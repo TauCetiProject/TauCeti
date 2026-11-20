@@ -97,8 +97,8 @@ section Center
 variable {R : Type u} [Ring R]
 
 /-- Stabilization `Stₙ(R) →* St_{n + 1}(R)` lands in the normalizer of the column root subgroup at
-the new last index: conjugation by a generator `x_{ij}(c)` with `i, j < n` acts on column elements
-by `TauCeti.IndexedSteinbergGroup.x_mul_colHom_mul_inv`. -/
+the new last index, since every generator `x_{ij}(c)` with `i, j < n` normalizes it
+(`TauCeti.IndexedSteinbergGroup.x_mem_normalizer_range_colHom`). -/
 private theorem range_stabilize_le_normalizer_colHom (n : ℕ) :
     (stabilize (Nat.le_succ n) (R := R)).range ≤
       Subgroup.normalizer ((IndexedSteinbergGroup.colHom (R := R) (Fin.last n)).range :
@@ -106,26 +106,11 @@ private theorem range_stabilize_le_normalizer_colHom (n : ℕ) :
   have hcastEmb : Fin.castLEEmb (Nat.le_succ n) = Fin.castSuccEmb := by
     ext p
     simp
-  have hconj : ∀ {i j : Fin n} (hij : i ≠ j) (c : R) (y : IndexedSteinbergGroup (Fin (n + 1)) R),
-      y ∈ (IndexedSteinbergGroup.colHom (R := R) (Fin.last n)).range →
-      stabilize (Nat.le_succ n) (IndexedSteinbergGroup.x hij c) * y *
-          (stabilize (Nat.le_succ n) (IndexedSteinbergGroup.x hij c))⁻¹ ∈
-        (IndexedSteinbergGroup.colHom (R := R) (Fin.last n)).range := by
-    rintro i j hij c _ ⟨v, rfl⟩
-    obtain ⟨v, rfl⟩ := Multiplicative.ofAdd.surjective v
-    simp only [stabilize, hcastEmb, IndexedSteinbergGroup.mapIndex_x, Fin.castSuccEmb_apply]
-    exact ⟨_, (IndexedSteinbergGroup.x_mul_colHom_mul_inv _ (Fin.castSucc_lt_last i).ne
-      (Fin.castSucc_lt_last j).ne c v).symm⟩
   rw [IndexedSteinbergGroup.range_le_iff]
   intro i j hij c
-  rw [Subgroup.mem_normalizer_iff]
-  refine fun y ↦ ⟨hconj hij c y, fun hy ↦ ?_⟩
-  have hinv : stabilize (Nat.le_succ n) (IndexedSteinbergGroup.x hij (-c)) =
-      (stabilize (Nat.le_succ n) (IndexedSteinbergGroup.x hij c))⁻¹ := by
-    rw [← IndexedSteinbergGroup.x_inv, map_inv]
-  have h := hconj hij (-c) _ hy
-  rwa [hinv, inv_inv, mul_assoc, mul_assoc, inv_mul_cancel, mul_one, ← mul_assoc,
-    inv_mul_cancel, one_mul] at h
+  simp only [stabilize, hcastEmb, IndexedSteinbergGroup.mapIndex_x, Fin.castSuccEmb_apply]
+  exact IndexedSteinbergGroup.x_mem_normalizer_range_colHom _ (Fin.castSucc_lt_last i).ne
+    (Fin.castSucc_lt_last j).ne c
 
 /-- Any element of `Stₙ(R)` in the kernel of `toGL` commutes, after stabilizing to `St_{n + 1}(R)`,
 with every column generator `x_{p, n}(b)` (`p < n`). -/
@@ -138,7 +123,7 @@ private theorem commute_stabilize_col {n : ℕ} {u : IndexedSteinbergGroup (Fin 
     rw [eq_bot_iff]
     rintro _ ⟨hker, ⟨v, rfl⟩⟩
     have hv : v = 1 := IndexedSteinbergGroup.toGL_comp_colHom_injective (Fin.last n)
-      (by rw [MonoidHom.comp_apply, MonoidHom.comp_apply, map_one, map_one]; exact hker)
+      (by simpa using hker)
     rw [hv, map_one, Subgroup.mem_bot]
   have hle := inf_normalizer_le_centralizer_of_inf_eq_bot Subgroup.le_normalizer_of_normal hinf
   have hker_u : stabilize (Nat.le_succ n) u ∈
@@ -149,8 +134,7 @@ private theorem commute_stabilize_col {n : ℕ} {u : IndexedSteinbergGroup (Fin 
         Set (IndexedSteinbergGroup (Fin (n + 1)) R)) :=
     hle ⟨hker_u, range_stabilize_le_normalizer_colHom n ⟨u, rfl⟩⟩
   exact (Subgroup.mem_centralizer_iff.mp hmem _
-    ⟨Multiplicative.ofAdd (Pi.single ⟨p.castSucc, (Fin.castSucc_lt_last p).ne⟩ b),
-      IndexedSteinbergGroup.colHom_ofAdd_single _ _⟩).symm
+    (IndexedSteinbergGroup.x_mem_range_colHom ⟨p.castSucc, (Fin.castSucc_lt_last p).ne⟩ b)).symm
 
 /-- **Milnor's centrality theorem (`K₂(R) ≤ Z(St(R))`).** The kernel of `toStableGL R` lies in the
 center of `SteinbergGroup R`. -/

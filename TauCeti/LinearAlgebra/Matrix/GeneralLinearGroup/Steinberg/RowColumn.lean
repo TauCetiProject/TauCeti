@@ -48,9 +48,14 @@ No commutativity of `R` is assumed; the order of the products `c * v b` and `v a
   `TauCeti.IndexedSteinbergGroup.colHom_injective`,
   `TauCeti.SteinbergGroup.ofFin_comp_colHom_injective`, and their row versions: faithfulness in
   `GL ι R`, in `St_ι(R)` and in the stable group `St(R)`.
+* `TauCeti.IndexedSteinbergGroup.x_mem_range_colHom`,
+  `TauCeti.IndexedSteinbergGroup.x_mem_range_rowHom`: the generators lie in the root subgroups.
 * `TauCeti.IndexedSteinbergGroup.x_mul_colHom_mul_inv`,
   `TauCeti.IndexedSteinbergGroup.x_mul_rowHom_mul_inv`: conjugation by `x_{ab}(c)` with
   `a, b ≠ t`.
+* `TauCeti.IndexedSteinbergGroup.x_mem_normalizer_range_colHom`,
+  `TauCeti.IndexedSteinbergGroup.x_mem_normalizer_range_rowHom`: hence `x_{ab}(c)` normalizes both
+  root subgroups.
 * `TauCeti.IndexedSteinbergGroup.map_colHom`, `TauCeti.IndexedSteinbergGroup.mapIndex_colHom`,
   `TauCeti.IndexedSteinbergGroup.transposeOp_colHom`, and their row versions: compatibility with
   ring homomorphisms, with index embeddings (which extend vectors by zero), and with the
@@ -92,6 +97,11 @@ private theorem pairwise_commute_xHom_row (t : ι) :
     rw [xHom_apply, xHom_apply]
     exact commute_x i.2.symm j.2.symm i.2 j.2 a.toAdd b.toAdd
 
+private theorem funMultiplicative_ofAdd_single {α : Type*} [DecidableEq α] (i : α) (r : R) :
+    MulEquiv.funMultiplicative α R (Multiplicative.ofAdd (Pi.single i r)) =
+      Pi.mulSingle i (Multiplicative.ofAdd r) :=
+  funext fun j ↦ (Pi.mulSingle_multiplicativeOfAdd_eq (M := fun _ ↦ R) i r j).symm
+
 variable [Fintype ι] [DecidableEq ι] (t : ι)
 
 /-- The **column root homomorphism** `v ↦ ∏_{i ≠ t} x_{it}(v i)` from the additive group of
@@ -114,11 +124,7 @@ generator `x_{it}(r)`. -/
 @[simp]
 theorem colHom_ofAdd_single (i : {i // i ≠ t}) (r : R) :
     colHom t (Multiplicative.ofAdd (Pi.single i r)) = x i.2 r := by
-  have h : MulEquiv.funMultiplicative _ R (Multiplicative.ofAdd (Pi.single i r)) =
-      Pi.mulSingle i (Multiplicative.ofAdd r) := by
-    funext j
-    by_cases hj : j = i <;> simp [hj]
-  rw [colHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, h,
+  rw [colHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, funMultiplicative_ofAdd_single,
     MonoidHom.noncommPiCoprod_mulSingle, xHom_apply, toAdd_ofAdd]
 
 /-- On the basis vector supported at `i` with value `r`, the row homomorphism is the Steinberg
@@ -126,12 +132,16 @@ generator `x_{ti}(r)`. -/
 @[simp]
 theorem rowHom_ofAdd_single (i : {i // i ≠ t}) (r : R) :
     rowHom t (Multiplicative.ofAdd (Pi.single i r)) = x i.2.symm r := by
-  have h : MulEquiv.funMultiplicative _ R (Multiplicative.ofAdd (Pi.single i r)) =
-      Pi.mulSingle i (Multiplicative.ofAdd r) := by
-    funext j
-    by_cases hj : j = i <;> simp [hj]
-  rw [rowHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, h,
+  rw [rowHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, funMultiplicative_ofAdd_single,
     MonoidHom.noncommPiCoprod_mulSingle, xHom_apply, toAdd_ofAdd]
+
+/-- Each generator `x_{it}(r)` with `i ≠ t` lies in the column root subgroup at `t`. -/
+theorem x_mem_range_colHom (i : {i // i ≠ t}) (r : R) : x i.2 r ∈ (colHom t).range :=
+  ⟨Multiplicative.ofAdd (Pi.single i r), colHom_ofAdd_single i r⟩
+
+/-- Each generator `x_{ti}(r)` with `i ≠ t` lies in the row root subgroup at `t`. -/
+theorem x_mem_range_rowHom (i : {i // i ≠ t}) (r : R) : x i.2.symm r ∈ (rowHom t).range :=
+  ⟨Multiplicative.ofAdd (Pi.single i r), rowHom_ofAdd_single i r⟩
 
 /-! ### Matrix images and faithfulness -/
 
@@ -222,9 +232,7 @@ theorem x_mul_colHom_mul_inv {a b : ι} (hab : a ≠ b) (hat : a ≠ t) (hbt : b
     x hab c * colHom t (Multiplicative.ofAdd v) * (x hab c)⁻¹ =
       colHom t (Multiplicative.ofAdd (v + Pi.single ⟨a, hat⟩ (c * v ⟨b, hbt⟩))) := by
   induction v using Pi.single_induction with
-  | zero =>
-    rw [ofAdd_zero, map_one, mul_one, mul_inv_cancel, Pi.zero_apply, mul_zero, Pi.single_zero,
-      add_zero, ofAdd_zero, map_one]
+  | zero => simp [← x_add]
   | add v w hv hw =>
     have hconj : x hab c * colHom t (Multiplicative.ofAdd (v + w)) * (x hab c)⁻¹ =
         (x hab c * colHom t (Multiplicative.ofAdd v) * (x hab c)⁻¹) *
@@ -236,12 +244,12 @@ theorem x_mul_colHom_mul_inv {a b : ι} (hab : a ≠ b) (hat : a ≠ t) (hbt : b
   | single i r =>
     by_cases hib : i = ⟨b, hbt⟩
     · subst hib
-      rw [colHom_ofAdd_single, x_mul_x_mul_inv hab hbt hat, Pi.single_eq_same, ofAdd_add, map_mul,
-        colHom_ofAdd_single, colHom_ofAdd_single]
+      simp only [colHom_ofAdd_single, x_mul_x_mul_inv hab hbt hat, Pi.single_eq_same, ofAdd_add,
+        map_mul]
       exact (commute_x hat hbt hbt.symm hat.symm _ _).eq
     · have hib' : (b : ι) ≠ i := fun h ↦ hib (Subtype.ext h.symm)
-      rw [colHom_ofAdd_single, (commute_x hab i.2 hib' hat.symm c r).eq, mul_inv_cancel_right,
-        Pi.single_eq_of_ne (Ne.symm hib), mul_zero, Pi.single_zero, add_zero, colHom_ofAdd_single]
+      simp [(commute_x hab i.2 hib' hat.symm c r).eq, Pi.single_eq_of_ne (Ne.symm hib), mul_assoc,
+        ← x_add]
 
 /-- Conjugating a row element by `x_{ab}(c)`, for distinct `a, b` both different from `t`,
 adds `-(v a * c)` to the coordinate `v b`. -/
@@ -250,9 +258,7 @@ theorem x_mul_rowHom_mul_inv {a b : ι} (hab : a ≠ b) (hat : a ≠ t) (hbt : b
     x hab c * rowHom t (Multiplicative.ofAdd v) * (x hab c)⁻¹ =
       rowHom t (Multiplicative.ofAdd (v + Pi.single ⟨b, hbt⟩ (-(v ⟨a, hat⟩ * c)))) := by
   induction v using Pi.single_induction with
-  | zero =>
-    rw [ofAdd_zero, map_one, mul_one, mul_inv_cancel, Pi.zero_apply, zero_mul, neg_zero,
-      Pi.single_zero, add_zero, ofAdd_zero, map_one]
+  | zero => simp [← x_add]
   | add v w hv hw =>
     have hconj : x hab c * rowHom t (Multiplicative.ofAdd (v + w)) * (x hab c)⁻¹ =
         (x hab c * rowHom t (Multiplicative.ofAdd v) * (x hab c)⁻¹) *
@@ -264,13 +270,38 @@ theorem x_mul_rowHom_mul_inv {a b : ι} (hab : a ≠ b) (hat : a ≠ t) (hbt : b
   | single i r =>
     by_cases hia : i = ⟨a, hat⟩
     · subst hia
-      rw [rowHom_ofAdd_single, x_mul_x_mul_inv_reverse hab hat.symm hbt.symm, Pi.single_eq_same,
-        ofAdd_add, map_mul, rowHom_ofAdd_single, rowHom_ofAdd_single]
+      simp only [rowHom_ofAdd_single, x_mul_x_mul_inv_reverse hab hat.symm hbt.symm,
+        Pi.single_eq_same, ofAdd_add, map_mul]
       exact (commute_x hbt.symm hat.symm hbt hat _ _).eq
     · have hia' : (i : ι) ≠ a := fun h ↦ hia (Subtype.ext h)
-      rw [rowHom_ofAdd_single, (commute_x hab i.2.symm hbt hia' c r).eq, mul_inv_cancel_right,
-        Pi.single_eq_of_ne (Ne.symm hia), zero_mul, neg_zero, Pi.single_zero, add_zero,
-        rowHom_ofAdd_single]
+      simp [(commute_x hab i.2.symm hbt hia' c r).eq, Pi.single_eq_of_ne (Ne.symm hia), mul_assoc,
+        ← x_add]
+
+/-- A generator `x_{ab}(c)`, for distinct `a, b` both different from `t`, normalizes the column
+root subgroup at `t`. -/
+theorem x_mem_normalizer_range_colHom {a b : ι} (hab : a ≠ b) (hat : a ≠ t) (hbt : b ≠ t)
+    (c : R) :
+    x hab c ∈
+      Subgroup.normalizer ((colHom (R := R) t).range : Set (IndexedSteinbergGroup ι R)) := by
+  have hconj : ∀ (c : R) (y : IndexedSteinbergGroup ι R), y ∈ (colHom t).range →
+      x hab c * y * (x hab c)⁻¹ ∈ (colHom t).range := by
+    rintro c _ ⟨v, rfl⟩
+    exact ⟨_, (x_mul_colHom_mul_inv hab hat hbt c v.toAdd).symm⟩
+  refine Subgroup.mem_normalizer_iff.mpr fun y ↦ ⟨hconj c y, fun hy ↦ ?_⟩
+  simpa [← x_inv, mul_assoc] using hconj (-c) _ hy
+
+/-- A generator `x_{ab}(c)`, for distinct `a, b` both different from `t`, normalizes the row root
+subgroup at `t`. -/
+theorem x_mem_normalizer_range_rowHom {a b : ι} (hab : a ≠ b) (hat : a ≠ t) (hbt : b ≠ t)
+    (c : R) :
+    x hab c ∈
+      Subgroup.normalizer ((rowHom (R := R) t).range : Set (IndexedSteinbergGroup ι R)) := by
+  have hconj : ∀ (c : R) (y : IndexedSteinbergGroup ι R), y ∈ (rowHom t).range →
+      x hab c * y * (x hab c)⁻¹ ∈ (rowHom t).range := by
+    rintro c _ ⟨v, rfl⟩
+    exact ⟨_, (x_mul_rowHom_mul_inv hab hat hbt c v.toAdd).symm⟩
+  refine Subgroup.mem_normalizer_iff.mpr fun y ↦ ⟨hconj c y, fun hy ↦ ?_⟩
+  simpa [← x_inv, mul_assoc] using hconj (-c) _ hy
 
 /-! ### Functoriality -/
 
@@ -374,7 +405,7 @@ theorem mapIndex_colHom (e : ι ↪ κ) (v : {i // i ≠ t} → R) :
       add_zero]
   | single i r =>
     rw [colHom_ofAdd_single, mapIndex_x, he.extend_single, colHom_ofAdd_single]
-    rfl
+    simp only [Subtype.map_coe]
 
 /-- Along an embedding `e : ι ↪ κ` of index types, a row element at `t` maps to the row element at
 `e t` of the vector extended by zero. -/
@@ -392,7 +423,7 @@ theorem mapIndex_rowHom (e : ι ↪ κ) (v : {i // i ≠ t} → R) :
       add_zero]
   | single i r =>
     rw [rowHom_ofAdd_single, mapIndex_x, he.extend_single, rowHom_ofAdd_single]
-    rfl
+    simp only [Subtype.map_coe]
 
 end Hom
 
