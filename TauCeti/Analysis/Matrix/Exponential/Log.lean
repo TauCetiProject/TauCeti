@@ -11,6 +11,8 @@ public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.Normed.Algebra.MatrixExponential
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog.Order
+import TauCeti.Analysis.Matrix.FunctionalCalculus
 
 /-!
 # The logarithm and real powers of positive definite matrices
@@ -39,6 +41,8 @@ topology is the native matrix topology.
 * `Matrix.IsHermitian.commute_exp_iff`: a matrix commutes with the exponential of a Hermitian
   matrix exactly when it commutes with the matrix.
 * `Matrix.PosDef.cfc_log_inv`: `log P⁻¹ = -log P` for positive definite `P`.
+* `Matrix.PosDef.cfc_log_le_cfc_log`: the matrix logarithm is operator monotone on positive
+  definite matrices over any `RCLike` field.
 * `Matrix.PosDef.rpow_eq_exp_smul_cfc_log`: `P ^ s = exp (s • log P)` for positive definite `P`.
 * `Matrix.contDiffOn_cfc_log`, `Matrix.contDiffOn_rpow`, `Matrix.contDiffOn_sqrt`: the logarithm,
   every real power and the square root are `C^n` on the positive definite matrices.
@@ -103,6 +107,37 @@ theorem PosDef.cfc_log_inv {P : Matrix n n 𝕜} (hP : P.PosDef) :
       ((P.finite_real_spectrum.image _).continuousOn _) (P.finite_real_spectrum.continuousOn _)
       hP.1.isSelfAdjoint, ← cfc_neg]
   exact cfc_congr fun x _ ↦ Real.log_inv x
+
+/-- **Operator monotonicity of the matrix logarithm.** For positive definite matrices `A ≤ B` over
+any `RCLike` field `𝕜`, `cfc Real.log A ≤ cfc Real.log B` in the Loewner order. -/
+theorem PosDef.cfc_log_le_cfc_log {A B : Matrix n n 𝕜} (hA : A.PosDef) (hle : A ≤ B) :
+    cfc Real.log A ≤ cfc Real.log B := by
+  let Φ := Matrix.mapToComplexStarAlgHom (n := n) (𝕜 := 𝕜)
+  have hΦle : Φ A ≤ Φ B := by
+    rw [le_iff, ← map_sub]
+    exact (le_iff.1 hle).mapToComplexStarAlgHom
+  have hB_sa : IsSelfAdjoint B := (hA.posSemidef.nonneg.trans hle).isSelfAdjoint
+  have hlog : CFC.log (Φ A) ≤ CFC.log (Φ B) :=
+    CFC.log_le_log hΦle (isStrictlyPositive_iff_posDef.2 hA.mapToComplexStarAlgHom)
+  unfold CFC.log at hlog
+  rw [← StarAlgHom.map_cfc Φ Real.log A (A.finite_real_spectrum.continuousOn _)
+      continuous_mapToComplexStarAlgHom hA.1.isSelfAdjoint (hA.1.isSelfAdjoint.map Φ),
+    ← StarAlgHom.map_cfc Φ Real.log B (B.finite_real_spectrum.continuousOn _)
+      continuous_mapToComplexStarAlgHom hB_sa (hB_sa.map Φ),
+    le_iff, ← map_sub] at hlog
+  rw [le_iff]
+  refine posSemidef_iff_dotProduct_mulVec.2
+    ⟨(cfc_predicate Real.log B).isHermitian.sub (cfc_predicate Real.log A).isHermitian, fun x ↦ ?_⟩
+  have hy := (posSemidef_iff_dotProduct_mulVec.1 hlog).2 (fun i ↦ RCLike.map 𝕜 ℂ (x i))
+  have hquad : star (fun i ↦ RCLike.map 𝕜 ℂ (x i)) ⬝ᵥ Φ (cfc Real.log B - cfc Real.log A) *ᵥ
+      (fun i ↦ RCLike.map 𝕜 ℂ (x i)) =
+      RCLike.map 𝕜 ℂ (star x ⬝ᵥ (cfc Real.log B - cfc Real.log A) *ᵥ x) := by
+    simp only [dotProduct, mulVec, map_sum, Φ, mapToComplexStarAlgHom_apply, Pi.star_apply,
+      RCLike.star_def, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
+      Complex.ext (by simp) (by simp)
+  rw [hquad, Complex.nonneg_iff] at hy
+  exact RCLike.nonneg_iff.2 ⟨by simpa using hy.1, by simpa using hy.2.symm⟩
 
 /-- **Smoothness of the matrix logarithm.** The logarithm is `C^n` on the positive definite
 matrices for every `n : ℕ∞ω`, including `n = ω`, over either the real or the complex scalars. -/

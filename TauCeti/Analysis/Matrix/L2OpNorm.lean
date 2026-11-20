@@ -32,6 +32,10 @@ rather than restricting scalars, so that no algebra diamond arises.
 * `Matrix.sum_sum_norm_sq_le_card_mul_l2_opNorm_sq`: a Frobenius bound by the operator norm.
 * `Matrix.l2_opNorm_sub_diagonal_diag_le`: zeroing the diagonal of a square matrix at most doubles
   its `ℓ²` operator norm.
+* `Matrix.l2_opNorm_fromBlocks_zero₁₂_zero₂₁`: the `ℓ²` operator norm of a block-diagonal matrix
+  `fromBlocks A 0 0 B` is `max ‖A‖ ‖B‖`.
+* `Matrix.l2_opNorm_fromBlocks_zero_conjTranspose`: the Hermitian dilation `fromBlocks 0 A Aᴴ 0`
+  has the same `ℓ²` operator norm as `A`.
 -/
 
 public section
@@ -113,5 +117,56 @@ theorem l2_opNorm_sub_diagonal_diag_le (A : Matrix n n 𝕜) :
     rw [l2_opNorm_diagonal]
     exact (pi_norm_le_iff_of_nonneg (norm_nonneg A)).mpr fun i ↦ A.norm_apply_le_l2_opNorm i i
   linarith [norm_sub_le A (diagonal A.diag)]
+
+/-- The `ℓ²` operator norm of a block-diagonal rectangular matrix is the maximum of the `ℓ²`
+operator norms of its diagonal blocks. -/
+theorem l2_opNorm_fromBlocks_zero₁₂_zero₂₁ {m₁ m₂ n₁ n₂ : Type*}
+    [Fintype m₁] [Fintype m₂] [Fintype n₁] [Fintype n₂] [DecidableEq n₁] [DecidableEq n₂]
+    (A : Matrix m₁ n₁ 𝕜) (B : Matrix m₂ n₂ 𝕜) :
+    ‖fromBlocks A 0 0 B‖ = max ‖A‖ ‖B‖ := by
+  apply le_antisymm
+  · rw [l2_opNorm_def]
+    refine ContinuousLinearMap.opNorm_le_bound _ (le_max_of_le_left (norm_nonneg A)) fun x ↦ ?_
+    let u : EuclideanSpace 𝕜 n₁ := WithLp.toLp 2 (x.ofLp ∘ Sum.inl)
+    let v : EuclideanSpace 𝕜 n₂ := WithLp.toLp 2 (x.ofLp ∘ Sum.inr)
+    have hmul : (fromBlocks A 0 0 B) *ᵥ x.ofLp = Sum.elim (A *ᵥ u.ofLp) (B *ᵥ v.ofLp) := by
+      have hx : x.ofLp = Sum.elim u.ofLp v.ofLp := by ext k; cases k <;> rfl
+      rw [hx, fromBlocks_mulVec]; simp [u, v]
+    have hnn := le_max_of_le_left (c := ‖B‖) (norm_nonneg A)
+    have hA := (A.l2_opNorm_mulVec u).trans
+      (mul_le_mul_of_nonneg_right (le_max_left ‖A‖ ‖B‖) (norm_nonneg _))
+    have hB := (B.l2_opNorm_mulVec v).trans
+      (mul_le_mul_of_nonneg_right (le_max_right ‖A‖ ‖B‖) (norm_nonneg _))
+    refine (sq_le_sq₀ (norm_nonneg _) (mul_nonneg hnn (norm_nonneg _))).1 ?_
+    have hA2 := (sq_le_sq₀ (norm_nonneg _) (mul_nonneg hnn (norm_nonneg u))).2 hA
+    have hB2 := (sq_le_sq₀ (norm_nonneg _) (mul_nonneg hnn (norm_nonneg v))).2 hB
+    simp [EuclideanSpace.norm_sq_eq, mul_pow, EuclideanSpace.equiv, u, v] at hA2 hB2
+    simp [EuclideanSpace.norm_sq_eq, Fintype.sum_sum_type, toLpLin_apply, hmul, mul_pow, u, v]
+    linarith
+  · refine max_le ?_ ?_ <;> rw [l2_opNorm_def] <;>
+      refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun w ↦
+        (sq_le_sq₀ (norm_nonneg _) (mul_nonneg (norm_nonneg _) (norm_nonneg _))).1 ?_
+    · let x : EuclideanSpace 𝕜 (n₁ ⊕ n₂) := WithLp.toLp 2 (Sum.elim w.ofLp 0)
+      simpa [EuclideanSpace.norm_sq_eq, Fintype.sum_sum_type, x, fromBlocks_mulVec,
+        EuclideanSpace.equiv, mul_pow] using (sq_le_sq₀ (norm_nonneg _)
+          (mul_nonneg (norm_nonneg _) (norm_nonneg _))).2 ((fromBlocks A 0 0 B).l2_opNorm_mulVec x)
+    · let x : EuclideanSpace 𝕜 (n₁ ⊕ n₂) := WithLp.toLp 2 (Sum.elim 0 w.ofLp)
+      simpa [EuclideanSpace.norm_sq_eq, Fintype.sum_sum_type, x, fromBlocks_mulVec,
+        EuclideanSpace.equiv, mul_pow] using (sq_le_sq₀ (norm_nonneg _)
+          (mul_nonneg (norm_nonneg _) (norm_nonneg _))).2 ((fromBlocks A 0 0 B).l2_opNorm_mulVec x)
+
+/-- The Hermitian dilation `fromBlocks 0 A Aᴴ 0` of a rectangular matrix `A` has the same `ℓ²`
+operator norm as `A`. -/
+theorem l2_opNorm_fromBlocks_zero_conjTranspose {m p : Type*} [Fintype m] [Fintype p]
+    [DecidableEq m] [DecidableEq p] (A : Matrix m p 𝕜) :
+    ‖fromBlocks (0 : Matrix m m 𝕜) A Aᴴ 0‖ = ‖A‖ := by
+  refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
+  have hmul : (fromBlocks (0 : Matrix m m 𝕜) A Aᴴ 0)ᴴ * fromBlocks 0 A Aᴴ 0 =
+      fromBlocks (A * Aᴴ) 0 0 (Aᴴ * A) := by
+    simp [fromBlocks_conjTranspose, fromBlocks_multiply]
+  have hAA : ‖A * Aᴴ‖ = ‖A‖ * ‖A‖ := by
+    simpa [l2_opNorm_conjTranspose] using l2_opNorm_conjTranspose_mul_self Aᴴ
+  rw [sq, ← l2_opNorm_conjTranspose_mul_self, hmul, l2_opNorm_fromBlocks_zero₁₂_zero₂₁,
+    l2_opNorm_conjTranspose_mul_self, hAA, max_self, sq]
 
 end Matrix

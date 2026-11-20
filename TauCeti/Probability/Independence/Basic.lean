@@ -26,6 +26,11 @@ event `F`) gives `Z` the scalar-multiple law `P A • ν` (respectively `P (A �
 An independent, identically distributed family admits a measurable version agreeing almost
 everywhere at each index, preserving independence and identical distribution
 (`ProbabilityTheory.iIndepFun.exists_measurable_ae_eq_of_identDistrib`).
+
+Finset-restricted variants of Mathlib's `indepFun_finsetProd_of_notMem₀` /
+`indepFun_finsetSum_of_notMem₀` require a.e. measurability only on `s` and at the excluded index
+`i` (`ProbabilityTheory.iIndepFun.indepFun_finsetProd_of_notMem₀_on` and
+`ProbabilityTheory.iIndepFun.indepFun_finsetSum_of_notMem₀_on`).
 -/
 
 public section
@@ -150,5 +155,34 @@ theorem iIndepFun.exists_measurable_ae_eq_of_identDistrib {Ω ι α : Type*}
     fun i ↦ ((hid i).aemeasurable_fst.identDistrib_mk.symm.trans (hid i)).trans
       (hid i₀).aemeasurable_fst.identDistrib_mk,
     fun i ↦ (hid i).aemeasurable_fst.identDistrib_mk.symm⟩
+
+/-- Finset-restricted variant of `ProbabilityTheory.iIndepFun.indepFun_finsetProd_of_notMem₀`:
+for an independent family `f` in a commutative monoid with jointly measurable multiplication,
+`∏ j ∈ s, f j` and `f i` are independent when `i ∉ s`, assuming a.e. measurability only on `s`
+and at `i`. -/
+@[to_additive /-- Finset-restricted variant of
+`ProbabilityTheory.iIndepFun.indepFun_finsetSum_of_notMem₀`: for an independent family `f` in a
+commutative additive monoid with jointly measurable addition, `∑ j ∈ s, f j` and `f i` are
+independent when `i ∉ s`, assuming a.e. measurability only on `s` and at `i`. -/]
+theorem iIndepFun.indepFun_finsetProd_of_notMem₀_on {Ω ι β : Type*} [MeasurableSpace Ω]
+    [MeasurableSpace β] [CommMonoid β] [MeasurableMul₂ β] {μ : Measure Ω}
+    {f : ι → Ω → β} (hf_indep : iIndepFun f μ) {s : Finset ι} {i : ι} (hi : i ∉ s)
+    (hf_meas : ∀ j ∈ s, AEMeasurable (f j) μ) (hf_i : AEMeasurable (f i) μ) :
+    IndepFun (∏ j ∈ s, f j) (f i) μ := by
+  classical
+  let t : Finset ↥(insert i s) := s.attach.map
+    ⟨fun k ↦ ⟨k.val, Finset.mem_insert_of_mem k.property⟩,
+      fun _ _ h ↦ Subtype.ext (by simpa using congrArg Subtype.val h)⟩
+  have hi' : (⟨i, Finset.mem_insert_self i s⟩ : ↥(insert i s)) ∉ t := by
+    simp only [t, Finset.mem_map, Finset.mem_attach, true_and, Subtype.ext_iff, not_exists]
+    exact fun k hk ↦ hi (hk ▸ k.property)
+  have hmeas_ins : ∀ k : ↥(insert i s), AEMeasurable (f k.val) μ := fun k ↦ by
+    rcases Finset.mem_insert.1 k.property with hk | hk
+    · rw [hk]; exact hf_i
+    · exact hf_meas k.val hk
+  have h := (hf_indep.precomp Subtype.val_injective).indepFun_finsetProd_of_notMem₀ hmeas_ins hi'
+  rwa [show (∏ k ∈ t, f k.val) = ∏ k ∈ s, f k by
+    simp only [t, Finset.prod_map]
+    exact Finset.prod_attach s f] at h
 
 end ProbabilityTheory
