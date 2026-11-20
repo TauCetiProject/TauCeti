@@ -184,12 +184,10 @@ lemma map_edge (F : C ⥤ D) {X Y : C} (f : X ⟶ Y) :
     (edge f).map F.classifyingSpaceMap.hom.continuous =
       (edge (F.map f)).cast (F.classifyingSpaceMap_vertex X) (F.classifyingSpaceMap_vertex Y) := by
   ext t
-  -- The endpoints `nerveEquiv.symm X` of the edges are typed as composable arrows rather than
-  -- vertices of the nerve, which defeats `rw` and `simp`; so the equations are chained by `exact`.
-  exact (congrArg (· t) ((nerve.edgeMk f).map_toTopPath (nerveMap F))).trans
-    ((SSet.Edge.toTopPath_apply ((nerve.edgeMk f).map (nerveMap F)) t).trans
-      ((congrArg (SSet.toTopObjMk · _)
-      (nerveMap_app_mk₁ F f)).trans (SSet.Edge.toTopPath_apply (nerve.edgeMk (F.map f)) t).symm))
+  rw [edge_eq_toTopPath, edge_eq_toTopPath, (nerve.edgeMk f).map_toTopPath (nerveMap F),
+    Path.cast_coe, Path.cast_coe]
+  apply SSet.Edge.toTopPath_apply_eq_of_edge_eq
+  exact nerveMap_app_mk₁ F f
 
 variable (C) in
 /-- The functor from a category to the fundamental groupoid of its classifying space, sending an

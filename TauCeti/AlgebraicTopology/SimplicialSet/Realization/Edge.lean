@@ -69,6 +69,12 @@ lemma toTopPath_apply (e : X.Edge x₀ x₁) (t : I) :
     e.toTopPath t = toTopObjMk e.edge (StdSimplex.homeomorphI.symm t) := by
   rw [toTopPath, _root_.Path.cast_coe, TauCeti.TopCat.path₁_apply, toTopObjMk_def]
 
+/-- Edges with the same underlying `1`-simplex trace pointwise equal paths, even when their
+endpoints are given as different (though necessarily equal) vertices. -/
+lemma toTopPath_apply_eq_of_edge_eq {y₀ y₁ : X _⦋0⦌} {e : X.Edge x₀ x₁} {e' : X.Edge y₀ y₁}
+    (h : e.edge = e'.edge) (t : I) : e.toTopPath t = e'.toTopPath t := by
+  rw [toTopPath_apply, toTopPath_apply, h]
+
 /-- The degenerate edge at a vertex traces the constant path at its point. -/
 @[simp]
 lemma toTopPath_id (x : X _⦋0⦌) : (Edge.id x).toTopPath = _root_.Path.refl (toTopPoint x) := by
