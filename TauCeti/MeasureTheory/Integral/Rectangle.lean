@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 
 /-!
@@ -36,8 +37,12 @@ a doubly (twisted) periodic map are used.
   equal values on the two opposite sides integrates to zero over the rectangle.
 * `TauCeti.eqOn_zero_of_setIntegral_rect_eq_zero`: a continuous nonnegative function with zero
   integral over a nondegenerate rectangle vanishes on it.
+* `Continuous.integrableOn_Icc_prod_Icc`: a continuous function is integrable over every closed
+  rectangle.
 * `TauCeti.setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero`: a function vanishing outside
   the strip `[a₁, b₁] × I` has the same integral over every wider strip `[c, d] × I`.
+* `TauCeti.setIntegral_Icc_add_prod_eq`: the integral over a translated strip
+  `[c + L, d + L] × I` is the integral of the translate `z ↦ f (z + (L, 0))` over `[c, d] × I`.
 * `TauCeti.setIntegral_Icc_prod_le_of_comp_add_le`: comparison of the integrals of `f` and `M` over
   a translated strip `[c + L, d + L] × I` and the original one, when `f (z + (L, 0)) ≤ M z`.
 * `TauCeti.integrableOn_setIntegral_slice`,
@@ -150,6 +155,12 @@ theorem eqOn_zero_of_setIntegral_rect_eq_zero {f : ℝ × ℝ → ℝ} (h₁ : a
   rw [← hcl]
   exact hU.of_subset_closure hf.continuousOn continuousOn_const subset_closure subset_rfl
 
+omit [NormedSpace ℝ E] in
+/-- A continuous function is integrable over every closed rectangle `[a₁, b₁] × [a₂, b₂]`. -/
+theorem _root_.Continuous.integrableOn_Icc_prod_Icc {f : ℝ × ℝ → E} (hf : Continuous f) :
+    IntegrableOn f (Icc a₁ b₁ ×ˢ Icc a₂ b₂) :=
+  hf.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
+
 /-- **Enlarging a strip.** If `f` vanishes at every point whose first coordinate lies outside
 `[a₁, b₁]`, then its integrals over a wider strip `[c, d] × I ⊇ [a₁, b₁] × I` and over
 `[a₁, b₁] × I` agree. -/
@@ -160,6 +171,21 @@ theorem setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero {X : Type*} [Measur
   setIntegral_eq_of_subset_of_forall_sdiff_eq_zero (measurableSet_Icc.prod hI)
     (prod_mono (Icc_subset_Icc hc hd) subset_rfl) fun z hz ↦ hf z fun h ↦ hz.2 ⟨h, hz.1.2⟩
 
+/-- The translate by `(L, 0)` of a point lies in the strip `[c + L, d + L] × I` exactly when the
+point lies in `[c, d] × I`. -/
+private theorem preimage_add_fst_Icc_prod (c d L : ℝ) (I : Set ℝ) :
+    (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) ⁻¹' (Icc (c + L) (d + L) ×ˢ I) = Icc c d ×ˢ I := by
+  ext z
+  simp only [mem_preimage, mem_prod, mem_Icc, Prod.fst_add, Prod.snd_add, add_zero]
+  constructor <;> rintro ⟨⟨h, h'⟩, h''⟩ <;> exact ⟨⟨by linarith, by linarith⟩, h''⟩
+
+/-- **Integrals over a translated strip.** The integral of `f` over the strip `[c + L, d + L] × I`
+is the integral of its translate `z ↦ f (z + (L, 0))` over the strip `[c, d] × I`. -/
+theorem setIntegral_Icc_add_prod_eq (f : ℝ × ℝ → E) (c d L : ℝ) (I : Set ℝ) :
+    ∫ z in Icc (c + L) (d + L) ×ˢ I, f z = ∫ z in Icc c d ×ˢ I, f (z + (L, 0)) := by
+  rw [← (measurePreserving_add_right volume (L, 0)).setIntegral_preimage_emb
+    (measurableEmbedding_addRight _) f, preimage_add_fst_Icc_prod]
+
 /-- **Comparison of integrals over a translated strip.** If `f` at the translate `z + (L, 0)` is
 pointwise bounded by `M z` on the strip `[c, d] × I`, with `M` integrable on that strip and `f`
 integrable on the translated strip `[c + L, d + L] × I`, then the integral of `f` over the
@@ -169,16 +195,9 @@ theorem setIntegral_Icc_prod_le_of_comp_add_le {f M : ℝ × ℝ → ℝ} {c d L
     (hMi : IntegrableOn M (Icc c d ×ˢ I))
     (hfM : ∀ z ∈ Icc c d ×ˢ I, f (z + (L, 0)) ≤ M z) :
     ∫ z in Icc (c + L) (d + L) ×ˢ I, f z ≤ ∫ z in Icc c d ×ˢ I, M z := by
-  have he : MeasurePreserving (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) :=
-    measurePreserving_add_right volume (L, 0)
-  have hemb : MeasurableEmbedding (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) :=
-    measurableEmbedding_addRight (L, 0)
-  have hpre : (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) ⁻¹' (Icc (c + L) (d + L) ×ˢ I) = Icc c d ×ˢ I := by
-    ext z
-    simp only [mem_preimage, mem_prod, mem_Icc, Prod.fst_add, Prod.snd_add, add_zero]
-    constructor <;> rintro ⟨⟨h, h'⟩, h''⟩ <;> exact ⟨⟨by linarith, by linarith⟩, h''⟩
-  rw [← he.setIntegral_preimage_emb hemb f, hpre]
-  rw [← he.integrableOn_comp_preimage hemb, hpre] at hfi
+  rw [setIntegral_Icc_add_prod_eq]
+  rw [← (measurePreserving_add_right volume (L, 0)).integrableOn_comp_preimage
+    (measurableEmbedding_addRight _), preimage_add_fst_Icc_prod] at hfi
   exact setIntegral_mono_on hfi hMi (measurableSet_Icc.prod hI) hfM
 
 /-- **Fubini on a product set: the slices are integrable.** If `f` is integrable over the product
@@ -222,15 +241,11 @@ theorem le_setIntegral_rect_of_forall_le_mul_setIntegral_slice {f : ℝ × ℝ �
     (h₁ : a₁ < b₁) (hf : IntegrableOn f (Icc a₁ b₁ ×ˢ Icc a₂ b₂))
     (hm : ∀ s ∈ Icc a₁ b₁, m ≤ (b₁ - a₁) * ∫ t in Icc a₂ b₂, f (s, t)) :
     m ≤ ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, f z := by
-  have hpos : 0 < b₁ - a₁ := sub_pos.2 h₁
+  have h := le_setIntegral_Icc_add_of_le_mul (a := a₁) (sub_pos.2 h₁)
+    (σ := fun s ↦ ∫ t in Icc a₂ b₂, f (s, t)) (m := m)
+  rw [add_sub_cancel] at h
   rw [← setIntegral_setIntegral_slice_eq_setIntegral_rect hf]
-  calc m = ∫ _ in Icc a₁ b₁, m / (b₁ - a₁) := by
-        rw [setIntegral_const, Real.volume_real_Icc_of_le h₁.le, smul_eq_mul,
-          mul_div_cancel₀ _ hpos.ne']
-    _ ≤ ∫ s in Icc a₁ b₁, ∫ t in Icc a₂ b₂, f (s, t) :=
-        setIntegral_mono_on (integrableOn_const isCompact_Icc.measure_lt_top.ne)
-          (integrableOn_setIntegral_slice hf) measurableSet_Icc fun s hs ↦
-            (div_le_iff₀' hpos).2 (hm s hs)
+  exact h (integrableOn_setIntegral_slice hf) hm
 
 /-- **Integrating a slicewise inequality.** If `f` and `g` are integrable over the rectangle
 `[a₁, b₁] × [a₂, b₂]` and, for every `s ∈ [a₁, b₁]`, the integral of `f (s, ·)` over `[a₂, b₂]` is
