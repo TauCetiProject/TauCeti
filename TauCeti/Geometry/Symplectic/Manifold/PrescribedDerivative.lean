@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.RelativeMoser
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.LocalDiffeomorph
 import TauCeti.Geometry.Symplectic.Manifold.Opens
@@ -14,14 +13,14 @@ import TauCeti.Geometry.Symplectic.Manifold.Opens
 /-!
 # Symplectomorphisms of neighbourhoods with prescribed derivative
 
-Let `θ` and `σ` be closed two-forms on boundaryless manifolds `M` and `N`, let `f : Q → M` be a
-compact embedded submanifold along which `θ` is nondegenerate, and let `Ψ` be a partial
-diffeomorphism from `M` to `N`, defined near `f(Q)`, whose differential at every point of `f(Q)`
-is a linear symplectic map: `σ(dΨ v, dΨ w) = θ(v, w)` for all tangent vectors `v`, `w` of `M` at
-that point. Then `Ψ` can be corrected to a symplectomorphism of neighbourhoods without changing
-it to first order along `f(Q)`: there are open neighbourhoods `U₀` of `f(Q)` and `U₁` of `Ψ(f(Q))`
-and a diffeomorphism `φ : U₀ → U₁` pulling `σ` back to `θ` which agrees with `Ψ` at every point of
-`f(Q)` and has the same differential there
+Let `θ` and `σ` be closed two-forms on manifolds `M` and `N`, with `M` boundaryless, let
+`f : Q → M` be a compact embedded submanifold along which `θ` is nondegenerate, and let `Ψ` be a
+partial diffeomorphism from `M` to `N`, defined near `f(Q)`, whose differential at every point of
+`f(Q)` is a linear symplectic map: `σ(dΨ v, dΨ w) = θ(v, w)` for all tangent vectors `v`, `w` of
+`M` at that point. Then `Ψ` can be corrected to a symplectomorphism of neighbourhoods without
+changing it to first order along `f(Q)`: there are open neighbourhoods `U₀` of `f(Q)` and `U₁` of
+`Ψ(f(Q))` and a diffeomorphism `φ : U₀ → U₁` pulling `σ` back to `θ` which agrees with `Ψ` at
+every point of `f(Q)` and has the same differential there
 (`TauCeti.SmoothTwoForm.exists_diffeomorph_opens_mfderiv_eq_of_eval₂_eq`).
 
 The hypothesis says that `Ψ^* σ` and `θ` agree as bilinear forms on the full ambient tangent spaces
@@ -64,39 +63,14 @@ variable {E F H G M N : Type*}
   {K : ModelWithCorners ℝ F G} [TopologicalSpace M] [ChartedSpace H M]
   [TopologicalSpace N] [ChartedSpace G N]
 
-/-- The correction of a partial diffeomorphism `Ψ` by a diffeomorphism `Θ` of its source,
-restricted to an open subset `U₀` of the source, is a diffeomorphism onto an open subset of `N`. -/
-private theorem exists_diffeomorph_opens_comp_eq (Ψ : PartialDiffeomorph I K M N ∞)
-    (Θ : (⟨Ψ.source, Ψ.open_source⟩ : Opens M) ≃ₘ⟮I, I⟯
-      (⟨Ψ.source, Ψ.open_source⟩ : Opens M))
-    {U₀ : Opens M} (hU₀ : U₀ ≤ (⟨Ψ.source, Ψ.open_source⟩ : Opens M)) :
-    ∃ (U₁ : Opens N) (φ : U₀ ≃ₘ⟮I, K⟯ U₁),
-      Subtype.val ∘ ⇑φ = (Ψ ∘ Subtype.val) ∘ Θ ∘ Opens.inclusion hU₀ := by
-  let ι := Opens.inclusion hU₀
-  have hιval : Subtype.val ∘ ι = Subtype.val := Set.val_comp_inclusion hU₀
-  have hι : ContMDiff I I ∞ ι := contMDiff_inclusion hU₀
-  let Φ : U₀ → N := (Ψ ∘ Subtype.val) ∘ Θ ∘ ι
-  have hinj : Function.Injective Φ := fun z z' h ↦ by
-    have h' := Ψ.toPartialEquiv.injOn (Θ (ι z)).2 (Θ (ι z')).2 h
-    have hv := congrArg Subtype.val (Θ.injective (Subtype.ext h') : ι z = ι z')
-    exact Subtype.ext hv
-  -- `Φ` is a composite of local diffeomorphisms.
-  have hloc : IsLocalDiffeomorph I K ∞ Φ := fun z ↦
-    (IsLocalDiffeomorphAt.of_comp_left (hιval ▸ isLocalDiffeomorph_subtype_val z)
-        (isLocalDiffeomorph_subtype_val _) hι.continuous.continuousAt).comp
-      (hg := (Θ.isLocalDiffeomorph _).comp (hg := (isLocalDiffeomorph_subtype_val _).comp
-        (hg := Ψ.isLocalDiffeomorphAt I K ∞ (Θ (ι z)).2)))
-  exact ⟨hloc.image, hloc.diffeomorphOfInjective hinj,
-    funext (IsLocalDiffeomorph.coe_diffeomorphOfInjective_apply hloc hinj)⟩
-
 variable {E' H' Q : Type*} [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M]
   [SecondCountableTopology M] [IsManifold K ∞ N]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} [J.Boundaryless]
   [TopologicalSpace Q] [ChartedSpace H' Q] [IsManifold J ∞ Q] [CompactSpace Q]
 
-/-- The Moser step: on the source `U` of `Ψ`, a diffeomorphism of `U` which fixes `f(Q)` with the
-identity as differential pulls `Ψ^* σ` back to `θ` near `f(Q)`. -/
+/-- The Moser step: on the source `U` of `Ψ`, there is a diffeomorphism `Θ` of `U` which fixes
+`f(Q)`, has the identity as differential there, and pulls `Ψ^* σ` back to `θ` near `f(Q)`. -/
 private theorem exists_diffeomorph_source_eventually_mpullback_eq (f : SmoothEmbedding J I ∞ Q M)
     {θ : SmoothTwoForm I M} (hθ : θ.IsClosed) (hnd : ∀ q, (θ.bilinFormAt (f q)).Nondegenerate)
     {σ : SmoothTwoForm K N} (hσ : σ.IsClosed) (Ψ : PartialDiffeomorph I K M N ∞)
@@ -173,7 +147,7 @@ theorem exists_diffeomorph_opens_mfderiv_eq_of_eval₂_eq (f : SmoothEmbedding J
   have hq (q : Q) : f q ∈ U₀ := ⟨⟨f q, hsrc q⟩, hfA (mem_range_self q), rfl⟩
   have hιq (q : Q) : Opens.inclusion hU₀ ⟨f q, hq q⟩ = ⟨f q, hsrc q⟩ :=
     Subtype.ext (congrFun hιval _)
-  obtain ⟨U₁, φ, hφ⟩ := exists_diffeomorph_opens_comp_eq Ψ Θ hU₀
+  obtain ⟨U₁, φ, hφ⟩ := Ψ.exists_diffeomorph_opens_comp_eq Θ hU₀
   refine ⟨U₀, U₁, φ, fun q ↦ ⟨hq q, ?_, fun v ↦ ?_⟩, ?_⟩
   · rw [← Function.comp_apply (f := Subtype.val), hφ]
     simp only [Function.comp_apply]
@@ -191,19 +165,15 @@ theorem exists_diffeomorph_opens_mfderiv_eq_of_eval₂_eq (f : SmoothEmbedding J
       rw [Function.comp_apply, hιq, hΘf]
     exact DFunLike.congr_fun (mfderiv_congr_point (I := I) (I' := K) (f := Ψ) hpt) v
   · -- On `U₀`, the pullback by `φ` is the pullback along `ι` of the pullback by `Θ` of `Ψ^* σ`.
-    simp only [SmoothForm.mpullback_mpullback, hφ]
-    rw [show SmoothForm.mpullback ((Ψ ∘ Subtype.val) ∘ Θ ∘ Opens.inclusion hU₀)
-          (hΨU.comp (Θ.contMDiff.comp hι)) σ =
-        SmoothForm.mpullback _ hι (SmoothForm.mpullback Θ Θ.contMDiff
-          (SmoothForm.mpullback _ hΨU σ)) by
-      rw [SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback],
-      show SmoothForm.mpullback (Subtype.val : U₀ → M) contMDiff_subtype_val θ =
-        SmoothForm.mpullback _ hι (SmoothForm.mpullback _ contMDiff_subtype_val θ) by
-      simp only [SmoothForm.mpullback_mpullback, hιval]]
+    rw [SmoothForm.mpullback_mpullback_of_comp_eq φ.contMDiff contMDiff_subtype_val
+      (Θ.contMDiff.comp hι) hΨU hφ, ← SmoothForm.mpullback_mpullback _ _ hι Θ.contMDiff]
     refine Subtype.ext (funext fun z ↦ ContinuousAlternatingMap.ext fun v ↦ ?_)
     have hzA : Opens.inclusion hU₀ z ∈ A := by
       obtain ⟨a, ha, h⟩ := z.2
       rwa [show Opens.inclusion hU₀ z = a from Subtype.ext ((congrFun hιval z).trans h.symm)]
-    rw [SmoothForm.mpullback_apply _ hι, SmoothForm.mpullback_apply _ hι, hAΘ hzA]
+    rw [SmoothForm.mpullback_apply _ hι, hAΘ hzA, SmoothForm.coe_mpullback_subtype_val_apply,
+      SmoothForm.coe_mpullback_subtype_val_apply]
+    simp only [Manifold.mfderiv_inclusion_apply]
+    rfl
 
 end TauCeti.SmoothTwoForm
