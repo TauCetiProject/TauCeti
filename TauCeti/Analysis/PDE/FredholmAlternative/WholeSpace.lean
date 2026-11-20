@@ -76,14 +76,11 @@ private theorem integral_norm_gradient_sq_le_of_tsupport_subset (hn : Fintype.ca
     {ψ : EuclideanSpace ℝ ι → ℝ} {R K : ℝ} (hR : 1 ≤ R)
     (hψts : tsupport ψ ⊆ closedBall 0 (2 * R)) (hψg : ∀ x, ‖gradient ψ x‖ ≤ K / R) :
     ∫ x, ‖gradient ψ x‖ ^ 2 ∂mu ≤ K ^ 2 * (2 ^ Fintype.card ι * mu.real (ball 0 1)) := by
-  have hR0 : 0 < R := zero_lt_one.trans_le hR
   have := setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall (mu := mu)
     (s := univ) hψts fun x _ => hψg x
   rw [Measure.restrict_univ] at this
   refine this.trans ?_
-  rw [measureReal_def, Measure.addHaar_closedBall _ _ (mul_nonneg zero_le_two hR0.le),
-    ENNReal.toReal_mul,
-    ENNReal.toReal_ofReal (by positivity), finrank_euclideanSpace, ← measureReal_def, mul_pow,
+  rw [Measure.addHaar_real_closedBall _ _ (by positivity), finrank_euclideanSpace, mul_pow,
     div_pow]
   have hpow : R ^ Fintype.card ι ≤ R ^ 2 := pow_le_pow_right₀ hR hn
   calc K ^ 2 / R ^ 2 * (2 ^ Fintype.card ι * R ^ Fintype.card ι * mu.real (ball 0 1))
@@ -124,7 +121,7 @@ theorem abs_integral_inner_gradient_le_of_eqOn_one (hn : Fintype.card ι ≤ 2)
     · have h1 : ψ =ᶠ[𝓝 x] fun _ => (1 : ℝ) := by
         filter_upwards [isOpen_ball.mem_nhds hx] with y hy
         exact hψ1 (ball_subset_closedBall hy)
-      simp [g, gradient, h1.fderiv_eq]
+      simp [g, h1.gradient_eq, gradient_fun_const]
     · simp [g, h, S, hx, mul_comm]
   have hψc : HasCompactSupport ψ :=
     (isCompact_closedBall _ _).of_isClosed_subset (isClosed_tsupport ψ) hψts
@@ -235,21 +232,7 @@ theorem eq_zero_of_forall_energyFormH1_one_zero_zero_eq_zero [DecidableEq ι] [N
   have hgrad : W1p.gradient (w : W1p mu ⊤ 2) = 0 := by
     have := hw w
     rwa [energyFormH1_one_zero_zero_eq_inner, inner_self_eq_zero] at this
-  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero
-    (by simpa using isPreconnected_univ) hgrad
-  -- A constant in `L²(ℝⁿ)` vanishes, since `ℝⁿ` has infinite measure.
-  have hc0 : c = 0 := by
-    have hmem : MemLp (fun _ : EuclideanSpace ℝ ι => c) 2 mu := by
-      simpa only [Opens.coe_top, Measure.restrict_univ] using (Lp.memLp _).ae_eq hc
-    refine ((memLp_const_iff two_ne_zero ENNReal.ofNat_ne_top).1 hmem).resolve_right ?_
-    rw [measure_univ_of_isAddLeftInvariant]
-    exact lt_irrefl _
-  subst hc0
-  have hw0 : (w : W1p mu ⊤ 2) = 0 := by
-    refine W1p.ext (Lp.ext ?_) (by simp [hgrad])
-    filter_upwards [hc] with x hx
-    simp [hx]
-  exact Subtype.ext hw0
+  exact Subtype.ext (W1p.eq_zero_of_gradient_eq_zero ENNReal.ofNat_ne_top hgrad)
 
 end PDE
 

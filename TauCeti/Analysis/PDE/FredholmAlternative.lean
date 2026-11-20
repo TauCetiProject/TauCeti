@@ -289,8 +289,8 @@ theorem setOf_sub_mem_w1p0Submodule_forall_energyFormH1_eq_eq_vadd
     rw [(hsol u).1 hu' v, hu₀ v, sub_self]
   · rintro ⟨_, ⟨w, hw, rfl⟩, rfl⟩
     refine ⟨?_, (hsol _).2 fun v => ?_⟩
-    · rw [add_sub_right_comm, ← ClosedSubmodule.mem_toSubmodule_iff]
-      exact add_mem ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hu₀g) w.2
+    · rw [add_sub_right_comm]
+      exact add_mem hu₀g ((ClosedSubmodule.mem_toSubmodule_iff _ _).1 w.2)
     · rw [add_sub_cancel_left, (hker w).1 hw v, hu₀ v, sub_self]
 
 /-! ### The compatibility condition under Gårding's inequality

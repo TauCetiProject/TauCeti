@@ -439,6 +439,12 @@ theorem forall_energyFormH1_eq_iff_forall_energyFormH1_sub_eq
         ℓ v - energyFormH1 a b c g (v : W1p mu Omega 2) :=
   forall_congr' fun v => by rw [energyFormH1_sub_left hcoeff, sub_left_inj]
 
+/-- For `w ∈ H¹₀(Ω)`, the function `g + w` has boundary values `g`. -/
+private theorem add_coe_sub_mem_w1p0Submodule (g : W1p mu Omega 2) (w : W1p0 mu Omega 2) :
+    g + (w : W1p mu Omega 2) - g ∈ w1p0Submodule mu Omega 2 := by
+  rw [add_sub_cancel_left, ← ClosedSubmodule.mem_toSubmodule_iff]
+  exact w.2
+
 /-- **The Dirichlet problem with boundary values `g` as a problem in `H¹₀(Ω)`.** For `g ∈ H¹(Ω)` and
 `ℓ ∈ H⁻¹(Ω)`, the problem `a(u, ·) = ℓ` on `H¹₀(Ω)` with `u - g ∈ H¹₀(Ω)` has a solution `u` exactly
 when the problem `a(w, ·) = ℓ - a(g, ·)` has a solution `w ∈ H¹₀(Ω)`; the two are related by
@@ -458,8 +464,7 @@ theorem exists_sub_mem_w1p0Submodule_forall_energyFormH1_eq_iff_exists_w1p0
   · rintro ⟨w, hw⟩
     refine ⟨g + w, ?_, (forall_energyFormH1_eq_iff_forall_energyFormH1_sub_eq hcoeff _ g ℓ).2
       fun v => ?_⟩
-    · rw [add_sub_cancel_left, ← ClosedSubmodule.mem_toSubmodule_iff]
-      exact w.2
+    · exact add_coe_sub_mem_w1p0Submodule g w
     · rw [add_sub_cancel_left, ← hw v, energyFormH1L0_apply]
 
 /-- **Unique solvability with boundary values `g`, reduced to `H¹₀(Ω)`.** For `g ∈ H¹(Ω)` and
@@ -479,20 +484,15 @@ theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_iff_existsUniq
     refine ⟨⟨u - g, hu⟩, fun v => (energyFormH1L0_apply hcoeff _ v).trans ((hsol u).1 hu' v),
       fun w hw => Subtype.ext ?_⟩
     have hgw : g + (w : W1p mu Omega 2) - g = w := add_sub_cancel_left g _
-    have hmem : g + (w : W1p mu Omega 2) - g ∈ w1p0Submodule mu Omega 2 := by
-      rw [hgw, ← ClosedSubmodule.mem_toSubmodule_iff]
-      exact w.2
-    exact eq_sub_of_add_eq' <| huniq (g + w) ⟨hmem, (hsol _).2 fun v => by
-      rw [hgw, ← energyFormH1L0_apply hcoeff]; exact hw v⟩
+    exact eq_sub_of_add_eq' <| huniq (g + w) ⟨add_coe_sub_mem_w1p0Submodule g w,
+      (hsol _).2 fun v => by rw [hgw, ← energyFormH1L0_apply hcoeff]; exact hw v⟩
   · rintro ⟨w, hw, hwuniq⟩
     have hgw : g + (w : W1p mu Omega 2) - g = w := add_sub_cancel_left g _
-    refine ⟨g + w, ⟨?_, (hsol _).2 fun v => by
+    refine ⟨g + w, ⟨add_coe_sub_mem_w1p0Submodule g w, (hsol _).2 fun v => by
       rw [hgw, ← energyFormH1L0_apply hcoeff]; exact hw v⟩, fun u ⟨hu, hu'⟩ => ?_⟩
-    · rw [hgw, ← ClosedSubmodule.mem_toSubmodule_iff]
-      exact w.2
-    · have := hwuniq ⟨u - g, hu⟩
-        fun v => (energyFormH1L0_apply hcoeff _ v).trans ((hsol u).1 hu' v)
-      rw [← this, Submodule.coe_mk, add_sub_cancel]
+    have := hwuniq ⟨u - g, hu⟩
+      fun v => (energyFormH1L0_apply hcoeff _ v).trans ((hsol u).1 hu' v)
+    rw [← this, Submodule.coe_mk, add_sub_cancel]
 
 /-- **The Dirichlet problem with boundary values in `H¹(Ω)` and forcing in `H⁻¹(Ω)`.** For a
 divergence-form operator whose energy form is bounded and coercive on `H¹₀(Ω)`, every
