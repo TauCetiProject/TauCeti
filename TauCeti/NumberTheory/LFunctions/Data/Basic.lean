@@ -56,7 +56,7 @@ imposed on the analytic record.
 
 ## Main results
 
-* `AnalyticLFunctionData.dual_dual`, `degree_dual`, `gammaFactor_dual`.
+* `AnalyticLFunctionData.dual_dual`, `degree_dual`, `gammaFactor_dual`, `exists_shift_norm_le`.
 * `HasDirichletAgreement.dual`, `HasMeromorphicContinuation.dual`, `HasFunctionalEquation.dual`.
 * `HasFunctionalEquation.eventuallyEq`: the functional equation as germs at every point.
 
@@ -126,6 +126,14 @@ theorem gammaFactor_def (s : ℂ) :
     d.gammaFactor s =
       (d.gammaR.map fun μ ↦ Gammaℝ (s + μ)).prod * (d.gammaC.map fun ν ↦ Gammaℂ (s + ν)).prod :=
   (rfl)
+
+/-- Every record `d` has a finite norm bound on its real and complex gamma shifts. -/
+theorem exists_shift_norm_le :
+    ∃ M ≥ 0, (∀ μ ∈ d.gammaR, ‖μ‖ ≤ M) ∧ (∀ ν ∈ d.gammaC, ‖ν‖ ≤ M) := by
+  obtain ⟨R, hR⟩ := (d.gammaR + d.gammaC).finite_toSet.isBounded.exists_norm_le
+  exact ⟨max R 0, le_max_right _ _,
+    fun μ hμ ↦ (hR μ (Multiset.mem_add.2 (.inl hμ))).trans (le_max_left _ _),
+    fun ν hν ↦ (hR ν (Multiset.mem_add.2 (.inr hν))).trans (le_max_left _ _)⟩
 
 /-- The **dual card**: conjugate coefficients, conjugate gamma shifts, conjugate root number, the
 reflected completed function `s ↦ conj Λ(conj s)`, and the conjugate polar divisor. The conductor
