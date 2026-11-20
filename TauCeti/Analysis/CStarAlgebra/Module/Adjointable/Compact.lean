@@ -29,13 +29,16 @@ bimodules.
 ## Main declarations
 
 * `TauCeti.AdjointableMap.rankOne A x y`: the rank-one operator `θ_{x,y}`, with
-  `adjoint_rankOne`, `norm_rankOne_le`, `comp_rankOne`, `rankOne_comp`, `rankOne_comp_rankOne`,
-  sesquilinearity, the coefficient laws `rankOne_smul_coeff_left` and `rankOne_smul_coeff_right`,
-  and positivity of `θ_{x,x}` (`rankOne_self_nonneg`).
+  `adjoint_rankOne`, `norm_rankOne_le`, `comp_rankOne`, `rankOne_comp`, `rankOne_comp_rankOne`
+  (and `star_rankOne`, `mul_rankOne`, `rankOne_mul`, `rankOne_mul_rankOne` in
+  `AdjointableMap A E E`), sesquilinearity, the coefficient laws `rankOne_smul_coeff_left` and
+  `rankOne_smul_coeff_right`, and positivity of `θ_{x,x}` (`rankOne_self_nonneg`).
 * `TauCeti.AdjointableMap.compactOperator A E F`: the closed subspace `K_A(E, F)` of
   `AdjointableMap A E F`, characterized as the smallest closed subspace containing every rank-one
   operator (`compactOperator_le_iff`) and by finite-sum approximation
   (`mem_compactOperator_iff_forall_exists_sum`).
+* `TauCeti.AdjointableMap.map_mem_compactOperator`: a continuous (semi)linear map sending
+  rank-one operators into `K_A` preserves `K_A`.
 * `TauCeti.AdjointableMap.comp_mem_compactOperator_left`,
   `TauCeti.AdjointableMap.comp_mem_compactOperator_right`, and
   `TauCeti.AdjointableMap.adjoint_mem_compactOperator_iff`: `K_A` absorbs composition with
@@ -69,22 +72,15 @@ variable {A E F G : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrder
 section RankOne
 
 variable (A) in
-private theorem norm_inner_smul_le (x : F) (y z : E) :
-    ‖inner A y z • x‖ ≤ ‖x‖ * ‖y‖ * ‖z‖ :=
-  calc ‖inner A y z • x‖ ≤ ‖inner A y z‖ * ‖x‖ := CStarModule.norm_smul_le _ _
-    _ ≤ ‖y‖ * ‖z‖ * ‖x‖ := by gcongr; exact norm_inner_le E
-    _ = ‖x‖ * ‖y‖ * ‖z‖ := by ring
-
-variable (A) in
 /-- The bounded complex-linear map `z ↦ ⟪y, z⟫_A • x` underlying `rankOne A x y`. -/
 private noncomputable def rankOneCLM (x : F) (y : E) : E →L[ℂ] F :=
   LinearMap.mkContinuous
     { toFun z := inner A y z • x
       map_add' z w := by rw [inner_add_right, CStarModule.add_smul]
       map_smul' c z := by
-        rw [inner_smul_right_complex, (CStarModule.isScalarTower A F).smul_assoc]
-        rfl }
-    (‖x‖ * ‖y‖) (norm_inner_smul_le A x y)
+        rw [inner_smul_right_complex, (CStarModule.isScalarTower A F).smul_assoc,
+          RingHom.id_apply] }
+    (‖x‖ * ‖y‖) (CStarModule.norm_inner_smul_le A x y)
 
 private theorem rankOneCLM_apply (x : F) (y z : E) :
     rankOneCLM A x y z = inner A y z • x :=
@@ -103,15 +99,15 @@ noncomputable def rankOne (x : F) (y : E) : AdjointableMap A E F where
 theorem rankOne_apply (x : F) (y z : E) : rankOne A x y z = inner A y z • x :=
   (rfl)
 
-/-- The adjoint of `θ_{x,y}` is `θ_{y,x}`. -/
+/-- The adjoint of `θ_{x,y}` is `θ_{y,x}`: by construction, the adjoint field of `rankOne A x y`
+is the map underlying `rankOne A y x`, so no inner-product computation is repeated here. -/
 @[simp]
 theorem adjoint_rankOne (x : F) (y : E) : (rankOne A x y).adjoint = rankOne A y x :=
-  (eq_adjoint_iff.mpr fun z w ↦ by
-    rw [rankOne_apply, rankOne_apply, inner_op_smul_left, inner_op_smul_right, star_inner]).symm
+  ext fun z ↦ adjoint_mk_apply _ _ _ z
 
 /-- The norm bound `‖θ_{x,y}‖ ≤ ‖x‖ ‖y‖`. -/
 theorem norm_rankOne_le (x : F) (y : E) : ‖rankOne A x y‖ ≤ ‖x‖ * ‖y‖ :=
-  opNorm_le_bound _ (by positivity) (norm_inner_smul_le A x y)
+  opNorm_le_bound _ (by positivity) (CStarModule.norm_inner_smul_le A x y)
 
 /-- Composing on the left with an adjointable operator: `T θ_{x,y} = θ_{T x, y}`. -/
 @[simp]
@@ -129,6 +125,27 @@ this is `θ_{x,y} θ_{u,v} = θ_{x ⟨y, u⟩_B, v}`. -/
 theorem rankOne_comp_rankOne (x : G) (y u : F) (v : E) :
     (rankOne A x y).comp (rankOne A u v) = rankOne A (inner A y u • x) v := by
   rw [comp_rankOne, rankOne_apply]
+
+/-- The adjoint of `θ_{x,y}` in the C⋆-algebra `AdjointableMap A E E` is `θ_{y,x}`. -/
+@[simp]
+theorem star_rankOne (x y : E) : star (rankOne A x y) = rankOne A y x :=
+  adjoint_rankOne x y
+
+/-- Multiplying on the left in `AdjointableMap A E E`: `T θ_{x,y} = θ_{T x, y}`. -/
+@[simp]
+theorem mul_rankOne (T : AdjointableMap A E E) (x y : E) :
+    T * rankOne A x y = rankOne A (T x) y :=
+  comp_rankOne T x y
+
+/-- Multiplying on the right in `AdjointableMap A E E`: `θ_{x,y} T = θ_{x, T⋆ y}`. -/
+theorem rankOne_mul (x y : E) (T : AdjointableMap A E E) :
+    rankOne A x y * T = rankOne A x (star T y) :=
+  rankOne_comp x y T
+
+/-- The product law `θ_{x,y} θ_{u,v} = θ_{⟪y, u⟫_A • x, v}` in `AdjointableMap A E E`. -/
+theorem rankOne_mul_rankOne (x y u v : E) :
+    rankOne A x y * rankOne A u v = rankOne A (inner A y u • x) v :=
+  rankOne_comp_rankOne x y u v
 
 /-- Moving a coefficient across a rank-one operator: `θ_{a • x, y} = θ_{x, a⋆ • y}`; for right
 Hilbert `B`-modules this is `θ_{x b, y} = θ_{x, y b⋆}`. -/
@@ -225,6 +242,7 @@ theorem compactOperator_def :
       (Submodule.span ℂ {T | ∃ (x : F) (y : E), rankOne A x y = T}).topologicalClosure :=
   (rfl)
 
+@[simp]
 theorem rankOne_mem_compactOperator (x : F) (y : E) : rankOne A x y ∈ compactOperator A E F :=
   Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨x, y, rfl⟩)
 
@@ -269,44 +287,36 @@ theorem mem_compactOperator_iff_forall_exists_sum {T : AdjointableMap A E F} :
   · rintro ⟨n, x, y, h⟩
     exact ⟨_, mem_span_rankOne_iff.mpr ⟨n, x, y, rfl⟩, by rwa [dist_eq_norm]⟩
 
+/-- A continuous (semi)linear map between spaces of adjointable operators that sends every
+rank-one operator into `K_A` sends all of `K_A` into `K_A`. -/
+theorem map_mem_compactOperator {E' F' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+    [SMul A E'] [CStarModule A E'] [NormedAddCommGroup F'] [NormedSpace ℂ F'] [SMul A F']
+    [CStarModule A F'] {σ : ℂ →+* ℂ}
+    (L : AdjointableMap A E F →ₛₗ[σ] AdjointableMap A E' F') (hL : Continuous L)
+    (h : ∀ (x : F) (y : E), L (rankOne A x y) ∈ compactOperator A E' F')
+    {T : AdjointableMap A E F} (hT : T ∈ compactOperator A E F) :
+    L T ∈ compactOperator A E' F' :=
+  (compactOperator_le_iff (p := (compactOperator A E' F').comap L)
+    (isClosed_compactOperator.preimage hL)).mpr h hT
+
 /-- `K_A` absorbs composition on the left: `S T ∈ K_A(E, G)` for `T ∈ K_A(E, F)`. -/
 theorem comp_mem_compactOperator_left (S : AdjointableMap A F G) {T : AdjointableMap A E F}
     (hT : T ∈ compactOperator A E F) : S.comp T ∈ compactOperator A E G := by
-  have hle : compactOperator A E F ≤ (compactOperator A E G).comap (compL S).toLinearMap := by
-    refine (compactOperator_le_iff ?_).mpr fun x y ↦ ?_
-    · rw [Submodule.comap_coe]
-      exact isClosed_compactOperator.preimage (compL S).continuous
-    · rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, compL_apply, comp_rankOne]
-      exact rankOne_mem_compactOperator _ _
-  simpa only [Submodule.mem_comap, ContinuousLinearMap.coe_coe, compL_apply] using hle hT
+  simpa using map_mem_compactOperator (compL S).toLinearMap (compL S).continuous
+    (fun x y ↦ by simp) hT
 
 /-- `K_A` absorbs composition on the right: `S T ∈ K_A(E, G)` for `S ∈ K_A(F, G)`. -/
 theorem comp_mem_compactOperator_right {S : AdjointableMap A F G}
     (hS : S ∈ compactOperator A F G) (T : AdjointableMap A E F) :
     S.comp T ∈ compactOperator A E G := by
-  have hle : compactOperator A F G ≤
-      (compactOperator A E G).comap ((compL (A := A)).flip T).toLinearMap := by
-    refine (compactOperator_le_iff ?_).mpr fun x y ↦ ?_
-    · rw [Submodule.comap_coe]
-      exact isClosed_compactOperator.preimage ((compL (A := A)).flip T).continuous
-    · rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, ContinuousLinearMap.flip_apply,
-        compL_apply, rankOne_comp]
-      exact rankOne_mem_compactOperator _ _
-  simpa only [Submodule.mem_comap, ContinuousLinearMap.coe_coe, ContinuousLinearMap.flip_apply,
-    compL_apply] using hle hS
+  simpa using map_mem_compactOperator ((compL (A := A)).flip T).toLinearMap
+    ((compL (A := A)).flip T).continuous (fun x y ↦ by simp [rankOne_comp]) hS
 
 /-- The adjoint of a module-compact operator is module-compact. -/
 theorem adjoint_mem_compactOperator {T : AdjointableMap A E F}
     (hT : T ∈ compactOperator A E F) : T.adjoint ∈ compactOperator A F E := by
-  have hadj : ⇑(adjointEquiv (A := A) (E := E) (F := F)) = adjoint := funext adjointEquiv_apply
-  have hle : compactOperator A E F ≤
-      (compactOperator A F E).comap (adjointEquiv (A := A) (E := E) (F := F)).toLinearMap := by
-    refine (compactOperator_le_iff ?_).mpr fun x y ↦ ?_
-    · rw [Submodule.comap_coe, LinearEquiv.coe_coe, hadj]
-      exact isClosed_compactOperator.preimage continuous_adjoint
-    · rw [Submodule.mem_comap, LinearEquiv.coe_coe, adjointEquiv_apply, adjoint_rankOne]
-      exact rankOne_mem_compactOperator _ _
-  simpa only [Submodule.mem_comap, LinearEquiv.coe_coe, adjointEquiv_apply] using hle hT
+  simpa using map_mem_compactOperator adjointₗᵢ.toLinearEquiv.toLinearMap
+    adjointₗᵢ.continuous (fun x y ↦ by simp) hT
 
 @[simp]
 theorem adjoint_mem_compactOperator_iff {T : AdjointableMap A E F} :

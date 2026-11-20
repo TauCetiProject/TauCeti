@@ -42,7 +42,8 @@ Riesz theorem.
   products iff it preserves the diagonal inner products `⟪x, x⟫_A`.
 * `CStarModule.isGreatest_norm_inner`: norm recovery, `‖x‖` is the largest value of
   `‖⟪y, x⟫_A‖` over the closed unit ball.
-* `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`.
+* `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`, and `CStarModule.norm_inner_smul_le`:
+  `‖⟪y, z⟫_A x‖ ≤ ‖x‖ ‖y‖ ‖z‖`.
 * `CStarModule.inner_map_map_le_norm_sq_smul`: Paschke's inequality
   `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A` for any bounded `A`-linear operator `T : E →L[ℂ] F`.
 * `CStarModule.tendsto_smul`: the action is essential, `e x → x` along an approximate unit.
@@ -235,6 +236,16 @@ protected theorem norm_smul_le (a : A) (x : E) : ‖a • x‖ ≤ ‖a‖ * ‖
   rw [CStarModule.norm_smul]
   refine (norm_mul_le _ _).trans_eq ?_
   rw [CFC.norm_sqrt _ inner_self_nonneg, ← norm_eq_sqrt_norm_inner_self]
+
+variable (A) in
+/-- The bound `‖⟪y, z⟫_A x‖ ≤ ‖x‖ ‖y‖ ‖z‖`, from `CStarModule.norm_smul_le` and the
+Cauchy–Schwarz inequality `CStarModule.norm_inner_le`. -/
+theorem norm_inner_smul_le {F : Type*} [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F]
+    [CStarModule A F] (x : F) (y z : E) : ‖inner A y z • x‖ ≤ ‖x‖ * ‖y‖ * ‖z‖ :=
+  calc ‖inner A y z • x‖ ≤ ‖inner A y z‖ * ‖x‖ := CStarModule.norm_smul_le _ _
+    _ ≤ ‖y‖ * ‖z‖ * ‖x‖ :=
+      mul_le_mul_of_nonneg_right (norm_inner_le E) (CStarModule.norm_nonneg A)
+    _ = ‖x‖ * ‖y‖ * ‖z‖ := by ring
 
 end Norm
 
