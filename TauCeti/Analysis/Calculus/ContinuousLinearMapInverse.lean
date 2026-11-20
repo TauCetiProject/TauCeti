@@ -8,8 +8,11 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+public import Mathlib.Topology.UniformSpace.UniformConvergence
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # Inverting and differentiating continuous linear maps
@@ -38,6 +41,8 @@ curve through `1` with the constant `C`; the latter involves no inversion.
 * `ContinuousLinearMap.IsInvertible.of_mul_norm_sub_lt` and
   `ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt`: if `‖A⁻¹‖ ≤ M` and
   `M * ‖B - A‖ < 1`, then `B` is invertible with `‖B⁻¹‖ ≤ M / (1 - M * ‖B - A‖)`.
+* `TendstoUniformlyOn.eventually_forall_isInvertible`: a family converging uniformly on a set to
+  invertible maps with compact image is eventually invertible on that set.
 * `HasDerivAt.clm_inverse`: differentiates `(A t)⁻¹`.
 * `HasDerivAt.clm_inverse_apply`: differentiates `(A t)⁻¹ (w t)`.
 * `ContDiffWithinAt.clm_inverse`, `ContDiffAt.clm_inverse`, `ContDiffOn.clm_inverse`: the
@@ -180,6 +185,19 @@ theorem ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt [Com
       _ ≤ M * ‖A x‖ := by gcongr
   rw [div_mul_eq_mul_div, le_div_iff₀ hδ]
   nlinarith [mul_le_mul_of_nonneg_left hAx hM0]
+
+/-- Invertibility persists under uniform approximation on a set whose image is compact: if
+`A i → A` uniformly on `s`, the values of `A` on `s` form a compact set and are all invertible,
+then eventually every `A i` is invertible at every point of `s`. -/
+theorem TendstoUniformlyOn.eventually_forall_isInvertible [CompleteSpace E] {α ι : Type*}
+    {A : ι → α → E →L[𝕜] F} {B : α → E →L[𝕜] F} {l : Filter ι} {s : Set α}
+    (h : TendstoUniformlyOn A B l s) (hs : IsCompact (B '' s))
+    (hB : ∀ x ∈ s, (B x).IsInvertible) :
+    ∀ᶠ i in l, ∀ x ∈ s, (A i x).IsInvertible := by
+  refine (h.eventually_mapsTo (Set.mapsTo_image B s) hs
+    (isOpen_setOfPred_isInvertible.mem_nhdsSet.2 ?_)).mono fun i hi x hx ↦ hi hx
+  rintro _ ⟨x, hx, rfl⟩
+  exact hB x hx
 
 end Perturbation
 
