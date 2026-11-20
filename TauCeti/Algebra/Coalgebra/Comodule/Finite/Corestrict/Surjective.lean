@@ -8,8 +8,9 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Abelian
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Corestrict.Basic
-public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Corestrict
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Regular
+public import TauCeti.Algebra.Coalgebra.Comodule.Transport
+import Mathlib.Algebra.Module.ULift
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Finite
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.RegularSubcomodule
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
@@ -33,8 +34,6 @@ criterion: `G → G'` is a closed immersion exactly when every finite-dimensiona
 
 ## Main results
 
-* `TauCeti.FGComoduleCat.matrixCoefficient_corestrict_mem_range`: every matrix coefficient of a
-  corestricted finite comodule lies in the range of `f`.
 * `CoalgHom.surjective_of_forall_exists_mono_epi`: if every finite `D`-comodule is a subquotient of
   a corestricted finite `C`-comodule, then `f` is surjective.
 * `CoalgHom.exists_mono_epi_of_surjective`: conversely, if `f` is surjective, every finite
@@ -46,7 +45,9 @@ criterion: `G → G'` is a closed immersion exactly when every finite-dimensiona
 For the first direction, an element `d : D` lies in a finite-dimensional subcoalgebra `E`, and `d`
 is the matrix coefficient of the counit at `d` in the regular comodule `E`. Pulling this
 coefficient back along the epimorphism and extending it along the monomorphism shows that `d` is a
-coefficient of a corestricted comodule, hence lies in the range of `f`.
+coefficient of a corestricted comodule, hence lies in the range of `f`. Finite-dimensional
+witnesses are transported to lifted finite coordinate spaces, so the coalgebras may have
+independent universes and the common carrier universe need only contain that of `k`.
 
 For the converse, the coaction embeds `M` into the cofree `D`-comodule `M ⊗ D`, which is the image
 of the corestricted cofree `C`-comodule `M ⊗ C` under `id ⊗ f`. Since `M` is finite, its image in
@@ -67,34 +68,11 @@ public section
 open CategoryTheory Limits
 open scoped TensorProduct
 
-namespace TauCeti.FGComoduleCat
-
-universe u v w x
-
-variable {R : Type u} [CommSemiring R]
-variable {C : Type v} {D : Type w} [AddCommMonoid C] [Module R C] [Coalgebra R C]
-  [AddCommMonoid D] [Module R D] [Coalgebra R D]
-
-/-- Every matrix coefficient of a finite comodule corestricted along `f` lies in the range of
-`f`. -/
-theorem matrixCoefficient_corestrict_mem_range (f : C →ₗc[R] D) (Y : FGComoduleCat.{u, v, x} R C)
-    (φ : (corestrict f).obj Y →ₗ[R] R) (y : (corestrict f).obj Y) :
-    Comodule.matrixCoefficient (C := D) φ y ∈ LinearMap.range (f : C →ₗ[R] D) := by
-  -- The coefficient over `D` is the image under `f` of the coefficient over `C`, read with the
-  -- corestricted comodule structure on the carrier of `Y`.
-  have key (ψ : Y →ₗ[R] R) (z : Y) :
-      (letI : Comodule R D Y := Comodule.Corestrict f;
-        Comodule.matrixCoefficient (C := D) ψ z) ∈ LinearMap.range (f : C →ₗ[R] D) :=
-    ⟨_, (CoalgHom.matrixCoefficient_corestrict f ψ z).symm⟩
-  exact key φ y
-
-end TauCeti.FGComoduleCat
-
 open TauCeti
 
 namespace CoalgHom
 
-universe u v w
+universe u v w x
 
 section Surjective
 
@@ -104,8 +82,8 @@ variable {k : Type u} [Field k]
 comodule over `C`, then `f` is surjective. -/
 theorem surjective_of_forall_exists_mono_epi {C : Type v} {D : Type w} [AddCommGroup C]
     [Module k C] [Coalgebra k C] [AddCommGroup D] [Module k D] [Coalgebra k D] (f : C →ₗc[k] D)
-    (h : ∀ M : FGComoduleCat.{u, w, w} k D, ∃ (Y : FGComoduleCat.{u, v, w} k C)
-      (Z : FGComoduleCat.{u, w, w} k D) (i : Z ⟶ (FGComoduleCat.corestrict f).obj Y)
+    (h : ∀ M : FGComoduleCat.{u, w, max u x} k D, ∃ (Y : FGComoduleCat.{u, v, max u x} k C)
+      (Z : FGComoduleCat.{u, w, max u x} k D) (i : Z ⟶ (FGComoduleCat.corestrict f).obj Y)
       (p : Z ⟶ M), Mono i ∧ Epi p) :
     Function.Surjective f := by
   intro d
@@ -113,17 +91,21 @@ theorem surjective_of_forall_exists_mono_epi {C : Type v} {D : Type w} [AddCommG
   obtain ⟨E, hE, hdE⟩ := Subcoalgebra.exists_finiteDimensional_subcoalgebra_mem (k := k) d
   let N := E.toRegularSubcomodule
   have : Module.Finite k N := inferInstanceAs (Module.Finite k E.toRegularSubcomodule.toSubmodule)
-  obtain ⟨Y, Z, i, p, hi, hp⟩ := h (FGComoduleCat.of N)
+  let e : N ≃ₗ[k] ULift.{x} (Fin (Module.finrank k N) → k) :=
+    (Module.finBasis k N).equivFun.trans ULift.moduleEquiv.symm
+  let _ := Comodule.Transport (C := D) e
+  obtain ⟨Y, Z, i, p, hi, hp⟩ := h (FGComoduleCat.of (ULift.{x} (Fin (Module.finrank k N) → k)))
   have hp' : Function.Surjective p := (ModuleCat.epi_iff_surjective _).1
-    ((forget₂ (FGComoduleCat.{u, w, w} k D) (ModuleCat.{w} k)).map_epi p)
+    ((forget₂ (FGComoduleCat.{u, w, max u x} k D) (ModuleCat.{max u x} k)).map_epi p)
   have hi' : Function.Injective i := (ModuleCat.mono_iff_injective _).1
-    ((forget₂ (FGComoduleCat.{u, w, w} k D) (ModuleCat.{w} k)).map_mono i)
-  obtain ⟨z, hz⟩ := hp' (⟨d, hdE⟩ : N)
+    ((forget₂ (FGComoduleCat.{u, w, max u x} k D) (ModuleCat.{max u x} k)).map_mono i)
+  obtain ⟨z, hz⟩ := hp' (e ⟨d, hdE⟩)
   -- Extend the pulled-back counit functional from `Z` to the corestriction of `Y`.
   obtain ⟨r, hr⟩ := LinearMap.exists_leftInverse_of_injective i.hom.toLinearMap
     (LinearMap.ker_eq_bot.2 hi')
-  let φ : N →ₗ[k] k := (Coalgebra.counit (R := k) (A := D)).comp (SMulMemClass.subtype N)
-  obtain ⟨c, hc⟩ := FGComoduleCat.matrixCoefficient_corestrict_mem_range f Y
+  let φ : ULift.{x} (Fin (Module.finrank k N) → k) →ₗ[k] k :=
+    Coalgebra.counit (R := k) (A := D) ∘ₗ SMulMemClass.subtype N ∘ₗ e.symm.toLinearMap
+  obtain ⟨c, hc⟩ := f.matrixCoefficient_corestrict_mem_range Y
     (φ ∘ₗ p.hom.toLinearMap ∘ₗ r) (i z)
   refine ⟨c, hc.trans ?_⟩
   calc Comodule.matrixCoefficient (C := D) (φ ∘ₗ p.hom.toLinearMap ∘ₗ r) (i.hom z)
@@ -136,15 +118,76 @@ theorem surjective_of_forall_exists_mono_epi {C : Type v} {D : Type w} [AddCommG
       (Comodule.matrixCoefficient_map p.hom φ z).symm
     _ = d := by
       rw [hz]
-      exact Comodule.matrixCoefficient_counit_comp_subtype N ⟨d, hdE⟩
+      rw [← Comodule.transportToHom_apply (C := D) e, Comodule.matrixCoefficient_map]
+      simpa only [φ, Comodule.transportToHom_toLinearMap, LinearMap.comp_assoc,
+        LinearEquiv.symm_comp, LinearMap.comp_id] using
+        Comodule.matrixCoefficient_counit_comp_subtype N ⟨d, hdE⟩
+
+attribute [local instance] Comodule.cofree in
+/-- A finite cofree image containing the coaction gives the quotient used in the proof. -/
+private theorem exists_epi_mono_of_coact_mem_range {C : Type v} {D : Type w}
+    [AddCommGroup C] [Module k C] [Coalgebra k C]
+    [AddCommGroup D] [Module k D] [Coalgebra k D] (f : C →ₗc[k] D)
+    (M : FGComoduleCat.{u, w, max u x} k D) (Y : FGComoduleCat.{u, v, max u x} k C)
+    (G : Comodule.Hom k D ((FGComoduleCat.corestrict f).obj Y) (M ⊗[k] D))
+    (hρ : ∀ m : M, Comodule.coact (R := k) (C := D) (M := M) m ∈ Comodule.Hom.range G) :
+    ∃ (Q : FGComoduleCat.{u, w, max u x} k D)
+      (q : (FGComoduleCat.corestrict f).obj Y ⟶ Q) (j : M ⟶ Q), Epi q ∧ Mono j := by
+  -- Transport the finite image to the same carrier universe before taking the pullback.
+  let Q := Comodule.Hom.range G
+  have : Module.Finite k Q := G.range_finite
+  let _ : AddCommGroup Q := Module.addCommMonoidToAddCommGroup k
+  let eQ : Q ≃ₗ[k] ULift.{x} (Fin (Module.finrank k Q) → k) :=
+    (Module.finBasis k Q).equivFun.trans ULift.moduleEquiv.symm
+  let Q' : FGComoduleCat.{u, w, max u x} k D :=
+    ⟨ComoduleCat.transport k D eQ, Module.Finite.equiv eQ⟩
+  let _ := Comodule.Transport (C := D) eQ
+  let q : (FGComoduleCat.corestrict f).obj Y ⟶ Q' :=
+    ObjectProperty.homMk ((Comodule.transportToHom eQ).comp (G.codRestrict Q G.mem_range_self))
+  let j : M ⟶ Q' := ObjectProperty.homMk
+    ((Comodule.transportToHom eQ).comp ((Comodule.Hom.cofreeUnit M).codRestrict Q hρ))
+  have hq : Epi q := by
+    apply (forget₂ (FGComoduleCat.{u, w, max u x} k D) (ModuleCat.{max u x} k)).epi_of_epi_map
+    apply (ModuleCat.epi_iff_surjective _).2
+    have hs : Function.Surjective (G.codRestrict Q G.mem_range_self) := by
+      rintro ⟨z, hz⟩
+      obtain ⟨y, rfl⟩ := Comodule.Hom.mem_range.1 hz
+      exact ⟨y, Subtype.ext (Comodule.Hom.codRestrict_apply G Q G.mem_range_self y)⟩
+    -- Forgetting the wrappers leaves the composite comodule map.
+    have : Function.Surjective
+        ((Comodule.transportToHom eQ).comp (G.codRestrict Q G.mem_range_self)) := by
+      intro z
+      obtain ⟨y, hy⟩ := hs (eQ.symm z)
+      exact ⟨y, by simp only [Comodule.Hom.comp_apply, Comodule.transportToHom_apply,
+        hy, LinearEquiv.apply_symm_apply]⟩
+    exact this
+  have hj : Mono j := by
+    apply (forget₂ (FGComoduleCat.{u, w, max u x} k D) (ModuleCat.{max u x} k)).mono_of_mono_map
+    apply (ModuleCat.mono_iff_injective _).2
+    have hi : Function.Injective ((Comodule.Hom.cofreeUnit M).codRestrict Q hρ) := by
+      intro m m' h
+      have h' := congrArg (fun z : Q ↦ z.val) h
+      have he := Comodule.Hom.codRestrict_apply (Comodule.Hom.cofreeUnit M) Q hρ
+      rw [he, he] at h'
+      exact Comodule.coact_injective h'
+    -- Forgetting the wrappers leaves the composite comodule map.
+    have : Function.Injective ((Comodule.transportToHom eQ).comp
+        ((Comodule.Hom.cofreeUnit M).codRestrict Q hρ)) := by
+      intro m m' h
+      apply hi
+      apply eQ.injective
+      simpa only [Comodule.Hom.comp_apply, Comodule.transportToHom_apply] using h
+    exact this
+  exact ⟨Q', q, j, hq, hj⟩
 
 attribute [local instance] Comodule.cofree in
 /-- If `f` is surjective, every finite comodule `M` over `D` embeds into a quotient of the
 corestriction along `f` of a finite comodule over `C`. -/
-private theorem exists_epi_mono_of_surjective {C D : Type v} [AddCommGroup C] [Module k C]
+private theorem exists_epi_mono_of_surjective {C : Type v} {D : Type w}
+    [AddCommGroup C] [Module k C]
     [Coalgebra k C] [AddCommGroup D] [Module k D] [Coalgebra k D] (f : C →ₗc[k] D)
-    (hf : Function.Surjective f) (M : FGComoduleCat.{u, v, v} k D) :
-    ∃ (Y : FGComoduleCat.{u, v, v} k C) (Q : FGComoduleCat.{u, v, v} k D)
+    (hf : Function.Surjective f) (M : FGComoduleCat.{u, w, max u x} k D) :
+    ∃ (Y : FGComoduleCat.{u, v, max u x} k C) (Q : FGComoduleCat.{u, w, max u x} k D)
       (q : (FGComoduleCat.corestrict f).obj Y ⟶ Q) (j : M ⟶ Q), Epi q ∧ Mono j := by
   let _ : Comodule k D (M ⊗[k] C) := Comodule.Corestrict f
   let g := Comodule.Hom.cofreeLTensor M f
@@ -158,53 +201,37 @@ private theorem exists_epi_mono_of_surjective {C D : Type v} [AddCommGroup C] [M
     (LinearMap.range (σ ∘ₗ Comodule.coact (R := k) (C := D) (M := M)))
     (by rw [LinearMap.range_eq_map]; exact Module.Finite.fg_top.map _)
   have : Module.Finite k Ys := hYs
-  let Y := FGComoduleCat.of (R := k) (C := C) Ys
+  let _ : AddCommGroup Ys := Module.addCommMonoidToAddCommGroup k
+  let eY : Ys ≃ₗ[k] ULift.{x} (Fin (Module.finrank k Ys) → k) :=
+    (Module.finBasis k Ys).equivFun.trans ULift.moduleEquiv.symm
+  let _ := Comodule.Transport (C := C) eY
+  let Y : FGComoduleCat.{u, v, max u x} k C :=
+    ⟨ComoduleCat.transport k C eY, Module.Finite.equiv eY⟩
+  let F : Comodule.Hom k C Y (M ⊗[k] C) :=
+    (Subcomodule.subtype Ys).comp (Comodule.transportInvHom (C := C) eY)
   let G : Comodule.Hom k D ((FGComoduleCat.corestrict f).obj Y) (M ⊗[k] D) :=
-    g.comp (Comodule.corestrictHom (M := Ys) f (Subcomodule.subtype Ys))
-  have hG : G.toLinearMap = g.toLinearMap ∘ₗ SMulMemClass.subtype Ys := by
-    rw [← Subcomodule.subtype_toLinearMap]
-    -- `Comodule.Hom.comp` and `Comodule.corestrictHom` are exposed and keep the underlying linear
-    -- maps; the lemmas `comp_toLinearMap` and `corestrictHom_toLinearMap` do not fire by
-    -- rewriting, since the domain of `G` carries the instances of the bundled corestriction.
-    rfl
-  -- The image `Q` of `Y` in `M ⊗ D` is a finite `D`-comodule containing the coaction of `M`.
-  let Q := Comodule.Hom.range G
-  have : Module.Finite k Q := G.range_finite
-  have hρ (m : M) : Comodule.coact (R := k) (C := D) (M := M) m ∈ Q := by
+    g.comp (Comodule.corestrictHom (M := Y) f F)
+  have hG : G.toLinearMap = g.toLinearMap ∘ₗ SMulMemClass.subtype Ys ∘ₗ eY.symm.toLinearMap := by
+    -- The bundled corestriction supplies the source instances; reduce its exposed wrappers.
+    change g.toLinearMap ∘ₗ (Subcomodule.subtype Ys).toLinearMap ∘ₗ
+      (Comodule.transportInvHom (C := C) eY).toLinearMap = _
+    rw [Subcomodule.subtype_toLinearMap, Comodule.transportInvHom_toLinearMap]
+  have hρ (m : M) : Comodule.coact (R := k) (C := D) (M := M) m ∈ Comodule.Hom.range G := by
     rw [← Subcomodule.mem_toSubmodule, Comodule.Hom.range_toSubmodule, hG]
-    exact ⟨⟨_, hPY ⟨m, rfl⟩⟩, LinearMap.congr_fun hσ (Comodule.coact (R := k) (C := D) (M := M) m)⟩
-  let q : (FGComoduleCat.corestrict f).obj Y ⟶ FGComoduleCat.of (R := k) (C := D) Q :=
-    ObjectProperty.homMk (G.codRestrict Q G.mem_range_self)
-  let j : M ⟶ FGComoduleCat.of (R := k) (C := D) Q :=
-    ObjectProperty.homMk ((Comodule.Hom.cofreeUnit M).codRestrict Q hρ)
-  have hq : Epi q := by
-    apply (forget₂ (FGComoduleCat.{u, v, v} k D) (ModuleCat.{v} k)).epi_of_epi_map
-    refine (ModuleCat.epi_iff_surjective _).2 ?_
-    have : Function.Surjective (G.codRestrict Q G.mem_range_self) := by
-      rintro ⟨x, hx⟩
-      obtain ⟨y, rfl⟩ := Comodule.Hom.mem_range.1 hx
-      exact ⟨y, Subtype.ext (Comodule.Hom.codRestrict_apply G Q G.mem_range_self y)⟩
-    -- The underlying function of `forget₂.map q` is that of `G.codRestrict Q _`.
-    exact this
-  have hj : Mono j := by
-    apply (forget₂ (FGComoduleCat.{u, v, v} k D) (ModuleCat.{v} k)).mono_of_mono_map
-    refine (ModuleCat.mono_iff_injective _).2 ?_
-    have : Function.Injective ((Comodule.Hom.cofreeUnit M).codRestrict Q hρ) :=
-      fun m m' h ↦ by
-        have h' := congrArg Subtype.val h
-        have e := Comodule.Hom.codRestrict_apply (Comodule.Hom.cofreeUnit M) Q hρ
-        rw [e, e] at h'
-        exact Comodule.coact_injective h'
-    -- The underlying function of `forget₂.map j` is that of the corestricted coaction.
-    exact this
-  exact ⟨Y, _, q, j, hq, hj⟩
+    refine ⟨eY ⟨_, hPY ⟨m, rfl⟩⟩, ?_⟩
+    -- Evaluate the linear composite before simplifying the inverse coordinate map.
+    change g.toLinearMap (eY.symm (eY ⟨_, _⟩)).val = _
+    rw [eY.symm_apply_apply]
+    exact LinearMap.congr_fun hσ (Comodule.coact (R := k) (C := D) (M := M) m)
+  obtain ⟨Q, q, j, hq, hj⟩ := exists_epi_mono_of_coact_mem_range f M Y G hρ
+  exact ⟨Y, Q, q, j, hq, hj⟩
 
 /-- If `f` is surjective, every finite comodule over `D` is a subquotient of the corestriction
 along `f` of a finite comodule over `C`. -/
-theorem exists_mono_epi_of_surjective {C D : Type v} [AddCommGroup C] [Module k C]
+theorem exists_mono_epi_of_surjective {C : Type v} {D : Type w} [AddCommGroup C] [Module k C]
     [Coalgebra k C] [AddCommGroup D] [Module k D] [Coalgebra k D] (f : C →ₗc[k] D)
-    (hf : Function.Surjective f) (M : FGComoduleCat.{u, v, v} k D) :
-    ∃ (Y : FGComoduleCat.{u, v, v} k C) (Z : FGComoduleCat.{u, v, v} k D)
+    (hf : Function.Surjective f) (M : FGComoduleCat.{u, w, max u x} k D) :
+    ∃ (Y : FGComoduleCat.{u, v, max u x} k C) (Z : FGComoduleCat.{u, w, max u x} k D)
       (i : Z ⟶ (FGComoduleCat.corestrict f).obj Y) (p : Z ⟶ M), Mono i ∧ Epi p := by
   obtain ⟨Y, Q, q, j, hq, hj⟩ := exists_epi_mono_of_surjective f hf M
   -- In the abelian category of finite `D`-comodules, a subobject of a quotient is a quotient of a
@@ -213,10 +240,11 @@ theorem exists_mono_epi_of_surjective {C D : Type v} [AddCommGroup C] [Module k 
 
 /-- A morphism of coalgebras over a field is surjective exactly when every finite comodule over
 `D` is a subquotient of the corestriction along `f` of a finite comodule over `C`. -/
-theorem surjective_iff_forall_exists_mono_epi {C D : Type v} [AddCommGroup C] [Module k C]
-    [Coalgebra k C] [AddCommGroup D] [Module k D] [Coalgebra k D] (f : C →ₗc[k] D) :
-    Function.Surjective f ↔ ∀ M : FGComoduleCat.{u, v, v} k D,
-      ∃ (Y : FGComoduleCat.{u, v, v} k C) (Z : FGComoduleCat.{u, v, v} k D)
+theorem surjective_iff_forall_exists_mono_epi {C : Type v} {D : Type w}
+    [AddCommGroup C] [Module k C] [Coalgebra k C]
+    [AddCommGroup D] [Module k D] [Coalgebra k D] (f : C →ₗc[k] D) :
+    Function.Surjective f ↔ ∀ M : FGComoduleCat.{u, w, max u x} k D,
+      ∃ (Y : FGComoduleCat.{u, v, max u x} k C) (Z : FGComoduleCat.{u, w, max u x} k D)
         (i : Z ⟶ (FGComoduleCat.corestrict f).obj Y) (p : Z ⟶ M), Mono i ∧ Epi p :=
   ⟨exists_mono_epi_of_surjective f, surjective_of_forall_exists_mono_epi f⟩
 
