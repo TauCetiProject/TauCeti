@@ -41,6 +41,8 @@ feeding scalar extension of local homology, module orientations, and fundamental
   naturally in `X`.
 * `CategoryTheory.Functor.singularHomologyFunctorObjCompIso`: `F (Hₙ(X; R)) ≅ Hₙ(X; F R)`,
   naturally in `X`.
+* `CategoryTheory.Functor.isZero_singularHomologyFunctor_iff`: when `F` is also faithful,
+  `Hₙ(X; F R) = 0` if and only if `Hₙ(X; R) = 0`.
 * `TopPair.singularHomologyObjIso`: `F (Hₙ(P; R)) ≅ Hₙ(P; F R)` for a topological pair `P`.
 * `RingHom.singularHomologyExtendScalarsIso`: `S ⊗[R] Hₖ(M; R) ≅ Hₖ(M; S)` for exact `f : R →+* S`.
 -/
@@ -95,6 +97,14 @@ lemma singularHomologyFunctorObjCompIso_inv_app (n : ℕ) (X : TopCat.{w}) :
         (F.mapHomologicalComplexCompHomologyFunctorIso (.down ℕ) n).hom.app
           (((singularChainComplexFunctor C).obj R).obj X) :=
   SSet.homologyFunctorObjCompIso_inv_app F R n (TopCat.toSSet.obj X)
+
+/-- For a faithful additive functor `F : C ⥤ D` preserving coproducts and homology,
+`Hₙ(X; F R) = 0` if and only if `Hₙ(X; R) = 0`. -/
+lemma isZero_singularHomologyFunctor_iff [F.Faithful] (n : ℕ) (X : TopCat.{w}) :
+    IsZero (((singularHomologyFunctor D n).obj (F.obj R)).obj X) ↔
+      IsZero (((singularHomologyFunctor C n).obj R).obj X) := by
+  rw [← ((singularHomologyFunctorObjCompIso F R n).app X).isZero_iff,
+    IsZero.iff_id_eq_zero, IsZero.iff_id_eq_zero, Functor.comp_obj, ← F.map_id, F.map_eq_zero_iff]
 
 end CategoryTheory.Functor
 

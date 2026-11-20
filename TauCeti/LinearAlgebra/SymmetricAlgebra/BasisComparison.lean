@@ -186,7 +186,7 @@ theorem equivMvPolynomial_symmetricAlgebraHomogeneous_apply {ι : Type w}
     (d : Sym ι n) :
     SymmetricAlgebra.equivMvPolynomial b
         (Module.Basis.symmetricAlgebraHomogeneous b n d : SymmetricAlgebra R M) =
-      MvPolynomial.monomial (Sym.equivFinsuppDegree ι n d).1 1 := by
+      MvPolynomial.monomial (Sym.equivFinsuppDegree ι n d).val 1 := by
   classical
   rw [← coe_homogeneousSubmoduleEquivMvPolynomial_apply R M b n]
   simp [Module.Basis.symmetricAlgebraHomogeneous]

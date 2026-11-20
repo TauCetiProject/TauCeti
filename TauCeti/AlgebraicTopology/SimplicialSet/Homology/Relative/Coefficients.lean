@@ -115,15 +115,15 @@ def chainComplexObjMapIso (P : SSetPair.{w}) :
     (P : SSetPair.{w}) : (F.mapHomologicalComplex (.down ℕ)).map (P.chainComplexπ R) ≫
       (chainComplexObjMapIso F R P).hom =
       ((SSet.chainComplexFunctorObjCompMapIso F R).app P.right).hom ≫ P.chainComplexπ (F.obj R) :=
-  CokernelCofork.π_mapOfIsColimit (isColimitMapCokernelCofork F R P)
-    (P.cokernelCoforkChainComplex (F.obj R)) (chainComplexMapArrowIso F R P).hom
+  CokernelCofork.π_mapOfIsColimit (P.cokernelCoforkChainComplex (F.obj R))
+    (isColimitMapCokernelCofork F R P) (chainComplexMapArrowIso F R P).hom
 @[reassoc (attr := simp)] lemma chainComplexπ_comp_chainComplexObjMapIso_inv (P : SSetPair.{w}) :
     P.chainComplexπ (F.obj R) ≫ (chainComplexObjMapIso F R P).inv =
       ((SSet.chainComplexFunctorObjCompMapIso F R).app P.right).inv ≫
         (F.mapHomologicalComplex (.down ℕ)).map (P.chainComplexπ R) :=
-  CokernelCofork.π_mapOfIsColimit (P.isColimitCokernelCoforkChainComplex (F.obj R))
-    ((P.cokernelCoforkChainComplex R).map (F.mapHomologicalComplex _))
-    (chainComplexMapArrowIso F R P).inv
+  CokernelCofork.π_mapOfIsColimit
+    ((P.cokernelCoforkChainComplex R).map (F.mapHomologicalComplex (.down ℕ)))
+    (P.isColimitCokernelCoforkChainComplex (F.obj R)) (chainComplexMapArrowIso F R P).inv
 @[reassoc] lemma map_chainComplexMap_comp_chainComplexObjMapIso_hom {P P' : SSetPair.{w}}
     (f : P ⟶ P') : (F.mapHomologicalComplex (.down ℕ)).map (chainComplexMap f R) ≫
       (chainComplexObjMapIso F R P').hom =

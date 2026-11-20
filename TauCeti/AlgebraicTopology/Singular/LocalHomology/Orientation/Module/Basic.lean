@@ -72,11 +72,11 @@ theorem IsModuleLocalOrientation.neg {z : ↑(localHomology N {x} d)}
     (hz : IsModuleLocalOrientation N x d z) : IsModuleLocalOrientation N x d (-z) :=
   isModuleLocalOrientation_neg_iff.2 hz
 instance : MulAction Rˣ (ModuleLocalOrientation N M x d) where
-  smul u z := ⟨(u : R) • z.val, (isModuleLocalOrientation_smul_iff_of_isUnit u.isUnit).2 z.2⟩
+  smul u z := ⟨(u : R) • z.val, (isModuleLocalOrientation_smul_iff_of_isUnit u.isUnit).2 z.property⟩
   one_smul z := Subtype.ext (one_smul R z.val)
   mul_smul u v z := Subtype.ext (mul_smul (u : R) (v : R) z.val)
 instance : InvolutiveNeg (ModuleLocalOrientation N M x d) :=
-  { neg := fun z ↦ ⟨-z.val, z.2.neg⟩, neg_neg := fun z ↦ Subtype.ext (neg_neg z.val) }
+  { neg := fun z ↦ ⟨-z.val, z.property.neg⟩, neg_neg := fun z ↦ Subtype.ext (neg_neg z.val) }
 /-- With coefficients `ULift ℤ`, `IsModuleLocalOrientation` matches `IsLocalOrientation`. -/
 theorem isModuleLocalOrientation_iff_isLocalOrientation (x : M) (d : ℕ)
     (z : ↑(localHomology (of ℤ (ULift.{w} ℤ)) {x} d)) :

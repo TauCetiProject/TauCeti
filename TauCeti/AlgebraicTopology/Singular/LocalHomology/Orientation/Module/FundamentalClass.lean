@@ -201,14 +201,14 @@ theorem isFundamentalClass_fundamentalClass : IsFundamentalClass (o.fundamentalC
 def equivSubtypeIsFundamentalClass (hn : finrank ℝ E = n) : ModuleOrientation N M E n ≃
       {μ : ↑((toSSet.obj (TopCat.of M)).homology N n) // IsFundamentalClass μ} :=
   ⟨fun o ↦ ⟨o.fundamentalClass hn, o.isFundamentalClass_fundamentalClass hn⟩,
-   fun μ ↦ μ.2.toModuleOrientation, fun o ↦ o.toModuleOrientation_fundamentalClass hn,
-   fun μ ↦ Subtype.ext (μ.2.fundamentalClass_toModuleOrientation hn)⟩
+   fun μ ↦ μ.property.toModuleOrientation, fun o ↦ o.toModuleOrientation_fundamentalClass hn,
+   fun μ ↦ Subtype.ext (μ.property.fundamentalClass_toModuleOrientation hn)⟩
 @[simp] theorem coe_equivSubtypeIsFundamentalClass_apply (hn : finrank ℝ E = n) :
     (equivSubtypeIsFundamentalClass (N := N) (M := M) hn o).val = o.fundamentalClass hn := (rfl)
 @[simp] theorem equivSubtypeIsFundamentalClass_symm_apply (hn : finrank ℝ E = n)
     (μ : {μ : ↑((toSSet.obj (TopCat.of M)).homology N n) // IsFundamentalClass μ}) :
     (equivSubtypeIsFundamentalClass (N := N) (M := M) (E := E) hn).symm μ =
-      μ.2.toModuleOrientation := (rfl)
+      μ.property.toModuleOrientation := (rfl)
 section Map
 open AlgebraicTopology
 variable {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]

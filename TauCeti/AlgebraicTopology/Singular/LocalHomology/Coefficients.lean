@@ -86,9 +86,12 @@ lemma singularHomologyToLocalHomology_homologyNatTransOfCoefficients_app {M : Ty
     singularHomologyToLocalHomology N' x k
         ((SSet.homologyNatTransOfCoefficients φ k).app (toSSet.obj (TopCat.of M)) μ) =
       localHomologyMapOfCoefficients φ {x} k (singularHomologyToLocalHomology N x k μ) := by
-  simp only [singularHomologyToLocalHomology_eq_singularHomologyπ]
-  exact ((comp_apply _ _ μ).symm.trans (congr_hom
-    (homologyNatTransOfCoefficients_app_comp_singularHomologyπ φ {x} k) μ)).trans (comp_apply _ _ μ)
+  refine (singularHomologyToLocalHomology_eq_singularHomologyπ N' x _).trans ?_
+  refine (((comp_apply _ _ μ).symm.trans (congr_hom
+    (homologyNatTransOfCoefficients_app_comp_singularHomologyπ φ {x} k) μ)).trans
+      (comp_apply _ _ μ)).trans ?_
+  exact congrArg (localHomologyMapOfCoefficients φ {x} k)
+    (singularHomologyToLocalHomology_eq_singularHomologyπ N x μ).symm
 section Iso
 variable {R R' R'' : A} (e : R ≅ R')
 section SingleSpace
