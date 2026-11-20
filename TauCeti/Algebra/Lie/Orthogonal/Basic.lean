@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Basic.Real.Star
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 import Mathlib.Algebra.Group.Pi.Units
 
 /-!
@@ -23,9 +24,10 @@ The bridge is purely algebraic, with no exponential or topological content, so i
 and consumed by the exponential and Lie-subgroup files that compare `so` with star-algebra
 statements about the unitary — that is, orthogonal — group of `Matrix n n ℝ`.
 
-The file also records invertibility of the indefinite Gram matrix
-`LieAlgebra.Orthogonal.indefiniteDiagonal p q R`, symmetry of the split even orthogonal Gram
-matrix `LieAlgebra.Orthogonal.JD ι R` and the invariance of its bilinear form under renaming the
+The file also records that the indefinite Gram matrix
+`LieAlgebra.Orthogonal.indefiniteDiagonal p q R` is invertible, its own inverse, self-adjoint and
+the block matrix `diag(1, -1)`, symmetry of the split even orthogonal Gram matrix
+`LieAlgebra.Orthogonal.JD ι R` and the invariance of its bilinear form under renaming the
 hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gram matrix
 `LieAlgebra.Orthogonal.JB ι R`.
 
@@ -35,6 +37,10 @@ hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gra
   skew-adjoint matrices.
 * `LieAlgebra.Orthogonal.isUnit_indefiniteDiagonal`: the Gram matrix of the indefinite form is
   invertible.
+* `LieAlgebra.Orthogonal.indefiniteDiagonal_mul_indefiniteDiagonal`,
+  `LieAlgebra.Orthogonal.star_indefiniteDiagonal`,
+  `LieAlgebra.Orthogonal.isHermitian_indefiniteDiagonal`: it is its own inverse, and self-adjoint.
+* `LieAlgebra.Orthogonal.indefiniteDiagonal_eq_fromBlocks`: it is the block matrix `diag(1, -1)`.
 * `LieAlgebra.Orthogonal.isSymm_JD`: the split even orthogonal Gram matrix is symmetric.
 * `LieAlgebra.Orthogonal.toBilin'_JD_comp_sumMap`: the split even orthogonal form is unchanged by
   renaming its hyperbolic pairs along an equivalence.
@@ -68,6 +74,35 @@ open Matrix in
 own inverse. -/
 theorem isUnit_indefiniteDiagonal : IsUnit (indefiniteDiagonal p q R) :=
   isUnit_diagonal.mpr (Pi.isUnit_iff.mpr fun i ↦ by cases i <;> simp)
+
+/-- The Gram matrix `diag(1, …, 1, -1, …, -1)` of the indefinite form is its own inverse. -/
+@[simp]
+theorem indefiniteDiagonal_mul_indefiniteDiagonal :
+    indefiniteDiagonal p q R * indefiniteDiagonal p q R = 1 := by
+  rw [indefiniteDiagonal, Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
+  congr 1
+  ext (i | i) <;> simp
+
+omit [Fintype p] [Fintype q] in
+/-- The Gram matrix of the indefinite form is the block matrix `diag(1, -1)`. -/
+theorem indefiniteDiagonal_eq_fromBlocks :
+    indefiniteDiagonal p q R = Matrix.fromBlocks 1 0 0 (-1) := by
+  rw [indefiniteDiagonal, ← Matrix.fromBlocks_diagonal]
+  simp [← Matrix.diagonal_neg]
+
+omit [Fintype p] [Fintype q] in
+/-- The Gram matrix `diag(1, …, 1, -1, …, -1)` of the indefinite form is self-adjoint. -/
+@[simp]
+theorem star_indefiniteDiagonal [StarRing R] : star (indefiniteDiagonal p q R) =
+    indefiniteDiagonal p q R := by
+  rw [indefiniteDiagonal, Matrix.star_eq_conjTranspose, Matrix.diagonal_conjTranspose]
+  congr 1
+  ext (i | i) <;> simp
+
+omit [Fintype p] [Fintype q] in
+/-- The Gram matrix `diag(1, …, 1, -1, …, -1)` of the indefinite form is Hermitian. -/
+theorem isHermitian_indefiniteDiagonal [StarRing R] : (indefiniteDiagonal p q R).IsHermitian :=
+  (Matrix.star_eq_conjTranspose _).symm.trans star_indefiniteDiagonal
 
 variable {ι : Type*} [DecidableEq ι]
 
