@@ -80,10 +80,12 @@ theorem natCast_mul_eulerExponent (n N r : ℕ) :
     Int.mul_ediv_cancel' (Int.natCast_dvd_sum_divisors_moebius_mul_pow _ r).neg_right]
 
 /-- **The Möbius formula** `e_r(n, N) = -(1 / r) ∑_{d ∣ r} μ(d) ((-1) ^ n N) ^ (r / d)`, as an
-equality of rational numbers, for positive `r`. -/
-theorem eulerExponent_eq (n N : ℕ) {r : ℕ} (hr : r ≠ 0) :
+equality of rational numbers. At `r = 0` both sides are `0`. -/
+theorem eulerExponent_eq (n N r : ℕ) :
     (eulerExponent n N r : ℚ) =
       -(1 / r) * ∑ d ∈ r.divisors, (μ d : ℚ) * ((-1 : ℚ) ^ n * N) ^ (r / d) := by
+  rcases eq_or_ne r 0 with rfl | hr
+  · simp
   have h := congrArg (fun z : ℤ ↦ (z : ℚ)) (natCast_mul_eulerExponent n N r)
   push_cast at h
   rw [neg_mul, ← mul_neg, ← h, ← mul_assoc, one_div, inv_mul_cancel₀ (by exact_mod_cast hr),
