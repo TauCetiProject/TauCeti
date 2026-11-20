@@ -21,9 +21,9 @@ cotangent-lifted action of `G` on `T*Q` has the moment map `⟨μ(q, p), ξ⟩ =
 (`TauCeti.CotangentBundle.momentMap`). This file proves the ingredients of the model case
 `T*Q //₀ G ≅ T*(Q ⧸ G)` of cotangent bundle reduction: a reduction map `Ψ` from the zero level
 `μ⁻¹(0)` onto `T*(Q ⧸ G)` whose fibres are exactly the `G`-orbits, and which pulls the canonical
-symplectic form of `T*(Q ⧸ G)` back to that of `T*Q` along smooth families in `μ⁻¹(0)`. It does
-not construct `μ⁻¹(0) ⧸ G` as a manifold, nor a map out of it, so the symplectomorphism itself is
-not stated here.
+symplectic form of `T*(Q ⧸ G)` back to that of `T*Q` along smooth families in `μ⁻¹(0)`. The
+symplectomorphism of the reduced space `μ⁻¹(0) ⧸ G` with `T*(Q ⧸ G)` built from them is in
+`TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent.ReducedSpace`.
 
 Most statements are made for a map `ρ : Q → B` with the properties of the orbit projection that
 they use, and the final section applies them to the orbit projection itself. Write `Ψ` for the
