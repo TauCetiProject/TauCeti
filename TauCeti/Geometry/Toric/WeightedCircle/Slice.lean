@@ -282,6 +282,12 @@ slice over `z₂ ≠ 0`
 def weightedSliceTransition (w : ℂ) : ℂ :=
   (Circle.exp (-(a * Complex.arg w / b)) : ℂ) * ((√((2 * ε - b * ‖w‖ ^ 2) / a) : ℝ) : ℂ)
 
+/-- The defining formula of the change of slices. -/
+theorem weightedSliceTransition_apply (w : ℂ) :
+    weightedSliceTransition a b ε w =
+      (Circle.exp (-(a * Complex.arg w / b)) : ℂ) * ((√((2 * ε - b * ‖w‖ ^ 2) / a) : ℝ) : ℂ) :=
+  (rfl)
+
 /-- The change of slices has the norm `√((2 ε - b |w|²) / a)` of the first coordinate of the slice
 point over `w`. -/
 theorem norm_weightedSliceTransition (w : ℂ) :
