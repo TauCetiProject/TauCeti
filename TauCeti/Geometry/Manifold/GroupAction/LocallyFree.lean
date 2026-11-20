@@ -26,7 +26,8 @@ The proof uses the elements of order two. In a compact commutative Lie group the
 (`TauCeti.Lie.finite_setOf_pow_eq_one`). If `ξ ∈ 𝔤_x` is nonzero, the closed
 one-parameter subgroup `T_ξ`, the closure of `{exp (t ξ) | t ∈ ℝ}`, fixes `x`; it is a torus of
 positive dimension, a product of at least one circle, so it contains an element `g ≠ 1` with
-`g ^ 2 = 1` (`TauCeti.Lie.exists_sq_eq_one_ne_one_smul_eq_of_isotropy_ne_bot`). So every point
+`g ^ 2 = 1` (`TauCeti.Lie.IsTorus.exists_sq_eq_one_ne_one`,
+`TauCeti.Lie.exists_sq_eq_one_ne_one_smul_eq_of_isotropy_ne_bot`). So every point
 that is not locally free lies in the fixed set of one of the finitely many involutions of `G`. By
 the identity principle for elements of finite order (`TauCeti.isClopen_interior_fixedBy`), the
 fixed set of an involution has clopen interior, which on the connected manifold `M` is empty
@@ -94,32 +95,14 @@ theorem exists_sq_eq_one_ne_one_smul_eq_of_isotropy_ne_bot [CompactSpace G] {x :
     exact hx ((LieSubalgebra.eq_bot_iff _).2 h)
   have hle : closedOneParameterSubgroup ξ ≤ stabilizer G x :=
     (mem_isotropy_fundamental_iff_closedOneParameterSubgroup_le (I' := I')).1 hξ
-  -- `T_ξ` is a torus, a product of `d` circles.
-  obtain ⟨φ⟩ :=
-    (isTorus_closedOneParameterSubgroup ξ).nonempty_continuousMulEquiv_pi_circle (I := I)
-  set d := Module.finrank ℝ (lieSubalgebraOfSubgroup (I := I) (closedOneParameterSubgroup ξ))
-  -- It is nontrivial, since `exp (t ξ) ≠ 1` for some `t`, so `d ≠ 0`.
+  -- `T_ξ` is a nontrivial torus, since `exp (t ξ) ≠ 1` for some `t`.
   obtain ⟨t, ht⟩ : ∃ t : ℝ, mulInvariantExp (I := I) (t • ξ) ≠ 1 := by
     by_contra! h
     exact hξ0 (forall_mulInvariantExp_smul_eq_one_iff.1 h)
-  have hd : 0 < d := by
-    refine Nat.pos_of_ne_zero fun hd ↦ ht ?_
-    have : IsEmpty (Fin d) := by
-      rw [hd]
-      infer_instance
-    have : Subsingleton (closedOneParameterSubgroup ξ) := φ.toEquiv.subsingleton
-    exact congrArg Subtype.val (Subsingleton.elim
-      (⟨_, mulInvariantExp_smul_mem_closedOneParameterSubgroup ξ t⟩ :
-        closedOneParameterSubgroup ξ) 1)
-  -- The element `-1` of the first circle factor is an involution of `T_ξ`.
-  let c : Fin d → Circle := Pi.mulSingle ⟨0, hd⟩ (-1)
-  have hc2 : c ^ 2 = 1 := by
-    rw [← Pi.mulSingle_pow, neg_one_sq, Pi.mulSingle_one]
-  have hc1 : c ≠ 1 := fun h ↦ Circle.neg_ne_self 1 (by
-    simpa [c] using congrFun h ⟨0, hd⟩)
-  refine ⟨φ.symm c, ?_, fun h ↦ hc1 ?_, hle (φ.symm c).2⟩
-  · rw [← Subgroup.coe_pow, ← map_pow, hc2, map_one, Subgroup.coe_one]
-  · rw [← φ.apply_symm_apply c, show φ.symm c = 1 from Subtype.ext h, map_one]
+  have hne : closedOneParameterSubgroup ξ ≠ ⊥ := fun h ↦ ht (Subgroup.mem_bot.1
+    (h ▸ mulInvariantExp_smul_mem_closedOneParameterSubgroup ξ t))
+  obtain ⟨g, hg, hg2, hg1⟩ := (isTorus_closedOneParameterSubgroup ξ).exists_sq_eq_one_ne_one I hne
+  exact ⟨g, hg2, hg1, hle hg⟩
 
 /-- **Effective actions of compact commutative Lie groups are generically locally free.** For an
 effective smooth action of a compact commutative Lie group, such as a torus, on a connected
