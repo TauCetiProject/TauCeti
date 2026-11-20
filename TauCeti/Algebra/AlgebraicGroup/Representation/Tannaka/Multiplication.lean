@@ -62,21 +62,21 @@ variable (k H : Type u) [CommSemiring k] [Semiring H] [Bialgebra k H] [Module.Fl
 subcomodule containing all their pairwise products. -/
 noncomputable def regularMulHom
     (N P Q : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H))
-    (h : ∀ (n : N.1) (p : P.1), (n : H) * (p : H) ∈ Q.1) :
+    (h : ∀ (n : N.val) (p : P.val), (n : H) * (p : H) ∈ Q.val) :
     finiteRegularObject k H N ⊗ finiteRegularObject k H P ⟶ finiteRegularObject k H Q := by
-  letI : Module.Finite k N.1 := Subcomodule.mem_finiteSubcomodules.mp N.2
-  letI : Module.Finite k P.1 := Subcomodule.mem_finiteSubcomodules.mp P.2
-  letI : Module.Finite k Q.1 := Subcomodule.mem_finiteSubcomodules.mp Q.2
-  exact FGComoduleCat.ofHom (Subcomodule.mulHom N.1 P.1 Q.1 h)
+  letI : Module.Finite k N.val := Subcomodule.mem_finiteSubcomodules.mp N.property
+  letI : Module.Finite k P.val := Subcomodule.mem_finiteSubcomodules.mp P.property
+  letI : Module.Finite k Q.val := Subcomodule.mem_finiteSubcomodules.mp Q.property
+  exact FGComoduleCat.ofHom (Subcomodule.mulHom N.val P.val Q.val h)
 
 /-- The linear map underlying corestricted multiplication of finite regular subcomodules is the
 one underlying `Subcomodule.mulHom`. -/
 @[simp]
 theorem regularMulHom_toLinearMap
     (N P Q : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H))
-    (h : ∀ (n : N.1) (p : P.1), (n : H) * (p : H) ∈ Q.1) :
+    (h : ∀ (n : N.val) (p : P.val), (n : H) * (p : H) ∈ Q.val) :
     (regularMulHom k H N P Q h).hom.toLinearMap =
-      (Subcomodule.mulHom N.1 P.1 Q.1 h).toLinearMap := by
+      (Subcomodule.mulHom N.val P.val Q.val h).toLinearMap := by
   rfl
 
 end RegularMulHom
@@ -123,18 +123,18 @@ products of the two source subcomodules lie in the chosen target subcomodule. -/
 theorem localFunctional_mul
     (η : Aut (FGComoduleCat.scalarExtensionMonoidalFunctor k H A))
     (N P Q : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H))
-    (h : ∀ (n : N.1) (p : P.1), (n : H) * (p : H) ∈ Q.1)
-    (n : N.1) (p : P.1) :
+    (h : ∀ (n : N.val) (p : P.val), (n : H) * (p : H) ∈ Q.val)
+    (n : N.val) (p : P.val) :
     localFunctional k H A η Q ⟨(n : H) * (p : H), h n p⟩ =
       localFunctional k H A η N n * localFunctional k H A η P p := by
-  let _ : Module.Finite k N.1 := Subcomodule.mem_finiteSubcomodules.mp N.2
-  let _ : Module.Finite k P.1 := Subcomodule.mem_finiteSubcomodules.mp P.2
-  let _ : Module.Finite k Q.1 := Subcomodule.mem_finiteSubcomodules.mp Q.2
-  let q : Q.1 := ⟨(n : H) * (p : H), h n p⟩
+  let _ : Module.Finite k N.val := Subcomodule.mem_finiteSubcomodules.mp N.property
+  let _ : Module.Finite k P.val := Subcomodule.mem_finiteSubcomodules.mp P.property
+  let _ : Module.Finite k Q.val := Subcomodule.mem_finiteSubcomodules.mp Q.property
+  let q : Q.val := ⟨(n : H) * (p : H), h n p⟩
   have hq : (regularMulHom k H N P Q h).hom.toLinearMap (n ⊗ₜ[k] p) = q := by
     rw [regularMulHom_toLinearMap]
     apply Subtype.ext
-    exact Subcomodule.mulHom_tmul N.1 P.1 Q.1 h n p
+    exact Subcomodule.mulHom_tmul N.val P.val Q.val h n p
   have hnat := LinearMap.congr_fun
     (scalarExtensionComponent_natural k H A η (regularMulHom k H N P Q h))
       (1 ⊗ₜ[k] (n ⊗ₜ[k] p))
@@ -146,7 +146,7 @@ theorem localFunctional_mul
   rw [TensorProduct.AlgebraTensorModule.distribBaseChange_symm_tmul, one_mul] at htensor
   rw [localFunctional_apply, localFunctional_apply, localFunctional_apply]
   rw [← hnat, htensor, regularMulHom_toLinearMap]
-  exact counitEvaluation_mul k H A N.1 P.1 Q.1 h _ _
+  exact counitEvaluation_mul k H A N.val P.val Q.val h _ _
 
 end LocalMultiplicativity
 

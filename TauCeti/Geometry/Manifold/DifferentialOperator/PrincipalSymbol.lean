@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorField.Derivation
 public import TauCeti.RingTheory.Derivation.PrincipalSymbol
 import Mathlib.Data.Nat.Choose.Cast
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
+import TauCeti.LinearAlgebra.Multilinear.Polarization
 
 /-!
 # The principal symbol of a differential operator on smooth functions
@@ -75,6 +76,9 @@ conjugation with the pullback of functions, pulls its principal symbol back by t
 * `TauCeti.forall_smoothCommutatorSymbol_eq_zero_iff`: on a boundaryless manifold, an operator of
   order at most `m + 1` has vanishing commutator symbol at every point exactly when it has order at
   most `m`.
+* `TauCeti.forall_smoothPrincipalSymbol_eq_zero_iff`: on a boundaryless manifold, an operator of
+  order at most `m + 1` has vanishing principal symbol at every point exactly when it has order at
+  most `m`.
 * `TauCeti.smoothCommutatorSymbol_conjDifferentialOperators`,
   `TauCeti.smoothPrincipalSymbol_conjDifferentialOperators`: naturality under diffeomorphisms.
 
@@ -126,7 +130,8 @@ private def covectorLift (hx : I.IsInteriorPoint x) :
 
 private theorem covectorLift_apply_self (hx : I.IsInteriorPoint x)
     (ξ : TangentSpace I x →L[ℝ] ℝ) : covectorLift hx ξ x = 0 :=
-  mem_smoothVanishingIdeal_iff.mp ((exists_vanishingIdealDifferential_comp_eq_id hx).choose ξ).2
+  mem_smoothVanishingIdeal_iff.mp ((exists_vanishingIdealDifferential_comp_eq_id hx).choose
+      ξ).property
 
 private theorem mvfderiv_covectorLift (hx : I.IsInteriorPoint x)
     (ξ : TangentSpace I x →L[ℝ] ℝ) : mvfderiv I (covectorLift hx ξ) x = ξ := by
@@ -315,6 +320,24 @@ theorem smoothPrincipalSymbol_eq_zero_of_mem_differentialOperators (hx : I.IsInt
   simp [smoothPrincipalSymbol_def,
     smoothCommutatorSymbol_eq_zero_of_mem_differentialOperators hx D hD]
 
+/-- On a boundaryless manifold, an operator of order at most `m + 1` has vanishing principal symbol
+at every point if and only if it has order at most `m`. -/
+theorem forall_smoothPrincipalSymbol_eq_zero_iff [BoundarylessManifold I M] {m : ℕ}
+    (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ (m + 1)) :
+    (∀ (x : M) (ξ : TangentSpace I x →L[ℝ] ℝ),
+      smoothPrincipalSymbol I BoundarylessManifold.isInteriorPoint D ξ = 0) ↔
+      (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∈
+        differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m := by
+  refine ⟨fun h ↦ (forall_smoothCommutatorSymbol_eq_zero_iff D).1 fun x ↦ ?_,
+    fun hD x ↦ smoothPrincipalSymbol_eq_zero_of_mem_differentialOperators _ D hD⟩
+  -- The commutator symbol is symmetric and vanishes on the diagonal, so it vanishes by
+  -- polarization.
+  refine MultilinearMap.eq_zero_of_apply_const_eq_zero
+    (smoothCommutatorSymbol_comp_perm BoundarylessManifold.isInteriorPoint D) fun ξ ↦ ?_
+  have hξ := h x ξ
+  rw [smoothPrincipalSymbol_def, mul_eq_zero, inv_eq_zero] at hξ
+  exact hξ.resolve_left (Nat.cast_ne_zero.2 (Nat.factorial_ne_zero _))
+
 /-- **Principal symbols multiply under composition.** For operators `P` and `Q` of orders at most
 `m` and `k`, the principal symbol of `P ∘ Q`, as an operator of order at most `m + k`, is the
 product of the principal symbols. -/
@@ -324,7 +347,7 @@ theorem smoothPrincipalSymbol_comp (hx : I.IsInteriorPoint x) {m k : ℕ}
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I hx
         ⟨(P : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∘ₗ (Q : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯),
-          comp_mem_differentialOperators P.2 Q.2⟩ ξ =
+          comp_mem_differentialOperators P.property Q.property⟩ ξ =
       smoothPrincipalSymbol I hx P ξ * smoothPrincipalSymbol I hx Q ξ := by
   obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ := ⟨_, mvfderiv_covectorLift hx ξ⟩
   -- The `(m + k)`-fold commutator of `P ∘ Q` with `f` is `(m + k).choose m` times the product of

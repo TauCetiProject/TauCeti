@@ -17,11 +17,17 @@ of preimage-event probabilities. This converts restricted distribution identitie
 independence identities without requiring the restricting event to be measurable.
 
 Restricting a measure to the whole space, written as the top open set, does not change it
-(`MeasureTheory.Measure.restrict_coe_opens_top`). Spaces of functions on an open set `Ω` are
-built on `μ.restrict Ω`, so this identifies their whole-space instances with the spaces for `μ`.
+(`MeasureTheory.Measure.restrict_coe_opens_top`), so almost-everywhere statements for the
+measure hold for the restriction (`MeasureTheory.Measure.ae_le_ae_restrict_coe_opens_top`).
+Spaces of functions on an open set `Ω` are built on `μ.restrict Ω`, so this identifies their
+whole-space instances with the spaces for `μ`.
 
 On a finite type, the restriction of a measure to its points of finite mass is a finite measure
 (`MeasureTheory.Measure.isFiniteMeasure_restrict_setOf_measure_singleton_ne_top`).
+
+Two functions agree almost everywhere on a null-measurable set `s` exactly when their indicators
+of `s` agree almost everywhere (`MeasureTheory.ae_eq_restrict_iff_indicator_ae_eq₀`, the
+null-measurable form of Mathlib's `MeasureTheory.ae_eq_restrict_iff_indicator_ae_eq`).
 -/
 
 public section
@@ -37,6 +43,12 @@ theorem restrict_coe_opens_top {α : Type*} {_ : MeasurableSpace α} [Topologica
     μ.restrict ((⊤ : TopologicalSpace.Opens α) : Set α) = μ := by
   rw [TopologicalSpace.Opens.coe_top, restrict_univ]
 
+/-- Almost-everywhere statements for a measure hold for its restriction to the whole space, as
+the top open set. -/
+theorem ae_le_ae_restrict_coe_opens_top {α : Type*} {_ : MeasurableSpace α} [TopologicalSpace α]
+    {μ : Measure α} : ae μ ≤ ae (μ.restrict ((⊤ : TopologicalSpace.Opens α) : Set α)) :=
+  ae_mono (restrict_coe_opens_top μ).ge
+
 end MeasureTheory.Measure
 
 namespace TauCeti
@@ -51,6 +63,24 @@ theorem measure_preimage_inter_eq_of_map_restrict_eq_smul
     smul_apply, smul_eq_mul] using congrArg (fun ν : Measure E ↦ ν C) h
 
 end TauCeti
+
+namespace MeasureTheory
+
+/-- Functions agree almost everywhere on a null-measurable set `s` if and only if their indicators
+of `s` agree almost everywhere.  This is `MeasureTheory.ae_eq_restrict_iff_indicator_ae_eq` for a
+null-measurable rather than measurable `s`. -/
+theorem ae_eq_restrict_iff_indicator_ae_eq₀ {α β : Type*} [MeasurableSpace α] [Zero β]
+    {μ : Measure α} {s : Set α} {f g : α → β} (hs : NullMeasurableSet s μ) :
+    f =ᵐ[μ.restrict s] g ↔ s.indicator f =ᵐ[μ] s.indicator g := by
+  rw [Filter.EventuallyEq, ae_restrict_iff'₀ hs]
+  refine ⟨fun h => ?_, fun h => ?_⟩ <;> filter_upwards [h] with x hx
+  · by_cases hxs : x ∈ s
+    · simp [hxs, hx hxs]
+    · simp [hxs]
+  · intro hxs
+    simpa [hxs] using hx
+
+end MeasureTheory
 
 namespace MeasureTheory.Measure
 

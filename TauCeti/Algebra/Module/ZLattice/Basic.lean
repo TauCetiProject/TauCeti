@@ -23,7 +23,8 @@ the ambient space, and membership in the pull-back `ZLattice.comap` of a lattice
 the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is again discrete, and
 so is the pull-back of a discrete subgroup or of a full lattice along a linear isometry
 equivalence; precomposing a linear map with a linear equivalence likewise preserves discreteness
-and fullness of its range. A discrete subgroup containing a full lattice is a full lattice.
+and fullness of its range. A discrete subgroup containing a full lattice is a full lattice, and so
+is a discrete subgroup of finite index in one (`IsZLattice.of_relIndex_ne_zero`).
 
 ## Main results
 
@@ -53,7 +54,8 @@ and fullness of its range. A discrete subgroup containing a full lattice is a fu
 * `ZLattice.discreteTopology_of_norm_sq_mem_int_mul`: a lattice whose squared norms are all
   multiples of a positive constant `c` by integers is discrete.
 * `IsZLattice.of_le`: a discrete subgroup containing a full lattice is a full lattice.
-* `TauCeti.discreteTopology_span_one`: the integer span of `1` in `ℝ` is discrete.
+* `ZLattice.instDiscreteTopologySpanSingleton`: the `ℤ`-span of a single vector in a real normed
+  space is discrete.
 -/
 
 public section
@@ -61,12 +63,6 @@ public section
 open MeasureTheory Module Set
 
 namespace TauCeti
-
-/-- The integer lattice in the real line has the discrete topology. -/
-instance discreteTopology_span_one :
-    DiscreteTopology (Submodule.span ℤ {1} : Submodule ℤ ℝ) := by
-  rw [← Set.range_eq_singleton (Module.Basis.singleton_apply Unit ℝ)]
-  infer_instance
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {ι : Type*}
 
@@ -170,7 +166,7 @@ theorem mem_comap (K : Type*) [NormedField K] {E F : Type*} [NormedAddCommGroup 
 instance instDiscreteTopologyComapSubtype {K : Type*} [NormedField K] {E : Type*}
     [NormedAddCommGroup E] [NormedSpace K E] (L : Submodule ℤ E) [DiscreteTopology L]
     (V : Submodule K E) : DiscreteTopology (ZLattice.comap K L V.subtype) :=
-  comap_discreteTopology K L continuous_subtype_val V.injective_subtype
+  comap_discreteTopology K L continuous_subtypeVal V.injective_subtype
 
 section LinearIsometryEquiv
 
@@ -226,7 +222,7 @@ theorem discreteTopology_of_norm_sq_mem_int_mul {E : Type*} [NormedAddCommGroup 
     {L : Submodule ℤ E} {c : ℝ} (hc : 0 < c) (h : ∀ x ∈ L, ∃ m : ℤ, ‖x‖ ^ 2 = c * m) :
     DiscreteTopology L := by
   refine DiscreteTopology.of_forall_le_norm (Real.sqrt_pos.2 hc) fun y hy ↦ ?_
-  obtain ⟨m, hm⟩ := h y y.2
+  obtain ⟨m, hm⟩ := h y y.property
   have hy0 : 0 < ‖(y : E)‖ := norm_pos_iff.2 fun h0 ↦ hy (Subtype.ext h0)
   have hm1 : (1 : ℝ) ≤ m := by
     have hmpos : (0 : ℝ) < m := by
@@ -236,11 +232,33 @@ theorem discreteTopology_of_norm_sq_mem_int_mul {E : Type*} [NormedAddCommGroup 
   have h1 : c ≤ ‖(y : E)‖ ^ 2 := by nlinarith
   exact (Real.sqrt_le_iff.2 ⟨hy0.le, h1⟩).trans_eq (Submodule.norm_coe y).symm
 
+/-- The `ℤ`-span of a single vector in a real normed space has the discrete topology. -/
+instance instDiscreteTopologySpanSingleton {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (v : E) : DiscreteTopology (Submodule.span ℤ {v}) :=
+  let _ : NormedSpace ℚ E := NormedSpace.restrictScalars ℚ ℝ E
+  DiscreteTopology.of_subset (NormedSpace.discreteTopology_zmultiples v)
+    (Submodule.span_singleton_toAddSubgroup_eq_zmultiples v).le
+
 /-- A discrete subgroup containing a full lattice is a full lattice. -/
 theorem _root_.IsZLattice.of_le {K : Type*} [NormedField K] {E : Type*} [NormedAddCommGroup E]
     [NormedSpace K E] {L₁ L₂ : Submodule ℤ E} [DiscreteTopology L₁] [IsZLattice K L₁]
     [DiscreteTopology L₂] (h : L₁ ≤ L₂) : IsZLattice K L₂ :=
   ⟨eq_top_iff.2 (IsZLattice.span_top (K := K) (L := L₁) ▸ Submodule.span_mono h)⟩
+
+/-- A discrete subgroup of finite index in a full lattice is a full lattice: a positive multiple
+of every lattice vector lies in it, so it spans the same subspace. -/
+theorem _root_.IsZLattice.of_relIndex_ne_zero {K : Type*} [NormedField K] [CharZero K]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace K E] {L₁ L₂ : Submodule ℤ E}
+    [DiscreteTopology L₁] [DiscreteTopology L₂] [IsZLattice K L₂]
+    (h : L₁.toAddSubgroup.relIndex L₂.toAddSubgroup ≠ 0) : IsZLattice K L₁ := by
+  refine ⟨eq_top_iff.2 ?_⟩
+  rw [← IsZLattice.span_top (K := K) (L := L₂), Submodule.span_le]
+  intro x hx
+  obtain ⟨n, hn, -, hmem⟩ := AddSubgroup.exists_nsmul_mem_of_relIndex_ne_zero h hx
+  have hx' : x = (n : K)⁻¹ • (n • x) := by
+    rw [← Nat.cast_smul_eq_nsmul K, inv_smul_smul₀ (Nat.cast_ne_zero.2 hn.ne')]
+  rw [hx']
+  exact Submodule.smul_mem _ _ (Submodule.subset_span hmem.1)
 
 variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
   [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]

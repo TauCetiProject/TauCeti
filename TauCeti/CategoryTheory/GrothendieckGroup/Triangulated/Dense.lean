@@ -254,8 +254,8 @@ noncomputable def orderIso :
     {A : ObjectProperty C // A.IsTriangulated ∧ A.IsClosedUnderIsomorphisms ∧
       A.retractClosure = ⊤} ≃o AddSubgroup (TriangulatedK0 C) where
   toFun A :=
-    have _ := A.2.1
-    (TriangulatedK0.map A.1.ι).range
+    have _ := A.property.1
+    (TriangulatedK0.map A.val.ι).range
   invFun H := ⟨ofSubgroup H, inferInstance, inferInstance, retractClosure_ofSubgroup H⟩
   left_inv A := by
     rcases A with ⟨A, htri, hiso, hdense⟩

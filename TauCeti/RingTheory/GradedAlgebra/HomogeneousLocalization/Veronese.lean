@@ -61,8 +61,8 @@ of `A`. -/
 private def ofVeronese
     (c : NumDenSameDeg (veroneseGrading 𝒜 d) P) : NumDenSameDeg 𝒜 Q where
   deg := d * c.deg
-  num := ⟨(c.num : veronese 𝒜 d), c.num.2⟩
-  den := ⟨(c.den : veronese 𝒜 d), c.den.2⟩
+  num := ⟨(c.num : veronese 𝒜 d), c.num.property⟩
+  den := ⟨(c.den : veronese 𝒜 d), c.den.property⟩
   den_mem := hPQ c.den_mem
 
 end HomogeneousLocalization.NumDenSameDeg
@@ -128,8 +128,8 @@ theorem val_veroneseHomogeneousLocalizationMap
 theorem veroneseHomogeneousLocalizationMap_mk
     (c : NumDenSameDeg (veroneseGrading 𝒜 d) P) :
     veroneseHomogeneousLocalizationMap 𝒜 d hPQ (mk c) =
-      mk (𝒜 := 𝒜) (x := Q) ⟨d * c.deg, ⟨((c.num : veronese 𝒜 d) : A), c.num.2⟩,
-        ⟨((c.den : veronese 𝒜 d) : A), c.den.2⟩, hPQ c.den_mem⟩ := by
+      mk (𝒜 := 𝒜) (x := Q) ⟨d * c.deg, ⟨((c.num : veronese 𝒜 d) : A), c.num.property⟩,
+        ⟨((c.den : veronese 𝒜 d) : A), c.den.property⟩, hPQ c.den_mem⟩ := by
   apply val_injective Q
   rw [val_veroneseHomogeneousLocalizationMap, val_mk, val_mk]
   exact (embedding_ofVeronese 𝒜 d hPQ c).symm
@@ -168,9 +168,9 @@ theorem veroneseHomogeneousLocalizationMap_surjective
     rw [smul_eq_mul, add_comm, ← Nat.succ_mul, Nat.succ_eq_add_one,
       Nat.sub_one_add_one (NeZero.ne d)]
   have hn : (c.num : A) * (c.den : A) ^ (d - 1) ∈ 𝒜 (d * c.deg) :=
-    hdeg ▸ SetLike.mul_mem_graded c.num.2 (SetLike.pow_mem_graded (d - 1) c.den.2)
+    hdeg ▸ SetLike.mul_mem_graded c.num.property (SetLike.pow_mem_graded (d - 1) c.den.property)
   have hd : (c.den : A) ^ d ∈ 𝒜 (d * c.deg) := by
-    simpa only [smul_eq_mul] using SetLike.pow_mem_graded d c.den.2
+    simpa only [smul_eq_mul] using SetLike.pow_mem_graded d c.den.property
   refine ⟨mk ⟨c.deg, ⟨⟨_, mem_veronese_of_mem hn⟩, hn⟩,
     ⟨⟨_, mem_veronese_of_mem hd⟩, hd⟩, hQP (Q.pow_mem c.den_mem d)⟩,
     val_injective Q ?_⟩

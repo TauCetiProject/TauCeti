@@ -53,7 +53,8 @@ theorem Submodule.exists_linearEquiv_pi_ideal {ι : Type*} [Finite ι]
     ext v
     constructor
     · rintro ⟨x, rfl⟩
-      exact (hb _).2 fun i ↦ (IsLocalization.mem_coeSubmodule _ _).2 ⟨x i, (x i).2, (hf x i).symm⟩
+      exact (hb _).2 fun i ↦ (IsLocalization.mem_coeSubmodule _ _).2 ⟨x i, (x i).property,
+          (hf x i).symm⟩
     · intro hv
       choose x hx heq using fun i ↦ (IsLocalization.mem_coeSubmodule K (J i)).1 ((hb v).1 hv i)
       refine ⟨fun i ↦ ⟨x i, hx i⟩, b.repr.injective ?_⟩
