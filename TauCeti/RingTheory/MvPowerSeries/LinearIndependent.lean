@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.RatFunc.IntermediateField
-public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
 public import TauCeti.RingTheory.HahnSeries.PowerSeries
+public import TauCeti.RingTheory.LaurentSeries.RatFunc
 public import TauCeti.RingTheory.MvPowerSeries.Equiv
 
 /-!
@@ -41,8 +40,6 @@ but `q · 1` and `1 · q` are the same product.
 * `Transcendental.linearIndependent_prod_toMvPowerSeries_mul_pow`: the products
   `∏ s, f_{i_s}(X_s) q(X_s)^{k_s}` are independent over `K` when the `f_i` are independent over
   `K⟮q⟯` and `q` is transcendental over `K`.
-* `RatFunc.transcendental_coe`: the Laurent expansion of a nonconstant rational function is
-  transcendental over the constants.
 
 ## References
 
@@ -85,8 +82,12 @@ private theorem prod_toMvPowerSeries_fin [Finite J] (hg : LinearIndependent R g)
       simp only [map_sum, map_smul, coeff_prod_toMvPowerSeries, map_zero, smul_eq_mul] at this
       simp only [Fin.prod_univ_succ, Finsupp.cons_zero, Finsupp.cons_succ] at this
       rw [← (Fin.consEquiv fun _ ↦ J).sum_comp, Fintype.sum_prod_type] at this
-      simpa [Finset.mul_sum, coeff_prod_toMvPowerSeries, mul_assoc, mul_comm,
-        mul_left_comm] using this
+      simp only [Fin.consEquiv_apply, Fin.cons_zero, Fin.cons_succ] at this
+      -- Pull the factor `coeff n (g a)` into the inner sum to match `this` term by term.
+      simp only [map_sum, map_smul, coeff_prod_toMvPowerSeries, map_zero, smul_eq_mul,
+        Finset.sum_mul]
+      rw [← this]
+      exact Fintype.sum_congr _ _ fun a ↦ Fintype.sum_congr _ _ fun j' ↦ by ring
     simpa using ih _ (key (j 0)) (Fin.tail j)
 
 /-- The case of finitely many series, transported from `Fin (Fintype.card σ)` to `σ`. -/
@@ -146,25 +147,6 @@ theorem linearIndependent_prod_toMvPowerSeries_mul_pow (hq : Transcendental K q)
   simpa using h1.prod_toMvPowerSeries σ
 
 end Transcendental
-
-namespace RatFunc
-
-variable {K : Type*} [Field K]
-
-/-- The Laurent expansion at `0` of a nonconstant rational function is transcendental over the
-field of constants. -/
-theorem transcendental_coe {p : RatFunc K} (hp : ¬∃ c, p = C c) :
-    Transcendental K (p : K⸨X⸩) := by
-  -- The embedding `K(X) → K⸨X⸩` is a `K`-algebra map, so it preserves algebraicity.
-  let φ : RatFunc K →ₐ[K] K⸨X⸩ :=
-    { algebraMap (RatFunc K) K⸨X⸩ with
-      commutes' := fun c ↦ by
-        simp [← RatFunc.algebraMap_C, ← IsScalarTower.algebraMap_apply,
-          HahnSeries.algebraMap_apply', PowerSeries.algebraMap_apply'] }
-  exact fun h ↦ p.transcendental_of_ne_C hp
-    ((isAlgebraic_algHom_iff φ φ.toRingHom.injective).mp h)
-
-end RatFunc
 
 /-! ### Examples -/
 
