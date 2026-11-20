@@ -19,7 +19,7 @@ import TauCeti.LinearAlgebra.Matrix.OfReal
 # Gradient graphs and the special Lagrangian equation
 
 For a real `n × n` matrix `A`, the graph `{v + i A v | v ∈ ℝⁿ}` of `A` in `ℂⁿ` is the image of
-the real-linear map `TauCeti.realGraphMap A`, `v ↦ v + i A v`, whose values `eⱼ + i A eⱼ` on the
+the real-linear map `Matrix.realGraphMap A`, `v ↦ v + i A v`, whose values `eⱼ + i A eⱼ` on the
 standard basis are the columns of the complex matrix `1 + i A`. The gradient graph
 `x ↦ x + i ∇u(x)` of a function `u : ℝⁿ → ℝ` (`TauCeti.gradientGraph`) is the graph `y = ∇u(x)` in
 the coordinates `z = x + i y` of `ℂⁿ`; when `u` is `C²` at `x`, its derivative there is
@@ -29,8 +29,8 @@ data of these graphs.
 
 * **The Lagrangian condition.** `Im ⟪v + i A v, w + i A w⟫_ℂ = v ⬝ A w - A v ⬝ w`, so the graph of
   `A` is Lagrangian exactly when `A` is symmetric
-  (`TauCeti.forall_im_inner_realGraphMap_eq_zero_iff`). Hessians of `C²` functions are symmetric,
-  so gradient graphs are Lagrangian (`TauCeti.im_inner_fderiv_gradientGraph`).
+  (`Matrix.forall_im_inner_realGraphMap_eq_zero_iff`). Hessians of `C²` functions are symmetric,
+  so gradient graphs are Lagrangian (`TauCeti.im_inner_fderiv_gradientGraph_eq_zero`).
 * **The holomorphic volume form.** The pullback of `Ω = dz₁ ∧ ⋯ ∧ dzₙ` along `v ↦ v + i A v` is
   `det (1 + i A) dx₁ ∧ ⋯ ∧ dxₙ` (`TauCeti.standardComplexVolume_realGraphMap`); along a gradient
   graph it is `det (1 + i D²u) dx₁ ∧ ⋯ ∧ dxₙ`
@@ -44,16 +44,16 @@ data of these graphs.
   (`TauCeti.standardSpecialLagrangianForm_fderiv_gradientGraph_eq_norm_ιMulti_iff`).
 * **The phase-lift equation.** For symmetric `A` with eigenvalues `λⱼ`,
   `det (1 + i A) = (∏ⱼ √(1 + λⱼ²)) e^(i ∑ⱼ arctan λⱼ)`
-  (`TauCeti.det_one_add_I_smul_map_ofReal_eq_mul_exp`), so `e^(-iθ) det (1 + i A)` is real and
-  positive exactly when `∑ⱼ arctan λⱼ = θ + 2πk` for some integer `k`
-  (`TauCeti.im_exp_mul_det_eq_zero_and_re_pos_iff`). The integer `k` records the branch; nothing
-  here selects one.
+  (`Matrix.IsHermitian.det_one_add_I_smul_map_ofReal_eq_mul_exp`), so `e^(-iθ) det (1 + i A)` is
+  real and positive exactly when `∑ⱼ arctan λⱼ = θ + 2πk` for some integer `k`
+  (`Matrix.IsHermitian.im_exp_mul_det_eq_zero_and_re_pos_iff`). The integer `k` records the
+  branch; nothing here selects one.
 * **The linearized equation.** At a symmetric solution `A` of `Im (e^(-iθ) det (1 + i A)) = 0`,
   the derivative of the residual in a real direction `B` is
   `Re (e^(-iθ) det (1 + i A)) tr ((1 + A²)⁻¹ B)`
-  (`TauCeti.hasDerivAt_im_exp_mul_det_one_add_I_smul`), and `B ↦ tr ((1 + A²)⁻¹ B)` has positive
-  principal symbol (`TauCeti.trace_inv_one_add_mul_self_mul_vecMulVec_pos`). On the positive
-  branch `Re (e^(-iθ) det (1 + i A)) > 0`, so the linearization is elliptic there.
+  (`Matrix.IsSymm.hasDerivAt_im_exp_mul_det_one_add_I_smul`), and `B ↦ tr ((1 + A²)⁻¹ B)` has
+  positive principal symbol (`Matrix.IsSymm.trace_inv_one_add_mul_self_mul_vecMulVec_pos`). On the
+  positive branch `Re (e^(-iθ) det (1 + i A)) > 0`, so the linearization is elliptic there.
 
 ## References
 
@@ -68,9 +68,9 @@ noncomputable section
 open Complex Matrix
 open scoped InnerProductSpace Gradient
 
-namespace TauCeti
-
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {n : ℕ}
+
+namespace Matrix
 
 omit [DecidableEq ι] in
 /-- The real-linear map `v ↦ v + i A v` from `ℝⁿ` to `ℂⁿ`, whose image is the graph of the real
@@ -118,7 +118,7 @@ theorem im_inner_realGraphMap (A : Matrix ι ι ℝ) (v w : EuclideanSpace ℝ �
 
 omit [DecidableEq ι] in
 /-- The graph `{v + i A v}` of a real symmetric matrix `A` is isotropic for `Im ⟪·, ·⟫_ℂ`. -/
-theorem im_inner_realGraphMap_eq_zero {A : Matrix ι ι ℝ} (hA : A.IsSymm)
+theorem IsSymm.im_inner_realGraphMap_eq_zero {A : Matrix ι ι ℝ} (hA : A.IsSymm)
     (v w : EuclideanSpace ℝ ι) : (⟪realGraphMap A v, realGraphMap A w⟫_ℂ).im = 0 := by
   rw [im_inner_realGraphMap, dotProduct_comm (A *ᵥ v.ofLp), hA.dotProduct_mulVec_comm, sub_self]
 
@@ -127,7 +127,7 @@ symmetric. -/
 theorem forall_im_inner_realGraphMap_single_eq_zero_iff (A : Matrix ι ι ℝ) :
     (∀ i j, (⟪realGraphMap A (EuclideanSpace.single i 1),
       realGraphMap A (EuclideanSpace.single j 1)⟫_ℂ).im = 0) ↔ A.IsSymm := by
-  refine ⟨fun h ↦ IsSymm.ext fun i j ↦ ?_, fun hA i j ↦ im_inner_realGraphMap_eq_zero hA _ _⟩
+  refine ⟨fun h ↦ IsSymm.ext fun i j ↦ ?_, fun hA i j ↦ hA.im_inner_realGraphMap_eq_zero _ _⟩
   have := h j i
   simp only [im_inner_realGraphMap, sub_eq_zero] at this
   simpa using this
@@ -139,11 +139,11 @@ theorem forall_im_inner_realGraphMap_eq_zero_iff (A : Matrix ι ι ℝ) :
     (∀ v w, (⟪realGraphMap A v, realGraphMap A w⟫_ℂ).im = 0) ↔ A.IsSymm := by
   classical
   exact ⟨fun h ↦ (forall_im_inner_realGraphMap_single_eq_zero_iff A).1 fun _ _ ↦ h _ _,
-    im_inner_realGraphMap_eq_zero⟩
+    IsSymm.im_inner_realGraphMap_eq_zero⟩
 
 omit [DecidableEq ι] in
 /-- The real parts of `v + i A v` recover `v`, so the map `v ↦ v + i A v` is injective. -/
-theorem injective_realGraphMap (A : Matrix ι ι ℝ) :
+theorem realGraphMap_injective (A : Matrix ι ι ℝ) :
     Function.Injective (realGraphMap A) := by
   intro v w h
   ext k
@@ -154,47 +154,14 @@ theorem linearIndependent_realGraphMap_single (A : Matrix ι ι ℝ) :
     LinearIndependent ℝ fun j ↦ realGraphMap A (EuclideanSpace.single j 1) := by
   have h := (EuclideanSpace.basisFun ι ℝ).toBasis.linearIndependent.map'
     (realGraphMap A).toLinearMap
-    (LinearMap.ker_eq_bot.mpr (injective_realGraphMap A))
+    (LinearMap.ker_eq_bot.mpr (realGraphMap_injective A))
   simpa [Function.comp_def] using h
 
 /-! ### The phase in terms of the eigenvalues -/
 
-/-- For a real symmetric matrix `A` with eigenvalues `λⱼ`, `det (1 + i A) = ∏ⱼ (1 + i λⱼ)`. -/
-theorem det_one_add_I_smul_map_ofReal {A : Matrix ι ι ℝ} (hA : A.IsHermitian) :
-    (1 + I • A.map ((↑) : ℝ → ℂ)).det = ∏ j, (1 + (hA.eigenvalues j : ℂ) * I) := by
-  have hchar : (A.map ((↑) : ℝ → ℂ)).charpoly =
-      ∏ j, (Polynomial.X - Polynomial.C (hA.eigenvalues j : ℂ)) := by
-    have hmap : A.map ((↑) : ℝ → ℂ) = A.map Complex.ofRealHom := rfl
-    rw [hmap, charpoly_map, hA.charpoly_eq, Polynomial.map_prod]
-    simp
-  have heval := eval_charpoly (A.map ((↑) : ℝ → ℂ)) I
-  rw [hchar, Polynomial.eval_prod] at heval
-  simp only [Polynomial.eval_sub, Polynomial.eval_X, Polynomial.eval_C] at heval
-  have hmat : (1 + I • A.map ((↑) : ℝ → ℂ)) = (-I) • (scalar ι I - A.map ((↑) : ℝ → ℂ)) := by
-    rw [scalar_apply, ← smul_one_eq_diagonal, smul_sub, smul_smul, neg_mul, I_mul_I, neg_neg,
-      one_smul, neg_smul, sub_neg_eq_add]
-  rw [hmat, det_smul, ← heval, ← Finset.card_univ, ← Finset.prod_const,
-    ← Finset.prod_mul_distrib]
-  refine Finset.prod_congr rfl fun j _ ↦ ?_
-  ring_nf
-  rw [I_sq]
-  ring
-
-/-- **Polar form of `det (1 + i A)`.** For a real symmetric matrix `A` with eigenvalues `λⱼ`,
-`det (1 + i A) = (∏ⱼ √(1 + λⱼ²)) e^(i ∑ⱼ arctan λⱼ)`, so the phase of the graph of `A` is
-`∑ⱼ arctan λⱼ`. -/
-theorem det_one_add_I_smul_map_ofReal_eq_mul_exp {A : Matrix ι ι ℝ}
-    (hA : A.IsHermitian) :
-    (1 + I • A.map ((↑) : ℝ → ℂ)).det =
-      ((∏ j, √(1 + hA.eigenvalues j ^ 2) : ℝ) : ℂ) *
-        Complex.exp ((∑ j, Real.arctan (hA.eigenvalues j) : ℝ) * I) := by
-  simp_rw [det_one_add_I_smul_map_ofReal hA, Complex.one_add_mul_I_eq_sqrt_mul_exp,
-    Finset.prod_mul_distrib, Complex.ofReal_prod, Complex.ofReal_sum, Finset.sum_mul,
-    Complex.exp_sum]
-
 /-- **The phase-lift equation.** For a real symmetric matrix `A` with eigenvalues `λⱼ`,
 `e^(-iθ) det (1 + i A)` is real and positive exactly when `∑ⱼ arctan λⱼ = θ` modulo `2π`. -/
-theorem im_exp_mul_det_eq_zero_and_re_pos_iff {A : Matrix ι ι ℝ}
+theorem IsHermitian.im_exp_mul_det_eq_zero_and_re_pos_iff {A : Matrix ι ι ℝ}
     (hA : A.IsHermitian) (θ : ℝ) :
     ((Complex.exp (-(θ : ℂ) * I) * (1 + I • A.map ((↑) : ℝ → ℂ)).det).im = 0 ∧
         0 < (Complex.exp (-(θ : ℂ) * I) * (1 + I • A.map ((↑) : ℝ → ℂ)).det).re) ↔
@@ -204,7 +171,7 @@ theorem im_exp_mul_det_eq_zero_and_re_pos_iff {A : Matrix ι ι ℝ}
   have hr : 0 < r := Finset.prod_pos fun j _ ↦ Real.sqrt_pos.2 (by positivity)
   have hz : Complex.exp (-(θ : ℂ) * I) * (1 + I • A.map ((↑) : ℝ → ℂ)).det =
       (r : ℂ) * Complex.exp (((s - θ : ℝ) : ℂ) * I) := by
-    rw [det_one_add_I_smul_map_ofReal_eq_mul_exp hA, mul_left_comm, ← Complex.exp_add,
+    rw [hA.det_one_add_I_smul_map_ofReal_eq_mul_exp, mul_left_comm, ← Complex.exp_add,
       Complex.ofReal_sub]
     congr 2
     ring
@@ -226,34 +193,12 @@ theorem im_exp_mul_det_eq_zero_and_re_pos_iff {A : Matrix ι ι ℝ}
 
 /-! ### The linearized equation -/
 
-/-- For a real symmetric matrix `A`, `(1 + i A)⁻¹ = (1 - i A) (1 + A²)⁻¹`. -/
-theorem inv_one_add_I_smul_map_ofReal {A : Matrix ι ι ℝ} (hA : A.IsSymm) :
-    (1 + I • A.map ((↑) : ℝ → ℂ))⁻¹ =
-      (1 - I • A.map ((↑) : ℝ → ℂ)) * ((1 + A * A)⁻¹).map ((↑) : ℝ → ℂ) := by
-  have hmap (X Y : Matrix ι ι ℝ) :
-      (X * Y).map ((↑) : ℝ → ℂ) = X.map (↑) * Y.map (↑) :=
-    Matrix.map_mul (f := Complex.ofRealHom)
-  have hone : (1 : Matrix ι ι ℝ).map ((↑) : ℝ → ℂ) = 1 :=
-    Matrix.map_one _ (by simp) (by simp)
-  have h1 : (1 + I • A.map ((↑) : ℝ → ℂ)) * (1 - I • A.map ((↑) : ℝ → ℂ)) =
-      (1 + A * A).map ((↑) : ℝ → ℂ) := by
-    rw [Matrix.map_add _ Complex.ofReal_add, hmap, hone]
-    simp [add_mul, mul_sub, smul_smul]
-    abel
-  -- `1 + A² = 1 + Aᵀ A` is positive definite, hence invertible.
-  have hpos : (1 + A * A).PosDef := by
-    simpa [conjTranspose_eq_transpose_of_trivial, hA.eq] using
-      PosDef.one.add_posSemidef (posSemidef_conjTranspose_mul_self A)
-  refine inv_eq_right_inv ?_
-  rw [← Matrix.mul_assoc, h1, ← hmap,
-    mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).1 hpos.isUnit), hone]
-
 /-- **The linearized special Lagrangian equation.** Let `A` be a real symmetric matrix solving the
 phase-`θ` equation `Im (e^(-iθ) det (1 + i A)) = 0`. Then the derivative of the imaginary residual
 `Im (e^(-iθ) det (1 + i (A + t B)))` at `t = 0`, in any real direction `B`, is
 `Re (e^(-iθ) det (1 + i A)) tr ((1 + A²)⁻¹ B)`: the linearized operator is the trace against
-`(1 + A²)⁻¹`, times the real part of the residual. -/
-theorem hasDerivAt_im_exp_mul_det_one_add_I_smul {A : Matrix ι ι ℝ} (hA : A.IsSymm)
+`(1 + A²)⁻¹`, times `Re (e^(-iθ) det (1 + i A))`. -/
+theorem IsSymm.hasDerivAt_im_exp_mul_det_one_add_I_smul {A : Matrix ι ι ℝ} (hA : A.IsSymm)
     (B : Matrix ι ι ℝ) {θ : ℝ}
     (hθ : (Complex.exp (-(θ : ℂ) * I) * (1 + I • A.map ((↑) : ℝ → ℂ)).det).im = 0) :
     HasDerivAt
@@ -279,35 +224,22 @@ theorem hasDerivAt_im_exp_mul_det_one_add_I_smul {A : Matrix ι ι ℝ} (hA : A.
   · funext t
     simp [hline, det_mul]
   · -- On a solution `e^(-iθ) det M` is real, and `M⁻¹ N = i (1 - i A) (1 + A²)⁻¹ B`.
-    have htr (X : Matrix ι ι ℝ) :
-        trace (X.map ((↑) : ℝ → ℂ)) = ((trace X : ℝ) : ℂ) := by
-      simp [trace, Complex.ofReal_sum]
+    have htr (X : Matrix ι ι ℝ) : trace (X.map ((↑) : ℝ → ℂ)) = ((trace X : ℝ) : ℂ) :=
+      (AddMonoidHom.map_trace Complex.ofRealHom X).symm
     have hmap (X Y : Matrix ι ι ℝ) :
         (X * Y).map ((↑) : ℝ → ℂ) = X.map (↑) * Y.map (↑) :=
       Matrix.map_mul (f := Complex.ofRealHom)
     have hMN : M⁻¹ * N = I • (((1 + A * A)⁻¹ * B).map ((↑) : ℝ → ℂ) -
         I • (A * (1 + A * A)⁻¹ * B).map ((↑) : ℝ → ℂ)) := by
-      rw [hM_def, inv_one_add_I_smul_map_ofReal hA, hN_def, hmap, hmap, hmap]
+      rw [hM_def, hA.inv_one_add_I_smul_map_ofReal, hN_def, hmap, hmap, hmap]
       simp [sub_mul, Matrix.mul_assoc]
-    have hz : c * M.det = ((c * M.det).re : ℂ) := Complex.ext rfl (by simp [hθ])
+    have hz : c * M.det = ((c * M.det).re : ℂ) := Complex.ext (by simp) (by simp [hθ])
     rw [Complex.imCLM_apply, ← mul_assoc, hz, hMN, trace_smul, trace_sub, trace_smul, htr, htr]
     simp
 
-/-- **Ellipticity of the linearized special Lagrangian equation.** For a real symmetric matrix
-`A`, the linearized operator `B ↦ tr ((1 + A²)⁻¹ B)` of `hasDerivAt_im_exp_mul_det_one_add_I_smul`
-has positive principal symbol: `tr ((1 + A²)⁻¹ ξ ξᵀ) > 0` for every nonzero `ξ`. -/
-theorem trace_inv_one_add_mul_self_mul_vecMulVec_pos {A : Matrix ι ι ℝ}
-    (hA : A.IsSymm) {ξ : ι → ℝ} (hξ : ξ ≠ 0) :
-    0 < trace ((1 + A * A)⁻¹ * vecMulVec ξ ξ) := by
-  have hpos : (1 + A * A).PosDef := by
-    simpa [conjTranspose_eq_transpose_of_trivial, hA.eq] using
-      PosDef.one.add_posSemidef (posSemidef_conjTranspose_mul_self A)
-  have htr : trace ((1 + A * A)⁻¹ * vecMulVec ξ ξ) = ξ ⬝ᵥ ((1 + A * A)⁻¹ *ᵥ ξ) := by
-    simp only [trace, diag, Matrix.mul_apply, vecMulVec_apply, dotProduct, mulVec,
-      Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
-  rw [htr]
-  simpa using hpos.inv.dotProduct_mulVec_pos hξ
+end Matrix
+
+namespace TauCeti
 
 /-! ### Gradient graphs -/
 
@@ -333,6 +265,7 @@ theorem hasFDerivAt_gradientGraph {u : EuclideanSpace ℝ ι → ℝ}
     HasFDerivAt (gradientGraph u)
       (realGraphMap (LinearMap.toMatrix (EuclideanSpace.basisFun ι ℝ).toBasis
         (EuclideanSpace.basisFun ι ℝ).toBasis (hessianOperator u x).toLinearMap)) x := by
+  -- `realGraphMap 0` is the real inclusion `v ↦ v` of `ℝⁿ` into `ℂⁿ`.
   let L := realGraphMap (0 : Matrix ι ι ℝ)
   have h := L.hasFDerivAt.add ((L.hasFDerivAt.comp x hu.hasFDerivAt_gradient).const_smul I)
   convert h using 1
@@ -352,13 +285,13 @@ omit [DecidableEq ι] in
 /-- **Gradient graphs are Lagrangian.** If `u` is `C²` at `x`, the tangent space of the gradient
 graph at `x` is isotropic for the symplectic form `Im ⟪·, ·⟫_ℂ` of `ℂⁿ`, by the symmetry of the
 Hessian. -/
-theorem im_inner_fderiv_gradientGraph {u : EuclideanSpace ℝ ι → ℝ}
+theorem im_inner_fderiv_gradientGraph_eq_zero {u : EuclideanSpace ℝ ι → ℝ}
     {x : EuclideanSpace ℝ ι} (hu : ContDiffAt ℝ 2 u x) (v w : EuclideanSpace ℝ ι) :
     (⟪fderiv ℝ (gradientGraph u) x v, fderiv ℝ (gradientGraph u) x w⟫_ℂ).im = 0 := by
   classical
   rw [(hasFDerivAt_gradientGraph hu).fderiv]
-  exact im_inner_realGraphMap_eq_zero
-    ((EuclideanSpace.basisFun ι ℝ).isSymm_toMatrix_hessianOperator hu) v w
+  exact ((EuclideanSpace.basisFun ι ℝ).isSymm_toMatrix_hessianOperator
+    hu).im_inner_realGraphMap_eq_zero v w
 
 /-! ### The holomorphic volume form and the special Lagrangian equation -/
 
@@ -386,7 +319,9 @@ theorem standardComplexVolume_realGraphMap (A : Matrix (Fin n) (Fin n) ℝ)
     have h := Complex.ofRealHom.map_det ((EuclideanSpace.basisFun (Fin n) ℝ).toBasis.toMatrix w)ᵀ
     rw [Complex.ofRealHom_eq_coe] at h
     rw [h]
-    congr 1
+    refine congrArg det ?_
+    ext i j
+    simp [Module.Basis.toMatrix_apply]
   rw [standardComplexVolume_apply, hrows, det_mul, det_transpose, hdet, mul_comm]
 
 /-- On the tangent frame `eⱼ + i A eⱼ` of the graph of `A`, the complex volume form is
@@ -422,7 +357,7 @@ theorem standardSpecialLagrangianForm_realGraphMap_single_eq_norm_ιMulti_iff_ex
         ‖exteriorPower.ιMulti ℝ n (fun j ↦ realGraphMap A (EuclideanSpace.single j 1))‖ ↔
       ∃ k : ℤ, ∑ j, Real.arctan (hA.eigenvalues j) = θ + 2 * Real.pi * k := by
   rw [standardSpecialLagrangianForm_realGraphMap_single_eq_norm_ιMulti_iff,
-    and_iff_right (isHermitian_iff_isSymm.1 hA), im_exp_mul_det_eq_zero_and_re_pos_iff hA]
+    and_iff_right (isHermitian_iff_isSymm.1 hA), hA.im_exp_mul_det_eq_zero_and_re_pos_iff]
 
 /-- **The holomorphic volume form on a gradient graph**: if `u` is `C²` at `x`, the pullback of
 `Ω = dz₁ ∧ ⋯ ∧ dzₙ` along the gradient graph is `det (1 + i D²u(x)) dx₁ ∧ ⋯ ∧ dxₙ` at `x`. -/

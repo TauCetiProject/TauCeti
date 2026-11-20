@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Matrix.Spectrum
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arctan
+import Mathlib.Algebra.Order.Star.Real
 
 /-!
 # The Cayley transform of a Hermitian matrix
@@ -42,6 +43,15 @@ determinant is `z / conj z` for `z = det (1 + i A)` (`Matrix.IsHermitian.det_cay
 * `Matrix.cayley_conj`: naturality under conjugation.
 * `Matrix.cayley_diagonal_ofReal`: the Cayley transform of a real diagonal matrix.
 * `Matrix.IsHermitian.det_cayley`: the determinant of the Cayley transform.
+* `Matrix.IsHermitian.det_one_add_I_smul_map_ofReal`: for real symmetric `A` with eigenvalues
+  `λⱼ`, `det (1 + i A) = ∏ⱼ (1 + i λⱼ)`, and its polar form
+  `Matrix.IsHermitian.det_one_add_I_smul_map_ofReal_eq_mul_exp`:
+  `det (1 + i A) = (∏ⱼ √(1 + λⱼ²)) e^(i ∑ⱼ arctan λⱼ)`.
+* `Matrix.IsSymm.posDef_one_add_mul_self`: `1 + A²` is positive definite for real symmetric `A`.
+* `Matrix.IsSymm.inv_one_add_I_smul_map_ofReal`: `(1 + i A)⁻¹ = (1 - i A) (1 + A²)⁻¹` for real
+  symmetric `A`.
+* `Matrix.IsSymm.trace_inv_one_add_mul_self_mul_vecMulVec_pos`: `tr ((1 + A²)⁻¹ ξ ξᵀ) > 0` for
+  real symmetric `A` and nonzero `ξ`.
 
 ## References
 
@@ -176,5 +186,84 @@ theorem det_cayley (hA : A.IsHermitian) :
     div_eq_mul_inv]
 
 end IsHermitian
+
+/-! ### Real symmetric matrices
+
+For a real symmetric matrix `A`, viewed as a complex matrix, the factor `1 + i A` of the Cayley
+transform has determinant `∏ⱼ (1 + i λⱼ)` over the eigenvalues `λⱼ` of `A`, and inverse
+`(1 - i A) (1 + A²)⁻¹`. -/
+
+section Real
+
+/-- For a real symmetric matrix `A`, the matrix `1 + A² = 1 + Aᵀ A` is positive definite. -/
+theorem IsSymm.posDef_one_add_mul_self {A : Matrix n n ℝ} (hA : A.IsSymm) :
+    (1 + A * A).PosDef := by
+  simpa [conjTranspose_eq_transpose_of_trivial, hA.eq] using
+    PosDef.one.add_posSemidef (posSemidef_conjTranspose_mul_self A)
+
+/-- For a real symmetric matrix `A` with eigenvalues `λⱼ`, `det (1 + i A) = ∏ⱼ (1 + i λⱼ)`. -/
+theorem IsHermitian.det_one_add_I_smul_map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
+    (1 + I • A.map ((↑) : ℝ → ℂ)).det = ∏ j, (1 + (hA.eigenvalues j : ℂ) * I) := by
+  have hchar : (A.map ((↑) : ℝ → ℂ)).charpoly =
+      ∏ j, (Polynomial.X - Polynomial.C (hA.eigenvalues j : ℂ)) := by
+    have hmap : A.map ((↑) : ℝ → ℂ) = A.map Complex.ofRealHom := rfl
+    rw [hmap, charpoly_map, hA.charpoly_eq, Polynomial.map_prod]
+    simp
+  have heval := eval_charpoly (A.map ((↑) : ℝ → ℂ)) I
+  rw [hchar, Polynomial.eval_prod] at heval
+  simp only [Polynomial.eval_sub, Polynomial.eval_X, Polynomial.eval_C] at heval
+  have hmat : (1 + I • A.map ((↑) : ℝ → ℂ)) = (-I) • (scalar n I - A.map ((↑) : ℝ → ℂ)) := by
+    rw [scalar_apply, ← smul_one_eq_diagonal]
+    simp [smul_sub, smul_smul]
+  rw [hmat, det_smul, ← heval, ← Finset.card_univ, ← Finset.prod_const,
+    ← Finset.prod_mul_distrib]
+  refine Finset.prod_congr rfl fun j _ ↦ ?_
+  ring_nf
+  rw [I_sq]
+  ring
+
+/-- **Polar form of `det (1 + i A)`.** For a real symmetric matrix `A` with eigenvalues `λⱼ`,
+`det (1 + i A) = (∏ⱼ √(1 + λⱼ²)) e^(i ∑ⱼ arctan λⱼ)`, so the phase of `det (1 + i A)` is
+`∑ⱼ arctan λⱼ`. -/
+theorem IsHermitian.det_one_add_I_smul_map_ofReal_eq_mul_exp {A : Matrix n n ℝ}
+    (hA : A.IsHermitian) :
+    (1 + I • A.map ((↑) : ℝ → ℂ)).det =
+      ((∏ j, √(1 + hA.eigenvalues j ^ 2) : ℝ) : ℂ) *
+        Complex.exp ((∑ j, Real.arctan (hA.eigenvalues j) : ℝ) * I) := by
+  simp_rw [hA.det_one_add_I_smul_map_ofReal, Complex.one_add_mul_I_eq_sqrt_mul_exp,
+    Finset.prod_mul_distrib, Complex.ofReal_prod, Complex.ofReal_sum, Finset.sum_mul,
+    Complex.exp_sum]
+
+/-- For a real symmetric matrix `A`, `(1 + i A)⁻¹ = (1 - i A) (1 + A²)⁻¹`. -/
+theorem IsSymm.inv_one_add_I_smul_map_ofReal {A : Matrix n n ℝ} (hA : A.IsSymm) :
+    (1 + I • A.map ((↑) : ℝ → ℂ))⁻¹ =
+      (1 - I • A.map ((↑) : ℝ → ℂ)) * ((1 + A * A)⁻¹).map ((↑) : ℝ → ℂ) := by
+  have hmap (X Y : Matrix n n ℝ) :
+      (X * Y).map ((↑) : ℝ → ℂ) = X.map (↑) * Y.map (↑) :=
+    Matrix.map_mul (f := Complex.ofRealHom)
+  have hone : (1 : Matrix n n ℝ).map ((↑) : ℝ → ℂ) = 1 :=
+    Matrix.map_one _ (by simp) (by simp)
+  have h1 : (1 + I • A.map ((↑) : ℝ → ℂ)) * (1 - I • A.map ((↑) : ℝ → ℂ)) =
+      (1 + A * A).map ((↑) : ℝ → ℂ) := by
+    rw [Matrix.map_add _ Complex.ofReal_add, hmap, hone]
+    simp [add_mul, mul_sub, smul_smul]
+    abel
+  refine inv_eq_right_inv ?_
+  rw [← Matrix.mul_assoc, h1, ← hmap,
+    mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).1 hA.posDef_one_add_mul_self.isUnit), hone]
+
+/-- For a real symmetric matrix `A`, the linear functional `B ↦ tr ((1 + A²)⁻¹ B)` is positive on
+the rank-one matrices `ξ ξᵀ`: `tr ((1 + A²)⁻¹ ξ ξᵀ) > 0` for every nonzero `ξ`. -/
+theorem IsSymm.trace_inv_one_add_mul_self_mul_vecMulVec_pos {A : Matrix n n ℝ}
+    (hA : A.IsSymm) {ξ : n → ℝ} (hξ : ξ ≠ 0) :
+    0 < trace ((1 + A * A)⁻¹ * vecMulVec ξ ξ) := by
+  have htr : trace ((1 + A * A)⁻¹ * vecMulVec ξ ξ) = ξ ⬝ᵥ ((1 + A * A)⁻¹ *ᵥ ξ) := by
+    simp only [trace, diag, Matrix.mul_apply, vecMulVec_apply, dotProduct, mulVec,
+      Finset.mul_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+  rw [htr]
+  simpa using hA.posDef_one_add_mul_self.inv.dotProduct_mulVec_pos hξ
+
+end Real
 
 end Matrix
