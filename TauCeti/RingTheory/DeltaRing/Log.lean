@@ -174,8 +174,7 @@ noncomputable def ofPowDvd (hα : ∀ m, α m ∈ nonZeroDivisors A)
   deltaLog_one := by
     have h := (hdvd 1).choose_spec
     generalize (hdvd 1).choose = c at h ⊢
-    rw [map_one, one_pow, one_mul, delta_one] at h
-    exact h.symm
+    simpa using h.symm
   pow_mul_deltaLog m := (hdvd m).choose_spec.symm
   deltaLog_mul m m' := by
     have h := (hdvd (m * m')).choose_spec
@@ -258,8 +257,7 @@ only one (`instUniqueUnits`). -/
 def units : DeltaLogStructure p (Units.coeHom A) where
   deltaLog u := delta p (u : A) * ((u⁻¹ : Aˣ) : A) ^ p
   deltaLog_one := by simp
-  pow_mul_deltaLog u := by
-    rw [Units.coeHom_apply, mul_left_comm, ← mul_pow, Units.mul_inv, one_pow, mul_one]
+  pow_mul_deltaLog u := by simp [mul_left_comm _ (delta p _), ← mul_pow]
   deltaLog_mul u v := by
     have hu : ((u : A) * ((u⁻¹ : Aˣ) : A)) ^ p = 1 := by rw [Units.mul_inv, one_pow]
     have hv : ((v : A) * ((v⁻¹ : Aˣ) : A)) ^ p = 1 := by rw [Units.mul_inv, one_pow]
@@ -289,11 +287,9 @@ def map (D : DeltaLogStructure p α) (f : A →+* B)
     (hf : ∀ x, f (delta p x) = delta p (f x)) :
     DeltaLogStructure p ((f : A →* B).comp α) where
   deltaLog m := f (D.deltaLog m)
-  deltaLog_one := by rw [deltaLog_one, map_zero]
-  pow_mul_deltaLog m := by
-    rw [MonoidHom.comp_apply, MonoidHom.coe_ofClass, ← hf, ← D.pow_mul_deltaLog, map_mul, map_pow]
-  deltaLog_mul m m' := by
-    rw [D.deltaLog_mul, map_add, map_add, map_mul, map_mul, map_natCast]
+  deltaLog_one := by simp
+  pow_mul_deltaLog m := by simp [← hf, ← D.pow_mul_deltaLog]
+  deltaLog_mul m m' := by simp [D.deltaLog_mul]
 
 @[simp]
 theorem deltaLog_map (D : DeltaLogStructure p α) (f : A →+* B)
@@ -348,11 +344,9 @@ variable {D : DeltaLogStructure p α} {E : DeltaLogStructure p β} {F : DeltaLog
 def comp (g : Hom E F) (f : Hom D E) : Hom D F where
   ringHom := g.ringHom.comp f.ringHom
   monoidHom := g.monoidHom.comp f.monoidHom
-  map_delta x := by rw [RingHom.comp_apply, f.map_delta, g.map_delta, RingHom.comp_apply]
-  apply_monoidHom m := by
-    rw [MonoidHom.comp_apply, g.apply_monoidHom, f.apply_monoidHom, RingHom.comp_apply]
-  deltaLog_monoidHom m := by
-    rw [MonoidHom.comp_apply, g.deltaLog_monoidHom, f.deltaLog_monoidHom, RingHom.comp_apply]
+  map_delta x := by simp [f.map_delta, g.map_delta]
+  apply_monoidHom m := by simp [f.apply_monoidHom, g.apply_monoidHom]
+  deltaLog_monoidHom m := by simp [f.deltaLog_monoidHom, g.deltaLog_monoidHom]
 
 @[simp]
 theorem comp_ringHom (g : Hom E F) (f : Hom D E) :
@@ -385,8 +379,7 @@ theorem map_frobenius [Fact p.Prime] (f : Hom D E) (x : A) :
 /-- A morphism of `δ_log`-rings intertwines the correction factors. -/
 theorem correction_monoidHom (f : Hom D E) (m : M) :
     E.correction (f.monoidHom m) = f.ringHom (D.correction m) := by
-  rw [correction_apply, correction_apply, f.deltaLog_monoidHom, map_add, map_one, map_mul,
-    map_natCast]
+  simp [f.deltaLog_monoidHom]
 
 end Hom
 
@@ -399,8 +392,8 @@ def toMap (D : DeltaLogStructure p α) (f : A →+* B)
   ringHom := f
   monoidHom := MonoidHom.id M
   map_delta := hf
-  apply_monoidHom m := by rw [MonoidHom.id_apply, MonoidHom.comp_apply, MonoidHom.coe_ofClass]
-  deltaLog_monoidHom m := by rw [MonoidHom.id_apply, deltaLog_map]
+  apply_monoidHom m := by simp
+  deltaLog_monoidHom m := by simp
 
 @[simp]
 theorem toMap_ringHom (D : DeltaLogStructure p α) (f : A →+* B)

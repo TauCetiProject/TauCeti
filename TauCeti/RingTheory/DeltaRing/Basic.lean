@@ -155,7 +155,7 @@ theorem natCast_dvd_frobenius_sub_pow (x : A) : (p : A) ∣ frobenius p A x - x 
 theorem map_frobenius {B F : Type*} [CommRing B] [DeltaRing p B] [FunLike F A B]
     [RingHomClass F A B] (f : F) (hf : ∀ x, f (delta p x) = delta p (f x)) (x : A) :
     f (frobenius p A x) = frobenius p B (f x) := by
-  rw [frobenius_apply, frobenius_apply, map_add, map_mul, map_pow, map_natCast, hf]
+  simp [frobenius_apply, hf]
 
 omit [DeltaRing p A] in
 /-- On a ring in which `p` is a nonzerodivisor, a `δ`-structure is determined by its Frobenius
