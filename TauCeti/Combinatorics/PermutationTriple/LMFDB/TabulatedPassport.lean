@@ -95,7 +95,7 @@ def toOrderedPassport (T : TabulatedPassport n) : OrderedPassport n :=
   ⟨T.stored, T.isAdmissible⟩
 
 @[simp] theorem coe_toOrderedPassport (T : TabulatedPassport n) :
-    T.toOrderedPassport.1 = T.stored :=
+    T.toOrderedPassport.val = T.stored :=
   (rfl)
 
 /-- A tabulated passport is determined by its stored ordered passport. -/
@@ -114,7 +114,7 @@ def IsRepresentativeOf (T : TabulatedPassport n) (P : OrderedPassport n) : Prop 
 /-- A tabulated passport represents `P` exactly when its stored ordered passport is obtained from
 `P` by reordering the branch points. -/
 theorem isRepresentativeOf_iff {T : TabulatedPassport n} {P : OrderedPassport n} :
-    T.IsRepresentativeOf P ↔ ∃ ρ : Perm (Fin 3), P.1.reindexBranchPoints ρ = T.stored := by
+    T.IsRepresentativeOf P ↔ ∃ ρ : Perm (Fin 3), P.val.reindexBranchPoints ρ = T.stored := by
   rw [IsRepresentativeOf, mem_orbit_iff]
   constructor
   · rintro ⟨ρ, hρ⟩
@@ -145,16 +145,16 @@ variable {T T' : TabulatedPassport n} {P : OrderedPassport n}
 
 /-- The stored ordered passport of a representative has the size of the represented ordered
 passport. -/
-theorem passportSize_eq (h : T.IsRepresentativeOf P) : T.stored.passportSize = P.1.passportSize :=
+theorem passportSize_eq (h : T.IsRepresentativeOf P) : T.stored.passportSize = P.val.passportSize :=
   OrderedPassport.passportSize_eq_of_mem_orbit h
 
 /-- Reordering the branch points along some permutation maps the classes of the represented
 ordered passport onto the classes of the stored one. -/
 theorem exists_op_smul_mem_classSet_iff (h : T.IsRepresentativeOf P) :
     ∃ ρ : Perm (Fin 3), ∀ c : ConnectedIsoClass n,
-      MulOpposite.op ρ • c ∈ T.stored.classSet ↔ c ∈ P.1.classSet := by
+      MulOpposite.op ρ • c ∈ T.stored.classSet ↔ c ∈ P.val.classSet := by
   obtain ⟨ρ, hρ⟩ := isRepresentativeOf_iff.mp h
-  exact ⟨ρ, fun c ↦ hρ ▸ PassportSpec.op_smul_mem_classSet_reindexBranchPoints_iff ρ c P.1⟩
+  exact ⟨ρ, fun c ↦ hρ ▸ PassportSpec.op_smul_mem_classSet_reindexBranchPoints_iff ρ c P.val⟩
 
 /-- Two representatives of one orbit sharing an isomorphism class are equal. -/
 theorem eq_of_mem_classSet (hT : T.IsRepresentativeOf P) (hT' : T'.IsRepresentativeOf P)
@@ -196,13 +196,13 @@ theorem exists_isRepresentativeOf_ne :
   have hmem : ConnectedIsoClass.mk t ∈ (ofTriple t).stored.classSet :=
     t.mk_mem_classSet_passportOf
   have hsmul : MulOpposite.op ρ • ConnectedIsoClass.mk t ∈
-      (MulOpposite.op ρ • t.orderedPassportOf).1.classSet := by
+      (MulOpposite.op ρ • t.orderedPassportOf).val.classSet := by
     rw [OrderedPassport.coe_smul, ConnectedTriple.coe_orderedPassportOf,
       PassportSpec.smul_eq_reindexBranchPoints, MulOpposite.unop_op,
       PassportSpec.op_smul_mem_classSet_reindexBranchPoints_iff]
     exact hmem
   let Q := MulOpposite.op ρ • t.orderedPassportOf
-  refine ⟨t.orderedPassportOf, ofTriple t, ⟨Q.1, Q.2⟩, ?_, mem_orbit _ _, fun h ↦ hne ?_,
+  refine ⟨t.orderedPassportOf, ofTriple t, ⟨Q.val, Q.property⟩, ?_, mem_orbit _ _, fun h ↦ hne ?_,
     ⟨_, hmem⟩, ⟨_, hsmul⟩⟩
   · rw [← toOrderedPassport_ofTriple]
     exact isRepresentativeOf_toOrderedPassport _
@@ -230,7 +230,7 @@ not to its orbit. -/
 theorem mk_mem_classSet_iff_eq (h : r.IsValidAt t) {P : OrderedPassport n}
     (hP : (ofTriple t).IsRepresentativeOf P) {s : PermutationTriple n} (hs : s ∈ r.triples)
     (hconn : s.IsConnected) :
-    ConnectedIsoClass.mk ⟨s, hconn⟩ ∈ P.1.classSet ↔ P = t.orderedPassportOf := by
+    ConnectedIsoClass.mk ⟨s, hconn⟩ ∈ P.val.classSet ↔ P = t.orderedPassportOf := by
   have hstored := h.mk_mem_classSet_ofTriple hs hconn
   rw [stored_ofTriple, ← ConnectedTriple.coe_orderedPassportOf] at hstored
   constructor
@@ -244,7 +244,7 @@ theorem mk_mem_classSet_iff_eq (h : r.IsValidAt t) {P : OrderedPassport n}
 /-- The stored passport size of a valid passport row is the size of every ordered passport of the
 orbit of the stored one. -/
 theorem passSize_eq_of_isRepresentativeOf (h : r.IsValidAt t) {P : OrderedPassport n}
-    (hP : (ofTriple t).IsRepresentativeOf P) : r.passSize = P.1.passportSize :=
+    (hP : (ofTriple t).IsRepresentativeOf P) : r.passSize = P.val.passportSize :=
   h.passSize_eq.trans hP.passportSize_eq
 
 end PassportRecord.IsValidAt

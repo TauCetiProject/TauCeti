@@ -78,8 +78,8 @@ instance : IsMulCommutative (periodMatrixGroup a b) :=
 
 /-- Entrywise negation preserves invertible quadratic multiplication matrices. -/
 instance : Neg (periodMatrixGroup a b) where
-  neg g := ⟨-g.1, by
-    rcases g.2 with ⟨u, hu⟩
+  neg g := ⟨-g.val, by
+    rcases g.property with ⟨u, hu⟩
     exact ⟨-u, by rw [periodUnitMatrix_neg, hu]⟩⟩
 
 /-- Coercing `-g` from `periodMatrixGroup a b` to `GL (Fin 2) R` negates in `GL (Fin 2) R`. -/

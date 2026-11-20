@@ -193,7 +193,7 @@ theorem exists_setLAverage_enorm_gradient_sq_le_divergence [Nonempty ι] {s : �
       mul_pow, ENNReal.ofReal_mul (by positivity), mul_assoc]
   have hav := setLAverage_enorm_sq_le_of_setIntegral_le (f := fun x => W1p.value u x - m)
     (by positivity) (by positivity) hμ2 measure_ball_lt_top.ne
-    ((W1p.integrable_norm_gradient_sq u).mono_measure
+    ((Lp.memLp (W1p.gradient u)).norm.integrable_sq.mono_measure
       (Measure.restrict_mono ((ball_subset_ball (by linarith)).trans hball) le_rfl))
     ((((Lp.memLp (W1p.value u)).mono_measure (Measure.restrict_mono hball le_rfl)).sub
       (memLp_const m)).norm.integrable_sq)

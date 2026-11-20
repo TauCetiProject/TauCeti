@@ -212,7 +212,7 @@ theorem periodMatrixQuotientEquivZpowersNegOne_mk {a b : ℤ} {N : ℕ} {a' b' :
     (hd : discr a b < -4) (ha : (a : ZMod N) = a') (hb : (b : ZMod N) = b')
     (M : periodMatrixGroup a' b') :
     periodMatrixQuotientEquivZpowersNegOne hd ha hb M =
-      (⟨(M : GL (Fin 2) (ZMod N)), by rw [ha, hb]; exact M.2⟩ :
+      (⟨(M : GL (Fin 2) (ZMod N)), by rw [ha, hb]; exact M.property⟩ :
         periodMatrixGroup (a : ZMod N) (b : ZMod N)) := (rfl)
 
 /-- At level `2`, `-1 = 1` in `periodMatrixGroup`, so for `discr a b < -4` the reduced global-unit

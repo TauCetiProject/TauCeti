@@ -234,7 +234,9 @@ theorem unipotentLevelThreeArtinEquiv_ofAdd {a b : ℤ} (e : 𝓞 K ≃+* Quadra
     unipotentLevelThreeArtinEquiv e hd ha hb (Multiplicative.ofAdd s) =
       periodMatrixQuotientArtinEquiv e 3
         ((⟨(unipotentPeriodMatrixHom (ZMod 3) (Multiplicative.ofAdd s) : GL (Fin 2) (ZMod 3)),
-          by rw [ha, hb]; exact (unipotentPeriodMatrixHom (ZMod 3) (Multiplicative.ofAdd s)).2⟩ :
+          by
+            rw [ha, hb]
+            exact (unipotentPeriodMatrixHom (ZMod 3) (Multiplicative.ofAdd s)).property⟩ :
             periodMatrixGroup (a : ZMod 3) (b : ZMod 3)) :
           periodMatrixGroup (a : ZMod 3) (b : ZMod 3) ⧸ unitPeriodMatrixSubgroup a b 3) := by
   simp [unipotentLevelThreeArtinEquiv]
