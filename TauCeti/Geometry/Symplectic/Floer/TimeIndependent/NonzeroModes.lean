@@ -303,21 +303,6 @@ theorem mul_setIntegral_norm_fderiv_sq_add_le_setIntegral_norm_floerLinearizatio
       |>.integrableOn_Icc_prod_Icc)
     (norm_sub_floerLinearization_le hg haγ)
 
-/-- Along `(s, t) ↦ γ(s)`, the linearized operator of the mean-zero part `ξ - ξbar` is that of `ξ`
-minus the Morse operator `M ξbar = ξbar' - J dX_H(γ) ξbar` of the slice average. -/
-private theorem floerLinearization_sub_intervalIntegral (hξ : ContDiff ℝ 1 ξ) (z : ℝ × ℝ) :
-    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-        (fun _ ↦ H) (fun z ↦ γ z.1) (fun z ↦ ξ z - ∫ t in (0 : ℝ)..1, ξ (z.1, t)) z =
-      ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
-          (fun _ ↦ H) (fun z ↦ γ z.1) ξ z -
-        (deriv (fun s ↦ ∫ t in (0 : ℝ)..1, ξ (s, t)) z.1 -
-          J (fderiv ℝ (ω.hamiltonianVectorField H) (γ z.1) (∫ t in (0 : ℝ)..1, ξ (z.1, t)))) := by
-  have hbar : DifferentiableAt ℝ (fun s ↦ ∫ t in (0 : ℝ)..1, ξ (s, t)) z.1 :=
-    (hξ.parametric_intervalIntegral (μ := volume)).differentiable one_ne_zero z.1
-  rw [← floerLinearization_comp_fst_of_hasDerivAt γ hbar.hasDerivAt]
-  exact floerLinearization_sub ω _ _ _ _ ξ _ z (hξ.differentiable one_ne_zero z)
-    (hbar.comp z differentiableAt_fst)
-
 /-- **Splitting off the zero mode.** Let `H` be a `C²` autonomous Hamiltonian and `γ` a
 continuous curve, and let `ξ` be a `C¹` map of period one in `t`, with slice average
 `ξbar(s) = ∫₀¹ ξ(s, t) dt`. Over `[s₀, s₁] × [0, 1]` the squared `L²` norm of the linearized Floer
@@ -344,7 +329,7 @@ theorem setIntegral_norm_floerLinearization_sq_eq (hH : ContDiff ℝ 2 H) (hγ :
   have hDξ : Continuous (D ξ) := continuous_floerLinearization_comp_fst hH hγ hξ
   have hsplit (z : ℝ × ℝ) : D ξ z = m z.1 + D (fun z ↦ ξ z - ξbar z.1) z :=
     eq_add_of_sub_eq' (floerLinearization_sub_intervalIntegral (ω := ω) (J := J) (H := H)
-      (γ := γ) hξ z).symm
+      γ hξ z).symm
   have hη (z : ℝ × ℝ) : D (fun z ↦ ξ z - ξbar z.1) z = D ξ z - m z.1 := by
     rw [hsplit z, add_sub_cancel_left]
   -- The slices of `D (ξ - ξbar) = D ξ - m` have integral zero, by the zero-mode identity.
@@ -353,7 +338,8 @@ theorem setIntegral_norm_floerLinearization_sq_eq (hH : ContDiff ℝ 2 H) (hγ :
       intervalIntegral_floerLinearization_comp_fst (ω := ω) (J := J) (H := H) γ hξ hper s
     simp_rw [hη, ← h0]
     rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one]
-    exact intervalIntegral_sub_intervalIntegral_zero_one fun t ↦ D ξ (s, t)
+    simpa only [interval_average_eq, sub_zero, inv_one, one_smul] using
+      intervalIntegral_sub_intervalAverage (fun t ↦ D ξ (s, t)) 0 1
   have hw : Continuous (D (fun z ↦ ξ z - ξbar z.1)) := by
     rw [funext hη]
     exact hDξ.sub (hm.comp continuous_fst)
@@ -386,8 +372,9 @@ theorem setIntegral_norm_sq_le_max_mul_setIntegral_norm_floerLinearization_sq
   have hη : ContDiff ℝ 2 η := hξ.sub (hbar.comp contDiff_fst)
   have hbar₀ : ξbar s₀ = 0 := by simp [ξbar, h₀]
   have hbar₁ : ξbar s₁ = 0 := by simp [ξbar, h₁]
-  have hηmean (s : ℝ) : ∫ t in (0 : ℝ)..1, η (s, t) = 0 :=
-    intervalIntegral_sub_intervalIntegral_zero_one fun t ↦ ξ (s, t)
+  have hηmean (s : ℝ) : ∫ t in (0 : ℝ)..1, η (s, t) = 0 := by
+    simpa only [interval_average_eq, sub_zero, inv_one, one_smul] using
+      intervalIntegral_sub_intervalAverage (fun t ↦ ξ (s, t)) 0 1
   -- `∫ ‖ξ‖² = ∫ ‖ξbar‖² + ∫ ‖η‖²`, the zero mode and the mean-zero part.
   have hnorm : ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1, ‖ξ z‖ ^ 2 =
       (∫ s in Icc s₀ s₁, ‖ξbar s‖ ^ 2) + ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1, ‖η z‖ ^ 2 := by

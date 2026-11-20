@@ -40,7 +40,9 @@ splitting of a map `ξ` of period one in `t` into its slice average and the rest
   (`TauCeti.SymplecticForm.intervalIntegral_floerLinearization_comp_fst`).
 * **Maps that do not depend on `t`.** On the map `(s, t) ↦ ζ(s)` of a curve, `D` is the Morse
   operator: `D ζ = ζ' - J dX_H(γ) ζ`
-  (`TauCeti.SymplecticForm.floerLinearization_comp_fst_of_hasDerivAt`).
+  (`TauCeti.SymplecticForm.floerLinearization_comp_fst_of_hasDerivAt`). So on the mean-zero part,
+  `D (ξ - ξbar) = D ξ - (ξbar' - J dX_H(γ) ξbar)`
+  (`TauCeti.SymplecticForm.floerLinearization_sub_intervalIntegral`).
 * **The kernel.** If `‖dX_H‖ ≤ a < 2π`, `‖d²X_H‖ ≤ c`, `‖γ'‖ ≤ M` and `c M < 2 (2π - a)²`, the
   remaining modes carry no kernel: a bounded `C²` map `ξ` of period one in `t` solves `D ξ = 0`
   exactly when it does not depend on `t` and `ζ(s) = ξ(s, 0)` solves the linearized gradient
@@ -145,6 +147,24 @@ theorem floerLinearization_comp_fst_of_hasDerivAt (γ : ℝ → V) {ζ : ℝ →
     one_smul, zero_smul, zero_sub, map_neg]
   exact (sub_eq_add_neg _ _).symm
 
+/-- **The linearized operator on the mean-zero part.** Along a time-independent cylinder
+`u(s, t) = γ(s)`, the linearized Floer operator `D` of the mean-zero part `ξ - ξbar` of a `C¹` map
+`ξ` is `D ξ` minus the Morse operator `ξbar' - J dX_H(γ) ξbar` of the slice average
+`ξbar(s) = ∫₀¹ ξ(s, t) dt`. -/
+theorem floerLinearization_sub_intervalIntegral (γ : ℝ → V) {ξ : ℝ × ℝ → V}
+    (hξ : ContDiff ℝ 1 ξ) (z : ℝ × ℝ) :
+    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun _ ↦ H) (fun z ↦ γ z.1) (fun z ↦ ξ z - ∫ t in (0 : ℝ)..1, ξ (z.1, t)) z =
+      ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+          (fun _ ↦ H) (fun z ↦ γ z.1) ξ z -
+        (deriv (fun s ↦ ∫ t in (0 : ℝ)..1, ξ (s, t)) z.1 -
+          J (fderiv ℝ (ω.hamiltonianVectorField H) (γ z.1) (∫ t in (0 : ℝ)..1, ξ (z.1, t)))) := by
+  have hbar : DifferentiableAt ℝ (fun s ↦ ∫ t in (0 : ℝ)..1, ξ (s, t)) z.1 :=
+    (hξ.parametric_intervalIntegral (μ := volume)).differentiable one_ne_zero z.1
+  rw [← floerLinearization_comp_fst_of_hasDerivAt γ hbar.hasDerivAt]
+  exact floerLinearization_sub ω _ _ _ _ ξ _ z (hξ.differentiable one_ne_zero z)
+    (hbar.comp z differentiableAt_fst)
+
 end ZeroMode
 
 section Kernel
@@ -184,8 +204,9 @@ private theorem eq_intervalIntegral_of_floerLinearization_eq_zero
   have hη : ContDiff ℝ 2 η := hξ.sub ((hξ.parametric_intervalIntegral (μ := volume)).comp
     contDiff_fst)
   have hηper (s t : ℝ) : η (s, t + 1) = η (s, t) := by simp only [η, hper]
-  have hηmean (s : ℝ) : ∫ t in (0 : ℝ)..1, η (s, t) = 0 :=
-    intervalIntegral_sub_intervalIntegral_zero_one fun t ↦ ξ (s, t)
+  have hηmean (s : ℝ) : ∫ t in (0 : ℝ)..1, η (s, t) = 0 := by
+    simpa only [interval_average_eq, sub_zero, inv_one, one_smul] using
+      intervalIntegral_sub_intervalAverage (fun t ↦ ξ (s, t)) 0 1
   have hbarB (s : ℝ) : ‖ξbar s‖ ≤ B := by
     simpa using intervalIntegral.norm_integral_le_of_norm_le_const
       (a := 0) (b := 1) (f := fun t ↦ ξ (s, t)) fun t _ ↦ hB (s, t)
@@ -193,16 +214,11 @@ private theorem eq_intervalIntegral_of_floerLinearization_eq_zero
   -- `η` solves `∂s η = -J ∂t η + J dX_H(γ) η`, since `ξ` does and `ξbar` solves the zero mode.
   have hηeq (z : ℝ × ℝ) : fderiv ℝ η z (1, 0) =
       -J (fderiv ℝ η z (0, 1)) + J (fderiv ℝ (ω.hamiltonianVectorField H) (γ z.1) (η z)) := by
-    have hd : HasFDerivAt η (fderiv ℝ ξ z -
-        (smulRight (1 : ℝ →L[ℝ] ℝ)
-          (J (fderiv ℝ (ω.hamiltonianVectorField H) (γ z.1) (ξbar z.1)))).comp (fst ℝ ℝ ℝ)) z :=
-      ((hξ.differentiable (by norm_num)) z).hasFDerivAt.sub
-        ((hbarderiv z.1).hasFDerivAt.comp z hasFDerivAt_fst)
-    have hz := hD z
+    have hz : ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
+        (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) η z = 0 :=
+      (floerLinearization_sub_intervalIntegral γ (hξ.of_le (by norm_num)) z).trans
+        (by rw [hD z, (hbarderiv z.1).deriv, sub_self, sub_zero])
     rw [floerLinearization_const_eq, map_sub] at hz
-    rw [hd.fderiv]
-    simp only [η, sub_apply, coe_comp, Function.comp_apply, coe_fst', smulRight_apply,
-      one_apply_eq_self, one_smul, map_zero, sub_zero, map_sub]
     linear_combination (norm := module) hz
   -- The cylinder `(s, t) ↦ γ(s)` has `‖du‖ ≤ M`.
   have hu (z : ℝ × ℝ) : ‖fderiv ℝ (fun z : ℝ × ℝ ↦ γ z.1) z‖ ≤ M := by
