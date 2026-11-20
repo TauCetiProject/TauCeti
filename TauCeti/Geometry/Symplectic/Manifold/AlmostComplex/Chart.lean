@@ -46,6 +46,9 @@ part of the equivalence; native tangent-frame transitions give coordinate conjug
   `mfderiv_comp_toEndomorphism` and `chartPushforward_eq_pullbackEnd_inChart`: it squares to `-1`,
   the chart derivative intertwines it with `J`, and it is a pullback of `J` read in the extended
   chart.
+* `ContMDiffAlmostComplexStructure.chartPushforward_eq_of_eventuallyEq_comp`: structures whose
+  differentials are intertwined by a map `Ψ` read the same in charts `ψ` and `ψ'` with
+  `ψ = ψ' ∘ Ψ`.
 * `ContMDiffAlmostComplexStructure.fderiv_chart_comp_add_eq_zero_iff`: for a map from the plane,
   the coordinate Cauchy–Riemann equation `∂ₛ(ψ ∘ g) + ψ_* J ∂ₜ(ψ ∘ g) = 0` at a point says that
   the derivative of `g` there intertwines multiplication by `i` with `J`.
@@ -211,6 +214,63 @@ theorem mfderiv_comp_toEndomorphism (ψ : OpenPartialHomeomorph M G) {y : M} (hy
     rintro z rfl
     rw [hleft]
   exact (key _ (ψ.left_inv hy)).symm
+
+/-- **Structures related by a map agree in corresponding charts.** Let `Ψ : M → M'` be
+differentiable at `y`, with differential intertwining `J` at `y` and `J'` at `Ψ y`, and let `ψ`,
+`ψ'` be charts of `M` and `M'` with values in `G` such that `ψ = ψ' ∘ Ψ` near `y`. Then `J` read in
+`ψ` and `J'` read in `ψ'` agree at `ψ y`. For a diffeomorphism `Ψ` this says that the coordinate
+expression of a structure does not change when both the structure and the chart are transported
+along `Ψ`. -/
+theorem chartPushforward_eq_of_eventuallyEq_comp {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] [IsManifold I' ∞ M'] (J' : ContMDiffAlmostComplexStructure I' n M')
+    {Ψ : M → M'} {ψ : OpenPartialHomeomorph M G} {ψ' : OpenPartialHomeomorph M' G} {y : M}
+    (hy : y ∈ ψ.source) (hy' : Ψ y ∈ ψ'.source) (heq : (ψ : M → G) =ᶠ[𝓝 y] ψ' ∘ Ψ)
+    (hΨ : MDifferentiableAt I I' Ψ y) (hψ' : MDifferentiableAt I' 𝓘(ℝ, G) ψ' (Ψ y))
+    (hψs : MDifferentiableAt 𝓘(ℝ, G) I ψ.symm (ψ y))
+    (hψs' : MDifferentiableAt 𝓘(ℝ, G) I' ψ'.symm (ψ' (Ψ y)))
+    (hJ : ∀ v : TangentSpace I y, mfderiv I I' Ψ y (J y v) = J' (Ψ y) (mfderiv I I' Ψ y v)) :
+    J.chartPushforward ψ (ψ y) = J'.chartPushforward ψ' (ψ y) := by
+  have hψ : MDifferentiableAt I 𝓘(ℝ, G) ψ y := (hψ'.comp y hΨ).congr_of_eventuallyEq heq
+  have hval : ψ y = ψ' (Ψ y) := heq.eq_of_nhds
+  have hchain : mfderiv I 𝓘(ℝ, G) ψ y = (mfderiv I' 𝓘(ℝ, G) ψ' (Ψ y)).comp (mfderiv I I' Ψ y) := by
+    rw [heq.mfderiv_eq]
+    exact mfderiv_comp y hψ' hΨ
+  -- The two pushforwards agree on the image of the differential `dψ_y`: both are `dψ_y ∘ J_y`
+  -- there, by the chain rule `dψ_y = dψ'_{Ψ y} ∘ dΨ_y` and the intertwining property of `dΨ_y`.
+  have hpt (v : TangentSpace I y) : J.chartPushforward ψ (ψ y) (mfderiv I 𝓘(ℝ, G) ψ y v) =
+      J'.chartPushforward ψ' (ψ y) (mfderiv I 𝓘(ℝ, G) ψ y v) := by
+    have h1 := DFunLike.congr_fun (J.mfderiv_comp_toEndomorphism ψ hy hψ hψs) v
+    have h2 := DFunLike.congr_fun (J'.mfderiv_comp_toEndomorphism ψ' hy' hψ' hψs')
+      (mfderiv I I' Ψ y v)
+    have h3 : (J'.chartPushforward ψ' (ψ' (Ψ y)) : G → G) = J'.chartPushforward ψ' (ψ y) := by
+      rw [hval]
+    -- The intermediate vectors live in tangent spaces at different points, all equal to `G` by
+    -- definition, so the steps are chained with `Eq.trans` rather than `calc`.
+    have e2 : mfderiv I 𝓘(ℝ, G) ψ y (J y v) =
+        mfderiv I' 𝓘(ℝ, G) ψ' (Ψ y) (mfderiv I I' Ψ y (J y v)) := by
+      rw [hchain]; rfl
+    have e3 : mfderiv I' 𝓘(ℝ, G) ψ' (Ψ y) (mfderiv I I' Ψ y (J y v)) =
+        mfderiv I' 𝓘(ℝ, G) ψ' (Ψ y) (J' (Ψ y) (mfderiv I I' Ψ y v)) := by
+      rw [hJ]
+    have e5 : J'.chartPushforward ψ' (ψ' (Ψ y))
+          (mfderiv I' 𝓘(ℝ, G) ψ' (Ψ y) (mfderiv I I' Ψ y v)) =
+        J'.chartPushforward ψ' (ψ y) (mfderiv I 𝓘(ℝ, G) ψ y v) := by
+      rw [h3, hchain]; rfl
+    exact h1.symm.trans (e2.trans (e3.trans (h2.trans e5)))
+  -- The differential `dψ_y` is onto, since `ψ` is a chart.
+  have hsurj (w : G) : ∃ v : TangentSpace I y, (mfderiv I 𝓘(ℝ, G) ψ y v : G) = w := by
+    have h := ψ.mfderiv_apply_mfderiv_symm_apply (ψ.map_source hy)
+      (by rwa [ψ.left_inv hy]) hψs w
+    -- Generalize the base point `ψ⁻¹ (ψ y)`, which is `y`.
+    have key : ∀ y₁, y₁ = y → (∃ v : TangentSpace I y₁, (mfderiv I 𝓘(ℝ, G) ψ y₁ v : G) = w) →
+        ∃ v : TangentSpace I y, (mfderiv I 𝓘(ℝ, G) ψ y v : G) = w := by
+      rintro _ rfl h
+      exact h
+    exact key _ (ψ.left_inv hy) ⟨_, h⟩
+  refine ContinuousLinearMap.ext fun w ↦ ?_
+  obtain ⟨v, rfl⟩ := hsurj w
+  exact hpt v
 
 /-- **The Cauchy–Riemann equation at a point, read in a chart.** For a map `g` from the plane
 into `M`, differentiable at `z`, and a chart `ψ` of `M` with values in a normed space, which is
