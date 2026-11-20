@@ -45,6 +45,8 @@ first letter `m > i` would be read before any `m - 1`. Consequently
 * `TauCeti.SkewSemistandardYoungTableau.isLatticeWord_readingWord_iff`: the lattice condition in
   terms of row counts.
 * `TauCeti.LRTableau.entry_le`: the entries in row `i` are at most `i`.
+* `TauCeti.LRTableau.rowCount_eq_zero_of_lt`, `TauCeti.LRTableau.sum_range_rowCount_of_lt`: row
+  `r` holds no letter above `r`, so the letters below `x > r` fill it.
 * `TauCeti.LRTableau.card_eq`: a Littlewood–Richardson tableau of shape `ν / λ` and content `μ`
   forces `|ν| = |λ| + |μ|`.
 * `TauCeti.natCard_lrTableau_bot_left`: `c^ν_{∅ μ}` is `1` if `ν = μ` and `0` otherwise.
@@ -150,6 +152,17 @@ theorem entry_le (T : LRTableau inner outer μ) (i j : ℕ) : T.val i j ≤ i :=
     List.count_eq_zero_of_not_mem fun h => (hsmall _ h).not_ge (by omega),
     List.count_eq_zero_of_not_mem (by simp; omega)] at hpre
   omega
+
+/-- A row `r` of a Littlewood–Richardson tableau contains no letter `k > r`. -/
+theorem rowCount_eq_zero_of_lt (T : LRTableau inner outer μ) {r k : ℕ} (h : r < k) :
+    T.val.rowCount r k = 0 := by
+  rw [rowCount_def, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+  exact fun j _ hj => (T.entry_le r j).not_gt (hj ▸ h)
+
+/-- The letters below `x` fill every row `r < x` of a Littlewood–Richardson tableau. -/
+theorem sum_range_rowCount_of_lt (T : LRTableau inner outer μ) {r x : ℕ} (h : r < x) :
+    ∑ k ∈ Finset.range x, T.val.rowCount r k = outer.rowLen r - inner.rowLen r :=
+  T.val.sum_range_rowCount_of_forall_lt fun j _ _ => (T.entry_le r j).trans_lt h
 
 /-- **The sizes of the shapes of a Littlewood–Richardson tableau add up**: a tableau of shape
 `ν / λ` and content `μ` forces `|ν| = |λ| + |μ|`. -/
