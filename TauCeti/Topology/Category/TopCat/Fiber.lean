@@ -200,4 +200,9 @@ middle map `p'` cannot be recovered from the composite square, as for `eqToHom_t
 lemma fiberMap_comp_fiberMap (sq : CommSq f p p' g) (sq' : CommSq f' p' p'' g') (b : B) :
     sq.fiberMap b ≫ sq'.fiberMap (g b) = (sq.horiz_comp sq').fiberMap b := (rfl)
 
+/-- Underlying `ContinuousMap` commutativity `p'.hom.comp f.hom = g.hom.comp p.hom` of a
+commutative square `sq : CommSq f p p' g` in `TopCat`. -/
+theorem hom_comp_eq (sq : CommSq f p p' g) : p'.hom.comp f.hom = g.hom.comp p.hom := by
+  rw [← TopCat.hom_comp, ← TopCat.hom_comp, sq.w]
+
 end CategoryTheory.CommSq
