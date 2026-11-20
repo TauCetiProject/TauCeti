@@ -235,18 +235,20 @@ theorem index_top : index (⊤ : L.IntermediateCarrier) = L.discriminant := by
     L.natCard_discriminantGroup]
 
 /-- The index of a full intermediate carrier is positive. -/
-theorem index_pos (M : L.IntermediateCarrier) [M.1.IsLattice ℚ] : 0 < index M := by
+theorem index_pos (M : L.IntermediateCarrier) [M.1.IsFullLattice ℚ] : 0 < index M := by
   rw [index_eq_natCard_quotient]
+  have := Submodule.IsLattice.free ℚ M.1
+  have := Submodule.IsLattice.finite ℚ M.1
   let _ : Finite (↑M.1 ⧸ L.carrier.submoduleOf M.1) :=
     Submodule.finiteQuotientOfFreeOfRankEq _ <| by
       rw [(Submodule.submoduleOfEquivOfLe M.2.1).finrank_eq,
-        Submodule.finrank_eq_finrank ℚ L.carrier Submodule.IsLattice.span_eq_top,
-        Submodule.finrank_eq_finrank ℚ M.1 Submodule.IsLattice.span_eq_top]
+        Submodule.finrank_eq_finrank ℚ L.carrier Submodule.IsFullLattice.span_eq_top,
+        Submodule.finrank_eq_finrank ℚ M.1 Submodule.IsFullLattice.span_eq_top]
   exact Nat.card_pos
 
 section IsLattice
 
-variable {M : L.IntermediateCarrier} [M.1.IsLattice ℚ]
+variable {M : L.IntermediateCarrier} [M.1.IsFullLattice ℚ]
 
 private theorem carrier_relIndex_toIntegralLattice_eq_index (hM : IsIntegral M) :
     L.carrier.toAddSubgroup.relIndex hM.toIntegralLattice.carrier.toAddSubgroup = index M := by
@@ -269,12 +271,12 @@ theorem IsIntegral.discriminant_mul_index_sq (hM : IsIntegral M) :
     (by rw [hM.toIntegralLattice_form])
     (by rw [hM.toIntegralLattice_carrier]; exact M.2.1)).symm
 
-omit [M.1.IsLattice ℚ] in
+omit [M.1.IsFullLattice ℚ] in
 /-- The square of the index of an integral overlattice divides the discriminant. -/
 theorem IsIntegral.index_sq_dvd_discriminant (hM : IsIntegral M) :
     index M ^ 2 ∣ L.discriminant := by
   by_cases h : L.form.Nondegenerate
-  · -- nondegeneracy makes `M.1` a full lattice, via `instIsLatticeIntermediateCarrier`
+  · -- nondegeneracy makes `M.1` a full lattice, via `instIsFullLatticeIntermediateCarrier`
     let _ : L.IsNondegenerate := ⟨h⟩
     exact Dvd.intro_left _ hM.discriminant_mul_index_sq
   · rw [(L.discriminant_eq_zero_iff).mpr h]
@@ -291,12 +293,12 @@ theorem IsIntegral.isUnimodular_iff_index_sq_eq_discriminant (hM : IsIntegral M)
     hM.toIntegralLattice.IsUnimodular ↔ index M ^ 2 = L.discriminant := by
   constructor
   · intro h
-    have hdual : hM.toIntegralLattice.dualCarrier.IsLattice ℚ := by
+    have hdual : hM.toIntegralLattice.dualCarrier.IsFullLattice ℚ := by
       rw [← hM.toIntegralLattice.isUnimodular_def.mp h]
       infer_instance
     let _ : L.IsNondegenerate := ⟨by
       rw [← hM.toIntegralLattice_form]
-      exact (hM.toIntegralLattice.isLattice_dualCarrier_iff_nondegenerate).mp hdual⟩
+      exact (hM.toIntegralLattice.isFullLattice_dualCarrier_iff_nondegenerate).mp hdual⟩
     rw [hM.toIntegralLattice.isUnimodular_iff_discriminant_eq_one] at h
     rw [← hM.discriminant_mul_index_sq, h, one_mul]
   · intro h
@@ -309,7 +311,7 @@ theorem IsIntegral.isUnimodular_iff_index_sq_eq_discriminant (hM : IsIntegral M)
 /-- **The discriminant of the integral overlattice glued along a subgroup of the discriminant
 group:** `disc(L_H) · |H|² = disc(L)`. -/
 theorem IsIntegral.discriminant_mul_natCard_sq {H : AddSubgroup L.DiscriminantGroup}
-    [(L.intermediateCarrierOfDiscriminantSubgroup H).1.IsLattice ℚ]
+    [(L.intermediateCarrierOfDiscriminantSubgroup H).1.IsFullLattice ℚ]
     (hH : IsIntegral (L.intermediateCarrierOfDiscriminantSubgroup H)) :
     hH.toIntegralLattice.discriminant * Nat.card H ^ 2 = L.discriminant := by
   rw [← index_intermediateCarrierOfDiscriminantSubgroup H]
@@ -319,7 +321,7 @@ theorem IsIntegral.discriminant_mul_natCard_sq {H : AddSubgroup L.DiscriminantGr
 the square of the order of that subgroup is the discriminant.** -/
 theorem IsIntegral.isUnimodular_iff_natCard_sq_eq_discriminant
     {H : AddSubgroup L.DiscriminantGroup}
-    [(L.intermediateCarrierOfDiscriminantSubgroup H).1.IsLattice ℚ]
+    [(L.intermediateCarrierOfDiscriminantSubgroup H).1.IsFullLattice ℚ]
     (hH : IsIntegral (L.intermediateCarrierOfDiscriminantSubgroup H)) :
     hH.toIntegralLattice.IsUnimodular ↔ Nat.card H ^ 2 = L.discriminant := by
   rw [hH.isUnimodular_iff_index_sq_eq_discriminant,

@@ -33,6 +33,8 @@ degree:
   estimates of inverse symbols.
 * `HomogeneousSymbol.isElliptic_adjoint_iff`: between Hilbert spaces, the pointwise adjoint of a
   symbol is elliptic exactly when the symbol is.
+* `HomogeneousSymbol.isElliptic_ofSphere_iff`: the homogeneous extension `ofSphere m g` of a map
+  `g` from the unit sphere of frequencies is elliptic exactly when `g` is invertible there.
 * `HomogeneousSymbol.IsElliptic.finrank_eq`: when the frequency space is nontrivial, an elliptic
   symbol identifies the two fibres, so they have the same dimension. On a trivial frequency space
   every symbol is elliptic (`HomogeneousSymbol.isElliptic_of_subsingleton`), and no such
@@ -244,6 +246,22 @@ theorem isElliptic_adjoint_iff {V W : Type*} [NormedAddCommGroup V] [InnerProduc
     [CompleteSpace V] [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
     {a : HomogeneousSymbol X E V W m} : a.adjoint.IsElliptic ↔ a.IsElliptic := by
   simp only [isElliptic_iff, coefficient_adjoint, ContinuousLinearMap.isInvertible_adjoint_iff]
+
+/-! ### Homogeneous extensions from the unit sphere -/
+
+/-- The homogeneous extension of `g` is elliptic exactly when `g` is invertible on the unit sphere
+of frequencies. -/
+theorem isElliptic_ofSphere_iff {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {g : X × E → V →L[ℂ] W} (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0}) :
+    (ofSphere m g hg).IsElliptic ↔ ∀ x ξ, ‖ξ‖ = 1 → (g (x, ξ)).IsInvertible := by
+  rw [isElliptic_iff]
+  refine ⟨fun h x ξ hξ ↦ ?_, fun h x ξ hξ ↦ ?_⟩
+  · simpa [coefficient_ofSphere_of_norm_eq_one g hg hξ] using
+      h x ξ (norm_ne_zero_iff.mp (hξ ▸ one_ne_zero))
+  · have hn : 0 < ‖ξ‖ := norm_pos_iff.mpr hξ
+    rw [coefficient_ofSphere_of_ne_zero g hg hξ, ← Complex.coe_smul,
+      ContinuousLinearMap.isInvertible_smul_iff (by exact_mod_cast (Real.rpow_pos_of_pos hn m).ne')]
+    exact h x _ (by simpa using norm_smul_inv_norm (𝕜 := ℝ) hξ)
 
 end HomogeneousSymbol
 

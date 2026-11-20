@@ -7,8 +7,6 @@ module
 
 public import TauCeti.ModelTheory.Infinitary.Infinite
 public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
-public import TauCeti.ModelTheory.RelationalConfiguration.Structure
-public import TauCeti.ModelTheory.RelationalConfiguration.Topology
 import TauCeti.ModelTheory.Syntax
 
 /-!
@@ -49,10 +47,9 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
 * `TauCeti.RelationalConfiguration.measurableSet_modelsOf`: model classes of such sentences are
   measurable, and `TauCeti.RelationalConfiguration.standardBorelSpace_modelsOf` makes them
   standard Borel.
-* `FirstOrder.Language.Equiv.mem_modelsOf_iff`: model classes are invariant under isomorphism of
-  the decoded structures.
-* `TauCeti.RelationalConfiguration.isomorphismInvariant_modelsOf`: model classes are closed under
-  isomorphism.
+* `FirstOrder.Language.Equiv.mem_modelsOf_iff` and
+  `TauCeti.RelationalConfiguration.isomorphismInvariant_modelsOf`: model classes are invariant
+  under isomorphism of the decoded structures.
 -/
 
 public section
@@ -215,8 +212,8 @@ namespace TauCeti.RelationalConfiguration
 
 variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {ι : Type uι}
 
-/-- Model classes are closed under isomorphism: a configuration isomorphic to a model of `φ` is a
-model of `φ`. -/
+/-- Model classes of infinitary sentences are isomorphism invariant, on any carrier and for any
+branching index. -/
 theorem isomorphismInvariant_modelsOf (φ : L.SentenceInf ι) :
     IsomorphismInvariant (modelsOf (V := V) φ) :=
   isomorphismInvariant_iff.2 fun _ _ h hc => by
