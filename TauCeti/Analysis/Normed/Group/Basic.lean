@@ -42,6 +42,9 @@ contains `0`.
 
 The translation by `c - c₀`, which takes `c₀` to `c`, preserves distances to these centres.
 
+A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` has norm at most
+`R / (1 - γ)`.
+
 ## Main declarations
 
 * `TauCeti.norm_sub_sq_le_two_mul` -- the squared triangle inequality through an intermediate
@@ -68,6 +71,8 @@ The translation by `c - c₀`, which takes `c₀` to `c`, preserves distances to
 * `TauCeti.nonneg_of_forall_norm_lt` -- a constant bound on `‖f x‖` over a ball of positive radius
   is nonnegative.
 * `TauCeti.dist_add_sub_eq` -- `dist (x + (c - c₀)) c = dist x c₀`.
+* `TauCeti.norm_le_div_of_isFixedPt` -- a fixed point `v` of `T` with `‖T v‖ ≤ R + γ ‖v‖` and
+  `γ < 1` satisfies `‖v‖ ≤ R / (1 - γ)`.
 -/
 
 public section
@@ -200,5 +205,14 @@ theorem nonneg_of_forall_norm_lt {E F 𝓕 : Type*} [SeminormedAddGroup E] [Semi
 theorem dist_add_sub_eq {E : Type*} [SeminormedAddCommGroup E] (x c c₀ : E) :
     dist (x + (c - c₀)) c = dist x c₀ := by
   rw [← dist_add_right x c₀ (c - c₀), add_sub_cancel]
+
+/-- A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` for some `γ < 1` has norm at most
+`R / (1 - γ)`. -/
+theorem norm_le_div_of_isFixedPt {E : Type*} [Norm E] {T : E → E} {v : E} {R γ : ℝ}
+    (hγ : γ < 1) (hT : ‖T v‖ ≤ R + γ * ‖v‖) (hv : Function.IsFixedPt T v) :
+    ‖v‖ ≤ R / (1 - γ) := by
+  rw [hv.eq] at hT
+  rw [le_div_iff₀ (sub_pos.2 hγ)]
+  linarith
 
 end TauCeti
