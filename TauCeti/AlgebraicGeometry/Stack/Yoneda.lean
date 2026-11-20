@@ -74,4 +74,9 @@ lemma yonedaEquiv_inverse (T : Scheme.{u}) (𝒳 : StackInGroupoids.{u}) :
     (yonedaEquiv T 𝒳).inverse = Pseudofunctor.yonedaPullback.{u + 1} 𝒳.toSchPseudofunctor T :=
   rfl
 
+@[simp]
+lemma yonedaEquiv_counitIso (T : Scheme.{u}) (𝒳 : StackInGroupoids.{u}) :
+    (yonedaEquiv T 𝒳).counitIso = Pseudofunctor.yonedaCounitIso.{u + 1} 𝒳.toSchPseudofunctor T :=
+  rfl
+
 end TauCeti.AlgebraicGeometry.StackInGroupoids

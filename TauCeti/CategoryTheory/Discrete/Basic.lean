@@ -17,6 +17,8 @@ between two objects, which then are equal.
 
 * `CategoryTheory.IsDiscrete.nonempty_hom_iff`: in a discrete category there is a morphism
   between two objects if and only if they are equal.
+* `CategoryTheory.IsDiscrete.map_eq`: a functor out of a discrete category sends parallel
+  morphisms to the same morphism.
 * `CategoryTheory.IsDiscrete.naturality`, `CategoryTheory.IsDiscrete.natIso`: every family of
   morphisms between two functors out of a discrete category is natural, so a family of
   isomorphisms is a natural isomorphism.
@@ -44,6 +46,11 @@ lemma IsDiscrete.naturality {D E : Type*} [Category* D] [Category* E] [IsDiscret
   obtain rfl := IsDiscrete.eq_of_hom φ
   obtain rfl := Subsingleton.elim φ (𝟙 a)
   simp
+
+/-- A functor out of a discrete category sends parallel morphisms to the same morphism. -/
+lemma IsDiscrete.map_eq {D E : Type*} [Category* D] [Category* E] [IsDiscrete D] (G : D ⥤ E)
+    {a b : D} (φ ψ : a ⟶ b) : G.map φ = G.map ψ := by
+  rw [Subsingleton.elim φ ψ]
 
 /-- The natural isomorphism between two functors out of a discrete category given by a family of
 isomorphisms; naturality is automatic by `IsDiscrete.naturality`. -/

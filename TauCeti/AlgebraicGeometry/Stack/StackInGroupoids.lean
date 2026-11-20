@@ -28,8 +28,9 @@ Morphisms of stacks in groupoids are strong transformations of the underlying ps
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.Hom`: morphisms of stacks in groupoids, the strong
   transformations of the underlying pseudofunctors. Identities and composites are Mathlib's
   `Pseudofunctor.StrongTrans.id` and `Pseudofunctor.StrongTrans.vcomp`.
-* `TauCeti.AlgebraicGeometry.StackInGroupoids.isGroupoid_hom`: with modifications as morphisms,
-  the morphisms between two stacks in groupoids form a groupoid.
+* `TauCeti.AlgebraicGeometry.StackInGroupoids.isGroupoid_obj`: every fibre is a groupoid, so by
+  `Pseudofunctor.isGroupoid_hom` the morphisms between two stacks in groupoids, with
+  modifications as morphisms, form a groupoid.
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.Hom.IsFiberwiseEquiv`: a morphism whose component
   on every scheme is an equivalence of fibre groupoids. It holds for identities, is closed under
   composition, and satisfies two-out-of-three.
@@ -74,18 +75,13 @@ attribute [instance] StackInGroupoids.isGroupoid StackInGroupoids.isStack
 abbrev Hom (X Y : StackInGroupoids.{u}) : Type (u + 1) :=
   Pseudofunctor.StrongTrans X.toSchPseudofunctor Y.toSchPseudofunctor
 
-open Pseudofunctor.StrongTrans in
-/-- The category of morphisms between two stacks in groupoids, with modifications as morphisms,
-is a groupoid: a modification is invertible as soon as its components are, and these are natural
-transformations between functors into groupoids. -/
-instance isGroupoid_hom (X Y : StackInGroupoids.{u}) :
-    IsGroupoid (X.toSchPseudofunctor ⟶ Y.toSchPseudofunctor) where
-  all_isIso Θ := by
-    have (a : LocallyDiscrete Scheme.{u}ᵒᵖ) : IsIso (Θ.as.app a) := by
-      obtain ⟨⟨T⟩⟩ := a
-      have : IsIso (Θ.as.app (.mk (op T))).toNatTrans := NatIso.isIso_of_isIso_app _
-      exact (Cat.Hom.isoMk (asIso (Θ.as.app (.mk (op T))).toNatTrans)).isIso_hom
-    exact isIso_of_isIso_app Θ
+/-- Every fibre of a stack in groupoids is a groupoid, also over a point of
+`LocallyDiscrete Scheme.{u}ᵒᵖ` not written as `.mk (op T)`. With `Pseudofunctor.isGroupoid_hom`,
+this makes the morphisms between two stacks in groupoids, with modifications as morphisms, a
+groupoid. -/
+instance isGroupoid_obj (X : StackInGroupoids.{u}) (a : LocallyDiscrete Scheme.{u}ᵒᵖ) :
+    IsGroupoid (X.toSchPseudofunctor.obj a) :=
+  X.isGroupoid a.as.unop
 
 namespace Hom
 
