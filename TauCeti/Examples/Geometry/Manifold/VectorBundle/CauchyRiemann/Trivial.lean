@@ -42,7 +42,7 @@ private theorem modelDzbar_ne_zero {H M : Type*} [TopologicalSpace H]
     modelDzbar (I := I) x ≠ 0 := by
   intro h
   have h₁ := congrArg (fun L : TangentSpace I x →L[ℝ] ℂ ↦ L (1 : ℂ)) h
-  have h₀ : (0 : TangentSpace I x →L[ℝ] ℂ) (1 : ℂ) = 0 := rfl
+  have h₀ : (0 : TangentSpace I x →L[ℝ] ℂ) (1 : ℂ) = 0 := zero_apply _
   exact one_ne_zero (by simpa only [map_one] using
     (modelDzbar_apply x 1).symm.trans (h₁.trans h₀))
 
@@ -68,7 +68,8 @@ private theorem torus_dzbar_ne_zero (x : UnitAddCircle × UnitAddCircle) :
     TauCeti.UnitAddTorus.dzbar x ≠ 0 := by
   intro h
   have h₁ := congrArg (fun L : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) x →L[ℝ] ℂ ↦ L (1, 0)) h
-  have h₀ : (0 : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) x →L[ℝ] ℂ) ((1, 0) : ℝ × ℝ) = 0 := rfl
+  have h₀ : (0 : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) x →L[ℝ] ℂ) ((1, 0) : ℝ × ℝ) = 0 :=
+    zero_apply _
   have h₁' : (1 : ℂ) = 0 := by
     simpa only [TauCeti.UnitAddTorus.dzbar_apply, Complex.ofReal_one, Complex.ofReal_zero,
       zero_mul, sub_zero] using h₁.trans h₀

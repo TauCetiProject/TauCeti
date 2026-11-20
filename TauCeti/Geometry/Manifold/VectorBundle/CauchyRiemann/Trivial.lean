@@ -21,9 +21,10 @@ Functions `M → F` are the sections of the trivial bundle `M × F`, and their `
 `∂bar σ = (dσ)^{0,1}`, is the `(0,1)`-part of the canonical connection of the trivial bundle. So
 it is a complex linear real Cauchy–Riemann operator: `∂bar (g σ) = g ∂bar σ + (∂bar g) ⊗ σ` for
 real valued `g`. The complementary operator `∂ σ = dσ - ∂bar σ = (dσ)^{1,0}` is also defined here;
-its values are `(1,0)`-forms, so it is not a real Cauchy–Riemann operator. On a complex normed
-space with multiplication by `i` as its almost complex structure, `∂bar` and `∂` are the conjugate
-Wirtinger derivative and the Wirtinger derivative.
+its values are `(1,0)`-forms. On a nonempty base with a nontrivial tangent model and nonzero
+target, it is not a real Cauchy–Riemann operator. On a complex normed space with multiplication
+by `i` as its almost complex structure, `∂bar` and `∂` are the conjugate Wirtinger derivative
+and the Wirtinger derivative.
 
 ## Main declarations
 
@@ -223,7 +224,7 @@ theorem dbarFunction_eq_zeroOnePart_trivial :
       j.zeroOnePart (V := Bundle.Trivial M F) (CovariantDerivative.trivial (I := I) F σ x) := by
   funext σ x
   rw [CovariantDerivative.trivial_apply]
-  rfl
+  exact j.dbarFunction_eq_zeroOnePart σ x
 
 /-- `∂bar` on functions is a real Cauchy–Riemann operator on the trivial bundle: its values are
 `(0,1)`-forms, and `∂bar (g σ) = g ∂bar σ + (∂bar g) ⊗ σ` for real valued `g`. -/
@@ -249,7 +250,7 @@ theorem isZeroOneForm_conjSMulForm (η : Π x : M, TangentSpace I x →L[ℝ] �
     j.IsZeroOneForm (V := Trivial M ℂ) (conjSMulForm η x ξ) := by
   refine isZeroOneForm_iff.2 fun v ↦ ?_
   rw [conjSMulForm_apply, smul_apply, isZeroOneForm_iff.1 (hη x) v, smul_neg, smul_comm]
-  rfl
+  simp only [smul_apply]
 
 /-- `∂bar σ + conj σ • η` is a real Cauchy–Riemann operator when `η` is a `(0,1)`-form. -/
 theorem isRealCauchyRiemannOperator_dbarFunction_add_conjSMulForm
