@@ -506,6 +506,24 @@ instance isIso_restrictionMap (i : L ⟶ K) (p : X ⟶ S) [IsIso p] (σ : K ⟶ 
     infer_instance
   exact IsIso.of_isIso_comp_right _ (Limits.pullback.snd _ _)
 
+/-- Under the slice universal property, the first projection of the relative restriction map
+restricts the join map along `i`. -/
+-- The projection and `homEquiv_comp_map_coe` already simplify this expression.
+lemma homEquiv_comp_restrictionMap_fst (i : L ⟶ K) (p : X ⟶ S) (σ : K ⟶ X)
+    {T : SSet.{u}} (F : T ⟶ slice σ) :
+    (homEquiv (F ≫ restrictionMap i p σ ≫ Limits.pullback.fst _ _)).val =
+      join.map (𝟙 T) i ≫ (homEquiv F).val := by
+  rw [restrictionMap_fst, homEquiv_comp_map_coe, Category.comp_id]
+
+/-- Under the slice universal property, the second projection of the relative restriction map
+postcomposes the join map with `p`. -/
+-- The projection and `homEquiv_comp_map_coe` already simplify this expression.
+lemma homEquiv_comp_restrictionMap_snd (i : L ⟶ K) (p : X ⟶ S) (σ : K ⟶ X)
+    {T : SSet.{u}} (F : T ⟶ slice σ) :
+    (homEquiv (F ≫ restrictionMap i p σ ≫ Limits.pullback.snd _ _)).val =
+      (homEquiv F).val ≫ p := by
+  rw [restrictionMap_snd, homEquiv_comp_map_coe, join.map_id, Category.id_comp]
+
 section lifting
 
 open Limits
@@ -516,9 +534,10 @@ variable {A B P : SSet.{u}}
 `j : A ⟶ B`, `i : L ⟶ K` and `p : X ⟶ S`, and let `u : P ⟶ B ⋆ K` be the map induced on a pushout
 `P` of `A ⋆ K ← A ⋆ L → B ⋆ L`. Then `j` lifts against every relative slice map
 `X_{/σ} ⟶ X_{/i ≫ σ} ×_{S_{/i ≫ σ ≫ p}} S_{/σ ≫ p}` exactly when `u` lifts against `p`: through
-the universal property of the slice, a lifting problem of either kind is a pair of maps
-`A ⋆ K ⟶ X` and `B ⋆ L ⟶ X` agreeing on `A ⋆ L`, together with a map `B ⋆ K ⟶ S` restricting to
-their composites with `p`, and a solution is a map `B ⋆ K ⟶ X` over `S` extending both. -/
+the universal property of the slice, a lifting problem, ranging over all diagrams `σ`, is a pair
+of maps `A ⋆ K ⟶ X` and `B ⋆ L ⟶ X` agreeing on `A ⋆ L`, together with a map `B ⋆ K ⟶ S`
+restricting to their composites with `p`, and a solution is a map `B ⋆ K ⟶ X` over `S` extending
+both. For a fixed `σ`, the map `A ⋆ K ⟶ X` must restrict to `σ` on `K`. -/
 theorem forall_hasLiftingProperty_restrictionMap_iff_of_isPushout (j : A ⟶ B) (i : L ⟶ K)
     (p : X ⟶ S) {f : join A K ⟶ P} {g : join B L ⟶ P}
     (h : IsPushout (join.map (𝟙 A) i) (join.map j (𝟙 L)) f g) {u : P ⟶ join B K}
@@ -544,10 +563,10 @@ theorem forall_hasLiftingProperty_restrictionMap_iff_of_isPushout (j : A ⟶ B) 
     have hl₁ := congrArg (fun F ↦ (homEquiv F).val) sq'.fac_left
     have hl₂ := congrArg (fun F ↦ (homEquiv F).val) (sq'.fac_right =≫ pullback.fst _ _)
     have hl₃ := congrArg (fun F ↦ (homEquiv F).val) (sq'.fac_right =≫ pullback.snd _ _)
-    simp only [Category.assoc, restrictionMap_fst, restrictionMap_snd, pullback.lift_fst,
-      pullback.lift_snd, homEquiv_comp_map_coe, join.map_id, Category.id_comp, Category.comp_id,
-      Equiv.apply_symm_apply] at hl₁ hl₂ hl₃
-    simp only [homEquiv_comp_coe] at hl₁ hl₂ hl₃
+    simp only [Category.assoc, pullback.lift_fst, pullback.lift_snd,
+      Equiv.apply_symm_apply, homEquiv_comp_restrictionMap_fst,
+      homEquiv_comp_restrictionMap_snd] at hl₂ hl₃
+    simp only [homEquiv_comp_coe, Equiv.apply_symm_apply] at hl₁
     exact ⟨⟨⟨(homEquiv sq'.lift).val, h.hom_ext (by rw [reassoc_of% hf, hl₁])
       (by rw [reassoc_of% hg, hl₂]), hl₃⟩⟩⟩
   · obtain ⟨b₁, b₂, hb, rfl⟩ : ∃ b₁ b₂ hb, b = pullback.lift b₁ b₂ hb :=
@@ -558,10 +577,10 @@ theorem forall_hasLiftingProperty_restrictionMap_iff_of_isPushout (j : A ⟶ B) 
     have h₁ := congrArg (fun F ↦ (homEquiv F).val) (sq.w =≫ pullback.fst _ _)
     have h₂ := congrArg (fun F ↦ (homEquiv F).val) (sq.w =≫ pullback.snd _ _)
     have h₃ := congrArg (fun F ↦ (homEquiv F).val) hb
-    simp only [Category.assoc, restrictionMap_fst, restrictionMap_snd, pullback.lift_fst,
-      pullback.lift_snd, homEquiv_comp_map_coe, join.map_id, Category.id_comp,
-      Category.comp_id] at h₁ h₂ h₃
-    simp only [homEquiv_comp_coe] at h₁ h₂ h₃
+    simp only [Category.assoc, pullback.lift_fst, pullback.lift_snd,
+      homEquiv_comp_restrictionMap_fst, homEquiv_comp_restrictionMap_snd] at h₁ h₂
+    simp only [homEquiv_comp_map_coe, join.map_id, Category.id_comp, Category.comp_id] at h₃
+    simp only [homEquiv_comp_coe] at h₁ h₂
     have sq' : CommSq (h.desc (homEquiv a).val (homEquiv b₁).val h₁) u p (homEquiv b₂).val :=
       ⟨h.hom_ext (by simp [reassoc_of% hf, h₂]) (by simp [reassoc_of% hg, h₃])⟩
     have hl₁ : join.map j (𝟙 K) ≫ sq'.lift = (homEquiv a).val := by

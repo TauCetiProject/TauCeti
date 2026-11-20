@@ -152,11 +152,12 @@ private noncomputable def opEquiv :
 /-- Maps `X ⟶ C_{p/}` correspond to maps `Xᵒᵖ ⟶ Cᵒᵖ_{/pᵒᵖ}` by taking opposites, since the
 coslice is the opposite of this slice. -/
 private def opHomEquiv : (X ⟶ coslice p) ≃ (X.op ⟶ slice (opFunctor.map p)) :=
-  (opEquivalence.toAdjunction.homEquiv X (slice (opFunctor.map p))).symm
+  (opSliceIso p).homToEquiv.trans
+    (opEquivalence.toAdjunction.homEquiv X (slice (opFunctor.map p))).symm
 
 private lemma opHomEquiv_comp (f : Y ⟶ X) (F : X ⟶ coslice p) :
     opHomEquiv (f ≫ F) = opFunctor.map f ≫ opHomEquiv F :=
-  opEquivalence.toAdjunction.homEquiv_naturality_left_symm f F
+  opEquivalence.toAdjunction.homEquiv_naturality_left_symm f (F ≫ (opSliceIso p).hom)
 
 /-- **The universal property of the coslice**: maps `X ⟶ C_{p/}` correspond to maps `K ⋆ X ⟶ C`
 extending `p`. -/
@@ -310,8 +311,11 @@ private lemma opHomEquiv_comp_opFunctor_map (F : X ⟶ coslice p)
     (M : slice (opFunctor.map p) ⟶ slice (opFunctor.map q)) :
     opHomEquiv (F ≫ (opSliceIso p).hom ≫ opFunctor.map M ≫ (opSliceIso q).inv) =
       opHomEquiv F ≫ M := by
-  simp only [opSliceIso, Iso.refl_hom, Iso.refl_inv]
-  exact opEquivalence.toAdjunction.homEquiv_naturality_right_symm F M
+  have h : (F ≫ (opSliceIso p).hom ≫ opFunctor.map M ≫ (opSliceIso q).inv) ≫
+      (opSliceIso q).hom = (F ≫ (opSliceIso p).hom) ≫ opFunctor.map M := by
+    simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  exact (congrArg (opEquivalence.toAdjunction.homEquiv X (slice (opFunctor.map q))).symm h).trans
+    (opEquivalence.toAdjunction.homEquiv_naturality_right_symm (F ≫ (opSliceIso p).hom) M)
 
 /-- **Maps of coslices are opposite to maps of slices**: through the identification of coslices
 with opposite slices (`SSet.coslice.opSliceIso`), the map of coslices induced by `i` and `g`
@@ -408,7 +412,7 @@ coslices with opposite slices (`SSet.coslice.opSliceIso`) and the comparison of 
 noncomputable def opSliceRestrictionMapArrowIso (j : A ⟶ B) (p : X ⟶ S) (τ : B ⟶ X) :
     Arrow.mk (opFunctor.map
       (slice.restrictionMap (opFunctor.map j) (opFunctor.map p) (opFunctor.map τ))) ≅
-        Arrow.mk (restrictionMap j p τ) :=
+        Arrow.mk (restrictionMap j p τ) := by
   -- The opposite of the pullback of slices is a pullback of the corresponding coslices.
   have hP := ((IsPullback.of_hasPullback
       (slice.map (𝟙 _) (opFunctor.map p) (by simp) :
@@ -422,22 +426,40 @@ noncomputable def opSliceRestrictionMapArrowIso (j : A ⟶ B) (p : X ⟶ S) (τ 
     (Category.id_comp _).symm
     (opSliceIso_inv_comp_map (p := j ≫ τ) (𝟙 A) p _ (CategoryTheory.Functor.map_id _ _) rfl).symm
     (opSliceIso_inv_comp_map (p := τ ≫ p) j (𝟙 S) _ rfl (CategoryTheory.Functor.map_id _ _)).symm
-  -- Both projections of the comparison are instances of `SSet.coslice.opSliceIso_inv_comp_map`.
-  Arrow.isoMk (opSliceIso τ).symm hP.isoPullback (pullback.hom_ext
+  -- The mapped diagrams are definitionally equal via `opFunctor.map_comp`; `erw` lets
+  -- rewriting recognize them without unfolding the slice or pullback constructions.
+  exact Arrow.isoMk (opSliceIso τ).symm hP.isoPullback (pullback.hom_ext
     (by
       simp only [Arrow.mk_hom, Iso.symm_hom, Category.assoc, restrictionMap_fst]
-      exact (opSliceIso_inv_comp_map (p := τ) j (𝟙 X) _ rfl
-        (CategoryTheory.Functor.map_id _ _)).trans
-        (((congrArg (opFunctor.map · ≫ (opSliceIso (j ≫ τ)).inv)
-          (slice.restrictionMap_fst _ _ _)).symm.trans (Functor.map_comp_assoc _ _ _ _)).trans
-            (congrArg (_ ≫ ·) hP.isoPullback_hom_fst.symm)))
+      erw [hP.isoPullback_hom_fst]
+      refine (opSliceIso_inv_comp_map (p := τ) j (𝟙 X) _ rfl
+        (CategoryTheory.Functor.map_id _ _)).trans ?_
+      exact (congrArg (opFunctor.map · ≫ (opSliceIso (j ≫ τ)).inv)
+        (slice.restrictionMap_fst _ _ _)).symm.trans (Functor.map_comp_assoc _ _ _ _))
     (by
       simp only [Arrow.mk_hom, Iso.symm_hom, Category.assoc, restrictionMap_snd]
-      exact (opSliceIso_inv_comp_map (p := τ) (𝟙 B) p _ (CategoryTheory.Functor.map_id _ _)
-        rfl).trans
-        (((congrArg (opFunctor.map · ≫ (opSliceIso (τ ≫ p)).inv)
-          (slice.restrictionMap_snd _ _ _)).symm.trans (Functor.map_comp_assoc _ _ _ _)).trans
-            (congrArg (_ ≫ ·) hP.isoPullback_hom_snd.symm))))
+      erw [hP.isoPullback_hom_snd]
+      refine (opSliceIso_inv_comp_map (p := τ) (𝟙 B) p _
+        (CategoryTheory.Functor.map_id _ _) rfl).trans ?_
+      exact (congrArg (opFunctor.map · ≫ (opSliceIso (τ ≫ p)).inv)
+        (slice.restrictionMap_snd _ _ _)).symm.trans (Functor.map_comp_assoc _ _ _ _)))
+
+@[simp]
+lemma opSliceRestrictionMapArrowIso_hom_left (j : A ⟶ B) (p : X ⟶ S) (τ : B ⟶ X) :
+    (opSliceRestrictionMapArrowIso j p τ).hom.left = (opSliceIso τ).inv :=
+  (rfl)
+
+@[reassoc (attr := simp)]
+lemma opSliceRestrictionMapArrowIso_hom_right_fst (j : A ⟶ B) (p : X ⟶ S) (τ : B ⟶ X) :
+    (opSliceRestrictionMapArrowIso j p τ).hom.right ≫ pullback.fst _ _ =
+      opFunctor.map (pullback.fst _ _) ≫ (opSliceIso (j ≫ τ)).inv := by
+  apply IsPullback.isoPullback_hom_fst
+
+@[reassoc (attr := simp)]
+lemma opSliceRestrictionMapArrowIso_hom_right_snd (j : A ⟶ B) (p : X ⟶ S) (τ : B ⟶ X) :
+    (opSliceRestrictionMapArrowIso j p τ).hom.right ≫ pullback.snd _ _ =
+      opFunctor.map (pullback.snd _ _) ≫ (opSliceIso (τ ≫ p)).inv := by
+  apply IsPullback.isoPullback_hom_snd
 
 /-- **Lifting against relative coslice maps is lifting against relative slice maps**: for maps
 `i : L ⟶ K`, `j : A ⟶ B`, `p : X ⟶ S` and `τ : B ⟶ X`, the map `i` lifts against the relative
@@ -450,18 +472,16 @@ theorem hasLiftingProperty_restrictionMap_iff_slice (i : L ⟶ K) (j : A ⟶ B) 
       HasLiftingProperty (opFunctor.map i)
         (slice.restrictionMap (opFunctor.map j) (opFunctor.map p) (opFunctor.map τ)) :=
   (HasLiftingProperty.iff_of_arrow_iso_right i (opSliceRestrictionMapArrowIso j p τ).symm).trans
-    ((HasLiftingProperty.iff_of_arrow_iso_left
-      (Arrow.isoOfNatIso opFunctorCompOpFunctorIso (Arrow.mk i) :
-        Arrow.mk (opFunctor.map (opFunctor.map i)) ≅ Arrow.mk i) _).symm.trans
-      (opFunctor.hasLiftingProperty_iff_of_isEquivalence _ _))
+    (opEquivalence.toAdjunction.hasLiftingProperty_iff i _).symm
 
 /-- **Lifting problems for relative coslices are extension problems along a pushout-join.** Let
 `j : A ⟶ B`, `i : L ⟶ K` and `p : X ⟶ S`, and let `u : P ⟶ B ⋆ K` be the map induced on a pushout
 `P` of `A ⋆ K ← A ⋆ L → B ⋆ L`. Then `i` lifts against every relative coslice map
 `X_{τ/} ⟶ X_{j ≫ τ/} ×_{S_{j ≫ τ ≫ p/}} S_{τ ≫ p/}` exactly when `u` lifts against `p`: through
-the universal property of the coslice, a lifting problem of either kind is a pair of maps
-`A ⋆ K ⟶ X` and `B ⋆ L ⟶ X` agreeing on `A ⋆ L`, together with a map `B ⋆ K ⟶ S` restricting to
-their composites with `p`, and a solution is a map `B ⋆ K ⟶ X` over `S` extending both. It is
+the universal property of the coslice, a lifting problem, ranging over all diagrams `τ`, is a pair
+of maps `A ⋆ K ⟶ X` and `B ⋆ L ⟶ X` agreeing on `A ⋆ L`, together with a map `B ⋆ K ⟶ S`
+restricting to their composites with `p`, and a solution is a map `B ⋆ K ⟶ X` over `S` extending
+both. For a fixed `τ`, the map `B ⋆ L ⟶ X` must restrict to `τ` on `B`. The criterion is
 deduced from its slice counterpart
 `SSet.slice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout` by passing to opposites
 (`SSet.coslice.hasLiftingProperty_restrictionMap_iff_slice`). -/
