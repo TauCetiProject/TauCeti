@@ -293,6 +293,29 @@ def orthogonalSphereIsoTwoFieldEquatorsPreimage :
   _root_.TopCat.isoOfHomeo ((orthogonalSphereHomeomorphEquator _).trans
     ((twoFieldEquatorsFiberHomeomorph huv).trans (twoFieldEquatorsFiberHomeomorphPreimage x)))
 
+/-- The isomorphism `TauCeti.orthogonalSphereIsoTwoFieldEquatorsPreimage` sends `q` to `(x, q)`. -/
+@[simp]
+theorem coe_orthogonalSphereIsoTwoFieldEquatorsPreimage_hom_apply
+    (q : sphere (0 : (ℝ ∙ (⟨v x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 huv⟩ :
+      (ℝ ∙ u x)ᗮ))ᗮ) 1) :
+    (((orthogonalSphereIsoTwoFieldEquatorsPreimage huv).hom q : twoFieldEquators u v) :
+        sphere (0 : E) 1 × sphere (0 : E) 1) =
+      (x, (orthogonalSphereToEquator (u x)
+        (orthogonalSphereToEquator _ q : sphere (0 : (ℝ ∙ u x)ᗮ) 1) : sphere (0 : E) 1)) :=
+  (coe_twoFieldEquatorsFiberHomeomorph_apply huv (orthogonalSphereHomeomorphEquator _ q)).trans
+    (by rw [orthogonalSphereHomeomorphEquator_apply])
+
+/-- The inverse of `TauCeti.orthogonalSphereIsoTwoFieldEquatorsPreimage` sends `(x, q)` to `q`. -/
+@[simp]
+theorem coe_orthogonalSphereIsoTwoFieldEquatorsPreimage_inv_apply
+    (xq : (twoFieldEquatorsProj u v ⁻¹' {x} : Set _)) :
+    (((((orthogonalSphereIsoTwoFieldEquatorsPreimage huv).inv xq :
+      sphere (0 : (ℝ ∙ (⟨v x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 huv⟩ :
+        (ℝ ∙ u x)ᗮ))ᗮ) 1) : (ℝ ∙ (⟨v x, Submodule.mem_orthogonal_singleton_iff_inner_left.2 huv⟩ :
+          (ℝ ∙ u x)ᗮ))ᗮ) : (ℝ ∙ u x)ᗮ) : E) = (xq : twoFieldEquators u v).1.2 :=
+  (congrArg Subtype.val (coe_orthogonalSphereHomeomorphEquator_symm_apply _ _)).trans
+    (coe_twoFieldEquatorsFiberHomeomorph_symm_apply huv _)
+
 /-- The fibre of the space of equators of `Sⁿ` is a sphere of dimension `n - 2`: when `u x` and
 `v x` are nonzero and orthogonal in a space of dimension `n + 2`, the orthogonal complement of
 `v x` in `(u x)⊥` has dimension `n`. -/
