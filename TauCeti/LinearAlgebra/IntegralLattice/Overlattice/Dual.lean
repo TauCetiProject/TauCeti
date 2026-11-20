@@ -210,6 +210,7 @@ theorem IsIntegral.dualClassHom_mem_orthogonalComplement {M : L.IntermediateCarr
 /-- **Double duality for intermediate carriers.** -/
 @[simp]
 theorem dual_dual (M : L.IntermediateCarrier) : dual (dual M) = M := by
+  have := Submodule.IsLattice.free ℚ M.1
   refine Subtype.ext ?_
   rw [coe_dual, coe_dual]
   simpa only [L.form_flip] using
