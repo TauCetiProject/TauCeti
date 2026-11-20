@@ -104,9 +104,6 @@ theorem standardMonomial_single (i : ι) (n : ℕ) : standardMonomial x (single 
     ((Multiset.eq_sort_iff _).2 ⟨List.pairwise_replicate.2 (Or.inr le_rfl), rfl⟩).symm]
   simp
 
-theorem standardMonomial_single_one (i : ι) : standardMonomial x (single i 1) = x i := by
-  simp
-
 /-- A monoid homomorphism maps standard monomials in the `x i` to standard monomials in their
 images. -/
 theorem map_standardMonomial {S F : Type*} [Monoid S] [FunLike F R S] [MonoidHomClass F R S]
