@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.FreeGroup.Basic
 import Mathlib.Data.Nat.Pairing
 import TauCeti.GroupTheory.FreeGroup.Basic
-import TauCeti.GroupTheory.FreeGroup.Merzljakov.BlockInsertAll
+import TauCeti.GroupTheory.FreeGroup.Merzljakov.Block.InsertAll
 
 /-!
 # Merzljakov's theorem for one block of quantifiers, and the values of the formal solution
@@ -43,7 +43,7 @@ shows that its values at `g` are the witnesses `f g`.
 The construction is that of the proof of Merzljakov's theorem for alternating blocks of
 quantifiers, `FreeGroup.exists_formalSolution_of_skolem` in
 `TauCeti.GroupTheory.FreeGroup.Merzljakov.FormalSolution`, whose shared steps are in
-`TauCeti.GroupTheory.FreeGroup.Merzljakov.BlockInsertAll`, specialised to one block of quantifiers
+`TauCeti.GroupTheory.FreeGroup.Merzljakov.Block.InsertAll`, specialised to one block of quantifiers
 and extended by the values at the point `g`. With one block, the Merzljakov words only need
 disjoint exponent lists, with no condition on the witnesses, and only the variables occurring in
 `w` are inserted, so `X` and `Y` may be infinite.

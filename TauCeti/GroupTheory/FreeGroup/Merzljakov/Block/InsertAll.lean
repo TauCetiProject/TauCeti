@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.Cancellation
-public import TauCeti.GroupTheory.FreeGroup.Merzljakov.BlockInsertion
+public import TauCeti.GroupTheory.FreeGroup.Merzljakov.Block.Insertion
 import Mathlib.Algebra.Order.BigOperators.Group.List
 import Mathlib.Tactic.Group
 

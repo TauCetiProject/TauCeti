@@ -7,10 +7,10 @@ module
 
 public import Mathlib.GroupTheory.Commutator.Basic
 public import TauCeti.GroupTheory.FreeGroup.Merzljakov.Basic
-public import TauCeti.GroupTheory.FreeGroup.Merzljakov.BlockInsertion
+public import TauCeti.GroupTheory.FreeGroup.Merzljakov.Block.Insertion
 public import TauCeti.Logic.ForallExistsAlt
 import TauCeti.GroupTheory.FreeGroup.Basic
-import TauCeti.GroupTheory.FreeGroup.Merzljakov.BlockInsertAll
+import TauCeti.GroupTheory.FreeGroup.Merzljakov.Block.InsertAll
 
 /-!
 # Merzljakov's theorem for a single equation over a free group
@@ -47,7 +47,7 @@ in `h j` the blocks of the variables `x_t` with `t > j` do not occur by the Merz
 condition, so only `x₀, …, x_j` are inserted. Applying the endomorphism sending `x_i` to
 `u_i⁻¹ x_i v_i⁻¹` and fixing `A` produces the required formal solution
 (`FreeGroup.lift_eq_one_of_translate`). These steps, shared with the form of the theorem for one
-block of quantifiers, are in `TauCeti.GroupTheory.FreeGroup.Merzljakov.BlockInsertAll`.
+block of quantifiers, are in `TauCeti.GroupTheory.FreeGroup.Merzljakov.Block.InsertAll`.
 
 Compared with Kharlampovich–Myasnikov (§4.4), which selects "marked" occurrences of blocks via a
 solution table over a finite alphabet, this proof replaces all occurrences of an unsplit block using
