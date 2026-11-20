@@ -26,6 +26,9 @@ Iterates of a derivation remain linear over the scalars, so they commute with fi
 linear combinations. On products they satisfy the general Leibniz rule
 `Dⁿ (a * b) = ∑ (n choose i) Dⁱ a Dⁿ⁻ⁱ b`.
 
+The derivative of the total inverse `Ring.inverse a` is `-(Ring.inverse a) ^ 2 • D a`, as for
+`⅟a`; for instance a derivation kills the inverse of every invertible natural number.
+
 An element whose derivative is a unit is squarefree, since a square factor `x * x` of `a` makes
 `x` divide `D a`. This detects squarefreeness of a polynomial from a partial derivative that is a
 unit, without factoring it.
@@ -40,6 +43,7 @@ unit, without factoring it.
 * `Derivation.iterate_apply_mul`: the general Leibniz rule for iterates of a derivation.
 * `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
 * `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
+* `Derivation.leibniz_ringInverse`: the derivative of `Ring.inverse a`.
 * `Derivation.squarefree_of_isUnit`: an element whose derivative is a unit is squarefree.
 -/
 
@@ -133,5 +137,21 @@ theorem squarefree_of_isUnit (D : Derivation R A A) {a : A} (ha : IsUnit (D a)) 
   refine isUnit_of_dvd_unit ?_ ha
   rw [mul_assoc, leibniz, smul_eq_mul, smul_eq_mul]
   exact dvd_add (dvd_mul_right x _) (dvd_mul_of_dvd_left (dvd_mul_right x y) _)
+
+section Ring
+
+variable {R A M : Type*} [CommRing R] [CommRing A] [Algebra R A] [AddCommGroup M] [Module A M]
+  [Module R M]
+
+/-- The derivative of the ring inverse: `D (Ring.inverse a) = -(Ring.inverse a) ^ 2 • D a`, the
+form of `Derivation.leibniz_invOf` for the total inverse. When `a` is not a unit, both sides
+vanish. -/
+theorem leibniz_ringInverse (D : Derivation R A M) (a : A) :
+    D (Ring.inverse a) = -Ring.inverse a ^ 2 • D a := by
+  by_cases ha : IsUnit a
+  · exact D.leibniz_of_mul_eq_one (Ring.inverse_mul_cancel a ha)
+  · simp [Ring.inverse_non_unit a ha]
+
+end Ring
 
 end Derivation
