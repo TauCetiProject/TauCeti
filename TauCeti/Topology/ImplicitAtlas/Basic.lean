@@ -302,6 +302,25 @@ theorem regLocus_eq_empty_of_neg {I : Finset A}
     (hI : d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) < 0) : 𝒜.regLocus I = ∅ :=
   eq_empty_of_forall_notMem fun _ hx ↦ (𝒜.nonneg_of_mem_regLocus hx).not_gt hI
 
+/-- **An ineffective point has no regular base.** Suppose that for some index `α` the obstruction
+space `E_α` is zero, the thickenings `X_∅` and `X_α` are single points and the group `Γ_α` is
+nontrivial, so that it acts on `X_α` ineffectively. Then the regular locus of `X_∅` is empty: a
+nontrivial element of `Γ_α` fixes the point of `Z_∅α = X_α`, which `ψ_∅α` sends to the point of
+`X_∅`, and `Γ_α` acts freely on `ψ_∅α⁻¹(X_∅^reg)`. -/
+theorem regLocus_empty_eq_empty_of_nontrivial (α : A) [Nontrivial (Γ α)] [Subsingleton (E α)]
+    [Subsingleton (T ∅)] [Subsingleton (T {α})] [Nonempty (T {α})] : 𝒜.regLocus ∅ = ∅ := by
+  refine eq_empty_of_forall_notMem fun y hy ↦ ?_
+  obtain ⟨x⟩ := ‹Nonempty (T {α})›
+  have hx : x ∈ kuranishiZeroSet 𝒜.kuranishi ∅ {α} := mem_kuranishiZeroSet.2 fun ⟨β, hβ⟩ _ ↦ by
+    obtain rfl := Finset.mem_singleton.1 hβ
+    exact Subsingleton.elim _ _
+  obtain ⟨γ, hγ⟩ := exists_ne (1 : Γ α)
+  have hfree := 𝒜.eq_one_of_act_eq (Finset.empty_subset {α}) ⟨x, hx⟩
+    (Subsingleton.elim y (𝒜.footprintMap _ ⟨x, hx⟩) ▸ hy)
+    (Pi.mulSingle (M := fun β : ({α} : Finset A) ↦ Γ β) ⟨α, Finset.mem_singleton_self α⟩ γ)
+    (funext fun β ↦ (Finset.notMem_empty _ β.2).elim) (Subsingleton.elim _ _)
+  exact hγ (by simpa using congr_fun hfree ⟨α, Finset.mem_singleton_self α⟩)
+
 include 𝒜 in
 /-- A space carries no implicit atlas whose expected dimensions `d + m_I` are all negative,
 unless it is empty: the regular footprints cover it, and they are empty. -/
