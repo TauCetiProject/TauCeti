@@ -75,6 +75,12 @@ def almostComplexStructureAt (J : ContMDiffAlmostComplexStructure I n M) (x : M)
     ext v
     exact congrArg (fun A : TangentSpace I x →L[ℝ] TangentSpace I x ↦ A v) (J.square_neg x)
 
+/-- The defining identity `J² = -1`, as a product in the ring of endomorphisms of a fibre. -/
+theorem toEndomorphism_mul_self (J : ContMDiffAlmostComplexStructure I n M) (x : M) :
+    J.toEndomorphism x * J.toEndomorphism x = -1 := by
+  rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def]
+  exact J.square_neg x
+
 @[simp]
 theorem almostComplexStructureAt_toLinearMap (J : ContMDiffAlmostComplexStructure I n M)
     (x : M) :
