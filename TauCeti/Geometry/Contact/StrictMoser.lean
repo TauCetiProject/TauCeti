@@ -61,7 +61,8 @@ exactly. For a family of contact forms `α_t`, Gray's equation with `β = ∂_t 
 flow that pulls `α_t` back to a positive multiple of `α_s`, whereas the strict equation with
 `β = -∂_t α_t` integrates to a flow that pulls `α_t` back to `α_s` itself (see below). The price is
 the Reeb-direction equation, an ordinary differential equation along the Reeb flow, which the
-Moser theorems below take as a hypothesis and which is solved near a transverse slice at the end.
+Moser theorems below take as a hypothesis and which is solved near a transverse slice by
+`TauCeti.SmoothForm.exists_contMDiff_mvfderiv_reebVectorField_eq`.
 
 For a smooth family of contact forms `α_t`, represented by a one-form on `ℝ × M`, and a smooth
 time-dependent function `h_t`, the **strict Moser vector field**
