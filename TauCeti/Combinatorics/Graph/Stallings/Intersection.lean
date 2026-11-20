@@ -72,7 +72,7 @@ intersection of the subgroups accepted by two folded graphs. By
 theorem range_lift_treeLoopWord_core_prod (hS : S.IsFolded) (hT : T.IsFolded)
     (hO : (S.prod T).core.graph.IsOrientation O) :
     (FreeGroup.lift (fun e : ↥(O \ R.darts) =>
-      (S.prod T).core.treeLoopWord R (S.prod T).core.base e.1)).range =
+      (S.prod T).core.treeLoopWord R (S.prod T).core.base e.val)).range =
         S.subgroup S.base ⊓ T.subgroup T.base := by
   rw [range_lift_treeLoopWord _ R _ hO, core_prod_subgroup hS hT]
 

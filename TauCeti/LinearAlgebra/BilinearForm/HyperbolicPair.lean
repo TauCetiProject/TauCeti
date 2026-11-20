@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Torsion
 
 /-!
@@ -16,7 +17,8 @@ import TauCeti.LinearAlgebra.TensorProduct.Torsion
 Let `B` be a `ℤ`-valued bilinear form on an abelian group `H`, and let `v, t ∈ H` be a hyperbolic
 pair, `B v v = B t t = 0` and `B v t = B t v = 1`, which spans `H` modulo torsion: every `x ∈ H`
 differs from some `a v + c t` by an element of finite additive order. Such a form is even
-(`LinearMap.BilinForm.even_apply_self_of_isOfFinAddOrder_span`). This file computes its scalar
+(`LinearMap.BilinForm.even_apply_self_of_isOfFinAddOrder_span`) and symmetric
+(`LinearMap.BilinForm.isSymm_of_isOfFinAddOrder_span`). This file computes its scalar
 extension `B_𝕜 = B.baseChange 𝕜` to `𝕜 ⊗[ℤ] H`, for a field `𝕜` of characteristic zero, typically
 `ℝ`.
 
@@ -59,6 +61,21 @@ namespace LinearMap.BilinForm
 
 variable {𝕜 H : Type*} [Field 𝕜] [AddCommGroup H] {B : LinearMap.BilinForm ℤ H} {v t : H}
 
+/-- A `ℤ`-valued form on a group spanned modulo torsion by `v` and `t` is symmetric as soon as
+`B v t = B t v`, since it sees each argument only modulo torsion. In particular a form spanned by
+a hyperbolic pair is symmetric, as is its scalar extension `B_𝕜` (`IsSymm.baseChange`). -/
+theorem isSymm_of_isOfFinAddOrder_span (hvt : B v t = B t v)
+    (hspan : ∀ x : H, ∃ a c : ℤ, IsOfFinAddOrder (x - (a • v + c • t))) : B.IsSymm := by
+  refine ⟨fun x y ↦ ?_⟩
+  obtain ⟨a, c, hx⟩ := hspan x
+  obtain ⟨a', c', hy⟩ := hspan y
+  rw [B.apply_eq_apply_of_isOfFinAddOrder_sub_left hx,
+    B.apply_eq_apply_of_isOfFinAddOrder_sub_right hy,
+    B.apply_eq_apply_of_isOfFinAddOrder_sub_left hy,
+    B.apply_eq_apply_of_isOfFinAddOrder_sub_right hx]
+  simp only [map_add, map_zsmul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hvt]
+  ring
+
 /-- The polar form of `B_𝕜` on `a (1 ⊗ v)` and `c (1 ⊗ t)`, for a hyperbolic pair `v, t`, is
 `2ac`. -/
 private theorem polar_toQuadraticMap_baseChange_smul_one_tmul (hvt : B v t = 1) (htv : B t v = 1)
@@ -74,6 +91,8 @@ private theorem isTotallyIsotropic_span_one_tmul {x : H} (hx : B x x = 0) :
     (B.baseChange 𝕜).toQuadraticMap.IsTotallyIsotropic (𝕜 ∙ ((1 : 𝕜) ⊗ₜ[ℤ] x)) :=
   QuadraticMap.isTotallyIsotropic_span_singleton_iff.mpr <| by
     simp [BilinMap.toQuadraticMap_apply, hx]
+
+section CharZero
 
 variable [CharZero 𝕜]
 
@@ -159,6 +178,8 @@ theorem nondegenerate_toQuadraticMap_baseChange_of_isOfFinAddOrder_span (ht : B 
       (h _ (hline v)) with h1 | rfl
     · exact absurd h1 one_ne_zero
     · exact zero_smul _ _
+
+end CharZero
 
 variable [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
 

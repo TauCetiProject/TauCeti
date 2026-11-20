@@ -48,10 +48,8 @@ theorem ofBounded_resolvent_eq_resolvent (A : X →L[ℝ] X) {lambda : ℝ} (hla
     (ofBounded A).resolvent (ofBounded_hasGrowthBound A) lambda hlambda =
       _root_.resolvent A lambda := by
   have hlambda_pos : 0 < lambda := (norm_nonneg A).trans_lt hlambda
-  have hmem : lambda ∈ resolventSet ℝ A := spectrum.mem_resolventSet_of_norm_lt_mul <|
-    lt_of_le_of_lt
-      (mul_le_mul_of_nonneg_left ContinuousLinearMap.norm_id_le (norm_nonneg A))
-      (by simpa only [Real.norm_eq_abs, abs_of_pos hlambda_pos, mul_one] using hlambda)
+  have hmem : lambda ∈ resolventSet ℝ A := mem_resolventSet_of_norm_lt <| by
+    simpa only [Real.norm_eq_abs, abs_of_pos hlambda_pos] using hlambda
   have hright : (lambda • 1 - A) *
       (ofBounded A).resolvent (ofBounded_hasGrowthBound A) lambda hlambda = 1 := by
     ext x

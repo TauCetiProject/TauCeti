@@ -86,7 +86,7 @@ structure NashOnSubmanifold (d : ℕ) (f : (Fin n → ℝ) → τ → ℝ) (S : 
 /-- Unfolding `TauCeti.NashOnSubmanifold`. -/
 theorem nashOnSubmanifold_iff :
     NashOnSubmanifold d f S ↔ AnalyticOnSubmanifold d f S ∧ IsSemialgebraicOn f S :=
-  ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+  ⟨fun h ↦ ⟨h.analyticOnSubmanifold, h.isSemialgebraicOn⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 namespace NashOnSubmanifold
 

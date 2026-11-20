@@ -66,25 +66,25 @@ variable {ι : Type*} [LinearOrder ι] {K : AbstractSimplicialComplex ι} {k : �
 variable (y : Realization K)
 
 omit [LinearOrder ι] in
-private theorem support_nonempty : y.1.support.Nonempty := by
+private theorem support_nonempty : y.val.support.Nonempty := by
   simpa using K.isRelLowerSet_faces.prop_of_mem (support_mem K y)
 
 omit [LinearOrder ι] in
-private theorem sum_support : ∑ j ∈ y.1.support, y.1 j = 1 := by
+private theorem sum_support : ∑ j ∈ y.val.support, y.val j = 1 := by
   rw [← Realization.sum_eq_one K y, Finsupp.sum]
 
 /-- The first vertex `j` of the carrier of `y` at which the coordinate sum of `y` over the
 vertices `≤ j` exceeds `t`, or the last vertex of the carrier if there is none. -/
 private def quantile (t : ℝ) : ι :=
-  (insert (y.1.support.max' (support_nonempty y))
-    {j ∈ y.1.support | t < ∑ j' ∈ y.1.support with j' ≤ j, y.1 j'}).min' (insert_nonempty _ _)
+  (insert (y.val.support.max' (support_nonempty y))
+    {j ∈ y.val.support | t < ∑ j' ∈ y.val.support with j' ≤ j, y.val j'}).min' (insert_nonempty _ _)
 
 private theorem quantile_mem_insert (t : ℝ) :
-    quantile y t ∈ insert (y.1.support.max' (support_nonempty y))
-      {j ∈ y.1.support | t < ∑ j' ∈ y.1.support with j' ≤ j, y.1 j'} :=
+    quantile y t ∈ insert (y.val.support.max' (support_nonempty y))
+      {j ∈ y.val.support | t < ∑ j' ∈ y.val.support with j' ≤ j, y.val j'} :=
   min'_mem _ _
 
-private theorem quantile_mem (t : ℝ) : quantile y t ∈ y.1.support := by
+private theorem quantile_mem (t : ℝ) : quantile y t ∈ y.val.support := by
   rcases mem_insert.mp (quantile_mem_insert y t) with h | h
   · rw [h]
     exact max'_mem _ _
@@ -101,19 +101,19 @@ variable {y} in
 when `t` is below the coordinate sum of `y` over `p`. -/
 private theorem quantile_mem_iff {t : ℝ} (h₀ : 0 ≤ t) (h₁ : t < 1) {p : ι → Prop}
     [DecidablePred p] (hp : Antitone p) :
-    p (quantile y t) ↔ t < ∑ j ∈ y.1.support with p j, y.1 j := by
-  set σ := y.1.support
+    p (quantile y t) ↔ t < ∑ j ∈ y.val.support with p j, y.val j := by
+  set σ := y.val.support
   set m := quantile y t
-  have hsum : ∑ j ∈ σ, y.1 j = 1 := sum_support y
-  have hy0 (j : ι) : 0 ≤ y.1 j := Realization.nonneg K y j
+  have hsum : ∑ j ∈ σ, y.val j = 1 := sum_support y
+  have hy0 (j : ι) : 0 ≤ y.val j := Realization.nonneg K y j
   -- The coordinate sum up to `m` exceeds `t`, and that up to any earlier vertex does not.
-  have hm : t < ∑ j ∈ σ with j ≤ m, y.1 j := by
+  have hm : t < ∑ j ∈ σ with j ≤ m, y.val j := by
     rcases mem_insert.mp (quantile_mem_insert y t) with h | h
     · rw [show m = σ.max' (support_nonempty y) from h,
         filter_true_of_mem fun j hj => le_max' σ j hj, hsum]
       exact h₁
     · exact (mem_filter.mp h).2
-  have hlt (j : ι) (hj : j ∈ σ) (hjm : j < m) : ∑ j' ∈ σ with j' ≤ j, y.1 j' ≤ t := by
+  have hlt (j : ι) (hj : j ∈ σ) (hjm : j < m) : ∑ j' ∈ σ with j' ≤ j, y.val j' ≤ t := by
     by_contra! h
     exact hjm.not_ge (min'_le _ _ (mem_insert_of_mem (mem_filter.mpr ⟨hj, h⟩)))
   constructor
@@ -125,7 +125,7 @@ private theorem quantile_mem_iff {t : ℝ} (h₀ : 0 ≤ t) (h₁ : t < 1) {p : 
     have hsub : σ.filter p ⊆ σ.filter (· < m) :=
       monotone_filter_right _ fun j _ hj => lt_of_not_ge fun hmj => hpm (hp hmj hj)
     -- The coordinate sum below `m` is at most `t`: it is the sum up to the vertex before `m`.
-    have hbelow : ∑ j ∈ σ with j < m, y.1 j ≤ t := by
+    have hbelow : ∑ j ∈ σ with j < m, y.val j ≤ t := by
       rcases (σ.filter (· < m)).eq_empty_or_nonempty with he | hne
       · rw [he, sum_empty]
         exact h₀
@@ -143,7 +143,7 @@ map assigns to the offset `θ`: its entry `l` is `quantile y ((l + θ) / k)`. -/
 private def edgewiseTuple (θ : ℝ) : Fin k → ι :=
   fun l => quantile y ((l + θ) / k)
 
-private theorem edgewiseTuple_mem (θ : ℝ) (l : Fin k) : edgewiseTuple y θ l ∈ y.1.support :=
+private theorem edgewiseTuple_mem (θ : ℝ) (l : Fin k) : edgewiseTuple y θ l ∈ y.val.support :=
   quantile_mem y _
 
 private theorem edgewiseTuple_le_edgewiseTuple {θ θ' : ℝ} {l l' : Fin k}
@@ -168,7 +168,7 @@ variable {y} in
 in `p` exactly when `l + θ` is below `k` times the coordinate sum of `y` over `p`. -/
 private theorem edgewiseTuple_mem_iff {θ : ℝ} (hθ : θ ∈ Set.Ico 0 1) {l : Fin k}
     {p : ι → Prop} [DecidablePred p] (hp : Antitone p) :
-    p (edgewiseTuple y θ l) ↔ l + θ < k * ∑ j ∈ y.1.support with p j, y.1 j := by
+    p (edgewiseTuple y θ l) ↔ l + θ < k * ∑ j ∈ y.val.support with p j, y.val j := by
   have hk : (0 : ℝ) < k := by exact_mod_cast l.pos
   have hl : (l : ℝ) + 1 ≤ k := by exact_mod_cast l.isLt
   rw [edgewiseTuple, quantile_mem_iff (by have := hθ.1; positivity)
@@ -176,7 +176,7 @@ private theorem edgewiseTuple_mem_iff {θ : ℝ} (hθ : θ ∈ Set.Ico 0 1) {l :
 
 /-- The offsets `θ ∈ [0, 1)` to which `edgewiseTuple` assigns the vertex `u`. -/
 private def offsets (u : K.EdgewiseVertex k) : Set ℝ :=
-  {θ ∈ Set.Ico 0 1 | edgewiseTuple y θ = u.1}
+  {θ ∈ Set.Ico 0 1 | edgewiseTuple y θ = u.val}
 
 private theorem measurableSet_offsets (u : K.EdgewiseVertex k) :
     MeasurableSet (offsets y u) := by
@@ -187,7 +187,7 @@ private theorem measurableSet_offsets (u : K.EdgewiseVertex k) :
 
 /-- The vertices of the edgewise subdivision with all entries in the carrier of `y`. -/
 private def vertices : Finset (K.EdgewiseVertex k) :=
-  (finite_edgewiseVertex_entries_subset _ k y.1.support).toFinset
+  (finite_edgewiseVertex_entries_subset _ k y.val.support).toFinset
 
 /-- Every offset `θ ∈ [0, 1)` is assigned a vertex. -/
 private theorem exists_mem_vertices_mem_offsets (hk : k ≠ 0) {θ : ℝ} (hθ : θ ∈ Set.Ico 0 1) :
@@ -210,8 +210,8 @@ private theorem measure_offsets_ne_top (u : K.EdgewiseVertex k) : volume (offset
 at `k` times the coordinate sum of `y` over `p`, minus `l`. -/
 private theorem biUnion_offsets_eq (hk : k ≠ 0) (l : Fin k) {p : ι → Prop} [DecidablePred p]
     (hp : Antitone p) :
-    ⋃ u ∈ (vertices y).filter (p <| ·.1 l), offsets y u =
-      Set.Ico 0 (min 1 (k * ∑ j ∈ y.1.support with p j, y.1 j - l)) := by
+    ⋃ u ∈ (vertices y).filter (p <| ·.val l), offsets y u =
+      Set.Ico 0 (min 1 (k * ∑ j ∈ y.val.support with p j, y.val j - l)) := by
   ext θ
   simp only [Set.mem_iUnion, mem_filter, exists_prop, Set.mem_Ico, lt_min_iff]
   constructor
@@ -228,21 +228,21 @@ private theorem biUnion_offsets_eq (hk : k ≠ 0) (l : Fin k) {p : ι → Prop} 
 `p`, summed over `l`, is `k` times the coordinate sum of `y` over `p`. -/
 private theorem sum_measureReal_offsets_mul_card (hk : k ≠ 0) {p : ι → Prop} [DecidablePred p]
     (hp : Antitone p) :
-    ∑ u ∈ vertices (k := k) y, volume.real (offsets y u) * #{l | p (u.1 l)} =
-      k * ∑ j ∈ y.1.support with p j, y.1 j := by
-  set P := ∑ j ∈ y.1.support with p j, y.1 j
+    ∑ u ∈ vertices (k := k) y, volume.real (offsets y u) * #{l | p (u.val l)} =
+      k * ∑ j ∈ y.val.support with p j, y.val j := by
+  set P := ∑ j ∈ y.val.support with p j, y.val j
   have hP₀ : 0 ≤ P := sum_nonneg fun j _ => Realization.nonneg K y j
   have hP₁ : P ≤ 1 := (sum_support y).symm ▸
     sum_le_sum_of_subset_of_nonneg (filter_subset _ _) fun j _ _ => Realization.nonneg K y j
   -- For each `l`, the offsets of the vertices whose entry `l` lies in `p` form `[0, 1)` cut at
   -- `k * P - l`.
-  have hl (l : Fin k) : ∑ u ∈ vertices y with p (u.1 l), volume.real (offsets y u) =
+  have hl (l : Fin k) : ∑ u ∈ vertices y with p (u.val l), volume.real (offsets y u) =
       max (min 1 (k * P - l)) 0 := by
     rw [← measureReal_biUnion_finset (pairwiseDisjoint_offsets y _)
       (fun u _ => measurableSet_offsets y u) fun u _ => measure_offsets_ne_top y u,
       biUnion_offsets_eq y hk l hp, Real.volume_real_Ico, sub_zero]
-  calc ∑ u ∈ vertices y, volume.real (offsets y u) * #{l | p (u.1 l)}
-      = ∑ l : Fin k, ∑ u ∈ vertices y with p (u.1 l), volume.real (offsets y u) := by
+  calc ∑ u ∈ vertices y, volume.real (offsets y u) * #{l | p (u.val l)}
+      = ∑ l : Fin k, ∑ u ∈ vertices y with p (u.val l), volume.real (offsets y u) := by
         simp only [card_filter, Nat.cast_sum, mul_sum, Nat.cast_ite, Nat.cast_one,
           Nat.cast_zero, mul_ite, mul_one, mul_zero]
         rw [sum_comm]
@@ -269,15 +269,15 @@ private theorem preimageCoord_apply (u : K.EdgewiseVertex k) :
 
 private theorem exists_offset_of_mem_support {u : K.EdgewiseVertex k}
     (hu : u ∈ (preimageCoord y).support) :
-    ∃ θ ∈ Set.Ico (0 : ℝ) 1, edgewiseTuple y θ = u.1 := by
+    ∃ θ ∈ Set.Ico (0 : ℝ) 1, edgewiseTuple y θ = u.val := by
   obtain ⟨θ, hθ, hθu⟩ := nonempty_of_measureReal_ne_zero
     (by rwa [Finsupp.mem_support_iff, preimageCoord_apply] at hu)
   exact ⟨θ, hθ, hθu⟩
 
 private theorem sum_preimageCoord_mul_card (hk : k ≠ 0) {p : ι → Prop} [DecidablePred p]
     (hp : Antitone p) :
-    ∑ u ∈ (preimageCoord (k := k) y).support, preimageCoord y u * #{l | p (u.1 l)} =
-      k * ∑ j ∈ y.1.support with p j, y.1 j := by
+    ∑ u ∈ (preimageCoord (k := k) y).support, preimageCoord y u * #{l | p (u.val l)} =
+      k * ∑ j ∈ y.val.support with p j, y.val j := by
   rw [sum_subset (fun u hu => mem_vertices_of_measureReal_ne_zero y
       (by rwa [Finsupp.mem_support_iff, preimageCoord_apply] at hu))
     fun u _ hu => by rw [Finsupp.notMem_support_iff.mp hu, zero_mul]]
@@ -301,7 +301,7 @@ private theorem support_preimageCoord_mem (hk : k ≠ 0) :
     · obtain ⟨θ, -, hθu⟩ := exists_offset_of_mem_support y hu
       exact image_subset_iff.mpr fun l _ => hθu ▸ edgewiseTuple_mem y θ l
     · obtain ⟨u, hu⟩ := hne
-      exact ⟨u.1 ⟨0, Nat.pos_of_ne_zero hk⟩,
+      exact ⟨u.val ⟨0, Nat.pos_of_ne_zero hk⟩,
         mem_biUnion.mpr ⟨u, hu, mem_image_of_mem _ (mem_univ _)⟩⟩
   · obtain ⟨θ, -, hθu⟩ := exists_offset_of_mem_support y hu
     obtain ⟨θ', -, hθw⟩ := exists_offset_of_mem_support y hw
@@ -333,17 +333,19 @@ theorem edgewiseSubdivisionRealizationMap_surjective (hk : k ≠ 0) :
     Finset.sum_apply', Finsupp.smul_apply, smul_eq_mul, edgewisePoint_apply]
   -- The number of entries equal to `i` is the number at most `i` minus the number below `i`.
   have hcount (u : K.EdgewiseVertex k) :
-      (#{l | u.1 l = i} : ℝ) = #{l | u.1 l ≤ i} - #{l | u.1 l < i} := by
+      (#{l | u.val l = i} : ℝ) = #{l | u.val l ≤ i} - #{l | u.val l < i} := by
     rw [eq_sub_iff_add_eq, ← Nat.cast_add, Nat.cast_inj, ← card_union_of_disjoint
       (disjoint_filter.mpr fun l _ h h' => h'.ne h)]
     congr 1
     ext l
     simp [le_iff_eq_or_lt]
   -- The coordinate of `y` at `i` is a difference of two coordinate sums over lower sets.
-  have hy : ∑ j ∈ y.1.support with j ≤ i, y.1 j - ∑ j ∈ y.1.support with j < i, y.1 j = y.1 i := by
+  have hy : ∑ j ∈ y.val.support with j ≤ i, y.val j - ∑ j ∈ y.val.support with j < i,
+      y.val j = y.val i := by
     rw [sum_filter, sum_filter, ← sum_sub_distrib]
-    rw [sum_congr rfl fun j _ => show (if j ≤ i then y.1 j else 0) - (if j < i then y.1 j else 0) =
-      if j = i then y.1 j else 0 by
+    rw [sum_congr rfl fun j _ => show (if j ≤ i then y.val j else 0) -
+        (if j < i then y.val j else 0) =
+      if j = i then y.val j else 0 by
         rcases lt_trichotomy j i with h | rfl | h
         · simp [h, h.le, h.ne]
         · simp
@@ -351,12 +353,12 @@ theorem edgewiseSubdivisionRealizationMap_surjective (hk : k ≠ 0) :
     split_ifs with h
     · rfl
     · exact (Finsupp.notMem_support_iff.mp h).symm
-  calc ∑ u ∈ (preimageCoord y).support, preimageCoord y u * ((k : ℝ)⁻¹ * #{l | u.1 l = i})
-      = (k : ℝ)⁻¹ * (∑ u ∈ (preimageCoord y).support, preimageCoord y u * #{l | u.1 l ≤ i} -
-          ∑ u ∈ (preimageCoord y).support, preimageCoord y u * #{l | u.1 l < i}) := by
+  calc ∑ u ∈ (preimageCoord y).support, preimageCoord y u * ((k : ℝ)⁻¹ * #{l | u.val l = i})
+      = (k : ℝ)⁻¹ * (∑ u ∈ (preimageCoord y).support, preimageCoord y u * #{l | u.val l ≤ i} -
+          ∑ u ∈ (preimageCoord y).support, preimageCoord y u * #{l | u.val l < i}) := by
         rw [← sum_sub_distrib, mul_sum]
         exact sum_congr rfl fun u _ => by rw [hcount]; ring
-    _ = y.1 i := by
+    _ = y.val i := by
         rw [sum_preimageCoord_mul_card y hk (p := (· ≤ i)) antitone_le,
           sum_preimageCoord_mul_card y hk (p := (· < i)) antitone_lt, ← mul_sub, hy, ← mul_assoc,
           inv_mul_cancel₀ (Nat.cast_ne_zero.mpr hk), one_mul]
@@ -366,8 +368,8 @@ open Set TauCeti.SetLike in
 polyhedron, expressed in its original coordinate space. -/
 theorem iUnion_convexHull_range_edgewisePoint (K : AbstractSimplicialComplex ι) (hk : k ≠ 0) :
     (⋃ ρ : Face (K.edgewiseSubdivision k),
-      convexHull ℝ (range fun a : ρ.1 => (edgewisePoint a.1.1 : ι → ℝ))) =
-      range (fun x : Realization K => (x.1 : ι → ℝ)) := by
+      convexHull ℝ (range fun a : ρ.val => (edgewisePoint a.val.val : ι → ℝ))) =
+      range (fun x : Realization K => (x.val : ι → ℝ)) := by
   simp_rw [← range_edgewiseSubdivisionRealizationMap_faceInclusion]
   ext z
   constructor
@@ -377,7 +379,7 @@ theorem iUnion_convexHull_range_edgewisePoint (K : AbstractSimplicialComplex ι)
   · rintro ⟨x, rfl⟩
     obtain ⟨y, rfl⟩ := edgewiseSubdivisionRealizationMap_surjective (K := K) hk x
     let ρ := carrier _ y
-    let t : StandardSimplex ρ.1 := ⟨y.1, mem_convexHull_carrier _ y⟩
+    let t : StandardSimplex ρ.val := ⟨y.val, mem_convexHull_carrier _ y⟩
     have ht : faceInclusion _ ρ t = y := Subtype.ext (faceInclusion_val _ _ _)
     exact mem_iUnion.mpr ⟨ρ, t, by simp only [ht]⟩
 

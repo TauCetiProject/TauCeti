@@ -87,7 +87,7 @@ private theorem exists_finite_affine_cover_le_nonvanishingLocus {U : X.Opens}
       A ≤ L.nonvanishingLocus e := by
     obtain ⟨V, t, hxV⟩ := exists_mem_trivialization L x
     obtain ⟨_, ⟨A, hA, rfl⟩, hxA, hAUV⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open
-      (show (x : X) ∈ ((U ⊓ V : X.Opens) : Set X) from ⟨x.2, hxV⟩) (U ⊓ V).isOpen
+      (show (x : X) ∈ ((U ⊓ V : X.Opens) : Set X) from ⟨x.property, hxV⟩) (U ⊓ V).isOpen
     have hAV : A ≤ V := fun y hy ↦ (hAUV hy).2
     refine ⟨A, L.presheaf.map (homOfLE hAV).op (trivializationGenerator L t), hA, hxA,
       fun y hy ↦ (hAUV hy).1, ?_⟩

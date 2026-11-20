@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
@@ -34,6 +36,9 @@ a function over measurable sets `s n` have limit superior at most its `Lᵖ` sem
   `‖uₙ‖ ≤ ‖u‖`, then the `Lp` classes of `uₙ` converge to any representative of `u`.
 * `TauCeti.tendsto_eLpNorm_restrict_Ioo`: for a finite exponent, the `Lᵖ` norm of a function on
   the unit interval `(t, t + 1)` tends to zero as `t` tends to infinity in either direction.
+* `TauCeti.tendsto_eLpNorm_restrict_closedBall`: for a finite exponent and a measure vanishing on
+  points, the `Lᵖ` norm of a function on the closed ball of radius `r` about a point tends to zero
+  with `r`.
 * `TauCeti.limsup_eLpNorm_restrict_le`: `limsup ‖g‖_{Lᵖ(s n)} ≤ ‖g‖_{Lᵖ(limsup s n)}` for
   `0 < p < ∞` when the `s n` lie in a set `t` with `g ∈ Lᵖ(t)`.
 -/
@@ -133,6 +138,36 @@ theorem tendsto_eLpNorm_restrict_Ioo {F : Type*} [NormedAddCommGroup F] {μ : Me
       (hout x).mono fun t ht ↦ (Set.indicator_of_notMem ht g).symm)
   simpa only [sub_zero,
     eLpNorm_indicator_eq_eLpNorm_restrict measurableSet_Ioo.nullMeasurableSet] using h
+
+/-- For a finite exponent `q` and a measure vanishing on points, the `Lᵖ` norm of a function on the
+closed ball of radius `r` about a point tends to zero as `r → 0`: off the centre, a point leaves
+the ball once `r` is below its distance to the centre, so the cut-off functions tend to zero
+almost everywhere, dominated by the function itself. -/
+theorem tendsto_eLpNorm_restrict_closedBall {α F : Type*} [MetricSpace α] [MeasurableSpace α]
+    [OpensMeasurableSpace α] {μ : Measure α} [NullSingletonClass μ] [NormedAddCommGroup F]
+    {q : ℝ≥0∞} (hq : q ≠ ∞) {g : α → F} (hg : MemLp g q μ) (x : α) :
+    Tendsto (fun r ↦ eLpNorm g q (μ.restrict (Metric.closedBall x r))) (𝓝 0) (𝓝 0) := by
+  -- almost every point differs from the centre, and leaves the shrinking balls
+  have hne : ∀ᵐ y ∂μ, y ≠ x := by
+    rw [ae_iff]
+    simp
+  have hlim : ∀ᵐ y ∂μ, Tendsto (fun r ↦ (Metric.closedBall x r).indicator g y) (𝓝 0)
+      (𝓝 ((0 : α → F) y)) := by
+    filter_upwards [hne] with y hy
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [gt_mem_nhds (dist_pos.2 hy)] with r hr
+    rw [Set.indicator_of_notMem fun h ↦ not_le.2 hr (Metric.mem_closedBall.1 h), Pi.zero_apply]
+  have h := tendsto_eLpNorm_sub_of_ae_tendsto (m := μ) (l := 𝓝 (0 : ℝ)) (C := 1) hq
+    (f := fun r ↦ (Metric.closedBall x r).indicator g) (g := 0)
+    (Eventually.of_forall fun r ↦
+      hg.aestronglyMeasurable.indicator Metric.isClosed_closedBall.measurableSet)
+    hg
+    (Eventually.of_forall fun r ↦ Eventually.of_forall fun y ↦ by
+      rw [Pi.zero_apply, sub_zero, ENNReal.coe_one, one_mul]
+      exact eNorm_indicator_le_eNorm_self _ y)
+    hlim
+  simpa only [sub_zero, eLpNorm_indicator_eq_eLpNorm_restrict
+    Metric.isClosed_closedBall.measurableSet.nullMeasurableSet] using h
 
 /-- **The reverse Fatou lemma for `Lᵖ` seminorms over sets.** Let `0 < p < ∞`, let the sets `s n`
 be measurable and contained in `t`, and let `g ∈ Lᵖ(t)`. Then the limit superior of the `Lᵖ`
