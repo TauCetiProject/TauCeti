@@ -54,8 +54,8 @@ in the Kitware DKPS formalization at `b9a02d00c`
      of `ExpBounded/{Helpers,Adjoint,Unitary}` establishing summability, the
      group law and unitarity, all of which Mathlib already has.
   2. Norm preservation comes directly from the native bounded Stone group.
-     The Duhamel estimate uses `TauCeti.exp_add_sub_exp_eq_integral`, so no
-     separate differentiation or interpolation proof is retained.
+     The Duhamel estimate specializes the native bounded-semigroup comparison
+     with bounds equal to one, using scalar restriction and time reversal.
 -/
 
 public section
