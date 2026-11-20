@@ -368,6 +368,45 @@ theorem coordinateDeriv_const (c : A) {α : List (Fin n)} (hα : α ≠ []) :
     iteratedFDeriv_const_of_ne (n := (j :: js).length) (List.length_pos_of_ne_nil hα).ne',
     Pi.zero_apply, Pi.zero_apply, zero_apply]
 
+/-- The first coordinate derivatives of a continuous linear map are constant: `∂ⱼ L = L eⱼ`. -/
+theorem _root_.ContinuousLinearMap.coordinateDeriv_singleton (L : CoordinateSpace n →L[ℝ] A)
+    (j : Fin n) : coordinateDeriv [j] L = fun _ => L (EuclideanSpace.single j 1) := by
+  funext x
+  rw [coordinateDeriv_cons, coordinateDeriv_nil, L.fderiv]
+
+/-- The coordinate derivatives of order at least two of a continuous linear map vanish. -/
+theorem _root_.ContinuousLinearMap.coordinateDeriv_eq_zero_of_two_le_length
+    (L : CoordinateSpace n →L[ℝ] A) {α : List (Fin n)} (hα : 2 ≤ α.length) :
+    coordinateDeriv α L = 0 := by
+  rcases List.eq_nil_or_concat α with rfl | ⟨α', j, rfl⟩
+  · simp at hα
+  have hα' : α' ≠ [] := by
+    rintro rfl
+    simp at hα
+  rw [List.concat_eq_append, coordinateDeriv_append, L.coordinateDeriv_singleton,
+    coordinateDeriv_const _ hα']
+
+/-- The function `y ↦ yⱼ • c` is the continuous linear map `(proj j).smulRight c`. -/
+private theorem coord_smul_eq_smulRight (c : A) (j : Fin n) :
+    (fun y : CoordinateSpace n => y j • c) =
+      ⇑((EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).smulRight c) := by
+  funext y
+  rw [ContinuousLinearMap.smulRight_apply, PiLp.proj_apply]
+
+/-- The first coordinate derivatives of `y ↦ yⱼ • c` are constant: `∂ₗ (yⱼ • c) = (eₗ)ⱼ • c`. -/
+theorem coordinateDeriv_singleton_coord_smul (c : A) (j l : Fin n) :
+    coordinateDeriv [l] (fun y : CoordinateSpace n => y j • c) =
+      fun _ => (EuclideanSpace.single l (1 : ℝ) : CoordinateSpace n) j • c := by
+  rw [coord_smul_eq_smulRight, ContinuousLinearMap.coordinateDeriv_singleton,
+    ContinuousLinearMap.smulRight_apply, PiLp.proj_apply]
+
+/-- The coordinate derivatives of order at least two of `y ↦ yⱼ • c` vanish. -/
+theorem coordinateDeriv_coord_smul_eq_zero_of_two_le_length (c : A) (j : Fin n)
+    {α : List (Fin n)} (hα : 2 ≤ α.length) :
+    coordinateDeriv α (fun y : CoordinateSpace n => y j • c) = 0 := by
+  rw [coord_smul_eq_smulRight]
+  exact ContinuousLinearMap.coordinateDeriv_eq_zero_of_two_le_length _ hα
+
 /-- Two coordinate derivatives of a `C²` function commute, by the symmetry of its second
 derivative. -/
 theorem coordinateDeriv_pair_comm {f : CoordinateSpace n → A} (hf : ContDiff ℝ 2 f)

@@ -63,7 +63,8 @@ coefficient vanishing at all large frequencies is smoothing
 `TauCeti.Symbol.isSmoothing_of_coefficient_eq_zero`), also when the radius beyond which it
 vanishes depends on the compact set of positions
 (`TauCeti.Symbol.isSmoothing_of_forall_isCompact_coefficient_eq_zero`), while in positive
-dimension a nonzero constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
+dimension a nonzero constant is not (`TauCeti.Symbol.isSmoothing_const_iff`); it is a symbol of
+no negative order (`TauCeti.Symbol.not_exists_coefficient_eq_const`).
 
 The estimates are only required locally uniformly in `x`. The predicate `TauCeti.Symbol.IsUniform`
 asks for constants independent of `x`, and `TauCeti.Symbol.HasCompactSpatialSupport` asks that the
@@ -950,6 +951,11 @@ variable (hb : ContDiff ℝ ∞ b)
 theorem coefficient_ofFrequency (p : CoordinateSpace n × CoordinateSpace n) :
     (ofFrequency b hb hbound).coefficient p = b p.2 := (rfl)
 
+/-- A frequency-only symbol does not depend on the position. -/
+@[simp]
+theorem spatialDeriv_ofFrequency (j : Fin n) : spatialDeriv j (ofFrequency b hb hbound) = 0 :=
+  Symbol.ext <| funext fun ⟨_, _⟩ => by simp [coordinateDeriv_const _ (List.cons_ne_nil j [])]
+
 /-- A frequency-only symbol satisfies its estimates uniformly in the position. -/
 theorem isUniform_ofFrequency : (ofFrequency b hb hbound).IsUniform :=
   isUniform_iff.2 fun α β =>
@@ -1432,27 +1438,29 @@ theorem exists_coefficient_eq_of_forall_le_norm
   ⟨b + ofBoundedFrequencySupport (f - b.coefficient) (hf.sub b.contDiff_coefficient) R
     fun x ξ hξ => sub_eq_zero.2 (h x ξ hξ), by simp⟩
 
+/-- In positive dimension, a nonzero constant is a symbol of no negative order: along a ray of
+frequencies the weight `⟨ξ⟩ ^ m` tends to `0`, while the coefficient stays the fixed `T`. -/
+theorem not_exists_coefficient_eq_const [NeZero n] {T : V →L[ℂ] W} (hT : T ≠ 0) (hm : m < 0) :
+    ¬∃ a : Symbol n V W m, ∀ p, a.coefficient p = T := fun ⟨a, ha⟩ => by
+  obtain ⟨C, -, hC⟩ := a.exists_bound {0} isCompact_singleton [] []
+  have htend : Filter.Tendsto (fun t : ℝ ↦ C * (1 + t ^ 2) ^ (m / 2)) Filter.atTop (nhds 0) := by
+    simpa using tendsto_const_nhds.mul ((tendsto_rpow_neg_atTop (y := -(m / 2)) (by linarith)).comp
+      (Filter.tendsto_atTop_add_const_left _ 1 (Filter.tendsto_pow_atTop two_ne_zero)))
+  obtain ⟨t, ht⟩ := (htend.eventually (gt_mem_nhds (norm_pos_iff.2 hT))).exists
+  have h := hC 0 rfl (EuclideanSpace.single 0 t)
+  simp only [mixedDeriv_nil_nil, ha, List.length_nil, CharP.cast_eq_zero, sub_zero,
+    PiLp.norm_single, Real.norm_eq_abs, sq_abs] at h
+  linarith
+
 /-- In positive dimension, a nonzero constant symbol is not smoothing: it does not even have order
 `-2`. (On `ℝ⁰` every symbol is smoothing, since there `⟨ξ⟩ = 1`.) -/
 theorem isSmoothing_const_iff (hn : n ≠ 0) {T : V →L[ℂ] W} :
     (const T : Symbol n V W 0).IsSmoothing ↔ T = 0 := by
-  refine ⟨fun h => ?_, fun h => ?_⟩
+  refine ⟨fun h => Classical.byContradiction fun hT => ?_, fun h => ?_⟩
   · obtain ⟨b, hb⟩ := h (-2)
-    obtain ⟨C, hC0, hC⟩ := b.exists_bound {0} isCompact_singleton [] []
-    by_contra hT
-    have hT' : 0 < ‖T‖ := norm_pos_iff.2 hT
-    -- At a frequency with `‖ξ‖ ^ 2 = C / ‖T‖` the order `-2` bound fails.
-    let ξ : CoordinateSpace n := EuclideanSpace.single ⟨0, Nat.pos_of_ne_zero hn⟩ √(C / ‖T‖)
-    have hξ : ‖ξ‖ ^ 2 = C / ‖T‖ := by
-      rw [PiLp.norm_single, Real.norm_eq_abs, sq_abs, Real.sq_sqrt (by positivity)]
-    have h := hC 0 rfl ξ
-    rw [mixedDeriv_nil_nil, hb, coefficient_const, List.length_nil, Nat.cast_zero, sub_zero, hξ,
-      show (-2 : ℝ) / 2 = -1 by norm_num, Real.rpow_neg_one, ← div_eq_mul_inv,
-      le_div_iff₀ (by positivity)] at h
-    have : ‖T‖ * (1 + C / ‖T‖) = ‖T‖ + C := by field_simp
-    linarith
-  · subst h
-    exact fun _ => ⟨0, by funext p; simp⟩
+    have : NeZero n := ⟨hn⟩
+    exact not_exists_coefficient_eq_const hT (by norm_num) ⟨b, fun _ => by simp [hb]⟩
+  · exact h ▸ fun _ => ⟨0, by funext p; simp⟩
 
 end Smoothing
 
