@@ -59,13 +59,13 @@ section Continuity
 variable {G M : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
   [AddCommGroup M] [SMul G M] [TopologicalSpace M] [ContinuousAdd M] [ContinuousConstSMul G M]
 
-/-- **A `1`-cocycle continuous at `1` is continuous.** Near `g` the cocycle identity reads
-`f (g * x) = g • f x + f g`, and the right-hand side is continuous at `x = 1`. This is the
-cocycle analogue of `continuous_of_continuousAt_one` for monoid homomorphisms; the action of `G`
-need only be by continuous maps, with no joint continuity. -/
+/-- **A `1`-cocycle continuous at `1` is continuous.** This is the cocycle analogue of
+`continuous_of_continuousAt_one` for monoid homomorphisms; the action of `G` need only be by
+continuous maps, with no joint continuity. -/
 theorem IsCocycle₁.continuous_of_continuousAt_one {f : G → M} (hf : IsCocycle₁ f)
     (h₁ : ContinuousAt f 1) : Continuous f := by
   refine continuous_iff_continuousAt.2 fun g ↦ ?_
+  -- near `g` the cocycle identity reads `f (g * x) = g • f x + f g`
   have hg : ContinuousAt (fun x ↦ f (g * x)) 1 :=
     ((h₁.const_smul g).add continuousAt_const).congr
       (Filter.Eventually.of_forall fun x ↦ (hf g x).symm)

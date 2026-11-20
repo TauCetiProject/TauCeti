@@ -60,7 +60,7 @@ the principal crossed homomorphisms vanish, and this is the group of continuous 
   condition is automatic, so a `2`-cocycle is locally continuous as soon as it is continuous near
   `(1, 1)`.
 * `TauCeti.ContCohomology.LCZ2_eq_ker_d2`: over a discrete group every `2`-cocycle is locally
-  continuous, so `H²_lc` is the abstract `H²`.
+  continuous.
 * `TauCeti.ContCohomology.mem_Z1_iff_continuousAt_one`: a `1`-cocycle is continuous exactly when it
   is continuous at `1`.
 
@@ -114,6 +114,22 @@ theorem LC1_eq_top [DiscreteTopology G] : LC1 G M = ⊤ :=
   top_le_iff.1 (C1_eq_top (G := G) (M := M) ▸ C1_le_LC1 G M)
 
 end LC1
+
+section LC1Conj
+
+variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+
+/-- Precomposing a locally continuous `1`-cochain with conjugation by `g` keeps it locally
+continuous. -/
+theorem comp_conj_mem_LC1 {b : G → M} (hb : b ∈ LC1 G M) (g : G) :
+    (fun h => b (g * h * g⁻¹)) ∈ LC1 G M := by
+  have hconj : Tendsto (fun h : G => g * h * g⁻¹) (𝓝 1) (𝓝 1) := by
+    simpa using (IsTopologicalGroup.continuous_conj g).tendsto 1
+  filter_upwards [hconj.eventually (mem_LC1_iff.1 hb)] with h hh
+  exact hh.comp (f := fun k : G => g * k * g⁻¹) (IsTopologicalGroup.continuous_conj g).continuousAt
+
+end LC1Conj
 
 /-! ### Locally continuous `2`-cochains -/
 
@@ -204,10 +220,7 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribSMul G M] [ContinuousSMul G M]
 
-/-- **The coboundary of a locally continuous `1`-cochain is locally continuous.** Near `(1, 1)`
-the three values of `b` in `(d¹ b) (g, h) = g • b h - b (g * h) + b g` are taken near `1`; the
-conjugation cochain of `d¹ b` at `g` is `h ↦ g • b h + b g - (g * h * g⁻¹) • b g - b (g * h * g⁻¹)`,
-which involves `b` only near `1` as `h` tends to `1`. -/
+/-- **The coboundary of a locally continuous `1`-cochain is locally continuous.** -/
 theorem d1_mem_LC2 {b : G → M} (hb : b ∈ LC1 G M) : d1 G M b ∈ LC2 G M := by
   have hb' := mem_LC1_iff.1 hb
   refine mem_LC2_iff.2 ⟨?_, fun g => ?_⟩
@@ -221,16 +234,12 @@ theorem d1_mem_LC2 {b : G → M} (hb : b ∈ LC1 G M) : d1 G M b ∈ LC2 G M := 
         (hp₁₂.comp (f := fun q : G × G => q.1 * q.2)
           (continuousAt_fst.mul continuousAt_snd))).add (hp₁.comp continuousAt_fst)
     exact this.congr (Eventually.of_forall fun q => (d1_apply b q.1 q.2).symm)
-  · have hconj : Tendsto (fun h : G => g * h * g⁻¹) (𝓝 1) (𝓝 1) := by
-      simpa using (IsTopologicalGroup.continuous_conj g).tendsto 1
-    rw [mem_LC1_iff]
-    filter_upwards [hb', hconj.eventually hb'] with h hh hh'
+  · rw [mem_LC1_iff]
+    filter_upwards [hb', mem_LC1_iff.1 (comp_conj_mem_LC1 hb g)] with h hh hh'
     have : ContinuousAt
         (fun k : G => g • b k + b g - (g * k * g⁻¹) • b g - b (g * k * g⁻¹)) h :=
       (((hh.const_smul g).add continuousAt_const).sub
-        (((IsTopologicalGroup.continuous_conj g).smul continuous_const).continuousAt)).sub
-        (hh'.comp (f := fun k : G => g * k * g⁻¹)
-          (IsTopologicalGroup.continuous_conj g).continuousAt)
+        (((IsTopologicalGroup.continuous_conj g).smul continuous_const).continuousAt)).sub hh'
     refine this.congr (Eventually.of_forall fun k => ?_)
     simp only [conjugationCochain_apply, d1_apply, inv_mul_cancel_right]
     abel
@@ -246,9 +255,7 @@ variable {G : Type u} [Group G] {M : Type v} [AddCommGroup M] [DistribSMul G M]
 /-- **The conjugation cochain of a `2`-cocycle at a product.** For a `2`-cocycle `f`,
 `c_(a * b) (h) = a • c_b (h) + c_a (b * h * b⁻¹) + (d⁰ (f (a, b))) (a * b * h * (a * b)⁻¹)`, where
 `c_g` is `conjugationCochain G M g f`. It is the cochain form of composing conjugations by the lifts
-of `b` and of `a` in the twisted product of `f`, the last term correcting the lift of `a * b`. It
-consumes the cocycle identity at `(a, b, h)`, at `(a * b * h * (a * b)⁻¹, a, b)` and at
-`(a, b * h * b⁻¹, b)`. -/
+of `b` and of `a` in the twisted product of `f`, the last term correcting the lift of `a * b`. -/
 theorem conjugationCochain_mul {f : G × G → M}
     (hf : IsCocycle₂ f) (a b h : G) :
     conjugationCochain G M (a * b) f h =
@@ -257,6 +264,7 @@ theorem conjugationCochain_mul {f : G × G → M}
   have e₁ := hf a b h
   have e₂ := hf (a * b * h * (a * b)⁻¹) a b
   have e₃ := hf a (b * h * b⁻¹) b
+  -- the cocycle identity at `(a, b, h)`, `(a * b * h * (a * b)⁻¹, a, b)` and `(a, b * h * b⁻¹, b)`
   have hl : a * (b * h * b⁻¹) * a⁻¹ = a * b * h * (a * b)⁻¹ := by group
   have hla : a * b * h * (a * b)⁻¹ * a = a * (b * h * b⁻¹) := by group
   have hkb : b * h * b⁻¹ * b = b * h := by group
@@ -340,12 +348,13 @@ theorem LCH2pi_eq_zero_iff {f : LCZ2 G M} :
     LCH2pi G M f = 0 ↔ (f : G × G → M) ∈ LCB2 G M := by
   rw [QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff, AddSubgroup.mem_addSubgroupOf]
 
+omit [IsTopologicalGroup G] [ContinuousSMul G M] [IsScalarTower G G M] in
 /-- Two locally continuous `2`-cocycles have the same class exactly when they differ by the
 coboundary of a locally continuous `1`-cochain. -/
+@[simp]
 theorem LCH2pi_eq_iff {f f' : LCZ2 G M} :
-    LCH2pi G M f = LCH2pi G M f' ↔ (f : G × G → M) - f' ∈ LCB2 G M := by
-  rw [QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_iff_sub_mem,
-    AddSubgroup.mem_addSubgroupOf, AddSubgroup.coe_sub]
+    (f : LCH2 G M) = (f' : LCH2 G M) ↔ (f : G × G → M) - f' ∈ LCB2 G M := by
+  rw [QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_addSubgroupOf, AddSubgroup.coe_sub]
 
 end Cocycles
 
@@ -387,24 +396,17 @@ private def conjugationSubmonoid {f : G × G → M} (hf : IsCocycle₂ f)
   carrier := {g | conjugationCochain G M g f ∈ LC1 G M}
   one_mem' := (eventually_conjugationCochain_mem_LC1 hc).self_of_nhds
   mul_mem' {a b} ha hb := by
-    have hconj : Tendsto (fun h : G => b * h * b⁻¹) (𝓝 1) (𝓝 1) := by
-      simpa using (IsTopologicalGroup.continuous_conj b).tendsto 1
-    have ha' : ∀ᶠ h in 𝓝 1, ContinuousAt (conjugationCochain G M a f) h := ha
     have hb' : ∀ᶠ h in 𝓝 1, ContinuousAt (conjugationCochain G M b f) h := hb
     refine (mem_LC1_iff (f := conjugationCochain G M (a * b) f)).2 ?_
-    filter_upwards [hb', hconj.eventually ha'] with h hh hh'
+    filter_upwards [hb', mem_LC1_iff.1 (comp_conj_mem_LC1 ha b)] with h hh hh'
     have : ContinuousAt (fun k : G => a • conjugationCochain G M b f k +
         conjugationCochain G M a f (b * k * b⁻¹) + d0 G M (f (a, b)) (a * b * k * (a * b)⁻¹)) h :=
-      ((hh.const_smul a).add (hh'.comp (f := fun k : G => b * k * b⁻¹)
-        (IsTopologicalGroup.continuous_conj b).continuousAt)).add
+      ((hh.const_smul a).add hh').add
         ((continuous_d0_apply _).comp (IsTopologicalGroup.continuous_conj (a * b))).continuousAt
     exact this.congr (Eventually.of_forall fun k => (conjugationCochain_mul hf a b k).symm)
 
 /-- **Over a connected group the conjugation condition is automatic.** If a `2`-cocycle is
-continuous near `(1, 1)`, then its conjugation cochain at every `g` is continuous near `1`: this
-holds for `g` near `1`, the set of such `g` is closed under products by
-`TauCeti.ContCohomology.conjugationCochain_mul`, and a connected group is generated as a monoid by
-any neighbourhood of `1`. -/
+continuous near `(1, 1)`, then its conjugation cochain at every `g` is continuous near `1`. -/
 theorem conjugationCochain_mem_LC1_of_preconnected [PreconnectedSpace G] {f : G × G → M}
     (hf : IsCocycle₂ f) (hc : f ∈ LC1 (G × G) M) (g : G) :
     conjugationCochain G M g f ∈ LC1 G M := by

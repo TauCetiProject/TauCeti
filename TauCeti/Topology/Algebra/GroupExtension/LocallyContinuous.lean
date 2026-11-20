@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LocallyContinuous
-public import TauCeti.Topology.Algebra.GroupAction.TypeTags
-public import TauCeti.Topology.Algebra.GroupExtension.FactorSet
+public import TauCeti.Topology.Algebra.GroupExtension.Cohomology
+public import TauCeti.Topology.Constructions.TypeTags
 
 /-!
 # Locally continuous factor sets and their classes
@@ -28,10 +28,14 @@ additively it is then a locally continuous `2`-cocycle
 (`TauCeti.FactorSet.isLocallyContinuous_iff_ofMul_mem_LCZ2`) and has a class in
 `H²_lc(G, M)` (`TauCeti.FactorSet.locContCohomologyClass`). Two locally continuous factor sets have
 the same class exactly when their quotient is the coboundary `(g, h) ↦ g • x h / x (g * h) * x g`
-of a function `x` continuous near `1` (`TauCeti.FactorSet.locContCohomologyClass_eq_iff`), and
-every class is the class of a locally continuous factor set
-(`TauCeti.FactorSet.exists_locContCohomologyClass_eq`). Over a connected group the second
-condition is automatic (`TauCeti.FactorSet.isLocallyContinuous_iff_of_preconnected`).
+of a function `x` continuous near `1` (`TauCeti.FactorSet.locContCohomologyClass_eq_iff`); in
+particular the class vanishes exactly when the factor set itself is such a coboundary
+(`TauCeti.FactorSet.locContCohomologyClass_eq_zero_iff`), as it is for the trivial factor set
+(`TauCeti.FactorSet.locContCohomologyClass_trivial`). Every class is the class of a locally
+continuous factor set (`TauCeti.FactorSet.exists_locContCohomologyClass_eq`), and the comparison
+map from continuous cohomology sends the continuous class of a continuous factor set to its locally
+continuous class (`TauCeti.FactorSet.H2ToLCH2_contCohomologyClass`). Over a connected group the
+second condition is automatic (`TauCeti.FactorSet.isLocallyContinuous_iff_of_preconnected`).
 
 ## Main definitions
 
@@ -64,11 +68,6 @@ continuous at every point of a neighbourhood of `1`. -/
 def IsLocallyContinuous (α : FactorSet G M) : Prop :=
   (∀ᶠ p in 𝓝 1, ContinuousAt α p) ∧
     ∀ g : G, ∀ᶠ h in 𝓝 1, ContinuousAt (fun k => α (g, k) / α (g * k * g⁻¹, g)) h
-
-/-- Continuity at a point is unchanged by reading the values additively. -/
-private theorem continuousAt_ofMul_iff {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    {f : X → Y} {x : X} : ContinuousAt (fun y => Additive.ofMul (f y)) x ↔ ContinuousAt f x :=
-  ⟨fun h => continuous_toMul.continuousAt.comp h, fun h => continuous_ofMul.continuousAt.comp h⟩
 
 variable [IsTopologicalGroup M]
 
@@ -125,24 +124,50 @@ theorem locContCohomologyClass_eq_iff (α β : FactorSet G M) (hα : α.IsLocall
     α.locContCohomologyClass hα = β.locContCohomologyClass hβ ↔
       ∃ x : G → M, (∀ᶠ g in 𝓝 1, ContinuousAt x g) ∧
         ∀ g h : G, g • x h / x (g * h) * x g = α (g, h) / β (g, h) := by
-  rw [locContCohomologyClass_def, locContCohomologyClass_def, LCH2pi_eq_iff, mem_LCB2_iff]
+  rw [locContCohomologyClass_def, locContCohomologyClass_def, LCH2pi, QuotientAddGroup.mk'_apply,
+    QuotientAddGroup.mk'_apply, LCH2pi_eq_iff, mem_LCB2_iff]
   constructor
   · rintro ⟨c, hc, h⟩
     refine ⟨fun g => (c g).toMul, (mem_LC1_iff.1 hc).mono fun g hg =>
-      continuous_toMul.continuousAt.comp hg, fun g k => ?_⟩
+      continuousAt_toMul_iff.2 hg, fun g k => ?_⟩
     simpa [d1_apply, toMul_add, toMul_sub] using congrArg Additive.toMul (congrFun h (g, k))
   · rintro ⟨x, hx, h⟩
     refine ⟨fun g => Additive.ofMul (x g), mem_LC1_iff.2 (hx.mono fun g hg =>
-      continuous_ofMul.continuousAt.comp hg), funext fun ⟨g, k⟩ => ?_⟩
+      continuousAt_ofMul_iff.2 hg), funext fun ⟨g, k⟩ => ?_⟩
     simp only [d1_apply, coe_toLCZ2, Pi.sub_apply, ← ofMul_div, ← h g k]
     simp [ofMul_div, ofMul_mul]
 
-/-- **Every class in `H²_lc(G, M)` is the class of a locally continuous factor set.** A locally
-continuous `2`-cocycle need not be normalized; subtracting the coboundary of the constant
-`1`-cochain at its value at `(1, 1)` normalizes it without moving its class. -/
+@[simp]
+theorem locContCohomologyClass_trivial (h : (trivial G M).IsLocallyContinuous) :
+    (trivial G M).locContCohomologyClass h = 0 := by
+  have hz : (trivial G M).toLCZ2 h = 0 := Subtype.ext (funext fun _ => by simp)
+  rw [locContCohomologyClass_def, hz, map_zero]
+
+/-- **The class of a locally continuous factor set vanishes exactly when it is the coboundary of a
+function continuous near `1`.** -/
+theorem locContCohomologyClass_eq_zero_iff (α : FactorSet G M) (hα : α.IsLocallyContinuous) :
+    α.locContCohomologyClass hα = 0 ↔
+      ∃ x : G → M, (∀ᶠ g in 𝓝 1, ContinuousAt x g) ∧
+        ∀ g h : G, g • x h / x (g * h) * x g = α (g, h) := by
+  rw [← locContCohomologyClass_trivial (.of_continuous continuous_trivial),
+    locContCohomologyClass_eq_iff]
+  simp
+
+/-- The comparison map `H²(G, M) → H²_lc(G, M)` sends the continuous class of a continuous factor
+set to its locally continuous class. -/
+@[simp]
+theorem H2ToLCH2_contCohomologyClass (α : FactorSet G M) (hα : Continuous ⇑α) :
+    H2ToLCH2 G (Additive M) (α.contCohomologyClass hα) =
+      α.locContCohomologyClass (.of_continuous hα) := by
+  rw [contCohomologyClass_def, H2pi, QuotientAddGroup.mk'_apply, H2ToLCH2_mk,
+    locContCohomologyClass_def, LCH2pi, QuotientAddGroup.mk'_apply]
+  exact congrArg _ (Subtype.ext (by simp))
+
+/-- **Every class in `H²_lc(G, M)` is the class of a locally continuous factor set.** -/
 theorem exists_locContCohomologyClass_eq (c : LCH2 G (Additive M)) :
     ∃ (α : FactorSet G M) (hα : α.IsLocallyContinuous), α.locContCohomologyClass hα = c := by
-  obtain ⟨z, rfl⟩ := QuotientAddGroup.mk_surjective c
+  obtain ⟨z, rfl⟩ := QuotientAddGroup.mk'_surjective _ c
+  -- normalize `z` by the coboundary of the constant `1`-cochain at `z (1, 1)`
   set b : G × G → Additive M := d1 G (Additive M) fun _ => (z : G × G → Additive M) (1, 1)
     with hb_def
   have hb : b ∈ LCB2 G (Additive M) :=
@@ -157,13 +182,9 @@ theorem exists_locContCohomologyClass_eq (c : LCH2 G (Additive M)) :
     funext fun p => by simp [α]
   have hα : α.IsLocallyContinuous := (isLocallyContinuous_iff_ofMul_mem_LCZ2 α).2 (hαz ▸ hz')
   refine ⟨α, hα, ?_⟩
-  rw [locContCohomologyClass_def, LCH2pi, QuotientAddGroup.mk'_apply, QuotientAddGroup.eq,
-    AddSubgroup.mem_addSubgroupOf]
-  have hsub : (-(α.toLCZ2 hα) + z : LCZ2 G (Additive M)) = (b : G × G → Additive M) := by
-    ext p
-    simp [α]
-  rw [hsub]
-  exact hb
+  rw [locContCohomologyClass_def, LCH2pi, QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply,
+    LCH2pi_eq_iff, coe_toLCZ2, hαz, sub_sub_cancel_left]
+  exact neg_mem hb
 
 end FactorSet
 
