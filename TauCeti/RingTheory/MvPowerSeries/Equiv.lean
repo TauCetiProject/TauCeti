@@ -21,19 +21,21 @@ the coefficients that do not vanish.
 ## Separating two families of variables
 
 Power series in the variables `σ ⊕ τ` are power series in `σ` whose coefficients are power series
-in `τ` (`MvPowerSeries.sumAlgEquiv`). This is the power-series analogue of Mathlib's
-`MvPolynomial.sumAlgEquiv`, and generalizes Mathlib's `MvPowerSeries.optionEquivLeft`, which
-separates a single variable. It underlies the identification of restricted series in two
-families of variables with iterated restricted series
+in `τ` (`MvPowerSeries.sumAlgEquiv`), over any `R`-algebra `A` of coefficients, commutative or
+not. This is the power-series analogue of Mathlib's `MvPolynomial.sumAlgEquiv`, and generalizes
+Mathlib's `MvPowerSeries.optionEquivLeft`, which separates a single variable. It underlies the
+identification of restricted series in two families of variables with iterated restricted series
 (`TauCeti.MvPowerSeries.restrictedSumEquiv`).
 
 ## Main results
 
 * `PowerSeries.coeff_toMvPowerSeries`: the coefficients of `w.toMvPowerSeries i`.
 * `MvPowerSeries.sumAlgEquiv`: the algebra isomorphism
-  `MvPowerSeries (σ ⊕ τ) R ≃ₐ[R] MvPowerSeries σ (MvPowerSeries τ R)`.
+  `MvPowerSeries (σ ⊕ τ) A ≃ₐ[R] MvPowerSeries σ (MvPowerSeries τ A)`.
 * `MvPowerSeries.coeff_coeff_sumAlgEquiv` and
   `MvPowerSeries.coeff_sumAlgEquiv_symm`: its coefficients.
+* `MvPowerSeries.sumAlgEquiv_C`: its action on constants, with inverse
+  `MvPowerSeries.sumAlgEquiv_symm_C`.
 * `MvPowerSeries.sumAlgEquiv_X_inl` and `MvPowerSeries.sumAlgEquiv_X_inr`: its action on the
   variables, with inverses `MvPowerSeries.sumAlgEquiv_symm_X` and
   `MvPowerSeries.sumAlgEquiv_symm_C_X`.
@@ -82,7 +84,6 @@ theorem map_toMvPowerSeries {S : Type*} [CommSemiring S] (φ : R →+* S) (i : �
     MvPowerSeries.map φ (w.toMvPowerSeries i) = (PowerSeries.map φ w).toMvPowerSeries i := by
   simp only [toMvPowerSeries_apply, PowerSeries.map, ← MvPowerSeries.rename_map]
 
-
 end PowerSeries
 
 namespace MvPowerSeries
@@ -91,22 +92,22 @@ open Finset
 
 section Semiring
 
-variable (R σ τ : Type*) [Semiring R]
+variable (A σ τ : Type*)
 
 /-- Reindexing coefficients by the two parts of a monomial and currying the resulting family.
 Implementation detail of `sumAlgEquiv`. -/
 private noncomputable def sumEquiv :
-    MvPowerSeries (σ ⊕ τ) R ≃ MvPowerSeries σ (MvPowerSeries τ R) :=
-  (Equiv.arrowCongr Finsupp.sumFinsuppEquivProdFinsupp (Equiv.refl R)).trans
-    (Equiv.curry (σ →₀ ℕ) (τ →₀ ℕ) R)
+    MvPowerSeries (σ ⊕ τ) A ≃ MvPowerSeries σ (MvPowerSeries τ A) :=
+  (Equiv.arrowCongr Finsupp.sumFinsuppEquivProdFinsupp (Equiv.refl A)).trans
+    (Equiv.curry (σ →₀ ℕ) (τ →₀ ℕ) A)
 
-variable {R σ τ}
+variable {A σ τ} [Semiring A]
 
-private theorem coeff_coeff_sumEquiv (f : MvPowerSeries (σ ⊕ τ) R) (a : σ →₀ ℕ)
-    (b : τ →₀ ℕ) : coeff b (coeff a (sumEquiv R σ τ f)) = coeff (a.sumElim b) f := (rfl)
+private theorem coeff_coeff_sumEquiv (f : MvPowerSeries (σ ⊕ τ) A) (a : σ →₀ ℕ)
+    (b : τ →₀ ℕ) : coeff b (coeff a (sumEquiv A σ τ f)) = coeff (a.sumElim b) f := (rfl)
 
-private theorem sumEquiv_mul (f g : MvPowerSeries (σ ⊕ τ) R) :
-    sumEquiv R σ τ (f * g) = sumEquiv R σ τ f * sumEquiv R σ τ g := by
+private theorem sumEquiv_mul (f g : MvPowerSeries (σ ⊕ τ) A) :
+    sumEquiv A σ τ (f * g) = sumEquiv A σ τ f * sumEquiv A σ τ g := by
   classical
   ext a b
   simp only [coeff_coeff_sumEquiv, coeff_mul, map_sum]
@@ -118,16 +119,17 @@ private theorem sumEquiv_mul (f g : MvPowerSeries (σ ⊕ τ) R) :
 
 end Semiring
 
-variable {R σ τ : Type*} [CommSemiring R]
+variable {R A σ τ : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
 
-variable (R σ τ) in
+variable (R A σ τ) in
 /-- **Power series in `σ ⊕ τ` are power series in `σ` over power series in `τ`.** The
 coefficient of `xᵃ` of the image of `f` is the power series in `τ` whose coefficient of `yᵇ` is
-the coefficient of `xᵃ yᵇ` in `f`. This is the power-series analogue of Mathlib's
+the coefficient of `xᵃ yᵇ` in `f`. The coefficients `A` form an arbitrary, not necessarily
+commutative, `R`-algebra. This is the power-series analogue of Mathlib's
 `MvPolynomial.sumAlgEquiv`. -/
 noncomputable def sumAlgEquiv :
-    MvPowerSeries (σ ⊕ τ) R ≃ₐ[R] MvPowerSeries σ (MvPowerSeries τ R) where
-  toEquiv := sumEquiv R σ τ
+    MvPowerSeries (σ ⊕ τ) A ≃ₐ[R] MvPowerSeries σ (MvPowerSeries τ A) where
+  toEquiv := sumEquiv A σ τ
   map_mul' := sumEquiv_mul
   map_add' f g := by
     ext a b
@@ -135,29 +137,32 @@ noncomputable def sumAlgEquiv :
   commutes' r := by
     classical
     ext a b
-    have h : a.sumElim b = 0 ↔ a = 0 ∧ b = 0 := by
-      simp [Finsupp.ext_iff, Sum.forall]
-    simp only [Equiv.toFun_as_coe, algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply]
-    rw [coeff_coeff_sumEquiv]
-    simp only [coeff_C, h]
-    by_cases ha : a = 0 <;> by_cases hb : b = 0 <;> simp [ha, hb, coeff_C]
+    simp [coeff_coeff_sumEquiv, algebraMap_apply, coeff_C, apply_ite (coeff b), Finsupp.ext_iff,
+      Sum.forall, ite_and]
 
 /-- The coefficients of `sumAlgEquiv`: the coefficient of `yᵇ` in the coefficient of `xᵃ` of the
 image of `f` is the coefficient of `xᵃ yᵇ` in `f`. -/
 @[simp]
-theorem coeff_coeff_sumAlgEquiv (f : MvPowerSeries (σ ⊕ τ) R) (a : σ →₀ ℕ) (b : τ →₀ ℕ) :
-    coeff b (coeff a (sumAlgEquiv R σ τ f)) = coeff (a.sumElim b) f := (rfl)
+theorem coeff_coeff_sumAlgEquiv (f : MvPowerSeries (σ ⊕ τ) A) (a : σ →₀ ℕ) (b : τ →₀ ℕ) :
+    coeff b (coeff a (sumAlgEquiv R A σ τ f)) = coeff (a.sumElim b) f := (rfl)
 
 /-- The coefficients of the inverse of `sumAlgEquiv`: the coefficient of a monomial in `σ ⊕ τ` is
 read off from its `σ` and `τ` parts. -/
 @[simp]
-theorem coeff_sumAlgEquiv_symm (g : MvPowerSeries σ (MvPowerSeries τ R)) (a : σ →₀ ℕ)
-    (b : τ →₀ ℕ) : coeff (a.sumElim b) ((sumAlgEquiv R σ τ).symm g) = coeff b (coeff a g) := by
-  rw [← coeff_coeff_sumAlgEquiv, AlgEquiv.apply_symm_apply]
+theorem coeff_sumAlgEquiv_symm (g : MvPowerSeries σ (MvPowerSeries τ A)) (a : σ →₀ ℕ)
+    (b : τ →₀ ℕ) : coeff (a.sumElim b) ((sumAlgEquiv R A σ τ).symm g) = coeff b (coeff a g) := by
+  rw [← coeff_coeff_sumAlgEquiv (R := R), AlgEquiv.apply_symm_apply]
+
+/-- `sumAlgEquiv` sends a constant to the corresponding constant with constant coefficient. -/
+@[simp]
+theorem sumAlgEquiv_C (c : A) : sumAlgEquiv R A σ τ (C c) = C (C c) := by
+  classical
+  ext a b
+  simp [coeff_C, apply_ite (coeff b), Finsupp.ext_iff, Sum.forall, ite_and]
 
 /-- `sumAlgEquiv` sends a variable of the first family to the corresponding variable. -/
 @[simp]
-theorem sumAlgEquiv_X_inl (i : σ) : sumAlgEquiv R σ τ (X (.inl i)) = X i := by
+theorem sumAlgEquiv_X_inl (i : σ) : sumAlgEquiv R A σ τ (X (.inl i)) = X i := by
   classical
   ext a b
   rw [coeff_coeff_sumAlgEquiv, coeff_X, coeff_X, ← Finsupp.sumElim_single_zero]
@@ -166,22 +171,28 @@ theorem sumAlgEquiv_X_inl (i : σ) : sumAlgEquiv R σ τ (X (.inl i)) = X i := b
 /-- `sumAlgEquiv` sends a variable of the second family to the corresponding variable, viewed as
 a constant coefficient. -/
 @[simp]
-theorem sumAlgEquiv_X_inr (j : τ) : sumAlgEquiv R σ τ (X (.inr j)) = C (X j) := by
+theorem sumAlgEquiv_X_inr (j : τ) : sumAlgEquiv R A σ τ (X (.inr j)) = C (X j) := by
   classical
   ext a b
   rw [coeff_coeff_sumAlgEquiv, coeff_X, coeff_C, ← Finsupp.sumElim_zero_single]
   split_ifs <;> simp_all [coeff_X, Finsupp.ext_iff, Sum.forall, Finsupp.single_apply]
 
+/-- The inverse of `sumAlgEquiv` sends a constant with constant coefficient to the corresponding
+constant. -/
+@[simp]
+theorem sumAlgEquiv_symm_C (c : A) : (sumAlgEquiv R A σ τ).symm (C (C c)) = C c := by
+  rw [AlgEquiv.symm_apply_eq, sumAlgEquiv_C]
+
 /-- The inverse of `sumAlgEquiv` sends a variable to the corresponding variable of the first
 family. -/
 @[simp]
-theorem sumAlgEquiv_symm_X (i : σ) : (sumAlgEquiv R σ τ).symm (X i) = X (.inl i) := by
+theorem sumAlgEquiv_symm_X (i : σ) : (sumAlgEquiv R A σ τ).symm (X i) = X (.inl i) := by
   rw [AlgEquiv.symm_apply_eq, sumAlgEquiv_X_inl]
 
 /-- The inverse of `sumAlgEquiv` sends a constant variable to the corresponding variable of the
 second family. -/
 @[simp]
-theorem sumAlgEquiv_symm_C_X (j : τ) : (sumAlgEquiv R σ τ).symm (C (X j)) = X (.inr j) := by
+theorem sumAlgEquiv_symm_C_X (j : τ) : (sumAlgEquiv R A σ τ).symm (C (X j)) = X (.inr j) := by
   rw [AlgEquiv.symm_apply_eq, sumAlgEquiv_X_inr]
 
 end MvPowerSeries
