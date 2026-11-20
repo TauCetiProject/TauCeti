@@ -70,6 +70,10 @@ dropped from `TauCeti.pseudoReductiveCommHopfAlgProperty.baseChange`.
   a nontrivial finite purely inseparable extension `K / k`, the geometric fibre of `Res_{K/k} 𝔾ₘ`
   over `AlgebraicClosure k` is not pseudo-reductive, showing that pseudo-reductivity need not
   survive inseparable field extensions.
+* `TauCeti.Algebra.WeilRestriction.
+    not_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal_multiplicativeGroup`:
+  for a nontrivial finite purely inseparable extension `K / k`, the geometric unipotent radical of
+  `Res_{K/k} 𝔾ₘ` does not descend to `k`.
 
 ## References
 
@@ -213,5 +217,20 @@ theorem not_pseudoReductive_baseChange_multiplicativeGroup_of_isPurelyInseparabl
   exact (reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation
     k H).mpr ⟨inferInstance, geometricallyConnectedCommHopfAlgProperty_multiplicativeGroup,
       hpr.unipotentRadicalDefiningIdeal_eq_augmentation⟩
+
+/-- **Failure of descent of the geometric unipotent radical.** For a nontrivial finite purely
+inseparable extension `K / k`, the geometric unipotent radical of `Res_{K/k} 𝔾ₘ` does not descend
+to any closed `k`-subgroup of `Res_{K/k} 𝔾ₘ`. -/
+theorem not_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal_multiplicativeGroup
+    {K : Type u} [Field K] [Algebra k K] [FiniteDimensional k K] [IsPurelyInseparable k K]
+    (hK : 1 < Module.finrank k K) :
+    ¬ ∃ J : HopfIdeal k (FiniteTypeCommHopfAlgCat.of k (WeilRestriction k K K[T;T⁻¹])),
+        CommHopfAlgCat.baseChangeHopfIdeal (K := AlgebraicClosure k) J =
+          FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
+            (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k)
+              (FiniteTypeCommHopfAlgCat.of k (WeilRestriction k K K[T;T⁻¹]))) := by
+  have hpr := pseudoReductive_multiplicativeGroup (k := k) (K := K)
+  rw [← hpr.reductive_iff_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal]
+  exact not_reductive_multiplicativeGroup_of_isPurelyInseparable hK
 
 end TauCeti.Algebra.WeilRestriction
