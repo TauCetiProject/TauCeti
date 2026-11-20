@@ -1353,6 +1353,16 @@ theorem boundary_reflect_rotate_of_productBoundary {lam μ γ : DominantWeight n
     h.reflect.rotate.boundary = productBoundary μ.dual lam.dual γ.dual := by
   ext s i; fin_cases s <;> simp [hb]
 
+/-- Value of a hive at the reversed `k`-th vertex of side `C → A` (`s = 2`) in terms of its
+boundary. -/
+theorem apply_edgePoint_two_rev (h : Hive n R) (k : Fin (n + 1)) :
+    h (Vertex.edgePoint n 2 k.rev) =
+      ∑ i : Fin n with i.val < k.val, -h.boundary 2 i.rev := by
+  have hp : Vertex.edgePoint n 2 k.rev = (Vertex.edgePoint n 0 k).reflect :=
+    (Vertex.reflect_edgePoint n 0 k).symm
+  rw [hp, ← reflect_apply, h.reflect.apply_edgePoint_zero]
+  exact Finset.sum_congr rfl fun i _ => h.boundary_reflect 0 i
+
 end Symmetries
 
 /-! ### Small-rank structure and chirality checks -/
