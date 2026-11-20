@@ -9,8 +9,6 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Abelian
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Product
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import TauCeti.CategoryTheory.ObjectProperty.Kernels
-import Mathlib.Algebra.Category.ModuleCat.Biproducts
-import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
 # The abelian category of finite comodules
@@ -21,9 +19,11 @@ In particular, finite-dimensional comodules over a field form an abelian categor
 exact forgetful functor to vector spaces. For coordinate Hopf algebras this supplies the
 abelian and exact structures of the Tannakian representation category.
 
-The full-subcategory argument shows that finite generation is closed under kernels, cokernels and
-finite products. Mathlib's `ObjectProperty` abelian-subcategory instance then makes finite
-comodules abelian, and `CategoryTheory.ObjectProperty.preservesFiniteLimits_ι` and
+The full-subcategory argument shows that finite generation is closed under kernels and
+cokernels; closure under finite products is in
+`TauCeti.Algebra.Coalgebra.Comodule.Finite.Product`. Mathlib's `ObjectProperty`
+abelian-subcategory instance then makes finite comodules abelian, and
+`CategoryTheory.ObjectProperty.preservesFiniteLimits_ι` and
 `CategoryTheory.ObjectProperty.preservesFiniteColimits_ι` make their inclusion into all comodules
 exact.
 -/
@@ -51,23 +51,6 @@ instance isFG_isClosedUnderCokernels :
     let : Module.Finite R _ := hN
     exact Module.Finite.equiv (isoToLinearEquiv (R := R) (C := C)
       ((cokernelIsoRangeQuotient f).symm ≪≫ colimit.isoColimitCocone ⟨s, hs⟩))
-
-/-- Finite comodules are closed under binary products. -/
-instance isFG_isClosedUnderBinaryProducts :
-    (isFG.{u, v, w} R C).IsClosedUnderBinaryProducts :=
-  have : HasBinaryBiproducts (ComoduleCat.{u, v, w} R C) := .of_hasBinaryProducts
-  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun M N hM hN ↦ by
-    let F := forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)
-    have := preservesBinaryBiproducts_of_preservesBiproducts F
-    let : Module.Finite R (F.obj M) := hM
-    let : Module.Finite R (F.obj N) := hN
-    exact Module.Finite.equiv
-      ((F.mapBiprod M N ≪≫ ModuleCat.biprodIsoProd _ _).toLinearEquiv.symm)
-
-/-- Finite comodules are closed under finite products. -/
-instance isFG_isClosedUnderFiniteProducts :
-    (isFG.{u, v, w} R C).IsClosedUnderFiniteProducts :=
-  .mk'
 
 variable [IsNoetherianRing R] [Module.Flat R C]
 

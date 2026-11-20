@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Finiteness.Prod
 public import Mathlib.CategoryTheory.Limits.Constructions.FiniteProductsOfBinaryProducts
 public import Mathlib.CategoryTheory.Limits.Shapes.BinaryProducts.BinaryProducts
+public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Preadditive
@@ -23,8 +24,15 @@ construction stays in the full subcategory of finitely generated comodules. The 
 object is registered as the categorical binary product, which is upgraded to a biproduct over a
 commutative ring. Downstream code then uses Mathlib's generic `M ⨯ N` / `M ⊞ N` API.
 
+The same comparison shows that finite generation, as an object property of all comodules, is
+closed under binary and finite products, so Mathlib's `ObjectProperty` instances for full
+subcategories apply to `FGComoduleCat`.
+
 ## Main declarations
 
+* `TauCeti.ComoduleCat.isFG_isClosedUnderBinaryProducts`,
+  `TauCeti.ComoduleCat.isFG_isClosedUnderFiniteProducts`: finite generation of comodules is
+  closed under binary and finite products.
 * `TauCeti.FGComoduleCat.hasBinaryProduct`: the categorical binary product instance using
   the concrete product object.
 * `TauCeti.FGComoduleCat.hasBinaryProducts`, `hasFiniteProducts`: product infrastructure
@@ -47,10 +55,37 @@ namespace TauCeti
 
 universe u v w
 
-namespace FGComoduleCat
-
 variable (R : Type u) [CommSemiring R]
 variable (C : Type v) [AddCommMonoid C] [Module R C] [Coalgebra R C]
+
+namespace ComoduleCat
+
+/-- Finitely generated comodules are closed under binary products: the categorical product is
+isomorphic to the concrete product comodule on the product of the underlying modules. -/
+instance isFG_isClosedUnderBinaryProducts :
+    (isFG.{u, v, w} R C).IsClosedUnderBinaryProducts := by
+  refine ObjectProperty.IsClosedUnderLimitsOfShape.mk' ?_
+  rintro _ ⟨F, hF⟩
+  refine (isFG R C).prop_of_iso (HasLimit.isoOfNatIso (diagramIsoPair F)).symm ?_
+  let M := F.obj ⟨.left⟩
+  let N := F.obj ⟨.right⟩
+  let : Module.Finite R M := hF _
+  let : Module.Finite R N := hF _
+  let e : prod R C M N ≅ M ⨯ N :=
+    { hom := Limits.prod.lift (prodFst M N) (prodSnd M N)
+      inv := prodLift Limits.prod.fst Limits.prod.snd
+      hom_inv_id := prod_hom_ext (by simp) (by simp)
+      inv_hom_id := Limits.prod.hom_ext (by simp) (by simp) }
+  exact (isFG R C).prop_of_iso e (Module.Finite.prod : Module.Finite R (M × N))
+
+/-- Finitely generated comodules are closed under finite products. -/
+instance isFG_isClosedUnderFiniteProducts :
+    (isFG.{u, v, w} R C).IsClosedUnderFiniteProducts :=
+  .mk'
+
+end ComoduleCat
+
+namespace FGComoduleCat
 
 /-- The product of two finitely generated comodules, carried by the product of the
 underlying modules. -/
