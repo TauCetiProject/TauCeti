@@ -43,7 +43,8 @@ of genus two has gonality exactly two. Gonality one characterizes rational funct
 * `TauCeti.gonality_le_finrank_adjoin`, `TauCeti.exists_finrank_adjoin_eq_gonality`,
   `TauCeti.gonality_pos`: every transcendental element bounds the gonality, and for a function
   field some transcendental element attains it, which is then positive.
-* `AlgEquiv.gonality_eq`: isomorphic extensions have the same gonality.
+* `AlgEquiv.finrank_adjoin_apply`, `AlgEquiv.gonality_eq`: an isomorphism preserves the index
+  of a simple subfield, so isomorphic extensions have the same gonality.
 * `TauCeti.exists_transcendental_finrank_adjoin_le_degree_of_two_le_dim`: over an exact constant
   field, a divisor `D` with `ℓ(D) ≥ 2` gives a rational subfield of index at most `deg D`.
 * `TauCeti.gonality_eq_sInf_degree`: **the pencil description** of the gonality.
@@ -52,6 +53,8 @@ of genus two has gonality exactly two. Gonality one characterizes rational funct
 * `TauCeti.gonality_le_mul_degree_of_isPoleNumber`: a pole number `n ≠ 0` at a place `P`
   bounds the gonality by `n · deg P`.
 * `TauCeti.gonality_eq_one_iff`: gonality one means `F ≃ₐ[k] k(t)`.
+* `TauCeti.isEmpty_algEquiv_ratFunc_of_genus_ne_zero`: a field of positive genus is not
+  rational.
 * `TauCeti.gonality_eq_two_iff`: for a non-rational field, gonality two means a rational subfield
   of index two.
 * `TauCeti.gonality_le_genus_add_one`, `TauCeti.gonality_le_two_mul_genus_sub_two`,
@@ -114,17 +117,22 @@ theorem gonality_pos (hF : IsFunctionField k F) : 0 < gonality k F := by
   have := hF.finiteDimensional_adjoin hx
   exact hrank ▸ Module.finrank_pos
 
+/-- An isomorphism over `k` preserves the index of a simple subfield:
+`[F' : k(e x)] = [F : k(x)]`. -/
+theorem _root_.AlgEquiv.finrank_adjoin_apply {F' : Type*} [Field F'] [Algebra k F']
+    (e : F ≃ₐ[k] F') (x : F) : Module.finrank k⟮e x⟯ F' = Module.finrank k⟮x⟯ F := by
+  have h := IntermediateField.relfinrank_map_map k⟮x⟯ ⊤ e.toAlgHom
+  rwa [IntermediateField.adjoin_map, Set.image_singleton, ← AlgHom.fieldRange_eq_map,
+    AlgHom.fieldRange_eq_top.mpr e.surjective, IntermediateField.relfinrank_top_right,
+    IntermediateField.relfinrank_top_right] at h
+
 /-- An isomorphism over `k` carries rational subfields to rational subfields of the same index,
 so **isomorphic extensions have the same gonality**. -/
 theorem _root_.AlgEquiv.gonality_eq {F' : Type*} [Field F'] [Algebra k F'] (e : F ≃ₐ[k] F') :
     gonality k F = gonality k F' := by
   have htr (x : F) : Transcendental k (e x) ↔ Transcendental k x :=
     not_congr (isAlgebraic_algHom_iff e.toAlgHom e.injective)
-  have hrank (x : F) : Module.finrank k⟮e x⟯ F' = Module.finrank k⟮x⟯ F := by
-    have h := IntermediateField.relfinrank_map_map k⟮x⟯ ⊤ e.toAlgHom
-    rwa [IntermediateField.adjoin_map, Set.image_singleton, ← AlgHom.fieldRange_eq_map,
-      AlgHom.fieldRange_eq_top.mpr e.surjective, IntermediateField.relfinrank_top_right,
-      IntermediateField.relfinrank_top_right] at h
+  have hrank := e.finrank_adjoin_apply
   have hset : {n : ℕ | ∃ x : F, Transcendental k x ∧ Module.finrank k⟮x⟯ F = n} =
       {n : ℕ | ∃ y : F', Transcendental k y ∧ Module.finrank k⟮y⟯ F' = n} := by
     ext n
@@ -201,17 +209,9 @@ at `P` and no other pole, then the gonality is at most `n · deg P`. At a ration
 bound is `n` itself. No exactness of the constant field is needed. -/
 theorem gonality_le_mul_degree_of_isPoleNumber (hF : IsFunctionField k F) {P : Place k F}
     {n : ℕ} (hn : n ≠ 0) (h : P.IsPoleNumber n) : gonality k F ≤ n * P.degree := by
-  obtain ⟨x, hx0, hxP, hxQ⟩ := (P.isPoleNumber_iff n).mp h
-  have hx : Transcendental k x := P.transcendental_of_ord_ne_zero (by omega)
-  -- The pole divisor of `x` is `n P`.
-  have hpoles : Divisor.poles hF (Units.mk0 x hx0) = (n : ℤ) • WeilDivisor.ofPoint P := by
-    ext Q
-    rcases eq_or_ne Q P with rfl | hQ
-    · simp [hxP, WeilDivisor.coeff_ofPoint_self]
-    · simp [hxQ Q hQ, WeilDivisor.coeff_ofPoint_of_ne hQ]
-  have hdeg := Divisor.degree_poles hF (Units.mk0 x hx0) hx
-  rw [hpoles, Divisor.degree_zsmul, Divisor.degree_ofPoint] at hdeg
-  exact (gonality_le_finrank_adjoin hx).trans (by exact_mod_cast hdeg.ge)
+  obtain ⟨x, -, hxP, hxQ⟩ := (P.isPoleNumber_iff n).mp h
+  exact (gonality_le_finrank_adjoin (P.transcendental_of_ord_ne_zero (by omega))).trans
+    (P.finrank_adjoin_eq_mul_degree_of_ord_eq_neg hF hxP hxQ).le
 
 /-! ### Rational function fields -/
 
@@ -232,13 +232,18 @@ theorem gonality_eq_one_iff : gonality k F = 1 ↔ Nonempty (F ≃ₐ[k] RatFunc
   exact ⟨((RatFunc.algEquivOfTranscendental x hx).trans
     ((IntermediateField.equivOfEq htop).trans IntermediateField.topEquiv)).symm⟩
 
+/-- **A field of positive genus is not rational**: `k(t)` and its subfields have genus zero. -/
+theorem isEmpty_algEquiv_ratFunc_of_genus_ne_zero (hg : genus k F ≠ 0) :
+    IsEmpty (F ≃ₐ[k] RatFunc k) :=
+  ⟨fun e ↦ hg (genus_eq_zero_of_algHom_ratFunc e.toAlgHom)⟩
+
 /-- A function field of positive genus is not rational, so its gonality is at least two. -/
 theorem two_le_gonality_of_genus_ne_zero (hF : IsFunctionField k F) (hg : genus k F ≠ 0) :
     2 ≤ gonality k F := by
   have := gonality_pos hF
   by_contra! h
   obtain ⟨e⟩ := (gonality_eq_one_iff (k := k) (F := F)).mp (by omega)
-  exact hg (genus_eq_zero_of_algHom_ratFunc e.toAlgHom)
+  exact (isEmpty_algEquiv_ratFunc_of_genus_ne_zero hg).false e
 
 /-- **Gonality two means a rational subfield of index two**, for a function field that is not
 rational. Rationality has to be excluded: `k(t)` has gonality one but `k(t ^ 2)` has index two. -/

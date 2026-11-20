@@ -227,9 +227,7 @@ perfect field that is Tau Ceti's hyperelliptic predicate. -/
 theorem gonality_eq_two_iff_isHyperellipticFunctionField [PerfectField k]
     (hF : IsFunctionField k F) (hg : 2 ≤ genus k F) :
     gonality k F = 2 ↔ IsHyperellipticFunctionField k F := by
-  have hrat : IsEmpty (F ≃ₐ[k] RatFunc k) :=
-    ⟨fun e ↦ by have := genus_eq_zero_of_algHom_ratFunc e.toAlgHom; omega⟩
-  rw [gonality_eq_two_iff hF hrat,
+  rw [gonality_eq_two_iff hF (isEmpty_algEquiv_ratFunc_of_genus_ne_zero (by omega)),
     isHyperellipticFunctionField_iff_two_le_genus_and_exists_finrank_adjoin_eq_two,
     and_iff_right hg]
 
