@@ -76,6 +76,9 @@ frequency derivative of its Fourier transform.
   `TauCeti.Symbol.HasCompactSpatialSupport.memLp_quantizeSchwartzValue`: for a symbol
   `a : TauCeti.Symbol n V W m`, `Op(a) u` is continuous, and if `a` has compact spatial support
   then so does `Op(a) u`, which therefore lies in every `Lᵖ`.
+* `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial` and
+  `TauCeti.Symbol.quantizeSchwartzValue_const`: the symbol `f(x)` quantizes to multiplication by
+  `f`, and a constant symbol `T` to `T`.
 * `TauCeti.Symbol.quantizeSchwartzValue_ofSpatial_smul_id_comp`: multiplying a symbol by a real
   function `f` of the position multiplies its quantization by `f`.
 * `TauCeti.differentiable_quantizeSchwartzValue` and
@@ -936,6 +939,24 @@ theorem quantizeSchwartzValue_ofSpatial_smul_id_comp (a : Symbol n V W m)
       rw [coefficient_comp, coefficient_ofSpatial, ContinuousLinearMap.smul_comp,
         ContinuousLinearMap.id_comp, Pi.smul_apply, Complex.coe_smul]),
     quantizeSchwartzValue_smul_left]
+
+open scoped ContDiff in
+/-- The symbol `f(x)` of multiplication by `f` quantizes to multiplication: `Op(f) u = f u`. -/
+@[simp]
+theorem quantizeSchwartzValue_ofSpatial [CompleteSpace V] [CompleteSpace W]
+    (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) (u : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n) :
+    quantizeSchwartzValue (ofSpatial f hf).coefficient u x = f x (u x) := by
+  have hc : (ofSpatial f hf).coefficient = fun p ↦ f p.1 := funext (coefficient_ofSpatial f hf)
+  rw [hc, quantizeSchwartzValue_comp_fst]
+
+/-- The constant symbol `T` quantizes to `T`: `Op(T) u = T u`. -/
+@[simp]
+theorem quantizeSchwartzValue_const [CompleteSpace V] [CompleteSpace W] (T : V →L[ℂ] W)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (const T : Symbol n V W 0).coefficient u x = T (u x) := by
+  rw [quantizeSchwartzValue_congr_left (b := (ofSpatial (fun _ ↦ T) contDiff_const).coefficient)
+    (fun _ ↦ by simp) u, quantizeSchwartzValue_ofSpatial]
 
 /-- **Multiplication by a coordinate of the displacement.** Multiplying the input by
 `(x - y)_j` and evaluating the quantization at `x` replaces the symbol by `i ∂_{ξ_j} a`. -/
