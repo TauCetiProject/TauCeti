@@ -14,6 +14,7 @@ import TauCeti.Analysis.Contour.Residue.Rectangle
 import TauCeti.Analysis.Complex.NormSq
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.SpecialFunctions.Pochhammer
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
@@ -209,34 +210,6 @@ theorem mellinInv_eq_mellinInv_add_sum_residue_of_norm_le
       ((eventually_ne_atTop (0 : ℝ)).mono fun T hT u ↦ by simpa using hT)
       (hbound.mono fun T hT u hu ↦ (hT u hu).1)
 
-private lemma endpoints_le_pochhammer (j : ℕ) (hj : 1 ≤ j) (c t : ℝ)
-    (hmid : ∀ k : ℕ, 0 < k → k < j → 1 ≤ |c + k|) :
-    ‖(c : ℂ) + t * I‖ * ‖((c + j : ℝ) : ℂ) + t * I‖ ≤
-      ‖(ascPochhammer ℂ (j + 1)).eval ((c : ℂ) + t * I)‖ := by
-  have hprefix : ∀ n : ℕ, 1 ≤ n → n ≤ j →
-      ‖(c : ℂ) + t * I‖ ≤ ‖(ascPochhammer ℂ n).eval ((c : ℂ) + t * I)‖ := by
-    intro n
-    induction n with
-    | zero => omega
-    | succ n ih =>
-      intro hn hnj
-      rcases n.eq_zero_or_pos with rfl | hn0
-      · simp
-      have hfactor : 1 ≤ ‖(c : ℂ) + t * I + n‖ := by
-        calc
-          1 ≤ |c + n| := hmid n hn0 (by omega)
-          _ ≤ ‖(c : ℂ) + t * I + n‖ := by
-            simpa using Complex.abs_re_le_norm ((c : ℂ) + t * I + n)
-      rw [ascPochhammer_succ_eval, norm_mul]
-      exact (ih hn0 (by omega)).trans
-        (le_mul_of_one_le_right (norm_nonneg _) hfactor)
-  rw [ascPochhammer_succ_eval, norm_mul]
-  have heq : (c : ℂ) + t * I + j = ((c + j : ℝ) : ℂ) + t * I := by
-    push_cast
-    ring
-  rw [heq]
-  exact mul_le_mul_of_nonneg_right (hprefix j hj le_rfl) (norm_nonneg _)
-
 /-- The all-order Perron kernel is integrable and its full-line L¹ norm is bounded by the
 mixed square-root majorant determined by its first and last factors.
 
@@ -262,7 +235,8 @@ theorem integrable_and_integral_norm_cpow_div_ascPochhammer_le
       ‖(ascPochhammer ℂ (j + 1)).eval ((c : ℂ) + t * I)‖ :=
     (mul_le_mul (Complex.sqrt_sq_add_sq_le_norm_add_mul_I ha.le hac)
       (Complex.sqrt_sq_add_sq_le_norm_add_mul_I hb.le hbc)
-      (Real.sqrt_nonneg _) (norm_nonneg _)).trans (endpoints_le_pochhammer j hj c t hmid)
+      (Real.sqrt_nonneg _) (norm_nonneg _)).trans
+        (norm_endpoints_le_norm_ascPochhammer_eval j hj c t hmid)
   have hne (t : ℝ) : (ascPochhammer ℂ (j + 1)).eval ((c : ℂ) + t * I) ≠ 0 := by
     apply norm_pos_iff.mp
     exact lt_of_lt_of_le (by positivity) (hden t)
