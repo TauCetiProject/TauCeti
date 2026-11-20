@@ -485,18 +485,6 @@ section MixedHessian
 variable [I₁.Boundaryless] [I₂.Boundaryless] [I₃.Boundaryless]
   [IsManifold I₁ 2 M₁] [IsManifold I₂ 2 M₂] [IsManifold I₃ 2 M₃]
 
-omit [I₂.Boundaryless] [IsManifold I₁ 2 M₁] [IsManifold I₂ 2 M₂] [IsManifold I₃ 2 M₃] in
-/-- A branch `b : M₁ × M₃ → M₂` differentiable at `(q, Q)` has a differentiable coordinate
-expression in the preferred charts at `q`, `Q` and `b (q, Q)`. -/
-private theorem differentiableAt_extChartAt_comp_branch {b : M₁ × M₃ → M₂} {q : M₁} {Q : M₃}
-    (hb : MDifferentiableAt (I₁.prod I₃) I₂ b (q, Q)) :
-    DifferentiableAt ℝ
-      (fun z : E₁ × E₃ ↦ extChartAt I₂ (b (q, Q))
-        (b ((extChartAt I₁ q).symm z.1, (extChartAt I₃ Q).symm z.2)))
-      (extChartAt I₁ q q, extChartAt I₃ Q Q) := by
-  simpa only [writtenInExtChartAt, extChartAt_prod, PartialEquiv.prod_coe_symm,
-    PartialEquiv.prod_coe, Function.comp_def] using hb.differentiableAt_writtenInExtChartAt
-
 omit [IsManifold I₃ 2 M₃] in
 /-- The relations along a branch `b`, read in the preferred charts at `q`, `b (q, Q)` and `Q`: near
 the chart image of `(q, Q)`, the intermediate covectors of the coordinate expressions of `S` and `T`
@@ -521,7 +509,7 @@ private theorem eventually_cotangentGenerating_extChartAt {R : M₁ × M₃ → 
       cotangentGeneratingTarget S' (z.1, b' z) = cotangentGeneratingSource T' (b' z, z.2) ∧
       cotangentGeneratingSource R' z = cotangentGeneratingSource S' (z.1, b' z) := by
   intro e₁ e₂ e₃ S' T' R' b'
-  have hb' : DifferentiableAt ℝ b' (e₁ q, e₃ Q) := differentiableAt_extChartAt_comp_branch hb
+  have hb' : DifferentiableAt ℝ b' (e₁ q, e₃ Q) := hb.differentiableAt_comp_prod_extChartAt_symm
   have hb'₀ : b' (e₁ q, e₃ Q) = e₂ (b (q, Q)) := by
     simp only [b', e₁, e₃, extChartAt_to_inv]
   have hφ : Tendsto (fun z : E₁ × E₃ ↦ (e₁.symm z.1, e₃.symm z.2)) (𝓝 (e₁ q, e₃ Q))
@@ -585,7 +573,7 @@ theorem isInvertible_mixedHessian_of_comp {R : M₁ × M₃ → ℝ} {b : M₁ �
   have hMR' := isInvertible_cotangentMixedHessian_of_comp hS.contDiffAt_comp_prod_extChartAt_symm
     hT.contDiffAt_comp_prod_extChartAt_symm
     ((hR.contDiffAt_comp_prod_extChartAt_symm.fderiv_right (m := 1) le_rfl).differentiableAt
-      one_ne_zero) (differentiableAt_extChartAt_comp_branch hb)
+      one_ne_zero) hb.differentiableAt_comp_prod_extChartAt_symm
     (by simp only [extChartAt_to_inv])
     (isInvertible_cotangentLegendreHessian_extChartAt hS hT h)
     (mixedHessian_eq_cotangentMixedHessian_extChartAt hS ▸ hMS)

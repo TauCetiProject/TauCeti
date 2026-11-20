@@ -67,6 +67,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `ContMDiffAt.contDiffAt_writtenInExtChartAt` and
   `MDifferentiableAt.differentiableAt_writtenInExtChartAt`: the same for a map between manifolds,
   read in the extended charts at the point and at its image.
+* `MDifferentiableAt.differentiableAt_comp_prod_extChartAt_symm`: the same for a differentiable
+  map from a product of boundaryless manifolds, read in the product of the preferred charts at the
+  two factors and the preferred chart at the image.
 * `MDifferentiableAt.tangentSpaceCastModel_mfderiv_apply`: on a boundaryless source, the coordinate
   derivative is the manifold derivative transported by the canonical tangent-to-model casts.
 * `TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm`: on a boundaryless
@@ -500,6 +503,22 @@ theorem MDifferentiableAt.differentiableAt_writtenInExtChartAt {g : M → M'}
     DifferentiableAt 𝕜 (writtenInExtChartAt I I' x g) (extChartAt I x x) := by
   simpa only [writtenInExtChartAt, I.range_eq_univ, differentiableWithinAt_univ] using
     ((mdifferentiableAt_iff _ _).1 hg).2
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- On a product of boundaryless manifolds, a map into a manifold which is differentiable at
+`(x, x')` has a differentiable coordinate expression in the preferred extended charts at `x` and
+`x'` and at the image of `(x, x')`, at the pair of chart images. -/
+theorem MDifferentiableAt.differentiableAt_comp_prod_extChartAt_symm [I'.Boundaryless]
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] {H'' : Type*} [TopologicalSpace H'']
+    {I'' : ModelWithCorners 𝕜 E'' H''} {M'' : Type*} [TopologicalSpace M'']
+    [ChartedSpace H'' M''] {g : M × M' → M''} {x' : M'}
+    (hg : MDifferentiableAt (I.prod I') I'' g (x, x')) :
+    DifferentiableAt 𝕜
+      (fun z : E × E' ↦ extChartAt I'' (g (x, x'))
+        (g ((extChartAt I x).symm z.1, (extChartAt I' x').symm z.2)))
+      (extChartAt I x x, extChartAt I' x' x') := by
+  simpa only [writtenInExtChartAt, extChartAt_prod, PartialEquiv.prod_coe_symm,
+    PartialEquiv.prod_coe, Function.comp_def] using hg.differentiableAt_writtenInExtChartAt
 
 omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
 /-- On a boundaryless manifold, the manifold derivative of `g : M → M'` at `x` is the Fréchet
