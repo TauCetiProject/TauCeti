@@ -32,7 +32,8 @@ orientation `o` at `x` is the image `g_* o`.
 **The isotropy orientation character.** An element `h` of the stabilizer of `x` acts on the
 integral local homology `H_d(M, M ∖ {x}; ℤ) ≅ ℤ`, `d = dim M`, by multiplication by a sign
 `χ(h) = ±1`, and `χ` is a character of the stabilizer (`TauCeti.isotropyOrientationCharacter`,
-`TauCeti.localHomologySMulIso_hom_apply_eq_zsmul`). So `χ(h) = 1` exactly when `h` preserves the
+`TauCeti.localHomologySMulIso_hom_apply_eq_zsmul`), and `χ(h)` is the only sign by which `h`
+acts (`TauCeti.isotropyOrientationCharacter_eq_iff`). So `χ(h) = 1` exactly when `h` preserves the
 local orientations at `x`. The trivialization above is equivariant up to `χ`:
 `(g * h)_* o = χ(h) • g_* o` (`TauCeti.localHomologySMulIso_mul_hom_apply`). The character is
 constant on the path components of the stabilizer
@@ -63,6 +64,8 @@ made here.
   elements of `G` are compatible with transport along the orbit.
 * `TauCeti.localHomologySMulIso_hom_apply_eq_zsmul`: an element `h` of the stabilizer acts on
   `H_d(M, M ∖ {x}; ℤ)` as multiplication by `χ(h)`.
+* `TauCeti.isotropyOrientationCharacter_eq_iff`: `χ(h) = u` exactly when `h` acts on
+  `H_d(M, M ∖ {x}; ℤ)` as multiplication by `u`.
 * `TauCeti.isotropyOrientationCharacter_eq_one_iff`: `χ(h) = 1` exactly when `h` acts trivially.
 * `TauCeti.localHomologySMulIso_mul_hom_apply`: `(g * h)_* z = χ(h) • g_* z`.
 * `TauCeti.isotropyOrientationCharacter_eq_of_joined`: `χ` is constant on path components of the
@@ -286,8 +289,9 @@ private lemma stabilizerScalar_mul (hd : finrank ℝ E = d) (x : M) (g h : stabi
 
 /-- **The isotropy orientation character.** An element `h` of the stabilizer of `x` acts on the
 integral local homology `H_d(M, M ∖ {x}; ℤ) ≅ ℤ` in the dimension `d` of `M` by multiplication
-by a sign `χ(h) = ±1` (`TauCeti.localHomologySMulIso_hom_apply_eq_zsmul`), and `χ(h) = 1` exactly
-when `h` acts trivially (`TauCeti.isotropyOrientationCharacter_eq_one_iff`). -/
+by a sign `χ(h) = ±1` (`TauCeti.localHomologySMulIso_hom_apply_eq_zsmul`), and `χ(h)` is the
+only sign by which `h` acts (`TauCeti.isotropyOrientationCharacter_eq_iff`). In particular
+`χ(h) = 1` exactly when `h` acts trivially (`TauCeti.isotropyOrientationCharacter_eq_one_iff`). -/
 def isotropyOrientationCharacter (hd : finrank ℝ E = d) (x : M) : stabilizer G x →* ℤˣ :=
   MonoidHom.toHomUnits
     { toFun := stabilizerScalar hd x
@@ -308,6 +312,18 @@ theorem localHomologySMulIso_hom_apply_eq_zsmul (hd : finrank ℝ E = d) {x : M}
   rw [coe_isotropyOrientationCharacter]
   exact stabilizerScalar_spec hd x h z
 
+/-- **The orientation character is the only sign by which an element of the stabilizer acts.**
+`χ(h) = u` exactly when `h` acts on `H_d(M, M ∖ {x}; ℤ)` by multiplication by `u`. -/
+theorem isotropyOrientationCharacter_eq_iff (hd : finrank ℝ E = d) {x : M}
+    (h : stabilizer G x) (u : ℤˣ) :
+    isotropyOrientationCharacter hd x h = u ↔
+      ∀ z, (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (h : G)
+        (mem_stabilizer_iff.1 h.2) d).hom z = (u : ℤ) • z := by
+  refine ⟨fun hu z ↦ by rw [localHomologySMulIso_hom_apply_eq_zsmul hd h, hu],
+    fun hall ↦ Units.ext ?_⟩
+  rw [coe_isotropyOrientationCharacter]
+  exact stabilizerScalar_eq hd x h hall
+
 /-- An element of the stabilizer has trivial orientation character exactly when it acts trivially
 on `H_d(M, M ∖ {x}; ℤ)`, that is, when it preserves the local orientations at `x`. -/
 theorem isotropyOrientationCharacter_eq_one_iff (hd : finrank ℝ E = d) {x : M}
@@ -315,10 +331,7 @@ theorem isotropyOrientationCharacter_eq_one_iff (hd : finrank ℝ E = d) {x : M}
     isotropyOrientationCharacter hd x h = 1 ↔
       ∀ z, (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (h : G)
         (mem_stabilizer_iff.1 h.2) d).hom z = z := by
-  refine ⟨fun h1 z ↦ by rw [localHomologySMulIso_hom_apply_eq_zsmul hd h, h1, Units.val_one,
-    one_zsmul], fun hall ↦ Units.ext ?_⟩
-  rw [coe_isotropyOrientationCharacter, Units.val_one]
-  exact stabilizerScalar_eq hd x h fun z ↦ (hall z).trans (one_zsmul z).symm
+  simp only [isotropyOrientationCharacter_eq_iff hd h, Units.val_one, one_zsmul]
 
 /-- **The trivialization along the orbit is equivariant up to the orientation character.** For
 `g` with `g • x = y` and `h` in the stabilizer of `x`, the image of a class `z` of
