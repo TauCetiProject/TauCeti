@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
@@ -46,7 +47,7 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   `(g ∘ γ)' (t) = d g (γ t) (γ' t)` for a function `g` from the manifold to a normed space,
   with `TauCeti.Manifold.hasDerivAt_comp_curve` its unrestricted case.
 * `TauCeti.Manifold.exists_contMDiffAt_curveVelocity_eq`: every tangent vector on a
-  boundaryless manifold is realized by a curve of the given regularity at the given parameter.
+  manifold interior point is realized by a curve of the given regularity at the given parameter.
 * `TauCeti.Manifold.fromTangentSpace_curveVelocityWithin`: the velocity of a curve in an open
   subset of a real normed space is the within derivative of its coordinate curve.
 * `TauCeti.Manifold.curveVelocityWithin` and `TauCeti.Manifold.curveVelocity`: the velocity of a
@@ -1111,16 +1112,18 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {n : ℕ∞ω} [IsManifold I n M] [I.Boundaryless]
+  {n : ℕ∞ω} [IsManifold I n M]
 
-/-- Every tangent vector to a boundaryless manifold is the velocity of a curve which is
-`C^n` near the prescribed parameter. No completeness or metric is required. -/
+/-- Every tangent vector at an interior point is the velocity of a curve which is `C^n`
+near the prescribed parameter. No completeness or metric is required. -/
 theorem exists_contMDiffAt_curveVelocity_eq (hn : 1 ≤ n) (p : M)
-    (v : TangentSpace I p) (t : 𝕜) :
+    (hp : I.IsInteriorPoint p) (v : TangentSpace I p) (t : 𝕜) :
     ∃ γ : 𝕜 → M, γ t = p ∧ ContMDiffAt 𝓘(𝕜, 𝕜) I n γ t ∧
       curveVelocity I γ t = v := by
   have : IsManifold I 1 M := IsManifold.of_le hn
   let c := extChartAt I p
+  have htarget : c.target ∈ 𝓝 (c p) :=
+    mem_interior_iff_mem_nhds.mp (I.isInteriorPoint_iff.mp hp)
   -- Use the model-space instances for the chart line, rather than the fibre instances.
   let v' : E := v
   let l : 𝕜 → E := fun r ↦ c p + (r - t) • v'
@@ -1129,14 +1132,14 @@ theorem exists_contMDiffAt_curveVelocity_eq (hn : 1 ≤ n) (p : M)
   have hlt : l t = c p := by simp [l]
   have hc : ContMDiffAt 𝓘(𝕜, E) I n c.symm (c p) :=
     (contMDiffWithinAt_extChartAt_symm_target_self p).contMDiffAt
-      (extChartAt_target_mem_nhds p)
+      htarget
   have hγ : ContMDiffAt 𝓘(𝕜, 𝕜) I n (c.symm ∘ l) t :=
     (hlt ▸ hc).comp t hl.contMDiff.contMDiffAt
   have hγt : (c.symm ∘ l) t = p := by simp [Function.comp_apply, hlt, c]
   refine ⟨c.symm ∘ l, hγt, hγ, ?_⟩
   have heq : c ∘ (c.symm ∘ l) =ᶠ[𝓝 t] l := by
     filter_upwards [hl.continuous.continuousAt.preimage_mem_nhds
-      (hlt ▸ extChartAt_target_mem_nhds p)] with r hr
+      (hlt ▸ htarget)] with r hr
     exact c.right_inv hr
   have hderiv : HasDerivAt l v' t := by
     simpa only [l, Pi.add_apply, id_eq, zero_add, one_smul] using
