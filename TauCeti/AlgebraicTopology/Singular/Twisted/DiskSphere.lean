@@ -121,21 +121,12 @@ private lemma singularHomology₀Section_comp_coefficientMap_isoConstantOfHomoto
         LocalCoefficientSystem.twistedHomologyCoefficientMap
           ((LocalCoefficientSystem.pullback P.map.hom).map (isoConstantOfHomotopy H L).inv) 0 =
       L.map q ≫ ιTwistedHomology₀ (P.subspaceSystem L) y := by
-  have : ContractibleSpace P.fst := (contractible_iff_id_nullhomotopic _).2 ⟨x, ⟨H⟩⟩
-  have he : (isoConstantOfHomotopy H L).inv.app (FundamentalGroupoid.mk (P.map y)) = L.map q := by
-    have h1 : (isoConstantOfHomotopy H L).hom.app (FundamentalGroupoid.mk (P.map y)) ≫
-        L.map q = 𝟙 _ := by
-      rw [isoConstantOfHomotopy_hom_app]
-      -- The ambient space is contractible, so its fundamental groupoid is thin.
-      exact (L.map_comp _ q).symm.trans ((congrArg L.map
-        (Subsingleton.elim (α := Path.Homotopic.Quotient _ _) _ _)).trans (L.map_id _))
-    exact ((isoConstantOfHomotopy H L).app _).inv_ext h1
   rw [singularHomology₀Section_twistedHomologyConstantIso_inv_assoc]
   -- The constant system restricted to the subspace and the constant system on the subspace have
   -- the same fibres only up to definitional unfolding.
   erw [ιTwistedHomology₀_coefficientMap_assoc, ιTwistedHomology₀_coefficientMap,
     pullbackConstantIso_inv_app, Category.id_comp, pullback_map_app]
-  exact congrArg (· ≫ _) he
+  exact congrArg (· ≫ _) (isoConstantOfHomotopy_inv_app H L q)
 
 omit L in
 /-- A map of pairs carries the class of a coefficient at a point of the subspace to the class of
@@ -219,6 +210,9 @@ theorem twistedHomologyDiskBoundaryPairIso_one_inv_comp_twistedHomologyMap_twist
     Preadditive.sub_comp, Category.assoc, Category.assoc,
     TopPair.ιTwistedHomology₀_subspaceSystem_comp_twistedHomologyMap,
     TopPair.ιTwistedHomology₀_subspaceSystem_comp_twistedHomologyMap]
+  -- The two sides differ only in the implicit middle object of the composites: the fibre of
+  -- `(diskBoundaryPair 1).subspaceSystem` at a point of `S⁰` is by definition the fibre of the
+  -- ambient system at its image in the disk.
   rfl
 
 end TauCeti
