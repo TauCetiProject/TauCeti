@@ -17,6 +17,7 @@ import Mathlib.RingTheory.Ideal.GoingUp
 import TauCeti.Algebra.MonoidAlgebra.Exactness
 import Mathlib.RepresentationTheory.Invariants
 import Mathlib.RingTheory.SimpleModule.Basic
+import TauCeti.RepresentationTheory.OfModule
 import TauCeti.RepresentationTheory.PGroupInvariants
 
 /-!
@@ -182,8 +183,8 @@ private theorem exists_mul_eq_one_of_augmentation_ne_zero {k : Type*} [Field k] 
     | zero => simp
     | add y z hy hz => rw [add_smul, hy, hz, map_add, add_smul]
     | single g r =>
-      -- Mathlib states no evaluation lemma for `Representation.ofModule'`, so unfold it.
-      have hg : single g (1 : k) • s = s := by simpa [Representation.ofModule'] using hs g
+      have hg : single g (1 : k) • s = s := by
+        simpa [TauCeti.Representation.ofModule'_apply] using hs g
       calc single g r • s = r • (single g (1 : k) • s) := by
             rw [← smul_assoc, smul_single', mul_one]
         _ = augmentation k G (single g r) • s := by rw [hg, augmentation_single]
