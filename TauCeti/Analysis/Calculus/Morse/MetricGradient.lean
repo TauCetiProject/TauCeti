@@ -84,10 +84,10 @@ not treated here.
   stable and unstable subspaces of the linearization.
 * `TauCeti.tendstoUniformlyOn_fderiv_metricGradient`: the derivative of the metric gradient depends
   continuously on the metric in `C¹`.
-* `IsNondegenerateCriticalPoint.exists_localStableGraph_neg_metricGradient_tendstoUniformlyOn` and
-  `IsNondegenerateCriticalPoint.exists_localUnstableGraph_neg_metricGradient_tendstoUniformlyOn`,
-  in the namespace `TauCeti`: the local stable and unstable manifolds depend continuously in `C¹`
-  on the metric.
+* `exists_localStableGraph_neg_metricGradient_tendstoUniformlyOn_fderiv` and
+  `exists_localUnstableGraph_neg_metricGradient_tendstoUniformlyOn_fderiv`, in the namespace
+  `TauCeti.IsNondegenerateCriticalPoint`: the local stable and unstable manifolds depend
+  continuously in `C¹` on the metric.
 
 ## References
 
@@ -337,6 +337,12 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
   {f : E → ℝ} {G : E → E →L[ℝ] E} {U K : Set E}
   {ι : Type*} {l : Filter ι} {Gs : ι → E → E →L[ℝ] E}
 
+/-- The map `(A, w) ↦ A⁻¹ w` is `C^n` near a pair whose operator is invertible. -/
+private theorem contDiffAt_inverse_apply_of_isInvertible {n : WithTop ℕ∞} {A : E →L[ℝ] E}
+    (hA : A.IsInvertible) (w : E) :
+    ContDiffAt ℝ n (fun p : (E →L[ℝ] E) × E ↦ p.1.inverse p.2) (A, w) :=
+  (ContDiffAt.comp (A, w) hA.contDiffAt_map_inverse contDiffAt_fst).clm_apply contDiffAt_snd
+
 /-- The derivative of the metric gradient at a point where the metric is invertible, written
 through the map `(A, w) ↦ A⁻¹ w`, so that it is a continuous function of the point and of the
 value and the derivative of the metric there. -/
@@ -346,8 +352,7 @@ private theorem hasFDerivAt_metricGradient_of_isInvertible {y : E} (hf : ContDif
       ((fderiv ℝ (fun p : (E →L[ℝ] E) × E ↦ p.1.inverse p.2) (G y, ∇ f y)).comp
         ((fderiv ℝ G y).prod (fderiv ℝ (∇ f) y))) y := by
   have hΨ : DifferentiableAt ℝ (fun p : (E →L[ℝ] E) × E ↦ p.1.inverse p.2) (G y, ∇ f y) :=
-    ((ContDiffAt.comp (n := 1) (G y, ∇ f y) hGy.contDiffAt_map_inverse contDiffAt_fst).clm_apply
-      contDiffAt_snd).differentiableAt one_ne_zero
+    (contDiffAt_inverse_apply_of_isInvertible (n := 1) hGy _).differentiableAt one_ne_zero
   have hgrad : DifferentiableAt ℝ (∇ f) y :=
     (hf.gradient_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
   rw [funext (metricGradient_apply G f)]
@@ -392,8 +397,7 @@ theorem tendstoUniformlyOn_fderiv_metricGradient (hU : IsOpen U) (hK : IsCompact
   have hΦc : ∀ q ∈ (fun y ↦ (y, G y, fderiv ℝ G y)) '' K, ContinuousAt Φ q := by
     rintro _ ⟨y, hy, rfl⟩
     have hΨ : ContDiffAt ℝ 1 Ψ (G y, ∇ f y) :=
-      (ContDiffAt.comp (G y, ∇ f y) (hGK y hy).contDiffAt_map_inverse contDiffAt_fst).clm_apply
-        contDiffAt_snd
+      contDiffAt_inverse_apply_of_isInvertible (hGK y hy) _
     have hgrad : ContinuousAt (fun q : E × (E →L[ℝ] E) × (E →L[ℝ] E →L[ℝ] E) ↦ ∇ f q.1)
         (y, G y, fderiv ℝ G y) :=
       ContinuousAt.comp (g := ∇ f) (f := Prod.fst)
@@ -477,6 +481,8 @@ private theorem exists_ball_neg_metricGradient_tendstoUniformlyOn_fderiv
       (hGs.mono fun _ hi ↦ (hi.mono interior_subset).differentiableOn one_ne_zero) hconvK
       (hconv'.mono (hKU.trans interior_subset))).neg).mono ball_subset_closedBall
 
+namespace IsNondegenerateCriticalPoint
+
 /-- **The local stable manifolds of the negative gradient flow depend continuously on the metric
 in `C¹`.** Let `x` be a nondegenerate critical point of a function `f` that is `C²` on a
 neighbourhood `U` of `x`, and let `G` be a `C¹` metric field on `U` whose quadratic form at `x` is
@@ -490,7 +496,7 @@ The maps `gs i` converge to `g` uniformly, and their derivatives converge unifor
 ball: the compact pieces of the local stable manifolds vary continuously in `C¹` with the metric.
 The critical point does not move, since the zeros of every metric gradient are the critical points
 of `f`. -/
-theorem IsNondegenerateCriticalPoint.exists_localStableGraph_neg_metricGradient_tendstoUniformlyOn
+theorem exists_localStableGraph_neg_metricGradient_tendstoUniformlyOn_fderiv
     (h : IsNondegenerateCriticalPoint f x) (hU : U ∈ 𝓝 x) (hf : ContDiffOn ℝ 2 f U)
     (hG : ContDiffOn ℝ 1 G U) {c : ℝ} (hc : 0 < c) (hGx : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪G x v, v⟫_ℝ)
     (hGs : ∀ᶠ i in l, ContDiffOn ℝ 1 (Gs i) U) (hconv : TendstoUniformlyOn Gs G l U)
@@ -527,15 +533,15 @@ theorem IsNondegenerateCriticalPoint.exists_localStableGraph_neg_metricGradient_
 
 /-- **The local unstable manifolds of the negative gradient flow depend continuously on the metric
 in `C¹`.** Under the hypotheses of
-`IsNondegenerateCriticalPoint.exists_localStableGraph_neg_metricGradient_tendstoUniformlyOn`, for
-one projection `P` such that `1 - P` projects onto the unstable subspace of the linearization
+`IsNondegenerateCriticalPoint.exists_localStableGraph_neg_metricGradient_tendstoUniformlyOn_fderiv`,
+for one projection `P` such that `1 - P` projects onto the unstable subspace of the linearization
 `-(G x)⁻¹ ∘ Hess f(x)`, one confinement radius `r` and one parameter radius `ρ`, the confined
 backward trajectories of `-metricGradient G f` and, eventually, of `-metricGradient (Gs i) f`, read
 in displacement coordinates from `x` and truncated by `‖z - P z‖ ≤ ρ`, are the graphs over
 `range (1 - P) ∩ closedBall 0 ρ` of maps `g` and `gs i` that are `C¹` on the closed ball of
 radius `ρ`. The maps `gs i` converge to `g` uniformly, and their derivatives converge uniformly on
 that closed ball. -/
-theorem IsNondegenerateCriticalPoint.exists_localUnstableGraph_neg_metricGradient_tendstoUniformlyOn
+theorem exists_localUnstableGraph_neg_metricGradient_tendstoUniformlyOn_fderiv
     (h : IsNondegenerateCriticalPoint f x) (hU : U ∈ 𝓝 x) (hf : ContDiffOn ℝ 2 f U)
     (hG : ContDiffOn ℝ 1 G U) {c : ℝ} (hc : 0 < c) (hGx : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪G x v, v⟫_ℝ)
     (hGs : ∀ᶠ i in l, ContDiffOn ℝ 1 (Gs i) U) (hconv : TendstoUniformlyOn Gs G l U)
@@ -571,6 +577,8 @@ theorem IsNondegenerateCriticalPoint.exists_localUnstableGraph_neg_metricGradien
       (tendsto_const_nhds (x := x)) (hVs.mono fun _ hi ↦ hi.2) hV'
   exact ⟨P, hP, ContinuousLinearMap.range_id_sub_eq_unstableSubspace_of_exponential_bounds
     (by exact_mod_cast hα) hP hAP hs hu, r, hr, ρ, hρ, g, gs, by simpa only [Pi.neg_apply] using hg⟩
+
+end IsNondegenerateCriticalPoint
 
 end LocalGraphDependence
 
