@@ -17,7 +17,7 @@ import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
 import Mathlib.Analysis.SpecialFunctions.Integrability.Log
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
-import TauCeti.Analysis.SpecialFunctions.Complex.LogBounds
+import TauCeti.Analysis.SpecialFunctions.Complex.Log.Bounds
 
 /-!
 # Integrability of logarithms

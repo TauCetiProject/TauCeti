@@ -199,7 +199,7 @@ theorem ae_norm_sub_setAverage_le_of_holderOnWith {K α : ℝ≥0} {r : ℝ}
       calc dist z y ≤ dist z x + dist y x := dist_triangle_right _ _ _
         _ ≤ 2 * r := by linarith [mem_closedBall.1 hz.1, mem_closedBall.1 hy.1]
     exact (hf.dist_le hz.2 hy.2).trans
-      (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow dist_nonneg hzy α.2) K.2)
+      (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow dist_nonneg hzy α.property) K.property)
   rcases eq_or_ne (μ.restrict Ω (closedBall x r)) 0 with h0 | h0
   · simp [Measure.restrict_eq_zero.2 h0]
   have hfin : μ.restrict Ω (closedBall x r) ≠ ⊤ :=
@@ -500,7 +500,7 @@ theorem holderOnWith_preciseRepresentative_restrict_of_setAverage_norm_sub_le {�
   have hα' : (0 : ℝ) < α := hα
   have hC : (0 : ℝ) ≤ 2 * 2 ^ (α : ℝ) * (2 ^ finrank ℝ E / (c * (1 - 2 ^ (-(α : ℝ))))) :=
     mul_nonneg (by positivity)
-      (div_nonneg (by positivity) (mul_nonneg c.2 (one_sub_two_rpow_neg_pos hα').le))
+      (div_nonneg (by positivity) (mul_nonneg c.property (one_sub_two_rpow_neg_pos hα').le))
   refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
   -- Every radius up to `2 dist x y` is at most twice the diameter of `Ω`.
   have hdiam : ∀ r : ℝ, r ≤ 2 * dist x y → ENNReal.ofReal r ≤ 2 * ediam Ω := fun r hr ↦

@@ -163,7 +163,7 @@ theorem adjoin_range_stage_eq_top :
     simp only [CommAlgCat.hom_ofHom] at this
     exact DFunLike.congr_fun this element
   rw [← h]
-  exact (desc functor cocone element).2
+  exact (desc functor cocone element).property
 
 /-- Algebra maps out of the colimit into a target in any universe agree when they agree on each
 stage. -/

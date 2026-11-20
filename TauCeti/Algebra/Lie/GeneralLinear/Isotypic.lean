@@ -266,9 +266,9 @@ theorem nonempty_lieModuleEquiv_directSum_glIrreducible_of_forall_exists_eq_smul
     by_contra hne
     obtain ⟨c, hc⟩ := hsmul (τ i) _ _ (isGlHighestWeightVector_coe_iff.mpr (hy i))
       (hij ▸ isGlHighestWeightVector_coe_iff.mpr (hy j))
-    have hmem : ((y j : P j) : M) ∈ (P i).toSubmodule := hc ▸ Submodule.smul_mem _ c (y i).2
+    have hmem : ((y j : P j) : M) ∈ (P i).toSubmodule := hc ▸ Submodule.smul_mem _ c (y i).property
     exact (hy j).ne_zero (Subtype.ext (Submodule.disjoint_def.mp
-      (hP.submodule_iSupIndep.pairwiseDisjoint hne) _ hmem (y j).2))
+      (hP.submodule_iSupIndep.pairwiseDisjoint hne) _ hmem (y j).property))
   -- Every label occurs: some summand projection of a highest weight vector of weight `lam t` is
   -- nonzero, and all highest weight vectors of an irreducible module have the same weight.
   have hτsurj : Function.Surjective τ := by

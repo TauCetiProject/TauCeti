@@ -36,7 +36,7 @@ drives the proof of the C⋆-identity on the quotient by a closed two-sided idea
 public section
 
 open Filter
-open scoped CStarAlgebra
+open scoped CStarAlgebra ComplexOrder
 
 namespace Filter.IsIncreasingApproximateUnit
 

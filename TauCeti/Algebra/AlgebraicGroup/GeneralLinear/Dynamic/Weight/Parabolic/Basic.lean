@@ -110,7 +110,7 @@ theorem quotientPointsHom_weightParabolicPointsIso_inv_app_apply (w : Fin N → 
     (g : Cocharacter.parabolic (CommAlgCat.of R A) (weightCocharacter (R := R) w)) :
     CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R N)
         (weightParabolicDefiningHopfIdeal R w) (CommAlgCat.of R A)
-        ((weightParabolicPointsIso R w).inv.app (CommAlgCat.of R A) g) = g.1 := by
+        ((weightParabolicPointsIso R w).inv.app (CommAlgCat.of R A) g) = g.val := by
   unfold weightParabolicPointsIso
   convert
     (CommHopfAlgCat.quotientPointsHom_quotientPointsSubgroupRepresentingIso_inv_app_apply

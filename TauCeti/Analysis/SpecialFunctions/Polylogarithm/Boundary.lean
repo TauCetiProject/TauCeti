@@ -11,7 +11,7 @@ import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Complex.UpperLogContinuity
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
-import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Conjugation
+import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Conj
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.RadialIntegrand
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
