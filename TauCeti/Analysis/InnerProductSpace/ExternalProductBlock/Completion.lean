@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Fredholm.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.ExternalProductBlock.Basic
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Kernel
-import TauCeti.Analysis.InnerProductSpace.ExternalProductBlock.Basic
 import TauCeti.Analysis.Normed.Lp.ProdLp
 
 /-!
@@ -59,6 +59,8 @@ of `w` lies within `C ‖D w‖` of the corresponding common kernel
 ## Main declarations
 
 * `ContinuousLinearMap.externalProductBlockCompletion`: the block operator `D`.
+* `ContinuousLinearMap.externalProductBlockCompletion_apply_coe`: on the algebraic tensor products,
+  `D` is `ContinuousLinearMap.externalProductBlock`.
 * `ContinuousLinearMap.norm_externalProductBlockCompletion_apply_sq`: the norm identity above.
 * `norm_add_norm_add_norm_add_norm_le_two_mul_norm_externalProductBlockCompletion_apply`, in the
   `ContinuousLinearMap` namespace: the four amplified norms add up to at most `2 ‖D w‖`.
@@ -132,6 +134,18 @@ theorem snd_externalProductBlockCompletion (A : V₀ →L[𝕜] V₁) (B : W₀ 
     (externalProductBlockCompletion A B w).snd =
       B.lTensorCompletion V₀ w.fst + A.adjoint.rTensorCompletion W₁ w.snd :=
   (rfl)
+
+/-- On the algebraic tensor products, the external product block on the completed tensor products
+is `ContinuousLinearMap.externalProductBlock`. -/
+@[simp]
+theorem externalProductBlockCompletion_apply_coe (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
+    (u : V₀ ⊗[𝕜] W₀) (v : V₁ ⊗[𝕜] W₁) :
+    externalProductBlockCompletion A B
+        (WithLp.toLp 2 ((u : Completion (V₀ ⊗[𝕜] W₀)), (v : Completion (V₁ ⊗[𝕜] W₁)))) =
+      WithLp.toLp 2
+        (((externalProductBlock A B (WithLp.toLp 2 (u, v))).fst : Completion (V₁ ⊗[𝕜] W₀)),
+          ((externalProductBlock A B (WithLp.toLp 2 (u, v))).snd : Completion (V₀ ⊗[𝕜] W₁))) := by
+  simp [externalProductBlockCompletion_apply, Completion.coe_sub, Completion.coe_add]
 
 /-- **The cross terms cancel.** The norm of `D (u, v)` is computed from the four amplified
 operators: `‖D (u, v)‖² = ‖(A ⊗ 1) u‖² + ‖(1 ⊗ B) u‖² + ‖(A† ⊗ 1) v‖² + ‖(1 ⊗ B†) v‖²`. -/
