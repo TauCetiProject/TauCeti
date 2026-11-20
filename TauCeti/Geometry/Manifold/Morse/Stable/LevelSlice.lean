@@ -9,6 +9,7 @@ public import TauCeti.Dynamics.Flow.LevelCrossing
 public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Logic.Relation
 
 /-!
 # Level slices of transverse trajectories of an adapted pseudo-gradient
@@ -221,34 +222,16 @@ theorem finite_setOf_reflTransGen {hX : IsAdaptedPseudoGradient f X} (hf : IsMor
   · exact mem_insert_of_mem _ (mem_criticalPoints_iff_mfderiv_eq_zero.2 hq)
 
 omit hX in
-/-- A function that strictly decreases along every step of `R` between distinct points strictly
-decreases along every chain of `R`-steps between distinct points. -/
-private theorem lt_of_reflTransGen_of_forall {α β : Type*} [Preorder β] {R : α → α → Prop}
-    {g : α → β} (hR : ∀ b c, R b c → b ≠ c → g c < g b) {p q : α}
-    (hpq : Relation.ReflTransGen R p q) (hqp : q ≠ p) :
-    g q < g p := by
-  suffices q = p ∨ g q < g p from this.resolve_left hqp
-  clear hqp
-  induction hpq with
-  | refl => exact Or.inl rfl
-  | @tail b c _ hbc ih =>
-    rcases eq_or_ne b c with rfl | hbc'
-    · exact ih
-    rcases ih with rfl | ih
-    · exact Or.inr (hR _ _ hbc hbc')
-    · exact Or.inr ((hR _ _ hbc hbc').trans ih)
-
-omit hX in
 /-- **The function strictly decreases along chains of trajectories.** If a chain of trajectories
 runs from `p` to a different point `q`, then `f q < f p`. -/
 theorem apply_lt_apply_of_reflTransGen {hX : IsAdaptedPseudoGradient f X} {p q : M}
     (hpq : Relation.ReflTransGen hX.FlowsTo p q) (hqp : q ≠ p) :
     f q < f p :=
   -- A trajectory from `b` to `c ≠ b` lies strictly between their critical values.
-  lt_of_reflTransGen_of_forall (fun _ _ hbc hbc' ↦
+  hpq.lt_of_forall_ne (fun _ _ hbc hbc' ↦
     let ⟨_, hy⟩ := flowsTo_iff.1 hbc
     have hy := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hbc' hy
-    hy.1.trans hy.2) hpq hqp
+    hy.1.trans hy.2) hqp
 
 omit hX in
 /-- **Chains of trajectories form a partial order.** If chains of trajectories run from `p` to `q`
@@ -269,8 +252,8 @@ theorem IsMorseSmale.manifoldMorseIndex_lt_of_reflTransGen {hX : IsAdaptedPseudo
     (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
     (hpq : Relation.ReflTransGen hX.FlowsTo p q) (hqp : q ≠ p) :
     manifoldMorseIndex 𝓘(ℝ, E) f q < manifoldMorseIndex 𝓘(ℝ, E) f p :=
-  lt_of_reflTransGen_of_forall (fun _ _ hbc hbc' ↦ h.manifoldMorseIndex_lt hf hbc'
-    (flowsTo_iff.1 hbc)) hpq hqp
+  hpq.lt_of_forall_ne (fun _ _ hbc hbc' ↦ h.manifoldMorseIndex_lt hf hbc'
+    (flowsTo_iff.1 hbc)) hqp
 
 /-- **A trajectory crosses each intermediate level exactly once.** Along a trajectory from a
 critical point `a` to a different critical point `b`, the function `f` strictly decreases from
