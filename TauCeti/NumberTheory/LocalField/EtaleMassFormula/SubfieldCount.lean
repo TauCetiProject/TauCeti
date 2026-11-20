@@ -188,7 +188,7 @@ private theorem tsum_one_div_natCard_residueField_pow_discriminantExponent_eq (e
     ∑' L : {L : IntermediateField K (SeparableClosure K) //
         (∀ x : F, algebraMap F (SeparableClosure K) x ∈ L) ∧
           Module.finrank K L = inertiaDegree K F * e ∧ L.inertiaDegree = inertiaDegree K F},
-      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent =
+      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.discriminantExponent =
       e / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (inertiaDegree K F * (e - 1)) := by
   have := isSepClosure_tower_top K F (SeparableClosure K)
   let Φ := IsSepClosure.equiv F (SeparableClosure F) (SeparableClosure K)
@@ -198,7 +198,7 @@ private theorem tsum_one_div_natCard_residueField_pow_discriminantExponent_eq (e
       {L : IntermediateField K (SeparableClosure K) //
         ∀ x : F, algebraMap F (SeparableClosure K) x ∈ L} :=
     { toFun E := ⟨E.restrictScalars K, E.algebraMap_mem⟩
-      invFun L := L.1.toSubfield.toIntermediateField L.2
+      invFun L := L.val.toSubfield.toIntermediateField L.property
       left_inv _ := rfl
       right_inv _ := rfl }
   -- Transported to the separable closure of `F`, the subextensions being counted are `σ_F(e)`.
@@ -212,21 +212,22 @@ private theorem tsum_one_div_natCard_residueField_pow_discriminantExponent_eq (e
           map_mem_totallyRamifiedOfDegree_iff F Φ (ρ.symm L) e, hfr]
         -- `ρ.symm L` restricts back to `L` itself.
         rfl)
-  have hw (L) : 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent =
-      1 / (Nat.card 𝓀[F] : ℝ≥0∞) ^ (ε L).1.wildExponent *
+  have hw (L) : 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.discriminantExponent =
+      1 / (Nat.card 𝓀[F] : ℝ≥0∞) ^ (ε L).val.wildExponent *
         (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (inertiaDegree K F * (e - 1))) := by
-    have hε : (ε L).1 = (ρ.symm ⟨L.1, L.2.1⟩).map Φ.symm.toAlgHom := orderIsoMapComap_apply _ _
-    have hM := (ε L).2
+    have hε : (ε L).val = (ρ.symm ⟨L.val, L.property.1⟩).map Φ.symm.toAlgHom
+        := orderIsoMapComap_apply _ _
+    have hM := (ε L).property
     rw [hε] at hM ⊢
     have h := one_div_natCard_residueField_pow_discriminantExponent_restrictScalars F Φ
-      (ρ.symm ⟨L.1, L.2.1⟩) hM
+      (ρ.symm ⟨L.val, L.property.1⟩) hM
     -- `ρ.symm` followed by restriction of scalars is the identity.
-    rwa [show (ρ.symm ⟨L.1, L.2.1⟩).restrictScalars K = L.1 from rfl] at h
-  calc _ = ∑' L, 1 / (Nat.card 𝓀[F] : ℝ≥0∞) ^ (ε L).1.wildExponent *
+    rwa [show (ρ.symm ⟨L.val, L.property.1⟩).restrictScalars K = L.val from rfl] at h
+  calc _ = ∑' L, 1 / (Nat.card 𝓀[F] : ℝ≥0∞) ^ (ε L).val.wildExponent *
         (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (inertiaDegree K F * (e - 1))) := tsum_congr hw
-    _ = (∑' M : totallyRamifiedOfDegree F e, 1 / (Nat.card 𝓀[F] : ℝ≥0∞) ^ M.1.wildExponent) *
+    _ = (∑' M : totallyRamifiedOfDegree F e, 1 / (Nat.card 𝓀[F] : ℝ≥0∞) ^ M.val.wildExponent) *
         (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (inertiaDegree K F * (e - 1))) := by
-      rw [ε.tsum_eq (fun M ↦ 1 / (Nat.card 𝓀[F] : ℝ≥0∞) ^ M.1.wildExponent *
+      rw [ε.tsum_eq (fun M ↦ 1 / (Nat.card 𝓀[F] : ℝ≥0∞) ^ M.val.wildExponent *
         (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (inertiaDegree K F * (e - 1)))), ENNReal.tsum_mul_right]
     _ = _ := by rw [tsum_one_div_natCard_residueField_pow_wildExponent, mul_one_div]
 
@@ -240,7 +241,7 @@ finite. For `e = 0` both sides vanish. -/
 theorem tsum_inertiaDegree_eq {f : ℕ} (hf : f ≠ 0) (e : ℕ) :
     ∑' L : {L : IntermediateField K (SeparableClosure K) //
         Module.finrank K L = f * e ∧ L.inertiaDegree = f},
-      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent =
+      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.discriminantExponent =
       e / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (f * (e - 1)) := by
   set U := unramifiedExtension K (SeparableClosure K) f
   let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) U
@@ -263,10 +264,10 @@ theorem tsum_inertiaDegree_eq {f : ℕ} (hf : f ≠ 0) (e : ℕ) :
       {L : IntermediateField K (SeparableClosure K) //
         (∀ x : U, algebraMap U (SeparableClosure K) x ∈ L) ∧
           Module.finrank K L = f * e ∧ L.inertiaDegree = f} :=
-    Equiv.subtypeEquivRight fun L ↦ ⟨fun h ↦ ⟨fun x ↦ hle h.2 x.2, h⟩, And.right⟩
+    Equiv.subtypeEquivRight fun L ↦ ⟨fun h ↦ ⟨fun x ↦ hle h.2 x.property, h⟩, And.right⟩
   have h := tsum_one_div_natCard_residueField_pow_discriminantExponent_eq (K := K) U e
   rw [hUf] at h
   rw [← h]
-  exact τ.tsum_eq (fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent)
+  exact τ.tsum_eq (fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.discriminantExponent)
 
 end TauCeti

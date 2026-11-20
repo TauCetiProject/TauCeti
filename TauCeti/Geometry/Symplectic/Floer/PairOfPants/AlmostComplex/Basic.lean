@@ -128,7 +128,7 @@ variable {J : Puncture → ℝ → M → AlmostComplexStructure V} {hJ : ∀ q t
 /-- The end-weighted structure is tamed by `ω`. -/
 theorem tames_endWeightedAlmostComplex (h₀ : ω.Compatible J₀) (w : ℂ) (x : M) :
     ω.Tames (endWeightedAlmostComplex h₀ J hJ c hc hc₀ w x) :=
-  (h₀.cayleyEquiv.symm _).2
+  (h₀.cayleyEquiv.symm _).property
 
 /-- The Cayley transform of the end-weighted structure, relative to `J₀`, is the weighted sum
 `∑ q, c q w • cayley (J q (t_q(w)) x)`. This characterizes the structure, since the Cayley
@@ -357,7 +357,7 @@ theorem contMDiffAt_pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀) {n : �
   -- The Cayley transform is smooth: the cutoffs are smooth, and periodicity makes the Cayley
   -- transforms of the end structures smooth functions of the angular coordinate.
   refine contMDiffAt_finsetSum fun q _ => ?_
-  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.2 q
+  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.property q
   have hFp : Function.Periodic
       (fun t y => LinearMap.toContinuousLinearMap (J₀.cayley (J q t y))) 1 := fun t => by
     simp only [hJp q t]

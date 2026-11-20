@@ -167,7 +167,7 @@ theorem exists_path_eq_frameVelocityCoordinates_div_norm {n : ℕ∞ω}
       simpa only [zero_add] using
         periodic_frameVelocityCoordinates s hp 0
     exact Circle.ext (by simp only [U, hper])
-  exact ⟨U 0, ⟨⟨fun t ↦ U t, hU.comp continuous_subtype_val⟩, rfl, hclosed⟩, fun t ↦ rfl⟩
+  exact ⟨U 0, ⟨⟨fun t ↦ U t, hU.comp continuous_subtypeVal⟩, rfl, hclosed⟩, fun t ↦ rfl⟩
 
 end Continuous
 

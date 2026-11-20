@@ -130,14 +130,7 @@ theorem norm_toBoundedContinuousFunction_spatialSecondFDerivL_le
   -- The absorbed whole-space interpolation inequality for the slice.
   have h := hH.norm_iteratedFDeriv_add_two_le_of_norm_le (k := 0) hf
     (fun y ↦ by simpa using (valueL f).norm_coe_le_norm (slabMk y t))
-    ⟨‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖, by
-      rintro _ ⟨y, rfl⟩
-      -- Normalize the derivative order `0 + 2` to `2` (definitionally, since the order occurs
-      -- in the type of the multilinear map and cannot be rewritten) so that
-      -- `norm_iteratedFDeriv_two` applies.
-      change ‖iteratedFDeriv ℝ 2 _ y‖ ≤ _
-      rw [f.norm_iteratedFDeriv_two, ← HolderSpace.toBoundedContinuousFunction_apply]
-      exact BoundedContinuousFunction.norm_coe_le_norm _ _⟩ hε x
+    hε x
   -- As above, normalize `0 + 2` to `2` so that `norm_iteratedFDeriv_two` rewrites the
   -- slice Hessian to the spatial second derivative.
   change ‖iteratedFDeriv ℝ 2 _ x‖ ≤ _ at h
@@ -165,7 +158,7 @@ theorem norm_toBoundedContinuousFunction_timeDerivL_le (f : ParabolicC2HolderSpa
     rw [timeExtension_def]
     exact (valueL f).norm_coe_le_norm _
   -- Interpolate in time with the step `ε²`.
-  have h := hH.norm_le_of_hasDerivWithinAt_Icc hderiv hM (by positivity) hεab t.2
+  have h := hH.norm_le_of_hasDerivWithinAt_Icc hderiv hM (by positivity) hεab t.property
   have hpow : (ε ^ 2) ^ ((α / 2 : ℝ≥0) : ℝ) = ε ^ (α : ℝ) := by
     rw [← Real.rpow_natCast, ← Real.rpow_mul hε.le]
     congr 1

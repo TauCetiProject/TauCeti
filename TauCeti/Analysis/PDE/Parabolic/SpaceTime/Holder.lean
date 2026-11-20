@@ -341,7 +341,8 @@ theorem timeEHolderNorm_le_timeEHolderNorm_add_spaceEHolderNorm (α : ℝ≥0)
   have hCₜ : ∀ t ∈ Icc a b, HolderWith Cₜ.toNNReal α (uₜ · t) := fun t ht y z => by
     simpa [ENNReal.coe_toNNReal hₜ] using spaceEHolderNorm_le_iff.1 (le_refl Cₜ) ⟨t, ht⟩ y z
   refine timeEHolderNorm_le_iff.2 fun x t s => ?_
-  have := holderOnWith_Icc_of_hasFDerivAt_of_hasDerivWithinAt hu' hu'' huₜ hC₂ hCₜ x t t.2 s s.2
+  have := holderOnWith_Icc_of_hasFDerivAt_of_hasDerivWithinAt hu' hu'' huₜ hC₂ hCₜ x t t.property s
+      s.property
   simpa [ENNReal.coe_toNNReal h₂, ENNReal.coe_toNNReal hₜ, Subtype.edist_eq] using this
 
 /-- **The temporal seminorm of the spatial gradient is controlled by parabolic seminorms.** On

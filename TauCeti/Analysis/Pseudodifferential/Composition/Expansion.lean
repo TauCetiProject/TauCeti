@@ -198,6 +198,24 @@ theorem coefficient_sharpTerm (a : Symbol n W U m') (b : Symbol n V W m) (k : �
     field_simp
     ring
 
+/-- The terms of the composition expansion `a # b` vanish at every point near which `a` vanishes:
+they only involve frequency derivatives of `a` at the point. -/
+theorem coefficient_sharpTerm_eq_zero_of_eventuallyEq_zero_left {a : Symbol n W U m'}
+    {x ξ : CoordinateSpace n} (ha : a.coefficient =ᶠ[𝓝 (x, ξ)] 0) (b : Symbol n V W m) (k : ℕ) :
+    (a.sharpTerm b k).coefficient (x, ξ) = 0 := by
+  rw [coefficient_sharpTerm, Finset.sum_eq_zero, smul_zero]
+  intro w _
+  rw [ha.mixedDeriv_eq, mixedDeriv_zero, ContinuousLinearMap.zero_comp]
+
+/-- The terms of the composition expansion `a # b` vanish at every point near which `b` vanishes:
+they only involve position derivatives of `b` at the point. -/
+theorem coefficient_sharpTerm_eq_zero_of_eventuallyEq_zero_right {b : Symbol n V W m}
+    {x ξ : CoordinateSpace n} (hb : b.coefficient =ᶠ[𝓝 (x, ξ)] 0) (a : Symbol n W U m') (k : ℕ) :
+    (a.sharpTerm b k).coefficient (x, ξ) = 0 := by
+  rw [coefficient_sharpTerm, Finset.sum_eq_zero, smul_zero]
+  intro w _
+  rw [hb.mixedDeriv_eq, mixedDeriv_zero, ContinuousLinearMap.comp_zero]
+
 /-- The terms of the composition expansion only depend on the coefficients of the two symbols, not
 on the orders at which the symbols are considered. -/
 theorem coefficient_sharpTerm_congr {μ μ' : ℝ} {a : Symbol n W U m'} {a' : Symbol n W U μ'}

@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Sobolev.Embedding
 import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.Bochner.Holder
-import TauCeti.MeasureTheory.Integral.RieszPotential
+import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
 import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
@@ -297,7 +297,7 @@ theorem W1p0.integrable_mul_value_of_memLp [Nontrivial E]
   have hmemt : MemLp (W1p.value (v : W1p mu Omega 2)) t (mu.restrict Omega) :=
     (W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (mu := mu)
       ENNReal.ofNat_ne_top hOmega h2t (δ := 2⁻¹ - (t : ℝ)⁻¹) (by rw [ENNReal.toReal_ofNat])
-        hτn v.2).trans_lt (ENNReal.mul_lt_top (ENNReal.mul_lt_top ENNReal.ofReal_lt_top
+        hτn v.property).trans_lt (ENNReal.mul_lt_top (ENNReal.mul_lt_top ENNReal.ofReal_lt_top
       (ENNReal.rpow_lt_top_of_nonneg (by linarith) hOmega)) eNorm_lt_top)
   have hq1 : (1 : ℝ≥0∞) ≤ ((r : ℝ≥0∞)⁻¹ + (t : ℝ≥0∞)⁻¹)⁻¹ := by
     have hle : ((r⁻¹ + t⁻¹ : ℝ≥0) : ℝ) ≤ 1 := by push_cast; exact hrt
@@ -330,7 +330,7 @@ theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
       (ENNReal.rpow_ne_top_of_nonneg (by linarith) hOmega), fun v =>
       W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (mu := mu)
         ENNReal.ofNat_ne_top hOmega h2t (δ := 2⁻¹ - (t : ℝ)⁻¹) (by rw [ENNReal.toReal_ofNat])
-        hτn v.2⟩
+        hτn v.property⟩
   have hmemt : ∀ v : W1p0 mu Omega 2, MemLp (W1p.value (v : W1p mu Omega 2)) t ν := fun v =>
     (hS v).trans_lt (ENNReal.mul_lt_top hSfin.lt_top eNorm_lt_top)
   -- Hölder's inequality: `|∫_Ω f v| ≤ ‖f‖_{Lʳ} ‖v‖_{Lᵗ} |Ω|^{...}`.

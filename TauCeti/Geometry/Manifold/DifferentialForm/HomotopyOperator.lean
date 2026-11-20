@@ -400,7 +400,7 @@ private theorem compContinuousLinearMap_inl_mpullbackWithin_cylinder [IsManifold
   have hl (w : E) : mfderivWithin 𝓘(ℝ, E × ℝ) (I.prod (𝓡∂ 1)) (cylinderChart I x₀)
       (s ×ˢ Icc 0 1) (extChartAt I x₀ x₀, (t : ℝ)) (ContinuousLinearMap.inl ℝ E ℝ w) =
         (w, (0 : EuclideanSpace ℝ (Fin 1))) := by
-    rw [ContinuousLinearMap.inl_apply, mfderivWithin_cylinderChart_apply x₀ hs hsu ⟨hx, t.2⟩,
+    rw [ContinuousLinearMap.inl_apply, mfderivWithin_cylinderChart_apply x₀ hs hsu ⟨hx, t.property⟩,
       hD, zero_smul]
     -- `ContinuousLinearMap.id ℝ E w` is `w`, and `0 : TangentSpace (𝓡∂ 1) t` is
     -- `0 : EuclideanSpace ℝ (Fin 1)`, both by definition.

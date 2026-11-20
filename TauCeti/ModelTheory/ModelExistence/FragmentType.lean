@@ -18,8 +18,10 @@ carry the same information, including for fragments that are not closed under ne
 Restriction to a smaller fragment intersects the type with its slice, or precomposes the truth
 assignment with the slice inclusion. Fragment-elementary embeddings preserve both descriptions;
 conversely, preservation of the fragment types characterizes fragment elementarity. In particular,
-isomorphisms preserve these types and truth assignments. No countability, formation closure, or
-nonemptiness assumption is needed.
+isomorphisms preserve these types and truth assignments, and along an expansion by a language
+homomorphism `g`, fragment types pull back along `Fragment.comap g` and push forward along
+`Fragment.map g`. No countability, formation closure, injectivity of `g`, or nonemptiness
+assumption is needed.
 
 ## References
 
@@ -29,7 +31,7 @@ nonemptiness assumption is needed.
 
 public section
 
-universe u v w w'
+universe u v u' v' w w'
 
 namespace FirstOrder.Language
 
@@ -92,18 +94,18 @@ namespace Fragment
 /-- The realized truth assignment of a tuple on the arity slice of a fragment. -/
 def truthAssignment (A : Fragment L) (M : Type w) [L.Structure M] {n : ℕ} (a : Fin n → M) :
     A.slice n → Prop :=
-  fun φ => φ.1.Realize Empty.elim a
+  fun φ => φ.val.Realize Empty.elim a
 
 /-- Evaluation of a realized truth assignment is realization of the formula. -/
 @[simp]
 theorem truthAssignment_apply (A : Fragment L) (a : Fin n → M) (φ : A.slice n) :
-    A.truthAssignment M a φ ↔ φ.1.Realize Empty.elim a :=
+    A.truthAssignment M a φ ↔ φ.val.Realize Empty.elim a :=
   Iff.rfl
 
 /-- On the slice, the truth assignment records membership in the fragment type. -/
 theorem truthAssignment_iff_mem_fragmentType (A : Fragment L) (a : Fin n → M) (φ : A.slice n) :
-    A.truthAssignment M a φ ↔ φ.1 ∈ fragmentType A M a := by
-  simp only [truthAssignment_apply, mem_fragmentType, mem_slice.1 φ.2, true_and]
+    A.truthAssignment M a φ ↔ φ.val ∈ fragmentType A M a := by
+  simp only [truthAssignment_apply, mem_fragmentType, mem_slice.1 φ.property, true_and]
 
 /-- The truth assignment restricts along fragment inclusion by precomposition with the slice map.
 The slice map is Mathlib's `Set.inclusion`, so its identity and composition laws apply directly. -/
@@ -135,5 +137,51 @@ theorem Equiv.fragmentType_comp (e : N ≃[L] M) (A : Fragment L) (a : Fin n →
 theorem Equiv.truthAssignment_comp (e : N ≃[L] M) (A : Fragment L) (a : Fin n → N) :
     A.truthAssignment M (e ∘ a) = A.truthAssignment N a :=
   (e.aElementary A).truthAssignment_comp a
+
+/-! ### Transport along language maps -/
+
+section LanguageMap
+
+variable {L' : Language.{u', v'}}
+
+/-- Along an expansion, the fragment type relative to `B.comap g` is the preimage under `g` of the
+fragment type relative to `B`. -/
+@[simp]
+theorem LHom.fragmentType_comap (g : L →ᴸ L') (B : Fragment L')
+    [L'.Structure M] [g.IsExpansionOn M] (a : Fin n → M) :
+    fragmentType (B.comap g) M a = g.onBoundedFormulaInf ⁻¹' fragmentType B M a := by
+  rw [fragmentType_eq_inter, fragmentType_eq_inter, Set.preimage_inter, Fragment.slice_comap,
+    g.preimage_onBoundedFormulaInf_infinitaryType]
+
+/-- Along an expansion, the fragment type relative to `A.map g` is the image under `g` of the
+fragment type relative to `A`. No injectivity of `g` is needed. -/
+@[simp]
+theorem LHom.fragmentType_map (g : L →ᴸ L') (A : Fragment L)
+    [L'.Structure M] [g.IsExpansionOn M] (a : Fin n → M) :
+    fragmentType (A.map g) M a = g.onBoundedFormulaInf '' fragmentType A M a := by
+  rw [fragmentType_eq_inter, Fragment.slice_map, ← Set.image_inter_preimage,
+    g.preimage_onBoundedFormulaInf_infinitaryType, ← fragmentType_eq_inter]
+
+/-- Along an expansion, the truth assignment on `(B.comap g).slice n` factors through
+`g.onBoundedFormulaInf` into the truth assignment on `B.slice n`. -/
+theorem Fragment.truthAssignment_comap (g : L →ᴸ L') (B : Fragment L')
+    [L'.Structure M] [g.IsExpansionOn M] (a : Fin n → M) :
+    (B.comap g).truthAssignment M a =
+      B.truthAssignment M a ∘ fun φ => ⟨g.onBoundedFormulaInf φ.val,
+          by simpa using φ.property⟩ := by
+  ext φ
+  simp [LHom.realize_onBoundedFormulaInf]
+
+/-- Along a language equivalence, reinterpreting `M` along the inverse map transports fragment
+types by `e.onBoundedFormulaInf`. -/
+theorem LEquiv.fragmentType_reduct (e : L ≃ᴸ L') (A : Fragment L) (a : Fin n → M) :
+    letI := e.invLHom.reduct M
+    fragmentType (A.map e.toLHom) M a = e.onBoundedFormulaInf '' fragmentType A M a := by
+  let := e.invLHom.reduct M
+  rw [← e.comap_invLHom_eq_map_toLHom, e.invLHom.fragmentType_comap, Equiv.image_eq_preimage_symm]
+  ext ψ
+  simp
+
+end LanguageMap
 
 end FirstOrder.Language
