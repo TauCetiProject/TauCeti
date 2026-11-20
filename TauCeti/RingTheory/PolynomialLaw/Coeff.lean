@@ -50,6 +50,8 @@ formalization in the DividedPowers project.
   `Fin n`.
 * `PolynomialLaw.IsHomogeneousOfDegree.coeff_eq_zero`: a law homogeneous of degree `d` has no
   coefficients outside total degree `d`.
+* `PolynomialLaw.IsHomogeneousOfDegree.toFun_tmul_add_tmul`: on a combination of two vectors, a
+  law homogeneous of degree `d` is a binary form of degree `d` in the scalars.
 
 ## References
 
@@ -315,6 +317,39 @@ theorem IsHomogeneousOfDegree.coeff_eq_zero {d : ℕ} {f : M →ₚₗ[R] N}
   simp only [hL, hR, hΦ] at hx
   simp only [ite_and, hk, ite_false, ite_self] at hx
   simpa using hx
+
+/-- A law homogeneous of degree `d`, evaluated on a combination of two vectors `a` and `b`, is a
+binary form of degree `d` in the two scalars: `f (s ⊗ a + t ⊗ b) = ∑ⱼ sʲ tᵈ⁻ʲ ⊗ cⱼ`, where `cⱼ` is
+the coefficient of `f` with exponent `j` on `a` and exponent `d - j` on `b`. -/
+theorem IsHomogeneousOfDegree.toFun_tmul_add_tmul {d : ℕ} {f : M →ₚₗ[R] N}
+    (hf : f.IsHomogeneousOfDegree d) (a b : M) {S : Type*} [CommSemiring S] [Algebra R S]
+    (s t : S) :
+    f.toFun S (s ⊗ₜ[R] a + t ⊗ₜ[R] b) = ∑ j ∈ Finset.range (d + 1),
+      (s ^ j * t ^ (d - j)) ⊗ₜ[R] coeff R N (Option.elim' b fun _ : Unit ↦ a) f
+        ((Finsupp.single () j).optionElim (d - j)) := by
+  classical
+  let e : ℕ ↪ (Option Unit →₀ ℕ) :=
+    ⟨fun j ↦ (Finsupp.single () j).optionElim (d - j), fun j j' h ↦ by
+      simpa using DFunLike.congr_fun h (some ())⟩
+  have he (j : ℕ) : e j = (Finsupp.single () j).optionElim (d - j) := rfl
+  -- only the exponents of total degree `d` contribute, and these are the `e j` with `j ≤ d`
+  have hsupp : (coeff R N (Option.elim' b fun _ : Unit ↦ a) f).support ⊆
+      (Finset.range (d + 1)).map e := by
+    intro k hk
+    have hdeg : k none + k (some ()) = d := by
+      by_contra h
+      exact Finsupp.mem_support_iff.mp hk (hf.coeff_eq_zero _ (by simpa [Fintype.sum_option]))
+    refine Finset.mem_map.mpr ⟨k (some ()), Finset.mem_range.mpr (by omega), ?_⟩
+    ext o
+    rcases o with _ | ⟨⟨⟩⟩ <;> simp [he, Finsupp.optionElim_apply_eq_elim]
+    omega
+  have hsum : s ⊗ₜ[R] a + t ⊗ₜ[R] b =
+      ∑ o : Option Unit, Option.elim' t (fun _ ↦ s) o ⊗ₜ[R] Option.elim' b (fun _ ↦ a) o := by
+    simp [Fintype.sum_option, add_comm]
+  rw [hsum, toFun_sum_tmul_eq_coeff_sum, Finsupp.sum_of_support_subset _ hsupp _
+    (fun _ _ ↦ tmul_zero _ _), Finset.sum_map]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp [he, Fintype.prod_option, Finsupp.optionElim_apply_eq_elim, mul_comm]
 
 end Coeff
 
