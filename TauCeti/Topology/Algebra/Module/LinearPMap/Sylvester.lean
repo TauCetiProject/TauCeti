@@ -14,7 +14,7 @@ The domain-aware Sylvester equation `A X - X B = C` for partially defined
 operators `A` and `B` and continuous linear maps `X` and `C` between topological modules.
 
 The equation requires `X` to carry the domain of `B` into that of `A`.
-It specializes the ordinary bounded Sylvester equation and is preserved by
+It specializes the ordinary Sylvester equation of continuous linear maps and is preserved by
 addition, negation, subtraction, and scalar multiplication of solutions and
 right-hand sides. The homogeneous equation `A X - X B = 0` says exactly that `X`
 intertwines `B` with `A` in the domain-aware sense of `LinearPMap.Intertwines`.
@@ -48,7 +48,7 @@ variable {X Y C D : F →L[𝕜] E}
 
 /-- The domain-aware equation for full-domain partial operators is equivalent
 to the ordinary Sylvester equation between everywhere-defined continuous linear maps. -/
-@[simp] theorem ofBounded_iff [IsTopologicalAddGroup E] {A : E →L[𝕜] E} {B : F →L[𝕜] F} :
+@[simp] theorem toPMap_top_iff [IsTopologicalAddGroup E] {A : E →L[𝕜] E} {B : F →L[𝕜] F} :
     SylvesterEquation (A.toLinearMap.toPMap ⊤) (B.toLinearMap.toPMap ⊤) X C ↔
       A ∘L X - X ∘L B = C := by
   refine ⟨fun h => ?_, fun h => ⟨fun _ => Submodule.mem_top, fun x => ?_⟩⟩
@@ -59,10 +59,10 @@ to the ordinary Sylvester equation between everywhere-defined continuous linear 
 
 /-- An ordinary Sylvester equation between everywhere-defined continuous linear maps induces
 an equation between the corresponding full-domain partial operators. -/
-theorem ofBounded [IsTopologicalAddGroup E] {A : E →L[𝕜] E} {B : F →L[𝕜] F}
+theorem toPMap_top [IsTopologicalAddGroup E] {A : E →L[𝕜] E} {B : F →L[𝕜] F}
     (hEq : A ∘L X - X ∘L B = C) :
     SylvesterEquation (A.toLinearMap.toPMap ⊤) (B.toLinearMap.toPMap ⊤) X C :=
-  ofBounded_iff.mpr hEq
+  toPMap_top_iff.mpr hEq
 
 /-- The zero map solves the homogeneous domain-aware equation. -/
 theorem zero (A : E →ₗ.[𝕜] E) (B : F →ₗ.[𝕜] F) : SylvesterEquation A B 0 0 where
