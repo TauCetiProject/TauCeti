@@ -54,6 +54,20 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [MonoidalCategory C]
 
 variable {K₁ K₂ L₁ L₂ : CochainComplex C ℤ}
 
+/-- The degree `0` component of the differential of a degree `-1` cochain `H` between internal
+Hom complexes, transported to cochains: on `φ : T ⟶ 𝓗om^p(K₁, L₁)` it is the differential of
+`φ ≫ H` plus `H` applied to the differential of `φ`. -/
+private lemma internalHomComplexHomEquiv_comp_δ_v
+    (H : Cochain (internalHomComplex K₁ L₁) (internalHomComplex K₂ L₂) (-1)) {T : C} (p : ℤ)
+    (φ : T ⟶ (internalHomComplex K₁ L₁).X p) :
+    internalHomComplexHomEquiv K₂ L₂ T p (φ ≫ (δ (-1) 0 H).v p p (add_zero p)) =
+      δ (p - 1) p (internalHomComplexHomEquiv K₂ L₂ T (p - 1) (φ ≫ H.v p (p - 1) (by omega))) +
+        internalHomComplexHomEquiv K₂ L₂ T p
+          ((φ ≫ (internalHomComplex K₁ L₁).d p (p + 1)) ≫ H.v (p + 1) p (by omega)) := by
+  rw [δ_v (-1) 0 (by omega) _ p p (add_zero p) (p - 1) (p + 1) (by omega) rfl,
+    Int.negOnePow_zero, one_smul, Preadditive.comp_add, map_add, ← Category.assoc,
+    internalHomComplexHomEquiv_comp_d, Category.assoc]
+
 section Postcomp
 
 /-- The components `z ↦ z ∘ h` of the homotopy induced by a degree `-1` cochain `h` in the
@@ -82,16 +96,13 @@ def internalHomComplexPostcompHomotopy (K : CochainComplex C ℤ) {g g' : L₁ �
     ⟨Cochain.mk (postcompHomotopyHom K (Cochain.ofHomotopy h)), by
       refine Cochain.ext _ _ fun p q hpq ↦ ?_
       obtain rfl : p = q := by omega
-      rw [Cochain.add_v, δ_v (-1) 0 (by omega) _ p p hpq (p - 1) (p + 1) (by omega) rfl,
-        Cochain.ofHom_v, Cochain.ofHom_v, Cochain.mk_v, Cochain.mk_v, Int.negOnePow_zero,
-        one_smul]
       refine internalHomComplex_hom_ext' ?_
-      rw [Preadditive.comp_add, Preadditive.comp_add, map_add, map_add,
-        internalHomComplexHomEquiv_comp_postcomp_f, internalHomComplexHomEquiv_comp_postcomp_f,
-        ← Category.assoc, internalHomComplexHomEquiv_comp_d,
-        internalHomComplexHomEquiv_comp_postcompHomotopyHom, ← Category.assoc,
+      simp only [Cochain.add_v, Cochain.ofHom_v, Preadditive.comp_add, map_add,
+        internalHomComplexHomEquiv_comp_δ_v, Cochain.mk_v,
         internalHomComplexHomEquiv_comp_postcompHomotopyHom, internalHomComplexHomEquiv_comp_d,
-        δ_comp _ _ _ (p + 1) 0 p (by omega) rfl (by omega), δ_ofHomotopy, Cochain.comp_sub]
+        internalHomComplexHomEquiv_comp_postcomp_f]
+      -- The cochain identity `δ (z ∘ h) + (δ z) ∘ h + z ∘ g = z ∘ g'`, from `δ h = g' - g`.
+      rw [δ_comp _ _ _ (p + 1) 0 p (by omega) rfl (by omega), δ_ofHomotopy, Cochain.comp_sub]
       simp only [Int.reduceNeg, Int.negOnePow_neg, Int.negOnePow_one, Units.neg_smul, one_smul]
       abel⟩
 
@@ -140,16 +151,14 @@ def internalHomComplexPrecompHomotopy {f f' : K₁ ⟶ K₂} (h : Homotopy f f')
     ⟨Cochain.mk (precompHomotopyHom h L), by
       refine Cochain.ext _ _ fun p q hpq ↦ ?_
       obtain rfl : p = q := by omega
-      rw [Cochain.add_v, δ_v (-1) 0 (by omega) _ p p hpq (p - 1) (p + 1) (by omega) rfl,
-        Cochain.ofHom_v, Cochain.ofHom_v, Cochain.mk_v, Cochain.mk_v, Int.negOnePow_zero,
-        one_smul]
       refine internalHomComplex_hom_ext' ?_
-      rw [Preadditive.comp_add, Preadditive.comp_add, map_add, map_add,
-        internalHomComplexHomEquiv_comp_precomp_f, internalHomComplexHomEquiv_comp_precomp_f,
-        ← Category.assoc, internalHomComplexHomEquiv_comp_d,
-        internalHomComplexHomEquiv_comp_precompHomotopyHom, ← Category.assoc,
+      simp only [Cochain.add_v, Cochain.ofHom_v, Preadditive.comp_add, map_add,
+        internalHomComplexHomEquiv_comp_δ_v, Cochain.mk_v,
         internalHomComplexHomEquiv_comp_precompHomotopyHom, internalHomComplexHomEquiv_comp_d,
-        δ_units_smul, δ_comp _ _ _ 0 (p + 1) p (by omega) (by omega) rfl, δ_ofHomotopy,
+        internalHomComplexHomEquiv_comp_precomp_f]
+      -- The cochain identity `δ (±(h ⊗ T) ∘ z) ± (h ⊗ T) ∘ δ z + (f ⊗ T) ∘ z = (f' ⊗ T) ∘ z`,
+      -- from `δ (h ⊗ T) = f' ⊗ T - f ⊗ T`.
+      rw [δ_units_smul, δ_comp _ _ _ 0 (p + 1) p (by omega) (by omega) rfl, δ_ofHomotopy,
         Cochain.sub_comp, Int.negOnePow_succ, smul_add, smul_smul, Int.units_mul_self]
       simp only [one_smul, Units.neg_smul]
       abel⟩
