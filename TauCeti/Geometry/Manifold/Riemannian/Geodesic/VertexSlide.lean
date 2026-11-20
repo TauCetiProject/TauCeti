@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Broken
 public import TauCeti.Topology.PathSpace.Moore.Sampling
-import TauCeti.Topology.Algebra.Monoid.PartialProd
+import TauCeti.Topology.Algebra.Monoid
 
 /-!
 # Sliding the sampled vertices along a broken geodesic
