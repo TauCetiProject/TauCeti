@@ -35,6 +35,8 @@ conditions on single coordinates, such as polydiscs, are measured.
 * `TauCeti.volume_parallelepiped`: the parallelepiped spanned by `v` has volume `√(det G)`.
 * `TauCeti.volume_eq_one_of_subsingleton`: in a zero-dimensional space every nonempty set has
   volume one.
+* `TauCeti.volume_ball_eq_of_finrank_eq`: in finite-dimensional real inner product spaces of the
+  same dimension, open balls of the same radius have equal volume.
 * `Module.Basis.volume_eq_smul_addHaar`: the volume measure is `√(det G) • b.addHaar`.
 * `AffineIsometryEquiv.measurePreserving`: affine isometries preserve the volume measure, extending
   Mathlib's `LinearIsometryEquiv.measurePreserving` by a translation.
@@ -69,6 +71,18 @@ theorem volume_eq_one_of_subsingleton [Subsingleton E] {s : Set E} (hs : s.Nonem
   have hpar := (stdOrthonormalBasis ℝ E).volume_parallelepiped
   rwa [Subsingleton.eq_univ_of_nonempty ⟨0, (mem_parallelepiped_iff _ _).2 ⟨0, by simp, by simp⟩⟩,
     ← Subsingleton.eq_univ_of_nonempty hs] at hpar
+
+/-- In finite-dimensional real inner product spaces of the same dimension, open balls of the same
+radius have equal volume. -/
+theorem volume_ball_eq_of_finrank_eq {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+    (h : finrank ℝ E = finrank ℝ F) (x : E) (y : F) (r : ℝ) :
+    volume (Metric.ball x r) = volume (Metric.ball y r) := by
+  let e : E ≃ₗᵢ[ℝ] F :=
+    (stdOrthonormalBasis ℝ E).equiv (stdOrthonormalBasis ℝ F) (finCongr h)
+  rw [Measure.addHaar_ball_center volume x r, Measure.addHaar_ball_center volume y r,
+    ← e.measurePreserving.measure_preimage measurableSet_ball.nullMeasurableSet,
+    e.preimage_ball, map_zero]
 
 /-- In a finite-dimensional real inner product space, the parallelepiped spanned by a family of
 as many vectors as the dimension has volume the square root of the Gram determinant of the
