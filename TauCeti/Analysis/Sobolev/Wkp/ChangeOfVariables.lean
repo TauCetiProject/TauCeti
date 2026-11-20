@@ -98,7 +98,7 @@ derivatives gives the chain rule for the weak Hessian.
 * `TauCeti.Wkp.inner_iteratedGradient_compL_ae`: the chain rule
   `D²(u ∘ Φ) = DΦ† ∘ D²u(Φ ·) ∘ DΦ + ⟪∇u(Φ ·), D²Φ⟫` for the weak Hessian along a change of
   variables `Φ` of order two, and the resulting pointwise bound
-  `TauCeti.Wkp.norm_iteratedGradient_compL_le`.
+  `TauCeti.Wkp.norm_iteratedGradient_compL_le_ae`.
 * `TauCeti.Wkp.IsChangeOfVariables.memLp_comp` and
   `TauCeti.Wkp.IsChangeOfVariables.lpNorm_comp_le`: precomposition with a change of variables is
   bounded on `Lᵖ`, between measurable subsets of its domain and of its target, and
@@ -1109,7 +1109,7 @@ theorem inner_iteratedGradient_compL_ae (h : IsChangeOfVariables 2 U V Φ L c) (
 /-- **The Hessian under a change of variables.** Let `Φ` be a change of variables of order two
 from `U` into `V` with constant `L`, and `1 ≤ p < ∞`. For `u ∈ W^{2,p}(V)`, the weak Hessian of
 `u ∘ Φ` satisfies `‖D²(u ∘ Φ)(x)‖ ≤ L² ‖D²u(Φ x)‖ + L ‖∇u(Φ x)‖` for almost every `x ∈ U`. -/
-theorem norm_iteratedGradient_compL_le (h : IsChangeOfVariables 2 U V Φ L c) (hp : p ≠ ⊤)
+theorem norm_iteratedGradient_compL_le_ae (h : IsChangeOfVariables 2 U V Φ L c) (hp : p ≠ ⊤)
     (u : Wkp mu V p 2) :
     ∀ᵐ x ∂mu.restrict U, ‖iteratedGradient 1 (compL h hp u) x‖ ≤
       L ^ 2 * ‖iteratedGradient 1 u (Φ x)‖ + L * ‖iteratedGradient 0 (lowerOrder 1 u) (Φ x)‖ := by

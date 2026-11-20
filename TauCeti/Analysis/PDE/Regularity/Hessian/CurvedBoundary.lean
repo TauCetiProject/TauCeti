@@ -58,7 +58,7 @@ This is the proof of Gilbarg–Trudinger, Theorem 9.13, by flattening the bounda
 * **The flat estimate.** The flat estimate on `H ∩ U'`, for the compact set `Ψ(K)`, bounds
   `‖D²v‖_{Lᵖ(H ∩ Ψ(K))}` by the `Lᵖ` norms of `f ∘ Φ`, `∇v` and `v`.
 * **Back to `Ω`.** Since `u = v ∘ Ψ`, the chain rule bounds `‖D²u‖` by `‖D²v ∘ Ψ‖` and
-  `‖∇v ∘ Ψ‖` (`TauCeti.Wkp.norm_iteratedGradient_compL_le`), and precomposition with a change of
+  `‖∇v ∘ Ψ‖` (`TauCeti.Wkp.norm_iteratedGradient_compL_le_ae`), and precomposition with a change of
   variables is bounded on `Lᵖ` (`TauCeti.Wkp.IsChangeOfVariables.lpNorm_comp_le`), as are `∇v`
   and `v` by `∇u` and `u`.
 
@@ -299,7 +299,7 @@ private theorem lpNorm_iteratedGradient_inter_le (hL' : 0 ≤ L')
       ‖L' ^ 2 * ‖iteratedGradient 1 v (Ψ y)‖ +
         L' * ‖iteratedGradient 0 (lowerOrder 1 v) (Ψ y)‖‖ := by
     filter_upwards [ae_restrict_of_ae_restrict_of_subset hsub
-        (norm_iteratedGradient_compL_le hΨ hp v),
+        (norm_iteratedGradient_compL_le_ae hΨ hp v),
       ae_restrict_of_ae_restrict_of_subset hsub
         (iteratedGradient_restrictL_ae inf_le_left 1 u)] with y h1 h2
     rw [hv, h2] at h1
