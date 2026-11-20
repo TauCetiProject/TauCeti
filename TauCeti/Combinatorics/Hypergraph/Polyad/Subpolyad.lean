@@ -16,8 +16,10 @@ subtriad tests used in hypergraph regularity; restricting the three vertex cells
 special case, supplied by `Subpolyad3.ofSubcells`.
 
 Subpolyads are extensional in their three selected pair graphs and form a finite type, even
-without a finite pair palette, with at most `2 ^ (3 * |V|²)` subpolyads per polyad
-(`TauCeti.card_subpolyad3_le`). Their supports lie in the parent support. Nonempty finite
+without a finite pair palette, of exact cardinality
+`2 ^ (#pairSupport₀₁ + #pairSupport₀₂ + #pairSupport₁₂)` (`TauCeti.card_subpolyad3_eq`), bounded
+in terms of cell sizes by `TauCeti.card_subpolyad3_le_mul_card` and in terms of `|V|` by
+`TauCeti.card_subpolyad3_le`. Their supports lie in the parent support. Nonempty finite
 intersections are formed coordinatewise and their supports are the intersections of the supports.
 The subcell constructor accepts arbitrary vertex sets and intersects with the parent pair supports,
 so no containment hypotheses are needed. `Subpolyad3.unionSupport` collects the supports
@@ -109,23 +111,52 @@ private theorem pairData_injective : Function.Injective
 
 end Subpolyad3
 
+/-- The exact number of subpolyads of a polyad `P` is
+`2 ^ (#pairSupport₀₁ + #pairSupport₀₂ + #pairSupport₁₂)`. -/
+theorem card_subpolyad3_eq (P : Polyad3 S) :
+    Fintype.card (Subpolyad3 P) =
+      2 ^ (#P.pairSupport₀₁ + #P.pairSupport₀₂ + #P.pairSupport₁₂) := by
+  let e : Subpolyad3 P ≃
+      P.pairSupport₀₁.powerset × P.pairSupport₀₂.powerset × P.pairSupport₁₂.powerset :=
+    { toFun := fun Q ↦
+        (⟨Q.pair₀₁, mem_powerset.2 Q.pair₀₁_sub⟩,
+          ⟨Q.pair₀₂, mem_powerset.2 Q.pair₀₂_sub⟩,
+          ⟨Q.pair₁₂, mem_powerset.2 Q.pair₁₂_sub⟩)
+      invFun := fun ⟨q₀₁, q₀₂, q₁₂⟩ ↦
+        ⟨q₀₁.val, q₀₂.val, q₁₂.val, mem_powerset.1 q₀₁.property, mem_powerset.1 q₀₂.property,
+          mem_powerset.1 q₁₂.property⟩
+      left_inv := fun _ ↦ Subpolyad3.ext_data rfl rfl rfl
+      right_inv := fun ⟨_, _, _⟩ ↦ rfl }
+  rw [Fintype.card_congr e, Fintype.card_prod, Fintype.card_prod, Fintype.card_coe,
+    Fintype.card_coe, Fintype.card_coe, card_powerset, card_powerset, card_powerset,
+    pow_add, pow_add, mul_assoc]
+
+/-- The number of subpolyads of a polyad `P` is at most
+`2 ^ (#P.c₀ * #P.c₁ + #P.c₀ * #P.c₂ + #P.c₁ * #P.c₂)`. -/
+theorem card_subpolyad3_le_mul_card (P : Polyad3 S) :
+    Fintype.card (Subpolyad3 P) ≤ 2 ^ (#P.c₀ * #P.c₁ + #P.c₀ * #P.c₂ + #P.c₁ * #P.c₂) := by
+  have hle {A B : Finset V} {E : Finset {p : V × V // p.1 ≠ p.2}}
+      (hE : ∀ p ∈ E, p.val.1 ∈ A ∧ p.val.2 ∈ B) : #E ≤ #A * #B := by
+    rw [← card_product]
+    exact card_le_card_of_injOn (fun p ↦ p.val) (fun p hp ↦ mem_product.2 (hE p hp))
+      Subtype.val_injective.injOn
+  rw [card_subpolyad3_eq]
+  refine Nat.pow_le_pow_right two_pos (Nat.add_le_add (Nat.add_le_add ?_ ?_) ?_)
+  · exact hle fun p hp ↦ ⟨((P.mem_pairSupport₀₁ p).1 hp).1, ((P.mem_pairSupport₀₁ p).1 hp).2.1⟩
+  · exact hle fun p hp ↦ ⟨((P.mem_pairSupport₀₂ p).1 hp).1, ((P.mem_pairSupport₀₂ p).1 hp).2.1⟩
+  · exact hle fun p hp ↦ ⟨((P.mem_pairSupport₁₂ p).1 hp).1, ((P.mem_pairSupport₁₂ p).1 hp).2.1⟩
+
 /-- The number of subpolyads of a polyad on a host `V` is at most `2 ^ (3 * |V|²)`. -/
 theorem card_subpolyad3_le (P : Polyad3 S) :
     Fintype.card (Subpolyad3 P) ≤ 2 ^ (3 * Fintype.card V ^ 2) := by
-  have hcard : Fintype.card (Subpolyad3 P) ≤
-      Fintype.card (Finset {p : V × V // p.1 ≠ p.2}) ^ 3 := by
-    have h := Fintype.card_le_of_injective _ (Subpolyad3.pairData_injective (P := P))
-    simpa [Fintype.card_prod, pow_succ, mul_assoc] using h
-  have hp : Fintype.card {p : V × V // p.1 ≠ p.2} ≤ Fintype.card V ^ 2 := by
-    calc
-      Fintype.card {p : V × V // p.1 ≠ p.2} ≤ Fintype.card (V × V) := Fintype.card_subtype_le _
-      _ = Fintype.card V ^ 2 := by rw [Fintype.card_prod, sq]
-  calc
-    Fintype.card (Subpolyad3 P) ≤ (2 ^ Fintype.card {p : V × V // p.1 ≠ p.2}) ^ 3 := by
-      simpa [Fintype.card_finset] using hcard
-    _ = 2 ^ (3 * Fintype.card {p : V × V // p.1 ≠ p.2}) := by rw [← pow_mul, mul_comm]
-    _ ≤ 2 ^ (3 * Fintype.card V ^ 2) :=
-      Nat.pow_le_pow_right (by decide : 0 < 2) (Nat.mul_le_mul_left 3 hp)
+  refine (card_subpolyad3_le_mul_card P).trans (Nat.pow_le_pow_right two_pos ?_)
+  have h0 : #P.c₀ ≤ Fintype.card V := P.c₀.card_le_univ
+  have h1 : #P.c₁ ≤ Fintype.card V := P.c₁.card_le_univ
+  have h2 : #P.c₂ ≤ Fintype.card V := P.c₂.card_le_univ
+  calc #P.c₀ * #P.c₁ + #P.c₀ * #P.c₂ + #P.c₁ * #P.c₂
+      ≤ Fintype.card V * Fintype.card V + Fintype.card V * Fintype.card V +
+          Fintype.card V * Fintype.card V := by gcongr
+    _ = 3 * Fintype.card V ^ 2 := by ring
 
 namespace Subpolyad3
 
