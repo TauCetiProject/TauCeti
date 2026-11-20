@@ -174,6 +174,7 @@ theorem apply_of_mem (u : TimeWeighted T η X) {t : ℝ} (ht : t ∈ Ioc (0 : �
     u t = (t ^ η)⁻¹ • toWeighted u ⟨t, ht⟩ :=
   dite_eq_left ht
 
+@[simp]
 theorem apply_of_notMem (u : TimeWeighted T η X) {t : ℝ} (ht : t ∉ Ioc (0 : ℝ) T) : u t = 0 :=
   dite_eq_right ht
 
@@ -253,6 +254,7 @@ def mk (f : ℝ → X) (hf : ContinuousOn f (Ioc (0 : ℝ) T)) (C : ℝ)
       rw [norm_smul_of_nonneg (Real.rpow_nonneg t.2.1.le η)]
       exact hC t t.2
 
+@[simp]
 theorem mk_apply_of_mem {f : ℝ → X} (hf : ContinuousOn f (Ioc (0 : ℝ) T)) {C : ℝ}
     (hC : ∀ t ∈ Ioc (0 : ℝ) T, t ^ η * ‖f t‖ ≤ C) {t : ℝ} (ht : t ∈ Ioc (0 : ℝ) T) :
     mk f hf C hC t = f t := by
