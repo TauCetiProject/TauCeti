@@ -34,7 +34,8 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
 
 * `IsAdic.comap` : an adic topology transports along an inducing ring equivalence, without
   separate assumptions that either ring has continuous operations.
-* `IsAdic.isOpen_pow` : in a ring whose topology is `I`-adic, every power of `I` is open.
+* `IsAdic.isOpen_pow` and `IsAdic.isOpen` : in a ring whose topology is `I`-adic, every power of
+  `I` (in particular `I` itself) is open.
 * `IsAdic.isOpen_iff_le_of_isRadical` : in a ring whose topology is `I`-adic, a radical ideal is
   open if and only if it contains `I`.
 * `IsAdic.isClosed_pow` : in a ring whose topology is `I`-adic, every power of `I` is closed —
@@ -98,6 +99,10 @@ variable {R : Type*} [CommRing R] [TopologicalSpace R] {I : Ideal R}
 theorem isOpen_pow (hI : IsAdic I) (n : ℕ) : IsOpen ((I ^ n : Ideal R) : Set R) :=
   letI := I.adicTopology
   hI ▸ (I.openAddSubgroup n).isOpen
+
+/-- In a ring whose topology is the `I`-adic one, `I` itself is open. -/
+theorem isOpen (hI : IsAdic I) : IsOpen (I : Set R) := by
+  simpa only [pow_one] using hI.isOpen_pow 1
 
 /-- The quotient by an ideal of definition has the discrete quotient topology. -/
 theorem discreteTopology_quotient (hI : IsAdic I) : DiscreteTopology (R ⧸ I) := by
