@@ -28,9 +28,10 @@ mapped into `Ω` (`Distribution.compCLMOfOpenPartialHomeomorph`). This file prov
 front set transforms as a subset of the cotangent bundle: covectors pull back by the transpose of
 the derivative,
 
-`(x, ξ) ∈ WF(e^* T) ↔ (e x, (De⁻¹(e x))ᵀ ξ) ∈ WF(T)` for `x ∈ U`,
+`(x, ξ) ∈ WF(e^* T) ↔ (e x, (De⁻¹(e x))ᵀ ξ) ∈ WF(T)` for `x ∈ U`
 
-when `e` identifies `U` with `Ω` (`Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph`).
+(`Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph`), with no further condition relating
+`U` and `Ω`, since microlocal smoothness is local and `T` may be restricted to `e '' U`.
 Equivalently `WF(e^* T) = {(x, De(x)ᵀ η) | x ∈ U, (e x, η) ∈ WF(T)}`. This is the invariance of
 the wave front set under diffeomorphisms (Hörmander I, Theorem 8.2.4), which makes it a
 well-defined closed conic subset of the cotangent bundle of a manifold. For linear `e` it is
@@ -58,8 +59,8 @@ rapidly, and `|a_m(ξ)|` is bounded. For the others, the phase of `𝓕 G_ξ (m)
 
 * `Distribution.IsMicrolocallySmoothAt.compCLMOfOpenPartialHomeomorph`: if `T` is microlocally
   smooth at `(e x, (De⁻¹(e x))ᵀ ξ)`, then `e^* T` is microlocally smooth at `(x, ξ)`.
-* `Distribution.isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff`: the converse, when
-  `e` identifies `U` with `Ω`.
+* `Distribution.isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff`: the converse, for
+  `x ∈ U`, proved by restricting `T` to `e '' U` and pulling back along `e⁻¹`.
 * `Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph`: the wave front set of `e^* T`.
 
 ## References
@@ -247,31 +248,44 @@ theorem IsMicrolocallySmoothAt.compCLMOfOpenPartialHomeomorph {T : 𝓓'(Ω, ℂ
           ‖T.localFourier (ofSupportedIn hKΩ (G ζ)) ((B†) ζ)‖) := by rw [mul_pow]; ring
     _ ≤ a ^ N * C := mul_le_mul_of_nonneg_left (hC ζ hζ) (by positivity)
 
-/-- **The wave front set under a change of variables, pointwise.** When `e` identifies `U` with
-`Ω`, the pullback `e^* T` is microlocally smooth at `(x, ξ)` exactly when `T` is microlocally
-smooth at `(e x, (De⁻¹(e x))ᵀ ξ)`. -/
+/-- **The wave front set under a change of variables, pointwise.** For `x ∈ U`, the pullback
+`e^* T` is microlocally smooth at `(x, ξ)` exactly when `T` is microlocally smooth at
+`(e x, (De⁻¹(e x))ᵀ ξ)`. -/
 theorem isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E}
-    (hx : x ∈ U) (hΩ : (Ω : Set E) ⊆ e.target) (hΩU : MapsTo e.symm Ω U) :
+    (hx : x ∈ U) :
     (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).IsMicrolocallySmoothAt x ξ ↔
       T.IsMicrolocallySmoothAt (e x) (((fderiv ℝ e.symm (e x))†) ξ) := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.compCLMOfOpenPartialHomeomorph e he he' hU hUΩ hx⟩
-  -- Pull `e^* T` back along `e⁻¹`, which gives back `T`.
+  -- Restrict `T` to the image `V = e '' U`, which `e` identifies with `U`.
   have hxs : x ∈ e.source := hU hx
-  have h' : (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).IsMicrolocallySmoothAt
+  let V : Opens E := ⟨e '' U, e.isOpen_image_of_subset_source U.isOpen hU⟩
+  have hVΩ : V ≤ Ω := image_subset_iff.2 hUΩ
+  have hVt : (V : Set E) ⊆ e.target := by
+    rintro _ ⟨z, hz, rfl⟩
+    exact e.map_source (hU hz)
+  have hVU : MapsTo e.symm V U := by
+    rintro _ ⟨z, hz, rfl⟩
+    rwa [e.left_inv (hU hz)]
+  have hUV : MapsTo e U V := fun z hz ↦ ⟨z, hz, rfl⟩
+  have hres : compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T =
+      compCLMOfOpenPartialHomeomorph e he he' hU hUV (restrictCLM T) := by
+    rw [← restrictCLM_compCLMOfOpenPartialHomeomorph le_rfl hVΩ, restrictCLM_self]
+  rw [hres] at h
+  -- Pull `e^* T` back along `e⁻¹`, which gives back the restriction of `T` to `V`.
+  have h' : (compCLMOfOpenPartialHomeomorph e he he' hU hUV (restrictCLM T)).IsMicrolocallySmoothAt
       (e.symm (e x)) (((fderiv ℝ e.symm.symm (e.symm (e x)))†)
         (((fderiv ℝ e.symm (e x))†) ξ)) := by
     simpa only [OpenPartialHomeomorph.symm_symm, e.left_inv hxs,
       e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn he he' (by simp) hxs] using h
-  have h₂ := h'.compCLMOfOpenPartialHomeomorph e.symm he' he hΩ hΩU (hUΩ hx)
-  convert h₂ using 1
-  exact (compCLMOfOpenPartialHomeomorph_symm_apply_apply T).symm
+  have h₂ := h'.compCLMOfOpenPartialHomeomorph e.symm he' he hVt hVU ⟨x, hx, rfl⟩
+  rw [compCLMOfOpenPartialHomeomorph_symm_apply_apply (he₁ := he') (he₁' := he) (hV := hVt)
+    (hVU := hVU) (restrictCLM T : 𝓓'(V, ℂ))] at h₂
+  exact (isMicrolocallySmoothAt_restrictCLM_iff hVΩ ⟨x, hx, rfl⟩).1 h₂
 
-/-- **The wave front set under a change of variables** (Hörmander I, Theorem 8.2.4). When `e`
-identifies `U` with `Ω`, the wave front set of the pullback `e^* T` consists of the `(x, ξ)` with
-`x ∈ U` and `(e x, (De⁻¹(e x))ᵀ ξ) ∈ WF(T)`: covectors pull back by the transpose of the
-derivative. -/
-theorem waveFrontSet_compCLMOfOpenPartialHomeomorph (T : 𝓓'(Ω, ℂ))
-    (hΩ : (Ω : Set E) ⊆ e.target) (hΩU : MapsTo e.symm Ω U) :
+/-- **The wave front set under a change of variables** (Hörmander I, Theorem 8.2.4). The wave
+front set of the pullback `e^* T` consists of the `(x, ξ)` with `x ∈ U` and
+`(e x, (De⁻¹(e x))ᵀ ξ) ∈ WF(T)`: covectors pull back by the transpose of the derivative. -/
+theorem waveFrontSet_compCLMOfOpenPartialHomeomorph (T : 𝓓'(Ω, ℂ)) :
     (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).waveFrontSet =
       {p : E × E | p.1 ∈ U ∧ (e p.1, ((fderiv ℝ e.symm (e p.1))†) p.2) ∈ T.waveFrontSet} := by
   ext ⟨x, ξ⟩
@@ -281,9 +295,9 @@ theorem waveFrontSet_compCLMOfOpenPartialHomeomorph (T : 𝓓'(Ω, ℂ))
     refine ⟨hx, hUΩ hx, fun h0 ↦ hξ ?_, fun h' ↦ h ?_⟩
     · rw [← e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn he he' (by simp) (hU hx)
         ξ, h0, map_zero]
-    · exact (isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff hx hΩ hΩU).2 h'
+    · exact (isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff hx).2 h'
   · rintro ⟨hx, -, hξ, h⟩
     exact ⟨hx, fun h0 ↦ hξ (by rw [h0, map_zero]), fun h' ↦
-      h ((isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff hx hΩ hΩU).1 h')⟩
+      h ((isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff hx).1 h')⟩
 
 end Distribution
