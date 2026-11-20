@@ -6,13 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
-public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.SymmetricAlgebra
-public import TauCeti.Algebra.Coalgebra.Comodule.Dual
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.OfEnd
 
 /-!
-# Differentiating and evaluating comodule algebras
+# Differentiating a comodule algebra
 
 Let `A` be a comodule algebra over a commutative bialgebra `H`: geometrically, an action of the
 affine monoid `Spec H` on `Spec A`. A tangent vector `d` at the identity of `Spec H` acts on `A`
@@ -23,9 +21,7 @@ infinitesimal action of a Lie algebra element on functions is by vector fields.
 For the symmetric algebra of a comodule `M`, with its multiplicative coaction, the differentiated
 action is therefore the derivation of `Sym M` extending the differentiated action on the
 generators `M`. Applied to the dual of a representation `V`, this computes the infinitesimal
-action on the polynomial functions on `V`. Moreover, when `H` is a commutative Hopf algebra and
-`M` is a finite projective right `H`-comodule, every coinvariant polynomial in `Sym(M*)^H` is
-constant along rational orbits of `Spec H` acting on `M`.
+action on the polynomial functions on `V`.
 
 ## Main declarations
 
@@ -34,8 +30,6 @@ constant along rational orbits of `Spec H` acting on `M`.
   with the inclusion of generators.
 * `TauCeti.ComoduleAlgebra.differential_symmetricAlgebra`: on a symmetric algebra, it is the
   derivation `SymmetricAlgebra.derivationOfEnd` induced by the action on generators.
-* `TauCeti.ComoduleAlgebra.lift_eval_basePointsRepresentation_of_mem_coinvariants`: coinvariant
-  polynomial functions in `Sym(M*)^H` are constant on rational orbits of `Spec H` on `M`.
 
 ## References
 
@@ -48,8 +42,6 @@ public section
 open scoped TensorProduct
 
 namespace TauCeti.ComoduleAlgebra
-
-section Differential
 
 variable {R H : Type*} [CommRing R] [CommRing H] [Bialgebra R H]
 
@@ -105,52 +97,5 @@ theorem differential_symmetricAlgebra (d : Derivation R H (Bialgebra.CounitAlgeb
     rw [← h, Derivation.coe_mk'_linearMap]
 
 end SymmetricAlgebra
-
-end Differential
-
-section CoinvariantEvaluation
-
-universe u v w
-
-variable {R : Type u} {H : Type v} {M : Type w} [CommSemiring R] [CommSemiring H]
-  [HopfAlgebra R H] [AddCommMonoid M] [Module R M] [Comodule R H M]
-  [Module.Finite R M] [Module.Projective R M]
-
-attribute [local instance] Comodule.dual symmetricAlgebra
-
-/-- **Coinvariant polynomial functions are constant on rational orbits.** For any finite projective
-right `H`-comodule `M`, every base-valued point `g` of `Spec H` preserves the evaluation of every
-coinvariant polynomial `p ∈ Sym(M*)^H` on `M`. -/
-theorem lift_eval_basePointsRepresentation_of_mem_coinvariants
-    {p : SymmetricAlgebra R (Module.Dual R M)}
-    (hp : p ∈ coinvariants R H (SymmetricAlgebra R (Module.Dual R M)))
-    (g : WithConv (H →ₐ[R] R)) (x : M) :
-    SymmetricAlgebra.lift (Module.Dual.eval R M (Comodule.basePointsRepresentation M g x)) p =
-      SymmetricAlgebra.lift (Module.Dual.eval R M x) p := by
-  let A := SymmetricAlgebra R (Module.Dual R M)
-  let ψ : A →ₐ[R] A :=
-    (Algebra.TensorProduct.rid R R A).toAlgHom.comp
-      ((Algebra.TensorProduct.map (AlgHom.id R A) g⁻¹.ofConv).comp
-        (coactAlgHom R H A))
-  have hcomp :
-      SymmetricAlgebra.lift (Module.Dual.eval R M (Comodule.basePointsRepresentation M g x)) =
-        (SymmetricAlgebra.lift (Module.Dual.eval R M x)).comp ψ := by
-    ext φ
-    have key (t : Module.Dual R M ⊗[R] H) :
-        SymmetricAlgebra.lift (Module.Dual.eval R M x)
-            (Algebra.TensorProduct.rid R R A
-              (Algebra.TensorProduct.map (AlgHom.id R A) g⁻¹.ofConv
-                ((SymmetricAlgebra.ι R (Module.Dual R M)).rTensor H t))) =
-          g⁻¹.ofConv (dualTensorHom R M H t x) := by
-      induction t using _root_.TensorProduct.inductionOn with
-      | tmul ξ h => simp [dualTensorHom_apply, mul_comm]
-      | add s t hs ht => simp only [map_add, LinearMap.add_apply, hs, ht]
-    simp [ψ, A, symmetricAlgebra_coact, Comodule.symmetricAlgebraCoact_ι, Comodule.dual_coact,
-      key, ← WithConv.algHom_inv_apply]
-  have hψp : ψ p = p := by
-    simp [ψ, A, mem_coinvariants.mp hp]
-  rw [hcomp, AlgHom.comp_apply, hψp]
-
-end CoinvariantEvaluation
 
 end TauCeti.ComoduleAlgebra

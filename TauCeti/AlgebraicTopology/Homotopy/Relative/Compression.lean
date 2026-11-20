@@ -100,7 +100,8 @@ theorem Homotopic.of_homotopicRel {p q : RelGenLoop N X}
       prop' r := by
         refine mem_iff.2 ⟨fun t => ?_, fun s t hst => ?_⟩
         · simpa [F.eq_fst r (Cube.mk_zero_mem_prodBoundary t)] using apply_zero_mem_range p t
-        · simpa [F.eq_fst r (Cube.mk_mem_prodBoundary hst)] using (mem_iff.1 p.2).2 s t hst }) h
+        · simpa [F.eq_fst r (Cube.mk_mem_prodBoundary hst)] using (mem_iff.1 p.property).2 s t hst
+            }) h
 
 /-- A relative cube that is homotopic, relative to the boundary of the cube `I × I^N`, to a map
 with values in `A` is homotopic through relative cubes to the constant cube. -/
@@ -111,13 +112,13 @@ theorem homotopic_const_of_homotopicRel {p : RelGenLoop N X} {q : C(I × (I^N), 
   obtain ⟨q', rfl⟩ : ∃ q' : RelGenLoop N X, (q' : C(I × (I^N), X.pair.fst)) = q :=
     ⟨mk q (fun _ => hq _) fun s t hst =>
       (h.fst_eq_snd (Cube.mk_mem_prodBoundary hst)).symm.trans
-        ((mem_iff.1 p.2).2 s t hst), coe_mk _ _ _⟩
+        ((mem_iff.1 p.property).2 s t hst), coe_mk _ _ _⟩
   exact (Homotopic.of_homotopicRel h).trans (homotopic_const_of_mem_range q' hq)
 
 section Sweep
 
 variable {p : RelGenLoop N X}
-  (F : (p : C(I × (I^N), X.pair.fst)).HomotopyWith const.1 (· ∈ RelGenLoop N X))
+  (F : (p : C(I × (I^N), X.pair.fst)).HomotopyWith const.val (· ∈ RelGenLoop N X))
 
 /-- The face in `A` swept out by a homotopy `F` through relative cubes from `p` to the constant
 cube, as a map of `I × I^N` with the time of `F` as its first coordinate. -/
@@ -232,7 +233,7 @@ theorem subsingleton_of_homotopyRel {g : C(X.pair.fst, X.pair.fst)}
       map_zero_left y := by simp
       map_one_left y := by simp
       prop' t y hy := by
-        simpa using H.eq_fst t (RelGenLoop.mapsTo_prodBoundary p.2 hy) }
+        simpa using H.eq_fst t (RelGenLoop.mapsTo_prodBoundary p.property hy) }
 
 end RelHomotopyGroup
 

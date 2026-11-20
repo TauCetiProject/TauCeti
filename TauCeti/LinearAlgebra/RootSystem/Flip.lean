@@ -333,7 +333,7 @@ theorem autFlip_mem_weylGroup {f : P.Aut} (hf : f ∈ P.weylGroup) :
   induction hf using RootPairing.weylGroup.induction with
   | mem i =>
     rw [autFlip_reflection]
-    exact (weylGroup.ofIdx P.flip i).2
+    exact (weylGroup.ofIdx P.flip i).property
   | one =>
     rw [map_one]
     exact one_mem _
@@ -347,19 +347,9 @@ theorem autFlip_mem_weylGroup {f : P.Aut} (hf : f ∈ P.weylGroup) :
 theorem autFlip_mem_weylGroup_iff {f : P.Aut} :
     autFlip P f ∈ P.flip.weylGroup ↔ f ∈ P.weylGroup := by
   refine ⟨fun hf ↦ ?_, autFlip_mem_weylGroup⟩
-  have hsymm : ∀ g ∈ P.flip.weylGroup, (autFlip P).symm g ∈ P.weylGroup := by
-    intro g hg
-    induction hg using RootPairing.weylGroup.induction with
-    | mem i =>
-      rw [← autFlip_reflection, MulEquiv.symm_apply_apply]
-      exact (weylGroup.ofIdx P i).2
-    | one =>
-      rw [map_one]
-      exact one_mem _
-    | mul g₁ g₂ _ _ h₁ h₂ =>
-      rw [map_mul]
-      exact mul_mem h₁ h₂
-  simpa using hsymm (autFlip P f) hf
+  have h : (autFlip P).symm (autFlip P f) ∈ P.weylGroup :=
+    autFlip_mem_weylGroup (P := P.flip) hf
+  simpa only [MulEquiv.symm_apply_apply] using h
 
 end Equiv
 

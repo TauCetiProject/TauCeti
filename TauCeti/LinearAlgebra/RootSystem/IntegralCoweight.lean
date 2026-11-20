@@ -82,7 +82,7 @@ theorem Base.coweightEquiv_eq_self_of_forall_exists_nat_root'_apply (b : P.Base)
     (hwx : ∀ i ∈ b.support, ∃ n : ℕ, P.root' i ((w : P.Aut).coweightEquiv x) = n) :
     (w : P.Aut).coweightEquiv x = x := by
   have := P.flip_isReduced
-  let v : P.flip.weylGroup := ⟨Equiv.autFlip P w, Equiv.autFlip_mem_weylGroup w.2⟩
+  let v : P.flip.weylGroup := ⟨Equiv.autFlip P w, Equiv.autFlip_mem_weylGroup w.property⟩
   have hv (y : N) : v⁻¹ • y = (w : P.Aut).coweightEquiv y :=
     inv_smul_eq_iff.mpr <| by
       rw [Subgroup.smul_def, Equiv.autFlip_smul_coweight, LinearEquiv.symm_apply_apply]
