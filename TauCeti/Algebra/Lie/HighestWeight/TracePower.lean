@@ -202,14 +202,13 @@ theorem map_dualMap_tracePowerPolynomial (m : ℕ) :
   refine SymmetricAlgebra.eq_of_forall_lift_apply_eq fun f ↦ ?_
   obtain ⟨h, rfl⟩ := (Module.evalEquiv K H).surjective f
   -- evaluating at `h` after either induced map is evaluating at a linear form on the source
-  have hH : (SymmetricAlgebra.lift (Module.evalEquiv K H h)).comp
-      (_root_.SymmetricAlgebra.map K (IsKilling.cartanEquivDual H).toLinearMap) =
-        SymmetricAlgebra.lift (IsKilling.cartanEquivDual H h) :=
-    SymmetricAlgebra.algHom_ext <| LinearMap.ext fun h' ↦ by
+  have hH : Module.evalEquiv K H h ∘ₗ (IsKilling.cartanEquivDual H).toLinearMap =
+      IsKilling.cartanEquivDual H h :=
+    LinearMap.ext fun h' ↦ by
       simpa using LinearMap.trace_mul_comm K (toEnd K H L h') (toEnd K H L h)
   rw [Module.evalEquiv_apply, _root_.SymmetricAlgebra.lift_eval_map_dualMap,
     LieHom.coe_toLinearMap, LieSubalgebra.coe_incl, ← Module.evalEquiv_apply K H h,
-    ← AlgHom.comp_apply, hH, lift_eval_tracePowerPolynomial,
+    _root_.SymmetricAlgebra.lift_map_apply, hH, lift_eval_tracePowerPolynomial,
     lift_cartanEquivDual_tracePowerRestriction, LieSubalgebra.toEnd_eq]
 
 /-- **The trace-power polynomial restricts to the power sum of the weights**, on the side of
