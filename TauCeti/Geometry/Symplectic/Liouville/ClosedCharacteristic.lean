@@ -76,7 +76,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 namespace IsLiouvilleVectorField
 
-variable (hZσ : IsLiouvilleVectorField σ.1 Z) (hσ : σ.IsNondegenerate)
+variable (hZσ : IsLiouvilleVectorField σ.val Z) (hσ : σ.IsNondegenerate)
   (hc : IsCompleteVectorField Z) (hZ : ContMDiff I I.tangent (⊤ : ℕ∞) (T% Z))
 include hZσ hσ hc hZ
 
@@ -182,13 +182,13 @@ coordinate `r`, and let `T > 0`. If the level `T` of the time coordinate `log r`
 `ψ_T(∂W)`, has the contractible almost existence property in `U`, then it carries a closed
 characteristic contractible in `ψ_t(U)` for some `|t| < T`. -/
 theorem exists_hasContractibleClosedCharacteristic_image_flowOf (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hT : 0 < T)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hT : 0 < T)
     (hae : ω.HasContractibleAlmostExistence U
       (fun x ↦ Real.log (liouvilleRadialCoordinate Z W x)) T) :
     ∃ t ∈ Ioo (-T) T, ω.HasContractibleClosedCharacteristic (flowOf Z t '' U)
       (fun x ↦ Real.log (liouvilleRadialCoordinate Z W x)) T := by
   have hZs := h.contMDiff_of_interior_eq hZ
-  have hZσ : IsLiouvilleVectorField ω.1 Z := by
+  have hZσ : IsLiouvilleVectorField ω.val Z := by
     have := isLiouvilleVectorField_mextDeriv_of_interior_eq (α.isSmoothForm.of_le (by simp))
       (hZs.mdifferentiable (by simp)) (by rw [h.mextDeriv_eq, hZ])
     rwa [h.mextDeriv_eq] at this
@@ -212,7 +212,7 @@ radial coordinate `r`, and let `T > 0`. If the level `T` of `log r`, the hypersu
 has the contractible almost existence property in `M`, then it carries a closed characteristic
 contractible in `M`. -/
 theorem hasContractibleClosedCharacteristic_univ
-    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.1 = α.1) (hT : 0 < T)
+    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val) (hT : 0 < T)
     (hae : ω.HasContractibleAlmostExistence univ
       (fun x ↦ Real.log (liouvilleRadialCoordinate Z W x)) T) :
     ω.HasContractibleClosedCharacteristic univ

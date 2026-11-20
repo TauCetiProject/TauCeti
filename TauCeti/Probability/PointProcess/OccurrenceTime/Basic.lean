@@ -119,6 +119,22 @@ theorem tendsto_occurrenceTime_nhds_top (μ : Measure ℝ≥0) [IsLocallyFiniteM
   have hnm : (n : ℝ≥0∞) ≤ m := by exact_mod_cast hm
   exact not_le_of_gt (hn.trans_le (hnm.trans (le_add_of_nonneg_right zero_le_one))) hmass
 
+/-- Escape of occurrence times to infinity implies local finiteness, for any measure on the
+half-line without assuming integrality. -/
+theorem isLocallyFiniteMeasure_of_tendsto_occurrenceTime {μ : Measure ℝ≥0}
+    (h : Tendsto μ.occurrenceTime atTop (𝓝 ∞)) : IsLocallyFiniteMeasure μ := by
+  refine ⟨fun x => ⟨Iio (x + 1), Iio_mem_nhds (lt_add_one x), ?_⟩⟩
+  obtain ⟨n, hn⟩ := (h.eventually (eventually_gt_nhds (ENNReal.coe_lt_top (r := x + 1)))).exists
+  have hlt : μ (Iic (x + 1)) < (n + 1 : ℝ≥0∞) :=
+    lt_of_not_ge fun hle => hn.not_ge (μ.occurrenceTime_le_of_le hle)
+  exact (measure_mono Iio_subset_Iic_self).trans_lt (hlt.trans (by simp))
+
+/-- A measure on the half-line is locally finite if and only if its occurrence times tend to
+infinity. Neither integrality nor infinitely many finite occurrences is required. -/
+theorem isLocallyFiniteMeasure_iff_tendsto_occurrenceTime (μ : Measure ℝ≥0) :
+    IsLocallyFiniteMeasure μ ↔ Tendsto μ.occurrenceTime atTop (𝓝 ∞) :=
+  ⟨fun _ => μ.tendsto_occurrenceTime_nhds_top, isLocallyFiniteMeasure_of_tendsto_occurrenceTime⟩
+
 /-- Restricting to a closed observation window retains exactly the occurrences in
 that window; all subsequent occurrence times become infinite. -/
 @[simp]

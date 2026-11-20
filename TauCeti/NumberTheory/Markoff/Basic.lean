@@ -352,12 +352,12 @@ theorem markoffVieta_mem_positiveMarkoffTriples_iff {i : Fin 3} {x : Fin 3 → �
 /-- The integer Markoff graph: the simple graph on the positive Markoff triples in which `x` and
 `y` are adjacent when they are distinct and `y` is obtained from `x` by a Vieta move. -/
 def markoffGraph : SimpleGraph positiveMarkoffTriples :=
-  SimpleGraph.fromRel fun x y => ∃ i, markoffVieta i x.1 = y.1
+  SimpleGraph.fromRel fun x y => ∃ i, markoffVieta i x.val = y.val
 
 /-- Two positive Markoff triples are adjacent in the Markoff graph exactly when they are distinct
 and related by a Vieta move. Adjacency is symmetric because the moves are involutions. -/
 theorem markoffGraph_adj {x y : positiveMarkoffTriples} :
-    markoffGraph.Adj x y ↔ x ≠ y ∧ ∃ i, markoffVieta i x.1 = y.1 := by
+    markoffGraph.Adj x y ↔ x ≠ y ∧ ∃ i, markoffVieta i x.val = y.val := by
   rw [markoffGraph, SimpleGraph.fromRel_adj]
   refine and_congr_right fun _ => or_iff_left_of_imp ?_
   rintro ⟨i, hi⟩

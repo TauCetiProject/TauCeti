@@ -90,13 +90,6 @@ local instance CkHolderSpace.instNormedAddCommGroupBoundedContinuousFunction (n 
     NormedAddCommGroup (E →ᵇ (E [×n]→L[ℝ] F)) :=
   inferInstance
 
-/-- Shortcut instance for bounded continuous fields of `n`-multilinear maps, needed for operator
-norms of continuous linear maps into these fields indexed by the order `n`. It is local for the
-same reason. -/
-local instance CkHolderSpace.instNormedSpaceBoundedContinuousFunction (n : ℕ) :
-    NormedSpace ℝ (E →ᵇ (E [×n]→L[ℝ] F)) :=
-  inferInstance
-
 /-- The space of bounded `C^k` maps whose iterated Fréchet derivatives through order `k` are
 bounded and whose `k`-th iterated derivative is globally `α`-Hölder. Its norm is
 
@@ -185,7 +178,7 @@ private def equivSubtype : CkHolderSpace k α E F ≃ {J : Jet k α E F // IsJet
   Equiv.refl _
 
 /-- The underlying jet of an element. -/
-private def toJet (f : CkHolderSpace k α E F) : Jet k α E F := (equivSubtype f).1
+private def toJet (f : CkHolderSpace k α E F) : Jet k α E F := (equivSubtype f).val
 
 /-- An element from a jet satisfying the derivative identities. -/
 private def mk (J : Jet k α E F) (hJ : IsJetGraph J) : CkHolderSpace k α E F :=
@@ -200,7 +193,7 @@ private theorem toJet_mk (J : Jet k α E F) (hJ) : toJet (mk J hJ) = J := by
 private theorem hasFDerivAt_fieldL (f : CkHolderSpace k α E F) (j : Fin k) (x : E) :
     HasFDerivAt (fieldL j.castSucc (toJet f) : E → E [×j]→L[ℝ] F)
       (curryLeftL E F j (fieldL j.succ (toJet f) x)) x :=
-  (equivSubtype f).2 j x
+  (equivSubtype f).property j x
 
 /-- The `C^{k,α}` norm makes the space of bounded `C^{k,α}` maps a normed additive group. -/
 instance instNormedAddCommGroup : NormedAddCommGroup (CkHolderSpace k α E F) := by
@@ -272,7 +265,7 @@ private theorem hasFTaylorSeriesUpTo (f : CkHolderSpace k α E F) :
 private theorem iteratedFDeriv_toFun (f : CkHolderSpace k α E F) (i : Fin (k + 1)) (x : E) :
     _root_.iteratedFDeriv ℝ i f.toFun x = f.iteratedFDeriv i x := by
   rw [← (hasFTaylorSeriesUpTo f).eq_iteratedFDeriv (by exact_mod_cast i.is_le) x,
-    series_of_lt f x i.2]
+    series_of_lt f x i.isLt]
 
 /-- A bounded `C^{k,α}` map is determined by its underlying function. -/
 theorem toFun_injective : Function.Injective (toFun (k := k) (α := α) (E := E) (F := F)) := by
@@ -411,7 +404,7 @@ theorem norm_le_of_norm_iteratedFDeriv_le_of_holderWith {f : CkHolderSpace k α 
   · calc ∑ i : Fin (k + 1), ‖f.iteratedFDeriv i‖ ≤ ∑ _i : Fin (k + 1), M :=
           Finset.sum_le_sum fun i _ ↦ (BoundedContinuousFunction.norm_le hM0).2 fun x ↦ by
             rw [← iteratedFDeriv_eq]
-            exact hM i (Nat.lt_succ_iff.1 i.2) x
+            exact hM i (Nat.lt_succ_iff.1 i.isLt) x
       _ = (k + 1) * M := by simp
   · exact_mod_cast hK.nnholderNorm_le
 
@@ -506,6 +499,13 @@ theorem hasFDerivAt (f : CkHolderSpace (k + 1) α E F) (x : E) :
     HasFDerivAt f (f.fderivBCF x) x := by
   rw [coe_fderivBCF]
   exact ((f.contDiff.differentiable (by simp)) x).hasFDerivAt
+
+/-- A bounded `C^{k+1,α}` map is Lipschitz, with the supremum norm of its first derivative field
+as Lipschitz constant. -/
+theorem lipschitzWith (f : CkHolderSpace (k + 1) α E F) :
+    LipschitzWith ‖f.iteratedFDeriv 1‖₊ f :=
+  lipschitzWith_of_nnNorm_fderiv_le (f.contDiff.differentiable (by simp))
+    f.norm_fderiv_le_iteratedFDeriv_one
 
 /-- The `i`-th derivative field, as a continuous linear map to bounded continuous fields. It is
 bounded by the `C^{k,α}` norm pointwise, by `CkHolderSpace.norm_iteratedFDeriv_le`. -/
@@ -654,7 +654,7 @@ private def jetOf (f : E → F) (hf : ContDiff ℝ k f)
     (hholder : MemHolder α (_root_.iteratedFDeriv ℝ k f)) : Jet k α E F :=
   WithLp.toLp 1
     (WithLp.toLp 1 fun j : Fin k ↦ bcfOf (_root_.iteratedFDeriv ℝ j f)
-        (hf.continuous_iteratedFDeriv (by exact_mod_cast j.2.le)) (hbdd j j.2.le),
+        (hf.continuous_iteratedFDeriv (by exact_mod_cast j.isLt.le)) (hbdd j j.isLt.le),
       HolderSpace.ofBoundedContinuousFunction
         (bcfOf (_root_.iteratedFDeriv ℝ k f) (hf.continuous_iteratedFDeriv le_rfl)
           (hbdd k le_rfl)) hholder)
@@ -678,7 +678,7 @@ private theorem isJetGraph_jetOf (f : E → F) (hf : ContDiff ℝ k f)
   have hfun : (fieldL j.castSucc (jetOf f hf hbdd hholder) : E → E [×j]→L[ℝ] F) =
       _root_.iteratedFDeriv ℝ j f :=
     funext (fieldL_jetOf f hf hbdd hholder j.castSucc)
-  have h := (hf.differentiable_iteratedFDeriv (m := j) (by exact_mod_cast j.2) x).hasFDerivAt
+  have h := (hf.differentiable_iteratedFDeriv (m := j) (by exact_mod_cast j.isLt) x).hasFDerivAt
   rw [fderiv_iteratedFDeriv, Function.comp_apply] at h
   rw [hfun, fieldL_jetOf]
   exact h

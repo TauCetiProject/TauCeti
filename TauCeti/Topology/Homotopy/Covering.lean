@@ -157,7 +157,7 @@ noncomputable def _root_.IsCoveringMap.fundamentalGroupEquivFiber [SimplyConnect
       FundamentalGroup.fromPath <|
         ((Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath (e : E) (e' : E))).map
           ⟨p, hp.continuous⟩).cast
-            (Set.mem_singleton_iff.mp e.2).symm (Set.mem_singleton_iff.mp e'.2).symm
+            (Set.mem_singleton_iff.mp e.property).symm (Set.mem_singleton_iff.mp e'.property).symm
     left_inv γ := by
       refine CategoryTheory.End.ext ?_
       set Γ : Path.Homotopic.Quotient (e : E) (hp.monodromy γ.toPath e : E) :=
