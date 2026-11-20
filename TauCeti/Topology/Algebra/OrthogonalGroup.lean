@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Generation
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
-import TauCeti.Analysis.Matrix.EuclideanLin
+public import TauCeti.Analysis.Matrix.EuclideanLin
 
 /-!
 # Closedness and path components of matrix orthogonal groups
@@ -53,8 +53,8 @@ continuous in the operator-norm topology.
   continuously on the vector.
 * `TauCeti.sphereRotation`: for unit vectors `b` and `y ≠ -b` of `ℝᴺ`, the reflection in `b`
   followed by the reflection in `b + y`, a rotation taking `b` to `y`
-  (`TauCeti.sphereRotation_mulVec`) that depends continuously on `y`
-  (`TauCeti.continuousOn_sphereRotation`).
+  (`TauCeti.sphereRotation_mulVec`, `TauCeti.sphereRotation_smul`) that depends continuously
+  on `y` (`TauCeti.continuousOn_sphereRotation`).
 * `TauCeti.exists_path_linearIsometryEquiv_of_det_eq`: two linear isometries of Euclidean space
   with the same determinant are joined by an operator-norm-continuous path of linear isometries.
 
@@ -292,6 +292,13 @@ theorem sphereRotation_mulVec {b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1} 
   rw [coe_sphereRotation_of_ne h, ← mulVec_mulVec]
   rw [WithLp.ofLp_add] at hv ⊢
   exact reflectionMatrix_add_mulVec_reflectionMatrix_mulVec (hunit b) (hunit y) hv
+
+/-- The rotation `sphereRotation b y` takes `b` to `y` when `y ≠ -b`, acting on the unit
+sphere. -/
+theorem sphereRotation_smul {b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1} (h : y ≠ -b) :
+    sphereRotation b y • b = y :=
+  Subtype.ext (by
+    rw [coe_specialUnitaryGroup_smul_unitSphere, sphereRotation_mulVec h, WithLp.toLp_ofLp])
 
 /-- The rotation `sphereRotation b y` depends continuously on `y` away from `-b`. -/
 theorem continuousOn_sphereRotation (b : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
