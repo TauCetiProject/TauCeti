@@ -144,13 +144,7 @@ private theorem reducedComul_eq_zero_of_mem_one {x : S} (hx : x ∈ F 1) :
   rw [wordFiltration_eq_pow, pow_one] at hx
   obtain ⟨y, hy, z, ⟨m, rfl⟩, rfl⟩ := Submodule.mem_sup.mp hx
   obtain ⟨c, rfl⟩ := Submodule.mem_one.mp hy
-  have hc : reducedComul k S (algebraMap k S c) = 0 := by
-    rw [reducedComul_apply, Bialgebra.comul_algebraMap, Bialgebra.counit_algebraMap,
-      ← Algebra.TensorProduct.algebraMap_apply, ← Algebra.TensorProduct.algebraMap_apply']
-    abel
-  have hm : reducedComul k S (ι k M m) = 0 := by
-    simp [reducedComul_apply, add_comm]
-  simp [hc, hm]
+  simp [(isPrimitiveElem_ι m).reducedComul_eq_zero]
 
 /-- **The reduced coproduct of an element of degree at most `d + 1` has bidegree at most
 `(d, d)`.** -/

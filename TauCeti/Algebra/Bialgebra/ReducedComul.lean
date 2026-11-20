@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.Hom
+public import Mathlib.RingTheory.Bialgebra.Primitive
 
 /-!
 # The reduced coproduct of a bialgebra
@@ -19,6 +20,8 @@ commute with it.
 
 * `TauCeti.Bialgebra.reducedComul`: the reduced coproduct defect, as a linear map.
 * `TauCeti.Bialgebra.reducedComul_apply`: its value as an explicit formula.
+* `TauCeti.Bialgebra.reducedComul_algebraMap`, `Bialgebra.IsPrimitiveElem.reducedComul_eq_zero`:
+  it vanishes on scalars and on primitive elements.
 * `TauCeti.Bialgebra.map_reducedComul`: bialgebra maps commute with it.
 -/
 
@@ -44,6 +47,14 @@ theorem reducedComul_apply {B : Type*} [Ring B] [Bialgebra k B] (x : B) :
       algebraMap k (B ⊗[k] B) (Coalgebra.counit (R := k) x) := by
   simp [reducedComul, Algebra.algebraMap_eq_smul_one, Algebra.TensorProduct.one_def]
 
+/-- The reduced coproduct defect vanishes on scalars. -/
+@[simp]
+theorem reducedComul_algebraMap {B : Type*} [Ring B] [Bialgebra k B] (c : k) :
+    reducedComul k B (algebraMap k B c) = 0 := by
+  rw [reducedComul_apply, Bialgebra.comul_algebraMap, Bialgebra.counit_algebraMap,
+    ← Algebra.TensorProduct.algebraMap_apply, ← Algebra.TensorProduct.algebraMap_apply']
+  abel
+
 /-- Bialgebra maps commute with the reduced coproduct defect. -/
 theorem map_reducedComul {B C : Type*} [Ring B] [Bialgebra k B] [Ring C] [Bialgebra k C]
     (φ : B →ₐc[k] C) (x : B) :
@@ -53,3 +64,16 @@ theorem map_reducedComul {B C : Type*} [Ring B] [Bialgebra k B] [Ring C] [Bialge
     Algebra.TensorProduct.one_def]
 
 end TauCeti.Bialgebra
+
+namespace Bialgebra.IsPrimitiveElem
+
+variable {k B : Type*} [CommRing k] [Ring B] [Bialgebra k B]
+
+/-- The reduced coproduct defect vanishes on primitive elements. -/
+@[simp]
+theorem reducedComul_eq_zero {x : B} (hx : IsPrimitiveElem k x) :
+    TauCeti.Bialgebra.reducedComul k B x = 0 := by
+  simp [TauCeti.Bialgebra.reducedComul_apply, hx.counit_eq_zero, hx.comul_eq_tmul_add_tmul,
+    add_comm]
+
+end Bialgebra.IsPrimitiveElem
