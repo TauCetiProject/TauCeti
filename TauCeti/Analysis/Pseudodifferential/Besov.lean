@@ -493,7 +493,7 @@ private theorem exists_norm_quantizeToLittleBesov_le (ha : a.HasCompactSpatialSu
   obtain ⟨C, hC0, hC⟩ := ha.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le φ s
   refine ⟨C, hC0, fun u ↦ ?_⟩
   simpa only [quantizeToLittleBesov, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
-    ← Submodule.norm_coe, SchwartzMap.coe_toLittleBesovCLM] using hC u
+    ← Submodule.norm_coe, SchwartzMap.coe_toLittleBesovCLM_apply] using hC u
 
 /-- **Pseudodifferential operators with compact spatial support on little Besov spaces.** Let `a`
 be a scalar symbol of order `m` with compact spatial support, `s` real and `1 ≤ p ≤ ∞`. The
@@ -503,7 +503,7 @@ in `B^s_{p,∞}` and `B^{s-m}_{p,∞}`. For `p = ∞` these are the little Höld
 Schwartz function `u` it is `Op(a) u`
 (`TauCeti.Symbol.coe_quantizeLittleBesov_toLittleBesovCLM`), and by density of the Schwartz
 functions it is the unique continuous linear map with this property
-(`TauCeti.BesovSpace.continuousLinearMap_ext_littleBesov`). -/
+(`TauCeti.BesovSpace.littleBesov_continuousLinearMap_ext`). -/
 def quantizeLittleBesov (a : Symbol n ℂ ℂ m) (ha : a.HasCompactSpatialSupport)
     (φ : ContDiffBump (0 : CoordinateSpace n)) (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
     BesovSpace.littleBesov ℂ φ s p →L[ℂ] BesovSpace.littleBesov ℂ φ (s - m) p :=
@@ -520,9 +520,9 @@ theorem coe_quantizeLittleBesov_toLittleBesovCLM (ha : a.HasCompactSpatialSuppor
   obtain ⟨C, -, hC⟩ := exists_norm_quantizeToLittleBesov_le ha φ s
   rw [quantizeLittleBesov,
     ← ContinuousLinearMap.coe_coe (SchwartzMap.toLittleBesovCLM ℂ φ s p),
-    LinearMap.extendOfNorm_eq (SchwartzMap.denseRange_toLittleBesovCLM ℂ φ s p) ⟨C, hC⟩ u,
+    LinearMap.extendOfNorm_eq (SchwartzMap.denseRange_toLittleBesovCLM (F := ℂ) φ s p) ⟨C, hC⟩ u,
     quantizeToLittleBesov, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
-    ContinuousLinearMap.coe_coe, SchwartzMap.coe_toLittleBesovCLM]
+    ContinuousLinearMap.coe_coe, SchwartzMap.coe_toLittleBesovCLM_apply]
 
 /-- **The norm of `Op(a)` on the little Besov spaces.** The operator norm of
 `Op(a) : b^s_{p,∞} → b^{s-m}_{p,∞}` is bounded uniformly in `1 ≤ p ≤ ∞`. -/
@@ -530,8 +530,8 @@ theorem exists_norm_quantizeLittleBesov_le (ha : a.HasCompactSpatialSupport)
     (φ : ContDiffBump (0 : CoordinateSpace n)) (s : ℝ) :
     ∃ C, ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)], ‖a.quantizeLittleBesov ha φ s p‖ ≤ C := by
   obtain ⟨C, hC0, hC⟩ := exists_norm_quantizeToLittleBesov_le ha φ s
-  exact ⟨C,
-    LinearMap.opNorm_extendOfNorm_le (SchwartzMap.denseRange_toLittleBesovCLM ℂ φ s _) hC0 hC⟩
+  exact ⟨C, LinearMap.opNorm_extendOfNorm_le
+    (SchwartzMap.denseRange_toLittleBesovCLM (F := ℂ) φ s _) hC0 hC⟩
 
 end Symbol
 
