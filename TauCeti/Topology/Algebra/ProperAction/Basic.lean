@@ -43,8 +43,8 @@ type tags (`Multiplicative.properSMul`, `Additive.properVAdd`).
 * `MulAction.isClosedMap_quotientMk_of_compactSpace`,
   `MulAction.isProperMap_quotientMk_of_compactSpace`: for a continuous action of a compact group,
   with no separation axiom, the quotient map `X → X ⧸ G` is closed and proper.
-* `TauCeti.properSMul_prod`: a diagonal action is proper as soon as it is proper on the first
-  factor and continuous on a Hausdorff second factor.
+* `TauCeti.properSMul_prod`, `TauCeti.properVAdd_prod`: a diagonal action is proper as soon as
+  it is proper on the first factor and continuous on a Hausdorff second factor.
 * `Topology.IsEmbedding.properSMul`: an action which a topological embedding intertwines with a
   proper action is proper.
 * `Topology.IsEmbedding.properSMul_of_isEmbedding`: the same along a topological embedding of
