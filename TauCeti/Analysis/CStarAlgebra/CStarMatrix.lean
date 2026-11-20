@@ -29,7 +29,11 @@ Hilbert C⋆-module.
 
 The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: entries of finite
 sums and of `1 × 1` matrices, entrywise images under sums and scalar multiples of linear maps,
-and the transpose as a linear map.
+and the transpose as a linear map. It also restates `Matrix`'s lemmas on rectangular products and
+conjugate transposes for `CStarMatrix`: associativity, distributivity over subtraction, the
+conjugate transpose of sums and products, entrywise maps of products and conjugate transposes,
+and `conjTranspose_mul_self_eq_zero`. From these it shows that a rectangular matrix `v` with
+`vᴴ * v` or `v * vᴴ` idempotent satisfies `v * vᴴ * v = v`.
 
 ## Main declarations
 
@@ -37,6 +41,16 @@ and the transpose as a linear map.
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an
   ordinary matrix respects multiplication and sends `star` to the conjugate transpose.
+* `CStarMatrix.of_mul_of`, `CStarMatrix.conjTranspose_of`: rectangular products and conjugate
+  transposes of C⋆-matrices are those of the underlying matrices.
+* `CStarMatrix.mul_assoc`, `CStarMatrix.conjTranspose_mul`, `CStarMatrix.map_mul`,
+  `CStarMatrix.map_conjTranspose`, `CStarMatrix.conjTranspose_mul_self_eq_zero`: the rectangular
+  product and conjugate-transpose calculus of `Matrix`, restated for `CStarMatrix`.
+* `CStarMatrix.mul_conjTranspose_mul_self_of_isIdempotentElem_conjTranspose_mul_self` and
+  `CStarMatrix.mul_conjTranspose_mul_self_of_isIdempotentElem_mul_conjTranspose_self`: a
+  rectangular matrix whose initial or final matrix is idempotent is a partial isometry.
+* `CStarMatrix.conjTranspose_mul_eq_zero_of_orthogonal`: partial isometries with orthogonal final
+  matrices have orthogonal ranges.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
   `1 × 1` C⋆-matrices.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
@@ -154,16 +168,14 @@ C⋆-matrices. -/
 theorem map_mul [Fintype m] [NonUnitalNonAssocSemiring A] [NonUnitalNonAssocSemiring B]
     {F : Type*} [FunLike F A B] [NonUnitalRingHomClass F A B] (f : F)
     (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    (M * N).map f = M.map f * N.map f := by
-  ext
-  simp [mul_apply, map_sum]
+    (M * N).map f = M.map f * N.map f :=
+  Matrix.map_mul
 
 /-- Applying a star-preserving map to every entry commutes with the conjugate transpose. -/
 theorem map_conjTranspose [Star A] [Star B] {F : Type*} [FunLike F A B] [StarHomClass F A B]
     (f : F) (M : CStarMatrix m n A) :
-    M.conjTranspose.map f = (M.map f).conjTranspose := by
-  ext
-  simp [map_star]
+    M.conjTranspose.map f = (M.map f).conjTranspose :=
+  Matrix.conjTranspose_map f (map_star f)
 
 /-- Over a star-ordered ring with proper star, a rectangular C⋆-matrix `M` vanishes as soon as
 `Mᴴ * M` does. -/
@@ -172,6 +184,50 @@ theorem conjTranspose_mul_self_eq_zero [Fintype m] [PartialOrder A] [NonUnitalRi
     [StarRing A] [StarOrderedRing A] [IsProperStar A] {M : CStarMatrix m n A} :
     M.conjTranspose * M = 0 ↔ M = 0 :=
   Matrix.conjTranspose_mul_self_eq_zero
+
+/-- Partial isometries with orthogonal final matrices have orthogonal ranges: if
+`v * vᴴ * v = v`, `w * wᴴ * w = w` and `(v * vᴴ) * (w * wᴴ) = 0`, then `vᴴ * w = 0`. -/
+theorem conjTranspose_mul_eq_zero_of_orthogonal [NonUnitalSemiring A] [StarRing A] [Fintype l]
+    [Fintype m] [Fintype n] {v : CStarMatrix n m A} {w : CStarMatrix n l A}
+    (hv : v * v.conjTranspose * v = v) (hw : w * w.conjTranspose * w = w)
+    (h : v * v.conjTranspose * (w * w.conjTranspose) = 0) : v.conjTranspose * w = 0 := by
+  have hv' : v.conjTranspose * v * v.conjTranspose = v.conjTranspose := by
+    simpa [CStarMatrix.mul_assoc] using congrArg conjTranspose hv
+  calc v.conjTranspose * w
+      = v.conjTranspose * v * v.conjTranspose * (w * w.conjTranspose * w) := by rw [hv', hw]
+    _ = v.conjTranspose * (v * v.conjTranspose * (w * w.conjTranspose)) * w := by
+      simp only [CStarMatrix.mul_assoc]
+    _ = 0 := by rw [h, CStarMatrix.mul_zero, CStarMatrix.zero_mul]
+
+section Proper
+
+variable [Fintype m] [Fintype n] [NonUnitalRing A] [StarRing A] [PartialOrder A]
+  [StarOrderedRing A] [IsProperStar A]
+
+/-- If `vᴴ * v` is idempotent then `v * vᴴ * v = v`: a rectangular matrix whose initial matrix is
+a projection is a partial isometry. -/
+theorem mul_conjTranspose_mul_self_of_isIdempotentElem_conjTranspose_mul_self
+    {v : CStarMatrix n m A} (hv : IsIdempotentElem (v.conjTranspose * v)) :
+    v * v.conjTranspose * v = v := by
+  rw [CStarMatrix.mul_assoc]
+  -- With `x = v * (vᴴ * v) - v`, idempotence gives `vᴴ * x = 0`, hence `xᴴ * x = 0`.
+  have h₁ : v.conjTranspose * (v * (v.conjTranspose * v) - v) = 0 := by
+    rw [CStarMatrix.mul_sub, ← CStarMatrix.mul_assoc, hv.eq, sub_self]
+  have h₂ : (v * (v.conjTranspose * v) - v).conjTranspose * v = 0 := by
+    simpa using congrArg conjTranspose h₁
+  rw [← sub_eq_zero, ← conjTranspose_mul_self_eq_zero, CStarMatrix.mul_sub,
+    ← CStarMatrix.mul_assoc, h₂, CStarMatrix.zero_mul, sub_zero]
+
+/-- If `v * vᴴ` is idempotent then `v * vᴴ * v = v`: a rectangular matrix whose final matrix is
+a projection is a partial isometry. -/
+theorem mul_conjTranspose_mul_self_of_isIdempotentElem_mul_conjTranspose_self
+    {v : CStarMatrix n m A} (hv : IsIdempotentElem (v * v.conjTranspose)) :
+    v * v.conjTranspose * v = v := by
+  have := mul_conjTranspose_mul_self_of_isIdempotentElem_conjTranspose_mul_self
+    (v := v.conjTranspose) (by rwa [conjTranspose_conjTranspose])
+  simpa [CStarMatrix.mul_assoc] using congrArg conjTranspose this
+
+end Proper
 
 end Rectangular
 
