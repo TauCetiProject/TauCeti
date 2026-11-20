@@ -49,6 +49,13 @@ an integral covector in the image of the plumbing intersection matrix. -/
 def IsSpinCEquivalent (k l : P.characteristicVectors) : Prop :=
   ∃ x : V → ℤ, l.val = fun v => k.val v + 2 * (P.intersectionMatrix.mulVec x) v
 
+/-- Unfolds `TauCeti.PlumbingGraph.IsSpinCEquivalent`: `l = k + 2 * A x` for some lattice
+point `x`. -/
+theorem isSpinCEquivalent_iff (k l : P.characteristicVectors) :
+    P.IsSpinCEquivalent k l ↔
+      ∃ x : V → ℤ, l.val = fun v => k.val v + 2 * (P.intersectionMatrix.mulVec x) v :=
+  Iff.rfl
+
 /-- Every characteristic covector lies in its own lattice orbit. -/
 @[refl]
 theorem isSpinCEquivalent_refl (k : P.characteristicVectors) : P.IsSpinCEquivalent k k :=
