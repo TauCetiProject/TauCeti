@@ -75,12 +75,9 @@ theorem countable_isoClasses_inter_modelsOf_or_sdiff [∀ n, Countable (L.Relati
     {ι : Type uι} [Countable ι] (hC : ConcentratedAtBFLevels C) (hCan : AnalyticSet C)
     (θ : L.SentenceInf ι) :
     Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : ↥(C ∩ modelsOf θ) → _))) ∨
-      Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : ↥(C \ modelsOf θ) → _))) := by
-  refine hC.countable_isoClasses_inter_or_sdiff_of_measurableSet hCan
-    (measurableSet_modelsOf θ) ?_
-  intro c _ d _ hcd hc
-  obtain ⟨e⟩ := isoSetoid_apply.mp hcd
-  exact (e.mem_modelsOf_iff θ).mp hc
+      Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : ↥(C \ modelsOf θ) → _))) :=
+  hC.countable_isoClasses_inter_or_sdiff_of_measurableSet hCan (measurableSet_modelsOf θ)
+    fun _ _ _ _ hcd => ((isomorphismInvariant_modelsOf θ).mem_iff hcd).1
 
 /-- If the models of `φ` on `ℕ` are concentrated, then either `φ ∧ θ` or `φ ∧ ¬θ` has only
 countably many models on `ℕ` up to isomorphism. -/
