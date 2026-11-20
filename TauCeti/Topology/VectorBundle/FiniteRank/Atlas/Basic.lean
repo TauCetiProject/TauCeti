@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.VectorBundle.Core.Trivial
 public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
 
@@ -23,9 +24,13 @@ exactly its rank stratum. Thus its existing Mathlib vector-bundle topology is re
 rather than replaced by the product topology on coordinates.
 
 `FiniteRankAtlas.chartBaseSet` exposes the open domain in `X` of the preferred stratum chart
-at each base point. `FiniteRankAtlas.ofBundles` takes actual vector bundles on the rank strata,
-in any fibre universe. `FiniteRankAtlas.reconstructionHomeomorph` compares the reconstruction
-with their disjoint union, using `TauCeti.pointIndexedCoreHomeomorph` on each stratum. Its
+at each base point. `FiniteRankAtlas.totalSpaceHomeomorphOfCoordChangeEqId` identifies the
+reconstructed total space of any atlas with identity transitions on chart overlaps with the
+disjoint union of the stratum products, via
+`VectorBundleCore.globalTrivializationOfCoordChangeEqId`.
+`FiniteRankAtlas.ofBundles` takes actual vector bundles on the rank strata, in any fibre
+universe. `FiniteRankAtlas.reconstructionHomeomorph` compares the reconstruction with
+their disjoint union, using `TauCeti.pointIndexedCoreHomeomorph` on each stratum. Its
 forward and inverse formulas retain the continuous linear fibre identifications.
 -/
 
@@ -154,6 +159,16 @@ theorem range_stratum (n : ℕ) :
       cases hp
       exact ⟨⟨⟨x, rfl⟩, v⟩, rfl⟩
 
+/-- Every point of a rank stratum lies in its own preferred chart domain. -/
+theorem mem_baseSet_self (n : ℕ) (x : {x : X // A.rank x = n}) :
+    x ∈ (A.charts n).baseSet x := by
+  simpa only [A.indexAt_eq] using (A.charts n).mem_baseSet_at x
+
+/-- At any point of a rank stratum, the preferred trivialization is the chart labelled by it. -/
+theorem trivializationAt_charts (n : ℕ) (x : {x : X // A.rank x = n}) :
+    trivializationAt (Fin n → 𝕜) (A.charts n).Fiber x = (A.charts n).localTriv x := by
+  rw [VectorBundleCore.trivializationAt, VectorBundleCore.localTrivAt, A.indexAt_eq]
+
 section Continuity
 
 variable {Y : Type*} [TopologicalSpace Y] {b : Y → X}
@@ -249,6 +264,54 @@ theorem mem_baseSet_charts_iff {m : ℕ} {z x : {x : X // A.rank x = m}} :
   rw [A.baseSet_charts z, Set.mem_preimage]
 
 end ChartBaseSet
+
+section CoordChangeEqId
+
+private def stratumHomeomorphOfCoordChangeEqId
+    (hcoord : ∀ n i j, ∀ x ∈ (A.charts n).baseSet i ∩ (A.charts n).baseSet j, ∀ v,
+      (A.charts n).coordChange i j x v = v) (n : ℕ) :
+    (A.charts n).TotalSpace ≃ₜ {x : X // A.rank x = n} × (Fin n → 𝕜) :=
+  let t := (A.charts n).globalTrivializationOfCoordChangeEqId (hcoord n)
+  t.toOpenPartialHomeomorph.toHomeomorphOfSourceEqUnivTargetEqUniv
+    (by rw [t.source_eq, VectorBundleCore.globalTrivializationOfCoordChangeEqId_baseSet,
+      Set.preimage_univ])
+    (by rw [t.target_eq, VectorBundleCore.globalTrivializationOfCoordChangeEqId_baseSet,
+      Set.univ_prod_univ])
+
+/-- The reconstructed total space of any atlas whose transitions are the identity on all chart
+overlaps is homeomorphic to the disjoint union of the product spaces over its rank strata. -/
+def totalSpaceHomeomorphOfCoordChangeEqId
+    (hcoord : ∀ n i j, ∀ x ∈ (A.charts n).baseSet i ∩ (A.charts n).baseSet j, ∀ v,
+      (A.charts n).coordChange i j x v = v) :
+    TotalSpace Unit A.Fiber ≃ₜ Σ n : ℕ, {x : X // A.rank x = n} × (Fin n → 𝕜) :=
+  A.totalSpaceHomeomorph.symm.trans
+    { toEquiv := Equiv.sigmaCongrRight fun n =>
+        (A.stratumHomeomorphOfCoordChangeEqId hcoord n).toEquiv
+      continuous_toFun := continuous_sigma fun n =>
+        continuous_sigmaMk.comp (A.stratumHomeomorphOfCoordChangeEqId hcoord n).continuous
+      continuous_invFun := continuous_sigma fun n =>
+        continuous_sigmaMk.comp (A.stratumHomeomorphOfCoordChangeEqId hcoord n).symm.continuous }
+
+@[simp] theorem totalSpaceHomeomorphOfCoordChangeEqId_apply
+    (hcoord : ∀ n i j, ∀ x ∈ (A.charts n).baseSet i ∩ (A.charts n).baseSet j, ∀ v,
+      (A.charts n).coordChange i j x v = v)
+    (p : TotalSpace Unit A.Fiber) :
+    A.totalSpaceHomeomorphOfCoordChangeEqId hcoord p = ⟨A.rank p.proj, (⟨p.proj, rfl⟩, p.snd)⟩ :=
+  congrArg (Sigma.mk (A.rank p.proj))
+    ((A.charts (A.rank p.proj)).globalTrivializationOfCoordChangeEqId_apply
+      (hcoord (A.rank p.proj)) ⟨⟨p.proj, rfl⟩, p.snd⟩)
+
+@[simp] theorem totalSpaceHomeomorphOfCoordChangeEqId_symm_apply
+    (hcoord : ∀ n i j, ∀ x ∈ (A.charts n).baseSet i ∩ (A.charts n).baseSet j, ∀ v,
+      (A.charts n).coordChange i j x v = v)
+    (n : ℕ) (x : {x : X // A.rank x = n}) (v : Fin n → 𝕜) :
+    (A.totalSpaceHomeomorphOfCoordChangeEqId hcoord).symm ⟨n, (x, v)⟩ =
+      ⟨x.val, fun i => v (Fin.cast x.property i)⟩ :=
+  congrArg (fun q => A.totalSpaceHomeomorph ⟨n, q⟩)
+    ((A.stratumHomeomorphOfCoordChangeEqId hcoord n).symm_apply_eq.mpr
+      ((A.charts n).globalTrivializationOfCoordChangeEqId_apply (hcoord n) ⟨x, v⟩).symm)
+
+end CoordChangeEqId
 
 section Reconstruction
 
