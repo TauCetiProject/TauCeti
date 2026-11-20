@@ -291,14 +291,13 @@ theorem mem_hyperplane_iff (y : E) : y ∈ V ↔ y 0 = 0 := by
 
 /-- The orthogonal projection of `y` onto the hyperplane, its foot, is `y - y₀ e₀`. -/
 theorem coe_orthogonalProjectionOnto_hyperplane (y : E) :
-    (orthogonalProjectionOnto V y : E) = y - y 0 • e₀ := by
-  rw [Submodule.coe_orthogonalProjectionOnto_apply, Submodule.starProjection_orthogonal_val,
-    Submodule.starProjection_unit_singleton ℝ v₀.2, inner_unitNormal, coe_unitNormal]
+    (orthogonalProjectionOnto V y : E) = y - y 0 • e₀ :=
+  coe_orthogonalProjectionOnto_single_one_apply 0 y
 
 /-- A point of the hyperplane is its own foot. -/
 theorem coe_orthogonalProjectionOnto_hyperplane_of_apply_eq_zero {y : E} (hy : y 0 = 0) :
-    (orthogonalProjectionOnto V y : E) = y := by
-  rw [coe_orthogonalProjectionOnto_hyperplane, hy, zero_smul, sub_zero]
+    (orthogonalProjectionOnto V y : E) = y :=
+  coe_orthogonalProjectionOnto_single_one_of_apply_eq_zero hy
 
 /-- The corrector `halfSq · P[g]`: it vanishes on the hyperplane together with its first
 derivatives, while its second derivative tends to `g e₀* ⊗ e₀*` at the hyperplane from the

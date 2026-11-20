@@ -24,6 +24,8 @@ and of the reflection `TauCeti.hyperplaneReflection eᵢ 0` in it, `y ↦ y - 2 
   `y ↦ y - 2 yᵢ eᵢ`, and `TauCeti.reflection_single_one_apply` the same formula for its linear part.
 * `TauCeti.hyperplaneReflection_single_one_apply_self`: the reflection negates the `i`-th
   coordinate.
+* `TauCeti.coe_orthogonalProjectionOnto_single_one_apply`: the orthogonal projection onto
+  `{y | y i = 0}` is `y ↦ y - yᵢ eᵢ`.
 -/
 
 public section
@@ -62,6 +64,7 @@ theorem hyperplaneReflection_single_one_apply (i : ι) (y : EuclideanSpace ℝ �
   simp [EuclideanSpace.inner_single_right]
 
 /-- The reflection in the coordinate hyperplane `{y | y i = 0}` negates the `i`-th coordinate. -/
+@[simp]
 theorem hyperplaneReflection_single_one_apply_self (i : ι) (y : EuclideanSpace ℝ ι) :
     hyperplaneReflection (EuclideanSpace.single i (1 : ℝ)) 0 y i = -y i := by
   rw [hyperplaneReflection_single_one_apply]
@@ -76,5 +79,21 @@ theorem reflection_single_one_apply (i : ι) (m : EuclideanSpace ℝ ι) :
   have h := hyperplaneReflection_eq_reflection_add (EuclideanSpace.single i (1 : ℝ)) 0 m
   simp only [zero_div, mul_zero, zero_smul, add_zero] at h
   exact h.symm.trans (hyperplaneReflection_single_one_apply i m)
+
+/-- The orthogonal projection onto the coordinate hyperplane `{y | y i = 0}` is
+`y ↦ y - yᵢ eᵢ`. -/
+theorem coe_orthogonalProjectionOnto_single_one_apply (i : ι) (y : EuclideanSpace ℝ ι) :
+    ((ℝ ∙ EuclideanSpace.single i (1 : ℝ))ᗮ.orthogonalProjectionOnto y : EuclideanSpace ℝ ι) =
+      y - y i • EuclideanSpace.single i (1 : ℝ) := by
+  rw [Submodule.coe_orthogonalProjectionOnto_apply, Submodule.starProjection_orthogonal_val,
+    Submodule.starProjection_unit_singleton ℝ (by simp), real_inner_comm,
+    EuclideanSpace.real_inner_single_one_right]
+
+/-- A point of the coordinate hyperplane `{y | y i = 0}` is its own orthogonal projection. -/
+theorem coe_orthogonalProjectionOnto_single_one_of_apply_eq_zero {i : ι}
+    {y : EuclideanSpace ℝ ι} (hy : y i = 0) :
+    ((ℝ ∙ EuclideanSpace.single i (1 : ℝ))ᗮ.orthogonalProjectionOnto y : EuclideanSpace ℝ ι) =
+      y := by
+  rw [coe_orthogonalProjectionOnto_single_one_apply, hy, zero_smul, sub_zero]
 
 end TauCeti
