@@ -11,10 +11,8 @@ public import Mathlib.Order.Atoms
 /-!
 # Maximal subgroups above a subgroup of finite index
 
-Every proper subgroup of finite index lies in a maximal subgroup. Among the proper subgroups
-containing it, one of least index is maximal, because a strictly larger subgroup has strictly
-smaller index (Mathlib's `Subgroup.index_strictAnti`). Finite index cannot be dropped: the additive
-group `ℚ` has no maximal subgroup at all.
+Every proper subgroup of finite index lies in a maximal subgroup. Finite index cannot be dropped:
+the additive group `ℚ` has no maximal subgroup at all.
 
 This is the algebraic input for maximal open subgroups of a topological group: a maximal subgroup
 above an open subgroup is open.
@@ -36,7 +34,8 @@ variable {G : Type*} [Group G]
 subgroup.** -/]
 theorem exists_isCoatom_le_of_finiteIndex {K : Subgroup G} [K.FiniteIndex] (hK : K ≠ ⊤) :
     ∃ M : Subgroup G, IsCoatom M ∧ K ≤ M := by
-  -- A proper subgroup above `K` of least index is maximal.
+  -- A proper subgroup above `K` of least index is maximal, because a strictly larger subgroup
+  -- has strictly smaller index (Mathlib's `Subgroup.index_strictAnti`).
   obtain ⟨M, hM⟩ := exists_minimalFor_of_wellFoundedLT
     (fun M : Subgroup G ↦ K ≤ M ∧ M ≠ ⊤) index ⟨K, le_rfl, hK⟩
   have : M.FiniteIndex := finiteIndex_of_le hM.1.1
