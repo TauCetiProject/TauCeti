@@ -7,7 +7,12 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Shift
+import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
@@ -25,6 +30,10 @@ statement needs only the first-order expansion, so it applies to the differentia
 map of a flow at a rest point, whose derivative in `t` at `t = 0` is the linearization of the vector
 field. This is how rest points with invertible linearization become nondegenerate fixed points of
 the short-time maps of the flow.
+
+If moreover `A` is a one-parameter group, `A (s + t) = A s ∘ A t` with `A 0 = 1`, then its
+generator `L` kills exactly the vectors fixed by every `A t`
+(`HasDerivAt.apply_eq_zero_iff_forall_apply_eq_self`).
 -/
 
 public section
@@ -74,3 +83,36 @@ theorem HasDerivAt.eventually_eq_zero_of_apply_eq_self [CompleteSpace 𝕜] [Fin
     ∀ᶠ t in 𝓝[≠] t₀, ∀ w, A t w = w → w = 0 := by
   obtain ⟨K, -, hK⟩ := (LinearMap.injective_iff_antilipschitz (L : E →ₗ[𝕜] E)).1 hinj
   exact hL.eventually_eq_zero_of_apply_eq_self_of_antilipschitzWith hA hK
+
+section OneParameterGroup
+
+variable {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- **Fixed vectors of a one-parameter group of operators.** Let `D : 𝕜 → F →L[𝕜] F` satisfy
+`D 0 = 1` and `D (s + t) = D s ∘ D t`, with derivative `L` at `0`. Then a vector is killed by the
+generator `L` exactly when it is fixed by every `D t`. -/
+theorem HasDerivAt.apply_eq_zero_iff_forall_apply_eq_self {D : 𝕜 → F →L[𝕜] F} {L : F →L[𝕜] F}
+    (hL : HasDerivAt D L 0) (hD0 : D 0 = ContinuousLinearMap.id 𝕜 F)
+    (hadd : ∀ s t, D (s + t) = (D s).comp (D t)) (v : F) :
+    L v = 0 ↔ ∀ t, D t v = v := by
+  have hDv : HasDerivAt (fun t ↦ D t v) (L v) 0 := by
+    simpa using hL.clm_apply (hasDerivAt_const (0 : 𝕜) v)
+  constructor
+  · -- If `L v = 0`, then `t ↦ D t v` has derivative `D t (L v) = 0` at every `t`, because
+    -- `D u = D t ∘ D (u - t)`; so it is the constant `D 0 v = v`.
+    intro hv
+    have hderiv (t : 𝕜) : HasDerivAt (fun u ↦ D u v) 0 t := by
+      have hg := (D t).hasFDerivAt.comp_hasDerivAt (0 : 𝕜) hDv
+      rw [hv, map_zero, ← sub_self t] at hg
+      refine (hg.comp_sub_const t t).congr_of_eventuallyEq
+        (Filter.Eventually.of_forall fun u ↦ ?_)
+      simp [← ContinuousLinearMap.comp_apply, ← hadd]
+    intro t
+    simpa [hD0] using is_const_of_deriv_eq_zero (fun u ↦ (hderiv u).differentiableAt)
+      (fun u ↦ (hderiv u).deriv) t 0
+  · -- If every `D t` fixes `v`, then `t ↦ D t v` is constant, so its derivative `L v` vanishes.
+    intro hv
+    exact hDv.unique ((hasDerivAt_const (0 : 𝕜) v).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall hv))
+
+end OneParameterGroup

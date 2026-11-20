@@ -24,8 +24,8 @@ and simple poles at `0` and `1` (Iwaniec--Kowalski §5.1; Neukirch VII §5).
 It proves that `dedekindZetaData K` is self-dual, satisfies `HasAverageCoefficientGrowth`,
 `HasDirichletAgreement`, `HasMeromorphicContinuation`, and `HasFunctionalEquation`, and is
 recovered verbatim by `AnalyticLFunctionData.ofSeries`. Over `K = ℚ`, it compares
-`completedDedekindZeta ℚ`, `dedekindZetaC ℚ`, and `dedekindZetaData ℚ` with Mathlib's
-`completedRiemannZeta`, `riemannZeta`, and `TauCeti.LFunctions.riemannZetaData`.
+`completedDedekindZeta ℚ` and `dedekindZetaData ℚ` with Mathlib's `completedRiemannZeta` and
+`TauCeti.LFunctions.riemannZetaData`.
 
 ## Main definitions
 
@@ -41,9 +41,9 @@ recovered verbatim by `AnalyticLFunctionData.ofSeries`. Over `K = ℚ`, it compa
   `TauCeti.LFunctions.dedekindZetaData_hasFunctionalEquation`: the four analytic predicates.
 * `TauCeti.LFunctions.ofSeries_dedekindZetaData`: exact recovery by
   `AnalyticLFunctionData.ofSeries`.
-* `TauCeti.LFunctions.completedDedekindZeta_rat_eq`, `TauCeti.LFunctions.dedekindZetaC_rat_eq`,
-  `TauCeti.LFunctions.dedekindZetaData_rat_eqOffZero`: comparison over `ℚ` with the Riemann zeta
-  function and `riemannZetaData`.
+* `TauCeti.LFunctions.completedDedekindZeta_rat_eq`,
+  `TauCeti.LFunctions.dedekindZetaData_rat_eqOffZero`: comparison over `ℚ` with the completed
+  Riemann zeta function and `riemannZetaData`.
 
 ## References
 
@@ -206,15 +206,6 @@ theorem ofSeries_dedekindZetaData :
 
 /-! ### Comparison over `ℚ` with the Riemann zeta function -/
 
-/-- Over `ℚ`, `NumberField.dedekindZeta ℚ` agrees with `riemannZeta` on `Re s > 1`. -/
-private theorem dedekindZeta_rat_eq_riemannZeta {s : ℂ} (hs : 1 < s.re) :
-    dedekindZeta ℚ s = riemannZeta s := by
-  rw [dedekindZeta_eq_LSeries_dedekindZetaCoeff,
-    ← ArithmeticFunction.LSeries_zeta_eq_riemannZeta hs]
-  apply LSeries_congr
-  intro n hn
-  simp [hn]
-
 /-- Over `ℚ`, `completedDedekindZeta ℚ` is the meromorphic normal form of
 `completedRiemannZeta`. -/
 theorem completedDedekindZeta_rat_eq_toMeromorphicNFOn :
@@ -239,15 +230,6 @@ theorem completedDedekindZeta_rat_eq {s : ℂ} (h0 : s ≠ 0) (h1 : s ≠ 1) :
   rw [completedDedekindZeta_rat_eq_toMeromorphicNFOn]
   exact toMeromorphicNFOn_apply_of_analyticAt meromorphic_completedRiemannZeta
     (analyticAt_completedRiemannZeta h0 h1)
-
-/-- Over `ℚ`, `dedekindZetaC ℚ` agrees with Mathlib's `riemannZeta` away from `s = 1`. -/
-theorem dedekindZetaC_rat_eq {s : ℂ} (hs : s ≠ 1) :
-    dedekindZetaC ℚ s = riemannZeta s := by
-  rw [dedekindZetaC_def]
-  exact meromorphicContinuation_apply meromorphic_riemannZeta
-    (fun z hz ↦ analyticOn_riemannZeta z (by rintro rfl; norm_num at hz))
-    (fun z hz ↦ (dedekindZeta_rat_eq_riemannZeta hz).symm)
-    (analyticOn_riemannZeta s hs)
 
 /-- Over `ℚ`, `dedekindZetaData ℚ` agrees off index zero with the normal-form version of
 `riemannZetaData`. The two differ at index zero because `dedekindZetaCoeff ℚ 0 = 1` whereas

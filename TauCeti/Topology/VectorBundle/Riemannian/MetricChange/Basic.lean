@@ -82,10 +82,11 @@ theorem inner_metricChangeTransport_metricChangeTransport (b : B) (u v : E b) :
   ContinuousLinearMap.apply_metricChangeTransport_metricChangeTransport
     (h.isStrictlyPositive_continuousLinearMapOfBilin_inner b) u v
 
-omit [∀ b, FiniteDimensional ℝ (E b)] in
+omit [∀ b, FiniteDimensional ℝ (E b)] [IsContinuousRiemannianBundle F E] in
 /-- Read in a local orthonormal frame, the metric `h` is a continuous family of bilinear forms on
 the model. -/
-private theorem continuous_inner_bilinearComp_orthonormalFrame (e : Trivialization F (π F E))
+theorem continuous_inner_bilinearComp_orthonormalFrame [ContinuousFiberNorm F E]
+    (e : Trivialization F (π F E))
     [e.IsLinear ℝ] {n : ℕ} (c : Module.Basis (Fin n) ℝ F) :
     Continuous fun y : e.baseSet ↦ (h.inner y).bilinearComp
       (e.orthonormalFrame c (EuclideanSpace.basisFun (Fin n) ℝ) y :
@@ -113,27 +114,33 @@ private theorem isStrictlyPositive_inner_bilinearComp {V : Type*} [NormedAddComm
 transport of a second continuous Riemannian metric `h` is a continuous map of the total space. -/
 theorem continuous_metricChangeTransport :
     Continuous fun p : TotalSpace F E ↦
-      (⟨p.proj, (h.inner p.proj).metricChangeTransport p.2⟩ : TotalSpace F E) := by
+      (⟨p.proj, (h.inner p.proj).metricChangeTransport p.snd⟩ : TotalSpace F E) := by
+  suffices hc : Continuous fun p : Unit × TotalSpace F E ↦
+      (⟨p.2.proj, (h.inner p.2.proj).metricChangeTransport p.2.snd⟩ : TotalSpace F E) from
+    hc.comp ((continuous_const (y := ())).prodMk continuous_id)
   refine continuous_totalSpaceMk_apply_of_orthonormalFrame
-    (A := fun b ↦ (h.inner b).metricChangeTransport) fun e _ n c ↦ ?_
+    (A := fun _ b ↦ (h.inner b).metricChangeTransport) fun e _ n c ↦ ?_
   -- Read in a local orthonormal frame, the transport of `h` is the transport of `h` read in the
   -- frame, by naturality.
   refine (ContinuousLinearMap.continuousOn_metricChangeTransport.comp_continuous
-    (h.continuous_inner_bilinearComp_orthonormalFrame e c)
+    ((h.continuous_inner_bilinearComp_orthonormalFrame e c).comp continuous_snd)
     fun y ↦ h.isStrictlyPositive_inner_bilinearComp _).congr fun y ↦ ?_
   ext w
   simp [ContinuousLinearMap.metricChangeTransport_bilinearComp _
-    (h.isStrictlyPositive_continuousLinearMapOfBilin_inner y)]
+    (h.isStrictlyPositive_continuousLinearMapOfBilin_inner y.2)]
 
 /-- The inverse transport, the square root of the Riesz operator of `h` in each fibre, is a
 continuous map of the total space. -/
 private theorem continuous_sqrt_continuousLinearMapOfBilin_inner :
     Continuous fun p : TotalSpace F E ↦
-      (⟨p.proj, CFC.sqrt (h.inner p.proj)♯ p.2⟩ : TotalSpace F E) := by
-  refine continuous_totalSpaceMk_apply_of_orthonormalFrame (A := fun b ↦ CFC.sqrt (h.inner b)♯)
+      (⟨p.proj, CFC.sqrt (h.inner p.proj)♯ p.snd⟩ : TotalSpace F E) := by
+  suffices hc : Continuous fun p : Unit × TotalSpace F E ↦
+      (⟨p.2.proj, CFC.sqrt (h.inner p.2.proj)♯ p.2.snd⟩ : TotalSpace F E) from
+    hc.comp ((continuous_const (y := ())).prodMk continuous_id)
+  refine continuous_totalSpaceMk_apply_of_orthonormalFrame (A := fun _ b ↦ CFC.sqrt (h.inner b)♯)
     fun e _ n c ↦ ?_
   refine (ContinuousLinearMap.continuousOn_sqrt_continuousLinearMapOfBilin.comp_continuous
-    (h.continuous_inner_bilinearComp_orthonormalFrame e c)
+    ((h.continuous_inner_bilinearComp_orthonormalFrame e c).comp continuous_snd)
     fun y ↦ (h.isStrictlyPositive_inner_bilinearComp _).nonneg).congr fun y ↦ ?_
   ext w
   simp [ContinuousLinearMap.sqrt_continuousLinearMapOfBilin_bilinearComp]
@@ -143,28 +150,28 @@ homeomorphism of the total space applying in each fibre the metric change transp
 linear isometry from the given metric to `h` (`inner_metricChangeTransport_metricChangeTransport`).
 Its inverse applies the square root of the Riesz operator of `h` in each fibre. -/
 noncomputable def metricChangeHomeomorph : TotalSpace F E ≃ₜ TotalSpace F E where
-  toFun p := ⟨p.proj, (h.inner p.proj).metricChangeTransport p.2⟩
-  invFun p := ⟨p.proj, CFC.sqrt (h.inner p.proj)♯ p.2⟩
+  toFun p := ⟨p.proj, (h.inner p.proj).metricChangeTransport p.snd⟩
+  invFun p := ⟨p.proj, CFC.sqrt (h.inner p.proj)♯ p.snd⟩
   left_inv p := TotalSpace.ext rfl <| heq_of_eq
     congr($(ContinuousLinearMap.sqrt_mul_metricChangeTransport
-      (h.isStrictlyPositive_continuousLinearMapOfBilin_inner p.proj)) p.2)
+      (h.isStrictlyPositive_continuousLinearMapOfBilin_inner p.proj)) p.snd)
   right_inv p := TotalSpace.ext rfl <| heq_of_eq
     congr($(ContinuousLinearMap.metricChangeTransport_mul_sqrt
-      (h.isStrictlyPositive_continuousLinearMapOfBilin_inner p.proj)) p.2)
+      (h.isStrictlyPositive_continuousLinearMapOfBilin_inner p.proj)) p.snd)
   continuous_toFun := h.continuous_metricChangeTransport
   continuous_invFun := h.continuous_sqrt_continuousLinearMapOfBilin_inner
 
 /-- The metric change homeomorphism applies the metric change transport of `h` in each fibre. -/
 @[simp]
 theorem metricChangeHomeomorph_apply (p : TotalSpace F E) :
-    h.metricChangeHomeomorph p = ⟨p.proj, (h.inner p.proj).metricChangeTransport p.2⟩ :=
+    h.metricChangeHomeomorph p = ⟨p.proj, (h.inner p.proj).metricChangeTransport p.snd⟩ :=
   (rfl)
 
 /-- The inverse of the metric change homeomorphism applies the square root of the Riesz operator of
 `h` in each fibre. -/
 @[simp]
 theorem metricChangeHomeomorph_symm_apply (p : TotalSpace F E) :
-    h.metricChangeHomeomorph.symm p = ⟨p.proj, CFC.sqrt (h.inner p.proj)♯ p.2⟩ :=
+    h.metricChangeHomeomorph.symm p = ⟨p.proj, CFC.sqrt (h.inner p.proj)♯ p.snd⟩ :=
   (rfl)
 
 end Bundle.ContinuousRiemannianMetric

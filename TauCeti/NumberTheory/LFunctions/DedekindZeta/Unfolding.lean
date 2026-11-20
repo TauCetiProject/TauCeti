@@ -5,39 +5,58 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.UnitQuotient
 public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Pair
-public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Cone
-import Mathlib.NumberTheory.NumberField.Discriminant.Basic
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
-import TauCeti.NumberTheory.LFunctions.Theta.GammaIntegral
-import TauCeti.NumberTheory.LFunctions.Theta.UnitCone
+public import TauCeti.NumberTheory.LFunctions.Theta.UnitCone
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 
 /-!
-# Unfolding the theta integral for ideal lattices
+# Hecke's unfolding of the theta integral over a unit cone
 
-For an invertible fractional ideal `I` of a number field `K`, this file unfolds the theta integral
-of its mixed-space lattice `σ(I)` over the cone above a unit fundamental domain `D`, establishing
-Hecke's Mellin-transform identity linking `(mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2)`
-to the partial zeta Dirichlet series of the ideal class of `I⁻¹` (Neukirch, Chapter VII, §5,
-(5.3)–(5.5)).
+Let `I` be an invertible fractional ideal of a number field `K`, `σ(I)` its lattice in the mixed
+space, and `D` a fundamental domain for the units on the norm-one hypersurface. Hecke's integral
+representation of the partial zeta function of the class of `I⁻¹` integrates the theta series of
+`σ(I)` minus its constant term over the cone above `D` (Neukirch VII (5.5), before the Mellin
+substitution):
+
+`∫_{cone D} N(y)^(s/2) (θ_{σ(I)}(y) - 1) dy / y = Γ_ℝ(s)^r₁ Γ_ℝ(2s)^r₂ ∑_a |N(a)|^(-s)`
+
+for `Re s > 1`, where the sum runs over the points `a` of `σ(I)` in Mathlib's fundamental cone
+`fundamentalCone K` (`TauCeti.LFunctions.integral_unitCone_archNorm_cpow_mul_latticeTheta_sub_one`).
+For a nonzero integral ideal `J` these are the points of Mathlib's `idealSet K J`. Fractional
+ideals occur on the dual side of the functional equation, through the lattice of the trace dual of
+`I` (`TauCeti.LFunctions.mellinKernel_mixedDual_idealLattice`).
+
+The proof unfolds the units twice. On the side of the parameters, the translates of the cone above
+`D` by the units cover the positive orthant `w = #μ(K)` times
+(`TauCeti.LFunctions.IsUnitFundamentalDomain.hasSum_integral_unitCone_unitScale`), so the cone
+integrals of the Gaussians of the unit multiples `u a` of one lattice point `a` add up to `w` times
+its full gamma integral `Γ_ℝ(s)^r₁ Γ_ℝ(2s)^r₂ |N(a)|^(-s)`
+(`TauCeti.LFunctions.hasSum_integral_unitCone_archGaussian_unit_smul`). On the side of the
+lattice, the map `(a, u) ↦ u a` from the points of `σ(I)` in the fundamental cone and the units
+onto the nonzero points of `σ(I)` has fibres of `w` points, the torsion orbits
+(`NumberField.mixedEmbedding.fundamentalCone.natCard_unitSMul_eq_torsionOrder`). For `Re s > 1`
+the cone integrals `∫_{cone D} ‖archGaussian y z N(y)^(s/2)‖ dy / y` of the pointwise norms are
+summable over the nonzero points `z` of `σ(I)` (`TauCeti.LFunctions.summable_integral_unitCone`),
+which licenses the exchange of the lattice sum with the integral.
+
+The unfolding needs the cone above a fundamental domain for the units; over the whole positive
+orthant the sum of the gamma integrals of the nonzero lattice points diverges in positive unit
+rank (`NumberField.Units.not_summable_absNorm_of_rank_pos`).
 
 ## Main results
 
-* `TauCeti.LFunctions.hasSum_norm_cpow_idealLattice_fundamentalCone`: the sum of `|N(x)|^(-s)`
-  over nonzero points of `σ(I)` in Mathlib's fundamental cone equals
-  `w N(I)^(-s) ∑_{𝔟 I principal} N(𝔟)^(-s)` for `Re s > 1`.
-* `TauCeti.LFunctions.summable_integral_unitCone`: absolute summability of the termwise cone
-  integrals over nonzero points of `σ(I)` for `σ > 1`.
-* `TauCeti.LFunctions.integrableOn_archNorm_cpow_mul_latticeTheta_sub_one`: integrability of
-  `y ↦ N(y)^(s/2) (θ_{σ(I)}(y) - 1)` on `unitCone D` for `Re s > 1`.
-* `TauCeti.LFunctions.integral_unitCone_archNorm_cpow_mul_latticeTheta_sub_one`: unfolding the
-  cone integral of `N(y)^(s/2) (θ_{σ(I)}(y) - 1)` into the gamma factor times the fundamental-cone
-  sum.
-* `TauCeti.LFunctions.mellinKernelFEPair_Λ_idealLattice_eq`: on `Re s > 1`, the completed Mellin
-  transform `(mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2)` equals the completed partial
-  Dirichlet series.
+* `TauCeti.LFunctions.hasSum_integral_unitCone_archGaussian`: the cone integrals of the Gaussians
+  of the nonzero points of `σ(I)` against `N(y)^(s/2)` sum to
+  `Γ_ℝ(s)^r₁ Γ_ℝ(2s)^r₂ ∑_a |N(a)|^(-s)`, over the points `a` of `σ(I)` in the fundamental cone.
+* `TauCeti.LFunctions.summable_integral_unitCone`: the cone integrals of the pointwise norms
+  `∫_{cone D} ‖…‖` of these integrands are summable over the nonzero points of `σ(I)`.
+* `TauCeti.LFunctions.integrableOn_unitCone_archNorm_cpow_mul_latticeTheta_sub_one` and
+  `TauCeti.LFunctions.integral_unitCone_archNorm_cpow_mul_latticeTheta_sub_one`: the theta integral
+  over the cone converges and equals that sum.
+* `TauCeti.LFunctions.hasMellin_mellinKernel_idealLattice_sub_mellinConstant`: Neukirch's (5.5),
+  the Mellin transform at `s/2` of the kernel of `σ(I)` minus its constant term, expressed through
+  the Dirichlet series of the ideal class of `I⁻¹`.
 
 ## References
 
@@ -45,789 +64,227 @@ to the partial zeta Dirichlet series of the ideal class of `I⁻¹` (Neukirch, C
 -/
 
 public section
+
 noncomputable section
 
-open Complex Filter MeasureTheory NumberField NumberField.InfinitePlace
-  NumberField.mixedEmbedding NumberField.mixedEmbedding.fundamentalCone NumberField.Units Set
-  TauCeti.NumberField.mixedEmbedding
-open scoped nonZeroDivisors Pointwise Topology
+open Complex MeasureTheory Set NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
+  NumberField.mixedEmbedding.fundamentalCone NumberField.Units TauCeti.GlobalNumberFields
+open scoped nonZeroDivisors
 
 namespace TauCeti.LFunctions
 
-variable {K : Type*} [Field K] [NumberField K]
+variable {K : Type*} [Field K] [NumberField K] {D : Set (realSpace K)} {s : ℂ}
 
-/-! ### Fractional-ideal sum over the fundamental cone -/
+/-! ### The unfolding over an ideal lattice -/
 
-/-- A nonzero integral ideal is principal in `𝓞 K` if and only if its image in the fractional
-ideals is generated by a unit of `K`. -/
-private theorem isPrincipal_iff_exists_spanSingleton {L : Ideal (𝓞 K)} (hL : L ≠ ⊥) :
-    L.IsPrincipal ↔ ∃ x : Kˣ, (L : FractionalIdeal (𝓞 K)⁰ K) =
-      FractionalIdeal.spanSingleton (𝓞 K)⁰ (x : K) := by
-  constructor
-  · rintro ⟨a, ha⟩
-    have ha0 : a ≠ 0 := by
-      rintro rfl
-      exact hL (by simpa using ha)
-    have hak : algebraMap (𝓞 K) K a ≠ 0 :=
-      (IsFractionRing.injective (𝓞 K) K).ne ha0
-    refine ⟨Units.mk0 (algebraMap (𝓞 K) K a) hak, ?_⟩
-    rw [Units.val_mk0, ← FractionalIdeal.coeIdeal_span_singleton]
-    exact congrArg (fun M : Ideal (𝓞 K) ↦ (M : FractionalIdeal (𝓞 K)⁰ K)) ha
-  · rintro ⟨x, hx⟩
-    have hx_mem : (x : K) ∈ (1 : FractionalIdeal (𝓞 K)⁰ K) := by
-      have hle : (L : FractionalIdeal (𝓞 K)⁰ K) ≤ 1 := FractionalIdeal.coeIdeal_le_one
-      exact hle (hx.symm ▸ FractionalIdeal.mem_spanSingleton_self _ _)
-    obtain ⟨a, ha⟩ := (FractionalIdeal.mem_one_iff _).mp hx_mem
-    have hcoe : (L : FractionalIdeal (𝓞 K)⁰ K) =
-        ((Ideal.span ({a} : Set (𝓞 K)) : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K) := by
-      rw [hx, ← ha, FractionalIdeal.coeIdeal_span_singleton]
-    exact ⟨a, FractionalIdeal.coeIdeal_injective hcoe⟩
+variable (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
 
-/-- Clearing the denominator of an invertible fractional ideal by a positive natural number. -/
-private theorem exists_nat_pos_mul_eq_coeIdeal (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-    ∃ (d : ℕ) (_ : 0 < d) (J : (Ideal (𝓞 K))⁰),
-      FractionalIdeal.spanSingleton (𝓞 K)⁰ (d : K) * (I : FractionalIdeal (𝓞 K)⁰ K) =
-        (J : Ideal (𝓞 K)) := by
-  set a : 𝓞 K := ((I : FractionalIdeal (𝓞 K)⁰ K).den : 𝓞 K)
-  have ha0 : a ≠ 0 := nonZeroDivisors.coe_ne_zero _
-  have hspa : Ideal.span ({a} : Set (𝓞 K)) ≠ ⊥ := by
-    rw [Ne, Ideal.span_singleton_eq_bot]
-    exact ha0
-  set d : ℕ := Ideal.absNorm (Ideal.span ({a} : Set (𝓞 K)))
-  have hd : 0 < d := Nat.pos_of_ne_zero (mt Ideal.absNorm_eq_zero_iff.mp hspa)
-  have hd_mem : (d : 𝓞 K) ∈ Ideal.span ({a} : Set (𝓞 K)) := Ideal.absNorm_mem _
-  obtain ⟨b, hb⟩ := Ideal.mem_span_singleton.mp hd_mem
-  have hle :
-      FractionalIdeal.spanSingleton (𝓞 K)⁰ (d : K) *
-        (I : FractionalIdeal (𝓞 K)⁰ K) ≤ 1 := by
-    rw [FractionalIdeal.spanSingleton_mul_le_iff]
-    intro z hz
-    have hnum : (I : FractionalIdeal (𝓞 K)⁰ K).den • z ∈
-        Submodule.map (Algebra.linearMap (𝓞 K) K) (I : FractionalIdeal (𝓞 K)⁰ K).num := by
-      rw [← FractionalIdeal.den_mul_self_eq_num]
-      exact Submodule.smul_mem_pointwise_smul z _ _ hz
-    obtain ⟨c, _, hc⟩ := Submodule.mem_map.mp hnum
-    refine (FractionalIdeal.mem_one_iff _).mpr ⟨b * c, ?_⟩
-    rw [Algebra.linearMap_apply] at hc
-    have hda : (d : K) = algebraMap (𝓞 K) K a * algebraMap (𝓞 K) K b := by
-      have := congrArg (algebraMap (𝓞 K) K) hb
-      simpa only [map_natCast, map_mul] using this
-    rw [map_mul, hc, Submonoid.mk_smul, Algebra.smul_def, hda]
-    ring
-  obtain ⟨J₀, hJ₀⟩ := FractionalIdeal.le_one_iff_exists_coeIdeal.mp hle
-  have hJ₀_ne : J₀ ≠ ⊥ := by
-    intro hbot
-    rw [hbot, FractionalIdeal.coeIdeal_bot] at hJ₀
-    have hprod_ne : FractionalIdeal.spanSingleton (𝓞 K)⁰ (d : K) *
-        (I : FractionalIdeal (𝓞 K)⁰ K) ≠ 0 :=
-      mul_ne_zero (FractionalIdeal.spanSingleton_ne_zero_iff.mpr (Nat.cast_ne_zero.mpr hd.ne'))
-        I.ne_zero
-    exact hprod_ne hJ₀.symm
-  exact ⟨d, hd, ⟨J₀, mem_nonZeroDivisors_of_ne_zero hJ₀_ne⟩, hJ₀.symm⟩
+/-- A nonzero point of the lattice of `I` has nonzero norm. -/
+private theorem norm_ne_zero_of_ne_zero (z : {z : idealLattice K I // z ≠ 0}) :
+    mixedEmbedding.norm (z : mixedSpace K) ≠ 0 :=
+  norm_ne_zero_of_mem_idealLattice z.val.property fun h ↦ z.property (Submodule.coe_eq_zero.mp h)
 
-omit [NumberField K] in
-/-- Multiplying a field element by a natural number scales its mixed embedding by that real
-number. -/
-private theorem mixedEmbedding_natCast_mul (d : ℕ) (x : K) :
-    mixedEmbedding K ((d : K) * x) = (d : ℝ) • mixedEmbedding K x := by
-  ext w
-  · simp [mixedEmbedding_apply_isReal]
-  · simp [mixedEmbedding_apply_isComplex, Complex.real_smul]
+/-- A unit multiple of a point of the fundamental cone has nonzero norm. -/
+private theorem norm_unit_smul_ne_zero {a : mixedSpace K} (ha : a ∈ fundamentalCone K)
+    (u : (𝓞 K)ˣ) : mixedEmbedding.norm (u • a) ≠ 0 := by
+  rw [norm_unit_smul]
+  exact (norm_pos_of_mem ha).ne'
 
-/-- **The sum over the nonzero points of a fractional ideal in the fundamental cone** (Neukirch VII
-(5.3)–(5.4)). For `Re s > 1`, the sum of `|N(x)|^(-s)` over the nonzero points `x` of `σ(I)` in
-Mathlib's fundamental cone equals `w N(I)^(-s)` times the sum of `N(𝔟)^(-s)` over the nonzero
-integral ideals `𝔟` with `𝔟 I` principal. -/
-theorem hasSum_norm_cpow_idealLattice_fundamentalCone (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
-    {s : ℂ} (hs : 1 < s.re) :
-    HasSum
-      (fun x : {x : idealLattice K I // x ≠ 0 ∧ (x : mixedSpace K) ∈ fundamentalCone K} ↦
-        ((mixedEmbedding.norm (x : mixedSpace K) : ℝ) : ℂ) ^ (-s))
-      ((torsionOrder K : ℂ) *
-        ((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℂ) ^ (-s) *
-        ∑' 𝔟 : {𝔟 : Ideal (𝓞 K) // 𝔟 ≠ ⊥ ∧ ∃ x : Kˣ,
-            (𝔟 : FractionalIdeal (𝓞 K)⁰ K) * (I : FractionalIdeal (𝓞 K)⁰ K) =
-              FractionalIdeal.spanSingleton (𝓞 K)⁰ (x : K)},
-          (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)) := by
-  obtain ⟨d, hd, J, hJ⟩ := exists_nat_pos_mul_eq_coeIdeal I
-  have hdR : (0 : ℝ) < d := Nat.cast_pos.mpr hd
-  have hdK : (d : K) ≠ 0 := Nat.cast_ne_zero.mpr hd.ne'
-  set n : ℕ := Module.finrank ℚ K
-  -- Multiplication by the positive integer `d` maps `σ(I) ∩ cone` onto `idealSet K J`.
-  have hmem_iff (a : K) :
-      (d : K) * a ∈ ((J : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K) ↔
-        a ∈ (I : FractionalIdeal (𝓞 K)⁰ K) := by
-    rw [← hJ]
-    refine ⟨fun h ↦ ?_, fun h ↦ FractionalIdeal.mul_mem_mul
-      (FractionalIdeal.mem_spanSingleton_self _ _) h⟩
-    have hmul : (d : K)⁻¹ * ((d : K) * a) ∈
-        FractionalIdeal.spanSingleton (𝓞 K)⁰ (d : K)⁻¹ *
-          (FractionalIdeal.spanSingleton (𝓞 K)⁰ (d : K) *
-            (I : FractionalIdeal (𝓞 K)⁰ K)) :=
-      FractionalIdeal.mul_mem_mul (FractionalIdeal.mem_spanSingleton_self _ _) h
-    rwa [inv_mul_cancel_left₀ hdK, ← mul_assoc, ← map_mul, inv_mul_cancel₀ hdK, map_one,
-      one_mul] at hmul
-  have hscale_to
-      (x : {x : idealLattice K I // x ≠ 0 ∧ (x : mixedSpace K) ∈ fundamentalCone K}) :
-      (d : ℝ) • (x : mixedSpace K) ∈ idealSet K J := by
-    rw [mem_idealSet]
-    refine ⟨fundamentalCone.smul_mem_of_mem x.2.2 hdR.ne', ?_⟩
-    obtain ⟨a, haI, hax⟩ := (mem_idealLattice K I).mp x.1.2
-    have hdaJ : (d : K) * a ∈ ((J : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K) :=
-      (hmem_iff a).mpr haI
-    obtain ⟨b, hbJ, hba⟩ := (FractionalIdeal.mem_coeIdeal _).mp hdaJ
-    refine ⟨b, hbJ, ?_⟩
-    rw [← hax, ← mixedEmbedding_natCast_mul, ← hba, RingOfIntegers.coe_eq_algebraMap]
-  have hscale_inv (y : idealSet K J) :
-      (d : ℝ)⁻¹ • (y : mixedSpace K) ∈ idealLattice K I ∧
-        (d : ℝ)⁻¹ • (y : mixedSpace K) ≠ 0 ∧
-        (d : ℝ)⁻¹ • (y : mixedSpace K) ∈ fundamentalCone K := by
-    obtain ⟨hycone, b, hbJ, hby⟩ := mem_idealSet.mp y.2
-    have hinv_cone : (d : ℝ)⁻¹ • (y : mixedSpace K) ∈ fundamentalCone K :=
-      fundamentalCone.smul_mem_of_mem hycone (inv_ne_zero hdR.ne')
-    have hne : (d : ℝ)⁻¹ • (y : mixedSpace K) ≠ 0 := by
-      intro h0
-      have hpos := fundamentalCone.norm_pos_of_mem hinv_cone
-      rw [h0, map_zero] at hpos
-      exact lt_irrefl 0 hpos
-    refine ⟨?_, hne, hinv_cone⟩
-    rw [mem_idealLattice]
-    refine ⟨(d : K)⁻¹ * algebraMap (𝓞 K) K b, ?_, ?_⟩
-    · change (d : K)⁻¹ * algebraMap (𝓞 K) K b ∈ (I : FractionalIdeal (𝓞 K)⁰ K)
-      rw [← hmem_iff, mul_inv_cancel_left₀ hdK]
-      exact (FractionalIdeal.mem_coeIdeal _).mpr ⟨b, hbJ, rfl⟩
-    · apply smul_right_injective (mixedSpace K) hdR.ne'
-      dsimp only
-      rw [smul_inv_smul₀ hdR.ne', ← mixedEmbedding_natCast_mul, mul_inv_cancel_left₀ hdK,
-        ← RingOfIntegers.coe_eq_algebraMap, hby]
-  let e : {x : idealLattice K I // x ≠ 0 ∧ (x : mixedSpace K) ∈ fundamentalCone K} ≃
-      idealSet K J :=
-    { toFun := fun x ↦ ⟨(d : ℝ) • (x : mixedSpace K), hscale_to x⟩
-      invFun := fun y ↦ ⟨⟨(d : ℝ)⁻¹ • (y : mixedSpace K), (hscale_inv y).1⟩,
-        fun h ↦ (hscale_inv y).2.1 (congrArg Subtype.val h), (hscale_inv y).2.2⟩
-      left_inv := fun x ↦ Subtype.ext (Subtype.ext (inv_smul_smul₀ hdR.ne' _))
-      right_inv := fun y ↦ Subtype.ext (smul_inv_smul₀ hdR.ne' _) }
-  -- Identify the two ideal-class sums via `𝔟 * J = span (d) * (𝔟 * I)`.
-  have htsum_eq :
-      ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ //
-          Submodule.IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)))},
-          (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) =
-        ∑' 𝔟 : {𝔟 : Ideal (𝓞 K) // 𝔟 ≠ ⊥ ∧ ∃ x : Kˣ,
-            (𝔟 : FractionalIdeal (𝓞 K)⁰ K) * (I : FractionalIdeal (𝓞 K)⁰ K) =
-              FractionalIdeal.spanSingleton (𝓞 K)⁰ (x : K)},
-          (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) := by
-    let eI : {𝔟 : (Ideal (𝓞 K))⁰ //
-          Submodule.IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)))} ≃
-        {𝔟 : Ideal (𝓞 K) // 𝔟 ≠ ⊥ ∧ ∃ x : Kˣ,
-          (𝔟 : FractionalIdeal (𝓞 K)⁰ K) * (I : FractionalIdeal (𝓞 K)⁰ K) =
-            FractionalIdeal.spanSingleton (𝓞 K)⁰ (x : K)} :=
-      { toFun := fun 𝔟 ↦ ⟨𝔟.1.1, nonZeroDivisors.coe_ne_zero 𝔟.1, by
-          have hne : (𝔟.1 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)) ≠ ⊥ :=
-            mul_ne_zero (nonZeroDivisors.coe_ne_zero 𝔟.1) (nonZeroDivisors.coe_ne_zero J)
-          obtain ⟨y, hy⟩ := (isPrincipal_iff_exists_spanSingleton hne).mp 𝔟.2
-          refine ⟨(Units.mk0 (d : K) hdK)⁻¹ * y, ?_⟩
-          rw [FractionalIdeal.coeIdeal_mul, ← hJ] at hy
-          calc
-            ((𝔟.1 : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K) *
-                (I : FractionalIdeal (𝓞 K)⁰ K)
-                = FractionalIdeal.spanSingleton (𝓞 K)⁰ ((d : K)⁻¹) *
-                    (FractionalIdeal.spanSingleton (𝓞 K)⁰ (d : K) *
-                      (((𝔟.1 : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K) *
-                        (I : FractionalIdeal (𝓞 K)⁰ K))) := by
-                  rw [← mul_assoc, ← map_mul, inv_mul_cancel₀ hdK, map_one, one_mul]
-            _ = FractionalIdeal.spanSingleton (𝓞 K)⁰ ((d : K)⁻¹) *
-                  FractionalIdeal.spanSingleton (𝓞 K)⁰ (y : K) := by
-                  rw [← hy]; ring
-            _ = FractionalIdeal.spanSingleton (𝓞 K)⁰
-                  (((Units.mk0 (d : K) hdK)⁻¹ * y : Kˣ) : K) := by
-                  rw [← map_mul, Units.val_mul, Units.val_inv_eq_inv_val, Units.val_mk0]⟩
-        invFun := fun 𝔟 ↦ ⟨⟨𝔟.1, mem_nonZeroDivisors_of_ne_zero 𝔟.2.1⟩, by
-          have hne : 𝔟.1 * (J : Ideal (𝓞 K)) ≠ ⊥ :=
-            mul_ne_zero 𝔟.2.1 (nonZeroDivisors.coe_ne_zero J)
-          refine (isPrincipal_iff_exists_spanSingleton hne).mpr ?_
-          obtain ⟨x, hx⟩ := 𝔟.2.2
-          refine ⟨Units.mk0 (d : K) hdK * x, ?_⟩
-          rw [FractionalIdeal.coeIdeal_mul, ← hJ, mul_left_comm, hx, ← map_mul,
-            Units.val_mul, Units.val_mk0]⟩
-        left_inv := fun _ ↦ rfl
-        right_inv := fun _ ↦ rfl }
-    exact eI.tsum_eq (fun 𝔟 ↦ (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s))
-  -- Relate `absNorm J` to `d ^ [K : ℚ] * absNorm I`.
-  have habsJ : (Ideal.absNorm (J : Ideal (𝓞 K)) : ℚ) =
-      (d : ℚ) ^ n * FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) := by
-    have h1 := congrArg FractionalIdeal.absNorm hJ
-    rw [map_mul, FractionalIdeal.coeIdeal_absNorm,
-      FractionalIdeal.absNorm_span_singleton (𝓞 K)] at h1
-    have hnorm : |Algebra.norm ℚ (d : K)| = (d : ℚ) ^ n := by
-      rw [← map_natCast (algebraMap ℚ K) d, Algebra.norm_algebraMap,
-        abs_of_nonneg (by positivity)]
-    rw [hnorm] at h1
-    exact h1.symm
-  have hd_pow_pos : (0 : ℝ) < (d : ℝ) ^ n := pow_pos hdR n
-  have hI_nonneg :
-      (0 : ℝ) ≤ (FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) :=
-    Rat.cast_nonneg.mpr (FractionalIdeal.absNorm_nonneg _)
-  -- Transport `hasSum_norm_cpow_idealSet J hs` along `e` and divide out `(d ^ n) ^ (-s)`.
-  have hsumJ := (e.hasSum_iff.mpr (hasSum_norm_cpow_idealSet J hs)).mul_left (((d : ℂ) ^ n) ^ s)
-  have hnorm_scale
-      (x : {x : idealLattice K I // x ≠ 0 ∧ (x : mixedSpace K) ∈ fundamentalCone K}) :
-      ((d : ℂ) ^ n) ^ s * ((mixedEmbedding.norm (e x : mixedSpace K) : ℝ) : ℂ) ^ (-s) =
-        ((mixedEmbedding.norm (x : mixedSpace K) : ℝ) : ℂ) ^ (-s) := by
-    have hxpos : 0 < mixedEmbedding.norm (x : mixedSpace K) :=
-      fundamentalCone.norm_pos_of_mem x.2.2
-    have henorm : mixedEmbedding.norm (e x : mixedSpace K) =
-        (d : ℝ) ^ n * mixedEmbedding.norm (x : mixedSpace K) := by
-      change mixedEmbedding.norm ((d : ℝ) • (x : mixedSpace K)) = _
-      rw [mixedEmbedding.norm_smul, abs_of_pos hdR]
-    rw [henorm, Complex.ofReal_mul,
-      Complex.mul_cpow_ofReal_nonneg hd_pow_pos.le hxpos.le,
-      Complex.ofReal_pow, Complex.ofReal_natCast, ← mul_assoc,
-      ← Complex.cpow_add _ _ (pow_ne_zero n (Nat.cast_ne_zero.mpr hd.ne')),
-      add_neg_cancel, Complex.cpow_zero, one_mul]
-  have hrhs :
-      ((d : ℂ) ^ n) ^ s *
-        ((torsionOrder K : ℂ) * (Ideal.absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (-s) *
-          ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ //
-              Submodule.IsPrincipal ((𝔟 : Ideal (𝓞 K)) * (J : Ideal (𝓞 K)))},
-            (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)) =
-      (torsionOrder K : ℂ) *
-        ((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℂ) ^ (-s) *
-        ∑' 𝔟 : {𝔟 : Ideal (𝓞 K) // 𝔟 ≠ ⊥ ∧ ∃ x : Kˣ,
-            (𝔟 : FractionalIdeal (𝓞 K)⁰ K) * (I : FractionalIdeal (𝓞 K)⁰ K) =
-              FractionalIdeal.spanSingleton (𝓞 K)⁰ (x : K)},
-          (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) := by
-    have habsJC : (Ideal.absNorm (J : Ideal (𝓞 K)) : ℂ) =
-        ((d : ℝ) ^ n : ℝ) *
-          (((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℝ) : ℂ) := by
-      have := congrArg (Rat.cast (K := ℂ)) habsJ
-      simpa using this
-    rw [htsum_eq, habsJC, Complex.mul_cpow_ofReal_nonneg hd_pow_pos.le hI_nonneg]
-    simp only [Complex.ofReal_pow, Complex.ofReal_natCast, Complex.ofReal_ratCast]
-    set S : ℂ := ∑' 𝔟 : {𝔟 : Ideal (𝓞 K) // 𝔟 ≠ ⊥ ∧ ∃ x : Kˣ,
-        (𝔟 : FractionalIdeal (𝓞 K)⁰ K) * (I : FractionalIdeal (𝓞 K)⁰ K) =
-          FractionalIdeal.spanSingleton (𝓞 K)⁰ (x : K)},
-      (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)
-    calc
-      ((d : ℂ) ^ n) ^ s *
-          ((torsionOrder K : ℂ) *
-            (((d : ℂ) ^ n) ^ (-s) *
-              ((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℂ) ^ (-s)) *
-            S)
-          = (((d : ℂ) ^ n) ^ s * ((d : ℂ) ^ n) ^ (-s)) *
-            ((torsionOrder K : ℂ) *
-              ((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℂ) ^ (-s) *
-              S) := by
-            ring
-      _ = _ := by
-          rw [← Complex.cpow_add _ _ (pow_ne_zero n (Nat.cast_ne_zero.mpr hd.ne')),
-            add_neg_cancel, Complex.cpow_zero, one_mul]
-  rw [hrhs] at hsumJ
-  exact hsumJ.congr_fun fun x ↦ (hnorm_scale x).symm
+/-- The Gaussian of a nonzero point of `σ(I)` against `N(y)^(s/2)` is integrable on the cone
+for `0 < Re s`. -/
+private theorem integrableOn_unitCone_archGaussian_mul_archNorm_cpow
+    (z : {z : idealLattice K I // z ≠ 0}) (hs : 0 < s.re) :
+    IntegrableOn (fun y ↦ archGaussian y (z : mixedSpace K) * (archNorm y : ℂ) ^ (s / 2))
+      (unitCone D) (archHaar K) :=
+  (integrable_archGaussian_mul_archNorm_cpow (norm_ne_zero_of_ne_zero I z) hs).integrableOn
 
-/-- For real `σ > 1`, the norms of nonzero points of `σ(I)` in the fundamental cone are
-`(-σ)`-summable. -/
-private theorem summable_norm_rpow_idealLattice_fundamentalCone
-    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {σ : ℝ} (hσ : 1 < σ) :
-    Summable
-      fun x : {x : idealLattice K I // x ≠ 0 ∧ (x : mixedSpace K) ∈ fundamentalCone K} ↦
-        mixedEmbedding.norm (x : mixedSpace K) ^ (-σ) := by
-  have hs := (hasSum_norm_cpow_idealLattice_fundamentalCone I
-    (s := (σ : ℂ)) (by simpa using hσ)).summable
-  refine (Complex.reCLM.summable hs).congr fun x ↦ ?_
-  have hxpos : 0 < mixedEmbedding.norm (x : mixedSpace K) :=
-    fundamentalCone.norm_pos_of_mem x.2.2
-  simp only [Complex.reCLM_apply]
-  rw [← Complex.ofReal_neg, ← Complex.ofReal_cpow hxpos.le, Complex.ofReal_re]
+/-- The unfolded double sum over the points `a` of `σ(I)` in the fundamental cone and the units
+`u`: for `Re s > 1`, the cone integrals of the Gaussians of `u a` sum absolutely to `w` times
+`Γ_ℝ(s)^r₁ Γ_ℝ(2s)^r₂ ∑_a |N(a)|^(-s)`. -/
+private theorem hasSum_integral_unitCone_archGaussian_prod
+    (hD : IsUnitFundamentalDomain K D) (hs : 1 < s.re) :
+    HasSum (fun p : ↥(fundamentalCone K ∩ (idealLattice K I : Set (mixedSpace K))) × (𝓞 K)ˣ ↦
+        ∫ y in unitCone D,
+          archGaussian y (p.2 • (p.1 : mixedSpace K)) * (archNorm y : ℂ) ^ (s / 2) ∂archHaar K)
+      (torsionOrder K * (Gammaℝ s ^ nrRealPlaces K * Gammaℝ (2 * s) ^ nrComplexPlaces K *
+        ∑' a : ↥(fundamentalCone K ∩ (idealLattice K I : Set (mixedSpace K))),
+          (mixedEmbedding.norm (a : mixedSpace K) : ℂ) ^ (-s))) := by
+  set A := fundamentalCone K ∩ (idealLattice K I : Set (mixedSpace K))
+  set Γ : ℂ → ℂ := fun r ↦ Gammaℝ r ^ nrRealPlaces K * Gammaℝ (2 * r) ^ nrComplexPlaces K
+  set φ : ℂ → mixedSpace K → ℂ := fun r z ↦
+    ∫ y in unitCone D, archGaussian y z * (archNorm y : ℂ) ^ (r / 2) ∂archHaar K
+  have hσ : 1 < (s.re : ℂ).re := by simpa using hs
+  -- the sum over the units, for each point in the cone
+  have hfib (r : ℂ) (hr : 1 < r.re) (a : A) : HasSum (fun u : (𝓞 K)ˣ ↦
+      φ r (u • (a : mixedSpace K))) (torsionOrder K * (Γ r *
+        (mixedEmbedding.norm (a : mixedSpace K) : ℂ) ^ (-r))) := by
+    simpa [φ, Γ, mul_assoc] using hasSum_integral_unitCone_archGaussian_unit_smul hD
+      (by simpa using norm_unit_smul_ne_zero a.property.1 1) (zero_lt_one.trans hr)
+  -- the sum over the points in the cone of the sums over the units
+  have hcone (r : ℂ) (hr : 1 < r.re) : HasSum (fun a : A ↦
+      (torsionOrder K : ℂ) * (Γ r * (mixedEmbedding.norm (a : mixedSpace K) : ℂ) ^ (-r)))
+      (torsionOrder K * (Γ r * ∑' a : A, (mixedEmbedding.norm (a : mixedSpace K) : ℂ) ^ (-r))) :=
+    (((hasSum_norm_cpow_fundamentalCone_inter_idealLattice I (inv_inv _).symm
+      hr).summable.hasSum.mul_left (Γ r))).mul_left _
+  -- absolute convergence, dominating the norms by the same sum at the real point `Re s`
+  have hbound (p : A × (𝓞 K)ˣ) :
+      ‖φ s (p.2 • (p.1 : mixedSpace K))‖ ≤ (φ s.re (p.2 • (p.1 : mixedSpace K))).re :=
+    (norm_integral_le_integral_norm _).trans_eq
+      (setIntegral_norm_archGaussian_mul_archNorm_cpow _)
+  have hsummable : Summable fun p : A × (𝓞 K)ˣ ↦ φ s (p.2 • (p.1 : mixedSpace K)) := by
+    refine Summable.of_norm_bounded ((summable_prod_of_nonneg fun p ↦
+      (norm_nonneg _).trans (hbound p)).mpr ⟨fun a ↦ (hasSum_re (hfib _ hσ a)).summable, ?_⟩)
+      hbound
+    exact (hasSum_re (hcone _ hσ)).summable.congr fun a ↦ (hasSum_re (hfib _ hσ a)).tsum_eq.symm
+  rw [← (hsummable.hasSum.prod_fiberwise (hfib s hs)).unique (hcone s hs)]
+  exact hsummable.hasSum
 
-/-! ### Unfolding over the unit cone -/
-
-/-- Every nonzero point of an ideal lattice has nonzero mixed-embedding norm. -/
-private theorem norm_ne_zero_of_idealLattice {I : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
-    {x : idealLattice K I} (hx : x ≠ 0) :
-    mixedEmbedding.norm (x : mixedSpace K) ≠ 0 := by
-  obtain ⟨a, _, ha⟩ := (mem_idealLattice K I).mp x.2
-  have ha0 : a ≠ 0 := by
-    rintro rfl
-    apply hx
-    apply Subtype.ext
-    simpa using ha.symm
-  rw [← ha, mixedEmbedding.norm_eq_norm]
-  exact Rat.cast_ne_zero.mpr <|
-    abs_ne_zero.mpr ((Algebra.norm_ne_zero_iff (R := ℚ) (S := K)).mpr ha0)
-
-/-- The quotient `(𝓞 K)ˣ ⧸ Units.torsion K` is countable. -/
-private theorem countable_unitQuotient (K : Type*) [Field K] [NumberField K] :
-    Countable ((𝓞 K)ˣ ⧸ Units.torsion K) := by
-  have : Countable (𝓞 K) := Countable.of_moduleFinite (R := ℤ)
-  have : Countable (𝓞 K)ˣ := Function.Injective.countable Units.val_injective
-  exact Quotient.countable
-
-omit [NumberField K] in
-/-- Unit multiplication on an ideal lattice fixes `0`. -/
-private theorem unitSMulIdealLatticeEquiv_zero (u : (𝓞 K)ˣ)
-    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-    u.unitSMulIdealLatticeEquiv I 0 = 0 :=
-  Subtype.ext (by simp [Units.unitSMulIdealLatticeEquiv_apply])
-
-/-- The unit-action bijection `((𝓞 K)ˣ ⧸ torsion K) × (σ(I) ∩ cone) ≃ σ(I) \ {0}`. -/
-private def unitQuotientFundamentalConeEquiv (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
-    ((𝓞 K)ˣ ⧸ Units.torsion K) ×
-      {x : idealLattice K I // x ≠ 0 ∧ (x : mixedSpace K) ∈ fundamentalCone K} ≃
-      {x : idealLattice K I // x ≠ 0} := by
-  refine Equiv.ofBijective
-    (fun p ↦ ⟨p.1.out.unitSMulIdealLatticeEquiv I p.2.1, fun h ↦ p.2.2.1 <|
-      (p.1.out.unitSMulIdealLatticeEquiv I).injective
-        (h.trans (unitSMulIdealLatticeEquiv_zero p.1.out I).symm)⟩)
-    ⟨?_, ?_⟩
-  · rintro ⟨q₁, x₁⟩ ⟨q₂, x₂⟩ h
-    have hval : q₁.out • (x₁ : mixedSpace K) = q₂.out • (x₂ : mixedSpace K) := by
-      have := congrArg (fun z : {x : idealLattice K I // x ≠ 0} ↦ (z.1 : mixedSpace K)) h
-      simpa only [Units.unitSMulIdealLatticeEquiv_apply] using this
-    have hmul : (q₂.out⁻¹ * q₁.out) • (x₁ : mixedSpace K) = (x₂ : mixedSpace K) := by
-      rw [mul_smul, hval, inv_smul_smul]
-    have htor : q₂.out⁻¹ * q₁.out ∈ Units.torsion K :=
-      (fundamentalCone.unit_smul_mem_iff_mem_torsion x₁.2.2 _).mp (hmul ▸ x₂.2.2)
-    have hq : q₁ = q₂ := by
-      rw [← Quotient.out_eq q₁, ← Quotient.out_eq q₂]
-      exact (QuotientGroup.eq.mpr htor).symm
-    subst hq
-    have hx : x₁ = x₂ := Subtype.ext (Subtype.ext (smul_left_cancel _ hval))
-    exact Prod.ext rfl hx
-  · intro x
-    obtain ⟨u, hu⟩ := fundamentalCone.exists_unit_smul_mem (norm_ne_zero_of_idealLattice x.2)
-    set q : (𝓞 K)ˣ ⧸ Units.torsion K := QuotientGroup.mk u⁻¹
-    have htor : q.out⁻¹ * u⁻¹ ∈ Units.torsion K :=
-      QuotientGroup.eq.mp (Quotient.out_eq q)
-    have hcone : q.out⁻¹ • (x : mixedSpace K) ∈ fundamentalCone K := by
-      have hrew : q.out⁻¹ • (x : mixedSpace K) =
-          (q.out⁻¹ * u⁻¹) • (u • (x : mixedSpace K)) := by
-        rw [mul_smul, inv_smul_smul]
-      rw [hrew]
-      exact fundamentalCone.torsion_smul_mem_of_mem hu htor
-    set x₀ : idealLattice K I := q.out⁻¹.unitSMulIdealLatticeEquiv I x.1
-    have hx₀_ne : x₀ ≠ 0 := fun h ↦
-      x.2 ((q.out⁻¹.unitSMulIdealLatticeEquiv I).injective
-        (h.trans (unitSMulIdealLatticeEquiv_zero q.out⁻¹ I).symm))
-    refine ⟨⟨q, ⟨x₀, hx₀_ne, by simpa [x₀] using hcone⟩⟩, ?_⟩
-    apply Subtype.ext
-    apply Subtype.ext
-    dsimp only [x₀]
-    rw [Units.unitSMulIdealLatticeEquiv_apply, Units.unitSMulIdealLatticeEquiv_apply, smul_inv_smul]
-
-omit [NumberField K] in
-/-- Unit scaling on `realSpace K` is continuous. -/
-private theorem continuous_unitScale (u : (𝓞 K)ˣ) :
-    Continuous (unitScale u : realSpace K → realSpace K) :=
-  continuous_pi fun w ↦ by
-    have h : (fun y : realSpace K ↦ unitScale u y w) = fun y ↦ w (u : K) ^ 2 * y w :=
-      funext fun y ↦ unitScale_apply u y w
-    rw [h]
-    exact continuous_const.mul (continuous_apply w)
-
-omit [NumberField K] in
-/-- The unit-scale homeomorphism `y ↦ unitScale u y` of `realSpace K`. -/
-private def unitScaleHomeomorph (u : (𝓞 K)ˣ) : realSpace K ≃ₜ realSpace K where
-  toFun := unitScale u
-  invFun := unitScale u⁻¹
-  left_inv y := by rw [unitScale_unitScale, inv_mul_cancel, unitScale_one]
-  right_inv y := by rw [unitScale_unitScale, mul_inv_cancel, unitScale_one]
-  continuous_toFun := continuous_unitScale u
-  continuous_invFun := continuous_unitScale u⁻¹
-
-omit [NumberField K] in
-private theorem coe_unitScaleHomeomorph (u : (𝓞 K)ˣ) :
-    ⇑(unitScaleHomeomorph u) = unitScale u := rfl
-
-/-- Scaling by a unit preserves `archHaar K`. -/
-private theorem measurePreserving_unitScale (u : (𝓞 K)ˣ) :
-    MeasurePreserving (unitScale u) (archHaar K) (archHaar K) := by
-  have heq : unitScale u = ((fun w : InfinitePlace K ↦ w (u : K) ^ 2) * ·) :=
-    funext fun y ↦ funext fun w ↦ unitScale_apply u y w
-  refine ⟨?_, ?_⟩
-  · exact (continuous_unitScale u).measurable
-  · rw [heq]
-    exact map_archHaar_mul_left fun w ↦ pow_pos (pos_iff.mpr (by simp)) 2
-
-/-- The translates `E q := (unitScale q.out⁻¹) ⁻¹' (unitCone D)` tile the positive orthant
-disjointly as `q` ranges over `(𝓞 K)ˣ ⧸ Units.torsion K`. -/
-private theorem unitCone_tiling {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D) :
-    let E : (𝓞 K)ˣ ⧸ Units.torsion K → Set (realSpace K) :=
-      fun q ↦ unitScale q.out⁻¹ ⁻¹' unitCone D
-    (∀ q, MeasurableSet (E q)) ∧
-    Pairwise (Function.onFun Disjoint E) ∧
-    (⋃ q, E q) = {y : realSpace K | ∀ w, 0 < y w} := by
-  intro E
-  refine ⟨fun q ↦ (measurableSet_unitCone hD.measurableSet).preimage
-      (continuous_unitScale q.out⁻¹).measurable, ?_, ?_⟩
-  · intro q₁ q₂ hne
-    rw [Function.onFun, Set.disjoint_left]
-    intro y hy₁ hy₂
-    have hs₁ : surfacePart (unitScale q₁.out⁻¹ y) ∈ D := (mem_unitCone.mp hy₁).2
-    have hs₂ : surfacePart (unitScale q₂.out⁻¹ y) ∈ D := (mem_unitCone.mp hy₂).2
-    have hrel :
-        unitScale (q₂.out⁻¹ * q₁.out) (surfacePart (unitScale q₁.out⁻¹ y)) ∈ D := by
-      rwa [← surfacePart_unitScale, unitScale_unitScale, mul_assoc, mul_inv_cancel, mul_one]
-    have htor : q₂.out⁻¹ * q₁.out ∈ Units.torsion K :=
-      (hD.unitScale_mem_iff _ hs₁ _).mp hrel
-    exact hne <| by
-      rw [← Quotient.out_eq q₁, ← Quotient.out_eq q₂]
-      exact (QuotientGroup.eq.mpr htor).symm
-  · ext y
-    simp only [mem_iUnion, mem_preimage, mem_unitCone, mem_ofPred_eq, E]
-    constructor
-    · rintro ⟨q, hpos, -⟩ w
-      have h := unitScale_pos (hpos w) q.out
-      rwa [unitScale_unitScale, mul_inv_cancel, unitScale_one] at h
-    · intro hy
-      obtain ⟨u, hu⟩ :=
-        hD.exists_unitScale_mem (surfacePart y) (surfacePart_mem_normOneSurface hy)
-      set q : (𝓞 K)ˣ ⧸ Units.torsion K := QuotientGroup.mk u⁻¹
-      have htor : q.out⁻¹ * u⁻¹ ∈ Units.torsion K :=
-        QuotientGroup.eq.mp (Quotient.out_eq q)
-      refine ⟨q, fun w ↦ unitScale_pos (hy w) q.out⁻¹, ?_⟩
-      have hmem := (hD.unitScale_mem_iff _ hu _).mpr htor
-      rwa [unitScale_unitScale, mul_assoc, inv_mul_cancel, mul_one,
-        ← surfacePart_unitScale] at hmem
-
-/-- For any positive parameter `y` and complex `s`, the norm of `(archNorm y : ℂ) ^ (s / 2) *
-archGaussian y x` is `‖archGaussian y x‖ * archNorm y ^ (s.re / 2)`. -/
-private theorem norm_archNorm_cpow_mul_archGaussian {y : realSpace K} (hy : ∀ w, 0 < y w)
-    (s : ℂ) (x : mixedSpace K) :
-    ‖(archNorm y : ℂ) ^ (s / 2) * archGaussian y x‖ =
-      ‖archGaussian y x‖ * archNorm y ^ (s.re / 2) := by
-  rw [norm_mul, Complex.norm_cpow_eq_rpow_re_of_pos (archNorm_pos hy), Complex.div_ofNat_re,
-    mul_comm]
-
-/-- For a fixed nonzero point `x₀` of `σ(I)` and `s` with `0 < s.re`, the termwise cone integrals
-along the unit orbit of `x₀` sum to the full gamma integral of `x₀`. -/
-private theorem hasSum_unitCone_orbit_integral {D : Set (realSpace K)}
-    (hD : IsUnitFundamentalDomain K D) {x₀ : mixedSpace K}
-    (hx₀ : mixedEmbedding.norm x₀ ≠ 0) {s : ℂ} (hs : 0 < s.re) :
-    HasSum
-      (fun q : (𝓞 K)ˣ ⧸ Units.torsion K ↦
-        ∫ y in unitCone D, (archNorm y : ℂ) ^ (s / 2) *
-          archGaussian y (q.out • x₀) ∂archHaar K)
+/-- **Hecke's unfolding of the lattice sum.** For `Re s > 1`, the cone integrals of the Gaussians
+of the nonzero points `z` of the lattice `σ(I)` against `N(y)^(s/2) dy / y`, over the cone above a
+unit fundamental domain, sum to `Γ_ℝ(s)^r₁ Γ_ℝ(2s)^r₂ ∑_{a} |N(a)|^(-s)`, the sum running over the
+points `a` of `σ(I)` in the fundamental cone. -/
+theorem hasSum_integral_unitCone_archGaussian (hD : IsUnitFundamentalDomain K D)
+    (hs : 1 < s.re) :
+    HasSum (fun z : {z : idealLattice K I // z ≠ 0} ↦
+        ∫ y in unitCone D, archGaussian y (z : mixedSpace K) * (archNorm y : ℂ) ^ (s / 2)
+          ∂archHaar K)
       (Gammaℝ s ^ nrRealPlaces K * Gammaℝ (2 * s) ^ nrComplexPlaces K *
-        (mixedEmbedding.norm x₀ : ℂ) ^ (-s)) := by
-  have : Countable ((𝓞 K)ˣ ⧸ Units.torsion K) := countable_unitQuotient K
-  obtain ⟨hEm, hEdisj, hEunion⟩ := unitCone_tiling hD
-  set E : (𝓞 K)ˣ ⧸ Units.torsion K → Set (realSpace K) :=
-    fun q ↦ unitScale q.out⁻¹ ⁻¹' unitCone D
-  have hterm (q : (𝓞 K)ˣ ⧸ Units.torsion K) :
-      ∫ y in unitCone D,
-          (archNorm y : ℂ) ^ (s / 2) * archGaussian y (q.out • x₀) ∂archHaar K =
-        ∫ y in E q, (archNorm y : ℂ) ^ (s / 2) * archGaussian y x₀ ∂archHaar K := by
-    have hpre : unitScale q.out ⁻¹' E q = unitCone D := by
-      ext y
-      simp only [mem_preimage, E, unitScale_unitScale, inv_mul_cancel, unitScale_one]
-    have hemb : MeasurableEmbedding (unitScale q.out) := by
-      rw [← coe_unitScaleHomeomorph]
-      exact (unitScaleHomeomorph q.out).measurableEmbedding
-    have hcongr :
-        ∫ y in unitCone D,
-            (archNorm y : ℂ) ^ (s / 2) * archGaussian y (q.out • x₀) ∂archHaar K =
-          ∫ y in unitCone D,
-            (archNorm (unitScale q.out y) : ℂ) ^ (s / 2) *
-              archGaussian (unitScale q.out y) x₀ ∂archHaar K := by
-      refine setIntegral_congr_fun (measurableSet_unitCone hD.measurableSet) fun y _ ↦ ?_
-      rw [archNorm_unitScale, archGaussian_unit_smul]
-    rw [hcongr, ← hpre]
-    exact (measurePreserving_unitScale q.out).setIntegral_preimage_emb hemb
-      (fun y ↦ (archNorm y : ℂ) ^ (s / 2) * archGaussian y x₀) (E q)
-  simp_rw [hterm]
-  have hint :
-      Integrable (fun y ↦ (archNorm y : ℂ) ^ (s / 2) * archGaussian y x₀) (archHaar K) := by
-    simpa only [mul_comm] using integrable_archGaussian_mul_archNorm_cpow hx₀ hs
-  have hfull :
-      ∫ y in ⋃ q, E q, (archNorm y : ℂ) ^ (s / 2) * archGaussian y x₀ ∂archHaar K =
-      Gammaℝ s ^ nrRealPlaces K * Gammaℝ (2 * s) ^ nrComplexPlaces K *
-        (mixedEmbedding.norm x₀ : ℂ) ^ (-s) := by
-    rw [hEunion, Measure.restrict_eq_self_of_ae_mem ae_archHaar_pos]
-    simpa only [mul_comm] using integral_archGaussian_mul_archNorm_cpow hx₀ hs
-  rw [← hfull]
-  exact hasSum_integral_iUnion hEm hEdisj hint.integrableOn
-
-/-- For a fixed nonzero point `x₀` and real `σ > 0`, the real norm-weighted cone integrals along
-the unit orbit of `x₀` sum to the real gamma integral of `x₀`. -/
-private theorem hasSum_unitCone_orbit_norm_integral {D : Set (realSpace K)}
-    (hD : IsUnitFundamentalDomain K D) {x₀ : mixedSpace K}
-    (hx₀ : mixedEmbedding.norm x₀ ≠ 0) {σ : ℝ} (hσ : 0 < σ) :
-    HasSum
-      (fun q : (𝓞 K)ˣ ⧸ Units.torsion K ↦
-        ∫ y in unitCone D,
-          ‖archGaussian y (q.out • x₀)‖ * archNorm y ^ (σ / 2) ∂archHaar K)
-      ((Gammaℝ (σ : ℂ) ^ nrRealPlaces K * Gammaℝ (2 * (σ : ℂ)) ^ nrComplexPlaces K).re *
-        mixedEmbedding.norm x₀ ^ (-σ)) := by
-  have hs : 0 < (σ : ℂ).re := by simpa using hσ
-  have hC := Complex.reCLM.hasSum (hasSum_unitCone_orbit_integral hD hx₀ hs)
-  have hnorm_pos : 0 < mixedEmbedding.norm x₀ :=
-    lt_of_le_of_ne (mixedEmbedding.norm_nonneg x₀) hx₀.symm
-  have hrhs :
-      Complex.reCLM
-          (Gammaℝ (σ : ℂ) ^ nrRealPlaces K * Gammaℝ (2 * (σ : ℂ)) ^ nrComplexPlaces K *
-            (mixedEmbedding.norm x₀ : ℂ) ^ (-(σ : ℂ))) =
-        (Gammaℝ (σ : ℂ) ^ nrRealPlaces K * Gammaℝ (2 * (σ : ℂ)) ^ nrComplexPlaces K).re *
-          mixedEmbedding.norm x₀ ^ (-σ) := by
-    rw [Complex.reCLM_apply, ← Complex.ofReal_neg, ← Complex.ofReal_cpow hnorm_pos.le,
-      Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, mul_zero, sub_zero]
-  rw [hrhs] at hC
-  refine hC.congr_fun fun q ↦ ?_
-  have hint_full : Integrable (fun y ↦ (archNorm y : ℂ) ^ ((σ : ℂ) / 2) *
-      archGaussian y (q.out • x₀)) (archHaar K) := by
-    have hqnorm : mixedEmbedding.norm (q.out • x₀) ≠ 0 := by
-      rwa [norm_unit_smul]
-    simpa only [mul_comm] using integrable_archGaussian_mul_archNorm_cpow hqnorm hs
-  rw [← ContinuousLinearMap.integral_comp_comm Complex.reCLM hint_full.integrableOn]
-  refine setIntegral_congr_ae (measurableSet_unitCone hD.measurableSet) ?_
-  filter_upwards [ae_archHaar_pos] with y hy _
-  rw [Complex.reCLM_apply, ← Complex.ofReal_ofNat, ← Complex.ofReal_div,
-    ← Complex.ofReal_cpow (archNorm_pos hy).le, archGaussian_apply, ← Complex.ofReal_mul,
-    Complex.ofReal_re, Complex.norm_real, Real.norm_eq_abs, Real.abs_exp, mul_comm]
-
-/-- **Absolute summability of the termwise cone integrals.** Over the cone above a unit
-fundamental domain, the norm-weighted Gaussian integrals of the nonzero points of an ideal
-lattice `σ(I)` are summable for `σ > 1`. -/
-theorem summable_integral_unitCone {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D)
-    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {σ : ℝ} (hσ : 1 < σ) :
-    Summable fun x : {x : idealLattice K I // x ≠ 0} ↦
-      ∫ y in unitCone D,
-        ‖archGaussian y (x : mixedSpace K)‖ * archNorm y ^ (σ / 2) ∂archHaar K := by
-  have hσ0 : 0 < σ := zero_lt_one.trans hσ
-  let e := (Equiv.prodComm _ _).trans (unitQuotientFundamentalConeEquiv I)
-  rw [← e.summable_iff]
-  have hnonneg
-      (p : {x : idealLattice K I // x ≠ 0 ∧ (x : mixedSpace K) ∈ fundamentalCone K} ×
-        ((𝓞 K)ˣ ⧸ Units.torsion K)) :
-      0 ≤ ∫ y in unitCone D,
-        ‖archGaussian y ((e p : mixedSpace K))‖ * archNorm y ^ (σ / 2) ∂archHaar K := by
-    refine setIntegral_nonneg (measurableSet_unitCone hD.measurableSet) fun y hy ↦ ?_
-    exact mul_nonneg (norm_nonneg _) (Real.rpow_nonneg (archNorm_pos (mem_unitCone.mp hy).1).le _)
-  have he_coe
-      (x₀ : {x : idealLattice K I // x ≠ 0 ∧ (x : mixedSpace K) ∈ fundamentalCone K})
-      (q : (𝓞 K)ˣ ⧸ Units.torsion K) :
-      ((e (x₀, q) : idealLattice K I) : mixedSpace K) = q.out • (x₀ : mixedSpace K) := by
-    dsimp only [e, Equiv.trans_apply, Equiv.prodComm_apply, unitQuotientFundamentalConeEquiv,
-      Equiv.ofBijective_apply]
-    exact Units.unitSMulIdealLatticeEquiv_apply _ _ _
-  refine (summable_prod_of_nonneg hnonneg).mpr ⟨fun x₀ ↦ ?_, ?_⟩
-  · simpa only [Function.comp_apply, he_coe] using
-      (hasSum_unitCone_orbit_norm_integral hD (norm_ne_zero_of_idealLattice x₀.2.1) hσ0).summable
-  · refine ((summable_norm_rpow_idealLattice_fundamentalCone I hσ).mul_left
-        (Gammaℝ (σ : ℂ) ^ nrRealPlaces K *
-          Gammaℝ (2 * (σ : ℂ)) ^ nrComplexPlaces K).re).congr fun x₀ ↦ ?_
-    simpa only [Function.comp_apply, he_coe] using
-      (hasSum_unitCone_orbit_norm_integral hD
-        (norm_ne_zero_of_idealLattice x₀.2.1) hσ0).tsum_eq.symm
-
-/-- Termwise integrability and absolute summability of `y ↦ N(y)^(s/2) archGaussian y x` on
-`unitCone D` for `Re s > 1`. -/
-private theorem integrable_and_summable_norm_unitCone {D : Set (realSpace K)}
-    (hD : IsUnitFundamentalDomain K D) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
-    {s : ℂ} (hs : 1 < s.re) :
-    let μ := (archHaar K).restrict (unitCone D)
-    let F : {x : idealLattice K I // x ≠ 0} → realSpace K → ℂ :=
-      fun x y ↦ (archNorm y : ℂ) ^ (s / 2) * archGaussian y (x : mixedSpace K)
-    (∀ x, Integrable (F x) μ) ∧ Summable fun x ↦ ∫ y, ‖F x y‖ ∂μ := by
-  have hs0 : 0 < s.re := zero_lt_one.trans hs
-  refine ⟨fun x ↦ ?_, ?_⟩
-  · have h := integrable_archGaussian_mul_archNorm_cpow (norm_ne_zero_of_idealLattice x.2) hs0
-    exact (h.congr (Filter.Eventually.of_forall fun y ↦ mul_comm _ _)).integrableOn
-  · refine (summable_integral_unitCone hD I hs).congr fun x ↦ ?_
-    refine setIntegral_congr_fun (measurableSet_unitCone hD.measurableSet) fun y hy ↦ ?_
-    exact (norm_archNorm_cpow_mul_archGaussian (mem_unitCone.mp hy).1 s _).symm
-
-/-- **Integrability of the norm-weighted theta series over the unit cone.** For `Re s > 1`, the
-function `y ↦ N(y)^(s/2) (θ_{σ(I)}(y) - 1)` is integrable on `unitCone D` with respect to
-`archHaar K`. -/
-theorem integrableOn_archNorm_cpow_mul_latticeTheta_sub_one {D : Set (realSpace K)}
-    (hD : IsUnitFundamentalDomain K D) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
-    {s : ℂ} (hs : 1 < s.re) :
-    IntegrableOn
-      (fun y ↦ (archNorm y : ℂ) ^ (s / 2) * (latticeTheta (idealLattice K I) y - 1))
-      (unitCone D) (archHaar K) := by
-  have : Countable (idealLattice K I) := Countable.of_moduleFinite (R := ℤ)
-  set μ := (archHaar K).restrict (unitCone D)
-  set F : {x : idealLattice K I // x ≠ 0} → realSpace K → ℂ :=
-    fun x y ↦ (archNorm y : ℂ) ^ (s / 2) * archGaussian y (x : mixedSpace K)
-  obtain ⟨hF_int, hsum_norm⟩ := integrable_and_summable_norm_unitCone hD I hs
-  have hae :
-      (fun y ↦ (archNorm y : ℂ) ^ (s / 2) * (latticeTheta (idealLattice K I) y - 1)) =ᵐ[μ]
-        fun y ↦ ∑' x, F x y := by
-    filter_upwards [ae_restrict_mem (measurableSet_unitCone hD.measurableSet)] with y hy
-    rw [latticeTheta_eq_one_add (idealLattice K I) y (mem_unitCone.mp hy).1, add_sub_cancel_left,
-      ← tsum_mul_left]
-  refine Integrable.congr ?_ hae.symm
-  refine ⟨AEStronglyMeasurable.tsum fun x ↦ (hF_int x).aestronglyMeasurable, ?_⟩
-  rw [HasFiniteIntegral]
-  have hle : ∫⁻ y, ‖∑' x, F x y‖ₑ ∂μ ≤ ∑' x, ∫⁻ y, ‖F x y‖ₑ ∂μ := by
-    calc
-      ∫⁻ y, ‖∑' x, F x y‖ₑ ∂μ ≤ ∫⁻ y, ∑' x, ‖F x y‖ₑ ∂μ :=
-        lintegral_mono fun y ↦ eNorm_tsum_le_tsum_eNorm
-      _ = ∑' x, ∫⁻ y, ‖F x y‖ₑ ∂μ :=
-        lintegral_tsum fun x ↦ (hF_int x).aestronglyMeasurable.eNorm
-  refine lt_of_le_of_lt hle ?_
-  have hlt :
-      ∑' x, ∫⁻ y, ‖F x y‖ₑ ∂μ =
-        ∑' x, ENNReal.ofReal (∫ y, ‖F x y‖ ∂μ) := by
-    refine tsum_congr fun x ↦ ?_
-    exact (ofReal_integral_norm_eq_lintegral_eNorm (hF_int x)).symm
-  rw [hlt, ← ENNReal.ofReal_tsum_of_nonneg (fun x ↦ integral_nonneg fun _ ↦ norm_nonneg _)
-    hsum_norm]
-  exact ENNReal.ofReal_lt_top
-
-/-- **Unfolding the cone integral** (Neukirch VII (5.5) before the Mellin substitution). For
-`Re s > 1`, the cone integral of `N(y)^(s/2) (θ_{σ(I)}(y) - 1)` equals the product of the
-archimedean gamma factor `Γ_ℝ(s)^r₁ Γ_ℝ(2s)^r₂` and the fundamental-cone sum
-`∑_{x ∈ σ(I) ∩ cone} |N(x)|^(-s)`. -/
-theorem integral_unitCone_archNorm_cpow_mul_latticeTheta_sub_one {D : Set (realSpace K)}
-    (hD : IsUnitFundamentalDomain K D) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
-    {s : ℂ} (hs : 1 < s.re) :
-    ∫ y in unitCone D,
-        (archNorm y : ℂ) ^ (s / 2) * (latticeTheta (idealLattice K I) y - 1) ∂archHaar K =
-      Gammaℝ s ^ nrRealPlaces K * Gammaℝ (2 * s) ^ nrComplexPlaces K *
-        ∑' x : {x : idealLattice K I // x ≠ 0 ∧ (x : mixedSpace K) ∈ fundamentalCone K},
-          ((mixedEmbedding.norm (x : mixedSpace K) : ℝ) : ℂ) ^ (-s) := by
-  have : Countable (idealLattice K I) := Countable.of_moduleFinite (R := ℤ)
-  have hs0 : 0 < s.re := zero_lt_one.trans hs
-  set μ := (archHaar K).restrict (unitCone D)
-  set F : {x : idealLattice K I // x ≠ 0} → realSpace K → ℂ :=
-    fun x y ↦ (archNorm y : ℂ) ^ (s / 2) * archGaussian y (x : mixedSpace K)
-  obtain ⟨hF_int, hsum_norm⟩ := integrable_and_summable_norm_unitCone hD I hs
-  have hcongr : ∫ y in unitCone D,
-      (archNorm y : ℂ) ^ (s / 2) * (latticeTheta (idealLattice K I) y - 1) ∂archHaar K =
-      ∫ y, ∑' x, F x y ∂μ := by
-    refine setIntegral_congr_fun (measurableSet_unitCone hD.measurableSet) fun y hy ↦ ?_
-    rw [latticeTheta_eq_one_add (idealLattice K I) y (mem_unitCone.mp hy).1, add_sub_cancel_left,
-      ← tsum_mul_left]
-  rw [hcongr, ← integral_tsum_of_summable_integral_norm hF_int hsum_norm]
-  let e := (Equiv.prodComm _ _).trans (unitQuotientFundamentalConeEquiv I)
-  have hsum_prod : Summable fun p :
-      {x : idealLattice K I // x ≠ 0 ∧ (x : mixedSpace K) ∈ fundamentalCone K} ×
-        ((𝓞 K)ˣ ⧸ Units.torsion K) ↦ ∫ y, F (e p) y ∂μ := by
-    refine Summable.of_norm_bounded (e.summable_iff.mpr hsum_norm) fun p ↦ ?_
-    exact norm_integral_le_integral_norm _
-  rw [← e.tsum_eq, Summable.tsum_prod' hsum_prod (fun x₀ ↦ hsum_prod.comp_injective
-    (Prod.mk_right_injective x₀))]
-  rw [← tsum_mul_left]
-  refine tsum_congr fun x₀ ↦ ?_
-  have he_coe (q : (𝓞 K)ˣ ⧸ Units.torsion K) :
-      ((e (x₀, q) : idealLattice K I) : mixedSpace K) = q.out • (x₀ : mixedSpace K) := by
-    dsimp only [e, Equiv.trans_apply, Equiv.prodComm_apply, unitQuotientFundamentalConeEquiv,
-      Equiv.ofBijective_apply]
-    exact Units.unitSMulIdealLatticeEquiv_apply _ _ _
-  simpa only [F, μ, he_coe] using
-    (hasSum_unitCone_orbit_integral hD (norm_ne_zero_of_idealLattice x₀.2.1) hs0).tsum_eq
-
-/-! ### Identification of the Mellin pair of an ideal lattice -/
-
-/-- Relating `Gammaℝ (2 * s)` to `Gammaℂ s`:
-`Gammaℝ (2 * s) = 2⁻¹ * 2 ^ s * Gammaℂ s`. -/
-private theorem Gammaℝ_two_mul_eq (s : ℂ) :
-    Gammaℝ (2 * s) = (2 : ℂ)⁻¹ * (2 : ℂ) ^ s * Gammaℂ s := by
-  rw [Gammaℝ_def, Gammaℂ_def, neg_div, mul_div_cancel_left₀ _ two_ne_zero]
-  have h2pi : (2 * (Real.pi : ℂ)) ^ (-s) = (2 : ℂ) ^ (-s) * (Real.pi : ℂ) ^ (-s) := by
-    rw [← Complex.ofReal_ofNat, Complex.mul_cpow_ofReal_nonneg two_pos.le Real.pi_pos.le,
-      Complex.ofReal_ofNat]
-  rw [h2pi]
-  calc
-    (Real.pi : ℂ) ^ (-s) * Gamma s
-        = ((2 : ℂ)⁻¹ * 2) * ((2 : ℂ) ^ s * (2 : ℂ) ^ (-s)) *
-            ((Real.pi : ℂ) ^ (-s) * Gamma s) := by
-          rw [inv_mul_cancel₀ two_ne_zero, ← Complex.cpow_add _ _ two_ne_zero, add_neg_cancel,
-            Complex.cpow_zero, one_mul, one_mul]
-    _ = (2 : ℂ)⁻¹ * (2 : ℂ) ^ s *
-          (2 * ((2 : ℂ) ^ (-s) * (Real.pi : ℂ) ^ (-s)) * Gamma s) := by
-          ring
-
-/-- **Hecke's Mellin transform identity for an ideal lattice**, Neukirch VII (5.5): for `Re s > 1`
-and any unit fundamental domain `D`, the completed Mellin transform `(mellinKernelFEPair hD
-(idealLattice K I)).Λ (s / 2)` equals
-`|d_K|^(s/2) Γ_ℝ(s)^r₁ Γ_ℂ(s)^r₂ ∑_{𝔟 I principal} N(𝔟)^(-s)`. -/
-theorem mellinKernelFEPair_Λ_idealLattice_eq {D : Set (realSpace K)}
-    (hD : IsUnitFundamentalDomain K D) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
-    {s : ℂ} (hs : 1 < s.re) :
-    (mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2) =
-      ((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ nrRealPlaces K *
-        Gammaℂ s ^ nrComplexPlaces K *
-        ∑' 𝔟 : {𝔟 : Ideal (𝓞 K) // 𝔟 ≠ ⊥ ∧ ∃ x : Kˣ,
-            (𝔟 : FractionalIdeal (𝓞 K)⁰ K) * (I : FractionalIdeal (𝓞 K)⁰ K) =
-              FractionalIdeal.spanSingleton (𝓞 K)⁰ (x : K)},
-          (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) := by
-  classical
-  have hs2 : 1 / 2 < (s / 2).re := by rw [Complex.div_ofNat_re]; linarith
-  have hM1 := hasMellin_mellinKernel_sub_mellinConstant hD (idealLattice K I) hs2
-  have hM2 := hasMellin_mellinKernel_sub hD.measurableSet hD.isBounded (idealLattice K I) s
-    (integrableOn_archNorm_cpow_mul_latticeTheta_sub_one hD I hs)
-  have hconst : (mellinConstant K : ℂ) = (2 : ℂ) ^ nrComplexPlaces K / (torsionOrder K : ℂ) *
-      ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ) := by
-    rw [mellinConstant_eq_mul_surfaceHaar_real hD]
-    push_cast
-    rfl
-  rw [← hconst] at hM2
-  rw [← hM1.2, hM2.2, integral_unitCone_archNorm_cpow_mul_latticeTheta_sub_one hD I hs,
-    (hasSum_norm_cpow_idealLattice_fundamentalCone I hs).tsum_eq]
-  -- Simplify `(ZLattice.covolume (idealLattice K I) ^ 2 : ℂ) ^ (s / 2)`.
-  have hIpos : (0 : ℝ) < (FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) :=
-    Rat.cast_pos.mpr <| lt_of_le_of_ne (FractionalIdeal.absNorm_nonneg _)
-      (Ne.symm (mt FractionalIdeal.absNorm_eq_zero_iff.mp I.ne_zero))
-  have hdiscr_pos : (0 : ℝ) < (|discr K| : ℤ) :=
-    Int.cast_pos.mpr (abs_pos.mpr (discr_ne_zero K))
-  have h2pow_pos : (0 : ℝ) < ((2 : ℝ)⁻¹ ^ nrComplexPlaces K) ^ 2 := by positivity
-  have hcov_sq : ((ZLattice.covolume (idealLattice K I) : ℂ) ^ 2) ^ (s / 2) =
-      ((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℂ) ^ s *
-        (((2 : ℂ) ^ s) ^ nrComplexPlaces K)⁻¹ * ((|discr K| : ℤ) : ℂ) ^ (s / 2) := by
-    have hV : ZLattice.covolume (idealLattice K I) ^ 2 =
-        ((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℝ) ^ 2 *
-          ((2 : ℝ)⁻¹ ^ nrComplexPlaces K) ^ 2 * ((|discr K| : ℤ) : ℝ) := by
-      rw [covolume_idealLattice, mul_pow, mul_pow, Real.sq_sqrt (abs_nonneg _), Int.cast_abs]
-    have hVc : (ZLattice.covolume (idealLattice K I) : ℂ) ^ 2 =
-        (((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℝ) ^ 2 *
-          ((2 : ℝ)⁻¹ ^ nrComplexPlaces K) ^ 2 : ℝ) * (((|discr K| : ℤ) : ℝ) : ℂ) := by
-      rw [← Complex.ofReal_pow, hV, Complex.ofReal_mul]
-    rw [hVc, Complex.mul_cpow_ofReal_nonneg (by positivity) hdiscr_pos.le, Complex.ofReal_mul,
-      Complex.mul_cpow_ofReal_nonneg (sq_nonneg _) h2pow_pos.le]
-    have hsq (a : ℝ) (ha : 0 < a) : (((a ^ 2 : ℝ) : ℂ)) ^ (s / 2) = (a : ℂ) ^ s := by
-      rw [Complex.ofReal_pow, TauCeti.ofReal_pow_cpow ha.le 2 (s / 2), Nat.cast_ofNat,
-        mul_div_cancel₀ _ two_ne_zero]
-    rw [hsq _ hIpos, hsq _ (by positivity : (0 : ℝ) < (2 : ℝ)⁻¹ ^ nrComplexPlaces K)]
-    simp only [Complex.ofReal_ratCast, Complex.ofReal_intCast]
-    congr 2
-    rw [inv_pow, Complex.ofReal_inv, Complex.inv_cpow_ofReal_nonneg (by positivity),
-      Complex.ofReal_pow, TauCeti.ofReal_pow_cpow two_pos.le, Complex.ofReal_ofNat,
-      Complex.cpow_nat_mul]
-  rw [hcov_sq, Gammaℝ_two_mul_eq]
+        ∑' a : ↥(fundamentalCone K ∩ (idealLattice K I : Set (mixedSpace K))),
+          (mixedEmbedding.norm (a : mixedSpace K) : ℂ) ^ (-s)) := by
+  set A := fundamentalCone K ∩ (idealLattice K I : Set (mixedSpace K))
+  set φ : mixedSpace K → ℂ := fun z ↦
+    ∫ y in unitCone D, archGaussian y z * (archNorm y : ℂ) ^ (s / 2) ∂archHaar K
   have hw : (torsionOrder K : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (torsionOrder_ne_zero K)
-  have hN : ((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℂ) ^ s *
-      ((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℂ) ^ (-s) = 1 := by
-    rw [← Complex.cpow_add _ _ (by exact_mod_cast hIpos.ne'), add_neg_cancel, Complex.cpow_zero]
-  have h2s :
-      (((2 : ℂ) ^ s) ^ nrComplexPlaces K)⁻¹ * ((2 : ℂ) ^ s) ^ nrComplexPlaces K = 1 := by
-    refine inv_mul_cancel₀ (pow_ne_zero _ ?_)
-    rw [Ne, Complex.cpow_eq_zero_iff]
-    exact fun h ↦ two_ne_zero h.1
-  have h2r : (2 : ℂ) ^ nrComplexPlaces K * ((2 : ℂ)⁻¹) ^ nrComplexPlaces K = 1 := by
-    rw [← mul_pow, mul_inv_cancel₀ two_ne_zero, one_pow]
-  set S : ℂ := ∑' 𝔟 : {𝔟 : Ideal (𝓞 K) // 𝔟 ≠ ⊥ ∧ ∃ x : Kˣ,
-      (𝔟 : FractionalIdeal (𝓞 K)⁰ K) * (I : FractionalIdeal (𝓞 K)⁰ K) =
-        FractionalIdeal.spanSingleton (𝓞 K)⁰ (x : K)},
-    (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s)
-  rw [mul_pow, mul_pow]
-  calc
-    (2 : ℂ) ^ nrComplexPlaces K / (torsionOrder K : ℂ) *
-        (((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℂ) ^ s *
-          (((2 : ℂ) ^ s) ^ nrComplexPlaces K)⁻¹ * ((|discr K| : ℤ) : ℂ) ^ (s / 2)) *
-        (Gammaℝ s ^ nrRealPlaces K *
-          ((2 : ℂ)⁻¹ ^ nrComplexPlaces K * ((2 : ℂ) ^ s) ^ nrComplexPlaces K *
-            Gammaℂ s ^ nrComplexPlaces K) *
-          ((torsionOrder K : ℂ) *
-            ((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℂ) ^ (-s) * S))
-        = ((2 : ℂ) ^ nrComplexPlaces K * (2 : ℂ)⁻¹ ^ nrComplexPlaces K) *
-          ((((2 : ℂ) ^ s) ^ nrComplexPlaces K)⁻¹ * ((2 : ℂ) ^ s) ^ nrComplexPlaces K) *
-          ((torsionOrder K : ℂ) / (torsionOrder K : ℂ)) *
-          (((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℂ) ^ s *
-            ((FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℚ) : ℂ) ^ (-s)) *
-          (((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ nrRealPlaces K *
-            Gammaℂ s ^ nrComplexPlaces K * S) := by ring
-    _ = _ := by rw [h2r, h2s, div_self hw, hN]; ring
+  -- regroup the double sum along `(a, u) ↦ u a`, whose fibres have `w` points
+  let Φ : A × (𝓞 K)ˣ → {z : idealLattice K I // z ≠ 0} := fun p ↦
+    ⟨⟨p.2 • (p.1 : mixedSpace K), (Units.unitSMul_mem_idealLattice_iff _ _ _).mpr p.1.property.2⟩,
+      fun h ↦ norm_unit_smul_ne_zero p.1.property.1 p.2
+        ((congrArg mixedEmbedding.norm (Submodule.coe_eq_zero.mpr h)).trans (map_zero _))⟩
+  have hfiber (z : {z : idealLattice K I // z ≠ 0}) :
+      ∑' p : Φ ⁻¹' {z}, φ ((p : A × (𝓞 K)ˣ).2 • (p.val.1 : mixedSpace K)) =
+        torsionOrder K * φ (z : mixedSpace K) := by
+    have hΦ (p : A × (𝓞 K)ˣ) :
+        p ∈ Φ ⁻¹' {z} ↔ p.2 • (p.1 : mixedSpace K) = (z : mixedSpace K) := by
+      simp only [Set.mem_preimage, Set.mem_singleton_iff, Subtype.ext_iff, Φ]
+    -- a pair `(a, u)` with `u a = z` has `a = u⁻¹ z` in `σ(I)` already
+    let e : {p : A × (𝓞 K)ˣ // p.2 • (p.1 : mixedSpace K) = z} ≃
+        {p : fundamentalCone K × (𝓞 K)ˣ // p.2 • (p.1 : mixedSpace K) = z} :=
+      { toFun p := ⟨(⟨p.val.1, p.val.1.property.1⟩, p.val.2), p.property⟩
+        invFun p := ⟨(⟨p.val.1, p.val.1.property, (Units.unitSMul_mem_idealLattice_iff p.val.2 _
+            _).mp
+          (by rw [p.property]; exact z.val.property)⟩, p.val.2), p.property⟩
+        left_inv _ := rfl
+        right_inv _ := rfl }
+    rw [tsum_congr fun p : Φ ⁻¹' {z} ↦ congrArg φ ((hΦ p).mp p.prop), tsum_const,
+      Nat.card_congr ((Equiv.subtypeEquivRight hΦ).trans e),
+      natCard_unitSMul_eq_torsionOrder (norm_ne_zero_of_ne_zero I z), nsmul_eq_mul]
+  have h := ((hasSum_integral_unitCone_archGaussian_prod I hD hs).tsum_fiberwise
+    Φ).congr_fun fun z ↦ (hfiber z).symm
+  simpa only [φ, inv_mul_cancel_left₀ hw] using h.mul_left ((torsionOrder K : ℂ)⁻¹)
+
+/-- **Absolute convergence of the unfolded sum.** For `Re s > 1`, the cone integrals of the norms
+of the Gaussians of the nonzero points of `σ(I)` against `N(y)^(s/2)` are summable; this licenses
+the exchange of the lattice sum with the integral over the cone. -/
+theorem summable_integral_unitCone (hD : IsUnitFundamentalDomain K D) (hs : 1 < s.re) :
+    Summable fun z : {z : idealLattice K I // z ≠ 0} ↦
+      ∫ y in unitCone D, ‖archGaussian y (z : mixedSpace K) * (archNorm y : ℂ) ^ (s / 2)‖
+        ∂archHaar K := by
+  refine (hasSum_re (hasSum_integral_unitCone_archGaussian I hD (s := s.re)
+    (by simpa using hs))).summable.congr fun z ↦ ?_
+  exact (setIntegral_norm_archGaussian_mul_archNorm_cpow _).symm
+
+/-! ### The theta integral over the cone -/
+
+/-- On the cone, `N(y)^(s/2) (θ_{σ(I)}(y) - 1)` is the sum over the nonzero lattice points of
+their Gaussians against `N(y)^(s/2)`. -/
+private theorem archNorm_cpow_mul_latticeTheta_sub_one_eq_tsum {y : realSpace K}
+    (hy : ∀ w, 0 < y w) :
+    (archNorm y : ℂ) ^ (s / 2) * (latticeTheta (idealLattice K I) y - 1) =
+      ∑' z : {z : idealLattice K I // z ≠ 0},
+        archGaussian y (z : mixedSpace K) * (archNorm y : ℂ) ^ (s / 2) := by
+  rw [latticeTheta_eq_one_add _ y hy, add_sub_cancel_left, tsum_mul_right, mul_comm]
+
+/-- **The theta integral over the cone converges** for `Re s > 1`: `N(y)^(s/2) (θ_{σ(I)}(y) - 1)`
+is integrable for `dy / y` on the cone above a unit fundamental domain. -/
+theorem integrableOn_unitCone_archNorm_cpow_mul_latticeTheta_sub_one
+    (hD : IsUnitFundamentalDomain K D) (hs : 1 < s.re) :
+    IntegrableOn (fun y ↦ (archNorm y : ℂ) ^ (s / 2) * (latticeTheta (idealLattice K I) y - 1))
+      (unitCone D) (archHaar K) := by
+  set L := idealLattice K I
+  have : Countable L := Countable.of_moduleFinite (R := ℤ)
+  have hcone := measurableSet_unitCone hD.measurableSet
+  have hint (z : {z : L // z ≠ 0}) :=
+    integrableOn_unitCone_archGaussian_mul_archNorm_cpow I (D := D) z (zero_lt_one.trans hs)
+  have hcont : ContinuousOn (fun y ↦ (archNorm y : ℂ) ^ (s / 2) * (latticeTheta L y - 1))
+      (unitCone D) := fun y hy ↦ ContinuousAt.continuousWithinAt <|
+    ((continuousAt_ofReal_cpow_const _ _ (Or.inr (archNorm_pos (mem_unitCone.mp hy).1).ne')).comp
+      continuous_archNorm.continuousAt).mul
+      ((continuousAt_latticeTheta L (mem_unitCone.mp hy).1).sub continuousAt_const)
+  refine ⟨hcont.aestronglyMeasurable hcone, ?_⟩
+  -- the norm of the sum is at most the sum of the norms, whose integrals are summable
+  calc ∫⁻ y in unitCone D, ‖(archNorm y : ℂ) ^ (s / 2) * (latticeTheta L y - 1)‖ₑ ∂archHaar K
+      ≤ ∫⁻ y in unitCone D, ∑' z : {z : L // z ≠ 0},
+          ‖archGaussian y (z : mixedSpace K) * (archNorm y : ℂ) ^ (s / 2)‖ₑ ∂archHaar K := by
+        refine setLIntegral_mono' hcone fun y hy ↦ ?_
+        rw [archNorm_cpow_mul_latticeTheta_sub_one_eq_tsum I (mem_unitCone.mp hy).1]
+        exact eNorm_tsum_le_tsum_eNorm
+    _ = ∑' z : {z : L // z ≠ 0}, ENNReal.ofReal (∫ y in unitCone D,
+          ‖archGaussian y (z : mixedSpace K) * (archNorm y : ℂ) ^ (s / 2)‖ ∂archHaar K) := by
+        rw [lintegral_tsum fun z ↦ (hint z).aestronglyMeasurable.eNorm]
+        exact tsum_congr fun z ↦ (ofReal_integral_norm_eq_lintegral_eNorm (hint z)).symm
+    _ = ENNReal.ofReal (∑' z : {z : L // z ≠ 0}, ∫ y in unitCone D,
+          ‖archGaussian y (z : mixedSpace K) * (archNorm y : ℂ) ^ (s / 2)‖ ∂archHaar K) :=
+        (ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ integral_nonneg fun _ ↦ norm_nonneg _)
+          (summable_integral_unitCone I hD hs)).symm
+    _ < ⊤ := ENNReal.ofReal_lt_top
+
+/-- **Hecke's unfolding of the theta integral**, Neukirch VII (5.5) before the Mellin
+substitution. For `Re s > 1` and a unit fundamental domain `D`,
+
+`∫_{cone D} N(y)^(s/2) (θ_{σ(I)}(y) - 1) dy / y = Γ_ℝ(s)^r₁ Γ_ℝ(2s)^r₂ ∑_{a} |N(a)|^(-s)`,
+
+the sum running over the points `a` of `σ(I)` in the fundamental cone. -/
+theorem integral_unitCone_archNorm_cpow_mul_latticeTheta_sub_one
+    (hD : IsUnitFundamentalDomain K D) (hs : 1 < s.re) :
+    ∫ y in unitCone D, (archNorm y : ℂ) ^ (s / 2) * (latticeTheta (idealLattice K I) y - 1)
+        ∂archHaar K =
+      Gammaℝ s ^ nrRealPlaces K * Gammaℝ (2 * s) ^ nrComplexPlaces K *
+        ∑' a : ↥(fundamentalCone K ∩ (idealLattice K I : Set (mixedSpace K))),
+          (mixedEmbedding.norm (a : mixedSpace K) : ℂ) ^ (-s) := by
+  have : Countable (idealLattice K I) := Countable.of_moduleFinite (R := ℤ)
+  have hint (z : {z : idealLattice K I // z ≠ 0}) :=
+    integrableOn_unitCone_archGaussian_mul_archNorm_cpow I (D := D) z (zero_lt_one.trans hs)
+  rw [← (hasSum_integral_of_summable_integral_norm hint
+    (summable_integral_unitCone I hD hs)).unique (hasSum_integral_unitCone_archGaussian I hD hs)]
+  exact setIntegral_congr_fun (measurableSet_unitCone hD.measurableSet) fun y hy ↦
+    archNorm_cpow_mul_latticeTheta_sub_one_eq_tsum I (mem_unitCone.mp hy).1
+
+open scoped Classical in
+/-- **The Mellin representation of a partial zeta function**, Neukirch VII (5.5). Let `c` be the
+ideal class of `I⁻¹`, `V` the covolume of `σ(I)` and `D` a unit fundamental domain. For
+`Re s > 1`, the Mellin transform at `s/2` of the kernel `f_D(σ(I), ·)` minus its constant term
+`a₀ = 2^(r-1) R / w` is
+
+`2^r₂ (V²)^(s/2) N(I)^(-s) Γ_ℝ(s)^r₁ Γ_ℝ(2s)^r₂ ζ(c, s)`,
+
+where `ζ(c, s)` is the Dirichlet series of the indicator of `c`. -/
+theorem hasMellin_mellinKernel_idealLattice_sub_mellinConstant
+    (hD : IsUnitFundamentalDomain K D) {c : RayClassGroup (Modulus.one K)}
+    (hI : rayClassMk (Modulus.one K) ((idealsPrimeToEquiv Modulus.support_one).symm I) = c⁻¹)
+    (hs : 1 < s.re) :
+    HasMellin (fun u ↦ mellinKernel D (idealLattice K I) u - mellinConstant K) (s / 2)
+      (2 ^ nrComplexPlaces K * (ZLattice.covolume (idealLattice K I) ^ 2 : ℂ) ^ (s / 2) *
+        (FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℂ) ^ (-s) *
+        (Gammaℝ s ^ nrRealPlaces K * Gammaℝ (2 * s) ^ nrComplexPlaces K) *
+          LSeries (normCoeff K (rayClassCoeff (Modulus.one K) c)) s) := by
+  have h := hasMellin_mellinKernel_sub hD.measurableSet hD.isBounded _ s
+    (integrableOn_unitCone_archNorm_cpow_mul_latticeTheta_sub_one I hD hs)
+  have hw : (torsionOrder K : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (torsionOrder_ne_zero K)
+  rw [integral_unitCone_archNorm_cpow_mul_latticeTheta_sub_one I hD hs,
+    (hasSum_norm_cpow_fundamentalCone_inter_idealLattice I hI hs).tsum_eq] at h
+  rw [mellinConstant_eq_mul_surfaceHaar_real hD]
+  convert h using 1
+  · simp only [ofReal_mul, ofReal_div, ofReal_pow, ofReal_ofNat, ofReal_natCast]
+  · field_simp
 
 end TauCeti.LFunctions

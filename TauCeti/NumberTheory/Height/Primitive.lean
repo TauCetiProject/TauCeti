@@ -32,8 +32,9 @@ which Bombieri and Gubler open the proof of the `S`-integral form of the Subspac
 
 * `Set.isPrimitive_iff_finitePlace`: a nonzero tuple is `S`-primitive exactly when its local sup
   norms at the finite places outside `S` are `1`.
-* `NumberField.mulHeight_le_prod`: the height of a nonzero tuple of `S`-integers is at most the
-  product of its local sup norms over the infinite places and `S`.
+* `NumberField.mulHeight_le_prod` and `NumberField.mulHeight_le_prod_of_forall_le_one`: the height
+  of a nonzero tuple integral outside `S` is at most the product of its local sup norms over the
+  infinite places and `S`, indexed by height one primes or by finite places.
 * `NumberField.mulHeight_eq_prod_of_forall_iSup_eq_one` and
   `NumberField.mulHeight_eq_prod_of_isPrimitive`: equality when the local sup norms outside `S`
   are `1`, in particular for an `S`-primitive tuple.
@@ -160,6 +161,24 @@ theorem mulHeight_eq_prod_of_isPrimitive_image_maximalIdeal (S₀ : Finset (Fini
   rw [hS] at hx
   rw [mulHeight_eq_prod_of_isPrimitive _ hx, Finset.prod_map]
   simp
+
+/-- **The height of a nonzero finite tuple integral outside a finite set `S₀` of finite places
+is at most the product of its local sup norms over the infinite places and `S₀`.** This is
+`NumberField.mulHeight_le_prod` with `S₀` given as finite places rather than height one primes. -/
+theorem mulHeight_le_prod_of_forall_le_one (S₀ : Finset (FinitePlace K)) (hx : x ≠ 0)
+    (hxS : ∀ v : FinitePlace K, v ∉ S₀ → ∀ i, v (x i) ≤ 1) :
+    mulHeight x ≤ (∏ v : InfinitePlace K, (⨆ i, v (x i)) ^ v.mult) * ∏ v ∈ S₀, ⨆ i, v (x i) := by
+  refine (mulHeight_le_prod (S₀.map FinitePlace.equivHeightOneSpectrum.toEmbedding) hx ?_).trans_eq
+    ?_
+  · intro i
+    rw [Set.mem_integer_iff_finitePlace]
+    refine fun v hv ↦ hxS (FinitePlace.mk v) (fun hm ↦ hv ?_) i
+    exact Finset.mem_map.mpr ⟨FinitePlace.mk v, hm, FinitePlace.maximalIdeal_mk v⟩
+  · rw [Finset.prod_map]
+    congr 1
+    refine Finset.prod_congr rfl fun v _ ↦ ?_
+    simp only [Equiv.toEmbedding_apply, FinitePlace.equivHeightOneSpectrum_apply,
+      FinitePlace.mk_maximalIdeal]
 
 /-- **The height of every point is computed by finitely many places.** Every finite set `S` of
 finite places is contained in a finite set `S'` such that every nonzero finite tuple has a nonzero

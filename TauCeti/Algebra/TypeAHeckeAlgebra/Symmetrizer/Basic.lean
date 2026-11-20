@@ -65,7 +65,7 @@ theorem parabolicEigenSum_mem_parabolic (a : R) :
   let := Fintype.ofFinite (cs.parabolic J)
   rw [parabolicEigenSum_eq_sum]
   exact Subalgebra.sum_mem _ fun w _ ↦
-    Subalgebra.smul_mem _ (Tw_mem_parabolic cs w.2) _
+    Subalgebra.smul_mem _ (Tw_mem_parabolic cs w.property) _
 
 open scoped Classical in
 /-- The PBW coefficients of a parabolic weighted sum, extended by zero off the subgroup. -/
