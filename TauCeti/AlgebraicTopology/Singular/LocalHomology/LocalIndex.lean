@@ -94,7 +94,7 @@ omit [T2Space M] [T2Space N] in
 of `f` is a map of pairs `(U, U ∖ {x}) → (N, N ∖ {y})`. -/
 private theorem restrict_preimage_subset (f : C(M, N)) {x : M} {y : N} {U : Set M} (hx : x ∈ U)
     (hU : ∀ z ∈ U, f z = y → z = x) : f.restrict U ⁻¹' {y} ⊆ {⟨x, hx⟩} :=
-  fun z hz ↦ Subtype.ext (hU z z.2 (by simpa using hz))
+  fun z hz ↦ Subtype.ext (hU z z.property (by simpa using hz))
 
 /-- The image of the local orientation `o x` under the restriction of `f` to an open neighbourhood
 `U` of `x` meeting the fibre of `f` through `y` only in `x`, computed through the excision
@@ -159,7 +159,7 @@ restriction of `f` carries the local orientation `o x` to the local index times 
 theorem localHomologyMap_restrict_localOrientationEquiv_symm (f : C(M, N)) {x : M} {y : N}
     (hxy : f x = y) {U : Set M} (hUo : IsOpen U) (hx : x ∈ U) (hU : ∀ z ∈ U, f z = y → z = x) :
     localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) (f.restrict U) (S := {⟨x, hx⟩}) (T := {y})
-        (fun z hz ↦ Subtype.ext (hU z z.2 (by simpa using hz))) n
+        (fun z hz ↦ Subtype.ext (hU z z.property (by simpa using hz))) n
         ((hUo.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨x, hx⟩ n).symm (o x)).val =
       o.localIndex o' f x • (o' y).val := by
   subst hxy
@@ -181,7 +181,7 @@ theorem localIndex_eq_iff (f : C(M, N)) {x : M} {y : N} (hxy : f x = y) {U : Set
     (hUo : IsOpen U) (hx : x ∈ U) (hU : ∀ z ∈ U, f z = y → z = x) {c : ℤ} :
     o.localIndex o' f x = c ↔
       localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) (f.restrict U) (S := {⟨x, hx⟩}) (T := {y})
-          (fun z hz ↦ Subtype.ext (hU z z.2 (by simpa using hz))) n
+          (fun z hz ↦ Subtype.ext (hU z z.property (by simpa using hz))) n
           ((hUo.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨x, hx⟩ n).symm (o x)).val =
         c • (o' y).val := by
   rw [o.localHomologyMap_restrict_localOrientationEquiv_symm o' f hxy hUo hx hU]
@@ -208,7 +208,7 @@ theorem localIndex_congr {f g : C(M, N)} {x : M} (hfg : f =ᶠ[𝓝 x] g) :
     have hgU : ∀ z ∈ U ∩ W, g z = f x → z = x := fun z hz hgz ↦
       hU z hz.1 ((hWfg z hz.2).trans hgz)
     have hrestrict : g.restrict (U ∩ W) = f.restrict (U ∩ W) :=
-      ContinuousMap.ext fun z ↦ (hWfg z z.2.2).symm
+      ContinuousMap.ext fun z ↦ (hWfg z z.property.2).symm
     rw [eq_comm, o.localIndex_eq_iff o' hF g hfgx.symm (hUo.inter hWo) (mem_inter hxU hxW) hgU,
       ← o.localHomologyMap_restrict_localOrientationEquiv_symm o' f rfl (hUo.inter hWo)
         (mem_inter hxU hxW) hfU]
@@ -278,8 +278,8 @@ theorem localIndex_comap {M' N' : Type} [TopologicalSpace M'] [T2Space M'] [Char
       rw [hU z hz (hk.injective hgz)]
     -- `j` identifies `U` with `j '' U`, compatibly with the local orientations at `x` and `j x`.
     let ψ : C(↥(W ∩ W₁), ↥(j '' (W ∩ W₁))) :=
-      ⟨fun z ↦ ⟨j z, mem_image_of_mem j z.2⟩,
-        (hj.continuous.comp continuous_subtype_val).subtype_mk _⟩
+      ⟨fun z ↦ ⟨j z, mem_image_of_mem j z.property⟩,
+        (hj.continuous.comp continuous_subtypeVal).subtype_mk _⟩
     have hψ : IsOpenEmbedding ψ :=
       (IsOpenEmbedding.of_comp_iff ψ hU'o.isOpenEmbedding_subtypeVal).1
         (hj.comp hUo.isOpenEmbedding_subtypeVal)
@@ -307,7 +307,7 @@ theorem localIndex_comap {M' N' : Type} [TopologicalSpace M'] [T2Space M'] [Char
     -- The two composites `W ∩ W₁ → N'` agree.
     have e : (g.restrict (j '' (W ∩ W₁))).comp ⟨ψ, hψ.continuous⟩ =
         (⟨k, hk.continuous⟩ : C(N, N')).comp (f.restrict (W ∩ W₁)) :=
-      ContinuousMap.ext fun z ↦ hW₁ z z.2.2
+      ContinuousMap.ext fun z ↦ hW₁ z z.property.2
     -- Both composites act on local homology as the composites of the induced maps.
     have hc : ∀ {P Q : Type} [TopologicalSpace P] [TopologicalSpace Q] (a : C(↥(W ∩ W₁), P))
         (b : C(P, Q)) {S : Set P} {T : Set Q} (ha : a ⁻¹' S ⊆ {⟨x, hxU⟩}) (hb : b ⁻¹' T ⊆ S) z,
@@ -337,15 +337,15 @@ theorem localIndex_comap {M' N' : Type} [TopologicalSpace M'] [T2Space M'] [Char
 omit [T2Space M] in
 /-- The complement of `S ∖ {x}` meets `S` only in `x`. -/
 private theorem compl_diff_preimage_subset (S : Set M) (x : M) :
-    (⟨Subtype.val, continuous_subtype_val⟩ : C(↥(S \ {x})ᶜ, M)) ⁻¹' S ⊆
+    (⟨Subtype.val, continuous_subtypeVal⟩ : C(↥(S \ {x})ᶜ, M)) ⁻¹' S ⊆
       {⟨x, fun h ↦ h.2 rfl⟩} :=
-  fun z hz ↦ Subtype.ext (by_contra fun h ↦ z.2 ⟨hz, h⟩)
+  fun z hz ↦ Subtype.ext (by_contra fun h ↦ z.property ⟨hz, h⟩)
 
 /-- The local orientation at a point `x` of a finite set `S`, pushed forward from the complement of
 `S ∖ {x}` to a class of `Hₙ(M, M ∖ S)`. -/
 private def compClass {S : Set M} (hS : S.Finite) (x : M) :
     localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) S n :=
-  localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨Subtype.val, continuous_subtype_val⟩
+  localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨Subtype.val, continuous_subtypeVal⟩
     (compl_diff_preimage_subset S x) n
     (((hS.sdiff.isClosed.isOpen_compl).isOpenEmbedding_subtypeVal.localOrientationEquiv
       ⟨x, fun h ↦ h.2 rfl⟩ n).symm (o x)).val
@@ -365,8 +365,8 @@ private theorem localHomologyRestriction_compClass_of_ne {S : Set M} (hS : S.Fin
     (hx' : x' ∈ S) (hxx' : x ≠ x') :
     localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hx') n
       (o.compClass hS x) = 0 := by
-  have hempty : (⟨Subtype.val, continuous_subtype_val⟩ : C(↥(S \ {x})ᶜ, M)) ⁻¹' {x'} ⊆ ∅ :=
-    fun z (hz : (z : M) = x') ↦ z.2 ⟨hz ▸ hx', fun h ↦ hxx' (hz ▸ h).symm⟩
+  have hempty : (⟨Subtype.val, continuous_subtypeVal⟩ : C(↥(S \ {x})ᶜ, M)) ⁻¹' {x'} ⊆ ∅ :=
+    fun z (hz : (z : M) = x') ↦ z.property ⟨hz ▸ hx', fun h ↦ hxx' (hz ▸ h).symm⟩
   rw [compClass, ← ConcreteCategory.comp_apply, localHomologyMap_comp_localHomologyRestriction,
     ← localHomologyRestriction_comp_localHomologyMap _ _ (empty_subset _) hempty,
     ConcreteCategory.comp_apply,
@@ -443,7 +443,7 @@ theorem localIndex_eq_one_or_eq_neg_one_of_isLocalHomeomorphOn {f : C(M, N)} {s 
   let w := hU.localOrientationEquiv ⟨x, hxe⟩ n
     ((e.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨x, hxe⟩ n).symm (o x))
   have hw := hU.localHomologyMap_localOrientationEquiv_symm ⟨x, hxe⟩ w
-    (fun z hz ↦ Subtype.ext (hfib z z.2 hz))
+    (fun z hz ↦ Subtype.ext (hfib z z.property hz))
   rw [Equiv.symm_apply_apply] at hw
   have key (c : ℤ) (hc : w.val = c • (o' (f x)).val) : o.localIndex o' f x = c :=
     (o.localIndex_eq_iff o' hF f rfl e.open_source hxe hfib).2 (hw.trans hc)

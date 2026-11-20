@@ -599,12 +599,12 @@ private theorem exists_finset_chart_cover [I.Boundaryless]
     (extChartAt I α).source ∩ extChartAt I α ⁻¹' ball (extChartAt I α α) (r α)
   have hV_open (α : M) : IsOpen (V α) :=
     (continuousOn_extChartAt α).isOpen_inter_preimage (isOpen_extChartAt_source α) isOpen_ball
-  obtain ⟨t, ht⟩ := hK.elim_finite_subcover (fun α : K ↦ V α.1) (fun α ↦ hV_open α.1) fun α hα ↦
+  obtain ⟨t, ht⟩ := hK.elim_finite_subcover (fun α : K ↦ V α.val) (fun α ↦ hV_open α.val) fun α hα ↦
     mem_iUnion.2 ⟨⟨α, hα⟩, mem_extChartAt_source α, by
       simp only [mem_preimage, r, hα, ↓reduceDIte]; exact mem_ball_self (hr_pos α hα)⟩
   let sK : Finset M := t.image Subtype.val
   have hsK_sub : ∀ α ∈ sK, α ∈ K := by
-    intro α hα; obtain ⟨β, -, rfl⟩ := Finset.mem_image.1 hα; exact β.2
+    intro α hα; obtain ⟨β, -, rfl⟩ := Finset.mem_image.1 hα; exact β.property
   have hsK_cov : K ⊆ ⋃ α ∈ sK, V α := by simpa [sK] using ht
   have hsK_ne : sK.Nonempty := by
     obtain ⟨x, hx⟩ := hKne
@@ -744,7 +744,7 @@ theorem exists_opens_smoothEmbedding_norm_fderiv_sq_le [I.Boundaryless] [T2Space
     simp only [eM, hx, ↓reduceDIte]
   have heM_cmd : ContMDiffOn I 𝓘(ℝ, EuclideanSpace ℝ (Fin N)) (⊤ : ℕ∞) eM W_emb := by
     intro x hx
-    have hsub : (fun y : W_emb ↦ eM y) = emb := funext fun y ↦ heM_eq y.1 y.2
+    have hsub : (fun y : W_emb ↦ eM y) = emb := funext fun y ↦ heM_eq y.val y.property
     exact (contMDiffAt_subtype_iff (U := W_emb) (x := ⟨x, hx⟩) |>.1
       (hsub ▸ emb.contMDiff.contMDiffAt)).contMDiffWithinAt
   rcases K.eq_empty_or_nonempty with rfl | hKne
@@ -756,14 +756,14 @@ theorem exists_opens_smoothEmbedding_norm_fderiv_sq_le [I.Boundaryless] [T2Space
       ∃ A_α > 0, ∃ B_α ≥ 0,
         ∀ ⦃p : P⦄ ⦃u : ℝ × ℝ → M⦄ ⦃z : ℝ × ℝ⦄,
           p ∈ C → z ∈ D → u z ∈ K →
-          u z ∈ (extChartAt I α.1).source ∩
-            extChartAt I α.1 ⁻¹' ball (extChartAt I α.1 α.1) (r α.1) →
+          u z ∈ (extChartAt I α.val).source ∩
+            extChartAt I α.val ⁻¹' ball (extChartAt I α.val α.val) (r α.val) →
           MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z →
           IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J p z (u z))
             (ω.perturbedMFDeriv (Ks p) (Kt p) u z).toLinearMap →
           ‖fderiv ℝ (eM ∘ u) z‖ ^ 2 ≤ A_α * ω.floerEnergyDensity (Ks p) (Kt p) u z + B_α :=
-    fun α ↦ hω.exists_chart_embedding_bound hJ hXs hXt hC hD hK hJt heM_cmd α.1
-      (hr_tgt α.1 α.2) (hr_emb α.1 α.2) (hr_W α.1 α.2)
+    fun α ↦ hω.exists_chart_embedding_bound hJ hXs hXt hC hD hK hJt heM_cmd α.val
+      (hr_tgt α.val α.property) (hr_emb α.val α.property) (hr_W α.val α.property)
   choose A_α hAα B_α hBα hbd_α using hchart
   let sK_att := sK.attach
   have hsK_att_ne : sK_att.Nonempty := Finset.attach_nonempty_iff.2 hsK_ne
@@ -838,7 +838,7 @@ private theorem exists_localized_mvi [I.Boundaryless] [T2Space M]
       ∃ δ_α > 0, ∃ M₁_α > 0, ∃ M₂_α > 0, ∃ M₃_α ≥ 0,
         ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃p : P⦄ ⦃u : ℝ × ℝ → M⦄ ⦃c : ℝ × ℝ⦄ ⦃r' : ℝ⦄,
           IsOpen Ω → Ω ⊆ D → p ∈ C → 0 ≤ r' → closedBall c r' ⊆ Ω →
-          ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u Ω → MapsTo u Ω K → MapsTo u (closedBall c r') (V α.1) →
+          ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u Ω → MapsTo u Ω K → MapsTo u (closedBall c r') (V α.val) →
           (∀ z ∈ closedBall c r',
             IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J p z (u z))
               (ω.perturbedMFDeriv (Ks p) (Kt p) u z).toLinearMap) →
@@ -847,28 +847,31 @@ private theorem exists_localized_mvi [I.Boundaryless] [T2Space M]
           π * r' ^ 2 * ω.floerEnergyDensity (Ks p) (Kt p) u c ≤
             M₃_α * (π * r' ^ 2 + ∫ z in ball c r', ω.floerEnergyDensity (Ks p) (Kt p) u z) := by
     intro α
-    let Kα : Set E := closedBall (extChartAt I α.1 α.1) (r α.1) ∩ (extChartAt I α.1).symm ⁻¹' K
+    let Kα : Set E := closedBall (extChartAt I α.val α.val) (r α.val) ∩
+      (extChartAt I α.val).symm ⁻¹' K
     have hKα_comp : IsCompact Kα := by
       have hcl : IsClosed Kα :=
-        ((continuousOn_extChartAt_symm α.1).mono (hr_tgt α.1 α.2)).preimage_isClosed_of_isClosed
-          isClosed_closedBall hK.isClosed
+        ((continuousOn_extChartAt_symm α.val).mono
+          (hr_tgt α.val α.property)).preimage_isClosed_of_isClosed isClosed_closedBall hK.isClosed
       exact (isCompact_closedBall _ _).of_isClosed_subset hcl inter_subset_left
-    have hKα_tgt : Kα ⊆ (extChartAt I α.1).target := inter_subset_left.trans (hr_tgt α.1 α.2)
-    have hKα_W : C ×ˢ (D ×ˢ ((extChartAt I α.1).symm '' Kα)) ⊆ W :=
-      (prod_mono_right (prod_mono_right (image_mono inter_subset_left))).trans (hr_W α.1 α.2)
+    have hKα_tgt : Kα ⊆ (extChartAt I α.val).target :=
+      inter_subset_left.trans (hr_tgt α.val α.property)
+    have hKα_W : C ×ˢ (D ×ˢ ((extChartAt I α.val).symm '' Kα)) ⊆ W :=
+      (prod_mono_right (prod_mono_right (image_mono inter_subset_left))).trans
+        (hr_W α.val α.property)
     have hKα_tame : ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ Kα,
-        (hω.symplecticFormAt ((extChartAt I α.1).symm y)).Tames
-          (J p z ((extChartAt I α.1).symm y)) :=
+        (hω.symplecticFormAt ((extChartAt I α.val).symm y)).Tames
+          (J p z ((extChartAt I α.val).symm y)) :=
       fun p hp z hz _ hy ↦ hJt p hp z hz _ hy.2
     obtain ⟨δ_α, hδα, M₁_α, hM₁α, M₂_α, hM₂α, M₃_α, hM₃α, hmvi_α⟩ :=
-      hω.exists_pos_forall_pi_mul_sq_mul_floerEnergyDensity_le_inChart α.1 hW hKs hKt hJ hC hD
+      hω.exists_pos_forall_pi_mul_sq_mul_floerEnergyDensity_le_inChart α.val hW hKs hKt hJ hC hD
         hKα_comp hKα_tgt hKα_W hKα_tame
     refine ⟨δ_α, hδα, M₁_α, hM₁α, M₂_α, hM₂α, M₃_α, hM₃α,
       fun Ω p u c r' hΩ hΩD hp hr' hcr hu huK huV hfl hsmall ↦ ?_⟩
     refine hmvi_α hΩ hΩD hp hr' hcr hu hfl (fun z hz ↦ ?_) hsmall
     have hzV := huV hz
     exact ⟨hzV.1, ball_subset_closedBall hzV.2, by
-      rw [mem_preimage, (extChartAt I α.1).left_inv hzV.1]; exact huK (hcr hz)⟩
+      rw [mem_preimage, (extChartAt I α.val).left_inv hzV.1]; exact huK (hcr hz)⟩
   choose δ_α hδα M₁_α hM₁α M₂_α hM₂α M₃_α hM₃α hmvi_α using hchart
   let sK_att := sK.attach
   have hsK_att_ne : sK_att.Nonempty := Finset.attach_nonempty_iff.2 hsK_ne
@@ -884,8 +887,8 @@ private theorem exists_localized_mvi [I.Boundaryless] [T2Space M]
   have hM₃_nn : 0 ≤ M₃ := by
     obtain ⟨α, hα⟩ := hsK_att_ne; exact (hM₃α α).trans (Finset.le_sup' M₃_α hα)
   have hO_ex : ∀ α : {α // α ∈ sK}, ∃ O : Set (EuclideanSpace ℝ (Fin N)),
-      IsOpen O ∧ emb ⁻¹' O = ((↑) : W_emb → M) ⁻¹' V α.1 := fun α ↦
-    emb.isEmbedding.isInducing.isOpen_iff.1 ((hV_open α.1).preimage continuous_subtype_val)
+      IsOpen O ∧ emb ⁻¹' O = ((↑) : W_emb → M) ⁻¹' V α.val := fun α ↦
+    emb.isEmbedding.isInducing.isOpen_iff.1 ((hV_open α.val).preimage continuous_subtypeVal)
   choose O hO_open hO_eq using hO_ex
   have heMK_comp : IsCompact (eM '' K) := hK.image_of_continuousOn (heM_cmd.continuousOn.mono hKW)
   have heMK_cov : eM '' K ⊆ ⋃ α : {α // α ∈ sK}, O α := by
@@ -898,7 +901,7 @@ private theorem exists_localized_mvi [I.Boundaryless] [T2Space M]
   refine ⟨η, hη, δ_mvi, hδmvi_pos, M₁, hM₁_pos, M₂, hM₂_pos, M₃, hM₃_nn,
     fun Ω p u c r' hΩ hΩD hp hr' hcr hu huK hfl hdist hsmall ↦ ?_⟩
   obtain ⟨α, hballO⟩ := hLeb (eM (u c)) ⟨u c, huK (hcr (mem_closedBall_self hr')), rfl⟩
-  have huV : MapsTo u (closedBall c r') (V α.1) := by
+  have huV : MapsTo u (closedBall c r') (V α.val) := by
     intro z hz
     have hzO : eM (u z) ∈ O α := hballO (hdist z hz)
     rw [heM_eq (u z) (hKW (huK (hcr hz)))] at hzO

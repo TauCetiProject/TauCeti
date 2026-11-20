@@ -116,15 +116,15 @@ theorem homologyMap_connectedComponent_comp_singularTransfer_comp_homologyMap
     [CategoryWithHomology C] (hp : IsCoveringMap p) (hfin : ∀ b, Finite ↥(p ⁻¹' {b}))
     (R : C) (b : B) (n : ℕ) :
     SSet.homologyMap (TopCat.toSSet.map
-        (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ : TopCat.of (connectedComponent b) ⟶ B))
+        (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ : TopCat.of (connectedComponent b) ⟶ B))
         R n ≫ HomologicalComplex.homologyMap (hp.singularTransfer hfin R) n ≫
         SSet.homologyMap (TopCat.toSSet.map p) R n =
       Nat.card (p ⁻¹' {b}) • SSet.homologyMap (TopCat.toSSet.map
-        (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ : TopCat.of (connectedComponent b) ⟶ B))
+        (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ : TopCat.of (connectedComponent b) ⟶ B))
         R n := by
   let := Subtype.preconnectedSpace (isPreconnected_connectedComponent (x := b))
   exact hp.homologyMap_comp_singularTransfer_comp_homologyMap hfin R
-    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
+    (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
     ⟨b, mem_connectedComponent⟩ n
 
 end IsCoveringMap

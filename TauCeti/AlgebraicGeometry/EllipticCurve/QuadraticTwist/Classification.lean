@@ -171,7 +171,7 @@ theorem exists_smul_quadraticTwist_eq_quadraticTwist_iff [IsGalois K Ω] (hj₀ 
     refine hne (eq_of_le_of_finrank_eq hL'L ?_).symm
     rw [Algebra.IsQuadraticExtension.finrank_eq_two, Algebra.IsQuadraticExtension.finrank_eq_two]
   have hσL₀ (x : L) : σ (algebraMap L Ω x) = algebraMap L Ω x :=
-    (mem_fixingSubgroup_iff _ _).mp hσL x x.2
+    (mem_fixingSubgroup_iff _ _).mp hσL x x.property
   have hσL'₀ : ¬ ∀ x : L', σ (algebraMap L' Ω x) = algebraMap L' Ω x :=
     fun h ↦ hσL' ((mem_fixingSubgroup_iff _ _).mpr fun x hx ↦ h ⟨x, hx⟩)
   set N := (E.baseChange Ω).negVariableChange

@@ -93,22 +93,22 @@ private theorem chart_tendstoUniformlyOn_of_compactOpen {U₀ : Set (ℝ × ℝ)
   have hlim_M : Tendsto uM atTop (𝓝 vM) := by
     rw [ContinuousMap.tendsto_nhds_compactOpen]
     intro L hL U hU hLU
-    have hL' : IsCompact (((↑) : C' → ℝ × ℝ) '' L) := hL.image continuous_subtype_val
+    have hL' : IsCompact (((↑) : C' → ℝ × ℝ) '' L) := hL.image continuous_subtypeVal
     have hL'U₀ : ((↑) : C' → ℝ × ℝ) '' L ⊆ U₀ := by
-      rintro _ ⟨y, -, rfl⟩; exact hC'U₀ y.2
+      rintro _ ⟨y, -, rfl⟩; exact hC'U₀ y.property
     have hvL' : MapsTo v (((↑) : C' → ℝ × ℝ) '' L) U := by
       rintro _ ⟨y, hy, rfl⟩; exact hLU hy
     filter_upwards [(tendsto_add_atTop_nat N₀).eventually (hco _ U hL' hL'U₀ hU hvL')] with
       n hn y hy
     exact hn ⟨y, hy, rfl⟩
-  let vS : C(C', Usrc) := ⟨fun y ↦ ⟨v y.1, hvα y.2⟩,
-    ((hvc.mono hC'U₀).domRestrict).subtype_mk fun y ↦ hvα y.2⟩
+  let vS : C(C', Usrc) := ⟨fun y ↦ ⟨v y.val, hvα y.property⟩,
+    ((hvc.mono hC'U₀).domRestrict).subtype_mk fun y ↦ hvα y.property⟩
   let uS : ℕ → C(C', Usrc) := fun n ↦
-    ⟨fun y ↦ ⟨u (n + N₀) y.1, hN₀ (n + N₀) (Nat.le_add_left N₀ n) y.2⟩,
+    ⟨fun y ↦ ⟨u (n + N₀) y.val, hN₀ (n + N₀) (Nat.le_add_left N₀ n) y.property⟩,
       (((huc (n + N₀)).mono hC'U₀).domRestrict).subtype_mk fun y ↦
-        hN₀ (n + N₀) (Nat.le_add_left N₀ n) y.2⟩
+        hN₀ (n + N₀) (Nat.le_add_left N₀ n) y.property⟩
   have hlim_S : Tendsto uS atTop (𝓝 vS) :=
-    (ContinuousMap.isInducing_postcomp ⟨Subtype.val, continuous_subtype_val⟩
+    (ContinuousMap.isInducing_postcomp ⟨Subtype.val, continuous_subtypeVal⟩
       IsInducing.subtypeVal).tendsto_nhds_iff.2 hlim_M
   let eC : C(Usrc, E) :=
     ⟨Usrc.domRestrict (extChartAt I α), (continuousOn_extChartAt α).domRestrict⟩
@@ -167,13 +167,13 @@ private theorem chart_eventually_norm_fderiv_le [I.Boundaryless] [T2Space M]
     Metric.nhds_basis_closedBall.mem_iff.1 ((isOpen_extChartAt_target α).mem_nhds (hsub_tgt hq))
   choose r hr_pos hr_sub using hball_ex
   obtain ⟨t, ht⟩ := hcomp_im.elim_finite_subcover
-    (fun q : (e '' (v '' C')) ↦ ball q.1 (r q.1 q.2)) (fun _ ↦ isOpen_ball)
+    (fun q : (e '' (v '' C')) ↦ ball q.val (r q.val q.property)) (fun _ ↦ isOpen_ball)
     (fun q hq ↦ mem_iUnion.2 ⟨⟨q, hq⟩, mem_ball_self (hr_pos q hq)⟩)
-  let Sα : Set E := ⋃ q ∈ t, closedBall q.1 (r q.1 q.2)
+  let Sα : Set E := ⋃ q ∈ t, closedBall q.val (r q.val q.property)
   have hSα_comp : IsCompact Sα := t.isCompact_biUnion fun q _ ↦ isCompact_closedBall _ _
   have hSα_tgt : Sα ⊆ e.target := by
-    intro w hw; obtain ⟨q, -, hwq⟩ := mem_iUnion₂.1 hw; exact hr_sub q.1 q.2 hwq
-  let Uα : Set M := e.source ∩ e ⁻¹' (⋃ q ∈ t, ball q.1 (r q.1 q.2))
+    intro w hw; obtain ⟨q, -, hwq⟩ := mem_iUnion₂.1 hw; exact hr_sub q.val q.property hwq
+  let Uα : Set M := e.source ∩ e ⁻¹' (⋃ q ∈ t, ball q.val (r q.val q.property))
   have hUα_open : IsOpen Uα :=
     (continuousOn_extChartAt α).isOpen_inter_preimage (isOpen_extChartAt_source α)
       (isOpen_biUnion fun _ _ ↦ isOpen_ball)
@@ -344,7 +344,7 @@ theorem exists_pos_forall_tendsto_subseq_off_finset_of_isCompact
   have hcomp_AA : IsCompact (closure (range Umap)) :=
     ArzelaAscoli.isCompact_closure_range_of_equicontinuous
       ((equicontinuous_restrict_iff _).mpr hequi) fun x ↦
-        ⟨eM '' K, heMK_comp, fun n ↦ ⟨u (ψ₁ n) x.1, huK (ψ₁ n) x.2.1, rfl⟩⟩
+        ⟨eM '' K, heMK_comp, fun n ↦ ⟨u (ψ₁ n) x.val, huK (ψ₁ n) x.property.1, rfl⟩⟩
   obtain ⟨a, -, χ₂, hχ₂, hlim_a⟩ := hcomp_AA.tendsto_subseq (x := Umap)
     fun n ↦ subset_closure (mem_range_self n)
   set φ := ψ₁ ∘ χ₂
@@ -361,16 +361,18 @@ theorem exists_pos_forall_tendsto_subseq_off_finset_of_isCompact
     simp only [v, hy, ↓reduceDIte]; exact (Classical.choose_spec (ha_mem y hy)).1
   have heMv (y : ℝ × ℝ) (hy : y ∈ U₀) : eM (v y) = a ⟨y, hy⟩ := by
     simp only [v, hy, ↓reduceDIte]; exact (Classical.choose_spec (ha_mem y hy)).2
-  let vW : C(U₀, W_emb) := ⟨fun y ↦ ⟨v y.1, hKW (hvK y.2)⟩, emb.isEmbedding.continuous_iff.2 <| by
-    have : emb ∘ (fun y : U₀ ↦ (⟨v y.1, hKW (hvK y.2)⟩ : W_emb)) = a := by
-      funext y; rw [Function.comp_apply, ← heM_eq (v y.1) (hKW (hvK y.2)), heMv y.1 y.2]
+  let vW : C(U₀, W_emb) := ⟨fun y ↦ ⟨v y.val, hKW (hvK y.property)⟩,
+    emb.isEmbedding.continuous_iff.2 <| by
+    have : emb ∘ (fun y : U₀ ↦ (⟨v y.val, hKW (hvK y.property)⟩ : W_emb)) = a := by
+      funext y
+      rw [Function.comp_apply, ← heM_eq (v y.val) (hKW (hvK y.property)), heMv y.val y.property]
     rw [this]; exact a.continuous⟩
   let uW : ℕ → C(U₀, W_emb) := fun n ↦
-    ⟨fun y ↦ ⟨u (φ n) y.1, hKW (huK (φ n) y.2.1)⟩,
+    ⟨fun y ↦ ⟨u (φ n) y.val, hKW (huK (φ n) y.property.1)⟩,
       (((hu (φ n)).continuousOn.mono sdiff_subset).domRestrict).subtype_mk fun y ↦
-        hKW (huK (φ n) y.2.1)⟩
+        hKW (huK (φ n) y.property.1)⟩
   have hvc : ContinuousOn v U₀ :=
-    continuousOn_iff_continuous_domRestrict.2 (continuous_subtype_val.comp vW.continuous)
+    continuousOn_iff_continuous_domRestrict.2 (continuous_subtypeVal.comp vW.continuous)
   have hlim_W : Tendsto uW atTop (𝓝 vW) := by
     refine (ContinuousMap.isInducing_postcomp ⟨emb, emb.isEmbedding.continuous⟩
       emb.isEmbedding.isInducing).tendsto_nhds_iff.2 ?_
@@ -379,18 +381,18 @@ theorem exists_pos_forall_tendsto_subseq_off_finset_of_isCompact
     have heq_v : (⟨emb, emb.isEmbedding.continuous⟩ : C(W_emb, _)).comp vW = a :=
       ContinuousMap.ext fun y ↦ by
         dsimp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, vW]
-        rw [← heM_eq (v y.1) (hKW (hvK y.2)), heMv y.1 y.2]
+        rw [← heM_eq (v y.val) (hKW (hvK y.property)), heMv y.val y.property]
     rw [heq_u, heq_v]; exact hlim_a
-  have hlim_M : Tendsto (fun n ↦ (⟨Subtype.val, continuous_subtype_val⟩ : C(W_emb, M)).comp (uW n))
-      atTop (𝓝 ((⟨Subtype.val, continuous_subtype_val⟩ : C(W_emb, M)).comp vW)) :=
+  have hlim_M : Tendsto (fun n ↦ (⟨Subtype.val, continuous_subtypeVal⟩ : C(W_emb, M)).comp (uW n))
+      atTop (𝓝 ((⟨Subtype.val, continuous_subtypeVal⟩ : C(W_emb, M)).comp vW)) :=
     (ContinuousMap.continuous_postcomp
-      ⟨Subtype.val, continuous_subtype_val⟩).continuousAt.tendsto.comp hlim_W
+      ⟨Subtype.val, continuous_subtypeVal⟩).continuousAt.tendsto.comp hlim_W
   have hco : ∀ C' U, IsCompact C' → C' ⊆ U₀ → IsOpen U → MapsTo v C' U →
       ∀ᶠ n in atTop, MapsTo (u (φ n)) C' U := by
     intro C' U hC' hC'U₀ hU hvU
     have hL : IsCompact (((↑) : U₀ → ℝ × ℝ) ⁻¹' C') := IsInducing.subtypeVal.isCompact_preimage' hC'
       (by simpa [Subtype.range_coe_subtype] using hC'U₀)
-    have hmap : MapsTo ((⟨Subtype.val, continuous_subtype_val⟩ : C(W_emb, M)).comp vW)
+    have hmap : MapsTo ((⟨Subtype.val, continuous_subtypeVal⟩ : C(W_emb, M)).comp vW)
         (((↑) : U₀ → ℝ × ℝ) ⁻¹' C') U := fun y hy ↦ hvU hy
     filter_upwards [(ContinuousMap.tendsto_nhds_compactOpen.1 hlim_M) _ hL U hU hmap] with
       n hn y hy
@@ -755,9 +757,9 @@ theorem contMDiffOn_one_and_isComplexLinearMap_of_tendsto_floer_parametric
     have hU : IsOpen U := hvc.isOpen_inter_preimage hΩ (isOpen_extChartAt_source α)
     have hball : ∀ z : U, ∃ r > 0, TendstoLocallyUniformlyOn
         (fun n ↦ fderiv ℝ (extChartAt I α ∘ u n)) (fderiv ℝ (extChartAt I α ∘ v)) atTop
-        (ball z.1 r) := fun z ↦ by
+        (ball z.val r) := fun z ↦ by
       obtain ⟨r, hr, -, -, -, hconv, -⟩ :=
-        hω.chart_c1_on_ball hW hKs hKt hJ hΩ hp hvW hu hfl hvc hco hbd α z.2.1 z.2.2
+        hω.chart_c1_on_ball hW hKs hKt hJ hΩ hp hvW hu hfl hvc hco hbd α z.property.1 z.property.2
       exact ⟨r, hr, hconv⟩
     choose r hr hconv using hball
     have hloc : TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (extChartAt I α ∘ u n))

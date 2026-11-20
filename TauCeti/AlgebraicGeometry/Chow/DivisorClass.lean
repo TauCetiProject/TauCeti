@@ -28,6 +28,11 @@ cycle has finite support. Hence:
   the `(n - 1)`-cycles `Z_{n-1}(X)`, by extension by zero away from codimension one
   (`SchemeWeilDivisor.toAlgebraicCycle`).
 
+The same dimension count shows that over a field the cycle `Σ_a (i_a)_* div(r_a)` of a family of
+integral closed subschemes of dimension `n + 1` with rational functions, on any scheme `X` locally
+of finite type over `κ`, is an `n`-cycle (`Chow.RatEquivFamily.cycle_mem_cyclesOfDimension`): a
+rational function only has zeros and poles in codimension one.
+
 If `X` is moreover integral and Noetherian, rational equivalence of `(n - 1)`-cycles is linear
 equivalence of Weil divisors:
 
@@ -136,6 +141,41 @@ lemma weilDivisorEquivCyclesOfDimension_symm_apply_apply (hn : topologicalKrullD
   SchemeWeilDivisor.equivFiniteCodimensionOneCycles_symm_apply_apply _ x
 
 end Dimension
+
+namespace RatEquivFamily
+
+include κ in
+/-- **Over a field, rational equivalences are `n`-cycles.** For a scheme locally of finite type over
+a field, the cycle `Σ_a (i_a)_* div(r_a)` of a family of integral closed subschemes of dimension
+`n + 1` with nonzero rational functions is an `n`-cycle: a rational function on `W_a` only has zeros
+and poles at points of codimension one, which by the dimension formula have dimension `n`. -/
+lemma cycle_mem_cyclesOfDimension [IsLocallyNoetherian X] {n : ℤ} (F : RatEquivFamily X n) :
+    F.cycle ∈ cyclesOfDimension X n := by
+  rw [mem_cyclesOfDimension_iff]
+  intro x hx
+  rw [Function.mem_support, cycle_apply] at hx
+  obtain ⟨a, ha⟩ : ∃ a, F.component a x ≠ 0 := by
+    by_contra! h
+    exact hx (finsum_eq_zero_of_forall_eq_zero h)
+  obtain ⟨y, rfl⟩ := F.support_component_subset a ha
+  rw [component_apply] at ha
+  have hy : coheight y = 1 := by
+    by_contra hy
+    exact ha (Scheme.ord_eq_zero_of_coheight_neq_one hy _)
+  -- `W_a` is locally of finite type over `κ` through `X`, of dimension `m = n + 1`
+  let : (F.W a).Over (Spec (.of κ)) := ⟨F.i a ≫ X ↘ Spec (.of κ)⟩
+  have : LocallyOfFiniteType (F.W a ↘ Spec (.of κ)) :=
+    inferInstanceAs (LocallyOfFiniteType (F.i a ≫ X ↘ Spec (.of κ)))
+  obtain ⟨m, hm, hmn⟩ := mem_pointsOfDimension.mp (F.genericPoint_mem a)
+  have hdim : topologicalKrullDim (F.W a) = m := by
+    rw [← coheight_add_height_eq_topologicalKrullDim κ (genericPoint (F.W a)),
+      coheight_eq_zero.mpr (Scheme.isMax_iff_eq_genericPoint.mpr rfl), hm]
+    simp
+  obtain ⟨d, hd, hdm⟩ :=
+    mem_pointsOfDimension.mp ((coheight_eq_one_iff_mem_pointsOfDimension κ hdim).mp hy)
+  exact mem_pointsOfDimension.mpr ⟨d, by rw [Scheme.Hom.height_apply_eq_height, hd], by omega⟩
+
+end RatEquivFamily
 
 section ClassGroup
 
