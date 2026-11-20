@@ -163,6 +163,8 @@ range, so the value is a `dite` rather than a plain application.
   rays of a `Fin` family and the consecutive closed intervals cover the whole order.
 * `TauCeti.apply_zero_le_of_forall_mem_range`, `TauCeti.le_apply_last_of_forall_mem_range`: points
   that lie in the range of a monotone `Fin` family lie between its first and last values.
+* `TauCeti.apply_fin_eq_of_val_eq`: evaluating a dependent family indexed by `Fin (f i)` at equal
+  outer indices and finite ordinals with equal underlying values gives the same value.
 -/
 
 public section
@@ -1139,5 +1141,14 @@ theorem sum_fin_three_rotate {M : Type*} [AddCommMonoid M] (f : Fin 3 → M) (j 
   have h : ∑ m : Fin 3, f (j + m) = ∑ m : Fin 3, f m :=
     Fintype.sum_equiv (Equiv.addLeft j) _ _ fun _ => rfl
   rw [← h, Fin.sum_univ_three, add_zero]
+
+/-- Evaluating a dependent family `x : ∀ i, Fin (f i) → α` at equal outer indices `a = b` and
+finite ordinals with equal underlying values produces the same value. -/
+theorem apply_fin_eq_of_val_eq {ι : Sort*} {f : ι → ℕ} {α : Sort*}
+    (x : ∀ i, Fin (f i) → α) {a b : ι} (hab : a = b)
+    {j₁ : Fin (f a)} {j₂ : Fin (f b)} (hj : j₁.val = j₂.val) :
+    x a j₁ = x b j₂ := by
+  subst hab
+  exact congrArg (x a) (Fin.ext hj)
 
 end TauCeti
