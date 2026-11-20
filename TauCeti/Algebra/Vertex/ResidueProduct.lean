@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Vertex.VertexOperator
+public import TauCeti.Algebra.Vertex.FormalDistribution
 import Mathlib.Order.Filter.Finite
 import Mathlib.Order.Filter.AtTopBot.Group
 
@@ -117,6 +117,16 @@ theorem ncoeff_nonnegResidueProduct (n : ℕ) (A B : VertexOperator R V) (m : �
       ∑ ij ∈ antidiagonal n, n.choose ij.1 • (-1 : ℤ) ^ ij.2 •
         (A[[(ij.1 : ℤ)]] * B[[m + ij.2]] - B[[m + ij.2]] * A[[(ij.1 : ℤ)]]) := by
   simp [nonnegResidueProduct]
+
+/-- The normalized modes of `nonnegResidueProduct n A B` are the residue in the first variable of
+`(z - w)ⁿ [A(z), B(w)]`. -/
+theorem ncoeff_nonnegResidueProduct_eq_residue (n : ℕ) (A B : VertexOperator R V) (m : ℤ) :
+    (nonnegResidueProduct n A B)[[m]] =
+      TauCeti.FormalDistribution.residue
+        ((TauCeti.FormalDistribution.mulSub ^ n) (A.commutatorDistribution B)) m := by
+  rw [ncoeff_nonnegResidueProduct, TauCeti.FormalDistribution.residue_apply,
+    TauCeti.FormalDistribution.mulSub_pow_apply]
+  exact sum_congr rfl fun ij _ ↦ by rw [zero_add, commutatorDistribution_apply]
 
 /-- Locality kills every nonnegative residue product at or above its order bound. -/
 theorem IsLocalOfOrder.nonnegResidueProduct_eq_zero {A B : VertexOperator R V} {N : ℕ}

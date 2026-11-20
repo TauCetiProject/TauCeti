@@ -34,10 +34,10 @@ Let `K ⊆ ℂ` be a compact set and `A ⊆ ℂ` a prescribed set of poles.
   neighbourhood of `K` can be uniformly approximated on `K` by rational functions `p / q` whose
   finite poles lie in `A \ K`, via a finite-rank operator with rational kernels depending only on
   `K`, `V`, `A`, and `ε`. The simple-fraction step uses Mathlib's spectral pole-pushing theorem
-  (`Subalgebra.spectrum_sUnion_connectedComponentIn` and
-  `Subalgebra.spectrum_isBounded_connectedComponentIn`) on the uniform closure of the algebra of
-  rational functions on `K` with poles in `A \ K`; the finite-rank operator follows by discretizing
-  the Cauchy–Pompeiu formula (`IsCompact.exists_norm_sub_sum_mul_sub_inv_smul_le`).
+  (`Subalgebra.spectrum_eq_union_sUnion_connectedComponentIn` and
+  `Subalgebra.isBounded_connectedComponentIn_spectrum_compl`) on the uniform closure of the algebra
+  of rational functions on `K` with poles in `A \ K`; the finite-rank operator follows by
+  discretizing the Cauchy–Pompeiu formula (`IsCompact.exists_norm_sub_sum_mul_sub_inv_smul_le`).
 * **Prescribed poles on the Riemann sphere (no pole at `∞`)**
   (`TauCeti.exists_rational_natDegree_le_norm_sub_lt`): if `A` meets every connected component of
   `Kᶜ`, including the unbounded component, then the rational approximant `p / q` can additionally
@@ -82,23 +82,23 @@ private noncomputable def rationalSubalgebra (K A : Set ℂ) : Subalgebra ℂ C(
     · rcases (by simpa [eval_mul] using hz : q₁.eval z = 0 ∨ q₂.eval z = 0) with h | h
       · exact hA₁ z h
       · exact hA₂ z h
-    · have h1 : q₁.eval (z : ℂ) ≠ 0 := fun h ↦ (hA₁ z h).2 z.2
-      have h2 : q₂.eval (z : ℂ) ≠ 0 := fun h ↦ (hA₂ z h).2 z.2
+    · have h1 : q₁.eval (z : ℂ) ≠ 0 := fun h ↦ (hA₁ z h).2 z.property
+      have h2 : q₂.eval (z : ℂ) ≠ 0 := fun h ↦ (hA₂ z h).2 z.property
       simp only [ContinuousMap.add_apply, hg₁ z, hg₂ z, eval_add, eval_mul]
       rw [div_add_div _ _ h1 h2, mul_comm (q₁.eval (z : ℂ)) (p₂.eval (z : ℂ))]
   algebraMap_mem' c := ⟨C c, 1, one_ne_zero, fun _ h ↦ by simp at h, fun _ ↦ by simp⟩
 
 /-- The coordinate map `z ↦ z` belongs to `rationalSubalgebra K A`. -/
 private theorem mem_rationalSubalgebra_coord (K A : Set ℂ) :
-    (⟨Subtype.val, continuous_subtype_val⟩ : C(K, ℂ)) ∈ rationalSubalgebra K A :=
+    (⟨Subtype.val, continuous_subtypeVal⟩ : C(K, ℂ)) ∈ rationalSubalgebra K A :=
   ⟨X, 1, one_ne_zero, fun _ h ↦ by simp at h, fun _ ↦ by simp⟩
 
 /-- For any `b ∈ A \ K`, the simple fraction `z ↦ (b - z)⁻¹` belongs to `rationalSubalgebra K A`. -/
 private theorem mem_rationalSubalgebra_inv_sub {K A : Set ℂ} {b : ℂ} (hb : b ∈ A \ K) :
     ∃ y ∈ rationalSubalgebra K A, ∀ z : K, y z = (b - (z : ℂ))⁻¹ := by
   have hcont : Continuous (fun z : K ↦ (b - (z : ℂ))⁻¹) :=
-    (continuous_const.sub continuous_subtype_val).inv₀ fun z h ↦
-      hb.2 (sub_eq_zero.mp (by simpa using h) ▸ z.2)
+    (continuous_const.sub continuous_subtypeVal).inv₀ fun z h ↦
+      hb.2 (sub_eq_zero.mp (by simpa using h) ▸ z.property)
   refine ⟨⟨_, hcont⟩, ⟨1, C b - X, ?_, ?_, fun z ↦ by simp⟩, fun _ ↦ rfl⟩
   · intro h
     have := congrArg (eval (b + 1)) h
@@ -121,7 +121,7 @@ theorem exists_rational_norm_inv_sub_lt {K A : Set ℂ} (hK : IsCompact K)
   let R := rationalSubalgebra K A
   let S := R.topologicalClosure
   let : IsClosed (S : Set C(K, ℂ)) := R.isClosed_topologicalClosure
-  let x : S := ⟨⟨Subtype.val, continuous_subtype_val⟩,
+  let x : S := ⟨⟨Subtype.val, continuous_subtypeVal⟩,
     R.le_topologicalClosure (mem_rationalSubalgebra_coord K A)⟩
   have hxval (z : K) : (x : C(K, ℂ)) z = z := rfl
   have hx : spectrum ℂ (x : C(K, ℂ)) = K := by
@@ -131,14 +131,15 @@ theorem exists_rational_norm_inv_sub_lt {K A : Set ℂ} (hK : IsCompact K)
     obtain ⟨y, hyR, hyval⟩ := mem_rationalSubalgebra_inv_sub hb
     rw [spectrum.notMem_iff, isUnit_iff_exists_inv]
     refine ⟨⟨y, R.le_topologicalClosure hyR⟩, Subtype.ext <| ContinuousMap.ext fun z ↦ ?_⟩
-    simpa [x, hyval z] using mul_inv_cancel₀ (sub_ne_zero.mpr fun h : b = (z : ℂ) ↦ hb.2 (h ▸ z.2))
+    simpa [x, hyval z] using
+      mul_inv_cancel₀ (sub_ne_zero.mpr fun h : b = (z : ℂ) ↦ hb.2 (h ▸ z.property))
   have hspec : a ∉ spectrum ℂ x := by
     intro haspec
-    have hbd := Subalgebra.spectrum_isBounded_connectedComponentIn S x haspec
+    have hbd := Subalgebra.isBounded_connectedComponentIn_spectrum_compl S x haspec
     rw [hx] at hbd
     obtain ⟨b, hbA, hbc⟩ := hA a ⟨mem_filledHull_iff.mpr hbd, ha⟩
     apply houtside b ⟨hbA, connectedComponentIn_subset _ _ hbc⟩
-    rw [Subalgebra.spectrum_sUnion_connectedComponentIn S x]
+    rw [Subalgebra.spectrum_eq_union_sUnion_connectedComponentIn S x]
     exact Or.inr <| mem_biUnion ⟨haspec, by rwa [hx]⟩ <| by rwa [hx]
   have hu : IsUnit (x - algebraMap ℂ S a) := by
     simpa only [neg_sub] using (spectrum.notMem_iff.mp hspec).neg
@@ -164,9 +165,9 @@ private theorem exists_rational_sum_smul_eq {K A : Set ℂ} {N : ℕ} (a : Fin N
       ∀ z ∈ K, p.eval z / q.eval z = ∑ i, a i * ((p_i i).eval z / (q_i i).eval z) := by
   let g_i (i : Fin N) : C(K, ℂ) :=
     ⟨fun z : K ↦ (p_i i).eval (z : ℂ) / (q_i i).eval (z : ℂ),
-      ((Polynomial.differentiable (p_i i)).continuous.comp continuous_subtype_val).div
-        ((Polynomial.differentiable (q_i i)).continuous.comp continuous_subtype_val)
-        fun z h ↦ (hqA_i i z h).2 z.2⟩
+      ((Polynomial.differentiable (p_i i)).continuous.comp continuous_subtypeVal).div
+        ((Polynomial.differentiable (q_i i)).continuous.comp continuous_subtypeVal)
+        fun z h ↦ (hqA_i i z h).2 z.property⟩
   have hg_mem (i : Fin N) : g_i i ∈ rationalSubalgebra K A :=
     ⟨p_i i, q_i i, hq_i i, hqA_i i, fun _ ↦ rfl⟩
   have hG_mem : (∑ i : Fin N, a i • g_i i) ∈ rationalSubalgebra K A :=
