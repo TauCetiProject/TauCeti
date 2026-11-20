@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 import Mathlib.Analysis.Fourier.LpSpace
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 
 /-!
@@ -32,6 +33,8 @@ normed complex `F`.
 * `SchwartzMap.toBesselPotentialSpaceCLM`: the inclusion `𝓢(E, F) →L[ℂ] H^{s,p}(E, F)`.
 * `SchwartzMap.toBesselPotentialSpaceCLM_injective`: this inclusion is injective.
 * `SchwartzMap.denseRange_toBesselPotentialSpaceCLM`: its range is dense for `p < ∞`.
+* `SchwartzMap.toBesselPotentialSpaceCLM_injective`: it is injective, so a nonzero Schwartz
+  function has positive `H^{s,p}` norm (`SchwartzMap.norm_toBesselPotentialSpaceCLM_pos`).
 * `SchwartzMap.toLp_toBesselPotentialSpaceCLM_zero`,
   `BesselPotentialSpace.toDistr_toLpₗᵢ_zero_symm_apply`: the identification `H^{0,p} = Lᵖ`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_zero`: on `H^{0,p}` the inclusion is isometric for
@@ -136,6 +139,21 @@ theorem denseRange_toBesselPotentialSpaceCLM (s : ℝ) (hp : p ≠ ∞) :
   exact (BesselPotentialSpace.toLpₗᵢ E F s p).symm.surjective.denseRange.comp
     ((denseRange_toLpCLM (F := F) hp).comp hsurj.denseRange (toLpCLM ℝ F p volume).continuous)
     (BesselPotentialSpace.toLpₗᵢ E F s p).symm.continuous
+
+/-- **The inclusion of Schwartz functions into `H^{s,p}` is injective**: the underlying tempered
+distribution of the image of `u` is the tempered distribution of `u`, which determines `u`. -/
+theorem toBesselPotentialSpaceCLM_injective (s : ℝ) :
+    Function.Injective (toBesselPotentialSpaceCLM (E := E) (F := F) s p) := fun u v huv ↦ by
+  have h := congrArg BesselPotentialSpace.toDistr huv
+  rw [toDistr_toBesselPotentialSpaceCLM, toDistr_toBesselPotentialSpaceCLM,
+    ← Lp.toTemperedDistribution_toLp_eq (p := p) u,
+    ← Lp.toTemperedDistribution_toLp_eq (p := p) v] at h
+  exact injective_toLp p volume (Lp.toTemperedDistribution_injective h)
+
+/-- A nonzero Schwartz function has positive `H^{s,p}` norm. -/
+theorem norm_toBesselPotentialSpaceCLM_pos (s : ℝ) {u : 𝓢(E, F)} (hu : u ≠ 0) :
+    0 < ‖toBesselPotentialSpaceCLM s p u‖ :=
+  norm_pos_iff.2 fun h0 ↦ hu (toBesselPotentialSpaceCLM_injective s (h0.trans (map_zero _).symm))
 
 omit [CompleteSpace F] in
 /-- The weighted Fourier transform `⟨ξ⟩ ^ s 𝓕 u` of a Schwartz function is a Schwartz function,
