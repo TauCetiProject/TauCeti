@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LinearIsometry
 public import TauCeti.Analysis.Sobolev.BesselPotential.Duality
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 
 /-!
 # Linear isometries and reflection on the Bessel-potential spaces
@@ -154,7 +155,9 @@ theorem compLinearIsometryEquiv_toBesselPotentialSpaceCLM (A : E ≃ₗᵢ[ℝ] 
   ext1
   rw [toDistr_compLinearIsometryEquiv, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
     SchwartzMap.toDistr_toBesselPotentialSpaceCLM, compCLM_toTemperedDistributionCLM]
-  congr 1
+  refine congrArg _ ?_
+  ext x
+  simp [SchwartzMap.compCLM_apply]
 
 end BesselPotentialSpace
 

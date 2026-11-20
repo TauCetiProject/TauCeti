@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.SchwartzSpace.LinearIsometry
 public import TauCeti.Analysis.Distribution.TemperedDistribution.ChangeOfVariables
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 
 /-!
 # Pullback of tempered distributions along linear isometries
@@ -53,17 +54,17 @@ theorem fourierMultiplierCLM_compCLM_linearIsometryEquiv (A : E ≃ₗᵢ[ℝ] E
   · have hg' : g ∘ A.symm.toContinuousLinearEquiv.symm = g :=
       funext fun x ↦ by simpa using (hgA x)
     ext u
-    rw [fourierMultiplierCLM_apply_apply, compCLM_apply_apply, compCLM_apply_apply,
-      fourierMultiplierCLM_apply_apply, SchwartzMap.pushforwardCLM_linearIsometryEquiv,
+    simp only [fourierMultiplierCLM_apply_apply, compCLM_apply_apply,
       SchwartzMap.pushforwardCLM_linearIsometryEquiv,
+      SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_linearIsometryEquiv,
       SchwartzMap.fourierInv_compCLMOfContinuousLinearEquiv_linearIsometryEquiv,
-      SchwartzMap.smulLeftCLM_compCLMOfContinuousLinearEquiv ℂ hg, hg',
-      SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_linearIsometryEquiv]
+      SchwartzMap.smulLeftCLM_compCLMOfContinuousLinearEquiv ℂ hg, hg']
   · ext u
     simp [fourierMultiplierCLM_apply_apply, SchwartzMap.smulLeftCLM, hg]
 
 /-- The Bessel potentials `J^s` commute with the pullback of tempered distributions along a linear
 isometry. -/
+@[simp]
 theorem besselPotential_compCLM_linearIsometryEquiv (A : E ≃ₗᵢ[ℝ] E) (s : ℝ) (T : 𝓢'(E, F)) :
     besselPotential E F s (compCLM F A.toLinearEquiv.toEquiv A.hasTemperateGrowth_toEquiv
         A.hasTemperateGrowth_toEquiv_symm T) =
@@ -73,6 +74,7 @@ theorem besselPotential_compCLM_linearIsometryEquiv (A : E ≃ₗᵢ[ℝ] E) (s 
 
 /-- The pullback along a linear isometry `A` of the distribution of `u ∈ Lᵖ` is the distribution of
 the `Lᵖ` function `u ∘ A`. -/
+@[simp]
 theorem compCLM_linearIsometryEquiv_toTemperedDistribution [CompleteSpace F] {p : ℝ≥0∞}
     [Fact (1 ≤ p)] (A : E ≃ₗᵢ[ℝ] E) (u : Lp F p (volume : Measure E)) :
     compCLM F A.toLinearEquiv.toEquiv A.hasTemperateGrowth_toEquiv
