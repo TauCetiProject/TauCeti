@@ -16,8 +16,8 @@ import Mathlib.Analysis.Convex.Contractible
 
 `TauCeti.logGamma` is the holomorphic logarithm of `Complex.Gamma` on the slit plane
 `ℂ ∖ (-∞, 0]`, normalized to vanish at `2`. It agrees with the real logarithm of Gamma on the
-positive real axis. In particular, its value at `3` is `Real.log 2`, and its real part is
-`Real.log ‖Complex.Gamma z‖`.
+positive real axis. In particular, it vanishes at `1`, takes the value `Real.log 2` at `3`, and
+its real part is `Real.log ‖Complex.Gamma z‖`.
 
 The branch is constructed once on the whole slit plane, using
 `TauCeti.exists_differentiableOn_eqOn_exp_comp`; its restrictions to sectors therefore agree
@@ -78,10 +78,10 @@ theorem analyticOnNhd_logGamma : AnalyticOnNhd ℂ logGamma slitPlane :=
 /-- A holomorphic logarithm of Gamma on the slit plane vanishing at `2` is the chosen branch. -/
 theorem eqOn_logGamma {L : ℂ → ℂ} (hL : DifferentiableOn ℂ L slitPlane)
     (he : ∀ z ∈ slitPlane, Complex.exp (L z) = Complex.Gamma z) (h2 : L 2 = 0) :
-    EqOn L logGamma slitPlane := by
-  exact eqOn_of_eqOn_exp_comp isOpen_slitPlane
+    EqOn L logGamma slitPlane :=
+  hL.continuousOn.eqOn_of_eqOn_exp_comp differentiableOn_logGamma.continuousOn
     (starConvex_one_slitPlane.isPathConnected one_mem_slitPlane).isConnected.isPreconnected
-    hL differentiableOn_logGamma (fun z hz => he z hz) (fun _ hz => exp_logGamma hz)
+    (fun z hz => (he z hz).trans (exp_logGamma hz).symm)
     (ofNat_mem_slitPlane 2) (h2.trans logGamma_two.symm)
 
 /-- The real part of any value of the branch is the logarithm of the Gamma norm. -/
@@ -111,6 +111,11 @@ theorem logGamma_ofReal {x : ℝ} (hx : 0 < x) :
       (by rintro _ ⟨t, ht, rfl⟩; exact he t ht) ⟨x, hx, rfl⟩ ⟨2, by norm_num, rfl⟩
   have hd2 : d 2 = 0 := by simp [d]
   exact sub_eq_zero.mp (hd.trans hd2)
+
+/-- At `1` the normalized branch vanishes. -/
+@[simp]
+theorem logGamma_one : logGamma 1 = 0 := by
+  simpa using logGamma_ofReal (x := 1) one_pos
 
 /-- At `3` the normalized branch takes the value `log 2`. -/
 @[simp]

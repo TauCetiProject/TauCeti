@@ -518,7 +518,7 @@ theorem le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le
       (fun t h x ↦ sub_le_iff_le_add'.1 ((shift_operator_eq hα u h x).trans_le (hP _)))
       (fun x ↦ by simpa using hinit x)
   have hp : slabTime p - t₀ ∈ Icc 0 (t₁ - t₀) :=
-    ⟨by linarith [(slabTime p).2.1], by linarith [(slabTime p).2.2]⟩
+    ⟨by linarith [(slabTime p).property.1], by linarith [(slabTime p).property.2]⟩
   have hτ : projIcc t₀ t₁ ht.le (slabTime p - t₀ + t₀) = slabTime p := by
     rw [sub_add_cancel, projIcc_val]
   simpa only [hτ, slabMk_space_slabTime] using key hp (p : ParabolicSpaceTime _).space

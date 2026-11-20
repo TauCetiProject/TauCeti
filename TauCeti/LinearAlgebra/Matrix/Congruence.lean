@@ -36,6 +36,7 @@ one factor after the other.
   `Matrix.one_add_vecMulVec_single_add_single_mul_mul_transpose_apply` — the determinant and
   entries of congruence under the basis substitution `r ↦ r + a + b`.
 * `Matrix.transpose_map_mul_mul_mul` — `((M N) ^ σ)ᵀ Q (M N) = (N ^ σ)ᵀ ((M ^ σ)ᵀ Q M) N`.
+* `Matrix.mul_mul_transpose_apply` — entrywise expansion of `(P * M * Qᵀ) i j` as a double sum.
 
 ## References
 
@@ -115,6 +116,15 @@ theorem transpose_map_mul_mul_mul {l m n R : Type*} [Fintype l] [Fintype m] [Com
     ((M * N).map σ)ᵀ * Q * (M * N) = (N.map σ)ᵀ * ((M.map σ)ᵀ * Q * M) * N := by
   rw [Matrix.map_mul, transpose_mul]
   simp only [Matrix.mul_assoc]
+
+/-- Entrywise expansion of a bilinear congruence `(P * M * Qᵀ) i j` as a double sum over the
+inner indices. -/
+theorem mul_mul_transpose_apply {l m n p R : Type*} [Fintype m] [Fintype n]
+    [NonUnitalNonAssocSemiring R] (P : Matrix l m R) (M : Matrix m n R) (Q : Matrix p n R)
+    (i : l) (j : p) :
+    (P * M * Qᵀ) i j = ∑ x : m, ∑ y : n, P i x * M x y * Q j y := by
+  simp only [Matrix.mul_apply, transpose_apply, Finset.sum_mul]
+  exact Finset.sum_comm
 
 section BasisSubstitution
 

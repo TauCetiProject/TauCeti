@@ -91,19 +91,18 @@ private theorem witness_spec : ∀ i,
       (witness i : Equiv.Perm (Fin 100)) 4 = fourPoint i := by
   decide +kernel
 
-private theorem mem_stabilizerChain_one_iff {g : Equiv.Perm (Fin 100)} :
-    g ∈ J2.stabilizerChain basePoint 1 ↔ g ∈ J2 ∧ g 0 = 0 := by
-  simp [Subgroup.stabilizerChain_succ, mem_stabilizer_iff, basePoint_def,
-    Equiv.Perm.smul_def]
-
 private theorem fourPoints_subset_orbit :
     (fourPoints : Set (Fin 100)) ⊆ orbit (J2.stabilizerChain basePoint 1) 4 := by
+  have h0 : basePoint 0 = 0 := by rw [basePoint_def]; decide
+  rw [Subgroup.stabilizerChain_succ, Subgroup.stabilizerChain_zero, h0]
   intro x hx
   obtain ⟨i, _, rfl⟩ := Finset.mem_image.mp hx
-  have hw := witness_spec i
-  refine mem_orbit_iff.mpr ⟨⟨(witness i : Equiv.Perm (Fin 100)), ?_⟩, ?_⟩
-  · exact mem_stabilizerChain_one_iff.mpr ⟨(witness i).2, hw.1⟩
-  · simpa only [Subgroup.smul_def, Equiv.Perm.smul_def] using hw.2
+  obtain ⟨hfix, himage⟩ := witness_spec i
+  have hmem :
+      (witness i : Equiv.Perm (Fin 100)) ∈ stabilizer (Equiv.Perm (Fin 100)) (0 : Fin 100) := by
+    simpa only [mem_stabilizer_iff, Equiv.Perm.smul_def] using hfix
+  refine mem_orbit_iff.mpr ⟨⟨witness i, (witness i).property, hmem⟩, ?_⟩
+  simpa only [Subgroup.smul_def, Equiv.Perm.smul_def] using himage
 
 private theorem mem_fourPoints (x : Fin 100) :
     x ∈ fourPoints ↔ x ≠ 0 ∧
@@ -120,10 +119,11 @@ private theorem orbit_four_eq :
   have h4 : (4 : Fin 100) ∈ fourPoints := by decide +kernel
   refine ⟨?_, fun h ↦ (mem_fourPoints 4).mp h4 |>.2 ?_⟩
   · rintro rfl
+    have h0 : basePoint 0 = 0 := by rw [basePoint_def]; decide
+    rw [Subgroup.stabilizerChain_succ, Subgroup.stabilizerChain_zero, h0] at hx
     obtain ⟨g, hg⟩ := mem_orbit_iff.mp hx
     have hz : g • (0 : Fin 100) = 0 := by
-      simpa only [Subgroup.smul_def, Equiv.Perm.smul_def] using
-        (mem_stabilizerChain_one_iff.mp g.2).2
+      simpa only [Subgroup.smul_def] using mem_stabilizer_iff.mp g.property.2
     exact (by decide : (4 : Fin 100) ≠ 0) ((MulAction.injective g) (hg.trans hz.symm))
   · exact mem_orbit_trans (mem_orbit_symm.mp hx) h
 
@@ -156,15 +156,22 @@ end J2
 
 /-- The canonical 100-point action of the second Janko group is primitive. -/
 instance isPreprimitive_J2 : MulAction.IsPreprimitive J2 (Fin 100) := by
+  have hbridge (x : Fin 100) :
+      MulAction.orbit (MulAction.stabilizer J2 (J2.basePoint 0)) x =
+        MulAction.orbit (J2.stabilizerChain J2.basePoint 1) x := by
+    exact (congrArg (fun H : Subgroup (Equiv.Perm (Fin 100)) ↦
+      MulAction.orbit (MulAction.stabilizer H (J2.basePoint 0)) x)
+      (Subgroup.stabilizerChain_zero J2 J2.basePoint)).symm.trans
+      (Subgroup.orbit_stabilizerChain_succ J2 J2.basePoint 0 x).symm
+  have h0 : J2.basePoint 0 = 0 := by rw [J2.basePoint_def]; decide
   apply MulAction.IsPreprimitive.of_two_orbit_stabilizer
     (J2.basePoint 0) (J2.basePoint 1) (4 : Fin 100)
   · intro x
-    have h0 : J2.basePoint 0 = 0 := by rw [J2.basePoint_def]; decide
-    simpa only [← Subgroup.orbit_stabilizerChain_one, h0] using
-      J2.orbit_stabilizer_zero_cover x
-  · rw [← Subgroup.orbit_stabilizerChain_one, J2.ncard_orbit_stabilizer_zero_one]
+    rw [hbridge, hbridge, h0]
+    exact J2.orbit_stabilizer_zero_cover x
+  · rw [hbridge, J2.ncard_orbit_stabilizer_zero_one]
     norm_num
-  · rw [← Subgroup.orbit_stabilizerChain_one, J2.ncard_orbit_stabilizer_zero_four]
+  · rw [hbridge, J2.ncard_orbit_stabilizer_zero_four]
     norm_num
 
 end TauCeti.Sporadic

@@ -14,7 +14,8 @@ public import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 
 Let `w` be a nonzerodivisor of a commutative ring `S`. If `S` has finite global dimension,
 a finitely generated Gorenstein-projective module over `S/(w)` has projective dimension at most
-one over `S`. In particular this holds when `S` is regular local.
+one over `S`. In particular this holds when `S` is regular local, or more generally regular of
+finite Krull dimension.
 
 This is the projective-dimension input to the construction of matrix factorizations from
 Gorenstein-projective modules: over a Noetherian ambient ring such a module admits a length-one
@@ -25,6 +26,16 @@ Restriction of scalars takes a projective `S/(w)`-module to an `S`-module of pro
 at most one. The short exact copresentations from a complete resolution then lower any uniform
 finite bound on the restricted Gorenstein-projective modules until that bound is one. Only the
 copresentations are needed; no comparison of singularity categories is assumed.
+
+## Main results
+
+In the namespace `TauCeti.IsGorensteinProjective`:
+
+* `hasProjectiveDimensionLE_restrictScalars_quotient`: a finitely generated Gorenstein-projective
+  `S/(w)`-module has projective dimension at most `1` over `S` when `S` has finite global
+  dimension, with specializations
+  `hasProjectiveDimensionLE_restrictScalars_quotient_of_isRegularLocalRing` and
+  `hasProjectiveDimensionLE_restrictScalars_quotient_of_isRegularRing`.
 
 ## References
 
@@ -89,8 +100,17 @@ theorem hasProjectiveDimensionLE_restrictScalars_quotient_of_isRegularLocalRing
     (hM : IsGorensteinProjective (S ⧸ Ideal.span {w}) M) (hw : w ∈ nonZeroDivisors S) :
     HasProjectiveDimensionLE
       ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) 1 :=
-  hM.hasProjectiveDimensionLE_restrictScalars_quotient hw (IsLocalRing.maximalIdeal S).spanFinrank
-    (IsRegularLocalRing.hasProjectiveDimensionLE
-      (IsRegularLocalRing.spanFinrank_maximalIdeal (R := S)).ge)
+  hM.hasProjectiveDimensionLE_restrictScalars_quotient hw _
+    IsRegularLocalRing.hasProjectiveDimensionLE_spanFinrank_maximalIdeal
+
+/-- A finitely generated Gorenstein-projective module over a hypersurface in a regular ring of
+finite Krull dimension has projective dimension at most one over that regular ring. -/
+theorem hasProjectiveDimensionLE_restrictScalars_quotient_of_isRegularRing
+    [IsRegularRing S] (hdim : ringKrullDim S < ⊤) {M : ModuleCat.{u} (S ⧸ Ideal.span {w})}
+    (hM : IsGorensteinProjective (S ⧸ Ideal.span {w}) M) (hw : w ∈ nonZeroDivisors S) :
+    HasProjectiveDimensionLE
+      ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) 1 := by
+  obtain ⟨d, hd⟩ := IsRegularRing.exists_hasProjectiveDimensionLE.{u} hdim
+  exact hM.hasProjectiveDimensionLE_restrictScalars_quotient hw d hd
 
 end TauCeti.IsGorensteinProjective

@@ -288,11 +288,11 @@ variable {K : Type u} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
 private theorem exists_nonsingular_eq_projModelPoint
     (x : {g : Spec (.of K) ⟶ W.projModel // g ≫ W.projModelOver = 𝟙 _}) :
     ∃ (P : Fin 3 → K) (hP : W.toProjective.Nonsingular P) (i : Fin 3) (hi : IsUnit (P i)),
-      x.1 = W.projModelPoint (RingHom.id K) hP.1 hi ∧
+      x.val = W.projModelPoint (RingHom.id K) hP.1 hi ∧
         W.projModelPointsEquiv x = Projective.Point.toAffine W.toProjective P := by
   -- the section `x` lies over the identity of `K`, so it has homogeneous coordinates `P`
-  obtain ⟨P, hP, i, hi, hx⟩ := W.exists_eq_projModelPoint (g := RingHom.id K) (x := x.1)
-    (by simpa only [CommRingCat.ofHom_id, Spec.map_id] using x.2)
+  obtain ⟨P, hP, i, hi, hx⟩ := W.exists_eq_projModelPoint (g := RingHom.id K) (x := x.val)
+    (by simpa only [CommRingCat.ofHom_id, Spec.map_id] using x.property)
   -- a solution with a nonzero coordinate on an elliptic curve over a field is nonsingular
   have hP' : W.toProjective.Nonsingular P :=
     (Projective.equation_iff_nonsingular_of_ne_zero (Function.ne_iff.mpr ⟨i, hi.ne_zero⟩)).mp
@@ -310,8 +310,9 @@ given by homogeneous coordinates, see `lift_projModelPoint_additionMorphism_eq_a
 @[simp]
 theorem projModelPointsEquiv_lift_additionMorphism [DecidableEq K]
     (x y : {g : Spec (.of K) ⟶ W.projModel // g ≫ W.projModelOver = 𝟙 _}) :
-    W.projModelPointsEquiv ⟨pullback.lift x.1 y.1 (x.2.trans y.2.symm) ≫ W.additionMorphism,
-      by rw [Category.assoc, additionMorphism_projModelOver, pullback.lift_fst_assoc, x.2]⟩ =
+    W.projModelPointsEquiv ⟨pullback.lift x.val y.val (x.property.trans y.property.symm) ≫
+        W.additionMorphism,
+      by rw [Category.assoc, additionMorphism_projModelOver, pullback.lift_fst_assoc, x.property]⟩ =
       W.projModelPointsEquiv x + W.projModelPointsEquiv y := by
   obtain ⟨P, hP, i, hi, hx, hxP⟩ := W.exists_nonsingular_eq_projModelPoint x
   obtain ⟨Q, hQ, j, hj, hy, hyQ⟩ := W.exists_nonsingular_eq_projModelPoint y

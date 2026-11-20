@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
 # The cokernel of `ε - Q` for a map preserving the form `⟪J ·, ·⟫`
@@ -73,10 +74,7 @@ def kerEquivQuotientRangeOfInnerApplyEq (hJ : Function.Injective J)
           _ = 0 := inner_apply_apply_eq_zero_of_inner_apply_eq_of_mem_ker hQ hε hf hx y
       have hx0 : x = 0 := hJ (by rw [inner_self_eq_zero.1 h0, map_zero])
       simp [hx0])
-    (by
-      have h₁ := Submodule.finrank_quotient_add_finrank (range f)
-      have h₂ := finrank_range_add_finrank_ker f
-      omega)
+    (finrank_quotient_range_eq_finrank_ker f).symm
 
 @[simp]
 theorem kerEquivQuotientRangeOfInnerApplyEq_apply (hJ : Function.Injective J)

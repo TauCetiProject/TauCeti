@@ -577,6 +577,11 @@ theorem map_const (y : Y) (γ : MoorePath X) :
     γ.map (.const X y) = constOfLength y γ.length :=
   (rfl)
 
+/-- The image of a reversed path is the reversed image. -/
+@[simp]
+theorem map_symm (f : C(X, Y)) (γ : MoorePath X) : γ.symm.map f = (γ.map f).symm :=
+  (rfl)
+
 @[fun_prop]
 theorem continuous_map (f : C(X, Y)) : Continuous (map f : MoorePath X → MoorePath Y) :=
   continuous_iff.2 ⟨continuous_length, f.continuous.comp continuous_eval⟩

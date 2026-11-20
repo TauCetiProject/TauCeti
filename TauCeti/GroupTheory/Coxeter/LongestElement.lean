@@ -263,7 +263,7 @@ noncomputable def reverseMul (h : cs.IsLongest w₀)
     (hJK : ∀ p, w₀ * p * w₀ ∈ cs.parabolic K ↔ p ∈ cs.parabolic J)
     (C : cs.MinimalCosetRepChain J) : cs.MinimalCosetRepChain K :=
   C.reverse.map
-    { toFun x := ⟨cs.minimalCosetRep K (x.1 * w₀), cs.isMinimalCosetRep_minimalCosetRep K _⟩
+    { toFun x := ⟨cs.minimalCosetRep K (x.val * w₀), cs.isMinimalCosetRep_minimalCosetRep K _⟩
       map_rel' hxy := h.minimalCosetRepCovBy_minimalCosetRep_mul hJK (SetRel.mem_inv.mp hxy) }
 
 variable (h : cs.IsLongest w₀) (hJK : ∀ p, w₀ * p * w₀ ∈ cs.parabolic K ↔ p ∈ cs.parabolic J)
@@ -275,18 +275,20 @@ theorem length_reverseMul : (C.reverseMul h hJK).length = C.length :=
 
 @[simp]
 theorem reverseMul_apply (k : Fin ((C.reverseMul h hJK).length + 1)) :
-    ((C.reverseMul h hJK) k).1 =
-      cs.minimalCosetRep K ((C (Fin.rev ⟨k, by simpa using k.2⟩)).1 * w₀) :=
+    ((C.reverseMul h hJK) k).val =
+      cs.minimalCosetRep K ((C (Fin.rev ⟨k, by simpa using k.isLt⟩)).val * w₀) :=
   (rfl)
 
 /-- The reversed chain starts at the coset of the last element of the chain, times `w₀`. -/
 @[simp]
-theorem head_reverseMul : (C.reverseMul h hJK).head.1 = cs.minimalCosetRep K (C.last.1 * w₀) := by
+theorem head_reverseMul : (C.reverseMul h hJK).head.val = cs.minimalCosetRep K (C.last.val * w₀)
+    := by
   simp [reverseMul]
 
 /-- The reversed chain ends at the coset of the first element of the chain, times `w₀`. -/
 @[simp]
-theorem last_reverseMul : (C.reverseMul h hJK).last.1 = cs.minimalCosetRep K (C.head.1 * w₀) := by
+theorem last_reverseMul : (C.reverseMul h hJK).last.val = cs.minimalCosetRep K (C.head.val * w₀)
+    := by
   simp [reverseMul]
 
 /-- **Reversing a saturated chain twice by a longest element returns it.** -/
@@ -295,7 +297,7 @@ theorem reverseMul_reverseMul :
     (C.reverseMul h hJK).reverseMul h (h.conj_mem_parabolic_iff_symm hJK) = C := by
   refine RelSeries.ext rfl (funext fun k ↦ Subtype.ext ?_)
   rw [Function.comp_apply, reverseMul_apply, reverseMul_apply]
-  convert h.minimalCosetRep_mul_minimalCosetRep_mul hJK (C k).2 using 6
+  convert h.minimalCosetRep_mul_minimalCosetRep_mul hJK (C k).property using 6
   · exact congrArg C (Fin.ext (by simp [Fin.val_rev]; omega))
   · exact congrArg C (Fin.ext rfl)
 

@@ -131,8 +131,8 @@ theorem continuous_prepend {y : X} (γ : Path x₀ y) :
       Path.Homotopic.Quotient.mk_trans]
   refine (continuous_ofBasedPath x₀).comp (Continuous.subtype_mk ?_ _)
   refine ContinuousMap.continuous_of_continuous_uncurry _ ?_
-  have h_eval : Continuous fun p : BasedPath y × I => p.1.1 p.2 :=
-    continuous_eval.comp (continuous_subtype_val.prodMap continuous_id)
+  have h_eval : Continuous fun p : BasedPath y × I => p.1.val p.2 :=
+    continuous_eval.comp (continuous_subtypeVal.prodMap continuous_id)
   -- Unfolding `BasedPath.ofPath` and its continuous-map evaluation exposes concatenation.
   change Continuous fun p : BasedPath y × I => γ.trans p.1.toPath p.2
   exact Path.trans_continuous_family (a := fun _ : BasedPath y => x₀)
@@ -156,7 +156,7 @@ def basepointLift (x₀ : X) : (proj : UniversalCover x₀ → X) ⁻¹' {x₀} 
 
 /-- The endpoint projection sends the constant-path point to the basepoint. -/
 theorem proj_basepointLift (x₀ : X) : proj (basepointLift x₀ : UniversalCover x₀) = x₀ :=
-  (basepointLift x₀).2
+  (basepointLift x₀).property
 
 /-- The underlying point of `basepointLift` is represented by the constant path. -/
 @[simp]
@@ -170,7 +170,8 @@ theorem basepointLift_coe (x₀ : X) :
 endpoint-fixed loop homotopy classes. This is a type equivalence, not a group equivalence. -/
 def fiberEquivFundamentalGroup (x₀ : X) :
     (proj : UniversalCover x₀ → X) ⁻¹' {x₀} ≃ FundamentalGroup X x₀ where
-  toFun e := FundamentalGroup.fromPath (cast (congrArg (Path.Homotopic.Quotient x₀) e.2) e.1.path)
+  toFun e := FundamentalGroup.fromPath (cast (congrArg (Path.Homotopic.Quotient x₀) e.property)
+      e.val.path)
   invFun g := ⟨mk x₀ g.toPath, rfl⟩
   left_inv := by
     rintro ⟨⟨x, q⟩, hx⟩
