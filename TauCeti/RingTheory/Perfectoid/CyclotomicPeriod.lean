@@ -100,17 +100,20 @@ variable {p : ℕ} [Fact p.Prime] {A : Type*} [CommRing A] [Fact ¬IsUnit (p : A
   [IsAdicComplete (Ideal.span {(p : A)}) A]
 
 /-- Fontaine's value on `μ`. -/
+@[simp]
 theorem fontaineTheta_mu (ε : PreTilt A p) :
     fontaineTheta A p (mu p ε) = ε.untilt - 1 := by
   rw [mu_eq, map_sub, fontaineTheta_teichmuller, map_one]
 
 /-- The shifted Fontaine value on `μ`. -/
+@[simp]
 theorem fontaineThetaShifted_mu (ε : PreTilt A p) :
     fontaineThetaShifted A p (mu p ε) =
       PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε) - 1 := by
   rw [mu_eq, map_sub, fontaineThetaShifted_teichmuller, map_one]
 
 /-- Fontaine's value on the polynomial period. -/
+@[simp]
 theorem fontaineTheta_xi (ε : PreTilt A p) :
     fontaineTheta A p (xi p ε) =
       ∑ j ∈ Finset.range p,
@@ -118,6 +121,7 @@ theorem fontaineTheta_xi (ε : PreTilt A p) :
   simp only [xi_eq, map_sum, map_pow, fontaineTheta_teichmuller]
 
 /-- A primitive root makes the polynomial period lie in Fontaine's kernel. -/
+@[simp high]
 theorem fontaineTheta_xi_eq_zero [IsDomain A] (ε : PreTilt A p)
     (hε : IsPrimitiveRoot
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) :
@@ -126,20 +130,24 @@ theorem fontaineTheta_xi_eq_zero [IsDomain A] (ε : PreTilt A p)
   exact hε.geom_sum_eq_zero (Fact.out : p.Prime).one_lt
 
 /-- A root system with sharp one gives `θ(μ) = 0`. -/
+@[simp high]
 theorem fontaineTheta_mu_eq_zero (ε : PreTilt A p) (hε : ε.untilt = 1) :
     fontaineTheta A p (mu p ε) = 0 := by rw [fontaineTheta_mu, hε, sub_self]
 
 /-- Fontaine's map sends `xiTilde` to `p` when the root system has sharp one. -/
+@[simp]
 theorem fontaineTheta_xiTilde (ε : PreTilt A p) (hε : ε.untilt = 1) :
     fontaineTheta A p (xiTilde p ε) = p := by
   simp [xiTilde_eq_sum, map_sum, map_pow, fontaineTheta_teichmuller, hε]
 
 /-- The shifted map on `xiTilde` agrees with Fontaine's map on `ξ`. -/
+@[simp]
 theorem fontaineThetaShifted_xiTilde (ε : PreTilt A p) :
     fontaineThetaShifted A p (xiTilde p ε) = fontaineTheta A p (xi p ε) := by
   rw [fontaineThetaShifted_apply, xiTilde_eq, RingEquiv.symm_apply_apply]
 
 /-- Primitivity makes `xiTilde` lie in the shifted Fontaine kernel. -/
+@[simp high]
 theorem fontaineThetaShifted_xiTilde_eq_zero [IsDomain A] (ε : PreTilt A p)
     (hε : IsPrimitiveRoot
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) :
