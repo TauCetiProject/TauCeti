@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.NormSq
 import TauCeti.Data.Fin.Basic
 
@@ -265,8 +266,12 @@ theorem volume_carrier_inter_strip (h₀ : P.vertex 0 = .inr ∞) {i : Fin n} (h
   have hv := P.vertex_ne_inr_infty_of_vertex_zero h₀ hi
   have hv' := P.vertex_ne_inr_infty_of_vertex_zero h₀ hi'
   have hlt := P.re_toComplex_vertex_lt_of_vertex_zero h₀ hi hi'
-  rw [heq, volume_idealRegionAbove hρ (Complex.re_mem_Icc_of_normSq_sub_eq hρ.le hi₁).1
-    (Complex.re_mem_Icc_of_normSq_sub_eq hρ.le hi₂).2,
+  -- both vertices lie on the semicircle, so their real parts lie in `[m - ρ, m + ρ]`
+  have hre {v : ℂ} (hv : Complex.normSq (v - m) = ρ ^ 2) : v.re ∈ Set.Icc (m - ρ) (m + ρ) := by
+    have hvm : ‖v - m‖ = ρ := by rw [Complex.norm_def, hv, Real.sqrt_sq hρ.le]
+    have h := Complex.re_mem_Icc_of_norm_sub_le hvm.le
+    rwa [Complex.ofReal_re] at h
+  rw [heq, volume_idealRegionAbove hρ (hre hi₁).1 (hre hi₂).2,
     vertexAngle_infty_of_re_lt hρ hv hv' hi₁ hi₂ hlt,
     vertexAngle_infty_of_lt_re hρ hv hv' hi₁ hi₂ hlt]
   congr 1

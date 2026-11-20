@@ -272,7 +272,7 @@ theorem vertexAngle_infty_of_re_lt {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hp (congrArg _ h)
     rw [toComplex_inr_coe] at hpm hpq ⊢
     rw [Complex.ofReal_re, vertexAngle_inr, eq_comm, sub_eq_zero,
-      Complex.eq_sub_of_normSq_eq_of_lt_re hρ.le hpm hqm hpq, sub_sub_cancel_left, neg_div,
+      Complex.eq_sub_of_normSq_eq_of_lt_re hρ.le hpm hqm.le hpq, sub_sub_cancel_left, neg_div,
       div_self hρ.ne', Real.arccos_neg_one]
 
 /-- **The angle at the right vertex of a triangle with an ideal vertex at `∞`.** If `p` and `q`
@@ -296,8 +296,9 @@ theorem vertexAngle_infty_of_lt_re {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
   · -- an ideal right vertex is the right endpoint `m + ρ` of the semicircle
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hq (congrArg _ h)
     rw [toComplex_inr_coe] at hqm hpq ⊢
-    rw [Complex.ofReal_re, vertexAngle_inr, Complex.eq_add_of_normSq_eq_of_re_lt hρ.le hqm hpm hpq,
-      add_sub_cancel_left, div_self hρ.ne', Real.arccos_one]
+    rw [Complex.ofReal_re, vertexAngle_inr,
+      Complex.eq_add_of_normSq_eq_of_re_lt hρ.le hqm hpm.le hpq, add_sub_cancel_left,
+      div_self hρ.ne', Real.arccos_one]
 
 /-- **An angle split by the upward vertical.** Let `A ∈ ℍ` lie on two semicircles, of centres
 `m₁`, `m₂` and radii `ρ₁`, `ρ₂`; let `p` lie on the first, to the left of `A`, and `q` on the
@@ -349,7 +350,7 @@ theorem vertexAngle_eq_add_of_mem_circles {A : ℍ} {p q : ℍ ⊕ OnePoint ℝ}
     rw [hCre, hCim, ← hA₂]
     linarith [mul_lt_mul'' h₁ h₁ A.im_pos.le A.im_pos.le]
   · -- `D` is on the first circle, to the left of `A`, like `p`
-    exact Complex.lt_normSq_sub_of_normSq_eq hA₁ hA₂ hp₁ hp₂ hDm hpA (by rwa [coe_re])
+    exact Complex.lt_normSq_sub_of_normSq_eq hA₁ hA₂ hp₁.le hp₂ hDm.ge hpA (by rwa [coe_re])
   · rw [← hgC, mem_leftHalfPlane_iff, re_toPoint_inv_smul]
     exact div_neg_of_neg_of_pos (sub_neg.2 hDA) A.im_pos
 
