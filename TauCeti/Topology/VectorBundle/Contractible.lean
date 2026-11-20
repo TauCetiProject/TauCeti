@@ -170,10 +170,18 @@ theorem continuousOn_continuousLinearMapAt_comp_of_continuous_frame [CompleteSpa
     (e : Trivialization F (π F E)) [e.IsLinear 𝕜] :
     ContinuousOn (fun y ↦ (e.continuousLinearMapAt 𝕜 (f y)).comp (χ y : F →L[𝕜] E (f y)))
       (f ⁻¹' e.baseSet) := by
-  -- A frame along `f` is a fibrewise linear map to `E` from the trivial bundle `B × F`.
-  simpa using continuousOn_continuousLinearMapAt_comp_symmL (E' := Bundle.Trivial B F) (g := f)
-    (φ := fun y ↦ (χ y : F →L[𝕜] E (f y))) (hχ.comp (Bundle.Trivial.homeomorphProd B F).continuous)
-    e (Bundle.Trivial.trivialization B F)
+  -- A frame along `f` is a fibrewise linear map to `E` from the trivial bundle over `B` with
+  -- fibre `F`. Its total space is identified with `B × F` by `homeomorphProd`, which sends `v` to
+  -- `(v.proj, v.2)` by definition (`homeomorphProd_apply`), so `hχ` transfers along it.
+  have h : Continuous fun v : TotalSpace F (Bundle.Trivial B F) ↦
+      TotalSpace.mk' F (f v.proj) ((χ v.proj : F →L[𝕜] E (f v.proj)) v.2) :=
+    hχ.comp (Bundle.Trivial.homeomorphProd B F).continuous
+  -- In the global trivialization of the trivial bundle, `symmL` is the identity and the base set
+  -- is everything.
+  have := continuousOn_continuousLinearMapAt_comp_symmL (g := f)
+    (φ := fun y ↦ (χ y : F →L[𝕜] E (f y))) h e (Bundle.Trivial.trivialization B F)
+  simpa only [Bundle.Trivial.symmL_trivialization, ContinuousLinearMap.comp_id,
+    Bundle.Trivial.trivialization_baseSet, univ_inter] using this
 
 /-- **Two frames differ by a continuous family of automorphisms.** If `φ` and `ψ` are continuous
 frames of a finite-rank vector bundle `E` along the same map `f`, the transition
