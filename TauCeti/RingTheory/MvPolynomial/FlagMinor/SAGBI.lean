@@ -154,7 +154,7 @@ generators (including the full determinant `flagMinor R univ` when `1 ≤ n`). -
 theorem card_nonempty_finset_fin (n : ℕ) :
     Fintype.card {I : Finset (Fin n) // I.Nonempty} = 2 ^ n - 1 := by
   rw [Fintype.card_subtype, show (univ.filter fun I : Finset (Fin n) ↦ I.Nonempty) = univ.erase ∅
-      by ext; simp [Finset.nonempty_iff_ne_empty],
+      by ext; simp [Finset.ne_empty_iff_nonempty],
     card_erase_of_mem (mem_univ ∅), card_univ, Fintype.card_finset, Fintype.card_fin]
 
 /-- Over a nontrivial commutative ring, the nonempty row subsets give `2 ^ n - 1` distinct flag
@@ -282,7 +282,7 @@ theorem range_mapDomainAlgHom_closure_flagDiagonalExponent (R : Type*) [CommRing
     | single a c =>
       rw [AddMonoidAlgebra.mapDomainAlgHom_apply, AddMonoidAlgebra.mapDomain_single,
         single_eq_monomial]
-      exact monomial_mem_initialAlgebra_rename_toLex_flagMinorAlgebra R a.2 c
+      exact monomial_mem_initialAlgebra_rename_toLex_flagMinorAlgebra R a.property c
   · rw [← (isSAGBIBasis_range_rename_toLex_flagMinor R).adjoin_leadingTerm]
     refine Algebra.adjoin_le ?_
     rintro _ ⟨_, ⟨I, rfl⟩, rfl⟩
@@ -466,7 +466,7 @@ private theorem weightReesAlgebra_specialFiber_equiv
     ((Polynomial.mapAlgHom A.val).comp (A.weightReesAlgebra w).val).codRestrict _ fun g ↦
       TauCeti.mem_coeffSubalgebra_iff.mpr fun m ↦ by
         simpa [Polynomial.coeff_map] using
-          (A.mem_weightFiltration_iff w).mp (TauCeti.mem_coeffSubalgebra_iff.mp g.2 m)
+          (A.mem_weightFiltration_iff w).mp (TauCeti.mem_coeffSubalgebra_iff.mp g.property m)
   let φ : A.weightReesAlgebra w →ₐ[R] MvPolynomial σ R :=
     (TauCeti.MvPolynomial.weightReesSymbol R w).comp ι
   have hker : RingHom.ker φ = Ideal.span {t} := by
@@ -476,36 +476,38 @@ private theorem weightReesAlgebra_specialFiber_equiv
       Ideal.mem_span_singleton]
     refine ⟨fun ⟨q, hq⟩ ↦ ?_, fun ⟨q, hq⟩ ↦
       ⟨ι q, by rw [hq, map_mul]; congr 1; exact Subtype.ext (by simp [ι, t])⟩⟩
-    have hcoeff (m : ℕ) : (g.1.coeff m : MvPolynomial σ R) = (Polynomial.X * q.1).coeff m := by
+    have hcoeff (m : ℕ) : (g.val.coeff m : MvPolynomial σ R) = (Polynomial.X * q.val).coeff m := by
       simpa [ι, Polynomial.coeff_map] using
         congrArg (fun p : (MvPolynomial σ R)[X] ↦ p.coeff m) (congrArg Subtype.val hq)
-    have h0 : g.1.coeff 0 = 0 := Subtype.ext (by simpa using hcoeff 0)
+    have h0 : g.val.coeff 0 = 0 := Subtype.ext (by simpa using hcoeff 0)
     obtain ⟨q', hq'⟩ := Polynomial.X_dvd_iff.mpr h0
     refine ⟨⟨q', TauCeti.mem_coeffSubalgebra_iff.mpr fun m ↦ (A.mem_weightFiltration_iff w).mpr ?_⟩,
       Subtype.ext (by simpa [t] using hq')⟩
-    have hm : (q'.coeff m : MvPolynomial σ R) = q.1.coeff m := by
+    have hm : (q'.coeff m : MvPolynomial σ R) = q.val.coeff m := by
       simpa [hq', Polynomial.coeff_X_mul] using hcoeff (m + 1)
-    exact hm ▸ TauCeti.mem_coeffSubalgebra_iff.mp q.2 m
+    exact hm ▸ TauCeti.mem_coeffSubalgebra_iff.mp q.property m
   have hrange : φ.range = Algebra.adjoin R (MvPolynomial.weightInitialForm w '' (A : Set _)) := by
     refine le_antisymm ?_ (Algebra.adjoin_le ?_)
     · rintro _ ⟨g, rfl⟩
-      have hι_sum : ι g = ∑ m ∈ g.1.support,
-          TauCeti.coeffSubalgebra.monomial _ m (g.1.coeff m : MvPolynomial σ R)
-            ((A.mem_weightFiltration_iff w).mp (TauCeti.mem_coeffSubalgebra_iff.mp g.2 m)) :=
+      have hι_sum : ι g = ∑ m ∈ g.val.support,
+          TauCeti.coeffSubalgebra.monomial _ m (g.val.coeff m : MvPolynomial σ R)
+            ((A.mem_weightFiltration_iff w).mp
+              (TauCeti.mem_coeffSubalgebra_iff.mp g.property m)) :=
         Subtype.ext <| by
           rw [AddSubmonoidClass.coe_finsetSum]
           simpa [ι, Polynomial.map_sum] using
-            congrArg (Polynomial.map A.val.toRingHom) g.1.as_sum_support
+            congrArg (Polynomial.map A.val.toRingHom) g.val.as_sum_support
       change TauCeti.MvPolynomial.weightReesSymbol R w (ι g) ∈ _
       rw [hι_sum, map_sum]
       refine Subalgebra.sum_mem _ fun m _ ↦ ?_
       rw [TauCeti.MvPolynomial.weightReesSymbol_monomial]
-      set b : MvPolynomial σ R := (g.1.coeff m).1
+      set b : MvPolynomial σ R := (g.val.coeff m).val
       rcases (TauCeti.MvPolynomial.mem_weightFiltration_iff_weightedTotalDegree_le.mp
-          ((A.mem_weightFiltration_iff w).mp (TauCeti.mem_coeffSubalgebra_iff.mp g.2 m))).eq_or_lt
+          ((A.mem_weightFiltration_iff w).mp
+            (TauCeti.mem_coeffSubalgebra_iff.mp g.property m))).eq_or_lt
         with heq | hlt
       · rw [← heq, ← MvPolynomial.weightInitialForm_def]
-        exact Algebra.subset_adjoin ⟨b, (g.1.coeff m).2, rfl⟩
+        exact Algebra.subset_adjoin ⟨b, (g.val.coeff m).property, rfl⟩
       · rw [MvPolynomial.weightedHomogeneousComponent_eq_zero m b hlt]; exact zero_mem _
     · rintro _ ⟨b, hb, rfl⟩
       have hbm : (⟨b, hb⟩ : A) ∈ A.weightFiltration w (b.weightedTotalDegree w) :=
@@ -605,8 +607,8 @@ theorem exists_pos_weight_flagMinorAlgebra_degeneration (k : Type*) [Field k] :
             (((flagMinorAlgebra n k).map (rename toLex)) : Set _)) =
         lex.initialAlgebra ((flagMinorAlgebra n k).map (rename toLex)) ∧
       (TauCeti.MvPolynomial.weightReesAeval
-          (fun I : {I : Finset (Fin n) // I.Nonempty} ↦ rename toLex (flagMinor k I.1))
-          (fun I ↦ Finsupp.weight w (flagDiagonalExponent I.1))).range =
+          (fun I : {I : Finset (Fin n) // I.Nonempty} ↦ rename toLex (flagMinor k I.val))
+          (fun I ↦ Finsupp.weight w (flagDiagonalExponent I.val))).range =
         (((flagMinorAlgebra n k).map (rename toLex)).weightReesAlgebra w).map
           (Polynomial.mapAlgHom ((flagMinorAlgebra n k).map (rename toLex)).val) ∧
       (letI := TauCeti.coeffSubalgebra.algebra
@@ -629,7 +631,7 @@ theorem exists_pos_weight_flagMinorAlgebra_degeneration (k : Type*) [Field k] :
   set A : Subalgebra k (MvPolynomial (Fin n ×ₗ Fin n) k) :=
     (flagMinorAlgebra n k).map (rename toLex)
   let c : {I : Finset (Fin n) // I.Nonempty} → MvPolynomial (Fin n ×ₗ Fin n) k :=
-    fun I ↦ rename toLex (flagMinor k I.1)
+    fun I ↦ rename toLex (flagMinor k I.val)
   have hrange : Set.range c =
       (fun I : Finset (Fin n) ↦ rename toLex (flagMinor k I)) '' {I | I.Nonempty} := by
     ext p; simp [c]
@@ -639,12 +641,12 @@ theorem exists_pos_weight_flagMinorAlgebra_degeneration (k : Type*) [Field k] :
     rw [hadj, hrange]; exact isSAGBIBasis_image_nonempty_rename_toLex_flagMinor k
   obtain ⟨w, hw, htop, hinit, hrees⟩ :=
     hsagbi.exists_pos_weight_range_weightReesAeval
-      fun I : {I : Finset (Fin n) // I.Nonempty} ↦ monic_rename_toLex_flagMinor k I.1
+      fun I : {I : Finset (Fin n) // I.Nonempty} ↦ monic_rename_toLex_flagMinor k I.val
   have hdeg : (fun I : {I : Finset (Fin n) // I.Nonempty} ↦ Finsupp.weight w (lex.degree (c I))) =
-      fun I ↦ Finsupp.weight w (flagDiagonalExponent I.1) :=
-    funext fun I ↦ by rw [degree_rename_toLex_flagMinor (R := k) I.1]
+      fun I ↦ Finsupp.weight w (flagDiagonalExponent I.val) :=
+    funext fun I ↦ by rw [degree_rename_toLex_flagMinor (R := k) I.val]
   have hrees_eq : (TauCeti.MvPolynomial.weightReesAeval c
-      (fun I ↦ Finsupp.weight w (flagDiagonalExponent I.1))).range =
+      (fun I ↦ Finsupp.weight w (flagDiagonalExponent I.val))).range =
       (A.weightReesAlgebra w).map (Polynomial.mapAlgHom A.val) := by
     rw [← hdeg, hrees, Subalgebra.map_weightReesAlgebra]; congr 1; ext p
     have hc' : p ∈ (Polynomial.mapAlgHom (aeval c)).range ↔

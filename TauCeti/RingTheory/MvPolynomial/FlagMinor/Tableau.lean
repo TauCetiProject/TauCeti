@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Tableau
-public import TauCeti.RingTheory.MvPolynomial.FlagMinor.Basic
+public import TauCeti.RingTheory.MvPolynomial.FlagMinor
 public import TauCeti.RingTheory.MvPolynomial.MultiHomogeneous
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basic
 import TauCeti.Data.Finset.Sort
@@ -88,12 +88,13 @@ namespace BoundedSSYT
 `Fin (μ.colLen m) ↪o Fin n`: entries increase strictly down each column of `μ` and lie below `n`. -/
 def colOrderEmb (T : BoundedSSYT n μ) (m : ℕ) : Fin (μ.colLen m) ↪o Fin n :=
   OrderEmbedding.ofStrictMono
-    (fun i ↦ ⟨T.1 i m, T.entry_lt (YoungDiagram.mem_iff_lt_colLen.mpr i.2)⟩)
-    fun _ _ h ↦ Fin.lt_def.mpr (T.1.col_strict h (YoungDiagram.mem_iff_lt_colLen.mpr ‹Fin _›.2))
+    (fun i ↦ ⟨T.val i m, T.entry_lt (YoungDiagram.mem_iff_lt_colLen.mpr i.isLt)⟩)
+    fun _ _ h ↦
+      Fin.lt_def.mpr (T.val.col_strict h (YoungDiagram.mem_iff_lt_colLen.mpr ‹Fin _›.isLt))
 
 @[simp]
 theorem coe_colOrderEmb_apply (T : BoundedSSYT n μ) (m : ℕ) (i : Fin (μ.colLen m)) :
-    (T.colOrderEmb m i : ℕ) = T.1 i m :=
+    (T.colOrderEmb m i : ℕ) = T.val i m :=
   (rfl)
 
 /-- The set of row indices appearing in column `m` of a bounded semistandard Young tableau `T`. -/
@@ -111,9 +112,9 @@ theorem card_colFinset (T : BoundedSSYT n μ) (m : ℕ) : #(T.colFinset m) = μ.
 /-- A row index `r : Fin n` belongs to `T.colFinset m` if and only if it appears at some cell
 `(i, m)` of column `m` of `μ`. -/
 theorem mem_colFinset_iff (T : BoundedSSYT n μ) {m : ℕ} {r : Fin n} :
-    r ∈ T.colFinset m ↔ ∃ i < μ.colLen m, T.1 i m = r := by
+    r ∈ T.colFinset m ↔ ∃ i < μ.colLen m, T.val i m = r := by
   rw [colFinset_def, mem_map]
-  refine ⟨fun ⟨i, _, hi⟩ ↦ ⟨i, i.2, by simpa [Fin.ext_iff] using hi⟩, ?_⟩
+  refine ⟨fun ⟨i, _, hi⟩ ↦ ⟨i, i.isLt, by simpa [Fin.ext_iff] using hi⟩, ?_⟩
   rintro ⟨i, hi, hir⟩
   exact ⟨⟨i, hi⟩, mem_univ _, Fin.ext hir⟩
 
@@ -142,7 +143,7 @@ theorem orderEmbOfFin_colFinset (T : BoundedSSYT n μ) (m : ℕ) :
 @[simp]
 theorem coe_orderEmbOfFin_colFinset_apply (T : BoundedSSYT n μ) (m : ℕ) {k : ℕ}
     (hk : #(T.colFinset m) = k) (i : Fin k) :
-    ((T.colFinset m).orderEmbOfFin hk i : ℕ) = T.1 i m := by
+    ((T.colFinset m).orderEmbOfFin hk i : ℕ) = T.val i m := by
   obtain rfl : k = μ.colLen m := hk.symm.trans (T.card_colFinset m)
   rw [T.orderEmbOfFin_colFinset m, coe_colOrderEmb_apply]
 
@@ -152,7 +153,7 @@ of the nonempty columns of a bounded semistandard tableau `T` produces the patte
 @[simp]
 theorem sum_rowSubset_colFinset (T : BoundedSSYT n μ) :
     ∑ m ∈ range (μ.rowLen 0), GTPattern.rowSubset (T.colFinset m) =
-      SemistandardYoungTableau.toGTPattern T.1 n := by
+      SemistandardYoungTableau.toGTPattern T.val n := by
   ext i j
   rw [GTPattern.coe_sum, Finset.sum_apply, Finset.sum_apply,
     SemistandardYoungTableau.toGTPattern_apply, SemistandardYoungTableau.patternEntry_def]
@@ -164,7 +165,7 @@ theorem sum_rowSubset_colFinset (T : BoundedSSYT n μ) :
     -- In column `m`, `i < #{r ∈ T.colFinset m | r < j}` holds precisely when `(i, m) ∈ μ`
     -- and `T i m < j`.
     have hcol (m : ℕ) :
-        i < #{r ∈ T.colFinset m | r.val < j} ↔ m < μ.rowLen i ∧ T.1 i m < j := by
+        i < #{r ∈ T.colFinset m | r.val < j} ↔ m < μ.rowLen i ∧ T.val i m < j := by
       by_cases him : i < μ.colLen m
       · have hmem : m < μ.rowLen i :=
           YoungDiagram.mem_iff_lt_rowLen.mp (YoungDiagram.mem_iff_lt_colLen.mpr him)
@@ -197,34 +198,36 @@ pattern `P` with `n` rows has a polynomial top weight, naming a shape `μ` with 
 that top row with `BoundedSSYT n μ`. -/
 def nonnegEquivBoundedSSYT (n : ℕ) :
     AddSubmonoid.nonneg (GTPattern n) ≃
-      Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.1 :=
+      Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.val :=
   let f : AddSubmonoid.nonneg (GTPattern n) → {l : DominantWeight n // l.IsPolynomial} :=
-    fun P ↦ ⟨P.1.topWeight, zero_le_iff_isPolynomial.mp P.2⟩
+    fun P ↦ ⟨P.val.topWeight, zero_le_iff_isPolynomial.mp P.property⟩
   ((Equiv.sigmaFiberEquiv f).symm.trans
     (Equiv.sigmaCongrLeft (shapeEquivPolynomialWeight n)).symm).trans
     (Equiv.sigmaCongrRight fun μ ↦
       ({ toFun := fun q ↦
-           ⟨q.1.1, fun i ↦ by simpa [f, topWeight_coe] using congrArg (fun x ↦ x.1.1 i) q.2⟩
+           ⟨q.val.val, fun i ↦ by
+             simpa [f, topWeight_coe] using congrArg (fun x ↦ x.val.val i) q.property⟩
          invFun := fun r ↦
-           ⟨⟨r.1, zero_le_iff_topRow.mpr fun i ↦ (r.2 i).symm ▸ Int.natCast_nonneg _⟩,
-             Subtype.ext (Subtype.ext (funext fun i ↦ by simpa [f, topWeight_coe] using r.2 i))⟩
+           ⟨⟨r.val, zero_le_iff_topRow.mpr fun i ↦ (r.property i).symm ▸ Int.natCast_nonneg _⟩,
+             Subtype.ext (Subtype.ext (funext fun i ↦ by
+               simpa [f, topWeight_coe] using r.property i))⟩
          left_inv := fun _ ↦ rfl
          right_inv := fun _ ↦ rfl } :
         {P : AddSubmonoid.nonneg (GTPattern n) // f P = shapeEquivPolynomialWeight n μ} ≃
-          {P : GTPattern n // ∀ i : Fin n, P.topRow i = (μ.1.rowLen i : ℤ)}).trans
-      (gtPatternEquivSSYT n μ.1 μ.2))
+          {P : GTPattern n // ∀ i : Fin n, P.topRow i = (μ.val.rowLen i : ℤ)}).trans
+      (gtPatternEquivSSYT n μ.val μ.property))
 
 @[simp]
 theorem fst_nonnegEquivBoundedSSYT_apply (P : AddSubmonoid.nonneg (GTPattern n)) :
-    ((nonnegEquivBoundedSSYT n P).1 : YoungDiagram) = (P : GTPattern n).topWeight.shape :=
+    ((nonnegEquivBoundedSSYT n P).fst : YoungDiagram) = (P : GTPattern n).topWeight.shape :=
   (rfl)
 
 @[simp]
 theorem coe_nonnegEquivBoundedSSYT_symm_apply
-    (s : Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.1) :
+    (s : Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.val) :
     ((nonnegEquivBoundedSSYT n).symm s : GTPattern n) =
-      SemistandardYoungTableau.toGTPattern s.2.1 n :=
-  gtPatternEquivSSYT_symm_apply_coe n s.1.1 s.1.2 s.2
+      SemistandardYoungTableau.toGTPattern s.snd.val n :=
+  gtPatternEquivSSYT_symm_apply_coe n s.fst.val s.fst.property s.snd
 
 end GTPattern
 
@@ -277,7 +280,7 @@ theorem degree_rename_toLex_flagMinorProd (R : Type*) [CommRing R] [Nontrivial R
 theorem exponentEntries_degree_rename_toLex_flagMinorProd (R : Type*) [CommRing R] [Nontrivial R]
     (T : BoundedSSYT n μ) :
     GTPattern.exponentEntries (lex.degree (rename toLex (T.flagMinorProd R))) =
-      ⇑(SemistandardYoungTableau.toGTPattern T.1 n) := by
+      ⇑(SemistandardYoungTableau.toGTPattern T.val n) := by
   rw [T.degree_rename_toLex_flagMinorProd R, map_sum, ← T.sum_rowSubset_colFinset,
     GTPattern.coe_sum]
   exact sum_congr rfl fun m _ ↦ GTPattern.exponentEntries_flagDiagonalExponent _
@@ -301,33 +304,33 @@ theorem flagMinorProd_ne_zero (R : Type*) [CommRing R] [Nontrivial R] (T : Bound
 most `n` rows. -/
 theorem degree_rename_toLex_flagMinorProd_injective (R : Type*) [CommRing R] [Nontrivial R] :
     Function.Injective
-      (fun s : (Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.1) ↦
-        lex.degree (rename toLex (s.2.flagMinorProd R))) := by
+      (fun s : (Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.val) ↦
+        lex.degree (rename toLex (s.snd.flagMinorProd R))) := by
   intro s₁ s₂ h
   apply (GTPattern.nonnegEquivBoundedSSYT n).symm.injective
   apply Subtype.ext
   apply DFunLike.coe_injective
   rw [GTPattern.coe_nonnegEquivBoundedSSYT_symm_apply,
     GTPattern.coe_nonnegEquivBoundedSSYT_symm_apply,
-    ← s₁.2.exponentEntries_degree_rename_toLex_flagMinorProd R,
-    ← s₂.2.exponentEntries_degree_rename_toLex_flagMinorProd R]
+    ← s₁.snd.exponentEntries_degree_rename_toLex_flagMinorProd R,
+    ← s₂.snd.exponentEntries_degree_rename_toLex_flagMinorProd R]
   exact congrArg GTPattern.exponentEntries h
 
 /-- **The leading exponents of the tableau products exhaust the diagonal-exponent monoid.** -/
 theorem range_degree_rename_toLex_flagMinorProd (R : Type*) [CommRing R] [Nontrivial R] :
     Set.range
-      (fun s : (Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.1) ↦
-        lex.degree (rename toLex (s.2.flagMinorProd R))) =
+      (fun s : (Σ μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}, BoundedSSYT n μ.val) ↦
+        lex.degree (rename toLex (s.snd.flagMinorProd R))) =
       (AddSubmonoid.closure (Set.range (flagDiagonalExponent (n := n))) :
         Set (Fin n ×ₗ Fin n →₀ ℕ)) := by
   refine Set.Subset.antisymm (Set.range_subset_iff.mpr fun s ↦ ?_) ?_
-  · rw [SetLike.mem_coe, s.2.degree_rename_toLex_flagMinorProd R]
+  · rw [SetLike.mem_coe, s.snd.degree_rename_toLex_flagMinorProd R]
     exact AddSubmonoid.sum_mem _ fun m _ ↦ AddSubmonoid.subset_closure ⟨_, rfl⟩
   · intro e he
     let P := GTPattern.flagExponentEquiv ⟨e, he⟩
     let s := GTPattern.nonnegEquivBoundedSSYT n P
     refine ⟨s, GTPattern.exponentEntries_injective ?_⟩
-    rw [s.2.exponentEntries_degree_rename_toLex_flagMinorProd R,
+    rw [s.snd.exponentEntries_degree_rename_toLex_flagMinorProd R,
       ← GTPattern.coe_nonnegEquivBoundedSSYT_symm_apply s, Equiv.symm_apply_apply,
       GTPattern.coe_flagExponentEquiv_apply]
 
@@ -367,11 +370,11 @@ theorem isMultiHomogeneous_flagMinor (R : Type*) [CommRing R] (I : Finset (Fin n
 
 /-- Indicator weight of column `c` of the generic `n × n` matrix `(z_(r,c))`. -/
 def flagColWeight (c : Fin n) : Fin n × Fin n → ℕ :=
-  fun p ↦ if p.2 = c then 1 else 0
+  fun p ↦ if p.snd = c then 1 else 0
 
 @[simp]
 theorem flagColWeight_apply (c : Fin n) (p : Fin n × Fin n) :
-    flagColWeight c p = if p.2 = c then 1 else 0 :=
+    flagColWeight c p = if p.snd = c then 1 else 0 :=
   (rfl)
 
 /-- Each flag minor `flagMinor R I` is weighted homogeneous for the indicator weight of column `c`,
@@ -415,28 +418,28 @@ theorem sum_ite_mem_colFinset_eq_weight (T : BoundedSSYT n μ) (r : Fin n) :
   -- Map each column `m` containing `r` at `(i, m)` to that unique cell of `μ`.
   refine Finset.card_bij
     (fun m hm ↦
-      let hex := (T.mem_colFinset_iff.mp (mem_filter.mp hm).2)
+      let hex := (T.mem_colFinset_iff.mp (mem_filter.mp hm).right)
       (Classical.choose hex, m))
     (fun m hm ↦ ?_) (fun _ _ _ _ h ↦ congrArg Prod.snd h) fun c hc ↦ ?_
   · obtain ⟨_, hmem⟩ := mem_filter.mp hm
     have hspec := Classical.choose_spec (T.mem_colFinset_iff.mp hmem)
     exact mem_filter.mpr ⟨(μ.mem_cells _).mpr
-      (YoungDiagram.mem_iff_lt_colLen.mpr hspec.1), hspec.2⟩
+      (YoungDiagram.mem_iff_lt_colLen.mpr hspec.left), hspec.right⟩
   · obtain ⟨hcμ, hcr⟩ := mem_filter.mp hc
     have hcμ' := (μ.mem_cells _).mp hcμ
-    have hm0 : c.2 < μ.rowLen 0 :=
-      (YoungDiagram.mem_iff_lt_rowLen.mp hcμ').trans_le (μ.rowLen_anti 0 c.1 (Nat.zero_le _))
-    have hrm : r ∈ T.colFinset c.2 :=
-      T.mem_colFinset_iff.mpr ⟨c.1, YoungDiagram.mem_iff_lt_colLen.mp hcμ', hcr⟩
-    refine ⟨c.2, mem_filter.mpr ⟨mem_range.mpr hm0, hrm⟩, ?_⟩
+    have hm0 : c.snd < μ.rowLen 0 :=
+      (YoungDiagram.mem_iff_lt_rowLen.mp hcμ').trans_le (μ.rowLen_anti 0 c.fst (Nat.zero_le _))
+    have hrm : r ∈ T.colFinset c.snd :=
+      T.mem_colFinset_iff.mpr ⟨c.fst, YoungDiagram.mem_iff_lt_colLen.mp hcμ', hcr⟩
+    refine ⟨c.snd, mem_filter.mpr ⟨mem_range.mpr hm0, hrm⟩, ?_⟩
     have hspec := Classical.choose_spec (T.mem_colFinset_iff.mp hrm)
     refine Prod.ext ?_ rfl
     -- Column strictness makes the row index `i` with `T i c.2 = r` unique.
     by_contra hne
     rcases lt_or_gt_of_ne hne with hlt | hgt
-    · exact (T.1.col_strict hlt hcμ').ne (hspec.2.trans hcr.symm)
-    · exact (T.1.col_strict hgt (YoungDiagram.mem_iff_lt_colLen.mpr hspec.1)).ne
-        (hcr.trans hspec.2.symm)
+    · exact (T.val.col_strict hlt hcμ').ne (hspec.right.trans hcr.symm)
+    · exact (T.val.col_strict hgt (YoungDiagram.mem_iff_lt_colLen.mpr hspec.left)).ne
+        (hcr.trans hspec.right.symm)
 
 /-- **Content comparison for tableau products.** Every `T.flagMinorProd R` is multihomogeneous for
 the row multigrading, of multidegree the content `⇑T.weight` of the tableau `T`. -/
@@ -477,4 +480,3 @@ theorem isWeightedHomogeneous_flagColWeight_flagMinorProd (R : Type*) [CommRing 
 end BoundedSSYT
 
 end TauCeti
-
