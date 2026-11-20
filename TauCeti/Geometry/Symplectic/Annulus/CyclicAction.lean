@@ -223,20 +223,6 @@ theorem mvfderiv_cyclicAction_add_eq_zero_of_isStripGeneratingFunction
   rw [← hq'] at h
   exact h
 
-/-- In a periodic chain of maps commuting with the translation `(x, y) ↦ (x + a, y)`, every state
-is determined by the first one: if the first states of two chains differ by `(a, 0)`, so do all. -/
-private theorem eq_add_of_periodic {F : ZMod N → ℝ × ℝ → ℝ × ℝ} {D : ZMod N → Set (ℝ × ℝ)}
-    {a : ℝ} (hT : ∀ k, ∀ p ∈ D k, F k (p + (a, 0)) = F k p + (a, 0))
-    {p p' : ZMod N → ℝ × ℝ} (hp : ∀ k, p k ∈ D k ∧ F k (p k) = p (k + 1))
-    (hp' : ∀ k, F k (p' k) = p' (k + 1)) (h₀ : p' 0 = p 0 + (a, 0)) (k : ZMod N) :
-    p' k = p k + (a, 0) := by
-  have key (n : ℕ) : p' n = p n + (a, 0) := by
-    induction n with
-    | zero => simpa using h₀
-    | succ n ih =>
-      rw [Nat.cast_succ, ← hp', ← (hp n).2, ih, hT _ _ (hp n).1]
-  simpa using key k.val
-
 /-- **Critical configurations and fixed points of the annulus.** Let every `S_k` generate `F_k`
 over `D_k`, and let every `F_k` commute on `D_k` with the integer translations
 `(x, y) ↦ (x + m, y)`, which preserve `D_k`. A critical configuration `x` of the cyclic action
@@ -285,9 +271,12 @@ theorem exists_intCast_add_eq_iff_of_isStripGeneratingFunction
     rw [zsmul_eq_mul, mul_one] at hm
     have h0 : p'.1 0 = p.1 0 + ((m : ℝ), 0) := by
       rw [hp0, hp'0, hy, Prod.mk_add_mk, add_zero, hm, add_sub_cancel]
+    -- The translated chain of `q` and the chain of `q'` agree at `0`, hence everywhere.
+    have hchain := periodic_add (fun k ↦ hT k m) p.2
     refine ⟨m, fun k ↦ ?_⟩
-    rw [← hpos' k, ← hpos k,
-      eq_add_of_periodic (fun k p hp ↦ (hT k m p hp).2) p.2 (fun k ↦ (p'.2 k).2) h0 k,
-      Prod.fst_add]
+    have hk : p.1 k + ((m : ℝ), 0) = p'.1 k :=
+      congrFun (eq_of_apply_zero_eq (z := fun k ↦ p.1 k + ((m : ℝ), 0))
+        (fun k ↦ (hchain k).2) (fun k ↦ (p'.2 k).2) h0.symm) k
+    rw [← hpos' k, ← hpos k, ← hk, Prod.fst_add]
 
 end TauCeti
