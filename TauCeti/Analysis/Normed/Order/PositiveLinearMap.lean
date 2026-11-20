@@ -55,15 +55,12 @@ theorem apply_le_mul_norm (hu : ∀ f : E, f ≤ ‖f‖ • u) (f : E) : φ f �
 
 /-- A positive linear functional is controlled in absolute value by its value at a dominating
 element `u`, scaled by the norm. -/
-theorem abs_apply_le_mul_norm (hu : ∀ f : E, f ≤ ‖f‖ • u) (f : E) : |φ f| ≤ φ u * ‖f‖ := by
-  refine abs_le.2 ⟨neg_le.1 ?_, apply_le_mul_norm φ hu f⟩
-  simpa using apply_le_mul_norm φ hu (-f)
+theorem abs_apply_le_mul_norm (hu : ∀ f : E, f ≤ ‖f‖ • u) (f : E) : |φ f| ≤ φ u * ‖f‖ :=
+  abs_le'.2 ⟨apply_le_mul_norm φ hu f, by simpa using apply_le_mul_norm φ hu (-f)⟩
 
 /-- A positive linear functional is nonnegative at a dominating element `u`. -/
 theorem apply_nonneg_of_forall_le_norm_smul (hu : ∀ f : E, f ≤ ‖f‖ • u) : 0 ≤ φ u := by
-  have := apply_le_mul_norm φ hu (-u)
-  rw [map_neg, norm_neg] at this
-  nlinarith [norm_nonneg u]
+  nlinarith [abs_apply_le_mul_norm φ hu u, neg_abs_le (φ u), norm_nonneg u]
 
 /-- A positive linear functional is controlled by its value at a dominating element `u`, scaled by
 the norm of the difference of the arguments. -/
@@ -97,9 +94,7 @@ theorem opNorm_eq_apply_of_monotone (ψ : E →L[ℝ] ℝ) (hψ : Monotone ψ)
   have hnonneg : 0 ≤ ψ u := hφ u ▸ PositiveLinearMap.apply_nonneg_of_forall_le_norm_smul φ hu
   refine le_antisymm (ψ.opNorm_le_bound hnonneg fun f => ?_) ?_
   · simpa [hφ] using PositiveLinearMap.abs_apply_le_mul_norm φ hu f
-  · calc ψ u ≤ ‖ψ u‖ := Real.le_norm_self _
-      _ ≤ ‖ψ‖ * ‖u‖ := ψ.le_opNorm u
-      _ ≤ ‖ψ‖ := mul_le_of_le_one_right (norm_nonneg ψ) hu₁
+  · exact (Real.le_norm_self _).trans (ψ.unit_le_opNorm u hu₁)
 
 end ContinuousLinearMap
 
@@ -112,9 +107,7 @@ variable {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E] {u : E}
 bounded real functions or real `L∞` with `u = 1`, every nonnegative `f` has this property. -/
 theorem apply_nonneg_of_abs_apply_le_mul_norm (ψ : E →ₗ[ℝ] ℝ) (hψ : ∀ g, |ψ g| ≤ ψ u * ‖g‖)
     {f : E} (hf : ‖‖f‖ • u - f‖ ≤ ‖f‖) : 0 ≤ ψ f := by
-  have hu : 0 ≤ ψ u := by
-    by_contra! h
-    nlinarith [hψ u, abs_pos.2 h.ne, norm_nonneg u]
+  have hu : 0 ≤ ψ u := by nlinarith [hψ u, neg_abs_le (ψ u), norm_nonneg u]
   have := (le_abs_self _).trans (hψ (‖f‖ • u - f))
   rw [map_sub, map_smul, smul_eq_mul] at this
   nlinarith [mul_le_mul_of_nonneg_left hf hu]
