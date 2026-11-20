@@ -187,8 +187,8 @@ theorem ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt [Com
   nlinarith [mul_le_mul_of_nonneg_left hAx hM0]
 
 /-- Invertibility persists under uniform approximation on a set whose image is compact: if
-`A i → A` uniformly on `s`, the values of `A` on `s` form a compact set and are all invertible,
-then eventually every `A i` is invertible at every point of `s`. -/
+`A i → B` uniformly on `s`, and the values of `B` on `s` form a compact set and are all
+invertible, then eventually every `A i` is invertible at every point of `s`. -/
 theorem TendstoUniformlyOn.eventually_forall_isInvertible [CompleteSpace E] {α ι : Type*}
     {A : ι → α → E →L[𝕜] F} {B : α → E →L[𝕜] F} {l : Filter ι} {s : Set α}
     (h : TendstoUniformlyOn A B l s) (hs : IsCompact (B '' s))

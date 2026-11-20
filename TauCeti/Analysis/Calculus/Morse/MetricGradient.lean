@@ -84,9 +84,9 @@ not treated here.
   `TauCeti.IsNondegenerateCriticalPoint.exists_localUnstableGraph_neg_metricGradient`: the local
   stable and unstable manifolds of the negative gradient flow of `g` are `C^n` graphs over the
   stable and unstable subspaces of the linearization.
-* `IsNondegenerateCriticalPoint.exists_localStableGraph_neg_metricGradient_tendstoUniformlyOn` and
-  `IsNondegenerateCriticalPoint.exists_localUnstableGraph_neg_metricGradient_tendstoUniformlyOn`,
-  in the namespace `TauCeti`: these graphs depend continuously in `C¹` on the metric.
+* `exists_localStableGraph_neg_metricGradient_tendstoUniformlyOn_fderiv` and
+  `exists_localUnstableGraph_neg_metricGradient_tendstoUniformlyOn_fderiv`, in the namespace
+  `TauCeti.IsNondegenerateCriticalPoint`: these graphs depend continuously in `C¹` on the metric.
 
 ## References
 
@@ -399,12 +399,14 @@ section MetricDependence
 
 variable {ι : Type*} {l : Filter ι} {Gs : ι → E → E →L[ℝ] E} {U : Set E}
 
+namespace IsNondegenerateCriticalPoint
+
 /-- The hypotheses of `ContinuousLinearMap.exists_localStableGraph_tendstoUniformlyOn_fderiv` for
 the negative metric gradients of `f` along metric fields `Gs i` converging in `C¹` to `G` near a
 nondegenerate critical point `x`: on a neighbourhood `K` of `x`, the fields `-metricGradient G f`
 and, eventually, `-metricGradient (Gs i) f` are `C¹`, they all vanish at `x`, and their
 derivatives converge uniformly on `K`. -/
-private theorem IsNondegenerateCriticalPoint.exists_mem_nhds_tendstoUniformlyOn_fderiv_neg
+private theorem exists_mem_nhds_tendstoUniformlyOn_fderiv_neg
     (h : IsNondegenerateCriticalPoint f x) (hG : ContDiffAt ℝ 1 G x) (hGx : (G x).IsInvertible)
     (hU : U ∈ 𝓝 x) (hGsU : ∀ᶠ i in l, ContDiffOn ℝ 1 (Gs i) U) (hGG : TendstoUniformlyOn Gs G l U)
     (hGG' : TendstoUniformlyOn (fun i ↦ fderiv ℝ (Gs i)) (fderiv ℝ G) l U) :
@@ -455,8 +457,7 @@ confinement radius `r` and one parameter radius `ρ`, the local stable sets at `
 coordinates and truncated by `‖P z‖ ≤ ρ`, are the graphs over `range P ∩ closedBall 0 ρ` of maps
 `g` and `gs i` that are `C¹` on the closed ball of radius `ρ`. The maps `gs i` converge to `g`
 uniformly, and their derivatives converge uniformly on the closed ball of radius `ρ`. -/
-theorem
-    IsNondegenerateCriticalPoint.exists_localStableGraph_neg_metricGradient_tendstoUniformlyOn
+theorem exists_localStableGraph_neg_metricGradient_tendstoUniformlyOn_fderiv
     (h : IsNondegenerateCriticalPoint f x) (hG : ContDiffAt ℝ 1 G x) {c : ℝ} (hc : 0 < c)
     (hGx : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪G x v, v⟫_ℝ) (hU : U ∈ 𝓝 x)
     (hGsU : ∀ᶠ i in l, ContDiffOn ℝ 1 (Gs i) U) (hGG : TendstoUniformlyOn Gs G l U)
@@ -490,16 +491,14 @@ theorem
     by simpa only [Pi.neg_apply] using hg⟩
 
 /-- **Local unstable manifolds depend continuously in `C¹` on the metric.** Under the hypotheses
-of `IsNondegenerateCriticalPoint.exists_localStableGraph_neg_metricGradient_tendstoUniformlyOn`,
-for a projection `P` such that `1 - P` projects onto the unstable subspace of the linearization
-`-(G x)⁻¹ ∘ Hess f(x)`, and for one confinement radius `r` and one parameter radius `ρ`, the local
-unstable sets at `x` of `-metricGradient G f` and, eventually, of `-metricGradient (Gs i) f`, read
-in displacement coordinates and truncated by `‖z - P z‖ ≤ ρ`, are the graphs over
-`range (1 - P) ∩ closedBall 0 ρ` of maps `g` and `gs i` that are `C¹` on the closed ball of radius
-`ρ`. The maps `gs i` converge to `g` uniformly, and their derivatives converge uniformly on the
-closed ball of radius `ρ`. -/
-theorem
-    IsNondegenerateCriticalPoint.exists_localUnstableGraph_neg_metricGradient_tendstoUniformlyOn
+of `exists_localStableGraph_neg_metricGradient_tendstoUniformlyOn_fderiv`, for a projection `P`
+such that `1 - P` projects onto the unstable subspace of the linearization `-(G x)⁻¹ ∘ Hess f(x)`,
+and for one confinement radius `r` and one parameter radius `ρ`, the local unstable sets at `x` of
+`-metricGradient G f` and, eventually, of `-metricGradient (Gs i) f`, read in displacement
+coordinates and truncated by `‖z - P z‖ ≤ ρ`, are the graphs over `range (1 - P) ∩ closedBall 0 ρ`
+of maps `g` and `gs i` that are `C¹` on the closed ball of radius `ρ`. The maps `gs i` converge to
+`g` uniformly, and their derivatives converge uniformly on the closed ball of radius `ρ`. -/
+theorem exists_localUnstableGraph_neg_metricGradient_tendstoUniformlyOn_fderiv
     (h : IsNondegenerateCriticalPoint f x) (hG : ContDiffAt ℝ 1 G x) {c : ℝ} (hc : 0 < c)
     (hGx : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪G x v, v⟫_ℝ) (hU : U ∈ 𝓝 x)
     (hGsU : ∀ᶠ i in l, ContDiffOn ℝ 1 (Gs i) U) (hGG : TendstoUniformlyOn Gs G l U)
@@ -533,6 +532,8 @@ theorem
   exact ⟨P, hP, ContinuousLinearMap.range_id_sub_eq_unstableSubspace_of_exponential_bounds
     (by exact_mod_cast hα) hP hAP hs hu, r, hr, ρ, hρ, g, gs,
     by simpa only [Pi.neg_apply] using hg⟩
+
+end IsNondegenerateCriticalPoint
 
 end MetricDependence
 
