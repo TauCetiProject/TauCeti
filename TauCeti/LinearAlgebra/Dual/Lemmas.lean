@@ -30,6 +30,8 @@ and so separate points.
 
 * `Module.Dual.ker_id_sub_smulRight`: if `f x = 1`, the kernel of `id - f(·) • x` is the line
   through `x`.
+* `Module.Dual.linearIndependent_iff_apply_basis`: a family of forms is linearly independent
+  exactly when the family of its coefficient vectors with respect to a basis is.
 * `Module.Dual.linearIndependent_proj` and `Module.Dual.span_range_proj_eq_top`: the coordinate
   projections on `ι → R` are linearly independent in the dual space, and span it when `ι` is
   finite.
@@ -100,6 +102,25 @@ end Semiring
 
 section CommSemiring
 
+section Basis
+
+variable {R M ι κ : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+
+/-- A family of forms is linearly independent exactly when the family of their coefficient
+vectors, the values on a basis, is. -/
+theorem linearIndependent_iff_apply_basis (b : Basis ι R M) {L : κ → Dual R M} :
+    LinearIndependent R L ↔ LinearIndependent R (fun i j ↦ L i (b j)) := by
+  let e : Dual R M ≃ₗ[R] (ι → R) := (b.constr R).symm
+  have he : (fun i j ↦ L i (b j)) = e ∘ L := by
+    ext
+    simp [e]
+  rw [he]
+  exact (e.toLinearMap.linearIndependent_iff_of_injOn e.injective.injOn).symm
+
+end Basis
+
+section Proj
+
 variable (R ι : Type*) [CommSemiring R]
 
 /-- The coordinate projections on `ι → R` are linearly independent in the dual space. -/
@@ -117,6 +138,8 @@ theorem span_range_proj_eq_top [Finite ι] :
     ext i x
     simp
   exact h ▸ (Pi.basisFun R ι).dualBasis.span_eq
+
+end Proj
 
 end CommSemiring
 
