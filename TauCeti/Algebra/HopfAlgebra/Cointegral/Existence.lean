@@ -36,10 +36,6 @@ Over a field, a nonzero left cointegral is a Frobenius functional, whence:
   `TauCeti.finrank_leftCointegrals`, `TauCeti.finrank_rightCointegrals`: the left and right
   integrals of `H`, and its left and right cointegrals, each form a one-dimensional space.
 
-The predicates `TauCeti.IsRightCointegral` and `LinearMap.IsRightInvariantIntegral` state the same
-equation; `TauCeti.isRightCointegral_iff_isRightInvariantIntegral` and its left counterpart record
-this, so that results about either apply to both.
-
 ## References
 
 * R. G. Larson and M. E. Sweedler, *An associative orthogonal bilinear form for Hopf algebras*,
@@ -278,18 +274,6 @@ theorem exists_isLeftCointegral_ne_zero [Nontrivial R] [Module.Finite R H]
   rw [tensorComponent_coact, LinearMap.tensorComponent_tmul] at this
   simpa using this
 
-/-- Right cointegrals are the right invariant integrals of `LinearMap.IsRightInvariantIntegral`:
-both say `(φ ⊗ id) Δ(h) = φ(h) 1`. -/
-theorem isRightCointegral_iff_isRightInvariantIntegral (φ : Module.Dual R H) :
-    IsRightCointegral φ ↔ φ.IsRightInvariantIntegral := by
-  rw [isRightCointegral_def, LinearMap.isRightInvariantIntegral_iff]
-
-/-- Left cointegrals are the left invariant integrals of `LinearMap.IsLeftInvariantIntegral`:
-both say `(id ⊗ φ) Δ(h) = φ(h) 1`. -/
-theorem isLeftCointegral_iff_isLeftInvariantIntegral (φ : Module.Dual R H) :
-    IsLeftCointegral φ ↔ φ.IsLeftInvariantIntegral := by
-  rw [isLeftCointegral_def, LinearMap.isLeftInvariantIntegral_iff]
-
 section Field
 
 variable {k H : Type*} [Field k] [Ring H] [HopfAlgebra k H] [FiniteDimensional k H]
@@ -330,28 +314,14 @@ theorem finrank_rightIntegral : Module.finrank k (rightIntegral k H) = 1 := by
 /-- The right cointegrals of a finite-dimensional Hopf algebra over a field form a line: they are
 the right integrals of the dual Hopf algebra `ConvolutionDual k H`. -/
 theorem finrank_rightCointegrals : Module.finrank k (rightCointegrals k H) = 1 := by
-  have h : (rightCointegrals k H).map
-      ((WithConv.linearEquiv k (Module.Dual k H)).symm : Module.Dual k H →ₗ[k] _) =
-      rightIntegral k (ConvolutionDual k H) := by
-    ext ψ
-    rw [Submodule.mem_map_equiv, LinearEquiv.symm_symm, mem_rightCointegrals,
-      isRightCointegral_iff_convMul, mem_rightIntegral_iff]
-    simp [ConvolutionDual.counit_apply]
-  rw [← LinearEquiv.finrank_map_eq (WithConv.linearEquiv k (Module.Dual k H)).symm, h,
-    finrank_rightIntegral]
+  rw [← LinearEquiv.finrank_map_eq (WithConv.linearEquiv k (Module.Dual k H)).symm,
+    map_rightCointegrals_eq_rightIntegral, finrank_rightIntegral]
 
 /-- The left cointegrals of a finite-dimensional Hopf algebra over a field form a line: they are
 the left integrals of the dual Hopf algebra `ConvolutionDual k H`. -/
 theorem finrank_leftCointegrals : Module.finrank k (leftCointegrals k H) = 1 := by
-  have h : (leftCointegrals k H).map
-      ((WithConv.linearEquiv k (Module.Dual k H)).symm : Module.Dual k H →ₗ[k] _) =
-      leftIntegral k (ConvolutionDual k H) := by
-    ext ψ
-    rw [Submodule.mem_map_equiv, LinearEquiv.symm_symm, mem_leftCointegrals,
-      isLeftCointegral_iff_convMul, mem_leftIntegral_iff]
-    simp [ConvolutionDual.counit_apply]
-  rw [← LinearEquiv.finrank_map_eq (WithConv.linearEquiv k (Module.Dual k H)).symm, h,
-    finrank_leftIntegral]
+  rw [← LinearEquiv.finrank_map_eq (WithConv.linearEquiv k (Module.Dual k H)).symm,
+    map_leftCointegrals_eq_leftIntegral, finrank_leftIntegral]
 
 end Field
 

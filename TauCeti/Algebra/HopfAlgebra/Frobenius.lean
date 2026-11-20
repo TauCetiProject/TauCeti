@@ -177,11 +177,8 @@ theorem IsLeftInvariantIntegral.antipode_surjective [FiniteDimensional k H]
   let r := ℛ k (t : H)
   intro x
   refine ⟨∑ i ∈ r.index, φ (r.right i * x) • r.left i, ?_⟩
-  have htx (y : H) : φ ((t : H) * y) = counit (R := k) y := by
-    simp [(mem_rightIntegral_iff.mp t.property) y, ht]
-  have h := hφ.strong_invariance (ℛ k x) r (b := (t : H))
-  simp only [htx, sum_smul_counit] at h
-  simpa only [map_sum, map_smul] using h.symm
+  simpa only [map_sum, map_smul] using
+    hφ.sum_apply_mul_smul_antipode t.property ht r x
 
 /-- The antipode is bijective whenever a finite-dimensional Hopf algebra admits
 a nonzero left invariant functional. -/
