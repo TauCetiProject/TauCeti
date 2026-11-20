@@ -11,7 +11,9 @@ public import TauCeti.Algebra.GroupAction.PermutationRepresentation
 public import TauCeti.GroupTheory.Coset.Basic
 public import TauCeti.GroupTheory.Index.Map
 public import TauCeti.GroupTheory.QuotientGroup.Basic
+import TauCeti.Algebra.Group.Subgroup.Conjugates
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import TauCeti.GroupTheory.QuotientGroup.Congr
 
 /-!
 # Permutation representations on coset spaces
@@ -27,17 +29,22 @@ representations, without assuming `H` normal or of finite index:
   iff the subgroups are conjugate (`Equiv.exists_conj_permutationRepresentation_quotient_iff`), and
   pointed-conjugate iff `H₁ = H₂`
   (`Equiv.exists_conj_permutationRepresentation_quotient_apply_eq_iff`).
-* **Transport along isomorphisms and right cosets.** Pointwise action preserves index
+* **Transport along homomorphisms and right cosets.** Pointwise action preserves index
   (`Subgroup.index_smul` in `TauCeti.GroupTheory.Index.Map`), giving the `ConjAct G`-subaction
-  `Subgroup.ofIndex` transported across `φ : G ≃* G'` by `MulEquiv.ofIndexEquiv`,
-  `MulEquiv.ofIndexEquiv_conjAct_smul`, and `MulEquiv.orbitRelQuotientOfIndexEquiv`; see also
-  `Equiv.permutationRepresentation_congrOfMapEq`, `Subgroup.rightCosetPerm`, and
-  `Equiv.permCongr_rightCosetPerm`.
-* **Normal core and centralizer.** The kernel of the coset representation is `H.normalCore`
-  (`Equiv.ker_permutationRepresentation_quotient`,
-  `Equiv.rangePermutationRepresentationQuotientMulEquiv`), and its centralizer in `Equiv.Perm β` is
+  `Subgroup.ofIndex` (with orbit identification `Subgroup.orbitOfIndexEquiv`) transported across
+  `φ : G ≃* G'` by `MulEquiv.ofIndexEquiv`, `MulEquiv.ofIndexEquiv_conjAct_smul`, and
+  `MulEquiv.orbitRelQuotientOfIndexEquiv`; see also
+  `Equiv.permutationRepresentation_congrComapOfSurjectiveMk`,
+  `Equiv.permutationRepresentation_congrOfMapEq`, `Subgroup.rightCosetPerm`,
+  `Equiv.permCongr_rightCosetPerm`, and `Subgroup.quotientEquivOp`.
+* **Normal core, centralizer, and conjugate count.** The kernel of the coset representation is
+  `H.normalCore` (`Equiv.ker_permutationRepresentation_quotient`,
+  `Equiv.rangePermutationRepresentationQuotientMulEquiv`), its centralizer in `Equiv.Perm β` is
   canonically `(H.normalizerQuotient)ᵐᵒᵖ` (`Subgroup.centralizerToPermHomQuotientMulEquiv`,
-  `Equiv.centralizerPermutationRepresentationQuotientMulEquiv`), of order `[N_G(H) : H]`.
+  `Equiv.centralizerPermutationRepresentationQuotientMulEquiv`) of order `[N_G(H) : H]`, and the
+  number of conjugates of `H` times that centralizer order equals `H.index`
+  (`Equiv.natCard_orbit_conjAct_mul_natCard_centralizer_permutationRepresentation`,
+  `Equiv.natCard_orbit_conjAct_eq_index_div_natCard_centralizer`).
 
 ## References
 
@@ -64,6 +71,21 @@ def ofIndex (G : Type*) [Group G] (n : ℕ) : SubMulAction (ConjAct G) (Subgroup
 
 /-- A subgroup belongs to `Subgroup.ofIndex G n` if and only if its index is `n`. -/
 @[simp] theorem mem_ofIndex {n : ℕ} {H : Subgroup G} : H ∈ ofIndex G n ↔ H.index = n := Iff.rfl
+
+/-- Since conjugation preserves subgroup index, the `ConjAct G`-orbit of `H` inside
+`Subgroup.ofIndex G n` bijects with its conjugacy orbit in `Subgroup G`. -/
+def orbitOfIndexEquiv {n : ℕ} (H : ofIndex G n) :
+    MulAction.orbit (ConjAct G) H ≃ MulAction.orbit (ConjAct G) H.1 where
+  toFun K := ⟨K.1.1, by
+    obtain ⟨c, hc⟩ := MulAction.mem_orbit_iff.mp K.2
+    exact MulAction.mem_orbit_iff.mpr ⟨c, congrArg Subtype.val hc⟩⟩
+  invFun K := ⟨⟨K.1, by
+    obtain ⟨c, hc⟩ := MulAction.mem_orbit_iff.mp K.2
+    exact mem_ofIndex.mpr (hc ▸ (index_smul c H.1).trans (mem_ofIndex.mp H.2))⟩, by
+    obtain ⟨c, hc⟩ := MulAction.mem_orbit_iff.mp K.2
+    exact MulAction.mem_orbit_iff.mpr ⟨c, Subtype.ext hc⟩⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
 
 /-! ### Equivariant coset bijections for conjugate subgroups -/
 
@@ -135,6 +157,23 @@ theorem quotientRightRelEquivQuotientLeftRel_rightCosetPerm (H : Subgroup G) (g 
     rw [rightCosetPerm_mk, QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk,
       QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk, mul_inv_rev,
       MulAction.Quotient.smul_mk, smul_eq_mul]
+
+/-- Inversion viewed as an isomorphism `MulEquiv.inv' G : G ≃* Gᵐᵒᵖ` maps `H` onto `H.op`. -/
+theorem map_inv'_eq_op (H : Subgroup G) :
+    H.map (MulEquiv.inv' G : G →* Gᵐᵒᵖ) = H.op := by
+  ext x
+  obtain ⟨x, rfl⟩ := MulOpposite.op_surjective x
+  simp [-MulOpposite.op_inv, inv_eq_iff_eq_inv]
+
+/-- The bijection `g H ↦ H g⁻¹` between left cosets `G ⧸ H` and right cosets `Gᵐᵒᵖ ⧸ H.op`,
+obtained by transporting `H` along `MulEquiv.inv' G : G ≃* Gᵐᵒᵖ`. -/
+def quotientEquivOp (H : Subgroup G) : G ⧸ H ≃ Gᵐᵒᵖ ⧸ H.op :=
+  TauCeti.QuotientGroup.congrOfMapEq (MulEquiv.inv' G) H.map_inv'_eq_op
+
+/-- `Subgroup.quotientEquivOp` maps the left coset `g H` to `op g⁻¹ · H.op`. -/
+@[simp] theorem quotientEquivOp_mk (H : Subgroup G) (g : G) :
+    H.quotientEquivOp (g : G ⧸ H) = (MulOpposite.op g⁻¹ : Gᵐᵒᵖ ⧸ H.op) :=
+  TauCeti.QuotientGroup.congrOfMapEq_mk (MulEquiv.inv' G) H.map_inv'_eq_op g
 
 /-! ### Centralizer of left translation on `G ⧸ H` -/
 
@@ -356,14 +395,31 @@ theorem exists_conj_permutationRepresentation_quotient_apply_eq_iff {H₁ H₂ :
     ext k i
     exact (Equiv.congr_fun (e₁.permutationRepresentation_eq_conj e₂ k) i).symm
 
+/-- Pulling back a coset numbering along `ψ : G →* G'` meeting every left coset of `B` precomposes
+the coset permutation representation with `ψ`. -/
+@[simp] theorem permutationRepresentation_congrComapOfSurjectiveMk (ψ : G →* G') (B : Subgroup G')
+    (hψ : Function.Surjective fun g : G ↦ (ψ g : G' ⧸ B)) (e : G' ⧸ B ≃ β) :
+    ((TauCeti.QuotientGroup.congrComapOfSurjectiveMk ψ B hψ).trans e).permutationRepresentation =
+      (e.permutationRepresentation (G := G')).comp ψ :=
+  permutationRepresentation_eq_of_map_smul _ fun _ _ ↦ by simp [MonoidHom.comp_apply]
+
 /-- Transporting a coset numbering along a group isomorphism `φ : G ≃* G'` carrying `A` onto `B`
 precomposes the coset permutation representation with `φ`. -/
-theorem permutationRepresentation_congrOfMapEq (φ : G ≃* G') {A : Subgroup G} {B : Subgroup G'}
-    (h : A.map (φ : G →* G') = B) (e : G' ⧸ B ≃ β) :
+@[simp] theorem permutationRepresentation_congrOfMapEq (φ : G ≃* G') {A : Subgroup G}
+    {B : Subgroup G'} (h : A.map (φ : G →* G') = B) (e : G' ⧸ B ≃ β) :
     ((TauCeti.QuotientGroup.congrOfMapEq φ h).trans e).permutationRepresentation (G := G) =
       (e.permutationRepresentation (G := G')).comp (φ : G →* G') :=
-  ((TauCeti.QuotientGroup.congrOfMapEq φ h).trans e).permutationRepresentation_eq_of_map_smul
-    fun _ q ↦ QuotientGroup.induction_on q fun _ ↦ by simp [MulAction.Quotient.smul_mk, smul_eq_mul]
+  permutationRepresentation_eq_of_map_smul _ fun _ _ ↦ by simp [MonoidHom.comp_apply]
+
+/-- Under the left-to-right coset bijection `H.quotientEquivOp : G ⧸ H ≃ Gᵐᵒᵖ ⧸ H.op`
+(`g H ↦ H g⁻¹`), the left action of `g` on `G ⧸ H` read through `H.quotientEquivOp.trans e` is the
+inverse of the action of `op g` on `Gᵐᵒᵖ ⧸ H.op` read through `e`. -/
+@[simp] theorem permutationRepresentation_quotientEquivOp_trans_apply (H : Subgroup G)
+    (e : Gᵐᵒᵖ ⧸ H.op ≃ β) (g : G) :
+    (H.quotientEquivOp.trans e).permutationRepresentation g =
+      (e.permutationRepresentation (MulOpposite.op g))⁻¹ := by
+  rw [Subgroup.quotientEquivOp, permutationRepresentation_congrOfMapEq]
+  simp [MulOpposite.op_inv]
 
 /-- If `r : Quotient (QuotientGroup.rightRel H) ≃ β` numbers the right cosets of `H` and
 `e := (QuotientGroup.quotientRightRelEquivQuotientLeftRel H).symm.trans r` is the induced numbering
@@ -417,5 +473,26 @@ theorem natCard_centralizer_permutationRepresentation_quotient {H : Subgroup G} 
   rw [Nat.card_congr e.centralizerPermutationRepresentationQuotientMulEquiv.toEquiv,
     Nat.card_congr MulOpposite.opEquiv.symm]
   rfl
+
+/-- **Orbit-automorphism product formula for a subgroup.** Multiplying the number of conjugates of
+`H` in `G` by the order of the centralizer of its coset permutation representation gives `H.index`.
+No finiteness assumption is needed (`Nat.card` is `0` when infinite). -/
+theorem natCard_orbit_conjAct_mul_natCard_centralizer_permutationRepresentation {H : Subgroup G}
+    (e : G ⧸ H ≃ β) :
+    Nat.card (MulAction.orbit (ConjAct G) H) *
+        Nat.card (Subgroup.centralizer (Set.range (e.permutationRepresentation (G := G)))) =
+      H.index := by
+  rw [e.natCard_centralizer_permutationRepresentation_quotient, Nat.card_coe_set_eq]
+  exact H.ncard_orbit_mul_relIndex_normalizer
+
+/-- When the coset space is finite, the number of conjugates of `H` in `G` is `H.index` divided by
+the order of the centralizer of its coset permutation representation. -/
+theorem natCard_orbit_conjAct_eq_index_div_natCard_centralizer [Finite β] {H : Subgroup G}
+    (e : G ⧸ H ≃ β) :
+    Nat.card (MulAction.orbit (ConjAct G) H) =
+      H.index /
+        Nat.card (Subgroup.centralizer (Set.range (e.permutationRepresentation (G := G)))) := by
+  rw [← e.natCard_orbit_conjAct_mul_natCard_centralizer_permutationRepresentation,
+    Nat.mul_div_cancel _ Nat.card_pos]
 
 end Equiv

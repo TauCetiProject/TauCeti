@@ -720,7 +720,7 @@ theorem _root_.Matrix.SpecialLinearGroup.map_transvection (f : A →+* B)
     Matrix.SpecialLinearGroup.map f (Matrix.SpecialLinearGroup.transvection hij c) =
       Matrix.SpecialLinearGroup.transvection hij (f c) := by
   ext a b
-  simp [Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
+  simp [Matrix.SpecialLinearGroup.map_apply_coe, Matrix.map_apply,
     Matrix.SpecialLinearGroup.transvection_coe, Matrix.one_apply, Matrix.single_apply,
     apply_ite f]
 
