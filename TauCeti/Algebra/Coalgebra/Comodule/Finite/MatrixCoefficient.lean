@@ -26,18 +26,17 @@ categorical structure of `FGComoduleCat K C`:
 * over a bialgebra, the coefficients of `M ⊗ N` are the products of those of `M` and `N`, and the
   coefficients of the tensor unit are the scalars.
 
-The main result is the converse of the first item: if `C(M) ≤ ⨆ k, C(F k)` for a finite family
-`F`, then `M` is a quotient of a subobject of a finite direct sum of members of `F`. The proof
-embeds `M` into finitely many copies of the finite regular subcomodule `D` spanned by the
-coefficients of `F`, using the coefficient maps of a dual basis of `M`, and writes `D` as a
-quotient of a finite direct sum of members of `F`, using the coefficient maps of dual bases of
-the `F k`. In particular the finite-sum and subquotient hull of one comodule `W` consists exactly
-of the comodules with coefficients in `C(W)`.
+The main result is the converse of the first item: if `C(M) ≤ ⨆ k, C(F k)` for a family `F`,
+then `M` is a quotient of a subobject of a finite direct sum of members of `F`. As `C(M)` is
+finite-dimensional, finitely many members of `F` carry it. The proof embeds `M` into finitely
+many copies of the finite regular subcomodule `D` spanned by their coefficients, using the
+coefficient maps of a dual basis of `M`, and writes `D` as a quotient of a finite direct sum of
+these members, using the coefficient maps of their dual bases. In particular the finite-sum and
+subquotient hull of one comodule `W` consists exactly of the comodules with coefficients in
+`C(W)`.
 
 ## Main declarations
 
-* `TauCeti.FGComoduleCat.surjective_of_epi`, `TauCeti.FGComoduleCat.injective_of_mono`:
-  epimorphisms and monomorphisms of finite comodules are surjective and injective.
 * `TauCeti.FGComoduleCat.matrixCoefficientSubmodule_le_of_epi`,
   `TauCeti.FGComoduleCat.matrixCoefficientSubmodule_le_of_mono`,
   `TauCeti.FGComoduleCat.matrixCoefficientSubmodule_eq_of_iso`: functoriality of `C(-)`.
@@ -74,19 +73,6 @@ section Ring
 
 variable {R : Type u} [CommRing R]
 variable {C : Type v} [AddCommMonoid C] [Module R C] [Coalgebra R C]
-
-/-- An epimorphism of finite comodules is surjective. -/
-theorem surjective_of_epi {M N : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N) [Epi f] :
-    Function.Surjective f :=
-  (ModuleCat.epi_iff_surjective _).1
-    (inferInstance : Epi ((forget₂ (FGComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).map f))
-
-/-- A monomorphism of finite comodules over a flat coalgebra over a Noetherian ring is
-injective. -/
-theorem injective_of_mono [IsNoetherianRing R] [Module.Flat R C]
-    {M N : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N) [Mono f] : Function.Injective f :=
-  (ModuleCat.mono_iff_injective _).1
-    (inferInstance : Mono ((forget₂ (FGComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).map f))
 
 /-- A quotient of a finite comodule has fewer matrix coefficients. -/
 theorem matrixCoefficientSubmodule_le_of_epi {M N : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N)
@@ -235,24 +221,27 @@ theorem exists_epi_biproduct_of_toSubmodule_eq_iSup {κ : Type} [Finite κ]
   exact ⟨z, Subtype.ext hz⟩
 
 /-- **Comodules with coefficients in `⨆ k, C(F k)` are subquotients of sums of the `F k`.** If
-the matrix coefficients of `M` lie among those of a finite family `F`, then `M` is a quotient of a
+the matrix coefficients of `M` lie among those of a family `F`, then `M` is a quotient of a
 subobject of a finite direct sum of members of `F`.
 
-Let `D ⊆ C` be the finite regular subcomodule spanned by the coefficients of the `F k`. Then `M`
-embeds into finitely many copies of `D`
-(`exists_mono_biproduct_of_matrixCoefficientSubmodule_le`), and `D` is a quotient of a finite
-direct sum of members of `F` (`exists_epi_biproduct_of_toSubmodule_eq_iSup`). The pullback of
-these two maps is the required subobject. -/
-theorem exists_mono_epi_of_matrixCoefficientSubmodule_le_iSup {κ : Type} [Finite κ]
+As `C(M)` is finite-dimensional, finitely many members of `F` carry it. Let `D ⊆ C` be the finite
+regular subcomodule spanned by the coefficients of these `F k`. Then `M` embeds into finitely
+many copies of `D` (`exists_mono_biproduct_of_matrixCoefficientSubmodule_le`), and `D` is a
+quotient of a finite direct sum of members of `F`
+(`exists_epi_biproduct_of_toSubmodule_eq_iSup`). The pullback of these two maps is the required
+subobject. -/
+theorem exists_mono_epi_of_matrixCoefficientSubmodule_le_iSup {κ : Type}
     {M : FGComoduleCat.{u, v, v} K C} {F : κ → FGComoduleCat.{u, v, v} K C}
     (h : Comodule.matrixCoefficientSubmodule (R := K) (C := C) (M := M) ≤
       ⨆ k, Comodule.matrixCoefficientSubmodule (R := K) (C := C) (M := F k)) :
     ∃ (ι : Type) (_ : Finite ι) (g : ι → κ) (Z : FGComoduleCat.{u, v, v} K C)
       (i : Z ⟶ ⨁ fun j ↦ F (g j)) (p : Z ⟶ M), Mono i ∧ Epi p := by
-  let D : Subcomodule K C C := ⨆ k,
+  obtain ⟨s, hs⟩ := ((Submodule.fg_iff_compact _).1 (Module.Finite.iff_fg.1 inferInstance)
+    ).exists_finset_of_le_iSup _ h
+  let D : Subcomodule K C C := ⨆ k : s,
     (Comodule.matrixCoefficientSubcoalgebra (R := K) (C := C) (M := F k)).toRegularSubcomodule
   have hD : D.toSubmodule =
-      ⨆ k, Comodule.matrixCoefficientSubmodule (R := K) (C := C) (M := F k) := by
+      ⨆ k : s, Comodule.matrixCoefficientSubmodule (R := K) (C := C) (M := F k) := by
     simp only [D, Subcomodule.iSup_toSubmodule, Subcoalgebra.toRegularSubcomodule_toSubmodule,
       Comodule.matrixCoefficientSubcoalgebra_toSubmodule]
   have : Module.Finite K D := by
@@ -261,21 +250,19 @@ theorem exists_mono_epi_of_matrixCoefficientSubmodule_le_iSup {κ : Type} [Finit
     rw [hD]
     infer_instance
   obtain ⟨ι, _, g, e, _⟩ := exists_epi_biproduct_of_toSubmodule_eq_iSup D hD
-  obtain ⟨κ', _, Φ, _⟩ := exists_mono_biproduct_of_matrixCoefficientSubmodule_le M D (h.trans hD.ge)
+  obtain ⟨κ', _, Φ, _⟩ := exists_mono_biproduct_of_matrixCoefficientSubmodule_le M D <|
+    hs.trans <| hD.ge.trans' <| iSup₂_le fun k hk ↦ le_iSup_of_le ⟨k, hk⟩ le_rfl
   -- Combine copies of the quotient map `e` into one epimorphism onto the copies of `D`.
-  let E : (⨁ fun p : κ' × ι ↦ F (g p.2)) ⟶ ⨁ fun _ : κ' ↦ of (R := K) (C := C) D :=
-    biproduct.desc fun p ↦ biproduct.ι (fun j ↦ F (g j)) p.2 ≫ e ≫
-      biproduct.ι (fun _ : κ' ↦ of (R := K) (C := C) D) p.1
-  have : Epi E := ⟨fun x y hxy ↦ biproduct.hom_ext' _ _ fun i ↦
-    (cancel_epi e).1 (biproduct.hom_ext' _ _ fun j ↦ by
-      simpa [E] using congrArg (biproduct.ι (fun p : κ' × ι ↦ F (g p.2)) (i, j) ≫ ·) hxy)⟩
-  exact ⟨κ' × ι, inferInstance, fun p ↦ g p.2, pullback E Φ, pullback.fst E Φ, pullback.snd E Φ,
-    inferInstance, inferInstance⟩
+  let E : (⨁ fun p : Σ _ : κ', ι ↦ F (g p.2)) ⟶ ⨁ fun _ : κ' ↦ of (R := K) (C := C) D :=
+    (biproductBiproductIso (fun _ : κ' ↦ ι) (fun _ j ↦ F (g j))).inv ≫
+      biproduct.map fun _ : κ' ↦ e
+  exact ⟨Σ _ : κ', ι, inferInstance, fun p ↦ (g p.2).1, pullback E Φ, pullback.fst E Φ,
+    pullback.snd E Φ, inferInstance, inferInstance⟩
 
 /-- **Subquotients of finite sums are cut out by coefficients.** A finite comodule `M` is a
-quotient of a subobject of a finite direct sum of members of a finite family `F` exactly when
-its matrix coefficients lie among those of the members of `F`. -/
-theorem matrixCoefficientSubmodule_le_iSup_iff_exists_mono_epi {κ : Type} [Finite κ]
+quotient of a subobject of a finite direct sum of members of a family `F` exactly when its
+matrix coefficients lie among those of the members of `F`. -/
+theorem matrixCoefficientSubmodule_le_iSup_iff_exists_mono_epi {κ : Type}
     {M : FGComoduleCat.{u, v, v} K C} {F : κ → FGComoduleCat.{u, v, v} K C} :
     Comodule.matrixCoefficientSubmodule (R := K) (C := C) (M := M) ≤
         ⨆ k, Comodule.matrixCoefficientSubmodule (R := K) (C := C) (M := F k) ↔
@@ -318,11 +305,11 @@ variable {C : Type v} [Semiring C] [Bialgebra R C]
 
 attribute [local instance] Comodule.tensor Comodule.trivial
 
-/-- The matrix coefficients of a tensor product of finite projective comodules are the
-products of the coefficients of the two factors. -/
+/-- The matrix coefficients of a tensor product of finite comodules, the first of them
+projective, are the products of the coefficients of the two factors. -/
 @[simp]
 theorem matrixCoefficientSubmodule_tensorObj (M N : FGComoduleCat.{u, v, u} R C)
-    [Module.Projective R M] [Module.Projective R N] :
+    [Module.Projective R M] :
     Comodule.matrixCoefficientSubmodule (R := R) (C := C) (M := ↥(M ⊗ N)) =
       Comodule.matrixCoefficientSubmodule (R := R) (C := C) (M := M) *
         Comodule.matrixCoefficientSubmodule (R := R) (C := C) (M := N) :=

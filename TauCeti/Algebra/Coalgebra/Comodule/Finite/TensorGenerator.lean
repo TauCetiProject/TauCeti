@@ -22,7 +22,7 @@ its category of representations.
 
 Both directions go through matrix coefficients, using the dictionary of
 `TauCeti.Algebra.Coalgebra.Comodule.Finite.MatrixCoefficient`: a finite comodule is a
-subquotient of a finite sum of members of a finite family exactly when its coefficients lie among
+subquotient of a finite sum of members of a family exactly when its coefficients lie among
 theirs, and the coefficients of a tensor product are the products of the coefficients.
 
 * If `H` is finitely generated, a finite regular subcomodule `X` containing a set of generators
@@ -96,14 +96,10 @@ theorem exists_isTensorGenerator [Algebra.FiniteType K H] :
       rw [htop]
       trivial
     exact hadjoin hc
-  -- Finitely many tensor powers carry all coefficients of `Y`.
-  obtain ⟨s, hs⟩ := ((Submodule.fg_iff_compact _).1 (Module.Finite.iff_fg.1 inferInstance)
-    ).exists_finset_of_le_iSup _ hT
   obtain ⟨ι, _, g, Z, i, p, hip⟩ := exists_mono_epi_of_matrixCoefficientSubmodule_le_iSup
-    (κ := s) (M := Y) (F := fun r ↦ tensorPow X r ⊗ tensorPow Xᘁ 0) <|
-    hs.trans <| iSup₂_le fun r hr ↦ le_iSup_of_le ⟨r, hr⟩ <|
-      (matrixCoefficientSubmodule_eq_of_iso (ρ_ (tensorPow X r))).ge
-  exact ⟨ι, inferInstance, fun j ↦ (g j).1, fun _ ↦ 0, Z, i, p, hip⟩
+    (M := Y) (F := fun r ↦ tensorPow X r ⊗ tensorPow Xᘁ 0) <|
+    hT.trans <| iSup_mono fun r ↦ (matrixCoefficientSubmodule_eq_of_iso (ρ_ (tensorPow X r))).ge
+  exact ⟨ι, inferInstance, g, fun _ ↦ 0, Z, i, p, hip⟩
 
 /-- **A tensor generator makes the Hopf algebra finitely generated.** If a finite-dimensional
 comodule `X` tensor-generates `FGComoduleCat K H` with its dual, then `H` is generated as a
