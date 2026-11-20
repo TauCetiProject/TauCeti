@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.CohomologicalDimension
 
-import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
-
 /-!
 # Sections through pro-`p` kernels
 
@@ -76,12 +74,8 @@ theorem exists_continuous_section_mem_of_isProP_ker [Fact p.Prime]
     obtain ⟨e, he, rfl⟩ := Subgroup.mem_map.mp (hf ▸ Subgroup.mem_top g)
     exact ⟨⟨e, he⟩, rfl⟩
   have hker' : IsProP p f'.toMonoidHom.ker := by
-    have hk : f'.toMonoidHom.ker = f.toMonoidHom.ker.subgroupOf E' := by
-      -- Both memberships are `f x = 1` by the definitions of `f'` and of `subgroupOf`; Mathlib
-      -- has no `simp` lemma for applying a structure-literal `ContinuousMonoidHom`.
-      ext x
-      exact Iff.rfl
-    rw [hk, ← Subgroup.inf_subgroupOf_right, Subgroup.isProP_subgroupOf_iff inf_le_right]
+    rw [show f'.toMonoidHom.ker = _ from MonoidHom.ker_domRestrict E' f.toMonoidHom,
+      ← Subgroup.inf_subgroupOf_right, Subgroup.isProP_subgroupOf_iff inf_le_right]
     exact hker
   obtain ⟨s, hs⟩ := exists_continuous_section_of_isProP_ker hG f' hf' hker'
   exact ⟨ι.comp s, hs, fun g ↦ (s g).2⟩
