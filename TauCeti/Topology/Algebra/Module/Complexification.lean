@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.Topology.Algebra.Module.Spaces.CompactConvergenceCLM
+public import TauCeti.Topology.Algebra.Module.Spaces.CompactConvergenceCLM
 import Mathlib.Topology.Algebra.Module.Star
 public import TauCeti.Analysis.Normed.Module.Complexification
 public import TauCeti.LinearAlgebra.Complex.Conjugation
@@ -27,15 +27,16 @@ topology on `ℂ ⊗[ℝ] W` satisfies `IsComplexificationTopology W`
 (`TauCeti.IsComplexificationTopology.of_finiteDimensional`). We also provide
 `TauCeti.complexificationEquivProd`, `TauCeti.tensorContinuousLinearEquivComplexification`,
 `TauCeti.tmulConjCLE`, `TauCeti.tmulConjCLM`, `ContinuousLinearMap.baseChangeComplex`,
-`ContinuousLinearEquiv.baseChangeComplex`, the continuous complex-linear extension
+`ContinuousLinearEquiv.baseChangeComplex`, and the continuous complex-linear extension
 `ContinuousLinearMap.liftBaseChangeComplex`. For the native compact-convergence duals,
 `TauCeti.complexificationCompactDualEquiv` identifies the complexification of the real dual with
-the complex dual of the complexification, continuously in both directions. It intertwines native
-conjugations; `TauCeti.compactDualRealPointsCLE` identifies the real dual with the actual fixed
-submodule. These comparisons are natural under real continuous-linear precomposition and need
+the complex dual of the complexification, continuously in both directions. It intertwines
+`TauCeti.tmulConj` on the coefficient tensor with
+`TauCeti.compactDualConjCLE`; `TauCeti.compactDualRealPointsCLE` identifies the real dual with
+the real points (`TauCeti.realPoints`) of that conjugation. These comparisons are natural under
+real continuous-linear precomposition and need
 no norm, finite-dimensionality or completeness hypothesis on the source. For a finite-dimensional
-source with maximal
-totally real image, the continuous complex-linear equivalence
+source with maximal totally real image, we also provide the continuous complex-linear equivalence
 `ContinuousLinearMap.complexificationEquivOfIsMaximalTotallyReal`.
 
 ## References
@@ -480,20 +481,6 @@ private theorem compactDualExtension_add (u v : ℂ ⊗[ℝ] (E →L_c[ℝ] ℝ)
         mul_comm Complex.I] using (Complex.re_add_im (A (1 ⊗ₜ[ℝ] x))).symm)
   exact (congrArg c h).symm.trans (c.apply_symm_apply A)
 
-omit [TopologicalSpace E]
-  [IsComplexificationTopology E] in
-/-- Restricting the scalar field preserves the actual compact-convergence topology. -/
-private theorem compactDual_isEmbedding_restrictScalars : Topology.IsEmbedding
-    (fun A : (ℂ ⊗[ℝ] E) →L_c[ℂ] ℂ ↦
-      (ContinuousLinearMap.toUniformConvergenceCLM (RingHom.id ℝ) ℂ {K : Set (ℂ ⊗[ℝ] E) |
-        IsCompact K})
-        (((ContinuousLinearMap.toUniformConvergenceCLM (RingHom.id ℂ) ℂ
-          {K : Set (ℂ ⊗[ℝ] E) | IsCompact K}).symm A).restrictScalars ℝ)) := by
-  apply (UniformConvergenceCLM.isEmbedding_coeFn (RingHom.id ℝ) ℂ
-    {K : Set (ℂ ⊗[ℝ] E) | IsCompact K}).of_comp_iff.mp
-  exact UniformConvergenceCLM.isEmbedding_coeFn (RingHom.id ℂ) ℂ
-    {K : Set (ℂ ⊗[ℝ] E) | IsCompact K}
-
 variable [TopologicalSpace (ℂ ⊗[ℝ] (E →L_c[ℝ] ℝ))]
   [IsComplexificationTopology (E →L_c[ℝ] ℝ)]
 
@@ -501,23 +488,23 @@ variable [TopologicalSpace (ℂ ⊗[ℝ] (E →L_c[ℝ] ℝ))]
 private theorem compactDual_continuous_restriction : Continuous (compactDualRestriction E) := by
   apply continuous_complexification_iff.mpr
   have h := ((oneTmulCLM E).precompCompactConvergenceCLM ℂ).continuous.comp
-    (compactDual_isEmbedding_restrictScalars E).continuous
+    (UniformConvergenceCLM.isEmbedding_restrictScalars (𝕜 := ℂ) (F := ℂ) ℝ
+      {K : Set (ℂ ⊗[ℝ] E) | IsCompact K}).continuous
   constructor
   · refine ((Complex.reCLM.postcompCompactConvergenceCLM E).continuous.comp h).congr ?_
     intro A
     ext x
-    -- These native compact-convergence wrappers have the same underlying function;
-    -- only the topology on the space of maps changes.
-    change (A (oneTmulCLM E x)).re =
-      realPart (E →L_c[ℝ] ℝ) (compactDualRestriction E A) x
-    rw [compactDualRestriction_re, oneTmulCLM_apply]
+    simp only [Function.comp_apply, ContinuousLinearMap.postcompCompactConvergenceCLM_apply_apply,
+      ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply,
+      UniformConvergenceCLM.restrictScalars_apply, Complex.reCLM_apply,
+      oneTmulCLM_apply, compactDualRestriction_re]
   · refine ((Complex.imCLM.postcompCompactConvergenceCLM E).continuous.comp h).congr ?_
     intro A
     ext x
-    -- The same native wrapper reduction as for the real coordinate above.
-    change (A (oneTmulCLM E x)).im =
-      imaginaryPart (E →L_c[ℝ] ℝ) (compactDualRestriction E A) x
-    rw [compactDualRestriction_im, oneTmulCLM_apply]
+    simp only [Function.comp_apply, ContinuousLinearMap.postcompCompactConvergenceCLM_apply_apply,
+      ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply,
+      UniformConvergenceCLM.restrictScalars_apply, Complex.imCLM_apply,
+      oneTmulCLM_apply, compactDualRestriction_im]
 
 /-- Extension is continuous for uniform convergence on every compact set. -/
 private theorem compactDual_continuous_extension : Continuous (compactDualExtension E) := by
@@ -532,19 +519,25 @@ private theorem compactDual_continuous_extension : Continuous (compactDualExtens
   have h := ((O.continuous.comp ((R.continuous.comp hr).sub (S.continuous.comp hi))).add
     ((O.continuous.comp ((R.continuous.comp hi).add (S.continuous.comp hr)))
       |>.const_smul Complex.I))
-  rw [(compactDual_isEmbedding_restrictScalars E).continuous_iff]
+  rw [(UniformConvergenceCLM.isEmbedding_restrictScalars (𝕜 := ℂ) (F := ℂ) ℝ
+      {K : Set (ℂ ⊗[ℝ] E) | IsCompact K}).continuous_iff]
   refine h.congr fun u ↦ ?_
   ext v
-  -- The pre/postcomposition maps are native exposed Mathlib wrappers. Keep the
-  -- coordinate operators opaque until their public evaluation rules apply.
-  change (((realPartCLM (E →L_c[ℝ] ℝ) u) (realPartCLM E v) -
-    (imaginaryPartCLM (E →L_c[ℝ] ℝ) u) (imaginaryPartCLM E v) : ℝ) : ℂ) +
-    Complex.I • (((imaginaryPartCLM (E →L_c[ℝ] ℝ) u) (realPartCLM E v) +
-      (realPartCLM (E →L_c[ℝ] ℝ) u) (imaginaryPartCLM E v) : ℝ) : ℂ) = compactDualExtension E u v
-  rw [realPartCLM_apply, imaginaryPartCLM_apply, realPartCLM_apply,
-    imaginaryPartCLM_apply, compactDualExtension_apply, smul_eq_mul, Complex.ofReal_add]
+  simp only [R, S, O, Function.comp_apply, Pi.add_apply, Pi.sub_apply, Pi.smul_apply,
+    add_apply, sub_apply, smul_apply,
+    ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply,
+    ContinuousLinearMap.postcompCompactConvergenceCLM_apply_apply,
+    UniformConvergenceCLM.restrictScalars_apply, Complex.ofRealCLM_apply,
+    realPartCLM_apply, imaginaryPartCLM_apply, compactDualExtension_apply,
+    smul_eq_mul, Complex.ofReal_add]
 
-/-- The literal compact-dual complexification CLE. -/
+/-- The complexification of the real compact-convergence dual is continuously complex-linearly
+isomorphic to the complex compact-convergence dual of the complexification. It sends `c ⊗ f`
+to the complex-linear functional determined by `z ⊗ x ↦ c * z * f x`. Its inverse takes the real
+and imaginary parts of restriction to `1 ⊗ E` as the two tensor coefficients. Both duals have their
+native
+compact-convergence topologies, and both complexifications carry any compatible real/imaginary
+product topology. No norm, completeness or finite-dimensionality assumption on `E` is needed. -/
 def complexificationCompactDualEquiv : (ℂ ⊗[ℝ] (E →L_c[ℝ] ℝ)) ≃L[ℂ]
     ((ℂ ⊗[ℝ] E) →L_c[ℂ] ℂ) where
   toFun := compactDualExtension E
@@ -613,7 +606,7 @@ def compactDualConjCLE : ((ℂ ⊗[ℝ] E) →L_c[ℂ] ℂ) ≃L⋆[ℂ] ((ℂ �
     compactDualConjCLE E A v = star (A (tmulConj E v)) := by
   simp [compactDualConjCLE, ContinuousLinearEquiv.compactConvergenceCLMCongrSL_apply]
 
-/-- Intrinsic dual conjugation is involutive for the actual compact topology. -/
+/-- Applying `compactDualConjCLE E` twice returns the original functional. -/
 theorem compactDualConjCLE_involutive : Function.Involutive (compactDualConjCLE E) := by
   intro A
   ext v
@@ -681,12 +674,20 @@ def compactDualRealPointsCLE : (E →L_c[ℝ] ℝ) ≃L[ℝ]
 @[simp] theorem coe_compactDualRealPointsCLE (f : E →L_c[ℝ] ℝ) :
     (compactDualRealPointsCLE E f).val = compactDualComplexExtension E f := by rfl
 
+/-- The native fixed-space inverse is the real coefficient of the inverse dual comparison. -/
+theorem compactDualRealPointsCLE_symm_eq_realPart
+    (A : TauCeti.realPoints (compactDualConjCLE E).toLinearMap) :
+    (compactDualRealPointsCLE E).symm A =
+      realPart (E →L_c[ℝ] ℝ) ((complexificationCompactDualEquiv E).symm A.val) := by
+  -- The inverse field records exactly this real coefficient, without any change of scalar action.
+  rfl
+
 /-- The inverse is real restriction on the actual native real inclusion. -/
 @[simp] theorem compactDualRealPointsCLE_symm_apply
     (A : TauCeti.realPoints (compactDualConjCLE E).toLinearMap) (x : E) :
     (compactDualRealPointsCLE E).symm A x = (A.val (1 ⊗ₜ[ℝ] x)).re := by
-  change realPart (E →L_c[ℝ] ℝ) ((complexificationCompactDualEquiv E).symm A.val) x = _
-  rw [compactDualEquiv_symm_apply, compactDualRestriction_re]
+  rw [compactDualRealPointsCLE_symm_eq_realPart,
+    realPart_complexificationCompactDualEquiv_symm_apply]
 
 section Naturality
 variable {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
@@ -707,12 +708,7 @@ theorem complexificationCompactDualEquiv_baseChangeComplex_precomp (L : E →L[�
   simp only [compactDualEquiv_apply, compactDualExtension_apply,
     ContinuousLinearMap.realPart_baseChangeComplex,
     ContinuousLinearMap.imaginaryPart_baseChangeComplex,
-    ContinuousLinearMap.precompCompactConvergenceCLM_apply]
-  -- Compact-dual composition has the ordinary pointwise composition evaluation.
-  change _ = compactDualExtension F u (L.baseChangeComplex v)
-  rw [compactDualExtension_apply, ContinuousLinearMap.realPart_baseChangeComplex,
-    ContinuousLinearMap.imaginaryPart_baseChangeComplex]
-  rfl
+    ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply]
 
 omit [ContinuousNeg E]
   [ContinuousNeg F] in
@@ -732,14 +728,9 @@ private theorem compactDualComplexExtension_precomp (L : E →L[ℝ] F) (f : F �
     compactDualComplexExtension E (L.precompCompactConvergenceCLM ℝ f) =
       L.baseChangeComplex.precompCompactConvergenceCLM ℂ (compactDualComplexExtension F f) := by
   ext v
-  simp only [ContinuousLinearMap.precompCompactConvergenceCLM_apply]
-  -- Unwrap native compact-convergence composition, without changing its topology.
-  change compactDualComplexExtension E (L.precompCompactConvergenceCLM ℝ f) v =
-    compactDualComplexExtension F f (L.baseChangeComplex v)
-  rw [compactDualComplexExtension_apply, compactDualComplexExtension_apply,
-    ContinuousLinearMap.realPart_baseChangeComplex,
+  simp only [ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply,
+    compactDualComplexExtension_apply, ContinuousLinearMap.realPart_baseChangeComplex,
     ContinuousLinearMap.imaginaryPart_baseChangeComplex]
-  rfl
 
 omit [TopologicalSpace (ℂ ⊗[ℝ] (E →L_c[ℝ] ℝ))]
   [IsComplexificationTopology (E →L_c[ℝ] ℝ)]
@@ -750,15 +741,8 @@ theorem compactDualConjCLE_precomp (L : E →L[ℝ] F) (A : (ℂ ⊗[ℝ] F) →
     compactDualConjCLE E (L.baseChangeComplex.precompCompactConvergenceCLM ℂ A) =
       L.baseChangeComplex.precompCompactConvergenceCLM ℂ (compactDualConjCLE F A) := by
   ext v
-  calc
-    compactDualConjCLE E (L.baseChangeComplex.precompCompactConvergenceCLM ℂ A) v =
-        star ((L.baseChangeComplex.precompCompactConvergenceCLM ℂ A) (tmulConj E v)) :=
-      compactDualConjCLE_apply E _ _
-    _ = star (A (L.baseChangeComplex (tmulConj E v))) := rfl
-    _ = star (A (tmulConj F (L.baseChangeComplex v))) := by
-      rw [ContinuousLinearMap.tmulConj_baseChangeComplex]
-    _ = compactDualConjCLE F A (L.baseChangeComplex v) := (compactDualConjCLE_apply F A _).symm
-    _ = (L.baseChangeComplex.precompCompactConvergenceCLM ℂ (compactDualConjCLE F A)) v := rfl
+  simp only [compactDualConjCLE_apply, ContinuousLinearMap.precompCompactConvergenceCLM_apply_apply,
+    ContinuousLinearMap.tmulConj_baseChangeComplex]
 
 /-- The actual fixed-endpoint inclusions commute with the native compact-dual transpose. -/
 theorem compactDualRealPointsCLE_precomp (L : E →L[ℝ] F) (f : F →L_c[ℝ] ℝ) :
