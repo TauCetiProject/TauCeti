@@ -47,6 +47,9 @@ by itself; at `z = r`, Lean's totalized inverse gives value one.
 
 Two integers whose images in `ℂ` are at distance less than `1` are equal.
 
+A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`
+(`Complex.add_im_ne_zero_of_abs_im_lt`).
+
 The canonical embedding of an `RCLike` field into `ℂ` is bundled as
 `TauCeti.toComplexStarAlgHom`, so real star-algebra constructions can be transported to `ℂ`.
 
@@ -348,5 +351,12 @@ theorem one_le_re_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ (1 + z).re := by
 /-- For `z` in the closed right half-plane (`0 ≤ z.re`), `1 + z` has norm at least `1`. -/
 theorem one_le_norm_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ ‖1 + z‖ :=
   (one_le_re_one_add hz).trans (re_le_norm _)
+
+/-- A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`. -/
+theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + μ).im ≠ 0 :=
+  fun h0 ↦ by
+    rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
+    rw [h0, abs_neg] at h
+    exact h.false
 
 end Complex

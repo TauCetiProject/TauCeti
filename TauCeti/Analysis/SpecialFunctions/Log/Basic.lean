@@ -11,6 +11,8 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 # Basic facts about the real logarithm
 
 * `Real.log_div_pos`: for `0 < r < c` the logarithm `log (c / r)` is positive.
+* `Real.abs_log_sub_log_le_log`: two positive reals within a factor `c` of each other have
+  logarithms within `log c`.
 
 ## Upper boundedness of `Real.log` on bounded and compact sets
 
@@ -28,6 +30,19 @@ namespace Real
 /-- For `0 < r < c` the logarithm `log (c / r)` is positive. -/
 theorem log_div_pos {c r : ℝ} (h0 : 0 < r) (hr : r < c) : 0 < log (c / r) :=
   log_pos ((one_lt_div h0).2 hr)
+
+/-- Two positive reals within a factor `c` of each other, `x ≤ c y` and `y ≤ c x`, have
+logarithms within `log c`: `|log x - log y| ≤ log c`. -/
+theorem abs_log_sub_log_le_log {x y c : ℝ} (hx : 0 < x) (hy : 0 < y) (hxy : x ≤ c * y)
+    (hyx : y ≤ c * x) : |log x - log y| ≤ log c := by
+  have hc : 0 < c := pos_of_mul_pos_left (hx.trans_le hxy) hy.le
+  have hup : log x ≤ log c + log y := by
+    rw [← log_mul hc.ne' hy.ne']
+    exact log_le_log hx hxy
+  have hlo : log y ≤ log c + log x := by
+    rw [← log_mul hc.ne' hx.ne']
+    exact log_le_log hy hyx
+  exact abs_le.2 ⟨by linarith, by linarith⟩
 
 end Real
 

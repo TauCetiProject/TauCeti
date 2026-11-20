@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 import Mathlib.Analysis.Asymptotics.Prod
 import TauCeti.Analysis.Asymptotics.VerticalStrip
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
@@ -77,12 +78,12 @@ namespace TauCeti
 /-- **Stirling's formula for `Gammaℝ` on vertical strips**, explicit form: for `s = σ + i t` with
 `t ≠ 0` and `|σ| ≤ |t|`,
 `|log ‖Γ_ℝ(s)‖ - (-π |t| / 4 + ((σ - 1) / 2) log |t| + (log 2 - (σ - 1) log (2π)) / 2)| ≤
-  (4 / (1 - cos (π / 4)) ^ 3 + |σ - 1| |σ| / 2 + σ ^ 2 / 2) / |t|`. -/
+  (1 / (4 * sin (π / 8) ^ 2) + |σ - 1| |σ| / 2 + σ ^ 2 / 2) / |t|`. -/
 theorem abs_log_norm_Gammaℝ_vertical_sub_le {s : ℂ} (hs : s.im ≠ 0) (hre : |s.re| ≤ |s.im|) :
     |Real.log ‖Complex.Gammaℝ s‖ -
         (-π * |s.im| / 4 + (s.re - 1) / 2 * Real.log |s.im| +
           (Real.log 2 - (s.re - 1) * Real.log (2 * π)) / 2)| ≤
-      (4 / (1 - Real.cos (π / 4)) ^ 3 + |s.re - 1| * |s.re| / 2 + s.re ^ 2 / 2) / |s.im| := by
+      (1 / (4 * Real.sin (π / 8) ^ 2) + |s.re - 1| * |s.re| / 2 + s.re ^ 2 / 2) / |s.im| := by
   have him2 : (s / 2).im ≠ 0 := by simpa using div_ne_zero hs two_ne_zero
   have hre2 : |(s / 2).re| ≤ |(s / 2).im| := by
     simp only [div_ofNat_re, div_ofNat_im, abs_div, Nat.abs_ofNat]
@@ -104,9 +105,11 @@ theorem abs_log_norm_Gammaℝ_vertical_sub_le {s : ℂ} (hs : s.im ≠ 0) (hre :
     ring
   have hsub_abs : |s.re / 2 - 1 / 2| = |s.re - 1| / 2 := by
     rw [← sub_div, abs_div, abs_two]
-  have hrhs : (2 / (1 - Real.cos (π / 4)) ^ 3 + |s.re / 2 - 1 / 2| * (|s.re| / 2) +
+  have hrhs : (1 / (8 * Real.sin (π / 8) ^ 2) + |s.re / 2 - 1 / 2| * (|s.re| / 2) +
         (s.re / 2) ^ 2) / (|s.im| / 2) =
-      (4 / (1 - Real.cos (π / 4)) ^ 3 + |s.re - 1| * |s.re| / 2 + s.re ^ 2 / 2) / |s.im| := by
+      (1 / (4 * Real.sin (π / 8) ^ 2) + |s.re - 1| * |s.re| / 2 + s.re ^ 2 / 2) / |s.im| := by
+    have hsin : Real.sin (π / 8) ≠ 0 :=
+      (Real.sin_pos_of_pos_of_lt_pi (by positivity) (by linarith [Real.pi_pos])).ne'
     rw [hsub_abs]
     field_simp
     ring
@@ -118,7 +121,7 @@ private theorem abs_log_norm_Gammaℝ_vertical_sub_le_of_re_le {w : ℂ} {R : �
     |Real.log ‖Complex.Gammaℝ w‖ -
         (-π * |w.im| / 4 + (w.re - 1) / 2 * Real.log |w.im| +
           (Real.log 2 - (w.re - 1) * Real.log (2 * π)) / 2)| ≤
-      (4 / (1 - Real.cos (π / 4)) ^ 3 + (R + 1) * R / 2 + R ^ 2 / 2) / |w.im| := by
+      (1 / (4 * Real.sin (π / 8) ^ 2) + (R + 1) * R / 2 + R ^ 2 / 2) / |w.im| := by
   have hR0 : 0 ≤ R := (abs_nonneg _).trans hwre
   have hwim_pos : 0 < |w.im| := by linarith
   have hwre1 : |w.re - 1| ≤ R + 1 := abs_le.2
@@ -140,7 +143,7 @@ theorem exists_abs_log_norm_Gammaℝ_vertical_sub_le (a b : ℝ) :
           (-π * |s.im| / 4 + (s.re - 1) / 2 * Real.log |s.im| +
             (Real.log 2 - (s.re - 1) * Real.log (2 * π)) / 2)| ≤
         C / |s.im| :=
-  ⟨4 / (1 - Real.cos (π / 4)) ^ 3 + (max |a| |b| + 1) * max |a| |b| / 2 + max |a| |b| ^ 2 / 2,
+  ⟨1 / (4 * Real.sin (π / 8) ^ 2) + (max |a| |b| + 1) * max |a| |b| / 2 + max |a| |b| ^ 2 / 2,
     max |a| |b| + 1,
     fun _ hs ht ↦ abs_log_norm_Gammaℝ_vertical_sub_le_of_re_le (abs_le_max_abs_abs hs.1 hs.2) ht⟩
 
@@ -190,12 +193,12 @@ private theorem log_norm_Gammaℂ_sub_stirling_eq {s : ℂ} (hs : s.im ≠ 0) :
 /-- **Stirling's formula for `Gammaℂ` on vertical strips**, explicit form: for `s = σ + i t` with
 `t ≠ 0` and `|σ| ≤ |t|`,
 `|log ‖Γ_ℂ(s)‖ - (-π |t| / 2 + (σ - 1 / 2) log |t| + log 2 - (σ - 1 / 2) log (2π))| ≤
-  (2 / (1 - cos (π / 4)) ^ 3 + |σ - 1 / 2| |σ| + σ ^ 2) / |t|`. -/
+  (1 / (8 * sin (π / 8) ^ 2) + |σ - 1 / 2| |σ| + σ ^ 2) / |t|`. -/
 theorem abs_log_norm_Gammaℂ_vertical_sub_le {s : ℂ} (hs : s.im ≠ 0) (hre : |s.re| ≤ |s.im|) :
     |Real.log ‖Complex.Gammaℂ s‖ -
         (-π * |s.im| / 2 + (s.re - 1 / 2) * Real.log |s.im| +
           Real.log 2 - (s.re - 1 / 2) * Real.log (2 * π))| ≤
-      (2 / (1 - Real.cos (π / 4)) ^ 3 + |s.re - 1 / 2| * |s.re| + s.re ^ 2) / |s.im| := by
+      (1 / (8 * Real.sin (π / 8) ^ 2) + |s.re - 1 / 2| * |s.re| + s.re ^ 2) / |s.im| := by
   rw [log_norm_Gammaℂ_sub_stirling_eq hs]
   exact abs_log_norm_Gamma_vertical_sub_le hs hre
 
@@ -288,8 +291,7 @@ theorem exists_abs_log_norm_Gammaℝ_add_vertical_sub_le (a b M : ℝ) :
   set B := max |a| |b|
   have : 0 ≤ B := (abs_nonneg a).trans (le_max_left _ _)
   set R := B + M'
-  set K := 4 / (1 - Real.cos (π / 4)) ^ 3 + (R + 1) * R / 2 + R ^ 2 / 2
-  have : 0 ≤ 1 - Real.cos (π / 4) := sub_nonneg.2 (Real.cos_le_one _)
+  set K := 1 / (4 * Real.sin (π / 8) ^ 2) + (R + 1) * R / 2 + R ^ 2 / 2
   have hK0 : 0 ≤ K := by positivity
   have : 0 ≤ Real.log (2 * π) := Real.log_nonneg (by linarith [Real.two_le_pi])
   set C := K + π * M' / 4 + (R + 1) / 2 * M' + (Real.log 2 + (R + 1) * Real.log (2 * π)) / 2
@@ -345,10 +347,7 @@ theorem exists_abs_log_norm_Gammaℂ_add_vertical_sub_le (a b M : ℝ) :
   have htT : T ≤ |s.im| := (le_max_left _ _).trans ht
   have htM : M + 2 ≤ |s.im| := (le_max_right _ _).trans ht
   have hνim : |ν.im| ≤ M := (abs_im_le_norm ν).trans hν
-  have him_ne : (s + ν).im ≠ 0 := by
-    have h := abs_sub_abs_le_abs_sub s.im (-ν.im)
-    simp only [abs_neg, sub_neg_eq_add] at h
-    exact abs_pos.1 (by simpa using (by linarith : (0 : ℝ) < |s.im| - |ν.im|).trans_le h)
+  have him_ne : (s + ν).im ≠ 0 := add_im_ne_zero_of_abs_im_lt (by linarith)
   have him1_ne : (s + ν + 1).im ≠ 0 := by simpa using him_ne
   -- Reduce `Gammaℂ (s + ν)` to `Gammaℝ (s + ν) * Gammaℝ (s + (ν + 1))` by duplication.
   have hdup : Real.log ‖Complex.Gammaℂ (s + ν)‖ =
