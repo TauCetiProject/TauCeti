@@ -510,7 +510,7 @@ private theorem integral_mul_fourierChar_eq {u : E → ℂ} (hu : ContDiff ℝ �
         huc.mul_right.mul_left)
     (((hf.continuous).mul hcont).integrable_of_hasCompactSupport hfc.mul_right)
     (fun x _ ↦ hf.differentiable (by simp) x)
-    (fun x _ ↦ (hasFDerivAt_fourierChar_comp (hΦd x)).differentiableAt)
+    (fun x _ ↦ (hΦd x).hasFDerivAt.fourierChar.differentiableAt)
   simp_rw [hkey, integral_const_mul] at hibp
   have hc : (2 * π * I : ℂ) ≠ 0 := by simp [pi_ne_zero]
   rw [neg_mul, ← mul_neg, ← hibp, inv_mul_cancel_left₀ hc]
