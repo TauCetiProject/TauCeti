@@ -68,6 +68,13 @@ open scoped ComplexOrder
 variable {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
   {A B : Matrix ι ι 𝕜}
 
+/-- Sorted eigenvalues are congruent along a matrix equality: the enumeration depends only on the
+matrix, not on the Hermitian proof. -/
+theorem IsHermitian.eigenvalues₀_congr (h : A = B) (hA : A.IsHermitian) (hB : B.IsHermitian) :
+    hA.eigenvalues₀ = hB.eigenvalues₀ := by
+  subst h
+  rfl
+
 /-- Entrywise perturbations of size `ε` change every sorted eigenvalue of a Hermitian matrix
 by at most `card ι * ε`. -/
 theorem IsHermitian.abs_eigenvalues₀_sub_le_of_entry_le

@@ -29,7 +29,7 @@ of Hermitian matrices this reads `d/dt λᵢ (A + t • B) |_{t = 0} = Re ⟪u, 
 (`Matrix.IsHermitian.hasDerivAt_eigenvalues₀_add_smul`). These are the first-order inputs to the
 Itô computation for the eigenvalues of matrix-valued diffusions: there the parameter is the vector
 of real noise coordinates, and simplicity holds off the collision set. Along the way, the entrywise
-derivative of a Hermitian family is itself Hermitian (`Matrix.isHermitian_of_fderiv`).
+derivative of a Hermitian family is itself Hermitian (`Matrix.isHermitian_fderiv_apply`).
 
 The value `k = ω` is allowed, so analytic families have analytic simple eigenvalues. At a repeated
 eigenvalue the ordered eigenvalues are in general only Lipschitz
@@ -304,36 +304,39 @@ private def selfAdjointPartEntry (a b : n) : Matrix n n 𝕜 →L[ℝ] 𝕜 :=
   ContinuousLinearMap.proj b ∘L ContinuousLinearMap.proj a ∘L
     (selfAdjoint.submodule ℝ (Matrix n n 𝕜)).subtypeL ∘L selfAdjointPartL ℝ (Matrix n n 𝕜)
 
+omit [Fintype n] [DecidableEq n] in
+private theorem coe_selfAdjointPartEntry (a b : n) :
+    ⇑(selfAdjointPartEntry (𝕜 := 𝕜) a b) =
+      fun X : Matrix n n 𝕜 ↦ (selfAdjointPart ℝ X : Matrix n n 𝕜) a b :=
+  rfl
+
 omit [DecidableEq n] in
 private theorem contDiff_selfAdjointPart_apply {k : ℕ∞ω} (a b : n) :
-    ContDiff ℝ k (fun X : Matrix n n 𝕜 ↦ (selfAdjointPart ℝ X : Matrix n n 𝕜) a b) :=
-  (selfAdjointPartEntry (𝕜 := 𝕜) a b).contDiff
+    ContDiff ℝ k (fun X : Matrix n n 𝕜 ↦ (selfAdjointPart ℝ X : Matrix n n 𝕜) a b) := by
+  rw [← coe_selfAdjointPartEntry]
+  exact (selfAdjointPartEntry (𝕜 := 𝕜) a b).contDiff
 
 omit [Fintype n] [DecidableEq n] in
 private theorem fderiv_selfAdjointPart_apply (a b : n) (X V : Matrix n n 𝕜) :
     fderiv ℝ (fun Y : Matrix n n 𝕜 ↦ (selfAdjointPart ℝ Y : Matrix n n 𝕜) a b) X V =
-      (selfAdjointPart ℝ V : Matrix n n 𝕜) a b :=
-  congrArg (· V) (selfAdjointPartEntry (𝕜 := 𝕜) a b).fderiv
+      (selfAdjointPart ℝ V : Matrix n n 𝕜) a b := by
+  rw [← coe_selfAdjointPartEntry, ContinuousLinearMap.fderiv, coe_selfAdjointPartEntry]
 
 omit [Fintype n] [DecidableEq n] in
 private theorem isHermitian_selfAdjointPart (X : Matrix n n 𝕜) :
     (selfAdjointPart ℝ X : Matrix n n 𝕜).IsHermitian :=
-  (selfAdjointPart ℝ X).2
-
-private theorem eigenvalues₀_congr {A B : Matrix n n 𝕜} (h : A = B) (hA : A.IsHermitian)
-    (hB : B.IsHermitian) : hA.eigenvalues₀ = hB.eigenvalues₀ := by
-  subst h
-  rfl
+  (selfAdjoint.isSelfAdjoint (x := selfAdjointPart ℝ X)).isHermitian
 
 /-- A Hermitian matrix is its own self-adjoint part, so the two have the same ordered
 eigenvalues. -/
 private theorem eigenvalues₀_selfAdjointPart {A : Matrix n n 𝕜} (hA : A.IsHermitian) :
     (isHermitian_selfAdjointPart A).eigenvalues₀ = hA.eigenvalues₀ :=
-  eigenvalues₀_congr (hA.isSelfAdjoint.coe_selfAdjointPart_apply ℝ) _ hA
+  IsHermitian.eigenvalues₀_congr (hA.isSelfAdjoint.coe_selfAdjointPart_apply ℝ) _ hA
 
 omit [Fintype n] [DecidableEq n] in
 /-- The entrywise derivative of a family of Hermitian matrices is Hermitian in every direction. -/
-theorem isHermitian_of_fderiv {M : E → Matrix n n 𝕜} (hM : ∀ x, (M x).IsHermitian) (x₀ v : E) :
+theorem isHermitian_fderiv_apply {M : E → Matrix n n 𝕜} (hM : ∀ x, (M x).IsHermitian)
+    (x₀ v : E) :
     (of fun a b ↦ fderiv ℝ (fun x ↦ M x a b) x₀ v).IsHermitian := by
   refine IsHermitian.ext fun a b ↦ ?_
   have h : (fun x ↦ M x a b) = (RCLike.conjCLE (K := 𝕜)) ∘ fun x ↦ M x b a :=
@@ -410,7 +413,7 @@ theorem hasFDerivAt_eigenvalues₀ (hM : ∀ x, (M x).IsHermitian)
   ext a b
   -- The derivative of `M` is Hermitian, so it is its own self-adjoint part.
   exact (fderiv_selfAdjointPart_apply a b _ _).trans (congrFun (congrFun
-    ((isHermitian_of_fderiv hM x₀ v).isSelfAdjoint.coe_selfAdjointPart_apply ℝ) a) b)
+    ((isHermitian_fderiv_apply hM x₀ v).isSelfAdjoint.coe_selfAdjointPart_apply ℝ) a) b)
 
 /-- The derivative of a simple ordered eigenvalue in the direction `v` is `Re ⟪u, (DM (x₀) v) u⟫`
 for any unit eigenvector `u`. -/
