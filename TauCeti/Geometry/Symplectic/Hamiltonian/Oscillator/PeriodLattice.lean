@@ -136,6 +136,12 @@ theorem hasFDerivAt_oscillatorEnergies_apply [DecidableEq ι] (m ν : ι → ℝ
       ((innerSL ℝ (EuclideanSpace.single i (m i * ν i ^ 2 * x.1 i))).coprod
         (innerSL ℝ (EuclideanSpace.single i (x.2 i / m i)))) x := by
   -- `Eᵢ` is the oscillator energy composed with the projection to the `i`-th phase plane.
+  have hE : (oscillatorEnergies m ν · i) =
+      oscillatorHamiltonian (m i) (ν i) ∘ ((coordFst i).prod (coordSnd i)) := by
+    ext y
+    rw [oscillatorEnergies_apply, Function.comp_apply, ContinuousLinearMap.prod_apply,
+      coordFst_apply, coordSnd_apply]
+  rw [hE]
   refine ((hasFDerivAt_oscillatorHamiltonian (m i) (ν i) (x.1 i, x.2 i)).comp x
     ((coordFst i).prod (coordSnd i)).hasFDerivAt).congr_fderiv
       (ContinuousLinearMap.ext fun w ↦ ?_)
