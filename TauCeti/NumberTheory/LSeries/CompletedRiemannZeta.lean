@@ -25,8 +25,8 @@ continuation.
 * `TauCeti.analyticAt_completedRiemannZeta`
 * `TauCeti.meromorphicOrderAt_completedRiemannZeta_zero`,
   `TauCeti.meromorphicOrderAt_completedRiemannZeta_one`
-* `TauCeti.meromorphic_riemannZeta`: the uncompleted function `riemannZeta` is meromorphic on `ℂ`
-  as well.
+* `TauCeti.meromorphic_riemannZeta` and `TauCeti.meromorphicOrderAt_riemannZeta_one`: the
+  uncompleted function `riemannZeta` is meromorphic on `ℂ` with a simple pole at `1`.
 * `TauCeti.meromorphicOrderAt_completedRiemannZeta_neg_two_mul_nat_add_one`: `Λ` is regular and
   nonzero at the trivial zeros `-2(n + 1)` of `riemannZeta`, where `Γ_ℝ` has its poles.
 * `TauCeti.zero_lt_divisor_completedRiemannZeta_iff`: the points of positive divisor of `Λ` are
@@ -149,6 +149,24 @@ theorem divisor_completedRiemannZeta_one :
     MeromorphicOn.divisor completedRiemannZeta univ 1 = -1 := by
   rw [(meromorphicOn_univ.2 meromorphic_completedRiemannZeta).divisor_apply (mem_univ 1),
     meromorphicOrderAt_completedRiemannZeta_one]
+  rfl
+
+/-- The Riemann zeta function has a simple pole at `1`. -/
+theorem meromorphicOrderAt_riemannZeta_one :
+    meromorphicOrderAt riemannZeta 1 = (-1 : ℤ) := by
+  have hev : riemannZeta =ᶠ[𝓝[≠] 1] (fun z ↦ (Gammaℝ z)⁻¹) * completedRiemannZeta := by
+    filter_upwards [nhdsWithin_le_nhds (eventually_ne_nhds one_ne_zero)] with s hs
+    rw [riemannZeta_def_of_ne_zero hs, div_eq_mul_inv, Pi.mul_apply, mul_comm]
+  rw [meromorphicOrderAt_congr hev,
+    meromorphicOrderAt_mul_of_ne_zero (Complex.differentiable_Gammaℝ_inv.analyticAt 1)
+      (inv_ne_zero (Gammaℝ_ne_zero_of_re_pos (by norm_num))),
+    meromorphicOrderAt_completedRiemannZeta_one]
+
+/-- The divisor of the Riemann zeta function is `-1` at its pole `1`. -/
+theorem divisor_riemannZeta_one :
+    MeromorphicOn.divisor riemannZeta univ 1 = -1 := by
+  rw [(meromorphicOn_univ.2 meromorphic_riemannZeta).divisor_apply (mem_univ 1),
+    meromorphicOrderAt_riemannZeta_one]
   rfl
 
 /-- The completed Riemann zeta function has a zero of positive multiplicity exactly at the zeros

@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.DedekindDomain.Ideal.Congruence
 public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 
-import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.DedekindDomain.Ideal.UnitsAway
 
 /-!
@@ -152,6 +152,10 @@ theorem dvd_antisymm {𝔪 𝔫 : Modulus K} (hm : 𝔪 ∣ 𝔫) (hn : 𝔫 ∣
   · exact le_antisymm (Ideal.dvd_iff_le.mp (dvd_iff.mp hn).1)
       (Ideal.dvd_iff_le.mp (dvd_iff.mp hm).1)
   · exact Finset.Subset.antisymm (dvd_iff.mp hm).2 (dvd_iff.mp hn).2
+
+/-- The absolute norm of the finite part of any modulus is nonzero. -/
+instance instNeZeroAbsNormFinitePart (𝔪 : Modulus K) : NeZero (Ideal.absNorm 𝔪.finitePart) :=
+  ⟨Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot⟩
 
 /-- **Strict divisibility of moduli is well founded**: there is no infinite sequence of moduli in
 which each term is a proper divisor of the previous one.  Along a proper divisor, the absolute norm

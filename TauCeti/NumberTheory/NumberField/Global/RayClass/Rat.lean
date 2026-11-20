@@ -418,4 +418,69 @@ theorem two_mul_card_rayClassGroup_ratFiniteModulus (h2 : 2 < n) :
     ← orderOf_eq_prime neg_one_sq hne, ← Nat.card_zpowers, Subgroup.card_mul_index,
     Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
 
+/-- The finite part of `ratModulus n hn` has absolute norm `n`. -/
+-- Not a `simp` lemma: `ratModulus_finitePart` and `Ideal.absNorm_span_singleton` rewrite the LHS.
+theorem absNorm_ratModulus_finitePart (n : ℕ) (hn : n ≠ 0) :
+    Ideal.absNorm (ratModulus n hn).finitePart = n := by
+  have h := Rat.RingOfIntegers.ideal_span_absNorm_eq_self (ratModulus n hn).finitePart
+  rw [ratModulus_finitePart] at h ⊢
+  exact Nat.dvd_antisymm
+    (NumberField.RingOfIntegers.natCast_dvd_natCast.mp
+      (Ideal.span_singleton_dvd_span_singleton_iff_dvd.mp (dvd_of_eq h)))
+    (NumberField.RingOfIntegers.natCast_dvd_natCast.mp
+      (Ideal.span_singleton_dvd_span_singleton_iff_dvd.mp (dvd_of_eq h.symm)))
+
+/-- The finite part of `ratFiniteModulus n hn` has absolute norm `n`. -/
+-- Not a `simp` lemma: `ratFiniteModulus_finitePart` and `Ideal.absNorm_span_singleton` rewrite the
+-- LHS.
+theorem absNorm_ratFiniteModulus_finitePart (n : ℕ) (hn : n ≠ 0) :
+    Ideal.absNorm (ratFiniteModulus n hn).finitePart = n := by
+  rw [ratFiniteModulus_finitePart, ← ratModulus_finitePart n hn, absNorm_ratModulus_finitePart]
+
+/-- At `n = 1` the finite modulus `(1)` without the real place is the trivial modulus. -/
+@[simp]
+theorem ratFiniteModulus_one : ratFiniteModulus 1 one_ne_zero = Modulus.one ℚ :=
+  Modulus.ext (by simp) (by simp)
+
+/-- The moduli `(n)` and `(n)·∞` have the same finite prime support. -/
+@[simp]
+theorem ratFiniteModulus_support (n : ℕ) (hn : n ≠ 0) :
+    (ratFiniteModulus n hn).support = (ratModulus n hn).support := by
+  ext v
+  simp [Modulus.mem_support_iff]
+
+/-- Every modulus `𝔪` of `ℚ` has the same finite prime support as `(N)·∞`, where `N` is the
+absolute norm of its finite part. -/
+theorem ratModulus_absNorm_support (𝔪 : Modulus ℚ) :
+    (ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _)).support = 𝔪.support := by
+  ext v
+  rw [Modulus.mem_support_iff, Modulus.mem_support_iff, ratModulus_finitePart,
+    Rat.RingOfIntegers.ideal_span_absNorm_eq_self]
+
+/-- **The moduli `(d)` and `(n)` without the real place divide each other as `d` and `n` do.** -/
+theorem ratFiniteModulus_dvd_ratFiniteModulus_iff {d : ℕ} {hd : d ≠ 0} :
+    ratFiniteModulus d hd ∣ ratFiniteModulus n hn ↔ d ∣ n := by
+  rw [Modulus.dvd_iff, ratFiniteModulus_finitePart, ratFiniteModulus_finitePart,
+    ratFiniteModulus_infinitePart, Ideal.span_singleton_dvd_span_singleton_iff_dvd,
+    NumberField.RingOfIntegers.natCast_dvd_natCast, and_iff_left (Finset.empty_subset _)]
+
+/-- A modulus of `ℚ` with empty infinite part is `ratFiniteModulus N` for the absolute norm `N`
+of its finite part. -/
+theorem eq_ratFiniteModulus_of_infinitePart_eq_empty {𝔪 : Modulus ℚ}
+    (h : 𝔪.infinitePart = ∅) :
+    𝔪 = ratFiniteModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) :=
+  Modulus.ext (Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm h
+
+/-- A modulus of `ℚ` with nonempty infinite part is `ratModulus N` for the absolute norm `N` of
+its finite part, since `ℚ` has a unique infinite place. -/
+theorem eq_ratModulus_of_infinitePart_ne_empty {𝔪 : Modulus ℚ}
+    (h : 𝔪.infinitePart ≠ ∅) :
+    𝔪 = ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) := by
+  refine Modulus.ext (Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm ?_
+  obtain ⟨w, hw⟩ := Finset.ne_empty_iff_nonempty.mp h
+  ext v
+  simp only [ratModulus_infinitePart, Finset.mem_singleton]
+  exact ⟨fun _ ↦ Subtype.ext (Subsingleton.elim _ _),
+    fun _ ↦ Subtype.ext (Subsingleton.elim v.val w.val) ▸ hw⟩
+
 end TauCeti.GlobalNumberFields
