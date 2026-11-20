@@ -120,6 +120,14 @@ instance compactSpace_disk (n : ℕ) : CompactSpace (TopCat.disk.{u} n) :=
   -- As for `TauCeti.TopCat.t3Space_disk`, the carrier is the lift of the metric closed ball.
   inferInstanceAs (CompactSpace (ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)))
 
+/-- The `n`-sphere `TopCat.sphere n` is compact. -/
+instance compactSpace_sphere (n : ℕ) : CompactSpace (TopCat.sphere.{u} n) :=
+  inferInstanceAs (CompactSpace (TopCat.diskBoundary.{u} (n + 1)))
+
+/-- The `n`-sphere `TopCat.sphere n` is Hausdorff. -/
+instance t2Space_sphere (n : ℕ) : T2Space (TopCat.sphere.{u} n) :=
+  inferInstanceAs (T2Space (ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)))
+
 /-- The inclusion `∂𝔻 n ⟶ 𝔻 n` of the boundary sphere of the disk is a closed embedding, being an
 injective map from a compact space to a Hausdorff one. -/
 theorem isClosedEmbedding_diskBoundaryInclusion (n : ℕ) :
@@ -509,6 +517,30 @@ variable (n : ℕ)
 abbrev cubeBoundaryPair : TopPair.{u} :=
   TopPair.ofSubset (X := TopCat.of (ULift.{u} (I^(Fin n))))
     (ULift.down ⁻¹' Cube.boundary (Fin n))
+
+/-- The isomorphism of pairs `(Iᵐ × Iⁿ, ∂Iᵐ × Iⁿ ∪ Iᵐ × ∂Iⁿ) ≅ (Iᵐ⁺ⁿ, ∂Iᵐ⁺ⁿ)` induced by
+`Fin.appendHomeomorph`. -/
+def cubeBoundaryPairProdIso (m n : ℕ) :
+    TopPair.ofSubset (X := TopCat.of (ULift.{u} (I^(Fin m)) × ULift.{u} (I^(Fin n))))
+      ((ULift.down ⁻¹' Cube.boundary (Fin m)) ×ˢ Set.univ ∪
+        Set.univ ×ˢ (ULift.down ⁻¹' Cube.boundary (Fin n))) ≅
+      cubeBoundaryPair.{u} (m + n) :=
+  TopPair.ofSubsetIso
+    (X := TopCat.of (ULift.{u} (I^(Fin m)) × ULift.{u} (I^(Fin n))))
+    (Y := TopCat.of (ULift.{u} (I^(Fin (m + n)))))
+    ((Homeomorph.ulift.prodCongr Homeomorph.ulift).trans
+      ((Fin.appendHomeomorph (X := I) m n).trans Homeomorph.ulift.symm))
+    fun ⟨_, _⟩ ↦
+      ⟨fun h ↦ Cube.append_mem_boundary_iff.2 (h.imp And.left And.right),
+       fun h ↦ (Cube.append_mem_boundary_iff.1 h).imp (⟨·, trivial⟩) (⟨trivial, ·⟩)⟩
+
+@[simp]
+lemma cubeBoundaryPairProdIso_hom_fst_apply (m n : ℕ)
+    (p : ULift.{u} (I^(Fin m)) × ULift.{u} (I^(Fin n))) :
+    TopPair.Hom.fst (cubeBoundaryPairProdIso.{u} m n).hom p =
+      ULift.up (Fin.append p.1.down p.2.down) := by
+  rw [cubeBoundaryPairProdIso, TopPair.ofSubsetIso_hom]
+  apply TopPair.ofSubsetMap_fst_apply
 
 /-- A singular `m`-cube of the ambient space of a pair `P` sending the boundary of the cube into
 the subspace, as a map of pairs `(Iᵐ, ∂Iᵐ) ⟶ P`. -/

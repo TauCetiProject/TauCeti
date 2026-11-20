@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Ball.Action
+public import Mathlib.Topology.Category.TopCat.Sphere
 public import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.PathComponent
 
@@ -34,6 +35,8 @@ the base case of the induction on dimension through the suspension isomorphism.
 * `TauCeti.exists_homeomorph_apply_eq_of_finrank_eq_one`: a homeomorphism onto the closed unit
   ball carrying exactly the image of an injection of the unit sphere onto the sphere can be chosen
   to invert that injection.
+* `TauCeti.TopCat.finite_sphere_zero`, `TauCeti.TopCat.discreteTopology_sphere_zero`:
+  `TopCat.sphere 0` is finite and discrete.
 -/
 
 public section
@@ -182,3 +185,21 @@ theorem exists_homeomorph_apply_eq_of_finrank_eq_one {X : Type*} [TopologicalSpa
     · rw [hzu, hx]
 
 end TauCeti
+
+namespace TauCeti.TopCat
+
+universe u
+
+/-- The `0`-sphere `TopCat.sphere 0` is finite. -/
+instance finite_sphere_zero : Finite (TopCat.sphere.{u} 0) :=
+  have : Finite (sphere (0 : EuclideanSpace ℝ (Fin 1)) 1) :=
+    TauCeti.finite_sphere_of_finrank_eq_one finrank_euclideanSpace_fin 0 1
+  Equiv.ulift.finite_iff.2 inferInstance
+
+/-- The `0`-sphere `TopCat.sphere 0` has the discrete topology. -/
+instance discreteTopology_sphere_zero : DiscreteTopology (TopCat.sphere.{u} 0) :=
+  have : DiscreteTopology (sphere (0 : EuclideanSpace ℝ (Fin 1)) 1) :=
+    TauCeti.discreteTopology_sphere_of_finrank_eq_one finrank_euclideanSpace_fin 0 1
+  inferInstanceAs (DiscreteTopology (ULift.{u} (sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)))
+
+end TauCeti.TopCat
