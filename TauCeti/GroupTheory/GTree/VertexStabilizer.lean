@@ -141,10 +141,9 @@ private theorem exists_finite_stabilizer_vertex_eq_closure (b₀ : T.quotient.V)
   obtain ⟨Y, hYf, hY₁Y, hYrev, hreach⟩ := D.exists_finite_darts b₀ hV₁ hY₁
   let K : T.quotient.V → Subgroup G := fun b => Subgroup.closure ((U ∩ stabilizer G (D.vertex b)) ∪
     ⋃ y ∈ {y ∈ Y | T.quotient.src y = b}, (stabilizer G (D.dart y) : Set G))
-  have hK (b : T.quotient.V) : K b ≤ stabilizer G (D.vertex b) := by
-    refine (Subgroup.closure_le _).mpr
-      (Set.union_subset Set.inter_subset_right (Set.iUnion₂_subset fun y hy => ?_))
-    exact hy.2 ▸ D.stabilizer_dart_le_stabilizer_vertex y
+  have hK (b : T.quotient.V) : K b ≤ stabilizer G (D.vertex b) :=
+    (Subgroup.closure_le _).mpr <| Set.union_subset Set.inter_subset_right <|
+      Set.iUnion₂_subset fun y hy => hy.2 ▸ D.stabilizer_dart_le_stabilizer_vertex y
   let R : Set T.quotient.V := {b | ∃ p : T.quotient.Path b₀ b,
     ∀ y ∈ Path.darts T.quotient p, y ∈ Y ∧ y ∈ D.tree.darts}
   -- The subgroups `K b` and the elements attached to `Y` contain `U`, so they generate.
