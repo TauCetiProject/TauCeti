@@ -42,7 +42,8 @@ This file defines `D_(I,J,B)` (`TauCeti.ImplicitAtlas.deformationSpace`) as a su
 * **The comparison maps** (`TauCeti.ImplicitAtlas.deformationMap`): for `I ⊆ I'`, `I ⊆ J'`,
   `J' ⊆ J ⊆ B ⊆ B'`, the continuous map `D_(I,J,B) × E_(B' \ B) → D_(I',J',B')` that puts the new
   obstruction coordinates in `E_(B' \ B)`, extends `t` by zero and applies `ψ_J'J` to `x`. These
-  maps compose (`TauCeti.ImplicitAtlas.deformationMap_deformationMap`), are equivariant
+  maps compose (`TauCeti.ImplicitAtlas.deformationMap_deformationMap`), the map from `(I, J, B)`
+  to itself is the identity (`TauCeti.ImplicitAtlas.deformationMap_self`), they are equivariant
   (`TauCeti.ImplicitAtlas.deformationMap_deformationAction`) and are maps of pairs: the image of
   `(p, e')` lies in `Z_K` exactly when `p ∈ Z_K` and `e' = 0`
   (`TauCeti.ImplicitAtlas.deformationMap_mem_deformationSupport_iff`). For `B = B'` they are the
@@ -287,6 +288,15 @@ theorem mem_kuranishiZeroSet_empty_of_eq_zero {I J B : Finset A} {hJB : J ⊆ B}
     p.2.2 ∈ kuranishiZeroSet 𝒜.kuranishi ∅ J :=
   mem_kuranishiZeroSet.2 fun α _ ↦ by rw [hp.2.2.1 α, he, Pi.zero_apply, smul_zero]
 
+/-- At a point of `D_(I,J,B)` with `e = 0`, membership in the support `Z_K` only asks for
+`ψ_∅J(x) ∈ K`. -/
+theorem mem_deformationSupport_iff_of_eq_zero {I J B : Finset A} {hJB : J ⊆ B} {K : Set X}
+    {p : 𝒜.deformationSpace I hJB} (he : p.1.1 = 0) :
+    p ∈ 𝒜.deformationSupport I hJB K ↔ 𝒜.baseHomeomorph
+      (𝒜.footprintMap (Finset.empty_subset J) ⟨_, mem_kuranishiZeroSet_empty_of_eq_zero p.2 he⟩) ∈
+        K :=
+  ⟨fun ⟨_, _, hK⟩ ↦ hK, fun hK ↦ ⟨he, _, hK⟩⟩
+
 /-- The support `Z_K` of a closed set `K` is closed in `D_(I,J,B)`. It need not be compact. -/
 theorem isClosed_deformationSupport {I J B : Finset A} {hJB : J ⊆ B} {K : Set X}
     (hK : IsClosed K) : IsClosed (𝒜.deformationSupport I hJB K) := by
@@ -300,7 +310,8 @@ theorem isClosed_deformationSupport {I J B : Finset A} {hJB : J ⊆ B} {K : Set 
         (continuous_subtype_val.comp continuous_subtype_val))).subtype_mk _
   have heq : 𝒜.deformationSupport I hJB K = (↑) '' (f ⁻¹' K) := by
     ext p
-    exact ⟨fun ⟨he, _, hK⟩ ↦ ⟨⟨p, he⟩, hK, rfl⟩, fun ⟨q, hq, hqp⟩ ↦ hqp ▸ ⟨q.2, _, hq⟩⟩
+    exact ⟨fun h ↦ ⟨⟨p, h.1⟩, (mem_deformationSupport_iff_of_eq_zero h.1).1 h, rfl⟩,
+      fun ⟨q, hq, hqp⟩ ↦ hqp ▸ (mem_deformationSupport_iff_of_eq_zero q.2).2 hq⟩
   rw [heq]
   exact hW.isClosedMap_subtype_val _ (hK.preimage hf)
 
@@ -314,20 +325,15 @@ theorem deformationAction_mem_deformationSupport_iff {I J B : Finset A} {hJB : J
     refine ⟨fun h ↦ funext fun α ↦ ?_, fun h ↦ funext fun α ↦ by simp [h]⟩
     have := congrArg (ρ α (g α)⁻¹) (congrFun h α)
     rwa [Representation.inv_self_apply, Pi.zero_apply, map_zero] at this
-  have hψ : ∀ (hx : (𝒜.deformationAction I hJB g p).1.2.2 ∈ kuranishiZeroSet 𝒜.kuranishi ∅ J)
-      (hx' : p.1.2.2 ∈ kuranishiZeroSet 𝒜.kuranishi ∅ J),
-      𝒜.footprintMap (Finset.empty_subset J) ⟨_, hx⟩ =
-        𝒜.footprintMap (Finset.empty_subset J) ⟨_, hx'⟩ := fun hx hx' ↦
-    (𝒜.footprintMap_act (Finset.empty_subset J) (Finset.restrict₂ hJB g) ⟨_, hx'⟩ hx).trans
-      (by rw [Subsingleton.elim (Finset.restrict₂ (Finset.empty_subset J) _) 1, map_one,
-        Homeomorph.one_apply])
-  constructor
-  · rintro ⟨h0, hx, hK⟩
-    have hx' := mem_kuranishiZeroSet_empty_of_eq_zero p.2 (he.1 h0)
-    exact ⟨he.1 h0, hx', by rwa [← hψ hx hx']⟩
-  · rintro ⟨h0, hx', hK⟩
-    have hx := mem_kuranishiZeroSet_empty_of_eq_zero (𝒜.deformationAction I hJB g p).2 (he.2 h0)
-    exact ⟨he.2 h0, hx, by rwa [hψ hx hx']⟩
+  by_cases h0 : p.1.1 = 0
+  · rw [mem_deformationSupport_iff_of_eq_zero (he.2 h0), mem_deformationSupport_iff_of_eq_zero h0]
+    refine Eq.to_iff (congrArg (𝒜.baseHomeomorph · ∈ K) ?_)
+    refine (𝒜.footprintMap_act (Finset.empty_subset J) (Finset.restrict₂ hJB g)
+      ⟨_, mem_kuranishiZeroSet_empty_of_eq_zero p.2 h0⟩ _).trans ?_
+    rw [Subsingleton.elim (Finset.restrict₂ (Finset.empty_subset J) _) 1, map_one,
+      Homeomorph.one_apply]
+  · exact iff_of_false (fun h ↦ h0 (he.1 (mem_deformationSupport.1 h).1))
+      fun h ↦ h0 (mem_deformationSupport.1 h).1
 
 /-! ### Comparison maps -/
 
@@ -466,30 +472,23 @@ theorem deformationMap_deformationMap {I'' J'' B'' : Finset A} (hI'I'' : I' ⊆ 
   subst h₁ h₂
   refine Subtype.ext (Prod.ext (funext fun α ↦ ?_) (Prod.ext (funext fun α ↦ ?_) ?_))
   · by_cases hαB : α.1 ∈ B
-    · have hαB' : α.1 ∈ B' := hBB' hαB
-      rw [val_deformationMap_fst_of_mem _ _ α hαB',
-        val_deformationMap_fst_of_mem _ _ ⟨α.1, hαB'⟩ hαB, val_deformationMap_fst_of_mem _ _ _ hαB]
-    · by_cases hαB' : α.1 ∈ B'
-      · rw [val_deformationMap_fst_of_mem _ _ α hαB',
-          val_deformationMap_fst_of_notMem _ _ ⟨α.1, hαB'⟩ hαB,
-          val_deformationMap_fst_of_notMem _ _ α hαB]
-        simp only [Finset.restrict₂_def]
-      · rw [val_deformationMap_fst_of_notMem _ _ α hαB',
-          val_deformationMap_fst_of_notMem _ _ α hαB]
-        simp only [Finset.restrict₂_def]
+    · simp [hαB, hBB' hαB]
+    · by_cases hαB' : α.1 ∈ B' <;> simp [hαB, hαB', Finset.restrict₂_def]
   · by_cases hαB : α.1 ∈ B
-    · have hαB' : α.1 ∈ B' := hBB' hαB
-      rw [val_deformationMap_snd_fst_of_mem _ _ α hαB',
-        val_deformationMap_snd_fst_of_mem _ _ ⟨α.1, hαB'⟩ hαB,
-        val_deformationMap_snd_fst_of_mem _ _ _ hαB]
-    · by_cases hαB' : α.1 ∈ B'
-      · rw [val_deformationMap_snd_fst_of_mem _ _ α hαB',
-          val_deformationMap_snd_fst_of_notMem _ _ ⟨α.1, hαB'⟩ hαB,
-          val_deformationMap_snd_fst_of_notMem _ _ α hαB]
-      · rw [val_deformationMap_snd_fst_of_notMem _ _ α hαB',
-          val_deformationMap_snd_fst_of_notMem _ _ α hαB]
+    · simp [hαB, hBB' hαB]
+    · by_cases hαB' : α.1 ∈ B' <;> simp [hαB, hαB']
   · simp only [val_deformationMap_snd_snd]
     exact 𝒜.footprintMap_footprintMap hJ''J' hJ'J _ _ _
+
+/-- The comparison map from `(I, J, B)` to itself is the identity. -/
+theorem deformationMap_self (hIJ : I ⊆ J) (p : 𝒜.deformationSpace I hJB)
+    (e' : (α : ↥(B \ B)) → E α) :
+    𝒜.deformationMap subset_rfl hIJ subset_rfl hJB subset_rfl p e' = p := by
+  refine Subtype.ext (Prod.ext (funext fun α ↦ ?_) (Prod.ext (funext fun α ↦ ?_) ?_))
+  · simp
+  · simp
+  · rw [val_deformationMap_snd_snd]
+    exact 𝒜.footprintMap_self J _
 
 /-- The comparison maps are equivariant for `Γ_B'`, which acts on `D_(I,J,B)` through `Γ_B` and
 on `E_(B' \ B)` by the representations. -/
@@ -521,32 +520,16 @@ theorem deformationMap_mem_deformationSupport_iff {K : Set X} (p : 𝒜.deformat
       p ∈ 𝒜.deformationSupport I hJB K ∧ e' = 0 := by
   have he : (𝒜.deformationMap hII' hIJ' hJ'J hJB hBB' p e').1.1 = 0 ↔ p.1.1 = 0 ∧ e' = 0 := by
     refine ⟨fun h ↦ ⟨funext fun α ↦ ?_, funext fun α ↦ ?_⟩, fun ⟨h₁, h₂⟩ ↦ funext fun α ↦ ?_⟩
-    · have := congrFun h ⟨α.1, hBB' α.2⟩
-      rwa [val_deformationMap_fst_of_mem _ _ ⟨α.1, hBB' α.2⟩ α.2] at this
-    · have := congrFun h ⟨α.1, (Finset.mem_sdiff.1 α.2).1⟩
-      rwa [val_deformationMap_fst_of_notMem _ _ ⟨α.1, (Finset.mem_sdiff.1 α.2).1⟩
-        (Finset.mem_sdiff.1 α.2).2] at this
-    · by_cases hα : α.1 ∈ B
-      · rw [val_deformationMap_fst_of_mem _ _ _ hα, h₁]
-        simp only [Pi.zero_apply]
-      · rw [val_deformationMap_fst_of_notMem _ _ _ hα, h₂]
-        simp only [Pi.zero_apply]
-  have hψ : ∀ (hx : (𝒜.deformationMap hII' hIJ' hJ'J hJB hBB' p e').1.2.2 ∈
-        kuranishiZeroSet 𝒜.kuranishi ∅ J') (hx' : p.1.2.2 ∈ kuranishiZeroSet 𝒜.kuranishi ∅ J),
-      𝒜.footprintMap (Finset.empty_subset J') ⟨_, hx⟩ =
-        𝒜.footprintMap (Finset.empty_subset J) ⟨_, hx'⟩ := fun hx hx' ↦
-    𝒜.footprintMap_footprintMap (Finset.empty_subset J') hJ'J
-      ⟨p.1.2.2, mem_kuranishiZeroSet_of_mem_deformationSpace hIJ' p.2⟩ hx hx'
-  constructor
-  · rintro ⟨h0, hx, hK⟩
-    obtain ⟨hp0, he0⟩ := he.1 h0
-    have hx' := mem_kuranishiZeroSet_empty_of_eq_zero p.2 hp0
-    exact ⟨⟨hp0, hx', by rwa [← hψ hx hx']⟩, he0⟩
-  · rintro ⟨⟨hp0, hx', hK⟩, he0⟩
-    have h0 := he.2 ⟨hp0, he0⟩
-    have hx := mem_kuranishiZeroSet_empty_of_eq_zero
-      (𝒜.deformationMap hII' hIJ' hJ'J hJB hBB' p e').2 h0
-    exact ⟨h0, hx, by rwa [hψ hx hx']⟩
+    · simpa using congrFun h ⟨α.1, hBB' α.2⟩
+    · simpa [(Finset.mem_sdiff.1 α.2).2] using congrFun h ⟨α.1, (Finset.mem_sdiff.1 α.2).1⟩
+    · by_cases hα : α.1 ∈ B <;> simp [hα, h₁, h₂]
+  by_cases h0 : p.1.1 = 0 ∧ e' = 0
+  · rw [and_iff_left h0.2, mem_deformationSupport_iff_of_eq_zero (he.2 h0),
+      mem_deformationSupport_iff_of_eq_zero h0.1]
+    exact Eq.to_iff (congrArg (𝒜.baseHomeomorph · ∈ K)
+      (𝒜.footprintMap_footprintMap (Finset.empty_subset J') hJ'J _ _ _))
+  · exact iff_of_false (fun h ↦ h0 (he.1 (mem_deformationSupport.1 h).1))
+      fun h ↦ h0 ⟨(mem_deformationSupport.1 h.1).1, h.2⟩
 
 end DeformationMap
 
