@@ -36,14 +36,15 @@ of the kernel.
 For a measure invariant under a group action, an integrand invariant under `g` has the same
 integral, and the same integrability, on `g • V` as on `V`.
 
-The integral of the difference `w (· + a) - w` of an integrable function against an essentially
-bounded function `φ` equals the integral of `w` against `φ (· - a) - φ`, by translation
-invariance.
+The integral of the difference `w (· + a) - w` of an integrable function against an
+a.e. strongly measurable, essentially bounded function `φ` (that is, `φ ∈ L^∞`) equals the
+integral of `w` against `φ (· - a) - φ`, by right-translation invariance. Only right translations
+need to be measurable.
 
 ## Main declarations
 
 * `TauCeti.integral_comp_add_sub_mul_eq`: moving a translation of an integrable function
-  onto an essentially bounded function inside an integral.
+  onto an a.e. strongly measurable, essentially bounded function inside an integral.
 * `TauCeti.setIntegral_ball_eq_setIntegral_ball_zero_add`: translating a ball integral to the
   origin.
 * `TauCeti.setIntegral_ball_sub_eq_zero`, `TauCeti.setAverage_ball_id`: for a measure invariant
@@ -226,25 +227,30 @@ end SMulSet
 
 section Translation
 
-variable {G 𝕜 : Type*} [AddGroup G] [MeasurableSpace G] [MeasurableAdd G]
+variable {G 𝕜 : Type*} [AddGroup G] [MeasurableSpace G] [MeasurableConstVAdd Gᵃᵒᵖ G]
   {μ : Measure G} [μ.IsAddRightInvariant] [NormedCommRing 𝕜] [NormedSpace ℝ 𝕜]
 
-/-- Moving a translation from the integrable function `w` onto the essentially bounded function
-`φ` inside an integral:
-`∫ (w (· + a) - w) * φ = ∫ (φ (· - a) - φ) * w`. -/
+/-- Moving a translation from the integrable function `w` onto the a.e. strongly measurable,
+essentially bounded function `φ` (the hypothesis `MemLp φ ∞ μ`) inside an integral:
+`∫ (w (· + a) - w) * φ = ∫ (φ (· - a) - φ) * w`. Only right translations need to be measurable,
+which `[MeasurableConstVAdd Gᵃᵒᵖ G]` expresses; `[MeasurableAdd G]` provides it. -/
 theorem integral_comp_add_sub_mul_eq {w φ : G → 𝕜} (hw : Integrable w μ) (hφ : MemLp φ ∞ μ)
     (a : G) : ∫ x, (w (x + a) - w x) * φ x ∂μ = ∫ y, (φ (y - a) - φ y) * w y ∂μ := by
-  have h1 : Integrable (fun x => w (x + a) * φ x) μ := (hw.comp_add_right a).mul_of_top_left hφ
+  have hadd (b : G) : MeasurePreserving (· + b) μ μ :=
+    measurePreserving_vadd (AddOpposite.op b) μ
+  have hsub : MeasurePreserving (· - a) μ μ := by simpa only [sub_eq_add_neg] using hadd (-a)
+  have h1 : Integrable (fun x => w (x + a) * φ x) μ :=
+    (((hadd a).integrable_comp hw.1).2 hw).mul_of_top_left hφ
   have h2 : Integrable (fun x => w x * φ x) μ := hw.mul_of_top_left hφ
   have h3 : Integrable (fun x => w x * φ (x - a)) μ :=
-    hw.mul_of_top_left (hφ.comp_measurePreserving (measurePreserving_sub_right μ a))
+    hw.mul_of_top_left (hφ.comp_measurePreserving hsub)
   calc ∫ x, (w (x + a) - w x) * φ x ∂μ
       = ∫ x, w (x + a) * φ x ∂μ - ∫ y, w y * φ y ∂μ := by
         rw [← integral_sub h1 h2]
         congr 1 with x
         ring
     _ = ∫ y, w y * φ (y - a) ∂μ - ∫ y, w y * φ y ∂μ := by
-        rw [← integral_add_right_eq_self (fun y => w y * φ (y - a)) a]
+        rw [← integral_vadd_eq_self (fun y => w y * φ (y - a)) (g := AddOpposite.op a)]
         simp
     _ = ∫ y, (φ (y - a) - φ y) * w y ∂μ := by
         rw [← integral_sub h3 h2]
