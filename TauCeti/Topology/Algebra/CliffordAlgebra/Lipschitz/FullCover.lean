@@ -155,8 +155,8 @@ theorem isOpenMap_cliffordFullCoverToOrthogonal (hQ : Q.Nondegenerate)
 
 /-- **The full cover is a covering of the orthogonal group.** For a nondegenerate quadratic form on
 a finite-dimensional space over a Hausdorff, locally compact and σ-compact topological field in
-which every element is a square up to sign, the action of the normalized full cover is a quotient
-covering map onto the orthogonal group, with deck group its finite kernel. -/
+which every element is a square up to sign, the action of the normalized full cover onto the
+orthogonal group is the quotient covering map associated to the action of its finite kernel. -/
 theorem isQuotientCoveringMap_cliffordFullCoverToOrthogonal (hQ : Q.Nondegenerate)
     (hK : ∀ a : K, IsSquare a ∨ IsSquare (-a)) :
     IsQuotientCoveringMap (cliffordFullCoverToOrthogonal Q)
