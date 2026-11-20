@@ -106,7 +106,8 @@ theorem hasWeakFDerivOn_newtonianKernel_convolution (hf : Integrable f)
       (fderiv ℝ (newtonianKernel n) ⋆[(lsmul ℝ ℝ).flip] f) :=
   hasWeakFDerivOn_convolution_of_forall_integral_fderiv_mul_sub
     (locallyIntegrable_newtonianKernel n) (locallyIntegrable_fderiv_newtonianKernel n)
-    (fun _ hg hgc v t ↦ integral_fderiv_mul_newtonianKernel_sub hg hgc v t) hf hfc Ω
+    (fun _ hg hgc v t ↦ integral_fderiv_mul_newtonianKernel_sub (hg.of_le (by simp)) hgc v t)
+    hf hfc Ω
 
 /-- **The Newtonian potential solves Poisson's equation in the sense of distributions.** For
 `n = 1` or `n ≥ 3` and `f` integrable with compact support, `-Δ(Gₙ ⋆ f) = f` weakly: for every

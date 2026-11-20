@@ -79,7 +79,8 @@ theorem hasWeakFDerivOn_planarNewtonianKernel_convolution (hg : Continuous g)
     locallyIntegrable_planarNewtonianKernel locallyIntegrable_fderiv_planarNewtonianKernel
     (fun φ hφ hφc v t ↦ by
       simpa only [mul_comm] using
-        integral_planarNewtonianKernel_sub_mul_fderiv_eq_neg_fderiv_mul hφ hφc v t)
+        integral_planarNewtonianKernel_sub_mul_fderiv_eq_neg_fderiv_mul
+          (hφ.of_le (by simp)) hφc v t)
     (hg.integrable_of_hasCompactSupport hgc) hgc Ω
 
 /-- **The Newtonian potential gains one derivative.** For `g` of class `C^k` with compact support
