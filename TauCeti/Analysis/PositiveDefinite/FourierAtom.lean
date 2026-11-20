@@ -14,6 +14,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.Fourier.FourierCharDeriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
@@ -139,11 +140,8 @@ variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] {n : WithT
 
 /-- Fourier atoms are jointly smooth in the frequency and the spatial variable. -/
 theorem contDiff_uncurry_fourierAtom : ContDiff ℝ n (Function.uncurry (fourierAtom (V := W))) := by
-  simp_rw [Function.uncurry_def, fourierAtom_eq_fourierChar, Real.fourierChar_apply]
-  exact Complex.contDiff_exp.comp
-    ((Complex.ofRealCLM.contDiff.comp
-      (contDiff_const.mul (contDiff_inner.comp (contDiff_snd.prodMk contDiff_fst)).neg)).mul
-        contDiff_const)
+  simp_rw [Function.uncurry_def, fourierAtom_eq_fourierChar]
+  exact (contDiff_inner.comp (contDiff_snd.prodMk contDiff_fst)).neg.fourierChar
 
 /-- Fourier atoms are smooth in the spatial variable. -/
 theorem contDiff_fourierAtom (q : W) : ContDiff ℝ n (fourierAtom q) :=

@@ -421,25 +421,6 @@ theorem hasSum_localFourier_ofSupportedIn [MeasurableSpace E] [BorelSpace E] (T 
   rw [h1] at hsum
   simpa only [Function.comp_def, h2] using hsum
 
-/-- Around every point of `Ω` there are a compact set `K ⊆ U ∩ Ω` for a given neighbourhood `U`, a
-smaller neighbourhood `K₁` of the point, a smooth function supported in `K` equal to one on `K₁`,
-and a full lattice none of whose nonzero translates of `K` meet `K`: the data of a Fourier expansion
-of the cutoffs supported in `K₁`. -/
-private theorem exists_compacts_cutoff_lattice {x : E} (hx : x ∈ Ω) {U : Set E} (hU : U ∈ 𝓝 x) :
-    ∃ (K : Compacts E) (K₁ : Set E), (K : Set E) ⊆ U ∩ Ω ∧ K₁ ∈ 𝓝 x ∧ K₁ ⊆ K ∧
-      (∃ χ : 𝓓_{K}(E, ℂ), ∀ y ∈ K₁, χ y = 1) ∧ ∃ (L : Submodule ℤ E) (_ : DiscreteTopology L)
-        (_ : IsZLattice ℝ L), ∀ y ∈ K, ∀ ℓ : L, y + ℓ ∈ K → ℓ = 0 := by
-  obtain ⟨K₂, hK₂x, hK₂U, hK₂⟩ := local_compact_nhds (inter_mem hU (Ω.isOpen.mem_nhds hx))
-  obtain ⟨K₁, hK₁x, hK₁K₂, hK₁⟩ := local_compact_nhds (interior_mem_nhds.2 hK₂x)
-  obtain ⟨χ₀, hχ₀, -, hχ₀1, -, hχ₀s⟩ := hK₁.exists_contDiff_cutoff isOpen_interior hK₁K₂
-  obtain ⟨L, hLd, hLz, hL⟩ := ZLattice.exists_forall_add_mem_eq_zero_of_isBounded hK₂.isBounded
-  refine ⟨⟨K₂, hK₂⟩, K₁, hK₂U, hK₁x, hK₁K₂.trans interior_subset,
-    ⟨ContDiffMapSupportedIn.of_support_subset (ofRealCLM.contDiff.comp hχ₀)
-      fun y hy ↦ interior_subset (hχ₀s (subset_tsupport _ (by simpa using hy))), fun y hy ↦ ?_⟩,
-    L, hLd, hLz, fun y hy ℓ h ↦ Subtype.ext (hL y hy ℓ ℓ.property h)⟩
-  have h1 : χ₀ y = 1 := interior_subset (hχ₀1 hy)
-  exact (ContDiffMapSupportedIn.coe_of_support_subset _ _ y).trans (by simp [h1])
-
 /-- **Uniform independence of the cutoff.** If `T` is microlocally smooth at `(x, ξ)`, then there
 are a neighbourhood `U` of `x` and an open cone `Γ` containing `ξ` on which the decay of every order
 `N` holds uniformly over the cutoffs supported in `U` with bounded derivatives: for some `r` and
@@ -458,7 +439,8 @@ theorem IsMicrolocallySmoothAt.exists_nhds_cone_forall_one_add_norm_pow_mul_norm
     exact φ.tsupport_subset (subset_tsupport _ hφ)
   obtain ⟨U₀, hU₀, Γ₀, hΓ₀, hξ₀, hcone₀, hdecay₀⟩ := h.exists_nhds_cone
   obtain ⟨Γ, hΓ, hξ, hcone, c, hc, hΓΓ₀⟩ := hΓ₀.exists_cone_closedBall_subset hcone₀ hξ₀
-  obtain ⟨K, K₁, hKU, hK₁x, hK₁K, ⟨χ, hχ1⟩, L, _, _, hL⟩ := exists_compacts_cutoff_lattice hx hU₀
+  obtain ⟨K, K₁, hKU, hK₁x, hK₁K, ⟨χ, hχ1⟩, L, _, _, hL⟩ :=
+    ContDiffMapSupportedIn.exists_compacts_cutoff_lattice (inter_mem hU₀ (Ω.isOpen.mem_nhds hx))
   have hKΩ : (K : Set E) ⊆ Ω := hKU.trans inter_subset_right
   -- The localized Fourier transform of `T` with the fixed cutoff `χ` decays on `Γ₀`.
   let χT : 𝓓(Ω, ℂ) := ofSupportedIn hKΩ χ
