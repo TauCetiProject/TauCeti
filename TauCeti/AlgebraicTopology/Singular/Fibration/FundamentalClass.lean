@@ -318,16 +318,29 @@ private lemma mapsTo_compl_fiber (y : p ⁻¹' {b}) :
     MapsTo (𝟙 E) (p ⁻¹' {b})ᶜ ({y.val}ᶜ : Set E) :=
   fun _ hz ↦ compl_subset_compl.2 (singleton_subset_iff.2 y.property) hz
 
+variable (p) in
+/-- The part of `E` over the chart ball, projected to the ball about `0` by the chart coordinate
+`x ↦ e x - e b` (`TauCeti.TopCat.normalCoordinateProj`). -/
+private abbrev chartProj :
+    _root_.TopCat.of (p ⁻¹' e.chartBall b ε) ⟶ _root_.TopCat.of (ball (0 : V) ε) :=
+  normalCoordinateProj p (_root_.TopCat.isoOfHomeo (X := _root_.TopCat.of (e.chartBall b ε))
+    (Y := _root_.TopCat.of (ball (0 : V) ε)) (e.chartBallHomeomorph hε)).hom
+
+/-- The fibre over `0` of `chartProj` is the fibre of `p` over `b`. -/
+private abbrev chartFiberHomeomorph : fiber (chartProj p e hε) ≃ₜ (p ⁻¹' {b}) :=
+  normalCoordinateProjFiberHomeomorph (e.isoOfHomeo_chartBallHomeomorph_hom_eq_zero_iff hε hb)
+    (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀))
+
 variable (y : p ⁻¹' {b})
 
-/-- The point of the fibre over `0` of `OpenPartialHomeomorph.chartBallProj e hε p` corresponding
-to the point `y` of the fibre over `b`. -/
-private abbrev fiberPoint : fiber (e.chartBallProj hε p) :=
-  (e.chartBallProjFiberHomeomorph hb hε p hε₀).symm y
+/-- The point of the fibre over `0` of `chartProj` corresponding to the point `y` of the fibre
+over `b`. -/
+private abbrev fiberPoint : fiber (chartProj p e hε) :=
+  (chartFiberHomeomorph e hb hε hε₀).symm y
 
 omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] [T1Space B] in
 private lemma coe_fiberPoint : ((fiberPoint e hb hε hε₀ y).val : E) = y.val :=
-  e.coe_chartBallProjFiberHomeomorph_symm_apply hb hε p hε₀ y
+  coe_normalCoordinateProjFiberHomeomorph_symm_apply _ _ y
 
 /-- The pair `(U, U ∖ {y})` for `U` the part of `E` over the chart ball, read in `U`. -/
 private def pointPairIso :
@@ -341,16 +354,16 @@ private def pointPairIso :
 /-- The fibre over `0` minus the point corresponding to `y` is the fibre over `b` minus `y`. -/
 private def fiberPointPairIso :
     TopPair.ofSubset ({fiberPoint e hb hε hε₀ y}ᶜ :
-        Set (_root_.TopCat.of (fiber (e.chartBallProj hε p)))) ≅
+        Set (_root_.TopCat.of (fiber (chartProj p e hε)))) ≅
       TopPair.ofSubset ({y}ᶜ : Set (_root_.TopCat.of (p ⁻¹' {b}))) :=
-  TopPair.ofSubsetIso (e.chartBallProjFiberHomeomorph hb hε p hε₀) fun z ↦ by
+  TopPair.ofSubsetIso (chartFiberHomeomorph e hb hε hε₀) fun z ↦ by
     simp only [mem_compl_iff, mem_singleton_iff, fiberPoint]
     exact (Homeomorph.eq_symm_apply _).not
 
 omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] [T1Space B] in
 private lemma fst_fiberPointPairIso_hom :
     TopPair.Hom.fst (fiberPointPairIso e hb hε hε₀ y).hom =
-      _root_.TopCat.ofHom (e.chartBallProjFiberHomeomorph hb hε p hε₀) := by
+      _root_.TopCat.ofHom (chartFiberHomeomorph (p := p) e hb hε hε₀) := by
   simp only [fiberPointPairIso, TopPair.ofSubsetIso_hom]
   exact TopPair.ofSubsetMap_fst _ _
 
@@ -359,13 +372,14 @@ omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] [T1Space B] in
 private lemma excisionMap_comp_ofSubsetMap :
     TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ ≫
         TopPair.ofSubsetMap (𝟙 E) (mapsTo_compl_fiber y) =
-      (e.chartBallComplFiberPairIso hb hε p).hom ≫
+      (normalCoordinateComplPairIso (p := p)
+          (e.isoOfHomeo_chartBallHomeomorph_hom_eq_zero_iff hε hb)).hom ≫
         TopPair.ofSubsetMap (𝟙 _) (mapsTo_compl_singleton (fiberPoint e hb hε hε₀ y)) ≫
         (pointPairIso e hb hε hε₀ y).inv ≫
         TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) ({y.val}ᶜ : Set E) := by
   refine TopPair.hom_ext_of_fst _ ?_
   ext z
-  simp only [pointPairIso, OpenPartialHomeomorph.chartBallComplFiberPairIso_hom,
+  simp only [pointPairIso, normalCoordinateComplPairIso_hom,
     TopPair.ofSubsetIso_inv, TopPair.Hom.fst_comp, ConcreteCategory.comp_apply]
   -- Every map involved is an inclusion or an identity of the underlying spaces; `erw` sees
   -- through the bundled forms of these maps, which `rw` does not unfold.
@@ -427,7 +441,8 @@ theorem singularHomologyComplFiberIso_hom_comp_singularHomologyπ [T1Space Y] (n
   -- over `0` corresponding to `y` is computed by `complSingletonIso`.
   have hψ := TrivialDisk.singularHomologyPreimageNeZeroIso_hom_comp_singularHomologyπ
     (e.chartBallTrivialization hε T hT) (e.chartBallTrivialization_apply_fst hε T hT) M
-    (e.mem_serreFibrations_chartBallProj hε hp) (convex_ball 0 ε) (ball_mem_nhds 0 hε₀)
+    (mem_serreFibrations_normalCoordinateProj hp (serreFibrations.of_isIso _)) (convex_ball 0 ε)
+    (ball_mem_nhds 0 hε₀)
     (fiberPoint e hb hε hε₀ y) n m h
   -- On the fibres, the restriction to `y` is the restriction to the corresponding point over `0`.
   have hfib := TopPair.singularHomologyπ_naturality (fiberPointPairIso e hb hε hε₀ y).hom
@@ -443,11 +458,14 @@ theorem singularHomologyComplFiberIso_hom_comp_singularHomologyπ [T1Space Y] (n
     (preimage_mono (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀))) m
   rw [← cancel_epi (TopPair.singularHomologyMap
     (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ) M m)]
-  calc _ = _ := singularHomologyMap_excisionMap_comp_singularHomologyComplFiberIso_hom_assoc M e hb
-        hε hε₀ hp n m h _
+  rw [singularHomologyComplFiberIso_def]
+  calc _ = _ := singularHomologyMap_excisionMap_comp_singularHomologyComplPreimageIso_hom_assoc
+        (e.isoOfHomeo_chartBallHomeomorph_hom_eq_zero_iff hε hb) M (e.isOpen_chartBall b ε)
+        isClosed_singleton (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀)) hp
+        (serreFibrations.of_isIso _) (convex_ball 0 ε) (ball_mem_nhds 0 hε₀) n m h _
     -- Over the chart ball: the square of `complSingletonIso`, then the identification of fibres.
-    _ = TopPair.singularHomologyMap (e.chartBallComplFiberPairIso hb hε p).hom
-          M m ≫
+    _ = TopPair.singularHomologyMap (normalCoordinateComplPairIso (p := p)
+          (e.isoOfHomeo_chartBallHomeomorph_hom_eq_zero_iff hε hb)).hom M m ≫
           (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _)
             (mapsTo_compl_singleton (fiberPoint e hb hε hε₀ y))) M m ≫
             (complSingletonIso (e.chartBallTrivialization hε T hT)
