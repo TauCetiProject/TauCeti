@@ -204,7 +204,7 @@ theorem mem_niemeierD16E8_carrier_iff_checkerboard
     (x : ∀ i, Fin (RootfulNiemeierType.d16e8.componentType i).rank → ℚ) :
     x ∈ niemeierD16E8.carrier ↔
       (rootLatticeIsometryCheckerboard 16 (by decide) (isSimplyLaced_D 16)) (x ⟨0, by decide⟩) ∈
-        (checkerboardPlusCarrier 16).1 ∧
+        (checkerboardPlusCarrier 16).val ∧
         ∀ j, ∃ z : ℤ, (z : ℚ) = x ⟨1, by decide⟩ j := by
   rw [mem_niemeierD16E8_carrier_iff]
   have hmem (y : ∀ i, Fin (RootfulNiemeierType.d16e8.componentType i).rank → ℚ) :

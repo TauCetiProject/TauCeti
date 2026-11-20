@@ -71,10 +71,10 @@ continuous on the closed strip `ℝ × [0, 1]`, and let `u` be `C²` and solve
 `{r > R}`. If `u` maps both boundary lines `ℑ z = 0` and `ℑ z = 1` into `{r ≤ R}`, and also the
 two ends `|ℜ z| ≥ T` of the strip for some `T`, then `u` maps the whole strip into `{r ≤ R}`. -/
 theorem liouvilleRadialCoordinate_le_of_le_strip_boundary_of_le_ends
-    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.1 = α.1) {R T : ℝ}
+    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val) {R T : ℝ}
     (hR : 1 ≤ R)
     (hJ : ∀ w x, R < liouvilleRadialCoordinate Z W x → ∀ v,
-      mvfderiv I (liouvilleRadialCoordinate Z W) x (J w x v) = -α.1 x ![v])
+      mvfderiv I (liouvilleRadialCoordinate Z W) x (J w x v) = -α.val x ![v])
     (htame : ∀ w x, R < liouvilleRadialCoordinate Z W x → ∀ v, 0 ≤ ω.eval₂ x v (J w x v))
     (hf : ContinuousOn (liouvilleRadialCoordinate Z W ∘ u) (univ ×ℂ Icc 0 1))
     (hu : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < liouvilleRadialCoordinate Z W (u z) →

@@ -9,8 +9,6 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import TauCeti.LinearAlgebra.Basis.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
-import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
-import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 import TauCeti.LinearAlgebra.LinearIndependent.Fin
 
 /-!
@@ -26,10 +24,7 @@ combined complementary parts complete a basis of their sum. This gives compatibl
 coordinates for comparing determinants of the four subspaces.
 
 The image of a subspace under a linear map has the same span as the images of any of its
-bases, including when that span is taken over a larger scalar ring. For a subspace `W` of
-`ι → K` over a field `K` (`[Finite ι]`), extending scalars coordinatewise to an integral domain `S`
-along an algebra map or ring homomorphism preserves its dimension
-(`Submodule.finrank_span_image_algebraMap`, `Submodule.finrank_span_image_ringHom`).
+bases, including when that span is taken over a larger scalar ring.
 -/
 
 public section
@@ -93,7 +88,7 @@ theorem exists_linearIndependent_span_inf_sup (U W : Submodule k V)
   let bZ := Module.finBasis k Z
   have hbas (P : Submodule k V) [Module.Finite k P] :
       span k (Set.range fun i ↦ (Module.finBasis k P i : V)) = P :=
-    (Submodule.span_range_subtype_eq_top_iff P fun i ↦ (Module.finBasis k P i).2).1
+    (Submodule.span_range_subtype_eq_top_iff P fun i ↦ (Module.finBasis k P i).property).1
       (Module.finBasis k P).span_eq
   refine ⟨_, _, _, (fun i ↦ (bX i : V)), (fun i ↦ (bY i : V)), (fun i ↦ (bZ i : V)),
     ?_, hbas _, ?_, ?_, ?_⟩
@@ -135,47 +130,3 @@ theorem span_image (b : Basis α R U) (f : M →ₗ[R] N) :
   simp only [Function.comp_def, Submodule.subtype_apply]
 
 end Module.Basis
-
-namespace Submodule
-
-/-- For a subspace `W` of `ι → K` over a field `K` (`[Finite ι]`) and an `K`-algebra `S` that is an
-integral domain, the `S`-span in `ι → S` of the coordinatewise image of `W` under `algebraMap K S`
-has `S`-dimension equal to `finrank K W`. -/
-theorem finrank_span_image_algebraMap {K S ι : Type*} [Field K] [CommRing S] [IsDomain S]
-    [Algebra K S] [Finite ι] (W : Submodule K (ι → K)) :
-    Module.finrank S
-        (span S ((fun (v : ι → K) i ↦ algebraMap K S (v i)) '' (W : Set (ι → K)))) =
-      Module.finrank K W := by
-  let b := Module.finBasis K W
-  let f : (ι → K) →ₗ[K] (ι → S) := Pi.algebraMap ι K S
-  have hf : (⇑f : (ι → K) → ι → S) = fun v i ↦ algebraMap K S (v i) := by
-    ext v i
-    simp [f, Pi.algebraMap]
-  have hspan : span S ((fun (v : ι → K) i ↦ algebraMap K S (v i)) '' (W : Set (ι → K))) =
-      span S (Set.range fun j ↦ f (b j)) := by
-    rw [← hf]
-    exact b.span_image f
-  have hli : LinearIndependent S (fun j ↦ f (b j)) := by
-    have hcomp : (fun j ↦ f (b j)) = fun j ↦ algebraMap K S ∘ (b j : ι → K) := by
-      ext j i
-      simp [f, Pi.algebraMap]
-    rw [hcomp]
-    exact (linearIndependent_algebraMap_comp_iff (R := K) (S := S)).mpr
-      b.linearIndependent_coe_basis
-  rw [hspan, finrank_span_eq_card hli, Fintype.card_fin]
-
-/-- For a subspace `W` of `ι → K` over a field `K` (`[Finite ι]`) and a ring homomorphism
-`φ : K →+* S` into an integral domain `S`, the `S`-span in `ι → S` of the coordinatewise image of
-`W` under `φ` has `S`-dimension equal to `finrank K W`. -/
-theorem finrank_span_image_ringHom {K S ι : Type*} [Field K] [CommRing S] [IsDomain S] [Finite ι]
-    (W : Submodule K (ι → K)) (φ : K →+* S) :
-    Module.finrank S (span S ((fun (v : ι → K) i ↦ φ (v i)) '' (W : Set (ι → K)))) =
-      Module.finrank K W := by
-  let : Algebra K S := φ.toAlgebra
-  have hφ : (fun (v : ι → K) i ↦ φ (v i)) = fun (v : ι → K) i ↦ algebraMap K S (v i) := by
-    ext v i
-    simp [RingHom.algebraMap_toAlgebra]
-  rw [hφ]
-  exact W.finrank_span_image_algebraMap
-
-end Submodule

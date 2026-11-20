@@ -178,7 +178,7 @@ theorem dirichletOperator_apply_eq_of_isWeakSolutionDirichlet
     {f : (dirichletOperator hcoeff hcoercive).domain} {g : Lp ℝ 2 (mu.restrict Omega)}
     {u : W1p0 mu Omega 2} (hu : W1p.value (u : W1p mu Omega 2) = f)
     (hg : IsWeakSolutionDirichlet a b c g u) : dirichletOperator hcoeff hcoercive f = g :=
-  ((LinearPMap.image_iff f.2).2
+  ((LinearPMap.image_iff f.property).2
     ((mem_graph_dirichletOperator_iff hcoeff hcoercive).2 ⟨u, hu, hg⟩)).symm
 
 /-- A Dirichlet eigenfunction is an eigenvector of the Dirichlet realization: if
@@ -375,8 +375,9 @@ theorem dirichletOperator_apply_eq_of_forall_neg_setIntegral_laplacian_mul_eq
       -∫ x in Omega, Δ (φ : EuclideanSpace ℝ ι → ℝ) x * (f : Lp ℝ 2 (mu.restrict Omega)) x ∂mu =
         ∫ x in Omega, g x * φ x ∂mu) :
     dirichletOperator hcoeff hcoercive f = g :=
-  ((LinearPMap.image_iff f.2).2 ((mem_graph_dirichletOperator_laplacian_iff hcoeff hcoercive).2
-    ⟨((mem_domain_dirichletOperator_laplacian_iff hcoeff hcoercive).1 f.2).1, hg⟩)).symm
+  ((LinearPMap.image_iff f.property).2 ((mem_graph_dirichletOperator_laplacian_iff hcoeff
+      hcoercive).2
+    ⟨((mem_domain_dirichletOperator_laplacian_iff hcoeff hcoercive).1 f.property).1, hg⟩)).symm
 
 /-- On its domain, the Dirichlet Laplacian is the distributional `-Δ`, in unsigned form: for `f`
 in the domain, `∫_Ω Δφ f = ∫_Ω (-A f) φ` for every test function `φ` on `Ω`. -/

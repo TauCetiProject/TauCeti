@@ -257,7 +257,7 @@ theorem relativeSubspaceArakelovHeight_euclideanDual [Fintype ι] :
   obtain ⟨c, hc, h⟩ :=
     exists_plucker_eq_mul_plucker_compl_or_eq_neg (finrank_add_finrank_euclideanDual U)
     b.linearIndependent_coe_basis b'.linearIndependent_coe_basis
-    fun i j ↦ mem_euclideanDual.1 (b' j).2 _ (b i).2
+    fun i j ↦ mem_euclideanDual.1 (b' j).property _ (b i).property
   rw [relativeSubspaceArakelovHeight_eq_arakelovMulHeight_plucker b',
     relativeSubspaceArakelovHeight_eq_arakelovMulHeight_plucker b,
     arakelovMulHeight_eq_of_forall_eq_or_eq_neg h]
@@ -484,9 +484,9 @@ theorem relativeSubspaceArakelovLogHeight_ker_mulVecLin :
   rw [A.ker_mulVecLin_eq_euclideanDual_span_range_row,
     relativeSubspaceArakelovLogHeight_euclideanDual]
 
-/-- By Hodge duality of Arakelov heights, the absolute Euclidean height of the kernel of a matrix
-`A` equals the absolute Euclidean height of its row space `span K (range A.row)`, without any rank,
-row-independence, or row-finiteness assumption on `A`. -/
+/-- **Hodge duality for matrix kernels.** The absolute Euclidean height of `ker A` equals the
+absolute Euclidean height of the row space of `A`, without any rank, row-independence, or
+row-finiteness assumption on `A`. -/
 theorem subspaceHeight_ker_mulVecLin :
     (LinearMap.ker A.mulVecLin).subspaceHeight = (span K (range A.row)).subspaceHeight := by
   rw [A.ker_mulVecLin_eq_euclideanDual_span_range_row, subspaceHeight_euclideanDual]

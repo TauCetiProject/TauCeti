@@ -13,10 +13,11 @@ import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 # Height of a subspace in terms of a spanning family
 
 The Euclidean height of a subspace is at most the product of the Euclidean
-heights of any basis. The constant is one: the local estimate is Hadamard's
-inequality at infinity and the ultrametric determinant bound at finite places.
-This bound lets one estimate the height of a kernel using its defining forms
-and dot-product duality.
+heights of any basis, and more generally of any finite family of nonzero
+spanning vectors (`Submodule.subspaceHeight_span_range_le_prod`). The constant
+is one: the local estimate is Hadamard's inequality at infinity and the
+ultrametric determinant bound at finite places. This bound lets one estimate
+the height of a kernel using its defining forms and dot-product duality.
 
 We first bound the relative Arakelov height of a Plücker vector, including
 dependent families with the projective zero convention. Taking degree roots
@@ -24,7 +25,7 @@ gives the absolute Euclidean bound for vectors and subspaces, both for linearly
 independent generators (`Submodule.subspaceHeight_le_prod`) and for arbitrary
 finite spanning families (`Submodule.relativeSubspaceArakelovHeight_span_range_le_prod`,
 `Submodule.subspaceHeight_span_range_le_prod_arakelovMulHeight_rpow`, and for nonzero generators
-`Submodule.subspaceHeight_span_range_le_prod_of_ne_zero`).
+`Submodule.subspaceHeight_span_range_le_prod`).
 
 ## References
 
@@ -118,6 +119,28 @@ theorem subspaceHeight_le_prod {p : ℕ} {x : Fin p → ι → K}
   rw [subspaceHeight_span_range hx]
   exact height2_plucker_le_prod x
 
+/-- Extracting a maximal linearly independent subfamily bounds the subspace height of the span of
+any finite family of nonzero vectors by the product of their Euclidean heights. -/
+theorem subspaceHeight_span_range_le_prod {m : Type*} [Fintype m] {v : m → ι → K}
+    (hv : ∀ i, v i ≠ 0) :
+    subspaceHeight (span K (range v)) ≤ ∏ i, height2 (v i) := by
+  classical
+  obtain ⟨κ, a, ha, hspan, hli⟩ := exists_linearIndependent' K v
+  have : Finite κ := Finite.of_injective a ha
+  let _ := Fintype.ofFinite κ
+  let e : Fin (Fintype.card κ) ≃ κ := (Fintype.equivFin κ).symm
+  let emb : Fin (Fintype.card κ) ↪ m := e.toEmbedding.trans ⟨a, ha⟩
+  have hcomp : v ∘ emb = (v ∘ a) ∘ e := by
+    ext x; simp [emb]
+  have hrange : range (v ∘ emb) = range (v ∘ a) := by
+    rw [hcomp, range_comp, e.range_eq_univ, image_univ]
+  rw [← hspan, ← hrange]
+  refine (subspaceHeight_le_prod (hcomp ▸ hli.comp e e.injective)).trans ?_
+  simp_rw [Function.comp_apply]
+  rw [← Finset.prod_map Finset.univ emb fun i ↦ height2 (v i)]
+  exact Finset.prod_le_prod_of_subset_of_one_le₀ (Finset.subset_univ _)
+    (fun i _ ↦ height2_nonneg (v i)) fun i _ _ ↦ one_le_height2_of_ne_zero (hv i)
+
 /-- The relative Arakelov height of a subspace is bounded by the product of
 relative Arakelov heights of its basis vectors. -/
 theorem relativeSubspaceArakelovHeight_le_prod {U : Submodule K (ι → K)} {p : ℕ}
@@ -170,15 +193,5 @@ theorem subspaceHeight_span_range_le_prod_arakelovMulHeight_rpow {m : Type*} [Fi
   refine (relativeSubspaceArakelovHeight_span_range_le_prod x).trans_eq ?_
   exact Finset.prod_congr rfl fun i _ ↦
     (Real.rpow_inv_natCast_pow (arakelovMulHeight_nonneg _) finrank_pos.ne').symm
-
-/-- The absolute Euclidean height of the span of a finite family of nonzero vectors is at most
-the product of their Euclidean heights, without assuming linear independence. Zero vectors are
-excluded because `height2 0 = 0` whereas every subspace has positive height. -/
-theorem subspaceHeight_span_range_le_prod_of_ne_zero {m : Type*} [Fintype m]
-    {x : m → ι → K} (hx : ∀ i, x i ≠ 0) :
-    subspaceHeight (span K (range x)) ≤ ∏ i, height2 (x i) := by
-  refine (subspaceHeight_span_range_le_prod_arakelovMulHeight_rpow x).trans_eq ?_
-  refine Finset.prod_congr rfl fun i _ ↦ ?_
-  simpa only [one_div, ite_eq_right (hx i)] using arakelovMulHeight_eq_height2 (x i)
 
 end Submodule
