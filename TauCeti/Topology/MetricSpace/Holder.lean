@@ -75,6 +75,7 @@ positive exponent, is equicontinuous on that set
 * `HolderOnWith.sub`: differences preserve the exponent and add the Hölder constants.
 * `MemHolder.sub`: the difference of two `r`-Hölder functions is `r`-Hölder.
 * `holderOnWith_iff_dist_le`: `HolderOnWith` is equivalent to the Hölder bound stated with `dist`.
+* `HolderOnWith.isBounded_image`: a function Hölder on a bounded set has bounded image.
 * `HolderOnWith.of_le_of_dist_le`: a function satisfying a `β`-Hölder bound between points at
   distance less than `δ > 0`, with values within distance `D` of each other, is `γ`-Hölder for
   `γ ≤ β`, with constant `K δ^(β - γ) + D δ^(-γ)`.
@@ -231,6 +232,15 @@ theorem holderOnWith_iff_dist_le {X Y : Type*} [PseudoMetricSpace X] [PseudoMetr
     {C r : ℝ≥0} {f : X → Y} {s : Set X} :
     HolderOnWith C r f s ↔ ∀ x ∈ s, ∀ y ∈ s, dist (f x) (f y) ≤ C * dist x y ^ (r : ℝ) :=
   ⟨fun hf _ hx _ hy => hf.dist_le hx hy, HolderOnWith.of_dist_le⟩
+
+/-- A function Hölder on a bounded set has bounded image. Compare
+`LipschitzWith.isBounded_image`. -/
+theorem HolderOnWith.isBounded_image {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y]
+    {C r : ℝ≥0} {f : X → Y} {s : Set X} (hf : HolderOnWith C r f s)
+    (hs : Bornology.IsBounded s) : Bornology.IsBounded (f '' s) := by
+  rw [Metric.isBounded_iff_ediam_ne_top] at hs ⊢
+  exact ne_top_of_le_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top
+    (ENNReal.rpow_ne_top_of_nonneg r.coe_nonneg hs)) hf.ediam_image_le
 
 /-- Postcomposition with an isometry preserves a Hölder bound on a set, with the same constant
 and exponent. -/
