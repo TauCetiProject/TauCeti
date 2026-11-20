@@ -30,6 +30,10 @@ across the tensor sign of `R ⊗[B] M`.
   structure map `A → B` is the base change of the `R`-algebra map `A →ₐ[R] B`.
 * `TensorProduct.AlgebraTensorModule.lTensor_eq_baseChange`: over the coefficient algebra itself,
   `TensorProduct.AlgebraTensorModule.lTensor` is `LinearMap.baseChange`.
+* `TensorProduct.AlgebraTensorModule.distribBaseChange_symm_comp_map_baseChange`: the
+  comparison `(A ⊗[R] M) ⊗[A] (A ⊗[R] N) ≃ A ⊗[R] (M ⊗[R] N)` is natural in `M` and `N`, with
+  its pure-tensor form
+  `TensorProduct.AlgebraTensorModule.distribBaseChange_symm_baseChange_tmul_baseChange`.
 
 * `TensorProduct.tmul_eq_one_tmul_smul_of_mem`: in `R ⊗[B] M`, for a subring `B` of `R` and
   `r ∈ B`, `r ⊗ m = 1 ⊗ r • m`.
@@ -71,6 +75,35 @@ theorem TensorProduct.AlgebraTensorModule.lTensor_eq_baseChange {R : Type*} (A :
     [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) :
     AlgebraTensorModule.lTensor A A f = f.baseChange A :=
   AlgebraTensorModule.ext fun a x => by simp
+
+/-- The comparison `(A ⊗[R] M) ⊗[A] (A ⊗[R] N) ≃ A ⊗[R] (M ⊗[R] N)` distributing scalar
+extension over a tensor product is natural in both tensor factors. -/
+theorem TensorProduct.AlgebraTensorModule.distribBaseChange_symm_comp_map_baseChange
+    {R A M N P Q : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q]
+    (f : M →ₗ[R] P) (g : N →ₗ[R] Q) :
+    (distribBaseChange R A P Q).symm.toLinearMap ∘ₗ
+        TensorProduct.map (f.baseChange A) (g.baseChange A) =
+      (TensorProduct.map f g).baseChange A ∘ₗ (distribBaseChange R A M N).symm.toLinearMap := by
+  refine TensorProduct.ext' fun x y => ?_
+  induction x using TensorProduct.inductionOn with
+  | add x₁ x₂ h₁ h₂ => simp only [LinearMap.comp_apply, add_tmul, map_add] at h₁ h₂ ⊢; rw [h₁, h₂]
+  | tmul a m =>
+    induction y using TensorProduct.inductionOn with
+    | add y₁ y₂ h₁ h₂ =>
+      simp only [LinearMap.comp_apply, tmul_add, map_add] at h₁ h₂ ⊢; rw [h₁, h₂]
+    | tmul b n => simp
+
+/-- Pure-tensor form of `distribBaseChange_symm_comp_map_baseChange`. -/
+theorem TensorProduct.AlgebraTensorModule.distribBaseChange_symm_baseChange_tmul_baseChange
+    {R A M N P Q : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q]
+    (f : M →ₗ[R] P) (g : N →ₗ[R] Q) (x : A ⊗[R] M) (y : A ⊗[R] N) :
+    (distribBaseChange R A P Q).symm (f.baseChange A x ⊗ₜ[A] g.baseChange A y) =
+      (TensorProduct.map f g).baseChange A ((distribBaseChange R A M N).symm (x ⊗ₜ[A] y)) :=
+  LinearMap.congr_fun (distribBaseChange_symm_comp_map_baseChange f g) (x ⊗ₜ[A] y)
 
 /-- In `R ⊗[B] M`, for a subring `B` of `R`, an element `r ∈ B` can be moved across the tensor
 sign: `r ⊗ m = 1 ⊗ r • m`. -/
