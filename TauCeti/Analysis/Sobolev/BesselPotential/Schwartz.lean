@@ -90,6 +90,13 @@ open scoped ENNReal SchwartzMap BesselPotentialSpace
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- An order `s` above half the dimension of `E` is nonnegative, so that `H^{s,p}(E, F)` embeds
+in `Lᵖ` (`BesselPotentialSpace.inclusionLp`). -/
+theorem TauCeti.nonneg_of_finrank_lt_two_mul {s : ℝ} (hs : Module.finrank ℝ E < 2 * s) :
+    0 ≤ s := by
+  linarith [(Module.finrank ℝ E).cast_nonneg (α := ℝ)]
+
 namespace SchwartzMap
 
 /-- The inclusion of Schwartz functions into the Bessel-potential space `H^{s,p}`, as a continuous

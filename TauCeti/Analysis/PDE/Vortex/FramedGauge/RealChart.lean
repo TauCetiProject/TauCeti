@@ -173,10 +173,10 @@ theorem realSubRef_ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} (u : Fin 4 → realSu
     realSubRef h (ofRealSubRef (f := f) (m := m) hs u) = u := by
   funext j
   refine Subtype.ext ?_
-  rw [coe_realSubRef, subRef_eq_toBesselPotentialSpace _ j (memSobolev_toLp_inclusion h _) ?_,
-    toBesselPotentialSpace_memSobolev_toLp_inclusion]
+  rw [coe_realSubRef, subRef_eq_toBesselPotentialSpace _ j (memSobolev_inclusionLp h _) ?_,
+    toBesselPotentialSpace_memSobolev_inclusionLp]
   filter_upwards [coeFn_inclusionLp_ae_eq_continuousRepField hs u j] with z hz
-  rw [toLp_inclusion, hz, ofRealSubRef_apply, add_sub_cancel_left, continuousRepField_apply]
+  rw [hz, ofRealSubRef_apply, add_sub_cancel_left, continuousRepField_apply]
 
 @[simp]
 theorem ofRealSubRef_realSubRef (hs : 1 < s) {h : 0 ≤ s} (x : SobolevFieldSpace f m s) :
