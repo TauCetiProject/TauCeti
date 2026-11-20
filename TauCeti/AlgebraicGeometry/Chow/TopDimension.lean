@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import TauCeti.AlgebraicGeometry.Chow.Basic
 import TauCeti.Topology.KrullDimension.Basic
+import TauCeti.Topology.LocallyFinsupp.Finsupp
 import TauCeti.Topology.Sober
 
 /-!
@@ -57,29 +58,20 @@ section Compact
 
 variable (X : Scheme.{u}) [CompactSpace X] (k : ℤ)
 
-open scoped Classical in
+omit [CompactSpace X] in
 /-- The cycle with coefficients given by a finitely supported function on the points of
 dimension `k`, extended by zero. -/
 private noncomputable def cycleOfFinsupp (f : pointsOfDimension X k →₀ ℤ) :
     cyclesOfDimension X k :=
-  have hsupp : Function.support (fun x ↦ if h : x ∈ pointsOfDimension X k then f ⟨x, h⟩ else 0) ⊆
-      Subtype.val '' (f.support : Set (pointsOfDimension X k)) := fun x hx ↦ by
-    by_cases h : x ∈ pointsOfDimension X k
-    · simp only [Function.mem_support, h, ↓reduceDIte] at hx
-      exact ⟨⟨x, h⟩, Finsupp.mem_support_iff.mpr hx, rfl⟩
-    · simp only [Function.mem_support, h, ↓reduceDIte, ne_eq, not_true_eq_false] at hx
-  ⟨⟨_, Set.subset_univ _, fun _ _ ↦ ⟨Set.univ, Filter.univ_mem,
-      ((f.support.finite_toSet.image _).subset hsupp).inter_of_right _⟩⟩,
+  ⟨Function.locallyFinsupp.ofFinsupp (f.embDomain (Function.Embedding.subtype _)),
     mem_cyclesOfDimension_iff.mpr fun x hx ↦ by
-      obtain ⟨y, -, rfl⟩ := hsupp hx
-      exact y.2⟩
+      by_contra h
+      exact hx (Finsupp.embDomain_of_notMem_range _ _ _ (by simpa using h))⟩
 
 omit [CompactSpace X] in
-open scoped Classical in
-private lemma cycleOfFinsupp_apply (f : pointsOfDimension X k →₀ ℤ) (x : X) :
-    (cycleOfFinsupp X k f : AlgebraicCycle X ℤ) x =
-      if h : x ∈ pointsOfDimension X k then f ⟨x, h⟩ else 0 :=
-  (rfl)
+private lemma cycleOfFinsupp_apply (f : pointsOfDimension X k →₀ ℤ) (x : pointsOfDimension X k) :
+    (cycleOfFinsupp X k f : AlgebraicCycle X ℤ) x = f x :=
+  Finsupp.embDomain_apply_self _ f x
 
 /-- On a quasi-compact scheme, the `k`-cycles are the finitely supported functions on the points
 of dimension `k`: a cycle corresponds to its coefficients. -/
@@ -92,14 +84,12 @@ noncomputable def cyclesOfDimensionEquivFinsupp :
       invFun := cycleOfFinsupp X k
       left_inv α := by
         refine Subtype.ext (Function.locallyFinsuppWithin.ext fun x ↦ ?_)
-        classical
-        rw [cycleOfFinsupp_apply]
-        split_ifs with h
-        · rfl
-        · exact (Function.notMem_support.mp fun hx ↦ h (mem_cyclesOfDimension_iff.mp α.2 hx)).symm
-      right_inv f := Finsupp.ext fun x ↦ by
-        classical
-        exact (cycleOfFinsupp_apply X k f x).trans (by simp only [x.2, ↓reduceDIte])
+        by_cases h : x ∈ pointsOfDimension X k
+        · exact cycleOfFinsupp_apply X k _ ⟨x, h⟩
+        · rw [Function.notMem_support.mp fun hx ↦ h (mem_cyclesOfDimension_iff.mp α.2 hx)]
+          exact Function.notMem_support.mp fun hx ↦
+            h (mem_cyclesOfDimension_iff.mp (cycleOfFinsupp X k _).2 hx)
+      right_inv f := Finsupp.ext (cycleOfFinsupp_apply X k f)
       map_add' _ _ := Finsupp.ext fun _ ↦ rfl }
 
 /-- The coefficients of a cycle under `cyclesOfDimensionEquivFinsupp`. -/
@@ -131,6 +121,7 @@ lemma cyclesOfDimensionBasis_repr_apply (α : cyclesOfDimension X k) (x : points
 
 /-- The basis vector of `cyclesOfDimensionBasis` at a point `x` of dimension `k` is the cycle `[x]`
 with coefficient one at `x`. -/
+@[simp]
 lemma coe_cyclesOfDimensionBasis [DecidableEq X] (x : pointsOfDimension X k) :
     (cyclesOfDimensionBasis X k x : AlgebraicCycle X ℤ) =
       Function.locallyFinsuppWithin.single x.1 1 := by
@@ -153,13 +144,6 @@ section TopDimension
 
 variable {X : Scheme.{u}} {n : ℕ}
 
-/-- On a scheme of dimension at most `n`, every point has dimension at most `n`: the closure of a
-point is a subspace. -/
-lemma height_le_of_topologicalKrullDim_le (hX : topologicalKrullDim X ≤ n) (x : X) :
-    height x ≤ n :=
-  WithBot.coe_le_coe.mp <| (height_eq_topologicalKrullDim_closure_singleton x).trans_le
-    ((topologicalKrullDim_subspace_le X _).trans hX)
-
 /-- On a scheme of dimension at most `n`, the points of dimension `n` are the generic points of the
 irreducible components of `X` of dimension `n`: such a point has no proper generization, which
 would have larger dimension. -/
@@ -172,32 +156,20 @@ lemma mem_pointsOfDimension_iff_of_topologicalKrullDim_le (hX : topologicalKrull
   by_contra hne
   -- A proper generization `y` of `x` is above `x` for the specialization order.
   have hxy : x < y := lt_of_le_not_ge hy fun h ↦ hne (hy.antisymm h).eq
-  have := (height_strictMono hxy (by simp [hm])).trans_le (height_le_of_topologicalKrullDim_le hX y)
+  have := (height_strictMono hxy (by simp [hm])).trans_le
+    (WithBot.coe_le_coe.mp ((height_le_topologicalKrullDim y).trans hX))
   simp [hm] at this
 
 /-- On a scheme of dimension at most `n`, taking closures identifies the points of dimension `n`
 with the irreducible components of dimension `n`. -/
 noncomputable def pointsOfDimensionEquivIrreducibleComponents (hX : topologicalKrullDim X ≤ n) :
     pointsOfDimension X n ≃
-      {Z : Set X // Z ∈ irreducibleComponents X ∧ topologicalKrullDim Z = n} where
-  toFun x :=
-    ⟨closure {x.1}, ((mem_pointsOfDimension_iff_of_topologicalKrullDim_le hX).mp x.2).1, by
-      rw [← height_eq_topologicalKrullDim_closure_singleton,
-        ((mem_pointsOfDimension_iff_of_topologicalKrullDim_le hX).mp x.2).2]
-      rfl⟩
-  invFun Z :=
-    ⟨(genericPoints.ofComponent ⟨Z.1, Z.2.1⟩).1,
-      (mem_pointsOfDimension_iff_of_topologicalKrullDim_le hX).mpr
-        ⟨(genericPoints.ofComponent ⟨Z.1, Z.2.1⟩).2, by
-          have h := height_eq_topologicalKrullDim_closure_singleton
-            (genericPoints.ofComponent ⟨Z.1, Z.2.1⟩).1
-          have hZ : topologicalKrullDim (closure {(genericPoints.ofComponent ⟨Z.1, Z.2.1⟩).1}) =
-              n := by
-            rw [genericPoints.isGenericPoint_ofComponent ⟨Z.1, Z.2.1⟩]
-            exact Z.2.2
-          exact_mod_cast h.trans hZ⟩⟩
-  left_inv x := Subtype.ext ((genericPoints.isGenericPoint_ofComponent _).eq isGenericPoint_closure)
-  right_inv Z := Subtype.ext (genericPoints.isGenericPoint_ofComponent ⟨Z.1, Z.2.1⟩)
+      {Z : Set X // Z ∈ irreducibleComponents X ∧ topologicalKrullDim Z = n} :=
+  ((Equiv.subtypeEquivRight fun _ ↦ mem_pointsOfDimension_iff_of_topologicalKrullDim_le hX).trans
+    (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm).trans <|
+    (genericPoints.equiv.subtypeEquiv fun x ↦ by
+      rw [← WithBot.coe_inj, height_eq_topologicalKrullDim_closure_singleton]
+      norm_cast).trans (Equiv.subtypeSubtypeEquivSubtypeInter _ _)
 
 /-- The irreducible component of dimension `n` corresponding to a point of dimension `n` is its
 closure. -/
@@ -206,6 +178,15 @@ lemma coe_pointsOfDimensionEquivIrreducibleComponents_apply (hX : topologicalKru
     (x : pointsOfDimension X n) :
     (pointsOfDimensionEquivIrreducibleComponents hX x : Set X) = closure {x.1} :=
   (rfl)
+
+/-- The closure of the point of dimension `n` corresponding to an irreducible component of
+dimension `n` is that component. -/
+@[simp]
+lemma closure_pointsOfDimensionEquivIrreducibleComponents_symm_apply
+    (hX : topologicalKrullDim X ≤ n)
+    (Z : {Z : Set X // Z ∈ irreducibleComponents X ∧ topologicalKrullDim Z = n}) :
+    closure {((pointsOfDimensionEquivIrreducibleComponents hX).symm Z : X)} = Z :=
+  genericPoints.isGenericPoint_ofComponent ⟨Z.1, Z.2.1⟩
 
 variable [IsLocallyNoetherian X]
 
@@ -216,7 +197,7 @@ lemma ratEquiv_eq_bot_of_topologicalKrullDim_le (hX : topologicalKrullDim X ≤ 
   ratEquiv_eq_bot_of_pointsOfDimension_eq_empty X <|
     Set.eq_empty_iff_forall_notMem.mpr fun x hx ↦ by
       obtain ⟨m, hm, hmn⟩ := mem_pointsOfDimension.mp hx
-      have := height_le_of_topologicalKrullDim_le hX x
+      have := (height_le_topologicalKrullDim x).trans hX
       rw [hm] at this
       norm_cast at this
       omega
@@ -240,6 +221,12 @@ noncomputable def cycleClassEquiv (hX : topologicalKrullDim X ≤ n) :
 lemma cycleClassEquiv_apply (hX : topologicalKrullDim X ≤ n) (α : cyclesOfDimension X n) :
     cycleClassEquiv hX α = cycleClass α :=
   (rfl)
+
+/-- The inverse of `cycleClassEquiv` sends the class of an `n`-cycle back to the cycle. -/
+@[simp]
+lemma cycleClassEquiv_symm_cycleClass (hX : topologicalKrullDim X ≤ n)
+    (α : cyclesOfDimension X n) : (cycleClassEquiv hX).symm (cycleClass α) = α :=
+  (cycleClassEquiv hX).symm_apply_apply α
 
 namespace ChowGroup
 
@@ -267,9 +254,7 @@ coefficients. -/
 lemma basisOfTopologicalKrullDimLE_repr_cycleClass (hX : topologicalKrullDim X ≤ n)
     (α : cyclesOfDimension X n) (x : pointsOfDimension X n) :
     (basisOfTopologicalKrullDimLE hX).repr (cycleClass α) x = (α : AlgebraicCycle X ℤ) x := by
-  rw [basisOfTopologicalKrullDimLE, Module.Basis.map_repr, LinearEquiv.trans_apply,
-    ← cycleClassEquiv_apply hX, ← AddEquiv.coe_toIntLinearEquiv (cycleClassEquiv hX),
-    LinearEquiv.symm_apply_apply, cyclesOfDimensionBasis_repr_apply]
+  simp [basisOfTopologicalKrullDimLE, Module.Basis.map_repr]
 
 /-- On a quasi-compact scheme of dimension at most `n`, the Chow group `CH_n(X)` is a free abelian
 group. -/
@@ -285,14 +270,16 @@ end TopDimension
 
 section Noetherian
 
-variable {X : Scheme.{u}} [IsNoetherian X] {n : ℕ}
+variable {X : Scheme.{u}} {n : ℕ}
 
-/-- A Noetherian scheme of dimension at most `n` has finitely many points of dimension `n`, being
-generic points of its finitely many irreducible components. -/
-lemma finite_pointsOfDimension_of_topologicalKrullDim_le (hX : topologicalKrullDim X ≤ n) :
-    (pointsOfDimension X n).Finite :=
+/-- A scheme of dimension at most `n` whose underlying space is Noetherian has finitely many points
+of dimension `n`, being generic points of its finitely many irreducible components. -/
+lemma finite_pointsOfDimension_of_topologicalKrullDim_le [NoetherianSpace X]
+    (hX : topologicalKrullDim X ≤ n) : (pointsOfDimension X n).Finite :=
   (genericPoints.finite (NoetherianSpace.finite_irreducibleComponents (α := X))).subset
     fun _ hx ↦ ((mem_pointsOfDimension_iff_of_topologicalKrullDim_le hX).mp hx).1
+
+variable [IsNoetherian X]
 
 /-- On a Noetherian scheme of dimension at most `n`, the Chow group `CH_n(X)` is a finitely
 generated abelian group. -/

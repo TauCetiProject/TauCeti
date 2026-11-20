@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Basic
 public import Mathlib.AlgebraicGeometry.AlgebraicCycle.Basic
+public import TauCeti.Topology.LocallyFinsupp.Finsupp
 
 /-!
 # Weil divisors on schemes
@@ -61,29 +62,10 @@ variable {X : Scheme.{u}}
 
 noncomputable section
 
-/-- Regard a finitely supported function as an algebraic cycle. -/
-private def algebraicCycleOfFinsupp : (X →₀ ℤ) →+ AlgebraicCycle X ℤ where
-  toFun D :=
-    { toFun := D
-      supportWithinDomain' := Set.subset_univ _
-      supportLocallyFiniteWithinDomain' := fun _ _ ↦
-        ⟨Set.univ, Filter.univ_mem, by simp⟩ }
-  map_zero' := by
-    ext
-    simp
-  map_add' D E := by
-    ext
-    simp
-
-@[simp]
-private lemma algebraicCycleOfFinsupp_apply (D : X →₀ ℤ) (x : X) :
-    algebraicCycleOfFinsupp D x = D x :=
-  rfl
-
 /-- Extend a scheme-theoretic Weil divisor by zero away from codimension one, obtaining
 an algebraic cycle on the underlying scheme. -/
 def toAlgebraicCycle : SchemeWeilDivisor X →+ AlgebraicCycle X ℤ :=
-  algebraicCycleOfFinsupp.comp <|
+  Function.locallyFinsupp.ofFinsupp.comp <|
     Finsupp.embDomain.addMonoidHom (Function.Embedding.subtype fun x : X ↦ coheight x = 1)
 
 /-- Extension by zero preserves the coefficient at a codimension-one point. -/
@@ -97,7 +79,7 @@ lemma toAlgebraicCycle_apply (D : SchemeWeilDivisor X) (x : CodimensionOnePoint 
 lemma toAlgebraicCycle_apply_of_coheight_ne_one (D : SchemeWeilDivisor X) (x : X)
     (hx : coheight x ≠ 1) :
     toAlgebraicCycle D x = 0 := by
-  rw [toAlgebraicCycle, AddMonoidHom.comp_apply, algebraicCycleOfFinsupp_apply]
+  rw [toAlgebraicCycle, AddMonoidHom.comp_apply, Function.locallyFinsupp.ofFinsupp_apply]
   exact Finsupp.embDomain_of_notMem_range _ _ _ (by simpa)
 
 /-- The support of a scheme-theoretic Weil divisor viewed as an algebraic cycle is the image of
