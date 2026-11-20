@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Matrix.Normed
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.RegularValue.Level
-import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.Immersion.ZeroDimensional
 import TauCeti.Geometry.Manifold.MFDeriv.Det
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Analysis.Calculus.ContDiff.Matrix
@@ -82,9 +82,7 @@ private theorem existsSLCharts :
     let : IsManifold 𝓘(𝕜, Model n 𝕜) ω (SpecialLinearGroup n 𝕜) :=
       IsManifold.of_discreteTopology ω
     exact ⟨inferInstance, inferInstance,
-      contMDiff_of_subsingleton.isImmersion_of_injective_mfderiv (by simp)
-        (fun x u v _ ↦
-          (tangentSpaceCastModel 𝓘(𝕜, Model n 𝕜) x).injective (Subsingleton.elim _ _)), .subtypeVal⟩
+      contMDiff_of_subsingleton.isImmersion_of_subsingleton (by simp), .subtypeVal⟩
   | inr hn =>
     have hf : ContDiff 𝕜 ω (det : Matrix n n 𝕜 → 𝕜) :=
       ContDiff.matrix_det fun i j ↦ (Matrix.entryLinearMap 𝕜 𝕜 i j).toContinuousLinearMap.contDiff

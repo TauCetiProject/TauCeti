@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Immersion.Differential
+public import TauCeti.Geometry.Manifold.Immersion.ZeroDimensional
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Analysis.Analytic.Submanifold.ZeroDimensional
@@ -49,12 +49,8 @@ normed space is a smooth embedding, for every positive differentiability order. 
 theorem Topology.IsEmbedding.isSmoothEmbedding_of_subsingleton (hf : IsEmbedding f)
     (hn : 1 ≤ n) : IsSmoothEmbedding 𝓘(𝕜, E) 𝓘(𝕜, F) n f := by
   let : DiscreteTopology M := ChartedSpace.discreteTopology E M
-  refine ⟨TauCeti.isImmersion_iff_forall_isImmersionAt.mpr (fun x ↦ ?_), hf⟩
-  -- TangentSpace is a type synonym for the model; its subsingleton instance is not inferred.
-  let : Subsingleton (TangentSpace 𝓘(𝕜, E) x) := inferInstanceAs (Subsingleton E)
-  exact (contMDiff_of_discreteTopology (f := f)).contMDiffOn
-    |>.isImmersionAt_iff_injective_mfderiv isOpen_univ (mem_univ x) hn
-    |>.mpr (Function.injective_of_subsingleton _)
+  let _ : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  exact ⟨(contMDiff_of_discreteTopology (f := f)).isImmersion_of_subsingleton hn, hf⟩
 
 end Immersion
 
