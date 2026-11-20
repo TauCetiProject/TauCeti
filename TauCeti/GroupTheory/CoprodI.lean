@@ -22,8 +22,9 @@ The free product of a family of two monoids indexed by `Bool` is the binary free
 the homomorphisms induced by a pair of homomorphisms on the two members correspond, so one of them
 is injective exactly when the other is.
 
-The free product of an empty family is trivial, and the free product of a family indexed by a
-type with a unique element is that single monoid.
+A free product of trivial monoids is trivial; in particular, so is the free product of an empty
+family. The free product of a family indexed by a type with a unique element is that single
+monoid.
 
 ## Main declarations
 
@@ -33,6 +34,7 @@ type with a unique element is that single monoid.
 * `Monoid.CoprodI.coprodLift_injective_iff`: for a family `M` indexed by `Bool`, homomorphisms
   `f i : M i →* N` induce an injective homomorphism `Coprod (M false) (M true) →* N` if and only
   if they induce an injective homomorphism `CoprodI M →* N`.
+* `Monoid.CoprodI.instUnique`: the free product of a family of trivial monoids is trivial.
 * `Monoid.CoprodI.instUniqueOfIsEmpty`: the free product of an empty family is trivial.
 * `MulEquiv.coprodIUnique`: the free product of a family indexed by a type with a unique element
   is isomorphic to the monoid at the single index.
@@ -46,10 +48,15 @@ namespace Monoid.CoprodI
 
 variable {ι : Type*} (M : ι → Type*) [∀ i, Monoid (M i)]
 
-/-- The free product of an empty family of monoids is trivial. -/
-instance instUniqueOfIsEmpty [IsEmpty ι] : Unique (CoprodI M) where
+/-- The free product of a family of trivial monoids is trivial. -/
+instance instUnique [∀ i, Subsingleton (M i)] : Unique (CoprodI M) where
   default := 1
-  uniq x := DFunLike.congr_fun (ext_hom (.id _) 1 isEmptyElim) x
+  uniq x := DFunLike.congr_fun (ext_hom (.id _) 1 fun _ ↦ Subsingleton.elim _ _) x
+
+/-- The free product of an empty family of monoids is trivial. -/
+instance instUniqueOfIsEmpty [IsEmpty ι] : Unique (CoprodI M) :=
+  have : ∀ i, Subsingleton (M i) := isEmptyElim
+  inferInstance
 
 end Monoid.CoprodI
 

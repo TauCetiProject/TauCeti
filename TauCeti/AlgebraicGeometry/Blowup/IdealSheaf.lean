@@ -195,13 +195,8 @@ theorem isProper_blowupToBase (hI : ∀ U : X.affineOpens, (I.ideal U).FG) :
   refine CommMon.isProper_relativeProjToBase (fun U hU ↦ ?_) (fun U _ ↦ ?_)
   · exact Algebra.FiniteType.equiv (reesAlgebra.finiteType_of_fg (hI ⟨U, hU⟩))
       (I.reesAlgebraSectionsEquiv hU).symm
-  · -- the unit `𝒪_X ⟶ I⁰` of the Rees algebra is an isomorphism, so `Γ(I⁰, U) ≅ Γ(X, U)`
-    refine Module.Finite.of_surjective (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U) ≫
-      (Scheme.Modules.sectionsFunctor U).map I.reesAlgebra.obj.toMon.one).hom ?_
-    have : IsIso (Functor.LaxMonoidal.ε (Scheme.Modules.sectionsFunctor U)) := by
-      rw [Scheme.Modules.sectionsFunctor_ε]
-      exact IsIso.id _
-    exact (ConcreteCategory.bijective_of_isIso _).2
+  · -- the unit `𝒪_X ⟶ I⁰` of the Rees algebra is an isomorphism
+    exact I.reesAlgebra.obj.finite_sections_zero_of_isIso_one U
 
 /-- **The blowup of a locally noetherian scheme is proper.** On a locally noetherian scheme every
 ideal sheaf is of finite type, so `Bl_I X ⟶ X` is proper for every ideal sheaf `I`. -/

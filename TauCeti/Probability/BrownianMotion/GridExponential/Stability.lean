@@ -60,44 +60,6 @@ variable {n : ℕ} {K : ℝ}
 
 namespace IsFilteredPreBrownianReal
 
-private theorem gridExponential_prefix_moments (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hτ : MonotoneOn τ (Iic n)) (hθ : ∀ j < n, Measurable[ℱ (τ j)] (θ j))
-    (hbθ : ∀ j < n, ∀ᵐ ω ∂P, |θ j ω| ≤ K) :
-    (∫ ω, gridExponential τ θ W n ω ∂P) = 1 ∧
-      MemLp (gridExponential τ θ W n) 2 P ∧
-      (∫ ω, gridExponential τ θ W n ω ^ 2 ∂P) ≤ exp (K ^ 2 * ((τ n : ℝ) - τ 0)) := by
-  -- The martingale API uses an infinite grid. Extend constantly in time and by zero in height.
-  let σ (j : ℕ) := τ (min j n)
-  let a (j : ℕ) := if j < n then θ j else fun _ ↦ 0
-  have hσ : Monotone σ := fun i j hij ↦ hτ (mem_Iic.mpr (min_le_right i n))
-    (mem_Iic.mpr (min_le_right j n)) (min_le_min_right n hij)
-  have ha (j : ℕ) : Measurable[ℱ (σ j)] (a j) := by
-    by_cases hj : j < n
-    · have haj : a j = θ j := ite_eq_left hj
-      have hσj : σ j = τ j := congrArg τ (min_eq_left hj.le)
-      rw [haj, hσj]
-      exact hθ j hj
-    · have haj : a j = fun _ ↦ 0 := ite_eq_right hj
-      rw [haj]
-      exact measurable_const
-  have hba (j : ℕ) : ∀ᵐ ω ∂P, |a j ω| ≤ |K| := by
-    by_cases hj : j < n
-    · filter_upwards [hbθ j hj] with ω hω
-      simpa only [a, ite_eq_left hj] using hω.trans (le_abs_self K)
-    · simp only [a, ite_eq_right hj, abs_zero]
-      exact ae_of_all _ fun _ ↦ abs_nonneg _
-  have heq : gridExponential σ a W n = gridExponential τ θ W n := by
-    funext ω
-    simp only [gridExponential_def]
-    congr 1
-    refine sum_congr rfl fun j hj ↦ ?_
-    have hj' := mem_range.mp hj
-    simp only [a, σ, ite_eq_left hj', min_eq_left hj'.le, min_eq_left (Nat.succ_le_of_lt hj')]
-  refine ⟨heq ▸ hW.integral_gridExponential hσ ha hba n,
-    heq ▸ hW.memLp_two_gridExponential hσ ha hba n, ?_⟩
-  simpa only [heq, σ, min_self, Nat.zero_min, sq_abs] using
-    hW.integral_sq_gridExponential_le hσ ha hba n
-
 variable (hW : IsFilteredPreBrownianReal ℱ W P) (hτ : MonotoneOn τ (Iic n))
     (hθ : ∀ j < n, Measurable[ℱ (τ j)] (θ j)) (hη : ∀ j < n, Measurable[ℱ (τ j)] (η j))
     (hbθ : ∀ j < n, ∀ᵐ ω ∂P, |θ j ω| ≤ K) (hbη : ∀ j < n, ∀ᵐ ω ∂P, |η j ω| ≤ K)
@@ -133,9 +95,7 @@ private theorem integral_sq_sqrt_sub_le
   let M := gridExponential τ (fun j ω ↦ (θ j ω + η j ω) / 2) W n
   let D := elementaryEnergy τ (fun j ω ↦ θ j ω - η j ω) n
   have hm := fun j hj ↦ ((hθ j hj).add (hη j hj)).div_const 2
-  obtain ⟨hA, hA₂, _⟩ := gridExponential_prefix_moments hW hτ hθ hbθ
-  obtain ⟨hB, hB₂, _⟩ := gridExponential_prefix_moments hW hτ hη hbη
-  obtain ⟨hM, hM₂, _⟩ := gridExponential_prefix_moments hW hτ hm (average_heights_bound hbθ hbη)
+  have hM₂ := hW.memLp_two_gridExponential hτ hm (average_heights_bound hbθ hbη)
   have hpoint (ω : Ω) : (√(A ω) - √(B ω)) ^ 2 ≤
       A ω + B ω - 2 * M ω + M ω * D ω / 4 := by
     have hid := sqrt_gridExponential_mul_sqrt (τ := τ) (θ := θ) (η := η) (W := W) n ω
@@ -144,15 +104,16 @@ private theorem integral_sq_sqrt_sub_le
     have hmul := mul_le_mul_of_nonneg_left he hpos
     nlinarith [sq_sqrt (gridExponential_pos τ θ W n ω).le,
       sq_sqrt (gridExponential_pos τ η W n ω).le]
-  have hiA := hA₂.integrable (by norm_num)
-  have hiB := hB₂.integrable (by norm_num)
-  have hiM := hM₂.integrable (by norm_num)
+  have hiA := hW.integrable_gridExponential hτ hθ
+  have hiB := hW.integrable_gridExponential hτ hη
+  have hiM := hW.integrable_gridExponential hτ hm
   have hiD := hM₂.integrable_mul (memLp_two_differenceEnergy (τ := τ) hθ hη hbθ hbη)
   have hi := integral_mono hSq
     (((hiA.add hiB).sub (hiM.const_mul 2)).add (hiD.div_const 4)) hpoint
   rw [integral_add' ((hiA.add hiB).sub (hiM.const_mul 2)) (hiD.div_const 4),
     integral_sub' (hiA.add hiB) (hiM.const_mul 2), integral_add' hiA hiB,
-    integral_const_mul, integral_div, hA, hB, hM] at hi
+    integral_const_mul, integral_div, hW.integral_gridExponential hτ hθ,
+    hW.integral_gridExponential hτ hη, hW.integral_gridExponential hτ hm] at hi
   simpa only [Pi.sub_apply, Pi.mul_apply, Pi.add_apply, one_add_one_eq_two,
     mul_one, sub_self, zero_add] using hi
 
@@ -161,11 +122,8 @@ private theorem sq_integral_abs_gridExponential_sub_le_of_bound :
     (∫ ω, |gridExponential τ θ W n ω - gridExponential τ η W n ω| ∂P) ^ 2 ≤
       ∫ ω, gridExponential τ (fun j ω ↦ (θ j ω + η j ω) / 2) W n ω *
         elementaryEnergy τ (fun j ω ↦ θ j ω - η j ω) n ω ∂P := by
-  let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨hA, hA₂, _⟩ := gridExponential_prefix_moments hW hτ hθ hbθ
-  obtain ⟨hB, hB₂, _⟩ := gridExponential_prefix_moments hW hτ hη hbη
-  have hiA := hA₂.integrable (by norm_num)
-  have hiB := hB₂.integrable (by norm_num)
+  have hiA := hW.integrable_gridExponential hτ hθ
+  have hiB := hW.integrable_gridExponential hτ hη
   have hs (a : ℕ → Ω → ℝ) (hi : Integrable (gridExponential τ a W n) P) :
       MemLp (fun ω ↦ √(gridExponential τ a W n ω)) 2 P := by
     simpa only [Real.sqrt_eq_rpow, norm_eq_abs, abs_of_pos (gridExponential_pos τ a W n _),
@@ -190,7 +148,8 @@ private theorem sq_integral_abs_gridExponential_sub_le_of_bound :
         simpa only [Pi.add_apply, sq_sqrt (gridExponential_pos τ θ W n ω).le,
           sq_sqrt (gridExponential_pos τ η W n ω).le] using
           (add_sq_le (a := √(gridExponential τ θ W n ω)) (b := √(gridExponential τ η W n ω))))
-    rw [integral_const_mul, integral_add' hiA hiB, hA, hB] at h
+    rw [integral_const_mul, integral_add' hiA hiB, hW.integral_gridExponential hτ hθ,
+      hW.integral_gridExponential hτ hη] at h
     norm_num at h ⊢
     exact h
   simp only [Pi.add_apply, Pi.sub_apply] at hCS
@@ -236,7 +195,9 @@ theorem pow_four_integral_abs_gridExponential_sub_le :
         ∫ ω, elementaryEnergy τ (fun j ω ↦ θ j ω - η j ω) n ω ∂P := by
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
   have hm := fun j hj ↦ ((hθ j hj).add (hη j hj)).div_const 2
-  obtain ⟨_, hM, hmoment⟩ := gridExponential_prefix_moments hW hτ hm (average_heights_bound hbθ hbη)
+  have hbM := average_heights_bound hbθ hbη
+  have hM := hW.memLp_two_gridExponential hτ hm hbM
+  have hmoment := hW.integral_sq_gridExponential_le hτ hm hbM
   have hD := memLp_two_differenceEnergy (τ := τ) hθ hη hbθ hbη
   have hCS := TauCeti.sq_integral_mul_le_integral_sq_mul_integral_sq hM hD
   have hL := sq_integral_abs_gridExponential_sub_le_of_bound hW hτ hθ hη hbθ hbη

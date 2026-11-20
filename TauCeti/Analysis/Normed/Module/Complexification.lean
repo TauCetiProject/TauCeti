@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.LinearMap.FiniteRange
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Tactic.Module
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 
@@ -57,7 +58,8 @@ for real seminormed spaces, giving a Taylor seminorm. Definiteness is needed onl
 * `TauCeti.Complexification.instNormedSpace`, `TauCeti.Complexification.instCompleteSpace`: the
   complex seminormed space structure, complete when `X` is, and continuous conjugation
   `TauCeti.Complexification.conjCLE`.
-* `TauCeti.Complexification.equivProd`: `X_ℂ` is real-linearly homeomorphic to `X × X`.
+* `TauCeti.Complexification.equivProd`: `X_ℂ` is real-linearly homeomorphic to `X × X`, so
+  `X_ℂ` is finite-dimensional when `X` is (`TauCeti.Complexification.instFiniteDimensional`).
 * `TauCeti.Complexification.equivPi`: the complexification of `ι → ℝ` is complex-linearly
   homeomorphic to `ι → ℂ`.
 * `ContinuousLinearMap.complexify` and `ContinuousLinearEquiv.complexify`: the complex-linear
@@ -346,6 +348,13 @@ theorem equivProd_symm_apply (p : X × X) : (equivProd X).symm p = ⟨p.1, p.2�
 instance instCompleteSpace [CompleteSpace X] : CompleteSpace (Complexification X) :=
   ((equivProd X).isUniformEmbedding.isUniformInducing.completeSpace_congr
     (equivProd X).surjective).2 inferInstance
+
+/-- The complexification of a finite-dimensional real space is finite-dimensional. -/
+instance instFiniteDimensional [FiniteDimensional ℝ X] :
+    FiniteDimensional ℂ (Complexification X) :=
+  haveI : FiniteDimensional ℝ (Complexification X) :=
+    (equivProd X).symm.toLinearEquiv.finiteDimensional
+  Module.Finite.of_restrictScalars_finite ℝ ℂ _
 
 end Norm
 
