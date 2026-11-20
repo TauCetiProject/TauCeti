@@ -63,6 +63,8 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
   the sum of the falling factorials of degree `j` at `x` weighted by the Stirling numbers of the
   second kind `S(m, j)`.
 * `TauCeti.ascPochhammer_add_eval`: `(x)ₖ₊ₘ = (x)ₖ (x + k)ₘ`.
+* `TauCeti.ascPochhammer_eval_eq_prod_range`: `(x)ₙ = x (x + 1) ⋯ (x + n - 1)` as a product over
+  `Finset.range n`.
 * `TauCeti.ascPochhammer_eval_neg_natCast`: `(−n)ₖ = (−1)ᵏ k! C(n, k)`.
 * `TauCeti.ascPochhammer_eval_neg_sub_add_one`: `(−b − k + 1)ₖ = (−1)ᵏ (b)ₖ`.
 * `TauCeti.sum_neg_one_pow_mul_choose_ascPochhammer`: the Chu–Vandermonde identity
@@ -342,6 +344,14 @@ theorem ascPochhammer_add_eval [Semiring R] (x : R) (k m : ℕ) :
   | succ m ih =>
     rw [← add_assoc, ascPochhammer_succ_eval, ih, ascPochhammer_succ_eval, mul_assoc,
       Nat.cast_add, add_assoc]
+
+/-- The rising factorial `(x)ₙ` is the product `x (x + 1) ⋯ (x + n - 1)` over
+`Finset.range n`, the ascending counterpart of `descPochhammer_eval_eq_prod_range`. -/
+theorem ascPochhammer_eval_eq_prod_range [CommSemiring R] (n : ℕ) (x : R) :
+    (ascPochhammer R n).eval x = ∏ j ∈ Finset.range n, (x + j) := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [ascPochhammer_succ_eval, ih, Finset.prod_range_succ]
 
 /-- `(−n)ₖ = (−1)ᵏ k! C(n, k)`. -/
 theorem ascPochhammer_eval_neg_natCast [Ring R] (n k : ℕ) :
