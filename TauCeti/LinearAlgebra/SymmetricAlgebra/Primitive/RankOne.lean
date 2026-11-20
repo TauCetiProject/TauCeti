@@ -65,10 +65,10 @@ theorem isPrimitiveElem_aeval_ι_one_iff {f : R[X]} :
     AlgEquiv.apply_symm_apply, equivPolynomial_ι_one, map_one, Polynomial.map_one, mul_one,
     one_mul, Polynomial.map_X, add_comm (f.map C)]
 
-/-- Over a ring of prime characteristic `p`, the primitive elements of the rank-one symmetric
+/-- Over a ring killed by a prime `p`, the primitive elements of the rank-one symmetric
 algebra `R[x]`, `x = ι R R 1`, are the `p`-polynomials: the `R`-linear combinations of the powers
 `x ^ p ^ i`. -/
-theorem isPrimitiveElem_iff_mem_span_ι_one_pow (p : ℕ) [Fact p.Prime] [CharP R p]
+theorem isPrimitiveElem_iff_mem_span_ι_one_pow (p : ℕ) [Fact p.Prime] (hR : (p : R) = 0)
     {a : SymmetricAlgebra R R} :
     IsPrimitiveElem R a ↔ a ∈ Submodule.span R (Set.range fun i => ι R R 1 ^ p ^ i) := by
   obtain ⟨f, rfl⟩ := equivPolynomial.symm.surjective a
@@ -80,7 +80,7 @@ theorem isPrimitiveElem_iff_mem_span_ι_one_pow (p : ℕ) [Fact p.Prime] [CharP 
     ext i
     simp [equivPolynomial_symm_apply]
   rw [equivPolynomial_symm_apply, isPrimitiveElem_aeval_ι_one_iff,
-    aeval_C_X_add_Y_eq_iff_mem_span p, hspan, Submodule.mem_map_equiv]
+    aeval_C_X_add_Y_eq_iff_mem_span p hR, hspan, Submodule.mem_map_equiv]
   simp [← equivPolynomial_symm_apply]
 
 end SymmetricAlgebra
@@ -91,16 +91,16 @@ open SymmetricAlgebra
 
 variable {R : Type*} [CommRing R]
 
-/-- Over a ring of prime characteristic `p`, a bialgebra endomorphism of the rank-one symmetric
+/-- Over a ring killed by a prime `p`, a bialgebra endomorphism of the rank-one symmetric
 algebra `R[x]`, `x = ι R R 1`, sends `x` to a `p`-polynomial, an `R`-linear combination of the
 powers `x ^ p ^ i`: every endomorphism of the additive group is a `p`-polynomial. -/
-theorem apply_ι_one_mem_span_ι_one_pow (p : ℕ) [Fact p.Prime] [CharP R p]
+theorem apply_ι_one_mem_span_ι_one_pow (p : ℕ) [Fact p.Prime] (hR : (p : R) = 0)
     (φ : SymmetricAlgebra R R →ₐc[R] SymmetricAlgebra R R) :
     φ (ι R R 1) ∈ Submodule.span R (Set.range fun i => ι R R 1 ^ p ^ i) := by
   have hx : IsPrimitiveElem R (ι R R 1) :=
     isPrimitiveElem_iff_comul_eq_tmul_add_tmul.mpr (by simp [add_comm])
   have hφ := hx.map φ
   rw [map_one] at hφ
-  exact (isPrimitiveElem_iff_mem_span_ι_one_pow p).mp hφ
+  exact (isPrimitiveElem_iff_mem_span_ι_one_pow p hR).mp hφ
 
 end BialgHom

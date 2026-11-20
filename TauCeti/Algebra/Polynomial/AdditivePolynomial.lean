@@ -130,9 +130,9 @@ theorem aeval_C_X_add_Y_eq_iff {f : R[X]} :
     · rw [← Nat.choose_symm_add]
       simpa [ha, hb] using h a b ha hb
 
-/-- In prime characteristic `p`, a polynomial satisfies `f(X + Y) = f(X) + f(Y)` exactly when it is
-a `p`-polynomial: an `R`-linear combination of the powers `X ^ p ^ i`. -/
-theorem aeval_C_X_add_Y_eq_iff_mem_span (p : ℕ) [Fact p.Prime] [CharP R p] {f : R[X]} :
+/-- Over a ring killed by a prime `p`, a polynomial satisfies `f(X + Y) = f(X) + f(Y)` exactly
+when it is a `p`-polynomial: an `R`-linear combination of the powers `X ^ p ^ i`. -/
+theorem aeval_C_X_add_Y_eq_iff_mem_span (p : ℕ) [Fact p.Prime] (hR : (p : R) = 0) {f : R[X]} :
     aeval (C X + Y : R[X][Y]) f = C f + f.map C ↔
       f ∈ Submodule.span R (Set.range fun i => (X : R[X]) ^ p ^ i) := by
   have hspan : Submodule.span R (Set.range fun i => (X : R[X]) ^ p ^ i) =
@@ -143,8 +143,7 @@ theorem aeval_C_X_add_Y_eq_iff_mem_span (p : ℕ) [Fact p.Prime] [CharP R p] {f 
   -- form is the support criterion `PowerSeries.subst_add_eq_iff_coeff_eq_zero`.
   have hseries := (PowerSeries.subst_add_eq_iff_constantCoeff_eq_zero_and_choose_mul_coeff_eq_zero
     (f : PowerSeries R)).symm.trans <|
-      PowerSeries.subst_add_eq_iff_coeff_eq_zero (f : PowerSeries R) (Fact.out : p.Prime)
-        (CharP.cast_eq_zero R p)
+      PowerSeries.subst_add_eq_iff_coeff_eq_zero (f : PowerSeries R) (Fact.out : p.Prime) hR
   simp only [coeff_coe, constantCoeff_coe, Nat.pos_iff_ne_zero] at hseries
   rw [aeval_C_X_add_Y_eq_iff, hseries, hspan, AddMonoidAlgebra.mem_supported']
   simp [eq_comm]
