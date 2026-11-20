@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Computability.Primrec.Basic
+public import TauCeti.Computability.RecursiveIn
 
 /-!
 # Earliest-discovery races
@@ -19,8 +19,8 @@ No persistence hypothesis on the streams is needed for these finite-data results
 for partial computations requires sound observations; in particular, retaining a transient
 observation from a moving oracle need not give a computation in the limit oracle.
 
-The race is primitive recursive uniformly in primitive-recursive streams. Its application to
-fixed-oracle computations is in `TauCeti.Computability.SingleOracle.Race`.
+The race preserves primitive recursiveness and relative computability of the observations.
+Its application to fixed-oracle computations is in `TauCeti.Computability.SingleOracle.Race`.
 -/
 
 public section
@@ -149,5 +149,33 @@ theorem primrec_race {γ : Type*} [Primcodable α] [Primcodable β] [Primcodable
       rw [race_succ]
       exact congrArg (fun o => o <|> ((l a (s + 1)).map Sum.inl <|>
         (r a (s + 1)).map Sum.inr)) ih
+
+/-- Racing uniformly effective streams is effective in the same oracle family. The update
+retains an existing winner and uses the next observations when there is no winner yet. -/
+theorem computableIn₂_race {γ : Type*} [Primcodable α] [Primcodable β] [Primcodable γ]
+    {G : Set (ℕ →. ℕ)} {l : γ → ℕ → Option α} {r : γ → ℕ → Option β}
+    (hl : ComputableIn₂ G l) (hr : ComputableIn₂ G r) :
+    ComputableIn₂ G fun x s => race (l x) (r x) s := by
+  have hobs : ComputableIn₂ G fun x s =>
+      ((l x s).map Sum.inl <|> (r x s).map Sum.inr : Option (α ⊕ β)) :=
+    Primrec.option_orElse.computableIn.comp
+      (((Primrec.option_map₁ Primrec.sumInl).computableIn.comp hl).pair
+        ((Primrec.option_map₁ Primrec.sumInr).computableIn.comp hr))
+  have hbase : ComputableIn G fun p : γ × ℕ =>
+      ((l p.1 0).map Sum.inl <|> (r p.1 0).map Sum.inr : Option (α ⊕ β)) :=
+    hobs.comp (ComputableIn.fst.pair (ComputableIn.const 0))
+  have hstep : ComputableIn₂ G fun (p : γ × ℕ) (q : ℕ × Option (α ⊕ β)) =>
+      q.2 <|> ((l p.1 (q.1 + 1)).map Sum.inl <|> (r p.1 (q.1 + 1)).map Sum.inr) :=
+    Primrec.option_orElse.computableIn.comp
+      ((ComputableIn.snd.comp ComputableIn.snd).pair
+        (hobs.comp ((ComputableIn.fst.comp ComputableIn.fst).pair
+          (Primrec.succ.computableIn.comp (ComputableIn.fst.comp ComputableIn.snd)))))
+  refine RecursiveIn.of_eq (ComputableIn.nat_rec ComputableIn.snd hbase hstep) ?_
+  rintro ⟨x, s⟩
+  induction s with
+  | zero => simp [race_zero]
+  | succ s ih =>
+    simp only [Part.some_inj] at ih ⊢
+    rw [race_succ, ← ih]
 
 end TauCeti.Staged
