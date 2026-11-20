@@ -18,6 +18,7 @@ public import TauCeti.Algebra.Lie.SkewAdjoint.Star
 public import TauCeti.Algebra.Star.SelfAdjoint
 public import TauCeti.LinearAlgebra.Complex.Module
 import Mathlib.LinearAlgebra.Matrix.PosDef
+import TauCeti.LinearAlgebra.Complex.Conjugation
 import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
 /-!
@@ -133,6 +134,14 @@ theorem coe_unitaryLieAlgebraEquivSelfAdjoint_symm_apply
 
 instance : FiniteDimensional ℝ (unitaryLieAlgebra ι) :=
   (unitaryLieAlgebraEquivSelfAdjoint ι).symm.finiteDimensional
+
+variable (ι) in
+/-- **`𝔲(n)` has real dimension `n²`**, the complex dimension of the Hermitian matrices it is
+identified with. -/
+theorem finrank_unitaryLieAlgebra :
+    finrank ℝ (unitaryLieAlgebra ι) = Fintype.card ι * Fintype.card ι := by
+  rw [(unitaryLieAlgebraEquivSelfAdjoint ι).finrank_eq, finrank_selfAdjoint_submodule,
+    finrank_matrix, finrank_self, mul_one]
 
 /-! ### The adjoint and coadjoint representations -/
 
