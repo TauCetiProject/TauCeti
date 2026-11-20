@@ -70,15 +70,15 @@ theorem six_pow_mul_factorial_le_factorial_two_mul_add_one (n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [show 2 * (n + 1) + 1 = 2 * n + 1 + 1 + 1 by omega]
+    rw [Nat.mul_add_one]
     calc 6 ^ (n + 1) * (n + 1)! = 6 * (n + 1) * (6 ^ n * n !) := by
           rw [Nat.pow_succ, factorial_succ]; ac_rfl
-      _ ≤ (2 * n + 1 + 1 + 1) * (2 * n + 1 + 1) * (2 * n + 1)! := by
+      _ ≤ (2 * n + 2 + 1) * (2 * n + 2) * (2 * n + 1)! := by
           refine Nat.mul_le_mul ?_ ih
-          calc 6 * (n + 1) = 3 * (2 * n + 1 + 1) := by omega
-            _ ≤ (2 * n + 1 + 1 + 1) * (2 * n + 1 + 1) := Nat.mul_le_mul_right _ (by omega)
-      _ = (2 * n + 1 + 1 + 1)! := by
-          rw [factorial_succ (2 * n + 1 + 1), factorial_succ (2 * n + 1), Nat.mul_assoc]
+          calc 6 * (n + 1) = 3 * (2 * n + 2) := by omega
+            _ ≤ (2 * n + 2 + 1) * (2 * n + 2) := Nat.mul_le_mul_right _ (by omega)
+      _ = (2 * n + 2 + 1)! := by
+          rw [factorial_succ (2 * n + 2), factorial_succ (2 * n + 1), Nat.mul_assoc]
 
 /-- `((n + 1)!)² ≤ 4 ^ n * (2 * n)!`, with equality at `n = 0`. -/
 theorem factorial_succ_sq_le_four_pow_mul_factorial_two_mul (n : ℕ) :
