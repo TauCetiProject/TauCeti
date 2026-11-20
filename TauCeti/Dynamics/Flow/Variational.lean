@@ -119,9 +119,9 @@ theorem fderiv_flowOfLipschitz_eq_id_add_integral (x : E) (t : ℝ) :
       calc _ ≤ ‖fderiv ℝ v (flowOfLipschitz v hv τ y)‖ * ‖fderiv ℝ (flowOfLipschitz v hv τ) y‖ :=
             ContinuousLinearMap.opNorm_comp_le _ _
         _ ≤ K * Real.exp (K * |t|) := by
-          refine mul_le_mul (norm_fderiv_le_of_lipschitz ℝ hv) ?_ (norm_nonneg _) K.2
+          refine mul_le_mul (norm_fderiv_le_of_lipschitz ℝ hv) ?_ (norm_nonneg _) K.property
           exact (norm_fderiv_flowOfLipschitz_le hv y τ).trans
-            (Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hτt K.2))
+            (Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hτt K.property))
     · refine ae_restrict_of_forall_mem measurableSet_uIoc fun τ _ y _ ↦ ?_
       exact ((hvs.differentiable one_ne_zero _).hasFDerivAt.comp y (hdiff τ y).hasFDerivAt)
   have hφ : flowOfLipschitz v hv t = fun y ↦ y + ∫ τ in (0 : ℝ)..t, v (flowOfLipschitz v hv τ y) :=

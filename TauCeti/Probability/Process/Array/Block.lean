@@ -71,8 +71,8 @@ the two axes, giving a function on the block over the relabelled index sets. -/
 private def finsetBlockReindex (σ τ : Equiv.Perm ℕ) (I₁ I₂ : Finset ℕ)
     (y : (I₁ ×ˢ I₂ : Finset (ℕ × ℕ)) → α) :
     (I₁.map σ.toEmbedding ×ˢ I₂.map τ.toEmbedding : Finset (ℕ × ℕ)) → α :=
-  fun p ↦ y ⟨(σ.symm p.1.1, τ.symm p.1.2), by
-    obtain ⟨h₁, h₂⟩ := Finset.mem_product.1 p.2
+  fun p ↦ y ⟨(σ.symm p.val.1, τ.symm p.val.2), by
+    obtain ⟨h₁, h₂⟩ := Finset.mem_product.1 p.property
     exact Finset.mem_product.2 ⟨Finset.mem_map_equiv.1 h₁, Finset.mem_map_equiv.1 h₂⟩⟩
 
 /-- The block over the relabelled index sets is read off the reindexed array. -/

@@ -58,7 +58,7 @@ theorem explicitCor2Transversal_explicitMap2_id
     apply congrArg (fun z : Z2 G N => (z : H2 G N))
     apply Subtype.ext
     ext ⟨γ, η⟩
-    simp only [coe_cocyclesCor2, cocyclesMap2_coe, cochainsMap2_apply]
+    simp only [coe_cocyclesCor2, coe_cocyclesMap2, cochainsMap2_apply]
     have hmap : cochainsMap2 (ContinuousMonoidHom.id U : U →* U) f c =
         fun q => f ((c : U × U → M) q) := by
       ext ⟨a, b⟩

@@ -33,7 +33,7 @@ variable {α : Type*}
 /-- The members of a filter are codirected under inclusion: the intersection of two members is a
 member contained in both. -/
 instance isCodirectedOrder_mem (f : Filter α) : IsCodirectedOrder {s : Set α // s ∈ f} :=
-  ⟨fun s t ↦ ⟨⟨_, inter_mem s.2 t.2⟩, Set.inter_subset_left, Set.inter_subset_right⟩⟩
+  ⟨fun s t ↦ ⟨⟨_, inter_mem s.property t.property⟩, Set.inter_subset_left, Set.inter_subset_right⟩⟩
 
 /-- Bounds `a ≤ f x ≤ b` holding eventually along a nontrivial filter force `a ≤ b`. -/
 theorem le_of_eventually_le_and_le {β : Type*} [Preorder β] {l : Filter α} [l.NeBot]

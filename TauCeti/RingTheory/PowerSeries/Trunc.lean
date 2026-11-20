@@ -128,7 +128,7 @@ theorem coeff_sum_C_mul_X_pow {m : ℕ} (a : Fin m → R) (n : ℕ) :
       simp [hni]]
     simp
   · refine Finset.sum_eq_zero fun i _ ↦ ?_
-    have hni : n ≠ (i : ℕ) := (i.2.trans_le (not_lt.mp h)).ne'
+    have hni : n ≠ (i : ℕ) := (i.isLt.trans_le (not_lt.mp h)).ne'
     simp [hni]
 
 /-- A power series has the same `m`-truncation as its finite expansion `∑_{i < m} aᵢ Xⁱ` along its

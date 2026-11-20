@@ -88,7 +88,8 @@ theorem exists_lift_modelOrientation_eq (o : Orientation I M ι)
     (m : _root_.Orientation ℝ E ι) :
     ∃ l : OrientationLift I M ι, mk l = o ∧ l.modelOrientation = m := by
   obtain ⟨l, rfl⟩ := o.exists_lift
-  rcases _root_.Orientation.eq_or_eq_neg l.modelOrientation m l.card_eq with h | h
+  rcases _root_.Orientation.eq_or_eq_neg l.modelOrientation m
+    (Nat.card_eq_fintype_card.trans l.card_eq) with h | h
   · exact ⟨l, rfl, h⟩
   · exact ⟨l.flip, (mk_eq_mk_iff _ _).mpr (.inr rfl), by
       rw [OrientationLift.flip_modelOrientation, h]
@@ -307,6 +308,16 @@ theorem orientationAt_model (o : _root_.Orientation ℝ E ι)
     OrientationLift.toVectorBundleOrientation_apply, OrientationLift.orientationAt_ofHasGroupoid]
   -- The tangent space of the model uses its model-space scalar structure.
   rfl
+
+/-- Transporting the tangent orientation of the constant model orientation to `E` through
+`NormedSpace.fromTangentSpace` recovers the original orientation. -/
+theorem map_orientationAt_model (o : _root_.Orientation ℝ E ι)
+    (hι : Fintype.card ι = Module.finrank ℝ E) (x : E) :
+    _root_.Orientation.map ι (NormedSpace.fromTangentSpace x).toLinearEquiv
+      ((model (I := 𝓘(ℝ, E)) o hι).orientationAt x) = o := by
+  rw [orientationAt_model]
+  -- `NormedSpace.fromTangentSpace x` is the identity of `E`, as the tangent space is `E`.
+  exact congrArg (· o) (_root_.Orientation.map_refl (R := ℝ) (M := E) ι)
 
 /-- The standard orientation of `ℝ`, in which the unit vector `1` is positive. -/
 def real : Orientation 𝓘(ℝ, ℝ) ℝ (Fin 1) :=

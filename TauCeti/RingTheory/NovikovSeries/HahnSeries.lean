@@ -137,7 +137,7 @@ def ofSection (σ : N.range →+ H) (hσ : ∀ γ, N (σ γ) = γ) :
       left_inv h := by simp
       right_inv p := by
         have hp : N.rangeRestrict (p.1 + σ p.2) = p.2 :=
-          Subtype.ext (by simp [hσ, AddMonoidHom.mem_ker.1 p.1.2])
+          Subtype.ext (by simp [hσ, AddMonoidHom.mem_ker.1 p.1.property])
         exact Prod.ext (Subtype.ext (by simp [hp])) hp
       map_add' h h' := by
         ext
@@ -377,7 +377,7 @@ def hahnSeriesEquiv : NovikovSeries R H N ≃+* locallyFiniteHahnSeries R K S :=
   RingEquiv.ofBijective
     ((toHahnSeries R S).codRestrict _ (toHahnSeries_mem_locallyFiniteHahnSeries S))
     ⟨fun _ _ hab => toHahnSeries_injective S (congrArg Subtype.val hab), fun f => by
-      obtain ⟨a, ha⟩ := (mem_range_toHahnSeries_iff S).2 f.2
+      obtain ⟨a, ha⟩ := (mem_range_toHahnSeries_iff S).2 f.property
       exact ⟨a, Subtype.ext ha⟩⟩
 
 @[simp]

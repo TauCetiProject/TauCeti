@@ -11,6 +11,7 @@ public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Linearization
 import Mathlib.Analysis.Calculus.TaylorIntegral
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Topology.UniformSpace.HeineCantor
 
@@ -60,8 +61,8 @@ tubular map defined on a disk bundle. This file proves:
   `δ_a^* J` through Hadamard's lemma as a field depending smoothly on `(a, z, W)` jointly,
   including `a = 0`, where its value is `J_N`. These statements take `N` complete, so that the
   average in Hadamard's lemma is a Bochner integral;
-* `J_N(z, W)` squares to `-1` when `J` is differentiable at `(z, 0)`, squares to `-1` near
-  `(z, 0)`, and `J(z, 0)` preserves `E × {0}`
+* `J_N(z, W)` squares to `-1` when `J` squares to `-1` near `(z, 0)` and `J(z, 0)` preserves
+  `E × {0}`
   (`TauCeti.normalLinearization_apply_normalLinearization_apply`); `J_N` is `Cᵐ` near `(z, W)`
   when `J` is `C^(m+1)` near `(z, 0)` (`TauCeti.contDiffAt_normalLinearization`); and it is
   invariant under every nonzero normal dilation (`TauCeti.normalDilation_normalLinearization`);
@@ -175,6 +176,30 @@ theorem normalLinearization_apply (J : E × N → E × N →L[ℝ] E × N) (p v 
         (fderiv ℝ J (p.1, 0) (0, p.2) (v.1, 0)).2 + (J (p.1, 0) (0, v.2)).2) := by
   simp [normalLinearization]
 
+/-- The operator norm of the normal linearization grows at most linearly in the normal
+coordinate: `‖J_N(z, W)‖ ≤ ‖J(z, 0)‖ + ‖dJ(z, 0)‖ ‖W‖`. -/
+theorem norm_normalLinearization_le (J : E × N → E × N →L[ℝ] E × N) (p : E × N) :
+    ‖normalLinearization J p‖ ≤ ‖J (p.1, 0)‖ + ‖fderiv ℝ J (p.1, 0)‖ * ‖p.2‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  set A := J (p.1, 0)
+  set D := fderiv ℝ J (p.1, 0)
+  have h₁ : ‖((v.1, 0) : E × N)‖ ≤ ‖v‖ := by simpa using norm_fst_le v
+  have h₂ : ‖((0, v.2) : E × N)‖ ≤ ‖v‖ := by simpa using norm_snd_le v
+  have hA₁ : ‖A (v.1, 0)‖ ≤ ‖A‖ * ‖v‖ := (A.le_opNorm _).trans (by gcongr)
+  have hA₂ : ‖A (0, v.2)‖ ≤ ‖A‖ * ‖v‖ := (A.le_opNorm _).trans (by gcongr)
+  have hD : ‖D (0, p.2) (v.1, 0)‖ ≤ ‖D‖ * ‖p.2‖ * ‖v‖ := by
+    calc ‖D (0, p.2) (v.1, 0)‖ ≤ ‖D (0, p.2)‖ * ‖((v.1, 0) : E × N)‖ := (D (0, p.2)).le_opNorm _
+      _ ≤ ‖D‖ * ‖((0, p.2) : E × N)‖ * ‖v‖ := by gcongr; exact D.le_opNorm _
+      _ = ‖D‖ * ‖p.2‖ * ‖v‖ := by simp
+  have hDv : 0 ≤ ‖D‖ * ‖p.2‖ * ‖v‖ := by positivity
+  rw [normalLinearization_apply, Prod.norm_mk]
+  refine max_le ((norm_fst_le (A (v.1, 0))).trans (hA₁.trans ?_)) ?_
+  · nlinarith
+  · calc ‖(D (0, p.2) (v.1, 0)).2 + (A (0, v.2)).2‖
+        ≤ ‖D (0, p.2) (v.1, 0)‖ + ‖A (0, v.2)‖ :=
+          (norm_add_le _ _).trans (add_le_add (norm_snd_le _) (norm_snd_le _))
+      _ ≤ (‖A‖ + ‖D‖ * ‖p.2‖) * ‖v‖ := by nlinarith
+
 /-! ### Algebraic properties -/
 
 /-- For `a ≠ 0` the normal dilation of `J` squares to `-1` at `p` when `J` squares to `-1` at the
@@ -248,12 +273,12 @@ theorem cauchyRiemannOperator_normalLinearization (J : E × N → E × N →L[�
     abel
 
 /-- **The normal linearization of an almost complex structure is an almost complex structure.**
-At `p`, it suffices that `J` is differentiable at `(p.1, 0)`, squares to `-1` near `(p.1, 0)`, and
-`J(p.1, 0)` preserves `E × {0}`: the identity `J' J + J J' = 0` obtained by differentiating
-`J² = -1` in the direction `(0, p.2)` makes the block `E → N` of `J_N(p)` anticommute with the
-diagonal blocks. -/
+At `p`, it suffices that `J` squares to `-1` near `(p.1, 0)` and `J(p.1, 0)` preserves `E × {0}`:
+the identity `J' J + J J' = 0` obtained by differentiating `J² = -1` in the direction `(0, p.2)`
+(`TauCeti.fderiv_apply_apply_eq_neg_of_eventually_sq`) makes the block `E → N` of `J_N(p)`
+anticommute with the diagonal blocks. -/
 theorem normalLinearization_apply_normalLinearization_apply {J : E × N → E × N →L[ℝ] E × N}
-    {p : E × N} (hJ : DifferentiableAt ℝ J (p.1, 0)) (hJ₀ : ∀ w, (J (p.1, 0) (w, 0)).2 = 0)
+    {p : E × N} (hJ₀ : ∀ w, (J (p.1, 0) (w, 0)).2 = 0)
     (hJ₂ : ∀ᶠ q in 𝓝 (p.1, 0), ∀ w, J q (J q w) = -w) (v : E × N) :
     normalLinearization J p (normalLinearization J p v) = -v := by
   rw [normalLinearization_apply, normalLinearization_apply]
@@ -261,11 +286,7 @@ theorem normalLinearization_apply_normalLinearization_apply {J : E × N → E ×
   set J' := fderiv ℝ J x ((0 : E), p.2)
   -- Differentiating `q ↦ J q (J q w) = -w` at `x`.
   have hderiv (w : E × N) : J' (J x w) + J x (J' w) = 0 := by
-    have hf := hJ.hasFDerivAt.clm_apply (hJ.hasFDerivAt.clm_apply (hasFDerivAt_const w x))
-    have h0 : HasFDerivAt (fun q ↦ J q (J q w)) (0 : E × N →L[ℝ] E × N) x :=
-      (hasFDerivAt_const (-w) x).congr_of_eventuallyEq (hJ₂.mono fun q hq ↦ hq w)
-    have h := congrArg (fun L : E × N →L[ℝ] E × N ↦ L ((0 : E), p.2)) (hf.unique h0)
-    simpa [J', add_comm] using h
+    rw [fderiv_apply_apply_eq_neg_of_eventually_sq hJ₂, neg_add_cancel]
   have hJx := hJ₂.self_of_nhds
   have hA : J x (v.1, 0) = ((J x (v.1, 0)).1, 0) := Prod.ext rfl (hJ₀ v.1)
   -- The normal component of `J x u` only depends on the normal component of `u`.

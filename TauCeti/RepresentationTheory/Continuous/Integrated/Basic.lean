@@ -228,7 +228,7 @@ theorem _root_.ContRepresentation.comp_integratedOperatorL1 [MeasurableAdd G]
     ContRepresentation.integratedOperatorL1_apply]
   have hint : ∫ g, π (.ofAdd h) (f g • π (.ofAdd g) v) ∂μ =
       π (.ofAdd h) (∫ g, f g • π (.ofAdd g) v ∂μ) :=
-    AddMonoidHom.integral_comp_comm (π (.ofAdd h)).toAddMonoidHom (π (.ofAdd h)).continuous
+    integral_comp_comm_of_addMonoidHomClass (π (.ofAdd h))
       (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)
   rw [← hint]
   have hcomp : ∫ g, (Lp.compMeasurePreserving (fun g ↦ -h + g)
@@ -277,7 +277,7 @@ theorem _root_.ContRepresentation.commute_integratedOperatorL1
   simp only [mul_apply_eq_comp, ContRepresentation.integratedOperatorL1_apply]
   have hint : ∫ t, π g (f t • π (.ofAdd t) v) ∂μ =
       π g (∫ t, f t • π (.ofAdd t) v ∂μ) :=
-    AddMonoidHom.integral_comp_comm (π g).toAddMonoidHom (π g).continuous
+    integral_comp_comm_of_addMonoidHomClass (π g)
       (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f) v)
   rw [← hint]
   apply integral_congr_ae
@@ -300,8 +300,7 @@ theorem _root_.ContRepresentation.integratedOperatorL1_commute (f₁ f₂ : G �
   rw [π.integratedOperatorL1_apply f₂ v]
   have hint : ∫ t, π.integratedOperatorL1 hcont hbdd μ f₁ (f₂ t • π (.ofAdd t) v) ∂μ =
       π.integratedOperatorL1 hcont hbdd μ f₁ (∫ t, f₂ t • π (.ofAdd t) v ∂μ) :=
-    AddMonoidHom.integral_comp_comm (π.integratedOperatorL1 hcont hbdd μ f₁).toAddMonoidHom
-      (π.integratedOperatorL1 hcont hbdd μ f₁).continuous
+    integral_comp_comm_of_addMonoidHomClass (π.integratedOperatorL1 hcont hbdd μ f₁)
       (integrable_smul_apply hcont hbdd.choose_spec (L1.integrable_coeFn f₂) v)
   rw [← hint]
   rw [π.integratedOperatorL1_apply f₂]
@@ -470,7 +469,7 @@ theorem _root_.ContRepresentation.mem_closure_range_integratedOperatorL1_apply
     v ∈ closure (Set.range fun f : G →₁[μ] 𝕜 ↦ π.integratedOperatorL1 hcont hbdd μ f v) := by
   -- One normalized weight inside each neighbourhood of `0`, indexed as a net shrinking to `0`.
   choose f hf using fun U : {U : Set G // U ∈ 𝓝 (0 : G)} ↦
-    exists_integral_eq_one_norm_eq_one 𝕜 μ U.2
+    exists_integral_eq_one_norm_eq_one 𝕜 μ U.property
   refine mem_closure_of_tendsto (ContRepresentation.tendsto_integratedOperatorL1_apply
     (l := atBot) (C := 1) (.of_forall fun U ↦ (hf U).1)
     (.of_forall fun U ↦ (hf U).2.1.le) (fun V hV ↦ ?_) v)

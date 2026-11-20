@@ -57,11 +57,10 @@ theorem coe_upperRootHom (a : HeisenbergGroup.unitarySubgroup σ) :
 variable (K σ) in
 /-- The upper root embedding is faithful. -/
 theorem upperRootHom_injective : Function.Injective (upperRootHom K σ) := by
-  unfold upperRootHom
-  exact (MulEquiv.subgroupCongr (by rw [coe_typeAGraphConjugator_two])).injective.comp
-    ((HeisenbergGroup.toSpecialLinear.subgroupComap_injective _
-      HeisenbergGroup.toSpecialLinear_injective).comp
-        (MulEquiv.subgroupCongr (HeisenbergGroup.unitarySubgroup_eq_comap σ)).injective)
+  intro a b h
+  apply Subtype.ext
+  apply HeisenbergGroup.toSpecialLinear_injective
+  simpa only [coe_upperRootHom] using congrArg Subtype.val h
 
 /-- An isometry belongs to the upper root group exactly when its matrix is upper
 unitriangular. -/
@@ -92,31 +91,37 @@ end Ring
 
 variable {K : Type*} [Field K] {σ : K →+* K}
 
+private theorem coe_upperRootHom_smul_mk (a : HeisenbergGroup.unitarySubgroup σ)
+    (p : (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).isotropicPoints σ)
+    {v : Fin 3 → K} {hv : v ≠ 0} (hp : (p : ℙ K (Fin 3 → K)) = Projectivization.mk K v hv) :
+    ((upperRootHom K σ a • p : _) : ℙ K (Fin 3 → K)) =
+      Projectivization.mk K (upperRootHom K σ a • v)
+        ((smul_ne_zero_iff_ne _).mpr hv) := by
+  simp only [SubMulAction.val_smul, Subgroup.smul_def, hp, Projectivization.smul_mk]
+
 /-- Every upper root element fixes the point at infinity. -/
 @[simp]
 theorem upperRootHom_smul_infinity (a : HeisenbergGroup.unitarySubgroup σ) :
     upperRootHom K σ a • infinity K σ = infinity K σ := by
   apply Subtype.ext
-  rw [SubMulAction.val_smul, Subgroup.smul_def, coe_infinity, Projectivization.smul_mk]
+  rw [coe_upperRootHom_smul_mk a _ (coe_infinity K σ), coe_infinity]
   congr 1
-  rw [← Subgroup.smul_def, upperRootHom_smul_vec]
-  simp
+  simp [upperRootHom_smul_vec]
 
 /-- The action on an affine point is given by multiplication by the upper root matrix. -/
 @[simp]
 theorem upperRootHom_smul_point (a : HeisenbergGroup.unitarySubgroup σ)
     (c : {c : K × K // c.1 + σ c.1 = σ c.2 * c.2}) :
     upperRootHom K σ a • point K σ c =
-      point K σ ⟨((a : HeisenbergGroup K).z + c.1.1 +
-          (a : HeisenbergGroup K).x * c.1.2,
-        σ (a : HeisenbergGroup K).x + c.1.2), by
+      point K σ ⟨((a : HeisenbergGroup K).z + c.val.1 +
+          (a : HeisenbergGroup K).x * c.val.2,
+        σ (a : HeisenbergGroup K).x + c.val.2), by
           simp only [map_add, map_mul, HeisenbergGroup.unitarySubgroup.map_map_x]
-          linear_combination HeisenbergGroup.unitarySubgroup.z_add_map_z a + c.2⟩ := by
+          linear_combination HeisenbergGroup.unitarySubgroup.z_add_map_z a + c.property⟩ := by
   apply Subtype.ext
-  rw [SubMulAction.val_smul, Subgroup.smul_def, coe_point, Projectivization.smul_mk,
-    coe_point]
+  rw [coe_upperRootHom_smul_mk a _ (coe_point c), coe_point]
   congr 1
-  rw [← Subgroup.smul_def, upperRootHom_smul_vec]
+  rw [upperRootHom_smul_vec]
   ext i
   fin_cases i <;> simp <;> ring
 
@@ -159,8 +164,8 @@ theorem existsUnique_upperRootHom_smul_zero (p :
     ∃! a : HeisenbergGroup.unitarySubgroup σ,
       upperRootHom K σ a • point K σ ⟨(0, 0), by simp⟩ = p := by
   obtain ⟨c, rfl⟩ := exists_point hp
-  let a := HeisenbergGroup.unitaryMk σ hσ (σ c.1.2) c.1.1 (by
-    simpa [hσ _] using c.2)
+  let a := HeisenbergGroup.unitaryMk σ hσ (σ c.val.2) c.val.1 (by
+    simpa [hσ _] using c.property)
   have ha : upperRootHom K σ a • point K σ ⟨(0, 0), by simp⟩ = point K σ c := by
     rw [upperRootHom_smul_zero]
     apply point_inj.mpr

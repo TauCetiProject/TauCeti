@@ -68,7 +68,7 @@ private theorem span_range_sumElim_eq_top {B : Rep ℤ Q}
     {s : Finset B}
     (hs : Submodule.span ℤ (s : Set B) = LinearMap.ker π.hom.toLinearMap) :
     Submodule.span (MonoidAlgebra ℤ Q)
-      (Set.range (Sum.elim x fun k : s ↦ B.ρ.asModuleEquiv.symm k.1)) = ⊤ := by
+      (Set.range (Sum.elim x fun k : s ↦ B.ρ.asModuleEquiv.symm k.val)) = ⊤ := by
   classical
   -- Use the associated module's scalar instance for the linear-equivalence transport.
   let : Module ℤ B.ρ.asModule := B.ρ.instModuleAsModule
@@ -76,7 +76,7 @@ private theorem span_range_sumElim_eq_top {B : Rep ℤ Q}
   refine eq_top_iff.2 fun m _ ↦ ?_
   -- `π m` is a combination of the `[σ i] - 1`, since these generate `I_Q`.
   have hmem : (augmentationι ℤ Q).hom (π.hom (B.ρ.asModuleEquiv m)) ∈
-      RingHom.ker (TauCeti.MonoidAlgebra.augmentation ℤ Q) := by
+      RingHom.ker (MonoidAlgebra.augmentation ℤ Q) := by
     have h := sum_coeff_augmentationι ℤ Q (π.hom (B.ρ.asModuleEquiv m))
     rw [RingHom.mem_ker,
       ← sum_coeff_single ((augmentationι ℤ Q).hom (π.hom (B.ρ.asModuleEquiv m))),
@@ -106,7 +106,7 @@ private theorem span_range_sumElim_eq_top {B : Rep ℤ Q}
   have hmem := Submodule.mem_map_of_mem (f := B.ρ.asModuleEquiv.symm.toLinearMap) hm
   rw [Submodule.map_span] at hmem
   have hle : B.ρ.asModuleEquiv.symm '' (s : Set B) ⊆
-      Set.range (Sum.elim x fun k : s ↦ B.ρ.asModuleEquiv.symm k.1) := by
+      Set.range (Sum.elim x fun k : s ↦ B.ρ.asModuleEquiv.symm k.val) := by
     rintro _ ⟨y, hy, rfl⟩
     exact ⟨Sum.inr ⟨y, hy⟩, rfl⟩
   have hmem' := Submodule.span_le_restrictScalars ℤ (MonoidAlgebra ℤ Q) _ hmem
@@ -118,10 +118,10 @@ private theorem span_range_sumElim_eq_top {B : Rep ℤ Q}
 private theorem orderOf_smul_mem_ker_augmentation_smul_top {B : Rep ℤ Q}
     (π : B ⟶ augmentationIdeal ℤ Q)
     (hkerI : ∀ v : B.ρ.asModule, π.hom (B.ρ.asModuleEquiv v) = 0 →
-      v ∈ RingHom.ker (TauCeti.MonoidAlgebra.augmentation ℤ Q) •
+      v ∈ RingHom.ker (MonoidAlgebra.augmentation ℤ Q) •
         (⊤ : Submodule (MonoidAlgebra ℤ Q) B.ρ.asModule))
     (σ : Q) {x : B.ρ.asModule} (hx : π.hom (B.ρ.asModuleEquiv x) = singleSub ℤ Q 1 σ) :
-    (orderOf σ : MonoidAlgebra ℤ Q) • x ∈ RingHom.ker (TauCeti.MonoidAlgebra.augmentation ℤ Q) •
+    (orderOf σ : MonoidAlgebra ℤ Q) • x ∈ RingHom.ker (MonoidAlgebra.augmentation ℤ Q) •
       (⊤ : Submodule (MonoidAlgebra ℤ Q) B.ρ.asModule) := by
   classical
   -- `ord(σ) = (ord(σ) - μ) + μ` with `μ = ∑ₖ [σ ^ k]`, and `μ • x` lies in the kernel.
@@ -159,7 +159,7 @@ private theorem mul_single_one_eq_self_of_smul_eq_zero {B : Rep ℤ Q}
 augmentation `|Q|`, then `γ` is the norm element and the norm vanishes on `B`. -/
 private theorem norm_eq_zero_of_smul_eq_zero [Fintype Q] (B : Rep ℤ Q) {γ : MonoidAlgebra ℤ Q}
     (hγ : ∀ y : B.ρ.asModule, γ • y = 0) (hinv : ∀ q : Q, γ * single q 1 = γ)
-    (hεγ : TauCeti.MonoidAlgebra.augmentation ℤ Q γ = Fintype.card Q) :
+    (hεγ : MonoidAlgebra.augmentation ℤ Q γ = Fintype.card Q) :
     B.ρ.norm = 0 := by
   ext v
   have h := congrArg B.ρ.asModuleEquiv (hγ (B.ρ.asModuleEquiv.symm v))
@@ -180,7 +180,7 @@ theorem norm_eq_zero_of_ker_le_coinvariantsKer [Fintype Q] (B : Rep ℤ Q)
     B.ρ.norm = 0 := by
   classical
   -- `B` is a module over the commutative ring `ℤ[Q]`, with augmentation ideal `I = ker ε`.
-  let ε := TauCeti.MonoidAlgebra.augmentation ℤ Q
+  let ε := MonoidAlgebra.augmentation ℤ Q
   have hkerI (v : B.ρ.asModule) (hv : π.hom (B.ρ.asModuleEquiv v) = 0) :
       v ∈ RingHom.ker ε • (⊤ : Submodule (MonoidAlgebra ℤ Q) B.ρ.asModule) := by
     simpa only [LinearEquiv.symm_apply_apply] using
@@ -193,15 +193,15 @@ theorem norm_eq_zero_of_ker_le_coinvariantsKer [Fintype Q] (B : Rep ℤ Q)
     hπ.comp B.ρ.asModuleEquiv.surjective
   choose x hx using fun i ↦ hπM (singleSub ℤ Q 1 (σ i))
   simp only [Function.comp_apply] at hx
-  let b : ι ⊕ s → B.ρ.asModule := Sum.elim x fun k ↦ B.ρ.asModuleEquiv.symm k.1
+  let b : ι ⊕ s → B.ρ.asModule := Sum.elim x fun k ↦ B.ρ.asModuleEquiv.symm k.val
   let e : ι ⊕ s → MonoidAlgebra ℤ Q := Sum.elim (fun i ↦ (orderOf (σ i) : MonoidAlgebra ℤ Q)) 1
   have he (j : ι ⊕ s) :
       e j • b j ∈ RingHom.ker ε • (⊤ : Submodule (MonoidAlgebra ℤ Q) B.ρ.asModule) := by
     rcases j with i | k
     · exact orderOf_smul_mem_ker_augmentation_smul_top π hkerI (σ i) (hx i)
-    · have hk : π.hom k.1 = 0 :=
-        LinearMap.mem_ker.mp (hs ▸ Submodule.subset_span k.2)
-      simpa [e, b] using hkerI (B.ρ.asModuleEquiv.symm k.1) (by simpa using hk)
+    · have hk : π.hom k.val = 0 :=
+        LinearMap.mem_ker.mp (hs ▸ Submodule.subset_span k.property)
+      simpa [e, b] using hkerI (B.ρ.asModuleEquiv.symm k.val) (by simpa using hk)
   -- The determinant trick gives `γ ≡ ∏ ord(σ i) = |Q|` modulo `I` killing `B`.
   obtain ⟨γ, hγI, hγ⟩ := Submodule.exists_sub_prod_mem_and_smul_eq_zero (RingHom.ker ε)
     (span_range_sumElim_eq_top π hσ hx hs) e he

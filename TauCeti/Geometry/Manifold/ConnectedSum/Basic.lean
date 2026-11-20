@@ -102,6 +102,10 @@ def puncture (e : E → M) : Opens M :=
 theorem mem_puncture {e : E → M} {x : M} : x ∈ puncture e ↔ x ≠ e 0 :=
   Iff.rfl
 
+/-- A vector whose image under `e` lies in the punctured summand `M ∖ {e 0}` is nonzero. -/
+theorem ne_zero_of_apply_mem_puncture {e : E → M} {w : E} (h : e w ∈ puncture e) : w ≠ 0 :=
+  fun hw ↦ mem_puncture.1 h (congrArg e hw)
+
 @[simp]
 theorem coe_puncture (e : E → M) : (puncture e : Set M) = {e 0}ᶜ :=
   (rfl)
@@ -140,7 +144,7 @@ theorem continuous_punctureMap (hφc : Continuous φ) : Continuous (punctureMap 
   hφc.restrict _
 
 theorem isOpenMap_punctureMap (hφo : IsOpenMap φ) : IsOpenMap (punctureMap φ hφ h0) :=
-  (hφo.comp (puncture e).isOpen.isOpenMap_subtype_val).codRestrict _
+  (hφo.comp (puncture e).isOpen.isOpenMap_subtypeVal).codRestrict _
 
 end punctureMap
 
@@ -325,17 +329,18 @@ theorem inl_eq_inr_iff (he₁ : Injective e₁) (he₂ : Injective e₂) {x : pu
   simp
 
 /-- The glued points determined by a nonzero vector `v`. -/
-theorem inl_eq_inr (v : E) (hv : v ≠ 0) (hx : e₁ v ∈ puncture e₁)
+theorem inl_eq_inr (v : E) (hx : e₁ v ∈ puncture e₁)
     (hy : e₂ (inversion 0 1 v) ∈ puncture e₂) :
     inl e₁ e₂ ⟨e₁ v, hx⟩ = inr e₁ e₂ ⟨e₂ (inversion 0 1 v), hy⟩ :=
-  Quot.sound ⟨v, hv, rfl, rfl⟩
+  Quot.sound ⟨v, ne_zero_of_apply_mem_puncture hx, rfl, rfl⟩
 
 /-- The glued points determined by a nonzero vector `w`, read from the second ball: `e₂ w` is glued
 to `e₁ (inversion 0 1 w)`, as the inversion is an involution. -/
-theorem inl_inversion_eq_inr {w : E} (hw : w ≠ 0) (hx : e₁ (inversion 0 1 w) ∈ puncture e₁)
+theorem inl_inversion_eq_inr {w : E} (hx : e₁ (inversion 0 1 w) ∈ puncture e₁)
     (hy : e₂ w ∈ puncture e₂) :
     inl e₁ e₂ ⟨e₁ (inversion 0 1 w), hx⟩ = inr e₁ e₂ ⟨e₂ w, hy⟩ :=
-  Quot.sound ⟨inversion 0 1 w, by simpa [inversion_eq_center one_ne_zero] using hw, rfl,
+  Quot.sound ⟨inversion 0 1 w, by
+    simpa [inversion_eq_center one_ne_zero] using ne_zero_of_apply_mem_puncture hy, rfl,
     by rw [inversion_inversion (0 : E) one_ne_zero]⟩
 
 section lift
@@ -392,8 +397,8 @@ theorem isOpenQuotientMap_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddi
   -- The points of `U` in each summand, as open subsets of `M` and of `N`.
   set U₁ : Set M := (↑) '' (Sum.inl ⁻¹' U : Set (puncture e₁))
   set U₂ : Set N := (↑) '' (Sum.inr ⁻¹' U : Set (puncture e₂))
-  have hU₁' : IsOpen U₁ := (puncture e₁).isOpen.isOpenMap_subtype_val _ hU₁
-  have hU₂' : IsOpen U₂ := (puncture e₂).isOpen.isOpenMap_subtype_val _ hU₂
+  have hU₁' : IsOpen U₁ := (puncture e₁).isOpen.isOpenMap_subtypeVal _ hU₁
+  have hU₂' : IsOpen U₂ := (puncture e₂).isOpen.isOpenMap_subtypeVal _ hU₂
   -- The points of one ball glued to an open set `V` of the other form the open set
   -- `e '' ({0}ᶜ ∩ inversion 0 1 ⁻¹' (e' ⁻¹' V))`.
   have hinv : ContinuousOn (inversion (0 : E) 1) {0}ᶜ :=
@@ -402,7 +407,7 @@ theorem isOpenQuotientMap_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddi
   · -- `x` is in the saturation if it is in `U`, or if it is glued to a point of `U₂`.
     have hW := h₁.isOpenMap _
       (hinv.isOpen_inter_preimage isOpen_compl_singleton (hU₂'.preimage h₂.continuous))
-    convert hU₁.union (hW.preimage continuous_subtype_val) using 1
+    convert hU₁.union (hW.preimage continuous_subtypeVal) using 1
     refine Set.ext fun x ↦ ?_
     simp only [mem_union, mem_preimage, mem_image, U₂]
     constructor
@@ -421,7 +426,7 @@ theorem isOpenQuotientMap_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddi
     -- gluing read from the second summand is again the inversion, an involution.
     have hW := h₂.isOpenMap _
       (hinv.isOpen_inter_preimage isOpen_compl_singleton (hU₁'.preimage h₁.continuous))
-    convert hU₂.union (hW.preimage continuous_subtype_val) using 1
+    convert hU₂.union (hW.preimage continuous_subtypeVal) using 1
     refine Set.ext fun y ↦ ?_
     simp only [mem_union, mem_preimage, mem_image, U₁]
     constructor
@@ -499,21 +504,35 @@ variable {e₁ e₂}
 
 /-- If moreover `f 0 ∉ range e₁`, the centre of the ball `f` of the connected sum is not a point
 of the second summand. -/
-theorem inr_ne_inlBall_zero (he₁ : Injective e₁) (he₂ : Injective e₂) (h : e₁ 0 ∉ range f)
+theorem inr_ne_inlBall_zero (h : e₁ 0 ∉ range f)
     (hf : f 0 ∉ range e₁) (y : puncture e₂) : inr e₁ e₂ y ≠ inlBall e₁ e₂ f h 0 := by
   intro hy
-  rw [inlBall_apply, eq_comm, inl_eq_inr_iff he₁ he₂] at hy
-  obtain ⟨v, -, hv, -⟩ := hy
-  exact hf ⟨v, by simpa using hv⟩
+  rw [inlBall_apply] at hy
+  have hy := (Quot.eqvGen_exact hy).symm
+  rw [← Relation.reflTransGen_symmGen] at hy
+  refine Sum.inr_ne_inl ((Relation.reflTransGen_iff_eq ?_).1 hy)
+  rintro (x | x) (hx | hx)
+  · exact not_rel_inl_inl hx
+  · exact not_rel_inl_inl hx
+  · obtain ⟨v, -, hv, -⟩ := rel_inl_inr.1 hx
+    exact hf ⟨v, by simpa using hv⟩
+  · exact not_rel_inr_inl hx
 
 /-- If moreover `g 0 ∉ range e₂`, the centre of the ball `g` of the connected sum is not a point
 of the first summand. -/
-theorem inl_ne_inrBall_zero (he₁ : Injective e₁) (he₂ : Injective e₂) (h : e₂ 0 ∉ range g)
+theorem inl_ne_inrBall_zero (h : e₂ 0 ∉ range g)
     (hg : g 0 ∉ range e₂) (x : puncture e₁) : inl e₁ e₂ x ≠ inrBall e₁ e₂ g h 0 := by
   intro hx
-  rw [inrBall_apply, inl_eq_inr_iff he₁ he₂] at hx
-  obtain ⟨v, -, -, hv⟩ := hx
-  exact hg ⟨_, by simpa using hv⟩
+  rw [inrBall_apply] at hx
+  have hx := (Quot.eqvGen_exact hx).symm
+  rw [← Relation.reflTransGen_symmGen] at hx
+  refine Sum.inl_ne_inr ((Relation.reflTransGen_iff_eq ?_).1 hx)
+  rintro (x | x) (hx | hx)
+  · exact not_rel_inr_inl hx
+  · obtain ⟨v, -, -, hv⟩ := rel_inl_inr.1 hx
+    exact hg ⟨_, by simpa using hv⟩
+  · exact not_rel_inr_inr hx
+  · exact not_rel_inr_inr hx
 
 theorem isOpenEmbedding_inlBall (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
     (h : e₁ 0 ∉ range f) (hf : IsOpenEmbedding f) : IsOpenEmbedding (inlBall e₁ e₂ f h) :=
@@ -535,8 +554,8 @@ theorem isLocalHomeomorph_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddi
   have key : ∀ U : Set (puncture e₁ ⊕ puncture e₂), IsOpen U → p ∈ U →
       InjOn (mk e₁ e₂) U → ∃ U ∈ 𝓝 p, IsOpenEmbedding (U.domRestrict (mk e₁ e₂)) :=
     fun U hU hp hinj ↦ ⟨U, hU.mem_nhds hp, .of_continuous_injective_isOpenMap
-      ((continuous_mk e₁ e₂).comp continuous_subtype_val) hinj.injective
-      (hopen.comp hU.isOpenMap_subtype_val)⟩
+      ((continuous_mk e₁ e₂).comp continuous_subtypeVal) hinj.injective
+      (hopen.comp hU.isOpenMap_subtypeVal)⟩
   rcases p with x | y
   · refine key _ isOpen_range_inl ⟨x, rfl⟩ ?_
     rintro _ ⟨x, rfl⟩ _ ⟨x', rfl⟩ h
@@ -560,8 +579,8 @@ private theorem separated_inl_inr [T2Space M] [T2Space N] [ProperSpace E]
     ((isCompact_closedBall 0 1).image h₂.continuous).isClosed
   refine ⟨inl e₁ e₂ '' ((↑) ⁻¹' (e₁ '' Metric.closedBall 0 1)ᶜ),
     inr e₁ e₂ '' ((↑) ⁻¹' (e₂ '' Metric.closedBall 0 1)ᶜ),
-    (isOpenEmbedding_inl h₁ h₂).isOpenMap _ (hK₁.isOpen_compl.preimage continuous_subtype_val),
-    (isOpenEmbedding_inr h₁ h₂).isOpenMap _ (hK₂.isOpen_compl.preimage continuous_subtype_val),
+    (isOpenEmbedding_inl h₁ h₂).isOpenMap _ (hK₁.isOpen_compl.preimage continuous_subtypeVal),
+    (isOpenEmbedding_inr h₁ h₂).isOpenMap _ (hK₂.isOpen_compl.preimage continuous_subtypeVal),
     ⟨x, fun ⟨v, _, hv⟩ ↦ hx ⟨v, hv⟩, rfl⟩, ⟨y, fun ⟨v, _, hv⟩ ↦ hy ⟨v, hv⟩, rfl⟩, ?_⟩
   · refine Set.disjoint_left.2 ?_
     rintro _ ⟨x', hx', rfl⟩ ⟨y', hy', hxy⟩
@@ -578,7 +597,7 @@ private theorem inl_mem_range_inr_of_mem_range (h₁ : IsOpenEmbedding e₁)
     (h₂ : IsOpenEmbedding e₂) {x : puncture e₁} (hx : (x : M) ∈ range e₁) :
     inl e₁ e₂ x ∈ range (inr e₁ e₂) := by
   obtain ⟨v, hv⟩ := hx
-  have hv0 : v ≠ 0 := by rintro rfl; exact x.2 hv.symm
+  have hv0 : v ≠ 0 := by rintro rfl; exact x.property hv.symm
   have hy : e₂ (inversion 0 1 v) ∈ puncture e₂ := by
     simpa [h₂.injective.eq_iff, inversion_eq_center one_ne_zero] using hv0
   refine ⟨⟨_, hy⟩, ?_⟩
@@ -591,7 +610,7 @@ private theorem inr_mem_range_inl_of_mem_range (h₁ : IsOpenEmbedding e₁)
     (h₂ : IsOpenEmbedding e₂) {y : puncture e₂} (hy : (y : N) ∈ range e₂) :
     inr e₁ e₂ y ∈ range (inl e₁ e₂) := by
   obtain ⟨w, hw⟩ := hy
-  have hw0 : w ≠ 0 := by rintro rfl; exact y.2 hw.symm
+  have hw0 : w ≠ 0 := by rintro rfl; exact y.property hw.symm
   have hx : e₁ (inversion 0 1 w) ∈ puncture e₁ := by
     simpa [h₁.injective.eq_iff, inversion_eq_center one_ne_zero] using hw0
   refine ⟨⟨_, hx⟩, ?_⟩
