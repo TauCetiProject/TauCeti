@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Polynomial.Lifts
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.RingTheory.WittVector.Compare
-public import Mathlib.RingTheory.WittVector.Frobenius
 public import TauCeti.FieldTheory.Finite.FrobeniusFixed
+public import TauCeti.RingTheory.WittVector.Frobenius
 
 /-!
 # Frobenius-fixed Witt vectors are the `p`-adic integers
@@ -30,8 +30,6 @@ polynomial of `F^a` has coefficients in `ℤ_p`.
 
 ## Main definitions and results
 
-* `WittVector.frobenius_eq_self_iff_forall_coeff`: over any ring of characteristic `p`, `σ x = x`
-  if and only if every coordinate of `x` is fixed by the `p`-power map.
 * `WittVector.mem_range_map_iff`: a Witt vector lies in the image of `W(f)` if and only if every
   coordinate lies in the image of `f`.
 * `TauCeti.WittVector.padicConstants p k`: the homomorphism `ι_k : ℤ_[p] →+* W(k)`, with
@@ -63,12 +61,6 @@ namespace WittVector
 variable {p : ℕ} [Fact p.Prime] {R S : Type*} [CommRing R] [CommRing S]
 
 local notation "𝕎" => WittVector p
-
-/-- In characteristic `p`, a Witt vector is fixed by the Witt-vector Frobenius if and only if each
-of its coordinates is fixed by the `p`-power map. -/
-theorem frobenius_eq_self_iff_forall_coeff [CharP R p] (x : 𝕎 R) :
-    frobenius x = x ↔ ∀ n, x.coeff n ^ p = x.coeff n := by
-  simp [frobenius_eq_map_frobenius, WittVector.ext_iff, map_coeff, frobenius_def]
 
 /-- A Witt vector lies in the image of `WittVector.map f` if and only if each of its coordinates
 lies in the image of `f`. -/
