@@ -82,6 +82,8 @@ central element and a point of the cone
   `TauCeti.lift_eval_eq_of_mk_le_mk_of_mem_adjointInvariantPolynomials`, and
   `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_of_mk_le_mk`: invariance of adjoint-invariant
   polynomials and stability of the nilpotent cone along the adjoint orbit closure order.
+* `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_basePointsRepresentation_iff`: the `k`-points of
+  the nilpotent cone are stable under the adjoint action of rational points.
 * `TauCeti.Comodule.VectorOrbit.IsNilpotentAd`, `TauCeti.Comodule.VectorOrbit.IsNilpotentAd.of_le`,
   and `TauCeti.Comodule.VectorOrbit.setOf_mk_le_eq_union_biUnion_of_isNilpotentAd`: nilpotent
   rational adjoint orbits, downward closure in the closure order, and decomposition of the
@@ -280,6 +282,18 @@ theorem lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials
       SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x) p := by
   let _ := Comodule.dual k H 𝔤
   exact Comodule.lift_eval_basePointsRepresentation_of_mem_coinvariants x g hp
+
+/-- **The nilpotent cone is stable under rational group points.** An element lies on the
+nilpotent cone exactly when its image under the adjoint action of a rational point does. -/
+@[simp]
+theorem nilpotentConeIdeal_le_ker_lift_eval_basePointsRepresentation_iff
+    (g : WithConv (H →ₐ[k] k)) (x : 𝔤) :
+    nilpotentConeIdeal k H ≤ RingHom.ker
+        (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 (Comodule.basePointsRepresentation 𝔤 g x))) ↔
+      nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x)) := by
+  simp only [nilpotentConeIdeal_le_iff, RingHom.mem_ker]
+  exact forall₂_congr fun p hp ↦ by
+    rw [lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials g x hp]
 
 /-- **Adjoint-invariant polynomials are constant on adjoint orbit closures.** -/
 theorem lift_eval_eq_of_mk_le_mk_of_mem_adjointInvariantPolynomials [IsAlgClosed k]
