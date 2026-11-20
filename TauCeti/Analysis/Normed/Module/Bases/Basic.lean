@@ -17,10 +17,10 @@ The basis vectors of a generalized Schauder basis span a dense subspace whenever
 filter is nontrivial, since every vector is a limit of finite coordinate projections.
 
 The coordinate functionals recover the coefficients of a finite sum of basis vectors, and of a
-basis series converging along any nontrivial summation filter below `atTop`, not only along the
-filter of the basis. Precomposing a continuous functional with a finite projection, or with an
-initial projection of a classical Schauder basis, gives a finite linear combination of
-coordinate functionals.
+basis series converging along any nontrivial summation filter whose support contains the queried
+index, not only along the filter of the basis. Precomposing a continuous functional with a finite
+projection, or with an initial projection of a classical Schauder basis, gives a finite linear
+combination of coordinate functionals.
 
 An unconditional basis indexed by `ℕ` is also a classical Schauder basis: convergence along the
 net of all finite sets implies convergence along initial segments. Conversely, any generalized
@@ -127,15 +127,16 @@ theorem comp_proj_eq_sum (f : StrongDual 𝕜 X) (A : Finset β) :
   ext x
   simp [proj_apply, mul_comm]
 
-/-- Coordinates of a convergent basis series are its coefficients. The series may converge
-along any nontrivial summation filter `L'` below `atTop`, which need not be the filter `L` of the
-basis. -/
-theorem coord_eq_of_hasSum {L' : SummationFilter β} [L'.NeBot] [L'.LeAtTop] {a : β → 𝕜}
-    {x : X} (h : HasSum (fun i ↦ a i • b i) x L') (i : β) : b.coord i x = a i := by
-  -- Applying `b.coord i` to the series leaves only its `i`-th term, which is `a i`.
-  have h2 : HasSum (fun j ↦ b.coord i (a j • b j)) (b.coord i (a i • b i)) L' :=
-    hasSum_single i (fun j hj ↦ by simp [b.ortho, hj]) L'
-  simpa [b.ortho] using (h.map (b.coord i) (b.coord i).continuous).unique h2
+/-- The `i`-th coordinate of a convergent basis series is its `i`-th coefficient. The series may
+converge along any nontrivial summation filter `L'` whose partial sums eventually contain `i`
+(that is, `i ∈ L'.support`), which need not be the filter `L` of the basis. For `L'` below `atTop`,
+such as `SummationFilter.conditional`, every index lies in the support by `simp`. -/
+theorem coord_eq_of_hasSum {L' : SummationFilter β} [L'.NeBot] {a : β → 𝕜} {x : X}
+    (h : HasSum (fun i ↦ a i • b i) x L') (i : β) (hi : i ∈ L'.support) :
+    b.coord i x = a i :=
+  -- Once the partial sums contain `i`, their `i`-th coordinate is constantly `a i`.
+  tendsto_nhds_unique (((b.coord i).continuous.tendsto x).comp h)
+    (tendsto_const_nhds.congr' (Eventually.mono hi fun _ hs ↦ (b.coord_sum a hs).symm))
 
 section CoordinateSeries
 
