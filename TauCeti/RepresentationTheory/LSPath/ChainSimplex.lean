@@ -42,13 +42,13 @@ along their common faces.
 
 The simplices are continua, whereas the Lakshmibai–Seshadri paths of a dominant shape are finitely
 many. The Lakshmibai–Seshadri points `TauCeti.LSPath.chainLSPoints` of a simplex are the points
-whose face data are the directions and durations of an LS path, equivalently whose path is the
-realized path of an LS path; for distinct directions they are finitely many, and the rational
-points among them in the open simplex of a chain are cut out by the integral break test: the break
-`a_{j+1} = x_0 + ⋯ + x_j` has denominator dividing the interval bond gcd `d_λ(τ_j, τ_{j+1})`. On
-the edge of a chain `x > y` the interior Lakshmibai–Seshadri points are the `d_λ(x, y) - 1` breaks
-`k / d_λ(x, y)`; for a bond `2` the only one is `1 / 2`, while `1 / 3` is a point of the edge
-failing the test.
+whose face data are the directions and durations of an LS path, equivalently, under the
+hypotheses of the gluing theorem, whose path is the realized path of an LS path; for distinct
+directions they are finitely many, and the rational points among them in the open simplex of a
+chain are cut out by the integral break test: the break `a_{j+1} = x_0 + ⋯ + x_j` has denominator
+dividing the interval bond gcd `d_λ(τ_j, τ_{j+1})`. On the edge of a chain `x > y` the interior
+Lakshmibai–Seshadri points are the `d_λ(x, y) - 1` breaks `k / d_λ(x, y)`; for a bond `2` the only
+one is `1 / 2`, while `1 / 3` is a point of the edge failing the test.
 
 ## Main definitions
 
@@ -353,8 +353,9 @@ theorem faceData_simplexPoint (π : LSPath P b lam) :
 
 variable (b lam) in
 /-- The **Lakshmibai–Seshadri points** of the simplex of a list of directions `τ`: the points whose
-face data are the directions and durations of an LS path of shape `λ`. For distinct minimal coset
-representatives they are the points whose path is the realized path of an LS path
+face data are the directions and durations of an LS path of shape `λ`. For a dominant shape, a
+realization injective on the orbit with no two realized orbit weights on a common ray, and distinct
+minimal coset representatives, they are the points whose path is the realized path of an LS path
 (`TauCeti.LSPath.mem_chainLSPoints_iff_exists_toPLPath_eq`); for a dominant shape and distinct
 directions there are finitely many (`TauCeti.LSPath.finite_chainLSPoints`), and for rational points
 of the open simplex of a chain they are cut out by the integrality of the breaks
