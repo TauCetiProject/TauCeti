@@ -80,6 +80,19 @@ theorem normalizedDet_refl : (ContinuousLinearEquiv.refl ℂ E).normalizedDet = 
 theorem normalizedDet_symm (A : E ≃L[ℂ] E) : A.symm.normalizedDet = A.normalizedDet⁻¹ :=
   eq_inv_of_mul_eq_one_right (by rw [← normalizedDet_trans, self_trans_symm, normalizedDet_refl])
 
+/-- The normalized determinant is invariant under conjugation, also by an isomorphism with another
+space: transporting `A` along `e : E ≃ E'` does not change it. -/
+@[simp]
+theorem normalizedDet_conj {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+    (A : E ≃L[ℂ] E) (e : E ≃L[ℂ] E') :
+    ((e.symm.trans A).trans e).normalizedDet = A.normalizedDet := by
+  have h : (((e.symm.trans A).trans e).toLinearEquiv : E' →ₗ[ℂ] E') =
+      (e.toLinearEquiv : E →ₗ[ℂ] E') ∘ₗ (A.toLinearEquiv : E →ₗ[ℂ] E) ∘ₗ
+        (e.toLinearEquiv.symm : E' →ₗ[ℂ] E) :=
+    LinearMap.ext fun _ ↦ rfl
+  ext1
+  simp only [coe_normalizedDet, h, LinearMap.det_conj]
+
 end ContinuousLinearEquiv
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
