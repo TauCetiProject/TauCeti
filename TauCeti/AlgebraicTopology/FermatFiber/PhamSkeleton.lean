@@ -57,6 +57,9 @@ with the deformation.
 
 ## Main results
 
+* `TauCeti.fermatFiber.mulRoots_one`, `TauCeti.fermatFiber.mulRoots_mulRoots` and
+  `TauCeti.fermatFiber.continuous_mulRoots`, with their skeleton versions: multiplying by roots of
+  unity is an action by continuous maps.
 * `TauCeti.phamRetraction_coe` and `TauCeti.phamHomotopy_apply_coe`: the retraction and the
   homotopy fix the skeleton.
 * `TauCeti.phamRetraction_comp_phamInclusion`: the retraction is a left inverse of the inclusion.
@@ -122,6 +125,28 @@ theorem fermatFiber.mulRoots_val (z : fermatFiber k) (u : Fin n → ℂ) (hu : �
   (rfl)
 
 variable {k} in
+/-- Multiplying every coordinate by `1` is the identity of the Fermat fibre. -/
+@[simp]
+theorem fermatFiber.mulRoots_one (z : fermatFiber k) : z.mulRoots 1 (fun _ => one_pow _) = z :=
+  Subtype.ext <| funext fun _ => one_mul _
+
+variable {k} in
+/-- Multiplying the coordinates by `uᵢ` and then by `vᵢ` is multiplying them by `vᵢ uᵢ`. -/
+theorem fermatFiber.mulRoots_mulRoots (z : fermatFiber k) {u v : Fin n → ℂ}
+    (hu : ∀ i, u i ^ k i = 1) (hv : ∀ i, v i ^ k i = 1) :
+    (z.mulRoots u hu).mulRoots v hv =
+      z.mulRoots (v * u) (fun i => by rw [Pi.mul_apply, mul_pow, hu, hv, one_mul]) :=
+  Subtype.ext <| funext fun _ => (mul_assoc _ _ _).symm
+
+variable {k} in
+/-- Multiplying the coordinates by roots of unity is continuous on the Fermat fibre. -/
+theorem fermatFiber.continuous_mulRoots {u : Fin n → ℂ} (hu : ∀ i, u i ^ k i = 1) :
+    Continuous fun z : fermatFiber k => z.mulRoots u hu := by
+  have h : Continuous fun z : fermatFiber k => fun i => u i * z.val i :=
+    continuous_pi fun i => continuous_const.mul ((continuous_apply i).comp continuous_subtype_val)
+  exact h.subtype_mk _
+
+variable {k} in
 /-- Multiplying each coordinate `zᵢ` of a point of the Pham skeleton by a `kᵢ`-th root of unity
 `uᵢ`; this leaves every power `zᵢ ^ kᵢ` unchanged, so the skeleton is preserved. -/
 def phamSkeleton.mulRoots (s : phamSkeleton k) (u : Fin n → ℂ) (hu : ∀ i, u i ^ k i = 1) :
@@ -134,6 +159,26 @@ variable {k} in
 theorem phamSkeleton.mulRoots_val (s : phamSkeleton k) (u : Fin n → ℂ)
     (hu : ∀ i, u i ^ k i = 1) : (s.mulRoots u hu).val = s.val.mulRoots u hu :=
   (rfl)
+
+variable {k} in
+/-- Multiplying every coordinate by `1` is the identity of the Pham skeleton. -/
+@[simp]
+theorem phamSkeleton.mulRoots_one (s : phamSkeleton k) : s.mulRoots 1 (fun _ => one_pow _) = s :=
+  Subtype.ext s.val.mulRoots_one
+
+variable {k} in
+/-- Multiplying the coordinates by `uᵢ` and then by `vᵢ` is multiplying them by `vᵢ uᵢ`. -/
+theorem phamSkeleton.mulRoots_mulRoots (s : phamSkeleton k) {u v : Fin n → ℂ}
+    (hu : ∀ i, u i ^ k i = 1) (hv : ∀ i, v i ^ k i = 1) :
+    (s.mulRoots u hu).mulRoots v hv =
+      s.mulRoots (v * u) (fun i => by rw [Pi.mul_apply, mul_pow, hu, hv, one_mul]) :=
+  Subtype.ext (s.val.mulRoots_mulRoots hu hv)
+
+variable {k} in
+/-- Multiplying the coordinates by roots of unity is continuous on the Pham skeleton. -/
+theorem phamSkeleton.continuous_mulRoots {u : Fin n → ℂ} (hu : ∀ i, u i ^ k i = 1) :
+    Continuous fun s : phamSkeleton k => s.mulRoots u hu :=
+  ((fermatFiber.continuous_mulRoots hu).comp continuous_subtype_val).subtype_mk _
 
 /-- The inclusion of the skeleton commutes with multiplying the coordinates by roots of unity. -/
 theorem phamInclusion_mulRoots (s : phamSkeleton k) {u : Fin n → ℂ} (hu : ∀ i, u i ^ k i = 1) :
@@ -407,20 +452,21 @@ theorem phamRetraction_mulRoots (hk : ∀ i, k i ≠ 0) {u : Fin n → ℂ}
 `{z ∈ ℂⁿ | ∑ᵢ zᵢ ^ kᵢ = 1}`: there is a retraction `r` with `r ∘ ι = id` and a homotopy from the
 identity to `ι ∘ r` fixing the skeleton at all times. The homotopy commutes with multiplying the
 coordinates by roots of unity of their exponents. -/
-theorem phamStrongRetraction (hk : ∀ i, k i ≠ 0) :
+theorem phamStrongRetraction (n : ℕ) (k : Fin n → ℕ) (hk : ∀ i, 1 ≤ k i) :
     ∃ r : C(fermatFiber k, phamSkeleton k),
       r.comp (phamInclusion k) = ContinuousMap.id (phamSkeleton k) ∧
       ∃ H : (ContinuousMap.id (fermatFiber k)).HomotopyRel ((phamInclusion k).comp r)
           (range (phamInclusion k)),
         ∀ u : Fin n → ℂ, (∀ i, u i ^ k i = 1) →
           ∀ (t : I) (z w : fermatFiber k), (∀ i, w.val i = u i * z.val i) →
-            ∀ i, (H (t, w)).val i = u i * (H (t, z)).val i :=
-  ⟨phamRetraction k hk, phamRetraction_comp_phamInclusion k hk, phamHomotopy k hk,
-    fun u hu t z w hw i => by
-      obtain rfl : w = z.mulRoots u hu := Subtype.ext <| by
-        rw [fermatFiber.mulRoots_val]
-        exact funext hw
-      simp only [phamHomotopy_apply_mulRoots, fermatFiber.mulRoots_val]⟩
+            ∀ i, (H (t, w)).val i = u i * (H (t, z)).val i := by
+  have hk : ∀ i, k i ≠ 0 := fun i => Nat.one_le_iff_ne_zero.1 (hk i)
+  refine ⟨phamRetraction k hk, phamRetraction_comp_phamInclusion k hk, phamHomotopy k hk,
+    fun u hu t z w hw i => ?_⟩
+  obtain rfl : w = z.mulRoots u hu := Subtype.ext <| by
+    rw [fermatFiber.mulRoots_val]
+    exact funext hw
+  simp only [phamHomotopy_apply_mulRoots, fermatFiber.mulRoots_val]
 
 /-! ### Positive levels -/
 
