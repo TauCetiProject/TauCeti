@@ -23,10 +23,10 @@ by the inverse absolute determinant and precomposes it by the adjoint of the inv
 change of coordinates needed to transport Fourier identities from the standard integer lattice
 to an arbitrary full lattice. For a dilation `x ↦ c • x` it reads
 `𝓕 (f (c • ·)) y = |c ^ n|⁻¹ • 𝓕 f (c⁻¹ • y)` in dimension `n`, so that dilating a function does not
-change the `L¹` norm of its Fourier transform and multiplies the `k`-th moment
-`∫ ‖y‖ ^ k ‖𝓕⁻ f y‖` of its inverse Fourier transform by `|c| ^ k`, while replacing `g` by
-`g (R⁻¹ • ·)`, `R > 0`, multiplies the `Lʳ` norm of its inverse Fourier transform by
-`R ^ (n - n / r)`.
+change the `L¹` norm of its inverse Fourier transform and multiplies the moment
+`∫ ‖y‖ ^ s ‖𝓕⁻ f y‖` of order `s` of that inverse Fourier transform by `|c| ^ s`, while
+replacing `g` by `g (R⁻¹ • ·)`, `R > 0`, multiplies the `Lʳ` norm of its inverse Fourier transform
+by `R ^ (n - n / r)`.
 
 The Jacobian factor comes from Mathlib's
 `MeasureTheory.Measure.map_linearMap_addHaar_eq_smul_addHaar`. The formulas use the total Bochner
@@ -103,21 +103,17 @@ theorem fourier_comp_smul (f : E → F) (c : ℝ) (y : E) :
     𝓕 (fun x ↦ f (c • x)) y = |c ^ finrank ℝ E|⁻¹ • 𝓕 f (c⁻¹ • y) := by
   rcases eq_or_ne c 0 with rfl | hc
   · rcases subsingleton_or_nontrivial E with hE | hE
-    · simp only [Real.fourier_eq, finrank_zero_of_subsingleton, pow_zero, abs_one, inv_one,
-        one_smul]
-      refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
-      simp [Subsingleton.elim x 0, Subsingleton.elim y 0]
+    · simp [Real.fourier_eq, Subsingleton.eq_zero, finrank_zero_of_subsingleton]
     · have hn : finrank ℝ E ≠ 0 := (finrank_pos (R := ℝ) (M := E)).ne'
       simp only [Real.fourier_eq, zero_pow hn, abs_zero, inv_zero, zero_smul]
-      by_cases hi : Integrable (fun x : E ↦ 𝐞 (-⟪x, y⟫) • f 0)
-      · have h := hi.norm
-        simp only [Circle.norm_smul] at h
-        rw [integrable_const_iff] at h
-        rcases h with h | h
-        · simp [norm_eq_zero.1 h]
-        · exact absurd (measure_univ_of_isAddLeftInvariant (volume : Measure E))
-            (measure_lt_top (volume : Measure E) Set.univ).ne
-      · exact integral_undef hi
+      rcases eq_or_ne (f 0) 0 with h0 | h0
+      · simp [h0]
+      refine integral_undef fun hi ↦ ?_
+      -- The norm of the integrand is the nonzero constant `‖f 0‖`, which is not integrable for
+      -- the infinite measure `volume`.
+      have : IsFiniteMeasure (volume : Measure E) :=
+        (integrable_const_iff_isFiniteMeasure (norm_ne_zero_iff.2 h0)).1 (by simpa using hi.norm)
+      exact measure_ne_top (volume : Measure E) Set.univ (measure_univ_of_isAddLeftInvariant _)
   · have hinner (x : E) : ⟪x, y⟫ = ⟪c • x, c⁻¹ • y⟫ := by
       rw [real_inner_smul_left, real_inner_smul_right, ← mul_assoc, mul_inv_cancel₀ hc, one_mul]
     simp only [Real.fourier_eq]
@@ -180,10 +176,12 @@ theorem eLpNorm_fourierInv_comp_inv_smul (g : E → F) {R : ℝ} (hR : 0 < R) (r
     ext x
     simp [fourierInv_comp_smul g, abs_of_pos hR]
   rw [h, eLpNorm_const_smul, Measure.eLpNorm_comp_inv_smul volume _ (inv_ne_zero hR.ne'),
-    abs_of_pos (inv_pos.2 hR), ← mul_assoc,
-    ← ofReal_norm, Real.norm_eq_abs, abs_of_pos (by positivity),
-    ← ENNReal.ofReal_mul (by positivity), Real.inv_rpow hR.le, ← Real.rpow_natCast,
-    ← Real.rpow_neg hR.le, ← Real.rpow_add hR, sub_eq_add_neg]
+    ← mul_assoc]
+  congr 1
+  -- The scalar factor: `‖R ^ n‖ₑ * |R⁻¹| ^ (n / r) = R ^ (n - n / r)`.
+  rw [← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg _)]
+  congr 1
+  simp [Real.rpow_sub hR, abs_of_pos hR, Real.inv_rpow hR.le, div_eq_mul_inv]
 
 /-! ### Translation -/
 
@@ -239,10 +237,7 @@ open ComplexConjugate in
 of `v` gives the inverse Fourier integral of `ξ ↦ conj (v (-ξ))`. -/
 theorem _root_.Real.conj_fourierInv_apply (v : E → ℂ) (x : E) :
     conj (𝓕⁻ v x) = 𝓕⁻ (fun ξ ↦ conj (v (-ξ))) x := by
-  rw [Real.fourierInv_eq', Real.fourierInv_eq', ← integral_conj, ← integral_neg_eq_self]
-  congr 1
-  ext ξ
-  simp [← Complex.exp_conj, inner_neg_left, map_ofNat]
+  rw [Real.fourierInv_eq_fourier_neg, Real.fourierInv_eq_fourier_neg, Real.conj_fourier_apply]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The exponential `exp(i ⟪y, ξ⟫)` is the Fourier character `𝐞 ⟪y, ξ / 2π⟫`. -/
