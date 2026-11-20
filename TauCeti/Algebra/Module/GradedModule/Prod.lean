@@ -26,13 +26,13 @@ universe u v w
 
 variable {R : Type u} [Semiring R] {M : Type v} {N : Type w}
   [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N]
-  (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
+  {ι : Type*} [DecidableEq ι] (G : InternalGrading R M ι) (H : InternalGrading R N ι)
 
-private def prodInl (p : ℤ) : G.piece p →ₗ[R] (G.piece p).prod (H.piece p) :=
+private def prodInl (p : ι) : G.piece p →ₗ[R] (G.piece p).prod (H.piece p) :=
   LinearMap.codRestrict _ ((LinearMap.inl R M N).comp (G.piece p).subtype)
     (fun x ↦ ⟨x.property, (H.piece p).zero_mem⟩)
 
-private def prodInr (p : ℤ) : H.piece p →ₗ[R] (G.piece p).prod (H.piece p) :=
+private def prodInr (p : ι) : H.piece p →ₗ[R] (G.piece p).prod (H.piece p) :=
   LinearMap.codRestrict _ ((LinearMap.inr R M N).comp (H.piece p).subtype)
     (fun x ↦ ⟨(G.piece p).zero_mem, x.property⟩)
 
@@ -43,10 +43,10 @@ private noncomputable def prodDecompose :
     (DirectSum.lmap (prodInr G H)).comp
       ((DirectSum.decomposeLinearEquiv H.piece).toLinearMap.comp (LinearMap.snd R M N))
 
-private theorem prodDecompose_of_mem (p : ℤ) (x : M) (y : N)
+private theorem prodDecompose_of_mem (p : ι) (x : M) (y : N)
     (hx : x ∈ G.piece p) (hy : y ∈ H.piece p) :
     prodDecompose G H (x, y) =
-      DirectSum.lof R ℤ (fun q ↦ (G.piece q).prod (H.piece q)) p ⟨(x, y), hx, hy⟩ := by
+      DirectSum.lof R ι (fun q ↦ (G.piece q).prod (H.piece q)) p ⟨(x, y), hx, hy⟩ := by
   simp only [prodDecompose, LinearMap.add_apply, LinearMap.comp_apply,
     LinearMap.fst_apply, LinearMap.snd_apply, LinearEquiv.coe_toLinearMap]
   rw [DirectSum.decomposeLinearEquiv_apply_coe G.piece p ⟨x, hx⟩,
@@ -84,7 +84,7 @@ private theorem prodDecompose_comp_coeLinearMap :
   exact prodDecompose_of_mem G H p x.1.1 x.1.2 x.2.1 x.2.2
 
 /-- The componentwise internal grading on a product of modules. -/
-noncomputable def prod : InternalGrading R (M × N) ℤ := by
+noncomputable def prod : InternalGrading R (M × N) ι := by
   letI := DirectSum.Decomposition.ofLinearMap (fun p ↦ (G.piece p).prod (H.piece p))
     (prodDecompose G H)
     (coeLinearMap_comp_prodDecompose G H) (prodDecompose_comp_coeLinearMap G H)
@@ -92,16 +92,16 @@ noncomputable def prod : InternalGrading R (M × N) ℤ := by
 
 /-- The degree-`p` piece of the product is the product of the degree-`p` pieces. -/
 @[simp]
-theorem prod_piece (p : ℤ) : (G.prod H).piece p = (G.piece p).prod (H.piece p) := by
+theorem prod_piece (p : ι) : (G.prod H).piece p = (G.piece p).prod (H.piece p) := by
   simp only [prod, ofDecomposition_piece]
 
 /-- The first inclusion into the product has degree zero. -/
-theorem isHomogeneous_inl :
+theorem isHomogeneous_inl [AddMonoid ι] :
     LinearMap.IsHomogeneous (LinearMap.inl R M N) G.piece (G.prod H).piece 0 :=
   LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by simpa using hx
 
 /-- The second inclusion into the product has degree zero. -/
-theorem isHomogeneous_inr :
+theorem isHomogeneous_inr [AddMonoid ι] :
     LinearMap.IsHomogeneous (LinearMap.inr R M N) H.piece (G.prod H).piece 0 :=
   LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by simpa using hx
 

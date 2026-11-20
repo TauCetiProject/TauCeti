@@ -56,6 +56,8 @@ travel.
 
 ## Main results
 
+* `TauCeti.PerfectMatching.exists_val_eq_sumCongr`: a perfect matching of `α ⊕ β` containing
+  every arc of a permutation of `α` is that permutation together with a perfect matching of `β`.
 * `TauCeti.PerfectMatching.ext_of_eqOn`: two perfect matchings agreeing on a set containing a
   partner of every point are equal.
 * `TauCeti.even_card_of_nonempty_perfectMatching`: a matched type has even cardinality, and so
@@ -424,11 +426,32 @@ theorem congr_trans (e : α ≃ β) (e' : β ≃ γ) (D : PerfectMatching α) :
     rw [congr_val_apply, congr_val_apply, congr_val_apply, Equiv.symm_trans_apply,
       Equiv.trans_apply]
 
+/-- Transporting along a product of permutations applies the right factor and then the left. -/
+theorem congr_mul (σ τ : Equiv.Perm α) (D : PerfectMatching α) :
+    congr (σ * τ) D = congr σ (congr τ D) := by
+  rw [Equiv.Perm.mul_def, congr_trans]
+
 /-- Transporting back along `e` is transporting along `e.symm`, since transports compose. -/
 @[simp]
 theorem congr_symm (e : α ≃ β) : (congr e).symm = congr e.symm :=
   Equiv.ext fun D => by
     rw [Equiv.symm_apply_eq, congr_trans, Equiv.symm_trans_self, congr_refl]
+
+/-- A perfect matching of `α ⊕ β` containing every arc of a permutation `X` of `α` is
+`Equiv.Perm.sumCongr X π` for a perfect matching `π` of `β`. This is a converse to
+`TauCeti.PerfectMatching.restrictInl`. -/
+theorem exists_val_eq_sumCongr (M : PerfectMatching (α ⊕ β)) {X : Equiv.Perm α}
+    (hM : ∀ a, M.val (.inl a) = .inl (X a)) :
+    ∃ π : PerfectMatching β, M.val = Equiv.Perm.sumCongr X π.val := by
+  have hr (a : α) : ((congr (Equiv.sumComm α β) M).val (.inr a)).isRight := by
+    simp [hM]
+  refine ⟨(congr (Equiv.sumComm α β) M).restrictInl hr, Equiv.ext fun x ↦ ?_⟩
+  rcases x with a | b
+  · simp [hM]
+  · have h := (congr (Equiv.sumComm α β) M).inl_restrictInl_val hr b
+    simp only [congr_val_apply, Equiv.sumComm_symm, Equiv.sumComm_apply, Sum.swap_inl] at h
+    rw [Equiv.Perm.sumCongr_apply, Sum.map_inr, ← Sum.swap_swap (M.val (.inr b)), ← h,
+      Sum.swap_inl]
 
 end Congr
 
@@ -442,6 +465,19 @@ transposition of `D.val a` with `b`. The arcs at `a` and `b` are distinct when `
 `b ≠ D.val a`; when `b = D.val a` the transposition is trivial and the result is `D` itself. -/
 def reconnect (D : PerfectMatching α) (a b : α) : PerfectMatching α :=
   congr (Equiv.swap (D.val a) b) D
+
+/-- Reconnecting two arcs is transporting the perfect matching along `Equiv.swap (D.val a) b`. -/
+theorem reconnect_def (D : PerfectMatching α) (a b : α) :
+    D.reconnect a b = congr (Equiv.swap (D.val a) b) D :=
+  (rfl)
+
+/-- Transporting a perfect matching along an equivalence commutes with reconnecting two arcs. -/
+@[simp]
+theorem congr_reconnect [DecidableEq β] (e : α ≃ β) (D : PerfectMatching α) (a b : α) :
+    congr e (D.reconnect a b) = (congr e D).reconnect (e a) (e b) := by
+  have he : (Equiv.swap (D.val a) b).trans e = e.trans (Equiv.swap (e (D.val a)) (e b)) :=
+    Equiv.ext (e.injective.map_swap (D.val a) b)
+  rw [reconnect_def, reconnect_def, congr_val_apply_apply, congr_trans, congr_trans, he]
 
 /-- The involution underlying a reconnected matching is the old one conjugated by the
 transposition of `D.val a` with `b`. -/

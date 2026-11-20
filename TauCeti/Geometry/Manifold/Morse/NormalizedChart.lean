@@ -207,15 +207,9 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_normalized_morseChart
   set e := BoundarylessModel.diffeomorph I (M := M) ∞
   set x' := BoundarylessModel.homeomorph I M x
   have hx' : (BoundarylessModel.homeomorph I M).symm x' = x := Homeomorph.symm_apply_apply _ _
-  have hsymm : ContMDiff 𝓘(ℝ, E) I ∞ (BoundarylessModel.homeomorph I M).symm := by
-    rw [← BoundarylessModel.coe_diffeomorph_symm I ∞]
-    exact e.symm.contMDiff
   have hg : ∀ᶠ y in 𝓝 x',
       ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) ∞ (f ∘ (BoundarylessModel.homeomorph I M).symm) y := by
-    rw [← hx'] at hf
-    filter_upwards
-      [((BoundarylessModel.homeomorph I M).symm.continuous.tendsto x').eventually hf] with y hy
-    exact hy.comp y (hsymm y)
+    rwa [BoundarylessModel.eventually_contMDiffAt_source_iff, hx']
   have hcrit : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E)
       (f ∘ (BoundarylessModel.homeomorph I M).symm) x' := by
     rwa [BoundarylessModel.isManifoldNondegenerateCriticalPoint_iff, hx']

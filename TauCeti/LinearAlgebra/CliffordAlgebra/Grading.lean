@@ -208,6 +208,19 @@ theorem exteriorAlgebra_mem_evenOdd_iff [Nontrivial R] (b : Module.Basis I R M) 
     Submodule.mem_bot] at hbot
   exact b.ExteriorAlgebra.ne_zero s hbot
 
+/-- **An exterior element with no coordinates of the other parity is homogeneous**: if its
+coordinate in the exterior coordinate basis vanishes at every index set whose cardinality is not
+`j` modulo `2`, it lies in the parity-`j` part of the Clifford algebra of the zero form. -/
+private theorem mem_evenOdd_of_exteriorAlgebra_repr_eq_zero (b : Module.Basis I R M) {j : ZMod 2}
+    {y : _root_.ExteriorAlgebra R M}
+    (hy : ∀ t : Finset I, (t.card : ZMod 2) ≠ j → b.ExteriorAlgebra.repr y t = 0) :
+    y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) j := by
+  classical
+  rw [← b.ExteriorAlgebra.linearCombination_repr y, Finsupp.linearCombination_apply]
+  refine Submodule.sum_mem _ fun s hs ↦ Submodule.smul_mem _ _ ?_
+  have hs' : (s.card : ZMod 2) = j := by_contra fun h ↦ Finsupp.mem_support_iff.1 hs (hy s h)
+  exact hs' ▸ b.exteriorAlgebra_mem_evenOdd_card s
+
 /-- **An exterior element is homogeneous of parity `i` exactly when it has no coordinates of the
 other parity**: its coordinate in the exterior coordinate basis vanishes at every index set whose
 cardinality has the other parity. -/
@@ -216,15 +229,7 @@ theorem mem_evenOdd_iff_exteriorAlgebra_repr_eq_zero (b : Module.Basis I R M) {i
     x ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i ↔
       ∀ t : Finset I, (t.card : ZMod 2) ≠ i → b.ExteriorAlgebra.repr x t = 0 := by
   classical
-  have hsupp : ∀ (j : ZMod 2) (y : _root_.ExteriorAlgebra R M),
-      (∀ t : Finset I, (t.card : ZMod 2) ≠ j → b.ExteriorAlgebra.repr y t = 0) →
-        y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) j := by
-    intro j y hy
-    rw [← b.ExteriorAlgebra.linearCombination_repr y, Finsupp.linearCombination_apply]
-    refine Submodule.sum_mem _ fun s hs ↦ Submodule.smul_mem _ _ ?_
-    have hs' : (s.card : ZMod 2) = j := by_contra fun h ↦ Finsupp.mem_support_iff.1 hs (hy s h)
-    exact hs' ▸ b.exteriorAlgebra_mem_evenOdd_card s
-  refine ⟨fun hx t ht ↦ ?_, hsupp i x⟩
+  refine ⟨fun hx t ht ↦ ?_, mem_evenOdd_of_exteriorAlgebra_repr_eq_zero b⟩
   -- `y` is the part of `x` of the parity opposite to `i`; it is homogeneous of both parities.
   let y := b.ExteriorAlgebra.repr.symm
     ((b.ExteriorAlgebra.repr x).filter fun s ↦ (s.card : ZMod 2) ≠ i)
@@ -233,10 +238,12 @@ theorem mem_evenOdd_iff_exteriorAlgebra_repr_eq_zero (b : Module.Basis I R M) {i
     simp only [y, LinearEquiv.apply_symm_apply, Finsupp.filter_apply]
   have hflip : ∀ c d : ZMod 2, c ≠ d + 1 → c = d := by decide
   have hy₁ : y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) (i + 1) :=
-    hsupp _ y fun s hs ↦ by rw [hrepr, ite_eq_right (not_not.2 (hflip _ _ hs))]
+    mem_evenOdd_of_exteriorAlgebra_repr_eq_zero b fun s hs ↦ by
+      rw [hrepr, ite_eq_right (not_not.2 (hflip _ _ hs))]
   have hy₀ : y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i := by
     have hrest : x - y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i :=
-      hsupp i _ fun s hs ↦ by rw [map_sub, Finsupp.sub_apply, hrepr, ite_eq_left hs, sub_self]
+      mem_evenOdd_of_exteriorAlgebra_repr_eq_zero b fun s hs ↦ by
+        rw [map_sub, Finsupp.sub_apply, hrepr, ite_eq_left hs, sub_self]
     simpa using Submodule.sub_mem _ hx hrest
   have hdisj : Disjoint (CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i)
       (CliffordAlgebra.evenOdd (0 : QuadraticForm R M) (i + 1)) := by

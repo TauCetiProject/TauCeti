@@ -98,6 +98,14 @@ theorem stabilizerChain_succ (i : ℕ) :
 theorem stabilizerChain_le (i : ℕ) : H.stabilizerChain b i ≤ H :=
   inf_le_left
 
+/-- The orbits of a member of a stabilizer chain are the orbits of the stabilizer of the previous
+base point in the previous member. -/
+theorem orbit_stabilizerChain_succ (i : ℕ) (x : α) :
+    orbit (H.stabilizerChain b (i + 1)) x = orbit (stabilizer (H.stabilizerChain b i) (b i)) x := by
+  ext y
+  rw [← orbitRel_apply, ← orbitRel_apply, ← stabilizer_subgroupOf, orbitRel_subgroupOf,
+    stabilizerChain_succ, inf_comm]
+
 /-- Each member of the stabilizer chain of a finite subgroup is finite. -/
 instance [Finite H] (i : ℕ) : Finite (H.stabilizerChain b i) :=
   Finite.of_injective _ (inclusion_injective (H.stabilizerChain_le b i))

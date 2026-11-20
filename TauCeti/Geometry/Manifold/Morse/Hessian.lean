@@ -220,9 +220,7 @@ theorem IsManifoldNondegenerateCriticalPoint.criticalHessian_ne_zero [Nontrivial
 the dual of the tangent space. -/
 theorem criticalHessian_isInvertible_of_injective [FiniteDimensional ℝ E]
     (h : Injective (criticalHessian I f x)) : (criticalHessian I f x).IsInvertible :=
-  -- `TangentSpace I x` is by definition the model space `E`, so the finite-dimensional result
-  -- for the normed space `E` applies; matrix and subspace proofs go through this lemma.
-  ContinuousLinearMap.isInvertible_of_injective (E := E) h
+  ContinuousLinearMap.isInvertible_of_injective h
 
 /-! ### Matrix and subspace descriptions -/
 
@@ -286,10 +284,8 @@ theorem _root_.Module.Basis.criticalHessian_isInvertible_iff_det_ne_zero
     (b : Module.Basis ι ℝ (TangentSpace I x)) :
     (criticalHessian I f x).IsInvertible ↔ (b.criticalHessianMatrix f).det ≠ 0 := by
   have : FiniteDimensional ℝ (TangentSpace I x) := b.finiteDimensional_of_finite
-  -- `b` is also a basis of the model space `E`, which is `TangentSpace I x` by definition.
-  have : FiniteDimensional ℝ E := b.finiteDimensional_of_finite
   rw [Module.Basis.criticalHessianMatrix, ← LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b]
-  exact ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm (E := E)
+  exact ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm
 
 end Matrix
 
@@ -481,6 +477,17 @@ theorem isManifoldNondegenerateCriticalPoint_iff_criticalHessian :
     exact h.fderiv_eq_zero
   · refine ⟨hsmooth.1 hf, ?_, hinv⟩
     rwa [← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
+
+/-- On a finite-dimensional boundaryless manifold, a critical point of a function which is `C²`
+there is nondegenerate as soon as its critical Hessian is nondegenerate: the only tangent vector `a`
+with `Hess f(x)(a, b) = 0` for every `b` is `a = 0`. -/
+theorem IsManifoldNondegenerateCriticalPoint.of_nondegenerate_criticalHessian
+    [FiniteDimensional ℝ E] (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hcrit : x ∈ criticalPoints I f)
+    (h : ∀ a, (∀ b, criticalHessian I f x a b = 0) → a = 0) :
+    IsManifoldNondegenerateCriticalPoint I f x :=
+  isManifoldNondegenerateCriticalPoint_iff_criticalHessian.2 ⟨hf,
+    TauCeti.mem_criticalPoints.1 hcrit, criticalHessian_isInvertible_of_injective
+      ((injective_iff_map_eq_zero _).2 fun a ha ↦ h a fun b ↦ by simp [ha])⟩
 
 section Matrix
 

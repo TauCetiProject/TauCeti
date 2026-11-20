@@ -62,8 +62,9 @@ on, so the two commute (`TauCeti.InfiniteTypeAHeckeAlgebra.commute_shift_of_mem_
 placing an element of the stage `a` on the first `a` strands and an element of the stage `b` on
 the next `b` strands is an algebra map from the tensor product
 (`TauCeti.InfiniteTypeAHeckeAlgebra.blockIncl`). These are the disjoint block maps along which
-Markov traces are multiplicative; that they are injective, so embeddings, needs the basis
-theorem and is not proved here.
+Markov traces are multiplicative; that they are injective, so embeddings, is
+`TauCeti.InfiniteTypeAHeckeAlgebra.blockIncl_injective`, proved in
+`TauCeti.Algebra.TypeAHeckeAlgebra.Block`.
 
 ## Main definitions
 
@@ -141,8 +142,8 @@ them. -/
 instance : Ring (InfiniteTypeAHeckeAlgebra R q) :=
   inferInstanceAs (Ring (RingQuot (InfiniteTypeAHeckeAlgebra.Rel R q)))
 
-/-- The infinite type-A Hecke algebra over `R` is an algebra over every ring that `R` is an
-algebra over. -/
+/-- The infinite type-A Hecke algebra over `R` is an algebra over every commutative semiring that
+`R` is an algebra over. -/
 instance (priority := 900) InfiniteTypeAHeckeAlgebra.instAlgebra' {S : Type*} [CommSemiring S]
     [Algebra S R] : Algebra S (InfiniteTypeAHeckeAlgebra R q) :=
   inferInstanceAs (Algebra S (RingQuot (InfiniteTypeAHeckeAlgebra.Rel R q)))
@@ -590,20 +591,21 @@ theorem braidHom_sigma {n : ℕ} (i : Fin (n - 1)) :
     braidHom R q n (BraidGroup.sigma i) = unitT q i :=
   BraidGroup.lift_sigma _ _ _ i
 
-/-- Conjugation of a braid does not change its Hecke trace for a tracial linear functional. -/
-theorem map_braidHom_conj {τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
-    (htr : ∀ x y, τ (x * y) = τ (y * x)) {n : ℕ} (b c : BraidGroup n) :
-    τ (braidHom R q n (c * b * c⁻¹)) = τ (braidHom R q n b) := by
+/-- Conjugation of a braid does not change its Hecke trace for a function that is tracial,
+that is, that satisfies `f (x * y) = f (y * x)`. -/
+theorem map_braidHom_conj {X : Type*} {f : InfiniteTypeAHeckeAlgebra R q → X}
+    (htr : ∀ x y, f (x * y) = f (y * x)) {n : ℕ} (b c : BraidGroup n) :
+    f (braidHom R q n (c * b * c⁻¹)) = f (braidHom R q n b) := by
   simp only [map_mul, map_inv, Units.val_mul]
   rw [htr, ← mul_assoc, Units.inv_mul, one_mul]
 
-/-- The Hecke skein identity holds for every linear functional, without a trace hypothesis,
-and in an arbitrary braid context. -/
-theorem _root_.LinearMap.map_braidHom_skein (τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R)
-    {n : ℕ} (b c : BraidGroup (n + 1)) (i : Fin n) :
-    τ (braidHom R q (n + 1) (b * BraidGroup.sigma (n := n + 1) i * c)) -
-        τ (braidHom R q (n + 1) (b * (BraidGroup.sigma (n := n + 1) i)⁻¹ * c)) =
-      ((q : R) - ↑q⁻¹) * τ (braidHom R q (n + 1) (b * c)) := by
+/-- The Hecke skein identity holds for every linear map to an `R`-module, without a trace
+hypothesis, and in an arbitrary braid context. -/
+theorem _root_.LinearMap.map_braidHom_skein {M : Type*} [AddCommGroup M] [Module R M]
+    (τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] M) {n : ℕ} (b c : BraidGroup n) (i : Fin (n - 1)) :
+    τ (braidHom R q n (b * BraidGroup.sigma i * c)) -
+        τ (braidHom R q n (b * (BraidGroup.sigma i)⁻¹ * c)) =
+      ((q : R) - ↑q⁻¹) • τ (braidHom R q n (b * c)) := by
   simp only [map_mul, map_inv, braidHom_sigma, Units.val_mul, val_unitT]
   rw [← map_sub, ← sub_mul, ← mul_sub, T_sub_val_inv_unitT]
   simp [Algebra.algebraMap_eq_smul_one]

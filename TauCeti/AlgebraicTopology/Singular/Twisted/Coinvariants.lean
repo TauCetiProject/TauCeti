@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Zero
-public import Mathlib.RepresentationTheory.Coinvariants
+public import TauCeti.RepresentationTheory.Coinvariants
 
 /-!
 # Zeroth twisted homology and monodromy coinvariants
@@ -17,6 +17,9 @@ its class modulo monodromy. In particular, it keeps the map from the fibre visib
 
 Paths used to construct the inverse disappear in the coinvariants, so the comparison is
 characterized by the basepoint fibre map.
+
+If every loop acts trivially on the fibre, the coinvariants are the fibre itself, so twisted zeroth
+homology is that fibre (`TauCeti.LocalCoefficientSystem.twistedHomology₀EquivOfIsTrivial`).
 
 ## References
 
@@ -99,7 +102,7 @@ def twistedHomology₀IsoCoinvariants :
     (isColimitCoinvariantsCocone L x)
 
 /-- At the basepoint, the homology-to-coinvariants comparison is the monodromy quotient map. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma ιTwistedHomology₀_isoCoinvariants_hom :
     ιTwistedHomology₀ L x ≫ (twistedHomology₀IsoCoinvariants L x).hom =
       ModuleCat.ofHom (Representation.Coinvariants.mk (monodromyRepresentation L x)) := by
@@ -140,5 +143,28 @@ lemma coinvariants_mk_comp_twistedHomology₀IsoCoinvariants_inv :
     ModuleCat.ofHom (Representation.Coinvariants.mk (monodromyRepresentation L x)) ≫
         (twistedHomology₀IsoCoinvariants L x).inv = ιTwistedHomology₀ L x := by
   rw [← ιTwistedHomology₀_isoCoinvariants_hom, Category.assoc, Iso.hom_inv_id, Category.comp_id]
+
+/-- **Zeroth homology with trivial monodromy.** If every loop at `x` acts trivially on the fibre of
+`L` at `x`, twisted zeroth homology is that fibre. -/
+def twistedHomology₀EquivOfIsTrivial [(monodromyRepresentation L x).IsTrivial] :
+    twistedHomology L 0 ≃ₗ[R] L.obj (FundamentalGroupoid.mk x) :=
+  (twistedHomology₀IsoCoinvariants L x).toLinearEquiv ≪≫ₗ
+    Representation.coinvariantsEquivOfIsTrivial _
+
+/-- The identification of zeroth homology with the fibre sends the class of a coefficient at `x` to
+that coefficient. -/
+@[simp]
+theorem twistedHomology₀EquivOfIsTrivial_ιTwistedHomology₀
+    [(monodromyRepresentation L x).IsTrivial] (a : L.obj (FundamentalGroupoid.mk x)) :
+    twistedHomology₀EquivOfIsTrivial L x (ιTwistedHomology₀ L x a) = a := by
+  rw [twistedHomology₀EquivOfIsTrivial, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply]
+  simp
+
+/-- The inverse identification sends a coefficient at `x` to its class. -/
+@[simp]
+theorem twistedHomology₀EquivOfIsTrivial_symm_apply [(monodromyRepresentation L x).IsTrivial]
+    (a : L.obj (FundamentalGroupoid.mk x)) :
+    (twistedHomology₀EquivOfIsTrivial L x).symm a = ιTwistedHomology₀ L x a :=
+  (LinearEquiv.symm_apply_eq _).2 (twistedHomology₀EquivOfIsTrivial_ιTwistedHomology₀ L x a).symm
 
 end TauCeti.LocalCoefficientSystem

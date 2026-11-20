@@ -300,7 +300,7 @@ private theorem exists_mem_gaugeFixedKernel_isDivisorVariation (R : degreeLT ℂ
   -- A kernel element with divisor variation `c i • Q i` for each point `i` of `D`.
   have hy (i : (D : Multiset ℂ).ToType) : ∃ y ∈ gaugeFixedKernel x,
       IsDivisorVariation x y D (c i • Q i) := by
-    obtain ⟨y, hy, ξ, hξ, hyξ⟩ := exists_mem_gaugeFixedKernel_sectionValue_eq hx hhol hlim hD i
+    obtain ⟨y, hy, -, ξ, hξ, hyξ⟩ := exists_mem_gaugeFixedKernel_sectionValue_eq hx hhol hlim hD i
       (c i)
     exact ⟨y, hy, isDivisorVariation_of_sectionValue_eq i
       (hD.pos_iff.1 (Multiset.count_pos.2 Multiset.coe_mem)) hξ hyξ⟩

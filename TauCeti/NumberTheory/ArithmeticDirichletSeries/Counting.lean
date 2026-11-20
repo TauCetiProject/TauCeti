@@ -9,10 +9,8 @@ public import Mathlib.Algebra.IsPrimePow
 public import Mathlib.Algebra.CharZero.Infinite
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
-import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 import Mathlib.Order.Filter.AtTopBot.Finset
-import Mathlib.RingTheory.Ideal.GoingUp
-import TauCeti.RingTheory.DedekindDomain.PrimesAbove
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import TauCeti.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.NormCoeff
@@ -658,16 +656,6 @@ a ratio usable: the denominator is eventually positive, and a finite discrepancy
 numerators vanishes in the limit. -/
 theorem tendsto_primeCount_univ_atTop (K : Type*) [Field K] [NumberField K] :
     Tendsto (primeCount K Set.univ) atTop atTop := by
-  -- The arithmetic input is lying over for the integral extension `ℤ → 𝓞 K`: contraction from the
-  -- height-one spectrum of `𝓞 K` onto that of `ℤ` is surjective. The latter spectrum is equivalent
-  -- to the infinite type of natural primes. The rest is the generic fact that cardinality tends to
-  -- infinity along the directed set of finite subsets.
-  let _ : Infinite (HeightOneSpectrum ℤ) :=
-    Infinite.of_surjective Rat.HeightOneSpectrum.primesEquiv
-      Rat.HeightOneSpectrum.primesEquiv.surjective
-  let _ : Infinite (HeightOneSpectrum (𝓞 K)) :=
-    Infinite.of_surjective (HeightOneSpectrum.under ℤ)
-      (HeightOneSpectrum.under_surjective ℤ (𝓞 K))
   have hcarrier : Tendsto (primesLE K) atTop atTop :=
     tendsto_normLE_atTop (fun p : HeightOneSpectrum (𝓞 K) ↦ Ideal.absNorm p.asIdeal)
   have hcard : Tendsto (fun x => (primesLE K x).card) atTop atTop :=

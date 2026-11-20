@@ -238,7 +238,7 @@ private theorem isInvertible_of_eval₂_mfderiv [FiniteDimensional ℝ E]
     (ha : ∀ u w, a u w = SmoothBundleForm.eval₂ σ (f x) (mfderiv I J f x u) (mfderiv I J f x w)) :
     a.IsInvertible := by
   let : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  refine ContinuousLinearMap.isInvertible_of_separatingLeft (E := E) fun u hu ↦ ?_
+  refine ContinuousLinearMap.isInvertible_of_separatingLeft fun u hu ↦ ?_
   have hdu := IsNondegenerate.hasSymplecticTangentImages_iff.1 h x u
     fun w ↦ (ha u w).symm.trans (hu w)
   exact (injective_iff_map_eq_zero _).1 (f.isImmersion.mfderiv_injective hn x) u hdu

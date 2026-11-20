@@ -355,7 +355,7 @@ private theorem π₁Hom_mk_circleWedge (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (
     (K : Subgroup (𝔸.vertexGroup v₀))
     (q : (circleWedge t K).toGraphOfGroups.Path ⟨(circleWedge t K).base⟩
       ⟨(circleWedge t K).base⟩) :
-    (circleWedge t K).π₁Hom (π₁.mk q) = π₁.mk ((circleWedge t K).pathMap q) :=
+    (circleWedge t K).π₁Hom (π₁.mk q) = π₁.mk ((circleWedge t K).toHom.mapPath q) :=
   (π₁Hom_mk _ q).trans ((MulEquiv.cast_apply _ _).trans (cast_eq _ _))
 
 /-- The base vertex of the wedge has type `v₀`, by definition of `wedgeTyp`, so composing with the
@@ -369,24 +369,26 @@ private theorem toMonoidHom_cast_typ_base_circleWedge_comp (t : ∀ i, IndexedPa
 
 /-- The dart `⟨i, some k⟩` of the wedge reads the letters `g_k, e_k, 1` of the `i`-th indexed
 path. -/
-private theorem letterPath_chain (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i))
+private theorem mapLetter_chain (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i))
     (K : Subgroup (𝔸.vertexGroup v₀)) (i : ι) (k : Fin (n i)) :
-    (circleWedge t K).letterPath (Letter.dart ((circleWedge t K).graph.dart (⟨i, some k⟩, true))) =
+    (circleWedge t K).toHom.mapLetter
+        (Letter.dart ((circleWedge t K).graph.dart (⟨i, some k⟩, true))) =
       ((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (wedgeTyp_wedgePos t i k.castSucc).symm
         ((t i).lab k))).comp (Path.ofDart (⟨((t i).dt k).1,
           ((t i).dt k).2.1.trans (wedgeTyp_wedgePos t i k.castSucc).symm, ((t i).dt k).2.2⟩ :
             wedgeTyp t (wedgePos n i k.castSucc) ⟶ (t i).vt k))).comp (Path.ofVertex 1) := by
   -- The labels of the dart and of its reverse are transports of `g_k` and `1`, by definition of
   -- `wedgeLabel`.
-  refine letterPath_dart_eq _ _ ?_ rfl ((cast_labelω _ _).trans (inv_eq_one.2 (map_one _)))
+  refine toHom_mapLetter_dart_eq _ _ ?_ rfl ((cast_labelω _ _).trans (inv_eq_one.2 (map_one _)))
   rw [MulEquiv.cast_apply, MulEquiv.cast_apply]
   exact (congrArg _ (MulEquiv.cast_apply _ _)).trans (cast_cast _ _ _)
 
 /-- The dart `⟨i, none⟩` of the wedge reads the last letters `g_n, e_n, h` of the `i`-th indexed
 path. -/
-private theorem letterPath_last (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i))
+private theorem mapLetter_last (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i))
     (K : Subgroup (𝔸.vertexGroup v₀)) (i : ι) :
-    (circleWedge t K).letterPath (Letter.dart ((circleWedge t K).graph.dart (⟨i, none⟩, true))) =
+    (circleWedge t K).toHom.mapLetter
+        (Letter.dart ((circleWedge t K).graph.dart (⟨i, none⟩, true))) =
       ((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup)
         (wedgeTyp_wedgePos t i (Fin.last (n i))).symm (t i).lastLab)).comp
           (Path.ofDart (⟨(t i).lastDart.1,
@@ -395,7 +397,7 @@ private theorem letterPath_last (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i))
         (Path.ofVertex (t i).endLab) := by
   -- The labels of the dart and of its reverse are transports of `g_n` and `h⁻¹`, by definition of
   -- `wedgeLabel`.
-  refine letterPath_dart_eq _ _ ?_ rfl ((cast_labelω _ _).trans (inv_eq_iff_eq_inv.2 ?_))
+  refine toHom_mapLetter_dart_eq _ _ ?_ rfl ((cast_labelω _ _).trans (inv_eq_iff_eq_inv.2 ?_))
   · rw [MulEquiv.cast_apply, MulEquiv.cast_apply]
     exact (congrArg _ (MulEquiv.cast_apply _ _)).trans (cast_cast _ _ _)
   · rw [MulEquiv.cast_apply]
@@ -418,11 +420,11 @@ private theorem cast_wedgeTyp_wedgePos_succ (t : ∀ i, IndexedPath 𝔸 v₀ v�
 /-- Along a circle, the path map reads the initial segments of the indexed path: reading the path
 to position `k` and then letters `g, d, h` is reading the `k`-th initial segment and then
 `g, d, h`. -/
-private theorem pathMap_circlePath_homotopic (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i))
+private theorem mapPath_circlePath_homotopic (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i))
     (K : Subgroup (𝔸.vertexGroup v₀)) (i : ι) (k : Fin (n i + 1)) :
     ∀ {y : Γ.V} (g : 𝔸.vertexGroup ((Fin.cons v₀ (t i).vt : Fin (n i + 1) → Γ.V) k))
       (d : (Fin.cons v₀ (t i).vt : Fin (n i + 1) → Γ.V) k ⟶ y) (h : 𝔸.vertexGroup y),
-      Path.Homotopic (((circleWedge t K).pathMap (circlePath t K i k)).comp
+      Path.Homotopic (((circleWedge t K).toHom.mapPath (circlePath t K i k)).comp
         (((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (wedgeTyp_wedgePos t i k).symm g)).comp
           (Path.ofDart (⟨d.1, d.2.1.trans (wedgeTyp_wedgePos t i k).symm, d.2.2⟩ :
             wedgeTyp t (wedgePos n i k) ⟶ y))).comp (Path.ofVertex h)))
@@ -431,15 +433,15 @@ private theorem pathMap_circlePath_homotopic (t : ∀ i, IndexedPath 𝔸 v₀ v
   | zero =>
     intro y g d h
     -- The path to position `0` is the empty path at the base vertex.
-    have h₀ : (circleWedge t K).pathMap (circlePath t K i 0) = .nil := pathMap_nil _
+    have h₀ : (circleWedge t K).toHom.mapPath (circlePath t K i 0) = .nil := Hom.mapPath_nil _
     rw [h₀, IndexedPath.pre_zero, cast_wedgeTyp_wedgePos_zero]
     exact homotopic_comp_ofVertex_ofDart_ofVertex .nil g d h
   | succ j ih =>
     intro y g d h
     -- The path to position `j + 1` is the path to position `j` followed by the dart `⟨i, some j⟩`.
-    have e : (circleWedge t K).pathMap (circlePath t K i j.succ) =
-        ((circleWedge t K).pathMap (circlePath t K i j.castSucc)).comp _ :=
-      (pathMap_cons _ _ _).trans (congrArg _ (letterPath_chain t K i j))
+    have e : (circleWedge t K).toHom.mapPath (circlePath t K i j.succ) =
+        ((circleWedge t K).toHom.mapPath (circlePath t K i j.castSucc)).comp _ :=
+      (Hom.mapPath_cons _ _ _).trans (congrArg _ (mapLetter_chain t K i j))
     rw [e, IndexedPath.pre_succ, cast_wedgeTyp_wedgePos_succ]
     exact (((ih ((t i).lab j) ((t i).dt j) 1).trans (Path.Homotopic.one _)).comp_right _).trans
       (homotopic_comp_ofVertex_ofDart_ofVertex _ g d h)
@@ -448,14 +450,15 @@ private theorem pathMap_circlePath_homotopic (t : ∀ i, IndexedPath 𝔸 v₀ v
 private theorem π₁Hom_mk_circleLoop (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i))
     (K : Subgroup (𝔸.vertexGroup v₀)) (i : ι) :
     (circleWedge t K).π₁Hom (π₁.mk (circleLoop t K i)) = π₁.mk (t i).toPath := by
-  have e : (circleWedge t K).pathMap (circleLoop t K i) =
-      ((circleWedge t K).pathMap (circlePath t K i (Fin.last (n i)))).comp _ :=
-    (pathMap_cons _ _ _).trans (congrArg _ (letterPath_last t K i))
+  have e : (circleWedge t K).toHom.mapPath (circleLoop t K i) =
+      ((circleWedge t K).toHom.mapPath (circlePath t K i (Fin.last (n i)))).comp _ :=
+    (Hom.mapPath_cons _ _ _).trans (congrArg _ (mapLetter_last t K i))
   rw [π₁Hom_mk_circleWedge, e]
   -- The right-hand side `(t i).toPath` is the last initial segment followed by `g_n, e_n, h`, by
   -- definition of `IndexedPath.toPath`.
   exact π₁.mk_eq_mk_iff.2
-    (pathMap_circlePath_homotopic t K i (Fin.last (n i)) (t i).lastLab (t i).lastDart (t i).endLab)
+    (mapPath_circlePath_homotopic t K i (Fin.last (n i)) (t i).lastLab (t i).lastDart
+      (t i).endLab)
 
 /-- The wedge is connected: the paths `basePath` reach every vertex from the base vertex. -/
 private theorem connected_circleWedge (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i))
@@ -554,7 +557,7 @@ private theorem iSup_range_circleWedge (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n
   have h : ((circleWedge t K).π₁Hom.comp (π₁.vertexHom (basePath t K none))).range =
       K.map (π₁.vertexHom Quiver.Path.nil) := by
     rw [range_π₁Hom_comp_vertexHom, toMonoidHom_cast_typ_base_circleWedge_comp]
-    exact congrArg (fun q => K.map (π₁.vertexHom q)) (pathMap_nil _)
+    exact congrArg (fun q => K.map (π₁.vertexHom q)) (Hom.mapPath_nil _)
   refine le_antisymm (iSup_le ?_) (h.ge.trans (le_iSup_of_le none le_rfl))
   rintro (_ | z)
   · exact h.le

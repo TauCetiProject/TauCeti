@@ -45,7 +45,8 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
 ## Main results
 
 * `IsOpen.isOpen_constructibleTopology` — on a prespectral space the constructible
-  topology refines the given one; hence `IsClosed.isProConstructible`.
+  topology refines the given one; hence `IsClosed.isProConstructible`, and on a T₀ prespectral
+  space `TauCeti.isProConstructible_singleton`.
 * `IsCompact.isProConstructible` — a quasi-compact open subset is pro-constructible. It is
   in fact clopen for the constructible topology, which is what makes the two previous families
   interact.
@@ -82,6 +83,9 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
 * `IsSpectralMap.isQuotientMap_of_generalizingMap` — a surjective generalizing spectral map onto
   a spectral space is a quotient map. This is the general form of Mathlib's
   `PrimeSpectrum.isQuotientMap_of_generalizingMap`, whose proof it follows.
+* `TauCeti.exists_disjoint_isOpen_of_isCompact_of_stableUnderGeneralization` — in a quasi-sober,
+  quasi-separated prespectral space, a compact subset and a disjoint closed subset stable under
+  generalization are separated by disjoint open subsets.
 
 ## References
 
@@ -187,6 +191,13 @@ theorem isProConstructible_setOfPred_specializes [PrespectralSpace X] (x : X) :
         (x := y) (y := x)
   rw [heq]
   exact IsProConstructible.sInter fun U hU ↦ hU.2.1.isProConstructible hU.1
+
+/-- Every singleton in a T₀ prespectral space is pro-constructible, as the constructible topology
+is Hausdorff. -/
+@[simp]
+theorem isProConstructible_singleton [T0Space X] [PrespectralSpace X] (x : X) :
+    IsProConstructible ({x} : Set X) :=
+  (Set.subsingleton_singleton.preimage (WithTopology.ofTopology_injective _)).isClosed
 
 /-! ### Functoriality -/
 
@@ -416,6 +427,41 @@ theorem _root_.IsSpectralMap.isQuotientMap_of_generalizingMap [CompactSpace X] [
   rw [Set.image_preimage_eq t hsurj, ← stableUnderGeneralization_compl_iff]
   convert hg.stableUnderGeneralization_image ht.isOpen_compl.stableUnderGeneralization
   rw [← Set.preimage_compl, Set.image_preimage_eq _ hsurj]
+
+/-- In a quasi-sober, quasi-separated prespectral space, a compact subset `K` and a disjoint closed
+subset `F` that is stable under generalization can be separated by disjoint open subsets. Ambient
+compactness and `T0Space` are not needed. -/
+theorem exists_disjoint_isOpen_of_isCompact_of_stableUnderGeneralization
+    [QuasiSober X] [PrespectralSpace X] [QuasiSeparatedSpace X] {K F : Set X}
+    (hK : IsCompact K) (hFc : IsClosed F) (hFg : StableUnderGeneralization F)
+    (hd : Disjoint K F) :
+    ∃ U V : Set X, IsOpen U ∧ IsOpen V ∧ K ⊆ U ∧ F ⊆ V ∧ Disjoint U V := by
+  obtain ⟨U, hUc, hUo, hKU, hUFc⟩ :=
+    PrespectralSpace.exists_isCompact_and_isOpen_between hK hFc.isOpen_compl
+      (subset_compl_iff_disjoint_right.2 hd)
+  -- Check `Disjoint (closure U) F` locally on a compact open neighbourhood `W` of `y ∈ F`, where
+  -- `W ∩ U` is compact open (hence pro-constructible in `W`) so its closure consists of
+  -- specializations.
+  have hcl : Disjoint (closure U) F := by
+    refine disjoint_left.2 fun y hycl hyF ↦ ?_
+    obtain ⟨W, ⟨hWo, hWc⟩, hyW, -⟩ :=
+      PrespectralSpace.isTopologicalBasis.exists_subset_of_mem_open (mem_univ y) isOpen_univ
+    have : CompactSpace W := isCompact_iff_compactSpace.1 hWc
+    have : QuasiSober W := hWo.isOpenEmbedding_subtypeVal.quasiSober
+    have : PrespectralSpace W := hWo.isOpenEmbedding_subtypeVal.prespectralSpace
+    have : QuasiSeparatedSpace W := hWo.isOpenEmbedding_subtypeVal.quasiSeparatedSpace
+    have hUWc : IsCompact (((↑) : W → X) ⁻¹' U) := by
+      rw [Subtype.isCompact_iff, Subtype.image_preimage_coe]
+      exact QuasiSeparatedSpace.inter_isCompact W U hWo hWc hUo hUc
+    have hUWo : IsOpen (((↑) : W → X) ⁻¹' U) := hUo.preimage continuous_subtype_val
+    have hyWcl : (⟨y, hyW⟩ : W) ∈ closure (((↑) : W → X) ⁻¹' U) :=
+      hWo.isOpenMap_subtype_val.preimage_closure_subset_closure_preimage hycl
+    rw [(hUWc.isProConstructible hUWo).closure_eq_setOfPred_specializes] at hyWcl
+    obtain ⟨z, hzU, hzy⟩ := hyWcl
+    exact hUFc hzU (hFg (hzy.map continuous_subtype_val) hyF)
+  exact ⟨U, (closure U)ᶜ, hUo, isClosed_closure.isOpen_compl, hKU,
+    subset_compl_iff_disjoint_left.2 hcl,
+    disjoint_compl_right.mono_left subset_closure⟩
 
 end TauCeti
 

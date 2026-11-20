@@ -33,8 +33,8 @@ The forward direction uses Mathlib's `IsGδ.isCompletelyMetrizableSpace` and
 `IsGδ.polishSpace`. This file supplies the converse and combines it with those
 upstream results to obtain the iff characterizations.
 
-For the converse, the sets `U n` of points having a neighbourhood whose trace on `s` has
-diameter less than `1 / (n + 1)` for a complete metric on `s` are open and contain `s`, and
+For the converse, the sets `U n` of points having a neighbourhood any two of whose points in `s`
+are at distance less than `1 / (n + 1)` for a complete metric on `s` are open and contain `s`, and
 `s = closure s ∩ ⋂ n, U n`: at a point of the right-hand side, the trace on `s` of its
 neighbourhood filter is a Cauchy filter, whose limit in `s` must be the point itself.
 
@@ -58,7 +58,7 @@ hypothesis. -/
 theorem isGδ_of_isCompletelyMetrizableSpace [T2Space X] {s : Set X}
     [IsCompletelyMetrizableSpace s] (hclosure : IsGδ (closure s)) : IsGδ s := by
   let := upgradeIsCompletelyMetrizable s
-  -- `U n` consists of the points with an open neighbourhood whose trace on `s` has small diameter.
+  -- `U n` consists of the points with an open neighbourhood whose points of `s` are pairwise close.
   let U : ℕ → Set X := fun n ↦
     ⋃₀ {V | IsOpen V ∧ ∀ a b : s, (a : X) ∈ V → (b : X) ∈ V → dist a b < 1 / (n + 1)}
   have hUo (n : ℕ) : IsOpen (U n) := isOpen_sUnion fun V hV ↦ hV.1
