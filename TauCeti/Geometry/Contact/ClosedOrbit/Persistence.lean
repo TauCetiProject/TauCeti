@@ -14,23 +14,24 @@ import TauCeti.Geometry.Manifold.Flow.Persistence
 /-!
 # Openness of bounded-action Reeb nondegeneracy
 
-For a smooth family of contact forms on a compact boundaryless manifold, the parameters for
-which every closed Reeb orbit of action at most `A` is nondegenerate form an open set.
-The action is the period, and the condition includes every positive period and all covers.
-The parameters with nondegenerate closed Reeb orbits at every action form a Gδ set.
-Density requires a separate perturbation argument.
+For a smooth family of contact forms on a compact boundaryless phase manifold, parametrized
+by a boundaryless manifold, the parameters for which every closed Reeb orbit of action at most
+`A` is nondegenerate form an open set. The action is the period, and the condition includes every
+positive period and all covers. The parameters with nondegenerate closed Reeb orbits at every
+action form a Gδ set. Density requires a separate perturbation argument.
 
-The proof combines the compact-window theorem
-`TauCeti.eventually_subset_flowDomain_and_forall_not_hasEigenvalue_returnDerivative` with
-`Flow.exists_pos_eventually_period_le_of_isCompact`, giving a uniform positive period bound near
-the compact slice `{a₀} × M`. The parameter manifold may be modelled on an
-infinite-dimensional Banach space: no compact neighborhood of the parameter is required.
+The parameter manifold may be modelled on an infinite-dimensional Banach space.
 
 ## References
 
 * F. Bourgeois, Y. Eliashberg, H. Hofer, K. Wysocki, and E. Zehnder,
   *Compactness results in Symplectic Field Theory*, Geom. Topol. 7 (2003), Section 2.3.
 -/
+
+/- The proof combines the compact-window theorem
+`TauCeti.eventually_subset_flowDomain_and_forall_not_hasEigenvalue_returnDerivative` with
+`Flow.exists_pos_eventually_period_le_of_isCompact`, giving a uniform positive period bound near
+the compact slice `{a₀} × M`. -/
 
 public section
 
