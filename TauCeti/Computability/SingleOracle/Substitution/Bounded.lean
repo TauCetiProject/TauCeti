@@ -7,6 +7,10 @@ module
 
 public import TauCeti.Computability.SingleOracle.Substitution.Basic
 public import TauCeti.Computability.SingleOracle.Stage
+-- The concrete search certificates compute using the evaluator's defining equations.
+import all TauCeti.Computability.SingleOracle.Evaln
+import Mathlib.Order.Filter.AtTopBot.Basic
+import Mathlib.Order.Filter.Finite
 
 /-!
 # Bounded oracle substitution and use
@@ -28,14 +32,14 @@ III.1.7–9.
 
 public section
 
-open Encodable Primrec
+open Encodable Filter Primrec
 
 namespace TauCeti.Oracle.Single.Code
 
 /-- The answer computed by `d` at an address using fuel `k` and at most the first `u` base-oracle
 coordinates. A missing run or a run using a larger prefix supplies no answer. -/
 def boundedAnswers (d : Code) (σ : ℕ → Option ℕ) (k u : ℕ) (x : ℕ) : Option ℕ :=
-  (evaln σ k d x).bind fun h => if h.use ≤ u then some h.output else none
+  (evaln σ k d x).bind fun h => Option.guard (fun _ => h.use ≤ u) h.output
 
 variable {σ : ℕ → Option ℕ} {c d : Code} {j k u x y : ℕ} {r : Halt}
 
@@ -44,21 +48,14 @@ variable {σ : ℕ → Option ℕ} {c d : Code} {j k u x y : ℕ} {r : Halt}
 theorem boundedAnswers_eq_some_iff :
     d.boundedAnswers σ j u x = some y ↔
       ∃ h, evaln σ j d x = some h ∧ h.use ≤ u ∧ h.output = y := by
-  simp only [boundedAnswers, Option.bind_eq_some_iff]
-  refine exists_congr fun h => and_congr_right fun _ => ?_
-  split_ifs <;> simp_all
+  simp [boundedAnswers, Option.bind_eq_some_iff, and_comm]
 
 /-- A bounded answer is missing if evaluation fails or the successful run exceeds the use bound. -/
 @[simp]
 theorem boundedAnswers_eq_none_iff :
     d.boundedAnswers σ j u x = none ↔
       evaln σ j d x = none ∨ ∃ h, evaln σ j d x = some h ∧ u < h.use := by
-  cases h : evaln σ j d x with
-  | none => simp [boundedAnswers, h]
-  | some t =>
-    by_cases ht : t.use ≤ u
-    · simp [boundedAnswers, h, ht, not_lt.2 ht]
-    · simp [boundedAnswers, h, ht, lt_of_not_ge ht]
+  cases h : evaln σ j d x <;> simp [boundedAnswers, h]
 
 /-- If the supplied answers represent `O`, the values computed by `d` are exactly the bounded
 answers supplied at some common fuel and use bound. -/
@@ -79,6 +76,32 @@ theorem boundedAnswers_eq_some_of_le {j' u' : ℕ} (hj : j ≤ j') (hu : u ≤ u
   obtain ⟨r, hr, hru, rfl⟩ := boundedAnswers_eq_some_iff.1 h
   exact boundedAnswers_eq_some_iff.2 ⟨r, evaln_mono hj hr, hru.trans hu, rfl⟩
 
+/-- With a fixed use bound `u`, the answers eventually supplied by `d` are exactly the
+values it computes relative to the base oracle restricted to addresses below `u`, provided
+the answer table agrees with the oracle at those addresses. -/
+theorem mem_eval_restrict_iff_exists_boundedAnswers {O : ℕ →. ℕ}
+    (hσ : ∀ z < u, ∀ v, σ z = some v ↔ v ∈ O z) :
+    y ∈ eval (O.restrict (p := Set.Iio u ∩ O.Dom) Set.inter_subset_right) d x ↔
+      ∃ j, d.boundedAnswers σ j u x = some y := by
+  let τ (z : ℕ) := if z < u then σ z else none
+  have hτ (z v : ℕ) :
+      τ z = some v ↔ v ∈ O.restrict (p := Set.Iio u ∩ O.Dom) Set.inter_subset_right z := by
+    by_cases hz : z < u
+    · simp only [τ, hz, ite_true, PFun.mem_restrict, Set.mem_inter_iff, Set.mem_Iio, true_and,
+        hσ z hz]
+      exact ⟨fun hv => ⟨(PFun.mem_dom O z).2 ⟨v, hv⟩, hv⟩, And.right⟩
+    · simp [τ, hz]
+  have hagree : Set.EqOn σ τ (Set.Iio u) := fun z hz => by simp [τ, Set.mem_Iio.1 hz]
+  rw [mem_eval_iff_exists_evaln hτ]
+  simp only [boundedAnswers_eq_some_iff]
+  constructor
+  · rintro ⟨j, r, hr, rfl⟩
+    have hu : r.use ≤ u :=
+      evaln_use_le_of_forall_eq_none (fun z hz => by simp [τ, not_lt.2 hz]) hr
+    exact ⟨j, r, evaln_eq_some_of_eqOn hr (hagree.symm.mono (Set.Iio_subset_Iio hu)), hu, rfl⟩
+  · rintro ⟨j, r, hr, hu, rfl⟩
+    exact ⟨j, r, evaln_eq_some_of_eqOn hr (hagree.mono (Set.Iio_subset_Iio hu)), rfl⟩
+
 /-- Query answers depend only on the allowed prefix of the base oracle, including when the
 answer is missing. -/
 theorem boundedAnswers_eq_of_eqOn {τ : ℕ → Option ℕ} (h : Set.EqOn σ τ (Set.Iio u)) :
@@ -90,15 +113,17 @@ theorem boundedAnswers_eq_of_eqOn {τ : ℕ → Option ℕ} (h : Set.EqOn σ τ 
   · exact ⟨r, evaln_eq_some_of_eqOn hr (h.mono (Set.Iio_subset_Iio hu)), hu, rfl⟩
   · exact ⟨r, evaln_eq_some_of_eqOn hr (h.symm.mono (Set.Iio_subset_Iio hu)), hu, rfl⟩
 
-/-- Bounded query answers are primitive recursive in finite oracle data, the two bounds,
-the program and the address. -/
+/-- Bounded query answers are primitive recursive in the oracle parameter, the two bounds,
+the program and the address, provided the parameter type is `Primcodable` and answer lookup
+is primitive recursive jointly in the parameter and address. -/
 theorem primrec_boundedAnswers {α : Type*} [Primcodable α]
     {answers : α → ℕ → Option ℕ} (hσ : Primrec₂ answers) :
     Primrec fun p : (α × ℕ × Code × ℕ) × ℕ =>
       p.1.2.2.1.boundedAnswers (answers p.1.1) p.1.2.1 p.2 p.1.2.2.2 := by
-  refine option_bind ((primrec_evaln hσ).comp fst) <| .mk <| Primrec.ite
-    (Primrec.nat_le.comp (Halt.primrec_use.comp snd) (snd.comp fst))
-    (option_some.comp (Halt.primrec_output.comp snd)) (const none)
+  exact option_bind ((primrec_evaln hσ).comp fst) <| .mk <| option_guard
+    ((Primrec.nat_le.comp (Halt.primrec_use.comp (snd.comp fst))
+      (snd.comp (fst.comp fst))).primrecRel)
+    (Halt.primrec_output.comp snd)
 
 private theorem evaln_succ_use_eq_zero_of_basic
     (hc : c = zero ∨ c = succ ∨ c = left ∨ c = right)
@@ -164,63 +189,21 @@ theorem exists_evaln_subst_of_evaln_boundedAnswers
 private def searchAnswers (x : ℕ) : Option ℕ :=
   if x = 1 then some 1 else if x = 2 then some 0 else none
 
-private theorem pair_zero_zero : Nat.pair 0 0 = 0 := by decide
-private theorem pair_zero_one : Nat.pair 0 1 = 1 := by decide
-
 private def shiftQuery : Code :=
   comp oracle succ
-
-private theorem evaln_shiftQuery_zero :
-    evaln searchAnswers 3 shiftQuery 0 = some ⟨1, 2⟩ :=
-  evaln_succ_comp_eq_some.2 ⟨by decide, ⟨1, 0⟩, ⟨1, 2⟩, by simp, by simp [searchAnswers], rfl⟩
-
-private theorem evaln_shiftQuery_one :
-    evaln searchAnswers 3 shiftQuery 1 = some ⟨0, 3⟩ :=
-  evaln_succ_comp_eq_some.2 ⟨by decide, ⟨2, 0⟩, ⟨0, 3⟩, by simp, by simp [searchAnswers], rfl⟩
-
-private theorem evaln_shiftQuery_one_fuel_two :
-    evaln searchAnswers 2 shiftQuery 1 = none := by
-  apply Option.eq_none_iff_forall_ne_some.2
-  intro r h
-  rw [shiftQuery, evaln_succ_comp_eq_some] at h
-  obtain ⟨-, g, f, hg, hf, -⟩ := h
-  obtain ⟨-, rfl⟩ := evaln_succ_succ_eq_some.1 hg
-  exact (lt_irrefl 2) (evaln_bound hf)
 
 -- The outer search sees nonzero at address zero, then zero at address one.
 private theorem evaln_search_boundedAnswers :
     evaln (shiftQuery.boundedAnswers searchAnswers 3 3) 3 (rfind' oracle) (Nat.pair 0 0) =
       some ⟨1, 2⟩ := by
-  have ha : shiftQuery.boundedAnswers searchAnswers 3 3 (Nat.pair 0 0) = some 1 := by
-    rw [pair_zero_zero]
-    exact boundedAnswers_eq_some_iff.2 ⟨⟨1, 2⟩, evaln_shiftQuery_zero, by decide, rfl⟩
-  have hb : shiftQuery.boundedAnswers searchAnswers 3 3 (Nat.pair 0 1) = some 0 := by
-    rw [pair_zero_one]
-    exact boundedAnswers_eq_some_iff.2 ⟨⟨0, 3⟩, evaln_shiftQuery_one, le_rfl, rfl⟩
-  have htail :
-      evaln (shiftQuery.boundedAnswers searchAnswers 3 3) 2 (rfind' oracle) (Nat.pair 0 1) =
-        some ⟨1, 2⟩ :=
-    evaln_succ_rfind'_eq_some.2 ⟨by decide, ⟨0, 2⟩,
-      evaln_succ_oracle_eq_some.2 ⟨by decide, 0, hb, rfl⟩, .inl ⟨rfl, rfl⟩⟩
-  exact evaln_succ_rfind'_eq_some.2 ⟨by decide, ⟨1, 1⟩,
-    evaln_succ_oracle_eq_some.2 ⟨by decide, 1, ha, rfl⟩, .inr ⟨by decide, _, htail, rfl⟩⟩
+  simp [evaln, boundedAnswers, shiftQuery, searchAnswers, Nat.unpaired, Nat.unpair, Nat.pair]
 
 private theorem evaln_search_subst_fuel_three :
     evaln searchAnswers 3 ((rfind' oracle).subst shiftQuery) (Nat.pair 0 0) = none := by
-  apply Option.eq_none_iff_forall_ne_some.2
-  intro t ht
-  rw [rfind'_subst, oracle_subst, evaln_succ_rfind'_eq_some] at ht
-  obtain ⟨-, f, hf, hcase⟩ := ht
-  rw [pair_zero_zero] at hf
-  have hf' : f = ⟨1, 2⟩ := evaln_unique hf evaln_shiftQuery_zero
-  subst f
-  obtain ⟨-, g, hg, -⟩ := hcase.resolve_left (by simp)
-  obtain ⟨-, v, hv, -⟩ := evaln_succ_rfind'_eq_some.1 hg
-  rw [pair_zero_one, evaln_shiftQuery_one_fuel_two] at hv
-  contradiction
+  simp [evaln, shiftQuery, searchAnswers, Nat.unpaired, Nat.unpair, Nat.pair]
 
-/-- The maximum of the two separate fuels can be too small for inlining, even when the
-intermediate oracle's answers are furnished by a single successful query at each address read. -/
+/-- The maximum of the two separate fuels can be too small for inlining.
+In the concrete witness, each intermediate answer is computed by one base-oracle query. -/
 theorem exists_evaln_boundedAnswers_and_evaln_subst_eq_none_at_max :
     ∃ (σ : ℕ → Option ℕ) (c d : Code) (x j k : ℕ) (r : Halt),
       evaln (d.boundedAnswers σ j j) k c x = some r ∧
@@ -296,12 +279,7 @@ theorem exists_evaln_boundedAnswers_iff_use_le (h : evaln σ k (c.subst d) x = s
 -- With a large enough fuel the inlined run has base use three.
 private theorem evaln_search_subst :
     evaln searchAnswers 4 ((rfind' oracle).subst shiftQuery) (Nat.pair 0 0) = some ⟨1, 3⟩ := by
-  rw [rfind'_subst, oracle_subst, evaln_succ_rfind'_eq_some]
-  have htail : evaln searchAnswers 3 (rfind' shiftQuery) (Nat.pair 0 1) = some ⟨1, 3⟩ :=
-    evaln_succ_rfind'_eq_some.2
-      ⟨by decide, ⟨0, 3⟩, pair_zero_one.symm ▸ evaln_shiftQuery_one, .inl ⟨rfl, rfl⟩⟩
-  exact ⟨by decide, ⟨1, 2⟩, pair_zero_zero.symm ▸ evaln_mono (by decide) evaln_shiftQuery_zero,
-    .inr ⟨by decide, _, htail, rfl⟩⟩
+  simp [evaln, shiftQuery, searchAnswers, Nat.unpaired, Nat.unpair, Nat.pair]
 
 example : ¬ ∃ j k t, evaln (shiftQuery.boundedAnswers searchAnswers j 2) k (rfind' oracle)
       (Nat.pair 0 0) = some t := by
@@ -350,17 +328,18 @@ theorem exists_evalStage_boundedAnswers_forall_mem_iff {runs : List (Code × ℕ
     exact (exists_evaln_boundedAnswers_iff_use_le (evalStage_eq_some_iff.1 hk).2.1).1
       ⟨j, s, t, (evalStage_eq_some_iff.1 ht).2.1⟩
   · intro hu
-    let stage (p : ↥runs.toFinset) := (h p.val (List.mem_toFinset.1 p.property)).choose
-    let k := runs.toFinset.attach.sup stage
-    have hk (p : ↥runs.toFinset) :
-        evalStage σ k (p.val.1.subst d) p.val.2.1 = some p.val.2.2 :=
-      evalStage_mono (Finset.le_sup (f := stage) (Finset.mem_attach _ p))
-        (h p.val (List.mem_toFinset.1 p.property)).choose_spec
-    let s := max k (runs.toFinset.sup fun p => encode p.1 + 1)
-    refine ⟨k, s, fun p hp => exists_evalStage_boundedAnswers_of_evalStage_subst
-      (hk ⟨p, List.mem_toFinset.2 hp⟩) le_rfl (hu p hp) (le_max_left _ _) ?_⟩
-    have hidx := (Finset.le_sup
-      (f := fun p : Code × ℕ × Halt => encode p.1 + 1) (List.mem_toFinset.2 hp))
-    exact (Nat.lt_succ_self _).trans_le (hidx.trans (le_max_right _ _))
+    have hcompiled (p) (hp : p ∈ runs.toFinset) :
+        ∀ᶠ k in atTop, evalStage σ k (p.1.subst d) p.2.1 = some p.2.2 := by
+      obtain ⟨k, hk⟩ := h p (List.mem_toFinset.1 hp)
+      exact eventually_atTop.2 ⟨k, fun _ hkk => evalStage_mono hkk hk⟩
+    obtain ⟨j, hj⟩ := ((eventually_all_finset runs.toFinset).2 hcompiled).exists
+    have houter (p) (hp : p ∈ runs.toFinset) :
+        ∀ᶠ s in atTop, ∃ t, evalStage (d.boundedAnswers σ j u) s p.1 p.2.1 = some t ∧
+          t.output = p.2.2.output := by
+      obtain ⟨t, ht, he⟩ := exists_evaln_boundedAnswers_of_evaln_subst
+        (evalStage_eq_some_iff.1 (hj p hp)).2.1 le_rfl (hu p (List.mem_toFinset.1 hp))
+      exact (eventually_atTop.2 (exists_forall_evalStage_eq_some ht)).mono fun _ hs => ⟨t, hs, he⟩
+    obtain ⟨s, hs⟩ := ((eventually_all_finset runs.toFinset).2 houter).exists
+    exact ⟨j, s, fun p hp => hs p (List.mem_toFinset.2 hp)⟩
 
 end TauCeti.Oracle.Single.Code

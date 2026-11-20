@@ -546,6 +546,12 @@ theorem eval_fixInput (O : ℕ →. ℕ) (c : Code) (x y : ℕ) :
 def haltingIndex (c : Code) (x : ℕ) : ℕ :=
   encode (c.fixInput x)
 
+/-- Decoding a halting index recovers the fixed-input program. -/
+@[simp]
+theorem ofNat_haltingIndex (c : Code) (x : ℕ) :
+    ofNat Code (c.haltingIndex x) = c.fixInput x := by
+  rw [haltingIndex, ofNat_encode]
+
 /-- Computing the index of a fixed-input program is primitive recursive. -/
 theorem primrec₂_haltingIndex : Primrec₂ haltingIndex :=
   Primrec.encode.comp primrec₂_fixInput
@@ -563,10 +569,9 @@ theorem haltingIndex_inj {c d : Code} {x y : ℕ} :
     rfl
 
 /-- The decoded halting index runs the program on its fixed input in every oracle. -/
-@[simp]
 theorem eval_ofNat_haltingIndex (O : ℕ →. ℕ) (c : Code) (x y : ℕ) :
     eval O (ofNat Code (c.haltingIndex x)) y = eval O c x := by
-  rw [haltingIndex, ofNat_encode, eval_fixInput]
+  rw [ofNat_haltingIndex, eval_fixInput]
 
 /-- Every partial recursive function is computed by one program relative to every oracle: the
 query-free program of an ordinary code computing it. -/
