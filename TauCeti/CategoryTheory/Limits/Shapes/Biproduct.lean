@@ -36,7 +36,9 @@ A biproduct `⨁ f` is the binary biproduct of one summand `f j` and the biprodu
 summands (`TauCeti.biproductSubtypeNeIso`), which is the inductive step of arguments that peel off
 one summand at a time; in a preadditive category the underlying decomposition of the identity is
 `TauCeti.biproduct_π_ι_add_toSubtype_fromSubtype`. A biproduct over an empty index type is zero
-(`TauCeti.isZero_biproduct_of_isEmpty`).
+(`TauCeti.isZero_biproduct_of_isEmpty`). The comparison isomorphism between the points of two
+limit bicones of one family carries inclusions to inclusions
+(`CategoryTheory.Limits.Bicone.ι_comp_conePointUniqueUpToIso_hom`).
 An additive functor which
 kills one summand of a binary biproduct inverts the projection onto the other
 (`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`). The biproduct comparison
@@ -610,3 +612,17 @@ noncomputable def isColimitBiprod (hc₁ : IsColimit c₁) (hc₂ : IsColimit c�
       · exact Cofork.IsColimit.hom_ext hc₂ (by simp))
 
 end CategoryTheory.Limits.CokernelCofork
+
+namespace CategoryTheory.Limits.Bicone
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {J : Type w} {F : J → C}
+
+/-- The comparison isomorphism between the points of two limit bicones of the same family
+carries the inclusions of the first bicone to those of the second. -/
+@[reassoc (attr := simp)]
+theorem ι_comp_conePointUniqueUpToIso_hom {c d : Bicone F} (hc : IsLimit c.toCone)
+    (hd : IsLimit d.toCone) (j : J) : c.ι j ≫ (hc.conePointUniqueUpToIso hd).hom = d.ι j :=
+  hd.hom_ext fun ⟨k⟩ => by
+    simpa [Bicone.ι_π] using c.ι j ≫= hc.conePointUniqueUpToIso_hom_comp hd ⟨k⟩
+
+end CategoryTheory.Limits.Bicone
