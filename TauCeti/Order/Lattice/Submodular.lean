@@ -57,15 +57,15 @@ theorem isSubmodular_def [Add K] [LE K] [Lattice L] (f : L → K) :
     IsSubmodular f ↔ ∀ a b, f (a ⊔ b) + f (a ⊓ b) ≤ f a + f b := Iff.rfl
 
 /-- A constant function on a lattice is submodular. -/
-theorem isSubmodular_const [Add K] [Preorder K] [Lattice L] (c : K) :
+theorem isSubmodular_const [Add K] [LE K] [@Std.Refl K (· ≤ ·)] [Lattice L] (c : K) :
     IsSubmodular (fun _ : L ↦ c) :=
-  fun _ _ ↦ le_rfl
+  fun _ _ ↦ Std.le_refl _
 
 /-- The sum of fixed weights over a finite set is submodular. In fact, its submodular inequality
 is always an equality. -/
-theorem isSubmodular_finsetSum {V : Type*} [DecidableEq V] [AddCommMonoid K] [Preorder K]
-    (f : V → K) : IsSubmodular (fun S : Finset V ↦ ∑ v ∈ S, f v) :=
-  fun _ _ ↦ Finset.sum_union_inter.le
+theorem isSubmodular_finsetSum {V : Type*} [DecidableEq V] [AddCommMonoid K] [LE K]
+    [@Std.Refl K (· ≤ ·)] (f : V → K) : IsSubmodular (fun S : Finset V ↦ ∑ v ∈ S, f v) :=
+  fun _ _ ↦ by rw [Finset.sum_union_inter]; exact Std.le_refl _
 
 namespace IsSubmodular
 
@@ -95,25 +95,30 @@ theorem comp_latticeHom [Add K] [LE K] [Lattice L] [Lattice M] [FunLike F M L]
 /-- Let `a` minimize a submodular function over `s` and `b` minimize it over `t`. If the meet
 lies in `s` and the join lies in `t`, then the join minimizes over `t` and the meet minimizes
 over `s`. -/
-theorem isMinOn_sup_inf [AddCommSemigroup K] [Preorder K] [AddLeftMono K]
+theorem isMinOn_sup_inf [AddCommMagma K] [Preorder K] [AddLeftMono K]
     [AddLeftReflectLE K] [Lattice L] {f : L → K} (hf : IsSubmodular f) {s t : Set L} {a b : L}
     (hamin : IsMinOn f s a) (hbmin : IsMinOn f t b) (hsup : a ⊔ b ∈ t) (hinf : a ⊓ b ∈ s) :
     IsMinOn f t (a ⊔ b) ∧ IsMinOn f s (a ⊓ b) := by
   rw [isMinOn_iff] at hamin hbmin ⊢
-  have hab := (hf a b).trans_eq (add_comm _ _)
   have hsup_le : f (a ⊔ b) ≤ f b := by
-    have h : f (a ⊔ b) + f a ≤ f b + f a :=
-      (add_le_add_right (hamin _ hinf) _).trans hab
-    exact le_of_add_le_add_right h
+    refine le_of_add_le_add_left (a := f a) ?_
+    calc
+      f a + f (a ⊔ b) = f (a ⊔ b) + f a := add_comm ..
+      _ ≤ f (a ⊔ b) + f (a ⊓ b) := add_le_add_right (hamin _ hinf) _
+      _ ≤ f a + f b := hf a b
   have hinf_le : f (a ⊓ b) ≤ f a := by
-    have h : f b + f (a ⊓ b) ≤ f b + f a :=
-      (add_le_add_left (hbmin _ hsup) _).trans hab
-    exact le_of_add_le_add_left h
+    refine le_of_add_le_add_left (a := f b) ?_
+    calc
+      f b + f (a ⊓ b) = f (a ⊓ b) + f b := add_comm ..
+      _ ≤ f (a ⊓ b) + f (a ⊔ b) := add_le_add_right (hbmin _ hsup) _
+      _ = f (a ⊔ b) + f (a ⊓ b) := add_comm ..
+      _ ≤ f a + f b := hf a b
+      _ = f b + f a := add_comm ..
   exact ⟨fun _ hc ↦ hsup_le.trans (hbmin _ hc), fun _ hc ↦ hinf_le.trans (hamin _ hc)⟩
 
 /-- The minimizers of a submodular function over a sublattice form a sublattice. Membership in
 this set records both membership in the original domain and minimality there. -/
-theorem isSublattice_minimizers [AddCommSemigroup K] [Preorder K] [AddLeftMono K]
+theorem isSublattice_minimizers [AddCommMagma K] [Preorder K] [AddLeftMono K]
     [AddLeftReflectLE K] [Lattice L] {f : L → K} (hf : IsSubmodular f)
     {s : Set L} (hs : IsSublattice s) :
     IsSublattice {a | a ∈ s ∧ IsMinOn f s a} := by
@@ -131,7 +136,7 @@ namespace IsSymmSubmodular
 
 /-- The posimodular inequality: a symmetric submodular function also satisfies the submodular
 inequality with the two differences in place of the join and meet. -/
-theorem sdiff_add_sdiff_le [AddCommSemigroup K] [LE K] [BooleanAlgebra L] {f : L → K}
+theorem sdiff_add_sdiff_le [AddCommMagma K] [LE K] [BooleanAlgebra L] {f : L → K}
     (hf : IsSymmSubmodular f) (a b : L) : f (a \ b) + f (b \ a) ≤ f a + f b := by
   have h := hf.submodular.apply a bᶜ
   rw [← hf.symm (a ⊔ bᶜ), hf.symm b] at h
