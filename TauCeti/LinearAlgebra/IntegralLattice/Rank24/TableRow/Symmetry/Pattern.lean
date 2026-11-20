@@ -24,6 +24,8 @@ row's lattice (`coupledPatternIsometryHom_injective`).
 
 ## Main declarations
 
+* `TauCeti.RootfulNiemeierType.forall_permCongr_mem_glueSymmetries_iff`: the indicated pattern
+  symmetries of a row are pure position glue symmetries if and only if the row is not `A₅⁴ D₄`.
 * `TauCeti.RootfulNiemeierType.coupledPatternIsometryHom`: action of `p.symmetries` on `r.lattice`
   for every `p ∈ r.gluePatterns` across all 23 rootful Niemeier rows.
 * `TauCeti.RootfulNiemeierType.coupledPatternIsometryHom_eq_patternIsometryHom`,
@@ -31,6 +33,9 @@ row's lattice (`coupledPatternIsometryHom_injective`).
   `TauCeti.RootfulNiemeierType.coupledPatternIsometryHom_literal`: agreement with
   `patternIsometryHom` away from `A₅⁴ D₄`, with `a5FourthD4CyclicSymmetryHom` on `[2(024)0]`, and
   triviality on literal patterns.
+* `TauCeti.RootfulNiemeierType.exists_coupledPatternIsometryHom_a5FourthD4_eq_pow`,
+  `TauCeti.RootfulNiemeierType.det_coupledPatternIsometryHom_a5FourthD4`: every pattern symmetry
+  of `A₅⁴ D₄` acts as a power of `a5FourthD4TrialityRotation` and has determinant `1`.
 * `TauCeti.RootfulNiemeierType.coupledPatternIsometryHom_injective`: every pattern symmetry group
   embeds faithfully into `Isometry r.lattice r.lattice`.
 
@@ -90,6 +95,52 @@ theorem coupledPatternIsometryHom_literal {r : RootfulNiemeierType} (word : List
     coupledPatternIsometryHom hp = 1 := by
   ext g
   rw [Subsingleton.elim g 1, map_one, MonoidHom.one_apply]
+
+/-- **The indicated symmetries of all patterns of a row are pure position glue symmetries if and
+only if the row is not `A₅⁴ D₄`.** -/
+@[simp]
+theorem forall_permCongr_mem_glueSymmetries_iff {r : RootfulNiemeierType} :
+    (∀ p (hp : p ∈ r.gluePatterns), ∀ g ∈ p.symmetries,
+      (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g ∈ r.glueSymmetries) ↔
+      r ≠ a5FourthD4 := by
+  refine ⟨fun h ↦ ?_, fun hr p hp g hg ↦ mem_glueSymmetries_of_mem_symmetries hr hp hg⟩
+  rintro rfl
+  exact permCongr_finRotate_notMem_glueSymmetries_a5FourthD4 _
+    (h (GluePattern.cyclic [2] [0, 2, 4] [0]) (List.Mem.head _) _
+      (by rw [GluePattern.symmetries_cyclic]; exact Subgroup.mem_zpowers _))
+
+/-- Every indicated pattern symmetry of `A₅⁴ D₄` acts on the component positions as a power
+`a5FourthD4BlockRot ^ k` (`k < 3`) and on `niemeierA5FourthD4` as the matching power
+`a5FourthD4TrialityRotation ^ k`. -/
+theorem exists_coupledPatternIsometryHom_a5FourthD4_eq_pow {p : GluePattern}
+    (hp : p ∈ a5FourthD4.gluePatterns) (g : p.symmetries) :
+    ∃ k < 3,
+      (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g.val = a5FourthD4BlockRot ^ k ∧
+        coupledPatternIsometryHom hp g = a5FourthD4TrialityRotation ^ k := by
+  rcases p with word | ⟨pre, block, post⟩ | @⟨n, word⟩
+  · refine ⟨0, by decide, ?_, ?_⟩
+    · rw [Subsingleton.elim g 1, Subgroup.coe_one, Equiv.Perm.one_def, Equiv.permCongr_refl]
+      exact (pow_zero a5FourthD4BlockRot).symm
+    · rw [coupledPatternIsometryHom_literal, MonoidHom.one_apply, pow_zero]
+  · have hp' : pre = [2] ∧ block = [0, 2, 4] ∧ post = [0] := by
+      simpa [gluePatterns] using hp
+    rcases hp' with ⟨rfl, rfl, rfl⟩
+    obtain ⟨k, hk, hgk, hact⟩ := exists_a5FourthD4CyclicSymmetryHom_eq_pow g
+    refine ⟨k, hk, ?_, ?_⟩
+    · refine Eq.trans ?_ hgk
+      ext i
+      rfl
+    · rw [coupledPatternIsometryHom_a5FourthD4_cyclic, hact]
+  · simp [gluePatterns] at hp
+
+/-- Every pattern symmetry of `A₅⁴ D₄` acts on `niemeierA5FourthD4` with determinant `1`. -/
+@[simp]
+theorem det_coupledPatternIsometryHom_a5FourthD4 {p : GluePattern}
+    (hp : p ∈ a5FourthD4.gluePatterns) (g : p.symmetries) :
+    Isometry.det a5FourthD4.lattice (coupledPatternIsometryHom hp g) = 1 := by
+  obtain ⟨k, -, -, hg⟩ := exists_coupledPatternIsometryHom_a5FourthD4_eq_pow hp g
+  change Isometry.det niemeierA5FourthD4 (coupledPatternIsometryHom hp g) = 1
+  rw [hg, map_pow, det_a5FourthD4TrialityRotation, one_pow]
 
 /-- **Every pattern symmetry group across all 23 rootful Niemeier rows embeds faithfully into the
 isometry group of its row's lattice.** -/

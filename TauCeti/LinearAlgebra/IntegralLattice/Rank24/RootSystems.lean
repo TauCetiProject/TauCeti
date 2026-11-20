@@ -170,6 +170,10 @@ theorem sourceIndex_bijective : Function.Bijective sourceIndex := by decide
   | .a2Twelfth => List.replicate 12 ⟨.A 2, by decide⟩
   | .a1TwentyFourth => List.replicate 24 ⟨.A 1, by decide⟩
 
+/-- Every rootful Niemeier row has at least one ADE component. -/
+instance (r : RootfulNiemeierType) : NeZero r.components.length :=
+  ⟨by cases r <;> decide⟩
+
 /-- The common Coxeter number displayed in the source. The numerical relation with component
 ranks and root counts is checked by `numRoots_eq_rank_mul_coxeterNumber`. -/
 @[expose] def coxeterNumber : RootfulNiemeierType → ℕ

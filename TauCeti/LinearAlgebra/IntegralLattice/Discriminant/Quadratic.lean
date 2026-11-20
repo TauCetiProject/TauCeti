@@ -39,8 +39,9 @@ construction.
 * `TauCeti.IntegralLattice.discriminantQuadraticModule`: the packaged finite quadratic module.
 * `TauCeti.IntegralLattice.isNondegenerate_discriminantQuadraticModule`: nondegeneracy of its
   polar pairing.
-* `TauCeti.IntegralLattice.Isometry.discriminantQuadraticIsometry`: functoriality under lattice
-  isometry.
+* `TauCeti.IntegralLattice.Isometry.discriminantQuadraticIsometry`,
+  `discriminantQuadraticIsometry_refl`, `discriminantQuadraticIsometry_symm`,
+  `discriminantQuadraticIsometry_trans`: functoriality under lattice isometry.
 
 ## References
 
@@ -272,6 +273,44 @@ theorem discriminantQuadraticIsometry_toFiniteBilinearModule (e : Isometry L M)
   rw [FiniteQuadraticModule.Isometry.toFiniteBilinearModule_toAddEquiv,
     discriminantQuadraticIsometry_toAddEquiv,
     discriminantBilinearIsometry_toAddEquiv]
+
+/-- The identity lattice isometry induces the identity discriminant-quadratic isometry. -/
+@[simp]
+theorem discriminantQuadraticIsometry_refl (L : IntegralLattice V)
+    [L.IsNondegenerate] (hL : L.IsEven) :
+    (Isometry.refl L).discriminantQuadraticIsometry hL =
+      QuadraticMap.IsometryEquiv.refl (L.discriminantQuadraticModule hL).quadratic :=
+  DFunLike.ext _ _ fun x ↦
+    (discriminantQuadraticIsometry_apply (Isometry.refl L) hL x).trans
+      (DFunLike.congr_fun (discriminantGroupEquiv_refl L) x)
+
+/-- Passing to the inverse lattice isometry passes to the inverse discriminant-quadratic
+isometry. -/
+@[simp]
+theorem discriminantQuadraticIsometry_symm (e : Isometry L M)
+    [L.IsNondegenerate] [M.IsNondegenerate] (hL : L.IsEven) :
+    e.symm.discriminantQuadraticIsometry (e.isEven_iff.mp hL) =
+      (e.discriminantQuadraticIsometry hL).symm := by
+  refine DFunLike.ext _ _ fun y ↦ EquivLike.injective (e.discriminantQuadraticIsometry hL) ?_
+  rw [QuadraticMap.IsometryEquiv.apply_symm_apply]
+  exact (discriminantQuadraticIsometry_apply e hL _).trans <|
+    (congrArg _ (discriminantQuadraticIsometry_apply e.symm (e.isEven_iff.mp hL) y)).trans <|
+      (congrArg _ (DFunLike.congr_fun (discriminantGroupEquiv_symm e) y)).trans
+        (e.discriminantGroupEquiv.apply_symm_apply y)
+
+/-- The discriminant-quadratic isometry induced by a composite is the composite of the induced
+isometries. -/
+@[simp]
+theorem discriminantQuadraticIsometry_trans (e : Isometry L M) (f : Isometry M N)
+    [L.IsNondegenerate] [M.IsNondegenerate] [N.IsNondegenerate] (hL : L.IsEven) :
+    (e.trans f).discriminantQuadraticIsometry hL =
+      (e.discriminantQuadraticIsometry hL).trans
+        (f.discriminantQuadraticIsometry (e.isEven_iff.mp hL)) :=
+  DFunLike.ext _ _ fun x ↦
+    (discriminantQuadraticIsometry_apply (e.trans f) hL x).trans <|
+      (DFunLike.congr_fun (discriminantGroupEquiv_trans e f) x).trans <|
+        (congrArg _ (discriminantQuadraticIsometry_apply e hL x).symm).trans
+          (discriminantQuadraticIsometry_apply f (e.isEven_iff.mp hL) _).symm
 
 end Isometry
 

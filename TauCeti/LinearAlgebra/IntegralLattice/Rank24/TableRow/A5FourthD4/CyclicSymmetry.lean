@@ -34,16 +34,21 @@ built from the glue-alphabet action there; this file builds it from the general 
 
 * `TauCeti.RootfulNiemeierType.a5FourthD4BlockRot`: the cyclic rotation of positions `1, 2, 3`
   generating `(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries`
-  (`symmetries_cyclic_a5FourthD4`), of order three (`orderOf_a5FourthD4BlockRot`).
-* `TauCeti.RootfulNiemeierType.a5FourthD4BlockRot_notMem_glueSymmetries`: the uncoupled block
-  rotation is not a glue symmetry of `a5FourthD4`.
-* `TauCeti.RootfulNiemeierType.a5FourthD4TrialityRotation`: the order-three self-isometry
-  (`orderOf_a5FourthD4TrialityRotation`) of `niemeierA5FourthD4` rotating the three marked `A₅`
-  components and applying `typeD4Triality` on the `D₄` component.
+  (`symmetries_cyclic_a5FourthD4`, `permCongr_finRotate_eq_a5FourthD4BlockRot`), of order three
+  (`orderOf_a5FourthD4BlockRot`).
+* `TauCeti.RootfulNiemeierType.a5FourthD4BlockRot_notMem_glueSymmetries`,
+  `TauCeti.RootfulNiemeierType.permCongr_finRotate_notMem_glueSymmetries_a5FourthD4`: the
+  uncoupled block rotation is not a glue symmetry of `a5FourthD4`.
+* `TauCeti.RootfulNiemeierType.a5FourthD4TrialityRotation`: the order-three, determinant-one
+  (`orderOf_a5FourthD4TrialityRotation`, `det_a5FourthD4TrialityRotation`) self-isometry of
+  `niemeierA5FourthD4` rotating the three marked `A₅` components and applying `typeD4Triality` on
+  the `D₄` component.
 * `TauCeti.RootfulNiemeierType.mem_symmetries_cyclic_a5FourthD4_iff`,
   `TauCeti.RootfulNiemeierType.a5FourthD4CyclicSymmetryHom`,
+  `TauCeti.RootfulNiemeierType.exists_a5FourthD4CyclicSymmetryHom_eq_pow`,
+  `TauCeti.RootfulNiemeierType.det_a5FourthD4CyclicSymmetryHom`,
   `TauCeti.RootfulNiemeierType.a5FourthD4CyclicSymmetryHom_injective`: membership characterization
-  and faithful action of `(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries` on
+  and faithful determinant-one action of `(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries` on
   `niemeierA5FourthD4`.
 
 ## References
@@ -108,6 +113,37 @@ theorem a5FourthD4BlockRot_eq_swap_mul_swap :
   · change a5FourthD4BlockRot (Fin.natAdd 4 (0 : Fin 1)) = _
     rw [a5FourthD4BlockRot_def, Equiv.Perm.finSumPerm_apply_natAdd]
     decide
+
+/-- Transporting the generator of `(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries` from
+`Fin (GluePattern.cyclic [2] [0, 2, 4] [0]).length` to `Fin a5FourthD4.components.length` gives
+`a5FourthD4BlockRot`. -/
+theorem permCongr_finRotate_eq_a5FourthD4BlockRot
+    (hlen : (GluePattern.cyclic [2] [0, 2, 4] [0]).length = a5FourthD4.components.length :=
+      by decide) :
+    (finCongr hlen).permCongr
+        (Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate 3)) 1) =
+      a5FourthD4BlockRot := by
+  let g : Equiv.Perm (Fin (GluePattern.cyclic [2] [0, 2, 4] [0]).length) :=
+    Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate 3)) 1
+  have hseed : (fun j : Fin (GluePattern.cyclic [0] [1, 2, 3] [4]).length ↦ (j : ℕ)) =
+      (GluePattern.cyclic [0] [1, 2, 3] [4]).seed := by
+    have h0 := GluePattern.ofFn_seed_cyclic_comp_pow [0] [1, 2, 3] [4] 0
+    rw [pow_zero, Equiv.Perm.coe_one] at h0
+    exact List.ofFn_injective ((by decide : _ = [0, 1, 2, 3, 4]).trans h0.symm)
+  have hrot : List.ofFn (fun j : Fin (GluePattern.cyclic [2] [0, 2, 4] [0]).length ↦ (g j : ℕ)) =
+      [0, 2, 3, 1, 4] := by
+    have h1 := GluePattern.ofFn_seed_cyclic_comp_pow [0] [1, 2, 3] [4] 1
+    rw [pow_one, ← hseed] at h1
+    exact h1
+  have hlist : List.ofFn (fun k : Fin a5FourthD4.components.length ↦
+        (((finCongr hlen).permCongr g k) : ℕ)) =
+      List.ofFn (fun k : Fin a5FourthD4.components.length ↦ (a5FourthD4BlockRot k : ℕ)) :=
+    (congrArg List.ofFn (funext fun k ↦ by
+      rw [Equiv.permCongr_apply, finCongr_apply_coe, finCongr_symm_apply])).trans
+      ((List.ofFn_congr hlen _).symm.trans
+        (hrot.trans (by rw [a5FourthD4BlockRot_eq_swap_mul_swap]; decide)))
+  ext k
+  exact congrFun (List.ofFn_injective hlist) k
 
 @[simp]
 theorem a5FourthD4BlockRot_zero : a5FourthD4BlockRot 0 = 0 := by
@@ -219,6 +255,18 @@ theorem a5FourthD4BlockRot_notMem_glueSymmetries :
   have hmin := four_le_sum_glueMinimum_of_mem_glueSubgroup a5FourthD4 (add_mem hv hw₃) hne
   rw [← glueWordMinimum_encodeGlueWord, henc] at hmin
   exact absurd hmin (by decide +kernel)
+
+/-- **In `A₅⁴ D₄`, the block rotation of `[2(024)0]` is not a pure position glue symmetry**:
+the generator of `(GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries`, transported to the component
+positions of `A₅⁴ D₄`, does not belong to `a5FourthD4.glueSymmetries`. -/
+theorem permCongr_finRotate_notMem_glueSymmetries_a5FourthD4
+    (hlen : (GluePattern.cyclic [2] [0, 2, 4] [0]).length = a5FourthD4.components.length :=
+      by decide) :
+    (finCongr hlen).permCongr
+        (Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate 3)) 1) ∉
+      a5FourthD4.glueSymmetries := by
+  rw [permCongr_finRotate_eq_a5FourthD4BlockRot hlen]
+  exact a5FourthD4BlockRot_notMem_glueSymmetries
 
 /-! ### Lifting `[2(024)0]` to `niemeierA5FourthD4` via `D₄` triality -/
 
@@ -419,6 +467,12 @@ theorem orderOf_a5FourthD4TrialityRotation : orderOf a5FourthD4TrialityRotation 
   have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
   exact orderOf_eq_prime a5FourthD4TrialityRotation_pow_three a5FourthD4TrialityRotation_ne_one
 
+/-- **`a5FourthD4TrialityRotation` is a proper isometry (`det = 1`).** -/
+@[simp]
+theorem det_a5FourthD4TrialityRotation :
+    Isometry.det niemeierA5FourthD4 a5FourthD4TrialityRotation = 1 :=
+  Isometry.det_eq_one_of_pow_eq_one (by decide : Odd 3) a5FourthD4TrialityRotation_pow_three
+
 /-! ### Faithful action of `[2(024)0].symmetries` on `niemeierA5FourthD4` -/
 
 /-- **The symmetries of the cyclic pattern `[2(024)0]` of `A₅⁴ D₄`** are `1`,
@@ -466,6 +520,34 @@ theorem a5FourthD4CyclicSymmetryHom_blockRot :
     a5FourthD4CyclicSymmetryHom ⟨a5FourthD4BlockRot, a5FourthD4BlockRot_mem_symmetries⟩ =
       a5FourthD4TrialityRotation := by
   simp [a5FourthD4CyclicSymmetryHom, mulEquivOfOrderOfEq_apply_gen]
+
+/-- Every symmetry of `[2(024)0]` acts on the component positions as `a5FourthD4BlockRot ^ k`
+(`k < 3`) and on `niemeierA5FourthD4` as the matching power `a5FourthD4TrialityRotation ^ k`. -/
+theorem exists_a5FourthD4CyclicSymmetryHom_eq_pow
+    (g : (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries) :
+    ∃ k < 3,
+      g.val = a5FourthD4BlockRot ^ k ∧
+        a5FourthD4CyclicSymmetryHom g = a5FourthD4TrialityRotation ^ k := by
+  rcases (mem_symmetries_cyclic_a5FourthD4_iff g.val).mp g.property with h | h | h
+  · exact ⟨0, by decide, h.trans (pow_zero _).symm, by
+      have hg1 : g = 1 := Subtype.ext h
+      rw [hg1, map_one, pow_zero]⟩
+  · exact ⟨1, by decide, h.trans (pow_one _).symm, by
+      have hgb : g = ⟨a5FourthD4BlockRot, a5FourthD4BlockRot_mem_symmetries⟩ := Subtype.ext h
+      rw [hgb, a5FourthD4CyclicSymmetryHom_blockRot, pow_one]⟩
+  · exact ⟨2, by decide, h, by
+      have hgb : g = ⟨a5FourthD4BlockRot, a5FourthD4BlockRot_mem_symmetries⟩ ^ 2 :=
+        Subtype.ext h
+      rw [hgb, map_pow, a5FourthD4CyclicSymmetryHom_blockRot]⟩
+
+/-- Every symmetry of the cyclic pattern `[2(024)0]` acts on `niemeierA5FourthD4` with
+determinant `1`. -/
+@[simp]
+theorem det_a5FourthD4CyclicSymmetryHom
+    (g : (GluePattern.cyclic [2] [0, 2, 4] [0]).symmetries) :
+    Isometry.det niemeierA5FourthD4 (a5FourthD4CyclicSymmetryHom g) = 1 := by
+  obtain ⟨k, -, -, hg⟩ := exists_a5FourthD4CyclicSymmetryHom_eq_pow g
+  rw [hg, map_pow, det_a5FourthD4TrialityRotation, one_pow]
 
 /-- **The cyclic pattern `[2(024)0]` acts faithfully on `niemeierA5FourthD4`.** -/
 theorem a5FourthD4CyclicSymmetryHom_injective :

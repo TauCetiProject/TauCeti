@@ -40,7 +40,8 @@ act on a lattice glued from copies of `D₄`.
   `D₄`, with coordinate formula `checkerboardTriality_apply`.
 * `TauCeti.IntegralLattice.checkerboardTriality_checkerboardSimpleRoot`: `τ` permutes the simple
   roots by `trialityPermD4`.
-* `TauCeti.IntegralLattice.checkerboardTriality_pow_three`: `τ³ = 1`.
+* `TauCeti.IntegralLattice.checkerboardTriality_pow_three`,
+  `TauCeti.IntegralLattice.det_checkerboardTriality`: `τ³ = 1` and `det τ = 1`.
 * `discriminantGroupEquiv_checkerboardTriality_checkerboardVectorClass` and its two companions:
   `τ` acts on the discriminant classes by `v ↦ c ↦ s ↦ v`.
 * `discriminantGroupEquiv_checkerboardTriality_typeD4QuaternaryDiscriminantQuadraticIsometry`:
@@ -48,8 +49,9 @@ act on a lattice glued from copies of `D₄`.
   powers give `TauCeti.IntegralLattice.checkerboardScalarIsometry`, realizing every unit of `F₄` on
   the checkerboard discriminant group.
 * `TauCeti.DynkinType.typeD4Triality`: the triality isometry of the root lattice of type `D₄`,
-  permuting the simple-root coordinates by `trialityPermD4` (`typeD4Triality_single`), whose
-  induced glue-alphabet isometry cycles the Conway--Sloane labels by
+  permuting the simple-root coordinates by `trialityPermD4` (`typeD4Triality_single`), of order
+  three and determinant one (`typeD4Triality_pow_three`, `det_typeD4Triality`), whose induced
+  glue-alphabet isometry `typeD4GlueAlphabetTriality` cycles the Conway--Sloane labels by
   `TauCeti.DynkinType.typeD4TrialityLabelPerm` (`1 ↦ 2 ↦ 3 ↦ 1`, of order three by
   `orderOf_typeD4TrialityLabelPerm`; `glueAlphabetIsometryOfIsometry_typeD4Triality_glueLabelEquiv`,
   `glueAlphabetIsometryOfIsometry_typeD4Triality_pow_glueLabelEquiv`).
@@ -182,6 +184,12 @@ theorem checkerboardTriality_pow_three : checkerboardTriality ^ 3 = 1 :=
     simp only [pow_three, Isometry.mul_apply, Isometry.one_apply,
       checkerboardTriality_eq_trialityLinearMap]
     exact trialityLinearMap_apply_apply_apply x
+
+/-- Triality on the checkerboard lattice `D₄` has determinant one. -/
+@[simp]
+theorem det_checkerboardTriality :
+    Isometry.det (checkerboardLattice 4) checkerboardTriality = 1 :=
+  Isometry.det_eq_one_of_pow_eq_one (by decide : Odd 3) checkerboardTriality_pow_three
 
 /-! ## The action on the discriminant group -/
 
@@ -370,6 +378,11 @@ theorem typeD4Triality_single (i : Fin 4) :
 theorem typeD4Triality_pow_three : typeD4Triality ht ^ 3 = 1 := by
   rw [typeD4Triality, ← map_pow, checkerboardTriality_pow_three, map_one]
 
+/-- Triality on the root lattice of type `D₄` has determinant one. -/
+@[simp]
+theorem det_typeD4Triality : Isometry.det ((D 4).rootLattice ht) (typeD4Triality ht) = 1 := by
+  rw [typeD4Triality, Isometry.det_conjMulEquiv, det_checkerboardTriality]
+
 /-- **The Conway--Sloane label permutation of `D₄` triality**: the 3-cycle `1 ↦ 2 ↦ 3 ↦ 1` fixing
 `0` (`s ↦ v ↦ c ↦ s`). -/
 def typeD4TrialityLabelPerm : Equiv.Perm (Fin 4) :=
@@ -391,6 +404,18 @@ theorem typeD4TrialityLabelPerm_two : typeD4TrialityLabelPerm 2 = 3 := by decide
 
 @[simp]
 theorem typeD4TrialityLabelPerm_three : typeD4TrialityLabelPerm 3 = 1 := by decide
+
+@[simp]
+theorem typeD4TrialityLabelPerm_symm_zero : typeD4TrialityLabelPerm.symm 0 = 0 := by decide
+
+@[simp]
+theorem typeD4TrialityLabelPerm_symm_one : typeD4TrialityLabelPerm.symm 1 = 3 := by decide
+
+@[simp]
+theorem typeD4TrialityLabelPerm_symm_two : typeD4TrialityLabelPerm.symm 2 = 1 := by decide
+
+@[simp]
+theorem typeD4TrialityLabelPerm_symm_three : typeD4TrialityLabelPerm.symm 3 = 2 := by decide
 
 /-- The triality permutation of the `D₄` labels has order three. -/
 @[simp]
@@ -443,6 +468,48 @@ theorem glueAlphabetIsometryOfIsometry_typeD4Triality_pow_glueLabelEquiv
       FiniteQuadraticModule.Isometry.trans_apply, ih,
       glueAlphabetIsometryOfIsometry_typeD4Triality_glueLabelEquiv, Equiv.Perm.mul_apply]
 
+/-- **Triality on the `D₄` glue alphabet**: the quadratic self-isometry of `(D 4).glueAlphabet`
+induced by `typeD4Triality` across `(D 4).glueAlphabetIsometry`. -/
+noncomputable def typeD4GlueAlphabetTriality :
+    FiniteQuadraticModule.Isometry ((D 4).glueAlphabet ht) ((D 4).glueAlphabet ht) :=
+  glueAlphabetIsometryOfIsometry (valid_D.mpr le_rfl) (valid_D.mpr le_rfl) (typeD4Triality ht)
+
+/-- `glueAlphabetIsometry` intertwines `typeD4GlueAlphabetTriality` with the discriminant-form
+action of `typeD4Triality`. -/
+theorem glueAlphabetIsometry_typeD4GlueAlphabetTriality (hv : (D 4).Valid)
+    (x : (D 4).glueAlphabet ht) :
+    (D 4).glueAlphabetIsometry hv ht (typeD4GlueAlphabetTriality ht x) =
+      (typeD4Triality ht).discriminantQuadraticIsometry ((D 4).isEven_rootLattice ht)
+        ((D 4).glueAlphabetIsometry hv ht x) :=
+  glueAlphabetIsometry_glueAlphabetIsometryOfIsometry hv hv (typeD4Triality ht) x
+
+/-- **`typeD4GlueAlphabetTriality` permutes the Conway--Sloane labels `0, 1, 2, 3` by
+`typeD4TrialityLabelPerm`**, fixing `0` and cycling `1 ↦ 2 ↦ 3 ↦ 1` (`s ↦ v ↦ c ↦ s`). -/
+@[simp]
+theorem typeD4GlueAlphabetTriality_glueLabelEquiv (i : Fin 4) :
+    typeD4GlueAlphabetTriality ht ((D 4).glueLabelEquiv ht i) =
+      (D 4).glueLabelEquiv ht (typeD4TrialityLabelPerm i) :=
+  glueAlphabetIsometryOfIsometry_typeD4Triality_glueLabelEquiv ht i
+
+/-- Reading the Conway--Sloane label after `typeD4GlueAlphabetTriality` applies
+`typeD4TrialityLabelPerm`. -/
+@[simp]
+theorem glueLabelEquiv_symm_typeD4GlueAlphabetTriality (x : (D 4).glueAlphabet ht) :
+    ((D 4).glueLabelEquiv ht).symm (typeD4GlueAlphabetTriality ht x) =
+      typeD4TrialityLabelPerm (((D 4).glueLabelEquiv ht).symm x) := by
+  obtain ⟨i, rfl⟩ := ((D 4).glueLabelEquiv ht).surjective x
+  rw [typeD4GlueAlphabetTriality_glueLabelEquiv, Equiv.symm_apply_apply, Equiv.symm_apply_apply]
+
+/-- Applying `typeD4GlueAlphabetTriality` three times returns its input. -/
+@[simp]
+theorem typeD4GlueAlphabetTriality_apply_apply_apply (x : (D 4).glueAlphabet ht) :
+    typeD4GlueAlphabetTriality ht
+        (typeD4GlueAlphabetTriality ht (typeD4GlueAlphabetTriality ht x)) = x := by
+  obtain ⟨i, rfl⟩ := ((D 4).glueLabelEquiv ht).surjective x
+  rw [typeD4GlueAlphabetTriality_glueLabelEquiv, typeD4GlueAlphabetTriality_glueLabelEquiv,
+    typeD4GlueAlphabetTriality_glueLabelEquiv]
+  exact congrArg ((D 4).glueLabelEquiv ht) (by fin_cases i <;> decide)
+
 variable (hv : (D 4).Valid) {F : Type*} [Field F] [Finite F] (hF : Nat.card F = 4) {ω : F}
   (hω : ω ^ 2 + ω + 1 = 0)
 
@@ -461,6 +528,23 @@ theorem discriminantGroupEquiv_typeD4Triality_glueAlphabetIsometry
     discriminantGroupEquiv_checkerboardTriality_typeD4QuaternaryDiscriminantQuadraticIsometry
       hF hω _).trans ?_))
   rw [QuadraticMap.IsometryEquiv.apply_symm_apply]
+
+/-- Read in `F₄` through `typeD4GlueAlphabetQuaternaryIsometry`, `typeD4GlueAlphabetTriality` is
+multiplication by `ω²`. -/
+@[simp]
+theorem typeD4GlueAlphabetQuaternaryIsometry_typeD4GlueAlphabetTriality
+    (x : (D 4).glueAlphabet (isSimplyLaced_D 4)) :
+    typeD4GlueAlphabetQuaternaryIsometry hF hω
+        (typeD4GlueAlphabetTriality (isSimplyLaced_D 4) x) =
+      ω ^ 2 * typeD4GlueAlphabetQuaternaryIsometry hF hω x := by
+  refine ((typeD4GlueAlphabetQuaternaryIsometry hF hω).symm_apply_eq.mp ?_).symm
+  apply EquivLike.injective ((D 4).glueAlphabetIsometry (valid_D.mpr le_rfl) (isSimplyLaced_D 4))
+  exact ((discriminantGroupEquiv_typeD4Triality_glueAlphabetIsometry (isSimplyLaced_D 4)
+    (valid_D.mpr le_rfl) hF hω x).symm).trans
+    ((((typeD4Triality (isSimplyLaced_D 4)).discriminantQuadraticIsometry_apply
+      ((D 4).isEven_rootLattice _) _).symm).trans
+      (glueAlphabetIsometry_typeD4GlueAlphabetTriality (isSimplyLaced_D 4)
+        (valid_D.mpr le_rfl) x).symm)
 
 /-- **The powers of triality act on the `D₄` glue alphabet as multiplication by the powers of
 `ω²`**, read through `typeD4GlueAlphabetQuaternaryIsometry`. Every nonzero element of `F₄` is a
