@@ -13,7 +13,6 @@ import Mathlib.FieldTheory.Separable
 import TauCeti.Algebra.Lie.AdjointAction.Basic
 import TauCeti.Algebra.Lie.Subalgebra.Cartan
 import TauCeti.Algebra.Lie.Subalgebra.Engel
-import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.Geometry.Symplectic.Plane
 import TauCeti.LinearAlgebra.End.Prod
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
@@ -64,13 +63,13 @@ itself, lies in the span of a Poisson-commuting family, then the family is nonde
 (`isNondegenerateQuadraticFamily_of_isSemisimple`): the Engel subalgebra of a semisimple element
 is its centralizer. These hypotheses pass to direct sums. On `(V₁ × V₂, ω₁ ⊕ ω₂)`, if `P₁` and
 `P₂` satisfy them for families `Q₁` and `Q₂` and the minimal polynomials of `A_{P₁}` and `A_{P₂}`
-are coprime, then every form Poisson-commuting with `P₁ ⊕ P₂` is a direct sum, and the two
-families extended by zero form a nondegenerate family
-(`isNondegenerateQuadraticFamily_sumElim_prod`). This is how the elliptic, hyperbolic and
-focus-focus blocks of Williamson's normal forms assemble. A nondegenerate form on a symplectic
-plane satisfies the hypotheses, after rescaling to separate the minimal polynomials, so any two
-nondegenerate plane forms give a nondegenerate family on the product of the two planes
-(`isNondegenerateQuadraticFamily_prod_of_finrank_eq_two`).
+are coprime, then every form Poisson-commuting with `P₁ ⊕ P₂` is a direct sum, and lies in the span
+of the two families extended by zero
+(`mem_span_sumElim_prod_of_quadraticPoissonBracket_eq_zero`). A nondegenerate form on a
+symplectic plane satisfies the hypotheses for the family it spans
+(`isSemisimple_hamiltonianEnd_of_finrank_eq_two`,
+`mem_span_singleton_of_quadraticPoissonBracket_eq_zero`). Direct sums of arbitrary nondegenerate
+families are treated in `TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Splitting`.
 
 ## Main results
 
@@ -80,10 +79,6 @@ nondegenerate plane forms give a nondegenerate family on the product of the two 
 * `TauCeti.SymplecticForm.mem_span_sumElim_prod_of_quadraticPoissonBracket_eq_zero`: the forms on
   a direct sum Poisson-commuting with `P₁ ⊕ P₂` lie in the span of the two families extended by
   zero, when the minimal polynomials of `A_{P₁}` and `A_{P₂}` are coprime.
-* `TauCeti.SymplecticForm.isNondegenerateQuadraticFamily_sumElim_prod`: direct sums of
-  nondegenerate families witnessed in this way are nondegenerate.
-* `TauCeti.SymplecticForm.isNondegenerateQuadraticFamily_prod_of_finrank_eq_two`: two
-  nondegenerate forms on symplectic planes give a nondegenerate family on their product.
 
 ## References
 
@@ -366,27 +361,6 @@ theorem mem_span_sumElim_prod_of_quadraticPoissonBracket_eq_zero {P₁ : Quadrat
   · rintro _ ⟨_, ⟨j, rfl⟩, rfl⟩
     exact ⟨Sum.inr j, by simp [L]⟩
 
-/-- **Direct sums of nondegenerate families.** Let `Q₁` and `Q₂` be families of pairwise
-Poisson-commuting quadratic forms on `V₁` and `V₂`. Suppose that `Pₖ` has semisimple Hamiltonian
-endomorphism, that every quadratic form Poisson-commuting with `Pₖ` lies in the span of `Qₖ`, and
-that the minimal polynomials of the Hamiltonian endomorphisms of `P₁` and `P₂` are coprime. Then
-the two families, extended by zero, form a nondegenerate family on `V₁ × V₂` for the direct-sum
-symplectic form, with `P₁ ⊕ P₂` playing the role of `P`. -/
-theorem isNondegenerateQuadraticFamily_sumElim_prod
-    (hQ₁ : ∀ i j, ω₁.quadraticPoissonBracket (Q₁ i) (Q₁ j) = 0)
-    (hQ₂ : ∀ i j, ω₂.quadraticPoissonBracket (Q₂ i) (Q₂ j) = 0) {P₁ : QuadraticForm ℝ V₁}
-    {P₂ : QuadraticForm ℝ V₂} (hP₁ : (ω₁.hamiltonianEnd P₁).IsSemisimple)
-    (hP₂ : (ω₂.hamiltonianEnd P₂).IsSemisimple)
-    (hPQ₁ : ∀ R, ω₁.quadraticPoissonBracket R P₁ = 0 → R ∈ Submodule.span ℝ (Set.range Q₁))
-    (hPQ₂ : ∀ R, ω₂.quadraticPoissonBracket R P₂ = 0 → R ∈ Submodule.span ℝ (Set.range Q₂))
-    (hc : IsCoprime (minpoly ℝ (ω₁.hamiltonianEnd P₁)) (minpoly ℝ (ω₂.hamiltonianEnd P₂))) :
-    (ω₁.prod ω₂).IsNondegenerateQuadraticFamily
-      (Sum.elim (fun i ↦ (Q₁ i).prod 0) fun j ↦ (0 : QuadraticForm ℝ V₁).prod (Q₂ j)) :=
-  isNondegenerateQuadraticFamily_of_isSemisimple
-    (quadraticPoissonBracket_sumElim_prod_eq_zero hQ₁ hQ₂) (P := P₁.prod P₂)
-    (by rw [hamiltonianEnd_prod]; exact hP₁.prodMap hP₂)
-    fun _ hR ↦ mem_span_sumElim_prod_of_quadraticPoissonBracket_eq_zero hPQ₁ hPQ₂ hc hR
-
 end Prod
 
 /-! ### Symplectic planes -/
@@ -423,56 +397,6 @@ theorem mem_span_singleton_of_quadraticPoissonBracket_eq_zero (hV : finrank ℝ 
     (by simpa using (ω.quadraticPoissonBracket_eq_zero_iff.1 hR).symm)
   exact Submodule.mem_span_singleton.2
     ⟨t, ω.hamiltonianEndEquiv.injective (by rw [map_smul, ht])⟩
-
-variable {V₁ V₂ : Type*} [AddCommGroup V₁] [Module ℝ V₁] [FiniteDimensional ℝ V₁]
-  [AddCommGroup V₂] [Module ℝ V₂] [FiniteDimensional ℝ V₂]
-  {ω₁ : SymplecticForm V₁} {ω₂ : SymplecticForm V₂}
-
-/-- **Products of two symplectic planes.** If `Q₁` and `Q₂` are nondegenerate quadratic forms on
-symplectic planes `V₁` and `V₂`, then `Q₁ ⊕ 0` and `0 ⊕ Q₂` form a nondegenerate family on
-`V₁ × V₂` for the direct-sum symplectic form. These are the elliptic–elliptic,
-elliptic–hyperbolic and hyperbolic–hyperbolic types of Williamson's classification in dimension
-four. -/
-theorem isNondegenerateQuadraticFamily_prod_of_finrank_eq_two (hV₁ : finrank ℝ V₁ = 2)
-    (hV₂ : finrank ℝ V₂ = 2) {Q₁ : QuadraticForm ℝ V₁} {Q₂ : QuadraticForm ℝ V₂}
-    (hQ₁ : Q₁.Nondegenerate) (hQ₂ : Q₂.Nondegenerate) :
-    (ω₁.prod ω₂).IsNondegenerateQuadraticFamily ![Q₁.prod 0, (0 : QuadraticForm ℝ V₁).prod Q₂] := by
-  obtain ⟨c₁, _, hc₁⟩ := exists_hamiltonianEnd_mul_self_eq_smul_one (ω := ω₁) hV₁ hQ₁
-  obtain ⟨c₂, hc₂0, hc₂⟩ := exists_hamiltonianEnd_mul_self_eq_smul_one (ω := ω₂) hV₂ hQ₂
-  -- Rescale `Q₂` by `s` so that the squares `c₁` and `s² c₂` of the two Hamiltonian
-  -- endomorphisms differ; their minimal polynomials are then coprime.
-  obtain ⟨s, hs0, hs⟩ : ∃ s : ℝ, s ≠ 0 ∧ c₁ ≠ s ^ 2 * c₂ := by
-    by_cases h : c₁ = c₂
-    · exact ⟨2, two_ne_zero, fun h' ↦ hc₂0 (by linarith)⟩
-    · exact ⟨1, one_ne_zero, by simpa using h⟩
-  have hsc₂ : ω₂.hamiltonianEnd (s • Q₂) * ω₂.hamiltonianEnd (s • Q₂) = (s ^ 2 * c₂) • 1 := by
-    rw [map_smul, smul_mul_smul_comm, hc₂, smul_smul, sq]
-  have hcop : IsCoprime (minpoly ℝ (ω₁.hamiltonianEnd Q₁))
-      (minpoly ℝ (ω₂.hamiltonianEnd (s • Q₂))) := by
-    refine ((Polynomial.isCoprime_sub_C_of_isUnit_sub (Polynomial.X ^ 2)
-      (sub_ne_zero.2 hs).isUnit).of_isCoprime_of_dvd_left
-      (minpoly.dvd _ _ ?_)).of_isCoprime_of_dvd_right (minpoly.dvd _ _ ?_)
-    · simp [sq, hc₁, Algebra.algebraMap_eq_smul_one]
-    · rw [map_sub, map_pow, Polynomial.aeval_X, Polynomial.aeval_C, sq, hsc₂,
-        Algebra.algebraMap_eq_smul_one, sub_self]
-  have h := isNondegenerateQuadraticFamily_sumElim_prod (ω₁ := ω₁) (ω₂ := ω₂)
-    (Q₁ := fun _ : Unit ↦ Q₁) (Q₂ := fun _ : Unit ↦ Q₂)
-    (fun _ _ ↦ ω₁.quadraticPoissonBracket_eq_zero_iff.2 (Commute.refl _))
-    (fun _ _ ↦ ω₂.quadraticPoissonBracket_eq_zero_iff.2 (Commute.refl _))
-    (isSemisimple_hamiltonianEnd_of_finrank_eq_two hV₁ hQ₁)
-    (by
-      rw [map_smul]
-      exact Module.End.IsSemisimple_smul s
-        (isSemisimple_hamiltonianEnd_of_finrank_eq_two hV₂ hQ₂))
-    (fun R hR ↦ by
-      simpa using mem_span_singleton_of_quadraticPoissonBracket_eq_zero hV₁ hQ₁ hR)
-    (fun R hR ↦ by
-      rw [quadraticPoissonBracket_smul_right, smul_eq_zero, or_iff_right hs0] at hR
-      simpa using mem_span_singleton_of_quadraticPoissonBracket_eq_zero hV₂ hQ₂ hR)
-    hcop
-  refine (isNondegenerateQuadraticFamily_iff_of_span_eq (congrArg _ ?_)).1 h
-  ext
-  simp
 
 end Plane
 
