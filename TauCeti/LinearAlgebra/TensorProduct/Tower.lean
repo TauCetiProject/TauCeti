@@ -30,6 +30,9 @@ across the tensor sign of `R ⊗[B] M`.
   structure map `A → B` is the base change of the `R`-algebra map `A →ₐ[R] B`.
 * `TensorProduct.AlgebraTensorModule.lTensor_eq_baseChange`: over the coefficient algebra itself,
   `TensorProduct.AlgebraTensorModule.lTensor` is `LinearMap.baseChange`.
+* `TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor`: cancelling the base
+  change `B ⊗[A] (A ⊗[R] M) ≃ B ⊗[R] M` sends `b ⊗ x` to `b` times the image of `x` in
+  `B ⊗[R] M`.
 
 * `TensorProduct.tmul_eq_one_tmul_smul_of_mem`: in `R ⊗[B] M`, for a subring `B` of `R` and
   `r ∈ B`, `r ⊗ m = 1 ⊗ r • m`.
@@ -71,6 +74,17 @@ theorem TensorProduct.AlgebraTensorModule.lTensor_eq_baseChange {R : Type*} (A :
     [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) :
     AlgebraTensorModule.lTensor A A f = f.baseChange A :=
   AlgebraTensorModule.ext fun a x => by simp
+
+/-- Cancelling the base change `B ⊗[A] (A ⊗[R] M) ≃ B ⊗[R] M` sends `b ⊗ x` to `b` times the image
+of `x` under the scalar extension `A ⊗[R] M → B ⊗[R] M` of the structure map `A → B`. -/
+theorem TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor {R A B M : Type*}
+    [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A] [Algebra R B] [Algebra A B]
+    [IsScalarTower R A B] [AddCommMonoid M] [Module R M] (b : B) (x : A ⊗[R] M) :
+    cancelBaseChange R A B B M (b ⊗ₜ x) =
+      b • (IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a m => simp [smul_tmul', Algebra.smul_def, mul_comm]
+  | add x y hx hy => simp only [tmul_add, map_add, hx, hy, smul_add]
 
 /-- In `R ⊗[B] M`, for a subring `B` of `R`, an element `r ∈ B` can be moved across the tensor
 sign: `r ⊗ m = 1 ⊗ r • m`. -/
