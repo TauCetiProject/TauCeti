@@ -71,6 +71,10 @@ on one side they tend to `e_ξ` as tempered distributions
 `exp(i ⟪x, ξ⟫) a(x, ξ)` boundedly in `x`
 (`TauCeti.Symbol.IsUniform.tendsto_integral_smul_quantizeSchwartzValue_cutoffExponential`).
 
+A spatial cutoff `ψ` equal to `1` wherever the symbol `r` does not vanish identically leaves
+`Op(r) T` unchanged: `ψ Op(r) T = Op(r) T`
+(`TauCeti.Symbol.smulLeftCLM_quantizeTempered_of_eq_one`).
+
 ## References
 
 * M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §1.
@@ -310,6 +314,41 @@ theorem quantizeTempered_toTemperedDistribution_exp_inner_mul_I (a : Symbol n �
     ContinuousLinearMap.apply_apply]
 
 end Exponential
+
+/-! ### Spatial cutoffs -/
+
+section Cutoff
+
+variable {F : Type*} [AddCommGroup F] [Module ℂ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [ContinuousConstSMul ℂ F] {r : Symbol n ℂ ℂ m}
+
+/-- **Spatial cutoffs.** If `ψ`, of temperate growth, is `1` at every position at which the symbol
+`r` does not vanish identically, then `ψ Op(r) T = Op(r) T` for every tempered distribution `T`. -/
+theorem smulLeftCLM_quantizeTempered_of_eq_one (hr : r.IsUniform)
+    {ψ : CoordinateSpace n → ℂ} (hψg : ψ.HasTemperateGrowth)
+    (hψ : ∀ x ξ, r.coefficient (x, ξ) ≠ 0 → ψ x = 1) (T : 𝓢'(CoordinateSpace n, F)) :
+    TemperedDistribution.smulLeftCLM F ψ (quantizeTempered F r hr T) =
+      quantizeTempered F r hr T := by
+  -- `ψ Op(r) u = Op(r) u` pointwise, so `Op(r)ᵗ (ψ φ) = Op(r)ᵗ φ`.
+  have hpt (u : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n) :
+      ψ x * quantizeUniformCLM r hr u x = quantizeUniformCLM r hr u x := by
+    by_cases hx : ∀ ξ, r.coefficient (x, ξ) = 0
+    · rw [quantizeUniformCLM_apply, quantizeSchwartzValue_congr_left (b := 0) hx u,
+        quantizeSchwartzValue_zero_left, mul_zero]
+    · obtain ⟨ξ, hξ⟩ := not_forall.1 hx
+      rw [hψ x ξ hξ, one_mul]
+  have key : transposeUniformCLM r hr ∘L SchwartzMap.smulLeftCLM ℂ ψ =
+      transposeUniformCLM r hr := by
+    refine eq_transposeUniformCLM fun u φ ↦ ?_
+    rw [ContinuousLinearMap.coe_comp, Function.comp_apply, ← integral_mul_quantizeUniformCLM]
+    refine integral_congr_ae (.of_forall fun x ↦ ?_)
+    simp only [SchwartzMap.smulLeftCLM_apply_apply hψg, smul_eq_mul]
+    rw [mul_comm (ψ x), mul_assoc, hpt]
+  ext φ
+  rw [TemperedDistribution.smulLeftCLM_apply_apply, quantizeTempered_apply_apply,
+    quantizeTempered_apply_apply, ← ContinuousLinearMap.comp_apply, key]
+
+end Cutoff
 
 end Symbol
 
