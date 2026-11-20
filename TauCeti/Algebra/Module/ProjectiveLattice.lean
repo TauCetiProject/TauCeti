@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.Localization.Module
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import TauCeti.Algebra.Module.LocalizedModule.Submodule
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Finite projective lattices
@@ -47,8 +48,6 @@ develops the algebraic carrier over an arbitrary coefficient algebra:
 
 * `TauCeti.ProjectiveLattice B K V`: finitely generated projective `B`-submodules of `V` spanning
   `V` over `K`.
-* `LinearMap.compLeft_single`: applying a linear map coordinatewise to `Pi.single i x` gives
-  `Pi.single i (f x)`.
 * `TauCeti.ProjectiveLattice.standard`: the image of `ι → B` in `ι → K`.
 * `TauCeti.ProjectiveLattice.mem_standard`: a vector lies in the standard lattice exactly when all
   its coordinates come from `B`.
@@ -67,14 +66,6 @@ develops the algebraic carrier over an arbitrary coefficient algebra:
 -/
 
 public section
-
-/-- Applying a linear map coordinatewise to the one-point family `Pi.single i x` gives the
-one-point family `Pi.single i (f x)`. -/
-@[simp]
-theorem LinearMap.compLeft_single {R M M₂ ι : Type*} [Semiring R] [AddCommMonoid M]
-    [AddCommMonoid M₂] [Module R M] [Module R M₂] [DecidableEq ι] (f : M →ₗ[R] M₂) (i : ι)
-    (x : M) : f.compLeft ι (Pi.single i x) = Pi.single i (f x) :=
-  funext (Pi.apply_single (fun _ ↦ f) (fun _ ↦ map_zero f) i x)
 
 namespace TauCeti
 
