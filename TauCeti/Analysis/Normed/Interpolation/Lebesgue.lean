@@ -17,7 +17,9 @@ couple, `TauCeti.CompatibleCouple.lebesgue`, inside the common ambient space `L�
 `Lᵖ` and Lorentz spaces (Bergh–Löfström, Chapter 5). Its intersection is `L^{p₀} ∩ L^{p₁}`, the
 pairs of functions agreeing almost everywhere (`TauCeti.CompatibleCouple.mem_lebesgue_inter_iff`),
 and its sum is `L^{p₀} + L^{p₁}`, in which two decompositions agree exactly when their sums agree
-almost everywhere (`TauCeti.CompatibleCouple.lebesgue_fstToSum_add_sndToSum_eq_iff`). At the
+almost everywhere (`TauCeti.CompatibleCouple.lebesgue_fstToSum_add_sndToSum_eq_iff`), and a
+decomposition is a function `g ∈ Lᵖ` exactly when its sum agrees with `g` almost everywhere
+(`TauCeti.CompatibleCouple.lebesgue_sumSpaceEmbed_fstToSum_add_sndToSum_eq_ofLp_iff`). At the
 exponents `1` and `∞` the couple has the same decompositions as `TauCeti.CompatibleCouple.l1Linfty`,
 so the embedding of its sum space into `L¹ + L^∞` is a surjective isometry
 (`TauCeti.CompatibleCouple.lebesgue_one_top_sumSpaceEmbed_surjective`,
@@ -87,6 +89,17 @@ theorem lebesgue_fstToSum_add_sndToSum_eq_iff {f₀ g₀ : Lp E p₀ μ} {f₁ g
     ← (l1Linfty 𝕜 E μ).sumSpaceEmbed_injective.eq_iff, map_add, sumSpaceEmbed_fstToSum,
     sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.sumSpaceEmbed_ofLp]
   exact L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_add_iff 𝕜
+
+/-- A decomposition `f₀ + f₁` in `L^{p₀} + L^{p₁}` is the function `g ∈ Lᵖ` of `L¹ + L^∞` exactly
+when `f₀ + f₁ = g` almost everywhere. -/
+theorem lebesgue_sumSpaceEmbed_fstToSum_add_sndToSum_eq_ofLp_iff {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {f₀ : Lp E p₀ μ} {f₁ : Lp E p₁ μ} {g : Lp E p μ} :
+    (lebesgue 𝕜 E μ p₀ p₁).sumSpaceEmbed
+        ((lebesgue 𝕜 E μ p₀ p₁).fstToSum f₀ + (lebesgue 𝕜 E μ p₀ p₁).sndToSum f₁) =
+      L1AddLinfty.ofLp g ↔ ⇑f₀ + ⇑f₁ =ᵐ[μ] ⇑g := by
+  simp only [← (l1Linfty 𝕜 E μ).sumSpaceEmbed_injective.eq_iff, map_add, sumSpaceEmbed_fstToSum,
+    sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.sumSpaceEmbed_ofLp]
+  exact L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_iff 𝕜
 
 /-- The Lebesgue couple `(L¹, L^∞)` and `l1Linfty` have the same decompositions: the embedding of
 the sum space of the former into `L¹ + L^∞` sends `g + h` to `g + h`. -/
