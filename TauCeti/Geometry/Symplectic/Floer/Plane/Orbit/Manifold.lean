@@ -32,8 +32,9 @@ pointwise in `M` and uniformly after applying `e`
 `TauCeti.SmoothTwoForm.IsNondegenerate`, with a closed-manifold corollary).
 
 Under two further assumptions the loops converge for all `R → ∞`, not only along a sequence: if
-the derivative of `e ∘ u ∘ φ` in the end coordinates is bounded on a part `ε s > b` of the end and
-the one-periodic orbits in `K` are isolated, then `ℓ_R → x` for a single orbit `x`
+the derivative of `e ∘ u ∘ φ` in the end coordinates `(s, t)` is bounded on the strip `ε s > b`,
+`0 ≤ t ≤ 1` of the end and the one-periodic orbits in `K` are isolated, then `ℓ_R → x` for a
+single orbit `x`
 (`exists_mem_periodicSolutions_tendstoUniformly_atTop_pssPlanePerturbation_of_isCompact`). On a
 compact boundaryless manifold, for a `C²` Hamiltonian all of whose one-periodic orbits are
 nondegenerate, the orbits are isolated, so the end of a finite-energy PSS plane with bounded
@@ -300,7 +301,7 @@ private theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_positive
         (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         u z) ≠ ⊤)
     {b C : ℝ}
-    (hC : ∀ z : ℝ × ℝ, b < z.1 →
+    (hC : ∀ z : ℝ × ℝ, b < z.1 → z.2 ∈ Icc 0 1 →
       ‖fderiv ℝ (e ∘ u ∘ realChart positive.cylindricalEndLift) z‖ ≤ C)
     (hiso : ∀ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1, (∀ t, x t ∈ K) →
       ∀ᶠ q in 𝓝 (x 0), ∀ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
@@ -319,7 +320,7 @@ private theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_positive
   have hsub : Ioi (max a b) ×ˢ (univ : Set ℝ) ⊆ Ioi a ×ˢ univ :=
     prod_mono (Ioi_subset_Ioi ha) subset_rfl
   obtain ⟨x, hx, hxK, hconv, hpt⟩ :=
-    hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isCompact hHs hH he hK
+    hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_of_floer_of_isolated hHs hH he hK
       he_inj hde (hu'.mono hsub) (fun s hs ↦ hper s (ha.trans_lt hs))
       (fun s hs t ↦ huK _ (hmem (s, t) (ha.trans_lt hs)))
       (fun z ↦ J (realChart positive.cylindricalEndLift z)) hc
@@ -331,7 +332,7 @@ private theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_positive
             (hfloer' z ⟨ha.trans_lt hz.1, hz.2⟩))
       (ne_top_of_le_ne_top hE'
         (lintegral_mono_set (prod_mono (Ioi_subset_Ioi ha) subset_rfl)))
-      (fun z hz ↦ hC z ((le_max_right a b).trans_lt hz.1)) hiso
+      (fun z hz ↦ hC z ((le_max_right a b).trans_lt hz.1) hz.2) hiso
   simp only [comp_apply, realChart_positive_mk] at hconv hpt
   exact ⟨x, hx, hxK, hconv, hpt⟩
 
@@ -434,12 +435,12 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_pssPlanePerturbation
 /-- **Convergence of the end of a finite-energy PSS plane in a manifold to an isolated orbit.**
 Under the hypotheses of
 `exists_mem_periodicSolutions_tendstoUniformly_pssPlanePerturbation_of_isCompact`, suppose
-moreover that the derivative of `e ∘ u ∘ φ` in the end coordinates is bounded on a part
-`ε s > b` of the end, where `φ` is the end lift `p.cylindricalEndLift` and `ε = p.endSign`, and
-that the one-periodic orbits of the Hamiltonian vector field in `K` are isolated: for each such
-orbit `x`, no other orbit in `K` starts close to `x 0`. Then the loops `ℓ_R(t) = u(φ(ε R + i t))`
-converge, as `R → ∞`, to a single one-periodic orbit `x` in `K`, pointwise in `M` and uniformly
-after applying `e`. -/
+moreover that the derivative of `e ∘ u ∘ φ` in the end coordinates `(s, t)` is bounded on the
+strip `ε s > b`, `0 ≤ t ≤ 1` of the end, where `φ` is the end lift `p.cylindricalEndLift` and
+`ε = p.endSign`, and that the one-periodic orbits of the Hamiltonian vector field in `K` are
+isolated: for each such orbit `x`, no other orbit in `K` starts close to `x 0`. Then the loops
+`ℓ_R(t) = u(φ(ε R + i t))` converge, as `R → ∞`, to a single one-periodic orbit `x` in `K`,
+pointwise in `M` and uniformly after applying `e`. -/
 theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_pssPlanePerturbation_of_isCompact
     (hω : ω.IsNondegenerate) (p : PSSPlane) (hH : Periodic H 1)
     (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) (he : ContMDiff I 𝓘(ℝ, F) 1 e)
@@ -462,7 +463,7 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_pssPlanePerturbation
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         u z) ≠ ⊤)
     {b C : ℝ}
-    (hC : ∀ z : ℝ × ℝ, b < p.endSign * z.1 →
+    (hC : ∀ z : ℝ × ℝ, b < p.endSign * z.1 → z.2 ∈ Icc 0 1 →
       ‖fderiv ℝ (e ∘ u ∘ realChart p.cylindricalEndLift) z‖ ≤ C)
     (hiso : ∀ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1, (∀ t, x t ∈ K) →
       ∀ᶠ q in 𝓝 (x 0), ∀ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
@@ -480,15 +481,22 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_pssPlanePerturbation
   have hHs' : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t y ↦ -H (-t) y) :=
     (hHs.comp ((contDiff_neg.contMDiff (n := 1)).prodMap contMDiff_id)).neg
   -- In end coordinates the end lift of the negative plane is that of the positive plane after the
-  -- reflection `z ↦ -z`, so the derivative bound carries over.
-  have hC' (z : ℝ × ℝ) (hz : b < z.1) :
+  -- reflection `z ↦ -z`, and the loops of the positive plane are `1`-periodic, so the derivative
+  -- bound at `(s, t)` is the bound at `(-s, 1 - t)` for the negative plane.
+  have hC' (z : ℝ × ℝ) (hz : b < z.1) (ht : z.2 ∈ Icc 0 1) :
       ‖fderiv ℝ (e ∘ u ∘ realChart positive.cylindricalEndLift) z‖ ≤ C := by
+    have hper : (fun w ↦ (e ∘ u ∘ realChart positive.cylindricalEndLift) (w + (0, -1))) =
+        e ∘ u ∘ realChart positive.cylindricalEndLift := by
+      funext ⟨s, t⟩
+      simpa only [comp_apply, Prod.mk_add_mk, add_zero, ← sub_eq_add_neg,
+        realChart_positive_mk] using congrArg (fun w ↦ e (u (Complex.equivRealProdCLM w)))
+          ((positive.periodic_cylindricalEndLift (positive.endSign * s)).sub_eq t)
     have h : e ∘ u ∘ realChart positive.cylindricalEndLift =
         fun w ↦ (e ∘ u ∘ realChart negative.cylindricalEndLift) ((-1 : ℝ) • w) := by
       funext w
       simp [TauCeti.Complex.realChart_apply, cylindricalEndLift_negative]
-    rw [h, fderiv_comp_smul, neg_one_smul, norm_neg]
-    exact hC _ (by simpa [endSign_negative] using hz)
+    rw [← hper, fderiv_comp_add_right, h, fderiv_comp_smul, neg_one_smul, norm_neg]
+    exact hC _ (by simpa [endSign_negative] using hz) (by simpa using ⟨ht.2, ht.1⟩)
   -- The orbits of `-H(-t)` are those of `H` run backwards, so they are isolated as well.
   have hiso' (y) (hy : y ∈ periodicSolutions
       (fun t ↦ ω.hamiltonianVectorField (fun x ↦ -H (-t) x)) 1) (hyK : ∀ t, y t ∈ K) :
@@ -523,10 +531,10 @@ map. Let `u` be `C¹` on a part `‖w‖ > r` of the end, solving the Floer equa
 `e : M → F` be a `C¹` injective map with injective differential into a finite-dimensional normed
 space, suppose that the structures are uniformly tame with respect to `e`,
 `c ‖d e v‖² ≤ ω(v, J(z) v)` with `c > 0`, and that the derivative of `e ∘ u ∘ φ` in the end
-coordinates is bounded on a part `ε s > b` of the end, where `φ` is the end lift
-`p.cylindricalEndLift` and `ε = p.endSign`. Then the loops `ℓ_R(t) = u(φ(ε R + i t))` converge, as
-`R → ∞`, to a single one-periodic orbit `x` of the Hamiltonian vector field, pointwise in `M` and
-uniformly after applying `e`. -/
+coordinates `(s, t)` is bounded on the strip `ε s > b`, `0 ≤ t ≤ 1` of the end, where `φ` is the
+end lift `p.cylindricalEndLift` and `ε = p.endSign`. Then the loops `ℓ_R(t) = u(φ(ε R + i t))`
+converge, as `R → ∞`, to a single one-periodic orbit `x` of the Hamiltonian vector field, pointwise
+in `M` and uniformly after applying `e`. -/
 theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_pssPlanePerturbation
     [CompactSpace M] [T2Space M] [BoundarylessManifold I M] (hω : ω.IsNondegenerate)
     (p : PSSPlane) (hH : Periodic H 1) (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 2 (uncurry H))
@@ -548,7 +556,7 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_pssPlanePerturbation
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         u z) ≠ ⊤)
     {b C : ℝ}
-    (hC : ∀ z : ℝ × ℝ, b < p.endSign * z.1 →
+    (hC : ∀ z : ℝ × ℝ, b < p.endSign * z.1 → z.2 ∈ Icc 0 1 →
       ‖fderiv ℝ (e ∘ u ∘ realChart p.cylindricalEndLift) z‖ ≤ C)
     (hnd : ∀ x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
       IsNondegenerateFixedPt I (timeDependentFlowOf (fun t ↦ ω.hamiltonianVectorField (H t)) 0 1)
@@ -558,20 +566,13 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_atTop_pssPlanePerturbation
         (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I))))) (e ∘ x) atTop ∧
       ∀ t, Tendsto (fun R ↦ u (Complex.equivRealProdCLM
         (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x t)) := by
-  have hX := hω.contMDiff_hamiltonianVectorField_uncurry (n := 1) (by simp)
-    (hHs.of_le (by norm_num))
-  -- A nondegenerate orbit starts at an isolated fixed point of the time-one map, so it is
-  -- isolated among the orbits.
-  have hiso (x) (hx : x ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1) :
-      ∀ᶠ q in 𝓝 (x 0), ∀ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H t)) 1,
-        y 0 = q → y = x :=
-    eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt hX hx
-      (by simpa only [zero_add] using (hnd x hx).eventually_not_isFixedPt)
+  -- Nondegenerate orbits are isolated among the orbits.
   obtain ⟨x, hx, -, h⟩ :=
     hω.exists_mem_periodicSolutions_tendstoUniformly_atTop_pssPlanePerturbation_of_isCompact p hH
       (hHs.of_le one_le_two) he isCompact_univ he_inj.injOn (fun q _ ↦ hde q) hu
-      (fun _ _ ↦ mem_univ _) J hc hJc hfloer hE hC fun x hx _ ↦
-        (hiso x hx).mono fun _ hq y hy _ ↦ hq y hy
+      (fun _ _ ↦ mem_univ _) J hc hJc hfloer hE hC
+      (hω.forall_mem_periodicSolutions_hamiltonianVectorField_eventually_eq hHs
+        fun x hx _ ↦ hnd x hx)
   exact ⟨x, hx, h⟩
 
 end IsNondegenerate
