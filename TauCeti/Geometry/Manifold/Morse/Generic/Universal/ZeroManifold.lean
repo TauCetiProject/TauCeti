@@ -236,9 +236,7 @@ theorem exists_mfderiv_snd_eq_parameterProj_comp_universalDifferential (hk : 1 �
   have hR : (D : C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ →ₗ[ℝ] E × C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯).range =
       (L : E × C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ →ₗ[ℝ] E →L[ℝ] ℝ).ker := hrange
   have hclo : IsClosed (range D) := by
-    change IsClosed ((D : C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ →ₗ[ℝ] E × C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯).range :
-      Set (E × C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯))
-    rw [hR]
+    rw [← ContinuousLinearMap.coe_coe, ← LinearMap.coe_range, hR]
     exact L.isClosed_ker
   let T := (D.equivRange hinj hclo).trans (ContinuousLinearEquiv.ofEq _ _ hR)
   refine ⟨T, ?_⟩
