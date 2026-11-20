@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Connected.LocallyPathConnected
 public import Mathlib.Topology.Connected.PathConnected
 public import TauCeti.Topology.Circle.Loop
 public import TauCeti.Topology.CompactOpen
@@ -27,7 +28,8 @@ compatibly with evaluation at `1 ∈ S¹`, constant loops, and the based loop fi
 Its subspace `𝓛₀Q` of **contractible** loops (`TauCeti.contractibleLoops`) consists of the loops
 joined by a path in the free loop space to a constant loop, equivalently to the constant loop at
 their own basepoint (`mem_contractibleLoops_iff_joined_const`), so `𝓛₀Q` is the union of the
-path components of the constant loops (`pathComponent_const_subset_contractibleLoops`). The
+path components of the constant loops (`pathComponent_const_subset_contractibleLoops`), and so is
+open when the free loop space is locally path-connected (`TauCeti.isOpen_contractibleLoops`). The
 constant loops embed in `𝓛₀Q` (`TauCeti.isEmbedding_constContractibleLoop`), with retraction
 `TauCeti.basepointContractibleLoop` given by evaluation at `1`. A path in the free loop space
 that starts at a constant loop stays in `𝓛₀Q` (`TauCeti.constLoopPath_mem_contractibleLoops`),
@@ -304,6 +306,18 @@ theorem mem_contractibleLoops_iff_joined_const {γ : C(Circle, Q)} :
     (ContinuousMap.continuous_const' (X := Circle) (Y := Q))
   simp only [mappingSpaceEval_apply, ContinuousMap.const_apply] at hc
   exact hq.trans hc.symm
+
+variable (Q) in
+/-- In a locally path-connected free loop space, the contractible free loops form an open set:
+they are the union of the path components of the constant loops, and path components are open. -/
+theorem isOpen_contractibleLoops [LocallyPathConnectedSpace C(Circle, Q)] :
+    IsOpen (contractibleLoops Q) := by
+  have : contractibleLoops Q = ⋃ q, pathComponent (ContinuousMap.const Circle q) := by
+    ext γ
+    simp only [mem_contractibleLoops_iff, Set.mem_iUnion]
+    exact exists_congr fun _ => ⟨Joined.symm, Joined.symm⟩
+  rw [this]
+  exact isOpen_iUnion fun q => IsOpen.pathComponent _
 
 end TauCeti
 

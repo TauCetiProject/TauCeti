@@ -37,8 +37,10 @@ This file develops the coordinate structure of `C₀(I, E)`:
   equal to its maximum on that set (`ZeroAtInftyContinuousMap.norm_eq_sup_of_forall_eq_zero`);
 * `ZeroAtInftyContinuousMap.singleCLM R i`: the isometry `x ↦ single i x` as a continuous linear
   map;
-* `ZeroAtInftyContinuousMap.tendsto_toWeakDual_evalCLM_cofinite`: the coordinate functionals
-  `evalCLM R i` of `C₀(I, R)` are weak-star null along the cofinite filter;
+* `ZeroAtInftyContinuousMap.tendsto_toWeakDual_evalCLM_cofinite` and
+  `ZeroAtInftyContinuousMap.opNorm_evalCLM`: the coordinate functionals `evalCLM R i` of
+  `C₀(I, R)` are weak-star null along the cofinite filter, and over a nontrivially normed field and
+  nontrivial normed space have operator norm `1`;
 * `ZeroAtInftyContinuousMap.cons`: prepend one entry to a null sequence, with norm
   `max ‖b‖ ‖f‖` (`ZeroAtInftyContinuousMap.norm_cons`);
 * `ZeroAtInftyContinuousMap.exists_norm_coe_eq_norm`: the sup norm is attained at some
@@ -487,6 +489,20 @@ theorem tendsto_toWeakDual_evalCLM_cofinite :
     have : Tendsto (fun i ↦ evalCLM R i f) cofinite (𝓝 0) := by simpa using f.tendsto_cofinite
     -- `topDualPairing R _ (StrongDual.toWeakDual g) f` is `g f` by definition of the pairing.
     exact this
+
+/-- Over a nontrivially normed field and a nontrivial normed space, evaluation at a point of a
+discrete index has operator norm `1`. -/
+@[simp]
+theorem opNorm_evalCLM {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [Nontrivial E] (i : I) :
+    ‖(evalCLM 𝕜 i : C₀(I, E) →L[𝕜] E)‖ = 1 := by
+  classical
+  refine le_antisymm (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
+    simpa only [evalCLM_apply, one_mul] using f.norm_coe_le_norm i) ?_
+  obtain ⟨e, he⟩ := exists_ne (0 : E)
+  have hle := (evalCLM 𝕜 i : C₀(I, E) →L[𝕜] E).le_opNorm (single i e)
+  rw [evalCLM_apply, single_eq_same, norm_single] at hle
+  exact le_of_mul_le_mul_right (by simpa only [one_mul] using hle) (norm_pos_iff.mpr he)
 
 section Ring
 

@@ -27,7 +27,9 @@ instead.
 The second statement is the diagonal extraction of a subsequence along which countably many
 sequences converge at once (`TauCeti.extraction_forall_exists_tendsto`): if every subsequence of
 each of the sequences `x j` has a convergent further subsequence, a single subsequence makes all of
-them converge. It is the compactness step of the Arzelà–Ascoli theorem.
+them converge. It is the compactness step of the Arzelà–Ascoli theorem. For finitely many
+properties of extractions, each preserved by further extraction, the same holds one property at a
+time (`TauCeti.extraction_forall_mem_finset`).
 
 Finally, a sequence converges along `atTop` exactly when it does so along real (or other floor
 semiring) cutoffs `x ↦ u ⌊x⌋₊` (`TauCeti.tendsto_comp_natFloor_iff`). This compares limits of
@@ -102,6 +104,24 @@ theorem extraction_forall_exists_tendsto {X : Type*} {l : X → Filter X} {x : �
       tendsto_id)).congr' ?_⟩
     filter_upwards [eventually_ge_atTop j] with n hn
     simp only [Function.comp_apply, ← (hm n).2, max_eq_right hn]
+
+/-- **Common extraction for finitely many properties.** Let `P i` be properties of extractions
+`ψ : ℕ → ℕ`, for `i` in a finite set `s`, each preserved by passing to a further extraction. If
+every extraction has, for each `i ∈ s`, a further extraction with property `P i`, then a single
+extraction has every property `P i`, `i ∈ s`. -/
+theorem extraction_forall_mem_finset {ι : Type*} {s : Finset ι} {P : ι → (ℕ → ℕ) → Prop}
+    (h : ∀ i ∈ s, ∀ ψ : ℕ → ℕ, StrictMono ψ → ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧ P i (ψ ∘ ψ'))
+    (hP : ∀ i ∈ s, ∀ ψ ψ' : ℕ → ℕ, StrictMono ψ' → P i ψ → P i (ψ ∘ ψ')) :
+    ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∀ i ∈ s, P i ψ := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => exact ⟨id, strictMono_id, by simp⟩
+  | insert a s _ ih =>
+    obtain ⟨ψ, hψ, hs⟩ := ih (fun i hi ↦ h i (Finset.mem_insert_of_mem hi))
+      fun i hi ↦ hP i (Finset.mem_insert_of_mem hi)
+    obtain ⟨ψ', hψ', ha⟩ := h a (Finset.mem_insert_self a s) ψ hψ
+    exact ⟨ψ ∘ ψ', hψ.comp hψ', (Finset.forall_mem_insert _ _ _).2
+      ⟨ha, fun i hi ↦ hP i (Finset.mem_insert_of_mem hi) ψ ψ' hψ' (hs i hi)⟩⟩
 
 /-- A sequence `u` converges along `atTop` if and only if its values `u ⌊x⌋₊` at the natural
 floors of `x` converge as `x → ∞` in a floor semiring such as `ℝ`. -/
