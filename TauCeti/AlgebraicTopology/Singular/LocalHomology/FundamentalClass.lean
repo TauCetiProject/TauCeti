@@ -747,6 +747,13 @@ def uliftIntHomologyIso (X : TopCat.{0}) (k : ℕ) :
       (TopCat.toSSet.obj X).homology (ModuleCat.of ℤ ℤ) k :=
   ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).mapIso uliftIntIso).app X
 
+/-- The identification of singular homology with coefficients in `ULift ℤ` and in `ℤ` is the map
+induced on homology by the coefficient isomorphism `uliftIntIso`. -/
+theorem uliftIntHomologyIso_hom (X : TopCat.{0}) (k : ℕ) :
+    (uliftIntHomologyIso X k).hom =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).map uliftIntIso.hom).app X :=
+  (rfl)
+
 /-- Changing coefficients from `ULift ℤ` to `ℤ` commutes with the maps induced by continuous
 maps. -/
 @[reassoc]

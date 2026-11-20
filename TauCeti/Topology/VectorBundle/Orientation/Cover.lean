@@ -27,7 +27,8 @@ of orientations of `F`, so the projection is a covering map
 fixed-point-free deck involution (`TauCeti.VectorBundleOrientationCover.deck`).
 
 A family of fibre orientations is an orientation of the bundle exactly when the associated
-section of the cover is continuous (`TauCeti.VectorBundleOrientation.continuous_mk_cover` and
+section of the cover is continuous (`TauCeti.VectorBundleOrientation.continuous_mk_cover`,
+`TauCeti.VectorBundleOrientation.coverSection` and
 `TauCeti.VectorBundleOrientation.ofContinuous`), so a bundle is orientable if and only if its
 orientation double cover has a continuous section
 (`TauCeti.VectorBundleOrientation.nonempty_iff_exists_section`). Over a connected base, a
@@ -52,6 +53,8 @@ in a trivialization have locally constant determinant sign.
   a trivialization.
 * `TauCeti.VectorBundleOrientationCover.deck`: the deck involution reversing orientations.
 * `TauCeti.VectorBundleOrientation.ofContinuous`: an orientation from a continuous section.
+* `TauCeti.VectorBundleOrientation.coverSection`: the continuous section of the cover given by an
+  orientation.
 
 ## Main results
 
@@ -517,12 +520,52 @@ theorem continuous_mk_cover (hι : Fintype.card ι = finrank ℝ F)
     (trivializationAt F E b).open_baseSet.mem_nhds hx] with y hy hy'
   exact ⟨hy', (hy hy').trans hxo⟩
 
+/-- The continuous section `b ↦ (b, o b)` of the orientation double cover given by an orientation
+`o` of the bundle, provided `ι` has cardinality the rank of the bundle. -/
+def coverSection (hι : Fintype.card ι = finrank ℝ F) (o : VectorBundleOrientation F E ι) :
+    C(B, VectorBundleOrientationCover F E ι) :=
+  ⟨fun b ↦ ⟨b, o b⟩, o.continuous_mk_cover hι⟩
+
+/-- The section given by an orientation `o` sends `b` to `(b, o b)`. -/
+@[simp]
+theorem coverSection_apply (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) (b : B) :
+    o.coverSection hι b = ⟨b, o b⟩ :=
+  (rfl)
+
+/-- The section given by an orientation is a section of the projection. -/
+theorem proj_coverSection (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) (b : B) : (o.coverSection hι b).proj = b :=
+  (rfl)
+
+/-- The section given by an orientation is injective. -/
+theorem coverSection_injective (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) : Function.Injective (o.coverSection hι) :=
+  Function.LeftInverse.injective (g := VectorBundleOrientationCover.proj) (o.proj_coverSection hι)
+
+/-- The deck involution exchanges the sections given by `o` and by the opposite orientation. -/
+theorem deck_coverSection (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) (b : B) :
+    VectorBundleOrientationCover.deck (o.coverSection hι b) = (-o).coverSection hι b :=
+  (rfl)
+
+/-- The sheets of the sections given by `o` and by the opposite orientation are disjoint. -/
+theorem disjoint_range_coverSection_neg (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) :
+    Disjoint (Set.range (o.coverSection hι)) (Set.range ((-o).coverSection hι)) := by
+  refine Set.disjoint_left.2 ?_
+  rintro _ ⟨x, rfl⟩ ⟨y, h⟩
+  obtain rfl : y = x := by
+    simpa only [proj_coverSection] using congrArg VectorBundleOrientationCover.proj h
+  exact VectorBundleOrientationCover.deck_ne_self _ ((o.deck_coverSection hι y).trans h)
+
 /-- A bundle of rank `card ι` is orientable if and only if its orientation double cover has a
 continuous section. -/
 theorem nonempty_iff_exists_section (hι : Fintype.card ι = finrank ℝ F) :
     Nonempty (VectorBundleOrientation F E ι) ↔
       ∃ s : B → VectorBundleOrientationCover F E ι, Continuous s ∧ ∀ b, (s b).proj = b := by
-  refine ⟨fun ⟨o⟩ ↦ ⟨_, o.continuous_mk_cover hι, fun _ ↦ rfl⟩, fun ⟨s, hs, hproj⟩ ↦ ?_⟩
+  refine ⟨fun ⟨o⟩ ↦ ⟨_, (o.coverSection hι).continuous, o.proj_coverSection hι⟩,
+    fun ⟨s, hs, hproj⟩ ↦ ?_⟩
   -- A section is determined by its fibre orientations, transported along `(s b).proj = b`.
   have key (p : VectorBundleOrientationCover F E ι) (b : B) (h : p.proj = b) :
       (⟨b, h ▸ p.orientation⟩ : VectorBundleOrientationCover F E ι) = p := by
