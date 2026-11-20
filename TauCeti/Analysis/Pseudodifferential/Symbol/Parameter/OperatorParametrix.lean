@@ -14,13 +14,14 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Sobolev
 
 Let `a((x, ξ), z)` be a strongly parameter-dependent symbol of order `m` (`TauCeti.ParameterSymbol`)
 which is elliptic with parameter and polynomial of degree less than `d` in the frequency, such as
-the symbol of `A - z` for an elliptic differential operator `A` of order `m`; the symbol
+the symbol of `A - z` for an elliptic differential operator `A` of order `2` whose principal symbol
+takes no values in `Λ` (then `m = 2`, since `z` counts as two frequency orders); the symbol
 `(s + ‖ξ‖²) - z` of `s - Δ - z` is an example (`TauCeti.ParameterSymbol.shiftedLaplacian`). Its
 formal right parametrix `b₀, b₁, …` (`TauCeti.ParameterSymbol.rightInverseTerms`), with `bⱼ` of
 order `-m - j`, solves the formal composition equations order by order. This file turns the first
-`N` of these terms into an operator statement, with a remainder that decays in the spectral
-parameter. These are the composition and remainder estimates that compare the quantized parametrix
-with the resolvent `(A - z)⁻¹`, before the contour integral defining the complex powers of `A`.
+`N` of these terms into a local right-parametrix identity for the operators, whose remainder decays
+uniformly in the spectral parameter `z`. It is an input to the comparison of the quantized
+parametrix with the resolvent `(A - z)⁻¹`, which this file does not make.
 
 Let `Bₙ = ∑_{j < N} bⱼ` (`TauCeti.ParameterSymbol.rightParametrix`), and let `ψ` and `ψ₁` be
 smooth cutoffs in the position, with `ψ₁` compactly supported and equal to `1` near the support of
@@ -76,6 +77,39 @@ open scoped ContDiff Topology SchwartzMap
 
 namespace TauCeti
 
+namespace Symbol
+
+variable {n : ℕ} {m m' m'' : ℝ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+  [CompleteSpace V] [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
+
+/-- If at the position `x` the composition `a # Q` with a compactly supported `Q` is the identity
+plus `R` after multiplication by `ψ(x)`, then `ψ · Op(a) (Op(Q) u) = ψ · u + Op(ψ R) u` at `x`. -/
+private theorem smul_quantizeSchwartzValue_sharp_eq_add {a : Symbol n V W m} {Q : Symbol n W V m'}
+    (hQ : Q.HasCompactSpatialSupport) (R : Symbol n W W m'') {ψ : CoordinateSpace n → ℝ}
+    (hψ : ContDiff ℝ ∞ ψ) (u : 𝓢(CoordinateSpace n, W)) (x : CoordinateSpace n)
+    (h : ∀ ξ, (ψ x : ℂ) • (a.sharp Q hQ).coefficient (x, ξ) =
+      (ψ x : ℂ) • (ContinuousLinearMap.id ℂ W + R.coefficient (x, ξ))) :
+    (ψ x : ℂ) • quantizeSchwartzValue a.coefficient
+        ((hQ.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+          (Q.contDiff_quantizeSchwartzValue u)) x =
+      (ψ x : ℂ) • u x + quantizeSchwartzValue ((ofSpatial
+        (fun x => ψ x • ContinuousLinearMap.id ℂ W) (hψ.smul contDiff_const)).comp R).coefficient
+          u x := by
+  -- The identity as the coefficient of a symbol, so that the quantization is additive in it.
+  have hId : (ofSpatial (n := n) (fun _ => ContinuousLinearMap.id ℂ W)
+      contDiff_const).coefficient = fun _ => ContinuousLinearMap.id ℂ W :=
+    funext fun p => coefficient_ofSpatial _ _ p
+  calc _ = quantizeSchwartzValue ((ψ x : ℂ) • (a.sharp Q hQ).coefficient) u x := by
+        rw [quantizeSchwartzValue_smul_left, quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue]
+    _ = quantizeSchwartzValue ((ψ x : ℂ) • ((ofSpatial (fun _ => ContinuousLinearMap.id ℂ W)
+          contDiff_const).coefficient + R.coefficient)) u x :=
+        quantizeSchwartzValue_congr_left (fun ξ => by simpa [hId] using h ξ) u
+    _ = _ := by
+        rw [quantizeSchwartzValue_smul_left, quantizeSchwartzValue_coefficient_add, hId,
+          quantizeSchwartzValue_id, smul_add, quantizeSchwartzValue_ofSpatial_smul_id_comp]
+
+end Symbol
+
 namespace ParameterSymbol
 
 variable {n : ℕ} {Λ : Opens ℂ} {m m' : ℝ}
@@ -93,19 +127,6 @@ theorem toSymbol_sharpTerm (b : ParameterSymbol n Λ W U m') (a : ParameterSymbo
   Symbol.ext <| funext fun ⟨x, ξ⟩ => by
     simp [coefficient_sharpTerm b a k x ξ hz, Symbol.coefficient_sharpTerm, mixedDeriv_def]
 
-/-- If `b` is polynomial of degree less than `d` in the frequency, that is, its frequency
-derivatives along all words of length `d` vanish, then the composition terms `sharpTerm b a k`
-with `k ≥ d` vanish. -/
-theorem coefficient_sharpTerm_eq_zero_of_coordinateDeriv_eq_zero {b : ParameterSymbol n Λ W U m'}
-    {d : ℕ} (hb : ∀ x, ∀ z ∈ Λ, ∀ w : List (Fin n), w.length = d →
-      coordinateDeriv w (fun η => b.coefficient ((x, η), z)) = 0)
-    (a : ParameterSymbol n Λ V W m) {k : ℕ} (hk : d ≤ k) (x ξ : CoordinateSpace n) {z : ℂ}
-    (hz : z ∈ Λ) : (b.sharpTerm a k).coefficient ((x, ξ), z) = 0 := by
-  rw [coefficient_sharpTerm b a k x ξ hz, Finset.sum_eq_zero fun w _ => ?_, smul_zero]
-  rw [← List.take_append_drop (k - d) (List.ofFn w), coordinateDeriv_append,
-    hb x z hz _ (by simp; omega), coordinateDeriv_zero, Pi.zero_apply,
-    ContinuousLinearMap.zero_comp]
-
 /-! ### The truncated right parametrix and its remainder -/
 
 variable [CompleteSpace V] {a : ParameterSymbol n Λ V W m}
@@ -116,6 +137,7 @@ of order `m` elliptic with parameter, a parameter-dependent symbol of order `-m`
 noncomputable def rightParametrix (ha : a.IsElliptic) (N : ℕ) : ParameterSymbol n Λ W V (-m) :=
   ∑ j ∈ range N, inclusion (sub_le_self _ (Nat.cast_nonneg j)) (a.rightInverseTerms ha j)
 
+@[simp]
 theorem coefficient_rightParametrix (ha : a.IsElliptic) (N : ℕ) :
     (a.rightParametrix ha N).coefficient =
       ∑ j ∈ range N, (a.rightInverseTerms ha j).coefficient := by
@@ -143,6 +165,7 @@ noncomputable def rightParametrixRemainder (ha : a.IsElliptic) (d N : ℕ) :
   ∑ j ∈ range N, ∑ i ∈ range d, inclusion (rightParametrixRemainder_order_le N j i)
     (a.sharpTerm (a.rightInverseTerms ha j) (N - j + i))
 
+@[simp]
 theorem coefficient_rightParametrixRemainder (ha : a.IsElliptic) (d N : ℕ) :
     (a.rightParametrixRemainder ha d N).coefficient = ∑ j ∈ range N, ∑ i ∈ range d,
       (a.sharpTerm (a.rightInverseTerms ha j) (N - j + i)).coefficient := by
@@ -198,9 +221,9 @@ theorem sum_coefficient_sharpTerm_rightParametrix (ha : a.IsElliptic) {d N : ℕ
 
 /-- **The right parametrix of a differential operator with parameter.** Let `a` be a symbol of
 order `m` elliptic with parameter and polynomial of degree less than `d` in the frequency, such as
-the symbol of `A - z` for an elliptic differential operator `A`, and `N ≥ 1`. Let `ψ`, `ψ₁` be
-smooth real functions of the position, `ψ₁` compactly supported and equal to `1` near the support
-of `ψ`. Then for every spectral parameter `z ∈ Λ` and every Schwartz function `u`, with
+the symbol of `A - z` for an elliptic differential operator `A` of order `2`, and `N ≥ 1`. Let `ψ`,
+`ψ₁` be smooth real functions of the position, `ψ₁` compactly supported and equal to `1` near the
+support of `ψ`. Then for every spectral parameter `z ∈ Λ` and every Schwartz function `u`, with
 `w = ψ₁ · Op(Bₙ(z)) u`, where `Bₙ = ∑_{j < N} bⱼ` is the truncated right parametrix,
 
 `ψ · Op(a(z)) w = ψ · u + Op(ψ rₙ(z)) u`,
@@ -255,19 +278,14 @@ theorem smul_quantizeSchwartzValue_rightParametrix_eq_add [CompleteSpace W] (ha 
         simpa [mixedDeriv_def] using congrFun (hd y z hz β hβ) η,
       Finset.sum_apply, Finset.smul_sum, Finset.sum_congr rfl fun k _ => hterm k ξ,
       ← Finset.smul_sum, sum_coefficient_sharpTerm_rightParametrix ha hN hd x ξ hz]
-  have hId : (Symbol.ofSpatial (n := n) (fun _ => ContinuousLinearMap.id ℂ W)
-      contDiff_const).coefficient
-      = fun _ => ContinuousLinearMap.id ℂ W := funext fun p => Symbol.coefficient_ofSpatial _ _ p
+  -- `w` is `Op(Q) u`, so the operator identity follows from the symbol identity `hsharp`.
   have hw' : w = (hQ.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
       (Q.contDiff_quantizeSchwartzValue u) :=
     SchwartzMap.ext fun y => by rw [hw, HasCompactSupport.toSchwartzMap_toFun]
-  rw [toSymbol_comp, toSymbol_ofSpatial _ _ hz,
-    Symbol.quantizeSchwartzValue_ofSpatial_smul_id_comp, ← smul_add, ← quantizeSchwartzValue_id u x,
-    ← hId, ← Symbol.quantizeSchwartzValue_coefficient_add, hw',
-    ← Symbol.quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hQ,
-    ← quantizeSchwartzValue_smul_left, ← quantizeSchwartzValue_smul_left]
-  refine quantizeSchwartzValue_congr_left (fun ξ => ?_) u
-  simpa [hId] using hsharp ξ
+  rw [hw', toSymbol_comp, toSymbol_ofSpatial _ _ hz]
+  exact Symbol.smul_quantizeSchwartzValue_sharp_eq_add hQ _ hψ u x fun ξ => by
+    rw [coefficient_toSymbol]
+    exact hsharp ξ
 
 end Parametrix
 
