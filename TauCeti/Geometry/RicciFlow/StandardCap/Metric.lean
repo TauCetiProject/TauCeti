@@ -185,8 +185,8 @@ theorem isInvertible_mfderiv_standardCapPolar (p : standardCapRadialDomain × sp
       (standardCapPolar V) p).IsInvertible := by
   have : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ n
   -- The tangent spaces are the model spaces `ℝ × ℝⁿ` and `V`, of the same dimension `n + 1`.
-  refine ContinuousLinearMap.isInvertible_of_injective_of_finrank_eq
-    (U := ℝ × EuclideanSpace ℝ (Fin n)) (G := V) _ ?_ (injective_mfderiv_standardCapPolar p)
+  refine (ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq
+    (U := ℝ × EuclideanSpace ℝ (Fin n)) (G := V) ?_).2 (injective_mfderiv_standardCapPolar p)
   rw [Module.finrank_prod, finrank_euclideanSpace_fin, Module.finrank_self,
     Fact.out (p := Module.finrank ℝ V = n + 1), add_comm]
 
