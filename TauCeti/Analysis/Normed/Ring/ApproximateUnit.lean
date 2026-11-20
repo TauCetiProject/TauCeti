@@ -31,8 +31,9 @@ We prove:
 * transfer under continuous multiplicative maps with dense range, provided the image of the
   approximate unit is eventually norm bounded. This allows a bounded approximate unit of a
   dense subalgebra to serve in its completion;
-* `IsClosed.mem_of_tendsto_mul`: if a filter of contractions `e` in a closed set `s` is a
-  two-sided approximate unit for `x` and `e * x * e ∈ s` for all `e ∈ s`, then `x ∈ s`.
+* `IsClosed.mem_of_tendsto_mul`: if an eventually norm-bounded filter of elements `e` is a
+  two-sided approximate unit for `x` and `e * x * e` eventually lies in a closed set `s`, then
+  `x ∈ s`.
 
 ## References
 
@@ -269,13 +270,12 @@ namespace IsClosed
 
 variable {A : Type*} [NonUnitalSeminormedRing A]
 
-/-- If `x * e → x` and `e * x → x` along a proper filter of contractions `e` eventually in a closed
-set `s` with `e * x * e ∈ s` for all `e ∈ s`, then `x ∈ s`. -/
+/-- If `x * e → x` and `e * x → x` along a proper filter of eventually norm-bounded `e` with
+`e * x * e` eventually in a closed set `s`, then `x ∈ s`. -/
 theorem mem_of_tendsto_mul {s : Set A} {x : A} (hs : IsClosed s) {l : Filter A} [l.NeBot]
-    (hls : ∀ᶠ e in l, e ∈ s) (hnorm : ∀ᶠ e in l, ‖e‖ ≤ 1) (hmul : ∀ e ∈ s, e * x * e ∈ s)
+    (hmem : ∀ᶠ e in l, e * x * e ∈ s) (hbdd : IsBoundedUnder (· ≤ ·) l (‖·‖))
     (hr : Tendsto (x * ·) l (𝓝 x)) (hl : Tendsto (· * x) l (𝓝 x)) : x ∈ s := by
   -- `e * x * e = (e * x - x) * e + (x * e - x) + x`, and `e` stays bounded.
-  have hbdd : IsBoundedUnder (· ≤ ·) l ((‖·‖) ∘ id) := isBoundedUnder_of_eventually_le hnorm
   have h₁ : Tendsto (fun e ↦ (e * x - x) * e) l (𝓝 0) :=
     (tendsto_sub_nhds_zero_iff.mpr hl).zero_mul_isBoundedUnder_le hbdd
   have h₂ : Tendsto (fun e ↦ x * e - x) l (𝓝 0) := tendsto_sub_nhds_zero_iff.mpr hr
@@ -285,6 +285,6 @@ theorem mem_of_tendsto_mul {s : Set A} {x : A} (hs : IsClosed s) {l : Filter A} 
       simp only [sub_mul]
       abel
     · simp
-  exact hs.mem_of_tendsto hlim (hls.mono hmul)
+  exact hs.mem_of_tendsto hlim hmem
 
 end IsClosed

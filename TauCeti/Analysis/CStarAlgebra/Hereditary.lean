@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import Mathlib.Analysis.CStarAlgebra.SpecialFunctions.PosPart
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
+import TauCeti.Algebra.Star.Polarization
 import TauCeti.Analysis.Normed.Ring.ApproximateUnit
 
 /-!
@@ -107,20 +108,11 @@ theorem IsHereditary.star_mul_mul_mem (hB : B.IsHereditary) {b : A} (hb : b ∈ 
 /-- A hereditary star subalgebra `B` of a C⋆-algebra satisfies `B * A * B ⊆ B`. -/
 theorem IsHereditary.mul_mul_mem (hB : B.IsHereditary) {b c : A} (hb : b ∈ B) (x : A)
     (hc : c ∈ B) : b * x * c ∈ B := by
-  -- Polarization: `4 • (star u * x * c) = ∑ₖ Iᵏ • star (c + Iᵏ • u) * x * (c + Iᵏ • u)`.
-  set u := star b
-  have hu : u ∈ B := star_mem hb
-  have hpol : (4 : ℂ) • (star u * x * c) =
-      star (c + u) * x * (c + u) + Complex.I • (star (c + Complex.I • u) * x *
-        (c + Complex.I • u)) - star (c - u) * x * (c - u) -
-        Complex.I • (star (c - Complex.I • u) * x * (c - Complex.I • u)) := by
-    simp only [star_add, star_sub, star_smul, Complex.star_def, Complex.conj_I, add_mul, sub_mul,
-      mul_add, mul_sub, smul_mul_assoc, mul_smul_comm, smul_add, smul_sub, smul_smul, neg_smul,
-      neg_mul, smul_neg, Complex.I_mul_I]
-    module
-  have h4 : star u * x * c = (4 : ℂ)⁻¹ • ((4 : ℂ) • (star u * x * c)) := by
-    rw [smul_smul, inv_mul_cancel₀ (by norm_num), one_smul]
-  rw [show b = star u from (star_star b).symm, h4, hpol]
+  -- Polarize with `u = star b`, which lies in `B`.
+  have hu : star b ∈ B := star_mem hb
+  have h4 : b * x * c = (4 : ℂ)⁻¹ • ((4 : ℂ) • (star (star b) * x * c)) := by
+    rw [star_star, smul_smul, inv_mul_cancel₀ (by norm_num), one_smul]
+  rw [h4, TauCeti.star_mul_mul_polarization]
   refine SMulMemClass.smul_mem _ (sub_mem (sub_mem (add_mem ?_ ?_) ?_) ?_)
   · exact hB.star_mul_mul_mem (add_mem hc hu) x
   · exact SMulMemClass.smul_mem _ <|
@@ -142,7 +134,8 @@ theorem isHereditary_of_mul_mul_mem (hBc : IsClosed (B : Set A))
         (hl b hb).1).const_mul (star y)
   have hl' : Tendsto (· * (star y * y)) l (𝓝 (star y * y)) := by
     simpa only [star_mul, star_star] using TauCeti.tendsto_mul_star_of_tendsto_mul hsa hr
-  exact hBc.mem_of_tendsto_mul hlB hnorm (fun e he ↦ h e he _ e he) hr hl'
+  exact hBc.mem_of_tendsto_mul (hlB.mono fun e he ↦ h e he _ e he)
+    (isBoundedUnder_of_eventually_le hnorm) hr hl'
 
 /-- A closed star subalgebra `B` of a C⋆-algebra is hereditary if and only if
 `B * A * B ⊆ B`. -/
@@ -160,7 +153,8 @@ theorem IsHereditary.mem_of_star_mul_self_mem_of_mul_star_self_mem (hB : B.IsHer
     (by rw [star_star]) (hl _ h₂).1
   have hl' : Tendsto (· * x) l (𝓝 x) := by
     simpa only [star_star] using TauCeti.tendsto_mul_star_of_tendsto_mul hsa hr'
-  exact hBc.mem_of_tendsto_mul hlB hnorm (fun e he ↦ hB.mul_mul_mem he x he) hr hl'
+  exact hBc.mem_of_tendsto_mul (hlB.mono fun e he ↦ hB.mul_mul_mem he x he)
+    (isBoundedUnder_of_eventually_le hnorm) hr hl'
 
 /-- The left ideal `{x | star x * x ∈ B}` of a hereditary star subalgebra `B`, as a complex
 subspace. It absorbs left multiplication (`IsHereditary.mul_mem_leftIdeal`) and is closed when `B`

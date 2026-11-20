@@ -212,10 +212,12 @@ theorem exists_approximateUnit {B : NonUnitalStarSubalgebra ℂ A} (hB : IsClose
   have hl := CStarAlgebra.increasingApproximateUnit B
   have := hl.neBot
   have hpos : ∀ᶠ e in (CStarAlgebra.approximateUnit B).map ((↑) : B → A), 0 ≤ e :=
-    eventually_map.mpr <| hl.eventually_nonneg.mono fun _ he ↦ he
+    eventually_map.mpr <| hl.eventually_nonneg.mono fun e he ↦
+      (ZeroMemClass.coe_zero B).symm.trans_le (Subtype.coe_le_coe.mpr he)
   refine ⟨_, inferInstance, eventually_map.mpr <| .of_forall fun e ↦ e.2, hpos,
     hpos.mono fun _ ↦ IsSelfAdjoint.of_nonneg,
-    eventually_map.mpr <| hl.eventually_norm.mono fun _ he ↦ he, fun b hb ↦ ⟨?_, ?_⟩⟩
+    eventually_map.mpr <| hl.eventually_norm.mono fun e he ↦
+      (AddSubgroupClass.coe_norm (s := B) e).symm.trans_le he, fun b hb ↦ ⟨?_, ?_⟩⟩
   · simpa only [tendsto_map'_iff, Function.comp_def, NonUnitalStarSubalgebra.coe_mul] using
       (continuous_subtype_val.tendsto _).comp (hl.tendsto_mul_left ⟨b, hb⟩)
   · simpa only [tendsto_map'_iff, Function.comp_def, NonUnitalStarSubalgebra.coe_mul] using
