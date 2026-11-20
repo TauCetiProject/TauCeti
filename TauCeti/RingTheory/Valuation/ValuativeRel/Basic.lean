@@ -19,8 +19,9 @@ General lemmas about `ValuativeRel` that Mathlib does not yet provide.
 ## Main results
 
 * `TauCeti.ValuativeRel.not_vle_zero_of_isUnit` : If `f` is a unit, then `¬ f ≤ᵥ 0`.
-* `TauCeti.ValuativeRel.one_vle_inv_mul_iff` and
-  `TauCeti.ValuativeRel.inv_mul_vle_one_iff` : cancel a unit in valuation comparisons.
+* `Units.vle_inv_mul_iff_mul_vle` and `Units.inv_mul_vle_iff_vle_mul` : move a unit across a
+  valuation comparison; `Units.one_vle_inv_mul_iff` and `Units.inv_mul_vle_one_iff` are their
+  special cases with bound `1`.
 * `TauCeti.natCast_ne_zero_of_isUnit` and `TauCeti.two_ne_zero_of_isUnit_two`: an integer
   that is a unit in the ring of integers is nonzero in the ambient ring.
 * `TauCeti.valuativeExtension_self`: every valuative commutative semiring is a valuative extension
@@ -47,9 +48,11 @@ pinned Mathlib.
 
 public section
 
-namespace TauCeti.ValuativeRel
+section
 
 variable {A : Type*} [Semiring A] [ValuativeRel A]
+
+namespace TauCeti.ValuativeRel
 
 /-- If `f` is a unit, then `¬ f ≤ᵥ 0`. -/
 theorem not_vle_zero_of_isUnit {f : A} (hf : IsUnit f) : ¬ f ≤ᵥ (0 : A) := by
@@ -58,19 +61,47 @@ theorem not_vle_zero_of_isUnit {f : A} (hf : IsUnit f) : ¬ f ≤ᵥ (0 : A) := 
   simpa [Units.inv_mul, ValuativeRel.not_vle.mpr ValuativeRel.zero_vlt_one] using
     ValuativeRel.mul_vle_mul_right h ↑u⁻¹
 
-/-- For a unit `ϖ`, `1 ≤ᵥ ϖ⁻¹ * t` exactly when `ϖ ≤ᵥ t`. -/
-theorem one_vle_inv_mul_iff (ϖ : Aˣ) {t : A} : 1 ≤ᵥ (ϖ⁻¹ : Aˣ) * t ↔ (ϖ : A) ≤ᵥ t := by
-  -- write `1` as `ϖ⁻¹ * ϖ` and cancel the factor `ϖ⁻¹`, which is nonzero for `≤ᵥ`
-  rw [← ϖ.inv_mul, ValuativeRel.mul_vle_mul_iff_right
-    (ValuativeRel.not_vle.mp (not_vle_zero_of_isUnit ϖ⁻¹.isUnit))]
-
-/-- For a unit `ϖ`, `ϖ⁻¹ * t ≤ᵥ 1` exactly when `t ≤ᵥ ϖ`. -/
-theorem inv_mul_vle_one_iff (ϖ : Aˣ) {t : A} : (ϖ⁻¹ : Aˣ) * t ≤ᵥ 1 ↔ t ≤ᵥ (ϖ : A) := by
-  -- write `1` as `ϖ⁻¹ * ϖ` and cancel the factor `ϖ⁻¹`, which is nonzero for `≤ᵥ`
-  rw [← ϖ.inv_mul, ValuativeRel.mul_vle_mul_iff_right
-    (ValuativeRel.not_vle.mp (not_vle_zero_of_isUnit ϖ⁻¹.isUnit))]
-
 end TauCeti.ValuativeRel
+
+namespace Units
+
+/-- For a unit `ϖ`, `a ≤ᵥ ϖ⁻¹ * b` exactly when `ϖ * a ≤ᵥ b`. This is the unit analogue of
+Mathlib's `ValuativeRel.vle_div_iff` (stated there for a nonzero divisor in a division ring), in
+the shape of the ordered-group lemma `le_inv_mul_iff_mul_le`. -/
+@[simp]
+theorem vle_inv_mul_iff_mul_vle (ϖ : Aˣ) {a b : A} :
+    a ≤ᵥ (ϖ⁻¹ : Aˣ) * b ↔ (ϖ : A) * a ≤ᵥ b := by
+  -- multiply `ϖ * a ≤ᵥ b` by `ϖ⁻¹`, which is nonzero for `≤ᵥ`, and cancel `ϖ⁻¹ * ϖ`
+  rw [← ValuativeRel.mul_vle_mul_iff_right (y := (ϖ : A) * a)
+    (ValuativeRel.not_vle.mp (TauCeti.ValuativeRel.not_vle_zero_of_isUnit ϖ⁻¹.isUnit)),
+    ϖ.inv_mul_cancel_left]
+
+/-- For a unit `ϖ`, `ϖ⁻¹ * a ≤ᵥ b` exactly when `a ≤ᵥ ϖ * b`. This is the unit analogue of
+Mathlib's `ValuativeRel.div_vle_iff` (stated there for a nonzero divisor in a division ring), in
+the shape of the ordered-group lemma `inv_mul_le_iff_le_mul`. -/
+@[simp]
+theorem inv_mul_vle_iff_vle_mul (ϖ : Aˣ) {a b : A} :
+    (ϖ⁻¹ : Aˣ) * a ≤ᵥ b ↔ a ≤ᵥ (ϖ : A) * b := by
+  -- multiply `a ≤ᵥ ϖ * b` by `ϖ⁻¹`, which is nonzero for `≤ᵥ`, and cancel `ϖ⁻¹ * ϖ`
+  rw [← ValuativeRel.mul_vle_mul_iff_right (z := (ϖ : A) * b)
+    (ValuativeRel.not_vle.mp (TauCeti.ValuativeRel.not_vle_zero_of_isUnit ϖ⁻¹.isUnit)),
+    ϖ.inv_mul_cancel_left]
+
+/-- For a unit `ϖ`, `1 ≤ᵥ ϖ⁻¹ * a` exactly when `ϖ ≤ᵥ a`: the case `1` of
+`Units.vle_inv_mul_iff_mul_vle`, and the unit analogue of Mathlib's
+`ValuativeRel.one_vle_div_iff`. -/
+theorem one_vle_inv_mul_iff (ϖ : Aˣ) {a : A} : 1 ≤ᵥ (ϖ⁻¹ : Aˣ) * a ↔ (ϖ : A) ≤ᵥ a := by
+  simp
+
+/-- For a unit `ϖ`, `ϖ⁻¹ * a ≤ᵥ 1` exactly when `a ≤ᵥ ϖ`: the case `1` of
+`Units.inv_mul_vle_iff_vle_mul`, and the unit analogue of Mathlib's
+`ValuativeRel.div_vle_one_iff`. -/
+theorem inv_mul_vle_one_iff (ϖ : Aˣ) {a : A} : (ϖ⁻¹ : Aˣ) * a ≤ᵥ 1 ↔ a ≤ᵥ (ϖ : A) := by
+  simp
+
+end Units
+
+end
 
 open ValuativeRel
 
