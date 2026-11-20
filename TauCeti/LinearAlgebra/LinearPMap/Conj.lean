@@ -21,9 +21,10 @@ is the image of the graph of `A` under `e × e`. It is functorial in `e`, preser
 order and restrictions of the domain, and agrees with `LinearEquiv.conj` on everywhere-defined
 maps.
 
-The topological consequences (closedness, closures, cores, resolvents) are in
-`TauCeti.Topology.Algebra.Module.LinearPMap.Conj`, and unitary conjugation of adjoints and of
-self-adjoint operators in `TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions`.
+The topological consequences (closedness, closures, cores) are in
+`TauCeti.Topology.Algebra.Module.LinearPMap.Conj`, resolvents and spectra in
+`TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Conj`, and unitary conjugation of adjoints
+and of self-adjoint operators in `TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions`.
 
 ## Main definitions
 
