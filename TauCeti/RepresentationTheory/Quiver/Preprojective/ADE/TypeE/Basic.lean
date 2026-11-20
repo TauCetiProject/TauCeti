@@ -109,10 +109,8 @@ attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 /-! ### The arms of the `Eₙ` diagram -/
 
 /-- Adjacency of the nodes `i` and `j` of the Bourbaki-labelled `Eₙ` diagram, read on natural
-numbers: the edges are `0 — 2`, `1 — 3` and `i — i + 1` for `i ≥ 2`. It is reducible because it
-is the right-hand side of `diagramGraph_E_adj`, which this file and its importers apply where
-`EAdj` is expected. -/
-private abbrev EAdj (i j : ℕ) : Prop :=
+numbers: the edges are `0 — 2`, `1 — 3` and `i — i + 1` for `i ≥ 2`. -/
+private def EAdj (i j : ℕ) : Prop :=
   i = 0 ∧ j = 2 ∨ j = 0 ∧ i = 2 ∨ i = 1 ∧ j = 3 ∨ j = 1 ∧ i = 3 ∨ 2 ≤ i ∧ i + 1 = j ∨
     2 ≤ j ∧ j + 1 = i
 
@@ -145,6 +143,13 @@ private theorem exists_eq_eArm_of_eAdj (n : ℕ) {j : ℕ} (h : EAdj 3 j) : ∃ 
   · exact ⟨0, by simp [eArm, h.1]⟩
   · exact ⟨2, by simp [eArm]; omega⟩
   · exact ⟨1, by simp [eArm]; omega⟩
+
+/-- Adjacency in the Bourbaki-labelled `Eₙ` diagram. -/
+private theorem diagramGraph_E_adj {n : ℕ} (i j : Fin n) :
+    (diagramGraph (CartanMatrix.E n)).Adj i j ↔ EAdj i j := by
+  rw [diagramGraph_adj]
+  simp only [CartanMatrix.E, Matrix.of_apply, ne_eq, Fin.ext_iff, EAdj]
+  split_ifs <;> simp <;> omega
 
 /-- Every node other than the branch node lies on an arm. -/
 private theorem exists_eArm_eq (n : ℕ) {i : ℕ} (hi : i ≠ 3) : ∃ a p, 0 < p ∧ eArm n a p = i := by

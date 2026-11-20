@@ -36,10 +36,6 @@ the root-system case is irreducibility, which Mathlib packages as
 
 * `TauCeti.diagramGraph_submatrix`: the diagram of a principal submatrix is the pullback of the
   diagram along the reindexing.
-* `TauCeti.diagramGraph_adj_apply_iff`: a permutation preserving the matrix entries is an
-  automorphism of the diagram.
-* `TauCeti.diagramGraph_D_adj` and `TauCeti.diagramGraph_E_adj`: the edges of the `Dₙ` and `Eₙ`
-  diagrams.
 * `TauCeti.DynkinType.diagramGraph_cartanMatrix_A` and
   `TauCeti.DynkinType.diagramGraph_cartanMatrix_of_not_isSimplyLaced`: the type `Aₙ` diagram and
   the unweighted diagram of every multiply-laced `DynkinType` (`Bₙ`, `Cₙ`, `F₄`, `G₂`) equal the
@@ -94,12 +90,6 @@ theorem diagramGraph_adj {i j : B} :
 
 instance [DecidableEq B] (A : Matrix B B ℤ) : DecidableRel (diagramGraph A).Adj :=
   fun _ _ ↦ decidable_of_iff _ diagramGraph_adj.symm
-
-/-- A permutation preserving the entries of an integer matrix preserves adjacency in its
-diagram. -/
-theorem diagramGraph_adj_apply_iff {ρ : Equiv.Perm B} (hρ : ∀ i j, A (ρ i) (ρ j) = A i j)
-    {i j : B} : (diagramGraph A).Adj (ρ i) (ρ j) ↔ (diagramGraph A).Adj i j := by
-  simp only [diagramGraph_adj, hρ, ρ.injective.ne_iff]
 
 /-- **The diagram of a principal submatrix is the pullback of the diagram.** Restricting a matrix
 to an injectively indexed family of indices deletes from its diagram exactly the vertices outside
@@ -191,17 +181,6 @@ theorem diagramGraph_D_adj {n : ℕ} (hn : 3 ≤ n) (i j : Fin n) :
   simp only [CartanMatrix.D, Matrix.of_apply, ne_eq, Fin.ext_iff]
   have := i.2
   have := j.2
-  split_ifs <;> simp <;> omega
-
-/-- Two nodes of the `Eₙ` diagram are joined exactly when they are `0` and `2`, `1` and `3`, or
-consecutive from `2` on. -/
-theorem diagramGraph_E_adj {n : ℕ} (i j : Fin n) :
-    (diagramGraph (CartanMatrix.E n)).Adj i j ↔
-      (i : ℕ) = 0 ∧ (j : ℕ) = 2 ∨ (j : ℕ) = 0 ∧ (i : ℕ) = 2 ∨
-        (i : ℕ) = 1 ∧ (j : ℕ) = 3 ∨ (j : ℕ) = 1 ∧ (i : ℕ) = 3 ∨
-        2 ≤ (i : ℕ) ∧ (i : ℕ) + 1 = j ∨ 2 ≤ (j : ℕ) ∧ (j : ℕ) + 1 = i := by
-  rw [diagramGraph_adj]
-  simp only [CartanMatrix.E, Matrix.of_apply, ne_eq, Fin.ext_iff]
   split_ifs <;> simp <;> omega
 
 /-- Below rank three the `Dₙ` diagram has no edges. -/

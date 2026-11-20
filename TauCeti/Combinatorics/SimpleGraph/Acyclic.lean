@@ -14,9 +14,7 @@ public import TauCeti.Data.List.OneDegenerateOrder
 This file records consequences of acyclicity for paths and for degrees (a nonempty finite
 forest has a vertex of degree at most one, so a nonempty finite regular forest has degree at
 most one), deduces that the letters of a list on which a graph induces a forest can be put in a
-one-degenerate order by peeling off leaves, and gives a height criterion for acyclicity. It also
-shows that an automorphism of a tree fixing a vertex maps no vertex to a neighbour, since it
-preserves the distance to the fixed vertex.
+one-degenerate order by peeling off leaves, and gives a height criterion for acyclicity.
 
 ## Main results
 
@@ -26,8 +24,6 @@ preserves the distance to the fixed vertex.
   at most one.
 * `SimpleGraph.IsAcyclic.degree_le_one_of_isRegularOfDegree`: a nonempty finite regular
   forest has degree at most one.
-* `SimpleGraph.IsTree.not_adj_apply_of_apply_eq_self`: an automorphism of a tree fixing a vertex
-  moves no vertex to a neighbour.
 * `List.exists_perm_isOneDegenerateOrder`: a list without repeated letters on which a graph
   induces a forest can be rearranged into a one-degenerate order for the graph.
 * `SimpleGraph.IsAcyclic.not_adj_getVert_of_add_one_lt`: nonconsecutive vertices of a path
@@ -194,13 +190,6 @@ theorem IsAcyclic.degree_le_one_of_isRegularOfDegree
     (hG : G.IsAcyclic) (hd : G.IsRegularOfDegree d) : d ≤ 1 := by
   obtain ⟨v, hv⟩ := hG.exists_degree_le_one
   exact hd.degree_eq v ▸ hv
-
-/-- **An automorphism of a tree fixing a vertex moves no vertex to a neighbour.** It preserves the
-distance to the fixed vertex, whereas two adjacent vertices of a tree lie at different distances
-from every vertex. -/
-theorem IsTree.not_adj_apply_of_apply_eq_self {V : Type*} {G : SimpleGraph V} (hG : G.IsTree)
-    (φ : G ≃g G) {v : V} (hv : φ v = v) (u : V) : ¬ G.Adj u (φ u) := fun h ↦
-  hG.dist_ne_of_adj v h (by rw [← φ.dist_eq v u, hv])
 
 /-- **A forest has a one-degenerate order.** A list without repeated letters on whose letters `G`
 induces a forest can be rearranged into a one-degenerate order for `G`: peel off a letter joined to

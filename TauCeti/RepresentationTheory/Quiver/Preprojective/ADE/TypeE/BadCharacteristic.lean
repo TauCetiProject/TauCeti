@@ -58,7 +58,7 @@ private def eBranchEmbedding {n : ℕ} (hn : 5 ≤ n) :
   map_rel_iff' := by
     intro i j
     rw [diagramGraph_E_adj]
-    simp only [eBranchNodes_val]
+    simp only [eBranchNodes_val, EAdj]
     fin_cases i <;> fin_cases j <;> simp [zigzagD4Graph_adj]
 
 variable (k : Type*) [CommRing k] [Nontrivial k] {n : ℕ}
