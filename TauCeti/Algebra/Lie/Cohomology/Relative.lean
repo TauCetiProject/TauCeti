@@ -265,8 +265,8 @@ def relativeCochainsPullback (n : ℕ) :
     LieModule.maxTrivSubmodule R H ((L ⧸ H.toLieSubmodule) [⋀^Fin n]→ₗ[R] M) →ₗ[R]
       relativeCochains R M H n where
   toFun η := ⟨_, compLinearMap_mk'_mem_relativeCochains η⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
+  map_add' _ _ := Subtype.ext (AlternatingMap.ext fun _ ↦ by simp)
+  map_smul' _ _ := Subtype.ext (AlternatingMap.ext fun _ ↦ by simp)
 
 @[simp]
 theorem coe_relativeCochainsPullback_apply {n : ℕ}

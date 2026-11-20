@@ -76,13 +76,13 @@ theorem cochainMap_apply (g : M →ₗ[R] M') (f : L' →ₗ⁅R⁆ L) {n : ℕ}
 @[simp]
 theorem cochainMap_id (n : ℕ) :
     cochainMap (LinearMap.id : M →ₗ[R] M) (LieHom.id : L →ₗ⁅R⁆ L) n = LinearMap.id :=
-  (rfl)
+  LinearMap.ext fun _ ↦ AlternatingMap.ext fun _ ↦ by simp
 
 /-- Pushforward composes covariantly and pullback contravariantly. -/
 theorem cochainMap_comp (g : M →ₗ[R] M') (g' : M' →ₗ[R] M'') (f : L' →ₗ⁅R⁆ L)
     (f' : L'' →ₗ⁅R⁆ L') (n : ℕ) :
     cochainMap g' f' n ∘ₗ cochainMap g f n = cochainMap (g' ∘ₗ g) (f.comp f') n :=
-  (rfl)
+  LinearMap.ext fun _ ↦ AlternatingMap.ext fun _ ↦ by simp
 
 /-- In degree two, `cochainMap` is the map `twoCochainMap` of 2-cochains. -/
 @[simp]
