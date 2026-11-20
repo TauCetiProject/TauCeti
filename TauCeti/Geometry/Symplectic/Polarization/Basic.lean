@@ -32,13 +32,15 @@ The distribution is recorded, as in `TauCeti.IsContMDiffDistribution`, as a fami
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.IsNondegenerate.mem_of_forall_eval₂_eq_zero_of_isCoisotropic`: a vector
+  `σ`-orthogonal to a coisotropic fibre `P_x` lies in `P_x`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsRealPolarization.two_mul_finrank`: a real polarization
   has half the rank of the tangent bundle.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsRealPolarization.eval₂_eq_zero`: `σ` vanishes on pairs of
   vectors of `P`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsRealPolarization.mem_of_forall_eval₂_eq_zero`: a vector
   `σ`-orthogonal to `P_x` lies in `P_x`.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.IsRealPolarization.comap`: the pullback of a real
+* `TauCeti.SmoothTwoForm.IsNondegenerate.IsRealPolarization.comap_mfderiv`: the pullback of a real
   polarization by a symplectomorphism is a real polarization.
 * `TauCeti.SymplecticForm.isRealPolarization_const`: on a finite-dimensional symplectic vector
   space, a Lagrangian subspace taken at every point is a real polarization of the constant form.
@@ -76,6 +78,16 @@ structure IsRealPolarization (P : Π x : M, Submodule ℝ (TangentSpace I x)) : 
   /-- A real polarization is involutive. -/
   isInvolutive : IsInvolutiveDistribution I P
 
+/-- A tangent vector `σ`-orthogonal to a coisotropic subspace `P x` lies in `P x`. -/
+theorem mem_of_forall_eval₂_eq_zero_of_isCoisotropic {P : Π x : M, Submodule ℝ (TangentSpace I x)}
+    {x : M} (hPx : (hσ.symplecticFormAt x).IsCoisotropic (P x)) {v : TangentSpace I x}
+    (hv : ∀ w ∈ P x, SmoothBundleForm.eval₂ σ x v w = 0) : v ∈ P x := by
+  refine SymplecticForm.isCoisotropic_iff_le.1 hPx ?_
+  rw [SymplecticForm.mem_orthogonal_iff']
+  intro w hw
+  rw [symplecticFormAt_apply]
+  exact hv w hw
+
 namespace IsRealPolarization
 
 variable {hσ} {P : Π x : M, Submodule ℝ (TangentSpace I x)} (hP : hσ.IsRealPolarization P)
@@ -85,21 +97,16 @@ include hP
 theorem eval₂_eq_zero {x : M} {v w : TangentSpace I x} (hv : v ∈ P x) (hw : w ∈ P x) :
     SmoothBundleForm.eval₂ σ x v w = 0 := by
   rw [← symplecticFormAt_apply hσ]
-  exact SymplecticForm.isIsotropic_iff.1 (SymplecticForm.isLagrangian_iff.1 (hP.isLagrangian x)).1
-    v hv w hw
+  exact (hP.isLagrangian x).symplecticForm_apply_eq_zero hv hw
 
 /-- Each fibre of a real polarization is coisotropic. -/
 theorem isCoisotropic (x : M) : (hσ.symplecticFormAt x).IsCoisotropic (P x) :=
-  (SymplecticForm.isLagrangian_iff.1 (hP.isLagrangian x)).2
+  (hP.isLagrangian x).isCoisotropic
 
 /-- A tangent vector `σ`-orthogonal to a fibre of a real polarization lies in that fibre. -/
 theorem mem_of_forall_eval₂_eq_zero {x : M} {v : TangentSpace I x}
-    (hv : ∀ w ∈ P x, SmoothBundleForm.eval₂ σ x v w = 0) : v ∈ P x := by
-  refine SymplecticForm.isCoisotropic_iff_le.1 (hP.isCoisotropic x) ?_
-  rw [SymplecticForm.mem_orthogonal_iff']
-  intro w hw
-  rw [symplecticFormAt_apply]
-  exact hv w hw
+    (hv : ∀ w ∈ P x, SmoothBundleForm.eval₂ σ x v w = 0) : v ∈ P x :=
+  hσ.mem_of_forall_eval₂_eq_zero_of_isCoisotropic (hP.isCoisotropic x) hv
 
 /-- A real polarization has half the rank of the tangent bundle: `2 dim P_x = dim M`. -/
 theorem two_mul_finrank [FiniteDimensional ℝ E] (x : M) :
@@ -128,7 +135,7 @@ variable {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E�
 /-- **Pullback of a real polarization by a symplectomorphism.** If a diffeomorphism `ψ` pulls `σ₂`
 back to `σ` and `P₂` is a real polarization of `σ₂`, then the pulled-back distribution
 `x ↦ dψ_x⁻¹(P₂ (ψ x))` is a real polarization of `σ`. -/
-theorem IsRealPolarization.comap [CompleteSpace E] [CompleteSpace E₂]
+theorem IsRealPolarization.comap_mfderiv [CompleteSpace E] [CompleteSpace E₂]
     {P₂ : Π y : M₂, Submodule ℝ (TangentSpace I₂ y)} (hP₂ : hσ₂.IsRealPolarization P₂)
     (ψ : M ≃ₘ⟮I, I₂⟯ M₂) (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) :
     hσ.IsRealPolarization fun x ↦ (P₂ (ψ x)).comap (mfderiv I I₂ ψ x).toLinearMap where

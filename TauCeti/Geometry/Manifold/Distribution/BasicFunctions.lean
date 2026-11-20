@@ -28,8 +28,9 @@ observables preserving the polarization
 ## Main results
 
 * `TauCeti.mem_basicFunctions_iff`: the defining property.
-* `TauCeti.basicFunctions_top`: for the whole tangent bundle, the basic functions are the smooth
-  functions with vanishing differential.
+* `TauCeti.basicFunctions_bot`: every smooth function is basic for the zero distribution.
+* `TauCeti.mem_basicFunctions_top_iff`: for the whole tangent bundle, the basic functions are the
+  smooth functions with vanishing differential.
 * `TauCeti.basicFunctions_antitone`: a larger distribution has fewer basic functions.
 
 ## References
@@ -67,6 +68,7 @@ def basicFunctions (D : Π x : M, Submodule 𝕜 (TangentSpace I x)) :
 variable {D D' : Π x : M, Submodule 𝕜 (TangentSpace I x)} {a : C^∞⟮I, M; 𝕜⟯}
 
 /-- A smooth function is basic for `D` when its differential annihilates `D`. -/
+@[simp]
 theorem mem_basicFunctions_iff :
     a ∈ basicFunctions I D ↔ ∀ x, ∀ v ∈ D x, mvfderiv I a x v = 0 :=
   Iff.rfl
@@ -77,8 +79,9 @@ theorem mvfderiv_apply_eq_zero_of_mem_basicFunctions (ha : a ∈ basicFunctions 
   ha x v hv
 
 /-- A larger distribution has fewer basic functions. -/
-theorem basicFunctions_antitone (h : ∀ x, D x ≤ D' x) : basicFunctions I D' ≤ basicFunctions I D :=
-  fun _ ha x v hv ↦ ha x v (h x hv)
+theorem basicFunctions_antitone :
+    Antitone (basicFunctions I : (Π x : M, Submodule 𝕜 (TangentSpace I x)) → _) :=
+  fun _ _ h _ ha x v hv ↦ ha x v (h x hv)
 
 /-- Every smooth function is basic for the zero distribution. -/
 @[simp]

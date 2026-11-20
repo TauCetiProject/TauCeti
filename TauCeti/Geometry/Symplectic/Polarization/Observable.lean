@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Distribution.BasicFunctions
 public import TauCeti.Geometry.Symplectic.Hamiltonian.LieAlgebra
-public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
+public import TauCeti.Geometry.Symplectic.Polarization.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
@@ -55,10 +55,10 @@ not, since `[X_{p²}, ∂_p] = -2 ∂_q`.
   functions preserving `P` preserves `P`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.preservesDistribution_of_mem_basicFunctions`: basic
   functions preserve an involutive coisotropic distribution, such as a real polarization.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.preservesDistribution_mul`: the product of a basic
-  function and a function preserving such a distribution preserves it.
-* `TauCeti.SmoothTwoForm.symm_poissonLieAlgebraEquiv_mem_observableLieSubalgebra`: basic functions
-  are observables.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.preservesDistribution_mul_of_mem_basicFunctions`: the
+  product of a basic function and a function preserving such a distribution preserves it.
+* `SmoothTwoForm.symm_poissonLieAlgebraEquiv_mem_observableLieSubalgebra_of_mem_basicFunctions`
+  (in `TauCeti`): basic functions are observables.
 
 ## References
 
@@ -140,11 +140,6 @@ end PreservesDistribution
 
 variable [FiniteDimensional ℝ E]
 
-/-- The Hamiltonian vector field of a smooth function is a smooth vector field. -/
-private theorem contMDiff_hamiltonianVectorField_of_smooth (hσ : σ.IsNondegenerate)
-    (hf : ContMDiff I 𝓘(ℝ) ∞ f) : CMDiff ∞ (T% (σ.hamiltonianVectorField f)) :=
-  hσ.contMDiff_hamiltonianVectorField le_rfl (hf.of_le (by simp))
-
 /-- **Bracket closure.** For a symplectic form, the Poisson bracket of two smooth functions
 preserving a distribution `P` preserves `P`: `X_{{f, g}} = -[X_f, X_g]`, and by the Jacobi identity
 `[[X_f, X_g], Y] = [X_f, [X_g, Y]] - [X_g, [X_f, Y]]` is tangent to `P` whenever `Y` is. -/
@@ -155,8 +150,8 @@ theorem PreservesDistribution.poissonBracket (hσ : σ.IsSymplectic) (hfs : Cont
   intro U hU Y hY hYP x hx
   have : IsManifold I (minSmoothness ℝ 3) M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  have hXf := contMDiff_hamiltonianVectorField_of_smooth hσ.isNondegenerate hfs
-  have hXg := contMDiff_hamiltonianVectorField_of_smooth hσ.isNondegenerate hgs
+  have hXf := hσ.isNondegenerate.contMDiff_hamiltonianVectorField le_rfl (by simpa using hfs)
+  have hXg := hσ.isNondegenerate.contMDiff_hamiltonianVectorField le_rfl (by simpa using hgs)
   have hYat {y : M} (hy : y ∈ U) : CMDiffAt ∞ (T% Y) y := (hY y hy).contMDiffAt (hU.mem_nhds hy)
   -- The brackets `[X_f, Y]` and `[X_g, Y]` are again smooth on `U` and tangent to `P` there.
   have hbr {Z : Π x : M, TangentSpace I x} (hZ : CMDiff ∞ (T% Z)) :
@@ -217,17 +212,23 @@ namespace IsNondegenerate
 
 variable {hσ : σ.IsNondegenerate}
 
+/-- If the differential of `f` at `x` vanishes on a coisotropic fibre `P x`, then the Hamiltonian
+vector field of `f` at `x` lies in `P x`: `σ(X_f, v) = df(v)` vanishes for `v ∈ P x`, so
+`X_f ∈ (P x)^σ ⊆ P x`. -/
+theorem hamiltonianVectorField_mem_of_forall_mvfderiv_eq_zero {x : M}
+    (hPx : (hσ.symplecticFormAt x).IsCoisotropic (P x))
+    (hf : ∀ v ∈ P x, mvfderiv I f x v = 0) : σ.hamiltonianVectorField f x ∈ P x :=
+  hσ.mem_of_forall_eval₂_eq_zero_of_isCoisotropic hPx fun w hw ↦ by
+    rw [hσ.eval₂_hamiltonianVectorField]
+    exact hf w hw
+
 /-- **The Hamiltonian vector field of a basic function is tangent to a coisotropic distribution**,
-for instance a real polarization: `σ(X_a, v) = da(v)` vanishes for `v ∈ P`, so
-`X_a ∈ P^σ ⊆ P`. -/
-theorem hamiltonianVectorField_mem_of_mem_basicFunctions
-    (hP : ∀ x, (hσ.symplecticFormAt x).IsCoisotropic (P x)) {a : C^∞⟮I, M; ℝ⟯}
-    (ha : a ∈ basicFunctions I P) (x : M) : σ.hamiltonianVectorField a x ∈ P x := by
-  refine SymplecticForm.isCoisotropic_iff_le.1 (hP x) ?_
-  rw [SymplecticForm.mem_orthogonal_iff']
-  intro w hw
-  rw [symplecticFormAt_apply, hσ.eval₂_hamiltonianVectorField]
-  exact mvfderiv_apply_eq_zero_of_mem_basicFunctions ha hw
+for instance a real polarization. -/
+theorem hamiltonianVectorField_mem_of_mem_basicFunctions {x : M}
+    (hPx : (hσ.symplecticFormAt x).IsCoisotropic (P x)) {a : C^∞⟮I, M; ℝ⟯}
+    (ha : a ∈ basicFunctions I P) : σ.hamiltonianVectorField a x ∈ P x :=
+  hamiltonianVectorField_mem_of_forall_mvfderiv_eq_zero hPx fun _ hv ↦
+    mvfderiv_apply_eq_zero_of_mem_basicFunctions ha hv
 
 /-- **Basic functions preserve an involutive coisotropic distribution**, for instance a real
 polarization. The Hamiltonian vector field of a basic function is tangent to the distribution, so
@@ -238,15 +239,16 @@ theorem preservesDistribution_of_mem_basicFunctions
   fun _ hU _ hY hYP _ hx ↦ hPi.mlieBracket_mem hU
     (hσ.mdifferentiable_hamiltonianVectorField (a.contMDiff.of_le (by simp))).mdifferentiableOn
     (hY.mdifferentiableOn (by simp))
-    (fun y _ ↦ hamiltonianVectorField_mem_of_mem_basicFunctions hP ha y) hYP hx
+    (fun y _ ↦ hamiltonianVectorField_mem_of_mem_basicFunctions (hP y) ha) hYP hx
 
 /-- **The observables of an involutive coisotropic distribution are a module over its basic
 functions.** For a real polarization these are the observables and the basic functions of
 geometric quantization. The product of a basic function `a` and a function `f` preserving the
 distribution preserves it: `[X_{af}, Y] = a [X_f, Y] - Y(a) X_f + f [X_a, Y] - Y(f) X_a`, where
 `Y(a) = 0` and the three other vectors lie in the distribution. -/
-theorem preservesDistribution_mul (hP : ∀ x, (hσ.symplecticFormAt x).IsCoisotropic (P x))
-    (hPi : IsInvolutiveDistribution I P) {a f : C^∞⟮I, M; ℝ⟯} (ha : a ∈ basicFunctions I P)
+theorem preservesDistribution_mul_of_mem_basicFunctions
+    (hP : ∀ x, (hσ.symplecticFormAt x).IsCoisotropic (P x)) (hPi : IsInvolutiveDistribution I P)
+    {a f : C^∞⟮I, M; ℝ⟯} (ha : a ∈ basicFunctions I P)
     (hf : σ.PreservesDistribution P f) : σ.PreservesDistribution P ⇑(a * f) := by
   intro U hU Y hY hYP x hx
   have ha1 : MDiff a := a.contMDiff.mdifferentiable (by simp)
@@ -261,7 +263,7 @@ theorem preservesDistribution_mul (hP : ∀ x, (hσ.symplecticFormAt x).IsCoisot
   rw [hX, mlieBracket_add_left ((ha1 x).smul_section (hXf x)) ((hf1 x).smul_section (hXa x)),
     mlieBracket_smul_left (ha1 x) (hXf x), mlieBracket_smul_left (hf1 x) (hXa x),
     mvfderiv_apply_eq_zero_of_mem_basicFunctions ha (hYP x hx), neg_zero, zero_smul, zero_add]
-  have hXaP := hamiltonianVectorField_mem_of_mem_basicFunctions hP ha x
+  have hXaP := hamiltonianVectorField_mem_of_mem_basicFunctions (hP x) ha
   have hbrP := preservesDistribution_of_mem_basicFunctions hP hPi ha hU hY hYP x hx
   exact add_mem (Submodule.smul_mem _ _ (hf hU hY hYP x hx))
     (add_mem (Submodule.smul_mem _ _ hXaP) (Submodule.smul_mem _ _ hbrP))
@@ -281,7 +283,7 @@ def observableSubmodule (hP : ∀ x, (hσ.symplecticFormAt x).IsCoisotropic (P x
     exact preservesDistribution_zero
   smul_mem' a f hf := by
     rw [Set.mem_ofPred_eq, Subalgebra.smul_def, smul_eq_mul]
-    exact preservesDistribution_mul hP hPi a.2 hf
+    exact preservesDistribution_mul_of_mem_basicFunctions hP hPi a.2 hf
 
 /-- A smooth function lies in the module of observables when its Hamiltonian vector field
 preserves the distribution. -/
@@ -295,8 +297,8 @@ end IsNondegenerate
 
 /-- For an involutive distribution `P` with coisotropic fibres, such as a real polarization of a
 symplectic form, the basic functions of `P` are observables of `P`. -/
-theorem symm_poissonLieAlgebraEquiv_mem_observableLieSubalgebra (hσ : σ.IsSymplectic)
-    (hP : ∀ x, (hσ.isNondegenerate.symplecticFormAt x).IsCoisotropic (P x))
+theorem symm_poissonLieAlgebraEquiv_mem_observableLieSubalgebra_of_mem_basicFunctions
+    (hσ : σ.IsSymplectic) (hP : ∀ x, (hσ.isNondegenerate.symplecticFormAt x).IsCoisotropic (P x))
     (hPi : IsInvolutiveDistribution I P) {a : C^∞⟮I, M; ℝ⟯} (ha : a ∈ basicFunctions I P) :
     (σ.poissonLieAlgebraEquiv hσ).symm a ∈ σ.observableLieSubalgebra P hσ := by
   rw [mem_observableLieSubalgebra_iff, LinearEquiv.apply_symm_apply]
