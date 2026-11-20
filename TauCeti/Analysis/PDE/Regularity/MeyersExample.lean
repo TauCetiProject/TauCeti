@@ -160,12 +160,11 @@ theorem meyersCoefficient_apply (x : EuclideanSpace ℝ (Fin (n + 2))) :
 theorem dotProduct_meyersCoefficient_mulVec (x η ξ : EuclideanSpace ℝ (Fin (n + 2))) :
     η ⬝ᵥ (meyersCoefficient μ x *ᵥ ξ) = meyersEigenvalue n μ * ⟪η, ξ⟫_ℝ +
       (1 - meyersEigenvalue n μ) / ‖x‖ ^ 2 * (⟪η, x⟫_ℝ * ⟪x, ξ⟫_ℝ) := by
-  simp only [meyersCoefficient, Matrix.add_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec,
-    Matrix.vecMulVec_mulVec, dotProduct_add, dotProduct_smul, smul_eq_mul,
-    MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op, EuclideanSpace.inner_eq_star_dotProduct,
-    star_trivial]
-  rw [dotProduct_comm ξ.ofLp η.ofLp, dotProduct_comm x.ofLp η.ofLp,
-    dotProduct_comm ξ.ofLp x.ofLp]
+  -- Keep the common factor `(1 - κ) / ‖x‖ ^ 2` rather than splitting into cases, so that `ring`
+  -- closes the remaining reordering of the two inner products.
+  simp [meyersCoefficient, Matrix.add_mulVec, Matrix.smul_mulVec, Matrix.vecMulVec_mulVec,
+    EuclideanSpace.inner_eq_star_dotProduct, dotProduct_comm, -mul_eq_mul_left_iff]
+  ring
 
 /-- With `κ = μ (μ + n) / (n + 1)`, the bilinear form of Meyers' coefficient is bounded by
 `|κ| + |1 - κ|`. -/
@@ -673,10 +672,8 @@ private theorem mul_rpow_le_norm_radialCoordGradient (hμ0 : 0 < μ) (hμ1 : μ 
   have hn : ‖radialCoordGradient μ 0 x‖ ^ 2 = (‖x‖ ^ (μ - 1)) ^ 2 +
       2 * ‖x‖ ^ (μ - 1) * ((μ - 1) * ‖x‖ ^ (μ - 3) * x 0) * x 0 +
       ((μ - 1) * ‖x‖ ^ (μ - 3) * x 0) ^ 2 * ‖x‖ ^ 2 := by
-    rw [radialCoordGradient, norm_add_sq_real, norm_smul, norm_smul, real_inner_smul_left,
-      real_inner_smul_right, EuclideanSpace.inner_single_left, PiLp.norm_single, norm_one,
-      Real.norm_eq_abs, Real.norm_eq_abs, mul_pow, mul_pow, sq_abs, sq_abs]
-    simp only [map_one, one_mul]
+    simp [radialCoordGradient, norm_add_sq_real, norm_smul, real_inner_smul_left,
+      real_inner_smul_right, EuclideanSpace.inner_single_left, mul_pow]
     ring
   rw [hn, norm_rpow_sub_one hx]
   generalize ‖x‖ ^ (μ - 3) = t
