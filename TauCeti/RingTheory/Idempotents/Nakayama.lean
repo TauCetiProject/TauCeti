@@ -45,8 +45,7 @@ theorem IsIdempotentElem.exists_smul_eq_mul_of_mul_sub_smul_mem {S T : Type*} [C
       rw [LinearMap.range_eq_map, ← Submodule.map_smul'']
       exact Submodule.mem_map_of_mem ((Ideal.mem_map_algebraMap_iff J).mp hs)
     have hy : f y = s • e + f (e * y - s • e) := by
-      simp only [f, LinearMap.mulLeft_apply]
-      rw [mul_sub, ← mul_assoc, he.eq, mul_smul_comm, he.eq]
+      simp only [f, LinearMap.mulLeft_apply, mul_sub, ← mul_assoc, mul_smul_comm, he.eq]
       abel
     rw [hy]
     exact Submodule.add_mem_sup (Submodule.smul_mem _ s (Submodule.mem_span_singleton_self e)) hmem

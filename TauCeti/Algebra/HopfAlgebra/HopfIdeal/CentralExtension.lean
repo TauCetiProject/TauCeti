@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
-public import TauCeti.RingTheory.Ideal.Extended
 public import TauCeti.Algebra.Subalgebra.Center
+
+import TauCeti.RingTheory.Ideal.KrullIntersection
 
 /-!
 # The central augmentation ideal as an extended ideal

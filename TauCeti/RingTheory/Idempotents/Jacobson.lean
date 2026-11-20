@@ -76,7 +76,7 @@ theorem IsIdempotentElem.eq_of_sub_mem_jacobson {R : Type*} [Ring R] {e e' : R}
   -- idempotent in the radical, hence zero, so `a = a b`.
   have key {a b : R} (ha : IsIdempotentElem a) (hb : IsIdempotentElem b) (hab : Commute a b)
       (h : a - b ∈ Ring.jacobson R) : a = a * b := by
-    have hab' : a * (1 - b) = a * (a - b) := by rw [mul_sub, mul_sub, mul_one, ha.eq]
+    have hab' : a * (1 - b) = a * (a - b) := by simp only [mul_sub, mul_one, ha.eq]
     have h0 := (ha.mul_of_commute ((Commute.one_right a).sub_right hab)
       hb.one_sub).eq_zero_of_mem_jacobson (hab' ▸ Ideal.mul_mem_left _ a h)
     rwa [mul_one_sub, sub_eq_zero] at h0

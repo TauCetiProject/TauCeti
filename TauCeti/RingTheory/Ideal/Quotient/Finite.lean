@@ -5,10 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
+public import Mathlib.RingTheory.Finiteness.Defs
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RingTheory.Noetherian.Defs
 public import TauCeti.RingTheory.Ideal.Extended
 import TauCeti.Algebra.Module.Submodule.Finite
 public import TauCeti.RingTheory.Ideal.Operations
 import Mathlib.LinearAlgebra.TensorProduct.Quotient
+import Mathlib.RingTheory.Noetherian.Basic
 import Mathlib.RingTheory.TensorProduct.Finite
 -- Private: products indexed by a list and finiteness of a sigma type of tuples are used only
 -- inside proofs.
