@@ -15,6 +15,10 @@ The fragment type of a tuple consists of the formulas in a fragment's arity slic
 that tuple. Equivalently, the tuple determines a truth assignment on the slice. These two views
 carry the same information, including for fragments that are not closed under negation.
 
+The realized fragment types of a structure at an arity are the fragment types of its tuples;
+they are the realized complete types cut down to the slice, restriction to a smaller fragment cuts
+them down further, and isomorphic structures realize the same ones.
+
 Restriction to a smaller fragment intersects the type with its slice, or precomposes the truth
 assignment with the slice inclusion. Fragment-elementary embeddings preserve both descriptions;
 conversely, preservation of the fragment types characterizes fragment elementarity. In particular,
@@ -137,6 +141,59 @@ theorem Equiv.fragmentType_comp (e : N ≃[L] M) (A : Fragment L) (a : Fin n →
 theorem Equiv.truthAssignment_comp (e : N ≃[L] M) (A : Fragment L) (a : Fin n → N) :
     A.truthAssignment M (e ∘ a) = A.truthAssignment N a :=
   (e.aElementary A).truthAssignment_comp a
+
+/-! ### Realized fragment types -/
+
+/-- The types relative to `A` realized by `n`-tuples of `M`. -/
+def realizedFragmentTypes (A : Fragment L) (M : Type w) [L.Structure M] (n : ℕ) :
+    Set (Set (L.BoundedFormulaω Empty n)) :=
+  Set.range (fragmentType A M (n := n))
+
+/-- A set of formulas is a realized fragment type of `M` exactly when it is the fragment type of
+some tuple of `M`. -/
+@[simp]
+theorem mem_realizedFragmentTypes {p : Set (L.BoundedFormulaω Empty n)} :
+    p ∈ realizedFragmentTypes A M n ↔ ∃ a : Fin n → M, fragmentType A M a = p :=
+  Iff.rfl
+
+/-- The fragment type of a tuple of `M` is a realized fragment type of `M`. -/
+theorem fragmentType_mem_realizedFragmentTypes (a : Fin n → M) :
+    fragmentType A M a ∈ realizedFragmentTypes A M n :=
+  ⟨a, rfl⟩
+
+/-- The realized fragment types are the realized complete types intersected with the arity
+slice. -/
+theorem realizedFragmentTypes_eq_image (A : Fragment L) (M : Type w) [L.Structure M] (n : ℕ) :
+    realizedFragmentTypes A M n = (A.slice n ∩ ·) '' realizedTypes M n := by
+  ext p
+  simp only [mem_realizedFragmentTypes, Set.mem_image, mem_realizedTypes, exists_exists_eq_and,
+    fragmentType_eq_inter]
+
+/-- Restricting to a smaller fragment intersects every realized fragment type with its arity
+slice. -/
+theorem realizedFragmentTypes_eq_image_of_le (hAB : A ≤ B) (M : Type w) [L.Structure M] (n : ℕ) :
+    realizedFragmentTypes A M n = (A.slice n ∩ ·) '' realizedFragmentTypes B M n := by
+  rw [realizedFragmentTypes, realizedFragmentTypes, ← Set.range_comp]
+  exact congrArg Set.range (funext (fragmentType_eq_inter_of_le hAB))
+
+/-- A countable structure realizes countably many fragment types at each arity. -/
+theorem countable_realizedFragmentTypes [Countable M] (A : Fragment L) (n : ℕ) :
+    (realizedFragmentTypes A M n).Countable :=
+  Set.countable_range _
+
+/-- At arity `0` the only realized fragment type is the fragment type of the empty tuple: the
+sentences of `A` true in `M`. -/
+theorem realizedFragmentTypes_zero (A : Fragment L) (M : Type w) [L.Structure M] :
+    realizedFragmentTypes A M 0 = {fragmentType A M Fin.elim0} := by
+  rw [realizedFragmentTypes, Set.range_unique, Subsingleton.elim default Fin.elim0]
+
+/-- Isomorphic structures realize the same fragment types. -/
+theorem Equiv.realizedFragmentTypes_eq (e : M ≃[L] N) (A : Fragment L) (n : ℕ) :
+    realizedFragmentTypes A M n = realizedFragmentTypes A N n := by
+  ext p
+  simp only [mem_realizedFragmentTypes]
+  exact ⟨fun ⟨a, ha⟩ => ⟨e ∘ a, by rw [e.fragmentType_comp, ha]⟩,
+    fun ⟨b, hb⟩ => ⟨e.symm ∘ b, by rw [e.symm.fragmentType_comp, hb]⟩⟩
 
 /-! ### Transport along language maps -/
 
