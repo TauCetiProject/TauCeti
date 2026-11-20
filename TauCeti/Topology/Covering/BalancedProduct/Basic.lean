@@ -44,6 +44,7 @@ there for an abstract presentation of `E / H` rather than for a fixed model.
 * The centre of `G` acts on `E ×_G A` through the labels (`TauCeti.BalancedProduct.center_smul_mk`).
   Along a path of labels whose steps are carried to central translates by `l`, the classes of the
   endpoints differ by a power of `l` (`TauCeti.BalancedProduct.mk_inv_prod_ofFn_smul`).
+* `TauCeti.BalancedProduct.orbitProj`: the projection `⟦e, a⟧ ↦ ⟦a⟧` onto the orbit space of `A`.
 * `TauCeti.isQuotientCoveringMap_quotientMk_of_smul_disjoint`: an action with locally pairwise
   disjoint translates presents its orbit space as a quotient covering map.
 * `TauCeti.BalancedProduct.isQuotientCoveringMap_mk`: the class map `E × A → E ×_G A` is one such.
@@ -274,6 +275,23 @@ theorem proj_mapRight {B : Type*} [MulAction G B] (f : A → B)
     (hf : ∀ (g : G) a, f (g • a) = g • f a) (z : BalancedProduct G E A) :
     proj B hq (mapRight f hf z) = proj A hq z :=
   Quotient.inductionOn z fun _ => rfl
+
+/-! ### The projection onto the orbit space of the labels -/
+
+/-- The projection `⟦e, a⟧ ↦ ⟦a⟧` of the balanced product onto the orbit space of `A`. -/
+def orbitProj : BalancedProduct G E A → MulAction.orbitRel.Quotient G A :=
+  Quotient.map Prod.snd fun _ _ ⟨g, hg⟩ => ⟨g, congrArg Prod.snd hg⟩
+
+@[simp]
+theorem orbitProj_mk (e : E) (a : A) :
+    orbitProj (mk G e a) = Quotient.mk (MulAction.orbitRel G A) a :=
+  (rfl)
+
+theorem orbitProj_surjective [Nonempty E] :
+    Function.Surjective (orbitProj : BalancedProduct G E A → _) := by
+  intro x
+  induction x using Quotient.inductionOn with
+  | h a => exact ⟨mk G (Classical.arbitrary E) a, rfl⟩
 
 section Covering
 
