@@ -183,7 +183,7 @@ theorem timeDependentFlowOf_def :
   (rfl)
 
 /-- Outside the domain of the time-dependent flow, the flow takes the junk value `x`. -/
-theorem timeDependentFlowOf_of_not_mem (h : ((s, t), x) ∉ timeDependentFlowDomain X) :
+theorem timeDependentFlowOf_of_notMem (h : ((s, t), x) ∉ timeDependentFlowDomain X) :
     timeDependentFlowOf X s t x = x := by
   rw [mem_timeDependentFlowDomain, mem_flowDomain] at h
   rw [timeDependentFlowOf_def, flowOf_apply, maximalIntegralCurve_eq_of_not_mem h]
@@ -425,7 +425,7 @@ theorem timeDependentFlowOf_comp_add_right (θ s t : ℝ) (x : M) :
     timeDependentFlowOf (fun u ↦ X (u + θ)) s t x = timeDependentFlowOf X (s + θ) (t + θ) x := by
   by_cases h : ((s + θ, t + θ), x) ∈ timeDependentFlowDomain X
   · exact (timeDependentFlowOf_comp_add_right_of_mem hX θ h).2
-  · rw [timeDependentFlowOf_of_not_mem h, timeDependentFlowOf_of_not_mem
+  · rw [timeDependentFlowOf_of_notMem h, timeDependentFlowOf_of_notMem
       (mt (mem_timeDependentFlowDomain_comp_add_right_iff hX θ).1 h)]
 
 /-- On a complete normed model space, the domain of the time-dependent flow of a `C¹` field
