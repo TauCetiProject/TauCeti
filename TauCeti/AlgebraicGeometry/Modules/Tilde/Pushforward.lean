@@ -53,7 +53,6 @@ def tildeRestrictScalarsIsoPushforward :
 
 /-- The affine pushforward comparison preserves the global section associated
 with an element of the module. -/
-@[simp]
 theorem tildeRestrictScalarsIsoPushforward_hom_toOpen (m : M) :
     dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
     (((tildeRestrictScalarsIsoPushforward φ M).hom.val.app (.op ⊤))
