@@ -45,6 +45,12 @@ variable {A}
 @[simp]
 theorem constantCoeffAlgHom_apply (f : S⟦X⟧) : constantCoeffAlgHom A f = constantCoeff f := (rfl)
 
+/-- As a ring homomorphism, `PowerSeries.constantCoeffAlgHom` is `PowerSeries.constantCoeff`. -/
+@[simp]
+theorem constantCoeffAlgHom_toRingHom :
+    (constantCoeffAlgHom A (S := S) : S⟦X⟧ →+* S) = constantCoeff :=
+  (rfl)
+
 /-- Evaluation at `X = 0` is a retraction of the inclusion of constants. -/
 @[simp]
 theorem constantCoeffAlgHom_comp_toAlgHom {S : Type*} [CommSemiring S] [Algebra A S] :
