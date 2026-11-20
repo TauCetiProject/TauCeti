@@ -5,16 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialSet.Subcomplex
+public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.CategoryTheory.MorphismProperty.Basic
 
 /-!
-# Subcomplexes transported along isomorphisms
+# Subcomplexes transported along isomorphisms, and the empty subcomplex
 
 An isomorphism `e : X ≅ Y` of simplicial sets carries a subcomplex `A` of `X` to the subcomplex
 `A.preimage e.inv` of `Y`, and the inclusions of the two subcomplexes are isomorphic arrows. Hence
 any class of morphisms that respects isomorphisms, such as the (inner) anodyne extensions, contains
 one inclusion exactly when it contains the other.
+
+The empty subcomplex `⊥` has no simplices, so it is not `Nonempty`; for instance, slices and
+coslices over a diagram restricted to `⊥` are the whole simplicial set.
 
 ## Main results
 
@@ -22,6 +25,7 @@ one inclusion exactly when it contains the other.
   isomorphism `(A : SSet) ≅ B`, compatible with the inclusions.
 * `SSet.Subcomplex.morphismProperty_ι_iff_of_preimage_eq`: for `A.preimage e.inv = B` and a class
   `W` of morphisms respecting isomorphisms, `W A.ι ↔ W B.ι`.
+* `SSet.Subcomplex.not_nonempty_bot`: the empty subcomplex `⊥` is not nonempty.
 -/
 
 public section
@@ -70,5 +74,10 @@ lemma morphismProperty_ι_iff_of_preimage_eq (W : MorphismProperty SSet.{u}) [W.
     (e : X ≅ Y) {A : X.Subcomplex} {B : Y.Subcomplex} (h : A.preimage e.inv = B) :
     W A.ι ↔ W B.ι :=
   W.arrow_mk_iso_iff (Arrow.isoMk (isoOfPreimageEq e h) e (isoOfPreimageEq_hom_ι e h))
+
+/-- The empty subcomplex has no simplices: it has dimension `< 0`. -/
+@[simp]
+lemma not_nonempty_bot : ¬ ((⊥ : X.Subcomplex) : SSet.{u}).Nonempty :=
+  (notNonempty_iff_hasDimensionLT_zero _).2 inferInstance
 
 end SSet.Subcomplex
