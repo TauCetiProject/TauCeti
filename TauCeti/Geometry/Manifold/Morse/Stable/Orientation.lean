@@ -283,8 +283,8 @@ private theorem reindex_unstableFrameOrientation_eq_orientationAt_iff_self
       Orientation.reindex ℝ _ e (unstableFrameOrientation hφ hf hx op op' hxu) =
         o.orientationAt x := by
   rw [unstableFrameOrientation_def, unstableFrameOrientation_def]
-  have h0 := hX.zero_mem_linearBackwardTimes φ
-    (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.mem_criticalPoints)
+  have h0 : (0 : ℝ) ∈ hX.linearBackwardTimes φ x :=
+    mem_linearBackwardTimes_self (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.mem_criticalPoints) 0
   have hfl0 : (φ.toChart ∘ hX.flow (-0) : M → E) = φ.toChart := funext fun z ↦ by simp
   obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφ hf hy).exists
   obtain ⟨eDy, heDy⟩ := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ)
@@ -335,8 +335,8 @@ private theorem reindex_stableNormalOrientation_eq_orientationAt_iff_self
       Orientation.reindex ℝ _ e (stableNormalOrientation hφ hf hx op' op hxs) =
         o.orientationAt x := by
   rw [stableNormalOrientation_def, stableNormalOrientation_def]
-  have h0 := hX.zero_mem_linearForwardTimes φ
-    (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.mem_criticalPoints)
+  have h0 : (0 : ℝ) ∈ hX.linearForwardTimes φ x :=
+    mem_linearForwardTimes_self (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.mem_criticalPoints) 0
   have hfl0 : (φ.toChart ∘ hX.flow 0 : M → E) = φ.toChart := funext fun z ↦ by simp
   obtain ⟨T, hT⟩ := (hX.eventually_mem_linearForwardTimes hφ hy).exists
   obtain ⟨eDy, heDy⟩ := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ)

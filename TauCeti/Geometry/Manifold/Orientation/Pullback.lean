@@ -60,6 +60,9 @@ spaces glued from oriented pieces, such as the connected sum.
   (reverses) orientation at a point does so at every nearby point.
 * `IsPreconnected.isOrientationPreservingAt_iff`: on a preconnected set where a `C¹` map has
   invertible derivative, it preserves orientation at one point exactly when it does at any other.
+* `TauCeti.Manifold.Orientation.exists_eventually_isOrientationPreservingAt`: a map into the model
+  space with invertible derivative at a point, such as a chart, preserves orientations near that
+  point for one of the orientations of the model space.
 
 ## References
 
@@ -400,5 +403,19 @@ theorem _root_.IsPreconnected.isOrientationPreservingAt_iff {f : M → M'} {s : 
         ⟨h', (h ha).self_of_nhds⟩)
       (fun h' ↦ not_isOrientationPreservingAt_and_isOrientationReversingAt o o' f b
         ⟨h', (h hb).self_of_nhds⟩)
+
+/-- **A map into the model space preserves orientations near a point, for an orientation of the
+model space.** If `g : M → E` is `C¹` at `a` with invertible derivative there, then for some
+orientation `oE` of `E`, `g` preserves the orientations `o` and `oE` at every point near `a`: the
+constant orientation of `E` given by the image of `o` at `a`. -/
+theorem exists_eventually_isOrientationPreservingAt {g : M → E} {a : M}
+    (hg : ContMDiffAt I 𝓘(ℝ, E) 1 g a) (hd : (mfderiv I 𝓘(ℝ, E) g a).IsInvertible)
+    (o : Orientation I M ι) :
+    ∃ oE : Orientation 𝓘(ℝ, E) E ι, ∀ᶠ x in 𝓝 a, IsOrientationPreservingAt o oE g x := by
+  obtain ⟨e, he⟩ := hd
+  refine ⟨model (I := 𝓘(ℝ, E))
+    (_root_.Orientation.map ι e.toLinearEquiv (o.orientationAt a) : _root_.Orientation ℝ E ι)
+    o.card_eq, eventually_isOrientationPreservingAt hg
+      ((isOrientationPreservingAt_iff_of_coe_eq _ _ g a e he).2 (orientationAt_model _ _ _).symm)⟩
 
 end TauCeti.Manifold.Orientation

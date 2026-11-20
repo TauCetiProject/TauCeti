@@ -62,8 +62,11 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
   under convergence in `L¹_loc(Ω)`.
 * `TauCeti.tendsto_totalVariationOn_of_le_add`: variations converge along an `L¹_loc(Ω)`
   approximation whose variations exceed the limit's by amounts tending to zero.
-* `TauCeti.totalVariationOn_le_of_tendsto_L1`: a total-variation bound holding frequently along
-  a filter is preserved under convergence in `L¹(Ω)` along it.
+* `TauCeti.totalVariationOn_smul_measure`: scaling the measure by `c : ℝ≥0` scales the total
+  variation by `c`.
+* `TauCeti.totalVariationOn_le_liminf_of_tendsto_L1` and
+  `TauCeti.totalVariationOn_le_of_tendsto_L1`: lower semicontinuity and preservation of frequent
+  upper bounds under convergence in `L¹(Ω)`.
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm`: a weakly differentiable
   function has total variation at most the integral of the norm of its weak derivative, hence
   locally finite variation (`TauCeti.HasWeakFDerivOn.exists_totalVariationOn_ne_top`).
@@ -295,6 +298,15 @@ theorem totalVariationOn_smul (c : ℝ) :
   · rw [abs_of_nonpos hc, ← totalVariationOn_smul_of_nonneg (neg_nonneg.mpr hc), neg_smul,
       totalVariationOn_neg]
 
+/-- Scaling the measure by a nonnegative real scales the total variation by the same factor. -/
+@[simp]
+theorem totalVariationOn_smul_measure (c : ℝ≥0) :
+    totalVariationOn (c • μ) Ω u = (c : ℝ≥0∞) * totalVariationOn μ Ω u := by
+  simp_rw [totalVariationOn_def, ENNReal.mul_iSup]
+  refine iSup_congr fun φ => iSup_congr fun _ => ?_
+  rw [integral_smul_nnreal_measure, NNReal.smul_def, smul_eq_mul, ENNReal.ofReal_mul c.coe_nonneg,
+    ENNReal.ofReal_coe_nnreal]
+
 /-- A test vector field bounded by `c` pairs to at most `c |Du|(Ω)`. -/
 theorem ofReal_abs_integral_le_ofReal_mul_totalVariationOn (φ : 𝓓(Ω, E)) {c : ℝ}
     (hφ : ∀ x, ‖φ x‖ ≤ c) :
@@ -433,18 +445,15 @@ theorem tendsto_totalVariationOn_of_le_add [OpensMeasurableSpace E] {ι : Type*}
   rw [add_zero] at hbound
   exact (limsup_le_limsup (.of_forall hwb)).trans_eq hbound.limsup_eq
 
-/-- A bound on the total variation holding frequently along `l` is preserved under convergence
-in `L¹(Ω)` along `l`. -/
-theorem totalVariationOn_le_of_tendsto_L1 [OpensMeasurableSpace E] {ι : Type*}
+/-- **Lower semicontinuity under `L¹(Ω)` convergence.** If `u i → v` in `L¹(Ω)`, then
+`|Dv|(Ω) ≤ liminf |Du i|(Ω)`. -/
+theorem totalVariationOn_le_liminf_of_tendsto_L1 [OpensMeasurableSpace E] {ι : Type*}
     {l : Filter ι} {u : ι → E →₁[μ.restrict Ω] ℝ}
-    {v : E →₁[μ.restrict Ω] ℝ} {C : ℝ≥0∞} (h : Tendsto u l (𝓝 v))
-    (hC : ∃ᶠ i in l, totalVariationOn μ Ω (u i) ≤ C) :
-    totalVariationOn μ Ω v ≤ C := by
-  refine (totalVariationOn_le_liminf
+    {v : E →₁[μ.restrict Ω] ℝ} (h : Tendsto u l (𝓝 v)) :
+    totalVariationOn μ Ω v ≤ liminf (fun i => totalVariationOn μ Ω (u i)) l := by
+  refine totalVariationOn_le_liminf
     (.of_forall fun i => IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn (u i)))
-    (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn v)) ?_).trans
-      (liminf_le_of_frequently_le' hC)
-  intro K _ hK
+    (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn v)) fun K _ hK => ?_
   have hd := tendsto_iff_edist_tendsto_0.mp h
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hd
     (fun _ => zero_le) fun i => ?_
@@ -452,6 +461,15 @@ theorem totalVariationOn_le_of_tendsto_L1 [OpensMeasurableSpace E] {ι : Type*}
   simpa only [eDist_eq_eNorm_sub] using
     (lintegral_mono_set hK :
       (∫⁻ x in K, ‖u i x - v x‖ₑ ∂μ) ≤ ∫⁻ x in Ω, ‖u i x - v x‖ₑ ∂μ)
+
+/-- A bound on the total variation holding frequently along `l` is preserved under convergence
+in `L¹(Ω)` along `l`. -/
+theorem totalVariationOn_le_of_tendsto_L1 [OpensMeasurableSpace E] {ι : Type*}
+    {l : Filter ι} {u : ι → E →₁[μ.restrict Ω] ℝ}
+    {v : E →₁[μ.restrict Ω] ℝ} {C : ℝ≥0∞} (h : Tendsto u l (𝓝 v))
+    (hC : ∃ᶠ i in l, totalVariationOn μ Ω (u i) ≤ C) :
+    totalVariationOn μ Ω v ≤ C :=
+  (totalVariationOn_le_liminf_of_tendsto_L1 h).trans (liminf_le_of_frequently_le' hC)
 
 /-! ### Weakly differentiable functions -/
 
