@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cellular.Dimension
 public import TauCeti.AlgebraicTopology.Cellular.Lacunary
 public import TauCeti.Topology.CWComplex.Classical.ComplexProjective
 
@@ -109,14 +110,6 @@ private def singularHomologyIsoSigma (k : ℕ) :
     cellularHomologyIsoSigma _ R k (isEmpty_cell_or_isEmpty_cell_add_one k)
       fun m hm ↦ hm ▸ isEmpty_cell_or_isEmpty_cell_add_one m
 
-/-- The singular homology of `CPⁿ` vanishes in degrees carrying no cells. -/
-private lemma isZero_singularHomology_of_isEmpty {k : ℕ}
-    [IsEmpty (cell (univ : Set (ComplexProjectiveSpace n)) k)] :
-    IsZero (((AlgebraicTopology.singularHomologyFunctor A k).obj R).obj
-      (TopCat.of (ComplexProjectiveSpace n))) :=
-  ((isZero_cellularChainGroup _ k R).of_iso (cellularChainGroupIso _ R k).symm).of_iso
-    (singularHomologyIsoSigma R k)
-
 /-- **The even-degree homology of complex projective space.** For `i ≤ n`, `H₂ᵢ(CPⁿ; R) ≅ R`.
 The isomorphism is the cellular–singular comparison `TauCeti.cellularSingularHomologyIsoUniv`
 followed by the identification `TauCeti.cellularHomologyIsoSigma` of the cellular homology with
@@ -132,14 +125,15 @@ def singularHomologyIso {i : ℕ} (hi : i ≤ n) :
 theorem isZero_singularHomology_of_odd {k : ℕ} (hk : Odd k) :
     IsZero (((AlgebraicTopology.singularHomologyFunctor A k).obj R).obj
       (TopCat.of (ComplexProjectiveSpace n))) :=
+  have := finite_cwComplex (n := n)
   have := isEmpty_cell_of_odd (n := n) hk
-  isZero_singularHomology_of_isEmpty R
+  (Homeomorph.Set.univ _).symm.toHomotopyEquiv.isZero_singularHomology_of_isEmpty_cell R k
 
 /-- The singular homology of `CPⁿ` vanishes above degree `2n`. -/
 theorem isZero_singularHomology_of_lt {k : ℕ} (hk : 2 * n < k) :
     IsZero (((AlgebraicTopology.singularHomologyFunctor A k).obj R).obj
       (TopCat.of (ComplexProjectiveSpace n))) :=
-  have := isEmpty_cell_of_lt (n := n) hk
-  isZero_singularHomology_of_isEmpty R
+  have := finite_cwComplex (n := n)
+  isZero_singularHomology_univ_of_isEmpty_cell_gt _ R (fun _ hm ↦ isEmpty_cell_of_lt hm) hk
 
 end TauCeti.ComplexProjectiveSpace
