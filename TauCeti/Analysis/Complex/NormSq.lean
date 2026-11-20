@@ -15,7 +15,7 @@ For two real points `c₁`, `c₂` of the complex plane, the difference of the t
 (`Complex.normSq_sub_ofReal_sub_normSq_sub_ofReal`): the radical axis of two circles centred on
 the real line is the vertical line through their intersection points. This file also records the
 real points of such a circle and on which side of a second circle its points lie. It also bounds
-the norm along upward vertical rays leaving a point of the closed upper half-plane.
+the norm along vertical lines through a point of the closed upper half-plane.
 
 ## Main results
 
@@ -33,7 +33,7 @@ the norm along upward vertical rays leaving a point of the closed upper half-pla
 * `Complex.norm_one_add_sq_div_sq_of_norm_eq`: on the circle `‖z‖ = R`, `‖1 + z² / R²‖` is
   `2 |re z| / R`.
 * `Complex.norm_le_norm_add_ofReal_mul_I`: for `0 ≤ z.im` and `0 ≤ s`, `‖z‖ ≤ ‖z + s * I‖`.
-* `Complex.norm_add_div_two_le_norm_add_ofReal_mul_I`: for `0 ≤ z.im` and `0 ≤ s`,
+* `Complex.norm_add_div_two_le_norm_add_ofReal_mul_I`: for `0 ≤ z.im` and real `s`,
   `(‖z‖ + s) / 2 ≤ ‖z + s * I‖`.
 -/
 
@@ -146,12 +146,17 @@ theorem norm_le_norm_add_ofReal_mul_I {z : ℂ} (hz : 0 ≤ z.im) {s : ℝ} (hs 
     ofReal_im, I_re, I_im]
   nlinarith
 
-/-- The points of a vertical ray leaving a point `z` of the closed upper half-plane upward, at
-height `s` above `z`, are at distance at least `(‖z‖ + s) / 2` from the origin. -/
-theorem norm_add_div_two_le_norm_add_ofReal_mul_I {z : ℂ} (hz : 0 ≤ z.im) {s : ℝ}
-    (hs : 0 ≤ s) : (‖z‖ + s) / 2 ≤ ‖z + (s : ℂ) * I‖ := by
-  -- `s` is at most the imaginary part `z.im + s` of `z + s * I`, hence at most its norm
-  have h : s ≤ ‖z + (s : ℂ) * I‖ := le_trans (by simpa using hz) (im_le_norm _)
-  linarith [norm_le_norm_add_ofReal_mul_I hz hs]
+/-- For `z` in the closed upper half-plane and every real `s`, the point `z + s * I` of the
+vertical line through `z` is at distance at least `(‖z‖ + s) / 2` from the origin. -/
+theorem norm_add_div_two_le_norm_add_ofReal_mul_I {z : ℂ} (hz : 0 ≤ z.im) (s : ℝ) :
+    (‖z‖ + s) / 2 ≤ ‖z + (s : ℂ) * I‖ := by
+  rcases le_total 0 s with hs | hs
+  · -- `s` is at most the imaginary part `z.im + s` of `z + s * I`, hence at most its norm
+    have h : s ≤ ‖z + (s : ℂ) * I‖ := le_trans (by simpa using hz) (im_le_norm _)
+    linarith [norm_le_norm_add_ofReal_mul_I hz hs]
+  · -- for `s ≤ 0`, the triangle inequality gives `‖z‖ ≤ ‖z + s * I‖ - s`
+    have h := norm_le_norm_add_norm_sub' z (z + (s : ℂ) * I)
+    have hsI : ‖z - (z + (s : ℂ) * I)‖ = -s := by simp [abs_of_nonpos hs]
+    linarith [norm_nonneg (z + (s : ℂ) * I)]
 
 end Complex
