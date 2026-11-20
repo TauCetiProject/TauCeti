@@ -7,11 +7,11 @@ module
 
 public import TauCeti.Geometry.Lie.Adjoint.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Associated.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Associated.BilinForm
+public import TauCeti.Geometry.Manifold.VectorBundle.Associated.BilinMap
 public import Mathlib.Algebra.Lie.Abelian
 import Mathlib.Analysis.Calculus.ContDiff.Basic
-import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Geometry.Lie.Subgroup.Commutative
+import TauCeti.Topology.Algebra.Lie.Bracket
 
 /-!
 # The adjoint bundle of a principal bundle
@@ -35,12 +35,12 @@ vanishes (`TauCeti.AdjointBundle.instIsLieAbelian`).
 
 An `Ad`-invariant bilinear form `β` on `𝔤`, such as minus the Killing form of a compact semisimple
 group, induces a fibre pairing on `ad(P)`, `β_b ([p, X], [p, Y]) = β (X, Y)`. This is the
-general construction `TauCeti.AssociatedBundle.bilinForm` for the invariant bilinear maps on an
+general construction `TauCeti.AssociatedBundle.bilinMap` for the invariant bilinear maps on an
 associated bundle: it is nondegenerate when `β` is
-(`TauCeti.AssociatedBundle.nondegenerate_bilinForm_iff`), commutes with pullback
-(`TauCeti.AssociatedBundle.bilinForm_pullbackEquiv`) and pairs smooth sections to smooth functions
-(`ContMDiff.bilinForm_associatedBundle`). It is `ad`-invariant on each fibre,
-`β_b (⁅x, y⁆, z) = -β_b (y, ⁅x, z⁆)` (`TauCeti.AdjointBundle.bilinForm_lie_eq_neg_bilinForm_lie`).
+(`TauCeti.AssociatedBundle.nondegenerate_bilinMap_iff`), commutes with pullback
+(`TauCeti.AssociatedBundle.bilinMap_pullbackEquiv`) and pairs smooth sections to smooth functions
+(`ContMDiff.bilinMap_associatedBundle`). It is `ad`-invariant on each fibre,
+`β_b (⁅x, y⁆, z) = -β_b (y, ⁅x, z⁆)` (`TauCeti.AdjointBundle.bilinMap_lie_eq_neg_bilinMap_lie`).
 
 ## References
 
@@ -121,8 +121,9 @@ theorem mk_eq_mk_of_isMulCommutative [IsMulCommutative G] {b : B} (p q : P b)
 /-- For a commutative structure group, the fibres of the adjoint bundle are abelian Lie
 algebras, since the Lie algebra of a commutative Lie group is abelian
 (`TauCeti.Lie.isLieAbelian_groupLieAlgebra_of_isMulCommutative`). -/
-instance instIsLieAbelian [FiniteDimensional ℝ E] [T2Space G] [IsMulCommutative G] (b : B) :
+instance instIsLieAbelian [FiniteDimensional ℝ E] [IsMulCommutative G] (b : B) :
     IsLieAbelian (AdjointBundle I G P b) := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
   have : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
   have : LieGroup I (minSmoothness ℝ 3) G := LieGroup.minSmoothness_of_isRCLikeNormedField
   refine ⟨fun x y ↦ ?_⟩
@@ -138,16 +139,16 @@ instance instIsLieAbelian [FiniteDimensional ℝ E] [T2Space G] [IsMulCommutativ
 `β_b (⁅x, y⁆, z) = -β_b (y, ⁅x, z⁆)`. An `Ad`-invariant bilinear form on `𝔤` is invariant under
 the bracket (`TauCeti.Lie.AdjointModule.lieInvariant_of_smul_invariant`), and the induced pairing
 reads it in a principal frame. -/
-theorem bilinForm_lie_eq_neg_bilinForm_lie [FiniteDimensional ℝ E]
+theorem bilinMap_lie_eq_neg_bilinMap_lie [FiniteDimensional ℝ E]
     {β : AdjointModule I G →L[ℝ] AdjointModule I G →L[ℝ] ℝ}
     (hβ : ∀ (g : G) (X Y : AdjointModule I G), β (g • X) (g • Y) = β X Y) {b : B}
     (x y z : AdjointBundle I G P b) :
-    bilinForm G P β b ⁅x, y⁆ z = -bilinForm G P β b y ⁅x, z⁆ := by
+    bilinMap G P β b ⁅x, y⁆ z = -bilinMap G P β b y ⁅x, z⁆ := by
   have hlie := AdjointModule.lieInvariant_of_smul_invariant hβ
   obtain ⟨p, X, rfl⟩ := exists_mk x
   obtain ⟨Y, rfl⟩ := (mk_bijective (G := G) (F := AdjointModule I G) p).2 y
   obtain ⟨Z, rfl⟩ := (mk_bijective (G := G) (F := AdjointModule I G) p).2 z
-  rw [lie_mk, lie_mk, bilinForm_mk hβ, bilinForm_mk hβ]
+  rw [lie_mk, lie_mk, bilinMap_mk hβ, bilinMap_mk hβ]
   simpa only [ContinuousLinearMap.toBilinForm_apply] using hlie X Y Z
 
 end AdjointBundle
@@ -164,16 +165,6 @@ variable [FiniteDimensional ℝ E]
   [TopologicalSpace M] [ChartedSpace HM M]
   {b : M → B} {v w : ∀ m, AdjointBundle I G P (b m)} {s : Set M} {x : M}
 
-/-- The bracket of `𝔤`, as a continuous bilinear map. -/
-private def lieL : AdjointModule I G →L[ℝ] AdjointModule I G →L[ℝ] AdjointModule I G :=
-  LinearMap.toContinuousLinearMap
-    (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ
-      LinearMap.mk₂ ℝ (fun X Y : AdjointModule I G ↦ ⁅X, Y⁆) add_lie smul_lie lie_add lie_smul)
-
-private theorem lieL_apply (X Y : AdjointModule I G) : lieL X Y = ⁅X, Y⁆ := by
-  simp only [lieL, LinearMap.coe_toContinuousLinearMap', LinearMap.coe_comp,
-    Function.comp_apply, LinearEquiv.coe_coe, LinearMap.mk₂_apply]
-
 /-- **The bracket of smooth maps into the adjoint bundle is smooth**, within a set: the pointwise
 bracket of two maps into `ad(P)` over a common base map, smooth within `s` at `x`, is smooth within
 `s` at `x`. -/
@@ -184,20 +175,11 @@ theorem _root_.ContMDiffWithinAt.lie_adjointBundle
       (fun m ↦ (⟨b m, w m⟩ : TotalSpace (AdjointModule I G) (AdjointBundle I G P))) s x) :
     ContMDiffWithinAt IM (IB.prod 𝓘(ℝ, AdjointModule I G)) n
       (fun m ↦ (⟨b m, ⁅v m, w m⁆⟩ : TotalSpace (AdjointModule I G) (AdjointBundle I G P))) s x := by
-  obtain ⟨hb, hv'⟩ := contMDiffWithinAt_totalSpace_iff.mp hv
-  have hw' := (contMDiffWithinAt_totalSpace_iff.mp hw).2
-  refine contMDiffWithinAt_totalSpace_iff.mpr ⟨hb, ?_⟩
-  have hx := mem_baseSet_trivializationAt G P (b x)
-  have hmem := hb.continuousWithinAt.preimage_mem_nhdsWithin
-    ((trivializationAt G P (b x)).open_baseSet.mem_nhds hx)
+  refine contMDiffWithinAt_totalSpace_iff.mpr ⟨(contMDiffWithinAt_totalSpace_iff.mp hv).1, ?_⟩
   -- Near `x`, the coordinate of the bracket is the bracket of the coordinates.
-  apply ((lieL (I := I) (G := G)).isBoundedBilinearMap.contDiff.contMDiff.contMDiffAt
-    |>.comp_contMDiffWithinAt x (hv'.prodMk_space hw')).congr_of_eventuallyEq
-  · filter_upwards [hmem] with y hy
-    simp only [Function.comp_apply, lieL_apply]
-    exact AdjointBundle.trivializationAt_lie_snd hy (v y) (w y)
-  · simp only [Function.comp_apply, lieL_apply]
-    exact AdjointBundle.trivializationAt_lie_snd hx (v x) (w x)
+  exact AssociatedBundle.contMDiffWithinAt_of_trivializationAt
+    (lieL ℝ (AdjointModule I G) (AdjointModule I G)).isBoundedBilinearMap.contDiff hv hw
+    fun y hy ↦ AdjointBundle.trivializationAt_lie_snd hy (v y) (w y)
 
 /-- The bracket of maps into the adjoint bundle smooth at a point is smooth there. -/
 theorem _root_.ContMDiffAt.lie_adjointBundle
