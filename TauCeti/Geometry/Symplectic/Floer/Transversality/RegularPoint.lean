@@ -13,9 +13,9 @@ public import TauCeti.Topology.Instances.Real.SliceInjective
 # Regular points of Floer trajectories
 
 Let `u : ℝ × ℝ → V` be a Floer trajectory in a symplectic vector space, converging to the loops
-`xm` and `xp` as `s → -∞` and `s → +∞`. Transversality for the moduli spaces of Floer
-trajectories with respect to variations of a time-dependent almost complex structure `J_t` is
-proved at the *regular points* of Floer, Hofer and Salamon: the points `(s, t)` with
+`xm` and `xp` as `s → -∞` and `s → +∞`. Floer, Hofer and Salamon prove transversality for the
+moduli spaces of Floer trajectories with respect to variations of a time-dependent almost complex
+structure `J_t` at their *regular points*: the points `(s, t)` with
 
 * `∂ₛu(s, t) ≠ 0`,
 * `u(s, t) ≠ xm(t)` and `u(s, t) ≠ xp(t)`, and
@@ -23,10 +23,10 @@ proved at the *regular points* of Floer, Hofer and Salamon: the points `(s, t)` 
 
 (`TauCeti.Floer.regularPoints`). The last condition says that `(s, t)` is the only preimage of
 `(u(s, t), t)` under the map `(s, t) ↦ (u(s, t), t)`: a variation of `J_t` supported near
-`u(s, t)` at time `t` is then felt by the trajectory only near `(s, t)`. The detection of cokernel
-elements of the linearized operator by variations of a time-dependent `J_t` at these points is not
-yet proved; `TauCeti.SymplecticForm.eq_zero_of_integral_apply_deriv_floerOperator_eq_zero` is the
-corresponding statement for a time-independent `J` at points near which `u` itself is injective.
+`u(s, t)` at time `t` is then felt by the trajectory only near `(s, t)`.
+`TauCeti.SymplecticForm.eq_zero_of_integral_apply_deriv_floerOperator_eq_zero` is the related
+statement detecting cokernel elements of the linearized operator by variations of a
+time-independent `J` at points near which `u` itself is injective.
 
 This file proves two parts of the theorem of Floer, Hofer and Salamon that the regular points of
 a nonstationary trajectory form an open dense set.
