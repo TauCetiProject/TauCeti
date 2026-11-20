@@ -29,6 +29,8 @@ extension by zero preserves finite limits.
 ## Main declarations
 
 * `TopologicalSpace.Opens.extendByZero`: extension by zero of sheaves from `U` to `X`.
+* `TopologicalSpace.Opens.extendByZeroIsoSheafPullback`: extension by zero is the sheaf pullback
+  along `Over.forget U` after the identification `TopologicalSpace.Opens.sheafEquivOver`.
 * `TopologicalSpace.Opens.extendByZeroAdjunction`: extension by zero is left adjoint to
   `TopologicalSpace.Opens.sheafRestrict`. In particular it preserves all colimits.
 * `TopologicalSpace.Opens.extendByZeroIsoSheafify`: extension by zero is the sheafification of the
@@ -69,6 +71,13 @@ noncomputable def extendByZero :
   U.sheafEquivOver.inverse ⋙ (Over.forget U).sheafPullback A
     ((Opens.grothendieckTopology X).over U) (Opens.grothendieckTopology X)
 
+/-- Extension by zero is the identification of sheaves on `U` with sheaves on the slice site
+`Over U`, followed by the sheaf pullback along `Over.forget U`. -/
+noncomputable def extendByZeroIsoSheafPullback :
+    U.extendByZero A ≅ U.sheafEquivOver.inverse ⋙ (Over.forget U).sheafPullback A
+      ((Opens.grothendieckTopology X).over U) (Opens.grothendieckTopology X) :=
+  Iso.refl _
+
 /-- Extension by zero is left adjoint to restriction to the open subset `U`. -/
 noncomputable def extendByZeroAdjunction : U.extendByZero A ⊣ U.sheafRestrict :=
   (U.sheafEquivOver.symm.toAdjunction.comp
@@ -80,7 +89,7 @@ interval of `U`. -/
 noncomputable def extendByZeroIsoSheafify :
     U.extendByZero A ≅ U.sheafEquivOver.inverse ⋙ sheafToPresheaf _ A ⋙
       TauCeti.CategoryTheory.PresheafExtensionByZero.functor U ⋙ presheafToSheaf _ A :=
-  U.sheafEquivOver.inverse.isoWhiskerLeft
+  U.extendByZeroIsoSheafPullback A ≪≫ U.sheafEquivOver.inverse.isoWhiskerLeft
     (TauCeti.CategoryTheory.SheafExtensionByZero.sheafPullbackIsoSheafify U _)
 
 /-- Extension by zero is a left adjoint, so it preserves all colimits. -/
@@ -89,9 +98,8 @@ instance isLeftAdjoint_extendByZero : (U.extendByZero A).IsLeftAdjoint :=
 
 /-- Extension by zero preserves finite limits. -/
 instance preservesFiniteLimits_extendByZero [HasFiniteLimits A] :
-    PreservesFiniteLimits (U.extendByZero A) := by
-  unfold extendByZero
-  infer_instance
+    PreservesFiniteLimits (U.extendByZero A) :=
+  preservesFiniteLimits_of_natIso (U.extendByZeroIsoSheafPullback A).symm
 
 end
 
