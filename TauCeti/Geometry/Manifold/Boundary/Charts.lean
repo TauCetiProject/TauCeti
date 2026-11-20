@@ -57,6 +57,8 @@ step and are not proved here.
   the vanishing zeroth coordinate in any ambient chart.
 * `TauCeti.ModelWithCorners.isInteriorPoint_euclideanHalfSpace_iff`: interior points are detected
   by the positive zeroth coordinate in any ambient chart.
+* `TauCeti.mem_boundary_iff_transHomeomorph_prodUnique`: the same boundary criterion in an ambient
+  chart read with a trivial second factor, the form taken by the hyperplane and product charts.
 * `TauCeti.boundaryChartedSpace_atlas`: the boundary atlas is the range of its preferred charts.
 * `TauCeti.boundaryChartedSpace_chartAt_source` and its companions characterize the preferred
   boundary charts induced by the ambient preferred charts.
@@ -117,10 +119,10 @@ theorem ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (hx : x ∈ e.sourc
 variable (e) in
 /-- In any ambient chart, read with a trivial second factor, the boundary is the hyperplane where
 the zeroth coordinate vanishes. -/
-private theorem mem_boundary_iff_transHomeomorph_prodUnique :
-    ∀ w ∈ (e.transHomeomorph (Homeomorph.prodUnique _ Unit).symm).source,
+theorem mem_boundary_iff_transHomeomorph_prodUnique {F : Type*} [TopologicalSpace F] [Unique F] :
+    ∀ w ∈ (e.transHomeomorph (Homeomorph.prodUnique _ F).symm).source,
       w ∈ (𝓡∂ (n + 1)).boundary M ↔
-        (e.transHomeomorph (Homeomorph.prodUnique _ Unit).symm w).1.1 0 = 0 :=
+        (e.transHomeomorph (Homeomorph.prodUnique _ F).symm w).1.1 0 = 0 :=
   fun _ hw ↦ by
     simpa using ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (by simpa using hw)
 

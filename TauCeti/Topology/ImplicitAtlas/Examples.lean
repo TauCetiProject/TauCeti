@@ -163,8 +163,8 @@ noncomputable def ofChartedSpace :
     have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.1⟩
     refine Or.inr ⟨n, by simp [Finset.eq_empty_of_isEmpty I],
       (chartAt (EuclideanHalfSpace (n + 1)) x.1).transHomeomorph (Homeomorph.prodUnique _ _).symm,
-      by simp, fun y hy ↦ ?_, fun _ _ ↦ funext fun α ↦ (IsEmpty.false α.1).elim⟩
-    simpa using ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (by simpa using hy)
+      by simp, mem_boundary_iff_transHomeomorph_prodUnique _,
+      fun _ _ ↦ funext fun α ↦ (IsEmpty.false α.1).elim⟩
 
 /-- The boundaries of the thickenings of the manifold atlas with boundary are the manifold
 boundary. -/
