@@ -334,6 +334,7 @@ theorem rightHom_comp_mapExtension {N : Type*} [CommGroup N] [MulDistribMulActio
 
 theorem inl_injective : Function.Injective (inl α) := fun _ _ h => congrArg Extension.left h
 
+-- The proof is adapted from Mathlib's `SemidirectProduct.range_inl_eq_ker_rightHom`.
 theorem range_inl_eq_ker_rightHom : (inl α).range = (rightHom α).ker :=
   le_antisymm (by rintro _ ⟨a, rfl⟩; simp [MonoidHom.mem_ker])
     fun x hx => ⟨x.left, by ext <;> simp_all [MonoidHom.mem_ker]⟩
