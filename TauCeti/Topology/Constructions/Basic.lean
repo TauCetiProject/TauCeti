@@ -27,8 +27,9 @@ the topology of the fibre product `Function.Pullback f g`, a subspace of the pro
 * `Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp`: open maps are stable under
   pullback; the projection of a fibre product to one factor is open onto its range when the map
   from the other factor is.
-* `Topology.IsQuotientMap.of_isClosedMap_of_isEmbedding`: quotient maps pull back to quotient
-  maps along continuous closed maps, for instance to the preimage of a closed set.
+* `Topology.IsQuotientMap.of_isClosedMap_of_isEmbedding`: a quotient map `q` restricts to a
+  quotient map over a closed subset. More generally, `q` pulls back along a continuous closed map
+  `i` over an embedding `j`, provided the range of `i` contains `q ⁻¹' range j`.
 * `ContinuousMap.pullbackFst`, `ContinuousMap.pullbackSnd`, `ContinuousMap.mapPullback`,
   `ContinuousMap.mapPullbackSnd`, `Homeomorph.pullbackComm`: bundled projections, functoriality,
   and symmetry of the fibre product.
@@ -128,12 +129,12 @@ theorem Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp [TopologicalSp
     obtain ⟨q', hq'⟩ : (x, (ι q).2) ∈ range ι := hrange ▸ hx
     exact ⟨q', show ι q' ∈ T from hq' ▸ hUV ⟨hxU, hqV⟩, Subtype.ext (by simp [hq'])⟩
 
-/-- **Quotient maps pull back along closed maps.** Let `q : X → Y` be a quotient map, let
-`i : P → X` be a continuous closed map and `j : Q → Y` an embedding with `q ∘ i = j ∘ q'`, such
-that every point which `q` maps into the range of `j` lies in the range of `i`. Then `q'` is a
-quotient map. For the inclusion `j` of a closed subset `s` and the inclusion `i` of `q ⁻¹' s`,
-this says that `q` restricted to `q ⁻¹' s` is a quotient map onto `s`, the closed counterpart of
-`Topology.IsQuotientMap.restrictPreimage_isOpen`. -/
+/-- **Quotient maps pull back along closed maps whose range contains the preimage.** Let
+`q : X → Y` be a quotient map, let `i : P → X` be a continuous closed map and `j : Q → Y` an
+embedding with `q ∘ i = j ∘ q'`, such that every point which `q` maps into the range of `j`
+lies in the range of `i`. Then `q'` is a quotient map. For the inclusion `j` of a closed subset
+`s` and the inclusion `i` of `q ⁻¹' s`, this says that `q` restricted to `q ⁻¹' s` is a quotient
+map onto `s`, the closed counterpart of `Topology.IsQuotientMap.restrictPreimage_isOpen`. -/
 theorem Topology.IsQuotientMap.of_isClosedMap_of_isEmbedding [TopologicalSpace Y] {P Q : Type*}
     [TopologicalSpace P] [TopologicalSpace Q] {q : X → Y} {q' : P → Q} {i : P → X} {j : Q → Y}
     (hq : IsQuotientMap q) (hi : IsClosedMap i) (hic : Continuous i) (hj : IsEmbedding j)
