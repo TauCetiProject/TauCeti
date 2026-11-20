@@ -32,7 +32,7 @@ open Function Matrix
 
 namespace TauCeti
 
-variable {K K' ι κ : Type*} {n : ℕ}
+variable {K ι κ : Type*} {n : ℕ}
 
 /-- A family of vectors in `Fin n → K` is in general position if every subfamily indexed by an
 injection from `Fin n` is linearly independent.  In particular, a family with fewer than `n`
@@ -86,18 +86,6 @@ theorem inGeneralPosition_smul_iff {c : ι → K} (hc : ∀ i, c i ≠ 0) :
     ext
     simp
   rw [hu, LinearIndependent.units_smul_iff]
-
-/-- Applying a field homomorphism coefficientwise does not change general position. -/
-@[simp]
-theorem inGeneralPosition_map_iff [Field K'] (σ : K →+* K') :
-    InGeneralPosition (fun i j ↦ σ (L i j)) ↔ InGeneralPosition L := by
-  rw [inGeneralPosition_iff_det_ne_zero, inGeneralPosition_iff_det_ne_zero]
-  refine forall₂_congr fun e _ ↦ ?_
-  have hB : Matrix.of (fun i j ↦ σ (L (e i) j)) =
-      σ.mapMatrix (Matrix.of fun i j ↦ L (e i) j) := by
-    ext i j
-    simp
-  rw [hB, ← σ.map_det, map_ne_zero]
 
 /-- An invertible linear change of coordinates does not change general position: the row vectors
 `L i` are multiplied on the right by a matrix `A` of nonzero determinant. -/
@@ -183,3 +171,23 @@ theorem inGeneralPosition_coords_add_sum :
 end CoordinateForms
 
 end TauCeti
+
+namespace RingHom
+
+open TauCeti
+
+variable {K K' ι : Type*} {n : ℕ} [Field K] [Field K'] {L : ι → Fin n → K}
+
+/-- Applying a field homomorphism coefficientwise does not change general position. -/
+@[simp]
+theorem inGeneralPosition_map_iff (σ : K →+* K') :
+    InGeneralPosition (fun i j ↦ σ (L i j)) ↔ InGeneralPosition L := by
+  rw [inGeneralPosition_iff_det_ne_zero, inGeneralPosition_iff_det_ne_zero]
+  refine forall₂_congr fun e _ ↦ ?_
+  have hB : Matrix.of (fun i j ↦ σ (L (e i) j)) =
+      σ.mapMatrix (Matrix.of fun i j ↦ L (e i) j) := by
+    ext i j
+    simp
+  rw [hB, ← σ.map_det, map_ne_zero]
+
+end RingHom
