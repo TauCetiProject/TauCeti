@@ -29,8 +29,8 @@ bases of permutation invariants are classified.
 
 ## Main results
 
-* `MonomialOrder.toSyn_mapDomain_degree_le`: the leading exponent of an invariant polynomial is the
-  largest exponent of its orbit.
+* `MonomialOrder.toSyn_mapDomain_degree_le_of_mem_permInvariants`: the leading exponent of an
+  invariant polynomial is the largest exponent of its orbit.
 * `MonomialOrder.degree_orbitSum`, `MonomialOrder.monic_orbitSum`: the orbit sum of an
   orbit-maximal exponent is monic with that leading exponent.
 * `MonomialOrder.mem_leadingExponents_permInvariants_iff`: the leading exponents of the invariant
@@ -58,7 +58,8 @@ variable {σ R : Type*} [CommSemiring R] (m : MonomialOrder σ) {G : Subgroup (E
   {e : σ →₀ ℕ} {p : MvPolynomial σ R}
 
 /-- The leading exponent of a `G`-invariant polynomial is the largest exponent of its `G`-orbit. -/
-theorem toSyn_mapDomain_degree_le (hp : p ∈ permInvariants R G) {g : Equiv.Perm σ} (hg : g ∈ G) :
+theorem toSyn_mapDomain_degree_le_of_mem_permInvariants (hp : p ∈ permInvariants R G)
+    {g : Equiv.Perm σ} (hg : g ∈ G) :
     m.toSyn ((m.degree p).mapDomain g) ≤ m.toSyn (m.degree p) := by
   rcases eq_or_ne p 0 with rfl | hp0
   · simp
@@ -110,7 +111,7 @@ theorem mem_leadingExponents_permInvariants_iff [NoZeroDivisors R] [Nontrivial R
   refine ⟨fun h ↦ ?_, fun he ↦ mem_leadingExponents_iff.2 ⟨orbitSum R G e,
     orbitSum_mem_permInvariants e, orbitSum_ne_zero, m.degree_orbitSum he⟩⟩
   obtain ⟨f, hf, -, rfl⟩ := mem_leadingExponents_iff.1 h
-  exact fun g hg ↦ m.toSyn_mapDomain_degree_le hf hg
+  exact fun g hg ↦ m.toSyn_mapDomain_degree_le_of_mem_permInvariants hf hg
 
 variable (R G) in
 /-- The orbit sums form a SAGBI basis of the invariant subalgebra of a permutation group, for
@@ -121,7 +122,7 @@ theorem isSAGBIBasis_range_orbitSum :
   refine ⟨Set.range_subset_iff.2 orbitSum_mem_permInvariants, Algebra.adjoin_le ?_⟩
   rintro _ ⟨f, hf, rfl⟩
   have hmax : ∀ g ∈ G, m.toSyn ((m.degree f).mapDomain g) ≤ m.toSyn (m.degree f) :=
-    fun g hg ↦ m.toSyn_mapDomain_degree_le hf hg
+    fun g hg ↦ m.toSyn_mapDomain_degree_le_of_mem_permInvariants hf hg
   have hterm : m.leadingTerm f = C (m.leadingCoeff f) * m.leadingTerm (orbitSum R G (m.degree f)) :=
     by rw [m.leadingTerm_orbitSum hmax, C_mul_monomial, mul_one, leadingTerm]
   rw [hterm]
