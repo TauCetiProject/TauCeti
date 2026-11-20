@@ -13,6 +13,9 @@ import TauCeti.Topology.Circle.Metric
 /-!
 # Directional derivatives and Lipschitz bounds of the Fourier phases
 
+The derivative of a phase `y ↦ 𝐞 (Φ y)` is `2πi DΦ(y) 𝐞 (Φ y)`, by the chain rule from Mathlib's
+`Real.hasDerivAt_fourierChar`.
+
 On a real inner-product space, the phases `ζ ↦ 𝐞 ⟪ζ, x⟫` and `y ↦ 𝐞 (-⟪y, ζ⟫)` of the inverse and
 direct Fourier integrals have directional derivatives `2πi ⟪v, x⟫ 𝐞 ⟪ζ, x⟫` and
 `-2πi ⟪v, ζ⟫ 𝐞 (-⟪y, ζ⟫)` in the direction `v`. These are Mathlib's derivatives
@@ -28,6 +31,8 @@ are bounded by a first frequency moment.
 
 ## Main results
 
+* `HasFDerivAt.fourierChar`, `Real.fderiv_fourierChar_comp_apply`: the derivative of
+  `y ↦ 𝐞 (Φ y)`.
 * `Real.hasLineDerivAt_fourierChar_inner`: the directional derivative of `ζ ↦ 𝐞 ⟪ζ, x⟫`.
 * `Real.hasLineDerivAt_fourierChar_neg_inner`: the directional derivative of
   `y ↦ 𝐞 (-⟪y, ζ⟫)`.
@@ -41,6 +46,30 @@ public section
 open scoped FourierTransform RealInnerProductSpace
 
 namespace Real
+
+section Comp
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The derivative of the phase `y ↦ 𝐞 (Φ y)` at `x` is `2πi 𝐞 (Φ x) Φ'`, where `Φ'` is the
+derivative of `Φ` at `x`. -/
+theorem _root_.HasFDerivAt.fourierChar {Φ : E → ℝ} {Φ' : E →L[ℝ] ℝ} {x : E}
+    (hΦ : HasFDerivAt Φ Φ' x) :
+    HasFDerivAt (fun y ↦ (𝐞 (Φ y) : ℂ))
+      ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (2 * π * Complex.I * 𝐞 (Φ x))).comp Φ')
+      x :=
+  (hasDerivAt_fourierChar (Φ x)).hasFDerivAt.comp x hΦ
+
+/-- The derivative of the phase `y ↦ 𝐞 (Φ y)` in the direction `w` is `2πi DΦ(x) w 𝐞 (Φ x)`. -/
+theorem fderiv_fourierChar_comp_apply {Φ : E → ℝ} {x : E} (hΦ : DifferentiableAt ℝ Φ x)
+    (w : E) :
+    fderiv ℝ (fun y ↦ (𝐞 (Φ y) : ℂ)) x w = 2 * π * Complex.I * fderiv ℝ Φ x w * 𝐞 (Φ x) := by
+  rw [hΦ.hasFDerivAt.fourierChar.fderiv]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply,
+    one_apply_eq_self, Complex.real_smul]
+  ring
+
+end Comp
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
