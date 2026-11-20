@@ -285,11 +285,17 @@ def hexGraphTranslation : Multiplicative (ℤ × ℤ) →* (hexGraph ≃g hexGra
 @[simp] theorem hexGraphTranslation_apply (w : Multiplicative (ℤ × ℤ)) (f : TriFace) :
     hexGraphTranslation w f = w.toAdd +ᵥ f := (rfl)
 
+@[simp] theorem hexGraphTranslation_symm_apply (w : Multiplicative (ℤ × ℤ)) (f : TriFace) :
+    (hexGraphTranslation w).symm f = -w.toAdd +ᵥ f := (rfl)
+
 /-- The rotation `ρ` acts on `hexGraph` by a graph automorphism. -/
 def hexGraphRot : hexGraph ≃g hexGraph :=
   ⟨TriFace.rot, hexGraph_adj_rot_iff⟩
 
 @[simp] theorem hexGraphRot_apply (f : TriFace) : hexGraphRot f = TriFace.rot f := (rfl)
+
+@[simp] theorem hexGraphRot_symm_apply (f : TriFace) :
+    hexGraphRot.symm f = TriFace.rot.symm f := (rfl)
 
 /-- The bijection `TriEdge.equivHexGraphEdgeSet` commutes with translations. -/
 @[simp] theorem TriEdge.equivHexGraphEdgeSet_vadd (w : ℤ × ℤ) (e : TriEdge) :
