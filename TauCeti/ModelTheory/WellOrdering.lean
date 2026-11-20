@@ -65,7 +65,7 @@ constant that does not occur in `σ`.
   sentence, the order types of its models are bounded by a countable ordinal.
 * `FirstOrder.Language.wellOrdering_undefinable`: no `L_{ω₁ω}` sentence defines the structures in
   which `lt` is a well-order, not even among the countable nonempty structures.
-* `FirstOrder.Language.wellFoundedLT_undefinable`: in the language of orders, no `L_{ω₁ω}`
+* `TauCeti.wellFoundedLT_undefinable`: in the language of orders, no `L_{ω₁ω}`
   sentence defines the well-orders among the countable nonempty linear orders.
 
 ## References
@@ -728,6 +728,16 @@ private def ltStructure (lt : L.Relations 2) {M : Type w} [LT M] (m : M) : L.Str
     | 2, R, xs => R = lt ∧ xs 0 < xs 1
     | _, _, _ => False
 
+/-- The inclusion of the ordinals below `α` into the ordinals below `α + 1`. -/
+private noncomputable def toTypeSuccEmbedding (α : Ordinal.{w}) : α.ToType ↪o (α + 1).ToType :=
+  OrderEmbedding.ofStrictMono
+    (fun a => ToType.mk ⟨(ToType.toOrd a).1, (ToType.toOrd a).2.trans_le (Order.le_succ α)⟩)
+    fun _ _ hxy => ToType.mk.strictMono (Subtype.mk_lt_mk.2 (ToType.mk.symm.strictMono hxy))
+
+private theorem countable_toType_add_one {α : Ordinal.{w}} (hα : α < ω₁) :
+    Countable (α + 1).ToType :=
+  Cardinal.countable_toType_of_lt_omega_one ((Cardinal.isSuccLimit_omega 1).add_one_lt hα)
+
 /-- **Undefinability of well-ordering.** Among countable nonempty structures in `Type w`, no
 `L_{ω₁ω}` sentence holds in a structure if and only if `lt` is a well-order. A fortiori no
 sentence has as its models exactly the structures in `Type w` in which `lt` is a well-order, which
@@ -745,12 +755,9 @@ theorem wellOrdering_undefinable (lt : L.Relations 2) :
   have hrel (x y : M) : RelMap lt ![x, y] ↔ x < y := and_iff_right rfl
   have hwo : IsWellOrder M fun x y : M => RelMap lt ![x, y] := by
     simpa only [hrel] using (inferInstance : IsWellOrder M (· < ·))
-  let f : α.ToType → M := fun a => ToType.mk
-    ⟨(ToType.toOrd a).1, (ToType.toOrd a).2.trans_le (Order.le_succ α)⟩
-  have hc : Countable M :=
-    Cardinal.countable_toType_of_lt_omega_one ((Cardinal.isSuccLimit_omega 1).add_one_lt hα)
-  exact hbound M _ hne ((hφ M _ hne hc).2 hwo) f fun x y hxy => (hrel _ _).2
-    (ToType.mk.strictMono (Subtype.mk_lt_mk.2 (ToType.mk.symm.strictMono hxy)))
+  have hc : Countable M := countable_toType_add_one hα
+  exact hbound M _ hne ((hφ M _ hne hc).2 hwo) (toTypeSuccEmbedding α) fun x y hxy =>
+    (hrel _ _).2 ((toTypeSuccEmbedding α).strictMono hxy)
 
 /-! ### Well-orders in the language of orders -/
 
@@ -796,8 +803,7 @@ private theorem realize_ltSentence [Language.order.Structure M] [LinearOrder M]
   have h : SentenceInf.Realize (σ ⊓ Theoryω.conjunction _ countable_linearOrderTheory) M :=
     SentenceInf.realize_inf.2 ⟨hσ, (Theoryω.realize_conjunction_iff _).2
       (Theoryω.model_image_toOmega_iff.2 inferInstance)⟩
-  simpa only [SentenceInf.realize_def, FormulaInf.realize_def,
-    LHom.realize_onBoundedFormulaInf] using h
+  exact (LHom.realize_sentenceInf_onBoundedFormulaInf _ _).2 h
 
 /-- In a model of `ltSentence σ`, `ltSymb` is the strict order of a linear order satisfying
 `σ`; so it is well-founded when every such linear order is well-founded. -/
@@ -810,9 +816,8 @@ private theorem wellFounded_of_realize_ltSentence [ltLanguage.Structure M]
   classical
   let := (lhomMorleyize {⟨2, ltFormula⟩}).reduct M
   obtain ⟨h₁, h₂⟩ := SentenceInf.realize_inf.1 h
-  obtain ⟨hσM, hLO⟩ := SentenceInf.realize_inf.1 <| by
-    simpa only [SentenceInf.realize_def, FormulaInf.realize_def,
-      LHom.realize_onBoundedFormulaInf] using h₁
+  obtain ⟨hσM, hLO⟩ :=
+    SentenceInf.realize_inf.1 ((LHom.realize_sentenceInf_onBoundedFormulaInf _ _).1 h₁)
   have : M ⊨ Language.order.linearOrderTheory :=
     Theoryω.model_image_toOmega_iff.1 ((Theoryω.realize_conjunction_iff _).1 hLO)
   let := Language.order.linearOrderOfModels M
@@ -823,11 +828,17 @@ private theorem wellFounded_of_realize_ltSentence [ltLanguage.Structure M]
 
 end Order
 
+end FirstOrder.Language
+
+namespace TauCeti
+
+open FirstOrder FirstOrder.Language Structure Ordinal
+
 /-- **Undefinability of well-ordering for the language of orders.** No `L_{ω₁ω}` sentence in the
 language of orders holds in a countable nonempty linear order in `Type w` exactly when that order
-is well-founded. It is the counterpart of `wellOrdering_undefinable`, which concerns a symbol
-interpreted as a strict well-order, for the language whose only symbol `≤` is interpreted
-reflexively.
+is well-founded. It is the counterpart of `FirstOrder.Language.wellOrdering_undefinable`, which
+concerns a symbol interpreted as a strict well-order, for the language whose only symbol `≤` is
+interpreted reflexively.
 
 By `TauCeti.exists_sentenceω_realize_iff_exists_lt_nonempty_orderIso`, the well-orders of type
 below each countable ordinal do form a definable class; so the countable well-orders are a union
@@ -844,14 +855,10 @@ theorem wellFoundedLT_undefinable :
   let M := (α + 1).ToType
   let := orderStructure M
   let := morleyExpansion {⟨2, ltFormula⟩} M
-  have : Countable M :=
-    Cardinal.countable_toType_of_lt_omega_one ((Cardinal.isSuccLimit_omega 1).add_one_lt hα)
+  have : Countable M := countable_toType_add_one hα
   have hne : Nonempty M := nonempty_toType_iff.2 (by simp)
-  let f : α.ToType → M := fun a => ToType.mk
-    ⟨(ToType.toOrd a).1, (ToType.toOrd a).2.trans_le (Order.le_succ α)⟩
-  exact hbound M _ hne (realize_ltSentence ((hσ M).2 inferInstance)) f
+  exact hbound M _ hne (realize_ltSentence ((hσ M).2 inferInstance)) (toTypeSuccEmbedding α)
     (relChain_iff.2 fun x y hxy => ((morleyExpansion_relMap_morleyRel rfl _).trans
-      (realize_ltFormula _ _)).2 (ToType.mk.strictMono
-        (Subtype.mk_lt_mk.2 (ToType.mk.symm.strictMono hxy))))
+      (realize_ltFormula _ _)).2 ((toTypeSuccEmbedding α).strictMono hxy))
 
-end FirstOrder.Language
+end TauCeti

@@ -17,7 +17,7 @@ of orders, whose countable models are exactly the orders isomorphic to `M`. When
 well-order, for example `o.ToType` for a countable ordinal `o`, these are exactly the countable
 well-orders of the order type of `M`. Taking the countable disjunction of these sentences over the
 ordinals below a countable ordinal `α` defines the countable well-orders of order type below `α`.
-The bound is necessary: by `FirstOrder.Language.wellFoundedLT_undefinable`, no single sentence
+The bound is necessary: by `TauCeti.wellFoundedLT_undefinable`, no single sentence
 defines all countable well-orders.
 
 For an infinite well-order this cannot be done in first-order logic, even by a theory with
