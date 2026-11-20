@@ -27,8 +27,9 @@ difference quotients tend to zero at small scales: for every `ε > 0` there is `
 `TauCeti.HolderSpace α X Y` of bounded `α`-Hölder functions. For every order `k`, the little Hölder
 space `h^{k,α}` is the subspace `TauCeti.CkHolderSpace.littleHolder` of the Banach space
 `TauCeti.CkHolderSpace k α E F` of bounded `C^{k,α}` maps whose `k`-th derivative is little
-`α`-Hölder. These are the closures of the smooth maps in the Hölder norms, on which bounded
-operators of Hölder spaces are determined by their action on smooth maps.
+`α`-Hölder. On a finite-dimensional real normed space, `h^{k,α}` lies in the closure of the
+smooth maps with bounded derivatives, with equality when `α < 1`, so a bounded operator that sends
+those smooth maps into a little Hölder space sends all of `h^{k,α}` there.
 
 ## Main results
 
@@ -52,17 +53,19 @@ operators of Hölder spaces are determined by their action on smooth maps.
   Lipschitz functions are not dense in the full Hölder space.
 * `TauCeti.CkHolderSpace.isClosed_littleHolder`: `h^{k,α}` is closed in the `C^{k,α}` norm, hence
   a Banach space when `F` is complete.
-* `TauCeti.CkHolderSpace.exists_contDiff_norm_sub_lt` and
+* `TauCeti.CkHolderSpace.exists_mem_smoothBoundedDerivatives_norm_sub_lt`,
+  `TauCeti.CkHolderSpace.littleHolder_subset_closure` and
   `TauCeti.CkHolderSpace.littleHolder_eq_closure`: on a finite-dimensional real normed space, an
   element of `h^{k,α}` is approximated in the `C^{k,α}` norm by its convolutions with normalized
-  bumps, which are smooth with bounded derivatives of every order. Convolution commutes with the
-  derivatives through order `k`, so the lower derivatives converge uniformly, being Lipschitz, and
-  the top one converges in the Hölder norm as in the case `k = 0`. For `α < 1` smooth maps with
+  bumps, which lie in the subspace `TauCeti.CkHolderSpace.smoothBoundedDerivatives` of smooth maps
+  with bounded derivatives of every order. Convolution commutes with the derivatives through order
+  `k`, so the lower derivatives converge uniformly, being Lipschitz, and the top one converges in
+  the Hölder norm as in the case `k = 0`. For `α < 1` smooth maps with
   bounded derivatives have Lipschitz `k`-th derivative, so `h^{k,α}` is exactly their closure,
   and the Banach space `h^{k,α}` is their completion in the `C^{k,α}` norm.
-* `TauCeti.CkHolderSpace.mapsTo_littleHolder`: for `α < 1`, a bounded operator of spaces of
-  bounded `C^{k,α}` maps sending the smooth maps with bounded derivatives into `h^{k',α'}` sends
-  all of `h^{k,α}` into `h^{k',α'}`.
+* `TauCeti.CkHolderSpace.mapsTo_littleHolder`: on a finite-dimensional real normed space, a
+  bounded operator of spaces of bounded `C^{k,α}` maps sending the smooth maps with bounded
+  derivatives into `h^{k',α'}` sends all of `h^{k,α}` into `h^{k',α'}`.
 
 ## References
 
@@ -371,8 +374,7 @@ variable {k α E F}
 @[simp]
 theorem mem_littleHolder_iff {f : CkHolderSpace k α E F} :
     f ∈ littleHolder k α E F ↔ MemLittleHolder α (_root_.iteratedFDeriv ℝ k f) := by
-  rw [littleHolder, Submodule.mem_comap, ContinuousLinearMap.coe_coe,
-    iteratedFDerivHolderL_apply, HolderSpace.mem_littleHolder_iff, coe_iteratedFDerivHolder]
+  simp [littleHolder]
 
 /-- **The little Hölder space `h^{k,α}` is closed** in the `C^{k,α}` norm. -/
 theorem isClosed_littleHolder :
@@ -383,6 +385,38 @@ theorem isClosed_littleHolder :
 /-- The little Hölder space `h^{k,α}` of a complete space is a Banach space. -/
 instance [CompleteSpace F] : CompleteSpace (littleHolder k α E F) :=
   isClosed_littleHolder.completeSpace_coe
+variable (k α E F) in
+/-- The bounded `C^{k,α}` maps that are smooth with all derivatives bounded, as a subspace of
+`CkHolderSpace k α E F`. They are dense in `h^{k,α}` on a finite-dimensional space
+(`CkHolderSpace.littleHolder_subset_closure`). -/
+def smoothBoundedDerivatives : Submodule ℝ (CkHolderSpace k α E F) where
+  carrier := {g | ContDiff ℝ ∞ g ∧ ∀ i, ∃ C, ∀ x, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C}
+  zero_mem' := ⟨by rw [coe_zero]; exact contDiff_zero_fun, fun i ↦ ⟨0, by simp⟩⟩
+  add_mem' := by
+    rintro f g ⟨hf, hfb⟩ ⟨hg, hgb⟩
+    refine ⟨coe_add f g ▸ hf.add hg, fun i ↦ ?_⟩
+    obtain ⟨C, hC⟩ := hfb i
+    obtain ⟨D, hD⟩ := hgb i
+    refine ⟨C + D, fun x ↦ ?_⟩
+    rw [coe_add, iteratedFDeriv_add_apply (hf.of_le (by simp)).contDiffAt
+      (hg.of_le (by simp)).contDiffAt]
+    exact (norm_add_le _ _).trans (add_le_add (hC x) (hD x))
+  smul_mem' := by
+    rintro c f ⟨hf, hfb⟩
+    refine ⟨coe_smul c f ▸ hf.const_smul c, fun i ↦ ?_⟩
+    obtain ⟨C, hC⟩ := hfb i
+    refine ⟨‖c‖ * C, fun x ↦ ?_⟩
+    rw [coe_smul, iteratedFDeriv_const_smul_apply (hf.of_le (by simp)).contDiffAt, norm_smul]
+    exact mul_le_mul_of_nonneg_left (hC x) (norm_nonneg _)
+
+/-- Membership in `smoothBoundedDerivatives` is smoothness together with a global bound on each
+derivative. -/
+@[simp]
+theorem mem_smoothBoundedDerivatives_iff {g : CkHolderSpace k α E F} :
+    g ∈ smoothBoundedDerivatives k α E F ↔
+      ContDiff ℝ ∞ g ∧ ∀ i, ∃ C, ∀ x, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C :=
+  Iff.rfl
+
 
 /-- A bounded `C^{k,α}` map whose `k`-th derivative is Hölder of a larger exponent `β > α` lies in
 `h^{k,α}`. -/
@@ -414,9 +448,7 @@ omit [CompleteSpace F] in
 order `k` are those of `f` minus their convolutions with the bump. -/
 private theorem exists_contDiff_iteratedFDeriv_sub_eq [MeasurableSpace E] [BorelSpace E]
     {μ : Measure E} [μ.IsAddHaarMeasure] (f : CkHolderSpace k α E F) (ρ : ContDiffBump (0 : E)) :
-    ∃ g : CkHolderSpace k α E F, ContDiff ℝ ∞ g ∧
-      (∀ i, ∃ C, ∀ x, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C) ∧
-      ∀ i ≤ k, _root_.iteratedFDeriv ℝ i ⇑(f - g) =
+    ∃ g ∈ smoothBoundedDerivatives k α E F, ∀ i ≤ k, _root_.iteratedFDeriv ℝ i ⇑(f - g) =
         _root_.iteratedFDeriv ℝ i f - ρ.normed μ ⋆[lsmul ℝ ℝ, μ] _root_.iteratedFDeriv ℝ i f := by
   set g₀ : E → F := ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f
   have hD (i : ℕ) (hi : i ≤ k) : _root_.iteratedFDeriv ℝ i g₀ =
@@ -438,7 +470,7 @@ private theorem exists_contDiff_iteratedFDeriv_sub_eq [MeasurableSpace E] [Borel
   let g : CkHolderSpace k α E F :=
     ofContDiff g₀ (hg₀.of_le (by exact_mod_cast le_top)) (fun i _ ↦ hg₀b i) hg₀h
   have hg : ⇑g = g₀ := coe_ofContDiff _ _ _ _
-  refine ⟨g, hg ▸ hg₀, hg ▸ hg₀b, fun i hi ↦ ?_⟩
+  refine ⟨g, ⟨hg ▸ hg₀, hg ▸ hg₀b⟩, fun i hi ↦ ?_⟩
   have hfi : ContDiff ℝ i f := f.contDiff.of_le (by exact_mod_cast hi)
   have hgi : ContDiff ℝ i g₀ := hg₀.of_le (by exact_mod_cast le_top)
   rw [coe_sub, hg, iteratedFDeriv_sub hfi hgi, hD i hi]
@@ -446,10 +478,9 @@ private theorem exists_contDiff_iteratedFDeriv_sub_eq [MeasurableSpace E] [Borel
 /-- **Mollification approximates elements of `h^{k,α}`.** An element of the little Hölder space
 `h^{k,α}` on a finite-dimensional space is approximated in the `C^{k,α}` norm by smooth maps all
 of whose derivatives are bounded: its convolutions with normalized bumps at small enough scales. -/
-theorem exists_contDiff_norm_sub_lt (f : CkHolderSpace k α E F) (hf : f ∈ littleHolder k α E F)
-    {ε : ℝ} (hε : 0 < ε) :
-    ∃ g : CkHolderSpace k α E F, ContDiff ℝ ∞ g ∧
-      (∀ i, ∃ C, ∀ x, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C) ∧ ‖f - g‖ < ε := by
+theorem exists_mem_smoothBoundedDerivatives_norm_sub_lt (f : CkHolderSpace k α E F)
+    (hf : f ∈ littleHolder k α E F) {ε : ℝ} (hε : 0 < ε) :
+    ∃ g ∈ smoothBoundedDerivatives k α E F, ‖f - g‖ < ε := by
   borelize E
   -- Each derivative of `f - ρ ⋆ f` will be at most `η`, and the Hölder constant of the top one
   -- at most `2 η`, so that `‖f - ρ ⋆ f‖ ≤ (k + 3) η < ε`.
@@ -464,8 +495,8 @@ theorem exists_contDiff_norm_sub_lt (f : CkHolderSpace k α E F) (hf : f ∈ lit
     rw [le_div_iff₀ (by positivity)] at h
     nlinarith [norm_nonneg f]
   let ρ : ContDiffBump (0 : E) := ⟨δ / 2, δ, half_pos hδ, half_lt_self hδ⟩
-  obtain ⟨g, hg, hgb, hsub⟩ := exists_contDiff_iteratedFDeriv_sub_eq (μ := Measure.addHaar) f ρ
-  refine ⟨g, hg, hgb, ?_⟩
+  obtain ⟨g, hg, hsub⟩ := exists_contDiff_iteratedFDeriv_sub_eq (μ := Measure.addHaar) f ρ
+  refine ⟨g, hg, ?_⟩
   -- Below the scale `δ`, the top derivative of `f` has Hölder quotients at most `η`.
   have hloc : ∀ x y, dist x y < ρ.rOut → dist (_root_.iteratedFDeriv ℝ k f x)
       (_root_.iteratedFDeriv ℝ k f y) ≤ η * dist x y ^ (α : ℝ) :=
@@ -496,35 +527,40 @@ theorem exists_contDiff_norm_sub_lt (f : CkHolderSpace k α E F) (hf : f ∈ lit
         rw [div_lt_iff₀ (by positivity)]
         nlinarith [(k.cast_nonneg : (0 : ℝ) ≤ k)]
 
-/-- **Smooth maps are dense in the little Hölder space.** For `α < 1` and a finite-dimensional
-real normed space `E`, the little Hölder space `h^{k,α}(E, F)` is the closure, in the `C^{k,α}`
-norm, of the smooth maps all of whose derivatives are bounded. So `h^{k,α}` is the completion of
-these smooth maps in the `C^{k,α}` norm. -/
-theorem littleHolder_eq_closure (hα : α < 1) :
-    (littleHolder k α E F : Set (CkHolderSpace k α E F)) = closure
-      {g : CkHolderSpace k α E F |
-        ContDiff ℝ ∞ g ∧ ∀ i, ∃ C, ∀ x, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C} := by
-  refine Subset.antisymm (fun f hf ↦ Metric.mem_closure_iff.2 fun ε hε ↦ ?_) ?_
-  · obtain ⟨g, hg, hgb, hfg⟩ := exists_contDiff_norm_sub_lt f hf hε
-    exact ⟨g, ⟨hg, hgb⟩, by rwa [dist_eq_norm]⟩
-  · refine closure_minimal (fun g ⟨hg, hgb⟩ ↦ ?_) isClosed_littleHolder
-    obtain ⟨C, hC⟩ := hgb (k + 1)
-    exact mem_littleHolder_of_contDiff_succ hα (hg.of_le (by exact_mod_cast le_top)) hC
+/-- **Smooth maps are dense in the little Hölder space.** On a finite-dimensional real normed
+space `E`, every element of the little Hölder space `h^{k,α}(E, F)` is a limit, in the `C^{k,α}`
+norm, of smooth maps all of whose derivatives are bounded. -/
+theorem littleHolder_subset_closure :
+    (littleHolder k α E F : Set (CkHolderSpace k α E F)) ⊆
+      closure (smoothBoundedDerivatives k α E F) := fun f hf ↦
+  Metric.mem_closure_iff.2 fun ε hε ↦
+    have ⟨g, hg, hfg⟩ := exists_mem_smoothBoundedDerivatives_norm_sub_lt f hf hε
+    ⟨g, hg, by rwa [dist_eq_norm]⟩
 
-/-- **Bounded operators restrict to the little Hölder spaces.** For `α < 1`, a continuous linear
-map between spaces of bounded `C^{k,α}` maps that sends every smooth map with bounded derivatives
-into the little Hölder space `h^{k',α'}` sends all of `h^{k,α}` into `h^{k',α'}`. -/
-theorem mapsTo_littleHolder (hα : α < 1) {k' : ℕ} {α' : ℝ≥0} {E' F' : Type*}
+/-- **The little Hölder space is the closure of the smooth maps.** For `α < 1` and a
+finite-dimensional real normed space `E`, the little Hölder space `h^{k,α}(E, F)` is the closure,
+in the `C^{k,α}` norm, of the smooth maps all of whose derivatives are bounded. So `h^{k,α}` is the
+completion of these smooth maps in the `C^{k,α}` norm. -/
+theorem littleHolder_eq_closure (hα : α < 1) :
+    (littleHolder k α E F : Set (CkHolderSpace k α E F)) =
+      closure (smoothBoundedDerivatives k α E F) := by
+  refine littleHolder_subset_closure.antisymm
+    (closure_minimal (fun g ⟨hg, hgb⟩ ↦ ?_) isClosed_littleHolder)
+  obtain ⟨C, hC⟩ := hgb (k + 1)
+  exact mem_littleHolder_of_contDiff_succ hα (hg.of_le (by exact_mod_cast le_top)) hC
+
+/-- **Bounded operators restrict to the little Hölder spaces.** On a finite-dimensional real
+normed space `E`, a continuous linear map between spaces of bounded `C^{k,α}` maps that sends
+every smooth map with bounded derivatives into the little Hölder space `h^{k',α'}` sends all of
+`h^{k,α}` into `h^{k',α'}`. -/
+theorem mapsTo_littleHolder {k' : ℕ} {α' : ℝ≥0} {E' F' : Type*}
     [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup F'] [NormedSpace ℝ F']
     (T : CkHolderSpace k α E F →L[ℝ] CkHolderSpace k' α' E' F')
-    (hT : ∀ g : CkHolderSpace k α E F, ContDiff ℝ ∞ g →
-      (∀ i, ∃ C, ∀ x, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C) → T g ∈ littleHolder k' α' E' F') :
+    (hT : ∀ g ∈ smoothBoundedDerivatives k α E F, T g ∈ littleHolder k' α' E' F') :
     MapsTo T (littleHolder k α E F) (littleHolder k' α' E' F') := by
-  have h : MapsTo T {g : CkHolderSpace k α E F |
-      ContDiff ℝ ∞ g ∧ ∀ i, ∃ C, ∀ x, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C}
-      (littleHolder k' α' E' F') := fun g ⟨hg, hgb⟩ ↦ hT g hg hgb
-  simpa only [← littleHolder_eq_closure hα, isClosed_littleHolder.closure_eq] using
-    h.closure T.continuous
+  have h : MapsTo T (smoothBoundedDerivatives k α E F) (littleHolder k' α' E' F') := hT
+  have h' := (h.closure T.continuous).mono_left littleHolder_subset_closure
+  rwa [isClosed_littleHolder.closure_eq] at h'
 
 end Mollification
 

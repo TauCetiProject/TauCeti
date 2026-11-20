@@ -311,7 +311,7 @@ theorem ContDiffBump.normed_convolution_eq_of_eqOn {G F : Type*} [NormedAddCommG
   · simp [ht]
   · have hρt : ρ t ≠ 0 := fun h0 ↦ ht (by simp [ContDiffBump.normed_def, h0])
     have htr : t ∈ ball (0 : G) ρ.rOut := ρ.support_eq ▸ Function.mem_support.2 hρt
-    rw [h (by rwa [mem_ball, dist_eq_norm, sub_sub_cancel_left, norm_neg, ← mem_ball_zero_iff])]
+    rw [h (by simpa [dist_eq_norm] using htr)]
 
 /-- Every available Fréchet derivative of a `C^N` function commutes with normalized-bump
 convolution: `Dᵏ (ρ ⋆ f) = ρ ⋆ Dᵏ f` for `k ≤ N`. Unlike
