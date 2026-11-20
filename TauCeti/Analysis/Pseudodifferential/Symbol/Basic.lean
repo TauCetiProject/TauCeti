@@ -1346,6 +1346,17 @@ theorem IsSmoothing.inclusion {a : Symbol n V W m} (ha : a.IsSmoothing) (h : m �
     (inclusion h a).IsSmoothing :=
   fun m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion]
 
+/-- A symbol is smoothing exactly when its negative is. -/
+@[simp]
+theorem isSmoothing_neg_iff {a : Symbol n V W m} : (-a).IsSmoothing ↔ a.IsSmoothing :=
+  ⟨fun ha => neg_neg a ▸ ha.neg, IsSmoothing.neg⟩
+
+/-- Including a symbol into a higher order does not change whether it is smoothing. -/
+@[simp]
+theorem isSmoothing_inclusion_iff {a : Symbol n V W m} {h : m ≤ m'} :
+    (inclusion h a).IsSmoothing ↔ a.IsSmoothing :=
+  ⟨fun ha m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion], (·.inclusion h)⟩
+
 theorem IsSmoothing.frequencyDeriv {a : Symbol n V W m} (ha : a.IsSmoothing) (j : Fin n) :
     (frequencyDeriv j a).IsSmoothing := fun m' => by
   obtain ⟨a', ha'⟩ := ha (m' + 1)
