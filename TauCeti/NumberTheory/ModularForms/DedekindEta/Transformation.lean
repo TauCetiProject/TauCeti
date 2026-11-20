@@ -36,6 +36,7 @@ eta multiplier by `exp(-π i / 4)`. At `τ = i`, the new automorphy factor `-c +
 lies in the upper half-plane, controlling the principal square root. Together with the
 translation laws, this is the inversion step in the Euclidean calculation of the multiplier, and
 also shows that negating `γ` multiplies `ε(γ)` by `i` when `c > 0` and by `-i` when `c < 0`.
+When `c > 0` and `d < 0`, right multiplication by `S` multiplies `ε` by `-exp(-π i / 4)`.
 When `c = 0` (`γ = ±T^{±b}`), `ε(γ)` is `e^{π i b / 12}` for `d > 0` and `-i e^{-π i b / 12}`
 for `d < 0`; when `c = 1`, `ε(γ) = exp(π i ((a + d) / 12 - 1/4))`; and when `c ≠ 0`, `c i + d`
 avoids the branch cut of the principal square root so `ε(γ⁻¹) = ε(γ)⁻¹`.
@@ -66,6 +67,8 @@ matched by the reciprocity law of Dedekind sums.
 * `TauCeti.ModularForm.etaMultiplier_mul_T_zpow`, `TauCeti.ModularForm.etaMultiplier_T_zpow_mul`:
   `ε(γ Tⁿ) = ε(Tⁿ γ) = e^{π i n / 12} ε(γ)`.
 * `TauCeti.ModularForm.etaMultiplier_mul_S`: `ε(γ S) = e^{-π i / 4} ε(γ)` when `d > 0`.
+* `TauCeti.ModularForm.etaMultiplier_mul_S_of_c_pos_of_d_neg`: `ε(γ S) = -e^{-π i / 4} ε(γ)` when
+  `c > 0` and `d < 0`.
 * `TauCeti.ModularForm.etaMultiplier_neg_of_c_pos`,
   `TauCeti.ModularForm.etaMultiplier_neg_of_c_neg`: `ε(-γ) = i ε(γ)` for `c > 0` and
   `ε(-γ) = -i ε(γ)` for `c < 0`.
@@ -448,6 +451,19 @@ theorem etaMultiplier_neg_of_c_neg (γ : SL(2, ℤ)) (hc : γ 1 0 < 0) :
   rw [neg_neg] at h
   rw [h, ← mul_assoc]
   simp
+
+/-- Right inversion multiplies the eta multiplier by `-exp(-π i / 4)` when `c > 0` and `d < 0`.
+This complements `etaMultiplier_mul_S`, where `d > 0` gives the factor `exp(-π i / 4)`. -/
+theorem etaMultiplier_mul_S_of_c_pos_of_d_neg (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) (hd : γ 1 1 < 0) :
+    etaMultiplier (γ * S) = -cexp (-(π * I / 4)) * etaMultiplier γ := by
+  have hd' : 0 < (-γ) 1 1 := by
+    simpa only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, Left.neg_pos_iff] using hd
+  have hc' : (γ * S) 1 0 < 0 := by rwa [mul_S_apply_apply_zero]
+  -- `-(γ S) = (-γ) S`, and `-γ` has positive lower-right entry.
+  have h := etaMultiplier_mul_S (-γ) hd'
+  rw [neg_mul, etaMultiplier_neg_of_c_neg (γ * S) hc', etaMultiplier_neg_of_c_pos γ hc] at h
+  rw [← mul_right_inj' (neg_ne_zero.mpr I_ne_zero), h]
+  ring
 
 /-- Explicit eta multiplier when `c = 0` and `d > 0`: then `γ = T ^ b` and
 `ε(γ) = e^{π i b / 12}`. -/
