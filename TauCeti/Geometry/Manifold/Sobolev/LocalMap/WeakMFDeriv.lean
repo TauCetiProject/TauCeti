@@ -12,10 +12,10 @@ import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 import Mathlib.Topology.Bases
-import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
-import TauCeti.Analysis.Sobolev.WeakDeriv.ChainRule
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Geometry.Manifold.Sobolev.ChartTransition
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.CoordChange
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -42,9 +42,9 @@ coordinate expressions are the weak derivatives of those of `u`.
   `s` (`TauCeti.MemWkpLocMapOn.exists_hasWeakMFDerivOn`), whose coordinate expressions are locally
   `Lᵖ` (`TauCeti.HasWeakMFDerivOn.memLpLoc`). The weak derivatives of the coordinate expressions
   of `u` in countably many pairs of charts covering `s` are glued along the changes of chart, by
-  the chain rule for weak derivatives under changes of variables
-  (`TauCeti.HasWeakFDerivOn.comp_contDiffOn_diffeo`) and under composition with `C¹` maps
-  (`TauCeti.HasWeakFDerivOn.contDiffOn_comp`), and by their uniqueness
+  the chain rules for weak derivatives under changes of chart of the source
+  (`TauCeti.HasWeakFDerivOn.comp_symm_trans_of_mem_maximalAtlas`) and of the target
+  (`TauCeti.HasWeakFDerivOn.extCoordChange_comp`), and by their uniqueness
   (`TauCeti.HasWeakFDerivOn.ae_eq`).
 * **Uniqueness.** Two weak differentials agree almost everywhere in every chart
   (`TauCeti.HasWeakMFDerivOn.ae_eq`), and a field agreeing almost everywhere with a weak
@@ -139,114 +139,15 @@ end Defs
 
 section ChartChange
 
-variable [IsManifold 𝓘(ℝ, ℂ) 1 X] [IsManifold I 1 M]
+/-- For `u` continuous on an open set `s`, the points of the target of the chart at `x₀` lying over
+`s` and mapped by `u` into an open set `t` form an open set, which is therefore its own interior. -/
+private theorem coe_interior_chartAt_target_inter_preimage (hs : IsOpen s) (hu : ContinuousOn u s)
+    {t : Set M} (ht : IsOpen t) (x₀ : X) :
+    (Opens.interior ((chartAt ℂ x₀).target ∩ (chartAt ℂ x₀).symm ⁻¹' (s ∩ u ⁻¹' t)) : Set ℂ) =
+      (chartAt ℂ x₀).target ∩ (chartAt ℂ x₀).symm ⁻¹' (s ∩ u ⁻¹' t) :=
+  ((chartAt ℂ x₀).isOpen_inter_preimage_symm_inter_preimage hu hs ht).interior_eq
 
-/-- Changing the charts at both ends of a linear map in coordinates, through intermediate charts,
-gives the direct change of chart. -/
-private theorem tangentCoordChange_comp_comp_tangentCoordChange {a x₀ x : X} {b y₀ : M}
-    (hx : x ∈ (chartAt ℂ x₀).source ∩ (chartAt ℂ a).source)
-    (hux : u x ∈ (chartAt H y₀).source ∩ (chartAt H b).source) (L : ℂ →L[ℝ] F) :
-    tangentCoordChange I (u x) y₀ (u x) ∘L
-        (tangentCoordChange I b (u x) (u x) ∘L L ∘L tangentCoordChange 𝓘(ℝ, ℂ) x a x) ∘L
-          tangentCoordChange 𝓘(ℝ, ℂ) x₀ x x =
-      tangentCoordChange I b y₀ (u x) ∘L L ∘L tangentCoordChange 𝓘(ℝ, ℂ) x₀ a x := by
-  ext v
-  simp only [ContinuousLinearMap.comp_apply]
-  rw [tangentCoordChange_comp (I := 𝓘(ℝ, ℂ))
-      (by simp only [extChartAt_source]; exact ⟨⟨hx.1, mem_chart_source ℂ x⟩, hx.2⟩),
-    tangentCoordChange_comp
-      (by simp only [extChartAt_source]; exact ⟨⟨hux.2, mem_chart_source H (u x)⟩, hux.1⟩)]
-
-/-- A linear map is determined by its expression in coordinates. -/
-private theorem eq_of_tangentCoordChange_comp_comp_eq {x₀ x : X} {y₀ : M}
-    (hx : x ∈ (chartAt ℂ x₀).source) (hux : u x ∈ (chartAt H y₀).source)
-    {L L' : TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] TangentSpace I (u x)}
-    (h : tangentCoordChange I (u x) y₀ (u x) ∘L L ∘L tangentCoordChange 𝓘(ℝ, ℂ) x₀ x x =
-      tangentCoordChange I (u x) y₀ (u x) ∘L L' ∘L tangentCoordChange 𝓘(ℝ, ℂ) x₀ x x) :
-    L = L' := by
-  have hX : x ∈ (extChartAt 𝓘(ℝ, ℂ) x).source ∩ (extChartAt 𝓘(ℝ, ℂ) x₀).source ∩
-      (extChartAt 𝓘(ℝ, ℂ) x).source := by
-    simp only [extChartAt_source]
-    exact ⟨⟨mem_chart_source ℂ x, hx⟩, mem_chart_source ℂ x⟩
-  have hM : u x ∈ (extChartAt I (u x)).source ∩ (extChartAt I y₀).source ∩
-      (extChartAt I (u x)).source := by
-    simp only [extChartAt_source]
-    exact ⟨⟨mem_chart_source H (u x), hux⟩, mem_chart_source H (u x)⟩
-  -- Evaluating the composite is definitional; the tangent spaces are the model spaces.
-  have key : ∀ (K : TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] TangentSpace I (u x)) (w : ℂ),
-      (tangentCoordChange I (u x) y₀ (u x) ∘L K ∘L tangentCoordChange 𝓘(ℝ, ℂ) x₀ x x) w =
-        tangentCoordChange I (u x) y₀ (u x) (K (tangentCoordChange 𝓘(ℝ, ℂ) x₀ x x w)) :=
-    fun _ _ ↦ rfl
-  ext v
-  have hv := congrArg (tangentCoordChange I y₀ (u x) (u x))
-    (DFunLike.congr_fun h (tangentCoordChange 𝓘(ℝ, ℂ) x x₀ x v))
-  have hM' : ∀ w : TangentSpace I (u x),
-      tangentCoordChange I y₀ (u x) (u x) (tangentCoordChange I (u x) y₀ (u x) w) = w := fun w ↦
-    (tangentCoordChange_comp hM).trans (tangentCoordChange_self (mem_extChartAt_source (u x)))
-  have hX' : tangentCoordChange 𝓘(ℝ, ℂ) x₀ x x (tangentCoordChange 𝓘(ℝ, ℂ) x x₀ x v) = v :=
-    (tangentCoordChange_comp hX).trans (tangentCoordChange_self (mem_extChartAt_source x))
-  rwa [key, key, hM', hM', hX'] at hv
-
-/-- **Change of chart of `X`.** A weak derivative `D` of `g` on `U`, read through the change of
-chart `chartAt ℂ a ∘ (chartAt ℂ x₀).symm` on an open set `V` that it maps into `U`, gives a weak
-derivative of `g` after the change of chart. -/
-private theorem hasWeakFDerivOn_comp_chartAt_comp_chartAt_symm {a x₀ : X} {U V : Set ℂ}
-    (hV : IsOpen V)
-    (hVs : V ⊆ (chartAt ℂ x₀).target ∩ (chartAt ℂ x₀).symm ⁻¹' (chartAt ℂ a).source)
-    {g : ℂ → F} {D : ℂ → ℂ →L[ℝ] F} (hD : HasWeakFDerivOn volume (Opens.interior U) g D)
-    (hmaps : MapsTo (chartAt ℂ a ∘ (chartAt ℂ x₀).symm) V (interior U)) :
-    HasWeakFDerivOn volume (Opens.interior V) (g ∘ chartAt ℂ a ∘ (chartAt ℂ x₀).symm) fun z ↦
-      D (chartAt ℂ a ((chartAt ℂ x₀).symm z)) ∘L
-        fderiv ℝ (chartAt ℂ a ∘ (chartAt ℂ x₀).symm) z := by
-  have hVi : (Opens.interior V : Set ℂ) = V := hV.interior_eq
-  have hφ₀ : chartAt ℂ x₀ ∈ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) 1 X :=
-    IsManifold.chart_mem_maximalAtlas x₀
-  have hφa : chartAt ℂ a ∈ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) 1 X :=
-    IsManifold.chart_mem_maximalAtlas a
-  -- As a function, the change of chart is the transition `(chartAt ℂ x₀).symm.trans (chartAt ℂ a)`.
-  have hVΦ : (Opens.interior V : Set ℂ) ⊆ ((chartAt ℂ x₀).symm.trans (chartAt ℂ a)).source := by
-    rw [hVi, OpenPartialHomeomorph.trans_source]
-    exact hVs
-  have h := hD.comp_contDiffOn_diffeo (U := Opens.interior V)
-    ((contDiffOn_symm_trans_of_mem_maximalAtlas hφ₀ hφa).mono hVΦ)
-    (((chartAt ℂ x₀).symm.trans (chartAt ℂ a)).injOn.mono hVΦ)
-    (fun z hz ↦ det_fderiv_symm_trans_ne_zero one_ne_zero hφ₀ hφa (hVΦ hz))
-    (by rw [hVi, OpenPartialHomeomorph.coe_trans]; exact hmaps)
-  rw [OpenPartialHomeomorph.coe_trans] at h
-  exact h
-
-variable [I.Boundaryless] [CompleteSpace F]
-
-/-- **Change of chart of `M`.** If `v` takes values in the sources of the charts at `b` and `y₀`
-on an open set `V`, a weak derivative `D` of its coordinate expression in the extended chart at
-`b`, followed by the tangent change of coordinates, is a weak derivative of its coordinate
-expression in the extended chart at `y₀`. -/
-private theorem hasWeakFDerivOn_extChartAt_comp {b y₀ : M} {v : ℂ → M} {V : Set ℂ}
-    (hV : IsOpen V) (hv : ContinuousOn (extChartAt I b ∘ v) V)
-    (hvV : ∀ z ∈ V, v z ∈ (chartAt H b).source ∩ (chartAt H y₀).source) {D : ℂ → ℂ →L[ℝ] F}
-    (hD : HasWeakFDerivOn volume (Opens.interior V) (extChartAt I b ∘ v) D) :
-    HasWeakFDerivOn volume (Opens.interior V) (extChartAt I y₀ ∘ v) fun z ↦
-      tangentCoordChange I b y₀ (v z) ∘L D z := by
-  have hVi : (Opens.interior V : Set ℂ) = V := hV.interior_eq
-  have hb : ∀ z ∈ V, v z ∈ (extChartAt I b).source := fun z hz ↦ by
-    simpa using (hvV z hz).1
-  have hO : IsOpen ((extChartAt I b).symm ≫ extChartAt I y₀).source := by
-    rw [PartialEquiv.trans_source, PartialEquiv.symm_source]
-    exact (continuousOn_extChartAt_symm b).isOpen_inter_preimage (isOpen_extChartAt_target b)
-      (isOpen_extChartAt_source y₀)
-  have hvc : ContinuousOn (extChartAt I b ∘ v) (Opens.interior V) := by rw [hVi]; exact hv
-  have h := hD.contDiffOn_comp hvc hO (contDiffOn_ext_coord_change y₀ b) fun z hz ↦ by
-    rw [hVi] at hz
-    rw [PartialEquiv.trans_source, PartialEquiv.symm_source]
-    refine ⟨(extChartAt I b).map_source (hb z hz), ?_⟩
-    rw [mem_preimage, Function.comp_apply, (extChartAt I b).left_inv (hb z hz), extChartAt_source]
-    exact (hvV z hz).2
-  refine (h.congr_ae ?_).congr_ae_deriv ?_ <;>
-    refine ae_restrict_of_forall_mem (Opens.interior V).isOpen.measurableSet fun z hz ↦ ?_ <;>
-    rw [hVi] at hz <;>
-    beta_reduce
-  · simp only [Function.comp_apply, (extChartAt I b).left_inv (hb z hz)]
-  · rw [tangentCoordChange_def, I.range_eq_univ, fderivWithin_univ, Function.comp_apply]
+variable [IsManifold 𝓘(ℝ, ℂ) 1 X] [IsManifold I 1 M] [I.Boundaryless] [CompleteSpace F]
 
 /-- **Change of the pair of charts.** Let `D` be a weak derivative of the coordinate expression of
 `u` in the chart of `X` at `a` and the extended chart of `M` at `b`. Then, on the part of the
@@ -266,15 +167,16 @@ private theorem hasWeakFDerivOn_extChartAt_comp_comp_chartAt_symm (hs : IsOpen s
             fderiv ℝ (chartAt ℂ a ∘ (chartAt ℂ x₀).symm) z := by
   set V := (chartAt ℂ x₀).target ∩ (chartAt ℂ x₀).symm ⁻¹'
     ((s ∩ (chartAt ℂ a).source) ∩ u ⁻¹' ((chartAt H y₀).source ∩ (chartAt H b).source))
-  have hV : IsOpen V := (chartAt ℂ x₀).isOpen_inter_preimage_symm_inter_preimage
-    (hu.mono inter_subset_left) (hs.inter (chartAt ℂ a).open_source)
-    ((chartAt H y₀).open_source.inter (chartAt H b).open_source)
-  have hA := (chartAt ℂ a).isOpen_inter_preimage_symm_inter_preimage hu hs
-    (chartAt H b).open_source
+  have hV : (Opens.interior V : Set ℂ) = V :=
+    coe_interior_chartAt_target_inter_preimage (hs.inter (chartAt ℂ a).open_source)
+      (hu.mono inter_subset_left) ((chartAt H y₀).open_source.inter (chartAt H b).open_source) x₀
   -- First change the chart of `X` from `a` to `x₀`, on the part of the domain covered by both.
-  have h1 := hasWeakFDerivOn_comp_chartAt_comp_chartAt_symm hV (fun z hz ↦ ⟨hz.1, hz.2.1.2⟩) hD
+  have h1 := hD.comp_symm_trans_of_mem_maximalAtlas (U := Opens.interior V)
+    (IsManifold.chart_mem_maximalAtlas x₀) (IsManifold.chart_mem_maximalAtlas a)
+    (by rw [hV, OpenPartialHomeomorph.trans_source]; exact fun z hz ↦ ⟨hz.1, hz.2.1.2⟩)
     fun z hz ↦ by
-      rw [hA.interior_eq]
+      rw [hV] at hz
+      rw [coe_interior_chartAt_target_inter_preimage hs hu (chartAt H b).open_source a]
       refine ⟨(chartAt ℂ a).map_source hz.2.1.2, ?_⟩
       simp only [Function.comp_apply, mem_preimage, (chartAt ℂ a).left_inv hz.2.1.2]
       exact ⟨hz.2.1.1, hz.2.2.2⟩
@@ -283,12 +185,14 @@ private theorem hasWeakFDerivOn_extChartAt_comp_comp_chartAt_symm (hs : IsOpen s
         (extChartAt I b ∘ u ∘ (chartAt ℂ x₀).symm) z :=
     ae_restrict_of_forall_mem (Opens.interior V).isOpen.measurableSet fun z hz ↦ by
       simp [(chartAt ℂ a).left_inv (interior_subset hz).2.1.2]
-  replace h1 := h1.congr_ae heq
   -- Then change the chart of `M` from `b` to `y₀`.
-  exact hasWeakFDerivOn_extChartAt_comp hV (((chartAt ℂ x₀).continuousOn_comp_comp_symm
-    ((continuousOn_extChartAt b).mono fun y hy ↦ by simpa using hy.2)
-    (hu.mono inter_subset_left)).mono fun z hz ↦ ⟨hz.1, hz.2.1, hz.2.2⟩)
-    (fun z hz ↦ ⟨hz.2.2.2, hz.2.2.1⟩) h1
+  refine (h1.congr_ae heq).extCoordChange_comp ?_ fun z hz ↦ ?_
+  · rw [hV]
+    exact ((chartAt ℂ x₀).continuousOn_comp_comp_symm
+      ((continuousOn_extChartAt b).mono fun y hy ↦ by simpa using hy.2)
+      (hu.mono inter_subset_left)).mono fun z hz ↦ ⟨hz.1, hz.2.1, hz.2.2⟩
+  · rw [← SetLike.mem_coe, hV] at hz
+    exact ⟨hz.2.2.2, hz.2.2.1⟩
 
 end ChartChange
 
@@ -358,22 +262,15 @@ private theorem hasWeakFDerivOn_glue [IsManifold 𝓘(ℝ, ℂ) 1 X] [IsManifold
   refine hD'.congr_ae_deriv ?_
   rw [EventuallyEq, ae_restrict_iff' (Opens.interior W).isOpen.measurableSet]
   filter_upwards [(ae_ball_iff hT).2 hpiece] with z hz hzW
-  rw [Opens.coe_interior, (φ₀.isOpen_inter_preimage_symm_inter_preimage hc hs
-    (chartAt H y₀).open_source).interior_eq] at hzW
+  rw [coe_interior_chartAt_target_inter_preimage hs hc (chartAt H y₀).open_source] at hzW
   obtain ⟨haT, hxa, hua⟩ := hsel _ hzW.2.1
   have hzV : z ∈ (Opens.interior (V (sel (φ₀.symm z))) : Set ℂ) := by
-    rw [Opens.coe_interior, (φ₀.isOpen_inter_preimage_symm_inter_preimage
-      (hc.mono inter_subset_left) (hs.inter (chartAt ℂ _).open_source)
-      ((chartAt H y₀).open_source.inter (chartAt H _).open_source)).interior_eq]
+    rw [coe_interior_chartAt_target_inter_preimage (hs.inter (chartAt ℂ _).open_source)
+      (hc.mono inter_subset_left) ((chartAt H y₀).open_source.inter (chartAt H _).open_source)]
     exact ⟨hzW.1, ⟨hzW.2.1, hxa⟩, hzW.2.2, hua⟩
-  rw [← hz _ haT hzV]
-  have hX : ∀ c : X, fderiv ℝ (chartAt ℂ c ∘ φ₀.symm) z =
-      tangentCoordChange 𝓘(ℝ, ℂ) x₀ c (φ₀.symm z) := fun c ↦ by
-    have h := (tangentCoordChange_eq_fderiv (𝕜 := ℝ) (E := ℂ) (x := x₀) (y := c)
-      (z := φ₀.symm z)).symm
-    rwa [φ₀.right_inv hzW.1] at h
-  rw [hX, hX]
-  exact (tangentCoordChange_comp_comp_tangentCoordChange ⟨φ₀.map_target hzW.1, hxa⟩
+  rw [← hz _ haT hzV, fderiv_chartAt_comp_chartAt_symm hzW.1,
+    fderiv_chartAt_comp_chartAt_symm hzW.1]
+  exact (Manifold.tangentCoordChange_comp_comp_tangentCoordChange ⟨φ₀.map_target hzW.1, hxa⟩
     ⟨hzW.2.2, hua⟩ _).symm
 
 /-- **Existence of the weak differential.** On a second countable Riemann surface, a local Sobolev
@@ -415,31 +312,27 @@ theorem HasWeakMFDerivOn.ae_eq [IsManifold 𝓘(ℝ, ℂ) 1 X] [IsManifold I 1 M
       Du ((chartAt ℂ x₀).symm z) = Du' ((chartAt ℂ x₀).symm z) := by
   set φ₀ := chartAt ℂ x₀
   set W : M → Set ℂ := fun y₀ ↦ φ₀.target ∩ φ₀.symm ⁻¹' (s ∩ u ⁻¹' (chartAt H y₀).source)
-  have hW : ∀ y₀, IsOpen (W y₀) := fun y₀ ↦
-    φ₀.isOpen_inter_preimage_symm_inter_preimage hu hs (chartAt H y₀).open_source
+  have hW : ∀ y₀, (Opens.interior (W y₀) : Set ℂ) = W y₀ := fun y₀ ↦
+    coe_interior_chartAt_target_inter_preimage hs hu (chartAt H y₀).open_source x₀
   -- Countably many charts of `M` cover the image of `s`, seen from the chart at `x₀`.
-  obtain ⟨T, hT, hTW⟩ := isOpen_iUnion_countable W hW
+  obtain ⟨T, hT, hTW⟩ := isOpen_iUnion_countable W fun y₀ ↦ hW y₀ ▸ (Opens.interior _).isOpen
   have hpiece : ∀ y₀ ∈ T, ∀ᵐ z, z ∈ W y₀ →
       tangentCoordChange I (u (φ₀.symm z)) y₀ (u (φ₀.symm z)) ∘L Du (φ₀.symm z) ∘L
           (fderiv ℝ (chartAt ℂ (φ₀.symm z) ∘ φ₀.symm) z : ℂ →L[ℝ] ℂ) =
         tangentCoordChange I (u (φ₀.symm z)) y₀ (u (φ₀.symm z)) ∘L Du' (φ₀.symm z) ∘L
           (fderiv ℝ (chartAt ℂ (φ₀.symm z) ∘ φ₀.symm) z : ℂ →L[ℝ] ℂ) := fun y₀ _ ↦ by
     have hae := (h x₀ y₀).ae_eq (h' x₀ y₀)
-    rw [Opens.coe_interior, (hW y₀).interior_eq] at hae
-    exact (ae_restrict_iff' (hW y₀).measurableSet).1 hae
+    rw [hW y₀] at hae
+    exact (ae_restrict_iff' (hW y₀ ▸ (Opens.interior _).isOpen.measurableSet)).1 hae
   rw [ae_restrict_iff' (φ₀.isOpen_inter_preimage_symm hs).measurableSet]
   filter_upwards [(ae_ball_iff hT).2 hpiece] with z hz hzs
   have hzW : z ∈ ⋃ y₀ ∈ T, W y₀ := by
     rw [hTW]
     exact mem_iUnion.2 ⟨u (φ₀.symm z), hzs.1, hzs.2, mem_chart_source H _⟩
   obtain ⟨y₀, hy₀, hzy⟩ := mem_iUnion₂.1 hzW
-  have hzx : φ₀ (φ₀.symm z) = z := φ₀.right_inv hzs.1
-  have hX := (tangentCoordChange_eq_fderiv (𝕜 := ℝ) (E := ℂ) (x := x₀) (y := φ₀.symm z)
-    (z := φ₀.symm z)).symm
-  rw [hzx] at hX
   have hcoord := hz y₀ hy₀ hzy
-  rw [hX] at hcoord
-  exact eq_of_tangentCoordChange_comp_comp_eq (φ₀.map_target hzs.1) hzy.2.2 hcoord
+  rw [fderiv_chartAt_comp_chartAt_symm hzs.1] at hcoord
+  exact Manifold.eq_of_tangentCoordChange_comp_comp_eq (φ₀.map_target hzs.1) hzy.2.2 hcoord
 
 /-- The coordinate expressions of a weak differential of a local Sobolev map
 `u ∈ W^{1,p}_loc(s, M)` on an open set `s` are locally `Lᵖ`. -/
@@ -454,10 +347,9 @@ theorem HasWeakMFDerivOn.memLpLoc [IsManifold 𝓘(ℂ) 1 X] [IsManifold I ∞ M
   obtain ⟨-, D', hD', hD'L⟩ := memWkpLoc_succ_iff.1
     (hu.memWkpLoc_chart (IsManifold.chart_mem_maximalAtlas x₀)
       (IsManifold.chart_mem_maximalAtlas y₀))
-  have hW := ((chartAt ℂ x₀).isOpen_inter_preimage_symm_inter_preimage hu.continuousOn hs
-    (chartAt H y₀).open_source).interior_eq
   have hae := hD'.ae_eq (h x₀ y₀)
-  rw [Opens.coe_interior, hW] at hae
+  rw [coe_interior_chartAt_target_inter_preimage hs hu.continuousOn (chartAt H y₀).open_source]
+    at hae
   exact (memWkpLoc_zero_iff.1 hD'L).congr_ae hae
 
 /-! ### Comparison with the differential -/
@@ -470,8 +362,7 @@ theorem _root_.ContMDiffOn.hasWeakMFDerivOn_mfderiv [IsManifold 𝓘(ℝ, ℂ) 1
   set φ₀ := chartAt ℂ x₀
   set W := φ₀.target ∩ φ₀.symm ⁻¹' (s ∩ u ⁻¹' (chartAt H y₀).source)
   have hW : (Opens.interior W : Set ℂ) = W :=
-    (φ₀.isOpen_inter_preimage_symm_inter_preimage hu.continuousOn hs
-      (chartAt H y₀).open_source).interior_eq
+    coe_interior_chartAt_target_inter_preimage hs hu.continuousOn (chartAt H y₀).open_source x₀
   -- The coordinate expression of `u` is `C¹`, so its derivative is a weak derivative.
   have hf : ContDiffOn ℝ 1 (extChartAt I y₀ ∘ u ∘ φ₀.symm) (Opens.interior W) := by
     rw [hW]

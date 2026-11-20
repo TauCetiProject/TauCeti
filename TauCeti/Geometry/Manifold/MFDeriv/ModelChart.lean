@@ -14,6 +14,7 @@ import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Analysis.Calculus.TangentCone.Chart
 import TauCeti.Geometry.Manifold.ContMDiff.Groupoid
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.CoordChange
 
 /-!
 # Calculus in the charts of a manifold modelled on its own model space
@@ -55,8 +56,8 @@ open set.
   `y` if and only if the Fréchet derivative of `h` vanishes at `e y`.
 * `TauCeti.isOpen_setOf_mfderiv_ne_zero`: the points where the differential of a `C^1` map is
   nonzero form an open set.
-* `TauCeti.tangentCoordChange_eq_fderiv`: the tangent change of coordinates is the derivative of
-  the change of chart, and `TauCeti.mfderiv_chartAt_symm`: the differential of the inverse of a
+* `TauCeti.fderiv_chartAt_comp_chartAt_symm`: the derivative of a change of chart is the tangent
+  change of coordinates, and `TauCeti.mfderiv_chartAt_symm`: the differential of the inverse of a
   preferred chart is the derivative of a change of chart.
 -/
 
@@ -347,13 +348,15 @@ theorem isOpen_setOf_mfderiv_ne_zero (hf : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F)
   filter_upwards [hev, c.open_source.mem_nhds hmem] with y hy hys
   exact fun h ↦ hy ((hiff y hys).1 h)
 
-/-- The tangent change of coordinates from the chart at `x` to the chart at `y`, at `z`, is the
-derivative of the change of chart `chartAt E y ∘ (chartAt E x).symm` at the coordinate of `z`. -/
-theorem tangentCoordChange_eq_fderiv {x y z : M} :
-    tangentCoordChange 𝓘(𝕜, E) x y z =
-      fderiv 𝕜 (chartAt E y ∘ (chartAt E x).symm) (chartAt E x z) := by
-  rw [tangentCoordChange_def]
-  simp
+/-- The derivative of the change of chart from the chart at `x` to the chart at `y`, at a point `z`
+of the target of the chart at `x`, is the tangent change of coordinates at the point with
+coordinate `z`. This is `TauCeti.Manifold.tangentCoordChange_eq_fderiv` for the model
+`𝓘(𝕜, E)`. -/
+theorem fderiv_chartAt_comp_chartAt_symm {x y : M} {z : E} (hz : z ∈ (chartAt E x).target) :
+    fderiv 𝕜 (chartAt E y ∘ (chartAt E x).symm) z =
+      tangentCoordChange 𝓘(𝕜, E) x y ((chartAt E x).symm z) := by
+  rw [Manifold.tangentCoordChange_eq_fderiv]
+  simp [(chartAt E x).right_inv hz]
 
 /-- The differential of the inverse of the chart at `x` at a point `z` of its target is the
 derivative at `z` of the change of chart from the chart at `x` to the chart at
