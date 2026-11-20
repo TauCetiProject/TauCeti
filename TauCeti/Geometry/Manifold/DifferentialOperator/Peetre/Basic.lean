@@ -43,7 +43,8 @@ multiplication operators. So for compact `M`, a linear endomorphism of `C^∞(M)
 and only if it is a differential operator of finite order in Grothendieck's sense
 (`LinearMap.exists_mem_differentialOperators_iff_apply_eq_zero_of_eventuallyEq`). On a noncompact
 manifold the order need not be bounded: on a disjoint union of circles, the operator acting by the
-`j`-th derivative on the `j`-th circle is local but has no finite order.
+`j`-th derivative on the `j`-th circle is local but has no finite order
+(`AddCircle.sigmaOperator_pow_timeDerivation_notMem_differentialOperators`).
 
 ## Main results
 
