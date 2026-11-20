@@ -393,17 +393,18 @@ theorem snoc_cyclicDiscreteEnergyForget {r : Fin (m + 2) ↪o Fin (n + 2)} (h0 :
   | cast j => rw [Fin.snoc_castSucc, cyclicDiscreteEnergyForget_apply, Function.comp_apply]
 
 omit [PseudoMetricSpace X] in
-/-- Successive vertex-forgetting agrees with selecting the composite subsequence, when the first
-selection retains the first and last slots. -/
+/-- Successive vertex-forgetting agrees with selecting the composite subsequence. -/
 @[simp]
-theorem cyclicDiscreteEnergyForget_trans {l : ℕ} {r : Fin (m + 2) ↪o Fin (n + 2)} (h0 : r 0 = 0)
-    (hlast : r (Fin.last (m + 1)) = Fin.last (n + 1)) (s : Fin (l + 2) ↪o Fin (m + 2))
-    (q : Fin (n + 1) → X) :
+theorem cyclicDiscreteEnergyForget_trans {l : ℕ} (r : Fin (m + 2) ↪o Fin (n + 2))
+    (s : Fin (l + 2) ↪o Fin (m + 2)) (q : Fin (n + 1) → X) :
     cyclicDiscreteEnergyForget s (cyclicDiscreteEnergyForget r q) =
       cyclicDiscreteEnergyForget (s.trans r) q := by
   funext j
-  rw [cyclicDiscreteEnergyForget_apply, snoc_cyclicDiscreteEnergyForget h0 hlast,
-    Function.comp_apply, cyclicDiscreteEnergyForget_apply, RelEmbedding.trans_apply]
+  -- An increasing selection never sends a non-final slot to the final slot.
+  obtain ⟨k, hk⟩ := (s j.castSucc).eq_castSucc_of_ne_last
+    ((s.strictMono j.castSucc_lt_last).trans_le (Fin.le_last _)).ne
+  rw [cyclicDiscreteEnergyForget_apply, ← hk, Fin.snoc_castSucc, cyclicDiscreteEnergyForget_apply,
+    cyclicDiscreteEnergyForget_apply, RelEmbedding.trans_apply, ← hk]
 
 /-- **Forgetting vertices does not increase the cyclic energy.** Let the fine steps `τ` be those
 of the times `t`, and the coarse steps `τ'` those of the selected times `t ∘ r`, the steps of the
@@ -471,7 +472,7 @@ theorem cyclicDiscreteEnergyForgetMap_trans {l : ℕ} {τ'' : Fin (l + 1) → �
         (by rw [RelEmbedding.trans_apply, hs0, hr0])
         (by rw [RelEmbedding.trans_apply, hslast, hrlast]) hτ'' c := by
   ext q : 2
-  exact cyclicDiscreteEnergyForget_trans hr0 hrlast s q.1
+  exact cyclicDiscreteEnergyForget_trans r s q.1
 
 /-- **Geodesic insertion for closed chains.** In a geodesic space, for times `t` and a selection
 `r` retaining the first and last slots, every coarse closed chain is obtained by forgetting
