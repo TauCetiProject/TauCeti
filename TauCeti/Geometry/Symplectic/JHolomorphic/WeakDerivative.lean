@@ -37,10 +37,11 @@ solution of the Cauchy--Riemann equation `∂ₛu + J(u) ∂ₜu = 0` across the
 of the classical equation is equivalent to it because `J² = -1` along the image. The same holds
 at the end of a finite-energy plane: the inverted map `w ↦ u w⁻¹`, filled at `0` with the limit of
 `u` at infinity, is such a weak solution near `0`
-(`SymplecticForm.exists_isWeakCauchyRiemannOn_update_comp_inv_of_finite_energy`). These are the
-hypotheses of interior elliptic regularity for the nonlinear Cauchy--Riemann equation: a continuous
-`W^{1,p}` solution with `p > 2` and smooth `J`. That regularity theorem, which would make the
-filling smooth and so complete the removal of singularities, is not proved here.
+(`SymplecticForm.exists_isWeakCauchyRiemannOn_update_comp_inv_of_finite_energy`). Both give a
+continuous `W^{1,p}` weak solution with `p > 2` for a `C²` structure `J`, the input of interior
+elliptic regularity for the nonlinear Cauchy--Riemann equation. That regularity theorem is not
+proved here. The regularity it gives the filling is limited by that of `J`, so a smooth filling,
+which completes the removal of singularities, also needs a smooth `J`.
 
 ## References
 
