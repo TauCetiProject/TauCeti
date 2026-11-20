@@ -180,7 +180,7 @@ theorem memWkpLoc_iff_locally [CompleteSpace F] {k : ℕ} :
     MemWkpLoc p U k f μ ↔ ∀ x ∈ U, ∃ V ∈ 𝓝[U] x, MemWkpLoc p V k f μ := by
   refine ⟨fun hf _ _ => ⟨U, self_mem_nhdsWithin, hf⟩, fun h => ?_⟩
   have hO : ∀ x : U, ∃ O : Opens E, (x : E) ∈ O ∧ MemWkpLoc p (U ∩ O) k f μ := fun x => by
-    obtain ⟨V, hV, hfV⟩ := h x x.2
+    obtain ⟨V, hV, hfV⟩ := h x x.property
     obtain ⟨O, hO, hxO, hOV⟩ := mem_nhdsWithin.1 hV
     exact ⟨⟨O, hO⟩, hxO, hfV.mono fun z hz => hOV ⟨hz.2, hz.1⟩⟩
   choose O hxO hfO using hO

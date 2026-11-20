@@ -86,9 +86,9 @@ theorem principal_map_eq_weilPairingDivisor {n : ℤ} (hchar : (n : F) ≠ 0)
   set s₀ := (finite_setOf_zsmul_eq W (psiFunctionField_ne_zero W hchar) 0).toFinset
   -- present the divisor of `g` as the pushforward of a divisor on points, the form taken by
   -- `principal_map_eq_pushforward`
-  have hpush : ∑ S ∈ s₀, (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine (R₀ + S)).1 -
-      WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine S).1) =
-      WeilDivisor.pushforward (fun P ↦ (pointEquivDegreeOnePlace W.toAffine P).1)
+  have hpush : ∑ S ∈ s₀, (WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine (R₀ + S)).val -
+      WeilDivisor.ofPoint (pointEquivDegreeOnePlace W.toAffine S).val) =
+      WeilDivisor.pushforward (fun P ↦ (pointEquivDegreeOnePlace W.toAffine P).val)
         (∑ S ∈ s₀, (WeilDivisor.ofPoint (R₀ + S) - WeilDivisor.ofPoint S)) := by
     simp [map_sum]
   rw [hpush] at hg
@@ -115,7 +115,7 @@ theorem weilPairing_torsionMapAlong (N : ℕ) [NeZero N] (hN : (N : F) ≠ 0)
         (W.torsionMapAlong f N S) (W.torsionMapAlong f N T) =
       Additive.ofMul (restrictRootsOfUnity f N (weilPairing W N hN S T).toMul) := by
   have hchar : ((N : ℤ) : F) ≠ 0 := by rwa [Int.cast_natCast]
-  have hT := (Submodule.mem_torsionBy_iff _ _).mp T.2
+  have hT := (Submodule.mem_torsionBy_iff _ _).mp T.property
   obtain ⟨g, hg⟩ := exists_principal_eq_weilPairingDivisor W hchar hT
   have hg' : Divisor.principal (W.map f).toAffine.isFunctionField
       (Units.map (FunctionField.map W.toAffine f).toMonoidHom g) =

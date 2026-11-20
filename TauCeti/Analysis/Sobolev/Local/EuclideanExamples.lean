@@ -438,17 +438,17 @@ theorem not_memLpLoc_uncountableBasisMap (p : ℝ≥0∞) {U : Set ℝ} (hU : (i
   obtain ⟨D, hDcnt, hDdense⟩ := hSsep
   set T : Set ℝ := K ∩ {x : ℝ | uncountableBasisMap x ∈ S}
   have hTcnt : T.Countable := by
-    have hDmap : ∀ x : T, ∃ d ∈ D, dist (uncountableBasisMap x.1) d < 1 / 2 := fun ⟨x, hx⟩ => by
+    have hDmap : ∀ x : T, ∃ d ∈ D, dist (uncountableBasisMap x.val) d < 1 / 2 := fun ⟨x, hx⟩ => by
       obtain ⟨d, hdD, hd⟩ := Metric.mem_closure_iff.1 (hDdense hx.2) (1 / 2) (by norm_num)
       exact ⟨d, hdD, hd⟩
     choose f hfD hfd using hDmap
     have hinj : Function.Injective f := by
       intro x y hxy
       by_contra hne
-      have hne' : x.1 ≠ y.1 := fun h => hne (Subtype.ext h)
-      have h1 : 1 ≤ dist (uncountableBasisMap x.1) (uncountableBasisMap y.1) :=
+      have hne' : x.val ≠ y.val := fun h => hne (Subtype.ext h)
+      have h1 : 1 ≤ dist (uncountableBasisMap x.val) (uncountableBasisMap y.val) :=
         dist_uncountableBasisMap_of_ne hne'
-      have htri := dist_triangle_right (uncountableBasisMap x.1) (uncountableBasisMap y.1) (f x)
+      have htri := dist_triangle_right (uncountableBasisMap x.val) (uncountableBasisMap y.val) (f x)
       have hfdx := hfd x
       rw [hxy] at htri hfdx
       linarith [hfdx, hfd y]
@@ -675,7 +675,7 @@ theorem not_hasWeakFDerivOn_indicator_clm_pos [FiniteDimensional ℝ E] [μ.IsAd
     { toFun := fun q => q.1 • v + (bK q.2 : E)
       invFun := fun x => (ℓ x, bK.symm ⟨x - ℓ x • v, by simp [K, hv]⟩)
       left_inv := fun ⟨t, y⟩ => by
-        have hby : ℓ (bK y : E) = 0 := (bK y).2
+        have hby : ℓ (bK y : E) = 0 := (bK y).property
         ext
         · simp [hv, hby]
         · simp only [map_add, map_smul, hv, hby, smul_eq_mul, mul_one, add_zero,
@@ -690,7 +690,7 @@ theorem not_hasWeakFDerivOn_indicator_clm_pos [FiniteDimensional ℝ E] [μ.IsAd
           RingHom.id_apply, smul_add, smul_smul, smul_eq_mul] }
   let e : (ℝ × EuclideanSpace ℝ (Fin m)) ≃L[ℝ] E := eLin.toContinuousLinearEquiv
   have hℓe : ∀ q : ℝ × EuclideanSpace ℝ (Fin m), ℓ (e q) = q.1 := fun ⟨t, y⟩ => by
-    have hby : ℓ (bK y : E) = 0 := (bK y).2
+    have hby : ℓ (bK y : E) = 0 := (bK y).property
     simp [e, eLin, hv, hby]
   set Ω' : Opens (ℝ × EuclideanSpace ℝ (Fin m)) :=
     ⟨e ⁻¹' (Ω : Set E), Ω.isOpen.preimage e.continuous⟩
@@ -942,7 +942,7 @@ theorem memWkpLoc_one_norm_rpow_smul_id {α : ℝ} (hα : -1 < α)
   have hsrCont : Continuous (fun x : E => (innerSL ℝ x).smulRight x) := by
     let B : (E →L[ℝ] ℝ) × E → (E →L[ℝ] E) := fun p => p.1.smulRight p.2
     have hB : Continuous B :=
-      (ContinuousLinearMap.smulRightL ℝ E E).isBoundedBilinearMap.continuous
+      (StrongDual.smulRightL ℝ E E).isBoundedBilinearMap.continuous
     exact hB.comp ((innerSL ℝ).continuous.prodMk continuous_id)
   have hDmeas : Measurable D :=
     ((continuous_norm.measurable.pow_const α).smul measurable_const).add

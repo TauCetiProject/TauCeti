@@ -96,9 +96,9 @@ private theorem isOpen_image_ball_zero_one (hEF : finrank ℝ E = finrank ℝ F)
   let j : F → sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 := Φ ∘ (↑)
   have hj : IsOpenEmbedding j := Φ.isOpenEmbedding.comp OnePoint.isOpenEmbedding_coe
   have hcont {s : Set E} (hs : s ⊆ closedBall (0 : E) 1) : Continuous fun y : s ↦ j (f y) :=
-    hj.continuous.comp (hf.comp_continuous continuous_subtype_val fun y ↦ hs y.2)
+    hj.continuous.comp (hf.comp_continuous continuous_subtypeVal fun y ↦ hs y.property)
   have hinj' {s : Set E} (hs : s ⊆ closedBall (0 : E) 1) : Injective fun y : s ↦ j (f y) :=
-    fun y z h ↦ Subtype.ext <| hinj (hs y.2) (hs z.2) (hj.injective h)
+    fun y z h ↦ Subtype.ext <| hinj (hs y.property) (hs z.property) (hj.injective h)
   have hjf : InjOn (j ∘ f) (closedBall 0 1) := hj.injective.injOn.comp hinj (mapsTo_univ _ _)
   have hAeq : ((j ∘ f) '' sphere 0 1)ᶜ = (range fun y : sphere (0 : E) 1 ↦ j (f y))ᶜ :=
     congrArg compl (image_eq_range _ _)
@@ -257,9 +257,9 @@ theorem IsOpen.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn {f : M → N
     hinj.injective fun s hs ↦ ?_
   have hsU : ((↑) '' s : Set M) ⊆ U := by
     rintro _ ⟨y, -, rfl⟩
-    exact y.2
+    exact y.property
   rw [domRestrict_eq, image_comp]
-  exact (hU.isOpenMap_subtype_val s hs).image_of_continuousOn_of_injOn (hf.mono hsU)
+  exact (hU.isOpenMap_subtypeVal s hs).image_of_continuousOn_of_injOn (hf.mono hsU)
     (hinj.mono hsU) hEF
 
 omit [FiniteDimensional ℝ E] in
@@ -286,12 +286,12 @@ private theorem coe_apply_mem_interior (e : A ≃ₜ B) (hEF : finrank ℝ E = f
     (hx : (x : M) ∈ interior A) : (e x : N) ∈ interior B := by
   -- On the open submanifold `interior A`, `e` is a continuous injection into `N`.
   let U : TopologicalSpace.Opens M := ⟨interior A, isOpen_interior⟩
-  let g : U → N := fun y ↦ e ⟨y, interior_subset y.2⟩
+  let g : U → N := fun y ↦ e ⟨y, interior_subset y.property⟩
   have hg : Continuous g :=
-    continuous_subtype_val.comp (e.continuous.comp (continuous_inclusion interior_subset))
+    continuous_subtypeVal.comp (e.continuous.comp (continuous_inclusion interior_subset))
   have hginj : Injective g := fun y z hyz ↦
     Subtype.ext (Subtype.mk.inj (e.injective (Subtype.ext hyz)))
-  exact interior_maximal (by rintro _ ⟨y, rfl⟩; exact (e _).2)
+  exact interior_maximal (by rintro _ ⟨y, rfl⟩; exact (e _).property)
     (hg.isOpenEmbedding_of_injective hginj hEF).isOpen_range ⟨⟨x, hx⟩, rfl⟩
 
 /-- **Invariance of interior points.** Let `A` and `B` be homeomorphic subsets of topological
@@ -309,7 +309,8 @@ dimension. Then a point of `A` lies in the frontier of `A` exactly when its imag
 frontier of `B`. -/
 theorem coe_apply_mem_frontier_iff (e : A ≃ₜ B) (hEF : finrank ℝ E = finrank ℝ F) (x : A) :
     (e x : N) ∈ frontier B ↔ (x : M) ∈ frontier A := by
-  simp only [frontier, mem_sdiff, subset_closure (e x).2, subset_closure x.2, true_and,
+  simp only [frontier, mem_sdiff, subset_closure (e x).property, subset_closure x.property,
+      true_and,
     e.coe_apply_mem_interior_iff hEF]
 
 end Homeomorph

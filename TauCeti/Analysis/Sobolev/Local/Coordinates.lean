@@ -108,7 +108,7 @@ theorem memWkpLoc_succ_of_hasWeakFDerivOn (b : Module.Basis ι ℝ E) {D : E →
   have : CompleteSpace F := hD.completeSpace
   refine memWkpLoc_succ_iff.2 ⟨hf, D, hD, ?_⟩
   have hDeq : D = fun x => ∑ i,
-      ContinuousLinearMap.smulRightL ℝ E F (LinearMap.toContinuousLinearMap (b.coord i))
+      StrongDual.smulRightL ℝ E F (LinearMap.toContinuousLinearMap (b.coord i))
         (D x (b i)) := by
     funext x
     ext v
@@ -116,7 +116,7 @@ theorem memWkpLoc_succ_of_hasWeakFDerivOn (b : Module.Basis ι ℝ E) {D : E →
       _ = _ := by rw [map_sum]; simp
   rw [hDeq]
   exact MemWkpLoc.sum Finset.univ fun i _ =>
-    (hb i).clm_comp (ContinuousLinearMap.smulRightL ℝ E F _)
+    (hb i).clm_comp (StrongDual.smulRightL ℝ E F _)
 
 open TopologicalSpace in
 /-- **Local Sobolev classes through partial derivatives along a basis.** A map lies in

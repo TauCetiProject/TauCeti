@@ -10,8 +10,14 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 /-!
 # Elementary inequalities in seminormed rings
 
-This file records elementary consequences of the submultiplicativity of the norm, and an estimate
-for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative.
+This file records elementary consequences of the submultiplicativity of the norm, exact
+positive-power norms without `NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the
+norm is multiplicative, and convergence to `0` of finite partial products when factors tend to `0`
+cofinitely (`TauCeti.tendsto_finsetProd_cofinite_zero`).
+
+Among the former are the estimates `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`
+(`TauCeti.norm_mul_sub_le_left`) and `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
+(`TauCeti.norm_mul_sub_le_right`), which compare a product with `c` through the product with `b`.
 -/
 
 public section
@@ -26,6 +32,21 @@ theorem norm_mul_lt_one {K : Type*} [NonUnitalSeminormedRing K] (u v : K) (hu : 
     _ ≤ ‖u‖ := by
       simpa only [mul_one] using mul_le_mul_of_nonneg_left hv.le (norm_nonneg u)
     _ < 1 := hu
+
+/-- The distance from `e * a` to `c` exceeds the distance from `e * b` to `c` by at most
+`‖e‖ ‖a - b‖`: `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`. -/
+theorem norm_mul_sub_le_left {R : Type*} [NonUnitalSeminormedRing R] (e a b c : R) :
+    ‖e * a - c‖ ≤ ‖e‖ * ‖a - b‖ + ‖e * b - c‖ := by
+  rw [← sub_add_sub_cancel (e * a) (e * b) c, ← mul_sub]
+  exact (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
+
+/-- The distance from `a * e` to `c` exceeds the distance from `b * e` to `c` by at most
+`‖a - b‖ ‖e‖`: `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`. This is the right-multiplication
+version of `TauCeti.norm_mul_sub_le_left`. -/
+theorem norm_mul_sub_le_right {R : Type*} [NonUnitalSeminormedRing R] (e a b c : R) :
+    ‖a * e - c‖ ≤ ‖a - b‖ * ‖e‖ + ‖b * e - c‖ := by
+  rw [← sub_add_sub_cancel (a * e) (b * e) c, ← sub_mul]
+  exact (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
 
 /-- Consecutive powers stay in the open unit ball when the first factor is strictly inside
 and the second factor is in the closed unit ball. -/
@@ -91,6 +112,14 @@ theorem _root_.Finset.norm_mul_prod_pow_le {ι R : Type*} [SeminormedCommRing R]
     rw [Finset.prod_insert ht, Finset.prod_insert ht, ← mul_assoc, ← mul_assoc]
     exact (ih _).trans (by gcongr; exact norm_mul_pow_le _ _ _)
 
+/-- Without the normalisation `‖1‖ = 1`, positive powers under a multiplicative norm satisfy
+`‖x ^ (n + 1)‖ = ‖x‖ ^ (n + 1)`. -/
+theorem norm_pow_succ {M : Type*} [Norm M] [Monoid M] [NormMulClass M] (x : M) (n : ℕ) :
+    ‖x ^ (n + 1)‖ = ‖x‖ ^ (n + 1) := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ x (n + 1), norm_mul, ih, pow_succ ‖x‖ (n + 1)]
+
 /-- For a multiplicative norm with `‖1‖ = 1`, an element `w` of norm one and `r` of norm at most
 one, `‖w - 1‖ ≤ ‖(w - 1) a‖ + 2 ‖a - r‖ + 2 (1 - ‖r‖)` for every `a`. So `w - 1` is controlled by
 `(w - 1) a` wherever `a` is close to some `r` of norm close to one. -/
@@ -147,6 +176,44 @@ theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass 
     (hz : ‖z - 1‖ < 1) : z ≠ 0 := by
   rintro rfl
   simp at hz
+
+/-- If `f` tends to `0` along the cofinite filter in a seminormed commutative ring, then so do its
+finite partial products `s ↦ ∏ i ∈ s, f i`. -/
+theorem tendsto_finsetProd_cofinite_zero {ι R : Type*} [SeminormedCommRing R] {f : ι → R}
+    (hf : Filter.Tendsto f Filter.cofinite (nhds 0)) :
+    Filter.Tendsto (fun s : Finset ι ↦ ∏ i ∈ s, f i) Filter.cofinite (nhds 0) := by
+  classical
+  have hfin (δ : ℝ) (hδ : 0 < δ) : {i : ι | δ ≤ ‖f i‖}.Finite :=
+    (Filter.eventually_cofinite.mp (Metric.tendsto_nhds.mp hf δ hδ)).subset fun i hi ↦ by
+      simpa [dist_zero_right] using hi
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  have hB := hfin 1 zero_lt_one
+  set M := ∏ i ∈ hB.toFinset, max 1 ‖f i‖
+  have hM1 : 1 ≤ M := Finset.one_le_prod₀ fun _ _ ↦ le_max_left 1 _
+  have hC := hfin (min 1 (ε / M)) (lt_min zero_lt_one (div_pos hε (zero_lt_one.trans_le hM1)))
+  refine (Finset.finite_toSet (insert ∅ hC.toFinset.powerset)).subset fun s hs ↦ ?_
+  rw [Set.mem_compl_iff, Set.mem_ofPred_eq, dist_zero_right, not_lt] at hs
+  rw [Finset.mem_coe, Finset.mem_insert, Finset.mem_powerset]
+  by_contra! h
+  obtain ⟨j, hj, hjC⟩ := Finset.not_subset.mp h.2
+  have hjlt : ‖f j‖ < ε / M :=
+    (not_le.mp (hC.mem_toFinset.not.mp hjC)).trans_le (min_le_right _ _)
+  have herase : ∏ i ∈ s.erase j, ‖f i‖ ≤ M := by
+    rw [← Finset.prod_inter_mul_prod_sdiff (s.erase j) hB.toFinset]
+    refine (mul_le_of_le_one_right (Finset.prod_nonneg fun _ _ ↦ norm_nonneg _)
+      (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) fun i hi ↦
+        le_of_not_ge (hB.mem_toFinset.not.mp (Finset.mem_sdiff.mp hi).2))).trans ?_
+    exact (Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ le_max_right 1 ‖f i‖).trans
+      (Finset.prod_le_prod_of_subset_of_one_le₀ Finset.inter_subset_right
+        (fun _ _ ↦ by positivity) fun _ _ _ ↦ le_max_left 1 _)
+  have hprod : ‖∏ i ∈ s, f i‖ < ε := by
+    calc ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := norm_prod_le_prod_norm_of_nonempty ⟨j, hj⟩ f
+      _ = ‖f j‖ * ∏ i ∈ s.erase j, ‖f i‖ := (Finset.mul_prod_erase s _ hj).symm
+      _ ≤ ‖f j‖ * M := mul_le_mul_of_nonneg_left herase (norm_nonneg _)
+      _ < ε / M * M := mul_lt_mul_of_pos_right hjlt (zero_lt_one.trans_le hM1)
+      _ = ε := div_mul_cancel₀ ε (zero_lt_one.trans_le hM1).ne'
+  exact hs.not_gt hprod
 
 end TauCeti
 

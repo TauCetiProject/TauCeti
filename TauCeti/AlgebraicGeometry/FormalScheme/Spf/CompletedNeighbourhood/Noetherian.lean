@@ -159,7 +159,7 @@ private theorem isUnit_algebraMap_residue (s : (p : PrimeSpectrum A).asIdeal.pri
   rw [IsScalarTower.algebraMap_apply A (A ⧸ (p : PrimeSpectrum A).asIdeal), isUnit_iff_ne_zero,
     ne_eq, IsFractionRing.to_map_eq_zero_iff, Ideal.Quotient.algebraMap_eq,
     Ideal.Quotient.eq_zero_iff_mem]
-  exact s.2
+  exact s.property
 
 /-- The ideal of definition vanishes in `Frac(A ⧸ 𝔭)`. -/
 private theorem map_ideal_residue :
@@ -169,7 +169,7 @@ private theorem map_ideal_residue :
   intro a ha
   rw [RingHom.mem_ker, IsScalarTower.algebraMap_apply A (A ⧸ (p : PrimeSpectrum A).asIdeal),
     Ideal.Quotient.algebraMap_eq, Ideal.Quotient.eq_zero_iff_mem.mpr
-      ((mem_carrier_iff_le (IsAdicRing.ideal_spec A).2.1).mp p.2 ha), map_zero]
+      ((mem_carrier_iff_le (IsAdicRing.ideal_spec A).2.1).mp p.property ha), map_zero]
 
 /-- The value at `𝔭` of an element of `A_𝔭`, in `Frac(A ⧸ 𝔭)`. -/
 private noncomputable def residueLocalization :

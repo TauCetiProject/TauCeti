@@ -125,8 +125,8 @@ theorem exists_hasWeakFDerivOn_eLpNorm_le_of_hasWeakConjWirtingerDerivOn_of_le
   · have hm₁ := hg₁.locallyIntegrableOn_deriv.aestronglyMeasurable
     have hmI := hgI.locallyIntegrableOn_deriv.aestronglyMeasurable
     have hmD : AEStronglyMeasurable D (volume.restrict V) :=
-      ((smulRightL ℝ ℂ F reCLM).continuous.comp_aestronglyMeasurable hm₁).add
-        ((smulRightL ℝ ℂ F imCLM).continuous.comp_aestronglyMeasurable hmI)
+      ((smulRightL ℝ ℝ ℝ ℂ F reCLM).continuous.comp_aestronglyMeasurable hm₁).add
+        ((smulRightL ℝ ℝ ℝ ℂ F imCLM).continuous.comp_aestronglyMeasurable hmI)
     calc eLpNorm D p (volume.restrict V)
         ≤ eLpNorm (fun z => ‖g₁ z‖ + ‖gI z‖) p (volume.restrict V) := by
           refine eLpNorm_mono_real hmD fun z => ?_
@@ -321,8 +321,8 @@ private theorem exists_eLpNormWkp_compact_le_of_hasWeakConjWirtingerDerivOn (hp 
     obtain ⟨Ω₂, hΩ₁Ω₂, hΩ₂c, hΩ₂Ω, C₀, hC₀⟩ :=
       exists_eLpNorm_le_of_hasWeakConjWirtingerDerivOn (F := F) hp hp_top hΩ₁c hΩ₁Ω
     let a : ℂ → (ℂ →L[ℝ] F) →L[ℝ] F := fun w => apply ℝ F w
-    let L₁ := smulRightL ℝ ℂ F reCLM
-    let L₂ := smulRightL ℝ ℂ F imCLM
+    let L₁ := smulRightL ℝ ℝ ℝ ℂ F reCLM
+    let L₂ := smulRightL ℝ ℝ ℝ ℂ F imCLM
     let B : ℝ≥0 := ‖L₁‖₊ * ‖a 1‖₊ + ‖L₂‖₊ * ‖a I‖₊
     have hKΩ₂ : K ⊆ Ω₂ := hKΩ₁.trans (subset_closure.trans hΩ₁Ω₂)
     have hΩ₂Ω' : Ω₂ ≤ Ω := subset_closure.trans hΩ₂Ω

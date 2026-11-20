@@ -245,11 +245,11 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.comap_ker_comm_of_comp_eq_id
 quotient `Γ(X, U) ⧸ I(U)` is flat over `Γ(S, W)` for every affine open `U ⊆ f⁻¹ W`. -/
 theorem flat_appLE_comp_ofHom_quotient_mk (I : X.IdealSheafData) (f : X ⟶ S)
     [Flat (I.subschemeι ≫ f)] {W : S.Opens} (hW : IsAffineOpen W) (U : X.affineOpens)
-    (hUW : U.1 ≤ f ⁻¹ᵁ W) :
+    (hUW : U.val ≤ f ⁻¹ᵁ W) :
     (f.appLE W U hUW ≫ CommRingCat.ofHom (Ideal.Quotient.mk (I.ideal U))).hom.Flat := by
-  have h := (I.subschemeι ≫ f).flat_appLE hW (U.2.preimage I.subschemeι)
+  have h := (I.subschemeι ≫ f).flat_appLE hW (U.property.preimage I.subschemeι)
     ((Scheme.Hom.preimage_mono _ hUW).trans_eq rfl)
-  rw [← Scheme.Hom.appLE_comp_appLE I.subschemeι f W U.1 _ hUW le_rfl,
+  rw [← Scheme.Hom.appLE_comp_appLE I.subschemeι f W U.val _ hUW le_rfl,
     ← Scheme.Hom.app_eq_appLE, subschemeι_app, ← Category.assoc] at h
   exact (RingHom.Flat.respectsIso.cancel_right_isIso _ _).mp h
 
@@ -368,15 +368,15 @@ variable {S X : Scheme.{u}}
 to flatness of its quotient algebra of sections over the base. -/
 theorem flat_resLE_subschemeι_iff {I : X.IdealSheafData} {f : X ⟶ S}
     {W : S.Opens} (hW : IsAffineOpen W) (U : X.affineOpens)
-    (hUW : U.1 ≤ f ⁻¹ᵁ W) :
-    Flat ((I.subschemeι ≫ f).resLE W (I.subschemeι ⁻¹ᵁ U.1)
+    (hUW : U.val ≤ f ⁻¹ᵁ W) :
+    Flat ((I.subschemeι ≫ f).resLE W (I.subschemeι ⁻¹ᵁ U.val)
       ((Scheme.Hom.preimage_mono I.subschemeι hUW).trans_eq rfl)) ↔
       (f.appLE W U hUW ≫ CommRingCat.ofHom (Ideal.Quotient.mk (I.ideal U))).hom.Flat := by
   have : IsAffine W.toScheme := hW
-  have : IsAffine (I.subschemeι ⁻¹ᵁ U.1).toScheme := U.2.preimage I.subschemeι
+  have : IsAffine (I.subschemeι ⁻¹ᵁ U.val).toScheme := U.property.preimage I.subschemeι
   rw [HasRingHomProperty.iff_of_isAffine (P := @Flat),
     RingHom.Flat.respectsIso.arrow_mk_iso_iff (arrowResLEAppIso _ _ _ _),
-    ← Scheme.Hom.appLE_comp_appLE I.subschemeι f W U.1 _ hUW le_rfl,
+    ← Scheme.Hom.appLE_comp_appLE I.subschemeι f W U.val _ hUW le_rfl,
     ← Scheme.Hom.app_eq_appLE, subschemeι_app, ← Category.assoc]
   exact RingHom.Flat.respectsIso.cancel_right_isIso _ _
 
