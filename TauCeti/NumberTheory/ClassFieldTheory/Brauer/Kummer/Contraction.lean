@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Kummer.Basic
+public import TauCeti.RepresentationTheory.Continuous.TopRep.KernelCokernel
 
 /-!
 # The root contraction `μₙ ⊗ μₙ → μₙ` and its dependence on the root
@@ -258,10 +259,8 @@ theorem nsmul_kummerBrauerClass_pow (a b : Fˣ) :
   -- Multiplication by `k` on `μₙ` intertwines the pairing of `ζ ^ k` with the pairing of `ζ`.
   have hcup := (kummerCupPairing (ζ ^ k) hζk).cup_coeffMap (kummerCupPairing ζ hζ)
     (𝟙 _) (𝟙 _) ((k : ZMod n) • 𝟙 (muNRep n F)) (fun x y ↦ by
-      rw [CategoryTheory.id_apply, CategoryTheory.id_apply,
-        ← nsmul_kummerCupPairing_pow_bil hζ hζk x y, ← TopRep.Hom.hom, TopRep.hom_smul,
-        ContIntertwiningMap.smul_apply, TopRep.hom_id, ContIntertwiningMap.id_apply,
-        Nat.cast_smul_eq_nsmul]) 1 1 (kummerClass F hn a) (kummerClass F hn b)
+      rw [CategoryTheory.id_apply, CategoryTheory.id_apply, TopRep.natCast_smul_id_apply,
+        nsmul_kummerCupPairing_pow_bil hζ hζk]) 1 1 (kummerClass F hn a) (kummerClass F hn b)
   -- The functor `H²(G_F, ·)` is `ℤ/n`-linear, so it sends `(k : ℤ/n) • 𝟙` to `k • 𝟙`.
   have hk : TauCeti.ContinuousCohomology.coeffMap ((k : ZMod n) • 𝟙 (muNRep n F)) (1 + 1) =
       k • 𝟙 (continuousCohomology (1 + 1) (muNRep n F)) := by
