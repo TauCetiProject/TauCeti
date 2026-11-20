@@ -8,9 +8,7 @@ module
 public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.GroupTheory.Index.Coatom
-import Mathlib.Algebra.Group.Subgroup.Order
 import Mathlib.Topology.Algebra.Group.ClosedSubgroup
-import Mathlib.Order.Atoms.Finite
 
 /-!
 # Open subgroups of compact groups
