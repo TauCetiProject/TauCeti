@@ -93,6 +93,7 @@ def extOneHomologySuccEquiv (n : ℕ) [Epi (wangδ φ (ModuleCat.of k k) n)]
         (ModuleCat.of k k)).obj (TopCat.of F)).homology (n + 1) ⧸ LinearMap.range
           (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) (n + 1)).hom)))
         Y 1 :=
+  -- the third object of `wangCokernelShortComplex φ n` is by definition `Hₙ(F)`
   have : Projective (wangCokernelShortComplex (k := k) φ n).X₃ := ‹_›
   LinearEquiv.ofBijective (Ext.precompOfLinear (Ext.mk₀ (wangCokernelShortComplex φ n).f) k Y
     (zero_add 1))
@@ -135,6 +136,9 @@ theorem card_torsion_cohomology_two_eq_card_quotient_span_det
       (ModuleCat.of k k)).obj (TopCat.of (MappingTorus φ))).homology 1) (ModuleCat.of k k) 1) :=
     (LinearMap.isTorsion_ext_quotient_range (mem_nonZeroDivisors_of_ne_zero hdet)).of_injective
       (f := e.toLinearMap) e.injective
+  -- `singularHomologyFunctor` is by definition the homology of the singular chain complex, and
+  -- the source `Hₙ₊₁(T_φ)` of `e` at `n = 0` is by definition `H₁(T_φ)`, so `htors` and `e` apply
+  -- to the `H₁(T_φ)` of the universal coefficient theorem
   exact ((TopCat.card_torsion_singularCohomology_eq_card_ext (n := 1) htors).trans
     (Nat.card_congr e.toEquiv)).trans
     (LinearMap.card_ext_one_quotient_range_eq_card_quotient_span_det hdet)
