@@ -16,8 +16,9 @@ order `120` is divisible by `5` but not by `25`, and to their subgroups.
 
 The file also records that `p` times the number of Sylow `p`-subgroups divides the order of the
 group whenever `p` does. When `p ^ 2` does not divide the order, any two elements of order `p`
-generate conjugate subgroups. More generally, every element of prime-power order is conjugate
-to an element of any chosen Sylow subgroup for that prime.
+generate conjugate subgroups, and for `p = 2` the two elements are themselves conjugate. More
+generally, every element of prime-power order is conjugate to an element of any chosen Sylow
+subgroup for that prime.
 
 ## Main results
 
@@ -30,6 +31,8 @@ to an element of any chosen Sylow subgroup for that prime.
 * `TauCeti.exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd`: if `p ^ 2` does not divide the order of
   the group, some conjugate of an element of order `p` is a power of any other element of
   order `p`.
+* `TauCeti.isConj_of_orderOf_eq_two`: if `4` does not divide the order of the group, any two
+  elements of order two are conjugate.
 * `TauCeti.subsingleton_sylow_of_forall_dvd_natCard_modEq_one`: the Sylow `p`-subgroup is unique
   when no divisor of the group order other than `1` is congruent to `1` modulo `p`.
 -/
@@ -104,6 +107,21 @@ theorem exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd (hsq : ¬ p ^ 2 ∣ Nat.car
   have hmem : (x : G) ∈ (Pg : Subgroup G) := x.property
   simp only [Pg, Sylow.coe_ofCard] at hmem
   exact ⟨y, hy ▸ hmem⟩
+
+/-- If `4` does not divide the order of a group, then any two elements of order two are
+conjugate. -/
+theorem isConj_of_orderOf_eq_two (h4 : ¬ 4 ∣ Nat.card G) {g h : G} (hg : orderOf g = 2)
+    (hh : orderOf h = 2) : IsConj g h := by
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  obtain ⟨y, hy⟩ := exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd (by norm_num [h4]) hg hh
+  obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp hy
+  rw [← zpow_mod_orderOf, hg, Nat.cast_ofNat] at hk
+  -- The conjugate `y * h * y⁻¹` is a power `g ^ (k % 2)`, and it is not `1` since `h ≠ 1`.
+  rcases Int.emod_two_eq_zero_or_one k with hk0 | hk1
+  · rw [hk0, zpow_zero, eq_comm, conj_eq_one_iff] at hk
+    simp [hk] at hh
+  · rw [hk1, zpow_one] at hk
+    exact (isConj_iff.mpr ⟨y, hk.symm⟩).symm
 
 /-- A group has a unique Sylow `p`-subgroup when `1` is the only divisor of its order congruent
 to `1` modulo `p`. The hypothesis forces the group to be finite, since every number divides
