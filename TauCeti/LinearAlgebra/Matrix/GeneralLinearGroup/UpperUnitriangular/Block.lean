@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.ElementaryRowOperations
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
+public import TauCeti.LinearAlgebra.Matrix.Block
 public import TauCeti.LinearAlgebra.Matrix.LDU
 import Mathlib.Order.Interval.Finset.Basic
 import Mathlib.Order.SuccPred.Nat
@@ -80,14 +81,18 @@ by `n × ι`: the block in block row `i` and block column `j` contributes when `
 def adjacentBlockTrace (X : Matrix (n × ι) (n × ι) R) : R :=
   ∑ i, ∑ j, if i ⋖ j then (X.submatrix (·, i) (·, j)).trace else 0
 
+theorem adjacentBlockTrace_def (X : Matrix (n × ι) (n × ι) R) :
+    adjacentBlockTrace X = ∑ i, ∑ j, if i ⋖ j then (X.submatrix (·, i) (·, j)).trace else 0 :=
+  (rfl)
+
 @[simp]
 theorem adjacentBlockTrace_zero : adjacentBlockTrace (0 : Matrix (n × ι) (n × ι) R) = 0 := by
-  simp [adjacentBlockTrace]
+  simp [adjacentBlockTrace_def]
 
 @[simp]
 theorem adjacentBlockTrace_add (X Y : Matrix (n × ι) (n × ι) R) :
     adjacentBlockTrace (X + Y) = adjacentBlockTrace X + adjacentBlockTrace Y := by
-  simp only [adjacentBlockTrace, ← Finset.sum_add_distrib, ← ite_add_zero]
+  simp only [adjacentBlockTrace_def, ← Finset.sum_add_distrib, ← ite_add_zero]
   simp [submatrix_add, trace_add]
 
 @[simp]
@@ -108,12 +113,12 @@ theorem adjacentBlockTrace_of_subsingleton [Subsingleton ι] (X : Matrix (n × �
 diagonal, the argument of the usual nondegenerate Whittaker character. -/
 theorem adjacentBlockTrace_of_unique [Unique n] (X : Matrix (n × ι) (n × ι) R) :
     adjacentBlockTrace X = ∑ i, ∑ j, if i ⋖ j then X (default, i) (default, j) else 0 := by
-  simp [adjacentBlockTrace, trace]
+  simp [adjacentBlockTrace_def, trace]
 
 /-- For the blocks `Fin (k + 1)`, the adjacent block trace is `∑ᵢ tr X_(i,i+1)`. -/
 theorem adjacentBlockTrace_fin {k : ℕ} (X : Matrix (n × Fin (k + 1)) (n × Fin (k + 1)) R) :
     adjacentBlockTrace X = ∑ i : Fin k, (X.submatrix (·, i.castSucc) (·, i.succ)).trace := by
-  rw [adjacentBlockTrace, Fin.sum_univ_castSucc]
+  rw [adjacentBlockTrace_def, Fin.sum_univ_castSucc]
   have hlast : ∀ j : Fin (k + 1), ¬Fin.last k ⋖ j := fun j h => (Fin.le_last j).not_gt h.lt
   have hsucc (i : Fin k) (j : Fin (k + 1)) : i.castSucc ⋖ j ↔ i.succ = j := by
     simp [Fin.ext_iff]
@@ -137,24 +142,42 @@ theorem adjacentBlockTrace_sub (X Y : Matrix (n × ι) (n × ι) R) :
 
 end AddCommGroup
 
-section NonUnitalNonAssocSemiring
-
-variable [NonUnitalNonAssocSemiring R]
-
-/-- Conjugating by block-diagonal matrices multiplies each block on both sides. -/
-theorem submatrix_blockDiagonal_mul_mul_blockDiagonal (d d' : ι → Matrix n n R)
-    (X : Matrix (n × ι) (n × ι) R) (i j : ι) :
-    (blockDiagonal d * X * blockDiagonal d').submatrix (·, i) (·, j) =
-      d i * X.submatrix (·, i) (·, j) * d' j := by
-  ext a b
-  simp [Matrix.mul_apply, blockDiagonal_apply, Fintype.sum_prod_type, Finset.sum_mul, ite_mul,
-    mul_ite]
-
-end NonUnitalNonAssocSemiring
-
 end Matrix
 
 namespace TauCeti
+
+section BlockDiagonalGL
+
+variable (n ι R : Type*) [Fintype n] [DecidableEq n] [Fintype ι] [DecidableEq ι] [Semiring R]
+
+/-- The block-diagonal embedding `∏ᵢ GL n R → GL (n × ι) R` of the Levi subgroup. -/
+def blockDiagonalGL : (ι → GL n R) →* GL (n × ι) R :=
+  (Units.map
+      (blockDiagonalRingHom n ι R : (ι → Matrix n n R) →* Matrix (n × ι) (n × ι) R)).comp
+    MulEquiv.piUnits.symm.toMonoidHom
+
+variable {n ι R}
+
+@[simp]
+theorem coe_blockDiagonalGL (g : ι → GL n R) :
+    (blockDiagonalGL n ι R g : Matrix (n × ι) (n × ι) R) =
+      blockDiagonal fun i => (g i : Matrix n n R) :=
+  (rfl)
+
+theorem coe_blockDiagonalGL_inv (g : ι → GL n R) :
+    ((blockDiagonalGL n ι R g)⁻¹ : GL (n × ι) R) =
+      (blockDiagonal fun i => ((g i)⁻¹ : GL n R) : Matrix (n × ι) (n × ι) R) := by
+  rw [← map_inv, coe_blockDiagonalGL, Pi.inv_def]
+
+/-- The blocks of a conjugate by a Levi element. -/
+theorem submatrix_blockDiagonalGL_mul_mul_inv (g : ι → GL n R) (X : Matrix (n × ι) (n × ι) R)
+    (i j : ι) :
+    ((blockDiagonalGL n ι R g : Matrix (n × ι) (n × ι) R) * X *
+        ((blockDiagonalGL n ι R g)⁻¹ : GL (n × ι) R)).submatrix (·, i) (·, j) =
+      (g i : Matrix n n R) * X.submatrix (·, i) (·, j) * ((g j)⁻¹ : GL n R) := by
+  rw [coe_blockDiagonalGL, coe_blockDiagonalGL_inv, submatrix_blockDiagonal_mul_mul_blockDiagonal]
+
+end BlockDiagonalGL
 
 variable (n ι R : Type*) [Fintype n] [DecidableEq n] [Fintype ι] [LinearOrder ι] [CommRing R]
 
@@ -217,7 +240,7 @@ theorem adjacentBlockTrace_coe_mul (u v : blockUpperUnitriangularGroup n ι R) :
         Matrix (n × ι) (n × ι) R) =
       adjacentBlockTrace ((u : GL (n × ι) R) : Matrix (n × ι) (n × ι) R) +
         adjacentBlockTrace ((v : GL (n × ι) R) : Matrix (n × ι) (n × ι) R) := by
-  simp only [adjacentBlockTrace, ← Finset.sum_add_distrib, ← ite_add_zero]
+  simp only [adjacentBlockTrace_def, ← Finset.sum_add_distrib, ← ite_add_zero]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   split_ifs with hij
   · rw [submatrix_coe_mul_of_covBy u v hij, trace_add]
@@ -256,35 +279,6 @@ theorem adjacentTraceChar_of_subsingleton [Subsingleton ι] (ψ : AddChar R M) :
   simp [adjacentBlockTrace_of_subsingleton]
 
 end BlockUpperUnitriangularGroup
-
-variable (n ι R)
-
-/-- The block-diagonal embedding `∏ᵢ GL n R → GL (n × ι) R` of the Levi subgroup. -/
-def blockDiagonalGL : (ι → GL n R) →* GL (n × ι) R :=
-  (Units.map
-      (blockDiagonalRingHom n ι R : (ι → Matrix n n R) →* Matrix (n × ι) (n × ι) R)).comp
-    MulEquiv.piUnits.symm.toMonoidHom
-
-variable {n ι R}
-
-@[simp]
-theorem coe_blockDiagonalGL (g : ι → GL n R) :
-    (blockDiagonalGL n ι R g : Matrix (n × ι) (n × ι) R) =
-      blockDiagonal fun i => (g i : Matrix n n R) :=
-  (rfl)
-
-theorem coe_blockDiagonalGL_inv (g : ι → GL n R) :
-    ((blockDiagonalGL n ι R g)⁻¹ : GL (n × ι) R) =
-      (blockDiagonal fun i => ((g i)⁻¹ : GL n R) : Matrix (n × ι) (n × ι) R) := by
-  rw [← map_inv, coe_blockDiagonalGL, Pi.inv_def]
-
-/-- The blocks of a conjugate by a Levi element. -/
-theorem submatrix_blockDiagonalGL_mul_mul_inv (g : ι → GL n R) (X : Matrix (n × ι) (n × ι) R)
-    (i j : ι) :
-    ((blockDiagonalGL n ι R g : Matrix (n × ι) (n × ι) R) * X *
-        ((blockDiagonalGL n ι R g)⁻¹ : GL (n × ι) R)).submatrix (·, i) (·, j) =
-      (g i : Matrix n n R) * X.submatrix (·, i) (·, j) * ((g j)⁻¹ : GL n R) := by
-  rw [coe_blockDiagonalGL, coe_blockDiagonalGL_inv, submatrix_blockDiagonal_mul_mul_blockDiagonal]
 
 /-- Conjugation by a Levi element preserves the block upper-unitriangular group. -/
 theorem blockDiagonalGL_mul_mul_inv_mem (g : ι → GL n R) {u : GL (n × ι) R}
@@ -341,7 +335,7 @@ theorem adjacentBlockTrace_blockDiagonalConj (g : ι → GL n R)
       ∑ i, ∑ j, if i ⋖ j then
         (((g j)⁻¹ * g i : GL n R) * ((u : GL (n × ι) R) : Matrix (n × ι) (n × ι) R).submatrix
           (·, i) (·, j)).trace else 0 := by
-  simp only [adjacentBlockTrace, coe_blockDiagonalConj_apply, Units.val_mul,
+  simp only [adjacentBlockTrace_def, coe_blockDiagonalConj_apply, Units.val_mul,
     submatrix_blockDiagonalGL_mul_mul_inv]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   rw [trace_mul_cycle]
@@ -358,7 +352,7 @@ theorem adjacentTraceChar_comp_blockDiagonalConj_const [Monoid M] (ψ : AddChar 
   simp only [MonoidHom.coe_comp, Function.comp_apply, MulEquiv.coe_toMonoidHom,
     adjacentTraceChar_apply]
   rw [adjacentBlockTrace_blockDiagonalConj]
-  simp [adjacentBlockTrace]
+  simp [adjacentBlockTrace_def]
 
 variable [CommMonoid M]
 
@@ -411,7 +405,7 @@ private theorem eq_of_covBy_of_adjacentTraceChar_comp_eq {ψ : AddChar R M} (hψ
   have hchar := DFunLike.congr_fun h
     ⟨_, transvection_mem_blockUpperUnitriangularGroup (p := (b, i)) (q := (a, j)) hij.lt hpq t⟩
   rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, adjacentTraceChar_apply,
-    adjacentTraceChar_apply, adjacentBlockTrace_blockDiagonalConj, adjacentBlockTrace] at hchar
+    adjacentTraceChar_apply, adjacentBlockTrace_blockDiagonalConj, adjacentBlockTrace_def] at hchar
   simp only [GeneralLinearGroup.val_transvection] at hchar
   rw [sum_trace_mul_submatrix_transvection hij,
     show (∑ i', ∑ j', if i' ⋖ j' then ((transvection (b, i) (a, j) t :
