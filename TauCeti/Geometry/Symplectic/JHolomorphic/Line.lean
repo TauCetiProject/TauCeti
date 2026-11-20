@@ -51,6 +51,7 @@ energy and elliptic estimates.
   `TauCeti.IsComplexLinearMap.det_eq_sq_add_sq`: a complex-linear endomorphism of the standard
   complex line is multiplication by `a + i b`, where `(a, b) = F (1, 0)`; so `F (0, 1) = (-b, a)`
   and `det F = a² + b²`.
+* `TauCeti.IsComplexLinearMap.det_nonneg`: such an endomorphism preserves orientation.
 * `TauCeti.IsConstStructureJHolomorphicAt.fderiv_stdComplexLineImag` and
   `TauCeti.IsConstStructureJHolomorphicAt.fderiv_stdComplexLine_apply`: the corresponding statements
   for Frechet derivatives of constant-structure `J`-holomorphic maps.
@@ -305,6 +306,14 @@ lemma det_eq_sq_add_sq
   rw [LinearMap.det_finTwoProd, ← stdComplexLineReal_eq, ← stdComplexLineImag_eq,
     hL.apply_stdComplexLineImag_eq]
   ring
+
+/-- A complex-linear endomorphism of the standard complex line preserves orientation. -/
+theorem det_nonneg
+    (hL : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) L) :
+    0 ≤ LinearMap.det L := by
+  rw [hL.det_eq_sq_add_sq]
+  positivity
 
 end IsComplexLinearMap
 

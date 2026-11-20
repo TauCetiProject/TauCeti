@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.CoverGeneration
 public import TauCeti.Topology.MetricSpace.Lebesgue
 public import Mathlib.CategoryTheory.Functor.OfSequence
+import TauCeti.Topology.UnitInterval.Contractible
 
 /-!
 # Gluing functors out of the fundamental groupoid

@@ -30,7 +30,9 @@ to the canonical form of every component, this identifies the positive-definite 
 with the families of positive scalars, one per component: the invariant metrics of a root system
 have exactly one free positive parameter per irreducible component. This parametrisation is
 natural: pulling forms back along an equivalence of root systems reindexes the scales by the
-induced bijection of irreducible components.
+induced bijection of irreducible components. Restriction and orthogonal reconstruction are natural
+in the same way, through the induced equivalences of component pairings
+`RootPairing.Equiv.componentPairingEquiv`.
 
 ## Main definitions
 
@@ -62,6 +64,10 @@ induced bijection of irreducible components.
   `RootPairing.InvariantForm.posDefEquivScale_symm_comp_componentEquiv_coe`: the component scales of
   forms pulled back along an equivalence are the scales of the original forms on the corresponding
   components.
+* `RootPairing.InvariantForm.restrictComponent_comap`,
+  `RootPairing.InvariantForm.comap_ofComponent`: restriction and orthogonal reconstruction
+  commute with the pullbacks along an equivalence and along the induced equivalences of component
+  pairings.
 
 ## References
 
@@ -361,7 +367,33 @@ theorem componentScale_comap (e : P.Equiv Q) (B₀ B : Q.InvariantForm) (C : P.C
   obtain ⟨i, rfl⟩ : ∃ i, P.componentOf i = C := C.exists_rep
   simp
 
-variable [Finite ι₂] [Q.IsRootSystem] [LinearOrder K] [IsStrictOrderedRing K]
+variable [Finite ι₂] [Q.IsRootSystem]
+
+omit [NeZero (2 : K)] in
+/-- **Restricting the pullback of an invariant form to a component** is pulling back its
+restriction to the corresponding component along the equivalence of component pairings. -/
+theorem restrictComponent_comap (e : P.Equiv Q) (B : Q.InvariantForm) (C : P.Component) :
+    (comap e.toHom B).restrictComponent C =
+      comap (e.componentPairingEquiv C).toHom (B.restrictComponent (e.componentEquiv C)) := by
+  ext x y
+  simp
+
+omit [NeZero (2 : K)] in
+/-- **Orthogonal reconstruction commutes with the pullbacks**: the pullback of the orthogonal sum
+of a family of component forms is the orthogonal sum of their pullbacks along the equivalences of
+component pairings, reindexed along the bijection of components. -/
+theorem comap_ofComponent (e : P.Equiv Q) (G : ∀ D, (Q.componentPairing D).InvariantForm) :
+    comap e.toHom (ofComponent G) =
+      ofComponent fun C ↦ comap (e.componentPairingEquiv C).toHom (G (e.componentEquiv C)) := by
+  have := Fintype.ofFinite P.Component
+  have := Fintype.ofFinite Q.Component
+  ext x y
+  rw [comap_form_apply, ofComponent_form_apply, ofComponent_form_apply]
+  refine (Fintype.sum_equiv e.componentEquiv _ _ fun C ↦ ?_).symm
+  rw [comap_form_apply, Equiv.componentPairingEquiv_weightMap_componentProj,
+    Equiv.componentPairingEquiv_weightMap_componentProj]
+
+variable [LinearOrder K] [IsStrictOrderedRing K]
 
 /-- **The parametrisation of positive-definite invariant forms by component scales is natural
 under equivalences**: pulling a positive-definite form back along `e` reindexes its family of
