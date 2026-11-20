@@ -66,13 +66,16 @@ critical point is nondegenerate exactly when the piece through it is modelled on
 Morse–Bott family of zero-dimensional pieces is Morse
 (`TauCeti.IsMorseBottFamily.isMorse_of_subsingleton`), and conversely the critical points of a
 Morse function, each included as a point, form a Morse–Bott family
-(`TauCeti.IsMorse.exists_isMorseBottFamily`). At the other extreme, a constant function on a
-nonempty connected manifold without boundary is Morse–Bott with the whole manifold as its only
-critical submanifold (`TauCeti.isMorseBottFamily_const`). Without connectedness, on a locally
-connected manifold without boundary, a constant function is Morse–Bott with one critical
-submanifold for each connected component, embedded as an open subset
-(`TauCeti.isMorseBottFamily_ofOpens_const`). Each of these pieces has full dimension, so its
-normal spaces are zero (`TauCeti.SmoothEmbedding.subsingleton_normalSpace_ofOpens`).
+(`TauCeti.IsMorse.exists_isMorseBottFamily`). For a Morse function, every piece of every Morse–Bott
+family is a single point (`TauCeti.IsMorseBottFamily.range_eq_singleton_of_isMorse`,
+`TauCeti.IsMorseBottFamily.subsingleton_of_isMorse`), since its critical points are isolated.
+At the other extreme, a constant function on a nonempty connected manifold without boundary is
+Morse–Bott with the whole manifold as its only critical submanifold
+(`TauCeti.isMorseBottFamily_const`). Without connectedness, on a locally connected manifold without
+boundary, a constant function is Morse–Bott with one critical submanifold for each connected
+component, embedded as an open subset (`TauCeti.isMorseBottFamily_ofOpens_const`). Each of these
+pieces has full dimension, so its normal spaces are zero
+(`TauCeti.SmoothEmbedding.subsingleton_normalSpace_ofOpens`).
 
 On a product `M × V`, with `M` nonempty, preconnected and boundaryless, a function `(x, v) ↦ q v`
 whose fibre function `q` has `0` as its only critical point, a nondegenerate one, is Morse–Bott with
@@ -281,6 +284,21 @@ theorem isMorse_of_subsingleton [∀ a, Subsingleton (E' a)] (hn : n ≠ 0) : Is
   exact (h.isManifoldNondegenerateCriticalPoint_iff hn ha).2 inferInstance
 
 end Boundaryless
+
+/-- For a Morse function the image of each piece of a Morse–Bott family is a single point, since
+the critical points are isolated. -/
+theorem range_eq_singleton_of_isMorse [IsManifold I 1 M] (hf : IsMorse I f) (a : ι) (s : S a) :
+    range (i a) = {i a s} := by
+  have : T1Space M := I.t1Space M
+  rw [h.range_eq_connectedComponentIn a s]
+  exact connectedComponentIn_eq_singleton (h.range_subset_criticalPoints a (mem_range_self s))
+    (hf.eventually_eq_of_mem_criticalPoints _)
+
+/-- For a Morse function each piece of a Morse–Bott family is a single point. -/
+theorem subsingleton_of_isMorse [IsManifold I 1 M] (hf : IsMorse I f) (a : ι) :
+    Subsingleton (S a) :=
+  ⟨fun s t ↦ (i a).isEmbedding.injective <|
+    (h.range_eq_singleton_of_isMorse hf a s).subset (mem_range_self t) |>.symm⟩
 
 end IsMorseBottFamily
 

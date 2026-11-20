@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 public import TauCeti.Geometry.Manifold.Morse.Bott.Family
 public import TauCeti.Geometry.Manifold.Morse.BettiNumber
 import TauCeti.Geometry.Manifold.Morse.Bott.Index
-import TauCeti.Topology.Connected.Basic
 
 /-!
 # The indices of the pieces of a Morse–Bott function and the Morse–Bott count
@@ -107,21 +106,6 @@ def index (a : ι) : ℕ :=
 
 theorem index_def (a : ι) : h.index a = manifoldMorseIndex I f (i a (h.nonempty a).some) :=
   (rfl)
-
-/-- For a Morse function the image of each piece of a Morse–Bott family is a single point, since
-the critical points are isolated. -/
-theorem range_eq_singleton_of_isMorse [IsManifold I 1 M] (hf : IsMorse I f) (a : ι) (s : S a) :
-    range (i a) = {i a s} := by
-  have : T1Space M := I.t1Space M
-  rw [h.range_eq_connectedComponentIn a s]
-  exact connectedComponentIn_eq_singleton (h.range_subset_criticalPoints a (mem_range_self s))
-    (hf.eventually_eq_of_mem_criticalPoints _)
-
-/-- For a Morse function each piece of a Morse–Bott family is a single point. -/
-theorem subsingleton_of_isMorse [IsManifold I 1 M] (hf : IsMorse I f) (a : ι) :
-    Subsingleton (S a) :=
-  ⟨fun s t ↦ (i a).isEmbedding.injective <|
-    (h.range_eq_singleton_of_isMorse hf a s).subset (mem_range_self t) |>.symm⟩
 
 variable [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifold I 2 M] (hn : n ≠ 0)
 include hn
