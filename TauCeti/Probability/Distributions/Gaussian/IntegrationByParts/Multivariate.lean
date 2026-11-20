@@ -10,7 +10,6 @@ public import TauCeti.Probability.Distributions.Gaussian.IntegrationByParts.Basi
 public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
-import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Probability.Distributions.Gaussian.Independence
 
 /-!
@@ -25,7 +24,9 @@ continuous linear functional `L'`. In coordinates this is the identity
 of Anderson, Guionnet and Zeitouni, used to differentiate expectations of functions of
 Gaussian matrices and, for a covariance `v • 1`, as Stein's identity in estimation theory.
 
-The covariance may be singular, and the only integrability hypotheses are those of the two sides.
+The covariance may be singular. In the functional form the only integrability hypotheses are
+those of the two sides; the coordinate forms assume integrability of the centered side and of
+every partial derivative `∂ₗ f X`.
 
 ## Main results
 
@@ -64,21 +65,6 @@ namespace ProbabilityTheory.HasGaussianLaw
 variable {Ω E F : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {X : Ω → E}
-
-/-- One-dimensional Gaussian integration by parts in the second variable, integrated against an
-arbitrary s-finite measure in the first variable. -/
-private theorem integral_prod_gaussianReal_sub_smul_eq_smul_integral_deriv {α : Type*}
-    [MeasurableSpace α] {ν : Measure α} [SFinite ν] (a : ℝ) (v : ℝ≥0) (g : α → ℝ → F)
-    (hg : ∀ y, Differentiable ℝ (g y))
-    (h₁ : Integrable (fun p ↦ (p.2 - a) • g p.1 p.2) (ν.prod (gaussianReal a v)))
-    (h₂ : Integrable (fun p ↦ deriv (g p.1) p.2) (ν.prod (gaussianReal a v))) :
-    ∫ p, (p.2 - a) • g p.1 p.2 ∂(ν.prod (gaussianReal a v)) =
-      (v : ℝ) • ∫ p, deriv (g p.1) p.2 ∂(ν.prod (gaussianReal a v)) := by
-  rw [integral_prod _ h₁, integral_prod _ h₂, ← integral_smul]
-  refine integral_congr_ae ?_
-  filter_upwards [h₁.prod_right_ae, h₂.prod_right_ae] with y hy₁ hy₂
-  exact TauCeti.Probability.integral_sub_smul_eq_smul_integral_deriv_gaussianReal a v (g y)
-    (hg y) hy₁ hy₂
 
 /-- The nondegenerate case of `integral_dual_sub_smul_eq_integral_fderiv`. -/
 private theorem integral_dual_sub_smul_eq_integral_fderiv_of_ne_zero [CompleteSpace E]
@@ -132,7 +118,7 @@ private theorem integral_dual_sub_smul_eq_integral_fderiv_of_ne_zero [CompleteSp
   rw [← integral_map hφ hH₁, ← integral_map hφ hH₂, hprod]
   rw [hprod] at hi₁ hi₂
   rw [integral_smul, ← hv]
-  exact integral_prod_gaussianReal_sub_smul_eq_smul_integral_deriv a v g
+  exact TauCeti.Probability.integral_prod_gaussianReal_sub_smul_eq_smul_integral_deriv a v g
     (fun y s ↦ (hf _).comp s ((differentiableAt_id.smul_const u).const_add y)) hi₁
     ((integrable_smul_iff hLc _).1 hi₂)
 
@@ -165,7 +151,8 @@ theorem integral_dual_sub_smul_eq_integral_fderiv [CompleteSpace E] [SecondCount
   simp
 
 /-- **Multivariate Gaussian integration by parts in a basis.** If `X` is a Gaussian random vector
-and `b` a finite basis, then for a differentiable test function `f`
+and `b` a finite basis, then for a differentiable test function `f` such that
+`(X k - 𝔼[X k]) • f X` and each `∂ₗ f X` are integrable,
 `𝔼[(X k - 𝔼[X k]) • f X] = ∑ l, cov[X k, X l] • 𝔼[∂ₗ f X]`,
 where `X k` is the `k`-th coordinate of `X` and `∂ₗ f` the derivative of `f` in the direction of
 `b l`. The covariance may be singular. -/
@@ -205,7 +192,8 @@ theorem integral_repr_sub_smul_eq_sum_covariance_smul_integral_fderiv {ι : Type
   · exact fun l _ ↦ (hdf l).smul _
 
 /-- **Multivariate Gaussian integration by parts in coordinates.** If the finite family of real
-random variables `X ω k` is jointly Gaussian, then for a differentiable test function `f`
+random variables `X ω k` is jointly Gaussian, then for a differentiable test function `f` such
+that `(X k - 𝔼[X k]) • f X` and each `∂ₗ f X` are integrable,
 `𝔼[(X k - 𝔼[X k]) • f X] = ∑ l, cov[X k, X l] • 𝔼[∂ₗ f X]`.
 The covariance may be singular. -/
 theorem integral_sub_smul_eq_sum_covariance_smul_integral_fderiv {ι : Type*} [Fintype ι]
@@ -224,10 +212,11 @@ end ProbabilityTheory.HasGaussianLaw
 namespace TauCeti.Probability
 
 /-- **Gaussian integration by parts for a multivariate Gaussian.** For a positive-semidefinite
-covariance matrix `S` and a differentiable test function `f` such that both sides are
-integrable,
+covariance matrix `S` and a differentiable test function `f` such that `(x i - m i) • f x` and
+every partial derivative `∂ⱼ f` are integrable under `N(m, S)`,
 `∫ (x i - m i) • f x ∂N(m, S) = ∑ j, S i j • ∫ ∂ⱼ f x ∂N(m, S)`.
-For `S = v • 1` this is Stein's identity `𝔼[(X i - m i) • f X] = v • 𝔼[∂ᵢ f X]`. -/
+Under these hypotheses, for `S = v • 1` this gives Stein's identity
+`𝔼[(X i - m i) • f X] = v • 𝔼[∂ᵢ f X]`. -/
 theorem integral_sub_smul_eq_sum_smul_integral_fderiv_multivariateGaussian {ι F : Type*}
     [Fintype ι] [DecidableEq ι] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
     (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ} (hS : S.PosSemidef)

@@ -10,6 +10,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Moments
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # Gaussian integration by parts
@@ -17,7 +18,8 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 This file proves Gaussian integration by parts for any mean and variance, for test functions with
 values in a Banach space. For a differentiable test function, it assumes only that the derivative
 and the centered first moment are integrable; integrability of the function itself follows.
-Real-valued and standard-normal forms are recorded as corollaries.
+Real-valued and standard-normal forms are recorded as corollaries, as is a parametric form that
+integrates the identity against an s-finite measure in an auxiliary variable.
 It also records the identity for affine test functions.
 -/
 
@@ -79,6 +81,23 @@ theorem integral_sub_smul_eq_smul_integral_deriv_gaussianReal {E : Type*}
     _ = (-(v : ℝ)) • ∫ x, (-(x - μ) / (v : ℝ) * p x) • f x := integral_smul _ _
     _ = (v : ℝ) • ∫ x, p x • deriv f x := by rw [hparts, smul_neg, neg_smul]
     _ = (v : ℝ) • ∫ x, deriv f x ∂(gaussianReal μ v) := by rw [hgauss (deriv f)]
+
+/-- **Gaussian integration by parts with a parameter.** For a family of differentiable test
+functions `g y`, Gaussian integration by parts in the second variable holds after integrating
+against an s-finite measure `ν` in the first variable, provided both integrands are integrable for
+the product measure `ν.prod (gaussianReal a v)`. -/
+theorem integral_prod_gaussianReal_sub_smul_eq_smul_integral_deriv {α E : Type*}
+    [MeasurableSpace α] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    {ν : Measure α} [SFinite ν] (a : ℝ) (v : ℝ≥0) (g : α → ℝ → E)
+    (hg : ∀ y, Differentiable ℝ (g y))
+    (h₁ : Integrable (fun p ↦ (p.2 - a) • g p.1 p.2) (ν.prod (gaussianReal a v)))
+    (h₂ : Integrable (fun p ↦ deriv (g p.1) p.2) (ν.prod (gaussianReal a v))) :
+    ∫ p, (p.2 - a) • g p.1 p.2 ∂(ν.prod (gaussianReal a v)) =
+      (v : ℝ) • ∫ p, deriv (g p.1) p.2 ∂(ν.prod (gaussianReal a v)) := by
+  rw [integral_prod _ h₁, integral_prod _ h₂, ← integral_smul]
+  refine integral_congr_ae ?_
+  filter_upwards [h₁.prod_right_ae, h₂.prod_right_ae] with y hy₁ hy₂
+  exact integral_sub_smul_eq_smul_integral_deriv_gaussianReal a v (g y) (hg y) hy₁ hy₂
 
 /-- **Gaussian integration by parts** for real test functions. -/
 theorem integral_sub_mul_eq_mul_integral_deriv_gaussianReal
