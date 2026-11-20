@@ -284,10 +284,10 @@ noncomputable def tensorCoinvariantsEquiv (hδ : IsHopfModule δ) :
       intro a n
       have hP (i : H × H) : hδ.toCoinvariants ((ℛ k a).right i • (n : M)) =
           counit (R := k) ((ℛ k a).right i) • n :=
-        Subtype.ext (by simpa using hδ.coinvariantProj_smul n.2 ((ℛ k a).right i))
+        Subtype.ext (by simpa using hδ.coinvariantProj_smul n.property ((ℛ k a).right i))
       simp only [LinearMap.comp_apply, TensorProduct.lift.tmul, LinearMap.compl₂_apply,
         Submodule.subtype_apply, AlgHom.toLinearMap_apply, Algebra.lsmul_coe,
-        hδ.map_smul_of_mem_coinvariants n.2 (ℛ k a), map_sum, LinearMap.lTensor_tmul, hP,
+        hδ.map_smul_of_mem_coinvariants n.property (ℛ k a), map_sum, LinearMap.lTensor_tmul, hP,
         LinearMap.id_apply]
       simp_rw [← TensorProduct.smul_tmul, ← TensorProduct.sum_tmul, Coalgebra.sum_smul_counit])
 
