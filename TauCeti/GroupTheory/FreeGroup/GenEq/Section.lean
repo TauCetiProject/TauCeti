@@ -596,7 +596,8 @@ theorem isReduced_substituteVars_segment_of_forall_isOpenBoundary
       exact U.isReduced_substituteVars_segment_succ him (by omega)
         (Fin.lt_def.1 (Ω.crosses_iff.1 hμ).1) (Fin.lt_def.1 (Ω.crosses_iff.1 hμ).2) (ih (by omega))
     · obtain him | him := him.lt_or_eq
-      · simp [Ω.segment_eq_nil_of_le (show m + 1 ≤ i by omega)]
+      · have hmi : m + 1 ≤ (i : ℕ) := by omega
+        simp [Ω.segment_eq_nil_of_le hmi]
       · have hseg := Ω.segment_succ ⟨m, by omega⟩ true
         simp only at hseg
         rw [← him, hseg, FreeGroup.substituteVars_singleton_inl]
