@@ -20,18 +20,11 @@ Given `χ = 2 - 2 · genus` on both sides, the branched-cover formula
 `2 genus X - 2 = deg f · (2 genus Y - 2) + R(f)`
 (`TauCeti.RiemannSurface.FiniteHolomorphicMap.two_mul_genus_sub_two_eq_of_eulerChar_eq`).
 
-Since `deg f ≥ 1` and `R(f) ≥ 0`, this compares the genera of the two surfaces. A nonconstant
-closed pseudoholomorphic curve `u` factors as `u = v ∘ f` through a simple curve `v` and a finite
-holomorphic map `f` of some degree `d`; these comparisons bound the genus of `u` from below by
-that of `v`, bound the covering degree `d` by the genera, and relate the virtual dimensions of
-`u` and `v`:
+Since `deg f ≥ 1` and `R(f) ≥ 0`, this compares the genera of the two surfaces:
 
 * `deg f · (genus Y - 1) ≤ genus X - 1`, with equality exactly when `f` is unramified;
 * `genus Y ≤ genus X`, with equality exactly when `deg f = 1`, or `genus Y = 1` and `f` is
-  unramified, or `genus Y = 0` and `R(f) = 2 deg f - 2`;
-* the unmarked virtual dimension `D = (m - 3)(2 - 2 g) + 2 c` of a curve of genus `g` and Chern
-  number `c` in a target of complex dimension `m` satisfies `D(v ∘ f) = deg f · D(v) - (m - 3) R(f)`
-  when the Chern number of `v ∘ f` is `deg f` times that of `v`.
+  unramified, or `genus Y = 0` and `R(f) = 2 deg f - 2`.
 
 ## Main results
 
@@ -43,8 +36,6 @@ that of `v`, bound the covering degree `d` by the genera, and relate the virtual
 * `TauCeti.RiemannSurface.FiniteHolomorphicMap.genus_le_genus`,
   `TauCeti.RiemannSurface.FiniteHolomorphicMap.genus_eq_genus_iff`: `genus Y ≤ genus X` and its
   equality case.
-* `TauCeti.RiemannSurface.FiniteHolomorphicMap.index_eq_degree_mul_index_sub`: the virtual
-  dimension of a multiple cover.
 
 ## Checks
 
@@ -59,8 +50,6 @@ The level-one modular curve has genus `0`: see
   American Mathematical Society, 1995, Chapter II §4.
 * Otto Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81,
   Springer, 1981, §17.
-* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
-  Colloquium Publications 52, 2012, Section 2.5 (simple curves and multiple covers).
 -/
 
 public section
@@ -165,19 +154,6 @@ theorem genus_eq_genus_iff (hX : eulerChar X = 2 - 2 * genus X)
       have : (ramificationDegree f : ℤ) + 2 = 2 * degree f := by exact_mod_cast hR
       push_cast at h
       omega
-
-/-- **The index of a multiple cover.** Let `f : X → Y` be a finite holomorphic map of compact
-Riemann surfaces satisfying `χ = 2 - 2 · genus`, and write `D(g, c) = (m - 3) (2 - 2 g) + 2 c`
-for the unmarked virtual dimension of a closed curve of genus `g` and first Chern number `c` in a
-target of complex dimension `m`. Then
-`D(genus X, deg f · c) = deg f · D(genus Y, c) - (m - 3) R(f)` for every integer `c`. For a
-curve `v` on `Y` with Chern number `c` whose composite `v ∘ f` has Chern number `deg f · c`, this
-is `D(v ∘ f) = deg f · D(v) - (m - 3) R(f)`. -/
-theorem index_eq_degree_mul_index_sub (m c : ℤ) (hX : eulerChar X = 2 - 2 * genus X)
-    (hY : eulerChar Y = 2 - 2 * genus Y) :
-    (m - 3) * (2 - 2 * genus X) + 2 * (degree f * c) =
-      degree f * ((m - 3) * (2 - 2 * genus Y) + 2 * c) - (m - 3) * ramificationDegree f := by
-  linear_combination (3 - m) * f.two_mul_genus_sub_two_eq_of_eulerChar_eq hX hY
 
 end FiniteHolomorphicMap
 
