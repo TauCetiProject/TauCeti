@@ -117,6 +117,11 @@ theorem ncoeff_neg_one_field_vacuum : (A.field A.vacuum)[[-1]] = 1 := by
 theorem ncoeff_field_vacuum_of_ne {n : ℤ} (hn : n ≠ -1) : (A.field A.vacuum)[[n]] = 0 := by
   simp [A.ncoeff_field_vacuum, hn]
 
+-- Not a simp lemma, so that `ncoeff_neg_one_field_vacuum` and `ncoeff_field_vacuum_of_ne` fire.
+/-- The field of the vacuum is the identity field: `Y(|0⟩, z) = id`. -/
+theorem field_vacuum : A.field A.vacuum = idField :=
+  ext_ncoeff fun n ↦ by rw [A.ncoeff_field_vacuum, ncoeff_idField]
+
 /-- The state–field map is injective: `a` is recovered as `a₍₋₁₎|0⟩`. -/
 theorem field_injective : Function.Injective A.field := by
   intro a b h
