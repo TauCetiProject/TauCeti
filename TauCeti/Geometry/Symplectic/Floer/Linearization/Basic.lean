@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 
 /-!
 # Local-coordinate linearization of the inhomogeneous Floer equation
@@ -236,12 +237,10 @@ theorem floerLinearization_smul_fst (ω : SymplecticForm V)
     (hξ : DifferentiableAt ℝ ξ z) :
     ω.floerLinearization J Ks Kt u (fun w ↦ β w.1 • ξ w) z =
       β z.1 • ω.floerLinearization J Ks Kt u ξ z + β' • ξ z := by
-  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 • ξ w) _ z :=
-    (hβ.hasFDerivAt.comp z hasFDerivAt_fst).smul hξ.hasFDerivAt
-  rw [floerLinearization_def, hd.fderiv, floerLinearization_def]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, comp_apply,
-    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
-    Function.comp_apply, toSpanSingleton_apply, one_smul, zero_smul, add_zero, map_sub]
+  rw [floerLinearization_def, floerLinearization_def,
+    Floer.fderiv_smul_fst_apply_stdComplexLineReal hβ hξ,
+    Floer.fderiv_smul_fst_apply_stdComplexLineImag hβ.differentiableAt hξ]
+  simp only [map_smul, smul_apply, map_sub]
   module
 
 /-- **Conjugating the linearization by an exponential weight.** On maps of the form
