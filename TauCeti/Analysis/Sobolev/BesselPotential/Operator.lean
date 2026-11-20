@@ -16,7 +16,8 @@ A continuous linear operator `A` on tempered distributions that maps `H^{s,p}(E,
 `H^{r,p}(E, G)` is automatically bounded between these Banach spaces, by the closed graph theorem;
 `BesselPotentialSpace.mapCLM` bundles such restrictions. This file applies the construction to the
 directional derivative `∂_v : H^{s+1,p}(E, F) → H^{s,p}(E, F)` for `1 < p < ∞`
-(`BesselPotentialSpace.lineDerivCLM`). Combined with
+(`BesselPotentialSpace.lineDerivCLM`), and to the Laplacian `Δ : H^{s+2}(E, F) → H^s(E, F)`
+(`BesselPotentialSpace.laplacianCLM`). Combined with
 `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le`, `mapCLM` likewise yields
 multiplication by a function with bounded derivatives as a bounded operator on `H^{k,p}`; these
 are the linear building blocks of differential operators with nondecaying smooth coefficients on
@@ -27,7 +28,8 @@ The second part of the file describes the operators on these functions when `u` 
 
 * a real function `f` lies in `realSobolevFunctions E s p` exactly when `f`, viewed as a complex
   function, is almost everywhere the `Lᵖ` function of some `u ∈ H^{s,p}(E)`
-  (`TemperedDistribution.mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq`);
+  (`TemperedDistribution.mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq`), which
+  `BesselPotentialSpace.ofRealSobolevFunction` chooses;
 * if moreover `f` is `C¹`, `1 < p < ∞` and `u ∈ H^{s+1,p}(E)`, then the `Lᵖ` function of `∂_v u`
   is almost everywhere the classical derivative `x ↦ fderiv ℝ f x v`
   (`BesselPotentialSpace.coeFn_inclusionLp_lineDerivCLM_ae_eq`);
@@ -39,6 +41,9 @@ The second part of the file describes the operators on these functions when `u` 
 
 * `BesselPotentialSpace.lineDerivCLM`: the directional derivative
   `H^{s+1,p}(E, F) →L[ℂ] H^{s,p}(E, F)` for `1 < p < ∞`.
+* `BesselPotentialSpace.laplacianCLM`: the Laplacian `H^{s+2}(E, F) →L[ℂ] H^s(E, F)`.
+* `BesselPotentialSpace.ofRealSobolevFunction`: the element of `H^{s,p}(E)` of a real function in
+  `realSobolevFunctions E s p`.
 -/
 
 public section
@@ -74,6 +79,26 @@ theorem toDistr_lineDerivCLM (hp : 1 < p) (hp_top : p ≠ ∞) (v : E) (u : H^{s
 
 end lineDerivCLM
 
+section laplacianCLM
+
+open scoped Laplacian
+
+variable [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+
+/-- **The Laplacian on the Sobolev scale.** The Laplacian `Δ`, as a bounded operator
+`H^{s+2}(E, F) →L[ℂ] H^s(E, F)` (`TemperedDistribution.MemSobolev.laplacian`). -/
+def laplacianCLM (s : ℝ) : H^{s + 2}(E, F) →L[ℂ] H^{s}(E, F) :=
+  mapCLM (LineDeriv.laplacianCLM ℂ E 𝓢'(E, F)) fun u ↦ by
+    simpa using u.memSobolev_toDistr.laplacian
+
+/-- `laplacianCLM s` acts on the underlying tempered distributions by `Δ`. -/
+@[simp]
+theorem toDistr_laplacianCLM (s : ℝ) (u : H^{s + 2}(E, F)) :
+    (laplacianCLM s u).toDistr = Δ u.toDistr := by
+  simp [laplacianCLM]
+
+end laplacianCLM
+
 end BesselPotentialSpace
 
 /-! ### Real-valued elements -/
@@ -104,6 +129,19 @@ theorem mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq {s : ℝ} {p : ℝ
 end TemperedDistribution
 
 namespace BesselPotentialSpace
+
+/-- **The element of `H^{s,p}(E)` of a real Sobolev function.** For `s ≥ 0` and a real function
+`f ∈ realSobolevFunctions E s p`, the element of `H^{s,p}(E)` whose `Lᵖ` function is
+`x ↦ (f x : ℂ)` (`BesselPotentialSpace.coeFn_inclusionLp_ofRealSobolevFunction`). -/
+def ofRealSobolevFunction {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (hs : 0 ≤ s) {f : E → ℝ}
+    (hf : f ∈ realSobolevFunctions E s p) : H^{s, p}(E) :=
+  ((mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq hs).1 hf).choose
+
+/-- The `Lᵖ` function of `ofRealSobolevFunction hs hf` is `x ↦ (f x : ℂ)`. -/
+theorem coeFn_inclusionLp_ofRealSobolevFunction {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (hs : 0 ≤ s)
+    {f : E → ℝ} (hf : f ∈ realSobolevFunctions E s p) :
+    ⇑(inclusionLp hs (ofRealSobolevFunction hs hf)) =ᵐ[volume] fun x ↦ (f x : ℂ) :=
+  ((mem_realSobolevFunctions_iff_exists_inclusionLp_ae_eq hs).1 hf).choose_spec
 
 /-- **Classical derivatives of real elements of `H^{s+1,p}`.** For `1 < p < ∞` and `s ≥ 0`, if the
 `Lᵖ` function of `u ∈ H^{s+1,p}(E)` is almost everywhere a real `C¹` function `f`, then the `Lᵖ`
