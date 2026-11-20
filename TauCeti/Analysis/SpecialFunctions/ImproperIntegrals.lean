@@ -104,30 +104,24 @@ theorem integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth {p a c : ℝ} {V :
     have hbase : Continuous (fun x : ℝ => 1 + |x|) := by fun_prop
     have hexp : Continuous (fun x : ℝ => exp (-a * V x)) := by fun_prop
     exact (hbase.rpow_const (fun x => Or.inl (by positivity))).mul hexp
+  have hdom (x : ℝ) (hx : R' ≤ |x|) :
+      ‖(1 + |x|) ^ p * exp (-a * V x)‖ ≤ 2 ^ p * ‖|x| ^ q‖ := by
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), Real.norm_eq_abs,
+      abs_of_nonneg (Real.rpow_nonneg (abs_nonneg x) q)]
+    exact hpoint x (hR'.trans hx) (hRbound x hx)
   have hneg : (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) =O[Filter.atBot]
       (fun x : ℝ => (-x) ^ q) := by
     apply Asymptotics.IsBigO.of_bound (2 ^ p)
     filter_upwards [Filter.eventually_lt_atBot (-R')] with x hx
     have hnegx : R' < -x := by linarith
     have habs : |x| = -x := abs_of_nonpos (by linarith)
-    have hnonneg : 0 ≤ (1 + |x|) ^ p * exp (-a * V x) := by positivity
-    have hbound := hpoint x (by rw [habs]; linarith [hnegx, hR'])
-      (hRbound x (by rw [habs]; exact le_of_lt hnegx))
-    rw [Real.norm_eq_abs, abs_of_nonneg hnonneg, Real.norm_eq_abs,
-      abs_of_nonneg (Real.rpow_nonneg (by linarith : 0 ≤ -x) q)]
-    simpa only [habs] using hbound
+    simpa only [habs] using hdom x (by rw [habs]; exact le_of_lt hnegx)
   have hpos : (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) =O[Filter.atTop]
       (fun x : ℝ => x ^ q) := by
     apply Asymptotics.IsBigO.of_bound (2 ^ p)
     filter_upwards [Filter.eventually_gt_atTop R'] with x hx
-    have hxge1 : 1 ≤ x := le_of_lt (lt_of_le_of_lt hR' hx)
     have habs : |x| = x := abs_of_nonneg (by linarith)
-    have hnonneg : 0 ≤ (1 + |x|) ^ p * exp (-a * V x) := by positivity
-    have hbound := hpoint x (by rw [habs]; exact hxge1)
-      (hRbound x (by rw [habs]; exact le_of_lt hx))
-    rw [Real.norm_eq_abs, abs_of_nonneg hnonneg, Real.norm_eq_abs,
-      abs_of_nonneg (Real.rpow_nonneg (by linarith : 0 ≤ x) q)]
-    simpa only [habs] using hbound
+    simpa only [habs] using hdom x (by rw [habs]; exact le_of_lt hx)
   exact hg.locallyIntegrable.integrable_of_isBigO_atBot_atTop hneg
     ⟨Iio (-R'), Filter.Iio_mem_atBot _, hpowNeg⟩ hpos
     ⟨Ioi R', Filter.Ioi_mem_atTop _, hpowPos⟩

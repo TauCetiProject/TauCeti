@@ -31,6 +31,26 @@ open MeasureTheory Real Set
 
 namespace TauCeti.Probability
 
+private theorem betaGasPairs_prod_mul {M : Type*} [CommMonoid M] (n : ℕ) (f : Fin n → M) :
+    (∏ z ∈ betaGasPairs n, f z.1 * f z.2) = ∏ i : Fin n, f i ^ (n - 1) := by
+  classical
+  have hfst :
+      (∏ z ∈ betaGasPairs n, f z.1) = ∏ i : Fin n, f i ^ (n - 1 - i.val) := by
+    rw [Finset.prod_finset_product (betaGasPairs n) Finset.univ
+      (fun i => Finset.Ioi i) (by intro z; simp)]
+    simp only [Finset.prod_const, Fin.card_Ioi]
+  have hsnd :
+      (∏ z ∈ betaGasPairs n, f z.2) = ∏ i : Fin n, f i ^ i.val := by
+    rw [Finset.prod_finset_product_right (betaGasPairs n) Finset.univ
+      (fun i => Finset.Iio i) (by intro z; simp)]
+    simp only [Finset.prod_const, Fin.card_Iio]
+  rw [Finset.prod_mul_distrib, hfst, hsnd, ← Finset.prod_mul_distrib]
+  apply Finset.prod_congr rfl
+  intro i _
+  rw [← pow_add]
+  congr 1
+  omega
+
 /-- Bound the Vandermonde interaction by a product of one-coordinate powers. -/
 theorem betaGasVandermonde_le_coord_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
     (x : Fin n → ℝ) :
@@ -43,28 +63,6 @@ theorem betaGasVandermonde_le_coord_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
     have h := abs_sub_le (x i) 0 (x j)
     simp only [sub_zero, zero_sub, abs_neg] at h
     nlinarith [abs_nonneg (x i), abs_nonneg (x j)]
-  have hfst :
-      (∏ z ∈ betaGasPairs n, f z.1 ^ β) =
-        ∏ i : Fin n, f i ^ (β * ((n - 1 - i.val : ℕ) : ℝ)) := by
-    rw [Finset.prod_finset_product (betaGasPairs n) Finset.univ
-      (fun i => Finset.Ioi i) (by
-        intro z
-        simp)]
-    simp only [Finset.prod_const, Fin.card_Ioi, f]
-    apply Finset.prod_congr rfl
-    intro i _
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
-  have hsnd :
-      (∏ z ∈ betaGasPairs n, f z.2 ^ β) =
-        ∏ i : Fin n, f i ^ (β * (i.val : ℝ)) := by
-    rw [Finset.prod_finset_product_right (betaGasPairs n) Finset.univ
-      (fun i => Finset.Iio i) (by
-        intro z
-        simp)]
-    simp only [Finset.prod_const, Fin.card_Iio, f]
-    apply Finset.prod_congr rfl
-    intro i _
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
   calc
     _ ≤ ∏ z ∈ betaGasPairs n, (f z.1 ^ β * f z.2 ^ β) := by
       apply Finset.prod_le_prod₀
@@ -76,18 +74,12 @@ theorem betaGasVandermonde_le_coord_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
           Real.rpow_le_rpow (abs_nonneg _) (hdiff z.1 z.2) hβ
         _ = f z.1 ^ β * f z.2 ^ β :=
           Real.mul_rpow (by positivity) (by positivity)
-    _ = (∏ z ∈ betaGasPairs n, f z.1 ^ β) *
-        (∏ z ∈ betaGasPairs n, f z.2 ^ β) := Finset.prod_mul_distrib
-    _ = ∏ i : Fin n, (f i ^ (β * ((n - 1 - i.val : ℕ) : ℝ)) *
-        f i ^ (β * (i.val : ℝ))) := by rw [hfst, hsnd, Finset.prod_mul_distrib]
+    _ = ∏ i : Fin n, (f i ^ β) ^ (n - 1) :=
+      betaGasPairs_prod_mul n (fun i => f i ^ β)
     _ = ∏ i : Fin n, f i ^ (β * ((n - 1 : ℕ) : ℝ)) := by
       apply Finset.prod_congr rfl
       intro i _
-      rw [← Real.rpow_add (by positivity)]
-      have hpow : n - 1 - i.val + i.val = n - 1 := by omega
-      have hpowR : ((n - 1 - i.val : ℕ) : ℝ) + (i.val : ℝ) =
-          ((n - 1 : ℕ) : ℝ) := by exact_mod_cast hpow
-      rw [← mul_add, hpowR]
+      rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
 
 /-- Bound the beta-gas weight by a product of one-coordinate functions. -/
 theorem betaGasWeight_le_coord_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)

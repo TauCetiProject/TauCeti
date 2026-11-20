@@ -34,18 +34,15 @@ example (hint : Integrable (betaGasWeight n β V)
 example (n : ℕ) (β : ℝ) (V : ℝ → ℝ)
     (hint : ¬ Integrable (betaGasWeight n β V) (volume : Measure (Fin n → ℝ)))
     (x : Fin n → ℝ) : betaGasPDFReal n β V x = 0 := by
-  rw [betaGasPDFReal_def, betaGasPartitionFunction_def, integral_undef hint, div_zero]
+  rw [betaGasPDFReal_eq_zero_of_not_integrable n β V hint]
+  rfl
 
 example (n : ℕ) (β : ℝ) (V : ℝ → ℝ)
     (hint : ¬ Integrable (betaGasWeight n β V) (volume : Measure (Fin n → ℝ))) :
     betaGasMeasure n β V = 0 := by
   ext s
   rw [betaGasMeasure_apply]
-  have hdensity : betaGasPDFReal n β V = 0 := by
-    funext x
-    simp only [Pi.zero_apply, betaGasPDFReal_def, betaGasPartitionFunction_def,
-      integral_undef hint, div_zero]
-  simp [hdensity]
+  simp [betaGasPDFReal_eq_zero_of_not_integrable n β V hint]
 
 example (n : ℕ) (β : ℝ) (V : ℝ → ℝ) :
     IsFiniteMeasure (betaGasMeasure n β V) := inferInstance

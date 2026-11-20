@@ -174,6 +174,13 @@ theorem betaGasPDFReal_nonneg (n : ℕ) (β : ℝ) (V : ℝ → ℝ)
     (x : Fin n → ℝ) : 0 ≤ betaGasPDFReal n β V x :=
   div_nonneg (betaGasWeight_nonneg n β V x) (betaGasPartitionFunction_nonneg n β V)
 
+/-- A nonintegrable weight has zero normalized density under the Bochner integral convention. -/
+theorem betaGasPDFReal_eq_zero_of_not_integrable (n : ℕ) (β : ℝ) (V : ℝ → ℝ)
+    (hint : ¬ Integrable (betaGasWeight n β V) (volume : Measure (Fin n → ℝ))) :
+    betaGasPDFReal n β V = 0 := by
+  funext x
+  simp [betaGasPDFReal_def, betaGasPartitionFunction_def, integral_undef hint]
+
 /-- The normalized density is integrable, including when a nonintegrable
 weight makes its partition function and density zero. -/
 theorem integrable_betaGasPDFReal (n : ℕ) (β : ℝ) (V : ℝ → ℝ) :
@@ -182,12 +189,7 @@ theorem integrable_betaGasPDFReal (n : ℕ) (β : ℝ) (V : ℝ → ℝ) :
   by_cases hint : Integrable (betaGasWeight n β V)
       (volume : Measure (Fin n → ℝ))
   · exact hint.div_const _
-  · have hzero : betaGasPartitionFunction n β V = 0 := by
-      rw [betaGasPartitionFunction_def, integral_undef hint]
-    have hdensity : betaGasPDFReal n β V = 0 := by
-      funext x
-      simp [betaGasPDFReal_def, hzero]
-    rw [hdensity]
+  · rw [betaGasPDFReal_eq_zero_of_not_integrable n β V hint]
     exact integrable_zero _ _ _
 
 /-- A positive partition function normalizes the integral of the density. -/
@@ -282,23 +284,27 @@ theorem gaussianBetaGasWeight_eq_exp_mul_prod (n : ℕ) (β : ℝ) (x : Fin n �
 @[fun_prop]
 theorem continuous_gaussianBetaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 ≤ β) :
     Continuous (gaussianBetaGasWeight n β) := by
+  rw [gaussianBetaGasWeight_eq_betaGasWeight]
   exact continuous_betaGasWeight n hβ (V := fun t => t ^ 2 / 2) (by fun_prop)
 
 /-- The Gaussian weight is measurable for every inverse temperature. -/
 @[fun_prop]
 theorem measurable_gaussianBetaGasWeight (n : ℕ) (β : ℝ) :
-    Measurable (gaussianBetaGasWeight n β) :=
-  measurable_betaGasWeight n β (V := fun t => t ^ 2 / 2) (by fun_prop)
+    Measurable (gaussianBetaGasWeight n β) := by
+  rw [gaussianBetaGasWeight_eq_betaGasWeight]
+  exact measurable_betaGasWeight n β (V := fun t => t ^ 2 / 2) (by fun_prop)
 
 /-- The Gaussian beta-gas weight is nonnegative. -/
 theorem gaussianBetaGasWeight_nonneg (n : ℕ) (β : ℝ)
     (x : Fin n → ℝ) : 0 ≤ gaussianBetaGasWeight n β x := by
+  rw [gaussianBetaGasWeight_eq_betaGasWeight]
   exact betaGasWeight_nonneg n β _ x
 
 /-- The Gaussian beta-gas weight is positive at configurations with distinct coordinates. -/
 theorem gaussianBetaGasWeight_pos (n : ℕ) (β : ℝ) {x : Fin n → ℝ}
-    (hx : Function.Injective x) : 0 < gaussianBetaGasWeight n β x :=
-  betaGasWeight_pos n β _ hx
+    (hx : Function.Injective x) : 0 < gaussianBetaGasWeight n β x := by
+  rw [gaussianBetaGasWeight_eq_betaGasWeight]
+  exact betaGasWeight_pos n β _ hx
 
 /-- The partition function, finite and strictly positive for `0 < β`. Outside the integrable
 case, the Bochner integral is defined to be zero. -/
@@ -318,8 +324,9 @@ theorem gaussianBetaGasPartitionFunction_def (n : ℕ) (β : ℝ) :
 
 /-- The partition function is nonnegative, including when the weight is not integrable. -/
 theorem gaussianBetaGasPartitionFunction_nonneg (n : ℕ) (β : ℝ) :
-    0 ≤ gaussianBetaGasPartitionFunction n β :=
-  betaGasPartitionFunction_nonneg n β _
+    0 ≤ gaussianBetaGasPartitionFunction n β := by
+  rw [gaussianBetaGasPartitionFunction_eq_betaGasPartitionFunction]
+  exact betaGasPartitionFunction_nonneg n β _
 
 /-- The Gaussian beta-gas density; it integrates to one for `0 < β`. -/
 def gaussianBetaGasPDFReal (n : ℕ) (β : ℝ) (x : Fin n → ℝ) : ℝ :=
@@ -332,14 +339,16 @@ theorem gaussianBetaGasPDFReal_eq_betaGasPDFReal (n : ℕ) (β : ℝ) :
 /-- The Gaussian density is measurable for every inverse temperature. -/
 @[fun_prop]
 theorem measurable_gaussianBetaGasPDFReal (n : ℕ) (β : ℝ) :
-    Measurable (gaussianBetaGasPDFReal n β) :=
-  measurable_betaGasPDFReal n β (V := fun t => t ^ 2 / 2) (by fun_prop)
+    Measurable (gaussianBetaGasPDFReal n β) := by
+  rw [gaussianBetaGasPDFReal_eq_betaGasPDFReal]
+  exact measurable_betaGasPDFReal n β (V := fun t => t ^ 2 / 2) (by fun_prop)
 
 /-- The Gaussian density is continuous for nonnegative inverse temperature. -/
 @[fun_prop]
 theorem continuous_gaussianBetaGasPDFReal (n : ℕ) {β : ℝ} (hβ : 0 ≤ β) :
-    Continuous (gaussianBetaGasPDFReal n β) :=
-  continuous_betaGasPDFReal n hβ (V := fun t => t ^ 2 / 2) (by fun_prop)
+    Continuous (gaussianBetaGasPDFReal n β) := by
+  rw [gaussianBetaGasPDFReal_eq_betaGasPDFReal]
+  exact continuous_betaGasPDFReal n hβ (V := fun t => t ^ 2 / 2) (by fun_prop)
 
 /-- The Gaussian beta-gas density is integrable at every inverse temperature. -/
 theorem integrable_gaussianBetaGasPDFReal (n : ℕ) (β : ℝ) :
@@ -355,8 +364,9 @@ theorem gaussianBetaGasPDFReal_def (n : ℕ) (β : ℝ) (x : Fin n → ℝ) :
 
 /-- The Gaussian beta-gas density is nonnegative for every inverse temperature. -/
 theorem gaussianBetaGasPDFReal_nonneg (n : ℕ) (β : ℝ)
-    (x : Fin n → ℝ) : 0 ≤ gaussianBetaGasPDFReal n β x :=
-  betaGasPDFReal_nonneg n β _ x
+    (x : Fin n → ℝ) : 0 ≤ gaussianBetaGasPDFReal n β x := by
+  rw [gaussianBetaGasPDFReal_eq_betaGasPDFReal]
+  exact betaGasPDFReal_nonneg n β _ x
 
 /-- The Gaussian beta-gas measure; it is a probability measure for `0 < β`. -/
 def gaussianBetaGasMeasure (n : ℕ) (β : ℝ) : Measure (Fin n → ℝ) :=
