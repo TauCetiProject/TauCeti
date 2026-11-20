@@ -16,8 +16,7 @@ Given a smooth partition of unity `ρ` on `M` subordinate to an open cover `U`, 
 `x ↦ ∑ᵢ ρᵢ (b x) • (g i)^* φ` of pullbacks of a smooth form `φ` on `Z` is a smooth form on `X`
 (`TauCeti.isSmoothForm_sum_finsupport_smul_mpullback`). The sum is taken over the finite set
 `ρ.finsupport (b x)` of indices whose bump does not vanish at `b x`, so it is pointwise finite and
-only involves maps `g i` near points where they are smooth. Pulling such a pointwise finite sum
-back along a further map pulls back each summand (`TauCeti.mpullback_sum_smul`).
+only involves maps `g i` near points where they are smooth.
 
 This is the smoothness half of the standard partition-of-unity constructions of homotopy
 operators and descended forms from local sections, for instance the contracting homotopy of the
@@ -44,19 +43,7 @@ variable {EX HX X EZ HZ Z EM HM M F : Type*}
   [NormedAddCommGroup EM] [NormedSpace ℝ EM] [TopologicalSpace HM]
   {IM : ModelWithCorners ℝ EM HM} [TopologicalSpace M] [ChartedSpace HM M]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
-
-/-- Pullback of a pointwise finite weighted sum of forms, whose finite index set may depend on the
-point, is the weighted sum of the pullbacks, with index set and weights read at the image point. -/
-theorem mpullback_sum_smul {ι : Type*} (f : X → Z) (S : Z → Finset ι) (c : ι → Z → ℝ)
-    (φ : ι → RoughForm IZ Z F k) :
-    mpullback IX IZ f (fun z ↦ ∑ i ∈ S z, c i z • φ i z) =
-      fun x ↦ ∑ i ∈ S (f x), c i (f x) • mpullback IX IZ f (φ i) x := by
-  funext x
-  ext v
-  simp only [mpullback_apply, ContinuousAlternatingMap.sum_apply,
-    ContinuousAlternatingMap.smul_apply]
-
-variable [IsManifold IX ∞ X] [IsManifold IZ ∞ Z]
+  [IsManifold IX ∞ X] [IsManifold IZ ∞ Z]
 
 /-- **Gluing pullbacks with a partition of unity.** Let `ρ` be a smooth partition of unity on `M`
 subordinate to an open cover `U`, read on `X` through a smooth map `b : X → M`. If each
