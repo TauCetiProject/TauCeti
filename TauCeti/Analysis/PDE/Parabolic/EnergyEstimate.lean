@@ -222,8 +222,9 @@ theorem HasWeakLineDerivOn.norm_sq_add_mul_integral_le_of_gelfandDual
     rw [hχs]
     nlinarith [mul_le_mul_of_nonneg_left hfmono hα', mul_le_mul_of_nonneg_left hχmono
       (by positivity : 0 ≤ 2 * β)]
-  have := le_mul_exp_of_le_add_mul_integral (hχ.mono htb) (by positivity) hbound t
-    (right_mem_Icc.2 ht.1)
+  have := le_mul_exp_of_le_add_mul_integral (hχ.mono htb).integrableOn_Icc (by positivity)
+    (ae_restrict_of_forall_mem measurableSet_Icc hbound) (right_mem_Icc.2 ht.1)
+    (hbound t (right_mem_Icc.2 ht.1))
   simpa only [hχ_def, mul_comm (exp _)] using this
 
 /-- The energy estimate for the difference of two weak solutions with the same initial value and

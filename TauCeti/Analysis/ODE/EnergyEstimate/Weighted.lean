@@ -217,8 +217,7 @@ theorem exists_forall_norm_le_mul_exp_neg (hA : Continuous A)
   -- The weighted solution is bounded, since `B` is.
   obtain ⟨K, hK⟩ := exists_forall_norm_le_of_tendsto hB (hbot.sub (hw'bot.smul_const I))
     (htop.sub (hw'top.smul_const I))
-  have hK₀ : 0 ≤ K := (norm_nonneg _).trans (hK 0)
-  have hbound := norm_sq_le_exp_mul_integral_norm_sq hK₀ hu
+  have hbound := norm_sq_le_exp_mul_integral_norm_sq hu
     (fun s ↦ by
       rw [norm_neg]
       exact ((B s).le_opNorm (u s)).trans (by gcongr; exact hK s)) hu2
