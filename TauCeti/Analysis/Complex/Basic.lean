@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Asymptotics.Basic
+import Mathlib.Analysis.Normed.Operator.Basic
 
 /-!
 # Complex conjugation: invariant discs, symmetric norms and unit-norm quotients
@@ -46,6 +49,13 @@ whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`).
 The real coordinates `equivRealProdCLM : ℂ ≃L[ℝ] ℝ × ℝ` do not increase distances, so they map the
 disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)` of `ℝ × ℝ`
 (`Complex.dist_equivRealProdCLM_le`).
+
+Reading a map `ξ` on `ℝ × ℝ` in the complex coordinate `ξ ∘ equivRealProdCLM` preserves its
+zero structure. Vanishing to a given order at a point passes into the complex coordinate
+(`Complex.isBigO_comp_equivRealProdCLM`), while vanishing on a set
+(`Complex.eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM`) and having a codiscrete nonvanishing set
+(`Complex.setOf_ne_zero_mem_codiscreteWithin_of_comp_equivRealProdCLM`) pass back from the
+complex coordinate to `ℝ × ℝ`.
 -/
 
 public section
@@ -270,5 +280,41 @@ theorem dist_equivRealProdCLM_le (y : ℂ) (z₀ : ℝ × ℝ) :
     dist (equivRealProdCLM y) z₀ ≤ dist y (equivRealProdCLM.symm z₀) := by
   conv_lhs => rw [← equivRealProdCLM.apply_symm_apply z₀]
   exact (lipschitz_equivRealProd.dist_le_mul y _).trans (by simp)
+
+open Asymptotics Filter Function Set Topology
+
+variable {F : Type*} {ξ : ℝ × ℝ → F} {Ω : Set (ℝ × ℝ)}
+
+/-- A map vanishing on `Ω` in the complex coordinate `equivRealProdCLM` vanishes on `Ω`. -/
+theorem eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM [Zero F]
+    (h : EqOn (ξ ∘ equivRealProdCLM) 0 (equivRealProdCLM ⁻¹' Ω)) : EqOn ξ 0 Ω := fun z hz ↦ by
+  simpa using h (show equivRealProdCLM.symm z ∈ _ by simpa using hz)
+
+/-- A vanishing-order bound passes from `ℝ × ℝ` into the complex coordinate: if
+`ξ = O(‖z - z₀‖ ^ n)` at `z₀`, then `ξ ∘ equivRealProdCLM = O((w - equivRealProdCLM.symm z₀) ^ n)`
+at `equivRealProdCLM.symm z₀`. -/
+theorem isBigO_comp_equivRealProdCLM [Norm F] {z₀ : ℝ × ℝ} {n : ℕ}
+    (h : ξ =O[𝓝 z₀] fun z ↦ ‖z - z₀‖ ^ n) :
+    (ξ ∘ equivRealProdCLM) =O[𝓝 (equivRealProdCLM.symm z₀)]
+      fun w ↦ (w - equivRealProdCLM.symm z₀) ^ n := by
+  set e := equivRealProdCLM
+  replace h := h.comp_tendsto
+    ((e.continuous.tendsto (e.symm z₀)).trans_eq (by rw [e.apply_symm_apply]))
+  refine h.trans (IsBigO.of_bound (‖(e : ℂ →L[ℝ] ℝ × ℝ)‖ ^ n) (Eventually.of_forall fun w ↦ ?_))
+  have hw : e w - z₀ = e (w - e.symm z₀) := by simp
+  simp only [comp_apply, hw, norm_pow, norm_norm, ← mul_pow]
+  gcongr
+  exact (e : ℂ →L[ℝ] ℝ × ℝ).le_opNorm _
+
+/-- If the nonvanishing set of `ξ ∘ e` is codiscrete within `e ⁻¹' Ω` in the complex coordinate
+`e = equivRealProdCLM`, then the nonvanishing set of `ξ` is codiscrete within `Ω`. -/
+theorem setOf_ne_zero_mem_codiscreteWithin_of_comp_equivRealProdCLM [Zero F]
+    (h : {w | (ξ ∘ equivRealProdCLM) w ≠ 0} ∈ codiscreteWithin (equivRealProdCLM ⁻¹' Ω)) :
+    {z | ξ z ≠ 0} ∈ codiscreteWithin Ω := by
+  set e := equivRealProdCLM
+  have := (e.toHomeomorph.isEmbedding.image_mem_codiscreteWithin
+    (s := e ⁻¹' {z | ξ z ≠ 0}) (t := e ⁻¹' Ω)).2 h
+  simpa only [ContinuousLinearEquiv.coe_toHomeomorph,
+    image_preimage_eq _ e.surjective] using this
 
 end Complex
