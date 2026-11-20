@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.LinearPMap.AdjointComp
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SubmoduleAdjoint
 public import TauCeti.Analysis.Normed.Operator.LinearPMap.ProdLp
 public import TauCeti.LinearAlgebra.LinearPMap.DomainPow
+import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
 
 /-!
 # The Hermitian dilation of an unbounded operator
@@ -36,6 +37,7 @@ For bounded operators between finite-dimensional spaces the same block matrix is
 
 * `LinearPMap.hermitianDilation`: the operator `(x, y) ↦ (T† y, T x)` on `dom T × dom T†`.
 * `LinearPMap.mem_hermitianDilation_domain`: its domain is `dom T × dom T†`.
+* `LinearPMap.hermitianDilation_apply_eq_swap`: `D_T` evaluates as `T ⊕ T†` followed by the swap.
 * `LinearPMap.hermitianDilation_toLp`: `D_T (x, y) = (T† y, T x)`.
 * `LinearPMap.mem_graph_hermitianDilation_iff`: the graph of `D_T` in terms of the graphs of `T`
   and `T†`.
@@ -96,17 +98,31 @@ abbrev hermitianDilationFst (u : T.hermitianDilation.domain) : T.domain :=
 abbrev hermitianDilationSnd (u : T.hermitianDilation.domain) : T†.domain :=
   ⟨(u : WithLp 2 (E × F)).snd, (mem_hermitianDilation_domain.mp u.2).2⟩
 
+/-- The Hermitian dilation evaluates as the direct sum `T ⊕ T†` followed by the swap of the two
+summands. -/
+theorem hermitianDilation_apply_eq_swap (u : (T.withLpProdMap 2 T†).domain) :
+    T.hermitianDilation ⟨u, mem_hermitianDilation_domain.mpr (mem_withLpProdMap_domain.mp u.2)⟩ =
+      WithLp.toLp 2 ((T.withLpProdMap 2 T† u).snd, (T.withLpProdMap 2 T† u).fst) :=
+  -- `compPMap` keeps the domain and evaluates by `g (f u)`, and the swap is `withLpProdComm`.
+  LinearMap.compPMap_apply _ _ u
+
 /-- The first component of `D_T (x, y)` is `T† y`. -/
 @[simp]
 theorem fst_hermitianDilation_apply (u : T.hermitianDilation.domain) :
-    (T.hermitianDilation u).fst = T† (hermitianDilationSnd u) :=
-  withLpProdMap_apply_snd u
+    (T.hermitianDilation u).fst = T† (hermitianDilationSnd u) := by
+  have h := congrArg WithLp.fst (hermitianDilation_apply_eq_swap
+    ⟨u, mem_withLpProdMap_domain.mpr (mem_hermitianDilation_domain (T := T) |>.mp u.2)⟩)
+  rw [WithLp.toLp_fst, withLpProdMap_apply_snd] at h
+  exact h
 
 /-- The second component of `D_T (x, y)` is `T x`. -/
 @[simp]
 theorem snd_hermitianDilation_apply (u : T.hermitianDilation.domain) :
-    (T.hermitianDilation u).snd = T (hermitianDilationFst u) :=
-  withLpProdMap_apply_fst u
+    (T.hermitianDilation u).snd = T (hermitianDilationFst u) := by
+  have h := congrArg WithLp.snd (hermitianDilation_apply_eq_swap
+    ⟨u, mem_withLpProdMap_domain.mpr (mem_hermitianDilation_domain (T := T) |>.mp u.2)⟩)
+  rw [WithLp.toLp_snd, withLpProdMap_apply_fst] at h
+  exact h
 
 /-- The Hermitian dilation sends `(x, y)` to `(T† y, T x)`. -/
 theorem hermitianDilation_apply (u : T.hermitianDilation.domain) :
@@ -137,12 +153,16 @@ theorem mem_graph_hermitianDilation_iff {z : WithLp 2 (E × F) × WithLp 2 (E ×
   rw [mem_graph_iff, mem_graph_iff]
   -- `D_T` is `T ⊕ T†` followed by the swap, so `D_T u = z.2` exactly when `(T ⊕ T†) u` is the
   -- swap of `z.2`.
-  refine exists_congr fun u ↦ and_congr_right fun _ ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  refine exists_congr fun u ↦ and_congr_right fun _ ↦ ?_
+  have hs : T.hermitianDilation u =
+      WithLp.toLp 2 ((T.withLpProdMap 2 T† u).snd, (T.withLpProdMap 2 T† u).fst) :=
+    hermitianDilation_apply_eq_swap (T := T) u
+  rw [hs]
+  constructor <;> intro h
   · rw [← h]
-    rfl
-  · change WithLp.toLp 2 ((T.withLpProdMap 2 T† u).snd, (T.withLpProdMap 2 T† u).fst) = z.2
-    rw [h]
-    rfl
+    exact WithLp.ofLp_injective 2 (Prod.ext (by simp) (by simp))
+  · rw [h]
+    exact WithLp.ofLp_injective 2 (Prod.ext (by simp) (by simp))
 
 /-- The kernel of the Hermitian dilation is `ker T × ker T†`. -/
 @[simp]
@@ -269,24 +289,12 @@ theorem hasCore_hermitianDilation (hT : T.IsClosed) (hd : Dense (T.domain : Set 
       ((S.prod S').comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap) := by
   set C := (S.prod S').comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap
   have hDc : T.hermitianDilation.IsClosed := (isSelfAdjoint_hermitianDilation hT hd).isClosed
-  have hRc : (T.hermitianDilation.domRestrict C).IsClosable :=
-    hDc.isClosable.leIsClosable domRestrict_le
-  refine ⟨fun u hu ↦ mem_hermitianDilation_domain.mpr ⟨hS.1 hu.1, hS'.1 hu.2⟩,
-    le_antisymm ?_ ?_⟩
-  · refine le_of_le_graph ?_
-    rw [← hRc.graph_closure_eq_closure_graph]
-    exact Submodule.topologicalClosure_minimal _ (le_graph_of_le domRestrict_le) hDc
-  refine le_of_le_graph ?_
-  rw [← hRc.graph_closure_eq_closure_graph]
-  -- The graphs of `T` and `T†` are the closures of the graphs of their restrictions to the cores.
-  have hgT : (T.graph : Set (E × F)) ⊆ _root_.closure ((T.domRestrict S).graph : Set (E × F)) := by
-    rw [← Submodule.topologicalClosure_coe,
-      (hT.isClosable.leIsClosable domRestrict_le).graph_closure_eq_closure_graph, hS.2]
-  have hgT' :
-      (T†.graph : Set (F × E)) ⊆ _root_.closure ((T†.domRestrict S').graph : Set (F × E)) := by
-    rw [← Submodule.topologicalClosure_coe,
-      ((adjoint_isClosed hd).isClosable.leIsClosable domRestrict_le).graph_closure_eq_closure_graph,
-      hS'.2]
+  refine (hDc.hasCore_iff_graph_subset_closure (S := C) fun u hu ↦
+    mem_hermitianDilation_domain.mpr ⟨hS.1 hu.1, hS'.1 hu.2⟩).mpr ?_
+  -- The graphs of `T` and `T†` lie in the closures of the graphs of their restrictions to the
+  -- cores.
+  have hgT := (hT.hasCore_iff_graph_subset_closure hS.1).mp hS
+  have hgT' := ((adjoint_isClosed hd).hasCore_iff_graph_subset_closure hS'.1).mp hS'
   -- The graph of the dilation is the image of the product of these graphs under a continuous map.
   let Φ : (E × F) × (F × E) → WithLp 2 (E × F) × WithLp 2 (E × F) :=
     fun q ↦ (WithLp.toLp 2 (q.1.1, q.2.1), WithLp.toLp 2 (q.2.2, q.1.2))
@@ -314,8 +322,6 @@ theorem hasCore_hermitianDilation (hT : T.IsClosed) (hd : Dense (T.domain : Set 
         ((T†.domRestrict S').graph : Set (F × E))) := by
     rw [closure_prod_eq]
     exact ⟨hgT hp₁, hgT' hp₂⟩
-  have h := _root_.closure_mono himage (image_closure_subset_closure_image hΦ ⟨_, hmem, rfl⟩)
-  rw [← Submodule.topologicalClosure_coe] at h
-  exact h
+  exact _root_.closure_mono himage (image_closure_subset_closure_image hΦ ⟨_, hmem, rfl⟩)
 
 end LinearPMap
