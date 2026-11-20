@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
+import TauCeti.Analysis.Calculus.ContDiff.ClosedInterval
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
@@ -44,6 +46,9 @@ is a primitive of `-F` plus an affine function, which is in general no better th
 * `TauCeti.PDE.exists_ae_mul_gradient_add_eq_sub_intervalIntegral`: the first integral
   `a u' + F = k - ∫_{x₀}^t f`, and its converse
   `TauCeti.PDE.setIntegral_mul_deriv_eq_sub_of_ae_add_eq_sub_intervalIntegral`.
+* `TauCeti.PDE.exists_contDiff_eq_intervalRepresentativeL_and_deriv_eq`: for a continuous
+  nonvanishing coefficient and continuous `F`, the first integral holds pointwise and `ū` is `C¹`
+  up to the boundary, with `ū' = (k - ∫_{x₀}^t f - F) / a`.
 * `TauCeti.PDE.abs_add_setIntegral_inv_mul_div_le`: for `λ ≤ a ≤ M`, the bound for the constant
   `k = (δ + ∫ a⁻¹ G) / ∫ a⁻¹` of a first integral, independent of `a` beyond `λ` and `M`.
 * `TauCeti.PDE.ae_abs_gradient_le_of_forall_integral_eq`: the explicit pointwise bound for `u'`.
@@ -156,6 +161,58 @@ theorem setIntegral_mul_deriv_eq_sub_of_ae_add_eq_sub_intervalIntegral
   rw [integral_congr_ae hcongr, integral_sub (h1.integrableOn.congr_fun (fun t _ => mul_comm _ _)
     measurableSet_Ioo) (h2.integrableOn.congr_fun (fun t _ => mul_comm _ _) measurableSet_Ioo),
     hkΦ]
+
+/-- **Continuous coefficients give `C¹` solutions.** Let `a` be continuous and nonvanishing on
+`[x₀, x₁]`, let `f` be integrable on `(x₀, x₁)` and `F` continuous on `[x₀, x₁]`, and let
+`u ∈ W^{1,p}(x₀, x₁)` solve `-(a u')' = f + F'` in the sense of distributions. Then the continuous
+representative `ū` of `u` is `C¹` up to the boundary: it agrees on `[x₀, x₁]` with a `C¹` function
+`w` on `ℝ`, and for a constant `k` the first integral holds pointwise on `[x₀, x₁]`,
+`w' t = (k - ∫_{x₀}^t f - F t) / a t`. -/
+theorem exists_contDiff_eq_intervalRepresentativeL_and_deriv_eq (hx : x₀ < x₁)
+    (ha : ContinuousOn a (Icc x₀ x₁)) (ha0 : ∀ t ∈ Icc x₀ x₁, a t ≠ 0)
+    (hf : IntegrableOn f (Ioo x₀ x₁)) (hF : ContinuousOn F (Icc x₀ x₁))
+    (hu : ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+      ∫ t in Ioo x₀ x₁, a t * W1p.gradient u t * deriv φ t =
+        (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t) :
+    ∃ k : ℝ, ∃ w : ℝ → ℝ, ContDiff ℝ 1 w ∧
+      (∀ t : Icc x₀ x₁, W1p.intervalRepresentativeL hx u t = w t) ∧
+      ∀ t ∈ Icc x₀ x₁, deriv w t = (k - (∫ s in x₀..t, f s) - F t) / a t := by
+  obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn ha
+  obtain ⟨k, hk⟩ := exists_ae_mul_gradient_add_eq_sub_intervalIntegral
+    ((ha.mono Ioo_subset_Icc_self).aestronglyMeasurable measurableSet_Ioo)
+    ((ae_restrict_iff' measurableSet_Ioo).2 (Eventually.of_forall fun t ht =>
+      (Real.norm_eq_abs _).symm.trans_le (hM t (Ioo_subset_Icc_self ht))))
+    hf (hF.integrableOn_Icc.mono_set Ioo_subset_Icc_self) hu
+  -- The derivative `g = (k - ∫ f - F) / a` is continuous on `[x₀, x₁]`; extend it by projection.
+  set g : ℝ → ℝ := fun t => (k - (∫ s in x₀..t, f s) - F t) / a t
+  have hg : ContinuousOn g (Icc x₀ x₁) :=
+    ((continuousOn_const.sub
+      (TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hf
+        (left_mem_Icc.2 hx.le))).sub hF).div ha ha0
+  set ĝ : ℝ → ℝ := fun t => g (projIcc x₀ x₁ hx.le t)
+  set x₀' : Icc x₀ x₁ := ⟨x₀, left_mem_Icc.2 hx.le⟩
+  obtain ⟨hw, hdw⟩ := hg.contDiff_and_deriv_const_add_integral_comp_projIcc hx.le
+    (W1p.intervalRepresentativeL hx u x₀')
+  refine ⟨k, fun t => W1p.intervalRepresentativeL hx u x₀' + ∫ s in x₀..t, ĝ s, hw, fun t => ?_,
+    fun t ht => ?_⟩
+  · -- On `(x₀, x₁)` the weak gradient is `g` almost everywhere, by the first integral.
+    have hgrad : ∀ᵐ s ∂volume.restrict (Ioo x₀ t), W1p.gradient u s = ĝ s := by
+      have hk' := (ae_restrict_iff' measurableSet_Ioo).1 hk
+      rw [ae_restrict_iff' measurableSet_Ioo]
+      filter_upwards [hk'] with s hs hst
+      have hs' : s ∈ Ioo x₀ x₁ := ⟨hst.1, hst.2.trans_le t.2.2⟩
+      have has := ha0 s (Ioo_subset_Icc_self hs')
+      simp only [ĝ, g, projIcc_of_mem hx.le (Ioo_subset_Icc_self hs')]
+      rw [eq_div_iff has, ← hs hs']
+      ring
+    have hĝint : ∫ s in x₀..t, W1p.gradient u s = ∫ s in x₀..t, ĝ s := by
+      simp only [intervalIntegral.integral_of_le t.2.1, integral_Ioc_eq_integral_Ioo]
+      exact integral_congr_ae hgrad
+    have hint := W1p.integral_gradient_eq_intervalRepresentativeL_sub hx u x₀' t
+    rw [hĝint] at hint
+    simp only [hint, add_sub_cancel]
+  · rw [hdw]
+    simp only [g, projIcc_of_mem hx.le ht]
 
 /-- **The constant of a first integral is bounded independently of the coefficient.** If
 `λ ≤ a ≤ M` almost everywhere on `(x₀, x₁)`, with `λ > 0`, and `G` is integrable there, then

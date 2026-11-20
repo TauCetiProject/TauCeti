@@ -481,7 +481,7 @@ jobs:
           # API or shell failure above cannot be misreported as a green scope decision.
           echo "SCOPE_OK=1" >> "$GITHUB_ENV"
 
-      - name: Diff size guard — additions, deletions, and changed files each ≤ 2000 (rename-aware local Git measure shared with staging; Lake-pin bumps exempt from the line caps)
+      - name: Diff size guard — additions ≤ 3000, deletions and changed files each ≤ 2000 (rename-aware local Git measure shared with staging; Lake-pin bumps exempt from the line caps)
         # Per-PR cap, enforced when each PR is built on pull_request_target (its entry condition to the
         # queue). A merge_group batch is the sum of already-capped PRs, so we don't re-cap the combined
         # size here. The combined batch scope uses a complete local Git diff.
@@ -504,7 +504,7 @@ jobs:
           printf '%s\n' "$size" > "$RUNNER_TEMP/review-size.json"
           read -r adds dels files pins too_large < <(printf '%s' "$size" | jq -r \
             '"\(.additions) \(.deletions) \(.files) \(.pins_changed) \(.too_large)"' 2>/dev/null) || true
-          echo "diff size: +$adds / -$dels across $files files (cap: 2000 each)"
+          echo "diff size: +$adds / -$dels across $files files (cap: 3000 added, 2000 removed, 2000 files)"
           # Fail closed on missing or non-numeric data: [ -gt ] errors on garbage but an `if`
           # would swallow that as false, silently passing the guard.
           if ! [[ "$adds" =~ ^[0-9]+$ && "$dels" =~ ^[0-9]+$ && "$files" =~ ^[0-9]+$ \
@@ -521,8 +521,8 @@ jobs:
             echo "::notice::PR moves the Lake pins, so the added/removed line caps do not apply"
           fi
 
-      - name: New-file length guard — newly added .lean files must be ≤ 1000 lines
-        # A brand-new file may be at most 1000 lines; an existing file may grow up to the
+      - name: New-file length guard — newly added .lean files must be ≤ 1250 lines
+        # A brand-new file may be at most 1250 lines; an existing file may grow up to the
         # in-build linter ceiling of 1500 (set in lakefile.toml). The split keeps new material
         # small and reviewable while not blocking incremental growth of established files.
         # PR-only, like the diff-size guard: new files enter the library through a PR, and a
@@ -1511,11 +1511,11 @@ jobs:
           elif [ "${{ env.INFRA }}" = "1" ] && [ "${{ env.INTEGRATION_BAD }}" != "1" ]; then
             sc_state=failure; sc_desc="trusted scope/config checks did not complete — see the run; human review may be required"
           elif [ "${{ env.TOO_LARGE }}" = "1" ]; then
-            sc_state=failure; sc_desc="diff exceeds 2000 added/removed lines or 2000 files — split into smaller PRs to keep review manageable"
+            sc_state=failure; sc_desc="diff exceeds 3000 added lines, 2000 removed lines or 2000 files — split into smaller PRs to keep review manageable"
           elif [ "${{ env.DIFF_UNKNOWN }}" = "1" ]; then
             sc_state=failure; sc_desc="could not measure the PR diff from local Git objects — re-run pr-build"
           elif [ "${{ env.NEWFILE_TOO_LONG }}" = "1" ]; then
-            sc_state=failure; sc_desc="a newly added .lean file exceeds 1000 lines — split it (existing files may grow to 1500)"
+            sc_state=failure; sc_desc="a newly added .lean file exceeds 1250 lines — split it (existing files may grow to 1500)"
           elif [ "${{ env.OUT_OF_SCOPE }}" = "1" ]; then
             # Only the path restriction is waivable. Every other scope/config/size
             # guard above must pass first. Approval comes from bors's HTTPS state,

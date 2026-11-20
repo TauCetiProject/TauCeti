@@ -30,6 +30,8 @@ Floer operator `∂s u + J(∂t u - X_{H_t}(u))` has linearization
 slice `s = const` the operator `D = TauCeti.Floer.stationaryCylinderOperator` is `∂s + A` for the
 asymptotic operator `A ζ = J_t (ζ' - S_t ζ)` acting on loops
 (`TauCeti.Floer.asymptoticOperator`, `Floer.stationaryCylinderOperator_eq_add_asymptoticOperator`).
+On a product section `φ(s) e(t)` whose loop solves `e' = S_t e - λ J_t e`, so that `A e = λ e`, it
+is the scalar operator `(φ' + λ φ) e` (`Floer.stationaryCylinderOperator_smul_of_hasDerivAt`).
 These are the operators which describe the linearized Floer equation on cylindrical ends
 asymptotic to `x`.
 
@@ -466,7 +468,40 @@ theorem stationaryCylinderOperator_of_notMem_tsupport (hz : z ∉ tsupport ξ) :
     fderiv_of_notMem_tsupport ℝ hz]
   simp
 
+/-- **Product sections with an eigenmode.** If a loop `e` solves `e' = S_t e - λ J_t e`, then on
+the product section `φ(s) e(t)` the stationary cylinder operator acts as the scalar operator
+`d/ds + λ`: `D (φ e) = (φ' + λ φ) e`. -/
+theorem stationaryCylinderOperator_smul_of_hasDerivAt {e : ℝ → V} {lam : ℝ}
+    (he : ∀ y, HasDerivAt e (S y (e y) - lam • J y (e y)) y) {φ : ℝ → ℝ}
+    (hφ : Differentiable ℝ φ) (z : ℝ × ℝ) :
+    stationaryCylinderOperator J S (fun w ↦ φ w.1 • e w.2) z =
+      (deriv φ z.1 + lam * φ z.1) • e z.2 := by
+  have h1 : HasFDerivAt (fun w : ℝ × ℝ ↦ φ w.1)
+      (deriv φ z.1 • ContinuousLinearMap.fst ℝ ℝ ℝ) z :=
+    (hφ z.1).hasDerivAt.comp_hasFDerivAt z hasFDerivAt_fst
+  have h2 := (he z.2).hasFDerivAt.comp z (hasFDerivAt_snd (p := z))
+  have h : HasFDerivAt (fun w : ℝ × ℝ ↦ φ w.1 • e w.2) _ z := h1.smul h2
+  have hJ : J z.2 (J z.2 (e z.2)) = -e z.2 := AlmostComplexStructure.apply_apply _ _
+  rw [stationaryCylinderOperator_def, h.fderiv]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.coe_snd', ContinuousLinearMap.toSpanSingleton_apply,
+    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.coe_fst', stdComplexLineReal_fst,
+    stdComplexLineReal_snd, stdComplexLineImag_fst, stdComplexLineImag_snd, smul_eq_mul,
+    mul_one, mul_zero, zero_smul, one_smul, smul_zero, zero_add, add_zero, map_smul,
+    AlmostComplexStructure.apply_sub]
+  rw [hJ]
+  module
+
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V}
+
+/-- For continuous `J_t` and `S_t`, the stationary cylinder operator of a `C¹` map is continuous. -/
+theorem continuous_stationaryCylinderOperator
+    (hJc : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) (hSc : Continuous S)
+    (hξ : ContDiff ℝ 1 ξ) : Continuous (stationaryCylinderOperator J S ξ) := by
+  have h := hξ.continuous_fderiv one_ne_zero
+  simp only [funext (stationaryCylinderOperator_def J S ξ)]
+  exact (h.clm_apply continuous_const).add (((hJc.comp continuous_snd).clm_apply
+    ((h.clm_apply continuous_const).sub ((hSc.comp continuous_snd).clm_apply hξ.continuous))))
 
 /-- **Shifting the stationary cylinder operator by a weight.** Replacing `S_t` by `S_t - δ J_t`
 shifts the stationary cylinder operator by `-δ`. -/
