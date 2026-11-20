@@ -192,16 +192,21 @@ theorem esymm_div_choose_mul_esymm_div_choose_le_sq (k : ℕ) :
   · rw [esymm_of_card_lt hk, zero_div, mul_zero]
     positivity
 
-/-- On the cone `σ_1, …, σ_l > 0`, the elementary symmetric means `S_1, …, S_l` are positive. -/
-theorem esymm_div_choose_pos {l : ℕ} (hpos : ∀ j ∈ Finset.Icc 1 l, 0 < s.esymm j) {j : ℕ}
-    (hj : j ≤ l) : 0 < s.esymm j / (card s).choose j := by
-  rcases Nat.eq_zero_or_pos j with rfl | hj₀
-  · simp
-  have hσ := hpos j (Finset.mem_Icc.mpr ⟨hj₀, hj⟩)
+/-- If `σ_j(s) > 0`, then the elementary symmetric mean `S_j = σ_j(s) / binom(card s, j)` is
+positive. In particular `S_1, …, S_l` are positive on the cone `σ_1, …, σ_l > 0`. -/
+theorem esymm_div_choose_pos {j : ℕ} (hσ : 0 < s.esymm j) :
+    0 < s.esymm j / (card s).choose j := by
   have hjn : j ≤ card s := by
     by_contra h
     exact hσ.ne' (esymm_of_card_lt (not_le.mp h))
   exact div_pos hσ (by exact_mod_cast Nat.choose_pos hjn)
+
+/-- On the cone `σ_1, …, σ_l > 0`, every `σ_j` with `j ≤ l` is positive (`σ_0 = 1`). -/
+private lemma esymm_pos_of_le {l : ℕ} (hpos : ∀ j ∈ Finset.Icc 1 l, 0 < s.esymm j) {j : ℕ}
+    (hj : j ≤ l) : 0 < s.esymm j := by
+  rcases Nat.eq_zero_or_pos j with rfl | hj₀
+  · simp
+  exact hpos j (Finset.mem_Icc.mpr ⟨hj₀, hj⟩)
 
 /-- Consecutive Maclaurin inequality `S_{j+1}^j ≤ S_j^{j+1}` on the cone `σ_1, …, σ_l > 0`, for
 `j + 1 ≤ l`. -/
@@ -213,9 +218,9 @@ private lemma esymm_div_choose_pow_le_pow_succ {l : ℕ}
   | zero => simp
   | succ j ih =>
     set S : ℕ → K := fun i ↦ s.esymm i / (card s).choose i
-    have h₀ := s.esymm_div_choose_pos hpos (j := j) (by omega)
-    have h₁ := s.esymm_div_choose_pos hpos (j := j + 1) (by omega)
-    have h₂ := s.esymm_div_choose_pos hpos (j := j + 2) (by omega)
+    have h₀ := s.esymm_div_choose_pos (s.esymm_pos_of_le hpos (j := j) (by omega))
+    have h₁ := s.esymm_div_choose_pos (s.esymm_pos_of_le hpos (j := j + 1) (by omega))
+    have h₂ := s.esymm_div_choose_pos (s.esymm_pos_of_le hpos (j := j + 2) (by omega))
     have hnewton : S j * S (j + 2) ≤ S (j + 1) ^ 2 :=
       s.esymm_div_choose_mul_esymm_div_choose_le_sq j
     -- Raise Newton's inequality to the power `j + 1` and combine it with the previous step.
@@ -241,9 +246,9 @@ theorem esymm_div_choose_pow_le_pow {k l : ℕ} (hkl : k ≤ l)
     have hpos' : ∀ j ∈ Finset.Icc 1 l, 0 < s.esymm j := fun j hj ↦
       hpos j (Finset.mem_Icc.mpr ⟨(Finset.mem_Icc.mp hj).1, (Finset.mem_Icc.mp hj).2.trans
         (Nat.le_succ l)⟩)
-    have hk₀ := s.esymm_div_choose_pos hpos (j := k) (by omega)
-    have hl₀ := s.esymm_div_choose_pos hpos (j := l) (by omega)
-    have hl₁ := s.esymm_div_choose_pos hpos (j := l + 1) le_rfl
+    have hk₀ := s.esymm_div_choose_pos (s.esymm_pos_of_le hpos (j := k) (by omega))
+    have hl₀ := s.esymm_div_choose_pos (s.esymm_pos_of_le hpos (j := l) (by omega))
+    have hl₁ := s.esymm_div_choose_pos (s.esymm_pos_of_le hpos (j := l + 1) le_rfl)
     have hcons : S (l + 1) ^ l ≤ S l ^ (l + 1) :=
       s.esymm_div_choose_pow_le_pow_succ hpos le_rfl
     -- Both sides of the goal are nonnegative; compare their `l`-th powers.
@@ -264,8 +269,8 @@ theorem esymm_div_choose_rpow_le_rpow {k l : ℕ} (hk : 1 ≤ k) (hkl : k ≤ l)
     (hpos : ∀ j ∈ Finset.Icc 1 l, 0 < s.esymm j) :
     (s.esymm l / (card s).choose l) ^ (1 / (l : ℝ)) ≤
       (s.esymm k / (card s).choose k) ^ (1 / (k : ℝ)) := by
-  have hk₀ := s.esymm_div_choose_pos hpos (j := k) hkl
-  have hl₀ := s.esymm_div_choose_pos hpos (j := l) le_rfl
+  have hk₀ := s.esymm_div_choose_pos (s.esymm_pos_of_le hpos (j := k) hkl)
+  have hl₀ := s.esymm_div_choose_pos (s.esymm_pos_of_le hpos (j := l) le_rfl)
   have hpow := s.esymm_div_choose_pow_le_pow hkl hpos
   have hlR : (0 : ℝ) < l := by exact_mod_cast hk.trans hkl
   -- Take the `(k l)`-th root of `S_l^k ≤ S_k^l`.
