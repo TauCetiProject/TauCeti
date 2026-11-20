@@ -121,7 +121,8 @@ theorem ae_eq_of_forall_integral_inner_eq_rclike {𝕜 F : Type*} [RCLike 𝕜] 
     (LinearMap.mk₂ ℝ (fun a b ↦ ⟪a, b⟫_𝕜) inner_add_left hsmul inner_add_right
       fun r a b ↦ by rw [← inner_conj_symm, hsmul, RCLike.conj_smul, inner_conj_symm]) 1
     fun a b ↦ by simpa using norm_inner_le_norm (𝕜 := 𝕜) a b
-  have hB (a b : F) : B a b = ⟪a, b⟫_𝕜 := rfl
+  have hB (a b : F) : B a b = ⟪a, b⟫_𝕜 := by
+    simp only [B, LinearMap.mkContinuous₂_apply, LinearMap.mk₂_apply]
   have hre (a b : F) : ⟪a, b⟫_ℝ = RCLike.re ⟪a, b⟫_𝕜 := rfl
   refine ae_eq_of_forall_integral_inner_eq hg hh fun φ ↦ ?_
   have hint {f : E → F} (hf : LocallyIntegrableOn f Ω μ) :
