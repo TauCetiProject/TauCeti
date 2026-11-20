@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.Sobolev
-public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
-import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
@@ -53,8 +51,6 @@ The Leibniz rule turns `g f` into `g u - ∑ᵢ (∂ᵢ g) wᵢ + ∑ᵢ ∂ᵢ 
   negative order `H^{-k,p}`.
 * `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast`: the two
   combined, for `H^{k,p}` with `k ∈ ℤ` and bounded derivatives up to order `|k|`.
-* `SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le`: the closed graph theorem
-  turns this into the bound `‖g u‖_{H^{k,p}} ≤ C ‖u‖_{H^{k,p}}` on Schwartz functions.
 
 ## References
 
@@ -152,34 +148,3 @@ theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast (hp : 1 < p) (h
     exact hf.smulLeftCLM_of_norm_iteratedFDeriv_le_neg hp hp_top hg (by simpa using hbd)
 
 end TemperedDistribution
-
-namespace SchwartzMap
-
-open TemperedDistribution
-open scoped BesselPotentialSpace ENNReal
-
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
-  [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- **Multipliers with bounded derivatives on `H^{k,p}`, on Schwartz functions.** For
-`1 < p < ∞`, if `g` has temperate growth and bounded derivatives of order at most `k`, then
-`‖g u‖_{H^{k,p}} ≤ C ‖u‖_{H^{k,p}}` for every Schwartz function `u`, with `C` independent of
-`u`. -/
-theorem exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (hp : 1 < p) (hp_top : p ≠ ∞)
-    (k : ℕ) {g : E → ℂ} (hg : g.HasTemperateGrowth)
-    (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) :
-    ∃ C, 0 ≤ C ∧ ∀ u : 𝓢(E, F), ‖toBesselPotentialSpaceCLM k p (smulLeftCLM F g u)‖ ≤
-      C * ‖toBesselPotentialSpaceCLM k p u‖ := by
-  -- Multiplication by `g` preserves `H^k`, so by the closed graph theorem it is bounded there.
-  let T : H^{(k : ℝ), p}(E, F) →L[ℂ] H^{(k : ℝ), p}(E, F) :=
-    BesselPotentialSpace.mapCLM (TemperedDistribution.smulLeftCLM F g) fun f ↦
-      f.memSobolev_toDistr.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top hg hbd
-  refine ⟨‖T‖, norm_nonneg _, fun u ↦ ?_⟩
-  have hT : T (toBesselPotentialSpaceCLM k p u) =
-      toBesselPotentialSpaceCLM k p (smulLeftCLM F g u) :=
-    BesselPotentialSpace.ext (by simp [T, smulLeftCLM_toTemperedDistributionCLM_eq])
-  rw [← hT]
-  exact T.le_opNorm _
-
-end SchwartzMap

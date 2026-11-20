@@ -15,7 +15,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
-import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
+import TauCeti.Analysis.Sobolev.BesselPotential.MatrixMultiplier
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 
 /-!
@@ -44,7 +44,7 @@ Bessel-potential space `H^s = H^{s,2}` for every real `s`, negative orders inclu
 whole-space coordinate-change estimate behind the localization of the Sobolev scale to charts.
 
 The bound `‖u ∘ φ‖_{H^s} ≤ C ‖u‖_{H^s}` is first proved on Schwartz functions
-(`SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_compCLM_le`), in three steps.
+(`SchwartzMap.hasSobolevExtension_compCLM`), in three steps.
 
 * **Nonnegative integer orders**, by induction. At order `0` it is the `L²` bound for precomposition
   with a map whose Jacobian determinant is bounded away from zero
@@ -54,14 +54,14 @@ The bound `‖u ∘ φ‖_{H^s} ≤ C ‖u‖_{H^s}` is first proved on Schwartz
   (`SchwartzMap.norm_toBesselPotentialSpaceCLM_add_one_sq`), and by the chain rule
   `∂ᵢ (u ∘ φ) = ∑ⱼ cᵢⱼ (∂ⱼ u) ∘ φ`, where `Dφ bᵢ = ∑ⱼ cᵢⱼ bⱼ`
   (`SchwartzMap.lineDerivOp_compCLM_apply`), whose coefficients are bounded multipliers on `H^k`
-  (`SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le`).
+  (`SchwartzMap.hasSobolevExtension_smulLeftCLM`).
 * **Negative integer orders**, by duality. For the `L²` pairing the transpose of `u ↦ u ∘ φ` is the
   pushforward of densities `φ_* v = |det Dφ⁻¹| (v ∘ φ⁻¹)` (`SchwartzMap.integral_inner_compCLM_eq`),
   which is bounded on `H^k` by the previous step applied to `φ⁻¹` and the multiplier bound for the
   Jacobian factor. The `H^{-k}` norm is computed by testing against `H^k`
   (`SchwartzMap.norm_toBesselPotentialSpaceCLM_neg_le_of_forall`).
 * **Real orders**, by complex interpolation of the Hilbert scale between `⌊s⌋` and `⌊s⌋ + 1`
-  (`SchwartzMap.norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm`).
+  (`SchwartzMap.HasSobolevExtension.interpolate`).
 
 Density of Schwartz functions then extends the bound to `H^s`, and the extension agrees with the
 pullback of tempered distributions.
@@ -166,7 +166,7 @@ private theorem exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_repr_fderiv_le
       ‖toBesselPotentialSpaceCLM k 2
         (smulLeftCLM F (fun x ↦ ((b.toBasis.repr (fderiv ℝ g x v) j : ℝ) : ℂ)) w)‖ ≤
         c * ‖toBesselPotentialSpaceCLM k 2 w‖ :=
-  exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (by norm_num) ENNReal.ofNat_ne_top k
+  hasSobolevExtension_iff_exists_norm_le.1 <| hasSobolevExtension_smulLeftCLM (k : ℝ)
     (hg.basis_repr_fderiv_apply b.toBasis v j) fun n _ ↦ by
       obtain ⟨C, hC⟩ := hb n
       exact ⟨C * ‖v‖, fun x ↦
@@ -292,8 +292,8 @@ private theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_neg_natCast
   obtain ⟨Cs, hCs0, hCs⟩ := exists_norm_toBesselPotentialSpaceCLM_compCLM_le_natCast (F := F)
     (φ := φ.symm) hψ hφ' hb' (by positivity) (φ.symm.inv_max_one_pow_le_abs_det_fderiv
       (hψ.1.differentiable (by simp)) (hφ'.1.differentiable (by simp)) (by simpa using hL)) k
-  obtain ⟨CJ, hCJ0, hCJ⟩ := exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (F := F) (p := 2)
-    (by norm_num) ENNReal.ofNat_ne_top k hJ fun n _ ↦
+  obtain ⟨CJ, hCJ0, hCJ⟩ := hasSobolevExtension_iff_exists_norm_le.1 <|
+    hasSobolevExtension_smulLeftCLM (F := F) (k : ℝ) hJ fun n _ ↦
       hφ.exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le hψ n fun m _ ↦ hb' m
   have hQ (v : 𝓢(E, F)) : ‖toBesselPotentialSpaceCLM k 2 (pushforwardCLM ℂ φ hφ hψ v)‖ ≤
       CJ * (Cs * ‖toBesselPotentialSpaceCLM k 2 v‖) := by
@@ -318,14 +318,13 @@ private theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_neg_natCast
     _ = _ := by ring
 
 /-- **Changes of variables on `H^m` for integer `m`, on Schwartz functions.** -/
-private theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_intCast
+private theorem hasSobolevExtension_compCLM_intCast
     (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
     (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C)
     (hb' : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ.symm x‖ ≤ C) (m : ℤ) :
-    ∃ C, 0 ≤ C ∧ ∀ u : 𝓢(E, F),
-      ‖toBesselPotentialSpaceCLM m 2
-          (compCLM ℂ hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) u)‖ ≤
-        C * ‖toBesselPotentialSpaceCLM m 2 u‖ := by
+    HasSobolevExtension
+      (compCLM ℂ (F := F) hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv)) m m := by
+  refine hasSobolevExtension_iff_exists_norm_le.2 ?_
   obtain ⟨k, rfl | rfl⟩ := m.eq_nat_or_neg
   · obtain ⟨L, hL⟩ := hb' 0
     rw [Int.cast_natCast]
@@ -335,10 +334,28 @@ private theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_intCast
   · rw [Int.cast_neg, Int.cast_natCast]
     exact exists_norm_toBesselPotentialSpaceCLM_compCLM_le_neg_natCast (F := F) hφ hψ hb hb' k
 
+/-- **Changes of variables extend to `H^s`.** If `φ` and `φ⁻¹` have temperate growth and bounded
+derivatives of every positive order, then composition with `φ` on Schwartz functions extends to a
+bounded operator `H^s → H^s`, for every real `s`. Between consecutive integers this is
+interpolation of the Hilbert scale. -/
+theorem hasSobolevExtension_compCLM (hφ : (φ : E → E).HasTemperateGrowth)
+    (hψ : (φ.symm : E → E).HasTemperateGrowth)
+    (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C)
+    (hb' : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ.symm x‖ ≤ C) (s : ℝ) :
+    HasSobolevExtension
+      (compCLM ℂ (F := F) hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv)) s s := by
+  have h := (hasSobolevExtension_compCLM_intCast (F := F) hφ hψ hb hb' ⌊s⌋).interpolate
+    (hasSobolevExtension_compCLM_intCast hφ hψ hb hb' (⌊s⌋ + 1))
+    ⟨Int.fract_nonneg s, (Int.fract_lt_one s).le⟩
+  have hs : (1 - Int.fract s) * (⌊s⌋ : ℝ) + Int.fract s * ((⌊s⌋ + 1 : ℤ) : ℝ) = s := by
+    rw [Int.fract]
+    push_cast
+    ring
+  rwa [hs] at h
+
 /-- **Changes of variables on `H^s`, on Schwartz functions.** If `φ` and `φ⁻¹` have temperate
 growth and bounded derivatives of every positive order, then `‖u ∘ φ‖_{H^s} ≤ C ‖u‖_{H^s}` for
-every real `s` and every Schwartz function `u`, with `C` independent of `u`. Between consecutive
-integers this is interpolation of the Hilbert scale. -/
+every real `s` and every Schwartz function `u`, with `C` independent of `u`. -/
 theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le
     (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
     (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C)
@@ -346,43 +363,8 @@ theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le
     ∃ C, 0 ≤ C ∧ ∀ u : 𝓢(E, F),
       ‖toBesselPotentialSpaceCLM s 2
           (compCLM ℂ hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) u)‖ ≤
-        C * ‖toBesselPotentialSpaceCLM s 2 u‖ := by
-  set P := compCLM ℂ (F := F) hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv)
-  obtain ⟨C₀, hC₀0, hC₀⟩ := exists_norm_toBesselPotentialSpaceCLM_compCLM_le_intCast (F := F) hφ hψ
-    hb hb' ⌊s⌋
-  obtain ⟨C₁, hC₁0, hC₁⟩ := exists_norm_toBesselPotentialSpaceCLM_compCLM_le_intCast (F := F) hφ hψ
-    hb hb' (⌊s⌋ + 1)
-  have h₀ (u : 𝓢(E, F)) : ‖toBesselPotentialSpaceCLM (⌊s⌋ : ℝ) 2 ((P : 𝓢(E, F) →ₗ[ℂ] 𝓢(E, F)) u)‖
-      ≤ C₀ * ‖toBesselPotentialSpaceCLM (⌊s⌋ : ℝ) 2 u‖ := by
-    rw [ContinuousLinearMap.coe_coe]
-    exact hC₀ u
-  have h₁ (u : 𝓢(E, F)) :
-      ‖toBesselPotentialSpaceCLM ((⌊s⌋ : ℝ) + 1) 2 ((P : 𝓢(E, F) →ₗ[ℂ] 𝓢(E, F)) u)‖ ≤
-        C₁ * ‖toBesselPotentialSpaceCLM ((⌊s⌋ : ℝ) + 1) 2 u‖ := by
-    have h := hC₁ u
-    rw [Int.cast_add, Int.cast_one] at h
-    rw [ContinuousLinearMap.coe_coe]
-    exact h
-  have h := norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm hC₀0 hC₁0 h₀ h₁
-    ⟨Int.fract_nonneg s, (Int.fract_lt_one s).le⟩
-  rw [ContinuousLinearMap.coe_coe] at h
-  have hs : (1 - Int.fract s) * (⌊s⌋ : ℝ) + Int.fract s * ((⌊s⌋ : ℝ) + 1) = s := by
-    rw [Int.fract]
-    ring
-  rw [hs] at h
-  exact ⟨_, by positivity, h⟩
-
-/-- **Changes of variables extend to `H^s`.** If `φ` and `φ⁻¹` have temperate growth and bounded
-derivatives of every positive order, then composition with `φ` on Schwartz functions extends to a
-bounded operator `H^s → H^s`, for every real `s`. -/
-theorem hasSobolevExtension_compCLM (hφ : (φ : E → E).HasTemperateGrowth)
-    (hψ : (φ.symm : E → E).HasTemperateGrowth)
-    (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C)
-    (hb' : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ.symm x‖ ≤ C) (s : ℝ) :
-    HasSobolevExtension
-      (compCLM ℂ (F := F) hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv)) s s :=
-  hasSobolevExtension_iff_exists_norm_le.2
-    (exists_norm_toBesselPotentialSpaceCLM_compCLM_le hφ hψ hb hb' s)
+        C * ‖toBesselPotentialSpaceCLM s 2 u‖ :=
+  hasSobolevExtension_iff_exists_norm_le.1 (hasSobolevExtension_compCLM hφ hψ hb hb' s)
 
 end SchwartzMap
 
