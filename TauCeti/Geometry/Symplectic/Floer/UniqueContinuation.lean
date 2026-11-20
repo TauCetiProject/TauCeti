@@ -200,7 +200,7 @@ theorem eqOn_zero_of_floerLinearization_eq_zero_of_forall_isBigO (hΩ : IsOpen �
   exact eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM <|
     eqOn_zero_of_contDiffOn_of_forall_isBigO_of_complexStructure hΩ' hΩc' hJ' hJJ' hξ' hCm hCb
       heq (show e.symm z₀ ∈ e ⁻¹' Ω by rwa [mem_preimage, e.apply_symm_apply])
-      (isBigO_comp_equivRealProdCLM h₀)
+      (fun n ↦ isBigO_comp_equivRealProdCLM (h₀ n))
 
 /-- **Isolated zeros of solutions of the linearized Floer operator.** Let `J` be `C¹` and the
 Hamiltonians `K_s`, `K_t` be `C²` near the graph of a `C¹` map `u` over a connected open set
@@ -428,7 +428,7 @@ theorem eqOn_of_floerOperator_eq_zero_of_forall_isBigO (hΩ : IsOpen Ω) (hΩc :
   have h := eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM (ξ := u - v) <|
     eqOn_zero_of_contDiffOn_of_forall_isBigO_of_complexStructure hΩ' hΩc' hJ' hJJ' hξ' hCm hCb
       heq (show e.symm z₀ ∈ e ⁻¹' Ω by rwa [mem_preimage, e.apply_symm_apply])
-      (isBigO_comp_equivRealProdCLM h₀)
+      (fun n ↦ isBigO_comp_equivRealProdCLM (h₀ n))
   exact fun z hz ↦ sub_eq_zero.1 (h hz)
 
 /-- **Isolated coincidences of Floer solutions.** Under the hypotheses of

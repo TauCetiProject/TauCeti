@@ -52,7 +52,7 @@ disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)
 
 Reading a map `ξ` on `ℝ × ℝ` in the complex coordinate `ξ ∘ equivRealProdCLM` preserves its
 zero structure: vanishing on a set (`Complex.eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM`),
-vanishing to infinite order at a point (`Complex.isBigO_comp_equivRealProdCLM`) and having a
+vanishing to a given order at a point (`Complex.isBigO_comp_equivRealProdCLM`) and having a
 codiscrete nonvanishing set (`Complex.setOf_ne_zero_mem_codiscreteWithin_of_comp_equivRealProdCLM`)
 all pass back from the complex coordinate to `ℝ × ℝ`.
 -/
@@ -290,13 +290,13 @@ theorem eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM [Zero F]
   simpa using h (show equivRealProdCLM.symm z ∈ _ by simpa using hz)
 
 /-- In the complex coordinate the vanishing order at `z₀` is measured by
-`‖e w - e w₀‖ ≤ ‖e‖ ‖w - w₀‖`, so a zero of infinite order stays one. -/
-theorem isBigO_comp_equivRealProdCLM [Norm F] {z₀ : ℝ × ℝ}
-    (h₀ : ∀ n : ℕ, ξ =O[𝓝 z₀] fun z ↦ ‖z - z₀‖ ^ n) (n : ℕ) :
+`‖e w - e w₀‖ ≤ ‖e‖ ‖w - w₀‖`, so a zero of order at least `n` stays one. -/
+theorem isBigO_comp_equivRealProdCLM [Norm F] {z₀ : ℝ × ℝ} {n : ℕ}
+    (h : ξ =O[𝓝 z₀] fun z ↦ ‖z - z₀‖ ^ n) :
     (ξ ∘ equivRealProdCLM) =O[𝓝 (equivRealProdCLM.symm z₀)]
       fun w ↦ (w - equivRealProdCLM.symm z₀) ^ n := by
   set e := equivRealProdCLM
-  have h := (h₀ n).comp_tendsto
+  replace h := h.comp_tendsto
     ((e.continuous.tendsto (e.symm z₀)).trans_eq (by rw [e.apply_symm_apply]))
   refine h.trans (IsBigO.of_bound (‖(e : ℂ →L[ℝ] ℝ × ℝ)‖ ^ n) (Eventually.of_forall fun w ↦ ?_))
   have hw : e w - z₀ = e (w - e.symm z₀) := by simp
