@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.IsManifold.Basic
+public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Exponential
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Topology
 public import TauCeti.Analysis.Sobolev.BesselPotential.Real
 
 /-!
-# Banach charts on the Sobolev framed gauge group
+# Banach charts and the Lie group structure of the Sobolev framed gauge group
 
 For a real order `s > 1`, the Sobolev framed gauge group `G_s` of plane vortices
 (`TauCeti.Vortex.SobolevTopologicalGaugeGroup`) consists of the continuous circle-valued maps `u`
@@ -36,9 +36,13 @@ an open subgroup of `G_s`.
 exponential is a homomorphism, two charts differ by a translation of the model space on their
 common domain (`TauCeti.Vortex.gaugeChart_symm_trans_eqOn_add`), so `G_s` is a manifold of every
 smoothness class `n` over `ℝ`, analytic included
-(`TauCeti.Vortex.SobolevTopologicalGaugeGroup.instIsManifold`). The smoothness of the group
-operations and of the action of `G_(k+1)` on the field space `A_m^k` in these charts is not
-treated here.
+(`TauCeti.Vortex.SobolevTopologicalGaugeGroup.instIsManifold`).
+
+**The Lie group structure.** Since `G_s` is abelian, in the charts at `u`, `v` and `u v`
+multiplication is the addition of phases, and in the charts at `u` and `u⁻¹` inversion is their
+negation. Hence `G_s` is a Lie group of every smoothness class over `ℝ`, analytic included
+(`TauCeti.Vortex.SobolevTopologicalGaugeGroup.instLieGroup`). The action of `G_(k+1)` on the field
+space `A_m^k` is not treated here.
 
 ## References
 
@@ -54,7 +58,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex Filter MeasureTheory Module Set TemperedDistribution BesselPotentialSpace Topology
-open scoped SchwartzMap BesselPotentialSpace Manifold
+open scoped SchwartzMap BesselPotentialSpace Manifold ContDiff
 
 variable {s : ℝ}
 
@@ -357,6 +361,51 @@ instance instIsManifold (n : WithTop ℕ∞) :
   simp only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, range_id, preimage_id,
     inter_univ, Function.id_comp, Function.comp_id]
   exact (contDiff_id.add contDiff_const).contDiffOn.congr hc
+
+/-- In the charts at `u`, `v` and `u v`, multiplication is the addition of phases. -/
+private theorem gaugeChart_mul_gaugeChart_symm (u v : SobolevTopologicalGaugeGroup hs)
+    (F G : realSubmodule ℂ (zero_le_one.trans hs.le)) :
+    gaugeChart (u * v) ((gaugeChart u).symm F * (gaugeChart v).symm G) = F + G := by
+  rw [gaugeChart_symm_apply, gaugeChart_symm_apply, mul_mul_mul_comm, ← AddChar.map_add_eq_mul,
+    gaugeChart_mul_expGauge]
+
+/-- In the charts at `u` and `u⁻¹`, inversion is the negation of phases. -/
+private theorem gaugeChart_inv_gaugeChart_symm (u : SobolevTopologicalGaugeGroup hs)
+    (F : realSubmodule ℂ (zero_le_one.trans hs.le)) :
+    gaugeChart u⁻¹ ((gaugeChart u).symm F)⁻¹ = -F := by
+  rw [gaugeChart_symm_apply, mul_inv, ← AddChar.map_neg_eq_inv, gaugeChart_mul_expGauge]
+
+/-- **`G_s` is a Lie group of every smoothness class over `ℝ`**, including analytic: in the charts
+multiplication and inversion are the addition and negation of phases
+(`gaugeChart_mul_gaugeChart_symm`, `gaugeChart_inv_gaugeChart_symm`). -/
+instance instLieGroup (n : WithTop ℕ∞) :
+    LieGroup 𝓘(ℝ, realSubmodule ℂ (zero_le_one.trans hs.le)) n
+      (SobolevTopologicalGaugeGroup hs) where
+  contMDiff_mul p := by
+    rw [contMDiffAt_iff]
+    refine ⟨continuous_mul.continuousAt, ?_⟩
+    have h : extChartAt 𝓘(ℝ, realSubmodule ℂ (zero_le_one.trans hs.le)) (p.1 * p.2) ∘
+        (fun q : SobolevTopologicalGaugeGroup hs × SobolevTopologicalGaugeGroup hs ↦ q.1 * q.2) ∘
+        (extChartAt (𝓘(ℝ, realSubmodule ℂ (zero_le_one.trans hs.le)).prod
+          𝓘(ℝ, realSubmodule ℂ (zero_le_one.trans hs.le))) p).symm = fun q ↦ q.1 + q.2 := by
+      funext q
+      -- The product chart at `p` is the product of the charts at `p.1` and `p.2`.
+      simp only [extChartAt_prod, PartialEquiv.prod_symm, PartialEquiv.prod_coe, extChartAt_coe,
+        extChartAt_coe_symm, modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm,
+        Function.comp_apply, id_eq, chartAt_eq]
+      exact gaugeChart_mul_gaugeChart_symm p.1 p.2 q.1 q.2
+    rw [h]
+    exact (contDiff_fst.add contDiff_snd).contDiffWithinAt
+  contMDiff_inv u := by
+    rw [contMDiffAt_iff]
+    refine ⟨continuous_inv.continuousAt, ?_⟩
+    have h : extChartAt 𝓘(ℝ, realSubmodule ℂ (zero_le_one.trans hs.le)) u⁻¹ ∘
+        (fun v : SobolevTopologicalGaugeGroup hs ↦ v⁻¹) ∘
+        (extChartAt 𝓘(ℝ, realSubmodule ℂ (zero_le_one.trans hs.le)) u).symm = Neg.neg := by
+      funext F
+      simpa using gaugeChart_inv_gaugeChart_symm u F
+    rw [h]
+    exact contDiff_neg.contDiffWithinAt
 
 end SobolevTopologicalGaugeGroup
 
