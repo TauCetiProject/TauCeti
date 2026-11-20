@@ -30,6 +30,7 @@ normed complex `F`.
 ## Main declarations
 
 * `SchwartzMap.toBesselPotentialSpaceCLM`: the inclusion `𝓢(E, F) →L[ℂ] H^{s,p}(E, F)`.
+* `SchwartzMap.toBesselPotentialSpaceCLM_injective`: this inclusion is injective.
 * `SchwartzMap.denseRange_toBesselPotentialSpaceCLM`: its range is dense for `p < ∞`.
 * `SchwartzMap.toLp_toBesselPotentialSpaceCLM_zero`,
   `BesselPotentialSpace.toDistr_toLpₗᵢ_zero_symm_apply`: the identification `H^{0,p} = Lᵖ`.
@@ -106,6 +107,15 @@ theorem toDistr_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
     BesselPotentialSpace.toLpₗᵢ_symm_apply, Lp.toTemperedDistribution_toLp_eq,
     ← besselPotential_toTemperedDistributionCLM_eq, besselPotential_besselPotential_apply,
     add_neg_cancel, besselPotential_zero, ContinuousLinearMap.id_apply]
+
+/-- The inclusion of Schwartz functions into `H^{s,p}` is injective. -/
+theorem toBesselPotentialSpaceCLM_injective (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
+    Function.Injective (toBesselPotentialSpaceCLM (E := E) (F := F) s p) := by
+  intro u v h
+  have hd := congrArg BesselPotentialSpace.toDistr h
+  simp only [toDistr_toBesselPotentialSpaceCLM,
+    ← Lp.toTemperedDistribution_toLp_eq (p := p)] at hd
+  exact injective_toLp p volume (LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot hd)
 
 /-- In `H^{0,p} = Lᵖ` the `Lᵖ` part of a Schwartz function `u` is `u` itself. -/
 theorem toLp_toBesselPotentialSpaceCLM_zero (u : 𝓢(E, F)) :

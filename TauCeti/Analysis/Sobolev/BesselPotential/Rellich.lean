@@ -397,16 +397,10 @@ theorem not_isCompactOperator_inclusion [Nontrivial E] [Nontrivial G] (h : r ≤
   let u : 𝓢(E, G) := (b.hasCompactSupport.smul_right (f' := fun _ ↦ w)).toSchwartzMap
     (b.contDiff.smul contDiff_const)
   have hu : SchwartzMap.toBesselPotentialSpaceCLM r p u ≠ 0 := by
+    rw [← map_zero (SchwartzMap.toBesselPotentialSpaceCLM r p),
+      (SchwartzMap.toBesselPotentialSpaceCLM_injective r p).ne_iff]
     intro h0
-    have hd := congrArg BesselPotentialSpace.toDistr h0
-    rw [SchwartzMap.toDistr_toBesselPotentialSpaceCLM, toDistr_zero,
-      ← Lp.toTemperedDistribution_toLp_eq (p := p)] at hd
-    have hl : u.toLp p = 0 := LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot
-      (hd.trans (map_zero _).symm)
-    have hae : (u : E → G) =ᵐ[volume] 0 := by
-      filter_upwards [u.coeFn_toLp p volume, hl ▸ Lp.coeFn_zero G p volume] with y h1 h2
-      rw [← h1, h2]
-    have h00 := congrFun ((Continuous.ae_eq_iff_eq volume u.continuous continuous_zero).1 hae) 0
+    have h00 := congrArg (· 0) h0
     simp [u, b.one_of_mem_closedBall (by simp : (0 : E) ∈ Metric.closedBall 0 1), hw] at h00
   -- Its translates by `k v`, `k ∈ ℕ`, for a nonzero vector `v`, leave every compact set.
   obtain ⟨v, hv⟩ := exists_ne (0 : E)
@@ -434,9 +428,7 @@ theorem not_isCompactOperator_inclusion [Nontrivial E] [Nontrivial G] (h : r ≤
   have hconst (k : ℕ) :
       ‖inclusion h (x (φ k))‖ = ‖SchwartzMap.toBesselPotentialSpaceCLM r p u‖ := by
     simp [x]
-  rw [show (fun k ↦ ‖inclusion h (x (φ k))‖) = fun _ ↦ ‖SchwartzMap.toBesselPotentialSpaceCLM r p u‖
-    from funext hconst, tendsto_const_nhds_iff] at hnorm
-  exact hu (norm_eq_zero.1 hnorm)
+  exact hu (norm_eq_zero.1 (tendsto_const_nhds_iff.1 (hnorm.congr hconst)))
 
 end NotCompact
 
