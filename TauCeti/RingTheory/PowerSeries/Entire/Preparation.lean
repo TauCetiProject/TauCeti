@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.PowerSeries.Entire.Division
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Normalization
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.PowerSeries.Weierstrass.Nested
 
 /-!
 # Normalised Weierstrass preparation of entire power series
@@ -53,6 +54,8 @@ entire factor.
   of entire series.
 * `TauCeti.PowerSeries.IsEntirePreparation.mono`: a normalised preparation at `c` is one at every
   smaller radius.
+* `TauCeti.PowerSeries.IsEntirePreparation.dvd_of_le`: over a coefficient ring with multiplicative
+  norm, the polynomial factor at a smaller radius divides the polynomial factor at a larger one.
 
 ## References
 
@@ -193,5 +196,38 @@ theorem IsEntirePreparation.isCoprime [CompleteSpace R] (h : IsEntirePreparation
   simp only [Subring.coe_add, Subring.coe_mul, Subring.coe_one]
   rw [hP, Polynomial.coe_smul, smul_mul_smul_comm, h.isUnit_leadingCoeff.val_inv_mul, one_smul]
   linear_combination hωGq
+
+/-- **Nested normalised preparations.** Over an ultrametric normed commutative ring with
+multiplicative norm, let `F` be distinguished of degree `d` at a positive radius `c ≤ c'`. Then the
+polynomial factor of a normalised entire preparation of `F` at `c` in degree `d` divides the
+polynomial factor of any normalised entire preparation of `F` at `c'`. -/
+theorem IsEntirePreparation.dvd_of_le [NormMulClass R] {d' : ℕ}
+    (h : IsEntirePreparation c d F P G) (h' : IsEntirePreparation c' d' F P' G')
+    (hF : IsDistinguished c d F) (hc : 0 < c) (hcc' : c ≤ c') : P ∣ P' := by
+  -- Rescale both preparations to unit-times-monic factorizations and compare them.
+  have key {c₀ : ℝ} {d₀ : ℕ} {P₀ : Polynomial R} {G₀ : R⟦X⟧}
+      (h₀ : IsEntirePreparation c₀ d₀ F P₀ G₀) :
+      ∃ e : IsRestricted.subring (R := R) c₀, IsUnit e ∧
+        (Polynomial.C (Ring.inverse P₀.leadingCoeff) * P₀).IsMonicOfDegree d₀ ∧
+        (e : R⟦X⟧) * ((Polynomial.C (Ring.inverse P₀.leadingCoeff) * P₀ : Polynomial R) : R⟦X⟧) =
+          F := by
+    have ha := h₀.isUnit_leadingCoeff
+    refine ⟨polynomialToRestricted c₀ (Polynomial.C P₀.leadingCoeff) *
+        ⟨G₀, h₀.isEntire.isRestricted c₀⟩,
+      ((ha.map Polynomial.C).map (polynomialToRestricted c₀)).mul h₀.isUnit,
+      ⟨by rw [Polynomial.natDegree_C_mul_of_isUnit ha.ringInverse, h₀.natDegree_eq],
+        Polynomial.monic_C_mul_of_mul_leadingCoeff_eq_one (Ring.inverse_mul_cancel _ ha)⟩, ?_⟩
+    simp only [Subring.coe_mul, coe_polynomialToRestricted, Polynomial.coe_mul, Polynomial.coe_C]
+    rw [h₀.eq_mul, mul_mul_mul_comm, ← map_mul, Ring.mul_inverse_cancel _ ha, map_one, one_mul,
+      mul_comm]
+  obtain ⟨e, he, hω, heω⟩ := key h
+  obtain ⟨e', he', hω', heω'⟩ := key h'
+  obtain ⟨A, -, hA, -⟩ := hF.exists_isMonicOfDegree_mul_eq_of_preparations hc hcc' he he' hω hω'
+    heω heω'
+  have hP' : P' = Polynomial.C P'.leadingCoeff *
+      (Polynomial.C (Ring.inverse P'.leadingCoeff) * P') := by
+    rw [← mul_assoc, ← map_mul, Ring.mul_inverse_cancel _ h'.isUnit_leadingCoeff, map_one, one_mul]
+  rw [hP', hA]
+  exact Dvd.dvd.mul_left (Dvd.dvd.mul_right (dvd_mul_left _ _) _) _
 
 end TauCeti.PowerSeries

@@ -48,9 +48,10 @@ the slope-`m` factor.
   disjoint finite slopes (not both vanishing at `0`) are coprime.
 * `Polynomial.IsPureSlopeFactorization.natDegree_apply`,
   `Polynomial.IsPureSlopeFactorization.mulSupport_eq`,
-  `Polynomial.IsPureSlopeFactorization.pairwise_isCoprime` and
-  `Polynomial.IsPureSlopeFactorization.unique`: degree determination, support, pairwise coprimality
-  and uniqueness of pure slope factorisations.
+  `Polynomial.IsPureSlopeFactorization.pairwise_isCoprime`,
+  `Polynomial.IsPureSlopeFactorization.exists_isCoprime_mul_eq` and
+  `Polynomial.IsPureSlopeFactorization.unique`: degree determination, support, pairwise coprimality,
+  coprime cofactors and uniqueness of pure slope factorisations.
 * `Polynomial.exists_mul_newtonSlopes_filter_le`: threshold factorisation `f = P * Q` separating
   finite slopes `≤ σ` from finite slopes `> σ`.
 * `Polynomial.existsUnique_isPureSlopeFactorization`,
@@ -313,6 +314,20 @@ theorem pairwise_isCoprime (hg : f.IsPureSlopeFactorization v g) :
     Pairwise fun m₁ m₂ => IsCoprime (g m₁) (g m₂) := fun m₁ m₂ hne =>
   isCoprime_of_forall_mem_newtonSlopes_eq v (hg.apply_ne_zero m₁) (hg.apply_ne_zero m₂)
     (.inl (by simp [hg.coeff_zero m₁])) (hg.newtonSlopes_eq m₁) (hg.newtonSlopes_eq m₂) hne
+
+/-- Each factor `g m` of a pure slope factorisation of `f` over a field is a coprime factor of `f`:
+`f = g m * c` with `g m` and `c` coprime. -/
+theorem exists_isCoprime_mul_eq (hg : f.IsPureSlopeFactorization v g) (m : ℝ) :
+    ∃ c : K[X], IsCoprime (g m) c ∧ g m * c = f := by
+  have hv0 : ∀ x, v x = ⊤ → x = 0 := fun _ => v.top_iff.mp
+  set T := (f.newtonSlopes v).toFinset
+  refine ⟨∏ x ∈ T.erase m, g x, IsCoprime.prod_right fun x hx =>
+    hg.pairwise_isCoprime (Finset.ne_of_mem_erase hx).symm, ?_⟩
+  by_cases hm : m ∈ T
+  · rw [Finset.mul_prod_erase T g hm, hg.prod_toFinset_eq hv0]
+  · rw [Finset.erase_eq_of_notMem hm,
+      (hg.apply_eq_one_iff hv0).mpr (by simpa [T, Multiset.mem_toFinset] using hm), one_mul,
+      hg.prod_toFinset_eq hv0]
 
 /-- Over a field, a polynomial has at most one pure slope factorisation. -/
 theorem unique (hg₁ : f.IsPureSlopeFactorization v g₁)
