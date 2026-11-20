@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.FormalGroup.Curve.Expansion
+public import TauCeti.RingTheory.FormalGroup.Typical
 import Mathlib.RingTheory.PowerSeries.Expand
 
 /-!

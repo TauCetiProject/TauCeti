@@ -28,6 +28,7 @@ variable {R : Type*} [CommRing R] {p : ℕ} [hp : Fact p.Prime]
 
 /-- In characteristic `p`, the positive Araki coefficients of Hazewinkel's integral
 formal group law are its Hazewinkel parameters. -/
+@[simp↓]
 theorem arakiCoeff_hazewinkelIntegralFormalGroup_of_charP [CharP R p]
     (v : ℕ+ → R) (n : ℕ+) :
     (hazewinkelIntegralFormalGroup p v).arakiCoeff hp.out (n : ℕ) = v n := by
