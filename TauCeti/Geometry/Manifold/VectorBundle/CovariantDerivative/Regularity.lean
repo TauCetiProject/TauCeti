@@ -110,6 +110,19 @@ theorem alongVectorField_smul (cov : CovariantDerivative I F V)
     (a.contMDiff.mdifferentiableAt (by simp))]
   simp
 
+/-- Adding a `C^n` endomorphism-valued one-form preserves the regularity of a connection.
+The model fibre need not have finite dimension. -/
+theorem ContMDiffCovariantDerivative.addOneForm
+    {cov : CovariantDerivative I F V} (hcov : ContMDiffCovariantDerivative cov n)
+    {A : Π x : M, V x →L[𝕜] TangentSpace I x →L[𝕜] V x}
+    (hA : ContMDiff I (I.prod 𝓘(𝕜, F →L[𝕜] E →L[𝕜] F)) n
+      (fun x ↦ TotalSpace.mk' (F →L[𝕜] E →L[𝕜] F)
+        (E := fun y ↦ V y →L[𝕜] TangentSpace I y →L[𝕜] V y) x (A x))) :
+    ContMDiffCovariantDerivative (cov.addOneForm A) n where
+  contMDiff.contMDiff {σ} hσ := by
+    have h := hA.contMDiffOn.clm_bundle_apply (hσ.of_le le_self_add)
+    exact hcov.contMDiff.contMDiff hσ |>.add_section h
+
 section Real
 
 variable
