@@ -60,6 +60,10 @@ here.
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.isIntegral_blowupComponent`,
+  `AlgebraicGeometry.Scheme.isProper_blowupComponent` and
+  `AlgebraicGeometry.Scheme.topologicalKrullDim_blowupComponent_le_one`: each component of the
+  blowup is an integral scheme, proper over `K`, of dimension at most one.
 * `AlgebraicGeometry.Scheme.dualGraphVertexEquiv_endpoint` and
   `AlgebraicGeometry.Scheme.dualGraphVertexEquiv_endpoint_eq_iff`: the endpoints of an edge are
   the components carrying the two points over the node.
@@ -124,29 +128,41 @@ theorem blowupComponent_over (v : irreducibleComponents (X.singularLocus K).blow
       (X.blowupComponent v).ι ≫ (X.singularLocus K).blowupToBase ≫ X ↘ Spec (.of K) :=
   (rfl)
 
+/-- A component of the blowup is an integral scheme: it is irreducible, and reduced as an open
+subscheme of a regular scheme. -/
+instance isIntegral_blowupComponent (v : irreducibleComponents (X.singularLocus K).blowup) :
+    IsIntegral (X.blowupComponent v).toScheme := by
+  have : IsReduced (X.singularLocus K).blowup := isReduced_of_isReduced_stalk _
+  have : IrreducibleSpace (X.blowupComponent v) := Subtype.irreducibleSpace v.2.1
+  exact isIntegral_of_irreducibleSpace_of_isReduced _
+
+/-- A component of the blowup is proper over `K`: it is also closed in the blowup, which is finite
+over the curve. -/
+instance isProper_blowupComponent (v : irreducibleComponents (X.singularLocus K).blowup) :
+    IsProper ((X.blowupComponent v).toScheme ↘ Spec (.of K)) := by
+  have := X.isFinite_blowupToBase_singularLocus (atWorstNodal K X)
+  have : IsClosedImmersion (X.blowupComponent v).ι :=
+    .of_isPreimmersion _ (by rw [Opens.range_ι]; exact isClosed_of_mem_irreducibleComponents _ v.2)
+  rw [blowupComponent_over]
+  infer_instance
+
+/-- A component of the blowup has dimension at most that of the curve, which is at most one. -/
+theorem topologicalKrullDim_blowupComponent_le_one
+    (v : irreducibleComponents (X.singularLocus K).blowup) :
+    topologicalKrullDim (X.blowupComponent v) ≤ 1 := by
+  have := X.isFinite_blowupToBase_singularLocus (atWorstNodal K X)
+  have hX : topologicalKrullDim X ≤ 1 :=
+    ((familyOfCurves_iff_of_field (X ↘ Spec (.of K))).mp inferInstance).2
+  exact
+    ((X.blowupComponent v).ι ≫ (X.singularLocus K).blowupToBase).topologicalKrullDim_le.trans hX
+
 /-- The cohomology of the structure sheaf of a component of the blowup is finite-dimensional: the
 component is a proper integral scheme of dimension at most one. -/
 instance (v : irreducibleComponents (X.singularLocus K).blowup) (n : ℕ) :
     FiniteDimensional K (TauCeti.AlgebraicGeometry.Scheme.Modules.Cohomology
-      (InvertibleSheaf.trivial (X.blowupComponent v).toScheme).obj n) := by
-  let U := X.blowupComponent v
-  let ν := (X.singularLocus K).blowupToBase
-  have := X.isFinite_blowupToBase_singularLocus (atWorstNodal K X)
-  -- `U` is integral: irreducible, and reduced as an open subscheme of a regular scheme.
-  have : IsReduced (X.singularLocus K).blowup := isReduced_of_isReduced_stalk _
-  have : IrreducibleSpace U := Subtype.irreducibleSpace v.2.1
-  have : IsIntegral U.toScheme := isIntegral_of_irreducibleSpace_of_isReduced _
-  -- `U` is proper over `K`: it is also closed in the blowup, which is finite over the curve.
-  have : IsClosedImmersion U.ι :=
-    .of_isPreimmersion _ (by rw [Opens.range_ι]; exact isClosed_of_mem_irreducibleComponents _ v.2)
-  have : IsProper (U.toScheme ↘ Spec (.of K)) := by
-    rw [blowupComponent_over]
-    infer_instance
-  -- `U` has dimension at most that of the curve, which is at most one.
-  have hX : topologicalKrullDim X ≤ 1 :=
-    ((familyOfCurves_iff_of_field (X ↘ Spec (.of K))).mp inferInstance).2
-  exact Modules.finiteDimensional_cohomology_trivial_of_topologicalKrullDim_le_one K
-    (((U.ι ≫ ν).topologicalKrullDim_le).trans hX) n
+      (InvertibleSheaf.trivial (X.blowupComponent v).toScheme).obj n) :=
+  Modules.finiteDimensional_cohomology_trivial_of_topologicalKrullDim_le_one K
+    (X.topologicalKrullDim_blowupComponent_le_one v) n
 
 /-! ### The points over a node -/
 
