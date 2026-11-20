@@ -297,14 +297,21 @@ theorem range_weightMomentMap_of_basis :
 include h in
 /-- **The moment cone as a facet polyhedron.** For weights dual to a lattice basis `b`, the image
 of the moment map is the facet polyhedron with inward normals `-b_k` and support constants `0`.
-Every constraint is active at its apex `0`, and the normals form the lattice basis
-`b.map (LinearEquiv.neg ℤ)`, so `TauCeti.Toric.isSmoothVertex_of_forall_apply_eq` makes the apex a
-smooth vertex of this presentation. -/
+Its apex `0` is a smooth vertex of this presentation
+(`TauCeti.isSmoothVertex_zero_of_basis`). -/
 theorem range_weightMomentMap_eq_facetPolyhedron_of_basis :
     Set.range (weightMomentMap α) = Toric.facetPolyhedron i (fun k ↦ -b k) 0 := by
   rw [range_weightMomentMap_of_basis h b hα]
   ext ν
   simp
+
+omit [Fintype ι] hα in
+/-- **The apex is a smooth vertex.** The apex `0` is a smooth vertex of the facet presentation of
+the moment cone in `TauCeti.range_weightMomentMap_eq_facetPolyhedron_of_basis`: every constraint
+is active at `0`, and the normals `-b_k` form the lattice basis `b.map (LinearEquiv.neg ℤ)`. -/
+theorem isSmoothVertex_zero_of_basis : Toric.IsSmoothVertex i (fun k ↦ -b k) 0 0 :=
+  Toric.isSmoothVertex_of_forall_apply_eq (b.map (LinearEquiv.neg ℤ)) (fun _ ↦ by simp)
+    fun _ ↦ by simp
 
 end Integral
 
@@ -366,13 +373,10 @@ theorem exists_basis_iff_forall_weightRotation_eq_id_iff (h : Toric.IsIntegralLa
     exact ⟨k, mul_left_cancel₀ (by positivity : (2 * π) ≠ 0) (by linear_combination -hk)⟩
   choose a ha using hint
   -- These integer values form a `ℤ`-linear map `N → ℤ^ι`.
-  let e : N →ₗ[ℤ] ι → ℤ :=
+  let e : N →ₗ[ℤ] ι → ℤ := AddMonoidHom.toIntLinearMap
     { toFun := a
-      map_add' := fun n m ↦ funext fun j ↦ Int.cast_injective (α := ℝ) (by
-        rw [Pi.add_apply, Int.cast_add, ← ha, ← ha, ← ha, map_add, map_add])
-      map_smul' := fun k n ↦ funext fun j ↦ Int.cast_injective (α := ℝ) (by
-        rw [Pi.smul_apply, smul_eq_mul, Int.cast_mul, ← ha, ← ha, map_zsmul, map_zsmul,
-          zsmul_eq_mul, RingHom.id_apply]) }
+      map_zero' := funext fun j ↦ Int.cast_injective (α := ℝ) (by simp [← ha])
+      map_add' := fun n m ↦ funext fun j ↦ Int.cast_injective (α := ℝ) (by simp [← ha]) }
   have he (n : N) (j : ι) : α j (i n) = e n j := ha n j
   -- It is injective because `A` and `i` are, and surjective because `A` is.
   have heinj : Function.Injective e := fun n m hnm ↦ h.injective <| hAinj <| funext fun j ↦ by

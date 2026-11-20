@@ -14,6 +14,7 @@ public import Mathlib.Topology.Instances.AddCircle.Defs
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
+import Mathlib.Analysis.Convex.Strict.Extreme
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Data.Set.Card
@@ -809,22 +810,10 @@ weights (`TauCeti.zero_mem_interior_range_weightMomentMap_id_neg_id`). -/
 theorem zero_notMem_interior_range_weightMomentMap [Nonempty ι] {α : ι → StrongDual ℝ 𝔱}
     (hα : LinearIndependent ℝ α) :
     (0 : StrongDual ℝ 𝔱) ∉ interior (Set.range (weightMomentMap α)) := by
-  classical
-  intro h0
   obtain ⟨j₀⟩ := ‹Nonempty ι›
-  -- Small positive multiples `t α_{j₀}` of a weight would lie in the moment image.
-  have hlim : Filter.Tendsto (fun t : ℝ ↦ t • α j₀) (nhds 0) (nhds 0) := by
-    simpa using (Filter.tendsto_id (x := nhds (0 : ℝ))).smul_const (α j₀)
-  obtain ⟨t, ⟨x, hx⟩, ht⟩ := (((hlim.eventually (mem_interior_iff_mem_nhds.1 h0)).filter_mono
-    nhdsWithin_le_nhds).and self_mem_nhdsWithin).exists (f := nhdsWithin 0 (Set.Ioi 0))
-  -- Then the coefficient of `α_{j₀}` in `μ(x) - t α_{j₀} = 0` would be negative.
-  have hsum : ∑ j, (-(1 / 2) * (x.1 j ^ 2 + x.2 j ^ 2) - (Pi.single j₀ t : ι → ℝ) j) • α j = 0 := by
-    rw [Finset.sum_congr rfl fun j _ ↦ sub_smul _ _ (α j), Finset.sum_sub_distrib,
-      ← weightMomentMap_def, hx, Fintype.sum_eq_single j₀ fun j hj ↦ by
-        rw [Pi.single_eq_of_ne hj, zero_smul], Pi.single_eq_same, sub_self]
-  have hc := Fintype.linearIndependent_iff.1 hα _ hsum j₀
-  rw [Pi.single_eq_same] at hc
-  nlinarith [sq_nonneg (x.1 j₀), sq_nonneg (x.2 j₀), Set.mem_Ioi.1 ht]
+  have : Nontrivial (StrongDual ℝ 𝔱) := ⟨⟨α j₀, 0, hα.ne_zero j₀⟩⟩
+  exact fun h0 ↦ Set.disjoint_left.1 (disjoint_interior_extremePoints _) h0
+    (zero_mem_extremePoints_range_weightMomentMap hα)
 
 /-! ### An apex in the interior of the moment image -/
 
