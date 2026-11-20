@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Finsupp.Defs
+import Mathlib.Data.Finsupp.NeLocus
 import Mathlib.Order.Preorder.Finite
 
 /-!
@@ -14,19 +15,20 @@ import Mathlib.Order.Preorder.Finite
 An index map `s : α → β` induces `Finsupp.lmapDomain M R s : (α →₀ M) →ₗ[R] (β →₀ M)`, sending the
 coefficient at `a` to `s a` (summed on fibres). This file records that the powers of the
 endomorphism `Finsupp.lmapDomain M R f` induced by `f : α → α` are induced by the iterates of
-`f`, together with injectivity criteria over any commutative ring `R`: for the affine
-combinations `(1 - c) • id + c • lmapDomain M R s` along an injective inflationary shift `s`
-(`∀ a, a ≤ s a`), and for the combinations
-`a • (lmapDomain N R s₀).comp f₀ + b • (lmapDomain N R s₁).comp f₁` of injective linear maps
-followed by injections with disjoint ranges, exactly when `v ↦ (a • v, b • v)` is injective on
-the source (for instance when `a = 1 - b`, or when `a` or `b` acts regularly).
+`f`, together with injectivity results over a commutative semiring `R`.
+
+* For an injective inflationary shift `s : α → α` (`∀ a, a ≤ s a`) and `a + b = 1`, the
+  combination `a • id + b • lmapDomain M R s` is injective when `M` is additively cancellative.
+* For injections `s₀, s₁` with disjoint ranges, `a • (lmapDomain N R s₀).comp f₀ +
+  b • (lmapDomain N R s₁).comp f₁` is injective if and only if `v ↦ (f₀ (a • v), f₁ (b • v))` is.
+  In particular it is injective when `f₀, f₁` are injective and `a + b = 1`.
 
 ## Main results
 
 * `Finsupp.lmapDomain_pow`: `lmapDomain M R f ^ n = lmapDomain M R f^[n]`.
-* `Finsupp.one_sub_smul_id_add_smul_lmapDomain_injective`,
-  `Finsupp.smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective`, and
-  `Finsupp.one_sub_smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective`.
+* `Finsupp.smul_id_add_smul_lmapDomain_injective`.
+* `Finsupp.smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective_iff` and its corollary
+  `Finsupp.smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective`.
 -/
 
 public section
@@ -41,82 +43,95 @@ theorem lmapDomain_pow {R M α : Type*} [Semiring R] [AddCommMonoid M] [Module R
   | zero => rw [pow_zero, Function.iterate_zero, lmapDomain_id, Module.End.one_eq_id]
   | succ n ih => rw [pow_succ, ih, Function.iterate_succ, lmapDomain_comp, Module.End.mul_eq_comp]
 
-/-- Over any commutative ring `R`, `(1 - c) • id + c • lmapDomain M R s` is injective for any
-injective inflationary shift `s : α → α` (`∀ a, a ≤ s a`) on a partial order `α`. -/
-theorem one_sub_smul_id_add_smul_lmapDomain_injective
-    {α R M : Type*} [PartialOrder α] [CommRing R] [AddCommGroup M] [Module R M] {s : α → α}
-    (hs : Function.Injective s) (hle : ∀ a, a ≤ s a) (c : R) :
+/-- Over a commutative semiring `R`, if `a + b = 1`, then `a • id + b • lmapDomain M R s` is
+injective on `α →₀ M` for any additively cancellative `M` and any injective inflationary shift
+`s : α → α` (`∀ x, x ≤ s x`) on a partial order `α`. -/
+theorem smul_id_add_smul_lmapDomain_injective
+    {α R M : Type*} [PartialOrder α] [CommSemiring R] [AddCancelCommMonoid M] [Module R M]
+    {s : α → α} (hs : Function.Injective s) (hle : ∀ x, x ≤ s x) {a b : R} (hab : a + b = 1) :
     Function.Injective
-      ((1 - c) • (LinearMap.id : (α →₀ M) →ₗ[R] (α →₀ M)) + c • lmapDomain M R s) := by
-  refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
-  -- Strong induction on the size of the support: `c • v` lies in the kernel too, and has smaller
-  -- support, so `c • v = 0`, and then the map sends `v` to itself.
-  induction hn : v.support.card using Nat.strong_induction_on generalizing v with | _ n ih
-  rcases v.support.eq_empty_or_nonempty with h | h
-  · exact support_eq_empty.1 h
-  obtain ⟨m, hm⟩ := v.support.exists_maximal h
-  -- `c` kills the coefficient at a maximal point `m` of the support of `v`.
-  have hcm : c • v m = 0 := by
-    rcases (hle m).eq_or_lt with h_eq | h_lt
-    · have hmap : mapDomain s v m = v m :=
-        (congrArg (mapDomain s v) h_eq).trans (mapDomain_apply_of_injective hs v m)
-      rw [show v m = 0 by simpa [hmap, ← add_smul] using congrArg (· m) hv, smul_zero]
-    · have hv_sm : v (s m) = 0 := notMem_support_iff.1 fun hsm ↦
-        h_lt.ne (hm.eq_of_le hsm h_lt.le)
-      simpa [hv_sm, mapDomain_apply_of_injective hs] using congrArg (· (s m)) hv
-  have hsupp : (c • v).support ⊂ v.support :=
-    (Finset.ssubset_iff_of_subset support_smul).2 ⟨m, hm.prop, by simpa using hcm⟩
-  have hcv : c • v = 0 :=
-    ih _ (hn ▸ Finset.card_lt_card hsupp) _ (by rw [map_smul, hv, smul_zero]) rfl
-  simpa [sub_smul, hcv, ← mapDomain_smul] using hv
+      (a • (LinearMap.id : (α →₀ M) →ₗ[R] (α →₀ M)) + b • lmapDomain M R s) := by
+  classical
+  intro v w hvw
+  -- Strong induction on the number of points where `v` and `w` differ: `b • v` and `b • w` have
+  -- the same image too, and differ at fewer points, so `b • v = b • w`, and then `a • v = a • w`.
+  induction hn : (v.neLocus w).card using Nat.strong_induction_on generalizing v w with | _ n ih
+  rcases (v.neLocus w).eq_empty_or_nonempty with h | h
+  · exact neLocus_eq_empty.1 h
+  obtain ⟨m, hm⟩ := (v.neLocus w).exists_maximal h
+  -- The point `m` is not fixed by `s`: at a fixed point the map returns the coefficient itself, so
+  -- `v` and `w` would agree at `m`.
+  have h_lt : m < s m := by
+    refine (hle m).lt_of_ne fun h_eq ↦ mem_neLocus.1 hm.prop ?_
+    have hfix (u : α →₀ M) :
+        (a • (LinearMap.id : (α →₀ M) →ₗ[R] (α →₀ M)) + b • lmapDomain M R s) u m = u m := by
+      have hmap : mapDomain s u m = u m :=
+        (congrArg (mapDomain s u) h_eq).trans (mapDomain_apply_of_injective hs u m)
+      simp [hmap, ← add_smul, hab]
+    simpa only [hfix] using congrArg (· m) hvw
+  -- By maximality of `m`, `v` and `w` agree at `s m`, so evaluating at `s m` gives
+  -- `b • v m = b • w m`.
+  have hsm : v (s m) = w (s m) := by
+    by_contra hne
+    exact h_lt.ne (hm.eq_of_le (mem_neLocus.2 hne) h_lt.le)
+  have hbm : b • v m = b • w m := by
+    have h' := congrArg (· (s m)) hvw
+    simp only [LinearMap.add_apply, LinearMap.smul_apply, LinearMap.id_apply, lmapDomain_apply,
+      coe_add, coe_smul, Pi.add_apply, Pi.smul_apply, mapDomain_apply_of_injective hs, hsm] at h'
+    exact add_left_cancel h'
+  have hsub : (b • v).neLocus (b • w) ⊂ v.neLocus w :=
+    (Finset.ssubset_iff_of_subset fun x hx ↦
+      mem_neLocus.2 fun h ↦ mem_neLocus.1 hx (by simp [h])).2
+      ⟨m, hm.prop, by simpa [mem_neLocus] using hbm⟩
+  have hbvw : b • v = b • w :=
+    ih ((b • v).neLocus (b • w)).card (hn ▸ Finset.card_lt_card hsub)
+      (by rw [map_smul, map_smul, hvw]) rfl
+  have hav : a • v = a • w := by
+    have h' : a • v + mapDomain s (b • v) = a • w + mapDomain s (b • w) := by
+      simpa [mapDomain_smul] using hvw
+    rw [hbvw] at h'
+    exact add_right_cancel h'
+  rw [← one_smul R v, ← one_smul R w, ← hab, add_smul, add_smul, hav, hbvw]
 
-/-- The `s₀`-coordinates of `(a • (lmapDomain N R s₀).comp f₀ + b • (lmapDomain N R s₁).comp f₁) v`
-determine `a • v`, when `f₀` and `s₀` are injective and `s₀, s₁` have disjoint ranges. -/
-private theorem smul_eq_smul_of_apply_eq
+/-- Over a commutative semiring `R`, if `s₀, s₁` are injective with disjoint ranges, then
+`a • (lmapDomain N R s₀).comp f₀ + b • (lmapDomain N R s₁).comp f₁` is injective if and only if
+`v ↦ (f₀ (a • v), f₁ (b • v))` is injective. -/
+theorem smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective_iff
     {α₀ α₁ β R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-    [AddCommMonoid N] [Module R N] {s₀ : α₀ → β} {s₁ : α₁ → β} (hs₀ : Function.Injective s₀)
+    [AddCommMonoid N] [Module R N] {s₀ : α₀ → β} {s₁ : α₁ → β}
+    (hs₀ : Function.Injective s₀) (hs₁ : Function.Injective s₁)
     (hdisj : Disjoint (Set.range s₀) (Set.range s₁)) {f₀ : M →ₗ[R] (α₀ →₀ N)}
-    {f₁ : M →ₗ[R] (α₁ →₀ N)} (hf₀ : Function.Injective f₀) {a b : R} {v w : M}
-    (hvw : (a • (lmapDomain N R s₀).comp f₀ + b • (lmapDomain N R s₁).comp f₁) v =
-      (a • (lmapDomain N R s₀).comp f₀ + b • (lmapDomain N R s₁).comp f₁) w) :
-    a • v = a • w :=
-  hf₀ <| by
-    rw [map_smul, map_smul]
-    ext x
-    simpa [fun u ↦ mapDomain_of_notMem_range u _ (Set.disjoint_left.1 hdisj ⟨x, rfl⟩),
-      mapDomain_apply_of_injective hs₀] using congrArg (· (s₀ x)) hvw
+    {f₁ : M →ₗ[R] (α₁ →₀ N)} {a b : R} :
+    Function.Injective (a • (lmapDomain N R s₀).comp f₀ + b • (lmapDomain N R s₁).comp f₁) ↔
+      Function.Injective fun v : M ↦ (f₀ (a • v), f₁ (b • v)) := by
+  -- The map factors through `v ↦ (f₀ (a • v), f₁ (b • v))`, followed by gluing the two blocks into
+  -- a function on `α₀ ⊕ α₁` and mapping along the injection `Sum.elim s₀ s₁`.
+  have hinj : Function.Injective
+      (mapDomain (M := N) (Sum.elim s₀ s₁) ∘ sumFinsuppEquivProdFinsupp.symm) :=
+    (mapDomain_injective (hs₀.sumElim hs₁ fun x y h ↦
+      Set.disjoint_left.1 hdisj ⟨x, rfl⟩ ⟨y, h.symm⟩)).comp
+      sumFinsuppEquivProdFinsupp.symm.injective
+  have hfac : ⇑(a • (lmapDomain N R s₀).comp f₀ + b • (lmapDomain N R s₁).comp f₁) =
+      (mapDomain (Sum.elim s₀ s₁) ∘ sumFinsuppEquivProdFinsupp.symm) ∘
+        fun v : M ↦ (f₀ (a • v), f₁ (b • v)) := by
+    ext v : 1
+    simp [sumElim_eq_add, mapDomain_add, ← mapDomain_comp, mapDomain_smul]
+  rw [hfac, hinj.of_comp_iff]
 
-/-- `a • (lmapDomain N R s₀).comp f₀ + b • (lmapDomain N R s₁).comp f₁` is injective whenever
-`f₀, f₁` are injective, `s₀, s₁` are injective with disjoint ranges, and `v ↦ (a • v, b • v)` is
-injective on `M`. The last condition is also necessary, and holds when `a` or `b` acts regularly on
-`M`; over a ring without zero divisors and a torsion-free `M`, it follows from `a ≠ 0 ∨ b ≠ 0`
-(see `IsSMulRegular.of_ne_zero`). -/
+/-- Over a commutative semiring `R`, if `a + b = 1`, then
+`a • (lmapDomain N R s₀).comp f₀ + b • (lmapDomain N R s₁).comp f₁` is injective whenever `f₀, f₁`
+are injective and `s₀, s₁` are injective with disjoint ranges. -/
 theorem smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective
     {α₀ α₁ β R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
     [AddCommMonoid N] [Module R N] {s₀ : α₀ → β} {s₁ : α₁ → β}
     (hs₀ : Function.Injective s₀) (hs₁ : Function.Injective s₁)
     (hdisj : Disjoint (Set.range s₀) (Set.range s₁)) {f₀ : M →ₗ[R] (α₀ →₀ N)}
     {f₁ : M →ₗ[R] (α₁ →₀ N)} (hf₀ : Function.Injective f₀) (hf₁ : Function.Injective f₁)
-    {a b : R} (hab : Function.Injective fun v : M ↦ (a • v, b • v)) :
+    {a b : R} (hab : a + b = 1) :
     Function.Injective
-      (a • (lmapDomain N R s₀).comp f₀ + b • (lmapDomain N R s₁).comp f₁) := by
-  intro v w hvw
-  have h₀ := smul_eq_smul_of_apply_eq hs₀ hdisj hf₀ hvw
-  rw [add_comm] at hvw
-  exact hab (Prod.ext h₀ (smul_eq_smul_of_apply_eq hs₁ hdisj.symm hf₁ hvw))
-
-/-- Over any commutative ring `R`, every affine combination
-`(1 - c) • (lmapDomain N R s₀).comp f₀ + c • (lmapDomain N R s₁).comp f₁` of injective linear maps
-followed by disjoint-range coordinate embeddings is injective. -/
-theorem one_sub_smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective
-    {α₀ α₁ β R M N : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
-    [AddCommMonoid N] [Module R N] {s₀ : α₀ → β} {s₁ : α₁ → β}
-    (hs₀ : Function.Injective s₀) (hs₁ : Function.Injective s₁)
-    (hdisj : Disjoint (Set.range s₀) (Set.range s₁)) {f₀ : M →ₗ[R] (α₀ →₀ N)}
-    {f₁ : M →ₗ[R] (α₁ →₀ N)} (hf₀ : Function.Injective f₀) (hf₁ : Function.Injective f₁) (c : R) :
-    Function.Injective
-      ((1 - c) • (lmapDomain N R s₀).comp f₀ + c • (lmapDomain N R s₁).comp f₁) :=
-  smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective hs₀ hs₁ hdisj hf₀ hf₁ fun v w h ↦ by
-    simpa [← add_smul] using congrArg (fun p : M × M ↦ p.1 + p.2) h
+      (a • (lmapDomain N R s₀).comp f₀ + b • (lmapDomain N R s₁).comp f₁) :=
+  (smul_lmapDomain_comp_add_smul_lmapDomain_comp_injective_iff hs₀ hs₁ hdisj).2 fun v w h ↦ by
+    rw [← one_smul R v, ← one_smul R w, ← hab, add_smul, add_smul,
+      hf₀ (congrArg Prod.fst h), hf₁ (congrArg Prod.snd h)]
 
 end Finsupp
