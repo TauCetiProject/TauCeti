@@ -63,16 +63,6 @@ private theorem homComplexificationEquiv_apply (e : W ≃L[ℝ] F) (d : D ≃L[�
   apply complexification_ext <;>
     simp [homComplexificationEquiv, frameComplex]
 
-private theorem homComplexificationEquiv_in_frames (e : W ≃L[ℝ] F) (d : D ≃L[ℝ] G)
-    (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) :
-    (e.baseChangeComplex.trans (tensorContinuousLinearEquivComplexification F)).arrowCongr
-      (d.baseChangeComplex.trans (tensorContinuousLinearEquivComplexification G))
-        (homComplexificationLinearEquiv u) =
-      Complexification.continuousLinearMapEquiv F G
-        (((e.arrowCongr d).baseChangeComplex.trans
-          (tensorContinuousLinearEquivComplexification (F →L[ℝ] G))) u) := by
-  rw [← homComplexificationEquiv_apply e d u]
-  ext v <;> simp [homComplexificationEquiv, frameComplex, sub_eq_add_neg]
 
 section Topological
 variable {B F G : Type*} [TopologicalSpace B]
@@ -119,18 +109,6 @@ def bundleHomComplexificationEquiv (x : B) : (ℂ ⊗[ℝ] (V x →L[ℝ] L x)) 
       (ℂ ⊗[ℝ] (V x →L[ℝ] L x)) → ((ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x))) =
       homComplexificationLinearEquiv := by rfl
 
-/-- The intrinsic native comparison commutes with every pair of real fibre frames. -/
-theorem bundleHomComplexificationEquiv_in_frames (x : B)
-    (e : V x ≃L[ℝ] F) (d : L x ≃L[ℝ] G)
-    (u : ℂ ⊗[ℝ] (V x →L[ℝ] L x)) :
-    (e.baseChangeComplex.trans (tensorContinuousLinearEquivComplexification F)).arrowCongr
-      (d.baseChangeComplex.trans (tensorContinuousLinearEquivComplexification G))
-        (bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) x u) =
-      Complexification.continuousLinearMapEquiv F G
-        (((e.arrowCongr d).baseChangeComplex.trans
-          (tensorContinuousLinearEquivComplexification (F →L[ℝ] G))) u) := by
-  exact homComplexificationEquiv_in_frames e d u
-
 /-- Exact commuting square for the native frames, with no compatibility hypothesis. -/
 theorem bundleHomComplexificationEquiv_in_trivializations (e : Trivialization F (π F V))
     [MemTrivializationAtlas e] (d : Trivialization G (π G L))
@@ -141,7 +119,7 @@ theorem bundleHomComplexificationEquiv_in_trivializations (e : Trivialization F 
       Complexification.continuousLinearMapEquiv F G ((e.continuousLinearMap (RingHom.id ℝ)
         d).complexification
         ⟨x, u⟩).2 := by
-  have h := bundleHomComplexificationEquiv_in_frames (G := G) x
+  have h := homComplexificationLinearEquiv_in_frames
     (e.continuousLinearEquivAt ℝ x hx.1) (d.continuousLinearEquivAt ℝ x hx.2) u
   rw [← e.continuousLinearEquivAt_complexification hx.1,
     ← d.continuousLinearEquivAt_complexification hx.2,
@@ -150,7 +128,8 @@ theorem bundleHomComplexificationEquiv_in_trivializations (e : Trivialization F 
   rw [← e.continuousLinearEquivAt_continuousLinearMap d hx,
     ← (e.continuousLinearMap (RingHom.id ℝ) d).continuousLinearEquivAt_complexification
       (by simpa using hx)] at h
-  simpa only [Trivialization.continuousLinearEquivAt_apply] using h
+  simpa only [Trivialization.continuousLinearEquivAt_apply,
+    bundleHomComplexificationEquiv_coe] using h
 
 /-- The preferred native chart square. -/
 theorem bundleHomComplexificationEquiv_in_trivializationAt (a x : B)

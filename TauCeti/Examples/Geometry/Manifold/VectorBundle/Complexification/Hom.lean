@@ -70,8 +70,8 @@ theorem varying_frame_square (t : ℝ) (u : ℂ ⊗[ℝ] (ℝ →L[ℝ] ℝ)) :
     Complexification.continuousLinearMapEquiv ℝ ℝ
       ((((varyingFrame t).arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ)).baseChangeComplex.trans
         (tensorContinuousLinearEquivComplexification (ℝ →L[ℝ] ℝ))) u) := by
-  exact bundleHomComplexificationEquiv_in_frames (F := ℝ) (G := ℝ) (V := Trivial ℝ ℝ)
-    (L := Trivial ℝ ℝ) t (varyingFrame t) (ContinuousLinearEquiv.refl ℝ ℝ) u
+  simpa only [bundleHomComplexificationEquiv_coe] using
+    homComplexificationLinearEquiv_in_frames (varyingFrame t) (ContinuousLinearEquiv.refl ℝ ℝ) u
 
 /-- The two displayed real frames differ concretely. -/
 theorem varyingFrame_nonconstant : varyingFrame 0 1 ≠ varyingFrame 1 1 := by norm_num

@@ -590,6 +590,25 @@ theorem homComplexificationLinearEquiv_naturality
     | add v w hv hw => simp only [map_add, hv, hw]
   | add u w hu hw => simp only [map_add, add_apply, hu, hw]
 
+open scoped TauCeti.Complexification
+
+/-- The intrinsic Hom comparison intertwines arbitrary real fibre frames with the model
+continuous Hom comparison. -/
+theorem homComplexificationLinearEquiv_in_frames {F G : Type*}
+    [SeminormedAddCommGroup F] [NormedSpace ℝ F]
+    [SeminormedAddCommGroup G] [NormedSpace ℝ G]
+    [TopologicalSpace (ℂ ⊗[ℝ] (W →L[ℝ] D))]
+    [IsComplexificationTopology (W →L[ℝ] D)]
+    (e : W ≃L[ℝ] F) (d : D ≃L[ℝ] G)
+    (u : ℂ ⊗[ℝ] (W →L[ℝ] D)) :
+    (e.baseChangeComplex.trans (tensorContinuousLinearEquivComplexification F)).arrowCongr
+      (d.baseChangeComplex.trans (tensorContinuousLinearEquivComplexification G))
+        (homComplexificationLinearEquiv u) =
+      Complexification.continuousLinearMapEquiv F G
+        (((e.arrowCongr d).baseChangeComplex.trans
+          (tensorContinuousLinearEquivComplexification (F →L[ℝ] G))) u) := by
+  ext v <;> simp [sub_eq_add_neg]
+
 end
 end HomComplexification
 end TauCeti
