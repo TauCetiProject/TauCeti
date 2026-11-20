@@ -34,8 +34,8 @@ The proof has two steps.
   subgroups have a common fixed vertex when every product of an element of `S` and an element
   of `S'` is elliptic: otherwise some element of `S` moves the first dart of the path and some
   element of `S'` moves its last dart (`GTree.isEllipticSubgroup_closure_union`). For the sets
-  `{s}` and `{t}` this says that the product of two elliptic elements without a common fixed
-  vertex is hyperbolic (`GTree.isHyperbolic_mul_of_disjoint`).
+  `{s}` and `{t}` this says that two elliptic elements whose product is elliptic have a common
+  fixed vertex (`GTree.exists_smul_eq_and_smul_eq_of_isElliptic_mul`).
 * Helly's theorem for subtrees (`SerreGraph.IsTree.helly_theorem`): the fixed point sets of
   finitely many such subgroups are convex and, by the first step, pairwise intersecting, so they
   have a common vertex (`GTree.isEllipticSubgroup_closure_iUnion`). The case of singleton sets is
@@ -46,8 +46,8 @@ The proof has two steps.
 
 * `TauCeti.GTree.isHyperbolic_mul_iff_of_smul_src_eq_of_smul_tgt_eq`: if `s` fixes the source and
   `t` the target of a dart, then `s * t` is hyperbolic exactly when neither of them fixes the dart.
-* `TauCeti.GTree.isHyperbolic_mul_of_disjoint`: the product of two elliptic elements without a
-  common fixed vertex is hyperbolic.
+* `TauCeti.GTree.exists_smul_eq_and_smul_eq_of_isElliptic_mul`: two elliptic elements whose
+  product is elliptic have a common fixed vertex.
 * `TauCeti.GTree.isEllipticSubgroup_closure_iUnion`: if finitely many sets each generate a
   subgroup fixing a vertex and the products of elements of two different sets are elliptic, then
   their union generates a subgroup fixing a vertex.
@@ -254,15 +254,6 @@ theorem exists_smul_eq_and_smul_eq_of_isElliptic_mul {s t : G} (hs : T.IsEllipti
     isEllipticSubgroup_closure_union (T := T) (S := {s}) (S' := {t})
       (by simpa [← Subgroup.zpowers_eq_closure]) (by simpa [← Subgroup.zpowers_eq_closure])
       (by simpa)
-
-/-- **Serre's lemma on pairs of elliptic elements.** The product of two elliptic elements without
-a common fixed vertex is hyperbolic. -/
-theorem isHyperbolic_mul_of_disjoint {s t : G} (hs : T.IsElliptic s) (ht : T.IsElliptic t)
-    (hst : Disjoint (fixedBy T.V s) (fixedBy T.V t)) : T.IsHyperbolic (s * t) := by
-  by_contra h
-  obtain ⟨v, hsv, htv⟩ :=
-    exists_smul_eq_and_smul_eq_of_isElliptic_mul hs ht (not_isHyperbolic_iff.mp h)
-  exact Set.disjoint_left.mp hst (mem_fixedBy.mpr hsv) (mem_fixedBy.mpr htv)
 
 /-- **Serre's lemma for two subgroups.** If subgroups `H` and `K` each fix a vertex and every
 product of an element of `H` and an element of `K` is elliptic, then `H ⊔ K` fixes a vertex. -/
