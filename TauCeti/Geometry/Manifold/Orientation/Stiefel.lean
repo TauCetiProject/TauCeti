@@ -8,9 +8,12 @@ module
 public import TauCeti.Geometry.Manifold.Instances.Stiefel
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.LinearAlgebra.Basis.Exact
+import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.LinearAlgebra.Ray
 
 /-!
 # The normal orientation of Stiefel manifolds
@@ -57,14 +60,12 @@ and the two-frame orientation orients the domain `T¹Sⁿ⁺¹ × S¹` of that m
 
 The orientation is constructed, as for the sphere, from a nowhere-vanishing continuous top form:
 the pullback to the Stiefel manifold of the contraction of a volume form of `Fin k → E` with the
-normal vector fields. It does not vanish because the normals are sent by the derivative of the
-Gram map to independent vectors, while the tangent vectors are sent to zero.
+normal vector fields (`ContinuousAlternatingMap.curryLeftVec`). It does not vanish because the
+normals are sent by the derivative of the Gram map to independent vectors, while the tangent
+vectors are sent to zero.
 
 ## Main declarations
 
-* `TauCeti.stiefelNormal`: the normal vector field `ν_s` of the Stiefel manifold.
-* `TauCeti.gramSym2Deriv_stiefelNormal`: the derivative of the Gram map sends `ν_s v` to `2` times
-  the coordinate vector of `s`.
 * `Orientation.stiefelOrientation`: the normal orientation of the Stiefel manifold of orthonormal
   `k`-frames.
 * `Orientation.orientation_eq_orientationAt_stiefelOrientation_iff`,
@@ -74,7 +75,9 @@ Gram map to independent vectors, while the tangent vectors are sent to zero.
 * `Orientation.stiefelOrientation_neg`: reversing the orientation of `Fin k → E` reverses the
   normal orientation.
 * `Orientation.stiefelTwoOrientation`: the normal orientation of the Stiefel manifold of
-  orthonormal two-frames, with the normals `(v₀, 0)`, `(0, v₁)`, `(v₁, v₀)`.
+  orthonormal two-frames, with the normals `(v₀, 0)`, `(0, v₁)`, `(v₁, v₀)`; it is
+  `Orientation.stiefelOrientation` for the order `TauCeti.stiefelTwoNormalOrder` of the normals
+  (`Orientation.stiefelTwoOrientation_eq_stiefelOrientation`).
 * `TauCeti.isOrientationPreservingAt_stiefelTwoReflection`,
   `TauCeti.isOrientationReversingAt_stiefelTwoReflection`: the frame reflection `(u, v) ↦ (u, -v)`
   preserves or reverses the normal orientation according to the parity of the dimension.
@@ -98,98 +101,10 @@ open scoped Manifold ContDiff RealInnerProductSpace
 
 namespace TauCeti
 
-/-! ### The normal vector fields -/
-
-section Normal
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {k : ℕ}
-
-/-- The **normal vector field** `ν_s` of the Stiefel manifold indexed by an unordered pair
-`s = s(i, j)` of indices: at a family `v`, the family `ν_s v` has `v j` in slot `i` and `v i` in
-slot `j`, and `0` in the other slots (so `ν_{s(i, i)} v` has `v i` in slot `i`). It is the
-gradient of `v ↦ ⟪v i, v j⟫` for `i ≠ j` and half the gradient of `v ↦ ⟪v i, v i⟫`. -/
-def stiefelNormal (s : Sym2 (Fin k)) : (Fin k → E) →L[ℝ] Fin k → E :=
-  ContinuousLinearMap.pi fun l ↦ ∑ j, if s(l, j) = s then ContinuousLinearMap.proj j else 0
-
-/-- The slot `l` of `ν_s v` is the sum of the vectors `v j` over the indices `j` with
-`s(l, j) = s`. -/
-theorem stiefelNormal_apply (s : Sym2 (Fin k)) (v : Fin k → E) (l : Fin k) :
-    stiefelNormal s v l = ∑ j, if s(l, j) = s then v j else 0 := by
-  simp only [stiefelNormal, ContinuousLinearMap.pi_apply, sum_apply]
-  exact Finset.sum_congr rfl fun j _ ↦ by split_ifs <;> rfl
-
-end Normal
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {k : ℕ}
-
-/-- At an orthonormal family `v`, the derivative of the Gram map sends the normal `ν_s v` to
-`2` times the indicator of `s`: the normals are dual to the coordinates of the Gram map. -/
-theorem gramSym2Deriv_stiefelNormal {v : Fin k → E} (hv : Orthonormal ℝ v) (s : Sym2 (Fin k)) :
-    gramSym2Deriv E k v (stiefelNormal s v) = Pi.single s 2 := by
-  have key (a b : Fin k) : ⟪v a, stiefelNormal s v b⟫ = if s(a, b) = s then 1 else 0 := by
-    rw [stiefelNormal_apply, inner_sum, Finset.sum_eq_single a]
-    · rw [Sym2.eq_swap]
-      split_ifs <;> simp [hv.1 a]
-    · intro j _ hj
-      split_ifs
-      · rw [orthonormal_iff_ite.1 hv]
-        exact ite_eq_right_iff.2 fun h ↦ absurd h.symm hj
-      · exact inner_zero_right _
-    · simp
-  funext s'
-  induction s' using Sym2.ind with
-  | _ a b =>
-    rw [gramSym2Deriv_apply_mk, key, real_inner_comm, key, Sym2.eq_swap, Pi.single_apply]
-    split_ifs <;> norm_num
-
-/-! ### The contraction with the normals -/
-
-/-- The contraction of a continuous alternating form with the vectors `u 0, …, u (N - 1)` in its
-first `N` slots. -/
-private def curryNormals {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {m : ℕ} :
-    {N : ℕ} → (V [⋀^Fin (m + N)]→L[ℝ] ℝ) → (Fin N → V) → V [⋀^Fin m]→L[ℝ] ℝ
-  | 0, f, _ => f
-  | N + 1, f, u => curryNormals (ContinuousAlternatingMap.curryLeft (n := m + N) f (u 0))
-      (Fin.tail u)
-
-private theorem curryNormals_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    {m : ℕ} : ∀ {N : ℕ} (f : V [⋀^Fin (m + N)]→L[ℝ] ℝ) (u : Fin N → V) (t : Fin m → V),
-      curryNormals f u t = f (Matrix.vecAppend (Nat.add_comm m N) u t)
-  | 0, f, u, t => by
-    rw [curryNormals]
-    congr 1
-    funext i
-    simp [Matrix.vecAppend_eq_ite]
-  | N + 1, f, u, t => by
-    rw [curryNormals, curryNormals_apply, ContinuousAlternatingMap.curryLeft_apply_apply]
-    congr 1
-    funext i
-    refine Fin.cases ?_ (fun i ↦ ?_) i
-    · simp [Matrix.vecAppend_eq_ite]
-    · simp only [Matrix.vecAppend_eq_ite, Matrix.cons_val_succ, Fin.val_succ, Fin.tail]
-      split_ifs with h₁ h₂ h₂
-      · rfl
-      · omega
-      · omega
-      · congr 1
-        ext
-        simp
-
-private theorem continuous_curryNormals {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    {m : ℕ} {X : Type*} [TopologicalSpace X] :
-    ∀ {N : ℕ} {F : X → V [⋀^Fin (m + N)]→L[ℝ] ℝ} {u : X → Fin N → V}, Continuous F →
-      Continuous u → Continuous fun x ↦ curryNormals (F x) (u x)
-  | 0, _, _, hF, _ => hF
-  | N + 1, F, u, hF, hu =>
-    continuous_curryNormals (F := fun x ↦ ContinuousAlternatingMap.curryLeft (n := m + N) (F x)
-        (u x 0)) (u := fun x ↦ Fin.tail (u x))
-      (((ContinuousAlternatingMap.curryLeftLI (n := m + N)).continuous.comp hF).clm_apply
-        ((continuous_apply 0).comp hu))
-      (continuous_pi fun i ↦ (continuous_apply i.succ).comp hu)
-
 /-! ### The normal orientation of `V_k(E)` -/
 
-variable [FiniteDimensional ℝ E] {N m : ℕ}
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {k N m : ℕ}
 
 /-- The model space of the Stiefel manifold of orthonormal `k`-frames of `E`. -/
 local notation "𝓥" => 𝓘(ℝ, Fin (k * finrank ℝ E - Nat.choose (k + 1) 2) → ℝ)
@@ -204,14 +119,14 @@ a form of degree `m` on the space of `k`-families. -/
 private def stiefelNormalForm (σ : Fin N ≃ Sym2 (Fin k))
     (O : _root_.Orientation ℝ (Fin k → E) (Fin (m + N))) :
     (Fin k → E) → (Fin k → E) [⋀^Fin m]→L[ℝ] ℝ := fun x ↦
-  curryNormals (stiefelVolume O) fun i ↦ stiefelNormal (σ i) x
+  ContinuousAlternatingMap.curryLeftVec (stiefelVolume O) fun i ↦ stiefelNormal (σ i) x
 
 private theorem stiefelNormalForm_apply (σ : Fin N ≃ Sym2 (Fin k))
     (O : _root_.Orientation ℝ (Fin k → E) (Fin (m + N))) (x : Fin k → E)
     (t : Fin m → Fin k → E) :
     stiefelNormalForm σ O x t = Module.Ray.someVector O
       (Matrix.vecAppend (Nat.add_comm m N) (fun i ↦ stiefelNormal (σ i) x) t) := by
-  rw [stiefelNormalForm, curryNormals_apply, stiefelVolume,
+  rw [stiefelNormalForm, ContinuousAlternatingMap.curryLeftVec_apply, stiefelVolume,
     AlternatingMap.coe_toContinuousAlternatingMap]
 
 /-- `stiefelNormalForm σ O`, as a form on the space of `k`-families. -/
@@ -238,7 +153,7 @@ private theorem stiefelTopForm_apply (σ : Fin N ≃ Sym2 (Fin k))
 private theorem isSmoothForm_stiefelTopForm (σ : Fin N ≃ Sym2 (Fin k))
     (O : _root_.Orientation ℝ (Fin k → E) (Fin (m + N))) :
     IsSmoothForm 𝓥 0 (stiefelTopForm σ O) :=
-  (isSmoothForm_modelSpace_iff.2 (contDiff_zero.2 (continuous_curryNormals continuous_const
+  (isSmoothForm_modelSpace_iff.2 (contDiff_zero.2 (continuous_const.curryLeftVec
     (continuous_pi fun i ↦ (stiefelNormal (σ i)).continuous)))).mpullback
     (contMDiff_coe_stiefel E k)
 
@@ -266,31 +181,13 @@ private theorem exists_basis_coe_eq_vecAppend_stiefelNormal (σ : Fin N ≃ Sym2
   let B₀ : Basis (Fin m ⊕ Fin N) ℝ (Fin k → E) :=
     Basis.ofExactLift (injective_mfderiv_coe_stiefel v) hfg b c _ hs
   -- Listing the normals first and the tangent vectors after them.
-  let e : Fin (m + N) ≃ Fin m ⊕ Fin N :=
-    (finCongr (Nat.add_comm m N)).trans (finSumFinEquiv.symm.trans (Equiv.sumComm _ _))
-  refine ⟨B₀.reindex e.symm, funext fun i ↦ ?_⟩
-  rw [Basis.reindex_apply, Equiv.symm_symm]
-  -- The tangent vectors are read in `Fin k → E`, which is the tangent space of the model by
-  -- definition, so `vecAppend_eq_ite` applies up to unfolding rather than by rewriting.
-  refine Eq.trans ?_ (congrFun (Matrix.vecAppend_eq_ite _ _ _) i).symm
-  -- The coercions of `B₀` to `Fin k → E` and to the tangent space of the model agree by
-  -- definition, so the characterizing lemmas of `ofExactLift` apply up to unfolding.
-  by_cases h : (i : ℕ) < N
-  · refine Eq.trans ?_ (dite_eq_left_of_eq_true (eq_true h)).symm
-    have he : e i = Sum.inr ⟨i, h⟩ := by
-      have hi : Fin.cast (Nat.add_comm m N) i = Fin.castAdd m ⟨i, h⟩ := Fin.ext rfl
-      simp only [e, Equiv.trans_apply, finCongr_apply, hi, finSumFinEquiv_symm_apply_castAdd,
-        Equiv.sumComm_apply, Sum.swap_inl]
-    rw [he]
-    exact Basis.ofExactLift_inr (injective_mfderiv_coe_stiefel v) hfg b c _ hs _
-  · refine Eq.trans ?_ (dite_eq_right_of_eq_false (eq_false h)).symm
-    have he : e i = Sum.inl ⟨i - N, by omega⟩ := by
-      have hi : Fin.cast (Nat.add_comm m N) i = Fin.natAdd N ⟨i - N, by omega⟩ :=
-        Fin.ext (by simp only [Fin.val_cast, Fin.val_natAdd]; omega)
-      simp only [e, Equiv.trans_apply, finCongr_apply, hi, finSumFinEquiv_symm_apply_natAdd,
-        Equiv.sumComm_apply, Sum.swap_inr]
-    rw [he]
-    exact Basis.ofExactLift_inl (injective_mfderiv_coe_stiefel v) hfg b c _ hs _
+  refine ⟨((B₀.reindex finSumFinEquiv).reindex finAddFlip).reindex (finCongr (Nat.add_comm N m)),
+    ?_⟩
+  rw [Basis.coe_reindex, finCongr_symm]
+  -- `Matrix.vecAppend` is `Fin.append` read through `Fin.cast`, and the vectors of `B₀` are those
+  -- of `ofExactLift` read in `Fin k → E`, the tangent space of the model by definition.
+  exact congrArg (· ∘ Fin.cast (Nat.add_comm m N))
+    (Basis.coe_reindex_finAddFlip_ofExactLift (injective_mfderiv_coe_stiefel v) hfg b c _ hs)
 
 private theorem stiefelTopForm_ne_zero (σ : Fin N ≃ Sym2 (Fin k))
     (hm : k * finrank ℝ E - (k + 1).choose 2 = m)
@@ -317,18 +214,6 @@ def _root_.Orientation.stiefelOrientation (O : _root_.Orientation ℝ (Fin k →
   Manifold.Orientation.ofTopForm ((Module.finrank_fin_fun ℝ).trans hm) (stiefelTopForm σ O)
     (isSmoothForm_stiefelTopForm σ O) (stiefelTopForm_ne_zero σ hm O)
 
-omit [FiniteDimensional ℝ E] in
-/-- A volume form positive on the bases of orientation `O` is a positive multiple of the
-determinant of any basis of orientation `O`. -/
-private theorem exists_pos_someVector_eq_smul_det
-    (O : _root_.Orientation ℝ (Fin k → E) (Fin (m + N))) (e : Basis (Fin (m + N)) ℝ (Fin k → E))
-    (he : e.orientation = O) : ∃ r : ℝ, 0 < r ∧ Module.Ray.someVector O = r • e.det := by
-  have h : SameRay ℝ e.det (Module.Ray.someVector O) := by
-    rw [← ray_eq_iff e.det_ne_zero (Module.Ray.someVector_ne_zero O), Module.Ray.someVector_ray]
-    exact he
-  obtain ⟨r, hr, h⟩ := h.exists_pos_left e.det_ne_zero (Module.Ray.someVector_ne_zero O)
-  exact ⟨r, hr, h.symm⟩
-
 /-- A tangent basis `b` of `V_k(E)` at `v` is positive for the normal orientation of `O` and `σ`
 exactly when the normals `ν_{σ 0} v, …, ν_{σ (N - 1)} v` followed by `b`, read in `Fin k → E`
 through the derivative of the inclusion, have positive determinant in a basis `e` of
@@ -344,11 +229,8 @@ theorem _root_.Orientation.orientation_eq_orientationAt_stiefelOrientation_iff
         fun i ↦ mfderiv 𝓥 𝓘(ℝ, Fin k → E) ((↑) : stiefel E k → Fin k → E) v (b i)) := by
   rw [Orientation.stiefelOrientation,
     Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff, stiefelTopForm_apply]
-  obtain ⟨r, hr, h⟩ := exists_pos_someVector_eq_smul_det O e he
-  -- Scalar multiples of alternating maps are evaluated pointwise.
-  have key (w : Fin (m + N) → Fin k → E) : Module.Ray.someVector O w = r * e.det w :=
-    (congrArg (fun f ↦ f w) h).trans rfl
-  rw [key]
+  obtain ⟨r, hr, h⟩ := Module.Ray.exists_pos_someVector_eq_smul e.det_ne_zero he
+  rw [h, smul_apply, smul_eq_mul]
   exact mul_pos_iff_of_pos_left hr
 
 /-- The normals followed by the image of a tangent basis have nonzero determinant in any basis of
@@ -378,20 +260,6 @@ theorem _root_.Orientation.orientation_eq_neg_orientationAt_stiefelOrientation_i
     Ne, O.orientation_eq_orientationAt_stiefelOrientation_iff σ hm b e he, not_lt]
   exact (det_vecAppend_stiefelNormal_ne_zero σ b e).le_iff_lt
 
-omit [FiniteDimensional ℝ E] in
-/-- The volume form of `-O` is a negative multiple of that of `O`. -/
-private theorem exists_pos_someVector_neg_eq_smul
-    (O : _root_.Orientation ℝ (Fin k → E) (Fin (m + N))) :
-    ∃ r : ℝ, 0 < r ∧ Module.Ray.someVector (-O) = r • -Module.Ray.someVector O := by
-  have h : SameRay ℝ (-Module.Ray.someVector O) (Module.Ray.someVector (-O)) := by
-    rw [← ray_eq_iff (neg_ne_zero.2 (Module.Ray.someVector_ne_zero O))
-      (Module.Ray.someVector_ne_zero (-O)),
-      ← neg_rayOfNeZero ℝ (Module.Ray.someVector O) (Module.Ray.someVector_ne_zero O),
-      Module.Ray.someVector_ray, Module.Ray.someVector_ray]
-  obtain ⟨r, hr, h⟩ := h.exists_pos_left (neg_ne_zero.2 (Module.Ray.someVector_ne_zero O))
-    (Module.Ray.someVector_ne_zero (-O))
-  exact ⟨r, hr, h.symm⟩
-
 /-- Reversing the orientation of the space of `k`-families reverses the normal orientation of the
 Stiefel manifold. -/
 @[simp]
@@ -399,34 +267,13 @@ theorem _root_.Orientation.stiefelOrientation_neg
     (O : _root_.Orientation ℝ (Fin k → E) (Fin (m + N))) (σ : Fin N ≃ Sym2 (Fin k))
     (hm : k * finrank ℝ E - (k + 1).choose 2 = m) :
     (-O).stiefelOrientation σ hm = -O.stiefelOrientation σ hm := by
-  ext v
-  have hcard := ((O.stiefelOrientation σ hm).finrank_tangentSpace_eq v).symm
-  let b := Module.finBasisOfFinrankEq ℝ (TangentSpace 𝓥 v) ((Module.finrank_fin_fun ℝ).trans hm)
-  obtain ⟨r, hr, hO⟩ := exists_pos_someVector_neg_eq_smul O
+  obtain ⟨r, hr, hO⟩ := Module.Ray.exists_pos_someVector_neg_eq_smul O
+  refine Manifold.Orientation.ofTopForm_eq_neg_of_eq_smul _ _ _ _ _ (c := fun _ ↦ -r)
+    (fun _ ↦ neg_neg_of_pos hr) fun v ↦ ?_
   -- The top form of `-O` is `-r` times that of `O`.
-  have hφ : stiefelTopForm σ (-O) v b = -(r * stiefelTopForm σ O v b) := by
-    rw [stiefelTopForm_apply, stiefelTopForm_apply, hO, smul_apply, neg_apply, smul_eq_mul,
-      mul_neg]
-  have hne : stiefelTopForm σ O v b ≠ 0 :=
-    ((stiefelTopForm σ O v).map_basis_ne_zero_iff b).2 (stiefelTopForm_ne_zero σ hm O v)
-  have h₁ : b.orientation = ((-O).stiefelOrientation σ hm).orientationAt v ↔
-      stiefelTopForm σ O v b < 0 := by
-    rw [Orientation.stiefelOrientation,
-      Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff, hφ, neg_pos]
-    exact ⟨fun h ↦ neg_of_mul_neg_right h hr.le, fun h ↦ mul_neg_of_pos_of_neg hr h⟩
-  have h₂ : b.orientation = (O.stiefelOrientation σ hm).orientationAt v ↔
-      0 < stiefelTopForm σ O v b := by
-    rw [Orientation.stiefelOrientation,
-      Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff]
-  rw [Manifold.Orientation.orientationAt_neg]
-  rcases lt_or_gt_of_ne hne with hlt | hgt
-  · rw [← h₁.2 hlt]
-    exact ((b.orientation).eq_or_eq_neg _ hcard).resolve_left fun h ↦
-      (h₂.1 h).not_gt hlt
-  · have hb := ((b.orientation).eq_or_eq_neg (((-O).stiefelOrientation σ hm).orientationAt v)
-      hcard).resolve_left fun h ↦ (h₁.1 h).not_gt hgt
-    rw [← h₂.2 hgt, hb]
-    exact (neg_neg (G := _root_.Orientation ℝ (TangentSpace 𝓥 v) (Fin m)) _).symm
+  ext t
+  rw [ContinuousAlternatingMap.smul_apply, stiefelTopForm_apply, stiefelTopForm_apply, hO,
+    smul_apply, neg_apply, smul_eq_mul, smul_eq_mul, mul_neg, neg_mul]
 
 /-! ### Orthonormal two-frames -/
 
@@ -434,9 +281,28 @@ section Two
 
 variable {n : ℕ} [Fact (finrank ℝ E = n + 1 + 1)]
 
-/-- The order `s(0, 0)`, `s(1, 1)`, `s(0, 1)` of the unordered pairs of indices of two-frames. -/
-private def stiefelTwoNormalOrder : Fin 3 ≃ Sym2 (Fin 2) :=
+/-- The order `s(0, 0)`, `s(1, 1)`, `s(0, 1)` of the unordered pairs of indices of two-frames,
+in which `Orientation.stiefelTwoOrientation` lists the normals. -/
+def stiefelTwoNormalOrder : Fin 3 ≃ Sym2 (Fin 2) :=
   Equiv.ofBijective ![s(0, 0), s(1, 1), s(0, 1)] (by decide)
+
+/-- The first pair in the order of the normals of two-frames is `s(0, 0)`. -/
+@[simp]
+theorem stiefelTwoNormalOrder_zero : stiefelTwoNormalOrder 0 = s(0, 0) := by
+  rw [stiefelTwoNormalOrder, Equiv.ofBijective_apply]
+  rfl
+
+/-- The second pair in the order of the normals of two-frames is `s(1, 1)`. -/
+@[simp]
+theorem stiefelTwoNormalOrder_one : stiefelTwoNormalOrder 1 = s(1, 1) := by
+  rw [stiefelTwoNormalOrder, Equiv.ofBijective_apply]
+  rfl
+
+/-- The third pair in the order of the normals of two-frames is `s(0, 1)`. -/
+@[simp]
+theorem stiefelTwoNormalOrder_two : stiefelTwoNormalOrder 2 = s(0, 1) := by
+  rw [stiefelTwoNormalOrder, Equiv.ofBijective_apply]
+  rfl
 
 omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = n + 1 + 1)] in
 /-- For two-frames, the normals in the order of `stiefelTwoNormalOrder` are
@@ -501,6 +367,15 @@ def _root_.Orientation.stiefelTwoOrientation
     Manifold.Orientation 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) (stiefel E 2)
       (Fin (2 * n + 1)) :=
   O.stiefelOrientation (m := 2 * n + 1) (N := 3) stiefelTwoNormalOrder stiefelTwo_dim
+
+/-- The normal orientation of two-frames is the normal orientation of `V_k(E)` for `k = 2`, with
+the normals in the order `stiefelTwoNormalOrder`. -/
+theorem _root_.Orientation.stiefelTwoOrientation_eq_stiefelOrientation
+    (O : _root_.Orientation ℝ (Fin 2 → E) (Fin (2 * n + 4)))
+    (hm : 2 * finrank ℝ E - (2 + 1).choose 2 = 2 * n + 1) :
+    O.stiefelTwoOrientation =
+      O.stiefelOrientation (m := 2 * n + 1) (N := 3) stiefelTwoNormalOrder hm := by
+  rw [Orientation.stiefelTwoOrientation]
 
 /-- A tangent basis `b` of the Stiefel manifold at `v` is positive for the normal orientation of
 `O` exactly when the normals `(v₀, 0)`, `(0, v₁)`, `(v₁, v₀)` followed by `b`, read in `Fin 2 → E`
@@ -577,14 +452,10 @@ under `(a, b) ↦ (a, -b)`. -/
 private theorem alternatingMap_frameFlip_comp
     (f : (Fin 2 → E) [⋀^Fin (2 * n + 4)]→ₗ[ℝ] ℝ) (w : Fin (2 * n + 4) → Fin 2 → E) :
     f (frameFlip ∘ w) = (-1) ^ finrank ℝ E * f w := by
-  let e := Module.finBasisOfFinrankEq ℝ (Fin 2 → E) (finrank_fin_two_fun (n := n))
-  -- Scalar multiples of alternating maps are evaluated pointwise.
-  have hf (u : Fin (2 * n + 4) → Fin 2 → E) : f u = f e * e.det u :=
-    (congrArg (fun g ↦ g u) (f.eq_smul_basis_det e)).trans rfl
-  have hdet := e.det_comp (frameFlip (E := E) : (Fin 2 → E) →ₗ[ℝ] Fin 2 → E) w
-  rw [det_frameFlip, ContinuousLinearMap.coe_coe] at hdet
-  rw [hf, hf w, hdet]
-  ring
+  have h := congr($(AlternatingMap.compLinearMap_eq_det_smul
+    (Module.finBasisOfFinrankEq ℝ (Fin 2 → E) (finrank_fin_two_fun (n := n))) f
+    (frameFlip (E := E) : (Fin 2 → E) →ₗ[ℝ] Fin 2 → E)) w)
+  rwa [det_frameFlip, AlternatingMap.compLinearMap_apply, smul_apply, smul_eq_mul] at h
 
 /-- The derivative of the frame reflection, read in `Fin 2 → E`, is `(a, b) ↦ (a, -b)`. -/
 private theorem mfderiv_coe_mfderiv_stiefelTwoReflection (w : stiefel E 2)
