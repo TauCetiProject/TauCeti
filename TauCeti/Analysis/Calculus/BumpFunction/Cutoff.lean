@@ -12,7 +12,6 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Topology.Compactness.SigmaCompact
 import Mathlib.Topology.Sets.Opens
-import Mathlib.Analysis.Calculus.Deriv.Support
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Algebra.Order.Field.SquareGap
@@ -58,9 +57,7 @@ prescribed `ε` (`TauCeti.exists_contDiff_angle_cutoff`). On the line, a smooth 
 identity equals `s` on `[-r, r]` and vanishes outside `(-R, R)`
 (`TauCeti.exists_contDiff_cutoff_id`). On an inner product space, a smooth, even, compactly
 supported cutoff equals one on the annulus `r ≤ ‖ξ‖ ≤ R` and vanishes on the ball of radius `r / 2`
-(`TauCeti.exists_contDiff_cutoff_annulus`). Smooth plateaus supported in `[c - r - 1, c + r + 1]`
-have `L²` mass at least `2 r` and derivative energy bounded independently of `c` and `r`
-(`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a function supported in a closed
+(`TauCeti.exists_contDiff_cutoff_annulus`). The squared gradient of a function supported in a closed
 ball with bounded gradient there has integral at most the squared bound times the volume of the ball
 (`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`).
 
@@ -267,9 +264,7 @@ theorem _root_.ContDiffOn.exists_contDiff_eventually_eq_prod_univ [NormedSpace �
     ∃ g : E × G → F, ContDiff ℝ k g ∧ ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ η, g (y, η) = f (y, η) := by
   obtain ⟨ψ, hψ, -, hψone, -, hψU⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one hU hKU
   have hψU' : tsupport (fun p : E × G => ψ p.1) ⊆ U ×ˢ univ :=
-    (closure_minimal (t := tsupport ψ ×ˢ (univ : Set G))
-      (fun p hp => ⟨subset_tsupport ψ hp, mem_univ p.2⟩)
-      ((isClosed_tsupport ψ).prod isClosed_univ)).trans (prod_mono hψU subset_rfl)
+    (tsupport_comp_subset_preimage ψ continuous_fst).trans fun _ hx => ⟨hψU hx, mem_univ _⟩
   refine ⟨fun p => ψ p.1 • f p, hf.contDiff_smul_of_tsupport_subset (hU.prod isOpen_univ)
     ((hψ.of_le (by simp)).comp contDiff_fst).contDiffOn hψU', fun x hx => ?_⟩
   filter_upwards [hψone x hx] with y hy η
@@ -744,46 +739,6 @@ theorem exists_contDiff_cutoff_annulus [InnerProductSpace ℝ E] [FiniteDimensio
 
 
 open MeasureTheory Metric in
-/-- **Smooth plateaus on the line with uniformly bounded derivative.** There is a constant `C`
-such that around every centre `c` and for every radius `0 ≤ r`, some smooth `ψ : ℝ → ℝ` has
-topological support in `closedBall c (r + 1)` and satisfies `2 r ≤ ∫ ψ²` and `∫ ψ'² ≤ C`. The
-`L²` mass of the plateau grows with `r` while the energy of its derivative stays bounded, which is
-what escaping approximate kernels of first-order operators need. The plateau is the radial cutoff
-`TauCeti.exists_forall_contDiff_cutoff_closedBall` between radii `r` and `r + 1`. -/
-theorem exists_forall_contDiff_plateau : ∃ C : ℝ, ∀ (c : ℝ) {r : ℝ}, 0 ≤ r → ∃ ψ : ℝ → ℝ,
-    ContDiff ℝ ∞ ψ ∧ tsupport ψ ⊆ closedBall c (r + 1) ∧
-      2 * r ≤ ∫ s, ψ s ^ 2 ∧ ∫ s, deriv ψ s ^ 2 ≤ C := by
-  obtain ⟨K, -, hK⟩ := exists_forall_contDiff_cutoff_closedBall (E := ℝ)
-  refine ⟨2 * K ^ 2, fun c r hr ↦ ?_⟩
-  obtain ⟨ψ, hψ, -, hψ1, hψt, hψd, -⟩ := hK c hr (lt_add_one r)
-  have hψc : HasCompactSupport ψ := (isCompact_closedBall c _).of_isClosed_subset
-    (isClosed_tsupport ψ) hψt
-  refine ⟨ψ, hψ, hψt, ?_, ?_⟩
-  · -- `ψ = 1` on `closedBall c r`.
-    calc 2 * r = ∫ s in closedBall c r, ψ s ^ 2 := by
-          rw [setIntegral_congr_fun (g := fun _ ↦ 1) measurableSet_closedBall
-              fun s hs ↦ by simp [hψ1 hs],
-            setIntegral_const, Real.volume_real_closedBall hr, smul_eq_mul, mul_one]
-      _ ≤ ∫ s, ψ s ^ 2 := setIntegral_le_integral
-          ((hψ.pow 2).continuous.integrable_of_hasCompactSupport
-            (hψc.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num)))
-          (.of_forall fun _ ↦ sq_nonneg _)
-  · -- `ψ'` vanishes off the annulus `closedBall c (r + 1) \ ball c r`, where `|ψ'| ≤ K`.
-    have h0 (s : ℝ) (hs : s ∉ closedBall c (r + 1) \ ball c r) : deriv ψ s ^ 2 = 0 := by
-      rcases not_and_or.1 hs with hs | hs
-      · simp [notMem_support.1 fun h ↦ hs (hψt (support_deriv_subset h))]
-      · simp [(hψ1.eventuallyEq_of_mem (Filter.mem_of_superset
-          (isOpen_ball.mem_nhds (not_not.1 hs)) ball_subset_closedBall)).deriv_eq]
-    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero h0]
-    refine (Real.le_norm_self _).trans ((norm_setIntegral_le_of_norm_le_const (C := K ^ 2)
-      ((measure_mono sdiff_subset).trans_lt measure_closedBall_lt_top) fun s _ ↦ ?_).trans_eq ?_)
-    · simpa [gradient_eq_deriv'] using pow_le_pow_left₀ (norm_nonneg _) (hψd s) 2
-    · rw [measureReal_sdiff (ball_subset_closedBall.trans (closedBall_subset_closedBall
-          (by linarith))) measurableSet_ball measure_closedBall_lt_top.ne,
-        Real.volume_real_closedBall (by linarith), Real.volume_real_ball hr]
-      ring
-
-open MeasureTheory Metric in
 /-- A function whose gradient is at most `K` on a closed ball and vanishes off it has
 `∫_s ‖∇ψ‖² ≤ K² |B|` over every set `s`, where `B` is the closed ball. -/
 theorem setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall
@@ -826,12 +781,9 @@ theorem exists_cutoff_fderiv_bound :
   · refine β.one_of_mem_closedBall ?_
     rw [mem_closedBall, dist_zero_right, hnorm]
     exact (inv_mul_le_one₀ hr).2 (mem_closedBall.1 hx)
-  · refine Function.notMem_support.1 fun hx' ↦ ?_
-    have hmem : r⁻¹ • (x - c) ∈ Function.support β := hx'
-    rw [β.support_eq, mem_ball, dist_zero_right, hnorm] at hmem
-    have h2 : r⁻¹ * dist x c < 2 := hmem
-    rw [inv_mul_lt_iff₀ hr] at h2
-    linarith
+  · refine β.zero_of_le_dist ?_
+    rw [dist_zero_right, hnorm]
+    exact (le_inv_mul_iff₀ hr).2 (by simp only [β]; linarith)
   · exact ((β.contDiff (n := 1)).differentiable one_ne_zero _).hasFDerivAt.comp x
       (((hasFDerivAt_id x).sub_const c).const_smul r⁻¹)
   · refine (ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_mul (hC _) ?_ (norm_nonneg _) hC0)
