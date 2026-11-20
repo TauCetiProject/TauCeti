@@ -112,7 +112,7 @@ variable {A B K L : Type*} [CommRing A] [CommRing B] [IsDedekindDomain A] [IsDom
 homomorphism `f : A →+* B` into a domain `B` if and only if its class lies in the kernel of
 `ClassGroup.map f hf`. -/
 theorem map_mk0_eq_one_iff (f : A →+* B) (hf : Function.Injective f) (I : (Ideal A)⁰) :
-    map f hf (mk0 I) = 1 ↔ (I.1.map f).IsPrincipal := by
+    map f hf (mk0 I) = 1 ↔ (I.val.map f).IsPrincipal := by
   have hmk : map f hf (mk0 I) = mk (FractionRing B)
       (Units.map (FractionalIdeal.extendedHom' (FractionRing B)
         (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective f hf)).toMonoidHom
@@ -140,14 +140,14 @@ theorem map_eq_one_iff_forall_isPrincipal (f : A →+* B) (hf : Function.Injecti
   · intro h
     ext x
     obtain ⟨I, rfl⟩ := mk0_surjective x
-    exact (map_mk0_eq_one_iff f hf I).mpr (h I.1)
+    exact (map_mk0_eq_one_iff f hf I).mpr (h I.val)
 
 variable (A B) [Algebra A B] [Module.IsTorsionFree A B]
 
 /-- A nonzero integral ideal of a Dedekind domain `A` becomes principal in a torsion-free domain
 extension `B` if and only if its class lies in the kernel of `ClassGroup.extendedHom A B`. -/
 theorem extendedHom_mk0_eq_one_iff (I : (Ideal A)⁰) :
-    extendedHom A B (mk0 I) = 1 ↔ (I.1.map (algebraMap A B)).IsPrincipal := by
+    extendedHom A B (mk0 I) = 1 ↔ (I.val.map (algebraMap A B)).IsPrincipal := by
   rw [extendedHom_eq_map A B]
   exact map_mk0_eq_one_iff (algebraMap A B) (FaithfulSMul.algebraMap_injective A B) I
 
