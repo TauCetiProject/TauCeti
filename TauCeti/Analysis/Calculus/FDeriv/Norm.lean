@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.FDeriv.Norm
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
+import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 
 /-!
@@ -18,8 +19,10 @@ import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 At a local extremum of the norm of a map, its derivative is orthogonal to its value. In
 particular, the derivative of a map into a sphere is tangent to the sphere. Away from the origin,
 a vanishing derivative of a norm-composition forces the one-dimensional profile derivative to
-vanish. In any real normed space, a curve whose derivative is a multiple `c • f a` of its value
-has norm with derivative `c * ‖f a‖` (`HasDerivAt.norm_of_smul_self`).
+vanish. A function that is nonincreasing in the norm has derivatives of equal norm at any
+two points of one level where they do not vanish (`TauCeti.norm_fderiv_eq_of_antitone_norm`).
+In any real normed space, a curve whose derivative is a multiple `c • f a` of its value has norm
+with derivative `c * ‖f a‖` (`HasDerivAt.norm_of_smul_self`).
 
 The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
 sum of the squared partial derivatives of its components along `1` and `I`
@@ -49,6 +52,34 @@ theorem deriv_eq_zero_of_fderiv_comp_norm_eq_zero {v : ℝ → E} {x : F} (hx : 
   have h := congr($(((differentiableAt_of_deriv_ne_zero hv).hasDerivAt.hasFDerivAt.comp x
     hn.hasFDerivAt).fderiv.symm.trans hcrit) x)
   exact hv (by simpa [hn.fderiv_norm_self, hx] using h)
+
+/-- **Gradients of radially nonincreasing functions.** If `v` is nonincreasing in the norm, then
+any two points of the same level of `v` at which its totalized derivative does not vanish lie on
+the same centered sphere, and the derivatives there have the same norm. -/
+theorem norm_fderiv_eq_of_antitone_norm {v : F → ℝ} (hv : ∀ x y, ‖x‖ ≤ ‖y‖ → v y ≤ v x)
+    {x y : F} (hx : fderiv ℝ v x ≠ 0) (hy : fderiv ℝ v y ≠ 0) (hxy : v x = v y) :
+    ‖fderiv ℝ v x‖ = ‖fderiv ℝ v y‖ := by
+  -- A point strictly inside the sphere through a point of the same level is a local minimum.
+  have hmin {a b : F} (hab : ‖a‖ < ‖b‖) (heq : v a = v b) : fderiv ℝ v a = 0 := by
+    refine IsLocalMin.fderiv_eq_zero ?_
+    filter_upwards [Metric.isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hab)] with z hz
+    rw [heq]
+    exact hv z b (mem_ball_zero_iff.1 hz).le
+  have hnorm : ‖x‖ = ‖y‖ := by
+    rcases lt_trichotomy ‖x‖ ‖y‖ with h | h | h
+    · exact absurd (hmin h hxy) hx
+    · exact h
+    · exact absurd (hmin h hxy.symm) hy
+  -- The reflection exchanging `x` and `y` is a linear isometry preserving `v`.
+  let T := (Submodule.reflection (ℝ ∙ (x - y))ᗮ).toContinuousLinearEquiv
+  have hT : v ∘ T = v := funext fun z ↦ by
+    have hz : ‖T z‖ = ‖z‖ := (Submodule.reflection (ℝ ∙ (x - y))ᗮ).norm_map z
+    exact le_antisymm (hv _ _ hz.ge) (hv _ _ hz.le)
+  have hTx : T x = y := Submodule.reflection_sub hnorm
+  have hcomp := T.comp_right_fderiv (f := v) (x := x)
+  rw [hT, hTx] at hcomp
+  rw [hcomp]
+  exact (fderiv ℝ v y).opNorm_comp_linearIsometryEquiv (Submodule.reflection (ℝ ∙ (x - y))ᗮ)
 
 /-- At a local extremum `w` of `‖ψ‖`, the Fréchet derivative of `ψ` is orthogonal to `ψ w`. This
 covers a map whose norm is constant near `w`: the derivative of a map into a sphere is tangent to

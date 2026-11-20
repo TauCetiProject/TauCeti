@@ -27,6 +27,8 @@ derivative increases from a nonnegative value.
   adjacent-slope inequalities.
 * `ConvexOn.sub_eq_sub_of_slope_le` proves constancy of the difference when the slopes
   interlace.
+* `ConvexOn.add_rightDeriv_mul_sub_le`: the tangent line with the right derivative as slope lies
+  below a convex function.
 * `TauCeti.strictConvexOn_Icc_of_deriv3_pos`: strict convexity on `[a, b]` from a positive third
   derivative and a nonnegative second derivative at `a`.
 
@@ -88,6 +90,21 @@ theorem sub_eq_sub_of_slope_le (hφ : ConvexOn ℝ I φ) (hψ : ConvexOn ℝ I �
   rw [le_antisymm (hφ.rightDeriv_le_rightDeriv_of_slope_le hψ hx (h₁ x · · hxI))
     (hψ.rightDeriv_le_rightDeriv_of_slope_le hφ hx (h₂ x · · hxI)), sub_self] at hd
   exact hasDerivWithinAt_Ioi_iff_Ici.1 hd
+
+/-- **The tangent line of a convex function.** At an interior point `x` of `I`, the line through
+`(x, φ x)` whose slope is the right derivative of `φ` at `x` lies below `φ` on all of `I`. -/
+theorem add_rightDeriv_mul_sub_le (hφ : ConvexOn ℝ I φ) {x y : ℝ} (hx : x ∈ interior I)
+    (hy : y ∈ I) : φ x + derivWithin φ (Ioi x) x * (y - x) ≤ φ y := by
+  rcases lt_trichotomy x y with hxy | rfl | hyx
+  · have h := hφ.rightDeriv_le_slope_of_mem_interior hx hy hxy
+    rw [slope_def_field, le_div_iff₀ (sub_pos.2 hxy)] at h
+    linarith
+  · simp
+  · have hslope := hφ.slope_le_leftDeriv_of_mem_interior hy hx hyx
+    rw [slope_def_field, div_le_iff₀ (sub_pos.2 hyx)] at hslope
+    have hderiv := mul_le_mul_of_nonneg_right (hφ.leftDeriv_le_rightDeriv_of_mem_interior hx)
+      (sub_pos.2 hyx).le
+    linarith
 
 end ConvexOn
 
