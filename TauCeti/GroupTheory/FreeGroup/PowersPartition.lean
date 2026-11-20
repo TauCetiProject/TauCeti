@@ -31,11 +31,6 @@ with `γⱼ = b^j w` form the required partition.
 
 ## Main results
 
-* `FreeGroup.toWord_of_zpow_mul`: if `g` does not begin with the inverse of the letter
-  `b ^ sign k`, the reduced word of `b ^ k * g` is `|k|` copies of that letter followed by the
-  reduced word of `g`.
-* `FreeGroup.exists_eq_of_zpow_mul`: every element is `b ^ k * g'` with `g'` beginning with
-  neither `b` nor `b⁻¹`.
 * `FreeGroup.exists_powers_partition`: the Powers partition property of a free group on a type of
   generators with two distinct elements.
 
@@ -52,71 +47,6 @@ public section
 namespace FreeGroup
 
 variable {α : Type*}
-
-section LeadingPower
-
-variable [DecidableEq α] {b : α} {k : ℤ} {g : FreeGroup α}
-
-/-- If the reduced word of `g` does not begin with the inverse of the letter `b ^ sign k`, nothing
-cancels in `b ^ k * g`: its reduced word is `|k|` copies of that letter followed by the reduced word
-of `g`. -/
-theorem toWord_of_zpow_mul (hg : g ∉ startsWith (b, !decide (0 ≤ k))) :
-    (of b ^ k * g).toWord = List.replicate k.natAbs (b, decide (0 ≤ k)) ++ g.toWord := by
-  rw [toWord_mul, toWord_of_zpow]
-  refine IsReduced.reduce_eq
-    (List.isChain_append.2 ⟨isReduced_replicate _ _, isReduced_toWord, ?_⟩)
-  intro x hx y hy hxy
-  obtain rfl := List.eq_of_mem_replicate (List.mem_of_mem_getLast? hx)
-  obtain ⟨y₁, y₂⟩ := y
-  dsimp only at hxy ⊢
-  subst hxy
-  by_contra hne
-  refine hg (mem_startsWith_iff_head?_eq.2 ?_)
-  rw [Option.mem_def.1 hy]
-  cases y₂ <;> simp_all
-
-/-- Under the hypothesis of `toWord_of_zpow_mul`, the word length of `b ^ k * g` is `|k|` plus the
-word length of `g`. -/
-theorem norm_of_zpow_mul (hg : g ∉ startsWith (b, !decide (0 ≤ k))) :
-    norm (of b ^ k * g) = k.natAbs + norm g := by
-  simp [norm, toWord_of_zpow_mul hg]
-
-/-- A nontrivial power `b ^ k` times an element not beginning with the inverse of the letter
-`b ^ sign k` begins with that letter. -/
-theorem of_zpow_mul_mem_startsWith (hk : k ≠ 0) (hg : g ∉ startsWith (b, !decide (0 ≤ k))) :
-    of b ^ k * g ∈ startsWith (b, decide (0 ≤ k)) := by
-  simp [mem_startsWith_iff_head?_eq, toWord_of_zpow_mul hg, List.head?_replicate, hk]
-
-variable (b) in
-/-- Every element of a free group factors as `b ^ k * g'` with `g'` beginning with neither `b` nor
-`b⁻¹`: `b ^ k` is the leading power of `b` in its reduced word. -/
-theorem exists_eq_of_zpow_mul (g : FreeGroup α) :
-    ∃ (k : ℤ) (g' : FreeGroup α), (∀ s, g' ∉ startsWith (b, s)) ∧ g = of b ^ k * g' := by
-  suffices h : ∀ l : List (α × Bool), IsReduced l →
-      ∃ (k : ℤ) (g' : FreeGroup α), (∀ s, g' ∉ startsWith (b, s)) ∧ mk l = of b ^ k * g' by
-    obtain ⟨k, g', hg', h⟩ := h g.toWord isReduced_toWord
-    exact ⟨k, g', hg', by rwa [mk_toWord] at h⟩
-  intro l hl
-  induction l with
-  | nil => exact ⟨0, 1, fun s h => startsWith.ne_one _ h rfl, by rw [zpow_zero, one_mul, one_eq_mk]⟩
-  | cons c l ih =>
-    by_cases hc : c.1 = b
-    · obtain ⟨k, g', hg', hl'⟩ := ih (hl.infix (List.suffix_cons c l).isInfix)
-      obtain ⟨_, s⟩ := c
-      dsimp only at hc
-      subst hc
-      rw [← List.singleton_append, ← mul_mk, hl', ← mul_assoc]
-      cases s
-      · refine ⟨-1 + k, g', hg', ?_⟩
-        rw [zpow_add, zpow_neg_one, of, inv_mk_singleton]
-        rfl
-      · exact ⟨1 + k, g', hg', by rw [zpow_add, zpow_one, of]⟩
-    · refine ⟨0, mk (c :: l), fun s hs => hc ?_, by simp⟩
-      rw [mem_startsWith_iff_head?_eq, toWord_mk, hl.reduce_eq, List.head?_cons,
-        Option.some_inj] at hs
-      rw [hs]
-
-end LeadingPower
 
 section Partition
 
