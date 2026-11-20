@@ -30,7 +30,9 @@ uniform for `z` in a ball, and the complex derivative in `z`.
 * `Complex.norm_cexp_neg_mul_sub_sq_le`: the Gaussian bound
   `‖exp (-(c (t - z))²)‖ ≤ exp (c² D²) exp (-(c² / 2) t²)` for `‖z‖ ≤ D`.
 * `Complex.hasDerivAt_cexp_neg_mul_sub_sq`: the complex derivative of
-  `z ↦ exp (-(c (t - z))²)`.
+  `z ↦ exp (-(c (t - z))²)`, for complex `c` and `t`.
+* `Complex.hasDerivAt_cexp_neg_add_sq_div_two`: the complex derivative of
+  `w ↦ exp (-(z + w)² / 2)`.
 -/
 
 public section
@@ -91,11 +93,30 @@ theorem norm_cexp_neg_mul_sub_sq_le (c t : ℝ) {z : ℂ} {D : ℝ} (hz : ‖z�
   nlinarith [mul_nonneg (sq_nonneg c) (sq_nonneg (t - 2 * z.re)), mul_le_mul_of_nonneg_left hz'
     (sq_nonneg c)]
 
-/-- The complex derivative of the translated Gaussian `z ↦ exp (-(c (t - z))²)`. -/
-theorem hasDerivAt_cexp_neg_mul_sub_sq (c t : ℝ) (z : ℂ) :
+/-- The complex derivative of the translated Gaussian `z ↦ exp (-(c (t - z))²)`, for complex
+scale `c` and centre `t`. -/
+theorem hasDerivAt_cexp_neg_mul_sub_sq (c t z : ℂ) :
     HasDerivAt (fun z : ℂ => cexp (-(c * (t - z)) ^ 2))
       (cexp (-(c * (t - z)) ^ 2) * (2 * c ^ 2 * (t - z))) z := by
-  have h := (((hasDerivAt_id' z).const_sub (t : ℂ)).const_mul (c : ℂ)).fun_pow 2 |>.fun_neg.cexp
+  have h := (((hasDerivAt_id' z).const_sub t).const_mul c).fun_pow 2 |>.fun_neg.cexp
+  convert h using 1
+  ring
+
+/-- The complex derivative of the translated Gaussian `w ↦ exp (-(z + w)² / 2)`: it is
+`-(z + w) exp (-(z + w)² / 2)`. This is `Complex.hasDerivAt_cexp_neg_mul_sub_sq` at scale
+`1 / √2` and centre `0`, composed with the translation `w ↦ z + w`. -/
+theorem hasDerivAt_cexp_neg_add_sq_div_two (z w : ℂ) :
+    HasDerivAt (fun v : ℂ => cexp (-((z + v) ^ 2) / 2)) (cexp (-((z + w) ^ 2) / 2) * -(z + w))
+      w := by
+  have hc : ((√2 : ℝ) : ℂ)⁻¹ ^ 2 = 1 / 2 := by
+    rw [inv_pow, ← ofReal_pow, Real.sq_sqrt zero_le_two, ofReal_ofNat, one_div]
+  -- At scale `1 / √2` and centre `0` the Gaussian exponent is `-u² / 2`.
+  have hexp (u : ℂ) : -(((√2 : ℝ) : ℂ)⁻¹ * (0 - u)) ^ 2 = -(u ^ 2) / 2 := by
+    rw [mul_pow, hc]
+    ring
+  have h := (hasDerivAt_cexp_neg_mul_sub_sq ((√2 : ℝ) : ℂ)⁻¹ 0 (z + w)).comp w
+    ((hasDerivAt_id' w).const_add z)
+  simp only [Function.comp_def, hexp, hc] at h
   convert h using 1
   ring
 
