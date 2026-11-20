@@ -39,6 +39,9 @@ take energies with values in `(-∞, ∞]`; here `φ` may take the value `⊥`, 
 
 ## Main results
 
+* `TauCeti.moreauYosida_eq_top_of_forall_eq_top` and
+  `TauCeti.self_mem_moreauYosidaResolvent_of_eq_top`: when `φ = ⊤` at finite distance from `x`,
+  `φ_τ(x) = ⊤` and `x ∈ J_τ x`.
 * `TauCeti.apply_add_le_of_mem_moreauYosidaResolvent`: the one-step energy estimate
   `φ y + d(x, y)² / (2τ) ≤ φ x` for `y ∈ J_τ x`.
 * `TauCeti.edist_ne_top_of_mem_moreauYosidaResolvent`: a resolvent step has finite length.
@@ -145,6 +148,19 @@ theorem mem_moreauYosidaResolvent_iff_eq_moreauYosida :
       edist x y ≠ ⊤ ∧ φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) = moreauYosida φ τ x :=
   ⟨fun h ↦ ⟨h.1, le_antisymm (le_iInf₂ h.2) (moreauYosida_le φ τ h.1)⟩,
     fun h ↦ ⟨h.1, fun _ hz ↦ h.2.le.trans (moreauYosida_le φ τ hz)⟩⟩
+
+/-- The Moreau–Yosida approximation at `x` is `⊤` whenever `φ` is `⊤` at every point at finite
+distance from `x`. -/
+theorem moreauYosida_eq_top_of_forall_eq_top (h : ∀ y, edist x y ≠ ⊤ → φ y = ⊤) :
+    moreauYosida φ τ x = ⊤ :=
+  top_unique <| le_moreauYosida_iff.2 fun y hy ↦ by
+    rw [h y hy, EReal.top_add_of_ne_bot (EReal.coe_ennreal_ne_bot _)]
+
+/-- When `φ_τ(x) = ⊤`, `x` itself lies in the resolvent `J_τ x`. -/
+theorem self_mem_moreauYosidaResolvent_of_eq_top (h : moreauYosida φ τ x = ⊤) :
+    x ∈ moreauYosidaResolvent φ τ x :=
+  mem_moreauYosidaResolvent_iff.2 ⟨by simp, fun _ hz ↦
+    le_top.trans (by rw [← h]; exact moreauYosida_le φ τ hz)⟩
 
 /-- **One-step energy estimate.** A resolvent step `y ∈ J_τ x` lowers the energy by at least the
 penalty `d(x, y)² / (2τ)`. -/

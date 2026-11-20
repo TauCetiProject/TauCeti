@@ -28,7 +28,9 @@ For `f` differentiable on an open set `s` and mapping it into `t`, the same boun
 Fréchet derivative `fderiv ℝ f` as Jacobian and `μ` on `t` in place of `μ` on `f '' s`
 (`MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`). If moreover the derivative is
 invertible on `s`, then almost-everywhere properties on `t` pull back along `f` to almost-everywhere
-properties on `s` (`MeasureTheory.ae_restrict_comp_of_differentiableOn`).
+properties on `s` (`MeasureTheory.ae_restrict_comp_of_differentiableOn`). Conversely, if `f` is
+`μ`-almost everywhere measurable and admits a differentiable left inverse `g` with `|det Dg| ≤ J`
+everywhere, then `μ.map f ≤ J • μ` (`MeasureTheory.map_addHaar_le_smul_of_leftInverse`).
 
 Such a pushforward bound `μ.map f ≤ C • ν` gives the `eLpNorm` estimate for precomposition with
 `f` (`MeasureTheory.eLpNorm_comp_le_of_map_le_smul`). For a change of variables no upper bound on
@@ -57,6 +59,8 @@ a permutation of the vertices of a simplex, acts on integrals over it.
   `c⁻¹ μ` on `f '' s`.
 * `MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`: the same for `f`
   differentiable on an open set `s` and mapping it into `t`, with `μ` on `t` as the target.
+* `MeasureTheory.map_addHaar_le_smul_of_leftInverse`: the pushforward `μ.map f` is at most `J • μ`
+  when `f` admits a differentiable left inverse `g` with `|det (fderiv ℝ g)| ≤ J`.
 * `MeasureTheory.ae_restrict_comp_of_differentiableOn`: almost-everywhere properties pull back
   along a map that is injective with invertible derivative on an open set.
 * `MeasureTheory.exists_det_bounds_of_isCompact`: Jacobian and derivative bounds on a compact
@@ -128,6 +132,24 @@ theorem map_restrict_le_smul_restrict_of_differentiableOn (hs : IsOpen s)
     (μ.restrict s).map f ≤ (ENNReal.ofReal c)⁻¹ • μ.restrict t :=
   (map_restrict_le_smul_restrict_image_of_differentiableOn μ hs hf hinj subset_rfl
     hs.measurableSet hc hdet).trans (by gcongr; exact hmaps.image_subset)
+
+/-- **Pushforward bound from a Jacobian upper bound on a left inverse.** If `f` is `μ`-almost
+everywhere measurable and admits a differentiable left inverse `g` with `|det (fderiv ℝ g y)| ≤ J`
+everywhere, then `f` pushes `μ` forward to at most `J • μ`. -/
+theorem map_addHaar_le_smul_of_leftInverse {g : E → E} {J : ℝ} (hf : AEMeasurable f μ)
+    (hg : Differentiable ℝ g) (hgf : Function.LeftInverse g f)
+    (hJ : ∀ y, |(fderiv ℝ g y).det| ≤ J) :
+    μ.map f ≤ ENNReal.ofReal J • μ := by
+  refine Measure.le_iff.2 fun t ht ↦ ?_
+  rw [Measure.map_apply_of_aemeasurable hf ht]
+  calc μ (f ⁻¹' t)
+      ≤ μ (g '' t) := measure_mono fun x hx ↦ ⟨f x, hx, hgf x⟩
+    _ ≤ ∫⁻ y in t, ENNReal.ofReal |(fderiv ℝ g y).det| ∂μ :=
+        addHaar_image_le_lintegral_abs_det_fderiv μ ht
+          fun y _ ↦ (hg y).hasFDerivAt.hasFDerivWithinAt
+    _ ≤ ∫⁻ _ in t, ENNReal.ofReal J ∂μ :=
+        setLIntegral_mono' ht fun y _ ↦ ENNReal.ofReal_le_ofReal (hJ y)
+    _ = (ENNReal.ofReal J • μ) t := by simp
 
 /-- **Null sets pull back along a map with invertible derivative.** If `f` is injective and
 differentiable on an open set `s`, with invertible derivative there, and maps `s` into `t`, then a
