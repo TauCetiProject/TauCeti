@@ -24,8 +24,8 @@ This is the chain-level counterpart of Mathlib's `CategoryTheory.Idempotents.Kar
 construction it follows: the idempotents are split at the level of Hom complexes rather than only
 in an underlying category.  Applied to a pretriangulated envelope it is the candidate DG model of
 an idempotent completion, as for perfect derived categories.  Only closed idempotents are split
-here; comparing `H⁰` of the envelope with the idempotent completion of `H⁰`, which requires
-lifting idempotents up to homotopy, is not treated in this file.
+here; `TauCeti/CategoryTheory/DG/Karoubi/HomotopyCategory.lean` compares `H⁰` of the envelope with
+the idempotent completion of `H⁰`.
 
 The embedding `X ↦ (X, 1)` is a DG functor which is an isomorphism on every Hom complex, hence
 quasi-fully faithful.  Every object of the envelope is a retract, in the category `Z⁰` of closed
@@ -124,12 +124,8 @@ theorem d_mem_homSubmodule {P Q : DGKaroubi R C} {i j : ℤ} {f : DGHom R i P.X 
   by_cases hij : i + 1 = j
   · subst hij
     refine ⟨?_, ?_⟩
-    · have key := dgDifferential_dgComp R P.p f (zero_add i)
-      rw [hf.1, P.dgDifferential_p, zero_dgComp, zero_add, Int.negOnePow_zero, one_smul] at key
-      exact key.symm
-    · have key := dgDifferential_dgComp R f Q.p (add_zero i)
-      rw [hf.2, Q.dgDifferential_p, dgComp_zero, smul_zero, add_zero] at key
-      exact key.symm
+    · rw [← dgDifferential_dgComp_of_dgDifferential_eq_zero_left R P.dgDifferential_p, hf.1]
+    · rw [← dgDifferential_dgComp_of_dgDifferential_eq_zero_right R f Q.dgDifferential_p, hf.2]
   · rw [(dgHomComplex R P.X Q.X).shape i j hij]
     exact zero_mem _
 
@@ -429,7 +425,7 @@ theorem closedHomMk_comp {P Q S : DGKaroubi R C} (f : DGHom R 0 P.X Q.X)
     (hg : g ∈ homSubmodule Q S 0) (hdg : dgDifferential R 0 g = 0) :
     closedHomMk f hf hdf ≫ closedHomMk g hg hdg =
       closedHomMk (dgComp R f g (zero_add 0)) (dgComp_mem_homSubmodule hf hg _)
-        (by rw [dgDifferential_dgComp, hdf, hdg, zero_dgComp, dgComp_zero, smul_zero, add_zero]) :=
+        (by rw [dgDifferential_dgComp_of_dgDifferential_eq_zero_left R hdf, hdg, dgComp_zero]) :=
   closedHom_ext <| by
     rw [dgHomVal_dgClosedHom_comp, dgHomVal_dgClosedHom_closedHomMk,
       dgHomVal_dgClosedHom_closedHomMk, dgHomVal_dgClosedHom_closedHomMk]
