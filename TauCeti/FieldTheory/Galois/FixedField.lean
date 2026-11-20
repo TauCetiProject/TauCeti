@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
 import Mathlib.FieldTheory.Galois.Infinite
+import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
@@ -77,6 +78,9 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `IntermediateField.finiteDimensional_fixedField` and `IntermediateField.isGalois_fixedField`:
   Artin's theorem on the fixed field of a finite subgroup, with no hypothesis on `M / K`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
+* `IntermediateField.fixedField_le_iff_fixingSubgroup_le_of_isClosed` and
+  `IntermediateField.finiteDimensional_fixedField_of_isOpen`: the infinite Galois correspondence
+  for a closed subgroup, and finiteness of the field fixed by an open one
 * `IntermediateField.card_fixingSubgroup_le`
 * `IntermediateField.fixingSubgroup_adjoin_simple`, with
   `IntermediateField.mem_fixedField_stabilizer`,
@@ -187,6 +191,28 @@ Mathlib's `IsGalois.of_fixed_field` on the fixed field of the Galois corresponde
 instance isGalois_fixedField (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
     IsGalois (fixedField H) M :=
   IsGalois.of_fixed_field M H
+
+/-- **The fixed field of a closed subgroup lies in `E` exactly when the fixers of `E` lie in the
+subgroup**, for a Galois extension `M / K` of any degree. Mathlib's
+`IsGalois.fixedField_le_iff_fixingSubgroup_le` is the finite-dimensional case, in which every
+subgroup is closed for the Krull topology. -/
+theorem fixedField_le_iff_fixingSubgroup_le_of_isClosed [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsClosed (H : Set (M ≃ₐ[K] M)))
+    {E : IntermediateField K M} :
+    fixedField H ≤ E ↔ E.fixingSubgroup ≤ H :=
+  ⟨fun h ↦ (fixingSubgroup_antitone h).trans
+      (InfiniteGalois.fixingSubgroup_fixedField ⟨H, hH⟩).le,
+    fun h ↦ (fixedField_le h).trans (InfiniteGalois.fixedField_fixingSubgroup E).le⟩
+
+/-- **The fixed field of an open subgroup is finite** over the base, for a Galois extension
+`M / K` of any degree: the open subgroup is the fixing subgroup of its fixed field, and Mathlib's
+`InfiniteGalois.isOpen_iff_finite` identifies the intermediate fields with open fixers. -/
+theorem finiteDimensional_fixedField_of_isOpen [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsOpen (H : Set (M ≃ₐ[K] M))) :
+    FiniteDimensional K (fixedField H) := by
+  rw [← InfiniteGalois.isOpen_iff_finite,
+    InfiniteGalois.fixingSubgroup_fixedField ⟨H, Subgroup.isClosed_of_isOpen H hH⟩]
+  exact hH
 
 end IntermediateField
 
