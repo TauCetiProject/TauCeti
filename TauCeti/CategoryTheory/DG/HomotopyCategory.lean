@@ -399,8 +399,8 @@ theorem dgCompZero_mem_dgBoundaries_of_left {X Y Z : C}
     dgCompZero R f g ∈ dgBoundaries R X Z := by
   obtain ⟨h, rfl⟩ := hf
   refine ⟨dgComp R h g (add_zero (-1)), ?_⟩
-  rw [dgDifferential_dgComp, (mem_dgCycles R).mp hg]
-  simp only [dgComp_zero, smul_zero, add_zero, dgCompZero_def]
+  rw [dgDifferential_dgComp_of_dgDifferential_eq_zero_right R h ((mem_dgCycles R).mp hg),
+    dgCompZero_def]
 
 /-- Composing a degree-zero cocycle on the left with a degree-zero boundary gives a boundary. -/
 theorem dgCompZero_mem_dgBoundaries_of_right {X Y Z : C}
@@ -409,8 +409,8 @@ theorem dgCompZero_mem_dgBoundaries_of_right {X Y Z : C}
     dgCompZero R f g ∈ dgBoundaries R X Z := by
   obtain ⟨h, rfl⟩ := hg
   refine ⟨dgComp R f h (zero_add (-1)), ?_⟩
-  rw [dgDifferential_dgComp, (mem_dgCycles R).mp hf]
-  simp only [zero_dgComp, zero_add, Int.negOnePow_zero, one_smul, dgCompZero_def]
+  rw [dgDifferential_dgComp_of_dgDifferential_eq_zero_left R ((mem_dgCycles R).mp hf) h,
+    dgCompZero_def]
 
 /-- Composition restricted to degree-zero cocycles. -/
 def dgCyclesComp (X Y Z : C) :
