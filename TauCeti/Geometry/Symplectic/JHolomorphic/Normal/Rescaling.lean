@@ -188,6 +188,19 @@ theorem normalLinearization_apply (J : E × N → E × N →L[ℝ] E × N) (p v 
         (fderiv ℝ J (p.1, 0) (0, p.2) (v.1, 0)).2 + (J (p.1, 0) (0, v.2)).2) := by
   simp [normalLinearization]
 
+/-- The normal linearization preserves the vertical directions `{0} × N`, acting on them by the
+block `J_NN(z, 0)`. -/
+theorem normalLinearization_apply_zero_mk (J : E × N → E × N →L[ℝ] E × N) (p : E × N) (n : N) :
+    normalLinearization J p (0, n) = (0, (J (p.1, 0) (0, n)).2) := by
+  simp [Prod.mk_zero_zero]
+
+/-- The normal linearization acts on a general vector `(v, n)` as on `(v, 0)`, plus the block
+`J_NN(z, 0)` acting on the vertical part `(0, n)`. -/
+theorem normalLinearization_apply_mk (J : E × N → E × N →L[ℝ] E × N) (p : E × N) (v : E)
+    (n : N) : normalLinearization J p (v, n) =
+      normalLinearization J p (v, 0) + (0, (J (p.1, 0) (0, n)).2) := by
+  rw [← normalLinearization_apply_zero_mk, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
+
 /-- The operator norm of the normal linearization grows at most linearly in the normal
 coordinate: `‖J_N(z, W)‖ ≤ ‖J(z, 0)‖ + ‖dJ(z, 0)‖ ‖W‖`. -/
 theorem norm_normalLinearization_le (J : E × N → E × N →L[ℝ] E × N) (p : E × N) :
