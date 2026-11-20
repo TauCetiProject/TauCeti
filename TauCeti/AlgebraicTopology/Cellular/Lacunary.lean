@@ -23,11 +23,13 @@ whose neighbouring dimensions carry no cells (or which carries none itself), hom
 `n`-cells, with coefficients in any abelian category whose coproducts indexed by the `n`-cells are
 exact (automatic for finitely many `n`-cells), integral coefficients included.
 
-Through the cellular–singular comparison the same holds for the singular homology of every space
-`Y` homotopy equivalent to an absolute CW complex `C`
+Through the cellular–singular comparison the same holds for the singular homology of a space `Y`
+homotopy equivalent to an absolute CW complex `C`
 (`ContinuousMap.HomotopyEquiv.singularHomologyIsoSigma`), for instance of a manifold through the
-CW model of a Morse function on it: `Hₙ(Y; R) ≅ ∐_{n-cells} R`. The complex projective spaces,
-with one cell in each even dimension, are the basic example.
+CW model of a Morse function on it: `Hₙ(Y; R) ≅ ∐_{n-cells} R`. This needs coproducts indexed by
+the cells of every dimension to be exact, and the `(n + 1)`-skeleton comparison of `C` to induce an
+isomorphism on `Hₙ`, as it does when `C` is finite-dimensional or sequential colimits in `A` are
+exact. The complex projective spaces, with one cell in each even dimension, are the basic example.
 
 ## Main declarations
 
@@ -129,5 +131,19 @@ def singularHomologyIsoSigma (n : ℕ) [∀ m, HasExactColimitsOfShape (Discrete
       ∐ fun _ : cell C n ↦ R :=
   e.singularHomologyIso R n ≪≫ (cellularSingularHomologyIsoOfCWComplex C R n).symm ≪≫
     cellularHomologyIsoSigma C R n hsucc hpred
+
+/-- The isomorphism `ContinuousMap.HomotopyEquiv.singularHomologyIsoSigma` is the homotopy
+invariance isomorphism, followed by the cellular–singular comparison and the cellular lacunary
+isomorphism `TauCeti.cellularHomologyIsoSigma`. -/
+@[reassoc]
+lemma singularHomologyIsoSigma_hom (n : ℕ) [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A]
+    [IsIso ((skeletonBasePair C (n + 1)).singularHomologyMap (skeletonBasePairToComplex C (n + 1))
+      R n)]
+    (hsucc : IsEmpty (cell C n) ∨ IsEmpty (cell C (n + 1)))
+    (hpred : ∀ m, m + 1 = n → IsEmpty (cell C m) ∨ IsEmpty (cell C n)) :
+    (e.singularHomologyIsoSigma R n hsucc hpred).hom =
+      (e.singularHomologyIso R n).hom ≫ (cellularSingularHomologyIsoOfCWComplex C R n).inv ≫
+        (cellularHomologyIsoSigma C R n hsucc hpred).hom := by
+  simp only [singularHomologyIsoSigma, Iso.trans_hom, Iso.symm_hom]
 
 end ContinuousMap.HomotopyEquiv

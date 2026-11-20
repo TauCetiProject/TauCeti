@@ -131,8 +131,9 @@ theorem exists_cwComplex_homotopyEquiv_projectivization_complex (n : ℕ) :
   have := (ComplexProjectiveSpace.finite_cwComplex (n := n)).finite_cell m
   -- Both cell types are finite, with one element in each even dimension up to `2n`.
   refine Finite.card_eq.1 ?_
-  rw [ComplexProjectiveSpace.nat_card_cell_cwComplex, Nat.card_congr c, Nat.card_coe_set_eq,
-    ncard_def, ← criticalCount_def, criticalCount_projectiveMomentFunction_complex hw]
+  rw [ComplexProjectiveSpace.nat_card_cell_cwComplex, Nat.card_congr c,
+    natCard_sep_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount,
+    criticalCount_projectiveMomentFunction_complex hw]
   split_ifs <;> simp
 
 /-! ### The real line -/

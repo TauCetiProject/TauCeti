@@ -117,6 +117,7 @@ polynomial in the Morse inequalities.
   cutting the values of a Morse function into bands with at most one critical value each.
 * `TauCeti.criticalCount` and `TauCeti.totalCriticalCount`: the extended counts of critical
   points, with `TauCeti.criticalCount_eq_zero_iff`,
+  `TauCeti.natCard_sep_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount`,
   `TauCeti.natCard_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount`,
   `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
@@ -952,15 +953,22 @@ theorem criticalCount_le_totalCriticalCount (j : ℕ) :
     criticalCount I f j ≤ totalCriticalCount I f :=
   encard_le_encard (sep_subset _ _)
 
+/-- The number of critical points of index `j` is the cardinality of the set of critical points
+of index `j`; both are `0` when there are infinitely many. -/
+theorem natCard_sep_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount (j : ℕ) :
+    Nat.card {x ∈ criticalPoints I f | manifoldMorseIndex I f x = j} =
+      (criticalCount I f j).toNat := by
+  rw [Nat.card_coe_set_eq, ncard_def, criticalCount_def]
+
 /-- The number of critical points of index `j` is the cardinality of the type of critical points
 of index `j`; both are `0` when there are infinitely many. -/
 @[simp]
 theorem natCard_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount (j : ℕ) :
     Nat.card {p : criticalPoints I f // manifoldMorseIndex I f p = j} =
-      (criticalCount I f j).toNat := by
-  rw [Nat.card_congr (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ criticalPoints I f)
-    (manifoldMorseIndex I f · = j)), criticalCount_def, ← ncard_def]
-  exact Nat.card_coe_set_eq {x | x ∈ criticalPoints I f ∧ manifoldMorseIndex I f x = j}
+      (criticalCount I f j).toNat :=
+  (Nat.card_congr (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ criticalPoints I f)
+    (manifoldMorseIndex I f · = j))).trans
+    (natCard_sep_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount j)
 
 /-- A function and its negation have the same number of critical points. -/
 @[simp]
