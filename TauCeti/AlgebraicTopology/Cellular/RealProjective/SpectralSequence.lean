@@ -183,7 +183,8 @@ theorem exists_linearEquiv_skeletalSpectralSequence_page_two_d_eq_two_mul (hk : 
   refine ⟨skeletalSpectralSequenceFirstPageLinearEquiv R hkN ≪≫ₗ
       DistribMulAction.toLinearEquiv R R (Units.opEquiv.symm (MulOpposite.op u)),
     skeletalSpectralSequenceFirstPageLinearEquiv R (by lia), fun x ↦ ?_⟩
-  change _ = 2 * (skeletalSpectralSequenceFirstPageLinearEquiv R hkN x * u)
-  rw [hu, ← mul_assoc, ← mul_assoc, (Commute.ofNat_right _ 2).eq]
+  rw [LinearEquiv.trans_apply, DistribMulAction.toLinearEquiv_apply, Units.smul_def,
+    Units.coe_opEquiv_symm, MulOpposite.unop_op, op_smul_eq_mul, hu, ← mul_assoc, ← mul_assoc,
+    (Commute.ofNat_right _ 2).eq]
 
 end TauCeti.RealProjectiveSpace
