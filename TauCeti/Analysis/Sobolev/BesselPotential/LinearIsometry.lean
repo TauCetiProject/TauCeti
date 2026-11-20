@@ -124,16 +124,19 @@ theorem compLinearIsometryEquiv_symm (A : E ≃ₗᵢ[ℝ] E) :
 theorem compLinearIsometryEquiv_trans (A B : E ≃ₗᵢ[ℝ] E) :
     compLinearIsometryEquiv s p (F := F) (A.trans B) =
       (compLinearIsometryEquiv s p B).trans (compLinearIsometryEquiv s p A) :=
-  LinearIsometryEquiv.ext fun u ↦ ext
-    (compCLMOfContinuousLinearEquiv_trans A.toContinuousLinearEquiv B.toContinuousLinearEquiv
-      u.toDistr)
+  LinearIsometryEquiv.ext fun u ↦ ext (by
+    simp only [toDistr_compLinearIsometryEquiv, LinearIsometryEquiv.trans_apply,
+      LinearIsometryEquiv.toContinuousLinearEquiv_trans]
+    exact compCLMOfContinuousLinearEquiv_trans _ _ _)
 
 /-- Composition with the identity is the identity of `H^{s,p}`. -/
 @[simp]
 theorem compLinearIsometryEquiv_refl :
     compLinearIsometryEquiv s p (F := F) (LinearIsometryEquiv.refl ℝ E) =
       LinearIsometryEquiv.refl ℂ _ :=
-  LinearIsometryEquiv.ext fun u ↦ ext (compCLMOfContinuousLinearEquiv_refl u.toDistr)
+  LinearIsometryEquiv.ext fun u ↦ ext (by
+    simp only [toDistr_compLinearIsometryEquiv, LinearIsometryEquiv.toContinuousLinearEquiv_refl,
+      compCLMOfContinuousLinearEquiv_refl, LinearIsometryEquiv.coe_refl, id_eq])
 
 /-- On a Schwartz function `φ`, composition with `A` is the Schwartz function `φ ∘ A`. -/
 @[simp]

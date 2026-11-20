@@ -122,8 +122,11 @@ theorem compCLMOfContinuousLinearEquiv_trans (e₁ e₂ : E ≃L[ℝ] E) (T : �
 @[simp]
 theorem compCLMOfContinuousLinearEquiv_refl (T : 𝓢'(E, F)) :
     compCLMOfContinuousLinearEquiv F (ContinuousLinearEquiv.refl ℝ E) T = T := by
-  rw [compCLMOfContinuousLinearEquiv]
-  exact congrArg (· T) (compCLM_refl _ _)
+  have h : (ContinuousLinearEquiv.refl ℝ E).toEquiv = Equiv.refl E := by
+    ext x
+    simp only [ContinuousLinearEquiv.coe_toEquiv, ContinuousLinearEquiv.coe_refl', id_eq,
+      Equiv.refl_apply]
+  simp only [compCLMOfContinuousLinearEquiv, h, compCLM_refl, ContinuousLinearMap.id_apply]
 
 /-- Pulling back along `e` and then along `e⁻¹` gives back the original distribution. -/
 @[simp]
@@ -239,8 +242,9 @@ theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ
 /-- The Bessel potential `J^s` commutes with the pullback along a linear isometry. -/
 theorem besselPotential_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ] E) (s : ℝ) (T : 𝓢'(E, F)) :
     besselPotential E F s (compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv T) =
-      compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (besselPotential E F s T) :=
-  fourierMultiplierCLM_compCLMOfContinuousLinearEquiv A
+      compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (besselPotential E F s T) := by
+  rw [besselPotential]
+  exact fourierMultiplierCLM_compCLMOfContinuousLinearEquiv A
     (Complex.hasTemperateGrowth_ofReal.comp (Function.hasTemperateGrowth_one_add_norm_sq_rpow E _))
     (fun ξ ↦ by simp) T
 
