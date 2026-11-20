@@ -114,16 +114,15 @@ theorem mem_jointSubalgebra_iff {x : L} :
     x ∈ H.jointSubalgebra W ↔
       ∃ f : (Γ × {m : Λ →+ ℤ // ∀ v ∈ W, m v = 0}) →₀ L,
         (∀ p, f p ∈ H.wall p.1 p.2) ∧ f.sum (fun _ y => y) = x := by
-  change x ∈ (H.jointSubalgebra W).toSubmodule ↔ _
-  rw [H.jointSubalgebra_toSubmodule, Submodule.mem_iSup_iff_exists_finsupp]
+  rw [← LieSubalgebra.mem_toSubmodule, H.jointSubalgebra_toSubmodule,
+    Submodule.mem_iSup_iff_exists_finsupp]
 
 /-- A Lie subalgebra contains the joint subalgebra exactly when it contains each wall space
 whose normal annihilates the tangent set. -/
 theorem jointSubalgebra_le_iff {S : LieSubalgebra R L} :
     H.jointSubalgebra W ≤ S ↔
       ∀ n m, (∀ v ∈ W, m v = 0) → H.wall n m ≤ S.toSubmodule := by
-  change (H.jointSubalgebra W).toSubmodule ≤ S.toSubmodule ↔ _
-  rw [H.jointSubalgebra_toSubmodule, iSup_le_iff]
+  rw [← LieSubalgebra.toSubmodule_le_toSubmodule, H.jointSubalgebra_toSubmodule, iSup_le_iff]
   exact ⟨fun h n m hm => h ⟨n, ⟨m, hm⟩⟩, fun h p => h p.1 p.2 p.2.property⟩
 
 variable {W} in
