@@ -71,7 +71,8 @@ Duistermaat–Heckman measure.
   measure on `(0, 2π) × (-1, 1)`.
 * `TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_height`: the Duistermaat–Heckman measure of the
   height is `2π` times Lebesgue measure on `[-1, 1]`.
-* `TauCeti.liouvilleMeasure_sphereAreaForm_univ`: the area of `S²` is `4π`.
+* `TauCeti.liouvilleMeasure_sphereAreaForm_univ`: the area of `S²` is `4π`, and
+  `TauCeti.liouvilleMeasure_smul_sphereAreaForm_univ`: that of `r • σ` is `4π |r|`.
 * `TauCeti.duistermaatHeckmanMeasure_sphereAreaForm_const`: a constant moment map has
   Duistermaat–Heckman measure `4π δ_c`.
 
@@ -481,6 +482,15 @@ theorem liouvilleMeasure_sphereAreaForm_univ :
   rw [← SmoothTwoForm.duistermaatHeckmanMeasure_univ measurable_height,
     duistermaatHeckmanMeasure_sphereAreaForm_height, smul_apply, Measure.restrict_apply_univ,
     Real.volume_Icc, smul_eq_mul, ← ENNReal.ofReal_mul (by positivity)]
+  congr 1
+  ring
+
+/-- **The area of a rescaled sphere.** Rescaling the area form of the unit sphere by `r` rescales
+its area `4π` by `|r|`. -/
+theorem liouvilleMeasure_smul_sphereAreaForm_univ (r : ℝ) :
+    (r • sphereAreaForm).liouvilleMeasure 1 univ = ENNReal.ofReal (4 * π * |r|) := by
+  rw [SmoothTwoForm.liouvilleMeasure_smul, smul_apply, liouvilleMeasure_sphereAreaForm_univ,
+    pow_one, smul_eq_mul, ← ENNReal.ofReal_mul (abs_nonneg r)]
   congr 1
   ring
 
