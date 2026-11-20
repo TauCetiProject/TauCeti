@@ -22,6 +22,10 @@ Outside the topological support of a function on a topological vector space, its
 derivatives vanish. This is the directional counterpart of Mathlib's `fderiv_of_notMem_tsupport`.
 Both results require no differentiability hypothesis, which matters for Lipschitz functions.
 
+At a point of differentiability, the derivative in a direction `v` is the derivative along the
+line in the direction `v` (`DifferentiableAt.fderiv_apply_eq_of_hasDerivAt`), so it can be read off
+from the restriction of the function to that line.
+
 For a continuous function `g` with values in a real Banach space, the integral
 `y ↦ ∫ₐᵇ g (y - t h) dt` of its translates has directional derivative `g (y - a h) - g (y - b h)` in
 the direction `h`, by the fundamental theorem of calculus. On `[0, 1]` this is the segment average
@@ -53,6 +57,13 @@ theorem lineDeriv_of_notMem_tsupport {E : Type*} [AddCommGroup E] [Module 𝕜 E
     (notMem_tsupport_iff_eventuallyEq.1 h).comp_tendsto
       (Continuous.tendsto' (by fun_prop) 0 x (by simp))
   rw [lineDeriv, hzero.deriv_eq, deriv_const]
+
+/-- At a point where `f` is differentiable, the derivative of `f` in the direction `v` is the
+derivative at `0` of `f` along the line `t ↦ x + t • v`. -/
+theorem _root_.DifferentiableAt.fderiv_apply_eq_of_hasDerivAt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {f : E → F} {x v : E} {f' : F} (hf : DifferentiableAt 𝕜 f x)
+    (h : HasDerivAt (fun t : 𝕜 ↦ f (x + t • v)) f' 0) : fderiv 𝕜 f x v = f' :=
+  (hf.hasFDerivAt.hasLineDerivAt v).unique h
 
 /-- The function `y ↦ ∫ₐᵇ g (y - t h) dt` of a continuous `g` has directional derivative
 `g (y - a h) - g (y - b h)` in the direction `h`. -/
