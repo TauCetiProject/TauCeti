@@ -32,6 +32,8 @@ density `k` of `P.map φ` with respect to `μ.map φ`.
 
 * `TauCeti.HasDensity.congr_ae`, `TauCeti.HasDensity.ae_eq`: a density may be changed on a
   `μ`-null set, and for σ-finite `μ` it is unique up to such a change.
+* `TauCeti.HasDensity.ae_pos`: a density is positive almost everywhere for the measure it
+  defines.
 * `TauCeti.HasDensity.integral_eq`: `∫ g dP = ∫ f • g dμ`, for every `g`.
 * `TauCeti.HasDensity.integrable_iff`: `g` is `P`-integrable iff `f • g` is `μ`-integrable.
 * `TauCeti.HasDensity.integrable`, `TauCeti.HasDensity.integral_eq_one`: the density of a finite
@@ -97,6 +99,11 @@ theorem ae_eq [SigmaFinite μ] (hf : HasDensity P μ f) {g : X → ℝ} (hg : Ha
     hg.measurable.ennreal_ofReal.aemeasurable).mp (hf.eq_withDensity.symm.trans hg.eq_withDensity)
   filter_upwards [h, hf.ae_nonneg, hg.ae_nonneg] with x hx hfx hgx
   exact (ENNReal.ofReal_eq_ofReal_iff hfx hgx).mp hx
+
+/-- A density is positive almost everywhere with respect to the measure it defines. -/
+theorem ae_pos (h : HasDensity P μ f) : ∀ᵐ x ∂P, 0 < f x := by
+  rw [h.eq_withDensity, ae_withDensity_iff h.measurable.ennreal_ofReal]
+  exact ae_of_all _ fun x hx ↦ ENNReal.ofReal_pos.1 (pos_iff_ne_zero.2 hx)
 
 /-- The mass of a measurable set is the integral of the density over it. -/
 theorem measure_apply (h : HasDensity P μ f) {s : Set X} (hs : MeasurableSet s) :
