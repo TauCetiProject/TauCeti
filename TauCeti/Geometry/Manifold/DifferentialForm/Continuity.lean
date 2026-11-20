@@ -164,4 +164,14 @@ theorem IsSmoothForm.tendsto_apply {φ : RoughForm I M F k} (hφ : IsSmoothForm 
   refine ((continuous_eval.tendsto _).comp ((hA.tendsto.comp hx).prodMk_nhds hcoord)).congr'
     ((hx.eventually_mem (T.open_baseSet.mem_nhds hx₀)).mono fun i hi ↦ (hφA (x i) hi (v i)).symm)
 
+/-- **Evaluating a continuous form on continuous families of tangent vectors.** If `f` is continuous
+and, for each `j`, the tangent vectors `v y j ∈ T_(f y) M` depend continuously on `y` in the tangent
+bundle, then `y ↦ φ (f y) (v y)` is continuous for every `C⁰` form `φ`. -/
+theorem IsSmoothForm.continuous_apply {φ : RoughForm I M F k} (hφ : IsSmoothForm I 0 φ)
+    {Y : Type*} [TopologicalSpace Y] {f : Y → M} {v : (y : Y) → Fin k → TangentSpace I (f y)}
+    (hf : Continuous f) (hv : ∀ j, Continuous fun y ↦ (⟨f y, v y j⟩ : TangentBundle I M)) :
+    Continuous fun y ↦ φ (f y) (v y) :=
+  continuous_iff_continuousAt.2 fun y ↦
+    hφ.tendsto_apply (hf.tendsto y) fun j ↦ (hv j).tendsto y
+
 end TauCeti
