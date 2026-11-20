@@ -65,9 +65,10 @@ Weyl-invariant.
 * `RootPairing.exists_pos_coroot'_eq_of_mem_posRoots`,
   `RootPairing.exists_neg_coroot'_eq_of_mem_negRoots`, `RootPairing.exists_ne_zero_coroot'_eq`
   and `RootPairing.isRegularWeight_of_forall_exists_pos_coroot'_eq`: over a coefficient ring that
-  need not be ordered, if the simple coroots take positive values of an ordered group on a weight,
-  the positive, negative and arbitrary coroots take positive, negative and nonzero values there,
-  so the weight is regular.
+  need not be ordered, if every simple coroot takes a value `φ t` with `0 < t` on a weight, for an
+  additive map `φ` from an ordered group `S`, then every positive, negative or arbitrary coroot
+  takes a value `φ t` there with `t` positive, negative or nonzero in `S` respectively, and the
+  weight is regular when `φ` is injective.
 * `RootPairing.root'_pos_of_isPos` and `RootPairing.root'_neg_of_not_isPos`: on the coweight
   space, where the simple roots are positive, so are the positive roots, and the negative roots
   are negative.
