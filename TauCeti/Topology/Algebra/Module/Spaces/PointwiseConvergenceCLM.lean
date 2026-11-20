@@ -12,8 +12,9 @@ public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 Scalar multiplication on `E →SLₚₜ[σ] F` is jointly continuous whenever it is on `F`, since it is
 computed pointwise (`PointwiseConvergenceCLM.continuousSMul`). Post-composition evaluates as
-`postcomp E L f x = L (f x)` (`PointwiseConvergenceCLM.postcomp_apply_apply`). Passing from
-`E →SL[σ] F` to its pointwise-convergence copy is injective
+`postcomp E L f x = L (f x)` (`PointwiseConvergenceCLM.postcomp_apply_apply`), and
+post-composition by the identity is the identity (`PointwiseConvergenceCLM.postcomp_id`). Passing
+from `E →SL[σ] F` to its pointwise-convergence copy is injective
 (`ContinuousLinearMap.toPointwiseConvergenceCLM_injective`).
 A map lies in the closure of a set of maps in this topology exactly when it is the pointwise limit
 along some filter of maps eventually in the set
@@ -37,6 +38,14 @@ theorem postcomp_apply_apply {𝕜₁ 𝕜₂ 𝕜₃ E F G : Type*} [NormedFiel
     [ContinuousConstSMul 𝕜₃ G] (L : F →SL[τ] G) (f : E →SLₚₜ[σ] F) (x : E) :
     postcomp E L f x = L (f x) :=
   DFunLike.congr_fun (postcomp_apply E L f) x
+
+/-- Post-composition by the identity is the identity. -/
+@[simp]
+theorem postcomp_id {𝕜₁ 𝕜₂ E F : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂}
+    [AddCommGroup E] [TopologicalSpace E] [Module 𝕜₁ E] [AddCommGroup F] [TopologicalSpace F]
+    [IsTopologicalAddGroup F] [Module 𝕜₂ F] [ContinuousConstSMul 𝕜₂ F] :
+    postcomp E (ContinuousLinearMap.id 𝕜₂ F) = ContinuousLinearMap.id 𝕜₂ (E →SLₚₜ[σ] F) :=
+  rfl
 
 variable {𝕜₁ 𝕜₂ M E F : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂}
     [AddCommGroup E] [TopologicalSpace E] [Module 𝕜₁ E] [AddCommGroup F] [TopologicalSpace F]

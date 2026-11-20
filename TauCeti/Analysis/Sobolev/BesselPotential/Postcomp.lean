@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.LocallyConvex.PointwiseConvergence
+import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # Applying a continuous linear map to the values of Bessel-potential functions

@@ -10,7 +10,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
-import TauCeti.Analysis.LocallyConvex.PointwiseConvergence
+import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # Multiplication of vector-valued tempered distributions by operator-valued functions
@@ -37,6 +37,8 @@ Scalar multiples of the identity and constant maps are the two basic cases, and 
 * `TemperedDistribution.applyLeftCLM_eq_sum`: its expansion along any finite decomposition
   `A x = ∑ᵢ gᵢ(x) • Lᵢ`, and `TemperedDistribution.applyLeftCLM_apply_apply` its value on a test
   function.
+* `TemperedDistribution.applyLeftCLM_add`, `TemperedDistribution.applyLeftCLM_smul`,
+  `TemperedDistribution.applyLeftCLM_sum`: it is linear in multipliers of temperate growth.
 * `TemperedDistribution.applyLeftCLM_toTemperedDistributionCLM_eq`: on Schwartz functions it is
   `SchwartzMap.bilinLeftCLM (ContinuousLinearMap.apply ℂ G) hA`.
 * `TemperedDistribution.applyLeftCLM_smul_id`, `TemperedDistribution.applyLeftCLM_const`,
@@ -115,6 +117,40 @@ theorem applyLeftCLM_apply_apply {ι : Type*} (s : Finset ι) (L : ι → F →L
   rw [applyLeftCLM_eq_sum s L hg hA]
   simp only [sum_apply, ContinuousLinearMap.comp_apply,
     PointwiseConvergenceCLM.postcomp_apply_apply, smulLeftCLM_apply_apply]
+
+/-- Multiplication by a finite sum of operator-valued functions of temperate growth is the sum of
+the multiplications. -/
+theorem applyLeftCLM_sum {ι : Type*} {A : ι → E → F →L[ℂ] G} {s : Finset ι}
+    (hA : ∀ i ∈ s, (A i).HasTemperateGrowth) :
+    applyLeftCLM (fun x ↦ ∑ i ∈ s, A i x) = ∑ i ∈ s, applyLeftCLM (A i) := by
+  simp only [applyLeftCLM_def]
+  set b := Module.finBasis ℂ (F →L[ℂ] G)
+  have h (j) : smulLeftCLM F (fun x ↦ b.coord j (∑ i ∈ s, A i x)) =
+      ∑ i ∈ s, smulLeftCLM F fun x ↦ b.coord j (A i x) := by
+    simp only [map_sum]
+    exact smulLeftCLM_sum fun i hi ↦ (hA i hi).basis_coord b j
+  simp only [h, ContinuousLinearMap.comp_finsetSum]
+  exact Finset.sum_comm
+
+/-- Multiplication by a sum of two operator-valued functions of temperate growth is the sum of the
+multiplications. -/
+theorem applyLeftCLM_add {A₁ A₂ : E → F →L[ℂ] G} (hA₁ : A₁.HasTemperateGrowth)
+    (hA₂ : A₂.HasTemperateGrowth) :
+    applyLeftCLM (A₁ + A₂) = applyLeftCLM A₁ + applyLeftCLM A₂ := by
+  have h := applyLeftCLM_sum (A := ![A₁, A₂]) (s := Finset.univ)
+    (by simp [Fin.forall_fin_two, hA₁, hA₂])
+  simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one] at h
+  exact h
+
+/-- Multiplication by a scalar multiple of an operator-valued function of temperate growth is the
+scalar multiple of the multiplication. -/
+theorem applyLeftCLM_smul {A : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth) (c : ℂ) :
+    applyLeftCLM (c • A) = c • applyLeftCLM A := by
+  simp only [applyLeftCLM_def, Pi.smul_apply, map_smul, Finset.smul_sum]
+  set b := Module.finBasis ℂ (F →L[ℂ] G)
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [← ContinuousLinearMap.comp_smul, ← smulLeftCLM_smul (hA.basis_coord b j)]
+  rfl
 
 /-- A scalar function times the identity acts as `smulLeftCLM`. -/
 @[simp]
