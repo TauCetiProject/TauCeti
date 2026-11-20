@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Huber.Pair
 public import TauCeti.RingTheory.Huber.Subring
 public import TauCeti.RingTheory.Invariant.Basic
 public import TauCeti.Topology.Algebra.ConstMulAction

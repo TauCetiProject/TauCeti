@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.Pair
-
-import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
+public import TauCeti.RingTheory.Huber.Basic
 
 /-!
 # Subrings of Huber rings
@@ -19,8 +17,7 @@ only when one also wants completeness.
 
 A subring containing a pseudouniformiser of the ambient Huber ring also has the same bounded
 subsets and the same power-bounded elements as the ambient ring, so its power-bounded subring is
-the trace of the ambient one. For an arbitrary subring, boundedness only descends, and this is
-enough for a ring of integral elements to restrict to a ring of integral elements. These are the
+the trace of the ambient one. For an arbitrary subring, boundedness only descends. These are
 inputs for rings of invariants of finite group actions on Huber pairs.
 
 ## Main results
@@ -30,8 +27,6 @@ inputs for rings of invariants of finite group actions on Huber pairs.
 * `Subring.isBounded_image_subtype_iff`, `Subring.isPowerBounded_coe_iff`: boundedness and
   power-boundedness in a subring containing a pseudouniformiser agree with those in `R`.
 * `Subring.powerBoundedSubring_eq_comap`: for such a subring, `S° = R° ∩ S`.
-* `TauCeti.Huber.IsRingOfIntegralElements.comap_subtype`: `A⁺ ∩ S` is a ring of integral
-  elements of every subring `S`.
 -/
 
 public section
@@ -103,25 +98,3 @@ theorem powerBoundedSubring_eq_comap (S : Subring R) [NonarchimedeanAddGroup S] 
 end Huber
 
 end Subring
-
-namespace TauCeti.Huber
-
-/-- **A ring of integral elements restricts to every subring.** If `A⁺` is a ring of integral
-elements of `A`, then `A⁺ ∩ S` is a ring of integral elements of any subring `S` with the subspace
-topology: it is open by continuity of the inclusion, integrally closed in `S` because `A⁺` is
-integrally closed in `A`, and power-bounded in `S` because power-boundedness descends to a
-subspace. -/
-theorem IsRingOfIntegralElements.comap_subtype {A : Type*} [CommRing A] [TopologicalSpace A]
-    [NonarchimedeanRing A] {Aplus : Subring A} (h : IsRingOfIntegralElements Aplus)
-    (S : Subring A) [NonarchimedeanRing S] : IsRingOfIntegralElements (Aplus.comap S.subtype) where
-  isOpen := h.isOpen.preimage continuous_subtype_val
-  isIntegrallyClosedIn := by
-    have := h.isIntegrallyClosedIn
-    infer_instance
-  le_powerBoundedSubring x hx := by
-    refine mem_powerBoundedSubring.mpr <| isPowerBounded_iff.mpr <|
-      (S.isBounded_preimage_subtype (isPowerBounded_iff.mp (h.isPowerBounded_of_mem hx))).subset ?_
-    rintro _ ⟨n, rfl⟩
-    exact ⟨n, (SubmonoidClass.coe_pow x n).symm⟩
-
-end TauCeti.Huber
