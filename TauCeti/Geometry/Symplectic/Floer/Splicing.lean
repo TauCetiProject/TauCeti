@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
+public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.MeasureTheory.Integral.Bochner.Set
@@ -51,8 +51,19 @@ sets, the pointwise closeness follows from closeness of the coefficients `J(z, u
 (`TauCeti.SymplecticForm.setIntegral_sobolev_le_mul_setIntegral_floerLinearization_of_splice`). The
 pieces of a glued map are translates of the two cylinders. Translating the data translates the
 operator (`TauCeti.SymplecticForm.floerLinearization_comp_add_right`), and the injectivity
-estimate is invariant under translation in `s`
-(`TauCeti.SymplecticForm.setIntegral_sobolev_le_mul_setIntegral_floerLinearization_comp_add_right`).
+estimate of any operator is inherited by its translates
+(`TauCeti.Floer.setIntegral_sobolev_le_mul_setIntegral_of_comp_add_right`,
+`TauCeti.SymplecticForm.setIntegral_sobolev_le_mul_setIntegral_floerLinearization_comp_add_right`).
+
+**The formal adjoint.** The same holds for the formal adjoints
+`D^* η = -(∂s η + (∂t η) ∘ J(z, u z) + η ∘ A(z))` on covector fields
+(`TauCeti.SymplecticForm.floerLinearizationAdjoint_eq_neg`), whose symbol in the `s` direction is
+`σ = -1`: closeness of the coefficients `J(z, u z)` and `A = ∂t J - C` on the two half-cylinders
+gives the uniform estimate
+(`SymplecticForm.setIntegral_sobolev_le_mul_setIntegral_floerLinearizationAdjoint_of_splice`),
+and the estimate is invariant under translation
+(`setIntegral_sobolev_le_mul_setIntegral_floerLinearizationAdjoint_comp_add_right`). This is the
+form in which the estimate yields right inverses.
 
 Sections are `C²` maps `ξ : ℝ × ℝ → E` of period one in `t` that vanish outside a strip
 `(a, b) × ℝ`, and the integrals are over the fundamental domain `[a, b] × [0, 1]`, as in
@@ -316,6 +327,35 @@ theorem setIntegral_sobolev_le_mul_setIntegral_of_splice {P P₁ P₂ : (ℝ × 
   nlinarith [mul_le_mul_of_nonneg_right hk (le_trans (setIntegral_nonneg hrect
     fun _ _ ↦ sq_nonneg _) hL), mul_nonneg hC (sq_nonneg (1 / T * ‖σ‖))]
 
+omit [NormedSpace ℝ F] in
+/-- **Translation invariance of an injectivity estimate.** Let `P` satisfy the injectivity estimate
+`‖ξ‖²_{W^{1,2}} ≤ C ‖P ξ‖²_{L²}` on `C²` maps of period one in `t` vanishing outside a strip, and
+let `P'` be its translate by `(c, 0)`, in the sense that `P' (ξ (· + (c, 0))) = (P ξ) (· + (c, 0))`.
+Then `P'` satisfies the same estimate, with the same constant. -/
+theorem setIntegral_sobolev_le_mul_setIntegral_of_comp_add_right
+    {P P' : (ℝ × ℝ → E) → ℝ × ℝ → F} {C : ℝ} (c : ℝ)
+    (hP' : ∀ (ξ : ℝ × ℝ → E) (z : ℝ × ℝ), P' (fun w ↦ ξ (w + (c, 0))) z = P ξ (z + (c, 0)))
+    (hest : ∀ ⦃ξ : ℝ × ℝ → E⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
+      ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ s t, s ∉ Ioo a b → ξ (s, t) = 0) →
+        ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+            ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
+          C * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖P ξ z‖ ^ 2)
+    {ξ : ℝ × ℝ → E} (hξ : ContDiff ℝ 2 ξ) (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) {a b : ℝ}
+    (hab : a ≤ b) (hξ₀ : ∀ s t, s ∉ Ioo a b → ξ (s, t) = 0) :
+    ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+        ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
+      C * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖P' ξ z‖ ^ 2 := by
+  -- Apply the estimate to the translate `ξ'` of `ξ`, which vanishes outside `(a + c, b + c)`.
+  set ξ' : ℝ × ℝ → E := fun w ↦ ξ (w + (-c, 0))
+  have hξ'c : (fun w ↦ ξ' (w + (c, 0))) = ξ := funext fun w ↦ by
+    simp only [ξ', add_assoc, Prod.mk_add_mk, add_neg_cancel, add_zero, Prod.mk_zero_zero]
+  have h := hest (ξ := ξ') (hξ.comp (contDiff_id.add contDiff_const))
+    (fun s t ↦ by simp only [ξ', Prod.mk_add_mk, add_zero, hper]) (a := a + c) (b := b + c)
+    (by linarith) fun s t hs ↦ hξ₀ _ _ fun h ↦ hs ⟨by linarith [h.1], by linarith [h.2]⟩
+  rw [setIntegral_Icc_add_prod_eq, setIntegral_Icc_add_prod_eq] at h
+  rw [← hξ'c]
+  simpa only [fderiv_comp_add_right, hP'] using h
+
 end Floer
 
 namespace SymplecticForm
@@ -339,17 +379,9 @@ theorem setIntegral_sobolev_le_mul_setIntegral_floerLinearization_comp_add_right
     ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
         ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
       C * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization (fun w ↦ J (w + (c, 0)))
-        (fun w ↦ Ks (w + (c, 0))) (fun w ↦ Kt (w + (c, 0))) (fun w ↦ u (w + (c, 0))) ξ z‖ ^ 2 := by
-  -- Apply the estimate to the translate `ξ'` of `ξ`, which vanishes outside `(a + c, b + c)`.
-  set ξ' : ℝ × ℝ → V := fun w ↦ ξ (w + (-c, 0))
-  have hξ'c : (fun w ↦ ξ' (w + (c, 0))) = ξ := funext fun w ↦ by
-    simp only [ξ', add_assoc, Prod.mk_add_mk, add_neg_cancel, add_zero, Prod.mk_zero_zero]
-  have h := hest (ξ := ξ') (hξ.comp (contDiff_id.add contDiff_const))
-    (fun s t ↦ by simp only [ξ', Prod.mk_add_mk, add_zero, hper]) (a := a + c) (b := b + c)
-    (by linarith) fun s t hs ↦ hξ₀ _ _ fun h ↦ hs ⟨by linarith [h.1], by linarith [h.2]⟩
-  rw [setIntegral_Icc_add_prod_eq, setIntegral_Icc_add_prod_eq] at h
-  rw [← hξ'c]
-  simpa only [fderiv_comp_add_right, floerLinearization_comp_add_right] using h
+        (fun w ↦ Ks (w + (c, 0))) (fun w ↦ Kt (w + (c, 0))) (fun w ↦ u (w + (c, 0))) ξ z‖ ^ 2 :=
+  Floer.setIntegral_sobolev_le_mul_setIntegral_of_comp_add_right c
+    (fun ξ z ↦ ω.floerLinearization_comp_add_right J Ks Kt u ξ (c, 0) z) hest hξ hper hab hξ₀
 
 /-- **The uniform estimate for spliced linearized Floer operators.** Let `D`, `D₁` and `D₂` be the
 linearized Floer operators `∂s + J(z, u z) ∂t + C(z)` of three data sets, all regular enough to send
@@ -419,6 +451,127 @@ theorem setIntegral_sobolev_le_mul_setIntegral_floerLinearization_of_splice
     (fun η hη ↦ ω.continuous_floerLinearization hJ₂ hKs₂ hKt₂ hu₂ (hη.of_le one_le_two))
     hleib hleib hleib (fun η _ z hz ↦ hclose (hJε₁ z hz) (hCε₁ z hz) η)
     (fun η _ z hz ↦ hclose (hJε₂ z hz) (hCε₂ z hz) η) hest₁ hest₂ hξ hper hab hξ₀
+
+/-- **The injectivity estimate for the formal adjoint is invariant under translation.** If the
+formal adjoint of the linearized Floer operator of the data `(J, K_s, K_t, u)` satisfies
+`‖η‖²_{W^{1,2}} ≤ C ‖D^* η‖²_{L²}` on `C²` covector fields of period one in `t` vanishing outside
+a strip, then so does the formal adjoint for the data translated by `(c, 0)`, with the same
+constant. -/
+theorem setIntegral_sobolev_le_mul_setIntegral_floerLinearizationAdjoint_comp_add_right
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V} {C : ℝ} (c : ℝ)
+    (hest : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → (∀ s t, η (s, t + 1) = η (s, t)) →
+      ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ s t, s ∉ Ioo a b → η (s, t) = 0) →
+        ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
+            ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2) ≤
+          C * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2)
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η) (hper : ∀ s t, η (s, t + 1) = η (s, t))
+    {a b : ℝ} (hab : a ≤ b) (hη₀ : ∀ s t, s ∉ Ioo a b → η (s, t) = 0) :
+    ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
+        ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2) ≤
+      C * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearizationAdjoint (fun w ↦ J (w + (c, 0)))
+        (fun w ↦ Ks (w + (c, 0))) (fun w ↦ Kt (w + (c, 0))) (fun w ↦ u (w + (c, 0))) η z‖ ^ 2 :=
+  Floer.setIntegral_sobolev_le_mul_setIntegral_of_comp_add_right c
+    (fun η z ↦ ω.floerLinearizationAdjoint_comp_add_right J Ks Kt u η (c, 0) z) hest hη hper hab
+    hη₀
+
+/-- **The uniform estimate for spliced formal adjoints.** Let `D^*`, `D₁^*` and `D₂^*` be the
+formal adjoints `-(∂s + (∂t ·) ∘ J(z, u z) + · ∘ A(z))` of the linearized Floer operators of three
+data sets (`floerLinearizationAdjoint_eq_neg`, with `A = ∂t J - C`), all regular enough to send
+`C²` covector fields to continuous ones. Suppose that `D₁^*` and `D₂^*` satisfy the injectivity
+estimate `‖η‖²_{W^{1,2}} ≤ C ‖D_i^* η‖²_{L²}` on `C²` covector fields of period one in `t` vanishing
+outside a strip, and that the coefficients `J(z, u z)` and `A(z)` of `D^*` are `ε`-close to those of
+`D₁^*` on the half-cylinder `s ≤ T` and to those of `D₂^*` on `s ≥ -T`. If `64 C ≤ T²` and
+`8 C ε² ≤ 1`, then `D^*` satisfies the injectivity estimate with the constant `64 C`, independent of
+`T` and `ε`. -/
+theorem setIntegral_sobolev_le_mul_setIntegral_floerLinearizationAdjoint_of_splice
+    (ω : SymplecticForm V) {J J₁ J₂ : ℝ × ℝ → V → V →L[ℝ] V}
+    {Ks Kt Ks₁ Kt₁ Ks₂ Kt₂ : ℝ × ℝ → V → ℝ} {u u₁ u₂ : ℝ × ℝ → V}
+    (hJ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
+    (hJ₁ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J₁) (z, u₁ z))
+    (hKs₁ : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks₁) (z, u₁ z))
+    (hKt₁ : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt₁) (z, u₁ z)) (hu₁ : ContDiff ℝ 1 u₁)
+    (hJ₂ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J₂) (z, u₂ z))
+    (hKs₂ : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks₂) (z, u₂ z))
+    (hKt₂ : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt₂) (z, u₂ z)) (hu₂ : ContDiff ℝ 1 u₂)
+    {C ε T : ℝ} (hC : 0 ≤ C) (hT : 0 < T) (hCT : 64 * C ≤ T ^ 2) (hε : 8 * C * ε ^ 2 ≤ 1)
+    (hJε₁ : ∀ z : ℝ × ℝ, z.1 ≤ T → ‖J z (u z) - J₁ z (u₁ z)‖ ≤ ε)
+    (hAε₁ : ∀ z : ℝ × ℝ, z.1 ≤ T →
+      ‖(fderiv ℝ (fun w ↦ J w (u w)) z stdComplexLineImag - ω.floerLinearizationCoeff J Ks Kt u z) -
+        (fderiv ℝ (fun w ↦ J₁ w (u₁ w)) z stdComplexLineImag -
+          ω.floerLinearizationCoeff J₁ Ks₁ Kt₁ u₁ z)‖ ≤ ε)
+    (hJε₂ : ∀ z : ℝ × ℝ, -T ≤ z.1 → ‖J z (u z) - J₂ z (u₂ z)‖ ≤ ε)
+    (hAε₂ : ∀ z : ℝ × ℝ, -T ≤ z.1 →
+      ‖(fderiv ℝ (fun w ↦ J w (u w)) z stdComplexLineImag - ω.floerLinearizationCoeff J Ks Kt u z) -
+        (fderiv ℝ (fun w ↦ J₂ w (u₂ w)) z stdComplexLineImag -
+          ω.floerLinearizationCoeff J₂ Ks₂ Kt₂ u₂ z)‖ ≤ ε)
+    (hest₁ : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → (∀ s t, η (s, t + 1) = η (s, t)) →
+      ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ s t, s ∉ Ioo a b → η (s, t) = 0) →
+        ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
+            ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2) ≤
+          C * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearizationAdjoint J₁ Ks₁ Kt₁ u₁ η z‖ ^ 2)
+    (hest₂ : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → (∀ s t, η (s, t + 1) = η (s, t)) →
+      ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ s t, s ∉ Ioo a b → η (s, t) = 0) →
+        ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
+            ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2) ≤
+          C * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearizationAdjoint J₂ Ks₂ Kt₂ u₂ η z‖ ^ 2)
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η) (hper : ∀ s t, η (s, t + 1) = η (s, t))
+    {a b : ℝ} (hab : a ≤ b) (hη₀ : ∀ s t, s ∉ Ioo a b → η (s, t) = 0) :
+    ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 +
+        ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2) ≤
+      64 * C *
+        ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 := by
+  -- The symbol in the `s` direction is `-1`, of norm at most `1`.
+  set σ : (V →L[ℝ] ℝ) →L[ℝ] (V →L[ℝ] ℝ) := -ContinuousLinearMap.id ℝ (V →L[ℝ] ℝ)
+    with hσdef
+  have hσ : 64 * C * ‖σ‖ ^ 2 ≤ T ^ 2 := by
+    have h₀ := norm_nonneg σ
+    have h₁ : ‖σ‖ ≤ 1 := by
+      rw [hσdef, opNorm_neg]
+      exact norm_id_le
+    nlinarith [mul_le_mul_of_nonneg_left (pow_le_one₀ h₀ h₁ (n := 2)) hC]
+  have hJu {J' : ℝ × ℝ → V → V →L[ℝ] V} {u' : ℝ × ℝ → V}
+      (hJ' : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J') (z, u' z)) (hu' : ContDiff ℝ 1 u')
+      (z : ℝ × ℝ) : DifferentiableAt ℝ (fun w ↦ J' w (u' w)) z :=
+    ((hJ' z).comp₂ contDiffAt_id hu'.contDiffAt).differentiableAt one_ne_zero
+  have hleib {J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks' Kt' : ℝ × ℝ → V → ℝ} {u' : ℝ × ℝ → V}
+      (hJ' : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J') (z, u' z)) (hu' : ContDiff ℝ 1 u')
+      ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄ (hη : ContDiff ℝ 2 η) ⦃β β' : ℝ → ℝ⦄
+      (hβ : ∀ s, HasDerivAt β (β' s) s) (z : ℝ × ℝ) :
+      ω.floerLinearizationAdjoint J' Ks' Kt' u' (fun w ↦ β w.1 • η w) z =
+        β z.1 • ω.floerLinearizationAdjoint J' Ks' Kt' u' η z + β' z.1 • σ (η z) := by
+    rw [floerLinearizationAdjoint_smul_fst (hβ z.1) (hη.differentiable two_ne_zero z)
+      (hJu hJ' hu' z)]
+    simp [σ, sub_eq_add_neg]
+  have hcont {J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks' Kt' : ℝ × ℝ → V → ℝ} {u' : ℝ × ℝ → V}
+      (hJ' : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J') (z, u' z))
+      (hKs' : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks') (z, u' z))
+      (hKt' : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt') (z, u' z)) (hu' : ContDiff ℝ 1 u')
+      ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄ (hη : ContDiff ℝ 2 η) :
+      Continuous (ω.floerLinearizationAdjoint J' Ks' Kt' u' η) :=
+    continuous_iff_continuousAt.2 fun z ↦ continuousAt_floerLinearizationAdjoint (hJ' z) (hKs' z)
+      (hKt' z) hu'.contDiffAt (hη.of_le one_le_two).contDiffAt
+  have hclose {J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks' Kt' : ℝ × ℝ → V → ℝ} {u' : ℝ × ℝ → V}
+      (hJ' : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J') (z, u' z)) (hu' : ContDiff ℝ 1 u')
+      {z : ℝ × ℝ} (hJz : ‖J z (u z) - J' z (u' z)‖ ≤ ε)
+      (hAz : ‖(fderiv ℝ (fun w ↦ J w (u w)) z stdComplexLineImag -
+          ω.floerLinearizationCoeff J Ks Kt u z) -
+        (fderiv ℝ (fun w ↦ J' w (u' w)) z stdComplexLineImag -
+          ω.floerLinearizationCoeff J' Ks' Kt' u' z)‖ ≤ ε)
+      ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄ (hη : ContDiff ℝ 2 η) :
+      ‖ω.floerLinearizationAdjoint J Ks Kt u η z - ω.floerLinearizationAdjoint J' Ks' Kt' u' η z‖ ≤
+        ε * (‖fderiv ℝ η z stdComplexLineImag‖ + ‖η z‖) := by
+    refine (norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le
+      (hη.differentiable two_ne_zero z) (hJu hJ hu z) (hJu hJ' hu' z)).trans ?_
+    rw [mul_add]
+    gcongr
+  exact Floer.setIntegral_sobolev_le_mul_setIntegral_of_splice σ hC hT hσ hε
+    (hcont hJ hKs hKt hu) (hcont hJ₁ hKs₁ hKt₁ hu₁) (hcont hJ₂ hKs₂ hKt₂ hu₂)
+    (hleib hJ hu) (hleib hJ₁ hu₁) (hleib hJ₂ hu₂)
+    (fun η hη z hz ↦ hclose hJ₁ hu₁ (hJε₁ z hz) (hAε₁ z hz) hη)
+    (fun η hη z hz ↦ hclose hJ₂ hu₂ (hJε₂ z hz) (hAε₂ z hz) hη) hest₁ hest₂ hη hper hab hη₀
 
 end SymplecticForm
 
