@@ -962,19 +962,13 @@ theorem toDistr_quantizeSobolev_ofSpatial_smul_id (φ : 𝓢(CoordinateSpace n, 
     refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦
       BesselPotentialSpace.ext ?_
     ext ψ
-    have hc : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
-        ((φ.smooth ⊤).smul contDiff_const)).coefficient =
-          fun p ↦ φ p.1 • ContinuousLinearMap.id ℂ V :=
-      coefficient_ofSpatial_eq _ _
-    simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, hc,
+    simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
+      quantizeSchwartzValue_ofSpatial, _root_.smul_apply, ContinuousLinearMap.id_apply,
       ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
       BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
       smulLeftCLM_apply_apply, SchwartzMap.coe_apply,
       SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth, smul_eq_mul, mul_smul]
-    refine integral_congr_ae (.of_forall fun x ↦ ?_)
-    dsimp only
-    rw [quantizeSchwartzValue_comp_fst (fun x ↦ φ x • ContinuousLinearMap.id ℂ V),
-      _root_.smul_apply, ContinuousLinearMap.id_apply, smul_comm]
+    exact integral_congr_ae (.of_forall fun x ↦ smul_comm _ _ _)
   rw [key, ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion]
 
 /-- **Smoothing operators gain every number of derivatives.** A smoothing symbol `a` with
@@ -1024,14 +1018,9 @@ theorem quantizeSobolev_ofSpatial_smul {ψ : 𝓢(CoordinateSpace n, ℂ)} (hψ 
       BesselPotentialSpace.inclusion (by simp) ∘L BesselPotentialSpace.smulLeftCLM s ψ := by
   refine BesselPotentialSpace.continuousLinearMap_ext (p := 2) ENNReal.ofNat_ne_top fun u ↦
     BesselPotentialSpace.ext ?_
-  have hc : (ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) hψ).coefficient =
-      fun p ↦ ψ p.1 • ContinuousLinearMap.id ℂ V :=
-    coefficient_ofSpatial_eq _ hψ
-  have hq (x : CoordinateSpace n) :
-      quantizeSchwartzValue (fun p ↦ ψ p.1 • ContinuousLinearMap.id ℂ V) u x = ψ x • u x := by
-    simpa using quantizeSchwartzValue_comp_fst (fun y ↦ ψ y • ContinuousLinearMap.id ℂ V) u x
   ext φ
-  simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, hc, hq,
+  simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
+    quantizeSchwartzValue_ofSpatial, _root_.smul_apply, ContinuousLinearMap.id_apply,
     ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
     BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
     smulLeftCLM_toTemperedDistributionCLM_eq, SchwartzMap.toTemperedDistributionCLM_apply_apply,
