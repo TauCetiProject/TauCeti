@@ -299,6 +299,7 @@ theorem ofDet_apply (π : S → A) (s : S) : ofDet π s = PMF.pure (π s) := (rf
 
 omit [Nonempty A] in
 /-- The evaluation operator of a deterministic policy is its one-step lookahead. -/
+@[simp high]
 theorem bellmanEval_ofDet_apply (γ : ℝ≥0) (π : S → A) (v : BoundedFn S) (s : S) :
     M.bellmanEval γ (ofDet π) v s = M.reward s (π s) + γ * M.expect v s (π s) := by
   classical
