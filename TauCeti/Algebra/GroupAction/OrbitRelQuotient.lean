@@ -26,6 +26,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `TauCeti.MulAction.transversalEquivOrbitRelQuotient`: a set meeting every orbit, such that a
   group element carrying one of its points into it fixes that point, is a set of orbit
   representatives.
+* `TauCeti.MulAction.quotientMk_eq_quotientMk_iff_exists_smul_eq`: two points have the same
+  orbit class exactly when one is a translate of the other.
 * `TauCeti.MulAction.exists_smul_out_eq`: every point of an orbit is a translate of the chosen
   representative `Quotient.out` of that orbit.
 * `TauCeti.MulAction.injOn_quotientMk_slice`: if the slice map `(g, s) ↦ g • σ s` is injective
@@ -161,6 +163,13 @@ lemma MulAction.transversalEquivOrbitRelQuotient_symm_mk_mem_orbit {s : Set X}
     ((MulAction.transversalEquivOrbitRelQuotient hex hfix).symm (Quotient.mk'' x) : X) ∈
       MulAction.orbit G x :=
   Quotient.exact <| (MulAction.transversalEquivOrbitRelQuotient hex hfix).apply_symm_apply _
+
+/-- Two points have the same orbit class exactly when one is a translate of the other. -/
+@[to_additive
+/-- Two points have the same orbit class exactly when one is a translate of the other. -/]
+lemma MulAction.quotientMk_eq_quotientMk_iff_exists_smul_eq {x y : X} :
+    Quotient.mk (MulAction.orbitRel G X) x = Quotient.mk _ y ↔ ∃ g : G, g • x = y := by
+  rw [eq_comm, Quotient.eq, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
 
 /-- Equality of bottom-subgroup orbit classes is equality of representatives. -/
 @[simp]

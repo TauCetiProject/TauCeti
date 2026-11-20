@@ -45,7 +45,7 @@ on forms, so that `η` is determined by `i^* σ`.
   A smooth surjection `Ψ : Z → N` onto a manifold of the dimension of `Q`, with the same fibres as
   `p` and with `Ψ^* τ = p^* η` for a form `τ` on `N`, descends to a diffeomorphism `Φ : Q → N` with
   `Φ ∘ p = Ψ` and `Φ^* τ = η` (`TauCeti.SmoothTwoForm.exists_diffeomorph_comp_eq_and_mpullback_eq`).
-  So `(N, ω)` is the reduced space, as for the cotangent bundle of the orbit space in cotangent
+  So `(N, τ)` is the reduced space, as for the cotangent bundle of the orbit space in cotangent
   reduction at zero.
 * **Products.** The product of the data `(i₁, p₁, η₁)` and `(i₂, p₂, η₂)` is reduction data for the
   product form: `(p₁ × p₂)^* (η₁ ⊞ η₂) = (i₁ × i₂)^* (σ₁ ⊞ σ₂)`

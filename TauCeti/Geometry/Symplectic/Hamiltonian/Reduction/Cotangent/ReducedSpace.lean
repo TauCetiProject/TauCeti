@@ -249,22 +249,20 @@ theorem exists_diffeomorph_cotangentBundle_orbitRelQuotient
   refine (h.existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback hreg hn d
     isSymplectic_symplecticForm fun g ↦ mpullback_smul_symplecticForm g).exists.elim
     fun η hη ↦ ?_
-  have hfibρ (q q' : Q) : Quotient.mk (MulAction.orbitRel G Q) q = Quotient.mk _ q' ↔
-      ∃ g : G, g • q = q' := by
-    rw [eq_comm, Quotient.eq, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
   -- Every element of `G` fixes `0`, so the orbits of `G_0` on the level are those of `G`.
   have hpfib (z z' : h.levelSubMulAction 0) :
       Quotient.mk (MulAction.orbitRel ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0)
         (h.levelSubMulAction 0)) z = Quotient.mk _ z' ↔
       ∃ g : G, g • (z : CotangentBundle I Q) = z' := by
-    rw [eq_comm, Quotient.eq, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
+    rw [MulAction.quotientMk_eq_quotientMk_iff_exists_smul_eq]
     exact ⟨fun ⟨k, hk⟩ ↦ ⟨k, congrArg Subtype.val hk⟩,
       fun ⟨g, hg⟩ ↦ ⟨⟨g, Representation.mem_stabilizer.2 (map_zero _)⟩, Subtype.ext hg⟩⟩
   have hdim : finrank ℝ (QuotientModelSpace F (Fin n → ℝ)) =
       finrank ℝ (QuotientModelSpace EG E × (QuotientModelSpace EG E →L[ℝ] ℝ)) := by
     rw [finrank_quotientModelSpace_cotangent hn d, finrank_quotientModelSpace_prod_dual]
   have key := exists_diffeomorph_comp_eq_reductionMap_comp isSubmersion_quotientMk
-    Quotient.mk_surjective ker_mfderiv_quotientMk hfibρ
+    Quotient.mk_surjective ker_mfderiv_quotientMk
+    (fun _ _ ↦ MulAction.quotientMk_eq_quotientMk_iff_exists_smul_eq)
     (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff
     (fun z ↦ h.mem_levelSubMulAction.1 z.2) (fun x hx ↦ ⟨⟨x, h.mem_levelSubMulAction.2 hx⟩, rfl⟩)
     (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d) Quotient.mk_surjective hpfib
