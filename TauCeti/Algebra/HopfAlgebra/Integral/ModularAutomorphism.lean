@@ -100,11 +100,11 @@ include hP hstar in
 private theorem apply_mul_eq_zero_of_ne' {Q : Submodule ℂ A}
     (hQ : Q ∈ simpleCoefficientSubmodules ℂ A) (hQP' : Q ≠ P') {c y : A} (hc : c ∈ P)
     (hy : y ∈ Q) : h (y * c) = 0 := by
-  obtain ⟨Q', hQ', hQstar⟩ := exists_mem_simpleCoefficientSubmodules_star hQ
-  have hQ'P : Q' ≠ P := fun hEq ↦ hQP' <| Submodule.ext fun x ↦ by
-    rw [hstar, ← hEq, hQstar, star_star]
-  simpa using h.map_star_mul_eq_zero_of_mem_simpleCoefficientSubmodules hQ' hP hQ'P
-    ((hQstar (star y)).mpr (by simpa using hy)) hc
+  have hQ'P : Q.comap (starLinearEquiv ℂ (A := A)).toLinearMap ≠ P := fun hEq ↦ hQP' <|
+    Submodule.ext fun x ↦ by simp [hstar, ← hEq]
+  simpa using h.map_star_mul_eq_zero_of_mem_simpleCoefficientSubmodules
+    (comap_starLinearEquiv_mem_simpleCoefficientSubmodules hQ) hP hQ'P (x := star y)
+    (by simpa using hy) hc
 
 include hP hP' hstar in
 /-- For `a, c ∈ P`, the identity `h (a * y) = h (y * c)` on `star P` holds on all of `A`. -/
@@ -186,8 +186,8 @@ end Block
 private theorem exists_forall_apply_mul_eq (a : A) : ∃ c, ∀ y, h (a * y) = h (y * c) := by
   induction a using h.induction_simpleCoefficientSubmodules with
   | mem P hP a ha =>
-    obtain ⟨P', hP', hstar⟩ := exists_mem_simpleCoefficientSubmodules_star hP
-    obtain ⟨c, -, hc⟩ := h.exists_mem_forall_apply_mul_eq hP hP' hstar ha
+    obtain ⟨c, -, hc⟩ := h.exists_mem_forall_apply_mul_eq hP
+      (comap_starLinearEquiv_mem_simpleCoefficientSubmodules hP) (fun _ ↦ Iff.rfl) ha
     exact ⟨c, hc⟩
   | zero => exact ⟨0, by simp⟩
   | add a a' ha ha' =>
@@ -197,8 +197,8 @@ private theorem exists_forall_apply_mul_eq (a : A) : ∃ c, ∀ y, h (a * y) = h
 private theorem exists_forall_apply_mul_eq' (c : A) : ∃ a, ∀ y, h (a * y) = h (y * c) := by
   induction c using h.induction_simpleCoefficientSubmodules with
   | mem P hP c hc =>
-    obtain ⟨P', hP', hstar⟩ := exists_mem_simpleCoefficientSubmodules_star hP
-    obtain ⟨a, -, ha⟩ := h.exists_mem_forall_apply_mul_eq' hP hP' hstar hc
+    obtain ⟨a, -, ha⟩ := h.exists_mem_forall_apply_mul_eq' hP
+      (comap_starLinearEquiv_mem_simpleCoefficientSubmodules hP) (fun _ ↦ Iff.rfl) hc
     exact ⟨a, ha⟩
   | zero => exact ⟨0, by simp⟩
   | add c c' hc hc' =>
@@ -287,8 +287,8 @@ theorem coe_modularAut_eq {σ : A → A} (hσ : ∀ a b, h (b * σ a) = h (a * b
 /-- The modular automorphism maps each simple coefficient space into itself. -/
 theorem modularAut_mem_of_mem_simpleCoefficientSubmodules {P : Submodule ℂ A}
     (hP : P ∈ simpleCoefficientSubmodules ℂ A) {a : A} (ha : a ∈ P) : h.modularAut a ∈ P := by
-  obtain ⟨P', hP', hstar⟩ := exists_mem_simpleCoefficientSubmodules_star hP
-  obtain ⟨c, hcP, hc⟩ := h.exists_mem_forall_apply_mul_eq hP hP' hstar ha
+  obtain ⟨c, hcP, hc⟩ := h.exists_mem_forall_apply_mul_eq hP
+    (comap_starLinearEquiv_mem_simpleCoefficientSubmodules hP) (fun _ ↦ Iff.rfl) ha
   rwa [h.eq_of_forall_apply_mul_eq (c := h.modularAut a) (c' := c) fun b ↦ by
     rw [apply_mul_modularAut, hc]]
 

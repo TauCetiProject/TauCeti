@@ -27,7 +27,7 @@ of `b.conjugateMatrixComodule` via `star` on `A`, inducing an order isomorphism 
 subcomodule lattices (`Module.Basis.conjugateSubcomoduleOrderIso`) and preserving simplicity
 (`Module.Basis.isSimpleOrder_conjugateMatrixComodule`). Over a field, the `star`-preimage of a
 simple coefficient space is therefore again a simple coefficient space
-(`TauCeti.Comodule.exists_mem_simpleCoefficientSubmodules_star`).
+(`TauCeti.Comodule.comap_starLinearEquiv_mem_simpleCoefficientSubmodules`).
 
 ## References
 
@@ -225,16 +225,17 @@ variable {k A : Type*} [Field k] [StarRing k]
 
 /-- The conjugate of a simple coefficient space: its `star`-preimage is again a simple coefficient
 space. -/
-theorem exists_mem_simpleCoefficientSubmodules_star {P : Submodule k A}
+theorem comap_starLinearEquiv_mem_simpleCoefficientSubmodules {P : Submodule k A}
     (hP : P ∈ simpleCoefficientSubmodules k A) :
-    ∃ P' ∈ simpleCoefficientSubmodules k A, ∀ x, x ∈ P' ↔ star x ∈ P := by
+    P.comap (starLinearEquiv k (A := A)).toLinearMap ∈ simpleCoefficientSubmodules k A := by
   obtain ⟨M, hM, rfl⟩ := mem_simpleCoefficientSubmodules.mp hP
   have := hM
   have : Module.Finite k M := finite_of_isSimpleOrder (C := A)
   let b := Module.finBasis k M
   let _ : Comodule k A (Fin (finrank k M) → k) := b.conjugateMatrixComodule (A := A)
   have := b.isSimpleOrder_conjugateMatrixComodule (A := A)
-  exact ⟨_, matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules,
-    fun _ ↦ b.mem_matrixCoefficientSubmodule_conjugateMatrixComodule_iff⟩
+  convert matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules (k := k) (C := A)
+    (M := Fin (finrank k M) → k) using 1
+  exact Submodule.ext fun _ ↦ b.mem_matrixCoefficientSubmodule_conjugateMatrixComodule_iff.symm
 
 end TauCeti.Comodule
