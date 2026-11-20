@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Toric.Delzant.Quotient.Basic
 import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.Submersion.Basic
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
+import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Smooth
 import TauCeti.Topology.Algebra.ProperAction.Basic
 
 /-!
@@ -33,8 +34,7 @@ which the projection `Z → M_Δ` is a smooth submersion, by the quotient manifo
 
 * **Smoothness of the rotations.** The rotation action `(θ, z) ↦ θ • z` of the torus
   `(ℝ / 2πℤ)^ι` on `ℂ^ι`, with the torus a manifold modelled on `ℝ^ι`, is smooth
-  (`TauCeti.contMDiff_torusRotation`): its coefficients `cos θ_j` and `sin θ_j` are smooth on the
-  circle (`Function.Periodic.contMDiff_lift`).
+  (`TauCeti.contMDiff_torusRotation`).
 * **The kernel torus as a Lie group.** The torus is a Lie group (`TauCeti.instLieAddGroupPi`) and
   the kernel torus is a closed subgroup of it
   (`TauCeti.Toric.IsIntegralLattice.isClosed_ker_facetTorusHom`), so by the closed-subgroup
@@ -64,7 +64,6 @@ torus as a closed subgroup, so `M_Δ` has dimension `d + n - k`.
 
 ## Main results
 
-* `TauCeti.contMDiff_torusRotation`: the rotation action of `(ℝ / 2πℤ)^ι` on `ℂ^ι` is smooth.
 * `TauCeti.Toric.IsDelzant.isManifold_delzantQuotient`: the Delzant quotient is a smooth
   manifold.
 * `TauCeti.Toric.IsDelzant.isSubmersion_delzantQuotientMk`: the projection from the level onto
@@ -99,75 +98,6 @@ variable {ι : Type*} [Fintype ι]
 
 local instance : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
 
-/-! ### Smoothness of the rotation action -/
-
-/-- The coefficients `cos θ_j` and `sin θ_j` of the rotation by `θ`, and the coordinates `z.1 j` and
-`z.2 j` of the rotated point, are smooth functions of `(θ, z)`. -/
-private theorem contMDiff_torusRotation_coefficients (j : ι) :
-    let I := (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod
-      𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
-    ContMDiff I 𝓘(ℝ) ∞
-        (fun p : (ι → AddCircle (2 * π)) × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦
-          cos_periodic.lift (p.1 j)) ∧
-      ContMDiff I 𝓘(ℝ) ∞
-        (fun p : (ι → AddCircle (2 * π)) × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦
-          sin_periodic.lift (p.1 j)) ∧
-      ContMDiff I 𝓘(ℝ) ∞
-        (fun p : (ι → AddCircle (2 * π)) × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦
-          p.2.1 j) ∧
-      ContMDiff I 𝓘(ℝ) ∞
-        (fun p : (ι → AddCircle (2 * π)) × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦
-          p.2.2 j) := by
-  have hfst : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) 𝓘(ℝ) ∞
-      fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ x.1 j :=
-    ((EuclideanSpace.proj j : EuclideanSpace ℝ ι →L[ℝ] ℝ).comp
-      (ContinuousLinearMap.fst ℝ (EuclideanSpace ℝ ι) (EuclideanSpace ℝ ι))).contMDiff
-  have hsnd : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) 𝓘(ℝ) ∞
-      fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ x.2 j :=
-    ((EuclideanSpace.proj j : EuclideanSpace ℝ ι →L[ℝ] ℝ).comp
-      (ContinuousLinearMap.snd ℝ (EuclideanSpace ℝ ι) (EuclideanSpace ℝ ι))).contMDiff
-  exact ⟨(cos_periodic.contMDiff_lift contDiff_cos).comp
-      (contMDiff_apply.comp contMDiff_fst),
-    (sin_periodic.contMDiff_lift contDiff_sin).comp (contMDiff_apply.comp contMDiff_fst),
-    hfst.comp contMDiff_snd, hsnd.comp contMDiff_snd⟩
-
-/-- **The rotation action of the torus `(ℝ / 2πℤ)^ι` on `ℂ^ι` is smooth**, for the torus
-modelled on `ℝ^ι`: the map `(θ, z) ↦ (z_j ↦ exp(-i θ_j) z_j)` is smooth. -/
-theorem contMDiff_torusRotation :
-    ContMDiff ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod
-        𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι))
-      𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ∞
-      fun p : (ι → AddCircle (2 * π)) × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦
-        torusRotation p.1 p.2 := by
-  have hpair : (fun p : (ι → AddCircle (2 * π)) × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦
-      torusRotation p.1 p.2) = fun p ↦ ((torusRotation p.1 p.2).1, (torusRotation p.1 p.2).2) :=
-    (rfl)
-  rw [hpair]
-  -- Each coordinate of the rotated point is a polynomial in smooth functions.
-  refine ContMDiff.prodMk_space ?_ ?_
-  · have h : (fun p : (ι → AddCircle (2 * π)) × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦
-        (torusRotation p.1 p.2).1) = fun p ↦ (EuclideanSpace.equiv ι ℝ).symm
-          fun j ↦ cos_periodic.lift (p.1 j) * p.2.1 j + sin_periodic.lift (p.1 j) * p.2.2 j := by
-      funext p
-      ext j
-      exact torusRotation_apply_fst p.1 p.2 j
-    rw [h]
-    refine ((EuclideanSpace.equiv ι ℝ).symm : (ι → ℝ) →L[ℝ] EuclideanSpace ℝ ι).contMDiff.comp
-      (contMDiff_pi_module_iff.2 fun j ↦ ?_)
-    obtain ⟨hcos, hsin, hfst, hsnd⟩ := contMDiff_torusRotation_coefficients (ι := ι) j
-    exact (hcos.mul hfst).add (hsin.mul hsnd)
-  · have h : (fun p : (ι → AddCircle (2 * π)) × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦
-        (torusRotation p.1 p.2).2) = fun p ↦ (EuclideanSpace.equiv ι ℝ).symm
-          fun j ↦ -(sin_periodic.lift (p.1 j) * p.2.1 j) + cos_periodic.lift (p.1 j) * p.2.2 j := by
-      funext p
-      ext j
-      exact torusRotation_apply_snd p.1 p.2 j
-    rw [h]
-    refine ((EuclideanSpace.equiv ι ℝ).symm : (ι → ℝ) →L[ℝ] EuclideanSpace ℝ ι).contMDiff.comp
-      (contMDiff_pi_module_iff.2 fun j ↦ ?_)
-    obtain ⟨hcos, hsin, hfst, hsnd⟩ := contMDiff_torusRotation_coefficients (ι := ι) j
-    exact (hsin.mul hfst).neg.add (hcos.mul hsnd)
-
 namespace Toric
 
 variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
@@ -179,8 +109,15 @@ variable (i u) in
 /-- The kernel torus `N_Δ = ker ((ℝ / 2πℤ)^ι → V / 2π i(N))` of `TauCeti.Toric.facetTorusHom`, as a
 subgroup of `Multiplicative` of the torus `(ℝ / 2πℤ)^ι`. This is the form in which the
 closed-subgroup theorem and the quotient manifold theorem apply to it. -/
-abbrev kernelTorus : Subgroup (Multiplicative (ι → AddCircle (2 * π))) :=
+def kernelTorus : Subgroup (Multiplicative (ι → AddCircle (2 * π))) :=
   AddSubgroup.toSubgroup (facetTorusHom i u (2 * π)).ker
+
+/-- An element of the multiplicative torus lies in the kernel torus exactly when its underlying
+angles lie in the kernel of `TauCeti.Toric.facetTorusHom`. -/
+@[simp]
+theorem mem_kernelTorus_iff {k : Multiplicative (ι → AddCircle (2 * π))} :
+    k ∈ kernelTorus i u ↔ Multiplicative.toAdd k ∈ (facetTorusHom i u (2 * π)).ker :=
+  (Iff.rfl)
 
 /-- For an integral lattice, the kernel torus is closed. -/
 theorem IsIntegralLattice.isClosed_kernelTorus (hi : IsIntegralLattice i) :
@@ -189,7 +126,7 @@ theorem IsIntegralLattice.isClosed_kernelTorus (hi : IsIntegralLattice i) :
 
 /-- The kernel torus acts on the level through the rotations of `ℂ^ι`. -/
 @[simp]
-theorem coe_kernelTorus_smul (k : kernelTorus i u) (x : delzantLevel i u c) :
+theorem coe_smul_delzantLevel (k : kernelTorus i u) (x : delzantLevel i u c) :
     ((k • x : delzantLevel i u c) : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) =
       torusRotation (Multiplicative.toAdd (k : Multiplicative (ι → AddCircle (2 * π)))) x :=
   (rfl)
@@ -200,8 +137,9 @@ theorem DelzantQuotient.mk_eq_mk_iff_orbitRel {x y : delzantLevel i u c} :
     DelzantQuotient.mk x = DelzantQuotient.mk y ↔
       MulAction.orbitRel (kernelTorus i u) (delzantLevel i u c) x y := by
   rw [DelzantQuotient.mk_eq_mk_iff, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
-  exact ⟨fun ⟨θ, hθ, h⟩ ↦ ⟨⟨Multiplicative.ofAdd θ, hθ⟩, h⟩,
-    fun ⟨k, hk⟩ ↦ ⟨Multiplicative.toAdd (k : Multiplicative (ι → AddCircle (2 * π))), k.2, hk⟩⟩
+  exact ⟨fun ⟨θ, hθ, h⟩ ↦ ⟨⟨Multiplicative.ofAdd θ, mem_kernelTorus_iff.2 hθ⟩, h⟩,
+    fun ⟨k, hk⟩ ↦ ⟨Multiplicative.toAdd (k : Multiplicative (ι → AddCircle (2 * π))),
+      mem_kernelTorus_iff.1 k.2, hk⟩⟩
 
 /-- The orbit space of the kernel torus, acting on the level as a subgroup of the multiplicative
 torus, is the Delzant quotient: the two orbit relations agree
@@ -256,8 +194,13 @@ theorem IsIntegralLattice.properSMul_kernelTorus (hi : IsIntegralLattice i) :
   have : CompactSpace (kernelTorus i u) :=
     isCompact_iff_compactSpace.1 hi.isClosed_kernelTorus.isCompact
   -- An element of the kernel torus acts through its underlying angles.
-  have : ContinuousSMul (kernelTorus i u) (delzantLevel i u c) :=
-    ⟨continuous_vadd.comp
+  have hsmul : (fun p : kernelTorus i u × delzantLevel i u c ↦ p.1 • p.2) =
+      fun p ↦ Multiplicative.toAdd (p.1 : Multiplicative (ι → AddCircle (2 * π))) +ᵥ p.2 :=
+    funext fun p ↦ Subtype.ext ((coe_smul_delzantLevel p.1 p.2).trans
+      (coe_vadd_delzantLevel _ p.2).symm)
+  have : ContinuousSMul (kernelTorus i u) (delzantLevel i u c) := ⟨by
+    rw [hsmul]
+    exact continuous_vadd.comp
       ((continuous_toAdd.comp (continuous_subtype_val.comp continuous_fst)).prodMk continuous_snd)⟩
   properSMul_of_compactSpace (kernelTorus i u) (delzantLevel i u c)
 
@@ -293,8 +236,13 @@ theorem contMDiffSMul_kernelTorus :
     contMDiff_torusRotation.comp
       ((d.contMDiff_subtypeVal.comp contMDiff_fst).prodMk
         ((hΔ.contMDiff_coe_delzantLevel hi).comp contMDiff_snd))
-  exact ⟨hΔ.contMDiff_codRestrict_delzantLevel hi hg
-    fun p ↦ (torusRotation_mem_delzantLevel_iff _).2 p.2.2⟩
+  have hsmul : (fun p : kernelTorus i u × delzantLevel i u c ↦ p.1 • p.2) =
+      fun p ↦ ⟨torusRotation (Multiplicative.toAdd (p.1 : Multiplicative (ι → AddCircle (2 * π))))
+        p.2, (torusRotation_mem_delzantLevel_iff _).2 p.2.2⟩ :=
+    funext fun p ↦ Subtype.ext (coe_smul_delzantLevel p.1 p.2)
+  refine ⟨?_⟩
+  rw [hsmul]
+  exact hΔ.contMDiff_codRestrict_delzantLevel hi hg _
 
 /-- **The kernel torus acts freely on the level**, because every vertex of the Delzant polytope is
 smooth. -/
@@ -308,7 +256,7 @@ theorem isCancelSMul_kernelTorus : IsCancelSMul (kernelTorus i u) (delzantLevel 
     exact congrArg Subtype.val (MulAction.mem_stabilizer_iff.1 hk)
   have hθ : θ = 0 := by
     rw [← htθ]
-    exact (hΔ.weightRotation_neg_eq_self_iff hi x.2 (htθ ▸ k.2)).1 hfix
+    exact (hΔ.weightRotation_neg_eq_self_iff hi x.2 (htθ ▸ mem_kernelTorus_iff.1 k.2)).1 hfix
   exact Subtype.ext (congrArg Multiplicative.ofAdd hθ)
 
 /-- The hypotheses of the quotient manifold theorem for the action of the kernel torus on the

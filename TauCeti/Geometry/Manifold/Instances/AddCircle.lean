@@ -88,8 +88,8 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
 * `AddCircle.mfderiv_zsmul`: multiplication by an integer `k` has derivative multiplication by `k`.
 * `AddCircle.mfderiv_diffeomorphAddCircle`: the rescaling from period `p` to period `q` has
   derivative multiplication by `p⁻¹ * q`.
-* `Function.Periodic.contMDiff_lift`: a `C^n` periodic function on `ℝ` descends to a `C^n`
-  function on the circle.
+* `Function.Periodic.contMDiff_lift_iff`: a periodic function on `ℝ` is `C^n` exactly when the
+  function it induces on the circle is.
 
 ## References
 
@@ -781,15 +781,14 @@ namespace Function.Periodic
 
 variable {p : ℝ} [Fact (0 < p)]
 
-/-- A `C^n` `p`-periodic function on `ℝ` descends to a `C^n` function on `AddCircle p`, since the
-quotient map `ℝ → AddCircle p` is a surjective local diffeomorphism. -/
-theorem contMDiff_lift {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞ω}
-    {f : ℝ → F} (hf : Periodic f p) (hc : ContDiff ℝ n f) :
-    ContMDiff 𝓘(ℝ) 𝓘(ℝ, F) n hf.lift := by
-  refine ((AddCircle.isLocalDiffeomorph_coe p n).contMDiff_comp_iff
-    QuotientAddGroup.mk_surjective le_rfl).1 ?_
-  have h : hf.lift ∘ ((↑) : ℝ → AddCircle p) = f := funext fun t ↦ hf.lift_coe t
-  rw [h]
-  exact hc.contMDiff
+/-- A `p`-periodic function on `ℝ` is `C^n` exactly when the function it induces on
+`AddCircle p` is, since the quotient map `ℝ → AddCircle p` is a surjective local diffeomorphism. -/
+theorem contMDiff_lift_iff {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+    {n : ℕ∞ω} {f : ℝ → M} (hf : Periodic f p) :
+    ContMDiff 𝓘(ℝ) I n hf.lift ↔ ContMDiff 𝓘(ℝ) I n f := by
+  rw [← (AddCircle.isLocalDiffeomorph_coe p n).contMDiff_comp_iff
+    QuotientAddGroup.mk_surjective le_rfl]
+  exact Iff.of_eq (congrArg _ (funext fun t ↦ hf.lift_coe t))
 
 end Function.Periodic
