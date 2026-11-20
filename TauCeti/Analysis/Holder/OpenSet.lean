@@ -649,6 +649,15 @@ def toBoundedContinuousFunctionCLM : CkHolderSpaceOn k α Ω F →L[ℝ] (Ω →
 theorem toBoundedContinuousFunctionCLM_apply (f : CkHolderSpaceOn k α Ω F) :
     toBoundedContinuousFunctionCLM f = f.toBoundedContinuousFunction := (rfl)
 
+/-- Evaluating the extension by zero at a point of `Ω` is continuous on `C^{k,α}(Ω)`. -/
+theorem continuous_extend_apply {x : E} (hx : x ∈ Ω) :
+    Continuous fun f : CkHolderSpaceOn k α Ω F ↦ f.extend x := by
+  have h := (BoundedContinuousFunction.evalCLM ℝ (⟨x, hx⟩ : Ω)).continuous.comp
+    (toBoundedContinuousFunctionCLM (k := k) (α := α) (F := F)).continuous
+  convert h using 2 with f
+  rw [Function.comp_apply, toBoundedContinuousFunctionCLM_apply,
+    BoundedContinuousFunction.evalCLM_apply, coe_toBoundedContinuousFunction, ← extend_apply]
+
 /-- Forgetting the derivatives has operator norm at most one. -/
 theorem norm_toBoundedContinuousFunctionCLM_le_one :
     ‖toBoundedContinuousFunctionCLM (k := k) (α := α) (Ω := Ω) (F := F)‖ ≤ 1 :=

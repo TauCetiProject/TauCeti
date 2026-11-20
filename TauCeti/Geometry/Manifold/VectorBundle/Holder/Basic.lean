@@ -104,20 +104,8 @@ theorem memHolderSection_iff {s : ∀ x, V x} :
 with the reading of `s` on the image of the chart. -/
 theorem eqOn_extend_coord {w : ∀ i : Fin A.n, CkHolderSpaceOn k α (A.image i) F} {s : ∀ x, V x}
     (hs : ∀ i, ∀ y : A.image i, w i y = A.coord i s y) (i : Fin A.n) :
-    EqOn (w i).extend (A.coord i s) (A.image i) := fun y hy ↦ by
-  rw [show y = ((⟨y, hy⟩ : A.image i) : E) from rfl, CkHolderSpaceOn.extend_apply, hs]
-
-/-- Evaluating the extension by zero of a component at a point of the image of its chart is
-continuous on tuples of `C^{k,α}` chart components. -/
-private theorem continuous_extend_apply (i : Fin A.n) {y : E} (hy : y ∈ A.image i) :
-    Continuous fun w : ∀ i : Fin A.n, CkHolderSpaceOn k α (A.image i) F ↦ (w i).extend y := by
-  have h : Continuous fun w : ∀ i : Fin A.n, CkHolderSpaceOn k α (A.image i) F ↦
-      CkHolderSpaceOn.toBoundedContinuousFunctionCLM (w i) ⟨y, hy⟩ :=
-    (BoundedContinuousFunction.evalCLM ℝ _).continuous.comp
-      (CkHolderSpaceOn.toBoundedContinuousFunctionCLM.continuous.comp (continuous_apply i))
-  convert h using 2 with w
-  rw [CkHolderSpaceOn.toBoundedContinuousFunctionCLM_apply,
-    CkHolderSpaceOn.coe_toBoundedContinuousFunction, ← CkHolderSpaceOn.extend_apply]
+    EqOn (w i).extend (A.coord i s) (A.image i) := fun y hy ↦
+  ((w i).extend_apply ⟨y, hy⟩).trans (hs i ⟨y, hy⟩)
 
 end FiniteBundleAtlas
 
@@ -180,9 +168,11 @@ theorem isClosed_holderSections :
       mem_ofPred_eq]
   rw [hset]
   refine isClosed_iInter fun i ↦ isClosed_iInter fun i' ↦ isClosed_biInter fun y hy ↦
-    isClosed_eq (continuous_extend_apply i' (A.overlap_subset_image i i' hy)) ?_
+    isClosed_eq ((CkHolderSpaceOn.continuous_extend_apply
+      (A.overlap_subset_image i i' hy)).comp (continuous_apply i')) ?_
   exact ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y)).continuous.comp
-    (continuous_extend_apply i (A.overlap_subset_image i' i (A.transition_mem_overlap hy)))
+    ((CkHolderSpaceOn.continuous_extend_apply
+      (A.overlap_subset_image i' i (A.transition_mem_overlap hy))).comp (continuous_apply i))
 
 end FiniteBundleAtlas
 
@@ -205,7 +195,7 @@ variable {A k α}
 `C^{k,α}` norms. -/
 theorem norm_def (w : HolderSection A k α) :
     ‖w‖ = ‖(w : ∀ i : Fin A.n, CkHolderSpaceOn k α (A.image i) F)‖ :=
-  (rfl)
+  (Submodule.norm_coe w).symm
 
 /-- Each chart component has norm at most the norm of the section. -/
 theorem norm_component_le (w : HolderSection A k α) (i : Fin A.n) :
@@ -253,6 +243,7 @@ theorem toSection_injective : Function.Injective (toSection : HolderSection A k 
     rw [← coord_toSection, ← coord_toSection, h]
 
 /-- Two elements of `C^{k,α}(V)` are equal when their underlying sections are. -/
+@[ext]
 theorem ext {w w' : HolderSection A k α} (h : toSection w = toSection w') : w = w' :=
   toSection_injective h
 
@@ -312,6 +303,23 @@ theorem memHolderSection_iff_exists_toSection_eq {s : ∀ x, V x} :
     A.MemHolderSection k α s ↔ ∃ w : HolderSection A k α, HolderSection.toSection w = s :=
   ⟨fun hs ↦ ⟨HolderSection.ofSection s hs, HolderSection.toSection_ofSection s hs⟩,
     fun ⟨w, hw⟩ ↦ hw ▸ memHolderSection_toSection w⟩
+
+/-- The zero section is of class `C^{k,α}`. -/
+theorem MemHolderSection.zero : A.MemHolderSection k α (0 : ∀ x, V x) :=
+  memHolderSection_iff_exists_toSection_eq.2 ⟨0, map_zero _⟩
+
+/-- A sum of sections of class `C^{k,α}` is of class `C^{k,α}`. -/
+theorem MemHolderSection.add {s t : ∀ x, V x} (hs : A.MemHolderSection k α s)
+    (ht : A.MemHolderSection k α t) : A.MemHolderSection k α (s + t) := by
+  obtain ⟨w, rfl⟩ := memHolderSection_iff_exists_toSection_eq.1 hs
+  obtain ⟨w', rfl⟩ := memHolderSection_iff_exists_toSection_eq.1 ht
+  exact memHolderSection_iff_exists_toSection_eq.2 ⟨w + w', map_add _ w w'⟩
+
+/-- A scalar multiple of a section of class `C^{k,α}` is of class `C^{k,α}`. -/
+theorem MemHolderSection.smul (c : ℝ) {s : ∀ x, V x} (hs : A.MemHolderSection k α s) :
+    A.MemHolderSection k α (c • s) := by
+  obtain ⟨w, rfl⟩ := memHolderSection_iff_exists_toSection_eq.1 hs
+  exact memHolderSection_iff_exists_toSection_eq.2 ⟨c • w, map_smul _ c w⟩
 
 /-- Sections of class `C^{k,α}` are continuous. -/
 theorem MemHolderSection.continuous {s : ∀ x, V x} (hs : A.MemHolderSection k α s) :
