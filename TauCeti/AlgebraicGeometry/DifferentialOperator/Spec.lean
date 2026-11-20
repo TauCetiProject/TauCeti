@@ -71,14 +71,14 @@ private theorem stalkDerivation_mk (x : PrimeSpectrum R) (r : R) (t : x.asIdeal.
 /-- Applying the extensions of `δ` pointwise to a section over `V`. -/
 private noncomputable def specSectionsFun (V : (Spec R).Opens) (s : Γ(Spec R, V)) :
     Γ(Spec R, V) :=
-  ⟨fun x ↦ stalkDerivation δ x.1 (s.1 x), fun x ↦ by
-    obtain ⟨W, hxW, i, r, t, h⟩ := s.2 x
+  ⟨fun x ↦ stalkDerivation δ x.val (s.val x), fun x ↦ by
+    obtain ⟨W, hxW, i, r, t, h⟩ := s.property x
     exact ⟨W, hxW, i, t * δ r - r * δ t, t * t, fun y ↦
-      ⟨y.1.asIdeal.primeCompl.mul_mem (h y).1 (h y).1,
+      ⟨y.val.asIdeal.primeCompl.mul_mem (h y).1 (h y).1,
         (congrArg (stalkDerivation δ _) (h y).2).trans (stalkDerivation_mk δ _ r ⟨t, (h y).1⟩)⟩⟩⟩
 
 private theorem specSectionsFun_apply (V : (Spec R).Opens) (s : Γ(Spec R, V)) (x : V) :
-    (specSectionsFun δ V s).1 x = stalkDerivation δ x.1 (s.1 x) :=
+    (specSectionsFun δ V s).val x = stalkDerivation δ x.val (s.val x) :=
   rfl
 
 /-- The derivation of the sections of the structure sheaf of `Spec R` over `V` induced by a
@@ -87,18 +87,18 @@ the localization of `R` at `x`. -/
 noncomputable def _root_.Derivation.specSections (V : (Spec R).Opens) :
     Derivation k Γ(Spec R, V) Γ(Spec R, V) where
   toFun := specSectionsFun δ V
-  map_add' _ _ := Subtype.ext (funext fun x ↦ map_add (stalkDerivation δ x.1) _ _)
+  map_add' _ _ := Subtype.ext (funext fun x ↦ map_add (stalkDerivation δ x.val) _ _)
   map_smul' c s := Subtype.ext (funext fun x ↦
-    (congrArg (stalkDerivation δ x.1) (Scheme.spec_sections_smul_apply V c s x)).trans
-      (((stalkDerivation δ x.1).map_smul c _).trans
+    (congrArg (stalkDerivation δ x.val) (Scheme.spec_sections_smul_apply V c s x)).trans
+      (((stalkDerivation δ x.val).map_smul c _).trans
         (Scheme.spec_sections_smul_apply V c (specSectionsFun δ V s) x).symm))
-  map_one_eq_zero' := Subtype.ext (funext fun x ↦ (stalkDerivation δ x.1).map_one_eq_zero)
-  leibniz' _ _ := Subtype.ext (funext fun x ↦ (stalkDerivation δ x.1).leibniz _ _)
+  map_one_eq_zero' := Subtype.ext (funext fun x ↦ (stalkDerivation δ x.val).map_one_eq_zero)
+  leibniz' _ _ := Subtype.ext (funext fun x ↦ (stalkDerivation δ x.val).leibniz _ _)
 
 /-- On the image of `R` in the sections over `V`, `δ.specSections V` is `δ`. -/
 theorem _root_.Derivation.specSections_algebraMap (V : (Spec R).Opens) (r : R) :
     δ.specSections V (algebraMap R Γ(Spec R, V) r) = algebraMap R Γ(Spec R, V) (δ r) :=
-  Subtype.ext (funext fun x ↦ stalkDerivation_algebraMap δ x.1 r)
+  Subtype.ext (funext fun x ↦ stalkDerivation_algebraMap δ x.val r)
 
 /-- The derivations `δ.specSections` commute with restriction. -/
 theorem _root_.Derivation.presheaf_map_specSections {V W : (Spec R).Opens} (i : W ⟶ V)

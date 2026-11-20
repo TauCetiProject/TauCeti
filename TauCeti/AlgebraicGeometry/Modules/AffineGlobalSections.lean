@@ -346,9 +346,9 @@ instance (U : (Spec R).Opens) : IsScalarTower k R Γ(Spec R, U) :=
 /-- For `Spec R` over `Spec k`, scalar multiplication by `k` on the sections over `V` is computed
 pointwise in the localizations of `R`. -/
 theorem spec_sections_smul_apply (V : (Spec R).Opens) (c : k) (s : Γ(Spec R, V)) (x : V) :
-    (c • s).1 x = c • s.1 x := by
+    (c • s).val x = c • s.val x := by
   rw [Algebra.smul_def, Algebra.smul_def, algebraMap_spec_eq,
-    IsScalarTower.algebraMap_apply k R (StructureSheaf.Localizations R x.1)]
+    IsScalarTower.algebraMap_apply k R (StructureSheaf.Localizations R x.val)]
   rfl
 
 end SectionsAlgebra

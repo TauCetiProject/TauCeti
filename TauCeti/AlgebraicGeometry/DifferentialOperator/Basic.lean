@@ -263,8 +263,8 @@ theorem isSheaf_differentialOperators (m : ℕ) :
   let ι := {W : X.Opens // ∃ h : W ≤ V.left,
     (X.differentialOperators k m).sieveOfSection D (homOfLE (h.trans V.hom.le))}
   refine endApp_mem_differentialOperators_of_le_iSup D V
-    (fun i : ι ↦ Over.mk (homOfLE (i.2.1.trans V.hom.le)))
-    (fun i ↦ Over.homMk (homOfLE i.2.1)) (fun x hx ↦ ?_) fun i ↦ i.2.2 (Over.mk (𝟙 _))
+    (fun i : ι ↦ Over.mk (homOfLE (i.property.1.trans V.hom.le)))
+    (fun i ↦ Over.homMk (homOfLE i.property.1)) (fun x hx ↦ ?_) fun i ↦ i.property.2 (Over.mk (𝟙 _))
   obtain ⟨W, f, hf, hxW⟩ := hD x (V.hom.le hx)
   exact Opens.mem_iSup.2 ⟨⟨W ⊓ V.left, inf_le_right,
     (X.differentialOperators k m).sieveOfSection D |>.downward_closed hf (homOfLE inf_le_left)⟩,
@@ -337,24 +337,31 @@ noncomputable def differentialOperatorsZeroIso :
     X.presheaf ⋙ CategoryTheory.forget CommRingCat ≅ (X.differentialOperators k 0).toFunctor :=
   NatIso.ofComponents (fun U ↦ Equiv.toIso (Equiv.ofBijective
     (fun f ↦ ⟨X.toStructureEnd k U.unop f, toStructureEnd_mem_differentialOperators_zero f⟩)
-    ⟨fun f g h ↦ toStructureEnd_injective (k := k) U.unop congr($h.1), fun D ↦
-      (mem_differentialOperators_zero_iff.1 D.2).imp fun _ h ↦ Subtype.ext h⟩))
+    ⟨fun f g h ↦ toStructureEnd_injective (k := k) U.unop (congrArg Subtype.val h), fun D ↦
+      (mem_differentialOperators_zero_iff.1 D.property).imp fun _ h ↦ Subtype.ext h⟩))
     fun i ↦ by
       ext f
       exact Subtype.ext (restrictEnd_toStructureEnd i.unop f).symm
 
+-- The sources and targets of the components of `differentialOperatorsZeroIso` are spelled out in
+-- their simp-normal form (without `Functor.comp_obj` and `Subfunctor.toFunctor_obj`), so that the
+-- left-hand sides of the two lemmas below pass the `simpNF` linter.
 /-- The operator of order zero corresponding to a section of `O_X` is multiplication by it. -/
 @[simp]
 theorem coe_differentialOperatorsZeroIso_hom_app_apply (U : X.Opensᵒᵖ) (f : Γ(X, U.unop)) :
-    ((X.differentialOperatorsZeroIso k).hom.app U f).1 = X.toStructureEnd k U.unop f :=
+    (ConcreteCategory.hom (C := Type u) (X := ToType (X.presheaf.obj U))
+      (Y := (X.differentialOperators k 0).obj U)
+      ((X.differentialOperatorsZeroIso k).hom.app U) f).val = X.toStructureEnd k U.unop f :=
   (rfl)
 
 /-- The section of `O_X` corresponding to an operator of order zero is its value on `1`. -/
 @[simp]
 theorem differentialOperatorsZeroIso_inv_app_apply (U : X.Opensᵒᵖ)
-    (D : (X.differentialOperators k 0).toFunctor.obj U) :
-    (X.differentialOperatorsZeroIso k).inv.app U D = endApp D.1 (Over.mk (𝟙 U.unop)) 1 := by
-  obtain ⟨f, hf⟩ := mem_differentialOperators_zero_iff.1 D.2
+    (D : (X.differentialOperators k 0).obj U) :
+    ConcreteCategory.hom (C := Type u) (X := (X.differentialOperators k 0).obj U)
+      (Y := ToType (X.presheaf.obj U)) ((X.differentialOperatorsZeroIso k).inv.app U) D =
+      endApp D.val (Over.mk (𝟙 U.unop)) 1 := by
+  obtain ⟨f, hf⟩ := mem_differentialOperators_zero_iff.1 D.property
   have hD : D = (X.differentialOperatorsZeroIso k).hom.app U f := Subtype.ext hf.symm
   subst hD
   rw [← types_comp_apply ((X.differentialOperatorsZeroIso k).hom.app U)
@@ -450,14 +457,14 @@ composition. -/
   obj U := RingCat.of (X.differentialOperatorsSubring k U.unop)
   map i := RingCat.ofHom ((X.restrictEnd k i.unop).restrict _ _
     fun _ ↦ restrictEnd_mem_differentialOperatorsSubring i.unop)
-  map_id _ := RingCat.hom_ext (RingHom.ext fun D ↦ Subtype.ext (restrictEnd_id D.1))
+  map_id _ := RingCat.hom_ext (RingHom.ext fun D ↦ Subtype.ext (restrictEnd_id D.val))
   map_comp f g := RingCat.hom_ext
-    (RingHom.ext fun D ↦ Subtype.ext (restrictEnd_restrictEnd f.unop g.unop D.1).symm)
+    (RingHom.ext fun D ↦ Subtype.ext (restrictEnd_restrictEnd f.unop g.unop D.val).symm)
 
 @[simp]
 theorem coe_presheafOfDifferentialOperators_map_apply {U U' : X.Opensᵒᵖ} (i : U ⟶ U')
     (D : (X.presheafOfDifferentialOperators k).obj U) :
-    ((X.presheafOfDifferentialOperators k).map i D).1 = X.restrictEnd k i.unop D.1 :=
+    ((X.presheafOfDifferentialOperators k).map i D).val = X.restrictEnd k i.unop D.val :=
   (rfl)
 
 variable (X k) in
@@ -485,7 +492,7 @@ noncomputable def toPresheafOfDifferentialOperators :
     exact Subtype.ext (restrictEnd_toStructureEnd i.unop f).symm
 
 theorem coe_toPresheafOfDifferentialOperators_app_apply (U : X.Opensᵒᵖ) (f : Γ(X, U.unop)) :
-    ((X.toPresheafOfDifferentialOperators k).app U f).1 = X.toStructureEnd k U.unop f :=
+    ((X.toPresheafOfDifferentialOperators k).app U f).val = X.toStructureEnd k U.unop f :=
   (rfl)
 
 /-- On the empty scheme every endomorphism of the structure sheaf is zero. -/
