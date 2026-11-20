@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.FiberBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Basic
+public import Mathlib.LinearAlgebra.Span.Defs
 
 /-!
 # Trivializations over the whole base
@@ -47,6 +48,10 @@ is convergence of base points and of fibre coordinates in any linear trivializat
 point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`). Over the base set, pulling continuous
 linear maps on the model fibre back to a fibre through a linear trivialization is injective
 (`Bundle.Trivialization.injective_comp_continuousLinearMapAt`).
+
+Transport through a preferred fibre equivalence also shows that a family spanning a fibre with
+nontrivial model has a nonzero member (`VectorBundle.exists_ne_zero_of_span_range_eq_top`).
+The family and fibre may be infinite, with no continuity or manifold assumption on the family.
 
 We also record the product trivialization's fibrewise inverse
 (`Bundle.Trivialization.prod_symm_apply'`), the preferred trivialization of a direct-sum fibre
@@ -351,5 +356,25 @@ protected theorem continuousSMul [∀ x, AddCommMonoid (E x)] [∀ x, Module �
   let e := (trivializationAt F E b).continuousLinearEquivAt 𝕜 b
     (FiberBundle.mem_baseSet_trivializationAt' b)
   e.toHomeomorph.isInducing.continuousSMul continuous_id fun {c x} ↦ e.map_smul c x
+
+end VectorBundle
+
+namespace VectorBundle
+
+open Set
+
+variable {𝕜 M : Type*} (F : Type*) [NontriviallyNormedField 𝕜]
+  [TopologicalSpace M] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+
+/-- A family spanning a fiber with nontrivial model contains a nonzero member.
+Neither the index set nor the fiber needs to be finite, and no regularity is required. -/
+theorem exists_ne_zero_of_span_range_eq_top [Nontrivial F] {x : M} {ι : Type*}
+    {v : ι → V x} (hspan : Submodule.span 𝕜 (range v) = ⊤) : ∃ i, v i ≠ 0 := by
+  have : Nontrivial (V x) := (continuousLinearEquivAt 𝕜 F V x).toEquiv.nontrivial
+  by_contra! hall
+  exact top_ne_bot (hspan.symm.trans (Submodule.span_eq_bot.mpr (forall_mem_range.mpr hall)))
 
 end VectorBundle
