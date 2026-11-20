@@ -252,41 +252,6 @@ theorem closure_splitGluingPairs :
     simpa only [closure_Ioc hr₀.ne] using h
   rw [← himage, hclosure, ← insert_left_Ioc hr₀.le, image_insert_eq, hF₀]
 
-/-- The local compactified gluing space is a closed interval. Its inverse gluing coordinate
-is the expanding entrance norm divided by the box radius, and parameter zero is the broken
-trajectory. The assertion includes all unbroken pairs in the prescribed range. -/
-theorem exists_homeomorph_closure_splitGluingPairs :
-    ∃ e : Icc (0 : ℝ) r₀ ≃ₜ closure (splitGluingPairs ε r₀ g k),
-      (∀ p, (e.symm p : ℝ) = ‖p.val.1.snd‖ / ε) ∧
-      (e ⟨0, by constructor <;> linarith⟩).val =
-        (WithLp.toLp 2 (g 0, 0), WithLp.toLp 2 (0, k 0)) := by
-  obtain ⟨F, hF, himage, hF₀, hcoord⟩ :=
-    exists_splitGluingPairs_parametrization hg hgε hk hkε hε hr₀.le hr₀₁ hK
-  have hclosure : closure (splitGluingPairs ε r₀ g k) = F '' Icc 0 r₀ := by
-    rw [closure_splitGluingPairs hg hgε hk hkε hε hr₀ hr₀₁ hK, ← himage,
-      ← hF₀, ← image_insert_eq, insert_left_Ioc hr₀.le]
-  let f : Icc (0 : ℝ) r₀ → closure (splitGluingPairs ε r₀ g k) :=
-    fun r ↦ ⟨F r, by rw [hclosure]; exact mem_image_of_mem F r.property⟩
-  have hf : Continuous f := hF.domRestrict.codRestrict _
-  have hsurj : Surjective f := by
-    rintro ⟨p, hp⟩
-    rw [hclosure] at hp
-    obtain ⟨r, hr, rfl⟩ := hp
-    exact ⟨⟨r, hr⟩, rfl⟩
-  have hleft (r : Icc (0 : ℝ) r₀) : ‖(f r).val.1.snd‖ / ε = r := hcoord r r.property
-  let inv : closure (splitGluingPairs ε r₀ g k) → Icc (0 : ℝ) r₀ := fun p ↦
-    ⟨‖p.val.1.snd‖ / ε, by obtain ⟨r, rfl⟩ := hsurj p; rw [hleft]; exact r.property⟩
-  have hleftinv : LeftInverse inv f := fun r ↦ Subtype.ext (hleft r)
-  let e : Icc (0 : ℝ) r₀ ≃ₜ closure (splitGluingPairs ε r₀ g k) :=
-    { toFun := f
-      invFun := inv
-      left_inv := hleftinv
-      right_inv := hleftinv.rightInverse_of_surjective hsurj
-      continuous_toFun := hf
-      continuous_invFun := by
-        fun_prop }
-  exact ⟨e, fun _ ↦ rfl, hF₀⟩
-
 end Single
 
 /-! ### Families of discs -/
@@ -433,6 +398,39 @@ theorem exists_homeomorph_closure_biUnion_splitGluingPairs [CompleteSpace Eᵤ]
   · rw [← e.apply_symm_apply x, he, hnorm _ (e.symm x).property, e.apply_symm_apply]
   · rw [he, ← himage _ q.property.2]
     exact ⟨_, ⟨hq, q.property.1.2⟩, rfl⟩
+
+/-- The local compactified gluing space is a closed interval. Its inverse gluing coordinate
+is the expanding entrance norm divided by the box radius, and parameter zero is the broken
+trajectory. The assertion includes all unbroken pairs in the prescribed range. This is the case of
+a constant family in `exists_homeomorph_closure_biUnion_splitGluingPairs`. -/
+theorem exists_homeomorph_closure_splitGluingPairs [CompleteSpace Eᵤ]
+    (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * ε)))
+    (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g y‖ = ε)
+    (hk : LipschitzOnWith Kk k (closedBall 0 (r₀ * ε)))
+    (hkε : ∀ x ∈ closedBall 0 (r₀ * ε), ‖k x‖ = ε)
+    (hε : 0 < ε) (hr₀ : 0 < r₀) (hr₀₁ : r₀ ≤ 1) (hK : Kk * Kg * r₀ ^ 2 < 1) :
+    ∃ e : Icc (0 : ℝ) r₀ ≃ₜ closure (splitGluingPairs ε r₀ g k),
+      (∀ p, (e.symm p : ℝ) = ‖p.val.1.snd‖ / ε) ∧
+      (e ⟨0, by constructor <;> linarith⟩).val =
+        (WithLp.toLp 2 (g 0, 0), WithLp.toLp 2 (0, k 0)) := by
+  obtain ⟨e, hcoord, -, he₀⟩ :=
+    exists_homeomorph_closure_biUnion_splitGluingPairs (S := (univ : Set Unit))
+      (g := fun _ ↦ g) (k := fun _ ↦ k) (fun _ _ ↦ hg) (fun _ _ ↦ hgε) (fun _ _ ↦ hk)
+      (fun _ _ ↦ hkε) (fun _ _ ↦ continuousOn_const) (fun _ _ ↦ continuousOn_const) hε hr₀ hr₀₁ hK
+      isCompact_univ fun _ _ _ _ _ _ _ _ _ _ ↦ Subsingleton.elim _ _
+  -- Identify `[0, r₀]` with `[0, r₀] × univ` over the one-point parameter space.
+  let i : Icc (0 : ℝ) r₀ ≃ₜ (Icc 0 r₀ ×ˢ (univ : Set Unit) : Set (ℝ × Unit)) :=
+    { toFun r := ⟨(r, ()), r.property, mem_univ _⟩
+      invFun q := ⟨q.val.1, q.property.1⟩
+      left_inv _ := rfl
+      right_inv _ := rfl
+      continuous_toFun := by fun_prop
+      continuous_invFun := by fun_prop }
+  have hset : closure (⋃ p ∈ (univ : Set Unit), splitGluingPairs ε r₀ g k) =
+      closure (splitGluingPairs ε r₀ g k) := by
+    rw [biUnion_univ, iUnion_const]
+  exact ⟨(i.trans e).trans (Homeomorph.setCongr hset), fun x ↦ hcoord _,
+    he₀ () (mem_univ _)⟩
 
 end Family
 
