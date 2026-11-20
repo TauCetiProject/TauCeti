@@ -38,6 +38,9 @@ Fourier multipliers are additive in their symbol and commute with the Laplacian.
 bilinear pairing `∫ M (f x) (h x)` of Schwartz functions, the transpose of the multiplier with
 symbol `g` is the multiplier with the reflected symbol `g (-ξ)`; in particular a multiplier with an
 even symbol, such as the Bessel potential `⟨ξ⟩ ^ s`, is symmetric.
+The bilinear pairing of two Fourier transforms is the spatial pairing
+with the reflection `R g (x) = g (-x)`, `∫ M (𝓕 f) (𝓕 g) = ∫ M f (R g)`, so an operator with
+spatial transpose `S` has the Fourier-side transpose `R ∘ S ∘ R`.
 
 For the inverse Fourier transform, iterating Mathlib's `SchwartzMap.fourierInv_lineDerivOp_eq`
 gives `𝓕⁻ (∂_m^N σ) x = (-2πi ⟪x, m⟫) ^ N 𝓕⁻ σ x`, the inverse Fourier transform commutes with
@@ -69,6 +72,10 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 * `SchwartzMap.fourier_smulLeftCLM_fourierInv_eq`: `𝓕 (g • 𝓕⁻ f) = 𝓕⁻ (g (-·) • 𝓕 f)`.
 * `SchwartzMap.integral_bilin_fourierMultiplierCLM_eq`: the transpose of a Fourier multiplier for
   bilinear pairings has the reflected symbol, `∫ M (T_g f) h = ∫ M f (T_{g (-·)} h)`.
+* `SchwartzMap.integral_bilin_fourier_fourier`: bilinear Plancherel,
+  `∫ M (𝓕 f ξ) (𝓕 g ξ) dξ = ∫ M (f x) (g (-x)) dx`.
+* `SchwartzMap.integral_bilin_fourier_fourier_eq_of_forall_integral_bilin_eq`: an operator with
+  transpose `S` for the spatial pairing has the transpose `R ∘ S ∘ R` for the Fourier-side pairing.
 
 * `SchwartzMap.fourier_lineDerivOp_apply`: the Fourier transform of a directional derivative.
 * `SchwartzMap.support_fourier_lineDerivOp_subset`,
@@ -276,6 +283,39 @@ theorem integral_bilin_fourierMultiplierCLM_eq {G K : Type*} [NormedAddCommGroup
   simp
 
 end FourierMultiplier
+
+section BilinearPlancherel
+
+variable [NormedSpace ℂ F] [CompleteSpace F] {G K : Type*} [NormedAddCommGroup G]
+  [NormedSpace ℂ G] [CompleteSpace G] [NormedAddCommGroup K] [NormedSpace ℂ K]
+
+/-- **Bilinear Plancherel**: the bilinear pairing of the Fourier transforms of two Schwartz
+functions is the pairing of the first with the reflection of the second,
+`∫ M (𝓕 f ξ) (𝓕 g ξ) dξ = ∫ M (f x) (g (-x)) dx`. No complex conjugation is involved; the
+reflection comes from `𝓕 (𝓕 g) x = g (-x)`. -/
+theorem integral_bilin_fourier_fourier (f : 𝓢(E, F)) (g : 𝓢(E, G)) (M : F →L[ℂ] G →L[ℂ] K) :
+    ∫ ξ, M (𝓕 f ξ) (𝓕 g ξ) = ∫ x, M (f x) (g (-x)) := by
+  rw [integral_bilin_fourier_eq]
+  congr 1 with x
+  have h := fourierInv_apply_eq_fourier_neg (𝓕 g) (-x)
+  rw [FourierTransform.fourierInv_fourier_eq, neg_neg] at h
+  rw [← h]
+
+/-- **Transposes for the Fourier-side pairing.** Write `R g (x) = g (-x)` for the reflection. If
+`S` is the transpose of `T` for the spatial bilinear pairing, `∫ M (T f) g = ∫ M f (S g)`, then
+`R ∘ S ∘ R` is its transpose for the Fourier-side pairing `(f, g) ↦ ∫ M (𝓕 f) (𝓕 g)`. -/
+theorem integral_bilin_fourier_fourier_eq_of_forall_integral_bilin_eq (M : F →L[ℂ] G →L[ℂ] K)
+    {T : 𝓢(E, F) → 𝓢(E, F)} {S : 𝓢(E, G) → 𝓢(E, G)}
+    (hTS : ∀ f g, ∫ x, M (T f x) (g x) = ∫ x, M (f x) (S g x)) (f : 𝓢(E, F)) (g : 𝓢(E, G)) :
+    ∫ ξ, M (𝓕 (T f) ξ) (𝓕 g ξ) = ∫ ξ, M (𝓕 f ξ) (𝓕 (compCLMOfContinuousLinearEquiv ℂ
+      (LinearIsometryEquiv.neg ℝ (E := E)).toContinuousLinearEquiv
+        (S (compCLMOfContinuousLinearEquiv ℂ
+          (LinearIsometryEquiv.neg ℝ (E := E)).toContinuousLinearEquiv g))) ξ) := by
+  rw [integral_bilin_fourier_fourier, integral_bilin_fourier_fourier]
+  simpa using hTS f (compCLMOfContinuousLinearEquiv ℂ
+    (LinearIsometryEquiv.neg ℝ (E := E)).toContinuousLinearEquiv g)
+
+end BilinearPlancherel
 
 section normed
 
