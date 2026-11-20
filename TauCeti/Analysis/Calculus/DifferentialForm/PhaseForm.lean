@@ -25,6 +25,8 @@ recovers the derivative: `du = u · i Im (u⁻¹ du)` (`TauCeti.fderiv_apply_eq_
 ## Main definitions
 
 * `TauCeti.phaseForm α`: the one-form `Im (α⁻¹ dα)`.
+* `TauCeti.imOneForm`: the continuous linear map `L ↦ Im ∘ L` from complex-valued functionals to
+  real one-forms, through which the phase form and its relatives are differentiated.
 -/
 
 public section
@@ -55,10 +57,16 @@ theorem phaseForm_of_eq_zero (h : α x = 0) : phaseForm α x = 0 := by
   ext v
   simp [h]
 
-/-- The continuous linear map `L ↦ Im ∘ L`, with values in one-forms. -/
-private def imOneForm : (E →L[ℝ] ℂ) →L[ℝ] E [⋀^Fin 1]→L[ℝ] ℝ :=
+/-- The continuous linear map `L ↦ Im ∘ L`, reading a complex-valued real-linear functional as
+the real one-form given by its imaginary part. -/
+def imOneForm : (E →L[ℝ] ℂ) →L[ℝ] E [⋀^Fin 1]→L[ℝ] ℝ :=
   (ofSubsingletonLIE (0 : Fin 1)).toContinuousLinearEquiv.toContinuousLinearMap ∘L
     ContinuousLinearMap.compL ℝ E ℂ ℝ imCLM
+
+/-- The one-form `imOneForm L` evaluated on a vector. -/
+@[simp]
+theorem imOneForm_apply (L : E →L[ℝ] ℂ) (v : Fin 1 → E) : imOneForm L v = (L (v 0)).im := by
+  simp [imOneForm]
 
 /-- The phase form is `imOneForm` applied to `α⁻¹ dα`. -/
 private theorem phaseForm_eq_imOneForm (α : E → ℂ) :
