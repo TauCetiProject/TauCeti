@@ -44,7 +44,9 @@ exactly when both factors are, which is how block-diagonal second derivatives on
 are shown to be invertible. More generally, a map `M₁ × M₂ → M₁ × M₃` which preserves the first
 coordinate is block lower triangular, and it is invertible exactly when its diagonal block
 `M₂ → M₃` is. This is the shape of the differential of a fibre-preserving map between vector
-bundles over the same base, read in bundle charts.
+bundles over the same base, read in bundle charts. For an endomorphism `B`, the map
+`(u, l) ↦ (B u + l, u)` of `M × M` is invertible
+(`ContinuousLinearMap.isInvertible_coprod_id_prod_fst`).
 
 Between uniformly topologized modules an invertible continuous linear map transfers
 completeness from the codomain to the domain, because its inverse is a uniform homeomorphism.
@@ -309,6 +311,21 @@ theorem isInvertible_iff_of_fst_comp_eq {T : M₁ × M₂ →L[R] M₁ × M₃}
       simp [hKp, add_comm]
 
 end FstPreserving
+
+section CoprodId
+
+variable {R M : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
+  [IsTopologicalAddGroup M]
+
+/-- For an endomorphism `B`, the map `(u, l) ↦ (B u + l, u)` of `M × M` is invertible, with
+inverse `(f, g) ↦ (g, f - B g)`. -/
+theorem isInvertible_coprod_id_prod_fst (B : M →L[R] M) :
+    ((B.coprod (ContinuousLinearMap.id R M)).prod (fst R M M)).IsInvertible :=
+  ⟨ContinuousLinearEquiv.ofContinuousLinearMap ((B.coprod (ContinuousLinearMap.id R M)).prod
+    (fst R M M)) ((snd R M M).prod (fst R M M - B ∘L snd R M M)) (ext fun _ ↦ by simp)
+    (ext fun _ ↦ by simp), rfl⟩
+
+end CoprodId
 
 section OneSubComp
 
