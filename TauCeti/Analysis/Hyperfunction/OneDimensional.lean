@@ -113,7 +113,7 @@ theorem coe_holomorphicRestrict {U V : Opens ℂ} (h : U ≤ V) (f : holomorphic
 theorem holomorphicRestrict_self (U : Opens ℂ) (f : holomorphicSections U) :
     holomorphicRestrict le_rfl f = f :=
   Subtype.ext <| (coe_holomorphicRestrict _ f).trans <|
-    indicator_eq_self.mpr fun z hz => by_contra fun hzU => hz (f.property.2 z hzU)
+    indicator_eq_self.mpr <| Function.support_subset_iff'.mpr f.property.2
 
 @[simp]
 theorem holomorphicRestrict_holomorphicRestrict {U V W : Opens ℂ} (h₁ : U ≤ V) (h₂ : V ≤ W)
@@ -200,32 +200,28 @@ theorem throughReal_iSup {ι : Sort*} (U : ι → Opens ℝ) :
   -- The glued function: `f` off the real line, and the extension `g i` at a real point of `U i`.
   let G : ℂ → ℂ := fun z =>
     if z.im = 0 then (if h : ∃ i, z.re ∈ U i then g h.choose z else 0) else (f : ℂ → ℂ) z
+  -- Off the real line, the glued function is `f`.
+  have hGf : EqOn G f nonRealOpen := fun z hz => by simp [G, mem_nonRealOpen_iff.mp hz]
   -- On `W(U i)`, the glued function is the extension `g i`.
   have hG : ∀ i, EqOn G (g i) (complexNeighborhood (U i)) := by
     intro i z hz
-    by_cases him : z.im ≠ 0
-    · simp only [G, him, ite_false]
-      exact (hgf i him).symm
-    · have hre : z.re ∈ U i := (mem_complexNeighborhood_iff.mp hz).resolve_left him
-      have hex : ∃ j, z.re ∈ U j := ⟨i, hre⟩
-      simp only [G, not_not.mp him, hex, ite_true, dite_true]
+    by_cases him : z.im = 0
+    · have hex : ∃ j, z.re ∈ U j :=
+        ⟨i, (mem_complexNeighborhood_iff.mp hz).resolve_left fun h => h him⟩
+      simp only [G, him, hex, ite_true, dite_true]
       refine eqOn_inf_of_eqOn_nonRealOpen (hg _).1.continuousOn (hg i).1.continuousOn
         (nonRealOpen_le_complexNeighborhood _) (nonRealOpen_le_complexNeighborhood _)
         (fun w hw => (hgf _ hw).trans (hgf i hw).symm) ⟨Or.inr hex.choose_spec, hz⟩
-  refine mem_throughReal_iff.mpr ⟨G, ⟨fun z hz => ?_, fun z hz => ?_⟩, fun z hz => ?_⟩
+    · exact (hGf him).trans (hgf i him).symm
+  refine mem_throughReal_iff.mpr ⟨G, ⟨fun z hz => ?_, fun z hz => ?_⟩, hGf⟩
   · rcases mem_complexNeighborhood_iff.mp hz with him | hre
-    · have hGf : EqOn G f nonRealOpen := fun w hw => by simp [G, mem_nonRealOpen_iff.mp hw]
-      exact ((f.property.1.congr hGf).differentiableAt
+    · exact ((f.property.1.congr hGf).differentiableAt
         (nonRealOpen.isOpen.mem_nhds him)).differentiableWithinAt
     · obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hre
-      have hzi : z ∈ complexNeighborhood (U i) := Or.inr hi
       exact (((hg i).1.congr (hG i)).differentiableAt
-        ((complexNeighborhood (U i)).isOpen.mem_nhds hzi)).differentiableWithinAt
-  · have him : ¬z.im ≠ 0 := fun h => hz (Or.inl h)
-    have hex : ¬∃ i, z.re ∈ U i := fun ⟨i, hi⟩ =>
-      hz (Or.inr (Opens.mem_iSup.mpr ⟨i, hi⟩))
-    simp only [G, not_not.mp him, hex, ite_true, dite_false]
-  · simp [G, mem_nonRealOpen_iff.mp hz]
+        ((complexNeighborhood (U i)).isOpen.mem_nhds (Or.inr hi))).differentiableWithinAt
+  · simp only [mem_complexNeighborhood_iff, Opens.mem_iSup, not_or, not_not, not_exists] at hz
+    simp [G, hz]
 
 /-- A holomorphic function on `ℂ ∖ ℝ` that extends across every member of a cover of `V` extends
 across `V`. -/
@@ -246,8 +242,7 @@ abbrev OneDimBoundaryQuotient (U : Opens ℝ) :=
 representative on `ℂ ∖ ℝ`. -/
 def oneDimBoundaryRestrict {U V : Opens ℝ} (h : U ≤ V) :
     OneDimBoundaryQuotient V →ₗ[ℂ] OneDimBoundaryQuotient U :=
-  Submodule.mapQ (throughReal V) (throughReal U) LinearMap.id
-    (by simpa using throughReal_antitone h)
+  Submodule.factor (throughReal_antitone h)
 
 @[simp]
 theorem oneDimBoundaryRestrict_mk {U V : Opens ℝ} (h : U ≤ V)
@@ -265,13 +260,13 @@ theorem oneDimBoundaryRestrict_oneDimBoundaryRestrict {U V W : Opens ℝ} (h₁ 
     (h₂ : V ≤ W) (q : OneDimBoundaryQuotient W) :
     oneDimBoundaryRestrict h₁ (oneDimBoundaryRestrict h₂ q) =
       oneDimBoundaryRestrict (h₁.trans h₂) q :=
-  Submodule.Quotient.induction_on _ q fun _ => rfl
+  Submodule.factor_comp_apply (throughReal_antitone h₂) (throughReal_antitone h₁) q
 
 /-- Every one-dimensional hyperfunction on a smaller open set is the restriction of one on a
 larger open set. -/
 theorem oneDimBoundaryRestrict_surjective {U V : Opens ℝ} (h : U ≤ V) :
-    Function.Surjective (oneDimBoundaryRestrict h) := fun q =>
-  Submodule.Quotient.induction_on _ q fun f => ⟨Submodule.Quotient.mk f, rfl⟩
+    Function.Surjective (oneDimBoundaryRestrict h) :=
+  Submodule.factor_surjective (throughReal_antitone h)
 
 /-- **Locality.** A one-dimensional hyperfunction on `V` whose restrictions to the members of a
 cover of `V` all vanish is zero. -/
