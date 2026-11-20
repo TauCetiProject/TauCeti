@@ -112,6 +112,14 @@ theorem conjTranspose_coe_unitaryLieAlgebra (X : unitaryLieAlgebra ι) :
     (X : Matrix ι ι ℂ)ᴴ = -X :=
   mem_unitaryLieAlgebra_iff.mp X.2
 
+open ComplexConjugate in
+/-- The entries of a skew-Hermitian matrix satisfy `X_(b a) = -conj X_(a b)`. -/
+theorem coe_unitaryLieAlgebra_apply_swap (X : unitaryLieAlgebra ι) (a b : ι) :
+    (X : Matrix ι ι ℂ) b a = -conj ((X : Matrix ι ι ℂ) a b) := by
+  have h := congr_fun (congr_fun (conjTranspose_coe_unitaryLieAlgebra X) a) b
+  rw [conjTranspose_apply, Matrix.neg_apply] at h
+  rw [← map_neg, ← h, star_def, conj_conj]
+
 variable (ι) in
 /-- **`𝔲(n)` is `-i` times the Hermitian matrices**: `X ↦ -i X` is a real linear equivalence from
 the skew-Hermitian onto the Hermitian matrices, with inverse `K ↦ i K`. -/
@@ -136,8 +144,8 @@ instance : FiniteDimensional ℝ (unitaryLieAlgebra ι) :=
   (unitaryLieAlgebraEquivSelfAdjoint ι).symm.finiteDimensional
 
 variable (ι) in
-/-- **`𝔲(n)` has real dimension `n²`**, the complex dimension of the Hermitian matrices it is
-identified with. -/
+/-- **`𝔲(n)` has real dimension `n²`**: it is identified with the Hermitian matrices, whose real
+dimension is the complex dimension `n²` of all `n × n` matrices. -/
 theorem finrank_unitaryLieAlgebra :
     finrank ℝ (unitaryLieAlgebra ι) = Fintype.card ι * Fintype.card ι := by
   rw [(unitaryLieAlgebraEquivSelfAdjoint ι).finrank_eq, finrank_selfAdjoint_submodule,

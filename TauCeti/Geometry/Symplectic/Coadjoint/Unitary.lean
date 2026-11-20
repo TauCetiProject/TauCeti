@@ -9,6 +9,10 @@ public import TauCeti.Analysis.Matrix.UnitaryGroup.Kostant
 public import TauCeti.Geometry.Symplectic.Coadjoint
 public import TauCeti.Geometry.Symplectic.Orientation
 
+import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+import TauCeti.Geometry.Symplectic.Transport
+import TauCeti.LinearAlgebra.Complex.Orientation
+
 /-!
 # Root planes, dimension and orientation of the coadjoint orbits of `U(n)`
 
@@ -131,13 +135,6 @@ theorem mem_lieAnnihilator_unitaryTorusDualInclusion_iff {s : ι → ℝ}
 
 /-! ### The Kirillov–Kostant–Souriau form in matrix entries -/
 
-/-- The entries of a skew-Hermitian matrix satisfy `X_(b a) = -conj X_(a b)`. -/
-private theorem coe_unitaryLieAlgebra_apply_swap (X : unitaryLieAlgebra ι) (a b : ι) :
-    (X : Matrix ι ι ℂ) b a = -conj ((X : Matrix ι ι ℂ) a b) := by
-  have h := congr_fun (congr_fun (conjTranspose_coe_unitaryLieAlgebra X) a) b
-  rw [conjTranspose_apply, Matrix.neg_apply] at h
-  rw [← map_neg, ← h, star_def, conj_conj]
-
 /-- **The KKS form of a diagonal covector in matrix entries**: on the tangent model of the
 coadjoint orbit through `⟨diag(s), ·⟩`,
 `ω([X], [Y]) = ∑ₐ ∑_b (sₐ - s_b) Im (X_(a b) Y_(b a))`. -/
@@ -179,12 +176,9 @@ private theorem sum_sum_sub_mul_im_eq (s : ι → ℝ) (X Y : unitaryLieAlgebra 
   have hlt : ∑ p : ι × ι, (if s p.1 < s p.2 then f p else 0) =
       ∑ p : ι × ι, (if s p.2 < s p.1 then f p else 0) := by
     refine Fintype.sum_equiv (Equiv.prodComm ι ι) _ _ fun p => ?_
-    rw [← hswap p]
-    rfl
-  rw [← Fintype.sum_prod_type' (f := fun a b => (s a - s b) *
-      ((X : Matrix ι ι ℂ) a b * (Y : Matrix ι ι ℂ) b a).im)]
-  change ∑ p, f p = _
-  rw [Fintype.sum_congr _ _ hsplit, Finset.sum_add_distrib, hlt, ← two_mul, ← Finset.sum_filter,
+    rw [Equiv.prodComm_apply, Prod.fst_swap, Prod.snd_swap, hswap p]
+  rw [← Fintype.sum_prod_type f, Fintype.sum_congr _ _ hsplit, Finset.sum_add_distrib, hlt,
+    ← two_mul, ← Finset.sum_filter,
     Finset.sum_subtype (p := fun p : ι × ι => s p.2 < s p.1) _ (fun p => by simp),
     Finset.mul_sum]
   refine Fintype.sum_congr _ _ fun p => ?_
@@ -197,7 +191,7 @@ private theorem sum_sum_sub_mul_im_eq (s : ι → ℝ) (X Y : unitaryLieAlgebra 
 /-- The entries `X_(j k)` of `X ∈ 𝔲(n)` over the pairs `(j, k)` with `s_k < s_j`. -/
 private def rootEntries (s : ι → ℝ) :
     unitaryLieAlgebra ι →ₗ[ℝ] ({p : ι × ι // s p.2 < s p.1} → ℂ) :=
-  LinearMap.pi fun p => entryLinearMap ℝ ℂ p.1.1 p.1.2 ∘ₗ (unitaryLieAlgebra ι).toSubmodule.subtype
+  LinearMap.pi fun p => entryLinearMap ℝ ℂ p.1.1 p.1.2 ∘ₗ (unitaryLieAlgebra ι).incl.toLinearMap
 
 private theorem ker_rootEntries (s : ι → ℝ) :
     LinearMap.ker (rootEntries s) =
@@ -220,6 +214,10 @@ private theorem rootEntries_unitaryRootVector (s : ι → ℝ) (p : {p : ι × �
   refine (unitaryRootVector_apply_of_lt s p.2 q.2 z).trans (if_congr ?_ rfl rfl)
   rw [Subtype.ext_iff, Prod.ext_iff, eq_comm (a := q.1.1), eq_comm (a := q.1.2)]
 
+private theorem rootEntries_surjective (s : ι → ℝ) : Function.Surjective (rootEntries s) :=
+  fun f => ⟨∑ p, unitaryRootVector p.1.1 p.1.2 (f p),
+    by simp only [map_sum, rootEntries_unitaryRootVector, Finset.univ_sum_single]⟩
+
 variable (s : ι → ℝ)
 
 /-- **Complex coordinates on the tangent model of a coadjoint orbit of `U(n)`.** At the covector
@@ -231,13 +229,14 @@ def unitaryRootCoordinates (s : ι → ℝ) :
         (lieAnnihilator ℝ (unitaryLieAlgebra ι) (unitaryTorusDualInclusion ι s)).toSubmodule) ≃ₗ[ℝ]
       ({p : ι × ι // s p.2 < s p.1} → ℂ) :=
   (Submodule.quotEquivOfEq _ _ (ker_rootEntries s).symm).trans
-    ((rootEntries s).quotKerEquivOfSurjective fun f => ⟨∑ p, unitaryRootVector p.1.1 p.1.2 (f p),
-      by simp only [map_sum, rootEntries_unitaryRootVector, Finset.univ_sum_single]⟩)
+    ((rootEntries s).quotKerEquivOfSurjective (rootEntries_surjective s))
 
 @[simp]
 theorem unitaryRootCoordinates_mk (X : unitaryLieAlgebra ι) (p : {p : ι × ι // s p.2 < s p.1}) :
-    unitaryRootCoordinates s (Submodule.Quotient.mk X) p = (X : Matrix ι ι ℂ) p.1.1 p.1.2 :=
-  (rfl)
+    unitaryRootCoordinates s (Submodule.Quotient.mk X) p = (X : Matrix ι ι ℂ) p.1.1 p.1.2 := by
+  rw [unitaryRootCoordinates, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    LinearMap.quotKerEquivOfSurjective_apply_mk]
+  simp [rootEntries]
 
 /-- The root vectors of the pairs with `s_k < s_j` are the coordinate vectors of
 `TauCeti.unitaryRootCoordinates s`. -/
@@ -246,6 +245,16 @@ theorem unitaryRootCoordinates_mk_unitaryRootVector (p : {p : ι × ι // s p.2 
     unitaryRootCoordinates s (Submodule.Quotient.mk (unitaryRootVector p.1.1 p.1.2 z)) =
       Pi.single p z :=
   rootEntries_unitaryRootVector s p z
+
+/-- The inverse of `TauCeti.unitaryRootCoordinates s` sends coordinates `f` to the class of the sum
+of the root vectors with parameters `f p`. -/
+@[simp]
+theorem unitaryRootCoordinates_symm_apply (f : {p : ι × ι // s p.2 < s p.1} → ℂ) :
+    (unitaryRootCoordinates s).symm f =
+      Submodule.Quotient.mk (∑ p, unitaryRootVector p.1.1 p.1.2 (f p)) := by
+  rw [LinearEquiv.symm_apply_eq, ← Submodule.mkQ_apply, map_sum, map_sum]
+  simp only [Submodule.mkQ_apply, unitaryRootCoordinates_mk_unitaryRootVector,
+    Finset.univ_sum_single]
 
 /-- **The KKS form of a coadjoint orbit of `U(n)` in root coordinates**: at `⟨diag(s), ·⟩`,
 `ω(u, v) = ∑_(s_k < s_j) 2 (s_j - s_k) Im (conj (u_(j k)) v_(j k))`, a sum of positive multiples of
@@ -326,20 +335,17 @@ theorem finrank_lieAnnihilator_unitaryTorusDualInclusion :
 of the root coordinates `TauCeti.unitaryRootCoordinates s` by `i`. It is compatible with the KKS
 form (`TauCeti.compatible_unitaryRootComplexStructure`). -/
 def unitaryRootComplexStructure : AlmostComplexStructure (unitaryLieAlgebra ι ⧸
-    (lieAnnihilator ℝ (unitaryLieAlgebra ι) (unitaryTorusDualInclusion ι s)).toSubmodule) where
-  toLinearMap := (unitaryRootCoordinates s).symm.toLinearMap ∘ₗ
-    ((I • LinearMap.id : ({p : ι × ι // s p.2 < s p.1} → ℂ) →ₗ[ℂ] _).restrictScalars ℝ) ∘ₗ
-      (unitaryRootCoordinates s).toLinearMap
-  square_neg := by
-    ext x
-    simp [smul_smul]
+    (lieAnnihilator ℝ (unitaryLieAlgebra ι) (unitaryTorusDualInclusion ι s)).toSubmodule) :=
+  (AlmostComplexStructure.ofComplexModule ({p : ι × ι // s p.2 < s p.1} → ℂ)).transport
+    (unitaryRootCoordinates s).symm
 
 @[simp]
 theorem unitaryRootCoordinates_unitaryRootComplexStructure (x : unitaryLieAlgebra ι ⧸
     (lieAnnihilator ℝ (unitaryLieAlgebra ι) (unitaryTorusDualInclusion ι s)).toSubmodule) :
     unitaryRootCoordinates s (unitaryRootComplexStructure s x) =
       I • unitaryRootCoordinates s x := by
-  simp [unitaryRootComplexStructure]
+  rw [unitaryRootComplexStructure, AlmostComplexStructure.transport_apply, LinearEquiv.symm_symm,
+    LinearEquiv.apply_symm_apply, AlmostComplexStructure.ofComplexModule_apply]
 
 /-- The complex structure multiplies the parameter of a root vector by `i`. -/
 @[simp]
@@ -364,8 +370,11 @@ theorem compatible_unitaryRootComplexStructure :
     refine Fintype.sum_congr _ _ fun p => ?_
     simp only [unitaryRootCoordinates_unitaryRootComplexStructure, Pi.smul_apply, smul_eq_mul,
       map_mul, conj_I]
-    ring_nf
-    simp
+    -- The factors `-i` and `i` cancel: `(-i a) (i b) = a b` since `i² = -1`.
+    rw [show -I * conj (unitaryRootCoordinates s x p) * (I * unitaryRootCoordinates s y p) =
+        conj (unitaryRootCoordinates s x p) * unitaryRootCoordinates s y p by
+      linear_combination
+        -(conj (unitaryRootCoordinates s x p) * unitaryRootCoordinates s y p) * I_sq]
   · have hx' : unitaryRootCoordinates s x ≠ 0 := by
       rwa [Ne, LinearEquiv.map_eq_zero_iff]
     obtain ⟨p, hp⟩ := Function.ne_iff.mp hx'
@@ -388,22 +397,21 @@ for each pair `p = (j, k)` with `s_k < s_j`, the classes of `E_(j k) - E_(k j)` 
 and of `i E_(j k) + i E_(k j)` (index `(p, 1)`). -/
 def unitaryRootBasis : Basis ({p : ι × ι // s p.2 < s p.1} × Fin 2) ℝ (unitaryLieAlgebra ι ⧸
     (lieAnnihilator ℝ (unitaryLieAlgebra ι) (unitaryTorusDualInclusion ι s)).toSubmodule) :=
-  ((Pi.basis fun _ : {p : ι × ι // s p.2 < s p.1} => basisOneI).reindex
-    (Equiv.sigmaEquivProd _ _)).map (unitaryRootCoordinates s).symm
+  (Pi.basisFun ℂ {p : ι × ι // s p.2 < s p.1}).complexToReal.map (unitaryRootCoordinates s).symm
 
 @[simp]
 theorem unitaryRootBasis_apply_zero (p : {p : ι × ι // s p.2 < s p.1}) :
     unitaryRootBasis s (p, 0) = Submodule.Quotient.mk (unitaryRootVector p.1.1 p.1.2 1) := by
   rw [unitaryRootBasis, Basis.map_apply, LinearEquiv.symm_apply_eq,
-    unitaryRootCoordinates_mk_unitaryRootVector, Basis.reindex_apply, Pi.basis_apply]
+    unitaryRootCoordinates_mk_unitaryRootVector, Basis.complexToReal_apply, Pi.basisFun_apply]
   simp
 
 @[simp]
 theorem unitaryRootBasis_apply_one (p : {p : ι × ι // s p.2 < s p.1}) :
     unitaryRootBasis s (p, 1) = Submodule.Quotient.mk (unitaryRootVector p.1.1 p.1.2 I) := by
   rw [unitaryRootBasis, Basis.map_apply, LinearEquiv.symm_apply_eq,
-    unitaryRootCoordinates_mk_unitaryRootVector, Basis.reindex_apply, Pi.basis_apply]
-  simp
+    unitaryRootCoordinates_mk_unitaryRootVector, Basis.complexToReal_apply, Pi.basisFun_apply]
+  simp [← Pi.single_smul]
 
 /-- **The symplectic orientation of a coadjoint orbit of `U(n)`.** At `⟨diag(s), ·⟩`, the
 root-plane basis `([E_(j k) - E_(k j)], [i E_(j k) + i E_(k j)])` over the pairs with
