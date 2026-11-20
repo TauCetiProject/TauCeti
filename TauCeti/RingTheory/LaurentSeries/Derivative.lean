@@ -60,6 +60,7 @@ operation is introduced.
 * `LaurentSeries.derivative_inv` and `LaurentSeries.derivative_div`: the inverse and quotient
   rules over a field.
 * `LaurentSeries.continuous_derivative`: `D` is continuous for the valuation topology.
+* `LaurentSeries.derivative_expand`: the chain rule for Laurent expansion `X ↦ X ^ d`.
 * `LaurentSeries.ratHahnSeriesDerivation_ramifiedEmbedding`: **the chain rule on ramified
   levels**. Under the level-`n` embedding `u ↦ t ^ (1 / n)` into rational-exponent Hahn series,
   the derivative `d/dt` is `(1 / n) u ^ (1 - n) D`.
@@ -335,6 +336,27 @@ theorem derivative_eq_zero_iff_exists_C {R : Type*} [Ring R] [IsAddTorsionFree R
   simp
 
 section Ramified
+
+/-- **Chain rule for Laurent expansion**: the derivative of `f (X ^ d)` is
+`(Df)(X ^ d) * d X ^ (d - 1)`. -/
+theorem derivative_expand {R : Type*} [CommRing R] (d : ℕ+) (f : R⸨X⸩) :
+    derivative R (expand R d f) =
+      expand R d (derivative R f) * derivative R (single (d : ℤ) 1) := by
+  have hd : derivative R (single (d : ℤ) (1 : R)) = single ((d : ℤ) - 1) (d : R) := by
+    rw [derivative_apply, hasseDeriv_single]
+    simp
+  ext n
+  rw [hd, coeff_derivative, coeff_mul_single]
+  by_cases h : (d : ℤ) ∣ n + 1
+  · obtain ⟨k, hk⟩ := h
+    have hk' : n - ((d : ℤ) - 1) = (d : ℤ) * (k - 1) := by linarith
+    rw [hk, coeff_expand_mul, hk', coeff_expand_mul, coeff_derivative]
+    simp only [sub_add_cancel, zsmul_eq_mul, Int.cast_mul, Int.cast_natCast]
+    ring
+  · have h' : ¬ (d : ℤ) ∣ n - ((d : ℤ) - 1) := by
+      intro ⟨k, hk⟩
+      exact h ⟨k + 1, by linarith⟩
+    rw [coeff_expand_of_not_dvd d f h, coeff_expand_of_not_dvd d _ h', smul_zero, zero_mul]
 
 variable {R : Type*} [CommRing R] [Algebra ℚ R]
 
