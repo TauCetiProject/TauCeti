@@ -81,17 +81,6 @@ variable {R : Type uR} {A : Type uA} {B : Type uB}
 
 section Rows
 
-/-- Two additive maps out of `P →₀ A` agree once they agree on `Finsupp.single x c` for every
-generator `x` and every homogeneous coefficient `c`. -/
-private theorem finsupp_addMonoidHom_ext_homogeneous {N : Type*} [AddZeroClass N]
-    {φ ψ : (P →₀ A) →+ N}
-    (h : ∀ x i (c : A), c ∈ 𝒜 i → φ (Finsupp.single x c) = ψ (Finsupp.single x c)) : φ = ψ :=
-  Finsupp.addHom_ext fun x c ↦ by
-    induction c using DirectSum.Decomposition.inductionOn 𝒜 with
-    | zero => simp
-    | @homogeneous i c => exact h x i c c.2
-    | add c c' hc hc' => rw [Finsupp.single_add, map_add, map_add, hc, hc']
-
 /-- Applying a graded ring homomorphism coefficientwise commutes with the Koszul-signed extension
 of the images of the generators. -/
 theorem mapRange_rowFiniteSignedMap {F : Type*} [FunLike F A B] [GradedFunLike F 𝒜 ℬ]
@@ -99,7 +88,7 @@ theorem mapRange_rowFiniteSignedMap {F : Type*} [FunLike F A B] [GradedFunLike F
     Finsupp.mapRange f (map_zero f) (rowFiniteSignedMap (𝒜 := 𝒜) h g) =
       rowFiniteSignedMap (𝒜 := ℬ) (fun x ↦ Finsupp.mapRange f (map_zero f) (h x))
         (Finsupp.mapRange f (map_zero f) g) := by
-  refine DFunLike.congr_fun (finsupp_addMonoidHom_ext_homogeneous (𝒜 := 𝒜)
+  refine DFunLike.congr_fun (Finsupp.addHom_ext_of_decomposition 𝒜
     (φ := (Finsupp.mapRange.addMonoidHom (f : A →+ B)).comp
       (rowFiniteSignedMap (𝒜 := 𝒜) h).toAddMonoidHom)
     (ψ := (rowFiniteSignedMap (𝒜 := ℬ) _).toAddMonoidHom.comp
@@ -120,7 +109,7 @@ theorem mapRange_rowFiniteTwistedDifferential (m : P → P →₀ A) (g : P →�
     Finsupp.mapRange f (map_zero f) (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := dA) m g) =
       rowFiniteTwistedDifferential (𝒜 := ℬ) (d := dB)
         (fun x ↦ Finsupp.mapRange f (map_zero f) (m x)) (Finsupp.mapRange f (map_zero f) g) := by
-  refine DFunLike.congr_fun (finsupp_addMonoidHom_ext_homogeneous (𝒜 := 𝒜)
+  refine DFunLike.congr_fun (Finsupp.addHom_ext_of_decomposition 𝒜
     (φ := (Finsupp.mapRange.addMonoidHom (f : A →+ B)).comp
       (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := dA) m).toAddMonoidHom)
     (ψ := (rowFiniteTwistedDifferential (𝒜 := ℬ) (d := dB) _).toAddMonoidHom.comp
@@ -437,8 +426,9 @@ end RowFiniteTwistingCocycle
 
 namespace RowFiniteContinuationCocycle
 
-variable {P Q : Type uP} {indP : P → ℤ} {indQ : Q → ℤ}
-  {mP : RowFiniteTwistingCocycle 𝒜 dA P indP} {mQ : RowFiniteTwistingCocycle 𝒜 dA Q indQ}
+section
+
+variable {mP : RowFiniteTwistingCocycle 𝒜 dA P indP} {mQ : RowFiniteTwistingCocycle 𝒜 dA Q indQ}
 
 /-- On coefficient vectors, the continuation map of a restricted module with the cocycle `ν` is
 the continuation map of the original module with the image cocycle `f ∘ ν`. -/
@@ -456,7 +446,11 @@ theorem mapRange_linearEquiv_coefficientMap_restrictScalars (ν : RowFiniteConti
     ext y
     simp
 
-variable (hM : IsDGRightModule hB ℳ dM)
+end
+
+variable {P Q : Type uP} {indP : P → ℤ} {indQ : Q → ℤ}
+  {mP : RowFiniteTwistingCocycle 𝒜 dA P indP} {mQ : RowFiniteTwistingCocycle 𝒜 dA Q indQ}
+  (hM : IsDGRightModule hB ℳ dM)
 
 /-- The isomorphism of twisted complexes of a restricted module is natural in the cocycle: it
 intertwines the continuation map of `ν` with the continuation map of the image cocycle
