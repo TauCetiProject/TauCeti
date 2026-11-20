@@ -114,22 +114,22 @@ theorem exists_continuousOn_ae_eq_of_forall_zeroAtInfty (hp : p ≠ ⊤)
     ae_restrict_of_ae_restrict_of_subset hball hwv, ae_restrict_of_ae hg] with y hy hvy hwy hzy
   rw [← hzy, hwy, hvy, ζ.one_of_mem_closedBall (ball_subset_closedBall hy), one_mul]
 
-/-- **Interior `Cʲ` regularity from whole-space embeddings.** Let `p < ∞`. If for every order
-`m ≥ k` every element of the whole-space space `W^{m,p}(E)` agrees almost everywhere with a
-continuous function vanishing at infinity, then every `u ∈ W^{k+j,p}(Ω)` agrees almost everywhere on
-`Ω` with a function that is `Cʲ` on `Ω`. -/
+/-- **Interior `Cʲ` regularity from a whole-space embedding.** Let `p < ∞`. If every element of
+the whole-space space `W^{k,p}(E)` agrees almost everywhere with a continuous function vanishing at
+infinity, then every `u ∈ W^{k+j,p}(Ω)` agrees almost everywhere on `Ω` with a function that is
+`Cʲ` on `Ω`. -/
 theorem exists_contDiffOn_ae_eq_of_forall_zeroAtInfty (hp : p ≠ ⊤)
-    (h : ∀ m, k ≤ m → ∀ w : Wkp (volume : Measure E) ⊤ p m, ∃ g : C₀(E, ℝ),
-      value m w =ᵐ[volume] g) :
+    (h : ∀ w : Wkp (volume : Measure E) ⊤ p k, ∃ g : C₀(E, ℝ), value k w =ᵐ[volume] g) :
     ∀ (j : ℕ) (u : Wkp (volume : Measure E) Omega p (k + j)),
       ∃ g : E → ℝ, ContDiffOn ℝ j g Omega ∧
         (value (k + j) u : E → ℝ) =ᵐ[volume.restrict Omega] g
   | 0, u => by
     simp_rw [Nat.cast_zero, contDiffOn_zero]
-    exact exists_continuousOn_ae_eq_of_forall_zeroAtInfty hp (h k le_rfl) u
+    exact exists_continuousOn_ae_eq_of_forall_zeroAtInfty hp h u
   | j + 1, u => by
-    obtain ⟨g, hg, hug⟩ := exists_continuousOn_ae_eq_of_forall_zeroAtInfty hp
-      (h (k + (j + 1)) (by omega)) u
+    obtain ⟨g, hg, hug⟩ := exists_continuousOn_ae_eq_of_forall_zeroAtInfty hp h
+      (toOrderL (Nat.le_add_right k (j + 1)) u)
+    rw [value_toOrderL] at hug
     let b := stdOrthonormalBasis ℝ E
     -- The weak derivatives along `b` lie in `W^{k+j,p}(Ω)`, so they have `Cʲ` representatives.
     have hd : ∀ i, ∃ gi : E → ℝ, ContDiffOn ℝ j gi Omega ∧
@@ -159,8 +159,7 @@ theorem exists_contDiffOn_ae_eq (hk : finrank ℝ E < 2 * k) (j : ℕ)
     ∃ g : E → ℝ, ContDiffOn ℝ j g Omega ∧
       (value (k + j) u : E → ℝ) =ᵐ[volume.restrict Omega] g :=
   exists_contDiffOn_ae_eq_of_forall_zeroAtInfty ENNReal.ofNat_ne_top
-    (fun _ hm w => ⟨toZeroAtInfty (hk.trans_le (Nat.mul_le_mul_left 2 hm)) w,
-      value_ae_eq_toZeroAtInfty (hk.trans_le (Nat.mul_le_mul_left 2 hm)) w⟩) j u
+    (fun w => ⟨toZeroAtInfty hk w, value_ae_eq_toZeroAtInfty hk w⟩) j u
 
 /-- **The critical interior Sobolev embedding into `C(Ω)`.** If `k ≥ dim E`, every
 `u ∈ W^{k,1}(Ω)` agrees almost everywhere on `Ω` with a function continuous on `Ω`. -/
@@ -177,8 +176,7 @@ theorem exists_contDiffOn_ae_eq_one (hk : finrank ℝ E ≤ k) (j : ℕ)
     ∃ g : E → ℝ, ContDiffOn ℝ j g Omega ∧
       (value (k + j) u : E → ℝ) =ᵐ[volume.restrict Omega] g :=
   exists_contDiffOn_ae_eq_of_forall_zeroAtInfty ENNReal.one_ne_top
-    (fun _ hm w => ⟨toZeroAtInftyOne (hk.trans hm) w,
-      value_ae_eq_toZeroAtInftyOne (hk.trans hm) w⟩) j u
+    (fun w => ⟨toZeroAtInftyOne hk w, value_ae_eq_toZeroAtInftyOne hk w⟩) j u
 
 end Wkp
 
