@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Tannaka.Monoidal
-public import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
+public import TauCeti.Algebra.Coalgebra.Subcomodule.PointsAction
 public import TauCeti.Algebra.HopfAlgebra.OfBijectiveEndOfPoint
 import Mathlib.RingTheory.FiniteType
 import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
@@ -15,8 +15,9 @@ import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 /-!
 # Antipodes from rigidity of finite comodules
 
-Let `B` be a commutative bialgebra over a commutative semiring `R`, projective as an `R`-module
-(for instance, any commutative bialgebra over a field). If every finitely generated `B`-comodule
+Let `B` be a commutative bialgebra over a commutative semiring `R`, projective as an `R`-module,
+whose underlying semiring has the Orzech property (for instance, `B` a commutative ring; this
+covers any commutative bialgebra over a field). If every finitely generated `B`-comodule
 has a left dual in the monoidal category `FGComoduleCat R B`, then `B` has an antipode, so it is a
 Hopf algebra (`TauCeti.Tannaka.hopfAlgebraOfLeftRigid`). This is the step of neutral Tannakian
 reconstruction that produces the inverse of the reconstructed monoid scheme from the duals of
@@ -29,14 +30,15 @@ endomorphism of scalar extension). A monoidal natural transformation between str
 functors is compatible with the comparisons of duals
 (`CategoryTheory.NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate`), so on an object `M`
 with a left dual `ᘁM` the point action has a left inverse, built from the action on `ᘁM`. Over a
-commutative ring, a left-invertible endomorphism of a finite module is bijective (the Orzech
-property), so the point action on `M` is bijective
+commutative semiring with the Orzech property (such as a commutative ring), a left-invertible
+endomorphism of a finite module is bijective, so the point action on `M` is bijective
 (`TauCeti.Tannaka.bijective_endOfPoint_of_hasLeftDual`).
 
 The regular comodule `B` is the directed union of its finite subcomodules. When `B` is projective,
 so that finite subcomodules cover every element, and the value algebra is flat, bijectivity
 passes from finite subcomodules to the whole comodule
-(`TauCeti.Comodule.bijective_endOfPoint_of_forall_finite`). Applied to the universal point
+(`TauCeti.Comodule.bijective_endOfPoint_of_forall_finite`, in
+`TauCeti.Algebra.Coalgebra.Subcomodule.PointsAction`). Applied to the universal point
 `AlgHom.id R B`, this makes the universal point action on `B` bijective, and
 `TauCeti.HopfAlgebra.ofBijective` turns its inverse into an antipode.
 
@@ -47,10 +49,8 @@ passes from finite subcomodules to the whole comodule
   `TauCeti.Tannaka.isMonoidal_endOfPointNatTrans`.
 * `TauCeti.Tannaka.bijective_endOfPoint_of_hasLeftDual`: every point acts bijectively on a
   finite comodule with a left dual.
-* `TauCeti.Comodule.bijective_endOfPoint_of_forall_finite`: bijectivity on all finite
-  subcomodules gives bijectivity on the comodule.
 * `TauCeti.Tannaka.bijective_endOfPoint_id_of_leftRigid`: the universal point acts bijectively on
-  the regular comodule of a left-rigid commutative bialgebra.
+  the regular comodule of a left-rigid commutative bialgebra with the Orzech property.
 * `TauCeti.Tannaka.hopfAlgebraOfLeftRigid`: the resulting Hopf algebra structure.
 * `TauCeti.Tannaka.exists_antipode_of_rigid_finite_comodules`: the two antipode identities.
 
@@ -131,9 +131,9 @@ end NatTrans
 /-- Every point of a bialgebra acts bijectively on the scalar extension of a finite comodule with a
 left dual. The action on the left dual supplies a left inverse, by compatibility of monoidal
 natural transformations with duals, and a left-invertible endomorphism of a finite module over a
-commutative ring is bijective. -/
+commutative semiring with the Orzech property (for instance, a commutative ring) is bijective. -/
 theorem bijective_endOfPoint_of_hasLeftDual {R : Type u} [CommSemiring R] {H : Type v}
-    [Semiring H] [Bialgebra R H] {A : Type u} [CommRing A] [Algebra R A]
+    [Semiring H] [Bialgebra R H] {A : Type u} [CommSemiring A] [OrzechProperty A] [Algebra R A]
     (M : FGComoduleCat.{u, v, u} R H) [HasLeftDual M] (g : H →ₐ[R] A) :
     Function.Bijective (Comodule.endOfPoint M g) := by
   let F := FGComoduleCat.scalarExtensionFunctor.{u, v, u, u} R H A
@@ -168,77 +168,22 @@ theorem bijective_endOfPoint_of_hasLeftDual {R : Type u} [CommSemiring R] {H : T
   refine ⟨Function.LeftInverse.injective hleft, fun y ↦ ⟨r' y, hinj ?_⟩⟩
   rw [hleft]
 
-end Tannaka
+variable (R : Type u) [CommSemiring R] (B : Type u) [CommSemiring B] [OrzechProperty B]
+  [Bialgebra R B] [Module.Projective R B] [LeftRigidCategory (FGComoduleCat.{u, u, u} R B)]
 
-namespace Comodule
-
-variable {R : Type u} [CommSemiring R] {C : Type v} [Semiring C] [Algebra R C] [Coalgebra R C]
-  [Module.Projective R C]
-  {M : Type w} [AddCommMonoid M] [Module R M] [Comodule R C M]
-  {A : Type x} [CommSemiring A] [Algebra R A]
-
-/-- Over a projective coalgebra, finitely many elements of a scalar extension `A ⊗[R] M` lie in
-the scalar extension of one finite subcomodule. -/
-private theorem exists_finite_subcomodule_subset_range (s : Set (A ⊗[R] M)) (hs : s.Finite) :
-    ∃ N : Subcomodule R C M, Module.Finite R N.toSubmodule ∧
-      s ⊆ LinearMap.range ((Subcomodule.subtype N).toLinearMap.baseChange A) := by
-  obtain ⟨P, hP, hsP⟩ := TensorProduct.exists_finite_submodule_right_of_setFinite s hs
-  obtain ⟨N, hN, hPN⟩ := Subcomodule.exists_finite_subcomodule_of_fg (R := R) (C := C) P
-    (Module.Finite.iff_fg.mp hP)
-  refine ⟨N, hN, hsP.trans ?_⟩
-  rintro _ ⟨z, rfl⟩
-  obtain ⟨w, hw⟩ := Submodule.baseChange_mono (A := A) hPN
-    ⟨z, congrFun (LinearMap.baseChange_eq_lTensor (A := A) P.subtype) z⟩
-  rw [Subcomodule.subtype_toLinearMap]
-  exact ⟨w, hw⟩
-
-/-- If a point acts bijectively on the scalar extension of every finite subcomodule, it acts
-bijectively on the scalar extension of the whole comodule. This uses that the finite subcomodules
-cover the comodule (the coalgebra is projective) and that their scalar extensions embed (the
-value algebra is flat). -/
-theorem bijective_endOfPoint_of_forall_finite [Module.Flat R A] (g : C →ₐ[R] A)
-    (h : ∀ N : Subcomodule R C M, Module.Finite R N.toSubmodule →
-      Function.Bijective (endOfPoint N g)) :
-    Function.Bijective (endOfPoint M g) := by
-  have hι (N : Subcomodule R C M) :
-      Function.Injective ((Subcomodule.subtype N).toLinearMap.baseChange A) := by
-    rw [LinearMap.baseChange_eq_lTensor]
-    exact Module.Flat.lTensor_preserves_injective_linearMap _ (Subcomodule.subtype_injective N)
-  have hnat (N : Subcomodule R C M) (z : A ⊗[R] N) :
-      endOfPoint M g ((Subcomodule.subtype N).toLinearMap.baseChange A z) =
-        (Subcomodule.subtype N).toLinearMap.baseChange A (endOfPoint N g z) :=
-    (LinearMap.congr_fun (baseChange_comp_endOfPoint (Subcomodule.subtype N) g) z).symm
-  refine ⟨fun y₁ y₂ hy ↦ ?_, fun y ↦ ?_⟩
-  · obtain ⟨N, hN, hy₁₂⟩ := exists_finite_subcomodule_subset_range (C := C) {y₁, y₂}
-      (Set.toFinite _)
-    obtain ⟨z₂, rfl⟩ := hy₁₂ (Set.mem_insert_of_mem y₁ rfl)
-    obtain ⟨z₁, rfl⟩ := hy₁₂ (Set.mem_insert _ _)
-    rw [hnat, hnat] at hy
-    rw [(h N hN).injective (hι N hy)]
-  · obtain ⟨N, hN, hy⟩ := exists_finite_subcomodule_subset_range (C := C) {y}
-      (Set.finite_singleton y)
-    obtain ⟨z, rfl⟩ := hy (Set.mem_singleton y)
-    obtain ⟨w, rfl⟩ := (h N hN).surjective z
-    exact ⟨_, hnat N w⟩
-
-end Comodule
-
-namespace Tannaka
-
-variable (R : Type u) [CommSemiring R] (B : Type u) [CommRing B] [Bialgebra R B]
-  [Module.Projective R B] [LeftRigidCategory (FGComoduleCat.{u, u, u} R B)]
-
-/-- If every finite comodule over a projective commutative bialgebra `B` has a left dual, the
-universal point `AlgHom.id R B` acts bijectively on the regular comodule `B`. -/
+/-- If every finite comodule over a projective commutative bialgebra `B` with the Orzech property
+(for instance, `B` a commutative ring) has a left dual, the universal point `AlgHom.id R B` acts
+bijectively on the regular comodule `B`. -/
 theorem bijective_endOfPoint_id_of_leftRigid :
     Function.Bijective (Comodule.endOfPoint B (AlgHom.id R B)) :=
   Comodule.bijective_endOfPoint_of_forall_finite _ fun N hN ↦
     bijective_endOfPoint_of_hasLeftDual
       (⟨ComoduleCat.of R B N, hN⟩ : FGComoduleCat.{u, u, u} R B) (AlgHom.id R B)
 
-/-- A projective commutative bialgebra whose finite comodules have left duals is a Hopf algebra.
-Its antipode is `TauCeti.HopfAlgebra.antipodeOfBijective`, the counit evaluation of the inverse
-universal point action. This is not an instance, since `B` may already carry an antipode. -/
+/-- A projective commutative bialgebra with the Orzech property (for instance, a commutative ring)
+whose finite comodules have left duals is a Hopf algebra. Its antipode is
+`TauCeti.HopfAlgebra.antipodeOfBijective`, the counit evaluation of the inverse universal point
+action. This is not an instance, since `B` may already carry an antipode. -/
 -- Exposed so that, once installed with `letI`, its bialgebra structure is recognised as the given
 -- one by instance synthesis.
 @[expose, instance_reducible]
@@ -254,9 +199,10 @@ theorem antipode_hopfAlgebraOfLeftRigid :
       HopfAlgebra.antipodeOfBijective (bijective_endOfPoint_id_of_leftRigid R B) :=
   rfl
 
-/-- A projective commutative bialgebra (for instance, a commutative bialgebra over a field) whose
-finite comodules have left duals, in particular one whose category of finite comodules is rigid,
-has an antipode satisfying both convolution identities. -/
+/-- A projective commutative bialgebra with the Orzech property (for instance, a commutative
+bialgebra over a field, whose underlying semiring is a commutative ring) whose finite comodules
+have left duals, in particular one whose category of finite comodules is rigid, has an antipode
+satisfying both convolution identities. -/
 theorem exists_antipode_of_rigid_finite_comodules :
     ∃ S : B →ₗ[R] B,
       LinearMap.mul' R B ∘ₗ S.rTensor B ∘ₗ Coalgebra.comul =
