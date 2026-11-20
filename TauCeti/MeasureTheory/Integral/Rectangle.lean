@@ -38,6 +38,8 @@ a doubly (twisted) periodic map are used.
   integral over a nondegenerate rectangle vanishes on it.
 * `Continuous.integrableOn_Icc_prod_Icc`: a continuous function is integrable over every closed
   rectangle.
+* `TauCeti.setIntegral_Icc_prod_comp_fst`: a function of the first coordinate integrates over
+  `[a₁, b₁] × [a₂, b₂]` to `b₂ - a₂` times its integral over `[a₁, b₁]`.
 * `TauCeti.setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero`: a function vanishing outside
   the strip `[a₁, b₁] × I` has the same integral over every wider strip `[c, d] × I`.
 * `TauCeti.setIntegral_Icc_add_prod_eq`: the integral over a translated strip
@@ -156,6 +158,13 @@ omit [NormedSpace ℝ E] in
 theorem _root_.Continuous.integrableOn_Icc_prod_Icc {f : ℝ × ℝ → E} (hf : Continuous f) :
     IntegrableOn f (Icc a₁ b₁ ×ˢ Icc a₂ b₂) :=
   hf.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
+
+/-- A function of the first coordinate integrates over the rectangle `[a₁, b₁] × [a₂, b₂]` to
+`b₂ - a₂` times its integral over `[a₁, b₁]`. -/
+theorem setIntegral_Icc_prod_comp_fst (f : ℝ → E) (h₂ : a₂ ≤ b₂) :
+    ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, f z.1 = (b₂ - a₂) • ∫ s in Icc a₁ b₁, f s := by
+  rw [Measure.volume_eq_prod, ← Measure.prod_restrict, integral_fun_fst]
+  simp [h₂]
 
 /-- **Enlarging a strip.** If `f` vanishes at every point whose first coordinate lies outside
 `[a₁, b₁]`, then its integrals over a wider strip `[c, d] × I ⊇ [a₁, b₁] × I` and over
