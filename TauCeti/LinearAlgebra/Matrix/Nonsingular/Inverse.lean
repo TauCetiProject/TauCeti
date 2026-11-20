@@ -22,7 +22,8 @@ homomorphism commutes with `Ring.inverse` (`map_ringInverse`).
 Locality is needed: `ℤ →+* ℚ` is not local, and the `1 × 1` matrix `2` over `ℤ` has inverse `0`,
 while its image in `ℚ` has inverse `1 / 2`. Every ring homomorphism from a field to a nontrivial
 ring is local, so the statement applies, for instance, to the casts `ℚ → ℝ` and `ℝ → ℂ`: an
-inverse computed over `ℚ` is the inverse over `ℝ`.
+inverse computed over `ℚ` is the inverse over `ℝ`. The same determinant argument shows that the
+entrywise map `f.mapMatrix` of a local homomorphism is again local (`Matrix.isLocalHom_mapMatrix`).
 
 `Matrix.inv_submatrix_mul_row_eq_single` normalizes the rows of a matrix whose columns off a pivot
 set vanish to coordinate vectors, by the inverse of its pivot submatrix.
@@ -55,6 +56,15 @@ theorem map_nonsing_inv (f : F) [IsLocalHom f] (A : Matrix n n R) :
   rw [inv_def, inv_def, ← hdet, ← hadj, ← map_ringInverse f]
   ext i j
   simp
+
+omit [FunLike F R S] [RingHomClass F R S] in
+/-- A local ring homomorphism stays local when applied entrywise to square matrices: a matrix is
+invertible exactly when its determinant is, and the determinant commutes with `f`. -/
+instance isLocalHom_mapMatrix (f : R →+* S) [IsLocalHom f] :
+    IsLocalHom (f.mapMatrix : Matrix n n R →+* Matrix n n S) where
+  map_nonunit M hM := by
+    rw [isUnit_iff_isUnit_det, ← RingHom.map_det] at hM
+    exact (isUnit_iff_isUnit_det M).mpr (isUnit_of_map_unit f _ hM)
 
 /-- If the column change `Q` kills `x` off the pivot columns `e`, then normalizing by the inverse of
 the pivot matrix turns the rows of `x * Q` into coordinate vectors. -/
