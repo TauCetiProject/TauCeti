@@ -45,7 +45,6 @@ and in Gillet–Soulé's language their classes form `\widehat{CH}¹(Spec 𝓞 K
 * `TauCeti.ArakelovPicardGroup K`: Arakelov divisors modulo principal divisors.
 * `TauCeti.ArakelovPicardGroup.degree`, `TauCeti.ArakelovPicardGroup.toClassGroup`: the degree
   and the ideal class of a class of Arakelov divisors.
-* `TauCeti.unitLogSubgroup`: the weighted logarithms `log |(𝓞 K)ˣ|` of the units of `𝓞 K`.
 * `TauCeti.ArakelovPicardGroup.ofInfinitePartQuotient`: the map
   `ℝ^{InfinitePlace K} / log |(𝓞 K)ˣ| → Pic^(𝓞 K)`.
 
@@ -268,26 +267,6 @@ theorem principal_unit (u : (𝓞 K)ˣ) :
     simp
 
 end ArakelovDivisor
-
-section unitLogSubgroup
-
-variable [NumberField K]
-
-/-- The **unit logarithmic subgroup** `log |(𝓞 K)ˣ| ⊆ ℝ^{InfinitePlace K}`: the weighted logarithms
-`(mult(v) log |u|_v)_v` of the units `u` of `𝓞 K`, that is the image of `TauCeti.unitLogEmbedding`
-in the ambient space of archimedean coefficients. -/
-def unitLogSubgroup : AddSubgroup (InfinitePlace K → ℝ) :=
-  ((singleParityCheckCode ℝ (InfinitePlace K)).subtype.toAddMonoidHom.comp
-    (unitLogEmbedding K)).range
-
-variable {K}
-
-@[simp] theorem mem_unitLogSubgroup {l : InfinitePlace K → ℝ} :
-    l ∈ unitLogSubgroup K ↔
-      ∃ u : (𝓞 K)ˣ, (unitLogEmbedding K (Additive.ofMul u) : InfinitePlace K → ℝ) = l :=
-  ⟨fun ⟨u, hu⟩ ↦ ⟨u.toMul, hu⟩, fun ⟨u, hu⟩ ↦ ⟨Additive.ofMul u, hu⟩⟩
-
-end unitLogSubgroup
 
 variable [NumberField K] in
 /-- The **compactified Picard group** (Arakelov divisor class group) of a number field `K`: the
