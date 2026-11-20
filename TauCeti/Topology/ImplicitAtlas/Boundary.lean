@@ -54,7 +54,9 @@ The example of the interval `[0, 1]`, with boundary `{0, 1}`, is in
 ## Implementation notes
 
 * The data and the axioms other than the product axiom are those of `TauCeti.ImplicitAtlas`,
-  restated here because the product axiom of an implicit atlas is a field of that structure.
+  restated here because the product axiom of an implicit atlas is a field of that structure. For
+  the same reason the regular footprints (`TauCeti.ImplicitAtlasWithBoundary.footprint`) and their
+  basic properties are restated.
 * The boundary `Y` of the base is a parameter, a subset of `X`; the boundary restriction is an
   implicit atlas on the subtype `Y`, with thickenings the subtypes `∂X_I`.
 * The half-space is modelled as `ℝⁿ × ℝ≥0` rather than as Mathlib's `EuclideanHalfSpace (n + 1)`,
@@ -241,6 +243,57 @@ include 𝒜 in
 theorem isClosed_baseBoundary : IsClosed Y :=
   𝒜.image_baseHomeomorph_boundary ▸ 𝒜.baseHomeomorph.isClosedMap _ (𝒜.isClosed_boundary ∅)
 
+/-! ### Footprints
+
+The general facts about the zero sets and the regular footprints of an implicit atlas, restated for
+implicit atlases with boundary, whose fields restate those of `TauCeti.ImplicitAtlas`. -/
+
+/-- The zero sets `Z_IJ` are invariant under `Γ_J`. -/
+theorem act_mem_kuranishiZeroSet {I J : Finset A} (g : (α : J) → Γ α) {x : T J}
+    (hx : x ∈ kuranishiZeroSet 𝒜.kuranishi I J) :
+    act J g x ∈ kuranishiZeroSet 𝒜.kuranishi I J := mem_kuranishiZeroSet.2 fun α hα ↦ by
+  rw [𝒜.kuranishi_act, mem_kuranishiZeroSet.1 hx α hα, map_zero]
+
+/-- Points of `Z_IJ` with the same image under `ψ_IJ` lie together in `X_J^reg` or outside it,
+since they lie in one orbit and the regular locus is invariant. -/
+theorem mem_regLocus_of_footprintMap_eq {I J : Finset A} (h : I ⊆ J)
+    {x y : kuranishiZeroSet 𝒜.kuranishi I J} (hxy : 𝒜.footprintMap h x = 𝒜.footprintMap h y)
+    (hx : x.1 ∈ 𝒜.regLocus J) : y.1 ∈ 𝒜.regLocus J := by
+  obtain ⟨g, -, hg⟩ := (𝒜.footprintMap_eq_footprintMap_iff h x y).1 hxy
+  exact hg ▸ 𝒜.act_mem_regLocus J g x hx
+
+/-- The regular footprint `V_I = ψ_∅I(X_I^reg ∩ Z_∅I) ⊆ X`. -/
+def footprint (I : Finset A) : Set X :=
+  𝒜.baseHomeomorph '' (𝒜.footprintMap (Finset.empty_subset I) '' {x | x.1 ∈ 𝒜.regLocus I})
+
+@[simp]
+theorem mem_footprint {I : Finset A} {y : X} :
+    y ∈ 𝒜.footprint I ↔ ∃ x : kuranishiZeroSet 𝒜.kuranishi ∅ I,
+      x.1 ∈ 𝒜.regLocus I ∧ 𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset I) x) = y := by
+  simp [footprint]
+
+/-- The regular footprints are open: `X_I^reg ∩ Z_∅I` is an open union of fibres of `ψ_∅I`, so its
+image is open in the open image `U_∅I` by the quotient axiom. -/
+theorem isOpen_footprint (I : Finset A) : IsOpen (𝒜.footprint I) := by
+  set ψ := 𝒜.footprintMap (Finset.empty_subset I)
+  set W : Set (kuranishiZeroSet 𝒜.kuranishi ∅ I) := {x | x.1 ∈ 𝒜.regLocus I}
+  have hW : IsOpen W := (𝒜.isOpen_regLocus I).preimage continuous_subtype_val
+  have hsat : rangeFactorization ψ ⁻¹' (rangeFactorization ψ '' W) = W := by
+    refine Subset.antisymm (fun x ⟨y, hy, hyx⟩ ↦ ?_) (subset_preimage_image _ _)
+    exact 𝒜.mem_regLocus_of_footprintMap_eq _ (congrArg Subtype.val hyx) hy
+  have hopen : IsOpen (rangeFactorization ψ '' W) :=
+    ((𝒜.isQuotientMap_footprintMap _).isOpen_preimage).1 (by rwa [hsat])
+  have himage : ψ '' W = Subtype.val '' (rangeFactorization ψ '' W) := by
+    simp only [image_image, rangeFactorization_coe]
+  exact 𝒜.baseHomeomorph.isOpenMap _ (himage ▸
+    (𝒜.isOpen_range_footprintMap _).isOpenMap_subtype_val _ hopen)
+
+/-- The regular footprints cover `X`. -/
+theorem iUnion_footprint : ⋃ I, 𝒜.footprint I = univ :=
+  eq_univ_of_forall fun y ↦ mem_iUnion.2 <|
+    let ⟨I, x, hx, hxy⟩ := 𝒜.exists_footprintMap_eq y
+    ⟨I, 𝒜.mem_footprint.2 ⟨x, hx, hxy⟩⟩
+
 /-! ### The boundary restriction -/
 
 /-- The action of `Γ_I` on the boundary `∂X_I`. -/
@@ -294,6 +347,22 @@ theorem toKuranishiZeroSet_ofKuranishiZeroSet {I J : Finset A}
     (z : kuranishiZeroSet 𝒜.kuranishi I J) (hz : (z : T J) ∈ 𝒜.boundary J) :
     𝒜.toKuranishiZeroSet (𝒜.ofKuranishiZeroSet z hz) = z :=
   (rfl)
+
+@[simp]
+theorem coe_ofKuranishiZeroSet {I J : Finset A} (z : kuranishiZeroSet 𝒜.kuranishi I J)
+    (hz : (z : T J) ∈ 𝒜.boundary J) : ((𝒜.ofKuranishiZeroSet z hz).1 : T J) = z :=
+  (rfl)
+
+@[simp]
+theorem ofKuranishiZeroSet_toKuranishiZeroSet {I J : Finset A}
+    (x : kuranishiZeroSet 𝒜.boundaryKuranishi I J) :
+    𝒜.ofKuranishiZeroSet (𝒜.toKuranishiZeroSet x) (by simp) = x :=
+  (rfl)
+
+/-- The inclusion of the zero set of the boundary restriction into `Z_IJ` is injective. -/
+theorem toKuranishiZeroSet_injective {I J : Finset A} :
+    Function.Injective (𝒜.toKuranishiZeroSet (I := I) (J := J)) :=
+  fun _ _ hxy ↦ Subtype.ext (Subtype.ext (by simpa using congrArg Subtype.val hxy))
 
 /-- The footprint maps of the boundary restriction are the restrictions of the footprint maps,
 which preserve the boundaries. -/
