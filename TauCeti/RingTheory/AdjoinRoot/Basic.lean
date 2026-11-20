@@ -67,10 +67,10 @@ of `AdjoinRoot g`.
   `AdjoinRoot.finrank_quotient_map_mkQ_span_op_root_X_pow_pow`: the same count for the cyclic
   right modules `M_j`, the quotients of the opposite ring by `op (x ^ j)`, and the quotient of
   `M_j` by the image of `x ^ m`, which has rank `min j m`.
-* `Polynomial.quotientSpanEquivAdjoinRoot`: the cyclic polynomial quotient as an `R`-module
-  is `AdjoinRoot f`; polynomial scalar multiplication becomes multiplication by its image.
-  The two modules agree definitionally, so this connects cyclic module structure theorems with
-  `AdjoinRoot` directly.
+* `Polynomial.quotientSpanEquivAdjoinRoot`, `Polynomial.quotientSpanAlgEquivAdjoinRoot`: the cyclic
+  polynomial quotient as an `R`-module and as an `R`-algebra is `AdjoinRoot f`; polynomial scalar
+  multiplication becomes multiplication by its image. The two quotients agree definitionally, so
+  these equivalences isolate that identification cleanly.
 
 Stated over arbitrary commutative rings.
 
@@ -384,6 +384,35 @@ theorem quotientSpanEquivAdjoinRoot_smul (f g : R[X]) (y : R[X] ⧸ R[X] ∙ f) 
   | H h =>
     rw [← Submodule.Quotient.mk_smul, smul_eq_mul, Ideal.Quotient.mk_eq_mk, Ideal.Quotient.mk_eq_mk,
       quotientSpanEquivAdjoinRoot_mk, quotientSpanEquivAdjoinRoot_mk, map_mul]
+
+/-- The quotient `R[X] ⧸ Ideal.span {f}`, as an `R`-algebra, is `AdjoinRoot f`. -/
+-- `AdjoinRoot f` is defined as `R[X] ⧸ Ideal.span {f}`, so the two `R`-algebras agree
+-- definitionally; this isolates that unfolding in one place.
+noncomputable def quotientSpanAlgEquivAdjoinRoot (f : R[X]) :
+    (R[X] ⧸ Ideal.span {f}) ≃ₐ[R] AdjoinRoot f :=
+  AlgEquiv.refl
+
+/-- `quotientSpanAlgEquivAdjoinRoot` sends the class of a polynomial to its image in
+`AdjoinRoot`. -/
+@[simp]
+theorem quotientSpanAlgEquivAdjoinRoot_mk (f g : R[X]) :
+    quotientSpanAlgEquivAdjoinRoot f (Ideal.Quotient.mk (Ideal.span {f}) g) =
+      AdjoinRoot.mk f g := (rfl)
+
+/-- The inverse of `quotientSpanAlgEquivAdjoinRoot` sends the image of a polynomial in `AdjoinRoot`
+to its quotient class modulo `Ideal.span {f}`. -/
+@[simp]
+theorem quotientSpanAlgEquivAdjoinRoot_symm_mk (f g : R[X]) :
+    (quotientSpanAlgEquivAdjoinRoot f).symm (AdjoinRoot.mk f g) =
+      Ideal.Quotient.mk (Ideal.span {f}) g := (rfl)
+
+/-- The inverse of `quotientSpanAlgEquivAdjoinRoot` sends `AdjoinRoot.root f` to the class of
+`X`. -/
+@[simp]
+theorem quotientSpanAlgEquivAdjoinRoot_symm_root (f : R[X]) :
+    (quotientSpanAlgEquivAdjoinRoot f).symm (AdjoinRoot.root f) =
+      Ideal.Quotient.mk (Ideal.span {f}) X := by
+  rw [← AdjoinRoot.mk_X, quotientSpanAlgEquivAdjoinRoot_symm_mk]
 
 end Polynomial
 
