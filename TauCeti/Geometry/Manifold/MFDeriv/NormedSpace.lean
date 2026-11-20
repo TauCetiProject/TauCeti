@@ -443,4 +443,11 @@ theorem exists_contMDiffAt_mvfderiv_ne_zero [SeparatingDual 𝕜 E] {x : M} {v :
   obtain ⟨g, hg, hgv⟩ := exists_contMDiffAt_mvfderiv_eq_one (I := I) hv n
   exact ⟨g, hg, hgv.symm ▸ one_ne_zero⟩
 
+/-- If `dg_x(v) ≠ 0`, the hyperplane `ker dg_x` is complementary to the line `𝕜 ∙ v`. -/
+theorem isCompl_ker_mvfderiv_span_singleton {g : M → 𝕜} {x : M} {v : TangentSpace I x}
+    (hgv : mvfderiv I g x v ≠ 0) :
+    IsCompl (LinearMap.ker (mvfderiv I g x : TangentSpace I x →ₗ[𝕜] 𝕜)) (𝕜 ∙ v) :=
+  ⟨Submodule.disjoint_span_singleton_of_notMem hgv,
+    codisjoint_iff.2 (by rw [sup_comm]; exact LinearMap.span_singleton_sup_ker_eq_top _ hgv)⟩
+
 end TauCeti

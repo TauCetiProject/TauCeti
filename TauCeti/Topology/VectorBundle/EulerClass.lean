@@ -10,6 +10,7 @@ public import Mathlib.Topology.VectorBundle.Constructions
 public import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
 public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Category.TopPair.ContinuousLinearEquiv
+public import TauCeti.Topology.VectorBundle.ZeroSection
 import TauCeti.Topology.VectorBundle.Smul
 
 /-!
@@ -49,14 +50,15 @@ uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
 
 ## Main definitions
 
-* `TauCeti.zeroSectionCompl`: the nonzero vectors `E₀` of a bundle.
 * `TauCeti.thomPair`: the Thom pair `(E, E₀)`.
 * `TauCeti.thomPairOver`: the Thom pair `(E|_W, E₀|_W)` of the restriction to a subset `W` of the
   base; over the whole base it is the Thom pair `(E, E₀)` (`TauCeti.thomPairOverUnivIso`).
 * `TauCeti.thomPairOverMap`: the restriction map `(E|_W, E₀|_W) ⟶ (E|_{W'}, E₀|_{W'})` for
   `W ⊆ W'`.
 * `TauCeti.fiberThomPairMap`, `TauCeti.fiberThomPairOverMap`: the inclusions of the fibre pair
-  `(E_b, E_b ∖ {0})` into the Thom pair and into the Thom pair over a set containing `b`.
+  `(E_b, E_b ∖ {0})` into the Thom pair and into the Thom pair over a set containing `b`; over a
+  subsingleton base, `fiberThomPairMap` is an isomorphism
+  (`TauCeti.isIso_fiberThomPairMap_of_subsingleton`).
 * `TauCeti.thomPairMapOfNeZero`: a continuous map `f : X → E` taking nonzero values off a set `S`,
   as a map of pairs `(X, X ∖ S) ⟶ (E, E₀)`.
 * `TauCeti.thomPairProj`, `TauCeti.thomPairOverProj`: the projection of the total space to the base,
@@ -92,28 +94,6 @@ namespace TauCeti
 section Pair
 
 variable {B : Type w} (F : Type*) (E : B → Type w) [∀ b, Zero (E b)]
-
-/-- The complement `E₀` of the zero section in the total space of a bundle: its nonzero
-vectors. -/
-def zeroSectionCompl : Set (TotalSpace F E) :=
-  {v | v.snd ≠ 0}
-
-variable {F E} in
-@[simp]
-theorem mem_zeroSectionCompl {v : TotalSpace F E} : v ∈ zeroSectionCompl F E ↔ v.snd ≠ 0 :=
-  Iff.rfl
-
-/-- The nonzero vectors are the complement of the range of the zero section. -/
-theorem zeroSectionCompl_eq_compl_range :
-    zeroSectionCompl F E = (range (zeroSection F E))ᶜ := by
-  ext ⟨b, x⟩
-  simp only [mem_zeroSectionCompl, mem_compl_iff, mem_range, not_exists]
-  constructor
-  · rintro hx b' h
-    cases h
-    exact hx rfl
-  · intro h hx
-    exact h b (by rw [hx]; rfl)
 
 variable [TopologicalSpace (TotalSpace F E)]
 
@@ -246,21 +226,6 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [N
   {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
 
-variable (F E) in
-/-- The nonzero vectors of a real vector bundle form an open set. -/
-theorem isOpen_zeroSectionCompl : IsOpen (zeroSectionCompl F E) := by
-  refine isOpen_iff_forall_mem_open.2 fun v hv ↦ ?_
-  let e := trivializationAt F E v.proj
-  -- Over the base set of `e`, a vector is nonzero exactly when its coordinate in `F` is.
-  have key (w : TotalSpace F E) (hw : w ∈ e.source) : (e w).2 ≠ 0 ↔ w.snd ≠ 0 := by
-    rw [← e.continuousLinearEquivAt_apply' (R := ℝ) w hw]
-    exact map_ne_zero_iff _ (e.continuousLinearEquivAt ℝ _ _).injective
-  refine ⟨e.source ∩ e ⁻¹' (univ ×ˢ {0}ᶜ), fun w ⟨hw, hw'⟩ ↦
-    mem_zeroSectionCompl.2 ((key w hw).1 hw'.2),
-    e.continuousOn.isOpen_inter_preimage e.open_source (isOpen_univ.prod isOpen_compl_singleton),
-    FiberBundle.mem_trivializationAt_proj_source,
-    mem_univ _, (key v FiberBundle.mem_trivializationAt_proj_source).2 (mem_zeroSectionCompl.1 hv)⟩
-
 variable (F) in
 include F in
 /-- The nonzero vectors of a fibre of a real vector bundle form an open set. -/
@@ -289,7 +254,7 @@ variable {B : Type w} [TopologicalSpace B] (F : Type*) [TopologicalSpace F] (E :
 def fiberThomPairMap (b : B) :
     TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b)) ⟶ thomPair F E :=
   TopPair.ofSubsetMap (TopCat.ofHom ⟨TotalSpace.mk b, FiberBundle.continuous_totalSpaceMk F E b⟩)
-    fun _ hx ↦ hx
+    fun _ hx ↦ mem_zeroSectionCompl.2 hx
 
 @[simp]
 theorem fiberThomPairMap_fst_apply (b : B) (x : E b) :
@@ -309,6 +274,23 @@ theorem fiberThomPairMap_eq_ofSubsetMap (b : B) :
       (TopCat.ofHom ⟨TotalSpace.mk b, FiberBundle.continuous_totalSpaceMk F E b⟩)
       (fun _ hx ↦ mem_zeroSectionCompl.2 hx) :=
   (rfl)
+
+/-- Over a subsingleton base `B`, the inclusion `(E_b, E_b ∖ {0}) ⟶ (E, E₀)` of the fibre over `b`
+into the Thom pair is an isomorphism in `TopPair`. -/
+instance isIso_fiberThomPairMap_of_subsingleton [Subsingleton B] (b : B) :
+    IsIso (fiberThomPairMap F E b) := by
+  let e : E b ≃ₜ TotalSpace F E :=
+    (Equiv.ofBijective (TotalSpace.mk b) ⟨TotalSpace.mk_injective b,
+      fun ⟨b', x⟩ ↦ by cases Subsingleton.elim b b'; exact ⟨x, rfl⟩⟩).toHomeomorphOfIsInducing
+        (FiberBundle.totalSpaceMk_isInducing F E b)
+  have : IsIso (TopPair.Hom.fst (fiberThomPairMap F E b)) := by
+    rw [fiberThomPairMap_fst]
+    exact (TopCat.isoOfHomeo (X := TopCat.of (E b)) (Y := TopCat.of (TotalSpace F E)) e).isIso_hom
+  exact TopPair.isIso_of_isIso_fst_of_surjective_snd _ fun ⟨⟨b', x⟩, hx⟩ ↦ by
+    cases Subsingleton.elim b b'
+    refine ⟨⟨x, mem_zeroSectionCompl.1 hx⟩, ?_⟩
+    rw [fiberThomPairMap_eq_ofSubsetMap]
+    exact Subtype.ext (TopPair.ofSubsetMap_snd_apply _ _ _)
 
 /-- The projection `π : E ⟶ B` of a fibre bundle, as a morphism of topological spaces out of the
 ambient space of its Thom pair. -/
@@ -511,7 +493,7 @@ local instance pullbackFiberZero (b' : B') : Zero (((⇑f) *ᵖ E) b') :=
 /-- The map `(f*E, (f*E)₀) ⟶ (E, E₀)` of Thom pairs covering a continuous map `f : B' → B`. -/
 def pullbackThomPairMap : thomPair F ((⇑f) *ᵖ E) ⟶ thomPair F E :=
   TopPair.ofSubsetMap (TopCat.ofHom ⟨Pullback.lift f, Pullback.continuous_lift F E f⟩)
-    fun _ hv ↦ hv
+    fun _ hv ↦ mem_zeroSectionCompl.2 (mem_zeroSectionCompl.1 hv :)
 
 @[simp]
 theorem pullbackThomPairMap_fst_apply (v : TotalSpace F ((⇑f) *ᵖ E)) :
@@ -573,8 +555,8 @@ theorem negTotalSpace_apply (v : TotalSpace F E) :
 
 /-- Fibrewise negation `v ↦ -v`, as a self-map of the Thom pair `(E, E₀)`. -/
 def negThomPairMap : thomPair F E ⟶ thomPair F E :=
-  TopPair.ofSubsetMap (TopCat.ofHom (negTotalSpace F E)) fun v (hv : v.snd ≠ 0) ↦
-    (smul_ne_zero (neg_ne_zero.2 one_ne_zero) hv : ((-1 : ℝ) • v.snd) ≠ 0)
+  TopPair.ofSubsetMap (TopCat.ofHom (negTotalSpace F E)) fun _ hv ↦
+    mem_zeroSectionCompl.2 (smul_ne_zero (neg_ne_zero.2 one_ne_zero) (mem_zeroSectionCompl.1 hv))
 
 @[simp]
 theorem negThomPairMap_fst_apply (v : TotalSpace F E) :

@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Clique
 public import Mathlib.Combinatorics.SimpleGraph.DegreeSum
+import Mathlib.Data.Fintype.BigOperators
+import TauCeti.Combinatorics.SimpleGraph.OddTriple
+import TauCeti.Order.Hom.PowersetCard
 
 /-!
 # Three-vertex subsets spanning an odd number of edges
@@ -28,6 +31,10 @@ cardinality satisfies the degree-square identity
   of edges of `G`.
 * `SimpleGraph.Iso.map_oddTriangleFinset`, `SimpleGraph.Iso.card_oddTriangleFinset_eq`:
   invariance of `oddTriangleFinset` under graph isomorphism.
+* `SimpleGraph.triple_mem_oddTriangleFinset_iff`: `{a, b, c}` is an odd triangle exactly when an
+  odd number of the pairs `ab`, `ac`, `bc` are edges.
+* `SimpleGraph.card_oddTriangleFinset_eq_sum`: over a linear order, the odd triangles are counted
+  by their increasing triples `u < v < w`.
 * `SimpleGraph.mem_oddTriangleFinset_iff_of_cliqueFree`: in a `3`-clique-free graph, an odd
   triangle is a `3`-element vertex set spanning a single edge.
 * `SimpleGraph.card_oddTriangleFinset_add_sum_degree_sq`,
@@ -372,6 +379,51 @@ theorem card_oddTriangleFinset_eq_of_cliqueFree (hG : G.CliqueFree 3) :
 
 end CliqueFree
 
+section Triples
+
+variable {G : SimpleGraph V} [DecidableRel G.Adj]
+
+/-- Three vertices form an odd triangle exactly when an odd number of the three pairs are adjacent.
+If two of the vertices coincide, both sides are false. -/
+@[simp 1100, grind =]
+theorem triple_mem_oddTriangleFinset_iff {a b c : V} :
+    {a, b, c} ∈ G.oddTriangleFinset ↔ Xor (G.Adj a b) (Xor (G.Adj a c) (G.Adj b c)) := by
+  rw [mem_oddTriangleFinset, filter_edgeFinset_toFinset_subset, ← mem_oddTripleFinset,
+    triple_mem_oddTripleFinset_iff]
+
+end Triples
+
 end Basic
+
+section Order
+
+variable [Fintype V] [LinearOrder V] (G : SimpleGraph V) [DecidableRel G.Adj]
+
+/-- Over a linear order, the odd triangles are counted by their increasing triples `u < v < w`:
+each odd triangle is `{u, v, w}` for exactly one such triple. -/
+theorem card_oddTriangleFinset_eq_sum :
+    #G.oddTriangleFinset = ∑ u : V, ∑ v : V, ∑ w : V,
+      if u < v ∧ v < w ∧ Xor (G.Adj u v) (Xor (G.Adj u w) (G.Adj v w)) then 1 else 0 := by
+  have h : #G.oddTriangleFinset = #({p : V × V × V | p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧
+      {p.1, p.2.1, p.2.2} ∈ G.oddTriangleFinset} : Finset _) := by
+    symm
+    refine card_bij (fun p _ => {p.1, p.2.1, p.2.2}) (fun p hp => (mem_filter.mp hp).2.2.2) ?_ ?_
+    · rintro ⟨a, b, c⟩ ha ⟨a', b', c'⟩ hb h
+      obtain ⟨-, hab, hbc, -⟩ := mem_filter.mp ha
+      obtain ⟨-, hab', hbc', -⟩ := mem_filter.mp hb
+      have := Set.powersetCard.ofLtTriple.injective (a₁ := ⟨(a, b, c), hab, hbc⟩)
+        (a₂ := ⟨(a', b', c'), hab', hbc'⟩)
+        (Subtype.ext (by simpa only [Set.powersetCard.val_ofLtTriple] using h))
+      simpa using congrArg Subtype.val this
+    · intro s hs
+      obtain ⟨a, b, c, hab, hbc, hs3⟩ :=
+        Set.powersetCard.exists_lt_lt_val_eq ⟨s, (mem_oddTriangleFinset.mp hs).1⟩
+      refine ⟨(a, b, c), ?_, hs3.symm⟩
+      simp only [mem_filter, mem_univ, true_and]
+      exact ⟨hab, hbc, hs3 ▸ hs⟩
+  rw [h, card_filter]
+  simp only [Fintype.sum_prod_type, triple_mem_oddTriangleFinset_iff]
+
+end Order
 
 end SimpleGraph

@@ -300,7 +300,7 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
       have hz' : z.im ≤ 0 := not_lt.1 (show ¬ (0 : ℝ) < z.im from hz)
       refine ⟨imCutoff_eq_zero ?_, ?_⟩
       · nlinarith [(by positivity : (0 : ℝ) ≤ (n : ℝ) + 1)]
-      · simp [hD, Real.smoothTransition.deriv_of_neg (imCutoff_arg_neg (n := n) hz')]
+      · simp [hD, Real.smoothTransition.deriv_of_nonpos (imCutoff_arg_neg (n := n) hz').le]
     rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := H)
         (f := fun z => (imCutoff n z * fderiv ℝ χ z v + D n z) • g z)
         fun z hz => by simp [hzero z hz],
@@ -350,8 +350,8 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
       swap
       · simpa [hD, image_eq_zero_of_notMem_tsupport hzK] using hb0
       by_cases h2 : 2 < ((n : ℝ) + 1) * z.im
-      · simpa [hD, Real.smoothTransition.deriv_of_one_lt
-          (by linarith : 1 < ((n : ℝ) + 1) * z.im - 1)]
+      · simpa [hD, Real.smoothTransition.deriv_of_one_le
+          (by linarith : 1 ≤ ((n : ℝ) + 1) * z.im - 1)]
           using hb0
       push Not at h2
       rw [indicator_of_mem (show z ∈ K from ⟨hzK, le_of_lt hz⟩), norm_smul]
@@ -368,7 +368,7 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
         _ = 2 * (B * M * |v.im|) * ‖g z‖ := by ring
     · have hz : 0 < z.im := hz
       exact tendsto_const_nhds.congr' <| (eventually_imCutoff_arg hz).mono fun n hn => by
-        simp [hD, Real.smoothTransition.deriv_of_one_lt hn]
+        simp [hD, Real.smoothTransition.deriv_of_one_le hn.le]
   have hlim := h1.add h2
   rw [add_zero] at hlim
   exact tendsto_nhds_unique (hlim.congr key) h3.neg
