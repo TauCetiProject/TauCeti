@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.RingTheory.Ideal.Maps
+public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 
 /-!
 # The augmentation of a monoid algebra
@@ -29,6 +30,8 @@ in `TauCeti.Algebra.MonoidAlgebra.Exactness`.
 * `MonoidAlgebra.ker_augmentationLinearMap`: the linear kernel is the augmentation ideal.
 * `MonoidAlgebra.eq_sum_single_of_mul_single_eq_self`: over an additively torsion-free semiring,
   an element invariant under every right translation and with augmentation `|G|` is the norm.
+* `TauCeti.augmentation_subgroupCharSum`: the augmentation of the character sum
+  `∑_{h ∈ H} χ(h) h` is `∑_{h ∈ H} χ(h)`, so that of the norm element of `H` is its order.
 
 ## References
 
@@ -118,3 +121,15 @@ theorem eq_sum_single_of_mul_single_eq_self {R G : Type*} [Semiring R] [IsAddTor
   simp [coeff_sum, coeff_single, Finsupp.single_apply, hcoeff, hγ1]
 
 end MonoidAlgebra
+
+namespace TauCeti
+
+/-- The augmentation of the character sum `∑_{h ∈ H} χ(h) h` is `∑_{h ∈ H} χ(h)`; for the
+trivial character it is the order of `H`. -/
+@[simp]
+theorem augmentation_subgroupCharSum {k G : Type*} [Semiring k] [Group G] (χ : G →* k)
+    (H : Subgroup G) [Fintype H] :
+    MonoidAlgebra.augmentation k G (subgroupCharSum χ H) = ∑ h : H, χ (h : G) := by
+  simp [subgroupCharSum_def]
+
+end TauCeti
