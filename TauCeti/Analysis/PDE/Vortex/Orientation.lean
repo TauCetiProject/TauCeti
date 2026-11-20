@@ -37,7 +37,10 @@ identifies this orientation with the complex orientation of the tangent space of
   `Sym^m ℂ` at `D`: an element `y` of the kernel is taken to the weak `L²` kernel, there to the
   smooth classical solution with the same values (`TauCeti.Vortex.gaugeFixedKernelEquivWeak`), and
   then to the principal parts of `δα / α` at the zeros of `α`
-  (`TauCeti.Vortex.sobolevKernelPrincipalPartEquiv`). This identification is
+  (`TauCeti.Vortex.sobolevKernelPrincipalPartEquiv`). Every element of the kernel has the values of
+  such a classical solution (`TauCeti.Vortex.exists_gaugeFixedKernel_ae_eq_values`), and the
+  isomorphism reads off the principal parts of that solution
+  (`TauCeti.Vortex.sobolevKernelPrincipalPartEquiv_apply_of_ae_eq`). This identification is
   complex linear: it sends `J y` to `i` times the principal parts of `y`
   (`TauCeti.Vortex.sobolevKernelPrincipalPartEquiv_sobolevGaugeFixedKernelAlmostComplexStructure`).
 * The realization is onto at a vortex, so its determinant line is the real determinant line of its
@@ -119,6 +122,23 @@ private theorem sobolevKernelPrincipalPartEquiv_eq_of_ae_eq (hx : Continuous x)
       (h.symm.trans (coeFn_gaugeFixedKernelToLp u).symm)
   rw [sobolevKernelPrincipalPartEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply, hu]
 
+/-- **Every element of the kernel of the realization has the values of a classical solution.** Let
+`x` be a continuous field lying in the affine field space `A_m^k` for every `k`, and let `a` be its
+`L∞` class. Every element `y` of the kernel of `L_x : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` agrees almost
+everywhere with a smooth square-integrable classical solution `u` of `L_x u = 0`, which is the input
+of `sobolevKernelPrincipalPartEquiv_apply_of_ae_eq`. -/
+theorem exists_gaugeFixedKernel_ae_eq_values (hx : Continuous x)
+    (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) (hax : a =ᵐ[μ⊤] x)
+    (y : (sobolevGaugeFixedOperator a).ker) :
+    ∃ u : gaugeFixedKernel x, (u : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume]
+      fun z ↦ (WithLp.toLp 2 fun j ↦ W1p.value ((y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) j) z :
+        EuclideanSpace ℝ (Fin 4)) := by
+  obtain ⟨u, hu⟩ := (gaugeFixedKernelEquivWeak hx hmem).surjective
+    (sobolevGaugeFixedKernelEquiv hx hax y)
+  refine ⟨u, (coeFn_gaugeFixedKernelToLp u).symm.trans ?_⟩
+  rw [← coe_gaugeFixedKernelEquivWeak_apply hx hmem, hu]
+  exact coeFn_sobolevGaugeFixedKernelEquiv hx hax y
+
 /-- **`sobolevKernelPrincipalPartEquiv` reads off the principal parts of the classical solution**:
 if a classical kernel element `u` agrees almost everywhere with the values of `y`, then
 `sobolevKernelPrincipalPartEquiv` sends `y` to the principal parts of `δα / α` of `u` at the points
@@ -137,19 +157,6 @@ theorem sobolevKernelPrincipalPartEquiv_apply_of_ae_eq (hx : Continuous x)
       principalPart x ν u i.1 i.2 := by
   rw [sobolevKernelPrincipalPartEquiv_eq_of_ae_eq hx hmem hhol hax hD hν hνeq y u h,
     principalPartEquiv_apply]
-
-/-- Every element of the kernel of the realization has the values of a classical kernel element. -/
-private theorem exists_gaugeFixedKernel_ae_eq_values (hx : Continuous x)
-    (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) (hax : a =ᵐ[μ⊤] x)
-    (y : (sobolevGaugeFixedOperator a).ker) :
-    ∃ u : gaugeFixedKernel x, (u : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume]
-      fun z ↦ (WithLp.toLp 2 fun j ↦ W1p.value ((y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) j) z :
-        EuclideanSpace ℝ (Fin 4)) := by
-  obtain ⟨u, hu⟩ := (gaugeFixedKernelEquivWeak hx hmem).surjective
-    (sobolevGaugeFixedKernelEquiv hx hax y)
-  refine ⟨u, (coeFn_gaugeFixedKernelToLp u).symm.trans ?_⟩
-  rw [← coe_gaugeFixedKernelEquivWeak_apply hx hmem, hu]
-  exact coeFn_sobolevGaugeFixedKernelEquiv hx hax y
 
 /-- **The principal-part identification of the kernel is complex linear**: it sends `J y` to `i`
 times the principal parts of `y`, where `J` is the complex structure of the kernel of the
