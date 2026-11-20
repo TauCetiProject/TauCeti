@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DerivedCategory.KProjective
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Range
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Chains
 public import TauCeti.Geometry.Manifold.SmoothSingular.Smoothing
@@ -47,9 +48,10 @@ pair `(X, W)` (`TauCeti.singularPairInIso`), so the relative singular cochains o
 (`TauCeti.quasiIso_cochainComplexMap_smoothPairToSingular_comp_singularPairInIso_inv`).
 
 Both pairs are functorial in maps of pairs (`TauCeti.singularPairInMap` for continuous maps,
-`TauCeti.smoothPairInMap` for smooth maps), and the inclusion of the smooth pair into the singular
-pair is natural in smooth maps of pairs (`TauCeti.smoothPairInMap_comp_smoothPairToSingular`);
-enlargement of `W` is the case of the identity map.
+`TauCeti.smoothPairInMap` for smooth maps; see `TauCeti.singularPairInMap_comp` and
+`TauCeti.smoothPairInMap_comp`), and the inclusion of the smooth pair into the singular pair is
+natural in smooth maps of pairs (`TauCeti.smoothPairInMap_comp_smoothPairToSingular`); enlargement
+of `W` is the case of the identity map.
 
 These relative chains are the domain of relative integration of differential forms over smooth
 simplices, which compares the relative de Rham complex of an open pair with relative singular
@@ -63,7 +65,7 @@ cohomology.
   chains and the five lemma).
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -71,46 +73,6 @@ open CategoryTheory Limits TopologicalSpace
 open scoped Manifold ContDiff
 
 universe u v w
-
-namespace TopCat
-
-variable {X : Type u} [TopologicalSpace X]
-
-/-- The singular simplices of `X` coming from a subspace `S` are exactly the simplices with image in
-`S`, that is, the small singular subcomplex of the one-member family `S`. -/
-theorem range_toSSet_map_subtypeVal (S : Set X) :
-    SSet.Subcomplex.range (toSSet.map (ofHom (ContinuousMap.subtypeVal S))) =
-      (of X).smallSingularSubcomplex fun _ : Unit ↦ S := by
-  ext n σ
-  rw [mem_range_toSSet_subtypeVal_iff (X := of X), mem_smallSingularSubcomplex_iff, exists_const]
-
-end TopCat
-
-namespace SSet
-
-variable {C : Type v} [Category.{w} C] [HasCoproducts.{u} C] [Preadditive C]
-  [CategoryWithHomology C] (R : C)
-
-/-- Let `i : A ⟶ B` and `f : B ⟶ Z` be monomorphisms of simplicial sets. If `i` is a
-quasi-isomorphism on chains, then so is the inclusion of the range of `i ≫ f` into the range of
-`f`, for any presentation of these ranges as subcomplexes `S ≤ T` of `Z`. -/
-theorem quasiIso_chainComplexMap_homOfLE_of_range_eq {A B Z : SSet.{u}} (i : A ⟶ B) (f : B ⟶ Z)
-    [Mono i] [Mono f] [QuasiIso (chainComplexMap i R)] {S T : Z.Subcomplex} (hST : S ≤ T)
-    (hS : Subcomplex.range (i ≫ f) = S) (hT : Subcomplex.range f = T) :
-    QuasiIso (chainComplexMap (Subcomplex.homOfLE hST) R) := by
-  subst hS hT
-  have e : Subcomplex.toRange (i ≫ f) ≫ Subcomplex.homOfLE hST = i ≫ Subcomplex.toRange f := by
-    rw [← cancel_mono (Subcomplex.range f).ι]
-    rfl
-  have he := congrArg (chainComplexMap · R) e
-  simp only [Functor.map_comp] at he
-  have : QuasiIso (chainComplexMap (Subcomplex.toRange (i ≫ f)) R ≫
-      chainComplexMap (Subcomplex.homOfLE hST) R) := by
-    rw [he]
-    infer_instance
-  exact (quasiIso_iff_comp_left _ _).1 this
-
-end SSet
 
 namespace TauCeti
 
@@ -123,39 +85,26 @@ variable (X : Type u) [TopologicalSpace X] (W : Set X)
 abbrev singularPairIn : SSetPair.{u} :=
   ((TopCat.of X).smallSingularSubcomplex fun _ : Unit ↦ W).pair
 
-/-- The singular simplicial set of a subspace `W` is isomorphic to the subcomplex of the singular
-simplicial set of `X` of simplices with image in `W`, through the inclusion of `W`. -/
-def singularSubspaceIso :
-    TopCat.toSSet.obj (TopCat.of W) ≅
-      ((TopCat.of X).smallSingularSubcomplex fun _ : Unit ↦ W : SSet.{u}) :=
-  asIso (SSet.Subcomplex.toRange
-      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal W)))) ≪≫
-    SSet.Subcomplex.eqToIso (TopCat.range_toSSet_map_subtypeVal W)
-
-/-- `singularSubspaceIso` sends a singular simplex of `W` to its image in `X`. -/
-@[reassoc (attr := simp)]
-theorem singularSubspaceIso_hom_ι :
-    (singularSubspaceIso X W).hom ≫
-        ((TopCat.of X).smallSingularSubcomplex fun _ : Unit ↦ W).ι =
-      TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal W)) :=
-  (rfl)
-
 /-- The pair `singularPairIn X W` is the singular pair of the topological pair `(X, W)`: a singular
 simplex of `W` is a singular simplex of `X` with image in `W`. -/
 def singularPairInIso :
     TopPair.toSSetPair.obj (TopPair.ofSubset (X := TopCat.of X) W) ≅ singularPairIn X W :=
-  MorphismProperty.Arrow.isoMk (singularSubspaceIso X W) (Iso.refl _) (by rfl)
+  MorphismProperty.Arrow.isoMk (TopCat.singularSubspaceIso (X := TopCat.of X) W) (Iso.refl _) (by
+    rw [TopCat.singularSubspaceIso_hom]
+    exact (TopCat.toSmallSingularSubcomplex_ι _ _).trans (Category.comp_id _).symm)
 
-/-- On the subspaces, `singularPairInIso` is `singularSubspaceIso`. -/
+/-- On the subspaces, `singularPairInIso` is `TopCat.singularSubspaceIso`. -/
 @[simp]
 theorem singularPairInIso_hom_left :
-    (singularPairInIso X W).hom.left = (singularSubspaceIso X W).hom :=
-  (rfl)
+    (singularPairInIso X W).hom.left = (TopCat.singularSubspaceIso (X := TopCat.of X) W).hom := by
+  rw [singularPairInIso]
+  rfl
 
 /-- On the ambient simplicial sets, `singularPairInIso` is the identity. -/
 @[simp]
-theorem singularPairInIso_hom_right : (singularPairInIso X W).hom.right = 𝟙 _ :=
-  (rfl)
+theorem singularPairInIso_hom_right : (singularPairInIso X W).hom.right = 𝟙 _ := by
+  rw [singularPairInIso]
+  rfl
 
 end Defs
 
@@ -220,6 +169,24 @@ theorem singularPairInMap_left (φ : C(X, Y)) (hφ : Set.MapsTo φ W W') :
       TopCat.smallSingularSubcomplexMap _ _ (TopCat.ofHom φ) id fun _ ↦ hφ :=
   (rfl)
 
+/-- The identity map induces the identity of singular pairs. -/
+@[simp]
+theorem singularPairInMap_id :
+    singularPairInMap (ContinuousMap.id X) (Set.mapsTo_id W) = 𝟙 (singularPairIn X W) := by
+  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
+  · exact TopCat.smallSingularSubcomplexMap_id _
+  · exact TopCat.toSSet.map_id _
+
+/-- The map of singular pairs induced by a composite is the composite of the induced maps. -/
+theorem singularPairInMap_comp {Z : Type u} [TopologicalSpace Z] {W'' : Set Z} (φ : C(X, Y))
+    (ψ : C(Y, Z)) (hφ : Set.MapsTo φ W W') (hψ : Set.MapsTo ψ W' W'') :
+    singularPairInMap (ψ.comp φ) (hψ.comp hφ) =
+      singularPairInMap φ hφ ≫ singularPairInMap ψ hψ := by
+  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
+  · exact TopCat.smallSingularSubcomplexMap_comp _ _ _ (TopCat.ofHom φ) (TopCat.ofHom ψ) id id
+      (fun _ ↦ hφ) (fun _ ↦ hψ)
+  · exact TopCat.toSSet.map_comp _ _
+
 variable (W W') in
 /-- A smooth map carries smooth simplices with image in `W` to smooth simplices with image in `W'`
 when it carries `W` into `W'`. -/
@@ -248,10 +215,12 @@ def smoothPairInMap {φ : X → Y} (hφ : ContMDiff I J ∞ φ) (hW : Set.MapsTo
     ((cancel_mono (smoothSingularSubcomplex J Y).ι).1 (by
       -- The codomain of `(smoothPairIn J Y W').hom` is `(smoothPairIn J Y W').right`, which is the
       -- smooth singular subcomplex only after unfolding `SSetPair.of`, so `rw` cannot match the
-      -- composites; both sides are `(S ⊓ T).ι ≫ toSSet.map φ` once `smoothSingularSubcomplexMap_ι`
-      -- has been applied.
-      erw [Category.assoc, Category.assoc, smoothSingularSubcomplexMap_ι]
-      rfl))
+      -- composites. Both sides are `(S ⊓ T).ι ≫ toSSet.map φ`: the right side by
+      -- `smoothSingularSubcomplexMap_ι` and `homOfLE_ι`, the left side by `homOfLE_ι` and
+      -- `lift_ι`.
+      erw [Category.assoc, Category.assoc, smoothSingularSubcomplexMap_ι,
+        SSet.Subcomplex.homOfLE_ι_assoc inf_le_left, SSet.Subcomplex.homOfLE_ι inf_le_left,
+        SSet.Subcomplex.lift_ι]))
 
 /-- On the subspaces, `smoothPairInMap` is the restriction of the map of singular simplicial
 sets. -/
@@ -269,6 +238,28 @@ theorem smoothPairInMap_right {φ : X → Y} (hφ : ContMDiff I J ∞ φ) (hW : 
     (smoothPairInMap hφ hW).right = smoothSingularSubcomplexMap φ hφ :=
   (rfl)
 
+variable (I W) in
+/-- The identity map induces the identity of smooth pairs. -/
+@[simp]
+theorem smoothPairInMap_id :
+    smoothPairInMap (J := I) (φ := id) contMDiff_id (Set.mapsTo_id W) = 𝟙 (smoothPairIn I X W) := by
+  refine MorphismProperty.Arrow.Hom.ext ?_ smoothSingularSubcomplexMap_id
+  -- Both sides send a smooth simplex with image in `W` to the same underlying singular simplex.
+  ext n σ
+  rfl
+
+/-- The map of smooth pairs induced by a composite is the composite of the induced maps. -/
+theorem smoothPairInMap_comp {E'' H'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''} {Z : Type u} [TopologicalSpace Z]
+    [ChartedSpace H'' Z] {W'' : Set Z} {φ : X → Y} {ψ : Y → Z} (hφ : ContMDiff I J ∞ φ)
+    (hψ : ContMDiff J K ∞ ψ) (hW : Set.MapsTo φ W W') (hW' : Set.MapsTo ψ W' W'') :
+    smoothPairInMap (hψ.comp hφ) (hW'.comp hW) =
+      smoothPairInMap hφ hW ≫ smoothPairInMap hψ hW' := by
+  refine MorphismProperty.Arrow.Hom.ext ?_ (smoothSingularSubcomplexMap_comp hψ hφ)
+  -- Both sides postcompose the underlying singular simplex with `ψ ∘ φ`.
+  ext n σ
+  rfl
+
 /-- The inclusion of smooth pairs into singular pairs is natural in smooth maps of pairs. -/
 @[reassoc (attr := simp)]
 theorem smoothPairInMap_comp_smoothPairToSingular {φ : X → Y} (hφ : ContMDiff I J ∞ φ)
@@ -278,9 +269,12 @@ theorem smoothPairInMap_comp_smoothPairToSingular {φ : X → Y} (hφ : ContMDif
   refine MorphismProperty.Arrow.Hom.ext ?_ ?_
   · refine (cancel_mono ((TopCat.of Y).smallSingularSubcomplex fun _ : Unit ↦ W').ι).1 ?_
     -- As in `smoothPairInMap`, the pair components agree with the subcomplexes only after
-    -- unfolding `SSet.Subcomplex.pair`, so the composites are matched up to unfolding.
-    erw [Category.assoc, Category.assoc, TopCat.smallSingularSubcomplexMap_ι]
-    rfl
+    -- unfolding `SSet.Subcomplex.pair`, so `rw` cannot match the composites. Both sides are
+    -- `(S ⊓ T).ι ≫ toSSet.map φ`: the right side by `smallSingularSubcomplexMap_ι` and
+    -- `homOfLE_ι`, the left side by `homOfLE_ι` and `smoothPairInMap_left_ι`.
+    erw [Category.assoc, Category.assoc, TopCat.smallSingularSubcomplexMap_ι,
+      SSet.Subcomplex.homOfLE_ι_assoc inf_le_right, SSet.Subcomplex.homOfLE_ι inf_le_right,
+      smoothPairInMap_left_ι]
   · exact smoothSingularSubcomplexMap_ι hφ
 
 end Naturality
@@ -299,12 +293,12 @@ all singular simplices with image in `W` is a quasi-isomorphism: these are the s
 singular simplices of the manifold `W`. -/
 instance quasiIso_chainComplexMap_smoothPairToSingular_left :
     QuasiIso (SSet.chainComplexMap (smoothPairToSingular I X W).left R) := by
-  have := quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_opens (I := I) R W
-  exact SSet.quasiIso_chainComplexMap_homOfLE_of_range_eq R (smoothSingularSubcomplex I W).ι
+  exact (SSet.quasiIso_chainComplexMap_iff_homOfLE_of_range_eq R (smoothSingularSubcomplex I W).ι
     (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (W : Set X)))) inf_le_right
     ((range_smoothSingularSubcomplex_ι_comp_subtypeVal W).trans
-      (congrArg _ (TopCat.range_toSSet_map_subtypeVal _)))
-    (TopCat.range_toSSet_map_subtypeVal _)
+      (congrArg _ (TopCat.range_toSSet_map_subtypeVal (X := TopCat.of X) _)))
+    (TopCat.range_toSSet_map_subtypeVal (X := TopCat.of X) _)).1
+    (quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_opens (I := I) R W)
 
 /-- On the ambient simplicial sets, the inclusion of smooth singular simplices of `X` is a
 quasi-isomorphism, by the smoothing theorem. -/

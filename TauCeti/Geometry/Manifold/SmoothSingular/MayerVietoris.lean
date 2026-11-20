@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Range
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Subcomplex
 public import TauCeti.CategoryTheory.Subfunctor.Basic
@@ -117,28 +118,10 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_homOfLE :
           SSet.Subcomplex.range
             (TopCat.toSSet.map (TopCat.ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩))))
         R) := by
-  set f := TopCat.toSSet.map (TopCat.ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩)
   have : Mono (TopCat.ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩) :=
     (TopCat.mono_iff_injective _).2 (Set.inclusion_injective h)
-  have : Mono f := Functor.map_mono _ _
-  have : Mono (smoothSingularSubcomplexMap (Opens.inclusion h) (contMDiff_inclusion h) ≫
-      (smoothSingularSubcomplex I W).ι) := by
-    rw [smoothSingularSubcomplexMap_ι]
-    exact mono_comp _ _
-  let e₁ := asIso (SSet.Subcomplex.toRange (smoothSingularSubcomplexMap (Opens.inclusion h)
-    (contMDiff_inclusion h) ≫ (smoothSingularSubcomplex I W).ι)) ≪≫
-      SSet.Subcomplex.eqToIso (range_smoothSingularSubcomplexMap_inclusion_ι h)
-  let e₂ := asIso (SSet.Subcomplex.toRange f)
-  have hcomm : e₁.hom ≫ SSet.Subcomplex.homOfLE inf_le_right =
-      (smoothSingularSubcomplex I U).ι ≫ e₂.hom := by
-    rw [← cancel_mono (SSet.Subcomplex.range f).ι]
-    simp [e₁, e₂, f]
-  have hchain : SSet.chainComplexMap e₁.hom R ≫
-        SSet.chainComplexMap (SSet.Subcomplex.homOfLE inf_le_right) R =
-      SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R ≫ SSet.chainComplexMap e₂.hom R := by
-    rw [← Functor.map_comp, ← Functor.map_comp, hcomm]
-  rw [← quasiIso_iff_comp_right _ (SSet.chainComplexMap e₂.hom R), ← hchain,
-    quasiIso_iff_comp_left]
+  refine SSet.quasiIso_chainComplexMap_iff_homOfLE_of_range_eq R _ _ _ ?_ rfl
+  rw [← range_smoothSingularSubcomplexMap_inclusion_ι h, smoothSingularSubcomplexMap_ι]
 
 end Inclusion
 
