@@ -159,18 +159,18 @@ theorem isPseudoholomorphicWithinAt_ofComplexManifold_iff :
     rw [← modelWithCornersSelf_restrictScalars ℝ (𝕜' := ℂ) (E := E),
       ← modelWithCornersSelf_restrictScalars ℝ (𝕜' := ℂ) (E := E')] at hu
     refine (HasMFDerivWithinAt.of_restrictScalars ℝ (f' := u₀.complexOfMapISmul hI)
-      (hu.congr_mfderiv (ContinuousLinearMap.ext fun w ↦ ?_))).mdifferentiableWithinAt
-    exact (congrFun (u₀.coe_complexOfMapISmul hI) w).symm.trans
-      (ContinuousLinearMap.restrictScalarsTangent_apply _ w).symm
+      ?_).mdifferentiableWithinAt
+    rwa [ContinuousLinearMap.restrictScalarsTangent_modelWithCornersSelf,
+      ContinuousLinearMap.restrictScalars_complexOfMapISmul]
   · intro h
     -- The complex derivative, regarded as a real linear map between the real tangent spaces.
     let u : TangentSpace 𝓘(ℝ, E) x →L[ℝ] TangentSpace 𝓘(ℝ, E') (f x) :=
       (mfderivWithin 𝓘(ℂ, E) 𝓘(ℂ, E') f s x).restrictScalars ℝ
     have hu := h.hasMFDerivWithinAt.restrictScalars ℝ
-    rw [modelWithCornersSelf_restrictScalars, modelWithCornersSelf_restrictScalars] at hu
-    refine ⟨u, hu.congr_mfderiv (ContinuousLinearMap.ext fun w ↦
-        ContinuousLinearMap.restrictScalarsTangent_apply _ w),
-      (isComplexLinearMap_iff_apply _ _ _).mpr fun w ↦ ?_⟩
+    rw [ContinuousLinearMap.restrictScalarsTangent_modelWithCornersSelf ℝ (E := E) (E' := E')
+      (mfderivWithin 𝓘(ℂ, E) 𝓘(ℂ, E') f s x), modelWithCornersSelf_restrictScalars,
+      modelWithCornersSelf_restrictScalars] at hu
+    refine ⟨u, hu, (isComplexLinearMap_iff_apply _ _ _).mpr fun w ↦ ?_⟩
     rw [almostComplexStructureAt_apply, almostComplexStructureAt_apply]
     exact (congrArg u (ofComplexManifold_apply (E := E) x w)).trans
       (((mfderivWithin 𝓘(ℂ, E) 𝓘(ℂ, E') f s x).map_smul Complex.I w).trans

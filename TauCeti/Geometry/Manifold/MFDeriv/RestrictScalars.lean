@@ -48,13 +48,16 @@ fields and intertwines their manifold and vector-valued derivatives.
 * `MDifferentiableAt.mfderiv_restrictScalarsSelf_apply` and
   `MDifferentiableAt.mvfderiv_restrictScalarsSelf_apply`: derivative comparison through this
   fibre equivalence.
+* `ContinuousLinearMap.restrictScalarsTangent`: the scalar restriction of a map between tangent
+  spaces, as a map between the tangent spaces for the scalar restrictions of the models. It
+  preserves composition, identities, zero and addition, and for self models it is
+  `ContinuousLinearMap.restrictScalars`
+  (`ContinuousLinearMap.restrictScalarsTangent_modelWithCornersSelf`).
+* `HasMFDerivWithinAt.restrictScalars`, `HasMFDerivAt.restrictScalars`: the scalar restriction of a
+  derivative for boundaryless models over `𝕜'` is a derivative for their scalar restrictions.
 * `MDifferentiableWithinAt.restrictScalars`, `MDifferentiableAt.restrictScalars`,
   `MDifferentiableOn.restrictScalars`, `MDifferentiable.restrictScalars`: differentiability for
   boundaryless models over `𝕜'` implies differentiability for their scalar restrictions to `𝕜`.
-* `ContinuousLinearMap.restrictScalarsTangent`: the scalar restriction of a map between tangent
-  spaces, as a map between the tangent spaces for the scalar restrictions of the models.
-* `HasMFDerivWithinAt.restrictScalars`, `HasMFDerivAt.restrictScalars`: the scalar restriction of a
-  derivative for boundaryless models over `𝕜'` is a derivative for their scalar restrictions.
 * `HasMFDerivWithinAt.of_restrictScalars`, `HasMFDerivAt.of_restrictScalars`: conversely, a
   `𝕜'`-linear map whose scalar restriction is a derivative for the scalar restrictions is a
   derivative for the models over `𝕜'`.
@@ -91,33 +94,6 @@ variable {H H' : Type*} [TopologicalSpace H] [TopologicalSpace H']
 
 variable (𝕜)
 
-/-- A map which is differentiable within a set at a point for boundaryless models over `𝕜'` is
-differentiable within that set at that point for their scalar restrictions to `𝕜`. -/
-theorem MDifferentiableWithinAt.restrictScalars (h : MDifferentiableWithinAt I I' f s x) :
-    MDifferentiableWithinAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s x := by
-  simp only [mdifferentiableWithinAt_iff, ModelWithCorners.extChartAt_restrictScalars,
-    ModelWithCorners.range_eq_univ, inter_univ] at h ⊢
-  exact ⟨h.1, h.2.restrictScalars 𝕜⟩
-
-/-- A map which is differentiable at a point for boundaryless models over `𝕜'` is differentiable at
-that point for their scalar restrictions to `𝕜`. -/
-theorem MDifferentiableAt.restrictScalars (h : MDifferentiableAt I I' f x) :
-    MDifferentiableAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f x :=
-  mdifferentiableWithinAt_univ.mp (h.mdifferentiableWithinAt.restrictScalars 𝕜)
-
-/-- A map which is differentiable on a set for boundaryless models over `𝕜'` is differentiable on
-that set for their scalar restrictions to `𝕜`. -/
-theorem MDifferentiableOn.restrictScalars (h : MDifferentiableOn I I' f s) :
-    MDifferentiableOn (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s :=
-  fun x hx ↦ (h x hx).restrictScalars 𝕜
-
-/-- A map which is differentiable for boundaryless models over `𝕜'` is differentiable for their
-scalar restrictions to `𝕜`. For instance, a holomorphic map between complex manifolds is real
-differentiable. -/
-theorem MDifferentiable.restrictScalars (h : MDifferentiable I I' f) :
-    MDifferentiable (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f :=
-  fun x ↦ (h x).restrictScalars 𝕜
-
 /-- The scalar restriction to `𝕜` of a `𝕜'`-linear map between tangent spaces for boundaryless
 models over `𝕜'`, as a `𝕜`-linear map between the tangent spaces for their scalar restrictions.
 The tangent spaces for a model and for its scalar restriction are both the model space, and
@@ -143,10 +119,54 @@ theorem ContinuousLinearMap.restrictScalarsTangent_apply {y : N}
 variable {𝕜} in
 /-- The scalar restriction of a map between tangent spaces is injective if and only if the map is
 injective. -/
+@[simp]
 theorem ContinuousLinearMap.injective_restrictScalarsTangent_iff {y : N}
     (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
     Function.Injective (f'.restrictScalarsTangent 𝕜) ↔ Function.Injective f' :=
   Iff.rfl
+
+/-- Restricting the scalars of maps between tangent spaces preserves composition. -/
+@[simp]
+theorem ContinuousLinearMap.restrictScalarsTangent_comp {E'' : Type*} [NormedAddCommGroup E'']
+    [NormedSpace 𝕜 E''] [NormedSpace 𝕜' E''] [IsScalarTower 𝕜 𝕜' E''] {H'' : Type*}
+    [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜' E'' H''} [I''.Boundaryless] {P : Type*}
+    [TopologicalSpace P] [ChartedSpace H'' P] {y : N} {z : P}
+    (g' : TangentSpace I' y →L[𝕜'] TangentSpace I'' z)
+    (f' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
+    (g' ∘L f').restrictScalarsTangent 𝕜 =
+      g'.restrictScalarsTangent 𝕜 ∘L f'.restrictScalarsTangent 𝕜 :=
+  ContinuousLinearMap.ext fun _ ↦ rfl
+
+/-- Restricting the scalars of the identity of a tangent space gives the identity. -/
+@[simp]
+theorem ContinuousLinearMap.restrictScalarsTangent_id :
+    (ContinuousLinearMap.id 𝕜' (TangentSpace I x)).restrictScalarsTangent 𝕜 =
+      ContinuousLinearMap.id 𝕜 (TangentSpace (I.restrictScalars 𝕜) x) :=
+  ContinuousLinearMap.ext fun _ ↦ rfl
+
+/-- Restricting the scalars of the zero map between tangent spaces gives the zero map. -/
+@[simp]
+theorem ContinuousLinearMap.restrictScalarsTangent_zero {y : N} :
+    (0 : TangentSpace I x →L[𝕜'] TangentSpace I' y).restrictScalarsTangent 𝕜 = 0 :=
+  ContinuousLinearMap.ext fun _ ↦ rfl
+
+/-- Restricting the scalars of maps between tangent spaces preserves addition. -/
+@[simp]
+theorem ContinuousLinearMap.restrictScalarsTangent_add {y : N}
+    (f' g' : TangentSpace I x →L[𝕜'] TangentSpace I' y) :
+    (f' + g').restrictScalarsTangent 𝕜 =
+      f'.restrictScalarsTangent 𝕜 + g'.restrictScalarsTangent 𝕜 :=
+  ContinuousLinearMap.ext fun _ ↦ rfl
+
+/-- For the self models `𝓘(𝕜', E)` and `𝓘(𝕜', E')`, whose tangent spaces are `E` and `E'`, the
+scalar restriction of a map between tangent spaces is its ordinary scalar restriction
+`ContinuousLinearMap.restrictScalars`. -/
+theorem ContinuousLinearMap.restrictScalarsTangent_modelWithCornersSelf {M₀ : Type*}
+    [TopologicalSpace M₀] [ChartedSpace E M₀] {N₀ : Type*} [TopologicalSpace N₀]
+    [ChartedSpace E' N₀] {x₀ : M₀} {y₀ : N₀} (f' : E →L[𝕜'] E') :
+    ContinuousLinearMap.restrictScalarsTangent (I := 𝓘(𝕜', E)) (I' := 𝓘(𝕜', E')) (x := x₀)
+      (y := y₀) 𝕜 f' = f'.restrictScalars 𝕜 :=
+  ContinuousLinearMap.ext fun _ ↦ rfl
 
 /-- If `f'` is a derivative of `f` within a set at a point for boundaryless models over `𝕜'`, then
 its scalar restriction `f'.restrictScalarsTangent 𝕜` is a derivative of `f` within that set at that
@@ -166,6 +186,31 @@ theorem HasMFDerivAt.restrictScalars {f' : TangentSpace I x →L[𝕜'] TangentS
     (h : HasMFDerivAt I I' f x f') :
     HasMFDerivAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f x (f'.restrictScalarsTangent 𝕜) :=
   hasMFDerivWithinAt_univ.mp (h.hasMFDerivWithinAt.restrictScalars 𝕜)
+
+/-- A map which is differentiable within a set at a point for boundaryless models over `𝕜'` is
+differentiable within that set at that point for their scalar restrictions to `𝕜`. -/
+theorem MDifferentiableWithinAt.restrictScalars (h : MDifferentiableWithinAt I I' f s x) :
+    MDifferentiableWithinAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s x :=
+  (h.hasMFDerivWithinAt.restrictScalars 𝕜).mdifferentiableWithinAt
+
+/-- A map which is differentiable at a point for boundaryless models over `𝕜'` is differentiable at
+that point for their scalar restrictions to `𝕜`. -/
+theorem MDifferentiableAt.restrictScalars (h : MDifferentiableAt I I' f x) :
+    MDifferentiableAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f x :=
+  (h.hasMFDerivAt.restrictScalars 𝕜).mdifferentiableAt
+
+/-- A map which is differentiable on a set for boundaryless models over `𝕜'` is differentiable on
+that set for their scalar restrictions to `𝕜`. -/
+theorem MDifferentiableOn.restrictScalars (h : MDifferentiableOn I I' f s) :
+    MDifferentiableOn (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s :=
+  fun x hx ↦ (h x hx).restrictScalars 𝕜
+
+/-- A map which is differentiable for boundaryless models over `𝕜'` is differentiable for their
+scalar restrictions to `𝕜`. For instance, a holomorphic map between complex manifolds is real
+differentiable. -/
+theorem MDifferentiable.restrictScalars (h : MDifferentiable I I' f) :
+    MDifferentiable (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f :=
+  fun x ↦ (h x).restrictScalars 𝕜
 
 /-- If the scalar restriction `f'.restrictScalarsTangent 𝕜` of a `𝕜'`-linear map `f'` is a
 derivative of `f` within a set at a point for the scalar restrictions to `𝕜` of boundaryless models
