@@ -36,8 +36,10 @@ half-space restrictions of them is a `C^m` manifold with boundary
 
 A chart with values in `EuclideanHalfSpace (n + 1) × F` similarly restricts to a chart
 `OpenPartialHomeomorph.hyperplaneChart` with values in `ℝⁿ × F` of a set `s` that it reads as the
-hyperplane where the zeroth coordinate vanishes, as for the boundary of a thickening of an implicit
-atlas with boundary in its local product model.
+hyperplane where the zeroth coordinate vanishes. With a trivial factor `F` these are the charts of
+the boundary of a manifold modelled on the half-space (`TauCeti.boundaryChartedSpace`); in general
+they chart the boundary of a thickening of an implicit atlas with boundary in its local product
+model.
 
 ## Main declarations
 

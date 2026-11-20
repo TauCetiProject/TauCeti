@@ -150,18 +150,22 @@ theorem one_le_of_mem_boundary {I J : Finset A} (h : I ⊆ J) (x : kuranishiZero
   · exact (disjoint_left.1 hdisj hxe hxb).elim
   · omega
 
+/-- A point of `Z_∅I` whose footprint lies on the boundary `∂X` lies on the boundary `∂X_I`. -/
+theorem mem_boundary_of_baseHomeomorph_footprintMap_mem {I : Finset A}
+    (x : kuranishiZeroSet 𝒜.kuranishi ∅ I)
+    (hx : 𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset I) x) ∈ bd) :
+    x.1 ∈ 𝒜.boundary I :=
+  (𝒜.footprintMap_mem_boundary_iff _ x).1 (by rw [𝒜.boundary_empty]; exact hx)
+
 include 𝒜 in
 /-- An atlas with boundary all of whose expected dimensions `d + m_I` are at most `0` has empty
 boundary. -/
 theorem eq_empty_of_forall_nonpos
     (hd : ∀ I : Finset A, d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) ≤ 0) : bd = ∅ := by
   refine eq_empty_iff_forall_notMem.2 fun y hy ↦ ?_
-  obtain ⟨I, x, hreg, hx⟩ := 𝒜.exists_footprintMap_eq y
-  have hb : 𝒜.footprintMap (Finset.empty_subset I) x ∈ 𝒜.boundary ∅ := by
-    rw [𝒜.boundary_empty, mem_preimage, hx]
-    exact hy
+  obtain ⟨I, x, hreg, rfl⟩ := 𝒜.exists_footprintMap_eq y
   have := 𝒜.one_le_of_mem_boundary (subset_refl I) ⟨x.1, mem_kuranishiZeroSet_self _ x.1⟩
-    (by rwa [𝒜.footprintMap_self]) ((𝒜.footprintMap_mem_boundary_iff _ x).1 hb)
+    (by rwa [𝒜.footprintMap_self]) (𝒜.mem_boundary_of_baseHomeomorph_footprintMap_mem x hy)
   linarith [hd I]
 
 /-! ### Restriction to the boundary -/
@@ -186,11 +190,14 @@ theorem coe_boundaryAct_apply {I : Finset A} (g : (α : I) → Γ α) (x : 𝒜.
 private def boundaryKuranishi (I : Finset A) (α : I) (x : 𝒜.boundary I) : E α :=
   𝒜.kuranishi I α x
 
+private theorem boundaryKuranishi_apply (I : Finset A) (α : I) (x : 𝒜.boundary I) :
+    𝒜.boundaryKuranishi I α x = 𝒜.kuranishi I α x :=
+  (rfl)
+
 private theorem mem_kuranishiZeroSet_boundaryKuranishi {I J : Finset A} {x : 𝒜.boundary J} :
     x ∈ kuranishiZeroSet 𝒜.boundaryKuranishi I J ↔
       (x : T J) ∈ kuranishiZeroSet 𝒜.kuranishi I J := by
-  simp only [mem_kuranishiZeroSet]
-  rfl
+  simp only [mem_kuranishiZeroSet, boundaryKuranishi_apply]
 
 /-- The inclusion `Z_IJ ∩ ∂X_J → Z_IJ`. -/
 private def zeroSetInclusion {I J : Finset A} (x : kuranishiZeroSet 𝒜.boundaryKuranishi I J) :
@@ -226,16 +233,14 @@ private theorem mem_range_zeroSetInclusion {I J : Finset A} (h : I ⊆ J)
 
 private theorem isClosedEmbedding_zeroSetInclusion {I J : Finset A} :
     IsClosedEmbedding (𝒜.zeroSetInclusion (I := I) (J := J)) := by
-  have hval : IsInducing (fun x : kuranishiZeroSet 𝒜.kuranishi I J ↦ (x : T J)) :=
-    IsInducing.subtypeVal
-  have hcomp : IsInducing ((fun x : kuranishiZeroSet 𝒜.kuranishi I J ↦ (x : T J)) ∘
-      𝒜.zeroSetInclusion) := by
-    have : ((fun x : kuranishiZeroSet 𝒜.kuranishi I J ↦ (x : T J)) ∘ 𝒜.zeroSetInclusion) =
-        fun x ↦ (x.1 : T J) := rfl
-    rw [this]
+  have hcomp : Subtype.val ∘ 𝒜.zeroSetInclusion (I := I) (J := J) = fun x ↦ (x.1 : T J) :=
+    funext 𝒜.coe_zeroSetInclusion
+  refine ⟨⟨IsInducing.subtypeVal.of_comp_iff.1 ?_,
+    Function.Injective.of_comp (f := Subtype.val) ?_⟩, ?_⟩
+  · rw [hcomp]
     exact IsInducing.subtypeVal.comp IsInducing.subtypeVal
-  refine ⟨⟨hval.of_comp_iff.1 hcomp, fun x y hxy ↦ Subtype.ext (Subtype.ext
-    (congrArg (fun z : kuranishiZeroSet 𝒜.kuranishi I J ↦ (z : T J)) hxy))⟩, ?_⟩
+  · rw [hcomp]
+    exact Subtype.val_injective.comp Subtype.val_injective
   rw [range_zeroSetInclusion]
   exact (𝒜.isClosed_boundary J).preimage continuous_subtype_val
 
@@ -328,11 +333,8 @@ noncomputable def boundaryAtlas :
       exact he y.1 hy
   exists_footprintMap_eq y := by
     obtain ⟨I, x, hreg, hx⟩ := 𝒜.exists_footprintMap_eq y.1
-    have hb : x.1 ∈ 𝒜.boundary I := by
-      refine (𝒜.footprintMap_mem_boundary_iff (Finset.empty_subset I) x).1 ?_
-      rw [𝒜.boundary_empty, mem_preimage, hx]
-      exact y.2
-    exact ⟨I, 𝒜.zeroSetLift x hb, hreg, Subtype.ext hx⟩
+    exact ⟨I, 𝒜.zeroSetLift x (𝒜.mem_boundary_of_baseHomeomorph_footprintMap_mem x (hx ▸ y.2)),
+      hreg, Subtype.ext hx⟩
 
 /-- The base identification of the boundary atlas is that of `𝒜`, restricted to the boundary. -/
 @[simp]

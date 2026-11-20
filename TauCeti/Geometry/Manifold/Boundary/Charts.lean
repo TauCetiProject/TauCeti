@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Boundary.Basic
 public import TauCeti.Geometry.Manifold.Boundary.Invariance
 public import TauCeti.Geometry.Manifold.Boundary.Model
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
+import TauCeti.Geometry.Manifold.Boundary.HalfSpaceChart
 
 /-!
 # The boundary of a manifold with boundary is a manifold
@@ -112,38 +113,33 @@ theorem ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (hx : x ∈ e.sourc
     frontier_range_modelWithCornersEuclideanHalfSpace, modelWithCornersEuclideanHalfSpace_toFun]
   exact eq_comm
 
-/-- The image under `e.symm` of a point of the coordinate hyperplane lying in `e.target` is a
-boundary point of `M`. -/
-private theorem symm_boundaryParam_mem_boundary {z : EuclideanSpace ℝ (Fin n)}
-    (hz : EuclideanHalfSpace.boundaryParam n z ∈ e.target) :
-    e.symm (EuclideanHalfSpace.boundaryParam n z) ∈ (𝓡∂ (n + 1)).boundary M := by
-  rw [ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (e.map_target hz),
-    e.right_inv hz]
-  simp
+/-- Reading a point with a trivial second factor and forgetting it again is the identity. -/
+private theorem fst_prodUnique_symm_apply {X : Type*} [TopologicalSpace X] (x : X) :
+    ((Homeomorph.prodUnique X Unit).symm x).1 = x := by
+  rw [← Homeomorph.coe_prodUnique X Unit]
+  exact (Homeomorph.prodUnique X Unit).apply_symm_apply x
 
-/-- Reinserting the deleted coordinate recovers the chart value of a boundary point. -/
-private theorem boundaryParam_boundaryProj_chart_apply {x : M} (hx : x ∈ e.source)
-    (hxM : x ∈ (𝓡∂ (n + 1)).boundary M) :
-    EuclideanHalfSpace.boundaryParam n (EuclideanHalfSpace.boundaryProj n (e x)) = e x := by
-  simpa only [EuclideanHalfSpace.boundaryProj_coe] using
-    EuclideanHalfSpace.boundaryParam_boundaryProj
-      ((ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hx).1 hxM)
+variable (e) in
+/-- In any ambient chart, read with a trivial second factor, the boundary is the hyperplane where
+the zeroth coordinate vanishes. -/
+private theorem mem_boundary_iff_transHomeomorph_prodUnique :
+    ∀ w ∈ (e.transHomeomorph (Homeomorph.prodUnique _ Unit).symm).source,
+      w ∈ (𝓡∂ (n + 1)).boundary M ↔
+        (e.transHomeomorph (Homeomorph.prodUnique _ Unit).symm w).1.1 0 = 0 :=
+  fun _ hw ↦ ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hw
 
-open scoped Classical in
 /-- The boundary chart attached to an ambient chart `e` of `M`: read a boundary point through `e`
-and delete its (vanishing) zeroth coordinate.
+and delete its (vanishing) zeroth coordinate. This is the hyperplane chart
+`OpenPartialHomeomorph.hyperplaneChart` of `e`, read with a trivial second factor.
 
-The base point `p` witnesses that the boundary is nonempty, which `subtypeCoord` needs to choose an
-irrelevant inverse value outside the target. -/
+The base point `p` witnesses that the boundary is nonempty, which `hyperplaneChart` needs to choose
+an irrelevant inverse value outside the target. -/
 private noncomputable def boundaryChart (p : ↥((𝓡∂ (n + 1)).boundary M))
     (e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))) :
     OpenPartialHomeomorph ↥((𝓡∂ (n + 1)).boundary M) (EuclideanSpace ℝ (Fin n)) :=
-  e.subtypeCoord ((𝓡∂ (n + 1)).boundary M) ⟨p⟩ (EuclideanHalfSpace.boundaryParam n)
-    (EuclideanHalfSpace.boundaryProj n) symm_boundaryParam_mem_boundary
-    boundaryParam_boundaryProj_chart_apply
-    (fun _ _ => EuclideanHalfSpace.boundaryProj_boundaryParam _)
-    EuclideanHalfSpace.continuous_boundaryParam
-    EuclideanHalfSpace.continuous_boundaryProj.continuousOn
+  ((e.transHomeomorph (Homeomorph.prodUnique _ Unit).symm).hyperplaneChart
+    (mem_boundary_iff_transHomeomorph_prodUnique e) p).transHomeomorph
+    (Homeomorph.prodUnique _ Unit)
 
 variable {p : ↥((𝓡∂ (n + 1)).boundary M)}
 
@@ -151,22 +147,20 @@ variable {p : ↥((𝓡∂ (n + 1)).boundary M)}
 @[simp]
 private theorem boundaryChart_source :
     (boundaryChart p e).source = Subtype.val ⁻¹' e.source := by
-  unfold boundaryChart
-  apply OpenPartialHomeomorph.subtypeCoord_source
+  simp [boundaryChart]
 
 /-- The target of a boundary chart is the ambient target, pulled back to the hyperplane. -/
 @[simp]
 private theorem boundaryChart_target :
     (boundaryChart p e).target = EuclideanHalfSpace.boundaryParam n ⁻¹' e.target := by
-  unfold boundaryChart
-  apply OpenPartialHomeomorph.subtypeCoord_target
+  ext z
+  simp [boundaryChart, fst_prodUnique_symm_apply]
 
 /-- A boundary chart reads a point through the ambient chart and deletes the zeroth coordinate. -/
 @[simp]
 private theorem boundaryChart_apply (q : ↥((𝓡∂ (n + 1)).boundary M)) :
     boundaryChart p e q = EuclideanHalfSpace.boundaryProj n (e q.1) := by
-  unfold boundaryChart
-  apply OpenPartialHomeomorph.subtypeCoord_apply
+  simp [boundaryChart, fst_prodUnique_symm_apply]
 
 /-- On its target, the inverse of a boundary chart is the inverse of the ambient chart applied to
 the parametrized point. -/
@@ -175,9 +169,10 @@ private theorem boundaryChart_symm_apply {z : EuclideanSpace ℝ (Fin n)}
     (hz : EuclideanHalfSpace.boundaryParam n z ∈ e.target) :
     (((boundaryChart p e).symm z : ↥((𝓡∂ (n + 1)).boundary M)) : M) =
       e.symm (EuclideanHalfSpace.boundaryParam n z) := by
-  simp only [boundaryChart]
-  apply OpenPartialHomeomorph.coe_subtypeCoord_symm_apply
-  exact hz
+  simp only [boundaryChart, OpenPartialHomeomorph.transHomeomorph_symm_apply, comp_apply]
+  rw [OpenPartialHomeomorph.coe_hyperplaneChart_symm_apply _ _
+    (by simpa [fst_prodUnique_symm_apply] using hz)]
+  simp [fst_prodUnique_symm_apply]
 
 section BoundaryChartedSpace
 
