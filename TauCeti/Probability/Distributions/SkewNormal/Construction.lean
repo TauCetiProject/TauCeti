@@ -166,7 +166,7 @@ private theorem map_prod_gaussianReal_eq_skewNormalMeasure_zero_one (α : ℝ) :
     |>.aemeasurable)]
   refine setLIntegral_congr_fun hA fun y _ => ?_
   rw [lintegral_gaussianPDF_mul_gaussianPDF_abs hw0 hδw, mul_div_right_comm, hδc,
-    skewNormalPDF_of_pos one_pos]
+    skewNormalPDF_apply]
   simp
 
 /-- **The skew-normal law from two independent Gaussians.** For `s > 0` and

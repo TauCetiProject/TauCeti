@@ -37,6 +37,8 @@ global sections `F(X)`.
 
 * `TauCeti.Topology.isZero_cechCohomology_obj_of_isEmpty`: on the empty space, the Čech cohomology
   of every presheaf vanishes in every degree.
+* `TauCeti.Topology.isZero_cechCohomology_obj_of_isZero`: the Čech cohomology of a presheaf whose
+  values are all zero vanishes in every degree.
 * `TauCeti.Topology.cechCohomologyZeroIso_hom`: the identification in degree `0` is the
   augmentation of the Čech complex of any point-neighborhood cover, followed by its structure map.
 * `TauCeti.Topology.cechCohomologyZeroIso_hom_naturality`: the identification in degree `0` is
@@ -76,6 +78,12 @@ vanishes in every degree, even if its value on the empty open is nonzero. -/
 theorem isZero_cechCohomology_obj_of_isEmpty [IsEmpty X] (P : (Opens X)ᵒᵖ ⥤ A) :
     IsZero ((cechCohomology X A n).obj P) :=
   TauCeti.CategoryTheory.isZero_cechCohomology_obj _ _ n (fun _ ↦ inferInstanceAs (IsEmpty X)) P
+
+/-- **Čech cohomology of the zero presheaf vanishes.** If every value of `P` is a zero object, so
+is every Čech cohomology group of `P`. -/
+theorem isZero_cechCohomology_obj_of_isZero (P : (Opens X)ᵒᵖ ⥤ A) (hP : ∀ U, IsZero (P.obj U)) :
+    IsZero ((cechCohomology X A n).obj P) :=
+  Functor.map_isZero _ (Functor.isZero _ hP)
 
 variable {X A} [HasZeroObject A] (F : Sheaf (Opens.grothendieckTopology X) A)
 

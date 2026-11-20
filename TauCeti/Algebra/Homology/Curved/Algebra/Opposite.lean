@@ -44,7 +44,7 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
 
 namespace IsCurvedDGAlgebra
 
-variable {G : InternalGrading R A} [GradedAlgebra G.piece] {d : A →ₗ[R] A} {w : A}
+variable {G : InternalGrading R A ℤ} [GradedAlgebra G.piece] {d : A →ₗ[R] A} {w : A}
 
 /-- **The graded opposite of a curved differential graded algebra.** The Koszul-signed opposite,
 with the same differential on underlying elements, is a curved differential graded algebra whose

@@ -29,6 +29,11 @@ The proof reads the measure of the circle on the fundamental interval `(0, T]`, 
 onto the fundamental interval `(F 0, F 0 + T]`, and applies the change of variables formula
 `map_withDensity_abs_det_fderiv_eq_addHaar` there.
 
+The same reading on a fundamental domain shows that maps of `AddCircle T × Y` lifted from
+measure-preserving maps `f` of `ℝ × Y` commuting with `(s, y) ↦ (s + T, y)` preserve
+`volume.prod ν`: both `(0, T] × Y` and its preimage under `f` are fundamental domains of these
+translations, and an invariant set has the same measure in both.
+
 ## Main declarations
 
 * `AddCircle.map_volume_le_of_lift` and `AddCircle.map_haarAddCircle_le_of_lift`: if `c ≤ F'`
@@ -41,8 +46,15 @@ onto the fundamental interval `(F 0, F 0 + T]`, and applies the change of variab
 * `AddCircle.integral_deriv_smul_comp_of_lift` and
   `AddCircle.integral_haarAddCircle_deriv_smul_comp_of_lift`: the change of variables formula
   `∫ F' x • g (φ x) dx = ∫ g x dx` over the circle, for a lift with nonnegative derivative.
+* `AddCircle.measurable_of_lift`: a map of `AddCircle T × Y` lifted from a measurable map of
+  `ℝ × Y` is measurable.
+* `AddCircle.measurePreserving_of_lift`: a measure-preserving map of `ℝ × Y` commuting with the
+  translation by `T` of the first coordinate descends to a measure-preserving map of
+  `AddCircle T × Y`.
 * `Function.Periodic.eqOn_zero_of_intervalIntegral_eq_zero`: a continuous periodic function which
   is nonnegative over a period and has integral zero over a period vanishes inside that period.
+* `Function.Periodic.intervalIntegral_neg_div_two_eq`: the integral of a `T`-periodic function
+  over `[-T/2, T/2]` is its integral over `[0, T]`.
 -/
 
 public section
@@ -184,6 +196,106 @@ theorem integral_haarAddCircle_deriv_smul_comp_of_lift (hpos : ∀ x, 0 ≤ F' x
 
 end Pushforward
 
+section Descent
+
+variable {Y : Type*} [MeasurableSpace Y] {ν : Measure Y}
+
+/-- The action of `ℤ` on `ℝ × Y` by translating the first coordinate by multiples of `T`. -/
+private abbrev translateAction (T : ℝ) (Y : Type*) : AddAction ℤ (ℝ × Y) where
+  vadd n x := (x.1 + n • T, x.2)
+  zero_vadd x := by simp [HVAdd.hVAdd]
+  add_vadd m n x := by
+    simp only [HVAdd.hVAdd, Prod.mk.injEq, and_true]
+    rw [add_zsmul]
+    ring
+
+omit hT [MeasurableSpace Y] in
+/-- A map commuting with the translation by `T` of the first coordinate commutes with the
+translations by all integer multiples of `T`. -/
+private theorem apply_add_zsmul {f : ℝ × Y → ℝ × Y}
+    (hf : ∀ x : ℝ × Y, f (x.1 + T, x.2) = ((f x).1 + T, (f x).2)) (n : ℤ) (x : ℝ × Y) :
+    f (x.1 + n • T, x.2) = ((f x).1 + n • T, (f x).2) := by
+  induction n using Int.induction_on with
+  | zero => simp
+  | succ n ih =>
+    have h := hf (x.1 + (n : ℤ) • T, x.2)
+    rw [ih] at h
+    rw [add_one_zsmul, ← add_assoc, h, add_assoc]
+  | pred n ih =>
+    have h := hf (x.1 + (-(n : ℤ) - 1) • T, x.2)
+    rw [add_assoc, ← add_one_zsmul, sub_add_cancel, ih, Prod.ext_iff] at h
+    refine Prod.ext ?_ h.2.symm
+    have hs : (-(n : ℤ) - 1) • T = -(n : ℤ) • T - T := by rw [sub_zsmul, one_zsmul]; abel
+    linarith [h.1]
+
+/-- A map of `AddCircle T × Y` lifted from a measurable map of `ℝ × Y` is measurable. -/
+theorem measurable_of_lift {f : ℝ × Y → ℝ × Y} (hf : Measurable f)
+    {g : AddCircle T × Y → AddCircle T × Y}
+    (hg : ∀ x : ℝ × Y, g ((x.1 : AddCircle T), x.2) = (((f x).1 : AddCircle T), (f x).2)) :
+    Measurable g := by
+  -- `g = π ∘ f ∘ σ` for the measurable section `σ` of the projection `π` with values in
+  -- `(0, T] × Y`.
+  have hσ : Measurable fun z : AddCircle T × Y ↦ ((equivIoc T 0 z.1 : ℝ), z.2) :=
+    ((measurable_subtypeVal.comp (measurableEquivIoc T 0).measurable).comp
+      measurable_fst).prodMk measurable_snd
+  convert (AddCircle.measurable_mk'.prodMap measurable_id).comp (hf.comp hσ) using 1
+  funext ⟨θ, y⟩
+  simpa [Prod.map] using hg ((equivIoc T 0 θ : ℝ), y)
+
+/-- **Descent of measure-preserving maps to `AddCircle T × Y`.** Let `f` be a map of `ℝ × Y`
+preserving `volume.prod ν` and commuting with the translation `(s, y) ↦ (s + T, y)`. Then the map
+`g` it induces on `AddCircle T × Y`, characterized by `g ([s], y) = [f (s, y)]`, preserves
+`volume.prod ν`. -/
+theorem measurePreserving_of_lift [SFinite ν] {f : ℝ × Y → ℝ × Y}
+    (hf : MeasurePreserving f (volume.prod ν) (volume.prod ν))
+    (hfT : ∀ x : ℝ × Y, f (x.1 + T, x.2) = ((f x).1 + T, (f x).2))
+    {g : AddCircle T × Y → AddCircle T × Y}
+    (hg : ∀ x : ℝ × Y, g ((x.1 : AddCircle T), x.2) = (((f x).1 : AddCircle T), (f x).2)) :
+    MeasurePreserving g (volume.prod ν) (volume.prod ν) := by
+  -- Read the measure of a set of `AddCircle T × Y` on the fundamental domain `F = (0, T] × Y` of
+  -- the translations, and compare `F` with the second fundamental domain `f ⁻¹' F`.
+  set π : ℝ × Y → AddCircle T × Y := Prod.map (↑) id
+  have hπm : Measurable π := AddCircle.measurable_mk'.prodMap measurable_id
+  have hgπ (x : ℝ × Y) : g (π x) = π (f x) := hg x
+  set F : Set (ℝ × Y) := Ioc 0 T ×ˢ univ
+  have hFm : MeasurableSet F := measurableSet_Ioc.prod MeasurableSet.univ
+  have hπ : MeasurePreserving π ((volume.prod ν).restrict F) (volume.prod ν) := by
+    have := (AddCircle.measurePreserving_mk T 0).prod (MeasurePreserving.id ν)
+    rwa [zero_add, Measure.restrict_prod_eq_prod_univ] at this
+  have hgm := measurable_of_lift hf.measurable hg
+  refine ⟨hgm, Measure.ext fun E hE ↦ ?_⟩
+  let := translateAction T Y
+  have hvadd (n : ℤ) (x : ℝ × Y) : n +ᵥ x = (x.1 + n • T, x.2) := rfl
+  have : MeasurableConstVAdd ℤ (ℝ × Y) :=
+    ⟨fun n ↦ (measurable_fst.add_const _).prodMk measurable_snd⟩
+  have : VAddInvariantMeasure ℤ (ℝ × Y) (volume.prod ν) := ⟨fun n s hs ↦
+    ((measurePreserving_add_right volume (n • T)).prod (MeasurePreserving.id ν)).measure_preimage
+      hs.nullMeasurableSet⟩
+  have hFdom : IsAddFundamentalDomain ℤ F (volume.prod ν) := by
+    refine .mk' hFm.nullMeasurableSet fun x ↦ ?_
+    simpa [hvadd, F, zero_add] using existsUnique_add_zsmul_mem_Ioc hT.out x.1 0
+  have hfF : IsAddFundamentalDomain ℤ (f ⁻¹' F) (volume.prod ν) := by
+    refine .mk' (hf.measurable hFm).nullMeasurableSet fun x ↦ ?_
+    simp only [mem_preimage, hvadd, apply_add_zsmul hfT]
+    simpa [F] using existsUnique_add_zsmul_mem_Ioc hT.out (f x).1 0
+  have hπv (n : ℤ) (x : ℝ × Y) : π (n +ᵥ x) = π x := by
+    obtain ⟨s, y⟩ := x
+    simp [hvadd, π]
+  have hinv (S : Set (AddCircle T × Y)) (n : ℤ) :
+      (fun x ↦ n +ᵥ x) ⁻¹' (π ⁻¹' S) = π ⁻¹' S := by
+    ext x
+    simp only [mem_preimage, hπv]
+  have hEm : MeasurableSet (π ⁻¹' E) := hπm hE
+  rw [Measure.map_apply hgm hE, ← hπ.measure_preimage (hgm hE).nullMeasurableSet,
+    ← hπ.measure_preimage hE.nullMeasurableSet, Measure.restrict_apply (hπm (hgm hE)),
+    Measure.restrict_apply hEm, hFdom.measure_set_eq hfF (hπm (hgm hE)) (hinv _)]
+  have : π ⁻¹' (g ⁻¹' E) ∩ f ⁻¹' F = f ⁻¹' (π ⁻¹' E ∩ F) := by
+    ext x
+    simp [hgπ]
+  rw [this, hf.measure_preimage (hEm.inter hFm).nullMeasurableSet]
+
+end Descent
+
 end AddCircle
 
 /-- A continuous `T`-periodic function which is nonnegative on `[a, a + T]` and whose integral over
@@ -206,3 +318,11 @@ theorem Function.Periodic.eqOn_zero_of_intervalIntegral_eq_zero {f : ℝ → ℝ
   exact Measure.eqOn_open_of_ae_eq (ae_restrict_of_ae_restrict_of_subset
     (fun t ht ↦ Or.inl (Ioo_subset_Ioc_self ht)) hzero) isOpen_Ioo hf.continuousOn
     continuousOn_const ht
+
+/-- By periodicity, the integral of a `T`-periodic function over `[-T/2, T/2]` is its integral
+over the period `[0, T]`. -/
+theorem Function.Periodic.intervalIntegral_neg_div_two_eq {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : ℝ → E} {T : ℝ} (hf : Function.Periodic f T) :
+    ∫ t in -T / 2..T / 2, f t = ∫ t in 0..T, f t := by
+  have h := hf.intervalIntegral_add_eq (-T / 2) 0
+  rwa [zero_add, show -T / 2 + T = T / 2 by ring] at h

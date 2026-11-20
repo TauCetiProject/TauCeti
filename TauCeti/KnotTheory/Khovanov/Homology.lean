@@ -20,7 +20,8 @@ support, uniformly in the coefficient ring, including the zero ring and the empt
 
 `khovanovHomologyBracketIso` compares the normalized groups with bracket homology at the
 translated bidegree. It uses the signed native-shift comparison, not an unsigned identification
-of differentials. No Reidemeister invariance is asserted here.
+of differentials. `khovanovHomologyIsoCubeComplexHomology` is the same comparison for any code
+equal to the underlying code and any equal indices. No Reidemeister invariance is asserted here.
 
 ## References
 
@@ -64,6 +65,19 @@ def khovanovHomologyBracketIso (i j : ℤ) :
   (homologyFunctor _ _ i).mapIso (D.khovanovComplexShiftIso hD R j) ≪≫
     (CochainComplex.ShiftSequence.shiftIso (ModuleCat.{u} R)
       D.negativeCrossingCount i (i + D.negativeCrossingCount) (by omega)).app _
+
+/-- `Khⁱʲ(D; R)` is the cohomology of the cube complex of any code `Q` equal to the underlying code
+of `D`, at any cube height `a = i + n₋` and bracket quantum degree `k = j - n₊ + 2n₋`. This is
+`khovanovHomologyBracketIso` with the code and the indices replaced by equal ones, as needed for
+the resolutions of a crossing, which are the underlying codes of oriented codes only up to
+equality. -/
+def khovanovHomologyIsoCubeComplexHomology {Q : PDCode n} (hQ : Q.IsPlanar)
+    (hDQ : D.toPDCode = Q) (i j : ℤ) {k a : ℤ}
+    (hk : k = j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)
+    (ha : a = i + D.negativeCrossingCount) :
+    D.khovanovHomology hD R i j ≅ ((Q.resolutionCube hQ R k).cubeComplex).homology a :=
+  D.khovanovHomologyBracketIso hD R i j ≪≫
+    eqToIso (by subst hDQ hk ha; rw [PDCode.khovanovBracket_apply])
 
 /-- Every term of the normalized complex is free, without a nontriviality assumption on `R`. -/
 instance (i j : ℤ) : Module.Free R ((D.khovanovComplex hD R j).X i) := by

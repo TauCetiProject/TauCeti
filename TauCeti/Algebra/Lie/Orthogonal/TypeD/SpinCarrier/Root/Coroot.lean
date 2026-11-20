@@ -84,11 +84,8 @@ theorem corootCocharacter_eq_cocharacter_coroot_simpleIndex (i : Fin n) :
   rw [corootCocharacter_def]
   congr 1
   apply SplitTorus.cocharEquiv.eq_symm_apply.mpr
-  have heval : SplitTorus.cocharEquiv (Finsupp.applyAddHom i).toMultiplicative =
-      (Pi.single i 1 : Fin n → ℤ) := by
-    ext j
-    simp [SplitTorus.cocharEquiv_apply, Finsupp.single_apply, Pi.single_apply, eq_comm]
-  exact heval.trans ((DynkinType.D n).coroot_simpleIndex (DynkinType.valid_D.mpr hn) i).symm
+  exact (SplitTorus.cocharEquiv_applyAddHom i).trans
+    ((DynkinType.D n).coroot_simpleIndex (DynkinType.valid_D.mpr hn) i).symm
 
 /-- A coroot differential is the diagonal matrix of simple-coroot weights times the
 multiplicative tangent parameter, over any commutative value ring. -/
@@ -178,17 +175,12 @@ theorem range_derivationCompLieHom_weightTorusIntegralCoordinateMap_eq_span :
 torus is closed and its differential is injective. -/
 theorem linearIndependent_cartanVector :
     LinearIndependent B (cartanVector n hn (B := B)) := by
-  have h := (SplitTorus.tangentBasis (R := ℤ) (B := B) (I := Fin n)).linearIndependent.map_injOn
-    (derivationCompLieHom (B := B) (weightTorusIntegralCoordinateMap n hn).hom).toLinearMap
-    (derivationCompLieHom_injective_of_surjective _
-      (weightTorusIntegralCoordinateMap_surjective n hn)).injOn
-  have heq :
-      ⇑(derivationCompLieHom (B := B) (weightTorusIntegralCoordinateMap n hn).hom).toLinearMap ∘
-          SplitTorus.tangentBasis (R := ℤ) (B := B) (I := Fin n) =
-        cartanVector n hn (B := B) := by
-    funext i
-    exact derivationCompLieHom_weightTorusIntegralCoordinateMap_tangentBasis n hn i
-  rwa [heq] at h
+  simpa only [funext (cartanVector_eq_derivationComp_corootCocharacter n hn (B := B)),
+    corootCocharacter_def, derivationCompLieHom_apply] using
+    (SplitTorus.linearIndependent_derivationCompLieHom_cocharacter
+      (B := B) (weightTorusIntegralCoordinateMap n hn).hom
+      (derivationCompLieHom_injective_of_surjective _
+        (weightTorusIntegralCoordinateMap_surjective n hn)))
 
 /-- The simple-coroot differentials form a basis of their span, the toral tangent image. -/
 def cartanBasis :

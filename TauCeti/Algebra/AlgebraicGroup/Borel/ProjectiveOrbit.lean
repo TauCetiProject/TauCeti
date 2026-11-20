@@ -58,6 +58,7 @@ variable {k H M : Type u} [Field k] [IsAlgClosed k]
   [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
   [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
 
+omit [IsAlgClosed k] in
 /-- A Borel candidate lies in a conjugate of `D` as soon as every reduced connected closed
 subgroup with solvable rational points does. -/
 theorem IsBorelCandidate.exists_conjugate_le {D J : HopfIdeal k H}
@@ -74,7 +75,7 @@ theorem IsBorelCandidate.exists_conjugate_le {D J : HopfIdeal k H}
   let _ : Algebra.Smooth k Q := (smoothCommHopfAlgProperty_iff _).mp hJ.smooth
   let _ : IsReduced Q := isReduced_of_smooth k Q
   let _ : ConnectedSpace (PrimeSpectrum Q) :=
-    hJ.geometricallyConnected.connectedSpace k Q.obj
+    hJ.geometricallyConnected.connectedSpace
   let _ : Group.IsSolvable (WithConv (Q →ₐ[k] AlgebraicClosure k)) :=
     (geometricallySolvablePointsCommHopfAlgProperty_iff _ _).mp hJ.geometricallySolvable
   let _ : Group.IsSolvable (WithConv (Q →ₐ[k] k)) :=

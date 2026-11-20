@@ -56,7 +56,7 @@ noncomputable def gradedLift (f : M →ₗ[R] 𝒜 1) : homogeneousSubmodule R M
     | add x y _ _ _ hx hy => simpa using add_mem hx hy
     | mem_mul m hm i x _ ih =>
       obtain ⟨y, rfl⟩ := hm
-      simpa [add_comm 1 i] using SetLike.mul_mem_graded (f y).2 ih
+      simpa [add_comm 1 i] using SetLike.mul_mem_graded (f y).property ih
 
 /-- The graded lift agrees with the symmetric-algebra lift on every element. -/
 @[simp]

@@ -398,7 +398,7 @@ theorem mul_mem_zigzagIntegerGrade {m n : ℤ}
 section Twist
 
 variable {k G} {hns : ∀ i : V, ∃ j, G.Adj i j}
-  {𝒢 : InternalGrading k (nonisolatedZigzagQuotient k G)}
+  {𝒢 : InternalGrading k (nonisolatedZigzagQuotient k G) ℤ}
 
 /-- The degree-one Koszul twist of the path-length grading negates arrows. -/
 theorem koszulTwist_one_zigzagMk_ofArrow (h𝒢 : 𝒢.piece = zigzagIntegerGrade k G) (d : G.Dart) :

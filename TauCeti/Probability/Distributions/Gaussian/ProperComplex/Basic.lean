@@ -20,7 +20,8 @@ covariance is `C`, while the complex pseudocovariance vanishes.
 This file constructs the law on the product Borel space `ι → ℂ`, identifies its real
 coordinate law, and proves probability, the mean, parameter measurability, and the
 zero-covariance and invalid-covariance Dirac cases. Singular covariance matrices and
-empty coordinate types are included.
+empty coordinate types are included. `properComplexGaussianScalar` is the coordinate law
+with zero mean and unit covariance.
 
 The construction uses `Matrix.realify`, `complexToRealEuclidean`, and Mathlib's
 `multivariateGaussian`.
@@ -127,6 +128,21 @@ theorem properComplexGaussianMeasure_def (m : ι → ℂ) (C : Matrix ι ι ℂ)
 instance isProbabilityMeasure_properComplexGaussianMeasure (m : ι → ℂ) (C : Matrix ι ι ℂ) :
     IsProbabilityMeasure (properComplexGaussianMeasure m C) := by
   rw [properComplexGaussianMeasure_def]
+  infer_instance
+
+/-- The standard scalar proper complex Gaussian law, obtained as a coordinate of the proper
+complex Gaussian with unit covariance. -/
+def properComplexGaussianScalar : Measure ℂ :=
+  (properComplexGaussianMeasure (fun _ : Unit ↦ (0 : ℂ)) 1).map fun z ↦ z ()
+
+/-- The scalar law is the coordinate law of the one-dimensional proper complex Gaussian. -/
+theorem properComplexGaussianScalar_def :
+    properComplexGaussianScalar =
+      (properComplexGaussianMeasure (fun _ : Unit ↦ (0 : ℂ)) 1).map (fun z ↦ z ()) :=
+  (rfl)
+
+instance : IsProbabilityMeasure properComplexGaussianScalar := by
+  unfold properComplexGaussianScalar
   infer_instance
 
 /-- A proper complex Gaussian is Gaussian when its carrier is regarded as a real vector

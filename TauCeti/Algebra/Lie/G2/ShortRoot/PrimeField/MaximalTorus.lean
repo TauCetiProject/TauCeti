@@ -166,20 +166,8 @@ theorem isMaximalTorus_baseChangeHopfIdeal_weightTorusDefiningIdeal :
         ⟨CommHopfAlgCat.baseChange (K := k) carrierAlgebra,
           (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
         (CommHopfAlgCat.baseChangeHopfIdeal (K := k) weightTorusDefiningIdeal)) := by
-    have hsplitK : splitTorusCommHopfAlgProperty k
-        (FiniteTypeCommHopfAlgCat.baseChange (K := k)
-          (FiniteTypeCommHopfAlgCat.quotient
-            ⟨carrierAlgebra, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
-            weightTorusDefiningIdeal)) := by
-      rw [splitTorusCommHopfAlgProperty_iff]
-      obtain ⟨n, ⟨e⟩⟩ :=
-        (splitTorusCommHopfAlgProperty_iff (ZMod 3) _).mp
-          splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal
-      exact ⟨n, ⟨(DiagonalizableGroup.baseChangeCoordinateRingIso (ZMod 3) k
-          (SplitTorus.characterGroup (ULift (Fin n)))).symm ≪≫
-        (FiniteTypeCommHopfAlgCat.baseChangeFunctor (K := k)).mapIso e⟩⟩
-    exact ((splitTorusCommHopfAlgProperty k).prop_of_iso
-      (ObjectProperty.isoMk _ hq.symm) hsplitK).torus k _
+    exact ((splitTorusCommHopfAlgProperty k).prop_of_iso (ObjectProperty.isoMk _ hq.symm)
+      (splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal.baseChange k)).torus k _
   exact HopfIdeal.isMaximalTorus_of_maximal_points
     (CommHopfAlgCat.baseChangeHopfIdeal (K := k) weightTorusDefiningIdeal) hT
     (baseChangePointsEquiv k).toMonoidHom (baseChangePointsEquiv k).injective

@@ -53,8 +53,8 @@ Morse complex.
 * `TauCeti.morseIndex_comp`: invariance under a change of coordinates.
 * `TauCeti.morseIndex_slice_right`: along a critical zero section of a function on a product, the
   Morse index is the index of the restriction to the fibre.
-* `TauCeti.eventually_morseIndex_le`: in finite dimensions the Morse index of a `C²` function is
-  lower semicontinuous, also at degenerate and noncritical points.
+* `TauCeti.eventually_morseIndex_le`: the Morse index of a `C²` function is lower
+  semicontinuous, also at degenerate and noncritical points.
 * `TauCeti.span_range_hessianQuadraticForm_comp_left`, `TauCeti.span_range_hessianQuadraticForm_pi`,
   `TauCeti.range_hessianQuadraticForm_comp`: the space spanned by the Hessians of the functions
   `ℓ ∘ φ`, for `ℓ` a continuous linear functional, computed from a spanning family of functionals,
@@ -334,15 +334,15 @@ theorem morseIndex_slice_right [FiniteDimensional ℝ E] [FiniteDimensional ℝ 
     simp only [hessianQuadraticForm_apply, QuadraticMap.prod_apply, h1, h2]
     rw [fderiv_fderiv_slice_right_apply hf]
     simp
-  rw [morseIndex_def, morseIndex_def, hQ, QuadraticForm.sigNeg_prod,
-    (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero (0 : QuadraticForm ℝ E)).mp fun _ ↦ by simp,
+  rw [morseIndex_def, morseIndex_def, hQ, QuadraticForm.sigNeg_prod, QuadraticForm.sigNeg_zero,
     zero_add]
 
-/-- **The Morse index is lower semicontinuous.** In finite dimensions, if `f` is `C²` at `x`, then
-at every point near `x` the Morse index of `f` is at least its Morse index at `x`. The point `x`
-need not be critical, nor nondegenerate: a degenerate Hessian can acquire new negative directions
-under perturbation, but negative directions are never lost. -/
-theorem eventually_morseIndex_le [FiniteDimensional ℝ E] (hf : ContDiffAt ℝ 2 f x) :
+/-- **The Morse index is lower semicontinuous.** If `f` is `C²` at `x`, then at every point near
+`x` the Morse index of `f` is at least its Morse index at `x`. The point `x` need not be critical,
+nor nondegenerate: a degenerate Hessian can acquire new negative directions under perturbation,
+but negative directions are never lost. In infinite dimensions every Morse index is `0` by
+convention. -/
+theorem eventually_morseIndex_le (hf : ContDiffAt ℝ 2 f x) :
     ∀ᶠ y in 𝓝 x, morseIndex f x ≤ morseIndex f y := by
   have hc : ContinuousAt (fderiv ℝ (fderiv ℝ f)) x :=
     (hf.fderiv_right (m := 1) (by norm_num)).continuousAt_fderiv (by norm_num)
@@ -378,6 +378,14 @@ theorem morseIndex_eq_zero_of_not_finiteDimensional (hE : ¬FiniteDimensional �
   have h := morseIndex_le_finrank (f := f) (x := x)
   rw [Module.finrank_of_not_finite hE] at h
   omega
+
+/-- A constant function has Morse index `0` at every point, since its Hessian vanishes. -/
+@[simp]
+theorem morseIndex_const (c : ℝ) : morseIndex (fun _ : E ↦ c) x = 0 := by
+  by_cases hE : FiniteDimensional ℝ E
+  · rw [morseIndex_def, ← QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero]
+    simp
+  · exact morseIndex_eq_zero_of_not_finiteDimensional hE
 
 /-- If the Hessian is nondegenerate, the Morse indices of a function and its negation add to the
 dimension of the ambient space. In an infinite-dimensional space both indices and the dimension

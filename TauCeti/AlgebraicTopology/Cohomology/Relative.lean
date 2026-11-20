@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.LinearYoneda
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.Empty
 
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Excision
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Restrict
 public import TauCeti.AlgebraicTopology.Singular.Relative
@@ -47,6 +49,12 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
 * `TopPair.isIso_singularCohomologyMap_of_forall_isIso`: a map of pairs inducing isomorphisms on
   the cohomology of the ambient spaces and of the subspaces in every degree induces isomorphisms on
   relative cohomology.
+* `TopPair.isZero_singularCohomology_of_isZero_singularHomology`: relative cohomology vanishes in
+  degree `n` when relative homology with projective coefficients vanishes up to degree `n`.
+* `TopPair.singularCohomologyMap_eq_zero_of_fac` and
+  `TopPair.isZero_singularCohomology_of_surjective_map`: a map of pairs factoring through the
+  target subspace induces zero on cohomology; in particular, a pair with surjective subspace map
+  has vanishing relative cohomology in every degree.
 * `TopPair.shortExact_singularCochainComplexShortComplex`: the cochain sequence of a pair is short
   exact.
 * `TopPair.singularCohomologyδ`: the connecting morphism `Hⁿ(A) ⟶ Hᵐ(X, A)` for `n + 1 = m`, with
@@ -132,7 +140,7 @@ every degree induces an isomorphism of relative cochain complexes. -/
 theorem isIso_cochainComplexMap_of_relativeSimplex_equiv {P P' : SSetPair.{w}} (f : P ⟶ P')
     (e : ∀ n, P.RelativeSimplex n ≃ P'.RelativeSimplex n)
     (he : ∀ n (x : P.RelativeSimplex n),
-      (e n x).1 = f.right.app (Opposite.op (SimplexCategory.mk n)) x.1) :
+      (e n x).val = f.right.app (Opposite.op (SimplexCategory.mk n)) x.val) :
     IsIso (cochainComplexMap (R := R) (k := k) (M := M) f) := by
   have := isIso_chainComplexMap_of_relativeSimplex_equiv f R e he
   exact (linearYonedaFunctor k M).map_isIso (chainComplexMap f R).op
@@ -270,6 +278,40 @@ def singularCohomologyFunctor (n : ℕ) : TopPair.{w}ᵒᵖ ⥤ ModuleCat.{v} k 
   obj P := P.unop.singularCohomology R k M n
   map f := TopPair.singularCohomologyMap f.unop n
   map_comp f g := singularCohomologyMap_comp g.unop f.unop n
+
+variable (P) {k} in
+/-- **Relative cohomology vanishes up to the degree where relative homology does**: for a
+projective coefficient object `R`, if `Hⱼ(X, A; R) = 0` for `j ≤ n`, then
+`Hⁿ(X, A; R, M) = 0` for every object `M`. The relative singular chains are projective, since they
+are a direct summand of the singular chains of `X`, so their dual `Hom(C(X, A; R), M)` is exact
+wherever they are (`ChainComplex.exactAt_linearYonedaObj_of_projective`). -/
+theorem isZero_singularCohomology_of_isZero_singularHomology [Projective R] (n : ℕ)
+    (h : ∀ j ≤ n, IsZero (P.singularHomology R j)) : IsZero (P.singularCohomology R k M n) := by
+  rw [← HomologicalComplex.exactAt_iff_isZero_homology]
+  exact ChainComplex.exactAt_linearYonedaObj_of_projective k _ M
+    (fun i _ ↦ SSetPair.projective_chainComplex_X R (toSSetPair.obj P) i)
+    (fun j hj ↦ (HomologicalComplex.exactAt_iff_isZero_homology _ _).2 (h j hj)) le_rfl
+
+/-- A map of pairs `f : (X, A) ⟶ (X', A')` whose map of ambient spaces factors through the
+subspace `A'` induces the zero map on relative singular cohomology. -/
+lemma singularCohomologyMap_eq_zero_of_fac {P P' : TopPair.{w}} (f : P ⟶ P')
+    (g : P.fst ⟶ P'.snd) (hg : g ≫ P'.map = Hom.fst f) (n : ℕ) :
+    TopPair.singularCohomologyMap (R := R) (k := k) (M := M) f n = 0 := by
+  have hzero : singularCochainComplexMap (R := R) (k := k) (M := M) f = 0 := by
+    rw [singularCochainComplexMap, singularChainComplexMap_eq_zero_of_fac f R g hg, op_zero,
+      Functor.map_zero]
+    rfl
+  rw [TopPair.singularCohomologyMap, hzero, HomologicalComplex.homologyMap_zero]
+
+variable (P) in
+/-- **A pair whose subspace is everything has no relative cohomology.** If the embedding of the
+subspace of `P` is surjective, the relative singular cohomology of `P` vanishes in every degree. -/
+lemma isZero_singularCohomology_of_surjective_map (hP : Function.Surjective P.map) (n : ℕ) :
+    IsZero (P.singularCohomology R k M n) := by
+  -- The identity of `P` factors through the subspace, so it induces zero.
+  rw [IsZero.iff_id_eq_zero, ← singularCohomologyMap_id]
+  exact singularCohomologyMap_eq_zero_of_fac R k M (𝟙 P)
+    (TopCat.ofHom (P.liftSnd (.id _) fun x ↦ hP x)) (by ext x; exact P.map_liftSnd _ _ x) n
 
 section LongExactSequence
 
@@ -413,6 +455,24 @@ lemma singularCochainComplexShortComplexMap_τ₂ {P P' : TopPair.{w}} (f : P �
 lemma singularCochainComplexShortComplexMap_τ₃ {P P' : TopPair.{w}} (f : P ⟶ P') :
     (singularCochainComplexShortComplexMap (R := R) (k := k) (M := M) f).τ₃ =
       TopCat.singularCochainComplexMap (Hom.snd f) := (rfl)
+
+/-- On cohomology, the ambient component of the morphism of cochain sequences induced by a map of
+pairs `f` is the singular cohomology map of `Hom.fst f`. -/
+lemma homologyMap_singularCochainComplexShortComplexMap_τ₂ {P P' : TopPair.{w}} (f : P ⟶ P')
+    (n : ℕ) :
+    HomologicalComplex.homologyMap
+        (singularCochainComplexShortComplexMap (R := R) (k := k) (M := M) f).τ₂ n =
+      TopCat.singularCohomologyMap (Hom.fst f) n := by
+  rw [singularCochainComplexShortComplexMap_τ₂]
+
+/-- On cohomology, the subspace component of the morphism of cochain sequences induced by a map of
+pairs `f` is the singular cohomology map of `Hom.snd f`. -/
+lemma homologyMap_singularCochainComplexShortComplexMap_τ₃ {P P' : TopPair.{w}} (f : P ⟶ P')
+    (n : ℕ) :
+    HomologicalComplex.homologyMap
+        (singularCochainComplexShortComplexMap (R := R) (k := k) (M := M) f).τ₃ n =
+      TopCat.singularCohomologyMap (Hom.snd f) n := by
+  rw [singularCochainComplexShortComplexMap_τ₃]
 
 /-- The map from relative to absolute cohomology is natural in the pair. -/
 @[reassoc]

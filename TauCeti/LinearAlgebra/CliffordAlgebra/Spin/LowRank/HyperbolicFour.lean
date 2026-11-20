@@ -55,7 +55,7 @@ public section
 
 namespace TauCeti
 
-open Module CliffordAlgebra
+open Module _root_.CliffordAlgebra
 
 universe u
 
@@ -93,7 +93,7 @@ theorem hyperbolicFourEvenEquivMatrixProd_apply
 discriminant quadratic algebra, is the split algebra `K × K`. -/
 noncomputable def hyperbolicFourCenterEvenEquivProd :
     Subalgebra.center K (even (splitEvenForm K 2)) ≃ₐ[K] K × K :=
-  (centerCongr (hyperbolicFourEvenEquivMatrixProd K)).trans
+  (Subalgebra.centerCongr (hyperbolicFourEvenEquivMatrixProd K)).trans
     (centerProdAlgEquivOfIsCentral K _ _)
 
 omit [NeZero (2 : K)] in

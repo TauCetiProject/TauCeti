@@ -160,7 +160,7 @@ end Basic
 
 namespace GradedLieHom
 
-variable {N M P : Type} {R L L' L'' : Type*}
+variable {N M P R L L' L'' : Type*}
   [AddCommMonoid N] [AddCommMonoid M] [AddCommMonoid P] [CommRing R]
   [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
   [LieRing L''] [LieAlgebra R L'']

@@ -8,8 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.LocallyFlat.Separation
 public import TauCeti.Geometry.Sphere.Connected
-import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
-import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
 # Brown's bicollaring theorem for locally flat spheres
@@ -32,11 +30,6 @@ ambient model `EuclideanSpace ℝ (Fin n) × ℝ`: the first factor is the model
 sphere, and the second is its one-dimensional normal direction.  No orientation or choice of
 side is included in the statement.
 
-Conversely, once an embedded sphere `Sᵐ⁻¹ → Sᵐ`, `m ≥ 2`, has a global bicollar, the
-Jordan–Brouwer separation theorem identifies the two sides of the bicollar with the two path
-components of the complement of the image
-(`TauCeti.IsBicollar.exists_pathComponents_sphere`).
-
 ## Main definitions
 
 * `TauCeti.BrownBicollaring`: every locally flat embedding `Sⁿ → Sⁿ⁺¹` is globally
@@ -52,14 +45,11 @@ components of the complement of the image
   flat `n`-sphere in the `(n + 1)`-sphere whose complement is disconnected is bicollared. By the
   Jordan–Brouwer separation theorem the complement is always disconnected, and this is how Brown
   proves the theorem.
-* `TauCeti.IsBicollar.exists_pathComponents_sphere`: the complement of a bicollared sphere
-  `Sᵐ⁻¹ → Sᵐ`, `m ≥ 2`, has two path components, one on each side of the bicollar.
 
 ## References
 
 * M. Brown, *A proof of the generalized Schoenflies theorem*, Bull. Amer. Math. Soc. 66 (1960),
-  74–76. The identification of the two sides of a bicollared sphere with the complementary
-  components (`TauCeti.IsBicollar.exists_pathComponents_sphere`) is a step of its proof.
+  74–76.
 * M. Brown, *Locally flat imbeddings of topological manifolds*, Annals of Mathematics 75 (1962),
   331–341.
 * R. J. Daverman and G. A. Venema, *Embeddings in Manifolds*, Graduate Studies in Mathematics
@@ -134,77 +124,5 @@ theorem IsLocallyFlat.isBicollared_of_not_isPreconnected_compl_range {n : ℕ} (
   haveI := connectedSpace_euclideanSphere (m := n + 1) (by omega)
   haveI := connectedSpace_euclideanSphere (m := n + 2) (by omega)
   hf.isLocallyBicollared.isBicollared_of_not_isPreconnected_compl_range hf.injective hsep
-
-section SidesOfSphere
-
-open Module
-
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {f : sphere (0 : E) 1 → sphere (0 : F) 1} {b : sphere (0 : E) 1 × ℝ → sphere (0 : F) 1}
-
-/-- **The two sides of a bicollared sphere.** Let `b` be a bicollar of an embedding `f` of the
-unit sphere of `E` into the unit sphere of `F`, where `dim F = dim E + 1` and `dim E ≥ 2`. Then
-the complement of the image of `f` is the union of two disjoint open path-connected sets `A` and
-`B`, its two path components, with the positive side of the bicollar in `A` and the negative side
-in `B`. This is a step of Brown's proof of the generalized Schoenflies theorem (Brown, 1960). -/
-theorem IsBicollar.exists_pathComponents_sphere (h : IsBicollar f b) (hE : 2 ≤ finrank ℝ E)
-    (hEF : finrank ℝ F = finrank ℝ E + 1) :
-    ∃ A B : Set (sphere (0 : F) 1), IsOpen A ∧ IsOpen B ∧ Disjoint A B ∧
-      (range f)ᶜ = A ∪ B ∧ IsPathConnected A ∧ IsPathConnected B ∧
-      MapsTo b (univ ×ˢ Ioi 0) A ∧ MapsTo b (univ ×ˢ Iio 0) B := by
-  have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
-  have : PreconnectedSpace (sphere (0 : E) 1) :=
-    isPreconnected_iff_preconnectedSpace.1 (isPathConnected_sphere
-      (one_lt_rank_of_one_lt_finrank (by omega)) 0 zero_le_one).isConnected.isPreconnected
-  have : PreconnectedSpace (sphere (0 : F) 1) :=
-    isPreconnected_iff_preconnectedSpace.1 (isPathConnected_sphere
-      (one_lt_rank_of_one_lt_finrank (by omega)) 0 zero_le_one).isConnected.isPreconnected
-  -- The unit sphere of `F` is homeomorphic to a Euclidean sphere, a manifold, so it is locally
-  -- path connected.
-  have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) = finrank ℝ E + 1) :=
-    ⟨by simp⟩
-  have := ChartedSpace.locallyPathConnectedSpace (EuclideanSpace ℝ (Fin (finrank ℝ E)))
-    (sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1)
-  have := (sphereHomeomorphOfFinrankEq (F := F)
-    (E := EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) (by simp [hEF])).locallyPathConnectedSpace
-  set X := (range f)ᶜ
-  have hX : IsOpen X := (isCompact_range h.continuous).isClosed.isOpen_compl
-  -- By the Jordan–Brouwer theorem, `X` has two path components, those of some `p` and `q`.
-  obtain ⟨c, d, hcd, hcover⟩ := Nat.card_eq_two_iff.1
-    (natCard_zerothHomotopy_sphere_compl_range_eq_two hEF h.continuous h.injective)
-  obtain ⟨⟨p, hp⟩, rfl⟩ := ZerothHomotopy.mk_surjective c
-  obtain ⟨⟨q, hq⟩, rfl⟩ := ZerothHomotopy.mk_surjective d
-  have hjoined : ∀ {u v : sphere (0 : F) 1} (hu : u ∈ X) (hv : v ∈ X),
-      ZerothHomotopy.mk (⟨u, hu⟩ : X) = ZerothHomotopy.mk ⟨v, hv⟩ ↔ JoinedIn X u v := by
-    intro u v hu hv
-    rw [joinedIn_iff_joined hu hv, ← mem_pathComponent_iff,
-      ← ZerothHomotopy.preimage_singleton_eq_pathComponent, mem_preimage, mem_singleton_iff,
-      eq_comm]
-  set A := pathComponentIn X p
-  set B := pathComponentIn X q
-  have hAB : Disjoint A B := by
-    refine disjoint_left.2 fun r hrA hrB ↦ hcd ?_
-    exact (hjoined hp hq).2 ((hrA : JoinedIn X p r).trans (hrB : JoinedIn X q r).symm)
-  have hXAB : X = A ∪ B := by
-    refine Subset.antisymm (fun r hr ↦ ?_) (union_subset pathComponentIn_subset
-      pathComponentIn_subset)
-    have hr' : ZerothHomotopy.mk (⟨r, hr⟩ : X) ∈ ({ZerothHomotopy.mk ⟨p, hp⟩,
-        ZerothHomotopy.mk ⟨q, hq⟩} : Set (ZerothHomotopy X)) := hcover ▸ mem_univ _
-    rcases hr' with hr' | hr'
-    · exact Or.inl ((hjoined hr hp).1 hr').symm
-    · exact Or.inr ((hjoined hr hq).1 hr').symm
-  have hAo : IsOpen A := hX.pathComponentIn p
-  have hBo : IsOpen B := hX.pathComponentIn q
-  rcases h.mapsTo_and_mapsTo_or_mapsTo_and_mapsTo hAo hBo hAB hXAB
-      ⟨p, mem_pathComponentIn_self hp⟩ ⟨q, mem_pathComponentIn_self hq⟩ with
-    ⟨hpos, hneg⟩ | ⟨hpos, hneg⟩
-  · exact ⟨A, B, hAo, hBo, hAB, hXAB, isPathConnected_pathComponentIn hp,
-      isPathConnected_pathComponentIn hq, hpos, hneg⟩
-  · exact ⟨B, A, hBo, hAo, hAB.symm, hXAB.trans (union_comm _ _),
-      isPathConnected_pathComponentIn hq, isPathConnected_pathComponentIn hp, hpos, hneg⟩
-
-end SidesOfSphere
 
 end TauCeti

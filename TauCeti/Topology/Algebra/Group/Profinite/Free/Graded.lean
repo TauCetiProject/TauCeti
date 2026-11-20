@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
+public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Basic
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Span
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Abelianization
 import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
@@ -250,7 +250,11 @@ end freeProP
 
 namespace freeProP
 
-variable (p : ℕ) [Fact p.Prime] (X : Type u) [Finite X] [LinearOrder X]
+variable (p : ℕ) [Fact p.Prime] (X : Type u)
+
+section DegreeOneSpan
+
+variable [Finite X] [LinearOrder X]
 
 /-- **Spanning**: the `p`-power classes and the brackets of the generator classes span
 `gr_1(freeProP p X)`. -/
@@ -261,7 +265,12 @@ theorem span_range_degreeOneFamily_of_eq_top :
     ((isTopologicallyFinitelyGenerated_freeProP p X).isOpen_pLowerCentralSeries Fact.out 2)
     (topologicalClosure_closure_range_of_eq_top p X)
 
-omit [Finite X] in
+end DegreeOneSpan
+
+section DegreeOneLinearIndependent
+
+variable [LinearOrder X]
+
 /-- A linear relation among the degree-one family of the generators of `freeProP p X` maps to
 the same relation among the degree-one family of any family `y : X → H` in a pro-`p` group `H`. -/
 private theorem sum_smul_degreeOneFamily_eq_zero {H : Type u} [Group H]
@@ -277,7 +286,6 @@ private theorem sum_smul_degreeOneFamily_eq_zero {H : Type u} [Group H]
   simpa only [map_sum, map_smul, map_zero, AddMonoidHom.coe_toZModLinearMap,
     gradedMap_degreeOneFamily, hcomp] using h
 
-omit [Finite X] in
 /-- The coefficient of `[x'_i, x'_j]` in a vanishing linear combination of the degree-one family
 of the generators of `freeProP p X` is zero, for `i < j`: it is read off in the Heisenberg group
 over `𝔽_p`, sending `x_i, x_j` to the standard generators and the others to `1`. -/
@@ -326,7 +334,6 @@ private theorem coeff_inr_eq_zero_of_sum_smul_degreeOneFamily_eq_zero
       · rw [h, gradedMkZero_one, map_zero, AddMonoidHom.zero_apply]
       · rw [h, gradedMkZero_one, map_zero]
 
-omit [Finite X] in
 /-- **Linear independence**: the `p`-power classes `π x'_i` and the brackets `[x'_i, x'_j]` for
 `i < j` of the generator classes are linearly independent in `gr_1(freeProP p X)`. The
 coefficient of `π x'_i` is read off in `ℤ/p²`, and the coefficient of `[x'_i, x'_j]` in the
@@ -361,7 +368,8 @@ theorem linearIndependent_degreeOneFamily_of :
         exact one_mem _
   · exact coeff_inr_eq_zero_of_sum_smul_degreeOneFamily_eq_zero p X hc hij hk
 
-omit [Finite X] [LinearOrder X] in
+end DegreeOneLinearIndependent
+
 /-- **The iterated `p`-powers of the generator classes are linearly independent**: for every `j`,
 the classes `π^j x'_i ∈ gr_j(freeProP p X)` of the `p ^ j`-th powers of the generators are linearly
 independent. The coefficient of `π^j x'_i` is read off in `ℤ/pʲ⁺¹`, by sending `x_i` to the
@@ -380,6 +388,10 @@ theorem linearIndependent_gradedPowIter_gradedMkZero_of (j : ℕ) :
   exact (smul_eq_zero_iff_left
     (gradedMap_exponentSumZModPow_gradedPowIter_gradedMkZero_of_self_ne_zero j i)).mp h
 
+section DegreeOneBasis
+
+variable [Finite X] [LinearOrder X]
+
 /-- **The standard basis of `gr_1` of a free pro-`p` group of finite rank**: the `p`-power classes
 `π x'_i` for `i ∈ X` and the brackets `[x'_i, x'_j]` for `i < j` of the generator classes,
 indexed by `X ⊕ {ij : X × X // ij.1 < ij.2}`. -/
@@ -393,7 +405,12 @@ theorem degreeOneBasis_apply (k : X ⊕ {ij : X × X // ij.1 < ij.2}) :
     degreeOneBasis p X k = degreeOneFamily p (of : X → freeProP p X) k :=
   Module.Basis.mk_apply _ _ k
 
-omit [LinearOrder X] in
+end DegreeOneBasis
+
+section DegreeZero
+
+variable [Finite X]
+
 /-- **The generator classes span `gr_0` of a free pro-`p` group of finite rank.** -/
 theorem span_gradedMkZero_image_range_of_eq_top :
     span (ZMod p) (gradedMkZero p (freeProP p X) '' Set.range of) = ⊤ :=
@@ -402,7 +419,6 @@ theorem span_gradedMkZero_image_range_of_eq_top :
     (topologicalClosure_closure_range_of_eq_top p X)
 
 variable {p X} in
-omit [LinearOrder X] in
 /-- A bracket `[τ, y]` with a class `y ∈ gr_0(F)` of the free pro-`p` group lies in a subspace
 as soon as the brackets `[τ, ξ_j]` with the generator classes do, by bilinearity. -/
 theorem gradedBracket_mem_of_forall_gradedMkZero_of {m : ℕ} {τ : gradedPiece p (freeProP p X) m}
@@ -418,7 +434,6 @@ theorem gradedBracket_mem_of_forall_gradedMkZero_of {m : ℕ} {τ : gradedPiece 
   have h := hle (by rw [span_gradedMkZero_image_range_of_eq_top]; exact mem_top : y ∈ _)
   rwa [Submodule.mem_comap, gradedBracketLinear_apply] at h
 
-omit [LinearOrder X] in
 /-- **The basis of `gr_0` of a free pro-`p` group of finite rank** formed by the classes
 `x'_i = ⟦x_i⟧` of the generators: the basis `TauCeti.freeProP.frattiniQuotientBasis` of the
 Frattini quotient `F ⧸ Φ(F)`, transported along `gr_0(F) ≅ F ⧸ λ_1(F) = F ⧸ Φ(F)`. -/
@@ -428,7 +443,6 @@ noncomputable def degreeZeroBasis : Module.Basis X (ZMod p) (gradedPiece p (free
       (QuotientGroup.quotientMulEquivOfEq (pLowerCentralSeries_one_eq_proPFrattini Fact.out)))).symm
     (ZMod.map_smul _)
 
-omit [LinearOrder X] in
 @[simp]
 theorem degreeZeroBasis_apply (i : X) :
     degreeZeroBasis p X i = gradedMkZero p (freeProP p X) (of i) := by
@@ -436,7 +450,6 @@ theorem degreeZeroBasis_apply (i : X) :
   -- The identification `gr_0(F) ≅ F ⧸ Φ(F)` carries `x'_i` to the class `⟦x_i⟧`.
   simp
 
-omit [LinearOrder X] in
 /-- The coordinate of the class of a generator `a` at `ξ_i` is `1` if `a = i` and `0` otherwise. -/
 @[simp]
 theorem degreeZeroBasis_repr_gradedMkZero [DecidableEq X] (a i : X) :
@@ -444,7 +457,8 @@ theorem degreeZeroBasis_repr_gradedMkZero [DecidableEq X] (a i : X) :
       if a = i then 1 else 0 := by
   rw [← degreeZeroBasis_apply, Module.Basis.repr_self, Finsupp.single_apply]
 
-omit [Finite X] [LinearOrder X] in
+end DegreeZero
+
 /-- **The dimension of `gr_1` of a free pro-`p` group of finite rank** is `#X + (#X choose 2)`:
 `gr_1(F) ≅ 𝔽_p^X ⊕ Λ²(𝔽_p^X)`. -/
 theorem finrank_gradedPiece_one [Fintype X] :
@@ -455,7 +469,10 @@ theorem finrank_gradedPiece_one [Fintype X] :
   rw [Module.finrank_eq_card_basis (degreeOneBasis p X), Fintype.card_sum, Fintype.card_subtype,
     Fintype.card_product_filter_lt]
 
-omit [LinearOrder X] in
+section DegreeOneCard
+
+variable [Finite X]
+
 /-- The degree-one graded piece of the free pro-`p` group on a finite type `X` has
 `p ^ (#X + (#X choose 2))` elements. -/
 @[simp]
@@ -465,6 +482,8 @@ theorem natCard_gradedPiece_one :
   have := (isTopologicallyFinitelyGenerated_freeProP p X).finite_gradedPiece (Fact.out : p.Prime) 1
   rw [Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod, finrank_gradedPiece_one,
     Nat.card_eq_fintype_card]
+
+end DegreeOneCard
 
 end freeProP
 

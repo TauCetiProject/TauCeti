@@ -37,6 +37,8 @@ and it is semilocally simply connected, being covered by the simply connected co
 * `TauCeti.classifyingSpaceBasepoint`: the image of the base point of the countable join.
 * `TauCeti.classifyingSpaceLift`: descent of a continuous `G`-invariant map.
 * `TauCeti.classifyingSpaceDeckMulEquiv`: `G ≃* deck (classifyingSpaceProj G)`.
+* `TauCeti.universalGSpaceHomeomorphClassifyingSpace`: for a trivial group `G`, the orbit map as a
+  homeomorphism `universalGSpace G ≃ₜ classifyingSpace G`.
 
 ## Main results
 
@@ -194,19 +196,55 @@ variable (G)
 group element is a deck transformation, and every deck transformation arises this way because
 the countable join is connected. -/
 def classifyingSpaceDeckMulEquiv : G ≃* deck (classifyingSpaceProj G) :=
-  Deck.IsQuotientCoveringMap.deckMulEquiv (isQuotientCoveringMap_classifyingSpaceProj G)
+  (isQuotientCoveringMap_classifyingSpaceProj G).deckMulEquiv
 
 /-- The deck transformation attached to a group element is translation by that element. -/
 @[simp]
 theorem classifyingSpaceDeckMulEquiv_apply (g : G) (x : universalGSpace G) :
-    (classifyingSpaceDeckMulEquiv G g).1 x = g • x :=
-  Deck.IsQuotientCoveringMap.deckMulEquiv_apply _ g x
+    (classifyingSpaceDeckMulEquiv G g).val x = g • x :=
+  (isQuotientCoveringMap_classifyingSpaceProj G).deckMulEquiv_apply g x
 
 /-- A deck transformation of the orbit map is translation by the group element it corresponds
 to. -/
 @[simp]
 theorem classifyingSpaceDeckMulEquiv_symm_apply (φ : deck (classifyingSpaceProj G))
-    (x : universalGSpace G) : (classifyingSpaceDeckMulEquiv G).symm φ • x = φ.1 x :=
-  Deck.IsQuotientCoveringMap.deckMulEquiv_symm_apply _ φ x
+    (x : universalGSpace G) : (classifyingSpaceDeckMulEquiv G).symm φ • x = φ.val x :=
+  (isQuotientCoveringMap_classifyingSpaceProj G).deckMulEquiv_symm_apply φ x
+
+/-- **For a trivial group `G`, the orbit map `classifyingSpaceProj G` is a homeomorphism** from
+Milnor's countable join `universalGSpace G` onto `classifyingSpace G`. -/
+def universalGSpaceHomeomorphClassifyingSpace [Subsingleton G] :
+    universalGSpace G ≃ₜ classifyingSpace G where
+  toFun := classifyingSpaceProj G
+  invFun := classifyingSpaceLift (ContinuousMap.id (universalGSpace G)) fun g x ↦ by
+    rw [Subsingleton.elim g 1, one_smul]
+  left_inv x := classifyingSpaceLift_apply _ _ x
+  right_inv := (classifyingSpaceProj_surjective G).forall.mpr fun _ ↦ by simp
+  continuous_toFun := continuous_classifyingSpaceProj G
+  continuous_invFun := (classifyingSpaceLift _ _).continuous
+
+/-- The forward map of `universalGSpaceHomeomorphClassifyingSpace G` is `classifyingSpaceProj G`. -/
+@[simp]
+theorem universalGSpaceHomeomorphClassifyingSpace_apply [Subsingleton G]
+    (x : universalGSpace G) :
+    universalGSpaceHomeomorphClassifyingSpace G x = classifyingSpaceProj G x :=
+  (rfl)
+
+/-- The inverse of `universalGSpaceHomeomorphClassifyingSpace G` recovers points from their
+orbits. -/
+@[simp]
+theorem universalGSpaceHomeomorphClassifyingSpace_symm_proj [Subsingleton G]
+    (x : universalGSpace G) :
+    (universalGSpaceHomeomorphClassifyingSpace G).symm (classifyingSpaceProj G x) = x :=
+  (universalGSpaceHomeomorphClassifyingSpace G).symm_apply_apply x
+
+/-- The inverse of `universalGSpaceHomeomorphClassifyingSpace G` sends
+`classifyingSpaceBasepoint G` to `universalGSpaceBasepoint G`. -/
+@[simp]
+theorem universalGSpaceHomeomorphClassifyingSpace_symm_basepoint [Subsingleton G] :
+    (universalGSpaceHomeomorphClassifyingSpace G).symm (classifyingSpaceBasepoint G) =
+      universalGSpaceBasepoint G := by
+  rw [← classifyingSpaceProj_universalGSpaceBasepoint G,
+    universalGSpaceHomeomorphClassifyingSpace_symm_proj]
 
 end TauCeti

@@ -60,7 +60,7 @@ noncomputable section
 
 namespace TauCeti.CurrentAlgebra
 
-open _root_.LieModule.Cohomology TauCeti.LieModule.Cohomology TauCeti.LieModule
+open TauCeti.LieModule.Cohomology TauCeti.LieModule
 
 section CommRing
 
@@ -73,14 +73,16 @@ variable (R L) in
 def invariantFormsResidueClass :
     invariantForms R L L →ₗ[R] continuousSecondCohomology R (currentAlgebra R L)
       (TrivialLieModule R (currentAlgebra R L) R) where
-  toFun Φ := residueClass R L Φ (mem_invariantForms_iff.mp Φ.2).1 (mem_invariantForms_iff.mp Φ.2).2
+  toFun Φ := residueClass R L Φ (mem_invariantForms_iff.mp Φ.property).1
+      (mem_invariantForms_iff.mp Φ.property).2
   map_add' _ _ := residueClass_add _ _ _ _ _ _
   map_smul' r _ := residueClass_smul r _ _ _ _
 
 @[simp]
 theorem invariantFormsResidueClass_apply (Φ : invariantForms R L L) :
     invariantFormsResidueClass R L Φ =
-      residueClass R L Φ (mem_invariantForms_iff.mp Φ.2).1 (mem_invariantForms_iff.mp Φ.2).2 :=
+      residueClass R L Φ (mem_invariantForms_iff.mp Φ.property).1
+          (mem_invariantForms_iff.mp Φ.property).2 :=
   (rfl)
 
 /-- The residue class map on invariant symmetric forms is injective, over every commutative
@@ -93,7 +95,7 @@ end CommRing
 
 section Field
 
-variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [_root_.LieAlgebra.IsKilling K L]
 
 /-- **Every continuous class is a residue class.** Let `L` be a finite-dimensional Lie algebra with
@@ -103,7 +105,7 @@ coefficients is the residue class of an invariant symmetric form. -/
 theorem invariantFormsResidueClass_surjective :
     Function.Surjective (invariantFormsResidueClass K L) := fun a ↦ by
   obtain ⟨c, rfl⟩ := continuousSecondCohomologyMk_surjective a
-  obtain ⟨Ψ, hΨ, hΨs, f, hf, hc⟩ := exists_eq_twoCochainOfBilinear_add_d₁₂ c.2
+  obtain ⟨Ψ, hΨ, hΨs, f, hf, hc⟩ := exists_eq_twoCochainOfBilinear_add_d₁₂ c.property
   refine ⟨⟨Ψ, mem_invariantForms_iff.mpr ⟨hΨ, hΨs⟩⟩, ?_⟩
   rw [invariantFormsResidueClass_apply, residueClass_eq_mk, continuousSecondCohomologyMk_eq_iff]
   exact ⟨-f, neg_mem hf, by
@@ -143,7 +145,8 @@ variable {K L}
 @[simp]
 theorem invariantFormsResidueClassEquiv_apply (Φ : invariantForms K L L) :
     invariantFormsResidueClassEquiv K L Φ =
-      residueClass K L Φ (mem_invariantForms_iff.mp Φ.2).1 (mem_invariantForms_iff.mp Φ.2).2 :=
+      residueClass K L Φ (mem_invariantForms_iff.mp Φ.property).1
+          (mem_invariantForms_iff.mp Φ.property).2 :=
   (rfl)
 
 /-- The inverse of `invariantFormsResidueClassEquiv` recovers the form from its residue class. -/
