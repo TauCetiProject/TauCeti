@@ -57,8 +57,7 @@ open set.
 * `TauCeti.isOpen_setOf_mfderiv_ne_zero`: the points where the differential of a `C^1` map is
   nonzero form an open set.
 * `TauCeti.fderiv_chartAt_comp_chartAt_symm`: the derivative of a change of chart is the tangent
-  change of coordinates, and `TauCeti.mfderiv_chartAt_symm`: the differential of the inverse of a
-  preferred chart is the derivative of a change of chart.
+  change of coordinates.
 -/
 
 public section
@@ -357,19 +356,6 @@ theorem fderiv_chartAt_comp_chartAt_symm {x y : M} {z : E} (hz : z ∈ (chartAt 
       tangentCoordChange 𝓘(𝕜, E) x y ((chartAt E x).symm z) := by
   rw [Manifold.tangentCoordChange_eq_fderiv]
   simp [(chartAt E x).right_inv hz]
-
-/-- The differential of the inverse of the chart at `x` at a point `z` of its target is the
-derivative at `z` of the change of chart from the chart at `x` to the chart at
-`(chartAt E x).symm z`. -/
-theorem mfderiv_chartAt_symm {x : M} {z : E} (hz : z ∈ (chartAt E x).target) :
-    mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) (chartAt E x).symm z =
-      (fderiv 𝕜 (chartAt E ((chartAt E x).symm z) ∘ (chartAt E x).symm) z : E →L[𝕜] E) := by
-  rw [(mdifferentiableAt_atlas_symm (chart_mem_atlas E x) hz).mfderiv]
-  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, modelWithCornersSelf_coe, range_id,
-    fderivWithin_univ]
-  -- The casts `tangentSpaceCastModel` between the tangent spaces and the model space are
-  -- identities.
-  rfl
 
 end Preferred
 

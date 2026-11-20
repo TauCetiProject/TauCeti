@@ -8,11 +8,9 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Geometry.Manifold.Sobolev.LocalMap
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
-import Mathlib.Geometry.Manifold.MFDeriv.Atlas
-import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
-import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 import Mathlib.Topology.Bases
 import TauCeti.Geometry.Manifold.Complex.Analytic
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.Sobolev.ChartTransition
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.CoordChange
@@ -370,19 +368,18 @@ theorem _root_.ContMDiffOn.hasWeakMFDerivOn_mfderiv [IsManifold 𝓘(ℝ, ℂ) 1
   refine hf.hasWeakFDerivOn_fderiv.congr_ae_deriv
     (ae_restrict_of_forall_mem (Opens.interior W).isOpen.measurableSet fun z hz ↦ ?_)
   rw [hW] at hz
-  -- The derivative of the coordinate expression is computed by the chain rule.
-  have hx : φ₀.symm z ∈ s := hz.2.1
-  have hd := (hasMFDerivAt_extChartAt hz.2.2).comp z
-    (((hu.contMDiffAt (hs.mem_nhds hx)).mdifferentiableAt one_ne_zero).hasMFDerivAt.comp z
-      (mdifferentiableAt_atlas_symm (chart_mem_atlas ℂ x₀) hz.1).hasMFDerivAt)
-  rw [hasMFDerivAt_iff_hasFDerivAt, mfderiv_chartAt_eq_tangentCoordChange hz.2.2,
-    mfderiv_chartAt_symm hz.1] at hd
-  -- Restate the derivative with the topology of `ℂ` rather than that of its tangent spaces.
-  have hd' : HasFDerivAt (extChartAt I y₀ ∘ u ∘ φ₀.symm)
-      (tangentCoordChange I (u (φ₀.symm z)) y₀ (u (φ₀.symm z)) ∘L
-        mfderiv 𝓘(ℝ, ℂ) I u (φ₀.symm z) ∘L
-          (fderiv ℝ (chartAt ℂ (φ₀.symm z) ∘ φ₀.symm) z : ℂ →L[ℝ] ℂ)) z := hd
-  exact hd'.fderiv
+  -- The derivative of the coordinate expression is the differential read in the two charts.
+  have hd := ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm (I := 𝓘(ℝ, ℂ)) (I' := I)
+    (hu.continuousOn.continuousAt (hs.mem_nhds hz.2.1)) (β := x₀) (α := y₀)
+    (by simpa using φ₀.map_target hz.1) (by simpa using hz.2.2)
+  -- The differential is a map between the model spaces `ℂ` and `F` of the tangent spaces.
+  obtain ⟨D, hD⟩ : ∃ D : ℂ →L[ℝ] F, D = mfderiv 𝓘(ℝ, ℂ) I u (φ₀.symm z) := ⟨_, rfl⟩
+  rw [← hD, ← fderiv_chartAt_comp_chartAt_symm hz.1] at hd
+  simp only [φ₀, extChartAt_coe (I := 𝓘(ℝ, ℂ)), extChartAt_coe_symm (I := 𝓘(ℝ, ℂ)),
+    modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Function.comp_id, range_id,
+    fderivWithin_univ, Function.comp_apply, id_eq, (chartAt ℂ x₀).right_inv hz.1] at hd
+  subst hD
+  exact hd
 
 /-- **A weak differential of a `C¹` map is its differential.** If `u` is of class `C¹` on an open
 set `s`, then a weak differential of `u` on `s` agrees, in the chart at every point `x₀`, at almost
