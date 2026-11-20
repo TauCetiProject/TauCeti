@@ -34,6 +34,9 @@ which is the form in which it is applied to concrete words.
 * `Monoid.PushoutI.list_prod_inv_mul_of_mul_list_prod_notMem_range_base`: the conjugate
   `w⁻¹ * g * w` of a letter `g` outside the amalgamated subgroup by the product `w` of a reduced
   list that does not start in the factor of `g` is not in the amalgamated subgroup.
+* `Monoid.PushoutI.map_fst_eq_of_base_mul_list_prod_eq`: the factors of the successive letters of
+  a reduced list of letters, and so their number, are determined by the product of the list up to
+  the amalgamated subgroup.
 
 ## References
 
@@ -161,5 +164,29 @@ theorem list_prod_inv_mul_of_mul_list_prod_notMem_range_base (hφ : ∀ i, Injec
       exact fun h => hred l₀ hl₀ (by simpa using inv_mem h)
     · rcases List.mem_cons.1 hl with rfl | hl
       exacts [hg, hred l hl]
+
+/-- The factors of the successive letters of a normal form of an element of an amalgamated product
+of groups are determined by the element; in particular so is the number of letters. -/
+theorem map_fst_eq_of_base_mul_list_prod_eq (hφ : ∀ i, Injective (φ i)) {L L' : List (Σ i, G i)}
+    (hc : L.IsChain fun l l' => l.1 ≠ l'.1) (hred : ∀ l ∈ L, l.2 ∉ (φ l.1).range)
+    (hc' : L'.IsChain fun l l' => l.1 ≠ l'.1) (hred' : ∀ l ∈ L', l.2 ∉ (φ l.1).range) {h h' : H}
+    (heq : base φ h * (L.map fun l => of l.1 l.2).prod =
+      base φ h' * (L'.map fun l => of l.1 l.2).prod) :
+    L.map Sigma.fst = L'.map Sigma.fst := by
+  classical
+  obtain ⟨d⟩ := NormalWord.transversal_nonempty φ hφ
+  let w : CoprodI.Word G := ⟨L, fun l hl h1 => hred l hl ⟨1, by rw [map_one, h1]⟩, hc⟩
+  let w' : CoprodI.Word G := ⟨L', fun l hl h1 => hred' l hl ⟨1, by rw [map_one, h1]⟩, hc'⟩
+  obtain ⟨v, hv, hvl⟩ := Reduced.exists_normalWord_prod_eq d (w := w) hred
+  obtain ⟨v', hv', hvl'⟩ := Reduced.exists_normalWord_prod_eq d (w := w') hred'
+  have hprod (u : CoprodI.Word G) :
+      ofCoprodI (φ := φ) u.prod = (u.toList.map fun l => of l.1 l.2).prod := by
+    rw [CoprodI.Word.prod, map_list_prod, List.map_map]
+    simp [Function.comp_def]
+  have key : NormalWord.prod (h • v) = NormalWord.prod (h' • v') := by
+    rw [NormalWord.prod_base_smul, NormalWord.prod_base_smul, hv, hv', hprod, hprod]
+    exact heq
+  have hfst := congrArg (fun v => v.toList.map Sigma.fst) (NormalWord.prod_injective key)
+  simpa [NormalWord.base_smul_def', hvl, hvl', w, w'] using hfst
 
 end Monoid.PushoutI

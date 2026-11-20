@@ -22,9 +22,10 @@ This is the reason the boundary maps of a graph of groups are required to be inj
 data of an amalgam `A ∗_C B` with a non-injective map `C →* B` and an injective map `C →* A`, the
 vertex group `A` does not embed in the amalgam, and the normal form theorem fails.
 
-For a pushout of groups along `φ i : C →* G i`, an element of a factor `G i` that centralizes the
-image of `C` in `G i` commutes in the pushout with every element of the image `base φ c` of `C`,
-since that image is also the image of `φ i c` under the inclusion of `G i`.
+For a pushout of groups along `φ i : C →* G i`, the image `base φ c` of an element of `C` is also
+the image of `φ i c` under the inclusion of `G i`, so the image of `C` lies in the image of every
+factor. In particular, an element of a factor `G i` that centralizes the image of `C` in `G i`
+commutes in the pushout with every element of the image of `C`.
 
 ## Main results
 
@@ -32,6 +33,8 @@ since that image is also the image of `φ i c` under the inclusion of `G i`.
   identifies every pair of elements identified by some `φ j`.
 * `Monoid.PushoutI.not_injective_of`: if `φ i` is injective and `φ j` is not, then `G i` does not
   embed in the pushout.
+* `Monoid.PushoutI.base_range_le_of_range`: the image of `C` in the pushout lies in the image of
+  every factor.
 * `Monoid.PushoutI.commute_of_base_of_mem_centralizer`: an element of a factor centralizing the
   image of `C` commutes with the image of `C` in the pushout.
 
@@ -68,6 +71,11 @@ section Group
 
 variable {ι : Type*} {G : ι → Type*} {C : Type*} [∀ i, Group (G i)] [Group C]
   {φ : ∀ i, C →* G i}
+
+/-- The image of the amalgamating group in the pushout lies in the image of every factor. -/
+theorem base_range_le_of_range (i : ι) : (base φ).range ≤ (of (φ := φ) i).range := by
+  rintro _ ⟨c, rfl⟩
+  exact ⟨φ i c, of_apply_eq_base φ i c⟩
 
 /-- An element of a factor centralizing the image of the amalgamating group commutes in the
 pushout with every element of the image of the amalgamating group. -/
