@@ -120,17 +120,17 @@ theorem nondivPullbackDrift_apply (Φ Ψ : E → E) (A : E → E →L[ℝ] E) (b
 
 /-- The pulled-back principal coefficient `A'` is elliptic wherever `A` is: if
 `λ ‖η‖² ≤ ⟪A(Φ x) η, η⟫` and `‖DΦ(x)‖ ≤ L`, then `λ / max L 1 ^ 2 ‖ξ‖² ≤ ⟪A'(x) ξ, ξ⟫`. -/
-theorem nondivPullbackPrincipal_elliptic (hΦ : IsChangeOfVariables 2 U V Φ L c)
-    (hΨ : IsChangeOfVariables 2 V U Ψ L' c') (hΨΦ : ∀ x, Ψ (Φ x) = x)
-    (hΦΨ : ∀ y, Φ (Ψ y) = y) {A : E → E →L[ℝ] E} {x : E} (hx : x ∈ U) {lam : ℝ}
-    (hlam : 0 < lam) (hA : ∀ η, lam * ‖η‖ ^ 2 ≤ ⟪A (Φ x) η, η⟫_ℝ) :
+theorem nondivPullbackPrincipal_elliptic {k k' : ℕ}
+    (hΦ : IsChangeOfVariables (k + 1) U V Φ L c) (hΨ : IsChangeOfVariables k' V U Ψ L' c')
+    (hΨΦ : LeftInvOn Ψ Φ U) (hΦΨ : RightInvOn Ψ Φ V) {A : E → E →L[ℝ] E} {x : E} (hx : x ∈ U)
+    {lam : ℝ} (hlam : 0 < lam) (hA : ∀ η, lam * ‖η‖ ^ 2 ≤ ⟪A (Φ x) η, η⟫_ℝ) :
     0 < lam / max L 1 ^ 2 ∧
       ∀ ξ, lam / max L 1 ^ 2 * ‖ξ‖ ^ 2 ≤ ⟪nondivPullbackPrincipal Φ Ψ A x ξ, ξ⟫_ℝ := by
   refine ⟨by positivity, fun ξ => ?_⟩
   set N := fderiv ℝ Ψ (Φ x)
   -- `ξ = DΦ(x)† (N† ξ)`, since `N ∘ DΦ(x) = id`.
   have hid : N ∘L fderiv ℝ Φ x = ContinuousLinearMap.id ℝ E :=
-    hΦ.fderiv_comp_fderiv_eq_id hΨ (fun y _ => hΨΦ y) (fun y _ => hΦΨ y) hx
+    hΦ.fderiv_comp_fderiv_eq_id hΨ hΨΦ hΦΨ hx
   have hξ : (fderiv ℝ Φ x).adjoint (N.adjoint ξ) = ξ := by
     rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp, hid,
       ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
@@ -154,12 +154,12 @@ theorem nondivPullbackPrincipal_elliptic (hΦ : IsChangeOfVariables 2 U V Φ L c
 /-- The pulled-back principal coefficient is continuous within `s` at `x` when `Φ` maps `s` into
 `t`, `Φ x ∈ V` and `A` is continuous within `t` at `Φ x`. -/
 theorem continuousWithinAt_nondivPullbackPrincipal (hΨ : IsChangeOfVariables 2 V U Ψ L' c')
-    (hΦc : Continuous Φ) {s t : Set E} (hst : MapsTo Φ s t) {A : E → E →L[ℝ] E} {x : E}
+    {x : E} (hΦc : ContinuousAt Φ x) {s t : Set E} (hst : MapsTo Φ s t) {A : E → E →L[ℝ] E}
     (hxV : Φ x ∈ V) (hA : ContinuousWithinAt A t (Φ x)) :
     ContinuousWithinAt (nondivPullbackPrincipal Φ Ψ A) s x := by
   have hM : ContinuousAt (fun y => fderiv ℝ Ψ (Φ y)) x :=
     ((hΨ.contDiffOn.continuousOn_fderiv_of_isOpen V.isOpen (by norm_num)).continuousAt
-      (V.isOpen.mem_nhds hxV)).comp hΦc.continuousAt
+      (V.isOpen.mem_nhds hxV)).comp hΦc
   have hconj : Continuous fun q : (E →L[ℝ] E) × (E →L[ℝ] E) => q.1 ∘L q.2 ∘L q.1.adjoint := by
     fun_prop
   exact hconj.continuousAt.comp_continuousWithinAt
@@ -202,7 +202,7 @@ omit [mu.IsAddHaarMeasure] in
 /-- The coefficients of the pulled-back equation are almost everywhere strongly measurable on an
 open set `s` that `Φ` maps into `V`, when `A ∘ Φ` and `b ∘ Φ` are. -/
 theorem aestronglyMeasurable_nondivPullbackPrincipal_and_nondivPullbackDrift
-    (hΨ : IsChangeOfVariables 2 V U Ψ L' c') (hΦc : Continuous Φ) {s : Set E}
+    (hΨ : IsChangeOfVariables 2 V U Ψ L' c') {s : Set E} (hΦc : ContinuousOn Φ s)
     (hs : MeasurableSet s) (hsV : MapsTo Φ s V) {A : E → E →L[ℝ] E} {b : E → E}
     (hA : AEStronglyMeasurable (fun x => A (Φ x)) (mu.restrict s))
     (hb : AEStronglyMeasurable (fun x => b (Φ x)) (mu.restrict s)) :
@@ -210,11 +210,11 @@ theorem aestronglyMeasurable_nondivPullbackPrincipal_and_nondivPullbackDrift
       AEStronglyMeasurable (nondivPullbackDrift Φ Ψ A b) (mu.restrict s) := by
   have hM : AEStronglyMeasurable (fun x => fderiv ℝ Ψ (Φ x)) (mu.restrict s) :=
     ((hΨ.contDiffOn.continuousOn_fderiv_of_isOpen V.isOpen (by norm_num)).comp
-      hΦc.continuousOn hsV).aestronglyMeasurable hs
+      hΦc hsV).aestronglyMeasurable hs
   have hD2 : AEStronglyMeasurable (fun x => iteratedFDeriv ℝ 2 Ψ (Φ x)) (mu.restrict s) :=
     (((hΨ.contDiffOn.continuousOn_iteratedFDerivWithin le_rfl V.isOpen.uniqueDiffOn).congr
       fun y hy => (iteratedFDerivWithin_of_isOpen 2 V.isOpen hy).symm).comp
-        hΦc.continuousOn hsV).aestronglyMeasurable hs
+        hΦc hsV).aestronglyMeasurable hs
   have hconj : Continuous fun q : (E →L[ℝ] E) × (E →L[ℝ] E) => q.1 ∘L q.2 ∘L q.1.adjoint := by
     fun_prop
   have happ : Continuous fun q : (E →L[ℝ] E) × E => q.1 q.2 := by fun_prop

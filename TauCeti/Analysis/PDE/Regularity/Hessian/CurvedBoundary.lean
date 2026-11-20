@@ -380,14 +380,15 @@ private theorem exists_lpNorm_iteratedGradient_le_of_pullback (hp : 1 < p) (hp_t
           (volume.restrict ((Ω' : Set (WithLp 2 (ℝ × E))) ∩ K)) ≤
         C * (‖g‖ + ‖iteratedGradient 0 (lowerOrder 1 v)‖ + ‖value 2 v‖) := by
   have hΦΩ : MapsTo Φ Ω' Omega := hΦmaps.mono_right inter_subset_left
-  have hm := PDE.aestronglyMeasurable_nondivPullbackPrincipal_and_nondivPullbackDrift hΨ hΦc
-    Ω'.isOpen.measurableSet (fun x hx => (hΦmaps hx).2) hAΦ hbΦ
+  have hm := PDE.aestronglyMeasurable_nondivPullbackPrincipal_and_nondivPullbackDrift hΨ
+    hΦc.continuousOn Ω'.isOpen.measurableSet (fun x hx => (hΦmaps hx).2) hAΦ hbΦ
   refine exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_normalHalfSpace hp hp_top 0
-    hΩ'B hK hKB hm.1 (fun x hx => PDE.continuousWithinAt_nondivPullbackPrincipal hΨ hΦc hΦΩ
-      (hΦ.mapsTo (hKU' hx)) (hcont _ (hKW hx))) (fun x hx hxcl => ?_) hm.2
+    hΩ'B hK hKB hm.1 (fun x hx => PDE.continuousWithinAt_nondivPullbackPrincipal hΨ
+      hΦc.continuousAt hΦΩ (hΦ.mapsTo (hKU' hx)) (hcont _ (hKW hx))) (fun x hx hxcl => ?_) hm.2
     (β := L₂ * β + Module.finrank ℝ (WithLp 2 (ℝ × E)) * (L₂ * Λ)) ?_ hcΦ hcγ
   · obtain ⟨lam, hlam, hA⟩ := hell (Φ x) (hKW hx) (map_mem_closure hΦc hxcl hΦΩ)
-    exact ⟨_, PDE.nondivPullbackPrincipal_elliptic hΦ hΨ hΨΦ hΦΨ (hKU' hx) hlam hA⟩
+    exact ⟨_, PDE.nondivPullbackPrincipal_elliptic hΦ hΨ (fun y _ => hΨΦ y) (fun y _ => hΦΨ y)
+      (hKU' hx) hlam hA⟩
   · filter_upwards [hbβ, ae_restrict_mem Ω'.isOpen.measurableSet] with x hx hxΩ'
     exact PDE.norm_nondivPullbackDrift_le hΨ (hΦmaps hxΩ').2 hx (hAΛ x hxΩ')
 
