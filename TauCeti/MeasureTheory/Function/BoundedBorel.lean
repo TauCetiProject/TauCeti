@@ -43,6 +43,9 @@ symbols (`ofContinuousMap`). This embedding of `C(X, ℂ)` is a unital star alge
 isometric for the two supremum norms, and is compatible with pullback along continuous measurable
 maps. It is how a Borel functional calculus is compared with a continuous one, for instance with
 a star representation of `C(X, ℂ)` or with Mathlib's continuous functional calculus `cfcHom`.
+
+For nonreal `z`, the resolvent function `s ↦ (z - s)⁻¹` on `ℝ` is a bounded Borel symbol
+(`resolventSymbol`), bounded by `|Im z|⁻¹`.
 -/
 
 public section
@@ -388,6 +391,20 @@ gives the symbol of the composite continuous function. -/
     compStarAlgHom' φ hφ (ofContinuousMap g) = ofContinuousMap (g.comp φ) := (rfl)
 
 end ContinuousMap
+
+/-- For nonreal `z`, the resolvent function `s ↦ (z - s)⁻¹` on `ℝ` as a bounded Borel symbol: it
+is bounded by `|Im z|⁻¹`. Its spectral integral against a self-adjoint operator is the
+resolvent of that operator. -/
+def resolventSymbol (z : ℂ) (hz : z.im ≠ 0) : BoundedBorelFunction ℝ :=
+  ofFunction (fun s : ℝ ↦ (z - s)⁻¹) (by fun_prop) <| by
+    refine ⟨|z.im|⁻¹, by positivity, fun s ↦ ?_⟩
+    rw [norm_inv]
+    refine inv_anti₀ (abs_pos.2 hz) ?_
+    simpa using Complex.abs_im_le_norm (z - s)
+
+/-- The resolvent symbol takes the value `(z - s)⁻¹` at `s`. -/
+@[simp] theorem resolventSymbol_apply (z : ℂ) (hz : z.im ≠ 0) (s : ℝ) :
+    resolventSymbol z hz s = (z - s)⁻¹ := (rfl)
 
 end BoundedBorelFunction
 end TauCeti
