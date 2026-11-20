@@ -80,6 +80,36 @@ noncomputable section
 open scoped ENNReal NNReal FourierTransform InnerProductSpace InnerProduct
 open MeasureTheory TauCeti
 
+namespace TauCeti
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] {q : ℝ≥0} {r : ℝ≥0∞}
+
+/-- In positive dimension `n`, a sharp wave-admissible pair `2 / q + (n - 1) / r = (n - 1) / 2`
+with `2 < q` and `r ≠ 0` has `n ≥ 2` and `r > 2`. -/
+theorem two_le_finrank_of_admissible (hq : 2 < q) (hr0 : r ≠ 0)
+    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal =
+      ((Module.finrank ℝ E : ℝ) - 1) / 2) (hE : 0 < Module.finrank ℝ E) :
+    2 ≤ Module.finrank ℝ E ∧ (r⁻¹).toReal < 2⁻¹ ∧ 2 ≤ r := by
+  have hq0 : (0 : ℝ) < 2 / q := div_pos two_pos (by exact_mod_cast zero_lt_two.trans hq)
+  have hn : 2 ≤ Module.finrank ℝ E := by
+    by_contra h
+    have h1 : Module.finrank ℝ E = 1 := by omega
+    rw [h1, Nat.cast_one, sub_self, zero_mul, add_zero, zero_div] at hqr
+    exact hq0.ne' hqr
+  have hn' : (1 : ℝ) ≤ Module.finrank ℝ E - 1 := by
+    have : (2 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hn
+    linarith
+  have hρ : (r⁻¹).toReal < 2⁻¹ := by
+    have h : 0 < ((Module.finrank ℝ E : ℝ) - 1) * (2⁻¹ - (r⁻¹).toReal) := by linarith
+    linarith [pos_of_mul_pos_right h (by linarith)]
+  refine ⟨hn, hρ, ?_⟩
+  rw [← ENNReal.inv_le_inv,
+    ← ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 hr0),
+    ← ENNReal.ofReal_toReal (a := 2⁻¹) (by simp)]
+  exact ENNReal.ofReal_le_ofReal (hρ.le.trans_eq (by simp))
+
+end TauCeti
+
 namespace ContDiffBump
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -158,7 +188,7 @@ private theorem halfWavePropagator_comp_apply_adjoint_apply
     sub_eq_add_neg, halfWavePropagator_add_apply]
 
 /-- In dimension `0` the cutoffs vanish, and so do the blocks. -/
-private theorem fourierMultiplierCLM_littlewoodPaley_eq_zero
+theorem fourierMultiplierCLM_littlewoodPaley_eq_zero
     (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) (hE : Module.finrank ℝ E = 0) :
     Lp.fourierMultiplierCLM ℂ m = 0 := by
   have : Subsingleton E := Module.finrank_zero_iff.1 hE
@@ -207,32 +237,6 @@ section Admissible
 
 variable {p q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-include r' in
-/-- In positive dimension `n`, a sharp wave-admissible pair `2 / q + (n - 1) / r = (n - 1) / 2`
-with `2 < q` has `n ≥ 2` and `r > 2`. -/
-private theorem two_le_finrank_of_admissible (hq : 2 < q)
-    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal =
-      ((Module.finrank ℝ E : ℝ) - 1) / 2) (hE : 0 < Module.finrank ℝ E) :
-    2 ≤ Module.finrank ℝ E ∧ (r⁻¹).toReal < 2⁻¹ ∧ 2 ≤ r := by
-  have hq0 : (0 : ℝ) < 2 / q := div_pos two_pos (by exact_mod_cast zero_lt_two.trans hq)
-  have hn : 2 ≤ Module.finrank ℝ E := by
-    by_contra h
-    have h1 : Module.finrank ℝ E = 1 := by omega
-    rw [h1, Nat.cast_one, sub_self, zero_mul, add_zero, zero_div] at hqr
-    exact hq0.ne' hqr
-  have hn' : (1 : ℝ) ≤ Module.finrank ℝ E - 1 := by
-    have : (2 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hn
-    linarith
-  have hρ : (r⁻¹).toReal < 2⁻¹ := by
-    have h : 0 < ((Module.finrank ℝ E : ℝ) - 1) * (2⁻¹ - (r⁻¹).toReal) := by linarith
-    linarith [pos_of_mul_pos_right h (by linarith)]
-  refine ⟨hn, hρ, ?_⟩
-  rw [← ENNReal.inv_le_inv,
-    ← ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 (ENNReal.HolderConjugate.ne_zero r r')),
-    ← ENNReal.ofReal_toReal (a := 2⁻¹) (by simp)]
-  exact ENNReal.ofReal_le_ofReal (hρ.le.trans_eq (by simp))
-
 /-- **Decay of the time pairings** along a sharp wave-admissible pair: if `2 < q` and
 `2 / q + (n - 1) / r = (n - 1) / 2`, there is `A` such that for every scale `j`, all times
 `s ≠ t` and every `g ∈ L²`, `‖U(s) U(t)* g‖_r ≤ A 2^{2jγ} |s - t|^(-2/q) ‖g‖_{r'}`, where
@@ -261,7 +265,8 @@ private theorem exists_eLpNorm_halfWavePropagator_comp_adjoint_le (hq : 2 < q)
       eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
     exact zero_le
   -- In positive dimension, admissibility with `2 < q` forces `n ≥ 2` and `r > 2`.
-  obtain ⟨hn, hρ, hr⟩ := two_le_finrank_of_admissible (r' := r') hq hqr hE
+  obtain ⟨hn, hρ, hr⟩ :=
+    two_le_finrank_of_admissible hq (ENNReal.HolderConjugate.ne_zero r r') hqr hE
   have hθ : 0 ≤ θ := by linarith
   have hst' : 0 < |s - t| := abs_pos.2 (sub_ne_zero.2 hst)
   set D := (C * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
