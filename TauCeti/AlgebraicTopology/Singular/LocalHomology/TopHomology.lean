@@ -313,8 +313,8 @@ theorem projective_localHomology_univ [∀ V : ModuleCat.{w} Λ, HasProjectiveDi
     exact Projective.of_iso
       (singularHomologyComplSingletonFinrankIso N (chartAt E x) (mem_chart_source E x)).symm
       inferInstance
-  let g : localHomology N (univ : Set M) n ⟶ ⨁ fun x : F ↦ localHomology N ({x.1} : Set M) n :=
-    biproduct.lift fun x ↦ localHomologyRestriction N (subset_univ {x.1}) n
+  let g : localHomology N (univ : Set M) n ⟶ ⨁ fun x : F ↦ localHomology N ({x.val} : Set M) n :=
+    biproduct.lift fun x ↦ localHomologyRestriction N (subset_univ {x.val}) n
   have : Mono g := ⟨fun u v huv ↦ hF u v fun x hx ↦ by
     have h := huv =≫ biproduct.π _ ⟨x, hx⟩
     rw [Category.assoc, Category.assoc, biproduct.lift_π] at h

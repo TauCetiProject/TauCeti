@@ -446,11 +446,13 @@ isomorphism keeps the underlying tempered distribution
 def besselPotentialSpaceKMethodEquiv :
     (besselPotentialSpace E F p s₀ s₁).KMethodSpace θ q ≃L[ℂ]
       BesovSpace F φ ((1 - θ) * s₀ + θ * s₁) p q :=
-  ContinuousLinearEquiv.equivOfInverse (kMethodToBesov φ hs hθ) (besovToKMethod φ hs hθ)
-    (fun u ↦ KMethodSpace.ext <| sumSpace_ext _ <| by
-      rw [sumSpaceEmbed_toSumₗ_besovToKMethod, toDistr_kMethodToBesov])
-    (fun v ↦ BesovSpace.ext <| by
-      rw [toDistr_kMethodToBesov, sumSpaceEmbed_toSumₗ_besovToKMethod])
+  ContinuousLinearEquiv.ofContinuousLinearMap (kMethodToBesov φ hs hθ) (besovToKMethod φ hs hθ)
+    (ContinuousLinearMap.ext fun v ↦ BesovSpace.ext <| by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+        toDistr_kMethodToBesov, sumSpaceEmbed_toSumₗ_besovToKMethod])
+    (ContinuousLinearMap.ext fun u ↦ KMethodSpace.ext <| sumSpace_ext _ <| by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+        sumSpaceEmbed_toSumₗ_besovToKMethod, toDistr_kMethodToBesov])
 
 @[simp]
 theorem toDistr_besselPotentialSpaceKMethodEquiv_apply

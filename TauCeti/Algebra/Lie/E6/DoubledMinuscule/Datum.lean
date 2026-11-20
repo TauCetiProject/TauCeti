@@ -235,7 +235,7 @@ fundamental-weight torus coordinates. -/
   injective_representation_ι := pinnedRepresentation_ι_injective
   lattice := lattice.toAddSubgroup
   representation_mem_lattice := pinnedRepresentation_kostantForm_mem_lattice
-  span_lattice_eq_top := Submodule.IsLattice.span_eq_top (R := ℤ) (A := ℚ) (M := lattice)
+  span_lattice_eq_top := Submodule.IsFullLattice.span_eq_top (R := ℤ) (A := ℚ) (M := lattice)
   dim := 54
   basis := matrixBasis
   weight := matrixWeight

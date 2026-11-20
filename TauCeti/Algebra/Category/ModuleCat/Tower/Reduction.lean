@@ -152,7 +152,8 @@ private noncomputable def ofAdicCompletion : AdicCompletion I M →ₗ[A] (reduc
       simp only [LinearMap.comp_apply, AdicCompletion.eval_apply, AdicCompletion.mk_apply_coe,
         Submodule.mkQ_apply, ofAdicQuotient_mk, transition_quotientsπ]
       -- This is the Cauchy condition on the sequence `x`.
-      exact (quotientsπ_eq_quotientsπ_iff _ _).2 (SModEq.sub_mem.1 (x.2 (n + 1).le_succ).symm)
+      exact (quotientsπ_eq_quotientsπ_iff _ _).2 (SModEq.sub_mem.1 (x.property
+          (n + 1).le_succ).symm)
 
 private theorem limπ_ofAdicCompletion (x : AdicCompletion I M) (n : ℕ) :
     (reduction I M).limπ n (ofAdicCompletion I M x) = ofAdicQuotient I M n (x.val (n + 1)) := by
@@ -168,7 +169,7 @@ noncomputable def limReductionEquiv : (reduction I M).lim ≃ₗ[A] AdicCompleti
       simp only [LinearMap.comp_apply, toAdicCompletion_val, limπ_ofAdicCompletion,
         AdicCompletion.mk_apply_coe, Submodule.mkQ_apply, ofAdicQuotient_mk,
         toAdicQuotient_reductionπ, LinearMap.id_apply]
-      exact (x.2 n.le_succ).symm)
+      exact (x.property n.le_succ).symm)
     (by
       ext n y
       obtain ⟨x, hx⟩ := quotientsπ_surjective _ _ (n + 1) ((reduction I M).limπ (n + 1) y)

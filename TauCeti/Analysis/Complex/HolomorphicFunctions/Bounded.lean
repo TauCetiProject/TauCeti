@@ -140,7 +140,7 @@ variable {U U' U'' : Opens V}
 `H^∞(U, E)`. -/
 def of (U : Opens V) (g : V → E) (hg : DifferentiableOn ℂ g U) (C : ℝ)
     (hC : ∀ z ∈ U, ‖g z‖ ≤ C) : boundedHolomorphicFunctions E U :=
-  ⟨.ofNormedAddCommGroup (fun z : U => g z) hg.continuousOn.domRestrict C fun z => hC z z.2,
+  ⟨.ofNormedAddCommGroup (fun z : U => g z) hg.continuousOn.domRestrict C fun z => hC z z.property,
     g, hg, fun _ => rfl⟩
 
 @[simp]
@@ -211,13 +211,13 @@ theorem dist_apply_le_of_ball_subset (f : boundedHolomorphicFunctions E U) {x z 
 /-- Restriction of bounded holomorphic maps to a smaller open set. -/
 noncomputable def restrict (h : U' ≤ U) :
     boundedHolomorphicFunctions E U →L[ℂ] boundedHolomorphicFunctions E U' :=
-  ((compContinuousCLM E ℂ ⟨fun z => ⟨z, h z.2⟩, continuous_subtype_val.subtype_mk _⟩).comp
+  ((compContinuousCLM E ℂ ⟨fun z => ⟨z, h z.property⟩, continuous_subtypeVal.subtype_mk _⟩).comp
     (boundedHolomorphicFunctions E U).subtypeL).codRestrict _ fun f => by
-    exact ⟨extend f, (differentiableOn_extend f).mono h, fun z => extend_apply f ⟨z, h z.2⟩⟩
+    exact ⟨extend f, (differentiableOn_extend f).mono h, fun z => extend_apply f ⟨z, h z.property⟩⟩
 
 @[simp]
 theorem restrict_apply (h : U' ≤ U) (f : boundedHolomorphicFunctions E U) (z : U') :
-    (restrict h f : U' →ᵇ E) z = (f : U →ᵇ E) ⟨z, h z.2⟩ := (rfl)
+    (restrict h f : U' →ᵇ E) z = (f : U →ᵇ E) ⟨z, h z.property⟩ := (rfl)
 
 /-- Restriction agrees with restricting the same ambient representative. -/
 @[simp]
@@ -255,8 +255,8 @@ theorem isCompactOperator_restrict [ProperSpace E] {K : Set V} (hK : IsCompact K
   -- The unit ball of `H^∞(U, E)` is equicontinuous by the Cauchy estimate
   -- `dist_apply_le_of_ball_subset`, so the Arzelà–Ascoli theorem applies on the compact set `K`.
   have : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  let ρ : C(K, U) := ⟨fun z => ⟨z, hKU z.2⟩, continuous_subtype_val.subtype_mk _⟩
-  let σ : C(U', K) := ⟨fun z => ⟨z, hU'K z.2⟩, continuous_subtype_val.subtype_mk _⟩
+  let ρ : C(K, U) := ⟨fun z => ⟨z, hKU z.property⟩, continuous_subtypeVal.subtype_mk _⟩
+  let σ : C(U', K) := ⟨fun z => ⟨z, hU'K z.property⟩, continuous_subtypeVal.subtype_mk _⟩
   -- The unit ball of `H^∞(U, E)`, restricted to `K`.
   let A : Set (K →ᵇ E) :=
     (fun f : boundedHolomorphicFunctions E U => (f : U →ᵇ E).compContinuous ρ) '' closedBall 0 1
@@ -268,7 +268,7 @@ theorem isCompactOperator_restrict [ProperSpace E] {K : Set V} (hK : IsCompact K
     · -- Equicontinuity at `x`: on a ball of radius `R` around `x` inside `U`, the Cauchy
       -- estimate gives the common modulus `2 / R * dist z x`.
       intro x
-      obtain ⟨R, hR, hRU⟩ := Metric.isOpen_iff.mp U.isOpen x (hKU x.2)
+      obtain ⟨R, hR, hRU⟩ := Metric.isOpen_iff.mp U.isOpen x (hKU x.property)
       refine equicontinuousAt_of_continuity_modulus (fun z : K => 2 / R * dist z x) ?_ _ ?_
       · have hc : Continuous fun z : K => 2 / R * dist z x := by fun_prop
         simpa using hc.tendsto x
@@ -436,7 +436,7 @@ theorem norm_iteratedLineDeriv_le (x : U) (v : V) (k : ℕ) {R : ℝ} (hR : 0 < 
 @[simp]
 theorem iteratedLineDeriv_restrict (h : U' ≤ U) (x : U') (v : V) (k : ℕ)
     (f : boundedHolomorphicFunctions E U) :
-    iteratedLineDeriv x v k (restrict h f) = iteratedLineDeriv (⟨x, h x.2⟩ : U) v k f := by
+    iteratedLineDeriv x v k (restrict h f) = iteratedLineDeriv (⟨x, h x.property⟩ : U) v k f := by
   simp only [iteratedLineDeriv_apply]
   refine Filter.EventuallyEq.iteratedDeriv_eq k ?_
   filter_upwards [(isOpen_preimage_line (U := U') (x : V) v).mem_nhds (by simp)] with t ht
@@ -446,7 +446,7 @@ theorem iteratedLineDeriv_restrict (h : U' ≤ U) (x : U') (v : V) (k : ℕ)
 @[simp]
 theorem iteratedLineDeriv_comp_restrict (h : U' ≤ U) (x : U') (v : V) (k : ℕ) :
     (iteratedLineDeriv (E := E) x v k).comp (restrict h) =
-      iteratedLineDeriv (⟨x, h x.2⟩ : U) v k := by
+      iteratedLineDeriv (⟨x, h x.property⟩ : U) v k := by
   ext f
   exact iteratedLineDeriv_restrict h x v k f
 
@@ -480,7 +480,7 @@ all directions vanish, then `f` vanishes near `x`. -/
 theorem extend_eventuallyEq_zero_of_forall_iteratedLineDeriv_eq_zero (x : U)
     {f : boundedHolomorphicFunctions E U} (hf : ∀ v k, iteratedLineDeriv x v k f = 0) :
     extend f =ᶠ[𝓝 (x : V)] 0 := by
-  obtain ⟨ρ, hρ, hρU⟩ := Metric.isOpen_iff.mp U.isOpen x x.2
+  obtain ⟨ρ, hρ, hρU⟩ := Metric.isOpen_iff.mp U.isOpen x x.property
   exact eventually_of_mem (ball_mem_nhds (x : V) hρ)
     fun _ hz => extend_eq_zero_on_ball_of_forall_iteratedLineDeriv_eq_zero x hρU hf hz
 
@@ -522,14 +522,14 @@ theorem eq_zero_of_forall_iteratedLineDeriv_eq_zero {K : Set V}
       extend_eq_zero_on_ball_of_forall_iteratedLineDeriv_eq_zero ⟨y, hyS.1⟩
         hyU (iteratedLineDeriv_eq_zero_of_eventuallyEq _ hyzero) hz
   refine Subtype.ext (BoundedContinuousFunction.ext fun x => ?_)
-  obtain ⟨y, hyx, hyK⟩ := hK x x.2
+  obtain ⟨y, hyx, hyK⟩ := hK x x.property
   have hyU := connectedComponentIn_subset (U : Set V) x hyx
   have hyS : y ∈ S := ⟨hyU, mem_interior_iff_mem_nhds.2
     (extend_eventuallyEq_zero_of_forall_iteratedLineDeriv_eq_zero ⟨y, hyU⟩ (hf _ hyK))⟩
   have hsub := isPreconnected_connectedComponentIn.subset_of_closure_inter_subset hS
     ⟨y, hyx, hyS⟩ (fun z hz => hclosed ⟨hz.1, connectedComponentIn_subset _ _ hz.2⟩)
   rw [← extend_apply, Submodule.coe_zero, zero_apply]
-  exact interior_subset (hsub (mem_connectedComponentIn x.2)).2
+  exact interior_subset (hsub (mem_connectedComponentIn x.property)).2
 
 /-- **Identity theorem.** If `E` is complete and every connected component of `U` meets `U'`,
 then restriction `H^∞(U, E) → H^∞(U', E)` is injective. -/

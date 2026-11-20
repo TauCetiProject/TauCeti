@@ -388,6 +388,13 @@ theorem norm_sq_gaugeFixedAdjointSymbol (d : ℂ →L[ℝ] ℝ)
     Fin.sum_univ_two, coe_orthonormalBasisOneI]
   ring
 
+/-- The adjoint symbol is jointly continuous in the covector and the field value. -/
+theorem continuous_gaugeFixedAdjointSymbol :
+    Continuous fun p : (ℂ →L[ℝ] ℝ) × EuclideanSpace ℝ (Fin 4) ↦
+      gaugeFixedAdjointSymbol p.1 p.2 := by
+  simp_rw [gaugeFixedAdjointSymbol_def]
+  exact (PiLp.continuous_toLp 2 _).comp (by fun_prop)
+
 /-- The adjoint symbol commutes with real scaling of the covector. -/
 @[simp]
 theorem gaugeFixedAdjointSymbol_smul_left (r : ℝ) (d : ℂ →L[ℝ] ℝ)
@@ -1039,25 +1046,26 @@ theorem continuous_of_mem_gaugeFixedKernel (hy : y ∈ gaugeFixedKernel x) : Con
 `L²(ℂ; ℝ⁴)`. -/
 def gaugeFixedKernelToLp (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     gaugeFixedKernel x →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) where
-  toFun y := (memLp_of_mem_gaugeFixedKernel y.2).toLp y
+  toFun y := (memLp_of_mem_gaugeFixedKernel y.property).toLp y
   map_add' y v :=
-    MemLp.toLp_add (memLp_of_mem_gaugeFixedKernel y.2) (memLp_of_mem_gaugeFixedKernel v.2)
-  map_smul' t y := MemLp.toLp_const_smul t (memLp_of_mem_gaugeFixedKernel y.2)
+    MemLp.toLp_add (memLp_of_mem_gaugeFixedKernel y.property) (memLp_of_mem_gaugeFixedKernel
+        v.property)
+  map_smul' t y := MemLp.toLp_const_smul t (memLp_of_mem_gaugeFixedKernel y.property)
 
 theorem gaugeFixedKernelToLp_apply (y : gaugeFixedKernel x) :
-    gaugeFixedKernelToLp x y = (memLp_of_mem_gaugeFixedKernel y.2).toLp y := (rfl)
+    gaugeFixedKernelToLp x y = (memLp_of_mem_gaugeFixedKernel y.property).toLp y := (rfl)
 
 /-- The `L²` class of a kernel element agrees almost everywhere with the element. -/
 theorem coeFn_gaugeFixedKernelToLp (y : gaugeFixedKernel x) :
     gaugeFixedKernelToLp x y =ᵐ[volume] y :=
-  (memLp_of_mem_gaugeFixedKernel y.2).coeFn_toLp
+  (memLp_of_mem_gaugeFixedKernel y.property).coeFn_toLp
 
 /-- The `L²` norm of the class of a kernel element is the square root of the integral of its
 squared pointwise norm. -/
 theorem norm_gaugeFixedKernelToLp (y : gaugeFixedKernel x) :
     ‖gaugeFixedKernelToLp x y‖ = √(∫ z, ‖(y : ℂ → EuclideanSpace ℝ (Fin 4)) z‖ ^ 2) := by
   rw [gaugeFixedKernelToLp_apply, Lp.norm_toLp,
-    (memLp_of_mem_gaugeFixedKernel y.2).eLpNorm_two_eq_ofReal_sqrt_integral,
+    (memLp_of_mem_gaugeFixedKernel y.property).eLpNorm_two_eq_ofReal_sqrt_integral,
     ENNReal.toReal_ofReal (Real.sqrt_nonneg _)]
 
 /-- Elements of `gaugeFixedKernel x` are continuous, so they are determined by their `L²`
@@ -1066,7 +1074,7 @@ theorem gaugeFixedKernelToLp_injective (x : ℂ → EuclideanSpace ℝ (Fin 4)) 
     Function.Injective (gaugeFixedKernelToLp x) := by
   refine (injective_iff_map_eq_zero _).2 fun y hy ↦ Subtype.ext ?_
   have h := (coeFn_gaugeFixedKernelToLp y).symm.trans ((Lp.eq_zero_iff_ae_eq_zero).1 hy)
-  exact ((continuous_of_mem_gaugeFixedKernel y.2).ae_eq_iff_eq volume continuous_const).1 h
+  exact ((continuous_of_mem_gaugeFixedKernel y.property).ae_eq_iff_eq volume continuous_const).1 h
 
 end Kernel
 

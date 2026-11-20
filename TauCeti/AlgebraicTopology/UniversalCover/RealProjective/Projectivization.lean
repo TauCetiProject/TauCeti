@@ -65,7 +65,7 @@ private theorem continuous_toProjectivization : Continuous (toProjectivization n
   apply (isQuotientMap_mk n).continuous_iff.2
   simpa only [Function.comp_def, toProjectivization_mk] using
     (Projectivization.continuous_mk
-      ((PiLp.continuous_ofLp 2 (fun _ : Fin (n + 1) ↦ ℝ)).comp continuous_subtype_val)
+      ((PiLp.continuous_ofLp 2 (fun _ : Fin (n + 1) ↦ ℝ)).comp continuous_subtypeVal)
       (ofLp_val_ne_zero n))
 
 /-- Equality of real projective lines identifies precisely the antipodal classes. -/

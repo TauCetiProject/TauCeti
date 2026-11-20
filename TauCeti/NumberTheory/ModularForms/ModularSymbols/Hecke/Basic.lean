@@ -179,7 +179,8 @@ noncomputable def heckeSymbol : ModularSymbols R Γ₂ w →ₗ[R] ModularSymbol
     fun γ ↦ by
       have h := HeckeCoset.heckeSum_comp_of_mem D (symbolIntRep R w) hD
         (map_mapGL_le_intEntries 2 Γ₂) (map_mapGL_le_intEntries 2 Γ₁)
-        (fun _ hγ ↦ mk_comp_symbolIntRep_of_mem Γ₁ hγ) (Subgroup.mem_map_of_mem (mapGL ℚ) γ.2)
+        (fun _ hγ ↦ mk_comp_symbolIntRep_of_mem Γ₁ hγ) (Subgroup.mem_map_of_mem
+            (mapGL ℚ) γ.property)
       rwa [symbolIntRep_mapGL] at h
 
 /-- On the class of `x`, the Hecke operator is the Hecke sum `HeckeCoset.heckeSum` of the double
@@ -286,13 +287,13 @@ operator either way, and it is the index that is being constrained. -/
 noncomputable def heckeTSymbol (n : ℕ) [_hn : NeZero n] :
     Module.End R (ModularSymbols R (Gamma1 N) w) :=
   heckeSymbol (Gamma1 N) (Gamma1 N) (diagCosetGamma1 N n)
-    (Delta0_le_intEntries N (diagCosetGamma1 N n).out.2)
+    (Delta0_le_intEntries N (diagCosetGamma1 N n).out.property)
 
 /-- The defining equation of `heckeTSymbol`. -/
 theorem heckeTSymbol_def (n : ℕ) [NeZero n] :
     heckeTSymbol R w N n =
       heckeSymbol (Gamma1 N) (Gamma1 N) (diagCosetGamma1 N n)
-        (Delta0_le_intEntries N (diagCosetGamma1 N n).out.2) := (rfl)
+        (Delta0_le_intEntries N (diagCosetGamma1 N n).out.property) := (rfl)
 
 /-- **Transport `T_n` along an equality of indices.** -/
 theorem heckeTSymbol_congr {n m : ℕ} [NeZero n] [NeZero m] (h : n = m) :

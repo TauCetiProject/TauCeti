@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.LinearAlgebra.Basis.Basic
 import Mathlib.LinearAlgebra.StdBasis
 
@@ -51,6 +52,9 @@ vectors indexed by `ι`.
   values on a finite integer basis, weighted by the coordinates.
 * `Module.Basis.ringHom_comp_ne_zero`: the values of a ring homomorphism to a nontrivial ring on
   an integer basis do not all vanish.
+* `Module.Basis.map_sum_mul_eq_map_mul_apply`: pushing a scaled finite-basis expansion of an
+  algebra element through a ring homomorphism `f` when scalar multiples of the coordinates and the
+  basis vectors lift through a ring homomorphism `g`.
 * `Module.Basis.ne_neg`: over a ring in which `2 ≠ 0`, no basis vector is the negative of a basis
   vector.
 * `Module.Basis.constrSumInrEquiv`: the linear maps with prescribed values on the basis vectors
@@ -123,7 +127,7 @@ theorem linearIndependent_of_repr_eq_single {b : Module.Basis ι K V} {S : Finse
   have hπ : π ∘ v = fun s ↦ Pi.single s 1 := by
     funext s t
     simp only [Function.comp_apply, π, LinearMap.pi_apply, coord_apply]
-    rw [hv s t t.2]
+    rw [hv s t t.property]
     by_cases hst : t = s
     · simp [hst]
     · rw [Finsupp.single_eq_of_ne (fun h : (t : ι) = s ↦ hst (Subtype.ext h)),
@@ -214,6 +218,29 @@ theorem ringHom_comp_ne_zero [Nontrivial S] (ψ : R →+* S) : ⇑ψ ∘ ⇑b �
 
 end RingHom
 
+/-- Pushing a scaled finite-basis expansion of an `R`-algebra element `x : A` through a ring
+homomorphism `f : A →+* T`: if `r'`, `c j`, and `v j` in `S` lift `f (algebraMap R A r)`,
+`f (algebraMap R A (r * b.repr x j))`, and `f (b j)` along a ring homomorphism `g : S →+* T`,
+then `g (∑ j, c j * v j) = g r' * f x`. -/
+theorem map_sum_mul_eq_map_mul_apply {R A S T G H : Type*} [Fintype ι]
+    [CommSemiring R] [Semiring A] [Algebra R A] [Semiring S] [Semiring T]
+    [FunLike G S T] [RingHomClass G S T] [FunLike H A T] [RingHomClass H A T]
+    (b : Basis ι R A) (g : G) (f : H)
+    {x : A} {r : R} {r' : S} {c v : ι → S}
+    (hr : f (algebraMap R A r) = g r')
+    (hc : ∀ j, f (algebraMap R A (r * b.repr x j)) = g (c j))
+    (hv : ∀ j, f (b j) = g (v j)) :
+    g (∑ j, c j * v j) = g r' * f x := by
+  calc
+    g (∑ j, c j * v j)
+        = ∑ j, g (c j) * g (v j) := by simp only [map_sum, map_mul]
+      _ = ∑ j, f (algebraMap R A (r * b.repr x j)) * f (b j) := by simp only [hc, hv]
+      _ = ∑ j, f (algebraMap R A r * (b.repr x j • b j)) := by
+          refine Finset.sum_congr rfl fun j _ ↦ ?_
+          simp only [map_mul, Algebra.smul_def, mul_assoc]
+      _ = g r' * f x := by
+          rw [← map_sum, ← Finset.mul_sum, b.sum_repr, map_mul, hr]
+
 section Ring
 
 variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
@@ -245,21 +272,21 @@ variable {κ R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddComm
 determined by its values on the remaining basis vectors `b (inl l)`, and these are arbitrary. -/
 noncomputable def constrSumInrEquiv :
     {f : M →ₗ[R] N // ∀ j, f (b (.inr j)) = v j} ≃ (ι → N) where
-  toFun f l := f.1 (b (.inl l))
+  toFun f l := f.val (b (.inl l))
   invFun g := ⟨b.constr ℕ (Sum.elim g v), fun j ↦ by rw [constr_basis, Sum.elim_inr]⟩
-  left_inv f := Subtype.ext <| b.ext fun i ↦ by rcases i with l | j <;> simp [f.2]
+  left_inv f := Subtype.ext <| b.ext fun i ↦ by rcases i with l | j <;> simp [f.property]
   right_inv g := funext fun l ↦ by simp
 
 /-- The parameter of a linear map records its values on the basis vectors `b (inl l)`. -/
 @[simp]
 theorem constrSumInrEquiv_apply (f : {f : M →ₗ[R] N // ∀ j, f (b (.inr j)) = v j}) (l : ι) :
-    b.constrSumInrEquiv v f l = f.1 (b (.inl l)) :=
+    b.constrSumInrEquiv v f l = f.val (b (.inl l)) :=
   (rfl)
 
 /-- The linear map with parameter `g` sends `b (inl l)` to `g l` and `b (inr j)` to `v j`. -/
 @[simp]
 theorem coe_constrSumInrEquiv_symm_apply (g : ι → N) :
-    ((b.constrSumInrEquiv v).symm g).1 = b.constr ℕ (Sum.elim g v) :=
+    ((b.constrSumInrEquiv v).symm g).val = b.constr ℕ (Sum.elim g v) :=
   (rfl)
 
 end SumInr

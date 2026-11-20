@@ -233,7 +233,7 @@ private theorem eval_hasseDeriv_newtonHermite_of_lt (a : Fin r → R) (m : Fin r
     {x y : (i : Fin r) × Fin (m i)} (h : finSigmaFinEquiv x < finSigmaFinEquiv y) :
     (hasseDeriv x.2 (newtonHermite a m y)).eval (a x.1) = 0 := by
   rcases lt_trichotomy x.1 y.1 with hxy | hxy | hxy
-  · refine X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero.mp ?_ _ x.2.2
+  · refine X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero.mp ?_ _ x.2.isLt
     exact (dvd_prod_of_mem _ (by simpa using hxy)).mul_left _
   · obtain ⟨i, k⟩ := x
     obtain ⟨i', k'⟩ := y
@@ -266,7 +266,7 @@ theorem det_confluentVandermonde (a : Fin r → R) (m : Fin r → ℕ) :
     intro ρ c hρc
     exact eval_hasseDeriv_newtonHermite_of_lt a m (x := finSigmaFinEquiv.symm ρ)
       (y := finSigmaFinEquiv.symm c) (by simpa using hρc)
-  have hJ := congrArg det (confluentVandermonde_mul a m N fun c => (hdeg c).trans_lt c.2)
+  have hJ := congrArg det (confluentVandermonde_mul a m N fun c => (hdeg c).trans_lt c.isLt)
   rw [det_mul, hC, mul_one, det_of_isLowerTriangular _ hL] at hJ
   rw [hJ]
   simp only [of_apply, N, eval_hasseDeriv_newtonHermite_self]

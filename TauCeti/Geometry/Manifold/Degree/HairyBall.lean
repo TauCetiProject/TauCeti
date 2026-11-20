@@ -148,8 +148,8 @@ theorem exists_eq_zero_of_inner_eq_zero (hn : Even n) {v : E → E}
     (ht : ∀ x ∈ sphere (0 : E) 1, ⟪v x, x⟫_ℝ = 0) :
     ∃ x ∈ sphere (0 : E) 1, v x = 0 := by
   obtain ⟨x, hx⟩ := exists_eq_zero_of_continuous_of_inner_eq_zero hn hv.domRestrict
-    fun x ↦ ht x x.2
-  exact ⟨x, x.2, hx⟩
+    fun x ↦ ht x x.property
+  exact ⟨x, x.property, hx⟩
 
 /-- **The hairy ball theorem, section form.** A continuous section of the tangent bundle of the
 unit sphere `Sⁿ` of a real inner product space of dimension `n + 1`, with `n` even, vanishes at
