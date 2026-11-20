@@ -40,9 +40,16 @@ smooth manifold of dimension `dim G - dim K`, the **homogeneous space** of `G` b
   `G ⧸ K` (`Subgroup.mfderiv_quotientMk_fundamentalVectorField`);
 * `G` acts smoothly on `G ⧸ K` by left multiplication (`Subgroup.contMDiffSMul_quotientOfIsClosed`).
 
-The charts come from the quotient manifold theorem
-(`ProperSMul.instIsManifoldOrbitRelQuotient`) for the action of `K` on `G` by left multiplication,
-which is free, proper because `K` is closed, and smooth. Its orbits are the right cosets `K g`.
+More generally, if `G` acts smoothly on a boundaryless manifold `M` and `K` acts freely and
+properly, the orbit space `M ⧸ K` is a smooth manifold for the charts
+`Subgroup.orbitRelQuotientChartedSpaceOfIsClosed`
+(`Subgroup.isManifold_orbitRelQuotientOfIsClosed`), and the orbit projection is a smooth
+submersion (`Subgroup.isSubmersion_orbitRelQuotientMkOfIsClosed`).
+
+The charts of `G ⧸ K` come from the case `M = G` of this quotient manifold theorem
+(`ProperSMul.instIsManifoldOrbitRelQuotient`), for the action of `K` on `G` by left
+multiplication, which is free, proper because `K` is closed, and smooth. Its orbits are the right
+cosets `K g`.
 Inversion carries them to the left cosets, and Mathlib's bijection between the two coset spaces is
 a homeomorphism (`QuotientGroup.quotientRightRelHomeomorphQuotientLeftRel`); the charts of `G ⧸ K`
 are pulled back along its inverse (`Homeomorph.pullbackChartedSpace`). The charts are a definition
@@ -83,6 +90,66 @@ abbrev QuotientModelSpace : Type :=
   letI : T2Space G := I.t2Space_of_lieGroup ∞
   ProperSMul.QuotientModelSpace (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule E
 
+/-! ### Orbit spaces of closed subgroups -/
+
+section OrbitSpace
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
+  [ContMDiffSMul I I' ∞ G M] [ProperSMul K M] [IsCancelSMul K M]
+
+variable (I I' M) in
+/-- **The charts of the orbit space `M ⧸ K`** of a free proper action of a closed subgroup `K`, the
+charts of the quotient manifold theorem `ProperSMul.orbitRelQuotientChartedSpace` for the
+closed-subgroup structure of `K`. They are modelled on `ℝ^(dim M - dim K)`. -/
+@[instance_reducible]
+def orbitRelQuotientChartedSpaceOfIsClosed (hK : IsClosed (K : Set G)) :
+    letI : T2Space G := I.t2Space_of_lieGroup ∞
+    ChartedSpace
+      (ProperSMul.QuotientModelSpace (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule E')
+      (MulAction.orbitRel.Quotient K M) :=
+  letI : T2Space G := I.t2Space_of_lieGroup ∞
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
+  letI := d.chartedSpace
+  haveI := d.lieGroup
+  haveI := d.contMDiffSMul (I'' := I') (M := M)
+  ProperSMul.orbitRelQuotientChartedSpace
+    𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule) K I' M
+
+/-- **The quotient manifold theorem for a closed subgroup.** The orbit space of a free proper
+action of a closed subgroup `K` is a smooth manifold for the charts
+`Subgroup.orbitRelQuotientChartedSpaceOfIsClosed`. -/
+theorem isManifold_orbitRelQuotientOfIsClosed (hK : IsClosed (K : Set G)) :
+    letI : T2Space G := I.t2Space_of_lieGroup ∞
+    letI := orbitRelQuotientChartedSpaceOfIsClosed I I' M hK
+    IsManifold
+      𝓘(ℝ, ProperSMul.QuotientModelSpace (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule E')
+      ∞ (MulAction.orbitRel.Quotient K M) := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (I'' := I') (M := M)
+  exact ProperSMul.instIsManifoldOrbitRelQuotient
+
+/-- The orbit projection `M → M ⧸ K` of a free proper action of a closed subgroup is a smooth
+submersion. -/
+theorem isSubmersion_orbitRelQuotientMkOfIsClosed (hK : IsClosed (K : Set G)) :
+    letI : T2Space G := I.t2Space_of_lieGroup ∞
+    letI := orbitRelQuotientChartedSpaceOfIsClosed I I' M hK
+    IsSubmersion I'
+      𝓘(ℝ, ProperSMul.QuotientModelSpace (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule E')
+      ∞ (Quotient.mk (MulAction.orbitRel K M)) := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (I'' := I') (M := M)
+  exact ProperSMul.isSubmersion_quotientMk
+
+end OrbitSpace
+
 /-! ### The right coset space -/
 
 variable (I) in
@@ -92,15 +159,9 @@ of the action of `K` on `G` by left multiplication. -/
 private def rightChartedSpace (hK : IsClosed (K : Set G)) :
     ChartedSpace (QuotientModelSpace I K)
       (Quotient (QuotientGroup.rightRel K)) :=
-  letI : T2Space G := I.t2Space_of_lieGroup ∞
-  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
-  letI := d.chartedSpace
-  letI := d.lieGroup
-  haveI := d.contMDiffSMul
   haveI : IsClosed (K : Set G) := hK
   haveI : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  ProperSMul.orbitRelQuotientChartedSpace
-    𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule) K I G
+  orbitRelQuotientChartedSpaceOfIsClosed I I G hK
 
 variable (I) in
 /-- By the quotient manifold theorem, the charts of the right coset space `K \ G` form a smooth
@@ -109,14 +170,9 @@ private theorem isManifold_and_isSubmersion_right (hK : IsClosed (K : Set G)) :
     letI := rightChartedSpace I hK
     IsManifold 𝓘(ℝ, QuotientModelSpace I K) ∞ (Quotient (QuotientGroup.rightRel K)) ∧
       IsSubmersion I 𝓘(ℝ, QuotientModelSpace I K) ∞ (Quotient.mk (QuotientGroup.rightRel K)) := by
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hK
-  let _ := d.chartedSpace
-  let _ := d.lieGroup
-  have := d.contMDiffSMul
   have : IsClosed (K : Set G) := hK
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  exact ⟨ProperSMul.instIsManifoldOrbitRelQuotient, ProperSMul.isSubmersion_quotientMk⟩
+  exact ⟨isManifold_orbitRelQuotientOfIsClosed hK, isSubmersion_orbitRelQuotientMkOfIsClosed hK⟩
 
 /-! ### The homogeneous space -/
 
