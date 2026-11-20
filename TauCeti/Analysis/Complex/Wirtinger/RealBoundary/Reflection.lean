@@ -41,6 +41,10 @@ below the axis; for `F = ℂ` it is `TauCeti.schwarzReflection`.
 
 ## Main results
 
+* `TauCeti.HasWeakConjWirtingerDerivRealBoundaryOn.mono`: the weak formulation restricts to
+  smaller open sets.
+* `TauCeti.HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_interior`: away
+  from the real axis it is the distributional equation of `TauCeti.HasWeakConjWirtingerDerivOn`.
 * `TauCeti.MemLpLoc.starSchwarzReflection` and `TauCeti.locallyIntegrableOn_starSchwarzReflection`:
   local `Lᵖ` bounds and local integrability up to the boundary pass to the reflection on the
   doubled domain.
@@ -342,6 +346,52 @@ private theorem halfPairing_eq_zero (h : HasWeakConjWirtingerDerivRealBoundaryOn
   rw [realPart_I_smul, neg_eq_zero] at hi
   rw [← realPart_add_I_smul_imaginaryPart (halfPairing ξ η ψ), hr, hi]
   simp
+
+/-- **Restriction.** A solution of `\bar∂ξ = η` on `Ω ∩ {0 ≤ im}` with real boundary values is
+one on `Ω' ∩ {0 ≤ im}` for every smaller open set `Ω'`. -/
+theorem HasWeakConjWirtingerDerivRealBoundaryOn.mono {Ω' : Opens ℂ}
+    (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η) (hΩ' : Ω' ≤ Ω) :
+    HasWeakConjWirtingerDerivRealBoundaryOn Ω' ξ η := by
+  obtain ⟨hF, hξ, hη, hw⟩ := h
+  have hsub : (Ω' : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} :=
+    inter_subset_inter_left _ hΩ'
+  refine ⟨hF, hξ.mono_set hsub, hη.mono_set hsub, fun χ hχ ↦ ?_⟩
+  have hc : ((TestFunction.monoCLM ℝ χ : 𝓓(Ω, ℂ)) : ℂ → ℂ) = χ := by
+    simp [TestFunction.monoCLM_apply, hΩ']
+  simpa only [hc] using hw (TestFunction.monoCLM ℝ χ) (by simpa only [hc] using hχ)
+
+/-- **The equation away from the axis.** A solution of `\bar∂ξ = η` on `Ω ∩ {0 ≤ im}` with real
+boundary values solves the distributional equation on the open upper part `Ω ∩ {0 < im}`, the
+interior of `Ω ∩ {0 ≤ im}`: its test functions vanish near the real axis, where the boundary
+condition is not seen. -/
+theorem HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_interior
+    (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η) :
+    HasWeakConjWirtingerDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) ξ η := by
+  have hint : interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) = (Ω : Set ℂ) ∩ {z | 0 < z.im} :=
+    interior_inter_setOf_im_nonneg Ω.isOpen
+  have hle : Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) ≤ Ω := fun z hz ↦
+    (interior_subset hz).1
+  refine hasWeakConjWirtingerDerivOn_iff.2 ⟨h.1, h.2.1.mono_set interior_subset,
+    h.2.2.1.mono_set interior_subset, fun φ ↦ ?_⟩
+  have hψ : ((TestFunction.monoCLM ℝ φ : 𝓓(Ω, ℝ)) : ℂ → ℝ) = φ := by
+    simp [TestFunction.monoCLM_apply, hle]
+  -- `φ` vanishes off the open upper part, in particular on the real axis.
+  have hφ (z : ℂ) (hz : z ∉ {z : ℂ | 0 < z.im}) : z ∉ tsupport (φ : ℂ → ℝ) := fun hs ↦ by
+    have := φ.tsupport_subset hs
+    rw [Opens.coe_interior, hint] at this
+    exact hz this.2
+  have h0 := halfPairing_eq_zero h (TestFunction.monoCLM ℝ φ) fun x ↦ by
+    rw [hψ]
+    exact image_eq_zero_of_notMem_tsupport (hφ x (by simp))
+  have hH (f : ℂ → F) (hf : ∀ z, z ∉ tsupport (φ : ℂ → ℝ) → f z = 0) :
+      ∫ z in {z : ℂ | 0 ≤ z.im}, f z = ∫ z, f z :=
+    setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦
+      hf z (hφ z fun h' ↦ hz (show (0 : ℝ) ≤ z.im from h'.le))
+  simp only [halfPairing, hψ] at h0
+  rw [hH _ fun z hz ↦ by simp [lineDeriv_of_notMem_tsupport hz],
+    hH _ fun z hz ↦ by simp [lineDeriv_of_notMem_tsupport hz],
+    hH _ fun z hz ↦ by simp [image_eq_zero_of_notMem_tsupport hz]] at h0
+  rw [eq_neg_of_add_eq_zero_left h0, neg_smul]
 
 variable [ContinuousStar F]
 
