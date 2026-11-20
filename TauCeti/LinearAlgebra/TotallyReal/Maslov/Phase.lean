@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
+import TauCeti.Algebra.Module.Equiv.Basic
 
 /-!
 # The Maslov phase of maximal totally real subspaces
@@ -232,20 +233,14 @@ scalar `z` has Maslov phase `(z / conj z) ^ n`; for `z = e^{iθ}` this is `e^{2i
 theorem maslovPhase_map_lsmul {z : ℂ} (hz : z ≠ 0) :
     hL.maslovPhase (hL.map_linearEquiv (LinearEquiv.smulOfNeZero ℂ E z hz)) =
       (z / conj z) ^ finrank ℂ E := by
-  have hA : ((LinearEquiv.smulOfNeZero ℂ E z hz : E ≃ₗ[ℂ] E) : E →ₗ[ℂ] E) =
-      LinearMap.lsmul ℂ E z := by
-    ext x
-    simp
-  have hsmul : LinearMap.lsmul ℂ E z = z • LinearMap.id := by
-    ext x
-    simp
   calc
     hL.maslovPhase (hL.map_linearEquiv (LinearEquiv.smulOfNeZero ℂ E z hz)) =
         LinearMap.det (LinearEquiv.smulOfNeZero ℂ E z hz : E →ₗ[ℂ] E) /
           conj (LinearMap.det (LinearEquiv.smulOfNeZero ℂ E z hz : E →ₗ[ℂ] E)) :=
       hL.maslovPhase_map _
     _ = (z / conj z) ^ finrank ℂ E := by
-      rw [hA, hsmul, LinearMap.det_smul, LinearMap.det_id, mul_one, map_pow, ← div_pow]
+      rw [LinearEquiv.toLinearMap_smulOfNeZero, LinearMap.det_smul, LinearMap.det_id, mul_one,
+        map_pow, ← div_pow]
 
 /-- The image `i L` of a maximal totally real subspace `L` of an `n`-dimensional complex module
 has Maslov phase `(-1) ^ n` relative to `L`. -/
