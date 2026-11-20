@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.Adjoint
 public import TauCeti.RepresentationTheory.Continuous.KernelCokernel
+public import TauCeti.RepresentationTheory.Continuous.Multiplicity
 public import TauCeti.RepresentationTheory.RepresentationRing.Continuous
 
 /-!
@@ -32,6 +33,14 @@ on invertible operators and does not change under composition with equivalences 
 representations on either side. For unitary representations on Hilbert spaces, the cokernel is the
 kernel of the adjoint, so `ind_G T = [ker T] - [ker T†]` and `ind_G T† = - ind_G T`.
 
+The multiplicity of a finite-dimensional continuous representation `σ` in `ind_G T`, read through
+`TauCeti.contRepRingMultiplicity`, is `dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`. That
+difference is the index of the action of `T` on the multiplicity spaces of `σ`, so it is constant
+along norm-continuous families of equivariant Fredholm operators: the multiplicities of the
+equivariant index are homotopy invariant. For a compact group over `ℂ`, complete reducibility and
+Schur's lemma make a virtual representation determined by these multiplicities over the
+irreducible `σ`.
+
 ## Main definitions
 
 * `ContIntertwiningMap.equivariantIndex`: the virtual representation `[ker T] - [coker T]` of an
@@ -44,6 +53,8 @@ kernel of the adjoint, so `ind_G T = [ker T] - [ker T†]` and `ind_G T† = - i
   is the difference of the characters of the kernel and the cokernel.
 * `ContIntertwiningMap.repRingCharacter_equivariantIndex_one`: evaluated at the identity, the
   character is the Fredholm index.
+* `ContIntertwiningMap.contRepRingMultiplicity_equivariantIndex`: the multiplicity of `σ` in the
+  equivariant index is `dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`.
 * `ContIntertwiningMap.equivariantIndex_eq_zero_of_bijective`: bijective intertwining maps have
   equivariant index zero.
 * `ContIntertwiningMap.equivariantIndex_comp_equiv` and
@@ -52,12 +63,14 @@ kernel of the adjoint, so `ind_G T = [ker T] - [ker T†]` and `ind_G T† = - i
 * `ContIntertwiningMap.equivariantIndex_eq_sub_ker_adjoint`: for unitary representations on Hilbert
   spaces, `ind_G T = [ker T] - [ker T†]`.
 * `ContIntertwiningMap.equivariantIndex_adjoint`: taking the adjoint negates the equivariant index.
+* `ContinuousOn.contRepRingMultiplicity_equivariantIndex_eq`: homotopy invariance of the
+  multiplicities of the equivariant index.
 
 ## References
 
 * M. F. Atiyah and I. M. Singer, *The index of elliptic operators: I*, Ann. of Math. 87 (1968),
-  484–530, §6, for the equivariant index `[ker T] - [coker T]` with values in the representation
-  ring `R(G)`.
+  484–530, §§4 and 6, for the equivariant index `[ker T] - [coker T]` with values in the
+  representation ring `R(G)`.
 -/
 
 public section
@@ -126,6 +139,21 @@ theorem repRingCharacter_equivariantIndex_one :
   have := hT.finite_ker
   have := hT.finite_coker
   simp [repRingCharacter_equivariantIndex, ContinuousLinearMap.index_eq_finrank_sub]
+
+/-- The multiplicity of a finite-dimensional continuous representation `σ` in the equivariant
+index is the dimension of the intertwiners from `σ` into the kernel minus that into the
+cokernel. -/
+theorem contRepRingMultiplicity_equivariantIndex {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V] (σ : ContRepresentation 𝕜 G V)
+    (hσ : Continuous σ) :
+    contRepRingMultiplicity (ContFDRep.ofContRepresentation σ hσ) (T.equivariantIndex hT hπ hρ) =
+      Module.finrank 𝕜 (σ →ⁱL T.kerRepresentation) -
+        Module.finrank 𝕜 (σ →ⁱL T.cokerRepresentation) := by
+  have := hT.finite_ker
+  have := hT.isClosed_range
+  have := hT.finite_coker
+  rw [equivariantIndex_def, map_sub, contRepRingMultiplicity_of, contRepRingMultiplicity_of,
+    ContFDRep.finrank_hom_ofContRepresentation, ContFDRep.finrank_hom_ofContRepresentation]
 
 /-- **A bijective intertwining map has equivariant index zero**: its kernel and cokernel are both
 zero. -/
@@ -310,6 +338,26 @@ theorem equivariantIndex_adjoint :
     (T.adjoint hπu hρu).equivariantIndex_eq_sub_ker_adjoint hT' hρ hπ hρu hπu, neg_sub]
   congr 1
   exact of_kerRepresentation_eq_of_ker_eq _ _ (by rw [adjoint_adjoint]) _ _
+
+include hπu hρu in
+/-- **Homotopy invariance of the multiplicities of the equivariant index.** Along a family of
+intertwining maps between strongly continuous unitary representations on Hilbert spaces,
+continuous in operator norm and Fredholm on a preconnected set `s`, the multiplicity of every
+finite-dimensional continuous representation `σ` in the equivariant index is the same at every
+point of `s`. -/
+theorem _root_.ContinuousOn.contRepRingMultiplicity_equivariantIndex_eq {X V : Type*}
+    [TopologicalSpace X] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+    (σ : ContRepresentation 𝕜 G V) (hσ : Continuous σ)
+    {A : X → π →ⁱL ρ} {s : Set X} (hA : ContinuousOn (fun x ↦ (A x).toContinuousLinearMap) s)
+    (hFredholm : ∀ x ∈ s, (A x).toContinuousLinearMap.IsFredholm) (hs : IsPreconnected s)
+    {x y : X} (hx : x ∈ s) (hy : y ∈ s) :
+    contRepRingMultiplicity (ContFDRep.ofContRepresentation σ hσ)
+        ((A x).equivariantIndex (hFredholm x hx) hπ hρ) =
+      contRepRingMultiplicity (ContFDRep.ofContRepresentation σ hσ)
+        ((A y).equivariantIndex (hFredholm y hy) hπ hρ) := by
+  rw [contRepRingMultiplicity_equivariantIndex, contRepRingMultiplicity_equivariantIndex]
+  exact hA.finrank_contIntertwiningMap_kerRepresentation_sub_cokerRepresentation_eq σ hπu hρu
+    hFredholm hs hx hy
 
 end Adjoint
 

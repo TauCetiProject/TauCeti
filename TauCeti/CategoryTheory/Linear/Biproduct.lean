@@ -111,6 +111,42 @@ theorem finrank_homTo_biproduct [Fintype J] [StrongRankCondition k]
     Module.finrank k (Y ⟶ ⨁ X) = ∑ j, Module.finrank k (Y ⟶ X j) := by
   rw [(homToBiproductLinearEquiv k X Y).finrank_eq, Module.finrank_pi_fintype]
 
+section Binary
+
+variable {k} (Z A B : C) [HasBinaryBiproduct A B]
+
+variable (k) in
+/-- Morphisms into a binary biproduct are pairs of morphisms into its summands. -/
+noncomputable def homToBiprodLinearEquiv : (Z ⟶ A ⊞ B) ≃ₗ[k] (Z ⟶ A) × (Z ⟶ B) where
+  toFun f := (f ≫ biprod.fst, f ≫ biprod.snd)
+  invFun f := biprod.lift f.1 f.2
+  left_inv f := biprod.hom_ext _ _ (by simp) (by simp)
+  right_inv f := by simp
+  map_add' f g := by simp
+  map_smul' r f := by simp
+
+/-- The equivalence reads off the two components of a morphism. -/
+@[simp]
+theorem homToBiprodLinearEquiv_apply (f : Z ⟶ A ⊞ B) :
+    homToBiprodLinearEquiv k Z A B f = (f ≫ biprod.fst, f ≫ biprod.snd) :=
+  (rfl)
+
+/-- The inverse assembles a pair of morphisms by the biproduct lift map. -/
+@[simp]
+theorem homToBiprodLinearEquiv_symm_apply (f : (Z ⟶ A) × (Z ⟶ B)) :
+    (homToBiprodLinearEquiv k Z A B).symm f = biprod.lift f.1 f.2 :=
+  (rfl)
+
+variable (k) in
+/-- The rank of Hom into a binary biproduct is the sum of the ranks into its summands, when
+these are finite free modules. -/
+theorem finrank_homTo_biprod [StrongRankCondition k] [Module.Free k (Z ⟶ A)]
+    [Module.Finite k (Z ⟶ A)] [Module.Free k (Z ⟶ B)] [Module.Finite k (Z ⟶ B)] :
+    Module.finrank k (Z ⟶ A ⊞ B) = Module.finrank k (Z ⟶ A) + Module.finrank k (Z ⟶ B) := by
+  rw [(homToBiprodLinearEquiv k Z A B).finrank_eq, Module.finrank_prod]
+
+end Binary
+
 end TauCeti
 
 namespace CategoryTheory.Limits

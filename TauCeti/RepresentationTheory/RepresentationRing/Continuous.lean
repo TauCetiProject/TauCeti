@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.FDRep.Continuous
 public import TauCeti.RepresentationTheory.RepresentationRing.Basic
+import TauCeti.CategoryTheory.Linear.Biproduct
 
 /-!
 # The representation ring of continuous representations
@@ -26,12 +27,19 @@ underlying monoid. For a discrete `G` every representation is continuous and it 
 the circle group has discontinuous characters as an abstract group, and their classes in
 `repRing ℂ` do not come from continuous representations.
 
+For each continuous finite-dimensional representation `σ`, the dimension of the intertwiners
+`σ ⟶ X` is additive on direct sums, so it defines the **multiplicity homomorphism**
+`TauCeti.contRepRingMultiplicity σ : R(G) →+ ℤ`. For a compact group and an irreducible `σ` over
+`ℂ` it counts how often `σ` occurs in a virtual representation.
+
 ## Main definitions
 
 * `TauCeti.contRepRing k G`: the representation ring of continuous finite-dimensional
   representations, a commutative ring.
 * `TauCeti.contRepRingToRepRing k G`: the ring homomorphism forgetting continuity, and
   `TauCeti.contRepRingEquivRepRing k G` the ring isomorphism it is for a discrete `G`.
+* `TauCeti.contRepRingMultiplicity σ`: the additive map `R(G) → ℤ` sending `[X]` to the dimension
+  of `σ ⟶ X`.
 
 ## References
 
@@ -112,5 +120,24 @@ theorem contRepRingEquivRepRing_symm_of (V : FDRep k G) :
   (RingEquiv.symm_apply_eq _).2 (by simp)
 
 end Discrete
+
+section Multiplicity
+
+/-- The **multiplicity homomorphism** of a continuous finite-dimensional representation `σ`: the
+additive map `R(G) → ℤ` sending the class of `X` to the dimension of the space of intertwiners
+`σ ⟶ X`. For `G` compact and `σ` irreducible over `ℂ`, this is the multiplicity of `σ` in `X`. -/
+noncomputable def contRepRingMultiplicity (σ : ContFDRep k G) : contRepRing k G →+ ℤ :=
+  SplitK0.lift
+    { obj X := Module.finrank k (σ ⟶ X)
+      map_iso _ _ e := by rw [(Linear.homCongr k (Iso.refl σ) e).finrank_eq]
+      map_biprod X Y := by rw [finrank_homTo_biprod k σ X Y, Nat.cast_add] }
+
+/-- The multiplicity homomorphism sends the class of `X` to the dimension of `σ ⟶ X`. -/
+@[simp]
+theorem contRepRingMultiplicity_of (σ X : ContFDRep k G) :
+    contRepRingMultiplicity σ (SplitK0.of X) = Module.finrank k (σ ⟶ X) :=
+  SplitK0.lift_of _ X
+
+end Multiplicity
 
 end TauCeti
