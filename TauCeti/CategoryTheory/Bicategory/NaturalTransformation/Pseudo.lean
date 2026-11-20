@@ -106,6 +106,14 @@ lemma StrongTrans.isIso_of_isIso_app {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (Θ : 
   rw [← he]
   infer_instance
 
+/-- The components of the modification `eqToHom e` between equal strong transformations are the
+`eqToHom` of the equality of their components. -/
+@[simp]
+lemma StrongTrans.eqToHom_as_app {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (e : η = θ) (a : B) :
+    (eqToHom e).as.app a = eqToHom (congrArg (fun η ↦ η.app a) e) := by
+  subst e
+  rfl
+
 variable (P : B ⥤ᵖ B')
 
 /-- Whiskering the identity strong transformation gives the identity, up to the invertible
