@@ -23,7 +23,8 @@ It does not itself identify its group scheme with the canonical full-weight cons
 Admissibility uses functoriality of the Kostant form and the existing
 `SpStd.rep_kostantForm_mem_lattice`; the weight-basis and full-weight calculations are those of
 `SpStd.isCartanWeightVector_latticeBasis` and `SpStd.span_range_basisWeight_eq_top`.
-The packaging and character-coordinate proofs follow `TauCeti.F4ShortRoot.chevalleyDatum`.
+The packaging follows `TauCeti.F4ShortRoot.chevalleyDatum`; the character-coordinate equations
+use the general `DynkinType.ChevalleyDatum` lemmas for a fundamental-weight basis.
 
 ## References
 
@@ -53,6 +54,12 @@ theorem pinnedRepresentation_def :
       (rep n).comp (UniversalEnvelopingAlgebra.map ℚ (pinnedLieEquiv n ht).toLieHom) :=
   (rfl)
 
+private theorem pinnedRepresentation_ι_eq (x : (DynkinType.C (n + 1)).lieAlgebra ht) :
+    pinnedRepresentation n ht (_root_.UniversalEnvelopingAlgebra.ι ℚ x) =
+      rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (pinnedLieEquiv n ht x)) := by
+  rw [pinnedRepresentation_def, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι,
+    LieEquiv.coe_toLieHom]
+
 /-- On Lie elements, the pinned action is multiplication by the corresponding symplectic
 matrix. -/
 theorem pinnedRepresentation_ι (x : (DynkinType.C (n + 1)).lieAlgebra ht) :
@@ -60,8 +67,7 @@ theorem pinnedRepresentation_ι (x : (DynkinType.C (n + 1)).lieAlgebra ht) :
       Matrix.toLin' (pinnedLieEquiv n ht x).val := by
   apply LinearMap.ext
   intro v
-  rw [pinnedRepresentation_def, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι,
-    LieEquiv.coe_toLieHom, rep_ι_apply, Matrix.toLin'_apply]
+  rw [pinnedRepresentation_ι_eq, rep_ι_apply, Matrix.toLin'_apply]
 
 /-- The pinned standard action is faithful on the Lie algebra. -/
 theorem pinnedRepresentation_ι_injective :
@@ -72,6 +78,9 @@ theorem pinnedRepresentation_ι_injective :
   rw [pinnedRepresentation_ι, pinnedRepresentation_ι] at hxy
   exact (pinnedLieEquiv n ht).injective (Subtype.ext (Matrix.toLin'.injective hxy))
 
+-- Type C computes to rank `n + 1`. In the public h/e/f equations below, the cast
+-- identifies the pinned index with the native one and is a self-cast by `Fin.cast_eq_self`.
+
 /-- A pinned Cartan generator acts by the native standard Cartan operator. -/
 @[simp↓]
 theorem pinnedRepresentation_ι_h (i : Fin (DynkinType.C (n + 1)).rank) :
@@ -79,8 +88,7 @@ theorem pinnedRepresentation_ι_h (i : Fin (DynkinType.C (n + 1)).rank) :
       (((DynkinType.C (n + 1)).lieBasis ht).h i)) =
       rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (cartanGenerator n (Fin.cast (DynkinType.rank_C _) i))) := by
-  rw [pinnedRepresentation_def, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι,
-    LieEquiv.coe_toLieHom]
+  rw [pinnedRepresentation_ι_eq]
   exact congrArg (fun x => rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x))
     (pinnedLieEquiv_lieBasis_h n ht i)
 
@@ -91,8 +99,7 @@ theorem pinnedRepresentation_ι_e (i : Fin (DynkinType.C (n + 1)).rank) :
       (((DynkinType.C (n + 1)).lieBasis ht).e i)) =
       rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (rootGenerator n (.inl (Fin.cast (DynkinType.rank_C _) i)))) := by
-  rw [pinnedRepresentation_def, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι,
-    LieEquiv.coe_toLieHom]
+  rw [pinnedRepresentation_ι_eq]
   exact congrArg (fun x => rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x))
     (pinnedLieEquiv_lieBasis_e n ht i)
 
@@ -103,8 +110,7 @@ theorem pinnedRepresentation_ι_f (i : Fin (DynkinType.C (n + 1)).rank) :
       (((DynkinType.C (n + 1)).lieBasis ht).f i)) =
       rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (rootGenerator n (.inr (Fin.cast (DynkinType.rank_C _) i)))) := by
-  rw [pinnedRepresentation_def, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι,
-    LieEquiv.coe_toLieHom]
+  rw [pinnedRepresentation_ι_eq]
   exact congrArg (fun x => rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x))
     (pinnedLieEquiv_lieBasis_f n ht i)
 
@@ -135,17 +141,20 @@ theorem pinnedRepresentation_ι_rootGenerator
       rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (rootGenerator n (k.map (Fin.cast (DynkinType.rank_C _))
           (Fin.cast (DynkinType.rank_C _))))) := by
-  rw [pinnedRepresentation_def, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι,
-    LieEquiv.coe_toLieHom]
-  -- The datum uses `Fin (DynkinType.C (n + 1)).rank`, whereas the native operators use
-  -- `Fin (n + 1)`; explicit indices let the root equations cross that rank computation.
+  cases k <;> simp only [Sum.map_inl, Sum.map_inr, pinnedRepresentation_ι_rootGenerator_inl,
+    pinnedRepresentation_ι_rootGenerator_inr]
+
+-- Use native indices for the Kostant form comparison; type C has definitional rank `n + 1`.
+private theorem pinnedLieEquiv_rootGenerator (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    pinnedLieEquiv n ht (((DynkinType.C (n + 1)).lieBasis ht).rootGenerator k) =
+      rootGenerator n k := by
   cases k with
   | inl i =>
-    erw [LieAlgebra.Basis.rootGenerator_inl _ i, pinnedLieEquiv_lieBasis_e]
-    rfl
+    exact (congrArg (pinnedLieEquiv n ht) (LieAlgebra.Basis.rootGenerator_inl _ i)).trans
+      (pinnedLieEquiv_lieBasis_e n ht i)
   | inr i =>
-    erw [LieAlgebra.Basis.rootGenerator_inr _ i, pinnedLieEquiv_lieBasis_f]
-    rfl
+    exact (congrArg (pinnedLieEquiv n ht) (LieAlgebra.Basis.rootGenerator_inr _ i)).trans
+      (pinnedLieEquiv_lieBasis_f n ht i)
 
 private theorem pinnedRepresentation_mem_lattice
     {u : _root_.UniversalEnvelopingAlgebra ℚ ((DynkinType.C (n + 1)).lieAlgebra ht)}
@@ -164,19 +173,12 @@ private theorem pinnedRepresentation_mem_lattice
     ⟨u, hu, rfl⟩
   rw [UniversalEnvelopingAlgebra.map_kostantForm] at hmap
   have he : (fun k => (pinnedLieEquiv n ht)
-      (((DynkinType.C (n + 1)).lieBasis ht).rootGenerator k)) = rootGenerator n := by
-    funext k
-    cases k with
-    | inl i =>
-      exact (congrArg (pinnedLieEquiv n ht)
-        (LieAlgebra.Basis.rootGenerator_inl _ i)).trans (pinnedLieEquiv_lieBasis_e n ht i)
-    | inr i =>
-      exact (congrArg (pinnedLieEquiv n ht)
-        (LieAlgebra.Basis.rootGenerator_inr _ i)).trans (pinnedLieEquiv_lieBasis_f n ht i)
+      (((DynkinType.C (n + 1)).lieBasis ht).rootGenerator k)) = rootGenerator n :=
+    funext (pinnedLieEquiv_rootGenerator n ht)
+  -- The Cartan comparison already uses the native index type, as does `cartanGenerator`.
   have hh : (fun i => (pinnedLieEquiv n ht)
-      (((DynkinType.C (n + 1)).lieBasis ht).h i)) = cartanGenerator n := by
-    funext i
-    exact pinnedLieEquiv_lieBasis_h n ht i
+      (((DynkinType.C (n + 1)).lieBasis ht).h i)) = cartanGenerator n :=
+    funext (pinnedLieEquiv_lieBasis_h n ht)
   simp only [LieEquiv.coe_toLieHom, he, hh] at hmap
   exact hmap
 
@@ -187,7 +189,8 @@ private theorem isCartanWeightVector_pinned (a : Fin ((n + 1) + (n + 1))) :
         (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) := by
   apply (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mpr
   intro i
-  erw [pinnedRepresentation_ι_h]
+  rw [pinnedRepresentation_ι_h n ht i]
+  -- The cast in the Cartan equation is a self-cast, so the native weight-vector theorem applies.
   exact (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).mp
     (isCartanWeightVector_latticeBasis n a) i
 
@@ -242,29 +245,17 @@ theorem chevalleyDatum_weightLattice : (chevalleyDatum n ht).weightLattice = ⊤
 /-- The actual torus coordinates are the native fundamental-weight coordinates. -/
 @[simp]
 theorem chevalleyDatum_coordinateWeight :
-    (chevalleyDatum n ht).coordinateWeight = basisWeight n := by
-  ext a i
-  have h := (chevalleyDatum n ht).sum_coordinateWeight_smul a
-  conv_lhs at h =>
-    arg 2
-    ext j
-    rw [coe_chevalleyDatum_weightLatticeBasis]
-  simp only [← Pi.single_smul, smul_eq_mul, mul_one, Finset.univ_sum_single] at h
-  exact congrFun h i
+    (chevalleyDatum n ht).coordinateWeight = basisWeight n :=
+  (chevalleyDatum n ht).coordinateWeight_eq_of_coe_weightLatticeBasis
+    (coe_chevalleyDatum_weightLatticeBasis n ht)
 
 /-- Root characters use the pinned root datum's fundamental-weight coordinates. -/
 @[simp]
 theorem chevalleyDatum_coordinateRoot (γ : Fin (DynkinType.C (n + 1)).numRoots) :
     (chevalleyDatum n ht).coordinateRoot γ =
-      ((DynkinType.C (n + 1)).simplyConnectedRootDatum ht).root γ := by
-  ext i
-  have h := (chevalleyDatum n ht).sum_coordinateRoot_smul γ
-  conv_lhs at h =>
-    arg 2
-    ext j
-    rw [coe_chevalleyDatum_weightLatticeBasis]
-  simp only [← Pi.single_smul, smul_eq_mul, mul_one, Finset.univ_sum_single] at h
-  exact congrFun h i
+      ((DynkinType.C (n + 1)).simplyConnectedRootDatum ht).root γ :=
+  (chevalleyDatum n ht).coordinateRoot_eq_of_coe_weightLatticeBasis
+    (coe_chevalleyDatum_weightLatticeBasis n ht) γ
 
 end
 
