@@ -32,9 +32,11 @@ to the singular chain sequence of the triple `(X × Y, A × Y ∪ X × B, X × B
 `0 ⟶ C(A × Y ∪ X × B, X × B) ⟶ C(X × Y, X × B) ⟶ C(X × Y, A × Y ∪ X × B) ⟶ 0`.
 
 The middle component is a quasi-isomorphism by the cubical–singular comparison. The first is the
-comparison followed by the inclusion of pairs `(A × Y, A × B) ⟶ (A × Y ∪ X × B, X × B)`, which is an
-excision when `A` and `B` are open: then `A × Y` and `X × B` are open sets covering the union, the
-first the image of the inclusion and the second the subspace. By the five lemma the comparison is a
+comparison followed by the excision map of pairs `(A × Y, A × B) ⟶ (A × Y ∪ X × B, X × B)`
+(`TopPair.prodExcisionMap`), which induces isomorphisms on singular homology when `A` and `B` are
+open (`TopPair.isIso_singularHomologyMap_prodExcisionMap_of_isOpen`): then `A × Y` and `X × B` are
+open sets covering the union, the first the image of the inclusion and the second the subspace.
+By the five lemma the comparison is a
 quasi-isomorphism (`TauCeti.quasiIso_cubicalChainComplexProdToSingular`). This is the small-chain
 theorem for the cover of `A × Y ∪ X × B` by `A × Y` and `X × B`, in the form needed for products of
 pairs.
@@ -109,12 +111,29 @@ private instance : IsIso (prodLeftToTotalPair A B) := by
   have : IsIso (Hom.fst (prodLeftToTotalPair A B)) := inferInstanceAs (IsIso (𝟙 _))
   exact isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ⟨(y.1.1, ⟨y.1.2, y.2⟩), rfl⟩
 
+/-- The pair `(A × Y ∪ X × B, X × B)` of `TopPair.prodExcisionPair` is the inner pair of the
+triple, with `A × Y ∪ X × B` and `X × B` realized as preimages of `A` and `B`. -/
+private def prodExcisionPairToInnerPair :
+    (ofSubset A).prodExcisionPair (ofSubset B) ⟶
+      TopTriple.innerPair.obj (prodUnionTripleSnd A B) :=
+  TopPair.ofHom (TopCat.isoOfHomeo (Homeomorph.setCongr (by
+      -- The ambient space `(ofSubset A).fst ⊗ (ofSubset B).fst` of `prodSubspace` is `X ⊗ Y`.
+      rw [prodSubspace, range_ofSubset_map, range_ofSubset_map]; rfl))).hom
+    (TopCat.ofHom ⟨fun x ↦ ⟨(x.1, x.2.1), x.2.2⟩, by fun_prop⟩)
+    (by ext x; exact Subtype.ext ((ofSubset A).coe_prodSubspaceInr_apply (ofSubset B) x).symm)
+
+private instance : IsIso (prodExcisionPairToInnerPair A B) := by
+  have : IsIso (Hom.fst (prodExcisionPairToInnerPair A B)) :=
+    inferInstanceAs (IsIso (TopCat.isoOfHomeo _).hom)
+  exact isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ⟨(y.1.1, ⟨y.1.2, y.2⟩), rfl⟩
+
 /-- The comparison on the first terms: relative cubical chains of `(A × Y, A × B)` to relative
 singular chains of `(A × Y ∪ X × B, X × B)`. -/
 private def prodComparisonτ₁ :
     ((ofSubset B).prodLeft (ofSubset A).snd).cubicalChainComplex k ⟶
       (TopTriple.innerPair.obj (prodUnionTripleSnd A B)).singularChainComplex (ModuleCat.of k k) :=
-  cubicalToSingularRel k _ ≫ TopPair.singularChainComplexMap (prodExcisionSnd A B) _
+  cubicalToSingularRel k _ ≫ TopPair.singularChainComplexMap
+    ((ofSubset A).prodExcisionMap (ofSubset B) ≫ prodExcisionPairToInnerPair A B) _
 
 /-- The comparison on the middle terms: relative cubical chains of `(X × Y, X × B)` to relative
 singular chains of the same pair, written as the pair of the triple. -/
@@ -125,10 +144,13 @@ private def prodComparisonτ₂ :
 
 private theorem prodLeftMap_comp_prodLeftToTotalPair :
     prodLeftMap (𝟙 (ofSubset B)) (ofSubset A).map ≫ prodLeftToTotalPair A B =
-      prodExcisionSnd A B ≫ TopTriple.innerToTotal.app (prodUnionTripleSnd A B) :=
+      ((ofSubset A).prodExcisionMap (ofSubset B) ≫ prodExcisionPairToInnerPair A B) ≫
+        TopTriple.innerToTotal.app (prodUnionTripleSnd A B) :=
   hom_ext_of_fst _ (by
-    rw [Hom.fst_comp, Hom.fst_comp, prodExcisionSnd_fst, TopTriple.innerToTotal_app_fst]
-    ext; rfl)
+    rw [Hom.fst_comp, Hom.fst_comp, Hom.fst_comp, prodExcisionMap_fst,
+      TopTriple.innerToTotal_app_fst]
+    ext x
+    exact ((ofSubset A).coe_prodSubspaceInl_apply (ofSubset B) x).symm)
 
 @[reassoc]
 private theorem prodComparison_comm₁₂ :
@@ -199,10 +221,18 @@ comparison `N(P × Q) ⟶ C(X × Y, A × Y ∪ X × B)` of the relative cubical 
 the pairs `P = (X, A)` and `Q = (Y, B)` with relative singular chains is a quasi-isomorphism. -/
 theorem quasiIso_cubicalChainComplexProdToSingular (hA : IsOpen A) (hB : IsOpen B) :
     QuasiIso (cubicalChainComplexProdToSingular k A B) := by
-  have : QuasiIso (TopPair.singularChainComplexMap (prodExcisionSnd A B)
+  have : QuasiIso (TopPair.singularChainComplexMap
+      ((ofSubset A).prodExcisionMap (ofSubset B) ≫ prodExcisionPairToInnerPair A B)
       (ModuleCat.of k k)) :=
-    (quasiIso_iff _).2 fun n ↦ (quasiIsoAt_iff_isIso_homologyMap _ n).2
-      (isIso_singularHomologyMap_prodExcisionSnd (ModuleCat.of k k) hA hB n)
+    (quasiIso_iff _).2 fun n ↦ (quasiIsoAt_iff_isIso_homologyMap _ n).2 (by
+      have := isIso_singularHomologyMap_prodExcisionMap_of_isOpen (ModuleCat.of k k)
+        (ofSubset A) (ofSubset B) (range_ofSubset_map ▸ hA) (range_ofSubset_map ▸ hB) n
+      have := (singularHomologyMapIso (ModuleCat.of k k)
+        (asIso (prodExcisionPairToInnerPair A B)) n).isIso_hom
+      -- The homology map of a singular chain map is the induced map on singular homology.
+      change IsIso (TopPair.singularHomologyMap _ (ModuleCat.of k k) n)
+      rw [singularHomologyMap_comp]
+      infer_instance)
   have : QuasiIso (prodComparisonτ₁ k A B) := by
     rw [prodComparisonτ₁]
     infer_instance

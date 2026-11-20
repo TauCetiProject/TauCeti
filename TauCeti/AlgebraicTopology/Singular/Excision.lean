@@ -50,12 +50,13 @@ Compatibility with the connecting morphism of the pair is `TopPair.singularHomol
 applied to the excision map.
 
 For subsets `A ⊆ X` and `B ⊆ Y`, write `A × Y` and `X × B` for their preimages under the
-projections of `X × Y`. The inclusions of pairs `(X × B, A × B) ⟶ (A × Y ∪ X × B, A × Y)` and
-`(A × Y, A × B) ⟶ (A × Y ∪ X × B, X × B)` into the inner pairs of the triples
-`TopPair.prodUnionTripleFst` and `TopPair.prodUnionTripleSnd` (`TopPair.prodExcisionFst`,
-`TopPair.prodExcisionSnd`) are excisions when `A` and `B` are open
-(`TopPair.isIso_singularHomologyMap_prodExcisionFst`,
-`TopPair.isIso_singularHomologyMap_prodExcisionSnd`).
+projections of `X × Y`. The inclusion of pairs `(X × B, A × B) ⟶ (A × Y ∪ X × B, A × Y)` into the
+inner pair of the triple `TopPair.prodUnionTripleFst` (`TopPair.prodExcisionFst`) is an excision
+when `A` and `B` are open (`TopPair.isIso_singularHomologyMap_prodExcisionFst`). The excision map
+`(A × Y, A × B) ⟶ (A × Y ∪ X × B, X × B)` of a product of pairs (`TopPair.prodExcisionMap`) is an
+excision when the interiors of `A × Y` and `X × B` cover their union
+(`TopPair.isIso_singularHomologyMap_prodExcisionMap`), in particular when `A` and `B` are open
+(`TopPair.isIso_singularHomologyMap_prodExcisionMap_of_isOpen`).
 
 Combined with the long exact sequence of the triple `(X, A, A ∩ B)`, excision shows that when the
 interiors of `A` and `B` cover `X`, a morphism into `Hₙ(X, A ∩ B)` is determined by its images in
@@ -487,24 +488,8 @@ theorem prodExcisionFst_fst :
       TopCat.ofHom ⟨fun p ↦ ⟨(p.1, p.2.1), Or.inr p.2.2⟩, by fun_prop⟩ :=
   (rfl)
 
-/-- The inclusion of pairs `(A × Y, A × B) ⟶ (A × Y ∪ X × B, X × B)` into the inner pair of
-`TopPair.prodUnionTripleSnd`, an excision when `A` and `B` are open
-(`TopPair.isIso_singularHomologyMap_prodExcisionSnd`). -/
-def prodExcisionSnd :
-    (ofSubset B).prodLeft (ofSubset A).snd ⟶
-      TauCeti.TopTriple.innerPair.obj (prodUnionTripleSnd A B) :=
-  ofHom (TopCat.ofHom ⟨fun x ↦ ⟨(x.1.1, x.2), Or.inl x.1.2⟩, by fun_prop⟩)
-    (TopCat.ofHom ⟨fun x ↦ ⟨(x.1.1, x.2.1), x.2.2⟩, by fun_prop⟩) (by ext; rfl)
-
-/-- On ambient spaces, `TopPair.prodExcisionSnd` is the inclusion `A × Y ⟶ A × Y ∪ X × B`. -/
-@[simp]
-theorem prodExcisionSnd_fst :
-    Hom.fst (prodExcisionSnd A B) =
-      TopCat.ofHom ⟨fun x ↦ ⟨(x.1.1, x.2), Or.inl x.1.2⟩, by fun_prop⟩ :=
-  (rfl)
-
-/-- The open cover of `A × Y ∪ X × B` by `A × Y` and `X × B`, along which both excisions are
-proved. -/
+/-- The open cover of `A × Y ∪ X × B` by `A × Y` and `X × B`, along which
+`TopPair.isIso_singularHomologyMap_prodExcisionFst` is proved. -/
 private abbrev prodUnionCover : Fin 2 → Set ↥(CartesianMonoidalCategory.fst X Y ⁻¹' A ∪
     CartesianMonoidalCategory.snd X Y ⁻¹' B) :=
   ![(↑) ⁻¹' (CartesianMonoidalCategory.fst X Y ⁻¹' A),
@@ -545,24 +530,50 @@ theorem isIso_singularHomologyMap_prodExcisionFst (hA : IsOpen A) (hB : IsOpen B
   · simp only [Fin.forall_fin_two]
     exact ⟨Or.inl fun w hw ↦ ⟨⟨w.1, hw⟩, rfl⟩, Or.inr fun w hw ↦ ⟨(w.1.1, ⟨w.1.2, hw⟩), rfl⟩⟩
 
-/-- **Excision onto `A × Y`**: for open `A` and `B`, the inclusion of pairs
-`(A × Y, A × B) ⟶ (A × Y ∪ X × B, X × B)` induces isomorphisms on relative singular homology. The
-open sets `A × Y` and `X × B` cover `A × Y ∪ X × B`; the first is the image of the inclusion and
-the second is the subspace. -/
-theorem isIso_singularHomologyMap_prodExcisionSnd (hA : IsOpen A) (hB : IsOpen B) (n : ℕ) :
-    IsIso (TopPair.singularHomologyMap (prodExcisionSnd A B) R n) := by
-  refine isIso_singularHomologyMap_of_open_cover R (prodExcisionSnd A B) ?_ ?_
-    (prodUnionCover A B) (isOpen_prodUnionCover hA hB) (iUnion_prodUnionCover A B) ?_ n
-  · refine ⟨IsEmbedding.subtypeVal.isInducing.of_comp_iff.1
-      (IsEmbedding.subtypeVal.prodMap IsEmbedding.id).isInducing, fun x y h ↦ ?_⟩
-    have h' : ((x.1.1 : X), x.2) = ((y.1.1 : X), y.2) := congrArg Subtype.val h
-    obtain ⟨h₁, h₂⟩ := Prod.mk.inj h'
-    exact Prod.ext (Subtype.ext h₁) h₂
-  · rintro x ⟨b, hb⟩
-    have hx : (b.1 : X ⊗ Y).2 = x.2 := congrArg (fun w ↦ (w.1 : X ⊗ Y).2) hb
-    exact ⟨(x.1, ⟨x.2, hx ▸ b.2⟩), rfl⟩
-  · simp only [Fin.forall_fin_two]
-    exact ⟨Or.inr fun w hw ↦ ⟨(⟨w.1.1, hw⟩, w.1.2), rfl⟩, Or.inl fun w hw ↦ ⟨⟨w.1, hw⟩, rfl⟩⟩
+variable (P Q : TopPair.{w})
+
+/-- **Excision for a product of pairs.** For pairs `P = (X, A)` and `Q = (Y, B)`, if the interiors
+of `A × Y` and `X × B` in `A × Y ∪ X × B` cover it, then the excision map of pairs
+`(A × Y, A × B) ⟶ (A × Y ∪ X × B, X × B)` (`TopPair.prodExcisionMap`) induces isomorphisms on
+relative singular homology. -/
+theorem isIso_singularHomologyMap_prodExcisionMap
+    (h : interior ((↑) ⁻¹' (CartesianMonoidalCategory.fst P.fst Q.fst ⁻¹' Set.range P.map) :
+        Set (P.prodSubspace Q)) ∪
+      interior ((↑) ⁻¹' (CartesianMonoidalCategory.snd P.fst Q.fst ⁻¹' Set.range Q.map) :
+        Set (P.prodSubspace Q)) = Set.univ) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap (P.prodExcisionMap Q) R n) := by
+  refine isIso_singularHomologyMap_of_open_cover R (P.prodExcisionMap Q)
+    (by rw [prodExcisionMap_fst]; exact P.isEmbedding_prodSubspaceInl Q) ?_ _ (fun b ↦ ?_)
+    (Set.union_eq_iUnion.symm.trans h) (fun b ↦ ?_) n
+  · -- A point `(a, y)` of `A × Y` lying in `X × B` lies in `A × B`.
+    rintro ⟨a, y⟩ ⟨⟨x, b⟩, hxb⟩
+    rw [prodExcisionMap_fst] at hxb
+    -- In `X × Y`, `hxb` says `(x, Q.map b) = (P.map a, y)`; compare second coordinates.
+    have hy : Q.map b = y := congrArg Prod.snd ((P.coe_prodSubspaceInr_apply Q _).symm.trans
+      ((congrArg Subtype.val hxb).trans (P.coe_prodSubspaceInl_apply Q _)))
+    exact ⟨(a, b), Prod.ext rfl hy⟩
+  · cases b <;> exact isOpen_interior
+  · cases b
+    · -- Points with second coordinate in `B` lie in `X × B`.
+      refine Or.inl fun x hx ↦ ?_
+      obtain ⟨b, hb⟩ := interior_subset hx
+      exact ⟨(x.1.1, b), Subtype.ext ((P.coe_prodSubspaceInr_apply Q _).trans (Prod.ext rfl hb))⟩
+    · -- Points with first coordinate in `A` lie in `A × Y`.
+      refine Or.inr fun x hx ↦ ?_
+      obtain ⟨a, ha⟩ := interior_subset hx
+      rw [prodExcisionMap_fst]
+      exact ⟨(a, x.1.2), Subtype.ext ((P.coe_prodSubspaceInl_apply Q _).trans (Prod.ext ha rfl))⟩
+
+/-- **Excision for a product of open pairs.** For pairs `P = (X, A)` and `Q = (Y, B)` with `A` open
+in `X` and `B` open in `Y`, the excision map of pairs `(A × Y, A × B) ⟶ (A × Y ∪ X × B, X × B)`
+(`TopPair.prodExcisionMap`) induces isomorphisms on relative singular homology. -/
+theorem isIso_singularHomologyMap_prodExcisionMap_of_isOpen (hA : IsOpen (Set.range P.map))
+    (hB : IsOpen (Set.range Q.map)) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap (P.prodExcisionMap Q) R n) := by
+  refine isIso_singularHomologyMap_prodExcisionMap R P Q ?_ n
+  rw [(TopCat.isOpen_subtypeVal_preimage_preimage_fst_union hA).interior_eq,
+    (TopCat.isOpen_subtypeVal_preimage_preimage_snd_union hB).interior_eq]
+  exact Set.eq_univ_of_forall fun x ↦ x.2
 
 end Prod
 
