@@ -105,12 +105,6 @@ theorem isFrobeniusFunctional_iff :
   simp [IsFrobeniusFunctional, Nondegenerate, SeparatingLeft,
     SeparatingRight]
 
-/-- The identity of the ground ring is a Frobenius functional on the ring itself. -/
-@[simp]
-theorem isFrobeniusFunctional_id : (LinearMap.id : k →ₗ[k] k).IsFrobeniusFunctional :=
-  isFrobeniusFunctional_iff.mpr
-    ⟨fun a h ↦ by simpa using h 1, fun b h ↦ by simpa using h 1⟩
-
 /-- An element pairing to zero from the left against a Frobenius functional is zero. -/
 theorem IsFrobeniusFunctional.eq_zero_of_forall_left
     (hφ : φ.IsFrobeniusFunctional) {a : A} (h : ∀ b, φ (a * b) = 0) : a = 0 :=

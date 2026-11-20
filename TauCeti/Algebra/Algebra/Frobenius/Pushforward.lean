@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Algebra.Frobenius.Basic
-public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
-# Pushforward along a map into a Frobenius algebra
+# Pushforward along a map out of a Frobenius algebra
 
 Let `A` be a finite-dimensional algebra over a field `k` with a Frobenius functional `φ`, so that
 `(a, a') ↦ φ (a * a')` is a perfect pairing, and let `B` be any `k`-algebra with a linear
@@ -37,11 +37,11 @@ standard properties follow from the defining identity alone:
   (`LinearMap.IsFrobeniusFunctional.pushforward_algebraLinearMap`);
 * for gradings in which `φ` and `ψ` vanish off the top degrees `dA` and `dB` and `f` preserves
   degrees, the pushforward raises degree by `dA - dB`, the dimension of the target minus that of
-  the source (`LinearMap.IsFrobeniusFunctional.pushforward_mem`).
+  the source (`LinearMap.IsFrobeniusFunctional.pushforward_mem_graded`).
 
 ## Main definitions
 
-* `LinearMap.IsFrobeniusFunctional.pushforward`: the adjoint of a linear map into a Frobenius
+* `LinearMap.IsFrobeniusFunctional.pushforward`: the adjoint of a linear map out of a Frobenius
   algebra for the two trace pairings.
 
 ## Main results
@@ -53,7 +53,7 @@ standard properties follow from the defining identity alone:
 * `LinearMap.IsFrobeniusFunctional.pushforward_mul_map`: the projection formula.
 * `LinearMap.IsFrobeniusFunctional.pushforward_comp` and
   `LinearMap.IsFrobeniusFunctional.pushforward_id`: functoriality.
-* `LinearMap.IsFrobeniusFunctional.pushforward_mem`: the degree of the pushforward.
+* `LinearMap.IsFrobeniusFunctional.pushforward_mem_graded`: the degree of the pushforward.
 
 ## References
 
@@ -153,27 +153,11 @@ section Grading
 variable {ι : Type*} [AddCommGroup ι] [DecidableEq ι] (𝒜 : ι → Submodule k A) [GradedAlgebra 𝒜]
   (ℬ : ι → Submodule k B) [SetLike.GradedMul ℬ] {dA dB : ι}
 
-omit [FiniteDimensional k A] in
-/-- For a functional vanishing off the top degree `dA`, the pairing of `x` with an
-element of degree `l` only sees the component of `x` of the complementary degree `dA - l`. -/
-private theorem apply_decompose_mul (hφ0 : ∀ i ≠ dA, ∀ a ∈ 𝒜 i, φ a = 0) (x : A) {i l : ι}
-    {c : A} (hc : c ∈ 𝒜 l) (hil : i + l = dA) :
-    φ ((decompose 𝒜 x i : A) * c) = φ (x * c) := by
-  classical
-  conv_rhs => rw [← sum_support_decompose 𝒜 x]
-  rw [Finset.sum_mul, map_sum, Finset.sum_eq_single i]
-  · intro i' _ hi'
-    refine hφ0 _ (fun h ↦ hi' (add_right_cancel (h.trans hil.symm))) _
-      (SetLike.GradedMul.mul_mem (SetLike.coe_mem _) hc)
-  · intro hi
-    rw [DFinsupp.notMem_support_iff.mp hi]
-    simp
-
 /-- **The degree of the pushforward.** If `φ` vanishes off the top degree `dA` of `A`, `ψ`
 vanishes off the top degree `dB` of `B`, and `f` preserves degrees, then the pushforward raises
 degrees by `dA - dB`. For cohomology this is the shift by the dimension of the target minus the
 dimension of the source. -/
-theorem pushforward_mem (hφ0 : ∀ i ≠ dA, ∀ a ∈ 𝒜 i, φ a = 0)
+theorem pushforward_mem_graded (hφ0 : ∀ i ≠ dA, ∀ a ∈ 𝒜 i, φ a = 0)
     (hψ0 : ∀ i ≠ dB, ∀ b ∈ ℬ i, ψ b = 0) (hf : ∀ i, ∀ a ∈ 𝒜 i, f a ∈ ℬ i) {j : ι} {b : B}
     (hb : b ∈ ℬ j) : hφ.pushforward ψ f b ∈ 𝒜 (j + (dA - dB)) := by
   classical
@@ -187,7 +171,8 @@ theorem pushforward_mem (hφ0 : ∀ i ≠ dA, ∀ a ∈ 𝒜 i, φ a = 0)
     rw [Finset.mul_sum, map_sum]
     refine Finset.sum_eq_zero fun l _ ↦ ?_
     by_cases hil : i + l = dA
-    · rw [apply_decompose_mul 𝒜 hφ0 x (SetLike.coe_mem _) hil, apply_pushforward_mul]
+    · rw [TauCeti.GradedAlgebra.apply_coe_decompose_mul_of_forall_ne 𝒜 hφ0 x
+        (SetLike.coe_mem _) hil, apply_pushforward_mul]
       refine hψ0 (j + l) (fun h ↦ hi ?_) _
         (SetLike.GradedMul.mul_mem hb (hf l _ (SetLike.coe_mem _)))
       rw [← hil, ← h]
