@@ -545,17 +545,24 @@ theorem isInvertible_mixedHessian_of_comp {R : M₁ × M₃ → ℝ} {b : M₁ �
       generatingSource I₁ R y = generatingSource I₁ S (y.1, b y)) :
     (mixedHessian I₁ I₃ R (q, Q)).IsInvertible := by
   subst hb₀
-  -- Read `S`, `T`, `R` and `b` in the preferred charts and apply the normed-space statement.
+  -- Read the mixed Hessians in the preferred charts. `Function.comp_def` and `Prod.map_apply'`
+  -- rewrite the coordinate expression `S ∘ Prod.map (extChartAt I₁ q).symm (extChartAt I₂ a).symm`
+  -- of `mixedHessian_eq_cotangentMixedHessian_extChartAt` into the form
+  -- `fun z ↦ S ((extChartAt I₁ q).symm z.1, (extChartAt I₂ a).symm z.2)` of the chart lemmas.
+  rw [mixedHessian_eq_cotangentMixedHessian_extChartAt hS] at hMS
+  rw [mixedHessian_eq_cotangentMixedHessian_extChartAt hT] at hMT
+  rw [mixedHessian_eq_cotangentMixedHessian_extChartAt hR]
+  simp only [Function.comp_def, Prod.map_apply'] at hMS hMT ⊢
+  -- Read `R` and `b` in the preferred charts too and apply the normed-space statement.
   have hMR' := isInvertible_cotangentMixedHessian_of_comp hS.contDiffAt_comp_prod_extChartAt_symm
     hT.contDiffAt_comp_prod_extChartAt_symm
     ((hR.contDiffAt_comp_prod_extChartAt_symm.fderiv_right (m := 1) le_rfl).differentiableAt
       one_ne_zero) hb.differentiableAt_comp_prod_extChartAt_symm
     (by simp only [extChartAt_to_inv])
-    (isInvertible_cotangentLegendreHessian_extChartAt hS hT h)
-    (mixedHessian_eq_cotangentMixedHessian_extChartAt hS ▸ hMS)
-    (mixedHessian_eq_cotangentMixedHessian_extChartAt hT ▸ hMT)
+    (isInvertible_cotangentLegendreHessian_extChartAt hS hT h) hMS hMT
     (eventually_cotangentGenerating_extChartAt hS hT hR hb hrel)
-  rw [mixedHessian_eq_cotangentMixedHessian_extChartAt hR]
+  -- The goal is stated on the tangent spaces `TangentSpace I₁ q` and `TangentSpace I₃ Q`, which
+  -- are by definition the model spaces `E₁` and `E₃` of `hMR'`.
   exact hMR'
 
 /-- **Composition of generating functions of the first kind on manifolds.** Let `S` on `M₁ × M₂`
