@@ -37,6 +37,8 @@ The curried tensor bifunctor on cochain complexes is also identified with `tenso
   totalization `HomologicalComplex.mapBifunctorMap` of the two morphisms.
 * `HomologicalComplex.ι_whiskerLeft` and `HomologicalComplex.ι_whiskerRight`: the two whiskerings
   on a homogeneous summand.
+* `HomologicalComplex.whiskerLeft_zero` and `HomologicalComplex.zero_whiskerRight`: whiskering the
+  zero morphism gives zero, so `tensorLeft X` and `tensorRight X` preserve zero morphisms.
 * `HomologicalComplex.leftUnitor_inv_f` and `HomologicalComplex.rightUnitor_inv_f`: the degreewise
   components of the inverse unitors.
 * `HomologicalComplex.mapBifunctor₁₂.ι_eq_whiskerRight` and
@@ -118,6 +120,36 @@ lemma whiskerRight_eq_mapBifunctorMap {X Y : HomologicalComplex C c} (f : X ⟶ 
     (Z : HomologicalComplex C c) :
     f ▷ Z = mapBifunctorMap f (𝟙 Z) (curriedTensor C) c :=
   rfl
+
+/-- Left whiskering of homological complexes by the zero morphism is zero.  Homological complexes
+carry no `MonoidalPreadditive` instance, so `MonoidalPreadditive.whiskerLeft_zero` does not
+apply. -/
+@[simp]
+lemma whiskerLeft_zero (X : HomologicalComplex C c) {Y Z : HomologicalComplex C c} :
+    X ◁ (0 : Y ⟶ Z) = 0 :=
+  tensorHom_zero _
+
+/-- Right whiskering of homological complexes by the zero morphism is zero; the counterpart of
+`HomologicalComplex.whiskerLeft_zero`. -/
+@[simp]
+lemma zero_whiskerRight {X Y : HomologicalComplex C c} (Z : HomologicalComplex C c) :
+    (0 : X ⟶ Y) ▷ Z = 0 :=
+  zero_tensorHom _
+
+section
+
+variable [∀ X₁, PreservesColimit (CategoryTheory.Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
+  [∀ (X₁ X₂ X₃ X₄ : GradedObject I C), GradedObject.HasTensor₄ObjExt X₁ X₂ X₃ X₄]
+
+/-- Left tensoring with a homological complex preserves zero morphisms. -/
+instance (X : HomologicalComplex C c) : (tensorLeft X).PreservesZeroMorphisms :=
+  ⟨fun _ _ ↦ whiskerLeft_zero X⟩
+
+/-- Right tensoring with a homological complex preserves zero morphisms. -/
+instance (X : HomologicalComplex C c) : (tensorRight X).PreservesZeroMorphisms :=
+  ⟨fun _ _ ↦ zero_whiskerRight X⟩
+
+end
 
 /-- Left whiskering of homological complexes, restricted to a homogeneous summand, is left
 whiskering of the summand. -/
@@ -243,18 +275,15 @@ variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C]
   [MonoidalPreadditive C] [∀ K L : CochainComplex C ℤ, HasTensor K L]
 
 /-- The curried tensor bifunctor on complexes computes the total tensor product. -/
-@[simp]
 theorem curriedTensor_map₂CochainComplex_obj_obj (K A : CochainComplex C ℤ) :
     ((curriedTensor C).map₂CochainComplex.obj K).obj A = tensorObj K A := rfl
 
 /-- The curried tensor bifunctor acts in the right input by tensoring with an identity. -/
-@[simp]
 theorem curriedTensor_map₂CochainComplex_obj_map (K : CochainComplex C ℤ)
     {A B : CochainComplex C ℤ} (g : A ⟶ B) :
     ((curriedTensor C).map₂CochainComplex.obj K).map g = tensorHom (𝟙 K) g := rfl
 
 /-- The curried tensor bifunctor acts in the left input by tensoring with an identity. -/
-@[simp]
 theorem curriedTensor_map₂CochainComplex_map_app {K L : CochainComplex C ℤ}
     (f : K ⟶ L) (A : CochainComplex C ℤ) :
     ((curriedTensor C).map₂CochainComplex.map f).app A = tensorHom f (𝟙 A) := rfl

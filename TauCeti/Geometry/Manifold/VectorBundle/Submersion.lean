@@ -66,6 +66,14 @@ theorem fst_mem_extChartAt_target (p : TotalSpace F V) {y : EB × F}
   rw [FiberBundle.extChartAt_target] at hy
   exact hy.1.1
 
+/-- The target of a preferred chart of the total space is stable under scaling the fibre
+coordinate: the chart target is a product with the whole model fibre. -/
+theorem smul_snd_mem_extChartAt_target (p : TotalSpace F V) {y : EB × F}
+    (hy : y ∈ (extChartAt (IB.prod 𝓘(𝕜, F)) p).target) (t : 𝕜) :
+    (y.1, t • y.2) ∈ (extChartAt (IB.prod 𝓘(𝕜, F)) p).target := by
+  rw [FiberBundle.extChartAt_target] at hy ⊢
+  exact ⟨hy.1, mem_univ _⟩
+
 /-- Read through the inverse of a preferred chart of the total space, the bundle projection is the
 inverse of the base chart applied to the first coordinate. -/
 theorem proj_extChartAt_symm (p : TotalSpace F V) {y : EB × F}

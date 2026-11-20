@@ -93,7 +93,7 @@ theorem IsEven.thetaCosetClass_slash_of_mem_Gamma (hL : IsEven L)
     (hA : A ∈ CongruenceSubgroup.Gamma (level L)) :
     thetaCosetClass L δ ∣[(k : ℤ)] A = thetaCosetClass L δ := by
   induction δ using Submodule.Quotient.induction_on with
-  | H γ => simpa using hL.thetaCoset_slash_of_mem_Gamma hk γ.2 hA
+  | H γ => simpa using hL.thetaCoset_slash_of_mem_Gamma hk γ.property hA
 
 /-- The coset theta series of a discriminant class of an even full lattice, as a modular form
 of weight half the rank on the principal congruence subgroup at the lattice's level. -/
@@ -110,7 +110,7 @@ noncomputable def thetaCosetForm (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
   bdd_at_cusps' hc := by
     induction δ using Submodule.Quotient.induction_on with
     | H γ =>
-      simpa using hL.isBoundedAt_thetaCoset hk γ.2 (hc.mono (Subgroup.map_le_range _ _))
+      simpa using hL.isBoundedAt_thetaCoset hk γ.property (hc.mono (Subgroup.map_le_range _ _))
 
 /-- The underlying function of the coset theta form is the theta series of its class. -/
 @[simp]

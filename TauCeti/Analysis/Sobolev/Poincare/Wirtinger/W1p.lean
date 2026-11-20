@@ -13,6 +13,7 @@ import TauCeti.MeasureTheory.Function.LocallyAEConst
 import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -20,8 +21,8 @@ import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 # The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)`
 
 Let `Ω` be a bounded convex open subset of a finite-dimensional real inner product space `E` of
-dimension `n`, let `μ` be an additive Haar measure, and let `S ⊆ Ω` be null-measurable and have
-positive measure.  This file proves, for `1 ≤ p < ∞` and every `u ∈ W^{1,p}(Ω)`,
+dimension `n`, let `μ` be an additive Haar measure, and let `S ⊆ Ω` have positive measure.  This
+file proves, for `1 ≤ p ≤ ∞` and every `u ∈ W^{1,p}(Ω)`,
 
 `‖u - ⨍_S u‖_{Lᵖ(Ω)} ≤ μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S) * ‖∇u‖_{Lᵖ(Ω)}`,
 
@@ -49,6 +50,10 @@ on a subdomain `U` whose closure is a compact subset of `Ω`.  Two limits are th
   measure of `S ∩ U` needs to be tracked, since `diam U ≤ diam Ω` already bounds the numerator of
   the constant.
 
+These limits are taken for finite `p`.  The constant does not depend on `p`, so the case `p = ∞`
+follows by applying the finite case to `u` at the exponents `q < ∞`, on the domain `Ω` of finite
+measure, and letting `q → ∞` (`TauCeti.tendsto_eLpNorm_atTop`).
+
 ## Main declarations
 
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex`: the inequality on `W^{1,p}(Ω)`.
@@ -60,6 +65,9 @@ on a subdomain `U` whose closure is a compact subset of `Ω`.  Two limits are th
   for a ball contained in `Ω` and any `u ∈ W^{1,p}(Ω)`.
 * `TauCeti.W1p.exists_value_ae_eq_const_of_gradient_eq_zero`: on a preconnected `Ω`, a Sobolev
   function with vanishing weak gradient is almost everywhere constant.
+* `TauCeti.W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq`: on a preconnected `Ω`, a Sobolev
+  function whose weak gradient agrees almost everywhere with `∇ q` for a `C¹` function `q` equals
+  `q + c` almost everywhere.
 
 ## References
 
@@ -233,12 +241,9 @@ private theorem eLpNorm_value_sub_setAverage_le_of_isCompact_closure (hp : p ≠
 
 /-! ### The inequality on the whole domain -/
 
-/-- **The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)`.**  Let `Ω` be a bounded convex open set
-in a finite-dimensional real inner product space of dimension `n`, and let `S ⊆ Ω` be
-null-measurable of positive measure.  For `1 ≤ p < ∞`, every `u ∈ W^{1,p}(Ω)` deviates from its
-mean over `S` by at most `μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)` times the `Lᵖ` norm of its weak
-gradient. -/
-theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
+/-- The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)` for a null-measurable set `S`; see
+`TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex` for the statement without measurability. -/
+private theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex_of_nullMeasurableSet (hp : p ≠ ∞)
     (hconv : Convex ℝ (Omega : Set E)) (hb : Bornology.IsBounded (Omega : Set E))
     (hSm : NullMeasurableSet S mu) (hS : S ⊆ (Omega : Set E)) (hS0 : mu S ≠ 0)
     (u : W1p mu Omega p) :
@@ -247,9 +252,7 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
         ‖W1p.gradient u‖ₑ := by
   obtain ⟨V, hVmono, hVopen, hVconv, hVcompact, -, hVclosure, hVunion⟩ :=
     exists_seq_isOpen_convex_isCompact_closure_subset_iUnion_eq Omega.isOpen hconv
-  have hOfin : mu (Omega : Set E) ≠ ∞ :=
-    ((measure_mono subset_closure).trans_lt hb.isCompact_closure.measure_lt_top).ne
-  have hSfin : mu S ≠ ∞ := ne_top_of_le_ne_top hOfin (measure_mono hS)
+  have hSfin : mu S ≠ ∞ := (hb.subset hS).measure_lt_top.ne
   have hSRpos : 0 < mu.real S := ENNReal.toReal_pos hS0 hSfin
   have hSR0 : mu.real S ≠ 0 := hSRpos.ne'
   -- The means over `S ∩ V n` converge to the mean over `S`.
@@ -295,13 +298,65 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
         Filter.liminf_le_liminf hbound
     _ = ENNReal.ofReal (K / mu.real S) * ‖W1p.gradient u‖ₑ := htend.liminf_eq
 
+/-- **The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)`.**  Let `Ω` be a bounded convex open set
+in a finite-dimensional real inner product space of dimension `n`, and let `S ⊆ Ω` have positive
+measure.  For `1 ≤ p ≤ ∞`, every `u ∈ W^{1,p}(Ω)` deviates from its mean over `S` by at most
+`μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)` times the `Lᵖ` norm of its weak gradient.  The constant
+does not depend on `p`, so the case `p = ∞` is the limit of the finite exponents. -/
+theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex
+    (hconv : Convex ℝ (Omega : Set E)) (hb : Bornology.IsBounded (Omega : Set E))
+    (hS : S ⊆ (Omega : Set E)) (hS0 : mu S ≠ 0) (u : W1p mu Omega p) :
+    eLpNorm (fun x ↦ W1p.value u x - ⨍ y in S, W1p.value u y ∂mu) p (mu.restrict Omega) ≤
+      ENNReal.ofReal (mu.real (ball 0 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) / mu.real S) *
+        ‖W1p.gradient u‖ₑ := by
+  set C := ENNReal.ofReal
+    (mu.real (ball 0 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) / mu.real S)
+  -- Replace `S` by a measurable subset `S'` of `Ω` with the same restricted measure.
+  set S' : Set E := (Omega : Set E) ∩ toMeasurable mu S
+  have hres : mu.restrict S' = mu.restrict S :=
+    Measure.restrict_inter_toMeasurable (hb.subset hS).measure_lt_top.ne
+      Omega.isOpen.measurableSet hS
+  have hS'm : MeasurableSet S' :=
+    Omega.isOpen.measurableSet.inter (measurableSet_toMeasurable mu S)
+  have hmu : mu S' = mu S := by
+    rw [← Measure.restrict_apply_univ, hres, Measure.restrict_apply_univ]
+  have hmuR : mu.real S' = mu.real S := by rw [measureReal_def, measureReal_def, hmu]
+  -- The inequality at every finite exponent.
+  have hfin (q : ℝ≥0∞) [Fact (1 ≤ q)] (hq : q ≠ ∞) (v : W1p mu Omega q) :
+      eLpNorm (fun x ↦ W1p.value v x - ⨍ y in S, W1p.value v y ∂mu) q (mu.restrict Omega) ≤
+        C * ‖W1p.gradient v‖ₑ := by
+    have h := W1p.eLpNorm_value_sub_setAverage_le_of_convex_of_nullMeasurableSet (S := S') hq
+      hconv hb hS'm.nullMeasurableSet inter_subset_left (hmu ▸ hS0) v
+    rwa [hres, hmuR] at h
+  rcases ne_or_eq p ∞ with hp | rfl
+  · exact hfin p hp u
+  -- At `p = ∞`, lower `u` to the finite exponents `q ≥ 1` and let `q → ∞`.
+  have : IsFiniteMeasure (mu.restrict (Omega : Set E)) :=
+    isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
+  have hle : ∀ᶠ q : ℝ≥0 in atTop,
+      eLpNorm (fun x ↦ W1p.value u x - ⨍ y in S, W1p.value u y ∂mu) q (mu.restrict Omega) ≤
+        C * eLpNorm (W1p.gradient u) q (mu.restrict Omega) := by
+    filter_upwards [eventually_ge_atTop 1] with q hq
+    have : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨by exact_mod_cast hq⟩
+    have hval : W1p.value (W1p.ofExponentLE le_top u) =ᵐ[mu.restrict Omega] W1p.value u :=
+      (W1p.coeFn_value_ofExponentLE (le_top : (q : ℝ≥0∞) ≤ ∞) u).eventuallyEq
+    have havg : ⨍ y in S, W1p.value (W1p.ofExponentLE le_top u) y ∂mu =
+        ⨍ y in S, W1p.value u y ∂mu := average_congr (ae_restrict_of_ae_restrict_of_subset hS hval)
+    have h := hfin q ENNReal.coe_ne_top (W1p.ofExponentLE le_top u)
+    rw [havg, Lp.eNorm_def,
+      eLpNorm_congr_ae (W1p.coeFn_gradient_ofExponentLE _ u).eventuallyEq] at h
+    exact (eLpNorm_congr_ae (hval.mono fun x hx ↦ by simp only [hx])).symm.trans_le h
+  rw [Lp.eNorm_def]
+  exact le_of_tendsto_of_tendsto tendsto_eLpNorm_atTop
+    (ENNReal.Tendsto.const_mul tendsto_eLpNorm_atTop (Or.inr ENNReal.ofReal_ne_top)) hle
+
 /-- **The Poincaré–Wirtinger inequality on a ball.**  On a ball of radius `R` the constant of
 `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex` is `2 ^ (n + 1) * R`: the deviation of
 `u ∈ W^{1,p}(B(c, R))` from its mean over the ball is at most `2 ^ (n + 1) * R` times the `Lᵖ`
 norm of its weak gradient.  The constant is proportional to `R`, as the scaling of both sides
 forces. -/
 theorem W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball {c : E} {R : ℝ}
-    (hp : p ≠ ∞) (hOmega : (Omega : Set E) = ball c R) (u : W1p mu Omega p) :
+    (hOmega : (Omega : Set E) = ball c R) (u : W1p mu Omega p) :
     eLpNorm (fun x ↦ W1p.value u x - ⨍ y in (Omega : Set E), W1p.value u y ∂mu) p
         (mu.restrict Omega) ≤
       ENNReal.ofReal (2 ^ (finrank ℝ E + 1) * R) * ‖W1p.gradient u‖ₑ := by
@@ -317,9 +372,8 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball {c : E} {R : ℝ}
       mu.real (Omega : Set E) ≤ 2 ^ (finrank ℝ E + 1) * R := by
     rw [hOmega]
     exact mu.addHaar_real_ball_mul_diam_ball_pow_div_le c hR
-  refine (W1p.eLpNorm_value_sub_setAverage_le_of_convex hp (hOmega ▸ convex_ball c R)
-    (hOmega ▸ Metric.isBounded_ball (x := c) (r := R))
-    Omega.isOpen.measurableSet.nullMeasurableSet subset_rfl hpos u).trans
+  refine (W1p.eLpNorm_value_sub_setAverage_le_of_convex (hOmega ▸ convex_ball c R)
+    (hOmega ▸ Metric.isBounded_ball (x := c) (r := R)) subset_rfl hpos u).trans
     (mul_le_mul' (ENNReal.ofReal_le_ofReal hconst) le_rfl)
 
 /-- **The Poincaré–Wirtinger inequality on a ball inside the domain, in `L²`.**  If
@@ -339,7 +393,7 @@ theorem W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset {c : E} {R : �
   set uB := W1p.restrictL hB u
   set m := ⨍ y in ball c R, W1p.value u y ∂mu
   have hval : W1p.value uB =ᵐ[mu.restrict (ball c R)] W1p.value u := W1p.value_restrictL_ae hB u
-  have hP := W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball (p := 2) (by simp)
+  have hP := W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball (p := 2)
     (rfl : (B : Set E) = ball c R) uB
   have havg : ⨍ y in (B : Set E), W1p.value uB y ∂mu = m := average_congr hval
   rw [havg] at hP
@@ -388,10 +442,10 @@ theorem W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset {c : E} {R : 
   set uB : W1p mu B 1 := W1p.ofExponentLE (Fact.out : 1 ≤ p) (W1p.restrictL hB u)
   set m := ⨍ y in ball c R, W1p.value u y ∂mu
   have hval : W1p.value uB =ᵐ[mu.restrict (ball c R)] W1p.value u :=
-    (W1p.value_ofExponentLE_ae _ _).trans (W1p.value_restrictL_ae hB u)
+    (W1p.coeFn_value_ofExponentLE _ _).eventuallyEq.trans (W1p.value_restrictL_ae hB u)
   have hgrad : W1p.gradient uB =ᵐ[mu.restrict (ball c R)] W1p.gradient u :=
-    (W1p.gradient_ofExponentLE_ae _ _).trans (W1p.gradient_restrictL_ae hB u)
-  have hP := W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball (p := 1) ENNReal.one_ne_top
+    (W1p.coeFn_gradient_ofExponentLE _ _).eventuallyEq.trans (W1p.gradient_restrictL_ae hB u)
+  have hP := W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball (p := 1)
     (rfl : (B : Set E) = ball c R) uB
   have havg : ⨍ y in (B : Set E), W1p.value uB y ∂mu = m := average_congr hval
   rw [havg] at hP
@@ -448,5 +502,42 @@ theorem W1p.exists_value_ae_eq_const_of_gradient_eq_zero
   obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
   obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hxr
   exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩
+
+/-- **Integration up to a constant on a preconnected domain.** If `Ω` is preconnected and the weak
+gradient of `u ∈ W^{1,p}(Ω)` agrees almost everywhere on `Ω` with the classical gradient `∇ q` of
+a function `q` that is `C¹` on `Ω`, then `u` agrees almost everywhere on `Ω` with `q + c` for some
+constant `c : ℝ`. Neither boundedness of `Ω` nor global `Lᵖ` integrability of `q` is needed. -/
+theorem W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq
+    (hconn : IsPreconnected (Omega : Set E)) {u : W1p mu Omega p} {q : E → ℝ}
+    (hq : ContDiffOn ℝ 1 q Omega)
+    (hgrad : (W1p.gradient u : E → E) =ᵐ[mu.restrict Omega] ∇ q) :
+    ∃ c : ℝ, (W1p.value u : E → ℝ) =ᵐ[mu.restrict Omega] fun x ↦ q x + c := by
+  have hloc : ∃ c : ℝ, ∀ᵐ y ∂mu.restrict Omega, W1p.value u y - q y = c := by
+    refine hconn.exists_ae_eq_const_of_forall_nhds (HereditarilyLindelofSpace.isLindelof _)
+      fun x hx ↦ ?_
+    obtain ⟨R, hR, hxR⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
+    set r := R / 2
+    have hr : 0 < r := half_pos hR
+    let B : Opens E := ⟨ball x r, isOpen_ball⟩
+    have hKsub : closedBall x r ⊆ (Omega : Set E) :=
+      (closedBall_subset_ball (half_lt_self hR)).trans hxR
+    have hBO : B ≤ Omega := ball_subset_closedBall.trans hKsub
+    obtain ⟨v, hvval, hvgrad⟩ :=
+      W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact (mu := mu) (Omega := B) (p := p)
+        Omega.isOpen hq (isCompact_closedBall x r) ball_subset_closedBall hKsub
+    have hdiff_grad : W1p.gradient (W1p.restrictL hBO u - v) = 0 := by
+      rw [W1p.gradient_sub, sub_eq_zero]
+      apply Lp.ext
+      exact (W1p.gradient_restrictL_ae hBO u).trans <|
+        Filter.EventuallyEq.trans (ae_restrict_of_ae_restrict_of_subset hBO hgrad) hvgrad.symm
+    obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero
+      (Omega := B) (convex_ball x r).isPreconnected hdiff_grad
+    refine ⟨c, ball x r, ball_mem_nhds x hr, ?_⟩
+    filter_upwards [hc, W1p.value_sub_ae (W1p.restrictL hBO u) v,
+      W1p.value_restrictL_ae hBO u, hvval] with y hy hsub huB hvB
+    rw [← hy, hsub, Pi.sub_apply, huB, hvB]
+  obtain ⟨c, hc⟩ := hloc
+  refine ⟨c, hc.mono fun x hx ↦ ?_⟩
+  linarith
 
 end TauCeti

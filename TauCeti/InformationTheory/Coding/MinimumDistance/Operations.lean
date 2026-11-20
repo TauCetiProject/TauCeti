@@ -78,7 +78,7 @@ theorem hammingMinDist_le_hammingMinDist_shorten (hS : shorten C s ≠ ⊥) :
   obtain ⟨y, hy, hy0, hyd⟩ := exists_hammingNorm_eq_hammingMinDist hS
   obtain ⟨x, hx, hxoff, hxy⟩ := mem_shorten.mp hy
   have hxs : s.domRestrict x = y := funext hxy
-  have hxsc : sᶜ.domRestrict x = 0 := funext fun i ↦ hxoff i i.2
+  have hxsc : sᶜ.domRestrict x = 0 := funext fun i ↦ hxoff i i.property
   have hx0 : x ≠ 0 := fun h ↦ hy0 (by rw [← hxs, h]; rfl)
   calc
     hammingMinDist (C : Set (ι → A)) ≤ hammingNorm x :=

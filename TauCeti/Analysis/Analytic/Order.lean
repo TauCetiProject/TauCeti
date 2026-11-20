@@ -45,9 +45,9 @@ at `z` keeps its order as that exponent. The finiteness of the zero set itself o
   `(z - z₀) ^ n • u z` with `u` continuous at `z₀` forces order at least `n`.
 * `AnalyticAt.natCast_le_analyticOrderAt_iff_isBigO`,
   `AnalyticAt.analyticOrderAt_eq_natCast_iff_isTheta`, and
-  `AnalyticAt.analyticOrderAt_eq_top_iff_forall_isBigO`: an analytic function has order at least
-  `n` when it is `O((z - z₀) ^ n)`, order `n` when it is comparable to `(z - z₀) ^ n`, and
-  infinite order when it is `O((z - z₀) ^ n)` for every `n`.
+  `AnalyticAt.analyticOrderAt_eq_top_iff_forall_isBigO`: an analytic function has order at least `n`
+  exactly when it is `O((z - z₀) ^ n)`, order `n` exactly when it is comparable to `(z - z₀) ^ n`,
+  and infinite order exactly when it is `O((z - z₀) ^ n)` for every `n`.
 * `TauCeti.isBigO_sub_pow_of_le_analyticOrderAt` and
   `TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt`: a positive lower bound `T` on
   `analyticOrderAt g z₀` forces `g =O[𝓝 z₀] (· - z₀) ^ T` and
@@ -200,14 +200,13 @@ theorem _root_.AnalyticAt.natCast_le_analyticOrderAt_iff_isBigO {E : Type*}
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} (hf : AnalyticAt 𝕜 f z₀) {n : ℕ} :
     (n : ℕ∞) ≤ analyticOrderAt f z₀ ↔ f =O[𝓝 z₀] fun z ↦ (z - z₀) ^ n := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨u, hu, hfu⟩ := (natCast_le_analyticOrderAt hf).1 h
-    exact Asymptotics.IsBigO.congr' (by
-      simpa only [smul_eq_mul, mul_one] using
-        (Asymptotics.isBigO_refl (fun z ↦ (z - z₀) ^ n) (𝓝 z₀)).smul
-          (hu.continuousAt.norm.isBoundedUnder_le.isBigO_one 𝕜 (f := u)))
-      (hfu.mono fun z hz ↦ hz.symm) EventuallyEq.rfl
-  · have hle := hf.analyticOrderAt_le_of_isBigO h
-    rwa [← Pi.pow_def, analyticOrderAt_centeredMonomial] at hle
+  · obtain ⟨g, hg, hfg⟩ := (natCast_le_analyticOrderAt hf).1 h
+    refine Asymptotics.IsBigO.congr' ?_ (hfg.mono fun _ hz ↦ hz.symm) EventuallyEq.rfl
+    simpa only [smul_eq_mul, mul_one] using
+      (Asymptotics.isBigO_refl (fun z ↦ (z - z₀) ^ n) (𝓝 z₀)).smul
+        (hg.continuousAt.norm.isBoundedUnder_le.isBigO_one 𝕜)
+  · have hn : analyticOrderAt (fun z ↦ (z - z₀) ^ n) z₀ = n := analyticOrderAt_centeredMonomial
+    exact hn ▸ hf.analyticOrderAt_le_of_isBigO h
 
 /-- A function analytic at `z₀` has order `n` there exactly when its size is comparable to
 `‖z - z₀‖ ^ n` near `z₀`. -/
@@ -330,6 +329,20 @@ theorem eq_of_eventually_mul_eq_sub_pow_mul {Φ σ v : 𝕜 → 𝕜} {z : 𝕜}
 
 end TauCeti
 
+/-- A function with analytic order at least `T ≥ 1` at `z₀` satisfies
+`g w - g z₀ = o(‖w - z₀‖ ^ (T - 1))` near `z₀`. No analyticity assumption is needed because a
+positive `analyticOrderAt` already forces `g` to be analytic and vanish at `z₀`. -/
+theorem TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {g : 𝕜 → E}
+    {z₀ : 𝕜} {T : ℕ} (hT : 1 ≤ T) (h : (T : ℕ∞) ≤ analyticOrderAt g z₀) :
+    Asymptotics.IsLittleO (𝓝 z₀) (fun w ↦ g w - g z₀) (fun w ↦ ‖w - z₀‖ ^ (T - 1)) := by
+  have hne : analyticOrderAt g z₀ ≠ 0 := ((Nat.cast_pos.2 hT).trans_le h).ne'
+  obtain ⟨hg, hg₀⟩ := analyticOrderAt_ne_zero.1 hne
+  have hO : (fun w ↦ g w - g z₀) =O[𝓝 z₀] fun w ↦ ‖w - z₀‖ ^ T := by
+    simpa only [hg₀, sub_zero, norm_pow] using
+      (hg.natCast_le_analyticOrderAt_iff_isBigO.1 h).norm_right
+  exact hO.trans_isLittleO (Asymptotics.isLittleO_pow_sub_pow_sub z₀ (Nat.sub_lt hT zero_lt_one))
+
 /-- Outside zero and at most one additional scalar, subtracting a function from
 a scalar multiple of a monomial has order equal to the minimum of their orders. The
 exceptional scalar accounts for cancellation when the two orders coincide. If `f` is not analytic
@@ -377,18 +390,5 @@ theorem TauCeti.isBigO_sub_pow_of_le_analyticOrderAt {𝕜 : Type*} [Nontriviall
     g =O[𝓝 z₀] fun w ↦ (w - z₀) ^ T := by
   have hne : analyticOrderAt g z₀ ≠ 0 := ne_of_gt (lt_of_lt_of_le (by positivity) h)
   exact ((analyticOrderAt_ne_zero.1 hne).1.natCast_le_analyticOrderAt_iff_isBigO).1 h
-
-/-- If `g` has analytic order at least `T ≥ 1` at `z₀`, then `g w - g z₀ = o(‖w - z₀‖ ^ (T - 1))`
-near `z₀`. Analyticity of `g` at `z₀` and vanishing `g z₀ = 0` follow from the positive lower
-bound on the order. -/
-theorem TauCeti.isLittleO_sub_pow_sub_one_of_le_analyticOrderAt {𝕜 : Type*}
-    [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {g : 𝕜 → E} {z₀ : 𝕜} {T : ℕ} (hT : 1 ≤ T) (h : (T : ℕ∞) ≤ analyticOrderAt g z₀) :
-    (fun w ↦ g w - g z₀) =o[𝓝 z₀] fun w ↦ ‖w - z₀‖ ^ (T - 1) := by
-  have hne : analyticOrderAt g z₀ ≠ 0 := ne_of_gt (lt_of_lt_of_le (by positivity) h)
-  have hg0 : g z₀ = 0 := apply_eq_zero_of_analyticOrderAt_ne_zero hne
-  have hO : (fun w ↦ g w - g z₀) =O[𝓝 z₀] fun w ↦ ‖w - z₀‖ ^ T := by
-    simpa [hg0, norm_pow] using (TauCeti.isBigO_sub_pow_of_le_analyticOrderAt hT h).norm_right
-  exact hO.trans_isLittleO (Asymptotics.isLittleO_pow_sub_pow_sub z₀ (Nat.sub_lt hT zero_lt_one))
 
 end

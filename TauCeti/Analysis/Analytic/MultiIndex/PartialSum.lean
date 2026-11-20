@@ -14,16 +14,15 @@ On a finite coordinate space `ι → 𝕜`, each homogeneous term `p k (fun _ �
 multilinear series `p` expands into multi-index monomials of total degree `k`
 (`FormalMultilinearSeries.apply_eq_sum_mvCoeff`). Summing over `k < T` expresses the Taylor partial
 sum `p.partialSum T z` in terms of `p.mvCoeff`, and the triangle inequality bounds
-`‖p k (fun _ ↦ z)‖` and `‖p.partialSum T z‖` on the closed polydisc `‖z‖ ≤ r` by the multi-index
-majorant `∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k`.
+`‖p k (fun _ ↦ z)‖` on the closed polydisc `‖z‖ ≤ r` by the multi-index majorant
+`∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k`.
 
 ## Main results
 
 * `FormalMultilinearSeries.partialSum_eq_sum_mvCoeff`: the Taylor partial sum of order `T` written
   degree by degree in terms of `FormalMultilinearSeries.mvCoeff`.
-* `FormalMultilinearSeries.norm_apply_le_sum_mvCoeff` and
-  `FormalMultilinearSeries.norm_partialSum_le_sum_mvCoeff`: norm bounds on homogeneous terms and
-  partial sums on `‖z‖ ≤ r` in terms of `‖p.mvCoeff α‖ * r ^ k`.
+* `FormalMultilinearSeries.norm_apply_le_sum_mvCoeff`: norm bound on a homogeneous term on
+  `‖z‖ ≤ r` in terms of `‖p.mvCoeff α‖ * r ^ k`.
 -/
 
 public section
@@ -55,13 +54,5 @@ theorem norm_apply_le_sum_mvCoeff [DecidableEq ι]
     (norm_nonneg _)
   rw [norm_pow]
   exact pow_le_pow_left₀ (norm_nonneg _) ((norm_le_pi_norm z i).trans hz) _
-
-/-- On the closed polydisc `‖z‖ ≤ r`, the Taylor partial sum `p.partialSum T z` has norm at most
-`∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k`. -/
-theorem norm_partialSum_le_sum_mvCoeff [DecidableEq ι]
-    (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F) (T : ℕ) {z : ι → 𝕜} {r : ℝ} (hz : ‖z‖ ≤ r) :
-    ‖p.partialSum T z‖ ≤
-      ∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k :=
-  (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦ p.norm_apply_le_sum_mvCoeff k hz)
 
 end FormalMultilinearSeries

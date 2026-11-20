@@ -110,7 +110,7 @@ theorem free_of_isLocallyConstant_finrank_fiber
   intro p
   have heq := (((PrimeSpectrum.le_iff_specializes p
     ⟨IsLocalRing.maximalIdeal R, inferInstance⟩).mp
-      (IsLocalRing.le_maximalIdeal p.2.1)).map h.continuous).eq
+      (IsLocalRing.le_maximalIdeal p.isPrime.ne_top')).map h.continuous).eq
   refine heq.trans ?_
   exact ((IsLocalRing.maximalIdeal R).finrank_tensorProduct_eq_finrank_fiber M
     (IsLocalRing.ResidueField R) (by

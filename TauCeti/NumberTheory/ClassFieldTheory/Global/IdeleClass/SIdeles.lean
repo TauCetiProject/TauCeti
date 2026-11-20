@@ -117,7 +117,8 @@ theorem ideleClassRep_ρ_mk (σ : L ≃ₐ[K] L) (a : IdeleGroup (𝓞 L) L) :
 
 /-- The principal `S`-idele of an `S`-unit, as a homomorphism `U_{L,S} → I_{L,S}`. -/
 private def sUnitsToSIdelesHom : (primesAbove (𝓞 K) (𝓞 L) S).unit L →* sIdeles L S where
-  toFun a := ⟨IdeleGroup.unitEmbedding (𝓞 L) L a.1, (unitEmbedding_mem_sIdeles_iff S a.1).2 a.2⟩
+  toFun a := ⟨IdeleGroup.unitEmbedding (𝓞 L) L a.val, (unitEmbedding_mem_sIdeles_iff S a.val).2
+      a.property⟩
   map_one' := Subtype.ext (map_one _)
   map_mul' _ _ := Subtype.ext (map_mul _ _ _)
 
@@ -125,7 +126,7 @@ private theorem sUnitsToSIdelesHom_smul (σ : L ≃ₐ[K] L) (a : (primesAbove (
     sUnitsToSIdelesHom L S (σ • a) = σ • sUnitsToSIdelesHom L S a :=
   Subtype.ext <| by
     rw [coe_smul_sIdeles]
-    exact (congrArg _ (coe_smul_unit_primesAbove σ a)).trans (smul_unitEmbedding σ a.1).symm
+    exact (congrArg _ (coe_smul_unit_primesAbove σ a)).trans (smul_unitEmbedding σ a.val).symm
 
 /-- The inclusion `U_{L,S} → I_{L,S}` of the `S`-units as principal `S`-ideles, as a morphism of
 representations of `Aut(L/K)`. -/
@@ -138,7 +139,7 @@ def sUnitsToSIdeles : sUnitsRep L S ⟶ sIdelesRep L S :=
 @[simp]
 theorem sUnitsToSIdeles_hom_apply (a : Additive ((primesAbove (𝓞 K) (𝓞 L) S).unit L)) :
     (sUnitsToSIdeles L S).hom a = Additive.ofMul ⟨IdeleGroup.unitEmbedding (𝓞 L) L a.toMul,
-      (unitEmbedding_mem_sIdeles_iff S _).2 a.toMul.2⟩ :=
+      (unitEmbedding_mem_sIdeles_iff S _).2 a.toMul.property⟩ :=
   (rfl)
 
 variable (K) in
@@ -207,7 +208,7 @@ principal ideles and the quotient map onto the idele classes. -/
 def sIdeleShortComplex : ShortComplex (Rep ℤ (L ≃ₐ[K] L)) :=
   ShortComplex.mk (sUnitsToSIdeles L S) (sIdelesToIdeleClass L S) <| by
     ext a
-    exact congrArg Additive.ofMul (QuotientGroup.eq_one_iff _ |>.2 ⟨a.toMul.1, rfl⟩)
+    exact congrArg Additive.ofMul (QuotientGroup.eq_one_iff _ |>.2 ⟨a.toMul.val, rfl⟩)
 
 variable {S} in
 /-- **The sequence `0 → U_{L,S} → I_{L,S} → C_L → 0` is exact** when the classes of the primes
@@ -223,10 +224,10 @@ theorem sIdeleShortComplex_shortExact
     · have hx : (x.toMul : IdeleGroup (𝓞 L) L) ∈ IdeleGroup.principalSubgroup (𝓞 L) L :=
         (QuotientGroup.eq_one_iff _).1 (congrArg Additive.toMul hx)
       obtain ⟨a, ha, hax⟩ :=
-        (mem_principalSubgroup_iff_exists_mem_unit_of_mem_sIdeles x.toMul.2).1 hx
+        (mem_principalSubgroup_iff_exists_mem_unit_of_mem_sIdeles x.toMul.property).1 hx
       exact ⟨Additive.ofMul ⟨a, ha⟩, congrArg Additive.ofMul (Subtype.ext hax)⟩
     · rintro ⟨a, rfl⟩
-      exact congrArg Additive.ofMul (QuotientGroup.eq_one_iff _ |>.2 ⟨a.toMul.1, rfl⟩)
+      exact congrArg Additive.ofMul (QuotientGroup.eq_one_iff _ |>.2 ⟨a.toMul.val, rfl⟩)
   mono_f := by
     rw [Rep.mono_iff_injective]
     intro (a : Additive ((primesAbove (𝓞 K) (𝓞 L) S).unit L)) b hab
