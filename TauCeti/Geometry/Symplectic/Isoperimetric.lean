@@ -12,6 +12,7 @@ import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.MeasureTheory.Integral.Circle.LIntegral
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.TangentCone.Basic
+import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!

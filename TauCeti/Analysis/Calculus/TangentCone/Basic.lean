@@ -30,8 +30,6 @@ which lets chart transitions of a manifold with corners compare the corners of t
 * `TauCeti.uniqueDiffOn_pi_Ici`: a closed coordinate orthant is a set of unique differentiability.
 * `TauCeti.uniqueDiffOn_setOfPred_le_im`: a closed half-plane `{z : ℂ | a ≤ z.im}` is a set of
   unique differentiability.
-* `TauCeti.setOfPred_le_im_mem_nhds`: a closed half-plane is a neighbourhood of each point of the
-  open half-plane.
 * `TauCeti.mem_tangentConeAt_setOf_im_eq`: a real direction is tangent to a horizontal line in `ℂ`.
 * `IsPreconnected.uniqueDiffOn`: a preconnected set of reals containing two distinct points is a
   set of unique differentiability.
@@ -110,12 +108,6 @@ theorem TauCeti.uniqueDiffOn_pi_Ici {ι : Type*} (a : ι → ℝ) : UniqueDiffOn
 theorem TauCeti.uniqueDiffOn_setOfPred_le_im (a : ℝ) : UniqueDiffOn ℝ {z : ℂ | a ≤ z.im} :=
   uniqueDiffOn_convex (convex_halfSpace_im_ge a)
     ⟨Complex.I * (a + 1), by rw [Complex.interior_setOfPred_le_im]; simp⟩
-
-/-- A closed half-plane `{z : ℂ | a ≤ z.im}` is a neighbourhood of each point of the open
-half-plane `{z | a < z.im}`. -/
-theorem TauCeti.setOfPred_le_im_mem_nhds {a : ℝ} {w : ℂ} (hw : a < w.im) :
-    {z : ℂ | a ≤ z.im} ∈ 𝓝 w :=
-  mem_interior_iff_mem_nhds.mp (by rwa [Complex.interior_setOfPred_le_im])
 
 /-- A real direction `v` is tangent to the horizontal line `{y : ℂ | y.im = c}` at each of its
 points. -/
