@@ -250,8 +250,9 @@ private theorem thue_gap_exponent_le_of_forall {κ ε d ℓ₁ t G : ℝ} (hκ :
   · have hxr : (κ - 1) * t ≤ (d / 2 + 3 * (ε * d) / 2) * ((⌈x⌉₊ - 1 : ℕ) + 1) := by
       rw [← div_le_iff₀' (by positivity), hr, sub_add_cancel]
       exact Nat.le_ceil x
-    have := thue_gap_exponent_le hκ hd hu₀ hu (by rw [ha] at hcase; nlinarith) (by linarith) hxr
-      (ha ▸ hcase)
+    -- `B ≥ 1` follows from `(2 κ + 2) ε d ≤ κ - 1 - d / 2`, with `5 ε d / 2 ≥ 0` to spare.
+    have hB : 1 ≤ κ - 2 * (ε * d) * (κ - 1) - (d / 2 + 3 * (ε * d) / 2) := by linarith
+    have := thue_gap_exponent_le hκ hd hu₀ hu hB (by linarith) hxr (ha ▸ hcase)
     rw [← le_div_iff₀ hu₀] at this
     linarith
 
@@ -315,8 +316,8 @@ theorem thue_approximation {α : ℂ} (hd : 2 ≤ (minpoly ℚ α).natDegree) {�
     by_contra h
     rw [minpoly.eq_zero h, natDegree_zero] at hd
     omega
-  have hb : 0 < Algebra.natDenominator α := Nat.pos_of_ne_zero <|
-    IsAlgebraic.natDenominator_ne_zero ((IsFractionRing.isAlgebraic_iff ℤ ℚ ℂ).2 hα.isAlgebraic)
+  have hb : 0 < Algebra.natDenominator α :=
+    Nat.pos_of_ne_zero (Algebra.natDenominator_ne_zero_of_isAlgebraic_rat hα.isAlgebraic)
   have hbα : IsIntegral ℤ ((Algebra.natDenominator α : ℂ) * α) := by
     simpa [nsmul_eq_mul] using Algebra.isIntegral_natDenominator_smul α
   have hd₀ : (0 : ℝ) < (minpoly ℚ α).natDegree := by exact_mod_cast (by omega : 0 < _)
