@@ -199,27 +199,12 @@ private theorem holderWith_ofDerivFields_zero_succ_slabMk (m : ℕ) (h : m + 2 =
     (holderWith_mixedDerivL_slabMk G (r := 0) (m := m) (by omega) x)
 
 omit hG hH in
-/-- The time Hölder bound of the fields with a time derivative, read off `H`. -/
-private theorem holderWith_ofDerivFields_succ_slabMk (r m : ℕ) (h : 2 * r + m + 3 = k + 2)
-    (x : E) :
-    HolderWith ‖timeSliceL r m H‖₊ ((1 + α) / 2)
-      fun t : Icc a b ↦ ofDerivFields u G H (r + 1) m (slabMk x t) :=
-  holderWith_mixedDerivL_slabMk H (by omega) x
-
-omit hG hH in
 /-- The spatial Hölder bound of the spatial derivatives `D_x^(m+1) u` read off `G`. -/
 private theorem holderWith_ofDerivFields_zero_succ (m : ℕ) (h : m + 1 = k + 2) :
     HolderWith ‖mixedDerivHolderL 0 m G‖₊ α
       (ofDerivFields u G H 0 (m + 1) : slab (E := E) a b → E [×(m + 1)]→L[ℝ] F) :=
   (continuousMultilinearCurryRightEquiv' ℝ m E F).symm.isometry.comp_holderWith
     (holderWith_mixedDerivL G (r := 0) (m := m) (by omega))
-
-omit hG hH in
-/-- The spatial Hölder bound of the fields with a time derivative, read off `H`. -/
-private theorem holderWith_ofDerivFields_succ (r m : ℕ) (h : 2 * r + m + 2 = k + 2) :
-    HolderWith ‖mixedDerivHolderL r m H‖₊ α
-      (ofDerivFields u G H (r + 1) m : slab (E := E) a b → E [×m]→L[ℝ] F) :=
-  holderWith_mixedDerivL H (by omega)
 
 omit hG hH in
 private theorem holderWith_ofDerivFields_slabMk (r m : ℕ) (h : 2 * r + m + 1 = k + 2) :
@@ -229,7 +214,8 @@ private theorem holderWith_ofDerivFields_slabMk (r m : ℕ) (h : 2 * r + m + 1 =
   · rcases m with _ | m
     · omega
     · exact ⟨_, holderWith_ofDerivFields_zero_succ_slabMk m (by omega)⟩
-  · exact ⟨_, holderWith_ofDerivFields_succ_slabMk r m (by omega)⟩
+  · rw [ofDerivFields_succ]
+    exact ⟨_, holderWith_mixedDerivL_slabMk H (r := r) (m := m) (by omega)⟩
 
 omit hG hH in
 private theorem memHolder_ofDerivFields (r m : ℕ) (h : 2 * r + m = k + 2) :
@@ -238,7 +224,8 @@ private theorem memHolder_ofDerivFields (r m : ℕ) (h : 2 * r + m = k + 2) :
   · rcases m with _ | m
     · omega
     · exact ⟨_, holderWith_ofDerivFields_zero_succ m (by omega)⟩
-  · exact ⟨_, holderWith_ofDerivFields_succ r m (by omega)⟩
+  · rw [ofDerivFields_succ]
+    exact memHolder_mixedDerivL H (r := r) (m := m) (by omega)
 
 omit hG hH in
 variable (u G H) in
@@ -330,10 +317,10 @@ private theorem norm_add_norm_add_norm_ofSpatialFDerivTimeDeriv_le :
       (fun h ↦ ?_)).trans (by linarith [norm_nonneg u, norm_nonneg G])
     · rw [hfield, ofDerivFields_succ]
       exact norm_mixedDerivL_le H r m
-    · rw [hfield]
-      exact (holderWith_ofDerivFields_succ_slabMk r m (by omega) x).mono le_self_add
-    · rw [hfield]
-      exact (holderWith_ofDerivFields_succ r m (by omega)).mono le_add_self
+    · rw [hfield, ofDerivFields_succ]
+      exact (holderWith_mixedDerivL_slabMk H (by omega) x).mono le_self_add
+    · rw [hfield, ofDerivFields_succ]
+      exact (holderWith_mixedDerivL H (by omega)).mono le_add_self
 
 /-- **The norm estimate.** The order-`(k + 2)` norm of the map built from its first derivatives is
 controlled by the supremum of the map and the norms of its spatial and time derivatives in the
