@@ -31,8 +31,9 @@ holomorphic charts, so isothermal charts cover `X`, and the identity is a biholo
 to `X`. The two constructions are mutually inverse.
 
 That isothermal charts exist, that is `HasIsothermalCharts j` for every smooth `j` (the
-integrability of almost complex structures in real dimension two), is not proved here: it follows
-from solving the Beltrami equation (McDuff–Salamon, Appendix E).
+integrability of almost complex structures in real dimension two), follows from solving the
+Beltrami equation (McDuff–Salamon, Appendix E); it is proved in
+`TauCeti.Geometry.Manifold.Complex.Isothermal.Existence`.
 
 ## Main declarations
 
