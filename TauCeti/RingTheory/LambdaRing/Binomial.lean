@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Binomial
 public import TauCeti.RingTheory.LambdaRing.Basic
+import TauCeti.RingTheory.Binomial
 
 /-!
 # The binomial pre-λ structure
@@ -36,15 +37,6 @@ a line element. The operations are not additive: `λ² 2 = 1` while `λ² 1 + λ
 public noncomputable section
 
 open PowerSeries
-
-namespace Ring
-
-/-- `(1 choose n) = 0` for `n ≥ 2`, the analogue of `Ring.choose_zero_pos` for `1`. -/
-theorem choose_one_of_two_le (R : Type*) [NonAssocRing R] [Pow R ℕ] [NatPowAssoc R]
-    [BinomialRing R] {n : ℕ} (hn : 2 ≤ n) : choose (1 : R) n = 0 := by
-  rw [← Nat.cast_one, choose_natCast, Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero]
-
-end Ring
 
 namespace TauCeti
 

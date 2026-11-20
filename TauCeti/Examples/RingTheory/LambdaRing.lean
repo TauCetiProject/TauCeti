@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.LambdaRing.Binomial
 public import TauCeti.RingTheory.LambdaRing.MonoidAlgebra
+import TauCeti.RingTheory.Binomial
 
 /-!
 # Examples of pre-λ structures

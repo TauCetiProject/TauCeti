@@ -509,6 +509,7 @@ The identity combines them without division, which is the integral step needed i
 
 ## Main results
 
+* `TauCeti.Ring.choose_one_of_two_le`: `(1 choose n) = 0` for `n ≥ 2`.
 * `TauCeti.Ring.choose_neg_one` and `TauCeti.Ring.choose_neg_natCast_sub_one`: upper negation at
   `-1` (`(-1 choose n) = (-1) ^ n`) and at `-k - 1`
   (`(-k - 1 choose i) = (-1) ^ i * (k + i choose i)`), together with the signed cancellation
@@ -588,6 +589,14 @@ theorem add_one_nsmul_multichoose_add_one {R : Type*} [Semiring R] [BinomialRing
     ← Nat.factorial_succ]
   simp only [_root_.Ring.factorial_nsmul_multichoose_eq_ascPochhammer,
     Polynomial.ascPochhammer_smeval_eq_eval, ascPochhammer_succ_eval]
+
+/-! ## The coefficients of one -/
+
+/-- `(1 choose n) = 0` for `n ≥ 2`, the analogue of `Ring.choose_zero_pos` for `1`. -/
+theorem choose_one_of_two_le (R : Type*) [NonAssocRing R] [Pow R ℕ] [NatPowAssoc R]
+    [BinomialRing R] {n : ℕ} (hn : 2 ≤ n) : _root_.Ring.choose (1 : R) n = 0 := by
+  rw [← Nat.cast_one, _root_.Ring.choose_natCast, Nat.choose_eq_zero_of_lt (by omega),
+    Nat.cast_zero]
 
 /-! ## Negating the argument -/
 

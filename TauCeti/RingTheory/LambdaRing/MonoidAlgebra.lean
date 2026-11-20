@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Binomial
 public import TauCeti.Algebra.MonoidAlgebra.Basic
 public import TauCeti.RingTheory.LambdaRing.Basic
+import TauCeti.RingTheory.Binomial
 import TauCeti.RingTheory.LambdaRing.Binomial
 
 /-!
