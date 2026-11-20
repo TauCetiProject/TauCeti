@@ -256,6 +256,30 @@ theorem coe_kerExternalProductBlockCompletionEquiv_symm_apply
             Completion (V₁ ⊗[𝕜] W₁))) := by
   simp [kerExternalProductBlockCompletionEquiv]
 
+/-- `kerExternalProductBlockCompletionEquiv` sends a kernel vector to the tensor of kernel
+vectors whose inclusion is its first component. -/
+@[simp]
+theorem coe_mapIncl_kerExternalProductBlockCompletionEquiv_apply_fst
+    (w : (externalProductBlockCompletion A B).ker) :
+    ((mapIncl A.ker B.ker (kerExternalProductBlockCompletionEquiv A B w).1 :
+        V₀ ⊗[𝕜] W₀) : Completion (V₀ ⊗[𝕜] W₀)) =
+      (w : WithLp 2 (Completion (V₀ ⊗[𝕜] W₀) × Completion (V₁ ⊗[𝕜] W₁))).fst := by
+  simpa [kerExternalProductBlockCompletionEquiv] using
+    apply_kerEquivProdOfInjective_apply_fst _ _ _
+      (externalProductBlockCompletion_apply_eq_zero_iff_mem_range A B) w
+
+/-- `kerExternalProductBlockCompletionEquiv` sends a kernel vector to the tensor of kernel
+vectors whose inclusion is its second component. -/
+@[simp]
+theorem coe_mapIncl_kerExternalProductBlockCompletionEquiv_apply_snd
+    (w : (externalProductBlockCompletion A B).ker) :
+    ((mapIncl A.adjoint.ker B.adjoint.ker (kerExternalProductBlockCompletionEquiv A B w).2 :
+        V₁ ⊗[𝕜] W₁) : Completion (V₁ ⊗[𝕜] W₁)) =
+      (w : WithLp 2 (Completion (V₀ ⊗[𝕜] W₀) × Completion (V₁ ⊗[𝕜] W₁))).snd := by
+  simpa [kerExternalProductBlockCompletionEquiv] using
+    apply_kerEquivProdOfInjective_apply_snd _ _ _
+      (externalProductBlockCompletion_apply_eq_zero_iff_mem_range A B) w
+
 /-- The kernel of the adjoint of the external product block, identified with
 `(ker A† ⊗ ker B) × (ker A ⊗ ker B†)` through the inclusions of the kernels
 (`ContinuousLinearMap.coe_kerAdjointExternalProductBlockCompletionEquiv_symm_apply`). When `D` has
@@ -281,6 +305,30 @@ theorem coe_kerAdjointExternalProductBlockCompletionEquiv_symm_apply
         (((mapIncl A.adjoint.ker B.ker p.1 : V₁ ⊗[𝕜] W₀) : Completion (V₁ ⊗[𝕜] W₀)),
           ((mapIncl A.ker B.adjoint.ker p.2 : V₀ ⊗[𝕜] W₁) : Completion (V₀ ⊗[𝕜] W₁))) := by
   simp [kerAdjointExternalProductBlockCompletionEquiv]
+
+/-- `kerAdjointExternalProductBlockCompletionEquiv` sends a kernel vector to the tensor of kernel
+vectors whose inclusion is its first component. -/
+@[simp]
+theorem coe_mapIncl_kerAdjointExternalProductBlockCompletionEquiv_apply_fst
+    (w : (externalProductBlockCompletion A B).adjoint.ker) :
+    ((mapIncl A.adjoint.ker B.ker (kerAdjointExternalProductBlockCompletionEquiv A B w).1 :
+        V₁ ⊗[𝕜] W₀) : Completion (V₁ ⊗[𝕜] W₀)) =
+      (w : WithLp 2 (Completion (V₁ ⊗[𝕜] W₀) × Completion (V₀ ⊗[𝕜] W₁))).fst := by
+  simpa [kerAdjointExternalProductBlockCompletionEquiv] using
+    apply_kerEquivProdOfInjective_apply_fst _ _ _
+      (adjoint_externalProductBlockCompletion_apply_eq_zero_iff_mem_range A B) w
+
+/-- `kerAdjointExternalProductBlockCompletionEquiv` sends a kernel vector to the tensor of kernel
+vectors whose inclusion is its second component. -/
+@[simp]
+theorem coe_mapIncl_kerAdjointExternalProductBlockCompletionEquiv_apply_snd
+    (w : (externalProductBlockCompletion A B).adjoint.ker) :
+    ((mapIncl A.ker B.adjoint.ker (kerAdjointExternalProductBlockCompletionEquiv A B w).2 :
+        V₀ ⊗[𝕜] W₁) : Completion (V₀ ⊗[𝕜] W₁)) =
+      (w : WithLp 2 (Completion (V₁ ⊗[𝕜] W₀) × Completion (V₀ ⊗[𝕜] W₁))).snd := by
+  simpa [kerAdjointExternalProductBlockCompletionEquiv] using
+    apply_kerEquivProdOfInjective_apply_snd _ _ _
+      (adjoint_externalProductBlockCompletion_apply_eq_zero_iff_mem_range A B) w
 
 /-- The dimension of the kernel of the external product block is
 `dim ker A · dim ker B + dim ker A† · dim ker B†`. -/

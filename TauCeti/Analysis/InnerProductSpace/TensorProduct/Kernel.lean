@@ -49,10 +49,6 @@ ranges of operators built from `f ⊗ 1` and `1 ⊗ g` closed.
 
 ## Main declarations
 
-* `TensorProduct.eq_zero_of_forall_inner_coe_tmul`: a vector orthogonal to every pure tensor
-  vanishes.
-* `TensorProduct.apply_mem_of_forall_apply_coe_tmul_mem`: a bounded operator maps the completed
-  tensor product into a closed submodule if it maps every pure tensor there.
 * `ContinuousLinearMap.rTensorCompletion_apply_eq_zero_iff`,
   `ContinuousLinearMap.lTensorCompletion_apply_eq_zero_iff` (and the submodule forms
   `ContinuousLinearMap.ker_rTensorCompletion`, `ContinuousLinearMap.ker_lTensorCompletion`): the
@@ -87,31 +83,6 @@ open scoped InnerProductSpace
 variable {𝕜 E E' F F' : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E']
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F']
-
-namespace TensorProduct
-
-/-- A vector of the completed tensor product that is orthogonal to every pure tensor vanishes. -/
-theorem eq_zero_of_forall_inner_coe_tmul {w : Completion (E ⊗[𝕜] F)}
-    (h : ∀ x y, ⟪((x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) : Completion (E ⊗[𝕜] F)), w⟫_𝕜 = 0) : w = 0 := by
-  have hw : innerSL 𝕜 w = 0 := completion_ext fun x y ↦ by
-    rw [innerSL_apply_apply, ← inner_conj_symm, h, map_zero, zero_apply]
-  simpa using congr($hw w)
-
-/-- A bounded operator out of the completed tensor product maps into a closed submodule as soon as
-it maps every pure tensor into it. -/
-theorem apply_mem_of_forall_apply_coe_tmul_mem {M : Type*} [AddCommGroup M] [Module 𝕜 M]
-    [TopologicalSpace M] {T : Completion (E ⊗[𝕜] F) →L[𝕜] M} {S : Submodule 𝕜 M}
-    (hS : IsClosed (S : Set M))
-    (h : ∀ x y, T ((x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) : Completion (E ⊗[𝕜] F)) ∈ S)
-    (w : Completion (E ⊗[𝕜] F)) : T w ∈ S := by
-  have hle : Submodule.span 𝕜 (Set.range fun p : E × F ↦
-      ((p.1 ⊗ₜ[𝕜] p.2 : E ⊗[𝕜] F) : Completion (E ⊗[𝕜] F))) ≤ S.comap (T : _ →ₗ[𝕜] M) :=
-    Submodule.span_le.2 <| Set.range_subset_iff.2 fun p ↦ h p.1 p.2
-  have htop := Submodule.topologicalClosure_minimal _ hle (hS.preimage T.continuous)
-  rw [dense_span_coe_tmul] at htop
-  exact htop Submodule.mem_top
-
-end TensorProduct
 
 namespace ContinuousLinearMap
 
@@ -177,39 +148,13 @@ section lTensor
 
 variable [CompleteSpace F] [CompleteSpace F']
 
-/-- A vector killed by `1 ⊗ g` is orthogonal to every pure tensor whose second factor lies in the
-orthogonal complement of `ker g`, the closure of the range of `g†`. -/
-private theorem inner_coe_tmul_eq_zero_of_lTensorCompletion_apply_eq_zero (g : F →L[𝕜] F')
-    {w : Completion (E ⊗[𝕜] F)} (hw : g.lTensorCompletion E w = 0) (x : E) {z : F}
-    (hz : z ∈ g.kerᗮ) : ⟪((x ⊗ₜ[𝕜] z : E ⊗[𝕜] F) : Completion (E ⊗[𝕜] F)), w⟫_𝕜 = 0 := by
-  -- `z ↦ ⟪w, x ⊗ z⟫` is a continuous linear functional vanishing on the range of `g†`.
-  let φ : F →L[𝕜] 𝕜 := innerSL 𝕜 w ∘L Completion.toComplL ∘L mkL 𝕜 E F x
-  have hφ (z : F) : φ z = ⟪w, ((x ⊗ₜ[𝕜] z : E ⊗[𝕜] F) : Completion (E ⊗[𝕜] F))⟫_𝕜 := rfl
-  have hrange : g.adjoint.range ≤ φ.ker := by
-    rintro _ ⟨y, rfl⟩
-    simp only [LinearMap.mem_ker, coe_coe, hφ]
-    rw [← lTensorCompletion_tmul, ← adjoint_lTensorCompletion, adjoint_inner_right, hw,
-      inner_zero_left]
-  have hzφ : z ∈ φ.ker := by
-    rw [orthogonal_ker] at hz
-    exact Submodule.topologicalClosure_minimal _ hrange φ.isClosed_ker hz
-  rw [LinearMap.mem_ker, coe_coe, hφ] at hzφ
-  rw [← inner_conj_symm, hzφ, map_zero]
-
 /-- **The kernel of an amplification.** `1 ⊗ g` kills `w` exactly when `1 ⊗ Πᗮ` does, where `Πᗮ`
 is the orthogonal projection onto the orthogonal complement of `ker g`. -/
 theorem lTensorCompletion_apply_eq_zero_iff (g : F →L[𝕜] F') (w : Completion (E ⊗[𝕜] F)) :
     g.lTensorCompletion E w = 0 ↔ g.kerᗮ.starProjection.lTensorCompletion E w = 0 := by
-  constructor
-  · intro hw
-    refine eq_zero_of_forall_inner_coe_tmul fun x y ↦ ?_
-    rw [← (isSelfAdjoint_starProjection g.kerᗮ).adjoint_eq, ← adjoint_lTensorCompletion,
-      adjoint_inner_right, lTensorCompletion_tmul]
-    exact inner_coe_tmul_eq_zero_of_lTensorCompletion_apply_eq_zero g hw x
-      (g.kerᗮ.starProjection_apply_mem y)
-  · intro hw
-    -- `g` vanishes on `ker g`, so `1 ⊗ g = 1 ⊗ (g ∘ Πᗮ) = (1 ⊗ g) ∘ (1 ⊗ Πᗮ)`.
-    rw [← g.comp_starProjection_orthogonal_ker, lTensorCompletion_comp, comp_apply, hw, map_zero]
+  -- The flip `E ⊗̂ F ≃ F ⊗̂ E` turns `1 ⊗ g` into `g ⊗ 1`.
+  simpa only [rTensorCompletion_commIsometry_completion, LinearIsometryEquiv.map_eq_zero_iff]
+    using rTensorCompletion_apply_eq_zero_iff g ((commIsometry 𝕜 E F).completion w)
 
 /-- The kernel of `1 ⊗ g` is the kernel of `1 ⊗ Πᗮ` for the orthogonal projection `Πᗮ` onto the
 orthogonal complement of `ker g`. -/
@@ -340,10 +285,11 @@ theorem exists_norm_lTensorCompletion_starProjection_apply_le [CompleteSpace F] 
     (g : F →L[𝕜] F') (hg : IsClosed (g.range : Set F')) :
     ∃ C, 0 ≤ C ∧ ∀ w : Completion (E ⊗[𝕜] F),
       ‖g.kerᗮ.starProjection.lTensorCompletion E w‖ ≤ C * ‖g.lTensorCompletion E w‖ := by
-  obtain ⟨R, hR⟩ := g.exists_comp_eq_starProjection_orthogonal_ker hg
-  refine ⟨‖R‖, norm_nonneg R, fun w ↦ ?_⟩
-  rw [← hR, lTensorCompletion_comp, comp_apply]
-  exact (le_opNorm _ _).trans (by gcongr; exact norm_lTensorCompletion_le R)
+  -- The flip `E ⊗̂ F ≃ F ⊗̂ E` turns `1 ⊗ g` into `g ⊗ 1` and preserves norms.
+  obtain ⟨C, hC, h⟩ := exists_norm_rTensorCompletion_starProjection_apply_le (F := E) g hg
+  refine ⟨C, hC, fun w ↦ ?_⟩
+  simpa only [rTensorCompletion_commIsometry_completion, LinearIsometryEquiv.norm_map]
+    using h ((commIsometry 𝕜 E F).completion w)
 
 /-- **Distance to the common kernel.** If `f` and `g` have closed range, then the distance from
 `w` to its image under `Π_f ⊗ Π_g`, a vector of the common kernel of `f ⊗ 1` and `1 ⊗ g`

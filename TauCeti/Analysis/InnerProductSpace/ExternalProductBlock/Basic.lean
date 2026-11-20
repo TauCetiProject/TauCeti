@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.InnerProductSpace.OperatorIdentities
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Basic
+import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.LinearAlgebra.LinearEquiv.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Intersection
 
@@ -69,8 +70,7 @@ restrictions of `P` and `Q` to pairs of finite-dimensional eigenspaces of `P†P
   is `(ker A ⊗ ker B) ⊕ (ker A† ⊗ ker B†)`.
 * `ContinuousLinearMap.kerExternalProductBlockEquiv`: the corresponding linear equivalence, and
   `ContinuousLinearMap.finrank_ker_externalProductBlock` for its dimension.
-  It is built from `ContinuousLinearMap.kerEquivProdOfInjective`, which identifies a kernel on an
-  `L²` sum with a product when it is the product of the ranges of two injective linear maps.
+  It is built from `ContinuousLinearMap.kerEquivProdOfInjective`.
 * `ContinuousLinearMap.kerExternalProductBlockAdjointNegEquiv` and
   `ContinuousLinearMap.finrank_ker_externalProductBlock_adjoint_neg`: the kernel of the formal
   adjoint `externalProductBlock A† (-B)` is `(ker A† ⊗ ker B) × (ker A ⊗ ker B†)`.
@@ -99,44 +99,6 @@ noncomputable section
 open scoped TensorProduct InnerProductSpace
 
 namespace ContinuousLinearMap
-
-section KerEquivProd
-
-variable {R X Y Z M₁ M₂ : Type*} [Semiring R] [AddCommGroup X] [Module R X] [TopologicalSpace X]
-  [AddCommGroup Y] [Module R Y] [TopologicalSpace Y] [AddCommGroup Z] [Module R Z]
-  [TopologicalSpace Z] [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
-
-/-- The kernel of an operator on an `L²` sum, when it consists of the pairs whose components lie in
-the ranges of two injective linear maps, is linearly equivalent to the product of their
-sources. -/
-def kerEquivProdOfInjective (T : WithLp 2 (X × Y) →L[R] Z) {ι₁ : M₁ →ₗ[R] X}
-    {ι₂ : M₂ →ₗ[R] Y} (h₁ : Function.Injective ι₁) (h₂ : Function.Injective ι₂)
-    (hT : ∀ w, T w = 0 ↔ w.fst ∈ LinearMap.range ι₁ ∧ w.snd ∈ LinearMap.range ι₂) :
-    T.ker ≃ₗ[R] M₁ × M₂ :=
-  (LinearEquiv.ofInjective ((WithLp.linearEquiv 2 R _).symm.toLinearMap ∘ₗ ι₁.prodMap ι₂)
-      ((WithLp.linearEquiv 2 R _).symm.injective.comp <| Prod.map_injective.mpr ⟨h₁, h₂⟩) ≪≫ₗ
-    LinearEquiv.ofEq _ _ (by
-      ext w
-      rw [LinearMap.mem_ker, coe_coe, hT]
-      constructor
-      · rintro ⟨⟨x, y⟩, rfl⟩
-        exact ⟨⟨x, rfl⟩, ⟨y, rfl⟩⟩
-      · rintro ⟨⟨x, hx⟩, ⟨y, hy⟩⟩
-        exact ⟨(x, y),
-          WithLp.ofLp_injective 2 <| Prod.ext (by simpa using hx) (by simpa using hy)⟩)).symm
-
-/-- `kerEquivProdOfInjective` sends a pair to the pair of its images under the two injections. -/
-@[simp]
-theorem coe_kerEquivProdOfInjective_symm_apply (T : WithLp 2 (X × Y) →L[R] Z)
-    {ι₁ : M₁ →ₗ[R] X} {ι₂ : M₂ →ₗ[R] Y} (h₁ : Function.Injective ι₁)
-    (h₂ : Function.Injective ι₂)
-    (hT : ∀ w, T w = 0 ↔ w.fst ∈ LinearMap.range ι₁ ∧ w.snd ∈ LinearMap.range ι₂)
-    (p : M₁ × M₂) :
-    ((kerEquivProdOfInjective T h₁ h₂ hT).symm p : WithLp 2 (X × Y)) =
-      WithLp.toLp 2 (ι₁ p.1, ι₂ p.2) := by
-  simp [kerEquivProdOfInjective]
-
-end KerEquivProd
 
 variable {𝕜 V₀ V₁ W₀ W₁ : Type*} [RCLike 𝕜]
   [NormedAddCommGroup V₀] [InnerProductSpace 𝕜 V₀] [CompleteSpace V₀]
