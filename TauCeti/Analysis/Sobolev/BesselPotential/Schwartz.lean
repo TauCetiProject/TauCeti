@@ -31,6 +31,7 @@ normed complex `F`.
 
 * `SchwartzMap.toBesselPotentialSpaceCLM`: the inclusion `𝓢(E, F) →L[ℂ] H^{s,p}(E, F)`.
 * `SchwartzMap.denseRange_toBesselPotentialSpaceCLM`: its range is dense for `p < ∞`.
+* `SchwartzMap.toBesselPotentialSpaceCLM_injective`: it is injective.
 * `SchwartzMap.toLp_toBesselPotentialSpaceCLM_zero`,
   `BesselPotentialSpace.toDistr_toLpₗᵢ_zero_symm_apply`: the identification `H^{0,p} = Lᵖ`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_zero`: on `H^{0,p}` the inclusion is isometric for
@@ -126,6 +127,17 @@ theorem denseRange_toBesselPotentialSpaceCLM (s : ℝ) (hp : p ≠ ∞) :
   exact (BesselPotentialSpace.toLpₗᵢ E F s p).symm.surjective.denseRange.comp
     ((denseRange_toLpCLM (F := F) hp).comp hsurj.denseRange (toLpCLM ℝ F p volume).continuous)
     (BesselPotentialSpace.toLpₗᵢ E F s p).symm.continuous
+
+/-- **The inclusion of Schwartz functions into `H^{s,p}` is injective**: the underlying tempered
+distribution of the image of `u` is the tempered distribution of `u`, which determines `u`. -/
+theorem toBesselPotentialSpaceCLM_injective (s : ℝ) :
+    Function.Injective (toBesselPotentialSpaceCLM (E := E) (F := F) s p) := fun u v huv ↦ by
+  have h := congrArg BesselPotentialSpace.toDistr huv
+  rw [toDistr_toBesselPotentialSpaceCLM, toDistr_toBesselPotentialSpaceCLM,
+    ← Lp.toTemperedDistribution_toLp_eq (p := p) u,
+    ← Lp.toTemperedDistribution_toLp_eq (p := p) v] at h
+  exact injective_toLp p volume (LinearMap.ker_eq_bot.mp
+    (Lp.ker_toTemperedDistributionCLM_eq_bot (F := F) (μ := (volume : Measure E)) (p := p)) h)
 
 omit [CompleteSpace F] in
 /-- The weighted Fourier transform `⟨ξ⟩ ^ s 𝓕 u` of a Schwartz function is a Schwartz function,

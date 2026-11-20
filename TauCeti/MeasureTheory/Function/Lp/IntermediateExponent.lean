@@ -29,7 +29,10 @@ Quantitatively, the `Lᵖ` norms are logarithmically convex in `1 / p`: if
 
 (`MeasureTheory.eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow`), by Hölder's inequality applied to
 `‖f‖ = ‖f‖ ^ (1 - θ) ‖f‖ ^ θ`. The same bound for elements of `Lᵖ` spaces representing one
-function is `MeasureTheory.Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_eq`. Since the exponent
+function is `MeasureTheory.Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_eq`. At a single exponent, the
+same Hölder argument bounds the `Lᵖ` norm of a pointwise geometric mean
+`‖g‖ ≤ ‖g₀‖ ^ (1 - θ) ‖g₁‖ ^ θ` by `‖g₀‖_p ^ (1 - θ) ‖g₁‖_p ^ θ`
+(`MeasureTheory.Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_le`). Since the exponent
 `1 - θ` is positive for `θ < 1`, smallness in `L^{p₀}` and boundedness in `L^{p₁}` give smallness
 in `Lᵖ`; this is how compactness into `L^{p₀}` passes to the intermediate exponents.
 
@@ -312,5 +315,40 @@ theorem Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_eq {E : Type*} [NormedAddCommGr
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top
     (ENNReal.rpow_ne_top_of_nonneg (sub_nonneg.2 hθ.2) (Lp.eLpNorm_ne_top f₀))
     (ENNReal.rpow_ne_top_of_nonneg hθ.1 (Lp.eLpNorm_ne_top f₁))) key
+
+/-- **Hölder's inequality for a pointwise geometric mean**, for elements `g`, `g₀` and `g₁` of one
+`Lᵖ` space with `0 < p < ∞`: if `0 ≤ θ ≤ 1` and `‖g‖ ≤ ‖g₀‖ ^ (1 - θ) ‖g₁‖ ^ θ` almost everywhere,
+then `‖g‖ ≤ ‖g₀‖ ^ (1 - θ) ‖g₁‖ ^ θ`. -/
+theorem Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_le {E : Type*} [NormedAddCommGroup E]
+    {p : ℝ≥0∞} (hp₀ : p ≠ 0) (hp : p ≠ ∞) {θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    {g g₀ g₁ : Lp E p μ} (h : ∀ᵐ x ∂μ, ‖g x‖ ≤ ‖g₀ x‖ ^ (1 - θ) * ‖g₁ x‖ ^ θ) :
+    ‖g‖ ≤ ‖g₀‖ ^ (1 - θ) * ‖g₁‖ ^ θ := by
+  have hp' : 0 ≤ p.toReal := ENNReal.toReal_nonneg
+  have hθ₁ : 0 ≤ 1 - θ := sub_nonneg.2 hθ.2
+  -- Hölder's inequality with exponents `1 / (1 - θ)` and `1 / θ` for `‖g₀‖ ^ p` and `‖g₁‖ ^ p`.
+  have hint : ∫⁻ x, ‖g x‖ₑ ^ p.toReal ∂μ ≤
+      (∫⁻ x, ‖g₀ x‖ₑ ^ p.toReal ∂μ) ^ (1 - θ) * (∫⁻ x, ‖g₁ x‖ₑ ^ p.toReal ∂μ) ^ θ := by
+    refine (lintegral_mono_ae (h.mono fun x hx ↦ ?_)).trans
+      (ENNReal.lintegral_mul_norm_pow_le ((Lp.aestronglyMeasurable g₀).eNorm.pow_const _)
+        ((Lp.aestronglyMeasurable g₁).eNorm.pow_const _) hθ₁ hθ.1 (by ring))
+    rw [← ENNReal.rpow_mul, ← ENNReal.rpow_mul, mul_comm p.toReal, mul_comm p.toReal,
+      ENNReal.rpow_mul, ENNReal.rpow_mul, ← ENNReal.mul_rpow_of_nonneg _ _ hp']
+    gcongr
+    rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm,
+      ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hθ₁,
+      ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hθ.1, ← ENNReal.ofReal_mul (by positivity)]
+    exact ENNReal.ofReal_le_ofReal hx
+  have key : eLpNorm g p μ ≤ eLpNorm g₀ p μ ^ (1 - θ) * eLpNorm g₁ p μ ^ θ := by
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp (Lp.aestronglyMeasurable g),
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp (Lp.aestronglyMeasurable g₀),
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp (Lp.aestronglyMeasurable g₁),
+      ← ENNReal.rpow_mul, ← ENNReal.rpow_mul, mul_comm (1 / p.toReal), mul_comm (1 / p.toReal),
+      ENNReal.rpow_mul, ENNReal.rpow_mul, ← ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
+    gcongr
+  rw [Lp.norm_def, Lp.norm_def, Lp.norm_def, ENNReal.toReal_rpow, ENNReal.toReal_rpow,
+    ← ENNReal.toReal_mul]
+  exact ENNReal.toReal_mono (ENNReal.mul_ne_top
+    (ENNReal.rpow_ne_top_of_nonneg hθ₁ (Lp.eLpNorm_ne_top g₀))
+    (ENNReal.rpow_ne_top_of_nonneg hθ.1 (Lp.eLpNorm_ne_top g₁))) key
 
 end MeasureTheory
