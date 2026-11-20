@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Projective
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.CubePair
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Cube.Pair
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Relative
 
