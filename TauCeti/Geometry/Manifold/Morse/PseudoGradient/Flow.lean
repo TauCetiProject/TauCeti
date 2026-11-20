@@ -263,6 +263,15 @@ theorem mem_unstableSet_inter_stableSet_self {x : M} (hx : mfderiv 𝓘(ℝ, E) 
   ⟨Flow.self_mem_unstableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hx),
     Flow.self_mem_stableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hx)⟩
 
+/-- **A critical point lies only on its own unstable manifold.** If `x` is a critical point of `f`
+and `x ∈ W^u(p)`, then `x = p`: the flow fixes `x`, so `x ∈ W^u(x)`, and unstable sets of distinct
+points are disjoint. -/
+theorem eq_of_mem_unstableSet_of_mfderiv_eq_zero {x p : M}
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (h : x ∈ hX.flow.unstableSet p) : x = p := by
+  by_contra hxp
+  exact disjoint_left.1 (Flow.disjoint_unstableSet hxp)
+    (hX.mem_unstableSet_inter_stableSet_self hx).1 h
+
 /-- **The stable sets of the critical points cover the manifold.** -/
 theorem iUnion_stableSet (hf : IsMorse 𝓘(ℝ, E) f) :
     ⋃ x ∈ {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0}, hX.flow.stableSet x = univ := by
