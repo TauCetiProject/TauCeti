@@ -49,6 +49,7 @@ form used by its explicit Dixon-prime certificate.
 * `TauCeti.quaternionRotations`: the cyclic subgroup consisting of the elements `a i`.
 * `TauCeti.quaternionRotationsMulEquiv`: its coordinate equivalence with
   `Multiplicative (ZMod (2 * n))`.
+* `TauCeti.quaternionQuotientEquiv`: the quotient identification with `Multiplicative (ZMod 2)`.
 
 ## Main results
 
@@ -60,8 +61,9 @@ form used by its explicit Dixon-prime certificate.
   has index `2` and cardinality `2 * n`.
 * `TauCeti.conj_eq_inv_of_notMem_quaternionRotations`: an element outside the rotation subgroup
   conjugates every rotation to its inverse.
-* `TauCeti.sq_eq_one_quaternionGroup_iff`, `TauCeti.orderOf_eq_two_quaternionGroup_iff`: for
-  nonzero `n`, `QuaternionGroup.a n` is the unique element of order two.
+* `TauCeti.sq_eq_one_quaternionGroup_iff`, `TauCeti.orderOf_eq_two_quaternionGroup_iff`,
+  `TauCeti.mem_quaternionRotations_of_sq_eq_one`: for nonzero `n`, `QuaternionGroup.a n` is the
+  unique element of order two and every element squaring to `1` lies in the rotation subgroup.
 * `TauCeti.center_quaternionGroup_eq_zpowers`, `TauCeti.isMulCommutative_quaternionGroup_iff`: for
   `n ≠ 1` the centre is `Subgroup.zpowers (QuaternionGroup.a n)` and `QuaternionGroup n` is
   non-commutative.
@@ -247,6 +249,20 @@ theorem coe_quaternionRotationsMulEquiv_symm (i : Multiplicative (ZMod (2 * n)))
 instance isCyclic_quaternionRotations (n : ℕ) : IsCyclic (quaternionRotations n) :=
   isCyclic_of_surjective _ (quaternionRotationsMulEquiv n).symm.surjective
 
+/-- The quotient of `QuaternionGroup n` by its rotation subgroup is `Multiplicative (ZMod 2)`,
+via the coset parity homomorphism. -/
+noncomputable def quaternionQuotientEquiv (n : ℕ) :
+    QuaternionGroup n ⧸ quaternionRotations n ≃* Multiplicative (ZMod 2) :=
+  QuotientGroup.quotientKerEquivOfSurjective (quaternionCosetParity n)
+    (quaternionCosetParity_surjective n)
+
+/-- On a coset representative `g`, `TauCeti.quaternionQuotientEquiv` is the coset parity of `g`. -/
+@[simp]
+theorem quaternionQuotientEquiv_mk (n : ℕ) (g : QuaternionGroup n) :
+    quaternionQuotientEquiv n (g : QuaternionGroup n ⧸ quaternionRotations n) =
+      quaternionCosetParity n g :=
+  (rfl)
+
 /-- The quaternion group of order eight has exponent four. -/
 @[simp]
 theorem exponent_quaternionGroup_two : Monoid.exponent (QuaternionGroup 2) = 4 := by
@@ -329,6 +345,14 @@ theorem sq_eq_one_quaternionGroup_iff [NeZero n] {g : QuaternionGroup n} :
   · rintro (rfl | rfl)
     · exact one_pow 2
     · exact quaternionGroup_a_self_sq n
+
+/-- Every element of `QuaternionGroup n` (`n ≠ 0`) squaring to `1` belongs to the rotation
+subgroup. -/
+theorem mem_quaternionRotations_of_sq_eq_one {n : ℕ} [NeZero n] {x : QuaternionGroup n}
+    (hx : x ^ 2 = 1) : x ∈ quaternionRotations n := by
+  rcases sq_eq_one_quaternionGroup_iff.1 hx with rfl | rfl
+  · exact one_mem _
+  · exact a_mem_quaternionRotations _
 
 /-- **Unique involution.** For nonzero `n`, `QuaternionGroup.a n` is the unique element of order
 two in `QuaternionGroup n`. -/
