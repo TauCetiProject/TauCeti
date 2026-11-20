@@ -33,9 +33,11 @@ nonzero multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or
 linearly independent, and vectors in their span vanish outside the corresponding indices. These
 algebraic facts hold over normed rings at every exponent; over a ring with the strong rank
 condition, for instance a field, `lp` over an infinite index type is therefore not a finite module
-(`lp.not_finite`). In `ℓ²`, the squared norm of a finite sum of single-coordinate vectors is the
-sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and `lp.enorm_sum_single`
-for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
+(`lp.not_finite`). Subtracting a finite sum of coordinate vectors zeroes out those coordinates
+(`lp.sub_sum_single_apply`) and, for `p ≠ 0`, does not increase the `ℓᵖ` norm
+(`lp.norm_sub_sum_single_le`). In `ℓ²`, the squared norm of a finite sum of single-coordinate
+vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and
+`lp.enorm_sum_single` for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
 to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely many scalars `aᵢ`, have norm at
 most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
 
@@ -53,9 +55,12 @@ nontrivial, separability of `lp E p` forces `ι` to be countable because the ope
 For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
 operators on `lp E p` that converges on every `single i x` converges at every vector
 (`lp.tendsto_apply_of_tendsto_apply_single`). In the scalar case such an operator `T` is given by
-its coordinate series `T x = ∑ i, xᵢ • T eᵢ` (`ContinuousLinearMap.hasSum_smul_lp_single`), and
-on ℓ¹ its norm is the supremum of the norms `‖T eᵢ‖`
-(`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`).
+its coordinate series `T x = ∑ i, xᵢ • T eᵢ` (`ContinuousLinearMap.hasSum_smul_lp_single`), so for
+`q ≠ ∞` an operator out of `ℓ^q` into a Hausdorff space is determined by its values on the unit
+coordinate vectors (`ContinuousLinearMap.ext_lp_of_ne_top`). On ℓ¹, a uniform bound `C` on the
+norms `‖T eᵢ‖` bounds `‖T‖` (`ContinuousLinearMap.opNorm_lpOne_le`), so the norm of `T` is the
+supremum of the norms `‖T eᵢ‖` (`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`,
+`ContinuousLinearMap.nnnorm_eq_ciSup_nnnorm_lp_single`).
 -/
 
 public section
@@ -250,6 +255,24 @@ theorem enorm_sum_single {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [D
       (Finset.sum_nonneg fun _ _ ↦ by positivity) (by norm_num),
     ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ by positivity]
   simp_rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+
+/-- Evaluating `v - ∑ i ∈ s, lp.single p i (v i)` at coordinate `j` gives `0` on `s` and `v j`
+outside `s`. -/
+theorem sub_sum_single_apply {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [DecidableEq ι]
+    (v : lp E p) (s : Finset ι) (j : ι) :
+    (v - ∑ i ∈ s, lp.single p i (v i)) j = if j ∈ s then 0 else v j := by
+  simp only [lp.coeFn_sub, lp.coeFn_sum, lp.coeFn_single, Pi.sub_apply, Finset.sum_apply,
+    Finset.sum_pi_single]
+  split_ifs <;> simp
+
+/-- Subtracting the partial sum of coordinate vectors over a finite set `s` does not increase the
+`ℓᵖ` norm (for every `p ≠ 0`, including `p = ∞`). -/
+theorem norm_sub_sum_single_le {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [DecidableEq ι]
+    (hp : p ≠ 0) (v : lp E p) (s : Finset ι) :
+    ‖v - ∑ i ∈ s, lp.single p i (v i)‖ ≤ ‖v‖ := by
+  refine lp.norm_mono hp fun j ↦ ?_
+  rw [sub_sum_single_apply]
+  split_ifs <;> simp
 
 section Operator
 
@@ -493,6 +516,14 @@ theorem hasSum_smul_lp_single (hq : q ≠ ∞) (T : lp (fun _ : ι ↦ 𝕜) q �
   ext i
   exact (T.apply_lp_single i (x i)).symm
 
+/-- For `q < ∞`, two continuous linear maps on `ℓ^q` with values in a Hausdorff space are equal as
+soon as they agree on every unit coordinate vector `eᵢ`. -/
+theorem ext_lp_of_ne_top [T2Space E] (hq : q ≠ ∞) {T₁ T₂ : lp (fun _ : ι ↦ 𝕜) q →L[𝕜] E}
+    (h : ∀ i, T₁ (lp.single q i 1) = T₂ (lp.single q i 1)) : T₁ = T₂ := by
+  ext x
+  refine (T₁.hasSum_smul_lp_single hq x).unique ?_
+  simpa only [h] using T₂.hasSum_smul_lp_single hq x
+
 end NormedRing
 
 variable [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -504,20 +535,41 @@ theorem norm_apply_lp_single_le (T : lp (fun _ : ι ↦ 𝕜) q →L[𝕜] E) (i
   simpa [lp.norm_single (zero_lt_one.trans_le Fact.out)] using
     T.le_opNorm (lp.single q i (1 : 𝕜))
 
-/-- The norm of a continuous linear map on ℓ¹ is the supremum of the norms of its values on the
-unit coordinate vectors. For an empty index type both sides are `0`. -/
-theorem norm_eq_ciSup_norm_lp_single (T : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] E) :
-    ‖T‖ = ⨆ i, ‖T (lp.single 1 i 1)‖ := by
-  have hbdd : BddAbove (Set.range fun i ↦ ‖T (lp.single 1 i 1)‖) :=
-    ⟨‖T‖, Set.forall_mem_range.2 T.norm_apply_lp_single_le⟩
-  refine le_antisymm (T.opNorm_le_bound (Real.iSup_nonneg fun _ ↦ norm_nonneg _) fun x ↦ ?_)
-    (Real.iSup_le T.norm_apply_lp_single_le (norm_nonneg T))
-  -- Bound each term of `T x = ∑ i, xᵢ • T eᵢ` by `‖xᵢ‖` times the supremum; these sum to
-  -- `‖x‖` times the supremum.
+/-- The norms of the values of a continuous linear map on `ℓ^q` at the unit coordinate vectors
+are bounded above (by the norm of the map). -/
+theorem bddAbove_range_norm_apply_lp_single (T : lp (fun _ : ι ↦ 𝕜) q →L[𝕜] E) :
+    BddAbove (Set.range fun i ↦ ‖T (lp.single q i 1)‖) :=
+  ⟨‖T‖, Set.forall_mem_range.2 T.norm_apply_lp_single_le⟩
+
+/-- A continuous linear map on ℓ¹ whose values on the unit coordinate vectors have norm at most
+`C ≥ 0` has norm at most `C`. -/
+theorem opNorm_lpOne_le (T : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] E) {C : ℝ} (hC : 0 ≤ C)
+    (hT : ∀ i, ‖T (lp.single 1 i 1)‖ ≤ C) : ‖T‖ ≤ C := by
+  refine T.opNorm_le_bound hC fun x ↦ ?_
+  -- Bound each term of `T x = ∑ i, xᵢ • T eᵢ` by `‖xᵢ‖ * C`; these sum to `‖x‖ * C`.
   rw [mul_comm]
   exact (T.hasSum_smul_lp_single ENNReal.one_ne_top x).norm_le_of_bounded
     ((lp.hasSum_norm_one x).mul_right _) fun i ↦
-      (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left (le_ciSup hbdd i) (norm_nonneg _))
+      (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left (hT i) (norm_nonneg _))
+
+/-- The norm of a continuous linear map on ℓ¹ is the supremum of the norms of its values on the
+unit coordinate vectors. For an empty index type both sides are `0`. -/
+theorem norm_eq_ciSup_norm_lp_single (T : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] E) :
+    ‖T‖ = ⨆ i, ‖T (lp.single 1 i 1)‖ :=
+  le_antisymm
+    (T.opNorm_lpOne_le (Real.iSup_nonneg fun _ ↦ norm_nonneg _)
+      fun i ↦ le_ciSup T.bddAbove_range_norm_apply_lp_single i)
+    (Real.iSup_le T.norm_apply_lp_single_le (norm_nonneg T))
+
+/-- The nonnegative norm of a continuous linear map on ℓ¹ is the supremum of the nonnegative norms
+of its values on the unit coordinate vectors. -/
+theorem nnnorm_eq_ciSup_nnnorm_lp_single (T : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] E) :
+    ‖T‖₊ = ⨆ i, ‖T (lp.single 1 i 1)‖₊ := by
+  have hbdd : BddAbove (Set.range fun i ↦ ‖T (lp.single 1 i 1)‖₊) :=
+    ⟨‖T‖₊, Set.forall_mem_range.2 fun i ↦ by exact_mod_cast T.norm_apply_lp_single_le i⟩
+  refine le_antisymm ?_ (ciSup_le' fun i ↦ by exact_mod_cast T.norm_apply_lp_single_le i)
+  exact_mod_cast T.opNorm_lpOne_le (NNReal.coe_nonneg _)
+    fun i ↦ NNReal.coe_le_coe.2 (le_ciSup hbdd i)
 
 end Coordinates
 
