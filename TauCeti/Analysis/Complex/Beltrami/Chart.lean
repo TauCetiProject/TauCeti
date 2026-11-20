@@ -206,8 +206,7 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
   · exact wirtingerDeriv_normalizedChart_self ha
   · intro z hz
     rw [fderiv_normalizedChart]
-    apply isComplexLinear_of_apply
-    intro v
+    refine isComplexLinear_of_apply fun v ↦ ?_
     have := (hlin z hz).apply v
     simp only [ContinuousLinearMap.coe_coe, smul_apply] at this ⊢
     rw [this]
