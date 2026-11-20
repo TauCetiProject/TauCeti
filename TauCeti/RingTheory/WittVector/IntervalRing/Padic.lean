@@ -28,10 +28,12 @@ and hence its completion `B^I`, a `ℚ_[p]`-algebra in this way, and shows:
   `p⁻¹` to the inverse of `p` in `B^I`;
 * restriction `B^I → B^J` to a subinterval is `ℚ_[p]`-linear.
 
-So the charts `Spa(B^I, B^{I,+})` of `𝒴` lie over `Spa(ℚ_p, ℤ_p)`, compatibly with their
-restrictions. Together with `TauCeti.WittVector.frobenius_comp_padicIntHom`, which says that
-Frobenius on `𝕎 O` is a map over `ℤ_p`, these are the ring-level inputs to the factorisation of
-the structure maps `𝒴 → Spa(ℤ_p, ℤ_p)` and `𝒳 → Spa(ℤ_p, ℤ_p)` through `Spa(ℚ_p, ℤ_p)`.
+So `(ℚ_[p], ℤ_[p]) → (B^I, B^{I,+})` is a continuous map of pairs of rings, compatible with
+restriction; this file builds no morphism of adic spaces `Spa(B^I, B^{I,+}) → Spa(ℚ_p, ℤ_p)`.
+Together with `TauCeti.WittVector.frobenius_comp_padicIntHom`, which says that Frobenius on
+`𝕎 O` is a map over `ℤ_p`, these are the ring-level inputs to the structure maps of the charts
+`Spa(B^I, B^{I,+})` to `Spa(ℚ_p, ℤ_p)` and to the factorisation of the structure maps
+`𝒴 → Spa(ℤ_p, ℤ_p)` and `𝒳 → Spa(ℤ_p, ℤ_p)` through `Spa(ℚ_p, ℤ_p)`.
 
 ## Main results
 
