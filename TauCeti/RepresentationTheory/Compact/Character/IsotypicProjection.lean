@@ -274,13 +274,13 @@ theorem isotypicProjector_apply_of_mem_isotypicComponent
       (motive := fun x ↦ isotypicProjector rho hrho sigma hsigma
         (rho.toRepresentation.asModuleEquiv x) = rho.toRepresentation.asModuleEquiv x)
       (fun m : {m : Submodule k[G] rho.toRepresentation.asModule |
-        Nonempty (m ≃ₗ[k[G]] sigma.toRepresentation.asModule)} ↦ m.1) hx ?_ ?_ ?_
+        Nonempty (m ≃ₗ[k[G]] sigma.toRepresentation.asModule)} ↦ m.val) hx ?_ ?_ ?_
     · intro m x hx
-      let tau : Subrepresentation rho.toRepresentation := Subrepresentation.ofSubmodule' m.1
+      let tau : Subrepresentation rho.toRepresentation := Subrepresentation.ofSubmodule' m.val
       have htau : IsAtom tau := Subrepresentation.isSimpleModule_asSubmodule_iff.mp
-        (IsSimpleModule.congr m.2.some)
+        (IsSimpleModule.congr m.property.some)
       have happly := isotypicProjector_apply_subtype_of_equiv rho hrho sigma hsigma htau
-        m.2 (⟨x, hx⟩ : tau.toSubmodule)
+        m.property (⟨x, hx⟩ : tau.toSubmodule)
       rw [Representation.asModuleEquiv_apply]
       exact happly
     · exact map_zero (isotypicProjector rho hrho sigma hsigma)

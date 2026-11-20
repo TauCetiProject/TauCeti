@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.BilinearForm.LocalRing
 public import TauCeti.RingTheory.LocalRing.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
 /-!
 # Odd unimodular forms over local rings
@@ -65,7 +68,7 @@ theorem IsSymm.exists_orthogonal_isUnit_pair (hB : B.IsSymm) {n : ℕ}
   by_cases hTodd : ∃ y : B.orthogonal (R ∙ x), IsUnit (B.restrict _ y y)
   · obtain ⟨y, hy⟩ := hTodd
     refine ⟨x, y, hx, hy, ?_⟩
-    exact y.2 x (Submodule.mem_span_singleton_self x)
+    exact y.property x (Submodule.mem_span_singleton_self x)
   · have hdiag (y : B.orthogonal (R ∙ x)) :
         ¬ IsUnit (B.restrict _ y y) := fun hy ↦ hTodd ⟨y, hy⟩
     obtain ⟨i, -, hi⟩ :=
@@ -73,8 +76,8 @@ theorem IsSymm.exists_orthogonal_isUnit_pair (hB : B.IsSymm) {n : ℕ}
         (B.restrict _) t (hdiag (t 0)) hTdet
     let e : M := t 0
     let f : M := t i
-    have hxe : B x e = 0 := (t 0).2 x (Submodule.mem_span_singleton_self x)
-    have hxf : B x f = 0 := (t i).2 x (Submodule.mem_span_singleton_self x)
+    have hxe : B x e = 0 := (t 0).property x (Submodule.mem_span_singleton_self x)
+    have hxf : B x f = 0 := (t i).property x (Submodule.mem_span_singleton_self x)
     have hee : ¬ IsUnit (B e e) := by
       simpa only [e, LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply] using
         hdiag (t 0)

@@ -122,7 +122,7 @@ private theorem exists_section_exact_on_support (hF : IsFunctionField k F)
   let U : Option ↑B.support → Submodule k (riemannRochSpace D)
     | none => ⊥
     | some P =>
-      (riemannRochSpace (D - WeilDivisor.ofPoint P.1)).submoduleOf (riemannRochSpace D)
+      (riemannRochSpace (D - WeilDivisor.ofPoint P.val)).submoduleOf (riemannRochSpace D)
   have hU : ∀ P, U P ≠ ⊤ := by
     rintro (_ | P)
     · simp only [U]
@@ -138,7 +138,7 @@ private theorem exists_section_exact_on_support (hF : IsFunctionField k F)
       exact one_ne_zero (congrArg Subtype.val hzero)
     · simp only [U]
       intro htop
-      exact (hminimal P.1).ne (le_antisymm (hminimal P.1).le
+      exact (hminimal P.val).ne (le_antisymm (hminimal P.val).le
         (Submodule.submoduleOf_eq_top.mp htop))
   obtain ⟨z, hzU⟩ : ∃ z, ∀ P, z ∉ U P := by
     simpa [Set.ssubset_univ_iff, Set.iUnion_eq_univ_iff] using
@@ -147,8 +147,8 @@ private theorem exists_section_exact_on_support (hF : IsFunctionField k F)
     intro hz0
     apply hzU none
     simpa only [U, Submodule.mem_bot] using Subtype.ext hz0
-  refine ⟨D, z, hDA, hspace, z.2, hz0, fun P hP ↦ ?_⟩
-  apply ord_eq_neg_coeff_of_not_mem_sub_ofPoint z.2
+  refine ⟨D, z, hDA, hspace, z.property, hz0, fun P hP ↦ ?_⟩
+  apply ord_eq_neg_coeff_of_not_mem_sub_ofPoint z.property
   intro hmem
   apply hzU (some ⟨P, hP⟩)
   simpa only [U, Submodule.submoduleOf, Submodule.mem_comap, Submodule.subtype_apply] using hmem
@@ -190,7 +190,7 @@ private theorem dim_add_le_one_add_dim_add_of_effective (hF : IsFunctionField k 
           using hxLA
       obtain ⟨c, hc⟩ := (isIntegrallyClosedIn_iff_forall_isAlgebraic.mp hex) (x : F)
         (_root_.mem_algebraicClosure_iff.mp
-          (mem_algebraicClosure_of_mul_mem_riemannRochSpace hF hz0 hzord x.2
+          (mem_algebraicClosure_of_mul_mem_riemannRochSpace hF hz0 hzord x.property
             (by rwa [hspace])))
       apply Submodule.mem_span_singleton.mpr
       refine ⟨c, Subtype.ext ?_⟩

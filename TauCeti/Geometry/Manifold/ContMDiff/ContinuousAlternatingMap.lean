@@ -79,7 +79,7 @@ theorem contMDiffWithinAt_continuousAlternatingMap_apply :
   -- Each coefficient form gives the continuous linear map `z ↦ c t (·) • z`.
   let L (t : ι → Fin (finrank 𝕜 E)) : F →L[𝕜] E [⋀^ι]→L[𝕜] F :=
     (ContinuousLinearMap.compContinuousAlternatingMapCLM 𝕜 E 𝕜 F ι).flip (c t) ∘L
-      ContinuousLinearMap.smulRightL 𝕜 𝕜 F 1
+      ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 𝕜 F 1
   let R : ((ι → Fin (finrank 𝕜 E)) → F) →L[𝕜] E [⋀^ι]→L[𝕜] F :=
     ∑ t, L t ∘L ContinuousLinearMap.proj t
   have hf : f = fun y ↦ R fun t ↦ f y fun i ↦ b (t i) := by

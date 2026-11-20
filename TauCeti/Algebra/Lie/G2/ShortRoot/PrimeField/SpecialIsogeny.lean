@@ -259,7 +259,7 @@ private theorem toIdeal_le_ker_of_map_genericMatrix_eq {K : CommHopfAlgCat (ZMod
     apply Units.ext
     rw [← TauCeti.GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear, h]
   rw [hg]
-  exact (points_eq_hopfIdealPointsSubgroup K).le g.2
+  exact (points_eq_hopfIdealPointsSubgroup K).le g.property
 
 private theorem commonKernelHopfIdeal_toIdeal_le_ker_ambientCoordinateMap :
     (CommHopfAlgCat.commonKernelHopfIdeal generator).toIdeal ≤
@@ -691,7 +691,7 @@ theorem specialIsogeny_specialIsogeny (g : points A) :
   apply Subtype.ext
   apply Units.ext
   rw [coe_specialIsogeny, coe_specialIsogeny,
-    g2SpecialIsogeny_g2SpecialIsogeny_of_mem_points g.2]
+    g2SpecialIsogeny_g2SpecialIsogeny_of_mem_points g.property]
   ext a b
   rw [Matrix.map_apply, coe_frobenius_apply]
   norm_num

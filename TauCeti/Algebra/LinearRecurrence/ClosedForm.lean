@@ -113,7 +113,7 @@ private theorem sum_dite_eval_mul_pow [DecidableEq K] (s : Finset K) (m : K → 
     ∑ θ ∈ s, (if h : θ ∈ s then (g ⟨θ, h⟩ : K[X]) else 0).eval (n : K) * θ ^ n =
       expPolyMap s m g n := by
   rw [expPolyMap_apply, ← Finset.sum_coe_sort s]
-  exact Finset.sum_congr rfl fun θ _ ↦ by rw [dite_eq_left θ.2]
+  exact Finset.sum_congr rfl fun θ _ ↦ by rw [dite_eq_left θ.property]
 
 variable [CharZero K]
 
@@ -128,8 +128,8 @@ private theorem expPolyMap_injective {s : Finset K} (m : K → ℕ) (hs : ∀ θ
       θ ^ n = 0 := by
     rw [sum_dite_eval_mul_pow, hg, Pi.zero_apply]
   funext θ
-  have := TauCeti.eq_zero_of_sum_eval_mul_pow_eq_zero hs hz θ θ.2
-  rw [dite_eq_left θ.2] at this
+  have := TauCeti.eq_zero_of_sum_eval_mul_pow_eq_zero hs hz θ θ.property
+  rw [dite_eq_left θ.property] at this
   exact Subtype.ext this
 
 variable [DecidableEq K]
@@ -151,7 +151,7 @@ theorem exists_eq_sum_eval_mul_pow (hsplit : E.charPoly.Splits) (h0 : E.charPoly
       ext n
       simp [expPolyMap_apply, Finset.sum_apply]
     rw [this]
-    exact Submodule.sum_mem _ fun θ _ ↦ E.isSolution_eval_mul_pow (mem_degreeLT.mp (g θ).2)
+    exact Submodule.sum_mem _ fun θ _ ↦ E.isSolution_eval_mul_pow (mem_degreeLT.mp (g θ).property)
   let Φ := (expPolyMap s m).codRestrict E.solSpace hmem
   -- They are independent, since the characteristic roots are nonzero.
   have hinj : Function.Injective Φ := by
@@ -172,7 +172,7 @@ theorem exists_eq_sum_eval_mul_pow (hsplit : E.charPoly.Splits) (h0 : E.charPoly
   obtain ⟨g, hg⟩ := LinearMap.range_eq_top.mp hrange ⟨u, (E.is_sol_iff_mem_solSpace u).mp hu⟩
   refine ⟨fun θ ↦ if h : θ ∈ s then (g ⟨θ, h⟩ : K[X]) else 0, fun θ hθ ↦ ?_, fun n ↦ ?_⟩
   · have hθs : θ ∈ s := Multiset.mem_toFinset.mpr hθ
-    simpa only [dite_eq_left hθs] using mem_degreeLT.mp (g ⟨θ, hθs⟩).2
+    simpa only [dite_eq_left hθs] using mem_degreeLT.mp (g ⟨θ, hθs⟩).property
   · have := congrArg (fun v : E.solSpace ↦ (v : ℕ → K) n) hg
     simp only [Φ, LinearMap.codRestrict_apply] at this
     beta_reduce

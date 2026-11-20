@@ -131,7 +131,7 @@ theorem exists_closure_dom_subset [LocallyCompactSpace E] [CompactSpace M] [T2Sp
     (closure_mono interior_subset).trans ((hK x).isClosed.closure_subset.trans (hKW x))
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover (fun x ↦ interior (K x))
     (fun x ↦ isOpen_interior) fun x _ ↦ mem_iUnion.2 ⟨x, hxK x⟩
-  let c : Fin t.card → M := fun i ↦ (t.equivFin.symm i).1
+  let c : Fin t.card → M := fun i ↦ (t.equivFin.symm i).val
   refine ⟨⟨t.card, c, fun i ↦ interior (K (c i)), fun i ↦ isOpen_interior,
     fun i ↦ (hK _).closure_of_subset interior_subset,
     fun i ↦ (hcl _).trans (inter_subset_right.trans inter_subset_left),
@@ -241,6 +241,12 @@ theorem transition_transition {i i' : Fin A.n} {y : E} (hy : y ∈ A.overlap i i
   obtain ⟨x, hx, rfl⟩ := hy
   rw [transition_chart A hx.2, transition_chart A hx.1]
 
+/-- The inverse of chart `i'` carries the overlap of charts `i` and `i'` into both chart domains. -/
+theorem symm_mem_dom_of_mem_overlap {i i' : Fin A.n} {y : E} (hy : y ∈ A.overlap i i') :
+    (A.chart i').symm y ∈ A.dom i ∩ A.dom i' := by
+  obtain ⟨x, hx, rfl⟩ := hy
+  rwa [(A.chart i').left_inv (A.dom_subset_chart_source i' hx.2)]
+
 /-- A section read in chart `i`: its coordinates in the trivialization of chart `i`, as a function
 on the model space of `M`. -/
 def coord (i : Fin A.n) (s : ∀ x, V x) (y : E) : F :=
@@ -253,6 +259,18 @@ theorem coord_def (i : Fin A.n) (s : ∀ x, V x) (y : E) :
 theorem coord_chart {i : Fin A.n} (s : ∀ x, V x) {x : M} (hx : x ∈ A.dom i) :
     A.coord i s (A.chart i x) = (A.triv i ⟨x, s x⟩).2 := by
   rw [coord, (A.chart i).left_inv (A.dom_subset_chart_source i hx)]
+
+/-- Two sections agree at a point of the domain of chart `i` if their chart expressions in chart
+`i` agree at the image of the point. -/
+theorem eq_of_coord_chart_eq {i : Fin A.n} {s t : ∀ x, V x} {x : M} (hx : x ∈ A.dom i)
+    (h : A.coord i s (A.chart i x) = A.coord i t (A.chart i x)) : s x = t x := by
+  rw [A.coord_chart s hx, A.coord_chart t hx] at h
+  have hb : x ∈ (A.triv i).baseSet := A.dom_subset_baseSet i hx
+  have himage : A.triv i ⟨x, s x⟩ = A.triv i ⟨x, t x⟩ := by
+    rw [← (A.triv i).mk_proj_snd' (x := ⟨x, s x⟩) hb,
+      ← (A.triv i).mk_proj_snd' (x := ⟨x, t x⟩) hb, h]
+  exact TotalSpace.mk_inj.1 ((A.triv i).injOn ((A.triv i).mem_source.2 hb)
+    ((A.triv i).mem_source.2 hb) himage)
 
 theorem symm_mem_dom {i : Fin A.n} {y : E} (hy : y ∈ A.image i) : (A.chart i).symm y ∈ A.dom i := by
   obtain ⟨x, hx, rfl⟩ := hy
@@ -269,6 +287,13 @@ theorem continuousOn_chart_symm (i : Fin A.n) : ContinuousOn (A.chart i).symm (A
   (A.chart i).continuousOn_symm.mono fun y hy ↦ by
     obtain ⟨x, hx, rfl⟩ := A.mem_image.1 hy
     exact (A.chart i).map_source (A.dom_subset_chart_source i hx)
+
+/-- Chart transitions are continuous on the overlaps. -/
+theorem continuousOn_transition (i i' : Fin A.n) :
+    ContinuousOn (A.transition i i') (A.overlap i i') :=
+  (A.chart i).continuousOn.comp ((A.continuousOn_chart_symm i').mono
+    (A.overlap_subset_image i i')) fun _ hy ↦
+      A.dom_subset_chart_source i (A.symm_mem_dom_of_mem_overlap hy).1
 
 /-- The chart expression in chart `i` of a continuous section is continuous on `A.image i`. -/
 theorem continuousOn_coord {s : ∀ x, V x} (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x))
@@ -440,6 +465,19 @@ theorem coord_eq_coordChange {i i' : Fin A.n} (s : ∀ x, V x) {y : E} (hy : y �
     Trivialization.coordChangeL_apply _ _
       ⟨A.dom_subset_baseSet i hx.1, A.dom_subset_baseSet i' hx.2⟩,
     (A.triv i).symm_apply_apply_mk (A.dom_subset_baseSet i hx.1)]
+
+/-- A function continuous on the image of chart `i`, transported to chart `i'` by the chart
+transition and the coordinate change of the bundle, is continuous on the overlap. -/
+theorem continuousOn_coordChange_transition {i i' : Fin A.n} {g : E → F}
+    (hg : ContinuousOn g (A.image i)) :
+    ContinuousOn (fun y ↦ (A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y)
+      (g (A.transition i i' y))) (A.overlap i i') :=
+  ((continuousOn_coordChange ℝ (A.triv i) (A.triv i')).comp
+    ((A.continuousOn_chart_symm i').mono (A.overlap_subset_image i i')) fun _ hy ↦
+      ⟨A.dom_subset_baseSet i (A.symm_mem_dom_of_mem_overlap hy).1,
+        A.dom_subset_baseSet i' (A.symm_mem_dom_of_mem_overlap hy).2⟩).clm_apply
+    (hg.comp (A.continuousOn_transition i i') fun _ hy ↦
+      A.overlap_subset_image i' i (A.transition_mem_overlap hy))
 
 /-- **Gluing chart expressions.** Functions `g i`, continuous on the chart images `A.image i` and
 related on every overlap by the coordinate changes of the bundle, are the chart expressions of a

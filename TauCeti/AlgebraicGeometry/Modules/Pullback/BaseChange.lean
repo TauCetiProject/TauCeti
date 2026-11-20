@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Sections
 public import Mathlib.Topology.QuasiSeparated
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.RingTheory.Flat.IsBaseChange
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
@@ -447,8 +447,8 @@ theorem liftBaseChange_pullbackSectionsBaseLinear_injective [Module.Flat R S] {U
   -- Cover `U` by finitely many affine opens `V i`.
   obtain ⟨s, hs, hsU⟩ := isCompact_iff_finite_and_eq_biUnion_affineOpens.mp hU
   have := hs.to_subtype
-  let V : s → X.Opens := fun i ↦ i.1
-  have hVU (i : s) : V i ≤ U := hsU ▸ le_biSup (fun j : X.affineOpens ↦ (j : X.Opens)) i.2
+  let V : s → X.Opens := fun i ↦ i.val
+  have hVU (i : s) : V i ≤ U := hsU ▸ le_biSup (fun j : X.affineOpens ↦ (j : X.Opens)) i.property
   have hUV : U ≤ ⨆ i, V i := by rw [hsU, iSup_subtype']
   let := fun i ↦ sectionsBaseModule R M (V i)
   let := fun i ↦ sectionsBaseModule S ((pullback g).obj M) (g ⁻¹ᵁ V i)
@@ -462,7 +462,7 @@ theorem liftBaseChange_pullbackSectionsBaseLinear_injective [Module.Flat R S] {U
     (f := sectionsRestrictPiBaseLinear R M V hVU)
     (f' := sectionsRestrictPiBaseLinear S ((pullback g).obj M) (fun i ↦ g ⁻¹ᵁ V i)
       fun i ↦ g.preimage_mono (hVU i)) ?_
-    (isBaseChange_pi_pullbackSectionsBaseLinear g M H V fun i ↦ i.1.2)
+    (isBaseChange_pi_pullbackSectionsBaseLinear g M H V fun i ↦ i.val.property)
     (sectionsRestrictPiBaseLinear_injective R M V hVU hUV)
   ext x i
   simp only [LinearMap.comp_apply, LinearMap.pi_apply, LinearMap.coe_proj, Function.eval,
@@ -563,13 +563,15 @@ theorem isBaseChange_pullbackSections_of_isQuasiSeparated [Module.Flat R S] {U :
   -- Cover `U` by finitely many affine opens; their pairwise intersections are quasi-compact.
   obtain ⟨s, hs, hsU⟩ := isCompact_iff_finite_and_eq_biUnion_affineOpens.mp hU
   have := hs.to_subtype
-  have hVU (i : s) : (i.1 : X.Opens) ≤ U :=
-    hsU ▸ le_biSup (fun j : X.affineOpens ↦ (j : X.Opens)) i.2
-  exact isBaseChange_pullbackSectionsBaseLinear_of_cover g M H (fun i : s ↦ i.1) (fun i ↦ i.1.2)
-    hVU (by rw [hsU, iSup_subtype']) (fun p : s × s ↦ p.1.1 ⊓ p.2.1) Prod.fst Prod.snd
+  have hVU (i : s) : (i.val : X.Opens) ≤ U :=
+    hsU ▸ le_biSup (fun j : X.affineOpens ↦ (j : X.Opens)) i.property
+  exact isBaseChange_pullbackSectionsBaseLinear_of_cover g M H (fun i : s ↦ i.val)
+      (fun i ↦ i.val.property)
+    hVU (by rw [hsU, iSup_subtype']) (fun p : s × s ↦ p.1.val ⊓ p.2.val) Prod.fst Prod.snd
     (fun _ ↦ inf_le_left) (fun _ ↦ inf_le_right) (fun i j ↦ ⟨(i, j), rfl, rfl, le_rfl⟩)
-    fun p ↦ hU' _ _ (hVU p.1) p.1.1.1.isOpen p.1.1.2.isCompact (hVU p.2) p.2.1.1.isOpen
-      p.2.1.2.isCompact
+    fun p ↦ hU' _ _ (hVU p.1) p.1.val.val.isOpen p.1.val.property.isCompact
+        (hVU p.2) p.2.val.val.isOpen
+      p.2.val.property.isCompact
 
 /-- **Base change of global sections.** Let `Y = X ×_R S` with projection `g : Y ⟶ X`. For a
 quasi-coherent sheaf `M` on `X`, pulling back global sections exhibits the global sections of

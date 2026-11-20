@@ -281,13 +281,13 @@ theorem morseBoundaryCoeff_prod (p p' : criticalPoints 𝓘(ℝ, E) f)
   by_cases hpp : p = p'
   · subst hpp
     have hqq : q ≠ q' := by rintro rfl; omega
-    rw [hX.morseTrajectorySlice_prod_left hY p.2,
+    rw [hX.morseTrajectorySlice_prod_left hY p.property,
       ncard_image_of_injective _ (Prod.mk_right_injective _),
       hYs.morseBoundaryCoeff_eq_ncard hg (p := q) (q := q') (by omega)]
     simp [hqq]
   by_cases hqq : q = q'
   · subst hqq
-    rw [hX.morseTrajectorySlice_prod_right hY q.2,
+    rw [hX.morseTrajectorySlice_prod_right hY q.property,
       ncard_image_of_injective _ (Prod.mk_left_injective _),
       hXs.morseBoundaryCoeff_eq_ncard hf (p := p) (q := p') (by omega)]
     simp [hpp]

@@ -189,7 +189,7 @@ theorem completionTensorMap_injective (P : PairOfDefinition A) :
       ← Completion.mapRingHom_apply (f := P.ringOfDefinition.subtype) (hf := by fun_prop)] using hx
   have haC : (a : Completion A) ∈ P.completionRingOfDefinition := by
     rw [eq_neg_of_add_eq_zero_left hzero, ← P.coe_completionRingEquiv]
-    exact P.completionRingOfDefinition.neg_mem (P.completionRingEquiv b).2
+    exact P.completionRingOfDefinition.neg_mem (P.completionRingEquiv b).property
   have haB : a ∈ P.ringOfDefinition := P.coe_mem_completionRingOfDefinition_iff.mp haC
   let a' : P.ringOfDefinition := ⟨a, haB⟩
   have hjcoe : Completion.mapRingHom P.ringOfDefinition.subtype (by fun_prop)

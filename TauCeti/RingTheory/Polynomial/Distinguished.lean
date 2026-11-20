@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Data.Nat.Multiplicity
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
-
 import Mathlib.RingTheory.IntegralClosure.GoingDown
 
 /-!
@@ -30,8 +29,7 @@ completed group algebra `ℤ_p[[Γ]]` of a procyclic pro-`p` group `Γ`: at a le
 
 For a general polynomial `F` distinguished at an ideal `I` with `I ^ e ⊆ (p)`, every root `t` of
 `F` in an `O`-algebra satisfies `t ^ deg F ∈ I`, hence `p ∣ t ^ (deg F * e)`. Distinguished
-polynomials at `I` are closed under finite products, including the empty product `1`, and when `I`
-is radical (in particular prime) they are also closed under taking monic divisors.
+polynomials at `I` are closed under finite products, including the empty product `1`.
 
 ## Main results
 
@@ -42,12 +40,11 @@ is radical (in particular prime) they are also closed under taking monic divisor
   distinguished at every ideal containing `p`.
 * `Polynomial.IsDistinguishedAt.natCast_dvd_pow_of_aeval_eq_zero`: a root `t` of a polynomial `F`
   distinguished at `I`, with `I ^ e ⊆ (p)`, satisfies `p ∣ t ^ (deg F * e)`.
+* `Polynomial.IsDistinguishedAt.of_dvd`: a monic divisor of a polynomial distinguished at a radical
+  ideal is distinguished at that ideal.
 * `Polynomial.isDistinguishedAt_one`, `Polynomial.IsDistinguishedAt.pow`,
   `Polynomial.isDistinguishedAt_prod`: `1`, powers and finite products of distinguished
   polynomials are distinguished.
-* `Polynomial.IsDistinguishedAt.of_dvd_of_isRadical`, `Polynomial.IsDistinguishedAt.of_dvd`:
-  over a radical (in particular prime) ideal, monic divisors of distinguished polynomials are
-  distinguished.
 -/
 
 public section
@@ -140,22 +137,13 @@ theorem natCast_dvd_pow_of_aeval_eq_zero (hF : F.IsDistinguishedAt I)
     exact Ideal.map_mono hI (Ideal.map_pow (algebraMap O S) I e ▸ Ideal.pow_mem_pow h e)
   rwa [Ideal.map_span, Set.image_singleton, map_natCast, Ideal.mem_span_singleton] at h'
 
-/-- Over a radical ideal `I`, any monic divisor of a polynomial distinguished at `I` is also
-distinguished at `I`. -/
-theorem of_dvd_of_isRadical {R : Type*} [CommRing R] {I : Ideal R} {f g : R[X]}
-    (hf : f.IsDistinguishedAt I) (hI : I.IsRadical) (hg : g.Monic) (hdvd : g ∣ f) :
-    g.IsDistinguishedAt I := by
-  refine ⟨⟨fun {n} hn ↦ hI.radical ▸ ?_⟩, hg⟩
-  refine Ideal.radical_mono (Ideal.span_le.2 ?_)
-    (coeff_mem_radical_span_coeff_of_dvd f g hf.monic hg hdvd n hn.ne)
-  rintro _ ⟨_, hi, rfl⟩
-  exact hf.mem hi
-
-/-- Over a prime ideal `I`, any monic divisor of a polynomial distinguished at `I` is also
-distinguished at `I`. -/
-theorem of_dvd {R : Type*} [CommRing R] {I : Ideal R} [I.IsPrime] {f g : R[X]}
-    (hf : f.IsDistinguishedAt I) (hg : g.Monic) (hdvd : g ∣ f) :
-    g.IsDistinguishedAt I :=
-  hf.of_dvd_of_isRadical ‹I.IsPrime›.isRadical hg hdvd
+/-- A monic divisor of a polynomial distinguished at a radical ideal is distinguished at that
+ideal. Follows from Mathlib's `Polynomial.coeff_mem_radical_span_coeff_of_dvd`. -/
+theorem of_dvd {P : Ideal O} (hP : P.IsRadical) {f g : O[X]} (hg : g.IsDistinguishedAt P)
+    (hf : f.Monic) (hfg : f ∣ g) : f.IsDistinguishedAt P := by
+  refine ⟨⟨fun {i} hi ↦ ?_⟩, hf⟩
+  have hle : (Ideal.span { g.coeff j | j < g.natDegree }).radical ≤ P :=
+    hP.radical_le_iff.2 (Ideal.span_le.2 (by rintro _ ⟨_, hj, rfl⟩; exact hg.mem hj))
+  exact hle (coeff_mem_radical_span_coeff_of_dvd g f hg.monic hf hfg i hi.ne)
 
 end Polynomial.IsDistinguishedAt
