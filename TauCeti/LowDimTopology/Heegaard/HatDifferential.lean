@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Set.Card
 public import Mathlib.Data.ZMod.Basic
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.LowDimTopology.Heegaard.Admissibility
 public import TauCeti.LowDimTopology.Heegaard.Nice
 public import TauCeti.LowDimTopology.Heegaard.RelativeGrading
@@ -257,21 +257,18 @@ variable {χ : Region → ℤ}
 `TauCeti.HeegaardRegionSystem.hatCoefficient`. -/
 @[simp]
 theorem hatDifferential_single_apply (x y : H.Generator) (a : ZMod 2) :
-    H.hatDifferential χ (Finsupp.single x a) y = a * H.hatCoefficient χ x y := by
-  simp [hatDifferential]
+    H.hatDifferential χ (Finsupp.single x a) y = a * H.hatCoefficient χ x y :=
+  Finsupp.linearCombination_equivFunOnFinite_symm_single_apply _ x y a
 
 /-- The coefficient of `y` in the hat differential of a chain `c`. -/
 theorem hatDifferential_apply (c : H.Generator →₀ ZMod 2) (y : H.Generator) :
-    H.hatDifferential χ c y = c.sum fun x a => a * H.hatCoefficient χ x y := by
-  simp [hatDifferential, Finsupp.linearCombination_apply, Finsupp.sum_apply]
+    H.hatDifferential χ c y = c.sum fun x a => a * H.hatCoefficient χ x y :=
+  Finsupp.linearCombination_equivFunOnFinite_symm_apply _ c y
 
 /-- The hat differential vanishes exactly when all of its coefficients vanish. -/
 theorem hatDifferential_eq_zero_iff :
-    H.hatDifferential χ = 0 ↔ ∀ x y, H.hatCoefficient χ x y = 0 := by
-  refine ⟨fun h x y => ?_, fun h => ?_⟩
-  · simpa using DFunLike.congr_fun (LinearMap.congr_fun h (Finsupp.single x 1)) y
-  · ext x y
-    simp [h]
+    H.hatDifferential χ = 0 ↔ ∀ x y, H.hatCoefficient χ x y = 0 :=
+  Finsupp.linearCombination_equivFunOnFinite_symm_eq_zero_iff
 
 end Differential
 
