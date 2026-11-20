@@ -266,7 +266,7 @@ theorem vertexAngle_infty_of_re_lt {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
     rw [h, ← neg_neg ((μ : ℂ) * _), ← neg_mul, ← Complex.ofReal_neg, ← Complex.real_smul,
       InnerProductGeometry.angle_neg_right, InnerProductGeometry.angle_smul_right_of_pos _ _ hμ',
       Complex.angle_self_mul_right Complex.I_ne_zero,
-      Complex.norm_sub_eq_of_normSq_sub_eq hρ.le hpm]
+      (Complex.norm_eq_iff_normSq_eq_sq hρ.le).2 hpm]
     simp
   · -- an ideal left vertex is the left endpoint `m - ρ` of the semicircle
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hp (congrArg _ h)
@@ -291,7 +291,7 @@ theorem vertexAngle_infty_of_lt_re {p q : ℍ ⊕ OnePoint ℝ} {m ρ : ℝ} (h�
     rw [h, ← Complex.real_smul, InnerProductGeometry.angle_smul_right_of_pos _ _
         (pos_of_mul_neg_left hμ (sub_neg.2 hpq).le),
       Complex.angle_self_mul_right Complex.I_ne_zero,
-      Complex.norm_sub_eq_of_normSq_sub_eq hρ.le hqm]
+      (Complex.norm_eq_iff_normSq_eq_sq hρ.le).2 hqm]
     simp
   · -- an ideal right vertex is the right endpoint `m + ρ` of the semicircle
     obtain ⟨x, rfl⟩ := OnePoint.ne_infty_iff_exists.1 fun h ↦ hq (congrArg _ h)

@@ -21,7 +21,7 @@ the norm along upward vertical rays leaving a point of the closed upper half-pla
 
 * `Complex.normSq_sub_ofReal_sub_normSq_sub_ofReal`: the radical-line identity.
 * `Complex.norm_sq_add_I_mul_div_sqrt_two`: the squared norm of a normalized complex pair.
-* `Complex.norm_sub_eq_of_normSq_sub_eq`: a point at squared distance `ρ ^ 2` is at distance `ρ`.
+* `Complex.norm_eq_iff_normSq_eq_sq`: for `0 ≤ ρ`, `‖z‖ = ρ` if and only if `normSq z = ρ ^ 2`.
 * `Complex.eq_sub_of_normSq_eq_of_lt_re`, `Complex.eq_add_of_normSq_eq_of_re_lt`: a real point of
   the circle of centre `m` and radius `ρ` is `m - ρ` or `m + ρ`, according to its side.
 * `Complex.lt_normSq_sub_of_normSq_eq`: points of one circle on one side of an intersection point
@@ -58,36 +58,35 @@ theorem normSq_sub_ofReal_sub_normSq_sub_ofReal {c₁ c₂ : ℝ} (C z : ℂ) :
     ofReal_im, sub_zero]
   ring
 
-/-- A point at squared distance `ρ ^ 2` from `m`, with `0 ≤ ρ`, is at distance `ρ`. -/
-theorem norm_sub_eq_of_normSq_sub_eq {z : ℂ} {m ρ : ℝ} (hρ : 0 ≤ ρ)
-    (h : normSq (z - m) = ρ ^ 2) : ‖z - m‖ = ρ := by
-  rwa [normSq_eq_norm_sq, pow_left_inj₀ (norm_nonneg _) hρ two_ne_zero] at h
+/-- For `0 ≤ ρ`, a complex number has norm `ρ` exactly when its squared norm is `ρ ^ 2`. -/
+theorem norm_eq_iff_normSq_eq_sq {z : ℂ} {ρ : ℝ} (hρ : 0 ≤ ρ) : ‖z‖ = ρ ↔ normSq z = ρ ^ 2 := by
+  rw [normSq_eq_norm_sq, pow_left_inj₀ (norm_nonneg _) hρ two_ne_zero]
+
+/-- A point at squared distance `ρ ^ 2` from the real point `m`, with `0 ≤ ρ`, has real part in
+`[m - ρ, m + ρ]`. -/
+theorem re_mem_Icc_of_normSq_sub_eq {w : ℂ} {m ρ : ℝ} (hρ : 0 ≤ ρ)
+    (h : normSq (w - m) = ρ ^ 2) : w.re ∈ Set.Icc (m - ρ) (m + ρ) := by
+  have hre := abs_re_le_norm (w - m)
+  rw [(norm_eq_iff_normSq_eq_sq hρ).2 h, sub_re, ofReal_re, abs_le] at hre
+  constructor <;> linarith
 
 /-- A real point `x` of the circle of centre `m` and radius `ρ`, to the left of a complex point
 `w` of that circle, is its left endpoint `m - ρ`. -/
 theorem eq_sub_of_normSq_eq_of_lt_re {x m ρ : ℝ} {w : ℂ} (hρ : 0 ≤ ρ)
     (hx : normSq ((x : ℂ) - m) = ρ ^ 2) (hw : normSq (w - m) = ρ ^ 2)
     (hxw : (x : ℂ).re < w.re) : x = m - ρ := by
-  rw [← ofReal_sub, normSq_ofReal] at hx
-  rw [normSq_apply] at hw
-  simp only [sub_re, sub_im, ofReal_re, ofReal_im,
-    sub_zero] at hw hxw
-  have hlt : x - m < ρ := by nlinarith [mul_self_nonneg w.im]
-  have h : (x - m + ρ) * (x - m - ρ) = 0 := by linear_combination hx
-  linarith [(mul_eq_zero.1 h).resolve_right (sub_ne_zero.2 hlt.ne)]
+  -- `x` is `m ± ρ`, and `x < w.re ≤ m + ρ` rules out `m + ρ`
+  rw [← ofReal_sub, normSq_ofReal, ← sq, sq_eq_sq_iff_eq_or_eq_neg] at hx
+  rcases hx with hx | hx <;> linarith [ofReal_re x, (re_mem_Icc_of_normSq_sub_eq hρ hw).2]
 
 /-- A real point `x` of the circle of centre `m` and radius `ρ`, to the right of a complex point
 `w` of that circle, is its right endpoint `m + ρ`. -/
 theorem eq_add_of_normSq_eq_of_re_lt {x m ρ : ℝ} {w : ℂ} (hρ : 0 ≤ ρ)
     (hx : normSq ((x : ℂ) - m) = ρ ^ 2) (hw : normSq (w - m) = ρ ^ 2)
     (hwx : w.re < (x : ℂ).re) : x = m + ρ := by
-  rw [← ofReal_sub, normSq_ofReal] at hx
-  rw [normSq_apply] at hw
-  simp only [sub_re, sub_im, ofReal_re, ofReal_im,
-    sub_zero] at hw hwx
-  have hlt : -ρ < x - m := by nlinarith [mul_self_nonneg w.im]
-  have h : (x - m + ρ) * (x - m - ρ) = 0 := by linear_combination hx
-  linarith [(mul_eq_zero.1 h).resolve_left (by linarith)]
+  -- `x` is `m ± ρ`, and `m - ρ ≤ w.re < x` rules out `m - ρ`
+  rw [← ofReal_sub, normSq_ofReal, ← sq, sq_eq_sq_iff_eq_or_eq_neg] at hx
+  rcases hx with hx | hx <;> linarith [ofReal_re x, (re_mem_Icc_of_normSq_sub_eq hρ hw).1]
 
 /-- **The radical line of two circles.** Let `a` lie on two circles centred on the real axis, the
 level sets `|· - m₁|² = r₁` and `|· - m₂|² = r₂`, and let `w` lie on the first, to the left of `a`
@@ -104,16 +103,8 @@ theorem lt_normSq_sub_of_normSq_eq {a w z : ℂ} {m₁ r₁ m₂ r₂ : ℝ}
   have hw := normSq_sub_ofReal_sub_normSq_sub_ofReal (c₁ := m₁) (c₂ := m₂) a w
   rw [hz₁, ha₁, ha₂] at hz
   rw [hw₁, ha₁, ha₂] at hw
-  have _ : m₁ - m₂ < 0 := by nlinarith
-  nlinarith
-
-/-- A point at squared distance `ρ ^ 2` from the real point `m`, with `0 ≤ ρ`, has real part in
-`[m - ρ, m + ρ]`. -/
-theorem re_mem_Icc_of_normSq_sub_eq {w : ℂ} {m ρ : ℝ} (hρ : 0 ≤ ρ)
-    (h : normSq (w - m) = ρ ^ 2) : w.re ∈ Set.Icc (m - ρ) (m + ρ) := by
-  have hre := abs_re_le_norm (w - m)
-  rw [norm_sub_eq_of_normSq_sub_eq hρ h, sub_re, ofReal_re, abs_le] at hre
-  constructor <;> linarith [hre.1, hre.2]
+  -- the second centre lies to the right of the first, since `w` is outside the second circle
+  nlinarith [show m₁ - m₂ < 0 by nlinarith]
 
 /-- Let `w₁`, `w₂` lie on the circle `|· - m|² = r` and on or outside the circle
 `|· - m'|² = r'`, for real centres `m` and `m'`. Then every point `z` on or outside the first
@@ -150,24 +141,17 @@ theorem norm_one_add_sq_div_sq_of_norm_eq {z : ℂ} {R : ℝ} (hz : ‖z‖ = R)
 going upward from `z` is at least as far from the origin as `z`. -/
 theorem norm_le_norm_add_ofReal_mul_I {z : ℂ} (hz : 0 ≤ z.im) {s : ℝ} (hs : 0 ≤ s) :
     ‖z‖ ≤ ‖z + (s : ℂ) * I‖ := by
-  have hsq : ‖z‖ ^ 2 ≤ ‖z + (s : ℂ) * I‖ ^ 2 := by
-    simp only [← normSq_eq_norm_sq, normSq_apply, add_re,
-      add_im, mul_re, mul_im, ofReal_re, ofReal_im,
-      I_re, I_im]
-    nlinarith
-  have h := Real.sqrt_le_sqrt hsq
-  rwa [Real.sqrt_sq (norm_nonneg _), Real.sqrt_sq (norm_nonneg _)] at h
+  refine (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
+  simp only [← normSq_eq_norm_sq, normSq_apply, add_re, add_im, mul_re, mul_im, ofReal_re,
+    ofReal_im, I_re, I_im]
+  nlinarith
 
 /-- The points of a vertical ray leaving a point `z` of the closed upper half-plane upward, at
 height `s` above `z`, are at distance at least `(‖z‖ + s) / 2` from the origin. -/
 theorem norm_add_div_two_le_norm_add_ofReal_mul_I {z : ℂ} (hz : 0 ≤ z.im) {s : ℝ}
     (hs : 0 ≤ s) : (‖z‖ + s) / 2 ≤ ‖z + (s : ℂ) * I‖ := by
-  have h1 := norm_le_norm_add_ofReal_mul_I hz hs
-  have h2 : s ≤ ‖z + (s : ℂ) * I‖ := by
-    refine le_trans ?_ (le_trans (le_abs_self _) (abs_im_le_norm (z + (s : ℂ) * I)))
-    simp only [add_im, mul_im, ofReal_re, ofReal_im,
-      I_re, I_im]
-    linarith
-  linarith
+  -- `s` is at most the imaginary part `z.im + s` of `z + s * I`, hence at most its norm
+  have h : s ≤ ‖z + (s : ℂ) * I‖ := le_trans (by simpa using hz) (im_le_norm _)
+  linarith [norm_le_norm_add_ofReal_mul_I hz hs]
 
 end Complex
