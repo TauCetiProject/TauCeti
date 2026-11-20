@@ -10,7 +10,9 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Minkowski's integral inequality
@@ -48,6 +50,9 @@ Off-diagonal Marcinkiewicz interpolation uses it with the sets cut out by a heig
   truncations.
 * `TauCeti.lintegral_mul_setLIntegral_rpow_le_of_le`: its form for a power weight `t ^ s` on
   `(0, ∞)`, given a bound on each truncation of the weight.
+* `TauCeti.lintegral_mul_setLIntegral_ofReal_mul_rpow_lt_le`,
+  `TauCeti.lintegral_mul_setLIntegral_le_ofReal_mul_rpow_le`: the two endpoint estimates for the
+  truncations of `f` above and up to a height `c * t ^ γ`.
 
 ## References
 
@@ -264,5 +269,59 @@ theorem lintegral_mul_setLIntegral_rpow_le_of_le [SFinite μ] {f : α → ℝ≥
         rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg (by positivity)
           ENNReal.ofReal_ne_top), ENNReal.mul_rpow_of_nonneg _ _ hr0.le, ← ENNReal.rpow_mul,
           inv_mul_cancel₀ hr0.ne', ENNReal.rpow_one]
+
+/-- The region of `ℝ × α` above the graph of the height `c * t ^ γ` is measurable. -/
+theorem measurableSet_ofReal_mul_rpow_lt {f : α → ℝ≥0∞} (hf : Measurable f) (c γ : ℝ) :
+    MeasurableSet {z : ℝ × α | ENNReal.ofReal (c * z.1 ^ γ) < f z.2} :=
+  measurableSet_lt ((measurable_fst.pow_const γ).const_mul c).ennreal_ofReal
+    (hf.comp measurable_snd)
+
+/-- The region of `ℝ × α` up to the graph of the height `c * t ^ γ` is measurable. -/
+theorem measurableSet_le_ofReal_mul_rpow {f : α → ℝ≥0∞} (hf : Measurable f) (c γ : ℝ) :
+    MeasurableSet {z : ℝ × α | f z.2 ≤ ENNReal.ofReal (c * z.1 ^ γ)} :=
+  measurableSet_le (hf.comp measurable_snd)
+    ((measurable_fst.pow_const γ).const_mul c).ennreal_ofReal
+
+/-- A power weight `t ^ s` times a power of the truncated integrals `∫⁻ x in {x | R t x}, f x ^ pᵢ`
+is measurable in `t` when the truncating relation is jointly measurable. -/
+theorem measurable_ofReal_rpow_mul_setLIntegral_rpow [SFinite μ] {f : α → ℝ≥0∞}
+    {R : ℝ → α → Prop} (hR : MeasurableSet {z : ℝ × α | R z.1 z.2}) (hf : AEMeasurable f μ)
+    (s pᵢ r : ℝ) :
+    Measurable fun t : ℝ => ENNReal.ofReal (t ^ s) * (∫⁻ x in {x | R t x}, f x ^ pᵢ ∂μ) ^ r :=
+  (measurable_id.pow_const s).ennreal_ofReal.mul
+    ((measurable_setLIntegral_of_measurableSet hR (hf.pow_const pᵢ)).pow_const r)
+
+/-- **The endpoint estimate above a height.** Truncate `f` above the height `c * t ^ γ`, where the
+exponents are tied by `(s + 1) / γ = qᵢ (p - pᵢ) / pᵢ` with `pᵢ < p`. Then the `t ^ s`-weighted
+`L^{qᵢ / pᵢ}` norm in `t` of the truncated integrals of `f ^ pᵢ` is at most
+`c ^ (qᵢ (pᵢ - p) / pᵢ) / |s + 1| (∫⁻ f ^ p) ^ (qᵢ / pᵢ)`. -/
+theorem lintegral_mul_setLIntegral_ofReal_mul_rpow_lt_le [SFinite μ] {f : α → ℝ≥0∞}
+    (hf : Measurable f) {p pᵢ qᵢ s γ c : ℝ} (hc : 0 < c) (hpᵢ : 0 < pᵢ) (hpq : pᵢ ≤ qᵢ)
+    (hlt : pᵢ < p) (hγ : (s + 1) / γ = qᵢ * (p - pᵢ) / pᵢ) :
+    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
+        (∫⁻ x in {x | ENNReal.ofReal (c * t ^ γ) < f x}, f x ^ pᵢ ∂μ) ^ (qᵢ / pᵢ) ≤
+      ENNReal.ofReal (c ^ (qᵢ * (pᵢ - p) / pᵢ) / |s + 1|) * (∫⁻ x, f x ^ p ∂μ) ^ (qᵢ / pᵢ) := by
+  refine lintegral_mul_setLIntegral_rpow_le_of_le (measurableSet_ofReal_mul_rpow_lt hf c γ)
+    hf.aemeasurable hpᵢ hpq fun x => ?_
+  have hin := lintegral_indicator_ofReal_mul_rpow_lt_le hc
+    (hγ ▸ div_pos (mul_pos (hpᵢ.trans_le hpq) (sub_pos.2 hlt)) hpᵢ) (f x)
+  rwa [hγ, ← neg_div, ← mul_neg, neg_sub] at hin
+
+/-- **The endpoint estimate up to a height.** Truncate `f` up to the height `c * t ^ γ`, where the
+exponents are tied by `(s + 1) / γ = qᵢ (p - pᵢ) / pᵢ` with `p < pᵢ`. Then the `t ^ s`-weighted
+`L^{qᵢ / pᵢ}` norm in `t` of the truncated integrals of `f ^ pᵢ` is at most
+`c ^ (qᵢ (pᵢ - p) / pᵢ) / |s + 1| (∫⁻ f ^ p) ^ (qᵢ / pᵢ)`. -/
+theorem lintegral_mul_setLIntegral_le_ofReal_mul_rpow_le [SFinite μ] {f : α → ℝ≥0∞}
+    (hf : Measurable f) {p pᵢ qᵢ s γ c : ℝ} (hc : 0 < c) (hpᵢ : 0 < pᵢ) (hpq : pᵢ ≤ qᵢ)
+    (hlt : p < pᵢ) (hγ : (s + 1) / γ = qᵢ * (p - pᵢ) / pᵢ) :
+    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
+        (∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t ^ γ)}, f x ^ pᵢ ∂μ) ^ (qᵢ / pᵢ) ≤
+      ENNReal.ofReal (c ^ (qᵢ * (pᵢ - p) / pᵢ) / |s + 1|) * (∫⁻ x, f x ^ p ∂μ) ^ (qᵢ / pᵢ) := by
+  refine lintegral_mul_setLIntegral_rpow_le_of_le (measurableSet_le_ofReal_mul_rpow hf c γ)
+    hf.aemeasurable hpᵢ hpq fun x => ?_
+  have hin := lintegral_indicator_le_ofReal_mul_rpow_le hc
+    (hγ ▸ div_neg_of_neg_of_pos (mul_neg_of_pos_of_neg (hpᵢ.trans_le hpq) (sub_neg.2 hlt)) hpᵢ)
+    (f x)
+  rwa [hγ, ← neg_div, ← mul_neg, neg_sub] at hin
 
 end TauCeti

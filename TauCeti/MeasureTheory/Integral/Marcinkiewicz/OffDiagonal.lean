@@ -132,39 +132,23 @@ private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_of_measurable_of_sFi
           (∫⁻ x, f x ^ p ∂μ) ^ (q₁ / p₁) := by
   obtain ⟨-, hq, -, -⟩ := ne_zero_and_pos_of_div_eq hp₀ hlt₀ hlt₁ hpq₀ hpq₁ hγ₀ hγ₁
   have hp : 0 < p := hp₀.trans hlt₀
-  have hthr : Measurable fun z : ℝ × α => ENNReal.ofReal (c * z.1 ^ γ) :=
-    ((measurable_fst.pow_const γ).const_mul c).ennreal_ofReal
-  have hR₀ : MeasurableSet {z : ℝ × α | ENNReal.ofReal (c * z.1 ^ γ) < f z.2} :=
-    measurableSet_lt hthr (hf.comp measurable_snd)
-  have hR₁ : MeasurableSet {z : ℝ × α | f z.2 ≤ ENNReal.ofReal (c * z.1 ^ γ)} :=
-    measurableSet_le (hf.comp measurable_snd) hthr
   -- The weighted truncated integrals of the two endpoints, and their bounds.
   set I₀ : ℝ → ℝ≥0∞ := fun t => ENNReal.ofReal (t ^ (q - q₀ - 1)) *
     (∫⁻ x in {x | ENNReal.ofReal (c * t ^ γ) < f x}, f x ^ p₀ ∂μ) ^ (q₀ / p₀) with hI₀
   set I₁ : ℝ → ℝ≥0∞ := fun t => ENNReal.ofReal (t ^ (q - q₁ - 1)) *
     (∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t ^ γ)}, f x ^ p₁ ∂μ) ^ (q₁ / p₁) with hI₁
-  have hmeas₀ : Measurable I₀ := (measurable_id.pow_const _).ennreal_ofReal.mul
-    ((measurable_setLIntegral_of_measurableSet hR₀ (hf.pow_const p₀).aemeasurable).pow_const _)
-  have hmeas₁ : Measurable I₁ := (measurable_id.pow_const _).ennreal_ofReal.mul
-    ((measurable_setLIntegral_of_measurableSet hR₁ (hf.pow_const p₁).aemeasurable).pow_const _)
+  have hmeas₀ : Measurable I₀ := measurable_ofReal_rpow_mul_setLIntegral_rpow
+    (measurableSet_ofReal_mul_rpow_lt hf c γ) hf.aemeasurable _ _ _
+  have hmeas₁ : Measurable I₁ := measurable_ofReal_rpow_mul_setLIntegral_rpow
+    (measurableSet_le_ofReal_mul_rpow hf c γ) hf.aemeasurable _ _ _
   have hbound₀ : ∫⁻ t in Ioi (0 : ℝ), I₀ t ≤
       ENNReal.ofReal (c ^ (q₀ * (p₀ - p) / p₀) / |q - q₀|) * (∫⁻ x, f x ^ p ∂μ) ^ (q₀ / p₀) := by
-    refine lintegral_mul_setLIntegral_rpow_le_of_le hR₀ hf.aemeasurable hp₀ hpq₀ fun x => ?_
-    have hin := lintegral_indicator_ofReal_mul_rpow_lt_le (s := q - q₀ - 1) hc
-      (by rw [sub_add_cancel, hγ₀]; exact div_pos (mul_pos (hp₀.trans_le hpq₀) (by linarith)) hp₀)
-      (f x)
-    rwa [sub_add_cancel, hγ₀, ← neg_div, ← mul_neg, neg_sub] at hin
+    simpa only [sub_add_cancel] using lintegral_mul_setLIntegral_ofReal_mul_rpow_lt_le (μ := μ)
+      (s := q - q₀ - 1) hf hc hp₀ hpq₀ hlt₀ (by rwa [sub_add_cancel])
   have hbound₁ : ∫⁻ t in Ioi (0 : ℝ), I₁ t ≤
       ENNReal.ofReal (c ^ (q₁ * (p₁ - p) / p₁) / |q - q₁|) * (∫⁻ x, f x ^ p ∂μ) ^ (q₁ / p₁) := by
-    have hp₁ : 0 < p₁ := hp.trans hlt₁
-    refine lintegral_mul_setLIntegral_rpow_le_of_le hR₁ hf.aemeasurable hp₁ hpq₁ fun x => ?_
-    have hin := lintegral_indicator_le_ofReal_mul_rpow_le (s := q - q₁ - 1) hc
-      (by
-        rw [sub_add_cancel, hγ₁]
-        exact div_neg_of_neg_of_pos
-          (mul_neg_of_pos_of_neg (hp₁.trans_le hpq₁) (by linarith)) hp₁)
-      (f x)
-    rwa [sub_add_cancel, hγ₁, ← neg_div, ← mul_neg, neg_sub] at hin
+    simpa only [sub_add_cancel] using lintegral_mul_setLIntegral_le_ofReal_mul_rpow_le (μ := μ)
+      (s := q - q₁ - 1) hf hc (hp.trans hlt₁) hpq₁ hlt₁ (by rwa [sub_add_cancel])
   -- Multiplying the hypothesis by `t ^ (q - 1)` turns it into a bound by the two integrands.
   have hpt : ∀ t : ℝ, 0 < t →
       ν {y | ENNReal.ofReal t < u y} * ENNReal.ofReal (t ^ (q - 1)) ≤ A₀ * I₀ t + A₁ * I₁ t := by
