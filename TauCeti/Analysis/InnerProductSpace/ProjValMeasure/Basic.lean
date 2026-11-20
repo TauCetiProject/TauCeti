@@ -446,9 +446,12 @@ private theorem norm_sq_partialSum_sub (P : ProjValMeasure X H) {f : ℕ → Set
       (P.diag ξ (⋃ k, f k) - ∑ k ∈ Finset.range n, P.diag ξ (f k)).toReal := by
   have hUle := sum_measure_le_measure_iUnion (μ := P.diag ξ) (fun k => (hf k).nullMeasurableSet)
     hdisj.aedisjoint (Finset.range n)
-  rw [ContinuousLinearMap.norm_sub_sq_of_selfAdjoint_idempotent_absorption _ _
-    (partialSum_selfAdjoint P hf n) (partialSum_idem P hf hdisj n) (partialSum_mul_univ P hf n) ξ,
-    P.norm_sq_proj_apply, norm_sq_partialSum P hf hdisj ξ n,
+  have habs := LinearMap.norm_sub_sq_of_isSymmetric_idempotent_absorption _ _
+    (partialSum_selfAdjoint P hf n).isSymmetric
+    (congrArg ContinuousLinearMap.toLinearMap (partialSum_idem P hf hdisj n))
+    (congrArg ContinuousLinearMap.toLinearMap (partialSum_mul_univ P hf n)) ξ
+  rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe] at habs
+  rw [habs, P.norm_sq_proj_apply, norm_sq_partialSum P hf hdisj ξ n,
     ENNReal.toReal_sub_of_le hUle (measure_ne_top (μ := P.diag ξ) (s := ⋃ k, f k))]
 
 /-- For pairwise disjoint measurable sets, the finite sums of their projections,
