@@ -84,6 +84,8 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `TauCeti.AlgebraicGeometry.Spec.exists_isIso_appTop_eq_comp_of_bijective`: when `S` is
   recovered from its sections over an open `W` of `Spec S`, the sections of a scheme identified
   with `W` over `Spec R` are `S`, compatibly with the maps from `R`.
+* `TauCeti.AlgebraicGeometry.commSq_SpecMap_ofHom`: a commutative square of commutative rings
+  gives a commutative square of their spectra.
 * `TauCeti.AlgebraicGeometry.exists_affine_pair_comp_eq`: for a morphism `f : T' ⟶ T` of affine
   `S`-schemes, the affine `S`-scheme `Spec (Γ(T', 𝒪) ⊗[Γ(T, 𝒪)] Γ(T', 𝒪))` carries two maps to
   `T'` that agree after composing with `f` and induce the two tensor factor inclusions.
@@ -440,6 +442,16 @@ end AlgebraicGeometry
 namespace TauCeti.AlgebraicGeometry
 
 open _root_.AlgebraicGeometry
+
+/-- A commutative square of commutative rings `b ∘ a = d ∘ c` gives a commutative square of their
+spectra, `Spec b ≫ Spec a = Spec d ≫ Spec c`. -/
+lemma commSq_SpecMap_ofHom {R S T U : Type u} [CommRing R] [CommRing S] [CommRing T]
+    [CommRing U] {a : R →+* S} {b : S →+* T} {c : R →+* U} {d : U →+* T}
+    (h : b.comp a = d.comp c) :
+    CommSq (Spec.map (CommRingCat.ofHom b)) (Spec.map (CommRingCat.ofHom d))
+      (Spec.map (CommRingCat.ofHom a)) (Spec.map (CommRingCat.ofHom c)) :=
+  ⟨by rw [← Spec.map_comp, ← Spec.map_comp, ← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp,
+    h]⟩
 
 /-- Let `j : T ⟶ S` be a morphism to an affine scheme, `Y` a scheme over `S` and `Y'` an affine
 scheme over `S`. If restriction of global sections `Γ(Y, 𝒪) → Γ(Y ×_S T, 𝒪)` is an isomorphism,

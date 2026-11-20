@@ -234,6 +234,28 @@ lemma naturality_isoMapOfCommSq [Strict B] (η : F ⟶ G) {X₁ X₂ Y₁ Y₂ :
   rw [key l b sq.w.symm, reassoc_of% h₁]
   simp
 
+/-- The inverse form of `StrongTrans.naturality_isoMapOfCommSq_app`, for pseudofunctors into `Cat`:
+the inverse naturality isomorphisms of `η` along the two sides of a commutative square, composed
+with the square isomorphisms of `F` and of `G`, agree on every object. -/
+@[reassoc]
+lemma naturality_inv_isoMapOfCommSq_app [Strict B] {F G : B ⥤ᵖ Cat.{v₃, u₃}} (η : F ⟶ G)
+    {X₁ X₂ Y₁ Y₂ : B} {t : X₁ ⟶ Y₁} {l : X₁ ⟶ X₂} {r : Y₁ ⟶ Y₂} {b : X₂ ⟶ Y₂}
+    (sq : CommSq t l r b) (X : F.obj X₁) :
+    (G.map r).toFunctor.map ((η.naturality t).inv.toNatTrans.app X) ≫
+      (η.naturality r).inv.toNatTrans.app ((F.map t).toFunctor.obj X) ≫
+        (η.app Y₂).toFunctor.map ((F.isoMapOfCommSq sq).hom.toNatTrans.app X) =
+      (G.isoMapOfCommSq sq).hom.toNatTrans.app ((η.app X₁).toFunctor.obj X) ≫
+        (G.map b).toFunctor.map ((η.naturality l).inv.toNatTrans.app X) ≫
+          (η.naturality b).inv.toNatTrans.app ((F.map l).toFunctor.obj X) := by
+  -- Precompose with the forward naturality isomorphisms along `t` and `r` and use the
+  -- forward form.
+  rw [← cancel_epi ((G.map r).toFunctor.map ((η.naturality t).hom.toNatTrans.app X)),
+    ← cancel_epi ((η.naturality r).hom.toNatTrans.app _)]
+  simp only [← Functor.map_comp_assoc, Cat.Hom.hom_inv_id_toNatTrans_app, Functor.map_id,
+    Category.id_comp]
+  rw [reassoc_of% (η.naturality_isoMapOfCommSq_app sq X)]
+  simp [← Functor.map_comp_assoc]
+
 end StrongTrans
 
 /-- Naturality with respect to `2`-cells is automatic for a family of naturality
