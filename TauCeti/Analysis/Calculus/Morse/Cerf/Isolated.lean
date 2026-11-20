@@ -118,22 +118,6 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
 
-/-- At a transverse point, the kernel of the Hessian is the line spanned by any of its nonzero
-vectors. -/
-private theorem exists_eq_smul_of_fderiv_fderiv_apply_eq_zero
-    (hf : ContDiffAt ℝ 2 (uncurry f) (t, x))
-    (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x))) {v : E}
-    (hv0 : v ≠ 0) (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0) {u : E}
-    (hu : fderiv ℝ (fderiv ℝ (f t)) x u = 0) : ∃ c : ℝ, u = c • v := by
-  set K := LinearMap.ker (fderiv ℝ (fderiv ℝ (f t)) x).toLinearMap
-  have hK : ℝ ∙ v = K := Submodule.eq_of_le_of_finrank_le
-    ((Submodule.span_singleton_le_iff_mem _ _).2 hv)
-    ((finrank_ker_fderiv_fderiv_le_one hf hs).trans (finrank_span_singleton hv0).ge)
-  have huK : u ∈ K := hu
-  rw [← hK] at huK
-  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 huK
-  exact ⟨c, hc.symm⟩
-
 /-- **The augmented critical-point map is locally injective at a birth–death point.** Let `G` be
 the parametrized differential and `H` the Hessian of a family, differentiable at `p`, with
 `dG_p (τ, ξ) = τ a + H p ξ`, and let `v`, `ℓ` and the hypotheses be as in
