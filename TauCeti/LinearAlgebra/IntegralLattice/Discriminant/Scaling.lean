@@ -29,9 +29,7 @@ consists of the isometries of `L` in its principal congruence subgroup of level 
 For `n = 2` the rescaled lattice `M(2)` of a unimodular lattice `M` is always even
 (`TauCeti.IntegralLattice.isEven_smul_of_even`), and these
 statements identify its discriminant form with the `𝔽₂`-space `M / 2M` carrying the quadratic
-form `[x] ↦ (x, x) / 4 mod ℤ`, on which `O(M)` acts by reduction modulo two. In this model the
-reflection in a root of `M` acts on the discriminant form of `M(2)` as an orthogonal transvection
-of `M / 2M`, which is how the image of `O(M(2)) → O(q_(M(2)))` is computed.
+form `[x] ↦ (x, x) / 4 mod ℤ`, on which `O(M)` acts by reduction modulo two.
 
 ## Main declarations
 
@@ -40,8 +38,8 @@ of `M / 2M`, which is how the image of `O(M(2)) → O(q_(M(2)))` is computed.
   `TauCeti.IntegralLattice.IsUnimodular.discriminantGroupScaleEquiv_mk_eq_mk_of_coe_eq`.
 * `TauCeti.IntegralLattice.IsUnimodular.discriminantPairing_discriminantGroupScaleEquiv_symm_mk`:
   the discriminant pairing of `n L` is `B(y, z) / n mod ℤ`.
-* `IntegralLattice.IsUnimodular.discriminantQuadraticMap_discriminantGroupScaleEquiv_symm_mk`:
-  its half-norm discriminant form is `B(y, y) / (2n) mod ℤ`.
+* its half-norm discriminant form is `B(y, y) / (2n) mod ℤ`:
+`TauCeti.IntegralLattice.IsUnimodular.discriminantQuadraticMap_discriminantGroupScaleEquiv_symm_mk`
 * `TauCeti.IntegralLattice.Isometry.discriminantGroupScaleEquiv_discriminantGroupEquiv_smul`:
   the rescaled isometry acts on discriminant groups as the reduction modulo `n` of the
   isometry, with the self-isometry case
@@ -81,6 +79,12 @@ private theorem coe_dualCarrierScaleEquivCarrier_apply (hL : L.IsUnimodular) {n 
   rw [dualCarrierScaleEquivCarrier, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
     coe_dualCarrierScaleEquiv_apply]
 
+private theorem coe_dualCarrierScaleEquivCarrier_symm_apply (hL : L.IsUnimodular) {n : ℤ}
+    (hn : n ≠ 0) (y : L) :
+    (((hL.dualCarrierScaleEquivCarrier hn).symm y : (n • L).dualCarrier) : V) =
+      (n : ℚ)⁻¹ • (y : V) :=
+  coe_dualCarrierScaleEquiv_symm_apply hn L _
+
 /-- Multiplication by `n` carries the copy of the carrier inside the dual carrier of `n L` onto
 `n L ⊆ L`, the submodule by which `L / n L` is formed. -/
 private theorem map_carrierInDual_dualCarrierScaleEquivCarrier (hL : L.IsUnimodular) {n : ℤ}
@@ -89,13 +93,8 @@ private theorem map_carrierInDual_dualCarrierScaleEquivCarrier (hL : L.IsUnimodu
       n • (⊤ : Submodule ℤ L) := by
   have hn' : (n : ℚ) ≠ 0 := Int.cast_ne_zero.mpr hn
   ext y
-  rw [Submodule.mem_map_equiv, mem_carrierInDual_iff, Submodule.mem_smul_pointwise_iff_exists]
-  -- The ambient vector of the preimage of `y` is `n⁻¹ • y`.
-  have hcoe : (((hL.dualCarrierScaleEquivCarrier hn).symm y : (n • L).dualCarrier) : V) =
-      (n : ℚ)⁻¹ • (y : V) := by
-    rw [eq_inv_smul_iff₀ hn', ← hL.coe_dualCarrierScaleEquivCarrier_apply hn,
-      LinearEquiv.apply_symm_apply]
-  rw [hcoe]
+  rw [Submodule.mem_map_equiv, mem_carrierInDual_iff, Submodule.mem_smul_pointwise_iff_exists,
+    hL.coe_dualCarrierScaleEquivCarrier_symm_apply hn]
   constructor
   · intro hy
     refine ⟨⟨_, hy⟩, Submodule.mem_top, Subtype.ext ?_⟩
@@ -135,12 +134,10 @@ private theorem exists_discriminantGroupScaleEquiv_symm_mk (hL : L.IsUnimodular)
     ∃ x : (n • L).dualCarrier, (x : V) = (n : ℚ)⁻¹ • (y : V) ∧
       (hL.discriminantGroupScaleEquiv hn).symm (Submodule.Quotient.mk y) =
         Submodule.Quotient.mk x := by
-  have hn' : (n : ℚ) ≠ 0 := Int.cast_ne_zero.mpr hn
-  have hx : (n : ℚ)⁻¹ • (y : V) ∈ (n • L).dualCarrier := by
-    rw [mem_dualCarrier_smul_iff, smul_inv_smul₀ hn', ← L.isUnimodular_def.mp hL]
-    exact y.property
-  exact ⟨⟨_, hx⟩, rfl, hL.discriminantGroupScaleEquiv_symm_mk_eq_mk_of_coe_eq hn
-    (smul_inv_smul₀ hn' _).symm⟩
+  refine ⟨(hL.dualCarrierScaleEquivCarrier hn).symm y,
+    hL.coe_dualCarrierScaleEquivCarrier_symm_apply hn y,
+    hL.discriminantGroupScaleEquiv_symm_mk_eq_mk_of_coe_eq hn ?_⟩
+  rw [← hL.coe_dualCarrierScaleEquivCarrier_apply hn, LinearEquiv.apply_symm_apply]
 
 /-- **The discriminant pairing of a rescaled unimodular lattice.** Under
 `A_(nL) ≃ L / n L`, the discriminant pairing of `n L` is `([y], [z]) ↦ B(y, z) / n mod ℤ`. -/
