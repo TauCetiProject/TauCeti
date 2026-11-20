@@ -437,12 +437,12 @@ private theorem setIntegral_add_sum_le_of_tendsto_setIntegral_ball {e : ℕ → 
       (fun z w hzw ↦ (hdisj hzw).mono sdiff_subset sdiff_subset) hpunct hf
   have hVS : V ⊆ Ω \ ↑Z := hV ▸ sdiff_subset
   have hfV : ∫ y in V, f y ∂μ ≤ E - ∑ z : Z, A z :=
-    MeasureTheory.setIntegral_le_of_tendsto_of_le
+    (MeasureTheory.integrableOn_and_setIntegral_le_of_tendsto
       (hΩ.measurableSet.diff (.iUnion fun _ ↦ measurableSet_ball))
       (fun n y hy ↦ he (ψ n) y (hVS hy).1) (fun n ↦ (hint (ψ n)).mono_set sdiff_subset)
-      (hf.mono_set hVS) (fun y hy ↦ (hlim y (hVS hy)).comp hψ)
+      (fun y hy ↦ (hlim y (hVS hy)).comp hψ)
       (fun n ↦ by linarith [hsplit (ψ n), hE (ψ n)])
-      (tendsto_const_nhds.sub (tendsto_finsetSum _ fun z _ ↦ hA z))
+      (tendsto_const_nhds.sub (tendsto_finsetSum _ fun z _ ↦ hA z))).2
   rw [hfsplit, Finset.sum_sub_distrib]
   linarith
 

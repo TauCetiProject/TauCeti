@@ -59,8 +59,9 @@ unions with disjoint sets, and that a pointwise bound `m ≤ K σ` on `[a, a + K
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 * `MeasureTheory.norm_setIntegral_le_add_of_disjoint`: the integral over `S` is bounded by the
   integrals over `H ∪ (S ∪ T)`, `H` and `T`, for disjoint `H`, `S`, `T`.
-* `MeasureTheory.setIntegral_le_of_tendsto_of_le`: Fatou's lemma for nonnegative functions
-  converging pointwise on a set, with the bound on their integrals passing to the limit.
+* `MeasureTheory.integrableOn_and_setIntegral_le_of_tendsto`: Fatou's lemma for nonnegative
+  integrable functions converging pointwise on a set: the limit is integrable, and the bound on
+  their integrals passes to it.
 * `TendstoUniformlyOn.tendsto_setIntegral`: integrable functions converging uniformly on a set of
   finite measure to an integrable limit have converging integrals over it.
 -/
@@ -341,31 +342,40 @@ theorem norm_setIntegral_le_add_of_disjoint {f : α → E} {H S T : Set α}
     _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
 
 open Filter Topology in
-/-- **Fatou's lemma for set integrals.** If functions `e n ≥ 0` converge pointwise on a measurable
-set `T` to an integrable `f`, and `∫_T e n ≤ c n` with `c n → c₀`, then `∫_T f ≤ c₀`. -/
-theorem setIntegral_le_of_tendsto_of_le {T : Set α} {e : ℕ → α → ℝ} {f : α → ℝ} {c : ℕ → ℝ}
-    {c₀ : ℝ} (hT : MeasurableSet T) (he : ∀ n, ∀ y ∈ T, 0 ≤ e n y)
-    (hint : ∀ n, IntegrableOn (e n) T μ) (hf : IntegrableOn f T μ)
+/-- **Fatou's lemma for set integrals.** If integrable functions `e n ≥ 0` converge pointwise on a
+measurable set `T` to `f`, and `∫_T e n ≤ c n` with `c n → c₀`, then `f` is integrable on `T` and
+`∫_T f ≤ c₀`. -/
+theorem integrableOn_and_setIntegral_le_of_tendsto {T : Set α} {e : ℕ → α → ℝ} {f : α → ℝ}
+    {c : ℕ → ℝ} {c₀ : ℝ} (hT : MeasurableSet T) (he : ∀ n, ∀ y ∈ T, 0 ≤ e n y)
+    (hint : ∀ n, IntegrableOn (e n) T μ)
     (hlim : ∀ y ∈ T, Tendsto (fun n ↦ e n y) atTop (𝓝 (f y)))
     (hc : ∀ n, ∫ y in T, e n y ∂μ ≤ c n) (hc₀ : Tendsto c atTop (𝓝 c₀)) :
-    ∫ y in T, f y ∂μ ≤ c₀ := by
-  have hf0 (y : α) (hy : y ∈ T) : 0 ≤ f y := ge_of_tendsto' (hlim y hy) fun n ↦ he n y hy
+    IntegrableOn f T μ ∧ ∫ y in T, f y ∂μ ≤ c₀ := by
+  have hf0 : 0 ≤ᵐ[μ.restrict T] f :=
+    ae_restrict_of_forall_mem hT fun y hy ↦ ge_of_tendsto' (hlim y hy) fun n ↦ he n y hy
   have hc0 : 0 ≤ c₀ := ge_of_tendsto' hc₀ fun n ↦ (setIntegral_nonneg hT (he n)).trans (hc n)
-  refine (ENNReal.ofReal_le_ofReal_iff hc0).1 ?_
-  rw [ofReal_integral_eq_lintegral_ofReal hf (ae_restrict_of_forall_mem hT hf0)]
-  calc ∫⁻ y in T, ENNReal.ofReal (f y) ∂μ
-      = ∫⁻ y in T, liminf (fun n ↦ ENNReal.ofReal (e n y)) atTop ∂μ :=
-        setLIntegral_congr_fun hT fun y hy ↦
-          ((ENNReal.continuous_ofReal.tendsto _).comp (hlim y hy)).liminf_eq.symm
-    _ ≤ liminf (fun n ↦ ∫⁻ y in T, ENNReal.ofReal (e n y) ∂μ) atTop :=
-        lintegral_liminf_le' fun n ↦ (hint n).aemeasurable.ennreal_ofReal
-    _ = liminf (fun n ↦ ENNReal.ofReal (∫ y in T, e n y ∂μ)) atTop := by
-        congr 1
-        funext n
-        rw [ofReal_integral_eq_lintegral_ofReal (hint n) (ae_restrict_of_forall_mem hT (he n))]
-    _ ≤ liminf (fun n ↦ ENNReal.ofReal (c n)) atTop :=
-        liminf_le_liminf (.of_forall fun n ↦ ENNReal.ofReal_le_ofReal (hc n))
-    _ = ENNReal.ofReal c₀ := ((ENNReal.continuous_ofReal.tendsto _).comp hc₀).liminf_eq
+  have hmeas : AEStronglyMeasurable f (μ.restrict T) :=
+    aestronglyMeasurable_of_tendsto_ae atTop (fun n ↦ (hint n).aestronglyMeasurable)
+      (ae_restrict_of_forall_mem hT hlim)
+  have hlint : ∫⁻ y in T, ENNReal.ofReal (f y) ∂μ ≤ ENNReal.ofReal c₀ :=
+    calc ∫⁻ y in T, ENNReal.ofReal (f y) ∂μ
+        = ∫⁻ y in T, liminf (fun n ↦ ENNReal.ofReal (e n y)) atTop ∂μ :=
+          setLIntegral_congr_fun hT fun y hy ↦
+            ((ENNReal.continuous_ofReal.tendsto _).comp (hlim y hy)).liminf_eq.symm
+      _ ≤ liminf (fun n ↦ ∫⁻ y in T, ENNReal.ofReal (e n y) ∂μ) atTop :=
+          lintegral_liminf_le' fun n ↦ (hint n).aemeasurable.ennreal_ofReal
+      _ = liminf (fun n ↦ ENNReal.ofReal (∫ y in T, e n y ∂μ)) atTop := by
+          congr 1
+          funext n
+          rw [ofReal_integral_eq_lintegral_ofReal (hint n) (ae_restrict_of_forall_mem hT (he n))]
+      _ ≤ liminf (fun n ↦ ENNReal.ofReal (c n)) atTop :=
+          liminf_le_liminf (.of_forall fun n ↦ ENNReal.ofReal_le_ofReal (hc n))
+      _ = ENNReal.ofReal c₀ := ((ENNReal.continuous_ofReal.tendsto _).comp hc₀).liminf_eq
+  refine ⟨⟨hmeas, ?_⟩, ?_⟩
+  · rw [hasFiniteIntegral_iff_ofReal hf0]
+    exact hlint.trans_lt ENNReal.ofReal_lt_top
+  · rw [integral_eq_lintegral_of_nonneg_ae hf0 hmeas]
+    exact ENNReal.toReal_le_of_le_ofReal hc0 hlint
 
 open Filter Topology in
 /-- **Uniform convergence on a set of finite measure.** If `F i → f` uniformly on a set `S` of
