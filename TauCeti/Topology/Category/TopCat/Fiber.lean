@@ -63,12 +63,6 @@ lemma mapsTo_preimage_of_comp_eq {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} 
   rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, hf]
   exact he
 
-/-- A map `f` compatible with functions `q` on `E` and `q'` on `E'` to a common type, that is
-with `q' ∘ f = q`, carries preimages under `q` into preimages under `q'`. -/
-lemma mapsTo_preimage_of_apply_eq {E' : TopCat.{u}} (f : E ⟶ E') {F : Type*} {q : E → F}
-    {q' : E' → F} (hf : ∀ x, q' (f x) = q x) (S : Set F) : Set.MapsTo f (q ⁻¹' S) (q' ⁻¹' S) :=
-  fun x hx ↦ by rw [Set.mem_preimage, hf]; exact hx
-
 /-- The restriction `p⁻¹(S) ⟶ p'⁻¹(S)` of a map `f` over `B`, that is with `f ≫ p' = p`, to the
 parts over a subset `S` of `B`: the morphism of `TauCeti.restrictPreimageMap`. -/
 def preimageMap {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}

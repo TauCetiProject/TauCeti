@@ -87,12 +87,6 @@ private def interIso (s : W.LineExtension) :
       s.compl_union_compl s.extension_comp]
     rfl
 
-/-- The identification of `(X, q⁻¹(F ∖ W))` with `(X, ∅)` for `W` equal to `F`. -/
-private def topIso (hW : W = ⊤) : subspaceComplPair q W ≅ subspaceComplPair q ⊤ :=
-  TopPair.ofSubsetIso (Homeomorph.refl _) fun x ↦ by
-    rw [hW]
-    rfl
-
 variable (hq : ∀ (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) (v : F), v ∈ W → φ v = 1 → ∀ n,
   IsZero ((TopPair.ofSubset (q ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ)).singularCohomology R k M n))
 
@@ -147,8 +141,8 @@ private lemma stepIso_hom_naturality (s : W.LineExtension) (n : ℕ) :
         TopPair.singularCohomologyMap (subspaceComplPairMap f hf W) (n + 1) =
       TopPair.singularCohomologyMap (subspaceComplPairMap f hf s.W') n ≫
         (stepIso R k M q hq s n).hom := by
-  have hS := f.mapsTo_preimage_of_apply_eq hf {y | y ∈ s.W' ∧ s.extension y ≤ 0}ᶜ
-  have hT := f.mapsTo_preimage_of_apply_eq hf {y | y ∈ s.W' ∧ (-s.extension) y ≤ 0}ᶜ
+  have hS := Set.mapsTo_preimage_of_apply_eq f hf {y | y ∈ s.W' ∧ s.extension y ≤ 0}ᶜ
+  have hT := Set.mapsTo_preimage_of_apply_eq f hf {y | y ∈ s.W' ∧ (-s.extension) y ≤ 0}ᶜ
   have hU : Set.MapsTo f (closedHalf q s.W' s.extension ∪ closedHalf q s.W' (-s.extension))ᶜ
       (closedHalf q' s.W' s.extension ∪ closedHalf q' s.W' (-s.extension))ᶜ :=
     fun x hx h ↦ hx (by simpa only [Set.mem_union, Set.mem_preimage, hf] using h)
@@ -158,12 +152,12 @@ private lemma stepIso_hom_naturality (s : W.LineExtension) (n : ℕ) :
   have hunion : (unionIso q s).hom ≫ subspaceComplPairMap f hf s.W' =
       TopPair.ofSubsetMap f hU ≫ (unionIso q' s).hom := by
     simp only [unionIso, subspaceComplPairMap_eq_ofSubsetMap f hf _
-      (f.mapsTo_preimage_of_apply_eq hf _), TopPair.ofSubsetIso_hom]
+      (Set.mapsTo_preimage_of_apply_eq f hf _), TopPair.ofSubsetIso_hom]
     exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
   have hinter : (interIso q s).hom ≫ TopPair.ofSubsetMap f hI =
       subspaceComplPairMap f hf W ≫ (interIso q' s).hom := by
     simp only [interIso, subspaceComplPairMap_eq_ofSubsetMap f hf _
-      (f.mapsTo_preimage_of_apply_eq hf _), TopPair.ofSubsetIso_hom]
+      (Set.mapsTo_preimage_of_apply_eq f hf _), TopPair.ofSubsetIso_hom]
     exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
   rw [stepIso_hom, stepIso_hom, Category.assoc, Category.assoc]
   rw [← TopPair.singularCohomologyMap_comp, ← hinter, TopPair.singularCohomologyMap_comp,
@@ -192,7 +186,8 @@ def subspaceComplPairSingularCohomologyIso :
       ((subspaceComplPair q (⊤ : Submodule ℝ F)).singularCohomology R k M n ≅
         (subspaceComplPair q W).singularCohomology R k M m)
   | 0, _, hW, n, _, rfl =>
-    TopPair.singularCohomologyMapIso R k M (topIso q (Submodule.eq_top_of_finrank_eq hW)) n
+    TopPair.singularCohomologyMapIso R k M
+      (subspaceComplPairTopIso q (Submodule.eq_top_of_finrank_eq hW)) n
   | c + 1, W, hW, n, _, rfl =>
     let s := W.lineExtension (Submodule.lt_top_of_finrank_lt_finrank (by omega)).ne
     subspaceComplPairSingularCohomologyIso c s.W' (by rw [s.finrank_eq]; omega) n (n + c) rfl ≪≫
@@ -213,14 +208,9 @@ theorem subspaceComplPairSingularCohomologyIso_hom_naturality :
         TopPair.singularCohomologyMap (subspaceComplPairMap f hf ⊤) n ≫
           (subspaceComplPairSingularCohomologyIso R k M q hq c W hW n m h).hom
   | 0, W, hW, n, _, rfl => by
-    have h : (topIso q (Submodule.eq_top_of_finrank_eq hW)).hom ≫ subspaceComplPairMap f hf ⊤ =
-        subspaceComplPairMap f hf W ≫ (topIso q' (Submodule.eq_top_of_finrank_eq hW)).hom := by
-      simp only [topIso, subspaceComplPairMap_eq_ofSubsetMap f hf _
-        (f.mapsTo_preimage_of_apply_eq hf _), TopPair.ofSubsetIso_hom]
-      exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
     rw [subspaceComplPairSingularCohomologyIso, subspaceComplPairSingularCohomologyIso,
       TopPair.singularCohomologyMapIso_hom, TopPair.singularCohomologyMapIso_hom,
-      ← TopPair.singularCohomologyMap_comp, h,
+      ← TopPair.singularCohomologyMap_comp, subspaceComplPairTopIso_hom_naturality,
       TopPair.singularCohomologyMap_comp]
     -- The degree `n + 0` of the left side is `n`.
     rfl
