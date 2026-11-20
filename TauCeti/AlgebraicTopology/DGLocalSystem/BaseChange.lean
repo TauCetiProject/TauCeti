@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Fibration
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.HomotopyInvariance
 public import TauCeti.Topology.Category.TopCat.Pullback
-public import TauCeti.Topology.Homotopy.HomotopyEquiv
 public import TauCeti.Topology.PathSpace.Moore.Replacement.Equiv
 
 /-!

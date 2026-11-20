@@ -231,13 +231,22 @@ def Fiber.squareMapHomotopyEquiv {p : C(E, B)} {p' : C(E', B')}
       rw [ContinuousMap.comp_id, ← ContinuousMap.comp_assoc, hsq'] at this
       exact this.symm
 
-@[simp]
 theorem Fiber.squareMapHomotopyEquiv_toFun {p : C(E, B)} {p' : C(E', B')}
     (hp : IsHurewiczFibration.{max u v} p) (hp' : IsHurewiczFibration.{max u v} p') (h : C(E, E'))
     (g : C(B, B')) (hsq : p'.comp h = g.comp p) {b : B} {b' : B'} (hg : g b = b')
     (e : {x // p x = b} ≃ₕ {x // p' x = b'}) (he : ∀ x, (e x : E') = h x) :
     (Fiber.squareMapHomotopyEquiv hp hp' h g hsq hg e he).toFun = Fiber.squareMap h g hsq hg :=
   HomotopyEquiv.ofHomotopic_toFun _ _ _
+
+/-- The homotopy equivalence `Fiber.squareMapHomotopyEquiv` is the map of fibres
+`Fiber.squareMap`. -/
+@[simp]
+theorem Fiber.coe_squareMapHomotopyEquiv {p : C(E, B)} {p' : C(E', B')}
+    (hp : IsHurewiczFibration.{max u v} p) (hp' : IsHurewiczFibration.{max u v} p') (h : C(E, E'))
+    (g : C(B, B')) (hsq : p'.comp h = g.comp p) {b : B} {b' : B'} (hg : g b = b')
+    (e : {x // p x = b} ≃ₕ {x // p' x = b'}) (he : ∀ x, (e x : E') = h x) :
+    ⇑(Fiber.squareMapHomotopyEquiv hp hp' h g hsq hg e he) = Fiber.squareMap h g hsq hg :=
+  HomotopyEquiv.coe_ofHomotopic _ _ _
 
 end SquareMap
 

@@ -215,14 +215,24 @@ def HomotopyEquiv.ofHomotopic (e : X ≃ₕ Y) (f : C(X, Y)) (hf : f.Homotopic e
   left_inv := ((Homotopic.refl e.invFun).comp hf).trans e.left_inv
   right_inv := (hf.comp (Homotopic.refl e.invFun)).trans e.right_inv
 
-@[simp]
 theorem HomotopyEquiv.ofHomotopic_toFun (e : X ≃ₕ Y) (f : C(X, Y)) (hf : f.Homotopic e.toFun) :
     (e.ofHomotopic f hf).toFun = f :=
   (rfl)
 
-@[simp]
 theorem HomotopyEquiv.ofHomotopic_invFun (e : X ≃ₕ Y) (f : C(X, Y)) (hf : f.Homotopic e.toFun) :
     (e.ofHomotopic f hf).invFun = e.invFun :=
+  (rfl)
+
+/-- The homotopy equivalence `e.ofHomotopic f hf` is the map `f`. -/
+@[simp]
+theorem HomotopyEquiv.coe_ofHomotopic (e : X ≃ₕ Y) (f : C(X, Y)) (hf : f.Homotopic e.toFun) :
+    ⇑(e.ofHomotopic f hf) = f :=
+  (rfl)
+
+/-- The inverse of `e.ofHomotopic f hf` is the inverse of `e`. -/
+@[simp]
+theorem HomotopyEquiv.coe_ofHomotopic_symm (e : X ≃ₕ Y) (f : C(X, Y))
+    (hf : f.Homotopic e.toFun) : ⇑(e.ofHomotopic f hf).symm = e.symm :=
   (rfl)
 
 end ContinuousMap
