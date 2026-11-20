@@ -73,6 +73,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
 * `TauCeti.wirtingerDeriv_const_smul`, `TauCeti.conjWirtingerDeriv_const_smul`: `∂` and `\bar∂`
   commute with complex scalar multiplication.
+* `TauCeti.wirtingerDeriv_apply_one_ofReal_im`, `TauCeti.conjWirtingerDeriv_apply_one_ofReal_im`:
+  the Wirtinger derivatives of the imaginary part are `∂ Im = -i/2` and `\bar∂ Im = i/2`.
 * `TauCeti.conjWirtingerDeriv_eq_sum_smul`: `\bar∂` depends complex-linearly on the real
   derivative.
 * `TauCeti.conjWirtingerDeriv_fun_sub`, `TauCeti.conjWirtingerDeriv_fun_sum`: `\bar∂` of a
@@ -603,6 +605,20 @@ theorem conjWirtingerDeriv_eq_zero_iff_apply_one_eq_zero {f : ℂ → W} {x : �
   · intro h
     ext v
     rw [conjWirtingerDeriv_apply_eq_conj_smul_apply_one, h, smul_zero, zero_apply]
+
+/-- The Wirtinger derivative of the imaginary part: `∂ Im = -i/2`. -/
+@[simp]
+theorem wirtingerDeriv_apply_one_ofReal_im (z : ℂ) :
+    wirtingerDeriv (fun w : ℂ ↦ (w.im : ℂ)) z 1 = -I / 2 := by
+  rw [wirtingerDeriv_apply, fderiv_ofReal_im]
+  simp [div_eq_inv_mul]
+
+/-- The conjugate Wirtinger derivative of the imaginary part: `\bar∂ Im = i/2`. -/
+@[simp]
+theorem conjWirtingerDeriv_apply_one_ofReal_im (z : ℂ) :
+    conjWirtingerDeriv (fun w : ℂ ↦ (w.im : ℂ)) z 1 = I / 2 := by
+  rw [conjWirtingerDeriv_apply, fderiv_ofReal_im]
+  simp [div_eq_inv_mul]
 
 /-! ### The twisted exponentials `exp (a z - conj a conj z)` -/
 
