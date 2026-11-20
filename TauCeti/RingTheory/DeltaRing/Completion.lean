@@ -184,6 +184,12 @@ theorem evalₐ_delta_adicCompletion (hp : (p : A) ∈ I) (n : ℕ) (x : AdicCom
     evalₐ I n ((adicCompletion hp).delta x) = quotientDelta hp n (evalₐ I (n + 1) x) :=
   evalₐ_completionDelta hp n x
 
+/-- The image of `δ x` in `A ⧸ I ^ n` only depends on the image of `x` in `A ⧸ I ^ (n + 1)`. -/
+theorem evalₐ_delta_adicCompletion_eq_of_evalₐ_eq (hp : (p : A) ∈ I) {n : ℕ}
+    {x y : AdicCompletion I A} (h : evalₐ I (n + 1) x = evalₐ I (n + 1) y) :
+    evalₐ I n ((adicCompletion hp).delta x) = evalₐ I n ((adicCompletion hp).delta y) := by
+  simp [h]
+
 /-- The canonical map `A → AdicCompletion I A` is a map of `δ`-rings. -/
 @[simp]
 theorem delta_adicCompletion_algebraMap (hp : (p : A) ∈ I) (a : A) :
@@ -204,8 +210,8 @@ theorem eq_adicCompletion (fg : I.FG) (hp : (p : A) ∈ I) (d : DeltaRing p (Adi
   have hp' : (p : AdicCompletion I A) ∈ I.map (algebraMap A (AdicCompletion I A)) := by
     simpa using Ideal.mem_map_of_mem (algebraMap A (AdicCompletion I A)) hp
   -- The continuity of `d` makes `d.delta x` congruent to `δ a` modulo the `n`-th power of `I`.
-  have hd' := @delta_sub_delta_mem_pow p (AdicCompletion I A) _ d _ hp' n _ _
-    (by rwa [← Ideal.map_pow])
+  let := d
+  have hd' := delta_sub_delta_mem_pow hp' (n := n) (by rwa [← Ideal.map_pow])
   rw [hd, ← Ideal.map_pow, ← ker_evalₐ_eq_map_pow fg, RingHom.mem_ker, map_sub, sub_eq_zero]
     at hd'
   rw [← ker_evalₐ_eq_map_pow fg, RingHom.mem_ker, map_sub, sub_eq_zero] at ha
