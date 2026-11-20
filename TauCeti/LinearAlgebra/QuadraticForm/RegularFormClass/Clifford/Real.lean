@@ -62,7 +62,7 @@ theorem cliffordInvariant_natCast_eq_pow_iff_real (n k : ℕ) :
   have h2 : orderOf (quaternionClass (-1 : ℝˣ) (-1)) = 2 := by
     simpa [quaternionClass_def] using Quaternion.orderOf_mk_eq_two
   have hc : (n + 1).choose 4 ≡ (n + 1) / 4 [MOD 2] := by
-    simpa using Choose.choose_pow_modEq_div_nat (p := 2) (n + 1) 2
+    simpa using Choose.choose_pow_mul_modEq_choose_div_nat (p := 2) (n + 1) 2 1
   rw [cliffordInvariant_natCast, pow_eq_pow_iff_modEq, h2]
   exact ⟨hc.symm.trans, hc.trans⟩
 

@@ -19,8 +19,9 @@ needs.
 
 When `p` divides `n ≠ 0`, the last base-`p` digit of `n - 1` is `p - 1`, so Lucas' theorem also
 gives `choose (n - 1) (p - 1) ≡ 1 [MOD p]`; this is the congruence behind Frobenius descent for
-symmetric 2-cocycles. Likewise a power `p ^ k` has a single nonzero base-`p` digit, so
-`choose n (p ^ k)` is congruent modulo `p` to the digit of `n` in position `k`.
+symmetric 2-cocycles. Likewise a lower index `p ^ k * b` has `k` vanishing last base-`p` digits,
+so `choose n (p ^ k * b)` only sees the digits of `n` above position `k`; at `b = 1` it is
+congruent modulo `p` to the digit of `n` in position `k`.
 
 ## Main results
 
@@ -28,7 +29,8 @@ symmetric 2-cocycles. Likewise a power `p ^ k` has a single nonzero base-`p` dig
   for `c < p`.
 * `Choose.choose_sub_one_sub_one_modEq_one`: `choose (n - 1) (p - 1) ≡ 1 [MOD p]` when `p ∣ n`
   and `n ≠ 0`.
-* `Choose.choose_pow_modEq_div_nat`: `choose n (p ^ k) ≡ n / p ^ k [MOD p]`.
+* `Choose.choose_pow_mul_modEq_choose_div_nat`:
+  `choose n (p ^ k * b) ≡ choose (n / p ^ k) b [MOD p]`.
 * `TauCeti.Choose.choose_mul_choose_add_choose_modEq`: the parity identity
   `C(2m, 2) C(2m - 1, 2) + C(2m + 1, 4) ≡ C(m, 2) [MOD 2]`.
 -/
@@ -44,38 +46,37 @@ variable {p a b c : ℕ} [Fact p.Prime]
 theorem choose_mul_add_mul_modEq_choose_nat (hc : c < p) :
     Nat.choose (p * a + c) (p * b) ≡ Nat.choose a b [MOD p] := by
   have hp : 0 < p := (Fact.out : p.Prime).pos
+  -- The last base-`p` digits are `c` and `0`, above which come the digits of `a` and `b`.
   refine choose_modEq_choose_mod_mul_choose_div_nat.trans ?_
-  rw [Nat.mul_add_mod, Nat.mod_eq_of_lt hc, Nat.mul_add_div hp, Nat.div_eq_of_lt hc, add_zero,
-    Nat.mul_mod_right, Nat.mul_div_cancel_left _ hp, Nat.choose_zero_right, one_mul]
+  simp [Nat.mod_eq_of_lt hc,Nat.mul_add_div hp, Nat.div_eq_of_lt hc, hp.ne', Nat.ModEq.refl]
 
 /-- For a prime `p` dividing `n ≠ 0`, `choose (n - 1) (p - 1)` is congruent to `1` modulo `p`:
 the last base-`p` digit of `n - 1` is `p - 1`, and Lucas' theorem applies. -/
 theorem choose_sub_one_sub_one_modEq_one {n : ℕ} (hpn : p ∣ n) (hn : n ≠ 0) :
     Nat.choose (n - 1) (p - 1) ≡ 1 [MOD p] := by
-  have hp1 : 1 ≤ p := (Fact.out : p.Prime).one_le
-  have h₁ : (p - 1) % p = p - 1 := Nat.mod_eq_of_lt (by omega)
-  have h₂ : (p - 1) / p = 0 := Nat.div_eq_of_lt (by omega)
-  have hmod : (n - 1) % p = p - 1 := by
-    obtain ⟨q, rfl⟩ := hpn
-    have hq : 1 ≤ q := Nat.one_le_iff_ne_zero.2 (right_ne_zero_of_mul hn)
-    have hpq : p ≤ p * q := Nat.le_mul_of_pos_right p hq
-    have hsplit : p * q - 1 = p - 1 + p * (q - 1) := by rw [Nat.mul_sub_one]; omega
-    rw [hsplit, Nat.add_mul_mod_self_left, h₁]
+  have hp : 0 < p := (Fact.out : p.Prime).pos
+  have hlt : p - 1 < p := Nat.sub_lt hp one_pos
+  obtain ⟨q, rfl⟩ := hpn
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (right_ne_zero_of_mul hn)
+  -- `p * (m + 1) - 1` has last base-`p` digit `p - 1`, above which come the digits of `m`.
+  have hsplit : p * (m + 1) - 1 = p * m + (p - 1) := by rw [Nat.mul_succ]; omega
   refine choose_modEq_choose_mod_mul_choose_div_nat.trans ?_
-  rw [hmod, h₁, h₂, Nat.choose_self, Nat.choose_zero_right]
+  simp [hsplit, Nat.mod_eq_of_lt hlt, Nat.mul_add_div hp, Nat.div_eq_of_lt hlt, Nat.ModEq.refl]
 
-/-- For a prime `p`, `choose n (p ^ k)` is congruent to `n / p ^ k` modulo `p`: by Lucas' theorem
-it is congruent to the base-`p` digit of `n` in position `k`. At `p = 2` it says that
-`choose n (2 ^ k)` is odd exactly when bit `k` of `n` is set. -/
-theorem choose_pow_modEq_div_nat (n k : ℕ) : Nat.choose n (p ^ k) ≡ n / p ^ k [MOD p] := by
+/-- For a prime `p`, `choose n (p ^ k * b)` is congruent to `choose (n / p ^ k) b` modulo `p`:
+the last `k` base-`p` digits of the lower index vanish, so by Lucas' theorem only the digits of `n`
+above position `k` matter. At `b = 1` it says that `choose n (p ^ k)` is congruent to `n / p ^ k`,
+whose residue is the base-`p` digit of `n` in position `k`; so at `p = 2`, `choose n (2 ^ k)` is
+odd exactly when bit `k` of `n` is set. -/
+theorem choose_pow_mul_modEq_choose_div_nat (n k b : ℕ) :
+    Nat.choose n (p ^ k * b) ≡ Nat.choose (n / p ^ k) b [MOD p] := by
   induction k generalizing n with
   | zero => simp [Nat.ModEq]
   | succ k ih =>
-    have hp : 0 < p := (Fact.out : p.Prime).pos
+    -- The last base-`p` digit of `p ^ (k + 1) * b` is `0`: drop it and recurse on `n / p`.
     refine choose_modEq_choose_mod_mul_choose_div_nat.trans ?_
-    rw [pow_succ', Nat.mul_mod_right, Nat.mul_div_cancel_left _ hp, Nat.choose_zero_right,
-      one_mul, ← Nat.div_div_eq_div_mul]
-    exact ih (n / p)
+    simpa [pow_succ', mul_assoc, (Fact.out : p.Prime).ne_zero, Nat.div_div_eq_div_mul] using
+      ih (n / p)
 
 end Choose
 
