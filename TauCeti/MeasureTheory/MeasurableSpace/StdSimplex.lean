@@ -17,9 +17,9 @@ This file gives the simplex the σ-algebra induced by that weight vector, for an
 weight vector is measurable, and a map into the simplex is measurable exactly when its
 weight-vector map is.
 
-The inverse weight map extends to all weight vectors by choosing a fallback simplex point.
-Its measurability under topological hypotheses is
-`Convexity.StdSimplex.measurable_extendWeights`.
+The inverse weight map `Convexity.StdSimplex.extendWeights`, which sends weight vectors outside
+the simplex to a chosen fallback point, is measurable under topological hypotheses
+(`Convexity.StdSimplex.measurable_extendWeights`).
 
 Mathlib's topology on the simplex is stated over a ring and does not reach coefficients such as
 `ℝ≥0`; the induced σ-algebra needs no topology.
@@ -29,8 +29,7 @@ Mathlib's topology on the simplex is stated over a ring and does not reach coeff
 * `Convexity.StdSimplex.instMeasurableSpace` — the σ-algebra induced by `StdSimplex.weights`;
 * `Convexity.StdSimplex.measurable_toFun_comp_weights` — the weight vector is measurable;
 * `Convexity.StdSimplex.measurable_iff_toFun_comp_weights` — measurability into the simplex is
-  measurability of the weight vector;
-* `Convexity.StdSimplex.extendWeights` — an inverse weight map with a chosen fallback.
+  measurability of the weight vector.
 -/
 
 public section
@@ -39,11 +38,7 @@ open MeasureTheory
 
 namespace Convexity.StdSimplex
 
-variable {R ι : Type*} [LE R] [AddCommMonoid R] [One R]
-
-section MeasurableSpace
-
-variable [MeasurableSpace R]
+variable {R ι : Type*} [LE R] [AddCommMonoid R] [One R] [MeasurableSpace R]
 
 /-- The σ-algebra on the standard simplex induced by its weight vector. -/
 instance instMeasurableSpace : MeasurableSpace (StdSimplex R ι) :=
@@ -58,38 +53,5 @@ theorem measurable_toFun_comp_weights : Measurable fun p : StdSimplex R ι => (p
 theorem measurable_iff_toFun_comp_weights {δ : Type*} [MeasurableSpace δ] {f : δ → StdSimplex R ι} :
     Measurable f ↔ Measurable fun x => ((f x).weights : ι → R) :=
   measurable_comap_iff
-
-end MeasurableSpace
-
-/-- Read a weight vector as a simplex point when it lies in the simplex, using `p` elsewhere.
-This supplies probability parameters for mixtures supported on a simplex. -/
-noncomputable def extendWeights (p : StdSimplex R ι) (w : ι → R) : StdSimplex R ι :=
-  Function.extend (fun q : StdSimplex R ι ↦ (q.weights : ι → R)) id (fun _ ↦ p) w
-
-/-- The inverse weight map is extended with constant fallback value `p`. -/
-theorem extendWeights_def (p : StdSimplex R ι) :
-    p.extendWeights =
-      Function.extend (fun q : StdSimplex R ι ↦ (q.weights : ι → R)) id (fun _ ↦ p) := (rfl)
-
-/-- Extending the inverse of the weight embedding recovers every simplex point. -/
-@[simp]
-theorem extendWeights_weights (p q : StdSimplex R ι) :
-    p.extendWeights q.weights = q :=
-  toFun_comp_weights_injective.extend_apply _ _ q
-
-/-- Extending the inverse weight map preserves every vector in the simplex. -/
-@[simp]
-theorem weights_extendWeights_of_mem_range (p : StdSimplex R ι) {w : ι → R}
-    (hw : w ∈ Set.range (fun q : StdSimplex R ι ↦ (q.weights : ι → R))) :
-    ⇑(p.extendWeights w).weights = w := by
-  obtain ⟨q, rfl⟩ := hw
-  rw [extendWeights_weights]
-
-/-- A vector outside the simplex is sent to the chosen fallback point. -/
-@[simp]
-theorem extendWeights_of_notMem_range (p : StdSimplex R ι) {w : ι → R}
-    (hw : w ∉ Set.range (fun q : StdSimplex R ι ↦ (q.weights : ι → R))) :
-    p.extendWeights w = p :=
-  Function.extend_apply' _ _ _ hw
 
 end Convexity.StdSimplex
