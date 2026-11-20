@@ -48,7 +48,7 @@ so finite type is preserved. -/
 instance LocalGeneratorsData.isFiniteType_shrink
     {M : SheafOfModules.{u} R} (q : M.LocalGeneratorsData) [q.IsFiniteType] :
     q.shrink.IsFiniteType where
-  isFiniteType i := LocalGeneratorsData.IsFiniteType.isFiniteType (p := q) i.2.choose
+  isFiniteType i := LocalGeneratorsData.IsFiniteType.isFiniteType (p := q) i.property.choose
 
 /-- A sheaf of modules with finite-type local generators, indexed in any universe, is of finite
 type. -/

@@ -95,7 +95,7 @@ omit [HasZeroObject C] in
 private theorem snd_inr (φ : Y ⟶ I) :
     (snd φ).v 0 0 (add_zero 0) ≫ (inr φ).f 0 = 𝟙 _ := by
   rw [← id_X φ 0 1 rfl,
-    (Y.isZero_of_isStrictlyLE (-1) 1 (by lia)).eq_of_tgt ((fst φ).1.v 0 1 rfl) 0, zero_comp,
+    (Y.isZero_of_isStrictlyLE (-1) 1 (by lia)).eq_of_tgt ((fst φ).val.v 0 1 rfl) 0, zero_comp,
     zero_add]
 
 /-- The components of the inclusion `T ⟶ I`. -/

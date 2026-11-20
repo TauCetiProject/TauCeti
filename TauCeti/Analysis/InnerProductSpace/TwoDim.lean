@@ -15,6 +15,10 @@ The quarter turn `J = o.rightAngleRotation` of an oriented Euclidean plane carri
 of every positively oriented orthonormal basis `(e₀, e₁)` to the second, `J e₀ = e₁`, and hence
 `J e₁ = -e₀`. So in any such basis `J` is the standard quarter turn.
 
+For unit vectors `a`, `b` the inner product and the area form `ω` are the cosine and the sine of
+the angle from `a` to `b`: `√(1 - ⟪a, b⟫²) = |ω(a, b)|`, so `⟪a, b⟫ ∈ (-1, 1)` whenever
+`ω(a, b) ≠ 0`.
+
 On the complex plane, the continuous oriented volume form is normalized on the standard complex
 basis `(1, I)`. On a pair of vectors it is the area form `dx ∧ dy`, `(v, w) ↦ Im (conj v * w)`.
 
@@ -64,6 +68,23 @@ theorem sq_norm_smul_eq_of_areaForm_eq_zero {a x : E} (h : o.areaForm a x = 0) :
   refine ext_inner_right ℝ fun y ↦ ?_
   rw [real_inner_smul_left, real_inner_smul_left, ← o.inner_mul_inner_add_areaForm_mul_areaForm,
     h, zero_mul, add_zero]
+
+/-- For unit vectors `a`, `b` of an oriented plane, `√(1 - ⟪a, b⟫²) = |ω(a, b)|`: the inner
+product and the area form are the cosine and the sine of the angle from `a` to `b`. -/
+theorem sqrt_one_sub_inner_sq_eq_abs_areaForm {a b : E} (ha : ‖a‖ = 1) (hb : ‖b‖ = 1) :
+    √(1 - inner ℝ a b ^ 2) = |o.areaForm a b| := by
+  have h := o.inner_sq_add_areaForm_sq a b
+  rw [ha, hb, one_pow, one_mul] at h
+  rw [← Real.sqrt_sq_eq_abs, ← h, add_sub_cancel_left]
+
+/-- Two unit vectors of an oriented plane with nonzero area form are not parallel, so their inner
+product lies in `(-1, 1)`. -/
+theorem inner_mem_Ioo_of_areaForm_ne_zero {a b : E} (ha : ‖a‖ = 1) (hb : ‖b‖ = 1)
+    (h : o.areaForm a b ≠ 0) : inner ℝ a b ∈ Set.Ioo (-1) 1 := by
+  have hsq := o.inner_sq_add_areaForm_sq a b
+  rw [ha, hb, one_pow, one_mul] at hsq
+  have hlt : inner ℝ a b ^ 2 < 1 := by nlinarith [sq_pos_of_ne_zero h]
+  exact abs_lt.1 ((sq_lt_one_iff_abs_lt_one _).1 hlt)
 
 end Orientation
 
