@@ -52,9 +52,9 @@ the constant terms of `∂⁻` over `ZMod 2`.
 * `TauCeti.GridDiagram.unblockedDifferential_comp_self_eq_zero`: `∂⁻ ∘ ∂⁻ = 0`.
 * `TauCeti.GridDiagram.simplyBlockedDifferential_comp_self_eq_zero`: the same for the
   specialization at `V_i = 0`.
-* `TauCeti.GridDiagram.unblockedDifferential_unblockedDifferential_apply` and
-  `TauCeti.GridDiagram.simplyBlockedDifferential_simplyBlockedDifferential_apply`: the same,
-  applied to a chain.
+* `TauCeti.GridDiagram.restrictScalars_unblockedDifferential_comp_self_eq_zero` and
+  `TauCeti.GridDiagram.restrictScalars_simplyBlockedDifferential_comp_self_eq_zero`: the same for
+  both maps viewed as linear maps over the ground semiring.
 * `TauCeti.GridDiagram.fullyBlockedDecompositionCount_eq_zero`,
   `TauCeti.GridDiagram.fullyBlockedDifferential_comp_self_eq_zero`: the same for the fully blocked
   differential, the specialization at every `V_i = 0`.
@@ -196,12 +196,6 @@ theorem unblockedDifferential_comp_self_eq_zero :
     LinearMap.zero_apply]
   exact G.unblockedDifferential_sq_single_eq_zero R x
 
-/-- Applying the unblocked grid differential twice gives zero, in characteristic two. -/
-@[simp]
-theorem unblockedDifferential_unblockedDifferential_apply (c : GridChainMinus R n) :
-    G.unblockedDifferential R (G.unblockedDifferential R c) = 0 :=
-  LinearMap.congr_fun (G.unblockedDifferential_comp_self_eq_zero R) c
-
 /-- The simply blocked grid map squares to zero in characteristic two: it is the specialization
 of `∂⁻` at `V_i = 0`, and specialization intertwines the two maps. -/
 theorem simplyBlockedDifferential_comp_self_eq_zero (i : Fin n) :
@@ -217,12 +211,19 @@ theorem simplyBlockedDifferential_comp_self_eq_zero (i : Fin n) :
     ← G.simplyBlockedSpecialization_unblockedDifferential R i]
   rw [G.unblockedDifferential_sq_single_eq_zero R x, map_zero]
 
-/-- Applying the simply blocked grid map twice gives zero, in characteristic two. -/
-@[simp]
-theorem simplyBlockedDifferential_simplyBlockedDifferential_apply (i : Fin n)
-    (c : GridChainHat R n i) :
-    G.simplyBlockedDifferential R i (G.simplyBlockedDifferential R i c) = 0 :=
-  LinearMap.congr_fun (G.simplyBlockedDifferential_comp_self_eq_zero R i) c
+/-- Viewed as a linear map over the ground semiring, the unblocked grid differential squares to
+zero in characteristic two. -/
+theorem restrictScalars_unblockedDifferential_comp_self_eq_zero :
+    (G.unblockedDifferential R).restrictScalars R ∘ₗ (G.unblockedDifferential R).restrictScalars R =
+      0 :=
+  LinearMap.ext fun c => congr($(G.unblockedDifferential_comp_self_eq_zero R) c)
+
+/-- Viewed as a linear map over the ground semiring, the simply blocked grid map squares to zero
+in characteristic two. -/
+theorem restrictScalars_simplyBlockedDifferential_comp_self_eq_zero (i : Fin n) :
+    (G.simplyBlockedDifferential R i).restrictScalars R ∘ₗ
+        (G.simplyBlockedDifferential R i).restrictScalars R = 0 :=
+  LinearMap.ext fun c => congr($(G.simplyBlockedDifferential_comp_self_eq_zero R i) c)
 
 /-- Every fully blocked two-step decomposition count is even.
 

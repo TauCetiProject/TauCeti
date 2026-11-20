@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 public import TauCeti.KnotTheory.Grid.Homology.Series.SimplyBlocked
 public import TauCeti.KnotTheory.Grid.XHomotopy.Grading
-import TauCeti.Algebra.CharP.Two
+import TauCeti.Algebra.Homology.SquareZero.Quotient
 
 /-!
 # Simply blocked grid homology does not depend on the blocked `O`-marking
@@ -19,50 +18,34 @@ variable `V_i` set to zero. For a knot grid it does not depend on the choice of 
 of the two specializations which preserves the (`O`-Maslov, Alexander) bigrading, so the bigraded
 Poincaré series and the Alexander-graded Euler characteristic of `G-hat` are independent of `i`.
 
-The comparison is the one obtained from the mapping cones of `V_i` and `V_j`. Write `π_i` for
-specialization at `V_i = 0` and `L_i` for the lift of a specialized chain including its surviving
-variables (`simplyBlockedLift`). Since `π_i` intertwines the differentials and kills exactly the
-multiples of `V_i`, on which `V_i` acts injectively,
-
-`∂⁻ (L_i c) - L_i (∂_i c) = V_i • ρ_i c`
-
-for a unique unblocked chain `ρ_i c`, the *connecting map* (`simplyBlockedConnectingMap`), named
-after the connecting map of the long exact sequence of `V_i` that it describes on cycles. Given a
-map `H`
-on `GC⁻` with `∂⁻ H + H ∂⁻ = V_i + V_j`, the semilinear map
-
-`Φ c = π_j (L_i c + H (ρ_i c))`
-
-intertwines the two specialized differentials
-(`simplyBlockedColumnChangeMap_simplyBlockedDifferential`)
-and induces a bijection on homology
-(`oneVariableSpecializationColumnChangeHomologyMap_bijective`). In characteristic two this is the
-composite `Cone(V_i) ≅ Cone(V_j)` of the isomorphism of mapping cones `(a, b) ↦ (a + H b, b)`
-with the quasi-isomorphisms between a mapping cone of an injective map and its cokernel; here the
-cones are never formed, and bijectivity is checked directly on cycles. No knot hypothesis is
-needed for this part: two columns on the same component of a link are related by such a homotopy
-as well.
+Write `π_i` for specialization at `V_i = 0`. It is surjective, it intertwines the differentials,
+and it kills exactly the multiples of `V_i`, on which `V_i` acts injectively. So the specialization
+at `V_i = 0` is the quotient of `GC⁻` by the injective chain map `V_i`. Given a map `H` on `GC⁻`
+with `∂⁻ H + H ∂⁻ = V_i + V_j`, in characteristic two the chain maps `V_i` and `V_j` are
+homotopic, and the comparison of quotients by homotopic injective chain maps
+(`LinearMap.homologyEquivOfHomotopicInjective`), transported along the identifications of
+`TauCeti.GridDiagram.oneVariableSpecializationHomologyEquivLinearMapHomology`, gives a
+coefficient-linear equivalence of the homologies of the two specializations
+(`GridDiagram.oneVariableSpecializationHomologyEquivOfHomotopy`). If `V_i • a + ∂⁻ b = 0`, it
+sends the class of `π_i b` to the class of `π_j (H a + b)`. No knot hypothesis is needed for this
+part: two columns on the same component of a link are related by such a homotopy as well.
 
 On a knot grid the variables of all columns are homotopic through the `X`-marking homotopies
-(`GridDiagram.IsKnot.XSmulHomotopy`), which have bidegree `(-1, -1)`. With this homotopy `Φ`
-preserves bidegrees, giving the degree-zero equivalence
+(`GridDiagram.IsKnot.XSmulHomotopy`), which have bidegree `(-1, -1)`. With this homotopy the
+equivalence preserves bidegrees, giving the degree-zero equivalence
 `GridDiagram.IsKnot.simplyBlockedHomologyColumnChangeEquiv` of the bigraded simply blocked
 homologies for the blocked columns `i` and `j`.
 
 ## Main definitions
 
-* `TauCeti.GridDiagram.simplyBlockedConnectingMap`: the connecting map `ρ_i`.
-* `TauCeti.GridDiagram.simplyBlockedColumnChangeMap`: the chain map `Φ` from the specialization
-  at `V_i = 0` to the specialization at `V_j = 0`.
-* `TauCeti.GridDiagram.oneVariableSpecializationColumnChangeHomologyMap`: the map it induces on
-  homology.
+* `TauCeti.GridDiagram.oneVariableSpecializationHomologyEquivOfHomotopy`: the equivalence of the
+  homologies of the specializations at `V_i = 0` and at `V_j = 0` induced by a homotopy between
+  `V_i` and `V_j`.
 * `TauCeti.GridDiagram.IsKnot.simplyBlockedHomologyColumnChangeEquiv`: for a knot grid, the
   coefficient-linear equivalence of simply blocked homologies blocking the columns `i` and `j`.
 
 ## Main results
 
-* `TauCeti.GridDiagram.oneVariableSpecializationColumnChangeHomologyMap_bijective`: the change of
-  blocked column induces a bijection on homology.
 * `GridDiagram.IsKnot.simplyBlockedHomologyColumnChangeEquiv_mem_bigradedHatHomologyPiece_iff`:
   for a knot grid it preserves and reflects both homology degrees.
 * `TauCeti.GridDiagram.IsKnot.bigradedSimplyBlockedHomologyPoincareSeries_columnChange` and
@@ -86,366 +69,142 @@ namespace TauCeti.GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)
 
-/-! ### The connecting map -/
+/-! ### Changing the blocked column along a homotopy -/
 
-section Connecting
+section Homotopy
 
-variable (R : Type*) [CommRing R] (i : Fin n)
+variable (R : Type*) [CommRing R]
 
-/-- The lift of a specialized chain commutes with the differentials up to a multiple of `V_i`. -/
-private theorem exists_X_smul_eq_unblockedDifferential_simplyBlockedLift_sub
-    (c : GridChainHat R n i) :
-    ∃ r : GridChainMinus R n, (MvPolynomial.X i : MvPolynomial (Fin n) R) • r =
-      G.unblockedDifferential R (simplyBlockedLift R i c) -
-        simplyBlockedLift R i (G.simplyBlockedDifferential R i c) :=
-  (exact_X_smul_simplyBlockedSpecialization R i _).mp (by
-    rw [map_sub, simplyBlockedSpecialization_unblockedDifferential,
-      simplyBlockedSpecialization_simplyBlockedLift, simplyBlockedSpecialization_simplyBlockedLift,
-      sub_self])
+local notation "Base" k => ModuleCat.restrictScalars
+  (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ k} R)
 
-/-- The *connecting map* `ρ_i` of the specialization at `V_i = 0`: a specialized chain `c` goes to
-the unique unblocked chain `ρ_i c` with `V_i • ρ_i c = ∂⁻ (L_i c) - L_i (∂_i c)`
-(`X_smul_simplyBlockedConnectingMap`), where `L_i` is the lift `simplyBlockedLift`. On cycles this
-is the usual chain-level description of the connecting map of the long exact sequence of
-multiplication by `V_i`; that identification is not used or proved here. -/
-noncomputable def simplyBlockedConnectingMap : GridChainHat R n i →ₗ[R] GridChainMinus R n :=
-  (LinearEquiv.ofInjective (DistribSMul.toLinearMap R (GridChainMinus R n)
-      (MvPolynomial.X i : MvPolynomial (Fin n) R))
-        (X_smul_gridChainMinus_injective R i)).symm.toLinearMap ∘ₗ
-    LinearMap.codRestrict _
-      ((G.unblockedDifferential R).restrictScalars R ∘ₗ simplyBlockedLift R i -
-        simplyBlockedLift R i ∘ₗ (G.simplyBlockedDifferential R i).restrictScalars R)
-      fun c => G.exists_X_smul_eq_unblockedDifferential_simplyBlockedLift_sub R i c
+/-- Multiplication by `V_k` commutes with `∂⁻`, over the ground ring. -/
+private theorem X_smul_comp_unblockedDifferential (k : Fin n) :
+    DistribSMul.toLinearMap R (GridChainMinus R n) (MvPolynomial.X k : MvPolynomial (Fin n) R)
+        ∘ₗ (G.unblockedDifferential R).restrictScalars R =
+      (G.unblockedDifferential R).restrictScalars R ∘ₗ
+        DistribSMul.toLinearMap R (GridChainMinus R n)
+          (MvPolynomial.X k : MvPolynomial (Fin n) R) :=
+  LinearMap.ext fun c => (LinearMap.map_smul (G.unblockedDifferential R) _ c).symm
 
-/-- The defining equation of the connecting map: `V_i • ρ_i c = ∂⁻ (L_i c) - L_i (∂_i c)`. -/
-theorem X_smul_simplyBlockedConnectingMap (c : GridChainHat R n i) :
-    (MvPolynomial.X i : MvPolynomial (Fin n) R) • G.simplyBlockedConnectingMap R i c =
-      G.unblockedDifferential R (simplyBlockedLift R i c) -
-        simplyBlockedLift R i (G.simplyBlockedDifferential R i c) := by
-  rw [simplyBlockedConnectingMap, LinearMap.comp_apply, LinearEquiv.coe_coe]
-  -- Up to definitional unfolding, the goal is `ofInjective_symm_apply`: `V_i • x` is
-  -- `DistribSMul.toLinearMap R _ V_i x`, and the coercion of the `codRestrict` value at `c` is
-  -- `(∂⁻.restrictScalars R ∘ₗ L_i - L_i ∘ₗ ∂_i.restrictScalars R) c`, which is the right side.
-  -- A `rw` with these lemmas fails, since the proof arguments of `ofInjective` and `codRestrict`
-  -- in the definition are typed by the unfolded forms.
-  exact LinearEquiv.ofInjective_symm_apply (f := DistribSMul.toLinearMap R (GridChainMinus R n)
-    (MvPolynomial.X i : MvPolynomial (Fin n) R)) _
+/-- `X_smul_gridChainMinus_injective` for multiplication by `V_k` as a linear map. -/
+private theorem X_smul_toLinearMap_injective (k : Fin n) :
+    Function.Injective (DistribSMul.toLinearMap R (GridChainMinus R n)
+      (MvPolynomial.X k : MvPolynomial (Fin n) R)) :=
+  X_smul_gridChainMinus_injective R k
 
-/-- The connecting map is semilinear along the inclusion of the surviving variables. -/
-theorem simplyBlockedConnectingMap_smul (a : MvPolynomial {c : Fin n // c ≠ i} R)
-    (c : GridChainHat R n i) :
-    G.simplyBlockedConnectingMap R i (a • c) =
-      rename Subtype.val a • G.simplyBlockedConnectingMap R i c := by
-  apply X_smul_gridChainMinus_injective R i
-  dsimp only
-  rw [X_smul_simplyBlockedConnectingMap, smul_comm, X_smul_simplyBlockedConnectingMap,
-    LinearMap.map_smul, simplyBlockedLift_smul, LinearMap.map_smul, simplyBlockedLift_smul,
-    smul_sub]
+/-- `exact_X_smul_simplyBlockedSpecialization` for multiplication by `V_k` and specialization at
+`V_k = 0` as linear maps. -/
+private theorem exact_X_smul_toLinearMap_simplyBlockedSpecializationLinearMap (k : Fin n) :
+    Function.Exact
+      (DistribSMul.toLinearMap R (GridChainMinus R n) (MvPolynomial.X k : MvPolynomial (Fin n) R))
+      (simplyBlockedSpecializationLinearMap R k) := fun c => by
+  rw [simplyBlockedSpecializationLinearMap_apply]
+  exact exact_X_smul_simplyBlockedSpecialization R k c
 
-/-- In characteristic two the connecting map commutes with the differentials: the sign `-1` of
-the general identity `∂⁻ ∘ ρ_i = -ρ_i ∘ ∂_i` disappears. -/
-theorem unblockedDifferential_simplyBlockedConnectingMap [CharP R 2] (c : GridChainHat R n i) :
-    G.unblockedDifferential R (G.simplyBlockedConnectingMap R i c) =
-      G.simplyBlockedConnectingMap R i (G.simplyBlockedDifferential R i c) := by
-  apply X_smul_gridChainMinus_injective R i
-  dsimp only
-  rw [← LinearMap.map_smul, X_smul_simplyBlockedConnectingMap, X_smul_simplyBlockedConnectingMap,
-    map_sub, unblockedDifferential_unblockedDifferential_apply,
-    simplyBlockedDifferential_simplyBlockedDifferential_apply, map_zero, sub_zero, zero_sub,
-    neg_eq_of_add_eq_zero_left (add_self_eq_zero_of_charTwo R _)]
-
-/-- On a cycle `c` of the specialization at `V_i = 0`, the lift satisfies
-`∂⁻ (L_i c) = V_i • ρ_i c`. -/
-theorem unblockedDifferential_simplyBlockedLift_of_simplyBlockedDifferential_eq_zero
-    {c : GridChainHat R n i} (hc : G.simplyBlockedDifferential R i c = 0) :
-    G.unblockedDifferential R (simplyBlockedLift R i c) =
-      (MvPolynomial.X i : MvPolynomial (Fin n) R) • G.simplyBlockedConnectingMap R i c := by
-  rw [X_smul_simplyBlockedConnectingMap, hc, map_zero, sub_zero]
-
-/-- In characteristic two the connecting map sends a cycle of the specialization at `V_i = 0` to a
-cycle of `GC⁻`. -/
-theorem unblockedDifferential_simplyBlockedConnectingMap_of_simplyBlockedDifferential_eq_zero
-    [CharP R 2] {c : GridChainHat R n i} (hc : G.simplyBlockedDifferential R i c = 0) :
-    G.unblockedDifferential R (G.simplyBlockedConnectingMap R i c) = 0 := by
-  rw [unblockedDifferential_simplyBlockedConnectingMap, hc, map_zero]
-
-end Connecting
-
-/-! ### The change of blocked column on chains -/
-
-section ColumnChange
-
-variable (R : Type*) [CommRing R] (i j : Fin n)
-  (H : GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n)
-
-/-- **Changing the blocked column.** Given a map `H` on `GC⁻`, the map
-`c ↦ π_j (L_i c + H (ρ_i c))` from the specialization at `V_i = 0` to the specialization at
-`V_j = 0`. It is semilinear along the inclusion of the variables `V_c`, `c ≠ i`, followed by
-setting `V_j` to zero. When `∂⁻ H + H ∂⁻ = V_i + V_j` in characteristic two it is a chain map
-inducing a bijection on homology (`oneVariableSpecializationColumnChangeHomologyMap_bijective`). -/
-noncomputable def simplyBlockedColumnChangeMap :
-    GridChainHat R n i →ₛₗ[simplyBlockedRingHomAlong R id j i] GridChainHat R n j where
-  toFun c := simplyBlockedSpecialization R j
-    (simplyBlockedLift R i c + H (G.simplyBlockedConnectingMap R i c))
-  map_add' c d := by
-    simp only [map_add]
-    abel
-  map_smul' a c := by
-    rw [simplyBlockedConnectingMap_smul, simplyBlockedLift_smul, LinearMap.map_smul, ← smul_add,
-      LinearMap.map_smulₛₗ, simplyBlockedRingHomAlong_apply, Function.id_comp]
-
-/-- The change of blocked column applies `π_j` to `L_i c + H (ρ_i c)`. -/
-theorem simplyBlockedColumnChangeMap_apply (c : GridChainHat R n i) :
-    G.simplyBlockedColumnChangeMap R i j H c = simplyBlockedSpecialization R j
-      (simplyBlockedLift R i c + H (G.simplyBlockedConnectingMap R i c)) :=
-  (rfl)
-
-variable [CharP R 2] {i j H}
-  (hH : G.unblockedDifferential R ∘ₗ H + H ∘ₗ G.unblockedDifferential R =
-    (MvPolynomial.X i + MvPolynomial.X j : MvPolynomial (Fin n) R) • LinearMap.id)
-
-include hH in
-/-- The homotopy identity `∂⁻ (H a) = (V_i + V_j) • a + H (∂⁻ a)`, in characteristic two. -/
-private theorem unblockedDifferential_apply_of_homotopy (a : GridChainMinus R n) :
-    G.unblockedDifferential R (H a) =
-      (MvPolynomial.X i + MvPolynomial.X j : MvPolynomial (Fin n) R) • a +
-        H (G.unblockedDifferential R a) := by
-  have h := LinearMap.congr_fun hH a
-  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.smul_apply,
-    LinearMap.id_apply] at h
-  rw [← h, add_cancel_right_of_charTwo R]
-
-include hH in
-/-- **The change of blocked column is a chain map.** -/
-theorem simplyBlockedColumnChangeMap_simplyBlockedDifferential (c : GridChainHat R n i) :
-    G.simplyBlockedColumnChangeMap R i j H (G.simplyBlockedDifferential R i c) =
-      G.simplyBlockedDifferential R j (G.simplyBlockedColumnChangeMap R i j H c) := by
-  set r := G.simplyBlockedConnectingMap R i c
-  have hL : G.unblockedDifferential R (simplyBlockedLift R i c) =
-      simplyBlockedLift R i (G.simplyBlockedDifferential R i c) +
-        (MvPolynomial.X i : MvPolynomial (Fin n) R) • r := by
-    rw [X_smul_simplyBlockedConnectingMap, add_sub_cancel]
-  -- `∂⁻ (L_i c + H r) = (L_i (∂_i c) + H (ρ_i (∂_i c))) + V_j • r` in characteristic two.
-  have key : G.unblockedDifferential R (simplyBlockedLift R i c + H r) =
-      (simplyBlockedLift R i (G.simplyBlockedDifferential R i c) +
-        H (G.simplyBlockedConnectingMap R i (G.simplyBlockedDifferential R i c))) +
-        (MvPolynomial.X j : MvPolynomial (Fin n) R) • r := by
-    rw [map_add, hL, G.unblockedDifferential_apply_of_homotopy R hH,
-      unblockedDifferential_simplyBlockedConnectingMap, add_smul]
-    simp only [add_assoc, add_cancel_left_of_charTwo R]
-    abel
-  rw [simplyBlockedColumnChangeMap_apply, simplyBlockedColumnChangeMap_apply,
-    ← simplyBlockedSpecialization_unblockedDifferential, key,
-    map_add _ _ ((MvPolynomial.X j : MvPolynomial (Fin n) R) • r),
-    simplyBlockedSpecialization_X_smul, add_zero]
-
-include hH in
-/-- The change of blocked column may be computed from any unblocked chain `Y` with
-`∂⁻ Y = V_i • t`, not only from the lift: up to a boundary it sends `π_i Y` to `π_j (Y + H t)`. -/
-private theorem simplyBlockedColumnChangeMap_simplyBlockedSpecialization_sub_mem_range
-    {Y t : GridChainMinus R n}
-    (hY : G.unblockedDifferential R Y = (MvPolynomial.X i : MvPolynomial (Fin n) R) • t) :
-    G.simplyBlockedColumnChangeMap R i j H (simplyBlockedSpecialization R i Y) -
-        simplyBlockedSpecialization R j (Y + H t) ∈
-      LinearMap.range (G.simplyBlockedDifferential R j) := by
-  -- The lift of `π_i Y` is `Y + V_i • u`, and then `ρ_i (π_i Y) = t + ∂⁻ u`.
-  obtain ⟨u, hu⟩ := (exact_X_smul_simplyBlockedSpecialization R i
-    (simplyBlockedLift R i (simplyBlockedSpecialization R i Y) - Y)).mp (by
-      rw [map_sub, simplyBlockedSpecialization_simplyBlockedLift, sub_self])
-  dsimp only at hu
-  have hLY : simplyBlockedLift R i (simplyBlockedSpecialization R i Y) =
-      Y + (MvPolynomial.X i : MvPolynomial (Fin n) R) • u := by
-    rw [hu, add_sub_cancel]
-  have hρ : G.simplyBlockedConnectingMap R i (simplyBlockedSpecialization R i Y) =
-      t + G.unblockedDifferential R u := by
-    apply X_smul_gridChainMinus_injective R i
-    dsimp only
-    rw [X_smul_simplyBlockedConnectingMap, hLY, ← simplyBlockedSpecialization_unblockedDifferential]
-    simp only [map_add, map_smul, hY, simplyBlockedSpecialization_X_smul, map_zero, sub_zero,
-      smul_add]
-  have hHu := G.unblockedDifferential_apply_of_homotopy R hH u
-  refine ⟨simplyBlockedSpecialization R j (H u), ?_⟩
-  -- Both sides are `π_j (V_i • u + H (∂⁻ u))`, since `π_j` kills `V_j • u`.
-  rw [← simplyBlockedSpecialization_unblockedDifferential, simplyBlockedColumnChangeMap_apply, hLY,
-    hρ, hHu]
-  simp only [map_add, add_smul, simplyBlockedSpecialization_X_smul, add_zero]
-  abel
-
-include hH in
-/-- A cycle whose image under the change of blocked column is a boundary is itself a boundary,
-when `∂⁻ H + H ∂⁻ = V_i + V_j` in characteristic two. -/
-theorem mem_range_of_simplyBlockedColumnChangeMap_mem_range {x : GridChainHat R n i}
-    (hx : G.simplyBlockedDifferential R i x = 0)
-    (hΦx : G.simplyBlockedColumnChangeMap R i j H x ∈
-      LinearMap.range (G.simplyBlockedDifferential R j)) :
-    x ∈ LinearMap.range (G.simplyBlockedDifferential R i) := by
-  -- With `r = ρ_i x` and `Φ x = ∂_j z`, lifting `π_j (L_i x + H r - ∂⁻ (L_j z)) = 0` gives `W`
-  -- with `V_j • W = L_i x + H r - ∂⁻ (L_j z)`. Then `∂⁻ W = r`, and
-  -- `L_i x = ∂⁻ (L_j z + H W) + V_i • W`, so `x = ∂_i (π_i (L_j z + H W))`.
-  obtain ⟨z, hz⟩ := hΦx
-  have hLx := G.unblockedDifferential_simplyBlockedLift_of_simplyBlockedDifferential_eq_zero R i hx
-  have hr :=
-    G.unblockedDifferential_simplyBlockedConnectingMap_of_simplyBlockedDifferential_eq_zero R i hx
-  set r := G.simplyBlockedConnectingMap R i x
-  obtain ⟨W, hW⟩ := (exact_X_smul_simplyBlockedSpecialization R j
-    (simplyBlockedLift R i x + H r - G.unblockedDifferential R (simplyBlockedLift R j z))).mp (by
-      rw [map_sub, ← simplyBlockedColumnChangeMap_apply, ← hz,
-        simplyBlockedSpecialization_unblockedDifferential,
-        simplyBlockedSpecialization_simplyBlockedLift, sub_self])
-  dsimp only at hW
-  have hW' : simplyBlockedLift R i x + H r =
-      (MvPolynomial.X j : MvPolynomial (Fin n) R) • W +
-        G.unblockedDifferential R (simplyBlockedLift R j z) := by
-    rw [hW, sub_add_cancel]
-  have hrW : r = G.unblockedDifferential R W := by
-    apply X_smul_gridChainMinus_injective R j
-    dsimp only
-    have h := congrArg (G.unblockedDifferential R) hW'
-    simp only [map_add, map_smul, hLx, G.unblockedDifferential_apply_of_homotopy R hH, hr,
-      map_zero, add_zero, unblockedDifferential_unblockedDifferential_apply, add_smul,
-      add_cancel_left_of_charTwo R] at h
-    exact h
-  have hxW : simplyBlockedLift R i x = (MvPolynomial.X j : MvPolynomial (Fin n) R) • W + H r +
-      G.unblockedDifferential R (simplyBlockedLift R j z) := by
-    rw [← add_cancel_right_of_charTwo R (simplyBlockedLift R i x) (H r), hW']
-    abel
-  refine ⟨simplyBlockedSpecialization R i (simplyBlockedLift R j z + H W), ?_⟩
-  rw [← simplyBlockedSpecialization_unblockedDifferential, ← sub_eq_zero,
-    ← simplyBlockedSpecialization_simplyBlockedLift R i x, ← map_sub]
-  refine (exact_X_smul_simplyBlockedSpecialization R i _).mpr ⟨W, ?_⟩
-  dsimp only
-  rw [map_add, G.unblockedDifferential_apply_of_homotopy R hH, ← hrW, hxW, add_smul]
-  abel
-
-include hH in
-/-- Every cycle of the specialization at `V_j = 0` is the image of a cycle under the change of
-blocked column up to a boundary, when `∂⁻ H + H ∂⁻ = V_i + V_j` in characteristic two. -/
-theorem exists_sub_simplyBlockedColumnChangeMap_mem_range {y : GridChainHat R n j}
-    (hy : G.simplyBlockedDifferential R j y = 0) :
-    ∃ x, G.simplyBlockedDifferential R i x = 0 ∧
-      y - G.simplyBlockedColumnChangeMap R i j H x ∈
-        LinearMap.range (G.simplyBlockedDifferential R j) := by
-  -- With `t = ρ_j y`, the chain `Y = L_j y + H t` satisfies `∂⁻ Y = V_i • t`, so `π_i Y` is a
-  -- cycle, sent up to a boundary to `π_j (Y + H t) = y`.
-  have hLy := G.unblockedDifferential_simplyBlockedLift_of_simplyBlockedDifferential_eq_zero R j hy
-  have ht :=
-    G.unblockedDifferential_simplyBlockedConnectingMap_of_simplyBlockedDifferential_eq_zero R j hy
-  set t := G.simplyBlockedConnectingMap R j y
-  have hY : G.unblockedDifferential R (simplyBlockedLift R j y + H t) =
-      (MvPolynomial.X i : MvPolynomial (Fin n) R) • t := by
-    rw [map_add, hLy, G.unblockedDifferential_apply_of_homotopy R hH, ht, map_zero, add_zero,
-      add_smul, add_comm, add_cancel_right_of_charTwo R]
-  refine ⟨simplyBlockedSpecialization R i (simplyBlockedLift R j y + H t), ?_, ?_⟩
-  · rw [← simplyBlockedSpecialization_unblockedDifferential, hY,
-      simplyBlockedSpecialization_X_smul]
-  · have h := G.simplyBlockedColumnChangeMap_simplyBlockedSpecialization_sub_mem_range R hH hY
-    rw [add_cancel_right_of_charTwo R, simplyBlockedSpecialization_simplyBlockedLift] at h
-    rw [← neg_sub]
-    exact neg_mem h
-
-end ColumnChange
-
-/-! ### Homology -/
-
-section Homology
-
-variable (R : Type*) [CommRing R] [CharP R 2] {i j : Fin n}
+variable [CharP R 2] {i j : Fin n}
   {H : GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n}
   (hH : G.unblockedDifferential R ∘ₗ H + H ∘ₗ G.unblockedDifferential R =
     (MvPolynomial.X i + MvPolynomial.X j : MvPolynomial (Fin n) R) • LinearMap.id)
 
 include hH in
-/-- The map on cycles induced by changing the blocked column from `i` to `j`. -/
-noncomputable def oneVariableSpecializationColumnChangeCyclesMap :
-    LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom →ₛₗ[simplyBlockedRingHomAlong R id j i]
-      LinearMap.ker ((G.simplyBlockedComplex R j).d () ()).hom :=
-  oneVariableSpecializationCyclesMapOfIntertwining R i j _
-    (G.simplyBlockedColumnChangeMap R i j H)
-    (G.simplyBlockedColumnChangeMap_simplyBlockedDifferential R hH)
-
-/-- Under the explicit chain identifications, the map of cycles is the change of blocked
-column. -/
-@[simp]
-theorem simplyBlockedChainEquiv_oneVariableSpecializationColumnChangeCyclesMap
-    (z : LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom) :
-    G.simplyBlockedChainEquiv R j (G.oneVariableSpecializationColumnChangeCyclesMap R hH z) =
-      G.simplyBlockedColumnChangeMap R i j H (G.simplyBlockedChainEquiv R i z) :=
-  simplyBlockedChainEquiv_oneVariableSpecializationCyclesMapOfIntertwining R i j _ _ _ z
+/-- In characteristic two, a homotopy between `V_i` and `V_j` over the ground ring. -/
+private theorem restrictScalars_homotopy :
+    (G.unblockedDifferential R).restrictScalars R ∘ₗ H.restrictScalars R +
+        H.restrictScalars R ∘ₗ (G.unblockedDifferential R).restrictScalars R =
+      DistribSMul.toLinearMap R (GridChainMinus R n) (MvPolynomial.X i : MvPolynomial (Fin n) R) -
+        DistribSMul.toLinearMap R (GridChainMinus R n)
+          (MvPolynomial.X j : MvPolynomial (Fin n) R) := by
+  refine LinearMap.ext fun c => ?_
+  have h := LinearMap.congr_fun hH c
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.smul_apply,
+    LinearMap.id_apply] at h
+  rw [LinearMap.sub_apply, DistribSMul.toLinearMap_apply, DistribSMul.toLinearMap_apply,
+    ← sub_smul, CharTwo.sub_eq_add, ← h]
+  rfl
 
 include hH in
-/-- The map on the homology of the one-variable specializations induced by changing the blocked
-column from `i` to `j`. -/
-noncomputable def oneVariableSpecializationColumnChangeHomologyMap :
-    (G.simplyBlockedComplex R i).homology () →ₛₗ[simplyBlockedRingHomAlong R id j i]
-      (G.simplyBlockedComplex R j).homology () :=
-  oneVariableSpecializationHomologyMapOfIntertwining R i j _
-    (G.simplyBlockedColumnChangeMap R i j H)
-    (G.simplyBlockedColumnChangeMap_simplyBlockedDifferential R hH)
+/-- **Changing the blocked column.** Given a map `H` on `GC⁻` with `∂⁻ H + H ∂⁻ = V_i + V_j` in
+characteristic two, the coefficient-linear equivalence between the homologies of the
+specializations at `V_i = 0` and at `V_j = 0` comparing the quotients of `GC⁻` by the homotopic
+injective chain maps `V_i` and `V_j` (`LinearMap.homologyEquivOfHomotopicInjective`). -/
+noncomputable def oneVariableSpecializationHomologyEquivOfHomotopy :
+    (Base i).obj ((G.simplyBlockedComplex R i).homology ()) ≃ₗ[R]
+      (Base j).obj ((G.simplyBlockedComplex R j).homology ()) :=
+  (G.oneVariableSpecializationHomologyEquivLinearMapHomology R i).trans <|
+    (LinearMap.homologyEquivOfHomotopicInjective
+      (G.restrictScalars_unblockedDifferential_comp_self_eq_zero R)
+      (G.restrictScalars_unblockedDifferential_comp_self_eq_zero R)
+      (G.restrictScalars_simplyBlockedDifferential_comp_self_eq_zero R i)
+      (G.restrictScalars_simplyBlockedDifferential_comp_self_eq_zero R j)
+      (G.X_smul_comp_unblockedDifferential R i) (G.X_smul_comp_unblockedDifferential R j)
+      (X_smul_toLinearMap_injective R i) (X_smul_toLinearMap_injective R j)
+      (G.restrictScalars_homotopy R hH)
+      (simplyBlockedSpecializationLinearMap_surjective R i)
+      (simplyBlockedSpecializationLinearMap_surjective R j)
+      (exact_X_smul_toLinearMap_simplyBlockedSpecializationLinearMap R i)
+      (exact_X_smul_toLinearMap_simplyBlockedSpecializationLinearMap R j)
+      (G.simplyBlockedSpecializationLinearMap_comp_unblockedDifferential R i)
+      (G.simplyBlockedSpecializationLinearMap_comp_unblockedDifferential R j)).trans
+      (G.oneVariableSpecializationHomologyEquivLinearMapHomology R j).symm
 
-/-- The change of blocked column sends a cycle class to the class of the image cycle. -/
-@[simp]
-theorem oneVariableSpecializationColumnChangeHomologyMap_oneVariableSpecializationHomologyClass
-    (z : LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom) :
-    G.oneVariableSpecializationColumnChangeHomologyMap R hH
+include hH in
+/-- If `V_i • a + ∂⁻ b = 0` and `∂⁻ H + H ∂⁻ = V_i + V_j` in characteristic two, then
+`π_j (H a + b)` is a cycle of the specialization at `V_j = 0`. -/
+theorem simplyBlockedDifferential_simplyBlockedSpecialization_add_eq_zero
+    {a b : GridChainMinus R n}
+    (hab : (MvPolynomial.X i : MvPolynomial (Fin n) R) • a + G.unblockedDifferential R b = 0) :
+    G.simplyBlockedDifferential R j (simplyBlockedSpecialization R j (H a + b)) = 0 := by
+  simpa only [LinearMap.mem_ker, LinearMap.restrictScalars_apply,
+    simplyBlockedSpecializationLinearMap_apply] using
+    LinearMap.map_add_mem_ker_of_homotopy
+      (G.restrictScalars_unblockedDifferential_comp_self_eq_zero R)
+      (G.X_smul_comp_unblockedDifferential R i) (X_smul_toLinearMap_injective R i)
+      (G.restrictScalars_homotopy R hH)
+      (exact_X_smul_toLinearMap_simplyBlockedSpecializationLinearMap R j)
+      (G.simplyBlockedSpecializationLinearMap_comp_unblockedDifferential R j) hab
+
+/-- If `V_i • a + ∂⁻ b = 0` and `π_i b` is the cycle `z`, the change of blocked column sends the
+class of `z` to the class of `π_j (H a + b)`. -/
+theorem oneVariableSpecializationHomologyEquivOfHomotopy_oneVariableSpecializationHomologyClass
+    (z : LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom) {a b : GridChainMinus R n}
+    (hab : (MvPolynomial.X i : MvPolynomial (Fin n) R) • a + G.unblockedDifferential R b = 0)
+    (hb : simplyBlockedSpecialization R i b = G.simplyBlockedChainEquiv R i z) :
+    G.oneVariableSpecializationHomologyEquivOfHomotopy R hH
         (G.oneVariableSpecializationHomologyClass R i z) =
       G.oneVariableSpecializationHomologyClass R j
-        (G.oneVariableSpecializationColumnChangeCyclesMap R hH z) :=
-  oneVariableSpecializationHomologyMapOfIntertwining_oneVariableSpecializationHomologyClass
-    R i j _ _ _ z
+        ⟨(G.simplyBlockedChainEquiv R j).symm (simplyBlockedSpecialization R j (H a + b)), by
+          rw [G.mem_ker_simplyBlockedComplex_d_iff, LinearEquiv.apply_symm_apply]
+          exact G.simplyBlockedDifferential_simplyBlockedSpecialization_add_eq_zero R hH hab⟩ := by
+  refine (LinearEquiv.trans_apply ..).trans ?_
+  rw [
+    oneVariableSpecializationHomologyEquivLinearMapHomology_oneVariableSpecializationHomologyClass,
+    LinearEquiv.trans_apply]
+  rw [← simplyBlockedSpecializationLinearMap_apply] at hb
+  have hz : simplyBlockedSpecializationLinearMap R i b ∈
+      LinearMap.ker ((G.simplyBlockedDifferential R i).restrictScalars R) := by
+    rw [hb, LinearMap.mem_ker, LinearMap.restrictScalars_apply]
+    exact (G.mem_ker_simplyBlockedComplex_d_iff R i z).mp z.2
+  -- `hab` with both maps written as the linear maps the general comparison is stated for.
+  have hab' : DistribSMul.toLinearMap R (GridChainMinus R n)
+      (MvPolynomial.X i : MvPolynomial (Fin n) R) a +
+        (G.unblockedDifferential R).restrictScalars R b = 0 := hab
+  rw [show (⟨G.simplyBlockedChainEquiv R i z, _⟩ :
+      LinearMap.ker ((G.simplyBlockedDifferential R i).restrictScalars R)) = ⟨_, hz⟩ from
+        Subtype.ext hb.symm,
+    LinearMap.homologyEquivOfHomotopicInjective_mk _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hab' hz,
+    oneVariableSpecializationHomologyEquivLinearMapHomology_symm_mk]
+  exact congrArg (G.oneVariableSpecializationHomologyClass R j)
+    (Subtype.ext (congrArg (G.simplyBlockedChainEquiv R j).symm
+      (simplyBlockedSpecializationLinearMap_apply R j _)))
 
-/-- **The change of blocked column is bijective on homology.** If `∂⁻ H + H ∂⁻ = V_i + V_j` on
-`GC⁻` in characteristic two, the map `c ↦ π_j (L_i c + H (ρ_i c))` induces a bijection from the
-homology of the specialization at `V_i = 0` to that of the specialization at `V_j = 0`. -/
-theorem oneVariableSpecializationColumnChangeHomologyMap_bijective :
-    Function.Bijective (G.oneVariableSpecializationColumnChangeHomologyMap R hH) := by
-  exact oneVariableSpecializationHomologyMapOfIntertwining_bijective R i j _ _ _
-    (G.mem_range_of_simplyBlockedColumnChangeMap_mem_range R hH)
-    (G.exists_sub_simplyBlockedColumnChangeMap_mem_range R hH)
-
-end Homology
-
-end TauCeti.GridDiagram
-
-namespace TauCeti.OddComponentGridDiagram
-
-variable {n : ℕ}
-
-/-! ### Bidegrees -/
-
-/-- With a homotopy `H` of bidegree `(-1, -1)`, the change of blocked column preserves the
-bidegree of specialized chains. -/
-theorem simplyBlockedColumnChangeMap_mem_bigradedChainHatPiece (G : OddComponentGridDiagram n)
-    (R : Type*) [CommRing R] {i j : Fin n}
-    {H : GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n}
-    (hHdeg : ∀ {g : ℤ × ℤ} {a : GridChainMinus R n}, a ∈ G.bigradedChainMinusPiece R g →
-      H a ∈ G.bigradedChainMinusPiece R (g - (1, 1)))
-    {g : ℤ × ℤ} {c : GridChainHat R n i} (hc : c ∈ G.bigradedChainHatPiece R i g) :
-    G.1.simplyBlockedColumnChangeMap R i j H c ∈ G.bigradedChainHatPiece R j g := by
-  have hL := G.simplyBlockedLift_mem_bigradedChainMinusPiece_iff.mpr hc
-  -- `V_i • ρ_i c` has bidegree `g - (1, 0)`, so `ρ_i c` has bidegree `g + (1, 1)`.
-  have hρ : G.1.simplyBlockedConnectingMap R i c ∈ G.bigradedChainMinusPiece R (g + (1, 1)) := by
-    have hg : g + (1, 1) - (2, 1) = g - (1, 0) := by
-      ext <;> simp only [Prod.fst_sub, Prod.fst_add, Prod.snd_sub, Prod.snd_add] <;> omega
-    rw [← G.X_smul_mem_bigradedChainMinusPiece_iff i, GridDiagram.X_smul_simplyBlockedConnectingMap,
-      hg]
-    exact sub_mem (G.unblockedDifferential_mem_bigradedChainMinusPiece hL)
-      (G.simplyBlockedLift_mem_bigradedChainMinusPiece_iff.mpr
-        (G.simplyBlockedDifferential_mem_bigradedChainHatPiece hc))
-  rw [GridDiagram.simplyBlockedColumnChangeMap_apply]
-  refine G.simplyBlockedSpecialization_mem_bigradedChainHatPiece j (add_mem hL ?_)
-  simpa only [add_sub_cancel_right] using hHdeg hρ
-
-end TauCeti.OddComponentGridDiagram
-
-namespace TauCeti.GridDiagram
-
-variable {n : ℕ} {G : GridDiagram n}
+end Homotopy
 
 /-! ### Knot grids -/
 
 namespace IsKnot
 
-variable (hG : G.IsKnot) (R : Type*) [CommRing R] [CharP R 2] (i j : Fin n)
+variable {G} (hG : G.IsKnot) (R : Type*) [CommRing R] [CharP R 2] (i j : Fin n)
 
 local notation "Base" i => ModuleCat.restrictScalars
   (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
@@ -456,38 +215,59 @@ coefficient-linear equivalence between the simply blocked homologies blocking th
 `j`. -/
 noncomputable def simplyBlockedHomologyColumnChangeEquiv :
     (Base i).obj (hG.simplyBlockedHomology R i) ≃ₗ[R] (Base j).obj (hG.simplyBlockedHomology R j) :=
-  ModuleCat.restrictScalarsLinearEquivOfBijective _ _
-    (G.oneVariableSpecializationColumnChangeHomologyMap R
-      (hG.unblockedDifferential_comp_XSmulHomotopy_add_XSmulHomotopy_comp R i j))
-    (fun r => simplyBlockedRingHomAlong_C R id j i r)
-    (G.oneVariableSpecializationColumnChangeHomologyMap_bijective R
-      (hG.unblockedDifferential_comp_XSmulHomotopy_add_XSmulHomotopy_comp R i j))
+  G.oneVariableSpecializationHomologyEquivOfHomotopy R
+    (hG.unblockedDifferential_comp_XSmulHomotopy_add_XSmulHomotopy_comp R i j)
 
-/-- The equivalence sends the class of a cycle `z` to the class of its image under the change of
-blocked column. -/
+/-- If `V_i • a + ∂⁻ b = 0` and `π_i b` is the cycle `z`, the change of blocked column sends the
+class of `z` to the class of `π_j (H a + b)`, for the `X`-marking homotopy `H`. -/
 theorem simplyBlockedHomologyColumnChangeEquiv_oneVariableSpecializationHomologyClass
-    (z : hG.simplyBlockedCycles R i) :
+    (z : hG.simplyBlockedCycles R i) {a b : GridChainMinus R n}
+    (hab : (MvPolynomial.X i : MvPolynomial (Fin n) R) • a + G.unblockedDifferential R b = 0)
+    (hb : simplyBlockedSpecialization R i b = G.simplyBlockedChainEquiv R i z) :
     hG.simplyBlockedHomologyColumnChangeEquiv R i j
         (G.oneVariableSpecializationHomologyClass R i z) =
       G.oneVariableSpecializationHomologyClass R j
-        (G.oneVariableSpecializationColumnChangeCyclesMap R
-          (hG.unblockedDifferential_comp_XSmulHomotopy_add_XSmulHomotopy_comp R i j) z) :=
-  (ModuleCat.restrictScalarsLinearEquivOfBijective_apply _ _ _ _ _ _).trans
-    (G.oneVariableSpecializationColumnChangeHomologyMap_oneVariableSpecializationHomologyClass
-      R _ z)
+        ⟨(G.simplyBlockedChainEquiv R j).symm
+          (simplyBlockedSpecialization R j (hG.XSmulHomotopy R i j a + b)), by
+          rw [G.mem_ker_simplyBlockedComplex_d_iff, LinearEquiv.apply_symm_apply]
+          exact G.simplyBlockedDifferential_simplyBlockedSpecialization_add_eq_zero R
+            (hG.unblockedDifferential_comp_XSmulHomotopy_add_XSmulHomotopy_comp R i j) hab⟩ :=
+  G.oneVariableSpecializationHomologyEquivOfHomotopy_oneVariableSpecializationHomologyClass R _ z
+    hab hb
 
 /-- The change of blocked column on knot grid homology has bidegree zero. -/
 theorem isHomogeneous_simplyBlockedHomologyColumnChangeEquiv :
     LinearMap.IsHomogeneous (hG.simplyBlockedHomologyColumnChangeEquiv R i j).toLinearMap
       (hG.toOddComponentGridDiagram.bigradedHatHomologyGrading R i).piece
-      (hG.toOddComponentGridDiagram.bigradedHatHomologyGrading R j).piece 0 :=
-  hG.toOddComponentGridDiagram.isHomogeneous_bigradedHatHomologyGrading_of_cycles R i
-    hG.toOddComponentGridDiagram j _ _
-    (hG.simplyBlockedHomologyColumnChangeEquiv_oneVariableSpecializationHomologyClass R i j)
-    fun g z hz => by
-      rw [add_zero, simplyBlockedChainEquiv_oneVariableSpecializationColumnChangeCyclesMap]
-      exact hG.toOddComponentGridDiagram.simplyBlockedColumnChangeMap_mem_bigradedChainHatPiece R
-        (hG.XSmulHomotopy_mem_bigradedChainMinusPiece i j) hz
+      (hG.toOddComponentGridDiagram.bigradedHatHomologyGrading R j).piece 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro g y hy
+  rw [OddComponentGridDiagram.bigradedHatHomologyGrading_piece] at hy ⊢
+  obtain ⟨z, hz, rfl⟩ := (hG.toOddComponentGridDiagram.mem_bigradedHatHomologyPiece_iff R i).mp hy
+  -- The lift `b` of the cycle has bidegree `g`, and its boundary is `-V_i • a` for some `a`.
+  have hb := (OddComponentGridDiagram.simplyBlockedLift_mem_bigradedChainMinusPiece_iff
+    hG.toOddComponentGridDiagram).mpr hz
+  obtain ⟨a, ha⟩ := (exact_X_smul_simplyBlockedSpecialization R i
+    (-G.unblockedDifferential R (simplyBlockedLift R i (G.simplyBlockedChainEquiv R i z)))).mp (by
+      rw [map_neg, simplyBlockedSpecialization_unblockedDifferential,
+        simplyBlockedSpecialization_simplyBlockedLift,
+        (G.mem_ker_simplyBlockedComplex_d_iff R i z).mp z.2, neg_zero])
+  dsimp only at ha
+  -- `V_i • a` has bidegree `g - (1, 0)`, so `a` has bidegree `g + (1, 1)`.
+  have hadeg : a ∈ hG.toOddComponentGridDiagram.bigradedChainMinusPiece R (g + (1, 1)) := by
+    have hg : g + (1, 1) - (2, 1) = g - (1, 0) := by
+      ext <;> simp only [Prod.fst_sub, Prod.fst_add, Prod.snd_sub, Prod.snd_add] <;> omega
+    rw [← hG.toOddComponentGridDiagram.X_smul_mem_bigradedChainMinusPiece_iff i, hg, ha]
+    exact neg_mem (OddComponentGridDiagram.unblockedDifferential_mem_bigradedChainMinusPiece _ hb)
+  rw [LinearEquiv.coe_toLinearMap,
+    hG.simplyBlockedHomologyColumnChangeEquiv_oneVariableSpecializationHomologyClass R i j z
+      (by rw [ha, neg_add_cancel]) (simplyBlockedSpecialization_simplyBlockedLift R i _), add_zero]
+  refine OddComponentGridDiagram.oneVariableSpecializationHomologyClass_mem_bigradedHatHomologyPiece
+    _ R j ?_
+  rw [LinearEquiv.apply_symm_apply]
+  refine hG.toOddComponentGridDiagram.simplyBlockedSpecialization_mem_bigradedChainHatPiece j
+    (add_mem ?_ hb)
+  simpa only [add_sub_cancel_right] using hG.XSmulHomotopy_mem_bigradedChainMinusPiece i j hadeg
 
 /-- The change of blocked column preserves and reflects both homology degrees. -/
 @[simp]

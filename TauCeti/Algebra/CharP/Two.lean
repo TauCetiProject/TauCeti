@@ -18,8 +18,7 @@ inverse. Consequently addition is cancellative, even when the given semiring str
 additive cancellation. This supplies the cancellation needed by the grid commutation chain-map
 criterion. The same holds in any module over a semiring of characteristic two
 (`TauCeti.add_self_eq_zero_of_charTwo`), which is how terms appearing twice cancel in sign-free
-differentials (`TauCeti.add_cancel_left_of_charTwo`, `TauCeti.add_cancel_right_of_charTwo`), and
-there `a + b = 0` exactly when `a = b` (`TauCeti.add_eq_zero_iff_eq_of_charTwo`).
+differentials, and there `a + b = 0` exactly when `a = b` (`TauCeti.add_eq_zero_iff_eq_of_charTwo`).
 Adding two homotopy relations `a + p = D k + k'` and `p + b = D t + t'` cancels the shared term `p`
 (`TauCeti.add_eq_map_add_add_of_charTwo`).
 
@@ -48,16 +47,6 @@ theorem isCancelAdd_of_charTwo (R : Type*) [NonAssocSemiring R] [CharP R 2] : Is
 theorem add_self_eq_zero_of_charTwo (R : Type*) {M : Type*} [Semiring R] [CharP R 2]
     [AddCommMonoid M] [Module R M] (x : M) : x + x = 0 := by
   rw [← two_smul R, CharTwo.two_eq_zero, zero_smul]
-
-/-- In a module over a semiring of characteristic two, adding an element twice cancels it. -/
-theorem add_cancel_left_of_charTwo (R : Type*) {M : Type*} [Semiring R] [CharP R 2]
-    [AddCommMonoid M] [Module R M] (a b : M) : a + (a + b) = b := by
-  rw [← add_assoc, add_self_eq_zero_of_charTwo R, zero_add]
-
-/-- In a module over a semiring of characteristic two, adding an element twice cancels it. -/
-theorem add_cancel_right_of_charTwo (R : Type*) {M : Type*} [Semiring R] [CharP R 2]
-    [AddCommMonoid M] [Module R M] (a b : M) : a + b + b = a := by
-  rw [add_assoc, add_self_eq_zero_of_charTwo R, add_zero]
 
 /-- In a ring of characteristic two without zero divisors, two roots of `X ^ 2 + t X - s` are
 equal or differ by `t`. -/
