@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Edge
 
 /-!
@@ -142,9 +143,10 @@ lemma exists_joined_vertex (p : classifyingSpace C) : ∃ X : C, Joined (vertex 
 instance [IsEmpty C] : IsEmpty (classifyingSpace C) :=
   ⟨fun p ↦ IsEmpty.false (exists_joined_vertex p).choose⟩
 
-/-- The classifying space of a nonempty category is nonempty: it has a vertex. -/
+/-- The classifying space of a nonempty category is nonempty: its nerve has a vertex. -/
 instance [Nonempty C] : Nonempty (classifyingSpace C) :=
-  ⟨vertex (Classical.arbitrary C)⟩
+  have : Nonempty (nerve C _⦋0⦌) := ⟨nerveEquiv.symm (Classical.arbitrary C)⟩
+  SSet.nonempty_toTop
 
 /-- The classifying space of a category with at most one object and at most one arrow between any
 two objects, such as the category with one object and one morphism, has at most one point. -/
@@ -167,7 +169,7 @@ variable {C D : Type u} [Category.{v} C] [Category.{v} D]
 lemma classifyingSpaceMap_vertex (F : C ⥤ D) (X : C) :
     F.classifyingSpaceMap (vertex X) = vertex (F.obj X) :=
   (SSet.toTop_map_toTopPoint (nerveMap F) (nerveEquiv.symm X)).trans
-    (congrArg SSet.toTopPoint (nerveMap_app_mk₀ F X))
+    (congrArg SSet.toTopPoint (nerveMap_app_nerveEquiv_symm F X))
 
 end CategoryTheory.Functor
 
@@ -182,13 +184,12 @@ lemma map_edge (F : C ⥤ D) {X Y : C} (f : X ⟶ Y) :
     (edge f).map F.classifyingSpaceMap.hom.continuous =
       (edge (F.map f)).cast (F.classifyingSpaceMap_vertex X) (F.classifyingSpaceMap_vertex Y) := by
   ext t
-  rw [Path.map_coe, Function.comp_apply, Path.cast_coe, edge_eq_toTopPath, edge_eq_toTopPath]
-  -- The edges are rewritten pointwise by `exact`, since their endpoints `nerveEquiv.symm X` are
-  -- typed as composable arrows rather than vertices of the nerve, which defeats `rw` and `simp`.
-  exact (congrArg F.classifyingSpaceMap (SSet.Edge.toTopPath_apply (nerve.edgeMk f) t)).trans
-    ((SSet.toTop_map_toTopObjMk (nerveMap F) _ _).trans
-      ((congrArg (SSet.toTopObjMk · _) (nerveMap_app_mk₁ F f)).trans
-        (SSet.Edge.toTopPath_apply (nerve.edgeMk (F.map f)) t).symm))
+  -- The endpoints `nerveEquiv.symm X` of the edges are typed as composable arrows rather than
+  -- vertices of the nerve, which defeats `rw` and `simp`; so the equations are chained by `exact`.
+  exact (congrArg (· t) ((nerve.edgeMk f).map_toTopPath (nerveMap F))).trans
+    ((SSet.Edge.toTopPath_apply ((nerve.edgeMk f).map (nerveMap F)) t).trans
+      ((congrArg (SSet.toTopObjMk · _)
+      (nerveMap_app_mk₁ F f)).trans (SSet.Edge.toTopPath_apply (nerve.edgeMk (F.map f)) t).symm))
 
 variable (C) in
 /-- The functor from a category to the fundamental groupoid of its classifying space, sending an

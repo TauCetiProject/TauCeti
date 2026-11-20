@@ -24,9 +24,9 @@ writing `|X|` as the colimit of the realizations of the simplices of `X`, each o
 connected.
 
 In particular every point of `|X|` is joined by a path to the point of a vertex
-(`SSet.exists_joined_toTopPoint`). So `|X|` is empty when `X` has no vertices
-(`SSet.isEmpty_toTop`), and has at most one point when `X` has at most one simplex in each
-dimension (`SSet.subsingleton_toTop`).
+(`SSet.exists_joined_toTopPoint`). So `|X|` is empty exactly when `X` has no vertices
+(`SSet.isEmpty_toTop`, `SSet.nonempty_toTop`), and has at most one point when `X` has at most
+one simplex in each dimension (`SSet.subsingleton_toTop`).
 
 Consequently a weak equivalence of simplicial sets, a map whose realization is a weak homotopy
 equivalence, induces a bijection on connected components
@@ -191,6 +191,10 @@ lemma exists_joined_toTopPoint (p : |X|) : ∃ x : X _⦋0⦌, Joined (toTopPoin
 instance isEmpty_toTop [IsEmpty (X _⦋0⦌)] : IsEmpty |X| :=
   ⟨fun p ↦ IsEmpty.false (exists_joined_toTopPoint p).choose⟩
 
+/-- The geometric realization of a simplicial set with a vertex is nonempty. -/
+instance nonempty_toTop [Nonempty (X _⦋0⦌)] : Nonempty |X| :=
+  ⟨toTopPoint (Classical.arbitrary _)⟩
+
 /-- The geometric realization of a simplicial set with at most one simplex in each dimension has at
 most one point: the point of every simplex is the point of a degeneration of a vertex. -/
 lemma subsingleton_toTop (h : ∀ n : ℕ, Subsingleton (X _⦋n⦌)) : Subsingleton |X| := by
@@ -201,7 +205,7 @@ lemma subsingleton_toTop (h : ∀ n : ℕ, Subsingleton (X _⦋n⦌)) : Subsingl
     refine toTop_hom_ext fun n x w ↦ ?_
     rw [Subsingleton.elim x (X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op v), toTopObjMk_map,
       ← toTopPoint_eq_toTopObjMk]
-    rfl
+    simp only [TopCat.hom_id, ContinuousMap.id_apply, TopCat.hom_ofHom, ContinuousMap.const_apply]
   have hp := ConcreteCategory.congr_hom hid p
   have hq := ConcreteCategory.congr_hom hid q
   simp only [TopCat.hom_id, ContinuousMap.id_apply, TopCat.hom_ofHom, ContinuousMap.const_apply]

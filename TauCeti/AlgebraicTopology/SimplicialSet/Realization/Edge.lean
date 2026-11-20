@@ -45,13 +45,6 @@ namespace SSet
 
 variable {X Y : SSet.{u}}
 
-/-- The point of a face of a simplex is the point of the simplex with the transported
-coordinates. -/
-lemma toTopObjMk_δ {n : ℕ} (i : Fin (n + 2)) (x : X _⦋n + 1⦌)
-    (w : StdSimplex ℝ (Fin (n + 1))) :
-    toTopObjMk (X.δ i x) w = toTopObjMk x (StdSimplex.map (SimplexCategory.δ i) w) :=
-  toTopObjMk_map (SimplexCategory.δ i) x w
-
 namespace Edge
 
 variable {x₀ x₁ x₂ : X _⦋0⦌}
@@ -96,40 +89,33 @@ namespace CompStruct
 
 variable {e₀₁ : X.Edge x₀ x₁} {e₁₂ : X.Edge x₁ x₂} {e₀₂ : X.Edge x₀ x₂}
 
-/-- The map from the unit interval onto the `i`-th edge of the topological `2`-simplex. -/
-private noncomputable def faceMap (i : Fin 3) : C(I, StdSimplex ℝ (Fin 3)) :=
-  ⟨fun t ↦ StdSimplex.map (SimplexCategory.δ i) (StdSimplex.homeomorphI.symm t),
-    (StdSimplex.continuous_map ℝ _).comp StdSimplex.homeomorphI.symm.continuous⟩
-
-/-- The path of an edge of a `2`-simplex `s` is the path of the corresponding edge of the
+/-- The path of an edge of a `2`-simplex `s` is the path along the corresponding edge of the
 topological `2`-simplex, followed by the map to `|X|` given by `s`. -/
 private lemma toTopPath_eq_of_δ_eq {e : X.Edge x₀ x₁} {s : X _⦋2⦌} {i : Fin 3}
     (h : X.δ i s = e.edge) (t : I) :
-    e.toTopPath t = toTopObjMk s (faceMap i t) := by
-  rw [toTopPath_apply, ← h, toTopObjMk_δ, faceMap, ContinuousMap.coe_mk]
+    e.toTopPath t = toTopObjMk s (StdSimplex.edgePath i.succAbove t) := by
+  rw [toTopPath_apply, ← h, toTopObjMk_δ, StdSimplex.edgePath_apply, SimplexCategory.coe_δ]
 
 /-- A `2`-simplex with faces `e₀₁`, `e₁₂` and `e₀₂` makes the path of `e₀₁` followed by the path
 of `e₁₂` homotopic rel endpoints to the path of `e₀₂`. -/
 theorem toTopPath_trans_homotopic (h : CompStruct e₀₁ e₁₂ e₀₂) :
     (e₀₁.toTopPath.trans e₁₂.toTopPath).Homotopic e₀₂.toTopPath := by
-  -- The three paths are images of paths in the topological `2`-simplex, which is simply
-  -- connected, under the continuous map `g` given by the `2`-simplex `h.simplex`.
+  -- The three paths are images of the paths along the edges of the topological `2`-simplex,
+  -- which is simply connected, under the continuous map `g` given by the `2`-simplex `h.simplex`.
   let g : C(StdSimplex ℝ (Fin 3), |X|) := ⟨toTopObjMk h.simplex, continuous_toTopObjMk _⟩
-  have h₀ : faceMap 0 0 = .single 1 := by simp [faceMap]; rfl
-  have h₁ : faceMap 1 0 = .single 0 := by simp [faceMap]; rfl
-  have h₁' : faceMap 1 1 = .single 2 := by simp [faceMap]; rfl
-  have h₂ : faceMap 2 0 = .single 0 := by simp [faceMap]; rfl
-  have h₂' : faceMap 2 1 = .single 1 := by simp [faceMap]; rfl
-  have h₀' : faceMap 0 1 = .single 2 := by simp [faceMap]; rfl
-  let p : _root_.Path (StdSimplex.single (R := ℝ) (0 : Fin 3)) (.single 2) :=
-    (_root_.Path.mk (faceMap 2) h₂ h₂').trans (_root_.Path.mk (faceMap 0) h₀ h₀')
-  let q : _root_.Path (StdSimplex.single (R := ℝ) (0 : Fin 3)) (.single 2) :=
-    _root_.Path.mk (faceMap 1) h₁ h₁'
+  -- The paths along the edges, with their endpoints `Fin.succAbove i j` on numerals evaluated
+  -- by computation, so that they compose.
+  let p₀ : _root_.Path (StdSimplex.single (R := ℝ) (1 : Fin 3)) (.single 2) :=
+    (StdSimplex.edgePath (Fin.succAbove 0)).cast rfl rfl
+  let p₁ : _root_.Path (StdSimplex.single (R := ℝ) (0 : Fin 3)) (.single 2) :=
+    (StdSimplex.edgePath (Fin.succAbove 1)).cast rfl rfl
+  let p₂ : _root_.Path (StdSimplex.single (R := ℝ) (0 : Fin 3)) (.single 1) :=
+    (StdSimplex.edgePath (Fin.succAbove 2)).cast rfl rfl
   refine ⟨ContinuousMap.HomotopyRel.cast
-    ((SimplyConnectedSpace.paths_homotopic p q).map g).some ?_ ?_⟩
+    ((SimplyConnectedSpace.paths_homotopic (p₂.trans p₀) p₁).map g).some ?_ ?_⟩
   · ext t
     simp only [_root_.Path.coe_toContinuousMap, _root_.Path.map_coe, Function.comp_apply,
-      _root_.Path.trans_apply, p]
+      _root_.Path.trans_apply, p₀, p₂]
     split_ifs
     · exact (toTopPath_eq_of_δ_eq h.d₂ _).symm
     · exact (toTopPath_eq_of_δ_eq h.d₀ _).symm
