@@ -295,7 +295,7 @@ private theorem lpNorm_iteratedGradient_le_of_pullback (hp : p ≠ ⊤)
   have hℓ : (1 + 2 * max C₁ 0) * ‖lowerOrder 1 v‖ ≤ (1 + 2 * max C₁ 0) *
       (compLBound p 1 L₁ c₁ * (‖value 2 u‖ + ‖iteratedGradient 0 (lowerOrder 1 u)‖)) :=
     mul_le_mul_of_nonneg_left hlow (by positivity)
-  nlinarith
+  linarith
 
 end Pullback
 

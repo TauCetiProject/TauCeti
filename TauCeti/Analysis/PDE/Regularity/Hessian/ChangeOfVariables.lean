@@ -105,6 +105,19 @@ noncomputable def nondivPullbackDrift (Φ Ψ : E → E) (A : E → E →L[ℝ] E
   fderiv ℝ Ψ (Φ x) (b (Φ x)) + ∑ i, iteratedFDeriv ℝ 2 Ψ (Φ x)
     ![stdOrthonormalBasis ℝ E i, (A (Φ x)).adjoint (stdOrthonormalBasis ℝ E i)]
 
+/-- The value of the pulled-back principal coefficient: `A'(x) = DΨ(Φ x) ∘ A(Φ x) ∘ DΨ(Φ x)†`. -/
+theorem nondivPullbackPrincipal_apply (Φ Ψ : E → E) (A : E → E →L[ℝ] E) (x : E) :
+    nondivPullbackPrincipal Φ Ψ A x =
+      fderiv ℝ Ψ (Φ x) ∘L A (Φ x) ∘L (fderiv ℝ Ψ (Φ x)).adjoint :=
+  (rfl)
+
+/-- The value of the pulled-back drift:
+`b'(x) = DΨ(Φ x) b(Φ x) + ∑ᵢ D²Ψ(Φ x) (eᵢ, A(Φ x)† eᵢ)` for the standard orthonormal basis. -/
+theorem nondivPullbackDrift_apply (Φ Ψ : E → E) (A : E → E →L[ℝ] E) (b : E → E) (x : E) :
+    nondivPullbackDrift Φ Ψ A b x = fderiv ℝ Ψ (Φ x) (b (Φ x)) + ∑ i, iteratedFDeriv ℝ 2 Ψ (Φ x)
+      ![stdOrthonormalBasis ℝ E i, (A (Φ x)).adjoint (stdOrthonormalBasis ℝ E i)] :=
+  (rfl)
+
 /-- The pulled-back principal coefficient `A'` is elliptic wherever `A` is: if
 `λ ‖η‖² ≤ ⟪A(Φ x) η, η⟫` and `‖DΦ(x)‖ ≤ L`, then `λ / max L 1 ^ 2 ‖ξ‖² ≤ ⟪A'(x) ξ, ξ⟫`. -/
 theorem nondivPullbackPrincipal_elliptic (hΦ : IsChangeOfVariables 2 U V Φ L c)
@@ -130,7 +143,7 @@ theorem nondivPullbackPrincipal_elliptic (hΦ : IsChangeOfVariables 2 U V Φ L c
         exact (hΦ.norm_fderiv_le x hx).trans (le_max_left _ _)
   have hinner :
       ⟪nondivPullbackPrincipal Φ Ψ A x ξ, ξ⟫_ℝ = ⟪A (Φ x) (N.adjoint ξ), N.adjoint ξ⟫_ℝ := by
-    simp only [nondivPullbackPrincipal, ContinuousLinearMap.coe_comp, Function.comp_apply]
+    simp only [nondivPullbackPrincipal_apply, ContinuousLinearMap.coe_comp, Function.comp_apply]
     rw [← ContinuousLinearMap.adjoint_inner_right]
   rw [hinner]
   calc lam / max L 1 ^ 2 * ‖ξ‖ ^ 2 ≤ lam / max L 1 ^ 2 * (max L 1 * ‖N.adjoint ξ‖) ^ 2 := by
@@ -166,14 +179,14 @@ theorem norm_nondivPullbackDrift_le (hΨ : IsChangeOfVariables 2 V U Ψ L' c')
       ![stdOrthonormalBasis ℝ E i, (A (Φ x)).adjoint (stdOrthonormalBasis ℝ E i)]‖ ≤ L' * Λ :=
     fun i => by
       refine ((iteratedFDeriv ℝ 2 Ψ (Φ x)).le_opNorm _).trans ?_
-      rw [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
-        (stdOrthonormalBasis ℝ E).orthonormal.1 i, one_mul]
+      simp only [Fin.prod_univ_two, Matrix.cons_val, (stdOrthonormalBasis ℝ E).orthonormal.1 i,
+        one_mul]
       have ha : ‖(A (Φ x)).adjoint (stdOrthonormalBasis ℝ E i)‖ ≤ Λ := by
         refine ((A (Φ x)).adjoint.le_opNorm _).trans ?_
         rw [LinearIsometryEquiv.norm_map, (stdOrthonormalBasis ℝ E).orthonormal.1 i, mul_one]
         exact hA
       exact mul_le_mul hL'' ha (norm_nonneg _) h0
-  unfold nondivPullbackDrift
+  rw [nondivPullbackDrift_apply]
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
   · exact ((fderiv ℝ Ψ (Φ x)).le_opNorm _).trans (mul_le_mul hL' hb (norm_nonneg _) h0)
   · refine (norm_sum_le _ _).trans ?_
@@ -284,7 +297,7 @@ theorem ae_traceCLM_nondivPullbackPrincipal_comp_add_inner_nondivPullbackDrift_a
         c₀ (Φ x) * value 2 (compL hΦ hp u) x = f (Φ x) := by
   filter_upwards [ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq
     (stdOrthonormalBasis ℝ E) hΦ hΨ hΦΨ hp u hu] with x hx
-  simpa only [nondivPullbackPrincipal, nondivPullbackDrift, iteratedFDeriv_two_apply,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] using hx
+  simpa only [nondivPullbackPrincipal_apply, nondivPullbackDrift_apply, iteratedFDeriv_two_apply,
+    Matrix.cons_val] using hx
 
 end TauCeti.PDE
