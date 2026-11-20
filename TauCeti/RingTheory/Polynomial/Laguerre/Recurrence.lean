@@ -119,7 +119,9 @@ theorem X_mul_laguerre_add_one (α : R) (n : ℕ) :
     ring
   · have hq : ((-1 : ℚ) ^ j / j.factorial) = -((j + 1) * ((-1) ^ (j + 1) / (j + 1).factorial)) := by
       rw [Nat.factorial_succ]; push_cast; field_simp; ring
-    simpa using congrArg (algebraMap ℚ R) hq
+    rw [coeff_laguerre_self, coeff_laguerre_of_lt α (Nat.lt_succ_self j), coeff_laguerre_self, hq]
+    simp only [map_neg, map_mul, map_add, map_natCast, map_one, Nat.cast_add, Nat.cast_one]
+    ring
   · simp [coeff_laguerre_of_lt _ hj, coeff_laguerre_of_lt _ (by omega : n < j + 1),
       coeff_laguerre_of_lt _ (by omega : n + 1 < j + 1)]
 

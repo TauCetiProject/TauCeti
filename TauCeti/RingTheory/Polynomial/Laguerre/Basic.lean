@@ -139,8 +139,10 @@ theorem eval_zero_laguerre (α : R) (n : ℕ) :
 /-- The simple Laguerre polynomials take the value `1` at the origin: `Lₙ^{(0)}(0) = 1`. -/
 @[simp]
 theorem eval_zero_laguerre_zero_left (n : ℕ) : (laguerre (0 : R) n).eval 0 = 1 := by
+  -- `Lₙ^{(0)}(0) = (1 / n!) • (1)ₙ = (1 / n!) • n!`, and `1 / n! * n! = 1` in `ℚ`
+  have h : (1 : ℚ) / n.factorial * n.factorial = 1 :=
+    div_mul_cancel₀ 1 (Nat.cast_ne_zero.2 n.factorial_ne_zero)
   rw [eval_zero_laguerre, zero_add, ← eval_eq_smeval, ascPochhammer_eval_one]
-  simp [Algebra.smul_def, ← map_natCast (algebraMap ℚ R), -map_natCast, ← map_mul,
-    Nat.factorial_ne_zero]
+  rw [Algebra.smul_def, ← map_natCast (algebraMap ℚ R), ← map_mul, h, map_one]
 
 end Polynomial
