@@ -906,6 +906,25 @@ theorem contDiffAt_ext_coord_change [I.Boundaryless] (x x' : M) {y : E}
   have h := contDiffWithinAt_ext_coord_change (n := n) x x' hy
   rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
 
+omit [IsManifold I n M] in
+/-- The image in the chart at `x'` of a point of the chart domains at `x` and `x'` lies in the
+domain of the change of extended charts from `x'` to `x`. -/
+theorem extChartAt_mem_ext_coord_change_source {x x' y : M} (hx : y ∈ (chartAt H x).source)
+    (hx' : y ∈ (chartAt H x').source) :
+    extChartAt I x' y ∈ ((extChartAt I x').symm ≫ extChartAt I x).source := by
+  have hy : y ∈ (extChartAt I x').source := by rwa [extChartAt_source]
+  rw [PartialEquiv.trans_source, PartialEquiv.symm_source]
+  refine ⟨(extChartAt I x').map_source hy, ?_⟩
+  rw [Set.mem_preimage, (extChartAt I x').left_inv hy, extChartAt_source]
+  exact hx
+
+/-- On a boundaryless manifold, the change of extended charts from `x'` to `x` is `C^n` at the
+image in the chart at `x'` of every point of both chart domains. -/
+theorem contDiffAt_ext_coord_change_extChartAt [I.Boundaryless] {x x' y : M}
+    (hx : y ∈ (chartAt H x).source) (hx' : y ∈ (chartAt H x').source) :
+    ContDiffAt 𝕜 n (extChartAt I x ∘ (extChartAt I x').symm) (extChartAt I x' y) :=
+  contDiffAt_ext_coord_change x x' (extChartAt_mem_ext_coord_change_source hx hx')
+
 end InteriorCharts
 
 section CoordinateDomain

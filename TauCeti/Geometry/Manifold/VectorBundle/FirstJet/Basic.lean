@@ -124,6 +124,18 @@ theorem mem_extChartAt_source_of_mem_baseSet {i y : M}
   rw [extChartAt_source]
   exact hy.2
 
+/-- A point of the first-jet chart domain at `i` lies in the base set of the preferred
+trivialization of `V` at `i`. -/
+theorem mem_baseSet_trivializationAt_of_mem_baseSet {i y : M}
+    (hy : y ∈ baseSet (H := H) F V i) : y ∈ (trivializationAt F V i).baseSet :=
+  hy.1
+
+/-- A point of the first-jet chart domain at `i` lies in the source of the preferred chart at
+`i`. -/
+theorem mem_chartAt_source_of_mem_baseSet {i y : M} (hy : y ∈ baseSet (H := H) F V i) :
+    y ∈ (chartAt H i).source :=
+  hy.2
+
 /-- Near the image in the extended chart at `j` of a point `y` of the first-jet chart domain at `i`
 and the chart domain at `j`, the inverse of that extended chart lands in the first-jet chart domain
 at `i`. -/
@@ -186,6 +198,15 @@ theorem hasFDerivWithinAt_fiberCoordChange [IsManifold I 1 M] [ContMDiffVectorBu
       (extChartAt I j y) :=
   ((contDiffWithinAt_fiberCoordChange (n := 1) hi hj).differentiableWithinAt
     one_ne_zero).hasFDerivWithinAt
+
+/-- On a boundaryless manifold, the coordinate change of `V`, written in a chart, is `C^n` at the
+image of a point of the chart domains when `M` and `V` are. -/
+theorem contDiffAt_fiberCoordChange [I.Boundaryless] {n : ℕ∞ω} [IsManifold I n M]
+    [ContMDiffVectorBundle n F V I] {i j y : M} (hi : y ∈ (trivializationAt F V i).baseSet)
+    (hj : y ∈ baseSet (H := H) F V j) :
+    ContDiffAt 𝕜 n (fiberCoordChange I F V i j) (extChartAt I j y) := by
+  have h := contDiffWithinAt_fiberCoordChange (I := I) (n := n) hi hj
+  rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
 
 section
 
@@ -527,6 +548,17 @@ theorem contDiffWithinAt_localRep {n : ℕ∞ω} [IsManifold I n M] [ContMDiffVe
     exact ((trivializationAt F V i).contMDiffAt_section_iff hi.1).1 hs
   exact contMDiffWithinAt_iff_contDiffWithinAt.1 (h₁.comp_contMDiffWithinAt _
     (contMDiffWithinAt_extChartAt_symm_range i ((extChartAt I i).map_source hy)))
+
+/-- On a boundaryless manifold, the local representative in the chart and trivialization at `i`
+of a section that is `C^n` at a point `y` of the first-jet chart domain at `i` is `C^n` at the
+image of `y`. -/
+theorem contDiffAt_localRep [I.Boundaryless] {n : ℕ∞ω} [IsManifold I n M]
+    [ContMDiffVectorBundle n F V I] {s : ∀ x, V x} {i y : M}
+    (hs : ContMDiffAt I (I.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F x (s x)) y)
+    (hi : y ∈ baseSet (H := H) F V i) :
+    ContDiffAt 𝕜 n (localRep I F s i) (extChartAt I i y) := by
+  have h := contDiffWithinAt_localRep I F hs hi
+  rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
 
 /-- **Transformation law for local representatives.** Near the image of a point `y` of the
 first-jet chart domains at `i` and `j`, the local representative at `j` is the coordinate change
