@@ -32,7 +32,9 @@ form the cokernel and whose automorphism groups are the kernel, is in
 `TauCeti/Algebra/Group/CrossedModule/QuotientCategory.lean`.
 
 A morphism of crossed modules is a pair of homomorphisms commuting with the boundaries and the
-actions (`CrossedModule.Hom`). It induces homomorphisms of kernels and of cokernels.
+actions (`CrossedModule.Hom`). It induces homomorphisms of kernels and of cokernels. The bundled
+category of crossed modules, with the kernel and cokernel functors, is in
+`TauCeti/Algebra/Category/CrossedModuleCat/Basic.lean`.
 
 ## Main definitions
 
