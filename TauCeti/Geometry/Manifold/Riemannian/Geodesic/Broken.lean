@@ -223,7 +223,7 @@ section Broken
 
 /-- If consecutive points of `q 0, …, q (n + 1)` are at distance less than `r`, so are those of
 `q 1, …, q (n + 1)`. -/
-private theorem forall_dist_tail_lt {n : ℕ} {q : Fin (n + 2) → M}
+theorem forall_dist_tail_lt {n : ℕ} {q : Fin (n + 2) → M}
     (h : ∀ i : Fin (n + 1), dist (q i.castSucc) (q i.succ) < r) (i : Fin n) :
     dist (Fin.tail q i.castSucc) (Fin.tail q i.succ) < r := by
   simpa only [Fin.tail, Fin.succ_castSucc] using h i.succ
@@ -359,7 +359,7 @@ section Loop
 /-- If every point of a cyclic tuple `q 0, …, q n` is at distance less than `r` from the preceding
 one, `q n` preceding `q 0`, then consecutive points of `q 0, …, q n, q 0` are at distance less than
 `r`. -/
-private theorem forall_dist_snoc_lt {n : ℕ} {q : Fin (n + 1) → M}
+theorem forall_dist_snoc_lt {n : ℕ} {q : Fin (n + 1) → M}
     (h : ∀ i, dist (q i) (q (i - 1)) < r) (i : Fin (n + 1)) :
     dist ((Fin.snoc q (q 0) : Fin (n + 2) → M) i.castSucc)
       ((Fin.snoc q (q 0) : Fin (n + 2) → M) i.succ) < r := by
