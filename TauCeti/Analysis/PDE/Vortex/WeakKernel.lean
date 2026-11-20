@@ -167,6 +167,7 @@ def gaugeFixedKernelEquivWeak (hx : Continuous x) (hmem : ∀ k : ℕ, x ∈ fra
       fun i n ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2))))
 
 /-- `gaugeFixedKernelEquivWeak` takes a classical kernel element to its `L²` class. -/
+@[simp]
 theorem coe_gaugeFixedKernelEquivWeak_apply (hx : Continuous x)
     (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) (y : gaugeFixedKernel x) :
     (gaugeFixedKernelEquivWeak hx hmem y : Lp (EuclideanSpace ℝ (Fin 4)) 2 volume) =
