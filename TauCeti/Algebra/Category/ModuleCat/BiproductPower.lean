@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import TauCeti.Algebra.Category.ModuleCat.Biproducts
 
 /-!
 # The diagonal action on the fibre of a finite power
@@ -18,9 +19,9 @@ inclusions, and defines the diagonal action of `Module.End R (ω X)` on `ω (⨁
 
 ## Main definitions and results
 
-* `CategoryTheory.Functor.map_π_map_ι_apply`, `CategoryTheory.Functor.sum_map_ι_map_π_apply`:
-  the biproduct identities `ιₖ ≫ πⱼ = δₖⱼ` and `∑ j, πⱼ ≫ ιⱼ = 𝟙` on elements of the fibre (the
-  latter for an arbitrary finite biproduct `⨁ F`).
+* `CategoryTheory.Functor.map_π_map_ι_apply`: the biproduct identity `ιₖ ≫ πⱼ = δₖⱼ` on elements
+  of the fibre; the identity `∑ j, πⱼ ≫ ιⱼ = 𝟙` is `CategoryTheory.Functor.sum_map_ι_map_π_apply`
+  in `TauCeti.Algebra.Category.ModuleCat.Biproducts`.
 * `CategoryTheory.Functor.ext_map_π_apply`: an element of the fibre of a finite biproduct `⨁ F`
   is determined by its images under the projections.
 * `CategoryTheory.Functor.powerAlgHom`: the diagonal action of `Module.End R (ω X)` on
@@ -52,17 +53,6 @@ theorem map_π_map_ι_apply [DecidableEq ι] [Finite ι] (j k : ι) (x : ω.obj 
   · subst hkj
     simp
   · simp
-
-variable {ι} in
-/-- The identity `∑ j, πⱼ ≫ ιⱼ = 𝟙` of a finite biproduct, on elements of the fibre of an
-additive functor to modules. -/
-theorem sum_map_ι_map_π_apply [Fintype ι] (F : ι → C) (v : ω.obj (⨁ F)) :
-    ∑ j, (ω.map (biproduct.ι F j)).hom ((ω.map (biproduct.π F j)).hom v) = v := by
-  have h := congrArg (fun φ ↦ (ω.map φ).hom v) (biproduct.total (f := F))
-  simp only [Functor.map_sum, ModuleCat.hom_sum, LinearMap.sum_apply,
-    Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply, Functor.map_id,
-    ModuleCat.hom_id, LinearMap.id_apply] at h
-  exact h
 
 variable {ι} in
 /-- An element of the fibre `ω (⨁ F)` of a finite biproduct is determined by its images under
