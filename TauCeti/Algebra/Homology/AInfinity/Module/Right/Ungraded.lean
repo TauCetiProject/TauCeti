@@ -555,6 +555,17 @@ theorem matrixAct_apply (n : ℕ) (F : Fin n → Matrix X X A) (φ : X → M) (z
     Function.comp_apply, LinearMap.lcomp_apply, LinearMap.llcomp_apply, LinearMap.coe_single,
     LinearMap.coe_proj, Function.eval, Matrix.entryLinearMap_apply, Pi.single_apply, eq_comm]
 
+/-- The `z`-component of `m_{n+1}(φ, F₁, …, Fₙ)` in the matrix module, for a row vector `φ`
+concentrated at `x₀`, is the sum over the paths `x₀ → ⋯ → xₙ = z` of
+`m_{n+1}(φ x₀, F₁ x₀ x₁, …, Fₙ xₙ₋₁ xₙ)`. -/
+theorem matrixAct_single_apply (n : ℕ) (F : Fin n → Matrix X X A) (x₀ : X) (φ : M) (z : X) :
+    Mm.matrixAct X n F (Pi.single x₀ φ) z = ∑ x : Fin (n + 1) → X,
+      if x 0 = x₀ ∧ x (Fin.last n) = z then Mm.act n (fun l => F l (x l.castSucc) (x l.succ)) φ
+      else 0 := by
+  rw [matrixAct_apply]
+  refine Finset.sum_congr rfl fun x _ => ?_
+  by_cases hx0 : x 0 = x₀ <;> simp [hx0]
+
 /-- If the operation `m_{n+1}` of `M` vanishes, so does that of the matrix module. -/
 theorem matrixAct_eq_zero_of_act_eq_zero {n : ℕ} (h : Mm.act n = 0) : Mm.matrixAct X n = 0 := by
   refine MultilinearMap.ext fun F => LinearMap.ext fun φ => funext fun z => ?_

@@ -61,8 +61,8 @@ the `A∞` relations are proved, with no bookkeeping of cuts:
 * `TauCeti.TypeDAStructure.typeABoxAct_apply`: the operations of `M ⊠ P` as sums over cuts.
 * `TauCeti.TypeDAStructure.typeABoxAct_apply_eq_twistedDifferential`: the operations of `M ⊠ P` as
   a twisted differential along the block matrix.
-* `TauCeti.TypeDAStructure.blockMatrix_mul_blockMatrix_of_le`: products of block matrices are the
-  composite terms of the structure relations of `P`.
+* `TauCeti.TypeDAStructure.blockMatrix_mul_blockMatrix_apply_of_le`: products of block matrices
+  are the composite terms of the structure relations of `P`.
 * `TauCeti.TypeDAStructure.typeABoxModule_toUngradedAInfinityRightModule`: for a differential module
   `M`, `M ⊠ P` is `TauCeti.TypeDAStructure.boxModule`.
 
@@ -79,22 +79,6 @@ public section
 open Finset MulOpposite
 
 namespace TauCeti
-
-/-- A path from `0` to `n` in `Fin (n + 1)` either has a decreasing step, or crosses each
-`i < n` in exactly one step. -/
-private theorem exists_lt_or_existsUnique {k n : ℕ} (x : Fin (k + 1) → Fin (n + 1))
-    (hx0 : x 0 = 0) (hxl : x (Fin.last k) = Fin.last n) (i : ℕ) (hi : i < n) :
-    (∃ l : Fin k, x l.succ < x l.castSucc) ∨
-      ∃ l : Fin k, ((x l.castSucc : ℕ) ≤ i ∧ i < x l.succ) ∧
-        ∀ l' : Fin k, (x l'.castSucc : ℕ) ≤ i ∧ i < x l'.succ → l' = l := by
-  by_cases hdec : ∃ l : Fin k, x l.succ < x l.castSucc
-  · exact Or.inl hdec
-  · push Not at hdec
-    obtain ⟨l, hl⟩ := Fin.exists_castSucc_le_and_lt_succ (fun t => (x t : ℕ)) (c := i)
-      (by simp [hx0]) (by simpa [hxl] using hi)
-    exact Or.inr ⟨l, hl, fun l' hl' =>
-      (Fin.monotone_iff_le_succ.mpr fun t => hdec t : Monotone fun t => (x t : ℕ))
-        |>.eq_of_castSucc_le_and_lt_succ hl' hl⟩
 
 namespace TypeDAStructure
 
@@ -121,13 +105,13 @@ theorem blockMatrix_apply {n : ℕ} (a : Fin n → A) (x x' : Fin (n + 1)) :
   (rfl)
 
 /-- The entries of the block matrix below the diagonal vanish. -/
-theorem blockMatrix_of_lt {n : ℕ} (a : Fin n → A) {x x' : Fin (n + 1)} (h : x' < x) :
+theorem blockMatrix_apply_of_lt {n : ℕ} (a : Fin n → A) {x x' : Fin (n + 1)} (h : x' < x) :
     P.blockMatrix a x x' = 0 :=
   dite_eq_right (not_le.mpr h)
 
 /-- The entry of the block matrix from `x` to `x' ≥ x` is the coefficient matrix of the block of
 inputs between `x` and `x'`. -/
-theorem blockMatrix_of_le {n : ℕ} (a : Fin n → A) {x x' : Fin (n + 1)} (h : (x : ℕ) ≤ x') :
+theorem blockMatrix_apply_of_le {n : ℕ} (a : Fin n → A) {x x' : Fin (n + 1)} (h : (x : ℕ) ≤ x') :
     P.blockMatrix a x x' =
       P.coeff ((x' : ℕ) - x) (fun l => a ⟨x + l, by have := x'.isLt; have := l.isLt; omega⟩) :=
   dite_eq_left h
@@ -154,7 +138,7 @@ private theorem blockMatrix_update_of_le_lt {n : ℕ} (a : Fin n → A) {i : Fin
       P.coeff ((x' : ℕ) - x) (Function.update
         (fun l => a ⟨x + l, by have := x'.isLt; have := l.isLt; omega⟩)
         ⟨i - x, by omega⟩ u) := by
-  rw [blockMatrix_of_le P _ (by omega)]
+  rw [blockMatrix_apply_of_le P _ (by omega)]
   congr 1
   funext l
   simp only [Function.update_apply, Fin.ext_iff]
@@ -174,8 +158,7 @@ private theorem blockMatrix_update_smul {n : ℕ} (a : Fin n → A) {i : Fin n} 
     {x x' : Fin (n + 1)} (h : (x : ℕ) ≤ i ∧ (i : ℕ) < x') :
     P.blockMatrix (Function.update a i (c • u)) x x' =
       c • P.blockMatrix (Function.update a i u) x x' := by
-  simp only [P.blockMatrix_update_of_le_lt a _ h, MultilinearMap.map_update_smul]
-  rfl
+  simp only [P.blockMatrix_update_of_le_lt a _ h, MultilinearMap.map_update_smul, RingHom.id_apply]
 
 /-- Along a path from `0` to `n` without decreasing steps, changing the input `aᵢ` changes only
 the entry of the step across `i`. -/
@@ -194,6 +177,25 @@ private theorem blockMatrix_update_comp {n k : ℕ} (a : Fin n → A) {i : Fin n
 variable [DecidableEq Y] {M : Type*} [AddCommGroup M] [Module R M]
   (Mm : UngradedAInfinityRightModule dB M)
 
+/-- Along a path with a decreasing step, the operation of the matrix module along the block
+matrix vanishes: the entry of that step lies below the diagonal. -/
+private theorem act_blockMatrix_eq_zero_of_lt {n k : ℕ} (w : Fin n → A)
+    {x : Fin (k + 1) → Fin (n + 1)} {l : Fin k} (hl : x l.succ < x l.castSucc) :
+    (Mm.matrix Y).act k (fun t => P.blockMatrix w (x t.castSucc) (x t.succ)) = 0 :=
+  ((Mm.matrix Y).act k).map_coord_zero l (P.blockMatrix_apply_of_lt w hl)
+
+/-- Along a path with a decreasing step `l₀`, the operation of the matrix module along the block
+matrix with the entry of a step `l` replaced by `G` vanishes, provided `G = 0` when `l = l₀`. -/
+private theorem act_update_blockMatrix_eq_zero_of_lt {n k : ℕ} (w : Fin n → A)
+    {x : Fin (k + 1) → Fin (n + 1)} {l₀ : Fin k} (hl₀ : x l₀.succ < x l₀.castSucc) (l : Fin k)
+    {G : Matrix Y Y B} (hG : l = l₀ → G = 0) :
+    (Mm.matrix Y).act k
+      (Function.update (fun t => P.blockMatrix w (x t.castSucc) (x t.succ)) l G) = 0 := by
+  rcases eq_or_ne l l₀ with rfl | hl
+  · exact ((Mm.matrix Y).act k).map_coord_zero l (by rw [Function.update_self, hG rfl])
+  · exact ((Mm.matrix Y).act k).map_coord_zero l₀
+      (by rw [Function.update_of_ne hl.symm, P.blockMatrix_apply_of_lt w hl₀])
+
 /-- The operation of the matrix module along a path from `0` to `n` is additive in each input. -/
 private theorem act_blockMatrix_update_add {n k : ℕ} (a : Fin n → A) (i : Fin n) (u v : A)
     {x : Fin (k + 1) → Fin (n + 1)} (hx0 : x 0 = 0) (hxl : x (Fin.last k) = Fin.last n) :
@@ -203,11 +205,9 @@ private theorem act_blockMatrix_update_add {n k : ℕ} (a : Fin n → A) (i : Fi
         (x t.succ)) +
       (Mm.matrix Y).act k (fun t => P.blockMatrix (Function.update a i v) (x t.castSucc)
         (x t.succ)) := by
-  rcases exists_lt_or_existsUnique x hx0 hxl i i.isLt with ⟨l, hl⟩ | ⟨l, hl, huniq⟩
-  · have h0 (w : Fin n → A) : (Mm.matrix Y).act k
-        (fun t => P.blockMatrix w (x t.castSucc) (x t.succ)) = 0 :=
-      ((Mm.matrix Y).act k).map_coord_zero l (P.blockMatrix_of_lt w hl)
-    rw [h0, h0, h0, add_zero]
+  rcases Fin.exists_succ_lt_castSucc_or_existsUnique_castSucc_le_and_lt_succ (fun t => (x t : ℕ))
+      (c := i) (by simp [hx0]) (by simp [hxl]) with ⟨l, hl⟩ | ⟨l, hl, huniq⟩
+  · simp only [P.act_blockMatrix_eq_zero_of_lt Mm _ (Fin.lt_def.mpr hl), add_zero]
   · rw [P.blockMatrix_update_comp a _ huniq, P.blockMatrix_update_comp a _ huniq,
       P.blockMatrix_update_comp a _ huniq, P.blockMatrix_update_add a u v hl,
       MultilinearMap.map_update_add]
@@ -220,27 +220,11 @@ private theorem act_blockMatrix_update_smul {n k : ℕ} (a : Fin n → A) (i : F
         (x t.succ)) =
       c • (Mm.matrix Y).act k (fun t => P.blockMatrix (Function.update a i u) (x t.castSucc)
         (x t.succ)) := by
-  rcases exists_lt_or_existsUnique x hx0 hxl i i.isLt with ⟨l, hl⟩ | ⟨l, hl, huniq⟩
-  · have h0 (w : Fin n → A) : (Mm.matrix Y).act k
-        (fun t => P.blockMatrix w (x t.castSucc) (x t.succ)) = 0 :=
-      ((Mm.matrix Y).act k).map_coord_zero l (P.blockMatrix_of_lt w hl)
-    rw [h0, h0, smul_zero]
+  rcases Fin.exists_succ_lt_castSucc_or_existsUnique_castSucc_le_and_lt_succ (fun t => (x t : ℕ))
+      (c := i) (by simp [hx0]) (by simp [hxl]) with ⟨l, hl⟩ | ⟨l, hl, huniq⟩
+  · simp only [P.act_blockMatrix_eq_zero_of_lt Mm _ (Fin.lt_def.mpr hl), smul_zero]
   · rw [P.blockMatrix_update_comp a _ huniq, P.blockMatrix_update_comp a _ huniq,
-      P.blockMatrix_update_smul a c u hl, MultilinearMap.map_update_smul]
-    rfl
-
-/-- The component at `n` of the operation of the matrix module along the block matrix, applied
-to a row vector concentrated at `0`, as a sum over the paths from `0` to `n`. -/
-private theorem matrixAct_blockMatrix_single_apply {n k : ℕ} (a : Fin n → A) (ψ : Y → M) :
-    ((Mm.matrix Y).matrixAct (Fin (n + 1)) k fun _ => P.blockMatrix a) (Pi.single 0 ψ)
-        (Fin.last n) =
-      ∑ x : Fin (k + 1) → Fin (n + 1), if x 0 = 0 ∧ x (Fin.last k) = Fin.last n then
-        (Mm.matrix Y).act k (fun t => P.blockMatrix a (x t.castSucc) (x t.succ)) ψ else 0 := by
-  rw [UngradedAInfinityRightModule.matrixAct_apply]
-  refine sum_congr rfl fun x _ => ?_
-  by_cases hx0 : x 0 = 0
-  · simp [hx0]
-  · simp [hx0]
+      P.blockMatrix_update_smul a c u hl, MultilinearMap.map_update_smul, RingHom.id_apply]
 
 /-- The part of the operation `m_{n+1}(ψ, a₁, …, aₙ)` of `M ⊠ P` coming from the cuts of
 `a₁, …, aₙ` into `k` consecutive, possibly empty, blocks: the operation `m_{k+1}` of the matrix
@@ -255,7 +239,7 @@ private noncomputable def blockAct (k n : ℕ) :
     obtain rfl : inst = instDecidableEqFin n := Subsingleton.elim _ _
     refine LinearMap.ext fun ψ => ?_
     simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.coe_proj, Function.eval,
-      LinearMap.coe_single, matrixAct_blockMatrix_single_apply, ← sum_add_distrib]
+      LinearMap.coe_single, UngradedAInfinityRightModule.matrixAct_single_apply, ← sum_add_distrib]
     refine sum_congr rfl fun x _ => ?_
     split_ifs with hx
     · rw [act_blockMatrix_update_add P Mm a i u v hx.1 hx.2, LinearMap.add_apply]
@@ -265,11 +249,11 @@ private noncomputable def blockAct (k n : ℕ) :
     obtain rfl : inst = instDecidableEqFin n := Subsingleton.elim _ _
     refine LinearMap.ext fun ψ => ?_
     simp only [LinearMap.smul_apply, LinearMap.comp_apply, LinearMap.coe_proj, Function.eval,
-      LinearMap.coe_single, matrixAct_blockMatrix_single_apply, smul_sum]
+      LinearMap.coe_single, UngradedAInfinityRightModule.matrixAct_single_apply, smul_sum]
     refine sum_congr rfl fun x _ => ?_
     split_ifs with hx
-    · rw [act_blockMatrix_update_smul P Mm a i c u hx.1 hx.2, LinearMap.smul_apply]
-      rfl
+    · rw [act_blockMatrix_update_smul P Mm a i c u hx.1 hx.2, LinearMap.smul_apply,
+        RingHom.id_apply]
     · rw [smul_zero]
 
 private theorem blockAct_apply (k n : ℕ) (a : Fin n → A) (ψ : Y → M) :
@@ -344,7 +328,7 @@ private theorem matrixAct_blockMatrix_single_apply_castLE {n k : ℕ} (a : Fin n
         rw [Function.comp_apply, Pi.single_apply, Pi.single_apply]
         exact if_congr (by rw [Fin.ext_iff, Fin.ext_iff]; simp) rfl rfl]
   · intro _ x y hx
-    refine P.blockMatrix_of_lt a ?_
+    refine P.blockMatrix_apply_of_lt a ?_
     rw [Fin.lt_def]
     by_contra hxy
     exact hx ⟨⟨x, by have := y.isLt; simp only [Fin.val_castLE] at hxy; omega⟩, Fin.ext rfl⟩
@@ -377,10 +361,10 @@ private theorem matrixAct_blockMatrix_single_apply_last {n k : ℕ} (a : Fin n �
     simp only [blockMatrix_apply, he_def]
     by_cases h : (x : ℕ) ≤ y
     · rw [dite_eq_left (by omega), dite_eq_left h]
-      exact P.coeff_eq_of_eq (by omega) fun l => congrArg a (Fin.ext (by simp; omega))
+      exact P.coeff_congr (by omega) fun l => congrArg a (Fin.ext (by simp; omega))
     · rw [dite_eq_right (by omega), dite_eq_right h]
   · intro _ x y hy
-    refine P.blockMatrix_of_lt a ?_
+    refine P.blockMatrix_apply_of_lt a ?_
     rw [Fin.lt_def]
     by_contra hxy
     exact hy ⟨⟨y - j, by simp only [he_def] at hxy; omega⟩,
@@ -426,7 +410,7 @@ omit [DecidableEq Y] in
 /-- **Products of block matrices.** The entry from `x` to `x' ≥ x` of the square of the block
 matrix is the composite term of the type `DA` relation on the block between `x` and `x'`: a path
 `x → y → x'` cuts the block at `y`. -/
-theorem blockMatrix_mul_blockMatrix_of_le {n : ℕ} (a : Fin n → A) {x x' : Fin (n + 1)}
+theorem blockMatrix_mul_blockMatrix_apply_of_le {n : ℕ} (a : Fin n → A) {x x' : Fin (n + 1)}
     (h : (x : ℕ) ≤ x') :
     (P.blockMatrix a * P.blockMatrix a) x x' = typeDAComp P.coeff ((x' : ℕ) - x)
       (fun l => a ⟨x + l, by have := x'.isLt; have := l.isLt; omega⟩) := by
@@ -438,16 +422,16 @@ theorem blockMatrix_mul_blockMatrix_of_le {n : ℕ} (a : Fin n → A) {x x' : Fi
     (fun y hy => ?_) fun k => ?_
   · -- Off the interval from `x` to `x'` one of the two entries vanishes.
     by_cases hxy : (x : ℕ) ≤ y
-    · rw [P.blockMatrix_of_lt a (x := y) (x' := x') ?_, Matrix.mul_zero]
+    · rw [P.blockMatrix_apply_of_lt a (x := y) (x' := x') ?_, Matrix.mul_zero]
       rw [Fin.lt_def]
       by_contra hyx
       exact hy ⟨⟨y - x, by omega⟩, Fin.ext (by simp only; omega)⟩
-    · rw [P.blockMatrix_of_lt a (Fin.lt_def.mpr (not_le.mp hxy)), Matrix.zero_mul]
-  · rw [P.blockMatrix_of_le a (by simp only; omega), P.blockMatrix_of_le a (by
+    · rw [P.blockMatrix_apply_of_lt a (Fin.lt_def.mpr (not_le.mp hxy)), Matrix.zero_mul]
+  · rw [P.blockMatrix_apply_of_le a (by simp only; omega), P.blockMatrix_apply_of_le a (by
       simp only; have := k.isLt; omega)]
     congr 1
-    · exact P.coeff_eq_of_eq (by simp) fun l => congrArg a (Fin.ext (by simp))
-    · exact P.coeff_eq_of_eq (by simp only; omega) fun l => congrArg a (Fin.ext (by simp; omega))
+    · exact P.coeff_congr (by simp) fun l => congrArg a (Fin.ext (by simp))
+    · exact P.coeff_congr (by simp only; omega) fun l => congrArg a (Fin.ext (by simp; omega))
 
 omit [DecidableEq Y] in
 /-- **The differential terms of a block, indexed by the inputs.** The differential term of the type
@@ -483,7 +467,7 @@ private theorem contractNth_block {m c : ℕ} (a : Fin (m + 1) → A) {x : ℕ} 
   rcases lt_trichotomy (l : ℕ) j with hl | hl | hl
   · rw [Fin.contractNth_apply_of_lt _ _ _ _ (by simpa using hl),
       Fin.contractNth_apply_of_lt _ _ _ _ (by simp; omega)]
-    rfl
+    exact congrArg a (Fin.ext (by simp))
   · rw [Fin.contractNth_apply_of_eq _ _ _ _ (by simpa using hl),
       Fin.contractNth_apply_of_eq _ _ _ _ (by simp; omega)]
     simp only [Fin.val_castSucc, Fin.val_succ]
@@ -527,23 +511,11 @@ private theorem ungradedStasheffMul_block {m : ℕ} (a : Fin (m + 1) → A) {x x
   · refine dite_eq_right ?_
     rintro ⟨h₁, h₂⟩
     exact hi ⟨⟨i - x, by omega⟩, Fin.ext (by simp only; omega)⟩
-  · rw [dite_eq_left ⟨by simp, by simp only; omega⟩, P.blockMatrix_of_le _ (by simp only; omega)]
-    exact P.coeff_eq_of_eq (by simp only; omega) fun l => by
+  · rw [dite_eq_left ⟨by simp, by simp only; omega⟩,
+      P.blockMatrix_apply_of_le _ (by simp only; omega)]
+    exact P.coeff_congr (by simp only; omega) fun l => by
       rw [contractNth_block a (by omega) j l]
-      rfl
-
-/-- The component at `n` of an operation of the matrix module over `0, …, n`, on a row vector at
-`0`, as a sum over the paths from `0` to `n`. -/
-private theorem matrixAct_single_zero_apply {n k : ℕ}
-    (F : Fin k → Matrix (Fin (n + 1)) (Fin (n + 1)) (Matrix Y Y B)) (ψ : Y → M) :
-    ((Mm.matrix Y).matrixAct (Fin (n + 1)) k F) (Pi.single 0 ψ) (Fin.last n) =
-      ∑ x : Fin (k + 1) → Fin (n + 1), if x 0 = 0 ∧ x (Fin.last k) = Fin.last n then
-        (Mm.matrix Y).act k (fun t => F t (x t.castSucc) (x t.succ)) ψ else 0 := by
-  rw [UngradedAInfinityRightModule.matrixAct_apply]
-  refine sum_congr rfl fun x _ => ?_
-  by_cases hx0 : x 0 = 0
-  · simp [hx0]
-  · simp [hx0]
+      exact congrArg _ (Fin.ext (by simp))
 
 /-- The entry from `x` to `x'` of the differential terms of the block matrix: on the diagonal and
 above, the differential term of the type `DA` relation on the block between `x` and `x'`. -/
@@ -570,7 +542,7 @@ private theorem curvature_blockMatrix [CharP R 2] {n : ℕ} (a : Fin n → A) :
   ext1 x x'
   rw [Matrix.add_apply, Matrix.add_apply, LinearMap.mapMatrix_apply, Matrix.map_apply]
   by_cases h : (x : ℕ) ≤ x'
-  · rw [P.blockMatrix_mul_blockMatrix_of_le a h, P.blockMatrix_of_le a h, diffMatrix,
+  · rw [P.blockMatrix_mul_blockMatrix_apply_of_le a h, P.blockMatrix_apply_of_le a h, diffMatrix,
       mulMatrix, dite_eq_left h, dite_eq_left h, LinearMap.mapMatrix_apply]
     have hrel := P.stasheff ((x' : ℕ) - x)
       (fun l => a ⟨x + l, by have := x'.isLt; have := l.isLt; omega⟩)
@@ -578,12 +550,12 @@ private theorem curvature_blockMatrix [CharP R 2] {n : ℕ} (a : Fin n → A) :
     rw [← hrel]
     abel
   · have hlt : x' < x := Fin.lt_def.mpr (not_le.mp h)
-    rw [P.blockMatrix_of_lt a hlt, Matrix.mul_apply, diffMatrix, mulMatrix, dite_eq_right h,
+    rw [P.blockMatrix_apply_of_lt a hlt, Matrix.mul_apply, diffMatrix, mulMatrix, dite_eq_right h,
       dite_eq_right h, LinearMap.map_zero, zero_add, add_zero]
     refine Finset.sum_eq_zero fun y _ => ?_
     by_cases hxy : x ≤ y
-    · rw [P.blockMatrix_of_lt a (x := y) (x' := x') (lt_of_lt_of_le hlt hxy), Matrix.mul_zero]
-    · rw [P.blockMatrix_of_lt a (not_le.mp hxy), Matrix.zero_mul]
+    · rw [P.blockMatrix_apply_of_lt a (x := y) (x' := x') (lt_of_lt_of_le hlt hxy), Matrix.mul_zero]
+    · rw [P.blockMatrix_apply_of_lt a (not_le.mp hxy), Matrix.zero_mul]
 
 omit [DecidableEq Y] in
 private theorem diffMatrix_apply {n : ℕ} (a : Fin n → A) (x x' : Fin (n + 1)) :
@@ -593,6 +565,13 @@ private theorem diffMatrix_apply {n : ℕ} (a : Fin n → A) (x x' : Fin (n + 1)
   · rw [diffMatrix, dite_eq_left h, P.ungradedStasheffDiff_block a h]
   · rw [diffMatrix, dite_eq_right h]
     exact (Finset.sum_eq_zero fun i _ => ite_eq_right (by omega)).symm
+
+/-- Updating one matrix of a tuple updates one entry along every path. -/
+private theorem update_apply_path {X C : Type*} {k : ℕ} (F : Fin k → Matrix X X C)
+    (x : Fin (k + 1) → X) (l : Fin k) (G : Matrix X X C) :
+    (fun t => Function.update F l G t (x t.castSucc) (x t.succ)) =
+      Function.update (fun t => F t (x t.castSucc) (x t.succ)) l (G (x l.castSucc) (x l.succ)) :=
+  funext (Function.apply_update (fun t (G : Matrix X X C) => G (x t.castSucc) (x t.succ)) F l G)
 
 /-- **The differential terms along one path.** Along a path from `0` to `n`, replacing the entry
 of each step by the differential terms of its block and summing over the steps is summing over
@@ -605,15 +584,12 @@ private theorem sum_act_update_diffEntry {n k : ℕ} (a : Fin n → A) (i : Fin 
           P.blockMatrix (Function.update a i (dA (a i))) (x l.castSucc) (x l.succ) else 0)) =
       (Mm.matrix Y).act k (fun t => P.blockMatrix (Function.update a i (dA (a i)))
         (x t.castSucc) (x t.succ)) := by
-  rcases exists_lt_or_existsUnique x hx0 hxl i i.isLt with ⟨l₀, hl₀⟩ | ⟨l₀, hl₀, huniq⟩
+  rcases Fin.exists_succ_lt_castSucc_or_existsUnique_castSucc_le_and_lt_succ (fun t => (x t : ℕ))
+      (c := i) (by simp [hx0]) (by simp [hxl]) with ⟨l₀, hl₀⟩ | ⟨l₀, hl₀, huniq⟩
   · -- A decreasing step kills every term.
-    rw [((Mm.matrix Y).act k).map_coord_zero l₀ (P.blockMatrix_of_lt _ hl₀)]
-    refine Finset.sum_eq_zero fun l _ => ?_
-    rcases eq_or_ne l l₀ with rfl | hl
-    · refine ((Mm.matrix Y).act k).map_coord_zero l ?_
-      rw [Function.update_self, ite_eq_right (by have := Fin.lt_def.mp hl₀; omega)]
-    · refine ((Mm.matrix Y).act k).map_coord_zero l₀ ?_
-      rw [Function.update_of_ne hl.symm, P.blockMatrix_of_lt _ hl₀]
+    rw [P.act_blockMatrix_eq_zero_of_lt Mm _ (Fin.lt_def.mpr hl₀)]
+    exact Finset.sum_eq_zero fun l _ => P.act_update_blockMatrix_eq_zero_of_lt Mm a
+      (Fin.lt_def.mpr hl₀) l fun h => by subst h; exact ite_eq_right (by omega)
   · -- Only the step across `i` contributes.
     rw [Finset.sum_eq_single l₀ (fun l _ hl => ((Mm.matrix Y).act k).map_coord_zero l (by
         rw [Function.update_self, ite_eq_right fun h => hl (huniq l h)]))
@@ -626,16 +602,8 @@ private theorem sum_matrixAct_update_diffMatrix {n k : ℕ} (a : Fin n → A) (�
         (Function.update (fun _ => P.blockMatrix a) l (P.diffMatrix a))) (Pi.single 0 ψ)
         (Fin.last n) =
       ∑ i : Fin n, P.blockAct Mm k n (Function.update a i (dA (a i))) ψ := by
-  -- Updating one matrix of a tuple updates one entry along every path.
-  have hupd (x : Fin (k + 1) → Fin (n + 1)) (l : Fin k)
-      (G : Matrix (Fin (n + 1)) (Fin (n + 1)) (Matrix Y Y B)) :
-      (fun t => Function.update (fun _ => P.blockMatrix a) l G t (x t.castSucc) (x t.succ)) =
-        Function.update (fun t => P.blockMatrix a (x t.castSucc) (x t.succ)) l
-          (G (x l.castSucc) (x l.succ)) :=
-    funext (Function.apply_update (fun t (G : Matrix (Fin (n + 1)) (Fin (n + 1))
-      (Matrix Y Y B)) => G (x t.castSucc) (x t.succ)) _ l G)
-  simp only [matrixAct_single_zero_apply, blockAct_apply, hupd, P.diffMatrix_apply,
-    MultilinearMap.map_update_sum, LinearMap.sum_apply]
+  simp only [UngradedAInfinityRightModule.matrixAct_single_apply, blockAct_apply,
+    update_apply_path, P.diffMatrix_apply, MultilinearMap.map_update_sum, LinearMap.sum_apply]
   rw [Finset.sum_comm]
   conv_rhs => rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun x _ => ?_
@@ -692,7 +660,7 @@ private theorem blockMatrix_contractNth {m : ℕ} (a : Fin (m + 1) → A) (i : F
       have e₂ : ((p.succAbove z' : Fin (m + 2)) : ℕ) = z' := by
         rw [hz']; exact ite_eq_left hzi
       rw [dite_eq_left hzz, dite_eq_left (by rw [e₁, e₂]; exact hzz)]
-      refine P.coeff_eq_of_eq (by rw [e₁, e₂]) fun l => ?_
+      refine P.coeff_congr (by rw [e₁, e₂]) fun l => ?_
       rw [Fin.contractNth_apply_of_lt _ _ _ _ (by simp only [Fin.val_castSucc]; omega)]
       refine congrArg a (Fin.ext ?_)
       simp only [Fin.val_castSucc, Fin.val_cast]
@@ -703,7 +671,7 @@ private theorem blockMatrix_contractNth {m : ℕ} (a : Fin (m + 1) → A) (i : F
       have e₂ : ((p.succAbove z' : Fin (m + 2)) : ℕ) = z' + 1 := by
         rw [hz']; exact ite_eq_right hzi
       rw [dite_eq_left hzz, dite_eq_left (by rw [e₁, e₂]; omega)]
-      refine P.coeff_eq_of_eq (by rw [e₁, e₂]; omega) fun l => ?_
+      refine P.coeff_congr (by rw [e₁, e₂]; omega) fun l => ?_
       rw [Fin.contractNth_apply_of_gt _ _ _ _ (by simp only [Fin.val_castSucc]; omega)]
       refine congrArg a (Fin.ext ?_)
       simp only [Fin.val_succ, Fin.val_cast]
@@ -731,16 +699,14 @@ private theorem sum_act_update_mulEntry {m k : ℕ} (a : Fin (m + 1) → A) (i :
       (Mm.matrix Y).act k (fun t =>
         P.blockMatrix (Fin.contractNth i.castSucc (· * ·) a) (y t.castSucc) (y t.succ)) := by
   have hv (z : Fin (m + 1)) := val_succAbove_of_val_eq i hp z
-  rcases exists_lt_or_existsUnique y hy0 hyl i i.isLt with ⟨l₀, hl₀⟩ | ⟨l₀, hl₀, huniq⟩
+  rcases Fin.exists_succ_lt_castSucc_or_existsUnique_castSucc_le_and_lt_succ (fun t => (y t : ℕ))
+      (c := i) (by simp [hy0]) (by simp [hyl]) with ⟨l₀, hl₀⟩ | ⟨l₀, hl₀, huniq⟩
   · -- A decreasing step kills every term.
-    have hp₀ := Fin.lt_def.mp ((Fin.strictMono_succAbove p) hl₀)
-    rw [((Mm.matrix Y).act k).map_coord_zero l₀ (P.blockMatrix_of_lt _ hl₀)]
-    refine Finset.sum_eq_zero fun l _ => ?_
-    rcases eq_or_ne l l₀ with rfl | hl
-    · refine ((Mm.matrix Y).act k).map_coord_zero l ?_
-      rw [Function.update_self, dite_eq_right (by omega)]
-    · refine ((Mm.matrix Y).act k).map_coord_zero l₀ ?_
-      rw [Function.update_of_ne hl.symm, P.blockMatrix_of_lt _ ((Fin.strictMono_succAbove p) hl₀)]
+    have hp₀ := Fin.strictMono_succAbove p (Fin.lt_def.mpr hl₀)
+    rw [P.act_blockMatrix_eq_zero_of_lt Mm _ (Fin.lt_def.mpr hl₀)]
+    exact Finset.sum_eq_zero fun l _ => P.act_update_blockMatrix_eq_zero_of_lt Mm a
+      (x := fun t => p.succAbove (y t)) hp₀ l fun h => by
+        subst h; exact dite_eq_right (by have := Fin.lt_def.mp hp₀; omega)
   · -- Only the step across the contracted pair contributes.
     rw [Finset.sum_eq_single l₀ (fun l _ hl => ((Mm.matrix Y).act k).map_coord_zero l (by
         rw [Function.update_self, dite_eq_right]
@@ -779,12 +745,8 @@ private theorem sum_act_update_mulEntry_eq_zero {m k : ℕ} (a : Fin (m + 1) →
   by_cases hdec : ∃ l₀ : Fin k, x l₀.succ < x l₀.castSucc
   · -- A decreasing step kills the term.
     obtain ⟨l₀, hl₀⟩ := hdec
-    have hl₀' := Fin.lt_def.mp hl₀
-    rcases eq_or_ne l l₀ with rfl | hl
-    · exact ((Mm.matrix Y).act k).map_coord_zero l (by
-        rw [Function.update_self, dite_eq_right (by omega)])
-    · exact ((Mm.matrix Y).act k).map_coord_zero l₀ (by
-        rw [Function.update_of_ne hl.symm, P.blockMatrix_of_lt _ hl₀])
+    exact P.act_update_blockMatrix_eq_zero_of_lt Mm a hl₀ l fun h => by
+      subst h; exact dite_eq_right (by have := Fin.lt_def.mp hl₀; omega)
   · -- A nondecreasing path through `i + 1` has no step from at most `i` to at least `i + 2`.
     push Not at hdec
     have hm : Monotone x := Fin.monotone_iff_le_succ.mpr hdec
@@ -807,15 +769,8 @@ private theorem sum_matrixAct_update_mulMatrix {m k : ℕ} (a : Fin (m + 1) → 
         (Function.update (fun _ => P.blockMatrix a) l (P.mulMatrix a))) (Pi.single 0 ψ)
         (Fin.last (m + 1)) =
       ∑ i : Fin m, P.blockAct Mm k m (Fin.contractNth i.castSucc (· * ·) a) ψ := by
-  have hupd (x : Fin (k + 1) → Fin (m + 2)) (l : Fin k)
-      (G : Matrix (Fin (m + 2)) (Fin (m + 2)) (Matrix Y Y B)) :
-      (fun t => Function.update (fun _ => P.blockMatrix a) l G t (x t.castSucc) (x t.succ)) =
-        Function.update (fun t => P.blockMatrix a (x t.castSucc) (x t.succ)) l
-          (G (x l.castSucc) (x l.succ)) :=
-    funext (Function.apply_update (fun t (G : Matrix (Fin (m + 2)) (Fin (m + 2))
-      (Matrix Y Y B)) => G (x t.castSucc) (x t.succ)) _ l G)
-  simp only [matrixAct_single_zero_apply, blockAct_apply, hupd, P.mulMatrix_apply,
-    MultilinearMap.map_update_sum, LinearMap.sum_apply]
+  simp only [UngradedAInfinityRightModule.matrixAct_single_apply, blockAct_apply,
+    update_apply_path, P.mulMatrix_apply, MultilinearMap.map_update_sum, LinearMap.sum_apply]
   -- Bring the sum over the contracted pairs `i` outside.
   simp only [← Finset.sum_filter]
   rw [Finset.sum_comm, Finset.sum_congr rfl fun x _ => Finset.sum_comm, Finset.sum_comm]
@@ -919,7 +874,8 @@ theorem typeABoxAct_apply {K : ℕ} (hK : ∀ k, K ≤ k → Mm.act k = 0) (n : 
       if x 0 = 0 ∧ x (Fin.last k) = Fin.last n then
         (Mm.matrix Y).act k (fun t => P.blockMatrix a (x t.castSucc) (x t.succ)) ψ else 0 := by
   rw [P.typeABoxAct_eq_sum Mm hK, _root_.sum_apply, LinearMap.sum_apply]
-  exact Finset.sum_congr rfl fun k _ => P.matrixAct_blockMatrix_single_apply Mm a ψ
+  exact Finset.sum_congr rfl fun k _ =>
+    (Mm.matrix Y).matrixAct_single_apply (Fin (n + 1)) k _ 0 ψ (Fin.last n)
 
 /-- **For a differential module, `M ⊠ P` is the box tensor product of
 `TauCeti.TypeDAStructure.boxModule`.** A differential module, viewed as an `A∞` module, has no
@@ -956,8 +912,8 @@ theorem typeABoxModule_toUngradedAInfinityRightModule [CharP R 2] [Module Bᵐ�
       UngradedAInfinityRightModule.matrixAct_one_apply,
       continuationMap_apply (R := R) (M := M) (P.coeff n a)]
     have hΓ : P.blockMatrix a 0 (Fin.last n) = P.coeff n a := by
-      rw [P.blockMatrix_of_le a (by simp)]
-      exact P.coeff_eq_of_eq (by simp) fun l =>
+      rw [P.blockMatrix_apply_of_le a (by simp)]
+      exact P.coeff_congr (by simp) fun l =>
         congrArg a (Fin.ext (by simp only [Fin.val_zero, zero_add]; rfl))
     refine Finset.sum_congr rfl fun y _ => ?_
     rw [IsUngradedDGRightModule.toUngradedAInfinityRightModule_act_one, hΓ]
