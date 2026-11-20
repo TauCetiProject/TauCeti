@@ -395,8 +395,7 @@ theorem compactSupportCohomologyι_eq_zero_of_restrict_eq_zero {f : U ⟶ X}
   let L' := hf.preimageCompacts L.isCompact hL
   have hKL' : K ≤ L' := by
     intro x hx
-    change x ∈ (hf.preimageCompacts L.isCompact hL : Set U)
-    rw [IsInducing.coe_preimageCompacts]
+    rw [← SetLike.mem_coe, IsInducing.coe_preimageCompacts]
     exact hKL ⟨x, hx, rfl⟩
   have hLL' : L ≤ L'.map f f.hom.continuous := hf.subset_map_preimageCompacts L.isCompact hL
   rw [compactSupportCohomologyι_eq_zero_iff]
@@ -513,8 +512,7 @@ lemma compactSupportCohomologyExtend_compactSupportCohomologyRestrict_of_comp_eq
   have hsub : ((hi.preimageCompacts hS hSi).map i i.hom.continuous : Set X) ⊆
       (hf.preimageCompacts hT hTf).map f f.hom.continuous := by
     rintro _ ⟨y, hy, rfl⟩
-    change y ∈ (hi.preimageCompacts hS hSi : Set W) at hy
-    rw [IsInducing.coe_preimageCompacts] at hy
+    rw [Compacts.carrier_eq_coe, IsInducing.coe_preimageCompacts] at hy
     exact hf.subset_map_preimageCompacts hT hTf (hST hy)
   rw [compactSupportCohomologyRestrict_apply hi hS hSi
       (hi.subset_map_preimageCompacts hS hSi),

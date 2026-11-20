@@ -340,7 +340,7 @@ def capIntoCycles (φ : Q⁎[A].cycles p) :
           ChainComplex.d_comp_linearYonedaObj_iCycles,
           relativeCapInto_zero, comp_zero, smul_zero])
 
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma capIntoCycles_i (φ : Q⁎[A].cycles p) :
     capIntoCycles L S U A hS p q n h φ ≫
         C[U].iCycles q =
@@ -389,7 +389,7 @@ def capIntoHomology (φ : Q⁎[A].cycles p) :
     (by rw [← Category.assoc, toCycles_capIntoCycles, Category.assoc,
         HomologicalComplex.toCycles_comp_homologyπ, comp_zero])).val
 
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma homologyπ_capIntoHomology (φ : Q⁎[A].cycles p) :
     R[A].homologyπ n ≫ capIntoHomology L S U A hS p q n h φ =
       capIntoCycles L S U A hS p q n h φ ≫
