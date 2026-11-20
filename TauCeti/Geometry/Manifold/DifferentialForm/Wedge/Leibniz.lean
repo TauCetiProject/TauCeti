@@ -200,10 +200,10 @@ namespace SmoothForm
 theorem mextDeriv_wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₂ l) (x : M)
     (v : Fin (k + l + 1) → TangentSpace I x) :
-    mextDeriv (RoughForm.wedgeWith μ φ.1 ψ.1) x v =
-      RoughForm.wedgeWith μ (mextDeriv φ.1) ψ.1 x
+    mextDeriv (RoughForm.wedgeWith μ φ.val ψ.val) x v =
+      RoughForm.wedgeWith μ (mextDeriv φ.val) ψ.val x
           (v ∘ Fin.cast (show k + 1 + l = k + l + 1 by omega)) +
-        (-1 : ℝ) ^ k • RoughForm.wedgeWith μ φ.1 (mextDeriv ψ.1) x
+        (-1 : ℝ) ^ k • RoughForm.wedgeWith μ φ.val (mextDeriv ψ.val) x
           (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
   exact TauCeti.mextDeriv_wedgeWith μ (φ.mdifferentiableAt x) (ψ.mdifferentiableAt x) v
 
@@ -212,10 +212,10 @@ smooth forms, evaluated on tangent vectors. See `SmoothForm.mextDerivₗ_wedge` 
 law. -/
 theorem mextDeriv_wedge_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) (x : M)
     (v : Fin (k + l + 1) → TangentSpace I x) :
-    mextDeriv (RoughForm.wedge φ.1 ψ.1) x v =
-      RoughForm.wedge (mextDeriv φ.1) ψ.1 x
+    mextDeriv (RoughForm.wedge φ.val ψ.val) x v =
+      RoughForm.wedge (mextDeriv φ.val) ψ.val x
           (v ∘ Fin.cast (show k + 1 + l = k + l + 1 by omega)) +
-        (-1 : ℝ) ^ k • RoughForm.wedge φ.1 (mextDeriv ψ.1) x
+        (-1 : ℝ) ^ k • RoughForm.wedge φ.val (mextDeriv ψ.val) x
           (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
   simpa only [RoughForm.wedge_def] using
     mextDeriv_wedgeWith_apply (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v
@@ -256,12 +256,28 @@ evaluated on tangent vectors. The degree `0 + 1 + k` of `df ∧ φ` is identifie
 `Fin.cast`. -/
 theorem mextDerivₗ_funSMulₗ_apply [IsManifold I 2 M] (f : C^∞⟮I, M; ℝ⟯)
     (φ : SmoothForm I M ℝ k) (x : M) (v : Fin (k + 1) → TangentSpace I x) :
-    (mextDerivₗ I k (funSMulₗ f φ)).1 x v =
-      (mextDeriv (RoughForm.ofFunction I f)).wedge φ.1 x
+    (mextDerivₗ I k (funSMulₗ f φ)).val x v =
+      (mextDeriv (RoughForm.ofFunction I f)).wedge φ.val x
           (v ∘ Fin.cast (show 0 + 1 + k = k + 1 by omega)) +
-        f x * (mextDerivₗ I k φ).1 x v := by
+        f x * (mextDerivₗ I k φ).val x v := by
   simp only [mextDerivₗ_apply, coe_funSMulₗ]
   exact mextDeriv_fun_smul (f.contMDiff.mdifferentiableAt (by simp)) (φ.mdifferentiableAt x) v
+
+/-- The Leibniz rule `d (f φ) = df ∧ φ + f dφ` for a smooth function `f` times a smooth form `φ`,
+as an identity of smooth forms. The degree `0 + 1 + k` of `df ∧ φ` is identified with `k + 1` by
+`LinearEquiv.cast`. -/
+theorem mextDerivₗ_funSMulₗ [IsManifold I 2 M] (f : C^∞⟮I, M; ℝ⟯) (φ : SmoothForm I M ℝ k) :
+    mextDerivₗ I k (funSMulₗ f φ) =
+      LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
+          (show 0 + 1 + k = k + 1 by omega)
+          (SmoothForm.wedge (mextDerivₗ I 0 (ofFunction f)) φ) +
+        funSMulₗ f (mextDerivₗ I k φ) := by
+  apply Subtype.ext
+  ext x v
+  rw [mextDerivₗ_funSMulₗ_apply, Submodule.coe_add, Pi.add_apply,
+    ContinuousAlternatingMap.add_apply, cast_apply, coe_wedge, coe_funSMulₗ,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+  simp only [mextDerivₗ_apply, coe_ofFunction]
 
 end SmoothForm
 

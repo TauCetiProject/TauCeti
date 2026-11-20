@@ -29,6 +29,8 @@ Hausdorff boundaryless manifold.
 
 * `Diffeomorph.mfderiv_symm_apply_eq_of_mfderiv_apply_eq`: the inverse of a diffeomorphism
   carrying `X` to `Y` carries `Y` to `X`.
+* `Diffeomorph.isMIntegralCurveOn_comp_iff`: a diffeomorphism carrying `X` to `Y` identifies
+  integral curves of `X` and of `Y` on every parameter set.
 * `Diffeomorph.maximalIntegralCurveInterval_apply`, `Diffeomorph.mem_flowDomain_apply_iff`:
   related fields have the same maximal intervals of existence at corresponding points.
 * `Diffeomorph.apply_flowOf`: a diffeomorphism carrying `X` to `Y` conjugates their maximal flows.
@@ -65,6 +67,18 @@ theorem mfderiv_symm_apply_eq_of_mfderiv_apply_eq
     mfderiv I' I ψ.symm y (Y y) = X (ψ.symm y) := by
   obtain ⟨x, rfl⟩ := ψ.toEquiv.surjective y
   rw [coe_toEquiv, ← hXY x, ψ.mfderiv_symm_apply_mfderiv_apply hn, ψ.symm_apply_apply]
+
+/-- **A diffeomorphism conjugates integral curves.** If `ψ` carries `X` to `Y`, then `ψ ∘ γ` is
+an integral curve of `Y` on a parameter set `s` exactly when `γ` is an integral curve of `X`
+on `s`. -/
+theorem isMIntegralCurveOn_comp_iff
+    (hXY : ∀ x, mfderiv I I' ψ x (X x) = Y (ψ x)) {γ : ℝ → M} {s : Set ℝ} :
+    IsMIntegralCurveOn (ψ ∘ γ) Y s ↔ IsMIntegralCurveOn γ X s := by
+  refine ⟨fun hγ ↦ ?_, fun hγ ↦
+    hγ.map_of_mfderiv_eq (fun _ _ ↦ ψ.mdifferentiable hn _) (fun _ _ ↦ hXY _)⟩
+  have h := hγ.map_of_mfderiv_eq (fun _ _ ↦ ψ.symm.mdifferentiable hn _)
+    (fun _ _ ↦ ψ.mfderiv_symm_apply_eq_of_mfderiv_apply_eq hn hXY _)
+  simpa only [Function.comp_def, ψ.symm_apply_apply] using h
 
 /-- **Related vector fields have the same maximal intervals.** If a diffeomorphism `ψ` carries `X`
 to `Y`, the maximal interval of existence of `Y` through `ψ x` is that of `X` through `x`. -/

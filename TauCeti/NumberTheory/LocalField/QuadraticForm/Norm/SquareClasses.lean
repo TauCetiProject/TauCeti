@@ -124,7 +124,7 @@ theorem relIndex_unitQuadraticNormSquareClasses (a : K) :
       ((quadraticNormSubgroup a).subgroupOf (unitFiltration K 0)).index := by
   let φ : unitFiltration K 0 →* unitSquareClasses K :=
     (squareClassHom.comp (unitFiltration K 0).subtype).codRestrict (unitSquareClasses K) fun u ↦ by
-      obtain ⟨w, -, hwu⟩ := mem_unitFiltration_iff_exists.mp u.2
+      obtain ⟨w, -, hwu⟩ := mem_unitFiltration_iff_exists.mp u.property
       exact (mem_unitSquareClasses_iff K _).mpr ⟨w, by
         rw [MonoidHom.comp_apply, Subgroup.coe_subtype, squareClassHom_apply,
           QuotientGroup.mk'_apply]; congr 1; exact Units.ext hwu⟩
@@ -138,7 +138,8 @@ theorem relIndex_unitQuadraticNormSquareClasses (a : K) :
     ext u
     simp only [H, φ, Subgroup.mem_comap, Subgroup.mem_subgroupOf, MonoidHom.codRestrict_apply,
       MonoidHom.comp_apply, Subgroup.coe_subtype, mem_unitQuadraticNormSquareClasses_iff]
-    refine ⟨fun ⟨b, hb, _, hbu⟩ ↦ ?_, fun hu ↦ ⟨u, hu, (mem_unitFiltration_zero _).mp u.2, rfl⟩⟩
+    refine ⟨fun ⟨b, hb, _, hbu⟩ ↦ ?_, fun hu ↦ ⟨u, hu, (mem_unitFiltration_zero _).mp u.property,
+        rfl⟩⟩
     have hsq : b⁻¹ * (u : Kˣ) ∈ Subgroup.square Kˣ := by
       rwa [← QuotientGroup.eq, ← squareClassHom_apply, ← squareClassHom_apply]
     simpa only [mul_inv_cancel_left] using

@@ -161,7 +161,7 @@ which the theory of local fields consumes a ring of integers. -/
 theorem valuation_integers_adicCompletionIntegers :
     (ValuativeRel.valuation (v.adicCompletion K)).Integers (v.adicCompletionIntegers K) where
   hom_inj := Subtype.val_injective
-  map_le_one x := (v.mem_adicCompletionIntegers_iff_valuation_le_one (K := K) x.1).mp x.2
+  map_le_one x := (v.mem_adicCompletionIntegers_iff_valuation_le_one (K := K) x.val).mp x.property
   exists_of_le_one {r} hr :=
     ⟨⟨r, (v.mem_adicCompletionIntegers_iff_valuation_le_one (K := K) r).mpr hr⟩, rfl⟩
 
@@ -290,10 +290,10 @@ instance compactSpace_adicCompletionIntegers
   let f : 𝒪[v.adicCompletion K] ≃ₜ v.adicCompletionIntegers K := {
     toEquiv := (v.integerEquivAdicCompletionIntegers (K := K)).toEquiv
     continuous_toFun := continuous_induced_rng.mpr <|
-      continuous_subtype_val.congr fun x ↦
+      continuous_subtypeVal.congr fun x ↦
         (v.coe_integerEquivAdicCompletionIntegers (K := K) x).symm
     continuous_invFun := continuous_induced_rng.mpr <|
-      continuous_subtype_val.congr fun x ↦
+      continuous_subtypeVal.congr fun x ↦
         (v.coe_integerEquivAdicCompletionIntegers_symm (K := K) x).symm }
   exact f.compactSpace
 
@@ -330,6 +330,13 @@ theorem mem_unitFiltration_zero_adicCompletion_iff
   refine ⟨And.left, fun hu ↦ ⟨hu, (Valuation.map_sub _ _ _).trans ?_⟩⟩
   rw [hu, map_one, max_self]
 
+/-- The valuation on the `v`-adic completion of `K` restricts along `algebraMap` to
+`v.valuation K`. -/
+theorem valued_algebraMap_adicCompletion (x : K) :
+    Valued.v (algebraMap K (v.adicCompletion K) x) = v.valuation K x := by
+  rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
+    Algebra.algebraMap_self_apply]
+
 /-- **Units of `K` of valuation one in the completion.** The image in `K_v` of a unit `a` of `K`
 lies in the depth-zero step `U(K_v, 0)` of the unit filtration exactly when `a` has `v`-adic
 valuation one. -/
@@ -339,8 +346,55 @@ theorem unitsMap_algebraMap_mem_unitFiltration_zero_iff
         TauCeti.unitFiltration (v.adicCompletion K) 0 ↔
       v.valuation K a = 1 := by
   rw [mem_unitFiltration_zero_adicCompletion_iff, Units.coe_map, MonoidHom.coe_ofClass,
-    algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
-    Algebra.algebraMap_self_apply]
+    valued_algebraMap_adicCompletion]
+
+/-- **Units of `K` in the `k`-th unit filtration of the completion.** The image in `K_v` of a
+unit `a` of `K` lies in the depth-`k` step `U(K_v, k)` of the unit filtration exactly when `a` has
+`v`-adic valuation one and `v.valuation K (a - 1) ≤ exp (-k)`. -/
+theorem unitsMap_algebraMap_mem_unitFiltration_iff
+    [IsNonarchimedeanLocalField (v.adicCompletion K)] (k : ℕ) (a : Kˣ) :
+    Units.map (algebraMap K (v.adicCompletion K) : K →* v.adicCompletion K) a ∈
+        TauCeti.unitFiltration (v.adicCompletion K) k ↔
+      v.valuation K (a : K) = 1 ∧ v.valuation K ((a : K) - 1) ≤ WithZero.exp (-(k : ℤ)) := by
+  rw [mem_unitFiltration_adicCompletion_iff, Units.coe_map, MonoidHom.coe_ofClass,
+    ← map_one (algebraMap K (v.adicCompletion K)), ← map_sub,
+    valued_algebraMap_adicCompletion, valued_algebraMap_adicCompletion]
+
+/-- If `u` approximates a local unit `z` of valuation `1` strictly within `exp (-n)`, then
+`u * z⁻¹` lies in the `n`-th step of the unit filtration. -/
+theorem mul_inv_mem_unitFiltration_of_sub_lt
+    [IsNonarchimedeanLocalField (v.adicCompletion K)] {n : ℕ} {u z : (v.adicCompletion K)ˣ}
+    (hz1 : Valued.v (z : v.adicCompletion K) = 1)
+    (huz : Valued.v ((u : v.adicCompletion K) - (z : v.adicCompletion K)) <
+      WithZero.exp (-(n : ℤ))) :
+    u * z⁻¹ ∈ TauCeti.unitFiltration (v.adicCompletion K) n := by
+  have hsub : ((u * z⁻¹ : (v.adicCompletion K)ˣ) : v.adicCompletion K) - 1 =
+      ((u : v.adicCompletion K) - (z : v.adicCompletion K)) * ((z : v.adicCompletion K))⁻¹ := by
+    simp only [Units.val_mul, Units.val_inv_eq_inv_val, sub_mul, mul_inv_cancel₀ z.ne_zero]
+  have hlt : Valued.v (((u * z⁻¹ : (v.adicCompletion K)ˣ) : v.adicCompletion K) - 1) <
+      WithZero.exp (-(n : ℤ)) := by
+    rw [hsub, map_mul, map_inv₀, hz1, inv_one, mul_one]
+    exact huz
+  have hle1 : Valued.v (((u * z⁻¹ : (v.adicCompletion K)ˣ) : v.adicCompletion K) - 1) <
+      Valued.v (1 : v.adicCompletion K) := by
+    rw [map_one]
+    exact hlt.trans_le (WithZero.exp_le_exp.mpr (by omega))
+  exact (mem_unitFiltration_adicCompletion_iff v).mpr
+    ⟨(Valuation.map_eq_of_sub_lt (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰) hle1).trans
+      (map_one _), hlt.le⟩
+
+/-- Density of `K` in `K_v` produces a global element strictly within `exp (-n)` of any local
+element `z : K_v`. -/
+theorem exists_algebraMap_adicCompletion_sub_lt (z : v.adicCompletion K) (n : ℕ) :
+    ∃ a : K, Valued.v (algebraMap K (v.adicCompletion K) a - z) < WithZero.exp (-(n : ℤ)) := by
+  let r₀ : WithZero (Multiplicative ℤ) := WithZero.exp (-(n : ℤ) - 1)
+  have hball : {y : v.adicCompletion K | Valued.v (y - z) ≤ r₀} ∈ nhds z := by
+    have hopen : IsOpen ((fun y : v.adicCompletion K ↦ y - z) ⁻¹'
+        {y : v.adicCompletion K | Valued.v y ≤ r₀}) :=
+      (v.isOpen_setOf_valued_le WithZero.exp_ne_zero).preimage (continuous_sub_right _)
+    exact hopen.mem_nhds (by simp [r₀])
+  obtain ⟨-, ⟨a, rfl⟩, ha⟩ := (v.denseRange_algebraMap K).inter_nhds_nonempty hball
+  exact ⟨a, lt_of_le_of_lt ha (WithZero.exp_lt_exp.mpr (by omega))⟩
 
 /-- **The normalized valuation of `K_v` on the units of `K`.** The normalized valuation of the
 image in `K_v` of a unit `a` of `K` is the inverse of its `v`-adic valuation. -/
