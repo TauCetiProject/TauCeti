@@ -42,9 +42,9 @@ variable {F : Type*} [Field F] [DecidableEq F] [IsSepClosed F]
 
 /-- The class-group point map sends a point to the point under its place. -/
 private theorem toPointHom_eq_of_isEquiv_comap_valuation (P : W₁.Point) (Q : W₂.Point)
-    (h : (((pointEquivDegreeOnePlace W₁ P).1.valuation).comap
+    (h : (((pointEquivDegreeOnePlace W₁ P).val.valuation).comap
       (φ.fieldPullback : W₂.FunctionField →+* W₁.FunctionField)).IsEquiv
-        (pointEquivDegreeOnePlace W₂ Q).1.valuation) :
+        (pointEquivDegreeOnePlace W₂ Q).val.valuation) :
     φ.toPointHom P = Q := by
   cases P with
   | zero =>
@@ -77,25 +77,25 @@ isogeny's function-field pullback. -/
 theorem coe_pointEquivDegreeOnePlace_toPointHom (P : W₁.Point) :
     haveI := φ.isScalarTower_of_algebraMap_eq_fieldPullback hφ
     haveI := φ.finiteDimensional_functionField hφ
-    (pointEquivDegreeOnePlace W₂ (φ.toPointHom P)).1 =
-      (pointEquivDegreeOnePlace W₁ P).1.restrict F W₂.FunctionField := by
+    (pointEquivDegreeOnePlace W₂ (φ.toPointHom P)).val =
+      (pointEquivDegreeOnePlace W₁ P).val.restrict F W₂.FunctionField := by
   have := φ.isScalarTower_of_algebraMap_eq_fieldPullback hφ
   have := φ.finiteDimensional_functionField hφ
-  let v := (pointEquivDegreeOnePlace W₁ P).1
+  let v := (pointEquivDegreeOnePlace W₁ P).val
   -- Restriction preserves rationality, so its place corresponds to a target point.
   have hv : (v.restrict F W₂.FunctionField).degree = 1 := by
     have hle := Place.degree_restrict_le F W₂.FunctionField v
     have hpos := (v.restrict F W₂.FunctionField).one_le_degree_of_isFunctionField
       W₂.isFunctionField
-    have hdeg : v.degree = 1 := (pointEquivDegreeOnePlace W₁ P).2
+    have hdeg : v.degree = 1 := (pointEquivDegreeOnePlace W₁ P).property
     omega
   let Q := (pointEquivDegreeOnePlace W₂).symm ⟨v.restrict F W₂.FunctionField, hv⟩
-  have hQ : (pointEquivDegreeOnePlace W₂ Q).1 = v.restrict F W₂.FunctionField := by
+  have hQ : (pointEquivDegreeOnePlace W₂ Q).val = v.restrict F W₂.FunctionField := by
     simp [Q]
   have hmap : φ.toPointHom P = Q := by
     apply φ.toPointHom_eq_of_isEquiv_comap_valuation
     have he := (Place.restrict_eq_iff_isEquiv_comap F W₂.FunctionField v
-      (pointEquivDegreeOnePlace W₂ Q).1).mp hQ.symm
+      (pointEquivDegreeOnePlace W₂ Q).val).mp hQ.symm
     have hring : algebraMap W₂.FunctionField W₁.FunctionField =
         (φ.fieldPullback : W₂.FunctionField →+* W₁.FunctionField) := RingHom.ext hφ
     rwa [hring] at he
@@ -108,7 +108,7 @@ affine point `(x', y')` and `z` vanishes there, then `φ^* z` vanishes at `Q`. -
 theorem valuation_fieldPullback_lt_one_of_toPointHom_eq_some {Q : W₁.Point} {x' y' : F}
     {h' : W₂.Nonsingular x' y'} (hQ : φ.toPointHom Q = .some x' y' h') {z : W₂.FunctionField}
     (hz : (Place.ofPrime F W₂.FunctionField (CoordinateRing.pointPlace h'.1)).valuation z < 1) :
-    (pointEquivDegreeOnePlace W₁ Q).1.valuation (φ.fieldPullback z) < 1 := by
+    (pointEquivDegreeOnePlace W₁ Q).val.valuation (φ.fieldPullback z) < 1 := by
   let _ := φ.fieldPullback.toRingHom.toAlgebra
   have := φ.isScalarTower_of_algebraMap_eq_fieldPullback fun _ ↦ rfl
   have := φ.finiteDimensional_functionField fun _ ↦ rfl

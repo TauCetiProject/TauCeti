@@ -41,7 +41,7 @@ any subset `t` of the image `f(s)`. -/
 def centralizerMap (f : G →* G') {s : Set G} {t : Set G'} (h : t ⊆ f '' s) :
     centralizer s →* centralizer t :=
   (f.comp (centralizer s).subtype).codRestrict _ fun c =>
-    centralizer_le h (map_centralizer_le_centralizer_image s f (mem_map_of_mem f c.2))
+    centralizer_le h (map_centralizer_le_centralizer_image s f (mem_map_of_mem f c.property))
 
 @[to_additive (attr := simp)]
 theorem centralizerMap_apply_coe (f : G →* G') {s : Set G} {t : Set G'} (h : t ⊆ f '' s)

@@ -109,7 +109,7 @@ private theorem mk_extendSection {U : Opens X} (s : (x : U) → V x) :
     (fun x : U ↦ TotalSpace.mk' F (x : X) (s x)) =
       fun x : U ↦ TotalSpace.mk' F (x : X) (extendSection V s x) := by
   funext x
-  simp [extendSection, x.2]
+  simp [extendSection, x.property]
 
 omit [∀ x, Module ℂ (V x)] [VectorBundle ℂ F V] in
 /-- A section over an open set is analytic exactly when its extension by zero is analytic at
@@ -126,18 +126,18 @@ private theorem contMDiff_mk_iff {U : Opens X} (s : (x : U) → V x) :
 those whose bundled map into the total space is complex analytic. -/
 def holomorphicBundleSections (U : Opens X) : Submodule ℂ ((x : U) → V x) where
   carrier := {s | ContMDiff I (I.prod 𝓘(ℂ, F)) ω (fun x : U ↦ TotalSpace.mk' F (x : X) (s x))}
-  zero_mem' := (contMDiff_zeroSection ℂ V).comp contMDiff_subtype_val
+  zero_mem' := (contMDiff_zeroSection ℂ V).comp contMDiff_subtypeVal
   add_mem' {s t} hs ht := by
     refine (contMDiff_mk_iff I F V _).2 fun x ↦ ?_
     refine (((contMDiff_mk_iff I F V s).1 hs x).add_section
       ((contMDiff_mk_iff I F V t).1 ht x)).congr_of_eventuallyEq ?_
-    filter_upwards [U.isOpen.mem_nhds x.2] with y (hy : y ∈ U)
+    filter_upwards [U.isOpen.mem_nhds x.property] with y (hy : y ∈ U)
     simp [extendSection, hy]
   smul_mem' c s hs := by
     refine (contMDiff_mk_iff I F V _).2 fun x ↦ ?_
     refine (((contMDiff_mk_iff I F V s).1 hs x).const_smul_section (a := c)).congr_of_eventuallyEq
       ?_
-    filter_upwards [U.isOpen.mem_nhds x.2] with y (hy : y ∈ U)
+    filter_upwards [U.isOpen.mem_nhds x.property] with y (hy : y ∈ U)
     simp [extendSection, hy]
 
 theorem mem_holomorphicBundleSections_iff {U : Opens X} {s : (x : U) → V x} :
@@ -188,7 +188,7 @@ theorem ext {U : (Opens (TopCat.of X))ᵒᵖ} {s t : (holomorphicSectionSheaf I 
 /-- The bundled map of a section of the sheaf into the total space is complex analytic. -/
 theorem contMDiff {U : (Opens (TopCat.of X))ᵒᵖ} (s : (holomorphicSectionSheaf I F V).obj.obj U) :
     ContMDiff I (I.prod 𝓘(ℂ, F)) ω (fun x : ↥(unop U) ↦ TotalSpace.mk' F (x : X) (s x)) :=
-  s.2
+  s.property
 
 /-- A section of `V` over `U` whose bundled map is complex analytic, as a section of the sheaf. -/
 def ofContMDiff {U : Opens X} (s : (x : U) → V x)
@@ -234,9 +234,9 @@ theorem existsUnique_gluing {ι : Type} (U : ι → Opens X)
     (s : ∀ i, (holomorphicSectionSheaf I F V).obj.obj (op (U i)))
     (h : ∀ i j (x : X) (hi : x ∈ U i) (hj : x ∈ U j), s i ⟨x, hi⟩ = s j ⟨x, hj⟩) :
     ∃! t : (holomorphicSectionSheaf I F V).obj.obj (op (iSup U)),
-      ∀ i (x : U i), t ⟨x, le_iSup U i x.2⟩ = s i x := by
+      ∀ i (x : U i), t ⟨x, le_iSup U i x.property⟩ = s i x := by
   have hc : TopCat.Presheaf.IsCompatible (holomorphicSectionSheaf I F V).obj U s :=
-    fun i j ↦ ext fun x ↦ h i j x.1 _ _
+    fun i j ↦ ext fun x ↦ h i j x.val _ _
   obtain ⟨t, ht, hu⟩ := (holomorphicSectionSheaf I F V).existsUnique_gluing U s hc
   refine ⟨t, fun i x ↦ congrArg (fun r ↦ toFun I F V r x) (ht i), fun t' ht' ↦ hu t' ?_⟩
   exact fun i ↦ ext fun x ↦ ht' i x
@@ -260,29 +260,29 @@ def _root_.Bundle.Trivialization.holomorphicSectionLinearEquiv
     (fun x : U ↦ q (τ.continuousLinearMapAt ℂ x (s x))) (by
       have hc := fun x : U ↦ ((τ.contMDiffAt_iff_of_mem_maximalAtlas hτa
         (f := fun x : U ↦ TotalSpace.mk' F (x : X) (s x))
-        ((τ.mem_source).2 (hτ x.2))).1 ((contMDiff s) x)).2
+        ((τ.mem_source).2 (hτ x.property))).1 ((contMDiff s) x)).2
       refine (q.contDiff.contMDiff.comp hc).congr fun x ↦ ?_
       simp only [Function.comp_apply]
-      rw [Trivialization.continuousLinearMapAt_apply_of_mem ℂ τ (hτ x.2)])
+      rw [Trivialization.continuousLinearMapAt_apply_of_mem ℂ τ (hτ x.property)])
   invFun f := ofContMDiff (fun x : U ↦ τ.symmL ℂ x (q.symm (f x))) (by
     intro x
     refine (τ.contMDiffAt_iff_of_mem_maximalAtlas hτa
-      ((τ.mem_source).2 (hτ x.2))).2 ⟨contMDiff_subtype_val x, ?_⟩
+      ((τ.mem_source).2 (hτ x.property))).2 ⟨contMDiff_subtypeVal x, ?_⟩
     refine ((q.symm.contDiff.contMDiff).contMDiffAt.comp x
       ((holomorphicStructureSheafModules.contMDiff f) x)).congr_of_eventuallyEq ?_
     exact Filter.Eventually.of_forall fun y ↦ by
       simp only [Function.comp_apply]
-      rw [τ.symmL_apply (hτ y.2), τ.apply_mk_symm (hτ y.2)])
+      rw [τ.symmL_apply (hτ y.property), τ.apply_mk_symm (hτ y.property)])
   left_inv s := by
     apply Subtype.ext
     funext x
     simp only [toFun, ofContMDiff, holomorphicStructureSheafModules.ofContMDiff_apply,
-      q.symm_apply_apply, τ.symmL_continuousLinearMapAt (hτ x.2)]
+      q.symm_apply_apply, τ.symmL_continuousLinearMapAt (hτ x.property)]
   right_inv f := by
     apply holomorphicStructureSheafModules.ext
     intro x
     simp only [toFun, ofContMDiff, holomorphicStructureSheafModules.ofContMDiff_apply,
-      τ.continuousLinearMapAt_symmL (hτ x.2), q.apply_symm_apply]
+      τ.continuousLinearMapAt_symmL (hτ x.property), q.apply_symm_apply]
   map_add' s t := by
     apply holomorphicStructureSheafModules.ext
     intro x
@@ -350,18 +350,18 @@ theorem hom_ext {f g : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectio
 morphism of sheaves of holomorphic sections, by `s ↦ (x ↦ φ x (s x))`. -/
 def homOfLinearMap (φ : ∀ x, V₁ x →ₗ[ℂ] V₂ x)
     (hφ : ContMDiff (I.prod 𝓘(ℂ, F₁)) (I.prod 𝓘(ℂ, F₂)) ω
-      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ v.proj (φ v.proj v.2))) :
+      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ v.proj (φ v.proj v.snd))) :
     holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂ where
   hom.app _ := ModuleCat.ofHom
-    { toFun := fun s ↦ ⟨fun x ↦ φ x (s.1 x), hφ.comp s.2⟩
-      map_add' := fun s t ↦ Subtype.ext <| funext fun x ↦ map_add (φ x) (s.1 x) (t.1 x)
-      map_smul' := fun c s ↦ Subtype.ext <| funext fun x ↦ map_smul (φ x) c (s.1 x) }
+    { toFun := fun s ↦ ⟨fun x ↦ φ x (s.val x), hφ.comp s.property⟩
+      map_add' := fun s t ↦ Subtype.ext <| funext fun x ↦ map_add (φ x) (s.val x) (t.val x)
+      map_smul' := fun c s ↦ Subtype.ext <| funext fun x ↦ map_smul (φ x) c (s.val x) }
   hom.naturality _ _ _ := rfl
 
 @[simp]
 theorem homOfLinearMap_app_apply (φ : ∀ x, V₁ x →ₗ[ℂ] V₂ x)
     (hφ : ContMDiff (I.prod 𝓘(ℂ, F₁)) (I.prod 𝓘(ℂ, F₂)) ω
-      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ v.proj (φ v.proj v.2)))
+      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ v.proj (φ v.proj v.snd)))
     {U : (Opens (TopCat.of X))ᵒᵖ} (s : (holomorphicSectionSheaf I F₁ V₁).obj.obj U)
     (x : ↥(unop U)) :
     (homOfLinearMap φ hφ).hom.app U s x = φ x (s x) := (rfl)
@@ -370,7 +370,7 @@ theorem homOfLinearMap_app_apply (φ : ∀ x, V₁ x →ₗ[ℂ] V₂ x)
 @[simp]
 theorem homOfLinearMap_id
     (hφ : ContMDiff (I.prod 𝓘(ℂ, F₁)) (I.prod 𝓘(ℂ, F₁)) ω
-      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₁ v.proj (LinearMap.id (R := ℂ) v.2))) :
+      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₁ v.proj (LinearMap.id (R := ℂ) v.snd))) :
     homOfLinearMap (fun _ ↦ LinearMap.id) hφ = 𝟙 (holomorphicSectionSheaf I F₁ V₁) :=
   hom_ext fun _ _ _ ↦ rfl
 
@@ -381,10 +381,10 @@ theorem homOfLinearMap_comp {F₃ : Type*} [NormedAddCommGroup F₃] [NormedSpac
     [FiberBundle F₃ V₃] [∀ x, AddCommGroup (V₃ x)] [∀ x, Module ℂ (V₃ x)] [VectorBundle ℂ F₃ V₃]
     (φ : ∀ x, V₁ x →ₗ[ℂ] V₂ x)
     (hφ : ContMDiff (I.prod 𝓘(ℂ, F₁)) (I.prod 𝓘(ℂ, F₂)) ω
-      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ v.proj (φ v.proj v.2)))
+      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ v.proj (φ v.proj v.snd)))
     (ψ : ∀ x, V₂ x →ₗ[ℂ] V₃ x)
     (hψ : ContMDiff (I.prod 𝓘(ℂ, F₂)) (I.prod 𝓘(ℂ, F₃)) ω
-      (fun v : TotalSpace F₂ V₂ ↦ TotalSpace.mk' F₃ v.proj (ψ v.proj v.2))) :
+      (fun v : TotalSpace F₂ V₂ ↦ TotalSpace.mk' F₃ v.proj (ψ v.proj v.snd))) :
     homOfLinearMap φ hφ ≫ homOfLinearMap ψ hψ =
       homOfLinearMap (fun x ↦ ψ x ∘ₗ φ x) (hψ.comp hφ) :=
   hom_ext fun _ _ _ ↦ rfl
@@ -394,9 +394,9 @@ total-space maps in both directions are complex analytic, induces an isomorphism
 of holomorphic sections. -/
 def isoOfLinearEquiv (φ : ∀ x, V₁ x ≃ₗ[ℂ] V₂ x)
     (hφ : ContMDiff (I.prod 𝓘(ℂ, F₁)) (I.prod 𝓘(ℂ, F₂)) ω
-      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ v.proj (φ v.proj v.2)))
+      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ v.proj (φ v.proj v.snd)))
     (hφ' : ContMDiff (I.prod 𝓘(ℂ, F₂)) (I.prod 𝓘(ℂ, F₁)) ω
-      (fun v : TotalSpace F₂ V₂ ↦ TotalSpace.mk' F₁ v.proj ((φ v.proj).symm v.2))) :
+      (fun v : TotalSpace F₂ V₂ ↦ TotalSpace.mk' F₁ v.proj ((φ v.proj).symm v.snd))) :
     holomorphicSectionSheaf I F₁ V₁ ≅ holomorphicSectionSheaf I F₂ V₂ where
   hom := homOfLinearMap (fun x ↦ (φ x).toLinearMap) hφ
   inv := homOfLinearMap (fun x ↦ (φ x).symm.toLinearMap) hφ'
@@ -406,9 +406,9 @@ def isoOfLinearEquiv (φ : ∀ x, V₁ x ≃ₗ[ℂ] V₂ x)
 @[simp]
 theorem isoOfLinearEquiv_hom_app_apply (φ : ∀ x, V₁ x ≃ₗ[ℂ] V₂ x)
     (hφ : ContMDiff (I.prod 𝓘(ℂ, F₁)) (I.prod 𝓘(ℂ, F₂)) ω
-      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ v.proj (φ v.proj v.2)))
+      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ v.proj (φ v.proj v.snd)))
     (hφ' : ContMDiff (I.prod 𝓘(ℂ, F₂)) (I.prod 𝓘(ℂ, F₁)) ω
-      (fun v : TotalSpace F₂ V₂ ↦ TotalSpace.mk' F₁ v.proj ((φ v.proj).symm v.2)))
+      (fun v : TotalSpace F₂ V₂ ↦ TotalSpace.mk' F₁ v.proj ((φ v.proj).symm v.snd)))
     {U : (Opens (TopCat.of X))ᵒᵖ} (s : (holomorphicSectionSheaf I F₁ V₁).obj.obj U)
     (x : ↥(unop U)) :
     (isoOfLinearEquiv φ hφ hφ').hom.hom.app U s x = φ x (s x) := (rfl)
@@ -416,9 +416,9 @@ theorem isoOfLinearEquiv_hom_app_apply (φ : ∀ x, V₁ x ≃ₗ[ℂ] V₂ x)
 @[simp]
 theorem isoOfLinearEquiv_inv_app_apply (φ : ∀ x, V₁ x ≃ₗ[ℂ] V₂ x)
     (hφ : ContMDiff (I.prod 𝓘(ℂ, F₁)) (I.prod 𝓘(ℂ, F₂)) ω
-      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ v.proj (φ v.proj v.2)))
+      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ v.proj (φ v.proj v.snd)))
     (hφ' : ContMDiff (I.prod 𝓘(ℂ, F₂)) (I.prod 𝓘(ℂ, F₁)) ω
-      (fun v : TotalSpace F₂ V₂ ↦ TotalSpace.mk' F₁ v.proj ((φ v.proj).symm v.2)))
+      (fun v : TotalSpace F₂ V₂ ↦ TotalSpace.mk' F₁ v.proj ((φ v.proj).symm v.snd)))
     {U : (Opens (TopCat.of X))ᵒᵖ} (s : (holomorphicSectionSheaf I F₂ V₂).obj.obj U)
     (x : ↥(unop U)) :
     (isoOfLinearEquiv φ hφ hφ').inv.hom.app U s x = (φ x).symm (s x) := (rfl)
@@ -436,7 +436,7 @@ private def trivialSectionsEquiv (U : Opens X) :
     (Trivial.contMDiff_mk_iff.1 (contMDiff s)).2
   invFun f := ofContMDiff (fun x ↦ f x)
     (Trivial.contMDiff_mk_iff.2
-      ⟨contMDiff_subtype_val, holomorphicStructureSheafModules.contMDiff f⟩)
+      ⟨contMDiff_subtypeVal, holomorphicStructureSheafModules.contMDiff f⟩)
   map_add' _ _ := holomorphicStructureSheafModules.ext fun _ ↦ by simp
   map_smul' _ _ := holomorphicStructureSheafModules.ext fun _ ↦ by simp
   left_inv _ := ext fun _ ↦ by simp

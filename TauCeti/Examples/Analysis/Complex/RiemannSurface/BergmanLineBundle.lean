@@ -98,10 +98,10 @@ def poleShrink : Opens ℂ := ⟨ball 0 (1 / 2 : ℝ), isOpen_ball⟩
 /-- The boundary-pole function as an actual native holomorphic section. -/
 def boundaryPole : (holomorphicStructureSheafModules 𝓘(ℂ) ℂ).obj.obj (op poleDomain) :=
   holomorphicStructureSheafModules.ofContMDiff (fun x : poleDomain ↦ (1 - (x : ℂ))⁻¹)
-    ((contMDiff_const.sub contMDiff_subtype_val).inv₀ (by
+    ((contMDiff_const.sub contMDiff_subtypeVal).inv₀ (by
       intro x hx
       have he : (x : ℂ) = 1 := (sub_eq_zero.1 hx).symm
-      have h := x.2
+      have h := x.property
       simp [poleDomain, he] at h))
 
 /-- Compact containment is established for the actual proper shrink. -/

@@ -287,17 +287,17 @@ variable [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.sta
 maps to the group of Cartier divisors, compatibly with local equations. -/
 def toCartierDivisorHom (hX : ∀ y : X, coheight y ≤ 1) :
     locallyPrincipalSubgroup X →+ Scheme.CartierDivisor X where
-  toFun D := IsLocallyPrincipal.cartierDivisor hX (mem_locallyPrincipalSubgroup.mp D.2)
+  toFun D := IsLocallyPrincipal.cartierDivisor hX (mem_locallyPrincipalSubgroup.mp D.property)
   map_zero' := IsLocallyPrincipal.cartierDivisor_zero hX
   map_add' D E := IsLocallyPrincipal.cartierDivisor_add hX
-    (mem_locallyPrincipalSubgroup.mp D.2) (mem_locallyPrincipalSubgroup.mp E.2)
+    (mem_locallyPrincipalSubgroup.mp D.property) (mem_locallyPrincipalSubgroup.mp E.property)
 
 /-- The Weil-to-Cartier homomorphism computes the Cartier divisor of the underlying divisor. -/
 @[simp]
 lemma toCartierDivisorHom_apply (hX : ∀ y : X, coheight y ≤ 1)
     (D : locallyPrincipalSubgroup X) :
     toCartierDivisorHom hX D =
-      IsLocallyPrincipal.cartierDivisor hX (mem_locallyPrincipalSubgroup.mp D.2) :=
+      IsLocallyPrincipal.cartierDivisor hX (mem_locallyPrincipalSubgroup.mp D.property) :=
   (rfl)
 
 end Curve

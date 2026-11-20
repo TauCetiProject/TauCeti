@@ -350,10 +350,10 @@ def chartSection (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) (hV : (V : S
           (map_mem_imageOpens (hV hx) hx))).mdifferentiableAt).contMDiff
   map_add' u v := by
     ext x
-    simp [BergmanSpace.representative_add _ _ (map_mem_imageOpens (hV x.2) x.2)]
+    simp [BergmanSpace.representative_add _ _ (map_mem_imageOpens (hV x.property) x.property)]
   map_smul' c u := by
     ext x
-    simp [BergmanSpace.representative_smul _ _ (map_mem_imageOpens (hV x.2) x.2)]
+    simp [BergmanSpace.representative_smul _ _ (map_mem_imageOpens (hV x.property) x.property)]
 
 @[simp]
 theorem chartSection_apply (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
@@ -382,7 +382,7 @@ theorem chartSection_restrict (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
   ext x
   rw [holomorphicStructureSheafModules.map_apply, chartSection_apply, chartSection_apply]
   exact BergmanSpace.representative_restrict _ _
-    (map_mem_imageOpens (hV (h x.2)) x.2)
+    (map_mem_imageOpens (hV (h x.property)) x.property)
 
 namespace ChartBergman
 
@@ -527,7 +527,7 @@ theorem bergmanSection_coordinate_self (he : e ∈ IsManifold.maximalAtlas 𝓘(
     (u : bergmanSpace ℂ (e.imageOpens U)) (x : U) :
     q (τ.continuousLinearMapAt ℂ x (τ.bergmanSection q hτa he hU hτ u x)) =
       BergmanSpace.representative u (e x) := by
-  rw [bergmanSection_apply, τ.continuousLinearMapAt_symmL (hτ x.2), q.apply_symm_apply]
+  rw [bergmanSection_apply, τ.continuousLinearMapAt_symmL (hτ x.property), q.apply_symm_apply]
 
 /-- Realization in a line-bundle frame retains every Bergman class. -/
 theorem bergmanSection_injective (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
@@ -549,7 +549,7 @@ theorem bergmanSection_restrict (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 
   intro x
   rw [holomorphicSectionSheaf.map_apply, bergmanSection_apply, bergmanSection_apply,
     BergmanSpace.representative_restrict _ _ (OpenPartialHomeomorph.map_mem_imageOpens
-      (hU (h x.2)) x.2)]
+      (hU (h x.property)) x.property)]
 
 end Bundle.Trivialization
 
@@ -588,11 +588,11 @@ private theorem holomorphicSectionBoundedAux_apply
     (s : (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.obj (op U)) (z : e.imageOpens W) :
     (holomorphicSectionBoundedAux e he hU hK hKU s :
       BoundedContinuousFunction (e.imageOpens W) ℂ) z =
-      s ⟨e.symm z, hKU (subset_closure (mem_imageOpens.1 z.2).2)⟩ := by
+      s ⟨e.symm z, hKU (subset_closure (mem_imageOpens.1 z.property).2)⟩ := by
   simp only [holomorphicSectionBoundedAux, BoundedHolomorphicFunctions.of_apply,
     Function.comp_apply]
   exact (Subtype.val_injective.extend_apply _ _
-    ⟨e.symm z, hKU (subset_closure (mem_imageOpens.1 z.2).2)⟩).trans
+    ⟨e.symm z, hKU (subset_closure (mem_imageOpens.1 z.property).2)⟩).trans
       (holomorphicStructureSheafModules.sectionsLinearEquiv_apply _ _ _ _ _)
 
 /-- Read a native holomorphic function on a larger chart open as a Bergman class on a
@@ -622,21 +622,21 @@ def holomorphicSectionToBergman :
 theorem holomorphicSectionToBergman_apply
     (s : (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.obj (op U)) (x : W) :
     BergmanSpace.representative (e.holomorphicSectionToBergman he hU hK hKU s) (e x) =
-      s ⟨x, hKU (subset_closure x.2)⟩ := by
+      s ⟨x, hKU (subset_closure x.property)⟩ := by
   let : IsFiniteMeasure (volume.restrict (e.imageOpens W : Set ℂ)) :=
     e.isFiniteMeasure_restrict_imageOpens volume hK (hKU.trans hU)
-  have hx := map_mem_imageOpens (hU (hKU (subset_closure x.2))) x.2
+  have hx := map_mem_imageOpens (hU (hKU (subset_closure x.property))) x.property
   calc
     BergmanSpace.representative (e.holomorphicSectionToBergman he hU hK hKU s) (e x) =
         BoundedHolomorphicFunctions.extend (holomorphicSectionBoundedAux e he hU hK hKU s)
           (e x) := by
       exact BergmanSpace.representative_ofBounded
         (holomorphicSectionBoundedAux e he hU hK hKU s) hx
-    _ = s ⟨x, hKU (subset_closure x.2)⟩ := by
+    _ = s ⟨x, hKU (subset_closure x.property)⟩ := by
       rw [BoundedHolomorphicFunctions.extend_apply _ ⟨e x, hx⟩,
         holomorphicSectionBoundedAux_apply]
       congr 1
-      exact Subtype.ext (e.left_inv (hU (hKU (subset_closure x.2))))
+      exact Subtype.ext (e.left_inv (hU (hKU (subset_closure x.property))))
 
 end OpenPartialHomeomorph
 
@@ -672,10 +672,10 @@ theorem bergmanRestriction_apply (hK : IsCompact (closure (W : Set X)))
     (hKU : closure (W : Set X) ⊆ U)
     (s : (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.obj (op U)) (x : W) :
     BergmanSpace.representative (τ.bergmanRestriction q hτa he hU hτ hK hKU s) (e x) =
-      q (τ.continuousLinearMapAt ℂ x (s ⟨x, hKU (subset_closure x.2)⟩)) := by
+      q (τ.continuousLinearMapAt ℂ x (s ⟨x, hKU (subset_closure x.property)⟩)) := by
   rw [bergmanRestriction, LinearMap.comp_apply, e.holomorphicSectionToBergman_apply]
   exact τ.holomorphicSectionLinearEquiv_apply q hτa hτ s
-    ⟨x, hKU (subset_closure x.2)⟩
+    ⟨x, hKU (subset_closure x.property)⟩
 
 /-- Returning from the Bergman realization gives the native restriction of the original
 section, rather than an assertion that it was square-integrable on the larger open. -/
@@ -690,7 +690,7 @@ theorem bergmanSection_bergmanRestriction (hK : IsCompact (closure (W : Set X)))
   apply holomorphicSectionSheaf.ext
   intro x
   rw [bergmanSection_apply, bergmanRestriction_apply, q.symm_apply_apply,
-    τ.symmL_continuousLinearMapAt (hτ (hKU (subset_closure x.2))),
+    τ.symmL_continuousLinearMapAt (hτ (hKU (subset_closure x.property))),
     holomorphicSectionSheaf.map_apply]
 
 /-- Starting with a Bergman class, the native compact-shrink realization is the canonical
@@ -719,8 +719,8 @@ theorem bergmanSection_coordinate (τ' : Trivialization F (π F V)) [τ'.IsLinea
     (hx' : (x : X) ∈ τ'.baseSet) :
     q' (τ'.continuousLinearMapAt ℂ x (τ.bergmanSection q hτa he hU hτ u x)) =
       τ.scalarCoordChange τ' q q' x * BergmanSpace.representative u (e x) := by
-  rw [← τ.scalarCoordChange_mul_coordinate τ' q q' (hτ x.2) hx',
-    bergmanSection_apply, τ.continuousLinearMapAt_symmL (hτ x.2), q.apply_symm_apply]
+  rw [← τ.scalarCoordChange_mul_coordinate τ' q q' (hτ x.property) hx',
+    bergmanSection_apply, τ.continuousLinearMapAt_symmL (hτ x.property), q.apply_symm_apply]
 
 
 /-- A different holomorphic frame can read a realized section after compact shrinking. The
@@ -738,7 +738,7 @@ theorem bergmanRestriction_bergmanSection_coordinate
       τ.scalarCoordChange τ' q q' x * BergmanSpace.representative u (e x) := by
   rw [τ'.bergmanRestriction_apply]
   exact τ.bergmanSection_coordinate q hτa he hU hτ τ' q' u
-    ⟨x, hKU (subset_closure x.2)⟩ (hτ' (hKU (subset_closure x.2)))
+    ⟨x, hKU (subset_closure x.property)⟩ (hτ' (hKU (subset_closure x.property)))
 
 end Bundle.Trivialization
 

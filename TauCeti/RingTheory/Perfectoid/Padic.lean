@@ -71,7 +71,8 @@ theorem not_pow_dvd_padic (ϖ : powerBoundedSubring ℚ_[p]) (hϖ : IsPseudoUnif
     have := (Padic.norm_le_pow_iff_norm_lt_pow_add_one (ϖ : ℚ_[p]) (-1)).mpr
       (by simpa using (isPseudoUniformizer_iff_norm_lt_one.mp hϖ).2)
     simpa using this
-  have hc1 : ‖(c : ℚ_[p])‖ ≤ 1 := isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.2)
+  have hc1 : ‖(c : ℚ_[p])‖ ≤ 1 := isPowerBounded_iff_norm_le_one.mp
+      (mem_powerBoundedSubring.mp c.property)
   have hceq : (p : ℚ_[p]) = (ϖ : ℚ_[p]) ^ p * c := by
     simpa using congrArg Subtype.val hc
   have : (p : ℝ)⁻¹ ≤ (p : ℝ)⁻¹ ^ p := by
