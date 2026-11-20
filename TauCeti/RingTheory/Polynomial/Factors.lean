@@ -47,8 +47,6 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
 * `Polynomial.Factors.isCoprime`: distinct factors are coprime.
 * `Polynomial.Factors.span_eq_iInf_span`: for `f` nonzero and squarefree,
   `(f) = ⨅ p, (p)`.
-* `Polynomial.sum_natDegree_normalizedFactors`: the degrees of the normalized irreducible
-  factors, counted with multiplicity, sum to the degree.
 * `Polynomial.map_natDegree_normalizedFactors_eq_singleton_iff`: those degrees form a singleton
   exactly when the polynomial is irreducible.
 * `Polynomial.count_one_map_natDegree_normalizedFactors`: a nonzero squarefree polynomial has as
@@ -256,15 +254,6 @@ the cost of forgetting multiplicities. The lemmas below are the counterparts for
 -/
 
 variable [DecidableEq K]
-
-/-- The degrees of the normalized irreducible factors of a polynomial over a field, counted with
-multiplicity, sum to its degree. -/
-lemma sum_natDegree_normalizedFactors (g : K[X]) :
-    ((normalizedFactors g).map natDegree).sum = g.natDegree := by
-  by_cases hg : g = 0
-  · simp [hg]
-  · rw [← natDegree_multiset_prod _ (zero_notMem_normalizedFactors g)]
-    exact natDegree_eq_of_degree_eq (degree_eq_degree_of_associated (prod_normalizedFactors hg))
 
 /-- The degrees of the normalized irreducible factors of a polynomial over a field form the
 singleton `{g.natDegree}` exactly when the polynomial is irreducible. -/

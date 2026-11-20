@@ -34,10 +34,10 @@ It also records three facts about Mathlib's extension of scalars `ModuleCat.exte
 
 Along the structure map `algebraMap R S` of an `R`-algebra, extension of scalars is the tensor
 product `S ⊗[R] M` taken with the algebra module structure of `S`
-(`ModuleCat.extendScalarsAlgebraMapIso`), and through this identification it acts on morphisms by
-base change (`ModuleCat.extendScalars_map_comp_extendScalarsAlgebraMapIso_hom`). When `S` is flat
-over `R` it is exact, so it preserves homology
-(`ModuleCat.preservesHomology_extendScalars_algebraMap`). An `R`-linear map `f : M → N` to an
+(`ModuleCat.extendScalarsAlgebraMapIso`), naturally in `M`
+(`ModuleCat.extendScalarsAlgebraMapIso_inv_naturality`). When `S` is flat over `R`, this
+extension of scalars is exact and so preserves finite limits
+(`ModuleCat.preservesFiniteLimits_extendScalars_algebraMap`). An `R`-linear map `f : M → N` to an
 `S`-module exhibits `N` as the base change of `M` (`IsBaseChange S f`) exactly when its adjoint
 `S ⊗[R] M → N` is bijective; in that case the adjoint morphism of modules is an isomorphism
 (`ModuleCat.isIso_extendRestrictScalarsAdj_homEquiv_symm_of_isBaseChange`).
@@ -233,25 +233,32 @@ theorem extendScalarsAlgebraMapIso_inv_tmul (M : ModuleCat.{w} R) (s : S) (m : M
   unfold extendScalarsAlgebraMapIso
   rfl
 
-/-- **Naturality of `ModuleCat.extendScalarsAlgebraMapIso`**: on `S ⊗[R] M`, extension of scalars
-along `algebraMap R S` acts on a morphism `g` by the base change of `g`. -/
+/-- `extendScalarsAlgebraMapIso` is natural in the module: it identifies the base change
+`S ⊗[R] g` of an `R`-linear map `g` with the extension of scalars of `g`. -/
 @[reassoc]
-theorem extendScalars_map_comp_extendScalarsAlgebraMapIso_hom {M N : ModuleCat.{w} R}
-    (g : M ⟶ N) :
-    (extendScalars (algebraMap R S)).map g ≫ (extendScalarsAlgebraMapIso N).hom =
-      (extendScalarsAlgebraMapIso M).hom ≫ ofHom (g.hom.baseChange S) :=
-  ExtendScalars.hom_ext fun m ↦ by
-    -- Evaluate both composites at `1 ⊗ m`; `extendScalarsAlgebraMapIso` sends it to `1 ⊗ m`.
-    -- The goal from `ExtendScalars.hom_ext` types `1 : S` as an element of the restricted module
-    -- `(restrictScalars (algebraMap R S)).obj S`, which is not type-correct at instance
-    -- transparency, so no `rw` or `simp only` (not even `ConcreteCategory.comp_apply`) matches it.
-    -- `change` restates it at `S`, with the composites and `ofHom` already applied.
-    change (extendScalarsAlgebraMapIso N).hom
-        ((extendScalars (algebraMap R S)).map g ((1 : S) ⊗ₜ[R, algebraMap R S] m)) =
-      g.hom.baseChange S ((1 : S) ⊗ₜ[R] m)
-    rw [ExtendScalars.map_tmul, extendScalarsAlgebraMapIso_hom_tmul, LinearMap.baseChange_tmul]
+theorem extendScalarsAlgebraMapIso_inv_naturality {M N : ModuleCat.{w} R} (g : M ⟶ N) :
+    ofHom (g.hom.baseChange S) ≫ (extendScalarsAlgebraMapIso N).inv =
+      (extendScalarsAlgebraMapIso M).inv ≫ (extendScalars (algebraMap R S)).map g := by
+  refine hom_ext (LinearMap.ext fun t ↦ ?_)
+  induction t using TensorProduct.inductionOn with
+  | tmul s x =>
+    simp only [hom_comp, LinearMap.comp_apply, hom_ofHom, LinearMap.baseChange_tmul]
+    -- `simp` leaves the two inverse comparisons unreduced, so they are rewritten explicitly.
+    rw [extendScalarsAlgebraMapIso_inv_tmul, extendScalarsAlgebraMapIso_inv_tmul]
+    exact (ExtendScalars.map_tmul (algebraMap R S) g s x).symm
+  | add x y hx hy => simp_all
 
 end AlgebraMap
+
+section Flat
+
+/-- Extension of scalars along a flat algebra is exact, so it preserves finite limits. -/
+instance preservesFiniteLimits_extendScalars_algebraMap {R S : Type u} [CommRing R] [CommRing S]
+    [Algebra R S] [Module.Flat R S] :
+    Limits.PreservesFiniteLimits (extendScalars.{u, u, u} (algebraMap R S)) :=
+  preservesFiniteLimits_extendScalars_of_flat (RingHom.flat_algebraMap_iff.2 inferInstance)
+
+end Flat
 
 section BaseChange
 
@@ -293,18 +300,6 @@ theorem isIso_extendRestrictScalarsAdj_homEquiv_symm_of_isBaseChange
     rw [key]
     exact hf.equiv.toModuleIso.isIso_hom
   exact IsIso.of_isIso_comp_left (extendScalarsAlgebraMapIso _).inv _
-
-open Limits in
-/-- Extension of scalars along a flat algebra is exact, so it preserves homology. -/
-instance preservesHomology_extendScalars_algebraMap [Module.Flat R S] :
-    (extendScalars.{u, u, u} (algebraMap R S)).PreservesHomology := by
-  have := preservesFiniteLimits_extendScalars_of_flat
-    (RingHom.flat_algebraMap_iff.2 (inferInstance : Module.Flat R S))
-  have : PreservesColimitsOfSize.{0, 0} (extendScalars.{u, u, u} (algebraMap R S)) :=
-    (extendRestrictScalarsAdj.{u, u, u} (algebraMap R S)).leftAdjoint_preservesColimits
-  have : PreservesFiniteColimits (extendScalars.{u, u, u} (algebraMap R S)) :=
-    PreservesColimitsOfSize.preservesFiniteColimits _
-  infer_instance
 
 end BaseChange
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.Wang
-public import TauCeti.AlgebraicTopology.Singular.Coefficients.BaseChange
+public import TauCeti.AlgebraicTopology.Singular.Coefficients.FlatBaseChange
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient.Field
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
@@ -32,7 +32,7 @@ This is the criterion used for surface mapping tori `Y_φ` with `b₁(Y_φ) = 1`
 forms of it are proved here.
 
 * **Integral form.** Over a field `k` of characteristic zero, `H₁(F; k) ≅ k ⊗ H₁(F; ℤ)` by flat
-  base change (`TopCat.singularHomologyBaseChangeEquiv`), and `φ_*` corresponds to the base change
+  base change (`TauCeti.singularHomologyTensorIso`), and `φ_*` corresponds to the base change
   of its integral action. So if `H₁(F; ℤ)` is free, the determinant of `𝟙 - φ_*` over `k` is the
   image of the integral determinant, and when `H₁(F; ℤ)` also has finite rank, `b₁(T_φ; k) = 1`
   exactly when the integral determinant `det (𝟙 - φ_*)` is nonzero. So the condition
@@ -150,14 +150,12 @@ end Field
 
 section BaseChange
 
-open scoped TensorProduct
-
 variable {F : Type w} [TopologicalSpace F] (φ : F ≃ₜ F)
 
 /-- **The Wang determinant under flat base change.** If `S` is a flat `R`-algebra and `Hₙ(F; R)` is
 free, the determinant of `𝟙 - φ_*` on `Hₙ(F; S)` is the image in `S` of its determinant on
 `Hₙ(F; R)`. (When `Hₙ(F; R)` has infinite rank, both determinants are `1` by convention.) This is
-`TopCat.det_id_sub_singularHomologyMap_baseChange` for the monodromy. -/
+`TauCeti.det_id_sub_singularChains_homologyMap_baseChange` for the monodromy. -/
 theorem det_id_sub_homologyMap_monodromyChainMap_eq_algebraMap (R S : Type w) [CommRing R]
     [CommRing S] [Algebra R S] [Module.Flat R S] (n : ℕ)
     [Module.Free R ((((singularChainComplexFunctor (ModuleCat.{w} R)).obj
@@ -165,23 +163,12 @@ theorem det_id_sub_homologyMap_monodromyChainMap_eq_algebraMap (R S : Type w) [C
     (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of S S)) n).hom).det =
       algebraMap R S
         (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of R R)) n).hom).det := by
-  -- `singularHomologyFunctor` is by definition the homology of the singular chain complex.
-  have : Module.Free R (((singularHomologyFunctor (ModuleCat.{w} R) n).obj
-      (ModuleCat.of R R)).obj (TopCat.of F)) := ‹_›
-  -- Rewriting with `singularHomologyMap_monodromy_eq` would change the module in which `𝟙` and
-  -- the determinant are taken, so each side is transported through `congrArg` instead.
-  exact (congrArg (fun f ↦ (LinearMap.id - f.hom).det)
-    (singularHomologyMap_monodromy_eq φ (ModuleCat.of S S) n)).symm.trans
-      ((TopCat.det_id_sub_singularHomologyMap_baseChange
-        (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F))) n).trans
-          (congrArg (fun f ↦ algebraMap R S (LinearMap.id - f.hom).det)
-            (singularHomologyMap_monodromy_eq φ (ModuleCat.of R R) n)))
+  rw [monodromyChainMap_def, monodromyChainMap_def]
+  exact det_id_sub_singularChains_homologyMap_baseChange _ n
 
 end BaseChange
 
 section Integral
-
-open scoped TensorProduct
 
 /-- **The first Betti number of a mapping torus from integral homology.** If `H₁(F; ℤ)` is free of
 finite rank, then over every field `k` of characteristic zero, such as `ℚ` or `ℝ`,
@@ -198,10 +185,7 @@ theorem finrank_homology_one_eq_one_iff_det_int_ne_zero {F : Type} [TopologicalS
       (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0 := by
   have : FiniteDimensional k ((((singularChainComplexFunctor (ModuleCat.{0} k)).obj
       (ModuleCat.of k k)).obj (TopCat.of F)).homology 1) :=
-    -- `singularHomologyFunctor` is by definition the homology of the singular chain complex.
-    Module.Finite.equiv (R := k) (M := k ⊗[ℤ] (((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj
-      (ModuleCat.of ℤ ℤ)).obj (TopCat.of F)).homology 1)
-        (TopCat.singularHomologyBaseChangeEquiv ℤ k (TopCat.of F) 1).symm
+    Module.Finite.equiv (singularHomologyTensorIso ℤ k (TopCat.of F) 1).toLinearEquiv
   rw [finrank_homology_one_eq_one_iff, det_id_sub_homologyMap_monodromyChainMap_eq_algebraMap φ ℤ k,
     ne_eq, ne_eq, map_eq_zero_iff _ (algebraMap ℤ k).injective_int]
 
@@ -220,8 +204,8 @@ theorem det_id_sub_singularCohomologyMap_eq (n : ℕ) :
     (LinearMap.id - (TopCat.singularCohomologyMap (R := ModuleCat.of k k) (k := k)
         (M := ModuleCat.of k k) (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F))) n).hom).det =
       (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) n).hom).det :=
-  -- As in `det_id_sub_homologyMap_monodromyChainMap_eq_algebraMap`, the right side is transported
-  -- through `congrArg`, since rewriting would change the module in which the determinant is taken.
+  -- Rewriting with `singularHomologyMap_monodromy_eq` would change the module in which `𝟙` and
+  -- the determinant are taken, so the right side is transported through `congrArg` instead.
   (TopCat.det_id_sub_singularCohomologyMap_eq_singularHomologyMap
     (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F))) n).trans
       (congrArg (fun f ↦ (LinearMap.id - f.hom).det)
