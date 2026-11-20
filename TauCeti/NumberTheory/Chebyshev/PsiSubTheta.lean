@@ -7,6 +7,8 @@ module
 
 public import Mathlib.NumberTheory.Chebyshev
 import Mathlib.Analysis.Complex.ExponentialBounds
+import TauCeti.Algebra.Order.Floor.Semifield
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.NumberTheory.PrimeCounting
 
 /-!
@@ -105,19 +107,6 @@ theorem theta_sqrt_add_theta_rpow_le_psi_sub_theta {x : ℝ} (hx : 0 ≤ x) :
   simp only [Nat.cast_ofNat] at h3
   linarith
 
-/-- A sum of terms at most `M ≥ 0` over `a ≤ k ≤ y` is at most `(y + 1 − a)⁺ M`, for `y ≥ 0`. -/
-private theorem sum_Icc_floor_le_max_mul {y M : ℝ} (hy : 0 ≤ y) (hM : 0 ≤ M) (a : ℕ)
-    {f : ℕ → ℝ} (hf : ∀ k ∈ Icc a ⌊y⌋₊, f k ≤ M) :
-    ∑ k ∈ Icc a ⌊y⌋₊, f k ≤ max (y + 1 - a) 0 * M := by
-  refine (sum_le_card_nsmul _ _ _ hf).trans ?_
-  rw [nsmul_eq_mul, Nat.card_Icc]
-  gcongr
-  rcases le_total (⌊y⌋₊ + 1) a with h | h
-  · rw [Nat.sub_eq_zero_of_le h, Nat.cast_zero]
-    exact le_max_right _ _
-  · rw [Nat.cast_sub h, Nat.cast_add, Nat.cast_one]
-    exact le_max_of_le_left (by linarith [Nat.floor_le hy])
-
 /-- The roots `x^{1/k}` with `3 ≤ k ≤ log x / log 2` add up to at most
 `(log x / log 2 − 2)⁺ x^{1/3}`, for `x ≥ 0`. -/
 theorem sum_rpow_one_div_le {x : ℝ} (hx : 0 ≤ x) :
@@ -129,7 +118,7 @@ theorem sum_rpow_one_div_le {x : ℝ} (hx : 0 ≤ x) :
         (log_nonpos hx hx1.le) (log_nonneg one_le_two)).trans_lt one_pos)
     simp only [this, Icc_eq_empty_of_lt (by norm_num : 0 < 3), sum_empty]
     positivity
-  refine (sum_Icc_floor_le_max_mul (div_nonneg (log_nonneg hx1) (log_nonneg one_le_two))
+  refine (TauCeti.sum_Icc_floor_le_max_mul (div_nonneg (log_nonneg hx1) (log_nonneg one_le_two))
     (rpow_nonneg hx ((1 : ℝ) / 3)) 3 fun k hk ↦ rpow_le_rpow_of_exponent_le hx1 ?_).trans_eq ?_
   · have : (3 : ℝ) ≤ k := by exact_mod_cast (mem_Icc.mp hk).1
     gcongr
@@ -201,7 +190,7 @@ theorem psi_sub_theta_le_one_add_mul_sqrt_add {c ε y₀ x : ℝ}
   have hc0 := nonneg_of_forall_theta_le hc
   have hK : 0 ≤ log x / log 2 - 2 := by
     rw [sub_nonneg, le_div_iff₀ (log_pos one_lt_two), ← log_rpow two_pos]
-    exact log_le_log (by positivity) (by norm_num; linarith)
+    exact log_le_log (by positivity) (by rw [rpow_two]; linarith)
   have hsq : θ √x ≤ (1 + ε) * √x := hε _ ((le_abs_self y₀).trans (abs_le_sqrt hx₀))
   have hsum := (sum_theta_rpow_le_mul_sum_rpow hc (by linarith) ⌊log x / log 2⌋₊).trans
     (mul_le_mul_of_nonneg_left (sum_rpow_one_div_le (by linarith)) hc0)
@@ -295,8 +284,8 @@ theorem theta_ge_of_psi_ge_of_exp_le {c₀ ε b x : ℝ} (hc₀ : ∀ y, 0 < y �
 theorem card_filter_isPrimePow_eq_sum_primeCounting {x : ℝ} (hx : 0 ≤ x) :
     #{n ∈ Ioc 0 ⌊x⌋₊ | IsPrimePow n} =
       ∑ k ∈ Icc 1 ⌊log x / log 2⌋₊, Nat.primeCounting ⌊x ^ ((1 : ℝ) / k)⌋₊ := by
-  rw [card_eq_sum_ones, sum_filter, ← sum_filter, sum_PrimePow_eq_sum_sum (fun _ ↦ 1) hx]
-  refine sum_congr rfl fun k _ ↦ ?_
+  rw [card_eq_sum_ones]
+  convert sum_PrimePow_eq_sum_sum (fun _ ↦ 1) hx using 2 with k
   rw [← card_eq_sum_ones, ← Nat.primesLE_eq_filter_Ioc_zero, Nat.primesLE_card_eq_primeCounting]
 
 /-- For `x ≥ 2`, the prime powers `m ≤ x` number at most `π(x) + (log x / log 2 − 1) √x`: each
@@ -317,7 +306,8 @@ theorem card_filter_isPrimePow_le {x : ℝ} (hx : 2 ≤ x) :
     Nat.cast_add, Nat.cast_sum]
   simp only [Nat.cast_one, div_one, rpow_one]
   gcongr
-  refine (sum_Icc_floor_le_max_mul (by linarith) (sqrt_nonneg x) 2 fun k hk ↦ ?_).trans_eq ?_
+  refine (TauCeti.sum_Icc_floor_le_max_mul (by linarith) (sqrt_nonneg x) 2
+    fun k hk ↦ ?_).trans_eq ?_
   · have hk2 : (2 : ℝ) ≤ k := by exact_mod_cast (mem_Icc.mp hk).1
     calc (Nat.primeCounting ⌊x ^ ((1 : ℝ) / k)⌋₊ : ℝ)
         ≤ ⌊x ^ ((1 : ℝ) / k)⌋₊ := by exact_mod_cast Nat.primeCounting_le_self _
@@ -327,17 +317,6 @@ theorem card_filter_isPrimePow_le {x : ℝ} (hx : 2 ≤ x) :
   · rw [max_eq_left (by push_cast; linarith)]
     push_cast
     ring
-
-/-- For `x ≥ 1`, `(log x)² e² ≤ 16 √x`: the maximum of `L² e^{−L/2}` is `16/e²`, at `L = 4`. -/
-private theorem sq_log_mul_exp_one_le_sixteen_mul_sqrt {x : ℝ} (hx : 1 ≤ x) :
-    (log x * exp 1) ^ 2 ≤ 16 * √x := by
-  have hsqrt : √x = exp (log x / 4) ^ 2 := by
-    rw [← exp_nat_mul, sqrt_eq_rpow, rpow_def_of_pos (by linarith)]
-    ring_nf
-  have h := pow_le_pow_left₀ (by have := log_nonneg hx; positivity)
-    (exp_one_mul_le_exp (x := log x / 4)) 2
-  rw [hsqrt]
-  nlinarith
 
 /-- For `x ≥ 2`, the prime powers `m ≤ x` number at most `6 x / log x`. -/
 theorem card_filter_isPrimePow_le_six_mul_div_log {x : ℝ} (hx : 2 ≤ x) :
