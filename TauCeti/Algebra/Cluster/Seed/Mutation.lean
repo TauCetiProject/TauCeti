@@ -51,17 +51,6 @@ theorem isUnit_exchangeElement_iff_of_column_eq_zero (s : Seed c row u B) {k : K
     IsUnit (s.exchangeElement k) ↔ IsUnit (algebraMap R B (s.state.valueAtOne c k)) := by
   rw [s.exchangeElement_of_column_eq_zero h, Algebra.smul_def, Units.isUnit_mul_units]
 
-/-- The form matrix defines an alternating form in the function-space presentation. -/
-theorem isAlt_formMatrix (s : Seed c row u B) : s.formMatrix.toBilin'.IsAlt := by
-  apply (Matrix.isAlt_toBilin'_iff s.formMatrix).mpr
-  constructor
-  · ext i j
-    simp only [Matrix.transpose_apply, Matrix.neg_apply, formMatrix_apply]
-    exact (s.isAlt.neg_eq _ _).symm
-  · intro i
-    rw [formMatrix_apply]
-    exact s.isAlt _
-
 section Mutation
 
 variable [DecidableEq K] {s t t' : Seed c row u B} {k : K}

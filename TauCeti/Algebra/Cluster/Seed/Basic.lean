@@ -18,6 +18,7 @@ with its extended matrix, and a faithful based chart. The compatibility weights 
 vanish; they are separate from the positive symmetrizer of the exchange matrix.
 The ambient algebra is only a semiring algebra: invertibility of exchange elements
 is a further condition, rather than part of the chart or the seed data.
+The form matrix also defines an alternating form in the function-space presentation.
 
 `Seed.exchangeElement` is the finite sum of normalized monomials specified by the
 exchange polynomial. A nonzero extended column guarantees that this element is
@@ -78,6 +79,17 @@ theorem formMatrix_def (s : Seed c row u B) :
 theorem formMatrix_apply (s : Seed c row u B) (i j : I) :
     s.formMatrix i j = s.form (Finsupp.single i 1) (Finsupp.single j 1) :=
   by simp [formMatrix, LinearMap.BilinForm.toMatrix_apply, Finsupp.coe_basisSingleOne]
+
+/-- The form matrix defines an alternating form in the function-space presentation. -/
+theorem isAlt_formMatrix (s : Seed c row u B) : s.formMatrix.toBilin'.IsAlt := by
+  apply (Matrix.isAlt_toBilin'_iff s.formMatrix).mpr
+  constructor
+  · ext i j
+    simp only [Matrix.transpose_apply, Matrix.neg_apply, formMatrix_apply]
+    exact (s.isAlt.neg_eq _ _).symm
+  · intro i
+    rw [formMatrix_apply]
+    exact s.isAlt _
 
 /-- Each weight is the pairing of its exchange column with the corresponding basis vector. -/
 theorem weights_apply (s : Seed c row u B) (k : K) :
