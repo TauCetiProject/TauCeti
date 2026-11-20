@@ -50,7 +50,7 @@ theorem exists_fin_spanning_contMDiffSection :
   have hlocal (x : M) : ∃ s : Fin (finrank ℝ F) → ContMDiffSection I F ∞ V,
       ∃ U : Set M, IsOpen U ∧ x ∈ U ∧
         ∀ y ∈ U, Submodule.span ℝ (range fun i ↦ s i y) = ⊤ := by
-    obtain ⟨f, hf, heq⟩ := (e x).exists_contMDiff_eventuallyEq_localFrame (I := I) b
+    obtain ⟨f, hf, heq⟩ := (e x).exists_contMDiff_eventuallyEq_localFrame (I := I) (n := ∞) b le_rfl
       (mem_baseSet_trivializationAt F V x)
     obtain ⟨U, hU, hUopen, hxU⟩ := eventually_nhds_iff.mp (Filter.eventually_all.mpr heq)
     refine ⟨fun i ↦ ⟨f i, hf i⟩, U ∩ (e x).baseSet,
