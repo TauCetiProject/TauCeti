@@ -32,7 +32,9 @@ The unconditional series sum of the weights of a point of `StdSimplex R α` equa
 (`Convexity.StdSimplex.tsum_weights`).
 
 A standard simplex over a Hausdorff ring is Hausdorff (`Convexity.StdSimplex.t2Space`), so
-continuous surjections onto it from compact spaces are quotient maps.
+continuous surjections onto it from compact spaces are quotient maps. When the vertex type is
+finite and the ring is first-countable, the standard simplex is also first-countable
+(`Convexity.StdSimplex.firstCountableTopology`).
 -/
 
 public section
@@ -133,5 +135,11 @@ lemma continuous_prefixSum_weights {n : ℕ} {Z : Type*} [TopologicalSpace Z]
 instance t2Space [T2Space R] : T2Space (StdSimplex R N) :=
   .of_injective_continuous (f := fun t : StdSimplex R N ↦ ⇑t.weights)
     (fun _ _ h ↦ ext (DFunLike.coe_injective h)) (continuous_pi (continuous_weights_apply R))
+
+/-- A finite-dimensional standard simplex over a first-countable ring is first-countable, since its
+topology is induced by the coordinate embedding into `N → R`. -/
+instance firstCountableTopology [FirstCountableTopology R] [Finite N] :
+    FirstCountableTopology (StdSimplex R N) :=
+  (isEmbedding_toFun_comp_weights R N).isInducing.firstCountableTopology
 
 end Convexity.StdSimplex
