@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Basic
-public import TauCeti.LinearAlgebra.Finsupp.Supported
 
 /-!
 # Towers of cell attachments

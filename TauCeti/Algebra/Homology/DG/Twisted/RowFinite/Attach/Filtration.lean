@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.QuasiIso
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Tower
+public import TauCeti.LinearAlgebra.Finsupp.Supported
 
 /-!
 # Semi-free models along a filtration, one stage of cells at a time
