@@ -30,8 +30,9 @@ ideals it needs no argument that the kernel of `H → ℝ ⊗[ℚ] H → O(S)` i
 * `TauCeti.DeligneTorus.mumfordTateHopfIdeal h`: the Hopf ideal of `H` cutting out `MT(h)`.
 * `TauCeti.DeligneTorus.le_mumfordTateHopfIdeal_iff`: **minimality**; `MT(h)` is contained in
   the closed `ℚ`-subgroup cut out by `I` exactly when `h` kills `I_ℝ`.
-* `TauCeti.DeligneTorus.mumfordTateLift` and
-  `TauCeti.DeligneTorus.baseChangeMap_mkQuotient_comp_mumfordTateLift`: `h` factors through the
+* `TauCeti.DeligneTorus.mumfordTateLift`,
+  `TauCeti.DeligneTorus.baseChangeMap_mkQuotient_comp_mumfordTateLift` and
+  `TauCeti.DeligneTorus.mumfordTateLift_unique`: `h` factors uniquely through the
   real extension of `MT(h)`.
 * `TauCeti.DeligneTorus.mumfordTateHopfIdeal_toIdeal_le_ker`: a homomorphism into `G` defined
   over `ℚ` whose real extension factors through `h` lands in `MT(h)`.
@@ -98,6 +99,14 @@ theorem baseChangeMap_mkQuotient_comp_mumfordTateLift
     baseChangeMap (K := ℝ) (mkQuotient H (mumfordTateHopfIdeal h)) ≫ mumfordTateLift h = h :=
   baseChangeMap_mkQuotient_comp_baseChangeLiftQuotient _ _ _
 
+/-- The factorization through `MT(h)_ℝ` is the only morphism whose composite with the inclusion
+`MT(h)_ℝ → G_ℝ` is `h`. -/
+theorem mumfordTateLift_unique (h : baseChange (K := ℝ) H ⟶ _root_.CommHopfAlgCat.of ℝ S)
+    (g : baseChange (K := ℝ) (quotient H (mumfordTateHopfIdeal h)) ⟶ _root_.CommHopfAlgCat.of ℝ S)
+    (hg : baseChangeMap (K := ℝ) (mkQuotient H (mumfordTateHopfIdeal h)) ≫ g = h) :
+    g = mumfordTateLift h :=
+  baseChangeLiftQuotient_unique _ _ _ g hg
+
 /-- **Homomorphisms defined over `ℚ` through `h` land in the Mumford–Tate group.** Let
 `f : M → G` be a homomorphism of affine groups over `ℚ` whose real extension factors through
 `h`, as `M_ℝ → S → G_ℝ`. Then `f` lands in `MT(h)`: it kills the Mumford–Tate ideal. This
@@ -109,13 +118,9 @@ theorem mumfordTateHopfIdeal_toIdeal_le_ker
     (hfg : h ≫ g = baseChangeMap (K := ℝ) f) :
     (mumfordTateHopfIdeal h).toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom := by
   refine contractHopfIdeal_toIdeal_le_ker (algebraMap ℚ ℝ).injective _ f fun x hx ↦ ?_
-  have hx := RingHom.mem_ker.mp (commonKernelHopfIdeal_toIdeal_le_ker _ () hx)
-  rw [RingHom.mem_ker, ← hfg]
-  -- The kernel conditions apply the underlying ring homs; read them as applications of the
-  -- Hopf morphisms, where the composite unfolds.
-  change g.hom (h.hom x) = 0
-  change h.hom x = 0 at hx
-  rw [hx, map_zero]
+  have hx := BialgHom.mem_ker_toAlgHom_toRingHom.mp (commonKernelHopfIdeal_toIdeal_le_ker _ () hx)
+  rw [BialgHom.mem_ker_toAlgHom_toRingHom, ← hfg, _root_.CommHopfAlgCat.hom_comp,
+    BialgHom.comp_apply, hx, map_zero]
 
 /-- **The Mumford–Tate group is trivial exactly when `h` is trivial**: the Mumford–Tate ideal is
 the augmentation ideal, cutting out the trivial subgroup, exactly when `h` is the trivial
@@ -131,10 +136,7 @@ theorem mumfordTateHopfIdeal_eq_augmentation_iff
     fun hh x hx ↦ ?_⟩
   have hx0 : Coalgebra.counit (R := ℝ) x = 0 :=
     (HopfIdeal.mem_augmentation _ _).mp (HopfIdeal.mem_toIdeal.mp hx)
-  rw [RingHom.mem_ker]
-  -- Read the kernel condition as an application of the Hopf morphism.
-  change h.hom x = 0
-  rw [hh, hx0, map_zero]
+  rw [BialgHom.mem_ker_toAlgHom_toRingHom, hh, hx0, map_zero]
 
 /-- **Invariance under isomorphisms.** Let `e : H ≅ L` be an isomorphism of coordinate Hopf
 algebras, contravariantly an isomorphism `G' ≅ G` of affine groups over `ℚ`, and let

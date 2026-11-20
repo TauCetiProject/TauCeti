@@ -33,11 +33,12 @@ namespace TauCeti.HopfIdeal
 variable {R H : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
 
 /-- **Finiteness of suprema of Hopf ideals.** In a noetherian Hopf algebra the supremum of a set
-of Hopf ideals is the supremum of a finite subset: the underlying ideals of the finite partial
-suprema have a maximal member, and that member already contains every Hopf ideal of the set. -/
+of Hopf ideals is the supremum of a finite subset. -/
 theorem exists_finset_sup_eq_sSup [IsNoetherianRing H] (S : Set (HopfIdeal R H)) :
     ∃ t : Finset (HopfIdeal R H), ↑t ⊆ S ∧ t.sup id = sSup S := by
   classical
+  -- The underlying ideals of the finite partial suprema have a maximal member, and that member
+  -- already contains every Hopf ideal of the set.
   obtain ⟨_, ⟨t, ht, rfl⟩, hmax⟩ := set_has_maximal_iff_noetherian.mpr ‹IsNoetherianRing H›
     ((fun t : Finset (HopfIdeal R H) ↦ (t.sup id).toIdeal) '' {t | ↑t ⊆ S})
     ⟨_, ∅, by simp, rfl⟩

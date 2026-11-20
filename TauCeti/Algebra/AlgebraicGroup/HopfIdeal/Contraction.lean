@@ -157,15 +157,6 @@ theorem contractHopfIdeal_toIdeal_le_ker (halg : Function.Injective (algebraMap 
   (baseChangeHopfIdeal_toIdeal_le_ker_baseChangeMap_iff halg _ f).mp
     ((HopfIdeal.toIdeal_le_toIdeal.mpr (baseChangeHopfIdeal_contractHopfIdeal_le J)).trans hJ)
 
-/-- Pulling a Hopf ideal back along an isomorphism and then along its inverse recovers it. -/
-private theorem comapOfSurjective_inv_hom {A B : _root_.CommHopfAlgCat.{v} k} (e : A ≅ B)
-    (I : HopfIdeal k A) :
-    (I.comapOfSurjective e.inv.hom (ConcreteCategory.bijective_of_isIso e.inv).2).comapOfSurjective
-        e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2 = I := by
-  ext x
-  rw [HopfIdeal.mem_comapOfSurjective, HopfIdeal.mem_comapOfSurjective]
-  exact Iff.of_eq (congrArg (· ∈ I) (_root_.CommHopfAlgCat.inv_hom_apply e x))
-
 /-- Pulling the contraction back along an isomorphism `e : H ≅ L` is contained in the contraction
 of the pullback along the base change of `e`. -/
 private theorem comapOfSurjective_contractHopfIdeal_le (J : HopfIdeal K (baseChange (K := K) L))

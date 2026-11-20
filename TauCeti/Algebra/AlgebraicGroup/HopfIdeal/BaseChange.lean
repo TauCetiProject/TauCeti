@@ -54,6 +54,8 @@ along `h ↦ 1 ⊗ h`.
   change reflects containment of Hopf ideals.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_injective`: faithfully flat base change reflects
   equality of Hopf ideals.
+* `TauCeti.CommHopfAlgCat.comapOfSurjective_inv_hom`: pulling a Hopf ideal back along the inverse
+  of an isomorphism and then along the isomorphism recovers it.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_comapOfIso`: base change commutes with pulling a
   Hopf ideal back along an ambient isomorphism.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le`: the subgroup generated
@@ -193,6 +195,15 @@ theorem baseChangeHopfIdeal_mono {J J' : HopfIdeal k H} (hJ : J ≤ J') :
   rw [← HopfIdeal.toIdeal_le_toIdeal, baseChangeHopfIdeal_toIdeal, baseChangeHopfIdeal_toIdeal]
   exact Ideal.map_mono (HopfIdeal.toIdeal_le_toIdeal.mpr hJ)
 
+/-- Pulling a Hopf ideal back along the inverse of an isomorphism of commutative Hopf algebras and
+then along the isomorphism recovers it. -/
+theorem comapOfSurjective_inv_hom {A B : _root_.CommHopfAlgCat.{v} k} (e : A ≅ B)
+    (I : HopfIdeal k A) :
+    (I.comapOfSurjective e.inv.hom (ConcreteCategory.bijective_of_isIso e.inv).2).comapOfSurjective
+        e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2 = I := by
+  simp only [HopfIdeal.comapOfSurjective_comapOfSurjective, ← _root_.CommHopfAlgCat.hom_comp,
+    e.hom_inv_id, hom_id_eq_bialgHom_id, HopfIdeal.comapOfSurjective_id]
+
 /-- Base change commutes with pulling a Hopf ideal back along an ambient Hopf-algebra
 isomorphism. -/
 @[simp]
@@ -322,13 +333,11 @@ theorem baseChangeHopfIdeal_toIdeal_le_ker_baseChangeMap_iff
         RingHom.ker (baseChangeMap (K := K) f).hom.toAlgHom.toRingHom ↔
       I.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom := by
   refine ⟨fun hI x hx ↦ ?_, baseChangeHopfIdeal_toIdeal_le_ker_baseChangeMap I f⟩
-  have h := RingHom.mem_ker.mp (hI ((HopfIdeal.mem_toIdeal).mpr
+  have h := BialgHom.mem_ker_toAlgHom_toRingHom.mp (hI ((HopfIdeal.mem_toIdeal).mpr
     (one_tmul_mem_baseChangeHopfIdeal (K := K) (HopfIdeal.mem_toIdeal.mp hx))))
-  -- The kernel membership applies the underlying ring hom; read it as the Hopf morphism so the
-  -- pure-tensor formula for `baseChangeMap` applies.
-  change (baseChangeMap (K := K) f).hom ((1 : K) ⊗ₜ[k] x) = 0 at h
   rw [baseChangeMap_apply_tmul] at h
-  refine RingHom.mem_ker.mpr (Algebra.TensorProduct.includeRight_injective (A := K) halg ?_)
+  refine BialgHom.mem_ker_toAlgHom_toRingHom.mpr
+    (Algebra.TensorProduct.includeRight_injective (A := K) halg ?_)
   rw [map_zero, Algebra.TensorProduct.includeRight_apply]
   exact h
 
