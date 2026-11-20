@@ -40,7 +40,7 @@ commutative rings. Finally, scalar extension of a free full lattice recovers its
 * `Submodule.toAddSubgroup_submoduleOf`: taking the underlying additive subgroup commutes
   with restricting a submodule to another submodule.
 * `Submodule.isFullLattice_span`: the span of a finite set spanning the ambient module is a full
-  lattice.
+  lattice; `Module.Basis.isFullLattice_span_range` specializes this to the span of a finite basis.
 * `Submodule.isFullLattice_comap_of_isLocalization`: pullback of a full lattice along an injective
   linear map over a localization of a Noetherian commutative ring.
 * `Submodule.isFullLattice_comap`: the specialization to the total ring of fractions.
@@ -427,6 +427,12 @@ theorem isFullLattice_span {s : Set V} (hs : s.Finite) (hspan : span A s = ⊤) 
     (span R s).IsFullLattice A where
   __ := IsLattice.of_fg A ⟨hs.toFinset, by simp⟩
   span_eq_top := by rw [span_span_of_tower, hspan]
+
+/-- The `R`-span of a finite `A`-basis `b` of `V` is a full `R`-lattice in `V` (over `A`). -/
+instance _root_.Module.Basis.isFullLattice_span_range {ι : Type*} [Finite ι]
+    (b : Module.Basis ι A V) :
+    (span R (Set.range b)).IsFullLattice A :=
+  isFullLattice_span (Set.finite_range b) b.span_eq
 
 end Span
 

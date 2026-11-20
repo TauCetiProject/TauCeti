@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.Topology.Algebra.Module.Compact
 public import TauCeti.Algebra.Module.Lattice
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
+public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
 
@@ -44,6 +45,8 @@ compactness uses that `𝒪[E]` is compact.
   the endomorphisms mapping a lattice into itself form a compact open subset of `Module.End E V`.
 * `Submodule.IsFullLattice.isOpen_stabilizer`, `Submodule.IsFullLattice.isCompact_stabilizer`: the
   stabilizer of a lattice in `V ≃ₗ[E] V` is open and compact.
+* `Submodule.IsFullLattice.normalizedAbsoluteValue_det_of_mem_stabilizer`: every element of the
+  stabilizer `GL(L)` has determinant of normalized absolute value `1`.
 
 ## References
 
@@ -222,6 +225,28 @@ theorem IsFullLattice.isCompact_stabilizer :
     simp [T, LinearEquiv.smul_def]
   rw [h]
   exact (Submonoid.units_isCompact (IsFullLattice.isCompact_setOf_mapsTo L)).image e.continuous
+
+omit [TopologicalSpace V] [IsModuleTopology E V] in
+/-- **Lattice-stabilizer elements have unit determinant.** Any `T ∈ GL(L)` has `|det T|_E = 1`. -/
+theorem IsFullLattice.normalizedAbsoluteValue_det_of_mem_stabilizer {T : V ≃ₗ[E] V}
+    (hT : T ∈ MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V)) :
+    TauCeti.normalizedAbsoluteValue E (LinearMap.det (T : V →ₗ[E] V)) = 1 := by
+  have hmaps := TauCeti.mem_stabilizer_set_iff_mapsTo.mp hT
+  have hT_L : ∀ x ∈ L, T x ∈ L := fun x hx ↦ by simpa [LinearEquiv.smul_def] using hmaps.1 hx
+  have hTi_L : ∀ x ∈ L, T.symm x ∈ L := fun x hx ↦ by simpa [LinearEquiv.smul_def] using hmaps.2 hx
+  let g : L ≃ₗ[𝒪[E]] L := LinearEquiv.ofLinearMap
+    (((T : V →ₗ[E] V).restrictScalars 𝒪[E]).restrict hT_L)
+    (((T.symm : V →ₗ[E] V).restrictScalars 𝒪[E]).restrict hTi_L)
+    (by ext x; exact T.apply_symm_apply x)
+    (by ext x; exact T.symm_apply_apply x)
+  have : Module.Finite 𝒪[E] L := IsLattice.finite E L
+  have : Module.Free 𝒪[E] L := IsLattice.free E L
+  have hdet : LinearMap.det (T : V →ₗ[E] V) =
+      algebraMap 𝒪[E] E (LinearMap.det (g : L →ₗ[𝒪[E]] L)) :=
+    LinearMap.det_eq_algebraMap_det_of_isFullLattice (T : V →ₗ[E] V) (g : L →ₗ[𝒪[E]] L) fun _ ↦ rfl
+  obtain ⟨u, hu⟩ := g.isUnit_det'
+  rw [hdet, ← hu]
+  exact TauCeti.normalizedAbsoluteValue_coe_unit u
 
 end LocalField
 

@@ -97,7 +97,7 @@ noncomputable instance instIsFullLatticeDualCarrier (L : IntegralLattice V) [L.I
     L.dualCarrier.IsFullLattice ℚ := by
   let b := Module.Free.chooseBasis ℤ L.carrier
   rw [L.dualCarrier_eq_span_dualBasis b]
-  exact isFullLattice_span_basis (L.form.dualBasis L.form_nondegenerate (b.extendOfIsFullLattice ℚ))
+  exact (L.form.dualBasis L.form_nondegenerate (b.extendOfIsFullLattice ℚ)).isFullLattice_span_range
 
 instance (L : IntegralLattice V) [L.IsNondegenerate] : Module.Free ℤ L.dualCarrier :=
   Submodule.IsLattice.free ℚ L.dualCarrier
