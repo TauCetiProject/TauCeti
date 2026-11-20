@@ -45,6 +45,8 @@ faces of the increasing enumeration of a set `J` enumerate the sets `J` with one
   edge of `Δ[n]` are its vertices `0` and `1`.
 * `SSet.stdSimplex.nonempty_edge_iff`: `Δ[n]` has an edge from `a` to `b` exactly when `a ≤ b`,
   and it is then unique (`SSet.stdSimplex.subsingleton_edge`).
+* `SSet.stdSimplex.range_le_face_singleton_compl_sup_face_singleton_compl`: a map to `Δ[n]` sending
+  no edge to an edge from `a` to `b` lands in the simplices missing `a` or `b`.
 * `SSet.stdSimplex.quasicategory`: standard simplices are quasicategories.
 * `SSet.stdSimplex.isConnected`: standard simplices are connected.
 * `SSet.stdSimplex.contraction`: the homotopy from the constant map at the initial vertex of
@@ -219,6 +221,33 @@ lemma nonempty_edge_iff {n : ℕ} (a b : Fin (n + 1)) :
       ((monotone_apply e.edge (by decide)).trans_eq (edge_edge_apply_one e)),
     fun h ↦ ⟨Edge.mk (edge n a b h) (obj₀Equiv.injective (edge_apply_zero.{u} n a b h))
       (obj₀Equiv.injective (edge_apply_one.{u} n a b h))⟩⟩
+
+/-- A map `k : X ⟶ Δ[n]` that sends no edge of `X` to an edge from the vertex `a` to the vertex
+`b`, where `a ≤ b`, lands in the simplices missing `a` or `b`: a simplex of `Δ[n]` hitting both has
+the edge from `a` to `b` as a face. -/
+lemma range_le_face_singleton_compl_sup_face_singleton_compl {X : SSet.{u}} {n : ℕ}
+    (k : X ⟶ Δ[n]) {a b : Fin (n + 1)} (hab : a ≤ b)
+    (hk : ∀ t : X _⦋1⦌, ¬ (k.app _ t 0 = a ∧ k.app _ t 1 = b)) :
+    Subcomplex.range k ≤ face {a}ᶜ ⊔ face {b}ᶜ := by
+  rintro ⟨m⟩ _ ⟨x, rfl⟩
+  induction m using SimplexCategory.rec with | _ d
+  simp only [Subfunctor.max_obj, Set.mem_union, mem_face_iff, Finset.mem_compl,
+    Finset.mem_singleton]
+  by_contra h
+  simp only [not_or, not_forall, not_not] at h
+  obtain ⟨⟨i, hi⟩, ⟨j, hj⟩⟩ := h
+  -- The edge of `x` from its vertex `i` to its vertex `j` (or from `j` to `i`) is sent to an edge
+  -- from `a` to `b`.
+  have edge {i j : Fin (d + 1)} (hij : i ≤ j) :
+      k.app _ (X.map (SimplexCategory.mkOfLe i j hij).op x) 0 = k.app _ x i ∧
+        k.app _ (X.map (SimplexCategory.mkOfLe i j hij).op x) 1 = k.app _ x j := by
+    rw [NatTrans.naturality_apply, obj_map_apply, obj_map_apply]
+    exact ⟨rfl, rfl⟩
+  rcases le_total i j with hij | hji
+  · exact hk _ ((edge hij).imp (·.trans hi) (·.trans hj))
+  · -- Then `b ≤ a`, so that `a = b`.
+    have hba : b = a := le_antisymm (hj ▸ hi ▸ monotone_apply _ hji) hab
+    exact hk _ ((edge hji).imp (·.trans (hj.trans hba)) (·.trans (hi.trans hba.symm)))
 
 /-- Standard simplices are quasicategories, being isomorphic to nerves of linear orders. -/
 instance quasicategory (n : ℕ) : Quasicategory (Δ[n] : SSet.{u}) where

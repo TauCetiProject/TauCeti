@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.ProdStdSimplex
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Preorder
 
 /-!
 # Vertices of faces and degeneracies of simplices of `Δ[p] ⊗ Δ[q]`
@@ -16,7 +17,9 @@ degeneracies reindex the chain by `Fin.succAbove` and `Fin.predAbove`
 (`SSet.prodStdSimplex.objEquiv_δ`, `SSet.prodStdSimplex.objEquiv_σ`), a simplex repeating the
 vertex at `j` and `j + 1` is a degeneracy of its face (`SSet.prodStdSimplex.σ_δ_succ_of_eq`),
 and `f ▷ Δ[q]` applies `f` to the first coordinates of the vertices
-(`SSet.prodStdSimplex.objEquiv_whiskerRight_app`).
+(`SSet.prodStdSimplex.objEquiv_whiskerRight_app`). Since `Δ[p] ⊗ Δ[q]` is the nerve of the poset
+`Fin (p + 1) × Fin (q + 1)`, maps to it are determined by their values on vertices
+(`SSet.prodStdSimplex.hom_ext`).
 -/
 
 public section
@@ -66,6 +69,14 @@ lemma objEquiv_whiskerRight_app {m n r : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌)
     (y : (Δ[m] ⊗ Δ[q] : SSet.{u}) _⦋r⦌) :
     ⇑(objEquiv ((SSet.stdSimplex.map f ▷ Δ[q]).app _ y)) = Prod.map f id ∘ objEquiv y :=
   funext fun i ↦ Prod.ext (objEquiv_apply_fst _ i) (objEquiv_apply_snd _ i)
+
+/-- Maps from a simplicial set to `Δ[p] ⊗ Δ[q]` are determined by their values on vertices, since
+`Δ[p] ⊗ Δ[q]` is the nerve of the poset `Fin (p + 1) × Fin (q + 1)`. -/
+lemma hom_ext {X : SSet.{u}} {f g : X ⟶ Δ[p] ⊗ Δ[q]}
+    (h : ∀ x : X _⦋0⦌, f.app _ x = g.app _ x) : f = g := by
+  rw [← cancel_mono (isoNerve p q).hom]
+  exact nerve.hom_ext_of_preorder fun x ↦
+    congrArg (fun y : (Δ[p] ⊗ Δ[q] : SSet.{u}) _⦋0⦌ ↦ nerveEquiv ((isoNerve p q).hom.app _ y)) (h x)
 
 end prodStdSimplex
 
