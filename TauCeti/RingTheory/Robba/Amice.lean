@@ -263,10 +263,10 @@ variable (R) in
 coefficients. -/
 noncomputable def boundedToAmice : bounded R →ₐ[R] AmiceRing R where
   toFun f := ⟨f.1, coe_mem_amiceCoeff f.2⟩
-  map_one' := (rfl)
-  map_mul' _ _ := (rfl)
-  map_zero' := (rfl)
-  map_add' _ _ := (rfl)
+  map_one' := Subtype.ext <| by simp
+  map_mul' _ _ := Subtype.ext <| by simp
+  map_zero' := Subtype.ext <| by simp
+  map_add' _ _ := Subtype.ext <| by simp
   commutes' _ := Subtype.ext <| by simp
 
 @[simp]
