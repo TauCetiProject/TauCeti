@@ -67,6 +67,9 @@ This file sets up these conditions at three levels.
   depend only on the multiset of eigenvalues.
 * `Matrix.isGenericAt_iff_of_isRootEnumeration`: genericity of a matrix is genericity of any
   listing of its characteristic roots.
+* `Matrix.isGenericAt_one_iff`: a matrix is generic at `1` exactly when its characteristic
+  polynomial is separable; in particular strongly generic matrices and representations have
+  pairwise distinct Frobenius eigenvalues.
 * `Matrix.isGenericAt_diagonal_iff`: a diagonal matrix is generic exactly when its diagonal is.
 * `MonoidHom.isGenericAt_iff_of_inv_mul_mem`: independence of the Frobenius lift.
 * `MonoidHom.isGenericAt_inv_iff`: arithmetic and geometric Frobenius give the same condition.
@@ -387,6 +390,21 @@ theorem isStronglyGenericAt_iff_and :
 theorem IsStronglyGenericAt.isGenericAt (h : A.IsStronglyGenericAt q) : A.IsGenericAt q :=
   (isStronglyGenericAt_iff_and.1 h).2
 
+/-- A matrix is generic at `1` exactly when its characteristic polynomial is separable, that is,
+when its characteristic roots are pairwise distinct. -/
+@[simp]
+theorem isGenericAt_one_iff : A.IsGenericAt 1 ↔ A.charpoly.Separable := by
+  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly (E := AlgebraicClosure K) A
+  rw [isGenericAt_iff_of_isRootEnumeration hβ rfl, _root_.map_one,
+    TauCeti.isGenericEigenvalues_one_iff,
+    hβ.injective_iff_separable (charpoly_natDegree_eq_dim A).le (charpoly_monic A).ne_zero]
+
+/-- A strongly generic matrix has a separable characteristic polynomial: its characteristic roots
+are pairwise distinct. -/
+theorem IsStronglyGenericAt.separable_charpoly (h : A.IsStronglyGenericAt q) :
+    A.charpoly.Separable :=
+  isGenericAt_one_iff.1 (isStronglyGenericAt_iff_and.1 h).1
+
 /-- Genericity of a matrix is genericity of the roots in any factorization of its characteristic
 polynomial into linear factors over a field extension `L` of `K`. -/
 theorem isGenericAt_iff_of_charpoly_map_eq_prod {L : Type*} [Field L] [Algebra K L]
@@ -541,6 +559,12 @@ theorem IsStronglyGenericAt.isGenericAt (h : ρ.IsStronglyGenericAt I frob q) :
     ρ.IsGenericAt I frob q :=
   (isStronglyGenericAt_iff_and.1 h).2
 
+/-- If a representation is strongly generic at `frob`, then the characteristic polynomial of
+`ρ frob` is separable: the Frobenius eigenvalues are pairwise distinct. -/
+theorem IsStronglyGenericAt.separable_charpoly (h : ρ.IsStronglyGenericAt I frob q) :
+    (ρ frob : Matrix n n K).charpoly.Separable :=
+  h.2.separable_charpoly
+
 /-- **Independence of the Frobenius lift.** Genericity at `frob` and at `frob'` agree when the two
 elements differ by an element of `I`. -/
 theorem isGenericAt_iff_of_inv_mul_mem (h : frob⁻¹ * frob' ∈ I) :
@@ -611,6 +635,12 @@ theorem isStronglyGenericAt_iff_of_coe_eq_diagonal {α : n → K}
     (h : (ρ frob : Matrix n n K) = Matrix.diagonal α) :
     ρ.IsStronglyGenericAt I frob q ↔ I ≤ ρ.ker ∧ TauCeti.IsStronglyGenericEigenvalues q α := by
   rw [isStronglyGenericAt_iff, h, Matrix.isStronglyGenericAt_diagonal_iff]
+
+/-- A representation of dimension at most one is generic at every `q` exactly when `I` acts
+trivially. -/
+theorem isGenericAt_iff_le_ker_of_subsingleton [Subsingleton n] :
+    ρ.IsGenericAt I frob q ↔ I ≤ ρ.ker :=
+  and_iff_left (Matrix.isGenericAt_of_subsingleton _ q)
 
 /-- A representation of dimension at most one is strongly generic at every `q` exactly when `I`
 acts trivially. -/
