@@ -194,8 +194,10 @@ private theorem exists_isGood (C : FilteredCells (h := h) (ℳ := ℳ) (dM := dM
       hS.1 S.g_mem S.g_m hS.2 (C.c₀_deg k) (C.c₀_mem k) (C.dM_c₀_mem k) (C.rel k)
   refine ⟨⟨a, ha, hca, c, hcdeg, hca'⟩, hcN, hcc₀, ?_, hrel⟩
   rintro (x | q)
-  · exact C.mono k.le_succ (hS.1 x)
-  · exact hcN q
+  · rw [RowFiniteAugmentedModule.attach_g_inl]
+    exact C.mono k.le_succ (hS.1 x)
+  · rw [RowFiniteAugmentedModule.attach_g_inr]
+    exact hcN q
 
 /-- The attachment of the cells of stage `k`: a good one whenever one exists. -/
 private noncomputable def step (C : FilteredCells (h := h) (ℳ := ℳ) (dM := dM) Q) (k : ℕ)
@@ -207,7 +209,9 @@ private noncomputable def step (C : FilteredCells (h := h) (ℳ := ℳ) (dM := d
 private theorem isQuasiIsoOnto_tower (C : FilteredCells (h := h) (ℳ := ℳ) (dM := dM) Q) :
     ∀ k, IsQuasiIsoOnto (RowFiniteAugmentedModule.tower C.step k) (C.F k)
   | 0 => isQuasiIsoOnto_empty C.acyclic
-  | k + 1 => (Classical.epsilon_spec (C.exists_isGood k (isQuasiIsoOnto_tower C k))).2.2
+  | k + 1 => by
+    rw [RowFiniteAugmentedModule.tower_succ]
+    exact (Classical.epsilon_spec (C.exists_isGood k (isQuasiIsoOnto_tower C k))).2.2
 
 /-- The attachment of the cells of stage `k` to the stage `k` of the construction is good. -/
 private theorem isGood_step (C : FilteredCells (h := h) (ℳ := ℳ) (dM := dM) Q)
@@ -280,7 +284,12 @@ theorem exists_semifreeModel_of_filtration (hM : IsDGLeftModule h ℳ dM) {F : �
   exact ⟨RowFiniteAugmentedModule.towerCocycle C.step,
     RowFiniteAugmentedModule.towerAugmentation C.step,
     RowFiniteAugmentedModule.towerAugmentation_mem C.step,
-    fun x ↦ (C.isGood_step x.1).1 x.2, fun x ↦ (C.isGood_step x.1).2.1 x.2,
+    fun ⟨k, q⟩ ↦ by
+      rw [RowFiniteAugmentedModule.towerAugmentation_mk]
+      exact (C.isGood_step k).1 q,
+    fun ⟨k, q⟩ ↦ by
+      rw [RowFiniteAugmentedModule.towerAugmentation_mk]
+      exact (C.isGood_step k).2.1 q,
     RowFiniteAugmentedModule.linearCombination_towerAugmentation_m C.step,
     RowFiniteAugmentedModule.towerCocycle_m_mem_supported C.step,
     RowFiniteAugmentedModule.wellFounded_mem_support_towerCocycle C.step,

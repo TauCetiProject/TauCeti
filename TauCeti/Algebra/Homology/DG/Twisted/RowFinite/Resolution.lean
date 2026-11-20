@@ -185,7 +185,8 @@ theorem exists_semifreeResolution_m_eq {n : ℤ} {c : semifreeResolutionGenerato
   obtain ⟨c', rfl⟩ :=
     RowFiniteAugmentedModule.exists_mapDomain_towerOf_eq (resolutionStep 𝒜 d 𝒩 dN) hk
   refine ⟨⟨k, ⟨n, c', w, ?_, hw, ?_, ?_⟩⟩, rfl,
-    RowFiniteAugmentedModule.towerCocycle_m (resolutionStep 𝒜 d 𝒩 dN) _, rfl⟩
+    RowFiniteAugmentedModule.towerCocycle_m (resolutionStep 𝒜 d 𝒩 dN) _,
+    RowFiniteAugmentedModule.towerAugmentation_mk (resolutionStep 𝒜 d 𝒩 dN) _ _⟩
   · exact (mapDomain_mem_rowFiniteTotalGrading_iff 𝒜 _
       (RowFiniteAugmentedModule.towerOf_injective _ k)
       (RowFiniteAugmentedModule.indQ_towerOf _ k)).mp hc

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Basic
+public import TauCeti.LinearAlgebra.Finsupp.Supported
 
 /-!
 # Towers of cell attachments
@@ -45,12 +46,6 @@ attaches all the relative cycles of each stage, and of the cell-filtered semi-fr
 public section
 
 open Finsupp
-
-/-- A finitely supported function is supported on the points of rank below some bound, for any
-rank function to `ℕ`. -/
-theorem Finsupp.exists_mem_supported_lt {α M R : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] (r : α → ℕ) (f : α →₀ M) : ∃ k, f ∈ supported M R {y | r y < k} :=
-  ⟨f.support.sup (r · + 1), fun _ hy ↦ Nat.lt_of_succ_le (Finset.le_sup (f := (r · + 1)) hy)⟩
 
 namespace TauCeti
 
@@ -126,6 +121,37 @@ attaching cycles, and their images are the given ones. -/
     · simpa [linearCombination_mapDomain] using S.g_m x
     · simpa [linearCombination_mapDomain] using T.g_a q
 
+section attach
+
+variable (S : RowFiniteAugmentedModule.{uR, uA, uM, u} 𝒜 d ℳ dM) {Q : Type u} {indQ : Q → ℤ}
+  (T : S.Attachment indQ)
+
+/-- The rows of the attached module are those of the attaching cocycle. -/
+theorem attach_m : (S.attach T).m = S.m.attach T.a T.ha T.hca :=
+  (rfl)
+
+/-- The old generators keep their indices. -/
+@[simp]
+theorem attach_ind_inl (x : S.P) : (S.attach T).ind (.inl x) = S.ind x :=
+  (rfl)
+
+/-- The new generators have their prescribed indices. -/
+@[simp]
+theorem attach_ind_inr (q : Q) : (S.attach T).ind (.inr q) = indQ q :=
+  (rfl)
+
+/-- The old generators keep their images. -/
+@[simp]
+theorem attach_g_inl (x : S.P) : (S.attach T).g (.inl x) = S.g x :=
+  (rfl)
+
+/-- The new generators have their prescribed images. -/
+@[simp]
+theorem attach_g_inr (q : Q) : (S.attach T).g (.inr q) = T.c q :=
+  (rfl)
+
+end attach
+
 variable {Q : ℕ → RowFiniteAugmentedModule.{uR, uA, uM, u} 𝒜 d ℳ dM → Type u}
   {indQ : ∀ k S, Q k S → ℤ} (step : ∀ k S, Attachment S (indQ k S))
 
@@ -134,6 +160,14 @@ generators `step k (tower step k)`. -/
 @[expose] noncomputable def tower : ℕ → RowFiniteAugmentedModule.{uR, uA, uM, u} 𝒜 d ℳ dM
   | 0 => empty 𝒜 d ℳ dM
   | k + 1 => (tower k).attach (step k (tower k))
+
+/-- The tower starts from the module with no generators. -/
+theorem tower_zero : tower step 0 = empty 𝒜 d ℳ dM :=
+  (rfl)
+
+/-- Stage `k + 1` of the tower attaches the generators chosen by `step` to stage `k`. -/
+theorem tower_succ (k : ℕ) : tower step (k + 1) = (tower step k).attach (step k (tower step k)) :=
+  (rfl)
 
 private theorem tower_succ_m_inl (k : ℕ) (x : (tower step k).P) :
     (tower step (k + 1)).m.m (.inl x) = mapDomain Sum.inl ((tower step k).m.m x) :=
@@ -147,6 +181,18 @@ private theorem tower_succ_m_inr (k : ℕ) (q : Q k (tower step k)) :
 def towerOf : (k : ℕ) → (tower step k).P → Σ j, Q j (tower step j)
   | 0 => PEmpty.elim
   | k + 1 => Sum.elim (towerOf k) fun q ↦ ⟨k, q⟩
+
+/-- The old generators of stage `k + 1` are embedded as in stage `k`. -/
+@[simp]
+theorem towerOf_succ_inl (k : ℕ) (x : (tower step k).P) :
+    towerOf step (k + 1) (.inl x) = towerOf step k x :=
+  (rfl)
+
+/-- The new generators of stage `k + 1` are the generators attached at stage `k`. -/
+@[simp]
+theorem towerOf_succ_inr (k : ℕ) (q : Q k (tower step k)) :
+    towerOf step (k + 1) (.inr q) = ⟨k, q⟩ :=
+  (rfl)
 
 /-- The generators of stage `k` were attached at stages before `k`. -/
 theorem fst_towerOf_lt : ∀ (k : ℕ) (x : (tower step k).P), (towerOf step k x).1 < k
@@ -191,8 +237,14 @@ theorem indQ_towerOf : ∀ (k : ℕ) (x : (tower step k).P),
 
 /-- The augmentation of the union of the tower: a generator is sent to its image at the stage
 where it is attached. -/
-@[expose] noncomputable def towerAugmentation (x : Σ k, Q k (tower step k)) : M :=
+noncomputable def towerAugmentation (x : Σ k, Q k (tower step k)) : M :=
   (step x.1 _).c x.2
+
+/-- A generator attached at stage `k` is sent to its image chosen at stage `k`. -/
+@[simp]
+theorem towerAugmentation_mk (k : ℕ) (q : Q k (tower step k)) :
+    towerAugmentation step ⟨k, q⟩ = (step k _).c q :=
+  (rfl)
 
 private theorem towerAugmentation_towerOf : ∀ (k : ℕ) (x : (tower step k).P),
     towerAugmentation step (towerOf step k x) = (tower step k).g x
@@ -262,11 +314,13 @@ noncomputable def towerCocycle :
       mapDomain_zero]
 
 /-- The row of a generator attached at stage `k` is its attaching cycle, relabelled. -/
+@[simp]
 theorem towerCocycle_m (x : Σ k, Q k (tower step k)) :
     (towerCocycle step).m x = mapDomain (towerOf step x.1) ((step x.1 _).a x.2) :=
   (rfl)
 
 /-- The differential of the union restricts to the differential of each stage. -/
+@[simp]
 theorem rowFiniteTwistedDifferential_towerCocycle_mapDomain (k : ℕ) (f : (tower step k).P →₀ A) :
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (towerCocycle step).m
         (mapDomain (towerOf step k) f) =
