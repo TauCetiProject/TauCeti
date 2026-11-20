@@ -17,6 +17,7 @@ import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
+import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # Curvature of Hamiltonian perturbations and the Floer energy identity
@@ -110,7 +111,9 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   continuously on the value and the derivative of the map, so the energy is lower semicontinuous
   under pointwise convergence of values and derivatives (Fatou's lemma);
   `SymplecticForm.integrableOn_floerEnergyDensity_and_setIntegral_le_of_tendsto` bounds the
-  energy of the limit by a bound on the energies along the sequence.
+  energy of the limit by a bound on the energies along the sequence;
+  `SymplecticForm.tendstoLocallyUniformlyOn_floerEnergyDensity` gives locally uniform convergence of
+  the energy densities under locally uniform convergence of values and derivatives.
 
 ## References
 
@@ -758,6 +761,45 @@ theorem tendsto_floerEnergyDensity (ω : SymplecticForm V) {ι : Type*} {l : Fil
   have hω := ((ω.continuous_apply_comp (p := fun q : V × V ↦ q.1) continuous_fst
     continuous_snd).tendsto _).comp ((hPa stdComplexLineReal).prodMk_nhds (hPa stdComplexLineImag))
   simpa only [floerEnergyDensity_def, Function.comp_def] using hω
+
+/-- **Locally uniform convergence of the energy densities.** If `uₙ → v` and `duₙ → dv` locally
+uniformly on an open set `U` on which `v` and `dv` are continuous, and `X_K` is jointly continuous
+at the points `(z, v z)` of the graph of `v` over `U`, then the Floer energy densities of the `uₙ`
+converge to that of `v` locally uniformly on `U`. -/
+theorem tendstoLocallyUniformlyOn_floerEnergyDensity (ω : SymplecticForm V) {ι : Type*}
+    {l : Filter ι} {u : ι → ℝ × ℝ → V} {v : ℝ × ℝ → V} {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hv : ContinuousOn v U) (hdv : ContinuousOn (fderiv ℝ v) U)
+    (hX : ∀ z ∈ U, ContinuousAt (uncurry (ω.hamiltonianOneForm Ks Kt)) (z, v z))
+    (hu : TendstoLocallyUniformlyOn u v l U)
+    (hdu : TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u n)) (fderiv ℝ v) l U) :
+    TendstoLocallyUniformlyOn (fun n ↦ ω.floerEnergyDensity Ks Kt (u n))
+      (ω.floerEnergyDensity Ks Kt v) l U := by
+  -- The energy density of `w` at `z` is `G (z, w z, dw z)`, for a map `G` continuous at the
+  -- points of the graph of `(v, dv)` over `U`.
+  set P : (ℝ × ℝ) × V × (ℝ × ℝ →L[ℝ] V) → ℝ × ℝ →L[ℝ] V :=
+    fun p ↦ p.2.2 - ω.hamiltonianOneForm Ks Kt p.1 p.2.1
+  set G : (ℝ × ℝ) × V × (ℝ × ℝ →L[ℝ] V) → ℝ :=
+    fun p ↦ ω (P p stdComplexLineReal) (P p stdComplexLineImag)
+  have hG (w : ℝ × ℝ → V) : ω.floerEnergyDensity Ks Kt w = fun z ↦ G (z, w z, fderiv ℝ w z) := by
+    funext z
+    simp only [G, P, floerEnergyDensity_def, perturbedFDeriv_eq_sub]
+  simp only [hG]
+  rw [tendstoLocallyUniformlyOn_iff_forall_isCompact hU] at hu hdu ⊢
+  intro C hCU hC
+  refine IsCompact.comp_tendstoUniformlyOn (f := fun z ↦ (z, v z, fderiv ℝ v z))
+    (hC.image_of_continuousOn ((continuousOn_id.prodMk (hv.prodMk hdv)).mono hCU)) ?_
+    ((hu C hCU hC).prodMk_same (hdu C hCU hC)).graph
+  rintro _ ⟨z, hz, rfl⟩
+  have hX' : ContinuousAt (fun p : (ℝ × ℝ) × V × (ℝ × ℝ →L[ℝ] V) ↦
+      ω.hamiltonianOneForm Ks Kt p.1 p.2.1) (z, v z, fderiv ℝ v z) :=
+    ContinuousAt.comp (g := uncurry (ω.hamiltonianOneForm Ks Kt))
+      (f := fun p : (ℝ × ℝ) × V × (ℝ × ℝ →L[ℝ] V) ↦ (p.1, p.2.1)) (hX z (hCU hz))
+      (continuousAt_fst.prodMk continuousAt_snd.fst)
+  have hP : ContinuousAt P (z, v z, fderiv ℝ v z) := continuousAt_snd.snd.sub hX'
+  have hPa (a : ℝ × ℝ) : ContinuousAt (fun p ↦ P p a) (z, v z, fderiv ℝ v z) :=
+    (ContinuousLinearMap.apply ℝ V a).continuous.continuousAt.comp hP
+  exact (ω.continuous_apply_comp (p := fun q : V × V ↦ q.1) continuous_fst
+    continuous_snd).continuousAt.comp ((hPa stdComplexLineReal).prodMk (hPa stdComplexLineImag))
 
 /-- **Lower semicontinuity of the Floer energy.** Let `uₙ` be maps whose Floer energy densities are
 almost everywhere measurable on a measurable set `S`. If `uₙ → v` and `duₙ → dv` pointwise on `S`,

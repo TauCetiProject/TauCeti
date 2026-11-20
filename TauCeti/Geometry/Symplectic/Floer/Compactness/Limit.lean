@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence
+import TauCeti.MeasureTheory.Integral.EnergyConcentration
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Limits of Floer solutions off the bubbling points
@@ -40,9 +42,22 @@ lower semicontinuous (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_le
 limit equation is read back from the coordinate equation by
 `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_iff_fderiv_comp_equivRealProdCLM_I_sub`.
 
+The energy that the limit loses is accounted for at the bubbling points. The energy densities
+converge to that of `v` locally uniformly on `Ω \ Z`
+(`TauCeti.SymplecticForm.tendstoLocallyUniformlyOn_floerEnergyDensity`), so along a further
+subsequence every bubbling point `z` carries a mass `m z ≥ δ`: for small `ε > 0` the energies of
+the discs `B_ε(z)` converge to `m z` plus the energy of `v` on the punctured disc. Moreover
+`∫_{Ω \ Z} e(v) + ∑ m z ≤ E`
+(`SymplecticForm.exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset`,
+from `TauCeti.exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le`). The mass of
+`z` is the energy available to the bubbles at `z`: the area of a bubble obtained by rescaling at
+`z` is at most the lower limit of the energies of every disc about `z`
+(`TauCeti.SymplecticForm.lintegral_symplecticForm_le_liminf_of_tendsto_rescale`).
+
 The same holds for solutions in a symplectic chart of a manifold, in the namespace
 `TauCeti.SmoothTwoForm` of `TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold`:
-`IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`.
+`IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset` and
+`IsNondegenerate.exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset`.
 
 ## Main results
 
@@ -51,6 +66,9 @@ The same holds for solutions in a symplectic chart of a manifold, in the namespa
 * `TauCeti.SymplecticForm.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`:
   smooth Floer solutions of bounded energy converge in `C¹` off finitely many bubbling points to a
   Floer solution of energy at most `E`.
+* `SymplecticForm.exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset`:
+  along a further subsequence every bubbling point carries an energy mass of at least `δ`, and the
+  energy of the limit and the masses together are at most `E`.
 
 ## References
 
@@ -200,5 +218,72 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
       (hnn n)) (ae_of_all _ fun z (hz : z ∈ S) ↦ hz.1)).trans (hE (φ n)))
     (fun z hz ↦ hlim.tendsto_at hz) fun z hz ↦ hdconv.tendsto_at hz
   exact ⟨φ, Z, v, hφ, hZΩ, hcard, hconc, hv, hvK, hlim, hdconv, hveq, hint_v, hE_v⟩
+
+/-- **The energy of the bubbling points.** In the situation of
+`TauCeti.SymplecticForm.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`, a
+further subsequence `φ` attaches to every bubbling point `z ∈ Z` a mass `m z ≥ δ`: for every small
+`ε > 0` the Floer energy of `u_{φ n}` over the disc `B_ε(z)` converges to `m z` plus the energy of
+the limit `v` over the punctured disc, and the energy of `v` over `Ω \ Z` together with the masses
+is at most `E`. So the energy densities converge to that of `v` plus point masses at the bubbling
+points, each at least the threshold `δ`, and no energy is created in the limit. -/
+theorem exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset
+    (ω : SymplecticForm V) {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {K : Set V}
+    (hW : IsOpen W) (hKs : ContDiffOn ℝ 3 (uncurry Ks) W)
+    (hKt : ContDiffOn ℝ 3 (uncurry Kt) W)
+    (hJ : ContDiffOn ℝ 2
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hD : IsCompact D) (hK : IsCompact K) (hDKW : D ×ˢ K ⊆ W)
+    (hJt : ∀ z ∈ D, ∀ x ∈ K, ω.Tames (J z x)) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → V⦄ ⦃E : ℝ⦄, IsOpen Ω → Ω ⊆ D →
+      (∀ k, ContDiffOn ℝ (⊤ : ℕ∞) (u k) Ω) →
+      (∀ k, ∀ z ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u k z))
+        (ω.perturbedFDeriv Ks Kt (u k) z : ℝ × ℝ →ₗ[ℝ] V)) →
+      (∀ k, MapsTo (u k) Ω K) →
+      (∀ k, IntegrableOn (ω.floerEnergyDensity Ks Kt (u k)) Ω) →
+      (∀ k, ∫ z in Ω, ω.floerEnergyDensity Ks Kt (u k) z ≤ E) →
+      ∃ (φ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → V) (m : ℝ × ℝ → ℝ), StrictMono φ ∧
+        ↑Z ⊆ Ω ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop,
+          δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity Ks Kt (u (φ n)) y) ∧
+        ContDiffOn ℝ 1 v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
+        TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) ∧
+        TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u (φ n))) (fderiv ℝ v) atTop (Ω \ ↑Z) ∧
+        (∀ z ∈ Ω \ ↑Z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (v z))
+          (ω.perturbedFDeriv Ks Kt v z : ℝ × ℝ →ₗ[ℝ] V)) ∧
+        IntegrableOn (ω.floerEnergyDensity Ks Kt v) (Ω \ ↑Z) ∧
+        (∀ z ∈ Z, δ ≤ m z) ∧
+        (∀ z ∈ Z, ∀ᶠ ε in 𝓝[>] 0,
+          Tendsto (fun n ↦ ∫ y in ball z ε, ω.floerEnergyDensity Ks Kt (u (φ n)) y) atTop
+            (𝓝 (m z + ∫ y in ball z ε \ {z}, ω.floerEnergyDensity Ks Kt v y))) ∧
+        (∫ z in Ω \ ↑Z, ω.floerEnergyDensity Ks Kt v z) + ∑ z ∈ Z, m z ≤ E := by
+  obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
+    hW hKs hKt hJ hD hK hDKW hJt
+  refine ⟨δ, hδ, fun Ω u E hΩ hΩD hu hfl huK hint hE ↦ ?_⟩
+  obtain ⟨φ, Z, v, hφ, hZΩ, -, hconc, hv, hvK, hlim, hdlim, hveq, hint_v, -⟩ :=
+    hconv hΩ hΩD hu hfl huK hint hE
+  have hS : IsOpen (Ω \ ↑Z) := hΩ.sdiff Z.finite_toSet.isClosed
+  -- The energy densities converge locally uniformly off the bubbling points.
+  have hX := (ω.contDiffOn_uncurry_hamiltonianOneForm (n := 0) hW (hKs.of_le (by norm_num))
+    (hKt.of_le (by norm_num))).continuousOn
+  have hdens := ω.tendstoLocallyUniformlyOn_floerEnergyDensity hS hv.continuousOn
+    (hv.continuousOn_fderiv_of_isOpen hS le_rfl)
+    (fun z hz ↦ hX.continuousAt (hW.mem_nhds (hDKW ⟨hΩD hz.1, hvK hz⟩))) hlim hdlim
+  have hnn (n : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) : 0 ≤ ω.floerEnergyDensity Ks Kt (u (φ n)) z :=
+    ω.floerEnergyDensity_nonneg (hJt z (hΩD hz) _ (huK (φ n) hz)) (hfl (φ n) z hz)
+  obtain ⟨ψ, m, hψ, hm, hmE⟩ :=
+    exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le hΩ hZΩ hnn
+      (fun n ↦ hint (φ n)) (fun n ↦ hE (φ n)) hint_v hdens
+  have hconcψ (z : ℝ × ℝ) (hz : z ∈ Z) (ε : ℝ) (hε : 0 < ε) : ∀ᶠ n in atTop,
+      δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity Ks Kt (u (φ (ψ n))) y :=
+    hψ.tendsto_atTop.eventually (hconc z hz ε hε)
+  refine ⟨φ ∘ ψ, Z, v, m, hφ.comp hψ, hZΩ, hconcψ, hv, hvK, hlim.comp_tendsto hψ.tendsto_atTop,
+    hdlim.comp_tendsto hψ.tendsto_atTop, hveq, hint_v, fun z hz ↦ ?_, hm, hmE⟩
+  -- A punctured disc about `z` avoids the other bubbling points, so `v` has finite energy there.
+  obtain ⟨r, hr, hrsub⟩ := Metric.isOpen_iff.1
+    (hΩ.inter ((Z.finite_toSet.sdiff (t := {z})).isClosed.isOpen_compl)) z
+    ⟨hZΩ hz, fun h ↦ h.2 rfl⟩
+  exact le_of_tendsto_setIntegral_ball hΩ (hZΩ hz) hr
+    (hint_v.mono_set fun y hy ↦ ⟨(hrsub hy.1).1, fun hyZ ↦ (hrsub hy.1).2 ⟨hyZ, hy.2⟩⟩)
+    (hm z hz) (hconcψ z hz)
 
 end TauCeti.SymplecticForm

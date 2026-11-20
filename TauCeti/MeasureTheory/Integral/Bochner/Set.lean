@@ -59,6 +59,10 @@ unions with disjoint sets, and that a pointwise bound `m ≤ K σ` on `[a, a + K
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 * `MeasureTheory.norm_setIntegral_le_add_of_disjoint`: the integral over `S` is bounded by the
   integrals over `H ∪ (S ∪ T)`, `H` and `T`, for disjoint `H`, `S`, `T`.
+* `MeasureTheory.setIntegral_le_of_tendsto_of_le`: Fatou's lemma for nonnegative functions
+  converging pointwise on a set, with the bound on their integrals passing to the limit.
+* `TendstoUniformlyOn.tendsto_setIntegral`: integrable functions converging uniformly on a set of
+  finite measure to an integrable limit have converging integrals over it.
 -/
 
 public section
@@ -335,5 +339,55 @@ theorem norm_setIntegral_le_add_of_disjoint {f : α → E} {H S T : Set α}
   calc ‖b‖ = ‖a + (b + c) - a - c‖ := by congr 1; abel
     _ ≤ ‖a + (b + c) - a‖ + ‖c‖ := norm_sub_le _ _
     _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
+
+open Filter Topology in
+/-- **Fatou's lemma for set integrals.** If functions `e n ≥ 0` converge pointwise on a measurable
+set `T` to an integrable `f`, and `∫_T e n ≤ c n` with `c n → c₀`, then `∫_T f ≤ c₀`. -/
+theorem setIntegral_le_of_tendsto_of_le {T : Set α} {e : ℕ → α → ℝ} {f : α → ℝ} {c : ℕ → ℝ}
+    {c₀ : ℝ} (hT : MeasurableSet T) (he : ∀ n, ∀ y ∈ T, 0 ≤ e n y)
+    (hint : ∀ n, IntegrableOn (e n) T μ) (hf : IntegrableOn f T μ)
+    (hlim : ∀ y ∈ T, Tendsto (fun n ↦ e n y) atTop (𝓝 (f y)))
+    (hc : ∀ n, ∫ y in T, e n y ∂μ ≤ c n) (hc₀ : Tendsto c atTop (𝓝 c₀)) :
+    ∫ y in T, f y ∂μ ≤ c₀ := by
+  have hf0 (y : α) (hy : y ∈ T) : 0 ≤ f y := ge_of_tendsto' (hlim y hy) fun n ↦ he n y hy
+  have hc0 : 0 ≤ c₀ := ge_of_tendsto' hc₀ fun n ↦ (setIntegral_nonneg hT (he n)).trans (hc n)
+  refine (ENNReal.ofReal_le_ofReal_iff hc0).1 ?_
+  rw [ofReal_integral_eq_lintegral_ofReal hf (ae_restrict_of_forall_mem hT hf0)]
+  calc ∫⁻ y in T, ENNReal.ofReal (f y) ∂μ
+      = ∫⁻ y in T, liminf (fun n ↦ ENNReal.ofReal (e n y)) atTop ∂μ :=
+        setLIntegral_congr_fun hT fun y hy ↦
+          ((ENNReal.continuous_ofReal.tendsto _).comp (hlim y hy)).liminf_eq.symm
+    _ ≤ liminf (fun n ↦ ∫⁻ y in T, ENNReal.ofReal (e n y) ∂μ) atTop :=
+        lintegral_liminf_le' fun n ↦ (hint n).aemeasurable.ennreal_ofReal
+    _ = liminf (fun n ↦ ENNReal.ofReal (∫ y in T, e n y ∂μ)) atTop := by
+        congr 1
+        funext n
+        rw [ofReal_integral_eq_lintegral_ofReal (hint n) (ae_restrict_of_forall_mem hT (he n))]
+    _ ≤ liminf (fun n ↦ ENNReal.ofReal (c n)) atTop :=
+        liminf_le_liminf (.of_forall fun n ↦ ENNReal.ofReal_le_ofReal (hc n))
+    _ = ENNReal.ofReal c₀ := ((ENNReal.continuous_ofReal.tendsto _).comp hc₀).liminf_eq
+
+open Filter Topology in
+/-- **Uniform convergence on a set of finite measure.** If `F i → f` uniformly on a set `S` of
+finite measure, where eventually every `F i` and the limit `f` are integrable on `S`, then
+`∫_S F i → ∫_S f`: the difference of the integrals is at most `sup_S ‖F i - f‖ μ(S)`. Mathlib's
+`TendstoUniformlyOn.tendsto_intervalIntegral_of_continuousOn` is the case of an interval. -/
+theorem _root_.TendstoUniformlyOn.tendsto_setIntegral {ι : Type*} {l : Filter ι} {F : ι → α → E}
+    {f : α → E} {S : Set α} (hS : μ S ≠ ∞) (hF : ∀ᶠ i in l, IntegrableOn (F i) S μ)
+    (hf : IntegrableOn f S μ) (h : TendstoUniformlyOn F f l S) :
+    Tendsto (fun i ↦ ∫ x in S, F i x ∂μ) l (𝓝 (∫ x in S, f x ∂μ)) := by
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  have hS0 : 0 ≤ μ.real S := measureReal_nonneg
+  have hη : 0 < ε / (μ.real S + 1) := div_pos hε (by linarith)
+  filter_upwards [hF, Metric.tendstoUniformlyOn_iff.1 h _ hη] with i hFi hi
+  rw [dist_eq_norm, ← integral_sub hFi hf]
+  calc ‖∫ x in S, (F i x - f x) ∂μ‖ ≤ ε / (μ.real S + 1) * μ.real S :=
+        norm_setIntegral_le_of_norm_le_const hS.lt_top fun x hx ↦ by
+          rw [← dist_eq_norm, dist_comm]
+          exact (hi x hx).le
+    _ < ε := by
+        rw [div_mul_eq_mul_div, div_lt_iff₀ (by linarith)]
+        nlinarith [hS0]
 
 end MeasureTheory
