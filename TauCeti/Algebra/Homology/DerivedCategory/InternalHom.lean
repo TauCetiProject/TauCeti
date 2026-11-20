@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DerivedCategory.DerivedHom
 public import TauCeti.Algebra.Homology.InternalHomComplex.Homotopy
-public import TauCeti.Algebra.Homology.InternalHomComplex.Unit
+public import TauCeti.Algebra.Homology.InternalHomComplex.KInjective
 
 /-!
 # The derived internal Hom of unbounded complexes
@@ -19,8 +19,15 @@ category of `𝒪_X`-modules on a scheme `X`. The derived internal Hom
 complex `CochainComplex.internalHomComplex I J` between their K-injective replacements `I` and `J`.
 It is functorial in both variables because the replacement functor
 `TauCeti.kInjectiveReplacement` is, and because the internal Hom complex descends to homotopy
-categories (`TauCeti.internalHomComplexHomotopyFunctor`). For `C = X.Modules` it is the derived
-internal Hom `R𝓗om(K, L)` of [Stacks, Section 20.42 (08DH)].
+categories (`TauCeti.internalHomComplexHomotopyFunctor`).
+
+The derived internal Hom `R𝓗om(K, L)` of [Stacks, Section 20.42 (08DH)] is the internal Hom
+complex `𝓗om^•(K, J)` from the complex `K` itself into a K-injective replacement `J` of `L`.
+Replacing `K` by `I` as well does not change it when `𝓗om^•(-, J)` sends quasi-isomorphisms to
+quasi-isomorphisms. This holds when `C` has a separating family of objects `G` for which `- ⊗ G`
+preserves acyclic complexes (`TauCeti.quasiIso_internalHomComplexPrecomp`), as the extensions by
+zero `j_! 𝒪_U` of the structure sheaves of opens do for `C = X.Modules`. Under this hypothesis
+`TauCeti.derivedInternalHomQObjObjIso` identifies `R𝓗om(K, L)` with `𝓗om^•(K, J)`.
 
 The global sections `Hom(𝟙, -)` of the internal Hom complex `𝓗om^•(I, J)` representing
 `R𝓗om(K, L)` form the Hom complex of `I` and `J`, which represents the derived Hom complex
@@ -31,6 +38,9 @@ therefore the group of morphisms `K ⟶ L⟦n⟧` in the derived category
 ## Main definitions
 
 * `TauCeti.derivedInternalHom`: the derived internal Hom bifunctor.
+* `TauCeti.derivedInternalHomQObjObjIso`: given a separating family of objects `G` for which
+  `- ⊗ G` preserves acyclic complexes, `R𝓗om(K, L)` is the internal Hom complex from `K` into the
+  K-injective replacement of `L`.
 * `TauCeti.globalSectionsDerivedInternalHomIso`: the global sections of the internal Hom complex
   representing `R𝓗om(K, L)` represent the derived Hom complex `RHom(K, L)`.
 * `TauCeti.globalSectionsDerivedInternalHomHomologyAddEquiv`: their `n`-th cohomology is
@@ -93,6 +103,31 @@ lemma derivedInternalHom_map_app {K K' : DerivedCategory C} (f : K' ⟶ K) (L : 
       Qh.map (((internalHomComplexHomotopyFunctor C).map
         ((kInjectiveReplacement C).map f).op).app ((kInjectiveReplacement C).obj L)) :=
   (rfl)
+
+/-- Let `C` have a separating family `P` of objects `G` for which `- ⊗ G` preserves acyclic
+complexes. Then the derived internal Hom `R𝓗om(K, L)` of a cochain complex `K` is the internal
+Hom complex `𝓗om^•(K, J)` from `K` itself into the K-injective replacement `J` of `L`, as in
+[Stacks, Section 20.42 (08DH)]. The isomorphism is induced by a quasi-isomorphism from `K` to its
+K-injective replacement. -/
+def derivedInternalHomQObjObjIso {P : ObjectProperty C} (hP : P.IsSeparating)
+    (hPacyclic : ∀ G, P G → ∀ X : CochainComplex C ℤ, X.Acyclic →
+      (((tensorRight G).mapHomologicalComplex _).obj X).Acyclic)
+    (K : CochainComplex C ℤ) (L : DerivedCategory C) :
+    ((derivedInternalHom C).obj (op (Q.obj K))).obj L ≅
+      Q.obj (internalHomComplex K ((kInjectiveReplacement C).obj L).as) :=
+  let s := (HomotopyCategory.quotient _ _).preimage
+    ((kInjectiveReplacementAdjunction C).unit.app ((HomotopyCategory.quotient _ _).obj K))
+  have := quasiIso_of_quotient_map_eq_kInjectiveReplacementAdjunction_unit_app s
+    ((HomotopyCategory.quotient _ _).map_preimage _)
+  have hs : IsIso (Qh.map ((HomotopyCategory.quotient _ _).map
+      (internalHomComplexPrecomp s ((kInjectiveReplacement C).obj L).as))) := by
+    rw [isIso_Qh_map_iff, HomotopyCategory.quotient_map_mem_quasiIso_iff,
+      HomologicalComplex.mem_quasiIso_iff]
+    exact quasiIso_internalHomComplexPrecomp hP hPacyclic s _
+  ((derivedInternalHom C).mapIso ((quotientCompQhIso C).app K).op).app L ≪≫
+    @asIso _ _ _ _ (Qh.map ((HomotopyCategory.quotient _ _).map
+      (internalHomComplexPrecomp s ((kInjectiveReplacement C).obj L).as))) hs ≪≫
+    (quotientCompQhIso C).app _
 
 section GlobalSections
 
