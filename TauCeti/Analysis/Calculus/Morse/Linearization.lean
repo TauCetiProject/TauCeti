@@ -47,6 +47,8 @@ results that identify the operator as the derivative of the gradient and prove s
 * `TauCeti.hessianOperator_eq_continuousLinearMapOfBilin`: its Riesz formula.
 * `OrthonormalBasis.toMatrix_hessianOperator_apply` and `OrthonormalBasis.det_hessianOperator`:
   its entries and its determinant in an orthonormal basis.
+* `OrthonormalBasis.isSymm_toMatrix_hessianOperator`: for a `C²` function its matrix in an
+  orthonormal basis is symmetric.
 * `TauCeti.hessianOperator_single_apply`: for a `C²` function on `ℝⁿ`, its entries in the
   standard basis are the second partial derivatives.
 * `ContDiffAt.contDiffAt_hessianOperator`: pointwise regularity of the Hessian field.
@@ -146,6 +148,15 @@ theorem _root_.OrthonormalBasis.det_hessianOperator {ι : Type*} [Fintype ι] [D
   congr 1
   ext i j
   exact b.toMatrix_hessianOperator_apply f x i j
+
+/-- In an orthonormal basis, the matrix of the Hessian operator of a function `C²` at `x` is
+symmetric, by the symmetry of second derivatives. -/
+theorem _root_.OrthonormalBasis.isSymm_toMatrix_hessianOperator {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (b : OrthonormalBasis ι ℝ E) (hf : ContDiffAt ℝ 2 f x) :
+    (LinearMap.toMatrix b.toBasis b.toBasis (hessianOperator f x).toLinearMap).IsSymm :=
+  Matrix.IsSymm.ext fun i j ↦ by
+    rw [b.toMatrix_hessianOperator_apply, b.toMatrix_hessianOperator_apply]
+    exact hf.isSymmSndFDerivAt (by simp) _ _
 
 /-- In the standard basis of `ℝⁿ`, the entries `(D²u(y) eⱼ)ᵢ` of the Hessian operator of a function
 `C²` at `y` are the second partial derivatives `∂ᵢ∂ⱼu(y)`. -/

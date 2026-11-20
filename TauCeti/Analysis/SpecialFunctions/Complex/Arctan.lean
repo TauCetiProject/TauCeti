@@ -19,6 +19,8 @@ real numbers (`Complex.ofReal_arctan`). Exponentiating gives the Cayley transfor
 
 * `Complex.one_add_mul_I_div_one_sub_mul_I_eq_exp`: `(1 + i x) / (1 - i x) = e^{2 i arctan x}` for
   real `x`.
+* `Complex.one_add_mul_I_eq_sqrt_mul_exp`: the polar form `1 + i x = √(1 + x²) e^{i arctan x}` for
+  real `x`.
 -/
 
 public section
@@ -39,5 +41,12 @@ theorem one_add_mul_I_div_one_sub_mul_I_eq_exp (x : ℝ) :
     push_cast
     linear_combination -log ((1 + x * I) / (1 - x * I)) * I_sq
   rw [harg, exp_log (div_ne_zero h₁ h₂)]
+
+/-- **The polar form of `1 + i x`** for real `x`: its modulus is `√(1 + x²)` and its argument is
+`arctan x`. -/
+theorem one_add_mul_I_eq_sqrt_mul_exp (x : ℝ) :
+    1 + x * I = (√(1 + x ^ 2) : ℝ) * exp (Real.arctan x * I) := by
+  rw [exp_mul_I, ← ofReal_cos, ← ofReal_sin, Real.cos_arctan, Real.sin_arctan]
+  apply Complex.ext <;> simp <;> field_simp
 
 end Complex
