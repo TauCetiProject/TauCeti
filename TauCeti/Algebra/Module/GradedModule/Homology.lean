@@ -179,6 +179,17 @@ theorem quotientHomologyClass_mem_quotientHomology_piece {p : ι} {m : M} (hmp :
     LinearMap.quotientHomologyClass hd hN m hm ∈ (G.quotientHomology hdG hd hN hNG).piece p :=
   (G.mem_quotientHomology_piece_iff hdG hd hN hNG).2 ⟨m, hmp, hm, rfl⟩
 
+/-- A linear map out of quotient homology is homogeneous of degree `q` as soon as it sends the
+class of every element `m` of degree `p` with `d m ∈ N` into the degree-`(p + q)` piece. -/
+theorem isHomogeneous_of_quotientHomologyClass {P σ : Type*} [AddCommMonoid P] [Module R P]
+    [SetLike σ P] {ℬ : ι → σ} {q : ι} {f : d.quotientHomology hd N hN →ₗ[R] P}
+    (hf : ∀ (p : ι) (m : M), m ∈ G.piece p → ∀ hm : d m ∈ N,
+      f (LinearMap.quotientHomologyClass hd hN m hm) ∈ ℬ (p + q)) :
+    LinearMap.IsHomogeneous f (G.quotientHomology hdG hd hN hNG).piece ℬ q :=
+  LinearMap.isHomogeneous_def.2 fun p _ hy ↦ by
+    obtain ⟨m, hmp, hm, rfl⟩ := (G.mem_quotientHomology_piece_iff hdG hd hN hNG).1 hy
+    exact hf p m hmp hm
+
 end QuotientHomology
 
 end TauCeti.InternalGrading
@@ -223,14 +234,10 @@ theorem isHomogeneous_quotientHomologyProdEquiv :
     LinearMap.quotientHomologyClass_def, LinearMap.quotientHomologyClass_def,
     LinearMap.quotientHomologyProdEquiv_mk hd hN hN' hNN' hvN' hN'N hh hvd hreg hhom a b ha hb]
   have hab : d (a + h b) ∈ N' := by
-    have : d (a + h b) = d a + (d (h b) + h (d b) - v b) - h (d b) + v b := by
-      rw [map_add]
-      abel
-    rw [this]
-    exact N'.add_mem (N'.sub_mem (N'.add_mem (hNN' ha) (hNN' (hhom b))) (hNN' (hh _ hb)))
-      (hvN' b)
-  exact (G.mem_quotientHomology_piece_iff hdG hd hN' hN'G).2
-    ⟨a + h b, add_mem hap hhb, hab, by rw [LinearMap.quotientHomologyClass_def]⟩
+    rw [map_add]
+    exact N'.add_mem (hNN' ha) (LinearMap.d_h_mem_of_homotopy hNN' hvN' hh hhom hb)
+  simpa only [LinearMap.quotientHomologyClass_def] using
+    G.quotientHomologyClass_mem_quotientHomology_piece hdG hd hN' hN'G (add_mem hap hhb) hab
 
 include hhG in
 /-- **Graded doubling of quotient homology.** If the homotopy `h` in
