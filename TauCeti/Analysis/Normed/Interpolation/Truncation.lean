@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Normed.Interpolation.Lebesgue
 public import TauCeti.Analysis.Normed.Interpolation.RealMethod
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
-import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
