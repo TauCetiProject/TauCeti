@@ -142,7 +142,8 @@ lemma singularHomologyToTor_def (m : ℕ) :
 lemma singularHomologyKunneth_comp_singularHomologyToTor (m : ℕ) :
     singularHomologyKunneth X Y M N (m + 1) ≫ singularHomologyToTor X Y M N m = 0 :=
   (singularHomologyKunneth_comp_homologyMap_alexanderWhitney_assoc X Y M N (m + 1) _).trans
-    (homologyKunneth_comp_homologyToTor _ _ m)
+    (homologyKunneth_comp_homologyToTor ((toSSet.obj X).chainComplex M)
+      ((toSSet.obj Y).chainComplex N) m)
 
 variable {X Y M N} in
 /-- The square of `TopCat.singularHomologyToTor` for chain maps `α`, `β` and `γ` of singular chain
@@ -247,7 +248,8 @@ is exact, the first map being the Künneth map and the second `TopCat.singularHo
 theorem singularHomologyKunnethShortComplex_shortExact (m : ℕ) :
     (singularHomologyKunnethShortComplex X Y M N m).ShortExact :=
   ShortComplex.shortExact_of_iso (homologyKunnethShortComplexIso X Y M N m)
-    (homologyKunnethShortComplex_shortExact _ _ m)
+    (homologyKunnethShortComplex_shortExact ((toSSet.obj X).chainComplex M)
+      ((toSSet.obj Y).chainComplex N) m)
 
 /-- **The Künneth map is a monomorphism** when the cycles `Z_q(Y; N)` and the quotients
 `C_q(Y; N) / Z_q(Y; N)` are projective, for instance for any projective `N` over a principal ideal
@@ -257,7 +259,8 @@ theorem mono_singularHomologyKunneth (n : ℕ) : Mono (singularHomologyKunneth X
   -- The shuffle map is a homotopy inverse of the Alexander–Whitney map.  The instances are passed
   -- explicitly: instance search does not identify the homology instances of the general
   -- `TopCat.singularHomologyKunneth` with those found in `ModuleCat`, which are only defeq.
-  exact @mono_comp _ _ _ _ _ _ (mono_homologyKunneth _ _ n) _ (@IsIso.mono_of_iso _ _ _ _ _
+  exact @mono_comp _ _ _ _ _ _ (mono_homologyKunneth ((toSSet.obj X).chainComplex M)
+    ((toSSet.obj Y).chainComplex N) n) _ (@IsIso.mono_of_iso _ _ _ _ _
     ((eilenbergZilberHomotopyEquiv X Y M N).toHomologyIso n).isIso_inv)
 
 /-- **The Künneth short exact sequence for singular homology splits** when, in addition, the
