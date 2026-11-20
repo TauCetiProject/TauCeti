@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Homotopy.Extension.Basic
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Analysis.Normed.Module.Connected
 
 /-!
 # The unit sphere is a closed cofibration in the closed unit ball
@@ -42,7 +43,6 @@ hypothesis of the compression lemma for CW complexes.
   subspace and does not raise heights.
 * `TauCeti.hasHomotopyExtensionProperty_sphere_closedBall`: **the unit sphere has the homotopy
   extension property inside the closed unit ball.**
-* `Metric.contractibleSpace_closedBall_one`: the closed unit ball is contractible.
 * `ContinuousMap.nullhomotopic_iff_exists_extension_closedBall`: a map out of the unit sphere is
   null-homotopic exactly when it extends over the closed unit ball.
 * `ContinuousMap.HomotopicWith.exists_homotopicRel_range_subset`: a map of pairs homotopic through
@@ -201,15 +201,6 @@ theorem hasHomotopyExtensionProperty_sphere_closedBall :
     exact Prod.ext (Subtype.ext (congrArg Prod.fst h)) (Subtype.ext (congrArg Prod.snd h))
 
 end TauCeti
-
-namespace Metric
-
-/-- The closed unit ball of a real seminormed space is contractible, being convex. -/
-instance contractibleSpace_closedBall_one {E : Type*} [SeminormedAddCommGroup E]
-    [NormedSpace ℝ E] {x : E} : ContractibleSpace (closedBall x 1) :=
-  (convex_closedBall x 1).contractibleSpace ⟨x, mem_closedBall_self zero_le_one⟩
-
-end Metric
 
 namespace ContinuousMap
 

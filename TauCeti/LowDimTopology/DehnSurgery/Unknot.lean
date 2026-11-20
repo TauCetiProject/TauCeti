@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Sphere.HemisphereGraph
 public import TauCeti.LowDimTopology.DehnSurgery.Uniqueness
 public import TauCeti.LowDimTopology.DehnSurgery.SeifertFraming
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Unknot
+import TauCeti.Analysis.Normed.Module.Connected
 
 /-!
 # Surgery on the unknot
