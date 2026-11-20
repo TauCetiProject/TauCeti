@@ -71,6 +71,8 @@ chain rule for the gradient of a real profile composed with a real function.
   `y ↦ ‖y - x₀‖ ^ 2` has gradient `2 • (x - x₀)` at `x`.
 * `HasDerivAt.comp_hasGradientAt`: over `ℝ`, the chain rule for the gradient of `f ∘ g`, namely
   `f' • g'` when `f` has derivative `f'` at `g x` and `g` has gradient `g'` at `x`.
+* `TauCeti.inner_fderiv_gradient`: over `ℝ`,
+  `⟪fderiv ℝ (∇ f) x v, w⟫ = iteratedFDeriv ℝ 2 f x ![v, w]`.
 * `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
   Hessian as an endomorphism of `E`) is a symmetric operator wherever it exists, provided the
   function is differentiable nearby.
@@ -391,5 +393,14 @@ theorem _root_.HasDerivAt.comp_hasGradientAt {E : Type*} [NormedAddCommGroup E]
   refine (hf.comp_hasFDerivAt x hg).congr_fderiv ?_
   ext v
   simp
+
+/-- Over `ℝ`, the inner product of the derivative of the gradient with a vector equals the second
+Fréchet derivative: `⟪fderiv ℝ (∇ f) x v, w⟫ = iteratedFDeriv ℝ 2 f x ![v, w]`. No
+differentiability assumption is needed. -/
+theorem inner_fderiv_gradient {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [CompleteSpace E] (f : E → ℝ) (x v w : E) :
+    ⟪fderiv ℝ (∇ f) x v, w⟫_ℝ = iteratedFDeriv ℝ 2 f x ![v, w] := by
+  rw [iteratedFDeriv_two_apply, ← toDual_comp_gradient, LinearIsometryEquiv.comp_fderiv]
+  simpa using (toDual_apply_apply (𝕜 := ℝ)).symm
 
 end TauCeti
