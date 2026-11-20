@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Acyclic.PathAlgebra
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Symmetrify
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Grading
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Orientation
 
 /-!
@@ -68,7 +69,7 @@ universe u v w
 
 section Retraction
 
-variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) (Q : Type u) [CommRing k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- The algebra homomorphism `kQ →ₐ[k] Π_k(Q)` sending a path of `Q` to the class of the same path
@@ -90,6 +91,15 @@ theorem pathAlgebraToPreprojective_ofArrow {a b : Q} (f : a ⟶ b) :
     pathAlgebraToPreprojective k Q (ofArrow f) =
       preprojectiveMk k Q (ofArrow (Symmetrify.of.map f)) := by
   rw [pathAlgebraToPreprojective, AlgHom.comp_apply, mapAlgHom_ofArrow]
+
+variable {Q} in
+/-- The image of a basis path of `Q` in `Π_k(Q)` is homogeneous of degree equal to its path
+length. -/
+theorem pathAlgebraToPreprojective_ofPath_mem_preprojectiveGrade (x : Quiver.TotalPath Q) :
+    pathAlgebraToPreprojective k Q (ofPath x) ∈ preprojectiveGrade k Q x.2.2.length := by
+  rw [pathAlgebraToPreprojective_ofPath]
+  exact preprojectiveMk_mem_preprojectiveGrade k Q
+    (ofPath_mem_grade_of_length (Symmetrify.of.length_mapTotalPath x))
 
 /-- Killing the formal reverses kills the preprojective relator: each summand is a difference of
 two backtracks, and every backtrack traverses a formal reverse. -/
@@ -147,7 +157,7 @@ end Retraction
 
 section Finiteness
 
-variable (k : Type w) {Q : Type u} [CommRing k] [Nontrivial k] [Quiver.{v + 1} Q] [Fintype Q]
+variable (k : Type w) {Q : Type u} [CommRing k] [Nontrivial k] [Quiver.{v} Q] [Fintype Q]
   [∀ i j : Q, Fintype (i ⟶ j)]
 
 /-- **A quiver whose preprojective algebra is a finite module has no oriented cycle.** -/

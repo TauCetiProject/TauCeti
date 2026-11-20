@@ -92,7 +92,7 @@ Krull dimension at most `d`. -/
 theorem relativeDimensionLE_iff_topologicalKrullDim_preimage_le (f : X ⟶ Y) :
     RelativeDimensionLE d f ↔ ∀ y : Y, topologicalKrullDim (f ⁻¹' {y}) ≤ d := by
   simp_rw [← (f.fiberHomeo _).isHomeomorph.topologicalKrullDim_eq]
-  exact ⟨fun h ↦ h.1, fun h ↦ ⟨h⟩⟩
+  exact ⟨fun h ↦ h.topologicalKrullDim_fiber_le, fun h ↦ ⟨h⟩⟩
 
 /-- Every set-theoretic fibre of a morphism of relative dimension at most `d` has Krull dimension
 at most `d`. -/
@@ -137,7 +137,7 @@ private theorem topologicalKrullDim_preimage_comp_eq (i : Z ⟶ X) (hi : IsEmbed
   rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.preimage_comp]
   refine IsHomeomorph.topologicalKrullDim_eq _ <| isHomeomorph_iff_isEmbedding_surjective.mpr
     ⟨hi.restrictPreimage (f ⁻¹' {y}), fun x ↦ ?_⟩
-  obtain ⟨z, hz⟩ := hy x.2
+  obtain ⟨z, hz⟩ := hy x.property
   exact ⟨⟨z, by simp [hz]⟩, Subtype.ext hz⟩
 
 /-- Precomposing with a preimmersion, such as an open or closed immersion, preserves the bound on
@@ -160,7 +160,7 @@ theorem relativeDimensionLE_comp_iff_of_injective (f : X ⟶ Y) (g : Y ⟶ Z)
   by_cases hz : z ∈ Set.range g
   · obtain ⟨y, rfl⟩ := hz
     exact hpre y ▸ h y
-  · have : IsEmpty ((f ≫ g) ⁻¹' {z}) := ⟨fun x ↦ hz ⟨f x, by simpa using x.2⟩⟩
+  · have : IsEmpty ((f ≫ g) ⁻¹' {z}) := ⟨fun x ↦ hz ⟨f x, by simpa using x.property⟩⟩
     exact (topologicalKrullDim_zero_of_discreteTopology _).trans (mod_cast d.zero_le)
 
 /-- Postcomposing with a preimmersion, such as an open or closed immersion, preserves the bound on
@@ -193,11 +193,11 @@ instance RelativeDimensionLE.isZariskiLocalAtSource (d : ℕ) :
     exact RelativeDimensionLE.isPreimmersion_comp U.ι f
   refine (relativeDimensionLE_iff_topologicalKrullDim_preimage_le f).mpr fun y ↦ ?_
   have hcover (x : f ⁻¹' {y}) : ∃ i, x ∈ Set.range ((f ⁻¹' {y}).restrictPreimage (U i).ι) := by
-    have hx : x.1 ∈ iSup U := by
+    have hx : x.val ∈ iSup U := by
       rw [hU]
       trivial
     obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hx
-    exact ⟨i, ⟨⟨x.1, hi⟩, x.2⟩, rfl⟩
+    exact ⟨i, ⟨⟨x.val, hi⟩, x.property⟩, rfl⟩
   rw [topologicalKrullDim_eq_iSup_of_isOpenEmbedding _
     (fun i ↦ (U i).ι.isOpenEmbedding.restrictPreimage _) hcover]
   refine iSup_le fun i ↦ ?_

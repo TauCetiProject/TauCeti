@@ -97,10 +97,10 @@ private def rescaleLinearEquiv (u : σ → Rˣ)
     Gauss r E ≃ₗ[R] Gauss s E where
   toFun a := ofAddSubgroup ⟨fun t ↦ (t.prod fun i m ↦ (u i : R) ^ m) • a t,
     mem_addSubgroup.mpr <| (isRestrictedFamily_prod_pow_smul_iff _ hu _).mpr
-      (mem_addSubgroup.mp a.toAddSubgroup.2)⟩
+      (mem_addSubgroup.mp a.toAddSubgroup.property)⟩
   invFun a := ofAddSubgroup ⟨fun t ↦ (t.prod fun i m ↦ (((u i)⁻¹ : Rˣ) : R) ^ m) • a t,
     mem_addSubgroup.mpr <| (isRestrictedFamily_prod_pow_smul_iff _
-      (norm_units_inv_smul_mul u hu) _).mpr (mem_addSubgroup.mp a.toAddSubgroup.2)⟩
+      (norm_units_inv_smul_mul u hu) _).mpr (mem_addSubgroup.mp a.toAddSubgroup.property)⟩
   left_inv a := by
     ext t
     simp [smul_smul, ← Finsupp.prod_mul, ← mul_pow]

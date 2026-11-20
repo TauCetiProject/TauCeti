@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
 public import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Data.Fin.Tuple.Reflection
+import Mathlib.LinearAlgebra.Multilinear.Basis
 
 /-!
 # Algebraic curvature tensors
@@ -43,18 +45,27 @@ Its Ricci contraction is `(n - 1) g` and its scalar contraction is `n (n - 1)`, 
 is the four-tensor of every curvature operator satisfying `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)`,
 the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 
+Given a family `b : ι → V` in a real inner product space, the rank-one coordinate four-tensors
+`TauCeti.FourTensor.coordFourTensor b i j k l` evaluate `(u, v, z, w)` to
+`⟪b i, u⟫ ⟪b j, v⟫ ⟪b k, z⟫ ⟪b l, w⟫`, have operator norm `‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖`, pull
+back naturally along linear isometries, and expand every four-tensor from its components in a
+finite orthonormal basis (`TauCeti.FourTensor.sum_coordFourTensor_eq`).
+
 ## Main definitions
 
 * `TauCeti.FourTensor V`: continuous real four-linear forms on `V`.
 * `TauCeti.FourTensor.IsAlgebraicCurvature`: the pair antisymmetries, pair interchange and the
   first Bianchi identity.
 * `TauCeti.FourTensor.algebraicCurvatureSubmodule`: the submodule of algebraic curvature tensors.
-* `TauCeti.FourTensor.ofLinearMap₄`: on a finite-dimensional space, the four-tensor of a curried
-  four-linear form.
+* `TauCeti.FourTensor.ofLinearMap₄`, `TauCeti.FourTensor.toLinearMap₄`, and
+  `TauCeti.FourTensor.toLinearMap₄Equiv`: currying four-tensors into four-fold linear forms and the
+  finite-dimensional linear equivalence between them.
 * `TauCeti.FourTensor.ricci` and `TauCeti.FourTensor.scalar`: the Ricci and scalar contractions.
 * `TauCeti.FourTensor.kulkarniNomizu`: the Kulkarni–Nomizu product of two bilinear forms, as a
   four-tensor.
 * `TauCeti.FourTensor.constantCurvature`: the constant-curvature tensor of curvature `1`.
+* `TauCeti.FourTensor.coordFourTensor`: the rank-one coordinate four-tensor
+  `(u, v, z, w) ↦ ⟪b i, u⟫ ⟪b j, v⟫ ⟪b k, z⟫ ⟪b l, w⟫`.
 
 ## Main statements
 
@@ -77,6 +88,8 @@ the identity recorded by `Bundle.RiemannianMetric.IsConstantCurvatureTensor`.
 * `TauCeti.FourTensor.ricci_constantCurvature` and `TauCeti.FourTensor.scalar_constantCurvature`.
 * `TauCeti.FourTensor.inner_eq_mul_constantCurvature`: a curvature operator of constant curvature
   `κ` has four-tensor `κ` times the constant-curvature tensor.
+* `TauCeti.FourTensor.norm_coordFourTensor` and `TauCeti.FourTensor.sum_coordFourTensor_eq`:
+  operator norm and orthonormal-basis coordinate expansion for `coordFourTensor`.
 
 ## References
 
@@ -217,12 +230,31 @@ theorem isClosed_algebraicCurvatureSubmodule :
     ext r
     simp only [SetLike.mem_coe, mem_algebraicCurvatureSubmodule, Set.mem_inter_iff,
       Set.mem_iInter, Set.mem_ofPred_eq]
-    exact ⟨fun h ↦ ⟨⟨⟨h.1, h.2⟩, h.3⟩, h.4⟩, fun h ↦ ⟨h.1.1.1, h.1.1.2, h.1.2, h.2⟩⟩
+    exact ⟨fun h ↦ ⟨⟨⟨h.antisymm_first, h.antisymm_last⟩, h.swap_pairs⟩, h.cyclic_eq_zero⟩, fun h ↦
+        ⟨h.1.1.1, h.1.1.2, h.1.2, h.2⟩⟩
   rw [this]
   refine ((IsClosed.inter (IsClosed.inter ?_ ?_) ?_).inter ?_) <;>
     refine isClosed_iInter fun u ↦ isClosed_iInter fun v ↦ isClosed_iInter fun z ↦
       isClosed_iInter fun w ↦ isClosed_eq ?_ ?_ <;>
     fun_prop
+
+/-- Two four-tensors agree when they agree on every four-tuple `![u, v, z, w]`. -/
+theorem ext_vec {r s : FourTensor V} (h : ∀ u v z w, r ![u, v, z, w] = s ![u, v, z, w]) :
+    r = s :=
+  ContinuousMultilinearMap.ext fun m ↦ by
+    have hm : m = ![m 0, m 1, m 2, m 3] := (FinVec.etaExpand_eq m).symm
+    rw [hm]
+    exact h (m 0) (m 1) (m 2) (m 3)
+
+/-- A four-tensor has operator norm at most `C` once
+`|r ![u, v, z, w]| ≤ C * ‖u‖ * ‖v‖ * ‖z‖ * ‖w‖` for all `u, v, z, w`. -/
+theorem opNorm_le_bound_vec {r : FourTensor V} {C : ℝ} (hC : 0 ≤ C)
+    (h : ∀ u v z w, |r ![u, v, z, w]| ≤ C * ‖u‖ * ‖v‖ * ‖z‖ * ‖w‖) : ‖r‖ ≤ C :=
+  ContinuousMultilinearMap.opNorm_le_bound hC fun m ↦ by
+    rw [Fin.prod_univ_four]
+    have hm : m = ![m 0, m 1, m 2, m 3] := (FinVec.etaExpand_eq m).symm
+    conv_lhs => rw [hm]
+    simpa only [Real.norm_eq_abs, mul_assoc] using h (m 0) (m 1) (m 2) (m 3)
 
 /-- The pullback of a four-tensor by a continuous linear map `f` evaluates `r` on the images under
 `f`. -/
@@ -282,6 +314,24 @@ private theorem ricciSlice_apply (r : FourTensor V) (u v x y : V) :
     ricciSlice r u v x y = r ![x, u, y, v] :=
   (rfl)
 
+/-- Curry a continuous four-tensor into a four-fold linear map. -/
+def toLinearMap₄ : FourTensor V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ where
+  toFun r := LinearMap.mk₂ ℝ (fun u v ↦ LinearMap.mk₂ ℝ (fun z w ↦ r ![u, v, z, w])
+      (fun _ _ _ ↦ apply_add_third ..) (fun _ _ _ ↦ apply_smul_third ..)
+      (fun _ _ _ ↦ apply_add_fourth ..) (fun _ _ _ ↦ apply_smul_fourth ..))
+    (fun _ _ _ ↦ by ext; exact apply_add_first ..) (fun _ _ _ ↦ by ext; exact apply_smul_first ..)
+    (fun _ _ _ ↦ by ext; exact apply_add_second ..) (fun _ _ _ ↦ by ext; exact apply_smul_second ..)
+  map_add' _ _ := by ext; rfl
+  map_smul' _ _ := by ext; rfl
+
+/-- Evaluation of `toLinearMap₄ r` on four vectors. -/
+@[simp] theorem toLinearMap₄_apply (r : FourTensor V) (u v z w : V) :
+    toLinearMap₄ r u v z w = r ![u, v, z, w] := (rfl)
+
+/-- Currying a four-tensor into a four-fold linear map is injective. -/
+theorem toLinearMap₄_injective : Function.Injective (toLinearMap₄ (V := V)) := fun _ _ h ↦ by
+  ext m; rw [← FinVec.etaExpand_eq m]; exact congr($h (m 0) (m 1) (m 2) (m 3))
+
 end NormedSpace
 
 section FiniteDimensional
@@ -306,6 +356,38 @@ theorem ofLinearMap₄_apply (T : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V �
     ofLinearMap₄ T m = T (m 0) (m 1) (m 2) (m 3) :=
   (rfl)
 
+/-- Currying and uncurrying a four-tensor recovers the original four-tensor. -/
+@[simp] theorem ofLinearMap₄_toLinearMap₄ (r : FourTensor V) :
+    ofLinearMap₄ (toLinearMap₄ r) = r := by
+  ext m; rw [ofLinearMap₄_apply, toLinearMap₄_apply]; exact congrArg r (FinVec.etaExpand_eq m)
+
+/-- Uncurrying and currying a four-fold linear form recovers the original form. -/
+@[simp] theorem toLinearMap₄_ofLinearMap₄ (T : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ) :
+    toLinearMap₄ (ofLinearMap₄ T) = T := by ext; rfl
+
+/-- On a finite-dimensional space, currying identifies `FourTensor V` with four-fold linear maps,
+inverse to `ofLinearMap₄`. -/
+def toLinearMap₄Equiv : FourTensor V ≃ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ :=
+  { toLinearMap₄ with
+    invFun := ofLinearMap₄, left_inv := ofLinearMap₄_toLinearMap₄,
+    right_inv := toLinearMap₄_ofLinearMap₄ }
+
+/-- Applying `toLinearMap₄Equiv` agrees with `toLinearMap₄`. -/
+@[simp] theorem toLinearMap₄Equiv_apply (r : FourTensor V) :
+    toLinearMap₄Equiv r = toLinearMap₄ r := (rfl)
+
+/-- The underlying linear map of `toLinearMap₄Equiv` is `toLinearMap₄`. -/
+@[simp] theorem toLinearMap₄Equiv_toLinearMap :
+    (toLinearMap₄Equiv (V := V)).toLinearMap = toLinearMap₄ := (rfl)
+
+/-- The inverse of `toLinearMap₄Equiv` is `ofLinearMap₄`. -/
+@[simp] theorem toLinearMap₄Equiv_symm_apply (T : V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ) :
+    toLinearMap₄Equiv.symm T = ofLinearMap₄ T := (rfl)
+
+/-- The inverse of `toLinearMap₄Equiv` as a linear map is `ofLinearMap₄`. -/
+@[simp] theorem toLinearMap₄Equiv_symm_toLinearMap :
+    (toLinearMap₄Equiv (V := V)).symm.toLinearMap = ofLinearMap₄ := (rfl)
+
 /-- The Kulkarni–Nomizu product of two bilinear forms as a four-tensor, in the curvature
 convention `r(u, v, z, w) = g(R(u, v)w, z)`:
 `(h ⊙ k)(u, v, z, w) = h(u, z) k(v, w) + h(v, w) k(u, z) - h(u, w) k(v, z) - h(v, z) k(u, w)`.
@@ -329,14 +411,25 @@ theorem kulkarniNomizu_apply_eq (h k : BilinForm ℝ V) (u v z w : V) :
     kulkarniNomizu h k ![u, v, z, w] = LinearMap.BilinForm.kulkarniNomizu h k u v w z := by
   rw [kulkarniNomizu_apply, LinearMap.BilinForm.kulkarniNomizu_apply]
 
+/-- The Kulkarni–Nomizu four-tensor is antisymmetric in its first pair of arguments. -/
+theorem kulkarniNomizu_antisymm_first (h k : BilinForm ℝ V) (u v z w : V) :
+    kulkarniNomizu h k ![u, v, z, w] = -kulkarniNomizu h k ![v, u, z, w] := by
+  simp only [kulkarniNomizu_apply_eq]
+  exact LinearMap.BilinForm.kulkarniNomizu_antisymm_first h k u v w z
+
+/-- The Kulkarni–Nomizu four-tensor is antisymmetric in its last pair of arguments. -/
+theorem kulkarniNomizu_antisymm_last (h k : BilinForm ℝ V) (u v z w : V) :
+    kulkarniNomizu h k ![u, v, z, w] = -kulkarniNomizu h k ![u, v, w, z] := by
+  simp only [kulkarniNomizu_apply_eq]
+  exact LinearMap.BilinForm.kulkarniNomizu_antisymm_last h k u v w z
+
 /-- The Kulkarni–Nomizu product of two symmetric bilinear forms is an algebraic curvature
 tensor. -/
 theorem isAlgebraicCurvature_kulkarniNomizu {h k : BilinForm ℝ V} (hh : h.IsSymm)
     (hk : k.IsSymm) : IsAlgebraicCurvature (kulkarniNomizu h k) := by
-  refine ⟨fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_, fun u v z w ↦ ?_⟩ <;>
+  refine ⟨kulkarniNomizu_antisymm_first h k, kulkarniNomizu_antisymm_last h k,
+    fun u v z w ↦ ?_, fun u v z w ↦ ?_⟩ <;>
     simp only [kulkarniNomizu_apply_eq]
-  · exact LinearMap.BilinForm.kulkarniNomizu_antisymm_first h k u v w z
-  · exact LinearMap.BilinForm.kulkarniNomizu_antisymm_last h k u v w z
   · rw [hh.kulkarniNomizu_swap_pairs hk, LinearMap.BilinForm.kulkarniNomizu_antisymm_first,
       LinearMap.BilinForm.kulkarniNomizu_antisymm_last, neg_neg]
   · have := hh.kulkarniNomizu_cyclic_eq_zero hk u v z w
@@ -378,12 +471,16 @@ theorem ricci_apply_orthonormalBasis {ι : Type*} [Fintype ι] (b : OrthonormalB
     (r : FourTensor V) (u v : V) : ricci r u v = ∑ i, r ![b i, u, b i, v] :=
   bilinFormTrace_eq_sum (ricciSlice r u v) b
 
-/-- The Ricci contraction of an algebraic curvature tensor is symmetric. -/
-theorem IsAlgebraicCurvature.isSymm_ricci {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
-    (ricci r).IsSymm := by
+/-- The Ricci contraction of a four-tensor symmetric under pair interchange is symmetric. -/
+theorem isSymm_ricci_of_swap_pairs {r : FourTensor V}
+    (h : ∀ u v z w, r ![u, v, z, w] = r ![z, w, u, v]) : (ricci r).IsSymm := by
   refine ⟨fun u v ↦ ?_⟩
   simp only [ricci_apply_orthonormalBasis (stdOrthonormalBasis ℝ V)]
-  exact Finset.sum_congr rfl fun i _ ↦ (hr.swap_pairs _ _ _ _).symm
+  exact Finset.sum_congr rfl fun i _ ↦ (h _ _ _ _).symm
+
+/-- The Ricci contraction of an algebraic curvature tensor is symmetric. -/
+theorem IsAlgebraicCurvature.isSymm_ricci {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
+    (ricci r).IsSymm := isSymm_ricci_of_swap_pairs hr.swap_pairs
 
 /-- The Ricci contraction is equivariant under linear isometric equivalences: the Ricci contraction
 of the pullback of `r` by `e` is the pullback of the Ricci contraction of `r`. -/
@@ -525,6 +622,80 @@ theorem inner_eq_mul_constantCurvature {R : V → V → V → V} {κ : ℝ}
   ring
 
 end InnerProductSpace
+
+section CoordFourTensor
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+
+/-- The rank-one four-tensor `(u, v, z, w) ↦ ⟪b i, u⟫ ⟪b j, v⟫ ⟪b k, z⟫ ⟪b l, w⟫` attached to four
+vectors of a family `b`. -/
+def coordFourTensor {ι : Type*} (b : ι → V) (i j k l : ι) : FourTensor V :=
+  (ContinuousMultilinearMap.mkPiAlgebraFin ℝ 4 ℝ).compContinuousLinearMap
+    ![innerSL ℝ (b i), innerSL ℝ (b j), innerSL ℝ (b k), innerSL ℝ (b l)]
+
+/-- Definition of `coordFourTensor` as the composition of `mkPiAlgebraFin` with four inner-product
+functionals. -/
+theorem coordFourTensor_def {ι : Type*} (b : ι → V) (i j k l : ι) :
+    coordFourTensor b i j k l =
+      (ContinuousMultilinearMap.mkPiAlgebraFin ℝ 4 ℝ).compContinuousLinearMap
+        ![innerSL ℝ (b i), innerSL ℝ (b j), innerSL ℝ (b k), innerSL ℝ (b l)] :=
+  (rfl)
+
+/-- Evaluation of `coordFourTensor` on four vectors. -/
+@[simp]
+theorem coordFourTensor_apply {ι : Type*} (b : ι → V) (i j k l : ι) (u v z w : V) :
+    coordFourTensor b i j k l ![u, v, z, w] =
+      ⟪b i, u⟫_ℝ * ⟪b j, v⟫_ℝ * ⟪b k, z⟫_ℝ * ⟪b l, w⟫_ℝ := by
+  simp [coordFourTensor, ContinuousMultilinearMap.mkPiAlgebraFin_apply, List.ofFn_succ, mul_assoc]
+
+/-- The operator norm of `coordFourTensor b i j k l` is `‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖`. -/
+@[simp]
+theorem norm_coordFourTensor {ι : Type*} (b : ι → V) (i j k l : ι) :
+    ‖coordFourTensor b i j k l‖ = ‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖ := by
+  apply le_antisymm
+  · refine ((ContinuousMultilinearMap.mkPiAlgebraFin ℝ 4 ℝ).norm_compContinuousLinearMap_le
+      ![innerSL ℝ (b i), innerSL ℝ (b j), innerSL ℝ (b k), innerSL ℝ (b l)]).trans_eq ?_
+    simp [Fin.prod_univ_four, innerSL_apply_norm, mul_assoc]
+  · refine le_trans ?_ ((coordFourTensor b i j k l).ratio_le_opNorm ![b i, b j, b k, b l])
+    rw [coordFourTensor_apply, Fin.prod_univ_four]
+    simp only [real_inner_self_eq_norm_sq, Real.norm_eq_abs, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val, Fin.isValue, abs_of_nonneg (by positivity :
+        0 ≤ ‖b i‖ ^ 2 * ‖b j‖ ^ 2 * ‖b k‖ ^ 2 * ‖b l‖ ^ 2)]
+    set P := ‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖
+    have hsq : ‖b i‖ ^ 2 * ‖b j‖ ^ 2 * ‖b k‖ ^ 2 * ‖b l‖ ^ 2 = P * P := by simp only [P]; ring
+    rw [hsq, mul_self_div_self]
+
+/-- Every coordinate four-tensor of an orthonormal family has unit operator norm. -/
+theorem norm_coordFourTensor_of_orthonormal {ι : Type*} {b : ι → V} (hb : Orthonormal ℝ b)
+    (i j k l : ι) : ‖coordFourTensor b i j k l‖ = 1 := by
+  simp [hb.1]
+
+/-- Pulling back `coordFourTensor (f ∘ b)` along a linear isometry `f` gives `coordFourTensor b`. -/
+@[simp]
+theorem coordFourTensor_compContinuousLinearMap_linearIsometry {ι : Type*} (f : W →ₗᵢ[ℝ] V)
+    (b : ι → W) (i j k l : ι) :
+    (coordFourTensor (f ∘ b) i j k l).compContinuousLinearMap
+      (fun _ ↦ f.toContinuousLinearMap) = coordFourTensor b i j k l := by
+  refine ext_vec fun u v z w ↦ ?_
+  rw [compContinuousLinearMap_apply_vec]
+  simp
+
+/-- Every four-tensor on `V` is the sum of its components in an orthonormal basis `b` against the
+corresponding coordinate four-tensors `coordFourTensor b i j k l`. -/
+theorem sum_coordFourTensor_eq {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+    (r : FourTensor V) :
+    (∑ i, ∑ j, ∑ k, ∑ l, r ![b i, b j, b k, b l] • coordFourTensor b i j k l) = r := by
+  classical
+  apply ContinuousMultilinearMap.toMultilinearMap_injective
+  refine Module.Basis.ext_multilinear (fun _ ↦ b.toBasis) fun v ↦ ?_
+  have hv : (fun t : Fin 4 ↦ b.toBasis (v t)) = ![b (v 0), b (v 1), b (v 2), b (v 3)] := by
+    funext t; fin_cases t <;> rfl
+  simp only [ContinuousMultilinearMap.coe_coe, hv, sum_apply, smul_apply, coordFourTensor_apply,
+    smul_eq_mul, orthonormal_iff_ite.mp b.orthonormal, mul_ite, mul_one, mul_zero,
+    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
+
+end CoordFourTensor
 
 end FourTensor
 

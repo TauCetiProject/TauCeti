@@ -48,7 +48,7 @@ theorem isOpenCover_toOpens (X : Scheme.{u}) :
   refine .mk (top_le_iff.1 fun x _ ↦ ?_)
   obtain ⟨U, hxU⟩ := TopologicalSpace.Opens.mem_iSup.1
     ((iSup_affineOpens_eq_top X).ge (Set.mem_univ x))
-  exact TopologicalSpace.Opens.mem_iSup.2 ⟨⟨U.1, U.2⟩, hxU⟩
+  exact TopologicalSpace.Opens.mem_iSup.2 ⟨⟨U.val, U.property⟩, hxU⟩
 
 end AlgebraicGeometry.Scheme.AffineZariskiSite
 
