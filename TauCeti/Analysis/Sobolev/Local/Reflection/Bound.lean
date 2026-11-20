@@ -346,7 +346,7 @@ theorem exists_uniform_wkp_planarReflection_norm_le {Ω : Opens ℂ} {u : ℕ �
     ∃ R : ℝ, ∀ m, ∃ v : Wkp volume W p (k + 1), ‖v‖ ≤ R ∧
       Wkp.value (k + 1) v =ᵐ[volume.restrict W]
         planarReflection (higherReflectionCoeff (k + 1)) (u m) := by
-  obtain ⟨V, hVc, hVΩ, hWV⟩ := Opens.exists_isCompact_closure_subset_reflectionCore hWc hWΩ
+  obtain ⟨V, hVc, hVΩ, hWV⟩ := Opens.exists_subset_reflectionCore_and_isCompact_closure hWc hWΩ
   obtain ⟨R, hR⟩ := hu V hVc hVΩ
   have hne : ((k : ℝ≥0∞) + 2) * (higherReflectionBound (k + 1) p * ENNReal.ofReal R) ≠ ⊤ :=
     ENNReal.mul_ne_top (by simp) (ENNReal.mul_ne_top (higherReflectionBound_ne_top _ _)
