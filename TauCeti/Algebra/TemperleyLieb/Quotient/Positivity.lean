@@ -7,6 +7,7 @@ module
 public import TauCeti.Algebra.TemperleyLieb.Quotient.PathAlgebra
 public import TauCeti.Algebra.TemperleyLieb.Positivity
 public import TauCeti.Algebra.TemperleyLieb.Trace.Star
+public import TauCeti.Algebra.TemperleyLieb.TypeA
 public import TauCeti.Combinatorics.SimpleGraph.Hasse
 public import TauCeti.RingTheory.TraceFunctional.Positive
 import Mathlib.Analysis.Matrix.Order
@@ -46,7 +47,7 @@ variable {G : SimpleGraph V} [DecidableEq V] [G.LocallyFinite] {v₀ : V}
 theorem walkTrace_star_mul_self_nonneg (hrs : ∀ v, IsSelfAdjoint (r v)) {n : ℕ}
     (X : PathAlgebra ℂ G v₀ n) : 0 ≤ walkTrace G v₀ r (star X * X) := by
   rw [walkTrace_apply]
-  exact Finset.sum_nonneg fun v _ ↦ mul_nonneg (div_sq_nonneg_of_isSelfAdjoint hrs v.1 v₀) <| by
+  exact Finset.sum_nonneg fun v _ ↦ mul_nonneg (div_sq_nonneg_of_isSelfAdjoint hrs v.val v₀) <| by
     rw [Pi.mul_apply, Pi.star_apply, Matrix.star_eq_conjTranspose]
     exact (Matrix.posSemidef_conjTranspose_mul_self (X v)).trace_nonneg
 /-- For nonzero self-adjoint `r : V → ℂ`, `walkTrace` is faithful on `PathAlgebra ℂ G v₀ n`. -/
@@ -56,11 +57,11 @@ theorem walkTrace_star_mul_self_nonneg (hrs : ∀ v, IsSelfAdjoint (r v)) {n : �
   refine ⟨fun h ↦ funext fun v ↦ ?_, fun h ↦ by simp [h]⟩
   rw [walkTrace_apply] at h
   have h0 := (Finset.sum_eq_zero_iff_of_nonneg fun w _ ↦ mul_nonneg
-    (div_sq_nonneg_of_isSelfAdjoint hrs w.1 v₀) <| by
+    (div_sq_nonneg_of_isSelfAdjoint hrs w.val v₀) <| by
       simpa [Matrix.star_eq_conjTranspose] using
         (Matrix.posSemidef_conjTranspose_mul_self (X w)).trace_nonneg).1 h v (Finset.mem_univ v)
   simpa [Matrix.star_eq_conjTranspose, Matrix.trace_conjTranspose_mul_self_eq_zero_iff,
-    (div_sq_pos_of_isSelfAdjoint hr hrs v.1 v₀).ne'] using h0
+    (div_sq_pos_of_isSelfAdjoint hr hrs v.val v₀).ne'] using h0
 variable (G v₀) in
 /-- `walkTrace` bundled as a `StarPositiveFunctional` for self-adjoint weights `r`. -/
 def walkPositiveTrace (hrs : ∀ v, IsSelfAdjoint (r v)) (n : ℕ) :
@@ -175,11 +176,12 @@ private theorem sum_neighborFinset_hasse_qInt (δ : ℝ) :
 theorem sum_neighborFinset_discretePathWeight_sq {m : ℕ} (v : Fin (m - 1)) :
     ∑ u ∈ (pathGraph (m - 1)).neighborFinset v, discretePathWeight m u ^ 2 =
       ((2 * cos (π / m) : ℝ) : ℂ) * discretePathWeight m v ^ 2 := by
-  have hsq (t : Fin (m - 1)) : discretePathWeight m t ^ 2 =
-      (qInt ℝ (2 * cos (π / m)) (t.val + 1) : ℂ) := by
+  obtain ⟨k, rfl⟩ : ∃ k, m = k + 2 := ⟨m - 2, by have := v.isLt; omega⟩
+  have hsq (t : Fin (k + 1)) : discretePathWeight (k + 2) t ^ 2 =
+      (qInt ℝ (2 * cos (π / (k + 2 : ℕ))) (t.val + 1) : ℂ) := by
     rw [discretePathWeight, ← Complex.ofReal_pow,
       Real.sq_sqrt (qInt_two_mul_cos_pi_div_pos (Nat.succ_pos _) (by omega)).le]
-  simp_rw [hsq]; exact_mod_cast sum_neighborFinset_pathGraph_qInt v
+  simp_rw [hsq]; exact_mod_cast sum_neighborFinset_pathGraph_qInt (k := k) v
 /-- For `δ ≥ 2`, every vertex weight `genericPathWeight δ t` on `A_∞` is nonzero. -/
 theorem genericPathWeight_ne_zero {δ : ℝ} (hδ : 2 ≤ δ) (t : ℕ) : genericPathWeight δ t ≠ 0 :=
   Complex.ofReal_ne_zero.2 (Real.sqrt_pos.2 (qInt_pos_of_two_le hδ (Nat.succ_pos t))).ne'
@@ -253,10 +255,10 @@ theorem exists_isMarkovTrace_forall_nonneg_iff_eq_zero_or_mem_jonesLoopParameter
       ∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n), 0 ≤ tr n (star x * x)) ↔
       δ = 0 ∨ δ ∈ jonesLoopParameters := by
   refine ⟨fun ⟨_, htr, hpos⟩ ↦
-    htr.forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem_jonesLoopParameters.1 hpos, fun hδ ↦ ?_⟩
+    htr.forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem.1 hpos, fun hδ ↦ ?_⟩
   suffices ∃ tr : ∀ n, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ, IsMarkovTrace ℂ (δ : ℂ) tr by
     obtain ⟨_, htr⟩ := this
-    exact ⟨_, htr, htr.forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem_jonesLoopParameters.2 hδ⟩
+    exact ⟨_, htr, htr.forall_map_star_mul_self_nonneg_iff_eq_zero_or_mem.2 hδ⟩
   have hcase : (∃ m : ℕ, 2 ≤ m ∧ δ = 2 * Real.cos (Real.pi / m)) ∨ 2 ≤ δ :=
     hδ.elim (fun h0 ↦ Or.inl ⟨2, le_rfl, by simp [h0]⟩) fun hJ ↦
       (mem_jonesLoopParameters.1 hJ).imp (fun ⟨m, _, hm⟩ ↦ ⟨m, by omega, hm⟩) id

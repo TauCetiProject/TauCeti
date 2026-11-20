@@ -35,22 +35,23 @@ variable (K : Type*) {V : Type*} (G : SimpleGraph V) [DecidableEq V] [LocallyFin
 /-- The **endpoint-graded path algebra** of a locally finite graph `G` from `v₀` at level `n`: the
 finite product over `v ∈ G.walkEndpoints v₀ n` of full matrix algebras on `EndpointWalk`. -/
 abbrev PathAlgebra (n : ℕ) :=
-  ∀ v : G.walkEndpoints v₀ n, Matrix (G.EndpointWalk v₀ n v.1) (G.EndpointWalk v₀ n v.1) K
+  ∀ v : G.walkEndpoints v₀ n, Matrix (G.EndpointWalk v₀ n v.val) (G.EndpointWalk v₀ n v.val) K
 namespace PathAlgebra
 variable {K G v₀}
 section Semiring
 variable [Semiring K] {n : ℕ}
 /-- A matrix entry supported on a single endpoint block `t` at `(p, q)`. -/
-def blockSingle (t : G.walkEndpoints v₀ n) (p q : G.EndpointWalk v₀ n t.1) (c : K) :
+def blockSingle (t : G.walkEndpoints v₀ n) (p q : G.EndpointWalk v₀ n t.val) (c : K) :
     PathAlgebra K G v₀ n := Pi.single t (Matrix.single p q c)
-@[simp] theorem blockSingle_apply_same (t : G.walkEndpoints v₀ n) (p q : G.EndpointWalk v₀ n t.1)
+@[simp] theorem blockSingle_apply_same (t : G.walkEndpoints v₀ n) (p q : G.EndpointWalk v₀ n t.val)
     (c : K) : blockSingle t p q c t = Matrix.single p q c := Pi.single_eq_same t _
 theorem blockSingle_apply_of_ne {t s : G.walkEndpoints v₀ n} (hts : s ≠ t)
-    (p q : G.EndpointWalk v₀ n t.1) (c : K) : blockSingle t p q c s = 0 := Pi.single_eq_of_ne hts _
+    (p q : G.EndpointWalk v₀ n t.val) (c : K) : blockSingle t p q c s = 0 :=
+  Pi.single_eq_of_ne hts _
 /-- Every element of `PathAlgebra K G v₀ n` expands in the `blockSingle` matrix-unit basis. -/
 theorem eq_sum_blockSingle (X : PathAlgebra K G v₀ n) :
-    X = ∑ t : G.walkEndpoints v₀ n, ∑ p : G.EndpointWalk v₀ n t.1,
-      ∑ q : G.EndpointWalk v₀ n t.1, X t p q • blockSingle t p q (1 : K) := by
+    X = ∑ t : G.walkEndpoints v₀ n, ∑ p : G.EndpointWalk v₀ n t.val,
+      ∑ q : G.EndpointWalk v₀ n t.val, X t p q • blockSingle t p q (1 : K) := by
   ext s w z; simp only [Finset.sum_apply, Matrix.sum_apply, Pi.smul_apply, Matrix.smul_apply,
     smul_eq_mul]
   rw [Finset.sum_eq_single s (fun _ _ hts ↦ by simp [blockSingle_apply_of_ne hts.symm])
@@ -58,7 +59,7 @@ theorem eq_sum_blockSingle (X : PathAlgebra K G v₀ n) :
   simp [Matrix.single_apply, mul_ite, ite_and]
 /-- The identity of `PathAlgebra K G v₀ n` is the sum of diagonal `blockSingle` matrix units. -/
 theorem one_eq_sum_blockSingle : (1 : PathAlgebra K G v₀ n) =
-    ∑ s : G.walkEndpoints v₀ n, ∑ w : G.EndpointWalk v₀ n s.1, blockSingle s w w 1 := by
+    ∑ s : G.walkEndpoints v₀ n, ∑ w : G.EndpointWalk v₀ n s.val, blockSingle s w w 1 := by
   ext s p q; simp only [Pi.one_apply, Matrix.one_apply, Finset.sum_apply, Matrix.sum_apply]
   rw [Finset.sum_eq_single s (fun _ _ hts ↦ by simp [blockSingle_apply_of_ne hts.symm])
     (fun h ↦ (h (Finset.mem_univ _)).elim)]
@@ -114,13 +115,13 @@ block at a reachable vertex with no neighbours maps to `0`, so injectivity requi
 reachable dead ends. -/
 def walkExtend : PathAlgebra K G v₀ n →ₐ[K] PathAlgebra K G v₀ (n + 1) :=
   AlgHom.pi fun v ↦
-    (Matrix.reindexAlgEquiv K K (EndpointWalk.succEquiv G v₀ n v.1).symm).toAlgHom.comp
+    (Matrix.reindexAlgEquiv K K (EndpointWalk.succEquiv G v₀ n v.val).symm).toAlgHom.comp
       ((Matrix.blockDiagonal'AlgHom _ K K).comp
-        (AlgHom.pi fun u : G.neighborSet v.1 ↦ PathAlgebra.blockAt u.1))
+        (AlgHom.pi fun u : G.neighborSet v.val ↦ PathAlgebra.blockAt u.val))
 theorem walkExtend_apply (X : PathAlgebra K G v₀ n) (v : G.walkEndpoints v₀ (n + 1)) :
     walkExtend G v₀ X v =
-      (Matrix.blockDiagonal' fun u : G.neighborSet v.1 ↦ PathAlgebra.blockAt u.1 X).submatrix
-        (EndpointWalk.succEquiv G v₀ n v.1) (EndpointWalk.succEquiv G v₀ n v.1) := by
+      (Matrix.blockDiagonal' fun u : G.neighborSet v.val ↦ PathAlgebra.blockAt u.val X).submatrix
+        (EndpointWalk.succEquiv G v₀ n v.val) (EndpointWalk.succEquiv G v₀ n v.val) := by
   simp [walkExtend]; rfl
 /-- Matrix entries of `walkExtend G v₀ X` on extended walks `p.snoc h₁` and `q.snoc h₂`. -/
 theorem walkExtend_apply_snoc (X : PathAlgebra K G v₀ n) {u₁ u₂ v : V}
@@ -145,8 +146,8 @@ private theorem penultimate_eq_of_coe_init_eq {u v : V} {x : G.EndpointWalk v₀
     x (Fin.last n).castSucc = u := by
   simpa [EndpointWalk.coe_init, p.apply_last_eq] using congrFun hx (Fin.last n)
 /-- Entries of `walkExtend` applied to a single matrix unit `blockSingle u p₁ p₂ c`. -/
-theorem walkExtend_blockSingle_apply (u : G.walkEndpoints v₀ n) (p₁ p₂ : G.EndpointWalk v₀ n u.1)
-    (c : K) (s : G.walkEndpoints v₀ (n + 1)) (w y : G.EndpointWalk v₀ (n + 1) s.1) :
+theorem walkExtend_blockSingle_apply (u : G.walkEndpoints v₀ n) (p₁ p₂ : G.EndpointWalk v₀ n u.val)
+    (c : K) (s : G.walkEndpoints v₀ (n + 1)) (w y : G.EndpointWalk v₀ (n + 1) s.val) :
     walkExtend G v₀ (PathAlgebra.blockSingle u p₁ p₂ c) s w y =
       if (w.init : Fin (n + 1) → V) = p₁ ∧ (y.init : Fin (n + 1) → V) = p₂ then c else 0 := by
   rcases u with ⟨u₀, hu₀⟩; conv_lhs => rw [← w.snoc_init, ← y.snoc_init]
@@ -172,12 +173,12 @@ variable {K : Type*} [Field K] {V : Type*} (G : SimpleGraph V) [DecidableEq V]
 /-- The **endpoint-weighted matrix trace** on `PathAlgebra K G v₀ n`, summing `(r v / r v₀) ^ 2`
 times the matrix trace on each endpoint block `v`. -/
 def walkTrace {n : ℕ} : PathAlgebra K G v₀ n →ₗ[K] K where
-  toFun X := ∑ v : G.walkEndpoints v₀ n, (r v.1 / r v₀) ^ 2 * (X v).trace
+  toFun X := ∑ v : G.walkEndpoints v₀ n, (r v.val / r v₀) ^ 2 * (X v).trace
   map_add' _ _ := by simp [Matrix.trace_add, mul_add, Finset.sum_add_distrib]
   map_smul' _ _ := by simp [Matrix.trace_smul, smul_eq_mul, Finset.mul_sum, mul_left_comm]
 variable {G v₀ r}
 theorem walkTrace_apply {n : ℕ} (X : PathAlgebra K G v₀ n) :
-    walkTrace G v₀ r X = ∑ v : G.walkEndpoints v₀ n, (r v.1 / r v₀) ^ 2 * (X v).trace := (rfl)
+    walkTrace G v₀ r X = ∑ v : G.walkEndpoints v₀ n, (r v.val / r v₀) ^ 2 * (X v).trace := (rfl)
 theorem walkTrace_eq_sum_walkEndpoints {n : ℕ} (X : PathAlgebra K G v₀ n) : walkTrace G v₀ r X =
     ∑ v ∈ G.walkEndpoints v₀ n, (r v / r v₀) ^ 2 * (PathAlgebra.blockAt v X).trace := by
   rw [walkTrace_apply, ← (G.walkEndpoints v₀ n).sum_attach]; simp [Finset.univ_eq_attach]
@@ -197,7 +198,7 @@ theorem walkTrace_walkExtend {δ : K}
     rw [PathAlgebra.blockAt_of_mem hv, Matrix.trace, G.sum_endpointWalk_succ v₀ n v,
       ← (G.neighborFinset v).sum_attach fun u ↦ (PathAlgebra.blockAt u X).trace]
     refine Finset.sum_congr rfl fun u _ ↦ ?_
-    by_cases hu : u.1 ∈ G.walkEndpoints v₀ n; · simp [hu, Matrix.trace]
+    by_cases hu : u.val ∈ G.walkEndpoints v₀ n; · simp [hu, Matrix.trace]
     have := not_nonempty_iff.1 ((G.mem_walkEndpoints_iff v₀).not.1 hu)
     simp [PathAlgebra.blockAt_of_notMem hu]
   rw [Finset.sum_congr rfl fun _ hv ↦ by rw [htr hv, Finset.mul_sum],
@@ -222,11 +223,11 @@ variable {n : ℕ}
 /-- The generator element in `PathAlgebra K G v₀ n` acting at interior position `b` between `a` and
 `c`, with entry `r (s b) * r (t b) / r (s a) ^ 2` when `s a = s c` and `t` updates `s` at `b`. -/
 def walkGenerator (a b c : Fin (n + 1)) : PathAlgebra K G v₀ n :=
-  fun v ↦ Matrix.of fun s t : G.EndpointWalk v₀ n v.1 ↦
+  fun v ↦ Matrix.of fun s t : G.EndpointWalk v₀ n v.val ↦
     if s a = s c ∧ (t : Fin (n + 1) → V) = update (s : Fin (n + 1) → V) b (t b) ∧
         G.Adj (s a) (t b) then r (s b) * r (t b) / r (s a) ^ 2 else 0
 theorem walkGenerator_apply (a b c : Fin (n + 1)) (v : G.walkEndpoints v₀ n)
-    (s t : G.EndpointWalk v₀ n v.1) : walkGenerator G v₀ r a b c v s t =
+    (s t : G.EndpointWalk v₀ n v.val) : walkGenerator G v₀ r a b c v s t =
       if s a = s c ∧ (t : Fin (n + 1) → V) = update (s : Fin (n + 1) → V) b (t b) ∧
           G.Adj (s a) (t b) then r (s b) * r (t b) / r (s a) ^ 2 else 0 := (rfl)
 variable {G v₀ r}
@@ -234,20 +235,20 @@ variable {G v₀ r}
 and vanishes otherwise. -/
 theorem walkGenerator_mul_apply {a b c : Fin (n + 1)} (hab : a.val + 1 = b.val)
     (hbc : b.val + 1 = c.val) (v : G.walkEndpoints v₀ n)
-    (X : Matrix (G.EndpointWalk v₀ n v.1) (G.EndpointWalk v₀ n v.1) K)
-    (s u : G.EndpointWalk v₀ n v.1) : (walkGenerator G v₀ r a b c v * X) s u =
+    (X : Matrix (G.EndpointWalk v₀ n v.val) (G.EndpointWalk v₀ n v.val) K)
+    (s u : G.EndpointWalk v₀ n v.val) : (walkGenerator G v₀ r a b c v * X) s u =
       if hac : s a = s c then
-        ∑ x ∈ (G.neighborFinset (s a)).attach, r (s b) * r x.1 / r (s a) ^ 2 *
-          X (s.update hab hbc hac ((G.mem_neighborFinset _ _).1 x.2)) u
+        ∑ x ∈ (G.neighborFinset (s a)).attach, r (s b) * r x.val / r (s a) ^ 2 *
+          X (s.update hab hbc hac ((G.mem_neighborFinset _ _).1 x.property)) u
       else 0 := by
   rw [Matrix.mul_apply]; split_ifs with hac
   · let f (x : {x // x ∈ G.neighborFinset (s a)}) :=
-      s.update hab hbc hac ((G.mem_neighborFinset _ _).1 x.2)
+      s.update hab hbc hac ((G.mem_neighborFinset _ _).1 x.property)
     rw [← Finset.sum_subset (Finset.subset_univ ((G.neighborFinset (s a)).attach.image f)),
       Finset.sum_image fun _ _ _ _ h ↦ Subtype.ext <| by
-        simpa [f] using congrArg (fun w : G.EndpointWalk v₀ n v.1 ↦ w b) h]
+        simpa [f] using congrArg (fun w : G.EndpointWalk v₀ n v.val ↦ w b) h]
     · exact Finset.sum_congr rfl fun x _ ↦ by
-        have hx : G.Adj (s c) x.1 := hac ▸ (G.mem_neighborFinset _ _).1 x.2
+        have hx : G.Adj (s c) x.val := hac ▸ (G.mem_neighborFinset _ _).1 x.property
         simp [walkGenerator_apply, f, hac, hx]
     · intro t _ ht
       rw [walkGenerator_apply, ite_eq_right fun ⟨_, hst, hadj⟩ ↦ ht <| Finset.mem_image.2
@@ -255,8 +256,8 @@ theorem walkGenerator_mul_apply {a b c : Fin (n + 1)} (hab : a.val + 1 = b.val)
           EndpointWalk.ext fun i ↦ by simpa [f] using (congrFun hst i).symm⟩, zero_mul]
   · exact Finset.sum_eq_zero fun _ _ ↦ by simp [walkGenerator_apply, hac]
 theorem walkGenerator_update_apply {a b c : Fin (n + 1)} (hab : a.val + 1 = b.val)
-    (hbc : b.val + 1 = c.val) {v : G.walkEndpoints v₀ n} (s : G.EndpointWalk v₀ n v.1)
-    (hac : s a = s c) {x : V} (hx : G.Adj (s a) x) (u : G.EndpointWalk v₀ n v.1) :
+    (hbc : b.val + 1 = c.val) {v : G.walkEndpoints v₀ n} (s : G.EndpointWalk v₀ n v.val)
+    (hac : s a = s c) {x : V} (hx : G.Adj (s a) x) (u : G.EndpointWalk v₀ n v.val) :
     walkGenerator G v₀ r a b c v (s.update hab hbc hac hx) u =
       if (u : Fin (n + 1) → V) = update (s : Fin (n + 1) → V) b (u b) ∧ G.Adj (s a) (u b) then
         r x * r (u b) / r (s a) ^ 2 else 0 := by
@@ -268,7 +269,7 @@ theorem conjTranspose_walkGenerator [StarRing K] (hrs : ∀ v, IsSelfAdjoint (r 
     (v : G.walkEndpoints v₀ n) :
     (walkGenerator G v₀ r a b c v)ᴴ = walkGenerator G v₀ r a b c v := by
   have ha : a ≠ b := Fin.ne_of_val_ne (by omega); have hc : c ≠ b := Fin.ne_of_val_ne (by omega)
-  have hsymm {s t : G.EndpointWalk v₀ n v.1}
+  have hsymm {s t : G.EndpointWalk v₀ n v.val}
       (h : s a = s c ∧ (t : Fin (n + 1) → V) = update (s : Fin (n + 1) → V) b (t b) ∧
         G.Adj (s a) (t b)) :
       t a = t c ∧ (s : Fin (n + 1) → V) = update (t : Fin (n + 1) → V) b (s b) ∧
@@ -351,7 +352,7 @@ private theorem walkGenerator_zigzag (hr : ∀ v, r v ≠ 0) {a₁ b₁ c₁ a�
 /-- Matrix entries of a product of two `walkGenerator`s whose updated positions are disjoint. -/
 theorem walkGenerator_mul_walkGenerator_apply {a b c a' b' c' : Fin (n + 1)}
     (hab : a.val + 1 = b.val) (hbc : b.val + 1 = c.val) (h₁ : b ≠ a') (h₂ : b ≠ b')
-    (h₃ : b ≠ c') (v : G.walkEndpoints v₀ n) (s u : G.EndpointWalk v₀ n v.1) :
+    (h₃ : b ≠ c') (v : G.walkEndpoints v₀ n) (s u : G.EndpointWalk v₀ n v.val) :
     (walkGenerator G v₀ r a b c * walkGenerator G v₀ r a' b' c') v s u =
       if s a = s c ∧ s a' = s c' ∧
           (u : Fin (n + 1) → V) = update (update (s : Fin (n + 1) → V) b (u b)) b' (u b') ∧
@@ -368,8 +369,8 @@ theorem walkGenerator_mul_walkGenerator_apply {a b c a' b' c' : Fin (n + 1)}
         update_of_ne h₃.symm, hac, hac ▸ hub, true_and]; split_ifs <;> simp
     · rw [ite_eq_right fun h ↦ hub h.2.2.2.1]; refine Finset.sum_eq_zero fun x _ ↦ ?_
       rw [walkGenerator_apply, ite_eq_right fun ⟨_, hEq, _⟩ ↦ hub <|
-        (by simpa [update_of_ne h₂] using congrFun hEq b : u b = x.1) ▸
-          (G.mem_neighborFinset _ _).1 x.2, mul_zero]
+        (by simpa [update_of_ne h₂] using congrFun hEq b : u b = x.val) ▸
+          (G.mem_neighborFinset _ _).1 x.property, mul_zero]
   · rw [dite_eq_right hac, ite_eq_right fun h ↦ hac h.1]
 /-- Far-commutation relation `e_i * e_j = e_j * e_i` for disjoint `walkGenerator`s. -/
 theorem walkGenerator_mul_walkGenerator_comm {a b c a' b' c' : Fin (n + 1)}
@@ -450,10 +451,12 @@ variable {G v₀ r} (hr : ∀ v, r v ≠ 0) {δ : K}
   (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2)
 /-- Left multiplication by `walkExtend (blockSingle u p₁ p₂ 1)` isolates `p₂.snoc`. -/
 private theorem walkExtend_blockSingle_mul_apply {m : ℕ} (u : G.walkEndpoints v₀ m)
-    (p₁ p₂ : G.EndpointWalk v₀ m u.1) (Y : PathAlgebra K G v₀ (m + 1))
-    (s : G.walkEndpoints v₀ (m + 1)) (w z : G.EndpointWalk v₀ (m + 1) s.1) :
+    (p₁ p₂ : G.EndpointWalk v₀ m u.val) (Y : PathAlgebra K G v₀ (m + 1))
+    (s : G.walkEndpoints v₀ (m + 1)) (w z : G.EndpointWalk v₀ (m + 1) s.val) :
     (walkExtend G v₀ (PathAlgebra.blockSingle u p₁ p₂ (1 : K)) * Y) s w z =
-      if h : (w.init : Fin (m + 1) → V) = p₁ ∧ G.Adj u.1 s.1 then Y s (p₂.snoc h.2) z else 0 := by
+      if h : (w.init : Fin (m + 1) → V) = p₁ ∧ G.Adj u.val s.val then
+        Y s (p₂.snoc h.2) z
+      else 0 := by
   rw [Pi.mul_apply, Matrix.mul_apply]; simp_rw [walkExtend_blockSingle_apply]; split_ifs with h
   · rw [Finset.sum_eq_single (p₂.snoc h.2) (fun _ _ hy ↦ by
         rw [ite_eq_right fun hy' ↦ hy (EndpointWalk.eq_of_coe_init_eq <| by
@@ -464,10 +467,12 @@ private theorem walkExtend_blockSingle_mul_apply {m : ℕ} (u : G.walkEndpoints 
         zero_mul]
 /-- Right multiplication by `walkExtend (blockSingle u p₁ p₂ 1)` isolates `p₁.snoc`. -/
 private theorem mul_walkExtend_blockSingle_apply {m : ℕ} (X : PathAlgebra K G v₀ (m + 1))
-    (u : G.walkEndpoints v₀ m) (p₁ p₂ : G.EndpointWalk v₀ m u.1)
-    (s : G.walkEndpoints v₀ (m + 1)) (w z : G.EndpointWalk v₀ (m + 1) s.1) :
+    (u : G.walkEndpoints v₀ m) (p₁ p₂ : G.EndpointWalk v₀ m u.val)
+    (s : G.walkEndpoints v₀ (m + 1)) (w z : G.EndpointWalk v₀ (m + 1) s.val) :
     (X * walkExtend G v₀ (PathAlgebra.blockSingle u p₁ p₂ (1 : K))) s w z =
-      if h : (z.init : Fin (m + 1) → V) = p₂ ∧ G.Adj u.1 s.1 then X s w (p₁.snoc h.2) else 0 := by
+      if h : (z.init : Fin (m + 1) → V) = p₂ ∧ G.Adj u.val s.val then
+        X s w (p₁.snoc h.2)
+      else 0 := by
   rw [Pi.mul_apply, Matrix.mul_apply]; simp_rw [walkExtend_blockSingle_apply]; split_ifs with h
   · rw [Finset.sum_eq_single (p₁.snoc h.2) (fun _ _ hy ↦ by
         rw [ite_eq_right fun hy' ↦ hy (EndpointWalk.eq_of_coe_init_eq <| by
@@ -479,8 +484,8 @@ private theorem mul_walkExtend_blockSingle_apply {m : ℕ} (X : PathAlgebra K G 
 /-- Sandwiching the last `walkGenerator` between extended matrix units gives a nonzero multiple of
 `blockSingle t p q 1` whenever `t` is reachable in `m` steps. -/
 private theorem walkExtend_blockSingle_mul_walkGenerator_mul_walkExtend_blockSingle
-    {m : ℕ} (t : G.walkEndpoints v₀ (m + 2)) (p₀ : G.EndpointWalk v₀ m t.1)
-    (p q : G.EndpointWalk v₀ (m + 2) t.1) :
+    {m : ℕ} (t : G.walkEndpoints v₀ (m + 2)) (p₀ : G.EndpointWalk v₀ m t.val)
+    (p q : G.EndpointWalk v₀ (m + 2) t.val) :
     let u := p (Fin.last (m + 1)).castSucc; let u' := q (Fin.last (m + 1)).castSucc
     walkExtend G v₀ (PathAlgebra.blockSingle ⟨u, (G.mem_walkEndpoints_iff v₀).2 ⟨p.init⟩⟩
           p.init (p₀.snoc p.adj_init_last.symm) 1) *
@@ -488,7 +493,7 @@ private theorem walkExtend_blockSingle_mul_walkGenerator_mul_walkExtend_blockSin
           (Fin.last (m + 2)) *
         walkExtend G v₀ (PathAlgebra.blockSingle ⟨u', (G.mem_walkEndpoints_iff v₀).2 ⟨q.init⟩⟩
           (p₀.snoc q.adj_init_last.symm) q.init 1) =
-      (r u * r u' / r t.1 ^ 2) • PathAlgebra.blockSingle t p q 1 := by
+      (r u * r u' / r t.val ^ 2) • PathAlgebra.blockSingle t p q 1 := by
   intro u u'; ext s w z
   -- Collapse both outer matrix products to the unique intermediate walks through `u` and `u'`.
   rw [mul_walkExtend_blockSingle_apply]; simp_rw [walkExtend_blockSingle_mul_apply]
@@ -504,15 +509,15 @@ private theorem walkExtend_blockSingle_mul_walkGenerator_mul_walkExtend_blockSin
     · rw [ite_eq_right fun ⟨rfl, rfl⟩ ↦ hwz ⟨rfl, rfl⟩, mul_zero]
       split_ifs with hz hw <;> first | rfl | exact (hwz ⟨hw.1, hz.1⟩).elim
   · rw [PathAlgebra.blockSingle_apply_of_ne hst, Matrix.zero_apply, mul_zero]
-    -- On any block `s ≠ t`, the generator entry vanishes since vertex `m` is `t.1 ≠ s.1`.
+    -- On any block `s ≠ t`, the generator entry vanishes since vertex `m` is `t.val ≠ s.val`.
     split_ifs with hz hw
     · rw [walkGenerator_apply, ite_eq_right fun ⟨heq, _, _⟩ ↦
         hst (Subtype.ext (by simpa [p₀.apply_last_eq] using heq.symm))]
     all_goals rfl
 private theorem blockSingle_mem_walkRep_range_of_mem_walkEndpoints
     {m : ℕ} (ih : Function.Surjective (walkRep G v₀ hr hδ (n := m + 1)))
-    (t : G.walkEndpoints v₀ (m + 2)) (ht : t.1 ∈ G.walkEndpoints v₀ m)
-    (p q : G.EndpointWalk v₀ (m + 2) t.1) :
+    (t : G.walkEndpoints v₀ (m + 2)) (ht : t.val ∈ G.walkEndpoints v₀ m)
+    (p q : G.EndpointWalk v₀ (m + 2) t.val) :
     PathAlgebra.blockSingle t p q (1 : K) ∈ (walkRep G v₀ hr hδ (n := m + 2)).range := by
   obtain ⟨p₀⟩ := (G.mem_walkEndpoints_iff v₀).1 ht
   let u := p (Fin.last (m + 1)).castSucc; let u' := q (Fin.last (m + 1)).castSucc
@@ -521,13 +526,13 @@ private theorem blockSingle_mem_walkRep_range_of_mem_walkEndpoints
   obtain ⟨b, hb⟩ := ih (PathAlgebra.blockSingle ⟨u', (G.mem_walkEndpoints_iff v₀).2 ⟨q.init⟩⟩
     (p₀.snoc q.adj_init_last.symm) q.init 1)
   let R := (walkRep G v₀ hr hδ (n := m + 2)).range
-  have hprod : (r u * r u' / r t.1 ^ 2) • PathAlgebra.blockSingle t p q 1 ∈ R := by
+  have hprod : (r u * r u' / r t.val ^ 2) • PathAlgebra.blockSingle t p q 1 ∈ R := by
     rw [← walkExtend_blockSingle_mul_walkGenerator_mul_walkExtend_blockSingle t p₀ p q]
     exact (walkRep G v₀ hr hδ).mem_range.2 ⟨strandIncl a * e δ (Fin.last m) * strandIncl b, by
       simp only [map_mul, walkRep_strandIncl, ha, hb, walkRep_e]; rfl⟩
-  have hc : r u * r u' / r t.1 ^ 2 ≠ 0 :=
-    div_ne_zero (mul_ne_zero (hr u) (hr u')) (pow_ne_zero 2 (hr t.1))
-  convert R.smul_mem hprod (r u * r u' / r t.1 ^ 2)⁻¹ using 1
+  have hc : r u * r u' / r t.val ^ 2 ≠ 0 :=
+    div_ne_zero (mul_ne_zero (hr u) (hr u')) (pow_ne_zero 2 (hr t.val))
+  convert R.smul_mem hprod (r u * r u' / r t.val ^ 2)⁻¹ using 1
   rw [smul_smul, inv_mul_cancel₀ hc, one_smul]
 /-- Under an injective unit-step height from `v₀` with nonzero weights, `walkRep` is surjective. -/
 theorem walkRep_surjective {f : V → ℕ} (hf : Function.Injective f) (hf₀ : f v₀ = 0)
@@ -548,15 +553,15 @@ theorem walkRep_surjective {f : V → ℕ} (hf : Function.Injective f) (hf₀ : 
   | m + 2 => fun X ↦ (walkRep G v₀ hr hδ).mem_range.1 <| by
     have ih := walkRep_surjective hf hf₀ hadj (m + 1)
     let R := (walkRep G v₀ hr hδ (n := m + 2)).range
-    have hmax {s : G.walkEndpoints v₀ (m + 2)} (hs : s.1 ∉ G.walkEndpoints v₀ m) :
-        f s.1 = m + 2 := by
-      obtain ⟨w⟩ := (G.mem_walkEndpoints_iff v₀).1 s.2
+    have hmax {s : G.walkEndpoints v₀ (m + 2)} (hs : s.val ∉ G.walkEndpoints v₀ m) :
+        f s.val = m + 2 := by
+      obtain ⟨w⟩ := (G.mem_walkEndpoints_iff v₀).1 s.property
       exact (w.forall_eq_or_exists_endpointWalk hf hf₀ hadj).elim
         (fun h ↦ by simpa [w.apply_last_eq] using h (Fin.last (m + 2)))
         fun h ↦ (hs ((G.mem_walkEndpoints_iff v₀).2 h)).elim
     rw [X.eq_sum_blockSingle]
     refine R.sum_mem fun t _ ↦ R.sum_mem fun p _ ↦ R.sum_mem fun q _ ↦ R.smul_mem ?_ _
-    by_cases ht : t.1 ∈ G.walkEndpoints v₀ m
+    by_cases ht : t.val ∈ G.walkEndpoints v₀ m
     · exact blockSingle_mem_walkRep_range_of_mem_walkEndpoints hr hδ ih t ht p q
     · have := EndpointWalk.subsingleton_of_last_eq hf hf₀ hadj (hmax ht)
       obtain rfl : p = q := Subsingleton.elim _ _
@@ -646,8 +651,8 @@ variable {K : Type*} [Field K] {V : Type*} [Fintype V] [DecidableEq V] (G : Simp
   (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2)
 /-- On a finite graph, `walkRep` agrees entrywise with `pathRep` on genuine walks. -/
 theorem walkRep_eq_pathRep_apply {n : ℕ} (x : TemperleyLieb K δ n)
-    (v : G.walkEndpoints v₀ n) (p q : G.EndpointWalk v₀ n v.1) :
-    walkRep G v₀ hr hδ x v p q = pathRep G v₀ hr hδ x p q := by
+    (v : G.walkEndpoints v₀ n) (p q : G.EndpointWalk v₀ n v.val) :
+    walkRep G v₀ hr hδ x v p q = pathRep G v₀ hr (.of_forall hδ n) x p q := by
   induction x using TemperleyLieb.induction generalizing p q with
   | e _ =>
     have hp : G.IsWalkFrom v₀ ⇑p := p.isWalkFrom
@@ -657,16 +662,17 @@ theorem walkRep_eq_pathRep_apply {n : ℕ} (x : TemperleyLieb K δ n)
   | add _ _ hx hy => simp [hx, hy]
   | mul x _ hx hy =>
     simp only [map_mul, Pi.mul_apply, Matrix.mul_apply]
-    let emb : G.EndpointWalk v₀ n v.1 → (Fin (n + 1) → V) := (↑)
+    let emb : G.EndpointWalk v₀ n v.val → (Fin (n + 1) → V) := (↑)
     rw [← Finset.sum_subset (Finset.subset_univ (Finset.univ.image emb)),
       Finset.sum_image fun _ _ _ _ h ↦ DFunLike.coe_injective h]
     · exact Finset.sum_congr rfl fun _ _ ↦ by rw [hx, hy]
-    · intro u _ hu; rw [pathRep_apply_eq_zero hr hδ x (s := ⇑p) fun ⟨hp, hlast⟩ ↦ hu <|
+    · intro u _ hu
+      rw [pathRep_apply_eq_zero hr (.of_forall hδ n) x (s := ⇑p) fun ⟨hp, hlast⟩ ↦ hu <|
         Finset.mem_image.2 ⟨⟨u, hp.1 p.isWalkFrom, hlast.symm.trans p.apply_last_eq⟩,
           Finset.mem_univ _, rfl⟩, zero_mul]
 /-- On a finite graph, `walkTrace ∘ walkRep` coincides with `pathTrace`. -/
 theorem walkTrace_walkRep_eq_pathTrace {n : ℕ} (x : TemperleyLieb K δ n) :
-    walkTrace G v₀ r (walkRep G v₀ hr hδ x) = pathTrace G v₀ hr hδ x :=
+    walkTrace G v₀ r (walkRep G v₀ hr hδ x) = pathTrace G v₀ hr (.of_forall hδ n) x :=
   ((isMarkovTrace_pathTrace G v₀ hr hδ).eq_walkTrace_comp_walkRep G v₀ hr hδ n x).symm
 end FiniteGraph
 end TauCeti.TemperleyLieb

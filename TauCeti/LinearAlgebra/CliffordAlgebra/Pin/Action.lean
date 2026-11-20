@@ -101,7 +101,7 @@ theorem pinToOrthogonal_ι_apply {v : M} (hv : Q v = -1) (m : M) :
 theorem pinToOrthogonal_spinToPin (x : spinGroup Q) :
     pinToOrthogonal Q (spinToPin Q x) = spinToOrthogonal Q x := by
   refine Subtype.ext (LinearEquiv.ext fun m => ι_injective Q ?_)
-  rw [ι_pinToOrthogonal_apply, coe_spinToPin_apply, spinGroup.involute_eq x.2,
+  rw [ι_pinToOrthogonal_apply, coe_spinToPin_apply, spinGroup.involute_eq x.property,
     coe_spinToOrthogonal_apply, ι_spinVectorAction_apply]
 
 /-- A Spin element equal to `ι Q v * ι Q w` acts by the product

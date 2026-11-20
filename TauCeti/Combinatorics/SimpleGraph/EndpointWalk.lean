@@ -91,19 +91,19 @@ theorem update_eq_self (w : G.EndpointWalk v₀ m v) {a b c : Fin (m + 1)}
     (hab : a.val + 1 = b.val) (hbc : b.val + 1 = c.val) (hac : w a = w c) {x : V}
     (hx : G.Adj (w a) x) (hxb : x = w b) : w.update hab hbc hac hx = w :=
   ext fun _ ↦ by rw [coe_update, update_eq_self_iff.2 hxb]
-private theorem sigma_heq_of_coe_eq {u₁ u₂ : G.neighborSet v} (hu : u₁.1 = u₂.1)
-    {q : G.EndpointWalk v₀ m u₁.1} {p : G.EndpointWalk v₀ m u₂.1} (hqp : ∀ i, q i = p i) :
-    (⟨u₁, q⟩ : Σ u : G.neighborSet v, G.EndpointWalk v₀ m u.1) = ⟨u₂, p⟩ := by
+private theorem sigma_heq_of_coe_eq {u₁ u₂ : G.neighborSet v} (hu : u₁.val = u₂.val)
+    {q : G.EndpointWalk v₀ m u₁.val} {p : G.EndpointWalk v₀ m u₂.val} (hqp : ∀ i, q i = p i) :
+    (⟨u₁, q⟩ : Σ u : G.neighborSet v, G.EndpointWalk v₀ m u.val) = ⟨u₂, p⟩ := by
   obtain ⟨u₁, _⟩ := u₁; obtain ⟨u₂, _⟩ := u₂; subst hu; exact Sigma.ext rfl (heq_of_eq (ext hqp))
 /-- Decompose an `(m + 1)`-step walk ending at `v` along its penultimate neighbour `u` of `v`. -/
 def succEquiv (G : SimpleGraph V) (v₀ : V) (m : ℕ) (v : V) :
-    G.EndpointWalk v₀ (m + 1) v ≃ Σ u : G.neighborSet v, G.EndpointWalk v₀ m u.1 where
+    G.EndpointWalk v₀ (m + 1) v ≃ Σ u : G.neighborSet v, G.EndpointWalk v₀ m u.val where
   toFun w := ⟨⟨w (Fin.last m).castSucc, (G.mem_neighborSet _ _).2 w.adj_init_last.symm⟩, w.init⟩
-  invFun p := p.2.snoc ((G.mem_neighborSet _ _).1 p.1.2).symm
+  invFun p := p.2.snoc ((G.mem_neighborSet _ _).1 p.1.property).symm
   left_inv w := w.snoc_init
   right_inv := fun ⟨_, _⟩ ↦ sigma_heq_of_coe_eq (by simp) fun _ ↦ by simp
-@[simp] theorem succEquiv_symm_apply (p : Σ u : G.neighborSet v, G.EndpointWalk v₀ m u.1) :
-    (succEquiv G v₀ m v).symm p = p.2.snoc ((G.mem_neighborSet _ _).1 p.1.2).symm := (rfl)
+@[simp] theorem succEquiv_symm_apply (p : Σ u : G.neighborSet v, G.EndpointWalk v₀ m u.val) :
+    (succEquiv G v₀ m v).symm p = p.2.snoc ((G.mem_neighborSet _ _).1 p.1.property).symm := (rfl)
 @[simp] theorem succEquiv_snoc (w : G.EndpointWalk v₀ m u) (h : G.Adj u v) :
     succEquiv G v₀ m v (w.snoc h) = ⟨⟨u, (G.mem_neighborSet v u).2 h.symm⟩, w⟩ :=
   (succEquiv G v₀ m v).eq_symm_apply.1 rfl
@@ -111,7 +111,7 @@ instance instFintype [DecidableEq V] [LocallyFinite G] :
     ∀ {m : ℕ} {v : V}, Fintype (G.EndpointWalk v₀ m v)
   | 0, v => if h : v₀ = v then h ▸ inferInstance else @Fintype.ofIsEmpty _ (isEmpty_zero_of_ne h)
   | m + 1, v =>
-    haveI : ∀ u : G.neighborSet v, Fintype (G.EndpointWalk v₀ m u.1) := fun _ ↦ instFintype
+    haveI : ∀ u : G.neighborSet v, Fintype (G.EndpointWalk v₀ m u.val) := fun _ ↦ instFintype
     Fintype.ofEquiv _ (succEquiv G v₀ m v).symm
 instance subsingleton_one : Subsingleton (G.EndpointWalk v₀ 1 v) :=
   ⟨fun w₁ w₂ ↦ ext fun
@@ -182,12 +182,13 @@ variable (G : SimpleGraph V) [DecidableEq V] [LocallyFinite G] (v₀ : V)
 /-- Sum over `(m + 1)`-step walks ending at `v` by decomposing along the penultimate neighbour. -/
 theorem sum_endpointWalk_succ (m : ℕ) (v : V) {M : Type*} [AddCommMonoid M]
     (F : G.EndpointWalk v₀ (m + 1) v → M) : ∑ w : G.EndpointWalk v₀ (m + 1) v, F w =
-      ∑ u ∈ (G.neighborFinset v).attach, ∑ p : G.EndpointWalk v₀ m u.1,
-        F (p.snoc ((G.mem_neighborFinset v u.1).1 u.2).symm) := by
+      ∑ u ∈ (G.neighborFinset v).attach, ∑ p : G.EndpointWalk v₀ m u.val,
+        F (p.snoc ((G.mem_neighborFinset v u.val).1 u.property).symm) := by
   rw [← (EndpointWalk.succEquiv G v₀ m v).symm.sum_comp, Fintype.sum_sigma]
-  exact Finset.sum_bij (fun u _ ↦ ⟨u.1, (G.mem_neighborFinset v u.1).2 u.2⟩)
+  exact Finset.sum_bij (fun u _ ↦ ⟨u.val, (G.mem_neighborFinset v u.val).2 u.property⟩)
     (fun _ _ ↦ Finset.mem_attach _ _) (fun _ _ _ _ h ↦ Subtype.ext (Subtype.mk.inj h))
-    (fun u _ ↦ ⟨⟨u.1, (G.mem_neighborFinset v u.1).1 u.2⟩, Finset.mem_univ _, rfl⟩) fun _ _ ↦ rfl
+    (fun u _ ↦ ⟨⟨u.val, (G.mem_neighborFinset v u.val).1 u.property⟩, Finset.mem_univ _, rfl⟩)
+    fun _ _ ↦ rfl
 /-- The number of `(m + 1)`-step walks to `v` is the sum over neighbours `u` of `m`-step walks. -/
 theorem card_endpointWalk_succ (m : ℕ) (v : V) : Fintype.card (G.EndpointWalk v₀ (m + 1) v) =
     ∑ u ∈ G.neighborFinset v, Fintype.card (G.EndpointWalk v₀ m u) := by
@@ -207,7 +208,7 @@ theorem walkEndpoints_succ (m : ℕ) :
     exact ⟨fun ⟨u, hu, huv⟩ ↦ let ⟨p⟩ := ih.1 hu; ⟨p.snoc huv⟩,
       fun ⟨w⟩ ↦ ⟨w (Fin.last m).castSucc, ih.2 ⟨w.init⟩, w.adj_init_last⟩⟩
 instance instNonemptyEndpointWalk (m : ℕ) (u : G.walkEndpoints v₀ m) :
-    Nonempty (G.EndpointWalk v₀ m u.1) := (G.mem_walkEndpoints_iff v₀).1 u.2
+    Nonempty (G.EndpointWalk v₀ m u.val) := (G.mem_walkEndpoints_iff v₀).1 u.property
 /-- Swap summation over `(m + 1)`-step endpoints and neighbours when `g` vanishes off `m`-step
 endpoints. -/
 theorem sum_walkEndpoints_succ (m : ℕ) {M : Type*} [AddCommMonoid M] (g : V → V → M)

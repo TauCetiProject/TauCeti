@@ -16,15 +16,6 @@ noncomputable section
 namespace TauCeti.TemperleyLieb.QuotientExamples
 open Real SimpleGraph
 local instance (x : ℝ) : Fact (IsSelfAdjoint (x : ℂ)) := ⟨Complex.conj_ofReal x⟩
-/-- `1 = 2 cos (π / 3)` is an admissible Jones loop parameter. -/
-theorem one_mem_jonesLoopParameters : (1 : ℝ) ∈ jonesLoopParameters :=
-  mem_jonesLoopParameters.2 <| Or.inl ⟨3, le_rfl, by rw [Nat.cast_ofNat, cos_pi_div_three]; ring⟩
-/-- `√2 = 2 cos (π / 4)` is an admissible Jones loop parameter. -/
-theorem sqrt_two_mem_jonesLoopParameters : √2 ∈ jonesLoopParameters :=
-  mem_jonesLoopParameters.2 <| Or.inl ⟨4, by omega, by rw [Nat.cast_ofNat, cos_pi_div_four]; ring⟩
-/-- `2` is an admissible Jones loop parameter. -/
-theorem two_mem_jonesLoopParameters : (2 : ℝ) ∈ jonesLoopParameters :=
-  mem_jonesLoopParameters.2 <| Or.inr le_rfl
 private theorem card_endpointWalk_pathGraph_two (n : ℕ) (v : Fin 2) :
     Fintype.card ((pathGraph 2).EndpointWalk 0 n v) = if v.val = n % 2 then 1 else 0 := by
   induction n generalizing v with

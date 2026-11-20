@@ -33,7 +33,8 @@ nonarchimedean local field, the steps of its unit filtration are read off from `
 
 * `IsDedekindDomain.HeightOneSpectrum.integer_eq_adicCompletionIntegers`: the ring of integers of
   the valuative relation is `𝒪_v`; `mem_adicCompletionIntegers_iff_valuation_le_one` is the
-  membership form, `valuation_integers_adicCompletionIntegers` packages it as
+  membership form, `isDiscreteValuationRing_integer_adicCompletion` records its unconditional
+  discrete valuation ring structure, `valuation_integers_adicCompletionIntegers` packages it as
   `Valuation.Integers`, and `mem_maximalIdeal_integer_pow_iff` reads the powers of its maximal
   ideal as valuation bounds. `isUnit_natCast_integer_adicCompletion_iff` says a natural number is
   a unit of that ring exactly when it lies outside `v`.
@@ -132,6 +133,14 @@ theorem coe_integerEquivAdicCompletionIntegers_symm (x : v.adicCompletionInteger
     ((v.integerEquivAdicCompletionIntegers (K := K)).symm x : v.adicCompletion K) =
       (x : v.adicCompletion K) := (rfl)
 
+/-- The ring of integers of the valuative relation on `K_v` is unconditionally a discrete valuation
+ring, via `integerEquivAdicCompletionIntegers` and the discrete valuation ring structure on
+`v.adicCompletionIntegers K`. -/
+instance isDiscreteValuationRing_integer_adicCompletion :
+    IsDiscreteValuationRing 𝒪[v.adicCompletion K] :=
+  IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
+    (v.integerEquivAdicCompletionIntegers (K := K)).symm
+
 /-- An element of the ring of integers of the valuative relation on `K_v` lies in the `n`-th power
 of its maximal ideal exactly when its valuation is at most `exp (-n)`. This is
 `mem_maximalIdeal_pow_iff`, read through `integerEquivAdicCompletionIntegers`. -/
@@ -161,7 +170,7 @@ which the theory of local fields consumes a ring of integers. -/
 theorem valuation_integers_adicCompletionIntegers :
     (ValuativeRel.valuation (v.adicCompletion K)).Integers (v.adicCompletionIntegers K) where
   hom_inj := Subtype.val_injective
-  map_le_one x := (v.mem_adicCompletionIntegers_iff_valuation_le_one (K := K) x.1).mp x.2
+  map_le_one x := (v.mem_adicCompletionIntegers_iff_valuation_le_one (K := K) x.val).mp x.property
   exists_of_le_one {r} hr :=
     ⟨⟨r, (v.mem_adicCompletionIntegers_iff_valuation_le_one (K := K) r).mpr hr⟩, rfl⟩
 
@@ -290,10 +299,10 @@ instance compactSpace_adicCompletionIntegers
   let f : 𝒪[v.adicCompletion K] ≃ₜ v.adicCompletionIntegers K := {
     toEquiv := (v.integerEquivAdicCompletionIntegers (K := K)).toEquiv
     continuous_toFun := continuous_induced_rng.mpr <|
-      continuous_subtype_val.congr fun x ↦
+      continuous_subtypeVal.congr fun x ↦
         (v.coe_integerEquivAdicCompletionIntegers (K := K) x).symm
     continuous_invFun := continuous_induced_rng.mpr <|
-      continuous_subtype_val.congr fun x ↦
+      continuous_subtypeVal.congr fun x ↦
         (v.coe_integerEquivAdicCompletionIntegers_symm (K := K) x).symm }
   exact f.compactSpace
 
