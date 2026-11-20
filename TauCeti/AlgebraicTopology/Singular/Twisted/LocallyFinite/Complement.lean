@@ -128,7 +128,7 @@ private def towerToRelative (n j : ℕ) :
 include hKc in
 private lemma isIso_towerToRelative (n j : ℕ) :
     IsIso (towerToRelative L hK hKA hsub hcover hzero n j) :=
-  @IsIso.comp_isIso _ _ _ _ _ _ _ (isIso_twistedHomologyMap_excisionMap L hKc hKA hsub hcover n j)
+  IsIso.comp_isIso' (isIso_twistedHomologyMap_excisionMap L hKc hKA hsub hcover n j)
     (Iso.isIso_inv _)
 
 /-- The comparisons are compatible with the transition maps of the tower. -/
@@ -137,17 +137,16 @@ private lemma homology_map_comp_towerToRelative (n j : ℕ) :
         j).map (homOfLE (Nat.le_succ n)).op ≫ towerToRelative L hK hKA hsub hcover hzero n j =
       towerToRelative L hK hKA hsub hcover hzero (n + 1) j := by
   have hKK := Set.compl_subset_compl.2 ((hsub n).trans interior_subset)
-  have h₁ := (HomologicalComplex.homologyMap_comp _ _ j).symm.trans
-    ((congrArg (HomologicalComplex.homologyMap · j)
-      (relativeChainComplexTower_map_comp_excision L hK hKA hsub hcover n)).trans
-      (HomologicalComplex.homologyMap_comp _ _ j))
   have h₂ : (TopTriple.ofSubset hKK).twistedHomologyTotalToOuter L j ≫
       (outerIso L hKA hzero n j).inv = (outerIso L hKA hzero (n + 1) j).inv :=
     (Iso.comp_inv_eq _).2 <| (Iso.eq_inv_comp _).2 <|
       TopTriple.twistedHomologyTotalToOuter_ofSubset_comp (hKA (n + 1)) hKK L j
-  unfold towerToRelative
-  exact (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _) h₁).trans <|
-    (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) h₂)
+  have h₁ := (HomologicalComplex.homologyMap_comp _ _ j).symm.trans
+    ((congrArg (HomologicalComplex.homologyMap · j)
+      (relativeChainComplexTower_map_comp_excision L hK hKA hsub hcover n)).trans
+      (HomologicalComplex.homologyMap_comp _ _ j))
+  rw [towerToRelative, towerToRelative, ← h₂]
+  exact (reassoc_of% h₁) _
 
 /-- The comparisons agree on the components of an element of the limit of the tower. -/
 private lemma towerToRelative_limπ {j : ℕ}
@@ -214,12 +213,7 @@ private lemma toTwistedHomology_bijective (j : ℕ) :
   have : Subsingleton (C.homology (j + 1)).limOne :=
     ModuleTower.subsingleton_limOne_of_surjective _ fun n ↦
       (transition_bijective L hK hKc hKA hsub hcover hzero (j + 1) n).2
-  have htoLim : Function.Bijective (borelMooreHomologyToLim (complSystem L A) KU j) := by
-    refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_,
-      borelMooreHomologyToLim_surjective (complSystem L A) KU j⟩
-    obtain ⟨a, rfl⟩ :=
-      (exact_limOneToBorelMooreHomology_borelMooreHomologyToLim (complSystem L A) KU j _).1 hx
-    rw [Subsingleton.elim a 0, map_zero]
+  have htoLim := borelMooreHomologyToLim_bijective (complSystem L A) KU j
   have hcomp : Function.Bijective
       ((towerToRelative L hK hKA hsub hcover hzero 0 j).hom ∘ₗ ModuleTower.limπ _ 0) :=
     (Function.Bijective.of_comp_iff _ hlift).1 <| by

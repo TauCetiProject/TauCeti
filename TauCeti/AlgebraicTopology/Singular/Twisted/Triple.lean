@@ -87,7 +87,7 @@ def twistedChainComplexTotalToOuter :
     TopPair.twistedChainComplexMap (totalToOuter.app T) L
 
 /-- The quotient from `(X,B)` to `(X,A)` is induced by the identity of `C(X;L)`. -/
-@[simp, reassoc]
+@[reassoc (attr := simp)]
 lemma twistedChainComplexπ_comp_totalToOuter :
     dsimp% ((totalPair.obj T).twistedChainComplexπ L ≫ T.twistedChainComplexTotalToOuter L =
       (outerPair.obj T).twistedChainComplexπ L) := by
@@ -118,7 +118,7 @@ lemma twistedChainComplexCoeff_twistedChainComplexTotalToOuter_f_apply {k : ℕ}
   rw [h, TopPair.twistedChainComplexCoeff_twistedChainComplexπ_f_apply,
     TopPair.twistedChainComplexCoeff_twistedChainComplexπ_f_apply]
 
-@[simp, reassoc]
+@[reassoc (attr := simp)]
 lemma twistedChainComplexMap_innerToTotal_comp_totalToOuter :
     TopPair.twistedChainComplexMap (innerToTotal.app T) L ≫
       T.twistedChainComplexTotalToOuter L = 0 := by
@@ -235,7 +235,7 @@ lemma twistedHomologyδ_def (n m : ℕ) (h : m + 1 = n := by lia) :
     T.twistedHomologyδ L n m h =
       (T.shortExact_twistedChainComplexShortComplex L).δ n m (by simpa) := (rfl)
 
-@[simp, reassoc]
+@[reassoc (attr := simp)]
 lemma twistedHomologyMap_innerToTotal_comp_totalToOuter (k : ℕ) :
     TopPair.twistedHomologyMap (innerToTotal.app T) L k ≫
       T.twistedHomologyTotalToOuter L k = 0 := by
@@ -256,7 +256,7 @@ lemma twistedHomologyδ_comp_assoc (n m : ℕ) (h : m + 1 = n)
       TopPair.twistedHomologyMap (innerToTotal.app T) L m ≫ f = 0 := by
   erw [← Category.assoc, T.twistedHomologyδ_comp L n m h, zero_comp]
 
-@[simp, reassoc]
+@[reassoc (attr := simp)]
 lemma comp_twistedHomologyδ (n m : ℕ) (h : m + 1 = n := by lia) :
     T.twistedHomologyTotalToOuter L n ≫ T.twistedHomologyδ L n m h = 0 :=
   (T.shortExact_twistedChainComplexShortComplex L).comp_δ n m (by simpa)
