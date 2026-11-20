@@ -42,6 +42,7 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
 * `TauCeti.abs_log_sub_le_iff`: `|log x - y| ≤ C ↔ exp (-C) * exp y ≤ x ∧ x ≤ exp C * exp y` for
   `0 < x`.
+* `TauCeti.exp_neg_le_factorial_div_pow`: `exp (-y) ≤ n! / yⁿ` for `0 < y`.
 * `TauCeti.exists_rpow_mul_exp_neg_mul_le`: `x ^ σ exp (-c x)` is bounded on `x ≥ 0`, for `0 ≤ σ`,
   `0 < c`.
 * `TauCeti.abs_exp_sub_one_le_mul_exp_abs`: `|exp t - 1| ≤ |t| exp |t|` for every real `t`.
@@ -189,6 +190,12 @@ theorem abs_log_sub_le_iff {x y C : ℝ} (hx : 0 < x) :
     |log x - y| ≤ C ↔ exp (-C) * exp y ≤ x ∧ x ≤ exp C * exp y := by
   rw [abs_le, sub_le_iff_le_add, le_sub_iff_add_le, ← exp_add, ← exp_add,
     le_log_iff_exp_le hx, log_le_iff_le_exp hx]
+
+/-- For `0 < y`, `exp (-y) ≤ n! / yⁿ`: the exponential decays faster than every power. -/
+theorem exp_neg_le_factorial_div_pow {y : ℝ} (hy : 0 < y) (n : ℕ) :
+    exp (-y) ≤ n ! / y ^ n := by
+  rw [exp_neg, ← inv_div]
+  exact inv_anti₀ (by positivity) (pow_div_factorial_le_exp y hy.le n)
 
 /-- For `0 ≤ σ` and `0 < c`, the function `x ↦ x ^ σ exp (-c x)` is bounded on `x ≥ 0`: it tends
 to `0` at infinity, and on a bounded interval `x ^ σ` is bounded. -/

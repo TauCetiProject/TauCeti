@@ -153,14 +153,8 @@ theorem integral_cpow_mul_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.
 product `Γ(s) Γ(a - s)` is integrable. -/
 theorem verticalIntegrable_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n)
     (haσ : ∀ n : ℕ, a.re - σ ≠ -n) :
-    VerticalIntegrable (fun s ↦ Gamma s * Gamma (a - s)) σ := by
-  have hsub (y : ℝ) : a - (σ + y * I) = ↑(a.re - σ) + ↑(a.im - y) * I := by
-    apply Complex.ext <;> simp
-  obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow haσ 0
-  refine (verticalIntegrable_Gamma hσ).mul_bdd (c := C) ?_
-    (Eventually.of_forall fun y ↦ by simpa [hsub] using hC (a.im - y))
-  simpa only [sub_add_eq_sub_sub] using
-    (continuous_Gamma_sub_mul_I (w := a - σ) (by simpa using haσ)).aestronglyMeasurable
+    VerticalIntegrable (fun s ↦ Gamma s * Gamma (a - s)) σ :=
+  (verticalIntegrable_Gamma hσ).mul_Gamma_comp haσ (by fun_prop) fun y ↦ by simp
 
 /-- **The Mellin–Barnes integral of `(1 + u)^{-a}`.** On every vertical line `Re s = σ` with
 `0 < σ < Re a`, Mellin inversion of `Γ(s) Γ(a - s)` gives `Γ(a) (1 + u)^{-a}` for `u > 0`:
