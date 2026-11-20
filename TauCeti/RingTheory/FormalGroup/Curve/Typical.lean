@@ -286,6 +286,12 @@ theorem isPTypical_invHom_mapCurve_iff (e : TauCeti.FormalGroupIso F G) (p : ℕ
     (e.invHom.mapCurve γ).IsPTypical p ↔ γ.IsPTypical p := by
   simpa only [TauCeti.FormalGroupIso.symm_toHom] using isPTypical_toHom_mapCurve_iff e.symm p γ
 
+/-- Transporting along the curve equivalence of a formal-group isomorphism preserves and reflects
+`p`-typicality of curves. -/
+theorem isPTypical_curveEquiv_iff (e : TauCeti.FormalGroupIso F G) (p : ℕ) (γ : F.Curve) :
+    (e.curveEquiv γ).IsPTypical p ↔ γ.IsPTypical p := by
+  rw [TauCeti.FormalGroupIso.curveEquiv_apply, isPTypical_toHom_mapCurve_iff]
+
 /-- On the additive formal group law over any commutative ring, a curve `γ` is `p`-typical if and
 only if `(q : R) * PowerSeries.coeff k γ.toPowerSeries = 0` for every prime `q ≠ p` and every
 nonzero multiple `k` of `q`. -/
@@ -733,6 +739,35 @@ theorem coeff_pTypicalProjectorCurve_𝔾ₐ_pow {p : ℕ} (hp : p.Prime)
   rintro ⟨q, hq, hqp, hqk⟩
   exact hp.forall_prime_ne_not_dvd_iff_exists_pow_eq.mpr ⟨n, rfl⟩ q hq hqp hqk
 
+/-- On the additive formal group law, Cartier's `p`-typicalization projector deletes every
+coefficient whose degree is divisible by a prime `q ≠ p`. -/
+theorem coeff_pTypicalProjectorCurve_𝔾ₐ_eq_zero_of_dvd (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {q k : ℕ} (hq : q.Prime) (hqp : q ≠ p)
+    (hqk : q ∣ k) (γ : (𝔾ₐ (R := R)).Curve) :
+    PowerSeries.coeff k ((𝔾ₐ (R := R)).pTypicalProjectorCurve p hunit γ).toPowerSeries = 0 := by
+  rw [coeff_pTypicalProjectorCurve_𝔾ₐ, ite_eq_left ⟨q, hq, hqp, hqk⟩]
+
+/-- On the additive formal group law, Cartier's `p`-typicalization projector preserves every
+coefficient whose degree has no prime factor distinct from `p`. -/
+theorem coeff_pTypicalProjectorCurve_𝔾ₐ_of_forall_not_dvd (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {k : ℕ}
+    (hk : ∀ q : ℕ, q.Prime → q ≠ p → ¬ q ∣ k) (γ : (𝔾ₐ (R := R)).Curve) :
+    PowerSeries.coeff k ((𝔾ₐ (R := R)).pTypicalProjectorCurve p hunit γ).toPowerSeries =
+      PowerSeries.coeff k γ.toPowerSeries := by
+  rw [coeff_pTypicalProjectorCurve_𝔾ₐ, ite_eq_right fun ⟨q, hq, hqp, hqk⟩ ↦ hk q hq hqp hqk]
+
+/-- On the additive formal group law and for `p` prime, Cartier's `p`-typicalization projector
+keeps precisely the coefficients in the degrees `p^n` and deletes all others. -/
+theorem coeff_pTypicalProjectorCurve_𝔾ₐ_of_prime {p : ℕ} (hp : p.Prime)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (k : ℕ) (γ : (𝔾ₐ (R := R)).Curve) :
+    PowerSeries.coeff k ((𝔾ₐ (R := R)).pTypicalProjectorCurve p hunit γ).toPowerSeries =
+      if p ^ Nat.log p k = k then PowerSeries.coeff k γ.toPowerSeries else 0 := by
+  split_ifs with hpow
+  · exact coeff_pTypicalProjectorCurve_𝔾ₐ_of_forall_not_dvd p hunit
+      (hp.forall_prime_ne_not_dvd_iff_exists_pow_eq.mpr ⟨Nat.log p k, hpow⟩) γ
+  · exact coeff_pTypicalProjectorCurve_𝔾ₐ_eq_zero p hunit
+      (fun n hn ↦ hpow (by rw [← hn, Nat.log_pow hp.one_lt])) γ
+
 open scoped Classical in
 /-- Over a `ℚ`-algebra, Cartier's `p`-typicalization projector acts on the formal logarithm by
 deleting precisely the degrees divisible by a prime `q ≠ p`. -/
@@ -778,6 +813,35 @@ theorem coeff_pow_subst_pTypicalProjectorCurve_log [Algebra ℚ R] {p : ℕ} (hp
       PowerSeries.coeff (p ^ n) (PowerSeries.subst γ.toPowerSeries F.log) := by
   rw [F.coeff_subst_pTypicalProjectorCurve_log_of_prime hp hunit (p ^ n) γ,
     ite_eq_left (by rw [Nat.log_pow hp.one_lt])]
+
+/-- Over a `ℚ`-algebra, the formal logarithm turns Cartier's `p`-typicalization projector on `F`
+into Cartier's `p`-typicalization projector on `𝔾ₐ`. -/
+theorem subst_pTypicalProjectorCurve_log [Algebra ℚ R] (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (γ : F.Curve) :
+    PowerSeries.subst (F.pTypicalProjectorCurve p hunit γ).toPowerSeries F.log =
+      ((𝔾ₐ (R := R)).pTypicalProjectorCurve p hunit (F.logHom.mapCurve γ)).toPowerSeries := by
+  simpa only [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, logHom_toPowerSeries] using
+    congrArg Curve.toPowerSeries (F.logHom.mapCurve_pTypicalProjectorCurve p hunit γ)
+
+/-- Over a `ℚ`-algebra, Cartier's `p`-typicalization projector deletes from `log_F(γ(T))` every
+degree divisible by a prime `q ≠ p`. -/
+theorem coeff_subst_pTypicalProjectorCurve_log_eq_zero_of_dvd [Algebra ℚ R] (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {q k : ℕ} (hq : q.Prime) (hqp : q ≠ p)
+    (hqk : q ∣ k) (γ : F.Curve) :
+    PowerSeries.coeff k
+      (PowerSeries.subst (F.pTypicalProjectorCurve p hunit γ).toPowerSeries F.log) = 0 := by
+  rw [F.coeff_subst_pTypicalProjectorCurve_log p hunit k γ, ite_eq_left ⟨q, hq, hqp, hqk⟩]
+
+/-- Over a `ℚ`-algebra, Cartier's `p`-typicalization projector preserves every coefficient of
+`log_F(γ(T))` whose degree has no prime factor distinct from `p`. -/
+theorem coeff_subst_pTypicalProjectorCurve_log_of_forall_not_dvd [Algebra ℚ R] (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {k : ℕ}
+    (hk : ∀ q : ℕ, q.Prime → q ≠ p → ¬ q ∣ k) (γ : F.Curve) :
+    PowerSeries.coeff k
+      (PowerSeries.subst (F.pTypicalProjectorCurve p hunit γ).toPowerSeries F.log) =
+      PowerSeries.coeff k (PowerSeries.subst γ.toPowerSeries F.log) := by
+  rw [F.coeff_subst_pTypicalProjectorCurve_log p hunit k γ,
+    ite_eq_right fun ⟨q, hq, hqp, hqk⟩ ↦ hk q hq hqp hqk]
 
 /-- Every prime Frobenius operator `f_q` with `q ≠ p` kills the image of Cartier's
 `p`-typicalization projector. -/
@@ -947,6 +1011,48 @@ theorem cartierProjectorCurve_pTypicalProjectorCurve (p : ℕ)
     (fun G _ _ _ φ δ ↦ by rw [G.map_pTypicalProjectorCurve, G.map_cartierProjectorCurve])
     (fun _ f δ ↦ by rw [f.mapCurve_cartierProjectorCurve, f.mapCurve_pTypicalProjectorCurve])
     (fun _ f δ ↦ by rw [f.mapCurve_pTypicalProjectorCurve, f.mapCurve_cartierProjectorCurve])
+
+/-- Every elementary Cartier projector `1 - V_n [n]⁻¹ f_n` whose index `n ≠ 0` is divisible by a
+prime `q ≠ p` fixes the image of Cartier's `p`-typicalization projector. -/
+theorem cartierProjectorCurve_pTypicalProjectorCurve_of_dvd (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {q n : ℕ} (hq : q.Prime) (hqp : q ≠ p)
+    (hqn : q ∣ n) (hn : n ≠ 0) (hn_unit : IsUnit (n : R)) (γ : F.Curve) :
+    F.cartierProjectorCurve n hn hn_unit (F.pTypicalProjectorCurve p hunit γ) =
+      F.pTypicalProjectorCurve p hunit γ :=
+  F.cartierProjectorCurve_eq_self n hn hn_unit
+    ((F.isPTypical_pTypicalProjectorCurve p hunit γ).frobeniusCurve_eq_zero_of_dvd hq hqp hqn hn)
+
+/-- For every prime `q ≠ p`, the elementary Cartier projector at `q` fixes the image of Cartier's
+`p`-typicalization projector. -/
+@[simp]
+theorem cartierProjectorCurve_pTypicalProjectorCurve_of_prime (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {q : ℕ} (hq : q.Prime) (hqp : q ≠ p)
+    (hq_unit : IsUnit (q : R)) (γ : F.Curve) :
+    F.cartierProjectorCurve q hq.ne_zero hq_unit (F.pTypicalProjectorCurve p hunit γ) =
+      F.pTypicalProjectorCurve p hunit γ :=
+  F.cartierProjectorCurve_pTypicalProjectorCurve_of_dvd p hunit hq hqp dvd_rfl hq.ne_zero
+    hq_unit γ
+
+/-- Cartier's `p`-typicalization projector absorbs every precomposed elementary Cartier projector
+whose index `n ≠ 0` is divisible by a prime `q ≠ p`. -/
+theorem pTypicalProjectorCurve_cartierProjectorCurve_of_dvd (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {q n : ℕ} (hq : q.Prime) (hqp : q ≠ p)
+    (hqn : q ∣ n) (hn : n ≠ 0) (hn_unit : IsUnit (n : R)) (γ : F.Curve) :
+    F.pTypicalProjectorCurve p hunit (F.cartierProjectorCurve n hn hn_unit γ) =
+      F.pTypicalProjectorCurve p hunit γ := by
+  rw [cartierProjectorCurve_apply, map_sub,
+    F.pTypicalProjectorCurve_verschiebungCurve_of_dvd p hunit hq hqp hqn hn, sub_zero]
+
+/-- For every prime `q ≠ p`, Cartier's `p`-typicalization projector absorbs the precomposed
+elementary Cartier projector at `q`. -/
+@[simp]
+theorem pTypicalProjectorCurve_cartierProjectorCurve_of_prime (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) {q : ℕ} (hq : q.Prime) (hqp : q ≠ p)
+    (hq_unit : IsUnit (q : R)) (γ : F.Curve) :
+    F.pTypicalProjectorCurve p hunit (F.cartierProjectorCurve q hq.ne_zero hq_unit γ) =
+      F.pTypicalProjectorCurve p hunit γ :=
+  F.pTypicalProjectorCurve_cartierProjectorCurve_of_dvd p hunit hq hqp dvd_rfl hq.ne_zero
+    hq_unit γ
 
 /-- Frobenius `f_m` commutes with Cartier's `p`-typicalization projector whenever `m ≠ 0` is
 coprime to every prime `q ≠ p`. -/

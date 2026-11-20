@@ -618,8 +618,8 @@ private theorem restrictScalars_le_rayClassFieldOver_iff
     F.restrictScalars K ≤ rayClassFieldOver K 𝔪 ↔ F.map e.toAlgHom ≤ rayClassField 𝔪 := by
   rw [rayClassFieldOver_eq_map K 𝔪 e, IntermediateField.restrictScalars_le_iff K]
   exact ⟨fun h ↦ (IntermediateField.map_mono e.toAlgHom h).trans_eq
-      (IntermediateField.map_map_symm e (rayClassField 𝔪)),
-    fun h ↦ (IntermediateField.map_symm_map e F).symm.trans_le
+      (IntermediateField.map_map_symm e.symm (rayClassField 𝔪)),
+    fun h ↦ (IntermediateField.map_map_symm e F).symm.trans_le
       (IntermediateField.map_mono e.symm.toAlgHom h)⟩
 
 private theorem rayClassFieldOver_le_restrictScalars_iff
@@ -627,10 +627,10 @@ private theorem rayClassFieldOver_le_restrictScalars_iff
     (e : SeparableClosure K ≃ₐ[L] SeparableClosure L) :
     rayClassFieldOver K 𝔪 ≤ F.restrictScalars K ↔ rayClassField 𝔪 ≤ F.map e.toAlgHom := by
   rw [rayClassFieldOver_eq_map K 𝔪 e, IntermediateField.restrictScalars_le_iff K]
-  exact ⟨fun h ↦ (IntermediateField.map_map_symm e (rayClassField 𝔪)).symm.trans_le
+  exact ⟨fun h ↦ (IntermediateField.map_map_symm e.symm (rayClassField 𝔪)).symm.trans_le
       (IntermediateField.map_mono e.toAlgHom h),
     fun h ↦ (IntermediateField.map_mono e.symm.toAlgHom h).trans_eq
-      (IntermediateField.map_symm_map e F)⟩
+      (IntermediateField.map_map_symm e F)⟩
 
 /-- **Universal property of `rayClassFieldOver K 𝔪`**: for a finite abelian extension `M/L` and any
 `L`-embedding `ι : M →ₐ[L] SeparableClosure K`, `𝔪` is admissible for `M/L` if and only if the
@@ -668,7 +668,9 @@ theorem rayClassFieldOver_le_rayClassFieldOver_iff {𝔫 : Modulus L} :
   have := TauCeti.isSepClosure_tower_top K L (SeparableClosure K)
   let e := IsSepClosure.equiv L (SeparableClosure K) (SeparableClosure L)
   rw [rayClassFieldOver_eq_map K 𝔪 e, restrictScalars_le_rayClassFieldOver_iff K 𝔫 _ e,
-    IntermediateField.map_map_symm e (rayClassField 𝔪), rayClassField_le_rayClassField_iff]
+    show ((rayClassField 𝔪).map e.symm.toAlgHom).map e.toAlgHom = rayClassField 𝔪 from
+      IntermediateField.map_map_symm e.symm _,
+    rayClassField_le_rayClassField_iff]
 
 variable {K 𝔪} in
 /-- **Relative ray class fields grow with the modulus**: if `𝔪 ∣ 𝔫`, then

@@ -192,6 +192,13 @@ theorem coe_binaryFormMonomialBasis {R : Type*} [CommSemiring R] {w : ℕ} (j : 
   simp only [coe_finsuppDegreeFinTwoEquiv_symm, X_pow_eq_monomial, monomial_mul_monomial,
     one_mul]
 
+/-- The coordinate of a binary form on `Xʲ Yʷ⁻ʲ` in the monomial basis is its coefficient. -/
+theorem binaryFormMonomialBasis_repr_apply {R : Type*} [CommSemiring R] {w : ℕ}
+    (P : homogeneousSubmodule (Fin 2) R w) (j : Fin (w + 1)) :
+    (binaryFormMonomialBasis R w).repr P j =
+      (P : MvPolynomial (Fin 2) R).coeff (Finsupp.single 0 (j : ℕ) + Finsupp.single 1 (w - j)) := by
+  simp [binaryFormMonomialBasis]
+
 /-- Changing coefficients sends the monomial basis to the monomial basis. -/
 @[simp]
 theorem mapHomogeneousSubmodule_binaryFormMonomialBasis {S R : Type*} [CommSemiring S]
@@ -333,8 +340,7 @@ theorem binaryFormRep_binaryFormDual (M : Matrix (Fin 2) (Fin 2) ℤ)
       ext j
       have hrepr : (binaryFormMonomialBasis R w).repr (mapHomogeneousSubmodule f w P) j =
           f ((binaryFormMonomialBasis A w).repr P j) := by
-        simp [binaryFormMonomialBasis, homogeneousMonomialBasis_repr_apply,
-          MvPolynomial.coeff_map]
+        simp [binaryFormMonomialBasis_repr_apply, MvPolynomial.coeff_map]
       rw [hrepr]
       simp [Finsupp.single_apply]
     rw [hmap, map_sum]

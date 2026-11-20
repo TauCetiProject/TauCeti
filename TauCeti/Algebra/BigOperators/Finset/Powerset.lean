@@ -10,7 +10,10 @@ public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Finset.NoncommProd
 public import Mathlib.Data.Finset.Powerset
+public import Mathlib.Data.Nat.Choose.Basic
 public import TauCeti.Algebra.GroupWithZero.Indicator
+
+import Mathlib.Data.Nat.Choose.Sum
 
 /-!
 # Splitting products and sums over the subsets of a finite set
@@ -41,6 +44,11 @@ which commutes pairwise everywhere.
   over the `n + 1`-element subsets when an index is added to `s`, and
   `Finset.sum_noncommProd_powersetCard_succ_insert_of_pairwise_commute`, the same recursion as
   sums over `powersetCard` for a family commuting pairwise everywhere.
+* `Finset.sum_powerset_filter_card`: a sum over the subsets of `s` with cardinality in a given set,
+  of a function of the cardinality, grouped by cardinality.
+* `TauCeti.exists_minimal_subprod_eq_one`, `TauCeti.exists_minimal_vanishing_subsum`: a trivial
+  product with a nontrivial factor has a minimal trivial subproduct with at least two factors, and
+  likewise for sums.
 -/
 
 public section
@@ -111,11 +119,20 @@ theorem sum_noncommProd_powersetCard_succ_insert {ι R : Type*} [Semiring R] [De
   exact sum_noncommProd_powersetCard_succ_insert_of_pairwise_commute ha _
     hc.pairwise_commute_indicator n
 
+/-- A sum over the subsets of `s` whose cardinality satisfies `p`, of a function of the
+cardinality, grouped by cardinality. -/
+theorem sum_powerset_filter_card {ι M : Type*} [AddCommMonoid M] (s : Finset ι) (p : ℕ → Prop)
+    [DecidablePred p] (g : ℕ → M) :
+    ∑ I ∈ s.powerset with p #I, g #I = ∑ m ∈ range (#s + 1) with p m, (#s).choose m • g m := by
+  rw [sum_filter, sum_powerset_apply_card fun m ↦ if p m then g m else 0, sum_filter]
+  simp_rw [smul_ite, nsmul_zero]
+
 end Finset
 
 namespace TauCeti
 
 open Finset
+open scoped Finset
 
 /-- **A product over the subsets of a finite set `s` with at least two elements splits into four
 parts**: the empty set, the singletons, the subsets with at least two elements other than `s`, and
@@ -145,5 +162,33 @@ theorem prod_powerset_eq_mul_prod_singleton_mul_prod_filter_mul {α M : Type*} [
     grind
   rw [hsing, hbig, prod_image fun _ _ _ _ h ↦ singleton_inj.1 h]
   ac_rfl
+
+/-- A product `∏ i ∈ s, fᵢ = 1` with a factor `fᵢ ≠ 1` has a minimal trivial subproduct with at
+least two factors: an index set `I ⊆ s` with `∏ i ∈ I, fᵢ = 1` such that no nonempty proper subset
+of `I` has trivial product. -/
+@[to_additive exists_minimal_vanishing_subsum /-- A sum `∑ i ∈ s, fᵢ = 0` with a nonzero term has a
+minimal vanishing subsum with at least two terms: an index set `I ⊆ s` with `∑ i ∈ I, fᵢ = 0` such
+that no nonempty proper subset of `I` has vanishing sum. Applied to a linear relation
+`∑ cᵢxᵢ = 0` among the unknowns of a unit equation, it yields a nondegenerate homogeneous solution
+on a subset `I` of at least two of the unknowns; dividing by one of its terms then gives a
+nondegenerate solution of an equation in `|I| - 1` unknowns. -/]
+theorem exists_minimal_subprod_eq_one {ι M : Type*} [CommMonoid M] {s : Finset ι} {f : ι → M}
+    (h : ∏ i ∈ s, f i = 1) (hf : ∃ i ∈ s, f i ≠ 1) :
+    ∃ I ⊆ s, 2 ≤ #I ∧ ∏ i ∈ I, f i = 1 ∧ ∀ J ⊂ I, J.Nonempty → ∏ i ∈ J, f i ≠ 1 := by
+  classical
+  -- Choose `I` of least cardinality among the nonempty trivial subproducts of nontrivial factors.
+  let t := s.filter (f · ≠ 1)
+  let F := t.powerset.filter fun J ↦ J.Nonempty ∧ ∏ i ∈ J, f i = 1
+  have htF : t ∈ F := by
+    obtain ⟨i, hi, hfi⟩ := hf
+    exact mem_filter.mpr ⟨mem_powerset_self t, ⟨i, mem_filter.mpr ⟨hi, hfi⟩⟩,
+      by rw [prod_filter_ne_one, h]⟩
+  obtain ⟨I, hIF, hImin⟩ := F.exists_min_image card ⟨t, htF⟩
+  obtain ⟨hIt, hIne, hI1⟩ : I ⊆ t ∧ I.Nonempty ∧ ∏ i ∈ I, f i = 1 := by simpa [F] using hIF
+  refine ⟨I, hIt.trans (filter_subset _ s), ?_, hI1, fun J hJI hJ hJ1 ↦ ?_⟩
+  · by_contra! hI
+    obtain ⟨i, rfl⟩ := card_eq_one.mp (le_antisymm (Nat.lt_succ_iff.mp hI) hIne.card_pos)
+    exact (mem_filter.mp (hIt (mem_singleton_self i))).2 (by simpa using hI1)
+  · exact (card_lt_card hJI).not_ge (hImin J (by simpa [F, hJ, hJ1] using hJI.subset.trans hIt))
 
 end TauCeti
