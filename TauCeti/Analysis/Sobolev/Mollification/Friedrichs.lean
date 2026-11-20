@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.BumpFunction.Rescale
 public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 public import TauCeti.Analysis.Convolution.Commutator
 public import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.Analysis.Normed.Lp.SmoothApprox
 
 /-!
@@ -128,12 +129,6 @@ private theorem continuous_fderiv_apply (hρ : ContDiff ℝ 1 ρ) (v : E) :
     Continuous fun t ↦ fderiv ℝ ρ t v :=
   (hρ.continuous_fderiv one_ne_zero).clm_apply continuous_const
 
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- The directional derivative `∂ᵥ ρ` of a compactly supported kernel is compactly supported. -/
-private theorem hasCompactSupport_fderiv_apply (hρc : HasCompactSupport ρ) (v : E) :
-    HasCompactSupport fun t ↦ fderiv ℝ ρ t v :=
-  (hρc.fderiv (𝕜 := ℝ)).comp_left (g := fun A : E →L[ℝ] ℝ ↦ A v) (zero_apply v)
-
 omit [FiniteDimensional ℝ E] [CompleteSpace F] [CompleteSpace F'] in
 /-- The integrand of the commutator is integrable. -/
 private theorem integrable_sub_apply_smul (hρc : HasCompactSupport ρ) (hρ : ContDiff ℝ 1 ρ)
@@ -141,26 +136,12 @@ private theorem integrable_sub_apply_smul (hρc : HasCompactSupport ρ) (hρ : C
     Integrable (fun t ↦ (a (x - t) - a x) (fderiv ℝ ρ t v • g (x - t))) μ := by
   -- The integrand is the operator kernel `t ↦ ∂ᵥ ρ t • (a (x - t) - a x)` applied to `g (x - t)`.
   have hk : HasCompactSupport fun t ↦ fderiv ℝ ρ t v • (a (x - t) - a x) :=
-    (hasCompactSupport_fderiv_apply hρc v).smul_right
+    (hρc.fderiv_apply (𝕜 := ℝ) v).smul_right
   have hkc : Continuous fun t ↦ fderiv ℝ ρ t v • (a (x - t) - a x) :=
     (continuous_fderiv_apply hρ v).smul
       ((ha.comp (continuous_const.sub continuous_id)).sub continuous_const)
   simpa [map_smul] using
     (hk.convolutionExists_left (ContinuousLinearMap.id ℝ (F →L[ℝ] F')) hkc hg x).integrable
-
-omit [μ.IsAddHaarMeasure] [μ.IsNegInvariant] [CompleteSpace F] [CompleteSpace F'] in
-/-- A continuous operator field applied to a locally integrable function is locally integrable,
-since the field is bounded on compact sets. -/
-private theorem locallyIntegrable_apply {b : E → F →L[ℝ] F'}
-    (hb : Continuous b) (hg : LocallyIntegrable g μ) :
-    LocallyIntegrable (fun y ↦ b y (g y)) μ := by
-  refine locallyIntegrable_iff.2 fun K hK ↦ ?_
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hb.continuousOn
-  refine Integrable.mono' ((hg.integrableOn_isCompact hK).norm.const_mul C)
-    ((ContinuousLinearMap.id ℝ (F →L[ℝ] F')).aestronglyMeasurable_comp₂
-      hb.aestronglyMeasurable hg.aestronglyMeasurable).restrict ?_
-  filter_upwards [ae_restrict_mem hK.measurableSet] with y hy
-  exact (le_opNorm _ _).trans (mul_le_mul_of_nonneg_right (hC y hy) (norm_nonneg _))
 
 /-- **The commutator of a mollifier with `a ∂ᵥ` is a single integral.** For a `C¹` compactly
 supported kernel `ρ`, a continuous operator field `a` and a locally integrable `g`,
@@ -168,10 +149,12 @@ supported kernel `ρ`, a continuous operator field `a` and a locally integrable 
 theorem mollifierCommutator_eq_integral (hρc : HasCompactSupport ρ) (hρ : ContDiff ℝ 1 ρ)
     (ha : Continuous a) (hg : LocallyIntegrable g μ) (v x : E) :
     mollifierCommutator μ ρ a v g x = ∫ t, (a (x - t) - a x) (fderiv ℝ ρ t v • g (x - t)) ∂μ := by
-  have hag := locallyIntegrable_apply ha hg
-  have h₁ := ((hasCompactSupport_fderiv_apply hρc v).convolutionExists_left (lsmul ℝ ℝ)
+  have hag : LocallyIntegrable (fun y ↦ a y (g y)) μ := locallyIntegrableOn_univ.1
+    ((locallyIntegrableOn_univ.2 hg).continuousOn_clm_apply isOpen_univ.isLocallyClosed
+      ha.continuousOn)
+  have h₁ := ((hρc.fderiv_apply (𝕜 := ℝ) v).convolutionExists_left (lsmul ℝ ℝ)
     (continuous_fderiv_apply hρ v) hag x).integrable
-  have h₂ := ((hasCompactSupport_fderiv_apply hρc v).convolutionExists_left (lsmul ℝ ℝ)
+  have h₂ := ((hρc.fderiv_apply (𝕜 := ℝ) v).convolutionExists_left (lsmul ℝ ℝ)
     (continuous_fderiv_apply hρ v) hg x).integrable
   rw [mollifierCommutator_apply, hρc.fderiv_convolution_left_apply _ hρ hag,
     hρc.fderiv_convolution_left_apply _ hρ hg, convolution_def, convolution_def,
@@ -276,10 +259,8 @@ private theorem tendsto_eLpNorm_mollifierCommutator_sub_of_hasCompactSupport {p 
   have hDc : Continuous D :=
     ((ha.clm_apply hh).continuous_fderiv one_ne_zero).clm_apply continuous_const
   have hDhc : Continuous Dh := (hh.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  have hDs : HasCompactSupport D :=
-    (hahc.fderiv (𝕜 := ℝ)).comp_left (g := fun A : E →L[ℝ] F' ↦ A v) (zero_apply v)
-  have hDhs : HasCompactSupport Dh :=
-    (hhc.fderiv (𝕜 := ℝ)).comp_left (g := fun A : E →L[ℝ] F ↦ A v) (zero_apply v)
+  have hDs : HasCompactSupport D := hahc.fderiv_apply (𝕜 := ℝ) v
+  have hDhs : HasCompactSupport Dh := hhc.fderiv_apply (𝕜 := ℝ) v
   -- The product rule `∂ᵥ (a h) = (∂ᵥ a) h + a ∂ᵥ h`.
   have hD (y : E) : D y = fderiv ℝ a y v (h y) + a y (Dh y) := by
     simp only [D, Dh]
@@ -312,7 +293,7 @@ private theorem lintegral_eNorm_mul_eNorm_fderiv_apply_ne_top [IsFiniteMeasureOn
   have hc : Continuous fun t : E ↦ ‖t‖ * fderiv ℝ ρ t v :=
     continuous_norm.mul (continuous_fderiv_apply hρ v)
   have hs : HasCompactSupport fun t : E ↦ ‖t‖ * fderiv ℝ ρ t v :=
-    (hasCompactSupport_fderiv_apply hρc v).mul_left
+    (hρc.fderiv_apply (𝕜 := ℝ) v).mul_left
   simpa [HasFiniteIntegral, eNorm_mul] using
     (hc.integrable_of_hasCompactSupport hs (μ := μ)).hasFiniteIntegral.ne
 
@@ -412,9 +393,14 @@ private theorem sum_apply_fderiv_convolution_eq {ρ : E → ℝ} (hρc : HasComp
   have hint {k : E → ℝ} {u : E → F'} (hkc : HasCompactSupport k) (hk : Continuous k)
       (hu : LocallyIntegrable u μ) : Integrable (fun y ↦ k (x - y) • u y) μ := by
     simpa using ((hkc.convolutionExists_left (lsmul ℝ ℝ) hk hu x).integrable).comp_sub_left x
-  have hagj (j : ι') (hj : j ∈ s) := locallyIntegrable_apply (ha j hj).continuous hg
-  have hGj (j : ι') (hj : j ∈ s) := locallyIntegrable_apply (b := fun y ↦ fderiv ℝ (a j) y (w j))
-    (((ha j hj).continuous_fderiv one_ne_zero).clm_apply continuous_const) hg
+  have hagj (j : ι') (hj : j ∈ s) : LocallyIntegrable (fun y ↦ a j y (g y)) μ :=
+    locallyIntegrableOn_univ.1 ((locallyIntegrableOn_univ.2 hg).continuousOn_clm_apply
+      isOpen_univ.isLocallyClosed (ha j hj).continuous.continuousOn)
+  have hGj (j : ι') (hj : j ∈ s) :
+      LocallyIntegrable (fun y ↦ fderiv ℝ (a j) y (w j) (g y)) μ :=
+    locallyIntegrableOn_univ.1 ((locallyIntegrableOn_univ.2 hg).continuousOn_clm_apply
+      isOpen_univ.isLocallyClosed
+      (((ha j hj).continuous_fderiv one_ne_zero).clm_apply continuous_const).continuousOn)
   -- The derivative of the test function is `-∂ρ (x - ·)`.
   have hdψ (y u : E) : fderiv ℝ (fun y ↦ ρ (x - y)) y u = -fderiv ℝ ρ (x - y) u := by
     have hd : HasFDerivAt (fun y ↦ ρ (x - y))
@@ -429,7 +415,7 @@ private theorem sum_apply_fderiv_convolution_eq {ρ : E → ℝ} (hρc : HasComp
   rw [Finset.sum_congr rfl fun j hj ↦ integral_add
     (f := fun y ↦ -(fderiv ℝ ρ (x - y) (w j) • a j y (g y)))
     (g := fun y ↦ ρ (x - y) • fderiv ℝ (a j) y (w j) (g y))
-    (hint (hasCompactSupport_fderiv_apply hρc (w j)) (continuous_fderiv_apply hρ1 (w j))
+    (hint (hρc.fderiv_apply (𝕜 := ℝ) (w j)) (continuous_fderiv_apply hρ1 (w j))
       (hagj j hj)).neg (hint hρc hρ1.continuous (hGj j hj))] at hw
   -- So `∑ⱼ ∂_{wⱼ} (ρ ⋆ aⱼ g) = ρ ⋆ f + ∑ⱼ ρ ⋆ (∂_{wⱼ} aⱼ) g` at `x`.
   have h3 : ∑ j ∈ s, fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, μ] fun y ↦ a j y (g y)) x (w j) =
