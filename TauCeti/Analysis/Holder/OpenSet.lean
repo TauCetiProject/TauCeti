@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Topology.Sets.Opens
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.UniformLimitsDeriv
+import TauCeti.Analysis.Holder.IsBigO
 import TauCeti.Analysis.Holder.JetBounds
 import TauCeti.Analysis.Holder.MeanValue
 
@@ -58,6 +59,9 @@ completeness.
   derivative field of order `k` is constant, and `C^{0,α}(Ω)` consists of constants. The space is
   not wrong for `α > 1` but degenerate, which is why the exponents of interest lie in `(0, 1]`.
 * `TauCeti.CkHolderSpaceOn.instCompleteSpace`: completeness when the codomain is complete.
+* `TauCeti.CkHolderSpaceOn.exists_apply_eq_of_contDiffOn_of_isCompact`: for `α ≤ 1`, a function
+  that is `C^{k+1}` on a neighbourhood of a compact set containing `Ω` defines an element of
+  `C^{k,α}(Ω)`.
 * `TauCeti.CkHolderSpaceOn.restrictL`: restriction to a smaller open set, of operator norm at
   most one, and `TauCeti.CkHolderSpace.restrictOnL`: restriction of a bounded `C^{k,α}` map on the
   whole space to an open set, also of operator norm at most one.
@@ -716,6 +720,15 @@ def toBoundedContinuousFunctionCLM : CkHolderSpaceOn k α Ω F →L[ℝ] (Ω →
 theorem toBoundedContinuousFunctionCLM_apply (f : CkHolderSpaceOn k α Ω F) :
     toBoundedContinuousFunctionCLM f = f.toBoundedContinuousFunction := (rfl)
 
+/-- Evaluating the extension by zero at a point of `Ω` is continuous on `C^{k,α}(Ω)`. -/
+theorem continuous_extend_apply {x : E} (hx : x ∈ Ω) :
+    Continuous fun f : CkHolderSpaceOn k α Ω F ↦ f.extend x := by
+  have h := (BoundedContinuousFunction.evalCLM ℝ (⟨x, hx⟩ : Ω)).continuous.comp
+    (toBoundedContinuousFunctionCLM (k := k) (α := α) (F := F)).continuous
+  convert h using 2 with f
+  rw [Function.comp_apply, toBoundedContinuousFunctionCLM_apply,
+    BoundedContinuousFunction.evalCLM_apply, coe_toBoundedContinuousFunction, ← extend_apply]
+
 /-- Forgetting the derivatives has operator norm at most one. -/
 theorem norm_toBoundedContinuousFunctionCLM_le_one :
     ‖toBoundedContinuousFunctionCLM (k := k) (α := α) (Ω := Ω) (F := F)‖ ≤ 1 :=
@@ -966,6 +979,31 @@ theorem norm_inclusionSuccL_le (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1
   LinearMap.mkContinuous_norm_le _ zero_le_three _
 
 end inclusionSucc
+
+section isCompact
+
+/-- **`C^{k+1}` functions near a compact set are `C^{k,α}`.** For `α ≤ 1`, a function that is
+`C^{k+1}` on an open set `U` containing a compact set `K` defines an element of `C^{k,α}(Ω)` for
+every open `Ω ⊆ K`: its derivatives through order `k` are bounded on `K`, and its `k`-th
+derivative is `α`-Hölder on `K`. -/
+theorem exists_apply_eq_of_contDiffOn_of_isCompact {g : E → F} {U K : Set E} (hU : IsOpen U)
+    (hg : ContDiffOn ℝ (k + 1) g U) (hK : IsCompact K) (hKU : K ⊆ U) (hΩK : (Ω : Set E) ⊆ K)
+    (hα : α ≤ 1) : ∃ f : CkHolderSpaceOn k α Ω F, ∀ x : Ω, f x = g x := by
+  have hbdd : ∀ i ≤ k, ∃ C, ∀ x : Ω, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C := fun i hi ↦ by
+    obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn
+      ((ContinuousOn.continuousOn_iteratedFDeriv hg hU (by exact_mod_cast hi.trans k.le_succ)).mono
+        hKU)
+    exact ⟨C, fun x ↦ hC x (hΩK x.property)⟩
+  -- Near each point of `K` the `k`-th derivative is `C¹`, hence `α`-Hölder on a ball.
+  obtain ⟨δ, hδ, L, -, hL, -⟩ := hK.exists_holderOnWith_thickening_and_norm_le fun x hx ↦
+    (((hg.contDiffAt (hU.mem_nhds (hKU hx))).iteratedFDeriv_right (m := 1) (i := k)
+      (by rw [add_comm])).isBigO_sub_dist_rpow one_ne_zero hα).exists_holderOnWith_ball
+  have hholder : MemHolder α fun x : Ω ↦ _root_.iteratedFDeriv ℝ k g x :=
+    ⟨L, (hL.mono (hΩK.trans (Metric.self_subset_thickening hδ K))).holderWith⟩
+  exact ⟨ofContDiffOn g ((hg.mono (hΩK.trans hKU)).of_le (by exact_mod_cast k.le_succ)) hbdd
+    hholder, ofContDiffOn_apply g _ hbdd hholder⟩
+
+end isCompact
 
 end CkHolderSpaceOn
 
