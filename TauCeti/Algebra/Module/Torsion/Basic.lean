@@ -35,7 +35,7 @@ inside the `b`-torsion subgroup is the ambient `a`-torsion subgroup, and for a s
 commutative semiring the `a`-torsion submodule is the kernel of left scalar multiplication
 `LinearMap.lsmul R M a`. Linear maps send torsion elements to torsion elements, so submodules and
 linear images of torsion modules are torsion, and the torsion submodule of `M × N` is the product
-of the torsion submodules.
+of the torsion submodules. A linear map into a torsion-free module vanishes on the torsion.
 
 ## Main definitions
 
@@ -56,11 +56,18 @@ of the torsion submodules.
 * `TauCeti.Submodule.comap_torsion_of_comp_eq_smul`: a linear map with a left inverse up to a
   nonzerodivisor reflects torsion.
 * `LinearMap.le_comap_torsion`: a linear map sends torsion elements to torsion elements.
+* `LinearMap.torsion_le_ker`: a linear map into a torsion-free module vanishes on the torsion
+  submodule.
 * `TauCeti.Submodule.prodMk_mem_torsion`: a pair of torsion elements is torsion.
 * `Module.IsTorsion.of_injective`, `Module.IsTorsion.of_surjective`, `Module.IsTorsion.prod`:
   submodules, linear images and products of torsion modules are torsion.
+* `LinearEquiv.isTorsion'_iff`: being `S`-torsion is invariant under linear equivalences.
 * `Submodule.torsionBy_eq_ker_lsmul`: the `a`-torsion submodule is the kernel of
   `LinearMap.lsmul R M a`.
+* `Submodule.forall_pow_smul_mem_iff_forall_smul_mem`: saturation of a submodule with respect to a
+  scalar is equivalent to saturation with respect to all powers of that scalar.
+* `Submodule.torsionBy_quotient_eq_bot_iff_forall_smul_mem`: the quotient `M ⧸ P` has no
+  `a`-torsion if and only if `P` is `a`-saturated in `M`.
 * `Submodule.exists_smul_mem_of_forall_exists_smul_mem`: finitely many elements with nonzero
   multiples in `N` have a common nonzero multiplier into `N`.
 * `Ideal.isTorsion_quotient_of_mem`: the quotient of a commutative ring by an ideal
@@ -277,6 +284,22 @@ end Submodule
 
 end TauCeti
 
+namespace LinearMap
+
+variable {R M N : Type*} [CommRing R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N]
+
+/-- A linear map into a torsion-free module vanishes on the torsion submodule. -/
+theorem torsion_le_ker [Module.IsTorsionFree R N] (f : M →ₗ[R] N) :
+    Submodule.torsion R M ≤ LinearMap.ker f := by
+  rintro x ⟨a, hax⟩
+  rw [LinearMap.mem_ker]
+  apply (isRegular_iff_mem_nonZeroDivisors.mpr a.2).isSMulRegular
+  dsimp only
+  rw [smul_zero, ← map_smul, ← Submonoid.smul_def, hax, map_zero]
+
+end LinearMap
+
 namespace Module.IsTorsion
 
 variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
@@ -304,6 +327,20 @@ theorem prod (hM : Module.IsTorsion R M) (hN : Module.IsTorsion R N) :
 
 end Module.IsTorsion
 
+namespace LinearEquiv
+
+/-- Being `S`-torsion, every element killed by an element of `S`, is invariant under linear
+equivalences. -/
+theorem isTorsion'_iff {R M N : Type*} [Semiring R] [AddCommMonoid M] [AddCommMonoid N]
+    [Module R M] [Module R N] (e : M ≃ₗ[R] N) {S : Submonoid R} :
+    Module.IsTorsion' M S ↔ Module.IsTorsion' N S :=
+  ⟨fun h x ↦ (@h (e.symm x)).imp fun _ ha ↦ by
+    simpa [Submonoid.smul_def] using congrArg e ha,
+  fun h x ↦ (@h (e x)).imp fun _ ha ↦ by
+    simpa [Submonoid.smul_def] using congrArg e.symm ha⟩
+
+end LinearEquiv
+
 namespace Submodule
 
 /-- The `a`-torsion submodule of an `R`-module `M` is the kernel of left scalar multiplication by
@@ -312,6 +349,34 @@ theorem torsionBy_eq_ker_lsmul {R M : Type*} [CommSemiring R] [AddCommMonoid M] 
     (a : R) : torsionBy R M a = LinearMap.ker (LinearMap.lsmul R M a) := by
   ext x
   rw [mem_torsionBy_iff, LinearMap.mem_ker, LinearMap.lsmul_apply]
+
+/-- A submodule `P` of an `R`-module `M` is `a`-saturated (`∀ x, a • x ∈ P → x ∈ P`) if and only
+if it is saturated with respect to all powers of `a`. -/
+theorem forall_pow_smul_mem_iff_forall_smul_mem {S R M : Type*} [Monoid S] [Semiring R]
+    [AddCommMonoid M] [Module R M] [MulAction S M] (P : Submodule R M) (a : S) :
+    (∀ (k : ℕ) (x : M), (a ^ k) • x ∈ P → x ∈ P) ↔ ∀ x : M, a • x ∈ P → x ∈ P := by
+  refine ⟨fun h x hx ↦ h 1 x (by simpa only [pow_one] using hx), fun h k ↦ ?_⟩
+  induction k with
+  | zero => intro x hx; simpa only [pow_zero, one_smul] using hx
+  | succ k ih =>
+    intro x hx
+    rw [pow_succ, mul_smul] at hx
+    exact h x (ih (a • x) hx)
+
+/-- The quotient `M ⧸ P` has no `a`-torsion if and only if `P` is `a`-saturated in `M`. -/
+theorem torsionBy_quotient_eq_bot_iff_forall_smul_mem {S R M : Type*} [CommSemiring S] [Ring R]
+    [AddCommGroup M] [Module R M] [SMul S R] [Module S M] [IsScalarTower S R M]
+    (P : Submodule R M) (a : S) :
+    torsionBy S (M ⧸ P) a = ⊥ ↔ ∀ x : M, a • x ∈ P → x ∈ P := by
+  rw [eq_bot_iff]
+  refine ⟨fun h x hx ↦ ?_, fun h q hq ↦ ?_⟩
+  · have hmk : Quotient.mk (p := P) x ∈ torsionBy S (M ⧸ P) a := by
+      rw [mem_torsionBy_iff, ← Quotient.mk_smul, Quotient.mk_eq_zero]
+      exact hx
+    exact (Quotient.mk_eq_zero P).mp (h hmk)
+  · obtain ⟨x, rfl⟩ := Quotient.mk_surjective P q
+    rw [mem_torsionBy_iff, ← Quotient.mk_smul, Quotient.mk_eq_zero] at hq
+    exact (mem_bot _).mpr ((Quotient.mk_eq_zero P).mpr (h x hq))
 
 section
 

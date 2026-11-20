@@ -36,7 +36,9 @@ For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u
 
 The projection `P_U v` is the point of `v + Uᗮ` of least norm, and it is the only one: a vector
 `w` with `‖w‖ ≤ ‖P_U w‖` equals `P_U w`. Equivalently, `v ∈ U` exactly when adding a vector of
-`Uᗮ` never decreases the norm of `v`. Over `ℝ`, Pythagoras splits the squared distance from a
+`Uᗮ` never decreases the norm of `v`. Perturbing a subspace increases the distance from any vector
+to the subspace by at most the operator-norm change in orthogonal projection times the vector's
+norm. Over `ℝ`, Pythagoras splits the squared distance from a
 point `b + c`, with `b ∈ U` and `c ∈ Uᗮ`, into its components along `U` and `Uᗮ`.
 
 Since the kernel of `P_V` is `Vᗮ`, the projection `P_V` is injective on `U` exactly when no
@@ -72,6 +74,10 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `TauCeti.exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank`: fewer than `dim E` vectors
   have a common nonzero, and hence a common unit, orthogonal vector.
 * `TauCeti.ne_neg_of_inner_eq_zero`: a vector orthogonal to a nonzero vector `b` is not `-b`.
+* `TauCeti.norm_inner_le_norm_mul_infDist`: a vector `w` orthogonal to a subspace `P` satisfies
+  `‖⟪w, z⟫‖ ≤ ‖w‖ * infDist z P`.
+* `TauCeti.exists_mem_orthogonal_inner_ne_zero_of_not_le`: if `S` is not contained in `P`, some
+  vector orthogonal to `P` is not orthogonal to `S`.
 * `TauCeti.eventually_linearIndependent_starProjection_apply`,
   `TauCeti.eventually_linearIndependent_and_span_starProjection`: projected bases of a
   continuously varying family of subspaces stay linearly independent, and stay bases under a
@@ -89,6 +95,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   is its projection.
 * `Submodule.mem_iff_forall_mem_orthogonal_norm_le_norm_add`: `v ∈ U` if and only if
   `‖v‖ ≤ ‖v + w‖` for every `w ∈ Uᗮ`.
+* `Submodule.infDist_le_add_norm_starProjection_sub_mul`:
+  `infDist w U ≤ infDist w V + ‖P_U - P_V‖ * ‖w‖`.
 * `Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal`: Pythagoras for `‖v - (b + c)‖²` with
   `b ∈ R` and `c ∈ Rᗮ`, split along `R` and `Rᗮ`.
 * `Submodule.injOn_starProjection_iff_disjoint`: `P_V` is injective on `U` if and only if
@@ -273,6 +281,21 @@ theorem mem_iff_forall_mem_orthogonal_norm_le_norm_add {v : E} :
     rw [U.eq_starProjection_of_norm_le hle]
     exact U.starProjection_apply_mem v
 
+/-- Perturbing a subspace in orthogonal-projection operator norm increases the distance from any
+vector `w` to the subspace by at most `‖P_U - P_V‖ * ‖w‖`. -/
+theorem infDist_le_add_norm_starProjection_sub_mul (w : E) :
+    Metric.infDist w U ≤ Metric.infDist w V + ‖U.starProjection - V.starProjection‖ * ‖w‖ := by
+  rw [← U.dist_starProjection_eq_infDist, ← V.dist_starProjection_eq_infDist,
+    dist_eq_norm, dist_eq_norm]
+  calc ‖w - U.starProjection w‖
+      ≤ ‖w - V.starProjection w‖ + ‖V.starProjection w - U.starProjection w‖ := by
+        simpa only [sub_add_sub_cancel] using
+          norm_add_le (w - V.starProjection w) (V.starProjection w - U.starProjection w)
+    _ ≤ ‖w - V.starProjection w‖ + ‖U.starProjection - V.starProjection‖ * ‖w‖ := by
+        rw [norm_sub_rev (V.starProjection w), ← sub_apply]
+        gcongr
+        exact le_opNorm _ w
+
 omit [U.HasOrthogonalProjection] in
 /-- The orthogonal projection onto `V` is injective on `U` exactly when `U ⊓ Vᗮ = ⊥`, since its
 kernel is `Vᗮ`. -/
@@ -426,6 +449,31 @@ theorem ne_neg_of_inner_eq_zero {a b : E} (hb : b ≠ 0) (hab : ⟪a, b⟫_𝕜 
   rintro rfl
   rw [inner_neg_left, neg_eq_zero, inner_self_eq_zero] at hab
   exact hb hab
+
+/-- A vector `w` orthogonal to a subspace `P` pairs with any vector `z` to at most `‖w‖` times the
+distance from `z` to `P`. -/
+theorem norm_inner_le_norm_mul_infDist {P : Submodule 𝕜 E} {w : E} (hw : w ∈ Pᗮ) (z : E) :
+    ‖⟪w, z⟫_𝕜‖ ≤ ‖w‖ * Metric.infDist z (P : Set E) := by
+  rcases eq_or_ne w 0 with rfl | hw0
+  · simp
+  have hpos : 0 < ‖w‖ := norm_pos_iff.mpr hw0
+  rw [← div_le_iff₀' hpos]
+  refine (Metric.le_infDist ⟨0, P.zero_mem⟩).mpr fun p hp ↦ ?_
+  rw [div_le_iff₀' hpos, dist_eq_norm]
+  calc ‖⟪w, z⟫_𝕜‖ = ‖⟪w, z - p⟫_𝕜‖ := by
+        rw [inner_sub_right, Submodule.inner_left_of_mem_orthogonal hp hw, sub_zero]
+    _ ≤ ‖w‖ * ‖z - p‖ := norm_inner_le_norm w (z - p)
+
+/-- If a subspace `S` is not contained in a subspace `P` admitting an orthogonal projection, some
+vector orthogonal to `P` has nonzero inner product with some vector of `S`. -/
+theorem exists_mem_orthogonal_inner_ne_zero_of_not_le {S P : Submodule 𝕜 E}
+    [P.HasOrthogonalProjection] (h : ¬ S ≤ P) : ∃ w ∈ Pᗮ, ∃ s ∈ S, ⟪w, s⟫_𝕜 ≠ 0 := by
+  rw [← P.orthogonal_orthogonal] at h
+  obtain ⟨s, hs, hsP⟩ := IsConcreteLE.not_le_iff_exists.mp h
+  rw [Submodule.mem_orthogonal] at hsP
+  push Not at hsP
+  obtain ⟨w, hw, hne⟩ := hsP
+  exact ⟨w, hw, s, hs, hne⟩
 
 section ProjectedBasis
 

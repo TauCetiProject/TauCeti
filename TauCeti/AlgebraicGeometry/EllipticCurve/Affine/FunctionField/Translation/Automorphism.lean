@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.Complement
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.Place
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.GenericPoint
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace.Basic
 
 /-!
 # The automorphism group of the function field of an elliptic curve

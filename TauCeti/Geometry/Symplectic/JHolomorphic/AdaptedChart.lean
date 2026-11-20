@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import TauCeti.Analysis.Calculus.AdaptedChart
 public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
-public import TauCeti.Analysis.Calculus.NormalExtension
+public import TauCeti.Analysis.Calculus.NormalExtension.Basic
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 public import TauCeti.LinearAlgebra.Complex.Module
 

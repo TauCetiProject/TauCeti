@@ -122,7 +122,7 @@ theorem velocity_rotation (θ t : ℝ) :
     simp [Complex.ext_iff, Complex.exp_ofReal_re]
   rw [velocity, Matrix.SpecialLinearGroup.smulDeriv_coe, geodesicLine_one_apply, h]
   simp only [denom, Matrix.SpecialLinearGroup.mapGL_coe_matrix,
-    Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
+    Matrix.SpecialLinearGroup.map_apply_coe, Matrix.map_apply,
     Algebra.algebraMap_self_apply, Matrix.SpecialLinearGroup.coe_rotation, Matrix.of_apply,
     Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
   rw [inv_mul_eq_div]

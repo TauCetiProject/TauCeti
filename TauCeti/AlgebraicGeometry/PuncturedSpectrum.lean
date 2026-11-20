@@ -24,6 +24,8 @@ by finitely many basic opens, so that covers can be described and glued chart by
 
 * `TauCeti.IsLocalRing.mem_preimage_puncturedSpectrum_iff`: the primes of an `R`-algebra `B` in
   the preimage of the punctured spectrum are those not lying over `𝔪`.
+* `TauCeti.IsLocalRing.nonempty_puncturedSpectrum_iff`: the punctured spectrum is nonempty if and
+  only if `0 < ringKrullDim R`.
 * `TauCeti.IsLocalRing.puncturedSpectrum_eq_iSup_basicOpen`: if some set `s` generates an ideal
   whose radical is the maximal ideal, the puncture is the union of the basic opens `D(x)` for
   `x ∈ s`.
@@ -93,6 +95,19 @@ theorem mem_preimage_puncturedSpectrum_iff {B : Type u} [CommRing B] [Algebra R 
 theorem closedPoint_notMem_puncturedSpectrum :
     IsLocalRing.closedPoint R ∉ puncturedSpectrum R := by
   simp
+
+/-- The punctured spectrum of a local ring is nonempty if and only if the ring has positive Krull
+dimension. -/
+theorem nonempty_puncturedSpectrum_iff :
+    Nonempty (puncturedSpectrum R) ↔ 0 < ringKrullDim R := by
+  refine ⟨fun ⟨⟨x, hx⟩⟩ ↦ ?_, fun h ↦ ?_⟩
+  · -- In dimension zero the closed point is the only point.
+    by_contra hdim
+    have : Ring.KrullDimLE 0 R := Ring.krullDimLE_iff.mpr (not_lt.mp hdim)
+    have := Ring.KrullDimLE.subsingleton_primeSpectrum R
+    exact (mem_puncturedSpectrum_iff R x).mp hx (Subsingleton.elim _ _)
+  · obtain ⟨x, hx⟩ := (dense_compl_singleton_closedPoint_iff.mpr h).nonempty
+    exact ⟨⟨x, (mem_puncturedSpectrum_iff R x).mpr hx⟩⟩
 
 /-- The punctured spectrum is the union of basic opens when their generators have maximal
 radical. -/

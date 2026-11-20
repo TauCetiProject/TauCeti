@@ -239,7 +239,7 @@ theorem euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul {ψ : W �
   set k := finrank ℝ W
   have hnorm : ∀ w ∈ s, ‖ψ w‖ = 1 := fun w hw => (hψ w hw).self_of_nhds
   have horth : ∀ w ∈ s, ∀ u, ⟪ψ w, fderiv ℝ ψ w u⟫ = 0 := fun w hw =>
-    inner_fderiv_eq_zero_of_eventually_norm_eq ((hψ w hw).mono fun y hy => by rw [hy, hnorm w hw])
+    (isLocalExtr_const.congr ((hψ w hw).mono fun _ => Eq.symm)).inner_fderiv_eq_zero
   -- The cone map `(t, w) ↦ t • ψ w` on the Euclidean product `ℝ × W`.
   let Φ : WithLp 2 (ℝ × W) → E := fun x => (WithLp.ofLp x).1 • ψ (WithLp.ofLp x).2
   let S : Set (WithLp 2 (ℝ × W)) := WithLp.ofLp ⁻¹' (Ioo 0 1 ×ˢ s)

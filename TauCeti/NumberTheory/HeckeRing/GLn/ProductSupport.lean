@@ -168,7 +168,7 @@ private lemma exists_mul_diagonal_mul_diagonal_mul_eq_diagonal {a b c : Fin n �
   have hmat := congrArg (fun g : GL (Fin n) ℚ ↦ (g : Matrix (Fin n) (Fin n) ℚ)) heq
   simp only [Units.val_mul, natDiagGL_coe_eq_map_intCast n _ ha,
     natDiagGL_coe_eq_map_intCast n _ hb, natDiagGL_coe_eq_map_intCast n _ hc, mapGL_coe_matrix,
-    map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq, Int.coe_castRingHom] at hmat
+    map_apply_coe, algebraMap_int_eq, Int.coe_castRingHom] at hmat
   beta_reduce
   rw [hmat]
   simp only [hcast, map_mul]
