@@ -20,8 +20,8 @@ composition expansion of the ordinary symbols (`TauCeti.ParameterSymbol.toSymbol
 `(sharpTerm b a k)(z) = sharpTerm b(z) a(z) k`.
 
 When `b(z)` is a polynomial of degree less than `N` in the frequency, as for the symbol
-`p(x, ξ) - z` of `P - z` with `P` a differential operator of order less than `N`, the composition
-expansion of `b(z) # a(z)` is exact after `N` terms
+`p(x, ξ) - z` of `P - z` with `P` a second-order differential operator and `N = 3` (such as
+`s - Δ - z`), the composition expansion of `b(z) # a(z)` is exact after `N` terms
 (`TauCeti.Symbol.sharp_eq_sum_sharpTerm_of_mixedDeriv_nil_eq_zero`). So the composition symbol at
 `z` is the value at `z` of the single parameter-dependent symbol `∑_{k < N} sharpTerm b a k` of
 order `m' + m` (`TauCeti.ParameterSymbol.sharp_toSymbol_eq_toSymbol_sum_sharpTerm`, and
@@ -35,9 +35,9 @@ For `a` elliptic with parameter and polynomial in the frequency, the first `J + 
 parametrix up to order `-(J + 1)`: `a(z) ∘ (∑_{j ≤ J} bⱼ(z)) = 1 + R(z)` for one
 parameter-dependent symbol `R` of order `-(J + 1)`
 (`TauCeti.ParameterSymbol.IsElliptic.exists_properSharp_sum_rightInverseTerms_eq_id_add`). This
-is the symbol identity behind the comparison of the resolvent `(P - z)⁻¹` of a differential
-operator with the quantized parametrix, the first step of the contour construction of the
-complex powers of `P`.
+is the symbol identity behind the comparison of the resolvent `(P - z)⁻¹` of a second-order
+elliptic differential operator `P` with the quantized parametrix, the first step of the contour
+construction of the complex powers of `P`.
 
 ## References
 
@@ -142,7 +142,8 @@ variable [CompleteSpace V] {a : ParameterSymbol n Λ V W m}
 
 /-- **The exact right parametrix with parameter.** Let `a` be elliptic with parameter, with
 `a(z)` a polynomial of degree less than `N` in the frequency at every spectral parameter `z ∈ Λ`,
-as for the symbol of `P - z` with `P` a differential operator of order less than `N`. Let
+as for the symbol of `P - z` with `P` a second-order differential operator and `N = 3`: since `z`
+counts as two frequency orders, `P - z` is elliptic with parameter only for `P` of order `2`. Let
 `Q_J = ∑_{j ≤ J} bⱼ` be the sum of the first `J + 1` terms `bⱼ = a.rightInverseTerms ha j` of its
 right parametrix. Then there is a parameter-dependent symbol `R` of order `-(J + 1)` with
 
