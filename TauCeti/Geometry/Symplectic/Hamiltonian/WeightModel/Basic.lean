@@ -834,21 +834,18 @@ theorem range_weightMomentMap_id_neg_id :
     Set.range (weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ]) =
       Set.univ := by
   refine Set.eq_univ_of_forall fun ν ↦ ?_
-  -- A covector on `ℝ` is determined by its value `c` at `1`; realize `c` by one coordinate.
+  -- A covector on `ℝ` is determined by its value `c` at `1`. Realize `c` by the coordinates
+  -- `√(max (-2c) 0)` and `√(max (2c) 0)`, one of which vanishes.
   have hμ (x : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)) :
       weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] x 1 =
         -(1 / 2) * ((x.1 0 ^ 2 + x.2 0 ^ 2) - (x.1 1 ^ 2 + x.2 1 ^ 2)) := by
-    simp [Fin.sum_univ_two]
+    simp only [weightMomentMap_apply, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.cons_val_fin_one, ContinuousLinearMap.id_apply, neg_apply]
     ring
-  rcases le_total (ν 1) 0 with hν | hν
-  · obtain ⟨r, hr⟩ : ∃ r : ℝ, r ^ 2 = -2 * ν 1 := ⟨√(-2 * ν 1), Real.sq_sqrt (by linarith)⟩
-    refine ⟨(WithLp.toLp 2 ![r, 0], 0), ContinuousLinearMap.ext_ring ?_⟩
-    rw [hμ]
-    simp [hr]
-  · obtain ⟨r, hr⟩ : ∃ r : ℝ, r ^ 2 = 2 * ν 1 := ⟨√(2 * ν 1), Real.sq_sqrt (by linarith)⟩
-    refine ⟨(WithLp.toLp 2 ![0, r], 0), ContinuousLinearMap.ext_ring ?_⟩
-    rw [hμ]
-    simp [hr]
+  refine ⟨(WithLp.toLp 2 ![√(-(2 * ν 1)), √(2 * ν 1)], 0), ContinuousLinearMap.ext_ring ?_⟩
+  simp only [hμ, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
+    PiLp.zero_apply, Real.sq_sqrt']
+  linear_combination (1 / 2) * max_zero_sub_max_neg_zero_eq_self (2 * ν 1)
 
 /-- **The apex can be interior beyond complexity zero.** For the effective circle action on `ℂ²`
 with the weights `1` and `-1`, the image `0` of the fixed point `0` is an interior point of the

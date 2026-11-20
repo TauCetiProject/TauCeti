@@ -352,12 +352,11 @@ theorem exists_basis_iff_forall_weightRotation_eq_id_iff (h : Toric.IsIntegralLa
         ∃ n : N, ξ = (2 * π) • i n := by
   refine ⟨fun ⟨b, hα⟩ ↦ weightRotation_eq_id_iff_of_basis h b hα, fun heff ↦ ?_⟩
   have := h.finiteDimensional
-  have := h.free
   have := h.finite
-  have : Countable N := (Module.Free.chooseBasis ℤ N).equivFun.injective.countable
+  have : Countable N := Countable.of_moduleFinite (R := ℤ)
   -- Read the weights as one linear map `A : 𝔱 → ℝ^ι`, injective since the action is effective.
   let A : 𝔱 →ₗ[ℝ] ι → ℝ := LinearMap.pi fun j ↦ (α j : 𝔱 →ₗ[ℝ] ℝ)
-  have hA (ξ : 𝔱) (j : ι) : A ξ j = α j ξ := rfl
+  have hA (ξ : 𝔱) (j : ι) : A ξ j = α j ξ := by simp [A]
   have hAinj : Function.Injective A := (injective_iff_map_eq_zero A).2 fun ξ hξ ↦
     eq_zero_of_forall_apply_eq_zero_of_weightRotation (fun ξ ↦ (heff ξ).1) fun j ↦ congrFun hξ j
   simp only [weightRotation_eq_id_iff] at heff
@@ -377,7 +376,7 @@ theorem exists_basis_iff_forall_weightRotation_eq_id_iff (h : Toric.IsIntegralLa
     { toFun := a
       map_zero' := funext fun j ↦ Int.cast_injective (α := ℝ) (by simp [← ha])
       map_add' := fun n m ↦ funext fun j ↦ Int.cast_injective (α := ℝ) (by simp [← ha]) }
-  have he (n : N) (j : ι) : α j (i n) = e n j := ha n j
+  have he (n : N) (j : ι) : α j (i n) = e n j := by simp [e, ha]
   -- It is injective because `A` and `i` are, and surjective because `A` is.
   have heinj : Function.Injective e := fun n m hnm ↦ h.injective <| hAinj <| funext fun j ↦ by
     rw [hA, hA, he, he, hnm]
