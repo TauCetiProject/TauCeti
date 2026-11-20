@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.SpectralObject.SpectralSequence
+public import TauCeti.Algebra.Homology.SpectralObject.Map
 
 /-!
 # The objects and differentials of a spectral object through representatives
@@ -60,6 +61,8 @@ objects as images and of the differentials as connecting maps on representatives
   morphisms in `ComposableArrows ι 3`, on representatives and through the embeddings;
   `CategoryTheory.Abelian.SpectralObject.mapFourδ₄Toδ₃'_fromE` is the case of the canonical maps
   `E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₃) ⟶ E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₄)` for an index preorder.
+* `CategoryTheory.Abelian.SpectralObject.toE_EMap`: the representatives are natural in the
+  spectral object.
 * `CategoryTheory.Abelian.SpectralObject.toE_d`, `CategoryTheory.Abelian.SpectralObject.d_fromE`:
   the differentials on representatives.
 * `CategoryTheory.Abelian.SpectralObject.toE_spectralSequence_page_d`,
@@ -213,6 +216,17 @@ lemma map_fromE (β : mk₁ f₂₃ ⟶ mk₁ f₂₃') (hβ₀ : β.app 0 = α.
   rw [X.map_ιE_assoc f₁ f₂ f₃ f₁' f₂' f₃' α (homMk₂ (α.app 1) (α.app 2) (α.app 3)
       (naturality' α 1 2) (naturality' α 2 3)) n₀ n₁ n₂ rfl hn₁ hn₂, Category.assoc,
     X.opcyclesMap_fromOpcycles (β := β) (hβ₀ := hβ₀) (hβ₁ := hβ₁)]
+
+/-- **Naturality of the representatives in the spectral object.** The map
+`E^{n₁}(f₁, f₂, f₃) ⟶ E^{n₁}(f₁, f₂, f₃)` of a morphism of spectral objects `φ : X ⟶ Y` sends the
+element represented by `x ∈ H^{n₁}(f₁ ≫ f₂)` to the element represented by the image of `x` under
+`φ`. -/
+@[reassoc]
+lemma toE_EMap {Y : SpectralObject C ι} (φ : X ⟶ Y) (hn₁ : n₀ + 1 = n₁ := by lia)
+    (hn₂ : n₁ + 1 = n₂ := by lia) :
+    X.toE f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂ ≫ EMap φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ =
+      (φ.hom n₁).app (mk₁ f₁₂) ≫ Y.toE f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂ := by
+  simp only [toE, Category.assoc, πE_EMap, toCycles_cyclesMapOfHom_assoc]
 
 end Naturality
 

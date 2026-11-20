@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.DerivedCategory.MappingCone
 public import TauCeti.Algebra.Homology.SpectralObject.Basic
 public import TauCeti.Algebra.Homology.SpectralObject.SpectralSequenceMap
+public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Page
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
 
 /-!
@@ -28,6 +29,10 @@ compatibly with identities and composition, and hence, through `spectralObjectMa
 their spectral sequences. On the first page, whose objects are the cohomology of graded pieces,
 that morphism is the map in cohomology of the induced morphisms of graded pieces
 (`CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`).
+On a later page `r`, whose object at `(p, q)` is represented by elements of the cohomology of the
+quotient `F_{q+1}/F_{q-r+2}` (in `TauCeti.Algebra.Homology.SpectralSequence.Filtered.Page`), the
+morphism sends the element represented by `x` to the element represented by the image of `x` under
+the induced morphism of quotients (`CochainComplex.toSpectralSequencePageX_naturality`).
 
 A natural transformation whose components are quasi-isomorphisms induces an isomorphism of
 spectral objects (`CochainComplex.isIso_spectralObjectMap`): on each `H^n(f)` it is the map in
@@ -48,6 +53,8 @@ cohomology of a morphism of mapping cones, which is a quasi-isomorphism by the f
 * `CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`:
   on the first page, the morphism of spectral sequences is the map in cohomology of the morphism
   of graded pieces.
+* `CochainComplex.toSpectralSequencePageX_naturality`: on every page `r ≥ 2`, the morphism of
+  spectral sequences is the map in cohomology of the morphism of quotients on representatives.
 * `CochainComplex.filtrationFunctorMap_id`, `CochainComplex.filtrationFunctorMap_comp`:
   functoriality of `filtrationFunctorMap`.
 * `CochainComplex.quasiIso_filtrationFunctorMap_app`: a quasi-isomorphism of filtered complexes
@@ -214,5 +221,42 @@ lemma spectralSequenceFirstPageXIsoCokernel_hom_naturality
   exact (Category.assoc _ _ _).symm
 
 end FirstPage
+
+section Page
+
+open TauCeti (eIntHomOfLE)
+
+variable {F G : EInt ⥤ CochainComplex C ℤ} [∀ {a b : EInt} (f : a ⟶ b), Mono (F.map f)]
+  [∀ {a b : EInt} (f : a ⟶ b), Mono (G.map f)]
+
+/-- **The morphism of spectral sequences on representatives.** Let `α : F ⟶ G` be a morphism of
+functors `EInt ⥤ CochainComplex C ℤ` whose transition maps are monomorphisms. On page `r ≥ 2`, the
+morphism of spectral sequences induced by `α` sends the element of the object at `(p, q)`
+represented by `x ∈ H^n(F_{i₂}/F_{i₀})` to the element represented by the image of `x` in
+`H^n(G_{i₂}/G_{i₀})`, where `i₀ = q - r + 2`, `i₂ = q + 1` and `n = p + q`. -/
+@[reassoc]
+lemma toSpectralSequencePageX_naturality (α : F ⟶ G) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
+    (i₀ i₂ : ℤ) (h₀ : i₀ = pq.2 - r + 2) (h₂ : i₂ = pq.2 + 1) (n : ℤ) (hn : n = pq.1 + pq.2) :
+    toSpectralSequencePageX F r hr pq i₀ i₂ h₀ h₂ n hn ≫
+        ((spectralSequenceMap coreE₂Cohomological (spectralObjectMap α)).hom r hr).f pq =
+      HomologicalComplex.homologyMap (cokernel.map (F.map (eIntHomOfLE (show i₀ ≤ i₂ by lia)))
+          (G.map (eIntHomOfLE (show i₀ ≤ i₂ by lia))) (α.app i₀) (α.app i₂)
+          (α.naturality _)) n ≫
+        toSpectralSequencePageX G r hr pq i₀ i₂ h₀ h₂ n hn := by
+  simp only [spectralSequenceMap_hom, spectralSequencePageMap_f]
+  rw [toSpectralSequencePageX_eq F r hr pq i₀ i₂ h₀ h₂ n hn pq.2 (pq.2 + r - 1) rfl rfl (n - 1)
+      (n + 1) rfl rfl,
+    toSpectralSequencePageX_eq G r hr pq i₀ i₂ h₀ h₂ n hn pq.2 (pq.2 + r - 1) rfl rfl (n - 1)
+      (n + 1) rfl rfl]
+  simp only [Category.assoc]
+  rw [← EMap_comp_spectralSequencePageXIso_inv coreE₂Cohomological (spectralObjectMap α) r hr pq
+    i₀ pq.2 i₂ (pq.2 + r - 1 : ℤ) (by rw [h₀]; rfl) rfl (by rw [h₂]; rfl) rfl (n - 1) n (n + 1) hn,
+    toE_EMap_assoc (n₀ := n - 1) (n₁ := n) (n₂ := n + 1) (hn₁ := by lia) (hn₂ := by lia)]
+  have key := spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom α
+    (eIntHomOfLE (show i₀ ≤ i₂ by lia)) n
+  rw [← Iso.eq_comp_inv, Category.assoc, ← Iso.inv_comp_eq] at key
+  rw [reassoc_of% key]
+
+end Page
 
 end CochainComplex
