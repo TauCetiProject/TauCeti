@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 public import TauCeti.AlgebraicGeometry.EllipticCurve.QuadraticTwist.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Discriminant
 import TauCeti.AlgebraicGeometry.EllipticCurve.SingularPointCount
 
@@ -123,11 +124,8 @@ private theorem sum_quadraticChar_eval_Ψ₂Sq_of_isCharNeTwoNF (hF : ringChar F
     ∑ x : F, quadraticChar F (W.Ψ₂Sq.eval x) =
       ∑ x : F, quadraticChar F (x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x + W.a₆) := by
   refine sum_congr rfl fun x _ ↦ ?_
-  have h : W.Ψ₂Sq.eval x = 2 ^ 2 * (x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x + W.a₆) := by
-    simp only [Ψ₂Sq, b₂, b₄, b₆, a₁_of_isCharNeTwoNF, a₃_of_isCharNeTwoNF, eval_add, eval_mul,
-      eval_C, eval_pow, eval_X]
-    ring
-  rw [h, map_mul, quadraticChar_sq_one' (Ring.two_ne_zero hF), one_mul]
+  rw [W.eval_Ψ₂Sq_of_isCharNeTwoNF, map_mul, show (4 : F) = 2 ^ 2 by norm_num,
+    quadraticChar_sq_one' (Ring.two_ne_zero hF), one_mul]
 
 /-- **The point count of a normal-form model as a character sum**: over a finite field of odd
 characteristic with `q` elements, `y² = x³ + a₂x² + a₄x + a₆` has
