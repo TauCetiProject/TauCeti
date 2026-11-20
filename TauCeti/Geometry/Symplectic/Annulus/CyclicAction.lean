@@ -1,0 +1,385 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Symplectic.Annulus.TwistBand
+public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Chain
+
+/-!
+# The cyclic action of a chain of strip maps and its periodic orbits
+
+Let `F_k = (X_k, Y_k)`, `k ∈ ℤ/N`, be maps of the plane, with coordinates `(x, y)`, for instance
+lifts to the strip `ℝ × [0, 1]` of the twist maps into which an area-preserving diffeomorphism of
+the annulus `(ℝ / ℤ) × [0, 1]` is factored. Say that a function `S` of the twist coordinates
+`(x, X)` *generates* `F = (X, Y)` over a set `D` of states
+(`TauCeti.IsStripGeneratingFunction`) if at `(x, X(x, y))` it has derivative `Y dX - y dx` for
+every `(x, y) ∈ D`:
+
+`y = -∂₁ S(x, X)`,  `Y = ∂₂ S(x, X)`.
+
+This is the convention of the generating functions `TauCeti.stripGeneratingFunction` and
+`TauCeti.stripBandGeneratingFunction` of area-preserving strip maps; the band generating function
+of a twist map generates it on the whole strip
+(`TauCeti.isStripGeneratingFunction_stripBandGeneratingFunction`). It is the cotangent convention
+`p = d₁S`, `P = -d₂S` of `TauCeti.CotangentBundle.generatingCorrespondence` for the function `-S`,
+reading a state `(x, y)` as the covector `y dx` of `T^*ℝ`.
+
+If `S_k` generates `F_k` over `D_k`, the **cyclic action**
+
+`W(x_0, …, x_(N-1)) = Σ_k S_k(x_k, x_(k+1))`, indices mod `N`
+
+(`TauCeti.cyclicAction S`) has as critical points, among the configurations whose edges
+`(x_k, x_(k+1))` are twist coordinates of states of `D_k`, exactly the base points of the periodic
+chains of states: the sequences `p_k ∈ D_k` with `F_k(p_k) = p_(k+1)`. Recording its intermediate
+states, such a chain is a fixed point `p_0` of the composite `F_(N-1) ∘ ⋯ ∘ F_0`. The bijection
+sends a chain to its positions `x_k`, and a critical configuration to the states
+`(x_k, -∂₁ S_k(x_k, x_(k+1)))`
+(`TauCeti.exists_equiv_periodic_of_isStripGeneratingFunction`). It is the chain dictionary
+`TauCeti.CotangentBundle.exists_equiv_periodic_of_generating` for the functions `-S_k` on
+`ℝ × ℝ`, whose cyclic action is `-W`.
+
+The dictionary is compatible with the deck translation `T(x, y) = (x + 1, y)` of the strip. Suppose
+that every `F_k` commutes with the integer translations `T^m` on `D_k`, as lifts of annulus maps do,
+and that `D_k` is invariant under them. Then translating a chain by `T^m` translates its
+configuration by `m` in every coordinate, so the critical configurations are invariant under the
+diagonal translations `x ↦ x + m`
+(`TauCeti.mvfderiv_cyclicAction_add_eq_zero_of_isStripGeneratingFunction`), and so is the
+cyclic action when the `S_k` are invariant under `(x, X) ↦ (x + m, X + m)`
+(`TauCeti.cyclicAction_add_const`). Conversely, a periodic chain is determined by its first state.
+So two critical configurations differ by a diagonal integer translation exactly when their fixed
+points `(x_0, y_0)` of the composite define the same point `([x_0], y_0)` of the annulus
+(`TauCeti.exists_intCast_add_eq_iff_of_isStripGeneratingFunction`). Hence distinct critical points
+of the cyclic action on the quotient of the configurations by the diagonal integer translations
+give distinct fixed points of the composite on the annulus, all of zero displacement for the
+chosen lift. Different cyclic markings `x ↦ (k ↦ x_(k + j))` are not identified here: for a
+factorization into several different maps they belong to different composites.
+
+## Main definitions
+
+* `TauCeti.IsStripGeneratingFunction S F D`: `S` generates `F` over `D`, with
+  `y = -∂₁ S(x, X)` and `Y = ∂₂ S(x, X)`.
+
+## Main results
+
+* `TauCeti.isStripGeneratingFunction_stripBandGeneratingFunction`: the band generating function of
+  an area-preserving twist map of a strip generates it there.
+* `TauCeti.exists_equiv_periodic_of_isStripGeneratingFunction`: periodic chains of states are the
+  critical points of the cyclic action.
+* `TauCeti.mvfderiv_cyclicAction_add_eq_zero_of_isStripGeneratingFunction`: critical
+  configurations are invariant under diagonal integer translations.
+* `TauCeti.exists_intCast_add_eq_iff_of_isStripGeneratingFunction`: two critical configurations
+  differ by a diagonal integer translation exactly when they give the same fixed point of the
+  annulus.
+
+## References
+
+* C. Conley and E. Zehnder, *The Birkhoff–Lewis fixed point theorem and a conjecture of
+  V. I. Arnold*, Invent. Math. 73 (1983), 33–49.
+* A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
+  Springer, 2001, Section 5.1 (periodic points and generating functions).
+-/
+
+public section
+
+noncomputable section
+
+open Bundle Function Set
+open scoped Manifold ContDiff Interval
+
+namespace TauCeti
+
+/-! ### Generating functions in the strip convention -/
+
+/-- **Generating functions in the strip convention.** A function `S` of the twist coordinates
+`(x, X)` generates a map `F = (X, Y)` of the plane over a set `D` of states if at the twist
+coordinates `(x, X(x, y))` of every state `(x, y) ∈ D` it has derivative `Y(x, y) dX - y dx`, that
+is `∂₁ S(x, X) = -y` and `∂₂ S(x, X) = Y(x, y)`. -/
+def IsStripGeneratingFunction (S : ℝ × ℝ → ℝ) (F : ℝ × ℝ → ℝ × ℝ) (D : Set (ℝ × ℝ)) : Prop :=
+  ∀ p ∈ D, HasFDerivAt S
+    ((F p).2 • ContinuousLinearMap.snd ℝ ℝ ℝ - p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ)
+    (stripTwistCoord F p)
+
+/-- Unfolding `TauCeti.IsStripGeneratingFunction`. -/
+theorem isStripGeneratingFunction_iff {S : ℝ × ℝ → ℝ} {F : ℝ × ℝ → ℝ × ℝ} {D : Set (ℝ × ℝ)} :
+    IsStripGeneratingFunction S F D ↔ ∀ p ∈ D, HasFDerivAt S
+      ((F p).2 • ContinuousLinearMap.snd ℝ ℝ ℝ - p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ)
+      (stripTwistCoord F p) :=
+  Iff.rfl
+
+namespace IsStripGeneratingFunction
+
+variable {S : ℝ × ℝ → ℝ} {F : ℝ × ℝ → ℝ × ℝ} {D : Set (ℝ × ℝ)}
+  (hS : IsStripGeneratingFunction S F D) {p : ℝ × ℝ} (hp : p ∈ D)
+include hS hp
+
+/-- A generating function is differentiable at the twist coordinates of every state. -/
+theorem differentiableAt : DifferentiableAt ℝ S (stripTwistCoord F p) :=
+  (hS p hp).differentiableAt
+
+/-- **The first generating equation**, `∂₁ S(x, X) = -y`. -/
+theorem hasDerivAt_left : HasDerivAt (fun x ↦ S (x, (F p).1)) (-p.2) p.1 := by
+  have h := hS p hp
+  rw [stripTwistCoord_apply] at h
+  rw [hasDerivAt_iff_hasFDerivAt]
+  refine (h.comp p.1 (hasFDerivAt_prodMk_left p.1 (F p).1)).congr_fderiv ?_
+  ext
+  simp
+
+/-- **The second generating equation**, `∂₂ S(x, X) = Y`. -/
+theorem hasDerivAt_right : HasDerivAt (fun X ↦ S (p.1, X)) (F p).2 (F p).1 := by
+  have h := hS p hp
+  rw [stripTwistCoord_apply] at h
+  rw [hasDerivAt_iff_hasFDerivAt]
+  refine (h.comp (F p).1 (hasFDerivAt_prodMk_right p.1 (F p).1)).congr_fderiv ?_
+  ext
+  simp
+
+end IsStripGeneratingFunction
+
+/-- **Band generating functions are generating functions.** Let `F` be `C²` on a strip `ℝ × J`
+over an open interval `J ∋ 0`, preserve the area form `dx ∧ dy` and the line `y = 0` there, and
+twist, `∂_y X ≠ 0`. Then its band generating function generates it over the whole strip. -/
+theorem isStripGeneratingFunction_stripBandGeneratingFunction {F : ℝ × ℝ → ℝ × ℝ} {J : Set ℝ}
+    (hJ : IsOpen J) (hJc : J.OrdConnected) (h0 : (0 : ℝ) ∈ J)
+    (hF : ∀ q ∈ Prod.snd ⁻¹' J, ContDiffAt ℝ 2 F q) (hY : ∀ x, (F (x, 0)).2 = 0)
+    (hdet : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q).det = 1)
+    (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) :
+    IsStripGeneratingFunction (stripBandGeneratingFunction F J) F (Prod.snd ⁻¹' J) :=
+  fun p hp ↦ hasFDerivAt_stripBandGeneratingFunction hJ (injOn_stripTwistCoord hJc htwist) hp
+    (fun _ ht ↦ hF _ (hJc.uIcc_subset h0 hp ht)) (hY p.1)
+    (fun _ ht ↦ hdet _ (hJc.uIcc_subset h0 hp (uIoo_subset_uIcc_self ht))) (htwist p hp)
+
+/-! ### States as covectors -/
+
+/-- States of the strip are the covectors of `ℝ`: the state `(x, y)` is the covector `y dx` at `x`,
+and a covector at `x` is `y dx` for its value `y` on the unit tangent vector. The tangent lines of
+`ℝ` are `ℝ` by definition. -/
+private def stripCovectorEquiv : ℝ × ℝ ≃ CotangentBundle 𝓘(ℝ) ℝ where
+  toFun p := TotalSpace.mk' (ℝ →L[ℝ] ℝ) p.1 ((1 : ℝ →L[ℝ] ℝ).smulRight p.2)
+  invFun z := (z.proj, z.2 (1 : ℝ))
+  -- Both inverse laws are `1 • y = y`, the tangent lines of `ℝ` being `ℝ` by definition.
+  left_inv p := Prod.ext rfl (one_smul ℝ p.2)
+  right_inv z := by
+    obtain ⟨x, c⟩ := z
+    refine congrArg (TotalSpace.mk' (ℝ →L[ℝ] ℝ) x) ?_
+    ext
+    exact one_smul ℝ (c (1 : ℝ))
+
+@[simp]
+private theorem proj_stripCovectorEquiv (p : ℝ × ℝ) : (stripCovectorEquiv p).proj = p.1 :=
+  (rfl)
+
+private theorem stripCovectorEquiv_symm_apply (z : CotangentBundle 𝓘(ℝ) ℝ) :
+    stripCovectorEquiv.symm z = (z.proj, z.2 (1 : ℝ)) :=
+  (rfl)
+
+/-- Over the twist coordinates of a state `p ∈ D` of a map `F` generated by `S`, the cotangent
+relation generated by `-S` is the pair of covectors of `p` and of `F p`. -/
+private theorem generatingCorrespondence_neg_of_isStripGeneratingFunction {S : ℝ × ℝ → ℝ}
+    {F : ℝ × ℝ → ℝ × ℝ} {D : Set (ℝ × ℝ)} (hS : IsStripGeneratingFunction S F D) {p : ℝ × ℝ}
+    (hp : p ∈ D) :
+    CotangentBundle.generatingCorrespondence 𝓘(ℝ) 𝓘(ℝ) (fun z ↦ -S z) (stripTwistCoord F p) =
+      (stripCovectorEquiv p, stripCovectorEquiv (F p)) := by
+  -- A derivative `c` of a real function of a real variable is the covector `c dx`; the tangent
+  -- lines of `ℝ` and the identification `NormedSpace.fromTangentSpace` are `ℝ` by definition.
+  have hcov {f : ℝ → ℝ} {x c : ℝ} (hf : HasDerivAt f c x) :
+      mvfderiv 𝓘(ℝ) f x = (1 : ℝ →L[ℝ] ℝ).smulRight c := by
+    rw [mvfderiv, hf.hasFDerivAt.hasMFDerivAt.mfderiv]
+    rfl
+  rw [stripTwistCoord_apply, CotangentBundle.generatingCorrespondence_apply]
+  refine Prod.ext (CotangentBundle.ext (by simp) fun u ↦ ?_)
+    (CotangentBundle.ext (by simp) fun u ↦ ?_)
+  · rw [CotangentBundle.generatingSource_snd]
+    simp only
+    rw [hcov (hS.hasDerivAt_left hp).fun_neg, neg_neg]
+    rfl
+  · rw [CotangentBundle.generatingTarget_snd]
+    simp only
+    have h : -(1 : ℝ →L[ℝ] ℝ).smulRight (-(F p).2) = (1 : ℝ →L[ℝ] ℝ).smulRight (F p).2 := by
+      ext
+      simp
+    rw [hcov (hS.hasDerivAt_right hp).fun_neg]
+    exact congrArg (fun L : ℝ →L[ℝ] ℝ ↦ L u) h
+
+/-! ### Periodic chains and critical configurations -/
+
+variable {N : ℕ} [NeZero N]
+
+/-- The cyclic action of the functions `-S_k` is minus that of the `S_k`. -/
+private theorem cyclicAction_neg (S : ZMod N → ℝ × ℝ → ℝ) :
+    cyclicAction (fun k z ↦ -S k z) = -cyclicAction S := by
+  ext q
+  simp [cyclicAction_apply]
+
+/-- **Periodic chains of strip maps and critical points of the cyclic action.** Let `S_k`
+generate `F_k` over `D_k` for `k ∈ ℤ/N`. Taking positions is a bijection from the periodic chains
+of states, the sequences `p_k ∈ D_k` with `F_k(p_k) = p_(k+1)`, onto the critical points of the
+cyclic action `W(x) = Σ_k S_k(x_k, x_(k+1))` among the configurations whose every edge
+`(x_k, x_(k+1))` is the twist coordinates `(x, X_k(x, y))` of a state `(x, y) ∈ D_k`. Its inverse
+sends a critical configuration to the states `(x_k, -∂₁ S_k(x_k, x_(k+1)))`. -/
+theorem exists_equiv_periodic_of_isStripGeneratingFunction {F : ZMod N → ℝ × ℝ → ℝ × ℝ}
+    {S : ZMod N → ℝ × ℝ → ℝ} {D : ZMod N → Set (ℝ × ℝ)}
+    (hS : ∀ k, IsStripGeneratingFunction (S k) (F k) (D k)) :
+    ∃ e : {p : ZMod N → ℝ × ℝ // ∀ k, p k ∈ D k ∧ F k (p k) = p (k + 1)} ≃
+        {q : ZMod N → ℝ // (∀ k, (q k, q (k + 1)) ∈ stripTwistCoord (F k) '' D k) ∧
+          mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ 𝓘(ℝ)) (cyclicAction S) q = 0},
+      (∀ p k, (e p : ZMod N → ℝ) k = (p.1 k).1) ∧
+        ∀ q k, (e.symm q : ZMod N → ℝ × ℝ) k =
+          (q.1 k, -deriv (fun x ↦ S k (x, q.1 (k + 1))) (q.1 k)) := by
+  -- The strip maps, transported to covectors.
+  let φ (k : ZMod N) (z : CotangentBundle 𝓘(ℝ) ℝ) : CotangentBundle 𝓘(ℝ) ℝ :=
+    stripCovectorEquiv (F k (stripCovectorEquiv.symm z))
+  have hφ (k : ZMod N) (p : ℝ × ℝ) : φ k (stripCovectorEquiv p) = stripCovectorEquiv (F k p) :=
+    congrArg (fun p ↦ stripCovectorEquiv (F k p)) (stripCovectorEquiv.symm_apply_apply p)
+  have hbase (k : ZMod N) (p : ℝ × ℝ) :
+      ((stripCovectorEquiv p).proj, (φ k (stripCovectorEquiv p)).proj) =
+        stripTwistCoord (F k) p := by
+    simp [hφ]
+  obtain ⟨e₀, he₀, he₀'⟩ := CotangentBundle.exists_equiv_periodic_of_generating (N := N)
+    (S := fun k z ↦ -S k z) (W := fun k ↦ stripTwistCoord (F k) '' D k)
+    (D := fun k ↦ stripCovectorEquiv '' D k) (φ := φ)
+    (fun k _ ↦ by
+      rintro ⟨p, hp, rfl⟩
+      rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod]
+      exact mdifferentiableAt_iff_differentiableAt.2 ((hS k).differentiableAt hp).fun_neg)
+    (fun k _ ↦ by
+      rintro ⟨p, hp, rfl⟩
+      rw [hbase, hφ]
+      exact ⟨mem_image_of_mem _ hp,
+        generatingCorrespondence_neg_of_isStripGeneratingFunction (hS k) hp⟩)
+    (fun k _ ↦ by
+      rintro ⟨p, hp, rfl⟩
+      exact ⟨stripCovectorEquiv p, mem_image_of_mem _ hp, hbase k p⟩)
+  -- Periodic chains of states are the periodic chains of their covectors.
+  let e₁ : {p : ZMod N → ℝ × ℝ // ∀ k, p k ∈ D k ∧ F k (p k) = p (k + 1)} ≃
+      {z : ZMod N → CotangentBundle 𝓘(ℝ) ℝ //
+        ∀ k, z k ∈ stripCovectorEquiv '' D k ∧ φ k (z k) = z (k + 1)} :=
+    (Equiv.piCongrRight fun _ ↦ stripCovectorEquiv).subtypeEquiv fun p ↦ by
+      refine forall_congr' fun k ↦ ?_
+      simp only [Equiv.piCongrRight_apply, Pi.map_apply]
+      rw [stripCovectorEquiv.injective.mem_set_image, hφ, stripCovectorEquiv.injective.eq_iff]
+  -- Critical points of `-W` are those of `W`.
+  let e₂ := Equiv.subtypeEquivRight (p := fun q : ZMod N → ℝ ↦
+      (∀ k, (q k, q (k + 1)) ∈ stripTwistCoord (F k) '' D k) ∧
+        mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ 𝓘(ℝ))
+          (cyclicAction fun k z ↦ -S k z) q = 0)
+    fun q ↦ by rw [cyclicAction_neg, mvfderiv_neg, neg_eq_zero]
+  refine ⟨(e₁.trans e₀).trans e₂, fun p k ↦ he₀ _ k, fun q k ↦ ?_⟩
+  have h : ((((e₁.trans e₀).trans e₂).symm q : ZMod N → ℝ × ℝ) k) =
+      stripCovectorEquiv.symm (CotangentBundle.generatingSource 𝓘(ℝ) (fun z ↦ -S k z)
+        (q.1 k, q.1 (k + 1))) :=
+    congrArg stripCovectorEquiv.symm (he₀' (e₂.symm q) k)
+  rw [h, stripCovectorEquiv_symm_apply, CotangentBundle.proj_generatingSource,
+    CotangentBundle.generatingSource_snd]
+  -- The value of the covector `d₁(-S_k)` on the unit tangent vector is `-∂₁ S_k`.
+  exact Prod.ext rfl (((mvfderiv_eq_fderiv_apply _ _ (1 : ℝ)).trans fderiv_apply_one_eq_deriv).trans
+    (deriv.fun_neg ..))
+
+/-! ### Diagonal integer translations -/
+
+omit [NeZero N] in
+/-- Translating every state of a periodic chain by `(a, 0)` gives a periodic chain, when every
+factor commutes with this translation on its domain, which it preserves. -/
+private theorem periodic_add {F : ZMod N → ℝ × ℝ → ℝ × ℝ} {D : ZMod N → Set (ℝ × ℝ)} {a : ℝ}
+    (hT : ∀ k, ∀ p ∈ D k, p + (a, 0) ∈ D k ∧ F k (p + (a, 0)) = F k p + (a, 0))
+    {p : ZMod N → ℝ × ℝ} (hp : ∀ k, p k ∈ D k ∧ F k (p k) = p (k + 1)) (k : ZMod N) :
+    p k + (a, 0) ∈ D k ∧ F k (p k + (a, 0)) = p (k + 1) + (a, 0) :=
+  ⟨(hT k _ (hp k).1).1, by rw [(hT k _ (hp k).1).2, (hp k).2]⟩
+
+/-- **Critical configurations under diagonal translations.** If every `S_k` generates `F_k` over
+`D_k`, and every `F_k` commutes on `D_k` with the translation `(x, y) ↦ (x + a, y)`, which preserves
+`D_k`, then translating a critical configuration of the cyclic action by `a` in every coordinate
+gives a critical configuration. For lifts of annulus maps, `a` is any integer. -/
+theorem mvfderiv_cyclicAction_add_eq_zero_of_isStripGeneratingFunction
+    {F : ZMod N → ℝ × ℝ → ℝ × ℝ} {S : ZMod N → ℝ × ℝ → ℝ} {D : ZMod N → Set (ℝ × ℝ)}
+    (hS : ∀ k, IsStripGeneratingFunction (S k) (F k) (D k)) {a : ℝ}
+    (hT : ∀ k, ∀ p ∈ D k, p + (a, 0) ∈ D k ∧ F k (p + (a, 0)) = F k p + (a, 0))
+    {q : ZMod N → ℝ} (hq : ∀ k, (q k, q (k + 1)) ∈ stripTwistCoord (F k) '' D k)
+    (hc : mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ 𝓘(ℝ)) (cyclicAction S) q = 0) :
+    (∀ k, (q k + a, q (k + 1) + a) ∈ stripTwistCoord (F k) '' D k) ∧
+      mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ 𝓘(ℝ)) (cyclicAction S)
+        (fun k ↦ q k + a) = 0 := by
+  obtain ⟨e, he, -⟩ := exists_equiv_periodic_of_isStripGeneratingFunction hS
+  -- Translate the periodic chain of `q` by `(a, 0)`; its positions are `q + a`.
+  have hp := (e.symm ⟨q, hq, hc⟩).2
+  have hpos (k : ZMod N) : ((e.symm ⟨q, hq, hc⟩).1 k).1 = q k := by
+    rw [← he, Equiv.apply_symm_apply]
+  have hq' : (fun k ↦ q k + a) =
+      (e ⟨fun k ↦ (e.symm ⟨q, hq, hc⟩).1 k + (a, 0), periodic_add hT hp⟩ : ZMod N → ℝ) := by
+    funext k
+    rw [he, Prod.fst_add, hpos]
+  have h := (e ⟨fun k ↦ (e.symm ⟨q, hq, hc⟩).1 k + (a, 0), periodic_add hT hp⟩).2
+  rw [← hq'] at h
+  exact h
+
+/-- In a periodic chain of maps commuting with the translation `(x, y) ↦ (x + a, y)`, every state
+is determined by the first one: if the first states of two chains differ by `(a, 0)`, so do all. -/
+private theorem eq_add_of_periodic {F : ZMod N → ℝ × ℝ → ℝ × ℝ} {D : ZMod N → Set (ℝ × ℝ)}
+    {a : ℝ} (hT : ∀ k, ∀ p ∈ D k, F k (p + (a, 0)) = F k p + (a, 0))
+    {p p' : ZMod N → ℝ × ℝ} (hp : ∀ k, p k ∈ D k ∧ F k (p k) = p (k + 1))
+    (hp' : ∀ k, F k (p' k) = p' (k + 1)) (h₀ : p' 0 = p 0 + (a, 0)) (k : ZMod N) :
+    p' k = p k + (a, 0) := by
+  have key (n : ℕ) : p' n = p n + (a, 0) := by
+    induction n with
+    | zero => simpa using h₀
+    | succ n ih =>
+      rw [Nat.cast_succ, ← hp', ← (hp n).2, ih, hT _ _ (hp n).1]
+  simpa using key k.val
+
+/-- **Critical configurations and fixed points of the annulus.** Let every `S_k` generate `F_k`
+over `D_k`, and let every `F_k` commute on `D_k` with the integer translations
+`(x, y) ↦ (x + m, y)`, which preserve `D_k`. A critical configuration `x` of the cyclic action
+gives the fixed point `(x_0, y_0)` of the composite of the `F_k`, with
+`y_0 = -∂₁ S_0(x_0, x_1)`. Two critical configurations differ by a diagonal integer translation
+exactly when these fixed points define the same point `([x_0], y_0)` of the annulus. -/
+theorem exists_intCast_add_eq_iff_of_isStripGeneratingFunction
+    {F : ZMod N → ℝ × ℝ → ℝ × ℝ} {S : ZMod N → ℝ × ℝ → ℝ} {D : ZMod N → Set (ℝ × ℝ)}
+    (hS : ∀ k, IsStripGeneratingFunction (S k) (F k) (D k))
+    (hT : ∀ k, ∀ m : ℤ, ∀ p ∈ D k,
+      p + ((m : ℝ), 0) ∈ D k ∧ F k (p + ((m : ℝ), 0)) = F k p + ((m : ℝ), 0))
+    {q q' : ZMod N → ℝ} (hq : ∀ k, (q k, q (k + 1)) ∈ stripTwistCoord (F k) '' D k)
+    (hc : mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ 𝓘(ℝ)) (cyclicAction S) q = 0)
+    (hq' : ∀ k, (q' k, q' (k + 1)) ∈ stripTwistCoord (F k) '' D k)
+    (hc' : mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ 𝓘(ℝ)) (cyclicAction S) q' = 0) :
+    (∃ m : ℤ, ∀ k, q' k = q k + m) ↔
+      ((q' 0 : UnitAddCircle) = q 0 ∧
+        deriv (fun x ↦ S 0 (x, q' 1)) (q' 0) = deriv (fun x ↦ S 0 (x, q 1)) (q 0)) := by
+  obtain ⟨e, he, he'⟩ := exists_equiv_periodic_of_isStripGeneratingFunction hS
+  set p := e.symm ⟨q, hq, hc⟩
+  set p' := e.symm ⟨q', hq', hc'⟩ with hp'_def
+  have hp0 : p.1 0 = (q 0, -deriv (fun x ↦ S 0 (x, q 1)) (q 0)) := by
+    have h := he' ⟨q, hq, hc⟩ 0
+    rwa [zero_add] at h
+  have hp'0 : p'.1 0 = (q' 0, -deriv (fun x ↦ S 0 (x, q' 1)) (q' 0)) := by
+    have h := he' ⟨q', hq', hc'⟩ 0
+    rwa [zero_add] at h
+  -- The positions of the periodic chain of a critical configuration are the configuration.
+  have hpos : ∀ k, (p.1 k).1 = q k := fun k ↦ by rw [← he, Equiv.apply_symm_apply]
+  have hpos' : ∀ k, (p'.1 k).1 = q' k := fun k ↦ by rw [← he, Equiv.apply_symm_apply]
+  constructor
+  · rintro ⟨m, hm⟩
+    -- The chain of the translated configuration is the translated chain.
+    have hq'm : (⟨q', hq', hc'⟩ : {q : ZMod N → ℝ // _}) =
+        e ⟨fun k ↦ p.1 k + ((m : ℝ), 0), periodic_add (fun k ↦ hT k m) p.2⟩ :=
+      Subtype.ext (funext fun k ↦ (hm k).trans (by rw [he, Prod.fst_add, hpos]))
+    have h0 : p'.1 0 = p.1 0 + ((m : ℝ), 0) := by
+      rw [hp'_def, hq'm, Equiv.symm_apply_apply]
+    rw [hp0, hp'0, Prod.mk_add_mk, add_zero, Prod.mk.injEq, neg_inj] at h0
+    refine ⟨?_, h0.2⟩
+    rw [h0.1, AddCircle.coe_add, (AddCircle.coe_eq_zero_iff (1 : ℝ) (x := (m : ℝ))).2 ⟨m, by simp⟩,
+      add_zero]
+  · rintro ⟨hx, hy⟩
+    obtain ⟨m, hm⟩ : ∃ m : ℤ, m • (1 : ℝ) = q' 0 - q 0 := by
+      rw [← AddCircle.coe_eq_zero_iff (1 : ℝ), AddCircle.coe_sub, hx, sub_self]
+    rw [zsmul_eq_mul, mul_one] at hm
+    have h0 : p'.1 0 = p.1 0 + ((m : ℝ), 0) := by
+      rw [hp0, hp'0, hy, Prod.mk_add_mk, add_zero, hm, add_sub_cancel]
+    refine ⟨m, fun k ↦ ?_⟩
+    rw [← hpos' k, ← hpos k,
+      eq_add_of_periodic (fun k p hp ↦ (hT k m p hp).2) p.2 (fun k ↦ (p'.2 k).2) h0 k,
+      Prod.fst_add]
+
+end TauCeti
