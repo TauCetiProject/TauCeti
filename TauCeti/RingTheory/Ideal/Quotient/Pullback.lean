@@ -52,9 +52,9 @@ such as the conductor of `S` in `B`. Then `S` is the fibre product of `B` and `S
 ## Main results
 
 * `RingHom.ker_toQuotientPullback`: the kernel of the comparison is `ker f ⊓ I`.
-* `RingHom.surjective_toQuotientPullback_iff`: the comparison is surjective exactly when
+* `RingHom.toQuotientPullback_surjective_iff`: the comparison is surjective exactly when
   `J ⊆ f '' I`.
-* `RingHom.bijective_toQuotientPullback_iff`: the comparison is bijective exactly when
+* `RingHom.toQuotientPullback_bijective_iff`: the comparison is bijective exactly when
   `ker f ⊓ I = ⊥` and `J ⊆ f '' I`.
 * `RingHom.isPullback_quotient_iff`: the quotient square is a pullback square in `CommRingCat`
   exactly when `ker f ⊓ I = ⊥` and `J ⊆ f '' I`.
@@ -116,13 +116,13 @@ theorem ker_toQuotientPullback : ker (f.toQuotientPullback J hIJ) = ker f ⊓ I 
   simp [mem_ker, Subtype.ext_iff, Ideal.Quotient.eq_zero_iff_mem]
 
 /-- The comparison map is injective exactly when `ker f ⊓ I = ⊥`. -/
-theorem injective_toQuotientPullback_iff :
+theorem toQuotientPullback_injective_iff :
     Function.Injective (f.toQuotientPullback J hIJ) ↔ ker f ⊓ I = ⊥ := by
   rw [injective_iff_ker_eq_bot, ker_toQuotientPullback]
 
 /-- The comparison map is surjective exactly when every element of `J` is the image of an
 element of `I`. -/
-theorem surjective_toQuotientPullback_iff :
+theorem toQuotientPullback_surjective_iff :
     Function.Surjective (f.toQuotientPullback J hIJ) ↔ (J : Set B) ⊆ f '' I := by
   refine ⟨fun h b hb ↦ ?_, fun h ⟨⟨b, x⟩, hx⟩ ↦ ?_⟩
   · obtain ⟨a, ha⟩ := h ⟨(b, 0), by simpa [Ideal.Quotient.eq_zero_iff_mem] using hb⟩
@@ -137,16 +137,16 @@ theorem surjective_toQuotientPullback_iff :
 
 /-- The comparison map is bijective exactly when `ker f ⊓ I = ⊥` and every element of `J` is
 the image of an element of `I`. -/
-theorem bijective_toQuotientPullback_iff :
+theorem toQuotientPullback_bijective_iff :
     Function.Bijective (f.toQuotientPullback J hIJ) ↔ ker f ⊓ I = ⊥ ∧ (J : Set B) ⊆ f '' I := by
-  rw [Function.Bijective, injective_toQuotientPullback_iff, surjective_toQuotientPullback_iff]
+  rw [Function.Bijective, toQuotientPullback_injective_iff, toQuotientPullback_surjective_iff]
 
 /-- When `ker f ⊓ I = ⊥` and every element of `J` is the image of an element of `I`, the
 comparison map identifies `A` with the fibre product `B ×_{B/J} A/I`. -/
 noncomputable def quotientPullbackEquiv (hker : ker f ⊓ I = ⊥) (him : (J : Set B) ⊆ f '' I) :
     A ≃+* (Ideal.Quotient.mk J).pullback (Ideal.quotientMap J f hIJ) :=
   .ofBijective (f.toQuotientPullback J hIJ) <|
-    (bijective_toQuotientPullback_iff f J hIJ).mpr ⟨hker, him⟩
+    (toQuotientPullback_bijective_iff f J hIJ).mpr ⟨hker, him⟩
 
 variable {f J hIJ}
 
@@ -201,7 +201,7 @@ theorem isPullback_quotient_iff :
       (by simpa using CommRingCat.hom_ext (pullbackSnd_comp_toQuotientPullback f J hIJ).symm)
   refine (⟨fun h ↦ h.isLimit', fun h ↦ ⟨hsq, h⟩⟩ : _ ↔ Nonempty (IsLimit hsq.cone)).trans ?_
   rw [(CommRingCat.pullbackConeIsLimit _ _).nonempty_isLimit_iff_isIso_lift, hlift]
-  exact (ConcreteCategory.isIso_iff_bijective _).trans (bijective_toQuotientPullback_iff f J hIJ)
+  exact (ConcreteCategory.isIso_iff_bijective _).trans (toQuotientPullback_bijective_iff f J hIJ)
 
 end RingHom
 
