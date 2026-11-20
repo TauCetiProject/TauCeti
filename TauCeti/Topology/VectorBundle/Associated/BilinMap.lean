@@ -88,38 +88,21 @@ theorem bilinMap_trivializationAt (hβ : ∀ (g : G) (u v : F), β (g • u) (g 
 
 /-! ### Nondegeneracy and positivity -/
 
-/-- The fibre map of a `G`-invariant bilinear map is left-separating exactly when the bilinear
-map is. -/
-theorem separatingLeft_bilinMap_iff (hβ : ∀ (g : G) (u v : F), β (g • u) (g • v) = β u v)
-    (b : B) :
-    (bilinMap G P β b).toLinearMap₁₂.SeparatingLeft ↔ β.toLinearMap₁₂.SeparatingLeft := by
-  let p := (FiberBundle.homeomorphAt G P b).symm 1
-  have hp := mk_bijective (G := G) (F := F) p
-  constructor
-  · intro h u hu
-    refine hp.1 ((h (mk G p u) fun y ↦ ?_).trans (mk_zero p).symm)
-    obtain ⟨v, rfl⟩ := hp.2 y
-    simpa only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, bilinMap_mk hβ] using hu v
-  · intro h x hx
-    obtain ⟨u, rfl⟩ := hp.2 x
-    rw [h u fun v ↦ ?_, mk_zero]
-    simpa only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, bilinMap_mk hβ] using
-      hx (mk G p v)
+/-- The fibre map is left-separating exactly when the bilinear map is. -/
+theorem separatingLeft_bilinMap_iff (b : B) :
+    (bilinMap G P β b).toLinearMap₁₂.SeparatingLeft ↔ β.toLinearMap₁₂.SeparatingLeft :=
+  -- The fibre is a type synonym of `F` and the fibre map is `β` itself.
+  Iff.rfl
 
-/-- The fibre map of a `G`-invariant bilinear map is right-separating exactly when the bilinear
-map is. -/
-theorem separatingRight_bilinMap_iff (hβ : ∀ (g : G) (u v : F), β (g • u) (g • v) = β u v)
-    (b : B) :
-    (bilinMap G P β b).toLinearMap₁₂.SeparatingRight ↔ β.toLinearMap₁₂.SeparatingRight := by
-  -- Right separation of a bilinear map is left separation of its flip, which is again invariant.
-  rw [← LinearMap.flip_separatingLeft, ← LinearMap.flip_separatingLeft]
-  exact separatingLeft_bilinMap_iff (β := β.flip) (fun g u v ↦ hβ g v u) b
+/-- The fibre map is right-separating exactly when the bilinear map is. -/
+theorem separatingRight_bilinMap_iff (b : B) :
+    (bilinMap G P β b).toLinearMap₁₂.SeparatingRight ↔ β.toLinearMap₁₂.SeparatingRight :=
+  Iff.rfl
 
-/-- **Nondegenerate invariant bilinear maps induce nondegenerate fibre maps**, and conversely. -/
-theorem nondegenerate_bilinMap_iff (hβ : ∀ (g : G) (u v : F), β (g • u) (g • v) = β u v)
-    (b : B) :
+/-- **The fibre map is nondegenerate exactly when the bilinear map is.** -/
+theorem nondegenerate_bilinMap_iff (b : B) :
     (bilinMap G P β b).toLinearMap₁₂.Nondegenerate ↔ β.toLinearMap₁₂.Nondegenerate :=
-  and_congr (separatingLeft_bilinMap_iff hβ b) (separatingRight_bilinMap_iff hβ b)
+  Iff.rfl
 
 /-- **Positive definite invariant forms induce positive definite fibre forms.** -/
 theorem bilinMap_self_pos [NormedSpace ℝ F] {β : F →L[ℝ] F →L[ℝ] ℝ}
