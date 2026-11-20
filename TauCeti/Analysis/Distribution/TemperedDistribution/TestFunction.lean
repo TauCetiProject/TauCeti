@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.Analysis.Distribution.Restriction
 public import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
@@ -77,11 +78,7 @@ theorem ext_real {u v : 𝓢'(E, F)}
         (u.continuous.comp (SchwartzMap.postcompCLM Complex.ofRealCLM).continuous)
         (v.continuous.comp (SchwartzMap.postcompCLM Complex.ofRealCLM).continuous))
   ext φ
-  have hsplit : φ = (φ.postcompCLM Complex.reCLM).postcompCLM Complex.ofRealCLM +
-      Complex.I • (φ.postcompCLM Complex.imCLM).postcompCLM Complex.ofRealCLM := by
-    ext x
-    simpa [mul_comm] using (Complex.re_add_im (φ x)).symm
-  rw [hsplit]
+  rw [← SchwartzMap.postcompCLM_re_add_I_smul_im φ]
   simp only [map_add, map_smul, hreal]
 
 end Ext
