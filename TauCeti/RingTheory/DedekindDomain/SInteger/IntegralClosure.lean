@@ -44,6 +44,8 @@ elements of `B`, so `𝒪_{L,T}` is spanned over `𝒪_{K,S}` by `B`.
 
 ## Main results
 
+* `IsDedekindDomain.mem_span_of_mem_integer_primesAbove`: every `T`-integer of `L` lies in the
+  `𝒪_{K,S}`-span of the image of `B`.
 * `IsDedekindDomain.mem_integer_primesAbove_iff`: an element of `L` is a `T`-integer exactly when
   it is integral over `𝒪_{K,S}`.
 * `IsDedekindDomain.isIntegralClosure_integer_primesAbove`: `𝒪_{L,T}` is an integral closure of
@@ -104,7 +106,7 @@ instance : IsScalarTower R (S.integer K) ((primesAbove R B S).integer L) :=
 /-- A `T`-integer of `L` is an `𝒪_{K,S}`-combination of elements of `B`. The contraction to `R` of
 its denominator ideal in `B` extends to the unit ideal of `𝒪_{K,S}`, so `1` is a combination of
 elements `c` of `𝒪_{K,S}` with `c • x` in the image of `B`. -/
-private theorem mem_span_of_mem_integer_primesAbove {x : L}
+theorem mem_span_of_mem_integer_primesAbove {x : L}
     (hx : x ∈ (primesAbove R B S).integer L) :
     x ∈ Submodule.span (S.integer K) (Set.range (algebraMap B L)) := by
   set I := (Algebra.denIdeal (R := B) L x).under R
