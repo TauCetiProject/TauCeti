@@ -744,12 +744,12 @@ theorem _root_.Diffeomorph.isWeakPseudoholomorphicOn_comp_biholomorph_iff (Φ : 
       fun x hx ↦ show Φ (Φ.symm x) ∈ s by rwa [Φ.apply_symm_apply]
     exact h'.congr fun x _ ↦ by simp
   · -- Transport the chart `χ` of `X` to the chart `χ ∘ Φ` of `X'`.
-    have hφ' := Φ.transOpenPartialHomeomorph_mem_maximalAtlas_of_le (by simp) hχ
+    have hφ' := Φ.transOpenPartialHomeomorph_mem_maximalAtlas (by simp) hχ
     refine (isWeakCauchyRiemannOn_comp_biholomorph_iff Φ hJ hν hφ' rfl (fun z _ ↦ ?_) ψ).1
       (h _ hφ' ψ hψ)
     simp
   · -- Transport the chart `φ'` of `X'` to the chart `φ' ∘ Φ⁻¹` of `X`.
-    have hχ := Φ.symm.transOpenPartialHomeomorph_mem_maximalAtlas_of_le (by simp) hφ'
+    have hχ := Φ.symm.transOpenPartialHomeomorph_mem_maximalAtlas (by simp) hφ'
     refine (isWeakCauchyRiemannOn_comp_biholomorph_iff Φ hJ hν hφ' rfl (fun z _ ↦ ?_) ψ).2
       (h _ hχ ψ hψ)
     simp
