@@ -28,6 +28,9 @@ lower bound on the dimension of a divisor's section space into an actual finite 
 divisor `D` bounding the poles is effective, the degree of this map is at most `deg D`, so a
 second section of the divisor of a single point gives a map of degree one.
 
+If adding a point `x` to `D` enlarges the space of sections, a new section is a meromorphic
+function whose order at `x` is exactly the newly allowed `-(D(x) + 1)`.
+
 Since principal divisors have degree zero, the same embedding shows that a divisor of negative
 degree on a compact connected Riemann surface has no nonzero global sections.
 
@@ -140,6 +143,54 @@ theorem mem_range_toMeromorphic_iff (f : MeromorphicFunction X) :
   exact (MeromorphicFunction.ofMeromorphic_congr
     (fun x ↦ (isDivisorSectionAt s x).meromorphicAt) f.meromorphicAt_finitePart hEq).trans
       (MeromorphicFunction.ofMeromorphic_finitePart f)
+
+/-- **A jump in the section spaces gives a function of exact pole order.** If adding a point `x`
+to a divisor `D` raises the dimension of the global sections, then some meromorphic function
+satisfies the bound of `𝒪(D + [x])` and has order exactly `-(D(x) + 1)` at `x`. -/
+theorem _root_.TauCeti.RiemannSurface.MeromorphicFunction.exists_order_eq_neg_of_finrank_lt
+    {D : WeilDivisor X} {x : X}
+    (h : Module.finrank ℂ (divisorSections D ⊤) <
+      Module.finrank ℂ (divisorSections (D + WeilDivisor.ofPoint x) ⊤)) :
+    ∃ f : MeromorphicFunction X,
+      MeromorphicFunction.order x f = ((-(D x + 1) : ℤ) : WithTop ℤ) ∧
+      ∀ y, ((-(D + WeilDivisor.ofPoint x) y : ℤ) : WithTop ℤ) ≤ MeromorphicFunction.order y f := by
+  set E := D + WeilDivisor.ofPoint x
+  have hE (z : X) : E z = D z + WeilDivisor.coeff (WeilDivisor.ofPoint x) z :=
+    WeilDivisor.coeff_add D _ z
+  -- The image of `L(D)` lies in that of `L(D + [x])`, which is finite-dimensional, and does not
+  -- contain it, since it has smaller dimension.
+  have hDE : (toMeromorphic D).range ≤ (toMeromorphic E).range := fun f hf ↦ by
+    rw [mem_range_toMeromorphic_iff] at hf ⊢
+    intro y
+    refine le_trans ?_ (hf y)
+    rw [hE]
+    exact_mod_cast neg_le_neg (le_add_of_nonneg_right
+      (WeilDivisor.coeff_nonneg (WeilDivisor.ofPoint_nonneg x) y))
+  have : Module.Finite ℂ (divisorSections E ⊤) := Module.finite_of_finrank_pos (by omega)
+  have := Submodule.finiteDimensional_of_le hDE
+  have hlt : ¬(toMeromorphic E).range ≤ (toMeromorphic D).range := fun hle ↦ by
+    have := Submodule.finrank_mono hle
+    rw [LinearMap.finrank_range_of_inj (toMeromorphic_injective D),
+      LinearMap.finrank_range_of_inj (toMeromorphic_injective E)] at this
+    omega
+  obtain ⟨f, hfE, hfD⟩ := IsConcreteLE.not_le_iff_exists.mp hlt
+  rw [mem_range_toMeromorphic_iff] at hfE hfD
+  push Not at hfD
+  obtain ⟨y, hy⟩ := hfD
+  refine ⟨f, ?_, hfE⟩
+  -- The bounds of `L(D)` and `L(D + [x])` differ only at `x`, so `f` violates the first there,
+  -- which pins its order at `x` to `-(D(x) + 1)`.
+  have hyE := hfE y
+  rcases eq_or_ne y x with rfl | hyx
+  · rw [hE, WeilDivisor.coeff_ofPoint_self] at hyE
+    induction h : MeromorphicFunction.order y f using WithTop.recTopCoe with
+    | top => rw [h] at hy; exact absurd hy not_top_lt
+    | coe n =>
+      rw [h] at hy hyE
+      norm_cast at hy hyE ⊢
+      omega
+  · rw [hE, WeilDivisor.coeff_ofPoint_of_ne hyx, add_zero] at hyE
+    exact absurd hy (not_lt.mpr hyE)
 
 /-- A section space of dimension greater than one contains a section whose meromorphic
 image is not constant. No effectiveness assumption on the divisor is needed. -/
