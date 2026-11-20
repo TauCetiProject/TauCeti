@@ -62,6 +62,18 @@ theorem toRiemannianMetric_ofLE (g : ContMDiffRiemannianMetric IB n F E) (h : m 
     (g.ofLE h).toRiemannianMetric = g.toRiemannianMetric :=
   (rfl)
 
+/-- The continuous metric underlying a `C^n` metric has the same inner products. -/
+@[simp]
+theorem toContinuousRiemannianMetric_inner (g : ContMDiffRiemannianMetric IB n F E) :
+    g.toContinuousRiemannianMetric.inner = g.inner :=
+  (rfl)
+
+/-- Lowering the smoothness of a metric does not change the underlying continuous metric. -/
+@[simp]
+theorem toContinuousRiemannianMetric_ofLE (g : ContMDiffRiemannianMetric IB n F E) (h : m ≤ n) :
+    (g.ofLE h).toContinuousRiemannianMetric = g.toContinuousRiemannianMetric :=
+  (rfl)
+
 /-- Forgetting regularity to the same order leaves a metric unchanged. -/
 @[simp]
 theorem ofLE_refl (g : ContMDiffRiemannianMetric IB n F E) (h : n ≤ n) :
