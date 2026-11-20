@@ -181,8 +181,8 @@ theorem twistedContDiff_le_twistedContinuous : twistedContDiff X d ε ≤ twiste
 along `d`. -/
 theorem deriv_mem_twistedContinuous (w : twistedContDiff X d ε) :
     deriv (w : ℝ → X) ∈ twistedContinuous X d ε :=
-  ⟨w.2.1.continuous_deriv le_rfl, fun t => by
-    simp only [← fderiv_apply_one_eq_deriv, fderiv_add_eq_smul w.2.2 t, smul_apply]⟩
+  ⟨w.property.1.continuous_deriv le_rfl, fun t => by
+    simp only [← fderiv_apply_one_eq_deriv, fderiv_add_eq_smul w.property.2 t, smul_apply]⟩
 
 /-- A map twisted by `1` along `d` is `d`-periodic. -/
 theorem periodic_of_mem_twistedContinuous {f : ℝ → X} (hf : f ∈ twistedContinuous X d 1) :
@@ -198,7 +198,8 @@ variable (X d) in
 /-- The continuous `d`-periodic maps `ℝ → X`, that is, the continuous maps twisted by `1` along
 `d`, are the continuous loops on `AddCircle d`. -/
 def twistedContinuousOneEquiv : twistedContinuous X d 1 ≃ₗ[ℝ] C(AddCircle d, X) where
-  toFun f := ⟨(periodic_of_mem_twistedContinuous f.2).lift, continuous_coinduced_dom.2 f.2.1⟩
+  toFun f := ⟨(periodic_of_mem_twistedContinuous f.property).lift,
+      continuous_coinduced_dom.2 f.property.1⟩
   map_add' f g := AddCircle.continuousMap_ext_coe fun t => by
     simp only [ContinuousMap.coe_mk, ContinuousMap.add_apply, Function.Periodic.lift_coe,
       Submodule.coe_add, Pi.add_apply]
@@ -231,15 +232,16 @@ maps twisted by `ε` along `d`, for a continuous path `M` of bounded operators o
 def twistedLinearOperator (hM : Continuous M) (hper : Function.Periodic M d) (ε : ℝ) :
     twistedContDiff X d ε →ₗ[ℝ] twistedContinuous X d ε where
   toFun w := ⟨fun t => deriv (w : ℝ → X) t - M t ((w : ℝ → X) t),
-    (deriv_mem_twistedContinuous w).1.sub (hM.clm_apply w.2.1.continuous), fun t => by
-      simp only [(deriv_mem_twistedContinuous w).2 t, hper t, w.2.2 t, map_smul, smul_sub]⟩
+    (deriv_mem_twistedContinuous w).1.sub (hM.clm_apply w.property.1.continuous), fun t => by
+      simp only [(deriv_mem_twistedContinuous w).2 t, hper t, w.property.2 t, map_smul, smul_sub]⟩
   map_add' w v := by
     ext t
-    simp [deriv_add (w.2.1.differentiable one_ne_zero t) (v.2.1.differentiable one_ne_zero t)]
+    simp [deriv_add (w.property.1.differentiable one_ne_zero t)
+        (v.property.1.differentiable one_ne_zero t)]
     abel
   map_smul' c w := by
     ext t
-    simp [deriv_const_smul c (w.2.1.differentiable one_ne_zero t), smul_sub]
+    simp [deriv_const_smul c (w.property.1.differentiable one_ne_zero t), smul_sub]
 
 @[simp]
 theorem twistedLinearOperator_apply (hM : Continuous M) (hper : Function.Periodic M d)
@@ -252,7 +254,7 @@ theorem twistedLinearOperator_eq_iff (hM : Continuous M) (hper : Function.Period
     (w : twistedContDiff X d ε) (f : twistedContinuous X d ε) :
     twistedLinearOperator hM hper ε w = f ↔
       ∀ t, HasDerivAt (w : ℝ → X) (M t ((w : ℝ → X) t) + (f : ℝ → X) t) t := by
-  have hd (t : ℝ) := (w.2.1.differentiable one_ne_zero t).hasDerivAt
+  have hd (t : ℝ) := (w.property.1.differentiable one_ne_zero t).hasDerivAt
   constructor
   · rintro rfl t
     simpa [twistedLinearOperator_apply] using hd t
@@ -420,7 +422,7 @@ def twistedEndpoint (hM : Continuous M) (d ε : ℝ) : twistedContinuous X d ε 
     have hi (h : twistedContinuous X d ε) :
         IntervalIntegrable (fun s => dysonSeries (-M) s ((h : ℝ → X) s))
           MeasureTheory.volume 0 d :=
-      ((continuous_dysonSeries hM.neg).clm_apply h.2.1).intervalIntegrable 0 d
+      ((continuous_dysonSeries hM.neg).clm_apply h.property.1).intervalIntegrable 0 d
     simp only [Submodule.coe_add, Pi.add_apply, map_add, integral_add (hi f) (hi g)]
   map_smul' c f := by
     simp only [Submodule.coe_smul, Pi.smul_apply, map_smul, integral_smul, RingHom.id_apply]
@@ -438,13 +440,14 @@ theorem mem_range_twistedLinearOperator_iff (hM : Continuous M) (hper : Function
     f ∈ LinearMap.range (twistedLinearOperator hM hper ε) ↔
       twistedEndpoint hM d ε f ∈
         LinearMap.range (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) := by
-  rw [twistedEndpoint_apply, ← exists_twisted_solution_iff hM hper f.2.1 f.2.2]
+  rw [twistedEndpoint_apply, ← exists_twisted_solution_iff hM hper f.property.1 f.property.2]
   constructor
   · rintro ⟨w, hw⟩
-    exact ⟨w, (twistedLinearOperator_eq_iff hM hper w f).1 hw, w.2.2⟩
+    exact ⟨w, (twistedLinearOperator_eq_iff hM hper w f).1 hw, w.property.2⟩
   · rintro ⟨w, hw, htw⟩
     have hc : ContDiff ℝ 1 w := contDiff_one_of_hasDerivAt (X := fun t v => M t v + (f : ℝ → X) t)
-      (((hM.comp continuous_fst).clm_apply continuous_snd).add (f.2.1.comp continuous_fst)) hw
+      (((hM.comp continuous_fst).clm_apply continuous_snd).add (f.property.1.comp continuous_fst))
+          hw
     exact ⟨⟨w, hc, htw⟩, (twistedLinearOperator_eq_iff hM hper ⟨w, hc, htw⟩ f).2 hw⟩
 
 /-- For `d > 0` and `ε ≠ 0`, every vector `y` is `∫₀ᵈ Ψ(s)⁻¹ (f s) ds` for some continuous map
@@ -509,17 +512,17 @@ sends `x` to `t ↦ Ψ t x`. -/
 def kerTwistedLinearOperatorEquiv (hM : Continuous M) (hper : Function.Periodic M d) (ε : ℝ) :
     LinearMap.ker (twistedLinearOperator hM hper ε) ≃ₗ[ℝ]
       LinearMap.ker (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) where
-  toFun w := ⟨(w.1 : ℝ → X) 0, by
-    have hw := (mem_ker_twistedLinearOperator_iff hM hper w.1).1 w.2
+  toFun w := ⟨(w.val : ℝ → X) 0, by
+    have hw := (mem_ker_twistedLinearOperator_iff hM hper w.val).1 w.property
     have h := (forall_add_eq_smul_iff_smul_one_sub_apply_eq hM hper continuous_const
-      (f := 0) (by simp) (w := w.1) (by simpa using hw)).1 w.1.2.2
+      (f := 0) (by simp) (w := w.val) (by simpa using hw)).1 w.val.property.2
     simpa using h⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
-  invFun x := ⟨⟨_, dysonSeriesLeft_apply_mem_twistedContDiff hM hper x.2⟩,
+  invFun x := ⟨⟨_, dysonSeriesLeft_apply_mem_twistedContDiff hM hper x.property⟩,
     (mem_ker_twistedLinearOperator_iff hM hper _).2 (hasDerivAt_dysonSeriesLeft_apply hM x)⟩
   left_inv w := by
-    have hw := (mem_ker_twistedLinearOperator_iff hM hper w.1).1 w.2
+    have hw := (mem_ker_twistedLinearOperator_iff hM hper w.val).1 w.property
     ext t
     exact (eq_dysonSeriesLeft_apply hM hw t).symm
   right_inv x := by
@@ -529,14 +532,14 @@ def kerTwistedLinearOperatorEquiv (hM : Continuous M) (hper : Function.Periodic 
 @[simp]
 theorem kerTwistedLinearOperatorEquiv_apply (hM : Continuous M) (hper : Function.Periodic M d)
     (w : LinearMap.ker (twistedLinearOperator hM hper ε)) :
-    (kerTwistedLinearOperatorEquiv hM hper ε w : X) = (w.1 : ℝ → X) 0 :=
+    (kerTwistedLinearOperatorEquiv hM hper ε w : X) = (w.val : ℝ → X) 0 :=
   (rfl)
 
 @[simp]
 theorem kerTwistedLinearOperatorEquiv_symm_apply (hM : Continuous M)
     (hper : Function.Periodic M d)
     (x : LinearMap.ker (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X))) (t : ℝ) :
-    (((kerTwistedLinearOperatorEquiv hM hper ε).symm x).1 : ℝ → X) t = dysonSeriesLeft M t x :=
+    (((kerTwistedLinearOperatorEquiv hM hper ε).symm x).val : ℝ → X) t = dysonSeriesLeft M t x :=
   (rfl)
 
 /-- The range of `L` is the kernel of the endpoint map followed by the projection onto the

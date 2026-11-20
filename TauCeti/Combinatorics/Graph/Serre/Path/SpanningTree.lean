@@ -78,7 +78,7 @@ theorem loop_def (e : Γ.E) :
       (((T.path v (Γ.src e)).cons (Γ.dart e)).comp (T.path (Γ.tgt e) v)) := (rfl)
 
 @[simp] theorem basedPath_toPath {a b : Γ.V} (e : a ⟶ b) :
-    T.basedPath v e.toPath = T.loop v e.1 := by
+    T.basedPath v e.toPath = T.loop v e.val := by
   obtain ⟨e, rfl, rfl⟩ := e
   rw [loop]
   congr 2

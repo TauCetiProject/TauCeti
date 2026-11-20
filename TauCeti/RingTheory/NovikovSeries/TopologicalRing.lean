@@ -288,7 +288,7 @@ def posIdeal : Ideal (nonnegSubring R N) where
   smul_mem' c a ha := by
     obtain ⟨C, hC, haC⟩ := exists_pos_mem_periodFiltration_iff.2 ha
     exact exists_pos_mem_periodFiltration_iff.1
-      ⟨0 + C, by rwa [zero_add], mul_mem_periodFiltration c.2 haC⟩
+      ⟨0 + C, by rwa [zero_add], mul_mem_periodFiltration c.property haC⟩
 
 @[simp]
 theorem mem_posIdeal {a : nonnegSubring R N} :
@@ -300,7 +300,7 @@ instance : (posIdeal R N).IsTwoSided where
   mul_mem_of_left b ha := by
     obtain ⟨C, hC, haC⟩ := exists_pos_mem_periodFiltration_iff.2 ha
     exact exists_pos_mem_periodFiltration_iff.1
-      ⟨C + 0, by rwa [add_zero], mul_mem_periodFiltration haC b.2⟩
+      ⟨C + 0, by rwa [add_zero], mul_mem_periodFiltration haC b.property⟩
 
 /-- A series of the positive ideal is topologically nilpotent. -/
 theorem isTopologicallyNilpotent_of_mem_posIdeal {a : nonnegSubring R N} (ha : a ∈ posIdeal R N) :
@@ -312,7 +312,7 @@ theorem isTopologicallyNilpotent_of_mem_posIdeal {a : nonnegSubring R N} (ha : a
 subring. -/
 theorem tsum_pow_mem_nonnegSubring (a : nonnegSubring R N) :
     ∑' n : ℕ, (a : NovikovSeries R H N) ^ n ∈ nonnegSubring R N :=
-  tsum_mem isClosed_nonnegSubring fun n => Subring.pow_mem _ a.2 n
+  tsum_mem isClosed_nonnegSubring fun n => Subring.pow_mem _ a.property n
 
 /-- For `a` in the positive ideal, `1 - a` as a unit of the nonnegative subring. Its inverse is
 the geometric series `∑ aⁿ` (`TauCeti.NovikovSeries.coe_inv_unitsOneSub`). -/
@@ -412,7 +412,7 @@ def periodIdeal (C : ℝ) : Ideal (nonnegSubring R N) where
   zero_mem' := zero_mem (periodFiltration R N C)
   smul_mem' := fun c a ha => by
     simpa using
-      mul_mem_periodFiltration (mem_periodFiltration.2 (mem_nonnegSubring.1 c.2)) ha
+      mul_mem_periodFiltration (mem_periodFiltration.2 (mem_nonnegSubring.1 c.property)) ha
 
 @[simp]
 theorem mem_periodIdeal {a : nonnegSubring R N} :
@@ -455,7 +455,7 @@ variable {S : Type*} [CommSemiring S] [Algebra S R]
 scalar multiplication. -/
 instance : Algebra S (nonnegSubring R N) where
   smul s a := ⟨s • (a : NovikovSeries R H N), mem_nonnegSubring.2 fun h hh => by
-    rw [coeff_smul, mem_nonnegSubring.1 a.2 h hh, smul_zero]⟩
+    rw [coeff_smul, mem_nonnegSubring.1 a.property h hh, smul_zero]⟩
   algebraMap := (algebraMap S (NovikovSeries R H N)).codRestrict (nonnegSubring R N) fun s => by
     rw [algebraMap_apply]
     exact single_mem_nonnegSubring (map_zero N).ge _

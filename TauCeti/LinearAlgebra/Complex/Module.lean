@@ -227,7 +227,7 @@ variable {A : Type*} [AddCommGroup A] [Module ℂ A] [StarAddMonoid A] [StarModu
 self-adjoint elements of a complex star module, with inverse `a ↦ I • a`. -/
 def negISMulEquiv : skewAdjoint A ≃ₗ[ℝ] selfAdjoint A :=
   { skewAdjoint.negISMul with
-    invFun a := ⟨I • (a : A), I_smul_mem_skewAdjoint_iff_isSelfAdjoint.mpr a.2⟩
+    invFun a := ⟨I • (a : A), I_smul_mem_skewAdjoint_iff_isSelfAdjoint.mpr a.property⟩
     left_inv a := Subtype.ext (skewAdjoint.I_smul_neg_I a)
     right_inv a := Subtype.ext (by simp [smul_smul]) }
 

@@ -122,7 +122,7 @@ instance : Unique (JamesReducedProduct X x₀)ˣ :=
 
 /-- The James reduced product of a one-point space is a point. -/
 instance [Subsingleton X] : Unique (JamesReducedProduct X x₀) :=
-  haveI : IsEmpty {x : X // x ≠ x₀} := ⟨fun x => x.2 (Subsingleton.elim _ _)⟩
+  haveI : IsEmpty {x : X // x ≠ x₀} := ⟨fun x => x.property (Subsingleton.elim _ _)⟩
   inferInstanceAs (Unique (FreeMonoid {x : X // x ≠ x₀}))
 
 variable (X x₀) in
@@ -150,12 +150,12 @@ theorem letter_of_ne {x : X} (h : x ≠ x₀) :
 @[simp]
 theorem freeMonoidEquiv_symm_of (x : {x : X // x ≠ x₀}) :
     (freeMonoidEquiv X x₀).symm (FreeMonoid.of x) = letter (x : X) :=
-  (letter_of_ne x.2).symm
+  (letter_of_ne x.property).symm
 
 @[simp]
 theorem freeMonoidEquiv_letter_coe (x : {x : X // x ≠ x₀}) :
     freeMonoidEquiv X x₀ (letter x) = FreeMonoid.of x := by
-  rw [letter_of_ne x.2, MulEquiv.apply_symm_apply]
+  rw [letter_of_ne x.property, MulEquiv.apply_symm_apply]
 
 @[simp]
 theorem letter_eq_one_iff {x : X} : (letter x : JamesReducedProduct X x₀) = 1 ↔ x = x₀ := by
@@ -333,7 +333,7 @@ theorem mem_toList_freeMonoidEquiv_mk {n : ℕ} (v : Fin n → X) (a : {x : X //
       Fin.exists_fin_succ, Fin.cons_zero]
     simp only [Fin.cons_succ]
     by_cases h : v 0 = x₀
-    · simp [h, a.2.symm]
+    · simp [h, a.property.symm]
     · rw [letter_of_ne h, MulEquiv.apply_symm_apply, FreeMonoid.toList_of, List.mem_singleton,
         Subtype.ext_iff, eq_comm]
 

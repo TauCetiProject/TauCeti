@@ -287,10 +287,10 @@ theorem isClosed_setOf_exists_gaugeTransform_eq {k : ℕ} (hk : 2 < k) :
       (hq : Continuous q) :
       TendstoLocallyUniformly (fun i : S ↦ ⇑(q i)) (q p) l :=
     (tendstoUniformly_of_tendsto hs ((hq.tendsto p).comp hl)).tendstoLocallyUniformly
-  choose us hus hxy using fun i : S ↦ i.2
+  choose us hus hxy using fun i : S ↦ i.property
   obtain ⟨⟨v, hvG⟩, hv⟩ := mem_orbit_sobolevGaugeGroup_of_tendstoLocallyUniformly hk
-    (xs := fun i : S ↦ (i : S).1.1.toFramedFieldSpace)
-    (ys := fun i : S ↦ (i : S).1.2.toFramedFieldSpace)
+    (xs := fun i : S ↦ (i : S).val.1.toFramedFieldSpace)
+    (ys := fun i : S ↦ (i : S).val.2.toFramedFieldSpace)
     (x := p.1.toFramedFieldSpace) (y := p.2.toFramedFieldSpace)
     (fun i ↦ ⟨⟨us i, hus i⟩, Subtype.ext (hxy i)⟩)
     (hconv Prod.fst continuous_fst) (hconv Prod.snd continuous_snd) p.1.continuous p.2.continuous

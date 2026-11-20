@@ -140,7 +140,7 @@ theorem _root_.Valuation.isEquiv_spectralValuation_iff {Γ₀ : Type*}
     have hdiv : w (a ^ n / algebraMap K L c) ≤ 1 := le_one_of_spectralValuation_le_one hle <| by
       rw [map_div₀, map_pow, spectralValuation_algebraMap]
       exact div_le_one_of_le₀ hn.le zero_le
-    rw [map_div₀, map_pow, div_le_one₀ (zero_lt_iff.mpr hwc₀)] at hdiv
+    rw [map_div₀, map_pow, div_le_one₀ (pos_iff_ne_zero.mpr hwc₀)] at hdiv
     by_contra! h1
     exact (one_le_pow₀ h1).trans hdiv |>.not_gt hwc
   refine Valuation.isEquiv_of_val_le_one fun a ↦ ⟨fun ha ↦ ?_,
@@ -148,7 +148,7 @@ theorem _root_.Valuation.isEquiv_spectralValuation_iff {Γ₀ : Type*}
   by_contra! h
   have ha₀ : a ≠ 0 := by rintro rfl; simp at h
   have := hlt (a := a⁻¹) (by rw [map_inv₀]; exact inv_lt_one_of_one_lt₀ h)
-  rw [map_inv₀, inv_lt_one₀ (zero_lt_iff.mpr ((Valuation.ne_zero_iff w).mpr ha₀))] at this
+  rw [map_inv₀, inv_lt_one₀ (pos_iff_ne_zero.mpr ((Valuation.ne_zero_iff w).mpr ha₀))] at this
   exact this.not_ge ha
 
 end IsAlgebraic

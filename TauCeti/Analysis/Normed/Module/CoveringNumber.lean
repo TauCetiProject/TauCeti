@@ -72,7 +72,7 @@ theorem card_le_of_isSeparated_of_subset_closedBall {s : Finset E} (hε : ε ≠
   -- closed ball of radius `r + δ` around `x`.
   have hsub : cthickening δ (s : Set E) ⊆ closedBall x (r + δ) := by
     rw [add_comm]
-    exact (cthickening_subset_of_subset δ hsx).trans (cthickening_closedBall hδ.le r.2 x).le
+    exact (cthickening_subset_of_subset δ hsx).trans (cthickening_closedBall hδ.le r.property x).le
   have key : (s.card : ℝ≥0∞) * ENNReal.ofReal (δ ^ finrank ℝ E) * μ (ball 0 1) ≤
       ENNReal.ofReal ((r + δ) ^ finrank ℝ E) * μ (ball 0 1) :=
     calc (s.card : ℝ≥0∞) * ENNReal.ofReal (δ ^ finrank ℝ E) * μ (ball 0 1)
@@ -155,11 +155,11 @@ theorem pow_finrank_le_card_mul_pow_of_isCover_closedBall {N : Finset E}
   have key : ENNReal.ofReal ((r : ℝ) ^ finrank ℝ E) * μ (ball 0 1) ≤
       ENNReal.ofReal ((N.card : ℝ) * (ε : ℝ) ^ finrank ℝ E) * μ (ball 0 1) :=
     calc ENNReal.ofReal ((r : ℝ) ^ finrank ℝ E) * μ (ball 0 1)
-        = μ (closedBall x r) := (μ.addHaar_closedBall x r.2).symm
+        = μ (closedBall x r) := (μ.addHaar_closedBall x r.property).symm
       _ ≤ μ (⋃ y ∈ (N : Set E), closedBall y ε) := measure_mono hcov.subset_iUnion_closedBall
       _ ≤ ∑ y ∈ N, μ (closedBall y ε) := measure_biUnion_finset_le N fun y ↦ closedBall y ε
       _ = ∑ _y ∈ N, ENNReal.ofReal ((ε : ℝ) ^ finrank ℝ E) * μ (ball 0 1) :=
-          Finset.sum_congr rfl fun y _ ↦ μ.addHaar_closedBall y ε.2
+          Finset.sum_congr rfl fun y _ ↦ μ.addHaar_closedBall y ε.property
       _ = ENNReal.ofReal ((N.card : ℝ) * (ε : ℝ) ^ finrank ℝ E) * μ (ball 0 1) := by
           rw [Finset.sum_const, nsmul_eq_mul, ← mul_assoc, ENNReal.ofReal_mul (Nat.cast_nonneg _),
             ENNReal.ofReal_natCast]
@@ -182,7 +182,7 @@ theorem div_pow_finrank_le_externalCoveringNumber_closedBall (x : E) (r ε : ℝ
   rcases eq_or_ne ε 0 with rfl | hε
   · rcases eq_or_ne (finrank ℝ E) 0 with hd | hd
     · obtain ⟨y, hy, -⟩ := mem_iUnion₂.mp
-        (hcov.subset_iUnion_closedBall (mem_closedBall_self r.2))
+        (hcov.subset_iUnion_closedBall (mem_closedBall_self r.property))
       have hk1 : 1 ≤ k := (Finset.card_pos.mpr ⟨y, hy⟩).trans_le hNk
       simpa [hd] using hk1
     · have hr0 : (r : ℝ) = 0 :=

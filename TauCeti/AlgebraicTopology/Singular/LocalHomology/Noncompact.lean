@@ -352,11 +352,11 @@ theorem isZero_singularHomology_of_isOpen_ne_univ [PreconnectedSpace M] (hn : fi
     have hOpenM : IsOpen (Subtype.val '' connectedComponent x) :=
       hUo.isOpenEmbedding_subtypeVal.isOpenMap _ isOpen_connectedComponent
     have hClosedM : IsClosed (Subtype.val '' connectedComponent x) :=
-      (hc.image continuous_subtype_val).isClosed
+      (hc.image continuous_subtypeVal).isClosed
     have hClopen : IsClopen (Subtype.val '' connectedComponent x) := ⟨hClosedM, hOpenM⟩
     have hUniv : Subtype.val '' connectedComponent x = univ :=
-      hClopen.eq_univ ⟨x.1, x, mem_connectedComponent, rfl⟩
-    exact univ_subset_iff.1 (hUniv ▸ image_subset_iff.2 fun y _ ↦ y.2)
+      hClopen.eq_univ ⟨x.val, x, mem_connectedComponent, rfl⟩
+    exact univ_subset_iff.1 (hUniv ▸ image_subset_iff.2 fun y _ ↦ y.property)
 
 end General
 

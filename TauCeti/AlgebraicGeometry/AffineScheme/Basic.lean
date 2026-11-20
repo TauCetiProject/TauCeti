@@ -256,7 +256,7 @@ open of `S` form a basis of the topology of `S'`. -/
 theorem Scheme.Hom.isBasis_range_affineOpens_le_preimage {S S' : Scheme.{u}} (g : S' ⟶ S) :
     TopologicalSpace.Opens.IsBasis (Set.range fun i :
       {p : S'.affineOpens × S.affineOpens // (p.1 : S'.Opens) ≤ g ⁻¹ᵁ p.2} ↦
-        (i.1.1 : S'.Opens)) := by
+        (i.val.1 : S'.Opens)) := by
   refine TopologicalSpace.Opens.isBasis_iff_nbhd.mpr fun {U x} hx ↦ ?_
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, -⟩ :=
     S.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (g x)) isOpen_univ
@@ -424,8 +424,8 @@ theorem Scheme.Hom.eq_of_comp_eq_of_forall_liesOver_eq {R A : Type u} [CommRing 
     (e : A) (u : Spec ↧R) (v : Spec ↧A)
     (huniq : ∀ P'' : Ideal A, P''.IsPrime → P''.LiesOver u.asIdeal → e ∉ P'' → P'' = v.asIdeal)
     (hv : g v ∈ g ''ᵁ PrimeSpectrum.basicOpen e) (w : g ''ᵁ PrimeSpectrum.basicOpen e)
-    (hw : p w.1 = u) : w = ⟨g v, hv⟩ := by
-  obtain ⟨z, hz, hzw⟩ := w.2
+    (hw : p w.val = u) : w = ⟨g v, hv⟩ := by
+  obtain ⟨z, hz, hzw⟩ := w.property
   have hzu : Spec.map (CommRingCat.ofHom (algebraMap R A)) z = u := by
     rw [← hgp, Scheme.Hom.comp_apply]
     exact hzw.symm ▸ hw

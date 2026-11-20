@@ -40,7 +40,7 @@ theorem exists_stronglyConnected_singleton_subnetwork :
   · simp
   · simp
   · intro x y
-    exact ⟨fun e ↦ by simpa using e.2⟩
+    exact ⟨fun e ↦ by simpa using e.property⟩
   · exact Network.Subnetwork.isStronglyConnected_singleton (N := N) 1
 
 end

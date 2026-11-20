@@ -82,7 +82,7 @@ theorem homeomorphTrivial_apply (he : e.baseSet = Set.univ) (v : TotalSpace F E)
 @[simp]
 theorem homeomorphTrivial_symm_apply (he : e.baseSet = Set.univ)
     (w : TotalSpace F (Bundle.Trivial B F)) :
-    (e.homeomorphTrivial he).symm w = e.toPartialHomeomorph.symm (w.proj, w.2) := by
+    (e.homeomorphTrivial he).symm w = e.toPartialHomeomorph.symm (w.proj, w.snd) := by
   rfl
 
 section Linear
@@ -95,7 +95,7 @@ include R in
 /-- A linear trivialization sends a vector over its base set to a nonzero vector exactly when the
 vector is nonzero. -/
 theorem snd_apply_ne_zero_iff {v : TotalSpace F E} (hv : v.proj ∈ e.baseSet) :
-    (e v).2 ≠ 0 ↔ v.2 ≠ 0 := by
+    (e v).2 ≠ 0 ↔ v.snd ≠ 0 := by
   simpa only [linearEquivAt_apply] using (e.linearEquivAt R v.proj hv).map_ne_zero_iff
 
 include R in
@@ -155,14 +155,14 @@ variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] (e : Trivialization F
 theorem homeomorphTrivial_apply_eq_continuousLinearEquivAt (he : e.baseSet = Set.univ)
     (v : TotalSpace F E) :
     e.homeomorphTrivial he v = TotalSpace.mk' F v.proj (e.continuousLinearEquivAt 𝕜 v.proj
-      (he ▸ Set.mem_univ _) v.2) :=
+      (he ▸ Set.mem_univ _) v.snd) :=
   congrArg (Bundle.Trivial.homeomorphProd B F).symm
-    (e.apply_eq_prod_continuousLinearEquivAt 𝕜 v.proj (he ▸ Set.mem_univ _) v.2)
+    (e.apply_eq_prod_continuousLinearEquivAt 𝕜 v.proj (he ▸ Set.mem_univ _) v.snd)
 
 theorem homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt (he : e.baseSet = Set.univ)
     (w : TotalSpace F (Bundle.Trivial B F)) :
     (e.homeomorphTrivial he).symm w = TotalSpace.mk' F w.proj
-      ((e.continuousLinearEquivAt 𝕜 w.proj (he ▸ Set.mem_univ _)).symm w.2) := by
+      ((e.continuousLinearEquivAt 𝕜 w.proj (he ▸ Set.mem_univ _)).symm w.snd) := by
   rw [Homeomorph.symm_apply_eq, homeomorphTrivial_apply_eq_continuousLinearEquivAt 𝕜]
   exact congrArg (TotalSpace.mk' F w.proj) (ContinuousLinearEquiv.apply_symm_apply _ _).symm
 

@@ -544,10 +544,10 @@ noncomputable def TauCeti.QuadraticMap.specialOrthogonalGroupBaseChange [Module.
     [Module.Finite R M] (Q : QuadraticForm R M) :
     specialOrthogonalGroup Q →* specialOrthogonalGroup (Q.baseChange A) where
   toFun g := ⟨orthogonalGroupBaseChange (A := A) Q
-      ⟨g, specialOrthogonalGroup_le_orthogonalGroup Q g.2⟩, by
+      ⟨g, specialOrthogonalGroup_le_orthogonalGroup Q g.property⟩, by
     apply mem_specialOrthogonalGroup_iff.mpr
     refine ⟨(orthogonalGroupBaseChange (A := A) Q
-      ⟨g, specialOrthogonalGroup_le_orthogonalGroup Q g.2⟩).2, ?_⟩
+      ⟨g, specialOrthogonalGroup_le_orthogonalGroup Q g.property⟩).property, ?_⟩
     rw [det_orthogonalGroupBaseChange, det_coe_specialOrthogonalGroup, map_one]⟩
   map_one' := Subtype.ext (by simp [orthogonalGroupBaseChange])
   map_mul' g h := Subtype.ext (by simp [orthogonalGroupBaseChange, LinearEquiv.baseChange_mul])
@@ -881,7 +881,7 @@ def TauCeti.QuadraticMap.polarKernelBaseChange (Q : QuadraticForm R M) (u : M) :
       LinearMap.ker ((Q.baseChange A).polarBilin (1 ⊗ₜ[R] u)) where
   toFun w := ⟨1 ⊗ₜ[R] (w : M), by
     rw [LinearMap.mem_ker, polarBilin_apply_apply, QuadraticForm.polar_baseChange_tmul]
-    have hw : polar Q u w = 0 := LinearMap.mem_ker.mp w.2
+    have hw : polar Q u w = 0 := LinearMap.mem_ker.mp w.property
     simp [hw]⟩
   map_add' w w' := by ext; simp [TensorProduct.tmul_add]
   map_smul' r w := by ext; simp [TensorProduct.tmul_smul]

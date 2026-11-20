@@ -325,7 +325,7 @@ private abbrev completedLocallyConstantTests : Submodule ℤ_[p] C(Γ, ℤ_[p]) 
 
 private theorem dense_completedLocallyConstantTests :
     DenseRange (completedLocallyConstantTests (Γ := Γ) (p := p)).subtype := by
-  apply denseRange_subtype_val.mpr
+  apply denseRange_subtypeVal.mpr
   apply (dense_setOf_comp_quotientMk ℤ_[p]).mono
   rintro f ⟨U, g, hg⟩
   have hloc : IsLocallyConstant (f : Γ → ℤ_[p]) := by
@@ -379,7 +379,7 @@ private theorem ofCompletedGroupAlgebra_apply_locallyConstant
     ofCompletedGroupAlgebra x φ.toContinuousMap = completedLocallyConstantIntegral x φ := by
   have he := (completedIntegralOnLocallyConstantTests x).extend_eq
     (e := (completedLocallyConstantTests (Γ := Γ) (p := p)).subtypeL)
-    dense_completedLocallyConstantTests isUniformEmbedding_subtype_val.isUniformInducing
+    dense_completedLocallyConstantTests isUniformEmbedding_subtypeVal.isUniformInducing
     ⟨φ.toContinuousMap, ⟨φ, rfl⟩⟩
   rw [ofCompletedGroupAlgebra, coe_symm_toCLMEquiv]
   exact he.trans (completedIntegralOnLocallyConstantTests_apply x φ)
