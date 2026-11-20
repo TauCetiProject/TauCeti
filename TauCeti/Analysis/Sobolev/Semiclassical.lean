@@ -19,12 +19,13 @@ its derivatives in units of `h`, against the volume normalized by `h⁻ⁿ`:
 `‖f‖_{k,h} = h^(-n/2) ∑_{i ≤ k} hⁱ ‖Dⁱ f‖₂`
 
 (`TauCeti.semiclassicalSobolevNorm`). At `h = 1` it is the sum of the `L²` norms of the
-derivatives through order `k` (`TauCeti.semiclassicalSobolevNorm_one`), and for every `h > 0` it is
-that sum for the dilated function `f (h • ·)` (`TauCeti.semiclassicalSobolevNorm_eq_comp_smul`):
-the norm reads `f` in coordinates in which the scale `h` has unit size. The weights are those of
-the natural norms of fields concentrating at scale `h`, such as the rescaled Seiberg–Witten fields
-of Taubes's large-parameter analysis, whose profiles vary on the scale `h = (2r)^(-1/2)` and whose
-deviation from the vacuum lives in tubes of volume comparable to `h²`.
+derivatives through order `k` (`TauCeti.semiclassicalSobolevNorm_one`), and for `f` of class `Cᵏ`
+and every `h > 0` it is that sum for the dilated function `f (h • ·)`
+(`TauCeti.semiclassicalSobolevNorm_eq_comp_smul`): the norm reads `f` in coordinates in which the
+scale `h` has unit size. The weights are those of the natural norms of fields concentrating at
+scale `h`, such as the rescaled Seiberg–Witten fields of Taubes's large-parameter analysis, whose
+profiles vary on the scale `h = (2r)^(-1/2)` and whose deviation from the vacuum lives in tubes of
+volume comparable to `h²`.
 
 Since the dilation commutes with products and does not change sup norms, the two basic estimates
 of the unscaled norm, the Sobolev embedding and the algebra property for `2k > n`
@@ -85,7 +86,10 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 `‖f‖_{k,h} = h^(-n/2) ∑_{i ≤ k} hⁱ ‖Dⁱ f‖₂` with `n = dim E`: the `L²` norms of the derivatives
 through order `k`, each weighted by the power of `h` matching its order, against the volume
 normalized by `h⁻ⁿ`. For a function `f` of class `Cᵏ` and `h > 0` it is the sum of the `L²` norms of
-the derivatives of `f (h • ·)` (`TauCeti.semiclassicalSobolevNorm_eq_comp_smul`). -/
+the derivatives of `f (h • ·)` (`TauCeti.semiclassicalSobolevNorm_eq_comp_smul`).
+
+The value is meaningful only when `Dⁱ f ∈ L²` for all `i ≤ k`: `lpNorm` is `0` on a function
+outside `L²` (`MeasureTheory.lpNorm_of_not_memLp`), so such a derivative contributes `0`. -/
 def semiclassicalSobolevNorm (k : ℕ) (h : ℝ) (f : E → F) : ℝ :=
   h ^ (-(finrank ℝ E : ℝ) / 2) *
     ∑ i ∈ Finset.range (k + 1), h ^ i * lpNorm (iteratedFDeriv ℝ i f) 2 volume
@@ -98,6 +102,45 @@ theorem semiclassicalSobolevNorm_one (k : ℕ) (f : E → F) :
       ∑ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i f) 2 volume := by
   simp [semiclassicalSobolevNorm]
 
+/-- The semiclassical norm of the zero function vanishes. -/
+@[simp]
+theorem semiclassicalSobolevNorm_zero (k : ℕ) (h : ℝ) :
+    semiclassicalSobolevNorm k h (0 : E → F) = 0 := by
+  simp [semiclassicalSobolevNorm]
+
+/-- The semiclassical norm is invariant under negation. -/
+@[simp]
+theorem semiclassicalSobolevNorm_neg (k : ℕ) (h : ℝ) (f : E → F) :
+    semiclassicalSobolevNorm k h (-f) = semiclassicalSobolevNorm k h f := by
+  simp [semiclassicalSobolevNorm, iteratedFDeriv_neg]
+
+/-- **Homogeneity of the semiclassical norm.** For `f` of class `Cᵏ`,
+`‖c f‖_{k,h} = |c| ‖f‖_{k,h}`. -/
+theorem semiclassicalSobolevNorm_const_smul {k : ℕ} {f : E → F} (hf : ContDiff ℝ k f) (h c : ℝ) :
+    semiclassicalSobolevNorm k h (c • f) = |c| * semiclassicalSobolevNorm k h f := by
+  rw [semiclassicalSobolevNorm, semiclassicalSobolevNorm, mul_left_comm |c|]
+  congr 1
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  have hi : (i : ℕ∞) ≤ k := by exact_mod_cast Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
+  have hD : iteratedFDeriv ℝ i (c • f) = c • iteratedFDeriv ℝ i f :=
+    funext fun _ ↦ iteratedFDeriv_const_smul_apply ((hf.of_le (by exact_mod_cast hi)).contDiffAt)
+  rw [hD, lpNorm_const_smul, coe_nnNorm, Real.norm_eq_abs, mul_left_comm]
+
+/-- **The triangle inequality for the semiclassical norm.** For `f` and `g` of class `Cᵏ`, with
+`Dⁱ f ∈ L²` for `i ≤ k`, and `h ≥ 0`, `‖f + g‖_{k,h} ≤ ‖f‖_{k,h} + ‖g‖_{k,h}`. -/
+theorem semiclassicalSobolevNorm_add_le {k : ℕ} {f g : E → F} (hf : ContDiff ℝ k f)
+    (hg : ContDiff ℝ k g) (hfm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2) {h : ℝ} (hh : 0 ≤ h) :
+    semiclassicalSobolevNorm k h (f + g) ≤
+      semiclassicalSobolevNorm k h f + semiclassicalSobolevNorm k h g := by
+  rw [semiclassicalSobolevNorm, semiclassicalSobolevNorm, semiclassicalSobolevNorm, ← mul_add,
+    ← Finset.sum_add_distrib]
+  refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun i hi ↦ ?_) (Real.rpow_nonneg hh _)
+  have hi : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
+  rw [← mul_add, iteratedFDeriv_add (hf.of_le (by exact_mod_cast hi))
+    (hg.of_le (by exact_mod_cast hi))]
+  exact mul_le_mul_of_nonneg_left (lpNorm_add_le (hfm i hi) one_le_two) (pow_nonneg hh i)
+
 theorem semiclassicalSobolevNorm_nonneg (k : ℕ) {h : ℝ} (hh : 0 ≤ h) (f : E → F) :
     0 ≤ semiclassicalSobolevNorm k h f :=
   mul_nonneg (Real.rpow_nonneg hh _)
@@ -108,8 +151,8 @@ theorem semiclassicalSobolevNorm_nonneg (k : ℕ) {h : ℝ} (hh : 0 ≤ h) (f : 
 theorem rpow_mul_semiclassicalSobolevNorm (k : ℕ) {h : ℝ} (hh : 0 < h) (f : E → F) :
     h ^ ((finrank ℝ E : ℝ) / 2) * semiclassicalSobolevNorm k h f =
       ∑ i ∈ Finset.range (k + 1), h ^ i * lpNorm (iteratedFDeriv ℝ i f) 2 volume := by
-  rw [semiclassicalSobolevNorm, ← mul_assoc, ← Real.rpow_add hh, neg_div, add_neg_cancel,
-    Real.rpow_zero, one_mul]
+  rw [semiclassicalSobolevNorm, ← mul_assoc, ← Real.rpow_add hh]
+  simp [neg_div]
 
 /-- **The semiclassical norm is the norm of the dilated function.** For `f` of class `Cᵏ` and
 `h > 0`, `‖f‖_{k,h} = ∑_{i ≤ k} ‖Dⁱ(f (h • ·))‖₂`. -/
@@ -165,12 +208,17 @@ theorem exists_semiclassicalSobolevNorm_mul_le {k : ℕ} (hk : finrank ℝ E < 2
   obtain ⟨hg', hgm'⟩ := contDiff_comp_smul_and_memLp hg hgm hh.ne'
   obtain ⟨hm, hle⟩ := hC _ _ hf' hg' hfm' hgm'
   -- The product of the dilations is the dilation of the product.
-  have hm' : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i fun x ↦ (f * g) (h • x)) 2 := hm
+  have hcomp : (fun x ↦ (f * g) (h • x)) = (fun x ↦ f (h • x)) * fun x ↦ g (h • x) :=
+    funext fun _ ↦ by simp only [Pi.mul_apply]
+  have hm' : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i fun x ↦ (f * g) (h • x)) 2 := by
+    rw [hcomp]
+    exact hm
   have hback : (fun y ↦ (fun x ↦ (f * g) (h • x)) (h⁻¹ • y)) = f * g :=
     funext fun y ↦ by simp only [smul_inv_smul₀ hh.ne']
   have hEq : semiclassicalSobolevNorm k h (f * g) =
-      semiclassicalSobolevNorm k 1 ((fun x ↦ f (h • x)) * fun x ↦ g (h • x)) :=
-    semiclassicalSobolevNorm_eq_comp_smul (hf.mul hg) hh
+      semiclassicalSobolevNorm k 1 ((fun x ↦ f (h • x)) * fun x ↦ g (h • x)) := by
+    rw [← hcomp]
+    exact semiclassicalSobolevNorm_eq_comp_smul (hf.mul hg) hh
   refine ⟨fun i hi ↦ ?_, ?_⟩
   · -- Undo the dilation.
     have := (hm' i hi).iteratedFDeriv_comp_smul (u := fun x ↦ (f * g) (h • x)) (((hf.mul hg).comp
@@ -233,7 +281,9 @@ theorem rpow_mul_semiclassicalSobolevNorm_le_semiclassicalSobolevNorm_one (k : �
   · rwa [rpow_mul_semiclassicalSobolevNorm k hh]
   -- At scale zero the left side vanishes, unless `E` is zero dimensional.
   rcases eq_or_ne (finrank ℝ E) 0 with hn | hn
-  · simpa [semiclassicalSobolevNorm, hn] using hle
+  · rw [semiclassicalSobolevNorm, hn, Nat.cast_zero, neg_zero, zero_div, Real.rpow_zero, one_mul,
+      one_mul]
+    exact hle
   · rw [Real.zero_rpow (by positivity), zero_mul, semiclassicalSobolevNorm_one]
     exact Finset.sum_nonneg fun i _ ↦ lpNorm_nonneg
 

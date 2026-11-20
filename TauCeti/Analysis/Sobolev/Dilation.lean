@@ -109,8 +109,8 @@ theorem lpNorm_iteratedFDeriv_comp_smul {u : E → F} {k : ℕ} (hu : ContDiff �
   have h := eLpNorm_iteratedFDeriv_comp_inv_smul μ hu (inv_ne_zero hr) p
   simp only [inv_inv] at h
   simp only [lpNorm]
-  rw [h, ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity), abs_inv,
-    Real.inv_rpow (abs_nonneg r), ← Real.rpow_neg (abs_nonneg r), neg_sub]
+  rw [h, ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
+  simp [abs_inv, Real.inv_rpow, ← Real.rpow_neg]
 
 end MeasureTheory.Measure
 
