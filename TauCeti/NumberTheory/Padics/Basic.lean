@@ -33,8 +33,13 @@ compared.
 For a normed `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is continuous. When `‖1‖ = 1` in `K` it is an
 isometry, so it maps `ℤ_[p]` into the closed unit ball of `K`, and it is injective when `K` is
-nontrivial. When `‖1‖ = 1` in `K`, the norm of a natural number in `K` is also its `p`-adic norm
-(`TauCeti.norm_natCast_eq_norm_padic`).
+nontrivial. When `‖1‖ = 1` in `K`, the norm of a natural number or an integer in `K` is also its
+`p`-adic norm (`TauCeti.norm_natCast_eq_norm_padic`, `TauCeti.norm_intCast_eq_norm_padic`).
+
+A nonzero integer `n` satisfies `1 ≤ |n| ‖n‖` in `ℚ_[p]` (`Padic.one_le_abs_mul_norm_intCast`),
+since the power of `p` dividing `n` is at most `|n|`; by the previous remark the same holds in
+every normed `ℚ_p`-algebra with `‖1‖ = 1`. This is the lower bound for integers that Liouville's
+inequality at a `p`-adic place needs.
 -/
 
 public section
@@ -90,6 +95,19 @@ theorem closedBall_subset_range_coe_ringHom :
 
 end PadicInt
 
+namespace Padic
+
+variable {p : ℕ} [Fact (Nat.Prime p)]
+
+/-- A nonzero integer `n` has `p`-adic norm at least `1 / |n|`: the power of `p` dividing `n` is at
+most `|n|`. -/
+theorem one_le_abs_mul_norm_intCast {n : ℤ} (hn : n ≠ 0) : 1 ≤ |(n : ℝ)| * ‖(n : ℚ_[p])‖ := by
+  rw [norm_eq_zpow_neg_valuation (Int.cast_ne_zero.2 hn), valuation_intCast, zpow_neg,
+    zpow_natCast, ← div_eq_mul_inv, one_le_div (pow_pos (mod_cast (Fact.out : p.Prime).pos) _)]
+  exact_mod_cast Int.le_of_dvd (abs_pos.2 hn) ((dvd_abs _ _).2 (padicValInt_dvd n))
+
+end Padic
+
 namespace TauCeti
 
 section Algebra
@@ -119,6 +137,10 @@ theorem norm_padicIntAlgebraMap_le_one [NormOneClass K] (a : ℤ_[p]) :
 /-- The norm of a natural number in a normed `ℚ_p`-algebra with `‖1‖ = 1` is its `p`-adic norm. -/
 theorem norm_natCast_eq_norm_padic [NormOneClass K] (m : ℕ) : ‖(m : K)‖ = ‖(m : ℚ_[p])‖ := by
   rw [← map_natCast (algebraMap ℚ_[p] K), norm_algebraMap']
+
+/-- The norm of an integer in a normed `ℚ_p`-algebra with `‖1‖ = 1` is its `p`-adic norm. -/
+theorem norm_intCast_eq_norm_padic [NormOneClass K] (m : ℤ) : ‖(m : K)‖ = ‖(m : ℚ_[p])‖ := by
+  rw [← map_intCast (algebraMap ℚ_[p] K), norm_algebraMap']
 
 theorem padicIntAlgebraMap_injective [Nontrivial K] : Function.Injective (padicIntAlgebraMap p K) :=
   (algebraMap ℚ_[p] K).injective.comp PadicInt.isEmbedding_coe_ringHom.injective
