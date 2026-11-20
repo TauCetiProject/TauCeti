@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Colimits
+import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 public import Mathlib.AlgebraicGeometry.LimitsOver
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatMono
 public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
@@ -174,7 +175,7 @@ instance isClosedImmersion_hom_left (i : X ⟶ Y) [Mono i] : IsClosedImmersion i
 étale over `S`: its inclusion is an open and closed immersion. -/
 noncomputable def clopenSubscheme (U : Y.obj.left.Opens) (hU : IsClosed (U : Set Y.obj.left)) :
     FiniteEtaleScheme S :=
-  have : IsClosedImmersion U.ι := .of_isPreimmersion _ (by rwa [Scheme.Opens.range_ι])
+  have : IsClosedImmersion U.ι := U.isClosedImmersion_ι_of_isClosed hU
   ⟨Over.mk (U.ι ≫ Y.obj.hom), (finiteEtaleSchemeProperty_iff _).mpr
     ⟨inferInstanceAs (IsFinite (U.ι ≫ Y.obj.hom)), inferInstanceAs (Etale (U.ι ≫ Y.obj.hom))⟩⟩
 
