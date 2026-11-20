@@ -1201,6 +1201,19 @@ theorem W1p.norm_ofExponentLEL_apply_le (hpq : p ≤ q) (u : W1p mu Omega q) :
   (W1p.ofExponentLEL (mu := mu) (Omega := Omega) hpq).le_of_opNorm_le
     (W1p.opNorm_ofExponentLEL_le hpq) u
 
+/-- **Logarithmic convexity of the `W^{1,p}` norms.** If `p, q ≤ r` and
+`1 / q = (1 - θ) / p + θ / r` with `0 ≤ θ ≤ 1`, then the `W^{1,q}` norm of `u ∈ W^{1,r}(Ω)` is at
+most its `W^{1,p}` norm to the power `1 - θ` times its `W^{1,r}` norm to the power `θ`. -/
+theorem W1p.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow {r : ENNReal} [Fact (1 ≤ r)]
+    (hpr : p ≤ r) (hqr : q ≤ r) {θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * p⁻¹ + ENNReal.ofReal θ * r⁻¹) (u : W1p mu Omega r) :
+    ‖W1p.ofExponentLEL hqr u‖ ≤ ‖W1p.ofExponentLEL hpr u‖ ^ (1 - θ) * ‖u‖ ^ θ := by
+  rw [← Submodule.norm_coe (W1p.ofExponentLEL hqr u),
+    ← Submodule.norm_coe (W1p.ofExponentLEL hpr u), ← Submodule.norm_coe u,
+    W1p.ofExponentLEL_apply, W1p.ofExponentLEL_apply,
+    W1p.coe_ofExponentLE, W1p.coe_ofExponentLE]
+  exact Lp.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow hpr hqr hθ hq _
+
 end Exponent
 
 end TauCeti
