@@ -118,7 +118,7 @@ def map {S : Type v} [CommRing S] (phi : R →+* S) : SL2Borel R →* SL2Borel S
     (SL2Borel S) fun g ↦ by
       rw [mem_iff]
       rw [MonoidHom.domRestrict_apply, Matrix.SpecialLinearGroup.map_apply_coe,
-        RingHom.mapMatrix_apply, Matrix.map_apply, apply_one_zero, map_zero]
+        Matrix.map_apply, apply_one_zero, map_zero]
 
 /-- The special-linear matrix underlying an entrywise-mapped Borel element is the entrywise map
 of its underlying matrix. -/
@@ -132,8 +132,7 @@ entry of `g`. -/
 theorem map_apply {S : Type v} [CommRing S] (phi : R →+* S) (g : SL2Borel R)
     (i j : Fin 2) :
     (map phi g : SL(2, S)) i j = phi ((g : SL(2, R)) i j) := by
-  rw [coe_map, Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
-    Matrix.map_apply]
+  rw [coe_map, Matrix.SpecialLinearGroup.map_apply_coe, Matrix.map_apply]
 
 /-- Entrywise mapping sends a matrix in standard coordinates to the matrix obtained by mapping
 both parameters. -/

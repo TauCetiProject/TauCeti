@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 public import TauCeti.AlgebraicGeometry.Geometrically.GlobalSections
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 
 /-!
 # The pushforward of the structure sheaf under flat base change
