@@ -97,6 +97,11 @@ moduli spaces of Floer cylinders and pairs of pants in weighted Sobolev spaces. 
 given by the spectral gap of the asymptotic operator, and the decay of higher derivatives, are
 not treated here.
 
+For a family `J` given along `u` as a function of the domain point, possibly depending on `s`,
+with bounds on its first two derivatives, the same exponential convergence in `C¹` is proved in
+`TauCeti.Geometry.Symplectic.Floer.ExponentialDecay.Derivative`, through the linear
+Cauchy–Riemann equation solved by `∂ₛu`.
+
 ## Main results
 
 * `TauCeti.SymplecticForm.exists_forall_norm_sub_le_mul_integral_of_nondegenerate`: a loop near a
