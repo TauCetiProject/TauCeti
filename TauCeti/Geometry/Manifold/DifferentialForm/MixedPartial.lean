@@ -171,10 +171,9 @@ private theorem mvfderiv_apply_paramFrame (η : SmoothForm (𝓘(ℝ, P).prod I)
     funext l
     fin_cases l <;> simp
   simp only [hev] at hd
-  rw [hd.mvfderiv_prod_eq_add_apply, mvfderiv_eq_fderiv, paramFrame_fst, paramFrame_snd]
-  -- What remains is the identification `NormedSpace.fromTangentSpace p`, which is the identity
-  -- of `P` up to unfolding `TangentSpace 𝓘(ℝ, P) p`, and the reduction of `(p, x).1`, `(p, x).2`.
-  rfl
+  rw [hd.mvfderiv_prod_eq_add_apply, paramFrame_fst, paramFrame_snd]
+  -- The parameter summand is `mvfderiv_eq_fderiv_apply` once `(p, x).1` and `(p, x).2` reduce.
+  exact congrArg (· + _) (mvfderiv_eq_fderiv_apply _ p _)
 
 variable [CompleteSpace E] [CompleteSpace P] [IsManifold I 2 M]
 
