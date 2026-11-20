@@ -7,21 +7,23 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Basic
 public import TauCeti.RingTheory.Nilpotent.Log
+public import TauCeti.LinearAlgebra.Matrix.Exponential.Polynomial
 public import TauCeti.Algebra.AlgebraicGroup.OneParameter.Basic
-import Mathlib.Algebra.Polynomial.Roots
+import TauCeti.Algebra.Group.ForwardDiff
 
 /-!
 # Polynomial one-parameter subgroups through unipotent matrices
 
 Over a rational algebra, a nilpotent matrix `X` defines the polynomial one-parameter subgroup
-`t ↦ exp(tX)`. Over a rational domain, if `exp X` belongs to a closed subgroup of
+`t ↦ exp(tX)`. Over a rational ring, if `exp X` belongs to a closed subgroup of
 `GLₙ`, the whole polynomial curve factors through that subgroup. In particular, for a unipotent
 matrix `g` in a closed subgroup, the curve `t ↦ exp(t log g)` remains in the subgroup, even on
 points valued in nonreduced algebras.
 
 The restriction is scheme-theoretic: every element of the subgroup's defining Hopf ideal is
-sent to the zero polynomial. Integer parameters give powers of `exp X`, so infinitely many
-roots force each pulled-back equation to vanish. No smoothness, connectedness or reducedness
+sent to the zero polynomial. Natural-number parameters give powers of `exp X`, so each
+pulled-back equation vanishes at every natural number, and over a rational ring such a polynomial
+is zero (`Polynomial.eq_zero_of_eval_natCast_eq_zero`). No smoothness, connectedness or reducedness
 assumption on the subgroup is required. This is the polynomial-curve input to showing that
 `log g` belongs to its tangent Lie algebra.
 
@@ -60,34 +62,6 @@ theorem Matrix.GeneralLinearGroup.map_aeval_expSMulHom
   rw [Matrix.GeneralLinearGroup.map_expSMulHom]
   simp only [toAdd_ofAdd, RingHom.coe_coe, Polynomial.aeval_X,
     RingHom.mapMatrix_apply, Matrix.map_map, Function.comp_def, Polynomial.aeval_C]
-
-/-- The coefficient of `tᵐ` in the polynomial exponential `exp(tX)` is `Xᵐ / m!`. -/
-theorem Matrix.coeff_exp_X_smul_C_mapMatrix
-    {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [Algebra ℚ R]
-    {X : Matrix ι ι R} (hX : IsNilpotent X) (m : ℕ) (i j : ι) :
-    (IsNilpotent.exp ((Polynomial.X : R[X]) • Polynomial.C.mapMatrix X) i j).coeff m =
-      ((m.factorial : ℚ)⁻¹ • X ^ m) i j := by
-  obtain ⟨k, hk⟩ := hX
-  have hk' : ((Polynomial.X : R[X]) • Polynomial.C.mapMatrix X) ^ (k + (m + 1)) = 0 := by
-    rw [smul_pow, ← map_pow, pow_add X, hk, zero_mul, map_zero, smul_zero]
-  rw [IsNilpotent.exp_eq_sum hk', Matrix.sum_apply, Polynomial.finsetSum_coeff,
-    Finset.sum_eq_single_of_mem m (Finset.mem_range.mpr (by omega)) fun l _ hl ↦ ?_] <;>
-    rw [smul_pow, ← map_pow, Matrix.smul_apply, Matrix.smul_apply, RingHom.mapMatrix_apply,
-      Matrix.map_apply, smul_eq_mul, AddMonoidAlgebra.coeff_smul_apply,
-      Polynomial.coeff_X_pow_mul']
-  · simp
-  · split_ifs with h
-    · rw [Polynomial.coeff_C_of_ne_zero (by omega), smul_zero]
-    · exact smul_zero _
-
-/-- The linear coefficient of the polynomial exponential `exp(tX)` is `X`. -/
-theorem Matrix.coeff_one_exp_X_smul_C_mapMatrix
-    {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [Algebra ℚ R]
-    {X : Matrix ι ι R} (hX : IsNilpotent X) (i j : ι) :
-    (IsNilpotent.exp ((Polynomial.X : R[X]) • Polynomial.C.mapMatrix X) i j).coeff 1 =
-      X i j := by
-  rw [Matrix.coeff_exp_X_smul_C_mapMatrix hX, Nat.factorial_one, Nat.cast_one, inv_one, one_smul,
-    pow_one]
 
 namespace TauCeti.GeneralLinear
 
@@ -154,8 +128,6 @@ theorem aeval_comp_nilpotentOneParameterCoordinateMap_add (hX : IsNilpotent X) (
   simp only [aeval_comp_nilpotentOneParameterCoordinateMap, toConv_ofConv]
   simp only [← pointsMulEquiv_symm_apply, ← map_mul, ← ofAdd_add]
 
-variable [IsDomain R]
-
 /-- A polynomial one-parameter subgroup of `GLₙ` through a unipotent matrix `g` is the
 finite exponential curve of `log g`. The conclusion identifies regular maps, not only points. -/
 theorem eq_nilpotentOneParameterCoordinateMap_log
@@ -166,7 +138,7 @@ theorem eq_nilpotentOneParameterCoordinateMap_log
     (hg : IsNilpotent ((g : Matrix (Fin n) (Fin n) R) - 1))
     (h : toConv ((Polynomial.aeval (1 : R)).comp γ) = generalLinearToPoint n g) :
     γ = nilpotentOneParameterCoordinateMap n (IsNilpotent.isNilpotent_log hg) := by
-  have : CharZero R := Algebra.charZero_of_charZero ℚ R
+  have := HasUniqueDiv.of_module_rat R
   apply γ.eq_of_aeval_one_comp_eq _ hγ
     (aeval_comp_nilpotentOneParameterCoordinateMap_add n _)
   apply toConv_injective
@@ -190,18 +162,16 @@ theorem expSMulHom_ofAdd_X_mem_hopfIdealPointsSubgroup
   intro a ha
   rw [pointsMulEquiv_symm_apply]
   rw [← toConv_nilpotentOneParameterCoordinateMap n hY, ofConv_toConv]
-  have : CharZero R := Algebra.charZero_of_charZero ℚ R
-  apply Polynomial.eq_zero_of_infinite_isRoot
-  apply (Set.infinite_range_of_injective (Nat.cast_injective (R := R))).mono
-  rintro _ ⟨m, rfl⟩
+  have := HasUniqueDiv.of_module_rat R
+  refine Polynomial.eq_zero_of_eval_natCast_eq_zero _ fun m _ ↦ ?_
   have hm := (mem_hopfIdealPointsSubgroup_iff n I R
     (expSMulHom R hY (Multiplicative.ofAdd (m : R)))).mp
       (expSMulHom_ofAdd_natCast R hY m ▸
         (hopfIdealPointsSubgroup n I R).pow_mem hI m) a ha
   rw [pointsMulEquiv_symm_apply] at hm
   have heval := AlgHom.congr_fun (aeval_comp_nilpotentOneParameterCoordinateMap n hY (m : R)) a
-  simpa only [Set.mem_ofPred_eq, Polynomial.IsRoot, Polynomial.aeval_def, Polynomial.eval₂_id,
-    Algebra.algebraMap_self, AlgHom.comp_apply, pointsMulEquiv_symm_apply] using heval.trans hm
+  simpa only [Polynomial.aeval_def, Polynomial.eval₂_id, Algebra.algebraMap_self,
+    AlgHom.comp_apply, pointsMulEquiv_symm_apply] using heval.trans hm
 
 /-- Every algebra-valued parameter of `t ↦ exp(t log g)` stays in a closed subgroup containing
 the unipotent point `g`. The value algebra may be nonreduced; a rational algebra structure

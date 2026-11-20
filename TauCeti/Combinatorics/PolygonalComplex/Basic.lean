@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Basic
+public import TauCeti.Combinatorics.Graph.Serre.Path.Basic
 public import TauCeti.Data.Fin.Basic
 public import Mathlib.Basic.Finite.Sigma
 public import Mathlib.Logic.Equiv.Fin.Rotate
@@ -18,7 +18,9 @@ A polygonal complex is a Serre graph, its one-skeleton, together with a family o
 face is a polygon whose sides are attached, in cyclic order, to a closed sequence of darts of the
 one-skeleton: the `i`-th side of a face ends where its `(i + 1)`-st side starts, cyclically. Loops,
 parallel edges and repeated darts along a face are all allowed, so the one-vertex polygons
-`a b a⁻¹ b⁻¹` (a torus) and `a a` (a projective plane) are polygonal complexes.
+`a b a⁻¹ b⁻¹` (a torus) and `a a` (a projective plane) are polygonal complexes. Read from its
+first corner, the sides of a face are the darts of a closed path in the one-skeleton
+(`PolygonalComplex.facePath`).
 
 Distinct occurrences of the same vertex along the faces are kept apart as *corners*
 (`PolygonalComplex.Corner`): the corner `(f, i)` of the face `f` sits at the start of its `i`-th
@@ -43,6 +45,7 @@ condition into the global statement that every edge lies on one or two face side
 * `TauCeti.PolygonalComplex`: a Serre graph with faces attached along closed dart sequences.
 * `TauCeti.PolygonalComplex.Corner`, `TauCeti.PolygonalComplex.cornerEnds`: corners of faces and
   their two germs.
+* `TauCeti.PolygonalComplex.facePath`: the closed path along the sides of a face.
 * `TauCeti.PolygonalComplex.vertexLink`: the link of a vertex.
 * `TauCeti.PolygonalComplex.linkDegree`: the degree of a germ in its link.
 * `TauCeti.PolygonalComplex.sideCount`: the number of face sides traversing a dart.
@@ -54,10 +57,16 @@ condition into the global statement that every edge lies on one or two face side
 
 ## Main results
 
+* `TauCeti.PolygonalComplex.nonempty_path_cornerVertex`: the corners of a face are joined along its
+  sides in the one-skeleton.
+* `TauCeti.PolygonalComplex.nonempty_vertexLink_path_of_path`: a map of germs that joins the images
+  of the two germs of every corner carries paths in a vertex link to paths in the target link.
 * `TauCeti.PolygonalComplex.linkDegree_eq_natCard_sum`: the degree of the germ `e` is the
   `Nat.card` of the face sides traversing `rev e` or `e`.
 * `TauCeti.PolygonalComplex.linkDegree_eq_sideCount_rev_add_sideCount`: when finitely many face
   sides traverse `e` or its reverse, the degree of the germ `e` is the number of such sides.
+* `TauCeti.PolygonalComplex.isOrientable_iff_forall_outgoing`: orientability in terms of the darts
+  of the side occurrences, without geometric edges.
 
 ## References
 
@@ -68,7 +77,7 @@ condition into the global statement that every edge lies on one or two face side
 
 public section
 
-universe u v w
+universe u v w u' v' w'
 
 namespace TauCeti
 
@@ -156,6 +165,28 @@ def cornerVertex (c : C.Corner) : C.graph.V := C.graph.src (C.outgoing c)
 @[simp] theorem tgt_incoming (c : C.Corner) : C.graph.tgt (C.incoming c) = C.cornerVertex c := by
   rw [incoming_eq_outgoing_prevCorner, tgt_outgoing, nextCorner_prevCorner]
 
+/-- The corner following the corner at a position `i` of a face, other than its last position, is
+at the position `i + 1`. -/
+theorem nextCorner_mk_of_add_one_lt {f : C.Face} {i : Fin (C.sides f)}
+    (hi : (i : ℕ) + 1 < C.sides f) : C.nextCorner ⟨f, i⟩ = ⟨f, ⟨(i : ℕ) + 1, hi⟩⟩ :=
+  Sigma.ext rfl (heq_of_eq (Fin.ext (Fin.coe_finRotate_of_add_one_lt hi)))
+
+/-- Any two corners of a face are joined by a path in the one-skeleton, along the sides of the
+face. -/
+theorem nonempty_path_cornerVertex (f : C.Face) (i j : Fin (C.sides f)) :
+    Nonempty (C.graph.Path (C.cornerVertex ⟨f, i⟩) (C.cornerVertex ⟨f, j⟩)) := by
+  have key (k : ℕ) (hk : k < C.sides f) : Nonempty (C.graph.Path
+      (C.cornerVertex ⟨f, ⟨0, C.sides_pos f⟩⟩) (C.cornerVertex ⟨f, ⟨k, hk⟩⟩)) := by
+    induction k with
+    | zero => exact ⟨.nil⟩
+    | succ k ih =>
+      obtain ⟨P⟩ := ih (by omega)
+      exact ⟨P.cons ⟨C.outgoing ⟨f, ⟨k, by omega⟩⟩, rfl,
+        by rw [tgt_outgoing, C.nextCorner_mk_of_add_one_lt hk]⟩⟩
+  obtain ⟨P⟩ := key i i.isLt
+  obtain ⟨Q⟩ := key j j.isLt
+  exact ⟨P.reverse.comp Q⟩
+
 /-- A side of a face ends where the side at the cyclically next position starts. -/
 theorem tgt_side_eq_src_side {f : C.Face} {i j : Fin (C.sides f)}
     (h : (j : ℕ) = if (i : ℕ) + 1 = C.sides f then 0 else (i : ℕ) + 1) :
@@ -176,6 +207,73 @@ theorem incoming_mk_of_eq_zero {f : C.Face} {i j : Fin (C.sides f)} (hj : (j : �
   rw [← h]
   exact C.incoming_nextCorner ⟨f, i⟩
 
+/-- The incoming side of the first corner of a face is its last side. -/
+theorem incoming_mk_zero (f : C.Face) :
+    C.incoming ⟨f, ⟨0, C.sides_pos f⟩⟩ =
+      C.side f ⟨C.sides f - 1, Nat.sub_lt (C.sides_pos f) Nat.one_pos⟩ :=
+  C.incoming_mk_of_eq_zero rfl rfl
+
+/-- The corner preceding the first corner of a face is its last corner. -/
+theorem prevCorner_mk_zero (f : C.Face) :
+    C.prevCorner ⟨f, ⟨0, C.sides_pos f⟩⟩ =
+      ⟨f, ⟨C.sides f - 1, Nat.sub_lt (C.sides_pos f) Nat.one_pos⟩⟩ := by
+  rw [prevCorner_def]
+  refine Sigma.ext rfl (heq_of_eq (Fin.ext ?_))
+  have h := Fin.coe_finRotate_eq_ite ((finRotate (C.sides f)).symm ⟨0, C.sides_pos f⟩)
+  rw [Equiv.apply_symm_apply] at h
+  dsimp only at h ⊢
+  split_ifs at h
+  omega
+
+/-- The corner preceding the corner at a positive position `j` of a face is at the position
+`j - 1`. -/
+theorem prevCorner_mk_of_ne_zero {f : C.Face} {i j : Fin (C.sides f)} (hj : (j : ℕ) ≠ 0)
+    (hi : (i : ℕ) = j - 1) : C.prevCorner ⟨f, j⟩ = ⟨f, i⟩ := by
+  have h : finRotate _ i = j := Fin.ext (by rw [Fin.coe_finRotate_eq_ite]; split_ifs <;> omega)
+  rw [← h]
+  exact C.prevCorner_nextCorner ⟨f, i⟩
+
+/-- A corner is its own successor exactly on a monogon. -/
+@[simp] theorem nextCorner_eq_self_iff {c : C.Corner} : C.nextCorner c = c ↔ C.sides c.1 = 1 := by
+  obtain ⟨f, k⟩ := c
+  have hk := Fin.coe_finRotate_eq_ite k
+  have := k.isLt
+  rw [nextCorner_def, Sigma.ext_iff]
+  simp only [heq_eq_eq, true_and, Fin.ext_iff]
+  split_ifs at hk <;> omega
+
+/-- A corner is its own predecessor exactly on a monogon. -/
+@[simp] theorem prevCorner_eq_self_iff {c : C.Corner} : C.prevCorner c = c ↔ C.sides c.1 = 1 := by
+  rw [← C.nextCorner_eq_self_iff]
+  constructor <;> intro hc
+  · conv_lhs => rw [← hc]
+    exact C.nextCorner_prevCorner c
+  · conv_lhs => rw [← hc]
+    exact C.prevCorner_nextCorner c
+
+variable {C} in
+/-- Positions along faces with equally many sides advance in step: if `c'` sits at the position of a
+corner `c` of a possibly different complex, on a face with as many sides as that of `c`, then the
+corner `x` of the face of `c'` at the position of the corner following `c` follows `c'`. -/
+theorem eq_nextCorner_of_coe_snd {D : PolygonalComplex.{u', v', w'}} {c : D.Corner}
+    {c' x : C.Corner} (hfst : x.1 = c'.1) (hs : C.sides c'.1 = D.sides c.1)
+    (hx : (x.2 : ℕ) = (D.nextCorner c).2) (hc' : (c'.2 : ℕ) = c.2) : x = C.nextCorner c' := by
+  obtain ⟨g, k⟩ := c'
+  obtain ⟨g', k'⟩ := x
+  obtain rfl : g' = g := hfst
+  rw [nextCorner_def]
+  refine Sigma.ext rfl (heq_of_eq (Fin.ext ?_))
+  rw [nextCorner_def] at hx
+  have h₁ := Fin.coe_finRotate_eq_ite c.2
+  have h₂ := Fin.coe_finRotate_eq_ite k
+  dsimp only at hx hc' hs ⊢
+  split_ifs at h₁ h₂ <;> omega
+
+/-- A face with a single side is attached along a loop. -/
+theorem tgt_side_eq_src_side_of_sides_eq_one {f : C.Face} (hf : C.sides f = 1)
+    (i : Fin (C.sides f)) : C.graph.tgt (C.side f i) = C.graph.src (C.side f i) :=
+  C.tgt_side_eq_src_side (by split_ifs <;> omega)
+
 /-- The two germs of a corner, both starting at its vertex: the reverse of its incoming side and
 its outgoing side. -/
 def cornerEnds (c : C.Corner) : C.graph.E × C.graph.E :=
@@ -185,6 +283,41 @@ def cornerEnds (c : C.Corner) : C.graph.E × C.graph.E :=
     (C.cornerEnds c).1 = C.graph.rev (C.incoming c) := (rfl)
 
 @[simp] theorem cornerEnds_snd (c : C.Corner) : (C.cornerEnds c).2 = C.outgoing c := (rfl)
+
+/-! ### Face paths -/
+
+-- The sides of a face, read from its first corner, form a closed path.
+private theorem exists_path_darts_eq_ofFn_side (f : C.Face) :
+    ∃ p : C.graph.Path (C.cornerVertex ⟨f, ⟨0, C.sides_pos f⟩⟩)
+        (C.cornerVertex ⟨f, ⟨0, C.sides_pos f⟩⟩),
+      SerreGraph.Path.darts C.graph p = List.ofFn (C.side f) := by
+  refine SerreGraph.exists_path_darts_eq C.graph _ (List.ext_getElem (by simp) fun i h₁ h₂ => ?_)
+  rcases i with _ | i
+  · simp only [← src_outgoing, outgoing_def]
+    simp [C.sides_pos f]
+  · simp only [List.length_cons, List.length_map, List.length_ofFn] at h₁
+    simp only [List.getElem_cons_succ, List.getElem_append, List.getElem_map, List.getElem_ofFn,
+      List.length_map, List.length_ofFn, List.getElem_singleton]
+    split_ifs
+    · exact C.tgt_side_eq_src_side (by dsimp only; split_ifs <;> lia)
+    · rw [← src_outgoing, outgoing_def]
+      exact C.tgt_side_eq_src_side (by dsimp only; split_ifs <;> lia)
+
+/-- The boundary path of a face: the closed path at its first corner whose darts are the sides
+of the face, in order. -/
+noncomputable def facePath (f : C.Face) :
+    C.graph.Path (C.cornerVertex ⟨f, ⟨0, C.sides_pos f⟩⟩)
+      (C.cornerVertex ⟨f, ⟨0, C.sides_pos f⟩⟩) :=
+  (C.exists_path_darts_eq_ofFn_side f).choose
+
+/-- The darts of the boundary path of a face are its sides, in order. -/
+@[simp] theorem darts_facePath (f : C.Face) :
+    SerreGraph.Path.darts C.graph (C.facePath f) = List.ofFn (C.side f) :=
+  (C.exists_path_darts_eq_ofFn_side f).choose_spec
+
+/-- The boundary path of a face has one dart for each side. -/
+@[simp] theorem length_facePath (f : C.Face) : (C.facePath f).length = C.sides f := by
+  rw [← SerreGraph.Path.length_darts, darts_facePath, List.length_ofFn]
 
 /-! ### Vertex links -/
 
@@ -196,7 +329,7 @@ vertex and dart types are exposed, so that germs and corners are vertices and da
 @[expose] def vertexLink (v : C.graph.V) : SerreGraph.{v, w} where
   V := {e : C.graph.E // C.graph.src e = v}
   E := {c : C.Corner // C.cornerVertex c = v} × Bool
-  src d := ⟨cond d.2 (C.cornerEnds d.1.1).2 (C.cornerEnds d.1.1).1, by
+  src d := ⟨cond d.2 (C.cornerEnds d.1.val).2 (C.cornerEnds d.1.val).1, by
     rcases d with ⟨⟨c, rfl⟩, _ | _⟩ <;> simp⟩
   rev d := (d.1, !d.2)
   rev_rev d := by simp
@@ -210,11 +343,11 @@ vertex and dart types are exposed, so that germs and corners are vertices and da
     (C.vertexLink v).tgt d = (C.vertexLink v).src (d.1, !d.2) := (rfl)
 
 @[simp] theorem vertexLink_src_true {v : C.graph.V} (c : {c : C.Corner // C.cornerVertex c = v}) :
-    ((C.vertexLink v).src (c, true)).1 = C.outgoing c.1 := (rfl)
+    ((C.vertexLink v).src (c, true)).val = C.outgoing c.val := (rfl)
 
 @[simp] theorem vertexLink_src_false {v : C.graph.V}
     (c : {c : C.Corner // C.cornerVertex c = v}) :
-    ((C.vertexLink v).src (c, false)).1 = C.graph.rev (C.incoming c.1) := (rfl)
+    ((C.vertexLink v).src (c, false)).val = C.graph.rev (C.incoming c.val) := (rfl)
 
 /-- In a complex with finitely many faces, each vertex link has finitely many darts. -/
 instance [Finite C.Face] (v : C.graph.V) : Finite (C.vertexLink v).E :=
@@ -223,27 +356,54 @@ instance [Finite C.Face] (v : C.graph.V) : Finite (C.vertexLink v).E :=
 /-- In the link of `x`, a corner at `x` joins its outgoing side to the reverse of its incoming
 side. -/
 theorem nonempty_vertexLink_path {x : C.graph.V} (c : {c : C.Corner // C.cornerVertex c = x})
-    {a b : (C.vertexLink x).V} (ha : a.1 = C.outgoing c.1)
-    (hb : b.1 = C.graph.rev (C.incoming c.1)) : Nonempty ((C.vertexLink x).Path a b) :=
+    {a b : (C.vertexLink x).V} (ha : a.val = C.outgoing c.val)
+    (hb : b.val = C.graph.rev (C.incoming c.val)) : Nonempty ((C.vertexLink x).Path a b) :=
   ⟨Quiver.Hom.toPath (⟨(c, true), Subtype.ext ha.symm, Subtype.ext hb.symm⟩ : Quiver.Hom a b)⟩
 
 /-- In the link of `x`, a corner whose outgoing side is a germ at `x` joins that germ to the
 reverse of its incoming side. -/
 theorem nonempty_vertexLink_path_of_corner {x : C.graph.V} (c : C.Corner)
-    {a b : (C.vertexLink x).V} (ha : a.1 = C.outgoing c)
-    (hb : b.1 = C.graph.rev (C.incoming c)) : Nonempty ((C.vertexLink x).Path a b) :=
-  C.nonempty_vertexLink_path ⟨c, by rw [← src_outgoing, ← ha]; exact a.2⟩ ha hb
+    {a b : (C.vertexLink x).V} (ha : a.val = C.outgoing c)
+    (hb : b.val = C.graph.rev (C.incoming c)) : Nonempty ((C.vertexLink x).Path a b) :=
+  C.nonempty_vertexLink_path ⟨c, by rw [← src_outgoing, ← ha]; exact a.property⟩ ha hb
+
+variable {C} in
+/-- Let `φ` send the germs of `C` at `v` to germs of `D` at `x`. If, for each corner of `C` at `v`,
+the images of its two germs are joined in the link of `x`, then `φ` carries paths in the link of
+`v` to paths in the link of `x`. -/
+theorem nonempty_vertexLink_path_of_path {D : PolygonalComplex.{u', v', w'}} {v : C.graph.V}
+    {x : D.graph.V} (φ : C.graph.E → D.graph.E)
+    (hφ : ∀ e, C.graph.src e = v → D.graph.src (φ e) = x)
+    (hc : ∀ c : C.Corner, C.cornerVertex c = v → ∀ {a b : (D.vertexLink x).V},
+      a.val = φ (C.outgoing c) → b.val = φ (C.graph.rev (C.incoming c)) →
+        Nonempty ((D.vertexLink x).Path a b))
+    {a b : (C.vertexLink v).V} (P : (C.vertexLink v).Path a b) {a' b' : (D.vertexLink x).V}
+    (ha : a'.val = φ a.val) (hb : b'.val = φ b.val) : Nonempty ((D.vertexLink x).Path a' b') := by
+  obtain rfl : a' = ⟨φ a.val, hφ a.val a.property⟩ := Subtype.ext ha
+  obtain rfl : b' = ⟨φ b.val, hφ b.val b.property⟩ := Subtype.ext hb
+  refine SerreGraph.nonempty_path_of_path (Γ := C.vertexLink v) (Δ := D.vertexLink x)
+    (fun a => ⟨φ a.val, hφ a.val a.property⟩) (fun e => ?_) P
+  obtain ⟨c, _ | _⟩ := e
+  · exact (hc c.val c.property rfl rfl).map Quiver.Path.reverse
+  · exact hc c.val c.property rfl rfl
 
 /-- The degree of the germ `e` in the link of its source: the `Nat.card` of the link darts
 starting at `e`. A corner both of whose germs are `e` contributes two. As with `Nat.card`, this is
 `0` when there are infinitely many such darts; it is the ordinary count when `C.Face` is finite. -/
 noncomputable def linkDegree (e : C.graph.E) : ℕ :=
-  Nat.card {d : (C.vertexLink (C.graph.src e)).E // ((C.vertexLink _).src d).1 = e}
+  Nat.card {d : (C.vertexLink (C.graph.src e)).E // ((C.vertexLink _).src d).val = e}
 
 theorem linkDegree_def (e : C.graph.E) :
     C.linkDegree e =
-      Nat.card {d : (C.vertexLink (C.graph.src e)).E // ((C.vertexLink _).src d).1 = e} :=
+      Nat.card {d : (C.vertexLink (C.graph.src e)).E // ((C.vertexLink _).src d).val = e} :=
   (rfl)
+
+/-- The degree of a germ `e` at the vertex `v` is the number of darts of the link of `v` starting
+at `e`. -/
+theorem linkDegree_eq_card_of_src_eq {e : C.graph.E} {v : C.graph.V} (h : C.graph.src e = v) :
+    C.linkDegree e = Nat.card {d : (C.vertexLink v).E // ((C.vertexLink v).src d).val = e} := by
+  subst h
+  rfl
 
 /-- The number of face sides attached along the dart `e`, as the `Nat.card` of the corners whose
 outgoing side is `e`. As with `Nat.card`, this is `0` when there are infinitely many such corners;
@@ -265,18 +425,18 @@ theorem sideCount_pos_iff {e : C.graph.E} [Finite {c : C.Corner // C.outgoing c 
 with the corners whose incoming side is `rev e`; the latter are the successors of the corners whose
 outgoing side is `rev e`. -/
 private def linkFiberEquiv (e : C.graph.E) :
-    {d : (C.vertexLink (C.graph.src e)).E // ((C.vertexLink _).src d).1 = e} ≃
+    {d : (C.vertexLink (C.graph.src e)).E // ((C.vertexLink _).src d).val = e} ≃
       {c : C.Corner // C.outgoing c = C.graph.rev e} ⊕ {c : C.Corner // C.outgoing c = e} where
   toFun d := match d with
-    | ⟨(c, false), h⟩ => .inl ⟨C.prevCorner c.1, by
+    | ⟨(c, false), h⟩ => .inl ⟨C.prevCorner c.val, by
         rw [← incoming_eq_outgoing_prevCorner, ← C.graph.rev_rev (C.incoming _)]
         exact congrArg C.graph.rev h⟩
-    | ⟨(c, true), h⟩ => .inr ⟨c.1, h⟩
+    | ⟨(c, true), h⟩ => .inr ⟨c.val, h⟩
   invFun s := match s with
-    | .inl c => ⟨(⟨C.nextCorner c.1, by
-        rw [← tgt_outgoing, c.2, SerreGraph.tgt_rev]⟩, false), by
-        simp [c.2]⟩
-    | .inr c => ⟨(⟨c.1, by rw [← src_outgoing, c.2]⟩, true), c.2⟩
+    | .inl c => ⟨(⟨C.nextCorner c.val, by
+        rw [← tgt_outgoing, c.property, SerreGraph.tgt_rev]⟩, false), by
+        simp [c.property]⟩
+    | .inr c => ⟨(⟨c.val, by rw [← src_outgoing, c.property]⟩, true), c.property⟩
   left_inv d := by
     rcases d with ⟨⟨c, _ | _⟩, h⟩ <;> simp
   right_inv s := by
@@ -298,6 +458,13 @@ theorem linkDegree_eq_sideCount_rev_add_sideCount (e : C.graph.E)
     [Finite {c : C.Corner // C.outgoing c = e}] :
     C.linkDegree e = C.sideCount (C.graph.rev e) + C.sideCount e := by
   rw [linkDegree_eq_natCard_sum, Nat.card_sum, sideCount_def, sideCount_def]
+
+/-- A germ of nonzero link degree, or its reverse, is attached to a face side. -/
+theorem exists_outgoing_of_linkDegree_ne_zero {e : C.graph.E} (h : C.linkDegree e ≠ 0) :
+    ∃ c : C.Corner, C.outgoing c = e ∨ C.outgoing c = C.graph.rev e := by
+  rw [linkDegree_eq_natCard_sum] at h
+  obtain ⟨⟨c, hc⟩ | ⟨c, hc⟩⟩ := (Nat.card_ne_zero.1 h).1
+  exacts [⟨c, .inr hc⟩, ⟨c, .inl hc⟩]
 
 /-- A germ and its reverse have the same link degree: both count the face sides along their
 common edge. -/
@@ -388,6 +555,29 @@ theorem isOrientable_iff : C.IsOrientable ↔ ∃ σ : C.Face → Bool, ∀ c c'
     C.graph.toGeomEdge (C.outgoing c) = C.graph.toGeomEdge (C.outgoing c') →
       C.orientedSide σ c' = C.graph.rev (C.orientedSide σ c) :=
   Iff.rfl
+
+/-- Two side occurrences are traversed in opposite directions, for the face orientations `σ`,
+exactly when either their faces are oriented alike and their darts are mutually reverse, or their
+faces are oriented differently and their darts agree. -/
+theorem orientedSide_eq_rev_orientedSide_iff (σ : C.Face → Bool) (c c' : C.Corner) :
+    C.orientedSide σ c' = C.graph.rev (C.orientedSide σ c) ↔
+      (σ c.1 = σ c'.1 ∧ C.outgoing c' = C.graph.rev (C.outgoing c)) ∨
+        (σ c.1 ≠ σ c'.1 ∧ C.outgoing c' = C.outgoing c) := by
+  cases h : σ c.1 <;> cases h' : σ c'.1 <;>
+    simp [orientedSide, h, h', C.graph.rev_injective.eq_iff,
+      ← C.graph.rev_injective.eq_iff (a := C.graph.rev (C.outgoing c'))]
+
+/-- A polygonal complex is orientable exactly when its faces can be oriented so that two distinct
+side occurrences along the same dart lie on faces oriented differently, and two side occurrences
+along mutually reverse darts lie on faces oriented alike. -/
+theorem isOrientable_iff_forall_outgoing :
+    C.IsOrientable ↔ ∃ σ : C.Face → Bool, ∀ c c' : C.Corner, c ≠ c' →
+      (C.outgoing c' = C.outgoing c → σ c.1 ≠ σ c'.1) ∧
+        (C.outgoing c' = C.graph.rev (C.outgoing c) → σ c.1 = σ c'.1) := by
+  refine exists_congr fun σ => forall₃_congr fun c c' _ => ?_
+  rw [SerreGraph.toGeomEdge_eq_toGeomEdge_iff, orientedSide_eq_rev_orientedSide_iff]
+  have := C.graph.rev_ne (C.outgoing c)
+  grind
 
 end PolygonalComplex
 

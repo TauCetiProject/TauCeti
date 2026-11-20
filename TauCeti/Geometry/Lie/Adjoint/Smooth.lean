@@ -16,9 +16,6 @@ smoothness theorem for manifold derivatives expresses the derivative in a moving
 conjugation fixes the identity, this file cancels the resulting fixed tangent trivialization to
 recover the unframed tangent adjoint operator and its jointly smooth evaluation action.
 
-This advances Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
-
 ## Main results
 
 * `TauCeti.Lie.contMDiff_adjointContinuousLinearMap`: the adjoint operator depends smoothly on the
@@ -29,8 +26,6 @@ This advances Deliverable A, Layer 1 of
 
 ## References
 
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The group adjoint".
 * Sébastien Gouëzel and Floris van Doorn's
   `Mathlib.Geometry.Manifold.ContMDiffMFDeriv`, especially `ContMDiffAt.mfderiv`, supplies
   smoothness of the conjugation differential in a fixed frame. The frame cancellation follows the

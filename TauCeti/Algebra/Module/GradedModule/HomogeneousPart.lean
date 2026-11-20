@@ -44,7 +44,7 @@ universe uk uA uM uN uP
 variable {k : Type uk} [Semiring k]
   {M : Type uM} [AddCommMonoid M] [Module k M]
   {N : Type uN} [AddCommMonoid N] [Module k N]
-  (G : InternalGrading k M) (H : InternalGrading k N)
+  (G : InternalGrading k M ℤ) (H : InternalGrading k N ℤ)
 
 -- Assemble additively so the scalar action on a map need not agree with the coefficient action.
 private def homogeneousPartAddHom (f : M →+ N) (r : ℤ) : M →+ N :=
@@ -69,8 +69,8 @@ private theorem homogeneousPartAddHom_map_smul {A : Type uA}
   induction x using DirectSum.Decomposition.inductionOn G.piece with
   | zero => simp
   | @homogeneous p x =>
-    rw [homogeneousPartAddHom_apply_of_mem G H f r (hG x.2), hf,
-      homogeneousPartAddHom_apply_of_mem G H f r x.2]
+    rw [homogeneousPartAddHom_apply_of_mem G H f r (hG x.property), hf,
+      homogeneousPartAddHom_apply_of_mem G H f r x.property]
     have hindex : (p + s) + r = (p + r) + s := by omega
     rw [hindex]
     exact (DirectSum.map_decompose_shift H.piece H.piece (DistribSMul.toAddMonoidHom N a)
@@ -139,7 +139,7 @@ theorem homogeneousPart_add (f g : M →ₗ[k] N) (r : ℤ) :
 
 section Composition
 
-variable {P : Type uP} [AddCommMonoid P] [Module k P] (I : InternalGrading k P)
+variable {P : Type uP} [AddCommMonoid P] [Module k P] (I : InternalGrading k P ℤ)
 
 -- Work with the shared additive construction: a graded-scalar map need not be coefficient-linear.
 private theorem comp_homogeneousPartAddHom_apply_of_mem {A : Type uA} [Semiring A]
@@ -196,8 +196,9 @@ private theorem homogeneousPartAddHom_map_smul_of_graded (f : M →ₗ[A] N) (r 
   | zero => simp
   | @homogeneous i a =>
     exact homogeneousPartAddHom_map_smul G H f.toAddMonoidHom r i (a : A)
-      (f.map_smul a) (fun _ _ hx ↦ by simpa [add_comm] using SetLike.GradedSMul.smul_mem a.2 hx)
-      (fun _ _ hy ↦ by simpa [add_comm] using SetLike.GradedSMul.smul_mem a.2 hy) x
+      (f.map_smul a)
+          (fun _ _ hx ↦ by simpa [add_comm] using SetLike.GradedSMul.smul_mem a.property hx)
+      (fun _ _ hy ↦ by simpa [add_comm] using SetLike.GradedSMul.smul_mem a.property hy) x
   | add a b ha hb => simp [add_smul, ha, hb]
 
 /-- The degree-`r` part of an `A`-linear map for a common graded scalar action. The coefficient
@@ -285,7 +286,7 @@ theorem homogeneousPartOfGradedSMul_add (f g : M →ₗ[A] N) (r : ℤ) :
     G.homogeneousPartOfGradedSMul_apply_of_mem H 𝒜 g r hx]
 
 variable {P : Type uP} [AddCommMonoid P] [Module k P] [Module A P]
-  (I : InternalGrading k P) [SetLike.GradedSMul 𝒜 I.piece]
+  (I : InternalGrading k P ℤ) [SetLike.GradedSMul 𝒜 I.piece]
 
 /-- Postcomposition by a degree-`s` homogeneous map shifts the selected component by `s`. -/
 theorem comp_homogeneousPartOfGradedSMul (f : M →ₗ[A] N) (r : ℤ) {g : N →ₗ[A] P} {s : ℤ}
@@ -308,7 +309,7 @@ end GradedSMul
 section Factorization
 
 variable {A : Type uA} [Semiring A] [Module A M] [Module A N]
-  {P : Type uP} [AddCommMonoid P] [Module k P] [Module A P] (I : InternalGrading k P)
+  {P : Type uP} [AddCommMonoid P] [Module k P] [Module A P] (I : InternalGrading k P ℤ)
 
 /-- **Homogeneous factorization through an injective map.** If `f` is injective and homogeneous
 of degree zero, then a map of degree `r` whose range lies in the range of `f` factors through `f`

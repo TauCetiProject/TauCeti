@@ -63,7 +63,7 @@ with the continuous map `g ↦ (a g, b g)`, and the successor step `(a ⌣ b) g 
 postcomposition with a fixed continuous map. The successor step, however, needs the base case to
 be jointly continuous in the pair `(a, b)` in order to be a well-defined continuous map, and joint
 continuity of `(a, b) ↦ (g ↦ (a g, b g))` for the compact-open topologies is
-`ContinuousMap.continuous_prodMk`, which holds because a topological group is a regular space. No
+`ContinuousMap.continuous_prodMk'`, which holds because a topological group is a regular space. No
 hypothesis beyond `IsTopologicalGroup G` is needed anywhere in the file.
 
 ## Main definitions
@@ -359,7 +359,7 @@ def resolutionCup : (m n k : ℕ) → k = n + m →
     C((TopRep.resolutionX X (m + 1)).V × (TopRep.resolutionX Y (n + 1)).V,
       (TopRep.resolutionX Z (k + 1)).V)
   | 0, n, k, hk => ⟨fun p ↦ (P.pointwise n k hk).comp (p.1.prodMk p.2),
-      (continuous_postcomp _).comp ContinuousMap.continuous_prodMk⟩
+      (continuous_postcomp _).comp ContinuousMap.continuous_prodMk'⟩
   | m + 1, n, k + 1, hk =>
     ⟨fun p ↦ (resolutionCup m n k (Nat.succ.inj hk)).comp (p.1.prodMk (const G p.2)),
       (continuous_postcomp _).comp ContinuousMap.continuous_prodMk_const_right⟩
@@ -659,12 +659,12 @@ def cupCochain (m n : ℕ) :
     (TopRep.homogeneousCochains X).X m →ₗ[R] (TopRep.homogeneousCochains Y).X n →ₗ[R]
       (TopRep.homogeneousCochains Z).X (m + n) :=
   LinearMap.mk₂ R
-    (fun a b ↦ ⟨P.resolutionCupPairing m n a.1 b.1, fun g ↦ by
-      rw [← P.resolutionCupPairing_ρ, a.2 g, b.2 g]⟩)
-    (fun a a' b ↦ Subtype.ext (LinearMap.map_add₂ _ a.1 a'.1 b.1))
-    (fun r a b ↦ Subtype.ext (LinearMap.map_smul₂ _ r a.1 b.1))
-    (fun a b b' ↦ Subtype.ext (map_add _ b.1 b'.1))
-    (fun r a b ↦ Subtype.ext (LinearMap.map_smul _ r b.1))
+    (fun a b ↦ ⟨P.resolutionCupPairing m n a.val b.val, fun g ↦ by
+      rw [← P.resolutionCupPairing_ρ, a.property g, b.property g]⟩)
+    (fun a a' b ↦ Subtype.ext (LinearMap.map_add₂ _ a.val a'.val b.val))
+    (fun r a b ↦ Subtype.ext (LinearMap.map_smul₂ _ r a.val b.val))
+    (fun a b b' ↦ Subtype.ext (map_add _ b.val b'.val))
+    (fun r a b ↦ Subtype.ext (LinearMap.map_smul _ r b.val))
 
 /-- The underlying resolution element of a cup product of homogeneous cochains is the
 Alexander–Whitney pairing of the underlying elements. -/
@@ -673,7 +673,7 @@ Alexander–Whitney pairing of the underlying elements. -/
 -- statement is not in `simp`-normal form; use it with `rw`.
 theorem coe_cupCochain (m n : ℕ) (a : (TopRep.homogeneousCochains X).X m)
     (b : (TopRep.homogeneousCochains Y).X n) :
-    Subtype.val (P.cupCochain m n a b) = P.resolutionCupPairing m n a.1 b.1 := by
+    Subtype.val (P.cupCochain m n a b) = P.resolutionCupPairing m n a.val b.val := by
   rw [cupCochain, LinearMap.mk₂_apply]
 
 /-- The cup product of two homogeneous one-cochains, evaluated:
@@ -701,7 +701,7 @@ theorem cupCochain_leibniz (m n : ℕ) (a : (TopRep.homogeneousCochains X).X m)
   rw [TopRep.homogeneousCochains.d_apply, coe_cupCochain, Submodule.coe_add, Submodule.coe_smul,
     ContinuousCohomology.coe_homogeneousCochains_XIsoOfEq_hom_apply, coe_cupCochain, coe_cupCochain,
     TopRep.homogeneousCochains.d_apply, TopRep.homogeneousCochains.d_apply]
-  exact P.resolutionCupPairing_leibniz m n a.1 b.1
+  exact P.resolutionCupPairing_leibniz m n a.val b.val
 
 end TopPairing
 

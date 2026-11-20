@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Frobenius
 public import TauCeti.NumberTheory.NumberField.Quadratic.Basic
+public import TauCeti.NumberTheory.QuadraticOrder.PrimeIdeal
 import TauCeti.NumberTheory.Multiquadratic.Frobenius
 
 /-!
@@ -18,7 +19,10 @@ quadratic residue at that prime. This identifies the automorphism, rather than
 only its action on the chosen square root.
 
 This is the singleton case of `NumberField.isArithFrobAt_multiquadratic_eq_one_iff`,
-applied to Mathlib's chosen arithmetic Frobenius.
+applied to Mathlib's chosen arithmetic Frobenius. Comparing with the presented order `ℤ[√d]`, the
+Frobenius is nontrivial exactly when `(p)` is maximal in `ℤ[√d]`
+(`arithFrobAt_ne_one_iff_isMaximal_span_natCast`), which is the hypothesis of the integral
+Frobenius congruence `QuadraticAlgebra.frobenius_congruence`.
 
 The splitting interpretation is the quadratic case of the Frobenius splitting
 law in Neukirch, *Algebraic Number Theory*, Chapter I, §10.
@@ -49,6 +53,21 @@ theorem arithFrobAt_eq_one_iff_legendreSym_eq_one [IsGalois ℚ K]
     (fun _ : Unit => d) (fun _ => (θ : K))
     (fun _ => NumberField.coe_gen_sq hmin) htop hodd (fun _ => hd) Q
     (IsArithFrobAt.arithFrobAt ℤ (K ≃ₐ[ℚ] K) Q)
+
+/-- **Comparison with the presented order.** In a Galois quadratic field `ℚ(θ)` with `θ² = d` and
+at an odd prime `p ∤ d`, the arithmetic Frobenius at a prime above `p` is nontrivial exactly when
+`(p)` is maximal in the presented order `ℤ[√d]`, that is, exactly when `d` is not a square modulo
+`p` (`QuadraticAlgebra.isMaximal_span_natCast_iff_not_isSquare`). -/
+theorem arithFrobAt_ne_one_iff_isMaximal_span_natCast [IsGalois ℚ K]
+    (hmin : minpoly ℤ θ = X ^ 2 - C d)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hodd : p ≠ 2) (hd : ¬ (p : ℤ) ∣ d)
+    (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (Ideal.span {(p : ℤ)})]
+    [Finite (𝓞 K ⧸ Q)] :
+    arithFrobAt ℤ (K ≃ₐ[ℚ] K) Q ≠ 1 ↔
+      (Ideal.span {(p : QuadraticAlgebra ℤ d 0)}).IsMaximal := by
+  rw [Ne, arithFrobAt_eq_one_iff_legendreSym_eq_one hmin hgen hodd hd Q,
+    legendreSym.eq_one_iff p (by rwa [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]),
+    QuadraticAlgebra.isMaximal_span_natCast_iff_not_isSquare]
 
 end TauCeti.NumberField
 

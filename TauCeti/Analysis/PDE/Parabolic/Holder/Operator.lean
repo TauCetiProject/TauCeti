@@ -45,8 +45,16 @@ trace. This is the whole-space comparison principle applied to the Hölder class
   `TauCeti.ParabolicC2HolderSpace.norm_euclideanZerothOrderCoeff_le` by the scalar coefficients.
 * `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL`: the operator with Hölder
   coefficients `aⁱʲ`, `bⁱ`, `c` on `ℝⁿ`.
+* `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_lineMap`,
+  `TauCeti.ParabolicC2HolderSpace.norm_euclideanParabolicOperatorL_sub_le` and
+  `TauCeti.ParabolicC2HolderSpace.continuous_euclideanParabolicOperatorL`: the operator is affine
+  and Lipschitz continuous in its scalar coefficients.
 * `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_const_apply_eq_add`: freezing the
   coefficient matrix at a point.
+* `TauCeti.ParabolicC2HolderSpace.hasDerivAt_slabMk_projIcc_add` and (in the same namespace)
+  `deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq_euclideanParabolicOperatorL`:
+  on the slab shifted to start at time `0`, `u` is a classical solution whose coordinate form of
+  `P u` is `euclideanParabolicOperatorL`, so the classical whole-space results apply to it.
 * `TauCeti.ParabolicC2HolderSpace.le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le`,
   `TauCeti.ParabolicC2HolderSpace.abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le`
   and `TauCeti.ParabolicC2HolderSpace.eq_of_euclideanParabolicOperatorL_eq`: the one-sided and
@@ -290,6 +298,34 @@ theorem norm_euclideanZerothOrderCoeff_le
   (ContinuousLinearMap.norm_lsmul_compHolder₂_const_le _ _).trans
     (mul_le_of_le_one_right (norm_nonneg _) ContinuousLinearMap.norm_id_le)
 
+/-- The second-order coefficient field is linear in the scalar coefficients. -/
+@[simp]
+theorem euclideanSecondOrderCoeff_sub
+    (a a' : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    euclideanSecondOrderCoeff (a - a') =
+      euclideanSecondOrderCoeff a - euclideanSecondOrderCoeff a' :=
+  HolderSpace.ext fun p ↦ ContinuousLinearMap.ext fun H ↦ by
+    simp [HolderSpace.sub_apply, sub_mul, Finset.sum_sub_distrib]
+
+/-- The first-order coefficient field is linear in the scalar coefficients. -/
+@[simp]
+theorem euclideanFirstOrderCoeff_sub
+    (b b' : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    euclideanFirstOrderCoeff (b - b') =
+      euclideanFirstOrderCoeff b - euclideanFirstOrderCoeff b' :=
+  HolderSpace.ext fun p ↦ ContinuousLinearMap.ext fun v ↦ by
+    simp [HolderSpace.sub_apply, sub_mul, Finset.sum_sub_distrib]
+
+omit [DecidableEq ι] in
+/-- The zeroth-order coefficient field is linear in the scalar coefficient. -/
+@[simp]
+theorem euclideanZerothOrderCoeff_sub
+    (c c' : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    euclideanZerothOrderCoeff (c - c') =
+      euclideanZerothOrderCoeff c - euclideanZerothOrderCoeff c' :=
+  HolderSpace.ext fun p ↦ ContinuousLinearMap.ext fun y ↦ by
+    simp [HolderSpace.sub_apply, sub_mul]
+
 /-- The parabolic operator `P u = ∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` on `ℝⁿ = EuclideanSpace ℝ ι`
 with scalar coefficients `aⁱʲ`, `bⁱ`, `c` in `C_b^{α,α/2}`, as a continuous linear map from
 `C_b^{2+α,1+α/2}` to `C_b^{α,α/2}`. -/
@@ -335,6 +371,57 @@ theorem euclideanParabolicOperatorL_one_apply
   simp only [u.iteratedFDeriv_two_apply, slabMk_space_slabTime]
   simp [Matrix.one_apply]
 
+/-- The Euclidean parabolic operator is affine in its coefficients: on the segment between two
+coefficient triples it is the segment between the two operators. -/
+theorem euclideanParabolicOperatorL_lineMap
+    (a₀ a₁ : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (b₀ b₁ : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (c₀ c₁ : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) (s : ℝ) :
+    euclideanParabolicOperatorL (ht := ht) hα (AffineMap.lineMap a₀ a₁ s)
+        (AffineMap.lineMap b₀ b₁ s) (AffineMap.lineMap c₀ c₁ s) =
+      AffineMap.lineMap (euclideanParabolicOperatorL hα a₀ b₀ c₀)
+        (euclideanParabolicOperatorL hα a₁ b₁ c₁) s := by
+  ext u p
+  simp only [AffineMap.lineMap_apply_module, euclideanParabolicOperatorL_apply,
+    _root_.add_apply, FunLike.coe_smul, Pi.smul_apply,
+    HolderSpace.add_apply, HolderSpace.smul_apply, Pi.add_apply, smul_eq_mul, add_mul,
+    Finset.sum_add_distrib, mul_assoc, ← Finset.mul_sum]
+  ring
+
+/-- **Lipschitz dependence on the scalar coefficients.** In operator norm,
+`‖P_{a,b,c} - P_{a',b',c'}‖ ≤ ∑ᵢⱼ ‖aⁱʲ - a'ⁱʲ‖ + 24 (∑ᵢ ‖bⁱ - b'ⁱ‖ + ‖c - c'‖)`. -/
+theorem norm_euclideanParabolicOperatorL_sub_le
+    (a a' : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (b b' : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (c c' : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ‖euclideanParabolicOperatorL (ht := ht) hα a b c - euclideanParabolicOperatorL hα a' b' c'‖ ≤
+      ∑ i, ∑ j, ‖a i j - a' i j‖ + 24 * (∑ i, ‖b i - b' i‖ + ‖c - c'‖) := by
+  refine (norm_parabolicOperatorL_sub_le hα).trans ?_
+  rw [← euclideanSecondOrderCoeff_sub, ← euclideanFirstOrderCoeff_sub,
+    ← euclideanZerothOrderCoeff_sub]
+  gcongr
+  · exact norm_euclideanSecondOrderCoeff_le _
+  · exact norm_euclideanFirstOrderCoeff_le _
+  · exact norm_euclideanZerothOrderCoeff_le _
+
+/-- The Euclidean parabolic operator depends continuously on its scalar coefficients, in operator
+norm. -/
+theorem continuous_euclideanParabolicOperatorL :
+    Continuous fun abc : (ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) ×
+        (ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) ×
+        HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ ↦
+      euclideanParabolicOperatorL (ht := ht) hα abc.1 abc.2.1 abc.2.2 := by
+  refine continuous_iff_continuousAt.2 fun x ↦ ?_
+  rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
+  refine squeeze_zero (fun _ ↦ norm_nonneg _)
+    (fun y ↦ norm_euclideanParabolicOperatorL_sub_le hα _ _ _ _ _ _) ?_
+  have h : Continuous fun y : (ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) ×
+      (ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) ×
+      HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ ↦
+      ∑ i, ∑ j, ‖y.1 i j - x.1 i j‖ + 24 * (∑ i, ‖y.2.1 i - x.2.1 i‖ + ‖y.2.2 - x.2.2‖) := by
+    fun_prop
+  simpa using h.tendsto x
+
 /-- **Freezing the coefficients at a point.** The operator `∂ₜ - ∑ᵢⱼ aⁱʲ(z₀) ∂ᵢ∂ⱼ` with the
 coefficient matrix frozen at `z₀` and no lower-order terms is `P` plus the frozen principal error
 `(a - a(z₀))·D_x²` and the lower-order part `b·D_x + c`. -/
@@ -357,9 +444,10 @@ theorem euclideanParabolicOperatorL_const_apply_eq_add {t₀ t₁ : ℝ} {ht : t
     euclideanZerothOrderCoeff_apply]
   ring
 
-/-- At an interior time, the time slice through `x`, shifted to start at `0`, has the recorded
-time derivative as its ordinary derivative. -/
-private theorem hasDerivAt_shift (u : ParabolicC2HolderSpace α E F ht) (x : E) {t : ℝ}
+/-- At an interior time, the time slice through `x`, shifted to start at `0` and extended
+constantly in time outside the slab, has the recorded time derivative as its ordinary
+derivative. -/
+theorem hasDerivAt_slabMk_projIcc_add (u : ParabolicC2HolderSpace α E F ht) (x : E) {t : ℝ}
     (h : t ∈ Ioo 0 (t₁ - t₀)) :
     HasDerivAt (fun s ↦ u (slabMk x (projIcc t₀ t₁ ht.le (s + t₀))))
       (timeDerivL u (slabMk x (projIcc t₀ t₁ ht.le (t + t₀)))) t := by
@@ -372,7 +460,8 @@ private theorem hasDerivAt_shift (u : ParabolicC2HolderSpace α E F ht) (x : E) 
 
 /-- On a shifted interior time slice, the classical coordinate form of `P u` used by the
 whole-space comparison principle is the value of `P u` at the corresponding slab point. -/
-private theorem shift_operator_eq (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht)
+theorem deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq_euclideanParabolicOperatorL
+    (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht)
     {t : ℝ} (h : t ∈ Ioo 0 (t₁ - t₀)) (x : EuclideanSpace ℝ ι) :
     deriv (fun s ↦ u (slabMk x (projIcc t₀ t₁ ht.le (s + t₀)))) t -
       (∑ i, ∑ j, (Matrix.of fun i j ↦ a i j (slabMk x (projIcc t₀ t₁ ht.le (t + t₀)))) i j *
@@ -383,7 +472,7 @@ private theorem shift_operator_eq (u : ParabolicC2HolderSpace α (EuclideanSpace
         c (slabMk x (projIcc t₀ t₁ ht.le (t + t₀))) *
           u (slabMk x (projIcc t₀ t₁ ht.le (t + t₀)))) =
       euclideanParabolicOperatorL hα a b c u (slabMk x (projIcc t₀ t₁ ht.le (t + t₀))) := by
-  rw [(hasDerivAt_shift u x h).deriv, u.fderiv_fderiv_eq, u.fderiv_eq,
+  rw [(hasDerivAt_slabMk_projIcc_add u x h).deriv, u.fderiv_fderiv_eq, u.fderiv_eq,
     euclideanParabolicOperatorL_apply]
   simp only [Matrix.of_apply, map_sum, map_smul, smul_eq_mul]
 
@@ -431,11 +520,13 @@ theorem le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le
       (fun t _ x ↦ hc _) hγ hM hK hcont.continuousOn
       (hbdd.subset (image_subset_range _ _)).bddAbove
       (fun t _ x ↦ (u.contDiff_spatialSlice _).contDiffAt)
-      (fun t h x ↦ (hasDerivAt_shift u x h).differentiableAt)
-      (fun t h x ↦ sub_le_iff_le_add'.1 ((shift_operator_eq hα u h x).trans_le (hP _)))
+      (fun t h x ↦ (hasDerivAt_slabMk_projIcc_add u x h).differentiableAt)
+      (fun t h x ↦ sub_le_iff_le_add'.1
+        ((deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq_euclideanParabolicOperatorL hα u
+          h x).trans_le (hP _)))
       (fun x ↦ by simpa using hinit x)
   have hp : slabTime p - t₀ ∈ Icc 0 (t₁ - t₀) :=
-    ⟨by linarith [(slabTime p).2.1], by linarith [(slabTime p).2.2]⟩
+    ⟨by linarith [(slabTime p).property.1], by linarith [(slabTime p).property.2]⟩
   have hτ : projIcc t₀ t₁ ht.le (slabTime p - t₀ + t₀) = slabTime p := by
     rw [sub_add_cancel, projIcc_val]
   simpa only [hτ, slabMk_space_slabTime] using key hp (p : ParabolicSpaceTime _).space

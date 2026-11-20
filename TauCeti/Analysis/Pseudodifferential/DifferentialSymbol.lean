@@ -105,6 +105,34 @@ theorem differentialSymbol_smul (s : Finset ι) (v : ∀ i, Fin (k i) → E)
   funext p
   simp [differentialSymbol, smul_comm _ z, Finset.smul_sum]
 
+/-- Coefficients of class `C^r` give a polynomial differential symbol of class `C^r` jointly in
+the position and the frequency. -/
+theorem contDiff_differentialSymbol {r : ℕ∞} (s : Finset ι) (v : ∀ i, Fin (k i) → E)
+    {b : ι → E → V →L[ℂ] W} (hb : ∀ i ∈ s, ContDiff ℝ r (b i)) :
+    ContDiff ℝ r (differentialSymbol s v b) := by
+  refine ContDiff.sum fun i hi ↦ ?_
+  have hprod : ContDiff ℝ r fun p : E × E ↦ ∏ j, (Complex.I * (⟪p.2, v i j⟫ : ℂ)) :=
+    contDiff_prod fun j _ ↦ contDiff_const.mul
+      (Complex.ofRealCLM.contDiff.comp (contDiff_snd.inner ℝ contDiff_const))
+  exact hprod.smul ((hb i hi).comp contDiff_fst)
+
+/-- If every summand has order `d`, the polynomial differential symbol is homogeneous of
+degree `d` in the frequency. -/
+theorem differentialSymbol_smul_snd (s : Finset ι) (v : ∀ i, Fin (k i) → E)
+    (b : ι → E → V →L[ℂ] W) {d : ℕ} (hk : ∀ i ∈ s, k i = d) (x ξ : E) (t : ℝ) :
+    differentialSymbol s v b (x, t • ξ) = t ^ d • differentialSymbol s v b (x, ξ) := by
+  simp only [differentialSymbol_def, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  have h : ∏ j, (Complex.I * (⟪t • ξ, v i j⟫ : ℂ)) =
+      (t : ℂ) ^ d * ∏ j, (Complex.I * (⟪ξ, v i j⟫ : ℂ)) :=
+    calc ∏ j, (Complex.I * (⟪t • ξ, v i j⟫ : ℂ))
+        _ = ∏ j, ((t : ℂ) * (Complex.I * (⟪ξ, v i j⟫ : ℂ))) :=
+          Finset.prod_congr rfl fun j _ ↦ by rw [real_inner_smul_left, Complex.ofReal_mul]; ring
+        _ = _ := by
+          rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+            ← hk i hi]
+  rw [h, mul_smul, ← Complex.ofReal_pow, Complex.coe_smul]
+
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- After frequency rescaling, a differential monomial times `𝓕 u` is exactly the Fourier

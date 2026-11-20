@@ -60,6 +60,8 @@ equivalence is needed and equality of places *is* equality of valuations
   another place is that place (Stichtenoth, Theorem 1.1.13(d)).
 * `TauCeti.Place.mem_integers_of_isIntegral`: the valuation ring of a place is integrally closed
   in `F`.
+* `TauCeti.Place.isTrivialOn_iff_integers_comap_eq_top`: a place is trivial on a subfield `R`
+  precisely when its valuation ring contains the image of `R`.
 * `TauCeti.Place.degree_eq_one_iff_algebraMap_surjective` and
   `TauCeti.Place.degree_eq_one_iff_forall_exists_valuation_sub_lt_one`: the rational places are
   those whose residue field is exhausted by the constants, equivalently those at which every
@@ -366,6 +368,13 @@ theorem mem_integers_of_mem_algebraicClosure {f : F} (hf : f ∈ algebraicClosur
   · exact P.mem_integers_iff.mpr
       (le_of_eq (P.valuation_eq_one_of_isAlgebraic (mem_algebraicClosure_iff.mp hf) hf0))
 
+/-- **An algebraic function is regular at every place**: the set of places at which `x` is regular
+is all of them. -/
+theorem setOf_mem_integers_eq_univ_of_isAlgebraic {x : F} (hx : IsAlgebraic k x) :
+    {P : Place k F | x ∈ P.integers} = Set.univ :=
+  Set.eq_univ_of_forall fun P ↦
+    P.mem_integers_of_mem_algebraicClosure (mem_algebraicClosure_iff.mpr hx)
+
 /-- **A function agrees with at most one constant to first order**: if `f - a` and `f - b` both
 vanish at `P` for constants `a` and `b`, then `a = b`, the difference `b - a` being a constant
 that vanishes at `P`. -/
@@ -375,6 +384,16 @@ theorem eq_of_valuation_sub_lt_one {f : F} {a b : k} (ha : P.valuation (f - alge
   have h := Valuation.map_sub_lt P.valuation hb ha
   rw [sub_sub_sub_cancel_left, ← _root_.map_sub, P.isTrivialOn.eq_one _ (sub_ne_zero.mpr hne)] at h
   exact lt_irrefl _ h
+
+/-- A place of `F / k` is trivial on a subfield `R` precisely when its valuation ring contains the
+image of `R`. -/
+theorem isTrivialOn_iff_integers_comap_eq_top {R : Type*} [Field R] [Algebra R F] :
+    P.valuation.IsTrivialOn R ↔ P.integers.comap (algebraMap R F) = ⊤ :=
+  ⟨fun h ↦ ValuationSubring.ext _ _ fun f ↦
+      ⟨fun _ ↦ trivial, fun _ ↦ P.mem_integers_iff.mpr <| by
+        have := h; exact Valuation.IsTrivialOn.valuation_algebraMap_le_one P.valuation f⟩,
+    fun h ↦ .of_le_one P.valuation fun x ↦
+      P.mem_integers_iff.mp (ValuationSubring.mem_comap.mp (h.symm ▸ ValuationSubring.mem_top x))⟩
 
 end Constants
 
@@ -568,7 +587,7 @@ theorem mem_integers_of_aeval_mem_integers {q : Polynomial k} (hq : q.natDegree 
   have hq0 : q.leadingCoeff ≠ 0 := Polynomial.leadingCoeff_ne_zero.mpr (by rintro rfl; simp at hq)
   have hm : (Polynomial.C q.leadingCoeff⁻¹ * q).Monic :=
     Polynomial.monic_C_mul_of_mul_leadingCoeff_eq_one (inv_mul_cancel₀ hq0)
-  refine P.mem_integers_of_isIntegral (R := P.integers) (fun r ↦ r.2)
+  refine P.mem_integers_of_isIntegral (R := P.integers) (fun r ↦ r.property)
     (IsIntegral.of_aeval_monic (hm.map (algebraMap k P.integers)) ?_ ?_)
   · rwa [hm.natDegree_map, Polynomial.natDegree_C_mul (inv_ne_zero hq0)]
   · rw [Polynomial.aeval_map_algebraMap, map_mul, Polynomial.aeval_C]
@@ -621,7 +640,7 @@ theorem degree_eq_one_iff_forall_exists_valuation_sub_lt_one :
     exact ⟨c, (key ⟨f, hf⟩ c).mpr hc.symm⟩
   · intro h y
     obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective y
-    obtain ⟨c, hc⟩ := h (a : F) a.2
+    obtain ⟨c, hc⟩ := h (a : F) a.property
     exact ⟨c, ((key a c).mp hc).symm⟩
 
 /-- **A rational place has residue field `k`**: at a place of degree one the constants map

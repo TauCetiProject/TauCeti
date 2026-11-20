@@ -153,7 +153,7 @@ private theorem vermaCentralCharacter_sub_smul_root {i : H.root} (hi : i ∈ b.s
   -- at `t n = (n - c) / 2` the weight `lam + t n • α` takes the value `n` on `αᵢ^∨`
   let t : ℕ → K := fun n ↦ ((n : K) - c) / 2
   have ht : Function.Injective t := fun m n h ↦ by
-    simpa [t, div_left_inj' (two_ne_zero' K)] using h
+    simpa [t, div_left_inj₀ (two_ne_zero' K)] using h
   have hroot (n : ℕ) : (q₁ - q₂).IsRoot (t n) := by
     have hn : (lam + t n • α) ((IsKilling.rootSystem H).coroot i) = (n : K) := by
       rw [LinearMap.add_apply, LinearMap.smul_apply, hαc, ← hc, smul_eq_mul]

@@ -330,59 +330,61 @@ private theorem slope_le_gronwallBound_of_apply_le {b c : ℝ}
   exact div_le_div_of_nonneg_right (sub_le_sub_right hdist _) (sub_pos.2 hst).le
 
 /-- The endpoint energy regularization estimate on every positive-length time interval
-implies the EVI, provided the energy is lower semicontinuous and finite along the curve at
-positive times. -/
+implies the EVI, provided the energy is lower semicontinuous, not identically `⊤`, and never
+`⊥` along the curve at positive times. The estimate itself then makes the energy finite along
+the curve at positive times. -/
 theorem isEVISolution_of_apply_le (hφ : LowerSemicontinuous φ)
     (hu : ContinuousOn u (Ici 0))
-    (htop : ∀ t > 0, φ (u t) ≠ ⊤) (hbot : ∀ t > 0, φ (u t) ≠ ⊥)
+    (hdom : ∃ y, φ y ≠ ⊤) (hbot : ∀ t > 0, φ (u t) ≠ ⊥)
     (h : ∀ y, φ y ≠ ⊤ → ∀ s t : ℝ, 0 ≤ s → s < t →
       φ (u t) ≤ φ y + (((dist (u s) y ^ 2 - exp (lam * (t - s)) * dist (u t) y ^ 2) /
         (2 * ∫ r in 0..(t - s), exp (lam * r)) : ℝ) : EReal)) :
-    IsEVISolution lam φ u where
-  continuousOn := hu
-  apply_ne_top := htop _
-  apply_ne_bot := hbot _
-  limsup_slope_add_le {y} hy {t} ht := by
-    have he := EReal.coe_toReal (htop t ht) (hbot t ht)
-    have hybot : φ y ≠ ⊥ := by
-      intro hybot
-      have hle := h y hy 0 t le_rfl ht
-      rw [hybot, EReal.bot_add] at hle
-      exact hbot t ht (le_bot_iff.1 hle)
-    have hey := EReal.coe_toReal hy hybot
-    set a := dist (u t) y ^ 2 / 2
-    set b := (φ y).toReal
-    set e := (φ (u t)).toReal
-    have hlim : limsup (fun s ↦ ((slope (fun r ↦ dist (u r) y ^ 2 / 2) t s : ℝ) : EReal))
-        (𝓝[>] t) ≤ ((b - e - lam * a : ℝ) : EReal) := by
-      apply EReal.le_of_forall_lt_iff_le.1
-      intro R hR
-      have hR' : b - e - lam * a < R := EReal.coe_lt_coe_iff.1 hR
-      let c := e - (R - (b - e - lam * a)) / 2
-      have hc : c < e := by dsimp [c]; linarith
-      have hcR : b - c - lam * a < R := by dsimp [c]; linarith
-      have hcu : ContinuousAt u t := hu.continuousAt (Ici_mem_nhds ht)
-      have henergy : ∀ᶠ r in 𝓝[>] t, (c : EReal) < φ (u r) :=
-        ((hφ (u t)).comp hcu) c (by simpa only [Function.comp_apply, ← he,
-          EReal.coe_lt_coe_iff] using hc) |>.filter_mono
-          nhdsWithin_le_nhds
-      -- Compare with the solution of q' + lam * q = b - c.
-      let q : ℝ → ℝ := fun r ↦ gronwallBound a (-lam) (b - c) (r - t)
-      have hq : HasDerivAt q (b - c - lam * a) t :=
-        (hasDerivAt_gronwallBound_shift a (-lam) (b - c) t t).congr_deriv
-          (by rw [sub_self, gronwallBound_x0]; ring)
-      have hbound : ∀ᶠ r in 𝓝[>] t,
-          slope (fun z ↦ dist (u z) y ^ 2 / 2) t r ≤ slope q t r := by
-        filter_upwards [henergy, self_mem_nhdsWithin] with r hr htr
-        exact slope_le_gronwallBound_of_apply_le htr hey hr.le (h y hy t r ht.le htr)
-      have hqR : ∀ᶠ r in 𝓝[>] t, slope q t r < R :=
-        hq.hasDerivWithinAt.limsup_slope_le' (lt_irrefl t) hcR
-      exact limsup_le_of_le (by isBoundedDefault)
-        ((hbound.and hqR).mono fun _ hr ↦ EReal.coe_le_coe_iff.2 (hr.1.trans hr.2.le))
-    rw [← hey, ← he, ← EReal.coe_sub]
-    calc _ ≤ ((b - e - lam * a : ℝ) : EReal) + ((lam * a : ℝ) : EReal) :=
-          add_le_add hlim le_rfl
-      _ = _ := by rw [← EReal.coe_add]; congr 1; ring
+    IsEVISolution lam φ u := by
+  have htop : ∀ t > 0, φ (u t) ≠ ⊤ := by
+    obtain ⟨y, hy⟩ := hdom
+    exact fun t ht ↦ ne_top_of_le_ne_top (EReal.add_ne_top hy (EReal.coe_ne_top _))
+      (h y hy 0 t le_rfl ht)
+  refine ⟨hu, htop _, hbot _, fun {y} hy {t} ht ↦ ?_⟩
+  have he := EReal.coe_toReal (htop t ht) (hbot t ht)
+  have hybot : φ y ≠ ⊥ := by
+    intro hybot
+    have hle := h y hy 0 t le_rfl ht
+    rw [hybot, EReal.bot_add] at hle
+    exact hbot t ht (le_bot_iff.1 hle)
+  have hey := EReal.coe_toReal hy hybot
+  set a := dist (u t) y ^ 2 / 2
+  set b := (φ y).toReal
+  set e := (φ (u t)).toReal
+  have hlim : limsup (fun s ↦ ((slope (fun r ↦ dist (u r) y ^ 2 / 2) t s : ℝ) : EReal))
+      (𝓝[>] t) ≤ ((b - e - lam * a : ℝ) : EReal) := by
+    apply EReal.le_of_forall_lt_iff_le.1
+    intro R hR
+    have hR' : b - e - lam * a < R := EReal.coe_lt_coe_iff.1 hR
+    let c := e - (R - (b - e - lam * a)) / 2
+    have hc : c < e := by dsimp [c]; linarith
+    have hcR : b - c - lam * a < R := by dsimp [c]; linarith
+    have hcu : ContinuousAt u t := hu.continuousAt (Ici_mem_nhds ht)
+    have henergy : ∀ᶠ r in 𝓝[>] t, (c : EReal) < φ (u r) :=
+      ((hφ (u t)).comp hcu) c (by simpa only [Function.comp_apply, ← he,
+        EReal.coe_lt_coe_iff] using hc) |>.filter_mono
+        nhdsWithin_le_nhds
+    -- Compare with the solution of q' + lam * q = b - c.
+    let q : ℝ → ℝ := fun r ↦ gronwallBound a (-lam) (b - c) (r - t)
+    have hq : HasDerivAt q (b - c - lam * a) t :=
+      (hasDerivAt_gronwallBound_shift a (-lam) (b - c) t t).congr_deriv
+        (by rw [sub_self, gronwallBound_x0]; ring)
+    have hbound : ∀ᶠ r in 𝓝[>] t,
+        slope (fun z ↦ dist (u z) y ^ 2 / 2) t r ≤ slope q t r := by
+      filter_upwards [henergy, self_mem_nhdsWithin] with r hr htr
+      exact slope_le_gronwallBound_of_apply_le htr hey hr.le (h y hy t r ht.le htr)
+    have hqR : ∀ᶠ r in 𝓝[>] t, slope q t r < R :=
+      hq.hasDerivWithinAt.limsup_slope_le' (lt_irrefl t) hcR
+    exact limsup_le_of_le (by isBoundedDefault)
+      ((hbound.and hqR).mono fun _ hr ↦ EReal.coe_le_coe_iff.2 (hr.1.trans hr.2.le))
+  rw [← hey, ← he, ← EReal.coe_sub]
+  calc _ ≤ ((b - e - lam * a : ℝ) : EReal) + ((lam * a : ℝ) : EReal) :=
+        add_le_add hlim le_rfl
+    _ = _ := by rw [← EReal.coe_add]; congr 1; ring
 
 /-- For a lower semicontinuous energy, continuous curves of finite energy at positive times
 are EVI solutions exactly when they satisfy every endpoint energy regularization estimate. -/
@@ -395,7 +397,7 @@ theorem isEVISolution_iff_apply_le (hφ : LowerSemicontinuous φ) :
   refine ⟨fun h ↦ ⟨h.continuousOn, fun _ ht ↦ h.apply_ne_top ht,
     fun _ ht ↦ h.apply_ne_bot ht, fun _ _ _ _ hs hst ↦ h.apply_le_of_nonneg hφ hs hst⟩, ?_⟩
   rintro ⟨hu, htop, hbot, hreg⟩
-  exact isEVISolution_of_apply_le hφ hu htop hbot hreg
+  exact isEVISolution_of_apply_le hφ hu ⟨u 1, htop 1 one_pos⟩ hbot hreg
 
 namespace IsEVISolution
 
@@ -495,7 +497,7 @@ theorem dist_le (hu : IsEVISolution lam φ u) (hv : IsEVISolution lam φ v)
   have h := continuousWithinAt_const.closure_le hcl hcont fun s hs ↦
     dist_sq_le_of_pos hu hv hφ hs.1 hs.2
   have hexp : exp (-(2 * lam) * (t - 0)) = exp (-(lam * t)) ^ 2 := by
-    rw [← exp_nat_mul]
+    rw [← exp_natCast_mul]
     ring_nf
   rw [hexp] at h
   exact (pow_le_pow_iff_left₀ dist_nonneg (by positivity) two_ne_zero).1 (by nlinarith)

@@ -71,11 +71,11 @@ def diagonalPermMulEquivWeylGroup (r : ℕ) :
 @[simp]
 theorem diagonalPermMulEquivWeylGroup_indexEquiv_apply
     (e : Equiv.Perm (Fin (r + 1))) (p : CoordinateRootIndex (Fin (r + 1))) :
-    (diagonalPermMulEquivWeylGroup.{u} r e).1.indexEquiv p =
+    (diagonalPermMulEquivWeylGroup.{u} r e).val.indexEquiv p =
       coordinatePermRootIndex e p := by
   have h : (coordinateWeylGroupEquiv
-      (coordinatePermMulEquivWeylGroup e)).1.indexEquiv p =
-      (coordinatePermMulEquivWeylGroup e).1.indexEquiv p :=
+      (coordinatePermMulEquivWeylGroup e)).val.indexEquiv p =
+      (coordinatePermMulEquivWeylGroup e).val.indexEquiv p :=
     congrArg (fun f : Equiv.Perm (CoordinateRootIndex (Fin (r + 1))) ↦ f p)
     (RootPairing.weylGroupToPerm_weylGroupEquivOfReflectionPermEq _ _
       diagonal_reflectionPerm_eq _ _ (coordinatePermMulEquivWeylGroup e))
@@ -96,9 +96,9 @@ theorem diagonalPermMulEquivWeylGroup_symm_ofIdx
     (p : CoordinateRootIndex (Fin (r + 1))) :
     (diagonalPermMulEquivWeylGroup.{u} r).symm
         (RootPairing.weylGroup.ofIdx (diagonalRootDatum.{u} r) p) =
-      Equiv.swap p.1.1 p.1.2 := by
+      Equiv.swap p.val.1 p.val.2 := by
   apply (diagonalPermMulEquivWeylGroup r).injective
-  rw [MulEquiv.apply_symm_apply, diagonalPermMulEquivWeylGroup_swap _ _ p.2]
+  rw [MulEquiv.apply_symm_apply, diagonalPermMulEquivWeylGroup_swap _ _ p.property]
 
 /-- On a basis character `ε_i - ε_r`, a permutation gives `ε_{e(i)} - ε_{e(r)}`,
 expressed in the normalized projective coordinates. -/

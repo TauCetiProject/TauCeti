@@ -163,7 +163,7 @@ private theorem projectedCoordinates_injective :
   funext c
   have h := congrArg (fun v ↦ v.val c.out) hab
   simp only [projectedCoordinates_apply, Quotient.out_eq] at h
-  exact Int.cast_injective ((div_left_inj' (minimalPeriod_cast_ne_zero σ c)).mp h)
+  exact Int.cast_injective ((div_left_inj₀ (minimalPeriod_cast_ne_zero σ c)).mp h)
 
 /-- The integral vectors in the permutation-fixed space over `K`. -/
 def permutationIntegralLattice : Submodule ℤ

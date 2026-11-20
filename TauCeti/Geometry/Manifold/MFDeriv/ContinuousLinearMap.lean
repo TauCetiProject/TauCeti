@@ -12,17 +12,24 @@ public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 /-!
 # Manifold derivatives of continuous-linear-map applications
 
-This file records a local-calculus fact for vector-valued maps on manifolds: at a zero of a
-vector-valued map `u`, the derivative of a varying continuous linear map `c` applied to `u` has
-no contribution from the varying operator. Since that contribution is multiplied by `u = 0`, the
-operator `c` need only be continuous, not differentiable.
+This file records local-calculus facts for continuous-linear-map-valued maps on manifolds.
 
-On a normed space, the imported theorem `HasFDerivWithinAt.clm_apply_of_eq_zero` is a variant of
+At a zero of a vector-valued map `u`, the derivative of a varying continuous linear map `c`
+applied to `u` has no contribution from the varying operator. Since that contribution is
+multiplied by `u = 0`, the operator `c` need only be continuous, not differentiable. On a normed
+space, the imported theorem `HasFDerivWithinAt.clm_apply_of_eq_zero` is a variant of
 `HasFDerivWithinAt.clm_apply` needing only continuity of `c`. The manifold formula
 `mvfderiv_eq_comp_of_eventuallyEq_clm_apply` is its counterpart in charts, specialized to
-the case used when differentiating changes of fiber coordinates at the zero of a bundle section.
-It is stated for any map agreeing with `y ↦ c y (u y)` near the point, which is how fiber
-coordinates in two trivializations are related.
+the case used when differentiating changes of fiber coordinates at the zero of a bundle section,
+and `mdifferentiableAt_of_eventuallyEq_clm_apply` gives the differentiability. Both are stated
+for any map agreeing with `y ↦ c y (u y)` near the point, which is how fiber coordinates in two
+trivializations are related.
+
+For differentiable maps `A : M → F →L[𝕜] F'` and `p : M → F`, `mvfderiv_clm_apply` gives
+the product rule `d(A p) = (dA) p + A (dp)`, the manifold counterpart of Mathlib's
+`fderiv_clm_apply`. Its constant-vector case is `mvfderiv_clm_apply_const`, and
+`TauCeti.mvfderiv_clm_apply_const₂` evaluates a differentiable family of bilinear maps at two
+fixed vectors.
 
 For maps on a normed space, it also records how `mvfderiv` acts on vectors given in the
 model space through `NormedSpace.fromTangentSpace`: there it is the Fréchet derivative.
@@ -44,13 +51,14 @@ variable {𝕜 E H M F F' : Type*} [NontriviallyNormedField 𝕜]
 
 namespace TauCeti
 
-/-- At a zero of `u`, a map agreeing near `x` with `y ↦ c y (u y)` has derivative `c x` composed
-with the derivative of `u`: the variation of `c` is multiplied by `u x = 0`, so `c` need only be
-continuous at `x`. -/
-theorem mvfderiv_eq_comp_of_eventuallyEq_clm_apply {f : M → F'} {c : M → F →L[𝕜] F'}
-    {u : M → F} (hf : (fun y ↦ c y (u y)) =ᶠ[𝓝 x] f) (hc : ContinuousAt c x)
-    (hu : MDifferentiableAt I 𝓘(𝕜, F) u x) (hu0 : u x = 0) :
-    mvfderiv I f x = (c x).comp (mvfderiv I u x) := by
+/-- The chart form of `mvfderiv_eq_comp_of_eventuallyEq_clm_apply`: in the extended chart at `x`,
+the coordinate expression of `f` has derivative `c x` composed with that of `u`. -/
+private theorem hasFDerivWithinAt_writtenInExtChartAt_of_eventuallyEq_clm_apply {f : M → F'}
+    {c : M → F →L[𝕜] F'} {u : M → F} (hf : (fun y ↦ c y (u y)) =ᶠ[𝓝 x] f)
+    (hc : ContinuousAt c x) (hu : MDifferentiableAt I 𝓘(𝕜, F) u x) (hu0 : u x = 0) :
+    HasFDerivWithinAt (writtenInExtChartAt I 𝓘(𝕜, F') x f)
+      ((c x).comp (fderivWithin 𝕜 (writtenInExtChartAt I 𝓘(𝕜, F) x u) (range I)
+        (extChartAt I x x))) (range I) (extChartAt I x x) := by
   have hsymm : Tendsto (extChartAt I x).symm (𝓝[range I] extChartAt I x x) (𝓝 x) :=
     (map_extChartAt_symm_nhdsWithin_range x).le
   have hu' : HasFDerivWithinAt (fun z ↦ u ((extChartAt I x).symm z))
@@ -64,18 +72,32 @@ theorem mvfderiv_eq_comp_of_eventuallyEq_clm_apply {f : M → F'} {c : M → F �
     exact hc.tendsto.comp hsymm
   have hD := hu'.clm_apply_of_eq_zero hc' (by rwa [extChartAt_to_inv])
   rw [extChartAt_to_inv] at hD
-  have hfD : HasFDerivWithinAt (writtenInExtChartAt I 𝓘(𝕜, F') x f)
-      ((c x).comp (fderivWithin 𝕜 (writtenInExtChartAt I 𝓘(𝕜, F) x u) (range I)
-        (extChartAt I x x))) (range I) (extChartAt I x x) := by
-    refine hD.congr_of_eventuallyEq ?_ ?_
-    · filter_upwards [hsymm.eventually hf] with z hz
-      simp only [writtenInExtChartAt, extChartAt, chartAt_self_eq] at hz ⊢
-      simpa using hz.symm
-    · simp [writtenInExtChartAt, extChartAt, chartAt_self_eq, hf.eq_of_nhds]
-  have hmf : MDifferentiableAt I 𝓘(𝕜, F') f x :=
-    (mdifferentiableAt_iff f x).2
-      ⟨(hc.clm_apply hu.continuousAt).congr hf, hfD.differentiableWithinAt⟩
-  rw [hmf.mvfderiv, hfD.fderivWithin I.uniqueDiffWithinAt_image]
+  refine hD.congr_of_eventuallyEq ?_ ?_
+  · filter_upwards [hsymm.eventually hf] with z hz
+    simp only [writtenInExtChartAt, extChartAt, chartAt_self_eq] at hz ⊢
+    simpa using hz.symm
+  · simp [writtenInExtChartAt, extChartAt, chartAt_self_eq, hf.eq_of_nhds]
+
+/-- At a zero of `u`, a map agreeing near `x` with `y ↦ c y (u y)` is differentiable at `x` when
+`u` is: the variation of `c` is multiplied by `u x = 0`, so `c` need only be continuous at `x`. -/
+theorem mdifferentiableAt_of_eventuallyEq_clm_apply {f : M → F'} {c : M → F →L[𝕜] F'}
+    {u : M → F} (hf : (fun y ↦ c y (u y)) =ᶠ[𝓝 x] f) (hc : ContinuousAt c x)
+    (hu : MDifferentiableAt I 𝓘(𝕜, F) u x) (hu0 : u x = 0) :
+    MDifferentiableAt I 𝓘(𝕜, F') f x :=
+  (mdifferentiableAt_iff f x).2 ⟨(hc.clm_apply hu.continuousAt).congr hf,
+    (hasFDerivWithinAt_writtenInExtChartAt_of_eventuallyEq_clm_apply hf hc hu
+      hu0).differentiableWithinAt⟩
+
+/-- At a zero of `u`, a map agreeing near `x` with `y ↦ c y (u y)` has derivative `c x` composed
+with the derivative of `u`: the variation of `c` is multiplied by `u x = 0`, so `c` need only be
+continuous at `x`. -/
+theorem mvfderiv_eq_comp_of_eventuallyEq_clm_apply {f : M → F'} {c : M → F →L[𝕜] F'}
+    {u : M → F} (hf : (fun y ↦ c y (u y)) =ᶠ[𝓝 x] f) (hc : ContinuousAt c x)
+    (hu : MDifferentiableAt I 𝓘(𝕜, F) u x) (hu0 : u x = 0) :
+    mvfderiv I f x = (c x).comp (mvfderiv I u x) := by
+  rw [(mdifferentiableAt_of_eventuallyEq_clm_apply hf hc hu hu0).mvfderiv,
+    (hasFDerivWithinAt_writtenInExtChartAt_of_eventuallyEq_clm_apply hf hc hu hu0).fderivWithin
+      I.uniqueDiffWithinAt_image]
   -- Both sides now read the derivative of `u` in the chart at `x`; Mathlib's
   -- `MDifferentiableAt.mvfderiv` is the identification of that chart derivative with `mvfderiv`.
   exact congrArg (c x).comp hu.mvfderiv.symm
@@ -86,6 +108,32 @@ theorem mvfderiv_clm_apply_const {c : M → F →L[𝕜] F'}
     (hc : MDifferentiableAt I 𝓘(𝕜, F →L[𝕜] F') c x) (w : F) (v : TangentSpace I x) :
     mvfderiv I (fun z ↦ c z w) x v = mvfderiv I c x v w := by
   exact (ContinuousLinearMap.apply 𝕜 F' w).mvfderiv_comp_apply hc v
+
+/-- The **product rule** for the application `y ↦ A y (p y)` of a family of continuous linear maps
+to a vector-valued function on a manifold. -/
+theorem mvfderiv_clm_apply {A : M → F →L[𝕜] F'} {p : M → F} {x : M} (hA : MDiffAt A x)
+    (hp : MDiffAt p x) (v : TangentSpace I x) :
+    mvfderiv I (fun y ↦ A y (p y)) x v = mvfderiv I A x v (p x) + A x (mvfderiv I p x v) := by
+  have hpair := hA.prodMk_space hp
+  have hfst := (ContinuousLinearMap.fst 𝕜 (F →L[𝕜] F') F).mvfderiv_comp_apply hpair v
+  have hsnd := (ContinuousLinearMap.snd 𝕜 (F →L[𝕜] F') F).mvfderiv_comp_apply hpair v
+  simp only [Function.comp_def, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd']
+    at hfst hsnd
+  rw [← Function.comp_def (fun q : (F →L[𝕜] F') × F ↦ q.1 q.2) fun y ↦ (A y, p y),
+    mvfderiv_comp_apply_of_differentiableAt (g := fun y ↦ (A y, p y))
+      (φ := fun q : (F →L[𝕜] F') × F ↦ q.1 q.2)
+      (isBoundedBilinearMap_apply.differentiableAt (A x, p x)) hpair,
+    isBoundedBilinearMap_apply.fderiv, IsBoundedBilinearMap.deriv_apply, ← hfst, ← hsnd, add_comm]
+
+/-- Applying a differentiable family of continuous bilinear maps to two fixed vectors commutes with
+the vector-valued manifold derivative: `d (fun z ↦ c z v w) x u = (d c x u) v w`. -/
+theorem mvfderiv_clm_apply_const₂ {F'' : Type*} [NormedAddCommGroup F''] [NormedSpace 𝕜 F'']
+    {c : M → F →L[𝕜] F' →L[𝕜] F''}
+    (hc : MDifferentiableAt I 𝓘(𝕜, F →L[𝕜] F' →L[𝕜] F'') c x)
+    (v : F) (w : F') (u : TangentSpace I x) :
+    mvfderiv I (fun z ↦ c z v w) x u = mvfderiv I c x u v w := by
+  rw [mvfderiv_clm_apply_const (hc.clm_apply mdifferentiableAt_const),
+    mvfderiv_clm_apply_const hc]
 
 /-- On a normed space, the vector-valued manifold derivative applied to model-space vectors
 `L v`, viewed as tangent vectors via `NormedSpace.fromTangentSpace`, is the Fréchet derivative

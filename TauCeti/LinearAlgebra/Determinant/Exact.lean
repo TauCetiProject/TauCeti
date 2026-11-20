@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Determinant.Line
 public import TauCeti.LinearAlgebra.ExteriorPower.ShortExact
 import TauCeti.LinearAlgebra.Exact
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
+import TauCeti.LinearAlgebra.LinearMap.Range
 import TauCeti.RingTheory.PicardGroup.Contraction
 
 /-!
@@ -44,6 +45,9 @@ Explicitly, for `u₁, …, uₐ` in `A`, `v₁, …, vₖ` in `B` with `k = dim
 elements of the exterior algebra, so that no renumbering of the factors appears in the statement.
 Against a functional `ξ` normalized by `ξ (h z₁ ∧ ⋯ ∧ h z_d) = 1`, this says that `β ⊗ φ` goes to
 `φ γ • (α ⊗ ξ)` (`TauCeti.detLineFourTermEquiv_tmul_eq_smul_tmul`).
+Being canonical, the isomorphism is natural: isomorphisms of four-term exact sequences intertwine
+the isomorphisms of the two sequences with the induced isomorphisms of determinant lines
+(`TauCeti.detLineFourTermEquiv_congr`).
 
 A six-term exact sequence `0 → A₁ → A₂ → A₃ → A₄ → A₅ → A₆ → 0` of finite-dimensional vector
 spaces likewise gives the canonical isomorphism
@@ -68,11 +72,19 @@ that enlarging the stabilization changes the identification of determinant lines
 ## Main declarations
 
 * `TauCeti.detLineShortExactEquiv`: the isomorphism `det U ⊗ det W ≃ det V` of a short exact
-  sequence `0 → U → V → W → 0`, with its value `TauCeti.coe_detLineShortExactEquiv_tmul`.
+  sequence `0 → U → V → W → 0`, with its value `TauCeti.coe_detLineShortExactEquiv_tmul`; the
+  image of the exterior products of bases spans `det V`
+  (`TauCeti.exists_eq_smul_detLineShortExactEquiv`).
 * `TauCeti.detLineFourTermEquiv`: the isomorphism `det B ⊗ (det C)^* ≃ det A ⊗ (det D)^*` of a
   four-term exact sequence `0 → A → B → C → D → 0`.
 * `TauCeti.detLineFourTermEquiv_tmul`, `TauCeti.detLineFourTermEquiv_tmul_eq_smul_tmul`: its value
   on exterior products, which determine it by `TauCeti.rid_lTensor_eval_injective`.
+* `TauCeti.exists_spanning_ιMulti_append`: exterior products spanning `det B`, with the data
+  evaluating the isomorphism on them.
+* `TauCeti.detLineFourTermEquiv_ιMulti_tmul_of_finrank_eq_zero`: when all four terms are zero, it
+  matches the empty exterior products tensored with their normalized functionals.
+* `TauCeti.detLineFourTermEquiv_congr`: it is natural for isomorphisms of four-term exact
+  sequences.
 * `TauCeti.detLineShortExactCancelEquiv`: the isomorphism `det V ⊗ (det V')^* ≃ det U ⊗ (det U')^*`
   of two short exact sequences with the same quotient, with its value
   `TauCeti.detLineShortExactCancelEquiv_tmul`.
@@ -142,6 +154,24 @@ theorem coe_detLineShortExactEquiv_tmul_eq_map_mul (a : detLine K U)
     ext u
     simp [ExteriorAlgebra.ιMulti_mul_ιMulti]
   exact LinearMap.congr_fun key a
+
+/-- The determinant line of the middle term `V` of a short exact sequence `0 → U → V → W → 0` is
+spanned by the image under `TauCeti.detLineShortExactEquiv` of the exterior products of bases of
+`U` and `W`. -/
+theorem exists_eq_smul_detLineShortExactEquiv (y : detLine K V) :
+    ∃ r : K, y = r • detLineShortExactEquiv hf hfg hg
+      (exteriorPower.ιMulti K _ (Module.finBasis K U) ⊗ₜ
+        exteriorPower.ιMulti K _ (Module.finBasis K W)) := by
+  obtain ⟨w, rfl⟩ := (detLineShortExactEquiv hf hfg hg).surjective y
+  induction w using TensorProduct.inductionOn with
+  | add w w' hw hw' =>
+    obtain ⟨r, hr⟩ := hw
+    obtain ⟨r', hr'⟩ := hw'
+    exact ⟨r + r', by rw [map_add, hr, hr', add_smul]⟩
+  | tmul α ρ =>
+    obtain ⟨a, rfl⟩ := (Module.finBasis K U).exists_smul_ιMulti_eq α
+    obtain ⟨b, rfl⟩ := (Module.finBasis K W).exists_smul_ιMulti_eq ρ
+    exact ⟨a * b, by rw [TensorProduct.smul_tmul_smul, map_smul]⟩
 
 end ShortExact
 
@@ -236,8 +266,8 @@ theorem detLineFourTermEquiv_tmul (u : Fin (finrank K A) → A)
   -- Join the two halves of `γ` along `0 → range g → C → D → 0`.
   have hγ' : detLineShortExactEquiv (LinearMap.range g).injective_subtype hgh.range_subtype hh
       (exteriorPower.ιMulti K _ (g.rangeRestrict ∘ v) ⊗ₜ exteriorPower.ιMulti K _ (h ∘ z)) = γ :=
-    Subtype.ext (by rw [hγ, coe_detLineShortExactEquiv_tmul, ← Function.comp_assoc,
-      ← LinearMap.coe_comp, LinearMap.subtype_comp_rangeRestrict])
+    Subtype.ext (by rw [hγ, coe_detLineShortExactEquiv_tmul,
+      LinearMap.subtype_comp_rangeRestrict_comp])
   simp only [detLineFourTermEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul, hβ',
     LinearEquiv.lTensor_tmul, TensorProduct.assoc_tmul, LinearMap.lTensor_tmul,
     TensorProduct.rid_tmul, Dual.eval_apply, Module.Invertible.leftCancelDualEquiv_tmul_apply,
@@ -260,6 +290,58 @@ theorem detLineFourTermEquiv_tmul_eq_smul_tmul (u : Fin (finrank K A) → A)
   rw [← Module.Invertible.rid_lTensor_eval_tmul_eq_self hξ
     (detLineFourTermEquiv hf hfg hgh hh (β ⊗ₜ φ)), detLineFourTermEquiv_tmul hf hfg hgh hh u v z hβ
     hγ φ, TensorProduct.smul_tmul']
+
+include hf hfg hgh hh in
+/-- **Exterior products spanning `det B`.** For an exact sequence `0 → A → B → C → D → 0`, there
+are a family `v` of `dim (range g)` vectors of `B`, a family `z` of `dim D` vectors of `C`, and a
+functional `ξ` on `det D` taking the value `1` at the exterior product of `h ∘ z`, such that the
+exterior product `β` of `f` applied to a basis of `A` followed by `v` spans `det B`. With the
+exterior product `γ` of `g ∘ v` followed by `z`, these are the data with which
+`TauCeti.detLineFourTermEquiv_tmul_eq_smul_tmul` evaluates `TauCeti.detLineFourTermEquiv`. -/
+theorem exists_spanning_ιMulti_append :
+    ∃ (v : Fin (finrank K (LinearMap.range g)) → B) (z : Fin (finrank K D) → C)
+      (β : detLine K B) (γ : detLine K C) (ξ : Dual K (detLine K D)),
+      (β : ExteriorAlgebra K B) =
+          ExteriorAlgebra.ιMulti K _ (Fin.append (f ∘ Module.finBasis K A) v) ∧
+        (γ : ExteriorAlgebra K C) = ExteriorAlgebra.ιMulti K _ (Fin.append (g ∘ v) z) ∧
+        ξ (exteriorPower.ιMulti K _ (h ∘ z)) = 1 ∧ ∀ x : detLine K B, ∃ r : K, x = r • β := by
+  have : FiniteDimensional K D := Module.Finite.of_surjective h hh
+  -- Vectors of `B` lifting a basis of `range g`, and of `C` lifting a basis of `D`.
+  choose v hv using fun i ↦ g.surjective_rangeRestrict (Module.finBasis K (LinearMap.range g) i)
+  choose z hz using fun i ↦ hh (Module.finBasis K D i)
+  have hω : exteriorPower.ιMulti K _ (h ∘ z) ≠ 0 := by
+    rw [show h ∘ z = ⇑(Module.finBasis K D) from funext hz]
+    exact (exteriorPower.ιMulti_ne_zero_iff _).2 (Module.finBasis K D).linearIndependent
+  obtain ⟨ξ, hξ⟩ := Projective.exists_dual_eq_one K hω
+  refine ⟨v, z, detLineShortExactEquiv hf hfg.rangeRestrict g.surjective_rangeRestrict
+      (exteriorPower.ιMulti K _ (Module.finBasis K A) ⊗ₜ
+        exteriorPower.ιMulti K _ (g.rangeRestrict ∘ v)),
+    detLineShortExactEquiv (LinearMap.range g).injective_subtype hgh.range_subtype hh
+      (exteriorPower.ιMulti K _ (g.rangeRestrict ∘ v) ⊗ₜ exteriorPower.ιMulti K _ (h ∘ z)), ξ,
+    coe_detLineShortExactEquiv_tmul _ _ _ _ v, coe_detLineShortExactEquiv_tmul _ _ _ _ _, hξ, ?_⟩
+  rw [show g.rangeRestrict ∘ v = ⇑(Module.finBasis K (LinearMap.range g)) from funext hv]
+  exact exists_eq_smul_detLineShortExactEquiv hf hfg.rangeRestrict g.surjective_rangeRestrict
+
+/-- **`TauCeti.detLineFourTermEquiv` of a sequence of zero spaces.** When all four terms of the
+exact sequence have dimension zero, the isomorphism sends the empty exterior product of `B`
+tensored with the functional taking the value `1` on the empty exterior product of `C` to the
+empty exterior product of `A` tensored with the functional taking the value `1` on the empty
+exterior product of `D`. -/
+theorem detLineFourTermEquiv_ιMulti_tmul_of_finrank_eq_zero (hA : finrank K A = 0)
+    (hB : finrank K B = 0) (hC : finrank K C = 0) (hD : finrank K D = 0)
+    (u : Fin (finrank K A) → A) (b : Fin (finrank K B) → B) :
+    detLineFourTermEquiv hf hfg hgh hh
+        (exteriorPower.ιMulti K _ b ⊗ₜ (detLineEquivOfFinrankEqZero hC).toLinearMap) =
+      exteriorPower.ιMulti K _ u ⊗ₜ (detLineEquivOfFinrankEqZero hD).toLinearMap := by
+  have hg : finrank K (LinearMap.range g) = 0 :=
+    Nat.eq_zero_of_le_zero ((Submodule.finrank_le _).trans hC.le)
+  rw [detLineFourTermEquiv_tmul_eq_smul_tmul hf hfg hgh hh u 0 0
+      (γ := exteriorPower.ιMulti K _ 0) ?_ ?_ _ (detLineEquivOfFinrankEqZero_ιMulti hD _),
+    LinearEquiv.coe_coe, detLineEquivOfFinrankEqZero_ιMulti, one_smul]
+  · rw [exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_of_eq_zero hB,
+      ExteriorAlgebra.ιMulti_of_eq_zero (by rw [hA, hg])]
+  · rw [exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_of_eq_zero hC,
+      ExteriorAlgebra.ιMulti_of_eq_zero (by rw [hg, hD])]
 
 /-- Pairing the dual factor with a nonzero element `ω` of a line `L` is injective on `M ⊗ L^*`.
 With `TauCeti.detLineFourTermEquiv_tmul`, taking `L = det D` and `ω` the exterior product of the
@@ -286,6 +368,95 @@ theorem eq_smul_of_tmul_eq_tmul {L N P : Type*} [AddCommGroup L] [Module K L] [A
   have h₀ : M (y₀ ⊗ₜ n) = c • M₀ (y₀ ⊗ₜ n) := by
     rw [← hM, ← map_smul, smul_tmul', ← hyy]
   rw [LinearMap.smul_apply, ← smul_tmul', map_smul, map_smul, h₀, smul_comm]
+
+section Naturality
+
+/-! ### Naturality under isomorphisms of exact sequences -/
+
+variable {A' B' C' D' : Type*} [AddCommGroup A'] [Module K A'] [AddCommGroup B'] [Module K B']
+  [AddCommGroup C'] [Module K C'] [AddCommGroup D'] [Module K D']
+  {f' : A' →ₗ[K] B'} {g' : B' →ₗ[K] C'} {h' : C' →ₗ[K] D'}
+  [FiniteDimensional K A'] [FiniteDimensional K C'] (hf' : Function.Injective f')
+  (hfg' : Function.Exact f' g') (hgh' : Function.Exact g' h') (hh' : Function.Surjective h')
+  (eA : A ≃ₗ[K] A') (eB : B ≃ₗ[K] B') (eC : C ≃ₗ[K] C') (eD : D ≃ₗ[K] D')
+
+omit [FiniteDimensional K A] [FiniteDimensional K C] in
+/-- An isomorphism `e` sends an element of `det B` that is the exterior product of an appended
+family `Fin.append p v` to the exterior product of the appended images of the two parts,
+renumbered along `Fin.cast`. -/
+private theorem coe_detLineCongr_eq_ιMulti_append (e : B ≃ₗ[K] B') {x : detLine K B}
+    {m k m' k' : ℕ} {p : Fin m → B} {v : Fin k → B} {p' : Fin m' → B'} {v' : Fin k' → B'}
+    (hx : (x : ExteriorAlgebra K B) = ExteriorAlgebra.ιMulti K _ (Fin.append p v))
+    (hm : m' = m) (hk : k' = k) (hp : p' = e ∘ p ∘ Fin.cast hm) (hv : v' = e ∘ v ∘ Fin.cast hk) :
+    (e.detLineCongr x : ExteriorAlgebra K B') = ExteriorAlgebra.ιMulti K _ (Fin.append p' v') := by
+  subst hp hv
+  rw [LinearEquiv.coe_detLineCongr, hx, ← ExteriorAlgebra.ιMulti_mul_ιMulti,
+    ← ExteriorAlgebra.ιMulti_mul_ιMulti, map_mul, ExteriorAlgebra.map_apply_ιMulti,
+    ExteriorAlgebra.map_apply_ιMulti, ← Function.comp_assoc, ExteriorAlgebra.ιMulti_comp_cast,
+    ← Function.comp_assoc, ExteriorAlgebra.ιMulti_comp_cast, LinearEquiv.coe_coe]
+
+include hf hfg hgh hh hf' hfg' hgh' hh' in
+/-- **Naturality of the four-term isomorphism.** An isomorphism of four-term exact sequences,
+given by isomorphisms `eA`, `eB`, `eC` and `eD` commuting with the maps of the two sequences,
+intertwines their isomorphisms `det B ⊗ (det C)^* ≃ det A ⊗ (det D)^*`
+(`TauCeti.detLineFourTermEquiv`) with the induced isomorphisms of determinant lines. -/
+theorem detLineFourTermEquiv_congr (hfA : f' ∘ₗ eA.toLinearMap = eB.toLinearMap ∘ₗ f)
+    (hgB : g' ∘ₗ eB.toLinearMap = eC.toLinearMap ∘ₗ g)
+    (hhC : h' ∘ₗ eC.toLinearMap = eD.toLinearMap ∘ₗ h)
+    (t : detLine K B ⊗[K] Dual K (detLine K C)) :
+    detLineFourTermEquiv hf' hfg' hgh' hh'
+        (TensorProduct.congr eB.detLineCongr eC.detLineCongr.symm.dualMap t) =
+      TensorProduct.congr eA.detLineCongr eD.detLineCongr.symm.dualMap
+        (detLineFourTermEquiv hf hfg hgh hh t) := by
+  have : FiniteDimensional K D := Module.Finite.of_surjective h hh
+  -- The exterior products of the first sequence entering `TauCeti.detLineFourTermEquiv_tmul`;
+  -- `β` spans `det B`.
+  obtain ⟨v, z, β, γ, ξ, hβ, hγ, hξ, hspan⟩ := exists_spanning_ιMulti_append hf hfg hgh hh
+  set u := ⇑(Module.finBasis K A)
+  -- Their images in the second sequence, and the families computing them.
+  have hr : finrank K (LinearMap.range g') = finrank K (LinearMap.range g) := by
+    have hrange : LinearMap.range g' = (LinearMap.range g).map eC.toLinearMap := by
+      rw [← LinearMap.range_comp, ← hgB, LinearMap.range_comp, LinearEquiv.range,
+        Submodule.map_top]
+    rw [hrange, LinearEquiv.finrank_map_eq]
+  set u' := eA ∘ u ∘ Fin.cast eA.finrank_eq.symm
+  set v' := eB ∘ v ∘ Fin.cast hr
+  set z' := eC ∘ z ∘ Fin.cast eD.finrank_eq.symm
+  have hfu : ⇑f' ∘ ⇑eA = ⇑eB ∘ ⇑f := funext (LinearMap.congr_fun hfA)
+  have hgv : ⇑g' ∘ ⇑eB = ⇑eC ∘ ⇑g := funext (LinearMap.congr_fun hgB)
+  have hhz : ⇑h' ∘ (⇑eC ∘ z) = ⇑eD ∘ (⇑h ∘ z) := funext fun i ↦ LinearMap.congr_fun hhC (z i)
+  have hβ' : (eB.detLineCongr β : ExteriorAlgebra K B') =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (f' ∘ u') v') :=
+    coe_detLineCongr_eq_ιMulti_append eB hβ eA.finrank_eq.symm hr
+      (by simp only [u', ← Function.comp_assoc, hfu]) rfl
+  have hγ' : (eC.detLineCongr γ : ExteriorAlgebra K C') =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (g' ∘ v') z') :=
+    coe_detLineCongr_eq_ιMulti_append eC hγ hr eD.finrank_eq.symm
+      (by simp only [v', ← Function.comp_assoc, hgv]) rfl
+  have hξ' : (ξ ∘ₗ eD.detLineCongr.symm.toLinearMap) (exteriorPower.ιMulti K _ (h' ∘ z')) = 1 := by
+    have : h' ∘ z' = eD ∘ (h ∘ z) ∘ Fin.cast eD.finrank_eq.symm := by
+      simp only [z', ← Function.comp_assoc, hhz]
+    rw [LinearMap.comp_apply, LinearEquiv.coe_coe, this, ← LinearEquiv.detLineCongr_ιMulti,
+      LinearEquiv.symm_apply_apply, hξ]
+  -- Both sides are linear in `t`, and `det B` is spanned by `β`.
+  induction t using TensorProduct.inductionOn with
+  | add t₁ t₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+  | tmul x φ =>
+  obtain ⟨r, rfl⟩ := hspan x
+  rw [← TensorProduct.smul_tmul']
+  simp only [map_smul]
+  congr 1
+  rw [TensorProduct.congr_tmul,
+    detLineFourTermEquiv_tmul_eq_smul_tmul hf' hfg' hgh' hh' u' v' z' hβ' hγ' _ hξ',
+    detLineFourTermEquiv_tmul_eq_smul_tmul hf hfg hgh hh u v z hβ hγ φ hξ, map_smul,
+    TensorProduct.congr_tmul, LinearEquiv.detLineCongr_ιMulti, LinearEquiv.dualMap_apply,
+    LinearEquiv.symm_apply_apply]
+  -- The exterior products agree since `u'` is `eA ∘ u ∘ Fin.cast _`; compare the functionals
+  -- pointwise.
+  exact congrArg (φ γ • ·) (congrArg (_ ⊗ₜ ·)
+    (LinearMap.ext fun x ↦ (LinearEquiv.dualMap_apply _ ξ x).symm))
+
+end Naturality
 
 section ChangeOfMiddle
 
@@ -500,7 +671,7 @@ theorem detLineSixTermEquiv_tmul (u : Fin (finrank K A₁) → A₁)
   -- The second four-term sequence, written against `χ`.
   have hE₂ := detLineFourTermEquiv_tmul_eq_smul_tmul (LinearMap.range f₃).injective_subtype
     h₃₄.range_subtype h₄₅ hf₅ (f₃.rangeRestrict ∘ w) x y (β := δ)
-    (by rw [hδ, ← Function.comp_assoc, ← LinearMap.coe_comp, LinearMap.subtype_comp_rangeRestrict])
+    (by rw [hδ, LinearMap.subtype_comp_rangeRestrict_comp])
     hε φ hχ
   have h₁ : (Module.Invertible.rightCancelEquiv _
       (Module.Invertible.linearEquiv K (detLine K A₃))).symm β = (β ⊗ₜ γ₀') ⊗ₜ γ₀ := by
