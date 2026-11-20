@@ -75,38 +75,28 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   [IsManifold I ∞ M]
 
 /-- The **exact magnetic symplectic form** `ω_σ = ω + π^*dσ` of the cotangent bundle `T*M`, for a
-one-form `σ` on `M`: the canonical symplectic form `ω` twisted by the pullback of the exact
-magnetic field `dσ` along the projection `π : T*M → M`. -/
+one-form `σ` on `M`: the twisted symplectic form whose magnetic term is the exact two-form `dσ`. -/
 def magneticSymplecticForm (σ : SmoothForm I M ℝ 1) :
     SmoothTwoForm (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (CotangentBundle I M) :=
-  symplecticForm I M +
-    SmoothForm.mpullback (TotalSpace.proj : CotangentBundle I M → M) (contMDiff_proj _)
-      (mextDerivₗ I 1 σ)
-
-theorem magneticSymplecticForm_def (σ : SmoothForm I M ℝ 1) :
-    magneticSymplecticForm σ = symplecticForm I M +
-      SmoothForm.mpullback (TotalSpace.proj : CotangentBundle I M → M) (contMDiff_proj _)
-        (mextDerivₗ I 1 σ) :=
-  (rfl)
+  twistedSymplecticForm (mextDerivₗ I 1 σ)
 
 /-- The exact magnetic symplectic form of `σ` is the twisted symplectic form `ω + π^*β` with the
 exact magnetic term `β = dσ`. -/
 theorem magneticSymplecticForm_eq_twistedSymplecticForm (σ : SmoothForm I M ℝ 1) :
-    magneticSymplecticForm σ = twistedSymplecticForm (mextDerivₗ I 1 σ) := by
-  rw [magneticSymplecticForm_def, twistedSymplecticForm_def]
+    magneticSymplecticForm σ = twistedSymplecticForm (mextDerivₗ I 1 σ) :=
+  (rfl)
 
 /-- Without a magnetic field the magnetic symplectic form is the canonical one. -/
 @[simp]
 theorem magneticSymplecticForm_zero :
     magneticSymplecticForm (0 : SmoothForm I M ℝ 1) = symplecticForm I M := by
-  rw [magneticSymplecticForm_def, map_zero, map_zero, add_zero]
+  rw [magneticSymplecticForm_eq_twistedSymplecticForm, map_zero, twistedSymplecticForm_zero]
 
 /-- The magnetic symplectic form of `σ` is the canonical one exactly when `σ` is closed, that is,
 when the magnetic field `dσ` vanishes. -/
 theorem magneticSymplecticForm_eq_symplecticForm_iff (σ : SmoothForm I M ℝ 1) :
     magneticSymplecticForm σ = symplecticForm I M ↔ σ.IsClosed := by
-  rw [magneticSymplecticForm_def, add_eq_left,
-    map_eq_zero_iff _ SmoothForm.mpullback_proj_injective,
+  rw [magneticSymplecticForm_eq_twistedSymplecticForm, twistedSymplecticForm_eq_symplecticForm_iff,
     SmoothForm.isClosed_iff_mextDerivₗ_eq_zero]
 
 /-- **The fibre translation by `-σ` removes the magnetic term.** Translating the fibres of the
@@ -118,15 +108,14 @@ theorem mpullback_vectorBundleTranslateDiffeomorph_neg_symplecticForm (σ : Smoo
         (vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv (-σ))
           (SmoothForm.degreeOneEquiv (-σ)).contMDiff).contMDiff (symplecticForm I M) =
       magneticSymplecticForm σ := by
-  rw [mpullback_vectorBundleTranslateDiffeomorph_symplecticForm, map_neg, map_neg, sub_neg_eq_add,
-    magneticSymplecticForm_def]
+  rw [← twistedSymplecticForm_zero,
+    mpullback_vectorBundleTranslateDiffeomorph_twistedSymplecticForm, map_neg, zero_sub, neg_neg,
+    magneticSymplecticForm_eq_twistedSymplecticForm]
 
 /-- The exact magnetic symplectic form is closed and nondegenerate. -/
 theorem isSymplectic_magneticSymplecticForm (σ : SmoothForm I M ℝ 1) :
-    (magneticSymplecticForm σ).IsSymplectic := by
-  rw [← mpullback_vectorBundleTranslateDiffeomorph_neg_symplecticForm]
-  exact ((Diffeomorph.isLocalDiffeomorph _).isSymplectic_mpullback_iff
-    (Diffeomorph.toEquiv _).surjective).2 isSymplectic_symplecticForm
+    (magneticSymplecticForm σ).IsSymplectic :=
+  isSymplectic_twistedSymplecticForm (SmoothForm.isClosed_mextDerivₗ σ)
 
 variable [FiniteDimensional ℝ E]
 

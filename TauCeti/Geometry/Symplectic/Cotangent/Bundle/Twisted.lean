@@ -21,7 +21,7 @@ the **twisted symplectic form**
 phase space of a charged particle in the magnetic field `β`, and it is the model space of cotangent
 bundle reduction at a nonzero momentum value, where `β` is the curvature term of a principal
 connection. The exact magnetic forms `ω + π^*dσ` are the special case `β = dσ`
-(`TauCeti.CotangentBundle.magneticSymplecticForm_eq_twistedSymplecticForm`).
+(`TauCeti.CotangentBundle.magneticSymplecticForm`).
 
 The magnetic term vanishes on vertical vectors, those in the kernel of the differential of `π`,
 and the fibres are Lagrangian for `ω` (`TauCeti.CotangentBundle.isLagrangian_ker_mfderiv_proj`).
@@ -279,12 +279,7 @@ theorem isLagrangianMap_section_twistedSymplecticForm_iff (α : SmoothForm I M �
     (isNondegenerate_twistedSymplecticForm β).IsLagrangianMap I
         (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x)) ↔
       mextDerivₗ I 1 α = β := by
-  rw [← isIsotropicMap_section_twistedSymplecticForm_iff]
-  refine ⟨fun h ↦ h.isIsotropicMap, fun h ↦ h.isLagrangianMap_of_finrank (fun x ↦ ?_) ?_⟩
-  · -- The projection is a left inverse of the section.
-    exact Bundle.mfderiv_injective_of_proj_comp_eq_id
-      (((SmoothForm.degreeOneEquiv α).contMDiff x).mdifferentiableAt (by simp)) rfl
-  · rw [Module.finrank_prod, ContinuousLinearMap.dual_finrank_eq, two_mul]
+  rw [isLagrangianMap_section_iff_isIsotropicMap, isIsotropicMap_section_twistedSymplecticForm_iff]
 
 /-- **A twisted cotangent bundle has a Lagrangian section exactly when the magnetic term is
 exact.** On a finite-dimensional manifold, some smooth one-form `α` has a Lagrangian graph for
