@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
+public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
 # The measurable structure of the standard simplex
@@ -18,7 +18,8 @@ weight vector is measurable, and a map into the simplex is measurable exactly wh
 weight-vector map is.
 
 The inverse weight map extends to all weight vectors by choosing a fallback simplex point.
-Its measurability under topological hypotheses is established in the Borel simplex file.
+Its measurability under topological hypotheses is
+`Convexity.StdSimplex.measurable_extendWeights`.
 
 Mathlib's topology on the simplex is stated over a ring and does not reach coefficients such as
 `ℝ≥0`; the induced σ-algebra needs no topology.
@@ -38,7 +39,11 @@ open MeasureTheory
 
 namespace Convexity.StdSimplex
 
-variable {R ι : Type*} [LE R] [AddCommMonoid R] [One R] [MeasurableSpace R]
+variable {R ι : Type*} [LE R] [AddCommMonoid R] [One R]
+
+section MeasurableSpace
+
+variable [MeasurableSpace R]
 
 /-- The σ-algebra on the standard simplex induced by its weight vector. -/
 instance instMeasurableSpace : MeasurableSpace (StdSimplex R ι) :=
@@ -54,16 +59,7 @@ theorem measurable_iff_toFun_comp_weights {δ : Type*} [MeasurableSpace δ] {f :
     Measurable f ↔ Measurable fun x => ((f x).weights : ι → R) :=
   measurable_comap_iff
 
-end Convexity.StdSimplex
-
-namespace Convexity.StdSimplex
-
-variable {R ι : Type*} [PartialOrder R] [Semiring R]
-
-/-- A simplex point is determined by its weight vector. -/
-theorem injective_toFun_comp_weights :
-    Function.Injective fun p : StdSimplex R ι ↦ (p.weights : ι → R) :=
-  fun _ _ h ↦ StdSimplex.ext (DFunLike.coe_injective h)
+end MeasurableSpace
 
 /-- Read a weight vector as a simplex point when it lies in the simplex, using `p` elsewhere.
 This supplies probability parameters for mixtures supported on a simplex. -/
@@ -79,7 +75,7 @@ theorem extendWeights_def (p : StdSimplex R ι) :
 @[simp]
 theorem extendWeights_weights (p q : StdSimplex R ι) :
     p.extendWeights q.weights = q :=
-  injective_toFun_comp_weights.extend_apply _ _ q
+  toFun_comp_weights_injective.extend_apply _ _ q
 
 /-- Extending the inverse weight map preserves every vector in the simplex. -/
 @[simp]

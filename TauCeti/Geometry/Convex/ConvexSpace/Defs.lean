@@ -11,7 +11,8 @@ public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 /-!
 # Faces of the standard simplex
 
-Complements to Mathlib's `Convexity.StdSimplex` about the maps `StdSimplex.map f`.  An arbitrary
+Complements to Mathlib's `Convexity.StdSimplex`, mostly about the maps `StdSimplex.map f`.  A point
+is determined by its weight function (`StdSimplex.toFun_comp_weights_injective`).  An arbitrary
 map adds weights over its fibres.  An injective map embeds a standard simplex as a face of a larger
 one and keeps the weights of a point, so it is injective; a point supported on its range comes from
 the smaller simplex (`StdSimplex.comap`).  For `f = j.succAbove` its image is the
@@ -33,6 +34,13 @@ namespace Convexity.StdSimplex
 section AddCommMonoid
 
 variable {R : Type*} [LE R] [AddCommMonoid R] [One R]
+
+/-- A point of a standard simplex is determined by its weight function. -/
+theorem toFun_comp_weights_injective {X : Type*} :
+    Function.Injective fun p : StdSimplex R X ↦ (p.weights : X → R) := by
+  rintro ⟨w, _, _⟩ ⟨w', _, _⟩ h
+  obtain rfl : w = w' := DFunLike.coe_injective h
+  rfl
 
 /-- A point of the triangle `StdSimplex R (Fin 3)` is determined by its three weights. -/
 theorem ext_fin_three {x y : StdSimplex R (Fin 3)} (h0 : x.weights 0 = y.weights 0)
