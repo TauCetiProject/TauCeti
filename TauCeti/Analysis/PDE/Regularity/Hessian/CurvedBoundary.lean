@@ -35,9 +35,9 @@ with continuous coefficients on a domain with `C²` boundary.
   estimate on `Ω ∩ K`, for a compact `K` inside an open set `U` on which a change of variables of
   order two straightens `Ω` to a half-space.
 * `TauCeti.exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_contDiff_graph`: the
-  estimate near a boundary point where `Ω` is the region above the graph of a `C²` function. The
-  principal coefficients are assumed continuous up to the boundary near that point, and the
-  solution to vanish on the boundary near it.
+  estimate near a boundary point where, in rigid coordinates centred there, `Ω` is the region
+  above the graph of a `C²` function. The principal coefficients are assumed continuous up to the
+  boundary near that point, and the solution to vanish on the boundary near it.
 
 As in the flat case, the principal coefficients `A` need only be measurable on `Ω`, continuous
 within `Ω` at the points where the estimate is taken and elliptic there, and need not be symmetric;
@@ -288,10 +288,11 @@ private theorem exists_lpNorm_iteratedGradient_le_of_pullback (hp : 1 < p) (hp_t
       volume.restrict (Omega : Set (WithLp 2 (ℝ × E))) :=
     (Measure.absolutelyContinuous_of_le_smul (hΦ'.map_restrict_le volume)).trans
       (Measure.restrict_mono hD le_rfl).absolutelyContinuous
-  obtain ⟨hA', hb'⟩ := PDE.aestronglyMeasurable_comp_comp_adjoint_and_add_sum e hΨ hΩ'm
-    (hΦc.mono fun x hx => hx.2) (fun x hx => (hΦmaps hx).2)
-    ((hA.mono_ac hac).comp_aemeasurable hΦ'.aemeasurable)
-    ((hb.mono_ac hac).comp_aemeasurable hΦ'.aemeasurable)
+  have hAΦ := (hA.mono_ac hac).comp_aemeasurable hΦ'.aemeasurable
+  have hA' := PDE.aestronglyMeasurable_comp_comp_adjoint hΨ hΩ'm (hΦc.mono fun x hx => hx.2)
+    (fun x hx => (hΦmaps hx).2) hAΦ
+  have hb' := PDE.aestronglyMeasurable_fderiv_apply_add_sum e hΨ hΩ'm (hΦc.mono fun x hx => hx.2)
+    (fun x hx => (hΦmaps hx).2) hAΦ ((hb.mono_ac hac).comp_aemeasurable hΦ'.aemeasurable)
   refine exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_normalHalfSpace hp hp_top a
     (Omega := Ω') (U := U') (β := L' * β + Fintype.card ι * (L' * Λ))
     (by simp [Ω'])
@@ -313,7 +314,8 @@ private theorem exists_lpNorm_iteratedGradient_le_of_pullback (hp : 1 < p) (hp_t
       exact closure_mono (hΦmaps.image_subset.trans hD) h
     obtain ⟨lam, hlam, hA₀⟩ := hell y hy hyΩ
     refine ⟨lam / (‖fderiv ℝ Φ (Ψ y)‖ + 1) ^ 2, by positivity, fun ξ => ?_⟩
-    have h := PDE.mul_norm_sq_le_inner_comp_comp_adjoint hΦ hΨ hΨΦ hΦΨ (hΨ.mapsTo (hKU hy)) hlam.le
+    have h := PDE.mul_norm_sq_le_inner_comp_comp_adjoint
+      (IsChangeOfVariables.fderiv_comp_fderiv_eq_id hΦ hΨ hΨΦ hΦΨ (hΨ.mapsTo (hKU hy))) hlam.le
       (A₀ := A y) hA₀ ξ
     rw [hyx] at h ⊢
     exact h
@@ -491,22 +493,24 @@ theorem exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_isChangeOfVar
 
 /-- **The Calderón–Zygmund estimate near a `C²` boundary graph.** Let `1 < p < ∞` and let
 `Ω ⊆ ℝ × E` be open. Suppose that inside the normal cylinder of half-height `h₀` and radius `r₀`,
-`Ω` is the region `{φ(y) < t}` above the graph of a `C²` function `φ : E → ℝ` with `φ 0 = 0`, so
-that the origin is a boundary point. Let `W` be an open neighbourhood of the origin, let `A` be a
-measurable field of endomorphisms of `ℝ × E`, continuous within `Ω` at every point of `W` and
-elliptic at every point of `W` in the closure of `Ω`, and let `b` and `c` be measurable with
-`‖b‖ ≤ β` and `|c| ≤ γ` almost everywhere on `Ω`. Then there are an open neighbourhood `V` of the
-origin and a constant `C` such that every `u ∈ W^{2,p}(Ω)` with `ψ u ∈ W^{1,p}_0(Ω)` for every
-smooth `ψ` compactly supported in `W` (zero boundary values on `∂Ω ∩ W`) and solving
+in rigid coordinates `e` centred at `e⁻¹ 0`, `Ω` is the region `{φ(y) < t}` above the graph of a
+`C²` function `φ : E → ℝ` with `φ 0 = 0`, so that `e⁻¹ 0` is a boundary point. Let `W` be an open
+neighbourhood of `e⁻¹ 0`, let `A` be a measurable field of endomorphisms of `ℝ × E`, continuous
+within `Ω` at every point of `W` and elliptic at every point of `W` in the closure of `Ω`, and let
+`b` and `c` be measurable with `‖b‖ ≤ β` and `|c| ≤ γ` almost everywhere on `Ω`. Then there are an
+open neighbourhood `V` of `e⁻¹ 0` and a constant `C` such that every `u ∈ W^{2,p}(Ω)` with
+`ψ u ∈ W^{1,p}_0(Ω)` for every smooth `ψ` compactly supported in `W` (zero boundary values on
+`∂Ω ∩ W`) and solving
 
 `tr (A ∘ D²u) + ⟪b, ∇u⟫ + c u = f ∈ Lᵖ(Ω)` almost everywhere on `Ω`
 
 satisfies `‖D²u‖_{Lᵖ(Ω ∩ V)} ≤ C (‖f‖_{Lᵖ(Ω)} + ‖∇u‖_{Lᵖ(Ω)} + ‖u‖_{Lᵖ(Ω)})`. -/
 theorem exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_contDiff_graph
-    (hp : 1 < p) (hp_top : p ≠ ⊤) {Omega W : Opens (WithLp 2 (ℝ × E))} {φ : E → ℝ}
+    (hp : 1 < p) (hp_top : p ≠ ⊤) {Omega W : Opens (WithLp 2 (ℝ × E))}
+    {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {φ : E → ℝ}
     {h₀ r₀ : ℝ} (hh₀ : 0 < h₀) (hr₀ : 0 < r₀) (hφ0 : φ 0 = 0) (hφ : ContDiff ℝ 2 φ)
-    (hgraph : ∀ z ∈ normalCylinder h₀ r₀, (z ∈ Omega ↔ φ z.snd < z.fst))
-    (hW : (0 : WithLp 2 (ℝ × E)) ∈ W)
+    (hgraph : ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Omega ↔ φ z.snd < z.fst))
+    (hW : e.symm 0 ∈ W)
     {A : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
     (hA : AEStronglyMeasurable A (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
     (hcont : ∀ x ∈ W, ContinuousWithinAt A Omega x)
@@ -518,7 +522,7 @@ theorem exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_contDiff_grap
     {c₀ : WithLp 2 (ℝ × E) → ℝ} {γ : ℝ}
     (hc : AEStronglyMeasurable c₀ (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
     (hcγ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), |c₀ x| ≤ γ) :
-    ∃ V : Opens (WithLp 2 (ℝ × E)), (0 : WithLp 2 (ℝ × E)) ∈ V ∧ ∃ C : ℝ,
+    ∃ V : Opens (WithLp 2 (ℝ × E)), e.symm 0 ∈ V ∧ ∃ C : ℝ,
       ∀ (u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2)
         (f : Lp ℝ p ((volume : Measure (WithLp 2 (ℝ × E))).restrict Omega)),
         (∀ ψ : WithLp 2 (ℝ × E) → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ W →
@@ -532,32 +536,39 @@ theorem exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_contDiff_grap
         lpNorm (Wkp.iteratedGradient 1 u) p
             (volume.restrict ((Omega : Set (WithLp 2 (ℝ × E))) ∩ V)) ≤
           C * (‖f‖ + ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)‖ + ‖Wkp.value 2 u‖) := by
-  -- Flatten the boundary by the shear `(t, y) ↦ (t - φ y, y)`, in the identity coordinates.
-  -- The inverse of the identity isometry is the identity; Mathlib states this only for `refl`
-  -- itself (`AffineIsometryEquiv.coe_refl`), so it is checked pointwise by unfolding.
-  have hsymm (z : WithLp 2 (ℝ × E)) : (AffineIsometryEquiv.refl ℝ (WithLp 2 (ℝ × E))).symm z = z :=
-    rfl
+  -- Flatten the boundary by `Φ = e⁻¹ ∘ G⁻¹ ∘ e`, where `G` is the shear `(t, y) ↦ (t - φ y, y)`,
+  -- and precompose with `e⁻¹`, so that the flat side becomes the half-space `{0 < x.fst}`.
   obtain ⟨U', U, L, h0U, -, hΦ, hΨ, himage⟩ :=
     exists_isChangeOfVariables_of_contDiff (Omega := (Omega : Set (WithLp 2 (ℝ × E))))
-      (e := AffineIsometryEquiv.refl ℝ (WithLp 2 (ℝ × E))) (k := 2) one_le_two hh₀ hr₀ hφ0 hφ
-      (by simpa only [hsymm, SetLike.mem_coe] using hgraph)
-  have hH : {x : WithLp 2 (ℝ × E) | 0 < (AffineIsometryEquiv.refl ℝ _ x).fst} =
-      (normalHalfSpace (E := E) 0 : Set (WithLp 2 (ℝ × E))) := by
-    ext x
-    simp
-  rw [hH] at himage
-  -- Restrict the chart to `U ∩ W` and take a closed ball about the origin inside it.
-  obtain ⟨U'₁, hΦ₁, hΨ₁, hΨΦ₁, hΦΨ₁, himage₁⟩ :=
-    hΦ.exists_inf_of_image_eq hΨ
-      (fun x _ => by simp only [Function.comp_apply, AffineIsometryEquiv.apply_symm_apply,
-        AffineIsometryEquiv.symm_apply_apply, Homeomorph.apply_symm_apply])
-      (fun y _ => by simp only [Function.comp_apply, AffineIsometryEquiv.apply_symm_apply,
-        AffineIsometryEquiv.symm_apply_apply, Homeomorph.symm_apply_apply]) himage W
+      (k := 2) one_le_two hh₀ hr₀ hφ0 hφ (by simpa only [SetLike.mem_coe] using hgraph)
+  set G := graphFlattening φ hφ.continuous
+  let U'₁ : Opens (WithLp 2 (ℝ × E)) := ⟨e.symm ⁻¹' U', U'.isOpen.preimage e.symm.continuous⟩
+  have hΦ₁ : IsChangeOfVariables 2 U'₁ U (e.symm ∘ G.symm) L 1 := by
+    simpa [Function.comp_def] using hΦ.affineIsometryEquiv_comp_comp e.symm
+      (AffineIsometryEquiv.refl ℝ _) (U' := U'₁) (fun x hx => hx) fun y hy => hy
+  have hΨ₁ : IsChangeOfVariables 2 U U'₁ (G ∘ e) L 1 := by
+    simpa [Function.comp_def] using hΨ.affineIsometryEquiv_comp_comp
+      (AffineIsometryEquiv.refl ℝ _) e (U' := U) (fun x hx => hx)
+      fun y hy => show e.symm (e y) ∈ U' by rwa [e.symm_apply_apply]
+  have himage₁ : (e.symm ∘ G.symm) ''
+      ((normalHalfSpace (E := E) 0 : Set (WithLp 2 (ℝ × E))) ∩ U'₁) =
+      (Omega : Set (WithLp 2 (ℝ × E))) ∩ U := by
+    rw [← himage]
+    ext y
+    constructor
+    · rintro ⟨x, ⟨hxH, hxU⟩, rfl⟩
+      exact ⟨e.symm x, ⟨by simpa using hxH, hxU⟩, by simp⟩
+    · rintro ⟨x, ⟨hxH, hxU⟩, rfl⟩
+      exact ⟨e x, ⟨by simpa using hxH, show e.symm (e x) ∈ U' by rwa [e.symm_apply_apply]⟩,
+        by simp⟩
+  -- Restrict the chart to `U ∩ W` and take a closed ball about `e⁻¹ 0` inside it.
+  obtain ⟨U'₂, hΦ₂, hΨ₂, hΨΦ₂, hΦΨ₂, himage₂⟩ :=
+    hΦ₁.exists_inf_of_image_eq hΨ₁ (fun x _ => by simp) (fun y _ => by simp) himage₁ W
   obtain ⟨ρ, hρ, hρU⟩ := nhds_basis_closedBall.mem_iff.1 ((U ⊓ W).isOpen.mem_nhds ⟨h0U, hW⟩)
   obtain ⟨C, hC⟩ := exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_isChangeOfVariables
-    hp hp_top 0 hΦ₁ hΨ₁ hΨΦ₁ hΦΨ₁ himage₁ (isCompact_closedBall 0 ρ) hρU hA
+    hp hp_top 0 hΦ₂ hΨ₂ hΨΦ₂ hΦΨ₂ himage₂ (isCompact_closedBall _ ρ) hρU hA
     (fun x hx => hcont x (hρU hx).2) (fun x hx => hell x (hρU hx).2) hb hbβ hc hcγ
-  refine ⟨⟨ball 0 ρ, isOpen_ball⟩, mem_ball_self hρ, C, fun u f hu0 heq => ?_⟩
+  refine ⟨⟨ball (e.symm 0) ρ, isOpen_ball⟩, mem_ball_self hρ, C, fun u f hu0 heq => ?_⟩
   refine (lpNorm_mono_measure ((Lp.memLp _).mono_measure
     (Measure.restrict_mono inter_subset_left le_rfl))
     (Measure.restrict_mono (inter_subset_inter_right _ ball_subset_closedBall) le_rfl)).trans
