@@ -66,9 +66,10 @@ round trips recover restrictions. No unbounded frame change is asserted to induc
 isomorphism, and no arbitrary section is asserted to be square-integrable up to the boundary
 of its original domain.
 
-These are the analytic Banach stages of the finiteness theorem for `H¹(X, 𝒪)`; the surjectivity of
-the projection of `compatibleTriples` to its middle cocycle, the Schwartz argument and the
-comparison with native Čech cohomology are not part of this file.
+The continuous linear `middleProjection` retains the middle cocycle of a compatible triple.
+Compact holomorphic realization identifies functions and cocycles with their native Bergman
+classes. `Bergman.Lifting` proves surjectivity and uniform bounded lifting of the middle projection.
+These Banach spaces and compact restrictions enter the analytic finiteness argument for `H¹`.
 
 ## References
 
@@ -329,6 +330,102 @@ theorem isClosed_compatibleTriples :
 
 instance completeSpace_compatibleTriples : CompleteSpace (compatibleTriples g hW h' h'') :=
   (isClosed_compatibleTriples g hW h' h'').completeSpace_coe
+
+/-- The continuous linear projection of a compatible triple to its middle cocycle. -/
+def middleProjection :
+    compatibleTriples g hW h' h'' →L[ℂ] cocycles₁ g (subset_source_of_le hW h') :=
+  (((ContinuousLinearMap.fst ℂ _ _).comp (ContinuousLinearMap.snd ℂ _ _)).comp
+    (compatibleTriples g hW h' h'').subtypeL).codRestrict _ fun t ↦
+      ((mem_compatibleTriples_iff g hW h' h'').mp t.property).2.1
+
+/-- The projection retains the middle cochain of the original compatible triple. -/
+@[simp]
+theorem coe_middleProjection (t : compatibleTriples g hW h' h'') :
+    (middleProjection g hW h' h'' t).val = t.val.2.1 := by
+  unfold middleProjection
+  exact ContinuousLinearMap.coe_codRestrict_apply _ _ _ t
+
+end ChartBergman
+
+/-! ### Compact holomorphic representatives -/
+
+namespace ChartBergman
+
+open MeasureTheory
+open scoped ENNReal Topology
+
+universe u
+
+variable {M : Type u} [TopologicalSpace M] [ChartedSpace ℂ M]
+  {ι : Type*} {e : ι → OpenPartialHomeomorph M ℂ}
+  {W : ι → Opens M} {U : ι → Set M}
+
+/-- A holomorphic function on a larger chart domain gives a Bergman class on a relatively
+compact smaller open, with exactly the original values. -/
+theorem exists_representative_eq {e : OpenPartialHomeomorph M ℂ} {V : Opens M} {S : Set M}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 M)
+    (hK : IsCompact (closure (V : Set M))) (hKS : closure (V : Set M) ⊆ S)
+    (hKe : closure (V : Set M) ⊆ e.source) {f : M → ℂ} (hf : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f S) :
+    ∃ u : bergmanSpace ℂ (e.imageOpens V),
+      ∀ x ∈ V, BergmanSpace.representative u (e x) = f x := by
+  have hfe : DifferentiableOn ℂ (f ∘ e.symm) (e.imageOpens V) :=
+    ((hf.mono (subset_closure.trans hKS)).comp
+      (((contMDiffOn_symm_of_mem_maximalAtlas he).mdifferentiableOn one_ne_zero).mono
+        e.imageOpens_subset_target) fun z hz ↦ (e.mem_imageOpens.mp hz).2).differentiableOn
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (hf.continuousOn.mono hKS)
+  have hKC := e.isCompact_closure_imageOpens hK hKe
+  let : IsFiniteMeasure (volume.restrict (e.imageOpens V : Set ℂ)) :=
+    isFiniteMeasure_restrict.2 ((measure_mono subset_closure).trans_lt hKC.measure_lt_top).ne
+  let B := BoundedHolomorphicFunctions.of (e.imageOpens V) (f ∘ e.symm) hfe C
+    fun z hz ↦ hC _ (subset_closure (e.mem_imageOpens.mp hz).2)
+  refine ⟨BergmanSpace.ofBounded B, fun x hx ↦ ?_⟩
+  have hxe := hKe (subset_closure hx)
+  have hex := e.map_mem_imageOpens hxe hx
+  rw [BergmanSpace.representative_ofBounded _ hex,
+    BoundedHolomorphicFunctions.extend_apply _ ⟨e x, hex⟩,
+    BoundedHolomorphicFunctions.of_apply, Function.comp_apply, e.left_inv hxe]
+
+/-- A native Bergman representative pulled back by its own holomorphic chart is holomorphic. -/
+theorem mdifferentiableOn_representative_comp_chart
+    {e : OpenPartialHomeomorph M ℂ} {A : Opens M}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 M) (hA : (A : Set M) ⊆ e.source)
+    (u : bergmanSpace ℂ (e.imageOpens A)) :
+    MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) (BergmanSpace.representative u ∘ e) A := by
+  exact (BergmanSpace.differentiableOn_representative u).mdifferentiableOn.comp
+    (((contMDiffOn_of_mem_maximalAtlas he).mdifferentiableOn one_ne_zero).mono hA)
+    fun x hx ↦ e.map_mem_imageOpens (hA hx) hx
+
+/-- Restricting a holomorphic cocycle to relatively compact chart opens gives an actual
+native Bergman cocycle with the same pointwise readings. -/
+theorem exists_cocycle_representative_eq
+    (g : ι → ι → M → ℂ)
+    (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 M)
+    (hKW : ∀ i, IsCompact (closure (W i : Set M)))
+    (hWU : ∀ i, closure (W i : Set M) ⊆ U i)
+    (hKeW : ∀ i, closure (W i : Set M) ⊆ (e i).source)
+    (ζ : ι → ι → M → ℂ)
+    (hζ : ∀ i j, MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) (ζ i j) (U i ∩ U j))
+    (hζc : ∀ i j k, ∀ x ∈ U i ∩ U j ∩ U k,
+      ζ i j x + g i j x • ζ j k x = ζ i k x) :
+    ∃ Z : (i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W i ⊓ W j)),
+      Z ∈ cocycles₁ g (fun i ↦ subset_closure.trans (hKeW i)) ∧ ∀ i j, ∀ x ∈ W i ⊓ W j,
+        BergmanSpace.representative (Z i j) (e i x) = ζ i j x := by
+  have hKij (i j : ι) : IsCompact (closure ((W i ⊓ W j : Opens M) : Set M)) :=
+    (hKW i).of_isClosed_subset isClosed_closure (closure_mono inter_subset_left)
+  have hKUij (i j : ι) : closure ((W i ⊓ W j : Opens M) : Set M) ⊆ U i ∩ U j :=
+    fun x hx ↦ ⟨hWU i (closure_mono inter_subset_left hx),
+      hWU j (closure_mono inter_subset_right hx)⟩
+  choose Z hZ using fun i j ↦ exists_representative_eq (he i) (hKij i j) (hKUij i j)
+    ((closure_mono inter_subset_left).trans (hKeW i)) (hζ i j)
+  refine ⟨Z, ?_, hZ⟩
+  rw [mem_cocycles₁_iff]
+  intro i j k x hx
+  rw [hZ j k x ⟨hx.1.2, hx.2⟩, hZ i k x ⟨hx.1.1, hx.2⟩, hZ i j x hx.1]
+  have hh := hζc i j k x
+    ⟨⟨hWU i (subset_closure hx.1.1), hWU j (subset_closure hx.1.2)⟩,
+      hWU k (subset_closure hx.2)⟩
+  simp only [smul_eq_mul] at hh
+  linear_combination hh
 
 end ChartBergman
 
