@@ -40,13 +40,15 @@ develops the algebraic carrier over an arbitrary coefficient algebra:
   these are the two pole bounds `p ^ a • Λ' ⊆ Λ ⊆ p ^ (-b) • Λ'`;
 * lattices base change along coefficient maps `B → B'` whenever `K' = B'[S⁻¹]` and `B' → K'` is
   injective (as for `W(R) → W(R')`): the `B'`-span of the image of `Λ` is a lattice isomorphic to
-  `B' ⊗[B] Λ` (`TauCeti.ProjectiveLattice.baseChange`). This is the functoriality of the affine
-  Grassmannian in the coefficients, and it carries the standard lattice to the standard lattice.
+  `B' ⊗[B] Λ` (`TauCeti.ProjectiveLattice.baseChange`). This gives the base change map on lattices
+  along `B → B'`, and it carries the standard lattice to the standard lattice.
 
 ## Main declarations
 
 * `TauCeti.ProjectiveLattice B K V`: finitely generated projective `B`-submodules of `V` spanning
   `V` over `K`.
+* `LinearMap.compLeft_single`: applying a linear map coordinatewise to `Pi.single i x` gives
+  `Pi.single i (f x)`.
 * `TauCeti.ProjectiveLattice.standard`: the image of `ι → B` in `ι → K`.
 * `TauCeti.ProjectiveLattice.mem_standard`: a vector lies in the standard lattice exactly when all
   its coordinates come from `B`.
@@ -65,6 +67,14 @@ develops the algebraic carrier over an arbitrary coefficient algebra:
 -/
 
 public section
+
+/-- Applying a linear map coordinatewise to the one-point family `Pi.single i x` gives the
+one-point family `Pi.single i (f x)`. -/
+@[simp]
+theorem LinearMap.compLeft_single {R M M₂ ι : Type*} [Semiring R] [AddCommMonoid M]
+    [AddCommMonoid M₂] [Module R M] [Module R M₂] [DecidableEq ι] (f : M →ₗ[R] M₂) (i : ι)
+    (x : M) : f.compLeft ι (Pi.single i x) = Pi.single i (f x) :=
+  funext (Pi.apply_single (fun _ ↦ f) (fun _ ↦ map_zero f) i x)
 
 namespace TauCeti
 
@@ -189,9 +199,7 @@ noncomputable def standard : ProjectiveLattice B K (ι → K) where
     classical
     rw [eq_top_iff, ← (Pi.basisFun K ι).span_eq, Submodule.span_le]
     rintro _ ⟨i, rfl⟩
-    refine Submodule.subset_span ⟨Pi.single i 1, ?_⟩
-    ext j
-    simp [Pi.single_apply, apply_ite (algebraMap B K)]
+    exact Submodule.subset_span ⟨Pi.single i 1, by simp⟩
 
 variable {B K ι}
 
@@ -208,10 +216,7 @@ theorem mem_standard {x : ι → K} :
 
 /-- The standard lattice contains the standard basis vectors. -/
 theorem single_one_mem_standard [DecidableEq ι] (i : ι) : Pi.single i (1 : K) ∈ standard B K ι :=
-  mem_standard.mpr fun j ↦ by
-    rcases eq_or_ne j i with rfl | h
-    · exact ⟨1, by simp⟩
-    · exact ⟨0, by simp [h]⟩
+  mem_toSubmodule.mp (LinearMap.mem_range.mpr ⟨Pi.single i 1, by simp⟩)
 
 variable (K ι) in
 /-- When `B = K`, the standard lattice is the whole space. -/
@@ -231,10 +236,7 @@ noncomputable def map (e : V ≃ₗ[K] W) (Λ : ProjectiveLattice B K V) : Proje
   fg := Λ.fg.map _
   projective := Module.Projective.of_equiv (Λ.toSubmodule.equivMapOfInjective _
     (e.restrictScalars B).injective)
-  span_eq_top := by
-    rw [LinearEquiv.restrictScalars_toLinearMap, Submodule.map_coe, LinearMap.coe_restrictScalars,
-      Submodule.span_image, coe_toSubmodule, Λ.span_coe_eq_top, Submodule.map_top,
-      LinearEquiv.range]
+  span_eq_top := by simp [Submodule.map_coe]
 
 @[simp]
 theorem toSubmodule_map (e : V ≃ₗ[K] W) (Λ : ProjectiveLattice B K V) :
@@ -288,17 +290,6 @@ theorem exists_smul_mem (S : Submonoid B) [IsLocalization S K] (Λ Λ' : Project
     ∃ s ∈ S, ∀ x ∈ Λ, s • x ∈ Λ' :=
   Λ.fg.exists_smul_mem_of_le_span (F := K) S (M := Λ'.toSubmodule) (by simp)
 
-/-- When `K` is a localization of `B` at `S`, the inclusion of a lattice into the ambient module
-is a localization of `B`-modules at `S`. -/
-theorem isLocalizedModule_subtype (S : Submonoid B) [IsLocalization S K]
-    (Λ : ProjectiveLattice B K V) : IsLocalizedModule S Λ.toSubmodule.subtype := by
-  have := isLocalizedModule_id S V K
-  refine ⟨IsLocalizedModule.map_units (LinearMap.id : V →ₗ[B] V), fun v ↦ ?_,
-    fun h ↦ ⟨1, by simpa using Subtype.ext h⟩⟩
-  obtain ⟨s, hs, h⟩ := (Submodule.fg_span_singleton v).exists_smul_mem_of_le_span (F := K) S
-    (M := Λ.toSubmodule) (by simp)
-  exact ⟨⟨⟨s • v, h v (Submodule.mem_span_singleton_self v)⟩, ⟨s, hs⟩⟩, rfl⟩
-
 end Localization
 
 section BaseChange
@@ -325,8 +316,7 @@ theorem baseChangeMap_tmul (f : V →ₗ[K] V') (Λ : ProjectiveLattice B K V) (
 
 theorem range_baseChangeMap (f : V →ₗ[K] V') (Λ : ProjectiveLattice B K V) :
     LinearMap.range (baseChangeMap (B' := B') f Λ) = Submodule.span B' (f '' Λ) := by
-  rw [baseChangeMap, LinearMap.range_liftBaseChange, LinearMap.range_comp,
-    Submodule.range_subtype, Submodule.map_coe, LinearMap.coe_restrictScalars, coe_toSubmodule]
+  simp [baseChangeMap, LinearMap.range_liftBaseChange, LinearMap.range_comp, Submodule.map_coe]
 
 variable (S : Submonoid B) [IsLocalization S K]
   [IsLocalization (Algebra.algebraMapSubmonoid B' S) K']
@@ -341,7 +331,8 @@ theorem isLocalizedModule_baseChangeMap {f : V →ₗ[K] V'} (hf : IsBaseChange 
   rw [isLocalizedModule_iff_isBaseChange (Algebra.algebraMapSubmonoid B' S) K']
   refine (TensorProduct.isBaseChange B Λ.toSubmodule B').of_comp ?_
   have h :=
-    ((isLocalizedModule_iff_isBaseChange S K _).mp (Λ.isLocalizedModule_subtype S)).comp hf
+    ((isLocalizedModule_iff_isBaseChange S K _).mp
+      (Λ.toSubmodule.isLocalizedModule_subtype_of_span_eq_top S Λ.span_eq_top)).comp hf
   convert h using 1
   ext
   simp
@@ -376,16 +367,9 @@ noncomputable def baseChange {f : V →ₗ[K] V'} (hf : IsBaseChange K' f)
       (LinearEquiv.ofInjective _ (Λ.baseChangeMap_injective (B' := B') S hf))
   span_eq_top := by
     have := Λ.isLocalizedModule_baseChangeMap (B' := B') S hf
-    rw [Submodule.span_span_of_tower, eq_top_iff]
-    intro v _
-    obtain ⟨⟨x, c⟩, hx⟩ := IsLocalizedModule.surj (Algebra.algebraMapSubmonoid B' S)
-      (baseChangeMap f Λ) v
-    have hu := IsLocalization.map_units K' c
-    have hmem : algebraMap B' K' c • v ∈ Submodule.span K' (f '' Λ) := by
-      rw [algebraMap_smul, ← Submonoid.smul_def, hx, ← Submodule.span_span_of_tower B',
-        ← range_baseChangeMap]
-      exact Submodule.subset_span ⟨x, rfl⟩
-    exact (Submodule.smul_mem_iff_of_isUnit _ hu).mp hmem
+    rw [← range_baseChangeMap, LinearMap.coe_range, ← Set.image_univ]
+    exact span_eq_top_of_isLocalizedModule K' (Algebra.algebraMapSubmonoid B' S)
+      (baseChangeMap f Λ) Submodule.span_univ
 
 @[simp]
 theorem toSubmodule_baseChange {f : V →ₗ[K] V'} (hf : IsBaseChange K' f)
@@ -403,13 +387,13 @@ noncomputable def baseChangeEquiv {f : V →ₗ[K] V'} (hf : IsBaseChange K' f)
     (Λ : ProjectiveLattice B K V) :
     B' ⊗[B] Λ.toSubmodule ≃ₗ[B'] (Λ.baseChange B' S hf).toSubmodule :=
   (LinearEquiv.ofInjective _ (Λ.baseChangeMap_injective (B' := B') S hf)).trans
-    (LinearEquiv.ofEq _ _ (range_baseChangeMap f Λ))
+    (LinearEquiv.ofEq _ _ ((range_baseChangeMap f Λ).trans (toSubmodule_baseChange S hf Λ).symm))
 
 @[simp]
 theorem baseChangeEquiv_tmul {f : V →ₗ[K] V'} (hf : IsBaseChange K' f)
     (Λ : ProjectiveLattice B K V) (b : B') (x : Λ.toSubmodule) :
-    (Λ.baseChangeEquiv B' S hf (b ⊗ₜ x) : V') = b • f x :=
-  (rfl)
+    (Λ.baseChangeEquiv B' S hf (b ⊗ₜ x) : V') = b • f x := by
+  simp [baseChangeEquiv]
 
 /-- The base change of the standard lattice in `ι → K` along the coordinatewise map
 `ι → K → ι → K'` is the standard lattice in `ι → K'`. -/
@@ -431,11 +415,8 @@ theorem baseChange_standard [FaithfulSMul B K] (ι : Type*) [Finite ι] :
       simp [hy, Finset.sum_apply, Pi.single_apply, Algebra.smul_def]
     rw [hx]
     refine sum_mem fun i _ ↦ SMulMemClass.smul_mem _ ?_
-    have h : (Algebra.linearMap K K').compLeft ι (Pi.single i 1) = Pi.single i 1 := by
-      ext j
-      simp [Pi.single_apply, apply_ite (algebraMap K K')]
-    rw [← h]
-    exact apply_mem_baseChange S _ (single_one_mem_standard i)
+    simpa using apply_mem_baseChange S (.finitePow ι (.linearMap K K'))
+      (single_one_mem_standard (B := B) i)
 
 end BaseChange
 
