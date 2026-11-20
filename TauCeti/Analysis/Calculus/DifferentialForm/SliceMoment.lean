@@ -25,6 +25,7 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import Mathlib.Analysis.Complex.Liouville
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Moments of the normal slices of a closed two-form
@@ -354,12 +355,9 @@ private theorem wedge_compContinuousLinearMap_fst_apply (b : Module.Basis (Fin 2
     fin_cases i <;> rfl
   have h₁ (v : E) : β ![v, 0] = 0 := β.map_coord_zero 1 rfl
   have h₀ (v : E) : β ![0, v] = 0 := β.map_coord_zero 0 rfl
-  have hfst (u v : E × ℂ) : Prod.fst ∘ ![u, v] = ![u.1, v.1] := by
-    ext i : 1
-    fin_cases i <;> rfl
   rw [hframe, ContinuousAlternatingMap.wedge_def,
     ContinuousAlternatingMap.pairedWedge_mul_apply_two_two, hb]
-  simp [hfst, h₀, h₁]
+  simp [Matrix.comp_vec2, h₀, h₁]
 
 /-- The coefficient of `T ∧ π^*β` on the product frame has compact support when `T` vanishes
 outside a compact set of the fibre and `β` has compact support. -/
