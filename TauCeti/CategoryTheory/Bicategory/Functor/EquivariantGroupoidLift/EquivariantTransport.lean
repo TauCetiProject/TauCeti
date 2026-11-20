@@ -37,13 +37,14 @@ prescribed `H`-categories along `Γ` by equivariant functors: a curried form of 
 pseudofunctor on `Γ × SingleObj H`, with values the prescribed actions rather than the fibers of
 the joint pseudofunctor.
 
-For a lift `L` and an isomorphism `g : p ≅ q` of `Γ`, the transport functor `L.transport g.hom` is
-an equivalence, so `L.equivariantTransportEquivalence g` is an equivalence
-`actions p ≌ actions q` in the bicategory of pseudofunctors: an equivariant equivalence between
-the prescribed actions at `p` and at `q`. When a lift is reindexed along a functor `ψ : Λ ⥤ Γ`,
-for instance a quasi-inverse of an equivalence of parameter groupoids in the descent of families
-of local categories, the prescribed actions `actions (ψ l)` and `actions (ψ' l)` of two
-isomorphic reindexings `α : ψ ≅ ψ'` are compared by these equivalences along `α.app l`.
+For an isomorphism `g : p ≅ q` of `Γ`, `N.equivariantTransportEquivalence g` is an equivalence
+`actions p ≌ actions q` in the bicategory of pseudofunctors, with inverse
+`N.transportStrongTrans g.inv`: an equivariant equivalence between the prescribed actions at `p`
+and at `q`. For a lift `L`, it is applied to `L.normalizedTransport`. When a lift is reindexed
+along a functor `ψ : Λ ⥤ Γ`, for instance a quasi-inverse of an equivalence of parameter
+groupoids in the descent of families of local categories, the prescribed actions `actions (ψ l)`
+and `actions (ψ' l)` of two isomorphic reindexings `α : ψ ≅ ψ'` are compared by these
+equivalences along `α.app l`.
 
 ## Main definitions
 
@@ -51,8 +52,8 @@ isomorphic reindexings `α : ψ ≅ ψ'` are compared by these equivalences alon
   arrow of `Γ` as a strong transformation between the prescribed actions;
 * `TauCeti.EquivariantGroupoidLift.NormalizedTransport.equivariantTransport`: the pseudofunctor
   from `Γ` to the bicategory of `H`-actions given by transport;
-* `TauCeti.EquivariantGroupoidLift.equivariantTransportEquivalence`: transport of a lift along an
-  isomorphism as an equivalence of the prescribed actions.
+* `TauCeti.EquivariantGroupoidLift.NormalizedTransport.equivariantTransportEquivalence`: transport
+  along an isomorphism of `Γ` as an equivalence of the prescribed actions.
 
 ## References
 
@@ -84,7 +85,8 @@ variable (N : NormalizedTransport Γ actions)
 `actions p ⟶ actions q` with component `E_g` and naturality isomorphisms
 `T_a ⋙ E_g ≅ E_g ⋙ T_a` given by `N.transportCommIso g a`. -/
 -- The body is exposed so that its component and naturality isomorphisms are definitionally
--- `E_g` and `N.transportCommIso g a`, as stated by the component lemmas below.
+-- `E_g` and `N.transportCommIso g a`: the statements of the component lemmas below, and of those
+-- of `transportStrongTransId` and `transportStrongTransComp`, only typecheck with this unfolding.
 @[expose] noncomputable def transportStrongTrans {p q : Γ} (g : p ⟶ q) :
     actions p ⟶ actions q where
   app _ := (N.transport g).toCatHom
@@ -146,7 +148,10 @@ lemma transportStrongTrans_naturality_inv_app {p q : Γ} (g : p ⟶ q)
 /-- The unit isomorphism `E_(𝟙 p) ≅ 𝟭` of transport, as an invertible modification
 `N.transportStrongTrans (𝟙 p) ≅ 𝟙 (actions p)`. Its compatibility with the actions is
 `transportCommIso_id`. -/
-noncomputable def transportStrongTransId (p : Γ) :
+-- The body is exposed so that its component and naturality isomorphisms are definitionally
+-- `E_g` and `N.transportCommIso g a`: the statements of the component lemmas below, and of those
+-- of `transportStrongTransId` and `transportStrongTransComp`, only typecheck with this unfolding.
+@[expose] noncomputable def transportStrongTransId (p : Γ) :
     N.transportStrongTrans (𝟙 p) ≅ 𝟙 (actions p) :=
   isoMk (fun _ ↦ Cat.Hom.isoMk (N.transportId p)) (fun {a b} f ↦ by
     obtain rfl : a = ⟨SingleObj.star H⟩ := rfl
@@ -164,7 +169,10 @@ noncomputable def transportStrongTransId (p : Γ) :
 /-- The composition isomorphism `E_g ⋙ E_h ≅ E_gh` of transport, inverted, as an invertible
 modification `N.transportStrongTrans gh ≅ N.transportStrongTrans g ≫ N.transportStrongTrans h`
 for `g ≫ h = gh`. Its compatibility with the actions is `transportCommIso_comp`. -/
-noncomputable def transportStrongTransComp {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
+-- The body is exposed so that its component and naturality isomorphisms are definitionally
+-- `E_g` and `N.transportCommIso g a`: the statements of the component lemmas below, and of those
+-- of `transportStrongTransId` and `transportStrongTransComp`, only typecheck with this unfolding.
+@[expose] noncomputable def transportStrongTransComp {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
     (gh : p ⟶ r) (hgh : g ≫ h = gh) :
     N.transportStrongTrans gh ≅ N.transportStrongTrans g ≫ N.transportStrongTrans h :=
   isoMk (fun _ ↦ Cat.Hom.isoMk (N.transportComp g h gh hgh).symm) (fun {a b} f ↦ by
@@ -183,6 +191,10 @@ noncomputable def transportStrongTransComp {p q r : Γ} (g : p ⟶ q) (h : q ⟶
     rw [← cancel_epi ((N.transportComp g h gh hgh).hom.app _), Iso.hom_inv_id_app_assoc,
       ← N.transportCommIso_comp_assoc g h gh hgh f.as X, ← Functor.map_comp,
       Iso.hom_inv_id_app]
+    -- The remaining identity morphisms are typed through the category instance of the fibers,
+    -- not the instance of `(actions r).obj a` that the composites use, so `Functor.map_id` and
+    -- `Category.comp_id` do not rewrite them; we restate the first and apply the second by
+    -- `congrArg`.
     rw [show (act actions r f.as).map (𝟙 ((N.transport g ⋙ N.transport h).obj X)) = 𝟙 _ from
       (act actions r f.as).map_id _]
     exact (congrArg (_ ≫ ·) (Category.comp_id _)).symm)
@@ -218,7 +230,8 @@ sends `p` to the prescribed action `actions p`, an arrow `g` to the equivariant 
 `N.transportStrongTrans g`, and its unit and composition comparisons are
 `N.transportStrongTransId` and `N.transportStrongTransComp`. -/
 -- The body is exposed so that its values and comparisons are definitionally those of
--- `transportStrongTrans`, `transportStrongTransId` and `transportStrongTransComp`.
+-- `transportStrongTrans`, `transportStrongTransId` and `transportStrongTransComp`: the statements
+-- of `equivariantTransport_map`, `_mapId` and `_mapComp` only typecheck with this unfolding.
 @[expose] noncomputable def equivariantTransport :
     LocallyDiscrete Γ ⥤ᵖ (LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}) :=
   LocallyDiscrete.mkPseudofunctor actions N.transportStrongTrans N.transportStrongTransId
@@ -237,39 +250,31 @@ sends `p` to the prescribed action `actions p`, an arrow `g` to the equivariant 
       rw [Category.id_comp]
       exact LocallyDiscrete.mapComp_associativity_eqToHom (obj := fun p ↦ fiber actions p)
         N.transport (fun g h gh hgh ↦ (N.transportComp g h gh hgh).symm)
-        (fun f g h fg gh fgh hfg hgh hfgh hfgh' X ↦
-          LocallyDiscrete.inv_associativity_of_hom_associativity
-            (fun g h gh hgh ↦ N.transportComp g h gh hgh)
-            (fun f g h fg gh fgh hfg hgh hfgh hfgh' X ↦
-              N.transportComp_associativity f g h fg gh fgh hfg hgh hfgh hfgh' X)
-            f g h fg gh fgh hfg hgh hfgh hfgh' X)
-        f g h _ _ _ _ rfl rfl rfl rfl X _)
+        N.transportComp_inv_associativity f g h _ _ _ _ rfl rfl rfl rfl X _)
     (fun f ↦ by
       ext a X
       obtain rfl : a = ⟨SingleObj.star H⟩ := rfl
       rw [Pseudofunctor.StrongTrans.eqToHom_as_app, Cat.eqToHom_app]
-      -- As for associativity; the left unitor of `Cat` contributes an identity.
+      -- As for associativity; the left unitor of `Cat` contributes an identity, which is typed
+      -- through the category instance of the fibers and so is removed by `congrArg`.
       change (N.transportComp (𝟙 _) f _ rfl).inv.app X ≫
           ((N.transport f).map ((N.transportId _).hom.app X) ≫ 𝟙 _) = _
       exact (congrArg (_ ≫ ·) (Category.comp_id _)).trans
         (LocallyDiscrete.mapComp_left_unitality_eqToHom (obj := fun p ↦ fiber actions p)
           N.transport N.transportId (fun g h gh hgh ↦ (N.transportComp g h gh hgh).symm)
-          (fun g hg X ↦ by
-            rw [Iso.symm_hom, ← N.transportComp_left_unitality g hg X, Iso.inv_hom_id_app])
-          f _ rfl X _))
+          N.transportComp_inv_left_unitality f _ rfl X _))
     (fun f ↦ by
       ext a X
       obtain rfl : a = ⟨SingleObj.star H⟩ := rfl
       rw [Pseudofunctor.StrongTrans.eqToHom_as_app, Cat.eqToHom_app]
-      -- As for associativity; the right unitor of `Cat` contributes an identity.
+      -- As for associativity; the right unitor of `Cat` contributes an identity, which is typed
+      -- through the category instance of the fibers and so is removed by `congrArg`.
       change (N.transportComp f (𝟙 _) _ rfl).inv.app X ≫
           ((N.transportId _).hom.app ((N.transport f).obj X) ≫ 𝟙 _) = _
       exact (congrArg (_ ≫ ·) (Category.comp_id _)).trans
         (LocallyDiscrete.mapComp_right_unitality_eqToHom (obj := fun p ↦ fiber actions p)
           N.transport N.transportId (fun g h gh hgh ↦ (N.transportComp g h gh hgh).symm)
-          (fun g hg X ↦ by
-            rw [Iso.symm_hom, ← N.transportComp_right_unitality g hg X, Iso.inv_hom_id_app])
-          f _ rfl X _))
+          N.transportComp_inv_right_unitality f _ rfl X _))
 
 @[simp]
 lemma equivariantTransport_obj (b : LocallyDiscrete Γ) :
@@ -291,24 +296,91 @@ lemma equivariantTransport_mapComp {b₀ b₁ b₂ : LocallyDiscrete Γ} (g : b�
     N.equivariantTransport.mapComp g h = N.transportStrongTransComp g.as h.as (g ≫ h).as rfl :=
   rfl
 
-end NormalizedTransport
-
-variable (L : EquivariantGroupoidLift Γ actions)
-
-/-- Transport of a lift along an isomorphism `g : p ≅ q` of `Γ`, as an equivalence
-`actions p ≌ actions q` in the bicategory of pseudofunctors: an equivariant equivalence between
-the prescribed actions at `p` and at `q`. Its underlying strong transformation is
-`L.normalizedTransport.transportStrongTrans g.hom`, and its inverse has the chosen quasi-inverse
-of `L.transport g.hom` as component. -/
-noncomputable def equivariantTransportEquivalence {p q : Γ} (g : p ≅ q) :
-    Bicategory.Equivalence (actions p) (actions q) :=
-  letI : ∀ a, ((L.normalizedTransport.transportStrongTrans g.hom).app a).toFunctor.IsEquivalence :=
-    fun _ ↦ L.isEquivalence_transport g.hom
-  (L.normalizedTransport.transportStrongTrans g.hom).equivalenceOfIsEquivalence
+/-- Transport along an isomorphism `g : p ≅ q` of `Γ`, as an equivalence `actions p ≌ actions q`
+in the bicategory of pseudofunctors: an equivariant equivalence between the prescribed actions at
+`p` and at `q`. Its strong transformations are `N.transportStrongTrans g.hom` and
+`N.transportStrongTrans g.inv`, and its unit and counit are built from the modifications
+`N.transportStrongTransId` and `N.transportStrongTransComp`. -/
+-- The body is exposed so that the statements of the component lemmas below, which type its
+-- unit and counit at the composites of `N.transportStrongTrans g.hom` and
+-- `N.transportStrongTrans g.inv`, typecheck.
+@[expose] noncomputable def equivariantTransportEquivalence {p q : Γ} (g : p ≅ q) :
+    Bicategory.Equivalence (actions p) (actions q) where
+  hom := N.transportStrongTrans g.hom
+  inv := N.transportStrongTrans g.inv
+  unit := (N.transportStrongTransId p).symm ≪≫
+    N.transportStrongTransComp g.hom g.inv (𝟙 p) g.hom_inv_id
+  counit := (N.transportStrongTransComp g.inv g.hom (𝟙 q) g.inv_hom_id).symm ≪≫
+    N.transportStrongTransId q
+  left_triangle := by
+    apply Iso.ext
+    apply homCategory.ext
+    intro a
+    ext X
+    simp only [comp_app, Cat.Hom.comp_toFunctor, Functor.comp_obj, leftZigzagIso_hom, leftZigzag,
+      bicategoricalComp, Iso.trans_hom, Iso.symm_hom, comp_whiskerRight,
+      BicategoricalCoherence.assoc_iso, BicategoricalCoherence.whiskerRight_iso,
+      BicategoricalCoherence.refl_iso, whiskerRightIso_hom, Iso.refl_hom, whiskerRight_comp,
+      id_whiskerRight, Category.id_comp, Iso.inv_hom_id, Category.comp_id, whiskerLeft_comp,
+      Category.assoc, homCategory_comp_as_app, whiskerRight_as_app, associator_hom_as_app,
+      whiskerLeft_as_app, Cat.Hom.toNatTrans_comp, Cat.whiskerRight_toNatTrans,
+      Cat.associator_hom_toNatTrans, Cat.whiskerLeft_toNatTrans, NatTrans.comp_app,
+      Functor.whiskerRight_app, transportStrongTransId_inv_as_app_toNatTrans_app,
+      Functor.associator_hom_app, Functor.whiskerLeft_app,
+      transportStrongTransId_hom_as_app_toNatTrans_app, leftUnitor_hom_as_app,
+      rightUnitor_inv_as_app]
+    -- The components of the whiskerings in `Cat` and of `Cat.Hom.isoMk`, and those of the unitors
+    -- of `Cat`, are definitionally the stated ones, on objects only definitionally those of the
+    -- fibers.
+    change (N.transport g.hom).map ((N.transportId p).inv.app X) ≫
+        (N.transport g.hom).map ((N.transportComp g.hom g.inv (𝟙 p) g.hom_inv_id).inv.app X) ≫
+        (N.transportComp g.inv g.hom (𝟙 q) g.inv_hom_id).hom.app ((N.transport g.hom).obj X) ≫
+          (N.transportId q).hom.app ((N.transport g.hom).obj X) = 𝟙 _ ≫ 𝟙 _
+    -- The triangle identity follows from the associativity and unitality of `transportComp`.
+    have h := N.transportComp_associativity g.hom g.inv g.hom (𝟙 p) (𝟙 q) g.hom
+      g.hom_inv_id g.inv_hom_id (Category.id_comp _) (Category.comp_id _) X
+    rw [N.transportComp_left_unitality, N.transportComp_right_unitality] at h
+    rw [← h, ← Functor.map_comp, ← Functor.map_comp, ← Functor.map_comp, Iso.inv_hom_id_app_assoc,
+      Iso.inv_hom_id_app, CategoryTheory.Functor.map_id, Category.comp_id]
 
 @[simp]
 lemma equivariantTransportEquivalence_hom {p q : Γ} (g : p ≅ q) :
-    (L.equivariantTransportEquivalence g).hom = L.normalizedTransport.transportStrongTrans g.hom :=
-  (rfl)
+    (N.equivariantTransportEquivalence g).hom = N.transportStrongTrans g.hom :=
+  rfl
+
+@[simp]
+lemma equivariantTransportEquivalence_inv {p q : Γ} (g : p ≅ q) :
+    (N.equivariantTransportEquivalence g).inv = N.transportStrongTrans g.inv :=
+  rfl
+
+@[simp]
+lemma equivariantTransportEquivalence_unit_hom_as_app_toNatTrans_app {p q : Γ} (g : p ≅ q)
+    (a : LocallyDiscrete (SingleObj H)) (X : fiber actions p) :
+    ((N.equivariantTransportEquivalence g).unit.hom.as.app a).toNatTrans.app X =
+      (N.transportId p).inv.app X ≫ (N.transportComp g.hom g.inv (𝟙 p) g.hom_inv_id).inv.app X :=
+  rfl
+
+@[simp]
+lemma equivariantTransportEquivalence_unit_inv_as_app_toNatTrans_app {p q : Γ} (g : p ≅ q)
+    (a : LocallyDiscrete (SingleObj H)) (X : fiber actions p) :
+    ((N.equivariantTransportEquivalence g).unit.inv.as.app a).toNatTrans.app X =
+      (N.transportComp g.hom g.inv (𝟙 p) g.hom_inv_id).hom.app X ≫ (N.transportId p).hom.app X :=
+  rfl
+
+@[simp]
+lemma equivariantTransportEquivalence_counit_hom_as_app_toNatTrans_app {p q : Γ} (g : p ≅ q)
+    (a : LocallyDiscrete (SingleObj H)) (X : fiber actions q) :
+    ((N.equivariantTransportEquivalence g).counit.hom.as.app a).toNatTrans.app X =
+      (N.transportComp g.inv g.hom (𝟙 q) g.inv_hom_id).hom.app X ≫ (N.transportId q).hom.app X :=
+  rfl
+
+@[simp]
+lemma equivariantTransportEquivalence_counit_inv_as_app_toNatTrans_app {p q : Γ} (g : p ≅ q)
+    (a : LocallyDiscrete (SingleObj H)) (X : fiber actions q) :
+    ((N.equivariantTransportEquivalence g).counit.inv.as.app a).toNatTrans.app X =
+      (N.transportId q).inv.app X ≫ (N.transportComp g.inv g.hom (𝟙 q) g.inv_hom_id).inv.app X :=
+  rfl
+
+end NormalizedTransport
 
 end TauCeti.EquivariantGroupoidLift
