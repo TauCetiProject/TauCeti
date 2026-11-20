@@ -536,8 +536,9 @@ theorem isIso_singularHomologyMap_prodExcisionFst (hA : IsOpen A) (hB : IsOpen B
     obtain ⟨h₁, h₂⟩ := Prod.mk.inj h'
     exact Prod.ext h₁ (Subtype.ext h₂)
   · rintro x ⟨a, ha⟩
-    have hx : (a.1 : X ⊗ Y).1 = x.1 := congrArg (fun w ↦ (w.1 : X ⊗ Y).1) ha
-    exact ⟨⟨x, show x.1 ∈ A from hx ▸ a.2⟩, rfl⟩
+    have hx : CartesianMonoidalCategory.fst X Y a.1 = CartesianMonoidalCategory.fst X _ x :=
+      congrArg (fun w ↦ CartesianMonoidalCategory.fst X Y w.1) ha
+    exact ⟨⟨x, Set.mem_preimage.2 (hx ▸ a.2)⟩, rfl⟩
   · simp only [Fin.forall_fin_two]
     exact ⟨Or.inl fun w hw ↦ ⟨⟨w.1, hw⟩, rfl⟩, Or.inr fun w hw ↦ ⟨(w.1.1, ⟨w.1.2, hw⟩), rfl⟩⟩
 
