@@ -95,12 +95,12 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 continuous linear map from the tangent space to its dual. -/
 def flat (σ : SmoothTwoForm I M) (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
   -- The tangent space is the model space `E`, whose norm gives continuous currying.
-  ContinuousAlternatingMap.flatL ℝ E ℝ (σ.1 x)
+  ContinuousAlternatingMap.flatL ℝ E ℝ (σ.val x)
 
 /-- The flat map at a point is the currying `ContinuousAlternatingMap.flatL` of the value of the
 form there. -/
 theorem flat_def (σ : SmoothTwoForm I M) (x : M) :
-    σ.flat x = ContinuousAlternatingMap.flatL ℝ E ℝ (σ.1 x) :=
+    σ.flat x = ContinuousAlternatingMap.flatL ℝ E ℝ (σ.val x) :=
   (rfl)
 
 /-- The flat map evaluates as the two-form. -/
@@ -108,20 +108,20 @@ theorem flat_def (σ : SmoothTwoForm I M) (x : M) :
 theorem flat_apply (σ : SmoothTwoForm I M) (x : M) (v w : TangentSpace I x) :
     σ.flat x v w = SmoothBundleForm.eval₂ σ x v w := by
   rw [SmoothBundleForm.eval₂_apply]
-  exact ContinuousAlternatingMap.flatL_apply_apply (E := E) (σ.1 x) v w
+  exact ContinuousAlternatingMap.flatL_apply_apply (E := E) (σ.val x) v w
 
 /-- The interior product `ι_X σ` at a point is the flat map applied to `X`, read as a one-form. -/
 theorem interior_apply_eq_ofSubsingleton_flat (σ : SmoothTwoForm I M)
     (X : (x : M) → TangentSpace I x) (x : M) :
-    RoughForm.interior X σ.1 x =
+    RoughForm.interior X σ.val x =
       ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ 0 (σ.flat x (X x)) := by
   rw [RoughForm.interior_apply_eq_curryLeft]
-  exact (ContinuousAlternatingMap.ofSubsingleton_flatL_apply (E := E) (σ.1 x) (X x)).symm
+  exact (ContinuousAlternatingMap.ofSubsingleton_flatL_apply (E := E) (σ.val x) (X x)).symm
 
 /-- For a nondegenerate two-form, a vector field is determined by its contraction with the form:
 if `ι_X σ = ι_Y σ`, then `X = Y`. In particular, the Liouville field of a primitive is unique. -/
 theorem IsNondegenerate.interior_injective (h : σ.IsNondegenerate) :
-    Function.Injective fun X : (x : M) → TangentSpace I x ↦ RoughForm.interior X σ.1 := by
+    Function.Injective fun X : (x : M) → TangentSpace I x ↦ RoughForm.interior X σ.val := by
   intro X Y hXY
   funext x
   rw [← sub_eq_zero]
@@ -180,7 +180,7 @@ theorem contMDiffAt_sectionAlong_flat {EN HN N : Type*} [NormedAddCommGroup EN]
     [ChartedSpace HN N] {n : WithTop ℕ∞} {b : N → M} {σ : N → SmoothTwoForm I M} {m₀ : N}
     (hσ : ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] ℝ)) n
       (fun m ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] ℝ)
-        (E := fun x : M ↦ TangentSpace I x [⋀^Fin 2]→L[ℝ] Trivial M ℝ x) (b m) ((σ m).1 (b m)))
+        (E := fun x : M ↦ TangentSpace I x [⋀^Fin 2]→L[ℝ] Trivial M ℝ x) (b m) ((σ m).val (b m)))
       m₀) :
     ContMDiffAt J (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
       (fun m ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
@@ -242,17 +242,17 @@ variable (σ) in
 /-- Contraction `X ↦ ι_X σ = σ(X, ·)` of smooth vector fields into a two-form, as a linear map to
 smooth one-forms. -/
 def interiorₗ : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯ →ₗ[ℝ] SmoothForm I M ℝ 1 where
-  toFun X := ⟨RoughForm.interior X σ.1, by
+  toFun X := ⟨RoughForm.interior X σ.val, by
     rw [funext (σ.interior_apply_eq_ofSubsingleton_flat X)]
     exact (isSmoothForm_ofSubsingleton_iff.2
       (σ.contMDiff_flat.clm_bundle_apply X.contMDiff)).mem_smoothBundleForms⟩
-  map_add' X Y := Subtype.ext (RoughForm.interior_add_field _ _ σ.1)
-  map_smul' c X := Subtype.ext (RoughForm.interior_smul_field (fun _ ↦ c) X σ.1)
+  map_add' X Y := Subtype.ext (RoughForm.interior_add_field _ _ σ.val)
+  map_smul' c X := Subtype.ext (RoughForm.interior_smul_field (fun _ ↦ c) X σ.val)
 
 /-- The one-form `ι_X σ` is the interior product of `σ` with `X`. -/
 @[simp]
 theorem coe_interiorₗ (X : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯) :
-    (σ.interiorₗ X : RoughForm I M ℝ 1) = RoughForm.interior X σ.1 :=
+    (σ.interiorₗ X : RoughForm I M ℝ 1) = RoughForm.interior X σ.val :=
   (rfl)
 
 /-- As a section of the bundle of covectors, `ι_X σ` is the flat map applied to `X`. -/
@@ -302,13 +302,13 @@ theorem IsNondegenerate.interiorₗ_interiorEquiv_symm [FiniteDimensional ℝ E]
 @[simp]
 theorem IsNondegenerate.interior_interiorEquiv_symm [FiniteDimensional ℝ E]
     (h : σ.IsNondegenerate) (α : SmoothForm I M ℝ 1) :
-    RoughForm.interior (h.interiorEquiv.symm α) σ.1 = α.1 :=
+    RoughForm.interior (h.interiorEquiv.symm α) σ.val = α.val :=
   congrArg Subtype.val (h.interiorₗ_interiorEquiv_symm α)
 
 /-- The vector field `(σ♭)⁻¹ α` vanishes exactly where `α` does. -/
 theorem IsNondegenerate.interiorEquiv_symm_apply_eq_zero_iff [FiniteDimensional ℝ E]
     (h : σ.IsNondegenerate) (α : SmoothForm I M ℝ 1) (x : M) :
-    h.interiorEquiv.symm α x = 0 ↔ α.1 x = 0 := by
+    h.interiorEquiv.symm α x = 0 ↔ α.val x = 0 := by
   rw [interiorEquiv_symm_apply, (h.isInvertible_flat x).inverse_apply_eq, map_zero,
     ← SmoothForm.degreeOneEquiv_coe_eq_zero_iff, ← ContinuousLinearMap.toLinearMap_zero,
     ContinuousLinearMap.coe_inj]

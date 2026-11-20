@@ -106,8 +106,7 @@ theorem tendsto_eLpNorm_gridExponential_sub (hW : IsFilteredPreBrownianReal ℱ 
     (fun k ↦ (hW.memLp_two_gridExponential (N (ns k))
       (hτ (ns k)) (hθ (ns k)) (hK (ns k))).aestronglyMeasurable)
     ((hW.memLp_two_of_tendstoInMeasure_gridExponential hτ hθ hK hT hZ).mono_exponent (by norm_num))
-    (hW.uniformIntegrable_gridExponential (fun k ↦ hτ (ns k))
-      (fun k ↦ hθ (ns k)) (fun k ↦ hK (ns k)) (fun k ↦ hT (ns k))).unifIntegrable
+    ((hW.uniformIntegrable_gridExponential hτ hθ hK hT).comp ns).unifIntegrable
     (hZ.comp hns)
 
 /-- The limit density has expectation one: bounded grid likelihoods lose no mass in the limit. -/

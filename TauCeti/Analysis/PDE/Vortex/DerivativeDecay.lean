@@ -69,7 +69,8 @@ and is not treated here.
   `|∇ log |α|²| ≤ K exp (-c |z|)` for every `c < 1 / 2`.
 * `TauCeti.Vortex.exists_norm_fderiv_normSq_le_mul_exp`: `|∇ |α|²| ≤ K exp (-c |z|)`.
 * `TauCeti.Vortex.exists_norm_covariantDerivative_le_mul_exp`:
-  `|d_a α (v)| ≤ K |v| exp (-c |z|)`.
+  `|d_a α (v)| ≤ K |v| exp (-c |z|)`, so `d_a α (v) → 0` at infinity
+  (`TauCeti.Vortex.tendsto_covariantDerivative_cocompact`).
 * `TauCeti.Vortex.exists_energyDensity_le_mul_exp`: the energy density is bounded by
   `K exp (-c |z|)` for every `c < 1`.
 * `TauCeti.Vortex.contDiffAt_log_normSq_of_equation_eq_zero`: `log |α|²` is smooth wherever
@@ -321,6 +322,23 @@ theorem exists_norm_covariantDerivative_le_mul_exp
     (by simp [hsol z]) v, norm_mul, mul_comm K', mul_assoc]
   exact mul_le_mul_of_nonneg_left (hK' z) (norm_nonneg v)
 
+/-- **The covariant derivative of a plane vortex vanishes at infinity.** A vortex on the whole
+plane whose section satisfies `|α| → 1` at infinity has `d_a α (v) → 0` at infinity, for every
+tangent vector `v`. This is the hypothesis on `d_a α` in the Fredholm theory of the gauge-fixed
+operator. -/
+theorem tendsto_covariantDerivative_cocompact
+    (hb₁ : Continuous (fun w ↦ x w 0))
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (v : ℂ) :
+    Tendsto (fun z ↦ covariantDerivative x z v) (cocompact ℂ) (𝓝 0) := by
+  obtain ⟨K, hK⟩ := exists_norm_covariantDerivative_le_mul_exp hb₁ hp hq hsol hlim
+    (c := 1 / 4) (by norm_num)
+  have hexp : Tendsto (fun z : ℂ ↦ K * ‖v‖ * Real.exp (-(1 / 4 * ‖z‖))) (cocompact ℂ) (𝓝 0) := by
+    simpa using tendsto_const_nhds.mul (Real.tendsto_exp_neg_atTop_nhds_zero.comp
+      (tendsto_norm_cocompact_atTop.const_mul_atTop (by norm_num : (0 : ℝ) < 1 / 4)))
+  exact squeeze_zero_norm (fun z ↦ hK z v) hexp
+
 /-- **Exponential decay of the energy density of a plane vortex.** A vortex on the whole plane
 whose section satisfies `|α| → 1` at infinity has energy density
 `|F_a|² + |d_a α|² + (1 - |α|²)²` bounded by `K exp (-c |z|)` for every rate `c < 1`. -/
@@ -337,7 +355,7 @@ theorem exists_energyDensity_le_mul_exp
   refine ⟨(1 / 64 + 1) * K₁ ^ 2 + 2 * K₂ ^ 2, fun z ↦ ?_⟩
   set E := Real.exp (-(c / 2 * ‖z‖)) with hE
   have hEsq : E ^ 2 = Real.exp (-(c * ‖z‖)) := by
-    rw [hE, ← Real.exp_nat_mul]
+    rw [hE, ← Real.exp_natCast_mul]
     ring_nf
   -- The modulus defect, and hence the curvature, is bounded by `K₁ E`.
   have hdef₀ : 0 ≤ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by

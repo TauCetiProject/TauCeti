@@ -353,13 +353,13 @@ private theorem LocallyOfWeaklyFiniteType.exists_complete_chart {f : X ⟶ Y}
   -- 3. Both `{1} / 1` localisations cover their whole adic spectra, hence induce isomorphisms.
   obtain ⟨eA, heA⟩ :=
     exists_iso_presentationLimitPreAdicSpaceComap_toCompletionLocHom_of_forall_mem P hP
-      ({1} : Finset A) 1 L hden hT1 (fun y ↦ by rw [rationalSubset_singleton_one]; exact y.2)
+      ({1} : Finset A) 1 L hden hT1 (fun y ↦ by rw [rationalSubset_singleton_one]; exact y.property)
       hsheafA₁
   obtain ⟨eB, heB⟩ :=
     exists_iso_presentationLimitPreAdicSpaceComap_toCompletionLocHom_of_forall_mem P' hP' T' s' L'
       hden' hT1' (fun y ↦ by
         simp only [T', s', Finset.image_singleton, map_one, rationalSubset_singleton_one]
-        exact y.2) hsheafB₁
+        exact y.property) hsheafB₁
   -- 4. Conjugate the original chart square by `eA` and `eB`.
   have hcomm := presentationLimitPreAdicSpaceComap_completionLocPairMap_comp P P' hP hP' φ
     hsheafB ({1} : Finset A) 1 L hden L' hden' hsheafA₁ hsheafB₁

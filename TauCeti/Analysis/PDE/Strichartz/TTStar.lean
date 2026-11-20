@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
-public import TauCeti.MeasureTheory.Integral.RieszPotential
+public import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # The non-endpoint `TT*` argument
@@ -100,10 +101,7 @@ region `s < t` is bounded by the integral of its absolute value over the whole `
 theorem enorm_integral_setIntegral_Iio_le_lintegral_lintegral_enorm {V : Type*}
     [NormedAddCommGroup V] [NormedSpace ℝ V] (f : ℝ → ℝ → V) :
     ‖∫ t, ∫ s in Set.Iio t, f s t‖ₑ ≤ ∫⁻ t, ∫⁻ s, ‖f s t‖ₑ :=
-  calc _ ≤ ∫⁻ t, ‖∫ s in Set.Iio t, f s t‖ₑ := eNorm_integral_le_lintegral_eNorm _
-    _ ≤ ∫⁻ t, ∫⁻ s in Set.Iio t, ‖f s t‖ₑ :=
-        lintegral_mono fun _ ↦ eNorm_integral_le_lintegral_eNorm _
-    _ ≤ _ := lintegral_mono fun _ ↦ setLIntegral_le_lintegral _ _
+  enorm_integral_setIntegral_le_lintegral_lintegral f
 
 /-- **The bilinear `TT*` estimate.** Let `2 < q < ∞` with Hölder conjugate `p`, and let
 `U(t) : H → L²(X, μ)` be bounded operators whose time pairings decay from `L^{r'}` to `L^r`,

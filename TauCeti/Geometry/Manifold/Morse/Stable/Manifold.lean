@@ -110,6 +110,32 @@ theorem card_fin_manifoldMorseIndex_eq_finrank :
       Module.finrank ℝ ({i // φ.weight i < 0} → ℝ) := by
   rw [Fintype.card_fin, φ.finrank_negativeWeight_fun]
 
+/-- The product of `ℝ` with the coordinates of negative weight has dimension one more than the
+Morse index. -/
+theorem finrank_prod_negativeWeight_fun :
+    Module.finrank ℝ (ℝ × ({i // φ.weight i < 0} → ℝ)) = 1 + manifoldMorseIndex 𝓘(ℝ, E) f x := by
+  rw [Module.finrank_prod, Module.finrank_self, φ.finrank_negativeWeight_fun]
+
+/-- A Morse chart at a critical point of index `n - 1` has exactly one coordinate of positive
+weight. -/
+theorem exists_weight_eq_one_of_add_one_eq_finrank
+    (hx : manifoldMorseIndex 𝓘(ℝ, E) f x + 1 = Module.finrank ℝ E) :
+    ∃ j, φ.weight j = 1 ∧ ∀ i, i ≠ j → φ.weight i < 0 := by
+  classical
+  set s := Finset.univ.filter fun i ↦ φ.weight i < 0
+  have hs : s.card = manifoldMorseIndex 𝓘(ℝ, E) f x := by
+    rw [← φ.ncard_weight_neg, Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
+  obtain ⟨j, hj⟩ := Finset.card_eq_one.1 (show sᶜ.card = 1 by
+    rw [Finset.card_compl, Fintype.card_fin]
+    omega)
+  have hmem (i : Fin (Module.finrank ℝ E)) : i ∈ sᶜ ↔ i = j := by rw [hj, Finset.mem_singleton]
+  refine ⟨j, ?_, fun i hi ↦ ?_⟩
+  · have h := (hmem j).2 rfl
+    simp only [s, Finset.mem_compl, Finset.mem_filter, Finset.mem_univ, true_and] at h
+    exact (φ.weight_eq_neg_one_or_eq_one j).resolve_left fun h' ↦ h (by rw [h']; norm_num)
+  · by_contra h
+    exact hi ((hmem i).1 (by simpa [s] using h))
+
 /-- The vector of the model whose coordinates in the Morse chart `φ` are `c` in the directions of
 negative weight and `0` in the directions of positive weight. -/
 noncomputable def negativeExtend : ({i // φ.weight i < 0} → ℝ) →ₗ[ℝ] E :=
@@ -128,7 +154,7 @@ theorem coord_negativeExtend_of_not_weight_neg (c : {i // φ.weight i < 0} → �
     {i : Fin (Module.finrank ℝ E)} (hi : ¬φ.weight i < 0) : φ.coord (φ.negativeExtend c) i = 0 := by
   simp only [negativeExtend, LinearMap.coe_comp, LinearEquiv.coe_coe, comp_apply,
     LinearEquiv.apply_symm_apply]
-  exact Function.ExtendByZero.linearMap_apply_of_notMem_range ℝ c fun ⟨j, hj⟩ ↦ hi (hj ▸ j.2)
+  exact Function.ExtendByZero.linearMap_apply_of_notMem_range ℝ c fun ⟨j, hj⟩ ↦ hi (hj ▸ j.property)
 
 /-- `negativeExtend` is a right inverse of the coordinates of negative weight. -/
 @[simp]
@@ -177,7 +203,7 @@ theorem negativeCoord_eq_exp_smul_of_coord_eq {s : ℝ} {a b : E}
     φ.negativeCoord a = Real.exp s • φ.negativeCoord b := by
   funext i
   have hi : φ.weight i = -1 :=
-    (φ.weight_eq_neg_one_or_eq_one i).resolve_right ((φ.weight_ne_one_iff i).2 i.2)
+    (φ.weight_eq_neg_one_or_eq_one i).resolve_right ((φ.weight_ne_one_iff i).2 i.property)
   rw [Pi.smul_apply, negativeCoord_apply, negativeCoord_apply, h, smul_eq_mul,
     φ.linearFlow_of_weight_eq_neg_one hi]
 
@@ -342,7 +368,7 @@ theorem exists_stableSet_isManifold (hX : IsAdaptedPseudoGradient f X)
     (Submodule.IsCompl.isTopCompl_of_isClosed hN
       φ.stableSubspace.isClosed_of_finiteDimensional N.isClosed_of_finiteDimensional)
     fun y ↦ ?_
-  obtain ⟨q, hyq, hq, hmem⟩ := hX.exists_stableSet_chart φ hφ y.2
+  obtain ⟨q, hyq, hq, hmem⟩ := hX.exists_stableSet_chart φ hφ y.property
   exact ⟨q, hyq, fun z hz ↦ contMDiffAt_of_mem_maximalAtlas hq hz,
     fun z hz ↦ contMDiffAt_symm_of_mem_maximalAtlas hq hz, hmem⟩
 
