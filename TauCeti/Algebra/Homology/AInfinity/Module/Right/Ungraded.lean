@@ -691,6 +691,13 @@ noncomputable def matrix :
 theorem matrix_act : (Mm.matrix X).act = Mm.matrixAct X :=
   (rfl)
 
+/-- The operation `m₁` of the matrix module acts componentwise. -/
+theorem matrixAct_zero_apply (F : Fin 0 → Matrix X X A) (φ : X → M) (z : X) :
+    Mm.matrixAct X 0 F φ z = Mm.act 0 (fun l => l.elim0) (φ z) := by
+  rw [matrixAct_apply, Fintype.sum_eq_single (fun _ => z) fun x hx => ite_eq_right fun h =>
+    hx (funext fun t => by rw [Fin.fin_one_eq_zero t]; exact h), ite_eq_left rfl]
+  exact congrArg (fun t => Mm.act 0 t (φ z)) (Subsingleton.elim _ _)
+
 /-- The `z`-component of the operation `m₂(φ, F)` of the matrix module is
 `∑ x, m₂(φ x, F x z)`. -/
 theorem matrixAct_one_apply (F : Matrix X X A) (φ : X → M) (z : X) :

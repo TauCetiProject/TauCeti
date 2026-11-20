@@ -61,9 +61,10 @@ idempotents of `A` at the generators, and strict unitality, are not needed below
 The tensor products here are taken over `R` on the generators, as for the box tensor differential
 of `TauCeti.LowDimTopology.Bordered.TypeA`; the elementary tensors `y ⊗ x` whose idempotents do not
 match are among the generators of `P ⊠ N`, and they vanish in the tensor product over the
-idempotents. The type `A` module `M ⊠ P` is built here from a differential module `M`; the box
-tensor product of a general `A∞` module with a type `DA` bimodule, and the associativity for it,
-are not treated.
+idempotents. The type `A` module `M ⊠ P` is built here from a differential module `M`; for a
+general `A∞` module `M` whose operations vanish from some arity on it is
+`TauCeti.TypeDAStructure.typeABoxModule`, in `TauCeti.LowDimTopology.Bordered.TypeA.BoxTypeDA`.
+The associativity `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)` for such a module is not treated.
 
 ## Main definitions
 
@@ -196,7 +197,7 @@ private theorem boxAct_apply_of_ne_zero (dM : M →ₗ[R] M) {n : ℕ} (hn : n �
   rw [boxAct_apply, ite_eq_right hn, zero_add]
 
 /-- A coefficient matrix only depends on the length and the entries of its tuple of inputs. -/
-private theorem coeff_eq_of_eq {m n : ℕ} (h : m = n) {b : Fin m → A} {a : Fin n → A}
+theorem coeff_eq_of_eq {m n : ℕ} (h : m = n) {b : Fin m → A} {a : Fin n → A}
     (hab : ∀ l, b l = a (Fin.cast h l)) : P.coeff m b = P.coeff n a := by
   subst h
   congr 1
