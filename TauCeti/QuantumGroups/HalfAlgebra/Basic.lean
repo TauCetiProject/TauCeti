@@ -53,6 +53,7 @@ def halfIdeal (_hχ : ∀ i j, χ i j = χ j i) : Ideal (FreeAlgebra R I) where
   smul_mem' x _ hy := mul_mem_halfRadical_left x hy
 
 /-- Membership in the ideal is membership in the radical of the free pairing. -/
+@[simp]
 theorem mem_halfIdeal {x : FreeAlgebra R I} :
     x ∈ halfIdeal χ hχ ↔ x ∈ halfRadical χ := Iff.rfl
 
@@ -76,6 +77,7 @@ def halfMk : FreeAlgebra R I →ₐ[R] Half χ hχ :=
 def halfGenerator (i : I) : Half χ hχ := halfMk χ hχ (ι R i)
 
 /-- The quotient map sends a free generator to the corresponding simple generator. -/
+@[simp]
 theorem halfMk_ι (i : I) : halfMk χ hχ (ι R i) = halfGenerator χ hχ i := by rfl
 
 /-- Every element of the half algebra has a free-algebra representative. -/
@@ -140,7 +142,7 @@ theorem halfAugmentation_halfMk (x : FreeAlgebra R I) :
 @[simp]
 theorem halfAugmentation_generator (i : I) :
     halfAugmentation χ hχ (halfGenerator χ hχ i) = 0 := by
-  simp [halfGenerator]
+  rw [halfGenerator, halfAugmentation_halfMk, algebraMapInv_ι]
 
 /-- The symmetric pairing descended from the free pairing.
 Both arguments use the scalar restriction of the algebra ideal, giving the native
@@ -151,7 +153,7 @@ def halfPairing : LinearMap.BilinForm R (Half χ hχ) :=
     (fun _ hx => LinearMap.ext fun y => mem_halfRadical.mp hx y)
 
 /-- The descended pairing agrees with the free pairing on representatives. -/
-@[simp]
+@[simp↓]
 theorem halfPairing_halfMk (x y : FreeAlgebra R I) :
     halfPairing χ hχ (halfMk χ hχ x) (halfMk χ hχ y) = freePairing χ x y := by rfl
 
@@ -175,7 +177,8 @@ theorem halfPairing_nondegenerate : (halfPairing χ hχ).Nondegenerate := by
 theorem halfPairing_one_left (x : Half χ hχ) :
     halfPairing χ hχ 1 x = halfAugmentation χ hχ x := by
   obtain ⟨x, rfl⟩ := halfMk_surjective χ hχ x
-  simpa using halfPairing_halfMk χ hχ 1 x
+  simpa only [map_one, freePairing_one_left, halfAugmentation_halfMk]
+    using halfPairing_halfMk χ hχ 1 x
 
 /-- Pairing with one computes the augmentation. -/
 @[simp]
@@ -211,7 +214,7 @@ theorem halfScale_halfMk (c : I → R) (x : FreeAlgebra R I) :
 @[simp]
 theorem halfScale_generator (c : I → R) (i : I) :
     halfScale χ hχ c (halfGenerator χ hχ i) = c i • halfGenerator χ hχ i := by
-  simp [halfGenerator]
+  simp only [halfGenerator, halfScale_halfMk, freeHalfScale_ι, map_smul]
 
 /-- Scaling by one is the identity algebra endomorphism. -/
 @[simp]
@@ -279,13 +282,15 @@ theorem halfRemoveRight_one (i : I) : halfRemoveRight χ hχ i 1 = 0 := by
 @[simp]
 theorem halfRemove_generator (i j : I) :
     halfRemove χ hχ i (halfGenerator χ hχ j) = if i = j then 1 else 0 := by
-  by_cases h : i = j <;> simp [halfGenerator, h]
+  rw [halfGenerator, halfRemove_halfMk, freeRemove_ι]
+  split_ifs <;> simp
 
 /-- The right skew derivative takes its expected value on generators. -/
 @[simp]
 theorem halfRemoveRight_generator (i j : I) :
     halfRemoveRight χ hχ i (halfGenerator χ hχ j) = if i = j then 1 else 0 := by
-  by_cases h : i = j <;> simp [halfGenerator, h]
+  rw [halfGenerator, halfRemoveRight_halfMk, freeRemoveRight_ι]
+  split_ifs <;> simp
 
 /-- Left multiplication by a generator is adjoint to the left skew derivative. -/
 theorem halfPairing_generator_mul_left (i : I) (x y : Half χ hχ) :
@@ -293,7 +298,8 @@ theorem halfPairing_generator_mul_left (i : I) (x y : Half χ hχ) :
       halfPairing χ hχ x (halfRemove χ hχ i y) := by
   obtain ⟨x, rfl⟩ := halfMk_surjective χ hχ x
   obtain ⟨y, rfl⟩ := halfMk_surjective χ hχ y
-  simp [halfGenerator, ← map_mul]
+  simp only [halfGenerator, ← map_mul, halfPairing_halfMk, halfRemove_halfMk,
+    freePairing_ι_mul_left]
 
 /-- Right multiplication by a generator is adjoint to the right skew derivative. -/
 theorem halfPairing_mul_generator_left (i : I) (x y : Half χ hχ) :
