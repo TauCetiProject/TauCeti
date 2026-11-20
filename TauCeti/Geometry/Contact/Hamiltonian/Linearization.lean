@@ -102,25 +102,12 @@ theorem apply_fderiv_mpullbackWithin_contactHamiltonianVectorField (hα : α.IsC
     α.1 p ![fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I p).symm
       (α.contactHamiltonianVectorField f) (range I)) (extChartAt I p p) w] = 0 := by
   -- Differentiate `α(X_f) = f` at `p`, where `X_f` vanishes and `df_p = 0`.
-  have h := mvfderiv_apply_vectorField_of_eq_zero (i₀ := 0) (α.mdifferentiableAt p)
-    (V := ![α.contactHamiltonianVectorField f])
-    (fun i ↦ by fin_cases i; exact hα.mdifferentiable_contactHamiltonianVectorField hf p)
-    (hα.contactHamiltonianVectorField_eq_zero_iff.2 ⟨hf0, fun v _ ↦ by rw [hcrit]; rfl⟩) w
-  have hfun : (fun y ↦ α.1 y (![α.contactHamiltonianVectorField f] · y)) = f := by
-    funext y
-    convert hα.apply_contactHamiltonianVectorField f y using 2
-    funext i
-    fin_cases i
-    rfl
-  have hupd : update (![α.contactHamiltonianVectorField f] · p) 0
-      (fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I p).symm
-        (α.contactHamiltonianVectorField f) (range I)) (extChartAt I p p) w) =
-      ![fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I p).symm
-        (α.contactHamiltonianVectorField f) (range I)) (extChartAt I p p) w] := by
-    funext i
-    fin_cases i
-    exact update_self _ _ _
-  rw [hfun, hcrit, Matrix.cons_val_zero, hupd] at h
+  have h := mvfderiv_apply_vectorField_fin_one_of_eq_zero (α.mdifferentiableAt p)
+    (hα.mdifferentiable_contactHamiltonianVectorField hf p)
+    (hα.contactHamiltonianVectorField_eq_zero_iff.2
+      ⟨hf0, fun v _ ↦ by rw [hcrit, _root_.zero_apply]⟩) w
+  rw [funext (hα.apply_contactHamiltonianVectorField f), hcrit,
+    _root_.zero_apply] at h
   exact h.symm
 
 /-- **The linearization of a contact Hamiltonian vector field at a second-order zero.** Let `α` be
@@ -142,30 +129,16 @@ theorem mextDeriv_fderiv_mpullbackWithin_contactHamiltonianVectorField_left
   have hY : MDifferentiableAt I I.tangent (fun y ↦ (Y y : TangentBundle I M)) p :=
     FiberBundle.mdifferentiableAt_extend I E u
   have hYp : Y p = u := FiberBundle.extend_apply_self E u
-  have h := mvfderiv_apply_vectorField_of_eq_zero (i₀ := 0)
-    ((mextDerivₗ I 1 α).mdifferentiableAt p)
-    (V := ![α.contactHamiltonianVectorField f, Y])
-    (fun i ↦ by fin_cases i; exacts [hα.mdifferentiable_contactHamiltonianVectorField hf p, hY])
-    (hα.contactHamiltonianVectorField_eq_zero_iff.2 ⟨hf0, fun v _ ↦ by rw [hcrit]; rfl⟩) w
-  have hupd : update (![α.contactHamiltonianVectorField f, Y] · p) 0
-      (fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I p).symm
-        (α.contactHamiltonianVectorField f) (range I)) (extChartAt I p p) w) =
-      ![fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I p).symm
-        (α.contactHamiltonianVectorField f) (range I)) (extChartAt I p p) w, u] := by
-    funext i
-    fin_cases i
-    · exact update_self _ _ _
-    · exact (update_of_ne (by decide) _ _).trans hYp
-  rw [mextDerivₗ_apply, Matrix.cons_val_zero, hupd] at h
+  have h := mvfderiv_apply_vectorField_fin_two_of_eq_zero ((mextDerivₗ I 1 α).mdifferentiableAt p)
+    (hα.mdifferentiable_contactHamiltonianVectorField hf p) hY
+    (hα.contactHamiltonianVectorField_eq_zero_iff.2
+      ⟨hf0, fun v _ ↦ by rw [hcrit, _root_.zero_apply]⟩) w
+  rw [mextDerivₗ_apply, hYp] at h
   refine h.symm.trans ?_
   -- By the contraction equation, `dα(X_f, Y) = (R_α f) α(Y) - df(Y)`.
-  have hfun : (fun y ↦ mextDeriv α.1 y (![α.contactHamiltonianVectorField f, Y] · y)) =
-      fun y ↦ mvfderiv I f y (α.reebVectorField y) * α.1 y ![Y y] - mvfderiv I f y (Y y) := by
-    funext y
-    rw [← hα.mextDeriv_contactHamiltonianVectorField_left f y (Y y)]
-    congr 1
-    funext i
-    fin_cases i <;> rfl
+  have hfun : (fun y ↦ mextDeriv α.1 y ![α.contactHamiltonianVectorField f y, Y y]) =
+      fun y ↦ mvfderiv I f y (α.reebVectorField y) * α.1 y ![Y y] - mvfderiv I f y (Y y) :=
+    funext fun y ↦ hα.mextDeriv_contactHamiltonianVectorField_left f y (Y y)
   -- Differentiate the right side at `p`, where `R_α f` vanishes.
   have hR : MDifferentiableAt I I.tangent
       (fun y ↦ (α.reebVectorField y : TangentBundle I M)) p :=

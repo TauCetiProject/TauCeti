@@ -102,27 +102,13 @@ theorem criticalHessian_apply_eq_eval₂_fderiv (h : σ.IsNondegenerate)
   have h1 := criticalHessian_apply_eq_mvfderiv (hF p) hcrit hY w
   rw [hYp] at h1
   have h2 : (fun y ↦ mvfderiv I F y (Y y)) =
-      fun y ↦ σ.1 y (![σ.hamiltonianVectorField F, Y] · y) := by
-    funext y
-    rw [← h.apply_hamiltonianVectorField F y (Y y)]
-    congr 1
-    funext i
-    fin_cases i <;> rfl
+      fun y ↦ σ.1 y ![σ.hamiltonianVectorField F y, Y y] :=
+    funext fun y ↦ (h.apply_hamiltonianVectorField F y (Y y)).symm
   -- Since `X_F` vanishes at `p`, only its derivative contributes.
-  have h3 := mvfderiv_apply_vectorField_of_eq_zero (i₀ := 0) (σ.mdifferentiableAt p)
-    (V := ![σ.hamiltonianVectorField F, Y])
-    (fun i ↦ by fin_cases i; exacts [h.mdifferentiable_hamiltonianVectorField hF p, hY])
+  have h3 := mvfderiv_apply_vectorField_fin_two_of_eq_zero (σ.mdifferentiableAt p)
+    (h.mdifferentiable_hamiltonianVectorField hF p) hY
     (h.hamiltonianVectorField_eq_zero_iff.2 hcrit) w
-  have hupd : update (![σ.hamiltonianVectorField F, Y] · p) 0
-      (fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I p).symm
-        (σ.hamiltonianVectorField F) (range I)) (extChartAt I p p) w) =
-      ![fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I p).symm
-        (σ.hamiltonianVectorField F) (range I)) (extChartAt I p p) w, u] := by
-    funext i
-    fin_cases i
-    · exact update_self _ _ _
-    · exact (update_of_ne (by decide) _ _).trans hYp
-  rw [h1, h2, h3, Matrix.cons_val_zero, hupd]
+  rw [h1, h2, h3, hYp]
   exact (SmoothBundleForm.eval₂_apply σ p _ u).symm
 
 /-- **The null space of the Hessian at a critical point.** For a nondegenerate two-form `σ` and a

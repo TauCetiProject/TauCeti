@@ -30,8 +30,11 @@ exactly when `dα` vanishes on the fields (`TauCeti.RoughForm.mlieBracket_mem_ke
 
 On a boundaryless model, if one of the fields `V i₀` vanishes at `x`, the derivative at `x` of the
 evaluation of a form on the fields only differentiates `V i₀`, read in the preferred chart at `x`
-(`TauCeti.mvfderiv_apply_vectorField_of_eq_zero`). This computes linearizations of vector fields
-at their zeros, such as Hamiltonian vector fields at critical points.
+(`TauCeti.mvfderiv_apply_vectorField_of_eq_zero`; for a one-form, and for a two-form whose first
+field vanishes, `TauCeti.mvfderiv_apply_vectorField_fin_one_of_eq_zero` and
+`TauCeti.mvfderiv_apply_vectorField_fin_two_of_eq_zero` state this with explicit tuples). This
+computes linearizations of vector fields at their zeros, such as Hamiltonian vector fields at
+critical points.
 
 ## References
 
@@ -124,6 +127,44 @@ theorem mvfderiv_apply_vectorField_of_eq_zero [I.Boundaryless] {φ : RoughForm I
     ((hUx i₀).trans h₀) w
   rw [h, RoughForm.inChartAt_extChartAt_self, funext hUx] at key
   exact key
+
+/-- **The derivative of a one-form on a vector field at its zero.** On a boundaryless model, if
+`V` vanishes at `x`, the derivative at `x` of `y ↦ φ_y(V y)` is `φ_x` evaluated on the derivative
+of the coordinate expression of `V` in the preferred chart at `x`. -/
+theorem mvfderiv_apply_vectorField_fin_one_of_eq_zero [I.Boundaryless] {φ : RoughForm I M F 1}
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) y (φ y)) x)
+    {V : (y : M) → TangentSpace I y}
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
+    (h₀ : V x = 0) (w : TangentSpace I x) :
+    mvfderiv I (fun y ↦ φ y ![V y]) x w = φ x ![fderiv ℝ
+      (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm V (range I))
+        (extChartAt I x x) w] := by
+  have h := mvfderiv_apply_vectorField_of_eq_zero (i₀ := 0) hφ (V := ![V])
+    (fun i ↦ by fin_cases i; exact hV) h₀ w
+  have hV' : ∀ y, (![V] · y) = ![V y] := fun y ↦ by funext i; fin_cases i; rfl
+  simp only [hV', Matrix.cons_val_zero] at h
+  exact h.trans (congrArg (φ x) (Fin.update_cons_zero ..))
+
+/-- **The derivative of a two-form on vector fields at a zero of the first field.** On a
+boundaryless model, if `V` vanishes at `x`, the derivative at `x` of `y ↦ φ_y(V y, W y)` is
+`φ_x(L w, W x)`, where `L` is the derivative of the coordinate expression of `V` in the preferred
+chart at `x`. -/
+theorem mvfderiv_apply_vectorField_fin_two_of_eq_zero [I.Boundaryless] {φ : RoughForm I M F 2}
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] F) y (φ y)) x)
+    {V W : (y : M) → TangentSpace I y}
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
+    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x)
+    (h₀ : V x = 0) (w : TangentSpace I x) :
+    mvfderiv I (fun y ↦ φ y ![V y, W y]) x w = φ x ![fderiv ℝ
+      (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm V (range I))
+        (extChartAt I x x) w, W x] := by
+  have h := mvfderiv_apply_vectorField_of_eq_zero (i₀ := 0) hφ (V := ![V, W])
+    (fun i ↦ by fin_cases i; exacts [hV, hW]) h₀ w
+  have hVW : ∀ y, (![V, W] · y) = ![V y, W y] := fun y ↦ by funext i; fin_cases i <;> rfl
+  simp only [hVW, Matrix.cons_val_zero] at h
+  exact h.trans (congrArg (φ x) (Fin.update_cons_zero ..))
 
 /-- The invariant exterior-derivative formula within a subset, in positive degree.
 The bracket sum uses pairs `(i.castSucc, j.succ)` with `i ≤ j`, so its sign is the negative
