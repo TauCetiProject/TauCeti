@@ -112,10 +112,10 @@ theorem swap (w : Fin n → Rˣ) {i j : Fin n} (hij : i ≠ j) :
   rw [BinaryStep]
   refine ⟨i, j, hij, ?_, ?_⟩
   · intro k hki hkj
-    simp [Function.comp_apply, Equiv.swap_apply_def, hki, hkj]
-  · simpa [Function.comp_apply, Equiv.swap_apply_def, hij, hij.symm] using
-      ⟨QuadraticForm.isometryEquivWeightedSumSquaresReindex (R := R) ![(w i : R), (w j : R)]
-        (Equiv.swap 0 1)⟩
+    rw [Function.comp_apply, Equiv.swap_apply_of_ne_of_ne hki hkj]
+  · rw [Function.comp_apply, Function.comp_apply, Equiv.swap_apply_left, Equiv.swap_apply_right]
+    exact (QuadraticForm.equivalent_weightedSumSquares_of_comp_eq (Equiv.swap 0 1)
+      (Matrix.cons_cons_comp_swap_zero_one _ _ ![])).symm
 
 end BinaryStep
 

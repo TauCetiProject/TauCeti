@@ -113,10 +113,8 @@ theorem BinaryStep.prod_prod_Ioi_eq (hmul : ∀ a b c, F (a * b) c = F a c * F b
     {w w' : Fin n → Rˣ} (h : BinaryStep w w') :
     ∏ i, ∏ j ∈ Ioi i, F (w i) (w j) = ∏ i, ∏ j ∈ Ioi i, F (w' i) (w' j) := by
   have hsymm (a b : Rˣ) : F a b = F b a := by
-    refine hF a b b a (QuadraticForm.equivalent_weightedSumSquares_of_comp_eq
-      (Equiv.swap 0 1) ?_).symm
-    ext k
-    fin_cases k <;> rfl
+    exact hF a b b a (QuadraticForm.equivalent_weightedSumSquares_of_comp_eq
+      (Equiv.swap 0 1) (Matrix.cons_cons_comp_swap_zero_one (a : R) (b : R) ![])).symm
   obtain ⟨i, j, hij, hrest, hpair⟩ := h.exists_pair
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := by
     refine ⟨n - 2, ?_⟩

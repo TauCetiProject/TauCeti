@@ -11,7 +11,6 @@ import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Binary
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Isotropic
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
-import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 
 /-!
 # Spinor norms of binary forms over a nonarchimedean local field
