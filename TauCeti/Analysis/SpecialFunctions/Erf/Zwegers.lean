@@ -146,6 +146,21 @@ theorem norm_zwegersE_ofReal_lt_one (x : ℝ) : ‖zwegersE x‖ < 1 := by
   rw [zwegersE_ofReal, Complex.norm_real, Real.norm_eq_abs]
   exact Real.abs_erf_lt_one _
 
+/-- For real `x > 0`, the real part of `E(x)` is positive. -/
+theorem zwegersE_ofReal_re_pos {x : ℝ} (hx : 0 < x) : 0 < (zwegersE x).re := by
+  rw [zwegersE_ofReal, Complex.ofReal_re]
+  exact Real.erf_pos (by positivity)
+
+/-- For real `x < 0`, the real part of `E(x)` is negative. -/
+theorem zwegersE_ofReal_re_neg {x : ℝ} (hx : x < 0) : (zwegersE x).re < 0 := by
+  rw [zwegersE_ofReal, Complex.ofReal_re, ← Real.erf_zero]
+  exact Real.strictMono_erf (mul_neg_of_pos_of_neg (Real.sqrt_pos.2 pi_pos) hx)
+
+/-- On the real line the real part of `E` is less than `1`. -/
+theorem zwegersE_ofReal_re_lt_one (x : ℝ) : (zwegersE x).re < 1 := by
+  rw [zwegersE_ofReal, Complex.ofReal_re]
+  exact Real.erf_lt_one _
+
 /-! ### The tail `β` -/
 
 /-- Zwegers' tail `β(t) = ∫_t^∞ u^{-1/2} exp (-π u) du`. It equals `erfc (√(π t))`
@@ -231,16 +246,21 @@ theorem zwegersBeta_le_one (t : ℝ) : zwegersBeta t ≤ 1 := by
   rw [zwegersBeta_eq_erfc, ← Real.erfc_zero]
   exact Real.strictAnti_erfc.antitone (Real.sqrt_nonneg _)
 
-/-- The derivative of the tail is minus its integrand. -/
-theorem hasDerivAt_zwegersBeta {t : ℝ} (ht : 0 < t) :
+/-- The derivative of the tail is minus its integrand, away from `0`. For `t < 0` both sides
+vanish: `β` is constant there and `t ^ (-1/2) = 0` for Mathlib's power of a negative base. -/
+theorem hasDerivAt_zwegersBeta {t : ℝ} (ht : t ≠ 0) :
     HasDerivAt zwegersBeta (-(t ^ (-(1 / 2 : ℝ)) * rexp (-π * t))) t := by
   rw [show zwegersBeta = fun t => Real.erfc √(π * t) from funext zwegersBeta_eq_erfc]
-  have hπt : 0 < π * t := by positivity
   have h : HasDerivAt (fun t => Real.erfc √(π * t))
       (-(2 / √π * rexp (-√(π * t) ^ 2)) * (1 / (2 * √(π * t)) * (π * 1))) t :=
     (Real.hasDerivAt_erfc _).comp t
-      ((Real.hasDerivAt_sqrt hπt.ne').comp t ((hasDerivAt_id t).const_mul π))
+      ((Real.hasDerivAt_sqrt (mul_ne_zero pi_pos.ne' ht)).comp t ((hasDerivAt_id t).const_mul π))
   convert h using 1
+  rcases ht.lt_or_gt with ht | ht
+  · rw [Real.sqrt_eq_zero_of_nonpos (mul_neg_of_pos_of_neg pi_pos ht).le, Real.rpow_def_of_neg ht,
+      show -(1 / 2 : ℝ) * π = -(π / 2) by ring, Real.cos_neg, Real.cos_pi_div_two]
+    simp
+  have hπt : 0 < π * t := by positivity
   have hπ : √π ≠ 0 := by positivity
   have ht' : √t ≠ 0 := by positivity
   rw [Real.sq_sqrt hπt.le, Real.rpow_neg ht.le, ← Real.sqrt_eq_rpow, Real.sqrt_mul pi_pos.le]
