@@ -278,6 +278,20 @@ private theorem cotangentGeneratingSource_eq_of_extChartAt (x₁ : M₁) {f : M�
   subst hv
   exact key w
 
+omit [I₁.Boundaryless] [I₂.Boundaryless] [I₃.Boundaryless] [IsManifold I₁ 1 M₁]
+  [IsManifold I₂ 1 M₂] [IsManifold I₃ 1 M₃] in
+/-- A nondegenerate critical point `a` of `a' ↦ S(q, a') + T(a', Q)`, read in the preferred charts
+at `q`, `a` and `Q`: the image of `a` is a nondegenerate critical point of the corresponding sum of
+slices of the coordinate expressions of `S` and `T`. -/
+private theorem isNondegenerateCriticalPoint_extChartAt {q : M₁} {a : M₂} {Q : M₃}
+    (h : IsManifoldNondegenerateCriticalPoint I₂ (fun a' ↦ S (q, a') + T (a', Q)) a) :
+    IsNondegenerateCriticalPoint
+      (fun w ↦ S ((extChartAt I₁ q).symm (extChartAt I₁ q q), (extChartAt I₂ a).symm w) +
+        T ((extChartAt I₂ a).symm w, (extChartAt I₃ Q).symm (extChartAt I₃ Q Q)))
+      (extChartAt I₂ a a) := by
+  simpa only [Function.comp_def, extChartAt_to_inv] using
+    (isManifoldNondegenerateCriticalPoint_iff I₂).mp h
+
 omit [IsManifold I₁ 1 M₁] [IsManifold I₂ 1 M₂] [IsManifold I₃ 1 M₃] in
 /-- At a nondegenerate critical point `a` of `a' ↦ S(q, a') + T(a', Q)`, the negative intermediate
 Hessian of the coordinate expressions of `S` and `T` in the preferred charts at `q`, `a` and `Q`
@@ -298,13 +312,8 @@ private theorem isInvertible_cotangentLegendreHessian_extChartAt {q : M₁} {a :
   have hsum : ContDiffAt ℝ 2 (cotangentGeneratingSum S' T') ((e₁ q, e₃ Q), e₂ a) :=
     contDiffAt_cotangentGeneratingSum hS.contDiffAt_comp_prod_extChartAt_symm
       hT.contDiffAt_comp_prod_extChartAt_symm
-  have hcoord : (fun a' ↦ S (q, a') + T (a', Q)) ∘ e₂.symm =
-      fun w ↦ S' (e₁ q, w) + T' (w, e₃ Q) := by
-    funext w
-    simp only [comp_apply, S', T', e₁, e₃, extChartAt_to_inv]
-  have hcrit : IsNondegenerateCriticalPoint (fun w ↦ S' (e₁ q, w) + T' (w, e₃ Q)) (e₂ a) := by
-    rw [← hcoord]
-    exact (isManifoldNondegenerateCriticalPoint_iff I₂).mp h
+  have hcrit : IsNondegenerateCriticalPoint (fun w ↦ S' (e₁ q, w) + T' (w, e₃ Q)) (e₂ a) :=
+    isNondegenerateCriticalPoint_extChartAt h
   -- The negative intermediate Hessian is minus the Hessian of the slice through `(q, Q)`.
   have hslice : (fun w ↦ cotangentGeneratingSum S' T' ((e₁ q, e₃ Q), w)) =
       fun w ↦ S' (e₁ q, w) + T' (w, e₃ Q) :=
@@ -359,13 +368,8 @@ theorem exists_generatingComposition [CompleteSpace E₁] [CompleteSpace E₂] [
   have h1 : (1 : WithTop ℕ∞) ≤ n + 2 := le_add_left one_le_two
   have h2 : (2 : WithTop ℕ∞) ≤ n + 2 := le_add_self
   /- Step 1: the hypotheses of the normed-space composition theorem, read in the charts. -/
-  have hcoord : (fun a ↦ S (q₀, a) + T (a, Q₀)) ∘ e₂.symm =
-      fun w ↦ S' (e₁ q₀, w) + T' (w, e₃ Q₀) := by
-    funext w
-    simp only [comp_apply, S', T', e₁, e₃, extChartAt_to_inv]
-  have hcrit : IsNondegenerateCriticalPoint (fun w ↦ S' (e₁ q₀, w) + T' (w, e₃ Q₀)) (e₂ a₀) := by
-    rw [← hcoord]
-    exact (isManifoldNondegenerateCriticalPoint_iff I₂).mp h
+  have hcrit : IsNondegenerateCriticalPoint (fun w ↦ S' (e₁ q₀, w) + T' (w, e₃ Q₀)) (e₂ a₀) :=
+    isNondegenerateCriticalPoint_extChartAt h
   have hmatch : cotangentGeneratingTarget S' (e₁ q₀, e₂ a₀) =
       cotangentGeneratingSource T' (e₂ a₀, e₃ Q₀) :=
     (cotangentGeneratingTarget_eq_cotangentGeneratingSource_iff
@@ -481,6 +485,18 @@ section MixedHessian
 variable [I₁.Boundaryless] [I₂.Boundaryless] [I₃.Boundaryless]
   [IsManifold I₁ 2 M₁] [IsManifold I₂ 2 M₂] [IsManifold I₃ 2 M₃]
 
+omit [I₂.Boundaryless] [IsManifold I₁ 2 M₁] [IsManifold I₂ 2 M₂] [IsManifold I₃ 2 M₃] in
+/-- A branch `b : M₁ × M₃ → M₂` differentiable at `(q, Q)` has a differentiable coordinate
+expression in the preferred charts at `q`, `Q` and `b (q, Q)`. -/
+private theorem differentiableAt_extChartAt_comp_branch {b : M₁ × M₃ → M₂} {q : M₁} {Q : M₃}
+    (hb : MDifferentiableAt (I₁.prod I₃) I₂ b (q, Q)) :
+    DifferentiableAt ℝ
+      (fun z : E₁ × E₃ ↦ extChartAt I₂ (b (q, Q))
+        (b ((extChartAt I₁ q).symm z.1, (extChartAt I₃ Q).symm z.2)))
+      (extChartAt I₁ q q, extChartAt I₃ Q Q) := by
+  simpa only [writtenInExtChartAt, extChartAt_prod, PartialEquiv.prod_coe_symm,
+    PartialEquiv.prod_coe, Function.comp_def] using hb.differentiableAt_writtenInExtChartAt
+
 omit [IsManifold I₃ 2 M₃] in
 /-- The relations along a branch `b`, read in the preferred charts at `q`, `b (q, Q)` and `Q`: near
 the chart image of `(q, Q)`, the intermediate covectors of the coordinate expressions of `S` and `T`
@@ -505,9 +521,7 @@ private theorem eventually_cotangentGenerating_extChartAt {R : M₁ × M₃ → 
       cotangentGeneratingTarget S' (z.1, b' z) = cotangentGeneratingSource T' (b' z, z.2) ∧
       cotangentGeneratingSource R' z = cotangentGeneratingSource S' (z.1, b' z) := by
   intro e₁ e₂ e₃ S' T' R' b'
-  have hb' : DifferentiableAt ℝ b' (e₁ q, e₃ Q) := by
-    simpa only [writtenInExtChartAt, extChartAt_prod, PartialEquiv.prod_coe_symm,
-      PartialEquiv.prod_coe, Function.comp_def] using hb.differentiableAt_writtenInExtChartAt
+  have hb' : DifferentiableAt ℝ b' (e₁ q, e₃ Q) := differentiableAt_extChartAt_comp_branch hb
   have hb'₀ : b' (e₁ q, e₃ Q) = e₂ (b (q, Q)) := by
     simp only [b', e₁, e₃, extChartAt_to_inv]
   have hφ : Tendsto (fun z : E₁ × E₃ ↦ (e₁.symm z.1, e₃.symm z.2)) (𝓝 (e₁ q, e₃ Q))
@@ -568,16 +582,11 @@ theorem isInvertible_mixedHessian_of_comp {R : M₁ × M₃ → ℝ} {b : M₁ �
     (mixedHessian I₁ I₃ R (q, Q)).IsInvertible := by
   subst hb₀
   -- Read `S`, `T`, `R` and `b` in the preferred charts and apply the normed-space statement.
-  have hb' : DifferentiableAt ℝ
-      (fun z : E₁ × E₃ ↦ extChartAt I₂ (b (q, Q))
-        (b ((extChartAt I₁ q).symm z.1, (extChartAt I₃ Q).symm z.2)))
-      (extChartAt I₁ q q, extChartAt I₃ Q Q) := by
-    simpa only [writtenInExtChartAt, extChartAt_prod, PartialEquiv.prod_coe_symm,
-      PartialEquiv.prod_coe, Function.comp_def] using hb.differentiableAt_writtenInExtChartAt
   have hMR' := isInvertible_cotangentMixedHessian_of_comp hS.contDiffAt_comp_prod_extChartAt_symm
     hT.contDiffAt_comp_prod_extChartAt_symm
     ((hR.contDiffAt_comp_prod_extChartAt_symm.fderiv_right (m := 1) le_rfl).differentiableAt
-      one_ne_zero) hb' (by simp only [extChartAt_to_inv])
+      one_ne_zero) (differentiableAt_extChartAt_comp_branch hb)
+    (by simp only [extChartAt_to_inv])
     (isInvertible_cotangentLegendreHessian_extChartAt hS hT h)
     (mixedHessian_eq_cotangentMixedHessian_extChartAt hS ▸ hMS)
     (mixedHessian_eq_cotangentMixedHessian_extChartAt hT ▸ hMT)
