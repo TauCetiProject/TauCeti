@@ -57,9 +57,10 @@ variable {X T : Scheme.{u}} (q : T ⟶ X)
 /-- Under the identification of the members of the pulled-back directed affine cover with inverse
 images of affine opens, its transition map along `U ⟶ V` is the inclusion `q⁻¹ U ⟶ q⁻¹ V`.
 
-The statement and its proof plan (cancel the open immersion `(q⁻¹ V).ι`, then `simp`) follow the
-inline `have` in the proof of Mathlib's `AlgebraicGeometry.Scheme.Hom.toNormalization`
-(`Mathlib/AlgebraicGeometry/Normalization.lean`), stated here as a named lemma. -/
+Up to moving the isomorphism `pullbackRestrictIsoRestrict q U.toOpens` to the other side, this is
+the transition fact proved inline, in a `have`, in Mathlib's
+`AlgebraicGeometry.Scheme.Hom.toNormalization` (`Mathlib/AlgebraicGeometry/Normalization.lean`),
+stated here as a named lemma. -/
 @[reassoc]
 theorem directedCover_pullback₁_trans_pullbackRestrictIsoRestrict_hom
     {U V : X.AffineZariskiSite} (i : U ⟶ V) :
