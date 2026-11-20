@@ -22,21 +22,22 @@ namespace TauCeti.Examples.HomComplexification
 
 /-- Literal nonzero imaginary scalar coefficient on an original native bundle fibre. -/
 theorem imaginary_native_line (x : ℝ) :
-    bundleHomComplexificationEquiv (F := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ) x
+    bundleHomComplexificationEquiv (F := ℝ) (G := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ) x
       (Complex.I ⊗ₜ[ℝ] (ContinuousLinearMap.id ℝ ℝ)) (1 ⊗ₜ[ℝ] (1 : ℝ)) =
         Complex.I ⊗ₜ[ℝ] (1 : ℝ) := by simp
 
 /-- The actual inverse recovers the imaginary coefficient, not its real restriction. -/
 theorem imaginary_inverse (x : ℝ) :
-    (bundleHomComplexificationEquiv (F := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ) x).symm
+    (bundleHomComplexificationEquiv (F := ℝ) (G := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ) x).symm
       (Complex.I • (ContinuousLinearMap.id ℝ ℝ).baseChangeComplex) =
       Complex.I ⊗ₜ[ℝ] (ContinuousLinearMap.id ℝ ℝ) := by
-  apply (bundleHomComplexificationEquiv (F := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ) x).injective
+  apply (bundleHomComplexificationEquiv (F := ℝ) (G := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ)
+    x).injective
   rw [ContinuousLinearEquiv.apply_symm_apply, bundleHomComplexificationEquiv_tmul]
 
 /-- This test does not reduce to the zero map. -/
 theorem imaginary_native_line_ne_zero (x : ℝ) :
-    bundleHomComplexificationEquiv (F := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ) x
+    bundleHomComplexificationEquiv (F := ℝ) (G := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ) x
       (Complex.I ⊗ₜ[ℝ] (ContinuousLinearMap.id ℝ ℝ)) (1 ⊗ₜ[ℝ] (1 : ℝ)) ≠ 0 := by
   rw [imaginary_native_line]
   intro h
@@ -45,7 +46,7 @@ theorem imaginary_native_line_ne_zero (x : ℝ) :
 
 /-- Literal real coefficient and value. -/
 theorem real_native_line (x : ℝ) :
-    bundleHomComplexificationEquiv (F := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ) x
+    bundleHomComplexificationEquiv (F := ℝ) (G := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ) x
       (1 ⊗ₜ[ℝ] (ContinuousLinearMap.id ℝ ℝ)) (1 ⊗ₜ[ℝ] (1 : ℝ)) =
         1 ⊗ₜ[ℝ] (1 : ℝ) := by simp
 
@@ -63,11 +64,11 @@ theorem varying_frame_square (t : ℝ) (u : ℂ ⊗[ℝ] (ℝ →L[ℝ] ℝ)) :
       (tensorContinuousLinearEquivComplexification ℝ)).arrowCongr
       ((ContinuousLinearEquiv.refl ℝ ℝ).baseChangeComplex.trans
         (tensorContinuousLinearEquivComplexification ℝ))
-      (bundleHomComplexificationEquiv (F := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ) t u) =
-    Complexification.strongDualLineEquiv ℝ
+      (bundleHomComplexificationEquiv (F := ℝ) (G := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ) t u) =
+    Complexification.continuousLinearMapEquiv ℝ ℝ
       ((((varyingFrame t).arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ)).baseChangeComplex.trans
         (tensorContinuousLinearEquivComplexification (ℝ →L[ℝ] ℝ))) u) := by
-  exact bundleHomComplexificationEquiv_in_frames (F := ℝ) (V := Trivial ℝ ℝ)
+  exact bundleHomComplexificationEquiv_in_frames (F := ℝ) (G := ℝ) (V := Trivial ℝ ℝ)
     (L := Trivial ℝ ℝ) t (varyingFrame t) (ContinuousLinearEquiv.refl ℝ ℝ) u
 
 /-- The two displayed real frames differ concretely. -/
@@ -75,10 +76,11 @@ theorem varyingFrame_nonconstant : varyingFrame 0 1 ≠ varyingFrame 1 1 := by n
 
 /-- The actual inverse recovers a real coefficient as well. -/
 theorem real_inverse (x : ℝ) :
-    (bundleHomComplexificationEquiv (F := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ) x).symm
+    (bundleHomComplexificationEquiv (F := ℝ) (G := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ) x).symm
       (ContinuousLinearMap.id ℝ ℝ).baseChangeComplex =
       1 ⊗ₜ[ℝ] (ContinuousLinearMap.id ℝ ℝ) := by
-  apply (bundleHomComplexificationEquiv (F := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ) x).injective
+  apply (bundleHomComplexificationEquiv (F := ℝ) (G := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ)
+    x).injective
   rw [ContinuousLinearEquiv.apply_symm_apply, bundleHomComplexificationEquiv_tmul, one_smul]
 
 /-- Native construction for arbitrary, possibly incomplete coefficient models. -/
@@ -88,11 +90,11 @@ theorem arbitrary_model_smooth (F : Type*) [NormedAddCommGroup F] [NormedSpace �
       (fun x : ℝ ↦ (ℂ ⊗[ℝ] Trivial ℝ F x) →L[ℂ] (ℂ ⊗[ℝ] Trivial ℝ ℝ x))
     ContMDiffVectorBundle n (Complexification F →L[ℂ] Complexification ℝ)
       (fun x : ℝ ↦ (ℂ ⊗[ℝ] Trivial ℝ F x) →L[ℂ] (ℂ ⊗[ℝ] Trivial ℝ ℝ x)) 𝓘(ℝ) := by
-  exact instContMDiffVectorBundleComplexificationHom (V := Trivial ℝ F) (L := Trivial ℝ ℝ)
+  exact instContMDiffVectorBundleComplexificationHom (G := ℝ) (V := Trivial ℝ F) (L := Trivial ℝ ℝ)
 
 /-- Evaluation on an infinite-dimensional continuous-function model. -/
 theorem infinite_model (x : ℝ) :
-    bundleHomComplexificationEquiv (F := C(Icc (0 : ℝ) 1, ℝ))
+    bundleHomComplexificationEquiv (F := C(Icc (0 : ℝ) 1, ℝ)) (G := ℝ)
       (V := Trivial ℝ C(Icc (0 : ℝ) 1, ℝ)) (L := Trivial ℝ ℝ) x
       (Complex.I ⊗ₜ[ℝ]
         (ContinuousMap.evalCLM (R := ℝ) (M := ℝ) (⟨0, by norm_num⟩ : Icc (0 : ℝ) 1)))
@@ -101,7 +103,7 @@ theorem infinite_model (x : ℝ) :
 
 /-- The nonzero infinite-dimensional evaluation client. -/
 theorem infinite_model_ne_zero (x : ℝ) :
-    bundleHomComplexificationEquiv (F := C(Icc (0 : ℝ) 1, ℝ))
+    bundleHomComplexificationEquiv (F := C(Icc (0 : ℝ) 1, ℝ)) (G := ℝ)
       (V := Trivial ℝ C(Icc (0 : ℝ) 1, ℝ)) (L := Trivial ℝ ℝ) x
       (Complex.I ⊗ₜ[ℝ]
         (ContinuousMap.evalCLM (R := ℝ) (M := ℝ) (⟨0, by norm_num⟩ : Icc (0 : ℝ) 1)))
@@ -116,6 +118,13 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
 
+/-- The density fibre has its native topological additive group. -/
+local instance densityFiberAddGroup (x : M) : IsTopologicalAddGroup (DensityBundle I M x) :=
+  VectorBundle.isTopologicalAddGroup ℝ ℝ (DensityBundle I M) x
+/-- The density fibre has native continuous real scalar multiplication. -/
+local instance densityFiberSMul (x : M) : ContinuousSMul ℝ (DensityBundle I M x) :=
+  VectorBundle.continuousSMul ℝ ℝ (DensityBundle I M) x
+
 /-- Actual tangent-to-density Hom, with the new smooth mixin on the native complex-Hom atlas. -/
 theorem tangent_density_smooth :
     letI := VectorBundle.restrictScalars ℝ ℂ
@@ -123,7 +132,8 @@ theorem tangent_density_smooth :
       (fun x : M ↦ (ℂ ⊗[ℝ] TangentSpace I x) →L[ℂ] (ℂ ⊗[ℝ] DensityBundle I M x))
     ContMDiffVectorBundle ∞ (Complexification E →L[ℂ] Complexification ℝ)
       (fun x : M ↦ (ℂ ⊗[ℝ] TangentSpace I x) →L[ℂ] (ℂ ⊗[ℝ] DensityBundle I M x)) I := by
-  exact instContMDiffVectorBundleComplexificationHom (V := TangentSpace I) (L := DensityBundle I M)
+  exact instContMDiffVectorBundleComplexificationHom (G := ℝ) (V := TangentSpace I) (L :=
+    DensityBundle I M)
 
 /-- The full original native tangent-density total-space diffeomorphism. -/
 theorem tangent_density_diffeomorph : Nonempty
@@ -133,13 +143,26 @@ theorem tangent_density_diffeomorph : Nonempty
         I.prod 𝓘(ℝ, Complexification E →L[ℂ] Complexification ℝ)⟯
       TotalSpace (Complexification E →L[ℂ] Complexification ℝ)
         (fun x : M ↦ (ℂ ⊗[ℝ] TangentSpace I x) →L[ℂ] (ℂ ⊗[ℝ] DensityBundle I M x))) :=
-  ⟨bundleHomComplexificationDiffeomorph⟩
+  ⟨bundleHomComplexificationDiffeomorph (G := ℝ)⟩
+
+omit [FiniteDimensional ℝ E] in
+/-- The arbitrary-target result includes actual tangent endomorphisms. -/
+theorem tangent_endomorphism_smooth :
+    letI := fun x ↦ VectorBundle.isTopologicalAddGroup ℝ E (TangentSpace I : M → Type _) x
+    letI := fun x ↦ VectorBundle.continuousSMul ℝ E (TangentSpace I : M → Type _) x
+    ContMDiffVectorBundle ∞ (Complexification E →L[ℂ] Complexification E)
+      (fun x : M ↦ (ℂ ⊗[ℝ] TangentSpace I x) →L[ℂ] (ℂ ⊗[ℝ] TangentSpace I x)) I := by
+  let : ∀ x, IsTopologicalAddGroup (TangentSpace I x) := fun x ↦
+    VectorBundle.isTopologicalAddGroup ℝ E (TangentSpace I : M → Type _) x
+  let : ∀ x, ContinuousSMul ℝ (TangentSpace I x) := fun x ↦
+    VectorBundle.continuousSMul ℝ E (TangentSpace I : M → Type _) x
+  infer_instance
 
 end NativeDensity
 /-- Zero coefficient rank, using the constructed original-fibre map. -/
 theorem zero_rank_apply (x : ℝ) (u : ℂ ⊗[ℝ] ((Fin 0 → ℝ) →L[ℝ] ℝ))
     (v : ℂ ⊗[ℝ] (Fin 0 → ℝ)) :
-    bundleHomComplexificationEquiv (F := Fin 0 → ℝ) (V := Trivial ℝ (Fin 0 → ℝ))
+    bundleHomComplexificationEquiv (F := Fin 0 → ℝ) (G := ℝ) (V := Trivial ℝ (Fin 0 → ℝ))
       (L := Trivial ℝ ℝ) x u v = 0 := by
   have hv : v = 0 := Subsingleton.elim _ _
   rw [hv, map_zero]
@@ -152,7 +175,7 @@ theorem empty_index_diffeomorph : Nonempty
         (𝓘(ℝ)).prod 𝓘(ℝ, Complexification (Empty → ℝ) →L[ℂ] Complexification ℝ)⟯
       TotalSpace (Complexification (Empty → ℝ) →L[ℂ] Complexification ℝ)
         (fun _ : ℝ ↦ (ℂ ⊗[ℝ] (Empty → ℝ)) →L[ℂ] (ℂ ⊗[ℝ] ℝ))) :=
-  ⟨bundleHomComplexificationDiffeomorph (V := Trivial ℝ (Empty → ℝ)) (L := Trivial ℝ ℝ)⟩
+  ⟨bundleHomComplexificationDiffeomorph (G := ℝ) (V := Trivial ℝ (Empty → ℝ)) (L := Trivial ℝ ℝ)⟩
 
 /-- The native empty manifold charts, with no chosen base point. -/
 local instance emptyBaseCharts : ChartedSpace ℝ Empty := ChartedSpace.empty ℝ Empty
@@ -165,15 +188,26 @@ theorem empty_base_diffeomorph : Nonempty
         (𝓘(ℝ)).prod 𝓘(ℝ, Complexification ℝ →L[ℂ] Complexification ℝ)⟯
       TotalSpace (Complexification ℝ →L[ℂ] Complexification ℝ)
         (fun _ : Empty ↦ (ℂ ⊗[ℝ] ℝ) →L[ℂ] (ℂ ⊗[ℝ] ℝ))) :=
-  ⟨bundleHomComplexificationDiffeomorph (V := Trivial Empty ℝ) (L := Trivial Empty ℝ)⟩
+  ⟨bundleHomComplexificationDiffeomorph (G := ℝ) (V := Trivial Empty ℝ) (L := Trivial Empty ℝ)⟩
 
 /-- Disconnected base: the original coefficient is recovered on each component. -/
 theorem disconnected_roundtrip (x : ℝ ⊕ ℝ) (u : ℂ ⊗[ℝ] (ℝ →L[ℝ] ℝ)) :
-    (bundleHomComplexificationDiffeomorph (F := ℝ) (IB := 𝓘(ℝ)) (n := ∞)
+    (bundleHomComplexificationDiffeomorph (F := ℝ) (G := ℝ) (IB := 𝓘(ℝ)) (n := ∞)
       (V := Trivial (ℝ ⊕ ℝ) ℝ) (L := Trivial (ℝ ⊕ ℝ) ℝ)).symm
-      ((bundleHomComplexificationDiffeomorph (F := ℝ) (IB := 𝓘(ℝ)) (n := ∞)
+      ((bundleHomComplexificationDiffeomorph (F := ℝ) (G := ℝ) (IB := 𝓘(ℝ)) (n := ∞)
         (V := Trivial (ℝ ⊕ ℝ) ℝ) (L := Trivial (ℝ ⊕ ℝ) ℝ)) ⟨x, u⟩) = ⟨x, u⟩ :=
   Diffeomorph.symm_apply_apply _ _
+
+/-- Native topological addition on the actual zero-dimensional density fibre. -/
+local instance zeroDimDensityFiberAddGroup (x : Fin 0 → ℝ) :
+    IsTopologicalAddGroup (DensityBundle 𝓘(ℝ, Fin 0 → ℝ) (Fin 0 → ℝ) x) :=
+  VectorBundle.isTopologicalAddGroup ℝ ℝ
+    (DensityBundle 𝓘(ℝ, Fin 0 → ℝ) (Fin 0 → ℝ)) x
+/-- Native scalar continuity on the actual zero-dimensional density fibre. -/
+local instance zeroDimDensityFiberSMul (x : Fin 0 → ℝ) :
+    ContinuousSMul ℝ (DensityBundle 𝓘(ℝ, Fin 0 → ℝ) (Fin 0 → ℝ) x) :=
+  VectorBundle.continuousSMul ℝ ℝ
+    (DensityBundle 𝓘(ℝ, Fin 0 → ℝ) (Fin 0 → ℝ)) x
 
 /-- The density fibre is nonzero even when the base has dimension zero. -/
 theorem zero_dim_density_nonzero (x : Fin 0 → ℝ) :
@@ -194,6 +228,82 @@ theorem zero_dim_tangent_density_diffeomorph : Nonempty
       TotalSpace (Complexification (Fin 0 → ℝ) →L[ℂ] Complexification ℝ)
         (fun x : Fin 0 → ℝ ↦ (ℂ ⊗[ℝ] TangentSpace 𝓘(ℝ, Fin 0 → ℝ) x) →L[ℂ]
           (ℂ ⊗[ℝ] DensityBundle 𝓘(ℝ, Fin 0 → ℝ) (Fin 0 → ℝ) x))) :=
-  ⟨bundleHomComplexificationDiffeomorph⟩
+  ⟨bundleHomComplexificationDiffeomorph (G := ℝ)⟩
+
+section ArbitraryTarget
+variable (F G : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+/-- Arbitrary source and target models give the actual smooth native Hom atlas. -/
+theorem arbitrary_target_smooth (n : ℕ∞ω) :
+    ContMDiffVectorBundle n (Complexification F →L[ℂ] Complexification G)
+      (fun x : ℝ ↦ (ℂ ⊗[ℝ] Trivial ℝ F x) →L[ℂ] (ℂ ⊗[ℝ] Trivial ℝ G x)) 𝓘(ℝ) :=
+  inferInstance
+
+/-- The real and imaginary coefficients of arbitrary target rank survive inverse recovery. -/
+theorem arbitrary_target_inverse (x : ℝ) (T S : F →L[ℝ] G) :
+    (bundleHomComplexificationEquiv (F := F) (G := G)
+      (V := Trivial ℝ F) (L := Trivial ℝ G) x).symm
+      (T.baseChangeComplex + Complex.I • S.baseChangeComplex) =
+        1 ⊗ₜ[ℝ] T + Complex.I ⊗ₜ[ℝ] S := by
+  apply (bundleHomComplexificationEquiv (F := F) (G := G)
+    (V := Trivial ℝ F) (L := Trivial ℝ G) x).injective
+  simp [bundleHomComplexificationEquiv_tmul]
+
+/-- No norm or completeness on original fibres is required beyond the native bundle models. -/
+theorem arbitrary_native_target
+    {B EB HB : Type*} [TopologicalSpace B]
+    [NormedAddCommGroup EB] [NormedSpace ℝ EB] [TopologicalSpace HB]
+    (I : ModelWithCorners ℝ EB HB) [ChartedSpace HB B]
+    (V L : B → Type*) [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+    [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+    [FiberBundle F V] [VectorBundle ℝ F V]
+    [∀ x, AddCommGroup (L x)] [∀ x, Module ℝ (L x)] [∀ x, TopologicalSpace (L x)]
+    [TopologicalSpace (TotalSpace G L)] [FiberBundle G L] [VectorBundle ℝ G L]
+    (n : ℕ∞ω) :
+    letI := fun x ↦ VectorBundle.isTopologicalAddGroup ℝ G L x
+    letI := fun x ↦ VectorBundle.continuousSMul ℝ G L x
+    Nonempty
+      (TotalSpace (Complexification (F →L[ℝ] G))
+        (fun x ↦ ℂ ⊗[ℝ] (V x →L[ℝ] L x))
+        ≃ₘ^n⟮I.prod 𝓘(ℝ, Complexification (F →L[ℝ] G)),
+          I.prod 𝓘(ℝ, Complexification F →L[ℂ] Complexification G)⟯
+        TotalSpace (Complexification F →L[ℂ] Complexification G)
+          (fun x ↦ (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x))) := by
+  let : ∀ x, IsTopologicalAddGroup (L x) := fun x ↦
+    VectorBundle.isTopologicalAddGroup ℝ G L x
+  let : ∀ x, ContinuousSMul ℝ (L x) := fun x ↦
+    VectorBundle.continuousSMul ℝ G L x
+  exact ⟨bundleHomComplexificationDiffeomorph (F := F) (G := G)⟩
+
+end ArbitraryTarget
+
+/-- A genuinely two-dimensional target coefficient. -/
+theorem product_target_nonzero (x : ℝ) :
+    bundleHomComplexificationEquiv (F := ℝ) (G := ℝ × ℝ)
+      (V := Trivial ℝ ℝ) (L := Trivial ℝ (ℝ × ℝ)) x
+      (Complex.I ⊗ₜ[ℝ] ContinuousLinearMap.inl ℝ ℝ ℝ) (1 ⊗ₜ[ℝ] (1 : ℝ)) ≠ 0 := by
+  rw [bundleHomComplexificationEquiv_tmul_apply_tmul]
+  intro h
+  have := congrArg (fun u ↦ (imaginaryPart (ℝ × ℝ) u).1) h
+  simp at this
+
+/-- The full comparison also admits a zero-dimensional target model. -/
+theorem zero_target_smooth :
+    ContMDiffVectorBundle ∞ (Complexification ℝ →L[ℂ] Complexification (Fin 0 → ℝ))
+      (fun x : ℝ ↦ (ℂ ⊗[ℝ] Trivial ℝ ℝ x) →L[ℂ]
+        (ℂ ⊗[ℝ] Trivial ℝ (Fin 0 → ℝ) x)) 𝓘(ℝ) := inferInstance
+
+/-- An actual nonzero infinite-dimensional target, with no finite-rank target hypothesis. -/
+theorem infinite_target_nonzero (x : ℝ) :
+    bundleHomComplexificationEquiv (F := ℝ) (G := C(Icc (0 : ℝ) 1, ℝ))
+      (V := Trivial ℝ ℝ) (L := Trivial ℝ C(Icc (0 : ℝ) 1, ℝ)) x
+      (Complex.I ⊗ₜ[ℝ] (ContinuousLinearMap.id ℝ ℝ).smulRight
+        (ContinuousMap.const (Icc (0 : ℝ) 1) (1 : ℝ))) (1 ⊗ₜ[ℝ] (1 : ℝ)) ≠ 0 := by
+  rw [bundleHomComplexificationEquiv_tmul_apply_tmul]
+  intro h
+  have := congrArg (fun u ↦ imaginaryPart C(Icc (0 : ℝ) 1, ℝ) u
+    (⟨0, by norm_num⟩ : Icc (0 : ℝ) 1)) h
+  simp at this
 
 end TauCeti.Examples.HomComplexification
