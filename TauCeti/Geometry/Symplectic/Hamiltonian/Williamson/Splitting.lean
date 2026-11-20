@@ -313,7 +313,7 @@ private theorem IsNondegenerateQuadraticFamily.restrict_and_restrict_orthogonal
     ext ⟨a, b⟩
     have hab : QuadraticMap.polar (Q i) a b = 0 := by
       rw [← ω.apply_hamiltonianEnd]
-      exact b.2 _ ((Module.End.mem_invtSubmodule _).1 (hQL i) a.2)
+      exact mem_orthogonal_iff.1 b.2 _ ((Module.End.mem_invtSubmodule _).1 (hQL i) a.2)
     simp only [QuadraticMap.comp_apply, LinearEquiv.coe_coe, Submodule.coe_prodEquivOfIsCompl',
       QuadraticMap.prod_apply, Submodule.subtype_apply]
     rw [QuadraticMap.map_add (Q i), hab, add_zero]
