@@ -23,7 +23,7 @@ the measures of that decomposition:
   density `∏_w y_w⁻¹` (`archHaar_eq_withDensity`), and it is invariant under the dilations
   `y ↦ c y`, `c > 0` (`map_archHaar_smul`), as well as independent positive dilations
   (`map_archHaar_mul_left`), coordinatewise inversion (`map_archHaar_inv`) and the action of the
-  units (`map_archHaar_unitScale`).
+  units (`map_archHaar_unitScale`, `measurePreserving_unitScale`).
 * `surfaceHaar K` is the measure `d*x` on `S` induced by the product-over-places normalization of
   `dy / y`: the mass of `A ⊆ S` is the `dy / y`-mass of the parameters with surface part in `A`
   and norm in `[1, e]` (`surfaceHaar_apply`). It is σ-finite, and a bounded set of parameters
@@ -138,6 +138,12 @@ theorem map_archHaar_unitScale (u : (𝓞 K)ˣ) : (archHaar K).map (unitScale u)
     simp [unitScale_apply]
   rw [hscale]
   exact map_archHaar_mul_left fun w ↦ pow_pos (pos_iff.mpr (by simp)) 2
+
+/-- Scaling by a unit preserves the multiplicative Haar measure `archHaar K`. -/
+theorem measurePreserving_unitScale (u : (𝓞 K)ˣ) :
+    MeasurePreserving (unitScale u) (archHaar K) (archHaar K) where
+  measurable := (continuous_unitScale u).measurable
+  map_eq := map_archHaar_unitScale u
 
 /-! ### The Haar measure of the norm-one hypersurface -/
 

@@ -79,9 +79,7 @@ def preimageSkeletonSpectralSequencePageXIsoGraded {f : E → B} (hf : Continuou
     (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (hra : pq.2 + 3 ≤ r) (hrb : 2 - pq.1 - 2 * pq.2 ≤ r) :
     ((filteredSpaceSpectralSequence M (monotone_preimageSkeleton (C := C) f)).page r).X pq ≅
       cokernel (Abelian.SpectralObject.abutmentFiltrationMap
-        (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-          (monotone_chainFiltration ((AlgebraicTopology.singularChainComplexFunctor _).obj M)
-            (monotone_preimageSkeleton (C := C) f))))
+        (filteredSpaceSpectralObject M (monotone_preimageSkeleton (C := C) f))
         pq.2 (pq.1 + pq.2)) :=
   filteredSpaceSpectralSequencePageXIsoGradedOfExhaustive M _
     (fun _ hK ↦ exists_subset_preimageSkeleton_of_isCompact hf hfC hK)

@@ -45,6 +45,9 @@ once.
   updates the corresponding entry of `u` or of `v`.
 * `Fin.append_comp_swap_castAdd`, `Fin.append_comp_swap_natAdd`: exchanging two entries of
   `Fin.append u v` exchanges the corresponding entries of `u` or of `v`.
+* `Fin.comp_append`, `Fin.comp_append_comp_cast`, `Fin.comp_cast_comp_cast`: postcomposing an
+  appended (or casted appended) tuple with a function, and collapsing nested `Fin.cast`
+  precompositions.
 * `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
   `Fin.cons x a`.
 * `Fin.contractNth_castSucc_castSucc_snoc`, `Fin.contractNth_castSucc_last_snoc`: contracting
@@ -195,6 +198,23 @@ theorem append_comp_swap_natAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) 
         (fun h ↦ by simp [Fin.ext_iff] at h; omega) (fun h ↦ by simp [Fin.ext_iff] at h; omega)]
       simp)
     (fun i ↦ by rw [Function.comp_apply, ← (natAdd_injective n m).map_swap j k i]; simp) i
+
+/-- Postcomposing `Fin.append u v` with `f` appends `f ∘ u` and `f ∘ v`. -/
+theorem comp_append {β : Sort*} {n : ℕ} (f : α → β) (u : Fin m → α) (v : Fin n → α) :
+    f ∘ append u v = append (f ∘ u) (f ∘ v) :=
+  funext fun i ↦ addCases (fun _ ↦ by simp) (fun _ ↦ by simp) i
+
+/-- Postcomposing a casted appended tuple `Fin.append u v ∘ Fin.cast h` with `f` appends `f ∘ u`
+and `f ∘ v` with the same cast. -/
+theorem comp_append_comp_cast {β : Sort*} {n k : ℕ} (f : α → β) (u : Fin m → α) (v : Fin n → α)
+    (h : k = m + n) :
+    f ∘ (append u v ∘ Fin.cast h) = append (f ∘ u) (f ∘ v) ∘ Fin.cast h := by
+  rw [← Function.comp_assoc, comp_append]
+
+/-- Precomposing a tuple with two `Fin.cast` maps precomposes with the composite cast. -/
+theorem comp_cast_comp_cast {k n : ℕ} (u : Fin n → α) (h₁ : k = m) (h₂ : m = n) :
+    (u ∘ Fin.cast h₂) ∘ Fin.cast h₁ = u ∘ Fin.cast (h₁.trans h₂) :=
+  rfl
 
 section ContractNth
 
