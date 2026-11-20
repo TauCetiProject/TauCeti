@@ -148,10 +148,7 @@ lemma transportStrongTrans_naturality_inv_app {p q : Γ} (g : p ⟶ q)
 /-- The unit isomorphism `E_(𝟙 p) ≅ 𝟭` of transport, as an invertible modification
 `N.transportStrongTrans (𝟙 p) ≅ 𝟙 (actions p)`. Its compatibility with the actions is
 `transportCommIso_id`. -/
--- The body is exposed so that its component and naturality isomorphisms are definitionally
--- `E_g` and `N.transportCommIso g a`: the statements of the component lemmas below, and of those
--- of `transportStrongTransId` and `transportStrongTransComp`, only typecheck with this unfolding.
-@[expose] noncomputable def transportStrongTransId (p : Γ) :
+noncomputable def transportStrongTransId (p : Γ) :
     N.transportStrongTrans (𝟙 p) ≅ 𝟙 (actions p) :=
   isoMk (fun _ ↦ Cat.Hom.isoMk (N.transportId p)) (fun {a b} f ↦ by
     obtain rfl : a = ⟨SingleObj.star H⟩ := rfl
@@ -169,10 +166,7 @@ lemma transportStrongTrans_naturality_inv_app {p q : Γ} (g : p ⟶ q)
 /-- The composition isomorphism `E_g ⋙ E_h ≅ E_gh` of transport, inverted, as an invertible
 modification `N.transportStrongTrans gh ≅ N.transportStrongTrans g ≫ N.transportStrongTrans h`
 for `g ≫ h = gh`. Its compatibility with the actions is `transportCommIso_comp`. -/
--- The body is exposed so that its component and naturality isomorphisms are definitionally
--- `E_g` and `N.transportCommIso g a`: the statements of the component lemmas below, and of those
--- of `transportStrongTransId` and `transportStrongTransComp`, only typecheck with this unfolding.
-@[expose] noncomputable def transportStrongTransComp {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
+noncomputable def transportStrongTransComp {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
     (gh : p ⟶ r) (hgh : g ≫ h = gh) :
     N.transportStrongTrans gh ≅ N.transportStrongTrans g ≫ N.transportStrongTrans h :=
   isoMk (fun _ ↦ Cat.Hom.isoMk (N.transportComp g h gh hgh).symm) (fun {a b} f ↦ by
@@ -358,28 +352,28 @@ lemma equivariantTransportEquivalence_unit_hom_as_app_toNatTrans_app {p q : Γ} 
     (a : LocallyDiscrete (SingleObj H)) (X : fiber actions p) :
     ((N.equivariantTransportEquivalence g).unit.hom.as.app a).toNatTrans.app X =
       (N.transportId p).inv.app X ≫ (N.transportComp g.hom g.inv (𝟙 p) g.hom_inv_id).inv.app X :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma equivariantTransportEquivalence_unit_inv_as_app_toNatTrans_app {p q : Γ} (g : p ≅ q)
     (a : LocallyDiscrete (SingleObj H)) (X : fiber actions p) :
     ((N.equivariantTransportEquivalence g).unit.inv.as.app a).toNatTrans.app X =
       (N.transportComp g.hom g.inv (𝟙 p) g.hom_inv_id).hom.app X ≫ (N.transportId p).hom.app X :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma equivariantTransportEquivalence_counit_hom_as_app_toNatTrans_app {p q : Γ} (g : p ≅ q)
     (a : LocallyDiscrete (SingleObj H)) (X : fiber actions q) :
     ((N.equivariantTransportEquivalence g).counit.hom.as.app a).toNatTrans.app X =
       (N.transportComp g.inv g.hom (𝟙 q) g.inv_hom_id).hom.app X ≫ (N.transportId q).hom.app X :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma equivariantTransportEquivalence_counit_inv_as_app_toNatTrans_app {p q : Γ} (g : p ≅ q)
     (a : LocallyDiscrete (SingleObj H)) (X : fiber actions q) :
     ((N.equivariantTransportEquivalence g).counit.inv.as.app a).toNatTrans.app X =
       (N.transportId q).inv.app X ≫ (N.transportComp g.inv g.hom (𝟙 q) g.inv_hom_id).inv.app X :=
-  rfl
+  (rfl)
 
 end NormalizedTransport
 
