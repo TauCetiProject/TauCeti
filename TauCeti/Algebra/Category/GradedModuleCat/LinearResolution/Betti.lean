@@ -36,8 +36,9 @@ covers, `dᵢ = dim_k End_A(Sᵢ)`. Hence:
   series are supported on the diagonal `d = n`, provided every `dᵢ ≠ 0` and the `Sᵢ` represent
   every finite simple graded module concentrated in degree zero;
 * the Betti series of `M{1}` is `q` times the Betti series of `M`;
-* when `M` vanishes below degree `c`, the Betti series vanishes below the shifted diagonal
-  `j = c + n`, so its value at `t = -1` is defined coefficientwise in `q`.
+* when `M` vanishes below degree `c`, the Betti series at each `Pᵢ` with `dᵢ ≠ 0` vanishes below
+  the shifted diagonal `j = c + n`; for `M` vanishing in negative degrees, its value at `t = -1`
+  is therefore defined coefficientwise in `q`.
 
 The resolution may be infinite: each coefficient of the series is a coordinate of the class of a
 single term, so no finite projective dimension is needed.
@@ -62,9 +63,9 @@ In the namespace `TauCeti.GradedProjectiveResolution`:
 * `IsMinimal.coeff_coeff_bettiPoincarePowerSeries_nonneg`: at each `Pᵢ` with `dᵢ ≠ 0`, the Betti
   series of a minimal resolution has nonnegative coefficients.
 * `IsMinimal.coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_lt` and
-  `IsMinimal.hasEulerPowerSeries_bettiPoincarePowerSeries`: the Betti series of a minimal resolution
-  vanishes below a shifted diagonal, so it has a well-defined value at `t = -1` coefficientwise in
-  `q`.
+  `IsMinimal.hasEulerPowerSeries_bettiPoincarePowerSeries`: at each `Pᵢ` with `dᵢ ≠ 0`, the Betti
+  series of a minimal resolution vanishes below a shifted diagonal; for `M` vanishing in negative
+  degrees it has a well-defined value at `t = -1` coefficientwise in `q`.
 * `IsMinimal.isLinear_iff_diagonal_bettiPoincarePowerSeries`: a minimal resolution is linear
   exactly when its Betti series have diagonal support.
 * `IsMinimal.bettiPoincarePowerSeries_shiftObj_one`: the Betti series of `M{1}` is `q` times that
