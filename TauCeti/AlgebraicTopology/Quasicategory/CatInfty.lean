@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicTopology.SimplicialCategory.SimplicialObject
 public import Mathlib.AlgebraicTopology.SimplicialNerve
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Inner.PushoutProduct
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
-public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn
+public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic
 public import TauCeti.AlgebraicTopology.SimplicialNerve.Quasicategory
 public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
 
