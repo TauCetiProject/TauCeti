@@ -37,8 +37,10 @@ This applies to words in the generators of a Coxeter group, whose Coxeter graph 
 
 * `List.eq_of_isOneDegenerateOrder`: a function of the orderings of a duplicate-free
   one-degenerate order that is invariant under commutations and rotations is constant.
-* `List.IsOneDegenerateOrder.append_singleton` builds a one-degenerate order letter by letter, and
-  `List.IsOneDegenerateOrder.map_equiv` transports one along an equivalence.
+* `List.IsOneDegenerateOrder.append_singleton` builds a one-degenerate order letter by letter,
+  `List.IsOneDegenerateOrder.map_equiv` transports one along an equivalence, and
+  `List.isOneDegenerateOrder_of_pairwise` / `List.isOneDegenerateOrder_finRange_of_lt` construct one
+  from a pairwise relation or the natural order on `Fin n`.
 
 ## References
 
@@ -184,6 +186,25 @@ theorem IsOneDegenerateOrder.map_equiv {adj' : β → β → Prop} {S : List β}
   have hS' : S = S₁.map e ++ e z :: S₂.map e := by
     simpa [map_map] using congrArg (map e) hS
   exact e.injective (h _ _ _ hS' (e x) (mem_map_of_mem hx) (e y) (mem_map_of_mem hy) hxz hyz)
+
+/-- A list satisfying `S.Pairwise r` is a one-degenerate order for `adj` whenever every element of
+`S` is adjacent to at most one element of `S` preceding it with respect to `r`. -/
+theorem isOneDegenerateOrder_of_pairwise {r : α → α → Prop} {S : List α} (hS : S.Pairwise r)
+    (h : ∀ z ∈ S, ∀ x ∈ S, ∀ y ∈ S, r x z → r y z → adj z x → adj z y → x = y) :
+    IsOneDegenerateOrder adj S := by
+  intro S₁ z S₂ hEq x hx y hy hzx hzy
+  have hz : z ∈ S := hEq ▸ mem_append_right S₁ mem_cons_self
+  have hxS : x ∈ S := hEq ▸ mem_append_left _ hx
+  have hyS : y ∈ S := hEq ▸ mem_append_left _ hy
+  rw [hEq, pairwise_append] at hS
+  exact h z hz x hxS y hyS (hS.2.2 x hx z mem_cons_self) (hS.2.2 y hy z mem_cons_self) hzx hzy
+
+/-- `List.finRange n` is a one-degenerate order for `adj` whenever every element of `Fin n` is
+adjacent to at most one strictly smaller element. -/
+theorem isOneDegenerateOrder_finRange_of_lt {n : ℕ} {adj : Fin n → Fin n → Prop}
+    (h : ∀ z x y : Fin n, x < z → y < z → adj z x → adj z y → x = y) :
+    IsOneDegenerateOrder adj (finRange n) :=
+  isOneDegenerateOrder_of_pairwise (pairwise_lt_finRange n) fun z _ x _ y _ => h z x y
 
 /-- **Orderings of a forest are connected.** If `S` is a duplicate-free one-degenerate order for a
 symmetric relation `adj`, then a function of the orderings of `S` that is invariant under

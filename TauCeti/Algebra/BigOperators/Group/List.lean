@@ -32,6 +32,8 @@ entries whose relative order differs has commuting images.
 * `List.prod_map_erase_of_eq_one`: `∏_{i ∈ l.erase a} f i = ∏_{i ∈ l} f i` when `f a = 1`.
 * `List.prod_map_eq_of_perm`: two orderings of the same entries have the same product of images if
   the images of every inverted pair commute.
+* `SemiconjBy.list_map_prod_right`: an element semiconjugating `f i` to `g i` along a list
+  semiconjugates `(l.map f).prod` to `(l.map g).prod`.
 -/
 
 public section
@@ -107,5 +109,19 @@ theorem prod_map_eq_of_perm (f : ι → M) {l l' : List ι} (hp : l.Perm l')
     rw [map_cons, prod_cons, key,
       ih hp' fun x y hxy hyx => h x y (hxy.trans (sublist_cons_self a t))
         (hyx.trans ((sublist_cons_self a v).append_left u))]
+
+/-- If `a` semiconjugates `f i` to `g i` for every entry `i` of `l`, then `a` semiconjugates the
+product of `l.map f` to the product of `l.map g`. -/
+@[to_additive /-- If `a` additively semiconjugates `f i` to `g i` for every entry `i` of `l`, then
+`a` additively semiconjugates the sum of `l.map f` to the sum of `l.map g`. -/]
+theorem _root_.SemiconjBy.list_map_prod_right {a : M} {f g : ι → M} (l : List ι)
+    (h : ∀ i ∈ l, SemiconjBy a (f i) (g i)) :
+    SemiconjBy a (l.map f).prod (l.map g).prod := by
+  induction l with
+  | nil => simp
+  | cons x t ih =>
+    rw [forall_mem_cons] at h
+    rw [map_cons, prod_cons, map_cons, prod_cons]
+    exact h.1.mul_right (ih h.2)
 
 end List
