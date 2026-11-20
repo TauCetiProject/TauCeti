@@ -9,6 +9,9 @@ public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
+public import TauCeti.Geometry.Lie.Basic
+public import TauCeti.Topology.Algebra.ProperAction.Basic
+public import TauCeti.Topology.FiberBundle.Separation
 
 /-!
 # Cotangent lifts of diffeomorphisms
@@ -49,7 +52,9 @@ cotangent lift of each `x ↦ g • x` is the action of `g` on `T*M`
 (`Diffeomorph.cotangent_constSmul`). Cotangent lifts are equivariant for these actions: the
 cotangent lift of a diffeomorphism intertwines the lifted actions exactly when the diffeomorphism
 intertwines the actions on the base (`Diffeomorph.cotangent_smul`,
-`Diffeomorph.forall_cotangent_smul_iff`).
+`Diffeomorph.forall_cotangent_smul_iff`). The cotangent lift of a free action is free
+(`TauCeti.CotangentBundle.instIsCancelSMul`), and that of a proper action is proper
+(`TauCeti.CotangentBundle.properSMul`), since the bundle projection is equivariant.
 
 ## References
 
@@ -308,6 +313,28 @@ instance instContMDiffSMul {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace 
       (Filter.Eventually.of_forall fun q ↦ smul_eq_mk q.1 q.2)
     exact (((contMDiff_inv IG ∞).comp (contMDiff_fst.comp contMDiff_fst)).smul
       contMDiff_snd).contMDiffAt
+
+/-- **The cotangent lift of a free action is free.** An element fixing a covector fixes its base
+point, since the cotangent-lifted action covers the action on `M`. -/
+instance instIsCancelSMul [IsCancelSMul G M] : IsCancelSMul G (CotangentBundle I M) where
+  left_cancel' g _ _ h := MulAction.injective g h
+  right_cancel' g g' z h := IsCancelSMul.right_cancel g g' z.proj (by
+    rw [← proj_smul, h, proj_smul])
+
+/-- **The cotangent lift of a proper smooth action is proper.** If a Lie group `G` acts smoothly
+and properly on `M`, then the cotangent-lifted action, which is continuous, is proper, because the
+bundle projection `T*M → M` is equivariant. This is not an instance, since the model of `G` cannot
+be inferred from the conclusion. -/
+theorem properSMul {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace 𝕜 EG]
+    [TopologicalSpace HG] {IG : ModelWithCorners 𝕜 EG HG} [TopologicalSpace G] [ChartedSpace HG G]
+    [LieGroup IG ∞ G] [ContMDiffSMul IG I ∞ G M] [ProperSMul G M] :
+    ProperSMul G (CotangentBundle I M) :=
+  have := IG.t2Space_of_lieGroup (G := G) ∞
+  have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
+  have := ContMDiffSMul.continuousSMul (I := IG) (I' := I.prod 𝓘(𝕜, E →L[𝕜] 𝕜))
+    (G := G) (M := CotangentBundle I M) ∞
+  (FiberBundle.continuous_proj (E →L[𝕜] 𝕜) fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜).properSMul
+    proj_smul
 
 end TauCeti.CotangentBundle
 
