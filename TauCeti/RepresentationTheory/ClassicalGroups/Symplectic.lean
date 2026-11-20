@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
+import TauCeti.LinearAlgebra.BilinearForm.Isotropic
 
 /-!
 # The standard representation of the symplectic group
@@ -292,6 +294,26 @@ theorem char_stdSymplecticDualFDRep (g : Matrix.symplecticGroup (Fin n) k) :
         Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) k) := by
   simpa only [FDRep.character, FDRep.of_ρ', Representation.character] using
     char_stdSymplecticDualRep k n g
+
+/-- **`Sp₂ₙ(k)` acts transitively on the isotropic subspaces of each dimension.** Two subspaces of
+`k^(2n)` that are isotropic for the standard alternating form and have the same dimension are
+related by the standard action of a symplectic matrix. This holds in every characteristic. -/
+theorem exists_map_stdSymplecticRep_eq {U₁ U₂ : Submodule k ((Fin n ⊕ Fin n) → k)}
+    (h₁ : U₁ ≤ LinearMap.BilinForm.orthogonal (stdSymplecticBilinForm k n) U₁)
+    (h₂ : U₂ ≤ LinearMap.BilinForm.orthogonal (stdSymplecticBilinForm k n) U₂)
+    (h : Module.finrank k U₁ = Module.finrank k U₂) :
+    ∃ g : Matrix.symplecticGroup (Fin n) k, U₁.map (stdSymplecticRep k n g) = U₂ := by
+  obtain ⟨g, hg⟩ := (isAlt_stdSymplecticBilinForm k n).exists_isometryEquiv_map_eq
+    (stdSymplecticBilinForm_nondegenerate k n) h₁ h₂ h
+  -- The matrix of an isometry of `vᵀ J w` is symplectic.
+  have hA : LinearMap.toMatrix' (g : ((Fin n ⊕ Fin n) → k) →ₗ[k] (Fin n ⊕ Fin n) → k) ∈
+      Matrix.symplecticGroup (Fin n) k := by
+    rw [SymplecticGroup.mem_iff']
+    apply Matrix.toBilin'.injective
+    rw [← Matrix.toBilin'_comp, Matrix.toLin'_toMatrix', ← stdSymplecticBilinForm]
+    exact LinearMap.ext₂ fun x y ↦ g.map_app y x
+  refine ⟨⟨_, hA⟩, ?_⟩
+  rw [stdSymplecticRep_apply, ← Matrix.toLin'_apply', Matrix.toLin'_toMatrix', hg]
 
 end Field
 
