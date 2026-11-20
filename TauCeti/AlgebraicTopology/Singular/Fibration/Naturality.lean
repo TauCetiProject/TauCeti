@@ -97,7 +97,7 @@ abbrev serreSpectralSequenceMap (R : Type u) [Ring R] (hfg : f ≫ p' = p ≫ g)
     serreSpectralSequence C p R ⟶ serreSpectralSequence C' p' R :=
   filteredSpaceSpectralSequenceMap (ModuleCat.of R R) (monotone_preimageSkeleton p)
     (monotone_preimageSkeleton p') f
-    (mapsTo_preimageSkeleton (congrArg (fun h : E ⟶ B' ↦ ⇑h) hfg) hg)
+    (mapsTo_preimageSkeleton (by rw [← TopCat.coe_comp, hfg, TopCat.coe_comp]) hg)
 
 end Map
 
@@ -113,7 +113,7 @@ with `f ≫ p' = p` induces a morphism from the Serre spectral sequence of `p` o
 abbrev serreSpectralSequenceMapOver (R : Type u) [Ring R] (hf : f ≫ p' = p) :
     serreSpectralSequence C p R ⟶ serreSpectralSequence C p' R :=
   serreSpectralSequenceMap C C R (g := 𝟙 B) (hf.trans (Category.comp_id p).symm)
-    fun _ _ hx ↦ hx
+    fun _ ↦ by rw [TopCat.coe_id]; exact mapsTo_id _
 
 /-- On the stage `b = k - 1 ≤ b + 1` of the skeletal filtrations, the map of pairs induced by a map
 `f` over `B` is the map `(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹)) ⟶ (p'⁻¹(Xᵏ), p'⁻¹(Xᵏ⁻¹))` of preimages of
@@ -130,7 +130,7 @@ private lemma singularHomologyMap_preimagePairMap_comp_eqToHom (hf : f ≫ p' = 
           (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair (p := p) k b hb)).symm ≫
         TopPair.singularHomologyMap (filteredSpaceStepMap (monotone_preimageSkeleton (C := C) p)
           (monotone_preimageSkeleton (C := C) p') f
-          (mapsTo_preimageSkeleton_of_comp_eq (congrArg (fun h : E ⟶ B ↦ ⇑h) hf))
+          (mapsTo_preimageSkeleton_of_comp_eq (by rw [← TopCat.coe_comp, hf]))
           (Int.le_add_one le_rfl)) (ModuleCat.of R R) n :=
   TopPair.singularHomologyMap_comp_eqToHom_of_eq _
     (preimageSkeleton_eq_preimage_skeletonLT p k b hb).symm
@@ -172,7 +172,7 @@ theorem serreSpectralSequenceFirstPageXIsoSigma_hom_naturality (hf : f ≫ p' = 
         ((serreSpectralSequenceMapOver C R hf).hom 2 le_rfl).f pq =
       TopPair.singularHomologyMap (filteredSpaceStepMap (monotone_preimageSkeleton (C := C) p)
           (monotone_preimageSkeleton (C := C) p') f
-          (mapsTo_preimageSkeleton_of_comp_eq (congrArg (fun h : E ⟶ B ↦ ⇑h) hf))
+          (mapsTo_preimageSkeleton_of_comp_eq (by rw [← TopCat.coe_comp, hf]))
           (Int.le_add_one le_rfl))
           (ModuleCat.of R R) (q + k) ≫
         (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
