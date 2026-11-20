@@ -12,15 +12,18 @@ public import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.MeasureTheory.Measure.Restrict.Chain
 
 /-!
-# De Giorgi–Nash–Moser on balls under inverse-coercive ellipticity
+# De Giorgi–Nash–Moser under inverse-coercive ellipticity
 
 Let `a` be a measurable coefficient field on an open set of `ℝⁿ` which is uniformly elliptic in the
 almost-everywhere inverse-coercive sense (`TauCeti.PDE.IsUniformlyEllipticAE`): for almost every
 `x` and every `ξ`, `ξ · a(x)ξ ≥ λ‖ξ‖²` and `ξ · a(x)⁻¹ξ ≥ Λ⁻¹‖ξ‖²`, with no symmetry. This file
-proves the two interior regularity theorems for weak solutions of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0` in the
-form in which they are used: on a ball, quantitative in the `L²` norm of the solution, and with
-constants depending only on the ellipticity ratio `Λ / λ`, the dimension and the normalization
-of the Haar measure, in every dimension.
+proves the interior regularity theorems for weak solutions of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`, and of the
+equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ` with a right-hand side, with constants depending only on the
+ellipticity ratio `Λ / λ`, the dimension and the normalization of the Haar measure (and, with a
+right-hand side, the exponents of the data), in every dimension.
+
+For the homogeneous equation the two theorems are stated in the form in which they are used: on a
+ball and quantitative in the `L²` norm of the solution.
 
 * **De Giorgi's theorem.** A weak solution `u ∈ H¹(B(x₀, 2r))` has a precise representative
   which is `α`-Hölder on `B(x₀, r)` with constant `C r^(-α) r^(-n/2) ‖u‖_{L²(B(x₀, 2r))}`
@@ -65,7 +68,7 @@ depends only on the dimension, so the constant does too.
 * J. Moser, *On Harnack's theorem for elliptic differential equations*, Comm. Pure Appl. Math.
   **14** (1961), 577–591.
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Theorems 8.20, 8.22 and 8.24.
+  Theorems 8.17, 8.20, 8.22 and 8.24.
 -/
 
 public section
