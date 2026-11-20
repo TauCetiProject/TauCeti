@@ -17,8 +17,8 @@ of cones `C_{/p} ⟶ C_{/j ≫ p}` is a right fibration; taking `L` empty, so is
 coslices, with left fibrations. These are the special cases, for `S` a point, of the relative
 results `SSet.slice.rightFibration_restrictionMap` and `SSet.coslice.leftFibration_restrictionMap`
 of `TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Slice`: for an inner
-fibration `p : X ⟶ S`, the relative slice and coslice maps are right and left fibrations
-(HTT Proposition 2.1.2.1). Those are proved through the pushout-join lifting criteria
+fibration `p : X ⟶ S`, the relative slice and coslice maps along a monomorphism are right and left
+fibrations (HTT Proposition 2.1.2.1). Those are proved through the pushout-join lifting criteria
 `SSet.slice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout` and
 `SSet.coslice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout`.
 

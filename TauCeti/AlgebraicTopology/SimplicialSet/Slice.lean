@@ -506,6 +506,22 @@ instance isIso_restrictionMap (i : L ⟶ K) (p : X ⟶ S) [IsIso p] (σ : K ⟶ 
     infer_instance
   exact IsIso.of_isIso_comp_right _ (Limits.pullback.snd _ _)
 
+/-- Under the universal property of the slice, the first component of the relative slice map
+restricts the map `T ⋆ K ⟶ X` corresponding to a family of cones `F` along `T ⋆ i`. -/
+lemma homEquiv_comp_restrictionMap_fst_coe {T : SSet.{u}} (F : T ⟶ slice σ) (i : L ⟶ K)
+    (p : X ⟶ S) :
+    (homEquiv (F ≫ restrictionMap i p σ ≫ Limits.pullback.fst _ _)).val =
+      join.map (𝟙 T) i ≫ (homEquiv F).val := by
+  rw [restrictionMap_fst, homEquiv_comp_map_coe, Category.comp_id]
+
+/-- Under the universal property of the slice, the second component of the relative slice map
+composes the map `T ⋆ K ⟶ X` corresponding to a family of cones `F` with `p`. -/
+lemma homEquiv_comp_restrictionMap_snd_coe {T : SSet.{u}} (F : T ⟶ slice σ) (i : L ⟶ K)
+    (p : X ⟶ S) :
+    (homEquiv (F ≫ restrictionMap i p σ ≫ Limits.pullback.snd _ _)).val =
+      (homEquiv F).val ≫ p := by
+  rw [restrictionMap_snd, homEquiv_comp_map_coe, join.map_id, Category.id_comp]
+
 section lifting
 
 open Limits
@@ -545,9 +561,9 @@ theorem forall_hasLiftingProperty_restrictionMap_iff_of_isPushout (j : A ⟶ B) 
     have hl₁ := congrArg (fun F ↦ (homEquiv F).val) sq'.fac_left
     have hl₂ := congrArg (fun F ↦ (homEquiv F).val) (sq'.fac_right =≫ pullback.fst _ _)
     have hl₃ := congrArg (fun F ↦ (homEquiv F).val) (sq'.fac_right =≫ pullback.snd _ _)
-    simp only [Category.assoc, pullback.lift_fst, pullback.lift_snd, Equiv.apply_symm_apply,
-      restrictionMap_fst, restrictionMap_snd, homEquiv_comp_map_coe, join.map_id,
-      Category.id_comp, Category.comp_id] at hl₂ hl₃
+    simp only [Category.assoc, homEquiv_comp_restrictionMap_fst_coe,
+      homEquiv_comp_restrictionMap_snd_coe, pullback.lift_fst, pullback.lift_snd,
+      Equiv.apply_symm_apply] at hl₂ hl₃
     simp only [homEquiv_comp_coe, Equiv.apply_symm_apply] at hl₁
     exact ⟨⟨⟨(homEquiv sq'.lift).val, h.hom_ext (by rw [reassoc_of% hf, hl₁])
       (by rw [reassoc_of% hg, hl₂]), hl₃⟩⟩⟩
@@ -559,19 +575,19 @@ theorem forall_hasLiftingProperty_restrictionMap_iff_of_isPushout (j : A ⟶ B) 
     have h₁ := congrArg (fun F ↦ (homEquiv F).val) (sq.w =≫ pullback.fst _ _)
     have h₂ := congrArg (fun F ↦ (homEquiv F).val) (sq.w =≫ pullback.snd _ _)
     have h₃ := congrArg (fun F ↦ (homEquiv F).val) hb
-    simp only [Category.assoc, pullback.lift_fst, pullback.lift_snd, restrictionMap_fst,
-      restrictionMap_snd, homEquiv_comp_map_coe, join.map_id, Category.id_comp,
-      Category.comp_id] at h₁ h₂
-    simp only [homEquiv_comp_map_coe, join.map_id, Category.id_comp, Category.comp_id] at h₃
+    simp only [Category.assoc, homEquiv_comp_restrictionMap_fst_coe,
+      homEquiv_comp_restrictionMap_snd_coe, pullback.lift_fst, pullback.lift_snd] at h₁ h₂
     simp only [homEquiv_comp_coe] at h₁ h₂
+    simp only [homEquiv_comp_map_coe, join.map_id, Category.id_comp, Category.comp_id] at h₃
     have sq' : CommSq (h.desc (homEquiv a).val (homEquiv b₁).val h₁) u p (homEquiv b₂).val :=
       ⟨h.hom_ext (by simp [reassoc_of% hf, h₂]) (by simp [reassoc_of% hg, h₃])⟩
     have hl₁ : join.map j (𝟙 K) ≫ sq'.lift = (homEquiv a).val := by
       rw [← hf, Category.assoc, sq'.fac_left, IsPushout.inl_desc]
     have hl₂ : join.map (𝟙 B) i ≫ sq'.lift = (homEquiv b₁).val := by
       rw [← hg, Category.assoc, sq'.fac_left, IsPushout.inr_desc]
-    refine ⟨⟨⟨homEquiv.symm ⟨sq'.lift, ?_⟩, hom_ext (by simp [hl₁]),
-      pullback.hom_ext (hom_ext (by simp [hl₂])) (hom_ext (by simp))⟩⟩⟩
+    refine ⟨⟨⟨homEquiv.symm ⟨sq'.lift, ?_⟩, hom_ext (by simp [hl₁]), pullback.hom_ext
+      (hom_ext (by simp only [Category.assoc, homEquiv_comp_restrictionMap_fst_coe]; simp [hl₂]))
+      (hom_ext (by simp only [Category.assoc, homEquiv_comp_restrictionMap_snd_coe]; simp))⟩⟩⟩
     calc join.inr B K ≫ sq'.lift = join.inr A K ≫ join.map j (𝟙 K) ≫ sq'.lift := by
           rw [join.inr_map_assoc, Category.id_comp]
       _ = σ := by rw [hl₁, (homEquiv a).property]

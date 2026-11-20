@@ -498,29 +498,25 @@ lemma opSliceRestrictionMapArrowIso_hom_left (j : A ⟶ B) (p : X ⟶ S) (τ : B
 
 /-- On targets, the first component of the isomorphism `SSet.coslice.opSliceRestrictionMapArrowIso`
 is the opposite of the first projection of the pullback of slices, to `Xᵒᵖ_{/jᵒᵖ ≫ τᵒᵖ}`,
-followed by the identification of this slice with `Xᵒᵖ_{/(j ≫ τ)ᵒᵖ}` and of its opposite with the
+followed by the identification `SSet.coslice.opSliceIsoOfEq` of the opposite of this slice with the
 coslice `X_{j ≫ τ/}`. -/
 @[reassoc (attr := simp)]
 lemma opSliceRestrictionMapArrowIso_hom_right_fst (j : A ⟶ B) (p : X ⟶ S) (τ : B ⟶ X) :
     (opSliceRestrictionMapArrowIso j p τ).hom.right ≫ pullback.fst _ _ =
-      opFunctor.map (pullback.fst _ _) ≫ opFunctor.map (slice.map (𝟙 _) (𝟙 _) (by simp) :
-        slice (opFunctor.map j ≫ opFunctor.map τ) ⟶ slice (opFunctor.map (j ≫ τ))) ≫
-          (opSliceIso (j ≫ τ)).inv := by
-  rw [← opSliceIsoOfEq_hom (p := j ≫ τ) (Functor.map_comp _ _ _).symm]
-  apply IsPullback.isoPullback_hom_fst
+      opFunctor.map (pullback.fst _ _) ≫
+        (opSliceIsoOfEq (j ≫ τ) (Functor.map_comp _ _ _).symm).hom :=
+  IsPullback.isoPullback_hom_fst _
 
 /-- On targets, the second component of the isomorphism
 `SSet.coslice.opSliceRestrictionMapArrowIso` is the opposite of the second projection of the
-pullback of slices, to `Sᵒᵖ_{/τᵒᵖ ≫ pᵒᵖ}`, followed by the identification of this slice with
-`Sᵒᵖ_{/(τ ≫ p)ᵒᵖ}` and of its opposite with the coslice `S_{τ ≫ p/}`. -/
+pullback of slices, to `Sᵒᵖ_{/τᵒᵖ ≫ pᵒᵖ}`, followed by the identification
+`SSet.coslice.opSliceIsoOfEq` of the opposite of this slice with the coslice `S_{τ ≫ p/}`. -/
 @[reassoc (attr := simp)]
 lemma opSliceRestrictionMapArrowIso_hom_right_snd (j : A ⟶ B) (p : X ⟶ S) (τ : B ⟶ X) :
     (opSliceRestrictionMapArrowIso j p τ).hom.right ≫ pullback.snd _ _ =
-      opFunctor.map (pullback.snd _ _) ≫ opFunctor.map (slice.map (𝟙 _) (𝟙 _) (by simp) :
-        slice (opFunctor.map τ ≫ opFunctor.map p) ⟶ slice (opFunctor.map (τ ≫ p))) ≫
-          (opSliceIso (τ ≫ p)).inv := by
-  rw [← opSliceIsoOfEq_hom (p := τ ≫ p) (Functor.map_comp _ _ _).symm]
-  apply IsPullback.isoPullback_hom_snd
+      opFunctor.map (pullback.snd _ _) ≫
+        (opSliceIsoOfEq (τ ≫ p) (Functor.map_comp _ _ _).symm).hom :=
+  IsPullback.isoPullback_hom_snd _
 
 /-- For an isomorphism `p`, the map `SSet.coslice.restrictionMap j p τ` is an isomorphism: through
 `SSet.coslice.opSliceRestrictionMapArrowIso`, it is isomorphic to the opposite of a relative slice
