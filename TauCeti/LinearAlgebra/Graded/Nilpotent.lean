@@ -23,8 +23,6 @@ operators of a finite-support integer-graded vector space.
 
 ## Main results
 
-* `TauCeti.LinearMap.IsHomogeneous.pow`: the `k`-th power of an endomorphism of degree `q` has
-  degree `k • q`.
 * `TauCeti.LinearMap.IsHomogeneous.isNilpotent`: an endomorphism of nonzero degree for an
   exhaustive finite-support `ℤ`-grading is nilpotent.
 -/
@@ -32,14 +30,6 @@ operators of a finite-support integer-graded vector space.
 public section
 
 namespace TauCeti.LinearMap
-
-/-- The `k`-th power of an endomorphism of degree `q` has degree `k • q`. -/
-theorem IsHomogeneous.pow {R ι M σ : Type*} [Semiring R] [AddMonoid ι] [AddCommMonoid M]
-    [Module R M] [SetLike σ M] {f : Module.End R M} {𝒜 : ι → σ} {q : ι}
-    (hf : IsHomogeneous f 𝒜 𝒜 q) (k : ℕ) : IsHomogeneous (f ^ k) 𝒜 𝒜 (k • q) := by
-  induction k with
-  | zero => simp [Module.End.one_eq_id]
-  | succ k ih => simpa [pow_succ, Module.End.mul_eq_comp, succ_nsmul'] using ih.comp hf
 
 variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {𝒜 : ℤ → Submodule R M}
 

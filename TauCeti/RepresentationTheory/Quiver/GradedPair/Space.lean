@@ -47,6 +47,8 @@ by a grade-preserving linear equivalence exactly when their grades have equal di
 * `TauCeti.GradedCoordSpace.finite_setOf_grade_ne_bot`: only finitely many grades are nonzero.
 * `TauCeti.GradedCoordSpace.exists_linearEquiv_of_isInternal`: every finite-dimensional internal
   `ℤ`-grading of a complex vector space has a coordinate presentation.
+* `TauCeti.GradedCoordSpace.map_grade_of_mem_grade_iff`: a grade-preserving linear equivalence
+  maps each grade onto the corresponding grade.
 * `TauCeti.GradedCoordSpace.exists_linearEquiv_iff_finrank_grade_eq`: two presentations are
   isomorphic as graded vector spaces exactly when their grades have equal dimensions.
 
@@ -147,14 +149,17 @@ theorem degree_constant (n : ℕ) (a : ℤ) (i : Fin (constant n a).n) :
   (rfl)
 
 /-- The constant presentation in degree `a` is concentrated in degree `a`. -/
+@[simp]
 theorem grade_constant_self (n : ℕ) (a : ℤ) : (constant n a).grade a = ⊤ :=
   eq_top_iff.2 fun _ _ _ hi ↦ absurd rfl hi
 
 /-- The constant presentation in degree `a` vanishes in every other degree. -/
+@[simp]
 theorem grade_constant_of_ne {n : ℕ} {a b : ℤ} (h : b ≠ a) : (constant n a).grade b = ⊥ :=
   (grade_eq_bot_iff _ _).2 fun _ ↦ h.symm
 
 /-- The constant presentation has dimension `n` in its degree and zero elsewhere. -/
+@[simp]
 theorem finrank_grade_constant (n : ℕ) (a b : ℤ) :
     finrank ℂ ((constant n a).grade b) = if b = a then n else 0 := by
   split_ifs with h
@@ -190,6 +195,17 @@ theorem exists_linearEquiv_of_isInternal {V : Type*} [AddCommGroup V] [Module �
     rintro _ ⟨x, rfl, rfl⟩
     exact h.collectedBasis_mem _ x
 
+variable {S T} in
+/-- A linear equivalence that preserves grade membership in both directions maps each grade onto
+the corresponding grade. -/
+theorem map_grade_of_mem_grade_iff (e : S.Carrier ≃ₗ[ℂ] T.Carrier)
+    (he : ∀ (a : ℤ) (v : S.Carrier), v ∈ S.grade a ↔ e v ∈ T.grade a) (a : ℤ) :
+    (S.grade a).map (e : S.Carrier →ₗ[ℂ] T.Carrier) = T.grade a := by
+  ext w
+  refine ⟨?_, fun hw ↦ ⟨e.symm w, by simpa [he] using hw, by simp⟩⟩
+  rintro ⟨v, hv, rfl⟩
+  exact (he a v).1 hv
+
 /-- Two coordinate presentations admit a grade-preserving linear equivalence exactly when their
 grades have equal dimensions. -/
 theorem exists_linearEquiv_iff_finrank_grade_eq :
@@ -197,11 +213,7 @@ theorem exists_linearEquiv_iff_finrank_grade_eq :
       ∀ a, finrank ℂ (S.grade a) = finrank ℂ (T.grade a) := by
   constructor
   · rintro ⟨e, he⟩ a
-    refine LinearEquiv.finrank_eq (e.submoduleMap (S.grade a) ≪≫ₗ LinearEquiv.ofEq _ _ ?_)
-    ext w
-    refine ⟨?_, fun hw ↦ ⟨e.symm w, by simpa [he] using hw, by simp⟩⟩
-    rintro ⟨v, hv, rfl⟩
-    exact (he a v).1 hv
+    rw [← e.finrank_map_eq, map_grade_of_mem_grade_iff e he]
   · intro h
     simp only [finrank_grade] at h
     -- Equal fiber sizes give a degree-preserving bijection of the coordinates.

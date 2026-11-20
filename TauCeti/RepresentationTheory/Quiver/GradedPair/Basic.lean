@@ -175,6 +175,11 @@ theorem ext {e f : GradedPairEquiv P Q} (h : ∀ v, e v = f v) : e = f :=
 theorem coe_toLinearEquiv (e : GradedPairEquiv P Q) : ⇑e.toLinearEquiv = e :=
   rfl
 
+@[simp]
+theorem coe_mk (e : S.Carrier ≃ₗ[ℂ] T.Carrier) (h₁ h₂) :
+    ⇑(⟨e, h₁, h₂⟩ : GradedPairEquiv P Q) = e :=
+  rfl
+
 /-- A graded equivalence of pairs preserves grade membership in both directions. -/
 @[simp]
 theorem mem_grade_iff (e : GradedPairEquiv P Q) {a : ℤ} {v : S.Carrier} :
@@ -213,6 +218,15 @@ def trans (e : GradedPairEquiv P Q) (f : GradedPairEquiv Q R) : GradedPairEquiv 
   map_operator' v := by simp only [LinearEquiv.trans_apply, e.map_operator', f.map_operator']
 
 @[simp]
+theorem toLinearEquiv_symm (e : GradedPairEquiv P Q) :
+    e.symm.toLinearEquiv = e.toLinearEquiv.symm :=
+  (rfl)
+
+@[simp]
+theorem symm_symm (e : GradedPairEquiv P Q) : e.symm.symm = e :=
+  (rfl)
+
+@[simp]
 theorem refl_apply (v : S.Carrier) : refl P v = v :=
   (rfl)
 
@@ -231,13 +245,8 @@ theorem apply_symm_apply (e : GradedPairEquiv P Q) (w : T.Carrier) : e (e.symm w
 
 /-- A graded equivalence of pairs maps each grade onto the corresponding grade. -/
 theorem map_grade (e : GradedPairEquiv P Q) (a : ℤ) :
-    (S.grade a).map (e.toLinearEquiv : S.Carrier →ₗ[ℂ] T.Carrier) = T.grade a := by
-  ext w
-  refine ⟨?_, fun hw ↦ ⟨e.symm w, ?_, e.apply_symm_apply w⟩⟩
-  · rintro ⟨v, hv, rfl⟩
-    exact e.mem_grade_iff.2 hv
-  · rw [SetLike.mem_coe, ← e.mem_grade_iff, apply_symm_apply]
-    exact hw
+    (S.grade a).map (e.toLinearEquiv : S.Carrier →ₗ[ℂ] T.Carrier) = T.grade a :=
+  GradedCoordSpace.map_grade_of_mem_grade_iff e.toLinearEquiv e.mem_grade_iff' a
 
 end GradedPairEquiv
 
@@ -249,6 +258,20 @@ variable {S T U : GradedCoordSpace} {d : StepDirection}
 them. -/
 def Isomorphic (P : GradedPair S d) (Q : GradedPair T d) : Prop :=
   Nonempty (GradedPairEquiv P Q)
+
+theorem isomorphic_iff {P : GradedPair S d} {Q : GradedPair T d} :
+    P.Isomorphic Q ↔ Nonempty (GradedPairEquiv P Q) :=
+  Iff.rfl
+
+/-- A graded equivalence witnesses that two pairs are isomorphic. -/
+theorem _root_.TauCeti.GradedPairEquiv.isomorphic {P : GradedPair S d} {Q : GradedPair T d}
+    (e : GradedPairEquiv P Q) : P.Isomorphic Q :=
+  ⟨e⟩
+
+/-- Isomorphic pairs admit a graded equivalence. -/
+theorem Isomorphic.nonempty {P : GradedPair S d} {Q : GradedPair T d} (h : P.Isomorphic Q) :
+    Nonempty (GradedPairEquiv P Q) :=
+  h
 
 theorem Isomorphic.refl (P : GradedPair S d) : P.Isomorphic P :=
   ⟨GradedPairEquiv.refl P⟩
