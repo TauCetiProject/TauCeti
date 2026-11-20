@@ -8,18 +8,23 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 
 /-!
-# Relations and zero values of the archimedean gamma factors
+# Relations, zero values and moduli of the archimedean gamma factors
 
 Mathlib defines Deligne's archimedean factors `Gammaℝ s = π ^ (-s / 2) * Gamma (s / 2)` and
 `Gammaℂ s = 2 * (2 * π) ^ (-s) * Gamma s` using total division for the gamma function.
 
 * `Complex.Gammaℂ_eq_zero_iff`: the total zero values of `Gammaℂ` occur at the nonpositive
-  integers, complementing `Complex.Gammaℝ_eq_zero_iff`.
+  integers, complementing `Complex.Gammaℝ_eq_zero_iff`. These are poles of its meromorphic germ.
 * `Complex.two_mul_Gammaℝ_two_mul`: twice the real factor at `2 * z` is `2 ^ z` times `Gammaℂ z`,
   everywhere on `ℂ` including at the poles where both totalized values vanish.
+* Off the real axis none of `Γ`, `Γ_ℝ` and `Γ_ℂ` vanishes.
+* The moduli of the archimedean factors are `‖Γ_ℝ(s)‖ = π^(-Re s / 2) ‖Γ(s / 2)‖` and
+  `‖Γ_ℂ(s)‖ = 2 (2π)^(-Re s) ‖Γ(s)‖`.
 -/
 
 public section
+
+open Real
 
 namespace Complex
 
@@ -36,5 +41,30 @@ theorem two_mul_Gammaℝ_two_mul (z : ℂ) : 2 * Gammaℝ (2 * z) = 2 ^ z * Gamm
     rw [← cpow_add _ _ two_ne_zero, add_neg_cancel, cpow_zero]
   rw [Gammaℝ_def, Gammaℂ_def, neg_div, mul_div_cancel_left₀ _ two_ne_zero, h2π]
   linear_combination 2 * (Real.pi : ℂ) ^ (-z) * Gamma z * h2.symm
+
+/-- The gamma function does not vanish off the real axis. -/
+theorem Gamma_ne_zero_of_im_ne_zero {s : ℂ} (h : s.im ≠ 0) : Gamma s ≠ 0 :=
+  Gamma_ne_zero fun m hm ↦ h (by simp [hm])
+
+/-- The real archimedean factor does not vanish off the real axis. -/
+theorem Gammaℝ_ne_zero_of_im_ne_zero {s : ℂ} (h : s.im ≠ 0) : Gammaℝ s ≠ 0 := fun h0 ↦ by
+  obtain ⟨n, hn⟩ := Gammaℝ_eq_zero_iff.1 h0
+  exact h (by simp [hn])
+
+/-- The complex archimedean factor does not vanish off the real axis. -/
+theorem Gammaℂ_ne_zero_of_im_ne_zero {s : ℂ} (h : s.im ≠ 0) : Gammaℂ s ≠ 0 := fun h0 ↦ by
+  obtain ⟨n, hn⟩ := (Gammaℂ_eq_zero_iff s).1 h0
+  exact h (by simp [hn])
+
+/-- The modulus of the real archimedean gamma factor: `‖Γ_ℝ(s)‖ = π^(-Re s / 2) ‖Γ(s / 2)‖`. -/
+theorem norm_Gammaℝ (s : ℂ) : ‖Gammaℝ s‖ = π ^ (-s.re / 2) * ‖Gamma (s / 2)‖ := by
+  rw [Gammaℝ_def, norm_mul, norm_cpow_eq_rpow_re_of_pos pi_pos]
+  simp [neg_div]
+
+/-- The modulus of the complex archimedean gamma factor: `‖Γ_ℂ(s)‖ = 2 (2π)^(-Re s) ‖Γ(s)‖`. -/
+theorem norm_Gammaℂ (s : ℂ) : ‖Gammaℂ s‖ = 2 * (2 * π) ^ (-s.re) * ‖Gamma s‖ := by
+  have h2π : (2 * (π : ℂ)) = ((2 * π : ℝ) : ℂ) := by push_cast; ring
+  rw [Gammaℂ_def, norm_mul, norm_mul, h2π, norm_cpow_eq_rpow_re_of_pos (by positivity)]
+  simp
 
 end Complex
