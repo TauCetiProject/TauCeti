@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
 import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.MeasureTheory.Function.RankOne
 
 /-!
@@ -298,22 +299,12 @@ private noncomputable def hwCoeff {E : Type*} [NormedAddCommGroup E] [InnerProdu
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- The Laplacian of a `C²` map is continuous on an open set. -/
-private theorem continuousOn_laplacian {Ω : Set ℂ} (hΩ : IsOpen Ω) {u : ℂ → X}
-    (hu : ContDiffOn ℝ 2 u Ω) : ContinuousOn (fun z ↦ Δ u z) Ω := by
-  have hd2 : ContinuousOn (fderiv ℝ (fderiv ℝ u)) Ω :=
-    (hu.fderiv_of_isOpen hΩ (m := 1) (by norm_num)).continuousOn_fderiv_of_isOpen hΩ le_rfl
-  have h (v : ℂ) : ContinuousOn (fun z ↦ fderiv ℝ (fderiv ℝ u) z v v) Ω :=
-    (hd2.clm_apply continuousOn_const).clm_apply continuousOn_const
-  refine ((h 1).add (h Complex.I)).congr fun z _ ↦ ?_
-  simp [InnerProductSpace.laplacian_eq_iteratedFDeriv_complexPlane, iteratedFDeriv_two_apply]
-
 private theorem aestronglyMeasurable_hwCoeff {Ω : Set ℂ} (hΩ : IsOpen Ω) {u : ℂ → X}
     (hu : ContDiffOn ℝ 2 u Ω) (T : CPair X →L[ℝ] E) :
     MeasureTheory.AEStronglyMeasurable (hwCoeff T u) (MeasureTheory.volume.restrict Ω) := by
   have hc : ContinuousOn (fun z ↦ ofReal (Δ u z) : ℂ → Complexification X) Ω := by
     simpa [Function.comp_def] using
-      (ofRealLI X).continuous.comp_continuousOn (continuousOn_laplacian hΩ hu)
+      (ofRealLI X).continuous.comp_continuousOn (hu.continuousOn_laplacian hΩ)
   have hx : MeasureTheory.AEStronglyMeasurable (fun z ↦ T (hwPair u z))
       (MeasureTheory.volume.restrict Ω) :=
     (T.continuous.comp_continuousOn (contDiffOn_hwPair hΩ hu).continuousOn).aestronglyMeasurable
