@@ -80,9 +80,10 @@ An injective continuous affine map with finite-dimensional domain is a closed em
 proper: `ContinuousAffineMap.isClosedEmbedding_of_injective`, the affine companion of Mathlib's
 `LinearMap.isClosedEmbedding_of_injective`.
 
-Every linear action on a finite-dimensional Hausdorff topological vector space over a complete
-field is by continuous maps: `FiniteDimensional.continuousConstSMul`. This is not an instance,
-since the field cannot be inferred from the action.
+Every action by `𝕜`-linear maps on a finite-dimensional Hausdorff topological vector space over a
+complete nontrivially normed field `𝕜` is by continuous maps:
+`FiniteDimensional.continuousConstSMul`. This is not an instance, since the field cannot be inferred
+from the action.
 -/
 
 public section
@@ -143,8 +144,8 @@ theorem toContinuousLinearMap_apply (f : E →ₗ[𝕜] E) (v : E) :
 
 end Module.End
 
-/-- Every linear action on a finite-dimensional Hausdorff topological vector space over a complete
-field is by continuous maps, since each `g • ·` is a linear map. -/
+/-- Every action by `𝕜`-linear maps on a finite-dimensional Hausdorff topological vector space over
+a complete nontrivially normed field `𝕜` is by continuous maps. -/
 theorem FiniteDimensional.continuousConstSMul (𝕜 G E : Type*) [NontriviallyNormedField 𝕜]
     [CompleteSpace 𝕜] [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
     [Module 𝕜 E] [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E] [DistribSMul G E]
