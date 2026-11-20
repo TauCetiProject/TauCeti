@@ -290,8 +290,9 @@ theorem eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM [Zero F]
     (h : EqOn (ξ ∘ equivRealProdCLM) 0 (equivRealProdCLM ⁻¹' Ω)) : EqOn ξ 0 Ω := fun z hz ↦ by
   simpa using h (show equivRealProdCLM.symm z ∈ _ by simpa using hz)
 
-/-- In the complex coordinate the vanishing order at `z₀` is measured by
-`‖e w - e w₀‖ ≤ ‖e‖ ‖w - w₀‖`, so a zero of order at least `n` stays one. -/
+/-- A vanishing-order bound passes from `ℝ × ℝ` into the complex coordinate: if
+`ξ = O(‖z - z₀‖ ^ n)` at `z₀`, then `ξ ∘ equivRealProdCLM = O((w - equivRealProdCLM.symm z₀) ^ n)`
+at `equivRealProdCLM.symm z₀`. -/
 theorem isBigO_comp_equivRealProdCLM [Norm F] {z₀ : ℝ × ℝ} {n : ℕ}
     (h : ξ =O[𝓝 z₀] fun z ↦ ‖z - z₀‖ ^ n) :
     (ξ ∘ equivRealProdCLM) =O[𝓝 (equivRealProdCLM.symm z₀)]
