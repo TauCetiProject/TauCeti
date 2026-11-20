@@ -48,6 +48,8 @@ represented value carries the whole content of the first theorem: every quadrati
   agrees on their discriminants in its first argument.
 * `TauCeti.equivalent_binary_iff`: the binary equivalence criterion, Lam I.5.1.
 * `TauCeti.anisotropic_binary_iff`: `⟨a, b⟩` is anisotropic exactly when `-ab` is not a square.
+* `TauCeti.represents_binary_one_neg_iff` and `TauCeti.anisotropic_binary_one_neg_iff`: coordinate
+  representation and square-radicand anisotropy criteria for the norm form `⟨1, -d⟩`.
 
 ## References
 
@@ -244,6 +246,16 @@ theorem apply_mul_eq_of_equivalent_binary [Invertible (2 : R)] {M : Type*}
   simpa only [weightedSumSquares_units, hcoe] using
     equivalent_weightedSumSquares_of_isSquare_div (R := R) hsq
 
+/-- The binary form `⟨1, -d⟩` represents `a` if and only if `a = x² - d y²` is solvable. -/
+theorem represents_binary_one_neg_iff (d a : R) :
+    Represents (weightedSumSquares R ![1, -d]) a ↔ ∃ x y : R, a = x ^ 2 - d * y ^ 2 := by
+  rw [represents_iff, Set.mem_range]
+  constructor
+  · rintro ⟨v, rfl⟩
+    exact ⟨v 0, v 1, by simp [weightedSumSquares_apply, Fin.sum_univ_two, pow_two]; ring⟩
+  · rintro ⟨x, y, rfl⟩
+    exact ⟨![x, y], by simp [weightedSumSquares_apply, Fin.sum_univ_two, pow_two]; ring⟩
+
 end CommRing
 
 /-- **Isotropy of a binary diagonal form.** The form `⟨a, b⟩` is anisotropic exactly when `-ab`
@@ -269,6 +281,16 @@ theorem anisotropic_binary_iff {F : Type*} [Field F] (a b : F) :
     · exact absurd ⟨a * x 0 / x 1, by
         rw [div_mul_div_comm, eq_div_iff (mul_ne_zero h1 h1)]
         linear_combination -a * hx⟩ h
+
+/-- The binary form `⟨1, -d⟩` over a field is anisotropic if and only if `d` is not a square. -/
+theorem anisotropic_binary_one_neg_iff {F : Type*} [Field F] (d : F) :
+    (weightedSumSquares F ![(1 : F), -d]).Anisotropic ↔ ¬ IsSquare d := by
+  simpa using anisotropic_binary_iff (1 : F) (-d)
+
+/-- The binary form `⟨1, 1⟩` is anisotropic exactly when `-1` is not a square. -/
+theorem anisotropic_binary_one_one_iff {F : Type*} [Field F] :
+    (weightedSumSquares F ![(1 : F), 1]).Anisotropic ↔ ¬ IsSquare (-1 : F) := by
+  simpa using anisotropic_binary_iff (1 : F) 1
 
 /-- **Worked example.** Over `ℚ` the binary forms `⟨1, 1⟩` and `⟨2, 2⟩` are isometric: their
 discriminants `1` and `4` agree modulo squares, and both represent `2`, once as `1² + 1²` and once

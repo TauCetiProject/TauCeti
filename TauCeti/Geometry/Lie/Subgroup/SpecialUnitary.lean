@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Lie.Subgroup.SpecialLinear
-public import TauCeti.Geometry.Lie.Subgroup.Unitary
+public import TauCeti.Geometry.Lie.Subgroup.Unitary.Basic
 public import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!

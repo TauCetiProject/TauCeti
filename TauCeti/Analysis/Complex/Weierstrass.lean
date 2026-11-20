@@ -153,7 +153,7 @@ boundary-nonvanishing on `U ×ˢ sphere 0 R`, and has `0` as its unique zero of 
 private theorem exists_analyticOnNhd_zeroPolynomial
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
     {U : Set E} (hU : IsOpen U) (hU_conn : IsPreconnected U) {x₀ : E} (hx₀ : x₀ ∈ U)
-    {R : ℝ} (hR : 0 < R) {d : ℕ} {F : E × ℂ → ℂ}
+    {R : ℝ} (hR : 0 ≤ R) {d : ℕ} {F : E × ℂ → ℂ}
     (hF_an : ∀ x ∈ U, ∀ w ∈ closedBall (0 : ℂ) R, AnalyticAt ℂ F (x, w))
     (hF_sphere : ∀ x ∈ U, ∀ ζ ∈ sphere (0 : ℂ) R, F (x, ζ) ≠ 0)
     (hF_ord : analyticOrderAt (fun w ↦ F (x₀, w)) 0 = d)
@@ -168,14 +168,23 @@ private theorem exists_analyticOnNhd_zeroPolynomial
   have hFx_an {x : E} (hx : x ∈ U) : AnalyticOnNhd ℂ (fun w ↦ F (x, w)) (closedBall 0 R) :=
     fun w hw ↦ (hF_an x hx w hw).curry_right
   let Z : E → Multiset ℂ := fun x ↦ AnalyticOnNhd.zeroMultiset (fun w ↦ F (x, w)) (ball 0 R)
+  have hZzero (hR0 : R = 0) (x : E) : Z x = 0 := by
+    subst R
+    exact Multiset.eq_zero_iff_forall_notMem.2 fun z hz ↦
+      by simpa using AnalyticOnNhd.mem_of_mem_zeroMultiset hz
   have hpow_an (k : ℕ) : AnalyticOnNhd ℂ (fun x ↦ ((Z x).map (· ^ k)).sum) U :=
     DifferentiableOn.analyticOnNhd_of_finiteDimensional
-      (differentiableOn_sum_map_pow_zeroMultiset hR hF_an hF_sphere k) hU
-  have hZ0 : Z x₀ = Multiset.replicate d 0 :=
-    (hFx_an hx₀).zeroMultiset_eq_replicate (mem_ball_self hR) hF_ord
-      fun w hw ↦ hF_only w (ball_subset_closedBall hw)
+      (differentiableOn_sum_map_pow_zeroMultiset hF_an hF_sphere k) hU
+  have hZ0 : Z x₀ = Multiset.replicate d 0 := by
+    rcases hR.eq_or_lt with rfl | hR
+    · have hd : d = 0 := by
+        exact_mod_cast hF_ord.symm.trans ((hFx_an hx₀ 0 (by simp)).analyticOrderAt_eq_zero.2
+          (hF_sphere x₀ hx₀ 0 (by simp)))
+      rw [hd, Multiset.replicate_zero, hZzero rfl]
+    · exact (hFx_an hx₀).zeroMultiset_eq_replicate (mem_ball_self hR) hF_ord
+        fun w hw ↦ hF_only w (ball_subset_closedBall hw)
   have hcard {x : E} (hx : x ∈ U) : (Z x).card = d :=
-    (card_zeroMultiset_eq_of_isPreconnected hU_conn hR hF_an hF_sphere hx hx₀).trans
+    (card_zeroMultiset_eq_of_isPreconnected hU_conn hF_an hF_sphere hx hx₀).trans
       ((congrArg Multiset.card hZ0).trans (Multiset.card_replicate d 0))
   refine ⟨fun i x ↦ (-1) ^ (d - (i : ℕ)) * (Z x).esymm (d - (i : ℕ)),
     fun i x hx ↦ analyticAt_const.fun_mul
@@ -394,7 +403,7 @@ theorem exists_weierstrassPreparation {f : E × ℂ → ℂ} {x₀ : E} {w₀ : 
         (hF0_only ζ (sphere_subset_closedBall hζ) (ne_of_mem_sphere hζ hR.ne'))
   obtain ⟨δ, hδ, hδ_prop⟩ := Metric.mem_nhds_iff.1 (hev_an.and hev_ne)
   obtain ⟨c, hc_an, hc0, hmonic⟩ := exists_analyticOnNhd_zeroPolynomial isOpen_ball
-    (convex_ball x₀ δ).isPreconnected (mem_ball_self hδ) hR
+    (convex_ball x₀ δ).isPreconnected (mem_ball_self hδ) hR.le
     (fun _ hx ↦ (hδ_prop hx).1) (fun _ hx ↦ (hδ_prop hx).2) hF_ord hF0_only
   obtain ⟨U, hU_an, hU0, hFU⟩ := exists_analyticAt_weierstrassUnit (mem_ball_self hδ) hR
     (fun _ hx ↦ (hδ_prop hx).1) (fun _ hx ↦ (hδ_prop hx).2)

@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.NumberTheory.IntegralLattice.LocalDensity.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.NumberTheory.IntegralLattice.LocalDensity.FromBlocks
 import TauCeti.NumberTheory.Padics.RingHoms
 

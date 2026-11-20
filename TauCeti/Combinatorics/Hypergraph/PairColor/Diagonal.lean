@@ -8,7 +8,9 @@ module
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import TauCeti.Order.Partition.Finpartition
 public import Mathlib.Data.Fintype.Prod
+public import Mathlib.Order.Partition.Equipartition
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import TauCeti.Order.Partition.Equipartition
 
 /-!
 # Cleaning up diagonal pair blocks
@@ -245,5 +247,15 @@ theorem card_fillDiagonal_colorOfPair_ne_le_of_card_le {m : ℕ} (hm : ∀ A ∈
       (S.colorOfPair p.1 p.2).map some} ≤ m * Fintype.card V := by
   classical
   exact (S.card_fillDiagonal_colorOfPair_ne_le P).trans (by simpa using P.sum_sq_card_parts_le hm)
+
+open Classical in
+/-- For an equipartition `P`, diagonal cleanup edits at most `|V| * (|V| / #P.parts)` ordered
+pairs, since every cell has at most `|V| / #P.parts + 1` vertices. -/
+theorem card_fillDiagonal_colorOfPair_ne_le_of_isEquipartition (hP : P.IsEquipartition) :
+    #{p : V × V | (S.fillDiagonal P).colorOfPair p.1 p.2 ≠
+      (S.colorOfPair p.1 p.2).map some} ≤ Fintype.card V * (Fintype.card V / #P.parts) := by
+  classical
+  rw [S.card_fillDiagonal_colorOfPair_ne P]
+  simpa only [card_univ] using hP.sum_card_mul_sub_one_le
 
 end TauCeti.PairColorSystem

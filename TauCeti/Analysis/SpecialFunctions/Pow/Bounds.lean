@@ -15,7 +15,10 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 # Elementary bounds on real powers
 
 If `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`, then `x ^ a ≤ R ^ |a|` for every real `a`. This bounds
-powers of a level confined to an interval bounded away from zero.
+powers of a level confined to an interval bounded away from zero. Likewise, for `0 < u` and any
+exponent `p ∈ [p₁, p₂]`, `u ^ p ≤ u ^ p₁ + u ^ p₂`, which dominates `u ^ (Re s - 1)` for all
+`u > 0` by the sum of its endpoint powers as `s` varies in a vertical strip `σ₁ ≤ Re s ≤ σ₂`; and
+for `0 < a ≤ u` and `s ≤ t`, `u ^ s ≤ a ^ (s - t) * u ^ t` raises the exponent on `(a, ∞)`.
 
 A base at least `2` raised to a negative exponent of size at least `1` is at most `1 / 2`. This
 is the shape in which the local ratio of an Euler factor is bounded away from `1`, so that the
@@ -94,6 +97,10 @@ function that does not need a derivative.
 ## Main results
 
 * `Real.rpow_le_rpow_abs`: `x ^ a ≤ R ^ |a|` for `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`.
+* `Real.rpow_le_rpow_add_rpow_of_mem_Icc`: `u ^ p ≤ u ^ p₁ + u ^ p₂` for `0 < u` and
+  `p ∈ Set.Icc p₁ p₂`.
+* `Real.rpow_le_rpow_sub_mul_rpow_of_exponent_le`: `u ^ s ≤ a ^ (s - t) * u ^ t` for `0 < a ≤ u`
+  and `s ≤ t`.
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
 * `Real.rpow_neg_le_mul_rpow_neg`: `y ^ (-q) ≤ a ^ q x ^ (-q)` for `0 < x ≤ a y`, `a ≥ 0` and
   `q ≥ 0`.
@@ -133,6 +140,10 @@ function that does not need a derivative.
   `‖u r - c‖ ≤ K r ^ β` for `r ≥ 0`, when `a < 0`, respectively when `0 < a` and `b < a / 2`.
 * `TauCeti.norm_sub_le_three_mul_rpow_of_le_sub`: `‖x - y‖ ≤ 3 c (t - t') ^ β` from
   `‖x‖ ≤ c t ^ β`, `‖y‖ ≤ c t' ^ β` and `t' ≤ t - t'`, for `0 ≤ β ≤ 1`.
+* `TauCeti.rpow_mul_rpow_le_max`, `Prod.norm_fst_rpow_mul_norm_snd_rpow_le`, and
+  `TauCeti.le_rpow_mul_rpow_mul_of_forall_pos`: `a ^ (1 - x) * b ^ x ≤ max a b` on `[0, 1]`, its
+  product-seminorm corollary `‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖`, and right-continuity at `ε = 0`
+  of `(M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * C` for `θ ∈ [0, 1]`.
 -/
 
 public section
@@ -149,6 +160,21 @@ theorem rpow_le_rpow_abs {x R : ℝ} (hx : 0 < x) (hxR : x ≤ R) (hinvR : x⁻�
   · calc x ^ a = x⁻¹ ^ (-a) := by rw [← rpow_neg_eq_inv_rpow, neg_neg]
          _ ≤ R ^ (-a) := rpow_le_rpow (inv_nonneg.mpr hx.le) hinvR (neg_nonneg.mpr ha.le)
          _ = R ^ |a| := by rw [abs_of_neg ha]
+
+/-- For `0 < u` and `p ∈ Set.Icc p₁ p₂`, `u ^ p ≤ u ^ p₁ + u ^ p₂`. -/
+theorem rpow_le_rpow_add_rpow_of_mem_Icc {u p p₁ p₂ : ℝ} (hu : 0 < u) (hp : p ∈ Set.Icc p₁ p₂) :
+    u ^ p ≤ u ^ p₁ + u ^ p₂ := by
+  rcases le_total u 1 with hu1 | hu1
+  · exact le_add_of_le_of_nonneg (rpow_le_rpow_of_exponent_ge hu hu1 hp.1) (by positivity)
+  · exact le_add_of_nonneg_of_le (by positivity) (rpow_le_rpow_of_exponent_le hu1 hp.2)
+
+/-- For `0 < a ≤ u` and `s ≤ t`, `u ^ s ≤ a ^ (s - t) * u ^ t`. -/
+theorem rpow_le_rpow_sub_mul_rpow_of_exponent_le {a u s t : ℝ} (ha : 0 < a) (hau : a ≤ u)
+    (hst : s ≤ t) : u ^ s ≤ a ^ (s - t) * u ^ t :=
+  calc u ^ s = u ^ (s - t) * u ^ t := by rw [← rpow_add (ha.trans_le hau), sub_add_cancel]
+    _ ≤ a ^ (s - t) * u ^ t :=
+      mul_le_mul_of_nonneg_right (rpow_le_rpow_of_nonpos ha hau (sub_nonpos.2 hst))
+        (rpow_nonneg (ha.le.trans hau) t)
 
 /-- If `2 ≤ y` and `1 ≤ s`, then `y ^ (-s) ≤ 1 / 2`. -/
 theorem rpow_neg_le_half {y s : ℝ} (hy : 2 ≤ y) (hs : 1 ≤ s) : y ^ (-s) ≤ 1 / 2 :=
@@ -644,4 +670,37 @@ theorem norm_sub_le_three_mul_rpow_of_le_sub {V : Type*} [SeminormedAddCommGroup
     _ ≤ c * (2 * (t - t') ^ β) + c * (t - t') ^ β := by gcongr
     _ = 3 * c * (t - t') ^ β := by ring
 
+/-- For `0 ≤ a`, `0 ≤ b`, and `x ∈ [0, 1]`, the geometric interpolant `a ^ (1 - x) * b ^ x` is at
+most `max a b`. -/
+theorem rpow_mul_rpow_le_max {a b x : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hx : x ∈ Set.Icc (0 : ℝ) 1) :
+    a ^ (1 - x) * b ^ x ≤ max a b := by
+  calc a ^ (1 - x) * b ^ x
+      ≤ max a b ^ (1 - x) * max a b ^ x :=
+        mul_le_mul (Real.rpow_le_rpow ha (le_max_left a b) (sub_nonneg.2 hx.2))
+          (Real.rpow_le_rpow hb (le_max_right a b) hx.1)
+          (Real.rpow_nonneg hb _) (Real.rpow_nonneg (ha.trans (le_max_left a b)) _)
+    _ = max a b := by
+        rw [← Real.rpow_add' (ha.trans (le_max_left a b)) (by simp), sub_add_cancel, Real.rpow_one]
+
+/-- Continuity from the right of `(M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * C` at `ε = 0` for
+`θ ∈ [0, 1]`, used to pass Riesz–Thorin bounds from positive endpoint constants to nonnegative
+ones. -/
+theorem le_rpow_mul_rpow_mul_of_forall_pos {A M₀ M₁ θ C : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (hle : ∀ ε > 0, A ≤ (M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * C) :
+    A ≤ M₀ ^ (1 - θ) * M₁ ^ θ * C := by
+  have hcont : Continuous fun ε : ℝ ↦ (M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * C :=
+    (((continuous_const.add continuous_id).rpow_const fun _ ↦ Or.inr (sub_nonneg.2 hθ.2)).mul
+      ((continuous_const.add continuous_id).rpow_const fun _ ↦ Or.inr hθ.1)).mul continuous_const
+  have hlim := (hcont.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0))
+  simp only [add_zero] at hlim
+  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall hle)
+
 end TauCeti
+
+/-- For `p` in a product of seminormed groups and `x ∈ [0, 1]`,
+`‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖`. -/
+theorem Prod.norm_fst_rpow_mul_norm_snd_rpow_le {E F : Type*} [SeminormedAddGroup E]
+    [SeminormedAddGroup F] (p : E × F) {x : ℝ} (hx : x ∈ Set.Icc (0 : ℝ) 1) :
+    ‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖ := by
+  rw [Prod.norm_def]
+  exact TauCeti.rpow_mul_rpow_le_max (norm_nonneg p.1) (norm_nonneg p.2) hx

@@ -296,6 +296,17 @@ theorem IsometryEquiv.consPi_apply {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i,
     IsometryEquiv.consPi Q (x, y) = Fin.cons x y :=
   (rfl)
 
+/-- The orthogonal sum of isometric equivalences acts coordinatewise. -/
+@[simp]
+theorem IsometryEquiv.pi_apply {ι : Type*} [Fintype ι] {M N : ι → Type*}
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)]
+    {Q : ∀ i, QuadraticMap R (M i) P} {Q' : ∀ i, QuadraticMap R (N i) P}
+    (e : ∀ i, (Q i).IsometryEquiv (Q' i)) (x : ∀ i, M i) (i : ι) :
+    IsometryEquiv.pi e x i = e i (x i) := by
+  rw [← IsometryEquiv.coe_toLinearEquiv, IsometryEquiv.pi_toLinearEquiv,
+    LinearEquiv.piCongrRight_apply, IsometryEquiv.coe_toLinearEquiv]
+
 /-- `LinearEquiv.piCongrLeft` is isometric: reindexing an orthogonal sum along an equivalence of
 its finite index types does not change it. -/
 def IsometryEquiv.piCongrLeft {ι ι' : Type*} [Fintype ι] [Fintype ι'] {M : ι → Type*}
@@ -304,7 +315,7 @@ def IsometryEquiv.piCongrLeft {ι ι' : Type*} [Fintype ι] [Fintype ι'] {M : �
     (QuadraticMap.pi fun i' ↦ Q (e i')).IsometryEquiv (QuadraticMap.pi Q) where
   toLinearEquiv := LinearEquiv.piCongrLeft R M e
   map_app' x := by
-    rw [pi_apply, pi_apply]
+    rw [QuadraticMap.pi_apply, QuadraticMap.pi_apply]
     exact (Fintype.sum_equiv e (fun i' ↦ Q (e i') (x i')) _ fun i' ↦
       congrArg (Q (e i')) (Equiv.piCongrLeft_apply_apply M e x i').symm).symm
 
@@ -344,7 +355,8 @@ def IsometryEquiv.piSubtype {ι : Type*} [Fintype ι] {M : ι → Type*} [∀ i,
     have hzero : ∑ i : {i // ¬S i}, Q i (x i) = 0 := Finset.sum_eq_zero fun i _ ↦ by
       have := hS i i.2
       rw [Subsingleton.elim (x i) 0, map_zero]
-    rw [pi_apply, pi_apply, ← Fintype.sum_subtype_add_sum_subtype S, hzero, add_zero]
+    rw [QuadraticMap.pi_apply, QuadraticMap.pi_apply,
+      ← Fintype.sum_subtype_add_sum_subtype S, hzero, add_zero]
 
 /-- The forward map of `QuadraticMap.IsometryEquiv.piSubtype` restricts to the retained summands. -/
 @[simp]
@@ -490,7 +502,10 @@ theorem orthogonalGroupCongr_prod_orthogonalGroupProd
   apply LinearEquiv.ext
   intro m
   obtain ⟨⟨x₁, x₂⟩, rfl⟩ := (e₁.prod e₂).toLinearEquiv.surjective m
-  simp
+  have h : (e₁.prod e₂).symm (e₁ x₁, e₂ x₂) = (x₁, x₂) := by
+    have := (e₁.prod e₂).symm_apply_apply (x₁, x₂)
+    rwa [IsometryEquiv.prod_apply] at this
+  simp [h]
 
 /-- Deleting a trivial left summand along `IsometryEquiv.uniqueProd` sends an orthogonal sum of
 orthogonal transformations to its second factor. -/
@@ -502,8 +517,7 @@ theorem orthogonalGroupCongr_uniqueProd_orthogonalGroupProd [Unique M₁]
   apply LinearEquiv.ext
   intro m
   obtain ⟨x, rfl⟩ := (IsometryEquiv.uniqueProd Q₁ Q₂).toLinearEquiv.surjective m
-  rw [IsometryEquiv.coe_orthogonalGroupCongr_apply, LinearEquiv.symm_apply_apply]
-  simp [IsometryEquiv.coe_toLinearEquiv]
+  simp
 
 /-- Deleting a trivial right summand along `IsometryEquiv.prodUnique` sends an orthogonal sum of
 orthogonal transformations to its first factor. -/
@@ -515,8 +529,7 @@ theorem orthogonalGroupCongr_prodUnique_orthogonalGroupProd [Unique M₂]
   apply LinearEquiv.ext
   intro m
   obtain ⟨x, rfl⟩ := (IsometryEquiv.prodUnique Q₁ Q₂).toLinearEquiv.surjective m
-  rw [IsometryEquiv.coe_orthogonalGroupCongr_apply, LinearEquiv.symm_apply_apply]
-  simp [IsometryEquiv.coe_toLinearEquiv]
+  simp
 
 /-- `orthogonalGroupProd` is associative up to transport along `IsometryEquiv.prodAssoc`. -/
 @[simp]
@@ -530,8 +543,7 @@ theorem orthogonalGroupCongr_prodAssoc_orthogonalGroupProd
   apply LinearEquiv.ext
   intro m
   obtain ⟨x, rfl⟩ := (IsometryEquiv.prodAssoc Q₁ Q₂ Q₃).toLinearEquiv.surjective m
-  rw [IsometryEquiv.coe_orthogonalGroupCongr_apply, LinearEquiv.symm_apply_apply]
-  simp [IsometryEquiv.coe_toLinearEquiv]
+  simp
 
 /-- Swapping the two summands along `IsometryEquiv.prodComm` swaps the two factors of
 `orthogonalGroupProd`. -/
@@ -544,8 +556,9 @@ theorem orthogonalGroupCongr_prodComm_orthogonalGroupProd
   apply LinearEquiv.ext
   intro m
   obtain ⟨x, rfl⟩ := (IsometryEquiv.prodComm Q₁ Q₂).toLinearEquiv.surjective m
-  rw [IsometryEquiv.coe_orthogonalGroupCongr_apply, LinearEquiv.symm_apply_apply]
-  simp [IsometryEquiv.coe_toLinearEquiv]
+  have h : (IsometryEquiv.prodComm Q₁ Q₂).symm x.swap = x :=
+    (IsometryEquiv.prodComm Q₁ Q₂).symm_apply_apply x
+  simp [h]
 
 end OrthogonalGroup
 

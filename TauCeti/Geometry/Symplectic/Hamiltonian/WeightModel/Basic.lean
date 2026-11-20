@@ -83,7 +83,10 @@ span a cone containing a line, so that `0` is not an extreme point of the image,
 
 * `TauCeti.stdSymplecticForm_weightRotation`: rotations are symplectic.
 * `TauCeti.weightRotation_add`, `TauCeti.weightRotation_zero`: rotations form an action of the
-  additive group `ι → ℝ`.
+  additive group `ι → ℝ`; in particular `weightRotation θ ^ n` is the rotation by `n • θ`
+  (`TauCeti.weightRotation_nsmul`).
+* `TauCeti.weightRotation_product_apply`: rotations commute with the complex structure
+  `J(q, p) = (-p, q)`.
 * `TauCeti.weightMomentMap_weightRotation`: `μ` is invariant under every rotation.
 * `TauCeti.hamiltonianVectorField_weightMomentMap`: the Hamiltonian vector field of `μ^ξ` is the
   generator for the angles `α_i(ξ)`.
@@ -185,6 +188,13 @@ theorem weightRotation_add (θ θ' : ι → ℝ) :
     weightRotation (θ + θ') = (weightRotation θ).comp (weightRotation θ') := by
   ext x i <;> simp [cos_add, sin_add] <;> ring
 
+/-- The `n`-th power of a rotation, for composition, is the rotation by `n` times the angles. -/
+theorem weightRotation_nsmul (n : ℕ) (θ : ι → ℝ) :
+    weightRotation (n • θ) = weightRotation θ ^ n := by
+  induction n with
+  | zero => simp [ContinuousLinearMap.one_def]
+  | succ n ih => rw [succ_nsmul, weightRotation_add, ih, pow_succ, ContinuousLinearMap.mul_def]
+
 /-- Every rotation is injective, with inverse the rotation by the opposite angles. -/
 theorem weightRotation_injective (θ : ι → ℝ) : Function.Injective (weightRotation θ) :=
   fun y z h ↦ by
@@ -199,6 +209,13 @@ theorem stdSymplecticForm_weightRotation (θ : ι → ℝ)
     weightRotation_apply_fst, weightRotation_apply_snd, ← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   linear_combination (y.2 i * x.1 i - y.1 i * x.2 i) * sin_sq_add_cos_sq (θ i)
+
+/-- Rotations commute with the complex structure `J(q, p) = (-p, q)` of `ℂ^ι`, multiplication by
+`i`. -/
+theorem weightRotation_product_apply (θ : ι → ℝ) (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    weightRotation θ (AlmostComplexStructure.product _ x) =
+      AlmostComplexStructure.product _ (weightRotation θ x) := by
+  ext i <;> simp <;> ring
 
 /-- The velocity of the rotation by the angles `t • θ` is the generator of `θ`. -/
 theorem hasDerivAt_weightRotation_smul (θ : ι → ℝ)
@@ -477,28 +494,49 @@ theorem weightModelCoords_symm_apply_snd (u : ι ⊕ ι → ℝ) (i : ι) :
     (weightModelCoords.symm u).2 i = u (Sum.inr i) :=
   (rfl)
 
+omit [Fintype ι] in
+/-- In the real coordinates `(q_i)_i ⊔ (p_i)_i`, a subspace `W` of `ℂ^ι` cut out by `z_i = 0` for
+every `i ∉ s` is spanned by the coordinates of the indices in `s`. -/
+theorem map_weightModelCoords_eq_spanSubset [Finite ι]
+    {W : Submodule ℝ (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)} (s : Set ι)
+    (hW : ∀ x, x ∈ W ↔ ∀ i ∉ s, x.1 i = 0 ∧ x.2 i = 0) :
+    W.map weightModelCoords.toLinearMap = Pi.spanSubset ℝ (Sum.elim id id ⁻¹' s) := by
+  ext u
+  obtain ⟨v, rfl⟩ := weightModelCoords.surjective u
+  rw [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply, hW, Pi.mem_spanSubset_iff]
+  simp only [Sum.forall, Set.mem_preimage, Sum.elim_inl, Sum.elim_inr, id_eq,
+    weightModelCoords_apply_inl, weightModelCoords_apply_inr]
+  exact ⟨fun h ↦ ⟨fun i hi ↦ (h i hi).1, fun i hi ↦ (h i hi).2⟩,
+    fun h i hi ↦ ⟨h.1 i hi, h.2 i hi⟩⟩
+
+omit [Fintype ι] in
+/-- A subspace `W` of `ℂ^ι` cut out by `z_i = 0` for every `i ∉ s` has real dimension twice the
+number of elements of `s`. -/
+theorem finrank_eq_two_mul_ncard_of_mem_iff [Finite ι]
+    {W : Submodule ℝ (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)} (s : Set ι)
+    (hW : ∀ x, x ∈ W ↔ ∀ i ∉ s, x.1 i = 0 ∧ x.2 i = 0) :
+    Module.finrank ℝ W = 2 * s.ncard := by
+  rw [← weightModelCoords.finrank_map_eq, map_weightModelCoords_eq_spanSubset s hW,
+    Pi.dim_spanSubset, Set.preimage, Set.ncard_setOf_sumElim id (· ∈ s)]
+  simp only [id_eq, Set.ofPred_mem_eq]
+
 /-- In the real coordinates `(q_i)_i ⊔ (p_i)_i`, the kernel of the generator of the rotation by the
 angles `θ` is spanned by the coordinates whose angle vanishes. -/
 theorem map_weightModelCoords_ker_weightGenerator (θ : ι → ℝ) :
     (LinearMap.ker (weightGenerator θ).toLinearMap).map weightModelCoords.toLinearMap =
       Pi.spanSubset ℝ {j | Sum.elim θ θ j = 0} := by
-  ext u
-  obtain ⟨v, rfl⟩ := weightModelCoords.surjective u
-  rw [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply, mem_ker_weightGenerator_iff,
-    Pi.mem_spanSubset_iff]
-  constructor
-  · rintro h (i | i) hi
-    · exact (h i hi).1
-    · exact (h i hi).2
-  · exact fun h i hi ↦ ⟨h (Sum.inl i) hi, h (Sum.inr i) hi⟩
+  rw [map_weightModelCoords_eq_spanSubset {i | θ i = 0} fun x ↦ by
+    simpa only [Set.mem_ofPred_eq, ne_eq] using mem_ker_weightGenerator_iff θ x]
+  congr 1
+  ext (i | i) <;> simp
 
 /-- **Fixed tangent directions in the weight model.** The kernel of the generator of the rotation
 by the angles `θ` has dimension twice the number of `i` with `θ_i = 0`. -/
 theorem finrank_ker_weightGenerator (θ : ι → ℝ) :
     Module.finrank ℝ (LinearMap.ker (weightGenerator θ).toLinearMap) =
-      2 * {i | θ i = 0}.ncard := by
-  rw [← weightModelCoords.finrank_map_eq, map_weightModelCoords_ker_weightGenerator,
-    Pi.dim_spanSubset, Set.ncard_setOf_sumElim θ (· = 0)]
+      2 * {i | θ i = 0}.ncard :=
+  finrank_eq_two_mul_ncard_of_mem_iff {i | θ i = 0} fun x ↦ by
+    simpa only [Set.mem_ofPred_eq, ne_eq] using mem_ker_weightGenerator_iff θ x
 
 /-- **The image of the derivative of the moment map.** At `z`, the derivative of `μ` has image the
 span of the weights `α_i` for which the coordinate `z_i = q_i + i p_i` is nonzero. -/

@@ -27,7 +27,10 @@ keeps the letter `e`, up to the sign of the Koszul twist.  Hence the brace and t
 bracket of two such maps vanish on degenerate words again; these are the normalized Hochschild
 cochains.  Degenerate words are also spanned by the pure words of homogeneous letters with a
 letter equal to `e`, so vanishing on them may be tested on homogeneous inputs
-(`degenerateWords_le_iff_of_mem_piece`).
+(`degenerateWords_le_iff_of_mem_piece`).  Letterwise maps killing `e` vanish on degenerate words
+(`degenerateWords_le_ker_map`), and subtracting the letterwise action of a linear endomorphism that
+modifies every element by a scalar multiple of `e` lands in the degenerate words
+(`sub_map_mem_degenerateWords`).
 
 ## References
 
@@ -236,6 +239,13 @@ theorem coalgHom_mem_degenerateWords (f : ReducedTensorWords R M →ₗ[R] N)
   | add x y _ _ hx hy => simpa using Submodule.add_mem _ hx hy
   | smul c x _ hx => simpa using Submodule.smul_mem _ c hx
 
+/-- The letterwise map of a linear map killing `e` vanishes on degenerate words. -/
+theorem degenerateWords_le_ker_map (f : M →ₗ[R] N) {e : M} (he : f e = 0) :
+    degenerateWords R M e ≤ LinearMap.ker (ReducedTensorWords.map (R := R) f) :=
+  degenerateWords_le_iff.2 fun _ _ ⟨i, hi⟩ ↦ by
+    rw [LinearMap.mem_ker, map_of_tprod,
+      (PiTensorProduct.tprod R).map_coord_zero i (by simp [hi, he]), map_zero]
+
 /-! ### Graded Taylor expansions and homogeneous spanning words -/
 
 section Graded
@@ -249,6 +259,33 @@ theorem of_tprod_mem_degenerateWords_of_eq_smul {e : M} (n : {n : ℕ // 0 < n})
   have hx : x = Function.update x i (c • e) := by rw [← hi, Function.update_eq_self]
   rw [hx, (PiTensorProduct.tprod R).map_update_smul, map_smul]
   exact Submodule.smul_mem _ _ (of_tprod_mem_degenerateWords _ _ ⟨i, by simp⟩)
+
+section Sub
+
+variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Subtracting the letterwise action of a linear endomorphism that modifies every element by a
+scalar multiple of `e` lands in `degenerateWords R M e`. -/
+theorem sub_map_mem_degenerateWords (P : M →ₗ[R] M) {e : M}
+    (hP : ∀ a, ∃ c : R, a - P a = c • e) (z : ReducedTensorWords R M) :
+    z - ReducedTensorWords.map (R := R) P z ∈ degenerateWords R M e := by
+  suffices hle : (⊤ : Submodule R (ReducedTensorWords R M)) ≤
+      (degenerateWords R M e).comap (LinearMap.id - ReducedTensorWords.map (R := R) P) from
+    hle Submodule.mem_top
+  rw [← iSup_range_of R M, iSup_le_iff]
+  rintro n _ ⟨t, rfl⟩
+  induction t using PiTensorProduct.induction_on with
+  | smul_tprod r x =>
+    have hsub := (PiTensorProduct.tprod R).map_sub_map_piecewise x (fun j ↦ P (x j)) Finset.univ
+    rw [Finset.piecewise_univ] at hsub
+    simp only [Submodule.mem_comap, map_smul, LinearMap.sub_apply, LinearMap.id_apply,
+      map_of_tprod, ← map_sub, hsub, map_sum]
+    refine Submodule.smul_mem _ r (Submodule.sum_mem _ fun i _ ↦ ?_)
+    obtain ⟨c, hc⟩ := hP (x i)
+    exact of_tprod_mem_degenerateWords_of_eq_smul n _ (i := i) (c := c) (by simp [hc])
+  | add _ _ ht hu => rw [map_add]; exact Submodule.add_mem _ ht hu
+
+end Sub
 
 /-- Vanishing on degenerate words may be tested on pure words of homogeneous letters, one of which
 is the homogeneous element `e` with its degree. -/

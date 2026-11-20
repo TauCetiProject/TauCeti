@@ -137,7 +137,7 @@ ambient space `Lp E p μ`, as a linear isometry. -/
 def extendByZeroComapₗᵢ (hs : MeasurableSet s) :
     Lp E p (μ.comap ((↑) : s → α)) →ₗᵢ[𝕜] Lp E p μ :=
   (TauCeti.castLpₗᵢ (𝕜 := 𝕜) (Measure.restrict_univ (μ := μ))).toLinearIsometry.comp <|
-    (TauCeti.extendByZeroLpₗᵢ 𝕜 μ hs (subset_univ s)).comp
+    (TauCeti.extendByZeroLpₗᵢ 𝕜 μ hs.nullMeasurableSet (subset_univ s)).comp
       (comapSubtypeEquivₗᵢ 𝕜 μ hs).symm.toLinearIsometry
 
 variable (𝕜 μ p) in
@@ -152,8 +152,8 @@ def restrictComapCLM (hs : MeasurableSet s) :
 theorem coeFn_extendByZeroComapₗᵢ (hs : MeasurableSet s)
     (f₀ : Lp E p (μ.comap ((↑) : s → α))) :
     (extendByZeroComapₗᵢ 𝕜 μ hs f₀ : α → E) =ᵐ[μ] Function.extend ((↑) : s → α) (⇑f₀) 0 := by
-  have h1 := (ae_imp_of_ae_restrict (TauCeti.coeFn_extendByZeroLpₗᵢ 𝕜 hs (subset_univ s)
-    ((comapSubtypeEquivₗᵢ 𝕜 μ hs).symm f₀))).mono fun _ hx ↦ hx (mem_univ _)
+  have h1 := (ae_imp_of_ae_restrict (TauCeti.coeFn_extendByZeroLpₗᵢ 𝕜 hs.nullMeasurableSet
+    (subset_univ s) ((comapSubtypeEquivₗᵢ 𝕜 μ hs).symm f₀))).mono fun _ hx ↦ hx (mem_univ _)
   have h2 := (ae_eq_restrict_iff_indicator_ae_eq hs).1
     (coeFn_comapSubtypeEquivₗᵢ_symm (𝕜 := 𝕜) hs f₀)
   filter_upwards [h1, h2] with x hx1 hx2

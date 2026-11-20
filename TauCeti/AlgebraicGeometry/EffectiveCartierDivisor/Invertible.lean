@@ -277,15 +277,16 @@ def unitIsoOfForallIdealEqSpan {a : Γ(X, ⊤)}
 
 /-- The trivialization `unitIsoOfForallIdealEqSpan` is multiplication by `a`: composed with the
 inclusion `I ⟶ 𝒪_X`, it sends a function `r` over `V` to `a|_V * r`. -/
-@[simp]
 lemma sheafι_app_unitIsoOfForallIdealEqSpan_hom {a : Γ(X, ⊤)}
     (ha : ∀ U : X.affineOpens,
       IsSMulRegular Γ(X, U) (X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op a))
     (hIa : ∀ U : X.affineOpens,
       I.ideal U = Ideal.span {X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op a})
     (V : X.Opens) (r : Γ(X, V)) :
-    Scheme.Modules.Hom.app I.sheafι V ((I.unitIsoOfForallIdealEqSpan ha hIa).hom.val.app (op V) r) =
-      X.presheaf.map (homOfLE (le_top : V ≤ ⊤)).op a * r := by
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    (Scheme.Modules.Hom.app I.sheafι V
+        ((I.unitIsoOfForallIdealEqSpan ha hIa).hom.val.app (op V) r) =
+      X.presheaf.map (homOfLE (le_top : V ≤ ⊤)).op a * r) := by
   dsimp only [unitIsoOfForallIdealEqSpan, asIso_hom]
   -- The section modules of `I.sheaf.val` are those of `I.sheaf.presheaf`, but `rw` does not see
   -- through the two presentations.

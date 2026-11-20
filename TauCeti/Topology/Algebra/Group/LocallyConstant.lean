@@ -39,8 +39,6 @@ The uniformity statement itself needs only a compact *set* `K ⊆ G` and continu
 chosen point; no associativity, identity or inverse is needed.
 
 `IsLocallyConstant.exists_isOpen_forall_mul_right_eq` specializes to a compact space.
-`IsLocallyConstant.exists_isOpen_translate₂` and `IsLocallyConstant.exists_isOpen_translate₃` give
-uniformity for the families `(y, y * g)` and `(y, y * g, y * g * h)` used in cochain constructions.
 -/
 
 public section
@@ -94,27 +92,6 @@ theorem exists_isOpen_forall_mul_right_eq [CompactSpace G]
     (p₀ : P) (hσ : ContinuousAt σ p₀) :
     ∃ V : Set P, IsOpen V ∧ p₀ ∈ V ∧ ∀ p ∈ V, ∀ x : G, f (x * σ p) = f (x * σ p₀) := by
   simpa using exists_isOpen_forall_mem_mul_right_eq hf isCompact_univ p₀ hσ
-
-/-- A locally constant function `N : G × G → A`, evaluated along `(y, y * g)`, is locally
-constant in `g`, uniformly in `y`, on a compact space with continuous multiplication. -/
-theorem exists_isOpen_translate₂ [CompactSpace G]
-    {N : G × G → A} (hN : IsLocallyConstant N) (g₀ : G) :
-    ∃ V : Set G, IsOpen V ∧ g₀ ∈ V ∧ ∀ g ∈ V, ∀ y : G, N (y, y * g) = N (y, y * g₀) := by
-  simpa using (hN.comp_continuous
-    (continuous_fst.prodMk (continuous_fst.mul continuous_snd))).exists_isOpen_forall_mem_eq
-    isCompact_univ g₀
-
-/-- A locally constant function `Q : G × G × G → A`, evaluated along
-`(y, y * g, y * g * h)`, is locally constant in `(g, h)`, uniformly in `y`, on a compact space
-with continuous multiplication. -/
-theorem exists_isOpen_translate₃ [CompactSpace G]
-    {Q : G × G × G → A} (hQ : IsLocallyConstant Q) (q₀ : G × G) :
-    ∃ V : Set (G × G), IsOpen V ∧ q₀ ∈ V ∧
-      ∀ q ∈ V, ∀ y : G, Q (y, y * q.1, y * q.1 * q.2) = Q (y, y * q₀.1, y * q₀.1 * q₀.2) := by
-  simpa using (hQ.comp_continuous (continuous_fst.prodMk
-    ((continuous_fst.mul (continuous_fst.comp continuous_snd)).prodMk
-      ((continuous_fst.mul (continuous_fst.comp continuous_snd)).mul
-        (continuous_snd.comp continuous_snd))))).exists_isOpen_forall_mem_eq isCompact_univ q₀
 
 end IsLocallyConstant
 

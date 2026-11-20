@@ -332,6 +332,22 @@ theorem IsIntegralPath.pow (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.cor
   | zero => simp
   | succ n ih => rw [pow_succ]; exact ih.mul hF h
 
+/-- For every integral straight path `straight 𝕜 (f lam)` and every `n : ℕ`, the straight path
+`straight 𝕜 (f (n • lam))` is also an integral path. -/
+theorem IsIntegralPath.straight_nsmul
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {lam : X} (h : IsIntegralPath b f F (straight 𝕜 (f lam))) (n : ℕ) :
+    IsIntegralPath b f F (straight 𝕜 (f (n • lam))) := by
+  rw [map_nsmul, ← Nat.cast_smul_eq_nsmul 𝕜, straight_natCast_smul]
+  exact h.pow hF n
+
+/-- Dilation by any `n : ℕ` preserves integrality of straight paths. -/
+theorem IsIntegralPath.map_natCast_smul_straight
+    (hF : ∀ (i : b.support) (x : X), F i (f x) = (P.coroot' i x : 𝕜))
+    {v : V} (h : IsIntegralPath b f F (straight 𝕜 v)) (n : ℕ) :
+    IsIntegralPath b f F ((straight 𝕜 v).map ((n : 𝕜) • LinearMap.id)) := by
+  simpa using h.pow hF n
+
 /-- Path concatenation induces a strict crystal morphism from the Kashiwara tensor product of two
 `normalCrystalOn` crystals to any `normalCrystalOn` crystal containing their concatenations. -/
 noncomputable def mulOnHom (hf : Function.Injective f)

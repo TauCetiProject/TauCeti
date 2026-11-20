@@ -788,6 +788,33 @@ theorem gaussDegree_sum_range_teichmuller_mul_pow_lt (hv : v.Integers O)
     map_zero, zero_mul, gaussValuation_eq_zero_iff hv hρ₀ hρ] at this
   exact h this
 
+/-- Truncating the Teichmüller expansion of a nonzero Witt vector beyond its degree leaves a
+remainder of smaller Gauss valuation. -/
+theorem gaussValuation_sub_sum_range_teichmuller_mul_pow_lt (hv : v.Integers O) (hρ₀ : 0 < ρ)
+    (hρ : ρ < 1) {x : 𝕎 O} (hx : x ≠ 0) {n : ℕ} (hn : gaussDegree p hv ρ hρ x < n) :
+    gaussValuation p hv ρ hρ
+        (x - ∑ i ∈ Finset.range n, teichmuller p (x.teichmullerCoeff i) * (p : 𝕎 O) ^ i) <
+      gaussValuation p hv ρ hρ x := by
+  have hL0 : 0 < gaussValuation p hv ρ hρ x := gaussValuation_pos hv hρ₀ hρ hx
+  obtain ⟨N, hN⟩ := NNReal.exists_pow_lt_of_lt_one hL0 hρ
+  obtain ⟨w, hw⟩ := pow_dvd_sub_sum_teichmullerCoeff x (n + N)
+  rw [← Nat.range_succ_eq_Iic] at hw
+  have hsplit : x - ∑ i ∈ Finset.range n, teichmuller p (x.teichmullerCoeff i) * (p : 𝕎 O) ^ i =
+      (p : 𝕎 O) ^ (n + N + 1) * w +
+        ∑ i ∈ Finset.Ico n (n + N + 1), teichmuller p (x.teichmullerCoeff i) * (p : 𝕎 O) ^ i := by
+    rw [← hw, ← Finset.sum_range_add_sum_Ico _ (by omega : n ≤ n + N + 1)]
+    ring
+  rw [hsplit]
+  refine Valuation.map_add_lt _ ?_ (Valuation.map_sum_lt _ hL0.ne' fun i hi ↦ ?_)
+  · rw [map_mul, map_pow, gaussValuation_p]
+    calc ρ ^ (n + N + 1) * gaussValuation p hv ρ hρ w ≤ ρ ^ N :=
+          (mul_le_of_le_one_right' (gaussValuation_le_one hv hρ w)).trans
+            (pow_le_pow_of_le_one zero_le hρ.le (by omega))
+      _ < _ := hN
+  · rw [gaussValuation_teichmuller_mul_pow]
+    exact mul_pow_lt_gaussValuation_of_gaussDegree_lt hv hρ₀ hρ hx
+      (hn.trans_le (Finset.mem_Ico.mp hi).1)
+
 end Degree
 
 end TauCeti.WittVector

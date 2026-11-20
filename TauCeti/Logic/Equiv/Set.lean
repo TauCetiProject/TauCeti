@@ -13,6 +13,9 @@ public import Mathlib.Logic.Equiv.Set
 An equivalence `e : α ≃ β` carries `s` onto `t`, in the sense that `e x ∈ t ↔ x ∈ s` for every
 `x`, exactly when `e` maps `s` into `t` and `e.symm` maps `t` into `s`.
 
+The preimage of `{y}` under `e` is `{e.symm y}` (`Equiv.preimage_singleton`). Together with
+`Set.preimage_comp`, this identifies fibres after relabelling the base by an equivalence.
+
 A map `g : α → β` that agrees on `s` with an equivalence `s ≃ t` is a bijection from `s` onto `t`
 (`Equiv.bijOn_of_coe_eq`). This is a converse to `Set.BijOn.equiv`, which turns a bijection
 between sets into an equivalence of the subtypes.
@@ -24,6 +27,12 @@ of `f` (`Equiv.ofInjectiveSumCompl`).
 public section
 
 namespace Equiv
+
+/-- The preimage of a singleton under an equivalence is the singleton of its inverse image. -/
+@[simp]
+theorem preimage_singleton {α β : Type*} (e : α ≃ β) (y : β) :
+    e ⁻¹' {y} = {e.symm y} := by
+  rw [← e.image_symm_eq_preimage, Set.image_singleton]
 
 /-- An equivalence carries `s` onto `t` exactly when it maps `s` into `t` and its inverse maps `t`
 into `s`. -/

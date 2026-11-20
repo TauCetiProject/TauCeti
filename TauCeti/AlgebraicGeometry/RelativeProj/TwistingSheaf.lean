@@ -60,7 +60,7 @@ trivialize its twisting sheaves.
 
 ## References
 
-* [The Stacks Project, Section 27.15, Relative Proj](https://stacks.math.columbia.edu/tag/01NS)
+* [The Stacks Project, Section 27.15, Relative Proj](https://stacks.math.columbia.edu/tag/01NM)
 * [The Stacks Project, Lemma 27.15.5](https://stacks.math.columbia.edu/tag/01NR)
 * [The Stacks Project, Lemma 27.16.11](https://stacks.math.columbia.edu/tag/01O4)
 -/

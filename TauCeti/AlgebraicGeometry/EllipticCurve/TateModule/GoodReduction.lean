@@ -7,15 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Unramified
-public import TauCeti.NumberTheory.LocalField.Unramified.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Bound
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TorsionReduction
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel.ValuativeExtension
-import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
-import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
-import TauCeti.NumberTheory.LocalField.Henselian
 
 /-!
 # Good reduction from an unramified Tate module
@@ -75,9 +69,8 @@ section FiniteExtension
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [IsUnramified K L]
-  [DecidableEq L] {W : WeierstrassCurve K} [W.IsElliptic] [IsIntegral 𝒪[K] W]
+  [DecidableEq L] {W : WeierstrassCurve K} [IsIntegral 𝒪[K] W]
 
-omit [W.IsElliptic] in
 /-- **Full torsion over an unramified extension is bounded at bad reduction** (Silverman AEC
 VII.7.1). Let `L/K` be an unramified extension of nonarchimedean local fields, and suppose that
 Tate's algorithm, run with a uniformiser `ϖ` of `K`, stops on the integral model of `W` at a

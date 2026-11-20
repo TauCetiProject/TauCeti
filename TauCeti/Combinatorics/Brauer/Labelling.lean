@@ -193,7 +193,7 @@ theorem exists_forall_isConstantOnArcs_iff_eq [Fintype ι] (hk : k ≤ Fintype.c
       · exact Or.inr (D.apply_eq_of_apply_eq hxy.symm).symm
       · exact Or.inr hxy.symm
       · exact Or.inl (D.val.injective hxy).symm
-    refine Subtype.ext (Equiv.ext fun x => ?_)
+    ext x
     exact (hsame x (D'.val x) (h x).symm).resolve_left (D'.apply_ne x)
   · exact fun h => h ▸ (D.isConstantOnArcsEquiv.symm g).2
 

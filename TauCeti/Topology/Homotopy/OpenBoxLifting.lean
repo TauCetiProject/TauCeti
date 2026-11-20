@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.ContinuousMap.GlueHalves
+public import TauCeti.Topology.ContinuousMap.Glue.Halves
 public import TauCeti.Topology.Homotopy.HurewiczFibration.Basic
 public import TauCeti.Topology.Homotopy.Lifting.OpenBox
 

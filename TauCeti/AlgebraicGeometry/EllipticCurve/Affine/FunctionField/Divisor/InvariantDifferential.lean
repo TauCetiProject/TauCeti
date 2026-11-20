@@ -133,7 +133,6 @@ private theorem differentExponent_le_of_ord_nonneg (P : Place F W.FunctionField)
         (mul_mem (hc _) hxi)) (hc _))
     (adjoin_genericY_eq_top W (RatFunc F))
     (by simp only [map_add, map_mul, map_pow, hX, hC]; linear_combination heq)
-    (by rw [hu]; exact invariantDifferentialDenom_ne_zero W)
   rw [hu] at h
   omega
 
@@ -196,7 +195,6 @@ private theorem differentExponent_le_of_ord_neg (P : Place F W.FunctionField)
       simp only [map_add, map_mul, map_pow, map_inv₀, hX, hC]
       field_simp
       linear_combination heq)
-    (by rw [hu]; exact mul_ne_zero (invariantDifferentialDenom_ne_zero W) hx2)
   rw [hu, P.ord_mul (invariantDifferentialDenom_ne_zero W) hx2, P.ord_inv, P.ord_pow] at h
   push_cast at h
   omega
