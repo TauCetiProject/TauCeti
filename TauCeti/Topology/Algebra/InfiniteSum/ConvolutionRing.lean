@@ -17,21 +17,22 @@ import TauCeti.Analysis.Normed.Group.Pi
 
 A two-sided coefficient family `a : ℤ → R` stands for the formal Laurent series `∑_{n ∈ ℤ} aₙ tⁿ`.
 The product of two such series has coefficients `(ab)ₙ = ∑_{i ∈ ℤ} aᵢ bₙ₋ᵢ`, the discrete
-convolution `a ⋆ᵣ₊ b`, but these sums are infinite and need not converge. A class of families on
-which they do, closed under convolution, is a ring.
+convolution `a ⋆ᵣ₊ b`, but these sums are infinite and need not converge. Over a topological
+ring that is a `T3Space`, a class of families on which they do, closed under convolution, is a ring.
 
-`TauCeti.IsConvolutionRing S` says that the submodule `S` of `ℤ → R` contains every monomial
-`Pi.single n c` and is closed under convolution, that the convolution sums of its members converge,
-and that the triple products of three members are summable, so that the two bracketings of a
-triple product agree. Under it, this file equips `S` with the convolution product: `S` is a ring,
-a commutative `R`-algebra when `R` is commutative, the monomials multiply by adding degrees, and
-the families with coefficients in the closed unit ball of an ultrametric normed ring form a
-subring.
+`TauCeti.IsConvolutionRing S` collects the convergence and closure hypotheses for the convolution
+product on the submodule `S` of `ℤ → R`: `S` contains every monomial `Pi.single n c` and is closed
+under convolution, the convolution sums of its members converge, and the triple products of three
+members are summable, so that the two bracketings of a triple product agree. Under it, this file
+equips `S` with the convolution product, and the monomials multiply by adding degrees. When `R` is
+moreover a ring with `IsTopologicalRing R` and `T3Space R`, `S` is a ring (`instRing`); when `R`
+is in addition commutative, `S` is a commutative `R`-algebra (`instCommRing`, `instAlgebra`). The
+families with coefficients in the closed unit ball of an ultrametric normed ring form a subring.
 
 ## Main definitions
 
-* `TauCeti.IsConvolutionRing`: the hypotheses under which a submodule of `ℤ → R` is a ring under
-  convolution.
+* `TauCeti.IsConvolutionRing`: the convergence and closure hypotheses for the convolution product
+  on a submodule of `ℤ → R`.
 * `TauCeti.IsConvolutionRing.instRing`, `TauCeti.IsConvolutionRing.instCommRing`,
   `TauCeti.IsConvolutionRing.instAlgebra`: the ring and algebra structures.
 * `TauCeti.IsConvolutionRing.monomial`: the Laurent monomial `c tⁿ`.
@@ -57,11 +58,14 @@ open DiscreteConvolution
 
 variable {R : Type*}
 
-/-- The submodule `S` of two-sided coefficient families `ℤ → R` is a ring under the convolution
-product `(ab)ₙ = ∑_{i ∈ ℤ} aᵢ bₙ₋ᵢ`: it contains every monomial `Pi.single n c` and is closed under
-convolution, the convolution sums of two members converge, and the triple products
-`a i * b j * c k` over the triples with `i + j + k = n` of three members are summable, indexed as
-in `DiscreteConvolution.addRingConvolution_assoc`. -/
+/-- The convergence and closure hypotheses for the convolution product
+`(ab)ₙ = ∑_{i ∈ ℤ} aᵢ bₙ₋ᵢ` on the submodule `S` of two-sided coefficient families `ℤ → R`: `S`
+contains every monomial `Pi.single n c` and is closed under convolution, the convolution sums of
+two members converge, and the triple products `a i * b j * c k` over the triples with
+`i + j + k = n` of three members are summable, indexed as in
+`DiscreteConvolution.addRingConvolution_assoc`. The ring structure `instRing` on `S` further needs
+`R` to be a ring with `IsTopologicalRing R` and `T3Space R`; `instCommRing` and `instAlgebra` also
+need `R` to be commutative. -/
 class IsConvolutionRing [Semiring R] [TopologicalSpace R] (S : Submodule R (ℤ → R)) : Prop where
   single_mem (n : ℤ) (c : R) : Pi.single n c ∈ S
   addRingConvolution_mem {a b : ℤ → R} : a ∈ S → b ∈ S → a ⋆ᵣ₊ b ∈ S
