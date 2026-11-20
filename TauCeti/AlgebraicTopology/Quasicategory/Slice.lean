@@ -27,7 +27,8 @@ The proof is by the join horn filtration. Through the universal properties of sl
 a lifting problem of a map `j : A ⟶ B` against the relative slice map for `i`, and a lifting
 problem of `i` against the relative coslice map for `j`, are both extension problems along the
 pushout-join of `j` and `i` for maps `B ⋆ K ⟶ X` over `S`
-(`SSet.slice.forall_hasLiftingProperty_restrictionMap_iff`). For a horn `Λ[m, k] ⟶ Δ[m]` with
+(`SSet.slice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout` and its coslice
+counterpart, in `TauCeti.AlgebraicTopology.SimplicialSet.Coslice`). For a horn `Λ[m, k] ⟶ Δ[m]` with
 `0 < k`, the relative coslice map for it is a trivial fibration: by Mathlib's description of the
 trivial fibrations as the maps lifting against boundary inclusions (`SSet.rlp_monomorphisms`), it
 suffices to lift `∂Δ[n] ⟶ Δ[n]`, and the pushout-join `(Λ[m, k] ⋆ Δ[n]) ∪ (Δ[m] ⋆ ∂Δ[n])` is the
@@ -37,9 +38,6 @@ relative slice map for `Λ[m, k] ⟶ Δ[m]` is a trivial fibration, by the inner
 
 ## Main results
 
-* `SSet.slice.forall_hasLiftingProperty_restrictionMap_iff`: lifting problems of `j` against the
-  relative slice maps for `i` correspond to lifting problems of `i` against the relative coslice
-  maps for `j`.
 * `SSet.coslice.hasLiftingProperty_restrictionMap_horn_ι`,
   `SSet.slice.hasLiftingProperty_restrictionMap_horn_ι`: for an inner fibration `p`, the relative
   coslice map for `Λ[m, k] ⟶ Δ[m]` with `0 < k`, and the relative slice map for it with `k < m`,
@@ -78,151 +76,6 @@ namespace SSet
 
 variable {A B K L X S : SSet.{u}} {m : ℕ} {k : Fin (m + 1)}
 
-/-! ### Lifting problems for relative slices and coslices -/
-
-namespace coslice
-
-/-- For subcomplexes `A` of `K` and `B` of `L`, if the pushout-join inclusion
-`(A ⋆ L) ∪ (K ⋆ B) ⟶ K ⋆ L` has the left lifting property with respect to `p : X ⟶ S`, then for
-every `τ : K ⟶ X` the relative coslice map `X_{τ/} ⟶ X_{A ⟶ K ⟶ X/} ×_{S_{A ⟶ K ⟶ S/}} S_{τ ≫ p/}`
-has the right lifting property with respect to the inclusion of `B`. Through the universal
-property of the coslice, a lifting problem is a map `(A ⋆ L) ∪ (K ⋆ B) ⟶ X` and a map `K ⋆ L ⟶ S`
-under it. -/
-theorem hasLiftingProperty_restrictionMap_of_unionJoin (A : K.Subcomplex) (B : L.Subcomplex)
-    (p : X ⟶ S) [HasLiftingProperty (A.unionJoin B).ι p] (τ : K ⟶ X) :
-    HasLiftingProperty B.ι (restrictionMap A.ι p τ) := by
-  refine ⟨fun {a b} sq ↦ ?_⟩
-  obtain ⟨b₁, b₂, hb, rfl⟩ : ∃ b₁ b₂ hb, b = pullback.lift b₁ b₂ hb :=
-    ⟨b ≫ pullback.fst _ _, b ≫ pullback.snd _ _, by simp [pullback.condition],
-      pullback.hom_ext (by simp) (by simp)⟩
-  -- The square amounts to maps `K ⋆ B ⟶ X` and `A ⋆ L ⟶ X` agreeing on `A ⋆ B`, and a map
-  -- `K ⋆ L ⟶ S` under them. Glue the first two on the pushout-join and lift against `p`.
-  have h₁ := congrArg (fun F ↦ (homEquiv F).1) (sq.w =≫ pullback.fst _ _)
-  have h₂ := congrArg (fun F ↦ (homEquiv F).1) (sq.w =≫ pullback.snd _ _)
-  have h₃ := congrArg (fun F ↦ (homEquiv F).1) hb
-  simp only [Category.assoc, restrictionMap_fst, restrictionMap_snd, pullback.lift_fst,
-    pullback.lift_snd, homEquiv_comp_map_coe, join.map_id, Category.id_comp,
-    Category.comp_id] at h₁ h₂ h₃
-  simp only [homEquiv_comp_coe] at h₁ h₂ h₃
-  have hpush := Subcomplex.unionJoin.isPushout A B
-  have sq' : CommSq (hpush.desc (homEquiv b₁).1 (homEquiv a).1 h₁.symm) (A.unionJoin B).ι p
-      (homEquiv b₂).1 :=
-    ⟨hpush.hom_ext (by simp [h₃]) (by simp [h₂])⟩
-  have hl₁ : join.map A.ι (𝟙 _) ≫ sq'.lift = (homEquiv b₁).1 := by
-    rw [← Subcomplex.unionJoin.ι₁_ι, Category.assoc, sq'.fac_left, IsPushout.inl_desc]
-  have hl₂ : join.map (𝟙 _) B.ι ≫ sq'.lift = (homEquiv a).1 := by
-    rw [← Subcomplex.unionJoin.ι₂_ι, Category.assoc, sq'.fac_left, IsPushout.inr_desc]
-  refine ⟨⟨⟨homEquiv.symm ⟨sq'.lift, ?_⟩, hom_ext (by simp [hl₂]),
-    pullback.hom_ext (hom_ext (by simp [hl₁])) (hom_ext (by simp))⟩⟩⟩
-  calc join.inl K L ≫ sq'.lift = join.inl K B ≫ join.map (𝟙 K) B.ι ≫ sq'.lift := by
-        simp only [join.inl_map_assoc, Category.id_comp]
-    _ = τ := by rw [hl₂, (homEquiv a).2]
-
-/-- A lifting problem of `i : L ⟶ K` against the relative coslice map for `j : A ⟶ B` at
-`τ : B ⟶ X` is a lifting problem of `j` against a relative slice map for `i`. -/
-private lemma hasLiftingProperty_restrictionMap_of_slice (j : A ⟶ B) (i : L ⟶ K) (p : X ⟶ S)
-    (τ : B ⟶ X) (h : ∀ σ : K ⟶ X, HasLiftingProperty j (slice.restrictionMap i p σ)) :
-    HasLiftingProperty i (restrictionMap j p τ) := by
-  refine ⟨fun {a b} sq ↦ ?_⟩
-  obtain ⟨b₁, b₂, hb, rfl⟩ : ∃ b₁ b₂ hb, b = pullback.lift b₁ b₂ hb :=
-    ⟨b ≫ pullback.fst _ _, b ≫ pullback.snd _ _, by simp [pullback.condition],
-      pullback.hom_ext (by simp) (by simp)⟩
-  -- The square consists of `α : A ⋆ K ⟶ X`, `β : B ⋆ L ⟶ X` and `γ : B ⋆ K ⟶ S`, which form a
-  -- square from `j` to the relative slice map for `i` at the restriction `σ : K ⟶ X` of `α`.
-  have h₁ := congrArg (fun F ↦ (homEquiv F).1) (sq.w =≫ pullback.fst _ _)
-  have h₂ := congrArg (fun F ↦ (homEquiv F).1) (sq.w =≫ pullback.snd _ _)
-  have h₃ := congrArg (fun F ↦ (homEquiv F).1) hb
-  simp only [Category.assoc, restrictionMap_fst, restrictionMap_snd, pullback.lift_fst,
-    pullback.lift_snd, homEquiv_comp_map_coe, join.map_id, Category.id_comp,
-    Category.comp_id] at h₁ h₂ h₃
-  simp only [homEquiv_comp_coe] at h₁ h₂ h₃
-  let σ : K ⟶ X := join.inr A K ≫ (homEquiv b₁).1
-  have hβ : join.inr B L ≫ (homEquiv a).1 = i ≫ σ := by
-    rw [← Category.id_comp (join.inr B L), ← join.inr_map j, Category.assoc, h₁,
-      join.inr_map_assoc]
-  have hγ : join.inr B K ≫ (homEquiv b₂).1 = σ ≫ p := by
-    rw [Category.assoc, h₃, ← Category.assoc, join.inr_map, Category.id_comp]
-  have sq' : CommSq (slice.homEquiv.symm ⟨(homEquiv b₁).1, rfl⟩) j (slice.restrictionMap i p σ)
-      (pullback.lift (slice.homEquiv.symm ⟨(homEquiv a).1, hβ⟩)
-        (slice.homEquiv.symm ⟨(homEquiv b₂).1, hγ⟩) (slice.hom_ext (by simp [h₂]))) :=
-    ⟨pullback.hom_ext (slice.hom_ext (by simp [h₁])) (slice.hom_ext (by simp [h₃]))⟩
-  have := h σ
-  have hl₁ := congrArg (fun F ↦ (slice.homEquiv F).1) sq'.fac_left
-  have hl₂ := congrArg (fun F ↦ (slice.homEquiv F).1) (sq'.fac_right =≫ pullback.fst _ _)
-  have hl₃ := congrArg (fun F ↦ (slice.homEquiv F).1) (sq'.fac_right =≫ pullback.snd _ _)
-  simp only [Category.assoc, slice.restrictionMap_fst, slice.restrictionMap_snd, pullback.lift_fst,
-    pullback.lift_snd, slice.homEquiv_comp_map_coe, join.map_id, Category.id_comp,
-    Category.comp_id, Equiv.apply_symm_apply] at hl₁ hl₂ hl₃
-  simp only [slice.homEquiv_comp_coe] at hl₁ hl₂ hl₃
-  refine ⟨⟨⟨homEquiv.symm ⟨(slice.homEquiv sq'.lift).1, ?_⟩, hom_ext (by simp [hl₂]),
-    pullback.hom_ext (hom_ext (by simp [hl₁])) (hom_ext (by simp [hl₃]))⟩⟩⟩
-  calc join.inl B K ≫ (slice.homEquiv sq'.lift).1 =
-        join.inl B L ≫ join.map (𝟙 B) i ≫ (slice.homEquiv sq'.lift).1 := by
-        simp only [join.inl_map_assoc, Category.id_comp]
-    _ = τ := by rw [hl₂, (homEquiv a).2]
-
-end coslice
-
-namespace slice
-
-/-- A lifting problem of `j : A ⟶ B` against the relative slice map for `i : L ⟶ K` at
-`σ : K ⟶ X` is a lifting problem of `i` against a relative coslice map for `j`. -/
-private lemma hasLiftingProperty_restrictionMap_of_coslice (j : A ⟶ B) (i : L ⟶ K) (p : X ⟶ S)
-    (σ : K ⟶ X) (h : ∀ τ : B ⟶ X, HasLiftingProperty i (coslice.restrictionMap j p τ)) :
-    HasLiftingProperty j (restrictionMap i p σ) := by
-  refine ⟨fun {a b} sq ↦ ?_⟩
-  obtain ⟨b₁, b₂, hb, rfl⟩ : ∃ b₁ b₂ hb, b = pullback.lift b₁ b₂ hb :=
-    ⟨b ≫ pullback.fst _ _, b ≫ pullback.snd _ _, by simp [pullback.condition],
-      pullback.hom_ext (by simp) (by simp)⟩
-  -- The square consists of `α : A ⋆ K ⟶ X`, `β : B ⋆ L ⟶ X` and `γ : B ⋆ K ⟶ S`, which form a
-  -- square from `i` to the relative coslice map for `j` at the restriction `τ : B ⟶ X` of `β`.
-  have h₁ := congrArg (fun F ↦ (homEquiv F).1) (sq.w =≫ pullback.fst _ _)
-  have h₂ := congrArg (fun F ↦ (homEquiv F).1) (sq.w =≫ pullback.snd _ _)
-  have h₃ := congrArg (fun F ↦ (homEquiv F).1) hb
-  simp only [Category.assoc, restrictionMap_fst, restrictionMap_snd, pullback.lift_fst,
-    pullback.lift_snd, homEquiv_comp_map_coe, join.map_id, Category.id_comp,
-    Category.comp_id] at h₁ h₂ h₃
-  simp only [homEquiv_comp_coe] at h₁ h₂ h₃
-  let τ : B ⟶ X := join.inl B L ≫ (homEquiv b₁).1
-  have hα : join.inl A K ≫ (homEquiv a).1 = j ≫ τ := by
-    rw [← Category.id_comp (join.inl A K), ← join.inl_map _ i, Category.assoc, h₁,
-      join.inl_map_assoc]
-  have hγ : join.inl B K ≫ (homEquiv b₂).1 = τ ≫ p := by
-    rw [Category.assoc, h₃, ← Category.assoc, join.inl_map, Category.id_comp]
-  have sq' : CommSq (coslice.homEquiv.symm ⟨(homEquiv b₁).1, rfl⟩) i
-      (coslice.restrictionMap j p τ)
-      (pullback.lift (coslice.homEquiv.symm ⟨(homEquiv a).1, hα⟩)
-        (coslice.homEquiv.symm ⟨(homEquiv b₂).1, hγ⟩) (coslice.hom_ext (by simp [h₂]))) :=
-    ⟨pullback.hom_ext (coslice.hom_ext (by simp [h₁])) (coslice.hom_ext (by simp [h₃]))⟩
-  have := h τ
-  have hl₁ := congrArg (fun F ↦ (coslice.homEquiv F).1) sq'.fac_left
-  have hl₂ := congrArg (fun F ↦ (coslice.homEquiv F).1) (sq'.fac_right =≫ pullback.fst _ _)
-  have hl₃ := congrArg (fun F ↦ (coslice.homEquiv F).1) (sq'.fac_right =≫ pullback.snd _ _)
-  simp only [Category.assoc, coslice.restrictionMap_fst, coslice.restrictionMap_snd,
-    pullback.lift_fst, pullback.lift_snd, coslice.homEquiv_comp_map_coe, join.map_id,
-    Category.id_comp, Category.comp_id, Equiv.apply_symm_apply] at hl₁ hl₂ hl₃
-  simp only [coslice.homEquiv_comp_coe] at hl₁ hl₂ hl₃
-  refine ⟨⟨⟨homEquiv.symm ⟨(coslice.homEquiv sq'.lift).1, ?_⟩, hom_ext (by simp [hl₂]),
-    pullback.hom_ext (hom_ext (by simp [hl₁])) (hom_ext (by simp [hl₃]))⟩⟩⟩
-  calc join.inr B K ≫ (coslice.homEquiv sq'.lift).1 =
-        join.inr A K ≫ join.map j (𝟙 K) ≫ (coslice.homEquiv sq'.lift).1 := by
-        simp only [join.inr_map_assoc, Category.id_comp]
-    _ = σ := by rw [hl₂, (homEquiv a).2]
-
-/-- **Lifting problems for relative slices and relative coslices correspond.** For maps
-`j : A ⟶ B`, `i : L ⟶ K` and `p : X ⟶ S`, the map `j` lifts against every relative slice map
-`X_{/σ} ⟶ X_{/i ≫ σ} ×_{S_{/i ≫ σ ≫ p}} S_{/σ ≫ p}` exactly when `i` lifts against every relative
-coslice map `X_{τ/} ⟶ X_{j ≫ τ/} ×_{S_{j ≫ τ ≫ p/}} S_{τ ≫ p/}`: through the universal properties,
-both are extension problems along the pushout-join of `j` and `i` for maps `B ⋆ K ⟶ X` over
-`S`. -/
-theorem forall_hasLiftingProperty_restrictionMap_iff (j : A ⟶ B) (i : L ⟶ K) (p : X ⟶ S) :
-    (∀ σ : K ⟶ X, HasLiftingProperty j (restrictionMap i p σ)) ↔
-      ∀ τ : B ⟶ X, HasLiftingProperty i (coslice.restrictionMap j p τ) :=
-  ⟨fun h τ ↦ coslice.hasLiftingProperty_restrictionMap_of_slice j i p τ h,
-    fun h σ ↦ hasLiftingProperty_restrictionMap_of_coslice j i p σ h⟩
-
-end slice
-
 /-! ### Relative slices and coslices of inner fibrations -/
 
 namespace coslice
@@ -230,9 +83,9 @@ namespace coslice
 /-- For an inner fibration `p : X ⟶ S`, a simplex `τ : Δ[m] ⟶ X` and `0 < k`, **the relative
 coslice map `X_{τ/} ⟶ X_{(Λ[m, k] ⟶ Δ[m] ⟶ X)/} ×_{S_{(Λ[m, k] ⟶ Δ[m] ⟶ S)/}} S_{τ ≫ p/}` is a
 trivial fibration**: it has the right lifting property with respect to every monomorphism
-`j : A ⟶ B`. Through the universal property of the coslice, this says that maps
-`(Λ[m, k] ⋆ B) ∪ (Δ[m] ⋆ A) ⟶ X` extending `τ` extend to `Δ[m] ⋆ B`, over any given map
-`Δ[m] ⋆ B ⟶ S`. -/
+`j : A ⟶ B`. Through the universal property of the coslice, this says that a map
+`(Λ[m, k] ⋆ B) ∪ (Δ[m] ⋆ A) ⟶ X` extending `τ` extends to `Δ[m] ⋆ B` over every map
+`Δ[m] ⋆ B ⟶ S` whose restriction to `(Λ[m, k] ⋆ B) ∪ (Δ[m] ⋆ A)` is its composite with `p`. -/
 theorem hasLiftingProperty_restrictionMap_horn_ι (p : X ⟶ S) [InnerFibration p] (hk : 0 < k)
     (τ : Δ[m] ⟶ X) (j : A ⟶ B) [Mono j] :
     HasLiftingProperty j (restrictionMap Λ[m, k].ι p τ) := by
@@ -241,7 +94,9 @@ theorem hasLiftingProperty_restrictionMap_horn_ι (p : X ⟶ S) [InnerFibration 
   rw [rlp_monomorphisms]
   rintro _ _ _ ⟨n⟩
   have := join.innerAnodyneExtensions_unionJoin_horn_boundary n hk p (mem_innerFibrations p)
-  exact hasLiftingProperty_restrictionMap_of_unionJoin Λ[m, k] ∂Δ[n] p τ
+  exact (forall_hasLiftingProperty_restrictionMap_iff_of_isPushout Λ[m, k].ι ∂Δ[n].ι p
+    (Subcomplex.unionJoin.isPushout _ _) (Subcomplex.unionJoin.ι₁_ι _ _)
+    (Subcomplex.unionJoin.ι₂_ι _ _)).2 inferInstance τ
 
 end coslice
 
@@ -250,9 +105,9 @@ namespace slice
 /-- For an inner fibration `p : X ⟶ S`, a simplex `σ : Δ[m] ⟶ X` and `k < m`, **the relative
 slice map `X_{/σ} ⟶ X_{/(Λ[m, k] ⟶ Δ[m] ⟶ X)} ×_{S_{/(Λ[m, k] ⟶ Δ[m] ⟶ S)}} S_{/σ ≫ p}` is a
 trivial fibration**: it has the right lifting property with respect to every monomorphism
-`j : A ⟶ B`. Through the universal property of the slice, this says that maps
-`(A ⋆ Δ[m]) ∪ (B ⋆ Λ[m, k]) ⟶ X` extending `σ` extend to `B ⋆ Δ[m]`, over any given map
-`B ⋆ Δ[m] ⟶ S`. -/
+`j : A ⟶ B`. Through the universal property of the slice, this says that a map
+`(A ⋆ Δ[m]) ∪ (B ⋆ Λ[m, k]) ⟶ X` extending `σ` extends to `B ⋆ Δ[m]` over every map
+`B ⋆ Δ[m] ⟶ S` whose restriction to `(A ⋆ Δ[m]) ∪ (B ⋆ Λ[m, k])` is its composite with `p`. -/
 theorem hasLiftingProperty_restrictionMap_horn_ι (p : X ⟶ S) [InnerFibration p]
     (hk : k < Fin.last m) (σ : Δ[m] ⟶ X) (j : A ⟶ B) [Mono j] :
     HasLiftingProperty j (restrictionMap Λ[m, k].ι p σ) := by
@@ -261,17 +116,9 @@ theorem hasLiftingProperty_restrictionMap_horn_ι (p : X ⟶ S) [InnerFibration 
   rw [rlp_monomorphisms]
   rintro _ _ _ ⟨n⟩
   have := join.innerAnodyneExtensions_unionJoin_boundary_horn n hk p (mem_innerFibrations p)
-  exact (forall_hasLiftingProperty_restrictionMap_iff ∂Δ[n].ι Λ[m, k].ι p).2
-    (coslice.hasLiftingProperty_restrictionMap_of_unionJoin ∂Δ[n] Λ[m, k] p) σ
-
-/-- For an inner fibration `p : X ⟶ S`, a monomorphism `i : L ⟶ K`, a diagram `σ : K ⟶ X` and
-`0 < k`, **the relative slice map `X_{/σ} ⟶ X_{/i ≫ σ} ×_{S_{/i ≫ σ ≫ p}} S_{/σ ≫ p}` has the
-right lifting property with respect to the horn inclusion `Λ[m, k] ⟶ Δ[m]`**. -/
-theorem hasLiftingProperty_horn_ι_restrictionMap (p : X ⟶ S) [InnerFibration p] (i : L ⟶ K)
-    [Mono i] (σ : K ⟶ X) (hk : 0 < k) :
-    HasLiftingProperty Λ[m, k].ι (restrictionMap i p σ) :=
-  (forall_hasLiftingProperty_restrictionMap_iff Λ[m, k].ι i p).2
-    (fun τ ↦ coslice.hasLiftingProperty_restrictionMap_horn_ι p hk τ i) σ
+  exact (forall_hasLiftingProperty_restrictionMap_iff_of_isPushout ∂Δ[n].ι Λ[m, k].ι p
+    (Subcomplex.unionJoin.isPushout _ _) (Subcomplex.unionJoin.ι₁_ι _ _)
+    (Subcomplex.unionJoin.ι₂_ι _ _)).2 inferInstance σ
 
 /-- **The relative slice map of an inner fibration is a right fibration** (HTT
 Proposition 2.1.2.1): for an inner fibration `p : X ⟶ S`, a monomorphism `i : L ⟶ K` and a
@@ -280,20 +127,12 @@ fibration. -/
 instance rightFibration_restrictionMap (p : X ⟶ S) [InnerFibration p] (i : L ⟶ K) [Mono i]
     (σ : K ⟶ X) : RightFibration (restrictionMap i p σ) :=
   (rightFibration_iff_hasLiftingProperty _).2 fun _ _ hk ↦
-    hasLiftingProperty_horn_ι_restrictionMap p i σ hk
+    (forall_hasLiftingProperty_restrictionMap_iff _ i p).2
+      (fun τ ↦ coslice.hasLiftingProperty_restrictionMap_horn_ι p hk τ i) σ
 
 end slice
 
 namespace coslice
-
-/-- For an inner fibration `p : X ⟶ S`, a monomorphism `i : L ⟶ K`, a diagram `τ : K ⟶ X` and
-`k < m`, **the relative coslice map `X_{τ/} ⟶ X_{i ≫ τ/} ×_{S_{i ≫ τ ≫ p/}} S_{τ ≫ p/}` has the
-right lifting property with respect to the horn inclusion `Λ[m, k] ⟶ Δ[m]`**. -/
-theorem hasLiftingProperty_horn_ι_restrictionMap (p : X ⟶ S) [InnerFibration p] (i : L ⟶ K)
-    [Mono i] (τ : K ⟶ X) (hk : k < Fin.last m) :
-    HasLiftingProperty Λ[m, k].ι (restrictionMap i p τ) :=
-  (slice.forall_hasLiftingProperty_restrictionMap_iff i Λ[m, k].ι p).1
-    (fun σ ↦ slice.hasLiftingProperty_restrictionMap_horn_ι p hk σ i) τ
 
 /-- **The relative coslice map of an inner fibration is a left fibration**, dually to HTT
 Proposition 2.1.2.1: for an inner fibration `p : X ⟶ S`, a monomorphism `i : L ⟶ K` and a
@@ -302,13 +141,18 @@ fibration. -/
 instance leftFibration_restrictionMap (p : X ⟶ S) [InnerFibration p] (i : L ⟶ K) [Mono i]
     (τ : K ⟶ X) : LeftFibration (restrictionMap i p τ) :=
   (leftFibration_iff_hasLiftingProperty _).2 fun _ _ hk ↦
-    hasLiftingProperty_horn_ι_restrictionMap p i τ hk
+    (slice.forall_hasLiftingProperty_restrictionMap_iff i _ p).1
+      (fun σ ↦ slice.hasLiftingProperty_restrictionMap_horn_ι p hk σ i) τ
 
 end coslice
 
 /-! ### Slices and coslices of quasicategories -/
 
 variable {C : SSet.{u}}
+
+/-- The empty subcomplex has no vertex. -/
+private lemma not_nonempty_bot : ¬ ((⊥ : K.Subcomplex) : SSet.{u}).Nonempty :=
+  fun ⟨⟨_, hx⟩⟩ ↦ by simp only [Subfunctor.bot_obj, Set.mem_empty_iff_false] at hx
 
 namespace slice
 
@@ -326,8 +170,7 @@ instance rightFibration_map [Quasicategory C] (p : K ⟶ C) (j : L ⟶ K) [Mono 
 /-- The projection of the slice of a quasicategory is a right fibration. It is the restriction of
 cones to the empty diagram, followed by an isomorphism. -/
 instance rightFibration_π [Quasicategory C] (p : K ⟶ C) : RightFibration (π p) := by
-  -- The empty subcomplex has no vertex.
-  have := isIso_π ((⊥ : K.Subcomplex).ι ≫ p) fun ⟨x⟩ ↦ x.2
+  have := isIso_π ((⊥ : K.Subcomplex).ι ≫ p) not_nonempty_bot
   rw [← Category.comp_id (π p),
     ← map_π (q := (⊥ : K.Subcomplex).ι ≫ p) (⊥ : K.Subcomplex).ι (𝟙 C) (by simp)]
   infer_instance
@@ -370,8 +213,7 @@ instance leftFibration_map [Quasicategory C] (p : K ⟶ C) (j : L ⟶ K) [Mono j
 /-- The projection of the coslice of a quasicategory is a left fibration. It is the restriction of
 cocones to the empty diagram, followed by an isomorphism. -/
 instance leftFibration_π [Quasicategory C] (p : K ⟶ C) : LeftFibration (π p) := by
-  -- The empty subcomplex has no vertex.
-  have := isIso_π ((⊥ : K.Subcomplex).ι ≫ p) fun ⟨x⟩ ↦ x.2
+  have := isIso_π ((⊥ : K.Subcomplex).ι ≫ p) not_nonempty_bot
   rw [← Category.comp_id (π p),
     ← map_π (q := (⊥ : K.Subcomplex).ι ≫ p) (⊥ : K.Subcomplex).ι (𝟙 C) (by simp)]
   infer_instance
