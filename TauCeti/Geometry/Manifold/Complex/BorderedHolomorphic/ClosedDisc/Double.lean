@@ -49,8 +49,8 @@ characteristic of the double is `2 = 2 · 1`, twice that of the disc.
   `Complex.UnitClosedDisc.cayleyMoebius ζ`, that is, `w ↦ ζ (I - w) / (w + I)`.
 * `Complex.UnitClosedDisc.schottkyDoubleDiffeomorph_swap`: the sheet swap becomes the inversion
   `OnePoint.unitCircleInversion`.
-* `Complex.UnitClosedDisc.schottkyDoubleDiffeomorph_image_fixed_eq_sphere`: the fixed set of the sheet swap
-  becomes the unit circle.
+* `Complex.UnitClosedDisc.schottkyDoubleDiffeomorph_image_fixed_eq_sphere`: the fixed set of
+  the sheet swap becomes the unit circle.
 * `Complex.UnitClosedDisc.eulerChar_schottkyDouble` and
   `Complex.UnitClosedDisc.eulerChar_schottkyDouble_eq_two_mul`: `χ = 2 = 2 · χ(𝕔𝔻)`, where
   `χ(𝕔𝔻) = 1` (`TauCeti.eulerChar_of_contractibleSpace`) since the disc is contractible.
