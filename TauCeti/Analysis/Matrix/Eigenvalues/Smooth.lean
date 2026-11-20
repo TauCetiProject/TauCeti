@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 import TauCeti.Analysis.Matrix.Normed
+import TauCeti.Analysis.Matrix.Spectrum
 
 /-!
 # Smoothness and first variation of simple eigenvalues
@@ -49,10 +50,11 @@ implicit function theorem produces a `C^k` function `ψ` whose graph is the zero
 unit eigenvector of a simple eigenvalue is a unimodular multiple of the corresponding column of
 `U`.
 
-A general family factors as `x ↦ hermPart (M x)` through the complete space `n → n → 𝕜` of arrays,
-where `hermPart X = (X + Xᴴ) / 2` is real-linear and Hermitian-valued. Applying the above to
-`hermPart` and composing removes the completeness of `E`, and needs only differentiability of the
-entries of `M` for the first variation formula.
+A general family factors as `x ↦ selfAdjointPart ℝ (M x)` through the finite-dimensional, hence
+complete, space of matrices, where the self-adjoint part `(X + Xᴴ) / 2` is real-linear and
+Hermitian-valued. Applying the above to the self-adjoint part and composing removes the
+completeness of `E`, and needs only differentiability of the entries of `M` for the first
+variation formula.
 
 ## References
 
@@ -170,8 +172,7 @@ private theorem fderiv_reDetScalarSub_apply {M : E → Matrix n n 𝕜} {x₀ : 
   -- At `t = 0` the conjugated matrix is diagonal, so its adjugate is diagonal, supported at `k₀`.
   have hA0 : scalar n (d k₀ : 𝕜) - A 0 = diagonal fun k ↦ ((d k₀ - d k : ℝ) : 𝕜) := by
     have h : A 0 = diagonal (RCLike.ofReal ∘ d) := by
-      simpa [A, Unitary.conjStarAlgAut_star_apply] using
-        hM₀.conjStarAlgAut_star_eigenvectorUnitary
+      simpa [A] using hM₀.star_eigenvectorUnitary_mul_mul_eigenvectorUnitary
     rw [h, scalar_apply, diagonal_sub]
     simp
   rw [hA0, adjugate_diagonal, trace, Finset.sum_eq_single k₀]
@@ -186,58 +187,26 @@ private theorem fderiv_reDetScalarSub_apply {M : E → Matrix n n 𝕜} {x₀ : 
 
 /-! ### Simple eigenvalues -/
 
+/-- Simplicity of the ordered eigenvalue `λᵢ` is simplicity of the matrix-indexed eigenvalue at the
+matching index. -/
+private theorem eigenvalues_ne_eigenvalues_equivOfCardEq {A : Matrix n n 𝕜} (hA : A.IsHermitian)
+    {i : Fin (Fintype.card n)} (hi : ∀ j ≠ i, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ i) :
+    ∀ k ≠ Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n)) i, hA.eigenvalues k ≠
+      hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n)) i) := by
+  set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n))
+  intro k hk
+  have hk' : e.symm k ≠ i := fun h ↦ hk (by rw [← h, e.apply_symm_apply])
+  simpa [e, IsHermitian.eigenvalues] using hi _ hk'
+
 /-- At a simple ordered eigenvalue `λᵢ`, the product `∏_{j ≠ i} (λᵢ - λⱼ)` over the remaining
 matrix-indexed eigenvalues does not vanish. -/
 private theorem prod_erase_sub_eigenvalues_ne_zero {A : Matrix n n 𝕜} (hA : A.IsHermitian)
     {i : Fin (Fintype.card n)} (hi : ∀ j ≠ i, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ i) :
     ∏ j ∈ Finset.univ.erase (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n)) i),
       (hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n)) i) -
-        hA.eigenvalues j) ≠ 0 := by
-  set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n))
-  refine Finset.prod_ne_zero_iff.2 fun j hj ↦ sub_ne_zero.2 ?_
-  have hj' : e.symm j ≠ i := fun h ↦ (Finset.mem_erase.1 hj).1 (by rw [← h, e.apply_symm_apply])
-  simpa [e, IsHermitian.eigenvalues] using (hi _ hj').symm
-
-/-- A unit eigenvector `u` of a simple eigenvalue `d k₀` of a Hermitian matrix is a unimodular
-multiple of the `k₀`-th column of the eigenvector unitary `U`, so `⟪u, B u⟫ = (Uᴴ B U) k₀ k₀`. -/
-private theorem star_dotProduct_mulVec_eq {A : Matrix n n 𝕜} (hA : A.IsHermitian) {k₀ : n}
-    (hk₀ : ∀ k ≠ k₀, hA.eigenvalues k ≠ hA.eigenvalues k₀) {u : n → 𝕜}
-    (hu : A *ᵥ u = (hA.eigenvalues k₀ : 𝕜) • u) (hu1 : star u ⬝ᵥ u = 1) (B : Matrix n n 𝕜) :
-    star u ⬝ᵥ (B *ᵥ u) =
-      (star (hA.eigenvectorUnitary : Matrix n n 𝕜) * B * hA.eigenvectorUnitary) k₀ k₀ := by
-  set U : Matrix n n 𝕜 := (hA.eigenvectorUnitary : Matrix n n 𝕜)
-  set d := hA.eigenvalues
-  have hU : star U * U = 1 := Unitary.star_mul_self_of_mem hA.eigenvectorUnitary.2
-  have hU' : U * star U = 1 := Unitary.mul_star_self_of_mem hA.eigenvectorUnitary.2
-  have hD : star U * A * U = diagonal (RCLike.ofReal ∘ d) := by
-    simpa [U, Unitary.conjStarAlgAut_star_apply] using hA.conjStarAlgAut_star_eigenvectorUnitary
-  -- Coordinates of `u` in the eigenbasis vanish off `k₀`.
-  set w := star U *ᵥ u
-  have huw : u = U *ᵥ w := by rw [mulVec_mulVec, hU', one_mulVec]
-  have hDw : diagonal (RCLike.ofReal ∘ d) *ᵥ w = (d k₀ : 𝕜) • w := by
-    rw [← hD, ← mulVec_mulVec, ← mulVec_mulVec, ← huw, hu, mulVec_smul]
-  have hw : w = Pi.single k₀ (w k₀) := by
-    ext k
-    obtain rfl | hk := eq_or_ne k k₀
-    · simp
-    have h := congrFun hDw k
-    simp only [mulVec_diagonal, Function.comp_apply, Pi.smul_apply, smul_eq_mul] at h
-    have h' : ((d k : 𝕜) - d k₀) * w k = 0 := by rw [sub_mul, h, sub_self]
-    rw [Pi.single_eq_of_ne hk]
-    exact (mul_eq_zero.1 h').resolve_left (sub_ne_zero.2 (by exact_mod_cast hk₀ k hk))
-  have hconj (C : Matrix n n 𝕜) : star u ⬝ᵥ (C *ᵥ u) = star w ⬝ᵥ ((star U * C * U) *ᵥ w) := by
-    rw [huw, star_mulVec, ← dotProduct_mulVec, mulVec_mulVec, mulVec_mulVec, star_eq_conjTranspose,
-      Matrix.mul_assoc]
-  have hsingle (C : Matrix n n 𝕜) (a : 𝕜) :
-      star (Pi.single k₀ a) ⬝ᵥ (C *ᵥ Pi.single k₀ a) = star a * a * C k₀ k₀ := by
-    rw [← Pi.single_star, single_dotProduct]
-    simp only [mulVec, dotProduct_single]
-    ring
-  have h1 : star (w k₀) * w k₀ = 1 := by
-    have h := hconj 1
-    rw [Matrix.mul_one, hU, hw, hsingle, one_mulVec, hu1] at h
-    simpa using h.symm
-  rw [hconj, hw, hsingle, h1, one_mul]
+        hA.eigenvalues j) ≠ 0 :=
+  Finset.prod_ne_zero_iff.2 fun j hj ↦ sub_ne_zero.2
+    (eigenvalues_ne_eigenvalues_equivOfCardEq hA hi j (Finset.ne_of_mem_erase hj)).symm
 
 /-! ### Smoothness and first variation -/
 
@@ -327,10 +296,8 @@ private theorem hasFDerivAt_eigenvalues₀_of_completeSpace (hM : ∀ x, (M x).I
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
     ContinuousLinearMap.id_apply, zero_apply] at h0
   rw [he, h0] at h
-  have hk₀ : ∀ k ≠ e i, (hM x₀).eigenvalues k ≠ (hM x₀).eigenvalues (e i) := fun k hk ↦
-    (sub_ne_zero.1 (Finset.prod_ne_zero_iff.1 hc k
-      (Finset.mem_erase.2 ⟨hk, Finset.mem_univ k⟩))).symm
-  rw [← star_dotProduct_mulVec_eq (hM x₀) hk₀ (he ▸ hu) hu1] at h
+  rw [← (hM x₀).star_dotProduct_mulVec_eq_of_simple
+    (eigenvalues_ne_eigenvalues_equivOfCardEq (hM x₀) hi) (he ▸ hu) hu1] at h
   have h' := (mul_eq_zero.1 (by simpa using h.symm)).resolve_left (he ▸ hc)
   rw [sub_eq_zero] at h'
   rw [h', ContinuousLinearMap.comp_apply, RCLike.reCLM_apply, sum_sum_smul_apply]
@@ -339,53 +306,29 @@ end Complete
 
 /-! ### The universal Hermitian family -/
 
-/-- The `(a, b)` entry `(X a b + conj (X b a)) / 2` of the Hermitian part of an array `X`, as a
-continuous real-linear functional. -/
-private def hermPartEntry (a b : n) : (n → n → 𝕜) →L[ℝ] 𝕜 :=
-  (2⁻¹ : ℝ) • ((ContinuousLinearMap.proj (φ := fun _ : n ↦ 𝕜) b).comp
-      (ContinuousLinearMap.proj (φ := fun _ : n ↦ n → 𝕜) a) +
-    (RCLike.conjCLE (K := 𝕜) : 𝕜 →L[ℝ] 𝕜).comp
-      ((ContinuousLinearMap.proj (φ := fun _ : n ↦ 𝕜) a).comp
-        (ContinuousLinearMap.proj (φ := fun _ : n ↦ n → 𝕜) b)))
+open scoped Matrix.Norms.Elementwise
 
-omit [Fintype n] [DecidableEq n] in
-private theorem hermPartEntry_apply (a b : n) (X : n → n → 𝕜) :
-    hermPartEntry a b X = (2⁻¹ : ℝ) • (X a b + star (X b a)) := by
-  simp [hermPartEntry]
-
-/-- The Hermitian part `(X + Xᴴ) / 2` of an array `X`, a Hermitian family parametrized by the
-complete real normed space `n → n → 𝕜`. -/
-private def hermPart (X : n → n → 𝕜) : Matrix n n 𝕜 :=
-  of fun a b ↦ hermPartEntry a b X
-
-omit [Fintype n] [DecidableEq n] in
-private theorem hermPart_apply (X : n → n → 𝕜) (a b : n) :
-    hermPart X a b = hermPartEntry a b X := by
-  rw [hermPart, of_apply]
+/-- The `(a, b)` entry of the self-adjoint part `(X + Xᴴ) / 2` of a matrix `X`, as a continuous
+real-linear functional. -/
+private def selfAdjointPartEntry (a b : n) : Matrix n n 𝕜 →L[ℝ] 𝕜 :=
+  ContinuousLinearMap.proj b ∘L ContinuousLinearMap.proj a ∘L
+    (selfAdjoint.submodule ℝ (Matrix n n 𝕜)).subtypeL ∘L selfAdjointPartL ℝ (Matrix n n 𝕜)
 
 omit [DecidableEq n] in
-private theorem contDiff_hermPart_apply {k : ℕ∞ω} (a b : n) :
-    ContDiff ℝ k (fun X : n → n → 𝕜 ↦ hermPart X a b) := by
-  simpa only [hermPart_apply] using (hermPartEntry (𝕜 := 𝕜) a b).contDiff
+private theorem contDiff_selfAdjointPart_apply {k : ℕ∞ω} (a b : n) :
+    ContDiff ℝ k (fun X : Matrix n n 𝕜 ↦ (selfAdjointPart ℝ X : Matrix n n 𝕜) a b) :=
+  (selfAdjointPartEntry (𝕜 := 𝕜) a b).contDiff
 
 omit [Fintype n] [DecidableEq n] in
-private theorem fderiv_hermPart_apply (a b : n) (X : n → n → 𝕜) :
-    fderiv ℝ (fun Y : n → n → 𝕜 ↦ hermPart Y a b) X = hermPartEntry a b := by
-  simpa only [hermPart_apply] using (hermPartEntry (𝕜 := 𝕜) a b).fderiv (x := X)
+private theorem fderiv_selfAdjointPart_apply (a b : n) (X V : Matrix n n 𝕜) :
+    fderiv ℝ (fun Y : Matrix n n 𝕜 ↦ (selfAdjointPart ℝ Y : Matrix n n 𝕜) a b) X V =
+      (selfAdjointPart ℝ V : Matrix n n 𝕜) a b :=
+  congrArg (· V) (selfAdjointPartEntry (𝕜 := 𝕜) a b).fderiv
 
 omit [Fintype n] [DecidableEq n] in
-private theorem isHermitian_hermPart (X : n → n → 𝕜) : (hermPart X).IsHermitian := by
-  ext a b
-  simp only [hermPart_apply, conjTranspose_apply, hermPartEntry_apply, star_smul, star_add,
-    star_star, star_trivial]
-  rw [add_comm]
-
-omit [Fintype n] [DecidableEq n] in
-private theorem hermPart_eq {A : Matrix n n 𝕜} (hA : A.IsHermitian) :
-    hermPart (fun a b ↦ A a b) = A := by
-  ext a b
-  rw [hermPart_apply, hermPartEntry_apply, hA.apply, ← two_smul ℝ, smul_smul,
-    inv_mul_cancel₀ two_ne_zero, one_smul]
+private theorem isHermitian_selfAdjointPart (X : Matrix n n 𝕜) :
+    (selfAdjointPart ℝ X : Matrix n n 𝕜).IsHermitian :=
+  (selfAdjointPart ℝ X).2
 
 private theorem eigenvalues₀_congr {A B : Matrix n n 𝕜} (h : A = B) (hA : A.IsHermitian)
     (hB : B.IsHermitian) : hA.eigenvalues₀ = hB.eigenvalues₀ := by
@@ -397,32 +340,37 @@ private theorem eigenvalues₀_congr {A B : Matrix n n 𝕜} (h : A = B) (hA : A
 variable {M : E → Matrix n n 𝕜} {x₀ : E}
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
-/-- A Hermitian family factors through its array of entries and the universal Hermitian family. -/
-private theorem eigenvalues₀_eq_comp_hermPart (hM : ∀ x, (M x).IsHermitian)
+/-- A Hermitian family is its own self-adjoint part. -/
+private theorem eigenvalues₀_eq_comp_selfAdjointPart (hM : ∀ x, (M x).IsHermitian)
     (i : Fin (Fintype.card n)) :
     (fun x ↦ (hM x).eigenvalues₀ i) =
-      (fun X ↦ (isHermitian_hermPart X).eigenvalues₀ i) ∘ fun x a b ↦ M x a b :=
-  funext fun x ↦ congrFun (eigenvalues₀_congr (hermPart_eq (hM x)).symm (hM x)
-    (isHermitian_hermPart _)) i
+      (fun X ↦ (isHermitian_selfAdjointPart X).eigenvalues₀ i) ∘ M :=
+  funext fun x ↦ congrFun (eigenvalues₀_congr
+    ((hM x).isSelfAdjoint.coe_selfAdjointPart_apply ℝ).symm (hM x)
+    (isHermitian_selfAdjointPart _)) i
 
 /-- **Simple eigenvalues are as smooth as the family.** Let `M` be a family of Hermitian matrices
-over a real normed space whose entries are `C^k` at `x₀`, `k ≠ 0`. If the ordered eigenvalue
+over a real normed space whose entries are `C^k` at `x₀`. If the ordered eigenvalue
 `(M x₀).eigenvalues₀ i` is simple, then `x ↦ (M x).eigenvalues₀ i` is `C^k` at `x₀`. For `k = ω`
-this is analyticity. -/
+this is analyticity, and for `k = 0` it is continuity, which holds without simplicity
+(`Matrix.continuousAt_eigenvalues₀`). -/
 theorem contDiffAt_eigenvalues₀ (hM : ∀ x, (M x).IsHermitian) {k : ℕ∞ω}
     (hMk : ∀ a b, ContDiffAt ℝ k (fun x ↦ M x a b) x₀) {i : Fin (Fintype.card n)}
     (hi : ∀ j ≠ i, (hM x₀).eigenvalues₀ j ≠ (hM x₀).eigenvalues₀ i) :
     ContDiffAt ℝ k (fun x ↦ (hM x).eigenvalues₀ i) x₀ := by
-  rw [eigenvalues₀_eq_comp_hermPart hM i]
-  refine ContDiffAt.comp x₀ ?_ (contDiffAt_pi.2 fun a ↦ contDiffAt_pi.2 fun b ↦ hMk a b)
+  have hMk' : ContDiffAt ℝ k M x₀ := contDiffAt_pi.2 fun a ↦ contDiffAt_pi.2 fun b ↦ hMk a b
+  rw [eigenvalues₀_eq_comp_selfAdjointPart hM i]
+  refine ContDiffAt.comp x₀ ?_ hMk'
   obtain rfl | hk := eq_or_ne k 0
   · -- `C⁰` is continuity, which holds at repeated eigenvalues too.
     refine (contDiff_zero.2 (continuous_iff_continuousAt.2 fun X ↦ ?_)).contDiffAt
-    exact continuousAt_eigenvalues₀ isHermitian_hermPart
-      (fun a b ↦ (contDiff_hermPart_apply (k := 0) a b).continuous.continuousAt) i
-  have hcongr := eigenvalues₀_congr (hermPart_eq (hM x₀)).symm (hM x₀) (isHermitian_hermPart _)
-  exact contDiffAt_eigenvalues₀_of_completeSpace isHermitian_hermPart hk
-    (fun a b ↦ (contDiff_hermPart_apply a b).contDiffAt) (by simpa only [← hcongr] using hi)
+    exact continuousAt_eigenvalues₀ isHermitian_selfAdjointPart
+      (fun a b ↦ (contDiff_selfAdjointPart_apply (k := 0) a b).continuous.continuousAt) i
+  have hcongr := eigenvalues₀_congr ((hM x₀).isSelfAdjoint.coe_selfAdjointPart_apply ℝ).symm
+    (hM x₀) (isHermitian_selfAdjointPart _)
+  exact contDiffAt_eigenvalues₀_of_completeSpace isHermitian_selfAdjointPart hk
+    (fun a b ↦ (contDiff_selfAdjointPart_apply a b).contDiffAt)
+    (by simpa only [← hcongr] using hi)
 
 /-- **Hadamard's first variation formula.** Let `M` be a family of Hermitian matrices over a real
 normed space whose entries are differentiable at `x₀`, and let `u` be a unit eigenvector of `M x₀`
@@ -435,32 +383,41 @@ theorem hasFDerivAt_eigenvalues₀ (hM : ∀ x, (M x).IsHermitian)
     (hu : M x₀ *ᵥ u = ((hM x₀).eigenvalues₀ i : 𝕜) • u) (hu1 : star u ⬝ᵥ u = 1) :
     HasFDerivAt (fun x ↦ (hM x).eigenvalues₀ i)
       (RCLike.reCLM.comp (∑ a, ∑ b, (star (u a) * u b) • fderiv ℝ (fun x ↦ M x a b) x₀)) x₀ := by
-  have hcongr := eigenvalues₀_congr (hermPart_eq (hM x₀)).symm (hM x₀) (isHermitian_hermPart _)
-  have hcore := hasFDerivAt_eigenvalues₀_of_completeSpace isHermitian_hermPart
-    (x₀ := fun a b ↦ M x₀ a b) (fun a b ↦ (contDiff_hermPart_apply a b).contDiffAt) (i := i)
+  have hcongr := eigenvalues₀_congr ((hM x₀).isSelfAdjoint.coe_selfAdjointPart_apply ℝ).symm
+    (hM x₀) (isHermitian_selfAdjointPart _)
+  have hcore := hasFDerivAt_eigenvalues₀_of_completeSpace isHermitian_selfAdjointPart
+    (x₀ := M x₀) (fun a b ↦ (contDiff_selfAdjointPart_apply a b).contDiffAt) (i := i)
     (by simpa only [← hcongr] using hi) (u := u)
-    (by simpa only [hermPart_eq (hM x₀), ← hcongr] using hu) hu1
-  have hX : HasFDerivAt (fun x a b ↦ M x a b)
+    (by simpa only [(hM x₀).isSelfAdjoint.coe_selfAdjointPart_apply ℝ, ← hcongr] using hu) hu1
+  have hX : HasFDerivAt M
       (ContinuousLinearMap.pi fun a ↦ ContinuousLinearMap.pi fun b ↦
         fderiv ℝ (fun x ↦ M x a b) x₀) x₀ :=
     hasFDerivAt_pi.2 fun a ↦ hasFDerivAt_pi.2 fun b ↦ (hMd a b).hasFDerivAt
-  rw [eigenvalues₀_eq_comp_hermPart hM i]
+  rw [eigenvalues₀_eq_comp_selfAdjointPart hM i]
   refine (hcore.comp x₀ hX).congr_fderiv (ContinuousLinearMap.ext fun v ↦ ?_)
-  -- The derivative of `M` is Hermitian, so it agrees with its Hermitian part.
-  have hD (a b : n) : star (fderiv ℝ (fun x ↦ M x b a) x₀ v) = fderiv ℝ (fun x ↦ M x a b) x₀ v := by
+  -- The derivative of `M` is Hermitian, so it is its own self-adjoint part.
+  have hD : (of fun a b ↦ fderiv ℝ (fun x ↦ M x a b) x₀ v).IsHermitian := by
+    refine IsHermitian.ext fun a b ↦ ?_
     have h : (fun x ↦ M x a b) = fun x ↦ (RCLike.conjCLE (K := 𝕜)) (M x b a) :=
       funext fun x ↦ by rw [RCLike.conjCLE_apply, ← RCLike.star_def, (hM x).apply]
     have h2 : HasFDerivAt (fun x ↦ (RCLike.conjCLE (K := 𝕜)) (M x b a))
         ((RCLike.conjCLE (K := 𝕜) : 𝕜 →L[ℝ] 𝕜).comp (fderiv ℝ (fun x ↦ M x b a) x₀)) x₀ :=
       (RCLike.conjCLE (K := 𝕜)).hasFDerivAt.comp x₀ (hMd b a).hasFDerivAt
-    rw [h, h2.fderiv]
+    rw [of_apply, of_apply, h, h2.fderiv]
     simp [RCLike.star_def]
-  simp only [ContinuousLinearMap.comp_apply, RCLike.reCLM_apply, sum_sum_smul_apply]
-  congr 3
+  -- The composite derivative is the derivative of the self-adjoint part at `DM (x₀) v`. It is
+  -- unfolded with `change`, since the derivative of `M` is stated on arrays `n → n → 𝕜` and
+  -- `ContinuousLinearMap.comp_apply` does not match it against matrices.
+  change RCLike.re ((∑ a, ∑ b, (star (u a) * u b) •
+    fderiv ℝ (fun X : Matrix n n 𝕜 ↦ (selfAdjointPart ℝ X : Matrix n n 𝕜) a b) (M x₀))
+      (of fun a b ↦ fderiv ℝ (fun x ↦ M x a b) x₀ v)) =
+    RCLike.re ((∑ a, ∑ b, (star (u a) * u b) • fderiv ℝ (fun x ↦ M x a b) x₀) v)
+  rw [sum_sum_smul_apply]
+  refine congrArg RCLike.re ((sum_sum_smul_apply _ _ _).trans ?_)
+  congr 2
   ext a b
-  simp only [of_apply, fderiv_hermPart_apply, hermPartEntry_apply,
-    ContinuousLinearMap.pi_apply, hD]
-  rw [← two_smul ℝ, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
+  exact (fderiv_selfAdjointPart_apply a b _ _).trans
+    (congrFun (congrFun (hD.isSelfAdjoint.coe_selfAdjointPart_apply ℝ) a) b)
 
 /-- The derivative of a simple ordered eigenvalue in the direction `v` is `Re ⟪u, (DM (x₀) v) u⟫`
 for any unit eigenvector `u`. -/
