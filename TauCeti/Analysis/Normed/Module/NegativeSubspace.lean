@@ -85,6 +85,13 @@ theorem det_fst_comp_ne_zero_of_norm_snd_lt [FiniteDimensional ℝ E] (L : E →
     LinearMap.ker_eq_bot]
   exact L.injective_fst_comp_of_norm_snd_lt hL
 
+/-- A frame whose nonzero values lie strictly inside the negative cone has invertible negative
+block, as an operator. -/
+theorem isInvertible_fst_comp_of_norm_snd_lt [FiniteDimensional ℝ E] (L : E →L[ℝ] E × F)
+    (hL : ∀ u, u ≠ 0 → ‖(L u).2‖ < ‖(L u).1‖) : ((fst ℝ E F).comp L).IsInvertible :=
+  ((fst ℝ E F).comp L).isInvertible_of_injective_of_finrank_eq rfl
+    (L.injective_fst_comp_of_norm_snd_lt hL)
+
 /-- **Orientation transport through negative subspaces.** Along a continuous family of frames
 whose nonzero values lie strictly inside the negative cone, parametrized by a preconnected space,
 the sign of the determinant of the negative block is constant. -/
@@ -120,6 +127,17 @@ theorem negativeContraction_zero (L : E →L[ℝ] E × F) :
 theorem continuous_negativeContraction (L : E →L[ℝ] E × F) :
     Continuous L.negativeContraction :=
   continuous_const.add (continuous_id.smul continuous_const)
+
+/-- The straight-line contraction of a frame depends jointly continuously on the frame and the
+time. -/
+@[continuity, fun_prop]
+theorem _root_.Continuous.negativeContraction {X : Type*} [TopologicalSpace X]
+    {L : X → E →L[ℝ] E × F} {t : X → ℝ} (hL : Continuous L) (ht : Continuous t) :
+    Continuous fun x ↦ (L x).negativeContraction (t x) :=
+  have hfst := (compL ℝ E (E × F) E (fst ℝ E F)).continuous.comp hL
+  have hsnd := (compL ℝ E (E × F) F (snd ℝ E F)).continuous.comp hL
+  ((compL ℝ E E (E × F) (inl ℝ E F)).continuous.comp hfst).add
+    (ht.smul ((compL ℝ E F (E × F) (inr ℝ E F)).continuous.comp hsnd))
 
 /-- The straight-line contraction of a frame is the contraction of its graph coordinate: if
 the image of `L` is the graph of `A`, the image of `L.negativeContraction t` is the graph of
