@@ -118,7 +118,9 @@ by two over a local field. -/
 theorem eight_nsmul_one_padicTwo : 8 • (1 : WittRing ℚ_[2]) = 0 := by
   have h := WittRing.two_nsmul_eq_zero_of_mem_fundamentalIdeal_sq
     (pfisterClass_mem_fundamentalIdeal_pow ![(-1 : ℚ_[2]ˣ), -1])
-  rwa [pfisterClass_neg_one_neg_one, smul_smul] at h
+  rw [pfisterClass_neg_one_neg_one, smul_smul] at h
+  norm_num at h ⊢
+  exact h
 
 /-- `c v = ⟨⟨5, 2⟩⟩ = ⟨⟨-1, -1⟩⟩ = 4u` in `W(ℚ_2)`, because `(5, 2) = (-1, -1) = -1` over
 `ℚ_2`. -/
@@ -237,11 +239,10 @@ theorem natCard_wittRing_padicTwo : Nat.card (WittRing ℚ_[2]) = 32 := by
   rw [← Nat.card_congr wittRingPadicTwoEquiv.toEquiv]
   simp
 
-/-- The coordinate equivalence sends `(1, 0, 0)` to `u = 1`. The triple is written `(1, 0)`, its
-simp normal form, in which the pair `(0, 0)` is `0`. -/
+/-- The coordinate equivalence sends `(1, 0, 0)` to `u = 1`. -/
 @[simp]
-theorem wittRingPadicTwoEquiv_one_zero_zero : wittRingPadicTwoEquiv (1, 0) = 1 :=
-  (wittRingPadicTwoEquiv_apply 1 0 0).trans (by simp [ZMod.val_one_eq_one_mod])
+theorem wittRingPadicTwoEquiv_one_zero_zero : wittRingPadicTwoEquiv (1, 0, 0) = 1 := by
+  simp [wittRingPadicTwoEquiv_apply, ZMod.val_one_eq_one_mod]
 
 /-- The coordinate equivalence sends `(0, 1, 0)` to `v = ⟨⟨2⟩⟩`. -/
 @[simp]
@@ -266,10 +267,10 @@ theorem wittRing_padicTwo_mul_c (a : ZMod 8) (b e : ZMod 2) :
           e.val • oneFoldPfisterClass (Units.mk0 (-3 : ℚ_[2]) (by norm_num))) =
       a.val • oneFoldPfisterClass (Units.mk0 (-3 : ℚ_[2]) (by norm_num)) +
         (4 * b.val) • (1 : WittRing ℚ_[2]) := by
-  rw [mul_add, mul_add, mul_smul_comm, mul_smul_comm, mul_smul_comm, mul_one,
+  simp only [mul_add, mul_smul_comm, mul_one,
     oneFoldPfisterClass_neg_three_mul_oneFoldPfisterClass_two_padicTwo,
-    oneFoldPfisterClass_neg_three_mul_self_padicTwo, smul_zero, add_zero, smul_smul,
-    mul_comm b.val]
+    oneFoldPfisterClass_neg_three_mul_self_padicTwo, smul_zero, add_zero, smul_smul]
+  rw [mul_comm b.val]
 
 /-- **Multiplication by `c` in the coordinates of `W(ℚ_2)`.** Multiplication by `c = ⟨1, 3⟩`
 sends the class with coordinates `(a, b, e)` to the class with coordinates `(4b, 0, a)`. -/

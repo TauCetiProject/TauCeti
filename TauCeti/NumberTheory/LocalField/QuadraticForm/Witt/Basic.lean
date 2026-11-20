@@ -217,9 +217,7 @@ theorem pfisterClass_two_eq_pfisterClass_two_iff {a b c d : Kˣ} :
     pfisterClass ![a, b] = pfisterClass ![c, d] ↔ hilbertSymbol a b = hilbertSymbol c d := by
   rw [WittRing.eq_iff_cliffordInvariant_eq_of_mem_fundamentalIdeal_sq
     (pfisterClass_mem_fundamentalIdeal_pow _) (pfisterClass_mem_fundamentalIdeal_pow _),
-    WittRing.cliffordInvariant_pfisterClass_two, WittRing.cliffordInvariant_pfisterClass_two,
-    ← BrauerGroup.quaternionSubgroupSignEquiv_apply_quaternionClass,
-    ← BrauerGroup.quaternionSubgroupSignEquiv_apply_quaternionClass, EquivLike.apply_eq_iff_eq,
-    Subtype.mk.injEq]
+    WittRing.cliffordInvariant_pfisterClass_two, WittRing.cliffordInvariant_pfisterClass_two]
+  simp [← BrauerGroup.quaternionSubgroupSignEquiv_apply_quaternionClass]
 
 end TauCeti
