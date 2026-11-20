@@ -98,11 +98,16 @@ private theorem norm_legendreContFractIntegrand (c : ℕ) (d z : ℂ) {t : ℝ} 
   simp only [neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero]
   ring
 
+private theorem continuousOn_pow_mul_one_add_cpow (c : ℕ) (d : ℂ) :
+    ContinuousOn (fun t : ℝ => (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d) (Ici 0) :=
+  (by fun_prop : Continuous fun t : ℝ => (t : ℂ) ^ c).continuousOn.mul
+    ((by fun_prop : Continuous fun t : ℝ => 1 + (t : ℂ)).continuousOn.cpow_const
+      fun _ ht => TauCeti.one_add_ofReal_mem_slitPlane ht)
+
 private theorem continuousOn_legendreContFractIntegrand (c : ℕ) (d z : ℂ) :
-    ContinuousOn (fun t : ℝ => cexp (-(z * t)) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d) (Ici 0) := by
-  refine ((by fun_prop : Continuous fun t : ℝ => cexp (-(z * t)) * (t : ℂ) ^ c).continuousOn).mul
-    ((by fun_prop : Continuous fun t : ℝ => 1 + (t : ℂ)).continuousOn.cpow_const fun t ht => ?_)
-  exact TauCeti.one_add_ofReal_mem_slitPlane ht
+    ContinuousOn (fun t : ℝ => cexp (-(z * t)) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d) (Ici 0) :=
+  ((by fun_prop : Continuous fun t : ℝ => cexp (-(z * t))).continuousOn.mul
+    (continuousOn_pow_mul_one_add_cpow c d)).congr fun _ _ => mul_assoc _ _ _
 
 /-- For `Re z > 0`, the integrand `e^{-zt} t^c (1 + t)^d` of `K(c, d)(z)` is integrable on
 `(0, ∞)`. -/
@@ -148,9 +153,7 @@ private theorem mul_legendreContFractIntegral (c : ℕ) (d : ℂ) {z : ℂ} (hz 
     c * (t : ℂ) ^ (c - 1) * (1 + (t : ℂ)) ^ d + (t : ℂ) ^ c * (d * (1 + (t : ℂ)) ^ (d - 1))
   have hI (c' : ℕ) (d' : ℂ) := integrableOn_legendreContFractIntegrand c' d' hz
   have hv0 : ContinuousWithinAt v (Ici 0) 0 :=
-    ((by fun_prop : Continuous fun t : ℝ => (t : ℂ) ^ c).continuousOn.mul
-      ((by fun_prop : Continuous fun t : ℝ => 1 + (t : ℂ)).continuousOn.cpow_const
-        fun t ht => TauCeti.one_add_ofReal_mem_slitPlane ht)) 0 (mem_Ici.2 le_rfl)
+    continuousOn_pow_mul_one_add_cpow c d 0 (mem_Ici.2 le_rfl)
   have hv (t : ℝ) (ht : t ∈ Ioi 0) : HasDerivAt v (v' t) t := by
     have h := ((hasDerivAt_pow c (t : ℂ)).mul
       (((hasDerivAt_id (t : ℂ)).const_add 1).cpow_const (c := d)
@@ -167,7 +170,7 @@ private theorem mul_legendreContFractIntegral (c : ℕ) (d : ℂ) {z : ℂ} (hz 
     have heq : (fun t : ℝ => cexp (-z * t) • v t) =
         fun t : ℝ => cexp (-(z * t)) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d := funext fun t => by
       simp only [v, smul_eq_mul, neg_mul, mul_assoc]
-    exact TauCeti.HasLaplace.intro (heq ▸ hI c d) (heq ▸ rfl)
+    exact TauCeti.HasLaplace.intro (heq ▸ hI c d) (heq ▸ (legendreContFractIntegral_def c d z).symm)
   have hB : IntegrableOn (fun t : ℝ =>
       c * (cexp (-(z * t)) * (t : ℂ) ^ (c - 1) * (1 + (t : ℂ)) ^ d) +
         d * (cexp (-(z * t)) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ (d - 1))) (Ioi 0) :=
@@ -200,6 +203,13 @@ theorem mul_legendreContFractIntegral_succ (c : ℕ) (d : ℂ) {z : ℂ} (hz : 0
 The value at the unused index `0` is `-a z⁻¹`. -/
 def legendreContFractNum (a z : ℂ) (n : ℕ) : ℂ :=
   if n = 1 then z⁻¹ else if Even n then (((n / 2 : ℕ) : ℂ) - a) * z⁻¹ else ((n / 2 : ℕ) : ℂ) * z⁻¹
+
+/-- Unfolding `legendreContFractNum` to the explicit numerators of DLMF 8.9.2, in the form of an
+inline function of the index. -/
+theorem legendreContFractNum_def (a z : ℂ) :
+    legendreContFractNum a z = fun n =>
+      if n = 1 then z⁻¹ else if Even n then (((n / 2 : ℕ) : ℂ) - a) * z⁻¹
+        else ((n / 2 : ℕ) : ℂ) * z⁻¹ := (rfl)
 
 /-- The first partial numerator `a₁` of DLMF 8.9.2 is `z⁻¹`. -/
 @[simp]
