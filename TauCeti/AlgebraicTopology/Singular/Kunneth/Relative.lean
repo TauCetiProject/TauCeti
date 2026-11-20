@@ -349,7 +349,6 @@ theorem singularHomologyCross_comp_singularHomologyπ
     (congrArg (_ ≫ ·) (homologyMap_comp _ _ n)).trans <| (Category.assoc _ _ _).symm.trans <|
     (congrArg (· ≫ homologyMap (shuffleRel X Y B R S) n) hn.symm).trans (Category.assoc _ _ _)
 
-
 /-- **The connecting morphism on a relative cross product.** The connecting morphism
 `Hₙ(X × Y, fst⁻¹(B)) ⟶ Hₙ₋₁(fst⁻¹(B))` of the pair `(X, B) × Y` sends the relative cross product
 `a × b` of `a ∈ Hₚ(X, B; R)` and `b ∈ H_q(Y; S)` to `δ a × b`, where `δ a ∈ Hₚ₋₁(B; R)` is the
@@ -394,10 +393,11 @@ theorem singularHomologyCrossRel_comp_singularHomologyδ {p' n' : ℕ} (hp : p' 
   rw [singularHomologyCrossRel_def, singularHomologyCross_def]
   refine (Category.assoc _ _ _).trans ?_
   rw [key]
-  refine (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) hc).trans ?_)
-  rw [shuffleShortComplexMap_τ₁]
-  exact (congrArg (_ ≫ ·) (HomologicalComplex.homologyMap_comp _ _ n')).trans <|
-    (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) (Category.assoc _ _ _).symm)
+  -- the objects here are the singular complexes, which agree with the terms of the short exact
+  -- sequences only up to unfolding, so `hc` and `homologyMap_comp` are applied as terms
+  exact ((reassoc_of% hc) _).trans <| congrArg (_ ≫ ·) <|
+    (congrArg (_ ≫ ·) (HomologicalComplex.homologyMap_comp _ _ n')).trans
+      (Category.assoc _ _ _).symm
 
 end Cross
 
