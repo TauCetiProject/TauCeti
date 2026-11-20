@@ -107,6 +107,7 @@ theorem timeExtension_smul (hab : a ≤ b) (c : ℝ) (f : slab (E := E) a b → 
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] in
 /-- Clamped time extension commutes with postcomposition. -/
+@[simp]
 theorem timeExtension_comp {G : Type*} (hab : a ≤ b) (L : F → G) (f : slab (E := E) a b → F)
     (x : E) : timeExtension hab (L ∘ f) x = L ∘ timeExtension hab f x :=
   (rfl)
