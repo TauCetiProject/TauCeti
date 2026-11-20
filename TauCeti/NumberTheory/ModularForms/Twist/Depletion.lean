@@ -5,29 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.Degeneracy
-public import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.ModularForm
+public import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.Depletion
 public import TauCeti.NumberTheory.ModularForms.Twist.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Basic
-import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.QExpansion
+import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 /-!
 # Depletion, and twists by imprimitive characters
 
-For `d ≥ 1`, the **`d`-depletion** of a modular form `f` for `Γ₁(N)` is `f - V_d U_d f`, where
-`U_d` is the upper-triangular Hecke operator `∑_{b < d} f ∣ [1, b; 0, d]`, which extracts the
-coefficients `a_{d m}`, and `V_d` is the level-raising operator `τ ↦ d τ`, which substitutes
-`q ↦ q ^ d`. On `q`-expansions it deletes the terms whose index is divisible by `d`:
-
-`aₙ(f - V_d U_d f) = 0` if `d ∣ n`, and `aₙ(f)` otherwise.
-
-`U_d` acts at a level divisible by `d`, and `V_d` multiplies the level by `d`. Here `f` is read at
-the level `L / d`, which `N` and `d` divide, then raised by `V_d` to `L`; so the depletion is a
-modular form for `Γ₁(L)` whenever `N * d ∣ L` and `d * d ∣ L`. These are exactly the conditions
-under which `TauCeti/NumberTheory/ModularForms/Twist/Basic.lean` places the twist `f ⊗ Φ` of `f`
-by a function `Φ` modulo `d` at level `Γ₁(L)`. For instance the `2`-depletion of `Δ` has level
-`Γ₁(4)`.
+The `d`-depletion `f - V_d U_d f` of a modular form `f` for `Γ₁(N)`
+(`TauCeti/NumberTheory/ModularForms/HeckeSlash/UpperTri/Depletion.lean`) deletes the
+`q`-expansion terms whose index is divisible by `d`, and lands at level `Γ₁(L)` whenever
+`N * d ∣ L` and `d * d ∣ L`. These are exactly the conditions under which
+`TauCeti/NumberTheory/ModularForms/Twist/Basic.lean` places the twist `f ⊗ Φ` of `f` by a function
+`Φ` modulo `d` at level `Γ₁(L)`.
 
 The twist by a Dirichlet character `ψ` uses its zero extension, so it already deletes the
 coefficients at the indices sharing a prime with the modulus. Raising the modulus of `ψ` by a
@@ -45,20 +37,8 @@ first case, `ψ₀ = 1` modulo `1`, says that the twist by the trivial character
 `p`-depletion. It is not `f`: the trivial character modulo `2` has conductor `1`, but it vanishes
 at the even integers.
 
-## Main definitions
-
-* `ModularForm.depletion`, `CuspForm.depletion`: the `d`-depletion `f - V_d U_d f`, from level
-  `Γ₁(N)` to level `Γ₁(L)` for `N * d ∣ L` and `d * d ∣ L`.
-
 ## Main results
 
-* `ModularForm.depletion_apply`: `(f - V_d U_d f)(τ) = f(τ) - (U_d f)(d τ)`.
-* `CuspForm.coe_depletion`, `ModularForm.depletion_coe_cuspForm`: depletion commutes with the
-  inclusion of cusp forms into modular forms.
-* `ModularForm.qExpansion_depletion_coeff`, `CuspForm.qExpansion_depletion_coeff`: the depletion
-  deletes the coefficients at the multiples of `d`.
-* `ModularForm.coe_depletion_depletion`, `CuspForm.coe_depletion_depletion`: depletion is
-  idempotent.
 * `ModularForm.coe_twist_changeLevel_mul_eq_coe_depletion_twist`,
   `CuspForm.coe_twist_changeLevel_mul_eq_coe_depletion_twist`: raising the modulus of the character
   by a prime `p` replaces the twist by its `p`-depletion.
@@ -84,110 +64,6 @@ open scoped MatrixGroups ModularForm
 namespace TauCeti
 
 variable {N L M d p : ℕ} {k : ℤ}
-
-/-- The intermediate level `L / d` of the depletion is positive. -/
-private lemma neZero_div [NeZero L] [NeZero d] (hdL : d * d ∣ L) : NeZero (L / d) :=
-  ⟨(Nat.div_pos (Nat.le_of_dvd (NeZero.pos L) ((dvd_mul_right d d).trans hdL))
-    (NeZero.pos d)).ne'⟩
-
-/-! ### The depletion of a modular form -/
-
-/-- **The `d`-depletion of a modular form**, `f - V_d U_d f`. For `f` a modular form for `Γ₁(N)`,
-`N * d ∣ L` and `d * d ∣ L`, it reads `f` at the level `L / d`, which `d` divides, applies the
-upper-triangular Hecke operator `U_d` there, raises the result by `V_d` to level `L`, and subtracts
-it from `f` read at level `L`. Its `q`-expansion is that of `f` with the terms of index divisible by
-`d` deleted (`qExpansion_depletion_coeff`). -/
-def _root_.ModularForm.depletion [NeZero L] (d : ℕ) [NeZero d] (hNL : N * d ∣ L)
-    (hdL : d * d ∣ L) (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
-    _root_.ModularForm ((Gamma1 L).map (mapGL ℝ)) k :=
-  haveI := neZero_div (L := L) hdL
-  _root_.ModularForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd ((dvd_mul_right N d).trans hNL)) f -
-    ModularForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd
-      (dvd_of_eq (Nat.mul_div_cancel' ((dvd_mul_right d d).trans hdL))))
-      (heckeSlashUpperTriModularFormEnd k (Nat.dvd_div_of_mul_dvd hdL)
-        (_root_.ModularForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd
-          (Nat.dvd_div_of_mul_dvd (mul_comm N d ▸ hNL))) f))
-
-/-- The defining formula of the depletion: `(f - V_d U_d f)(τ) = f(τ) - (U_d f)(d τ)`, where
-`U_d f = ∑_{b < d} f ∣ [1, b; 0, d]` is `heckeSlashUpperTri k d f`. -/
-@[simp]
-lemma _root_.ModularForm.depletion_apply [NeZero L] [NeZero d] (hNL : N * d ∣ L)
-    (hdL : d * d ∣ L) (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k) (τ : ℍ) :
-    ModularForm.depletion d hNL hdL f τ = f τ - heckeSlashUpperTri k d f (scaleGL d • τ) := by
-  simp [ModularForm.depletion]
-
-/-- **The `q`-expansion of the depletion.** `aₙ(f - V_d U_d f)` is `0` when `d ∣ n` and `aₙ(f)`
-otherwise. -/
-theorem _root_.ModularForm.qExpansion_depletion_coeff [NeZero L] [NeZero d] (hNL : N * d ∣ L)
-    (hdL : d * d ∣ L) (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k) (n : ℕ) :
-    (qExpansion 1 (ModularForm.depletion d hNL hdL f)).coeff n =
-      if d ∣ n then 0 else (qExpansion 1 f).coeff n := by
-  have := neZero_div (L := L) hdL
-  rw [ModularForm.depletion, FunLike.coe_sub,
-    _root_.ModularForm.qExpansion_sub one_pos (one_mem_strictPeriods_Gamma1_map L),
-    map_sub, ModularForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map _),
-    _root_.ModularForm.coe_restrict]
-  split_ifs with hdn
-  · rw [coe_heckeSlashUpperTriModularFormEnd,
-      qExpansion_coeff_heckeSlashUpperTri' k d (one_mem_strictPeriods_Gamma1_map _) (NeZero.pos d),
-      _root_.ModularForm.coe_restrict, Nat.mul_div_cancel' hdn, sub_self]
-  · rw [sub_zero]
-
-/-- **Depletion is idempotent**: depleting twice at `d` deletes the same coefficients as depleting
-once. The two depletions are compared as functions, at their own levels. -/
-theorem _root_.ModularForm.coe_depletion_depletion [NeZero L] {L' : ℕ} [NeZero L'] [NeZero d]
-    (hNL : N * d ∣ L) (hdL : d * d ∣ L) (hLL' : L * d ∣ L') (hdL' : d * d ∣ L')
-    (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
-    ⇑(ModularForm.depletion d hLL' hdL' (ModularForm.depletion d hNL hdL f)) =
-      ⇑(ModularForm.depletion d hNL hdL f) := by
-  refine ModularFormClass.coe_eq_of_qExpansion_eq one_pos (one_mem_strictPeriods_Gamma1_map L')
-    (one_mem_strictPeriods_Gamma1_map L) (PowerSeries.ext fun n ↦ ?_)
-  simp only [ModularForm.qExpansion_depletion_coeff]
-  split_ifs <;> rfl
-
-/-! ### The depletion of a cusp form -/
-
-/-- **The `d`-depletion of a cusp form**, `f - V_d U_d f`, from level `Γ₁(N)` to level `Γ₁(L)`
-for `N * d ∣ L` and `d * d ∣ L`. Its underlying function is that of the depletion of `f` as a
-modular form (`coe_depletion`). -/
-def _root_.CuspForm.depletion [NeZero L] (d : ℕ) [NeZero d] (hNL : N * d ∣ L)
-    (hdL : d * d ∣ L) (f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
-    _root_.CuspForm ((Gamma1 L).map (mapGL ℝ)) k :=
-  haveI := neZero_div (L := L) hdL
-  _root_.CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd ((dvd_mul_right N d).trans hNL)) f -
-    CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd
-      (dvd_of_eq (Nat.mul_div_cancel' ((dvd_mul_right d d).trans hdL))))
-      (heckeSlashUpperTriCuspFormEnd k (Nat.dvd_div_of_mul_dvd hdL)
-        (_root_.CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd
-          (Nat.dvd_div_of_mul_dvd (mul_comm N d ▸ hNL))) f))
-
-/-- The depletion of a cusp form has the same underlying function as the depletion of `f` regarded
-as a modular form. -/
-@[simp]
-lemma _root_.CuspForm.coe_depletion [NeZero L] [NeZero d] (hNL : N * d ∣ L) (hdL : d * d ∣ L)
-    (f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
-    ⇑(CuspForm.depletion d hNL hdL f) =
-      ⇑(ModularForm.depletion d hNL hdL (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k)) := by
-  ext τ
-  simp [CuspForm.depletion]
-
-/-- The depletion of a cusp form, regarded as a modular form, is the depletion of the underlying
-modular form. -/
-theorem _root_.ModularForm.depletion_coe_cuspForm [NeZero L] [NeZero d] (hNL : N * d ∣ L)
-    (hdL : d * d ∣ L) (f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
-    ModularForm.depletion d hNL hdL (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k) =
-      (CuspForm.depletion d hNL hdL f : _root_.ModularForm ((Gamma1 L).map (mapGL ℝ)) k) := by
-  ext τ
-  simp
-
-/-- **The `q`-expansion of the depletion of a cusp form.** `aₙ(f - V_d U_d f)` is `0` when `d ∣ n`
-and `aₙ(f)` otherwise. -/
-theorem _root_.CuspForm.qExpansion_depletion_coeff [NeZero L] [NeZero d] (hNL : N * d ∣ L)
-    (hdL : d * d ∣ L) (f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) (n : ℕ) :
-    (qExpansion 1 (CuspForm.depletion d hNL hdL f)).coeff n =
-      if d ∣ n then 0 else (qExpansion 1 f).coeff n := by
-  rw [CuspForm.coe_depletion]
-  exact ModularForm.qExpansion_depletion_coeff hNL hdL _ n
 
 /-! ### Twists by imprimitive characters -/
 
@@ -245,17 +121,6 @@ theorem _root_.ModularForm.coe_twist_one_eq_coe_depletion [NeZero p] {L' : ℕ}
   · rw [one_mul]
   · rw [zero_mul]
   · exact absurd ((Nat.coprime_comm.mp ((Nat.Prime.coprime_iff_not_dvd hp).mpr hpn))) hn
-
-/-- **Depletion of cusp forms is idempotent.** -/
-theorem _root_.CuspForm.coe_depletion_depletion [NeZero L] {L' : ℕ} [NeZero L'] [NeZero d]
-    (hNL : N * d ∣ L) (hdL : d * d ∣ L) (hLL' : L * d ∣ L') (hdL' : d * d ∣ L')
-    (f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
-    ⇑(CuspForm.depletion d hLL' hdL' (CuspForm.depletion d hNL hdL f)) =
-      ⇑(CuspForm.depletion d hNL hdL f) := by
-  rw [CuspForm.coe_depletion, CuspForm.coe_depletion]
-  refine (congrArg _ (_root_.ModularForm.ext fun τ ↦ ?_)).trans
-    (ModularForm.coe_depletion_depletion hNL hdL hLL' hdL' _)
-  simp
 
 /-- **Depleting a twisted cusp form at a divisor of the modulus does not change it.** The
 cusp-form reading of `ModularForm.coe_depletion_twist_of_dvd`. -/

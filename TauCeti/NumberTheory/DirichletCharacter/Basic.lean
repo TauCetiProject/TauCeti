@@ -56,8 +56,9 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   at naturals prime to the new level, and
   `DirichletCharacter.changeLevel_ringHomComp_intCast_apply`: the value of a lifted integer-valued
   character at an integer prime to the new level.
-* `DirichletCharacter.changeLevel_mul_prime_natCast`: raising the level by a prime `p` kills the
-  values at the multiples of `p` and keeps the others.
+* `DirichletCharacter.changeLevel_natCast`: the raised character is `χ` at the naturals prime to
+  the new level and `0` at the others, and `DirichletCharacter.changeLevel_mul_prime_natCast`:
+  raising the level by a prime `p` kills the values at the multiples of `p` and keeps the others.
 * `DirichletCharacter.apply_intCast_eq_of_forall_isCoprime`: characters of equal levels agreeing
   at the integers prime to the level agree at every integer.
 * `DirichletCharacter.one_natCast`: the trivial character modulo `N` is `1` at the natural numbers
@@ -387,6 +388,15 @@ theorem changeLevel_natCast_of_coprime {R : Type*} [CommMonoidWithZero R] {d n :
     (χ : DirichletCharacter R d) {m : ℕ} (hm : m.Coprime n) : changeLevel h χ m = χ m := by
   simpa using changeLevel_eq_cast_of_dvd' χ h (a := (m : ℤ)) (Nat.isCoprime_iff_coprime.mpr hm)
 
+/-- The value of a Dirichlet character raised from level `d` to level `n` at a natural number:
+`χ m` when `m` is prime to `n`, and `0` otherwise. -/
+theorem changeLevel_natCast {R : Type*} [CommMonoidWithZero R] {d n : ℕ} (h : d ∣ n)
+    (χ : DirichletCharacter R d) (m : ℕ) :
+    changeLevel h χ m = if m.Coprime n then χ m else 0 := by
+  split_ifs with hm
+  · exact changeLevel_natCast_of_coprime h χ hm
+  · exact MulChar.map_nonunit _ (mt (ZMod.isUnit_iff_coprime m n).mp hm)
+
 /-- Raising the level of a Dirichlet character from `M` to `M * p`, for a prime `p`, kills its
 values at the multiples of `p` and keeps the others: the new character is `0` at `n` when
 `p ∣ n` and `χ n` otherwise. When `p ∣ M` nothing changes, `χ` already vanishing at the multiples
@@ -394,16 +404,13 @@ of `p`. -/
 theorem changeLevel_mul_prime_natCast {R : Type*} [CommMonoidWithZero R] {M p : ℕ}
     (hp : p.Prime) (χ : DirichletCharacter R M) (n : ℕ) :
     changeLevel (dvd_mul_right M p) χ n = if p ∣ n then 0 else χ n := by
-  by_cases hn : n.Coprime (M * p)
-  · have hpn : ¬ p ∣ n := fun hpn ↦
-      hp.one_lt.ne' ((Nat.Coprime.coprime_mul_left_right hn).symm.eq_one_of_dvd hpn)
-    simp [hpn, changeLevel_natCast_of_coprime _ _ hn]
-  · rw [MulChar.map_nonunit _ (mt (ZMod.isUnit_iff_coprime n (M * p)).mp hn)]
-    split_ifs with hpn
-    · rfl
-    · refine (χ.map_nonunit fun hu ↦ hn ?_).symm
-      exact Nat.Coprime.mul_right ((ZMod.isUnit_iff_coprime n M).mp hu)
-        ((Nat.coprime_comm.mp ((Nat.Prime.coprime_iff_not_dvd hp).mpr hpn)))
+  have hnp : n.Coprime p ↔ ¬ p ∣ n := Nat.coprime_comm.trans hp.coprime_iff_not_dvd
+  by_cases hpn : p ∣ n
+  · simp [changeLevel_natCast, Nat.coprime_mul_iff_right, hnp, hpn]
+  · by_cases hnM : n.Coprime M
+    · simp [changeLevel_natCast, Nat.coprime_mul_iff_right, hnp, hpn, hnM]
+    · simpa [changeLevel_natCast, Nat.coprime_mul_iff_right, hpn, hnM] using
+        (χ.map_nonunit (mt (ZMod.isUnit_iff_coprime n M).mp hnM)).symm
 
 /-- The value of a lifted integer-valued character at an integer coprime to the level. -/
 theorem changeLevel_ringHomComp_intCast_apply {R : Type*} [CommRing R] {d N : ℕ} (h : d ∣ N)
