@@ -42,6 +42,9 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   bracket power `(1 + ‖x‖ ^ 2) ^ r` and its complex version are smooth.
 * `TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le`: the bounds for the
   complex Bessel weight `(1 + ‖x‖ ^ 2) ^ (s / 2)`, in the form of symbol estimates of order `s`.
+* `TauCeti.exists_norm_pow_mul_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le`: for
+  `k + s ≤ 0`, the derivatives of `(1 + ‖x‖ ^ 2) ^ (s / 2)` stay bounded after multiplication by
+  `‖x‖ ^ k`.
 * `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le`: the derivative bounds
   for `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r`.
 * `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le_of_le_neg_half`: for
@@ -399,6 +402,35 @@ theorem exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le (s : ℝ)
         Complex.ofRealLI.norm_iteratedFDeriv_comp_left
           (contDiff_one_add_norm_sq_rpow (s / 2)).contDiffAt le_rfl
     _ ≤ _ := (hC x).trans_eq (by rw [sub_div])
+
+/-- **Bracket powers of negative order absorb polynomial weights.** If `k + s ≤ 0`, every
+derivative of the complex Bessel weight `(1 + ‖x‖ ^ 2) ^ (s / 2)` stays bounded after
+multiplication by `‖x‖ ^ k`: `‖x‖ ^ k ‖D^i (1 + ‖x‖ ^ 2) ^ (s / 2)‖ ≤ C` for all `x`. -/
+theorem exists_norm_pow_mul_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le {k : ℕ}
+    {s : ℝ} (hks : k + s ≤ 0) (i : ℕ) :
+    ∃ C, ∀ x : E, ‖x‖ ^ k *
+      ‖iteratedFDeriv ℝ i (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) x‖ ≤ C := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le (E := E) s i
+  refine ⟨|C|, fun x ↦ ?_⟩
+  have h1 : 1 ≤ 1 + ‖x‖ ^ 2 := le_add_of_nonneg_right (by positivity)
+  have hx : ‖x‖ ^ k ≤ (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) := by
+    calc ‖x‖ ^ k = (‖x‖ ^ 2) ^ ((k : ℝ) / 2) := by
+          rw [← Real.rpow_natCast, ← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg x)]
+          ring_nf
+      _ ≤ _ := Real.rpow_le_rpow (by positivity) (by linarith) (by positivity)
+  have hexp : (k : ℝ) / 2 + (s - i) / 2 ≤ 0 := by
+    have : (0 : ℝ) ≤ i := i.cast_nonneg
+    linarith
+  calc ‖x‖ ^ k * ‖iteratedFDeriv ℝ i (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) x‖
+      ≤ (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) * (|C| * (1 + ‖x‖ ^ 2) ^ ((s - i) / 2)) :=
+        mul_le_mul hx ((hC x).trans (by gcongr; exact le_abs_self _)) (norm_nonneg _)
+          (by positivity)
+    _ = |C| * (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2 + (s - i) / 2) := by
+        rw [Real.rpow_add (by positivity)]
+        ring
+    _ ≤ |C| * 1 :=
+        mul_le_mul_of_nonneg_left (Real.rpow_le_one_of_one_le_of_nonpos h1 hexp) (abs_nonneg _)
+    _ = |C| := mul_one _
 
 /-- **Derivative bounds for a linear function times a bracket power.** For every `v`, every real
 `r` and every `k`, `‖D^k (⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r)‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r + 1 / 2 - k / 2)`. -/
