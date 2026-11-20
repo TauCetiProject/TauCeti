@@ -11,6 +11,8 @@ public import TauCeti.Analysis.InnerProductSpace.Orientation
 public import TauCeti.Geometry.Manifold.Degree.Basic
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
+public import TauCeti.Geometry.Diffeomorphism.Sphere
+import Mathlib.Analysis.Complex.OperatorNorm
 import Mathlib.Analysis.InnerProductSpace.TwoDim
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
@@ -36,18 +38,27 @@ nowhere-vanishing top form `(v₁, …, vₙ) ↦ vol(u, v₁, …, vₙ)` (`Ori
 the pullback to `Sⁿ` of the contraction of the volume form of `E` with the position vector,
 through `TauCeti.Manifold.Orientation.ofTopForm`. Reversing `o` reverses it.
 
-The antipodal map `u ↦ -u` pulls this top form back to `(-1)^(n+1)` times itself, since it negates
-both the point `u` and the tangent vectors. So it preserves the outward-normal orientation of `Sⁿ`
-when `n` is odd and reverses it when `n` is even. When `n ≥ 1` the sphere is connected
-(`TauCeti.connectedSpace_sphere`), so it has exactly two orientations, and the antipodal map has
-orientation sign `(-1)^(n+1)` for every orientation of `Sⁿ`. Since every point has exactly one
-antipodal preimage, the antipodal map has degree `(-1)^(n+1)` at every value, and every value is
-regular, so its mapping degree `TauCeti.degree` is `(-1)^(n+1)`.
+A linear isometry `e` of `E`, restricted to the sphere, pulls this top form back to `det e` times
+itself, since it acts by `e` on both the point `u` and the tangent vectors. So it preserves the
+outward-normal orientation when `det e > 0` and reverses it when `det e < 0`; for instance, a
+reflection across a hyperplane, or complex conjugation on the unit circle of `ℂ`, reverses it.
+The antipodal map `u ↦ -u` is the restriction of `-1`, of determinant `(-1)^(n+1)`. So it
+preserves the outward-normal orientation of `Sⁿ` when `n` is odd and reverses it when `n` is even.
+When `n ≥ 1` the sphere is connected (`TauCeti.connectedSpace_sphere`), so it has exactly two
+orientations, and the antipodal map has orientation sign `(-1)^(n+1)` for every orientation of
+`Sⁿ`. Since every point has exactly one antipodal preimage, the antipodal map has degree
+`(-1)^(n+1)` at every value, and every value is regular, so its mapping degree `TauCeti.degree` is
+`(-1)^(n+1)`.
 
 ## Main declarations
 
 * `Orientation.sphereVolumeForm`: the nowhere-vanishing top form `vol(u, ·)` of the unit sphere.
 * `Orientation.sphereVolumeForm_neg`: reversing the orientation of `E` negates it.
+* `Orientation.mpullback_unitSphereEquiv_sphereVolumeForm`: a linear isometry `e` pulls the
+  volume form of `Sⁿ` back to `det e` times itself.
+* `Orientation.isOrientationPreservingAt_unitSphereEquiv`,
+  `Orientation.isOrientationReversingAt_unitSphereEquiv`: a linear isometry preserves the
+  outward-normal orientation when its determinant is positive and reverses it when negative.
 * `Orientation.mpullback_neg_sphereVolumeForm`: the antipodal map pulls the volume form of `Sⁿ`
   back to `(-1)^(n+1)` times itself.
 * `Orientation.sphereOrientation`: the outward-normal orientation of the unit sphere.
@@ -203,34 +214,58 @@ theorem _root_.Orientation.sphereOrientation_neg (o : Orientation ℝ E (Fin (n 
     rw [← hpos, hv]
     exact (neg_neg (G := Orientation ℝ (TangentSpace (𝓡 n) u) (Fin n)) _).symm
 
+/-- A linear isometry `e` of `E`, restricted to the unit sphere, pulls the volume form
+`(v₁, …, vₙ) ↦ vol(u, v₁, …, vₙ)` of the sphere back to `det e` times itself: it acts by `e` on
+the point and, read in `E`, on the tangent vectors. -/
+theorem _root_.Orientation.mpullback_unitSphereEquiv_sphereVolumeForm
+    (o : Orientation ℝ E (Fin (n + 1))) (e : E ≃ₗᵢ[ℝ] E) (u : sphere (0 : E) 1) :
+    mpullback (𝓡 n) (𝓡 n) e.unitSphereEquiv o.sphereVolumeForm.1 u =
+      LinearMap.det (e.toLinearEquiv : E →ₗ[ℝ] E) • o.sphereVolumeForm.1 u := by
+  ext v
+  rw [mpullback_apply, Orientation.sphereVolumeForm_apply, ContinuousAlternatingMap.smul_apply,
+    Orientation.sphereVolumeForm_apply, LinearIsometryEquiv.coe_unitSphereEquiv_apply,
+    smul_eq_mul, ← Orientation.volumeForm_comp_linearMap, Fin.comp_cons]
+  simp_rw [LinearIsometryEquiv.mvfderiv_coe_sphere_unitSphereEquiv, Function.comp_def,
+    LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
+
+/-- **A linear isometry of positive determinant preserves the outward-normal orientation of the
+unit sphere.** -/
+theorem _root_.Orientation.isOrientationPreservingAt_unitSphereEquiv
+    (o : Orientation ℝ E (Fin (n + 1))) {e : E ≃ₗᵢ[ℝ] E}
+    (he : 0 < LinearMap.det (e.toLinearEquiv : E →ₗ[ℝ] E)) (u : sphere (0 : E) 1) :
+    Manifold.Orientation.IsOrientationPreservingAt o.sphereOrientation o.sphereOrientation
+      e.unitSphereEquiv u := by
+  rw [Orientation.sphereOrientation]
+  exact Manifold.Orientation.isOrientationPreservingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _
+    he (o.mpullback_unitSphereEquiv_sphereVolumeForm e u)
+
+/-- **A linear isometry of negative determinant reverses the outward-normal orientation of the
+unit sphere.** For instance, a reflection across a hyperplane reverses it. -/
+theorem _root_.Orientation.isOrientationReversingAt_unitSphereEquiv
+    (o : Orientation ℝ E (Fin (n + 1))) {e : E ≃ₗᵢ[ℝ] E}
+    (he : LinearMap.det (e.toLinearEquiv : E →ₗ[ℝ] E) < 0) (u : sphere (0 : E) 1) :
+    Manifold.Orientation.IsOrientationReversingAt o.sphereOrientation o.sphereOrientation
+      e.unitSphereEquiv u := by
+  rw [Orientation.sphereOrientation]
+  exact Manifold.Orientation.isOrientationReversingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _
+    he (o.mpullback_unitSphereEquiv_sphereVolumeForm e u)
+
 /-- The antipodal map `u ↦ -u` pulls the volume form `(v₁, …, vₙ) ↦ vol(u, v₁, …, vₙ)` of the
-sphere back to `(-1)^(n+1)` times itself: it negates both the point and the tangent vectors. -/
+sphere back to `(-1)^(n+1)` times itself: it is the restriction of `-1`, of determinant
+`(-1)^(n+1)`. -/
 theorem _root_.Orientation.mpullback_neg_sphereVolumeForm (o : Orientation ℝ E (Fin (n + 1)))
     (u : sphere (0 : E) 1) :
     mpullback (𝓡 n) (𝓡 n) (fun y : sphere (0 : E) 1 ↦ -y) o.sphereVolumeForm.1 u =
       ((-1 : ℝ) ^ (n + 1)) • o.sphereVolumeForm.1 u := by
-  have hneg : MDifferentiableAt (𝓡 n) (𝓡 n) (fun y : sphere (0 : E) 1 ↦ -y) u :=
-    (contMDiff_neg_sphere (m := 1)).mdifferentiableAt one_ne_zero
-  have hcoe : MDifferentiableAt (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) (-u) :=
-    (contMDiff_coe_sphere (m := 1)).mdifferentiableAt one_ne_zero
-  -- The inclusion intertwines the antipodal maps of the sphere and of `E`.
-  have hd (w : TangentSpace (𝓡 n) u) :
-      mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) (-u) (mfderiv (𝓡 n) (𝓡 n) (fun y ↦ -y) u w) =
-        -mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u w := by
-    have hcomp : ((↑) : sphere (0 : E) 1 → E) ∘ (fun y ↦ -y) = -((↑) : _ → E) :=
-      funext fun y ↦ coe_neg_sphere y
-    rw [← mvfderiv_comp_apply u hcoe hneg, hcomp, mvfderiv_neg, neg_apply]
-  ext v
-  rw [mpullback_apply, Orientation.sphereVolumeForm_apply, ContinuousAlternatingMap.smul_apply,
-    Orientation.sphereVolumeForm_apply, coe_neg_sphere]
-  simp_rw [hd]
-  have hcons : (Fin.cons (-(u : E))
-      (fun i ↦ -mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) : Fin (n + 1) → E) =
-      fun i ↦ (-1 : ℝ) • (Fin.cons (u : E)
-        (fun i ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) : Fin (n + 1) → E) i := by
-    ext i
-    refine Fin.cases ?_ (fun i ↦ ?_) i <;> simp only [Fin.cons_zero, Fin.cons_succ, neg_one_smul]
-  rw [hcons, AlternatingMap.map_smul_univ, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+  have hneg : (fun y : sphere (0 : E) 1 ↦ -y) = (LinearIsometryEquiv.neg ℝ).unitSphereEquiv :=
+    funext fun y ↦ Subtype.ext (by simp)
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have hdet : LinearMap.det ((LinearIsometryEquiv.neg ℝ (E := E)).toLinearEquiv : E →ₗ[ℝ] E) =
+      (-1) ^ (n + 1) := by
+    rw [show ((LinearIsometryEquiv.neg ℝ (E := E)).toLinearEquiv : E →ₗ[ℝ] E) =
+        (-1 : ℝ) • LinearMap.id from LinearMap.ext fun x ↦ by simp, LinearMap.det_smul,
+      LinearMap.det_id, mul_one, (Fact.out : finrank ℝ E = n + 1)]
+  rw [hneg, o.mpullback_unitSphereEquiv_sphereVolumeForm, hdet]
 
 /-- **The antipodal map of an odd-dimensional sphere preserves the outward-normal
 orientation.** -/
@@ -345,46 +380,15 @@ theorem orientation_circleTangentBasis (z : sphere (0 : ℂ) 1) :
     (circleTangentBasis z).orientation = Complex.orientation.sphereOrientation.orientationAt z :=
   Basis.orientation_adjustToOrientation _ _
 
-/-- Complex conjugation, restricted to the unit circle, reverses its orientation. Its derivative,
-read in `ℂ`, is conjugation, which sends a counterclockwise tangent vector at `z` to a clockwise one
-at `conj z`. -/
+/-- Complex conjugation, restricted to the unit circle, reverses its orientation: it is the
+restriction of a linear isometry of `ℂ` of determinant `-1`. -/
 theorem isOrientationReversingAt_conjSphere (z : sphere (0 : ℂ) 1) :
     Manifold.Orientation.IsOrientationReversingAt Complex.orientation.sphereOrientation
       Complex.orientation.sphereOrientation conjSphere z := by
-  set κ := conjSphere
-  have hι (w : sphere (0 : ℂ) 1) := (contMDiff_coe_sphere (E := ℂ) (n := 1) (m := 1)
-    w).mdifferentiableAt one_ne_zero
-  have hκ : ContMDiff (𝓡 1) (𝓡 1) 1 κ := contMDiff_conjSphere
-  -- Read in `ℂ`, the derivative of `κ` is conjugation.
-  have hd (v : TangentSpace (𝓡 1) z) : mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) (κ z)
-      (mfderiv (𝓡 1) (𝓡 1) κ z v) =
-      (starRingEnd ℂ) (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) z v) := by
-    rw [← mvfderiv_comp_apply z (hι _) ((hκ z).mdifferentiableAt one_ne_zero),
-      show ((↑) ∘ κ : sphere (0 : ℂ) 1 → ℂ) = (Complex.conjCLE : ℂ →L[ℝ] ℂ) ∘ (↑) from
-        funext coe_conjSphere]
-    exact (Complex.conjCLE : ℂ →L[ℝ] ℂ).mvfderiv_comp_apply (hι z) v
-  -- A positively oriented tangent basis at `z` and its image at `conj z`.
-  set c := circleTangentBasis z
-  have hc := orientation_circleTangentBasis z
-  have hpos := (Complex.orientation_eq_orientationAt_sphereOrientation_iff c).1 hc
-  have hne : mfderiv (𝓡 1) (𝓡 1) κ z (c 0) ≠ 0 := fun h0 ↦ by
-    have := hd (c 0)
-    rw [h0, map_zero, eq_comm, map_eq_zero_iff _ (starRingEnd ℂ).injective] at this
-    exact c.ne_zero 0 (injective_mvfderiv_subtypeVal_sphere z (this.trans (map_zero _).symm))
-  let b' : Basis (Fin 1) ℝ (TangentSpace (𝓡 1) (κ z)) :=
-    basisOfLinearIndependentOfCardEqFinrank
-      ((linearIndependent_unique_iff (v := fun _ : Fin 1 ↦ mfderiv (𝓡 1) (𝓡 1) κ z (c 0))).2 hne)
-      ((Fintype.card_fin 1).trans
-        (Complex.orientation.sphereOrientation.finrank_tangentSpace_eq (κ z)).symm)
-  have hb' : ∀ i, mfderiv (𝓡 1) (𝓡 1) κ z (c i) = b' i := fun i ↦ by
-    fin_cases i
-    simp [b']
-  rw [Manifold.Orientation.isOrientationReversingAt_iff_of_basis c b' hb', iff_true_left hc,
-    ← Orientation.ne_iff_eq_neg _ _
-      (Complex.orientation.sphereOrientation.finrank_tangentSpace_eq (κ z)).symm,
-    Ne, Complex.orientation_eq_orientationAt_sphereOrientation_iff, ← hb', hd, not_lt]
-  simp only [κ, coe_conjSphere, Complex.conj_re, Complex.conj_im]
-  linarith
+  have h : conjSphere = Complex.conjLIE.unitSphereEquiv := funext fun w ↦ Subtype.ext (by simp)
+  rw [h]
+  exact Complex.orientation.isOrientationReversingAt_unitSphereEquiv
+    (by rw [Complex.det_conjLIE]; exact neg_one_lt_zero) z
 
 end Circle
 
