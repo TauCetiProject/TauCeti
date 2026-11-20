@@ -146,6 +146,16 @@ theorem mem_of_numericalFrobenius_lt (h : S.IsNumericalSemigroup) {n : ℕ}
   unfold numericalFrobenius at hn
   omega
 
+/-- Every gap of a numerical semigroup lies below its conductor. -/
+theorem IsNumericalSemigroup.lt_numericalConductor_of_notMem (h : S.IsNumericalSemigroup)
+    {n : ℕ} (hn : n ∉ S) : n < S.numericalConductor :=
+  lt_of_not_ge fun hle ↦ hn (mem_of_numericalConductor_le h hle)
+
+/-- A submonoid with nonzero conductor is a numerical semigroup. -/
+theorem isNumericalSemigroup_of_numericalConductor_ne_zero (hS : S.numericalConductor ≠ 0) :
+    S.IsNumericalSemigroup :=
+  (isNumericalSemigroup_iff_exists_bound S).mpr (Nat.nonempty_of_pos_sInf (Nat.pos_of_ne_zero hS))
+
 /-- A proper numerical semigroup has nonnegative Frobenius number. -/
 theorem numericalFrobenius_nonneg (h : S.IsNumericalSemigroup) (hS : S ≠ ⊤) :
     0 ≤ S.numericalFrobenius := by
@@ -171,6 +181,11 @@ theorem numericalFrobenius_eq_natCast_iff (S : AddSubmonoid ℕ) (n : ℕ) :
     · exact htail k (by omega)
   · rintro ⟨hnot, htail⟩
     exact ⟨fun k hk ↦ htail k (by omega), fun hc ↦ hnot (hc n le_rfl)⟩
+
+/-- One less than a nonzero conductor is a gap: it is the Frobenius number. -/
+theorem numericalConductor_sub_one_notMem (hS : S.numericalConductor ≠ 0) :
+    S.numericalConductor - 1 ∉ S :=
+  ((numericalFrobenius_eq_natCast_iff S _).mp (by unfold numericalFrobenius; omega)).1
 
 /-- The Frobenius number of a proper numerical semigroup is itself a gap. -/
 theorem numericalFrobenius_toNat_notMem (h : S.IsNumericalSemigroup) (hS : S ≠ ⊤) :
