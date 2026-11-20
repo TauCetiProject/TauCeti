@@ -40,44 +40,36 @@ open TauCeti.SerreGraph
 
 /-! ### The one-petal rose with an isolated vertex -/
 
-/-- Adjoining a loop at `x` to a graph without edges gives a graph all of whose darts are loops:
-the one-petal rose at `x` together with the other vertices, isolated. -/
-theorem noEdge_addEdge_src_eq_tgt {V : Type*} (x : V) (e : ((noEdge V).addEdge x x).E) :
-    ((noEdge V).addEdge x x).src e = ((noEdge V).addEdge x x).tgt e := by
-  rcases e with e | b
-  · exact e.elim
-  · cases b <;> rfl
-
 /-- Adjoining an isolated vertex to the one-petal rose leaves its integral cycle rank one. -/
 example : Module.finrank ℤ (((noEdge.{0, 0} Bool).addEdge false false).cycleLattice {.inr true}) =
     1 := by
   rw [cycleLattice_def, finrank_ker_incidenceBoundary_of_forall_src_eq_tgt fun e _ =>
-    noEdge_addEdge_src_eq_tgt false e, Nat.card_unique]
+    addEdge_src_eq_tgt isEmptyElim e, Nat.card_unique]
 
 /-- Adjoining an isolated vertex to the one-petal rose leaves its binary cycle rank one. -/
 example : Module.finrank (ZMod 2)
     (((noEdge.{0, 0} Bool).addEdge false false).modTwoCycleSpace {.inr true}) = 1 := by
   rw [modTwoCycleSpace_def, finrank_ker_incidenceBoundary_of_forall_src_eq_tgt
-    fun e _ => noEdge_addEdge_src_eq_tgt false e, Nat.card_unique]
+    fun e _ => addEdge_src_eq_tgt isEmptyElim e, Nat.card_unique]
 
 /-- The one-petal rose with an isolated vertex has two components. -/
 example : Nat.card (((noEdge.{0, 0} Bool).addEdge false false).supportGraph
     {.inr true}).ConnectedComponent = 2 := by
   rw [card_connectedComponent_supportGraph_of_forall_src_eq_tgt fun e _ =>
-    noEdge_addEdge_src_eq_tgt false e]
+    addEdge_src_eq_tgt isEmptyElim e]
   exact Nat.card_eq_fintype_card.trans Fintype.card_bool
 
 /-- The only spanning forest of the one-petal rose with an isolated vertex is empty: a spanning
 forest cannot contain the loop. -/
 example (F : Set ((noEdge.{0, 0} Bool).addEdge false false).E) :
     ((noEdge.{0, 0} Bool).addEdge false false).IsSpanningForest {.inr true} F ↔ F = ∅ :=
-  ⟨fun hF => hF.eq_empty fun e _ => noEdge_addEdge_src_eq_tgt false e,
-    fun h => h ▸ isSpanningForest_empty_iff.mpr fun e _ => noEdge_addEdge_src_eq_tgt false e⟩
+  ⟨fun hF => hF.eq_empty fun e _ => addEdge_src_eq_tgt isEmptyElim e,
+    fun h => h ▸ isSpanningForest_empty_iff.mpr fun e _ => addEdge_src_eq_tgt isEmptyElim e⟩
 
 /-- The one-petal rose with an isolated vertex has no spanning tree. -/
 example : IsEmpty ((noEdge.{0, 0} Bool).addEdge false false).SpanningTree :=
   ⟨fun T => not_subsingleton Bool <|
-    (preconnected_iff_of_forall_src_eq_tgt _ (noEdge_addEdge_src_eq_tgt false)).mp
+    (preconnected_iff_of_forall_src_eq_tgt _ (addEdge_src_eq_tgt isEmptyElim)).mp
       ((connected_iff _).mp ((nonempty_spanningTree_iff _).mp ⟨T⟩)).2⟩
 
 /-! ### Two isolated vertices -/

@@ -99,44 +99,23 @@ theorem ofPath_rosePetal_mem_range_map_restrictInclusion_iff (a : α) :
 
 /-- A petal loop and its reverse forget to the same walk in the underlying multigraph: the two
 darts of a petal lie on one undirected edge. -/
-theorem toWalk_reverse_rosePetal (a : α) :
+example (a : α) :
     Path.toWalk (rose α) (rosePetal a).reverse = Path.toWalk (rose α) (rosePetal a) := by
-  -- The vertex type of `rose α` unfolds only at default transparency, so the computation is
-  -- done for a loop at an arbitrary vertex and then applied to the petal.
-  have key : ∀ (v : (rose α).V) (e : v ⟶ v),
-      Path.toWalk (rose α) e.toPath.reverse = Path.toWalk (rose α) e.toPath := by
-    intro v e
-    rw [Quiver.Path.reverse_toPath, Path.toWalk_toPath, Path.toWalk_toPath,
-      Graph.IsLink.toWalk_eq_cons, Graph.IsLink.toWalk_eq_cons]
-    congr 1
-    rw [reverse_val, edge_rev]
   rw [rosePetal_eq_toPath]
-  exact key _ _
-
-/-- A petal loop and its reverse are distinct elements of the reduced path group. -/
-theorem ofPath_reverse_rosePetal_ne (a : α) :
-    PathGroup.ofPath (rosePetal a).reverse ≠ PathGroup.ofPath (rosePetal a) := by
-  intro h
-  -- As above, equations are composed rather than rewritten at the vertex `PUnit.unit`.
-  have h' : (FreeGroup.of a)⁻¹ = FreeGroup.of a :=
-    (rosePathGroupEquivFreeGroup_ofPath_reverse_rosePetal PUnit.unit a).symm.trans
-      ((congrArg (rosePathGroupEquivFreeGroup α PUnit.unit) h).trans
-        (rosePathGroupEquivFreeGroup_ofPath_rosePetal PUnit.unit a))
-  have h'' := congrArg (FreeGroup.lift fun _ => Multiplicative.ofAdd (1 : ℤ)) h'
-  simp only [map_inv, FreeGroup.lift_apply_of, ← ofAdd_neg] at h''
-  have := Multiplicative.ofAdd.injective h''
-  omega
+  exact Path.toWalk_reverse_toPath_of_loop _ _
 
 /-- The reduced path group of a rose with a petal does not factor through the walks of the
 underlying multigraph: no map on walks sends the forgotten walk of every closed path to its
-class. -/
-theorem not_exists_pathGroup_eq_comp_toWalk [Nonempty α] :
+class, since a petal loop and its reverse have the same walk but distinct classes. -/
+example [Nonempty α] :
     ¬∃ f : (rose α).toGraph.Walk PUnit.unit PUnit.unit → PathGroup (rose α) PUnit.unit,
       ∀ p, f (Path.toWalk (rose α) p) = PathGroup.ofPath p := by
   obtain ⟨a⟩ := ‹Nonempty α›
   rintro ⟨f, hf⟩
-  exact ofPath_reverse_rosePetal_ne a
-    ((hf _).symm.trans ((congrArg f (toWalk_reverse_rosePetal a)).trans (hf _)))
+  refine PathGroup.ofPath_reverse_rosePetal_ne a
+    ((hf _).symm.trans ((congrArg f ?_).trans (hf _)))
+  rw [rosePetal_eq_toPath]
+  exact Path.toWalk_reverse_toPath_of_loop _ _
 
 /-- The multigraph underlying a rose, a single vertex with loops, is connected with one
 component. -/
