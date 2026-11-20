@@ -51,6 +51,10 @@ arbitrary finite types.
 * `TauCeti.Probability.norm_integral_prod_mul_star_le` and
   `TauCeti.Probability.norm_sum_integral_prod_mul_star_le`: moment bounds for one trace word and
   for a family of trace words with a bounded number of rows and columns.
+* `TauCeti.Probability.norm_inv_mul_integral_trace_pow_sampleCovariance_sub_sum_le`: for
+  independent centred entries whose `2k`th absolute moments are bounded by `B`, the normalized
+  moment `(card p)⁻¹ E tr Sᵏ` minus the contribution of the words with `k + 1` vertices has norm at
+  most `k^(2k) B ∑_{a<k} (p/n)ᵃ / n`.
 
 ## References
 
@@ -88,6 +92,23 @@ private theorem measurable_readFun (r : Fin k ⊕ Fin k) : Measurable (readFun (
 private theorem norm_readFun (r : Fin k ⊕ Fin k) (z : 𝕜) : ‖readFun r z‖ = ‖z‖ := by
   cases r <;> simp [readFun]
 
+/-- A trace word of length `k` has `2 * k` factors. -/
+private theorem card_univ_sum_fin : #(univ : Finset (Fin k ⊕ Fin k)) = 2 * k := by
+  simp [two_mul]
+
+/-- The Hölder exponent of a product of `m ≠ 0` factors in `L^(q * m)` is `q`. -/
+private theorem inv_natCast_mul_inv_mul_natCast {m : ℕ} (hm : m ≠ 0) (q : ℝ≥0∞) :
+    ((m : ℝ≥0∞) * (q * m)⁻¹)⁻¹ = q := by
+  have hm' : (m : ℝ≥0∞) ≠ 0 := by simpa
+  rw [ENNReal.mul_inv (.inr (by simp)) (.inr hm'), mul_left_comm,
+    ENNReal.mul_inv_cancel hm' (by simp), mul_one, inv_inv]
+
+/-- A bound on the `2k`th absolute moments of the entries of a matrix with a nonempty set of
+positions is nonnegative. -/
+private theorem nonneg_of_integral_norm_pow_le [Nonempty p] [Nonempty n] {B : ℝ}
+    (hB : ∀ a b, ∫ ω, ‖X ω a b‖ ^ (2 * k) ∂P ≤ B) : 0 ≤ B :=
+  (integral_nonneg fun ω ↦ by positivity).trans (hB (Classical.arbitrary p) (Classical.arbitrary n))
+
 /-- The product along a trace word as a product of its `2 * k` factors. -/
 private theorem prod_mul_star_eq_prod_readFun (x : Matrix p n 𝕜) (i : Fin k → p)
     (j : Fin k → n) :
@@ -114,18 +135,13 @@ private theorem memLp_prod_mul_star [IsFiniteMeasure P] {q : ℝ≥0∞}
   rcases eq_or_ne k 0 with rfl | hk
   · simp [memLp_const]
   simp_rw [prod_mul_star_eq_prod_readFun]
-  have hk0 : ((2 * k : ℕ) : ℝ≥0∞) ≠ 0 := by exact_mod_cast (by omega : 2 * k ≠ 0)
   have h := MemLp.fun_prod (s := (univ : Finset (Fin k ⊕ Fin k))) (p := fun _ ↦ q * (2 * k : ℕ))
     (f := fun r ω ↦ readFun r (X ω (readPos i j r).1 (readPos i j r).2)) fun r _ ↦ by
       cases r
       · exact hX _ _
       · exact (hX _ _).star
-  have hcard : (univ : Finset (Fin k ⊕ Fin k)).card = 2 * k := by simp [two_mul]
-  have hexp : (∑ _r : Fin k ⊕ Fin k, (q * (2 * k : ℕ))⁻¹)⁻¹ = q := by
-    rw [sum_const, hcard, nsmul_eq_mul,
-      ENNReal.mul_inv (Or.inr (ENNReal.natCast_ne_top _)) (Or.inr hk0), mul_comm q⁻¹,
-      ← mul_assoc, ENNReal.mul_inv_cancel hk0 (ENNReal.natCast_ne_top _), one_mul, inv_inv]
-  rwa [hexp] at h
+  rwa [sum_const, card_univ_sum_fin, nsmul_eq_mul,
+    inv_natCast_mul_inv_mul_natCast (by omega)] at h
 
 /-- On a finite measure space, the trace of the `k`th power of the sample covariance matrix of
 `X` lies in `L^q` whenever all entries of `X` lie in `L^(q * 2k)`. Neither independence nor
@@ -203,25 +219,22 @@ theorem norm_integral_prod_mul_star_le (hk : k ≠ 0) {B : ℝ}
     (hX : ∀ a b, MemLp (fun ω ↦ X ω a b) (2 * k : ℕ) P)
     (hB : ∀ a b, ∫ ω, ‖X ω a b‖ ^ (2 * k) ∂P ≤ B) (i : Fin k → p) (j : Fin k → n) :
     ‖∫ ω, ∏ t, X ω (i t) (j t) * star (X ω (i (finRotate k t)) (j t)) ∂P‖ ≤ B := by
-  have hcard : (univ : Finset (Fin k ⊕ Fin k)).card = 2 * k := by simp [two_mul]
-  have hk' : ((2 * k : ℕ) : ℝ) ≠ 0 := by exact_mod_cast (by omega : 2 * k ≠ 0)
   have : Nonempty (Fin k) := ⟨⟨0, Nat.pos_of_ne_zero hk⟩⟩
   simp_rw [prod_mul_star_eq_prod_readFun]
   calc
     _ ≤ ((2 * k : ℕ) : ℝ)⁻¹ * ∑ r : Fin k ⊕ Fin k,
         ∫ ω, ‖readFun r (X ω (readPos i j r).1 (readPos i j r).2)‖ ^ (2 * k) ∂P := by
-      simpa [hcard] using norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow
+      simpa only [card_univ_sum_fin] using norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow
         (fun r ω ↦ readFun r (X ω (readPos i j r).1 (readPos i j r).2)) univ_nonempty
         (fun r _ ↦ by
-          simpa [hcard, norm_readFun] using (hX _ _).integrable_norm_pow (by omega))
+          rw [card_univ_sum_fin]
+          simpa [norm_readFun] using (hX _ _).integrable_norm_pow (by omega))
     _ ≤ ((2 * k : ℕ) : ℝ)⁻¹ * ∑ _r : Fin k ⊕ Fin k, B := by
       gcongr with r
       simpa [norm_readFun] using hB _ _
     _ = B := by
-      rw [sum_const, card_univ, Fintype.card_sum, Fintype.card_fin, nsmul_eq_mul, ← two_mul,
-        ← mul_assoc]
-      push_cast at hk' ⊢
-      rw [inv_mul_cancel₀ hk', one_mul]
+      rw [sum_const, card_univ_sum_fin, nsmul_eq_mul]
+      field_simp
 
 /-- Under a bound `B` on the `2k`th absolute moments of the entries of `X`, a family `S` of trace
 words of length `k ≠ 0`, each using at most `a` rows and at most `b` columns, has total expected
@@ -235,24 +248,18 @@ theorem norm_sum_integral_prod_mul_star_le [Fintype p] [Fintype n] [DecidableEq 
     ‖∑ w ∈ S, ∫ ω, ∏ t, X ω (w.1 t) (w.2 t) * star (X ω (w.1 (finRotate k t)) (w.2 t)) ∂P‖ ≤
       (Fintype.card p : ℝ) ^ a * (a : ℝ) ^ k * ((Fintype.card n : ℝ) ^ b * (b : ℝ) ^ k) * B := by
   have : Nonempty (Fin k) := ⟨⟨0, Nat.pos_of_ne_zero hk⟩⟩
-  rcases S.eq_empty_or_nonempty with rfl | ⟨w₀, -⟩
-  · -- The bound is nonnegative: either `B ≥ 0`, or an index type is empty and a factor vanishes.
-    rw [sum_empty, norm_zero]
-    rcases isEmpty_or_nonempty p with hp | hp
-    · rcases Nat.eq_zero_or_pos a with rfl | ha
-      · simp [hk]
-      · simp [ha.ne']
-    rcases isEmpty_or_nonempty n with hn | hn
-    · rcases Nat.eq_zero_or_pos b with rfl | hb
-      · simp [hk]
-      · simp [hb.ne']
-    have hB0 : 0 ≤ B := (integral_nonneg fun ω ↦ by positivity).trans
-      (hB (Classical.arbitrary p) (Classical.arbitrary n))
-    positivity
-  have : Nonempty p := ⟨w₀.1 (Classical.arbitrary _)⟩
-  have : Nonempty n := ⟨w₀.2 (Classical.arbitrary _)⟩
-  have hB0 : 0 ≤ B := (integral_nonneg fun ω ↦ by positivity).trans
-    (hB (Classical.arbitrary p) (Classical.arbitrary n))
+  -- If an index type is empty, there are no trace words and the bound has a vanishing factor.
+  rcases isEmpty_or_nonempty p with hp | hp
+  · rw [S.eq_empty_of_isEmpty, sum_empty, norm_zero]
+    rcases Nat.eq_zero_or_pos a with rfl | ha
+    · simp [hk]
+    · simp [ha.ne']
+  rcases isEmpty_or_nonempty n with hn | hn
+  · rw [S.eq_empty_of_isEmpty, sum_empty, norm_zero]
+    rcases Nat.eq_zero_or_pos b with rfl | hb
+    · simp [hk]
+    · simp [hb.ne']
+  have hB0 := nonneg_of_integral_norm_pow_le hB
   have hcard : (#S : ℝ) ≤ (Fintype.card p : ℝ) ^ a * (a : ℝ) ^ k *
       ((Fintype.card n : ℝ) ^ b * (b : ℝ) ^ k) := by
     have hsub : S ⊆ ({f : Fin k → p | #(univ.image f) ≤ a} : Finset _) ×ˢ
@@ -333,8 +340,7 @@ theorem norm_inv_mul_integral_trace_pow_sampleCovariance_sub_sum_le [Fintype p] 
     (by positivity)).trans ?_
   rcases isEmpty_or_nonempty n with hn | hn
   · simp [hk]
-  have hB0 : 0 ≤ B := (integral_nonneg fun ω ↦ by positivity).trans
-    (hB (Classical.arbitrary p) (Classical.arbitrary n))
+  have hB0 := nonneg_of_integral_norm_pow_le hB
   have hp : (Fintype.card p : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
   have hn : (Fintype.card n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
   rw [mul_sum, mul_sum, mul_sum]

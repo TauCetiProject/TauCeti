@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.TraceWord.Counting
 public import Mathlib.Data.Finset.Sum
-import TauCeti.Data.Fin.Basic
+public import TauCeti.Data.Fin.Sum
 
 /-!
 # Bipartite trace words
@@ -30,12 +30,11 @@ bijection with matrix positions `(a, b) : α × β`, so the step `i t → j t` r
 in which no edge is traversed exactly once visits at most `k + 1` vertices: the rows and columns it
 uses number at most `k + 1` in total.
 
+The word is indexed through the interleaving `TauCeti.finSumFinInterleaveEquiv` of
+`TauCeti.Data.Fin.Sum`, which places `i` at the even positions and `j` at the odd positions.
+
 ## Main declarations
 
-* `TauCeti.finSumFinInterleaveEquiv`: the interleaving `Fin k ⊕ Fin k ≃ Fin (2 * k)`,
-  `inl t ↦ 2 * t`, `inr t ↦ 2 * t + 1`, with its rotation formulas
-  `TauCeti.finRotate_finSumFinInterleaveEquiv_inl` and
-  `TauCeti.finRotate_finSumFinInterleaveEquiv_inr`.
 * `TauCeti.bipartiteWord`: the alternating cyclic word of a pair of sequences.
 * `TauCeti.card_image_bipartiteWord`: it visits `#(image i) + #(image j)` vertices.
 * `TauCeti.card_image_add_card_image_le_of_no_singleton_edge`: with no singleton edge, at most
@@ -53,47 +52,6 @@ public section
 open Finset
 
 namespace TauCeti
-
-/-- The interleaving of two copies of `Fin k` into `Fin (2 * k)`: `inl t ↦ 2 * t` and
-`inr t ↦ 2 * t + 1`. -/
-def finSumFinInterleaveEquiv (k : ℕ) : Fin k ⊕ Fin k ≃ Fin (2 * k) where
-  toFun := Sum.elim (fun t ↦ ⟨2 * t, by omega⟩) (fun t ↦ ⟨2 * t + 1, by omega⟩)
-  invFun s := if s.val % 2 = 0 then .inl ⟨s / 2, by omega⟩ else .inr ⟨s / 2, by omega⟩
-  left_inv := by
-    rintro (t | t)
-    · simp
-    · simp [Fin.ext_iff]
-      omega
-  right_inv s := by
-    by_cases h : s.val % 2 = 0 <;> simp [h, Fin.ext_iff] <;> omega
-
-@[simp]
-theorem val_finSumFinInterleaveEquiv_inl {k : ℕ} (t : Fin k) :
-    (finSumFinInterleaveEquiv k (.inl t) : ℕ) = 2 * t :=
-  (rfl)
-
-@[simp]
-theorem val_finSumFinInterleaveEquiv_inr {k : ℕ} (t : Fin k) :
-    (finSumFinInterleaveEquiv k (.inr t) : ℕ) = 2 * t + 1 :=
-  (rfl)
-
-/-- The step after the even position `2 * t` is the odd position `2 * t + 1`. -/
-theorem finRotate_finSumFinInterleaveEquiv_inl {k : ℕ} (t : Fin k) :
-    finRotate (2 * k) (finSumFinInterleaveEquiv k (.inl t)) =
-      finSumFinInterleaveEquiv k (.inr t) := by
-  rw [Fin.ext_iff, Fin.coe_finRotate_eq_ite]
-  simp only [val_finSumFinInterleaveEquiv_inl, val_finSumFinInterleaveEquiv_inr]
-  split_ifs <;> omega
-
-/-- The step after the odd position `2 * t + 1` is the even position of the cyclically next index
-`t + 1`. -/
-theorem finRotate_finSumFinInterleaveEquiv_inr {k : ℕ} (t : Fin k) :
-    finRotate (2 * k) (finSumFinInterleaveEquiv k (.inr t)) =
-      finSumFinInterleaveEquiv k (.inl (finRotate k t)) := by
-  rw [Fin.ext_iff, Fin.coe_finRotate_eq_ite, val_finSumFinInterleaveEquiv_inl,
-    Fin.coe_finRotate_eq_ite]
-  simp only [val_finSumFinInterleaveEquiv_inr]
-  split_ifs <;> omega
 
 variable {α β : Type*} {k : ℕ}
 

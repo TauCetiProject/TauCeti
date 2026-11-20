@@ -9,6 +9,8 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Basic.Finite.Defs
 public import Mathlib.Logic.Embedding.Basic
 public import Mathlib.Logic.Equiv.Defs
+public import Mathlib.Logic.Equiv.Fin.Rotate
+import TauCeti.Data.Fin.Basic
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Logic.Equiv.Fin.Basic
@@ -40,13 +42,19 @@ two- or three-variable object can rewrite rather than unfold them.
   equivalence from the sum with a finite complement.
 * `TauCeti.nonempty_sigmaFinEquiv`: blocks `Fin (m i)` whose sizes add up to `n` together form a
   type equivalent to `Fin n`.
+* `TauCeti.finSumFinInterleaveEquiv`: the interleaving `Fin k ⊕ Fin k ≃ Fin (2 * k)`,
+  `inl t ↦ 2 * t`, `inr t ↦ 2 * t + 1`, with its rotation formulas
+  `TauCeti.finRotate_finSumFinInterleaveEquiv_inl` and
+  `TauCeti.finRotate_finSumFinInterleaveEquiv_inr`: one step of `finRotate (2 * k)` moves from
+  `2 * t` to `2 * t + 1`, and from `2 * t + 1` to the even position of `finRotate k t`.
 
 ## Implementation notes
 
 The constructions are implementation details: `Mathlib.Data.Fintype.BigOperators`,
 `Mathlib.Data.Fintype.EquivFin` and `Mathlib.Logic.Equiv.Fin.Basic` are imported privately rather
-than re-exported. Only the finite sum, finiteness, equivalence and embedding interfaces needed by
-the declaration types are public.
+than re-exported, as is `TauCeti.Data.Fin.Basic`, which supplies the value formula for
+`finRotate`. Only the finite sum, finiteness, equivalence, rotation and embedding interfaces needed
+by the declaration types are public.
 -/
 
 public section
@@ -124,5 +132,46 @@ theorem unitSumUnitSumUnitEquivFinThree_symm_two :
 theorem nonempty_sigmaFinEquiv {ι : Type*} [Fintype ι] {m : ι → ℕ} {n : ℕ}
     (hn : ∑ i, m i = n) : Nonempty ((Σ i, Fin (m i)) ≃ Fin n) :=
   ⟨Fintype.equivFinOfCardEq (by simpa using hn)⟩
+
+/-- The interleaving of two copies of `Fin k` into `Fin (2 * k)`: `inl t ↦ 2 * t` and
+`inr t ↦ 2 * t + 1`. -/
+def finSumFinInterleaveEquiv (k : ℕ) : Fin k ⊕ Fin k ≃ Fin (2 * k) where
+  toFun := Sum.elim (fun t ↦ ⟨2 * t, by omega⟩) (fun t ↦ ⟨2 * t + 1, by omega⟩)
+  invFun s := if s.val % 2 = 0 then .inl ⟨s / 2, by omega⟩ else .inr ⟨s / 2, by omega⟩
+  left_inv := by
+    rintro (t | t)
+    · simp
+    · simp [Fin.ext_iff]
+      omega
+  right_inv s := by
+    by_cases h : s.val % 2 = 0 <;> simp [h, Fin.ext_iff] <;> omega
+
+@[simp]
+theorem val_finSumFinInterleaveEquiv_inl {k : ℕ} (t : Fin k) :
+    (finSumFinInterleaveEquiv k (.inl t) : ℕ) = 2 * t :=
+  (rfl)
+
+@[simp]
+theorem val_finSumFinInterleaveEquiv_inr {k : ℕ} (t : Fin k) :
+    (finSumFinInterleaveEquiv k (.inr t) : ℕ) = 2 * t + 1 :=
+  (rfl)
+
+/-- The step after the even position `2 * t` is the odd position `2 * t + 1`. -/
+theorem finRotate_finSumFinInterleaveEquiv_inl {k : ℕ} (t : Fin k) :
+    finRotate (2 * k) (finSumFinInterleaveEquiv k (.inl t)) =
+      finSumFinInterleaveEquiv k (.inr t) := by
+  rw [Fin.ext_iff, Fin.coe_finRotate_eq_ite]
+  simp only [val_finSumFinInterleaveEquiv_inl, val_finSumFinInterleaveEquiv_inr]
+  split_ifs <;> omega
+
+/-- The step after the odd position `2 * t + 1` is the even position of the cyclically next index
+`t + 1`. -/
+theorem finRotate_finSumFinInterleaveEquiv_inr {k : ℕ} (t : Fin k) :
+    finRotate (2 * k) (finSumFinInterleaveEquiv k (.inr t)) =
+      finSumFinInterleaveEquiv k (.inl (finRotate k t)) := by
+  rw [Fin.ext_iff, Fin.coe_finRotate_eq_ite, val_finSumFinInterleaveEquiv_inl,
+    Fin.coe_finRotate_eq_ite]
+  simp only [val_finSumFinInterleaveEquiv_inr]
+  split_ifs <;> omega
 
 end TauCeti
