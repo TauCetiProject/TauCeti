@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # Poisson's equation on the line and the plane
@@ -154,45 +155,6 @@ theorem abs_integral_inner_gradient_le_of_eqOn_one (hn : Fintype.card ι ≤ 2)
         gcongr
     _ = _ := by rw [Real.sqrt_mul (sq_nonneg K), Real.sqrt_sq hK, mul_assoc]
 
-/-- The `L²` norm of the gradient of `u ∈ H¹(ℝⁿ)` outside the ball of radius `R` tends to zero as
-`R → ∞`. -/
-private theorem tendsto_setIntegral_compl_ball_norm_gradient_sq (u : W1p mu ⊤ 2) :
-    Tendsto (fun R : ℝ => ∫ x in (ball (0 : EuclideanSpace ℝ ι) R)ᶜ, ‖W1p.gradient u x‖ ^ 2 ∂mu)
-      atTop (𝓝 0) := by
-  have hG : Integrable (fun x => ‖W1p.gradient u x‖ ^ 2) mu := by
-    have := (Lp.memLp (W1p.gradient u)).integrable_norm_pow two_ne_zero
-    simpa only [Opens.coe_top, Measure.restrict_univ] using this
-  simp_rw [← integral_indicator measurableSet_ball.compl]
-  rw [← integral_zero (EuclideanSpace ℝ ι) ℝ]
-  refine tendsto_integral_filter_of_dominated_convergence _
-    (Eventually.of_forall fun R => (hG.indicator measurableSet_ball.compl).aestronglyMeasurable)
-    (Eventually.of_forall fun R => Eventually.of_forall fun x => ?_) hG
-    (Eventually.of_forall fun x => ?_)
-  · rw [Real.norm_eq_abs, abs_of_nonneg (indicator_nonneg (fun _ _ => by positivity) x)]
-    exact indicator_le_self' (fun _ _ => by positivity) x
-  · refine tendsto_const_nhds.congr' ?_
-    filter_upwards [eventually_gt_atTop ‖x‖] with R hR
-    have hx : x ∈ ball (0 : EuclideanSpace ℝ ι) R := mem_ball_zero_iff.2 hR
-    rw [indicator_of_notMem (not_not_intro hx)]
-
-omit [mu.IsAddHaarMeasure] in
-/-- Dominated convergence for cutoffs: if `ψ R` takes values in `[0, 1]` and equals `1` on the
-closed ball of radius `max R 1`, then `∫ f (ψ R) → ∫ f` as `R → ∞` for integrable `f`. -/
-private theorem tendsto_integral_mul_of_eqOn_one {f : EuclideanSpace ℝ ι → ℝ}
-    {ψ : ℝ → EuclideanSpace ℝ ι → ℝ} (hf : Integrable f mu) (hψr : ∀ R, range (ψ R) ⊆ Icc 0 1)
-    (hψ1 : ∀ R, EqOn (ψ R) 1 (closedBall 0 (max R 1))) (hψc : ∀ R, Continuous (ψ R)) :
-    Tendsto (fun R : ℝ => ∫ x, f x * ψ R x ∂mu) atTop (𝓝 (∫ x, f x ∂mu)) := by
-  refine tendsto_integral_filter_of_dominated_convergence (fun x => ‖f x‖)
-    (Eventually.of_forall fun R => hf.aestronglyMeasurable.mul (hψc R).aestronglyMeasurable)
-    (Eventually.of_forall fun R => Eventually.of_forall fun x => ?_) hf.norm
-    (Eventually.of_forall fun x => ?_)
-  · obtain ⟨h0, h1⟩ := hψr R ⟨x, rfl⟩
-    rw [norm_mul, Real.norm_of_nonneg h0]
-    exact mul_le_of_le_one_right (norm_nonneg _) h1
-  · refine tendsto_const_nhds.congr' ?_
-    filter_upwards [eventually_ge_atTop ‖x‖] with R hR
-    rw [hψ1 R (mem_closedBall_zero_iff.2 (hR.trans (le_max_left R 1))), Pi.one_apply, mul_one]
-
 /-! ### Poisson's equation on the whole space -/
 
 /-- **Poisson's equation on the line and the plane has no finite-energy solution for data of
@@ -237,18 +199,30 @@ theorem not_isWeakSolutionDirichlet_one_zero_zero_of_integral_ne_zero [Decidable
   -- The left side tends to `0`.
   have hleft : Tendsto (fun R : ℝ => ∫ x, ⟪W1p.gradient (u : W1p mu ⊤ 2) x,
       gradient (ψ R) x⟫_ℝ ∂mu) atTop (𝓝 0) := by
-    have htail := (tendsto_setIntegral_compl_ball_norm_gradient_sq (u : W1p mu ⊤ 2)).comp
+    -- The `L²` norm of `∇u` outside the ball of radius `max R 1` tends to zero.
+    have hG : Integrable (fun x => ‖W1p.gradient (u : W1p mu ⊤ 2) x‖ ^ 2) mu := by
+      have := (Lp.memLp (W1p.gradient (u : W1p mu ⊤ 2))).integrable_norm_pow two_ne_zero
+      simpa only [Opens.coe_top, Measure.restrict_univ] using this
+    have htail := (tendsto_setIntegral_compl_ball hG 0).comp
       (tendsto_atTop_mono (fun R => le_max_left R 1) tendsto_id)
     have hsq := ((Real.continuous_sqrt.tendsto 0).comp htail).const_mul
       (c * √(2 ^ Fintype.card ι * mu.real (ball 0 1)))
     rw [Real.sqrt_zero, mul_zero] at hsq
     refine squeeze_zero_norm' (Eventually.of_forall fun R => ?_) hsq
+    rw [Real.norm_eq_abs, Function.comp_apply, Function.comp_apply]
     have hR := le_max_right R 1
-    refine (abs_integral_inner_gradient_le_of_eqOn_one hn hR hc0 ((hψ R).of_le (by simp)) (hψ1 R)
-      (hψts R) (fun x => (hψg R x).trans_eq ?_) (u : W1p mu ⊤ 2)).trans_eq rfl
+    refine abs_integral_inner_gradient_le_of_eqOn_one hn hR hc0 ((hψ R).of_le (by simp)) (hψ1 R)
+      (hψts R) (fun x => (hψg R x).trans_eq ?_) (u : W1p mu ⊤ 2)
     rw [two_mul, add_sub_cancel_right]
-  have hright := tendsto_integral_mul_of_eqOn_one hf hψr hψ1 fun R => (hψ R).continuous
-  exact hf0 (tendsto_nhds_unique (hright.congr fun R => (heq R).symm) hleft)
+  -- The right side tends to `∫ f`.
+  have hright := tendsto_integral_smul_of_eq_one_ball (R := fun R => max R 1)
+    (tendsto_atTop_mono (fun R => le_max_left R 1) tendsto_id)
+    (fun R => (hψ R).continuous.aestronglyMeasurable)
+    (fun R x hx => (hψ1 R (mem_closedBall_zero_iff.2 hx.le)).trans (Pi.one_apply x))
+    (fun R x => hψr R (mem_range_self x)) hf
+  refine hf0 (tendsto_nhds_unique (hright.congr fun R => ?_) hleft)
+  rw [heq R]
+  exact integral_congr_ae (Eventually.of_forall fun x => (smul_eq_mul _ _).trans (mul_comm _ _))
 
 /-- **The Laplacian on `ℝⁿ` has zero adjoint kernel.** In dimension `n ≥ 1`, if `w ∈ H¹₀(ℝⁿ)`
 satisfies `∫ ∇v · ∇w = 0` for every `v ∈ H¹₀(ℝⁿ)`, then `w = 0`. Its gradient vanishes, so it is
