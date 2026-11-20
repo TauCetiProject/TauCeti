@@ -487,7 +487,7 @@ theorem iIndepFun.hasLaw_average_cauchyMeasure {Ω ι : Type*} [MeasurableSpace 
   rw [charFun_map_mul_comp hmeas,
     hindep.charFun_map_fun_sum_eq_prod (fun i ↦ (hlaw i).aemeasurable)]
   simp only [(hlaw _).map_eq, charFun_cauchyMeasure, Finset.prod_apply, Finset.prod_const,
-    Finset.card_univ, ← Complex.exp_nat_mul]
+    Finset.card_univ, ← Complex.exp_natCast_mul]
   congr 1
   have habs : |(Fintype.card ι : ℝ)⁻¹ * t| = (Fintype.card ι : ℝ)⁻¹ * |t| := by
     rw [abs_mul, abs_of_pos (by positivity)]

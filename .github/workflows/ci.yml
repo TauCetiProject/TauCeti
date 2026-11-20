@@ -31,7 +31,7 @@ env:
   MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
 
 jobs:
-  # Infrastructure regression suites run separately in infrastructure-tests.yml.
+  # Infrastructure regression suites run in TauCetiTools checks.yml.
   build:
     # Publish fresh dot-notation context before library execution. GitHub's hosted
     # pool can queue this serialized publisher behind hours of ordinary PR work.
@@ -70,10 +70,9 @@ jobs:
           fetch-depth: 0
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@5d49641d46901054a68f78d900cbcb968b8538db
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 5d49641d46901054a68f78d900cbcb968b8538db
           project-directory: .
       # Prevent library imports from inheriting sorried roadmap/review declarations.
       - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
@@ -227,7 +226,11 @@ jobs:
       - name: Audit import headers against the complete source inventory
         run: python3 scripts/check-imports.py
 
-      # Temporary workaround; remove after adopting lean4#15868.
+      # Main-push builds use Lake's stock per-module restoration, one `leantar` process per cached
+      # module; only the sandboxed PR build in pr-build.yml runs TauCetiTools' bulk extraction first.
+      # https://github.com/leanprover/lean4/pull/16418 (libuv process spawning, in v4.37.0-rc1) is
+      # expected to make that per-module cost small; https://github.com/leanprover/lean4/pull/15868
+      # (native bulk unpacking) is still open.
       - name: Build
         env:
           # Restore only from the locally-populated $LAKE_CACHE_DIR the earlier fetch step filled;

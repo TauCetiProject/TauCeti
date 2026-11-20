@@ -217,7 +217,7 @@ theorem exists_smul_isIntegral (R : Type*) [CommRing R] {K : Type*} [Field K]
   obtain ⟨b, hb⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors R)
     ![W.a₁, W.a₂, W.a₃, W.a₄, W.a₆]
   have hb₀ : algebraMap R K (b : R) ≠ 0 :=
-    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors b.2
+    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors b.property
   -- One denominator suffices for every power: `bⁿ⁺¹ aᵢ = bⁿ · (b aᵢ)`.
   have key : ∀ (i : Fin 5) (n : ℕ), IsLocalization.IsInteger R
       (algebraMap R K (b : R) ^ (n + 1) * ![W.a₁, W.a₂, W.a₃, W.a₄, W.a₆] i) := by

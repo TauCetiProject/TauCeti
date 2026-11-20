@@ -247,7 +247,7 @@ theorem halfSpinRep_one_spinTorus (w₁ w₂ : Circle) :
   ext ψ
   simp only [coe_halfSpinRep_apply]
   refine map_spinTorus_apply_eq b hQ ρ ?_
-  rw [map_spinTorus_one_mk_apply b hQ ρ hb ψ.2, map_spinTorus_mk_one_apply, one_mul]
+  rw [map_spinTorus_one_mk_apply b hQ ρ hb ψ.property, map_spinTorus_mk_one_apply, one_mul]
 
 /-- **The torus acts on `W⁻` through the quotient of its coordinates**: on the negative
 half-spinors, `(w₁, w₂)` acts as `(w₁ w₂⁻¹, 1)`. -/
@@ -257,7 +257,7 @@ theorem halfSpinRep_neg_one_spinTorus (w₁ w₂ : Circle) :
   ext ψ
   simp only [coe_halfSpinRep_apply]
   refine map_spinTorus_apply_eq b hQ ρ ?_
-  rw [map_spinTorus_one_mk_apply b hQ ρ hb ψ.2, map_spinTorus_mk_one_apply,
+  rw [map_spinTorus_one_mk_apply b hQ ρ hb ψ.property, map_spinTorus_mk_one_apply,
     Circle.coe_inv_eq_conj, Complex.conj_re, Complex.conj_im, Complex.ofReal_neg, neg_one_mul]
 
 end Action

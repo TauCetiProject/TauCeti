@@ -14,14 +14,22 @@ Primitive Dirichlet characters are identified by their lifts to a common nonzero
 of the lifts forces equality of the original levels, because changing level preserves the
 conductor. This gives an equality criterion without choosing representatives at prime arguments.
 
-Passing to the associated primitive character `χ.primitiveCharacter` preserves and reflects both
-principality (`DirichletCharacter.primitiveCharacter_eq_one_iff`) and quadraticity
-(`DirichletCharacter.isQuadratic_primitiveCharacter_iff`).
-
 For primitive quadratic characters, their product at the least common multiple level is principal
 exactly when the original characters coincide, including their levels. This separates the
 exceptional equal-character case in two-character arguments for real Dirichlet L-functions.
 Only one of the two characters needs to be quadratic.
+
+## Main results
+
+* `DirichletCharacter.IsPrimitive.changeLevel_eq_changeLevel_iff`: two primitive characters have
+  equal lifts to a common nonzero level iff their levels and characters agree.
+* `DirichletCharacter.IsPrimitive.eq_primitiveCharacter_of_changeLevel_eq`,
+  `DirichletCharacter.IsPrimitive.level_eq_conductor_of_changeLevel_eq`,
+  `DirichletCharacter.IsPrimitive.apply_intCast_eq_primitiveCharacter_of_changeLevel_eq`: any
+  primitive character `ψ` of level `M ∣ L` (`L ≠ 0`) lifting to `χ` has level `χ.conductor` and
+  coincides with `χ.primitiveCharacter`.
+* `DirichletCharacter.IsPrimitive.mul_eq_one_iff`: the common-level product of two primitive
+  characters, one of them quadratic, is principal iff they coincide.
 -/
 
 public section
@@ -47,42 +55,36 @@ theorem IsPrimitive.changeLevel_eq_changeLevel_iff [CommMonoidWithZero R] [NeZer
   · rintro ⟨rfl, rfl⟩
     rfl
 
-/-- The primitive character associated to `χ` is principal if and only if `χ` is principal. -/
-@[simp]
-theorem primitiveCharacter_eq_one_iff [CommMonoidWithZero R]
-    (χ : DirichletCharacter R N) : χ.primitiveCharacter = 1 ↔ χ = 1 := by
-  rcases eq_or_ne N 0 with rfl | hN
-  · have hc : χ.conductor = 0 := conductor_eq_zero_iff_level_eq_zero.mpr rfl
-    have hchg := χ.changeLevel_primitiveCharacter
-    generalize χ.conductor_dvd_level = hdvd at hchg
-    generalize χ.conductor = k, χ.primitiveCharacter = ψ at hc hdvd hchg ⊢
-    subst hc
-    rw [changeLevel_self] at hchg
-    subst hchg
-    rfl
-  · have : NeZero N := ⟨hN⟩
-    exact ⟨fun h ↦ by rw [← χ.changeLevel_primitiveCharacter, h, map_one],
-      fun h ↦ by rcases h with rfl; exact primitiveCharacter_one⟩
+/-- A primitive character `ψ` of level `M ∣ L` (`L ≠ 0`) whose lift to level `L` is `χ` has level
+`χ.conductor` and transports along that equality to `χ.primitiveCharacter`. -/
+theorem IsPrimitive.eq_primitiveCharacter_of_changeLevel_eq [CommMonoidWithZero R] [NeZero L]
+    {ψ : DirichletCharacter R M} {χ : DirichletCharacter R L}
+    (hψ : ψ.IsPrimitive) (hM : M ∣ L) (hind : changeLevel hM ψ = χ) :
+    ∃ h : M = χ.conductor, h ▸ ψ = χ.primitiveCharacter :=
+  (hψ.changeLevel_eq_changeLevel_iff χ.primitiveCharacter_isPrimitive hM
+    χ.conductor_dvd_level).mp (hind.trans χ.changeLevel_primitiveCharacter.symm)
+
+/-- A primitive character `ψ` of level `M ∣ L` (`L ≠ 0`) whose lift to level `L` is `χ` has level
+equal to `χ.conductor`. -/
+theorem IsPrimitive.level_eq_conductor_of_changeLevel_eq [CommMonoidWithZero R] [NeZero L]
+    {ψ : DirichletCharacter R M} {χ : DirichletCharacter R L}
+    (hψ : ψ.IsPrimitive) (hM : M ∣ L) (hind : changeLevel hM ψ = χ) :
+    M = χ.conductor :=
+  (hψ.eq_primitiveCharacter_of_changeLevel_eq hM hind).1
+
+/-- A primitive character `ψ` of level `M ∣ L` (`L ≠ 0`) whose lift to level `L` is `χ` agrees
+with `χ.primitiveCharacter` on all integers. -/
+theorem IsPrimitive.apply_intCast_eq_primitiveCharacter_of_changeLevel_eq
+    [CommMonoidWithZero R] [NeZero L]
+    {ψ : DirichletCharacter R M} {χ : DirichletCharacter R L}
+    (hψ : ψ.IsPrimitive) (hM : M ∣ L) (hind : changeLevel hM ψ = χ) (a : ℤ) :
+    ψ a = χ.primitiveCharacter a := by
+  obtain ⟨rfl, rfl⟩ := hψ.eq_primitiveCharacter_of_changeLevel_eq hM hind
+  rfl
 
 section Quadratic
 
 variable [CommRing R]
-
-/-- The primitive character associated to `χ` is quadratic if and only if `χ` is quadratic. -/
-@[simp]
-theorem isQuadratic_primitiveCharacter_iff (χ : DirichletCharacter R N) :
-    χ.primitiveCharacter.IsQuadratic ↔ χ.IsQuadratic := by
-  rcases eq_or_ne N 0 with rfl | hN
-  · have hc : χ.conductor = 0 := conductor_eq_zero_iff_level_eq_zero.mpr rfl
-    have hchg := χ.changeLevel_primitiveCharacter
-    generalize χ.conductor_dvd_level = hdvd at hchg
-    generalize χ.conductor = k, χ.primitiveCharacter = ψ at hc hdvd hchg ⊢
-    subst hc
-    rw [changeLevel_self] at hchg
-    subst hchg
-    rfl
-  · have : NeZero N := ⟨hN⟩
-    rw [← isQuadratic_changeLevel_iff χ.conductor_dvd_level, χ.changeLevel_primitiveCharacter]
 
 /-- The common-level product of two primitive characters, one of them quadratic, is principal
 exactly when they are the same primitive character. In particular, different primitive levels

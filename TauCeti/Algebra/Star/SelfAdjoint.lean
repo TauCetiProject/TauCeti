@@ -21,7 +21,8 @@ In a star ring, taking adjoints shows that an element anticommuting with a self-
 adjoint anticommuting with `γ`, as needed for gradings. Similarly, taking stars transposes
 one-sided relations with a self-adjoint element: `x * q = x` becomes `q * x = x` for self-adjoint
 `x`, and `q * u = 0` becomes `star u * q = 0`. For a self-adjoint `p`, the
-element `2 p - 1` is again self-adjoint.
+element `2 p - 1` is again self-adjoint, and its commutator `ξ p - p ξ` with a skew-adjoint `ξ`
+is self-adjoint.
 
 ## Main results
 
@@ -34,6 +35,8 @@ element `2 p - 1` is again self-adjoint.
   `star u * q = 0`.
 * `IsSelfAdjoint.two_mul_sub_one`: `2 p - 1` is self-adjoint for a self-adjoint `p`.
 * `IsSelfAdjoint.of_mul_eq_one`: a right inverse of a self-adjoint element is self-adjoint.
+* `IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint`: the commutator `ξ H - H ξ` of a skew-adjoint
+  `ξ` with a self-adjoint `H` is self-adjoint.
 -/
 
 public section
@@ -89,3 +92,8 @@ theorem IsSelfAdjoint.of_mul_eq_one {A : Type*} [Monoid A] [StarMul A] {R Rinv :
   have hstar : star Rinv * R = 1 := by
     simpa only [star_mul, hR.star_eq, star_one] using congrArg star hRRinv
   exact left_inv_eq_right_inv hstar hRRinv
+
+/-- The commutator `ξ H - H ξ` of a skew-adjoint `ξ` with a self-adjoint `H` is self-adjoint. -/
+theorem IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint {R : Type*} [NonUnitalRing R] [StarRing R]
+    {ξ H : R} (hH : IsSelfAdjoint H) (hξ : ξ ∈ skewAdjoint R) : IsSelfAdjoint (ξ * H - H * ξ) := by
+  simp [IsSelfAdjoint, hH.star_eq, skewAdjoint.mem_iff.mp hξ, neg_add_eq_sub]

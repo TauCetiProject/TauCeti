@@ -196,7 +196,7 @@ two reflections. -/
 theorem hyperbolicPairTorus_mem_specialOrthogonalGroup
     (hu : Q u = 0) (hv : Q v = 0) (huv : polar Q u v = 1) (t : Rˣ) :
     (hyperbolicPairTorus Q hu hv huv t : M ≃ₗ[R] M) ∈ specialOrthogonalGroup Q := by
-  refine mem_specialOrthogonalGroup_iff.mpr ⟨(hyperbolicPairTorus Q hu hv huv t).2, ?_⟩
+  refine mem_specialOrthogonalGroup_iff.mpr ⟨(hyperbolicPairTorus Q hu hv huv t).property, ?_⟩
   by_cases hb : ∃ s : Finset M, Nonempty (Module.Basis s R M)
   · obtain ⟨s, ⟨b⟩⟩ := hb
     have := Module.Free.of_basis b
