@@ -179,7 +179,7 @@ theorem mul_rpow_neg_le_sub_of_mem_factoredNumbers {S : Finset ℕ} (hS : ∀ p 
     have hcast (z : ℕ) (hz : z ∈ Nat.factoredNumbers S) :
         ∏ p ∈ S, ((p : ℕ) : ℝ) ^ padicValNat p z = z := by
       exact_mod_cast prod_pow_padicValNat_eq_self_of_mem_factoredNumbers hS hz
-    have hp0 (p : S) : ((p : ℕ) : ℝ) ≠ 0 := by exact_mod_cast (hS p p.2).ne_zero
+    have hp0 (p : S) : ((p : ℕ) : ℝ) ≠ 0 := by exact_mod_cast (hS p p.property).ne_zero
     simp only [e, zpow_sub₀ (hp0 _), zpow_natCast]
     rw [Finset.prod_div_distrib, Finset.prod_coe_sort S (fun p ↦ ((p : ℕ) : ℝ) ^ padicValNat p x),
       Finset.prod_coe_sort S (fun p ↦ ((p : ℕ) : ℝ) ^ padicValNat p y), hcast x hx, hcast y hy]

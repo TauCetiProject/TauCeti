@@ -40,6 +40,8 @@ hypotheses only because Mathlib's `Point.map` does.
 * `WeierstrassCurve.Affine.Point.eq_of_coords`: nonzero points with equal coordinates are equal.
 * `WeierstrassCurve.Affine.Point.eq_or_eq_neg_of_xCoord_eq`: nonzero points with equal
   `x`-coordinates are equal or opposite.
+* `WeierstrassCurve.Affine.Point.card_filter_xRep_le_two`: at most two points of a `Finset`
+  share a value of Mathlib's `Point.xRep`.
 * `WeierstrassCurve.Affine.Point.xCoord_map` and
   `WeierstrassCurve.Affine.Point.yCoord_map`: the accessors commute with `Point.map`.
 * `WeierstrassCurve.Affine.Point.map_eq_self_iff`: a field endomorphism fixes a point exactly
@@ -140,6 +142,21 @@ theorem eq_or_eq_neg_of_xCoord_eq {F : Type*} [Field F] {W : _root_.WeierstrassC
     {P Q : W.Point} (hP : P ≠ 0) (hQ : Q ≠ 0) (h : xCoord P = xCoord Q) : P = Q ∨ P = -Q := by
   rw [← some_coords hP, ← some_coords hQ]
   exact X_eq_iff.mp h
+
+open Finset in
+/-- **At most two points of a `Finset` share an abscissa**, over a field: Mathlib's `Point.xRep`
+determines a point up to sign. -/
+theorem card_filter_xRep_le_two {F : Type*} [Field F] [DecidableEq F]
+    {W : _root_.WeierstrassCurve.Affine F} (s : Finset W.Point) (b : Fin 2 → F) :
+    #{P ∈ s | P.xRep = b} ≤ 2 := by
+  rcases eq_empty_or_nonempty {P ∈ s | P.xRep = b} with h | ⟨Q, hQ⟩
+  · simp [h]
+  · have hsub : {P ∈ s | P.xRep = b} ⊆ {Q, -Q} := by
+      intro P hP
+      have hb : P.xRep = Q.xRep := by
+        rw [(mem_filter.mp hP).2, (mem_filter.mp hQ).2]
+      rcases eq_or_eq_neg_of_xRep_eq_xRep hb with h | h <;> simp [h]
+    exact (card_le_card hsub).trans ((card_insert_le _ _).trans (by simp))
 
 variable {S F K : Type*} [CommRing S] [Field F] [Field K] [Algebra R S] [Algebra R F]
   [Algebra S F] [IsScalarTower R S F] [Algebra R K] [Algebra S K] [IsScalarTower R S K]

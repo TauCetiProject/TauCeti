@@ -92,8 +92,8 @@ theorem multiplicationAlgebra_le_iff {μ : Measure α} {M : VonNeumannAlgebra (L
   adjoin_le_iff.trans Set.forall_mem_range
 
 private theorem star_range_multiplicationOperator_subset (μ : Measure α) :
-    star (Set.range (Lp.multiplicationOperator (E := ℂ) (μ := μ))) ⊆
-      Set.range (Lp.multiplicationOperator (E := ℂ) (μ := μ)) := by
+    star (Set.range (Lp.multiplicationOperator (𝕜 := ℂ) (E := ℂ) (p := 2) (μ := μ))) ⊆
+      Set.range (Lp.multiplicationOperator (𝕜 := ℂ) (E := ℂ) (p := 2) (μ := μ)) := by
   rintro T hT
   obtain ⟨a, ha⟩ := Set.mem_star.mp hT
   exact ⟨star a, by rw [← Lp.star_multiplicationOperator, ha, star_star]⟩
@@ -443,7 +443,7 @@ noncomputable def multiplicationAlgebraDiracStarAlgEquiv (x₀ : α) :
         fun T ↦ ?_⟩
       have hT : (T : Lp ℂ 2 (Measure.dirac x₀) →L[ℂ] Lp ℂ 2 (Measure.dirac x₀)) ∈
           (⊥ : VonNeumannAlgebra (Lp ℂ 2 (Measure.dirac x₀))) := by
-        simpa [multiplicationAlgebra_dirac_eq_bot] using T.2
+        simpa [multiplicationAlgebra_dirac_eq_bot] using T.property
       obtain ⟨c, hc⟩ := mem_bot.mp hT
       refine ⟨c, Subtype.ext ?_⟩
       rw [StarAlgHom.ofId_apply, Algebra.algebraMap_eq_smul_one, SetLike.val_smul,
@@ -644,7 +644,7 @@ private theorem multiplicationOperator_linftyIndicator_ne_of_subset {μ : Measur
     TauCeti.linftyIndicator_mul_linftyIndicator_of_subset_left ht hE (hts.trans hsE)
   have hsE' : es * eE = es :=
     TauCeti.linftyIndicator_mul_linftyIndicator_of_subset_left hs hE hsE
-  have hzero : Lp.multiplicationOperator (E := ℂ) (et - es) = 0 := by
+  have hzero : Lp.multiplicationOperator (E := ℂ) (p := 2) (et - es) = 0 := by
     rw [Lp.multiplicationOperator_sub, sub_eq_zero, ← htE,
       ← Lp.multiplicationOperator_comp_multiplicationOperator, hQP, hp_op]
   have hts_eq : et = es := sub_eq_zero.mp <|
@@ -674,7 +674,7 @@ theorem exists_multiplicationAlgebra_isStarProjection_ne_zero_and_mul_eq_and_ne_
   refine ⟨Q, (TauCeti.isStarProjection_linftyIndicator (μ := μ) (R := ℂ) ht).map
     (multiplicationStarAlgHom μ), ?_, ?_, ?_⟩
   · intro hQ0
-    have hq_op : Lp.multiplicationOperator (E := ℂ) q = 0 := by
+    have hq_op : Lp.multiplicationOperator (E := ℂ) (p := 2) q = 0 := by
       simpa only [Q, coe_multiplicationStarAlgHom_apply, ZeroMemClass.coe_zero] using
         congrArg Subtype.val hQ0
     have hq0 : q = 0 :=

@@ -16,26 +16,29 @@ public import TauCeti.MeasureTheory.Function.Lp.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.Multiplier
 
 /-!
-# Multiplication operators on complex L²
+# Multiplication operators on `Lᵖ`
 
-An essentially bounded complex function `a` acts on `L²` by pointwise multiplication.  This file
-bundles that action as `MeasureTheory.Lp.multiplicationOperator a` and records its algebraic,
-adjoint, norm, pullback, unitary-conjugation, eigenspace, and commutant properties.  In particular,
-`multiplicationOperator` is a unital ⋆-algebra homomorphism
-`MeasureTheory.Lp.multiplicationStarAlgHom`, on a sigma-finite measure space its operator norm on
-`L²` with values in any nontrivial space is the `L∞` norm of the symbol, and on complex scalar `L²`
-every bounded operator commuting with indicator multiplications on sets of finite measure is
-locally multiplication by an `L∞` symbol (and globally so when the measure is sigma-finite).
-As a concrete eigenspace example, multiplication by the real-valued coordinate symbol
+An essentially bounded scalar function `a : Lp 𝕜 ∞ μ` acts on `Lp E p μ` (`1 ≤ p ≤ ∞`) by
+pointwise scalar multiplication. This file bundles that action as
+`MeasureTheory.Lp.multiplicationOperator a` and records its algebraic, adjoint, norm, pullback,
+unitary-conjugation, eigenspace, and commutant properties. Because the operator is built directly
+from heterogeneous `Lp` scalar multiplication via `LinearMap.mkContinuous`, the definition and
+algebraic identities require only `[NormedField 𝕜]` (without `[NontriviallyNormedField 𝕜]`).
+
+Over a nontrivially normed field `𝕜` on a sigma-finite measure space with nontrivial fiber `E`, the
+operator norm on `Lp E p μ` equals the `L∞` norm `‖a‖` (`norm_multiplicationOperator`). On
+`Lp E 2 μ` for a complete inner-product space `E` over `𝕜` (`[RCLike 𝕜]`), the Hilbert adjoint of
+multiplication by `a` is multiplication by `star a` (`adjoint_multiplicationOperator`), and over
+`ℂ` this gives a unital ⋆-algebra homomorphism `MeasureTheory.Lp.multiplicationStarAlgHom`. On
+complex scalar `L²`, every bounded operator commuting with indicator multiplications on sets of
+finite measure is locally multiplication by an `L∞` symbol (and globally so when the measure is
+sigma-finite). As a concrete eigenspace example, multiplication by the real-valued coordinate symbol
 `TauCeti.unitInterval.coordLp` on `Lp E 2 (volume : Measure unitInterval)` has no eigenvalues
 (`TauCeti.unitInterval.not_hasEigenvalue_multiplicationOperator_coordLp`).
-
-The construction is Mathlib's Hölder map for scalar multiplication with one exponent equal to
-infinity.  The resulting operator is the ambient multiplication operator compressed in the
-definition of a Toeplitz operator and generating the multiplication von Neumann algebra on `L²`.
 
 ## References
 
@@ -49,117 +52,116 @@ public section
 noncomputable section
 
 open Filter
-open scoped ENNReal ComplexInnerProductSpace InnerProduct Topology
+open scoped ENNReal ComplexInnerProductSpace InnerProductSpace Topology
 
 namespace MeasureTheory.Lp
 
 open ContinuousLinearMap
 
-variable {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
 
 section NormedSpace
 
-variable [NormedAddCommGroup E] [NormedSpace ℂ E]
+variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- Pointwise multiplication by an essentially bounded complex symbol, as a bounded operator on
-`L²`. -/
-def multiplicationOperator (a : Lp ℂ ∞ μ) : Lp E 2 μ →L[ℂ] Lp E 2 μ :=
-  (ContinuousLinearMap.lsmul ℂ ℂ : ℂ →L[ℂ] E →L[ℂ] E).holderL μ ∞ 2 2 a
+/-- Pointwise scalar multiplication by an essentially bounded symbol `a : Lp 𝕜 ∞ μ`, as a
+continuous linear operator on `Lp E p μ` (`1 ≤ p ≤ ∞`). -/
+def multiplicationOperator (a : Lp 𝕜 ∞ μ) : Lp E p μ →L[𝕜] Lp E p μ :=
+  LinearMap.mkContinuous
+    { toFun f := a • f
+      map_add' := Lp.add_smul a
+      map_smul' c f := (Lp.smul_comm c a f).symm }
+    ‖a‖ (Lp.norm_smul_le a)
+
+/-- Applying the multiplication operator is heterogeneous `Lp` scalar multiplication. -/
+theorem multiplicationOperator_apply (a : Lp 𝕜 ∞ μ) (f : Lp E p μ) :
+    multiplicationOperator a f = a • f :=
+  (rfl)
+
+/-- The multiplication operator acts by pointwise scalar multiplication almost everywhere. -/
+theorem multiplicationOperator_ae (a : Lp 𝕜 ∞ μ) (f : Lp E p μ) :
+    multiplicationOperator a f =ᵐ[μ] fun x ↦ a x • f x :=
+  coeFn_lpSMul a f
 
 /-- On scalar `L²`, `multiplicationOperator` agrees with the Hölder operator built from complex
 multiplication `ContinuousLinearMap.mul ℂ ℂ`. -/
 theorem holderL_mul_eq_multiplicationOperator :
     ⇑((ContinuousLinearMap.mul ℂ ℂ).holderL μ ∞ 2 2) =
-      multiplicationOperator (E := ℂ) (μ := μ) := by
+      multiplicationOperator (E := ℂ) (p := 2) (μ := μ) := by
   funext a
-  have hmul : ContinuousLinearMap.mul ℂ ℂ = (ContinuousLinearMap.lsmul ℂ ℂ : ℂ →L[ℂ] ℂ →L[ℂ] ℂ) :=
-    ContinuousLinearMap.ext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ rfl
-  rw [multiplicationOperator, hmul]
+  ext f
+  filter_upwards [(ContinuousLinearMap.mul ℂ ℂ).coeFn_holder (r := 2) a f,
+    multiplicationOperator_ae a f] with x h₁ h₂
+  rw [ContinuousLinearMap.holderL_apply_apply, h₁, h₂, ContinuousLinearMap.mul_apply', smul_eq_mul]
 
-/-- The multiplication operator acts by pointwise multiplication almost everywhere. -/
-theorem multiplicationOperator_ae (a : Lp ℂ ∞ μ) (f : Lp E 2 μ) :
-    multiplicationOperator a f =ᵐ[μ] fun x ↦ a x • f x := by
-  simpa only [multiplicationOperator, ContinuousLinearMap.holderL_apply_apply,
-    ContinuousLinearMap.lsmul_apply] using
-    (ContinuousLinearMap.lsmul ℂ ℂ : ℂ →L[ℂ] E →L[ℂ] E).coeFn_holder (r := 2) a f
-
-/-- Applying the multiplication operator is heterogeneous `Lp` scalar multiplication. -/
-theorem multiplicationOperator_apply (a : Lp ℂ ∞ μ) (f : Lp E 2 μ) :
-    multiplicationOperator a f = a • f := by
-  apply Lp.ext
-  exact (multiplicationOperator_ae a f).trans (coeFn_lpSMul (r := 2) a f).symm
-
-/-- Multiplication by `a` changes the `L²` norm by at most `‖a‖∞`. -/
-theorem norm_multiplicationOperator_apply_le (a : Lp ℂ ∞ μ) (f : Lp E 2 μ) :
-    ‖multiplicationOperator a f‖ ≤ ‖a‖ * ‖f‖ := by
-  rw [multiplicationOperator_apply]
-  exact Lp.norm_smul_le a f
-
-/-- The operator norm of multiplication by `a` is at most its `L∞` norm. -/
-theorem norm_multiplicationOperator_le (a : Lp ℂ ∞ μ) :
-    ‖multiplicationOperator (E := E) a‖ ≤ ‖a‖ :=
-  opNorm_le_bound _ (norm_nonneg a) (norm_multiplicationOperator_apply_le a)
+/-- Multiplication by `a` changes the `Lᵖ` norm by at most `‖a‖ * ‖f‖`. -/
+theorem norm_multiplicationOperator_apply_le (a : Lp 𝕜 ∞ μ) (f : Lp E p μ) :
+    ‖multiplicationOperator a f‖ ≤ ‖a‖ * ‖f‖ :=
+  Lp.norm_smul_le a f
 
 @[simp]
 theorem multiplicationOperator_zero :
-    multiplicationOperator (E := E) (0 : Lp ℂ ∞ μ) = 0 := by
-  simp [multiplicationOperator]
+    multiplicationOperator (E := E) (p := p) (0 : Lp 𝕜 ∞ μ) = 0 :=
+  ContinuousLinearMap.ext fun f ↦ Lp.zero_smul 𝕜 ∞ f
 
 /-- Multiplication operators depend additively on their symbols. -/
 @[simp]
-theorem multiplicationOperator_add (a b : Lp ℂ ∞ μ) :
-    multiplicationOperator (E := E) (a + b) =
-      multiplicationOperator a + multiplicationOperator b := by
-  simp [multiplicationOperator]
+theorem multiplicationOperator_add (a b : Lp 𝕜 ∞ μ) :
+    multiplicationOperator (E := E) (p := p) (a + b) =
+      multiplicationOperator a + multiplicationOperator b :=
+  ContinuousLinearMap.ext fun f ↦ Lp.smul_add a b f
 
 @[simp]
-theorem multiplicationOperator_neg (a : Lp ℂ ∞ μ) :
-    multiplicationOperator (E := E) (-a) = -multiplicationOperator a := by
-  simp [multiplicationOperator]
+theorem multiplicationOperator_neg (a : Lp 𝕜 ∞ μ) :
+    multiplicationOperator (E := E) (p := p) (-a) = -multiplicationOperator a := by
+  ext f
+  filter_upwards [multiplicationOperator_ae (-a) f, multiplicationOperator_ae a f,
+    Lp.coeFn_neg a, Lp.coeFn_neg (multiplicationOperator a f)] with x h₁ h₂ ha hf
+  rw [h₁, ha, Pi.neg_apply, neg_smul, neg_apply, hf, Pi.neg_apply, h₂]
 
 @[simp]
-theorem multiplicationOperator_sub (a b : Lp ℂ ∞ μ) :
-    multiplicationOperator (E := E) (a - b) =
+theorem multiplicationOperator_sub (a b : Lp 𝕜 ∞ μ) :
+    multiplicationOperator (E := E) (p := p) (a - b) =
       multiplicationOperator a - multiplicationOperator b := by
-  simp [multiplicationOperator]
+  rw [sub_eq_add_neg, multiplicationOperator_add, multiplicationOperator_neg, sub_eq_add_neg]
 
-/-- Multiplication operators depend complex-linearly on their symbols. -/
+/-- Multiplication operators depend linearly on their symbols. -/
 @[simp]
-theorem multiplicationOperator_smul (c : ℂ) (a : Lp ℂ ∞ μ) :
-    multiplicationOperator (E := E) (c • a) = c • multiplicationOperator a := by
-  simp [multiplicationOperator]
+theorem multiplicationOperator_smul (c : 𝕜) (a : Lp 𝕜 ∞ μ) :
+    multiplicationOperator (E := E) (p := p) (c • a) = c • multiplicationOperator a :=
+  ContinuousLinearMap.ext fun f ↦ Lp.smul_assoc c a f
 
 /-- Composing multiplication operators multiplies their symbols in the same order. -/
-theorem multiplicationOperator_comp_multiplicationOperator (a b : Lp ℂ ∞ μ) :
-    multiplicationOperator (E := E) a ∘L multiplicationOperator b =
+theorem multiplicationOperator_comp_multiplicationOperator (a b : Lp 𝕜 ∞ μ) :
+    multiplicationOperator (E := E) (p := p) a ∘L multiplicationOperator b =
       multiplicationOperator (a * b) := by
   ext f
   filter_upwards [multiplicationOperator_ae a (multiplicationOperator b f),
     multiplicationOperator_ae b f,
     multiplicationOperator_ae (a * b) f,
     coeFn_mul a b] with x ha hb hab hsmul
-  simp only [comp_apply, ha, hb, hab, hsmul, Pi.mul_apply]
-  rw [smul_smul]
+  simp only [comp_apply, ha, hb, hab, hsmul, Pi.mul_apply, smul_smul]
 
 /-- Multiplying symbols multiplies the corresponding operators. -/
 @[simp]
-theorem multiplicationOperator_mul (a b : Lp ℂ ∞ μ) :
-    multiplicationOperator (E := E) (a * b) =
+theorem multiplicationOperator_mul (a b : Lp 𝕜 ∞ μ) :
+    multiplicationOperator (E := E) (p := p) (a * b) =
       multiplicationOperator a * multiplicationOperator b := by
   rw [ContinuousLinearMap.mul_def, multiplicationOperator_comp_multiplicationOperator]
 
 /-- Multiplication operators commute with each other. -/
-theorem commute_multiplicationOperator (a b : Lp ℂ ∞ μ) :
-    Commute (multiplicationOperator (E := E) a) (multiplicationOperator b) := by
+theorem commute_multiplicationOperator (a b : Lp 𝕜 ∞ μ) :
+    Commute (multiplicationOperator (E := E) (p := p) a) (multiplicationOperator b) := by
   refine (commute_iff_eq _ _).2 (ContinuousLinearMap.ext fun f ↦ Lp.ext ?_)
   filter_upwards [multiplicationOperator_ae a (multiplicationOperator b f),
     multiplicationOperator_ae b f, multiplicationOperator_ae b (multiplicationOperator a f),
     multiplicationOperator_ae a f] with x hab hb hba ha
   simp only [mul_apply_eq_comp, hab, hb, hba, ha, smul_smul, mul_comm]
 
-/-- Multiplication by a symbol of modulus one almost everywhere preserves the `L²` norm. -/
-theorem norm_multiplicationOperator_apply_of_ae_norm_eq_one {u : Lp ℂ ∞ μ}
-    (hu : ∀ᵐ x ∂μ, ‖u x‖ = 1) (f : Lp E 2 μ) :
+/-- Multiplication by a symbol of norm one almost everywhere preserves the `Lᵖ` norm. -/
+theorem norm_multiplicationOperator_apply_of_ae_norm_eq_one {u : Lp 𝕜 ∞ μ}
+    (hu : ∀ᵐ x ∂μ, ‖u x‖ = 1) (f : Lp E p μ) :
     ‖multiplicationOperator u f‖ = ‖f‖ := by
   have h : ∀ᵐ x ∂μ, ‖multiplicationOperator u f x‖ = ‖f x‖ := by
     filter_upwards [multiplicationOperator_ae u f, hu] with x hx hux
@@ -168,32 +170,38 @@ theorem norm_multiplicationOperator_apply_of_ae_norm_eq_one {u : Lp ℂ ∞ μ}
     (Lp.norm_le_norm_of_ae_le (h.mono fun _ hx ↦ hx.ge))
 
 /-- A symbol equal almost everywhere to a constant acts by scalar multiplication. -/
-theorem multiplicationOperator_of_ae_eq_const {a : Lp ℂ ∞ μ} {c : ℂ}
+theorem multiplicationOperator_of_ae_eq_const {a : Lp 𝕜 ∞ μ} {c : 𝕜}
     (ha : a =ᵐ[μ] fun _ ↦ c) :
-    multiplicationOperator (E := E) a = c • ContinuousLinearMap.id ℂ (Lp E 2 μ) := by
+    multiplicationOperator (E := E) (p := p) a = c • ContinuousLinearMap.id 𝕜 (Lp E p μ) := by
   ext f
   filter_upwards [multiplicationOperator_ae a f, Lp.coeFn_smul c f, ha] with x h hf ha'
   simp [h, hf, ha']
 
-/-- Multiplication by the unit `1 : Lp ℂ ∞ μ` is the identity operator on `L²`. -/
+/-- Multiplication by the unit `1 : Lp 𝕜 ∞ μ` is the identity operator on `Lᵖ`. -/
 @[simp]
 theorem multiplicationOperator_one :
-    multiplicationOperator (E := E) (1 : Lp ℂ ∞ μ) = 1 := by
-  have h := multiplicationOperator_of_ae_eq_const (E := E) (c := (1 : ℂ))
-    (coeFn_one (E := ℂ) (μ := μ))
+    multiplicationOperator (E := E) (p := p) (1 : Lp 𝕜 ∞ μ) = 1 := by
+  have h := multiplicationOperator_of_ae_eq_const (E := E) (p := p) (c := (1 : 𝕜))
+    (coeFn_one (E := 𝕜) (μ := μ))
   rwa [one_smul, ← ContinuousLinearMap.one_def] at h
 
-/-- The scalar embedding into `L∞` acts on `L²` by scalar multiplication. -/
+/-- The scalar embedding into `L∞` acts on `Lᵖ` by scalar multiplication. -/
 @[simp]
-theorem multiplicationOperator_algebraMap (c : ℂ) :
-    multiplicationOperator (E := E) (algebraMap ℂ (Lp ℂ ∞ μ) c) =
-      c • ContinuousLinearMap.id ℂ (Lp E 2 μ) := by
+theorem multiplicationOperator_algebraMap (c : 𝕜) :
+    multiplicationOperator (E := E) (p := p) (algebraMap 𝕜 (Lp 𝕜 ∞ μ) c) =
+      c • ContinuousLinearMap.id 𝕜 (Lp E p μ) := by
   apply multiplicationOperator_of_ae_eq_const
-  simpa only [Algebra.algebraMap_self_apply] using coeFn_algebraMap (R := ℂ) (μ := μ) c
+  simpa only [Algebra.algebraMap_self_apply] using coeFn_algebraMap (R := 𝕜) (μ := μ) c
+
+@[simp]
+theorem multiplicationOperator_const [IsFiniteMeasure μ] (c : 𝕜) :
+    multiplicationOperator (E := E) (p := p) (Lp.const ∞ μ c) =
+      c • ContinuousLinearMap.id 𝕜 (Lp E p μ) :=
+  multiplicationOperator_of_ae_eq_const (Lp.coeFn_const (μ := μ) ∞ c)
 
 /-- Precomposition along a measure-preserving map intertwines `multiplicationOperator`. -/
 theorem compMeasurePreserving_multiplicationOperator_apply {β : Type*} [MeasurableSpace β]
-    {ν : Measure β} {g : α → β} (hg : MeasurePreserving g μ ν) (a : Lp ℂ ∞ ν) (f : Lp E 2 ν) :
+    {ν : Measure β} {g : α → β} (hg : MeasurePreserving g μ ν) (a : Lp 𝕜 ∞ ν) (f : Lp E p ν) :
     compMeasurePreserving g hg (multiplicationOperator a f) =
       multiplicationOperator (compMeasurePreserving g hg a) (compMeasurePreserving g hg f) := by
   refine Lp.ext (((coeFn_compMeasurePreserving _ hg).trans
@@ -207,14 +215,15 @@ end NormedSpace
 
 section InnerProductSpace
 
-variable [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E]
 
-/-- The adjoint of multiplication by `a` is multiplication by its complex conjugate. -/
+/-- On `L²`, the adjoint of multiplication by `a` is multiplication by `star a`. -/
 @[simp]
-theorem adjoint_multiplicationOperator (a : Lp ℂ ∞ μ) :
-    ContinuousLinearMap.adjoint (𝕜 := ℂ) (E := Lp E 2 μ) (F := Lp E 2 μ)
-      (multiplicationOperator (E := E) a) =
-      multiplicationOperator (E := E) (star a) := by
+theorem adjoint_multiplicationOperator (a : Lp 𝕜 ∞ μ) :
+    ContinuousLinearMap.adjoint (𝕜 := 𝕜) (E := Lp E 2 μ) (F := Lp E 2 μ)
+      (multiplicationOperator (E := E) (p := 2) a) =
+      multiplicationOperator (E := E) (p := 2) (star a) := by
   refine ((eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
   rw [L2.inner_def, L2.inner_def]
   refine integral_congr_ae ?_
@@ -224,9 +233,16 @@ theorem adjoint_multiplicationOperator (a : Lp ℂ ∞ μ) :
 
 /-- The operator-algebra involution of multiplication by `a` is multiplication by `star a`. -/
 @[simp]
-theorem star_multiplicationOperator (a : Lp ℂ ∞ μ) :
-    star (multiplicationOperator (E := E) a) = multiplicationOperator (E := E) (star a) := by
+theorem star_multiplicationOperator (a : Lp 𝕜 ∞ μ) :
+    star (multiplicationOperator (E := E) (p := 2) a) =
+      multiplicationOperator (E := E) (p := 2) (star a) := by
   rw [ContinuousLinearMap.star_eq_adjoint, adjoint_multiplicationOperator]
+
+end InnerProductSpace
+
+section ComplexInnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
 
 /-- Pointwise multiplication by essentially bounded complex functions, bundled as a unital
 ⋆-algebra homomorphism into the bounded operators on `L²`. -/
@@ -263,101 +279,88 @@ theorem conjStarAlgEquiv_compMeasurePreservingₗᵢEquiv_multiplicationOperator
     ← compMeasurePreservingₗᵢEquiv_apply ℂ (E := E) (p := 2) hf hg hfg,
     LinearIsometryEquiv.apply_symm_apply]
 
-end InnerProductSpace
-
-section FiniteMeasure
-
-variable [NormedAddCommGroup E] [NormedSpace ℂ E]
-variable [IsFiniteMeasure μ]
-
-@[simp]
-theorem multiplicationOperator_const (c : ℂ) :
-    multiplicationOperator (E := E) (Lp.const ∞ μ c) =
-      c • ContinuousLinearMap.id ℂ (Lp E 2 μ) :=
-  multiplicationOperator_of_ae_eq_const (Lp.coeFn_const (μ := μ) ∞ c)
-
-end FiniteMeasure
+end ComplexInnerProductSpace
 
 section ExactNorm
 
-variable [NormedAddCommGroup E] [NormedSpace ℂ E]
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- If `c ≤ ‖a‖` pointwise on `s`, then multiplication by `a` scales the `L²` norm of a constant
-indicator of `s` by at least `c`. -/
-private theorem mul_norm_indicatorConstLp_le {a : Lp ℂ ∞ μ} {c : ℝ} (hc_nonneg : 0 ≤ c)
-    {s : Set α} (hs : MeasurableSet s) (hs_top : μ s ≠ ∞) (ha : ∀ x ∈ s, c ≤ ‖a x‖)
+/-- Over a nontrivially normed field, the operator norm of multiplication by `a` on `Lᵖ` is at
+most its `L∞` norm. -/
+theorem norm_multiplicationOperator_le (a : Lp 𝕜 ∞ μ) :
+    ‖multiplicationOperator (E := E) (p := p) a‖ ≤ ‖a‖ :=
+  LinearMap.mkContinuous_norm_le _ (norm_nonneg a) _
+
+/-- If `0 < c` and `c ≤ ‖a‖` almost everywhere on `s`, then multiplication by `a` scales the `Lᵖ`
+norm of a constant indicator of `s` by at least `c`. -/
+private theorem mul_norm_indicatorConstLp_le {a : Lp 𝕜 ∞ μ} {c : ℝ} (hc_pos : 0 < c)
+    {s : Set α} (hs : MeasurableSet s) (hs_top : μ s ≠ ∞) (ha : ∀ᵐ x ∂μ, x ∈ s → c ≤ ‖a x‖)
     (v : E) :
-    c * ‖indicatorConstLp 2 hs hs_top v‖ ≤
-      ‖multiplicationOperator a (indicatorConstLp 2 hs hs_top v)‖ := by
-  set f := indicatorConstLp 2 hs hs_top v
-  set g := indicatorConstLp 2 hs hs_top ((c : ℂ) • v)
-  have hfg : c * ‖f‖ = ‖g‖ := by
-    simp only [f, g, norm_indicatorConstLp two_ne_zero ENNReal.ofNat_ne_top, norm_smul,
-      Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hc_nonneg, mul_assoc]
-  have hpoint : ∀ᵐ x ∂μ, ‖g x‖ ≤ ‖multiplicationOperator a f x‖ := by
-    filter_upwards [multiplicationOperator_ae a f, indicatorConstLp_coeFn (p := 2) (c := v),
-      indicatorConstLp_coeFn (p := 2) (c := (c : ℂ) • v)] with x hmul hf hg
-    rw [hmul, hf, hg]
-    by_cases hx : x ∈ s
-    · have hcx : c ≤ ‖a x‖ := ha x hx
-      simp only [Set.indicator_of_mem hx, norm_smul, Complex.norm_real, Real.norm_eq_abs,
-        abs_of_nonneg hc_nonneg]
-      gcongr
-    · simp [Set.indicator_of_notMem hx]
-  rw [hfg]
-  exact Lp.norm_le_norm_of_ae_le hpoint
+    c * ‖indicatorConstLp p hs hs_top v‖ ≤
+      ‖multiplicationOperator a (indicatorConstLp p hs hs_top v)‖ := by
+  set f := indicatorConstLp p hs hs_top v
+  refine (le_inv_mul_iff₀ hc_pos).1 (Lp.norm_le_mul_norm_of_ae_le_mul ?_)
+  filter_upwards [multiplicationOperator_ae a f,
+    indicatorConstLp_coeFn (p := p) (hs := hs) (hμs := hs_top) (c := v), ha] with x hmul hf hax
+  rw [hmul, hf]
+  by_cases hx : x ∈ s
+  · rw [Set.indicator_of_mem hx, norm_smul]
+    exact (le_inv_mul_iff₀ hc_pos).2 (mul_le_mul_of_nonneg_right (hax hx) (norm_nonneg v))
+  · simp [Set.indicator_of_notMem hx]
 
-/-- On a sigma-finite measure space, the operator norm of multiplication by `a` on `L²` with
-values in a nontrivial space is exactly the `L∞` norm of `a`. -/
+/-- On a sigma-finite measure space over a nontrivially normed field, the operator norm of
+multiplication by `a` on `Lp E p μ` (`1 ≤ p ≤ ∞`) with values in a nontrivial space `E` is
+exactly the `L∞` norm of `a`. -/
 @[simp]
-theorem norm_multiplicationOperator [SigmaFinite μ] [Nontrivial E] (a : Lp ℂ ∞ μ) :
-    ‖multiplicationOperator (E := E) a‖ = ‖a‖ := by
+theorem norm_multiplicationOperator [SigmaFinite μ] [Nontrivial E] (a : Lp 𝕜 ∞ μ) :
+    ‖multiplicationOperator (E := E) (p := p) a‖ = ‖a‖ := by
   apply le_antisymm (norm_multiplicationOperator_le a)
   by_contra hle
-  have _ : ‖multiplicationOperator (E := E) a‖ < ‖a‖ := lt_of_not_ge hle
-  -- Test the operator on the indicator of the set where `‖a‖` exceeds a level `c` strictly
-  -- between the operator norm and `‖a‖`.
-  set c := (‖multiplicationOperator (E := E) a‖ + ‖a‖) / 2 with hc_def
-  have hc_nonneg : 0 ≤ c := by positivity
-  have hop_lt_c : ‖multiplicationOperator (E := E) a‖ < c := by linarith [hc_def]
+  set c := (‖multiplicationOperator (E := E) (p := p) a‖ + ‖a‖) / 2 with hc_def
+  have hop_lt_c : ‖multiplicationOperator (E := E) (p := p) a‖ < c := by linarith [hc_def]
+  have hc_pos : 0 < c := (norm_nonneg _).trans_lt hop_lt_c
   have hc_lt : c < ‖a‖ := by linarith [hc_def]
-  set s := {x | c < ‖a x‖}
+  have ha_meas := Lp.aestronglyMeasurable a
+  set s := {x | c < ‖ha_meas.mk a x‖}
   have hs : MeasurableSet s :=
-    measurableSet_lt measurable_const (Lp.stronglyMeasurable a).norm.measurable
-  have hμs : μ s ≠ 0 := measure_lt_norm_ne_zero hc_nonneg hc_lt
+    measurableSet_lt measurable_const ha_meas.stronglyMeasurable_mk.norm.measurable
+  have hs_ae : s =ᵐ[μ] {x | c < ‖a x‖} :=
+    Filter.eventuallyEqSet_iff.2 (ha_meas.ae_eq_mk.symm.mono fun x hx ↦ by dsimp [s]; rw [hx])
+  have hμs : μ s ≠ 0 := by
+    rw [measure_congr hs_ae]
+    exact measure_lt_norm_ne_zero hc_pos.le hc_lt
   obtain ⟨t, ht, hts, hμt_pos, hμt_top⟩ :=
     Measure.exists_subset_measure_lt_top hs (pos_iff_ne_zero.mpr hμs)
   obtain ⟨v, hv⟩ := exists_ne (0 : E)
-  set f := indicatorConstLp 2 ht hμt_top.ne v
-  have hf_pos : 0 < ‖f‖ := by
-    rw [norm_indicatorConstLp two_ne_zero ENNReal.ofNat_ne_top]
-    have hμt_real_pos : 0 < μ.real t := ENNReal.toReal_pos hμt_pos.ne' hμt_top.ne
-    exact mul_pos (norm_pos_iff.mpr hv) (Real.rpow_pos_of_pos hμt_real_pos _)
-  -- Comparing the lower bound on `f` with the operator norm forces `c ≤ ‖M_a‖`.
-  have hcancel : c * ‖f‖ ≤ ‖multiplicationOperator (E := E) a‖ * ‖f‖ :=
-    (mul_norm_indicatorConstLp_le hc_nonneg ht hμt_top.ne
-      (fun _ hx ↦ le_of_lt (hts hx)) v).trans
+  set f := indicatorConstLp p ht hμt_top.ne v
+  have hf_pos : 0 < ‖f‖ :=
+    norm_pos_iff.2 fun hf0 ↦ (TauCeti.indicatorConstLp_eq_zero_iff.1 hf0).elim hμt_pos.ne' hv
+  have hcancel : c * ‖f‖ ≤ ‖multiplicationOperator (E := E) (p := p) a‖ * ‖f‖ :=
+    (mul_norm_indicatorConstLp_le hc_pos ht hμt_top.ne
+      (ha_meas.ae_eq_mk.mono fun _ hmk hx ↦ by rw [hmk]; exact le_of_lt (hts hx)) v).trans
       (le_opNorm _ _)
   exact (not_le_of_gt hop_lt_c) (le_of_mul_le_mul_right hcancel hf_pos)
 
 /-- On a sigma-finite measure space, `multiplicationOperator` is an isometry into the bounded
-operators on `L²` with values in a nontrivial space. -/
+operators on `Lᵖ` (`1 ≤ p ≤ ∞`) with values in a nontrivial space. -/
 theorem isometry_multiplicationOperator [SigmaFinite μ] [Nontrivial E] :
-    Isometry (multiplicationOperator (E := E) (μ := μ)) :=
-  AddMonoidHomClass.isometry_of_norm
-    ((ContinuousLinearMap.lsmul ℂ ℂ : ℂ →L[ℂ] E →L[ℂ] E).holderL μ ∞ 2 2)
-    (norm_multiplicationOperator (E := E))
+    Isometry (multiplicationOperator (𝕜 := 𝕜) (E := E) (p := p) (μ := μ)) := by
+  refine Isometry.of_dist_eq fun a b ↦ ?_
+  rw [_root_.dist_eq_norm, _root_.dist_eq_norm, ← multiplicationOperator_sub,
+    norm_multiplicationOperator]
 
 /-- On a sigma-finite measure space, `multiplicationOperator` is injective on `L∞` whenever the
 target fibre `E` is nontrivial. -/
 theorem multiplicationOperator_injective [SigmaFinite μ] [Nontrivial E] :
-    Function.Injective (multiplicationOperator (E := E) (μ := μ)) :=
-  (isometry_multiplicationOperator (E := E) (μ := μ)).injective
+    Function.Injective (multiplicationOperator (𝕜 := 𝕜) (E := E) (p := p) (μ := μ)) :=
+  (isometry_multiplicationOperator (𝕜 := 𝕜) (E := E) (p := p) (μ := μ)).injective
 
 @[simp]
-theorem multiplicationOperator_inj [SigmaFinite μ] [Nontrivial E] {a b : Lp ℂ ∞ μ} :
-    multiplicationOperator (E := E) a = multiplicationOperator (E := E) b ↔ a = b :=
-  (multiplicationOperator_injective (E := E) (μ := μ)).eq_iff
+theorem multiplicationOperator_inj [SigmaFinite μ] [Nontrivial E] {a b : Lp 𝕜 ∞ μ} :
+    multiplicationOperator (E := E) (p := p) a = multiplicationOperator (E := E) (p := p) b ↔
+      a = b :=
+  (multiplicationOperator_injective (𝕜 := 𝕜) (E := E) (p := p) (μ := μ)).eq_iff
 
 end ExactNorm
 
@@ -475,7 +478,7 @@ private theorem comp_multiplicationOperator_linftyIndicator_indicatorConstLp {s 
     with x hsmul hmul₁ hind hmul₂ ha' hcr'
   rw [hsmul, Pi.smul_apply, hmul₁, hind, hmul₂, ha', hcr']
   by_cases hx : x ∈ s ∩ r
-  · simp [hx, hx.1, mul_comm c]
+  · simp [hx, hx.left, mul_comm c]
   · simp [hx]
 
 /-- **Local multiplier representation on a finite-measure set.** On an arbitrary measure space, a
@@ -541,7 +544,7 @@ theorem commute_of_forall_commute_multiplicationOperator_linftyIndicator
   refine (commute_iff_eq _ _).mpr
     (ContinuousLinearMap.ext_indicatorConstLp ENNReal.ofNat_ne_top fun s hs hμs c ↦ ?_)
   set u := indicatorConstLp 2 hs hμs c
-  set P := multiplicationOperator (E := ℂ) (TauCeti.linftyIndicator μ ℂ s hs)
+  set P := multiplicationOperator (E := ℂ) (p := 2) (TauCeti.linftyIndicator μ ℂ s hs)
   have hPu : P u = u :=
     multiplicationOperator_linftyIndicator_indicatorConstLp_self hs hμs c
   obtain ⟨a, -, ha⟩ := exists_norm_le_and_comp_multiplicationOperator_linftyIndicator_eq hs
@@ -626,17 +629,17 @@ theorem exists_multiplicationOperator_eq_of_forall_commute_linftyIndicator [Sigm
     · have hem : e n * e m = e m :=
         TauCeti.linftyIndicator_mul_linftyIndicator_of_subset_right (hE n) (hE m)
           (monotone_spanningSets μ hmn)
-      have hbm : multiplicationOperator (E := ℂ) (b m * e m) =
-          multiplicationOperator (E := ℂ) (b n * e m) := by
-        calc multiplicationOperator (E := ℂ) (b m * e m)
+      have hbm : multiplicationOperator (E := ℂ) (p := 2) (b m * e m) =
+          multiplicationOperator (E := ℂ) (p := 2) (b n * e m) := by
+        calc multiplicationOperator (E := ℂ) (p := 2) (b m * e m)
             = T ∘L multiplicationOperator (e m) := by
                 rw [← multiplicationOperator_comp_multiplicationOperator, ← hb_eq m]
           _ = (T ∘L multiplicationOperator (e n)) ∘L multiplicationOperator (e m) := by
                 rw [comp_assoc, multiplicationOperator_comp_multiplicationOperator, hem]
-          _ = multiplicationOperator (E := ℂ) (b n * e m) := by
+          _ = multiplicationOperator (E := ℂ) (p := 2) (b n * e m) := by
                 rw [hb_eq n, comp_assoc, multiplicationOperator_comp_multiplicationOperator, hem,
                   multiplicationOperator_comp_multiplicationOperator]
-      have hbe := multiplicationOperator_injective (E := ℂ) hbm
+      have hbe := multiplicationOperator_injective (E := ℂ) (p := 2) hbm
       filter_upwards [coeFn_mul (b m) (e m), (Lp.ext_iff.mp hbe).trans (coeFn_mul (b n) (e m)),
         TauCeti.coeFn_linftyIndicator (μ := μ) (R := ℂ) (hE m)] with x h₁ h₂ hind _ hxEm
       rw [Pi.mul_apply, hind, Set.indicator_of_mem hxEm, Pi.one_apply, mul_one] at h₁ h₂
@@ -656,8 +659,8 @@ theorem exists_multiplicationOperator_eq_of_forall_commute_linftyIndicator [Sigm
 /-- On a sigma-finite measure space, the centralizer in `Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ` of the range of
 `multiplicationOperator` is that range itself. -/
 theorem centralizer_range_multiplicationOperator [SigmaFinite μ] :
-    (Set.range (multiplicationOperator (E := ℂ) (μ := μ))).centralizer =
-      Set.range (multiplicationOperator (E := ℂ) (μ := μ)) := by
+    (Set.range (multiplicationOperator (𝕜 := ℂ) (E := ℂ) (p := 2) (μ := μ))).centralizer =
+      Set.range (multiplicationOperator (𝕜 := ℂ) (E := ℂ) (p := 2) (μ := μ)) := by
   ext T
   constructor
   · intro hT
@@ -674,7 +677,7 @@ theorem eq_zero_of_mul_linftyIndicator_eq_self_of_multiplicationOperator_eq_zero
     [NormedAddCommGroup E] [NormedSpace ℂ E] [Nontrivial E]
     {s : Set α} (hs : MeasurableSet s) (hμs : μ s ≠ ∞) {a : Lp ℂ ∞ μ}
     (hsupp : a * TauCeti.linftyIndicator μ ℂ s hs = a)
-    (hzero : multiplicationOperator (E := E) a = 0) : a = 0 := by
+    (hzero : multiplicationOperator (E := E) (p := 2) a = 0) : a = 0 := by
   obtain ⟨v, hv⟩ := exists_ne (0 : E)
   have happly : multiplicationOperator (E := E) a (indicatorConstLp 2 hs hμs v) = 0 := by
     rw [hzero, zero_apply]
@@ -706,7 +709,7 @@ theorem eq_zero_of_multiplicationOperator_eq_smul [NormedAddCommGroup E] [Normed
 `multiplicationOperator a` on `Lp E 2 μ`. -/
 theorem not_hasEigenvalue_multiplicationOperator [NormedAddCommGroup E] [NormedSpace ℂ E]
     (a : Lp ℂ ∞ μ) {c : ℂ} (ha : ∀ᵐ x ∂μ, a x ≠ c) :
-    ¬ Module.End.HasEigenvalue (multiplicationOperator (E := E) a).toLinearMap c := by
+    ¬ Module.End.HasEigenvalue (multiplicationOperator (E := E) (p := 2) a).toLinearMap c := by
   intro hc
   obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hc
   exact hv0 <| eq_zero_of_multiplicationOperator_eq_smul ha (Module.End.mem_eigenspace_iff.mp hv)
@@ -726,14 +729,14 @@ open MeasureTheory
 /-- The bounded coordinate symbol `t ↦ (t : ℂ)` in `Lp ℂ ∞ (volume : Measure unitInterval)`. -/
 def coordLp : Lp ℂ ∞ (volume : Measure I) :=
   ContinuousMap.toLp ∞ (volume : Measure I) ℂ
-    ⟨fun t : I ↦ ((t : ℝ) : ℂ), Complex.continuous_ofReal.comp continuous_subtype_val⟩
+    ⟨fun t : I ↦ ((t : ℝ) : ℂ), Complex.continuous_ofReal.comp continuous_subtypeVal⟩
 
 /-- Almost everywhere on `unitInterval`, `coordLp` evaluates to `t ↦ (t : ℂ)`. -/
 theorem coeFn_coordLp :
     ⇑coordLp =ᵐ[volume] fun t : I ↦ ((t : ℝ) : ℂ) := by
   rw [coordLp]
   filter_upwards [ContinuousMap.coeFn_toLp (p := ∞) (𝕜 := ℂ) (volume : Measure I)
-    ⟨fun t : I ↦ ((t : ℝ) : ℂ), Complex.continuous_ofReal.comp continuous_subtype_val⟩] with t ht
+    ⟨fun t : I ↦ ((t : ℝ) : ℂ), Complex.continuous_ofReal.comp continuous_subtypeVal⟩] with t ht
   rw [ht, ContinuousMap.coe_mk]
 
 /-- The real-valued coordinate symbol `coordLp` is self-adjoint. -/
@@ -746,7 +749,7 @@ no eigenvalues. -/
 theorem not_hasEigenvalue_multiplicationOperator_coordLp
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] (c : ℂ) :
     ¬ Module.End.HasEigenvalue
-      (Lp.multiplicationOperator (E := E) coordLp).toLinearMap c := by
+      (Lp.multiplicationOperator (E := E) (p := 2) coordLp).toLinearMap c := by
   have hnull : ∀ᵐ t : I ∂volume, ((t : ℝ) : ℂ) ≠ c := by
     rw [ae_iff]
     exact Set.Subsingleton.measure_zero

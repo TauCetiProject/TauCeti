@@ -50,7 +50,7 @@ variable {𝕜 E F X : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProduct
 theorem AEStronglyMeasurable.rankOne (hy : AEStronglyMeasurable y μ)
     (hx : AEStronglyMeasurable x μ) :
     AEStronglyMeasurable (fun t => InnerProductSpace.rankOne 𝕜 (y t) (x t)) μ := by
-  convert (ContinuousLinearMap.smulRightL 𝕜 E F).aestronglyMeasurable_comp₂
+  convert (ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 E F).aestronglyMeasurable_comp₂
     ((innerSL 𝕜).continuous.comp_aestronglyMeasurable hx) hy using 1
   funext t
   ext v

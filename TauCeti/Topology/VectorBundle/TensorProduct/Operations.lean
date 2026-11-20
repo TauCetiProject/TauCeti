@@ -298,8 +298,8 @@ theorem continuous_bundleTensorMap {f : ∀ x, E₁ x →L[𝕜] E₁' x} {g : �
       hf.continuousAt.continuousWithinAt hg.continuousAt.continuousWithinAt
 
 variable (e₁ : ∀ x, E₁ x ≃L[𝕜] E₁' x) (e₂ : ∀ x, E₂ x ≃L[𝕜] E₂' x)
-  (he₁ : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₁' p.proj (e₁ p.proj p.2)))
-  (he₂ : Continuous (fun p : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₂' p.proj (e₂ p.proj p.2)))
+  (he₁ : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₁' p.proj (e₁ p.proj p.snd)))
+  (he₂ : Continuous (fun p : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₂' p.proj (e₂ p.proj p.snd)))
 
 /-- Homeomorphism of tensor-product total spaces induced by two continuous families of fibrewise
 linear equivalences. Continuity of the inverse follows automatically from finite rank. -/
@@ -310,12 +310,13 @@ def bundleTensorCongrHomeomorph : TotalSpace PF₁F₂ TE₁E₂ ≃ₜ TotalSpa
       ((continuous_hom_bundle_iff (fun x ↦ (e₂ x).toContinuousLinearMap)).2 he₂)
 
 @[simp] theorem bundleTensorCongrHomeomorph_apply (p : TotalSpace PF₁F₂ TE₁E₂) :
-    bundleTensorCongrHomeomorph e₁ e₂ he₁ he₂ p = ⟨p.proj, bundleTensorCongr e₁ e₂ p.proj p.2⟩ := by
+    bundleTensorCongrHomeomorph e₁ e₂ he₁ he₂ p = ⟨p.proj, bundleTensorCongr e₁ e₂ p.proj p.snd⟩
+        := by
   rw [bundleTensorCongrHomeomorph, bundleHomeomorphOfHom_apply]
 
 @[simp] theorem bundleTensorCongrHomeomorph_symm_apply (p : TotalSpace PF₁'F₂' TE₁'E₂') :
     (bundleTensorCongrHomeomorph e₁ e₂ he₁ he₂).symm p =
-      ⟨p.proj, (bundleTensorCongr e₁ e₂ p.proj).symm p.2⟩ := by
+      ⟨p.proj, (bundleTensorCongr e₁ e₂ p.proj).symm p.snd⟩ := by
   rw [bundleTensorCongrHomeomorph, bundleHomeomorphOfHom_symm_apply]
 end MapBundle
 
@@ -361,12 +362,12 @@ def bundleTensorCommHomeomorph : TotalSpace PF₁F₂ TE₁E₂ ≃ₜ TotalSpac
   bundleHomeomorphOfHom bundleTensorCommEquiv continuous_bundleTensorCommEquiv
 
 @[simp] theorem bundleTensorCommHomeomorph_apply (p : TotalSpace PF₁F₂ TE₁E₂) :
-    bundleTensorCommHomeomorph F₁ E₁ F₂ E₂ p = ⟨p.proj, bundleTensorCommEquiv p.proj p.2⟩ := by
+    bundleTensorCommHomeomorph F₁ E₁ F₂ E₂ p = ⟨p.proj, bundleTensorCommEquiv p.proj p.snd⟩ := by
   rw [bundleTensorCommHomeomorph, bundleHomeomorphOfHom_apply]
 
 @[simp] theorem bundleTensorCommHomeomorph_symm_apply (p : TotalSpace PF₂F₁ TE₂E₁) :
     (bundleTensorCommHomeomorph F₁ E₁ F₂ E₂).symm p =
-      ⟨p.proj, (bundleTensorCommEquiv p.proj).symm p.2⟩ := by
+      ⟨p.proj, (bundleTensorCommEquiv p.proj).symm p.snd⟩ := by
   rw [bundleTensorCommHomeomorph, bundleHomeomorphOfHom_symm_apply]
 end CommBundle
 
@@ -439,12 +440,12 @@ def bundleTensorAssocHomeomorph : TotalSpace PAssocL TAssocL ≃ₜ TotalSpace P
 
 @[simp] theorem bundleTensorAssocHomeomorph_apply (p : TotalSpace PAssocL TAssocL) :
     bundleTensorAssocHomeomorph F₁ E₁ F₂ E₂ F₃ E₃ p =
-      ⟨p.proj, bundleTensorAssocEquiv p.proj p.2⟩ := by
+      ⟨p.proj, bundleTensorAssocEquiv p.proj p.snd⟩ := by
   rw [bundleTensorAssocHomeomorph, bundleHomeomorphOfHom_apply]
 
 @[simp] theorem bundleTensorAssocHomeomorph_symm_apply (p : TotalSpace PAssocR TAssocR) :
     (bundleTensorAssocHomeomorph F₁ E₁ F₂ E₂ F₃ E₃).symm p =
-      ⟨p.proj, (bundleTensorAssocEquiv p.proj).symm p.2⟩ := by
+      ⟨p.proj, (bundleTensorAssocEquiv p.proj).symm p.snd⟩ := by
   rw [bundleTensorAssocHomeomorph, bundleHomeomorphOfHom_symm_apply]
 end AssocBundle
 
@@ -481,7 +482,7 @@ theorem bundleDualTensorHom_inCoordinates (a x : B) (hx₁ : x ∈ (trivializati
 is continuous. -/
 theorem continuous_bundleDualTensorHom :
     Continuous (fun p : TotalSpace PDual TDual ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := LE₁E₂)
-      p.proj (bundleDualTensorHom p.proj p.2)) :=
+      p.proj (bundleDualTensorHom p.proj p.snd)) :=
   have : ∀ x, ContinuousAdd (E₁ x →L[𝕜] E₂ x) := fun _ ↦ inferInstance
   (continuous_hom_bundle_iff (F₁ := PDual) (F₂ := F₁ →L[𝕜] F₂) (E₁ := TDual) (E₂ := LE₁E₂)
     (bundleDualTensorHom (𝕜 := 𝕜))).1 <| continuous_hom_bundle_of_inCoordinates_eq_const
@@ -502,8 +503,10 @@ def bundleDualTensorHomEquiv (x : B) : (StrongDual 𝕜 (E₁ x) ⊗[𝕜] E₂ 
     rw [bundleDualTensorHom_inCoordinates x x hx₁ hx₂,
       ← ProjectiveTensor.toOperatorEquiv_toContinuousLinearMap]
     exact ContinuousLinearMap.isInvertible_equiv
-  ContinuousLinearEquiv.equivOfInverse (bundleDualTensorHom x) (bundleDualTensorHom x).inverse
-    (fun _ ↦ hinv.inverse_apply_eq.2 rfl) (fun _ ↦ (hinv.inverse_apply_eq.1 rfl).symm)
+  ContinuousLinearEquiv.ofContinuousLinearMap (bundleDualTensorHom x)
+    (bundleDualTensorHom x).inverse
+    (ContinuousLinearMap.ext fun _ ↦ (hinv.inverse_apply_eq.1 rfl).symm)
+    (ContinuousLinearMap.ext fun _ ↦ hinv.inverse_apply_eq.2 rfl)
 
 @[simp] theorem bundleDualTensorHomEquiv_toContinuousLinearMap (x : B) :
     (bundleDualTensorHomEquiv 𝕜 F₁ F₂ (E₁ := E₁) (E₂ := E₂) x).toContinuousLinearMap =
@@ -528,13 +531,13 @@ def bundleDualTensorHomHomeomorph : TotalSpace PDual TDual ≃ₜ TotalSpace (F�
 
 @[simp] theorem bundleDualTensorHomHomeomorph_apply (p : TotalSpace PDual TDual) :
     bundleDualTensorHomHomeomorph F₁ E₁ F₂ E₂ p =
-      ⟨p.proj, bundleDualTensorHomEquiv 𝕜 F₁ F₂ p.proj p.2⟩ := by
+      ⟨p.proj, bundleDualTensorHomEquiv 𝕜 F₁ F₂ p.proj p.snd⟩ := by
   have : ∀ x, ContinuousAdd (E₁ x →L[𝕜] E₂ x) := fun _ ↦ inferInstance
   rw [bundleDualTensorHomHomeomorph, bundleHomeomorph_apply]
 
 @[simp] theorem bundleDualTensorHomHomeomorph_symm_apply (p : TotalSpace (F₁ →L[𝕜] F₂) LE₁E₂) :
     (bundleDualTensorHomHomeomorph F₁ E₁ F₂ E₂).symm p =
-      ⟨p.proj, (bundleDualTensorHomEquiv 𝕜 F₁ F₂ p.proj).symm p.2⟩ := by
+      ⟨p.proj, (bundleDualTensorHomEquiv 𝕜 F₁ F₂ p.proj).symm p.snd⟩ := by
   have : ∀ x, ContinuousAdd (E₁ x →L[𝕜] E₂ x) := fun _ ↦ inferInstance
   rw [bundleDualTensorHomHomeomorph, bundleHomeomorph_symm_apply]
 end DualTensorHomBundle

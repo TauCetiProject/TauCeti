@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Continuous
 public import Mathlib.MeasureTheory.Group.Integral
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
+public import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 public import TauCeti.MeasureTheory.Function.Lp.Indicator
 
 /-!
@@ -47,6 +48,9 @@ on bounded uniformly continuous functions with invariant means on `L∞` of a Ha
 * `MeasureTheory.Lp.leftTranslation_linftyIndicator`: it takes the indicator class of `s` in
   `L∞` to that of `g • s`.
 * `MeasureTheory.Lp.integral_leftTranslation`: left translation preserves integrals.
+* `MeasureTheory.Lp.leftTranslation_star`: left translation commutes with pointwise `star`.
+* `MeasureTheory.Lp.castLpₗᵢ_leftTranslation`: transporting along an equality of measures commutes
+  with left translation.
 * `MeasureTheory.Lp.continuous_leftTranslation_apply`: for `p < ∞`, `g ↦ L_g f` is continuous.
 * `MeasureTheory.Lp.leftTranslation_toLpTop`: the class in `L∞` of a bounded continuous
   function commutes with left translation.
@@ -128,6 +132,24 @@ theorem leftTranslation_one (g : G) : leftTranslation μ ∞ ℝ g (1 : Lp ℝ �
 theorem integral_leftTranslation [NormedSpace ℝ E] (g : G) (f : Lp E p μ) :
     ∫ x, leftTranslation μ p 𝕜 g f x ∂μ = ∫ x, f x ∂μ := by
   rw [integral_congr_ae (coeFn_leftTranslation g f), integral_mul_left_eq_self]
+
+/-- Left translation commutes with pointwise `star` on `Lᵖ`. -/
+theorem leftTranslation_star [StarAddMonoid E] [NormedStarGroup E] (g : G) (f : Lp E p μ) :
+    leftTranslation μ p 𝕜 g (star f) = star (leftTranslation μ p 𝕜 g f) := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_leftTranslation (𝕜 := 𝕜) g (star f),
+    (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.ae (coeFn_star f),
+    coeFn_star (leftTranslation μ p 𝕜 g f),
+    coeFn_leftTranslation (𝕜 := 𝕜) g f] with x h₁ h₂ h₃ h₄
+  rw [h₁, h₂, Pi.star_apply, h₃, Pi.star_apply, h₄]
+
+/-- Transporting along an equality of measures commutes with left translation on `Lᵖ`. -/
+theorem castLpₗᵢ_leftTranslation {ν : Measure G} [ν.IsMulLeftInvariant] (heq : μ = ν) (g : G)
+    (f : Lp E p μ) :
+    TauCeti.castLpₗᵢ (𝕜 := 𝕜) heq (leftTranslation μ p 𝕜 g f) =
+      leftTranslation ν p 𝕜 g (TauCeti.castLpₗᵢ (𝕜 := 𝕜) heq f) := by
+  subst heq
+  simp
 
 /-- The class in `L∞` of the left translate `x ↦ f (g⁻¹ * x)` of a bounded continuous function
 is the left translate of its class. -/

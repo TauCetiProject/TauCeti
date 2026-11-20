@@ -95,6 +95,10 @@ instance instSigmaCompactSpace [SigmaCompactSpace M] :
     SigmaCompactSpace (OrientationCover I M) :=
   (isProperMap_proj I M).sigmaCompactSpace
 
+/-- The orientation double cover of a compact manifold is compact. -/
+instance instCompactSpace [CompactSpace M] : CompactSpace (OrientationCover I M) :=
+  VectorBundleOrientationCover.compactSpace (Fintype.card_fin _)
+
 variable {I M}
 
 /-- A manifold is orientable if and only if its orientation double cover has a continuous

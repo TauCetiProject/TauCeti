@@ -44,8 +44,8 @@ instance instIsClosedToStarSubalgebra (M : VonNeumannAlgebra H) :
 
 /-- Equal concrete von Neumann algebras on `H` are canonically star-isomorphic. -/
 def equivOfEq {M N : VonNeumannAlgebra H} (h : M = N) : M ≃⋆ₐ[ℂ] N where
-  toFun x := ⟨x.1, h ▸ x.2⟩
-  invFun y := ⟨y.1, h.symm ▸ y.2⟩
+  toFun x := ⟨x.val, h ▸ x.property⟩
+  invFun y := ⟨y.val, h.symm ▸ y.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_mul' _ _ := rfl

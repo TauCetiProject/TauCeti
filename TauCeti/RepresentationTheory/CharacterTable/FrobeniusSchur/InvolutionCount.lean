@@ -109,7 +109,7 @@ square roots of `x` when there are finitely many, and `Nat.card`'s junk value `0
 finiteness of `G` is needed. -/
 @[simp]
 theorem squareRootCount_apply (x : G) :
-    (squareRootCount k G).1 x = (Nat.card {g : G // g * g = x} : k) :=
+    (squareRootCount k G).val x = (Nat.card {g : G // g * g = x} : k) :=
   (rfl)
 
 end Count
@@ -141,7 +141,7 @@ theorem characterPairing_ofCharacter_squareRootCount_eq_frobeniusSchurIndicator
       (Finset.filter_congr fun g _ => (inv_eq_iff_eq_inv (a := g * g) (b := x)).symm)
   rw [characterPairing_apply, Representation.frobeniusSchurIndicator_def]
   refine congrArg _ ?_
-  calc ∑ x : G, (ofCharacter ρ).1 x * (squareRootCount k G).1 x⁻¹
+  calc ∑ x : G, (ofCharacter ρ).val x * (squareRootCount k G).val x⁻¹
       = ∑ x : G, ∑ _g ∈ {g ∈ Finset.univ | (g * g)⁻¹ = x}, ρ.character x := by
         refine Finset.sum_congr rfl fun x _ => ?_
         rw [ofCharacter_apply, squareRootCount_apply, hcard x, Finset.sum_const, nsmul_eq_mul,

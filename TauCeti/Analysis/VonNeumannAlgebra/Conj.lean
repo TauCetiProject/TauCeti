@@ -52,7 +52,7 @@ noncomputable def conj (M : VonNeumannAlgebra H) (U : H ≃ₗᵢ[ℂ] K) : VonN
     have h : (M.toStarSubalgebra.map U.conjStarAlgEquiv.toStarAlgHom : Set (K →L[ℂ] K)) =
         U.conjStarAlgEquiv '' (M : Set (H →L[ℂ] H)) := by
       rw [StarSubalgebra.coe_map, coe_toStarSubalgebra]
-      exact Set.image_congr' U.conjStarAlgEquiv.toStarAlgHom_apply
+      exact Set.image_congr fun a _ ↦ U.conjStarAlgEquiv.toStarAlgHom_apply a
     have hcc : (U.conjStarAlgEquiv '' (M : Set (H →L[ℂ] H))).centralizer.centralizer =
         U.conjStarAlgEquiv '' (M : Set (H →L[ℂ] H)) := by
       rw [MulEquivClass.centralizer_image, MulEquivClass.centralizer_image,
@@ -70,7 +70,7 @@ theorem toStarSubalgebra_conj (M : VonNeumannAlgebra H) (U : H ≃ₗᵢ[ℂ] K)
 theorem coe_conj (M : VonNeumannAlgebra H) (U : H ≃ₗᵢ[ℂ] K) :
     (M.conj U : Set (K →L[ℂ] K)) = U.conjStarAlgEquiv '' (M : Set (H →L[ℂ] H)) := by
   rw [← coe_toStarSubalgebra, toStarSubalgebra_conj, StarSubalgebra.coe_map, coe_toStarSubalgebra]
-  exact Set.image_congr' U.conjStarAlgEquiv.toStarAlgHom_apply
+  exact Set.image_congr fun a _ ↦ U.conjStarAlgEquiv.toStarAlgHom_apply a
 
 theorem mem_conj_iff {M : VonNeumannAlgebra H} {U : H ≃ₗᵢ[ℂ] K} {y : K →L[ℂ] K} :
     y ∈ M.conj U ↔ ∃ x ∈ M, U.conjStarAlgEquiv x = y := by
@@ -202,8 +202,8 @@ theorem conj_iInf {ι : Sort*} (M : ι → VonNeumannAlgebra H) (U : H ≃ₗᵢ
 unitary equivalence `U : H ≃ₗᵢ[ℂ] K`. -/
 noncomputable def conjStarAlgEquiv (M : VonNeumannAlgebra H) (U : H ≃ₗᵢ[ℂ] K) :
     M ≃⋆ₐ[ℂ] M.conj U where
-  toFun x := ⟨U.conjStarAlgEquiv x.1, conjStarAlgEquiv_mem_conj_iff.mpr x.2⟩
-  invFun y := ⟨U.symm.conjStarAlgEquiv y.1, mem_conj_iff_symm.mp y.2⟩
+  toFun x := ⟨U.conjStarAlgEquiv x.val, conjStarAlgEquiv_mem_conj_iff.mpr x.property⟩
+  invFun y := ⟨U.symm.conjStarAlgEquiv y.val, mem_conj_iff_symm.mp y.property⟩
   left_inv x := Subtype.ext <| by simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
   right_inv y := Subtype.ext <| by simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
   map_mul' _ _ := Subtype.ext (map_mul U.conjStarAlgEquiv _ _)

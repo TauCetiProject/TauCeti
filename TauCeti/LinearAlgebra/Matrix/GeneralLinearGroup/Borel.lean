@@ -158,7 +158,7 @@ theorem mem_iff {g : GL (Fin 2) R} :
 @[simp]
 theorem apply_one_zero (g : GL2Borel R) :
     ((g : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) 1 0 = 0 :=
-  mem_iff.mp g.2
+  mem_iff.mp g.property
 
 variable (R)
 
