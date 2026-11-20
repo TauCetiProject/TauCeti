@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Localization
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Matrix.Contraction.LpNorm
 import TauCeti.Analysis.SpecificLimits.Absorption
 import TauCeti.Analysis.Sobolev.Wkp.Interpolation
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
@@ -190,7 +191,7 @@ theorem memLp_of_ae_sum_mul_inner_eq {Omega : Opens (EuclideanSpace ℝ (Fin n))
     MemLp f p (volume.restrict S) := by
   have hH : MemLp (Wkp.iteratedGradient 1 u) p (volume.restrict S) :=
     (Lp.memLp _).mono_measure (Measure.restrict_mono hS le_rfl)
-  refine (memLp_contraction_and_lpNorm_le ha ((ae_restrict_iff' hSm).2 haΛ) hH).1.ae_eq ?_
+  refine (Matrix.memLp_contraction_and_lpNorm_le ha ((ae_restrict_iff' hSm).2 haΛ) hH).1.ae_eq ?_
   filter_upwards [heq] with x hx
   rw [Matrix.contraction_apply]
   exact hx

@@ -79,13 +79,16 @@ constants are parameters, not hidden existential data.
   bilinear form is the operator norm of the matrix on Euclidean space.
 * `TauCeti.PDE.norm_toEuclideanCLM_apply_le`: the operator norm of the attached bilinear form
   bounds the action of the matrix on Euclidean space.
+* `TauCeti.PDE.aestronglyMeasurable_toEuclideanCLM_iff`: a field of matrices is measurable exactly
+  when the field of their operators on Euclidean space is.
 * `TauCeti.PDE.abs_sum_mul_apply_single_mul_apply_single_le`: a bilinear upper bound controls
   the pairing of the matrix with the coordinates of two continuous linear functionals.
 * `TauCeti.PDE.mul_sq_mul_norm_sq_le_matrixBilinearForm_add`: the pointwise absorption
   estimate used in Caccioppoli inequalities.
 * `TauCeti.PDE.ellipticCLMSet`: the operators on Euclidean space which are elliptic with
   given constants; `TauCeti.PDE.convex_ellipticCLMSet` and `TauCeti.PDE.isClosed_ellipticCLMSet`:
-  they form a closed convex set, which `TauCeti.PDE.toEuclideanCLM_mem_ellipticCLMSet_iff` and
+  they form a closed convex set, with membership `TauCeti.PDE.mem_ellipticCLMSet_iff`, which
+  `TauCeti.PDE.toEuclideanCLM_mem_ellipticCLMSet_iff` and
   `TauCeti.PDE.uniformlyEllipticOn_of_forall_toEuclideanCLM_mem` relate to uniform ellipticity.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_matrixBilinearForm`: pointwise coercivity of
   the bilinear form attached to a uniformly elliptic coefficient field.
@@ -370,6 +373,19 @@ lemma norm_matrixBilinearForm_eq_norm_toEuclideanCLM [DecidableEq n] (A : Matrix
   exact (abs_real_inner_le_norm _ _).trans
     (mul_le_mul_of_nonneg_left ((toEuclideanCLM (n := n) (𝕜 := ℝ) A).le_opNorm ξ) (norm_nonneg _))
 
+/-- A field of matrices is a.e. strongly measurable exactly when the field of the operators they
+define on Euclidean space is. -/
+theorem aestronglyMeasurable_toEuclideanCLM_iff [DecidableEq n] {X : Type*} [MeasurableSpace X]
+    {μ : MeasureTheory.Measure X} {a : X → Matrix n n ℝ} :
+    MeasureTheory.AEStronglyMeasurable (fun x => toEuclideanCLM (n := n) (𝕜 := ℝ) (a x)) μ ↔
+      MeasureTheory.AEStronglyMeasurable a μ := by
+  set e := toEuclideanCLM (n := n) (𝕜 := ℝ)
+  have he : Continuous e := e.toAlgEquiv.toLinearEquiv.toLinearMap.continuous_of_finiteDimensional
+  have he' : Continuous e.symm :=
+    e.symm.toAlgEquiv.toLinearEquiv.toLinearMap.continuous_of_finiteDimensional
+  refine ⟨fun h => ?_, fun h => he.comp_aestronglyMeasurable h⟩
+  simpa only [e.symm_apply_apply] using he'.comp_aestronglyMeasurable h
+
 /-- A pointwise bilinear upper bound gives a radius-restricted estimate for the bundled
 matrix bilinear form. -/
 lemma matrixBilinearForm_apply_norm_le_of_upper_bound {A : Matrix n n ℝ} {Lam R S : ℝ}
@@ -634,10 +650,19 @@ def ellipticCLMSet (lam Lam : ℝ) :
   {M | (∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪ξ, M ξ⟫_ℝ) ∧ ∀ η ξ, |⟪η, M ξ⟫_ℝ| ≤ Lam * ‖η‖ * ‖ξ‖}
 
 omit [DecidableEq n] in
+/-- An operator is elliptic with constant `λ` and bounded by `Λ` exactly when
+`λ ‖ξ‖² ≤ ⟪ξ, M ξ⟫` and `|⟪η, M ξ⟫| ≤ Λ ‖η‖ ‖ξ‖` for all `η`, `ξ`. -/
+theorem mem_ellipticCLMSet_iff {lam Lam : ℝ} {M : EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n} :
+    M ∈ ellipticCLMSet lam Lam ↔
+      (∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪ξ, M ξ⟫_ℝ) ∧ ∀ η ξ, |⟪η, M ξ⟫_ℝ| ≤ Lam * ‖η‖ * ‖ξ‖ :=
+  Iff.rfl
+
+omit [DecidableEq n] in
 /-- The elliptic operators with constants `λ, Λ` form a convex set. -/
 theorem convex_ellipticCLMSet (lam Lam : ℝ) :
     Convex ℝ (ellipticCLMSet (n := n) lam Lam) := by
   intro M₁ h₁ M₂ h₂ s t hs ht hst
+  rw [mem_ellipticCLMSet_iff] at h₁ h₂ ⊢
   refine ⟨fun ξ => ?_, fun η ξ => ?_⟩
   · have e₁ := mul_le_mul_of_nonneg_left (h₁.1 ξ) hs
     have e₂ := mul_le_mul_of_nonneg_left (h₂.1 ξ) ht
@@ -675,7 +700,7 @@ theorem toEuclideanCLM_mem_ellipticCLMSet_iff {lam Lam : ℝ} (A : Matrix n n �
     toEuclideanCLM (𝕜 := ℝ) A ∈ ellipticCLMSet lam Lam ↔
       (∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) ∧
         ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖ := by
-  simp only [ellipticCLMSet, Set.mem_ofPred_eq, inner_toEuclideanCLM, toQuadraticForm'_apply]
+  simp only [mem_ellipticCLMSet_iff, inner_toEuclideanCLM, toQuadraticForm'_apply]
 
 /-- A coefficient field whose operators are elliptic with constants `0 < λ ≤ Λ` at every point of
 `s` is uniformly elliptic on `s`. -/

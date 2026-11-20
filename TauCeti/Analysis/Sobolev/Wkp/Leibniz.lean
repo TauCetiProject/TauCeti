@@ -7,11 +7,15 @@ module
 
 public import TauCeti.Analysis.Sobolev.Leibniz
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+public import TauCeti.Analysis.Sobolev.Wkp.Zero
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Sobolev.Wkp.Exponent
 import TauCeti.Analysis.Sobolev.Wkp.Extension
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
+import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # The Leibniz rule for the weak gradient and the weak Hessian
@@ -27,7 +31,8 @@ the recorded weak derivatives of any Sobolev function whose value is `ζ u`:
 
   (`TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_mul`), where `D²w` is
   `TauCeti.Wkp.iteratedGradient 1 w`, a field of endomorphisms of `E`, and `a ⊗ b` denotes the
-  rank-one map `v ↦ ⟪a, v⟫ b`. The remainder `∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ` is at most
+  rank-one map `v ↦ ⟪a, v⟫ b`. The remainder `∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ`
+  (`TauCeti.leibnizRemainder`) is at most
   `2 ‖∇ζ‖ ‖∇u‖ + ‖D²ζ‖ |u|` pointwise in operator norm (`TauCeti.norm_leibnizRemainder_le`), and it
   vanishes off the support of `ζ` (`TauCeti.leibnizRemainder_eq_zero_of_notMem_tsupport`).
 * consequently `‖D²w - ζ D²u‖ ≤ 2 c₁ ‖∇u‖ + c₂ ‖u‖` for `‖∇ζ‖ ≤ c₁`, `‖D²ζ‖ ≤ c₂`
@@ -54,7 +59,11 @@ gives `L(ζ u) = ζ L u + (terms in ∇u and u)`, so an estimate for compactly s
 applied to `ζ u`, controls `ζ D²u` by `ζ L u` and lower-order norms of `u`. In that form, for `ζ`
 compactly supported with `‖∇ζ‖ ≤ M₁` and `‖D²ζ‖ ≤ M₂`, the remainder is an element `T` of `Lᵖ`
 vanishing off the support of `ζ` with `‖T‖ ≤ 2 M₁ ‖∇u‖ + M₂ ‖u‖`, and `‖ζ D²u‖ = ‖D²w - T‖`
-(`TauCeti.Wkp.exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul`).
+(`TauCeti.Wkp.exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul`). For `U ⊆ Ω` open
+of finite measure, `ζ` compactly supported in `U` and `q ≤ p` finite, the product `ζ u` lies in
+`W^{2,q}_0(U)` with weak Hessian `ζ D²u + T`
+(`TauCeti.Wkp.exists_mem_wkp0Submodule_iteratedGradient_ae_eq`), and the remainder lies in `Lᵖ(U)`
+with `‖T‖ ≤ 2 M₁ ‖∇u‖ + M₂ ‖u‖` (`TauCeti.Wkp.memLp_leibnizRemainder_and_lpNorm_le`).
 
 ## References
 
@@ -73,13 +82,16 @@ section LeibnizRemainder
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
-/-- The Leibniz remainder `∇ζ ⊗ v + v ⊗ ∇ζ + s D²ζ` of the weak Hessian of `ζ u`
-(`TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_mul`, with `v = ∇u` and `s = u`) is at
-most `2 ‖∇ζ‖ ‖v‖ + ‖D²ζ‖ |s|` in operator norm. -/
+/-- The Leibniz remainder `∇ζ ⊗ v + v ⊗ ∇ζ + s D²ζ` at `x` of the weak Hessian of `ζ u`, for
+`v = ∇u(x)` and `s = u(x)` (`TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_mul`), where
+`a ⊗ b` is the rank-one map `w ↦ ⟪a, w⟫ b`. -/
+@[expose] noncomputable def leibnizRemainder (zeta : E → ℝ) (v : E) (s : ℝ) (x : E) : E →L[ℝ] E :=
+  (innerSL ℝ (∇ zeta x)).smulRight v + (innerSL ℝ v).smulRight (∇ zeta x) + s • fderiv ℝ (∇ zeta) x
+
+/-- The Leibniz remainder `∇ζ ⊗ v + v ⊗ ∇ζ + s D²ζ` is at most `2 ‖∇ζ‖ ‖v‖ + ‖D²ζ‖ |s|` in
+operator norm. -/
 theorem norm_leibnizRemainder_le (zeta : E → ℝ) (v : E) (s : ℝ) (x : E) :
-    ‖(innerSL ℝ (∇ zeta x)).smulRight v + (innerSL ℝ v).smulRight (∇ zeta x)
-        + s • fderiv ℝ (∇ zeta) x‖ ≤
-      2 * ‖∇ zeta x‖ * ‖v‖ + ‖fderiv ℝ (∇ zeta) x‖ * ‖s‖ := by
+    ‖leibnizRemainder zeta v s x‖ ≤ 2 * ‖∇ zeta x‖ * ‖v‖ + ‖fderiv ℝ (∇ zeta) x‖ * ‖s‖ := by
   refine norm_add₃_le.trans (le_of_eq ?_)
   rw [ContinuousLinearMap.norm_smulRight_apply, ContinuousLinearMap.norm_smulRight_apply,
     innerSL_apply_norm, innerSL_apply_norm, norm_smul]
@@ -87,16 +99,14 @@ theorem norm_leibnizRemainder_le (zeta : E → ℝ) (v : E) (s : ℝ) (x : E) :
 
 /-- The Leibniz remainder `∇ζ ⊗ v + v ⊗ ∇ζ + s D²ζ` vanishes off the support of `ζ`. -/
 theorem leibnizRemainder_eq_zero_of_notMem_tsupport {zeta : E → ℝ} {x : E}
-    (hx : x ∉ tsupport zeta) (v : E) (s : ℝ) :
-    (innerSL ℝ (∇ zeta x)).smulRight v + (innerSL ℝ v).smulRight (∇ zeta x)
-      + s • fderiv ℝ (∇ zeta) x = 0 := by
+    (hx : x ∉ tsupport zeta) (v : E) (s : ℝ) : leibnizRemainder zeta v s x = 0 := by
   have hs0 := tsupport_iteratedGradientChain_subset zeta 0
   have hs1 := tsupport_iteratedGradientChain_subset zeta 1
   rw [iteratedGradientChain_zero] at hs0
   rw [iteratedGradientChain_succ, iteratedGradientChain_zero] at hs1
   have h1 : ∇ zeta x = 0 := image_eq_zero_of_notMem_tsupport fun h => hx (hs0 h)
   have h2 : fderiv ℝ (∇ zeta) x = 0 := image_eq_zero_of_notMem_tsupport fun h => hx (hs1 h)
-  simp [h1, h2]
+  simp [leibnizRemainder, h1, h2]
 
 end LeibnizRemainder
 
@@ -245,9 +255,80 @@ theorem exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul (hzeta : C
       with x h1 h2
     rw [h1, Pi.sub_apply, h2, add_sub_cancel]
   · filter_upwards [hT] with x hx hxK
-    rw [hx, leibnizRemainder_eq_zero_of_notMem_tsupport hxK]
+    rw [hx]
+    exact leibnizRemainder_eq_zero_of_notMem_tsupport hxK _ _
   · exact norm_iteratedGradient_one_sub_toLp_le_of_value_ae_eq_mul hzeta hM₁ hM₂ hζH hw
   · rw [sub_sub_cancel, Lp.norm_toLp, toReal_eLpNorm]
+
+/-- **The cutoff of a `W^{2,p}` function in `W^{2,q}_0`.** On an open set `U ⊆ Ω` of finite
+measure, for `q ≤ p` with `q < ∞` and a smooth `ζ` with compact support in `U`, the product `ζ u`
+of `u ∈ W^{2,p}(Ω)` lies in `W^{2,q}_0(U)`, with weak Hessian `ζ D²u + T` for the Leibniz
+remainder `T = ∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ` (`TauCeti.leibnizRemainder`). -/
+theorem exists_mem_wkp0Submodule_iteratedGradient_ae_eq {q : ENNReal} [Fact (1 ≤ q)]
+    (hqp : q ≤ p) (hq : q ≠ ⊤) {U : Opens E} (hU : U ≤ Omega) (hUfin : mu U ≠ ⊤)
+    (hzeta : ContDiff ℝ ∞ zeta) (hcpt : HasCompactSupport zeta) (hzetaU : tsupport zeta ⊆ U)
+    (u : Wkp mu Omega p 2) :
+    ∃ w ∈ wkp0Submodule mu U q 2, ∀ᵐ x ∂mu.restrict U,
+      iteratedGradient 1 w x = zeta x • iteratedGradient 1 u x +
+        leibnizRemainder zeta (iteratedGradient 0 (lowerOrder 1 u) x) (value 2 u x) x := by
+  have : IsFiniteMeasure (mu.restrict (U : Set E)) := isFiniteMeasure_restrict.2 hUfin
+  set v := ofExponentLEL hqp 2 (restrictL hU 2 u) with hv
+  obtain ⟨w, hw0, hwv⟩ := exists_mem_wkp0Submodule_value_ae_eq_mul hq hzeta hcpt hzetaU 2 v
+  refine ⟨w, hw0, ?_⟩
+  -- The weak derivatives of `v` are those of `u` on `U`.
+  have hHv : (iteratedGradient 1 v : E → _) =ᵐ[mu.restrict U] iteratedGradient 1 u :=
+    (iteratedGradient_ofExponentLEL_ae hqp 1 _).trans (iteratedGradient_restrictL_ae hU 1 u)
+  have hGv : (iteratedGradient 0 (lowerOrder 1 v) : E → _) =ᵐ[mu.restrict U]
+      iteratedGradient 0 (lowerOrder 1 u) := by
+    rw [hv, lowerOrder_ofExponentLEL]
+    refine (iteratedGradient_ofExponentLEL_ae hqp 0 _).trans ?_
+    rw [lowerOrder_restrictL]
+    exact iteratedGradient_restrictL_ae hU 0 (lowerOrder 1 u)
+  have hVv : (value 2 v : E → ℝ) =ᵐ[mu.restrict U] value 2 u :=
+    (value_ofExponentLEL_ae hqp 2 _).trans (value_restrictL_ae hU 2 u)
+  filter_upwards [iteratedGradient_one_ae_eq_of_value_ae_eq_mul hzeta hwv, hHv, hGv, hVv]
+    with x h1 h2 h3 h4
+  rw [h1, h2, h3, h4, leibnizRemainder]
+  abel
+
+/-- **The Leibniz remainder in `Lᵖ`.** For `u ∈ W^{2,p}(Ω)`, an open `U ⊆ Ω` and a smooth `ζ` with
+`‖∇ζ‖ ≤ M₁` and `‖D²ζ‖ ≤ M₂`, the Leibniz remainder `T = ∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ`
+(`TauCeti.leibnizRemainder`), when measurable, lies in `Lᵖ(U)` with
+`‖T‖ ≤ 2 M₁ ‖∇u‖ + M₂ ‖u‖`. -/
+theorem memLp_leibnizRemainder_and_lpNorm_le {U : Opens E} (hU : U ≤ Omega) {M₁ M₂ : ℝ}
+    (hM₁ : ∀ x, ‖∇ zeta x‖ ≤ M₁) (hM₂ : ∀ x, ‖fderiv ℝ (∇ zeta) x‖ ≤ M₂) (u : Wkp mu Omega p 2)
+    (hT : AEStronglyMeasurable (fun x =>
+      leibnizRemainder zeta (iteratedGradient 0 (lowerOrder 1 u) x) (value 2 u x) x)
+      (mu.restrict U)) :
+    MemLp (fun x => leibnizRemainder zeta (iteratedGradient 0 (lowerOrder 1 u) x) (value 2 u x) x)
+        p (mu.restrict U) ∧
+      lpNorm (fun x => leibnizRemainder zeta (iteratedGradient 0 (lowerOrder 1 u) x)
+        (value 2 u x) x) p (mu.restrict U) ≤
+        2 * M₁ * lpNorm (iteratedGradient 0 (lowerOrder 1 u)) p (mu.restrict U) +
+          M₂ * lpNorm (value 2 u) p (mu.restrict U) := by
+  have hres : mu.restrict (U : Set E) ≤ mu.restrict (Omega : Set E) :=
+    Measure.restrict_mono hU le_rfl
+  have hG := (Lp.memLp (iteratedGradient 0 (lowerOrder 1 u))).mono_measure hres
+  have hV := (Lp.memLp (value 2 u)).mono_measure hres
+  have hM₁0 : 0 ≤ M₁ := (norm_nonneg _).trans (hM₁ 0)
+  have hM₂0 : 0 ≤ M₂ := (norm_nonneg _).trans (hM₂ 0)
+  have hle (x : E) :
+      ‖leibnizRemainder zeta (iteratedGradient 0 (lowerOrder 1 u) x) (value 2 u x) x‖ ≤
+        2 * M₁ * ‖iteratedGradient 0 (lowerOrder 1 u) x‖ + M₂ * ‖value 2 u x‖ := by
+    refine (norm_leibnizRemainder_le zeta _ _ x).trans ?_
+    gcongr
+    · exact hM₁ x
+    · exact hM₂ x
+  have hbd := (hG.norm.const_mul (2 * M₁)).add (hV.norm.const_mul M₂)
+  refine ⟨hbd.of_le hT (ae_of_all _ fun x => (hle x).trans (Real.le_norm_self _)),
+    (lpNorm_mono_real hbd hle).trans ((lpNorm_add_le (hG.norm.const_mul _) Fact.out).trans ?_)⟩
+  refine add_le_add ?_ ?_
+  · refine (lpNorm_le_mul_lpNorm_of_ae_le_mul (hG.norm.const_mul (2 * M₁)).aestronglyMeasurable hG
+      (ae_of_all _ fun x => ?_))
+    rw [norm_mul, Real.norm_of_nonneg (by positivity), norm_norm]
+  · refine (lpNorm_le_mul_lpNorm_of_ae_le_mul (hV.norm.const_mul M₂).aestronglyMeasurable hV
+      (ae_of_all _ fun x => ?_))
+    rw [norm_mul, Real.norm_of_nonneg hM₂0, norm_norm]
 
 /-- **Smooth multiplication in `W^{k,p}`.** Let `Ω` have compact closure inside a set `U` of
 unique differentiability, for instance an open set. If `ψ` is smooth on `U` and

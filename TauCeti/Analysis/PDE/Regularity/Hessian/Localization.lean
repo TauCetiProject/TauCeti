@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Leibniz
 public import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
 public import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
-import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Matrix.Contraction.LpNorm
 
 /-!
 # The localized Calderón–Zygmund estimate on a domain
@@ -19,11 +19,7 @@ Let `1 < p < ∞`, and let `Ω ⊆ ℝⁿ` be open. This file localizes the whol
 `W^{2,p}` estimate for coefficients of small oscillation
 (`TauCeti.PDE.exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_le`) to a
 strong solution on `Ω`, by a smooth cutoff
-(`TauCeti.PDE.exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le`). Along the
-way it records that contracting an `Lᵖ` field of operators against a measurable coefficient field
-with entries bounded by `Λ` gives an `Lᵖ` function of norm at most `n² Λ` times that of the field
-(`MeasureTheory.AEStronglyMeasurable.matrix_contraction`,
-`TauCeti.PDE.memLp_contraction_and_lpNorm_le`).
+(`TauCeti.PDE.exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le`).
 
 There are `C` and `δ > 0`, depending only on `n` and `p`, with the following property. Let `A` be
 a matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ` and `0 < λ`, let `ζ` be smooth with compact support in `Ω`, with
@@ -70,36 +66,6 @@ open MeasureTheory TopologicalSpace
 open scoped ENNReal NNReal InnerProductSpace Gradient ContDiff
 
 variable {n : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- Contracting an a.e. strongly measurable field of operators on `ℝⁿ` against an a.e. strongly
-measurable coefficient field gives an a.e. strongly measurable function. -/
-theorem _root_.MeasureTheory.AEStronglyMeasurable.matrix_contraction {X : Type*}
-    [MeasurableSpace X] {μ : Measure X} {a : X → Matrix (Fin n) (Fin n) ℝ}
-    {T : X → EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)}
-    (ha : AEStronglyMeasurable a μ) (hT : AEStronglyMeasurable T μ) :
-    AEStronglyMeasurable (fun x => Matrix.contraction (a x) (T x)) μ := by
-  simp only [Matrix.contraction_apply]
-  refine Finset.aestronglyMeasurable_fun_sum _ fun i _ =>
-    Finset.aestronglyMeasurable_fun_sum _ fun j _ => ?_
-  exact ((continuous_id.matrix_elem i j).comp_aestronglyMeasurable ha).mul
-    (((ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i 1)).continuous
-      |>.comp_aestronglyMeasurable hT).inner aestronglyMeasurable_const)
-
-omit [Fact (1 ≤ p)] in
-/-- Contracting an `Lᵖ` field of operators on `ℝⁿ` against a coefficient field with entries
-bounded by `Λ` gives an `Lᵖ` function, with `‖∑ᵢⱼ aᵢⱼ Tᵢⱼ‖ ≤ n² Λ ‖T‖`. -/
-theorem memLp_contraction_and_lpNorm_le {X : Type*} [MeasurableSpace X] {μ : Measure X}
-    {a : X → Matrix (Fin n) (Fin n) ℝ} {Λ : ℝ}
-    (ha : AEStronglyMeasurable a μ) (haΛ : ∀ᵐ x ∂μ, ∀ i j, |a x i j| ≤ Λ)
-    {T : X → EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)} (hT : MemLp T p μ) :
-    MemLp (fun x => Matrix.contraction (a x) (T x)) p μ ∧
-      lpNorm (fun x => Matrix.contraction (a x) (T x)) p μ ≤ n ^ 2 * Λ * lpNorm T p μ := by
-  have hmeas := ha.matrix_contraction hT.aestronglyMeasurable
-  have hle : ∀ᵐ x ∂μ, ‖Matrix.contraction (a x) (T x)‖ ≤ n ^ 2 * Λ * ‖T x‖ :=
-    haΛ.mono fun x hx => by
-      rw [Real.norm_eq_abs]
-      exact Matrix.abs_contraction_le hx _
-  exact ⟨hT.of_le_mul hmeas hle, lpNorm_le_mul_lpNorm_of_ae_le_mul hmeas hT hle⟩
 
 /-- Extending `w ∈ W^{2,p}_0(Ω)` by zero to all of `ℝⁿ` preserves the vanishing of `w` off a set
 `K`, and turns an equation `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼw = g` on `Ω` into the same equation on `ℝⁿ` with right
