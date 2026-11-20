@@ -51,15 +51,19 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   itself, the derivative at such a point has nonzero determinant.
 * `OpenPartialHomeomorph.det_fderiv_mul_det_fderiv_symm`: for an open partial homeomorphism of a
   space to itself, `det De(e⁻¹ p) · det De⁻¹(p) = 1` at a point `p` of the target.
+* `OpenPartialHomeomorph.differentiableAt_and_differentiableAt_symm_of_contDiffOn`: an open
+  partial homeomorphism that is `C^n`, `n ≠ 0`, in both directions is differentiable at each point
+  `x` of its source, with inverse differentiable at `e x`.
 * `OpenPartialHomeomorph.det_fderiv_ne_zero_of_contDiffOn`,
   `OpenPartialHomeomorph.det_fderiv_symm_apply_of_contDiffOn`: for an open partial homeomorphism
   that is `C^n`, `n ≠ 0`, in both directions, a nonzero Jacobian determinant on the source, and
   reciprocity of the Jacobian determinants of `e` and `e.symm`.
 * `OpenPartialHomeomorph.adjoint_fderiv_apply_adjoint_fderiv_symm_apply`,
-  `OpenPartialHomeomorph.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn`: between
-  real inner product spaces, the transpose of the derivative of an open partial homeomorphism at
-  a point of its source is a left inverse of the transpose of the derivative of its inverse at the
-  image point, when both are differentiable there, in particular when both are `C^n`.
+  `OpenPartialHomeomorph.adjoint_fderiv_symm_apply_adjoint_fderiv_apply` and their
+  `_of_contDiffOn` forms: between inner product spaces over `ℝ` or `ℂ`, the transposes of the
+  derivative of an open partial homeomorphism at a point of its source and of the derivative of
+  its inverse at the image point are mutually inverse, when both are differentiable there, in
+  particular when both are `C^n`.
 * `OpenPartialHomeomorph.hasFDerivAt_transHomeomorph_iff`: postcomposing charts with continuous
   linear equivalences conjugates the Fréchet derivative of a map read in those charts.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
@@ -197,14 +201,24 @@ theorem det_fderiv_mul_det_fderiv_symm (e : OpenPartialHomeomorph E E) {p : E}
   rw [← ContinuousLinearMap.det_comp, e.fderiv_comp_fderiv_symm hp hd hds,
     ContinuousLinearMap.det_id]
 
+/-- An open partial homeomorphism that is `C^n`, `n ≠ 0`, on its source, with inverse `C^n` on
+its target, is differentiable at each point `x` of its source, and its inverse is differentiable
+at `e x`. -/
+theorem differentiableAt_and_differentiableAt_symm_of_contDiffOn (e : OpenPartialHomeomorph E F)
+    {n : WithTop ℕ∞} (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target)
+    (hn : n ≠ 0) {x : E} (hx : x ∈ e.source) :
+    DifferentiableAt 𝕜 e x ∧ DifferentiableAt 𝕜 e.symm (e x) :=
+  ⟨(he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hx),
+    (hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx))⟩
+
 /-- An open partial homeomorphism of a space to itself that is `C^n`, `n ≠ 0`, on its source,
 with inverse `C^n` on its target, has a derivative with nonzero determinant at every point of its
 source. -/
 theorem det_fderiv_ne_zero_of_contDiffOn (e : OpenPartialHomeomorph E E) {n : WithTop ℕ∞}
     (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
     (hx : x ∈ e.source) : (fderiv 𝕜 e x).det ≠ 0 :=
-  e.det_fderiv_ne_zero hx ((he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hx))
-    ((hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx)))
+  have hd := e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he hes hn hx
+  e.det_fderiv_ne_zero hx hd.1 hd.2
 
 /-- For an open partial homeomorphism of a space to itself that is `C^n`, `n ≠ 0`, on its source,
 with inverse `C^n` on its target, the Jacobian determinant of the inverse at `e x` is the
@@ -242,31 +256,50 @@ end OpenPartialHomeomorph
 
 namespace OpenPartialHomeomorph
 
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+variable {𝕜 : Type*} [RCLike 𝕜] {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
 
-open scoped InnerProduct in
+open scoped InnerProduct
+
 /-- For an open partial homeomorphism differentiable at a point `x` of its source, with inverse
 differentiable at `e x`, `De(x)ᵀ` is a left inverse of `De⁻¹(e x)ᵀ`:
 `De(x)ᵀ (De⁻¹(e x)ᵀ ξ) = ξ`. -/
 theorem adjoint_fderiv_apply_adjoint_fderiv_symm_apply (e : OpenPartialHomeomorph E F) {x : E}
-    (hx : x ∈ e.source) (hd : DifferentiableAt ℝ e x) (hds : DifferentiableAt ℝ e.symm (e x))
-    (ξ : E) : ((fderiv ℝ e x)†) (((fderiv ℝ e.symm (e x))†) ξ) = ξ := by
+    (hx : x ∈ e.source) (hd : DifferentiableAt 𝕜 e x) (hds : DifferentiableAt 𝕜 e.symm (e x))
+    (ξ : E) : ((fderiv 𝕜 e x)†) (((fderiv 𝕜 e.symm (e x))†) ξ) = ξ := by
   rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
     e.fderiv_symm_comp_fderiv_of_mem_source hx hd hds, ContinuousLinearMap.adjoint_id,
     ContinuousLinearMap.id_apply]
 
-open scoped InnerProduct in
+/-- For an open partial homeomorphism differentiable at a point `x` of its source, with inverse
+differentiable at `e x`, `De⁻¹(e x)ᵀ` is a left inverse of `De(x)ᵀ`:
+`De⁻¹(e x)ᵀ (De(x)ᵀ η) = η`. -/
+theorem adjoint_fderiv_symm_apply_adjoint_fderiv_apply (e : OpenPartialHomeomorph E F) {x : E}
+    (hx : x ∈ e.source) (hd : DifferentiableAt 𝕜 e x) (hds : DifferentiableAt 𝕜 e.symm (e x))
+    (η : F) : ((fderiv 𝕜 e.symm (e x))†) (((fderiv 𝕜 e x)†) η) = η := by
+  rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
+    e.fderiv_comp_fderiv_symm_of_mem_source hx hd hds, ContinuousLinearMap.adjoint_id,
+    ContinuousLinearMap.id_apply]
+
 /-- For an open partial homeomorphism that is `C^n`, `n ≠ 0`, on its source, with inverse `C^n` on
 its target, `De(x)ᵀ` is a left inverse of `De⁻¹(e x)ᵀ` at a point `x` of the source:
 `De(x)ᵀ (De⁻¹(e x)ᵀ ξ) = ξ`. -/
 theorem adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn
-    (e : OpenPartialHomeomorph E F) {n : WithTop ℕ∞} (he : ContDiffOn ℝ n e e.source)
-    (hes : ContDiffOn ℝ n e.symm e.target) (hn : n ≠ 0) {x : E} (hx : x ∈ e.source) (ξ : E) :
-    ((fderiv ℝ e x)†) (((fderiv ℝ e.symm (e x))†) ξ) = ξ :=
-  e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply hx
-    ((he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hx))
-    ((hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx))) ξ
+    (e : OpenPartialHomeomorph E F) {n : WithTop ℕ∞} (he : ContDiffOn 𝕜 n e e.source)
+    (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E} (hx : x ∈ e.source) (ξ : E) :
+    ((fderiv 𝕜 e x)†) (((fderiv 𝕜 e.symm (e x))†) ξ) = ξ :=
+  have hd := e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he hes hn hx
+  e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply hx hd.1 hd.2 ξ
+
+/-- For an open partial homeomorphism that is `C^n`, `n ≠ 0`, on its source, with inverse `C^n` on
+its target, `De⁻¹(e x)ᵀ` is a left inverse of `De(x)ᵀ` at a point `x` of the source:
+`De⁻¹(e x)ᵀ (De(x)ᵀ η) = η`. -/
+theorem adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_contDiffOn
+    (e : OpenPartialHomeomorph E F) {n : WithTop ℕ∞} (he : ContDiffOn 𝕜 n e e.source)
+    (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E} (hx : x ∈ e.source) (η : F) :
+    ((fderiv 𝕜 e.symm (e x))†) (((fderiv 𝕜 e x)†) η) = η :=
+  have hd := e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he hes hn hx
+  e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply hx hd.1 hd.2 η
 
 end OpenPartialHomeomorph
 
