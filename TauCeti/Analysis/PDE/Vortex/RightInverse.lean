@@ -15,6 +15,7 @@ import TauCeti.Analysis.PDE.Vortex.WeightedEstimate
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Adjoint
+import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 
 /-!
 # The weak right inverse of the gauge-fixed operator at a plane vortex
@@ -502,34 +503,6 @@ private theorem integral_sq_mul_norm_sq_le_of_forall_exists_lt
     exact mul_le_of_le_one_right hε.le ((div_le_one (by positivity)).2 (by linarith))
   linarith
 
-omit [μ.IsAddHaarMeasure] in
-/-- **Fatou's lemma for truncated weights.** A bound on `∫ V_n² u` for all the truncations
-`V_n = W / (1 + W / (n + 1))` of a weight `W` holds for `W` itself, since `V_n → W` pointwise. -/
-private theorem lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le
-    {W u : ℂ → ℝ} (hW : AEMeasurable W μ) (hu : AEMeasurable u μ) {C : ℝ≥0∞}
-    (h : ∀ n : ℕ,
-      ∫⁻ z, ENNReal.ofReal ((W z / (1 + 1 / ((n : ℝ) + 1) * W z)) ^ 2 * u z) ∂μ ≤ C) :
-    ∫⁻ z, ENNReal.ofReal (W z ^ 2 * u z) ∂μ ≤ C := by
-  have hlim (z : ℂ) : Tendsto (fun n : ℕ ↦
-      ENNReal.ofReal ((W z / (1 + 1 / ((n : ℝ) + 1) * W z)) ^ 2 * u z)) atTop
-      (𝓝 (ENNReal.ofReal (W z ^ 2 * u z))) := by
-    have hc : ContinuousAt (fun ε : ℝ ↦ ENNReal.ofReal ((W z / (1 + ε * W z)) ^ 2 * u z)) 0 :=
-      ENNReal.continuous_ofReal.continuousAt.comp
-        (((continuousAt_const.div (continuousAt_const.add
-          (continuousAt_id.mul continuousAt_const)) (by simp)).pow 2).mul continuousAt_const)
-    have h := hc.tendsto
-    simp only [zero_mul, add_zero, div_one] at h
-    exact h.comp (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
-  calc ∫⁻ z, ENNReal.ofReal (W z ^ 2 * u z) ∂μ
-      = ∫⁻ z, liminf (fun n : ℕ ↦
-          ENNReal.ofReal ((W z / (1 + 1 / ((n : ℝ) + 1) * W z)) ^ 2 * u z)) atTop ∂μ :=
-        lintegral_congr fun z ↦ (hlim z).liminf_eq.symm
-    _ ≤ liminf (fun n : ℕ ↦
-          ∫⁻ z, ENNReal.ofReal ((W z / (1 + 1 / ((n : ℝ) + 1) * W z)) ^ 2 * u z) ∂μ) atTop :=
-        lintegral_liminf_le' fun n ↦ (((hW.div (aemeasurable_const.add
-          (aemeasurable_const.mul hW))).pow_const 2).mul hu).ennreal_ofReal
-    _ ≤ C := liminf_le_of_frequently_le' (Frequently.of_forall h)
-
 /-- **The exponentially weighted estimate for the weak right inverse.** Let `x` be a `C¹`
 solution of the plane vortex equation with `|α| → 1` at infinity, let `ρ(z) = √(1 + |z|²)` and
 `|c| < 1/2`. There is `K` such that every square-integrable weak solution `y` of `L_x y = f`
@@ -615,19 +588,14 @@ theorem exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq
     (fun z ↦ by simpa only [abs_sub_comm 1 b] using sq_exp_mul_sqrt_add_norm_sq_le c 1 b z) y
   have hWf := hcmp (u := W) (v := w) (sq_exp_mul_sqrt_add_norm_sq_le c b 1) f
   -- Convert to `L²` norms.
-  have henorm (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (z : ℂ) :
-      ‖w z • g z‖ₑ ^ (2 : ℝ≥0∞).toReal = ENNReal.ofReal (w z ^ 2 * ‖g z‖ ^ 2) := by
-    rw [← ofReal_norm, ENNReal.toReal_ofNat, ENNReal.ofReal_rpow_of_nonneg
-      (norm_nonneg _) zero_le_two, norm_smul, Real.norm_eq_abs, Real.rpow_two, mul_pow, sq_abs]
   have hsm (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
       AEStronglyMeasurable (fun z ↦ w z • g z) μ :=
     ((contDiff_exp_mul_sqrt_add_norm_sq (n := 0) c one_pos).continuous.aestronglyMeasurable).smul
       (Lp.aestronglyMeasurable g)
-  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top (hsm y),
-    eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top (hsm f)]
-  simp_rw [henorm]
-  have hK : (K : ℝ≥0∞) = ENNReal.ofReal (E * E * K₀) ^ (1 / (2 : ℝ≥0∞).toReal) := by
-    rw [ENNReal.toReal_ofNat, ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num),
+  rw [eLpNorm_two_smul_eq_lintegral_ofReal_rpow (hsm y),
+    eLpNorm_two_smul_eq_lintegral_ofReal_rpow (hsm f)]
+  have hK : (K : ℝ≥0∞) = ENNReal.ofReal (E * E * K₀) ^ (1 / 2 : ℝ) := by
+    rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num),
       ← Real.sqrt_eq_rpow, ← ENNReal.ofReal_coe_nnreal, hK_def,
       Real.coe_toNNReal _ (Real.sqrt_nonneg _)]
   rw [hK, ← ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]
