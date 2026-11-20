@@ -172,6 +172,11 @@ theorem toPowerSeries_mul_inv (φ : FormalCoordinate R) : (φ * φ⁻¹).toPower
 theorem toPowerSeries_inv_mul (φ : FormalCoordinate R) : (φ⁻¹ * φ).toPowerSeries = X := by
   rw [inv_mul_cancel, toPowerSeries_one]
 
+/-- A formal coordinate `φ = u X + ⋯` is `X` times a unit power series. -/
+theorem exists_unit_toPowerSeries_eq_X_mul (φ : FormalCoordinate R) :
+    ∃ v : R⟦X⟧ˣ, φ.toPowerSeries = X * (v : R⟦X⟧) :=
+  exists_unit_eq_X_mul_of_subst_eq_X φ.constantCoeff_toPowerSeries (toPowerSeries_inv_mul φ)
+
 section Points
 
 variable {σ : Type*} {x : MvPowerSeries σ R}

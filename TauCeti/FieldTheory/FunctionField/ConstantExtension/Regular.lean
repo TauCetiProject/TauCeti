@@ -155,7 +155,7 @@ theorem linearDisjoint_of_transcendental_of_isDomain {x : F}
     .of_algebraMap_eq (R := k⟮x⟯) (S := k⟮x⟯ ⊗[k] k') (A := k'⟮y⟯) fun _ ↦ by
       simp [π₀, RingHom.algebraMap_toAlgebra]
   have : IsFractionRing _ _ := isFractionRing_tensorProduct_of_linearDisjoint HC hcomp
-  have := isDomain_tensorProduct_of_isLocalization_tensorProduct
+  have := isDomain_tensorProduct_of_isLocalization_tensorProduct_left
     (nonZeroDivisors (k⟮x⟯ ⊗[k] k')) le_rfl k'⟮y⟯ F
   let _ : Field (k'⟮y⟯ ⊗[k⟮x⟯] F) :=
     (Algebra.TensorProduct.isField_of_isAlgebraic k⟮x⟯ k'⟮y⟯ F (.inr inferInstance)).toField
