@@ -18,8 +18,8 @@ In any cartesian square of schemes, the topological image of either projection i
 the image of the opposite morphism (`AlgebraicGeometry.Scheme.Pullback.range_fst_of_isPullback`
 and `AlgebraicGeometry.Scheme.Pullback.range_snd_of_isPullback`), extending Mathlib's
 `range_fst` and `range_snd` from chosen pullbacks to arbitrary cartesian squares. If moreover the
-second projection is injective on points, the fibre of the first projection over a point `x` is in
-bijection with the fibre of the opposite map over the image of `x`
+second projection is injective on points, the fibre of the first projection over a point `x` has
+the same cardinality as the fibre of the opposite map over the image of `x`
 (`AlgebraicGeometry.Scheme.natCard_preimage_fst_singleton_of_isPullback`), as for the inverse
 image of a closed subscheme.
 
@@ -175,22 +175,13 @@ universe u
 
 variable {P X Y S : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y} {f : X ⟶ S} {g : Y ⟶ S}
 
-/-- In a pullback square of schemes whose second projection `snd` is injective, `snd` maps the
-fibre of `fst` over `x` bijectively onto the fibre of `g` over `f x`. -/
+/-- In a pullback square of schemes whose second projection `snd` is injective, the fibre of `fst`
+over `x` has the same cardinality as the fibre of `g` over `f x`: `snd` maps the first injectively
+onto the second (Mathlib's `Scheme.image_preimage_eq_of_isPullback`). -/
 theorem natCard_preimage_fst_singleton_of_isPullback (H : IsPullback fst snd f g)
     (hsnd : Function.Injective snd) (x : X) :
     Nat.card (fst ⁻¹' {x}) = Nat.card (g ⁻¹' {f x}) := by
-  have hmaps (p : fst ⁻¹' {x}) : snd p.1 ∈ g ⁻¹' {f x} := by
-    rw [Set.mem_preimage, Set.mem_singleton_iff, ← Scheme.Hom.comp_apply, ← H.w,
-      Scheme.Hom.comp_apply, Set.mem_singleton_iff.mp p.2]
-  refine Nat.card_congr (Equiv.ofBijective (fun p ↦ ⟨snd p.1, hmaps p⟩)
-    ⟨fun p p' h ↦ Subtype.ext (hsnd congr(($h).1)), fun y ↦ ?_⟩)
-  -- a point of the abstract pullback over `x` and `y` gives one of `P`
-  obtain ⟨q, hq, hy⟩ := Pullback.exists_preimage_pullback x y.1 y.2.symm
-  refine ⟨⟨H.isoPullback.inv q, ?_⟩, Subtype.ext ?_⟩
-  · rw [Set.mem_preimage, Set.mem_singleton_iff, ← Scheme.Hom.comp_apply,
-      IsPullback.isoPullback_inv_fst, hq]
-  · dsimp only
-    rw [← Scheme.Hom.comp_apply, IsPullback.isoPullback_inv_snd, hy]
+  rw [← Nat.card_image_of_injective hsnd, Scheme.image_preimage_eq_of_isPullback H,
+    Set.image_singleton]
 
 end AlgebraicGeometry.Scheme

@@ -11,6 +11,8 @@ public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 import Mathlib.AlgebraicGeometry.Morphisms.FlatMono
 import Mathlib.AlgebraicGeometry.Morphisms.IsIso
+import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
+import Mathlib.AlgebraicGeometry.Sites.EtalePoint
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 import TauCeti.AlgebraicGeometry.RationalPoint.Affine
@@ -181,11 +183,6 @@ theorem Scheme.Hom.natCard_preimage_singleton_eq_finrank {Y : Scheme.{u}} (f : X
     [IsFinite f] [Etale f] (y : Y) [IsSepClosed (Y.residueField y)] :
     Nat.card (f ⁻¹' {y}) = f.finrank y := by
   let g : f.fiber y ⟶ Spec (.of (Y.residueField y)) := f.fiberToSpecResidueField y
-  -- Mathlib registers no finiteness or étaleness instances for `f.fiberToSpecResidueField y`. It
-  -- is defined as the base change `pullback.snd f (Y.fromSpecResidueField y)` of `f`, so we read
-  -- off both from the base change instances, unfolding that definition.
-  have : IsFinite g := inferInstanceAs (IsFinite (Limits.pullback.snd f (Y.fromSpecResidueField y)))
-  have : Etale g := inferInstanceAs (Etale (Limits.pullback.snd f (Y.fromSpecResidueField y)))
   obtain ⟨s⟩ : Nonempty (Spec (Y.residueField y)) := inferInstance
   rw [← Nat.card_congr (f.fiberHomeo y).toEquiv, g.natCard_source_eq_finrank_of_etale s]
   exact (Scheme.Hom.finrank_of_isPullback _ _ _ _
