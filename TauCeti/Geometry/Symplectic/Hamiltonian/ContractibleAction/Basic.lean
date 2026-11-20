@@ -159,6 +159,17 @@ variable {w w₁ w₂ : ℝ × ℝ → M} {γ₀ γ₁ γ₂ : ℝ → M}
 theorem isCap {x : M} (hw : IsLoopCylinder I w γ₀ fun _ ↦ x) : IsCap I w γ₀ :=
   ⟨x, hw⟩
 
+/-- The initial loop of a cylinder is `1`-periodic. -/
+theorem periodic_left (hw : IsLoopCylinder I w γ₀ γ₁) : Function.Periodic γ₀ 1 := fun t ↦ by
+  rw [← hw.apply_zero, ← hw.apply_zero]
+  exact hw.apply_add_one (0, t)
+
+/-- The initial loop of a cylinder is `C²`. -/
+theorem contMDiff_left (hw : IsLoopCylinder I w γ₀ γ₁) : ContMDiff 𝓘(ℝ) I 2 γ₀ := by
+  have h : γ₀ = w ∘ fun t ↦ (0, t) := funext fun t ↦ (hw.apply_zero t).symm
+  rw [h]
+  exact hw.contMDiff.comp (contDiff_const.prodMk contDiff_id).contMDiff
+
 /-- The concatenation of a cylinder from `γ₀` to `γ₁` and a cylinder from `γ₁` to `γ₂` is a
 cylinder from `γ₀` to `γ₂`. -/
 theorem trans (hw₁ : IsLoopCylinder I w₁ γ₀ γ₁) (hw₂ : IsLoopCylinder I w₂ γ₁ γ₂) :

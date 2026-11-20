@@ -21,9 +21,10 @@ which equal one on balls exhausting a normed space, as well as convergence after
 shrinking neighbourhood of zero from an integrable function vanishing at zero, and the convergence
 of interval integrals `∫ Φ(t, y_i(t)) dt` of a continuous function along maps `y_i` which converge
 pointwise, with `Φ` bounded along them or with values in a compact set, or along continuous paths
-which converge uniformly. An interval integral `∫ t in a..b, f x t` also depends continuously on
-`x ∈ s` as soon as `f` is jointly continuous on `s ×ˢ uIcc a b`, including at boundary points of
-`s` (such as the endpoints of a closed interval), where Mathlib's
+which converge uniformly, and of `∫ Φ_i(t, y_i(t)) dt` for uniformly converging `Φ_i` along maps
+`y_i` which converge uniformly to a constant. An interval integral `∫ t in a..b, f x t` also
+depends continuously on `x ∈ s` as soon as `f` is jointly continuous on `s ×ˢ uIcc a b`, including
+at boundary points of `s` (such as the endpoints of a closed interval), where Mathlib's
 `intervalIntegral.continuous_parametric_intervalIntegral_of_continuous'` would require continuity
 on the whole space.
 
@@ -44,6 +45,10 @@ on the whole space.
   along them, for instance when they stay in a compact set.
 * `TauCeti.tendsto_intervalIntegral_comp_of_continuousOn`: the same for bounded `Φ` along
   `u ∘ y_i`, where `u` is continuous on a set containing the values of the `y_i`.
+* `TauCeti.tendsto_intervalIntegral_comp_of_tendstoUniformlyOn`: the integrals
+  `∫_{t₁}^{t₂} Φ i t (y i t) dt` tend to `∫_{t₁}^{t₂} Φ₀ t x dt` when the `Φ i` converge uniformly
+  near `x` to `Φ₀`, continuous along `uIcc t₁ t₂ ×ˢ {x}`, and the `y i` converge uniformly to the
+  constant `x`.
 * `TauCeti.continuousOn_parametric_intervalIntegral_of_continuousOn`: an interval integral of a
   function continuous on `s ×ˢ uIcc a b` is continuous in the parameter on `s`.
 * `TauCeti.tendsto_setIntegral_preimage_Ioo_zero`: integrals of an integrable function over the
@@ -252,6 +257,55 @@ theorem tendsto_intervalIntegral_comp_of_tendsto {ι V E : Type*} {l : Filter ι
     (Eventually.of_forall fun i t ht ↦
       hC _ ⟨uIoc_subset_uIcc ht, hyK i t (uIoc_subset_uIcc ht)⟩)
     fun t ht ↦ hyx t (uIoc_subset_uIcc ht)
+
+/-- **Integrals along maps converging to a point, for uniformly converging integrands.** Let the
+functions `Φ i : ℝ → V → E` converge uniformly on `uIcc t₁ t₂ ×ˢ U` to `Φ₀` for some
+neighbourhood `U` of `x`, where `Φ₀` is jointly continuous at the points `(t, x)` with
+`t ∈ uIcc t₁ t₂`. If the maps `y i : ℝ → V` converge uniformly on `uIcc t₁ t₂` to the constant
+map at `x`, in the sense that they eventually take values in any given neighbourhood of `x` there,
+then `∫_{t₁}^{t₂} Φ i t (y i t) dt` tends to `∫_{t₁}^{t₂} Φ₀ t x dt`, provided the integrands are
+eventually integrable. No continuity of the `Φ i` or the `y i` is assumed, and the filter need not
+be countably generated. -/
+theorem tendsto_intervalIntegral_comp_of_tendstoUniformlyOn {ι V E : Type*} [TopologicalSpace V]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure ℝ} [IsLocallyFiniteMeasure μ]
+    {l : Filter ι} {Φ : ι → ℝ → V → E} {Φ₀ : ℝ → V → E} {y : ι → ℝ → V} {x : V} {t₁ t₂ : ℝ}
+    {U : Set V} (hU : U ∈ 𝓝 x) (hcont : ∀ t ∈ uIcc t₁ t₂, ContinuousAt (uncurry Φ₀) (t, x))
+    (hunif : TendstoUniformlyOn (fun i ↦ uncurry (Φ i)) (uncurry Φ₀) l (uIcc t₁ t₂ ×ˢ U))
+    (hint : ∀ᶠ i in l, IntervalIntegrable (fun t ↦ Φ i t (y i t)) μ t₁ t₂)
+    (hy : ∀ U ∈ 𝓝 x, ∀ᶠ i in l, ∀ t ∈ uIcc t₁ t₂, y i t ∈ U) :
+    Tendsto (fun i ↦ ∫ t in t₁..t₂, Φ i t (y i t) ∂μ) l (𝓝 (∫ t in t₁..t₂, Φ₀ t x ∂μ)) := by
+  have hcx : ∀ t ∈ uIcc t₁ t₂, ContinuousAt (fun t ↦ Φ₀ t x) t := fun t ht ↦
+    (hcont t ht).comp (f := fun s ↦ (s, x)) (continuousAt_id.prodMk continuousAt_const)
+  have hint₀ : IntervalIntegrable (fun t ↦ Φ₀ t x) μ t₁ t₂ :=
+    ContinuousOn.intervalIntegrable fun t ht ↦ (hcx t ht).continuousWithinAt
+  -- The integrands converge uniformly on `uIcc t₁ t₂` to `t ↦ Φ₀ t x`.
+  have hunif' : TendstoUniformlyOn (fun i t ↦ Φ i t (y i t) - Φ₀ t x) 0 l (uIcc t₁ t₂) := by
+    rw [Metric.tendstoUniformlyOn_iff]
+    intro ε hε
+    -- Near `x`, uniformly in `t ∈ uIcc t₁ t₂`, the limit is within `ε / 2` of its value at `x`,
+    -- by compactness of `uIcc t₁ t₂`.
+    have hnear : ∀ᶠ z in 𝓝 x, ∀ t ∈ uIcc t₁ t₂, dist (Φ₀ t z) (Φ₀ t x) < ε / 2 :=
+      isCompact_uIcc.eventually_forall_of_forall_eventually fun t ht ↦ by
+        have h₁ : ContinuousAt (uncurry Φ₀ ∘ fun z : V × ℝ ↦ (z.2, z.1)) (x, t) :=
+          (hcont t ht).comp_of_eq (continuousAt_snd.prodMk continuousAt_fst) rfl
+        have h₂ : ContinuousAt ((fun s ↦ Φ₀ s x) ∘ Prod.snd) (x, t) :=
+          (hcx t ht).comp_of_eq continuousAt_snd rfl
+        have h : ContinuousAt (fun z : V × ℝ ↦ Φ₀ z.2 z.1 - Φ₀ z.2 x) (x, t) := h₁.sub h₂
+        filter_upwards [h.eventually (Metric.ball_mem_nhds _ (by positivity : 0 < ε / 2))]
+          with z hz
+        simpa [dist_eq_norm, sub_self] using hz
+    filter_upwards [hy _ hnear, hy _ hU,
+      Metric.tendstoUniformlyOn_iff.1 hunif (ε / 2) (by positivity)] with i hi hiU hu t ht
+    have h1 := hu (t, y i t) ⟨ht, hiU t ht⟩
+    have h2 := hi t ht t ht
+    simp only [uncurry_apply_pair] at h1
+    rw [Pi.zero_apply, dist_zero_left, ← dist_eq_norm]
+    linarith [dist_triangle (Φ i t (y i t)) (Φ₀ t (y i t)) (Φ₀ t x),
+      dist_comm (Φ₀ t (y i t)) (Φ i t (y i t))]
+  refine tendsto_sub_nhds_zero_iff.1
+    ((hunif'.tendsto_intervalIntegral_nhds_zero (μ := μ)).congr' ?_)
+  filter_upwards [hint] with i hi
+  exact intervalIntegral.integral_sub hi hint₀
 
 /-- If `f` is continuous on `s ×ˢ uIcc a b`, then the interval integral `∫ t in a..b, f x t ∂μ`
 is continuous in `x` on `s`. Only the values of `f` on `s ×ˢ uIcc a b` matter, so this applies
