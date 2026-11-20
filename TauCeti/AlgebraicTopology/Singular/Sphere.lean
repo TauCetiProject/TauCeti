@@ -113,6 +113,8 @@ Coefficients are an object `R` of an abelian category with coproducts.
   it.
 * `TauCeti.reducedSingularHomologyFunctor_map_sphere_neg`: the antipodal map acts on `H_redₙ(S)`
   by `(-1) ^ (n + 1)`.
+  `TauCeti.singularHomologyFunctor_map_sphere_neg` is the same for ordinary homology, in
+  positive degrees.
 * `TauCeti.isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne`,
   `TauCeti.reducedSingularHomologyTopCatSphereIso` and
   `TauCeti.reducedSingularHomologyFunctor_map_diskBoundaryNeg`: the same for Mathlib's
@@ -761,6 +763,20 @@ theorem reducedSingularHomologyFunctor_map_sphere_neg {n : ℕ} (hE : finrank �
     ext; simp
   rw [h, reducedSingularHomologyFunctor_map_unitSphereMap R hE, hdet, LinearMap.det_smul]
   simp [hE, sign_pow]
+
+/-- **The antipodal map acts by `(-1) ^ (n + 2)` on the top homology of a sphere.** For a real
+inner product space `E` of dimension `n + 2`, the antipodal map `x ↦ -x` of the unit sphere `S`
+of `E` induces multiplication by `(-1) ^ (n + 2)` on `Hₙ₊₁(S)`. -/
+theorem singularHomologyFunctor_map_sphere_neg {n : ℕ} (hE : finrank ℝ E = n + 2) :
+    ((AlgebraicTopology.singularHomologyFunctor C (n + 1)).obj R).map
+        (TopCat.ofHom ⟨Neg.neg, continuous_neg⟩ : TopCat.of (sphere (0 : E) 1) ⟶ _) =
+      (-1 : ℤ) ^ (n + 2) • 𝟙 _ := by
+  -- In positive degrees ordinary and reduced homology agree naturally.
+  have h := (reducedSingularHomologySuccIso R n).hom.naturality
+    (TopCat.ofHom ⟨Neg.neg, continuous_neg⟩ : TopCat.of (sphere (0 : E) 1) ⟶ _)
+  rw [reducedSingularHomologyFunctor_map_sphere_neg R hE] at h
+  rw [← cancel_epi ((reducedSingularHomologySuccIso R n).hom.app _), ← h]
+  simp
 
 end Orientation
 
