@@ -166,17 +166,16 @@ argument lies in `H` and are annihilated by the Lie derivatives along `H`. These
 `H`-invariant alternating maps on `L ⧸ H` (`relativeCochainsEquiv`). -/
 def relativeCochains (n : ℕ) : Submodule R (L [⋀^Fin n]→ₗ[R] M) :=
   H.toLieSubmodule.toSubmodule.conormalForms (Fin n) M ⊓
-    { carrier := {ω | ∀ y ∈ H, ⁅y, ω⁆ = 0}
-      add_mem' {ω ω'} hω hω' y hy := by rw [lie_add, hω y hy, hω' y hy, add_zero]
-      zero_mem' y _ := lie_zero y
-      smul_mem' c ω hω y hy := by rw [lie_smul, hω y hy, smul_zero] }
+    (LieModule.maxTrivSubmodule R H (L [⋀^Fin n]→ₗ[R] M)).toSubmodule
 
 variable {R M H}
 
 theorem mem_relativeCochains_iff {n : ℕ} {ω : L [⋀^Fin n]→ₗ[R] M} :
     ω ∈ relativeCochains R M H n ↔
       (∀ (v : Fin n → L) (i : Fin n), v i ∈ H → ω v = 0) ∧ ∀ y ∈ H, ⁅y, ω⁆ = 0 :=
-  Submodule.mem_inf.trans <| and_congr (by simp) Iff.rfl
+  Submodule.mem_inf.trans <| and_congr (by simp) <| by
+    simp only [LieSubmodule.mem_toSubmodule, LieModule.mem_maxTrivSubmodule, Subtype.forall,
+      LieSubalgebra.coe_bracket_of_module]
 
 /-- In positive degree, the first condition on relative cochains says that the interior
 products along `H` vanish. -/
@@ -202,23 +201,25 @@ theorem mem_relativeCochains_zero_iff {ω : L [⋀^Fin 0]→ₗ[R] M} :
 /-- Relative to the zero subalgebra, every cochain is relative. -/
 @[simp]
 theorem relativeCochains_bot (n : ℕ) : relativeCochains R M (⊥ : LieSubalgebra R L) n = ⊤ := by
-  refine eq_top_iff.mpr fun ω _ ↦ ⟨?_, fun y hy ↦ ?_⟩
+  refine eq_top_iff.mpr fun ω _ ↦ ⟨?_, (LieSubmodule.mem_toSubmodule _).mpr <|
+    (LieModule.mem_maxTrivSubmodule R _ _ ω).mpr fun y ↦ ?_⟩
   · have h : (⊥ : LieSubalgebra R L).toLieSubmodule.toSubmodule = ⊥ := by ext; simp
     rw [h, Submodule.conormalForms_bot]
     exact Submodule.mem_top
-  · rw [(LieSubalgebra.mem_bot y).mp hy, zero_lie]
+  · rw [LieSubalgebra.coe_bracket_of_module, (LieSubalgebra.mem_bot (y : L)).mp y.2, zero_lie]
 
 /-- **The differential preserves relative cochains**, by Cartan's formula
 `ι_y d ω = ⁅y, ω⁆ - d ι_y ω` and the equivariance `⁅y, d ω⁆ = d ⁅y, ω⁆`. -/
 theorem d_mem_relativeCochains {n : ℕ} {ω : L [⋀^Fin n]→ₗ[R] M}
     (hω : ω ∈ relativeCochains R M H n) : d R L M n ω ∈ relativeCochains R M H (n + 1) := by
+  have hlie := (mem_relativeCochains_iff.mp hω).2
   refine mem_relativeCochains_succ_iff.mpr ⟨fun y hy ↦ ?_, fun y hy ↦ ?_⟩
   · cases n with
-    | zero => rw [curryLeft_d_zero, hω.2 y hy]
+    | zero => rw [curryLeft_d_zero, hlie y hy]
     | succ n =>
-      rw [curryLeft_d_succ, hω.2 y hy, (mem_relativeCochains_succ_iff.mp hω).1 y hy,
+      rw [curryLeft_d_succ, hlie y hy, (mem_relativeCochains_succ_iff.mp hω).1 y hy,
         _root_.map_zero, sub_zero]
-  · rw [lie_d, hω.2 y hy, _root_.map_zero]
+  · rw [lie_d, hlie y hy, _root_.map_zero]
 
 variable (R M H)
 
@@ -253,11 +254,12 @@ theorem compLinearMap_mk'_mem_relativeCochains {n : ℕ}
     (η : LieModule.maxTrivSubmodule R H ((L ⧸ H.toLieSubmodule) [⋀^Fin n]→ₗ[R] M)) :
     (η : (L ⧸ H.toLieSubmodule) [⋀^Fin n]→ₗ[R] M).compLinearMap
       (LieSubmodule.Quotient.mk' H.toLieSubmodule : L →ₗ[R] _) ∈ relativeCochains R M H n := by
-  refine ⟨?_, fun y hy ↦ ?_⟩
+  refine ⟨?_, (LieSubmodule.mem_toSubmodule _).mpr <|
+    (LieModule.mem_maxTrivSubmodule R H _ _).mpr fun y ↦ ?_⟩
   · rw [LieSubmodule.Quotient.coe_mk', ← Submodule.conormalPullback_apply]
     exact Submodule.conormalPullback_mem _ _
-  rw [lie_compLinearMap_mk' ⟨y, hy⟩,
-    (LieModule.mem_maxTrivSubmodule R H _ _).mp η.2 ⟨y, hy⟩, zero_compLinearMap]
+  rw [LieSubalgebra.coe_bracket_of_module, lie_compLinearMap_mk' y,
+    (LieModule.mem_maxTrivSubmodule R H _ _).mp η.2 y, zero_compLinearMap]
 
 /-- Pullback along `L → L ⧸ H`, from `H`-invariant alternating maps on `L ⧸ H` to relative
 cochains. -/
@@ -299,7 +301,7 @@ theorem relativeCochainsPullback_surjective (n : ℕ) :
   refine ⟨⟨η, (LieModule.mem_maxTrivSubmodule R H _ _).mpr fun y ↦ ?_⟩, rfl⟩
   refine compLinearMap_injective _ (LieSubmodule.Quotient.surjective_mk' H.toLieSubmodule) ?_
   dsimp only
-  rw [← lie_compLinearMap_mk', hω.2 y y.2, zero_compLinearMap]
+  rw [← lie_compLinearMap_mk', (mem_relativeCochains_iff.mp hω).2 y y.2, zero_compLinearMap]
 
 /-- **Relative cochains are `Hom_H(⋀ⁿ(L/H), M)`**: pullback along `L → L ⧸ H` identifies the
 `H`-invariant alternating maps on `L ⧸ H` with the relative cochains of `(L, H)`. -/
