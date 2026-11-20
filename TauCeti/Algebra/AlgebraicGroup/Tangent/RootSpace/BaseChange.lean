@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Representation.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Weight.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Maximal
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
+import Mathlib.LinearAlgebra.TensorProduct.Decomposition
 
 /-!
 # Base change of adjoint weight spaces and roots
@@ -43,8 +44,6 @@ For a chosen split maximal torus `T` (`TauCeti.SplitMaximalTorus`) and its base 
 * `Derivation.finrank_adjointWeightSpace_baseChange`: a free weight space keeps its rank.
 * `Derivation.nontrivialAdjointWeights_baseChange`: for faithfully flat `S`, the nontrivial adjoint
   weights are unchanged.
-* `TauCeti.SplitMaximalTorus.baseChange_coordinateMap_hom_one_tmul`: the base-changed torus
-  restricts `1 ⊗ h` to the coefficient image of the restriction of `h`.
 * `TauCeti.SplitMaximalTorus.adjointWeightSpace_baseChange`,
   `TauCeti.SplitMaximalTorus.finrank_adjointWeightSpace_baseChange` and
   `TauCeti.SplitMaximalTorus.nontrivialAdjointWeights_baseChange`: the root spaces, their
@@ -101,29 +100,6 @@ theorem adjointWeightSpace_baseChange (π : H →ₐc[R] MonoidAlgebra R M)
   exact (Submodule.map_comap_eq_of_surjective (cotangentDualBaseChangeEquiv R S H).surjective
     _).symm
 
-omit [Module.Finite S (Bialgebra.CotangentSpace S (S ⊗[R] H))]
-  [Module.Projective S (Bialgebra.CotangentSpace S (S ⊗[R] H))] in
-/-- The inclusion of an adjoint weight space stays injective after base change: weight spaces are
-direct summands of the Lie algebra. -/
-private theorem injective_baseChange_subtype_adjointWeightSpace (π : H →ₐc[R] MonoidAlgebra R M)
-    (α : M) : Function.Injective ((adjointWeightSpace π α).subtype.baseChange S) := by
-  let _ := adjointComodule (R := R) (H := H)
-  -- Weight spaces of the adjoint representation are weight spaces of a comodule.
-  have key (p : Submodule R (Module.Dual R (Bialgebra.CotangentSpace R H)))
-      (hp : p = DiagonalizableGroup.weightSpace _ π.toCoalgHom α) :
-      Function.Injective (p.subtype.baseChange S) := by
-    subst hp
-    exact DiagonalizableGroup.injective_baseChange_subtype_weightSpace S _ _ α
-  exact key _ (adjointWeightSpace_eq_weightSpace π α)
-
-omit [Module.Finite S (Bialgebra.CotangentSpace S (S ⊗[R] H))]
-  [Module.Projective S (Bialgebra.CotangentSpace S (S ⊗[R] H))] in
-private theorem bijective_toBaseChange_adjointWeightSpace (π : H →ₐc[R] MonoidAlgebra R M)
-    (α : M) : Function.Bijective ((adjointWeightSpace π α).toBaseChange S) :=
-  ⟨((adjointWeightSpace π α).subtype.baseChange S).injective_rangeRestrict_iff.mpr
-    (injective_baseChange_subtype_adjointWeightSpace π α),
-    (adjointWeightSpace π α).toBaseChange_surjective S⟩
-
 /-- The scalar extension of the adjoint weight space `𝔤_α` is the adjoint weight space of the
 base change, through the comparison of Lie algebras. No flatness is needed, since `𝔤_α` is a
 direct summand of the Lie algebra. -/
@@ -131,8 +107,9 @@ noncomputable def adjointWeightSpaceBaseChangeEquiv (π : H →ₐc[R] MonoidAlg
     (πS : S ⊗[R] H →ₐc[S] MonoidAlgebra S M)
     (hπ : ∀ h, πS (1 ⊗ₜ h) = MonoidAlgebra.mapAlgHom M (Algebra.ofId R S) (π h)) (α : M) :
     S ⊗[R] adjointWeightSpace π α ≃ₗ[S] adjointWeightSpace πS α :=
-  (LinearEquiv.ofBijective ((adjointWeightSpace π α).toBaseChange S)
-    (bijective_toBaseChange_adjointWeightSpace π α)).trans
+  (LinearEquiv.ofBijective ((adjointWeightSpace π α).toBaseChange S) <| by
+    classical
+    exact DirectSum.IsInternal.toBaseChange_bijective _ (isInternal_adjointWeightSpace π) α).trans
     (((cotangentDualBaseChangeEquiv R S H).submoduleMap _).trans
       (LinearEquiv.ofEq _ _ (adjointWeightSpace_baseChange π πS hπ α).symm))
 
@@ -196,16 +173,6 @@ universe u
 
 variable {R : Type u} [CommRing R] {H : CommHopfAlgCat.{u} R} [Algebra.FiniteType R H] {r : ℕ}
 variable (S : Type u) [CommRing S] [Algebra R S]
-
-/-- The base-changed torus restricts `1 ⊗ h` to the restriction of `h` to the original torus,
-with its coefficients mapped along `R → S`. -/
-theorem baseChange_coordinateMap_hom_one_tmul (T : SplitMaximalTorus R H r) (h : H) :
-    (T.baseChange S).coordinateMap.hom (1 ⊗ₜ h) =
-      MonoidAlgebra.mapAlgHom _ (Algebra.ofId R S) (T.coordinateMap.hom h) := by
-  rw [baseChange_coordinateMap, CommHopfAlgCat.hom_comp, BialgHom.comp_apply,
-    CommHopfAlgCat.baseChangeMap_apply_tmul,
-    DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply,
-    MonoidAlgebra.scalarTensorBialgEquiv_tmul, one_smul]
 
 variable [Module.Finite R (Bialgebra.CotangentSpace R H)]
   [Module.Projective R (Bialgebra.CotangentSpace R H)]

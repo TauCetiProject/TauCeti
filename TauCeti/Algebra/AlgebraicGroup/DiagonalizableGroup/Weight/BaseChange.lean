@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Weight
 public import TauCeti.Algebra.Coalgebra.Comodule.BaseChange
+import Mathlib.LinearAlgebra.TensorProduct.Decomposition
 
 /-!
 # Base change of weight spaces
@@ -45,6 +46,26 @@ public section
 open scoped TensorProduct
 
 namespace TauCeti.DiagonalizableGroup
+
+section Injective
+
+variable {R S : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+variable {C : Type*} [AddCommMonoid C] [Module R C] [Coalgebra R C]
+variable {X : Type*}
+variable {V : Type*} [AddCommMonoid V] [Module R V] [Comodule R C V]
+
+variable (S V) in
+/-- **A weight space is a direct summand**, so its inclusion stays injective after any base
+change, flat or not. -/
+theorem injective_baseChange_subtype_weightSpace (π : C →ₗc[R] MonoidAlgebra R X) (x : X) :
+    Function.Injective ((weightSpace V π x).subtype.baseChange S) := by
+  classical
+  exact ((weightSpace V π x).subtype.baseChange S).injective_rangeRestrict_iff.mp
+    (DirectSum.IsInternal.toBaseChange_injective (S := S) _ (isInternal_weightSpace V π) x)
+
+end Injective
+
+section
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 variable {C : Type*} [AddCommGroup C] [Module R C] [Coalgebra R C]
@@ -97,24 +118,6 @@ theorem weightSpace_baseChange (π : C →ₗc[R] MonoidAlgebra R X)
   exact (congrFun (((isInternal_weightSpace (S ⊗[R] V) πS).submodule_iSupIndep
     |>.le_iff_eq_of_iSup_eq_top htop).mp hle) x).symm
 
-omit [Monoid X] in
-variable (S V) in
-/-- **A weight space is a direct summand**, so its inclusion stays injective after any base
-change, flat or not. -/
-theorem injective_baseChange_subtype_weightSpace (π : C →ₗc[R] MonoidAlgebra R X) (x : X) :
-    Function.Injective ((weightSpace V π x).subtype.baseChange S) := by
-  classical
-  let _ : Comodule R (MonoidAlgebra R X) V := Comodule.Corestrict (M := V) π
-  -- The weight projection is a retraction of the inclusion.
-  have hW : weightSpace V π x = Comodule.weightSpace R X V x :=
-    weightSpace_eq_comoduleWeightSpace V π x
-  let p : V →ₗ[R] weightSpace V π x := (Comodule.weightProj R X V x).codRestrict _
-    fun v ↦ hW ▸ Comodule.weightProj_mem_weightSpace x v
-  have hp : p ∘ₗ (weightSpace V π x).subtype = LinearMap.id := by
-    ext v
-    exact Comodule.weightProj_of_mem (hW ▸ v.2)
-  refine Function.LeftInverse.injective (g := p.baseChange S) fun z ↦ ?_
-  rw [← LinearMap.comp_apply, ← LinearMap.baseChange_comp, hp, LinearMap.baseChange_id,
-    LinearMap.id_apply]
+end
 
 end TauCeti.DiagonalizableGroup

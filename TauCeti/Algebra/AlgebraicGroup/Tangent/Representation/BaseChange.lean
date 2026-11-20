@@ -19,11 +19,9 @@ projective, and let `S` be a commutative `R`-algebra. The Lie algebra of `Spec H
 `R`-module `𝔤 = Module.Dual R (Bialgebra.CotangentSpace R H)`, and that of its base change
 `Spec (S ⊗[R] H)` is `𝔤_S = Module.Dual S (Bialgebra.CotangentSpace S (S ⊗[R] H))`.
 
-`Derivation.cotangentDualBaseChangeEquiv` identifies `S ⊗[R] 𝔤` with `𝔤_S`. It is the composite
-of three existing comparisons: scalar extension of tangent vectors
-(`Derivation.tangentScalarExtensionEquiv`), the identification of `S`-valued tangent vectors of
-`H` with tangent vectors of `S ⊗[R] H` (`TauCeti.tangentBaseChangeLieEquiv`), and cotangent
-duality over `S`. No flatness is needed.
+`Derivation.cotangentDualBaseChangeEquiv` (from
+`TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.BaseChange`) identifies `S ⊗[R] 𝔤` with `𝔤_S`, with
+no flatness assumption.
 
 The main result, `Derivation.map_coact_cotangentDualBaseChangeEquiv`, says that this
 identification is a morphism of comodules from the base change of the adjoint comodule of `H`
@@ -36,9 +34,6 @@ convolution conjugation of tangent vectors (`Derivation.adDerivation`); restrict
 
 ## Main declarations
 
-* `Derivation.cotangentDualBaseChangeEquiv`: the identification `S ⊗[R] 𝔤 ≃ₗ[S] 𝔤_S`.
-* `Derivation.cotangentDualBaseChangeEquiv_tmul_apply_cotangentMap`: its value on the cotangent
-  class of `1 ⊗ h`.
 * `Derivation.adDerivation_apply_one_tmul`: the adjoint action over `S ⊗[R] H`, evaluated on
   `1 ⊗ h`, is the adjoint action over `H` of the restricted point and tangent vector.
 * `Derivation.map_coact_cotangentDualBaseChangeEquiv`: **the identification is colinear for the
@@ -58,49 +53,6 @@ open WithConv TauCeti
 namespace Derivation
 
 variable {R S H : Type*} [CommRing R] [CommRing S] [Algebra R S] [CommRing H]
-
-section Bialgebra
-variable [Bialgebra R H]
-  [Module.Finite R (Bialgebra.CotangentSpace R H)]
-  [Module.Projective R (Bialgebra.CotangentSpace R H)]
-
-variable (R S H) in
-/-- **Base change of the Lie algebra.** The Lie algebra of `Spec (S ⊗[R] H)` over `S` is the
-scalar extension of the Lie algebra of `Spec H`. The comparison extends a tangent vector of `H`
-`S`-linearly to `S ⊗[R] H`, through coefficient-valued tangent vectors. -/
-noncomputable def cotangentDualBaseChangeEquiv :
-    S ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R H) ≃ₗ[S]
-      Module.Dual S (Bialgebra.CotangentSpace S (S ⊗[R] H)) :=
-  (tangentScalarExtensionEquiv (R := R) (A := H) (B := S)).trans
-    ((tangentBaseChangeLieEquiv (R := R) (K := S) (H := H)).toLinearEquiv.trans
-      (cotangentLinearEquiv (R := S) (A := S ⊗[R] H) (B := S)).symm)
-
-/-- Under cotangent duality, the comparison of Lie algebras is the extension of tangent vectors
-from `H` to `S ⊗[R] H`. -/
-@[simp]
-theorem cotangentLinearEquiv_cotangentDualBaseChangeEquiv
-    (z : S ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R H)) :
-    cotangentLinearEquiv (R := S) (A := S ⊗[R] H) (B := S) (cotangentDualBaseChangeEquiv R S H z) =
-      tangentBaseChangeLieEquiv (R := R) (K := S) (H := H)
-        (tangentScalarExtensionEquiv (R := R) (A := H) (B := S) z) := by
-  simp only [cotangentDualBaseChangeEquiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
-    LieEquiv.coe_toLinearEquiv]
-
-/-- The base-changed functional `s ⊗ x` takes the value `s * x (dh)` on the cotangent class of
-`1 ⊗ h`. These classes span the cotangent space of `S ⊗[R] H` over `S`, so this determines the
-comparison. -/
-@[simp]
-theorem cotangentDualBaseChangeEquiv_tmul_apply_cotangentMap (s : S)
-    (x : Module.Dual R (Bialgebra.CotangentSpace R H)) (h : H) :
-    cotangentDualBaseChangeEquiv R S H (s ⊗ₜ x)
-        (Bialgebra.cotangentMap S (S ⊗[R] H) (1 ⊗ₜ h)) =
-      s * algebraMap R S (x (Bialgebra.cotangentMap R H h)) := by
-  rw [← cotangentLinearEquiv_apply_apply, ← algEquivSelf_tangentScalarExtensionEquiv_tmul_apply]
-  simp only [cotangentDualBaseChangeEquiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
-    LieEquiv.coe_toLinearEquiv, tangentBaseChangeLieEquiv_tmul, one_mul,
-    Bialgebra.CounitAlgebra.algEquivSelf_symm_apply]
-
-end Bialgebra
 
 variable [HopfAlgebra R H]
 
