@@ -96,11 +96,8 @@ is the target-independent family of the scalar functions `Pi.single ∞ e`. -/
 private theorem single_inf_const_target (e : ℝ → ℝ) :
     (Pi.single inf (fun t (_ : M) ↦ e t) : Puncture → ℝ → M → ℝ) =
       fun q t _ ↦ (Pi.single inf e : Puncture → ℝ → ℝ) q t := by
-  funext q t x
-  by_cases hq : q = inf
-  · subst hq
-    simp
-  · simp [hq]
+  funext q
+  exact (Pi.apply_single (fun _ (e : ℝ → ℝ) t (_ : M) ↦ e t) (fun _ ↦ rfl) inf e q).symm
 
 /-- **Normalizing the Hamiltonians of the capped cylinder.** Adding functions `d_r` of time to the
 Hamiltonians `Hb r` adds the capped datum of the target-independent Hamiltonians `d_r`. -/
@@ -149,11 +146,8 @@ target-independent Hamiltonians `update d ∞ 0`. -/
 private theorem update_inf_zero_const_target (d : Puncture → ℝ → ℝ) :
     (update (fun q t (_ : M) ↦ d q t) inf 0 : Puncture → ℝ → M → ℝ) =
       fun q t _ ↦ (update d inf 0 : Puncture → ℝ → ℝ) q t := by
-  funext q t x
-  by_cases hq : q = inf
-  · subst hq
-    simp
-  · simp [hq]
+  funext q
+  exact (apply_update (fun _ (e : ℝ → ℝ) t (_ : M) ↦ e t) d inf 0 q).symm
 
 /-- **Normalizing the Hamiltonians of the input-exchange family capped at `0`.** Adding functions
 `d_q` of time to the Hamiltonians `H_q` adds the member of the family of the target-independent
