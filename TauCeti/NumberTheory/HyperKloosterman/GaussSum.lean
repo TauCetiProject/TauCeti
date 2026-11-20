@@ -12,11 +12,11 @@ import TauCeti.NumberTheory.DirichletCharacter.Even
 import TauCeti.NumberTheory.GaussSum.Basic
 
 /-!
-# Character averages of powers of Gauss sums
+# Character sums of powers of Gauss sums
 
 Let `ψ` be an additive character of `ZMod n` and `τ(χ) = gaussSum χ ψ` the Gauss sum of a
 Dirichlet character `χ` of level `n`. Expanding `τ(χ) ^ k` over `k`-tuples and applying the
-orthogonality of characters, the average of `χ⁻¹ (r) τ(χ) ^ k` over all characters selects the
+orthogonality of characters, the sum of `χ⁻¹ (r) τ(χ) ^ k` over all characters selects the
 tuples of product `r`, which gives the hyper-Kloosterman sum:
 
   `∑_χ χ⁻¹ (r) τ(χ) ^ k = φ(n) Kl_k(ψ, r)`.
@@ -28,15 +28,15 @@ and for a nontrivial `ψ`, the trivial character contributes `τ(1) ^ k = (-1) ^
 
 This exact identity is the finite-field step of the first moment of the even prime twists of
 Luo, Rudnick and Sarnak: combined with Deligne's estimate for hyper-Kloosterman sums it bounds the
-average by `(q - 1) k q ^ ((k - 1) / 2) + 1`. Over `ℂ` the factor `χ⁻¹ (r)` is the complex
-conjugate of `χ (r)` (`MulChar.star_apply'`).
+absolute value of this sum by `(q - 1) k q ^ ((k - 1) / 2) + 1`. Over `ℂ` the factor `χ⁻¹ (r)`
+is the complex conjugate of `χ (r)` (`MulChar.star_apply'`).
 
 ## Main statements
 
-* `TauCeti.sum_inv_apply_mul_gaussSum_pow`: the average over all Dirichlet characters.
+* `TauCeti.sum_inv_apply_mul_gaussSum_pow`: the sum over all Dirichlet characters.
 * `TauCeti.two_mul_sum_even_inv_apply_mul_gaussSum_pow`,
-  `TauCeti.sum_even_inv_apply_mul_gaussSum_pow`: the average over the even characters.
-* `TauCeti.sum_even_ne_one_inv_apply_mul_gaussSum_pow`: the average over the even nontrivial
+  `TauCeti.sum_even_inv_apply_mul_gaussSum_pow`: the sum over the even characters.
+* `TauCeti.sum_even_ne_one_inv_apply_mul_gaussSum_pow`: the sum over the even nontrivial
   characters at an odd prime level.
 
 ## References
@@ -57,7 +57,7 @@ section Level
 
 variable {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ)]
 
-/-- **Gauss-power average over all characters.** The average of `χ⁻¹ (r) τ(χ) ^ k` over the
+/-- **Gauss-power sum over all characters.** The sum of `χ⁻¹ (r) τ(χ) ^ k` over the
 Dirichlet characters of level `n` is `φ(n)` times the hyper-Kloosterman sum of rank `k` at
 `r`. -/
 theorem sum_inv_apply_mul_gaussSum_pow (ψ : AddChar (ZMod n) R) (k : ℕ) (r : (ZMod n)ˣ) :
@@ -78,7 +78,7 @@ theorem sum_inv_apply_mul_gaussSum_pow (ψ : AddChar (ZMod n) R) (k : ℕ) (r : 
   simp_rw [eq_comm (a := (r : ZMod n))]
 
 open scoped Classical in
-/-- **Gauss-power average over the even characters.** Twice the average of `χ⁻¹ (r) τ(χ) ^ k`
+/-- **Gauss-power sum over the even characters.** Twice the sum of `χ⁻¹ (r) τ(χ) ^ k`
 over the even Dirichlet characters of level `n` is `φ(n)` times the sum of the
 hyper-Kloosterman sums of rank `k` at `r` and at `-r`. -/
 theorem two_mul_sum_even_inv_apply_mul_gaussSum_pow (ψ : AddChar (ZMod n) R) (k : ℕ)
@@ -93,7 +93,7 @@ theorem two_mul_sum_even_inv_apply_mul_gaussSum_pow (ψ : AddChar (ZMod n) R) (k
   simp_rw [← mul_assoc, h]
 
 open scoped Classical in
-/-- **Gauss-power average over the even characters**, above level two: the average of
+/-- **Gauss-power sum over the even characters**, above level two: the sum of
 `χ⁻¹ (r) τ(χ) ^ k` over the even Dirichlet characters of level `n` is `φ(n) / 2` times the sum of
 the hyper-Kloosterman sums of rank `k` at `r` and at `-r`. -/
 theorem sum_even_inv_apply_mul_gaussSum_pow (hn : 2 < n) (ψ : AddChar (ZMod n) R) (k : ℕ)
@@ -107,8 +107,8 @@ theorem sum_even_inv_apply_mul_gaussSum_pow (hn : 2 < n) (ψ : AddChar (ZMod n) 
 end Level
 
 open scoped Classical in
-/-- **Gauss-power average over the even nontrivial characters.** At an odd prime level `q`
-and for a nontrivial additive character `ψ`, the average of `χ⁻¹ (r) τ(χ) ^ k` over the even
+/-- **Gauss-power sum over the even nontrivial characters.** At an odd prime level `q`
+and for a nontrivial additive character `ψ`, the sum of `χ⁻¹ (r) τ(χ) ^ k` over the even
 Dirichlet characters `χ ≠ 1` is `(q - 1) / 2` times the sum of the hyper-Kloosterman sums of
 rank `k` at `r` and at `-r`, minus the contribution `τ(1) ^ k = (-1) ^ k` of the trivial
 character. -/
