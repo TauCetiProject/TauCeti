@@ -58,7 +58,8 @@ private lemma isClosedUnderColimitsOfShape_pEmpty_overObj_isFinite (X : Scheme.{
   colimitsOfShape_le Y hY := by
     obtain ⟨t⟩ := (ObjectProperty.colimitsOfShape_isEmpty_iff _ _ _).mp hY
     have : IsEmpty Y.left := isInitial_iff_isEmpty.mp ⟨t.isInitialObj (Over.forget X) Y⟩
-    exact (inferInstance : IsFinite Y.hom)
+    rw [MorphismProperty.overObj_iff (W := @IsFinite)]
+    infer_instance
 
 /-- Schemes finite over a fixed scheme `X` are closed under finite coproducts in `Over X`. -/
 instance IsFinite.isClosedUnderFiniteCoproducts_overObj (X : Scheme.{u}) :
@@ -72,7 +73,11 @@ theorem IsFinite.sigmaDesc {X : Scheme.{u}} {ι : Type*} [Finite ι] {Y : ι →
     {f : ∀ i, Y i ⟶ X} (hf : ∀ i, IsFinite (f i)) : IsFinite (Sigma.desc f) :=
   (MorphismProperty.overObj @IsFinite).prop_of_isColimit
     (Over.isColimitLiftCocone _ (Sigma.desc f) (coproductIsCoproduct Y))
-    fun ⟨i⟩ ↦ show IsFinite (Sigma.ι Y i ≫ Sigma.desc f) by simpa using hf i
+    fun ⟨i⟩ ↦ by
+      simp only [Over.lift_obj, NatTrans.comp_app, Functor.const_map_app, colimit.cocone_ι,
+        colimit.ι_desc, Cofan.mk_ι_app]
+      rw [MorphismProperty.overObj_iff (W := @IsFinite)]
+      exact hf i
 
 /-- Objects of `CostructuredArrow L X` whose structure morphism is finite are closed under
 coproducts indexed by a finite type `ι`, provided that `C` has such coproducts and `L` preserves
