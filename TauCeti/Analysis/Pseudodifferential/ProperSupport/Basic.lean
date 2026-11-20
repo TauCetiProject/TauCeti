@@ -64,6 +64,8 @@ spatial support, and they are the pieces that are patched together on manifolds.
   cutoff by a `χ` supported in that ball has this property
   (`TauCeti.Symbol.hasNearDiagonalKernel_kernelCutoff`).
 * `TauCeti.Symbol.isSmoothing_kernelCutoff_sub`: if `χ = 1` near `0`, then `c - b` is smoothing.
+* `TauCeti.Symbol.HasNearDiagonalKernel.quantizeSchwartzValue_kernelCutoff_eq`: a cutoff
+  equal to one on the full propagation ball preserves quantization.
 * `TauCeti.Symbol.HasPropagationLE a ε`: `Op(a) u (x) = 0` whenever `u` vanishes on the ball of
   radius `ε` about `x`. Then `Op(a) u (x)` only depends on `u` near `x`
   (`TauCeti.Symbol.HasPropagationLE.quantizeSchwartzValue_congr`) and `Op(a)` preserves compact
@@ -377,6 +379,16 @@ theorem coefficient_kernelCutoff (b : Symbol n V W m) (x ξ : CoordinateSpace n)
     (kernelCutoff χ b).coefficient (x, ξ) = ∫ θ, 𝓕 χ θ • b.coefficient (x, ξ - (2 * π) • θ) :=
   (rfl)
 
+/-- The kernel cutoff of a spatial multiplier depends only on the cutoff value at zero.
+Completeness is needed only for the actual operator-valued integral. -/
+theorem coefficient_kernelCutoff_ofSpatial [CompleteSpace (V →L[ℂ] W)]
+    (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f)
+    (x ξ : CoordinateSpace n) :
+    (kernelCutoff χ (ofSpatial f hf)).coefficient (x, ξ) = χ 0 • f x := by
+  rw [coefficient_kernelCutoff]
+  simp only [coefficient_ofSpatial]
+  rw [integral_smul_const, SchwartzMap.integral_fourier_eq]
+
 private theorem coefficient_kernelCutoff_eq_cutoffCoeff (b : Symbol n V W m) :
     (kernelCutoff χ b).coefficient = cutoffCoeff χ b (2 * π) :=
   (rfl)
@@ -673,6 +685,26 @@ theorem HasPropagationLE.quantizeSchwartzValue_congr (ha : a.HasPropagationLE ε
     (a.continuous_coefficient_slice x).aestronglyMeasurable hC v (u - v)
   rw [add_sub_cancel] at hadd
   rw [hadd, ha (u - v) x fun y hy ↦ by rw [sub_apply, h y hy, sub_self], add_zero]
+
+/-- A kernel cutoff that is one on the full propagation ball preserves the original operator. -/
+theorem HasNearDiagonalKernel.quantizeSchwartzValue_kernelCutoff_eq
+    [CompleteSpace V] [CompleteSpace W] {R : ℝ} {a : Symbol n V W m}
+    (ha : a.HasNearDiagonalKernel R) (χ : 𝓢(CoordinateSpace n, ℂ))
+    (hχ₁ : Set.EqOn (χ : CoordinateSpace n → ℂ) 1 (Metric.ball 0 R))
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (Symbol.kernelCutoff χ a).coefficient u x =
+      quantizeSchwartzValue a.coefficient u x := by
+  rw [Symbol.quantizeSchwartzValue_kernelCutoff]
+  have hp : a.HasPropagationLE R :=
+    Symbol.hasPropagationLE_iff.mpr (Symbol.hasNearDiagonalKernel_iff.mp ha)
+  apply hp.quantizeSchwartzValue_congr
+  intro y hy
+  have hg : (fun z ↦ χ (x - z)).HasTemperateGrowth :=
+    χ.hasTemperateGrowth.comp ((Function.HasTemperateGrowth.const x).sub
+      Function.HasTemperateGrowth.id')
+  have hmem : x - y ∈ Metric.ball (0 : CoordinateSpace n) R := by
+    simpa only [Metric.mem_ball, dist_eq_norm, sub_zero, norm_sub_rev] using hy
+  simp only [SchwartzMap.smulLeftCLM_apply_apply hg, hχ₁ hmem, Pi.one_apply, one_smul]
 
 /-- If `a` has propagation at most `ε`, then `Op(a) u` is supported within distance `ε` of the
 support of `u`. -/
