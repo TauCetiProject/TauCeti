@@ -13,14 +13,10 @@ import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 
 For a forcing term `f : ℝ → E → F`, the Duhamel heat potential
 `w(t, x) = ∫₀ᵗ (K_{t-s} ⋆ f(s, ·))(x) ds` is built from convolutions in space, so it commutes
-with the operations on the values and the spatial derivatives of the forcing:
-
-* for a continuous linear equivalence `L`, the potential of `L ∘ f` is `L` applied to the
-  potential of `f` (`TauCeti.heatDuhamelPotential_comp_continuousLinearEquiv`);
-* if for `0 ≤ s ≤ t` every `f(s, ·)` has a continuous derivative `f'(s, ·)`, and `f`, `f'` are
-  jointly measurable and bounded there, then at the time `t ≥ 0` the potential `w(t, ·)` is
-  differentiable with derivative the potential of `f'`
-  (`TauCeti.hasFDerivAt_heatDuhamelPotential`).
+with the spatial derivatives of the forcing: if for `0 ≤ s ≤ t` every `f(s, ·)` has a continuous
+derivative `f'(s, ·)`, and `f`, `f'` are jointly measurable and bounded there, then at the time
+`t ≥ 0` the potential `w(t, ·)` is differentiable with derivative the potential of `f'`
+(`TauCeti.hasFDerivAt_heatDuhamelPotential`).
 
 The derivative is taken under the time integral of the Cauchy form
 `w(t, x) = ∫₀ᵗ u_{f(s, ·)}(t - s, x) ds` of the potential
@@ -47,18 +43,8 @@ namespace TauCeti
 open MeasureTheory Real Set Filter Topology
 open scoped Convolution Interval
 
-variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [NormedAddCommGroup G] [NormedSpace ℝ G]
-
-/-- The Duhamel heat potential commutes with a continuous linear equivalence of the values. -/
-theorem heatDuhamelPotential_comp_continuousLinearEquiv (L : F ≃L[ℝ] G) (f : ℝ → E → F)
-    (t : ℝ) (x : E) :
-    heatDuhamelPotential (fun s y ↦ L (f s y)) t x = L (heatDuhamelPotential f t x) := by
-  have hconv : ∀ s, (heatKernel (t - s) ⋆ fun y ↦ L (f s y)) x =
-      L ((heatKernel (t - s) ⋆ f s) x) := fun s ↦ by
-    simp only [convolution_lsmul, ← L.integral_comp_comm, map_smul]
-  simp only [heatDuhamelPotential_def, hconv, intervalIntegral, ← L.integral_comp_comm, map_sub]
 
 /-- **Spatial derivatives of the Duhamel potential.** Let `0 ≤ t`, let `f` and `f'` be jointly
 strongly measurable, and for `0 ≤ s ≤ t` let `f(s, ·)` and `f'(s, ·)` be bounded by `M` and `M'`,

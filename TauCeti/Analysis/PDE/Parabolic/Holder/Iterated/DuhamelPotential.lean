@@ -350,8 +350,8 @@ private theorem hasFDerivAt_heatField {r m : ℕ} (h : m + 2 * r + 1 ≤ k + 2) 
       (heatField hα₀ hα₁ f r (m + 1) (slabMk x t)).curryLeft x := by
   rw [funext fun y ↦ heatField_slabMk hα₀ hα₁ f (by omega) y t,
     heatField_slabMk hα₀ hα₁ f (by omega : m + 1 + 2 * r ≤ k + 2)]
-  exact ContDiff.hasFDerivAt_iteratedFDeriv_iterate_laplacian
-    ((contDiff_slice hα₀ hα₁ f t).of_le (by exact_mod_cast h)) x
+  exact ((contDiff_slice hα₀ hα₁ f t).iterate_laplacian (m := (m + 1 : ℕ))
+    (by norm_cast; omega)).hasFDerivAt_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_self m) x
 
 omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 private theorem hasFDerivAt_forcingField {m i a : ℕ} (h : 2 * i + (m + 2 * a) + 1 ≤ k)
@@ -359,9 +359,9 @@ private theorem hasFDerivAt_forcingField {m i a : ℕ} (h : 2 * i + (m + 2 * a) 
       (forcingField f (m + 1) i a (slabMk x t)).curryLeft x := by
   rw [funext fun y ↦ forcingField_slabMk f (by omega) y t,
     forcingField_slabMk f (by omega : 2 * i + (m + 1 + 2 * a) ≤ k)]
-  exact ContDiff.hasFDerivAt_iteratedFDeriv_iterate_laplacian
-    ((f.hasFTaylorSeriesUpTo_mixedDerivL i t).contDiff.of_le
-      (Nat.cast_le.2 (by omega : m + 2 * a + 1 ≤ k - 2 * i))) x
+  exact ((f.hasFTaylorSeriesUpTo_mixedDerivL i t).contDiff.iterate_laplacian (m := (m + 1 : ℕ))
+    (by norm_cast; exact Nat.cast_le.2 (by omega))).hasFDerivAt_iteratedFDeriv
+      (by exact_mod_cast Nat.lt_succ_self m) x
 
 private theorem hasFDerivAt_field {r m : ℕ} (h : 2 * r + m + 1 ≤ k + 2) (t : Icc (0 : ℝ) T)
     (x : E) : HasFDerivAt (fun y ↦ field hα₀ hα₁ f r m (slabMk y t))
