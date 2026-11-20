@@ -228,23 +228,14 @@ theorem mpullback_circleExp_circleAngularForm :
       mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) := by
   funext t
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  -- The derivative of the parametrization sends a real number `w` to `w` times the velocity.
-  have hd (w : ℝ) : mfderiv 𝓘(ℝ) (𝓡 1) Circle.exp t w =
-      w • Manifold.curveVelocity (𝓡 1) Circle.exp t := by
-    rw [Manifold.curveVelocity_apply]
-    -- On the tangent space `ℝ`, the scalar action is multiplication, so `w • 1 = w`.
-    exact (congrArg _ (mul_one w).symm).trans ((mfderiv 𝓘(ℝ) (𝓡 1) Circle.exp t).map_smul w 1)
   -- The tangent vector `v 0` of `ℝ` is a real number `w`.
   obtain ⟨w, hw⟩ : ∃ w : ℝ, v 0 = w := ⟨v 0, rfl⟩
   have hv : (fun i ↦ mfderiv 𝓘(ℝ) (𝓡 1) Circle.exp t (v i)) =
       fun _ ↦ w • Manifold.curveVelocity (𝓡 1) Circle.exp t := by
     funext i
-    rw [Subsingleton.elim i 0, hw, hd]
-  rw [mpullback_apply, hv, circleAngularForm_apply_smul_curveVelocity_circleExp]
-  simp only [mextDeriv_ofFunction, mvfderiv_eq_fderiv, fderiv_id,
-    ContinuousAlternatingMap.ofSubsingleton_apply_apply, hw]
-  -- Tangent vectors of `ℝ` are real numbers, on which the identity of `ℝ` acts.
-  rfl
+    rw [Subsingleton.elim i 0, hw, Manifold.mfderiv_apply_eq_smul_curveVelocity]
+  rw [mpullback_apply, hv, circleAngularForm_apply_smul_curveVelocity_circleExp,
+    mextDeriv_ofFunction_id_apply, hw]
 
 /-! The parametrization `z ↦ exp (z₀ i)` of the circle by the Euclidean line, used to compute
 the integral of the angular form. -/
@@ -428,9 +419,9 @@ theorem mpullback_toCircle_circleAngularForm :
     mpullback_circleExp_circleAngularForm]
   funext t
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  rw [mpullback_apply, ((hasFDerivAt_id t).const_mul c).hasMFDerivAt.mfderiv]
-  simp only [mextDeriv_ofFunction, mvfderiv_eq_fderiv, fderiv_id, Pi.smul_apply,
-    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.ofSubsingleton_apply_apply]
+  rw [mpullback_apply, ((hasFDerivAt_id t).const_mul c).hasMFDerivAt.mfderiv, Pi.smul_apply,
+    ContinuousAlternatingMap.smul_apply, mextDeriv_ofFunction_id_apply,
+    mextDeriv_ofFunction_id_apply]
   -- Tangent vectors of `ℝ` are real numbers, on which `c • id` acts by multiplication by `c`.
   rfl
 
@@ -470,10 +461,7 @@ theorem mpullback_homeomorphCircle_symm_timeForm :
       (p / (2 * π)) • mpullback 𝓘(ℝ) (𝓡 1) (toCircle : AddCircle p → Circle) circleAngularForm := by
     rw [mpullback_toCircle_circleAngularForm, smul_smul, hc, one_smul]
   -- The inverse homeomorphism is the inverse of the diffeomorphism `toCircle`.
-  have hid : ⇑(diffeomorphCircle p ω) ∘ ⇑(diffeomorphCircle p ω).symm = id :=
-    funext (diffeomorphCircle p ω).apply_symm_apply
   rw [ht, mpullback_smul, ← coe_diffeomorphCircle p ω, ← coe_diffeomorphCircle_symm p ω,
-    ← mpullback_comp ((diffeomorphCircle p ω).symm.contMDiff.mdifferentiable (by simp))
-      ((diffeomorphCircle p ω).contMDiff.mdifferentiable (by simp)), hid, mpullback_id]
+    mpullback_symm_mpullback (by simp)]
 
 end AddCircle

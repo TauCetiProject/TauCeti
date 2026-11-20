@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Geometry.Manifold.Instances.Sphere
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
@@ -67,33 +67,19 @@ private theorem contMDiff_circleExp_const_mul (n : ℕ∞ω) :
   contMDiff_circleExp.comp (contDiff_const.mul contDiff_id).contMDiff
 
 /-- The rescaled standard parametrization `t ↦ exp (2π i t / p)` of the unit circle has injective
-differential at every point: its velocity in `ℂ` is `(2π / p) i exp (2π i t / p) ≠ 0`. -/
+differential at every point: it is `Circle.exp`, whose differential is injective, after
+multiplication by `2π / p ≠ 0`. -/
 private theorem injective_mfderiv_circleExp_const_mul (t : ℝ) :
     Injective (mfderiv 𝓘(ℝ) (𝓡 1) (fun s : ℝ ↦ Circle.exp (2 * π / p * s)) t) := by
   set c : ℝ := 2 * π / p
   have hc : c ≠ 0 := div_ne_zero (by positivity) (Fact.out : 0 < p).ne'
-  have hκ : MDifferentiableAt 𝓘(ℝ) (𝓡 1) (fun s : ℝ ↦ Circle.exp (c * s)) t :=
-    (contMDiff_circleExp_const_mul p 1).mdifferentiableAt one_ne_zero
-  have hcoe : MDifferentiableAt (𝓡 1) 𝓘(ℝ, ℂ) (fun z : Circle ↦ (z : ℂ)) (Circle.exp (c * t)) :=
-    (contMDiff_coe_sphere (m := 1)).mdifferentiableAt one_ne_zero
-  -- In `ℂ`, the parametrization has the nonzero velocity `z = c i exp (c i t)`.
-  set z : ℂ := c • (Complex.I * ((Circle.exp (c * t) : Circle) : ℂ)) with hz
-  have hne : z ≠ 0 := smul_ne_zero hc (mul_ne_zero Complex.I_ne_zero (Circle.coe_ne_zero _))
-  have hd : HasFDerivAt (fun s : ℝ ↦ ((Circle.exp (c * s) : Circle) : ℂ))
-      ((1 : ℝ →L[ℝ] ℝ).smulRight z) t :=
-    ((hasDerivAt_coe_circleExp (c * t)).scomp t ((hasDerivAt_id t).const_mul c)).hasFDerivAt
-      |>.congr_fderiv (by ext; simp [hz])
-  -- A real number killed by the derivative `w ↦ w • z` of the parametrization in `ℂ` is zero.
-  have key (w : ℝ) (hw : ((1 : ℝ →L[ℝ] ℝ).smulRight z) w = 0) : w = 0 := by
-    rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self] at hw
-    exact (smul_eq_zero.mp hw).resolve_right hne
-  refine (injective_iff_map_eq_zero _).mpr fun v hv ↦ ?_
-  have h0 : mfderiv 𝓘(ℝ) 𝓘(ℝ, ℂ) ((fun z : Circle ↦ (z : ℂ)) ∘ fun s : ℝ ↦ Circle.exp (c * s)) t
-      v = 0 := by
-    rw [mfderiv_comp t hcoe hκ, ContinuousLinearMap.comp_apply, hv, map_zero]
-  rw [Function.comp_def, hd.hasMFDerivAt.mfderiv] at h0
-  -- Tangent vectors of `ℝ` are real numbers.
-  exact key v h0
+  have hd : mfderiv 𝓘(ℝ) (𝓡 1) (fun s : ℝ ↦ Circle.exp (c * s)) t =
+      (mfderiv 𝓘(ℝ) (𝓡 1) Circle.exp (c * t)).comp (c • ContinuousLinearMap.id ℝ ℝ) :=
+    ((contMDiff_circleExp.mdifferentiableAt (n := 1) one_ne_zero).hasMFDerivAt.comp t
+      ((hasFDerivAt_id t).const_mul c).hasMFDerivAt).mfderiv
+  rw [hd]
+  -- The composite acts as `Circle.exp`'s differential after multiplication by `c`.
+  exact (injective_mfderiv_circleExp (c * t)).comp (smul_right_injective ℝ hc)
 
 /-- The map `toCircle : AddCircle p → Circle` is `C^n` for every `n`. -/
 theorem contMDiff_toCircle (n : ℕ∞ω) :
