@@ -89,6 +89,8 @@ contribution small (`TauCeti.abs_integral_mul_mul_div_mul_sqrt_sub_sq_le`). Away
 * `TauCeti.sphericalPendulumRotationAngle_eq_setIntegral`: `Θ(h, j)` as an integral over the
   heights of the fibre `F⁻¹(h, j)`.
 * `TauCeti.sphericalPendulumRotationAngle_neg_right`: `Θ(h, -j) = -Θ(h, j)`.
+* `TauCeti.sphericalPendulumRotationAngle_eq_integral`: `Θ(h, j)` as an integral between the
+  turning points.
 * `TauCeti.tendsto_uncurry_sphericalPendulumRotationAngle_nhdsWithin_snd_pos_of_lt_one` and its
   three companions: the one-sided limits of `Θ(h, j)` as `(h, j) → (h₀, 0)`.
 * `TauCeti.tendsto_sphericalPendulumRotationAngle_nhdsGT_of_lt_one` and its three companions: the
@@ -159,6 +161,16 @@ theorem sphericalPendulumRotationAngle_neg_right (h j : ℝ) :
 theorem sphericalPendulumRotationAngle_zero_right (h : ℝ) :
     sphericalPendulumRotationAngle h 0 = 0 := by
   simp [sphericalPendulumRotationAngle_def]
+
+/-- Above the curve of relative equilibria, the rotation angle is twice the integral of
+`j / ((1 - z²) √(2 (h - z) (1 - z²) - j²))` between the turning points `z₋ < z₊`. -/
+theorem sphericalPendulumRotationAngle_eq_integral {h j z₀ : ℝ} (hj : j ≠ 0)
+    (hz₀ : z₀ ∈ Ioo (-1) 1) (hV : sphericalPendulumEffectivePotential j z₀ < h) :
+    sphericalPendulumRotationAngle h j =
+      2 * ∫ z in (sphericalPendulumLowerTurningPoint h j)..(sphericalPendulumUpperTurningPoint h j),
+        j / ((1 - z ^ 2) * √(2 * (h - z) * (1 - z ^ 2) - j ^ 2)) := by
+  simp only [sphericalPendulumRotationAngle_def, ← div_div]
+  rw [integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq hj hz₀ hV fun z ↦ j / (1 - z ^ 2)]
 
 /-! ### The limits of the rotation angle as `j → 0` -/
 

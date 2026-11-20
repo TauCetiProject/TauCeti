@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The turning points of the spherical pendulum
@@ -43,6 +44,8 @@ the pendulum, such as its rotation angle, as integrals with continuous integrand
 * `TauCeti.two_mul_sub_mul_one_sub_sq_sub_sq_pos`,
   `TauCeti.two_mul_sub_mul_one_sub_sq_sub_sq_nonpos`: the radicand is positive strictly between the
   turning points and nonpositive elsewhere below the north pole.
+* `TauCeti.integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq`: integrals over `(-1, 1)`
+  against the inverse square root of the radicand run between the turning points.
 * `TauCeti.continuousOn_sphericalPendulumLowerTurningPoint`,
   `TauCeti.continuousOn_sphericalPendulumUpperTurningPoint`: continuity of the turning points.
 
@@ -310,6 +313,25 @@ theorem two_mul_sub_mul_one_sub_sq_sub_sq_nonpos (hj : j ≠ 0) (hz₀ : z₀ �
   · nlinarith [mul_nonneg (mul_nonneg (sub_nonneg.2 hza) (by linarith : (0 : ℝ) ≤ b - z)) hz3.le]
   · have hbz : b ≤ z := not_lt.1 fun hzb ↦ hzab ⟨hza, hzb⟩
     nlinarith [mul_nonneg (mul_nonneg (sub_nonneg.2 hbz) (by linarith : (0 : ℝ) ≤ z - a)) hz3.le]
+
+/-- **Height quadratures run between the turning points.** Above the curve of relative equilibria,
+the square root of the radicand `2 (h - z) (1 - z²) - j²` vanishes at every height of `[-1, 1]`
+outside the open interval between the turning points. So the integral over `(-1, 1)` of any
+function divided by it is the integral from `z₋` to `z₊`. -/
+theorem integral_div_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq_eq (hj : j ≠ 0)
+    (hz₀ : z₀ ∈ Ioo (-1) 1) (hV : sphericalPendulumEffectivePotential j z₀ < h) (g : ℝ → ℝ) :
+    ∫ z in (-1)..1, g z / √(2 * (h - z) * (1 - z ^ 2) - j ^ 2) =
+      ∫ z in (sphericalPendulumLowerTurningPoint h j)..(sphericalPendulumUpperTurningPoint h j),
+        g z / √(2 * (h - z) * (1 - z ^ 2) - j ^ 2) := by
+  have ha := neg_one_lt_sphericalPendulumLowerTurningPoint hj hz₀ hV
+  have hb := sphericalPendulumUpperTurningPoint_lt_one hj hz₀ hV
+  have hab := sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV
+  rw [intervalIntegral.integral_of_le (by norm_num), intervalIntegral.integral_of_le hab.le,
+    ← MeasureTheory.integral_Icc_eq_integral_Ioc, MeasureTheory.integral_Ioc_eq_integral_Ioo,
+    MeasureTheory.setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_Icc
+      (s := Ioo _ _) fun z hz ↦ ⟨ha.le.trans hz.1.le, hz.2.le.trans hb.le⟩]
+  rintro z ⟨hz, hzab⟩
+  rw [Real.sqrt_eq_zero'.2 (two_mul_sub_mul_one_sub_sq_sub_sq_nonpos hj hz₀ hV hz.2 hzab), div_zero]
 
 /-- **The heights of a fibre.** Above the curve of relative equilibria, the heights `q₃` of the
 points of the fibre `F⁻¹(h, j)` of the energy–momentum map form the interval `[z₋, z₊]` between
