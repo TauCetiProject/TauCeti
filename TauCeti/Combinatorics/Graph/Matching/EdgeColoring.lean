@@ -21,6 +21,8 @@ into `k` perfect matchings, colours by the matching indices, and restricts the c
 the original graph. The matching-partition and chromatic-number formulations are included as
 equivalent interfaces. Consequently the least number of colours is the largest number of edges at
 a vertex, which is zero for the empty graph; for a simple graph this is its maximum degree.
+For a finite bipartite simple graph the theorem is also stated through colourings of Mathlib's
+`SimpleGraph.lineGraph`.
 
 ## References
 
@@ -111,29 +113,12 @@ namespace SimpleGraph
 
 variable {α : Type u} {k : ℕ}
 
-/-- Kőnig's edge-colouring theorem for a finite simple graph with a displayed covering
-bipartition. Its multigraph edge-colourings by `Fin k` exist exactly when the maximum degree of
-the simple graph is at most `k`. -/
-theorem nonempty_edgeColoring_ofSimpleGraph_iff_maxDegree_le (H : SimpleGraph α) [Fintype α]
-    [DecidableRel H.Adj] {L R : Finset ↥(Graph.ofSimpleGraph H).vertexSet}
-    (hLR : (Graph.ofSimpleGraph H).IsBipartition L R) :
-    Nonempty ((Graph.ofSimpleGraph H).EdgeColoring (Fin k)) ↔ H.maxDegree ≤ k := by
-  rw [hLR.nonempty_edgeColoring_iff_forall_incidenceCount_le]
-  constructor
-  · intro h
-    apply H.maxDegree_le_of_forall_degree_le
-    intro x
-    simpa using h x (by simp)
-  · intro hk x _
-    simpa using (H.degree_le_maxDegree x).trans hk
-
-/-- **Kőnig's line-colouring theorem for simple graphs.** For a finite simple graph with a
-displayed covering bipartition, the chromatic number of its line graph is its maximum degree.
-The maximum degree, and hence the chromatic number, is zero on the empty vertex type. -/
-theorem chromaticNumber_lineGraph_eq_maxDegree (H : SimpleGraph α) [Fintype α]
-    [DecidableRel H.Adj] {L R : Finset ↥(Graph.ofSimpleGraph H).vertexSet}
-    (hLR : (Graph.ofSimpleGraph H).IsBipartition L R) :
-    H.lineGraph.chromaticNumber = H.maxDegree := by
+/-- **Kőnig's line-colouring theorem.** The chromatic index of a finite bipartite simple graph
+is its maximum degree. Both are zero when the vertex type is empty. -/
+theorem IsBipartite.chromaticIndex_eq_maxDegree {H : SimpleGraph α} [Fintype α]
+    [DecidableRel H.Adj] (hH : H.IsBipartite) :
+    H.chromaticIndex = H.maxDegree := by
+  obtain ⟨L, R, hLR⟩ := hH.exists_isBipartition_ofSimpleGraph
   rw [← Graph.chromaticNumber_lineGraph_ofSimpleGraph]
   apply le_antisymm
   · exact (hLR.chromaticNumber_lineGraph_le_iff_forall_incidenceCount_le).2
@@ -144,5 +129,12 @@ theorem chromaticNumber_lineGraph_eq_maxDegree (H : SimpleGraph α) [Fintype α]
       obtain ⟨x, hx⟩ := H.exists_maximal_degree_vertex
       rw [hx, ← Graph.incidenceCount_ofSimpleGraph]
       exact Graph.incidenceCount_le_chromaticNumber_lineGraph _ x
+
+/-- **Kőnig's edge-colouring theorem.** A finite bipartite simple graph is edge-colourable by
+`k` colours exactly when its maximum degree is at most `k`. -/
+theorem IsBipartite.edgeColorable_iff_maxDegree_le {H : SimpleGraph α} [Fintype α]
+    [DecidableRel H.Adj] (hH : H.IsBipartite) :
+    H.EdgeColorable k ↔ H.maxDegree ≤ k := by
+  rw [← chromaticIndex_le_iff_edgeColorable, hH.chromaticIndex_eq_maxDegree, Nat.cast_le]
 
 end SimpleGraph

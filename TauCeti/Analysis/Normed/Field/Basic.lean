@@ -38,8 +38,9 @@ A normed field whose norm takes every positive real value is densely normed
 norms have closure `[0, ∞)` (`NormedField.closure_image_norm_ne_zero`,
 `NormedField.closure_range_norm`).
 
-Finally, `TauCeti.norm_sub_div_le_of_dist_div_le` turns a bound on the ratio `F / w` near `c⁻¹`
-into a relative error bound for `F - w / c`.
+Finally, `NormedField.iSup_eNorm_eq_top` records that the extended norms of a nontrivially normed
+field have supremum `⊤`, and `TauCeti.norm_sub_div_le_of_dist_div_le` turns a bound on the ratio
+`F / w` near `c⁻¹` into a relative error bound for `F - w / c`.
 -/
 
 public section
@@ -52,6 +53,13 @@ theorem TauCeti.norm_inv_lt_one_of_one_lt_norm {K : Type*} [NormedDivisionRing K
 namespace NormedField
 
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜]
+
+/-- Over a nontrivially normed field `𝕜`, the norms are unbounded, so `⨆ x : 𝕜, ‖x‖ₑ = ⊤`. -/
+@[simp]
+theorem iSup_eNorm_eq_top : (⨆ x : 𝕜, ‖x‖ₑ) = ⊤ := by
+  refine ENNReal.eq_top_of_forall_nnreal_le fun r ↦ ?_
+  obtain ⟨x, hx⟩ := exists_lt_nnNorm 𝕜 r
+  exact (ENNReal.coe_le_coe.mpr hx.le).trans (le_iSup (fun y : 𝕜 ↦ ‖y‖ₑ) x)
 
 /-- **Two radii `0 < r < s` are separated by a norm after raising to a power**: there are `m : ℕ`
 and `c : 𝕜` with `rᵐ < ‖c‖ < sᵐ`. -/

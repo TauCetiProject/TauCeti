@@ -395,7 +395,7 @@ theorem pbwHomogeneousSymmetrization_mem_center_iff (n : ℕ) (hn : IsUnit (n.fa
   refine ⟨fun h ↦ mem_lieInvariants.mpr fun x ↦ ?_,
     pbwHomogeneousSymmetrization_mem_center R L n hn⟩
   let q : homogeneousSubmodule R L n :=
-    ⟨lieModuleDerivation R L L x p, lieModuleDerivation_mem_homogeneousSubmodule R L L x p.2⟩
+    ⟨lieModuleDerivation R L L x p, lieModuleDerivation_mem_homogeneousSubmodule R L L x p.property⟩
   have hq : pbwHomogeneousSymmetrization R L n hn q = pbwHomogeneousSymmetrization R L n hn 0 := by
     rw [← lie_ι_pbwHomogeneousSymmetrization R L n hn x rfl, ← lie_skew,
       (mem_center_iff_forall_lie_ι R L).mp h x, neg_zero, map_zero]

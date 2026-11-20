@@ -19,6 +19,7 @@ import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The second derivative as a derivative
@@ -91,6 +92,8 @@ Morse-theoretic definitions that use them.
 * `TauCeti.fderiv_fderiv_fderiv_apply_comm`: the third derivative of a sufficiently smooth map is
   symmetric in its last two directions.
 * `TauCeti.fderiv_fderiv_const_smul`: the second derivative of a constant multiple.
+* `TauCeti.fderiv_fderiv_comp_add_right`: the second derivative of a translate is the translate
+  of the second derivative.
 * `TauCeti.fderiv_fderiv_smul_const_apply`: the second derivative of `y ↦ P y • v` is that of the
   scalar function `P`, times `v`.
 * `TauCeti.fderiv_fderiv_sub_clm`: subtracting a continuous linear map does not change the second
@@ -106,6 +109,8 @@ Morse-theoretic definitions that use them.
   cutoff, at every point.
 * `TauCeti.fderiv_fderiv_apply_eq_smul_iteratedDeriv`: in one variable the second derivative is
   the second iterated derivative.
+* `TauCeti.isInvertible_fderiv_fderiv_iff_iteratedDeriv_two_ne_zero`: in one variable the second
+  derivative is invertible exactly when the second iterated derivative is nonzero.
 * `TauCeti.fderiv_scalar_comp_eq_zero_iff`: post-composition with a scalar function whose
   derivative is nonzero preserves vanishing of the differential.
 * `TauCeti.fderiv_fderiv_scalar_comp_apply`: the second-order chain rule through a function of
@@ -403,16 +408,24 @@ theorem fderiv_fderiv_const_smul (c : 𝕜) (g : E → F) (x : E) :
     fderiv 𝕜 (fderiv 𝕜 (c • g)) x = c • fderiv 𝕜 (fderiv 𝕜 g) x := by
   rw [fderiv_const_smul_field, fderiv_const_smul_field (𝕜 := 𝕜) (f := fderiv 𝕜 g), Pi.smul_apply]
 
+/-- The second derivative of a translate `v ↦ φ (v + y)` at `w` is that of `φ` at `w + y`. No
+regularity is needed. -/
+theorem fderiv_fderiv_comp_add_right (φ : E → F) (y w : E) :
+    fderiv 𝕜 (fderiv 𝕜 fun v ↦ φ (v + y)) w = fderiv 𝕜 (fderiv 𝕜 φ) (w + y) := by
+  have hD : (fderiv 𝕜 fun v ↦ φ (v + y)) = fun v ↦ fderiv 𝕜 φ (v + y) :=
+    funext fun _ ↦ fderiv_comp_add_right y
+  rw [hD, fderiv_comp_add_right]
+
 /-- The second derivative of `y ↦ P y • v` is that of the scalar function `P`, times `v`. -/
 theorem fderiv_fderiv_smul_const_apply {P : E → 𝕜} {x : E} (hP : ContDiffAt 𝕜 2 P x) (v : F)
     (u w : E) :
     fderiv 𝕜 (fderiv 𝕜 fun y ↦ P y • v) x u w = fderiv 𝕜 (fderiv 𝕜 P) x u w • v := by
   have hfd : fderiv 𝕜 (fun y ↦ P y • v) =ᶠ[𝓝 x]
-      fun y ↦ (ContinuousLinearMap.smulRightL 𝕜 E F).flip v (fderiv 𝕜 P y) := by
+      fun y ↦ (StrongDual.smulRightL 𝕜 E F).flip v (fderiv 𝕜 P y) := by
     filter_upwards [hP.eventually (by simp)] with y hy
     exact fderiv_smul_const (hy.differentiableAt (by simp)) v
   rw [hfd.fderiv_eq, fderiv_fun_comp x
-    ((ContinuousLinearMap.smulRightL 𝕜 E F).flip v).differentiableAt
+    ((StrongDual.smulRightL 𝕜 E F).flip v).differentiableAt
     (hP.hasFDerivAt_fderiv le_rfl).differentiableAt]
   simp
 
@@ -533,6 +546,18 @@ theorem fderiv_fderiv_apply_eq_smul_iteratedDeriv (φ : 𝕜 → F) (t a b : �
   have h := iteratedFDeriv_two_apply (𝕜 := 𝕜) φ t ![a, b]
   rw [iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod] at h
   simpa [Fin.prod_univ_two] using h.symm
+
+/-- The second derivative of a scalar function of one variable, a map from `𝕜` to the linear forms
+on `𝕜`, is invertible exactly when the second iterated derivative is nonzero. -/
+theorem isInvertible_fderiv_fderiv_iff_iteratedDeriv_two_ne_zero {φ : 𝕜 → 𝕜} {t : 𝕜} :
+    (fderiv 𝕜 (fderiv 𝕜 φ) t).IsInvertible ↔ iteratedDeriv 2 φ t ≠ 0 := by
+  have h : fderiv 𝕜 (fderiv 𝕜 φ) t =
+      (ContinuousLinearMap.toSpanSingletonCLE : 𝕜 ≃L[𝕜] 𝕜 →L[𝕜] 𝕜) ∘L
+        ContinuousLinearMap.toSpanSingleton 𝕜 (iteratedDeriv 2 φ t) := by
+    ext
+    simpa using fderiv_fderiv_apply_eq_smul_iteratedDeriv φ t 1 1
+  rw [h, ContinuousLinearMap.isInvertible_equiv_comp,
+    ContinuousLinearMap.isInvertible_toSpanSingleton_iff]
 
 /-- Scalar post-composition with nonzero derivative preserves criticality. -/
 @[simp]

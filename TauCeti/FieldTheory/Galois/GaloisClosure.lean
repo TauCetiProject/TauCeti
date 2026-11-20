@@ -89,7 +89,7 @@ theorem fixingSubgroup_normalClosure [Normal k K] (L : IntermediateField k K) :
     refine normal_iff_forall_map_le'.mpr ?_
     rintro σ _ ⟨x, hx, rfl⟩ τ
     exact (AlgEquiv.symm_apply_eq σ).mp
-      (hx ⟨σ⁻¹ * τ * σ, (Subgroup.normalCore_normal _).conj_mem' τ.1 τ.2 σ⟩)
+      (hx ⟨σ⁻¹ * τ * σ, (Subgroup.normalCore_normal _).conj_mem' τ.val τ.property σ⟩)
   -- It contains `L`, so it contains the normal closure of `L`.
   rw [← le_fixedField_iff_le_fixingSubgroup, normalClosure_le_iff_of_normal,
     le_fixedField_iff_le_fixingSubgroup]

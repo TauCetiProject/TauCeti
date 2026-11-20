@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.NumberOfRoots
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.Datum
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Datum
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.Basic
@@ -346,7 +346,6 @@ zero-based value. -/
 @[simp]
 theorem card_support_simplyConnectedBase (t : DynkinType) (ht : t.Valid) :
     (t.simplyConnectedBase ht).support.card = t.rank := by
-  classical
   rw [← Fintype.card_coe,
     ← Fintype.card_congr (t.simpleSupportEquivSimplyConnectedBase ht), Fintype.card_fin]
 
@@ -449,21 +448,8 @@ theorem hasCartanType_simplyConnectedRootDatum (t : DynkinType) (ht : t.Valid) :
 /-- The coroots of the pinned datum span the cocharacter lattice. This is the simply connected
 lattice condition consumed by the pinned Chevalley--Demazure construction. -/
 theorem span_coroot_simplyConnectedRootDatum (t : DynkinType) (ht : t.Valid) :
-    Submodule.span ℤ (Set.range (t.simplyConnectedRootDatum ht).coroot) = ⊤ := by
-  cases t with
-  | A n => exact corootSpan_typeASimplyConnectedRootDatum_eq_top n
-  | B n => exact corootSpan_typeBSimplyConnectedRootDatum_eq_top n
-  | C n => exact corootSpan_typeCSimplyConnectedRootDatum_eq_top n
-  | D n => exact corootSpan_typeDSimplyConnectedRootDatum_eq_top n (valid_D.mp ht)
-  | E6 => exact corootSpan_e6SimplyConnectedRootDatum_eq_top
-  | E7 => exact corootSpan_e7SimplyConnectedRootDatum_eq_top
-  | E8 => exact corootSpan_e8SimplyConnectedRootDatum_eq_top
-  | F4 =>
-    exact simplyConnectedRootDatum_F4 ht ▸
-      RootPairing.IsRootSystem.span_coroot_eq_top (P := f4SimplyConnectedRootDatum)
-  | G2 =>
-    exact simplyConnectedRootDatum_G2 ht ▸
-      RootPairing.IsRootSystem.span_coroot_eq_top (P := g2SimplyConnectedRootDatum)
+    Submodule.span ℤ (Set.range (t.simplyConnectedRootDatum ht).coroot) = ⊤ :=
+  corootSpan_eq_top_of_coroot_eq_single (coroot_simpleIndex t ht)
 
 end
 
