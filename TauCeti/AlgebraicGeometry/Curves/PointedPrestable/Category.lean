@@ -149,6 +149,14 @@ def toOver : PointedPrestableFamily S n ⥤ Over S where
 instance : (toOver (S := S) (n := n)).Faithful where
   map_injective h := hom_ext congr(($h).left)
 
+/-- The total-space isomorphism induced by an isomorphism `e : P ≅ Q` via `toOver` commutes with
+the `Scheme.Over` structure morphisms. -/
+theorem forget_mapIso_toOver_hom_comp_over (e : P ≅ Q) :
+    ((Over.forget S).mapIso (toOver.mapIso e) : P.total ≅ Q.total).hom ≫ (Q.total ↘ S) =
+      P.total ↘ S := by
+  simp only [Functor.mapIso_hom, Over.forget_map, over_eq_toBase]
+  exact Over.w (toOver.map e.hom)
+
 /-- An isomorphism of pointed prestable families from an isomorphism of total spaces over `S`
 carrying each marking to the corresponding marking. -/
 def isoMk (e : P.total ≅ Q.total) (he : e.hom ≫ Q.toBase = P.toBase)

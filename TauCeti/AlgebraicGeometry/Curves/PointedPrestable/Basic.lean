@@ -114,6 +114,28 @@ instance isSeparated_total [S.IsSeparated] : P.total.IsSeparated :=
 theorem marking_apply_ne {i j : Fin n} (hij : i ≠ j) (s : S) : P.marking i s ≠ P.marking j s :=
   fun h ↦ Set.disjoint_left.mp (P.pairwise_disjoint_range hij) ⟨s, rfl⟩ ⟨s, h.symm⟩
 
+/-- Evaluating the markings of `P` at any point of the base is injective. -/
+theorem marking_apply_injective (s : S) : Function.Injective (fun i ↦ P.marking i s) :=
+  fun _ _ h ↦ Classical.not_not.mp fun hij ↦ P.marking_apply_ne hij s h
+
+/-- Viewed through `P.instOverTotal`, the structure morphism `P.total ↘ S` is a prestable family. -/
+instance prestableFamily_over : PrestableFamily (P.total ↘ S) :=
+  P.over_eq_toBase.symm ▸ P.prestableFamily
+
+/-- The total space of a pointed prestable family over a connected base is connected, its structure
+morphism being open and geometrically connected. -/
+instance connectedSpace_total [ConnectedSpace S] : ConnectedSpace P.total :=
+  GeometricallyConnected.connectedSpace P.toBase P.toBase.isOpenMap
+
+/-- Each marking lands in the smooth locus of `P.total ↘ S`. -/
+theorem range_marking_subset_smoothLocus_over (i : Fin n) :
+    Set.range (P.marking i) ⊆ (P.total ↘ S).smoothLocus := by
+  have aux : ∀ (f : P.total ⟶ S) [LocallyOfFinitePresentation f],
+      f = P.toBase → Set.range (P.marking i) ⊆ f.smoothLocus := by
+    rintro _ _ rfl
+    exact P.range_marking_subset_smoothLocus i
+  exact aux (P.total ↘ S) P.over_eq_toBase
+
 /-- Each marking is a closed immersion, being a section of a separated morphism. -/
 instance isClosedImmersion_marking (i : Fin n) : IsClosedImmersion (P.marking i) :=
   (P.marking i).isClosedImmersion_of_comp_eq_id (P.marking_comp_toBase i)

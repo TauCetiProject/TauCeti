@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Geometrically.Irreducible
 public import Mathlib.AlgebraicGeometry.Geometrically.Connected
+public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.RingTheory.Spectrum.Prime.Homeomorph
 public import TauCeti.RingTheory.TensorProduct.IsDomain
@@ -22,7 +23,9 @@ preimages identifies the irreducible components of `X` with those of `X'`: every
 component of a scheme over a separably closed field is geometrically irreducible. Thus, once the
 ground field is separably closed, no further field extension splits the irreducible components of
 a scheme; this is the input for splitting the components of a scheme of finite type over a finite
-separable extension of the ground field.
+separable extension of the ground field. When `X` is moreover locally quasi-finite over `K` (so that
+its base change `X'` to any field extension `L / K` is locally Artinian, hence discrete), the
+projection `X' ⟶ X` is in fact a homeomorphism.
 
 The proof has three steps.
 
@@ -54,9 +57,16 @@ subschemes.
   inseparable field extension gives a geometrically irreducible morphism of spectra.
 * `TauCeti.AlgebraicGeometry.geometricallyIrreducible_Spec_of_isSepClosed`: over a separably closed
   field, a morphism from an irreducible affine scheme is geometrically irreducible.
+* `TauCeti.AlgebraicGeometry.irreducibleComponentsEquivOfIsPullback`: base change along a
+  geometrically irreducible universally open morphism induces an equivalence on irreducible
+  components.
 * `TauCeti.AlgebraicGeometry.bijOn_preimage_irreducibleComponents_of_isSepClosed`: over a separably
   closed field, preimage under a base change `X' ⟶ X` to a `K`-algebra with irreducible spectrum is
   a bijection from the irreducible components of `X` to those of `X'`.
+* `TauCeti.AlgebraicGeometry.isHomeomorph_of_isPullback_algebraMap_of_isSepClosed` and
+  `TauCeti.AlgebraicGeometry.bijective_of_isPullback_algebraMap_of_isSepClosed`: base change of a
+  locally quasi-finite scheme over a separably closed field along any field extension is a
+  homeomorphism (in particular, bijective on points), even when the extension is inseparable.
 * `TauCeti.AlgebraicGeometry.GeometricallyIrreducible.geometricallyConnected`: the low-priority
   instance that geometric irreducibility implies geometric connectedness.
 * `TauCeti.AlgebraicGeometry.GeometricallyIrreducible.of_comp_isDominant`: geometric irreducibility
@@ -181,6 +191,45 @@ instance geometricallyIrreducible_Spec_of_isSepClosed {K A : Type u} [Field K] [
     exact GeometricallyIrreducible.comp _ _
   exact GeometricallyIrreducible.of_comp_of_surjective p _
 
+/-- Base change along a geometrically irreducible universally open morphism `h : S' ⟶ S` induces an
+equivalence on irreducible components. Over a field `K` that is separably closed, this applies in
+particular to `h = Spec.map (CommRingCat.ofHom (algebraMap K M))` for any `K`-algebra `M` with
+irreducible spectrum. -/
+noncomputable def irreducibleComponentsEquivOfIsPullback
+    {S S' X X' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'} {g : X' ⟶ X} {h : S' ⟶ S}
+    [GeometricallyIrreducible h] [UniversallyOpen h] (H : IsPullback g f' f h) :
+    irreducibleComponents X' ≃ irreducibleComponents X :=
+  have : GeometricallyIrreducible g := MorphismProperty.of_isPullback H.flip inferInstance
+  have : UniversallyOpen g := MorphismProperty.of_isPullback H.flip inferInstance
+  g.irreducibleComponentsEquiv g.isOpenMap
+
+@[simp]
+theorem coe_irreducibleComponentsEquivOfIsPullback
+    {S S' X X' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'} {g : X' ⟶ X} {h : S' ⟶ S}
+    [GeometricallyIrreducible h] [UniversallyOpen h] (H : IsPullback g f' f h)
+    (v' : irreducibleComponents X') :
+    (irreducibleComponentsEquivOfIsPullback H v' : Set X) = g '' (v' : Set X') := by
+  have : GeometricallyIrreducible g := MorphismProperty.of_isPullback H.flip inferInstance
+  have : UniversallyOpen g := MorphismProperty.of_isPullback H.flip inferInstance
+  exact g.irreducibleComponentsEquiv_apply_coe g.isOpenMap v'
+
+@[simp]
+theorem coe_irreducibleComponentsEquivOfIsPullback_symm
+    {S S' X X' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'} {g : X' ⟶ X} {h : S' ⟶ S}
+    [GeometricallyIrreducible h] [UniversallyOpen h] (H : IsPullback g f' f h)
+    (v : irreducibleComponents X) :
+    ((irreducibleComponentsEquivOfIsPullback H).symm v : Set X') = g ⁻¹' (v : Set X) := by
+  have : GeometricallyIrreducible g := MorphismProperty.of_isPullback H.flip inferInstance
+  have : UniversallyOpen g := MorphismProperty.of_isPullback H.flip inferInstance
+  exact g.irreducibleComponentsEquiv_symm_apply_coe g.isOpenMap v
+
+theorem preimage_coe_irreducibleComponentsEquivOfIsPullback
+    {S S' X X' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'} {g : X' ⟶ X} {h : S' ⟶ S}
+    [GeometricallyIrreducible h] [UniversallyOpen h] (H : IsPullback g f' f h)
+    (v' : irreducibleComponents X') :
+    g ⁻¹' (irreducibleComponentsEquivOfIsPullback H v' : Set X) = (v' : Set X') := by
+  rw [← coe_irreducibleComponentsEquivOfIsPullback_symm H, Equiv.symm_apply_apply]
+
 /-- **The irreducible components of a scheme over a separably closed field are geometrically
 irreducible.** Let `X` be a scheme over a separably closed field `K` and `X'` its base change to a
 `K`-algebra `M` with irreducible spectrum, for instance a field extension of `K`, with projection
@@ -191,15 +240,40 @@ theorem bijOn_preimage_irreducibleComponents_of_isSepClosed {K M : Type u} [Fiel
     {X X' : Scheme.{u}} {f : X ⟶ Spec (.of K)} {f' : X' ⟶ Spec (.of M)} {g : X' ⟶ X}
     (H : IsPullback g f' f (Spec.map (CommRingCat.ofHom (algebraMap K M)))) :
     Set.BijOn (g ⁻¹' ·) (irreducibleComponents X) (irreducibleComponents X') := by
+  let e := (irreducibleComponentsEquivOfIsPullback H).symm
+  refine ⟨fun Z hZ ↦ ?_, fun Z hZ W hW h ↦ ?_,
+    fun Z' hZ' ↦ ⟨e.symm ⟨Z', hZ'⟩, (e.symm ⟨Z', hZ'⟩).2,
+      preimage_coe_irreducibleComponentsEquivOfIsPullback H ⟨Z', hZ'⟩⟩⟩
+  · simpa [e] using (e ⟨Z, hZ⟩).2
+  · have h' : (e ⟨Z, hZ⟩ : Set X') = (e ⟨W, hW⟩ : Set X') := by simpa [e] using h
+    exact congrArg Subtype.val (e.injective (Subtype.ext h'))
+
+/-- **Base change of a locally quasi-finite scheme over a separably closed field along any field
+extension is a homeomorphism.** -/
+theorem isHomeomorph_of_isPullback_algebraMap_of_isSepClosed
+    {K L : Type u} [Field K] [IsSepClosed K] [Field L] [Algebra K L]
+    {X X' : Scheme.{u}} {f : X ⟶ Spec (.of K)} [LocallyQuasiFinite f]
+    {f' : X' ⟶ Spec (.of L)} {g : X' ⟶ X}
+    (H : IsPullback g f' f (Spec.map (CommRingCat.ofHom (algebraMap K L)))) :
+    IsHomeomorph g := by
   have : GeometricallyIrreducible g := MorphismProperty.of_isPullback H.flip inferInstance
   have : UniversallyOpen g := MorphismProperty.of_isPullback H.flip inferInstance
-  let e := g.irreducibleComponentsEquiv g.isOpenMap
-  refine ⟨fun Z hZ ↦ ?_, fun Z _ W _ h ↦ Set.preimage_injective.mpr g.surjective h,
-    fun Z' hZ' ↦ ⟨e ⟨Z', hZ'⟩, (e ⟨Z', hZ'⟩).2, ?_⟩⟩
-  · have := (e.symm ⟨Z, hZ⟩).2
-    rwa [g.irreducibleComponentsEquiv_symm_apply_coe] at this
-  · dsimp only
-    rw [← g.irreducibleComponentsEquiv_symm_apply_coe g.isOpenMap, e.symm_apply_apply]
+  have : LocallyQuasiFinite f' := MorphismProperty.of_isPullback H inferInstance
+  have : IsLocallyArtinian X' := .of_locallyQuasiFinite f'
+  refine ⟨g.continuous, g.isOpenMap, ⟨fun x₁ x₂ hx ↦ by_contra fun hne ↦ ?_, g.surjective⟩⟩
+  obtain ⟨z, -, hz₁, hz₂⟩ := (g.isIrreducible_preimage g.isOpenMap isIrreducible_singleton).2
+    {x₁} {x₁}ᶜ (isOpen_discrete _) (isOpen_discrete _) ⟨x₁, hx, rfl⟩ ⟨x₂, rfl, Ne.symm hne⟩
+  exact hz₂ hz₁
+
+/-- Base change of a locally quasi-finite scheme over a separably closed field along any field
+extension is bijective on points. -/
+theorem bijective_of_isPullback_algebraMap_of_isSepClosed
+    {K L : Type u} [Field K] [IsSepClosed K] [Field L] [Algebra K L]
+    {X X' : Scheme.{u}} {f : X ⟶ Spec (.of K)} [LocallyQuasiFinite f]
+    {f' : X' ⟶ Spec (.of L)} {g : X' ⟶ X}
+    (H : IsPullback g f' f (Spec.map (CommRingCat.ofHom (algebraMap K L)))) :
+    Function.Bijective g :=
+  (isHomeomorph_of_isPullback_algebraMap_of_isSepClosed H).bijective
 
 /-! ### Images and dense opens -/
 
