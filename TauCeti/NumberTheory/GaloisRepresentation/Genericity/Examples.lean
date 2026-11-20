@@ -70,7 +70,7 @@ private theorem one_one_eq : (![1, 1] : Fin 2 → ZMod 3) = fun _ ↦ 1 := by
   fin_cases i <;> rfl
 
 /-- Over `𝔽₃` with `q = 2`, the rank-two identity matrix is generic but not strongly generic. -/
-theorem identity_isGenericAt_and_not_isStronglyGenericAt :
+theorem isGenericAt_one_and_not_isStronglyGenericAt_one :
     (1 : Matrix (Fin 2) (Fin 2) (ZMod 3)).IsGenericAt 2 ∧
       ¬ (1 : Matrix (Fin 2) (Fin 2) (ZMod 3)).IsStronglyGenericAt 2 := by
   rw [← diagonal_one, ← one_one_eq, isGenericAt_diagonal_iff, isStronglyGenericAt_diagonal_iff]
@@ -78,13 +78,13 @@ theorem identity_isGenericAt_and_not_isStronglyGenericAt :
 
 /-- Over `𝔽₅` with `q = 2`, the diagonal matrix `diag(2, 1)` is not generic, although its
 eigenvalues are distinct. -/
-theorem diagonal_two_one_not_isGenericAt :
+theorem not_isGenericAt_diagonal_two_one :
     ¬ (diagonal ![2, 1] : Matrix (Fin 2) (Fin 2) (ZMod 5)).IsGenericAt 2 := by
   rw [isGenericAt_diagonal_iff]
   exact not_isGenericEigenvalues_two_one
 
 /-- Over `𝔽₇` with `q = 2`, the diagonal matrix `diag(1, 3)` is strongly generic. -/
-theorem diagonal_one_three_isStronglyGenericAt :
+theorem isStronglyGenericAt_diagonal_one_three :
     (diagonal ![1, 3] : Matrix (Fin 2) (Fin 2) (ZMod 7)).IsStronglyGenericAt 2 := by
   rw [isStronglyGenericAt_diagonal_iff]
   exact isStronglyGenericEigenvalues_one_three
@@ -92,7 +92,8 @@ theorem diagonal_one_three_isStronglyGenericAt :
 /-- The trivial representation of rank two over `𝔽₃` is generic at `q = 2` but not at `q = 1`,
 and is not strongly generic at `q = 2`, for every group `G`, subgroup `I` and element
 `frob`. -/
-theorem trivial_isGenericAt {G : Type*} [Group G] (I : Subgroup G) (frob : G) :
+theorem isGenericAt_one_and_not_isGenericAt_one_one_and_not_isStronglyGenericAt_one {G : Type*}
+    [Group G] (I : Subgroup G) (frob : G) :
     (1 : G →* GL (Fin 2) (ZMod 3)).IsGenericAt I frob 2 ∧
       ¬ (1 : G →* GL (Fin 2) (ZMod 3)).IsGenericAt I frob 1 ∧
       ¬ (1 : G →* GL (Fin 2) (ZMod 3)).IsStronglyGenericAt I frob 2 := by
@@ -112,6 +113,6 @@ theorem not_isGenericAt_of_mem_of_ne_one {G n K : Type*} [Group G] [Fintype n] [
     [Field K] {ρ : G →* GL n K} {I : Subgroup G} {g : G} (hg : g ∈ I) (hρg : ρ g ≠ 1)
     (frob : G) (q : K) :
     ¬ ρ.IsGenericAt I frob q ∧ ¬ ρ.IsStronglyGenericAt I frob q :=
-  ⟨fun h ↦ hρg (h.le_ker hg), fun h ↦ hρg (h.isGenericAt.le_ker hg)⟩
+  ⟨fun h ↦ hρg (h.le_ker hg), fun h ↦ hρg (h.le_ker hg)⟩
 
 end TauCeti.GenericityExamples

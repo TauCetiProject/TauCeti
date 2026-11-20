@@ -203,10 +203,11 @@ theorem charpoly_inv_eq_prod_X_sub_C {A : Matrix n n K} (hA : IsUnit A) {α : n 
     (Finset.prod_ne_zero_iff.1 hx) i (Finset.mem_univ i)
   have hc : ((-1) ^ Fintype.card n : K) * (∏ i, α i)⁻¹ * ((-1) ^ Fintype.card n * ∏ i, α i) =
       1 := by
-    rw [mul_mul_mul_comm, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul, inv_mul_cancel₀ hx]
+    simp [mul_mul_mul_comm _ (∏ i, α i)⁻¹, ← mul_pow, hx]
   rw [C_1, one_mul, one_mul, Finset.prod_neg, Finset.card_univ] at hrev
-  rw [charpoly_inv A hA, ← reverse_charpoly, h, hrev, hdet, Ring.inverse_eq_inv', ← mul_assoc,
-    ← C_1, ← C_neg, ← C_pow, ← C_mul, ← C_mul, hc, C_1, one_mul]
+  rw [charpoly_inv A hA, ← reverse_charpoly, h, hrev, hdet, Ring.inverse_eq_inv', ← mul_assoc]
+  simp only [← map_neg, ← map_one C, ← map_pow, ← map_mul]
+  rw [hc, C_1, one_mul]
 
 end Inverse
 

@@ -11,6 +11,8 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.RingTheory.Polynomial.RootEnumeration
 import TauCeti.Data.Multiset.Fintype
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
@@ -60,8 +62,9 @@ This file sets up these conditions at three levels.
   together with pairwise distinctness.
 * `TauCeti.isStronglyGenericEigenvalues_iff_div_notMem`: for nonzero eigenvalues, strong
   genericity excludes the two ratios `1` and `q`.
-* `TauCeti.isGenericEigenvalues_iff_of_map_univ_val_eq`: genericity depends only on the multiset
-  of eigenvalues.
+* `TauCeti.isGenericEigenvalues_iff_of_map_univ_val_eq`,
+  `TauCeti.isStronglyGenericEigenvalues_iff_of_map_univ_val_eq`: genericity and strong genericity
+  depend only on the multiset of eigenvalues.
 * `Matrix.isGenericAt_iff_of_isRootEnumeration`: genericity of a matrix is genericity of any
   listing of its characteristic roots.
 * `Matrix.isGenericAt_diagonal_iff`: a diagonal matrix is generic exactly when its diagonal is.
@@ -217,6 +220,14 @@ theorem isGenericEigenvalues_iff_of_map_univ_val_eq {β : κ → R}
     IsGenericEigenvalues q α ↔ IsGenericEigenvalues q β := by
   rw [isGenericEigenvalues_iff_forall_cons_le, isGenericEigenvalues_iff_forall_cons_le, h]
 
+/-- **Strong genericity depends only on the multiset of eigenvalues.** Two families with the same
+values, counted with multiplicity, are strongly generic together. -/
+theorem isStronglyGenericEigenvalues_iff_of_map_univ_val_eq {R : Type*} [MulOneClass R] {q : R}
+    {α : ι → R} {β : κ → R} (h : Finset.univ.val.map α = Finset.univ.val.map β) :
+    IsStronglyGenericEigenvalues q α ↔ IsStronglyGenericEigenvalues q β := by
+  rw [isStronglyGenericEigenvalues_iff_and, isStronglyGenericEigenvalues_iff_and,
+    isGenericEigenvalues_iff_of_map_univ_val_eq h, isGenericEigenvalues_iff_of_map_univ_val_eq h]
+
 end Multiset
 
 /-- Genericity is invariant under multiplying all eigenvalues by a common cancellable scalar,
@@ -333,6 +344,19 @@ private theorem isGenericEigenvalues_iff_of_isRootEnumeration {ι L : Type*} [Fi
   exact TauCeti.isGenericEigenvalues_iff_of_map_univ_val_eq
     ((isRootEnumeration_iff.1 hβ').symm.trans (isRootEnumeration_iff.1 hα'))
 
+/-- A listing of the characteristic roots in a field extension `L` of `K` and one in an algebraic
+closure of `K` list strongly generic families together. -/
+private theorem isStronglyGenericEigenvalues_iff_of_isRootEnumeration {ι L : Type*} [Fintype ι]
+    [Field L] [Algebra K L] {α : ι → L} {β : n → AlgebraicClosure K}
+    (hβ : A.charpoly.IsRootEnumeration β) (hα : A.charpoly.IsRootEnumeration α)
+    (hcard : Fintype.card ι = Fintype.card n) :
+    TauCeti.IsStronglyGenericEigenvalues (algebraMap K (AlgebraicClosure K) q) β ↔
+      TauCeti.IsStronglyGenericEigenvalues (algebraMap K L q) α := by
+  have h1 := isGenericEigenvalues_iff_of_isRootEnumeration (q := 1) hβ hα hcard
+  rw [_root_.map_one, _root_.map_one] at h1
+  rw [TauCeti.isStronglyGenericEigenvalues_iff_and, TauCeti.isStronglyGenericEigenvalues_iff_and,
+    h1, isGenericEigenvalues_iff_of_isRootEnumeration hβ hα hcard]
+
 /-- **Genericity of a matrix is genericity of any listing of its characteristic roots**, in any
 field extension `L` of `K`, provided the listing has as many entries as the size of the
 matrix. -/
@@ -344,19 +368,6 @@ theorem isGenericAt_iff_of_isRootEnumeration {ι L : Type*} [Fintype ι] [Field 
   obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly A
   exact ⟨β, hβ, (isGenericEigenvalues_iff_of_isRootEnumeration hβ hα hcard).2 h⟩
 
-/-- Strong genericity of a matrix is genericity at both `1` and `q`. -/
-theorem isStronglyGenericAt_iff_and :
-    A.IsStronglyGenericAt q ↔ A.IsGenericAt 1 ∧ A.IsGenericAt q := by
-  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly A
-  rw [isGenericAt_iff_of_isRootEnumeration hβ rfl, isGenericAt_iff_of_isRootEnumeration hβ rfl,
-    _root_.map_one, ← TauCeti.isStronglyGenericEigenvalues_iff_and]
-  refine ⟨fun ⟨γ, hγ, h⟩ ↦ ?_, fun h ↦ ⟨β, hβ, h⟩⟩
-  rw [TauCeti.isStronglyGenericEigenvalues_iff_and, ← _root_.map_one (algebraMap K _),
-    ← isGenericAt_iff_of_isRootEnumeration hγ rfl, ← isGenericAt_iff_of_isRootEnumeration hγ rfl,
-    isGenericAt_iff_of_isRootEnumeration hβ rfl, isGenericAt_iff_of_isRootEnumeration hβ rfl,
-    _root_.map_one, ← TauCeti.isStronglyGenericEigenvalues_iff_and] at h
-  exact h
-
 /-- **Strong genericity of a matrix is strong genericity of any listing of its characteristic
 roots**, in any field extension `L` of `K`, provided the listing has as many entries as the size
 of the matrix. -/
@@ -364,9 +375,18 @@ theorem isStronglyGenericAt_iff_of_isRootEnumeration {ι L : Type*} [Fintype ι]
     [Algebra K L] {α : ι → L} (hα : A.charpoly.IsRootEnumeration α)
     (hcard : Fintype.card ι = Fintype.card n) :
     A.IsStronglyGenericAt q ↔ TauCeti.IsStronglyGenericEigenvalues (algebraMap K L q) α := by
-  rw [isStronglyGenericAt_iff_and, isGenericAt_iff_of_isRootEnumeration hα hcard,
-    isGenericAt_iff_of_isRootEnumeration hα hcard, _root_.map_one,
-    TauCeti.isStronglyGenericEigenvalues_iff_and]
+  refine ⟨fun ⟨β, hβ, h⟩ ↦ (isStronglyGenericEigenvalues_iff_of_isRootEnumeration hβ hα hcard).1 h,
+    fun h ↦ ?_⟩
+  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly A
+  exact ⟨β, hβ, (isStronglyGenericEigenvalues_iff_of_isRootEnumeration hβ hα hcard).2 h⟩
+
+/-- Strong genericity of a matrix is genericity at both `1` and `q`. -/
+theorem isStronglyGenericAt_iff_and :
+    A.IsStronglyGenericAt q ↔ A.IsGenericAt 1 ∧ A.IsGenericAt q := by
+  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly A
+  rw [isStronglyGenericAt_iff_of_isRootEnumeration hβ rfl,
+    isGenericAt_iff_of_isRootEnumeration hβ rfl, isGenericAt_iff_of_isRootEnumeration hβ rfl,
+    _root_.map_one, TauCeti.isStronglyGenericEigenvalues_iff_and]
 
 /-- A strongly generic matrix is generic. -/
 theorem IsStronglyGenericAt.isGenericAt (h : A.IsStronglyGenericAt q) : A.IsGenericAt q :=
@@ -468,12 +488,8 @@ theorem isGenericAt_inv_iff (hA : IsUnit A) : A⁻¹.IsGenericAt q ↔ A.IsGener
         (by rw [(charpoly_monic A).natDegree_map, charpoly_natDegree_eq_dim])
   have hAL : IsUnit (A.map (algebraMap K L)) := by
     simpa using hA.map (algebraMap K L).mapMatrix
-  -- The inverse commutes with extension of scalars.
-  have hmap : A⁻¹.map (algebraMap K L) = (A.map (algebraMap K L))⁻¹ :=
-    (inv_eq_right_inv (by rw [← Matrix.map_mul, mul_nonsing_inv A ((isUnit_iff_isUnit_det A).1 hA),
-      Matrix.map_one _ (_root_.map_zero _) (_root_.map_one _)])).symm
   have hinv : (A⁻¹.map (algebraMap K L)).charpoly = ∏ i, (X - C (β i)⁻¹) := by
-    rw [hmap]
+    rw [map_nonsing_inv (algebraMap K L) A]
     exact charpoly_inv_eq_prod_X_sub_C hAL hprod
   rw [isGenericAt_iff_of_charpoly_map_eq_prod hinv, isGenericAt_iff_of_charpoly_map_eq_prod hprod]
   exact TauCeti.isGenericEigenvalues_inv_iff
@@ -518,6 +534,10 @@ theorem isStronglyGenericAt_iff :
 theorem IsGenericAt.le_ker (h : ρ.IsGenericAt I frob q) : I ≤ ρ.ker :=
   h.1
 
+/-- A strongly generic representation is trivial on `I`. -/
+theorem IsStronglyGenericAt.le_ker (h : ρ.IsStronglyGenericAt I frob q) : I ≤ ρ.ker :=
+  h.1
+
 /-- Strong genericity at `q` is genericity at both `1` and `q`. -/
 theorem isStronglyGenericAt_iff_and :
     ρ.IsStronglyGenericAt I frob q ↔ ρ.IsGenericAt I frob 1 ∧ ρ.IsGenericAt I frob q := by
@@ -559,10 +579,9 @@ theorem isStronglyGenericAt_inv_iff :
 theorem isGenericAt_map_iff {L : Type*} [Field L] [Algebra K L] :
     ((Matrix.GeneralLinearGroup.map (algebraMap K L)).comp ρ).IsGenericAt I frob
       (algebraMap K L q) ↔ ρ.IsGenericAt I frob q := by
-  have hinj : Function.Injective (Matrix.GeneralLinearGroup.map (n := n) (algebraMap K L)) :=
-    fun g g' h ↦ Units.ext <| Matrix.map_injective (algebraMap K L).injective <| by
-      simpa using congrArg Units.val h
-  rw [isGenericAt_iff, isGenericAt_iff, ker_comp_of_injective _ _ hinj, comp_apply,
+  rw [isGenericAt_iff, isGenericAt_iff,
+    ker_comp_of_injective _ _ (Matrix.GeneralLinearGroup.map_injective (algebraMap K L).injective),
+    comp_apply,
     Matrix.GeneralLinearGroup.val_map_apply, Matrix.isGenericAt_map_iff]
 
 /-- **Strong genericity is invariant under extension of scalars.** -/
