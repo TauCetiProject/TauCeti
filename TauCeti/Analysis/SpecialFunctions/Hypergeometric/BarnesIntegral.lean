@@ -32,7 +32,7 @@ shows that the vertical integral converges.
 
 ## Main results
 
-* `Complex.integrable_Gamma_mul_Gamma_mul_Gamma_neg_mul_inv_Gamma_mul_cpow`: for `σ < 0`,
+* `Complex.verticalIntegrable_Gamma_mul_Gamma_mul_Gamma_neg_mul_inv_Gamma_mul_cpow`: for `σ < 0`,
   `-σ < Re a`, `-σ < Re b < Re c` and `x > 0`, the integrand
   `Γ(a + t) Γ(b + t) Γ(-t) Γ(c + t)⁻¹ x^t` of DLMF 15.6.6 is integrable along the line
   `t = σ + i y`.
@@ -69,10 +69,9 @@ private lemma integral_Gamma_add_mul_Gamma_neg_mul_cpow {a : ℂ} {σ : ℝ} (h�
 
 /-- Along the line `t = σ + i y` with `σ < 0` and `-σ < Re a`, the product `Γ(a + t) Γ(-t) x^t`
 is integrable for `x > 0`: `Γ(a + t) Γ(-t)` is `Γ(s) Γ(a - s)` at `s = -t` and `‖x^t‖ = x^σ`. -/
-private lemma integrable_Gamma_add_mul_Gamma_neg_mul_cpow {a : ℂ} {σ x : ℝ} (hσ : σ < 0)
+private lemma verticalIntegrable_Gamma_add_mul_Gamma_neg_mul_cpow {a : ℂ} {σ x : ℝ} (hσ : σ < 0)
     (hσa : -σ < a.re) (hx : 0 < x) :
-    Integrable fun y : ℝ ↦
-      Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * (x : ℂ) ^ (σ + y * I) := by
+    VerticalIntegrable (fun t ↦ Gamma (a + t) * Gamma (-t) * (x : ℂ) ^ t) σ := by
   have hG : Integrable fun y : ℝ ↦ Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) := by
     refine (verticalIntegrable_Gamma_mul_Gamma_sub (a := a) (σ := -σ)
       (fun n hn ↦ by linarith [n.cast_nonneg' (α := ℝ)])
@@ -97,7 +96,9 @@ private lemma integrable_eulerMellinBarnesIntegrand {a b c : ℂ} {σ x : ℝ} (
         (r : ℂ) ^ (b + (σ + y * I) - 1) * (1 - (r : ℂ)) ^ (c - b - 1) *
           (Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * (x : ℂ) ^ (σ + y * I)))
       (volume.prod (volume.restrict (Ioc 0 1))) := by
-  have hH := integrable_Gamma_add_mul_Gamma_neg_mul_cpow hσ hσa hx
+  have hH : Integrable fun y : ℝ ↦
+      Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * (x : ℂ) ^ (σ + y * I) :=
+    verticalIntegrable_Gamma_add_mul_Gamma_neg_mul_cpow hσ hσa hx
   have hbσ : 0 < (b + σ).re := by simp; linarith
   have hcb : 0 < (c - b).re := by simpa using sub_pos.mpr hbc
   have hβ := ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
@@ -138,10 +139,10 @@ private lemma integral_Ioc_eulerMellinBarnesIntegrand {a b c : ℂ} {σ x : ℝ}
 /-- **Convergence of the Mellin–Barnes integral** (DLMF 15.6.6) in the region of Euler's
 integral: for `σ < 0`, `-σ < Re a`, `-σ < Re b`, `Re b < Re c` and `x > 0`, the integrand
 `Γ(a + t) Γ(b + t) Γ(-t) Γ(c + t)⁻¹ x^t` is integrable along the line `t = σ + i y`. -/
-theorem integrable_Gamma_mul_Gamma_mul_Gamma_neg_mul_inv_Gamma_mul_cpow {a b c : ℂ} {σ x : ℝ}
-    (hσ : σ < 0) (hσa : -σ < a.re) (hσb : -σ < b.re) (hbc : b.re < c.re) (hx : 0 < x) :
-    Integrable fun y : ℝ ↦ Gamma (a + (σ + y * I)) * Gamma (b + (σ + y * I)) *
-      Gamma (-(σ + y * I)) * (Gamma (c + (σ + y * I)))⁻¹ * (x : ℂ) ^ (σ + y * I) := by
+theorem verticalIntegrable_Gamma_mul_Gamma_mul_Gamma_neg_mul_inv_Gamma_mul_cpow {a b c : ℂ}
+    {σ x : ℝ} (hσ : σ < 0) (hσa : -σ < a.re) (hσb : -σ < b.re) (hbc : b.re < c.re) (hx : 0 < x) :
+    VerticalIntegrable
+      (fun t ↦ Gamma (a + t) * Gamma (b + t) * Gamma (-t) * (Gamma (c + t))⁻¹ * (x : ℂ) ^ t) σ := by
   have hGcb : Gamma (c - b) ≠ 0 := Gamma_ne_zero_of_re_pos (by simpa using sub_pos.mpr hbc)
   refine (((integrable_eulerMellinBarnesIntegrand hσ hσa hσb hbc hx).integral_prod_left).const_mul
     (Gamma (c - b))⁻¹).congr (ae_of_all _ fun y ↦ ?_)
