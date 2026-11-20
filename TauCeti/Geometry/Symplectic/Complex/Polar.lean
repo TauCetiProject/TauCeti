@@ -8,8 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.Geometry.Symplectic.Complex.Line
-import Mathlib.Analysis.Calculus.FDeriv.Mul
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.Complex.Circle
 
 /-!
 # The area form of the complex line in polar coordinates
@@ -24,8 +23,9 @@ The standard area form `ω(v, w) = Re v Im w - Im v Re w` of `ℂ`
 * **For maps in polar form.** A map `f = e^{iθ} r` from a real normed space, with real-valued
   angle `θ` and radius `r` differentiable at `x`, has differential
   `df_x v = e^{iθ(x)} (dr_x v + i r(x) dθ_x v)`
-  (`TauCeti.fderiv_circleExp_mul_ofReal_apply`), and so pulls the area form back to
-  `r dr ∧ dθ`: `ω(df_x v, df_x w) = r(x) (dr_x v dθ_x w - dθ_x v dr_x w)`
+  (`TauCeti.fderiv_circleExp_mul_ofReal_apply`, in `TauCeti.Analysis.Complex.Circle`), and so
+  pulls the area form back to `r dr ∧ dθ`:
+  `ω(df_x v, df_x w) = r(x) (dr_x v dθ_x w - dθ_x v dr_x w)`
   (`TauCeti.stdComplexSymplecticForm_fderiv_circleExp_mul_ofReal`). The factor `e^{iθ(x)}` drops
   out because rotations preserve the area form (`TauCeti.stdComplexSymplecticForm_mul_mul`).
 
@@ -56,22 +56,6 @@ theorem stdComplexSymplecticForm_apply_eq_polar {z : ℂ} (hz : z ≠ 0) (v w : 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {θ r : E → ℝ}
   {θ' r' : E →L[ℝ] ℝ} {x : E}
 
-/-- **The differential of a map in polar form.** If the angle `θ` and the radius `r` are
-differentiable at `x`, then `f = e^{iθ} r` has differential
-`df_x v = e^{iθ(x)} (dr_x v + i r(x) dθ_x v)`. -/
-theorem fderiv_circleExp_mul_ofReal_apply (hθ : HasFDerivAt θ θ' x) (hr : HasFDerivAt r r' x)
-    (v : E) :
-    fderiv ℝ (fun y ↦ (Circle.exp (θ y) : ℂ) * (r y : ℂ)) x v =
-      (Circle.exp (θ x) : ℂ) * ((r' v : ℂ) + (r x * θ' v : ℝ) * I) := by
-  have h : HasFDerivAt (fun y ↦ (Circle.exp (θ y) : ℂ) * (r y : ℂ)) _ x :=
-    (((ofRealCLM.hasFDerivAt.comp x hθ).mul_const' I).cexp.mul
-      (ofRealCLM.hasFDerivAt.comp x hr)).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall fun y ↦ by simp [Circle.coe_exp])
-  rw [h.fderiv]
-  simp only [Function.comp_apply, ofRealCLM_apply, op_smul_eq_smul, add_apply, smul_apply,
-    ContinuousLinearMap.comp_apply, smul_eq_mul, Circle.coe_exp, ofReal_mul]
-  ring
-
 /-- **Maps in polar form pull the area form back to `r dr ∧ dθ`.** If the angle `θ` and the radius
 `r` are differentiable at `x`, then `f = e^{iθ} r` satisfies
 `ω(df_x v, df_x w) = r(x) (dr_x v dθ_x w - dθ_x v dr_x w)`. -/
@@ -83,8 +67,7 @@ theorem stdComplexSymplecticForm_fderiv_circleExp_mul_ofReal (hθ : HasFDerivAt 
   rw [fderiv_circleExp_mul_ofReal_apply hθ hr, fderiv_circleExp_mul_ofReal_apply hθ hr,
     stdComplexSymplecticForm_mul_mul, Circle.norm_coe, one_pow, one_mul,
     stdComplexSymplecticForm_apply]
-  simp only [ofReal_mul, add_re, ofReal_re, mul_re, ofReal_im, mul_zero, sub_zero, I_re, mul_im,
-    zero_mul, add_zero, I_im, mul_one, sub_self, add_im, zero_add]
+  simp
   ring
 
 end TauCeti

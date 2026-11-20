@@ -18,6 +18,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
@@ -65,6 +66,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 * `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
   `unitary ℂ` and the topological group isomorphism `Circle ≃ₜ* unitary ℂ`.
 * `TauCeti.hasDerivAt_coe_circleExp`: the velocity of `t ↦ exp (t i)` at `t` is `i exp (t i)`.
+* `TauCeti.fderiv_circleExp_mul_ofReal_apply`: the differential of a map `e^{iθ} r` in polar form,
+  with real-valued angle `θ` and radius `r`, is `e^{iθ} (dr + i r dθ)`.
 -/
 
 public section
@@ -366,5 +369,23 @@ theorem hasDerivAt_coe_circleExp (t : ℝ) :
     HasDerivAt (fun s : ℝ ↦ ((Circle.exp s : Circle) : ℂ)) (I * Circle.exp t) t := by
   simp only [Circle.coe_exp]
   simpa [mul_comm] using ((ofRealCLM.hasDerivAt (x := t)).mul_const I).cexp
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {θ r : E → ℝ}
+  {θ' r' : E →L[ℝ] ℝ} {x : E}
+
+/-- **The differential of a map in polar form.** If the angle `θ` and the radius `r` are
+differentiable at `x`, then `f = e^{iθ} r` has differential
+`df_x v = e^{iθ(x)} (dr_x v + i r(x) dθ_x v)`. -/
+theorem fderiv_circleExp_mul_ofReal_apply (hθ : HasFDerivAt θ θ' x) (hr : HasFDerivAt r r' x)
+    (v : E) :
+    fderiv ℝ (fun y ↦ (Circle.exp (θ y) : ℂ) * (r y : ℂ)) x v =
+      (Circle.exp (θ x) : ℂ) * ((r' v : ℂ) + (r x * θ' v : ℝ) * I) := by
+  have h : HasFDerivAt (fun y ↦ (Circle.exp (θ y) : ℂ) * (r y : ℂ)) _ x :=
+    (((ofRealCLM.hasFDerivAt.comp x hθ).mul_const' I).cexp.mul
+      (ofRealCLM.hasFDerivAt.comp x hr)).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall fun y ↦ by simp [Circle.coe_exp])
+  rw [h.fderiv]
+  simp [Circle.coe_exp]
+  ring
 
 end TauCeti
