@@ -222,6 +222,29 @@ theorem IsContactForm.isNondegenerateOrbit_mk_iff (hα : α.IsContactForm)
   ⟨fun h ↦ h γ rfl, fun h _ hδ ↦
     mt (hα.hasEigenvalue_periodicLinearizedReturn_iff_of_mk_eq hc hδ 1).1 h⟩
 
+/-- A closed Reeb orbit is nondegenerate precisely when a local transverse section has return
+derivative without eigenvalue `1`. This identifies the contact-hyperplane and section notions. -/
+theorem IsContactForm.isNondegenerateOrbit_mk_iff_exists_returnDerivative
+    (hα : α.IsContactForm) (hc : IsCompleteVectorField α.reebVectorField)
+    (γ : Flow.PeriodicTrajectory (hα.reebFlow hc)) :
+    hα.IsNondegenerateOrbit hc (Flow.ClosedOrbit.mk γ) ↔
+      ∃ g : M → ℝ, ContMDiffAt I 𝓘(ℝ) 1 g γ.point ∧
+        mvfderiv I g γ.point (α.reebVectorField γ.point) ≠ 0 ∧
+        ¬(returnDerivative α.reebVectorField g γ.period γ.point).HasEigenvalue 1 := by
+  rw [hα.isNondegenerateOrbit_mk_iff, hα.periodicLinearizedReturn_def]
+  have hp : flowOf α.reebVectorField γ.period γ.point = γ.point := by
+    rw [← hα.reebFlow_apply hc]
+    exact γ.apply_period
+  constructor
+  · intro hnd
+    obtain ⟨g, hg, hgv⟩ :=
+      exists_contMDiffAt_mvfderiv_ne_zero (I := I) (hα.reebVectorField_ne_zero γ.point) 1
+    exact ⟨g, hg, hgv, mt (hα.hasEigenvalue_returnDerivative_iff
+      (hc.mem_flowDomain γ.period γ.point) hp hg hgv one_ne_zero).1 hnd⟩
+  · rintro ⟨g, hg, hgv, hnd⟩
+    exact mt (hα.hasEigenvalue_returnDerivative_iff
+      (hc.mem_flowDomain γ.period γ.point) hp hg hgv one_ne_zero).2 hnd
+
 /-- **Nondegeneracy of an iterate.** The `k`-fold iterate of a closed Reeb orbit is nondegenerate
 iff `1` is not an eigenvalue of the `k`-th power `(A_γ)^k` of its linearized Reeb return map. -/
 theorem IsContactForm.isNondegenerateOrbit_iterate_mk_iff (hα : α.IsContactForm)
@@ -269,14 +292,8 @@ theorem IsContactForm.finite_closedOrbit_inter_nonempty_and_period_le (hα : α.
       ⟨z, t, hε.trans_le htε, by rw [hα.reebFlow_apply, htz], hα.exists_reebFlow_ne hc z⟩
     have hmeet : ((Flow.ClosedOrbit.mk δ).support ∩ K).Nonempty :=
       ⟨z, Flow.ClosedOrbit.point_mem_support δ, hzK⟩
-    have hδ : ¬(hα.periodicLinearizedReturn hc δ).HasEigenvalue 1 :=
-      (hα.isNondegenerateOrbit_mk_iff hc δ).1
-        (hnd (Flow.ClosedOrbit.mk δ) hmeet (by rw [Flow.ClosedOrbit.period_mk]; exact htA))
-    obtain ⟨g, hg, hgv⟩ :=
-      exists_contMDiffAt_mvfderiv_ne_zero (I := I) (hα.reebVectorField_ne_zero z) 1
-    exact ⟨g, hg, hgv,
-      mt (hα.hasEigenvalue_returnDerivative_iff (hc.mem_flowDomain t z) htz hg hgv one_ne_zero).1
-        hδ⟩
+    exact (hα.isNondegenerateOrbit_mk_iff_exists_returnDerivative hc δ).1
+      (hnd (Flow.ClosedOrbit.mk δ) hmeet (by rw [Flow.ClosedOrbit.period_mk]; exact htA))
   obtain ⟨F, -, hF⟩ := exists_finset_forall_fst_eq_and_exists_flowOf_eq_snd hv hS hSD hSnd
   refine Flow.ClosedOrbit.finite_of_exists_finset (F := F) ?_
   rintro γ ⟨⟨p, hpγ, hpK⟩, hγA⟩

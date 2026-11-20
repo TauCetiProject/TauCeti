@@ -54,23 +54,32 @@ theorem exists_pos_period_le_nhds {x : X} (hx : ∃ s, ϕ s x ≠ x) :
     simpa only [zsmul_eq_mul, mem_periods] using hm
   exact (@hsub ((k : ℝ) * T, y) ⟨htime, hy⟩) hreturn
 
-/-- Positive return times on a compact set without stationary points are uniformly bounded away
-from zero. The compact set need not be invariant under the flow. -/
-theorem exists_pos_period_le_of_isCompact {K : Set X} (hK : IsCompact K)
+/-- Positive return times near a compact set without stationary points are uniformly bounded
+away from zero. The compact set need not have a compact neighborhood or be flow invariant. -/
+theorem exists_pos_eventually_period_le_of_isCompact {K : Set X} (hK : IsCompact K)
     (hmove : ∀ x ∈ K, ∃ s, ϕ s x ≠ x) :
-    ∃ ε > 0, ∀ x ∈ K, ∀ T > 0, ϕ T x = x → ε ≤ T := by
+    ∃ ε > 0, ∀ᶠ x in 𝓝ˢ K, ∀ T > 0, ϕ T x = x → ε ≤ T := by
   classical
   -- Compactness makes the local bounds uniform.
   choose ε hε U hU hbound using fun x : K ↦
     ϕ.exists_pos_period_le_nhds (hmove x x.property)
-  obtain ⟨c, hc⟩ := hK.elim_nhds_subcover' (fun x hx ↦ U ⟨x, hx⟩)
+  obtain ⟨c, hc⟩ := hK.elim_nhds_subcover_nhdsSet' (fun x hx ↦ U ⟨x, hx⟩)
     (fun x hx ↦ hU ⟨x, hx⟩)
   -- A finite family of positive local bounds admits a common positive lower bound.
   have hsmall : ∀ᶠ r : ℝ in 𝓝 0, ∀ x ∈ c, r < ε x :=
     c.eventually_all.mpr fun x _ ↦ eventually_lt_nhds (hε x)
   obtain ⟨δ, hδ, hδsmall⟩ := hsmall.exists_gt
-  refine ⟨δ, hδ, fun x hx T hT hfix ↦ ?_⟩
-  obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.mp (hc hx)
+  refine ⟨δ, hδ, ?_⟩
+  filter_upwards [hc] with x hx T hT hfix
+  obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.mp hx
   exact (hδsmall y hy).le.trans (hbound y x hxy T hT hfix)
+
+/-- Positive return times on a compact set without stationary points are uniformly bounded away
+from zero. The compact set need not be invariant under the flow. -/
+theorem exists_pos_period_le_of_isCompact {K : Set X} (hK : IsCompact K)
+    (hmove : ∀ x ∈ K, ∃ s, ϕ s x ≠ x) :
+    ∃ ε > 0, ∀ x ∈ K, ∀ T > 0, ϕ T x = x → ε ≤ T := by
+  obtain ⟨ε, hε, hbound⟩ := ϕ.exists_pos_eventually_period_le_of_isCompact hK hmove
+  exact ⟨ε, hε, hbound.self_of_nhdsSet⟩
 
 end Flow
