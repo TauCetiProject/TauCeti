@@ -28,8 +28,9 @@ A sum weighted by a finitely supported family of scalars, such as the translates
 function, is a finite sum over the support of the weights.
 A product over a finset is compared with the `finprod` of a finitely supported family whose
 factors off the finset are all at least `1`, or all at most `1`. A `finsum` whose terms are fixed by
-multiplication by an element is fixed by it. Finally, left multiplication by a left-regular
-element commutes with `finsum` even when the support is infinite.
+multiplication by an element is fixed by it. Over a ring with no zero divisors, a product of two
+`finsum`s is the `finsum` over pairs of the products of their terms. Finally, left multiplication
+by a left-regular element commutes with `finsum` even when the support is infinite.
 
 ## Main results
 
@@ -74,6 +75,8 @@ element commutes with `finsum` even when the support is infinite.
   least, respectively at most, `1`.
 * `TauCeti.mul_finsum_of_forall` and `TauCeti.finsum_mul_of_forall`: a `finsum` whose terms are
   fixed by left, respectively right, multiplication by `c` is fixed by it, whatever the support.
+* `TauCeti.finsum_mul_finsum`: `(∑ᶠ i, f i) * ∑ᶠ j, g j = ∑ᶠ p : ι × κ, f p.1 * g p.2` over a
+  ring with no zero divisors, whatever the supports.
 * `IsLeftRegular.mul_finsum`: left multiplication by a left-regular element commutes with
   `finsum`, whatever the support.
 * `Multiset.finsum_count_nsmul_eq_sum_map`: summing against the multiplicities of a multiset is
@@ -358,6 +361,29 @@ theorem finsum_mul_of_forall (h : ∀ i, f i * c = f i) : (∑ᶠ i, f i) * c = 
   finsum_induction (fun x => x * c = x) (zero_mul c) (fun x y hx hy => by rw [add_mul, hx, hy]) h
 
 end FixedByMul
+
+section ProdMul
+
+variable {ι κ R : Type*} [NonUnitalNonAssocSemiring R] [NoZeroDivisors R]
+
+/-- Over a ring with no zero divisors, the product of two `finsum`s is the `finsum` of the
+products over the product of the index types, without any finiteness assumption on the supports:
+when one factor has infinite support and the other is nonzero somewhere, so does the double sum,
+and both sides are `0`. -/
+theorem finsum_mul_finsum (f : ι → R) (g : κ → R) :
+    (∑ᶠ i, f i) * ∑ᶠ j, g j = ∑ᶠ p : ι × κ, f p.1 * g p.2 := by
+  by_cases h : (support fun p : ι × κ => f p.1 * g p.2).Finite
+  · rw [finsum_curry _ h, finsum_mul]
+    exact finsum_congr fun i => by rw [mul_finsum]
+  have hfg : (support fun p : ι × κ => f p.1 * g p.2) = support f ×ˢ support g := by
+    ext; simp
+  rw [finsum_of_infinite_support h]
+  rcases Set.infinite_prod.mp (hfg ▸ h : (support f ×ˢ support g).Infinite) with
+    ⟨hf, -⟩ | ⟨hg, -⟩
+  · rw [finsum_of_infinite_support hf, zero_mul]
+  · rw [finsum_of_infinite_support hg, mul_zero]
+
+end ProdMul
 
 end TauCeti
 
