@@ -41,7 +41,7 @@ exponentials of `t E` and `t F`. The `sl₂`-triple itself and the primitive vec
 
 ## Main results
 
-* `TauCeti.polynomialOperator_eq`: `X a ∂_b` is the derivation `X a • pderiv b`.
+* `TauCeti.polynomialOperator_def`: `X a ∂_b` is the derivation `X a • pderiv b`.
 * `TauCeti.polynomialOperator_mul`: `X a ∂_b` satisfies the Leibniz rule.
 * `MvPolynomial.IsHomogeneous.polynomialOperator`: `X a ∂_b` preserves homogeneous degrees.
 * `TauCeti.lie_polynomialOperator`: the commutation relations of the elementary matrices.
@@ -79,7 +79,7 @@ noncomputable def polynomialOperator (a b : σ) : Module.End R (MvPolynomial σ 
 
 variable (R) in
 /-- `X a ∂_b` is the derivation `X a • pderiv b`, viewed as a linear map. -/
-theorem polynomialOperator_eq (a b : σ) :
+theorem polynomialOperator_def (a b : σ) :
     polynomialOperator R a b =
       (((X a : MvPolynomial σ R) • pderiv b : Derivation R (MvPolynomial σ R) (MvPolynomial σ R)) :
         Module.End R (MvPolynomial σ R)) :=
@@ -116,8 +116,9 @@ theorem polynomialOperator_monomial (a b : σ) (s : σ →₀ ℕ) (r : R) :
 `polynomialOperator_monomial` on the diagonal. -/
 @[simp high]
 theorem polynomialOperator_self_monomial (a : σ) (s : σ →₀ ℕ) (r : R) :
-    polynomialOperator R a a (monomial s r) = s a • monomial s r :=
-  X_mul_pderiv_monomial
+    polynomialOperator R a a (monomial s r) = s a • monomial s r := by
+  rw [polynomialOperator_apply]
+  exact X_mul_pderiv_monomial
 
 end Operator
 
@@ -151,9 +152,9 @@ theorem lie_polynomialOperator [DecidableEq σ] (a b c d : σ) :
     simp only [D, Derivation.commutator_apply, smul_apply, sub_apply, pderiv_X, smul_eq_mul,
       Pi.single_apply]
     split_ifs <;> simp_all
-  rw [polynomialOperator_eq, polynomialOperator_eq, ← Derivation.commutator_coe_linear_map, hD,
+  rw [polynomialOperator_def, polynomialOperator_def, ← Derivation.commutator_coe_linear_map, hD,
     Derivation.coe_sub_linearMap]
-  split_ifs <;> simp [D, polynomialOperator_eq]
+  split_ifs <;> simp [D, polynomialOperator_def]
 
 end Lie
 
