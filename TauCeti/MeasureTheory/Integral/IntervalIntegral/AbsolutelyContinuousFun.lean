@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuo
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Comp
@@ -49,6 +50,9 @@ fundamental-theorem results to curves.
   with an integrable derivative off a countable set is absolutely continuous.
 * `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'`: indefinite integrals
   with base point in the integrability interval are absolutely continuous in any real normed space.
+* `IntervalIntegrable.integral_mul_primitive_pow` and
+  `IntervalIntegrable.integral_uIoc_mul_abs_primitive_pow`: for a real function `g` with primitive
+  `G`, `∫ g * G ^ n = G ^ (n + 1) / (n + 1)`, and its absolute-value form for nonnegative `g`.
 -/
 
 public section
@@ -305,3 +309,56 @@ theorem ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable
   simp only [Pi.add_apply, Function.comp_apply] at hFTC ⊢
   rw [hFTC]
   abel
+
+/-- The primitive `G t = ∫ r in c..t, g r` of a function `g` integrable on `[c, t]` satisfies
+`∫ s in c..t, g s * G s ^ n = G t ^ (n + 1) / (n + 1)`. This is the fundamental theorem of calculus
+`AbsolutelyContinuousOnInterval.integral_fderiv_apply_eq_sub` for `x ↦ x ^ (n + 1) / (n + 1)`
+along the absolutely continuous primitive. -/
+theorem IntervalIntegrable.integral_mul_primitive_pow {g : ℝ → ℝ} {c t : ℝ}
+    (hg : IntervalIntegrable g volume c t) (n : ℕ) :
+    ∫ s in c..t, g s * (∫ r in c..s, g r) ^ n = (∫ r in c..t, g r) ^ (n + 1) / (n + 1) := by
+  have hV : ∀ᵐ s, s ∈ uIoc c t → HasDerivAt (fun u ↦ ∫ r in c..u, g r) (g s) s := by
+    filter_upwards [hg.ae_hasDerivAt_integral] with s hs hsI
+    exact hs (uIoc_subset_uIcc hsI) c left_mem_uIcc
+  have h := (hg.absolutelyContinuousOnInterval_intervalIntegral' left_mem_uIcc)
+    |>.integral_fderiv_apply_eq_sub hV (φ := fun x : ℝ ↦ x ^ (n + 1) / (n + 1)) (by fun_prop)
+  simp only [fderiv_eq_smul_deriv, intervalIntegral.integral_same, smul_eq_mul] at h
+  rw [zero_pow n.succ_ne_zero, zero_div, sub_zero] at h
+  rw [← h]
+  refine intervalIntegral.integral_congr fun s _ ↦ ?_
+  simp only [deriv_div_const, deriv_pow_field, Nat.add_sub_cancel]
+  push_cast
+  field_simp
+
+open scoped Interval in
+/-- For a function `g` integrable and almost everywhere nonnegative on `[c, t]`, with primitive
+`G s = ∫ r in c..s, g r`, `∫ s in Ι c t, g s * |G s| ^ n = |G t| ^ (n + 1) / (n + 1)`. This is
+the estimate behind the Picard iteration for a linear equation with integrable coefficient. -/
+theorem IntervalIntegrable.integral_uIoc_mul_abs_primitive_pow {g : ℝ → ℝ} {c t : ℝ}
+    (hg : IntervalIntegrable g volume c t) (hg₀ : 0 ≤ᵐ[volume.restrict (uIcc c t)] g) (n : ℕ) :
+    ∫ s in Ι c t, g s * |∫ r in c..s, g r| ^ n = |∫ r in c..t, g r| ^ (n + 1) / (n + 1) := by
+  open intervalIntegral in
+  rcases le_total c t with h | h
+  · have hnn : ∀ s ∈ Icc c t, 0 ≤ ∫ r in c..s, g r := fun s hs ↦
+      integral_nonneg_of_ae_restrict hs.1 <| ae_restrict_of_ae_restrict_of_subset
+        ((Icc_subset_Icc_right hs.2).trans Icc_subset_uIcc) hg₀
+    rw [uIoc_of_le h, ← integral_of_le h, abs_of_nonneg (hnn t ⟨h, le_rfl⟩),
+      ← hg.integral_mul_primitive_pow]
+    refine integral_congr fun s hs ↦ ?_
+    rw [uIcc_of_le h] at hs
+    simp only [abs_of_nonneg (hnn s hs)]
+  · have hnp : ∀ s ∈ Icc t c, ∫ r in c..s, g r ≤ 0 := fun s hs ↦ by
+      rw [integral_symm, neg_nonpos]
+      exact integral_nonneg_of_ae_restrict hs.2 <| ae_restrict_of_ae_restrict_of_subset
+        ((Icc_subset_Icc_left hs.1).trans Icc_subset_uIcc') hg₀
+    rw [uIoc_of_ge h, ← integral_of_le h, abs_of_nonpos (hnp t ⟨le_rfl, h⟩)]
+    have : ∫ s in t..c, g s * |∫ r in c..s, g r| ^ n =
+        (-1) ^ n * ∫ s in t..c, g s * (∫ r in c..s, g r) ^ n := by
+      rw [← intervalIntegral.integral_const_mul]
+      refine integral_congr fun s hs ↦ ?_
+      rw [uIcc_of_le h] at hs
+      rw [abs_of_nonpos (hnp s hs), neg_pow]
+      ring
+    rw [this, integral_symm, hg.integral_mul_primitive_pow, neg_pow _ (n + 1),
+      pow_succ (-1 : ℝ)]
+    ring
