@@ -298,35 +298,6 @@ end Complete
 
 open scoped Matrix.Norms.Elementwise
 
-/-- The `(a, b)` entry of the self-adjoint part `(X + Xᴴ) / 2` of a matrix `X`, as a continuous
-real-linear functional. -/
-private def selfAdjointPartEntry (a b : n) : Matrix n n 𝕜 →L[ℝ] 𝕜 :=
-  ContinuousLinearMap.proj b ∘L ContinuousLinearMap.proj a ∘L
-    (selfAdjoint.submodule ℝ (Matrix n n 𝕜)).subtypeL ∘L selfAdjointPartL ℝ (Matrix n n 𝕜)
-
-omit [Fintype n] [DecidableEq n] in
-private theorem coe_selfAdjointPartEntry (a b : n) :
-    ⇑(selfAdjointPartEntry (𝕜 := 𝕜) a b) =
-      fun X : Matrix n n 𝕜 ↦ (selfAdjointPart ℝ X : Matrix n n 𝕜) a b :=
-  rfl
-
-omit [DecidableEq n] in
-private theorem contDiff_selfAdjointPart_apply {k : ℕ∞ω} (a b : n) :
-    ContDiff ℝ k (fun X : Matrix n n 𝕜 ↦ (selfAdjointPart ℝ X : Matrix n n 𝕜) a b) := by
-  rw [← coe_selfAdjointPartEntry]
-  exact (selfAdjointPartEntry (𝕜 := 𝕜) a b).contDiff
-
-omit [Fintype n] [DecidableEq n] in
-private theorem fderiv_selfAdjointPart_apply (a b : n) (X V : Matrix n n 𝕜) :
-    fderiv ℝ (fun Y : Matrix n n 𝕜 ↦ (selfAdjointPart ℝ Y : Matrix n n 𝕜) a b) X V =
-      (selfAdjointPart ℝ V : Matrix n n 𝕜) a b := by
-  rw [← coe_selfAdjointPartEntry, ContinuousLinearMap.fderiv, coe_selfAdjointPartEntry]
-
-omit [Fintype n] [DecidableEq n] in
-private theorem isHermitian_selfAdjointPart (X : Matrix n n 𝕜) :
-    (selfAdjointPart ℝ X : Matrix n n 𝕜).IsHermitian :=
-  (selfAdjoint.isSelfAdjoint (x := selfAdjointPart ℝ X)).isHermitian
-
 /-- A Hermitian matrix is its own self-adjoint part, so the two have the same ordered
 eigenvalues. -/
 private theorem eigenvalues₀_selfAdjointPart {A : Matrix n n 𝕜} (hA : A.IsHermitian) :
