@@ -326,7 +326,7 @@ theorem range_cyclicDiscreteEnergyRepeatFirst (τ : Fin (n + 1) → ℝ) (s c : 
     simp [Fin.cons_one]
   · intro h01
     have hp' : p = Fin.cons (Fin.tail p 0) (Fin.tail p) := by
-      rw [show Fin.tail p 0 = p 0 from h01, Fin.cons_self_tail]
+      rw [show Fin.tail p 0 = p 0 by simpa [Fin.tail] using h01, Fin.cons_self_tail]
     refine ⟨⟨Fin.tail p, ?_⟩, Subtype.ext ?_⟩
     · rw [mem_cyclicDiscreteEnergyStrictSublevel, ← cyclicDiscreteEnergy_cons_self τ s, ← hp']
       exact hp

@@ -75,7 +75,10 @@ forgetting the first entry is a continuous left inverse. -/
 theorem isEmbedding_cons_apply_zero {n : ℕ} :
     IsEmbedding fun q : Fin (n + 1) → X ↦ (Fin.cons (q 0) q : Fin (n + 2) → X) :=
   IsEmbedding.of_comp ((continuous_apply 0).finCons (A := fun _ ↦ X) continuous_id)
-    continuous_id.finTail IsEmbedding.id
+    continuous_id.finTail <| by
+      -- forgetting the repeated first entry gives back the tuple
+      simp only [Function.comp_def, id_eq, Fin.tail_cons]
+      exact IsEmbedding.id
 
 /-- Shrinking along one injective tuple: nonempty open sets `V i` can be shrunk to nonempty open
 sets `W i ⊆ V i` so that the box `∏ j, W (t j)` along an injective finite tuple `t` of indices
