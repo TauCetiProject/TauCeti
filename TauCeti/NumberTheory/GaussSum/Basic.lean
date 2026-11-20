@@ -41,6 +41,8 @@ then reindexing the Gauss sum by the Frobenius gives `g(χ ^ p, ψ) = g(χ, ψ)`
 ## Main results
 
 * `TauCeti.norm_gaussSum`: `‖g(χ, ψ)‖ = √#F`.
+* `TauCeti.gaussSum_ne_zero`: `g(χ, ψ) ≠ 0` for every `χ` when `ψ` is primitive and `#F ≠ 0` in
+  the coefficients.
 * `TauCeti.gaussSum_pow_modEq_neg_one`: `g(χ, ψ)^l ≡ -1 (mod l)` when `χ ^ l = 1` and
   `ψ ^ l ≠ 1`.
 * `TauCeti.gaussSum_pow_char_pow`: `g(χ, ψ) ^ q = χ⁻¹ (q) g(χ, ψ)` when the coefficients have
@@ -72,6 +74,17 @@ theorem norm_gaussSum {χ : MulChar F ℂ} (hχ : χ ≠ 1) {ψ : AddChar F ℂ}
   rw [← star_gaussSum_eq, ← starRingEnd_apply, Complex.mul_conj'] at h
   rw [← Real.sqrt_sq (norm_nonneg _)]
   exact congrArg Real.sqrt (by exact_mod_cast h)
+
+/-- **Gauss sums with a primitive additive character do not vanish.** Over a finite field `F`,
+if `ψ` is primitive and `#F` is nonzero in the domain `R` of values, then `g(χ, ψ) ≠ 0` for every
+multiplicative character `χ`, the trivial one included, whose Gauss sum is `-1`. Mathlib's
+`gaussSum_ne_zero_of_nontrivial` is the case of nontrivial `χ`. -/
+theorem gaussSum_ne_zero {R : Type*} [CommRing R] [IsDomain R] (h : (Fintype.card F : R) ≠ 0)
+    (χ : MulChar F R) {ψ : AddChar F R} (hψ : ψ.IsPrimitive) : gaussSum χ ψ ≠ 0 := by
+  rcases eq_or_ne χ 1 with rfl | hχ
+  · rw [gaussSum_one_left (by simpa using hψ one_ne_zero)]
+    exact neg_ne_zero.mpr one_ne_zero
+  · exact gaussSum_ne_zero_of_nontrivial h hχ hψ
 
 /-- **The `l`-th power of a Gauss sum modulo `l`.** Let `l` be a prime, `χ` a multiplicative
 character with `χ ^ l = 1` and `ψ` an additive character with `ψ ^ l ≠ 1` of a finite field `F`,

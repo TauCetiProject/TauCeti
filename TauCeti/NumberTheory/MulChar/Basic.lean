@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.MulChar.Basic
+public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Basic facts about multiplicative characters
@@ -36,6 +38,13 @@ its inverse carry the trivial character `1` and the trivial unit homomorphism `1
 
 Pushing a character along an injective ring homomorphism of the coefficients preserves its order
 (`MulChar.orderOf_ringHomComp`).
+
+With values in a field, an integer power of a character at a unit is the integer power of its
+value (`MulChar.zpow_apply_coe_eq_zpow`), the `ℤ`-exponent form of Mathlib's
+`MulChar.pow_apply_coe`.
+
+On a monoid with finitely many units, every value of a character is an algebraic integer
+(`MulChar.isIntegral_apply`): `0` at nonunits and a root of unity at units.
 
 A quadratic character takes the value `1` or `-1` at every unit
 (`MulChar.IsQuadratic.apply_eq_one_or_eq_neg_one`), so it is trivial when `2 = 0` in the
@@ -150,6 +159,26 @@ theorem isQuadratic_prod {M R ι : Type*} [CommMonoid M] [CommRing R]
     {s : Finset ι} {χ : ι → MulChar M R} (hχ : ∀ i ∈ s, (χ i).IsQuadratic) :
     (∏ i ∈ s, χ i).IsQuadratic :=
   Finset.prod_induction χ IsQuadratic (fun _ _ ↦ IsQuadratic.mul) isQuadratic_one hχ
+
+/-- With values in a field, an integer power of a character takes the integer power of its value
+at a unit: `(χ ^ n) a = χ a ^ n`. Mathlib's `MulChar.zpow_apply_coe` instead moves the power onto
+the unit, `(χ ^ n) a = χ (a ^ n)`. -/
+theorem zpow_apply_coe_eq_zpow {R R' : Type*} [CommMonoid R] [Field R'] (χ : MulChar R R') (n : ℤ)
+    (a : Rˣ) : (χ ^ n) a = χ a ^ n := by
+  obtain ⟨k, rfl | rfl⟩ := Int.eq_nat_or_neg n
+  · simp [pow_apply_coe]
+  · rw [zpow_neg, zpow_natCast, inv_apply_eq_inv, pow_apply_coe, zpow_neg, zpow_natCast,
+      Ring.inverse_eq_inv']
+
+/-- The values of a multiplicative character of a monoid with finitely many units are algebraic
+integers: `0` at nonunits and roots of unity at units. -/
+theorem isIntegral_apply {M R : Type*} [CommMonoid M] [Finite Mˣ] [CommRing R]
+    (χ : MulChar M R) (x : M) : IsIntegral ℤ (χ x) := by
+  by_cases hx : IsUnit x
+  · obtain ⟨u, rfl⟩ := hx
+    simpa using χ.toUnitHom.isIntegral_coe_apply u
+  · rw [map_nonunit χ hx]
+    exact isIntegral_zero
 
 section Transport
 

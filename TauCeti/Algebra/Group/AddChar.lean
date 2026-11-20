@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Algebra.Group.AddChar
+public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
+import Mathlib.GroupTheory.OrderOfElement
+import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # Additive characters
@@ -16,6 +19,8 @@ public import Mathlib.Algebra.Group.AddChar
 * `AddChar.map_sum_eq_prod`: an additive character turns finite sums into products.
 * `AddChar.pow_char_eq_one`: every additive character on a ring of characteristic `p`, such as
   `ZMod p`, takes values in the `p`-th roots of unity.
+* `AddChar.isIntegral_apply`: the values of an additive character of a finite group are algebraic
+  integers.
 -/
 
 public section
@@ -33,3 +38,11 @@ theorem AddChar.map_sum_eq_prod {ι A M : Type*} [AddCommMonoid A] [CommMonoid M
   induction s using Finset.cons_induction with
   | empty => simp
   | cons a s ha ih => rw [Finset.sum_cons, map_add_eq_mul, ih, Finset.prod_cons]
+
+/-- The values of an additive character of a finite additive group are algebraic integers: each
+is a root of unity of order dividing the order of the group. -/
+theorem AddChar.isIntegral_apply {A R : Type*} [AddGroup A] [Finite A] [CommRing R]
+    (ψ : AddChar A R) (a : A) : IsIntegral ℤ (ψ a) :=
+  IsIntegral.of_pow Nat.card_pos <| by
+    rw [← AddChar.map_nsmul_eq_pow, card_nsmul_eq_zero', AddChar.map_zero_eq_one]
+    exact isIntegral_one
