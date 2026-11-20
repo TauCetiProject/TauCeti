@@ -338,7 +338,7 @@ theorem bijective_stationarySobolevOperator_ofComplexModule
       simp [← Complex.coe_smul, inner_smul_left])
     (fun v w w' ↦ by simp [inner_add_right]) (fun c v w ↦ by
       simp [← Complex.coe_smul, inner_smul_right])
-  have hB (v w : F) : B v w = (inner ℂ v w).im := rfl
+  have hB (v w : F) : B v w = (inner ℂ v w).im := LinearMap.mk₂_apply ..
   have hBJ (v : F) : B v (J₀ v) = ‖v‖ ^ 2 := by
     rw [hB, AlmostComplexStructure.ofComplexModule_apply, inner_smul_right,
       inner_self_eq_norm_sq_to_K]
@@ -386,7 +386,7 @@ theorem coe_stationarySobolevEquiv {S : C(AddCircle (1 : ℝ), F →L[ℝ] F)}
     (stationarySobolevEquiv hS₁ hS hdet : H1 F →L[ℝ] Lp F 2 stripMeasure) =
       stationarySobolevOperator (fun _ ↦ AlmostComplexStructure.ofComplexModule F)
         fun t : ℝ ↦ S t :=
-  (rfl)
+  ContinuousLinearEquiv.coe_ofBijective _ _ _
 
 /-- The isomorphism `TauCeti.Floer.stationarySobolevEquiv` acts as the Sobolev realization of the
 stationary cylinder operator. -/
@@ -399,7 +399,7 @@ theorem coeFn_stationarySobolevEquiv {S : C(AddCircle (1 : ℝ), F →L[ℝ] F)}
     ⇑(stationarySobolevEquiv hS₁ hS hdet) =
       ⇑(stationarySobolevOperator (fun _ ↦ AlmostComplexStructure.ofComplexModule F)
         fun t : ℝ ↦ S t) :=
-  (rfl)
+  ContinuousLinearEquiv.coeFn_ofBijective _ _ _
 
 end Unitary
 
