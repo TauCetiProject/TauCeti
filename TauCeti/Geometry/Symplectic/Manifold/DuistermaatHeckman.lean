@@ -28,7 +28,9 @@ This file develops the basic properties of the measure that need no reduction th
 
 * **Total mass.** For measurable `μ`, the measure of the whole space is the symplectic volume of
   `M` (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_univ`); it is a finite measure on a compact
-  manifold (`TauCeti.SmoothTwoForm.isFiniteMeasure_duistermaatHeckmanMeasure`).
+  manifold (`TauCeti.SmoothTwoForm.isFiniteMeasure_duistermaatHeckmanMeasure`). A constant map
+  has measure the symplectic volume times a point mass
+  (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_const`).
 * **Properness.** If `μ` is a proper map to a Hausdorff space, the measure is finite on compact
   sets (`TauCeti.SmoothTwoForm.isFiniteMeasureOnCompacts_duistermaatHeckmanMeasure`), hence locally
   finite when the target is locally compact, even when `M` is not compact.
@@ -114,6 +116,14 @@ theorem duistermaatHeckmanMeasure_add_const [Add F] [MeasurableAdd F] (hμ : Mea
     σ.duistermaatHeckmanMeasure n (fun x ↦ μ x + c) =
       (σ.duistermaatHeckmanMeasure n μ).map (· + c) :=
   duistermaatHeckmanMeasure_comp (measurable_add_const c) hμ
+
+variable (σ n) in
+/-- **A constant moment map.** A constant map, such as the moment map of the trivial action, has
+Duistermaat–Heckman measure the symplectic volume of `M` times the point mass at its value. -/
+@[simp]
+theorem duistermaatHeckmanMeasure_const (c : F) :
+    σ.duistermaatHeckmanMeasure n (fun _ ↦ c) = σ.liouvilleMeasure n univ • Measure.dirac c :=
+  Measure.map_const _ c
 
 /-- **Rescaling the form.** Replacing `σ` by `r • σ` multiplies the Duistermaat–Heckman measure by
 `|r|ⁿ`. -/

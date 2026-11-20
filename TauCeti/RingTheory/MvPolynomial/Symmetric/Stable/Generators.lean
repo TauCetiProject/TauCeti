@@ -137,6 +137,17 @@ theorem coe_stableSymmetricProj_stablePsumPart {n : ℕ} (μ : n.Partition) (d :
       psumPart (Fin d) R μ := by
   rw [stablePsumPart, stableSymmetricProj_mk]
 
+/-- The power-sum product of the (unique, empty) partition of `0` is the unit of the symmetric
+functions. -/
+theorem stablePsumPart_zero (μ : Nat.Partition 0) : stablePsumPart R μ = stableSymmetricOne R := by
+  rw [Subsingleton.elim μ (.indiscrete 0)]
+  exact stableSymmetricSubmodule_ext fun d => Subtype.ext <| by simp
+
+/-- The power-sum product of the one-row partition `(n)` is the power sum `p_n`. -/
+theorem stablePsumPart_indiscrete {n : ℕ} (hn : n ≠ 0) :
+    stablePsumPart R (Nat.Partition.indiscrete n) = stablePsum R hn :=
+  stableSymmetricSubmodule_ext fun d => Subtype.ext <| by simp [hn]
+
 namespace SymmetricFunction
 
 /-- **The power-sum product symmetric function is the product of the power sums of its parts**:
@@ -202,9 +213,24 @@ end CommSemiring
 
 section CommRing
 
-namespace SymmetricFunction
-
 variable (R : Type*) [CommRing R]
+
+/-- The Schur coordinates of the elementary symmetric function: `e_n = s_(1ⁿ)` is the basis
+vector of index `(1ⁿ)`. -/
+@[simp]
+theorem stableSchurBasis_repr_stableEsymm (n : ℕ) :
+    (stableSchurBasis R n).repr (stableEsymm R n) = Finsupp.single (Nat.Partition.ones n) 1 := by
+  rw [← stableSchur_ones, stableSchurBasis_repr_stableSchur]
+
+/-- The Schur coordinates of the complete homogeneous symmetric function: `h_n = s_(n)` is the
+basis vector of index `(n)`. -/
+@[simp]
+theorem stableSchurBasis_repr_stableHsymm (n : ℕ) :
+    (stableSchurBasis R n).repr (stableHsymm R n) =
+      Finsupp.single (Nat.Partition.indiscrete n) 1 := by
+  rw [← stableSchur_indiscrete, stableSchurBasis_repr_stableSchur]
+
+namespace SymmetricFunction
 
 /-- **The elementary symmetric functions are algebraically independent.** -/
 theorem esymmAlgHom_injective : Function.Injective (esymmAlgHom R) := by
