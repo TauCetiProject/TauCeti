@@ -140,6 +140,27 @@ structure ChevalleyDatum (t : DynkinType) (ht : t.Valid) where
 
 namespace ChevalleyDatum
 
+/-- The standard fundamental-weight basis, transported to the lattice spanned by a full-weight
+family. -/
+noncomputable def fullWeightLatticeBasis {η ι : Type*} [Finite ι]
+    {weight : η → ι → ℤ} (hspan : Submodule.span ℤ (Set.range weight) = ⊤) :
+    Module.Basis ι ℤ (Submodule.span ℤ (Set.range weight)) :=
+  (Pi.basisFun ℤ ι).map (LinearEquiv.ofTop _ hspan).symm
+
+/-- The full-weight lattice basis has the standard fundamental-weight coordinates. -/
+@[simp] theorem coe_fullWeightLatticeBasis {η ι : Type*} [Finite ι] [DecidableEq ι]
+    {weight : η → ι → ℤ} (hspan : Submodule.span ℤ (Set.range weight) = ⊤) (i : ι) :
+    (fullWeightLatticeBasis hspan i : ι → ℤ) = Pi.single i 1 := by
+  rw [fullWeightLatticeBasis, Module.Basis.map_apply]
+  simp [Pi.basisFun_apply]
+
+/-- Reading the full-weight lattice basis returns the original coordinates. -/
+@[simp] theorem fullWeightLatticeBasis_repr {η ι : Type*} [Finite ι]
+    {weight : η → ι → ℤ} (hspan : Submodule.span ℤ (Set.range weight) = ⊤)
+    (μ : Submodule.span ℤ (Set.range weight)) (i : ι) :
+    (fullWeightLatticeBasis hspan).repr μ i = (μ : ι → ℤ) i := by
+  simp [fullWeightLatticeBasis, Module.Basis.map_repr, Pi.basisFun_repr]
+
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
 attribute [instance] instAddCommGroup instModule
@@ -184,15 +205,23 @@ theorem coordinateWeight_def (j : Fin D.dim) :
     D.coordinateWeight j = D.weightLatticeBasis.repr ⟨D.weight j, D.weight_mem_weightLattice j⟩ :=
   (rfl)
 
+/-- In a fundamental-weight lattice basis, reading coordinates is evaluation. -/
+theorem weightLatticeBasis_repr_of_coe_weightLatticeBasis
+    (hb : ∀ i, (D.weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1)
+    (μ : D.weightLattice) (i : Fin t.rank) :
+    D.weightLatticeBasis.repr μ i = (μ : Fin t.rank → ℤ) i := by
+  have h := congrArg Subtype.val (D.weightLatticeBasis.sum_repr μ)
+  rw [Submodule.coe_sum] at h
+  simpa [hb, Pi.single_apply] using congrFun h i
+
 /-- When the chosen basis of the weight lattice is the standard basis of fundamental weights, the
 coordinate weights agree with the weights themselves. -/
 theorem coordinateWeight_eq_of_coe_weightLatticeBasis
     (hb : ∀ i, (D.weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1) :
     D.coordinateWeight = D.weight := by
   funext j i
-  have h := congrFun (D.sum_coordinateWeight_smul j) i
-  simpa only [Finset.sum_apply, Pi.smul_apply, hb, Pi.single_apply, smul_eq_mul, mul_ite,
-    mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte] using h
+  rw [D.coordinateWeight_def]
+  exact D.weightLatticeBasis_repr_of_coe_weightLatticeBasis hb _ i
 
 /-- **The coordinate weights span the character lattice.** The weights span `Λ(D)` by definition,
 and reading `Λ(D)` in the chosen basis is a linear isomorphism onto `Fin t.rank → ℤ`. -/
@@ -277,10 +306,9 @@ theorem coordinateRoot_eq_of_coe_weightLatticeBasis
     (hb : ∀ i, (D.weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1)
     (γ : Fin t.numRoots) :
     D.coordinateRoot γ = (t.simplyConnectedRootDatum ht).root γ := by
-  ext i
-  have h := congrFun (D.sum_coordinateRoot_smul γ) i
-  simpa only [Finset.sum_apply, Pi.smul_apply, hb, Pi.single_apply, smul_eq_mul, mul_ite,
-    mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte] using h
+  funext i
+  rw [D.coordinateRoot_def]
+  exact D.weightLatticeBasis_repr_of_coe_weightLatticeBasis hb _ i
 
 /-! ## Nilpotence of the root generators -/
 
