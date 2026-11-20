@@ -163,8 +163,8 @@ theorem isInvertible_mfderiv_of_isIsotropic [FiniteDimensional ℝ E] [FiniteDim
   -- `TangentSpace K x` is definitionally the model space `EL` (and `TangentSpace J (b x)` is `F`),
   -- so the helper is applied at the model spaces, where `FiniteDimensional ℝ EL` is needed.
   have : FiniteDimensional ℝ EL := inferInstanceAs (FiniteDimensional ℝ (TangentSpace K x))
-  exact ContinuousLinearMap.isInvertible_of_injective_of_finrank_eq (U := EL) (G := F)
-    (mfderiv K J b x) hdim hinj
+  exact (ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq (U := EL) (G := F)
+    (A := mfderiv K J b x) hdim).2 hinj
 
 /-- **Isotropic relations project to local diffeomorphisms together.** In equal finite
 dimensions, if the tangent image of `y ↦ (a y, b y)` at an interior point `x` is isotropic for the
