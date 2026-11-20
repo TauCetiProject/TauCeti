@@ -222,68 +222,6 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimens
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
   [ContMDiffSMul I I' ∞ G M] [ProperSMul N M] [IsCancelSMul N M]
 
-omit [FiniteDimensional ℝ E'] [I'.Boundaryless] [IsManifold I' ∞ M] [ProperSMul N M]
-  [IsCancelSMul N M] in
-/-- A closed subgroup of a Lie group acting smoothly on `M` acts smoothly on `M`, for its
-closed-subgroup structure. -/
-private theorem contMDiffSMul_ofIsClosed (hN : IsClosed (N : Set G)) :
-    letI : T2Space G := I.t2Space_of_lieGroup ∞
-    letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
-    ContMDiffSMul 𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := I) N).toSubmodule) I' ∞ N M := by
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN
-  let _ := d.chartedSpace
-  exact MulAction.contMDiffSMul_compHom (f := N.subtype) d.contMDiff_subtypeVal
-
-variable (I I' M) in
-/-- **The charts of the orbit space `M ⧸ N`** of a free proper action of a closed subgroup `N`, the
-charts of the quotient manifold theorem `ProperSMul.orbitRelQuotientChartedSpace` for the
-closed-subgroup structure of `N`. They are modelled on `ℝ^(dim M - dim N)`. -/
-@[instance_reducible]
-def orbitRelQuotientChartedSpaceOfIsClosed (hN : IsClosed (N : Set G)) :
-    letI : T2Space G := I.t2Space_of_lieGroup ∞
-    ChartedSpace
-      (ProperSMul.QuotientModelSpace (Lie.lieSubalgebraOfSubgroup (I := I) N).toSubmodule E')
-      (MulAction.orbitRel.Quotient N M) :=
-  letI : T2Space G := I.t2Space_of_lieGroup ∞
-  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN
-  letI := d.chartedSpace
-  haveI := d.lieGroup
-  haveI := contMDiffSMul_ofIsClosed (I := I) (I' := I') (M := M) hN
-  ProperSMul.orbitRelQuotientChartedSpace
-    𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := I) N).toSubmodule) N I' M
-
-/-- **The quotient manifold theorem for a closed subgroup.** The orbit space of a free proper
-action of a closed subgroup `N` is a smooth manifold for the charts
-`Subgroup.orbitRelQuotientChartedSpaceOfIsClosed`. -/
-theorem isManifold_orbitRelQuotientOfIsClosed (hN : IsClosed (N : Set G)) :
-    letI : T2Space G := I.t2Space_of_lieGroup ∞
-    letI := orbitRelQuotientChartedSpaceOfIsClosed I I' M hN
-    IsManifold
-      𝓘(ℝ, ProperSMul.QuotientModelSpace (Lie.lieSubalgebraOfSubgroup (I := I) N).toSubmodule E')
-      ∞ (MulAction.orbitRel.Quotient N M) := by
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN
-  let _ := d.chartedSpace
-  have := d.lieGroup
-  have := contMDiffSMul_ofIsClosed (I := I) (I' := I') (M := M) hN
-  exact ProperSMul.instIsManifoldOrbitRelQuotient
-
-/-- The orbit projection `M → M ⧸ N` of a free proper action of a closed subgroup is a smooth
-submersion. -/
-theorem isSubmersion_orbitRelQuotientMkOfIsClosed (hN : IsClosed (N : Set G)) :
-    letI : T2Space G := I.t2Space_of_lieGroup ∞
-    letI := orbitRelQuotientChartedSpaceOfIsClosed I I' M hN
-    IsSubmersion I'
-      𝓘(ℝ, ProperSMul.QuotientModelSpace (Lie.lieSubalgebraOfSubgroup (I := I) N).toSubmodule E')
-      ∞ (Quotient.mk (MulAction.orbitRel N M)) := by
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let d := Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN
-  let _ := d.chartedSpace
-  have := d.lieGroup
-  have := contMDiffSMul_ofIsClosed (I := I) (I' := I') (M := M) hN
-  exact ProperSMul.isSubmersion_quotientMk
-
 /-- **The residual action is smooth.** If `G` acts smoothly on `M` and the closed normal subgroup
 `N` acts freely and properly, then the quotient Lie group `G ⧸ N` acts smoothly on the orbit
 manifold `M ⧸ N`, by `[g] • [x] = [g • x]`. -/
