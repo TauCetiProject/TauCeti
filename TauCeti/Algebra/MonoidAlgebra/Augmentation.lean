@@ -25,6 +25,7 @@ in `TauCeti.Algebra.MonoidAlgebra.Exactness`.
 * `MonoidAlgebra.augmentation`: the coefficient-sum ring homomorphism.
 * `MonoidAlgebra.augmentation_comp_mapDomainRingHom`: naturality in the monoid.
 * `MonoidAlgebra.augmentation_mapDomainRingEquiv`: invariance under monoid isomorphisms.
+* `MonoidAlgebra.augmentation_mapRingHom`: naturality in the coefficients.
 * `MonoidAlgebra.augmentationLinearMap`: the coefficient-sum linear map.
 * `MonoidAlgebra.augmentationLinearMap_surjective`: surjectivity over any semiring.
 * `MonoidAlgebra.ker_augmentationLinearMap`: the linear kernel is the augmentation ideal.
@@ -70,6 +71,17 @@ theorem augmentation_mapDomainRingEquiv {M : Type v} {N : Type w} [Monoid M] [Mo
     (e : M ≃* N) (x : MonoidAlgebra R M) :
     augmentation R N (mapDomainRingEquiv R e x) = augmentation R M x :=
   RingHom.congr_fun (augmentation_comp_mapDomainRingHom R (e : M →* N)) x
+
+/-- The coefficient-sum augmentation is natural with respect to homomorphisms of the
+coefficient semirings. -/
+@[simp]
+theorem augmentation_mapRingHom {S : Type w} [Semiring S] {K : Type v} [Monoid K] (f : R →+* S)
+    (x : MonoidAlgebra R K) :
+    augmentation S K (mapRingHom K f x) = f (augmentation R K x) := by
+  induction x using induction_linear with
+  | zero => simp
+  | add x y hx hy => simp [hx, hy]
+  | single k r => simp
 
 variable (K : Type v) [Monoid K]
 
