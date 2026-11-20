@@ -29,22 +29,28 @@ solutions lie in at most `2 ^ n` proper submodules of `Rⁿ`, namely the kernels
 proper subspaces containing all solutions therefore only has to handle the nondegenerate ones.
 
 *Translates of one-parameter subgroups.* Let `K` be a field. A vector `k : ι → ℤ` defines the
-one-parameter subgroup `t ↦ (t ^ kᵢ)ᵢ` of the torus `(Kˣ)ᶥ`; it is nontrivial when `k ≠ 0`. Its
-translate through a point `x` is the curve `t ↦ (xᵢ t ^ kᵢ)ᵢ`. Bounds for points of small height on
-a subvariety `X` of a torus, such as Schmidt's, only count the points of `X` lying on no torus coset
-of positive dimension contained in `X`. To count nondegenerate solutions of `∑ αᵢ yᵢ = 1` in this
-way, one needs that these cosets consist of degenerate solutions. Since every such coset contains a
-translate of a nontrivial one-parameter subgroup, it suffices to prove this for those translates.
+one-parameter subgroup `t ↦ (t ^ kᵢ)ᵢ` of the torus `(Kˣ)ᶥ`; it is nontrivial when `k ≠ 0`. For any
+point `x`, write `t ↦ (xᵢ t ^ kᵢ)ᵢ` for the curve obtained by scaling the coordinates of `x`; when
+every `xᵢ` is nonzero it is the translate through `x` of this subgroup, a curve in the torus. The
+results below are stated for these coordinate scalings of an arbitrary `x`, and only their
+interpretation as torus translates needs the coordinates of `x` to be nonzero.
 
-If the linear form `∑ αᵢ yᵢ` is constant on the translate `t ↦ (xᵢ t ^ kᵢ)ᵢ` at infinitely many
+Bounds for points of small height on a subvariety `X` of a torus, such as Schmidt's, only count the
+points of `X` lying on no torus coset of positive dimension contained in `X`. To count nondegenerate
+solutions of `∑ αᵢ yᵢ = 1` in this way, one needs that these cosets consist of degenerate solutions.
+Since every such coset contains a translate of a nontrivial one-parameter subgroup, it suffices to
+prove this for those translates.
+
+If the linear form `∑ αᵢ yᵢ` is constant on the curve `t ↦ (xᵢ t ^ kᵢ)ᵢ` at infinitely many
 `t`, and `k ≠ 0`, then the indices `i` with `kᵢ` equal to a fixed nonzero exponent form a nonempty
-set `I` whose subsum vanishes identically on the translate: the coefficients of the monomial
+set `I` whose subsum vanishes identically on the curve: the coefficients of the monomial
 `t ^ c` in the Laurent polynomial `∑ αᵢ xᵢ t ^ kᵢ` sum to zero for every `c ≠ 0`
-(`TauCeti.sum_filter_eq_ite_of_forall_sum_mul_zpow_eq`). Hence no point of such a translate is a
+(`TauCeti.sum_filter_eq_ite_of_forall_sum_mul_zpow_eq`). Hence no point of such a curve is a
 nondegenerate solution. Conversely, if a solution `x` has a vanishing subsum over `I`, then the
-translate through `x` of the one-parameter subgroup with exponent `1` on `I` and `0` elsewhere lies
-in the hyperplane. Over an infinite field, a solution is therefore degenerate exactly when it lies
-on the translate of a nontrivial one-parameter subgroup contained in the hyperplane.
+curve through `x` with exponent `1` on `I` and `0` elsewhere lies in the hyperplane; this direction
+holds over any division semiring. Over an infinite field, a solution is therefore degenerate exactly
+when it lies on such a curve with `k ≠ 0` contained in the hyperplane. For solutions with nonzero
+coordinates, these curves are the translates of nontrivial one-parameter subgroups.
 
 ## Main results
 
@@ -52,11 +58,11 @@ on the translate of a nontrivial one-parameter subgroup contained in the hyperpl
   most `2 ^ n` proper subspaces contain every degenerate solution of `∑ αᵢ yᵢ = 1`.
 * `TauCeti.exists_forall_sum_mul_mul_zpow_eq_zero`: if `∑ αᵢ xᵢ t ^ kᵢ = d` for infinitely many
   `t` and `k ≠ 0`, some nonempty subsum `∑ i ∈ I, αᵢ xᵢ t ^ kᵢ` vanishes for every `t`.
-* `TauCeti.not_isNondegenerateSolution_of_forall_sum_mul_mul_zpow_eq_one`: no point of a translate
-  of a nontrivial one-parameter subgroup lying in the hyperplane `∑ αᵢ yᵢ = 1` at infinitely many
-  parameters is a nondegenerate solution.
-* `TauCeti.exists_ne_zero_forall_sum_mul_mul_zpow_eq_one`: a degenerate solution lies on the
-  translate of a nontrivial one-parameter subgroup contained in the hyperplane.
+* `TauCeti.not_isNondegenerateSolution_of_forall_sum_mul_mul_zpow_eq_one`: if `k ≠ 0`, no point of
+  the curve `t ↦ (xᵢ t ^ kᵢ)ᵢ` lying in the hyperplane `∑ αᵢ yᵢ = 1` at infinitely many parameters
+  is a nondegenerate solution.
+* `TauCeti.exists_ne_zero_forall_sum_mul_mul_zpow_eq_one`: over a division semiring, a degenerate
+  solution `x` lies on a curve `t ↦ (xᵢ t ^ kᵢ)ᵢ`, `k ≠ 0`, contained in the hyperplane.
 * `TauCeti.not_isNondegenerateSolution_iff_exists_forall_sum_mul_mul_zpow_eq_one`: over an
   infinite field, the two conditions are equivalent.
 
@@ -111,39 +117,16 @@ end SubsumHyperplane
 
 section TorusTranslate
 
-variable {K ι : Type*} [Field K] [Fintype ι] {α x : ι → K}
+variable {K ι : Type*} [Fintype ι] {α x : ι → K}
 
-/-- **A linear form constant on a translate of a one-parameter subgroup has a vanishing subsum.**
-If `∑ αᵢ xᵢ t ^ kᵢ = d` for infinitely many `t` and `k ≠ 0`, then there is a nonempty set `I` of
-indices such that `∑ i ∈ I, αᵢ xᵢ t ^ kᵢ = 0` for every `t`. One can take for `I` the indices at
-which `k` takes a given nonzero value. -/
-theorem exists_forall_sum_mul_mul_zpow_eq_zero {k : ι → ℤ} (hk : k ≠ 0) {d : K} {S : Set K}
-    (hS : S.Infinite) (h : ∀ t ∈ S, ∑ i, α i * (x i * t ^ k i) = d) :
-    ∃ I : Finset ι, I.Nonempty ∧ ∀ t : K, ∑ i ∈ I, α i * (x i * t ^ k i) = 0 := by
-  classical
-  obtain ⟨j, hj : k j ≠ 0⟩ := Function.ne_iff.mp hk
-  refine ⟨({i | k i = k j} : Finset ι), ⟨j, by simp⟩, fun t ↦ ?_⟩
-  -- The coefficients of the nonconstant monomial `t ^ k j` sum to zero.
-  have h0 : ∑ i with k i = k j, α i * x i = 0 := by
-    simpa [hj] using sum_filter_eq_ite_of_forall_sum_mul_zpow_eq (c := fun i ↦ α i * x i) hS
-      (fun t ht ↦ by simpa only [mul_assoc] using h t ht) (k j)
-  calc ∑ i with k i = k j, α i * (x i * t ^ k i)
-      = ∑ i with k i = k j, α i * x i * t ^ k j :=
-        sum_congr rfl fun i hi ↦ by rw [(mem_filter.mp hi).2, mul_assoc]
-    _ = 0 := by rw [← sum_mul, h0, zero_mul]
+section DivisionSemiring
 
-/-- **Translates of one-parameter subgroups in the hyperplane consist of degenerate solutions.**
-If `k ≠ 0` and `∑ αᵢ xᵢ t ^ kᵢ = 1` for infinitely many `t`, then for every `t` the point
-`(xᵢ t ^ kᵢ)ᵢ` is not a nondegenerate solution of `∑ αᵢ yᵢ = 1`. -/
-theorem not_isNondegenerateSolution_of_forall_sum_mul_mul_zpow_eq_one {k : ι → ℤ} (hk : k ≠ 0)
-    {S : Set K} (hS : S.Infinite) (h : ∀ t ∈ S, ∑ i, α i * (x i * t ^ k i) = 1) (t : K) :
-    ¬ IsNondegenerateSolution α fun i ↦ x i * t ^ k i := fun hnd ↦ by
-  obtain ⟨I, hI, hI0⟩ := exists_forall_sum_mul_mul_zpow_eq_zero hk hS h
-  exact hnd.subsum_ne_zero hI (hI0 t)
+variable [DivisionSemiring K]
 
-/-- **Degenerate solutions lie on translates of one-parameter subgroups in the hyperplane.** If
+/-- **Degenerate solutions lie on coordinate-scaling curves in the hyperplane.** If
 `∑ αᵢ xᵢ = 1` and `x` is not a nondegenerate solution, then there is `k ≠ 0`, with entries `0`
-and `1`, such that `∑ αᵢ xᵢ t ^ kᵢ = 1` for every `t`. -/
+and `1`, such that `∑ αᵢ xᵢ t ^ kᵢ = 1` for every `t`. When every `xᵢ` is nonzero, the curve
+`t ↦ (xᵢ t ^ kᵢ)ᵢ` is the translate through `x` of a nontrivial one-parameter subgroup. -/
 theorem exists_ne_zero_forall_sum_mul_mul_zpow_eq_one (h1 : ∑ i, α i * x i = 1)
     (h : ¬ IsNondegenerateSolution α x) :
     ∃ k : ι → ℤ, k ≠ 0 ∧ ∀ t : K, ∑ i, α i * (x i * t ^ k i) = 1 := by
@@ -161,10 +144,45 @@ theorem exists_ne_zero_forall_sum_mul_mul_zpow_eq_one (h1 : ∑ i, α i * x i = 
   rw [hIt, zero_add, ← h1]
   exact sum_congr rfl fun i hi ↦ by simp [mem_compl.mp hi]
 
-/-- **Degenerate solutions are those on translates of one-parameter subgroups in the
-hyperplane.** Over an infinite field, a solution `x` of `∑ αᵢ xᵢ = 1` is not nondegenerate exactly
-when, for some `k ≠ 0`, the translate `t ↦ (xᵢ t ^ kᵢ)ᵢ` of the one-parameter subgroup with
-exponents `k` satisfies `∑ αᵢ xᵢ t ^ kᵢ = 1` for every `t ≠ 0`. -/
+end DivisionSemiring
+
+variable [Field K]
+
+/-- **A linear form constant on a coordinate-scaling curve has a vanishing subsum.**
+If `∑ αᵢ xᵢ t ^ kᵢ = d` for infinitely many `t` and `k ≠ 0`, then there is a nonempty set `I` of
+indices such that `∑ i ∈ I, αᵢ xᵢ t ^ kᵢ = 0` for every `t`. One can take for `I` the indices at
+which `k` takes a given nonzero value. No coordinate of `x` needs to be nonzero; when all are, the
+curve `t ↦ (xᵢ t ^ kᵢ)ᵢ` is the translate through `x` of a one-parameter subgroup. -/
+theorem exists_forall_sum_mul_mul_zpow_eq_zero {k : ι → ℤ} (hk : k ≠ 0) {d : K} {S : Set K}
+    (hS : S.Infinite) (h : ∀ t ∈ S, ∑ i, α i * (x i * t ^ k i) = d) :
+    ∃ I : Finset ι, I.Nonempty ∧ ∀ t : K, ∑ i ∈ I, α i * (x i * t ^ k i) = 0 := by
+  classical
+  obtain ⟨j, hj : k j ≠ 0⟩ := Function.ne_iff.mp hk
+  refine ⟨({i | k i = k j} : Finset ι), ⟨j, by simp⟩, fun t ↦ ?_⟩
+  -- The coefficients of the nonconstant monomial `t ^ k j` sum to zero.
+  have h0 : ∑ i with k i = k j, α i * x i = 0 := by
+    simpa [hj] using sum_filter_eq_ite_of_forall_sum_mul_zpow_eq (c := fun i ↦ α i * x i) hS
+      (fun t ht ↦ by simpa only [mul_assoc] using h t ht) (k j)
+  calc ∑ i with k i = k j, α i * (x i * t ^ k i)
+      = ∑ i with k i = k j, α i * x i * t ^ k j :=
+        sum_congr rfl fun i hi ↦ by rw [(mem_filter.mp hi).2, mul_assoc]
+    _ = 0 := by rw [← sum_mul, h0, zero_mul]
+
+/-- **Coordinate-scaling curves in the hyperplane consist of degenerate solutions.**
+If `k ≠ 0` and `∑ αᵢ xᵢ t ^ kᵢ = 1` for infinitely many `t`, then for every `t` the point
+`(xᵢ t ^ kᵢ)ᵢ` is not a nondegenerate solution of `∑ αᵢ yᵢ = 1`. In particular, when every `xᵢ` is
+nonzero, this applies to the translate through `x` of a nontrivial one-parameter subgroup. -/
+theorem not_isNondegenerateSolution_of_forall_sum_mul_mul_zpow_eq_one {k : ι → ℤ} (hk : k ≠ 0)
+    {S : Set K} (hS : S.Infinite) (h : ∀ t ∈ S, ∑ i, α i * (x i * t ^ k i) = 1) (t : K) :
+    ¬ IsNondegenerateSolution α fun i ↦ x i * t ^ k i := fun hnd ↦ by
+  obtain ⟨I, hI, hI0⟩ := exists_forall_sum_mul_mul_zpow_eq_zero hk hS h
+  exact hnd.subsum_ne_zero hI (hI0 t)
+
+/-- **Degenerate solutions are those on coordinate-scaling curves in the hyperplane.** Over an
+infinite field, a solution `x` of `∑ αᵢ xᵢ = 1` is not nondegenerate exactly when, for some
+`k ≠ 0`, the curve `t ↦ (xᵢ t ^ kᵢ)ᵢ` satisfies `∑ αᵢ xᵢ t ^ kᵢ = 1` for every `t ≠ 0`. When every
+`xᵢ` is nonzero, this curve is the translate through `x` of the one-parameter subgroup with
+exponents `k`. -/
 theorem not_isNondegenerateSolution_iff_exists_forall_sum_mul_mul_zpow_eq_one [Infinite K]
     (h1 : ∑ i, α i * x i = 1) :
     ¬ IsNondegenerateSolution α x ↔
