@@ -286,9 +286,10 @@ private theorem coeff_linearCombination_orbitSumQuotient (c : Quotient (permOrbi
   simp only [Finsupp.linearCombination_apply, Finsupp.sum, AddSubmonoidClass.coe_finsetSum,
     coeff_sum, SetLike.val_smul, coeff_smul]
   rw [Finset.sum_eq_single O]
-  · rw [orbitSumQuotient, coeff_orbitSum_of_rel ((permOrbitRel G).refl' _), smul_eq_mul, mul_one]
+  · rw [coe_orbitSumQuotient, coeff_orbitSum_of_rel ((permOrbitRel G).refl' _), smul_eq_mul,
+      mul_one]
   · intro O' _ hO'
-    rw [orbitSumQuotient, coeff_orbitSum_out_of_ne (by rwa [Quotient.out_eq]), smul_zero]
+    rw [coe_orbitSumQuotient, coeff_orbitSum_out_of_ne (by rwa [Quotient.out_eq]), smul_zero]
   · intro hO
     rw [Finsupp.notMem_support_iff.1 hO, zero_smul]
 
@@ -319,7 +320,7 @@ private theorem coe_permInvariantsBasis_eq :
 
 theorem coe_permInvariantsBasis (O : Quotient (permOrbitRel G)) :
     (permInvariantsBasis R G O : MvPolynomial σ R) = orbitSum R G O.out := by
-  rw [coe_permInvariantsBasis_eq, orbitSumQuotient]
+  rw [coe_permInvariantsBasis_eq, coe_orbitSumQuotient]
 
 /-- The coordinate of an invariant polynomial along the orbit sum of an orbit is the common
 coefficient of the monomials of that orbit. -/
