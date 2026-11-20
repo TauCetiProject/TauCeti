@@ -37,7 +37,9 @@ symbol of `P` evaluated at `df`. This file develops the algebraic theory:
   `D : A →ₗ[R] M` has order at most one exactly when `D = δ + (· • m)` for a derivation `δ` and
   `m : M`, and this splitting is unique, with `m = D 1`.
 * `AlgEquiv.conjDifferentialOperators`: conjugation `D ↦ e ∘ D ∘ e⁻¹` by an algebra isomorphism
-  `e : A ≃ B` preserves the order of operators on the algebra itself.
+  `e : A ≃ B` preserves the order of operators on the algebra itself. More generally, an operator
+  intertwined with one of order at most `m` by a surjective algebra homomorphism has order at most
+  `m` (`mem_differentialOperators_of_comp_eq_comp`).
 * `apply_mem_smul_top_of_mem_pow_smul_top`: an operator of order at most `m` sends
   `I ^ (m + 1) • M` into `I • N` for every ideal `I`, so the value of `D x` modulo `I` depends
   only on `x` modulo `I ^ (m + 1)`. For the vanishing ideal of a point this is the statement
@@ -48,6 +50,10 @@ symbol of `P` evaluated at `df`. This file develops the algebraic theory:
 * `smulCommutator_pow_comp_of_mem`: the top iterated commutators of a composition multiply,
   `ad_a ^ (m + k) (P ∘ Q) = (m + k).choose m • (ad_a ^ m P ∘ ad_a ^ k Q)`. Dividing by
   factorials over a `ℚ`-algebra, this is multiplicativity of principal symbols.
+* `Derivation.smulCommutator_pow_pow_apply`: the `n`-fold commutator of the `n`-th power of a
+  derivation `δ` with multiplication by `a` is multiplication by `n! (δ a) ^ n`, so `δ ^ (n + 1)`
+  does not have order at most `n` unless `(n + 1)! (δ a) ^ (n + 1) = 0` for all `a`
+  (`Derivation.pow_succ_notMem_differentialOperators`).
 * `derivative_comp_derivative_notMem_differentialOperators_one`: the second derivative on
   `R[X]` does not have order one when `2 ≠ 0` in `R`, since `[[∂², X], X] = 2`.
 
@@ -521,6 +527,42 @@ theorem mem_differentialOperators_one_iff {D : A →ₗ[R] M} :
 
 end FirstOrder
 
+/-! ### Powers of a derivation -/
+
+section DerivationPow
+
+variable {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R A]
+
+/-- The `n`-fold commutator of the `n`-th power of a derivation `δ` with multiplication by `a` is
+multiplication by `n! (δ a) ^ n`: the principal symbol of `δ ^ n` at `da` is `(δ a) ^ n`. -/
+theorem _root_.Derivation.smulCommutator_pow_pow_apply (δ : Derivation R A A) (a : A) (n : ℕ)
+    (x : A) :
+    (smulCommutator R a ^ n) ((δ : Module.End R A) ^ n) x = n.factorial • (δ a ^ n * x) := by
+  induction n generalizing x with
+  | zero => simp
+  | succ n ih =>
+    have hpow : (δ : Module.End R A) ^ n ∈ differentialOperators R A A A n := by
+      simpa using SetLike.pow_mem_graded n δ.mem_differentialOperators_one
+    have h := smulCommutator_pow_comp_of_mem δ.mem_differentialOperators_one hpow a
+    rw [add_comm 1 n] at h
+    rw [pow_succ' (δ : Module.End R A), Module.End.mul_eq_comp, h, LinearMap.smul_apply,
+      LinearMap.comp_apply, ih, pow_one, smulCommutator_apply_apply, Nat.choose_one_right,
+      Nat.factorial_succ]
+    simp only [Derivation.coeFn_coe, smul_eq_mul, Derivation.leibniz, nsmul_eq_mul]
+    push_cast
+    ring
+
+/-- The `(n + 1)`-st power of a derivation `δ` does not have order at most `n` when
+`(n + 1)! (δ a) ^ (n + 1) ≠ 0` for some `a`: its `(n + 1)`-fold commutator with `a` sends `1` to
+this element. -/
+theorem _root_.Derivation.pow_succ_notMem_differentialOperators (δ : Derivation R A A) {a : A}
+    {n : ℕ} (h : (n + 1).factorial • δ a ^ (n + 1) ≠ 0) :
+    (δ : Module.End R A) ^ (n + 1) ∉ differentialOperators R A A A n := fun hδ ↦ h <| by
+  simpa [δ.smulCommutator_pow_pow_apply] using
+    congr($(smulCommutator_pow_eq_zero hδ n.lt_add_one a) 1)
+
+end DerivationPow
+
 /-! ### Transport along algebra isomorphisms -/
 
 section Conj
@@ -536,21 +578,43 @@ theorem _root_.AlgEquiv.smulCommutator_conj (a : A) (D : A →ₗ[R] A) :
   ext y
   simp
 
+/-- If a surjective algebra homomorphism `ρ : A → B` intertwines an operator `P` on `A` with an
+operator `Q` on `B`, that is `Q ∘ ρ = ρ ∘ P`, then `Q` has order at most `m` whenever `P` does.
+For instance, restriction of smooth functions on a disjoint union of manifolds to one component
+is such a homomorphism. -/
+theorem mem_differentialOperators_of_comp_eq_comp {ρ : A →ₐ[R] B} (hρ : Function.Surjective ρ)
+    {P : A →ₗ[R] A} {Q : B →ₗ[R] B} (h : Q ∘ₗ ρ.toLinearMap = ρ.toLinearMap ∘ₗ P) {m : ℕ}
+    (hP : P ∈ differentialOperators R A A A m) : Q ∈ differentialOperators R B B B m := by
+  -- The commutator of `Q` with `ρ a` is intertwined with the commutator of `P` with `a`.
+  have hcomm : ∀ (a : A) {P : A →ₗ[R] A} {Q : B →ₗ[R] B},
+      Q ∘ₗ ρ.toLinearMap = ρ.toLinearMap ∘ₗ P →
+        smulCommutator R (ρ a) Q ∘ₗ ρ.toLinearMap = ρ.toLinearMap ∘ₗ smulCommutator R a P := by
+    intro a P Q h
+    ext x
+    have h' (y : A) : Q (ρ y) = ρ (P y) := congr($h y)
+    simp [← map_mul, h']
+  induction m generalizing P Q with
+  | zero =>
+    rw [mem_differentialOperators_zero_iff_smulCommutator] at hP ⊢
+    intro b
+    obtain ⟨a, rfl⟩ := hρ b
+    have h0 := hcomm a h
+    rw [hP a, LinearMap.comp_zero] at h0
+    ext y
+    obtain ⟨x, rfl⟩ := hρ y
+    exact congr($h0 x)
+  | succ m ih =>
+    rw [mem_differentialOperators_succ_iff] at hP ⊢
+    intro b
+    obtain ⟨a, rfl⟩ := hρ b
+    exact ih (hcomm a h) (hP a)
+
 /-- Conjugation by an algebra isomorphism preserves the order of a differential operator. -/
 theorem _root_.AlgEquiv.conj_mem_differentialOperators {D : A →ₗ[R] A} {m : ℕ}
     (hD : D ∈ differentialOperators R A A A m) :
-    e.toLinearMap ∘ₗ D ∘ₗ e.symm.toLinearMap ∈ differentialOperators R B B B m := by
-  induction m generalizing D with
-  | zero =>
-    rw [mem_differentialOperators_zero_iff_smulCommutator] at hD ⊢
-    intro b
-    rw [← e.apply_symm_apply b, e.smulCommutator_conj, hD]
-    simp
-  | succ m ih =>
-    rw [mem_differentialOperators_succ_iff] at hD ⊢
-    intro b
-    rw [← e.apply_symm_apply b, e.smulCommutator_conj]
-    exact ih (hD _)
+    e.toLinearMap ∘ₗ D ∘ₗ e.symm.toLinearMap ∈ differentialOperators R B B B m :=
+  mem_differentialOperators_of_comp_eq_comp (ρ := (e : A →ₐ[R] B)) e.surjective
+    (by ext; simp) hD
 
 /-- Iterated commutators commute with conjugation by an algebra isomorphism `e`, the entries
 being transported by `e`. -/
