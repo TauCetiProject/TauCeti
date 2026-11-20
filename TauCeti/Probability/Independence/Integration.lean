@@ -15,7 +15,12 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 # Integrability and expectations of products and quadratic forms under independence
 
 A finite product of independent integrable variables is integrable
-(`ProbabilityTheory.iIndepFun.integrable_fun_prod`).
+(`ProbabilityTheory.iIndepFun.integrable_fun_prod`). Products of functions of members of an
+independent family that read disjoint sets of members are independent
+(`ProbabilityTheory.iIndepFun.indepFun_fun_prod_comp_of_disjoint`), so such a product has
+expectation zero as soon as one member is read exactly once, through a factor of mean zero
+(`ProbabilityTheory.iIndepFun.integral_fun_prod_comp_eq_zero`). This is the vanishing of
+singleton edges in the moment method for random matrices.
 The product of two independent square-integrable real random variables is square integrable
 (`ProbabilityTheory.IndepFun.memLp_two_mul`). For a finite family `W : ι → Ω → 𝕜` with
 `RCLike 𝕜`, integrable squared norms, and integrable, vanishing mixed second moments
@@ -74,6 +79,52 @@ theorem integrable_fun_prod {Ω ι E : Type*} [MeasurableSpace Ω] [Fintype ι]
     (h : iIndepFun X P) (hX : ∀ i, Integrable (X i) P) :
     Integrable (fun ω ↦ ∏ i, X i ω) P :=
   h.integrable_finsetProd Finset.univ (fun i _ ↦ hX i)
+
+/-- Let `Y` be an independent family. Two finite products of measurable functions of members of
+`Y`, the first reading the members `e₁ s` and the second the members `e₂ t`, are independent when
+no member is read by both. A member may be read several times within one product. -/
+theorem indepFun_fun_prod_comp_of_disjoint {Ω κ ι₁ ι₂ β M : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} [MeasurableSpace β] [CommMonoid M] [MeasurableSpace M] [MeasurableMul₂ M]
+    [Fintype ι₁] [Fintype ι₂] {Y : κ → Ω → β} (hY : iIndepFun Y μ)
+    (hYm : ∀ a, AEMeasurable (Y a) μ) {e₁ : ι₁ → κ} {e₂ : ι₂ → κ}
+    (hdisj : ∀ s t, e₁ s ≠ e₂ t) {g₁ : ι₁ → β → M} {g₂ : ι₂ → β → M}
+    (hg₁ : ∀ s, Measurable (g₁ s)) (hg₂ : ∀ t, Measurable (g₂ t)) :
+    IndepFun (fun ω ↦ ∏ s, g₁ s (Y (e₁ s) ω)) (fun ω ↦ ∏ t, g₂ t (Y (e₂ t) ω)) μ := by
+  classical
+  set S₁ : Finset κ := Finset.univ.image e₁
+  set S₂ : Finset κ := Finset.univ.image e₂
+  have hS : Disjoint S₁ S₂ := by
+    simp only [S₁, S₂, Finset.disjoint_left, Finset.mem_image, Finset.mem_univ, true_and]
+    rintro _ ⟨s, rfl⟩ ⟨t, ht⟩
+    exact hdisj s t ht.symm
+  set φ₁ : (S₁ → β) → M := fun y ↦ ∏ s, g₁ s (y ⟨e₁ s, Finset.mem_image_of_mem e₁ (by simp)⟩)
+  set φ₂ : (S₂ → β) → M := fun y ↦ ∏ t, g₂ t (y ⟨e₂ t, Finset.mem_image_of_mem e₂ (by simp)⟩)
+  have hφ₁ : Measurable φ₁ :=
+    Finset.measurable_prod _ fun s _ ↦ (hg₁ s).comp (measurable_pi_apply _)
+  have hφ₂ : Measurable φ₂ :=
+    Finset.measurable_prod _ fun t _ ↦ (hg₂ t).comp (measurable_pi_apply _)
+  exact (hY.indepFun_finset₀ S₁ S₂ hS hYm).comp hφ₁ hφ₂
+
+/-- **Singleton reads vanish.** Let `Y` be an independent family. If, in a finite product of
+measurable functions of members of `Y`, the member read by the factor `t` is read by no other
+factor, and that factor has mean zero, then the product has mean zero. No integrability is
+required. -/
+theorem integral_fun_prod_comp_eq_zero {Ω κ ι β 𝕜 : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [MeasurableSpace β] [RCLike 𝕜] [Fintype ι]
+    {Y : κ → Ω → β} (hY : iIndepFun Y μ) (hYm : ∀ a, AEMeasurable (Y a) μ) {e : ι → κ}
+    {g : ι → β → 𝕜} (hg : ∀ s, Measurable (g s)) {t : ι} (ht : ∀ s, e s = e t → s = t)
+    (h0 : ∫ ω, g t (Y (e t) ω) ∂μ = 0) :
+    ∫ ω, ∏ s, g s (Y (e s) ω) ∂μ = 0 := by
+  classical
+  have hind := hY.indepFun_fun_prod_comp_of_disjoint hYm (e₁ := fun _ : Unit ↦ e t)
+    (e₂ := fun s : {s // s ≠ t} ↦ e s) (fun _ s hs ↦ s.property (ht s hs.symm)) (fun _ ↦ hg t)
+    (fun s ↦ hg s)
+  simp only [Fintype.prod_unique] at hind
+  simp_rw [Fintype.prod_eq_mul_prod_subtype_ne _ t]
+  rw [hind.integral_fun_mul_eq_mul_integral ?_ ?_, h0, zero_mul]
+  · exact ((hg t).comp_aemeasurable (hYm _)).aestronglyMeasurable
+  · exact Finset.aestronglyMeasurable_fun_prod _ fun s _ ↦
+      ((hg s).comp_aemeasurable (hYm _)).aestronglyMeasurable
 
 end ProbabilityTheory.iIndepFun
 
