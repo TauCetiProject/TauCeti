@@ -107,7 +107,8 @@ theorem mem_fieldOfModuli_iff {c : IsoClass k} {x : k} :
 @[simp]
 theorem fieldOfModuli_smul (g : k ≃ₐ[ℚ] k) (c : IsoClass k) :
     (g • c).fieldOfModuli = c.fieldOfModuli.map g.toAlgHom := by
-  rw [fieldOfModuli_def, IntermediateField.fixedField_stabilizer_smul, fieldOfModuli_def]
+  rw [fieldOfModuli_def, MulAction.stabilizer_smul_eq_stabilizer_map_conj,
+    MulEquiv.toMonoidHom_eq_coe, Subgroup.fixedField_map_conj, fieldOfModuli_def]
 
 /-- Over a finite extension `k` of `ℚ`, the automorphisms of `k` fixing the field of moduli of a
 class are exactly those fixing the class. -/

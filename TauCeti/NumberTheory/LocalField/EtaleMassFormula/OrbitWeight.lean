@@ -17,9 +17,6 @@ For an action of `Gal(SeparableClosure K / K)`, `TauCeti.orbitDiscriminantExpone
 discriminant exponents of the fields fixed by point stabilizers, one per orbit. Conjugate
 stabilizers have isomorphic fixed fields, so the summands do not depend on the representatives.
 This is the discriminant weight used to count finite étale algebras by their Galois sets.
-The lemmas `IntermediateField.weight_fixedField_stabilizer_smul` and
-`IntermediateField.weight_fixedField_stabilizer_out` record this independence over any field
-extension, for every weight of intermediate fields invariant under `K`-algebra equivalence.
 
 The weight is invariant under equivariant bijections and additive on disjoint unions with
 finitely many orbits. For a transitive nonempty action it is the discriminant exponent of any
@@ -57,8 +54,7 @@ theorem discriminantExponent_fixedField_stabilizer_smul
       (stabilizer Gal(SeparableClosure K/K) (σ • x))).discriminantExponent =
         (IntermediateField.fixedField
           (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent :=
-  IntermediateField.weight_fixedField_stabilizer_smul
-    IntermediateField.discriminantExponent_eq_of_algEquiv σ x
+  IntermediateField.discriminantExponent_eq_of_algEquiv (fixedFieldStabilizerSmulEquiv K σ x)
 
 /-- The summand of an orbit can be computed at any point in that orbit. -/
 theorem discriminantExponent_fixedField_stabilizer_out
@@ -68,8 +64,7 @@ theorem discriminantExponent_fixedField_stabilizer_out
       (stabilizer Gal(SeparableClosure K/K) ω.out)).discriminantExponent =
         (IntermediateField.fixedField
           (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent :=
-  IntermediateField.weight_fixedField_stabilizer_out
-    IntermediateField.discriminantExponent_eq_of_algEquiv hx
+  apply_fixedField_stabilizer_out K IntermediateField.discriminantExponent_eq_of_algEquiv hx
 
 private theorem discriminantExponent_fixedField_stabilizer_out_of_injective
     (f : X → Y) (hf : Function.Injective f)
@@ -79,9 +74,9 @@ private theorem discriminantExponent_fixedField_stabilizer_out_of_injective
     (IntermediateField.fixedField
       (stabilizer Gal(SeparableClosure K/K) ω.out)).discriminantExponent =
         (IntermediateField.fixedField
-          (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent :=
-  IntermediateField.weight_fixedField_stabilizer_out_of_injective
-    IntermediateField.discriminantExponent_eq_of_algEquiv f hf he hx
+          (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent := by
+  rw [discriminantExponent_fixedField_stabilizer_out K hx,
+    MulAction.stabilizer_eq_of_injective f hf he]
 
 /-- The sum of the discriminant exponents of the fixed fields of point stabilizers, one per
 orbit. An infinite fixed field contributes zero; infinitely many nonzero summands give a total

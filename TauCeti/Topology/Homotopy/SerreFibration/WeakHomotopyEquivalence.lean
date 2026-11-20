@@ -26,19 +26,21 @@ v        v
 B --g--> B'
 ```
 
-in which `p` and `p'` are Serre fibrations (`TauCeti.TopCat.serreFibrations`). If `g` is a weak
-homotopy equivalence and, for every point `b` of `B`, the induced map of fibres
-`p⁻¹(b) → p'⁻¹(g b)` (`CategoryTheory.CommSq.fiberMap`) is a weak homotopy equivalence, then `f`
-is a weak homotopy equivalence (`TauCeti.TopCat.isWeakHomotopyEquivalence_of_commSq`).
+in which `p` and `p'` are Serre fibrations (`TauCeti.TopCat.serreFibrations`). When `g` is a weak
+homotopy equivalence, `f` is a weak homotopy equivalence if and only if, for every point `b` of
+`B`, the induced map of fibres `p⁻¹(b) → p'⁻¹(g b)` (`CategoryTheory.CommSq.fiberMap`) is a weak
+homotopy equivalence (`TauCeti.TopCat.isWeakHomotopyEquivalence_iff_forall_fiberMap`, combining
+`TauCeti.TopCat.isWeakHomotopyEquivalence_of_commSq` and
+`TauCeti.TopCat.isWeakHomotopyEquivalence_fiberMap`).
 
 This is the five lemma applied to the exact homotopy sequences of `p` and `p'`, which the boundary
 maps make into a map of exact sequences (`TauCeti.TopCat.fibrationBoundary_map`). In positive
-degrees the terms around `π_n(E)` are groups and the usual diagram chase applies. At the low end
-of the sequences only pointed-set exactness is available, so the bijection on path components is
-proved separately: surjectivity by lifting a path in `B'` to `E'`, and injectivity by first moving
-both points into one fibre by path lifting, then using exactness at `π_0` of that fibre together
-with surjectivity of `g` on fundamental groups. Every fibre is used, not only the fibre over a
-chosen base point, since `B` need not be path connected.
+degrees the terms around `π_n(E)` and `π_n(F)` are groups and the usual diagram chase applies. At
+the low end of the sequences only pointed-set exactness is available, so the bijections on path
+components are proved separately by path lifting and exactness at `π_0` of the fibre together with
+surjectivity and injectivity on fundamental groups. Every fibre is used, not only the fibre over a
+chosen base point, since `B` need not be path connected, and empty fibres are handled without
+nonemptiness assumptions.
 
 A special case is **base change along a weak homotopy equivalence**. The base change of a Serre
 fibration `p : E → B` along a weak homotopy equivalence `g : B' → B` has total space weakly
@@ -63,6 +65,12 @@ Serre fibration over a base with no homotopy.
 
 * `TauCeti.TopCat.isWeakHomotopyEquivalence_of_commSq`: a map of Serre fibrations which is a weak
   homotopy equivalence on the bases and on every fibre is one on the total spaces.
+* `TauCeti.TopCat.isWeakHomotopyEquivalence_fiberMap`: a map of Serre fibrations which is a weak
+  homotopy equivalence on the total spaces and on the bases induces a weak homotopy equivalence on
+  every fibre.
+* `TauCeti.TopCat.isWeakHomotopyEquivalence_iff_forall_fiberMap`: over a weak homotopy equivalence
+  of bases, a map of Serre fibrations is a weak homotopy equivalence on total spaces if and only if
+  it is one on every fibre.
 * `TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackSnd`: base change of a Serre fibration along a
   weak homotopy equivalence.
 * `TauCeti.TopCat.isWeakHomotopyEquivalence_inclusion_preimage`: restriction of a Serre fibration
@@ -260,6 +268,150 @@ theorem isWeakHomotopyEquivalence_of_commSq (hp : serreFibrations p) (hp' : serr
     ⟨injective_map_option ⟨a, rfl⟩ hp hp' hg (hfib (p a)) rfl,
       surjective_map_option ⟨a, rfl⟩ hp hp' hg (hfib (p a)) rfl⟩
 
+section FiberComparison
+
+variable (sq : CommSq f p p' g) {b : B}
+
+/-- **Injectivity on positive-dimensional homotopy groups of the fibre.** -/
+private theorem injective_fiberMap_option (hp : serreFibrations p) (hp' : serreFibrations p')
+    {N : Type*} [Finite N] (hf : f.hom.IsWeakHomotopyEquivalence)
+    (hg : g.hom.IsWeakHomotopyEquivalence) (e : p.fiber b) :
+    Injective (HomotopyGroup.map (N := Option N) (sq.fiberMap b).hom
+      (rfl : sq.fiberMap b e = sq.fiberMap b e)) := by
+  classical
+  have hx : f e.1 = (sq.fiberMap b e).1 := (sq.fiberMap_apply_coe b e).symm
+  refine (injective_iff_map_eq_one
+    (HomotopyGroup.mapHom (N := Option N) (sq.fiberMap b).hom
+      (rfl : sq.fiberMap b e = sq.fiberMap b e))).2 fun w hw1 ↦ ?_
+  rw [HomotopyGroup.mapHom_apply] at hw1
+  have hfw : HomotopyGroup.map (p.fiberι b).hom (TopCat.Hom.fiberι_apply p b e) w = 1 := by
+    apply ((HomotopyGroup.bijective_map_congr (rfl : f.hom = f.hom) hx rfl).2
+      (hf.map_bijective (Option N) e.1)).1
+    rw [map_map_fiberι sq e hx, hw1, HomotopyGroup.map_one, HomotopyGroup.map_one]
+  obtain ⟨y, rfl⟩ := (mem_range_fibrationBoundary_iff hp).2
+    (hfw.trans HomotopyGroup.mk_const_eq_one.symm)
+  have hgy : fibrationBoundary hp' (sq.fiberMap b e) (HomotopyGroup.map g.hom rfl y) =
+      ⟦GenLoop.const⟧ := by
+    rw [fibrationBoundary_map sq hp hp', hw1, HomotopyGroup.mk_const_eq_one]
+  obtain ⟨z', hz'⟩ := (mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp').2 hgy
+  obtain ⟨z, rfl⟩ := ((HomotopyGroup.bijective_map_congr (rfl : f.hom = f.hom) hx rfl).2
+    (hf.map_bijective (Option (Option N)) e.1)).2 z'
+  have hpz : HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.2) z = y := by
+    apply (hg.map_bijective (Option (Option N)) b).1
+    rw [← map_proj_map sq e hx (Set.mem_singleton_iff.1 (sq.fiberMap b e).2), hz']
+  exact ((mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp).1 ⟨z, hpz⟩).trans
+    HomotopyGroup.mk_const_eq_one
+
+/-- **Surjectivity on positive-dimensional homotopy groups of the fibre.** -/
+private theorem surjective_fiberMap_option (hp : serreFibrations p) (hp' : serreFibrations p')
+    {N : Type*} [Finite N] (hf : f.hom.IsWeakHomotopyEquivalence)
+    (hg : g.hom.IsWeakHomotopyEquivalence) (e : p.fiber b) :
+    Surjective (HomotopyGroup.map (N := Option N) (sq.fiberMap b).hom
+      (rfl : sq.fiberMap b e = sq.fiberMap b e)) := by
+  classical
+  have hx : f e.1 = (sq.fiberMap b e).1 := (sq.fiberMap_apply_coe b e).symm
+  have hxι : p'.fiberι (g b) (sq.fiberMap b e) = (sq.fiberMap b e).1 :=
+    TopCat.Hom.fiberι_apply p' (g b) (sq.fiberMap b e)
+  intro w'
+  obtain ⟨z, hz⟩ := ((HomotopyGroup.bijective_map_congr (rfl : f.hom = f.hom) hx rfl).2
+    (hf.map_bijective (Option N) e.1)).2
+    (HomotopyGroup.map (p'.fiberι (g b)).hom hxι w')
+  have hpz : HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.2) z = 1 := by
+    apply (hg.map_bijective (Option N) b).1
+    rw [← map_proj_map sq e hx (Set.mem_singleton_iff.1 (sq.fiberMap b e).2), hz,
+      HomotopyGroup.map_one]
+    exact ((mem_range_homotopyGroupMap_fiberι_iff hp').1 ⟨w', rfl⟩).trans
+      HomotopyGroup.mk_const_eq_one
+  obtain ⟨v, rfl⟩ := (mem_range_homotopyGroupMap_fiberι_iff hp).2
+    (hpz.trans HomotopyGroup.mk_const_eq_one.symm)
+  have hu' : HomotopyGroup.map (p'.fiberι (g b)).hom hxι
+      (w' * (HomotopyGroup.map (sq.fiberMap b).hom rfl v)⁻¹) = 1 := by
+    rw [HomotopyGroup.map_mul, HomotopyGroup.map_inv, ← map_map_fiberι sq e hx, hz,
+      mul_inv_cancel]
+  obtain ⟨y', hy'⟩ := (mem_range_fibrationBoundary_iff hp').2
+    (hu'.trans HomotopyGroup.mk_const_eq_one.symm)
+  obtain ⟨y, rfl⟩ := (hg.map_bijective (Option (Option N)) b).2 y'
+  rw [fibrationBoundary_map sq hp hp'] at hy'
+  refine ⟨fibrationBoundary hp e y * v, ?_⟩
+  rw [HomotopyGroup.map_mul, hy', inv_mul_cancel_right]
+
+/-- **Surjectivity on path components of the fibre.** -/
+private theorem exists_joined_fiberMap (hp : serreFibrations p) (hp' : serreFibrations p')
+    (hf : f.hom.IsWeakHomotopyEquivalence) (hg : g.hom.IsWeakHomotopyEquivalence)
+    (y' : p'.fiber (g b)) : ∃ x, Joined (sq.fiberMap b x) y' := by
+  obtain ⟨e₀, he₀⟩ := hf.exists_joined y'.1
+  have hpb : Joined (p e₀) b := by
+    rw [← hg.joined_iff]
+    have hw : g (p e₀) = p' (f e₀) := (ConcreteCategory.congr_hom sq.w e₀).symm
+    rw [hw, ← Set.mem_singleton_iff.1 y'.2]
+    exact he₀.map p'.hom.continuous
+  obtain ⟨Γ, hΓ0, hΓ⟩ := exists_path_lift_of_mem_serreFibrations hp hpb.somePath
+  let e : p.fiber b := ⟨Γ 1, (congrFun hΓ 1).trans hpb.somePath.target⟩
+  have he_join : Joined e₀ e.1 := ⟨⟨Γ, hΓ0, rfl⟩⟩
+  have hy'E : Joined (sq.fiberMap b e).1 y'.1 := by
+    rw [sq.fiberMap_apply_coe]
+    exact (he_join.symm.map f.hom.continuous).trans he₀
+  obtain ⟨γ', hγ'⟩ :=
+    (joined_iff_mem_range_fibrationBoundary hp' (e := sq.fiberMap b e) y').1 hy'E
+  obtain ⟨γ, rfl⟩ := (hg.map_bijective (Option (Fin 0)) b).2 γ'
+  rw [fibrationBoundary_map sq hp hp'] at hγ'
+  rcases Quotient.exists_rep (fibrationBoundary hp e γ) with ⟨β, hβ⟩
+  rw [← hβ, HomotopyGroup.map_mk] at hγ'
+  refine ⟨β 0, ?_⟩
+  have h₀ := HomotopyGroup.mk_eq_mk_iff_joined.1 hγ'
+  rwa [GenLoop.map_apply, genLoopHomeoOfIsEmpty_symm_apply] at h₀
+
+/-- **Injectivity on path components of the fibre.** -/
+private theorem joined_of_joined_fiberMap (hp : serreFibrations p) (hp' : serreFibrations p')
+    (hf : f.hom.IsWeakHomotopyEquivalence) (hg : g.hom.IsWeakHomotopyEquivalence)
+    {x₁ x₂ : p.fiber b} (h : Joined (sq.fiberMap b x₁) (sq.fiberMap b x₂)) : Joined x₁ x₂ := by
+  have hx₁ : f x₁.1 = (sq.fiberMap b x₁).1 := (sq.fiberMap_apply_coe b x₁).symm
+  have hxE : Joined x₁.1 x₂.1 :=
+    hf.joined_iff.1 (by simpa only [sq.fiberMap_apply_coe] using h.map continuous_subtype_val)
+  obtain ⟨γ, hγ⟩ := (joined_iff_mem_range_fibrationBoundary hp (e := x₁) x₂).1 hxE
+  have hγ' : fibrationBoundary hp' (sq.fiberMap b x₁) (HomotopyGroup.map g.hom rfl γ) =
+      ⟦GenLoop.const⟧ := by
+    rw [fibrationBoundary_map sq hp hp', hγ, HomotopyGroup.map_mk]
+    refine HomotopyGroup.mk_eq_mk_iff_joined.2 ?_
+    rw [GenLoop.map_apply, genLoopHomeoOfIsEmpty_symm_apply, GenLoop.const_apply]
+    exact h.symm
+  obtain ⟨z', hz'⟩ := (mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp').2 hγ'
+  obtain ⟨z, rfl⟩ := ((HomotopyGroup.bijective_map_congr (rfl : f.hom = f.hom) hx₁ rfl).2
+    (hf.map_bijective (Option (Fin 0)) x₁.1)).2 z'
+  have hpz : HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 x₁.2) z = γ := by
+    apply (hg.map_bijective (Option (Fin 0)) b).1
+    rw [← map_proj_map sq x₁ hx₁ (Set.mem_singleton_iff.1 (sq.fiberMap b x₁).2), hz']
+  have hγ0 :=
+    ((mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp).1 ⟨z, hpz⟩).symm.trans hγ
+  have h₂₁ := HomotopyGroup.mk_eq_mk_iff_joined.1 hγ0
+  rw [GenLoop.const_apply, genLoopHomeoOfIsEmpty_symm_apply] at h₂₁
+  exact h₂₁
+
+end FiberComparison
+
+/-- **A map of Serre fibrations which is a weak homotopy equivalence on the total spaces and on the
+bases induces a weak homotopy equivalence on every fibre.** Empty fibres are covered without extra
+hypotheses. -/
+theorem isWeakHomotopyEquivalence_fiberMap (hp : serreFibrations p) (hp' : serreFibrations p')
+    (sq : CommSq f p p' g) (hf : f.hom.IsWeakHomotopyEquivalence)
+    (hg : g.hom.IsWeakHomotopyEquivalence) (b : B) :
+    (sq.fiberMap b).hom.IsWeakHomotopyEquivalence := by
+  refine ContinuousMap.isWeakHomotopyEquivalence_iff_joined.2
+    ⟨exists_joined_fiberMap sq hp hp' hf hg, fun _ _ ↦ joined_of_joined_fiberMap sq hp hp' hf hg,
+      fun n e ↦ ?_⟩
+  exact (HomotopyGroup.bijective_map_iff_of_equiv (sq.fiberMap b).hom rfl
+    (finSuccEquiv n).symm).1
+    ⟨injective_fiberMap_option sq hp hp' hf hg e,
+      surjective_fiberMap_option sq hp hp' hf hg e⟩
+
+/-- **Over a weak homotopy equivalence of bases, a map of Serre fibrations is a weak homotopy
+equivalence on total spaces if and only if it is one on every fibre.** -/
+theorem isWeakHomotopyEquivalence_iff_forall_fiberMap (hp : serreFibrations p)
+    (hp' : serreFibrations p') (sq : CommSq f p p' g) (hg : g.hom.IsWeakHomotopyEquivalence) :
+    f.hom.IsWeakHomotopyEquivalence ↔ ∀ b, (sq.fiberMap b).hom.IsWeakHomotopyEquivalence :=
+  ⟨fun hf b ↦ isWeakHomotopyEquivalence_fiberMap hp hp' sq hf hg b,
+    isWeakHomotopyEquivalence_of_commSq hp hp' sq hg⟩
+
 /-- **Base change of a Serre fibration along a weak homotopy equivalence.** If `p : E → B` is a
 Serre fibration and `g : B' → B` a weak homotopy equivalence, the projection
 `B' ×_B E → E` of the base change of `p` along `g` is a weak homotopy equivalence. -/
@@ -271,11 +423,7 @@ theorem isWeakHomotopyEquivalence_pullbackSnd (hp : serreFibrations p) {B' : Top
   refine isWeakHomotopyEquivalence_of_commSq (mem_serreFibrations_pullbackFst hp g) hp sq hg
     fun b' ↦ ?_
   -- The base change has the same fibres as `p`, by the homeomorphism `fiberPullbackFstIso`.
-  have h₁ : sq.fiberMap b' = (p.fiberPullbackFstIso g b').hom := by
-    ext x
-    exact (sq.fiberMap_apply_coe b' x).trans
-      ((TopCat.pullbackSnd_apply g p x.1).trans (p.fiberPullbackFstIso_hom_apply_coe g b' x).symm)
-  rw [h₁]
+  rw [sq.fiberMap_pullbackSnd b']
   exact (mem_weakEquivalences_iff _).1 (weakEquivalences.of_isIso _)
 
 /-- **Restriction of a Serre fibration over a weakly equivalent subspace.** If `p : E ⟶ B` is a
