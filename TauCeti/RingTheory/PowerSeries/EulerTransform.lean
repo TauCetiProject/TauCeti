@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
+public import Mathlib.RingTheory.PowerSeries.Binomial
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.WellKnown
 public import TauCeti.RingTheory.PowerSeries.Expand
 public import TauCeti.RingTheory.PowerSeries.PiTopology
+import TauCeti.RingTheory.PowerSeries.Derivative
+import TauCeti.RingTheory.PowerSeries.Geometric
 
 /-!
 # Integral Euler products `∏ (1 - X ^ r) ^ (-e r)`
@@ -34,8 +37,20 @@ recursion produces integers, this proves the necklace congruence: `m` divides
 `∑_{d ∣ m} μ(d) x ^ (m / d)` for every integer `x`. The resulting factorization of `1 - x X` is
 the cyclotomic identity of Metropolis and Rota.
 
+## Main definitions
+
+* `PowerSeries.xLogDeriv`: `X` times the logarithmic derivative, `u ↦ X * u' * u⁻¹`, as a
+  homomorphism from the units of `R⟦X⟧` to the additive group of `R⟦X⟧`, over any commutative ring.
+
 ## Main results
 
+* `PowerSeries.expand_invOneSubPow_zpow_neg_natCast`,
+  `PowerSeries.expand_invOneSubPow_zpow_natCast_mul_one_sub_X_pow_pow`: the factor
+  `expand r _ ↑(invOneSubPow R 1 ^ e)` is `(1 - X ^ r) ^ (-e)`.
+* `PowerSeries.rescale_neg_one_invOneSubPow_zpow`: under `X ↦ -X`, `(1 - X) ^ (-k)` is the
+  binomial series `binomialSeries R (-k)`.
+* `PowerSeries.X_pow_dvd_expand_invOneSubPow_zpow_sub`: `(1 - X ^ r) ^ (-k) = 1 + k X ^ r` modulo
+  `X ^ (r + 1)`.
 * `PowerSeries.hasProd_expand_invOneSubPow_zpow_iff`: an integral Euler product converges to `f`
   exactly when `f` agrees with its first `n` factors modulo `X ^ (n + 1)`, for every `n`.
 * `PowerSeries.exists_hasProd_expand_invOneSubPow_zpow`: every `f ∈ ℤ⟦X⟧` with constant
@@ -71,9 +86,16 @@ section CommRing
 
 variable {R : Type*} [CommRing R]
 
+/-- Two power series that agree modulo every power of `X` are equal. -/
+theorem eq_of_forall_X_pow_dvd_sub {a b : R⟦X⟧} (h : ∀ n : ℕ, X ^ (n + 1) ∣ a - b) : a = b := by
+  ext n
+  rw [← sub_eq_zero, ← map_sub]
+  exact X_pow_dvd_iff.1 (h n) n (Nat.lt_succ_self n)
+
 /-- `X` times the logarithmic derivative, `u ↦ X * u' * u⁻¹`, turns products of units into
-sums. -/
-private noncomputable def xLogDeriv : R⟦X⟧ˣ →* Multiplicative R⟦X⟧ where
+sums. Unlike the logarithmic derivative over a `ℚ`-algebra it is defined over every commutative
+ring. -/
+noncomputable def xLogDeriv : R⟦X⟧ˣ →* Multiplicative R⟦X⟧ where
   toFun u := Multiplicative.ofAdd (X * d⁄dX (u : R⟦X⟧) * ↑u⁻¹)
   map_one' := by simp
   map_mul' u v := by
@@ -83,37 +105,109 @@ private noncomputable def xLogDeriv : R⟦X⟧ˣ →* Multiplicative R⟦X⟧ wh
     linear_combination (X * d⁄dX (v : R⟦X⟧) * ↑v⁻¹) * u.mul_inv +
       (X * d⁄dX (u : R⟦X⟧) * ↑u⁻¹) * v.mul_inv
 
-/-- Congruence modulo `X ^ (n + 1)` is preserved by `X * d⁄dX`. -/
-private theorem X_pow_dvd_X_mul_derivative_sub {a b : R⟦X⟧} {n : ℕ} (h : X ^ (n + 1) ∣ a - b) :
-    X ^ (n + 1) ∣ X * d⁄dX a - X * d⁄dX b := by
-  obtain ⟨c, hc⟩ := h
-  refine ⟨C ((n : R) + 1) * c + X * d⁄dX c, ?_⟩
-  rw [← mul_sub, ← map_sub, hc, Derivation.leibniz, derivative_X_pow, smul_eq_mul, smul_eq_mul,
-    Nat.add_sub_cancel]
-  push_cast
-  ring
+/-- The defining equation of `xLogDeriv`: `xLogDeriv u = X * u' * u⁻¹`. -/
+@[simp]
+theorem toAdd_xLogDeriv (u : R⟦X⟧ˣ) :
+    (xLogDeriv u).toAdd = X * d⁄dX (u : R⟦X⟧) * (↑u⁻¹ : R⟦X⟧) := by
+  simp only [xLogDeriv, MonoidHom.coe_mk, OneHom.coe_mk, toAdd_ofAdd]
 
-/-- A unit with constant coefficient `1` has all its integer powers with constant
-coefficient `1`. -/
-private theorem constantCoeff_val_zpow {u : R⟦X⟧ˣ} (hu : constantCoeff (u : R⟦X⟧) = 1) (k : ℤ) :
-    constantCoeff (↑(u ^ k) : R⟦X⟧) = 1 := by
-  have h1 : Units.map ((constantCoeff (R := R) : R⟦X⟧ →+* R) : R⟦X⟧ →* R) u = 1 :=
-    Units.ext (by simpa using hu)
-  have := congrArg Units.val (congrArg (· ^ k) h1)
-  simpa [← map_zpow] using this
+/-- The constant coefficient of an integer power of a unit `u` of `R⟦X⟧` is the same power of
+the constant coefficient of `u`, as a unit of `R`. -/
+theorem constantCoeff_val_zpow (u : R⟦X⟧ˣ) (k : ℤ) :
+    constantCoeff (↑(u ^ k) : R⟦X⟧) =
+      (↑(Units.map ((constantCoeff : R⟦X⟧ →+* R) : R⟦X⟧ →* R) u ^ k) : R) := by
+  rw [← map_zpow, Units.coe_map, MonoidHom.coe_ofClass]
+
+/-- The integer powers of `(1 - X)⁻¹` have constant coefficient `1`. -/
+@[simp]
+theorem constantCoeff_invOneSubPow_zpow (k : ℤ) :
+    constantCoeff (↑(invOneSubPow R 1 ^ k) : R⟦X⟧) = 1 := by
+  have h1 : Units.map ((constantCoeff : R⟦X⟧ →+* R) : R⟦X⟧ →* R) (invOneSubPow R 1) = 1 :=
+    Units.ext (by simp [invOneSubPow_val_succ_eq_mk_add_choose])
+  rw [constantCoeff_val_zpow, h1, one_zpow, Units.val_one]
+
+/-- The coefficient of `X` in `(1 - X) ^ (-k)` is `k`. -/
+@[simp]
+theorem coeff_one_invOneSubPow_zpow (k : ℤ) :
+    coeff 1 (↑(invOneSubPow R 1 ^ k) : R⟦X⟧) = k := by
+  induction k using Int.induction_on with
+  | zero => simp
+  | succ k ih =>
+    rw [zpow_add_one, Units.val_mul, coeff_one_mul, ih, constantCoeff_invOneSubPow_zpow]
+    simp [invOneSubPow_val_succ_eq_mk_add_choose]
+  | pred k ih =>
+    have h1 : (↑(invOneSubPow R 1)⁻¹ : R⟦X⟧) = 1 - X := by
+      rw [← Units.inv_eq_val_inv, invOneSubPow_inv_eq_one_sub_pow, pow_one]
+    rw [zpow_sub_one, Units.val_mul, coeff_one_mul, ih, h1, constantCoeff_invOneSubPow_zpow]
+    simp [sub_eq_add_neg]
+
+/-- Under `X ↦ -X`, the integer power `(1 - X) ^ (-k)` becomes the binomial series
+`(1 + X) ^ (-k)`. -/
+theorem rescale_neg_one_invOneSubPow_zpow (k : ℤ) :
+    rescale (-1 : R) (↑(invOneSubPow R 1 ^ k) : R⟦X⟧) = binomialSeries R (-k) := by
+  induction k using Int.induction_on with
+  | zero => simp
+  | succ k ih =>
+    have h1 := rescale_neg_one_invOneSubPow (A := R) 1
+    rw [Nat.cast_one] at h1
+    rw [zpow_add_one, Units.val_mul, map_mul, ih, h1, neg_add, binomialSeries_add]
+  | pred k ih =>
+    have h1 : rescale (-1 : R) (↑(invOneSubPow R 1)⁻¹ : R⟦X⟧) = binomialSeries R (1 : ℤ) := by
+      have h2 := binomialSeries_nat (R := ℤ) (A := R) 1
+      rw [Nat.cast_one, pow_one] at h2
+      rw [← Units.inv_eq_val_inv, invOneSubPow_inv_eq_one_sub_pow, pow_one, map_sub, map_one,
+        rescale_X, h2, map_neg, map_one, neg_one_mul, sub_neg_eq_add]
+    rw [zpow_sub_one, Units.val_mul, map_mul, ih, h1, neg_sub, sub_eq_neg_add, binomialSeries_add]
+
+/-- The integral Euler factor `(1 - X ^ r) ^ (-e)` at `e = -1` is `1 - X ^ r`. -/
+@[simp]
+theorem expand_val_inv_invOneSubPow (r : ℕ) (hr : r ≠ 0) :
+    expand r hr (↑(invOneSubPow R 1)⁻¹ : R⟦X⟧) = 1 - X ^ r := by
+  rw [← Units.inv_eq_val_inv, invOneSubPow_inv_eq_one_sub_pow, pow_one, map_sub, map_one,
+    expand_X]
+
+/-- The integral Euler factor `(1 - X ^ r) ^ (-e)` at a nonpositive exponent `e = -k` is the
+polynomial `(1 - X ^ r) ^ k`. -/
+theorem expand_invOneSubPow_zpow_neg_natCast (r : ℕ) (hr : r ≠ 0) (k : ℕ) :
+    expand r hr (↑(invOneSubPow R 1 ^ (-(k : ℤ))) : R⟦X⟧) = (1 - X ^ r) ^ k := by
+  rw [zpow_neg, zpow_natCast, ← inv_pow, Units.val_pow_eq_pow_val, map_pow,
+    expand_val_inv_invOneSubPow]
+
+/-- The integral Euler factor `(1 - X ^ r) ^ (-k)` at a natural number `k` inverts
+`(1 - X ^ r) ^ k`. -/
+theorem expand_invOneSubPow_zpow_natCast_mul_one_sub_X_pow_pow (r : ℕ) (hr : r ≠ 0) (k : ℕ) :
+    expand r hr (↑(invOneSubPow R 1 ^ (k : ℤ)) : R⟦X⟧) * (1 - X ^ r) ^ k = 1 := by
+  rw [← expand_invOneSubPow_zpow_neg_natCast r hr k, ← map_mul, ← Units.val_mul, ← zpow_add,
+    add_neg_cancel, zpow_zero, Units.val_one, map_one]
+
+/-- `(1 - X ^ r) ^ (-k)` is `1` modulo `X ^ r`. -/
+theorem X_pow_dvd_expand_invOneSubPow_zpow_sub_one (r : ℕ) (hr : r ≠ 0) (k : ℤ) :
+    X ^ r ∣ expand r hr (↑(invOneSubPow R 1 ^ k) : R⟦X⟧) - 1 := by
+  simpa using X_pow_dvd_expand_sub_C_constantCoeff r hr (↑(invOneSubPow R 1 ^ k) : R⟦X⟧)
+
+/-- `(1 - X ^ r) ^ (-k)` is `1 + k X ^ r` modulo `X ^ (r + 1)`. -/
+theorem X_pow_dvd_expand_invOneSubPow_zpow_sub (r : ℕ) (hr : r ≠ 0) (k : ℤ) :
+    X ^ (r + 1) ∣ expand r hr (↑(invOneSubPow R 1 ^ k) : R⟦X⟧) - 1 - C (k : R) * X ^ r := by
+  rw [X_pow_dvd_iff]
+  intro m hm
+  obtain ⟨q, hq⟩ := X_pow_dvd_expand_invOneSubPow_zpow_sub_one (R := R) r hr k
+  rcases Nat.lt_succ_iff_lt_or_eq.1 hm with hm | rfl
+  · have h0 : coeff m (expand r hr (↑(invOneSubPow R 1 ^ k) : R⟦X⟧) - 1) = 0 := by
+      rw [hq, coeff_X_pow_mul', ite_eq_right (by omega)]
+    rw [map_sub, h0, coeff_C_mul_X_pow, ite_eq_right hm.ne, sub_zero]
+  · have := coeff_expand_mul m hr (↑(invOneSubPow R 1 ^ k) : R⟦X⟧) 1
+    rw [mul_one, coeff_one_invOneSubPow_zpow] at this
+    simp [this, coeff_one, hr]
 
 end CommRing
 
 /-- The unit `(1 - X ^ r)⁻¹ = ∑ X ^ (r * j)` of `ℤ⟦X⟧`. -/
 private noncomputable def invOneSubXPow (r : ℕ+) : ℤ⟦X⟧ˣ :=
-  Units.map ((expand (R := ℤ) r r.ne_zero : ℤ⟦X⟧ →+* ℤ⟦X⟧) : ℤ⟦X⟧ →* ℤ⟦X⟧)
-    (invOneSubPow ℤ 1)
+  Units.map (expand (R := ℤ) r r.ne_zero : ℤ⟦X⟧ →* ℤ⟦X⟧) (invOneSubPow ℤ 1)
 
 private theorem expand_invOneSubPow_zpow (r : ℕ+) (k : ℤ) :
     expand r r.ne_zero ↑(invOneSubPow ℤ 1 ^ k) = (↑(invOneSubXPow r ^ k) : ℤ⟦X⟧) := by
-  rw [invOneSubXPow, ← map_zpow, Units.coe_map]
-  -- the monoid hom underlying `expand` applies `expand`
-  rfl
+  rw [invOneSubXPow, ← map_zpow, Units.coe_map, MonoidHom.coe_ofClass]
 
 private theorem val_invOneSubXPow (r : ℕ+) :
     (↑(invOneSubXPow r) : ℤ⟦X⟧) = expand r r.ne_zero (mk 1) := by
@@ -125,47 +219,19 @@ private theorem val_invOneSubXPow (r : ℕ+) :
 
 private theorem val_inv_invOneSubXPow (r : ℕ+) :
     (↑(invOneSubXPow r)⁻¹ : ℤ⟦X⟧) = 1 - X ^ (r : ℕ) := by
-  have := expand_invOneSubPow_zpow r (-1)
-  rw [zpow_neg_one, zpow_neg_one, ← Units.inv_eq_val_inv, invOneSubPow_inv_eq_one_sub_pow,
-    pow_one, map_sub, map_one, expand_X] at this
-  exact this.symm
-
-private theorem constantCoeff_invOneSubPow_zpow (k : ℤ) :
-    constantCoeff (↑(invOneSubPow ℤ 1 ^ k) : ℤ⟦X⟧) = 1 :=
-  constantCoeff_val_zpow (by simp [invOneSubPow_val_succ_eq_mk_add_choose]) k
-
-private theorem coeff_one_invOneSubPow_zpow (k : ℤ) :
-    coeff 1 (↑(invOneSubPow ℤ 1 ^ k) : ℤ⟦X⟧) = k := by
-  induction k using Int.induction_on with
-  | zero => simp
-  | succ k ih =>
-    rw [zpow_add_one, Units.val_mul, coeff_one_mul, ih, constantCoeff_invOneSubPow_zpow]
-    simp [invOneSubPow_val_succ_eq_mk_add_choose]
-  | pred k ih =>
-    have h1 : (↑(invOneSubPow ℤ 1)⁻¹ : ℤ⟦X⟧) = 1 - X := by
-      rw [← Units.inv_eq_val_inv, invOneSubPow_inv_eq_one_sub_pow, pow_one]
-    rw [zpow_sub_one, Units.val_mul, coeff_one_mul, ih, h1, constantCoeff_invOneSubPow_zpow]
-    simp [sub_eq_add_neg]
+  rw [← zpow_neg_one, ← expand_invOneSubPow_zpow, zpow_neg_one, expand_val_inv_invOneSubPow]
 
 /-- `(1 - X ^ r) ^ (-k)` is `1` modulo `X ^ r`. -/
 private theorem X_pow_dvd_invOneSubXPow_zpow_sub_one (r : ℕ+) (k : ℤ) :
     X ^ (r : ℕ) ∣ (↑(invOneSubXPow r ^ k) : ℤ⟦X⟧) - 1 := by
-  simpa [← expand_invOneSubPow_zpow, constantCoeff_invOneSubPow_zpow] using
-    X_pow_dvd_expand_sub_C_constantCoeff (r : ℕ) r.ne_zero (↑(invOneSubPow ℤ 1 ^ k) : ℤ⟦X⟧)
+  rw [← expand_invOneSubPow_zpow]
+  exact X_pow_dvd_expand_invOneSubPow_zpow_sub_one (r : ℕ) r.ne_zero k
 
 /-- `(1 - X ^ r) ^ (-k)` is `1 + k X ^ r` modulo `X ^ (r + 1)`. -/
 private theorem X_pow_dvd_invOneSubXPow_zpow_sub (r : ℕ+) (k : ℤ) :
     X ^ ((r : ℕ) + 1) ∣ (↑(invOneSubXPow r ^ k) : ℤ⟦X⟧) - 1 - C k * X ^ (r : ℕ) := by
-  rw [X_pow_dvd_iff]
-  intro m hm
-  obtain ⟨q, hq⟩ := X_pow_dvd_invOneSubXPow_zpow_sub_one r k
-  rcases Nat.lt_succ_iff_lt_or_eq.1 hm with hm | rfl
-  · have h0 : coeff m ((↑(invOneSubXPow r ^ k) : ℤ⟦X⟧) - 1) = 0 := by
-      rw [hq, coeff_X_pow_mul', ite_eq_right (by omega)]
-    rw [map_sub, h0, coeff_C_mul_X_pow, ite_eq_right hm.ne, sub_zero]
-  · have := coeff_expand_mul (R := ℤ) (r : ℕ) r.ne_zero (↑(invOneSubPow ℤ 1 ^ k)) 1
-    rw [mul_one, coeff_one_invOneSubPow_zpow, expand_invOneSubPow_zpow] at this
-    simp [this, coeff_one]
+  rw [← expand_invOneSubPow_zpow]
+  simpa using X_pow_dvd_expand_invOneSubPow_zpow_sub (R := ℤ) (r : ℕ) r.ne_zero k
 
 /-- `X` times the logarithmic derivative of `(1 - X ^ r)⁻¹` is `r X ^ r (1 - X ^ r)⁻¹`. -/
 private theorem toAdd_xLogDeriv_invOneSubXPow (r : ℕ+) :
@@ -180,8 +246,7 @@ private theorem toAdd_xLogDeriv_invOneSubXPow (r : ℕ+) :
     smul_eq_mul] at hd
   have hX : X * X ^ ((r : ℕ) - 1) = (X : ℤ⟦X⟧) ^ (r : ℕ) := by
     rw [← pow_succ', Nat.sub_add_cancel r.pos]
-  simp only [xLogDeriv, MonoidHom.coe_mk, OneHom.coe_mk, toAdd_ofAdd]
-  rw [val_inv_invOneSubXPow]
+  rw [toAdd_xLogDeriv, val_inv_invOneSubXPow]
   linear_combination X * hd + C (r : ℤ) * w * hX
 
 /-- The coefficients of `X ^ r (1 - X ^ r)⁻¹ = ∑_{j ≥ 1} X ^ (r * j)`. -/
@@ -223,7 +288,8 @@ private theorem toAdd_xLogDeriv_eulerUnit (e : ℕ → ℤ) (n : ℕ) :
     (xLogDeriv (eulerUnit e n)).toAdd = ∑ i ∈ range n,
       e (i + 1) • (C ((i + 1 : ℕ) : ℤ) * X ^ (i + 1) * (↑(invOneSubXPow i.succPNat) : ℤ⟦X⟧)) := by
   simp only [eulerUnit, map_prod, map_zpow, toAdd_prod, toAdd_zpow]
-  exact sum_congr rfl fun i _ ↦ by rw [toAdd_xLogDeriv_invOneSubXPow]; rfl
+  exact sum_congr rfl fun i _ ↦ by
+    rw [toAdd_xLogDeriv_invOneSubXPow, Nat.succPNat_coe, Nat.succ_eq_add_one]
 
 /-- In degrees at most `n`, `X` times the logarithmic derivative of the finite Euler product
 up to `n` has the coefficients `∑_{d ∣ m} d * e d`. -/
@@ -268,22 +334,23 @@ theorem hasProd_expand_invOneSubPow_zpow_iff {e : ℕ → ℤ} {f : ℤ⟦X⟧} 
     exact (pow_dvd_pow X hnr).trans this
   have hprod (n : ℕ) :
       ∏ r ∈ (range n).map ⟨Nat.succPNat, Nat.succPNat_injective⟩, g r = ↑(eulerUnit e n) := by
-    -- `(i.succPNat : ℕ)` is `i + 1` by definition (`Nat.succPNat_coe`)
-    rw [prod_map, val_eulerUnit]
-    rfl
+    simp only [prod_map, val_eulerUnit, Function.Embedding.coeFn_mk, Nat.succPNat_coe,
+      Nat.succ_eq_add_one, g]
   have hL : HasProd g (mk fun n ↦ coeff n (↑(eulerUnit e n) : ℤ⟦X⟧)) := by
     simpa only [hprod] using WithPiTopology.hasProd_of_X_pow_dvd_sub_one _ hF
+  have hmk (n : ℕ) :
+      X ^ (n + 1) ∣ mk (fun n ↦ coeff n (↑(eulerUnit e n) : ℤ⟦X⟧)) - (↑(eulerUnit e n) : ℤ⟦X⟧) := by
+    rw [X_pow_dvd_iff]
+    intro m hm
+    rw [map_sub, coeff_mk, coeff_val_eulerUnit_of_le e (Nat.lt_succ_iff.1 hm), sub_self]
   simp only [← val_eulerUnit]
   constructor
   · intro h n
-    rw [h.unique hL, X_pow_dvd_iff]
-    intro m hm
-    rw [map_sub, coeff_mk, coeff_val_eulerUnit_of_le e (Nat.lt_succ_iff.1 hm), sub_self]
+    rw [h.unique hL]
+    exact hmk n
   · intro h
     convert hL
-    ext n
-    rw [coeff_mk, ← sub_eq_zero, ← map_sub]
-    exact X_pow_dvd_iff.1 (h n) n (Nat.lt_succ_self n)
+    exact eq_of_forall_X_pow_dvd_sub fun n ↦ by simpa using dvd_sub (h n) (hmk n)
 
 /-- The remainders of the recursive construction of integral Euler exponents: the `n`-th
 remainder is `f ∏_{r = 1}^{n} (1 - X ^ r) ^ (e r)`, where each `e r` removes the coefficient of
@@ -398,15 +465,11 @@ theorem X_mul_derivative_eq_mul_of_hasProd {e : ℕ → ℤ} {f : ℤ⟦X⟧}
   rw [hasProd_expand_invOneSubPow_zpow_iff] at h
   simp only [← val_eulerUnit] at h
   set G : ℤ⟦X⟧ := mk fun m ↦ ∑ d ∈ m.divisors, (d : ℤ) * e d
-  suffices ∀ n, X ^ (n + 1) ∣ X * d⁄dX f - f * G by
-    ext m
-    rw [← sub_eq_zero, ← map_sub]
-    exact X_pow_dvd_iff.1 (this m) m (Nat.lt_succ_self m)
-  intro n
+  refine eq_of_forall_X_pow_dvd_sub fun n ↦ ?_
   set U := eulerUnit e n
   set S := (xLogDeriv U).toAdd
   have hS : X * d⁄dX (U : ℤ⟦X⟧) = S * (U : ℤ⟦X⟧) := by
-    simp only [S, xLogDeriv, MonoidHom.coe_mk, OneHom.coe_mk, toAdd_ofAdd]
+    simp only [S, toAdd_xLogDeriv]
     rw [mul_assoc (X * d⁄dX (U : ℤ⟦X⟧)), Units.inv_mul, mul_one]
   have hSG : X ^ (n + 1) ∣ S - G := by
     rw [X_pow_dvd_iff]
@@ -426,9 +489,8 @@ theorem sum_divisors_mul_eq_neg_pow_of_hasProd {e : ℕ → ℤ} {x : ℤ}
   set M : ℤ⟦X⟧ := mk fun n ↦ x ^ n
   set G : ℤ⟦X⟧ := mk fun m ↦ ∑ d ∈ m.divisors, (d : ℤ) * e d
   have hinv : (1 - C x * X) * M = 1 := by
-    have := congrArg (rescale x) (mk_one_mul_one_sub_eq_one (S := ℤ))
-    rw [map_mul, rescale_mk, map_sub, map_one, rescale_X] at this
-    simpa [M, mul_comm] using this
+    rw [mul_comm]
+    exact TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one x
   have hd := X_mul_derivative_eq_mul_of_hasProd h
   rw [map_sub, Derivation.map_one_eq_zero, derivative_C_mul_X, zero_sub] at hd
   have hG : G = -C x * X * M := by linear_combination (-G) * hinv - M * hd

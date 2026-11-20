@@ -76,6 +76,8 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
 * `PowerSeries.mul_coeff_val_zpow_neg_add_coeff_val_zpow_neg_sub_one_mul_derivative_eq_zero`:
   for a unit `u : R⟦X⟧ˣ` over a commutative ring and `e, k ≥ 1`,
   `(e : R) * coeff (e * k) (u ^ (-k)) + coeff (e * k - 1) (u ^ (-k - 1) * u') = 0`.
+* `PowerSeries.X_pow_dvd_X_mul_derivative_sub`: `X * d⁄dX` preserves congruence modulo
+  `X ^ (n + 1)`.
 -/
 
 public section
@@ -239,6 +241,16 @@ theorem mul_coeff_val_zpow_neg_add_coeff_val_zpow_neg_sub_one_mul_derivative_eq_
   simpa [nsmul_eq_mul, hm, coeff_succ_X_mul] using
     nsmul_coeff_val_inv_pow_succ_add_coeff_X_mul_val_inv_pow_add_two_mul_derivative_eq_zero
       u e n
+
+/-- Congruence modulo `X ^ (n + 1)` is preserved by `X * d⁄dX`. -/
+theorem X_pow_dvd_X_mul_derivative_sub {a b : R⟦X⟧} {n : ℕ} (h : X ^ (n + 1) ∣ a - b) :
+    X ^ (n + 1) ∣ X * d⁄dX a - X * d⁄dX b := by
+  obtain ⟨c, hc⟩ := h
+  refine ⟨C ((n : R) + 1) * c + X * d⁄dX c, ?_⟩
+  rw [← mul_sub, ← map_sub, hc, Derivation.leibniz, derivative_X_pow, smul_eq_mul, smul_eq_mul,
+    Nat.add_sub_cancel]
+  push_cast
+  ring
 
 end CommRing
 
