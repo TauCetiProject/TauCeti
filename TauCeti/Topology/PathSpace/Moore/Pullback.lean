@@ -56,14 +56,14 @@ variable {D X : Type*} [TopologicalSpace D] [TopologicalSpace X]
   {f : C(D, X)} {b : X}
 
 /-- The parameter in the base of the pullback. -/
-def point (x : MoorePathPullback f b) : D := x.1.1
+def point (x : MoorePathPullback f b) : D := x.val.1
 
 /-- The path from `b` to the image of the parameter. -/
-def path (x : MoorePathPullback f b) : MoorePath X := x.1.2.toMoorePath
+def path (x : MoorePathPullback f b) : MoorePath X := x.val.2.toMoorePath
 
 /-- Projection to the based path space underlying the pullback. -/
 def toMoorePathFrom : C(MoorePathPullback f b, MoorePathFrom X b) :=
-  ⟨fun x ↦ x.1.2, continuous_snd.comp continuous_subtype_val⟩
+  ⟨fun x ↦ x.val.2, continuous_snd.comp continuous_subtypeVal⟩
 
 @[simp]
 theorem point_mk (d : D) (γ : MoorePathFrom X b) (h : γ.toMoorePath.target = f d) :
@@ -74,10 +74,10 @@ theorem path_mk (d : D) (γ : MoorePathFrom X b) (h : γ.toMoorePath.target = f 
     path (f := f) (b := b) ⟨(d, γ), h⟩ = γ.toMoorePath := (rfl)
 
 @[simp]
-theorem source_path (x : MoorePathPullback f b) : x.path.source = b := MoorePathFrom.source x.1.2
+theorem source_path (x : MoorePathPullback f b) : x.path.source = b := MoorePathFrom.source x.val.2
 
 @[simp]
-theorem target_path (x : MoorePathPullback f b) : x.path.target = f x.point := x.2
+theorem target_path (x : MoorePathPullback f b) : x.path.target = f x.point := x.property
 
 @[simp]
 theorem toMoorePathFrom_toMoorePath (x : MoorePathPullback f b) :
@@ -89,7 +89,7 @@ theorem ext {x y : MoorePathPullback f b} (h : x.point = y.point) (h' : x.path =
 
 @[fun_prop]
 theorem continuous_point : Continuous (point : MoorePathPullback f b → D) :=
-  continuous_fst.comp continuous_subtype_val
+  continuous_fst.comp continuous_subtypeVal
 
 @[fun_prop]
 theorem continuous_path : Continuous (path : MoorePathPullback f b → MoorePath X) :=
@@ -111,7 +111,7 @@ theorem proj_apply (x : MoorePathPullback f b) : proj f b x = x.point := (rfl)
 /-- Concatenate a loop in front using the action on the based path space. -/
 def leftAct (ω : MooreLoopSpace X b) (x : MoorePathPullback f b) :
     MoorePathPullback f b :=
-  ⟨(x.1.1, ω • x.1.2), by simpa using x.property⟩
+  ⟨(x.val.1, ω • x.val.2), by simpa using x.property⟩
 
 @[simp]
 theorem leftAct_one (x : MoorePathPullback f b) : leftAct 1 x = x :=
@@ -143,7 +143,7 @@ theorem point_leftAct (ω : MooreLoopSpace X b) (x : MoorePathPullback f b) :
 @[simp]
 theorem path_leftAct (ω : MooreLoopSpace X b) (x : MoorePathPullback f b) :
     (leftAct ω x).path = ω.toMoorePath.trans x.path (by simp) :=
-  MoorePathFrom.toMoorePath_leftAct ω x.1.2
+  MoorePathFrom.toMoorePath_leftAct ω x.val.2
 
 instance : ContinuousSMul (MooreLoopSpace X b) (MoorePathPullback f b) where
   continuous_smul :=
@@ -330,8 +330,8 @@ set. This is a continuous family of Moore paths, including at the centre. -/
 def radialPaths (hS : StarConvex ℝ c S) (hc : c ∈ S) (χ : C(S, X))
     (γ : MoorePathBetween X b (χ ⟨c, hc⟩)) : C(S, MoorePath X) :=
   let H : C(I × S, X) := χ.comp
-    ⟨fun z ↦ ⟨AffineMap.lineMap c z.2.1 (z.1 : ℝ),
-      hS.segment_subset z.2.2 (lineMap_mem_segment ℝ c z.2.1 z.1.2)⟩,
+    ⟨fun z ↦ ⟨AffineMap.lineMap c z.2.val (z.1 : ℝ),
+      hS.segment_subset z.2.property (lineMap_mem_segment ℝ c z.2.val z.1.property)⟩,
       by simp only [AffineMap.lineMap_apply_module]; fun_prop⟩
   let r : C(S, C(I, X)) := (H.comp ContinuousMap.prodSwap).curry
   ⟨fun v ↦ γ.toMoorePath.trans (.ofUnitPath (r v)) (by simp [r, H]),
@@ -355,8 +355,8 @@ theorem length_radialPaths (v : S) :
 in one unit of Moore time. -/
 theorem radialPaths_apply_length_add (v : S) (t : I) :
     radialPaths hS hc χ γ v (γ.toMoorePath.length + toNNReal t) =
-      χ ⟨AffineMap.lineMap c v.1 (t : ℝ),
-        hS.segment_subset v.2 (lineMap_mem_segment ℝ c v.1 t.2)⟩ := by
+      χ ⟨AffineMap.lineMap c v.val (t : ℝ),
+        hS.segment_subset v.property (lineMap_mem_segment ℝ c v.val t.property)⟩ := by
   simp [radialPaths, MoorePath.trans_apply_length_add, MoorePath.ofUnitPath_apply]
 
 /-- The fibre homotopy trivialization `fiberHomotopyEquiv` applied to `radialPaths`.

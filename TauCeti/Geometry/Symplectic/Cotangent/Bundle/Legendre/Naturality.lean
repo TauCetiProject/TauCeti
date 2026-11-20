@@ -105,12 +105,12 @@ pullback of the Legendre transform of `L` at `Tf v` along the differential of `f
 theorem legendreMap_comp_tangentMap_snd (f : M → N) (L : TangentBundle J N → 𝕜)
     (v : TangentBundle I M)
     (hL : DifferentiableAt 𝕜 (fun w : F ↦ L (TotalSpace.mk' F (f v.proj) w))
-      (mfderiv I J f v.proj v.2)) :
-    (legendreMap (L ∘ tangentMap I J f) v).2 =
-      (legendreMap L (tangentMap I J f v)).2 ∘L mfderiv I J f v.proj := by
+      (mfderiv I J f v.proj v.snd)) :
+    (legendreMap (L ∘ tangentMap I J f) v).snd =
+      (legendreMap L (tangentMap I J f v)).snd ∘L mfderiv I J f v.proj := by
   -- Read the differential and the velocity in the model spaces.
   let D : E →L[𝕜] F := mfderiv I J f v.proj
-  let x : E := v.2
+  let x : E := v.snd
   have hL' : DifferentiableAt 𝕜 (fun w : F ↦ L (TotalSpace.mk' F (f v.proj) w)) (D x) := hL
   have hD : fderiv 𝕜 ((fun w : F ↦ L (TotalSpace.mk' F (f v.proj) w)) ∘ D) x =
       fderiv 𝕜 (fun w : F ↦ L (TotalSpace.mk' F (f v.proj) w)) (D x) ∘L D := by
@@ -125,14 +125,14 @@ differential of `f` at the base point of `v` is invertible, then the Legendre tr
 differentiability assumption on `L`. -/
 theorem legendreMap_comp_tangentMap_snd_of_isInvertible (f : M → N) (L : TangentBundle J N → 𝕜)
     (v : TangentBundle I M) (hf : (mfderiv I J f v.proj).IsInvertible) :
-    (legendreMap (L ∘ tangentMap I J f) v).2 =
-      (legendreMap L (tangentMap I J f v)).2 ∘L mfderiv I J f v.proj := by
+    (legendreMap (L ∘ tangentMap I J f) v).snd =
+      (legendreMap L (tangentMap I J f v)).snd ∘L mfderiv I J f v.proj := by
   obtain ⟨A₀, hA₀⟩ := hf
   -- Read the differential in the model spaces.
   let A : E ≃L[𝕜] F := A₀
   have hA : (A : E →L[𝕜] F) = mfderiv I J f v.proj := hA₀
   have hD := A.comp_right_fderiv (f := fun w : F ↦ L (TotalSpace.mk' F (f v.proj) w))
-    (x := (v.2 : E))
+    (x := (v.snd : E))
   simp only [← ContinuousLinearEquiv.coe_coe, hA] at hD
   rw [legendreMap_snd, legendreMap_snd, comp_tangentMap_mk']
   -- `Tf v` is the vector `df v` at `f v.proj` (`tangentMap_proj`, `tangentMap_snd`).
@@ -142,8 +142,8 @@ theorem legendreMap_comp_tangentMap_snd_of_isInvertible (f : M → N) (L : Tange
 the cotangent relation of `f`. -/
 private theorem cotangentRel_legendreMap_comp_tangentMap_of_snd (f : M → N)
     (L : TangentBundle J N → 𝕜) (v : TangentBundle I M)
-    (hs : (legendreMap (L ∘ tangentMap I J f) v).2 =
-      (legendreMap L (tangentMap I J f v)).2 ∘L mfderiv I J f v.proj) :
+    (hs : (legendreMap (L ∘ tangentMap I J f) v).snd =
+      (legendreMap L (tangentMap I J f v)).snd ∘L mfderiv I J f v.proj) :
     CotangentBundle.cotangentRel I J f (legendreMap (L ∘ tangentMap I J f) v)
       (legendreMap L (tangentMap I J f v)) := by
   rw [legendreMap_def, legendreMap_def] at hs ⊢
@@ -155,7 +155,7 @@ cotangent relation of `f`. -/
 theorem cotangentRel_legendreMap_comp_tangentMap (f : M → N) (L : TangentBundle J N → 𝕜)
     (v : TangentBundle I M)
     (hL : DifferentiableAt 𝕜 (fun w : F ↦ L (TotalSpace.mk' F (f v.proj) w))
-      (mfderiv I J f v.proj v.2)) :
+      (mfderiv I J f v.proj v.snd)) :
     CotangentBundle.cotangentRel I J f (legendreMap (L ∘ tangentMap I J f) v)
       (legendreMap L (tangentMap I J f v)) :=
   cotangentRel_legendreMap_comp_tangentMap_of_snd f L v
@@ -177,18 +177,18 @@ theorem cotangentRel_legendreMap_comp_tangentMap_of_isInvertible (f : M → N)
 are related by the differential of `f`. -/
 private theorem lagrangianEnergy_comp_tangentMap_apply_of_snd (f : M → N)
     (L : TangentBundle J N → 𝕜) (v : TangentBundle I M)
-    (hs : (legendreMap (L ∘ tangentMap I J f) v).2 =
-      (legendreMap L (tangentMap I J f v)).2 ∘L mfderiv I J f v.proj) :
+    (hs : (legendreMap (L ∘ tangentMap I J f) v).snd =
+      (legendreMap L (tangentMap I J f v)).snd ∘L mfderiv I J f v.proj) :
     lagrangianEnergy (L ∘ tangentMap I J f) v = lagrangianEnergy L (tangentMap I J f v) := by
   rw [lagrangianEnergy_apply, lagrangianEnergy_apply]
-  exact congrArg (· - L (tangentMap I J f v)) (DFunLike.congr_fun hs v.2)
+  exact congrArg (· - L (tangentMap I J f v)) (DFunLike.congr_fun hs v.snd)
 
 /-- **The energy under a change of configuration.** If `L` is differentiable along the fibre at
 `Tf v`, the energy of `L ∘ Tf` at `v` is the energy of `L` at `Tf v`. -/
 theorem lagrangianEnergy_comp_tangentMap_apply (f : M → N) (L : TangentBundle J N → 𝕜)
     (v : TangentBundle I M)
     (hL : DifferentiableAt 𝕜 (fun w : F ↦ L (TotalSpace.mk' F (f v.proj) w))
-      (mfderiv I J f v.proj v.2)) :
+      (mfderiv I J f v.proj v.snd)) :
     lagrangianEnergy (L ∘ tangentMap I J f) v = lagrangianEnergy L (tangentMap I J f v) :=
   lagrangianEnergy_comp_tangentMap_apply_of_snd f L v (legendreMap_comp_tangentMap_snd f L v hL)
 
@@ -225,7 +225,7 @@ theorem fiberHessian_comp_tangentMap_apply_of_isInvertible (f : M → N)
   let A : E ≃L[𝕜] F := A₀
   have hA : (A : E →L[𝕜] F) = mfderiv I J f v.proj := hA₀
   have hH := A.fderiv_fderiv_comp_right_apply_apply
-    (fun w : F ↦ L (TotalSpace.mk' F (f v.proj) w)) (v.2 : E) (w₁ : E) (w₂ : E)
+    (fun w : F ↦ L (TotalSpace.mk' F (f v.proj) w)) (v.snd : E) (w₁ : E) (w₂ : E)
   simp only [← ContinuousLinearEquiv.coe_coe, hA] at hH
   rw [fiberHessian_def, fiberHessian_def, comp_tangentMap_mk']
   -- `Tf v` is the vector `df v` at `f v.proj` (`tangentMap_proj`, `tangentMap_snd`).
@@ -320,7 +320,8 @@ theorem isHyperregularLagrangian_comp_tangentMap_iff (L : TangentBundle J N → 
     rw [legendreMap_comp_tangentMap, ← h.coe_tangent, Function.Bijective.of_comp_iff' h₁]
     exact Function.Bijective.of_comp_iff _ h₂
   have hr := isRegularLagrangian_comp_tangentMap_iff L h (by simp)
-  exact ⟨fun hL ↦ ⟨hr.1 hL.1, hb.1 hL.2⟩, fun hL ↦ ⟨hr.2 hL.1, hb.2 hL.2⟩⟩
+  exact ⟨fun hL ↦ ⟨hr.1 hL.isRegularLagrangian, hb.1 hL.bijective_legendreMap⟩, fun hL ↦
+      ⟨hr.2 hL.isRegularLagrangian, hb.2 hL.bijective_legendreMap⟩⟩
 
 /-- **The Hamiltonian is natural under diffeomorphisms.** If `L` and `L ∘ Th` are hyperregular,
 the Hamiltonian of `L ∘ Th` is the Hamiltonian of `L` composed with the cotangent lift of `h`. -/

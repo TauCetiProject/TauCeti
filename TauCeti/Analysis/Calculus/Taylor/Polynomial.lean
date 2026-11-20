@@ -176,7 +176,7 @@ theorem iteratedFDeriv_taylorPolynomial_self [IsRCLikeNormedField 𝕜] {m : ℕ
   let : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
   exact iteratedFDeriv_finiteJetPolynomial_self m (fun r ↦ iteratedFDeriv 𝕜 r.val u y) y
     ⟨j, Nat.lt_succ_of_le hj⟩
-    fun v σ ↦ (hu.of_le (by exact_mod_cast hj)).iteratedFDeriv_comp_perm_of_isRCLikeNormedField v σ
+    fun v σ ↦ hu.iteratedFDeriv_comp_perm_of_minSmoothness (by simpa using hj) v σ
 
 end NormedField
 

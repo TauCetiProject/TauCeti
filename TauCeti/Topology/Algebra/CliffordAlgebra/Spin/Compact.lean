@@ -151,9 +151,9 @@ private theorem continuous_realCliffordSpinSpherePair (n : ℕ) :
   unfold realCliffordSpinSpherePair
   apply continuous_spinReflectionPair
   · exact (EuclideanSpace.equiv (Fin n) ℝ).continuous.comp
-      (continuous_subtype_val.comp continuous_fst)
+      (continuous_subtypeVal.comp continuous_fst)
   · exact (EuclideanSpace.equiv (Fin n) ℝ).continuous.comp
-      (continuous_subtype_val.comp continuous_snd)
+      (continuous_subtypeVal.comp continuous_snd)
 
 private def realCliffordSpinCompactParam (n : ℕ) :
     (Fin (n + 1) → realCliffordUnitSphere n × realCliffordUnitSphere n) →
@@ -209,14 +209,14 @@ private theorem exists_sphere_pair_list_prod_eq (n : ℕ) [NeZero n]
     intro q _
     exact spinToOrthogonal_spinReflectionPair _ _ _ _ _
   have hzorthg : spinToOrthogonal Q z =
-      ⟨g, (QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.2).1⟩ :=
+      ⟨g, (QuadraticMap.mem_specialOrthogonalGroup_iff.mp g.property).1⟩ :=
     hzorth.trans hlprod
   have hzproj : spinToSpecialOrthogonal Q z = g := by
     apply Subtype.ext
     apply LinearEquiv.ext
     intro m
     simpa only [coe_spinToSpecialOrthogonal_apply, coe_spinToOrthogonal_apply] using
-      congrArg (fun h : QuadraticMap.orthogonalGroup Q => h.1 m)
+      congrArg (fun h : QuadraticMap.orthogonalGroup Q => h.val m)
         hzorthg
   have hplen : p.length ≤ n := by
     have hpair : 2 * p.length ≤ l.length := by

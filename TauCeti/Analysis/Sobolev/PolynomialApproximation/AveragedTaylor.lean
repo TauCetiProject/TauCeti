@@ -484,9 +484,9 @@ private theorem averagedTaylor_ibp_term
       fun y ↦ iteratedFDeriv ℝ j u y (fun l ↦ b (I l)) * kernelTestTerm φ x I y := by
     ext y; by_cases hy : y ∈ tsupport φ
     · have huy : ContDiffAt ℝ j u y := (hu y hy).of_le (by exact_mod_cast hj)
-      rw [(List.reverse_perm (coordDirections I)).iteratedFDerivAlong_eq_apply
-          (by simpa [List.length_reverse, length_coordDirections] using huy)]
-      simp only [coordDirections, huy.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv, b]
+      rw [(List.reverse_perm (coordDirections I)).iteratedFDerivAlong_eq_of_contDiffAt huy
+          (by simp [List.length_reverse, length_coordDirections])]
+      simp only [coordDirections, huy.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv le_rfl, b]
     · simp [kernelTestTerm, image_eq_zero_of_notMem_tsupport hy]
   rw [hibp, hpt, ← mul_assoc, div_mul_eq_mul_div, ← mul_pow]; norm_num
 

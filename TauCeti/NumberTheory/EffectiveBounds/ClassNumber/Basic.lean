@@ -104,7 +104,7 @@ theorem classNumber_le_bound (F : Type*) [Field F] [NumberField F] :
       exact_mod_cast Nat.one_le_iff_ne_zero.mpr (Ideal.absNorm_ne_zero_of_nonZeroDivisors _)
     · simp only [Set.image_univ]
       exact Set.range_subset_iff.mpr fun C =>
-        ⟨by intro h; simpa [h] using f C |>.2, hf C |>.2⟩
+        ⟨by intro h; simpa [h] using f C |>.property, hf C |>.2⟩
   refine le_trans ?_ (h_card.trans ?_)
   · rw [Set.ncard_image_of_injective _ fun x y hxy => ?_, Set.ncard_univ]
     · norm_num [classNumber]

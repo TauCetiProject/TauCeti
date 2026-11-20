@@ -13,7 +13,9 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Basic
 On a real normed space with smooth bump functions, every open ball contains the topological
 support of a smooth bump function centred at its centre. This file defines the explicit concentric
 bump parameters `TauCeti.ballBump` (`rIn = ρ / 4`, `rOut = ρ / 2`) together with the existential
-witness `TauCeti.exists_contDiffBump_tsupport_subset_ball`.
+witness `TauCeti.exists_contDiffBump_tsupport_subset_ball`. Multiplying the identity by such a bump
+gives a smooth map into the ball that is the identity near its centre; composing with it turns a map
+defined only on a ball into a globally defined map with the same germ at the centre.
 
 ## Main definitions
 
@@ -23,11 +25,14 @@ witness `TauCeti.exists_contDiffBump_tsupport_subset_ball`.
 
 * `TauCeti.exists_contDiffBump_tsupport_subset_ball`: a bump centred at `c` whose topological
   support lies in the ball of radius `r` around `c`.
+* `TauCeti.exists_contDiff_eventuallyEq_id_forall_mem_ball`: a smooth map into the ball of radius
+  `r` about `0` which is the identity near `0`.
 -/
 
 public section
 
-open Metric
+open Metric Filter
+open scoped ContDiff Topology
 
 namespace TauCeti
 
@@ -54,5 +59,22 @@ theorem exists_contDiffBump_tsupport_subset_ball {E : Type*} [NormedAddCommGroup
   ⟨ballBump c hr, by
     rw [ContDiffBump.tsupport_eq, ballBump_rOut]
     exact closedBall_subset_ball (half_lt_self hr)⟩
+
+/-- A smooth self-map of a real normed space with smooth bump functions which is the identity near
+`0` and takes values in the ball of radius `r > 0` about `0`. It is `x ↦ b(x) • x` for a bump `b`
+equal to `1` near `0` and supported in that ball. -/
+theorem exists_contDiff_eventuallyEq_id_forall_mem_ball {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [HasContDiffBump E] {r : ℝ} (hr : 0 < r) :
+    ∃ ρ : E → E, ContDiff ℝ ∞ ρ ∧ ρ =ᶠ[𝓝 0] id ∧ ∀ x, ρ x ∈ ball (0 : E) r := by
+  let b : ContDiffBump (0 : E) := ⟨r / 2, r, half_pos hr, half_lt_self hr⟩
+  refine ⟨fun x ↦ b x • x, b.contDiff.smul contDiff_id, ?_, fun x ↦ ?_⟩
+  · filter_upwards [b.eventuallyEq_one] with x hx
+    simp [hx]
+  · dsimp only
+    rcases lt_or_ge ‖x‖ r with hx | hx
+    · rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg b.nonneg]
+      exact (mul_le_of_le_one_left (norm_nonneg x) b.le_one).trans_lt hx
+    · rw [b.zero_of_le_dist (by simpa using hx), zero_smul]
+      exact mem_ball_self hr
 
 end TauCeti

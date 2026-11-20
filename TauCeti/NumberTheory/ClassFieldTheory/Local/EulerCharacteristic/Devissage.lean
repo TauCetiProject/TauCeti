@@ -86,7 +86,7 @@ theorem localEulerCharacteristic_eq_localCardNorm_of_nsmul_eq_zero {n ℓ : ℕ}
   have hB := h B
   apply Subtype.ext
   apply Units.ext
-  have hχ := congrArg (fun x : Units.posSubgroup ℚ ↦ ((x.1 : ℚ))) hB
+  have hχ := congrArg (fun x : Units.posSubgroup ℚ ↦ ((x.val : ℚ))) hB
   simp only [localEulerCharacteristic_coe, localCardNorm_coe] at hχ ⊢
   rw [hcard 0, hcard 1, hcard 2]
   exact hχ
