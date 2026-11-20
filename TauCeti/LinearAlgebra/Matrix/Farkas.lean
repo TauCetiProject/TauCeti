@@ -49,6 +49,8 @@ alternative), to the cone in `(ι → K) × K` spanned by the rows `(A i, b i)`,
 
 * `Matrix.vecMul_add_vecMul_dotProduct_le`: weak duality, over any ordered semiring.
 * `Matrix.exists_mulVec_le_and_mulVec_eq_iff`: Farkas' lemma for mixed systems.
+* `Matrix.exists_dual_of_not_exists_vecMul_add_vecMul_eq_and_le`: a separating certificate for
+  an inequality that is not a nonnegative combination of the system.
 * `Matrix.exists_vecMul_add_vecMul_eq_and_le_iff`: valid inequalities of a solvable system.
 * `Matrix.exists_vecMul_add_vecMul_eq_iff`: valid homogeneous inequalities.
 * `Matrix.exists_mulVec_le_and_mulVec_eq_map_iff`: solvability is invariant under ordered field
@@ -112,11 +114,12 @@ private theorem exists_of_mem_hull_farkasGenerators {A : Matrix m ι K} {b : m �
       ← Nonneg.coe_smul]
     linarith
 
-/-- The separation step: if `(c, δ)` is not a combination `y ᵥ* A + z ᵥ* E = c`,
-`y ⬝ᵥ b + z ⬝ᵥ d ≤ δ` with `y ≥ 0`, then some `(u, s)` with `s ≥ 0` pairs nonnegatively with every
-row `(A i, b i)`, vanishes on every row `(E j, d j)`, and pairs negatively with `(c, δ)`. -/
-private theorem exists_dual_of_not_exists (A : Matrix m ι K) (b : m → K) (E : Matrix p ι K)
-    (d : p → K) (c : ι → K) (δ : K)
+/-- **Farkas certificate** for an inequality that is not a combination of a finite system: if
+`(c, δ)` is not a combination `y ᵥ* A + z ᵥ* E = c`, `y ⬝ᵥ b + z ⬝ᵥ d ≤ δ` with `y ≥ 0`, then some
+`(u, s)` with `s ≥ 0` pairs nonnegatively with every row `(A i, b i)`, vanishes on every row
+`(E j, d j)`, and pairs negatively with `(c, δ)`. No solvability of the system is assumed. -/
+theorem exists_dual_of_not_exists_vecMul_add_vecMul_eq_and_le (A : Matrix m ι K) (b : m → K)
+    (E : Matrix p ι K) (d : p → K) (c : ι → K) (δ : K)
     (h : ¬∃ (y : m → K) (z : p → K), 0 ≤ y ∧ y ᵥ* A + z ᵥ* E = c ∧ y ⬝ᵥ b + z ⬝ᵥ d ≤ δ) :
     ∃ (u : ι → K) (s : K), 0 ≤ s ∧ (∀ i, 0 ≤ A i ⬝ᵥ u + s * b i) ∧
       (∀ j, E j ⬝ᵥ u + s * d j = 0) ∧ c ⬝ᵥ u + s * δ < 0 := by
@@ -171,8 +174,9 @@ theorem exists_mulVec_le_and_mulVec_eq_iff (A : Matrix m ι K) (b : m → K) (E 
   refine ⟨fun ⟨x, hA, hE⟩ y z hy hyz => ?_, fun H => ?_⟩
   · simpa [hyz] using vecMul_add_vecMul_dotProduct_le hA hE hy z
   · by_contra hx
-    obtain ⟨u, s, -, hA, hE, hs⟩ := exists_dual_of_not_exists A b E d 0 (-1)
-      fun ⟨y, z, hy, hyz, hle⟩ => (H y z hy hyz).not_gt (by linarith)
+    obtain ⟨u, s, -, hA, hE, hs⟩ :=
+      exists_dual_of_not_exists_vecMul_add_vecMul_eq_and_le A b E d 0 (-1)
+        fun ⟨y, z, hy, hyz, hle⟩ => (H y z hy hyz).not_gt (by linarith)
     exact hx ⟨_, mulVec_neg_inv_smul (by simpa using hs) hA hE⟩
 
 /-- **Valid inequalities** of a solvable finite system `A *ᵥ x ≤ b`, `E *ᵥ x = d` over a
@@ -185,7 +189,8 @@ theorem exists_vecMul_add_vecMul_eq_and_le_iff {A : Matrix m ι K} {b : m → K}
   refine ⟨fun ⟨y, z, hy, hyz, hle⟩ x hA hE => ?_, fun H => ?_⟩
   · exact hyz ▸ (vecMul_add_vecMul_dotProduct_le hA hE hy z).trans hle
   by_contra hcert
-  obtain ⟨u, s, hs, hA, hE, hc⟩ := exists_dual_of_not_exists A b E d c δ hcert
+  obtain ⟨u, s, hs, hA, hE, hc⟩ :=
+    exists_dual_of_not_exists_vecMul_add_vecMul_eq_and_le A b E d c δ hcert
   rcases hs.lt_or_eq with hs | rfl
   · -- A positive last coordinate rescales to a solution `-s⁻¹ • u` violating `c ⬝ᵥ x ≤ δ`.
     have hcx := H _ (mulVec_neg_inv_smul hs hA hE).1 (mulVec_neg_inv_smul hs hA hE).2
