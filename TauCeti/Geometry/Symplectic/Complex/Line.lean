@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Analysis.Real.Sqrt
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Complex.Basic
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
@@ -52,6 +53,8 @@ conjugating the coordinates exchanges them.
 * `TauCeti.stdComplexSymplecticForm_tames_iff_im_pos` and
   `TauCeti.stdComplexSymplecticForm_tames_or_tames_transport_conj`: the orientation criterion
   and coverage of both components by the usual and conjugate real coordinates.
+* `TauCeti.AlmostComplexStructure.transport_conjCLE_apply`: transporting a structure along
+  complex conjugation conjugates it.
 * `TauCeti.exists_frame_of_tame_of_finrank_eq_two`: a complex structure on a real plane, tamed by
   an antisymmetric form, is identified with the complex line by a complex-linear isomorphism
   pulling the form back to `⟪i x, y⟫_ℝ`.
@@ -254,6 +257,13 @@ theorem stdComplexSymplecticForm_tames_or_tames_transport_conj (J : AlmostComple
       stdComplexSymplecticForm.Tames (J.transport Complex.conjCLE.toLinearEquiv) := by
   rw [stdComplexSymplecticForm_tames_iff_im_pos, stdComplexSymplecticForm_tames_transport_conj_iff]
   exact (lt_or_gt_of_ne (AlmostComplexStructure.im_apply_one_ne_zero J)).symm
+
+open scoped ComplexConjugate in
+/-- Transporting a structure along complex conjugation conjugates it: `v ↦ conj (J (conj v))`. -/
+theorem AlmostComplexStructure.transport_conjCLE_apply (J : AlmostComplexStructure ℂ) (v : ℂ) :
+    J.transport conjCLE.toLinearEquiv v = conj (J (conj v)) := by
+  rw [AlmostComplexStructure.transport_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
+    conjCLE_symm, ContinuousLinearEquiv.coe_toLinearEquiv, conjCLE_apply, conjCLE_apply]
 
 open ContinuousLinearMap in
 open scoped RealInnerProductSpace in
