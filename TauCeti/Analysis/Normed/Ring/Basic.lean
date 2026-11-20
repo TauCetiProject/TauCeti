@@ -10,9 +10,10 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 /-!
 # Elementary inequalities in seminormed rings
 
-This file records elementary consequences of the submultiplicativity of the norm, an estimate
-for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative, and convergence to `0` of finite
-partial products when factors tend to `0` cofinitely (`TauCeti.tendsto_finsetProd_cofinite_zero`).
+This file records elementary consequences of the submultiplicativity of the norm, exact
+positive-power norms without `NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the
+norm is multiplicative, and convergence to `0` of finite partial products when factors tend to `0`
+cofinitely (`TauCeti.tendsto_finsetProd_cofinite_zero`).
 
 Among the former are the estimates `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`
 (`TauCeti.norm_mul_sub_le_left`) and `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
@@ -110,6 +111,14 @@ theorem _root_.Finset.norm_mul_prod_pow_le {ι R : Type*} [SeminormedCommRing R]
   | insert t S ht ih =>
     rw [Finset.prod_insert ht, Finset.prod_insert ht, ← mul_assoc, ← mul_assoc]
     exact (ih _).trans (by gcongr; exact norm_mul_pow_le _ _ _)
+
+/-- Without the normalisation `‖1‖ = 1`, positive powers under a multiplicative norm satisfy
+`‖x ^ (n + 1)‖ = ‖x‖ ^ (n + 1)`. -/
+theorem norm_pow_succ {M : Type*} [Norm M] [Monoid M] [NormMulClass M] (x : M) (n : ℕ) :
+    ‖x ^ (n + 1)‖ = ‖x‖ ^ (n + 1) := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ x (n + 1), norm_mul, ih, pow_succ ‖x‖ (n + 1)]
 
 /-- For a multiplicative norm with `‖1‖ = 1`, an element `w` of norm one and `r` of norm at most
 one, `‖w - 1‖ ≤ ‖(w - 1) a‖ + 2 ‖a - r‖ + 2 (1 - ‖r‖)` for every `a`. So `w - 1` is controlled by

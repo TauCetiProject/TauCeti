@@ -62,6 +62,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   meeting the lower semicircle only at `±1` (`Circle.upperSemicircle_eq_inv_iff`).
 * `Circle.differentiableAt_coe_inv`: the pointwise inverse of a differentiable circle-valued map
   is differentiable.
+* `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
+  `unitary ℂ` and the topological group isomorphism `Circle ≃ₜ* unitary ℂ`.
 * `TauCeti.hasDerivAt_coe_circleExp`: the velocity of `t ↦ exp (t i)` at `t` is `i exp (t i)`.
 -/
 
@@ -330,11 +332,34 @@ theorem exists_upperSemicircle_eq_or_inv_eq (v : Circle) :
     · simp
     · simp [hsqrt, abs_of_neg him]
 
+/-- Every point of `Circle` belongs to `unitary ℂ`. -/
+theorem coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ := by
+  simp [Unitary.mem_iff_self_mul_star, RCLike.star_def, RCLike.mul_conj]
+
 end Circle
 
 namespace TauCeti
 
 open Complex
+
+/-- The unit circle `Circle` in `ℂ` is topologically isomorphic as a group to `unitary ℂ`. -/
+def circleEquivUnitary : Circle ≃ₜ* unitary ℂ where
+  toFun z := ⟨(z : ℂ), z.coe_mem_unitary⟩
+  invFun u := ⟨(u : ℂ), mem_sphere_zero_iff_norm.2 <| CStarRing.norm_of_mem_unitary u.2⟩
+  left_inv _ := Circle.ext rfl
+  right_inv _ := Subtype.ext rfl
+  map_mul' _ _ := Subtype.ext rfl
+  continuous_toFun := Continuous.subtype_mk
+    (continuous_subtype_val : Continuous ((↑) : Circle → ℂ)) Circle.coe_mem_unitary
+  continuous_invFun := Continuous.subtype_mk continuous_subtype_val _
+
+@[simp]
+theorem coe_circleEquivUnitary (z : Circle) : (circleEquivUnitary z : ℂ) = z :=
+  (rfl)
+
+@[simp]
+theorem coe_circleEquivUnitary_symm (u : unitary ℂ) : (circleEquivUnitary.symm u : ℂ) = u :=
+  (rfl)
 
 /-- Read in `ℂ`, the circle exponential `t ↦ exp (t i)` has velocity `i exp (t i)`. -/
 theorem hasDerivAt_coe_circleExp (t : ℝ) :

@@ -58,9 +58,9 @@ spaces glued from oriented pieces, such as the connected sum.
 * `TauCeti.Manifold.Orientation.eventually_isOrientationPreservingAt`,
   `TauCeti.Manifold.Orientation.eventually_isOrientationReversingAt`: a `C¹` map that preserves
   (reverses) orientation at a point does so at every nearby point.
-* `TauCeti.Manifold.Orientation.exists_eventually_isOrientationPreservingAt`: a `C¹` map into the
-  model space with invertible derivative at a point preserves orientations near it, for some
-  orientation of the model space.
+* `TauCeti.Manifold.Orientation.exists_eventually_isOrientationPreservingAt`: a map into the model
+  space with invertible derivative at a point, such as a chart, preserves orientations near that
+  point for one of the orientations of the model space.
 
 ## References
 
@@ -363,10 +363,19 @@ theorem eventually_isOrientationPreservingAt {f : M → M'} {a : M} (hf : ContMD
   rw [ContinuousLinearEquiv.toLinearEquiv_symm, ← _root_.Orientation.map_symm] at h
   exact (Equiv.symm_apply_eq _).mp h |>.symm
 
-/-- **A map into the model space with invertible derivative preserves orientations nearby, for
-some orientation of the model space.** If `g : M → E` is `C¹` at `a` with invertible derivative
-there, then for some orientation `oE` of `E`, `g` preserves the orientations `o` and `oE` at every
-point near `a`: the constant orientation of `E` given by the image of `o` at `a`. -/
+/-- **Orientation reversal is an open condition.** If a map `f` that is `C¹` at `a` reverses the
+orientations `o` and `o'` at `a`, then it reverses them at every point near `a`. -/
+theorem eventually_isOrientationReversingAt {f : M → M'} {a : M} (hf : ContMDiffAt I I' 1 f a)
+    {o : Orientation I M ι} {o' : Orientation I' M' ι}
+    (ho : IsOrientationReversingAt o o' f a) :
+    ∀ᶠ x in 𝓝 a, IsOrientationReversingAt o o' f x := by
+  simpa only [isOrientationPreservingAt_neg_right] using
+    eventually_isOrientationPreservingAt hf ((isOrientationPreservingAt_neg_right o o' f a).mpr ho)
+
+/-- **A map into the model space preserves orientations near a point, for an orientation of the
+model space.** If `g : M → E` is `C¹` at `a` with invertible derivative there, then for some
+orientation `oE` of `E`, `g` preserves the orientations `o` and `oE` at every point near `a`: the
+constant orientation of `E` given by the image of `o` at `a`. -/
 theorem exists_eventually_isOrientationPreservingAt {g : M → E} {a : M}
     (hg : ContMDiffAt I 𝓘(ℝ, E) 1 g a) (hd : (mfderiv I 𝓘(ℝ, E) g a).IsInvertible)
     (o : Orientation I M ι) :
@@ -376,14 +385,5 @@ theorem exists_eventually_isOrientationPreservingAt {g : M → E} {a : M}
     (_root_.Orientation.map ι e.toLinearEquiv (o.orientationAt a) : _root_.Orientation ℝ E ι)
     o.card_eq, eventually_isOrientationPreservingAt hg
       ((isOrientationPreservingAt_iff_of_coe_eq _ _ g a e he).2 (orientationAt_model _ _ _).symm)⟩
-
-/-- **Orientation reversal is an open condition.** If a map `f` that is `C¹` at `a` reverses the
-orientations `o` and `o'` at `a`, then it reverses them at every point near `a`. -/
-theorem eventually_isOrientationReversingAt {f : M → M'} {a : M} (hf : ContMDiffAt I I' 1 f a)
-    {o : Orientation I M ι} {o' : Orientation I' M' ι}
-    (ho : IsOrientationReversingAt o o' f a) :
-    ∀ᶠ x in 𝓝 a, IsOrientationReversingAt o o' f x := by
-  simpa only [isOrientationPreservingAt_neg_right] using
-    eventually_isOrientationPreservingAt hf ((isOrientationPreservingAt_neg_right o o' f a).mpr ho)
 
 end TauCeti.Manifold.Orientation

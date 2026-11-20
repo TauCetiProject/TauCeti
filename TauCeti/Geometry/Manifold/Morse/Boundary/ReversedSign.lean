@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Sign
 public import TauCeti.LinearAlgebra.Orientation.Exact.Pair
-public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Orientation
+public import TauCeti.Geometry.Manifold.Morse.Boundary.FundamentalChain
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 
 /-!
