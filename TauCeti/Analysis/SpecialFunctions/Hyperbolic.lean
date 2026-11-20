@@ -109,6 +109,7 @@ theorem tanh_lt_tanh_iff {a b : ℝ} : tanh a < tanh b ↔ a < b :=
   tanh_strictMono.lt_iff_lt
 
 /-- The hyperbolic tangent is nonnegative exactly on the nonnegative reals. -/
+@[simp]
 theorem tanh_nonneg_iff {x : ℝ} : 0 ≤ tanh x ↔ 0 ≤ x := by
   simpa only [tanh_zero] using tanh_strictMono.le_iff_le (a := 0) (b := x)
 
