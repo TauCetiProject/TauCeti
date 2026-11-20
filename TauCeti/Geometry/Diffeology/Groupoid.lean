@@ -105,7 +105,7 @@ theorem isInduction_of_mk_eq_isomorphismClassesMk
     -- An arrow from `ℓ z` to a representative `u ∈ U` of `p z` has a smooth local transport `τ`.
     obtain ⟨f⟩ : Nonempty (ℓ z ⟶ (u : C)) :=
       isomorphismClassesMk_eq_iff.mp ((hℓp hzv).trans (by rw [Function.comp_apply, ← hu, hφ]))
-    obtain ⟨V, hV, hzV, τ, hτ, hτs, hτV⟩ := htr f u.2
+    obtain ⟨V, hV, hzV, τ, hτ, hτs, hτV⟩ := htr f u.property
     -- `τ ∘ ℓ` is a plot near `z` passing through `u`, so it lands in the open set `U` near `z`.
     let : TopologicalSpace C := _root_.Diffeology.dTopology
     have hw : IsOpen (v ∩ ℓ ⁻¹' V) := (hℓ.continuousOn hv).isOpen_inter_preimage hv hV
@@ -199,7 +199,7 @@ theorem exists_isotropy_action_isInduction_of_proper_source_target [T2Space (Qui
     (ht : IsLocalDiffeomorph 𝓘(ℝ, E') 𝓘(ℝ, E) ∞ (Quiver.Total.right : Quiver.Total C → C))
     (hu : Continuous fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C))
     (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-      p.1.1.comp p.1.2 p.2)
+      p.val.1.comp p.val.2 p.property)
     (x : C) :
     ∃ (U : Set C) (_ : x ∈ U) (_ : MulAction (Aut x) U) (F : ActionCategory (Aut x) U ⥤ C)
       (φ : orbitRel.Quotient (Aut x) U → Quotient (isIsomorphicSetoid C)),

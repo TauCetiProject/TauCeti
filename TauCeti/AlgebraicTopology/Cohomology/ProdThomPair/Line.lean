@@ -85,19 +85,20 @@ variable {B : Type w} [TopologicalSpace B]
 
 /-- Points of `B × (F ∖ {0})` joined by a path lie on the same side of the zero section. -/
 private theorem pos_iff_of_joined (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1))
-    {p q : (prodThomPair B F).snd} (h : Joined p q) : 0 < e p.1.2 0 ↔ 0 < e q.1.2 0 := by
+    {p q : (prodThomPair B F).snd} (h : Joined p q) : 0 < e p.val.2 0 ↔ 0 < e q.val.2 0 := by
   -- Positivity is carried along any path; `Joined` is symmetric, so this gives both directions.
-  suffices key : ∀ {p q : (prodThomPair B F).snd}, Joined p q → 0 < e p.1.2 0 → 0 < e q.1.2 0 from
+  suffices key : ∀ {p q : (prodThomPair B F).snd}, Joined p q → 0 < e p.val.2 0 → 0 < e q.val.2 0
+      from
     ⟨key h, key h.symm⟩
   intro p q h hp
   obtain ⟨γ⟩ := h
-  set g : unitInterval → ℝ := fun t ↦ e (γ t).1.2 0
+  set g : unitInterval → ℝ := fun t ↦ e (γ t).val.2 0
   have hg : Continuous g := by fun_prop
   -- A vector of `ℝ¹` vanishes as soon as its coordinate does.
   have hne (t : unitInterval) : g t ≠ 0 := fun h0 ↦
-    (γ t).2 (e.map_eq_zero_iff.1 (by ext i; rw [Subsingleton.elim i 0]; exact h0))
-  have h0 : g 0 = e p.1.2 0 := by simp [g]
-  have h1 : g 1 = e q.1.2 0 := by simp [g]
+    (γ t).property (e.map_eq_zero_iff.1 (by ext i; rw [Subsingleton.elim i 0]; exact h0))
+  have h0 : g 0 = e p.val.2 0 := by simp [g]
+  have h1 : g 1 = e q.val.2 0 := by simp [g]
   rw [← h0] at hp
   rw [← h1]
   by_contra hq
@@ -111,7 +112,7 @@ private theorem exists_singularCohomologyZeroEval_eq_ite (e : F ≃L[ℝ] Euclid
     ∃ u : (prodThomPair B F).snd.singularCohomology (𝟙_ (ModuleCat.{w} k)) k
         (𝟙_ (ModuleCat.{w} k)) 0,
       ∀ p : (prodThomPair B F).snd,
-        singularCohomologyZeroEval p u = if 0 < e p.1.2 0 then 1 else 0 :=
+        singularCohomologyZeroEval p u = if 0 < e p.val.2 0 then 1 else 0 :=
   exists_singularCohomologyZeroEval_eq _ fun _ _ h ↦ by simp only [pos_iff_of_joined e h]
 
 variable (k B) in
@@ -130,7 +131,7 @@ def prodThomPairPuncturedLineClass (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) 
 theorem singularCohomologyZeroEval_prodThomPairPuncturedLineClass
     (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) (p : (prodThomPair B F).snd) :
     singularCohomologyZeroEval p (prodThomPairPuncturedLineClass k B e) =
-      if 0 < e p.1.2 0 then 1 else 0 :=
+      if 0 < e p.val.2 0 then 1 else 0 :=
   (exists_singularCohomologyZeroEval_eq_ite k B e).choose_spec p
 
 /-! ### The two sides of the zero section -/
@@ -146,7 +147,7 @@ def prodThomPairPuncturedLineSection (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)
 @[simp]
 theorem coe_prodThomPairPuncturedLineSection_apply (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1))
     (t : ℝ) (ht : t ≠ 0) (b : B) :
-    (prodThomPairPuncturedLineSection e t ht b).1 = (b, e.symm (EuclideanSpace.single 0 t)) :=
+    (prodThomPairPuncturedLineSection e t ht b).val = (b, e.symm (EuclideanSpace.single 0 t)) :=
   (rfl)
 
 /-- `TauCeti.prodThomPairPuncturedLineSection` is a section of the projection
@@ -203,7 +204,7 @@ private theorem prodThomPairPuncturedLineSection_comp_sphereZeroProdMap
     (hs : (s.down : EuclideanSpace ℝ (Fin 1)) = EuclideanSpace.single 0 t) :
     prodThomPairPuncturedLineSection (B := B) e t ht ≫ sphereZeroProdMap e =
       CartesianMonoidalCategory.lift (TopCat.ofHom (ContinuousMap.const B s)) (𝟙 _) := by
-  have h1 : ‖t‖ = 1 := by simpa [hs] using s.down.2
+  have h1 : ‖t‖ = 1 := by simpa [hs] using s.down.property
   refine TopCat.ext fun b ↦ ?_
   have key : prodThomPairPuncturedHomotopyEquiv B e (prodThomPairPuncturedLineSection e t ht b) =
       (s, b) := by
@@ -239,7 +240,7 @@ theorem eq_zero_of_singularCohomologyMap_prodThomPairPuncturedLineSection_eq_zer
   have hs : (s.down : EuclideanSpace ℝ (Fin 1)) ∈
       ({EuclideanSpace.single 0 1, -EuclideanSpace.single 0 1} : Set _) :=
     sphere_eq_pair_of_finrank_eq_one finrank_euclideanSpace_fin (r := 1)
-      (p := EuclideanSpace.single 0 1) (by simp) ▸ s.down.2
+      (p := EuclideanSpace.single 0 1) (by simp) ▸ s.down.property
   rcases hs with hs | hs
   · rwa [← prodThomPairPuncturedLineSection_comp_sphereZeroProdMap e s one_ne_zero hs,
       TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply]

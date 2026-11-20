@@ -89,7 +89,7 @@ private abbrev splitOddLine (K : Type u) [CommRing K] (n : ℕ) :
 /-- Coordinate identification of the first isotropic summand with the standard module. -/
 private noncomputable def splitOddWEquiv (K : Type u) [CommRing K] (n : ℕ) :
     splitOddW K n ≃ₗ[K] Fin n → K where
-  toFun x := x.1.1.2
+  toFun x := x.val.1.2
   invFun x := ⟨((0, x), 0), by simp [splitOddW]⟩
   left_inv x := by
     apply Subtype.ext
@@ -105,7 +105,7 @@ private noncomputable def splitOddWEquiv (K : Type u) [CommRing K] (n : ℕ) :
 /-- Coordinate identification of the second isotropic summand with the dual module. -/
 private noncomputable def splitOddW'Equiv (K : Type u) [CommRing K] (n : ℕ) :
     splitOddW' K n ≃ₗ[K] Module.Dual K (Fin n → K) where
-  toFun x := x.1.1.1
+  toFun x := x.val.1.1
   invFun f := ⟨((f, 0), 0), by simp [splitOddW']⟩
   left_inv x := by
     apply Subtype.ext
@@ -121,7 +121,7 @@ private noncomputable def splitOddW'Equiv (K : Type u) [CommRing K] (n : ℕ) :
 /-- Coordinate identification of the orthogonal remainder with the scalar module. -/
 private noncomputable def splitOddLineEquiv (K : Type u) [CommRing K] (n : ℕ) :
     splitOddLine K n ≃ₗ[K] K where
-  toFun z := z.1.2
+  toFun z := z.val.2
   invFun z := ⟨((0, 0), z), by simp [splitOddLine]⟩
   left_inv z := by
     apply Subtype.ext

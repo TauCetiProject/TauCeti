@@ -35,8 +35,9 @@ surjective one, and composing on the left with a map that does not lower the dim
 does not enlarge the kernel. Conjugating an endomorphism by a linear equivalence preserves the
 dimension of its kernel.
 The kernel of a surjection from a finite-dimensional space has dimension the difference of the
-dimensions, and an endomorphism of a finite-dimensional space has kernel and cokernel of the same
-dimension.
+dimensions, an endomorphism of a finite-dimensional space has kernel and cokernel of the same
+dimension, and the preimage of a submodule `p` inside another submodule `q` has the same
+`finrank` as the intersection `p ⊓ q` (`Submodule.finrank_comap_subtype`).
 -/
 
 public section
@@ -149,7 +150,7 @@ theorem exists_le_rank_eq {M : Submodule 𝕜 E} {k : ℕ} (hk : (k : Cardinal) 
   have hv' : LinearIndependent 𝕜 (M.subtype ∘ v) := hv.map' M.subtype M.ker_subtype
   have := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range (M.subtype ∘ v))
   refine ⟨span 𝕜 (Set.range (M.subtype ∘ v)),
-    span_le.mpr (Set.range_subset_iff.mpr fun i ↦ (v i).2), ?_⟩
+    span_le.mpr (Set.range_subset_iff.mpr fun i ↦ (v i).property), ?_⟩
   rw [← Module.finrank_eq_rank, finrank_span_eq_card hv', Fintype.card_fin]
 
 /-- The linear-algebra core of the transverse level disc, kernel part. If `T` has dimension
@@ -218,6 +219,13 @@ theorem rank_prod [Semiring 𝕜] [StrongRankCondition 𝕜] {M : Type u} {N : T
     Module.rank 𝕜 (V.prod W) =
       Cardinal.lift.{v} (Module.rank 𝕜 V) + Cardinal.lift.{u} (Module.rank 𝕜 W) := by
   rw [(V.prodEquiv W).rank_eq, _root_.rank_prod]
+
+/-- The dimension of a submodule `p` pulled back to `q` via `q.subtype` equals the dimension of the
+intersection `p ⊓ q`. -/
+theorem finrank_comap_subtype {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    (p q : Submodule R M) :
+    finrank R ↥(p.comap q.subtype) = finrank R ↥(p ⊓ q) := by
+  rw [← q.finrank_map_subtype_eq, map_comap_eq, range_subtype, inf_comm]
 
 end Submodule
 

@@ -119,7 +119,8 @@ form they recover the vector-space definitions.
   `SmoothTwoForm.hamiltonianCurvature_perturbationPullback`: naturality of the perturbed
   derivative, and the energy density, the area density and the curvature as two-forms on the
   domain. Consequently holomorphic changes of coordinates preserve the Floer equation
-  (`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_perturbationPullback`).
+  (`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_perturbationPullback`); for the exchange
+  `w ↦ 1 - w`, see `TauCeti.Geometry.Symplectic.Floer.Manifold.Exchange`.
 * `SmoothTwoForm.integral_floerEnergyDensity_image`,
   `SmoothTwoForm.integral_eval₂_mfderiv_stdComplexLine_image`,
   `SmoothTwoForm.integral_hamiltonianCurvature_image`,
@@ -381,7 +382,7 @@ theorem continuousOn_floerEnergyDensity (ω : SmoothTwoForm I M) {Ks Kt : ℝ ×
     (hXt : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
       (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ)) :
     ContinuousOn (ω.floerEnergyDensity Ks Kt u) U := by
-  have hfun : ω.floerEnergyDensity Ks Kt u = fun z ↦ ω.1 (u z)
+  have hfun : ω.floerEnergyDensity Ks Kt u = fun z ↦ ω.val (u z)
       ![ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal,
         ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag] :=
     funext fun z ↦ by rw [floerEnergyDensity_def, SmoothBundleForm.eval₂_apply]
@@ -517,7 +518,7 @@ theorem IsNondegenerate.continuous_floerEnergyDensity_zero_left [FiniteDimension
     (hω : ω.IsNondegenerate) (hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt))
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
     Continuous (ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u) := by
-  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  have hω₀ : IsSmoothForm I 0 ω.val := ω.isSmoothForm.of_le (by simp)
   -- The three terms of the pointwise energy identity are continuous.
   have harea : Continuous fun z ↦ SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)

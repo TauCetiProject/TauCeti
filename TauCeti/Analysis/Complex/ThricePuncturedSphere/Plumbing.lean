@@ -177,7 +177,7 @@ theorem norm_plumbingFactor_of_ne_inf {q : Puncture} (hq : q ≠ inf) (L : ℝ) 
 is the radius of the circle `Re z = L/2` in the end. -/
 theorem norm_plumbingFactor_eq_sq_div_of_ne_inf {q : Puncture} (hq : q ≠ inf) (L : ℝ) :
     ‖q.plumbingFactor L‖ = Real.exp (-(2 * π * (L / 2))) ^ 2 / 4 := by
-  rw [norm_plumbingFactor_of_ne_inf hq, ← Real.exp_nat_mul]
+  rw [norm_plumbingFactor_of_ne_inf hq, ← Real.exp_natCast_mul]
   ring_nf
 
 /-- The first input of the inserted sphere sits at the center of the end it is plumbed into. -/
@@ -492,7 +492,7 @@ thrice-punctured sphere because `w` avoids the center of the end `q` and the ima
 def plumbingPreimage (q : Puncture) (L : ℝ) (w : ThricePuncturedSphere)
     (hw : (w : ℂ) ≠ q.plumbingMap L 1) : ThricePuncturedSphere :=
   ⟨((w : ℂ) - q.endCenter) / q.plumbingFactor L,
-    q.sub_endCenter_div_plumbingFactor_ne_zero L (ne_endCenter w.2 q),
+    q.sub_endCenter_div_plumbingFactor_ne_zero L (ne_endCenter w.property q),
     fun h => hw ((q.plumbingMap_sub_endCenter_div L w).symm.trans (congrArg (q.plumbingMap L) h))⟩
 
 /-- The point undoing the plumbing map is `(w - c_q) / ψ'`. -/

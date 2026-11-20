@@ -92,9 +92,9 @@ exactly when its image lies in the subspace. -/
 lemma mem_range_restrict_hom_app_iff (P : TopPair.{w}) (S : (toSSetPair.obj P).right.Subcomplex)
     {n : SimplexCategoryᵒᵖ} (x : ((toSSetPair.obj P).restrict S).right.obj n) :
     x ∈ Set.range (((toSSetPair.obj P).restrict S).hom.app n) ↔
-      Set.range (P.fst.toSSetObjEquiv n x.1) ⊆ Set.range P.map :=
+      Set.range (P.fst.toSSetObjEquiv n x.val) ⊆ Set.range P.map :=
   (SSetPair.mem_range_restrict_hom_app_iff _ _ x).trans
-    (P.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff n x.1)
+    (P.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff n x.val)
 
 section ofInclusionMap
 
@@ -460,7 +460,9 @@ lemma singularHomologyFunctor_eq_chainComplexFunctor (n : ℕ) :
     apply eq_of_heq
     simp only [singularHomologyMap.eq_def, eqToHom_comp_heq_iff,
       comp_eqToHom_heq_iff, heq_eqToHom_comp_iff, heq_comp_eqToHom_iff]
-    exact (comp_eqToHom_heq _ _).symm
+    -- After unfolding `singularHomologyMap` and stripping the `eqToHom` casts, both sides are
+    -- the same homology map, so the `HEq` goal closes by `rfl`.
+    rfl
   · intro Q
     exact (singularHomologyFunctor_obj Q R n).trans <|
       (congrArg (fun K : ChainComplex C ℕ ↦ K.homology n)
@@ -579,6 +581,24 @@ lemma isIso_homologyMap_map_of_isZero {n : ℕ} (h₁ : IsZero (P.singularHomolo
   have := P.mono_homologyMap_map_of_isZero R h₁
   have := P.epi_homologyMap_map_of_isZero R h₀
   isIso_of_mono_of_epi _
+
+/-- If the inclusion of the subspace induces an epimorphism `Hₙ(A) ⟶ Hₙ(X)` and a monomorphism
+`Hₘ(A) ⟶ Hₘ(X)`, where `m + 1 = n`, then `Hₙ(X, A)` vanishes. -/
+lemma isZero_singularHomology_of_epi_of_mono {n m : ℕ} (h : m + 1 = n)
+    (he : Epi (SSet.homologyMap (TopCat.toSSet.map P.map) R n))
+    (hm : Mono (SSet.homologyMap (TopCat.toSSet.map P.map) R m)) :
+    IsZero (P.singularHomology R n) :=
+  (P.singularHomology_exact_relative R n m h).isZero_X₂
+    ((P.singularHomology_exact_space R n).epi_f_iff.1 he)
+    ((P.singularHomology_exact_subspace R n m h).mono_g_iff.1 hm)
+
+/-- If the inclusion of the subspace induces an epimorphism `H₀(A) ⟶ H₀(X)`, then `H₀(X, A)`
+vanishes. -/
+lemma isZero_singularHomology_zero_of_epi
+    (he : Epi (SSet.homologyMap (TopCat.toSSet.map P.map) R 0)) :
+    IsZero (P.singularHomology R 0) :=
+  IsZero.of_epi_eq_zero (P.singularHomologyπ R 0)
+    ((P.singularHomology_exact_space R 0).epi_f_iff.1 he)
 
 /-- A map of pairs `f : (X, A) ⟶ (X', A')` such that `Hₙ` of both pairs and `Hₙ₊₁(X', A')` vanish
 induces an isomorphism `Hₙ(X) ≅ Hₙ(X')` if it induces one on `Hₙ(A) ≅ Hₙ(A')`. -/

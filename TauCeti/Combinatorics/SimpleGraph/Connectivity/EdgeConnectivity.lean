@@ -309,8 +309,8 @@ theorem Walk.IsTrail.isEdgeConnected_two_toSubgraph {u : V} {c : G.Walk u u} (hc
     c.toSubgraph.coe.IsEdgeConnected 2 := by
   rw [isEdgeConnected_two_iff_forall_preconnected]
   intro f a b
-  have ha : a.1 ∈ c.support := c.mem_verts_toSubgraph.mp a.2
-  have hb : b.1 ∈ c.support := c.mem_verts_toSubgraph.mp b.2
+  have ha : a.val ∈ c.support := c.mem_verts_toSubgraph.mp a.property
+  have hb : b.val ∈ c.support := c.mem_verts_toSubgraph.mp b.property
   let u₀ : c.toSubgraph.verts := ⟨_, c.start_mem_verts_toSubgraph⟩
   have hra : (c.toSubgraph.coe.deleteEdges {f}).Reachable a u₀ := by
     rcases hc.reachable_deleteEdges_coe_or_reachable_deleteEdges_coe le_rfl f ha with h | h <;>

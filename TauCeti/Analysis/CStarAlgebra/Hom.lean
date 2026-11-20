@@ -99,19 +99,19 @@ theorem toContinuousLinearEquiv_toLinearIsometryEquiv (e : A ≃⋆ₐ[ℂ] B) :
 an `ℝ`-linear isometric equivalence `selfAdjoint A ≃ₗᵢ[ℝ] selfAdjoint B`. -/
 noncomputable def selfAdjointLinearIsometryEquiv (e : A ≃⋆ₐ[ℂ] B) :
     selfAdjoint A ≃ₗᵢ[ℝ] selfAdjoint B where
-  toFun a := ⟨e a.1, a.2.map e⟩
-  invFun b := ⟨e.symm b.1, b.2.map e.symm⟩
-  left_inv a := Subtype.ext (e.symm_apply_apply a.1)
-  right_inv b := Subtype.ext (e.apply_symm_apply b.1)
-  map_add' a₁ a₂ := Subtype.ext (map_add e a₁.1 a₂.1)
+  toFun a := ⟨e a.val, a.property.map e⟩
+  invFun b := ⟨e.symm b.val, b.property.map e.symm⟩
+  left_inv a := Subtype.ext (e.symm_apply_apply a.val)
+  right_inv b := Subtype.ext (e.apply_symm_apply b.val)
+  map_add' a₁ a₂ := Subtype.ext (map_add e a₁.val a₂.val)
   map_smul' r a := Subtype.ext <| by
     simp only [RingHom.id_apply, selfAdjoint.val_smul, ← Complex.coe_smul, map_smul]
-  norm_map' a := StarAlgEquiv.norm_map e a.1
+  norm_map' a := StarAlgEquiv.norm_map e a.val
 
 /-- The underlying element of `e.selfAdjointLinearIsometryEquiv a` is `e a`. -/
 @[simp]
 theorem coe_selfAdjointLinearIsometryEquiv_apply (e : A ≃⋆ₐ[ℂ] B) (a : selfAdjoint A) :
-    (e.selfAdjointLinearIsometryEquiv a : B) = e a.1 :=
+    (e.selfAdjointLinearIsometryEquiv a : B) = e a.val :=
   (rfl)
 
 /-- Taking the inverse commutes with `StarAlgEquiv.selfAdjointLinearIsometryEquiv`. -/
@@ -132,6 +132,6 @@ theorem selfAdjointLinearIsometryEquiv_mul {A B : Type*} [NonUnitalCommCStarAlge
     [NonUnitalCommCStarAlgebra B] (e : A ≃⋆ₐ[ℂ] B) (a₁ a₂ : selfAdjoint A) :
     e.selfAdjointLinearIsometryEquiv (a₁ * a₂) =
       e.selfAdjointLinearIsometryEquiv a₁ * e.selfAdjointLinearIsometryEquiv a₂ :=
-  Subtype.ext (map_mul e a₁.1 a₂.1)
+  Subtype.ext (map_mul e a₁.val a₂.val)
 
 end StarAlgEquiv

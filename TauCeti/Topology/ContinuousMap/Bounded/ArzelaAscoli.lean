@@ -45,7 +45,7 @@ theorem isCompactOperator_of_equicontinuous [CompactSpace α] {T : E → α →�
     IsCompactOperator T := by
   let e := ContinuousMap.isometryEquivBoundedOfCompact α F
   have h := ArzelaAscoli.isCompact_closure_range_of_equicontinuous (f := fun f : V => e.symm (T f))
-    hT fun x => let ⟨Q, hQ, hTQ⟩ := hTV x; ⟨Q, hQ, fun f => hTQ f f.2⟩
+    hT fun x => let ⟨Q, hQ, hTQ⟩ := hTV x; ⟨Q, hQ, fun f => hTQ f f.property⟩
   refine ⟨_, h.image e.continuous, Filter.mem_of_superset hV fun f hf => ?_⟩
   exact ⟨_, subset_closure ⟨⟨f, hf⟩, rfl⟩, e.apply_symm_apply _⟩
 
@@ -69,8 +69,8 @@ theorem IsCompact.isCompactOperator_of_equicontinuousOn {K : Set α} (hK : IsCom
   let p : E → V := fun f => if h : f ∈ V then ⟨f, h⟩ else ⟨0, mem_of_mem_nhds hV⟩
   obtain ⟨Q, hQ, hRQ⟩ := TauCeti.isCompactOperator_of_equicontinuous
     (T := fun f => mkOfCompact ⟨K.domRestrict (Φ (p f)), (hs.continuousOn (p f)).domRestrict⟩)
-    hV (fun x => let ⟨Q, hQ, hΦQ⟩ := hΦV x x.2; ⟨Q, hQ, fun f _ => hΦQ _ (p f).2⟩)
+    hV (fun x => let ⟨Q, hQ, hΦQ⟩ := hΦV x x.property; ⟨Q, hQ, fun f _ => hΦQ _ (p f).property⟩)
     (((equicontinuous_restrict_iff _).mpr hs).comp fun f : V => p f)
   refine ⟨_, hQ.image (continuous_compContinuous σ),
-    Filter.mem_of_superset (Filter.inter_mem hV hRQ) fun f hf => ⟨_, hf.2, ext fun z => ?_⟩⟩
-  simp [p, hf.1, hT, σ]
+    Filter.mem_of_superset (Filter.inter_mem hV hRQ) fun f hf => ⟨_, hf.right, ext fun z => ?_⟩⟩
+  simp [p, hf.left, hT, σ]

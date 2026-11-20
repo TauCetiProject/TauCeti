@@ -83,7 +83,7 @@ theorem localMultiplicity_compactifiedQuotientMap_ofCusp_cuspOrbitMk [DiscreteTo
     localMultiplicity (compactifiedQuotientMap h) (ofCusp (Δ.cuspOrbitMk c)) =
       (Δ.subgroupOf Γ).relIndex (stabilizer Γ (c : OnePoint ℝ)) := by
   have : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
-  have hc := mem_cuspPoints.mp c.2
+  have hc := mem_cuspPoints.mp c.property
   obtain ⟨σ, hσ⟩ := MulAction.exists_smul_eq PSL(2, ℝ) (c : OnePoint ℝ) ∞
   obtain ⟨D, hDc, hDσ⟩ := hc.exists_cuspDatum hσ
   obtain ⟨E, hEc, hEσ⟩ := (hc.mono h).exists_cuspDatum hσ

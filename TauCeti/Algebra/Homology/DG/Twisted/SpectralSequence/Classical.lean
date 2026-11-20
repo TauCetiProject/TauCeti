@@ -101,7 +101,7 @@ theorem shiftedModuleComplexHomologyEquiv_indexClassicalEntry (q : ℤ)
     (shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM q (k - q)
         ((m.indexClassicalEntry hM k q x y).hom c) : hM.Cohomology) =
       k.negOnePow • (hM.cohomologyAction
-        (m.indexClassicalClass h (x := x.1) (y := y.1) (by rw [x.2, y.2]))).unop
+        (m.indexClassicalClass h (x := x.val) (y := y.val) (by rw [x.property, y.property]))).unop
           (shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM (q + 1) (k - (q + 1)) c) := by
   rw [indexClassicalEntry_def, shiftedModuleComplexHomologyEquiv_shiftedModuleComplexActHomology,
     congrArg Int.negOnePow (sub_add_cancel k (q + 1)), indexClassicalClass_def]
@@ -117,7 +117,7 @@ theorem shiftedModuleComplexHomologyEquiv_indexClassicalD_π (q : ℤ) (y : {y :
     (shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM q (k - q)
         ((m.indexClassicalD hM k q ≫ Pi.π _ y).hom c) : hM.Cohomology) =
       k.negOnePow • ∑ x : {x : P // ind x = q + 1}, (hM.cohomologyAction
-        (m.indexClassicalClass h (x := x.1) (y := y.1) (by rw [x.2, y.2]))).unop
+        (m.indexClassicalClass h (x := x.val) (y := y.val) (by rw [x.property, y.property]))).unop
           (shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM (q + 1) (k - (q + 1))
             ((Pi.π (fun _ : {x : P // ind x = q + 1} ↦
               (shiftedModuleComplex.{uR, uA, uM, uP} hM (q + 1)).homology (k - (q + 1))) x).hom
