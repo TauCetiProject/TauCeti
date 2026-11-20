@@ -12,6 +12,7 @@ import Mathlib.NumberTheory.Modular
 import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
 import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.OrderOf
+import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 import TauCeti.NumberTheory.Modular.Abelianization
 import TauCeti.NumberTheory.Modular.Stabilizer
 
@@ -70,13 +71,8 @@ theorem exists_smul_eq_self_of_isOfFinOrder {g : PSL(2, ℤ)} (hg : IsOfFinOrder
     rw [← Matrix.GeneralLinearGroup.val_det_apply]
     simp
   have hellR : (Matrix.SpecialLinearGroup.mapGL ℝ γ).IsElliptic := by
-    rw [Matrix.IsElliptic, Matrix.discr_fin_two, γ.det_coe, Matrix.trace_fin_two] at hell
-    rw [Matrix.GeneralLinearGroup.IsElliptic, Matrix.IsElliptic, Matrix.discr_fin_two, hd,
-      Matrix.trace_fin_two]
-    simp only [Matrix.SpecialLinearGroup.mapGL_coe_matrix,
-      Matrix.SpecialLinearGroup.map_apply_coe, Matrix.map_apply,
-      algebraMap_int_eq, Int.coe_castRingHom]
-    exact_mod_cast hell
+    rw [Matrix.GeneralLinearGroup.IsElliptic, Matrix.SpecialLinearGroup.mapGL_coe_matrix]
+    exact Matrix.IsElliptic.map_intCast hell
   refine ⟨fixedPt _ hellR, ?_⟩
   rw [pslMk_smul]
   exact (gl_smul_eq_self_iff_eq_fixedPt (by rw [hd]; norm_num) hellR).2 rfl
@@ -93,29 +89,33 @@ theorem isOfFinOrder_iff_exists_smul_eq_self {g : PSL(2, ℤ)} :
   exact (MulAction.stabilizer PSL(2, ℤ) z).subtype.isOfFinOrder
     (isOfFinOrder_of_finite (⟨g, hz⟩ : MulAction.stabilizer PSL(2, ℤ) z))
 
-/-- A conjugate of a noncentral element is noncentral. -/
-private theorem conj_notMem_center {γ : SL(2, ℤ)} (hγ : γ ∉ Subgroup.center SL(2, ℤ))
-    (h : SL(2, ℤ)) : h * γ * h⁻¹ ∉ Subgroup.center SL(2, ℤ) := fun hc ↦ hγ (by
-  simpa [mul_assoc] using Subgroup.instNormalCenter.conj_mem _ hc h⁻¹)
-
-/-- A noncentral matrix fixing a point of `ℍ` can be conjugated to fix `i` or `ρ`: moving the
-point into the fundamental domain `𝒟`, it must be one of the three points `i`, `ρ`, `ρ + 1` with
-nontrivial stabiliser, and `ρ + 1 = T ρ`. -/
-private theorem exists_smul_eq_I_or_eq_ρ {γ : SL(2, ℤ)} {z : ℍ} (hz : γ • z = z)
-    (hγ : γ ∉ Subgroup.center SL(2, ℤ)) : ∃ h : SL(2, ℤ), h • z = I ∨ h • z = ρ := by
+/-- A matrix fixing a point of `ℍ`, with nontrivial class in `PSL(2, ℤ)`, has a conjugate other
+than `±1` fixing `i` or `ρ`: moving the point into the fundamental domain `𝒟`, it must be one of
+the three points `i`, `ρ`, `ρ + 1` with nontrivial stabiliser, and `ρ + 1 = T ρ`. -/
+private theorem exists_conj_smul_eq_I_or_eq_ρ {γ : SL(2, ℤ)} {z : ℍ} (hz : γ • z = z)
+    (hγ : (γ : PSL(2, ℤ)) ≠ 1) : ∃ h : SL(2, ℤ), h * γ * h⁻¹ ≠ 1 ∧ h * γ * h⁻¹ ≠ -1 ∧
+      ((h * γ * h⁻¹) • I = I ∨ (h * γ * h⁻¹) • ρ = ρ) := by
+  have hfix (h : SL(2, ℤ)) : (h * γ * h⁻¹) • (h • z) = h • z := by
+    rw [mul_smul, mul_smul, inv_smul_smul, hz]
+  -- a conjugate of `γ` is not central, since its class in `PSL(2, ℤ)` is a conjugate of `γ ≠ 1`
+  have hc (h : SL(2, ℤ)) : h * γ * h⁻¹ ∉ Subgroup.center SL(2, ℤ) := fun hc ↦ hγ <|
+    (conj_eq_one_iff (a := (h : PSL(2, ℤ)))).1 <| by
+      simpa only [QuotientGroup.mk_mul, QuotientGroup.mk_inv] using
+        (QuotientGroup.eq_one_iff (h * γ * h⁻¹)).2 hc
+  have hne (h : SL(2, ℤ)) : h * γ * h⁻¹ ≠ 1 ∧ h * γ * h⁻¹ ≠ -1 := by
+    simpa [Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one, not_or] using hc h
   obtain ⟨h, hh⟩ := exists_smul_mem_fd z
   by_cases hI : h • z = I
-  · exact ⟨h, Or.inl hI⟩
+  · exact ⟨h, (hne h).1, (hne h).2, Or.inl (hI ▸ hfix h)⟩
   by_cases hρ : h • z = ρ
-  · exact ⟨h, Or.inr hρ⟩
+  · exact ⟨h, (hne h).1, (hne h).2, Or.inr (hρ ▸ hfix h)⟩
   by_cases hρ' : h • z = (1 : ℝ) +ᵥ ρ
-  · refine ⟨T⁻¹ * h, Or.inr ?_⟩
-    rw [mul_smul, hρ', inv_smul_eq_iff, modular_T_smul]
-  · have hfix : (h * γ * h⁻¹) • (h • z) = h • z := by
-      rw [mul_smul, mul_smul, inv_smul_smul, hz]
-    refine (conj_notMem_center hγ h ?_).elim
+  · have hTρ : (T⁻¹ * h) • z = ρ := by
+      rw [mul_smul, hρ', inv_smul_eq_iff, modular_T_smul]
+    exact ⟨T⁻¹ * h, (hne _).1, (hne _).2, Or.inr (hTρ ▸ hfix _)⟩
+  · refine (hc h ?_).elim
     rw [Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
-    exact stabilizer_of_ne hh hfix hI hρ hρ'
+    exact stabilizer_of_ne hh (hfix h) hI hρ hρ'
 
 /-- A nontrivial element of finite order of `PSL(2, ℤ)` is conjugate to `S`, to `R` or to `R²`. -/
 theorem isConj_of_isOfFinOrder {g : PSL(2, ℤ)} (hg : IsOfFinOrder g) (h1 : g ≠ 1) :
@@ -123,28 +123,18 @@ theorem isConj_of_isOfFinOrder {g : PSL(2, ℤ)} (hg : IsOfFinOrder g) (h1 : g �
   obtain ⟨z, hz⟩ := exists_smul_eq_self_of_isOfFinOrder hg
   obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective g
   rw [pslMk_smul] at hz
-  have hγ : γ ∉ Subgroup.center SL(2, ℤ) := fun h ↦ h1 ((QuotientGroup.eq_one_iff γ).2 h)
-  obtain ⟨h, hw⟩ := exists_smul_eq_I_or_eq_ρ hz hγ
-  have hfix : (h * γ * h⁻¹) • (h • z) = h • z := by
-    rw [mul_smul, mul_smul, inv_smul_smul, hz]
+  obtain ⟨h, hne1, hne2, hw⟩ := exists_conj_smul_eq_I_or_eq_ρ hz h1
   have hconj : IsConj (γ : PSL(2, ℤ)) ((h * γ * h⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) :=
     isConj_iff.2 ⟨h, by rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]⟩
-  -- the conjugate `h γ h⁻¹` is not central, so it is not `±1`
-  have hc := conj_notMem_center hγ h
-  have hne : h * γ * h⁻¹ ≠ 1 ∧ h * γ * h⁻¹ ≠ -1 := by
-    constructor <;> intro he <;> refine hc ?_ <;>
-      simp [he, Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
   rcases hw with hw | hw
-  · rw [hw] at hfix
-    have hS := stabilizer_I.1 hfix
-    simp only [Finset.mem_insert, Finset.mem_singleton, hne.1, hne.2, false_or] at hS
+  · have hS := stabilizer_I.1 hw
+    simp only [Finset.mem_insert, Finset.mem_singleton, hne1, hne2, false_or] at hS
     left
     rcases hS with hS | hS <;> rw [hS] at hconj
     · exact hconj
     · rwa [Matrix.ProjectiveSpecialLinearGroup.mk_neg] at hconj
-  · rw [hw] at hfix
-    have hR := stabilizer_ρ.1 hfix
-    simp only [Finset.mem_insert, Finset.mem_singleton, hne.1, hne.2, false_or] at hR
+  · have hR := stabilizer_ρ.1 hw
+    simp only [Finset.mem_insert, Finset.mem_singleton, hne1, hne2, false_or] at hR
     right
     rcases hR with hR | hR | hR | hR <;> rw [hR] at hconj
     · exact Or.inl (by rwa [← R_def] at hconj)
@@ -193,8 +183,6 @@ classes in the abelianization `ℤ/6` are `4` and `2`. -/
 theorem not_isConj_coe_R_coe_R_sq : ¬ IsConj (R : PSL(2, ℤ)) ((R : PSL(2, ℤ)) ^ 2) := by
   intro h
   have h' := (abelianizationMulEquiv.toMonoidHom.comp Group.Abelianization.of).map_isConj h
-  rw [isConj_iff_eq, MonoidHom.comp_apply, MonoidHom.comp_apply, map_pow, map_pow,
-    MulEquiv.coe_toMonoidHom, abelianizationMulEquiv_of_coe_R] at h'
-  exact absurd h' (by decide)
+  simp +decide [isConj_iff_eq, ← ofAdd_nsmul] at h'
 
 end TauCeti.ModularGroup

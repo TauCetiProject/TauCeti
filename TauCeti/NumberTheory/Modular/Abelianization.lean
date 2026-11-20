@@ -70,6 +70,12 @@ private theorem of_coe_S_eq_of_coe_T_pow_three :
   rw [hU, map_mul, map_inv, mul_pow, inv_pow, mul_inv_eq_one] at h3
   rw [← h3, pow_succ, h2, one_mul]
 
+/-- In the abelianization the class of `T` has order dividing `6`: its cube is the class of `S`,
+whose square is `1`. -/
+private theorem of_coe_T_pow_six : Group.Abelianization.of (T : PSL(2, ℤ)) ^ 6 = 1 := by
+  rw [show 6 = 3 * 2 by norm_num, pow_mul, ← of_coe_S_eq_of_coe_T_pow_three, ← map_pow, coe_S_sq,
+    map_one]
+
 /-- Every element of the abelianization of `PSL(2, ℤ)` is a power of the class of `T`. -/
 private theorem exists_eq_of_coe_T_zpow (x : Group.Abelianization PSL(2, ℤ)) :
     ∃ k : ℤ, x = Group.Abelianization.of (T : PSL(2, ℤ)) ^ k := by
@@ -96,13 +102,10 @@ private theorem abelianization_lift_zmodSixChar_bijective :
   constructor
   · refine (injective_iff_map_eq_one _).2 fun x hx ↦ ?_
     obtain ⟨k, rfl⟩ := exists_eq_of_coe_T_zpow x
-    rw [map_zpow, Group.Abelianization.lift_apply_of, zmodSixChar_T, ← ofAdd_zsmul, zsmul_one,
-      ← ofAdd_zero, EmbeddingLike.apply_eq_iff_eq, ZMod.intCast_zmod_eq_zero_iff_dvd] at hx
+    simp only [map_zpow, Group.Abelianization.lift_apply_of, zmodSixChar_T, ← ofAdd_zsmul,
+      zsmul_one, ofAdd_eq_one, ZMod.intCast_zmod_eq_zero_iff_dvd] at hx
     obtain ⟨m, rfl⟩ := hx
-    have h6 : Group.Abelianization.of (T : PSL(2, ℤ)) ^ 6 = 1 := by
-      rw [show 6 = 3 * 2 from rfl, pow_mul, ← of_coe_S_eq_of_coe_T_pow_three, ← map_pow,
-        coe_S_sq, map_one]
-    rw [zpow_mul, zpow_natCast, h6, one_zpow]
+    rw [zpow_mul, zpow_natCast, of_coe_T_pow_six, one_zpow]
   · intro y
     refine ⟨Group.Abelianization.of (T : PSL(2, ℤ)) ^ (Multiplicative.toAdd y).val, ?_⟩
     rw [map_pow, Group.Abelianization.lift_apply_of, zmodSixChar_T, ← ofAdd_nsmul, nsmul_one,
@@ -139,6 +142,6 @@ theorem abelianizationMulEquiv_of_coe_R :
     abelianizationMulEquiv (Group.Abelianization.of (R : PSL(2, ℤ))) = Multiplicative.ofAdd 4 := by
   rw [R_def, QuotientGroup.mk_mul, map_mul, map_mul, abelianizationMulEquiv_of_coe_S,
     abelianizationMulEquiv_of_coe_T, ← ofAdd_add]
-  rfl
+  decide
 
 end TauCeti.ModularGroup
