@@ -59,13 +59,10 @@ variable {X : Type*} [TopologicalSpace X] {w x y z : X}
 /-- Serre's left delay is continuous for a family of paths with varying endpoints. -/
 theorem delayReflLeft_continuous_family {A : Type*} [TopologicalSpace A]
     {a b : A → X} (γ : ∀ q, Path (a q) (b q)) (hγ : Continuous ↿γ)
-    (s : C(A, I)) : Continuous ↿fun q ↦ delayReflLeft (s q) (γ q) := by
+    (s : C(A, I)) : Continuous ↿fun q ↦ delayReflLeft (s q) (γ q) :=
   -- The delay is evaluation at the reflected Serre reparametrization; this also works when
   -- the endpoints vary, where continuity in a single fixed native path space does not apply.
-  have h : Continuous (fun q : A × I ↦ γ q.1 (σ (qRight (σ q.2, s q.1)))) :=
-    hγ.comp (show Continuous (fun q : A × I ↦ (q.1, σ (qRight (σ q.2, s q.1)))) from by
-      fun_prop)
-  exact h
+  hγ.comp (by fun_prop : Continuous fun q : A × I ↦ (q.1, σ (qRight (σ q.2, s q.1))))
 
 /-! ### Reparametrizing the paths of a path space -/
 
@@ -121,18 +118,10 @@ theorem Homotopic.cast_map_reparam (L : Path (Path.refl x) (Path.refl x)) {f : I
     map_zero_left s := by simp
     map_one_left s := by simp
     prop' r s hs := by
-      -- At the ends `L` is the constant loop, which every reparametrization fixes. The `change`
-      -- unfolds the homotopy's value and the cast path at an endpoint, after which the
-      -- reparametrized constant loop is the constant loop by definition, closed by `rfl`.
-      rcases hs with rfl | hs
-      · change reparamHomotopy f hf hf₀ hf₁ (r, L 0) = L 0
-        rw [L.source]
-        rfl
-      · rw [Set.mem_singleton_iff] at hs
-        subst hs
-        change reparamHomotopy f hf hf₀ hf₁ (r, L 1) = L 1
-        rw [L.target]
-        rfl }⟩
+      -- At the ends `L` is the constant loop. Keeping `reparamHomotopy` folded, `simp` reduces
+      -- the goal to `reparamHomotopy f hf hf₀ hf₁ (r, refl x) = refl x`: the reparametrized
+      -- constant loop is the constant loop by definition, closed by `rfl`.
+      rcases hs with rfl | rfl <;> simp [-reparamHomotopy_apply] <;> rfl }⟩
 
 /-- Concatenating every loop of a loop of loops `L` at the constant loop with the constant loop
 does not change its homotopy class. -/
@@ -186,19 +175,14 @@ theorem prepend_apply (α : Path x y) (γ : Path y z) : prepend α z γ = α.tra
 
 /-- Prepending `q` and then `p` is homotopic to prepending `p.trans q`. -/
 theorem homotopic_prepend_comp_prepend (p : Path w x) (q : Path x y) (z : X) :
-    ((prepend p z).comp (prepend q z)).Homotopic (prepend (p.trans q) z) := by
-  let φ : I → I := fun t ↦ ⟨Homotopy.transAssocReparamAux t, Homotopy.transAssocReparamAux_mem_I t⟩
-  have hφ : Continuous φ := by fun_prop
-  have hφ₀ : φ 0 = 0 := Subtype.ext Homotopy.transAssocReparamAux_zero
-  have hφ₁ : φ 1 = 1 := Subtype.ext Homotopy.transAssocReparamAux_one
-  -- `Homotopy.trans_assoc_reparam`: left association reparametrizes right association.
-  have h : (⟨fun γ ↦ γ.reparam φ hφ hφ₀ hφ₁, by fun_prop⟩ : C(Path w z, Path w z)).comp
-      ((prepend p z).comp (prepend q z)) = prepend (p.trans q) z := by
-    ext γ : 1
-    exact (Homotopy.trans_assoc_reparam p q γ).symm
-  have H := (reparamHomotopy φ hφ hφ₀ hφ₁).compContinuousMap ((prepend p z).comp (prepend q z))
-  rw [ContinuousMap.id_comp, h] at H
-  exact ⟨H⟩
+    ((prepend p z).comp (prepend q z)).Homotopic (prepend (p.trans q) z) :=
+  -- `reparamHomotopy` deforms the identity into the associativity reparametrization, which turns
+  -- right association into left association (`Homotopy.trans_assoc_reparam`).
+  ⟨((reparamHomotopy (fun t ↦ ⟨Homotopy.transAssocReparamAux t,
+      Homotopy.transAssocReparamAux_mem_I t⟩) (by fun_prop)
+      (Subtype.ext Homotopy.transAssocReparamAux_zero)
+      (Subtype.ext Homotopy.transAssocReparamAux_one)).compContinuousMap _).cast
+    (ContinuousMap.id_comp _) (ContinuousMap.ext fun γ ↦ (Homotopy.trans_assoc_reparam p q γ).symm)⟩
 
 /-- Prepending depends only on the path-homotopy class of the prepended path. -/
 theorem Homotopic.prepend {p p' : Path x y} (h : p.Homotopic p') (z : X) :
