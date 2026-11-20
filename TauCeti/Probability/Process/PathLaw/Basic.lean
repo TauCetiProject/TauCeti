@@ -137,17 +137,17 @@ instance isProbabilityMeasure_prefixLaw (μ : Measure Ω) [IsProbabilityMeasure 
 `prefixLaw μ X n {w} = μ {ω | ∀ i, X i.val ω = w i}`. The singleton specialization of
 `blockLaw_apply_of_measurable` along the prefix selection. -/
 theorem prefixLaw_singleton_eq_measure [MeasurableSingletonClass α] {μ : Measure Ω}
-    {X : ℕ → Ω → α} (hX : ∀ i, AEMeasurable (X i) μ) {n : ℕ} (w : Fin n → α) :
+    {X : ℕ → Ω → α} {n : ℕ} (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) (w : Fin n → α) :
     prefixLaw μ X n {w} = μ {ω | ∀ i : Fin n, X i.val ω = w i} := by
-  rw [prefixLaw_def, blockLaw_apply_of_measurable μ X (fun i : Fin n => i.val)
-    (fun i => hX i.val) (measurableSet_singleton w)]
+  rw [prefixLaw_def, blockLaw_apply_of_measurable μ X (fun i : Fin n => i.val) hX
+    (measurableSet_singleton w)]
   exact congrArg μ (Set.ext fun ω => by simp [funext_iff, eq_comm])
 
 /-- The law of the first `n` states at a single finite path `w` is the measure of the event that
 the process follows any sequence `w'` extending that path. -/
 theorem prefixLaw_singleton_eq_measure_setOf [MeasurableSingletonClass α] {μ : Measure Ω}
-    {X : ℕ → Ω → α} (hX : ∀ i, AEMeasurable (X i) μ) {n : ℕ} (w : Fin n → α) (w' : ℕ → α)
-    (hfin : ∀ (j : ℕ) (hj : j < n), w' j = w ⟨j, hj⟩) :
+    {X : ℕ → Ω → α} {n : ℕ} (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) (w : Fin n → α)
+    (w' : ℕ → α) (hfin : ∀ (j : ℕ) (hj : j < n), w' j = w ⟨j, hj⟩) :
     prefixLaw μ X n {w} = μ {ω | ∀ j < n, X j ω = w' j} := by
   rw [prefixLaw_singleton_eq_measure hX w]
   exact congrArg μ (Set.ext fun ω => Fin.forall_iff.trans (forall₂_congr fun j hj => by
@@ -158,18 +158,20 @@ open Classical ProbabilityTheory in
 state lies outside the conditioning set have zero mass, including when the conditioning event
 itself has zero mass. -/
 theorem prefixLaw_singleton_cond_initial_mem [MeasurableSingletonClass α] {μ : Measure Ω}
-    {X : ℕ → Ω → α} {S : Set α} (hX : ∀ i, AEMeasurable (X i) μ) (n : ℕ) (w : Fin (n + 1) → α) :
+    {X : ℕ → Ω → α} {S : Set α} (n : ℕ) (hX : ∀ i : Fin (n + 1), AEMeasurable (X i.val) μ)
+    (w : Fin (n + 1) → α) :
     prefixLaw μ[|{ω | X 0 ω ∈ S}] X (n + 1) {w} =
       (μ {ω | X 0 ω ∈ S})⁻¹ *
         (if w 0 ∈ S then prefixLaw μ X (n + 1) {w} else 0) := by
   let s : Set Ω := {ω | X 0 ω ∈ S}
-  have hXcond : ∀ i, AEMeasurable (X i) μ[|s] := fun i => (hX i).mono_ac cond_absolutelyContinuous
+  have hXcond : ∀ i : Fin (n + 1), AEMeasurable (X i.val) μ[|s] := fun i =>
+    (hX i).mono_ac cond_absolutelyContinuous
   -- `ProbabilityTheory.cond_apply` asks for a measurable conditioning event; instead the
   -- set of paths is null measurable, being a finite intersection of coordinate preimages
   have hpath : NullMeasurableSet {ω | ∀ i : Fin (n + 1), X i.val ω = w i} (μ.restrict s) := by
     rw [Set.ofPred_forall]
     exact (NullMeasurableSet.iInter fun i =>
-      (hX i.val).nullMeasurableSet_preimage (measurableSet_singleton (w i))).mono_ac
+      (hX i).nullMeasurableSet_preimage (measurableSet_singleton (w i))).mono_ac
         Measure.restrict_le_self.absolutelyContinuous
   rw [prefixLaw_singleton_eq_measure hXcond, ProbabilityTheory.cond, _root_.smul_apply,
     Measure.restrict_apply₀ hpath, smul_eq_mul, prefixLaw_singleton_eq_measure hX]
