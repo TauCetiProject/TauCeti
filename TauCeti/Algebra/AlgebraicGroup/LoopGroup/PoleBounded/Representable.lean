@@ -74,7 +74,7 @@ universe u v w
 
 section UniversalSeries
 
-variable (ι : Type*) (k : Type u) [CommRing k]
+variable (ι : Type*) (k : Type u) [CommSemiring k]
 
 /-- The universal Laurent series `Σ_(m ≥ 0) a_(i,m) X^(m - N)` of level `N`, with coefficients
 the variables `a_(i,m) = X (i, m)` of the polynomial algebra `k[a_(i,m)]`. -/
@@ -98,14 +98,14 @@ theorem coeff_poleBoundedSeries (N : ℕ) (i : ι) (m : ℕ) :
 
 /-- Specializing the universal series of level `N` along `ψ` gives the series with coefficients
 `ψ (a_(i,m))`. -/
-theorem coeff_map_poleBoundedSeries {R : Type*} [CommRing R] [Algebra k R]
+theorem coeff_map_poleBoundedSeries {R : Type*} [CommSemiring R] [Algebra k R]
     (ψ : MvPolynomial (ι × ℕ) k →ₐ[k] R) (N : ℕ) (i : ι) (m : ℕ) :
     ((poleBoundedSeries ι k N i).map ψ).coeff (m - N) = ψ (X (i, m)) := by
   rw [map_coeff, coeff_poleBoundedSeries]
 
 /-- Every specialization of the universal series of level `N` has no pole of order larger than
 `N`. -/
-theorem map_poleBoundedSeries_mem_lattice {R : Type*} [CommRing R] [Algebra k R]
+theorem map_poleBoundedSeries_mem_lattice {R : Type*} [CommSemiring R] [Algebra k R]
     (ψ : MvPolynomial (ι × ℕ) k →ₐ[k] R) (N : ℕ) (i : ι) :
     (poleBoundedSeries ι k N i).map ψ ∈ lattice R R (-N) :=
   mem_lattice_iff.2 fun n hn ↦ by
@@ -113,7 +113,7 @@ theorem map_poleBoundedSeries_mem_lattice {R : Type*} [CommRing R] [Algebra k R]
 
 /-- Every family of Laurent series without poles of order larger than `N` is a specialization of
 the universal series of level `N`, at the coefficients `a_(i,m) ↦ (F i).coeff (m - N)`. -/
-theorem map_poleBoundedSeries_aeval_coeff {R : Type*} [CommRing R] [Algebra k R] {N : ℕ}
+theorem map_poleBoundedSeries_aeval_coeff {R : Type*} [CommSemiring R] [Algebra k R] {N : ℕ}
     {F : ι → R⸨X⸩} (hF : ∀ i, F i ∈ lattice R R (-N)) (i : ι) :
     (poleBoundedSeries ι k N i).map (aeval fun p : ι × ℕ ↦ (F p.1).coeff (p.2 - N)) = F i :=
   eq_of_mem_lattice_of_coeff_eq (map_poleBoundedSeries_mem_lattice _ N i) (hF i) fun n hn ↦ by
