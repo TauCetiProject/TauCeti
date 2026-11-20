@@ -41,6 +41,8 @@ representation theory of `p`-adic groups.
 * `TauCeti.HopfAlgebra.congruenceSubgroup_le_comap_mapDomain` and
   `congruenceSubgroup_le_comap_mapValue`: homomorphisms of groups and compatible maps of coefficient
   rings preserve congruence subgroups.
+* `TauCeti.HopfAlgebra.ker_mapValue_eq_congruenceSubgroup`: the kernel of the map of points induced
+  by a map of coefficient rings `ψ` is the congruence subgroup of level `ker ψ`.
 
 ## References
 
@@ -219,6 +221,18 @@ theorem congruenceSubgroup_le_comap_mapValue {R' : Type*} [CommRing R'] [Algebra
   intro h
   rw [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply, ← AlgHom.commutes ψ, ← map_sub]
   exact hIJ (mem_congruenceSubgroup_iff.1 hx h)
+
+/-- The kernel of the map of points induced by a map of coefficient rings `ψ : R →ₐ[k] R'` is the
+congruence subgroup of level `ker ψ`. -/
+theorem ker_mapValue_eq_congruenceSubgroup {R' : Type*} [CommRing R'] [Algebra k R']
+    (ψ : R →ₐ[k] R') :
+    (AlgHom.mapValue (H := H) ψ).ker = congruenceSubgroup k H (RingHom.ker ψ) := by
+  ext x
+  rw [MonoidHom.mem_ker, mem_congruenceSubgroup_iff, AlgHom.mapValue_apply,
+    ← WithConv.ofConv_injective.eq_iff, ofConv_toConv, AlgHom.ext_iff]
+  refine forall_congr' fun h ↦ ?_
+  rw [RingHom.mem_ker, map_sub, sub_eq_zero, AlgHom.comp_apply, AlgHom.convOne_apply,
+    AlgHom.commutes]
 
 end HopfAlgebra
 
