@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.ZLattice.Covolume
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
+import TauCeti.Analysis.SpecialFunctions.Complex.TwoPiI
 
 /-!
 # The embedding space of a Tate twist and its integral coordinates
@@ -46,8 +47,9 @@ covolume `1` for the coordinate Haar measure transported from `ℝ^d`.
 * `TauCeti.NumberField.finrank_tateEmbeddingSpace_of_even`,
   `TauCeti.NumberField.finrank_tateEmbeddingSpace_of_odd`: the dimension is `r₁ + r₂` in even and
   `r₂` in odd twist.
-* `TauCeti.NumberField.mem_tateEmbeddingLattice_iff_coordEquiv`: integrality of the selected
-  coordinates already characterizes the lattice.
+* `TauCeti.NumberField.tateEmbeddingSpace_ext_embedding`,
+  `TauCeti.NumberField.mem_tateEmbeddingLattice_iff_tateEmbeddingCoordEquiv`: the selected
+  coordinates already determine an element, and their integrality characterizes the lattice.
 * `TauCeti.NumberField.covolume_tateEmbeddingLattice`: the lattice is a `ℤ`-lattice of covolume
   `1` for the coordinate Haar measure.
 * `TauCeti.NumberField.measurePreserving_tateEmbeddingCoord`: the coordinates at any other choice
@@ -68,13 +70,6 @@ open NumberField NumberField.InfinitePlace ComplexConjugate MeasureTheory Module
 namespace TauCeti.NumberField
 
 variable (F : Type*) [Field F] (k : ℕ)
-
-/-- Complex conjugation acts on `(2πi)^k` by the sign `(-1)^k`. -/
-private theorem conj_two_pi_I_pow :
-    conj ((2 * Real.pi * Complex.I : ℂ) ^ k) = (-1) ^ k * (2 * Real.pi * Complex.I) ^ k := by
-  rw [map_pow, ← mul_pow]
-  congr 1
-  simp [Complex.conj_ofReal, map_ofNat]
 
 /-- The conjugation-equivariant functions on the complex embeddings of `F` with values in the
 real Tate twist `ℝ(k) = (2πi)^k ℝ`. For `k = n - 1` this is the target `Vₙ(F)` of Borel's
@@ -119,7 +114,7 @@ theorem tateEmbeddingCoord_apply (σ : F →+* ℂ) (v : tateEmbeddingSpace F k)
 
 /-- An element of the embedding Tate space takes the value `r * (2πi)^k` at `σ`, where `r` is its
 coordinate at `σ`. -/
-theorem tateEmbeddingCoord_mul (v : tateEmbeddingSpace F k) (σ : F →+* ℂ) :
+theorem ofReal_tateEmbeddingCoord_mul_two_pi_I_pow (v : tateEmbeddingSpace F k) (σ : F →+* ℂ) :
     (tateEmbeddingCoord F k σ v : ℂ) * (2 * Real.pi * Complex.I) ^ k =
       (v : (F →+* ℂ) → ℂ) σ := by
   obtain ⟨r, hr⟩ := v.2.1 σ
@@ -131,23 +126,32 @@ theorem tateEmbeddingCoord_eq_iff {v : tateEmbeddingSpace F k} {σ : F →+* ℂ
     tateEmbeddingCoord F k σ v = r ↔
       (v : (F →+* ℂ) → ℂ) σ = r * (2 * Real.pi * Complex.I) ^ k := by
   have h : (2 * Real.pi * Complex.I : ℂ) ^ k ≠ 0 := pow_ne_zero _ Complex.two_pi_I_ne_zero
-  rw [← tateEmbeddingCoord_mul, mul_left_inj' h, Complex.ofReal_inj]
+  rw [← ofReal_tateEmbeddingCoord_mul_two_pi_I_pow, mul_left_inj' h, Complex.ofReal_inj]
 
 /-- Two elements of the embedding Tate space with the same coordinates are equal. -/
 theorem tateEmbeddingSpace_ext {v v' : tateEmbeddingSpace F k}
     (h : ∀ σ, tateEmbeddingCoord F k σ v = tateEmbeddingCoord F k σ v') : v = v' := by
   ext σ
-  rw [← tateEmbeddingCoord_mul, ← tateEmbeddingCoord_mul, h]
+  rw [← ofReal_tateEmbeddingCoord_mul_two_pi_I_pow, ← ofReal_tateEmbeddingCoord_mul_two_pi_I_pow,
+    h]
 
 /-- Replacing an embedding by its complex conjugate multiplies the coordinate by `(-1)^k`. -/
 @[simp]
 theorem tateEmbeddingCoord_conjugate (v : tateEmbeddingSpace F k) (σ : F →+* ℂ) :
     tateEmbeddingCoord F k (ComplexEmbedding.conjugate σ) v =
       (-1) ^ k * tateEmbeddingCoord F k σ v := by
-  rw [tateEmbeddingCoord_eq_iff, v.2.2 σ, ← tateEmbeddingCoord_mul, map_mul, Complex.conj_ofReal,
-    conj_two_pi_I_pow]
+  rw [tateEmbeddingCoord_eq_iff, v.2.2 σ, ← ofReal_tateEmbeddingCoord_mul_two_pi_I_pow, map_mul,
+    Complex.conj_ofReal, Complex.conj_two_pi_I_pow]
   push_cast
   ring
+
+/-- The coordinate at `σ` is `(-1)^k` times the coordinate at the complex conjugate of `σ`. -/
+theorem tateEmbeddingCoord_eq_neg_one_pow_mul_conjugate (v : tateEmbeddingSpace F k)
+    (σ : F →+* ℂ) :
+    tateEmbeddingCoord F k σ v =
+      (-1) ^ k * tateEmbeddingCoord F k (ComplexEmbedding.conjugate σ) v := by
+  rw [tateEmbeddingCoord_conjugate, ← mul_assoc, ← mul_pow]
+  simp
 
 /-- In odd twist the coordinate at a real embedding vanishes. -/
 theorem tateEmbeddingCoord_eq_zero_of_isReal (hk : Odd k) (v : tateEmbeddingSpace F k)
@@ -156,16 +160,14 @@ theorem tateEmbeddingCoord_eq_zero_of_isReal (hk : Odd k) (v : tateEmbeddingSpac
   rw [ComplexEmbedding.isReal_iff.mp hσ, hk.neg_one_pow] at h
   linarith
 
-/-- The coordinate at an embedding `σ` is `(-1)^k` times the coordinate at the chosen embedding
-of the place of `σ`, or equal to it when that embedding is `σ` itself. -/
+/-- The coordinate at an embedding `σ` equals the coordinate at the chosen embedding
+`(mk σ).embedding` of its place, or is `(-1)^k` times it. -/
 theorem tateEmbeddingCoord_eq_or_eq_neg_one_pow_mul (v : tateEmbeddingSpace F k) (σ : F →+* ℂ) :
     tateEmbeddingCoord F k σ v = tateEmbeddingCoord F k (mk σ).embedding v ∨
       tateEmbeddingCoord F k σ v = (-1) ^ k * tateEmbeddingCoord F k (mk σ).embedding v := by
   rcases embedding_mk_eq σ with h | h
   · exact Or.inl (by rw [h])
-  · right
-    rw [h, tateEmbeddingCoord_conjugate, ← mul_assoc, ← mul_pow]
-    simp
+  · exact Or.inr (by rw [h, ← tateEmbeddingCoord_eq_neg_one_pow_mul_conjugate])
 
 variable (F k)
 
@@ -217,7 +219,7 @@ private def ofCoord (c : TateEmbeddingIndex F k → ℝ) : tateEmbeddingSpace F 
   ⟨fun σ ↦ (extendCoord c σ : ℂ) * (2 * Real.pi * Complex.I) ^ k,
     fun σ ↦ ⟨_, rfl⟩, fun σ ↦ by
       dsimp only
-      rw [map_mul, Complex.conj_ofReal, conj_two_pi_I_pow, extendCoord_conjugate]
+      rw [map_mul, Complex.conj_ofReal, Complex.conj_two_pi_I_pow, extendCoord_conjugate]
       push_cast
       ring⟩
 
@@ -234,8 +236,7 @@ private theorem extendCoord_tateEmbeddingCoord (v : tateEmbeddingSpace F k) (σ 
     · simp [h']
     · split_ifs with h''
       · rw [one_mul, h'']
-      · rw [h', tateEmbeddingCoord_conjugate, ← mul_assoc, ← mul_pow]
-        simp
+      · rw [h', ← tateEmbeddingCoord_eq_neg_one_pow_mul_conjugate]
   · rw [not_or, Nat.not_even_iff_odd, not_not] at h
     simp [extendCoord, placeCoord_eq_zero _ h.1 h.2, tateEmbeddingCoord_eq_zero_of_isReal h.1 v h.2]
 
@@ -270,6 +271,14 @@ theorem tateEmbeddingCoord_tateEmbeddingCoordEquiv_symm (c : TateEmbeddingIndex 
     (w : TateEmbeddingIndex F k) :
     tateEmbeddingCoord F k w.1.embedding ((tateEmbeddingCoordEquiv F k).symm c) = c w :=
   congr_fun ((tateEmbeddingCoordEquiv F k).apply_symm_apply c) w
+
+/-- Two elements of the embedding Tate space with the same coordinates at the chosen embeddings
+`w.embedding` are equal. -/
+theorem tateEmbeddingSpace_ext_embedding {v v' : tateEmbeddingSpace F k}
+    (h : ∀ w : TateEmbeddingIndex F k,
+      tateEmbeddingCoord F k w.1.embedding v = tateEmbeddingCoord F k w.1.embedding v') :
+    v = v' :=
+  (tateEmbeddingCoordEquiv F k).injective (funext h)
 
 variable (F k) in
 /-- The real dimension of the embedding Tate space is the number of places carrying a
@@ -317,23 +326,23 @@ theorem mem_tateEmbeddingLattice_iff {v : tateEmbeddingSpace F k} :
 omit [NumberField F] in
 /-- An element of the embedding Tate space lies in the lattice exactly when all of its
 coordinates are integers. -/
-theorem mem_tateEmbeddingLattice_iff_coord {v : tateEmbeddingSpace F k} :
+theorem mem_tateEmbeddingLattice_iff_tateEmbeddingCoord {v : tateEmbeddingSpace F k} :
     v ∈ tateEmbeddingLattice F k ↔ ∀ σ, ∃ m : ℤ, tateEmbeddingCoord F k σ v = m := by
   simp only [mem_tateEmbeddingLattice_iff, tateEmbeddingCoord_eq_iff, Complex.ofReal_intCast]
 
 /-- Integrality of the coordinates at the chosen embeddings `w.embedding` already characterizes
 the embedding Tate lattice. -/
-theorem mem_tateEmbeddingLattice_iff_coordEquiv {v : tateEmbeddingSpace F k} :
+theorem mem_tateEmbeddingLattice_iff_tateEmbeddingCoordEquiv {v : tateEmbeddingSpace F k} :
     v ∈ tateEmbeddingLattice F k ↔
       ∀ w : TateEmbeddingIndex F k, ∃ m : ℤ, tateEmbeddingCoordEquiv F k v w = m := by
-  refine ⟨fun hv w ↦ mem_tateEmbeddingLattice_iff_coord.mp hv _, fun hv ↦ ?_⟩
-  refine mem_tateEmbeddingLattice_iff_coord.mpr fun σ ↦ ?_
+  refine ⟨fun hv w ↦ mem_tateEmbeddingLattice_iff_tateEmbeddingCoord.mp hv _, fun hv ↦ ?_⟩
+  refine mem_tateEmbeddingLattice_iff_tateEmbeddingCoord.mpr fun σ ↦ ?_
   by_cases h : Even k ∨ ¬ComplexEmbedding.IsReal σ
   · obtain ⟨m, hm⟩ := hv ⟨mk σ, even_or_isComplex_mk h⟩
     rw [tateEmbeddingCoordEquiv_apply] at hm
     rcases tateEmbeddingCoord_eq_or_eq_neg_one_pow_mul v σ with h' | h'
     · exact ⟨m, h'.trans hm⟩
-    · exact ⟨(-1) ^ k * m, by rw [h', hm]; push_cast; rfl⟩
+    · exact ⟨(-1) ^ k * m, by rw [h', hm]; push_cast; ring⟩
   · rw [not_or, Nat.not_even_iff_odd, not_not] at h
     exact ⟨0, by simp [tateEmbeddingCoord_eq_zero_of_isReal h.1 v h.2]⟩
 
@@ -345,7 +354,7 @@ theorem tateEmbeddingLattice_eq_comap :
       (Submodule.span ℤ (Set.range (Pi.basisFun ℝ (TateEmbeddingIndex F k))))
       (tateEmbeddingCoordEquiv F k).toLinearMap := by
   ext v
-  rw [mem_tateEmbeddingLattice_iff_coordEquiv, ← SetLike.mem_coe, ZLattice.coe_comap,
+  rw [mem_tateEmbeddingLattice_iff_tateEmbeddingCoordEquiv, ← SetLike.mem_coe, ZLattice.coe_comap,
     Set.mem_preimage, SetLike.mem_coe, Basis.mem_span_iff_repr_mem]
   simp [eq_comm]
 
