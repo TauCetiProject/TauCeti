@@ -85,9 +85,7 @@ theorem exists_ι_sub_mem_of_comul_sub_mem {u : U} {k : ℕ}
   have hmk : m < k := by simpa using hm
   have hproj : ∀ n : Fin k, π m (π n u) = if (n : ℕ) = m then π m u else 0 := by
     intro n
-    have hn : π n u ∈ 𝒜 n := by
-      rw [_root_.GradedAlgebra.proj_apply]
-      exact (DirectSum.decompose 𝒜 u n).property
+    have hn := TauCeti.GradedAlgebra.proj_mem 𝒜 n u
     split_ifs with h
     · rw [_root_.GradedAlgebra.proj_apply, DirectSum.decompose_of_mem_same 𝒜 (h ▸ hn), h]
     · rw [_root_.GradedAlgebra.proj_apply, DirectSum.decompose_of_mem_ne 𝒜 hn h]

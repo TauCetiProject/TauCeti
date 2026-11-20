@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.DegreeFiltration
+public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
 public import TauCeti.RingTheory.FilteredAlgebra.TensorProduct.Basic
 
 /-!
@@ -29,6 +30,8 @@ Friedrichs' criterion that identifies logarithms of group-like elements with Lie
 
 ## Main results
 
+* `TauCeti.UniversalEnvelopingAlgebra.isHomogeneous_comul`: the comultiplication is homogeneous
+  of degree `0` for the total-degree grading of `U ⊗ U`.
 * `TauCeti.UniversalEnvelopingAlgebra.map_proj_comul`: the bihomogeneous component
   `(π i ⊗ π j) (Δ a)` equals `(π i ⊗ π j) (Δ (π (i + j) a))`.
 * `TauCeti.UniversalEnvelopingAlgebra.comul_proj`: `Δ (π n a)` is the sum of the bihomogeneous
@@ -62,49 +65,55 @@ variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 local notation "𝒜" => homogeneousSubmodule ℒ
 local notation "π" => _root_.GradedAlgebra.proj (homogeneousSubmodule ℒ)
+-- The grading of `U` as an internal grading, and the total-degree grading of `U ⊗ U`, whose
+-- degree-`n` piece is spanned by the tensors `a ⊗ b` with `a` and `b` homogeneous of degrees
+-- adding to `n`.
+local notation "𝒢" => InternalGrading.ofDecomposition (homogeneousSubmodule ℒ)
+local notation "𝒯" => InternalGrading.piece (InternalGrading.tensorProduct 𝒢 𝒢)
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 section Comul
 
-/-- The span of the tensors `a ⊗ b` with `a` and `b` homogeneous of degrees adding to `n`. -/
-private def tensorPiece (n : ℕ) : Submodule R (U ⊗[R] U) :=
-  ⨆ p ∈ antidiagonal n, Submodule.map₂ (TensorProduct.mk R U U) (𝒜 p.1) (𝒜 p.2)
-
-private theorem tensorPiece_le_iff {n : ℕ} {P : Submodule R (U ⊗[R] U)} :
-    tensorPiece ℒ n ≤ P ↔ ∀ i j, i + j = n → ∀ a ∈ 𝒜 i, ∀ b ∈ 𝒜 j, a ⊗ₜ[R] b ∈ P := by
-  simp [tensorPiece, Submodule.map₂_le]
-
-private theorem tmul_mem_tensorPiece {i j : ℕ} {a b : U} (ha : a ∈ 𝒜 i) (hb : b ∈ 𝒜 j) :
-    a ⊗ₜ[R] b ∈ tensorPiece ℒ (i + j) :=
-  Submodule.mem_iSup_of_mem (i, j) <| Submodule.mem_iSup_of_mem (mem_antidiagonal.mpr rfl) <|
-    Submodule.apply_mem_map₂ _ ha hb
+variable [GradedLieAlgebra ℒ]
 
 /-- Left multiplication by a bihomogeneous pure tensor raises the total degree. -/
-private theorem tmul_mul_mem_tensorPiece {i j m : ℕ} {u v : U} (hu : u ∈ 𝒜 i) (hv : v ∈ 𝒜 j)
-    {t : U ⊗[R] U} (ht : t ∈ tensorPiece ℒ m) :
-    (u ⊗ₜ[R] v) * t ∈ tensorPiece ℒ (i + j + m) := by
-  have hle : tensorPiece ℒ m ≤
-      (tensorPiece ℒ (i + j + m)).comap (LinearMap.mulLeft R (u ⊗ₜ[R] v)) := by
-    refine (tensorPiece_le_iff ℒ).mpr fun k l hkl a ha b hb => ?_
+private theorem tmul_mul_mem_tensorProduct {i j m : ℕ} {u v : U} (hu : u ∈ 𝒜 i) (hv : v ∈ 𝒜 j)
+    {t : U ⊗[R] U} (ht : t ∈ 𝒯 m) : (u ⊗ₜ[R] v) * t ∈ 𝒯 (i + j + m) := by
+  have hle : 𝒯 m ≤ (𝒯 (i + j + m)).comap (LinearMap.mulLeft R (u ⊗ₜ[R] v)) := by
+    refine InternalGrading.tensorProduct_piece_le_of_add_eq _ _ fun k l hkl a ha b hb => ?_
+    rw [InternalGrading.ofDecomposition_piece] at ha hb
     have hdeg : i + k + (j + l) = i + j + m := by omega
     simpa only [Submodule.mem_comap, LinearMap.mulLeft_apply,
       Algebra.TensorProduct.tmul_mul_tmul, hdeg] using
-      tmul_mem_tensorPiece ℒ (SetLike.mul_mem_graded hu ha) (SetLike.mul_mem_graded hv hb)
+      InternalGrading.tmul_mem_tensorProduct 𝒢 𝒢
+        ((InternalGrading.ofDecomposition_piece 𝒜).symm ▸ SetLike.mul_mem_graded hu ha :
+          u * a ∈ (𝒢).piece (i + k))
+        ((InternalGrading.ofDecomposition_piece 𝒜).symm ▸ SetLike.mul_mem_graded hv hb :
+          v * b ∈ (𝒢).piece (j + l))
   exact hle ht
 
-/-- The comultiplication sends the degree-`n` piece into the bihomogeneous tensors of total
-degree `n`. -/
-private theorem homogeneousSubmodule_le_comap_comul (n : ℕ) :
-    𝒜 n ≤ (tensorPiece ℒ n).comap (Coalgebra.comul (R := R)) := by
-  refine (homogeneousSubmodule_le_iff ℒ n _).mpr fun l hl => ?_
+/-- The comultiplication is homogeneous of degree `0` for the total-degree grading of `U ⊗ U`:
+it sends the degree-`n` piece into the span of the tensors `a ⊗ b` with `a` and `b` homogeneous
+of degrees adding to `n`. -/
+theorem isHomogeneous_comul :
+    TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := U)) 𝒜 𝒯 0 := by
+  rw [TauCeti.LinearMap.isHomogeneous_def]
+  intro n a ha
+  rw [add_zero]
+  refine (homogeneousSubmodule_le_iff ℒ n ((𝒯 n).comap (Coalgebra.comul (R := R)))).mpr
+    (fun l hl => ?_) ha
+  clear ha a
   have h1 := SetLike.one_mem_graded 𝒜
   rw [Submodule.mem_comap]
   induction l generalizing n with
   | nil =>
     subst hl
     simpa only [List.map_nil, List.prod_nil, List.sum_nil, Bialgebra.comul_one,
-      Algebra.TensorProduct.one_def, add_zero] using tmul_mem_tensorPiece ℒ h1 h1
+      Algebra.TensorProduct.one_def, add_zero] using
+      InternalGrading.tmul_mem_tensorProduct 𝒢 𝒢
+        ((InternalGrading.ofDecomposition_piece 𝒜).symm ▸ h1 : (1 : U) ∈ (𝒢).piece 0)
+        ((InternalGrading.ofDecomposition_piece 𝒜).symm ▸ h1 : (1 : U) ∈ (𝒢).piece 0)
   | cons x l ih =>
     subst hl
     have hx := ι_mem_homogeneousSubmodule ℒ x.2.property
@@ -112,21 +121,16 @@ private theorem homogeneousSubmodule_le_comap_comul (n : ℕ) :
     simp only [List.map_cons, List.prod_cons, List.sum_cons, Bialgebra.comul_mul, comul_ι,
       add_mul]
     refine Submodule.add_mem _ ?_ ?_
-    · simpa only [add_zero] using tmul_mul_mem_tensorPiece ℒ hx h1 hl
-    · simpa only [zero_add] using tmul_mul_mem_tensorPiece ℒ h1 hx hl
-
-private theorem comul_mem_tensorPiece {n : ℕ} {a : U} (ha : a ∈ 𝒜 n) :
-    Coalgebra.comul (R := R) a ∈ tensorPiece ℒ n :=
-  homogeneousSubmodule_le_comap_comul ℒ n ha
-
-variable [GradedLieAlgebra ℒ]
+    · simpa only [add_zero] using tmul_mul_mem_tensorProduct ℒ hx h1 hl
+    · simpa only [zero_add] using tmul_mul_mem_tensorProduct ℒ h1 hx hl
 
 /-- A bihomogeneous projection of total degree other than `n` kills the bihomogeneous tensors
 of total degree `n`. -/
-private theorem map_proj_eq_zero_of_mem_tensorPiece {n i j : ℕ} {t : U ⊗[R] U}
-    (ht : t ∈ tensorPiece ℒ n) (hij : i + j ≠ n) : TensorProduct.map (π i) (π j) t = 0 := by
-  have hle : tensorPiece ℒ n ≤ LinearMap.ker (TensorProduct.map (π i) (π j)) := by
-    refine (tensorPiece_le_iff ℒ).mpr fun k l hkl a ha b hb => ?_
+private theorem map_proj_eq_zero_of_mem_tensorProduct {n i j : ℕ} {t : U ⊗[R] U}
+    (ht : t ∈ 𝒯 n) (hij : i + j ≠ n) : TensorProduct.map (π i) (π j) t = 0 := by
+  have hle : 𝒯 n ≤ LinearMap.ker (TensorProduct.map (π i) (π j)) := by
+    refine InternalGrading.tensorProduct_piece_le_of_add_eq _ _ fun k l hkl a ha b hb => ?_
+    rw [InternalGrading.ofDecomposition_piece] at ha hb
     rw [LinearMap.mem_ker, TensorProduct.map_tmul]
     by_cases hik : k = i
     · simp [_root_.GradedAlgebra.proj_apply,
@@ -136,13 +140,13 @@ private theorem map_proj_eq_zero_of_mem_tensorPiece {n i j : ℕ} {t : U ⊗[R] 
 
 /-- The bihomogeneous projections of total degree `n` recover the bihomogeneous tensors of total
 degree `n`. -/
-private theorem sum_map_proj_of_mem_tensorPiece {n : ℕ} {t : U ⊗[R] U}
-    (ht : t ∈ tensorPiece ℒ n) :
+private theorem sum_map_proj_of_mem_tensorProduct {n : ℕ} {t : U ⊗[R] U} (ht : t ∈ 𝒯 n) :
     ∑ p ∈ antidiagonal n, TensorProduct.map (π p.1) (π p.2) t = t := by
-  have hle : tensorPiece ℒ n ≤
+  have hle : 𝒯 n ≤
       LinearMap.eqLocus (∑ p ∈ antidiagonal n, TensorProduct.map (π p.1) (π p.2))
         LinearMap.id := by
-    refine (tensorPiece_le_iff ℒ).mpr fun k l hkl a ha b hb => ?_
+    refine InternalGrading.tensorProduct_piece_le_of_add_eq _ _ fun k l hkl a ha b hb => ?_
+    rw [InternalGrading.ofDecomposition_piece] at ha hb
     rw [LinearMap.mem_eqLocus, LinearMap.sum_apply, Finset.sum_eq_single (k, l)]
     · simp [_root_.GradedAlgebra.proj_apply,
         DirectSum.decompose_of_mem_same 𝒜 ha, DirectSum.decompose_of_mem_same 𝒜 hb]
@@ -166,8 +170,8 @@ theorem map_proj_comul (i j : ℕ) (a : U) :
   rw [map_sum, map_sum, Finset.sum_eq_single (i + j)]
   · rw [_root_.GradedAlgebra.proj_apply]
   · intro m _ hm
-    exact map_proj_eq_zero_of_mem_tensorPiece ℒ
-      (comul_mem_tensorPiece ℒ (DirectSum.decompose 𝒜 a m).property) (Ne.symm hm)
+    exact map_proj_eq_zero_of_mem_tensorProduct ℒ
+      ((isHomogeneous_comul ℒ).map_mem (DirectSum.decompose 𝒜 a m).property) (Ne.symm hm)
   · intro h
     rw [DFinsupp.notMem_support_iff.mp h]
     simp
@@ -177,10 +181,8 @@ of the comultiplication in bidegrees `(i, j)` with `i + j = n`. -/
 theorem comul_proj (n : ℕ) (a : U) :
     Coalgebra.comul (R := R) (π n a) =
       ∑ p ∈ antidiagonal n, TensorProduct.map (π p.1) (π p.2) (Coalgebra.comul (R := R) a) := by
-  have hn : π n a ∈ 𝒜 n := by
-    rw [_root_.GradedAlgebra.proj_apply]
-    exact (DirectSum.decompose 𝒜 a n).property
-  conv_lhs => rw [← sum_map_proj_of_mem_tensorPiece ℒ (comul_mem_tensorPiece ℒ hn)]
+  conv_lhs => rw [← sum_map_proj_of_mem_tensorProduct ℒ
+    ((isHomogeneous_comul ℒ).map_mem (TauCeti.GradedAlgebra.proj_mem 𝒜 n a))]
   refine Finset.sum_congr rfl fun p hp => ?_
   rw [map_proj_comul ℒ p.1 p.2 a, mem_antidiagonal.mp hp]
 
@@ -231,12 +233,13 @@ theorem comul_mem_tensorProduct_ideal {k : ℕ} {a : U} (ha : a ∈ (𝓕).ideal
   by_cases hm : m < k
   · rw [ha m (by simpa using hm), map_zero]
     exact Submodule.zero_mem _
-  · have hle : tensorPiece ℒ m ≤ (((𝓕).tensorProduct R 𝓕).ideal k).restrictScalars R := by
-      refine (tensorPiece_le_iff ℒ).mpr fun i j hij x hx y hy => ?_
+  · have hle : 𝒯 m ≤ (((𝓕).tensorProduct R 𝓕).ideal k).restrictScalars R := by
+      refine InternalGrading.tensorProduct_piece_le_of_add_eq _ _ fun i j hij x hx y hy => ?_
+      rw [InternalGrading.ofDecomposition_piece] at hx hy
       exact (𝓕).tmul_mem_tensorProduct_ideal R 𝓕 (a := i) (b := j) (by omega)
         (mem_degreeFiltration_ideal_of_mem_homogeneousSubmodule ℒ _ _ hx (by simp))
         (mem_degreeFiltration_ideal_of_mem_homogeneousSubmodule ℒ _ _ hy (by simp))
-    exact hle (comul_mem_tensorPiece ℒ (DirectSum.decompose 𝒜 a m).property)
+    exact hle ((isHomogeneous_comul ℒ).map_mem (DirectSum.decompose 𝒜 a m).property)
 
 /-- The bihomogeneous component in a bidegree of total degree below `k` vanishes on the
 order-`k` term of the total-degree filtration of `U ⊗ U`. -/

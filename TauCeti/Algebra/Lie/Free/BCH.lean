@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.Free.Enveloping
 public import TauCeti.Algebra.Lie.UniversalEnveloping.BCH
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Embedding
 public import TauCeti.RingTheory.Nilpotent.BCH
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # The universal Baker–Campbell–Hausdorff element
@@ -72,11 +73,6 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra ℚ F
 local notation "J" => HopfIdeal.toIdeal (HopfIdeal.augmentation ℚ U)
 local notation "ι" => _root_.UniversalEnvelopingAlgebra.ι ℚ
 
-private theorem isNilpotent_mk_ι (c : ℕ) (x : F) :
-    IsNilpotent (Ideal.Quotient.mk (J ^ (c + 1)) (ι x)) := by
-  rw [← lowerCentralQuotientι_mk]
-  exact isNilpotent_lowerCentralQuotientι ℚ F c _
-
 /-- In the enveloping algebra of a free Lie algebra over `ℚ`, truncated at the `(c + 1)`-st
 power of the augmentation ideal, a product of the exponentials of two Lie elements is the
 exponential of a Lie element. -/
@@ -92,7 +88,7 @@ theorem exists_exp_ι_eq_exp_mul_exp (c : ℕ) (x y : F) :
   have he : ∀ z : F, IsNilpotent.exp (Ideal.Quotient.mk (J ^ (c + 1)) (ι z)) =
       Ideal.Quotient.factor h.le (IsNilpotent.exp (Ideal.Quotient.mk _ (ι z))) := by
     intro z
-    have hz := (isNilpotent_mk_ι S c z).map (Ideal.Quotient.factor h.ge)
+    have hz := (isNilpotent_mk_ι ℚ F c z).map (Ideal.Quotient.factor h.ge)
     rw [Ideal.Quotient.factor_mk] at hz
     rw [hz.map_exp, Ideal.Quotient.factor_mk]
   exact ⟨b, by rw [he, he, he, hb, map_mul]⟩
@@ -144,12 +140,13 @@ theorem lowerCentralQuotientι_bchElement (c : ℕ) :
 
 /-- The Baker–Campbell–Hausdorff elements of different classes are compatible: the quotient map
 from class at most `d` to class at most `c ≤ d` sends `bchElement d` to `bchElement c`. -/
+@[simp]
 theorem factor_bchElement {c d : ℕ} (h : c ≤ d) :
     LieIdeal.factor (LieModule.antitone_lowerCentralSeries ℚ 𝔣 𝔣 h) (bchElement d) =
       bchElement c := by
   rw [eq_bchElement_iff, lowerCentralQuotientι_factor ℚ 𝔣 h,
     ← (isNilpotent_lowerCentralQuotientι ℚ 𝔣 d _).map_exp, exp_lowerCentralQuotientι_bchElement,
-    map_mul, (isNilpotent_mk_ι (Fin 2) d X).map_exp, (isNilpotent_mk_ι (Fin 2) d Y).map_exp,
+    map_mul, (isNilpotent_mk_ι ℚ 𝔣 d X).map_exp, (isNilpotent_mk_ι ℚ 𝔣 d Y).map_exp,
     Ideal.Quotient.factor_mk, Ideal.Quotient.factor_mk]
 
 /-- **The Baker–Campbell–Hausdorff element through degree three**: the element of class three is
@@ -158,22 +155,9 @@ theorem bchElement_three :
     bchElement 3 = LieSubmodule.Quotient.mk (X + Y + (1 / 2 : ℚ) • ⁅X, Y⁆ +
       (1 / 12 : ℚ) • (⁅X, ⁅X, Y⁆⁆ + ⁅Y, ⁅Y, X⁆⁆)) := by
   -- The classes of the augmentation ideal form an ideal with vanishing fourth power.
-  have hpow : ∀ (K : Ideal (_root_.UniversalEnvelopingAlgebra ℚ 𝔣)) [K.IsTwoSided] (n : ℕ),
-      Ideal.map (Ideal.Quotient.mk K) J ^ n ≤ Ideal.map (Ideal.Quotient.mk K) (J ^ n) := by
-    intro K _ n
-    induction n with
-    | zero => simp only [Submodule.pow_zero, Ideal.one_eq_top, Ideal.map_top, le_refl]
-    | succ n ih =>
-      rw [Submodule.pow_succ, Ideal.mul_le]
-      intro r hr s hs
-      obtain ⟨a, ha, rfl⟩ := (Ideal.mem_map_iff_of_surjective _
-        Ideal.Quotient.mk_surjective).mp (ih hr)
-      obtain ⟨b, hb, rfl⟩ := (Ideal.mem_map_iff_of_surjective _
-        Ideal.Quotient.mk_surjective).mp hs
-      rw [← map_mul, Submodule.pow_succ]
-      exact Ideal.mem_map_of_mem _ (Ideal.mul_mem_mul ha hb)
   have hI : Ideal.map (Ideal.Quotient.mk (J ^ (3 + 1))) J ^ 4 = ⊥ :=
-    le_bot_iff.mp ((hpow _ 4).trans (Ideal.map_quotient_self _).le)
+    le_bot_iff.mp ((Ideal.pow_map_le_map_pow_of_surjective Ideal.Quotient.mk_surjective J 4).trans
+      (Ideal.map_quotient_self _).le)
   have hmem : ∀ z : 𝔣, Ideal.Quotient.mk (J ^ (3 + 1)) (ι z) ∈ Ideal.map (Ideal.Quotient.mk _) J :=
     fun z => Ideal.mem_map_of_mem _ (HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation ℚ 𝔣 z))
   symm

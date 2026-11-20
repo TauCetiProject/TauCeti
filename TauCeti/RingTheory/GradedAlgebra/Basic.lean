@@ -31,6 +31,7 @@ that divides it produces a homogeneous polynomial of one degree less.
   an idempotent with zero degree-zero component is zero.
 * `TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular`: if `a ∈ 𝒜 i` is left regular and
   `a * b ∈ 𝒜 (i + j)`, then `b ∈ 𝒜 j`.
+* `TauCeti.GradedAlgebra.proj_mem`: the degree-`i` projection lands in the degree-`i` component.
 * `TauCeti.GradedAlgebra.isScalarTower_gradeZero`: the scalars act on a graded algebra through its
   degree-zero part.
 -/
@@ -147,6 +148,18 @@ theorem mem_of_mul_mem_add_of_isLeftRegular {a b : A} {i j : ι} (ha : a ∈ �
   exact (decompose 𝒜 b j).2
 
 end Regular
+
+section Proj
+
+variable {R A ι : Type*} [DecidableEq ι] [AddMonoid ι] [CommSemiring R] [Semiring A]
+  [Algebra R A] (𝒜 : ι → Submodule R A) [_root_.GradedAlgebra 𝒜]
+
+/-- The degree-`i` projection of a graded algebra lands in the degree-`i` component. -/
+theorem proj_mem (i : ι) (a : A) : _root_.GradedAlgebra.proj 𝒜 i a ∈ 𝒜 i := by
+  rw [_root_.GradedAlgebra.proj_apply]
+  exact (decompose 𝒜 a i).property
+
+end Proj
 
 section GradeZero
 
