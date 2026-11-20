@@ -204,7 +204,7 @@ private theorem exists_lpNorm_iteratedGradient_le_of_mem_wkp0Submodule (hp : 2 <
         (U : Set _).indicator F x := by
     filter_upwards [ae_contraction_iteratedGradient_extendByZeroₗᵢ_eq_indicator (w := ⟨w, hw0⟩)
       heq] with x hx
-    exact (Matrix.contraction_iteratedGradient_apply _ _).symm.trans hx
+    rw [← hx, Matrix.contraction_apply]
   have hkey := hCZ ha (fun x => haΛ.opNorm_matrixBilinearForm_le (mem_univ x)) hosc W _ hWeq
     (((integrable_indicator_iff hUm).2 (hwp.integrable Fact.out)).congr
       (hW.mono fun _ h => h.symm))
@@ -460,7 +460,7 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_vmoModulus_le (hp : 2 < p)
     (fun σ hσ => hmono _ hσ.2.le) (fun σ hσ => hmono _ hσ.2.le) (fun σ hσ => hmono _ hσ.2.le)
     (fun {s t} hs hst htR => by
       have h := hstep hloc hell hη hR u hf
-        (heq.mono fun x hx => (Matrix.contraction_iteratedGradient_apply _ _).trans hx) hs hst htR
+        (heq.mono fun x hx => by rw [Matrix.contraction_apply, hx]) hs hst htR
       rwa [hKΛ] at h)
     (fun {s t} hs hst htR {ε} hε => by
       simpa only [finrank_euclideanSpace_fin] using

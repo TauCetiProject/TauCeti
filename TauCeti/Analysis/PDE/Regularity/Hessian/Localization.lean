@@ -199,8 +199,8 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
       Matrix.contraction (a x) (Wkp.iteratedGradient 1 w x) = FL x := by
     filter_upwards [hf, hD, Lp.coeFn_add (hζf.toLp _) (hE.toLp _), hζf.coeFn_toLp,
       hE.coeFn_toLp] with x hxf hxD h h' h''
-    replace hxf : Matrix.contraction (a x) (Wkp.iteratedGradient 1 u x) = f x :=
-      (Matrix.contraction_iteratedGradient_apply _ _).trans hxf
+    replace hxf : Matrix.contraction (a x) (Wkp.iteratedGradient 1 u x) = f x := by
+      rw [Matrix.contraction_apply, hxf]
     rw [h, Pi.add_apply, h', h'', hxD, map_add, map_smul, smul_eq_mul, ← hxf]
   have hwK : ∀ᵐ x ∂volume.restrict Omega, x ∉ tsupport zeta → Wkp.value 2 w x = 0 := by
     filter_upwards [hwv] with x hx hxs
@@ -208,7 +208,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
   obtain ⟨hWzero, hWeq⟩ := ae_extendByZeroₗᵢ_of_ae (w := ⟨w, hw0⟩) hwK hweq
   -- The whole-space estimate, and `ζ D²u = D²(ζ u) - T`.
   have hkey := hCZ hlam hA (isClosed_tsupport zeta) hε ha _ _ hWzero
-    (hWeq.mono fun x hx => (Matrix.contraction_iteratedGradient_apply _ _).symm.trans hx)
+    (hWeq.mono fun x hx => by rw [← hx, Matrix.contraction_apply])
   rw [Wkp0.iteratedGradient_extendByZeroₗᵢ, LinearIsometry.norm_map, LinearIsometry.norm_map]
     at hkey
   rw [hζD]

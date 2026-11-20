@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 public import TauCeti.Topology.Algebra.Module.Trace
 import Mathlib.Analysis.InnerProductSpace.Trace
 
@@ -20,8 +19,6 @@ non-divergence-form operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with constant coe
 ## Main declarations
 
 * `Matrix.contraction`: the contraction with `A`, as a continuous linear functional.
-* `Matrix.contraction_iteratedGradient_apply`: the evaluation `∑ᵢⱼ Aᵢⱼ ⟪H eᵢ, eⱼ⟫` for an
-  order-one iterated gradient `H`, such as a weak Hessian.
 * `Matrix.contraction_add`, `Matrix.contraction_sub`, `Matrix.contraction_smul`: the
   contraction is linear in the matrix.
 * `Matrix.contraction_one`: contraction with the identity matrix is the trace.
@@ -59,17 +56,6 @@ theorem contraction_apply (A : Matrix (Fin n) (Fin n) ℝ)
     contraction A H = ∑ i, ∑ j, A i j *
       ⟪H (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ := by
   simp [contraction, real_inner_comm]
-
-/-- `Matrix.contraction A` evaluates to `∑ᵢⱼ Aᵢⱼ ⟪H eᵢ, eⱼ⟫` on an order-one iterated gradient
-`H`, such as the value of a weak Hessian, with `H` applied through the instances of
-`TauCeti.IteratedGradient`. -/
-theorem contraction_iteratedGradient_apply (A : Matrix (Fin n) (Fin n) ℝ)
-    (H : IteratedGradient (EuclideanSpace ℝ (Fin n)) 1) :
-    contraction A H = ∑ i, ∑ j, A i j *
-      ⟪H (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ :=
-  -- The instances of `IteratedGradient (EuclideanSpace ℝ (Fin n)) 1` unfold to those of
-  -- `ContinuousLinearMap` used by `Matrix.contraction_apply`.
-  contraction_apply A H
 
 /-- The contraction is additive in the matrix. -/
 @[simp]
