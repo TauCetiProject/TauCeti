@@ -232,7 +232,7 @@ section BV
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [μ.IsAddHaarMeasure] in
 /-- If `V` is the preimage of `Ω` under the dilation by a nonzero ratio `r`, then `Ω` is the
 preimage of `V` under the inverse dilation. -/
-private theorem coe_eq_preimage_inv_smul (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω) :
+theorem coe_eq_preimage_inv_smul (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω) :
     (Ω : Set E) = (r⁻¹ • ·) ⁻¹' V := by
   rw [hVO, preimage_smul_inv₀ hr, preimage_smul₀ hr, smul_inv_smul₀ hr]
 
@@ -390,7 +390,7 @@ theorem compSmul_ofFunction (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹
 @[simp]
 theorem compSmul_symm (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω) :
     (compSmul hr hVO).symm = compSmul (μ := μ) (inv_ne_zero hr)
-      (by rw [hVO, preimage_smul_inv₀ hr, preimage_smul₀ hr, smul_inv_smul₀ hr]) := by
+      (coe_eq_preimage_inv_smul hr hVO) := by
   refine ContinuousLinearEquiv.ext (funext fun v => (compSmul hr hVO).injective ?_)
   rw [ContinuousLinearEquiv.apply_symm_apply, compSmul_apply, compSmul_apply]
   exact (compSmulAux_compSmulAux (inv_ne_zero hr) hr (inv_mul_cancel₀ hr) _ hVO v).symm
