@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Covering.Quotient
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
-public import TauCeti.MeasureTheory.Function.Lp.Precomposition
+public import TauCeti.MeasureTheory.Function.Lp.QuotientCovering
 
 /-!
 # Riemannian volume under finite quotient coverings
@@ -23,7 +23,9 @@ it pushes the Riemannian volume of `M` forward to `|G|` times the Riemannian vol
 
 So `vol_M (q⁻¹ B) = |G| vol_N B` for measurable `B`, and pulling back along `q` multiplies
 integrals by the covering degree `|G|`: `∫ f ∘ q = |G| ∫ f`, and `Lᵖ` norms by `|G| ^ (1/p)`. In
-particular `|G| ^ (-1/2) q^*` is an isometry from `L²(N)` to `L²(M)`. These are the
+particular `|G| ^ (-1/2) q^*` is an isometry from `L²(N)` to `L²(M)`. The translations by `G`
+preserve the volume of `M`, and the range of this isometry is exactly the subspace of
+`G`-invariant elements of `L²(M)`, so it is a unitary map onto that subspace. These are the
 normalizations used to transplant eigenfunctions of the Laplacian between the quotients of one
 manifold by almost-conjugate subgroups.
 
@@ -40,8 +42,12 @@ isometries, or that `q` is differentiable, is needed.
 * `IsQuotientCoveringMap.lintegral_comp_riemannianVolume`,
   `IsQuotientCoveringMap.integral_comp_riemannianVolume`: `∫ f ∘ q = |G| ∫ f`.
 * `IsQuotientCoveringMap.eLpNorm_comp_riemannianVolume`: `‖f ∘ q‖_p = |G| ^ (1/p) ‖f‖_p`.
+* `IsQuotientCoveringMap.measurePreserving_smul_riemannianVolume`: the translations by `G` preserve
+  the Riemannian volume of `M`.
 * `IsQuotientCoveringMap.normalizedPullbackLp`: the normalized pullback `|G| ^ (-1/p) q^*` as a
   linear isometry `Lᵖ(N) →ₗᵢ[𝕜] Lᵖ(M)`, with `IsQuotientCoveringMap.coeFn_normalizedPullbackLp`.
+* `IsQuotientCoveringMap.mem_range_normalizedPullbackLp_iff`: its range is the subspace of
+  `G`-invariant elements of `Lᵖ(M)`.
 
 ## References
 
@@ -192,6 +198,41 @@ theorem eLpNorm_comp_riemannianVolume (hq : IsQuotientCoveringMap q G)
   rw [← eLpNorm_map_measure (by rw [h]; exact hf.smul_measure _) hq.continuous.aemeasurable, h,
     eLpNorm_smul_measure_of_ne_zero (Nat.cast_ne_zero.2 Nat.card_pos.ne'), smul_eq_mul]
 
+omit [Finite G] in
+/-- **Deck transformations preserve volume.** The translations by `G` of a quotient covering map
+which is a local isometry preserve the Riemannian volume. -/
+theorem measurePreserving_smul_riemannianVolume (hq : IsQuotientCoveringMap q G)
+    (hinner : ∀ x (v w : TangentSpace I x),
+      ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ) (g : G) :
+    MeasurePreserving (g • ·) (riemannianVolume I M) (riemannianVolume I M) := by
+  have hmeas : Measurable (g • · : M → M) := (hq.continuous_const_smul g).measurable
+  refine ⟨hmeas, ?_⟩
+  -- `q` is injective on every translate of a neighbourhood `U x` disjoint from its translates.
+  choose U hU hUdisj using hq.disjoint
+  have hinj (x : M) (h : G) : InjOn q (h • U x) := by
+    rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ hab
+    simp only [hq.map_smul] at hab
+    obtain ⟨k, rfl⟩ := hq.apply_eq_iff_mem_orbit.1 hab
+    obtain rfl := hUdisj x k ⟨_, ⟨b, hb, rfl⟩, ha⟩
+    simp
+  -- On a measurable set where `q` is injective, its volume is that of its image under `q`.
+  have hvol {S : Set M} (hS : MeasurableSet S) (hSinj : InjOn q S) :
+      riemannianVolume I M S = riemannianVolume I' N (q '' S) :=
+    (riemannianVolume_image_of_inner_mfderiv hS hSinj fun x _ ↦ hinner x).symm
+  obtain ⟨T, hTc, hcover⟩ := LindelofSpace.elim_nhds_subcover (fun x ↦ interior (U x))
+    fun x ↦ interior_mem_nhds.2 (hU x)
+  refine Measure.ext_of_biUnion_eq_univ (s := fun x ↦ interior (U x)) hTc hcover fun x _ ↦ ?_
+  ext D hD
+  have hA : MeasurableSet (D ∩ interior (U x)) := hD.inter isOpen_interior.measurableSet
+  have hA' : MeasurableSet (g⁻¹ • (D ∩ interior (U x))) := by
+    rw [← preimage_smul]
+    exact hmeas hA
+  have hsub : D ∩ interior (U x) ⊆ U x := inter_subset_right.trans interior_subset
+  rw [Measure.restrict_apply hD, Measure.restrict_apply hD, Measure.map_apply hmeas hA,
+    preimage_smul, hvol hA' ((hinj x g⁻¹).mono (smul_set_mono hsub)),
+    hvol hA ((hinj x 1).mono (by rwa [one_smul])), ← image_smul, image_image]
+  simp only [hq.map_smul]
+
 /-! ### The normalized pullback on `Lᵖ` -/
 
 section Lp
@@ -223,6 +264,20 @@ theorem coeFn_normalizedPullbackLp (hq : IsQuotientCoveringMap q G)
   simpa only [normalizedPullbackLp, ENNReal.toReal_natCast] using Lp.coeFn_normalizedCompOfMapEqSmul
     hq.continuous.measurable (Nat.cast_ne_zero.2 Nat.card_pos.ne') (ENNReal.natCast_ne_top _)
     (hq.map_riemannianVolume hinner) g
+
+/-- **The normalized pullback is onto the invariants.** An element of `Lᵖ(M)` lies in the range of
+the normalized pullback `|G| ^ (-1/p) q^*` from `Lᵖ(N)` exactly when it is invariant under the
+translations by `G`. Since the normalized pullback is a linear isometry, for `p = 2` it is a unitary
+map from `L²(N)` onto the `G`-invariant subspace of `L²(M)`. -/
+theorem mem_range_normalizedPullbackLp_iff (hq : IsQuotientCoveringMap q G)
+    (hinner : ∀ x (v w : TangentSpace I x),
+      ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ)
+    (f : Lp F p (riemannianVolume I M)) :
+    f ∈ Set.range (normalizedPullbackLp 𝕜 p hq hinner) ↔
+      ∀ g : G, (fun x ↦ f (g • x)) =ᵐ[riemannianVolume I M] f := by
+  rw [normalizedPullbackLp]
+  exact hq.mem_range_normalizedCompOfMapEqSmul_iff
+    (fun g ↦ (hq.measurePreserving_smul_riemannianVolume hinner g).quasiMeasurePreserving) _ _ _ f
 
 end Lp
 
