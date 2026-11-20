@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Newton
 public import TauCeti.RingTheory.PowerSeries.Log
 
@@ -45,6 +46,7 @@ function. For instance, Arnold's cat map acts on `H₀`, `H₁` and `H₂` of th
 * `Matrix.logOf_charpolyRev`: `log det (1 - X A) = -∑ₖ tr (A ^ k) Xᵏ / k`.
 * `Matrix.subst_exp_mul_charpolyRev`, `Matrix.subst_exp_eq_inv_charpolyRev`: the trace–determinant
   formula `exp (∑ₖ tr (A ^ k) Xᵏ / k) = det (1 - X A)⁻¹`.
+* `LinearMap.reverse_charpoly_smul_id`: `det (1 - X (c • id)) = (1 - c X) ^ rank`.
 * `LinearMap.logOf_reverse_charpoly`, `LinearMap.subst_exp_mul_reverse_charpoly`,
   `LinearMap.subst_exp_eq_inv_reverse_charpoly`: the same for an endomorphism of a finite free
   module.
@@ -128,6 +130,18 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R
 theorem constantCoeff_coe_reverse_charpoly (f : Module.End R M) :
     constantCoeff (f.charpoly.reverse : R⟦X⟧) = 1 := by
   rw [charpoly_def, Matrix.reverse_charpoly, Matrix.constantCoeff_coe_charpolyRev]
+
+/-- The polynomial `det (1 - X f)` of the scalar endomorphism `f = c • id` of a finite free module
+is `(1 - c X) ^ rank`. -/
+theorem reverse_charpoly_smul_id (c : R) :
+    (c • LinearMap.id : Module.End R M).charpoly.reverse =
+      (1 - Polynomial.C c * Polynomial.X) ^ Module.finrank R M := by
+  nontriviality R
+  rw [← charpoly_toMatrix _ (Module.Free.chooseBasis R M), Matrix.reverse_charpoly, map_smul,
+    toMatrix_id, Module.finrank_eq_card_chooseBasisIndex, Matrix.charpolyRev,
+    Matrix.smul_one_eq_diagonal, Matrix.diagonal_map (map_zero Polynomial.C),
+    ← Matrix.diagonal_smul, ← Matrix.diagonal_one, Matrix.diagonal_sub, Matrix.det_diagonal]
+  simp [Polynomial.X_mul_C]
 
 variable [Algebra ℚ R]
 
