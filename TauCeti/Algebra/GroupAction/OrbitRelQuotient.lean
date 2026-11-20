@@ -26,6 +26,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `TauCeti.MulAction.transversalEquivOrbitRelQuotient`: a set meeting every orbit, such that a
   group element carrying one of its points into it fixes that point, is a set of orbit
   representatives.
+* `TauCeti.MulAction.mk_eq_iff_mem_orbit_out`: a point lies in an orbit exactly when it lies in
+  the orbit of the chosen representative `Quotient.out`.
 * `TauCeti.MulAction.exists_smul_out_eq`: every point of an orbit is a translate of the chosen
   representative `Quotient.out` of that orbit.
 * `TauCeti.MulAction.injOn_quotientMk_slice`: if the slice map `(g, s) ↦ g • σ s` is injective
@@ -197,12 +199,24 @@ theorem _root_.Subgroup.orbitRel_smul_smul_of_inv_mul_mem (H : Subgroup G) [H.No
     simpa [mul_assoc] using hk
   · simp [MulAction.subgroup_smul_def, smul_smul, mul_assoc]
 
+/-- **A point lies in an orbit exactly when it lies in the orbit of the chosen representative.**
+This combines Mathlib's `MulAction.orbitRel.Quotient.mem_orbit` and
+`MulAction.orbitRel.Quotient.orbit_eq_orbit_out`. -/
+@[to_additive AddAction.mk_eq_iff_mem_orbit_out
+  /-- **A point lies in an orbit exactly when it lies in the orbit of the chosen representative.**
+This combines Mathlib's `AddAction.orbitRel.Quotient.mem_orbit` and
+`AddAction.orbitRel.Quotient.orbit_eq_orbit_out`. -/]
+theorem MulAction.mk_eq_iff_mem_orbit_out {y : X} {ω : MulAction.orbitRel.Quotient G X} :
+    (Quotient.mk'' y : MulAction.orbitRel.Quotient G X) = ω ↔
+      y ∈ _root_.MulAction.orbit G ω.out := by
+  rw [← MulAction.orbitRel.Quotient.mem_orbit,
+    MulAction.orbitRel.Quotient.orbit_eq_orbit_out ω Quotient.out_eq']
+
 /-- **Every point of an orbit is a translate of its chosen representative.** This is Mathlib's
 `MulAction.orbitRel.Quotient.orbit_eq_orbit_out` in existential form. -/
 lemma MulAction.exists_smul_out_eq {y : X} {ω : MulAction.orbitRel.Quotient G X}
     (h : (Quotient.mk'' y : MulAction.orbitRel.Quotient G X) = ω) : ∃ g : G, g • ω.out = y :=
-  MulAction.mem_orbit_iff.1 <| MulAction.orbitRel.Quotient.orbit_eq_orbit_out ω Quotient.out_eq' ▸
-    MulAction.orbitRel.Quotient.mem_orbit.2 h
+  MulAction.mem_orbit_iff.1 <| MulAction.mk_eq_iff_mem_orbit_out.1 h
 
 /-- **Slices meet each orbit at most once.** If the slice map `(g, s) ↦ g • σ s` is injective on
 `G × U`, then distinct points of `U` lie in distinct orbits. -/
