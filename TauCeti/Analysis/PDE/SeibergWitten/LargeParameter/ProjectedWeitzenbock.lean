@@ -37,17 +37,20 @@ This file derives from the vector equation Taubes's two scalar differential ineq
 `-Δ|β|² / 2 + |∇β|² + (r / 4) (|φ|² + |β|² + 1) |β|² ≤ c |β| (|∇φ| + |φ| + |β|)`,
 
 with `Δ = div ∘ grad` (`TauCeti.Manifold.laplaceBeltrami`), operator norms of the covariant
-derivatives, and `c = 2 n |∇P| + |∇*∇P| + K` for `n = dim M`, a constant independent of `r`. These
+derivatives, and `c = 2 n c₁ + c₂ + K` for `n = dim M`, where `c₁ ≥ sup |∇P|` and
+`c₂ ≥ sup |∇*∇P|` are uniform bounds, so that `c` is a constant independent of `r`. These
 are exactly the hypotheses of the maximum-principle bounds of
 `TauCeti.Analysis.PDE.SeibergWitten.PointwiseBounds`; for instance Taubes's bound
 `|β|² ≤ (4 c² / r) (1 - |φ|²) + O(r⁻²)` on a closed manifold follows
 (`TauCeti.SeibergWitten.norm_sq_le_div_mul_one_sub_add_div_sq_of_roughLaplacian_add_eq_zero`).
 
 The derivation pairs the equation with `φ` and `β` and uses
-`(1 / 2) d*d |σ|² + |∇σ|² = ⟪∇*∇σ, σ⟫`
-(`CovariantDerivative.IsMetricCompatible.laplaceBeltrami_norm_sq`). Since `⟪φ, β⟫ = 0`, the term
-`(r / 2) β` drops out of the pairing with `φ`. The cross terms `⟪∇*∇β, φ⟫` and `⟪∇*∇φ, β⟫` are of
-lower order: as `P β = 0`, the Leibniz rule
+`-Δ|σ|² / 2 + ∑ᵢ |∇_{eᵢ}σ|² = ⟪∇*∇σ, σ⟫` for an orthonormal basis `eᵢ`
+(`CovariantDerivative.IsMetricCompatible.laplaceBeltrami_norm_sq`), together with
+`|∇σ|² ≤ ∑ᵢ |∇_{eᵢ}σ|²` for the operator norm
+(`ContinuousLinearMap.opNorm_sq_le_sum_norm_apply_sq_orthonormalBasis`). Since `⟪φ, β⟫ = 0`, the
+term `(r / 2) β` drops out of the pairing with `φ`. The cross terms `⟪∇*∇β, φ⟫` and `⟪∇*∇φ, β⟫`
+are of lower order: as `P β = 0`, the Leibniz rule
 `∇*∇(P β) = (∇*∇P) β - 2 ∑ᵢ (∇_{eᵢ} P)(∇_{eᵢ} β) + P (∇*∇β)`
 (`CovariantDerivative.roughLaplacian_clm_apply`) shows that `P (∇*∇β)`, the only part of `∇*∇β`
 seen by `φ = P φ`, is first order in `β` with coefficients the derivatives of `P`. Symmetrically
