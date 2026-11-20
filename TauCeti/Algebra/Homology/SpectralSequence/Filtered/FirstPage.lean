@@ -143,7 +143,7 @@ theorem spectralSequence_first_page_d_eq_of_eq (pq pq' : ℤ × ℤ)
     [hjk : Mono (F.map (TauCeti.eIntHomOfLE (show j ≤ k by lia)))] :
     ((spectralSequence F).page 2).d pq pq' =
       (spectralSequenceFirstPageXIsoCokernel F pq j k hj hk n hn).hom ≫
-        (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
+        (TauCeti.cokernelCompSequence_shortExact
           (F.map (TauCeti.eIntHomOfLE (show i ≤ j by lia)))
           (F.map (TauCeti.eIntHomOfLE (show j ≤ k by lia)))).δ n n' (by simp [← hn']) ≫
         (spectralSequenceFirstPageXIsoCokernel F pq' i j hi (by lia) n' (by lia)).inv := by
@@ -167,7 +167,7 @@ of the graded pieces. -/
 lemma δ_comp_homologyMap_cokernelFiltrationFunctorMapIso_trans_hom {i j k : ℤ} (hij : i ≤ j)
     (hjk : j ≤ k) {A B D : Subobject K} (hA : F i = A) (hB : F j = B) (hD : F k = D)
     (hAB : A ≤ B) (hBD : B ≤ D) (n₀ n₁ : ℤ) (h : (ComplexShape.up ℤ).Rel n₀ n₁) :
-    (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
+    (TauCeti.cokernelCompSequence_shortExact
         ((filtrationFunctor F hF).map (TauCeti.eIntHomOfLE hij))
         ((filtrationFunctor F hF).map (TauCeti.eIntHomOfLE hjk))).δ n₀ n₁ h ≫
       HomologicalComplex.homologyMap
@@ -178,7 +178,7 @@ lemma δ_comp_homologyMap_cokernelFiltrationFunctorMapIso_trans_hom {i j k : ℤ
         (cokernelFiltrationFunctorMapIso F hF (TauCeti.eIntHomOfLE hjk) ≪≫
           Subobject.cokernelOfLEIsoOfEq ((filtrationEInt_coe F j).trans hB)
             ((filtrationEInt_coe F k).trans hD) _ hBD).hom n₀ ≫
-      (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact (Subobject.ofLE A B hAB)
+      (TauCeti.cokernelCompSequence_shortExact (Subobject.ofLE A B hAB)
         (Subobject.ofLE B D hBD)).δ n₀ n₁ h := by
   -- The comparison maps from the pieces of the functor of the filtration to `A`, `B` and `D`.
   let u : ∀ (a : ℤ) {S : Subobject K}, F a = S → ((filtrationFunctor F hF).obj a ⟶ S) :=
@@ -198,10 +198,10 @@ lemma δ_comp_homologyMap_cokernelFiltrationFunctorMapIso_trans_hom {i j k : ℤ
     apply coequalizer.hom_ext
     simp [u]
   have key := HomologicalComplex.HomologySequence.δ_naturality
-    (TauCeti.snakeInputL₃Map (u i hA) (u j hB) (u k hD) (w hij hA hB hAB) (w hjk hB hD hBD))
-    (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _)
-    (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _) n₀ n₁ h
-  rwa [TauCeti.snakeInputL₃Map_τ₁, TauCeti.snakeInputL₃Map_τ₃, e, e] at key
+    (TauCeti.cokernelCompSequenceMap (u i hA) (u j hB) (u k hD) (w hij hA hB hAB) (w hjk hB hD hBD))
+    (TauCeti.cokernelCompSequence_shortExact _ _)
+    (TauCeti.cokernelCompSequence_shortExact _ _) n₀ n₁ h
+  rwa [TauCeti.cokernelCompSequenceMap_τ₁, TauCeti.cokernelCompSequenceMap_τ₃, e, e] at key
 
 end Filtration
 

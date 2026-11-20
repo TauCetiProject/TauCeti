@@ -145,7 +145,7 @@ connecting map `H^{p+q}(F^p/F^{p+1}) ⟶ H^{p+q+1}(F^{p+1}/F^{p+2})` of the shor
 theorem decreasingFiltrationSpectralSequence_first_page_d_eq (p q : ℤ) :
     ((decreasingFiltrationSpectralSequence F hF).page 1).d (p, q) (p + 1, q) =
       (decreasingFiltrationSpectralSequenceFirstPageXIso F hF p q).hom ≫
-        (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
+        (TauCeti.cokernelCompSequence_shortExact
           (Subobject.ofLE (F (p + 1 + 1)) (F (p + 1)) (hF (by lia)))
           (Subobject.ofLE (F (p + 1)) (F p) (hF (by lia)))).δ (p + q) (p + 1 + q)
             (by simp only [ComplexShape.up_Rel]; lia) ≫
@@ -169,12 +169,9 @@ theorem decreasingFiltrationSpectralSequence_first_page_d_eq (p q : ℤ) :
     HomologicalComplex.homologyFunctor_map, HomologicalComplex.homologyFunctor_map,
     (Iso.eq_comp_inv (HomologicalComplex.homologyMapIso _ (p + 1 + q))).2 key]
   simp only [Category.assoc]
-  -- The left-hand side is reassociated by hand: its composites pass through the objects of the
-  -- sequence of graded pieces, which are cokernels only after unfolding, so `simp` cannot reach
-  -- them. The remaining comparisons agree up to unfolding `homologyMapIso` and
+  -- The remaining comparisons agree up to unfolding `homologyMapIso` and
   -- `decreasingFiltrationSpectralSequencePageXIso`.
-  exact congrArg (_ ≫ ·) (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
-    ((Category.assoc _ _ _).trans (Category.assoc _ _ _))))
+  rfl
 
 /-- **Strong convergence of the spectral sequence of a finite decreasing filtration.** If
 `F^a = ⊥` and `F^b = ⊤`, then on every page `r ≥ 1` with `a ≤ p + r` and `p - r + 1 ≤ b`, the object
@@ -274,7 +271,7 @@ the connecting map `H_{p+q}(F_p/F_{p-1}) ⟶ H_{p+q-1}(F_{p-1}/F_{p-2})` of the 
 theorem homologicalFiltrationSpectralSequence_first_page_d_eq (p q : ℤ) :
     ((homologicalFiltrationSpectralSequence F hF).page 1).d (p, q) (p - 1, q) =
       (homologicalFiltrationSpectralSequenceFirstPageXIso F hF p q).hom ≫
-        (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
+        (TauCeti.cokernelCompSequence_shortExact
           (Subobject.ofLE (F (p - 1 - 1)) (F (p - 1)) (hF (by lia)))
           (Subobject.ofLE (F (p - 1)) (F p) (hF (by lia)))).δ (-(p + q)) (-(p - 1 + q))
             (by simp only [ComplexShape.up_Rel]; lia) ≫
@@ -297,10 +294,9 @@ theorem homologicalFiltrationSpectralSequence_first_page_d_eq (p q : ℤ) :
     HomologicalComplex.homologyFunctor_map, HomologicalComplex.homologyFunctor_map,
     (Iso.eq_comp_inv (HomologicalComplex.homologyMapIso _ (-(p - 1 + q)))).2 key]
   simp only [Category.assoc]
-  -- As for `CochainComplex.decreasingFiltrationSpectralSequence_first_page_d_eq`, the left-hand
-  -- side is reassociated by hand.
-  exact congrArg (_ ≫ ·) (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
-    ((Category.assoc _ _ _).trans (Category.assoc _ _ _))))
+  -- As for `CochainComplex.decreasingFiltrationSpectralSequence_first_page_d_eq`, the remaining
+  -- comparisons agree up to unfolding.
+  rfl
 
 /-- **Strong convergence of the homological spectral sequence of a finite filtration.** If
 `F_a = ⊥` and `F_b = ⊤`, then on every page `r ≥ 1` with `p - r ≤ a` and `b ≤ p + r - 1`, the object

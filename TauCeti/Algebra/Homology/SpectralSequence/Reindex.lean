@@ -94,10 +94,7 @@ lemma reindex_page_d_eq (r r' : ℤ) (hr : r₀' ≤ r) (hr' : r + d = r') (i j 
         (E.reindexPageXIso d f hf hd r r' hr hr' j b hb).inv := by
   subst hr' ha hb
   rw [reindexPageXIso, reindexPageXIso, eqToIso.hom, eqToIso.inv]
-  -- Both comparisons are `eqToHom` of an equation between definitionally equal objects, hence
-  -- identities up to definitional unfolding.
-  exact ((Category.id_comp ((E.page (r + d)).d (f i) (f j) ≫ 𝟙 _)).trans
-    (Category.comp_id _)).symm
+  exact (conj_eqToHom_iff_heq' _ _ _ _).2 .rfl
 
 variable {E} {E' E'' : SpectralSequence C c r₀}
 

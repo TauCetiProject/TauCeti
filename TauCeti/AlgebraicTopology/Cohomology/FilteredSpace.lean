@@ -409,7 +409,7 @@ private lemma δ_comp_homologyMap_cokernelOfLEIsoOfEq_trans_hom
     (hA : A = singularCochainFiltration R k M X c) (hB : B = singularCochainFiltration R k M X b)
     (hD : D = singularCochainFiltration R k M X a) (hAB : A ≤ B) (hBD : B ≤ D) (n₀ n₁ : ℤ)
     (h : (ComplexShape.up ℤ).Rel n₀ n₁) :
-    (kernelCokernelCompSequence_snakeInput_L₃_shortExact (Subobject.ofLE A B hAB)
+    (cokernelCompSequence_shortExact (Subobject.ofLE A B hAB)
         (Subobject.ofLE B D hBD)).δ n₀ n₁ h ≫
       HomologicalComplex.homologyMap (Subobject.cokernelOfLEIsoOfEq hA hB hAB
         (singularCochainFiltration_anti R k M hbc) ≪≫
@@ -420,20 +420,13 @@ private lemma δ_comp_homologyMap_cokernelOfLEIsoOfEq_trans_hom
       (((TopTriple.ofInclusions hab hbc).shortExact_singularCochainComplexShortComplex R k M).extend
         ComplexShape.embeddingUpNat).δ n₀ n₁ h := by
   subst hA hB hD
-  -- The sequence of graded pieces, with its objects written as cokernels, and its morphism to the
-  -- extended cochain sequence of the triple, given by the identifications of the graded pieces
-  -- with relative cochains. The squares are read in the extended sequence, whose objects are the
-  -- reindexed relative cochain complexes only after unfolding `extendFunctor`, by `exact`.
-  let L : ShortComplex (CochainComplex (ModuleCat.{v} k) ℤ) :=
-    ShortComplex.mk (cokernel.map (Subobject.ofLE _ _ hAB)
-        (Subobject.ofLE _ _ hAB ≫ Subobject.ofLE _ _ hBD) (𝟙 _) (Subobject.ofLE _ _ hBD)
-        (by simp))
-      (cokernel.map (Subobject.ofLE _ _ hAB ≫ Subobject.ofLE _ _ hBD) (Subobject.ofLE _ _ hBD)
-        (Subobject.ofLE _ _ hAB) (𝟙 _) (by simp))
-      (by apply coequalizer.hom_ext; simp)
-  have hL : L.ShortExact := kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _
-  let ψ : L ⟶ ((TopTriple.ofInclusions hab hbc).singularCochainComplexShortComplex R k M).map
-      (ComplexShape.embeddingUpNat.extendFunctor _) :=
+  -- The morphism from the sequence of graded pieces to the extended cochain sequence of the
+  -- triple, given by the identifications of the graded pieces with relative cochains. The squares
+  -- are read in the extended sequence, whose objects are the reindexed relative cochain complexes
+  -- only after unfolding `extendFunctor`.
+  let ψ : cokernelCompSequence (Subobject.ofLE _ _ hAB) (Subobject.ofLE _ _ hBD) ⟶
+      ((TopTriple.ofInclusions hab hbc).singularCochainComplexShortComplex R k M).map
+        (ComplexShape.embeddingUpNat.extendFunctor _) :=
     { τ₁ := (Subobject.cokernelOfLEIsoOfEq rfl rfl hAB _ ≪≫
         singularCochainFiltrationCokernelIso R k M hbc).hom
       τ₂ := (cokernelIsoOfEq (Subobject.ofLE_comp_ofLE _ _ _ hAB hBD) ≪≫
@@ -442,7 +435,7 @@ private lemma δ_comp_homologyMap_cokernelOfLEIsoOfEq_trans_hom
         singularCochainFiltrationCokernelIso R k M hab).hom
       comm₁₂ := cokernelOfLEIsoOfEq_trans_hom_comp_extendMap_totalToOuter R k M hAB hBD
       comm₂₃ := cokernelIsoOfEq_trans_hom_comp_extendMap_innerToTotal R k M hAB hBD }
-  exact HomologicalComplex.HomologySequence.δ_naturality ψ hL
+  exact HomologicalComplex.HomologySequence.δ_naturality ψ (cokernelCompSequence_shortExact _ _)
     (((TopTriple.ofInclusions hab hbc).shortExact_singularCochainComplexShortComplex R k M).extend
       ComplexShape.embeddingUpNat) n₀ n₁ h
 
@@ -485,8 +478,8 @@ theorem filteredSpaceCohomologySpectralSequence_first_page_d_eq (p q : ℤ) (n :
   simp only [Iso.trans_hom, Iso.trans_inv, Functor.mapIso_hom, Functor.mapIso_inv,
     HomologicalComplex.homologyFunctor_map, Category.assoc]
   -- The left-hand side is reassociated by hand: its composites pass through the objects of the
-  -- sequence of graded pieces and of the cochain sequence of the triple, which agree with those of
-  -- the right-hand side only after unfolding, so `simp` cannot reach them.
+  -- extended cochain sequence of the triple, which agree with those of the right-hand side only
+  -- after unfolding, so `simp` cannot reach them.
   exact congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans ((Category.assoc _ _ _).trans
     (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans (Category.assoc _ _ _)))))
 
