@@ -23,7 +23,9 @@ linear map vanishing on all but finitely many vectors of a Hilbert basis has fin
 every vector is the sum of its basis expansion, and that continuous (semi)linear maps, linear
 isometries, and linear isometric equivalences out of `E` are determined by their values on a
 Hilbert basis (`HilbertBasis.ext_continuousLinearMap`, `HilbertBasis.ext_linearIsometry`,
-`HilbertBasis.ext_linearIsometryEquiv`, `HilbertBasis.ext_inner_apply`).
+`HilbertBasis.ext_linearIsometryEquiv`, `HilbertBasis.ext_inner_apply`). More generally, a
+continuous semilinear map out of `E` sends every vector into a closed submodule containing the
+images of the basis vectors (`HilbertBasis.apply_mem_of_forall_apply_mem`).
 
 Finally, the orthogonal complement of the span of the basis vectors indexed by a set `s` is the
 closed span of the basis vectors indexed by its complement (`HilbertBasis.orthogonal_span_image`).
@@ -62,6 +64,18 @@ theorem ext_continuousLinearMap {ι 𝕜' M : Type*} [Semiring 𝕜'] {σ : 𝕜
     ?_
   rintro _ ⟨i, rfl⟩
   exact h i
+
+/-- A continuous semilinear map out of `E` sends every vector into a closed submodule that contains
+the images of all vectors of a Hilbert basis of `E`. -/
+theorem apply_mem_of_forall_apply_mem {ι 𝕜' M : Type*} [Semiring 𝕜'] {σ : 𝕜 →+* 𝕜'}
+    [AddCommMonoid M] [Module 𝕜' M] [TopologicalSpace M] (b : _root_.HilbertBasis ι 𝕜 E)
+    {S : Submodule 𝕜' M} (hS : IsClosed (S : Set M)) (L : E →SL[σ] M) (h : ∀ i, L (b i) ∈ S)
+    (x : E) : L x ∈ S := by
+  have hle : Submodule.span 𝕜 (Set.range b) ≤ S.comap (L : E →ₛₗ[σ] M) :=
+    Submodule.span_le.2 (Set.range_subset_iff.2 h)
+  have hcl := Submodule.topologicalClosure_minimal _ hle (hS.preimage L.continuous)
+  rw [b.dense_span] at hcl
+  exact hcl Submodule.mem_top
 
 /-- Two semilinear isometries out of `E` into a normed module agree when they agree on every vector
 of a Hilbert basis of `E`. -/
