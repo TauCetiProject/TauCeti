@@ -33,6 +33,8 @@ construction (`CategoryTheory.Limits.Bicone.orthogonalize_eq_self`).
 * `TauCeti.CStarCategory.hasOrthogonalBiproduct_iff`: orthogonal sums and native biproducts of
   finite families exist together; in particular a finite family with a biproduct has an
   orthogonal sum, as an instance.
+* `TauCeti.CStarCategory.hasFiniteOrthogonalBiproducts_iff`: a C*-category has finite orthogonal
+  sums exactly when it has finite biproducts, again with the corresponding instance.
 
 ## References
 
@@ -228,5 +230,16 @@ theorem hasOrthogonalBiproduct_iff : HasOrthogonalBiproduct F ↔ HasBiproduct F
 /-- A finite family of objects of a C*-category with a biproduct has an orthogonal sum. -/
 instance [HasBiproduct F] : HasOrthogonalBiproduct F :=
   hasOrthogonalBiproduct_iff.2 ‹_›
+
+variable (C) in
+/-- A C*-category has finite orthogonal sums exactly when it has finite biproducts. -/
+theorem hasFiniteOrthogonalBiproducts_iff :
+    HasFiniteOrthogonalBiproducts C ↔ HasFiniteBiproducts C :=
+  ⟨fun _ => HasFiniteOrthogonalBiproducts.hasFiniteBiproducts C,
+    fun _ => ⟨fun _ _ => inferInstance⟩⟩
+
+/-- A C*-category with finite biproducts has finite orthogonal sums. -/
+instance [HasFiniteBiproducts C] : HasFiniteOrthogonalBiproducts C :=
+  (hasFiniteOrthogonalBiproducts_iff C).2 ‹_›
 
 end TauCeti.CStarCategory

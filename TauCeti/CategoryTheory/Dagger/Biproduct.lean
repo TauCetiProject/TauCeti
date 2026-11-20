@@ -25,7 +25,9 @@ unitary isomorphism, not merely up to an isomorphism.
 * `CategoryTheory.Limits.Bicone.IsOrthogonal.isUnitary_conePointUniqueUpToIso_hom`: the
   comparison isomorphism between the points of two orthogonal limit bicones of the same family is
   unitary.
-* `TauCeti.HasOrthogonalBiproduct`: a family has an orthogonal sum.
+* `TauCeti.HasOrthogonalBiproduct`: a family has an orthogonal sum, with a chosen orthogonal limit
+  bicone `TauCeti.HasOrthogonalBiproduct.limitBicone`.
+* `TauCeti.HasFiniteOrthogonalBiproducts`: every finite family has an orthogonal sum.
 
 ## References
 
@@ -72,6 +74,12 @@ theorem dagger_ι (hc : c.IsOrthogonal) (j : J) : dagger (c.ι j) = c.π j := by
 theorem ι_comp_dagger_ι (hc : c.IsOrthogonal) (j : J) : c.ι j ≫ dagger (c.ι j) = 𝟙 (F j) := by
   rw [hc.dagger_ι, bicone_ι_π_self]
 
+/-- The inclusions of an orthogonal bicone have mutually orthogonal ranges. -/
+@[reassoc]
+theorem ι_comp_dagger_ι_of_ne (hc : c.IsOrthogonal) {j k : J} (h : j ≠ k) :
+    c.ι j ≫ dagger (c.ι k) = 0 := by
+  rw [hc.dagger_ι, bicone_ι_π_ne c h]
+
 /-- A dagger functor sends orthogonal bicones to orthogonal bicones. -/
 theorem map {D : Type u₂} [Category.{v₂} D] [HasZeroMorphisms D] [DaggerCategory D]
     (G : C ⥤ D) [G.PreservesZeroMorphisms] [G.PreservesDagger] (hc : c.IsOrthogonal) :
@@ -103,9 +111,51 @@ class HasOrthogonalBiproduct (F : J → C) : Prop where
   /-- Some limit bicone of the family is orthogonal. -/
   exists_isOrthogonal : ∃ b : LimitBicone F, b.bicone.IsOrthogonal
 
+namespace HasOrthogonalBiproduct
+
+/-- A chosen orthogonal limit bicone of a family with an orthogonal sum. -/
+noncomputable def limitBicone (F : J → C) [HasOrthogonalBiproduct F] : LimitBicone F :=
+  (exists_isOrthogonal (F := F)).choose
+
+/-- The chosen limit bicone of a family with an orthogonal sum is orthogonal. -/
+theorem isOrthogonal_limitBicone (F : J → C) [HasOrthogonalBiproduct F] :
+    (limitBicone F).bicone.IsOrthogonal :=
+  (exists_isOrthogonal (F := F)).choose_spec
+
 /-- A family with an orthogonal sum has a biproduct. -/
-theorem HasOrthogonalBiproduct.hasBiproduct (F : J → C) [HasOrthogonalBiproduct F] :
-    HasBiproduct F :=
-  .mk (HasOrthogonalBiproduct.exists_isOrthogonal (F := F)).choose
+theorem hasBiproduct (F : J → C) [HasOrthogonalBiproduct F] : HasBiproduct F :=
+  .mk (limitBicone F)
+
+/-- Reindexing a family with an orthogonal sum along an equivalence gives a family with an
+orthogonal sum. -/
+theorem comp_equiv {K : Type*} (F : K → C) [HasOrthogonalBiproduct F] (e : J ≃ K) :
+    HasOrthogonalBiproduct (F ∘ e) :=
+  ⟨⟨⟨(limitBicone F).bicone.whisker e,
+    ((limitBicone F).bicone.whiskerIsBilimitIff e).2 (limitBicone F).isBilimit⟩,
+    fun j => isOrthogonal_limitBicone F (e j)⟩⟩
+
+end HasOrthogonalBiproduct
+
+variable (C) in
+/-- A dagger category *has finite orthogonal sums* when every finite family of its objects has an
+orthogonal sum. -/
+class HasFiniteOrthogonalBiproducts : Prop where
+  /-- Every family indexed by `Fin n` has an orthogonal sum. -/
+  out : ∀ (n : ℕ) (F : Fin n → C), HasOrthogonalBiproduct F
+
+/-- In a dagger category with finite orthogonal sums, every finite family has an orthogonal
+sum. -/
+instance (priority := 100) HasFiniteOrthogonalBiproducts.hasOrthogonalBiproduct
+    [HasFiniteOrthogonalBiproducts C] [Finite J] (F : J → C) : HasOrthogonalBiproduct F := by
+  obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin J
+  have := HasFiniteOrthogonalBiproducts.out n (F ∘ e.symm)
+  simpa only [Function.comp_def, e.symm_apply_apply] using
+    HasOrthogonalBiproduct.comp_equiv (F ∘ e.symm) e
+
+variable (C) in
+/-- A dagger category with finite orthogonal sums has finite biproducts. -/
+theorem HasFiniteOrthogonalBiproducts.hasFiniteBiproducts [HasFiniteOrthogonalBiproducts C] :
+    HasFiniteBiproducts C :=
+  ⟨fun _ => ⟨fun F => HasOrthogonalBiproduct.hasBiproduct F⟩⟩
 
 end TauCeti
