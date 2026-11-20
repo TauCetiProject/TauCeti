@@ -46,6 +46,8 @@ and moving the remaining factors by vectors of that subspace does not change the
   multiplication by `n!`, whence `exteriorPower.toTensorPower_injective`.
 * `exteriorPower.ιMulti_ne_zero_iff`: over a field, an exterior product of vectors is nonzero
   exactly when the vectors are linearly independent.
+* `exteriorPower.ιMulti_comp_ne_zero_of_eq_basis`: lifts along a linear map `g` of a basis of its
+  target have a nonzero exterior product.
 * `exteriorPower.toTensorPower_injective_of_free`: antisymmetrization is injective for free
   modules in every characteristic, without factorial invertibility.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
@@ -281,6 +283,14 @@ theorem ιMulti_ne_zero_iff {n : ℕ} (v : Fin n → V) :
     exact (Finset.orderEmbOfFin_unique hs (fun _ ↦ Finset.mem_univ _) strictMono_id).symm
   simpa [ιMulti_family, he] using (ιMulti_family_linearIndependent_field (n := n) hv).ne_zero
     (Set.powersetCard.ofCard hs)
+
+/-- The exterior product of lifts `v₁, …, vₙ` along `g` of the vectors of a basis of `W` is
+nonzero. -/
+theorem ιMulti_comp_ne_zero_of_eq_basis {W : Type*} [AddCommGroup W] [Module K W]
+    {g : V →ₗ[K] W} {n : ℕ} {b : Module.Basis (Fin n) K W} {v : Fin n → V}
+    (hv : ∀ i, g (v i) = b i) : ιMulti K n (g ∘ v) ≠ 0 := by
+  rw [show g ∘ v = ⇑b from funext hv]
+  exact (ιMulti_ne_zero_iff _).2 b.linearIndependent
 
 end Field
 
