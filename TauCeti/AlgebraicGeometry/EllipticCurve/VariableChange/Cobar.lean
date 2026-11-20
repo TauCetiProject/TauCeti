@@ -347,9 +347,14 @@ theorem cobarAddMap_cobarAddMap (k : ℤ) {l m n : ℕ} (θ : Fin (m + 1) → Fi
   map θ := AddCommGrpCat.ofHom (cobarAddMap k θ.toOrderHom)
   map_id n := by
     ext f
+    rw [AddCommGrpCat.hom_ofHom, AddCommGrpCat.hom_id, AddMonoidHom.id_apply,
+      SimplexCategory.id_toOrderHom, OrderHom.id_coe]
     exact cobarAddMap_id k f
   map_comp θ ψ := by
     ext f
+    rw [AddCommGrpCat.hom_comp, AddMonoidHom.comp_apply, AddCommGrpCat.hom_ofHom,
+      AddCommGrpCat.hom_ofHom, AddCommGrpCat.hom_ofHom, SimplexCategory.comp_toOrderHom,
+      OrderHom.comp_coe]
     exact (cobarAddMap_cobarAddMap k ψ.toOrderHom θ.toOrderHom f).symm
 
 /-- **The cobar complex of weight `k`** of the Weierstrass Hopf algebroid, the alternating coface
