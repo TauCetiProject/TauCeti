@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
-public import TauCeti.Analysis.Pseudodifferential.ProperSupport
+public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Basic
 import TauCeti.Analysis.Pseudodifferential.LocalSymbol.Basic
-import TauCeti.Analysis.Pseudodifferential.OutputSupport
+import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 
 /-!
 # Composition with a properly supported operator
