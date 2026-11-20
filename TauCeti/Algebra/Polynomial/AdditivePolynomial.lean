@@ -53,8 +53,8 @@ characteristic `p`, `a_V = X ^ p - X`.
 * `AddSubgroup.derivative_additivePolynomial`: the derivative of `a_V` is the constant
   `∏_{c ∈ V, c ≠ 0} (-c)`.
 * `AddSubgroup.isIntegral_of_aeval_additivePolynomial_eq`: a root of `a_V - u` is integral.
-* `AddSubgroup.separable_additivePolynomial`: `a_V` is separable.
-* `AddSubgroup.separable_additivePolynomial_sub_C`: `a_V - u` is separable.
+* `AddSubgroup.separable_additivePolynomial`: over a field, `a_V` is separable.
+* `AddSubgroup.separable_additivePolynomial_sub_C`: over a field, `a_V - u` is separable.
 
 ## References
 
@@ -230,8 +230,8 @@ theorem splits_additivePolynomial_sub_C {u : R} {y : A}
   rw [V.map_additivePolynomial_sub_C_eq_prod hy]
   exact Splits.prod fun c _ ↦ Splits.X_sub_C _
 
-/-- **The derivative of `a_V` is constant**: `a_V' = ∏_{c ∈ V, c ≠ 0} (-c)`. In particular it is
-a unit, which makes `a_V - u` separable for every `u`. -/
+/-- **The derivative of `a_V` is constant**: `a_V' = ∏_{c ∈ V, c ≠ 0} (-c)`. Over a field this
+constant is nonzero, hence a unit, which makes `a_V - u` separable for every `u`. -/
 @[simp]
 theorem derivative_additivePolynomial :
     derivative V.additivePolynomial = C (∏ᶠ c : {c : V // c ≠ 0}, -(c : R)) := by
