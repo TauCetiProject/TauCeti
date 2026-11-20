@@ -150,7 +150,7 @@ private theorem integral_pow_mul_oscillation_logNormalMeasure (n : ℕ) :
     ∫ x, x ^ n * logNormalMomentOscillation x ∂logNormalMeasure 0 1 = 0 := by
   rw [logNormalMeasure_map_exp, integral_map measurable_exp.aemeasurable (by fun_prop)]
   simpa only [Function.comp_apply, logNormalMomentOscillation, Real.log_exp,
-    Real.exp_natCast_mul] using integral_exp_nat_mul_sin_gaussianReal n
+    Real.exp_natCast_mul, Int.cast_natCast] using integral_exp_int_mul_sin_gaussianReal n
 
 /-- Every natural power is integrable under a valid log-normal moment perturbation. -/
 theorem integrable_pow_logNormalMomentPerturbation {ε : ℝ} (hε : |ε| ≤ 1) (n : ℕ) :
