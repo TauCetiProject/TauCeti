@@ -26,8 +26,8 @@ a faithfully flat base change reflects injectivity
 
 ## Main results
 
-* `isSMulRegular_algebraMap_iff_of_faithfullyFlat_of_isBaseChange`: regularity of `x` descends
-  along a faithfully flat base change.
+* `IsBaseChange.isSMulRegular_algebraMap_iff_of_faithfullyFlat`: regularity of `x` descends along
+  a faithfully flat base change.
 * `RingTheory.Sequence.isWeaklyRegular_map_algebraMap_iff_of_faithfullyFlat_of_isBaseChange` and
   `RingTheory.Sequence.isWeaklyRegular_map_algebraMap_iff_of_faithfullyFlat`: weak regularity of
   a sequence descends along a faithfully flat base change.
@@ -43,7 +43,7 @@ variable {R S M N : Type*} [CommRing R] [CommRing S] [Algebra R S] [FaithfullyFl
 /-- **Faithfully flat descent of regular elements.** If `N` is the base change of `M` to a
 faithfully flat `R`-algebra `S`, then the image of `x : R` in `S` is regular on `N` exactly when
 `x` is regular on `M`. -/
-theorem isSMulRegular_algebraMap_iff_of_faithfullyFlat_of_isBaseChange {f : M →ₗ[R] N}
+theorem IsBaseChange.isSMulRegular_algebraMap_iff_of_faithfullyFlat {f : M →ₗ[R] N}
     (hf : IsBaseChange S f) (x : R) : IsSMulRegular N (algebraMap R S x) ↔ IsSMulRegular M x := by
   -- multiplication by `x` on `N` is the base change of multiplication by `x` on `M`
   have key (z : S ⊗[R] M) : hf.equiv ((LinearMap.lsmul R M x).lTensor S z) =
@@ -75,7 +75,7 @@ theorem isWeaklyRegular_map_algebraMap_iff_of_faithfullyFlat_of_isBaseChange {f 
     have hg : IsBaseChange S <|
         e.toLinearMap.restrictScalars R ∘ₗ TensorProduct.mk R S (QuotSMulTop x M) 1 :=
       IsBaseChange.of_equiv e (fun _ ↦ by simp)
-    rw [isSMulRegular_algebraMap_iff_of_faithfullyFlat_of_isBaseChange hf, ih hg]
+    rw [hf.isSMulRegular_algebraMap_iff_of_faithfullyFlat, ih hg]
 
 /-- **Faithfully flat descent of weakly regular sequences in a ring.** For a faithfully flat
 `R`-algebra `S`, the image in `S` of a list `rs` of elements of `R` is weakly regular on `S` exactly
