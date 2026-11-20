@@ -29,6 +29,7 @@ rational solutions `ξ`.
 
 ## Main results
 
+* `TauCeti.thueC₂`: Thue's constant `C₂`, bounding the auxiliary polynomials near `α`.
 * `TauCeti.thue_gap_principle`: Thue's gap principle with explicit constants, for complex
   algebraic `α`.
 * `TauCeti.thue_approximation`: Thue's approximation theorem, for complex algebraic `α`.
@@ -46,6 +47,25 @@ open Polynomial Height Real
 
 namespace TauCeti
 
+/-- Thue's constant `C₂ = 2 ^ ((1 / 2 + ε) d) (1 + |α|) ^ (1 + (1 / 2 + ε) d) C₁`, where
+`C₁ = (48 b max(1, house α)) ^ (d (1 + 1 / ε))` and `d` is the degree of `α`. Its `r`-th power
+bounds the values near `α` of Thue's auxiliary polynomials of parameter `r` (Evertse, ch. 6). -/
+noncomputable def thueC₂ (α : ℂ) (b : ℕ) (ε : ℝ) : ℝ :=
+  2 ^ ((1 / 2 + ε) * (minpoly ℚ α).natDegree) *
+    (1 + ‖α‖) ^ (1 + (1 / 2 + ε) * (minpoly ℚ α).natDegree) *
+    (48 * b * max 1 (house α)) ^ ((minpoly ℚ α).natDegree * (1 + 1 / ε))
+
+/-- Thue's constant `C₂` is at least `1`. -/
+theorem one_le_thueC₂ (α : ℂ) {b : ℕ} (hb : 0 < b) {ε : ℝ} (hε : 0 < ε) :
+    1 ≤ thueC₂ α b ε := by
+  have hb1 : (1 : ℝ) ≤ 48 * b * max 1 (house α) := by
+    have : (1 : ℝ) ≤ b := by exact_mod_cast hb
+    nlinarith [le_max_left (1 : ℝ) (house α)]
+  exact one_le_mul_of_one_le_of_one_le (one_le_mul_of_one_le_of_one_le
+    (one_le_rpow one_le_two (by positivity))
+    (one_le_rpow (by linarith [norm_nonneg α]) (by positivity)))
+    (one_le_rpow hb1 (by positivity))
+
 /-- **Thue's key inequality.** For Thue's auxiliary polynomials of parameter `r` and rational
 points `ξ₁, ξ₂` with `‖ξ₁ - α‖ ≤ 1`, some order `k ≤ d (2 ε r + 1)` satisfies
 `(H(ξ₁) ^ (N - k) H(ξ₂))⁻¹ ≤ C₂ ^ r (‖ξ₁ - α‖ ^ (r - k) + ‖ξ₂ - α‖)`, where
@@ -57,10 +77,7 @@ private theorem thue_key_inequality {α : ℂ} (hd : 2 ≤ (minpoly ℚ α).natD
       (k : ℝ) ≤ (minpoly ℚ α).natDegree * (2 * ε * r + 1) ∧
       (mulHeight₁ ξ₁ ^ (⌊(1 / 2 + ε) * (minpoly ℚ α).natDegree * r⌋₊ - k) *
           mulHeight₁ ξ₂)⁻¹ ≤
-        (2 ^ ((1 / 2 + ε) * (minpoly ℚ α).natDegree) *
-            (1 + ‖α‖) ^ (1 + (1 / 2 + ε) * (minpoly ℚ α).natDegree) *
-            (48 * b * max 1 (house α)) ^ ((minpoly ℚ α).natDegree * (1 + 1 / ε))) ^ r *
-          (‖(ξ₁ : ℂ) - α‖ ^ (r - k) + ‖(ξ₂ : ℂ) - α‖) := by
+        thueC₂ α b ε ^ r * (‖(ξ₁ : ℂ) - α‖ ^ (r - k) + ‖(ξ₂ : ℂ) - α‖) := by
   obtain ⟨P, Q, hPQ, hP, hQ, hdvd, hPC, hQC⟩ :=
     exists_thue_auxiliary_polynomials hb hbα hε₀ hε hr
   obtain ⟨k, hkN, hk, hlow⟩ :=
@@ -95,16 +112,13 @@ private theorem thue_key_log_inequality {α : ℂ} (hd : 2 ≤ (minpoly ℚ α).
       min (κ * ((r - k : ℕ) * log (mulHeight₁ ξ₁))) (κ * log (mulHeight₁ ξ₂)) ≤
         ((⌊(1 / 2 + ε) * (minpoly ℚ α).natDegree * r⌋₊ - k : ℕ) : ℝ) * log (mulHeight₁ ξ₁) +
           log (mulHeight₁ ξ₂) +
-          r * log (2 * (2 ^ ((1 / 2 + ε) * (minpoly ℚ α).natDegree) *
-            (1 + ‖α‖) ^ (1 + (1 / 2 + ε) * (minpoly ℚ α).natDegree) *
-            (48 * b * max 1 (house α)) ^ ((minpoly ℚ α).natDegree * (1 + 1 / ε)))) := by
+          r * log (2 * thueC₂ α b ε) := by
   have h₁' : ‖(ξ₁ : ℂ) - α‖ ≤ 1 :=
     h₁.trans (rpow_le_one_of_one_le_of_nonpos (one_le_mulHeight₁ ξ₁) (by linarith))
   obtain ⟨k, hkN, hk, hkey⟩ := thue_key_inequality hd hb hbα hε₀ hε hr h₁' ξ₂
   refine ⟨k, hkN, hk, ?_⟩
-  set C₂ := 2 ^ ((1 / 2 + ε) * ((minpoly ℚ α).natDegree : ℝ)) *
-    (1 + ‖α‖) ^ (1 + (1 / 2 + ε) * ((minpoly ℚ α).natDegree : ℝ)) *
-    (48 * b * max 1 (house α)) ^ (((minpoly ℚ α).natDegree : ℝ) * (1 + 1 / ε))
+  set C₂ := thueC₂ α b ε
+  have hC₂ : 0 < C₂ := zero_lt_one.trans_le (one_le_thueC₂ α hb hε₀)
   set N := ⌊(1 / 2 + ε) * ((minpoly ℚ α).natDegree : ℝ) * r⌋₊
   set H₁ := mulHeight₁ ξ₁
   set H₂ := mulHeight₁ ξ₂
@@ -246,7 +260,7 @@ complex algebraic number of degree `d ≥ 2`, let `κ > d / 2 + 1`, and let `b �
 with `b α` integral. Take `0 < ε ≤ (κ - 1 - d / 2) / ((2 κ + 2) d)`, the upper end being
 Evertse's choice of `ε`, and put
 `C₁ = (48 b max(1, house α)) ^ (d (1 + 1 / ε))`,
-`C₂ = 2 ^ ((1 / 2 + ε) d) (1 + |α|) ^ (1 + (1 / 2 + ε) d) C₁` and
+`C₂ = 2 ^ ((1 / 2 + ε) d) (1 + |α|) ^ (1 + (1 / 2 + ε) d) C₁` (that is, `thueC₂ α b ε`) and
 `λ = 1 + 2 (1 + κ d) / (ε d)`. If the rationals `ξ₁` and `ξ` satisfy `|ξ₁ - α| ≤ H(ξ₁) ^ (-κ)`,
 `H(ξ₁) ≥ (2 C₂) ^ (2 / (ε d))` and `|ξ - α| ≤ H(ξ) ^ (-κ)`, then `H(ξ) ≤ H(ξ₁) ^ λ`.
 Evertse's height threshold `max(e, (2 C₂) ^ (2 / (ε d)))` is at least the one assumed here. The
@@ -256,10 +270,7 @@ theorem thue_gap_principle {α : ℂ} (hd : 2 ≤ (minpoly ℚ α).natDegree) {�
     (hbα : IsIntegral ℤ ((b : ℂ) * α)) {ε : ℝ} (hε₀ : 0 < ε)
     (hε : ε ≤ (κ - 1 - (minpoly ℚ α).natDegree / 2) / ((2 * κ + 2) * (minpoly ℚ α).natDegree))
     {ξ₁ ξ : ℚ} (h₁ : ‖(ξ₁ : ℂ) - α‖ ≤ mulHeight₁ ξ₁ ^ (-κ))
-    (hC : (2 * (2 ^ ((1 / 2 + ε) * (minpoly ℚ α).natDegree) *
-        (1 + ‖α‖) ^ (1 + (1 / 2 + ε) * (minpoly ℚ α).natDegree) *
-        (48 * b * max 1 (house α)) ^ ((minpoly ℚ α).natDegree * (1 + 1 / ε)))) ^
-          (2 / (ε * (minpoly ℚ α).natDegree)) ≤ mulHeight₁ ξ₁)
+    (hC : (2 * thueC₂ α b ε) ^ (2 / (ε * (minpoly ℚ α).natDegree)) ≤ mulHeight₁ ξ₁)
     (h : ‖(ξ : ℂ) - α‖ ≤ mulHeight₁ ξ ^ (-κ)) :
     mulHeight₁ ξ ≤
       mulHeight₁ ξ₁ ^ (1 + 2 * (1 + κ * (minpoly ℚ α).natDegree) /
@@ -275,18 +286,8 @@ theorem thue_gap_principle {α : ℂ} (hd : 2 ≤ (minpoly ℚ α).natDegree) {�
     linarith
   have hεd : ε * d < 1 / 2 := by nlinarith
   have hε' : ε < 1 / 2 := by nlinarith
-  have hb1 : (1 : ℝ) ≤ 48 * b * max 1 (house α) := by
-    have : (1 : ℝ) ≤ b := by exact_mod_cast hb
-    nlinarith [le_max_left (1 : ℝ) (house α)]
-  set C₂ := 2 ^ ((1 / 2 + ε) * d) * (1 + ‖α‖) ^ (1 + (1 / 2 + ε) * d) *
-    (48 * b * max 1 (house α)) ^ (d * (1 + 1 / ε))
-  have h2C₂ : 1 < 2 * C₂ := by
-    have := one_le_mul_of_one_le_of_one_le (one_le_mul_of_one_le_of_one_le
-      (one_le_rpow one_le_two (by positivity : 0 ≤ (1 / 2 + ε) * d))
-      (one_le_rpow (by linarith [norm_nonneg α] : (1 : ℝ) ≤ 1 + ‖α‖)
-        (by positivity : 0 ≤ 1 + (1 / 2 + ε) * d)))
-      (one_le_rpow hb1 (by positivity : 0 ≤ d * (1 + 1 / ε)))
-    linarith
+  set C₂ := thueC₂ α b ε
+  have h2C₂ : 1 < 2 * C₂ := by linarith [one_le_thueC₂ α hb hε₀]
   have hH₁ : 1 < mulHeight₁ ξ₁ := (one_lt_rpow h2C₂ (by positivity)).trans_le hC
   set ℓ₁ := log (mulHeight₁ ξ₁)
   have hℓ₁ : 0 < ℓ₁ := log_pos hH₁
