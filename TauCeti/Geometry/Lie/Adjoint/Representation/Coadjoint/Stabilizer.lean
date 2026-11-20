@@ -5,11 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.InvariantForm
 public import Mathlib.RepresentationTheory.Stabilizer
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
+public import TauCeti.Geometry.Lie.Subgroup.OneParameter
+public import TauCeti.RepresentationTheory.InvariantForm
 
+import TauCeti.Algebra.Lie.Coadjoint
+import TauCeti.Geometry.Lie.Adjoint.Representation.Stabilizer
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 
 /-!
@@ -41,6 +46,20 @@ The computation of the Lie algebra rests on the derivative of the curve
 `ξ` fixes `ν` the curve is constant, and its derivative at `0` is `ν ⁅ξ, η⁆`; conversely, if
 `ν ⁅ξ, ·⁆ = 0` the derivative vanishes identically and the curve is constant.
 
+Covectors given by an invariant form have centralizers as stabilizers. Let `B` be a bilinear form
+on `𝔤` invariant under the adjoint action (`TauCeti.Representation.IsInvariantForm`), with trivial
+left radical, for instance an invariant inner product on the Lie algebra of a compact group. Then
+`μ ↦ B μ = B(μ, ·)` intertwines the adjoint and coadjoint representations, so
+
+`G_(B μ) = Z_G(μ) = Z_G(T_μ)`,
+
+the centralizer of the closed one-parameter subgroup `T_μ` of `μ`. The Lie algebra of `G_(B μ)` is
+the centralizer `{ξ | ⁅ξ, μ⁆ = 0}` of `μ`; for this, invariance of `B` under the tangent Lie
+algebra suffices. If `T_μ` is a torus `T`, which happens
+for some `μ` in the Lie algebra of every torus
+(`TauCeti.Lie.IsTorus.exists_closedOneParameterSubgroup_eq`), then `G_(B μ)` is the centralizer
+of `T`.
+
 ## Main results
 
 * `TauCeti.Lie.mem_stabilizer_coadjointRepresentation_iff`: `g ∈ G_ν` exactly when
@@ -54,6 +73,12 @@ The computation of the Lie algebra rests on the derivative of the curve
   `G_ν` is `𝔤_ν`**, transported to left-invariant derivations by evaluation at the identity.
 * `TauCeti.Lie.finrank_lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation`: in particular
   the Lie algebra of `G_ν` has the dimension of `𝔤_ν`.
+* `TauCeti.Lie.stabilizer_coadjointRepresentation_eq_stabilizer_adjointRepresentation`: for an
+  invariant form `B` with trivial left radical, `G_(B μ)` is the adjoint stabilizer of `μ`.
+* `TauCeti.Lie.stabilizer_coadjointRepresentation_eq_centralizer_closedOneParameterSubgroup`:
+  `G_(B μ) = Z_G(T_μ)`.
+* `TauCeti.Lie.lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation_eq_comap_lieAnnihilator`:
+  the Lie algebra of `G_(B μ)` is the centralizer of `μ`.
 
 ## References
 
@@ -61,6 +86,8 @@ The computation of the Lie algebra rests on the derivative of the curve
   Section 1.2.
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
   Springer, 2001, Section 22.
+* T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
+  Chapter IV, § 1.
 -/
 
 public section
@@ -85,6 +112,20 @@ theorem mem_stabilizer_coadjointRepresentation_iff {g : G} :
       ∀ ξ : GroupLieAlgebra I G, ν (adjointContinuousLinearMap (I := I) g ξ) = ν ξ := by
   rw [← Subgroup.inv_mem_iff, Representation.mem_stabilizer, LinearMap.ext_iff]
   simp only [coadjointRepresentation_apply, inv_inv]
+
+variable {B : LinearMap.BilinForm 𝕜 (GroupLieAlgebra I G)}
+
+/-- **The coadjoint stabilizer of an invariant-form covector is an adjoint stabilizer.** If `B`
+is invariant under the adjoint action and has trivial left radical, then `g` fixes the covector
+`B μ` under the coadjoint action exactly when `Ad_g μ = μ`. -/
+theorem stabilizer_coadjointRepresentation_eq_stabilizer_adjointRepresentation
+    (hB : Representation.IsInvariantForm (adjointRepresentation 𝕜 I G) B)
+    (hB' : LinearMap.SeparatingLeft B) (μ : GroupLieAlgebra I G) :
+    (coadjointRepresentation 𝕜 I G).stabilizer (B μ) =
+      (adjointRepresentation 𝕜 I G).stabilizer μ := by
+  rw [coadjointRepresentation_def]
+  exact hB.stabilizer_dual_apply_eq_stabilizer
+    (LinearMap.ker_eq_bot.mp (LinearMap.separatingLeft_iff_ker_eq_bot.mp hB')) μ
 
 end General
 
@@ -187,6 +228,41 @@ theorem finrank_lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation
   let e := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G) h₁
   exact (e.toLinearEquiv.ofSubmodules _ _
     (Submodule.map_comap_eq_of_surjective e.surjective _)).finrank_eq
+
+/-! ### Covectors of an invariant form -/
+
+section InvariantForm
+
+variable {B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)}
+
+/-- **The coadjoint stabilizer of an invariant-form covector is a centralizer.** For an invariant
+form `B` with trivial left radical, the coadjoint stabilizer of `B μ = B(μ, ·)` is the centralizer
+of the closed one-parameter subgroup `T_μ`: `G_(B μ) = Z_G(μ) = Z_G(T_μ)`. -/
+theorem stabilizer_coadjointRepresentation_eq_centralizer_closedOneParameterSubgroup
+    [IsTopologicalGroup G] (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
+    (hB' : LinearMap.SeparatingLeft B) (μ : GroupLieAlgebra I G) :
+    (coadjointRepresentation ℝ I G).stabilizer (B μ) =
+      Subgroup.centralizer (closedOneParameterSubgroup μ : Set G) := by
+  rw [stabilizer_coadjointRepresentation_eq_stabilizer_adjointRepresentation hB hB',
+    stabilizer_adjointRepresentation_eq_centralizer_closedOneParameterSubgroup]
+
+/-- **The Lie algebra of the coadjoint stabilizer of an invariant-form covector is the centralizer
+of `μ`.** For a form `B` invariant under the tangent Lie algebra, with trivial left radical, and
+under the identification of left-invariant derivations with `𝔤` by evaluation at the identity, the
+Lie algebra of `G_(B μ)` is `{ξ | ⁅ξ, μ⁆ = 0}`. A form invariant under
+`TauCeti.Lie.adjointRepresentation` is such a form
+(`TauCeti.Lie.lieInvariant_of_isInvariantForm_adjointRepresentation`). -/
+theorem lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation_eq_comap_lieAnnihilator
+    (hB : B.lieInvariant (GroupLieAlgebra I G)) (hB' : LinearMap.SeparatingLeft B)
+    (μ : GroupLieAlgebra I G) :
+    lieSubalgebraOfSubgroup (I := I) ((coadjointRepresentation ℝ I G).stabilizer (B μ)) =
+      (lieAnnihilator ℝ (GroupLieAlgebra I G) μ).comap
+        (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+          BoundarylessManifold.isInteriorPoint).toLieHom := by
+  rw [lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation,
+    lieAnnihilator_bilinForm_apply_eq_of_lieInvariant hB hB']
+
+end InvariantForm
 
 end Smooth
 
