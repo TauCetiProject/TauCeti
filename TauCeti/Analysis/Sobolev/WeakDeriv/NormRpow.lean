@@ -252,7 +252,7 @@ theorem hasWeakFDerivOn_norm_rpow (hs : 1 - (Module.finrank ℝ E : ℝ) < s) (�
         locallyIntegrable_norm_sub_rpow (mu := μ) (s := s) (by linarith) (0 : E))
       (locallyIntegrable_norm_rpow_smul_innerSL hs) (fun _ hg hc v ↦ by
         simpa only [smul_eq_mul, mul_comm] using
-          integral_norm_rpow_mul_fderiv_eq_neg hs0 hs hg hc v) Ω
+          integral_norm_rpow_mul_fderiv_eq_neg hs0 hs (hg.of_le (by simp)) hc v) Ω
   · exact hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton 0)
       (continuous_norm.rpow_const fun _ ↦ Or.inr hs0.le).continuousOn
       ((locallyIntegrable_norm_rpow_smul_innerSL hs).locallyIntegrableOn _)
