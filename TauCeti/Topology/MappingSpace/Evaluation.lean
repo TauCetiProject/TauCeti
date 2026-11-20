@@ -28,6 +28,8 @@ either space. That the constant maps embed `X` in `Map(B, X)` for nonempty `B` i
 * `TauCeti.isQuotientMap_mappingSpaceEval`: evaluation is a quotient map.
 * `TauCeti.mappingSpaceEval_comp_subtypeVal`: evaluation is constant on the based mapping space,
   the fibre over `x`; its universal lift is `TauCeti.BasedMap.lift`.
+* `TauCeti.basedMapHomeomorphPreimage`: the based mapping space is homeomorphic to the fibre of
+  evaluation over `x`, as a subspace of the mapping space.
 
 ## References
 
@@ -88,5 +90,27 @@ theorem mappingSpaceEval_comp_subtypeVal (b : B) (x : X) :
   simp only [ContinuousMap.comp_apply, mappingSpaceEval_apply, ContinuousMap.subtypeVal_apply,
     ContinuousMap.const_apply]
   exact f.property
+
+/-- The based mapping space `Map_*(B, X)` is the fibre of evaluation at `b` over `x`: the two
+subspaces of `C(B, X)` have the same points. -/
+def basedMapHomeomorphPreimage (b : B) (x : X) :
+    BasedMap B X b x ≃ₜ (mappingSpaceEval b ⁻¹' {x} : Set C(B, X)) where
+  toFun f := ⟨f.val, f.property⟩
+  invFun f := ⟨f.val, f.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- The homeomorphism `TauCeti.basedMapHomeomorphPreimage` keeps the underlying map. -/
+@[simp]
+theorem coe_basedMapHomeomorphPreimage_apply (b : B) (x : X) (f : BasedMap B X b x) :
+    (basedMapHomeomorphPreimage b x f : C(B, X)) = f.val :=
+  (rfl)
+
+/-- The inverse of `TauCeti.basedMapHomeomorphPreimage` keeps the underlying map. -/
+@[simp]
+theorem coe_basedMapHomeomorphPreimage_symm_apply (b : B) (x : X)
+    (f : (mappingSpaceEval b ⁻¹' {x} : Set C(B, X))) :
+    ((basedMapHomeomorphPreimage b x).symm f).val = f :=
+  (rfl)
 
 end TauCeti
