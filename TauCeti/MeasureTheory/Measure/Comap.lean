@@ -6,21 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Comap
+public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 
 import Mathlib.MeasureTheory.Measure.QuasiMeasurePreserving
 
 /-!
-# Composing pullbacks of measures along a measurable embedding
+# Pullbacks of measures along measurable embeddings and to compact subspaces
 
 Pulling a measure back along a measurable embedding `g` and then along an arbitrary map `f` is the
 same as pulling it back along `g ∘ f`. Mathlib's `MeasureTheory.Measure.comap_comap` needs a
 measurable-image hypothesis on `f`; strengthening `g` to a measurable embedding removes every
 hypothesis on `f`, which allows iterated pullbacks along maps such as arbitrary subtype inclusions.
 
+A measure that is finite on compact sets restricts to a finite measure on every compact subspace,
+such as a closed ball of a proper space.
+
 ## Main declarations
 
 * `MeasurableEmbedding.comap_comap`: `(μ.comap g).comap f = μ.comap (g ∘ f)` for a measurable
   embedding `g` and any `f`.
+* `MeasureTheory.Measure.isFiniteMeasure_comap_subtypeVal`: the pullback of a measure finite on
+  compact sets to a compact subspace is finite.
 -/
 
 public section
@@ -60,3 +66,17 @@ theorem comap_comap (hg : MeasurableEmbedding g) (f : α → β) (μ : Measure �
     rwa [image_comp]
 
 end MeasurableEmbedding
+
+namespace MeasureTheory.Measure
+
+variable {α : Type*} [MeasurableSpace α] [TopologicalSpace α] {μ : Measure α}
+  [IsFiniteMeasureOnCompacts μ]
+
+/-- The pullback of a measure that is finite on compact sets to a compact subspace is finite. -/
+instance isFiniteMeasure_comap_subtypeVal {s : Set α} [CompactSpace s] :
+    IsFiniteMeasure (μ.comap ((↑) : s → α)) :=
+  ⟨(comap_apply_le _ _ nullMeasurableSet_univ).trans_lt (by
+    rw [image_univ, Subtype.range_coe]
+    exact (isCompact_iff_compactSpace.2 ‹_›).measure_lt_top)⟩
+
+end MeasureTheory.Measure
