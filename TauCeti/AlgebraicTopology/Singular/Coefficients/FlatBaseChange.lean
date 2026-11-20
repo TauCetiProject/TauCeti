@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import Mathlib.RingTheory.Flat.Localization
+public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Module.Torsion.Localization
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
+public import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Flat base change in singular homology
@@ -24,6 +27,14 @@ coefficients, where the `Tor` term vanishes. It is the simplicial comparison
 `SSet.homologyExtendScalarsIso` applied to the singular simplicial set. The exactness of
 `S ⊗[R] -` is the instance `ModuleCat.preservesFiniteLimits_extendScalars_algebraMap`.
 
+Under this identification a continuous map acts on `S ⊗[R] Hₙ(X; R)` by the base change of its
+action on `Hₙ(X; R)`. So for a continuous self-map `g`, the determinant of `𝟙 - g_*` over `S` is
+the image of its determinant over `R` when `Hₙ(X; R)` is free
+(`TauCeti.det_id_sub_singularChains_homologyMap_eq_algebraMap`). For `R = ℤ` and `S` a field of
+characteristic zero, such as `ℚ` or `ℝ`, which is flat over `ℤ` because it is torsion-free,
+determinants of the action of a map on rational or real homology are computed from its action on
+integral homology.
+
 The main example is a localization `S = M⁻¹R` of `R` at a submonoid `M`, for instance
 `ℚ = (ℤ ∖ 0)⁻¹ℤ` or `ℤ[1/d]`. Since `M⁻¹R ⊗[R] N` vanishes exactly when every element of `N` is
 killed by an element of `M`, the homology with coefficients in `M⁻¹R` vanishes in a degree exactly
@@ -37,6 +48,9 @@ of a space vanishes in a degree exactly when its integral homology is a torsion 
 * `TauCeti.singularHomologyTensorIso`: `S ⊗[R] Hₙ(X; R) ≅ Hₙ(X; S)` for a flat `R`-algebra `S`,
   natural in `X` (`TauCeti.singularHomologyTensorIso_hom_naturality`), with components given by
   `TauCeti.singularHomologyTensorIso_hom`.
+* `TauCeti.det_id_sub_singularChains_homologyMap_eq_algebraMap`: for a continuous self-map `g` and
+  free `Hₙ(X; R)`, the determinant of `𝟙 - g_*` on `Hₙ(X; S)` is the image of its determinant on
+  `Hₙ(X; R)`.
 * `TauCeti.isTorsion'_singularChains_homology_iff`: `Hₙ(X; R)` is `M`-torsion exactly when
   `Hₙ(X; M⁻¹R)` vanishes; `TauCeti.isTorsion'_singularChains_int_homology_iff` is the case
   `R = ℤ`.
@@ -106,6 +120,35 @@ theorem singularHomologyTensorIso_hom_naturality [Module.Flat R S] {X Y : TopCat
   exact (ModuleCat.extendScalarsAlgebraMapIso_inv_naturality_assoc _ _).trans <|
     congrArg (_ ≫ ·) <| ((reassoc_of% h) _).trans <|
       congrArg (_ ≫ ·) (SSet.homologyExtendScalarsIso_hom_naturality _ (algebraMap R S) n)
+
+variable {R S} in
+/-- **Wang-type determinants under flat base change.** If `S` is a flat `R`-algebra and
+`Hₙ(X; R)` is free, then for a continuous self-map `g : X ⟶ X` the determinant of `𝟙 - g_*` on
+`Hₙ(X; S)` is the image in `S` of its determinant on `Hₙ(X; R)`. (When `Hₙ(X; R)` has infinite
+rank, both determinants are `1` by convention.) -/
+theorem det_id_sub_singularChains_homologyMap_eq_algebraMap [Module.Flat R S] {X : TopCat.{u}}
+    (g : X ⟶ X) (n : ℕ) [Module.Free R (((singularChains R).obj X).homology n)] :
+    (LinearMap.id - (HomologicalComplex.homologyMap ((singularChains S).map g) n).hom).det =
+      algebraMap R S
+        (LinearMap.id - (HomologicalComplex.homologyMap ((singularChains R).map g) n).hom).det := by
+  let e := (singularHomologyTensorIso R S X n).toLinearEquiv
+  nontriviality S
+  by_cases hfin : Module.Finite R (((singularChains R).obj X).homology n)
+  · -- Under `S ⊗[R] Hₙ(X; R) ≃ Hₙ(X; S)` the base change of `𝟙 - g_*` becomes `𝟙 - g_*`.
+    rw [← LinearMap.det_baseChange, LinearMap.baseChange_sub, LinearMap.baseChange_id]
+    refine (LinearMap.det_eq_of_comp_eq e (LinearMap.ext fun x ↦ ?_)).symm
+    have h := ConcreteCategory.congr_hom (singularHomologyTensorIso_hom_naturality R S g n) x
+    simp only [ConcreteCategory.comp_apply, ModuleCat.hom_ofHom] at h
+    simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply, LinearEquiv.coe_coe,
+      map_sub, e]
+    exact congrArg (_ - ·) h
+  · -- A free module whose base change to the nontrivial ring `S` is finite is finite.
+    rw [LinearMap.det_eq_one_of_not_module_finite hfin, map_one]
+    refine LinearMap.det_eq_one_of_not_module_finite (fun hS ↦ hfin ?_) _
+    let b := Module.Free.chooseBasis R (((singularChains R).obj X).homology n)
+    have := Module.Finite.equiv e.symm
+    have := Module.Finite.finite_basis (Algebra.TensorProduct.basis S b)
+    exact Module.Finite.of_basis b
 
 /-- For a flat `R`-algebra `S`, the homology with coefficients in `S` vanishes exactly when the
 extension of scalars of the homology with coefficients in `R` does. -/
