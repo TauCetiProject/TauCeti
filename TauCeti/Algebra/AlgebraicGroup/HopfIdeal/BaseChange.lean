@@ -54,8 +54,6 @@ along `h ↦ 1 ⊗ h`.
   change reflects containment of Hopf ideals.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_injective`: faithfully flat base change reflects
   equality of Hopf ideals.
-* `TauCeti.CommHopfAlgCat.comapOfSurjective_inv_hom`: pulling a Hopf ideal back along the inverse
-  of an isomorphism and then along the isomorphism recovers it.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_comapOfIso`: base change commutes with pulling a
   Hopf ideal back along an ambient isomorphism.
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le`: the subgroup generated
@@ -194,15 +192,6 @@ theorem baseChangeHopfIdeal_mono {J J' : HopfIdeal k H} (hJ : J ≤ J') :
     baseChangeHopfIdeal (K := K) J ≤ baseChangeHopfIdeal (K := K) J' := by
   rw [← HopfIdeal.toIdeal_le_toIdeal, baseChangeHopfIdeal_toIdeal, baseChangeHopfIdeal_toIdeal]
   exact Ideal.map_mono (HopfIdeal.toIdeal_le_toIdeal.mpr hJ)
-
-/-- Pulling a Hopf ideal back along the inverse of an isomorphism of commutative Hopf algebras and
-then along the isomorphism recovers it. -/
-theorem comapOfSurjective_inv_hom {A B : _root_.CommHopfAlgCat.{v} k} (e : A ≅ B)
-    (I : HopfIdeal k A) :
-    (I.comapOfSurjective e.inv.hom (ConcreteCategory.bijective_of_isIso e.inv).2).comapOfSurjective
-        e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2 = I := by
-  simp only [HopfIdeal.comapOfSurjective_comapOfSurjective, ← _root_.CommHopfAlgCat.hom_comp,
-    e.hom_inv_id, hom_id_eq_bialgHom_id, HopfIdeal.comapOfSurjective_id]
 
 /-- Base change commutes with pulling a Hopf ideal back along an ambient Hopf-algebra
 isomorphism. -/
