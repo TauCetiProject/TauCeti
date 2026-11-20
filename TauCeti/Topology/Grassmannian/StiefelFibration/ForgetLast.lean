@@ -86,7 +86,7 @@ theorem exists_trivialization_forgetLast (b : finiteOrthonormalFrame 𝕜 r N) :
   · have := isEmpty_of_lt (𝕜 := 𝕜) (Nat.lt_succ_of_le h)
     have : IsEmpty (sphere (0 : EuclideanSpace 𝕜 (Fin (N - r))) 1) := by
       rw [Nat.sub_eq_zero_of_le h]
-      exact ⟨fun x ↦ by simpa [Subsingleton.elim (x : EuclideanSpace 𝕜 (Fin 0)) 0] using x.2⟩
+      infer_instance
     exact ⟨Bundle.Trivialization.ofIsEmpty _ _, by simp⟩
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt h
   obtain ⟨c, hb⟩ := exists_trivialization_unitaryFrameMap (r := r) (m := m + 1) b
