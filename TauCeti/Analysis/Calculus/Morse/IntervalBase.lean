@@ -80,8 +80,8 @@ bijective.
   `TauCeti.intervalBaseFlow_eq_intervalBaseOrbit`: the trajectory `q` through the sigmoid, and
   every flow line through `(0, 1)` as a reparametrization of `q`.
 * `TauCeti.intervalBaseOrbit_eq_exp_mul_inv_sqrt` and
-  `TauCeti.intervalBaseOrbit_eq_one_sub_exp_sq_mul`: `q` near its two ends as a smooth function of
-  the gluing parameters `e^{C s}` and `e^{-C s}`.
+  `TauCeti.intervalBaseOrbit_eq_one_sub_exp_sq_mul`: `q` near its two ends in closed form in the
+  gluing parameters `e^{C s}` and `e^{-C s}`.
 * `TauCeti.mem_Icc_of_isIntegralCurve_intervalBasePotential`: for `C > 0`, a trajectory whose
   backward limit lies in `[-1, 1]` stays in `[-1, 1]`.
 * `TauCeti.exists_eq_intervalBaseOrbit_of_isIntegralCurve` and
@@ -449,8 +449,9 @@ theorem one_sub_intervalBaseOrbit_sq (C s : ℝ) :
   rw [intervalBaseOrbit_sq_eq_sigmoid, Real.sigmoid_neg]
 
 /-- **The end chart of `q` at its source.** In the gluing parameter `ε = e^{C s}`, which tends to
-`0` as `s → -∞` for `C > 0`, the trajectory is `q(s) = ε / √(1 + ε²)`, a smooth function of `ε`
-vanishing to first order at `ε = 0`: `q` leaves `0` at rate `C`. -/
+`0` as `s → -∞` for `C > 0`, the trajectory is `q(s) = ε / √(1 + ε²)`. This theorem is only that
+identity; it shows (without formalizing it) that `q` is a smooth function of `ε` vanishing to first
+order at `ε = 0`, so that `q` leaves `0` at rate `C`. -/
 theorem intervalBaseOrbit_eq_exp_mul_inv_sqrt (C s : ℝ) :
     intervalBaseOrbit C s = Real.exp (C * s) * (√(1 + Real.exp (C * s) ^ 2))⁻¹ := by
   have he := Real.exp_pos (C * s)
@@ -462,9 +463,9 @@ theorem intervalBaseOrbit_eq_exp_mul_inv_sqrt (C s : ℝ) :
   field_simp
 
 /-- **The end chart of `q` at its sink.** In the gluing parameter `ε = e^{-C s}`, which tends to
-`0` as `s → ∞` for `C > 0`, the trajectory is `q(s) = 1 - ε² / (√(1 + ε²) (√(1 + ε²) + 1))`,
-where the factor of `ε²` is a smooth function of `ε` equal to `1 / 2` at `ε = 0`: `q` approaches
-`1` at rate `2 C`. -/
+`0` as `s → ∞` for `C > 0`, the trajectory is `q(s) = 1 - ε² / (√(1 + ε²) (√(1 + ε²) + 1))`.
+This theorem is only that identity; it shows (without formalizing it) that the factor of `ε²` is a
+smooth function of `ε` equal to `1 / 2` at `ε = 0`, so that `q` approaches `1` at rate `2 C`. -/
 theorem intervalBaseOrbit_eq_one_sub_exp_sq_mul (C s : ℝ) :
     intervalBaseOrbit C s = 1 - Real.exp (-(C * s)) ^ 2 *
       (√(1 + Real.exp (-(C * s)) ^ 2) * (√(1 + Real.exp (-(C * s)) ^ 2) + 1))⁻¹ := by
@@ -475,7 +476,7 @@ theorem intervalBaseOrbit_eq_one_sub_exp_sq_mul (C s : ℝ) :
     rw [← Real.exp_nat_mul, show -(2 * C * s) = (2 : ℕ) * -(C * s) by push_cast; ring]
   rw [intervalBaseOrbit_apply, h]
   field_simp
-  nlinarith [hsq]
+  linear_combination -hsq
 
 private theorem inv_sqrt_two_mem_Ioo : (√2)⁻¹ ∈ Ioo (0 : ℝ) 1 :=
   ⟨by positivity, inv_lt_one_of_one_lt₀ Real.one_lt_sqrt_two⟩

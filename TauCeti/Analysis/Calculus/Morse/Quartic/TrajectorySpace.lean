@@ -52,11 +52,12 @@ The point with time coordinates `τ` is `TauCeti.quarticTrajectoryPoint p q τ`,
   trajectory is `ε / √(1 + ε²)`, and in the gluing parameter `ε = e^{-u}` near the sink `1` it is
   `1 - ε² / (√(1 + ε²) (√(1 + ε²) + 1))` (`TauCeti.intervalBaseOrbit_eq_exp_mul_inv_sqrt`,
   `TauCeti.intervalBaseOrbit_eq_one_sub_exp_sq_mul`, in
-  `TauCeti.Analysis.Calculus.Morse.IntervalBase`). Both are smooth functions of `ε` on all of `ℝ`;
-  the first vanishes to order exactly `1` at `ε = 0`, and the second differs from `1` by `ε²`
-  times a smooth factor equal to `1 / 2` there. So in the gluing parameter each moving coordinate
-  of a trajectory extends smoothly to the ends of its time interval, and the exponents `1` and `2`
-  are the rates at which it leaves `0` and approaches `±1`.
+  `TauCeti.Analysis.Calculus.Morse.IntervalBase`). These closed forms are what is formalized
+  here. Read off from them, though not proved in this file: both are smooth functions of `ε` on
+  all of `ℝ`, the first vanishes to order exactly `1` at `ε = 0`, and the second differs from `1`
+  by `ε²` times a smooth factor equal to `1 / 2` there. So in the gluing parameter each moving
+  coordinate of a trajectory extends smoothly to the ends of its time interval, and the exponents
+  `1` and `2` are the rates at which it leaves `0` and approaches `±1`.
 
 ## Main definitions
 
@@ -376,16 +377,8 @@ theorem existsUnique_quarticWellSum_quarticWellSumFlow_eq_iff [Fintype ι]
     (continuous_quarticWellSum.tendsto p).comp hlim.1
   have htop : Tendsto g atTop (𝓝 (quarticWellSum q)) :=
     (continuous_quarticWellSum.tendsto q).comp hlim.2
-  have hcont : Continuous g := by
-    simp only [g, quarticWellSumFlow_quarticTrajectoryPoint hq hpq]
-    refine continuous_quarticWellSum.comp (continuous_pi fun i ↦ ?_)
-    by_cases hpi : p i = 0
-    · simp only [quarticTrajectoryPoint_apply_of_eq_zero hpi]
-      refine continuous_const.mul ?_
-      simp only [intervalBaseOrbit_apply]
-      refine Continuous.inv₀ (by fun_prop) fun s ↦ (Real.sqrt_pos.2 (by positivity)).ne'
-    · simp only [quarticTrajectoryPoint_apply_of_ne_zero hpi]
-      exact continuous_const
+  have hcont : Continuous g := continuous_quarticWellSum.comp (continuous_iff_continuousAt.2 fun s ↦
+    (hasDerivAt_quarticWellSumFlow (quarticTrajectoryPoint_mem_Icc hq hpq τ) s).continuousAt)
   refine ⟨fun ⟨s, hs, _⟩ ↦ hs ▸ ⟨?_, ?_⟩, fun hc ↦ ?_⟩
   · exact (hanti.antitone.le_of_tendsto htop (s + 1)).trans_lt (hanti (lt_add_one s))
   · exact (hanti (sub_one_lt s)).trans_le (hanti.antitone.ge_of_tendsto hbot (s - 1))
