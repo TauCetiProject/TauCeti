@@ -56,16 +56,6 @@ namespace TauCeti.AlgebraicGeometry.InvertibleSheaf
 open Scheme.Modules hiding pullback pullbackComp pullbackId
 open MonoidalCategory
 
-variable {X Z : Scheme.{u}}
-
-/-- Two morphisms of line bundles have equal pullbacks exactly when the underlying morphisms of
-sheaves of modules do. -/
-private lemma pullback_map_eq_iff (g : Z ⟶ X) {M N : InvertibleSheaf X} {a b : M ⟶ N} :
-    (pullback g).map a = (pullback g).map b ↔
-      (Scheme.Modules.pullback g).map a.hom = (Scheme.Modules.pullback g).map b.hom :=
-  ⟨fun h ↦ by simpa [cancel_epi, cancel_mono] using congrArg (·.hom) h,
-    fun h ↦ ObjectProperty.hom_ext _ (by simp [h])⟩
-
 variable {I : Type u} [SmallCategory I] [IsCofiltered I] {F : I ⥤ Scheme.{u}}
   [∀ {i j} (f : i ⟶ j), IsAffineHom (F.map f)] {c : Cone F} (hc : IsLimit c)
 
@@ -79,7 +69,7 @@ theorem exists_pullback_map_eq_of_isLimit {i : I} [CompactSpace (F.obj i)]
     {M N : InvertibleSheaf (F.obj i)} {a b : M ⟶ N}
     (hab : (pullback (c.π.app i)).map a = (pullback (c.π.app i)).map b) :
     ∃ (j : I) (f : j ⟶ i), (pullback (F.map f)).map a = (pullback (F.map f)).map b := by
-  rw [pullback_map_eq_iff] at hab
+  rw [pullback_map_eq_pullback_map_iff] at hab
   -- Around every point, trivialize `M` and `N` on an affine open `U`, so that `a` and `b` become
   -- multiplication by functions on `U`; these agree at the limit, hence at some stage.
   have key (x : F.obj i) : ∃ (U : (F.obj i).Opens) (_ : x ∈ U)
@@ -106,7 +96,7 @@ theorem exists_pullback_map_eq_of_isLimit {i : I} [CompactSpace (F.obj i)]
     obtain ⟨x, hx, hy⟩ := Set.mem_iUnion₂.mp (ht.ge (Set.mem_univ y))
     exact Opens.mem_iSup.mpr ⟨⟨x, hx⟩, hy⟩
   obtain ⟨k, fk, g, hg⟩ := IsCofiltered.wideCospan fun x : t ↦ f x.1
-  refine ⟨k, fk, (pullback_map_eq_iff _).mpr ?_⟩
+  refine ⟨k, fk, (pullback_map_eq_pullback_map_iff _).mpr ?_⟩
   refine hom_ext_of_iSup_eq_top (fun x : t ↦ F.map fk ⁻¹ᵁ U x)
     (by rw [← Scheme.Hom.preimage_iSup, hcov, Scheme.Hom.preimage_top]) fun x ↦ ?_
   rw [restrictFunctor_map_pullback_map_eq_iff _ (eM x) (eN x) (ha x) (hb x), ← hg x, F.map_comp,

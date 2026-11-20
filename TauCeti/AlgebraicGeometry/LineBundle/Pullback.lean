@@ -36,6 +36,8 @@ The generic restriction compatibility used to establish this result is provided 
 * `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_iff_forall_restrict`: a sheaf of modules
   is invertible exactly when its restrictions to the members of an open cover are invertible;
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.pullback`: the pullback functor on line bundles.
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.pullback_map_eq_pullback_map_iff`: two morphisms of
+  line bundles have equal pullbacks exactly when their underlying module morphisms do.
 
 ## References
 
@@ -189,6 +191,14 @@ lemma pullback_map (f : X ⟶ Y) {L K : InvertibleSheaf Y} (φ : L ⟶ K) :
   cases pullback_obj_obj f K
   unfold pullback
   simp
+
+/-- Two morphisms of line bundles have equal pullbacks exactly when the underlying morphisms of
+sheaves of modules do. -/
+lemma pullback_map_eq_pullback_map_iff (f : X ⟶ Y) {L K : InvertibleSheaf Y} {φ ψ : L ⟶ K} :
+    (pullback f).map φ = (pullback f).map ψ ↔
+      (Scheme.Modules.pullback f).map φ.hom = (Scheme.Modules.pullback f).map ψ.hom :=
+  ⟨fun h ↦ by simpa [cancel_epi, cancel_mono] using congrArg (·.hom) h,
+    fun h ↦ ObjectProperty.hom_ext _ (by simp [h])⟩
 
 end InvertibleSheaf
 
