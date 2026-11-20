@@ -15,6 +15,7 @@ import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 import TauCeti.NumberTheory.Padics.Basic
 
 /-!
@@ -87,11 +88,8 @@ theorem one_le_house_pow_mul_norm_of_isUltrametricDist {L : Type*} [NormedField 
           exact IsUltrametricDist.norm_intCast_le_one L c
       _ = ‖σ x‖ := by ring
   -- In `ℝ`, the integer `N` is the norm of `c x`, which is bounded by its house.
-  have hNH : |(N : ℝ)| ≤ H ^ finrank ℚ K := by
-    have h := abs_norm_le_house_pow ((c : K) * x)
-    rw [← hyK, ← Algebra.coe_norm_int y, hyK] at h
-    push_cast at h
-    exact h.trans (pow_le_pow_left₀ (house_nonneg _) hH _)
+  have hNH : |(N : ℝ)| ≤ H ^ finrank ℚ K :=
+    RingOfIntegers.abs_norm_le_pow y fun σ ↦ (norm_embedding_le_house _ σ).trans (hyK ▸ hH)
   have hN0 : (0 : ℝ) < |(N : ℝ)| := by exact_mod_cast abs_pos.mpr hN
   calc (1 : ℝ) = |(N : ℝ)| * |(N : ℝ)|⁻¹ := (mul_inv_cancel₀ hN0.ne').symm
     _ ≤ H ^ finrank ℚ K * ‖σ x‖ :=

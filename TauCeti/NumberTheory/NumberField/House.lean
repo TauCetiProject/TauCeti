@@ -38,7 +38,6 @@ integrality of `δ ^ b * x` is that of `δ ^ a * x` times the integer `δ ^ (b -
 * `NumberField.house_prod_le_prod_house`: the house of a finite product is at most the product of
   the houses.
 * `NumberField.house_natCast_pow_mul_le_of_le`: raising the exponent of a size.
-* `NumberField.abs_norm_le_house_pow`: `|N_{K/ℚ}(x)| ≤ house x ^ [K : ℚ]`.
 * `NumberField.exists_natCast_mul_isIntegral_house_le`: finitely many elements of a number field
   have a common denominator `δ ≥ 1` and a bound `G ≥ δ` on the houses of their multiples by `δ`.
 * `NumberField.exists_numberField_denominator`: finitely many algebraic numbers in a field of
@@ -100,18 +99,6 @@ theorem house_natCast_pow_mul_le_of_le {δ a b : ℕ} (hab : a ≤ b) {G H : ℝ
   have := house_nonneg ((δ : K) ^ a * x)
   have := (Nat.cast_nonneg δ).trans hδ
   gcongr
-
-/-- The norm of `x` from `K` to `ℚ` is at most `house x ^ [K : ℚ]` in absolute value: it is the
-product of the `[K : ℚ]` complex conjugates of `x`. -/
-theorem abs_norm_le_house_pow (x : K) : |(Algebra.norm ℚ x : ℝ)| ≤ house x ^ finrank ℚ K := by
-  have h := norm_norm_le_norm_mul_house_pow x (Classical.arbitrary (K →+* ℂ))
-  rw [← Rat.norm_cast_real, Real.norm_eq_abs] at h
-  calc _ ≤ _ := h
-    _ ≤ house x * house x ^ (finrank ℚ K - 1) := by
-      have := house_nonneg x
-      gcongr
-      exact norm_embedding_le_house x _
-    _ = house x ^ finrank ℚ K := by rw [← pow_succ', Nat.sub_add_cancel finrank_pos]
 
 /-- **Common denominators.** Finitely many elements `x i` of a number field have a common
 denominator `δ ≥ 1`, so that every `δ * x i` is an algebraic integer, and a real bound `G ≥ δ` on
