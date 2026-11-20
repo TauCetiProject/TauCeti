@@ -102,9 +102,9 @@ coordinate `w(g, η)` and the right side is `-2π (c₁(L) - [η / 2π]) · [ω_
 theorem integralTopForm_inner_sub_eq_sub_poincarePairing [SigmaCompactSpace M]
     (hω : ω ∈ compactlySupportedClosedForms I M 2) (hω' : ω ∈ SmoothForm.selfDualForms o)
     (hF : F ∈ closedForms I M 2) (η : SmoothForm I M ℝ 2) :
-    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 ((η - F).1 x) (ω.1 x) •
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 ((η - F).val x) (ω.val x) •
         riemannianVolumeForm o x) =
-      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (η.1 x) (ω.1 x) •
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (η.val x) (ω.val x) •
         riemannianVolumeForm o x) -
       poincarePairing I M o (deRhamCohomology.mk I 2 ⟨F, hF⟩)
         (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩) := by
@@ -129,19 +129,19 @@ theorem integralTopForm_inner_selfDualPart_add_smul_add_sub_eq [SigmaCompactSpac
     (hω : ω ∈ compactlySupportedClosedForms I M 2) (hω' : ω ∈ SmoothForm.selfDualForms o)
     (hF : F ∈ closedForms I M 2) (F₀ ρ : SmoothForm I M ℝ 2) (r : ℝ) :
     integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2
-        ((SmoothForm.selfDualPart o F₀ + (r / 4) • ω + ρ - (F₀ + (2 : ℝ) • F)).1 x) (ω.1 x) •
+        ((SmoothForm.selfDualPart o F₀ + (r / 4) • ω + ρ - (F₀ + (2 : ℝ) • F)).val x) (ω.val x) •
         riemannianVolumeForm o x) =
-      r / 4 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ω.1 x)
-          (ω.1 x) • riemannianVolumeForm o x) -
+      r / 4 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ω.val x)
+          (ω.val x) • riemannianVolumeForm o x) -
         2 * poincarePairing I M o (deRhamCohomology.mk I 2 ⟨F, hF⟩)
           (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩) +
-        integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ρ.1 x) (ω.1 x) •
+        integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ρ.val x) (ω.val x) •
           riemannianVolumeForm o x) := by
   have hc : ω ∈ compactlySupportedForms I M 2 :=
     compactlySupportedClosedForms_le_compactlySupportedForms I 2 hω
   -- The anti-self-dual part `F₀⁺ - F₀ = -F₀⁻` pairs to zero with `ω` at every point.
   have h₀ : integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2
-      ((SmoothForm.selfDualPart o F₀ - F₀).1 x) (ω.1 x) • riemannianVolumeForm o x) = 0 := by
+      ((SmoothForm.selfDualPart o F₀ - F₀).val x) (ω.val x) • riemannianVolumeForm o x) = 0 := by
     have hω'' := (SmoothForm.coe_mem_selfDualForms_iff (o := o)).mpr hω'
     convert integralTopForm_zero o using 2
     funext x
@@ -171,23 +171,23 @@ with such bounds. -/
 theorem mul_div_le_integralTopForm_inner_selfDualPart_add_smul_add_sub [CompactSpace M]
     (hω : ω ∈ compactlySupportedClosedForms I M 2) (hω' : ω ∈ SmoothForm.selfDualForms o)
     (hF : F ∈ closedForms I M 2) (F₀ ρ : SmoothForm I M ℝ 2) {r a b c : ℝ} (ha : 0 < a)
-    (haω : a ≤ integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ω.1 x)
-      (ω.1 x) • riemannianVolumeForm o x))
+    (haω : a ≤ integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ω.val x)
+      (ω.val x) • riemannianVolumeForm o x))
     (hb : |poincarePairing I M o (deRhamCohomology.mk I 2 ⟨F, hF⟩)
       (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩)| ≤ b)
-    (hc : integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ρ.1 x)
-      (ρ.1 x) • riemannianVolumeForm o x) ≤ c)
+    (hc : integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ρ.val x)
+      (ρ.val x) • riemannianVolumeForm o x) ≤ c)
     (hr : 4 * a + 16 * b + 4 * c ≤ r * a) :
     r * a / 8 ≤ integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2
-        ((SmoothForm.selfDualPart o F₀ + (r / 4) • ω + ρ - (F₀ + (2 : ℝ) • F)).1 x) (ω.1 x) •
+        ((SmoothForm.selfDualPart o F₀ + (r / 4) • ω + ρ - (F₀ + (2 : ℝ) • F)).val x) (ω.val x) •
         riemannianVolumeForm o x) := by
   rw [integralTopForm_inner_selfDualPart_add_smul_add_sub_eq o hω hω' hF]
-  set A := integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ω.1 x)
-    (ω.1 x) • riemannianVolumeForm o x)
-  set R := integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ρ.1 x)
-    (ρ.1 x) • riemannianVolumeForm o x)
-  set Q := integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ρ.1 x)
-    (ω.1 x) • riemannianVolumeForm o x)
+  set A := integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ω.val x)
+    (ω.val x) • riemannianVolumeForm o x)
+  set R := integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ρ.val x)
+    (ρ.val x) • riemannianVolumeForm o x)
+  set Q := integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) 2 (ρ.val x)
+    (ω.val x) • riemannianVolumeForm o x)
   set P := poincarePairing I M o (deRhamCohomology.mk I 2 ⟨F, hF⟩)
     (compactlySupportedDeRhamCohomology.mk I 2 ⟨ω, hω⟩)
   -- Young's inequality `-2 ⟨ρ, ω⟩₂ ≤ ‖ρ‖₂² + ‖ω‖₂²`.
@@ -195,7 +195,7 @@ theorem mul_div_le_integralTopForm_inner_selfDualPart_add_smul_add_sub [CompactS
     SmoothForm.neg_add_le_two_mul_integralTopForm_inner o rfl
       (by simp [compactlySupportedForms_eq_top])
       (compactlySupportedClosedForms_le_compactlySupportedForms I 2 hω)
-  have hR₀ : 0 ≤ R := RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o ρ.1
+  have hR₀ : 0 ≤ R := RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o ρ.val
   have hP : P ≤ b := (le_abs_self P).trans hb
   -- `r ≥ 4` from `4 a ≤ r a`, so the coefficient `r / 4 - 1 / 2` of `A ≥ a` is positive. Then
   -- `r A / 4 - 2 P + Q ≥ (r / 4 - 1 / 2) A - 2 b - c / 2 ≥ (r / 4 - 1 / 2) a - 2 b - c / 2`,

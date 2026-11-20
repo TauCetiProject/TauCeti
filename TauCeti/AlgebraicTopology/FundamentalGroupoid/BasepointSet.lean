@@ -60,14 +60,14 @@ abbrev incl : FundamentalGroupoidOn S ⥤ FundamentalGroupoid X :=
 `f` sending `S` into `T`. -/
 @[expose]
 def map (f : C(X, Y)) (hf : MapsTo f S T) : FundamentalGroupoidOn S ⥤ FundamentalGroupoidOn T where
-  obj s := ⟨f s.1, hf s.2⟩
+  obj s := ⟨f s.val, hf s.property⟩
   map g := InducedCategory.homMk ((FundamentalGroupoid.map f).map g.hom)
   map_id _ := InducedCategory.hom_ext ((FundamentalGroupoid.map f).map_id _)
   map_comp _ _ := InducedCategory.hom_ext ((FundamentalGroupoid.map f).map_comp _ _)
 
 @[simp]
 theorem map_obj (f : C(X, Y)) (hf : MapsTo f S T) (s : FundamentalGroupoidOn S) :
-    (map f hf).obj s = ⟨f s.1, hf s.2⟩ :=
+    (map f hf).obj s = ⟨f s.val, hf s.property⟩ :=
   (rfl)
 
 @[simp]

@@ -80,9 +80,9 @@ theorem prod_def (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) :
 @[simp]
 theorem prod_apply (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) (p : M × N)
     (v : Fin 2 → TangentSpace (I.prod J) p) :
-    (prod σ τ).1 p v =
-      σ.1 p.1 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).1) +
-        τ.1 p.2 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).2) := by
+    (prod σ τ).val p v =
+      σ.val p.1 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).1) +
+        τ.val p.2 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).2) := by
   simp only [Manifold.tangentSpaceProdEquiv_apply, prod_def, SmoothForm.add_toRoughForm,
     Pi.add_apply, ContinuousAlternatingMap.add_apply, SmoothForm.mpullback_apply, mfderiv_fst,
     mfderiv_snd]
@@ -163,13 +163,13 @@ theorem volumeForm_prod_apply_append [FiniteDimensional ℝ E] [FiniteDimensiona
     (hn : finrank ℝ E = 2 * n) (hm : finrank ℝ F = 2 * m) (σ : SmoothTwoForm I M)
     (τ : SmoothTwoForm J N) (p : M × N) (u : Fin (2 * n) → TangentSpace I p.1)
     (w : Fin (2 * m) → TangentSpace J p.2) :
-    ((prod σ τ).volumeForm (n + m)).1 p (fun r ↦ (Manifold.tangentSpaceProdEquiv p).symm
+    ((prod σ τ).volumeForm (n + m)).val p (fun r ↦ (Manifold.tangentSpaceProdEquiv p).symm
         (Fin.append (fun i ↦ (u i, 0)) (fun j ↦ (0, w j)) (Fin.cast (Nat.mul_add 2 n m) r))) =
-      (σ.volumeForm n).1 p.1 u * (τ.volumeForm m).1 p.2 w := by
+      (σ.volumeForm n).val p.1 u * (τ.volumeForm m).val p.2 w := by
   -- On `T_p (M × N) = T_(p.1) M × T_(p.2) N`, the product form is `pr₁^* σ + pr₂^* τ`.
-  have hσ : (prod σ τ).1 p =
-      ((σ.1 p.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ _ _) +
-        (τ.1 p.2).compContinuousLinearMap (ContinuousLinearMap.snd ℝ _ _)).compContinuousLinearMap
+  have hσ : (prod σ τ).val p =
+      ((σ.val p.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ _ _) +
+        (τ.val p.2).compContinuousLinearMap (ContinuousLinearMap.snd ℝ _ _)).compContinuousLinearMap
         (Manifold.tangentSpaceProdEquiv (I := I) (J := J) p).toContinuousLinearMap := by
     ext v
     rw [prod_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
@@ -189,6 +189,6 @@ theorem volumeForm_prod_apply_append [FiniteDimensional ℝ E] [FiniteDimensiona
     smul_eq_mul, smul_eq_mul, hσ, ← ContinuousAlternatingMap.wedgePow_compContinuousLinearMap,
     ContinuousAlternatingMap.compContinuousLinearMap_apply, hfam]
   exact ContinuousAlternatingMap.wedgePow_fst_add_snd_apply_append (V := E) (W := F) hn hm
-    (σ.1 p.1) (τ.1 p.2) u w
+    (σ.val p.1) (τ.val p.2) u w
 
 end TauCeti.SmoothTwoForm

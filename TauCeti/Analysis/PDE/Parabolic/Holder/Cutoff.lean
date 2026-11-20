@@ -175,7 +175,7 @@ private theorem exists_eq_comp_time {a b : ℝ} (hab : a < b) {g g' : ℝ → �
       ∀ p : slab (E := E) a b, timeDerivL χ p = g' (p : ParabolicSpaceTime E).time := by
   have hcont (g : ℝ → ℝ) (hg : Continuous g) :
       Continuous fun p : slab (E := E) a b ↦ g (p : ParabolicSpaceTime E).time :=
-    hg.comp (continuous_time.comp continuous_subtype_val)
+    hg.comp (continuous_time.comp continuous_subtypeVal)
   let u : slab (E := E) a b →ᵇ ℝ := BoundedContinuousFunction.ofNormedAddCommGroup _
     (hcont g (continuous_iff_continuousAt.2 fun t ↦ (hg t).continuousAt)) A fun p ↦ hgA _
   let ut : HolderSpace α (slab (E := E) a b) ℝ := HolderSpace.ofBoundedContinuousFunction
@@ -186,7 +186,7 @@ private theorem exists_eq_comp_time {a b : ℝ} (hab : a < b) {g g' : ℝ → �
   refine ⟨mk u 0 0 ut (fun t x ↦ by simpa [u] using hasFDerivAt_const (𝕜 := ℝ) (g t) x)
     (fun t x ↦ by simpa using hasFDerivAt_const (𝕜 := ℝ) (0 : E →L[ℝ] ℝ) x)
     (fun x t ↦ ((hg t).hasDerivWithinAt.congr_of_mem (f₁ := timeExtension hab.le u x)
-      (fun τ hτ ↦ by simp [u, timeExtension_def, projIcc_of_mem hab.le hτ]) t.2).congr_deriv
+      (fun τ hτ ↦ by simp [u, timeExtension_def, projIcc_of_mem hab.le hτ]) t.property).congr_deriv
       (by rw [hut, time_slabMk])), fun p ↦ by simp [u], spatialFDerivL_mk ..,
     fun p ↦ by rw [timeDerivL_mk, hut]⟩
 

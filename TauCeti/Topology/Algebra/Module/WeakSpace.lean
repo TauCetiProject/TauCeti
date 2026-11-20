@@ -89,7 +89,7 @@ theorem exists_ne_zero_forall_toWeakSpace_smul_mem_of_mem_nhds_zero
   rw [nhds_pi] at ht
   obtain ⟨I, s, hs, hst⟩ := Filter.mem_pi'.1 ht
   -- The common kernel of the functionals in `I` has finite codimension, so it is nonzero.
-  let Φ : E →ₗ[𝕜] (I → 𝕜) := LinearMap.pi fun f ↦ (f.1 : E →L[𝕜] 𝕜).toLinearMap
+  let Φ : E →ₗ[𝕜] (I → 𝕜) := LinearMap.pi fun f ↦ (f.val : E →L[𝕜] 𝕜).toLinearMap
   obtain ⟨x, hx, hx0⟩ : ∃ x ∈ LinearMap.ker Φ, x ≠ 0 :=
     Submodule.exists_mem_ne_zero_of_ne_bot fun hker ↦
       hE (FiniteDimensional.of_injective Φ (LinearMap.ker_eq_bot.1 hker))

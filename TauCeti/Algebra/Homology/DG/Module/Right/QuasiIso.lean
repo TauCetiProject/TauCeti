@@ -140,7 +140,7 @@ theorem isQuasiIso_of_homotopyInverse (f : DGRightModuleHom hM hN) (g : N →ₗ
       at hc
     obtain ⟨y, hy⟩ := hc
     rw [hM.quotientMk_eq_zero_iff, hM.mem_boundaries]
-    have hz : dM (z : M) = 0 := hM.mem_cycles.mp z.2
+    have hz : dM (z : M) = 0 := hM.mem_cycles.mp z.property
     refine ⟨g y - K z, ?_⟩
     have key := hK z
     rw [hz, map_zero, add_zero, ← hy, ← hg] at key
@@ -148,7 +148,7 @@ theorem isQuasiIso_of_homotopyInverse (f : DGRightModuleHom hM hN) (g : N →ₗ
     abel
   · intro c
     obtain ⟨w, rfl⟩ := Submodule.Quotient.mk_surjective _ c
-    have hw : dN (w : N) = 0 := hN.mem_cycles.mp w.2
+    have hw : dN (w : N) = 0 := hN.mem_cycles.mp w.property
     have hgw : g (w : N) ∈ hM.cycles := by
       rw [hM.mem_cycles, hg, hw, map_zero]
     refine ⟨Submodule.Quotient.mk ⟨g w, hgw⟩, ?_⟩
@@ -185,7 +185,7 @@ theorem isQuasiIso_iff_forall_exists (f : DGRightModuleHom hM hN) :
     rw [Submodule.coe_sub, cyclesMap_apply_coe] at hv
     have hv' : dN v = f c - (y - f u₀) := hv
     refine ⟨u₀ + c, -v, ?_, ?_⟩
-    · rw [map_add, hu₀', hM.mem_cycles.mp c.2, add_zero]
+    · rw [map_add, hu₀', hM.mem_cycles.mp c.property, add_zero]
     · rw [map_add, map_neg, hv']
       abel
   · intro H
@@ -196,12 +196,12 @@ theorem isQuasiIso_iff_forall_exists (f : DGRightModuleHom hM hN) :
       rw [cohomologyMap_mk, hN.quotientMk_eq_zero_iff, hN.mem_boundaries, cyclesMap_apply_coe]
         at hz
       obtain ⟨y, hy⟩ := hz
-      obtain ⟨u, -, hu, -⟩ := H z y (hM.mem_cycles.mp z.2) hy.symm
+      obtain ⟨u, -, hu, -⟩ := H z y (hM.mem_cycles.mp z.property) hy.symm
       rw [hM.quotientMk_eq_zero_iff, hM.mem_boundaries]
       exact ⟨u, hu⟩
     · intro w
       obtain ⟨w, rfl⟩ := Submodule.Quotient.mk_surjective _ w
-      obtain ⟨u, v, hu, huv⟩ := H 0 w (map_zero dM) (by rw [map_zero, hN.mem_cycles.mp w.2])
+      obtain ⟨u, v, hu, huv⟩ := H 0 w (map_zero dM) (by rw [map_zero, hN.mem_cycles.mp w.property])
       refine ⟨Submodule.Quotient.mk ⟨u, hM.mem_cycles.mpr hu⟩, ?_⟩
       rw [cohomologyMap_mk, Submodule.Quotient.eq, hN.mem_boundaries]
       refine ⟨-v, ?_⟩

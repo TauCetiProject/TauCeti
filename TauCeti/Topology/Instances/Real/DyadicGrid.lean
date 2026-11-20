@@ -79,7 +79,7 @@ for a singleton interval. -/
 theorem dense_setOfPred_eq_add_mul_div_two_pow {a b : ℝ} (hab : a ≤ b) :
     Dense {t : Icc a b | ∃ n k : ℕ, k ≤ 2 ^ n ∧ (t : ℝ) = a + k * ((b - a) / 2 ^ n)} := by
   rcases hab.eq_or_lt with rfl | hab
-  · exact fun t ↦ subset_closure ⟨0, 0, by simp, by simpa using t.2.2.antisymm t.2.1⟩
+  · exact fun t ↦ subset_closure ⟨0, 0, by simp, by simpa using t.property.2.antisymm t.property.1⟩
   refine Metric.dense_iff.2 fun t r hr ↦ ?_
   have hba : 0 < b - a := sub_pos.2 hab
   obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one (div_pos hr hba) (one_half_lt_one (α := ℝ))
@@ -89,15 +89,16 @@ theorem dense_setOfPred_eq_add_mul_div_two_pow {a b : ℝ} (hab : a ≤ b) :
     h = (1 / 2) ^ n * (b - a) := by rw [h_def, one_div_pow]; ring
     _ < r := (lt_div_iff₀ hba).1 hn
   set k := ⌊((t : ℝ) - a) / h⌋₊
-  have hta : 0 ≤ ((t : ℝ) - a) / h := div_nonneg (sub_nonneg.2 t.2.1) hh.le
+  have hta : 0 ≤ ((t : ℝ) - a) / h := div_nonneg (sub_nonneg.2 t.property.1) hh.le
   have hk₁ : (k : ℝ) * h ≤ t - a := (le_div_iff₀ hh).1 (Nat.floor_le hta)
   have hk₂ : (t : ℝ) - a < (k + 1) * h := (div_lt_iff₀ hh).1 (Nat.lt_floor_add_one _)
   have hkn : k ≤ 2 ^ n := by
     refine Nat.floor_le_of_le ?_
     push_cast
     rw [div_le_iff₀ hh, h_def, mul_div_cancel₀ _ (by positivity)]
-    linarith [t.2.2]
-  refine ⟨⟨a + k * h, by nlinarith [hh.le, (k.cast_nonneg : (0 : ℝ) ≤ k)], by linarith [t.2.2]⟩,
+    linarith [t.property.2]
+  refine ⟨⟨a + k * h, by nlinarith [hh.le, (k.cast_nonneg : (0 : ℝ) ≤ k)], by linarith
+      [t.property.2]⟩,
     ?_, n, k, hkn, rfl⟩
   rw [Metric.mem_ball, Subtype.dist_eq, Real.dist_eq, abs_lt]
   constructor <;> simp only <;> nlinarith
@@ -113,7 +114,7 @@ theorem dense_iUnion_range_dyadicPoint {a b : ℝ} (hab : a ≤ b) :
 /-- The `k`th level-`n` dyadic time `k T / 2 ^ n` of the horizon `[0, T]`, as a time of a
 process indexed by `ℝ≥0`. Its real value is that of `dyadicPoint T.coe_nonneg n k`. -/
 noncomputable def dyadicTime (T : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) : ℝ≥0 :=
-  ⟨dyadicPoint T.coe_nonneg n k, (dyadicPoint T.coe_nonneg n k).2.1⟩
+  ⟨dyadicPoint T.coe_nonneg n k, (dyadicPoint T.coe_nonneg n k).property.1⟩
 
 /-- The real value of a dyadic time is that of the corresponding point of `[0, T]`. -/
 theorem coe_dyadicTime_eq_coe_dyadicPoint (T : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) :
@@ -152,7 +153,7 @@ theorem dyadicTime_monotone (T : ℝ≥0) (n : ℕ) : Monotone (dyadicTime T n) 
 
 /-- Dyadic times lie in the horizon. -/
 theorem dyadicTime_le (T : ℝ≥0) (n : ℕ) (k : Fin (2 ^ n + 1)) : dyadicTime T n k ≤ T :=
-  NNReal.coe_le_coe.1 (dyadicPoint T.coe_nonneg n k).2.2
+  NNReal.coe_le_coe.1 (dyadicPoint T.coe_nonneg n k).property.2
 
 /-- For a positive horizon, the dyadic times of each level are strictly increasing. -/
 theorem dyadicTime_strictMono {T : ℝ≥0} (hT : 0 < T) (n : ℕ) :

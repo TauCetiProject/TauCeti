@@ -117,7 +117,7 @@ theorem toFrame_op_smul (s : SpinStructure F E n) (g : realCliffordSpinGroupZero
   obtain ⟨φ₀, hq₀⟩ := s.exists_toFrame_eq_mk ⟨x, p⟩
   obtain ⟨φ₁, hq₁⟩ := s.exists_toFrame_eq_mk ⟨x, op g • p⟩
   set u : unitary (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) :=
-    (realCliffordSpinToEuclideanSpecialOrthogonal n g).1
+    (realCliffordSpinToEuclideanSpecialOrthogonal n g).val
   rw [TotalSpace.smul_mk, hq₀, hq₁,
     OrthonormalFrameBundle.eq_mk_of_proj_eq (op u • (⟨x, φ₀⟩ : OrthonormalFrameBundle ℝ F E _))
       (OrthonormalFrameBundle.proj_smul _ _)]
@@ -176,7 +176,7 @@ theorem op_negOne_smul_ne_self (s : SpinStructure F E n)
       (nondegenerate_realCliffordForm n 0).ne_zero) • p ≠ p := by
   intro h
   have hfib : op (spinGroup.negOne (realCliffordForm n 0)
-      (nondegenerate_realCliffordForm n 0).ne_zero) • p.2 = p.2 :=
+      (nondegenerate_realCliffordForm n 0).ne_zero) • p.snd = p.snd :=
     TotalSpace.mk_inj.1 h
   exact spinGroup.negOne_ne_one (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0).ne_zero
     (PrincipalBundle.smul_eq_self_iff.1 hfib)
@@ -203,7 +203,7 @@ theorem toOrientationCover_toFrame_op_smul (s : SpinStructure F E n)
   rw [s.toFrame_op_smul]
   exact OrthonormalFrameBundle.toOrientationCover_smul_of_det_pos Fact.out o
     (mem_specialOrthogonalGroup_iff_det_pos.1
-      (realCliffordSpinToEuclideanSpecialOrthogonal n g).2) (s.toFrame p)
+      (realCliffordSpinToEuclideanSpecialOrthogonal n g).property) (s.toFrame p)
 
 /-- Points in the same fibre of `P` induce the same point of the orientation double cover. -/
 theorem toOrientationCover_toFrame_eq_of_proj_eq (s : SpinStructure F E n)
@@ -338,10 +338,10 @@ theorem division_toEquiv_eq {s : SpinStructure F E n} (φ : s.Equiv s) (x : X) (
 `p ↦ division _ p.2 (φ.toEquiv p.proj p.2)` is continuous on the total space of `s.P`. -/
 theorem continuous_division_toEquiv {s : SpinStructure F E n} (φ : s.Equiv s) :
     Continuous fun p : TotalSpace (realCliffordSpinGroupZero n) s.P ↦
-      PrincipalBundle.division (realCliffordSpinGroupZero n) p.2 (φ.toEquiv p.proj p.2) :=
+      PrincipalBundle.division (realCliffordSpinGroupZero n) p.snd (φ.toEquiv p.proj p.snd) :=
   Continuous.division (f := TotalSpace.proj)
-    (p := fun p : TotalSpace (realCliffordSpinGroupZero n) s.P ↦ p.2)
-    (q := fun p : TotalSpace (realCliffordSpinGroupZero n) s.P ↦ φ.toEquiv p.proj p.2)
+    (p := fun p : TotalSpace (realCliffordSpinGroupZero n) s.P ↦ p.snd)
+    (q := fun p : TotalSpace (realCliffordSpinGroupZero n) s.P ↦ φ.toEquiv p.proj p.snd)
     continuous_id φ.continuous_toFun
 
 /-- Over a preconnected base, every automorphism of a Spin structure is either the identity or the
@@ -354,9 +354,9 @@ theorem eq_refl_or_eq_negOne [PreconnectedSpace X] {s : SpinStructure F E n} (φ
     PrincipalBundle.division (realCliffordSpinGroupZero n) (Classical.arbitrary (s.P x))
       (φ.toEquiv x (Classical.arbitrary (s.P x)))
   have hd_eq (p : TotalSpace (realCliffordSpinGroupZero n) s.P) :
-      d p.proj = PrincipalBundle.division (realCliffordSpinGroupZero n) p.2
-        (φ.toEquiv p.proj p.2) :=
-    φ.division_toEquiv_eq p.proj _ p.2
+      d p.proj = PrincipalBundle.division (realCliffordSpinGroupZero n) p.snd
+        (φ.toEquiv p.proj p.snd) :=
+    φ.division_toEquiv_eq p.proj _ p.snd
   have hd_cont : Continuous d := by
     rw [(FiberBundle.isQuotientMap_proj
       (F := realCliffordSpinGroupZero n) (E := s.P)).continuous_iff]
@@ -723,8 +723,8 @@ theorem isQuotientCoveringMap_toOrientedFrames (s : SpinStructure F E n)
     ⟨fun k ↦ continuous_const_smul (k : (realCliffordSpinGroupZero n)ᵐᵒᵖ)⟩
   have hfree : IsCancelSMul K (TotalSpace (realCliffordSpinGroupZero n) s.P) :=
     { right_cancel' k₁ k₂ p h := by
-        have hfib : (k₁ : (realCliffordSpinGroupZero n)ᵐᵒᵖ) • p.2 =
-            (k₂ : (realCliffordSpinGroupZero n)ᵐᵒᵖ) • p.2 :=
+        have hfib : (k₁ : (realCliffordSpinGroupZero n)ᵐᵒᵖ) • p.snd =
+            (k₂ : (realCliffordSpinGroupZero n)ᵐᵒᵖ) • p.snd :=
           TotalSpace.mk_inj.1 h
         exact Subtype.ext (MulOpposite.unop_injective (PrincipalBundle.smul_eq_smul_iff.1 hfib)) }
   refine (isQuotientCoveringMap_iff_isCoveringMap_and (s.toOrientedFrames o) K).2
@@ -738,8 +738,9 @@ theorem isQuotientCoveringMap_toOrientedFrames (s : SpinStructure F E n)
         (nondegenerate_realCliffordForm n 0).ne_zero), ?_⟩, rfl⟩
       exact (mem_ker_realCliffordSpinToEuclideanSpecialOrthogonal_iff n).2 (.inr rfl)
   · rintro ⟨k, rfl⟩
-    have hk : k.1.unop ∈ MonoidHom.ker (realCliffordSpinToEuclideanSpecialOrthogonal n :
-        realCliffordSpinGroupZero n →* specialOrthogonalGroup (EuclideanSpace ℝ (Fin n))) := k.2
+    have hk : k.val.unop ∈ MonoidHom.ker (realCliffordSpinToEuclideanSpecialOrthogonal n :
+        realCliffordSpinGroupZero n →* specialOrthogonalGroup (EuclideanSpace ℝ (Fin n)))
+            := k.property
     rcases (mem_ker_realCliffordSpinToEuclideanSpecialOrthogonal_iff n).1 hk with h1 | hneg
     · left
       have hk1 : k = 1 := Subtype.ext (MulOpposite.unop_injective h1)

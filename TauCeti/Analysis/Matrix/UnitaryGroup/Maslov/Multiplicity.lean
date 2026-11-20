@@ -66,7 +66,7 @@ private theorem souriau_mulVec_eq_self_iff (U : unitaryGroup n ℂ) {x : n → �
             vecMul_transpose]
       _ = (U : Matrix n n ℂ)ᵀ *ᵥ x := by
           conv_lhs => rw [← h]
-          rw [mulVec_mulVec, ← star_eq_conjTranspose, Unitary.star_mul_self_of_mem U.2,
+          rw [mulVec_mulVec, ← star_eq_conjTranspose, Unitary.star_mul_self_of_mem U.property,
             one_mulVec]
   · rintro ⟨y, hy, rfl⟩
     congr 1
@@ -85,7 +85,7 @@ private theorem mul_map_star_souriau (U : unitaryGroup n ℂ) :
     simp [Matrix.mul_apply]
   rw [h, coe_souriau, Matrix.mul_assoc, ← Matrix.mul_assoc (U : Matrix n n ℂ)ᵀ,
     transpose_mul_map_star, Matrix.one_mul, ← star_eq_conjTranspose]
-  exact Unitary.mul_star_self_of_mem U.2
+  exact Unitary.mul_star_self_of_mem U.property
 
 /-- The eigenvectors of a Souriau map at `1` are stable under conjugation. -/
 private theorem souriau_mulVec_star_eq_star (U : unitaryGroup n ℂ) {x : n → ℂ}

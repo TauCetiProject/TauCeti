@@ -188,6 +188,6 @@ theorem isNondegenerate_restrictEssentialSubspace :
     π.mem_orthogonal_essentialSubspace_iff.2 fun a => by
       simpa using congrArg Subtype.val (hξ a)
   exact Subtype.ext <| Submodule.mem_bot ℂ |>.1 <|
-    π.essentialSubspace.inf_orthogonal_eq_bot ▸ ⟨ξ.2, horth⟩
+    π.essentialSubspace.inf_orthogonal_eq_bot ▸ ⟨ξ.property, horth⟩
 
 end NonUnitalStarAlgHom

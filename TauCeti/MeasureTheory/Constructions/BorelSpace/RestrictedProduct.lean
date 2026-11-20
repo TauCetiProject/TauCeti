@@ -357,7 +357,7 @@ theorem comap_coe_eq_measurableSpace [Countable ι] [∀ i, TopologicalSpace (R 
     MeasurableSet.iInter fun m ↦ MeasurableSet.iUnion fun n ↦
       MeasurableSet.iUnion fun _ ↦ hWm n, ?_⟩
   ext x
-  have hfin : (e '' {i | x i ∉ A i}).Finite := (mem_cofinite.mp x.2).image e
+  have hfin : (e '' {i | x i ∉ A i}).Finite := (mem_cofinite.mp x.property).image e
   let m₀ : ℕ := hfin.toFinset.sup id + 1
   have hm₀ : ∀ n ≥ m₀, (x : Π i, R i) ∈ W n ↔ x ∈ U := fun n hn ↦ by
     have hxS : ∀ᶠ i in 𝓟 (S n), x i ∈ A i := eventually_principal.mpr fun i hi ↦ by
@@ -433,7 +433,7 @@ theorem measurableSpace_eq_generateFrom_cofiniteMeasurableBoxes [Countable ι]
         ⋃ F : Finset ι, box (Function.update (C F) i₀ B) := by
       ext x
       simp only [mem_preimage, Function.comp_apply, Function.eval, mem_iUnion, mem_box]
-      refine ⟨fun hx ↦ ⟨(mem_cofinite.mp x.2).toFinset, fun i ↦ ?_⟩, fun ⟨F, hF⟩ ↦ ?_⟩
+      refine ⟨fun hx ↦ ⟨(mem_cofinite.mp x.property).toFinset, fun i ↦ ?_⟩, fun ⟨F, hF⟩ ↦ ?_⟩
       · rcases eq_or_ne i i₀ with rfl | hi₀
         · simpa using hx
         · rw [Function.update_of_ne hi₀]
@@ -441,7 +441,7 @@ theorem measurableSpace_eq_generateFrom_cofiniteMeasurableBoxes [Countable ι]
           split_ifs with hi
           · exact mem_univ _
           · by_contra hnot
-            exact hi (Finset.mem_union_right _ ((mem_cofinite.mp x.2).mem_toFinset.mpr hnot))
+            exact hi (Finset.mem_union_right _ ((mem_cofinite.mp x.property).mem_toFinset.mpr hnot))
       · simpa using hF i₀
     rw [hpre]
     refine @MeasurableSet.iUnion _ _

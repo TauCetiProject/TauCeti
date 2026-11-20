@@ -328,7 +328,7 @@ def W1p0.restrictSubCompHyperplaneReflectionL (hp : p ≠ ⊤) (hH : ∀ x, x �
         (w1p0Submodule mu U p).toSubmodule.subtypeL))
     (w1p0Submodule mu (U ⊓ H) p).toSubmodule
     fun φ => by
-      simpa using W1p.restrictL_sub_compHyperplaneReflectionL_mem_w1p0Submodule hp hH hU φ.2
+      simpa using W1p.restrictL_sub_compHyperplaneReflectionL_mem_w1p0Submodule hp hH hU φ.property
 
 /-- The underlying Sobolev function of `(φ - φ ∘ ρ)|_{U ∩ H}`. -/
 theorem W1p0.coe_restrictSubCompHyperplaneReflectionL (hp : p ≠ ⊤)

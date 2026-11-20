@@ -268,7 +268,7 @@ theorem originTransport_subtypeVal_comp_heq {m : ℕ} (hm : (m : ℕ∞) < n) (c
     fun s ↦ ?_).trans (heq_of_eq (ContinuousMap.pathClass_self _ _))
   have hc : range ((ContinuousMap.subtypeVal A).comp c) ⊆ A := by
     rintro _ ⟨y, rfl⟩
-    exact (c y).2
+    exact (c y).property
   simpa using D.homotopy_of_range_subset hc s 0
 
 end Transport
