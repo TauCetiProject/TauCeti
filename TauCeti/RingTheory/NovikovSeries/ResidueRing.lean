@@ -33,7 +33,9 @@ unit exactly when its residue is a unit of `R[ker N]`. Neither injectivity nor d
 `N` is assumed. When `N` is injective the residue ring is `R`, as for power series, while a
 nontrivial period kernel survives in the residue. The residue and its section preserve degrees
 for every degree function on the exponents, so the residue ring of a graded Novikov ring is the
-graded group ring of the period kernel.
+graded group ring of the period kernel. The residue commutes with the pushforward along a ring
+homomorphism of coefficients and a period-rescaling map of exponents, which restricts to the period
+kernels (`TauCeti.NovikovSeries.mkerMap`).
 
 The main example is the *action-weighted extension* of period data `E : G →+ ℝ`: the exponent
 monoid `G × ℝ` with the period `(g, r) ↦ E g + r`, which is `E.coprod (AddMonoidHom.id ℝ)`. Its
@@ -50,6 +52,8 @@ residues proved before the extension transports to it.
 * `TauCeti.NovikovSeries.ofMker R N`: the group ring of the period kernel as a subring of `Λ₀`.
 * `TauCeti.NovikovSeries.residue R N`: the residue `Λ₀ →+* R[ker N]`.
 * `TauCeti.NovikovSeries.residueEquiv R N`: the residue ring `Λ₀ ⧸ Λ₊ ≃+* R[ker N]`.
+* `TauCeti.NovikovSeries.mkerMap φ hφ`: the restriction of a period-rescaling map of exponents to
+  the period kernels.
 * `TauCeti.NovikovSeries.residueEquivCoprodId R E`: the residue ring of the action-weighted
   extension, `Λ₀ ⧸ Λ₊ ≃+* R[G]`.
 
@@ -63,6 +67,7 @@ residues proved before the extension transports to it.
   is.
 * `TauCeti.NovikovSeries.residue_mem_gradeBy`, `TauCeti.NovikovSeries.ofMker_mem_gradeBy`: the
   residue and its section preserve degrees.
+* `TauCeti.NovikovSeries.residue_mapNonnegSubring`: the residue commutes with pushforward.
 * `TauCeti.NovikovSeries.coeff_residueEquivCoprodId_mk`: the coefficient of the residue at `g`
   after the action-weighted extension is the coefficient at `(g, -E g)`.
 * `TauCeti.NovikovSeries.residueEquivCoprodId_mk_mapNonnegSubring_inl`: compatibility of the
@@ -277,6 +282,58 @@ theorem residueEquiv_symm_apply (x : AddMonoidAlgebra R (mker N)) :
     (residueEquiv R N).symm x = Ideal.Quotient.mk _ (ofMker R N x) := by
   simp [residueEquiv]
 
+section Map
+
+variable {S H' : Type*} [Ring S] [AddMonoid H'] {N' : H' →+ ℝ}
+
+/-- A period-rescaling map of exponents restricts to a map of period kernels. -/
+def mkerMap (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) : mker N →+ mker N' :=
+  (φ.comp (mker N).subtype).codRestrict (mker N') fun k => mem_mker.2 <| by
+    obtain ⟨c, -, hcφ⟩ := hφ
+    rw [AddMonoidHom.comp_apply, hcφ, AddSubmonoid.coe_subtype, mem_mker.1 k.2, mul_zero]
+
+/-- The restriction `mkerMap φ hφ` acts as `φ` on the period kernel. -/
+@[simp]
+theorem coe_mkerMap_apply (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (k : mker N) :
+    (mkerMap φ hφ k : H') = φ k :=
+  (rfl)
+
+variable (ρ : R →+* S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
+
+/-- The residue commutes with pushforward: the residue of the image of a series under
+`mapNonnegSubring ρ φ hφ` is the image of its residue under `ρ` on coefficients and the restriction
+of `φ` to the period kernels. -/
+theorem residue_mapNonnegSubring (a : nonnegSubring R N) :
+    residue S N' (mapNonnegSubring ρ φ hφ a) =
+      AddMonoidAlgebra.mapDomainRingHom S (mkerMap φ hφ)
+        (AddMonoidAlgebra.mapRingHom (mker N) ρ (residue R N a)) := by
+  -- On the image of the group ring of the period kernel both sides agree monomial by monomial.
+  have hofMker (x : AddMonoidAlgebra R (mker N)) :
+      residue S N' (mapNonnegSubring ρ φ hφ (ofMker R N x)) =
+        AddMonoidAlgebra.mapDomainRingHom S (mkerMap φ hφ)
+          (AddMonoidAlgebra.mapRingHom (mker N) ρ x) := by
+    induction x using AddMonoidAlgebra.induction_linear with
+    | zero => simp
+    | add x y hx hy => simp only [_root_.map_add, hx, hy]
+    | single k r =>
+      rw [AddMonoidAlgebra.mapRingHom_single, AddMonoidAlgebra.mapDomainRingHom_apply,
+        AddMonoidAlgebra.mapDomain_single, ← residue_ofMker (AddMonoidAlgebra.single _ (ρ r))]
+      congr 1
+      ext1
+      simp
+  -- The rest of `a` has positive periods, so its image has residue zero.
+  rw [← hofMker, ← sub_eq_zero, ← _root_.map_sub, ← _root_.map_sub, residue_eq_zero_iff]
+  exact mapNonnegSubring_mem_posIdeal ρ φ hφ (sub_ofMker_residue_mem_posIdeal a)
+
+/-- The residue commutes with pushforward, as an identity of ring homomorphisms. -/
+theorem residue_comp_mapNonnegSubring :
+    (residue S N').comp (mapNonnegSubring ρ φ hφ) =
+      ((AddMonoidAlgebra.mapDomainRingHom S (mkerMap φ hφ)).comp
+        (AddMonoidAlgebra.mapRingHom (mker N) ρ)).comp (residue R N) :=
+  RingHom.ext (residue_mapNonnegSubring ρ φ hφ)
+
+end Map
+
 section ActionWeight
 
 variable {G : Type*} [AddMonoid G] (E : G →+ ℝ)
@@ -323,22 +380,13 @@ theorem residueEquivCoprodId_mk_mapNonnegSubring_inl (a : nonnegSubring R E) :
     residueEquivCoprodId R E (Ideal.Quotient.mk _
         (mapNonnegSubring (RingHom.id R) (AddMonoidHom.inl G ℝ) exists_period_rescale_inl a)) =
       AddMonoidAlgebra.mapDomain (mker E).subtype (residue R E a) := by
-  ext g
-  rw [coeff_residueEquivCoprodId_mk, coe_mapNonnegSubring, AddMonoidAlgebra.coeff_mapDomain]
-  by_cases hg : E g = 0
-  · -- At an exponent of `ker E`, both sides are the coefficient of `a` at `g`.
-    lift g to mker E using mem_mker.2 hg
-    have hk := Finsupp.mapDomain_apply_of_injective (mker E).subtype_injective
-      (residue R E a).coeff g
-    rw [AddSubmonoid.coe_subtype] at hk ⊢
-    rw [show ((g : G), -E g) = AddMonoidHom.inl G ℝ g by simp [mem_mker.1 g.2],
-      coeff_map_of_injective _ _ _ (fun _ _ h => congrArg Prod.fst h), hk, coeff_residue]
-    simp
-  · -- Otherwise `(g, -E g)` is not of the form `(g', 0)`, and `g` is not in `ker E`.
-    rw [mapDomain_subtype_mker_of_ne_zero _ hg]
-    by_contra hne
-    obtain ⟨g', -, hg'⟩ := support_map_subset _ _ _ _ (mem_support.2 hne)
-    exact hg (neg_eq_zero.1 (congrArg Prod.snd hg').symm)
+  rw [residueEquivCoprodId, RingEquiv.trans_apply, residueEquiv_mk, residue_mapNonnegSubring,
+    AddMonoidAlgebra.mapRingHom_id, RingHom.id_apply]
+  -- The restriction of `g ↦ (g, 0)` to `ker E`, followed by `(g, -E g) ↦ g`, is the inclusion.
+  induction residue R E a using AddMonoidAlgebra.induction_linear with
+  | zero => simp
+  | add x y hx hy => simp only [_root_.map_add, AddMonoidAlgebra.mapDomain_add, hx, hy]
+  | single k r => simp
 
 end ActionWeight
 
