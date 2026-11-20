@@ -47,7 +47,9 @@ basepoint are inherited directly from `TauCeti.Dynamics.Flow.ClosedOrbit`.
   `IsContactForm.hasEigenvalue_periodicLinearizedReturn_iterate_iff`).
 * **Nondegeneracy** (`IsContactForm.IsNondegenerateOrbit`): an unparametrized closed Reeb orbit is
   nondegenerate when `1` is not an eigenvalue of its linearized Reeb return map on `ξ`
-  (`IsContactForm.isNondegenerateOrbit_mk_iff`); its `k`-fold iterate is nondegenerate iff `1` is
+  (`IsContactForm.isNondegenerateOrbit_mk_iff`). The trajectory-level transverse-section criterion
+  is `IsContactForm.isNondegenerateOrbit_mk_iff_exists_not_hasEigenvalue_returnDerivative`.
+  Its `k`-fold iterate is nondegenerate iff `1` is
   not an eigenvalue of the `k`-th power (`IsContactForm.isNondegenerateOrbit_iterate_mk_iff`).
   In particular, if `-1` is an eigenvalue of the return map of `γ`, then its double cover
   `γ.iterate 2` is degenerate
@@ -60,7 +62,7 @@ basepoint are inherited directly from `TauCeti.Dynamics.Flow.ClosedOrbit`.
 * **Comparison with Poincaré sections**
   (`IsContactForm.kerSectionEquivKerDistribution_conj_normalReturnDerivative`): projection along
   `R_α` conjugates the normal return derivative of any transverse section to the linearized Reeb
-  return map.
+  return map for the branch at the specified return time `T`, including covered periods.
 
 ## Finiteness below an action bound and the circle model
 
@@ -107,6 +109,34 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
   {α : SmoothForm I M ℝ 1}
+
+section PeriodicTrajectories
+
+variable (hα : α.IsContactForm) (hc : IsCompleteVectorField α.reebVectorField)
+
+/-- Construct a periodic Reeb trajectory from a base point `x` and a positive return time `T`
+with `hα.reebFlow hc T x = x`. Non-stationarity is automatic from `R_α ≠ 0`. -/
+def IsContactForm.reebTrajectory (x : M) {T : ℝ} (hT : 0 < T) (hfix : hα.reebFlow hc T x = x) :
+    Flow.PeriodicTrajectory (hα.reebFlow hc) where
+  point := x
+  period := T
+  period_pos := hT
+  apply_period := hfix
+  exists_apply_ne := hα.exists_reebFlow_ne hc x
+
+@[simp]
+theorem IsContactForm.point_reebTrajectory (x : M) {T : ℝ} (hT : 0 < T)
+    (hfix : hα.reebFlow hc T x = x) :
+    (hα.reebTrajectory hc x hT hfix).point = x :=
+  (rfl)
+
+@[simp]
+theorem IsContactForm.period_reebTrajectory (x : M) {T : ℝ} (hT : 0 < T)
+    (hfix : hα.reebFlow hc T x = x) :
+    (hα.reebTrajectory hc x hT hfix).period = T :=
+  (rfl)
+
+end PeriodicTrajectories
 
 /-- **Contact action of a periodic Reeb trajectory equals its period.** -/
 theorem IsContactForm.pathIntegral_periodicTrajectory (hα : α.IsContactForm)
@@ -234,6 +264,19 @@ theorem IsContactForm.isNondegenerateOrbit_mk_iff (hα : α.IsContactForm)
   ⟨fun h ↦ h γ rfl, fun h _ hδ ↦
     mt (hα.hasEigenvalue_periodicLinearizedReturn_iff_of_mk_eq hc hδ 1).1 h⟩
 
+/-- A closed Reeb trajectory is nondegenerate iff some transverse local section at its base
+point has a return derivative without eigenvalue `1` for the branch at its specified period.
+This uses the trajectory's own period, including for a multiply covered trajectory. -/
+theorem IsContactForm.isNondegenerateOrbit_mk_iff_exists_not_hasEigenvalue_returnDerivative
+    (hα : α.IsContactForm) (hc : IsCompleteVectorField α.reebVectorField)
+    (δ : Flow.PeriodicTrajectory (hα.reebFlow hc)) :
+    hα.IsNondegenerateOrbit hc (Flow.ClosedOrbit.mk δ) ↔
+      ∃ g : M → ℝ, ContMDiffAt I 𝓘(ℝ) 1 g δ.point ∧
+        mvfderiv I g δ.point (α.reebVectorField δ.point) ≠ 0 ∧
+        ¬(returnDerivative α.reebVectorField g δ.period δ.point).HasEigenvalue 1 := by
+  rw [hα.isNondegenerateOrbit_mk_iff, hα.periodicLinearizedReturn_def,
+    hα.not_hasEigenvalue_one_linearizedReebReturn_iff_exists_not_hasEigenvalue_returnDerivative]
+
 /-- **Nondegeneracy of an iterate.** The `k`-fold iterate of a closed Reeb orbit is nondegenerate
 iff `1` is not an eigenvalue of the `k`-th power `(A_γ)^k` of its linearized Reeb return map. -/
 theorem IsContactForm.isNondegenerateOrbit_iterate_mk_iff (hα : α.IsContactForm)
@@ -268,7 +311,8 @@ theorem IsContactForm.finite_closedOrbit_inter_nonempty_and_period_le (hα : α.
       (γ.support ∩ K).Nonempty ∧ γ.period ≤ A}.Finite := by
   have hv := hα.contMDiff_reebVectorField.of_le (m := 1) (by simp)
   obtain ⟨ε, hε, hlow⟩ :=
-    (hα.reebFlow hc).exists_pos_period_le_of_isCompact hK fun x _ ↦ hα.exists_reebFlow_ne hc x
+    (hα.reebFlow hc).exists_pos_eventually_period_le_of_isCompact hK
+      fun x _ ↦ hα.exists_reebFlow_ne hc x
   set S : Set (ℝ × M) := Icc ε A ×ˢ K
   have hS : IsCompact S := isCompact_Icc.prod hK
   have hSD : S ⊆ flowDomain α.reebVectorField := fun x _ ↦ hc.mem_flowDomain x.1 x.2
@@ -277,18 +321,15 @@ theorem IsContactForm.finite_closedOrbit_inter_nonempty_and_period_le (hα : α.
         mvfderiv I g x.2 (α.reebVectorField x.2) ≠ 0 ∧
         ¬(returnDerivative α.reebVectorField g x.1 x.2).HasEigenvalue 1 := by
     rintro ⟨t, z⟩ ⟨⟨htε, htA⟩, hzK⟩ htz
-    let δ : Flow.PeriodicTrajectory (hα.reebFlow hc) :=
-      ⟨z, t, hε.trans_le htε, by rw [hα.reebFlow_apply, htz], hα.exists_reebFlow_ne hc z⟩
+    let δ := hα.reebTrajectory hc z (hε.trans_le htε) (by rwa [hα.reebFlow_apply])
     have hmeet : ((Flow.ClosedOrbit.mk δ).support ∩ K).Nonempty :=
-      ⟨z, Flow.ClosedOrbit.point_mem_support δ, hzK⟩
-    have hδ : ¬(hα.periodicLinearizedReturn hc δ).HasEigenvalue 1 :=
-      (hα.isNondegenerateOrbit_mk_iff hc δ).1
-        (hnd (Flow.ClosedOrbit.mk δ) hmeet (by rw [Flow.ClosedOrbit.period_mk]; exact htA))
-    obtain ⟨g, hg, hgv⟩ :=
-      exists_contMDiffAt_mvfderiv_ne_zero (I := I) (hα.reebVectorField_ne_zero z) 1
-    exact ⟨g, hg, hgv,
-      mt (hα.hasEigenvalue_returnDerivative_iff (hc.mem_flowDomain t z) htz hg hgv one_ne_zero).1
-        hδ⟩
+      ⟨z, by simpa only [δ, hα.point_reebTrajectory] using Flow.ClosedOrbit.point_mem_support δ,
+        hzK⟩
+    have hδ := hnd (Flow.ClosedOrbit.mk δ) hmeet
+      (by simpa only [Flow.ClosedOrbit.period_mk, δ, hα.period_reebTrajectory] using htA)
+    have hsection :=
+      (hα.isNondegenerateOrbit_mk_iff_exists_not_hasEigenvalue_returnDerivative hc δ).mp hδ
+    rwa [hα.point_reebTrajectory, hα.period_reebTrajectory] at hsection
   obtain ⟨F, -, hF⟩ := exists_finset_forall_fst_eq_and_exists_flowOf_eq_snd hv hS hSD hSnd
   refine Flow.ClosedOrbit.finite_of_exists_finset (F := F) ?_
   rintro γ ⟨⟨p, hpγ, hpK⟩, hγA⟩
@@ -297,12 +338,17 @@ theorem IsContactForm.finite_closedOrbit_inter_nonempty_and_period_le (hα : α.
   rw [Flow.ClosedOrbit.support_mk] at hpγ
   obtain ⟨r, rfl⟩ := (Flow.mem_orbit_iff _).1 hpγ
   let γ' : Flow.PeriodicTrajectory (hα.reebFlow hc) := r +ᵥ γ
-  have hεγ : ε ≤ γ.period := hlow γ'.point hpK γ'.period γ'.period_pos γ'.apply_period
+  have hpoint : γ'.point = hα.reebFlow hc r γ.point := γ.point_vadd r
+  have hperiod : γ'.period = γ.period := γ.period_vadd r
+  have hpK' : γ'.point ∈ K := by rwa [hpoint]
+  have hεγ : ε ≤ γ.period := by
+    simpa only [hperiod] using
+      hlow.self_of_nhdsSet γ'.point hpK' γ'.period γ'.period_pos γ'.apply_period
   have hper : flowOf α.reebVectorField γ.period γ'.point = γ'.point := by
-    rw [← hα.reebFlow_apply hc]
+    rw [← hperiod, ← hα.reebFlow_apply hc]
     exact γ'.apply_period
   obtain ⟨y, hyF, hy1, s, -, hsy⟩ :=
-    hF (γ.period, γ'.point) ⟨⟨hεγ, hγA⟩, hpK⟩ hper
+    hF (γ.period, γ'.point) ⟨⟨hεγ, hγA⟩, hpK'⟩ hper
   refine ⟨y, hyF, hy1, ?_⟩
   rw [← Flow.ClosedOrbit.mk_vadd r γ, Flow.ClosedOrbit.support_mk, Flow.mem_orbit_iff]
   refine ⟨-s, ?_⟩
@@ -453,33 +499,6 @@ section PeriodicTrajectories
 
 variable (hα : α.IsContactForm) (hc : IsCompleteVectorField α.reebVectorField)
 
-/-- Construct a periodic Reeb trajectory from a base point `x` and a positive return time `T`
-with `hα.reebFlow hc T x = x`. Non-stationarity is automatic from `R_α ≠ 0`. -/
-def reebTrajectory (x : M) {T : ℝ} (hT : 0 < T) (hfix : hα.reebFlow hc T x = x) :
-    Flow.PeriodicTrajectory (hα.reebFlow hc) where
-  point := x
-  period := T
-  period_pos := hT
-  apply_period := hfix
-  exists_apply_ne := hα.exists_reebFlow_ne hc x
-
-@[simp]
-theorem point_reebTrajectory (x : M) {T : ℝ} (hT : 0 < T) (hfix : hα.reebFlow hc T x = x) :
-    (hα.reebTrajectory hc x hT hfix).point = x :=
-  (rfl)
-
-@[simp]
-theorem period_reebTrajectory (x : M) {T : ℝ} (hT : 0 < T) (hfix : hα.reebFlow hc T x = x) :
-    (hα.reebTrajectory hc x hT hfix).period = T :=
-  (rfl)
-
-/-- Evaluating the circle parametrization of `reebTrajectory` at `(t : ℝ)` gives the Reeb flow at
-time `t`. (`Flow.PeriodicTrajectory.circleMap_coe` already simplifies the left-hand side.) -/
-theorem circleMap_reebTrajectory_coe (x : M) {T : ℝ} (hT : 0 < T)
-    (hfix : hα.reebFlow hc T x = x) (t : ℝ) :
-    (hα.reebTrajectory hc x hT hfix).circleMap t = hα.reebFlow hc t x :=
-  Flow.PeriodicTrajectory.circleMap_coe _ t
-
 /-- Construct a periodic Reeb trajectory from a periodic integral curve of `α.reebVectorField`. -/
 def reebTrajectoryOfIntegralCurve {γ : ℝ → M} (hγ : IsMIntegralCurve γ α.reebVectorField)
     {T : ℝ} (hT : 0 < T) (hper : Function.Periodic γ T) :
@@ -518,8 +537,8 @@ theorem circleMap_reebTrajectoryOfIntegralCurve_coe {γ : ℝ → M}
     (hγ : IsMIntegralCurve γ α.reebVectorField) {T : ℝ} (hT : 0 < T)
     (hper : Function.Periodic γ T) (t : ℝ) :
     (hα.reebTrajectoryOfIntegralCurve hc hγ hT hper).circleMap t = γ t := by
-  rw [reebTrajectoryOfIntegralCurve, circleMap_reebTrajectory_coe,
-    hα.reebFlow_eq_of_isMIntegralCurve hc hγ t]
+  rw [reebTrajectoryOfIntegralCurve, Flow.PeriodicTrajectory.circleMap_coe,
+    point_reebTrajectory, hα.reebFlow_eq_of_isMIntegralCurve hc hγ t]
 
 /-- The circle parametrization `AddCircle c.period → M` of a periodic Reeb trajectory is smooth. -/
 theorem contMDiff_circleMap (c : Flow.PeriodicTrajectory (hα.reebFlow hc)) :
@@ -583,7 +602,8 @@ variable {g : M → ℝ} {T : ℝ} {x : M}
 
 /-- **The linearized Reeb return map on `ξ` is conjugate to the normal return derivative.**
 For any local transverse section `{g = g x}`, the projection along `R_α(x)` conjugates
-`TauCeti.normalReturnDerivative` to `TauCeti.SmoothForm.IsContactForm.linearizedReebReturn`. -/
+`TauCeti.normalReturnDerivative` to `TauCeti.SmoothForm.IsContactForm.linearizedReebReturn`
+for the branch at the specified return time `T`, including covered periods. -/
 theorem kerSectionEquivKerDistribution_conj_normalReturnDerivative
     (hT : (T, x) ∈ flowDomain α.reebVectorField)
     (hfix : flowOf α.reebVectorField T x = x)
@@ -599,21 +619,6 @@ theorem kerSectionEquivKerDistribution_conj_normalReturnDerivative
     (hα.contMDiff_reebVectorField.of_le (by simp)) hT hfix hg hgv
     (hα.isCompl_kerDistribution_span_reebVectorField x)
     (hα.coe_linearizedReebReturn_apply hT hfix)
-
-/-- At a local periodic point `x` of period `T` where `1` is not an eigenvalue of
-`linearizedReebReturn`, there exists a function `g : M → ℝ`, `C¹` at `x` and transverse to
-`R_α(x)`, whose `returnDerivative` at `(T, x)` does not have `1` as an eigenvalue. -/
-theorem exists_contMDiffAt_and_not_hasEigenvalue_returnDerivative
-    (hT : (T, x) ∈ flowDomain α.reebVectorField)
-    (hfix : flowOf α.reebVectorField T x = x)
-    (hnd : ¬(hα.linearizedReebReturn hT hfix).HasEigenvalue 1) :
-    ∃ g : M → ℝ, ContMDiffAt I 𝓘(ℝ) 1 g x ∧
-      mvfderiv I g x (α.reebVectorField x) ≠ 0 ∧
-      ¬(returnDerivative α.reebVectorField g T x).HasEigenvalue 1 := by
-  obtain ⟨g, hg, hgv⟩ := hα.exists_contMDiffAt_and_mvfderiv_reebVectorField_eq_one 1 x
-  have hgv0 : mvfderiv I g x (α.reebVectorField x) ≠ 0 := hgv ▸ one_ne_zero
-  exact ⟨g, hg, hgv0,
-    mt (hα.hasEigenvalue_returnDerivative_iff hT hfix hg hgv0 one_ne_zero).1 hnd⟩
 
 end SectionComparison
 
