@@ -91,7 +91,7 @@ theorem _root_.QuadraticMap.Nondegenerate.not_anisotropic_restrict_of_finrank_ge
     rw [LinearMap.finrank_range_of_inj hf, Module.finrank_prod]
     simp
   have hPzero (x : P) : Q x = 0 := by
-    obtain ⟨y, hy⟩ := x.2
+    obtain ⟨y, hy⟩ := x.property
     rw [← hy]
     exact (e.symm.map_app (hyperbolicPlaneProdIsotropicMap y)).trans
       (hyperbolicPlane_prod_self_isotropicMap y)
@@ -104,12 +104,12 @@ theorem _root_.QuadraticMap.Nondegenerate.not_anisotropic_restrict_of_finrank_ge
     omega
   obtain ⟨x, hx⟩ := Module.finrank_pos_iff_exists_ne_zero.mp hinterRank
   rw [QuadraticMap.not_anisotropic_iff_exists]
-  refine ⟨⟨x, x.2.1⟩, ?_, ?_⟩
+  refine ⟨⟨x, x.property.1⟩, ?_, ?_⟩
   · intro hzero
     apply hx
     apply Subtype.ext
     exact (Submodule.coe_eq_zero (p := U)).mpr hzero
-  · simpa only [QuadraticMap.restrict_apply] using hPzero ⟨x, x.2.2⟩
+  · simpa only [QuadraticMap.restrict_apply] using hPzero ⟨x, x.property.2⟩
 
 /-- **O'Meara 42:12.** Over a field in which two is invertible, for a subspace of dimension at
 least three in a regular quaternary quadratic space with square discriminant, the restricted form

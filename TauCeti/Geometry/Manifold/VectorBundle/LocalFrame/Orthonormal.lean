@@ -16,6 +16,9 @@ Let `V → M` be a vector bundle whose fibres carry inner products.
 * `IsLocalFrameOn.coeff_eq_inner`: the coefficient functionals of an orthonormal local frame are
   its metric duals. This lets local-frame connection and curvature coefficients be read as inner
   products.
+* `IsLocalFrameOn.sum_inner_smul_eq` and `IsLocalFrameOn.sum_sq_norm_inner`: every fibre vector
+  is the sum of these inner products times the frame vectors, and its squared norm is the sum of
+  the squared norms of these inner products.
 * `IsLocalFrameOn.of_orthonormal`: a `C^n` family of `finrank 𝕜 F` pointwise orthonormal sections
   of a finite-rank bundle on `u` forms a `C^n` local frame on `u`.
 * `IsLocalFrameOn.toOrthonormalBasisAt`: at each point `x ∈ u`, an orthonormal local frame gives
@@ -60,6 +63,25 @@ theorem coeff_eq_inner (hx : x ∈ u) (ho : Orthonormal 𝕜 (fun i ↦ s i x))
   have h := ho.inner_right_fintype (fun j ↦ hs.coeff j x v) i
   rw [← hexp] at h
   exact h.symm
+
+include hs
+
+/-- A frame orthonormal at a point reconstructs every fibre vector from its inner products. -/
+theorem sum_inner_smul_eq [Fintype ι] (hx : x ∈ u)
+    (ho : Orthonormal 𝕜 (fun i ↦ s i x)) (v : V x) :
+    ∑ i, inner 𝕜 (s i x) v • s i x = v := by
+  simpa only [FiberBundle.extend_apply_self, hs.coeff_eq_inner hx ho] using
+    (hs.coeff_sum_eq (FiberBundle.extend F v) hx).symm
+
+/-- Parseval's identity for a local frame orthonormal at the point of evaluation. -/
+theorem sum_sq_norm_inner [Fintype ι] (hx : x ∈ u)
+    (ho : Orthonormal 𝕜 (fun i ↦ s i x)) (v : V x) :
+    ∑ i, ‖inner 𝕜 (s i x) v‖ ^ 2 = ‖v‖ ^ 2 := by
+  symm
+  rw [@norm_sq_eq_re_inner 𝕜]
+  nth_rw 1 [← hs.sum_inner_smul_eq hx ho v]
+  simp only [sum_inner, inner_smul_left, map_sum, RCLike.conj_mul, ← RCLike.ofReal_pow,
+    RCLike.ofReal_re]
 
 end
 

@@ -77,9 +77,9 @@ theorem FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply (n : ℕ)
     (FiniteLocallyFreeSheaf.relativeDifferentials R X).rank x = n := by
   have := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
   obtain ⟨W, hxW, hW⟩ := exists_isStandardSmoothOfRelativeDimension R n x
-  let : Algebra R Γ(X, W) := ((X.baseRingToStructurePresheaf R).app (op W.1)).hom.toAlgebra
+  let : Algebra R Γ(X, W) := ((X.baseRingToStructurePresheaf R).app (op W.val)).hom.toAlgebra
   have : Algebra.IsStandardSmoothOfRelativeDimension n R Γ(X, W) := hW.toAlgebra
-  have : Nonempty W.1 := ⟨⟨x, hxW⟩⟩
+  have : Nonempty W.val := ⟨⟨x, hxW⟩⟩
   have : W.property.fromSpec.IsOver (Spec (.of R)) := isOver_fromSpec R X W
   have : IsOpenImmersion W.property.fromSpec := IsAffineOpen.isOpenImmersion_fromSpec W.property
   obtain ⟨ι, _, hι, ⟨e⟩⟩ := exists_relativeDifferentialsSpecIsoFree R n Γ(X, W)

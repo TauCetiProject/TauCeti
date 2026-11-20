@@ -68,8 +68,8 @@ private theorem exists_hasFDerivAt_coreReading_stereographic'_symm_comp (p : sph
     (SolidTorus.coreReading_comp_eventuallyEq G Ψ),
     (injective_fderiv_coe_comp_stereographic'_symm p _).comp hinj, fun v ↦ ?_⟩
   -- `G` takes values in the unit sphere, so its derivative is orthogonal to its value.
-  exact inner_fderiv_eq_zero_of_eventually_norm_eq (ψ := G) (w := Ψ (0, 1))
-    (.of_forall fun y ↦ by simp [G, norm_eq_of_mem_sphere]) (LΨ v)
+  exact IsLocalExtr.inner_fderiv_eq_zero (ψ := G) (w := Ψ (0, 1))
+    (isLocalExtr_const.congr (.of_forall fun y ↦ (norm_eq_of_mem_sphere _).symm)) (LΨ v)
 
 /-- **Solid torus neighbourhoods of knots in the three-sphere, with their derivative at the core.**
 Every `C²` embedded circle `f` in a unit three-sphere has a solid torus neighbourhood `Φ` inside

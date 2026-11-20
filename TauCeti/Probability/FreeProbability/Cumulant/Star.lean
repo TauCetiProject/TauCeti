@@ -63,8 +63,8 @@ of adjoints `star aₙ, …, star a₁` conjugates the block moment of a noncros
 replaces `π` by its reversal. -/
 theorem partitionMoment_star_comp_rev (hφ : ∀ x, φ (star x) = star (φ x)) (a : Fin n → A)
     (π : NoncrossingPartition (univ : Finset (Fin n))) :
-    partitionMoment φ (star (a ∘ Fin.rev)) (NoncrossingPartition.reverse n π).1 =
-      star (partitionMoment φ a π.1) := by
+    partitionMoment φ (star (a ∘ Fin.rev)) (NoncrossingPartition.reverse n π).val =
+      star (partitionMoment φ a π.val) := by
   rw [partitionMoment_def, partitionMoment_def, NoncrossingPartition.prod_parts_reverse,
     star_prod]
   refine prod_congr rfl fun B _ => ?_

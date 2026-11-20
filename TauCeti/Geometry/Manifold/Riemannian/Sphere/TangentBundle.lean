@@ -95,7 +95,7 @@ theorem sphereTangentProj_of_mem_orthogonal {x : sphere (0 : E) 1} {u : E}
 theorem sphereTangentProj_coe_sphereTangentEquiv (x : sphere (0 : E) 1)
     (v : TangentSpace (𝓡 n) x) :
     sphereTangentProj x (sphereTangentEquiv x v) = v := by
-  rw [sphereTangentProj_of_mem_orthogonal (sphereTangentEquiv x v).2, Subtype.coe_eta,
+  rw [sphereTangentProj_of_mem_orthogonal (sphereTangentEquiv x v).property, Subtype.coe_eta,
     LinearIsometryEquiv.symm_apply_apply]
 
 @[simp]
@@ -130,7 +130,7 @@ theorem contMDiff_sphereTangentProj {k : ℕ∞ω} :
       rw [Submodule.coe_orthogonalProjectionOnto_apply, Submodule.starProjection_orthogonal_val,
         Submodule.starProjection_unit_singleton ℝ (norm_eq_of_mem_sphere p.1)]
   exact contMDiff_sphereTangentEquiv_symm contMDiff_fst hu fun p ↦
-    ((ℝ ∙ (p.1 : E))ᗮ.orthogonalProjectionOnto p.2).2
+    ((ℝ ∙ (p.1 : E))ᗮ.orthogonalProjectionOnto p.2).property
 
 /-- **Smoothness of sphere tangent lifts.** A map
 `y ↦ ⟨base y, (sphereTangentEquiv (base y)).symm ⟨w y, hw y⟩⟩` into
@@ -243,13 +243,13 @@ def sphereTangentSubbundleDiffeomorph {k : ℕ∞ω} :
   let hsub := hasLocalContMDiffSubbundleFrames_orthogonalSpanSphere (E := E) (n := n) (k := ω)
   have hincl : ContMDiff ((𝓡 n).prod 𝓘(ℝ, Fin n → ℝ)) ((𝓡 n).prod 𝓘(ℝ, E)) k
       (fun q : TotalSpace (Fin n → ℝ) (fun x : sphere (0 : E) 1 ↦ (ℝ ∙ (x : E))ᗮ) ↦
-        (⟨q.proj, (q.2 : E)⟩ : TotalSpace E (Bundle.Trivial (sphere (0 : E) 1) E))) :=
+        (⟨q.proj, (q.snd : E)⟩ : TotalSpace E (Bundle.Trivial (sphere (0 : E) 1) E))) :=
     hsub.contMDiff_totalSpace_inclusion.of_le le_top
   have hinv : ContMDiff ((𝓡 n).prod 𝓘(ℝ, Fin n → ℝ)) (𝓡 n).tangent k
       (fun q : TotalSpace (Fin n → ℝ) (fun x : sphere (0 : E) 1 ↦ (ℝ ∙ (x : E))ᗮ) ↦
         TotalSpace.mk' (EuclideanSpace ℝ (Fin n)) q.proj
-          ((sphereTangentEquiv (n := n) q.proj).symm.toContinuousLinearEquiv q.2)) :=
-    (contMDiff_sphereTangentEquiv_symm_along_iff fun q ↦ q.2.2).mpr
+          ((sphereTangentEquiv (n := n) q.proj).symm.toContinuousLinearEquiv q.snd)) :=
+    (contMDiff_sphereTangentEquiv_symm_along_iff fun q ↦ q.snd.property).mpr
       (Bundle.Trivial.contMDiff_mk_iff.mp hincl)
   exact (bundleDiffeomorph
     (fun x ↦ (sphereTangentEquiv (n := n) x).symm.toContinuousLinearEquiv) hinv).symm
@@ -257,14 +257,14 @@ def sphereTangentSubbundleDiffeomorph {k : ℕ∞ω} :
 @[simp]
 theorem sphereTangentSubbundleDiffeomorph_apply {k : ℕ∞ω}
     (p : TangentBundle (𝓡 n) (sphere (0 : E) 1)) :
-    sphereTangentSubbundleDiffeomorph (k := k) p = ⟨p.proj, sphereTangentEquiv p.proj p.2⟩ := by
+    sphereTangentSubbundleDiffeomorph (k := k) p = ⟨p.proj, sphereTangentEquiv p.proj p.snd⟩ := by
   simp [sphereTangentSubbundleDiffeomorph]
 
 @[simp]
 theorem sphereTangentSubbundleDiffeomorph_symm_apply {k : ℕ∞ω}
     (q : TotalSpace (Fin n → ℝ) (fun x : sphere (0 : E) 1 ↦ (ℝ ∙ (x : E))ᗮ)) :
     (sphereTangentSubbundleDiffeomorph (k := k)).symm q =
-      ⟨q.proj, (sphereTangentEquiv q.proj).symm q.2⟩ := by
+      ⟨q.proj, (sphereTangentEquiv q.proj).symm q.snd⟩ := by
   rw [sphereTangentSubbundleDiffeomorph]
   exact bundleDiffeomorph_apply _ _ q
 
@@ -277,14 +277,14 @@ theorem sphereTangentSubbundleDiffeomorph_symm_apply {k : ℕ∞ω}
 def sphereTangentProdRealDiffeomorph {k : ℕ∞ω} :
     (TangentBundle (𝓡 n) (sphere (0 : E) 1) × ℝ) ≃ₘ^k⟮(𝓡 n).tangent.prod 𝓘(ℝ, ℝ),
       (𝓡 n).prod 𝓘(ℝ, E)⟯ (sphere (0 : E) 1 × E) where
-  toFun p := (p.1.proj, (sphereTangentEquiv p.1.proj p.1.2 : E) + p.2 • (p.1.proj : E))
+  toFun p := (p.1.proj, (sphereTangentEquiv p.1.proj p.1.snd : E) + p.2 • (p.1.proj : E))
   invFun q := (⟨q.1, sphereTangentProj q.1 q.2⟩, inner ℝ (q.1 : E) q.2)
   left_inv := by
     rintro ⟨⟨x, v⟩, t⟩
     have hx : inner ℝ (x : E) (x : E) = 1 :=
       inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere x)
     have horth : inner ℝ (x : E) (sphereTangentEquiv x v : E) = 0 :=
-      Submodule.mem_orthogonal_singleton_iff_inner_right.mp (sphereTangentEquiv x v).2
+      Submodule.mem_orthogonal_singleton_iff_inner_right.mp (sphereTangentEquiv x v).property
     have hinner : inner ℝ (x : E) ((sphereTangentEquiv x v : E) + t • (x : E)) = t := by
       rw [inner_add_right, real_inner_smul_right, horth, hx, zero_add, mul_one]
     refine Prod.ext (TotalSpace.ext rfl ?_) hinner
@@ -303,7 +303,7 @@ def sphereTangentProdRealDiffeomorph {k : ℕ∞ω} :
       (Bundle.contMDiff_proj _).comp contMDiff_fst
     have htan : ContMDiff ((𝓡 n).tangent.prod 𝓘(ℝ, ℝ)) 𝓘(ℝ, E) k
         (fun p : TangentBundle (𝓡 n) (sphere (0 : E) 1) × ℝ ↦
-          (sphereTangentEquiv p.1.proj p.1.2 : E)) :=
+          (sphereTangentEquiv p.1.proj p.1.snd : E)) :=
       contMDiff_coe_sphereTangentEquiv.comp contMDiff_fst
     have hrad : ContMDiff ((𝓡 n).tangent.prod 𝓘(ℝ, ℝ)) 𝓘(ℝ, E) k
         (fun p : TangentBundle (𝓡 n) (sphere (0 : E) 1) × ℝ ↦ p.2 • (p.1.proj : E)) :=
@@ -318,7 +318,7 @@ def sphereTangentProdRealDiffeomorph {k : ℕ∞ω} :
 theorem sphereTangentProdRealDiffeomorph_apply {k : ℕ∞ω}
     (p : TangentBundle (𝓡 n) (sphere (0 : E) 1) × ℝ) :
     sphereTangentProdRealDiffeomorph (k := k) p =
-      (p.1.proj, (sphereTangentEquiv p.1.proj p.1.2 : E) + p.2 • (p.1.proj : E)) :=
+      (p.1.proj, (sphereTangentEquiv p.1.proj p.1.snd : E) + p.2 • (p.1.proj : E)) :=
   (rfl)
 
 @[simp]
@@ -336,28 +336,28 @@ def sphereTangentProdTrivialDiffeomorph {k : ℕ∞ω} :
         Bundle.Trivial (sphere (0 : E) 1) ℝ) ≃ₘ^k⟮(𝓡 n).prod
           𝓘(ℝ, EuclideanSpace ℝ (Fin n) × ℝ), (𝓡 n).prod 𝓘(ℝ, E)⟯
       TotalSpace E (Bundle.Trivial (sphere (0 : E) 1) E) where
-  toFun p := ⟨p.proj, (sphereTangentEquiv p.proj p.2.1 : E) + (p.2.2 : ℝ) • (p.proj : E)⟩
-  invFun q := ⟨q.proj, (sphereTangentProj q.proj q.2, inner ℝ (q.proj : E) q.2)⟩
+  toFun p := ⟨p.proj, (sphereTangentEquiv p.proj p.snd.1 : E) + (p.snd.2 : ℝ) • (p.proj : E)⟩
+  invFun q := ⟨q.proj, (sphereTangentProj q.proj q.snd, inner ℝ (q.proj : E) q.snd)⟩
   left_inv p := by
     have h := (sphereTangentProdRealDiffeomorph (E := E) (n := n) (k := k)).left_inv
-      (⟨p.proj, p.2.1⟩, p.2.2)
+      (⟨p.proj, p.snd.1⟩, p.snd.2)
     obtain ⟨h1, h2⟩ := Prod.mk.inj h
     exact TotalSpace.ext rfl (heq_of_eq (Prod.ext (TotalSpace.mk_inj.mp h1) h2))
   right_inv q := by
     have h := (sphereTangentProdRealDiffeomorph (E := E) (n := n) (k := k)).right_inv
-      (q.proj, q.2)
+      (q.proj, q.snd)
     exact TotalSpace.ext rfl (heq_of_eq (Prod.mk.inj h).2)
   contMDiff_toFun := by
     have hp1 : ContMDiff ((𝓡 n).prod 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × ℝ)) (𝓡 n).tangent k
         (fun p : TotalSpace (EuclideanSpace ℝ (Fin n) × ℝ)
           ((fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) ×ᵇ
             Bundle.Trivial (sphere (0 : E) 1) ℝ) ↦
-          (⟨p.proj, p.2.1⟩ : TangentBundle (𝓡 n) (sphere (0 : E) 1))) :=
+          (⟨p.proj, p.snd.1⟩ : TangentBundle (𝓡 n) (sphere (0 : E) 1))) :=
       Bundle.Prod.contMDiff_fst
     have hp2 : ContMDiff ((𝓡 n).prod 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × ℝ)) 𝓘(ℝ, ℝ) k
         (fun p : TotalSpace (EuclideanSpace ℝ (Fin n) × ℝ)
           ((fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) ×ᵇ
-            Bundle.Trivial (sphere (0 : E) 1) ℝ) ↦ (p.2.2 : ℝ)) :=
+            Bundle.Trivial (sphere (0 : E) 1) ℝ) ↦ (p.snd.2 : ℝ)) :=
       (Bundle.Trivial.contMDiff_mk_iff.mp Bundle.Prod.contMDiff_snd).2
     refine Bundle.Trivial.contMDiff_mk_iff.mpr ⟨Bundle.contMDiff_proj _, ?_⟩
     exact (contMDiff_coe_sphereTangentEquiv.comp hp1).add
@@ -378,14 +378,14 @@ theorem sphereTangentProdTrivialDiffeomorph_apply {k : ℕ∞ω}
       ((fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) ×ᵇ
         Bundle.Trivial (sphere (0 : E) 1) ℝ)) :
     sphereTangentProdTrivialDiffeomorph (k := k) p =
-      ⟨p.proj, (sphereTangentEquiv p.proj p.2.1 : E) + (p.2.2 : ℝ) • (p.proj : E)⟩ :=
+      ⟨p.proj, (sphereTangentEquiv p.proj p.snd.1 : E) + (p.snd.2 : ℝ) • (p.proj : E)⟩ :=
   (rfl)
 
 @[simp]
 theorem sphereTangentProdTrivialDiffeomorph_symm_apply {k : ℕ∞ω}
     (q : TotalSpace E (Bundle.Trivial (sphere (0 : E) 1) E)) :
     (sphereTangentProdTrivialDiffeomorph (n := n) (k := k)).symm q =
-      ⟨q.proj, (sphereTangentProj (n := n) q.proj q.2, inner ℝ (q.proj : E) q.2)⟩ :=
+      ⟨q.proj, (sphereTangentProj (n := n) q.proj q.snd, inner ℝ (q.proj : E) q.snd)⟩ :=
   (rfl)
 
 end TauCeti
