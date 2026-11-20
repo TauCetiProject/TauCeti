@@ -150,6 +150,16 @@ theorem IsContactForm.isCompl_kerDistribution_span_reebVectorField (hα : α.IsC
     (x : M) : IsCompl (α.kerDistribution x) (ℝ ∙ α.reebVectorField x) :=
   isCompl_kerDistribution_span_characteristicVectorField (isContactForm_def.1 hα x)
 
+/-- Removing its Reeb component `α(v) R_α` from a tangent vector `v` leaves a vector of the
+contact distribution. -/
+theorem IsContactForm.sub_smul_reebVectorField_mem_kerDistribution (hα : α.IsContactForm)
+    {x : M} (v : TangentSpace I x) :
+    v - α.1 x ![v] • α.reebVectorField x ∈ α.kerDistribution x := by
+  have h := (isContactForm_def.1 hα x).apply_sub_smul_reebVector v
+  simp only [ContinuousLinearMap.coe_coe, degreeOneEquiv_apply_apply_vec,
+    ← characteristicVectorField_def, characteristicVectorField_mextDerivₗ] at h
+  rwa [mem_kerDistribution]
+
 /-- **Rescaling law for the Reeb vector field.** Let `α` be a contact form and `β = f α` for a
 function `f`, `C¹` at `x`. Then `R_β(x) = R_α(x) / f(x) + y` exactly when `y` lies in
 `ξ_x = ker α_x` and `dα(y, w) = df(w) / f(x)²` for all `w ∈ ξ_x`. In particular

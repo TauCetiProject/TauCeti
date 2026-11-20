@@ -321,11 +321,7 @@ theorem isContactHamiltonianVectorField_iff_kerDistribution :
   · intro hX x
     refine ⟨(hX x).1, fun v ↦ ?_⟩
     -- Subtract the Reeb component to test the equation on a vector in the contact plane.
-    have hv : v - α.1 x ![v] • α.reebVectorField x ∈ α.kerDistribution x := by
-      rw [mem_kerDistribution, ← degreeOneEquiv_apply_apply_vec, map_sub, map_smul]
-      simp only [degreeOneEquiv_apply_apply_vec, hα.apply_reebVectorField,
-        smul_eq_mul, mul_one, sub_self]
-    have h := (hX x).2 _ hv
+    have h := (hX x).2 _ (hα.sub_smul_reebVectorField_mem_kerDistribution v)
     have hR := hα.mextDeriv_reebVectorField_right x (X x)
     rw [mextDeriv_eq_bilinFormAt] at hR
     simp only [mextDeriv_eq_bilinFormAt, map_sub, map_smul, hR,
