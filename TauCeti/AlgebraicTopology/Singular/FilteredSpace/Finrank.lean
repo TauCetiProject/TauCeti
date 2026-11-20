@@ -290,6 +290,19 @@ theorem finrank_singularHomology_ofInclusion_eq_sum_of_eq_zero_or {a b : ℤ} (h
         hX.sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_le V hab m
           fun q hq i _ ↦ h q hq i) hc) n
 
+end Monotone
+
+end Int
+
+section Int
+
+variable {Y : TopCat.{w}} {X : ℤ → Set Y} (hX : Monotone X) {k : Type*} [Ring k]
+  [IsNoetherianRing k] [StrongRankCondition k] [HasRankNullity.{w} k] (V : ModuleCat.{w} k)
+
+namespace Monotone
+
+open TauCeti
+
 /-- **The dimension of the homology of a finitely filtered space.** Let `X : ℤ → Set Y` be an
 increasing family of subsets of `Y` with `X a = ∅` and `X b = Y`, and let `Hₙ(Y; V)` be
 finite-dimensional. On every page `r ≥ 2` with `b - a + 1 ≤ r` of the spectral sequence of the

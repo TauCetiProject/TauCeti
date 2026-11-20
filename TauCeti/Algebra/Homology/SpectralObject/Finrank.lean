@@ -58,7 +58,7 @@ variable {k : Type*} [Ring k] [IsNoetherianRing k] (X : SpectralObject (ModuleCa
 
 /-- The `q`th piece of the filtration of the abutment embeds into the abutment, so it is finitely
 generated when the abutment is. -/
-theorem finite_abutmentFiltration (q n : ℤ) [Module.Finite k (X.abutment n)] :
+instance finite_abutmentFiltration (q n : ℤ) [Module.Finite k (X.abutment n)] :
     Module.Finite k (X.abutmentFiltration q n) :=
   Module.Finite.of_injective (X.abutmentFiltrationι q n).hom
     ((ModuleCat.mono_iff_injective _).1 inferInstance)
@@ -76,7 +76,6 @@ theorem finrank_abutmentFiltration_eq_sum {a b n : ℤ} (hab : a ≤ b)
   induction b, hab using Int.leInduction with
   | base => simp [ModuleCat.finrank_eq_zero_of_isZero ha]
   | succ b hab ih =>
-    have := X.finite_abutmentFiltration (b + 1) n
     -- `F_b H^n ⟶ F_{b+1} H^n ⟶ F_{b+1} H^n / F_b H^n` is short exact.
     have hS : (ShortComplex.mk _ _ (cokernel.condition (X.abutmentFiltrationMap b n))).ShortExact :=
       { exact := ShortComplex.exact_cokernel _ }
