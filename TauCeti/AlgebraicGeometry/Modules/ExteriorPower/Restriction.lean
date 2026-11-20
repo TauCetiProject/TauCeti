@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.ExteriorPower.Restriction
 public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Comparison
-public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 
 /-!
 # Restriction of exterior powers on schemes
