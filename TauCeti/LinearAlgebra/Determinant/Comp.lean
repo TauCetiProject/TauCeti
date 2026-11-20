@@ -180,7 +180,8 @@ theorem detLineCompEquiv_detLineCongr (hf : f' ∘ₗ eM.toLinearMap = eN.toLine
   -- Written through these isomorphisms, the three transports are those of
   -- `TauCeti.detLineSixTermEquiv_congr`, and `LinearMap.detLineCompEquiv` is by definition the
   -- six-term isomorphism (`LinearMap.detLineCompEquiv_def`).
-  rw [detLineCongr_eq_congr, detLineCongr_eq_congr f, detLineCongr_eq_congr g]
+  rw [detLineCompEquiv_def f g, detLineCompEquiv_def f' g']
+  simp only [detLineCongr_eq_congr]
   exact TauCeti.detLineSixTermEquiv_congr (Submodule.inclusion_injective (ker_le_ker_comp f g))
     (f.exact_inclusion_kerCompToKer g) (f.exact_kerCompToKer_kerToCoker g)
     (f.exact_kerToCoker_cokerToCokerComp g) (f.exact_cokerToCokerComp_factor g)
