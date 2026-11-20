@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.Fibration.Comparison
 public import TauCeti.AlgebraicTopology.Singular.Fibration.FirstPage
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
@@ -228,28 +229,11 @@ theorem isIso_serreSpectralSequenceMapOver_hom_f (hf : f ≫ p' = p)
         (TopPair.isZero_singularHomology_ofInclusion_self _ _ n)
     exact (hz p).isIso (hz p') _
   obtain ⟨k, rfl⟩ : ∃ k : ℕ, b = k - 1 := ⟨(b + 1).toNat, by lia⟩
-  rcases lt_or_ge n k with hn | hn
-  · -- Below the dimension of the cells both pairs have no homology.
-    exact (isZero_singularHomology_preimageSkeleton_succ hp R _ n (by lia)).isIso
-      (isZero_singularHomology_preimageSkeleton_succ hp' R _ n (by lia)) _
-  obtain ⟨q, rfl⟩ : ∃ q : ℕ, n = q + k := ⟨n - k, by lia⟩
-  -- On the preimages of consecutive skeleta the map is the sum of the maps of the fibres over the
-  -- centres of the cells.
-  have hpair : IsIso (TopPair.singularHomologyMap
-      (TopCat.Hom.preimagePairMap f hf (skeletonLT_subset_skeletonLT_succ C k))
-      (ModuleCat.of R R) (q + k)) := by
-    have e := preimageSkeletonPairSingularHomologyIsoSigma_hom_naturality (C := C) hp R hp' hf
-      k q _ (fun j x ↦ f.coe_preimageMap_apply hf _ x)
-    rw [← Iso.eq_comp_inv] at e
-    rw [e]
-    -- The fibre over the centre of each cell is a fibre over a point of `C`; the sum of these
-    -- isomorphisms is then an isomorphism by `Sigma.map_isIso`.
-    have : ∀ j : cell C k, IsIso (((AlgebraicTopology.singularHomologyFunctor
-        (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map (f.preimageMap hf {map k j 0})) :=
-      fun j ↦ hfib _ (closedCell_subset_complex k j
-        ⟨0, Metric.mem_closedBall_self zero_le_one, rfl⟩) q
-    infer_instance
-  have e := singularHomologyMap_preimagePairMap_comp_eqToHom (C := C) hf R k _ rfl (q + k)
+  -- On the preimages of consecutive skeleta the map is an isomorphism, since the fibre over the
+  -- centre of each cell is a fibre over a point of `C`.
+  have hpair := isIso_singularHomologyMap_preimagePairMap hp hp' R hf k n fun j q _ ↦
+    hfib _ (closedCell_subset_complex k j ⟨0, Metric.mem_closedBall_self zero_le_one, rfl⟩) q
+  have e := singularHomologyMap_preimagePairMap_comp_eqToHom (C := C) hf R k _ rfl n
   rw [(IsIso.eq_inv_comp _).2 e.symm]
   infer_instance
 
