@@ -147,7 +147,7 @@ private def levelCocycle (c : cocycles₂ (L.rep F)) :
       (FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) M) :=
   ⟨fun q => L.coeffFixedPointsEquiv e he (c q), mem_Z2_iff.2 ⟨continuous_of_discreteTopology,
     fun g h j => by
-      have hc := congrArg (L.coeffFixedPointsEquiv e he) ((mem_cocycles₂_iff c).1 c.2 g h j)
+      have hc := congrArg (L.coeffFixedPointsEquiv e he) ((mem_cocycles₂_iff c).1 c.property g h j)
       rw [map_add, map_add] at hc
       exact hc.trans (congrArg (· + _) (L.coeffFixedPointsEquiv_ρ e he g (c (h, j))))⟩⟩
 
@@ -195,16 +195,16 @@ level `A^U` of a layer and a character `χ'` of its abelianized Galois group, re
 inflation to `U` of the class `a' ∪ δχ'` of the character formula is the class of the carry cocycle
 of `ψ` and of `a'`, read as an invariant `a` of `U` in `M`. -/
 theorem explicitInfl2_artinCharacterCup (a' : F.level L.ground)
-    (χ' : Additive (Abelianization L.Gal) →+ AddCircle (1 : ℚ))
+    (χ' : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ))
     (ψ : Additive L.ground.toSubgroup →+ AddCircle (1 : ℚ))
     (hψ : IsOpen (ψ.ker : Set (Additive L.ground.toSubgroup)))
     (hψχ : ∀ u : L.ground.toSubgroup,
-      ψ (.ofMul u) = χ' (.ofMul (Abelianization.of (u : L.Gal))))
+      ψ (.ofMul u) = χ' (.ofMul (Group.Abelianization.of (u : L.Gal))))
     (a : H0 L.ground.toSubgroup M) (ha : e a = a') :
     L.explicitInfl2 e he (L.artinCharacterCup F a' χ') =
       (characterCarryCocycle ψ hψ a : H2 L.ground.toSubgroup M) := by
   -- `ψ` is `χ'` read on `U` through `U → U ⧸ V`.
-  have hψ' : ψ = (χ'.comp Abelianization.of.toAdditive).comp
+  have hψ' : ψ = (χ'.comp Group.Abelianization.of.toAdditive).comp
       (QuotientGroup.mk' L.relativeTop : L.ground.toSubgroup →* L.Gal).toAdditive :=
     AddMonoidHom.ext fun u ↦ hψχ u.toMul
   rw [← LinearEquiv.apply_symm_apply (L.groundLevelEquiv F) a',
@@ -315,7 +315,7 @@ theorem exists_explicitInfl2_eq (c : H2 L.ground.toSubgroup M) :
   -- inside both `N` and `V` gives a layer `W ◁ U` refining `V ◁ U` whose quotient refines `U ⧸ N`.
   obtain ⟨N, y, rfl⟩ := ContCohomology.exists_explicitInfl2_eq c
   let S : Set G := Subtype.val '' (N : Set L.ground.toSubgroup) ∩ (L.top : Set G)
-  have hS : IsOpen S := (L.ground.isOpen.isOpenMap_subtype_val _ N.isOpen).inter L.top.isOpen
+  have hS : IsOpen S := (L.ground.isOpen.isOpenMap_subtypeVal _ N.isOpen).inter L.top.isOpen
   have h1 : (1 : G) ∈ S := ⟨⟨1, N.one_mem, rfl⟩, L.top.one_mem⟩
   obtain ⟨W, hW⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hS h1
   have hWV : W.toOpenSubgroup ≤ L.top := fun w hw => (hW hw).2

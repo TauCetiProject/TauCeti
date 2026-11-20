@@ -275,7 +275,7 @@ theorem condExp_comap_ae_eq_of_injOn {Ω β E : Type*} [NormedAddCommGroup E] [N
     ⟨G ⁻¹' (G '' (s ∩ A)), ⟨_, (hs.inter hA).image_of_measurable_injOn hG
       (hinj.mono Set.inter_subset_right), rfl⟩, ?_⟩).symm.trans ?_
   · filter_upwards [hAμ] with ω hω
-    refine propext ⟨fun h ↦ ⟨ω, ⟨h, hω⟩, rfl⟩, ?_⟩
+    refine ⟨fun h ↦ ⟨ω, ⟨h, hω⟩, rfl⟩, ?_⟩
     rintro ⟨ω', ⟨hω's, hω'A⟩, he⟩
     rwa [← hinj hω'A hω he]
   · simpa using condExp_of_aestronglyMeasurable' le_rfl hf.1 hf
@@ -294,7 +294,7 @@ theorem lintegral_enorm_condExp_rpow_le {Ω E : Type*} [NormedAddCommGroup E] [N
     have hfi : ¬ Integrable f μ := fun h ↦ hf h.1
     simp [condExp_of_not_integrable hfi, hp₀]
   have h := eLpNorm_condExp_le_eLpNorm (μ := μ) (m := m) f (p := .ofReal p) (by simpa using hp)
-  simpa [eLpNorm_eq_lintegral_rpow_enorm_toReal, hp₀, hp₀.le, integrable_condExp.1, hf,
+  simpa [eLpNorm_eq_lintegral_rpow_eNorm_toReal, hp₀, hp₀.le, integrable_condExp.1, hf,
     ENNReal.rpow_le_rpow_iff] using h
 
 /-- **Positive-part bound for the conditional expectation**: for a real level `a`, the positive
@@ -307,11 +307,11 @@ theorem lintegral_ofReal_posPart_condExp_sub_le {Ω : Type*} {m m₀ : Measurabl
   -- Pointwise `(x - a)⁺ ≤ |x - a|`, then the triangle inequality and the L¹ contraction.
   calc ∫⁻ ω, ENNReal.ofReal ((μ[f | m] ω - a)⁺) ∂μ
       ≤ ∫⁻ ω, (‖μ[f | m] ω‖ₑ + ‖a‖ₑ) ∂μ := lintegral_mono fun ω => by
-        grw [← enorm_sub_le, Real.enorm_eq_ofReal_abs]
+        grw [← eNorm_sub_le, Real.eNorm_eq_ofReal_abs]
         exact ENNReal.ofReal_le_ofReal (sup_le (le_abs_self _) (abs_nonneg _))
     _ = eLpNorm (μ[f | m]) 1 μ + ‖a‖ₑ * μ Set.univ := by
         rw [lintegral_add_right _ measurable_const, lintegral_const,
-          eLpNorm_one_eq_lintegral_enorm integrable_condExp.aestronglyMeasurable]
+          eLpNorm_one_eq_lintegral_eNorm integrable_condExp.aestronglyMeasurable]
     _ ≤ eLpNorm f 1 μ + ‖a‖ₑ * μ Set.univ := by
         grw [eLpNorm_condExp_le_eLpNorm f le_rfl]
 

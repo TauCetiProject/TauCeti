@@ -67,8 +67,8 @@ theorem MemLp.of_le_of_le {f : α → ε} {p₀ p p₁ : ℝ≥0∞} (hf₀ : Me
   · rwa [top_le_iff.1 h₁] at hf₁
   have hp0 : p ≠ 0 := (hp₀.bot_lt.trans_le h₀).ne'
   have hmeas := hf₀.aestronglyMeasurable
-  refine (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp hmeas).2 ?_
-  have hI₀ := lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hp₀ (ne_top_of_le_ne_top hp h₀)
+  refine (eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top hp0 hp hmeas).2 ?_
+  have hI₀ := lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp₀ (ne_top_of_le_ne_top hp h₀)
     hf₀.eLpNorm_lt_top
   have hle : p₀.toReal ≤ p.toReal := ENNReal.toReal_mono hp h₀
   rcases eq_or_ne p₁ ∞ with rfl | hp₁
@@ -87,7 +87,7 @@ theorem MemLp.of_le_of_le {f : α → ε} {p₀ p p₁ : ℝ≥0∞} (hf₀ : Me
         rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hr hC)]
         exact ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg hr hC) hI₀
   · -- `‖f‖ ^ p` is dominated by `‖f‖ ^ p₀` where `‖f‖ ≤ 1` and by `‖f‖ ^ p₁` elsewhere.
-    have hI₁ := lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top
+    have hI₁ := lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top
       (hp0.bot_lt.trans_le h₁).ne' hp₁ hf₁.eLpNorm_lt_top
     have hle₁ : p.toReal ≤ p₁.toReal := ENNReal.toReal_mono hp₁ h₁
     calc ∫⁻ a, ‖f a‖ₑ ^ p.toReal ∂μ
@@ -97,7 +97,7 @@ theorem MemLp.of_le_of_le {f : α → ε} {p₀ p p₁ : ℝ≥0∞} (hf₀ : Me
           · exact (ENNReal.rpow_le_rpow_of_exponent_ge h hle).trans le_self_add
           · exact (ENNReal.rpow_le_rpow_of_exponent_le h hle₁).trans le_add_self
       _ < ∞ := by
-        rw [lintegral_add_left' (hmeas.enorm.pow_const _)]
+        rw [lintegral_add_left' (hmeas.eNorm.pow_const _)]
         exact ENNReal.add_lt_top.2 ⟨hI₀, hI₁⟩
 
 section Split
@@ -119,7 +119,7 @@ theorem eLpNorm_indicator_eLpNorm_lt_enorm_le {f : α → E} {p₀ p : ℝ≥0�
     exact zero_le
   set t := eLpNorm f p μ
   set s := {x | t < ‖f x‖ₑ}
-  have hs₀ : NullMeasurableSet s μ := nullMeasurableSet_lt aemeasurable_const hf.enorm
+  have hs₀ : NullMeasurableSet s μ := nullMeasurableSet_lt aemeasurable_const hf.eNorm
   have hs : AEStronglyMeasurable (s.indicator f) μ := hf.indicator₀ hs₀
   rcases eq_or_ne p₀ 0 with rfl | hp₀0
   · rw [eLpNorm_exponent_zero hs]
@@ -136,9 +136,9 @@ theorem eLpNorm_indicator_eLpNorm_lt_enorm_le {f : α → E} {p₀ p : ℝ≥0�
     fun x => ?_
   by_cases hx : x ∈ s
   · rw [Set.indicator_of_mem hx]
-    exact ENNReal.rpow_le_rpow_sub_mul_rpow hp₀ enorm_ne_top
+    exact ENNReal.rpow_le_rpow_sub_mul_rpow hp₀ eNorm_ne_top
       (ENNReal.rpow_le_rpow_of_nonpos (le_of_lt hx) (sub_nonpos.2 (ENNReal.toReal_mono hp h₀)))
-  · rw [Set.indicator_of_notMem hx, enorm_zero, ENNReal.zero_rpow_of_pos hp₀]
+  · rw [Set.indicator_of_notMem hx, eNorm_zero, ENNReal.zero_rpow_of_pos hp₀]
     exact zero_le
 
 /-- For `p ≤ p₁`, the part of `f` where `‖f‖` is at most `‖f‖_p` has `L^{p₁}` norm at most
@@ -148,18 +148,18 @@ theorem eLpNorm_indicator_enorm_le_eLpNorm_le {f : α → E} {p p₁ : ℝ≥0�
     eLpNorm ({x | ‖f x‖ₑ ≤ eLpNorm f p μ}.indicator f) p₁ μ ≤ eLpNorm f p μ := by
   set t := eLpNorm f p μ
   set s := {x | ‖f x‖ₑ ≤ t}
-  have hs₀ : NullMeasurableSet s μ := nullMeasurableSet_le hf.enorm aemeasurable_const
+  have hs₀ : NullMeasurableSet s μ := nullMeasurableSet_le hf.eNorm aemeasurable_const
   have hs : AEStronglyMeasurable (s.indicator f) μ := hf.indicator₀ hs₀
   have hst (x : α) : ‖s.indicator f x‖ₑ ≤ t := by
     by_cases hx : x ∈ s
     · rw [Set.indicator_of_mem hx]
       exact hx
-    · rw [Set.indicator_of_notMem hx, enorm_zero]
+    · rw [Set.indicator_of_notMem hx, eNorm_zero]
       exact zero_le
   rcases eq_or_ne t 0 with ht0 | ht0
   · -- `s.indicator f` vanishes identically.
     have h0 : s.indicator f = 0 :=
-      funext fun x => enorm_eq_zero.1 (le_antisymm (ht0 ▸ hst x) bot_le)
+      funext fun x => eNorm_eq_zero.1 (le_antisymm (ht0 ▸ hst x) bot_le)
     rw [h0, eLpNorm_zero, ht0]
   rcases eq_or_ne t ∞ with ht | ht
   · exact ht ▸ le_top
@@ -171,7 +171,7 @@ theorem eLpNorm_indicator_enorm_le_eLpNorm_le {f : α → E} {p p₁ : ℝ≥0�
   refine eLpNorm_le_of_exponent_le hs hp0.bot_lt h₁ (ENNReal.toReal_pos ht0 ht)
     (by rw [ENNReal.ofReal_toReal ht]; exact eLpNorm_indicator_le f hs₀)
     (Filter.Eventually.of_forall fun x => ?_)
-  rw [← toReal_enorm]
+  rw [← toReal_eNorm]
   exact ENNReal.toReal_mono ht (hst x)
 
 /-- A function in `Lᵖ` is the sum of a function in `L^{p₀}` and a function in `L^{p₁}` for every
@@ -245,17 +245,17 @@ theorem eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow {f : α → ε} {p₀ p₁ p : 
       (Or.inl (ENNReal.ofReal_pos.2 ha).ne'), ENNReal.inv_div (Or.inl ENNReal.ofReal_ne_top)
       (Or.inl (ENNReal.ofReal_pos.2 hθ₀).ne'), div_eq_mul_inv, div_eq_mul_inv]
   calc eLpNorm f p μ = eLpNorm ((‖f ·‖ₑ ^ (1 - θ)) * (‖f ·‖ₑ ^ θ)) p μ := by
-        rw [← eLpNorm_enorm f hf]
+        rw [← eLpNorm_eNorm f hf]
         congr 1
         ext x
         rw [Pi.mul_apply, ← ENNReal.rpow_add_of_nonneg _ _ ha.le hθ₀.le, sub_add_cancel,
           ENNReal.rpow_one]
     _ ≤ eLpNorm (‖f ·‖ₑ ^ (1 - θ)) (p₀ / ENNReal.ofReal (1 - θ)) μ *
           eLpNorm (‖f ·‖ₑ ^ θ) (p₁ / ENNReal.ofReal θ) μ :=
-        eLpNorm_le_eLpNorm_mul_eLpNorm_ennreal (hf.enorm.pow_const _).aestronglyMeasurable
-          (hf.enorm.pow_const _).aestronglyMeasurable
+        eLpNorm_le_eLpNorm_mul_eLpNorm_ennreal (hf.eNorm.pow_const _).aestronglyMeasurable
+          (hf.eNorm.pow_const _).aestronglyMeasurable
     _ = eLpNorm f p₀ μ ^ (1 - θ) * eLpNorm f p₁ μ ^ θ := by
-        rw [eLpNorm_enorm_rpow f hf ha, eLpNorm_enorm_rpow f hf hθ₀, hr₀, hr₁]
+        rw [eLpNorm_eNorm_rpow f hf ha, eLpNorm_eNorm_rpow f hf hθ₀, hr₀, hr₁]
 
 /-- The `Lᵖ` norm at an intermediate exponent `p₀ ≤ p ≤ p₁`, with `p₀ ≠ 0`, is at most the
 larger of the `L^{p₀}` and `L^{p₁}` norms: `‖f‖_p ≤ max (‖f‖_{p₀}, ‖f‖_{p₁})`. This is the

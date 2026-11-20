@@ -31,7 +31,8 @@ public section
 namespace MonoidHom
 
 variable {B E R : Type*} [Group B] [Group E] [CommMonoid R]
-  [Finite (Abelianization E)] [HasEnoughRootsOfUnity R (Monoid.exponent (Abelianization E))]
+  [Finite (Group.Abelianization E)] [HasEnoughRootsOfUnity R (Monoid.exponent (Group.Abelianization
+      E))]
 
 /-- A character extends along a group homomorphism exactly when it kills the inverse image
 of the target's commutator subgroup. Only the target's abelianization needs to be finite. -/
@@ -39,14 +40,14 @@ theorem exists_comp_eq_iff_comap_commutator_le_ker (f : B →* E) (χ : B →* R
     (∃ ψ : E →* Rˣ, ψ.comp f = χ) ↔ (commutator E).comap f ≤ χ.ker := by
   constructor
   · rintro ⟨ψ, rfl⟩ x hx
-    exact Abelianization.commutator_le_ker ψ hx
+    exact Group.Abelianization.commutator_le_ker ψ hx
   · intro hχ
-    let q := (Abelianization.of.comp f).rangeRestrict
+    let q := (Group.Abelianization.of.comp f).rangeRestrict
     have hq : q.ker ≤ χ.ker := by
-      simpa only [q, ker_rangeRestrict, ← comap_ker, Abelianization.ker_of] using hχ
+      simpa only [q, ker_rangeRestrict, ← comap_ker, Group.Abelianization.ker_of] using hχ
     obtain ⟨ψ, hψ⟩ := domRestrict_surjective (M := R) _
-      (q.liftOfSurjective (Abelianization.of.comp f).rangeRestrict_surjective ⟨χ, hq⟩)
-    refine ⟨ψ.comp Abelianization.of, MonoidHom.ext fun b ↦ ?_⟩
+      (q.liftOfSurjective (Group.Abelianization.of.comp f).rangeRestrict_surjective ⟨χ, hq⟩)
+    refine ⟨ψ.comp Group.Abelianization.of, MonoidHom.ext fun b ↦ ?_⟩
     simpa [q] using DFunLike.congr_fun hψ (q b)
 
 end MonoidHom

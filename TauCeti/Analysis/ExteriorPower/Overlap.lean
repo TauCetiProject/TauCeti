@@ -71,7 +71,7 @@ theorem iSup_plucker_append_inv_mul_mul_eq [CommRing K] [Nontrivial K] [Fintype 
     obtain ⟨i, rfl⟩ := finSumFinEquiv.surjective i
     rcases i with i | i <;> simp [Matrix.mul_apply]
   rw [hfun, v.iSup_plucker_mul_eq hv _ hQ hQ' hQQ']
-  simp only [Matrix.row_eq_self, Equiv.symm_apply_apply]
+  simp only [Matrix.row_of]
 
 variable [Field K] [Finite ι]
 
@@ -102,7 +102,7 @@ theorem iSup_plucker_append_le (v : AbsoluteValue K ℝ) (hv : IsNonarchimedean 
         (Real.iSup_nonneg_of_nonnegHomClass v _) (Real.iSup_nonneg_of_nonnegHomClass v _))
       have h := Matrix.plucker_append_mul A B (A⁻¹ * Matrix.of x) (B⁻¹ * Matrix.of y) s
       rw [hA, hB] at h
-      simp only [Matrix.row_eq_self, Equiv.symm_apply_apply] at h
+      simp only [Matrix.row_of] at h
       have hm' : v A.det = ⨆ s, v (plucker x s) := hm
       have hn' : v B.det = ⨆ s, v (plucker y s) := hn
       rw [h, map_mul, map_mul, hm', hn']
@@ -114,9 +114,9 @@ theorem iSup_plucker_append_le (v : AbsoluteValue K ℝ) (hv : IsNonarchimedean 
       obtain ⟨i, rfl⟩ := finSumFinEquiv.surjective i
       rcases i with i | i
       · refine Real.iSup_le (fun j ↦ ?_) zero_le_one
-        simpa [A, hox] using hb i j
+        simpa [A, hox, Matrix.row_of] using hb i j
       · refine Real.iSup_le (fun j ↦ ?_) zero_le_one
-        simpa [B, hoy] using hc i j
+        simpa [B, hoy, Matrix.row_of] using hc i j
     · have hz : plucker y = 0 := not_ne_iff.mp ((plucker_ne_zero_iff y).not.mpr hy)
       have hxy : ¬LinearIndependent K (Fin.append x y) := fun h ↦
         hy (by simpa [Function.comp_def] using
@@ -202,7 +202,7 @@ private theorem iSup_plucker_single_overlap_le {r : ℕ} (v : AbsoluteValue K �
   have ha := v.iSup_plucker_append_single hv e (Matrix.of (Fin.append y z))
   have hb := v.iSup_plucker_append_single hv e (Matrix.of y)
   have hc := v.iSup_plucker_append_single hv e (Matrix.of z)
-  simp only [Matrix.row_eq_self, Equiv.symm_apply_apply, Matrix.of_apply] at ha hb hc
+  simp only [Matrix.row_of, Matrix.of_apply] at ha hb hc
   rw [ha, hb, hc]
   have hfun : (fun i j ↦ if j ∈ range e then 0 else Fin.append y z i j) =
       Fin.append (fun i j ↦ if j ∈ range e then 0 else y i j)
@@ -229,7 +229,7 @@ theorem iSup_plucker_overlap_le {r : ℕ} (v : AbsoluteValue K ℝ)
   by_cases hx : LinearIndependent K x
   · obtain ⟨e, Q, Q', he, hm, hQQ', -, hQ, hQ', hred⟩ :=
       v.exists_integral_plucker_reduction hv (x := Matrix.of x) (by
-        simpa only [Matrix.row_eq_self, Equiv.symm_apply_apply] using hx)
+        simpa only [Matrix.row_of] using hx)
     let P := (Matrix.of x).submatrix id e
     let X := P⁻¹ * (Matrix.of x * Q)
     let Y := Matrix.of y * Q
@@ -238,7 +238,7 @@ theorem iSup_plucker_overlap_le {r : ℕ} (v : AbsoluteValue K ℝ)
     have ha : 0 < a := v.pos (Matrix.det_ne_zero_of_left_inverse
       (Matrix.mul_nonsing_inv P (isUnit_iff_ne_zero.mpr he)))
     have hnorm : a * (⨆ s, v (plucker x s)) = 1 := by
-      simp only [Matrix.row_eq_self, Equiv.symm_apply_apply] at hm
+      simp only [Matrix.row_of] at hm
       rw [← hm]
       exact (v.map_mul _ _).symm.trans (by
         rw [Matrix.det_nonsing_inv_mul_det _ (isUnit_iff_ne_zero.mpr he), map_one])

@@ -134,7 +134,7 @@ private theorem aeval_eq_zero_of_apply_two_eq_zero [Infinite K] (hG : G.IsHomoge
     have hb : b = b 1 • ![b 0 / b 1, 1, 0] := by
       ext i
       fin_cases i <;> simp [hb2, hb1, mul_div_cancel₀]
-    rw [hb, hG.aeval_smul, h1, smul_zero]
+    rw [hb, hG.aeval_smul_of_algebra, h1, smul_zero]
   by_cases hb1 : b 1 = 0
   · -- The point `(1 : 0 : 0)` is a zero of `t ↦ G(1, t, 0)`, which vanishes for `t ≠ 0`.
     have hR : (aeval ![1, Polynomial.X, 0] G : K[X]) = 0 :=
@@ -154,7 +154,7 @@ private theorem aeval_eq_zero_of_apply_two_eq_zero [Infinite K] (hG : G.IsHomoge
     have hb' : b = b 0 • ![1, 0, 0] := by
       ext i
       fin_cases i <;> simp [hb1, hb]
-    rw [hb', hG.aeval_smul, h3, smul_zero]
+    rw [hb', hG.aeval_smul_of_algebra, h3, smul_zero]
   · exact h2 b hb hb1
 
 /-- If the binary form `G(X₀, X₁, 0)` vanishes, then along the line at infinity the partial

@@ -84,7 +84,8 @@ end LinearMap
 namespace MultilinearMap
 
 /-- The bilinear map `(x, y) ↦ m ![x, y]` of a multilinear map `m` in two variables. -/
-def toBilinMap (m : MultilinearMap R (fun _ : Fin 2 => V) N) : LinearMap.BilinMap R V N :=
+def toBilinMap (m : MultilinearMap (RingHom.id R) (fun _ : Fin 2 => V)
+    N) : LinearMap.BilinMap R V N :=
   LinearMap.mk₂ R (fun x y => m ![x, y])
     (fun x x' y => m.cons_add ![y] x x')
     (fun c x y => m.cons_smul ![y] c x)
@@ -92,25 +93,25 @@ def toBilinMap (m : MultilinearMap R (fun _ : Fin 2 => V) N) : LinearMap.BilinMa
     (fun c x y => by simpa using m.snoc_smul ![x] c y)
 
 @[simp]
-theorem toBilinMap_apply (m : MultilinearMap R (fun _ : Fin 2 => V) N) (x y : V) :
+theorem toBilinMap_apply (m : MultilinearMap (RingHom.id R) (fun _ : Fin 2 => V) N) (x y : V) :
     m.toBilinMap x y = m ![x, y] :=
   (rfl)
 
 /-- The form of a scalar-valued multilinear map that is unchanged by swapping its two arguments
 is symmetric. -/
-theorem isSymm_toBilinMap {m : MultilinearMap R (fun _ : Fin 2 => V) R}
+theorem isSymm_toBilinMap {m : MultilinearMap (RingHom.id R) (fun _ : Fin 2 => V) R}
     (h : ∀ x y : V, m ![y, x] = m ![x, y]) : LinearMap.BilinForm.IsSymm m.toBilinMap :=
   ⟨fun x y => (h x y).symm⟩
 
 /-- The bilinear map of a multilinear map that vanishes on a repeated argument is alternating. -/
-theorem isAlt_toBilinMap {m : MultilinearMap R (fun _ : Fin 2 => V) N}
+theorem isAlt_toBilinMap {m : MultilinearMap (RingHom.id R) (fun _ : Fin 2 => V) N}
     (h : ∀ x : V, m ![x, x] = 0) : m.toBilinMap.IsAlt :=
   fun x => (toBilinMap_apply m x x).trans (h x)
 
 /-- **A multilinear map in two variables is determined by its bilinear map.**  Every argument of
 `m` is a `![x, y]`, and the bilinear map records the value of `m` there. -/
 theorem toBilinMap_injective :
-    Function.Injective (toBilinMap : MultilinearMap R (fun _ : Fin 2 => V) N → _) := by
+    Function.Injective (toBilinMap : MultilinearMap (RingHom.id R) (fun _ : Fin 2 => V) N → _) := by
   intro m n h
   ext f
   rw [← FinVec.etaExpand_eq f]

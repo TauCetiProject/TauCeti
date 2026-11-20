@@ -130,7 +130,7 @@ representation: `rankOne 𝕜 w v` pairs to `x ↦ ⟪π x v, w⟫`. Unitarity e
 `π x⁻¹`, which it identifies with `π x`. -/
 theorem traceCoeff_rankOne (hunitary : IsUnitary π) (v w : V) :
     traceCoeff π hπ (InnerProductSpace.rankOne 𝕜 w v) = matrixCoeff π hπ v w := by
-  have := FiniteDimensional.complete 𝕜 V
+  have := FiniteDimensional.completeSpace 𝕜 V
   ext x
   rw [traceCoeff_apply, matrixCoeff_apply, InnerProductSpace.rankOne_comp,
     hunitary.adjoint_eq_inv, inv_inv, traceCLM_apply, InnerProductSpace.trace_rankOne]

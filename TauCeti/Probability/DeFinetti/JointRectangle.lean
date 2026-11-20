@@ -121,7 +121,7 @@ private lemma blockCylinder_eq_preimage_permReindex {m : ℕ} {k : Fin m → ℕ
 
 -- Contractability of the coordinate process upgrades to exchangeability of the law itself: the
 -- path law of the coordinates is the measure, and contractable processes are mixed-IID.
-private lemma exchangeableLaw_of_contractable [StandardBorelSpace α] [Nonempty α]
+private lemma exchangeableLaw_of_contractable [StandardBorelSpace α]
     {μ : Measure (ℕ → α)} [IsFiniteMeasure μ]
     (hX : Contractable μ fun j (x : ℕ → α) => x j) : ExchangeableLaw μ := by
   have hY_meas : ∀ j, Measurable (fun x : ℕ → α => x j) := fun j => measurable_pi_apply j

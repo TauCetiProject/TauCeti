@@ -165,9 +165,9 @@ theorem wassersteinEDist_map_IccExtend_le_lintegral_eLpNorm (hab : a ≤ b)
         eLpNorm_map_measure measurable_edist.aestronglyMeasurable (hs'.prodMk hu').aemeasurable
     _ ≤ eLpNorm (fun γ : C(Icc a b, X) ↦ ∫⁻ r in Ι s u, metricDerivative (IccExtend hab γ) r)
           p η := by
-        refine eLpNorm_mono_enorm_ae (hs'.edist hu').aestronglyMeasurable ?_
+        refine eLpNorm_mono_eNorm_ae (hs'.edist hu').aestronglyMeasurable ?_
         filter_upwards [hAC] with γ hγ
-        simpa only [enorm_eq_self] using hγ.edist_le_lintegral_metricDerivative hs hu
+        simpa only [eNorm_eq_self] using hγ.edist_le_lintegral_metricDerivative hs hu
     _ ≤ ∫⁻ r in Ι s u,
           eLpNorm (fun γ : C(Icc a b, X) ↦ metricDerivative (IccExtend hab γ) r) p η := by
         -- Minkowski's integral inequality moves the `Lᵖ(η)` seminorm inside the time integral.
@@ -199,7 +199,7 @@ theorem hasFiniteMoment_map_IccExtend (hab : a ≤ b) {η : Measure C(Icc a b, X
     rfl
   have ht : (projIcc a b hab t : ℝ) ∈ uIcc a b := by
     rw [uIcc_of_le hab]
-    exact (projIcc a b hab t).2
+    exact (projIcc a b hab t).property
   rw [hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment measurable_edist h₀, hproj]
   refine ne_top_of_le_ne_top ?_
     (wassersteinEDist_map_IccExtend_le_lintegral_eLpNorm hab hAC hp1 hp ht₀ ht)

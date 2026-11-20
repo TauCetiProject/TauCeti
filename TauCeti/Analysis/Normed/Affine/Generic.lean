@@ -105,20 +105,20 @@ theorem dense_genericLocus {ι : Sort*} [Countable ι] (A : ι → AffineSubspac
     (AffineIsometryEquiv.constVSub ℝ (Classical.arbitrary P)).toIsometryEquiv.completeSpace
   rw [genericLocus_eq_iInter]
   exact dense_iInter_of_isOpen
-    (fun i => (A i).closed_of_finiteDimensional.isOpen_compl)
+    (fun i => (A i).isClosed_of_finiteDimensional.isOpen_compl)
     (fun i => (A i).dense_compl_of_ne_top (hA i))
 
 /-- The common complement is a countable intersection of open sets. -/
 theorem isGδ_genericLocus {ι : Sort*} [Countable ι] (A : ι → AffineSubspace ℝ P) :
     IsGδ (genericLocus A) := by
   rw [genericLocus_eq_iInter]
-  exact IsGδ.iInter_of_isOpen (fun i => (A i).closed_of_finiteDimensional.isOpen_compl)
+  exact IsGδ.iInter_of_isOpen (fun i => (A i).isClosed_of_finiteDimensional.isOpen_compl)
 
 /-- For a finite family, the common complement is open. -/
 theorem isOpen_genericLocus {ι : Sort*} [Finite ι] (A : ι → AffineSubspace ℝ P) :
     IsOpen (genericLocus A) := by
   rw [genericLocus_eq_iInter]
-  exact isOpen_iInter_of_finite (fun i => (A i).closed_of_finiteDimensional.isOpen_compl)
+  exact isOpen_iInter_of_finite (fun i => (A i).isClosed_of_finiteDimensional.isOpen_compl)
 
 /-- A generic point can be chosen in any prescribed nonempty open set. -/
 theorem exists_mem_open_genericLocus {ι : Sort*} [Countable ι]
@@ -272,9 +272,9 @@ theorem hyperplane_subset_closure_sdiff_of_finrank {ι : Sort*} [Countable ι]
   intro ε hε
   obtain ⟨z, hz, hzE⟩ := A.exists_mem_open_avoid_of_finrank_lt E
     (fun i => by have := hE i; omega) (U := Subtype.val ⁻¹' Metric.ball x ε)
-    (Metric.isOpen_ball.preimage continuous_subtype_val)
+    (Metric.isOpen_ball.preimage continuous_subtypeVal)
     ⟨⟨x, AffineSubspace.self_mem_mk' x _⟩, Metric.mem_ball_self hε⟩
-  exact ⟨z, ⟨hA z z.2, fun hzZ => by
+  exact ⟨z, ⟨hA z z.property, fun hzZ => by
     obtain ⟨i, hi⟩ := Set.mem_iUnion.mp (hZE hzZ)
     exact hzE i hi⟩, by simpa [dist_comm] using hz⟩
 
@@ -290,15 +290,15 @@ variable {V P : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 /-- Generic points of a finite exceptional arrangement form an open set. -/
 theorem isOpen_isGeneric (E : ExceptionalArrangement ℝ P) : IsOpen {x | E.IsGeneric x} := by
   convert
-    AffineSubspace.isOpen_genericLocus (fun S : E.exceptions => S.1) using 1
+    AffineSubspace.isOpen_genericLocus (fun S : E.exceptions => S.val) using 1
   ext x
   simp [isGeneric_iff]
 
 /-- Generic points of a finite exceptional arrangement form a dense set. -/
 theorem dense_isGeneric (E : ExceptionalArrangement ℝ P) : Dense {x | E.IsGeneric x} := by
   convert
-    AffineSubspace.dense_genericLocus (fun S : E.exceptions => S.1)
-      (fun S => E.proper S.1 S.2) using 1
+    AffineSubspace.dense_genericLocus (fun S : E.exceptions => S.val)
+      (fun S => E.proper S.val S.property) using 1
   ext x
   simp [isGeneric_iff]
 
@@ -307,8 +307,8 @@ theorem dense_iInter_isGeneric {ι : Type*} [Countable ι]
     (E : ι → ExceptionalArrangement ℝ P) : Dense {x | ∀ i, (E i).IsGeneric x} := by
   convert
     AffineSubspace.dense_genericLocus
-      (fun p : Σ i, (E i).exceptions => p.2.1)
-      (fun p => (E p.1).proper p.2.1 p.2.2) using 1
+      (fun p : Σ i, (E i).exceptions => p.2.val)
+      (fun p => (E p.1).proper p.2.val p.2.property) using 1
   ext x
   simp [isGeneric_iff, Sigma.forall]
 
@@ -316,7 +316,7 @@ theorem dense_iInter_isGeneric {ι : Type*} [Countable ι]
 theorem isGδ_iInter_isGeneric {ι : Type*} [Countable ι]
     (E : ι → ExceptionalArrangement ℝ P) : IsGδ {x | ∀ i, (E i).IsGeneric x} := by
   convert
-    AffineSubspace.isGδ_genericLocus (fun p : Σ i, (E i).exceptions => p.2.1) using 1
+    AffineSubspace.isGδ_genericLocus (fun p : Σ i, (E i).exceptions => p.2.val) using 1
   ext x
   simp [isGeneric_iff, Sigma.forall]
 

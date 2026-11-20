@@ -56,7 +56,7 @@ theorem exists_tendsto_integral_apply_circleMap_nhds_zero (ω : SymplecticForm V
     ∃ r : ℕ → ℝ, (∀ n, 0 < r n ∧ r n ≤ b) ∧ Tendsto r atTop (𝓝 0) ∧
       Tendsto (fun n ↦ ∫ θ in -π..π, ω (u (circleMap z₀ (r n) θ))
         (deriv (fun θ ↦ u (circleMap z₀ (r n) θ)) θ)) atTop (𝓝 0) := by
-  have : CompleteSpace V := FiniteDimensional.complete ℝ V
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   let action (r : ℝ) := ∫ θ in -π..π, ω (u (circleMap z₀ r θ))
     (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)
   -- Use Euclidean coordinates only for Wirtinger; the original norm controls their energy.
@@ -129,7 +129,7 @@ theorem integral_fderiv_apply_punctured_disc (ω : SymplecticForm V) {u : ℂ �
       ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) =
       (1 / 2 : ℝ) * ∫ θ in -π..π, ω (u (circleMap z₀ b θ))
         (deriv (fun θ ↦ u (circleMap z₀ b θ)) θ) := by
-  have : CompleteSpace V := FiniteDimensional.complete ℝ V
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   let D := {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
   let A (r : ℝ) := {z : ℂ | r ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
   let area (z : ℂ) := ω (fderiv ℝ u z 1) (fderiv ℝ u z I)
@@ -141,7 +141,7 @@ theorem integral_fderiv_apply_punctured_disc (ω : SymplecticForm V) {u : ℂ �
       (isClosed_le (continuous_id.sub continuous_const).norm continuous_const).measurableSet
   have hsub {r : ℝ} (hr : 0 < r) : A r ⊆ D := fun z hz ↦ ⟨hr.trans_le hz.1, hz.2⟩
   have harea : IntegrableOn area D :=
-    ω.integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq henergy
+    ω.integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq 1 I henergy
   obtain ⟨r, hr, hrlim, hactionlim⟩ := ω.exists_tendsto_integral_apply_circleMap_nhds_zero
     z₀ hb (fun z hz ↦ (hu z hz).of_le one_le_two) henergy
   -- Dominated convergence exhausts the punctured disc even though the radii need not be monotone.

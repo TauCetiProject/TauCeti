@@ -96,19 +96,19 @@ theorem IsInvertible.prod_coprod_coprod {Λ Λ₃ G : Type*} [NormedAddCommGroup
   let inv : F × G × Λ₃ →L[𝕜] E × Λ × Λ₃ :=
     (ContinuousLinearEquiv.prodAssoc 𝕜 E Λ Λ₃).toContinuousLinearMap ∘L
       ((e.symm : F × G →L[𝕜] E × Λ).prodMap (ContinuousLinearMap.id 𝕜 Λ₃)) ∘L S
-  refine ⟨ContinuousLinearEquiv.equivOfInverse ((T.coprod (D₂.coprod D₃)).prod
+  refine ⟨ContinuousLinearEquiv.ofContinuousLinearMap ((T.coprod (D₂.coprod D₃)).prod
     ((q.prodMap (ContinuousLinearMap.id 𝕜 Λ₃)) ∘L
       (ContinuousLinearEquiv.prodAssoc 𝕜 E Λ Λ₃).symm.toContinuousLinearMap)) inv
-    (fun z ↦ ?_) (fun w ↦ ?_), rfl⟩
-  · obtain ⟨x, l, l₃⟩ := z
-    have := he' (x, l)
-    simp only [coprod_apply] at this
-    simp [inv, S, ← add_assoc, this]
+    (ContinuousLinearMap.ext fun w ↦ ?_) (ContinuousLinearMap.ext fun z ↦ ?_), rfl⟩
   · obtain ⟨y, g, m⟩ := w
     have h1 := hA (y - D₃ m, g)
     have h2 := hq (y - D₃ m, g)
     simp only [coprod_apply] at h1
     simp [inv, S, ← add_assoc, h1, h2]
+  · obtain ⟨x, l, l₃⟩ := z
+    have := he' (x, l)
+    simp only [coprod_apply] at this
+    simp [inv, S, ← add_assoc, this]
 
 omit [CompleteSpace 𝕜] in
 /-- **Kernel charts under a change of models.** A kernel coordinate `q` of the stabilization of `T`
@@ -156,7 +156,7 @@ theorem IsFredholm.exists_stabilization_kernel_coordinates (hT₀ : IsFredholm (
   obtain ⟨S, hSD, hS⟩ := Submodule.exists_le_isTopCompl_of_dense hT₀.isClosed_range hD
   have : FiniteDimensional 𝕜 S :=
     ((T x₀).range.quotientEquivOfIsCompl S hS.isCompl).finiteDimensional
-  have : IsClosed (S : Set F) := S.closed_of_finiteDimensional
+  have : IsClosed (S : Set F) := S.isClosed_of_finiteDimensional
   let A : X → (E × S) →L[𝕜] F := fun x ↦ (T x).coprod S.subtypeL
   have hsurj : Surjective (A x₀) := by
     apply LinearMap.range_eq_top.mp

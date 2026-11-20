@@ -145,13 +145,13 @@ of the degree-`n` summand, via the canonical symmetric-power comparison. -/
 lemma gradedSymmetricAlgebraSectionsEquiv_homogeneous (hU : IsAffineOpen U) (n : ℕ)
     (x : TauCeti.SymmetricAlgebra.homogeneousSubmodule Γ(X, U)
       ((Scheme.Modules.sectionsFunctor U).obj F.obj) n) :
-    gradedSymmetricAlgebraSectionsEquiv F hU x.1 = DirectSum.of _ n
+    gradedSymmetricAlgebraSectionsEquiv F hU x.val = DirectSum.of _ n
       (((Scheme.Modules.sectionsFunctor U).map
           (eqToHom (gradedSymmetricAlgebra_obj_obj_X F n).symm))
         ((Scheme.Modules.symmetricPowerSectionsIso (F.obj : X.Modules) hU n).hom x)) := by
   dsimp only [gradedSymmetricAlgebraSectionsEquiv, AlgEquiv.trans_apply,
     DirectSum.decomposeAlgEquiv_apply, AlgEquiv.ofLinearEquiv_apply]
-  rw [DirectSum.decompose_of_mem _ x.2]
+  rw [DirectSum.decompose_of_mem _ x.property]
   exact sectionsLinearEquiv_of F hU n x
 
 /-- The inverse comparison takes a section of degree `n` to the corresponding homogeneous
@@ -162,7 +162,7 @@ lemma gradedSymmetricAlgebraSectionsEquiv_symm_of (hU : IsAffineOpen U) (n : ℕ
     (gradedSymmetricAlgebraSectionsEquiv F hU).symm (DirectSum.of _ n x) =
       ((Scheme.Modules.symmetricPowerSectionsIso (F.obj : X.Modules) hU n).inv
         (((Scheme.Modules.sectionsFunctor U).map
-          (eqToHom (gradedSymmetricAlgebra_obj_obj_X F n))) x)).1 := by
+          (eqToHom (gradedSymmetricAlgebra_obj_obj_X F n))) x)).val := by
   apply (AlgEquiv.symm_apply_eq _).mpr
   have h := gradedSymmetricAlgebraSectionsEquiv_homogeneous F hU n
     ((sectionsDegreeIso F hU n).inv x)
@@ -184,7 +184,7 @@ lemma gradedSymmetricAlgebraSectionsEquiv_mem_grade_iff (hU : IsAffineOpen U) (n
     rw [gradedSymmetricAlgebraSectionsEquiv_symm_of, AlgEquiv.symm_apply_apply] at h
     exact h ▸ ((Scheme.Modules.symmetricPowerSectionsIso (F.obj : X.Modules) hU n).inv
       (((Scheme.Modules.sectionsFunctor U).map
-        (eqToHom (gradedSymmetricAlgebra_obj_obj_X F n))) x)).2
+        (eqToHom (gradedSymmetricAlgebra_obj_obj_X F n))) x)).property
   · intro ha
     rw [gradedSymmetricAlgebraSectionsEquiv_homogeneous F hU n ⟨a, ha⟩]
     exact CommMon.of_mem_gradedSectionsGrading _ n _
@@ -257,7 +257,7 @@ lemma gradedSymmetricAlgebraSectionsEquiv_restrict (hU : IsAffineOpen U) {V : X.
       (fun a b ha hb ↦ ?_) a
   · simp only [map_zero]
   · have hmap :
-        (((PresheafOfModulesOfCommRing.symmetricPower n).obj F.obj.val).map i.op x).1 = ρ x.1 :=
+        (((PresheafOfModulesOfCommRing.symmetricPower n).obj F.obj.val).map i.op x).val = ρ x.val :=
       PresheafOfModulesOfCommRing.coe_symmetricPower_obj_map_apply n F.obj.val i.op x
     erw [← hmap, gradedSymmetricAlgebraSectionsEquiv_homogeneous,
       gradedSymmetricAlgebraSectionsEquiv_homogeneous]

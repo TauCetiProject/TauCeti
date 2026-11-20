@@ -84,12 +84,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   (hZ : ContMDiff I I.tangent ∞ (T% Z)) {ι : S → M} (hι : ContMDiff J I ∞ ι)
 include hZ hι
 
-/-- The domain `{(t, s) | φₜ(ι s) is defined}` of the local Liouville flow map is open. -/
-private theorem isOpen_setOf_mem_flowDomain_comp :
-    IsOpen {p : ℝ × S | (p.1, ι p.2) ∈ flowDomain Z} :=
-  (isOpen_flowDomain (hZ.of_le (by simp))).preimage
-    (continuous_fst.prodMk (hι.continuous.comp continuous_snd))
-
 /-- The local flow map `(t, s) ↦ φₜ(ι s)` is smooth near every point of its domain. -/
 private theorem contMDiffAt_flowOf_comp_uncurry {p : ℝ × S} (hp : (p.1, ι p.2) ∈ flowDomain Z) :
     ContMDiffAt (𝓘(ℝ).prod J) I ∞ (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) p :=
@@ -101,10 +95,10 @@ variable [IsManifold J ∞ S] {α : SmoothForm I M ℝ 1}
 smooth vector field `Z` be the Liouville field of the one-form `α`, `ι_Z dα = α`, and let
 `ι : S → M` be smooth. At every point of its domain, the local flow map `(t, s) ↦ φₜ(ι s)` pulls `α`
 back to the symplectization form `eᵗ ι^* α` of the restricted form. -/
-theorem mpullback_flowOf_comp_apply_eq_symplectization (hZα : (mextDeriv α.1).interior Z = α.1)
+theorem mpullback_flowOf_comp_apply_eq_symplectization (hZα : (mextDeriv α.val).interior Z = α.val)
     {p : ℝ × S} (hp : (p.1, ι p.2) ∈ flowDomain Z) :
-    mpullback (𝓘(ℝ).prod J) I (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) α.1 p =
-      (SmoothForm.mpullback ι hι α).symplectization.1 p := by
+    mpullback (𝓘(ℝ).prod J) I (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) α.val p =
+      (SmoothForm.mpullback ι hι α).symplectization.val p := by
   -- The local flow rescales the primitive: `(φₜ^* α)_x = eᵗ α_x`.
   have hscale := mpullback_flowOf_apply_eq_exp_smul_of_interior_eq (hZ.of_le (by simp))
     α.mdifferentiable rfl hZα hp
@@ -125,22 +119,23 @@ theorem mpullback_flowOf_comp_apply_eq_symplectization (hZα : (mextDeriv α.1).
 `Z` be the Liouville field of the one-form `α`, `ι_Z dα = α`, and let `ι : S → M` be smooth. At
 every point of its domain, the local flow map `(t, s) ↦ φₜ(ι s)` pulls `dα` back to the exterior
 derivative of the symplectization form `eᵗ ι^* α`. -/
-theorem mpullback_flowOf_comp_mextDeriv_apply (hZα : (mextDeriv α.1).interior Z = α.1)
+theorem mpullback_flowOf_comp_mextDeriv_apply (hZα : (mextDeriv α.val).interior Z = α.val)
     {p : ℝ × S} (hp : (p.1, ι p.2) ∈ flowDomain Z) :
-    mpullback (𝓘(ℝ).prod J) I (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) (mextDeriv α.1) p =
-      mextDeriv (SmoothForm.mpullback ι hι α).symplectization.1 p := by
+    mpullback (𝓘(ℝ).prod J) I (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) (mextDeriv α.val) p =
+      mextDeriv (SmoothForm.mpullback ι hι α).symplectization.val p := by
   rw [mpullback_mextDeriv_at ((contMDiffAt_flowOf_comp_uncurry hZ hι hp).of_le (by simp))
     ((α.contMDiff _).of_le (by simp))]
   -- The two one-forms agree on the open domain of the flow map, a neighbourhood of `p`.
   refine mextDeriv_congr_of_eventuallyEq ?_
-  filter_upwards [(isOpen_setOf_mem_flowDomain_comp hZ hι).mem_nhds hp] with q hq
+  filter_upwards [(isOpen_setOf_mem_flowDomain (hZ.of_le (by simp)) continuous_fst
+      (hι.continuous.comp continuous_snd)).mem_nhds hp] with q hq
   exact mpullback_flowOf_comp_apply_eq_symplectization hZ hι hZα hq
 
 /-- **The local Liouville flow map is an immersion.** Let the smooth vector field `Z` be the
 Liouville field of the one-form `α`, `ι_Z dα = α`, and let `ι : S → M` be smooth with `ι^* α` a
 contact form. Then the local flow map `(t, s) ↦ φₜ(ι s)` has injective differential at every point
 of its domain, since it pulls `dα` back to the symplectic form `d(eᵗ ι^* α)`. -/
-theorem injective_mfderiv_flowOf_comp (hZα : (mextDeriv α.1).interior Z = α.1)
+theorem injective_mfderiv_flowOf_comp (hZα : (mextDeriv α.val).interior Z = α.val)
     (hα : (SmoothForm.mpullback ι hι α).IsContactForm) {p : ℝ × S}
     (hp : (p.1, ι p.2) ∈ flowDomain Z) :
     Function.Injective (mfderiv (𝓘(ℝ).prod J) I (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) p) := by
@@ -149,14 +144,14 @@ theorem injective_mfderiv_flowOf_comp (hZα : (mextDeriv α.1).interior Z = α.1
   refine (injective_iff_map_eq_zero _).2 fun v hv ↦ hnd v fun w ↦ ?_
   rw [SmoothBundleForm.eval₂_apply, mextDerivₗ_apply,
     ← mpullback_flowOf_comp_mextDeriv_apply hZ hι hZα hp, mpullback_apply_pair, hv]
-  exact (mextDeriv α.1 _).map_coord_zero 0 rfl
+  exact (mextDeriv α.val _).map_coord_zero 0 rfl
 
 /-- **The local Liouville flow map is a local diffeomorphism.** Let the smooth vector field `Z` be
 the Liouville field of the one-form `α`, `ι_Z dα = α`, and let `ι : S → M` be smooth from a
 boundaryless manifold of one dimension less, with `ι^* α` a contact form. Then the local flow map
 `(t, s) ↦ φₜ(ι s)` is a local diffeomorphism at every point of its domain. -/
 theorem isLocalDiffeomorphAt_flowOf_comp [FiniteDimensional ℝ E'] [J.Boundaryless]
-    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hZα : (mextDeriv α.1).interior Z = α.1)
+    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hZα : (mextDeriv α.val).interior Z = α.val)
     (hα : (SmoothForm.mpullback ι hι α).IsContactForm) {p : ℝ × S}
     (hp : (p.1, ι p.2) ∈ flowDomain Z) :
     IsLocalDiffeomorphAt (𝓘(ℝ).prod J) I ∞ (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) p := by
@@ -168,7 +163,8 @@ theorem isLocalDiffeomorphAt_flowOf_comp [FiniteDimensional ℝ E'] [J.Boundaryl
   have hinj := injective_mfderiv_flowOf_comp hZ hι hZα hα hp
   exact isLocalDiffeomorphAt_of_mfderiv_eq
     (fun q hq ↦ (contMDiffAt_flowOf_comp_uncurry hZ hι hq).contMDiffWithinAt)
-    (isOpen_setOf_mem_flowDomain_comp hZ hι) hp BoundarylessManifold.isInteriorPoint (by simp)
+    (isOpen_setOf_mem_flowDomain (hZ.of_le (by simp)) continuous_fst
+      (hι.continuous.comp continuous_snd)) hp BoundarylessManifold.isInteriorPoint (by simp)
     (e := (LinearMap.linearEquivOfInjective _ hinj hdim').toContinuousLinearEquiv)
     (ContinuousLinearMap.ext fun w ↦ LinearMap.linearEquivOfInjective_apply hinj hdim' w)
 
@@ -179,7 +175,7 @@ form. Then for some `ε > 0` the flow `φₜ(ι s)` is defined for `|t| < ε`, a
 `(-ε, ε) × S` the local flow map `(t, s) ↦ φₜ(ι s)` is injective and a local diffeomorphism, that
 is, a diffeomorphism onto an open subset of `M`. -/
 theorem exists_pos_injOn_flowOf_comp [FiniteDimensional ℝ E'] [J.Boundaryless] [CompactSpace S]
-    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hZα : (mextDeriv α.1).interior Z = α.1)
+    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hZα : (mextDeriv α.val).interior Z = α.val)
     (hα : (SmoothForm.mpullback ι hι α).IsContactForm) (hιi : Function.Injective ι) :
     ∃ ε > 0, Ioo (-ε) ε ×ˢ univ ⊆ {p : ℝ × S | (p.1, ι p.2) ∈ flowDomain Z} ∧
       InjOn (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) (Ioo (-ε) ε ×ˢ univ) ∧
@@ -202,12 +198,13 @@ theorem exists_pos_injOn_flowOf_comp [FiniteDimensional ℝ E'] [J.Boundaryless]
   -- By the tube lemma, the open set `U ∩ D` contains a product `u × S` with `u` a neighbourhood
   -- of `0`, and hence a collar of uniform width.
   obtain ⟨u, v, hu, -, h0u, hSv, huv⟩ := generalized_tube_lemma isCompact_singleton isCompact_univ
-    (hUo.inter (isOpen_setOf_mem_flowDomain_comp hZ hι)) (subset_inter hsU hD)
+    (hUo.inter (isOpen_setOf_mem_flowDomain (hZ.of_le (by simp)) continuous_fst
+      (hι.continuous.comp continuous_snd))) (subset_inter hsU hD)
   obtain ⟨ε, hε, hεu⟩ := Metric.isOpen_iff.mp hu 0 (h0u rfl)
   have hsub : Ioo (-ε) ε ×ˢ (univ : Set S) ⊆ U ∩ D := fun p hp ↦
     huv ⟨hεu (by simpa [Real.ball_eq_Ioo] using hp.1), hSv (mem_univ _)⟩
   exact ⟨ε, hε, fun p hp ↦ (hsub hp).2, hinj.mono fun p hp ↦ (hsub hp).1,
-    fun p ↦ hloc ⟨p, (hsub p.2).1⟩⟩
+    fun p ↦ hloc ⟨p, (hsub p.property).1⟩⟩
 
 /-- **The Liouville collar of a noncompact hypersurface.** Let the smooth vector field `Z` be the
 Liouville field of the one-form `α`, `ι_Z dα = α`, and let `ι : S → M` be a smooth topological
@@ -220,7 +217,7 @@ No compactness of `S` is needed. The embedding hypothesis is necessary: the coll
 homeomorphism onto its open image and restricts to `ι` on `{0} × S`. -/
 theorem exists_continuous_pos_injOn_flowOf_comp [FiniteDimensional ℝ E'] [J.Boundaryless]
     [TopologicalSpace.PseudoMetrizableSpace M] [TopologicalSpace.PseudoMetrizableSpace S]
-    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hZα : (mextDeriv α.1).interior Z = α.1)
+    (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hZα : (mextDeriv α.val).interior Z = α.val)
     (hα : (SmoothForm.mpullback ι hι α).IsContactForm) (hιe : Topology.IsInducing ι) :
     ∃ ε : C(S, ℝ), (∀ s, 0 < ε s) ∧
       {p : ℝ × S | |p.1| < ε p.2} ⊆ {p : ℝ × S | (p.1, ι p.2) ∈ flowDomain Z} ∧
@@ -230,12 +227,13 @@ theorem exists_continuous_pos_injOn_flowOf_comp [FiniteDimensional ℝ E'] [J.Bo
   have hZ1 : ContMDiff I I.tangent 1 (T% Z) := hZ.of_le (by simp)
   set D := {p : ℝ × S | (p.1, ι p.2) ∈ flowDomain Z}
   have hloc : IsLocalDiffeomorphOn (𝓘(ℝ).prod J) I ∞ (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) D :=
-    fun p ↦ isLocalDiffeomorphAt_flowOf_comp hZ hι hdim hZα hα p.2
+    fun p ↦ isLocalDiffeomorphAt_flowOf_comp hZ hι hdim hZα hα p.property
   -- The section `s ↦ (0, s)` is mapped to `ι`, which induces the topology of `S`; so the flow map
   -- is an open embedding on an open neighbourhood `U ⊆ D` of `{0} × S`.
   obtain ⟨U, hUo, hsU, hUD, hemb⟩ :=
     hloc.isLocalHomeomorphOn.exists_isOpenEmbedding_near_section
-      (isOpen_setOf_mem_flowDomain_comp hZ hι) (s := fun y : S ↦ ((0 : ℝ), y))
+      (isOpen_setOf_mem_flowDomain (hZ.of_le (by simp)) continuous_fst
+        (hι.continuous.comp continuous_snd)) (s := fun y : S ↦ ((0 : ℝ), y))
       (by
         rintro _ ⟨y, rfl⟩
         exact mem_flowDomain_zero hZ1 (ι y))
@@ -246,7 +244,7 @@ theorem exists_continuous_pos_injOn_flowOf_comp [FiniteDimensional ℝ E'] [J.Bo
   let := TopologicalSpace.pseudoMetrizableSpacePseudoMetric S
   obtain ⟨ε, hε, hεU⟩ := hUo.exists_continuous_pos_forall_abs_lt fun y ↦ hsU ⟨y, rfl⟩
   have hsub : {p : ℝ × S | |p.1| < ε p.2} ⊆ U := fun p hp ↦ hεU p.2 p.1 hp
-  refine ⟨ε, hε, hsub.trans hUD, fun p hp q hq hpq ↦ ?_, fun p ↦ hloc ⟨p, hUD (hsub p.2)⟩⟩
+  refine ⟨ε, hε, hsub.trans hUD, fun p hp q hq hpq ↦ ?_, fun p ↦ hloc ⟨p, hUD (hsub p.property)⟩⟩
   exact congrArg Subtype.val
     (hemb.injective (a₁ := ⟨p, hsub hp⟩) (a₂ := ⟨q, hsub hq⟩) hpq)
 
@@ -257,11 +255,12 @@ less, to which `Z` is transverse. Then `ι^* α` is a contact form, and the loca
 `(t, s) ↦ φₜ(ι s)` is a local diffeomorphism at every point of its domain. -/
 theorem isLocalDiffeomorphAt_flowOf_comp_of_isTransverseAlong [FiniteDimensional ℝ E']
     [J.Boundaryless] (hdim : finrank ℝ E' + 1 = finrank ℝ E)
-    (hσ : SmoothTwoForm.IsNondegenerate (mextDerivₗ I 1 α)) (hZα : (mextDeriv α.1).interior Z = α.1)
+    (hσ : SmoothTwoForm.IsNondegenerate (mextDerivₗ I 1 α)) (hZα : (mextDeriv α.val).interior Z =
+        α.val)
     (hιs : ∀ s, Function.Injective (mfderiv J I ι s)) (hZι : IsTransverseAlong J Z ι)
     {p : ℝ × S} (hp : (p.1, ι p.2) ∈ flowDomain Z) :
     IsLocalDiffeomorphAt (𝓘(ℝ).prod J) I ∞ (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) p := by
-  have hct : IsContactType J (mextDerivₗ I 1 α).1 α.1 ι := isContactType_iff.2
+  have hct : IsContactType J (mextDerivₗ I 1 α).val α.val ι := isContactType_iff.2
     ⟨univ, isOpen_univ, subset_univ _, fun _ _ ↦ by rw [mextDerivₗ_apply], Z, hZ.contMDiffOn,
       fun x _ ↦ by rw [mextDerivₗ_apply, hZα], hZι⟩
   exact isLocalDiffeomorphAt_flowOf_comp hZ hι hdim hZα

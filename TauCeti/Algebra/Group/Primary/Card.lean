@@ -31,6 +31,9 @@ For a prime `p` this pins the order down: `#A[p^∞]` is the full power of `p` d
   only depends on `#A`.
 * `TauCeti.AddCommGroup.natCard_primaryComponent`: for a prime `p` and a finite group,
   `#A[p^∞] = p ^ v_p(#A)`.
+* `TauCeti.AddCommGroup.natCard_dvd_of_natCard_primaryComponent_dvd` and
+  `TauCeti.AddCommGroup.natCard_eq_of_natCard_primaryComponent_eq`: the converses, for finite
+  groups: `#G ∣ #H` (resp. `#G = #H`) if this holds for every prime-primary component.
 -/
 
 public section
@@ -72,17 +75,20 @@ theorem dvd_of_prime_dvd_natCard_primaryComponent {n p : ℕ}
     (h : p ∣ Nat.card (AddCommGroup.primaryComponent A n)) : p ∣ n := by
   have := Fact.mk hp
   obtain ⟨x, hx⟩ := exists_prime_addOrderOf_dvd_card' p h
-  obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.2
+  obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.property
   refine hp.dvd_of_dvd_pow (n := k) ?_
   rw [← hx]
   exact addOrderOf_dvd_of_nsmul_eq_zero (Subtype.ext hk)
 
 /-- **The order of the `n`-primary component is monotone in the order of the group**: if
-`#A ∣ #B` for finite commutative groups, then `#A[n^∞] ∣ #B[n^∞]`. -/
-theorem natCard_primaryComponent_dvd_of_natCard_dvd [Finite A] [Finite B]
+`#A ∣ #B` for commutative groups with `B` finite, then `#A[n^∞] ∣ #B[n^∞]` (`A` is then finite
+too). -/
+theorem natCard_primaryComponent_dvd_of_natCard_dvd [Finite B]
     (h : Nat.card A ∣ Nat.card B) (n : ℕ) :
     Nat.card (AddCommGroup.primaryComponent A n) ∣
       Nat.card (AddCommGroup.primaryComponent B n) := by
+  have : Finite A :=
+    Nat.finite_of_card_ne_zero (ne_zero_of_dvd_ne_zero (Nat.card_pos (α := B)).ne' h)
   -- `#A[n^∞]` divides `#B = #B[n^∞] · [B : B[n^∞]]` and is prime to the index
   have hcop : (Nat.card (AddCommGroup.primaryComponent A n)).Coprime
       (AddCommGroup.primaryComponent B n).index :=
@@ -93,13 +99,15 @@ theorem natCard_primaryComponent_dvd_of_natCard_dvd [Finite A] [Finite B]
   rw [AddSubgroup.card_mul_index]
   exact (AddSubgroup.card_addSubgroup_dvd_card _).trans h
 
-/-- **Finite commutative groups of the same order have `n`-primary components of the same
+/-- **Commutative groups of the same finite order have `n`-primary components of the same
 order.** -/
-theorem natCard_primaryComponent_eq_of_natCard_eq [Finite A] [Finite B]
+theorem natCard_primaryComponent_eq_of_natCard_eq [Finite B]
     (h : Nat.card A = Nat.card B) (n : ℕ) :
-    Nat.card (AddCommGroup.primaryComponent A n) = Nat.card (AddCommGroup.primaryComponent B n) :=
-  Nat.dvd_antisymm (natCard_primaryComponent_dvd_of_natCard_dvd h.dvd n)
-    (natCard_primaryComponent_dvd_of_natCard_dvd h.symm.dvd n)
+    Nat.card (AddCommGroup.primaryComponent A n) =
+      Nat.card (AddCommGroup.primaryComponent B n) := by
+  have : Finite A := Nat.finite_of_card_ne_zero (h ▸ Nat.card_pos.ne')
+  exact Nat.dvd_antisymm (natCard_primaryComponent_dvd_of_natCard_dvd h.dvd n)
+      (natCard_primaryComponent_dvd_of_natCard_dvd h.symm.dvd n)
 
 /-- **The order of a prime-primary component** of a finite commutative group is the corresponding
 prime-power factor of the group order. -/
@@ -115,6 +123,31 @@ theorem natCard_primaryComponent (A : Type*) [AddCommGroup A] [Finite A] {p : �
   rw [← (AddCommGroup.primaryComponent A p).card_mul_index, hk,
     Nat.factorization_mul (pow_ne_zero _ hp.ne_zero) AddSubgroup.index_ne_zero_of_finite]
   simp [hp.factorization_pow, hi]
+
+/-- **If the `p`-primary component of `G` has order dividing that of `H` for every prime `p`, then
+`#G ∣ #H`** for finite commutative groups. The order of the `p`-primary component is the `p`-part
+of the group order (`TauCeti.AddCommGroup.natCard_primaryComponent`). -/
+theorem natCard_dvd_of_natCard_primaryComponent_dvd {G H : Type*} [AddCommGroup G]
+    [AddCommGroup H] [Finite G] [Finite H]
+    (h : ∀ p : ℕ, p.Prime → Nat.card (AddCommGroup.primaryComponent G p) ∣
+      Nat.card (AddCommGroup.primaryComponent H p)) :
+    Nat.card G ∣ Nat.card H := by
+  rw [← Nat.factorization_prime_le_iff_dvd Nat.card_pos.ne' Nat.card_pos.ne']
+  intro p hp
+  refine (hp.pow_dvd_iff_le_factorization Nat.card_pos.ne').1 ?_
+  rw [← natCard_primaryComponent G hp]
+  exact (h p hp).trans (AddSubgroup.card_addSubgroup_dvd_card _)
+
+/-- **Finite commutative groups whose `p`-primary components have the same order for every prime
+`p` have the same order.** This is the converse of
+`TauCeti.AddCommGroup.natCard_primaryComponent_eq_of_natCard_eq`. -/
+theorem natCard_eq_of_natCard_primaryComponent_eq {G H : Type*} [AddCommGroup G]
+    [AddCommGroup H] [Finite G] [Finite H]
+    (h : ∀ p : ℕ, p.Prime → Nat.card (AddCommGroup.primaryComponent G p) =
+      Nat.card (AddCommGroup.primaryComponent H p)) :
+    Nat.card G = Nat.card H :=
+  Nat.dvd_antisymm (natCard_dvd_of_natCard_primaryComponent_dvd fun p hp ↦ (h p hp).dvd)
+    (natCard_dvd_of_natCard_primaryComponent_dvd fun p hp ↦ (h p hp).symm.dvd)
 
 end AddCommGroup
 

@@ -215,7 +215,7 @@ private theorem uniformIntegrable_limitStep :
     refine Set.eq_empty_of_forall_notMem fun z hz ↦ ?_
     have hz' : (2 : ℝ≥0) ≤ ‖limitStep V n z.1 z.2‖₊ := hz
     have h1 : ‖limitStep V n z.1 z.2‖₊ ≤ 1 := by
-      rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs, NNReal.coe_one]
+      rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs, NNReal.coe_one]
       exact abs_le.2 ⟨by linarith [(limitStep V n).nonneg z.1 z.2], (limitStep V n).le_one z.1 z.2⟩
     exact absurd (hz'.trans h1) (by norm_num)
   simp [hempty]

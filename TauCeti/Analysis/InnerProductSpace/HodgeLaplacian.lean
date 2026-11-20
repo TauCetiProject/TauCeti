@@ -29,6 +29,8 @@ is zero exactly when `ker B = range A`, provided `range A` is closed. Hence
   injective;
 * `ContinuousLinearMap.exact_iff_injective_hodgeLaplacian`: for a complex whose first operator
   has closed range, exactness at `V` is equivalent to injectivity of `Δ`;
+* `ContinuousLinearMap.exact_of_surjective_hodgeLaplacian`: for any complex, surjectivity of `Δ`
+  implies exactness at `V`, without assuming `range A` is closed;
 * `ContinuousLinearMap.exact_iff_isInvertible_hodgeLaplacian`: when `V` is finite-dimensional,
   exactness at `V` is equivalent to invertibility of `Δ`.
 
@@ -135,11 +137,26 @@ theorem exact_iff_injective_hodgeLaplacian (hBA : B ∘L A = 0)
     Function.Exact A B ↔ Function.Injective (A.hodgeLaplacian B) :=
   ⟨A.injective_hodgeLaplacian B, A.exact_of_injective_hodgeLaplacian B hBA hA⟩
 
+/-- For a complex `U → V → W`, surjectivity of the Laplacian at `V` implies exactness at `V`,
+without assuming that `A` has closed range. -/
+theorem exact_of_surjective_hodgeLaplacian (hBA : B ∘L A = 0)
+    (h : Function.Surjective (A.hodgeLaplacian B)) : Function.Exact A B := by
+  refine LinearMap.exact_of_comp_of_mem_range (by simpa using congrArg toLinearMap hBA)
+    fun v hv ↦ ?_
+  rw [coe_coe] at hv
+  obtain ⟨w, hw⟩ := h v
+  rw [hodgeLaplacian_apply] at hw
+  have hBBw : B (adjoint B (B w)) = 0 := by
+    simpa [← comp_apply B A, hBA, hv] using congrArg B hw
+  have hBw : adjoint B (B w) = 0 :=
+    inner_self_eq_zero (𝕜 := 𝕜).1 (by rw [adjoint_inner_left, hBBw, inner_zero_right])
+  exact ⟨adjoint A w, by simpa [hBw] using hw⟩
+
 /-- For a complex `U → V → W` with finite-dimensional middle space, exactness at `V` is equivalent
 to invertibility of the Laplacian at `V`. -/
 theorem exact_iff_isInvertible_hodgeLaplacian [FiniteDimensional 𝕜 V] (hBA : B ∘L A = 0) :
     Function.Exact A B ↔ (A.hodgeLaplacian B).IsInvertible := by
-  rw [A.exact_iff_injective_hodgeLaplacian B hBA (Submodule.closed_of_finiteDimensional _),
+  rw [A.exact_iff_injective_hodgeLaplacian B hBA (Submodule.isClosed_of_finiteDimensional _),
     isInvertible_iff_bijective, Function.Bijective, ← coe_coe,
     ← LinearMap.injective_iff_surjective, and_self]
 

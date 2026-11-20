@@ -64,7 +64,7 @@ private local instance : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
   finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
 
 private local instance : CompleteSpace (LeftInvariantDerivation I G) :=
-  FiniteDimensional.complete ℝ _
+  FiniteDimensional.completeSpace ℝ _
 
 -- Center the exponential at the identity before taking its local logarithm.
 private def centeredProduct (X Y : LeftInvariantDerivation I G) : G :=

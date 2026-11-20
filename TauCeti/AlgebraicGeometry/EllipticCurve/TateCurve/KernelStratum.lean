@@ -158,11 +158,11 @@ private theorem exists_one_sub_mul_tateUniformizationY_eq (q : Kˣ) (hq : ‖(q 
   have : CompleteSpace S := (IsUltrametricDist.isClosed_ball (1 : K) 1).completeSpace_coe
   have : Nonempty S := ⟨⟨c, hmem.mpr hc⟩⟩
   have hne (v : S) : (v : K) ≠ 0 := fun h ↦ by
-    have := hmem.mp v.2
+    have := hmem.mp v.property
     rw [h, sub_zero, norm_one] at this
     exact lt_irrefl _ this
   let U : S → Kˣ := fun v ↦ Units.mk0 v (hne v)
-  have hU (v : S) : ‖1 - ((U v : Kˣ) : K)‖ < 1 := hmem.mp v.2
+  have hU (v : S) : ‖1 - ((U v : Kˣ) : K)‖ < 1 := hmem.mp v.property
   -- the step stays in the ball: it moves by less than one from `c`, which lies in the ball
   have hstep (v : S) : kernelStep q (U v) c ∈ S := by
     refine hmem.mpr ?_
@@ -171,9 +171,9 @@ private theorem exists_one_sub_mul_tateUniformizationY_eq (q : Kˣ) (hq : ‖(q 
     rw [norm_sub_rev]
     exact norm_kernelStep_sub_lt q _ hq hc (hU v)
   have hF : ContractingWith ‖(q : K)‖₊ (fun v : S ↦ (⟨kernelStep q (U v) c, hstep v⟩ : S)) := by
-    refine ⟨by rwa [← NNReal.coe_lt_coe, coe_nnnorm, NNReal.coe_one],
+    refine ⟨by rwa [← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one],
       LipschitzWith.of_dist_le_mul fun v w ↦ ?_⟩
-    rw [Subtype.dist_eq, Subtype.dist_eq, dist_eq_norm, dist_eq_norm, coe_nnnorm]
+    rw [Subtype.dist_eq, Subtype.dist_eq, dist_eq_norm, dist_eq_norm, coe_nnNorm]
     exact norm_kernelStep_sub_kernelStep_le q _ _ hq hc (hU v) (hU w)
   set v := ContractingWith.fixedPoint _ hF
   have hv : kernelStep q (U v) c = v :=

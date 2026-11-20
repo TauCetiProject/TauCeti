@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Action
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Action.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 
 /-!
@@ -44,6 +44,9 @@ symplectic vector space, which caps the loop by the cone over it.
   term (`TauCeti.cappedLoopAction_rectangleTrans_sub_cappedLoopAction`). This is how the energy
   of a Floer cylinder becomes a difference of capped actions, in
   `TauCeti.Geometry.Symplectic.Floer.CylinderAction`.
+* **Normalization.** Adding a function `c` of time to the Hamiltonian adds `∫₀¹ c` to the
+  action (`TauCeti.cappedLoopAction_add_const`), as for the action of a loop in a vector space
+  (`TauCeti.SymplecticForm.hamiltonianAction_add_const`).
 * **Special cases.** The constant loop capped by the constant disc has action the time average
   of `H` (`TauCeti.cappedLoopAction_const`). For an exact form `ω = dθ` the action is
   `∫_γ θ + ∫₀¹ H(t, γ(t)) dt` for every disc (`TauCeti.cappedLoopAction_mextDeriv`). For a weakly
@@ -102,12 +105,29 @@ theorem cappedLoopAction_def (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) 
     cappedLoopAction ω H γ D = rectangleIntegral ω D (0, 0) (1, 1) + ∫ t in 0..1, H t (γ t) :=
   (rfl)
 
+/-- The capped action only depends on the loop through its values on the unit interval. -/
+theorem cappedLoopAction_congr_loop (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) {γ γ' : ℝ → M}
+    (h : EqOn γ γ' (Icc 0 1)) (D : ℝ × ℝ → M) :
+    cappedLoopAction ω H γ D = cappedLoopAction ω H γ' D := by
+  rw [cappedLoopAction_def, cappedLoopAction_def,
+    intervalIntegral.integral_congr fun t ht ↦ congrArg (H t) (h (by simpa using ht))]
+
 /-- The constant loop at `x`, capped by the constant disc, has action the time average
 `∫₀¹ H(t, x) dt` of the Hamiltonian at `x`. -/
 @[simp]
 theorem cappedLoopAction_const (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) (x : M) :
     cappedLoopAction ω H (fun _ ↦ x) (fun _ ↦ x) = ∫ t in 0..1, H t x := by
   rw [cappedLoopAction_def, rectangleIntegral_const, zero_add]
+
+/-- **Normalizing a Hamiltonian shifts the capped action.** Adding a function `c` of time to the
+Hamiltonian adds its time average `∫₀¹ c` to the action of every capped loop. -/
+theorem cappedLoopAction_add_const (ω : RoughForm I M ℝ 2) {H : ℝ → M → ℝ} {c : ℝ → ℝ}
+    {γ : ℝ → M} (D : ℝ × ℝ → M)
+    (hH : IntervalIntegrable (fun t ↦ H t (γ t)) MeasureTheory.volume 0 1)
+    (hc : IntervalIntegrable c MeasureTheory.volume 0 1) :
+    cappedLoopAction ω (fun t x ↦ H t x + c t) γ D =
+      cappedLoopAction ω H γ D + ∫ t in 0..1, c t := by
+  rw [cappedLoopAction_def, cappedLoopAction_def, intervalIntegral.integral_add hH hc, add_assoc]
 
 section Continuous
 
@@ -180,7 +200,7 @@ backwards, `u ∘ Prod.map (fun s ↦ 1 - s) id`, which is a disc of `γ` when `
 theorem cappedLoopAction_comp_prodMap_one_sub_eq_neg_cylinderAction [IsManifold I ∞ M]
     (σ : SmoothTwoForm I M) (H : ℝ → M → ℝ) {γ γ₀ : ℝ → M} {u : ℝ × ℝ → M}
     (hu : IsSmoothCylinder I γ γ₀ u) :
-    cappedLoopAction σ.1 H γ (u ∘ Prod.map (fun s ↦ 1 - s) id) = -cylinderAction σ.1 H u := by
+    cappedLoopAction σ.val H γ (u ∘ Prod.map (fun s ↦ 1 - s) id) = -cylinderAction σ.val H u := by
   rw [cappedLoopAction_def, SmoothTwoForm.cylinderAction_eq_of_isSmoothCylinder hu,
     rectangleIntegral_comp_prodMap_one_sub (σ.isSmoothForm.of_le (by simp))
       (hu.contMDiff.of_le (by simp))]

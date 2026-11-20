@@ -152,7 +152,7 @@ ray-class Artin symbol of the ray class of `c ∈ C_K` is the global Artin symbo
 embedding `ι` of `L` into the separable closure. -/
 theorem of_rayClassArtinMap_rayClassQuotient (ι : L →ₐ[K] SeparableClosure K)
     (c : IdeleClassGroup (𝓞 K) K) :
-    Abelianization.of (rayClassArtinMap 𝔪 h (rayClassQuotient 𝔪 c)) =
+    Group.Abelianization.of (rayClassArtinMap 𝔪 h (rayClassQuotient 𝔪 c)) =
       (globalArtinMap K L ι (.ofMul c)).toMul := by
   rw [rayClassArtinMap_rayClassQuotient, of_ideleClassArtinMap K L ι]
 
@@ -201,11 +201,11 @@ theorem isArithFrobAt_rayClassArtinMap_idealClass (I : integralIdealsPrimeTo �
     (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (I : Ideal (𝓞 K))] :
     IsArithFrobAt (𝓞 K) (rayClassArtinMap 𝔪 h (idealClass 𝔪 I)) Q := by
   have hI : (I : Ideal (𝓞 K)) ≠ ⊥ := (Modulus.isCoprimeTo_iff.mp
-    (Modulus.mem_integralIdealsPrimeTo.mp I.2)).1
+    (Modulus.mem_integralIdealsPrimeTo.mp I.property)).1
   have : (I : Ideal (𝓞 K)).IsPrime := Ideal.isPrime_of_liesOver Q _
   let v : HeightOneSpectrum (𝓞 K) := ⟨I, inferInstance, hI⟩
   have hv : v ∉ 𝔪.support := fun hv ↦
-    (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)).2 v hv dvd_rfl
+    (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.property)).2 v hv dvd_rfl
   have : Q.LiesOver v.asIdeal := ‹Q.LiesOver (I : Ideal (𝓞 K))›
   rw [idealClass_apply, rayClassArtinMap_rayClassMk,
     NumberFieldArithmetic.artinHomAway_apply_eq_artinElementAway _ _ _ _ v

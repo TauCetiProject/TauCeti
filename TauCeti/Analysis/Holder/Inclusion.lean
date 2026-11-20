@@ -130,7 +130,7 @@ theorem nnHolderNorm_le_interpolate (hβα : β ≤ α) (hα : α ≠ 0) (f : Ho
       (2 * ‖f.toBoundedContinuousFunction‖₊) ^ ((1 - β / α : ℝ≥0) : ℝ) := by
   have h₀ : HolderWith (2 * ‖f.toBoundedContinuousFunction‖₊) 0 (f : X → Y) :=
     holderWith_zero_of_nnnorm_le fun x ↦ by
-      simpa using f.toBoundedContinuousFunction.nnnorm_coe_le_nnnorm x
+      simpa using f.toBoundedContinuousFunction.nnNorm_coe_le_nnNorm x
   have hθ : β / α + (1 - β / α) = 1 := add_tsub_cancel_of_le (div_le_one_of_le₀ hβα α.coe_nonneg)
   have hexp : α * (β / α) + 0 * (1 - β / α) = β := by
     rw [zero_mul, add_zero, mul_div_cancel₀ _ hα]
@@ -150,7 +150,7 @@ private theorem norm_inclusionL_le_of_norm_le_two [BoundedSpace X] (hβα : β �
       (nnHolderNorm α (f : X → Y) : ℝ) ^ ((β / α : ℝ≥0) : ℝ) *
         (2 * ‖f.toBoundedContinuousFunction‖) ^ ((1 - β / α : ℝ≥0) : ℝ) := by
     have := NNReal.coe_le_coe.2 h
-    simpa only [NNReal.coe_mul, NNReal.coe_rpow, NNReal.coe_ofNat, coe_nnnorm] using this
+    simpa only [NNReal.coe_mul, NNReal.coe_rpow, NNReal.coe_ofNat, coe_nnNorm] using this
   have hA : (nnHolderNorm α (f : X → Y) : ℝ) ^ ((β / α : ℝ≥0) : ℝ) ≤
       (2 : ℝ) ^ ((β / α : ℝ≥0) : ℝ) :=
     Real.rpow_le_rpow (NNReal.coe_nonneg _)

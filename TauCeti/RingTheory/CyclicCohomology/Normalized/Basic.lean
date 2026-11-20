@@ -41,7 +41,7 @@ variable (R A M : Type*) [Semiring R] [AddCommMonoid A] [One A] [Module R A]
 
 /-- Hochschild cochains which vanish when a noninitial argument is the unit. -/
 def normalizedHochschildCochains (n : ℕ) :
-    Submodule R (MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) where
+    Submodule R (MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) where
   carrier := {φ | ∀ (a : Fin (n + 1) → A) (i : Fin (n + 1)), i ≠ 0 → a i = 1 → φ a = 0}
   zero_mem' := by simp
   add_mem' hφ hψ a i hi ha := by simp [hφ a i hi ha, hψ a i hi ha]
@@ -52,7 +52,7 @@ variable {R A M} {n : ℕ}
 /-- Normalization means vanishing if any noninitial argument equals the unit. -/
 @[simp]
 theorem mem_normalizedHochschildCochains_iff
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} :
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M} :
     φ ∈ normalizedHochschildCochains R A M n ↔
       ∀ (a : Fin (n + 1) → A) (i : Fin (n + 1)), i ≠ 0 → a i = 1 → φ a = 0 := Iff.rfl
 
@@ -65,7 +65,7 @@ theorem normalizedHochschildCochains_zero : normalizedHochschildCochains R A M 0
 /-- Applying a linear map to the values preserves normalization. -/
 theorem _root_.LinearMap.compMultilinearMap_mem_normalizedHochschildCochains
     {N : Type*} [AddCommMonoid N] [Module R N] [SMulCommClass R R N] (f : M →ₗ[R] N)
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M}
     (hφ : φ ∈ normalizedHochschildCochains R A M n) :
     f.compMultilinearMap φ ∈ normalizedHochschildCochains R A N n := by
   intro a i hi ha
@@ -73,7 +73,7 @@ theorem _root_.LinearMap.compMultilinearMap_mem_normalizedHochschildCochains
 
 /-- A normalized cochain also vanishes on scalar multiples of the unit in noninitial slots. -/
 theorem apply_update_smul_one_eq_zero_of_mem_normalizedHochschildCochains
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M}
     (hφ : φ ∈ normalizedHochschildCochains R A M n) (a : Fin (n + 1) → A)
     (i : Fin (n + 1)) (hi : i ≠ 0) (r : R) :
     φ (Function.update a i (r • (1 : A))) = 0 := by
@@ -82,7 +82,7 @@ theorem apply_update_smul_one_eq_zero_of_mem_normalizedHochschildCochains
 /-- Pullback along a linear map preserving the unit preserves normalized cochains. -/
 theorem _root_.LinearMap.compLinearMap_mem_normalizedHochschildCochains
     {B : Type*} [AddCommMonoid B] [One B] [Module R B] (f : B →ₗ[R] A) (hf : f 1 = 1)
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M}
     (hφ : φ ∈ normalizedHochschildCochains R A M n) :
     φ.compLinearMap (fun _ ↦ f) ∈ normalizedHochschildCochains R B M n := by
   intro a i hi ha
@@ -117,7 +117,7 @@ variable {R A M : Type*} [Semiring R] [NonAssocSemiring A] [Module R A]
 
 omit [IsScalarTower R A A] [SMulCommClass R A A] in
 private theorem normalized_face_eq_zero
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M}
     (hφ : φ ∈ normalizedHochschildCochains R A M n)
     (a : Fin (n + 2) → A) (j : Fin (n + 1)) (ha : a j.succ = 1)
     (i : Fin (n + 2)) (hi : i ≠ j.castSucc ∧ i ≠ j.succ) :
@@ -146,7 +146,7 @@ private theorem normalized_face_eq_zero
 
 /-- The Hochschild coboundary preserves normalized cochains. -/
 theorem hochschildCoboundary_mem_normalizedHochschildCochains
-    {φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M}
     (hφ : φ ∈ normalizedHochschildCochains R A M n) :
     hochschildCoboundary R A M n φ ∈ normalizedHochschildCochains R A M (n + 1) := by
   -- The two faces adjacent to a unit cancel; every remaining face has a noninitial unit argument.
@@ -167,7 +167,7 @@ variable {R A M : Type*} [Semiring R] [AddCommMonoid A] [One A] [Module R A]
 
 /-- On normalized cochains Connes' operator is the cyclic norm of unit insertion. -/
 theorem connesB_eq_cyclicNorm_barContraction_of_mem_normalizedHochschildCochains
-    {φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M}
     (hφ : φ ∈ normalizedHochschildCochains R A M (n + 1)) :
     connesB R A M n φ = cyclicNorm R A M n (barContraction R A M n φ) := by
   have hs : barContraction R A M n (cyclicOperator R A M (n + 1) φ) = 0 := by
@@ -179,7 +179,7 @@ theorem connesB_eq_cyclicNorm_barContraction_of_mem_normalizedHochschildCochains
 /-- The signed cyclic-sum formula for `B` on normalized cochains, dual to the formula on
 normalized Hochschild chains. -/
 theorem connesB_apply_of_mem_normalizedHochschildCochains
-    {φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M}
     (hφ : φ ∈ normalizedHochschildCochains R A M (n + 1)) (a : Fin (n + 1) → A) :
     connesB R A M n φ a =
       ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n * k) •
@@ -190,7 +190,7 @@ theorem connesB_apply_of_mem_normalizedHochschildCochains
 
 /-- `B` of a normalized cochain vanishes if any argument is the unit, including the zeroth. -/
 theorem connesB_apply_eq_zero_of_mem_normalizedHochschildCochains
-    {φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M}
     (hφ : φ ∈ normalizedHochschildCochains R A M (n + 1))
     (a : Fin (n + 1) → A) (i : Fin (n + 1)) (ha : a i = 1) :
     connesB R A M n φ a = 0 := by
@@ -202,7 +202,7 @@ theorem connesB_apply_eq_zero_of_mem_normalizedHochschildCochains
 
 /-- Connes' operator preserves normalized Hochschild cochains. -/
 theorem connesB_mem_normalizedHochschildCochains
-    {φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M}
     (hφ : φ ∈ normalizedHochschildCochains R A M (n + 1)) :
     connesB R A M n φ ∈ normalizedHochschildCochains R A M n :=
   fun a i _ ha ↦ connesB_apply_eq_zero_of_mem_normalizedHochschildCochains hφ a i ha
@@ -217,13 +217,14 @@ def normalizedConnesB (n : ℕ) :
 /-- Forgetting normalization intertwines the normalized and full Connes operators. -/
 @[simp]
 theorem coe_normalizedConnesB (φ : normalizedHochschildCochains R A M (n + 1)) :
-    (normalizedConnesB R A M n φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) =
+    (normalizedConnesB R A M n φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) =
       connesB R A M n φ := (rfl)
 
 /-- A cyclic normalized cochain of positive degree is killed by `B`. -/
 theorem normalizedConnesB_eq_zero_of_mem_cyclicCochains
     {φ : normalizedHochschildCochains R A M (n + 1)}
-    (hφ : (φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M) ∈ cyclicCochains R A M (n + 1)) :
+    (hφ : (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦ A) M) ∈ cyclicCochains R A M (n
+        + 1)) :
     normalizedConnesB R A M n φ = 0 :=
   Subtype.ext ((coe_normalizedConnesB φ).trans (connesB_eq_zero_of_mem_cyclicCochains hφ))
 
@@ -256,7 +257,8 @@ variable {R A M} {n : ℕ}
 @[simp]
 theorem coe_normalizedHochschildCoboundary (φ : normalizedHochschildCochains R A M n) :
     (normalizedHochschildCoboundary R A M n φ :
-      MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M) = hochschildCoboundary R A M n φ := (rfl)
+      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 2) ↦
+          A) M) = hochschildCoboundary R A M n φ := (rfl)
 
 /-- A normalized cochain is a normalized cocycle exactly when it is a Hochschild cocycle. -/
 theorem normalizedHochschildCoboundary_eq_zero_iff {φ : normalizedHochschildCochains R A M n} :

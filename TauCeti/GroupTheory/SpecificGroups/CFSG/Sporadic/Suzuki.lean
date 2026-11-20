@@ -10,11 +10,10 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the Suzuki sporadic group
 
-This file carries the `Suz` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records the presentation `GPLTable.Suz.1` from
-Rolf Lindenbergh's Group Presentations Library as a `TauCeti.GroupPresentation`, together with
-the exact source, generator convention, transcription notes, expected counts, and decidable
-checks on the transcription.
+This file carries the `Suz` row of the sporadic presentation data. It records the presentation
+`GPLTable.Suz.1` from Roderik Lindenbergh's Group Presentations Library as a
+`TauCeti.GroupPresentation`, together with the exact source, generator convention, transcription
+notes, expected counts, and decidable checks on the transcription.
 
 The presentation uses the Coxeter graph
 
@@ -107,9 +106,8 @@ transport step, concatenating the seven image tables in generator order, with ev
 as a two-byte little-endian integer, has SHA-256
 `30670ef2e7e902035636fa63568ef957a91fea59d4536f6d2c431dc9448b8cd7`; the corresponding
 concatenation of the six pinned `FiniteSimpleGroups` tables has SHA-256
-`75a378c50ccaad53155d65869595601436384ecd59eecc73fb02e22e59ef972b`. This is the roadmap's
-independent comparison artifact; no external code or generated permutation table is imported into
-Tau Ceti.
+`75a378c50ccaad53155d65869595601436384ecd59eecc73fb02e22e59ef972b`. This is the independent
+comparison artifact; no external code or generated permutation table is imported into Tau Ceti.
 
 ## Main definition
 

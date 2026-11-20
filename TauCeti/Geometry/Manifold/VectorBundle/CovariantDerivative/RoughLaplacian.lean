@@ -39,6 +39,8 @@ The trace is the contraction of the bilinear map `∇²σ` against the canonical
 
 * `CovariantDerivative.roughLaplacian`: the rough Laplacian `∇*∇ σ` at a point.
 * `CovariantDerivative.roughLaplacian_eq_sum`: its value in an orthonormal basis.
+* `CovariantDerivative.roughLaplacian_eq_zero_of_apply_eq_zero`: parallel sections have zero rough
+  Laplacian.
 * `CovariantDerivative.roughLaplacian_smul_smul_sub`: the double commutator of `∇*∇` with
   multiplication by two functions is `-2 ⟪grad f, grad g⟫ σ`.
 * `CovariantDerivative.roughLaplacian_smul`: the Leibniz rule for the rough Laplacian of the
@@ -136,6 +138,17 @@ theorem roughLaplacian_sub {τ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) (hτ 
   rw [sub_eq_add_neg, roughLaplacian_add cov covT hσ hτ' x, roughLaplacian_neg cov covT x,
     sub_eq_add_neg]
 
+/-- The rough Laplacian of a smooth parallel section is zero: `∇σ = 0` implies `∇*∇ σ = 0`. -/
+theorem roughLaplacian_eq_zero_of_apply_eq_zero (hσ : CMDiff ∞ (T% σ)) (h : cov σ = 0) :
+    cov.roughLaplacian covT σ = 0 := by
+  funext x
+  rw [cov.roughLaplacian_eq_sum covT σ x (stdOrthonormalBasis ℝ _)]
+  refine neg_eq_zero.2 (Finset.sum_eq_zero fun i _ ↦ ?_)
+  obtain ⟨W, hW, hWx⟩ := exists_contMDiff_section_eq I E ∞ (stdOrthonormalBasis ℝ _ i)
+  have hW0 : (fun y ↦ cov σ y (W y)) = 0 := funext fun y ↦ by simp [h]
+  rw [← hWx, cov.secondCovariantDerivative_apply covT hσ x hW, hW0]
+  simp [h]
+
 /-- **The principal symbol of the rough Laplacian.** For smooth functions `f`, `g` and a smooth
 section `σ`, the double commutator of `∇*∇` with multiplication by `f` and `g` is
 `∇*∇(f g σ) - f ∇*∇(g σ) - g ∇*∇(f σ) + f g ∇*∇ σ = -2 ⟪grad f, grad g⟫ σ`.
@@ -228,7 +241,7 @@ theorem roughLaplacian_trivial (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M) :
   set one : Π y : M, Trivial M ℝ y := fun _ ↦ (1 : ℝ)
   have hone : ContMDiff I (I.prod 𝓘(ℝ, ℝ)) ∞ (fun y ↦ (⟨y, one y⟩ : TotalSpace ℝ (Trivial M ℝ))) :=
     fun y ↦ by
-      simp only [contMDiffAt_section, Trivial.fiberBundle_trivializationAt',
+      simp only [contMDiffAt_section_iff, Trivial.fiberBundle_trivializationAt',
         Trivial.trivialization_apply]
       exact contMDiffAt_const
   have hpar (y : M) : trivial (I := I) ℝ one y = 0 := by

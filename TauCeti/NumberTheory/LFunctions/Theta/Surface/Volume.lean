@@ -89,7 +89,7 @@ open scoped Classical in
 /-- In the coordinates of `expMapBasis`, the unit `∏_i η_i ^ c_i` acts on the archimedean
 parameters by the translation by `2 c`. -/
 theorem unitScale_expMapBasis (c : {w : InfinitePlace K // w ≠ w₀} → ℤ) (z : realSpace K) :
-    unitScale (∏ i, fundSystem K (equivFinRank.symm i) ^ c i) (expMapBasis z) =
+    unitScale (∏ i, fundSystem K ((equivFinRank K).symm i) ^ c i) (expMapBasis z) =
       expMapBasis (2 • intCoord c + z) := by
   ext w
   rw [unitScale_apply, two_smul, expMapBasis_add, expMapBasis_add, expMapBasis_intCoord]
@@ -100,18 +100,18 @@ open scoped Classical in
 `expMapBasis` at `z` without its constant factor, is `1`. -/
 private theorem expMapBasis_jacobian_mul_density (z : realSpace K) :
     ENNReal.ofReal (Real.exp (z w₀ * Module.finrank ℚ K)) *
-        (∏ w : {w : InfinitePlace K // IsComplex w}, ENNReal.ofReal (expMapBasis z w.1))⁻¹ *
+        (∏ w : {w : InfinitePlace K // IsComplex w}, ENNReal.ofReal (expMapBasis z w.val))⁻¹ *
       ENNReal.ofReal (∏ w, (expMapBasis z w)⁻¹) = 1 := by
   have he : ∀ w, 0 < expMapBasis z w := expMapBasis_pos z
   have hprod : Real.exp (z w₀ * Module.finrank ℚ K) * ∏ w, (expMapBasis z w)⁻¹ =
-      ∏ w : {w : InfinitePlace K // IsComplex w}, expMapBasis z w.1 := by
+      ∏ w : {w : InfinitePlace K // IsComplex w}, expMapBasis z w.val := by
     rw [mul_comm, Real.exp_mul, Real.rpow_natCast, ← prod_expMapBasis_pow,
       ← Finset.prod_mul_distrib, prod_eq_prod_mul_prod]
     simp_rw [mult_isReal, mult_isComplex, pow_one, pow_two, ← mul_assoc,
       inv_mul_cancel₀ (he _).ne', one_mul, Finset.prod_const_one, one_mul]
-  rw [← ENNReal.ofReal_prod_of_nonneg fun w _ ↦ (he w.1).le, mul_right_comm,
+  rw [← ENNReal.ofReal_prod_of_nonneg fun w _ ↦ (he w.val).le, mul_right_comm,
     ← ENNReal.ofReal_mul (Real.exp_nonneg _), hprod, ENNReal.mul_inv_cancel
-      (ENNReal.ofReal_pos.mpr (Finset.prod_pos fun w _ ↦ he w.1)).ne' ENNReal.ofReal_ne_top]
+      (ENNReal.ofReal_pos.mpr (Finset.prod_pos fun w _ ↦ he w.val)).ne' ENNReal.ofReal_ne_top]
 
 /-- **`dy / y` in the coordinates of `expMapBasis`**: it is Lebesgue measure times
 `2^(-r₂) R [K : ℚ]`, where `R` is the regulator. -/
@@ -161,7 +161,7 @@ private theorem expMapBasis_preimage_shell (A : Set (realSpace K)) :
   ext z
   simp only [mem_preimage, mem_inter_iff, surfacePart_expMapBasis, archNorm_expMapBasis, mem_Icc,
     normSlab, coordCylinder, mem_ofPred_eq]
-  rw [← Real.exp_nat_mul, Real.one_le_exp_iff, Real.exp_le_exp, mul_comm, ← le_div_iff₀ hn,
+  rw [← Real.exp_natCast_mul, Real.one_le_exp_iff, Real.exp_le_exp, mul_comm, ← le_div_iff₀ hn,
     mul_nonneg_iff_of_pos_right hn, one_div, and_comm]
 
 /-- The parameters with surface part in a subset of `S` and norm in `[1, e]` are positive, so they
@@ -182,7 +182,7 @@ private theorem surfaceHaar_preimage_eq_volume {A : Set (realSpace K)}
     surfaceHaar K (Subtype.val ⁻¹' A) =
       2⁻¹ ^ nrComplexPlaces K * ENNReal.ofReal (regulator K) * Module.finrank ℚ K *
         volume (normSlab K ∩ coordCylinder A) := by
-  rw [surfaceHaar_apply (measurable_subtype_coe hAm), Subtype.image_preimage_coe,
+  rw [surfaceHaar_apply (measurable_subtypeVal hAm), Subtype.image_preimage_coe,
     inter_eq_right.mpr hA, ← image_preimage_eq_of_subset (shell_subset_range hA),
     expMapBasis_preimage_shell, archHaar_image_expMapBasis
       (measurableSet_normSlab.inter (measurableSet_coordCylinder hAm))]
@@ -259,7 +259,7 @@ private theorem isAddFundamentalDomain_coordCylinder {D : Set (realSpace K)}
   -- translating by a lattice point is acting by the corresponding unit
   have htrans (c : {w : InfinitePlace K // w ≠ w₀} → ℤ) :
       unitTranslation c +ᵥ z ∈ coordCylinder D ↔
-        unitScale (∏ i, fundSystem K (equivFinRank.symm i) ^ c i) y ∈ D := by
+        unitScale (∏ i, fundSystem K ((equivFinRank K).symm i) ^ c i) y ∈ D := by
     rw [unitScale_expMapBasis, coordCylinder, mem_preimage, AddSubgroup.vadd_def, vadd_eq_add,
       unitTranslation]
     congr! 2
@@ -267,25 +267,25 @@ private theorem isAddFundamentalDomain_coordCylinder {D : Set (realSpace K)}
     by_cases hw : w = w₀ <;> simp [p, hw]
   obtain ⟨u, hu⟩ := hD.exists_unitScale_mem y hy
   obtain ⟨⟨ζ, e⟩, rfl, -⟩ := exist_unique_eq_mul_prod K u
-  set c₀ : {w : InfinitePlace K // w ≠ w₀} → ℤ := fun i ↦ e (equivFinRank.symm i)
-  have hc₀ : unitScale (∏ i, fundSystem K (equivFinRank.symm i) ^ c₀ i) y ∈ D := by
+  set c₀ : {w : InfinitePlace K // w ≠ w₀} → ℤ := fun i ↦ e ((equivFinRank K).symm i)
+  have hc₀ : unitScale (∏ i, fundSystem K ((equivFinRank K).symm i) ^ c₀ i) y ∈ D := by
     rw [mul_comm, ← unitScale_unitScale,
-      (unitScale_eq_self_iff (fun w ↦ ((mem_normOneSurface.mp hy).1 w).ne') _).mpr ζ.2] at hu
+      (unitScale_eq_self_iff (fun w ↦ ((mem_normOneSurface.mp hy).1 w).ne') _).mpr ζ.property] at hu
     convert hu using 2
-    exact Fintype.prod_equiv equivFinRank.symm _ _ fun _ ↦ rfl
+    exact Fintype.prod_equiv (equivFinRank K).symm _ _ fun _ ↦ rfl
   refine ⟨unitTranslation c₀, (htrans c₀).mpr hc₀, ?_⟩
   rintro ⟨_, c, rfl⟩ hc
   have hc' := (htrans c).mp hc
-  rw [← inv_mul_cancel_right (∏ i, fundSystem K (equivFinRank.symm i) ^ c i)
-    (∏ i, fundSystem K (equivFinRank.symm i) ^ c₀ i), ← unitScale_unitScale,
+  rw [← inv_mul_cancel_right (∏ i, fundSystem K ((equivFinRank K).symm i) ^ c i)
+    (∏ i, fundSystem K ((equivFinRank K).symm i) ^ c₀ i), ← unitScale_unitScale,
     hD.unitScale_mem_iff _ hc₀, ← Finset.prod_inv_distrib, ← Finset.prod_mul_distrib] at hc'
   simp_rw [← zpow_neg, ← zpow_add, ← sub_eq_add_neg] at hc'
-  have h0 : (fun j ↦ c (equivFinRank j) - c₀ (equivFinRank j)) = 0 := by
+  have h0 : (fun j ↦ c (equivFinRank K j) - c₀ (equivFinRank K j)) = 0 := by
     refine prod_fundSystem_zpow_mem_torsion_iff.mp ?_
     convert hc' using 1
-    exact (Fintype.prod_equiv equivFinRank.symm _ _ fun _ ↦ by simp).symm
+    exact (Fintype.prod_equiv (equivFinRank K).symm _ _ fun _ ↦ by simp).symm
   have hcc : c = c₀ := funext fun i ↦ by
-    simpa [sub_eq_zero] using congrFun h0 (equivFinRank.symm i)
+    simpa [sub_eq_zero] using congrFun h0 ((equivFinRank K).symm i)
   subst hcc
   rfl
 

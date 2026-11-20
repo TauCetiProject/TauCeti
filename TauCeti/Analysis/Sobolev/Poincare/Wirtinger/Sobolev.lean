@@ -10,7 +10,7 @@ import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
 import TauCeti.MeasureTheory.Integral.Average
-import TauCeti.MeasureTheory.Integral.RieszPotential
+import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
 import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
@@ -111,7 +111,7 @@ theorem eLpNorm_sub_setAverage_le_mul_measure_rpow_of_convex (hΩ : IsOpen Ω)
   have hpt : ∀ᵐ x ∂μ.restrict Ω, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ≤ c * ‖V x‖ₑ := by
     filter_upwards [ae_restrict_mem hΩ.measurableSet] with x hx
     refine (enorm_sub_setAverage_le_of_convex (μ := μ) hΩ hΩc hb hu hx hS hS₀).trans_eq ?_
-    rw [enorm_eq_self]
+    rw [eNorm_eq_self]
     congr 1
     refine lintegral_congr fun y => ?_
     have hexp : (n : ℝ) * ((n : ℝ)⁻¹ - 1) = 1 - n := by field_simp
@@ -119,8 +119,8 @@ theorem eLpNorm_sub_setAverage_le_mul_measure_rpow_of_convex (hΩ : IsOpen Ω)
   -- The `Lᵖ`-`L^q` bound for the potential, with `κ = 1/n`.
   have hpot := eLpNorm_setLIntegral_enorm_sub_rpow_mul_le (μ := μ) (p := p) (q := q)
     (κ := (n : ℝ)⁻¹) hp hpq hδ hδn (inv_le_one_of_one_le₀ hn) hΩ.measurableSet
-    hDm.enorm
-  rw [eLpNorm_enorm _ hDm] at hpot
+    hDm.eNorm
+  rw [eLpNorm_eNorm _ hDm] at hpot
   have hum : AEStronglyMeasurable (fun x => u x - ⨍ y in S, u y ∂μ) (μ.restrict Ω) :=
     (hu.continuousOn.aestronglyMeasurable hΩ.measurableSet).sub aestronglyMeasurable_const
   calc
@@ -168,7 +168,7 @@ theorem W1p.isClosed_setOf_eLpNorm_value_sub_setAverage_le (hS : S ⊆ (Omega : 
     ((W1p.continuous_setAverage_value hS).tendsto u).comp hvu
   have hbound : Tendsto (fun k => (C : ℝ≥0∞) * ‖W1p.gradient (v k)‖ₑ) atTop
       (𝓝 ((C : ℝ≥0∞) * ‖W1p.gradient u‖ₑ)) :=
-    ENNReal.Tendsto.const_mul ((continuous_enorm.tendsto _).comp hgradient)
+    ENNReal.Tendsto.const_mul ((continuous_eNorm.tendsto _).comp hgradient)
       (Or.inr ENNReal.coe_ne_top)
   obtain ⟨ns, hns, hae⟩ :=
     (tendstoInMeasure_of_tendsto_Lp hvalue).exists_seq_tendsto_ae
@@ -230,7 +230,7 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_mul_measure_rpow_of_convex [Nontrivi
     rw [havg]
     exact eLpNorm_congr_ae (hwf.mono fun x hx ↦ by simp only [hx])
   have hgradient : ‖W1p.gradient w‖ₑ = eLpNorm (fderiv ℝ f) p (mu.restrict Omega) := by
-    rw [Lp.enorm_def]
+    rw [Lp.eNorm_def]
     refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
       (hcont.aestronglyMeasurable Omega.isOpen.measurableSet) ?_
     filter_upwards [hgrad] with y hy
@@ -317,7 +317,7 @@ theorem W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_eq_ball [Nontrivia
     (f := fun x ↦ W1p.value u x - ⨍ y in Omega, W1p.value u y ∂mu) hq0 ENNReal.coe_ne_top
     ((Lp.aestronglyMeasurable _).sub aestronglyMeasurable_const)
   rw [ENNReal.coe_toReal] at hL
-  rw [hL, laverage_rpow_enorm_rpow_inv_eq hp0 hp (Lp.aestronglyMeasurable _), ← Lp.enorm_def,
+  rw [hL, laverage_rpow_enorm_rpow_inv_eq hp0 hp (Lp.aestronglyMeasurable _), ← Lp.eNorm_def,
     Measure.restrict_apply_univ, hmeas, ENNReal.ofReal_rpow_of_pos hm,
     ENNReal.ofReal_rpow_of_pos hm, ENNReal.div_eq_inv_mul, ENNReal.div_eq_inv_mul,
     ← ENNReal.ofReal_inv_of_pos (by positivity), ← ENNReal.ofReal_inv_of_pos (by positivity)]
@@ -361,9 +361,9 @@ theorem W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_ball_subset [Nontr
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   set uB : W1p mu B p := W1p.ofExponentLE hpp₀ (W1p.restrictL hB u)
   have hval : W1p.value uB =ᵐ[mu.restrict (ball c r)] W1p.value u :=
-    (W1p.value_ofExponentLE_ae _ _).trans (W1p.value_restrictL_ae hB u)
+    (W1p.coeFn_value_ofExponentLE _ _).eventuallyEq.trans (W1p.value_restrictL_ae hB u)
   have hgrad : W1p.gradient uB =ᵐ[mu.restrict (ball c r)] W1p.gradient u :=
-    (W1p.gradient_ofExponentLE_ae _ _).trans (W1p.gradient_restrictL_ae hB u)
+    (W1p.coeFn_gradient_ofExponentLE _ _).eventuallyEq.trans (W1p.gradient_restrictL_ae hB u)
   have havg : ⨍ y in (B : Set E), W1p.value uB y ∂mu = ⨍ y in ball c r, W1p.value u y ∂mu :=
     average_congr hval
   have h := W1p.setLAverage_rpow_enorm_value_sub_setAverage_le_of_eq_ball hp hr rfl hpq hδ hδn uB

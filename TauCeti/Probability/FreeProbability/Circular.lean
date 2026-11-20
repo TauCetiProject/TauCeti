@@ -127,7 +127,7 @@ theorem IsSemicircularSystem.isCircular [StarModule ℂ A] {s : Fin 2 → A}
       1 * !![q, q; Complex.I * q, -Complex.I * q] = !![0, 1; 1, 0] := by
     ext i j
     fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.transpose_apply]
+      simp [Matrix.mul_apply, Fin.sum_univ_two]
     · linear_combination q ^ 2 * Complex.I_sq
     · linear_combination hq - q ^ 2 * Complex.I_sq
     · linear_combination hq - q ^ 2 * Complex.I_sq
@@ -160,7 +160,7 @@ theorem isSemicircularSystem_real_imag (h : IsCircular φ c) :
       !![0, 1; 1, 0] * !![q, -Complex.I * q; q, Complex.I * q] = 1 := by
     ext i j
     fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.transpose_apply]
+      simp [Matrix.mul_apply, Fin.sum_univ_two]
     · linear_combination hq
     · linear_combination hq - 2 * q ^ 2 * Complex.I_sq
   rw [hv, hC] at h'

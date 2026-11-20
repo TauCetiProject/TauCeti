@@ -83,7 +83,7 @@ def closedUpperHalfPlaneModel : ModelWithCorners ℝ ℂ ClosedUpperHalfPlane :=
         simp only [max_eq_left hz]
         exact Complex.re_add_im _ }
     rfl ((convex_Ici (0 : ℝ)).linear_preimage Complex.imCLM.toLinearMap)
-    continuous_subtype_val (by
+    continuous_subtypeVal (by
       -- The model constructor asks for continuity of a map into the subtype; this unfolds
       -- its bundled partial-equivalence inverse so `fun_prop` can see the clamped coordinate.
       change Continuous (fun z : ℂ ↦ (⟨(z.re : ℂ) + ((max z.im 0 : ℝ) : ℂ) * I,
@@ -128,6 +128,25 @@ theorem range_closedUpperHalfPlaneModel :
   rw [h]
   exact Subtype.range_coe_subtype
 
+/-- The part of the extended target of a chart into the closed upper half-plane lying over an
+open set is relatively open in the closed upper half-plane: it is `Ω ∩ {z | 0 ≤ z.im}` for an
+open `Ω ⊆ ℂ`. -/
+theorem _root_.OpenPartialHomeomorph.exists_isOpen_extend_target_inter_preimage {X : Type*}
+    [TopologicalSpace X] (φ : OpenPartialHomeomorph X ClosedUpperHalfPlane) {W : Set X}
+    (hW : IsOpen W) :
+    ∃ Ω : Set ℂ, IsOpen Ω ∧ (φ.extend closedUpperHalfPlaneModel).target ∩
+      (φ.extend closedUpperHalfPlaneModel).symm ⁻¹' W = Ω ∩ {z | 0 ≤ z.im} := by
+  have hcont : ContinuousOn (φ.symm ∘ closedUpperHalfPlaneModel.symm)
+      (closedUpperHalfPlaneModel.symm ⁻¹' φ.target) :=
+    φ.continuousOn_symm.comp closedUpperHalfPlaneModel.continuous_symm.continuousOn
+      fun _ hz ↦ hz
+  refine ⟨_, hcont.isOpen_inter_preimage
+    (φ.open_target.preimage closedUpperHalfPlaneModel.continuous_symm) hW, ?_⟩
+  ext z
+  simp only [OpenPartialHomeomorph.extend_target, OpenPartialHomeomorph.extend_coe_symm,
+    range_closedUpperHalfPlaneModel, mem_inter_iff, mem_preimage, mem_ofPred_eq]
+  tauto
+
 /-- The manifold interior of the model consists exactly of points with positive imaginary part. -/
 @[simp]
 theorem closedUpperHalfPlaneModel_isInteriorPoint_iff (z : ClosedUpperHalfPlane) :
@@ -156,9 +175,9 @@ def upperHalfPlaneChart : OpenPartialHomeomorph ClosedUpperHalfPlane ℂ where
       using hz
   left_inv' z _ := closedUpperHalfPlaneModel_symm_coe z
   right_inv' _ hz := coe_closedUpperHalfPlaneModel_symm_of_im_nonneg (le_of_lt hz)
-  open_source := isOpen_lt continuous_const (continuous_im.comp continuous_subtype_val)
+  open_source := isOpen_lt continuous_const (continuous_im.comp continuous_subtypeVal)
   open_target := isOpen_lt continuous_const continuous_im
-  continuousOn_toFun := continuous_subtype_val.continuousOn
+  continuousOn_toFun := continuous_subtypeVal.continuousOn
   continuousOn_invFun := closedUpperHalfPlaneModel.continuous_symm.continuousOn
 
 /-- `upperHalfPlaneChart` is the inclusion into `ℂ`. -/
@@ -258,14 +277,14 @@ def ClosedUpperHalfPlane.euclideanHalfSpaceHomeomorph :
 
 @[simp]
 theorem ClosedUpperHalfPlane.coe_euclideanHalfSpaceHomeomorph (z : ClosedUpperHalfPlane) :
-    (euclideanHalfSpaceHomeomorph z).1 =
+    (euclideanHalfSpaceHomeomorph z).val =
       closedUpperHalfPlaneCoordinates z := by
   rw [euclideanHalfSpaceHomeomorph]
   rfl
 
 @[simp]
 theorem ClosedUpperHalfPlane.coe_euclideanHalfSpaceHomeomorph_symm (v : EuclideanHalfSpace 2) :
-    (euclideanHalfSpaceHomeomorph.symm v : ℂ) = closedUpperHalfPlaneCoordinates.symm v.1 := by
+    (euclideanHalfSpaceHomeomorph.symm v : ℂ) = closedUpperHalfPlaneCoordinates.symm v.val := by
   rw [euclideanHalfSpaceHomeomorph]
   rfl
 
@@ -283,7 +302,7 @@ def ClosedUpperHalfPlane.euclideanHalfSpaceDiffeomorph (n : ℕ∞ω) :
     -- The inherited half-space chart and subtype coercion reduce to their ambient model
     -- coordinates; `simp` has already exposed the chart composition, but cannot rewrite
     -- this dependent subtype expression to the public coefficient getter directly.
-    change (euclideanHalfSpaceHomeomorph (closedUpperHalfPlaneModel.symm z)).1 =
+    change (euclideanHalfSpaceHomeomorph (closedUpperHalfPlaneModel.symm z)).val =
       closedUpperHalfPlaneCoordinates z
     rw [coe_euclideanHalfSpaceHomeomorph]
     congr 1
@@ -305,14 +324,15 @@ def ClosedUpperHalfPlane.euclideanHalfSpaceDiffeomorph (n : ℕ∞ω) :
 @[simp]
 theorem ClosedUpperHalfPlane.coe_euclideanHalfSpaceDiffeomorph (n : ℕ∞ω)
     (z : ClosedUpperHalfPlane) :
-    (euclideanHalfSpaceDiffeomorph n z).1 = closedUpperHalfPlaneCoordinates z := by
+    (euclideanHalfSpaceDiffeomorph n z).val = closedUpperHalfPlaneCoordinates z := by
   rw [euclideanHalfSpaceDiffeomorph]
   exact coe_euclideanHalfSpaceHomeomorph z
 
 @[simp]
 theorem ClosedUpperHalfPlane.coe_euclideanHalfSpaceDiffeomorph_symm (n : ℕ∞ω)
     (v : EuclideanHalfSpace 2) :
-    ((euclideanHalfSpaceDiffeomorph n).symm v : ℂ) = closedUpperHalfPlaneCoordinates.symm v.1 := by
+    ((euclideanHalfSpaceDiffeomorph n).symm v : ℂ) = closedUpperHalfPlaneCoordinates.symm v.val
+        := by
   rw [euclideanHalfSpaceDiffeomorph]
   exact coe_euclideanHalfSpaceHomeomorph_symm v
 

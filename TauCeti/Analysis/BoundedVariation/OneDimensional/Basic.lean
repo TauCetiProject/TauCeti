@@ -85,8 +85,8 @@ theorem totalVariationOn_le_variation_vectorMeasure
     VectorMeasure.setIntegral_eq_integral_of_forall_compl_eq_zero Ω.isOpen.measurableSet
       (fun x hx ↦ φ.zero_on_compl hx)
   rw [hpair]
-  refine (Real.ofReal_le_enorm _).trans ?_
-  rw [enorm_neg, ← hloc]
+  refine (Real.ofReal_le_eNorm _).trans ?_
+  rw [eNorm_neg, ← hloc]
   have hφnorm (x : ℝ) : ‖φ x‖ₑ ≤ 1 := by
     rw [← ofReal_norm, ← ENNReal.ofReal_one]
     exact ENNReal.ofReal_le_ofReal (hφ x)
@@ -96,7 +96,7 @@ theorem totalVariationOn_le_variation_vectorMeasure
     ‖∫ᵛ x in Ω, φ x ∂•hf.vectorMeasure‖ₑ ≤
         1 * ‖(ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ)‖ₑ *
           hf.vectorMeasure.variation Ω :=
-      VectorMeasure.enorm_setIntegral_le_of_enorm_le_const (fun x _ ↦ hφnorm x)
+      VectorMeasure.eNorm_setIntegral_le_of_eNorm_le_const (fun x _ ↦ hφnorm x)
     _ ≤ 1 * 1 * hf.vectorMeasure.variation Ω := by gcongr
     _ = hf.vectorMeasure.variation Ω := by rw [one_mul, one_mul]
 

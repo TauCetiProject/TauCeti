@@ -98,7 +98,7 @@ private theorem minorsIdeal_span_image_of_free [Free R F] [Module.Finite R F]
     obtain rfl : w = fun i ↦ j (v i) := funext fun i ↦ (hvw i).symm
     -- The determinant is multilinear in the functionals `g k`, which are `S`-linear combinations
     -- of base changes of functionals on `F` since `Dual S W` is the base change of `Dual R F`.
-    let μ : MultilinearMap S (fun _ : Fin p ↦ Dual S W) S :=
+    let μ : MultilinearMap (RingHom.id S) (fun _ : Fin p ↦ Dual S W) S :=
       (Matrix.detRowAlternating.compLinearMap
         (LinearMap.pi fun i ↦ LinearMap.applyₗ (j (v i)))).toMultilinearMap
     have hμ (g : Fin p → Dual S W) : μ g = (Matrix.of fun i k ↦ g k (j (v i))).det := by
@@ -140,7 +140,7 @@ theorem minorsIdeal_span_image [Projective R F] (hj : IsBaseChange S j)
     classical
     obtain ⟨σ, hσ⟩ := Module.projective_def'.1 ‹Projective R F›
     let J : Finset F := Finset.univ.biUnion fun i ↦ (σ (v i)).support
-    let A : F →ₗ[R] (J → R) := LinearMap.pi fun a ↦ Finsupp.lapply a.1 ∘ₗ σ
+    let A : F →ₗ[R] (J → R) := LinearMap.pi fun a ↦ Finsupp.lapply a.val ∘ₗ σ
     let B : (J → R) →ₗ[R] F := Fintype.linearCombination R fun a : J ↦ (a : F)
     have hBA (i : Fin p) : B (A (v i)) = v i := by
       have h := congr($hσ (v i))
@@ -264,7 +264,7 @@ theorem fittingIdeal_zero_eq_top_iff : fittingIdeal R M 0 = ⊤ ↔ Subsingleton
       (fun _ ↦ ⟨0, Subsingleton.elim _ _⟩) finrank_zero_of_subsingleton.le⟩
   -- at a prime `p` of the support the fibre `κ(p) ⊗[R] M` is nonzero, so `Fitt₀(M) ≤ p`
   rw [mem_support_iff_nontrivial_residueField_tensorProduct] at hp
-  exact p.2.ne_top <| top_le_iff.mp <|
+  exact p.isPrime.ne_top <| top_le_iff.mp <|
     h ▸ (fittingIdeal_le_iff_lt_finrank p.asIdeal 0).mpr finrank_pos
 
 /-- The base change `S ⊗[R] M` of a finite module `M` vanishes exactly when `Fitt₀(M)` extends to

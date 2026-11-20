@@ -99,7 +99,7 @@ theorem coeff_aeval_X_pow_weight {e : σ → ℕ} {T : Set (σ →₀ ℕ)} (he 
   classical
   conv_lhs => rw [f.as_sum]
   simp only [map_sum, aeval_X_pow_left_monomial, Polynomial.finsetSum_coeff,
-    Polynomial.coeff_monomial]
+    Polynomial.coeff_monomial_apply]
   rw [Finset.sum_eq_single μ (fun ν hν hne ↦ ite_eq_right_iff.mpr fun h ↦
     absurd (he (hf hν) hμ h) hne) fun h ↦ by simp [notMem_support_iff.mp h]]
   simp
@@ -172,7 +172,7 @@ theorem eval_hasseDeriv_aeval_X_pow (e : σ → ℕ) (a : R) (f : MvPolynomial �
   refine Finset.sum_congr rfl fun ν _ ↦ ?_
   rw [coeff_taylor]
   conv_lhs => rw [← mul_one (eval _ (hasseDeriv ν f)), ← smul_eq_mul, ← smul_monomial]
-  rw [map_smul, Polynomial.coeff_smul, smul_eq_mul, mul_comm]
+  rw [map_smul, AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul, mul_comm]
 
 end CommRing
 

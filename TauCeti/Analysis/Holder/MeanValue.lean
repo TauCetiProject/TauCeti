@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.MeanValue
 public import TauCeti.Topology.MetricSpace.Holder
+
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 
 /-!
 # Hölder bounds from bounds on a function and its derivative
@@ -22,6 +25,7 @@ controls its oscillation between distant points (`HolderOnWith.of_le_of_dist_le`
   `N₁ + 2 N₀`.
 * `TauCeti.holderOnWith_thickening_of_norm_fderiv_le`: if the bounds hold on an open set containing
   the `2δ`-thickening of a set `K`, the function is Hölder on the `δ`-thickening of `K`.
+* `ContDiffOn.exists_holderOnWith`: a function `C¹` on a compact convex set is Hölder there.
 -/
 
 public section
@@ -40,8 +44,8 @@ distances less than `1`. -/
 theorem holderWith_of_norm_le_of_norm_fderiv_le {g : E → F} {N₀ N₁ α : ℝ≥0} (hα : α ≤ 1)
     (hg : Differentiable ℝ g) (hg0 : ∀ x, ‖g x‖ ≤ N₀) (hg1 : ∀ x, ‖fderiv ℝ g x‖ ≤ N₁) :
     HolderWith (N₁ + 2 * N₀) α g := by
-  have hL : LipschitzWith N₁ g := lipschitzWith_of_nnnorm_fderiv_le hg fun x => by
-    rw [← NNReal.coe_le_coe, coe_nnnorm]
+  have hL : LipschitzWith N₁ g := lipschitzWith_of_nnNorm_fderiv_le hg fun x => by
+    rw [← NNReal.coe_le_coe, coe_nnNorm]
     exact hg1 x
   have h := HolderOnWith.of_le_of_dist_le (s := univ) (δ := 1) (D := 2 * N₀)
     (fun x _ y _ _ => (holderWith_one.2 hL).dist_le x y) (fun x _ y _ => ?_) hα one_pos
@@ -77,3 +81,14 @@ theorem holderOnWith_thickening_of_norm_fderiv_le {Ω K : Set E} {g : E → F} {
     linarith [dist_le_norm_add_norm (g x) (g y), hg0 x (hU hx), hg0 y (hU hy)]
 
 end TauCeti
+
+/-- A function that is `C¹` on a compact convex set is `α`-Hölder there for every `α ≤ 1`: it is
+Lipschitz and bounded on that set. -/
+theorem ContDiffOn.exists_holderOnWith {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {s : Set E} {g : E → F} (hg : ContDiffOn ℝ 1 g s)
+    (hs : Convex ℝ s) (hs' : IsCompact s) {α : ℝ≥0} (hα : α ≤ 1) :
+    ∃ C, HolderOnWith C α g s := by
+  obtain ⟨K, hK⟩ := hg.exists_lipschitzOnWith one_ne_zero hs hs'
+  obtain ⟨M, hM⟩ := hs'.exists_bound_of_continuousOn hg.continuousOn
+  exact ⟨_, hK.holderOnWith_of_norm_le (M := M.toNNReal)
+    (fun x hx ↦ (hM x hx).trans (Real.le_coe_toNNReal M)) hα⟩

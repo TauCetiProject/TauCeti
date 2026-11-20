@@ -103,9 +103,9 @@ private theorem spinToEvenHom_continuous (n : ℕ) : Continuous (spinToEvenHom n
   have h : Continuous (fun g : SpinUnitsRange(n) ↦
       (⟨(((realCliffordSpinContinuousMulEquivUnitsRange n).symm g :
         spinGroup (realCliffordForm n 0)) : CliffordAlgebra (realCliffordForm n 0)),
-        spinGroup.mem_even ((realCliffordSpinContinuousMulEquivUnitsRange n).symm g).2⟩ :
+        spinGroup.mem_even ((realCliffordSpinContinuousMulEquivUnitsRange n).symm g).property⟩ :
           CliffordAlgebra.even (realCliffordForm n 0))) :=
-    (continuous_subtype_val.comp
+    (continuous_subtypeVal.comp
       (realCliffordSpinContinuousMulEquivUnitsRange n).symm.continuous).subtype_mk _
   apply h.congr
   intro g
@@ -114,7 +114,7 @@ private theorem spinToEvenHom_continuous (n : ℕ) : Continuous (spinToEvenHom n
 
 local instance completeEven (n : ℕ) :
     CompleteSpace (CliffordAlgebra.even (realCliffordForm n 0)) :=
-  FiniteDimensional.complete ℝ _
+  FiniteDimensional.completeSpace ℝ _
 
 /-- The smooth inclusion of the closed compact-Spin carrier into the units of the real even
 Clifford algebra. -/
@@ -142,10 +142,10 @@ private theorem coe_realCliffordSpinContinuousMulEquivUnitsRange_symm_apply
     (n : ℕ) (g : SpinUnitsRange(n)) :
     (((realCliffordSpinContinuousMulEquivUnitsRange n).symm g :
       spinGroup (realCliffordForm n 0)) : CliffordAlgebra (realCliffordForm n 0)) =
-        ((g.1 : (CliffordAlgebra (realCliffordForm n 0))ˣ) :
+        ((g.val : (CliffordAlgebra (realCliffordForm n 0))ˣ) :
           CliffordAlgebra (realCliffordForm n 0)) := by
   have hg := congrArg (fun z : SpinUnitsRange(n) ↦
-    ((z.1 : (CliffordAlgebra (realCliffordForm n 0))ˣ) :
+    ((z.val : (CliffordAlgebra (realCliffordForm n 0))ˣ) :
       CliffordAlgebra (realCliffordForm n 0)))
     ((realCliffordSpinContinuousMulEquivUnitsRange n).apply_symm_apply g)
   -- `spinGroup.toUnits` has the Spin element as its value field definitionally.
@@ -215,7 +215,7 @@ def realCliffordSpinEvenSmoothHom
 theorem realCliffordSpinEvenSmoothHom_apply
     (f : CliffordAlgebra.even (realCliffordForm n 0) →ₐ[ℝ] A) (g : SpinUnitsRange(n)) :
     ((f.realCliffordSpinEvenSmoothHom g : Aˣ) : A) =
-      f ⟨((g.1 : (CliffordAlgebra (realCliffordForm n 0))ˣ) :
+      f ⟨((g.val : (CliffordAlgebra (realCliffordForm n 0))ˣ) :
           CliffordAlgebra (realCliffordForm n 0)), by
         exact (coe_realCliffordSpinContinuousMulEquivUnitsRange_symm_apply n g) ▸
           spinGroup.mem_even

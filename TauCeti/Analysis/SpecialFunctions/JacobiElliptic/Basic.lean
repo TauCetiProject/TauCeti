@@ -286,7 +286,7 @@ theorem hasDerivAt_jacobiAm {k : ℝ} (hk : k ^ 2 < 1) (u : ℝ) :
 /-- The Jacobi amplitude is nonexpansive in its real argument. -/
 theorem lipschitzWith_jacobiAm (k : ℝ) : LipschitzWith 1 (jacobiAm k) := by
   by_cases hk : k ^ 2 < 1
-  · refine lipschitzWith_of_nnnorm_deriv_le
+  · refine lipschitzWith_of_nnNorm_deriv_le
       (fun u ↦ (hasDerivAt_jacobiAm hk u).differentiableAt) fun u ↦ ?_
     rw [(hasDerivAt_jacobiAm hk u).deriv]
     have hnorm : ‖jacobiDn k u‖ ≤ 1 := by

@@ -50,10 +50,10 @@ private theorem singularValue_linearIsometryEquiv_sandwich_le {X Y X' Y' : Type*
       gcongr <;>
         first
           | apply NNReal.coe_le_coe.mp
-            simpa only [coe_nnnorm, NNReal.coe_one] using
+            simpa only [coe_nnNorm, NNReal.coe_one] using
               b.toLinearIsometry.norm_toContinuousLinearMap_le
           | apply NNReal.coe_le_coe.mp
-            simpa only [coe_nnnorm, NNReal.coe_one] using
+            simpa only [coe_nnNorm, NNReal.coe_one] using
               a.toLinearIsometry.norm_toContinuousLinearMap_le
     _ = _ := by simp
 

@@ -19,7 +19,7 @@ in optimal transport, into the `Lᵖ` seminorm of an `E`-valued function, to whi
 structure of `E` applies (for instance, scaling by a constant).
 
 The measurability assumptions on `E` make both functions almost everywhere strongly measurable,
-which `MeasureTheory.eLpNorm_congr_enorm_ae` needs.
+which `MeasureTheory.eLpNorm_congr_eNorm_ae` needs.
 
 On a pseudometric space, `MeasureTheory.memLp_dist_iff_memLp_edist` likewise identifies membership
 in `Lᵖ` of the real distance to a basepoint with that of the extended distance.
@@ -40,8 +40,8 @@ ground distance `edist x y` have the same `Lᵖ` seminorm. -/
 theorem eLpNorm_sub_eq_eLpNorm_edist {E : Type*} [SeminormedAddCommGroup E] [MeasurableSpace E]
     [OpensMeasurableSpace E] [SecondCountableTopology E] (p : ℝ≥0∞) (π : Measure (E × E)) :
     eLpNorm (fun z : E × E ↦ z.1 - z.2) p π = eLpNorm (fun z : E × E ↦ edist z.1 z.2) p π :=
-  eLpNorm_congr_enorm_ae (by fun_prop) measurable_edist.aestronglyMeasurable
-    (.of_forall fun z ↦ by simp [edist_eq_enorm_sub])
+  eLpNorm_congr_eNorm_ae (by fun_prop) measurable_edist.aestronglyMeasurable
+    (.of_forall fun z ↦ by simp [eDist_eq_eNorm_sub])
 
 /-- On a pseudometric space, the real-distance and extended-distance formulations of
 finite `p`-moment at a basepoint agree. -/
@@ -50,13 +50,13 @@ theorem memLp_dist_iff_memLp_edist {X : Type*} [PseudoMetricSpace X] [Measurable
     MemLp (fun y ↦ dist y x) p ν ↔ MemLp (fun y ↦ edist x y) p ν := by
   have key (hd : AEStronglyMeasurable (fun y ↦ dist y x) ν) :
       MemLp (fun y ↦ dist y x) p ν ↔ MemLp (fun y ↦ edist x y) p ν := by
-    apply memLp_congr_enorm
+    apply memLp_congr_eNorm
     · exact hd
     · exact (ENNReal.continuous_ofReal.comp_aestronglyMeasurable hd).congr
         (.of_forall fun y ↦ by simp only [edist_dist, dist_comm])
     · exact .of_forall fun y ↦ by
-        simp only [edist_dist, dist_comm, enorm_eq_self]
-        exact Real.enorm_eq_ofReal dist_nonneg
+        simp only [edist_dist, dist_comm, eNorm_eq_self]
+        exact Real.eNorm_eq_ofReal dist_nonneg
   refine ⟨fun h ↦ (key h.aestronglyMeasurable).1 h, fun h ↦ (key ?_).2 h⟩
   exact h.aestronglyMeasurable.aemeasurable.ennreal_toReal.aestronglyMeasurable.congr
     (.of_forall fun y ↦ by simp only [← dist_edist, dist_comm])
@@ -74,8 +74,8 @@ theorem eLpNorm_edist_le_add {α Y : Type*} {m : MeasurableSpace α} [PseudoEMet
   calc eLpNorm (fun x ↦ edist (f' x) (g' x)) p μ
       ≤ eLpNorm ((fun x ↦ edist (f x) (g x)) +
           ((fun x ↦ edist (f x) (f' x)) + fun x ↦ edist (g x) (g' x))) p μ := by
-        refine eLpNorm_mono_enorm hmeas fun x ↦ ?_
-        simp only [enorm_eq_self, Pi.add_apply]
+        refine eLpNorm_mono_eNorm hmeas fun x ↦ ?_
+        simp only [eNorm_eq_self, Pi.add_apply]
         calc edist (f' x) (g' x)
             ≤ edist (f' x) (f x) + edist (f x) (g x) + edist (g x) (g' x) :=
               edist_triangle4 _ _ _ _

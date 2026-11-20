@@ -283,7 +283,7 @@ complex, for the cover of `Y` by its affine opens and for the cover of `X` by th
 def cohomologyPushforwardIsoOfIsAffineHom (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
     AddCommGrpCat.of (Cohomology ((pushforward f).obj M) n) ≅
       AddCommGrpCat.of (Cohomology M n) :=
-  cohomologyPushforwardIsoOfCover f (fun i : Y.affineOpens ↦ (i : Y.Opens)) (fun i ↦ i.2)
+  cohomologyPushforwardIsoOfCover f (fun i : Y.affineOpens ↦ (i : Y.Opens)) (fun i ↦ i.property)
     (iSup_affineOpens_eq_top Y) M n
 
 /-- The cohomology comparison along an affine morphism commutes with maps of quasi-coherent
@@ -320,12 +320,12 @@ theorem homologyCechComplexIsoCohomology_hom_comp_cohomologyPushforwardIsoOfIsAf
     (subsingleton_cohomologyOn_inf_succ U
       (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ hU i) ((pushforward f).obj M))
     (subsingleton_cohomologyOn_inf_succ _
-      (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ i.2) ((pushforward f).obj M)) φ n
+      (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ i.property) ((pushforward f).obj M)) φ n
   have hX := TauCeti.Topology.homologyMap_cechComplexMap_comp_homologyCechComplexIsoH_hom
     (fun i ↦ f ⁻¹ᵁ U i) (f.iSup_preimage_eq_top hcover) _
     (f.iSup_preimage_eq_top (iSup_affineOpens_eq_top Y)) _
     (subsingleton_cohomologyOn_inf_preimage_succ f U hU M)
-    (subsingleton_cohomologyOn_inf_preimage_succ f _ (fun i ↦ i.2) M)
+    (subsingleton_cohomologyOn_inf_preimage_succ f _ (fun i ↦ i.property) M)
     ⟨φ.f, fun i ↦ (Opens.map f.base).map (φ.φ i)⟩ n
   have hC := congrArg (HomologicalComplex.homologyMap · n)
     (cechComplexPushforwardIso_hom_comp_cechComplexMap f U _ M φ)
@@ -413,10 +413,7 @@ lemma exists_mono_isQuasicoherent_subsingleton_cohomology [CompactSpace X]
   have hU (i : 𝒰.I₀) : IsAffineOpen (U i) := isAffineOpen_opensRange (𝒰.f i)
   have hcover : ⨆ i, U i = ⊤ := 𝒰.iSup_opensRange
   -- An affine open of a scheme with affine diagonal is an affine morphism.
-  have hι (i : 𝒰.I₀) : IsAffineHom (U i).ι := ⟨fun V hV ↦
-    (U i).ι.isAffineOpen_iff_of_isOpenImmersion.mp (by
-      rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
-      exact (hU i).inf hV)⟩
+  have hι (i : 𝒰.I₀) : IsAffineHom (U i).ι := (hU i).isAffineHom_ι
   have : HasFiniteBiproducts X.Modules := .of_hasFiniteProducts
   let F : 𝒰.I₀ → X.Modules := fun i ↦
     (pushforward (U i).ι).obj ((restrictFunctor (U i).ι).obj M)

@@ -23,7 +23,14 @@ controls variation of inverse operators by variation of the original operators.
 
 Over a semifield, multiplying a map by a nonzero scalar `c` preserves invertibility, and the inverse
 of `c • f` is `c⁻¹ • f.inverse`; this is how the inverse of a positively homogeneous family of
-maps is seen to be homogeneous of the opposite degree.
+maps is seen to be homogeneous of the opposite degree. Scaling the identity by a nonzero scalar `c`
+from a group with zero acting on the space, such as complex multiplication on `ℂ` viewed as a
+real-linear map, is invertible (`ContinuousLinearMap.isUnit_smul_id_of_ne_zero`). On a
+topological semifield, `a ↦ a • c` is invertible exactly when `c ≠ 0`
+(`ContinuousLinearMap.isInvertible_toSpanSingleton_iff`).
+
+An endomorphism is invertible exactly when it is a unit of the endomorphism ring
+(`ContinuousLinearMap.isInvertible_iff_isUnit`).
 
 The file also records that the product `f.prodMap g` of two continuous linear maps is invertible
 exactly when both factors are, which is how block-diagonal second derivatives on a product space
@@ -46,6 +53,18 @@ open Filter
 open scoped Topology
 
 namespace ContinuousLinearMap
+
+section IsUnit
+
+variable {R M : Type*} [Semiring R] [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+
+/-- An endomorphism is invertible, that is, a continuous linear equivalence, exactly when it is a
+unit of the ring of continuous endomorphisms. -/
+theorem isInvertible_iff_isUnit {f : M →L[R] M} : f.IsInvertible ↔ IsUnit f :=
+  ⟨fun ⟨e, he⟩ ↦ he ▸ ((ContinuousLinearEquiv.unitsEquiv R M).symm e).isUnit,
+    fun ⟨u, hu⟩ ↦ ⟨ContinuousLinearEquiv.unitsEquiv R M u, hu ▸ rfl⟩⟩
+
+end IsUnit
 
 section Sub
 
@@ -136,6 +155,39 @@ theorem inverse_smul (c : 𝕜) (f : M →L[𝕜] M₂) : (c • f).inverse = c�
     map_smul, smul_apply]
 
 end Smul
+
+section SMulId
+
+variable {R S M : Type*} [Semiring R] [GroupWithZero S] [TopologicalSpace M] [AddCommMonoid M]
+  [Module R M] [DistribMulAction S M] [SMulCommClass R S M] [ContinuousConstSMul S M]
+
+/-- Scaling the identity by a nonzero scalar `c` is invertible, with inverse scaling by `c⁻¹`. The
+scalars need not commute with operators: for example, multiplication by a nonzero complex number
+is an invertible real-linear map of `ℂ`. -/
+theorem isUnit_smul_id_of_ne_zero {c : S} (hc : c ≠ 0) :
+    IsUnit (c • ContinuousLinearMap.id R M) := by
+  have := SMulCommClass.symm R S M
+  convert (ContinuousLinearEquiv.smulLeft (Units.mk0 c hc) : M ≃L[R] M).toUnit.isUnit
+  ext; simp [ContinuousLinearEquiv.toUnit]
+
+end SMulId
+
+section ToSpanSingleton
+
+variable {𝕜 : Type*} [Semifield 𝕜] [TopologicalSpace 𝕜] [ContinuousMul 𝕜]
+
+/-- On a topological semifield, the continuous linear map `a ↦ a • c` is invertible exactly when
+`c ≠ 0`. -/
+@[simp]
+theorem isInvertible_toSpanSingleton_iff {c : 𝕜} :
+    (toSpanSingleton 𝕜 c).IsInvertible ↔ c ≠ 0 := by
+  refine ⟨?_, fun hc ↦ .of_inverse (g := toSpanSingleton 𝕜 c⁻¹) ?_ ?_⟩
+  · rintro h rfl
+    rw [toSpanSingleton_zero, isInvertible_zero_iff] at h
+    exact not_subsingleton 𝕜 h.1
+  all_goals ext; simp [hc]
+
+end ToSpanSingleton
 
 section ProdMap
 

@@ -92,7 +92,7 @@ theorem not_memLp_top_log_norm [Nontrivial E] [μ.IsOpenPosMeasure] :
     simp only [U, mem_ofPred_eq] at hy ⊢
     have hlog : M.toReal < Real.log ‖y‖ := by
       rwa [Real.lt_log_iff_exp_lt ((Real.exp_pos _).trans hy)]
-    rw [not_le, Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_toReal hM]
+    rw [not_le, Real.eNorm_eq_ofReal_abs, ← ENNReal.ofReal_toReal hM]
     exact (ENNReal.ofReal_lt_ofReal_iff_of_nonneg ENNReal.toReal_nonneg).2
       (hlog.trans_le (le_abs_self _))
   exact (hU.measure_pos μ hUne).ne' (measure_mono_null hUsub ae_le_eLpNormEssSup)
@@ -114,7 +114,7 @@ theorem setLIntegral_enorm_log_norm_sub_log_le [Nontrivial E] {R : ℝ} (hR : 0 
     have hpos : 0 < ‖y‖ := norm_pos_iff.2 (by simpa using hy0)
     have hle : 0 ≤ g y := sub_nonneg.2 (Real.log_le_log hpos (mem_ball_zero_iff.1 hy).le)
     refine ⟨hle, ?_⟩
-    rw [← enorm_neg, neg_sub, Real.enorm_eq_ofReal hle]
+    rw [← eNorm_neg, neg_sub, Real.eNorm_eq_ofReal hle]
   have hmeas : AEMeasurable g (μ.restrict (ball 0 R)) :=
     (measurable_const.sub (Real.measurable_log.comp measurable_norm)).aemeasurable
   rw [lintegral_congr_ae (hg0.mono fun _ hy => hy.2),
@@ -182,7 +182,7 @@ private theorem exists_setLAverage_enorm_log_norm_sub_le [Nontrivial E] (c : E) 
     refine ⟨Real.log ‖c‖, (laverage_le_essSup _).trans (essSup_le_of_ae_le _ ?_)⟩
     filter_upwards [ae_restrict_mem measurableSet_ball] with y hy
     have habs := abs_log_norm_sub_log_norm_le_one (mem_ball_iff_norm.1 hy) hc
-    rw [Real.enorm_eq_ofReal_abs]
+    rw [Real.eNorm_eq_ofReal_abs]
     exact (ENNReal.ofReal_le_one.2 habs).trans (one_le_pow₀ (by norm_num))
   · -- Near the origin, `B(c, r) ⊆ B(0, 3r)` and `log ‖·‖` is within `1` of `log (3r)` in mean
     -- over `B(0, 3r)`.
@@ -248,7 +248,7 @@ private theorem exists_forall_mem_ball_ofReal_le_enorm_log_norm_sub [Nontrivial 
     have hyz := mem_ball_iff_norm.1 hy
     have hy0 : 0 < ‖y‖ := by linarith [norm_le_insert' z y, norm_sub_rev y z]
     have hlog := Real.log_lt_log hy0 (by linarith [norm_le_insert' y z] : ‖y‖ < r / 4)
-    rw [Real.enorm_eq_ofReal_abs, abs_sub_comm]
+    rw [Real.eNorm_eq_ofReal_abs, abs_sub_comm]
     exact ENNReal.ofReal_le_ofReal ((by linarith : δ ≤ a - Real.log ‖y‖).trans (le_abs_self _))
   · -- `a` lies below the values of `log ‖·‖` on a ball of points of norm in `(r / 2, r)`.
     obtain ⟨z, hz⟩ := exists_norm_eq E (by positivity : 0 ≤ 3 / 4 * r)
@@ -256,7 +256,7 @@ private theorem exists_forall_mem_ball_ofReal_le_enorm_log_norm_sub [Nontrivial 
     have hyz := mem_ball_iff_norm.1 hy
     have hlog := Real.log_lt_log (by positivity)
       (by linarith [norm_le_insert' z y, norm_sub_rev y z] : r / 2 < ‖y‖)
-    rw [Real.enorm_eq_ofReal_abs]
+    rw [Real.eNorm_eq_ofReal_abs]
     exact ENNReal.ofReal_le_ofReal ((by linarith : δ ≤ Real.log ‖y‖ - a).trans (le_abs_self _))
 
 /-- **The mean oscillation of `log ‖x‖` does not vanish on small balls.** On a nontrivial

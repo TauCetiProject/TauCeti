@@ -56,7 +56,7 @@ theorem card_roots_toFinset_comp_C_sub_X_sq {p : R[X]} (hp : p ≠ 0) (t : R) :
     rw [Ne, comp_eq_zero_iff]
     rintro (h | ⟨-, h⟩)
     · exact hp h
-    · simpa using congrArg (coeff · 2) h
+    · simpa using congrArg (fun q : R[X] ↦ q.coeff 2) h
   have hmem (y : R) : y ∈ (p.comp (C t - X ^ 2)).roots.toFinset ↔ p.IsRoot (t - y ^ 2) := by
     simp [mem_roots hq]
   -- Group the roots of the substituted polynomial by the root `t - y ^ 2` of `p` they come from.

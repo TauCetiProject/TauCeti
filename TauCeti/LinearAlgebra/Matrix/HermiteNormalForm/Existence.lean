@@ -113,7 +113,7 @@ private theorem exists_isHermiteNormalForm_of_pos {L : Submodule ℤ (Fin (m + 1
   · intro j
     simp only [transpose_apply, of_apply, C, Fin.cons_succ, hw₀]
     exact ⟨Int.emod_nonneg _ hd₀'.ne', Int.emod_lt_of_pos _ hd₀'⟩
-  · rw [of_col]
+  · dsimp
     exact Fin.cases ((hd d).mpr dvd_rfl)
       (fun j ↦ sub_mem (hvL j) (Submodule.smul_mem _ _ ((hd d).mpr dvd_rfl))) j
   · obtain ⟨c, hc⟩ := htail x hx
@@ -123,8 +123,8 @@ private theorem exists_isHermiteNormalForm_of_pos {L : Submodule ℤ (Fin (m + 1
     refine ⟨Pi.single 0 t, ?_⟩
     ext i
     cases i using Fin.cases with
-    | zero => simp [C, mul_comm]
-    | succ i => simp [C]
+    | zero => simp [C, mul_comm, Function.swap]
+    | succ i => simp [C, Function.swap]
 
 /-- **Existence of Hermite bases.** Every sublattice `L` of `ℤ^m` is the column lattice of a
 matrix in Hermite normal form. -/
@@ -155,7 +155,7 @@ theorem exists_isHermiteNormalForm_range_mulVecLin_eq :
     rcases Nat.eq_zero_or_pos d with rfl | hd₀
     · -- If `d = 0`, the lifts of the columns of `H'` form a Hermite basis of `L`.
       refine ⟨k, (of v)ᵀ, (isHermitePivotedBy_of_succ hp fun i j ↦ hv j i).isHermiteNormalForm,
-        range_mulVecLin_eq_of_succ (fun j ↦ by rw [of_col]; exact hvL j) (fun x hx ↦ ?_)
+        range_mulVecLin_eq_of_succ (fun j ↦ by dsimp; exact hvL j) (fun x hx ↦ ?_)
           fun a ha ↦ ?_⟩
       · obtain ⟨c, hc⟩ := htail x hx
         exact ⟨c, fun i ↦ by simpa [mulVec, dotProduct, hv] using hc i⟩
@@ -179,7 +179,7 @@ private theorem exists_isHermiteNormalForm_finrank (L : Submodule ℤ (Fin m →
       H.IsHermiteNormalForm ∧ LinearMap.range H.mulVecLin = L := by
   obtain ⟨k, H, hH, rfl⟩ := exists_isHermiteNormalForm_range_mulVecLin_eq L
   have hk : Module.finrank ℤ (LinearMap.range H.mulVecLin) = k := by
-    rw [← rank]
+    rw [finrank_range_mulVecLin]
     exact hH.rank_eq
   generalize Module.finrank ℤ (LinearMap.range H.mulVecLin) = k' at hk ⊢
   subst hk
@@ -321,7 +321,7 @@ theorem IsHermiteNormalForm.exists_isHermiteDecomposition {A : Matrix (Fin m) (F
   rw [hAU]
   obtain ⟨a | a, rfl⟩ := e.surjective j
   · simp [b', b₀, e, hs, hermitePad_apply]
-  · have hker : A *ᵥ (b a : Fin n → ℤ) = 0 := LinearMap.mem_ker.mp (b a).2
+  · have hker : A *ᵥ (b a : Fin n → ℤ) = 0 := LinearMap.mem_ker.mp (b a).property
     simp [b', b₀, e, hker, hermitePad_apply]
 
 /-- **Existence of the Hermite normal form.** Every integer matrix `A` has a Hermite
@@ -338,7 +338,21 @@ column lattice is that of `A`, see `Matrix.IsHermiteNormalForm.sigma_mk_hermiteB
 Hermite basis `Submodule.hermiteBasis` of the column lattice of `A`, and has `A.rank` columns,
 which is by definition the rank of that lattice. -/
 noncomputable def hermiteBasis (A : Matrix (Fin m) (Fin n) ℤ) : Matrix (Fin m) (Fin A.rank) ℤ :=
-  (LinearMap.range A.mulVecLin).hermiteBasis
+  (finrank_range_mulVecLin A).rec (motive := fun k _ ↦ Matrix (Fin m) (Fin k) ℤ)
+    (LinearMap.range A.mulVecLin).hermiteBasis
+
+/-- Transport a property of a matrix along an equality of numbers of columns. -/
+private theorem rec_matrix_cols {k k' : ℕ} (h : k = k') (H : Matrix (Fin m) (Fin k) ℤ)
+    (P : ∀ k, Matrix (Fin m) (Fin k) ℤ → Prop) (hP : P k H) :
+    P k' (h.rec (motive := fun k _ ↦ Matrix (Fin m) (Fin k) ℤ) H) := by
+  subst h
+  exact hP
+
+/-- Transport a property of the Hermite basis of the column lattice of `A` to `A.hermiteBasis`. -/
+private theorem hermiteBasis_rec (A : Matrix (Fin m) (Fin n) ℤ)
+    (P : ∀ k, Matrix (Fin m) (Fin k) ℤ → Prop)
+    (hP : P _ (LinearMap.range A.mulVecLin).hermiteBasis) : P A.rank A.hermiteBasis :=
+  rec_matrix_cols _ _ P hP
 
 variable {A : Matrix (Fin m) (Fin n) ℤ}
 
@@ -346,13 +360,15 @@ variable {A : Matrix (Fin m) (Fin n) ℤ}
 @[simp]
 theorem isHermiteNormalForm_hermiteBasis (A : Matrix (Fin m) (Fin n) ℤ) :
     A.hermiteBasis.IsHermiteNormalForm :=
-  (LinearMap.range A.mulVecLin).isHermiteNormalForm_hermiteBasis
+  hermiteBasis_rec A (fun _ H ↦ H.IsHermiteNormalForm)
+    (LinearMap.range A.mulVecLin).isHermiteNormalForm_hermiteBasis
 
 /-- The column lattice of the Hermite basis of `A` is that of `A`. -/
 @[simp]
 theorem range_mulVecLin_hermiteBasis (A : Matrix (Fin m) (Fin n) ℤ) :
     LinearMap.range A.hermiteBasis.mulVecLin = LinearMap.range A.mulVecLin :=
-  (LinearMap.range A.mulVecLin).range_mulVecLin_hermiteBasis
+  hermiteBasis_rec A (fun _ H ↦ LinearMap.range H.mulVecLin = LinearMap.range A.mulVecLin)
+    (LinearMap.range A.mulVecLin).range_mulVecLin_hermiteBasis
 
 /-- The Hermite basis of `A` is the Hermite matrix of a Hermite decomposition of `A`. -/
 theorem exists_isHermiteDecomposition_hermiteBasis (A : Matrix (Fin m) (Fin n) ℤ) :
@@ -364,7 +380,8 @@ theorem exists_isHermiteDecomposition_hermiteBasis (A : Matrix (Fin m) (Fin n) �
 columns of the Hermite basis of `A`, with unique coefficients. -/
 theorem mem_range_iff_hermite {x : Fin m → ℤ} :
     x ∈ LinearMap.range A.mulVecLin ↔ ∃! c, A.hermiteBasis *ᵥ c = x :=
-  Submodule.mem_iff_hermite
+  hermiteBasis_rec A (fun _ H ↦ x ∈ LinearMap.range A.mulVecLin ↔ ∃! c, H *ᵥ c = x)
+    Submodule.mem_iff_hermite
 
 /-- **Uniqueness of the Hermite basis.** Every matrix in Hermite normal form with the column
 lattice of `A` is the Hermite basis of `A`, with the same number of columns. -/

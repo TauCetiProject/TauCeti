@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.AlgebraicTopology.Singular.Relative
 public import TauCeti.CategoryTheory.Abelian.DiagramLemmas.CokernelComp
+public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Topology.Category.TopTriple
 import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 
@@ -29,7 +30,10 @@ functorial as well, and the connecting morphism is natural for morphisms of trip
 
 The short exact sequence and its connecting morphism use an abelian coefficient category.  The
 zero composite and the degree-zero epimorphism also hold for preadditive coefficients with
-coproducts and homology.
+coproducts and homology.  Exactness at `Hₙ(X, B)` propagates vanishing from `(A, B)` and `(X, A)`
+to `(X, B)` (`TopTriple.isZero_singularHomology_totalPair`), and when `H_{d+1}(X, A) = 0` it
+propagates projectivity over hereditary coefficient categories
+(`TopTriple.projective_singularHomology_totalPair`).
 
 The source is Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
@@ -140,6 +144,48 @@ instance [CategoryWithHomology C] :
       ((HomologicalComplex.comp_f _ _ _).symm.trans
         (congrArg (fun f ↦ f.f 0) (T.singularChainComplexπ_comp_totalToOuter R)))
   exact HomologicalComplex.epi_homologyMap_of_epi_of_not_rel _ _ (by simp)
+
+/-- In each degree, the map `Cₙ(A, B) ⟶ Cₙ(X, B)` of relative singular chains of a triple
+`(X, A, B)` is a split monomorphism: a retraction of `Cₙ(A) ⟶ Cₙ(X)` is the identity on the chains
+of `B`, so it descends to the quotients by them. -/
+instance isSplitMono_singularChainComplexMap_innerToTotal_f (n : ℕ) :
+    IsSplitMono ((TopPair.singularChainComplexMap (innerToTotal.app T) R).f n) := by
+  -- The singular simplicial pair of `(X, A)` has `TopCat.toSSet.map T.outerMap` as its map only
+  -- up to unfolding `TopPair.toSSetPair` and `outerPair`, so its degreewise splitting is
+  -- supplied explicitly. For the same reason, the sources of the quotient maps below agree with
+  -- the singular chains of `X` and `A` only definitionally, so `rw` cannot match the composites
+  -- with them and the equations are composed with `exact` instead.
+  have : IsSplitMono ((SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n) :=
+    inferInstanceAs (IsSplitMono
+      ((SSet.chainComplexMap (TopPair.toSSetPair.obj (outerPair.obj T)).hom R).f n))
+  let r := retraction ((SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n)
+  have hr {Z : C} (h : ((TopCat.toSSet.obj T.snd).chainComplex R).X n ⟶ Z) :
+      (SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n ≫ r ≫ h = h :=
+    IsSplitMono.id_assoc _ h
+  -- The chains of `B` map to the chains of `X` through those of `A`, on which `r` is the
+  -- identity; so `r` followed by the quotient map vanishes on them.
+  have e : (SSet.chainComplexMap (TopCat.toSSet.map T.innerMap) R ≫
+      SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n =
+      (SSet.chainComplexMap (TopCat.toSSet.map T.totalMap) R).f n := by
+    rw [← Functor.map_comp, ← TopCat.toSSet.map_comp, T.innerMap_comp_outerMap]
+  have hB : (SSet.chainComplexMap (TopCat.toSSet.map T.totalMap) R).f n ≫ r ≫
+      ((innerPair.obj T).singularChainComplexπ R).f n = 0 :=
+    (congrArg (· ≫ r ≫ _) e).symm.trans <| (Category.assoc _ _ _).trans <|
+      (congrArg (_ ≫ ·) (hr _)).trans
+        ((TopPair.toSSetPair.obj (innerPair.obj T)).chainComplex_condition_f R n)
+  let ρ : ((totalPair.obj T).singularChainComplex R).X n ⟶
+      ((innerPair.obj T).singularChainComplex R).X n :=
+    ((TopPair.toSSetPair.obj (totalPair.obj T)).isColimitCokernelCoforkChainComplexX R n).desc
+      (CokernelCofork.ofπ _ hB)
+  have hρ : ((totalPair.obj T).singularChainComplexπ R).f n ≫ ρ =
+      r ≫ ((innerPair.obj T).singularChainComplexπ R).f n :=
+    ((TopPair.toSSetPair.obj (totalPair.obj T)).isColimitCokernelCoforkChainComplexX R n).fac _
+      WalkingParallelPair.one
+  have hπ := congrArg (fun φ ↦ φ.f n) (T.singularChainComplexπ_comp_innerToTotal R)
+  exact ⟨⟨ρ, (cancel_epi (((innerPair.obj T).singularChainComplexπ R).f n)).1 <|
+    (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ ρ) hπ).trans <|
+      (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·) hρ).trans <|
+        (hr _).trans (Category.comp_id _).symm⟩⟩
 
 end
 
@@ -276,6 +322,19 @@ lemma singularHomologyδ_naturality {T T' : TopTriple.{w}} (φ : T ⟶ T') (R : 
     (singularChainComplexShortComplexMap φ R)
     (T.shortExact_singularChainComplexShortComplex R)
     (T'.shortExact_singularChainComplexShortComplex R) n m (by simpa)
+
+/-- **Projectivity of top relative homology glues across a triple** in a hereditary abelian
+category: if `H_{d+1}(X, A)` vanishes and both `H_d(A, B)` and `H_d(X, A)` are projective, then
+`0 ⟶ H_d(A, B) ⟶ H_d(X, B) ⟶ H_d(X, A)` is exact with projective image, so `H_d(X, B)` splits as
+a direct sum of two projectives and is projective. -/
+theorem projective_singularHomology_totalPair [∀ V : A, HasProjectiveDimensionLE V 1]
+    (d : ℕ) (h : IsZero ((outerPair.obj T).singularHomology R (d + 1)))
+    [Projective ((innerPair.obj T).singularHomology R d)]
+    [Projective ((outerPair.obj T).singularHomology R d)] :
+    Projective ((totalPair.obj T).singularHomology R d) := by
+  have : Mono (TopPair.singularHomologyMap (innerToTotal.app T) R d) :=
+    (T.singularHomology_exact_inner R (d + 1) d rfl).mono_g (h.eq_of_src _ 0)
+  exact (T.singularHomology_exact_total R d).projective_X₂_of_mono_f
 
 end
 

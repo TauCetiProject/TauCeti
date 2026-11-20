@@ -257,9 +257,9 @@ theorem tendsto_quantile_map_inner_uniformBallMeasure_nhdsGT_zero (c : E) {r : �
     (hr : 0 ≤ r) (v : E) :
     Tendsto ((uniformBallMeasure c r).map (fun x ↦ ⟪v, x⟫)).quantile
       (𝓝[>] 0) (𝓝 (⟪v, c⟫ - r * ‖v‖)) := by
-  have ha : 0 < ((Module.finrank ℝ E : ℝ) + 1) / 2 := by positivity
-  have h := (((tendsto_inverseRegularizedIncompleteBeta_zero ha ha).const_mul 2).const_add (-1)
-    |>.const_mul (r * ‖v‖)).const_add ⟪v, c⟫
+  have h := (((tendsto_inverseRegularizedIncompleteBeta_zero ((Module.finrank ℝ E + 1) / 2)
+    ((Module.finrank ℝ E + 1) / 2)).const_mul 2).const_add (-1) |>.const_mul (r * ‖v‖)).const_add
+    ⟪v, c⟫
   simp only [mul_zero, add_zero, mul_neg_one, ← sub_eq_add_neg] at h
   apply h.congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu

@@ -50,8 +50,8 @@ theorem mul_norm_sinThetaMap_rightSingularSubspace_le (A B : E →ₗ[𝕜] F)
     δ * ‖(A.rightSingularSubspace s).sinThetaMap (B.rightSingularSubspace t)‖ ≤
       (‖B.toContinuousLinearMap‖ + ‖A.toContinuousLinearMap‖) *
         ‖B.toContinuousLinearMap - A.toContinuousLinearMap‖ := by
-  let : CompleteSpace E := FiniteDimensional.complete 𝕜 E
-  let : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  let : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
+  let : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   let P : E →L[𝕜] E := (A.adjoint ∘ₗ A).toContinuousLinearMap
   let Q : E →L[𝕜] E := (B.adjoint ∘ₗ B).toContinuousLinearMap
   have hP : (P : E →ₗ[𝕜] E).IsSymmetric := by
@@ -88,8 +88,8 @@ theorem mul_norm_sinThetaMap_leftSingularSubspace_le (A B : E →ₗ[𝕜] F)
     δ * ‖(A.leftSingularSubspace s).sinThetaMap (B.leftSingularSubspace t)‖ ≤
       (‖B.toContinuousLinearMap‖ + ‖A.toContinuousLinearMap‖) *
         ‖B.toContinuousLinearMap - A.toContinuousLinearMap‖ := by
-  let : CompleteSpace E := FiniteDimensional.complete 𝕜 E
-  let : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  let : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
+  let : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   have h := mul_norm_sinThetaMap_rightSingularSubspace_le
     A.adjoint B.adjoint (s := s) (t := t)
     (by simpa only [adjoint_adjoint, rightSingularSubspace_adjoint] using hgap)

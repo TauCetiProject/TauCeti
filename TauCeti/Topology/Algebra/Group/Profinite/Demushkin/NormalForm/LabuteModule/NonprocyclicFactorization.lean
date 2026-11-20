@@ -112,7 +112,7 @@ theorem one_add_add_of_inv_mem_span_one_add_of_two_pow_sub_one_add_of
   have := χ.isClosed_ker
   have : IsMulCommutative (G ⧸ χ.toMonoidHom.ker) :=
     Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr
-      (Abelianization.commutator_le_ker _)
+      (Group.Abelianization.commutator_le_ker _)
   have hΓ := hG.quotient χ.toMonoidHom.ker
   -- `1 + a = -χ(x)⁻¹` lies in `U^(f)`, which `χ(y) = 1 - 2^f` topologically generates.
   have he : ((-(χ x)⁻¹ : ℤ_[2]ˣ) : ℤ_[2]) = 1 + a := by
@@ -187,7 +187,7 @@ theorem exists_ofMul_mk_demushkinWordTwoEvenPadic_ker_eq_add_smul
   have := χ.isClosed_ker
   have : IsMulCommutative (G ⧸ χ.toMonoidHom.ker) :=
     Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr
-      (Abelianization.commutator_le_ker _)
+      (Group.Abelianization.commutator_le_ker _)
   let _ := (hG.topologicalAbelianization χ.toMonoidHom.ker).completedGroupAlgebraModule
     (G ⧸ χ.toMonoidHom.ker)
   obtain ⟨c, d, hcd⟩ := Ideal.mem_span_pair.mp
@@ -234,10 +234,10 @@ theorem exists_ofMul_mk_demushkinWordTwoEven_ker_orientationTwoEven_comp_mk_eq_a
       χ.toMonoidHom.ker).completedGroupAlgebraModule (freeProP 2 (Fin n) ⧸ χ.toMonoidHom.ker)
     ∃ z₁ z₃ : Additive (TopologicalAbelianization χ.toMonoidHom.ker),
       Additive.ofMul ((⟨_, demushkinWordTwoEven_mem_ker χ.toMonoidHom a f n
-          ((congrArg (· ^ (2 + a)) ((presentedProP.comp_mk_freeProPGen _ _ _ _ 0).trans
+          ((congrArg (· ^ (2 + a)) ((presentedProP.comp_mk_freeProPGen _ 0).trans
             (orientationTwoEven_presentedProPGen_of_ne a f n v u zero_ne_one
               (by decide)))).trans (one_pow _))
-          ((congrArg (· ^ 2 ^ f) ((presentedProP.comp_mk_freeProPGen _ _ _ _ 2).trans
+          ((congrArg (· ^ 2 ^ f) ((presentedProP.comp_mk_freeProPGen _ 2).trans
             (orientationTwoEven_presentedProPGen_of_ne a f n v u (by decide)
               (by decide)))).trans (one_pow _))⟩ : χ.toMonoidHom.ker) :
             TopologicalAbelianization χ.toMonoidHom.ker) =
@@ -248,13 +248,13 @@ theorem exists_ofMul_mk_demushkinWordTwoEven_ker_orientationTwoEven_comp_mk_eq_a
               (y : freeProP 2 (Fin n) ⧸ χ.toMonoidHom.ker)) • z₃ := by
   intro χ
   have hx : ∀ i, i ≠ 1 → i ≠ 3 → i < 2 * (n / 2) → χ (freeProPGen 2 n i) = 1 := fun i hi₁ hi₃ _ ↦
-    (presentedProP.comp_mk_freeProPGen _ _ _ _ i).trans
+    (presentedProP.comp_mk_freeProPGen _ i).trans
       (orientationTwoEven_presentedProPGen_of_ne a f n v u hi₁ hi₃)
   have h₁ : χ (freeProPGen 2 n 1) = v :=
-    (presentedProP.comp_mk_freeProPGen _ _ _ _ 1).trans
+    (presentedProP.comp_mk_freeProPGen _ 1).trans
       (orientationTwoEven_presentedProPGen_one a f n v u (by omega))
   have h₃ : χ (freeProPGen 2 n 3) = u :=
-    (presentedProP.comp_mk_freeProPGen _ _ _ _ 3).trans
+    (presentedProP.comp_mk_freeProPGen _ 3).trans
       (orientationTwoEven_presentedProPGen_three a f n v u hn)
   simpa only [demushkinWordTwoEvenPadic_natCast] using
     ((isProP_freeProP 2 (Fin n)).exists_ofMul_mk_demushkinWordTwoEvenPadic_ker_eq_add_smul

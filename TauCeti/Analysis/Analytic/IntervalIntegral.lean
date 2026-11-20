@@ -77,7 +77,7 @@ theorem HasFPowerSeriesOnBall.intervalIntegral_comp {f : E → F}
   refine ⟨hf.r_le.trans hradius, hf.r_pos, fun {y} hy ↦ ?_⟩
   simp only [add_sub_cancel_left]
   have hy' : (‖y‖₊ : ℝ≥0∞) < p.radius := by
-    simpa [edist_zero_right, enorm_eq_nnnorm] using lt_of_lt_of_le hy hf.r_le
+    simpa [edist_zero_right, eNorm_eq_nnNorm] using lt_of_lt_of_le hy hf.r_le
   have happly (n : ℕ) : (∫ t in a..b, (p n).compContinuousLinearMap fun _ ↦ L t)
       (fun _ ↦ y) = ∫ t in a..b, p n fun _ ↦ L t y := by
     -- Evaluation is real-linear even when `𝕜` has no real algebra structure.
@@ -101,7 +101,7 @@ theorem HasFPowerSeriesOnBall.intervalIntegral_comp {f : E → F}
       ((pi_norm_le_iff_of_nonneg (norm_nonneg y)).2 fun _ ↦ ht hmem)
   · refine hf.hasSum ?_
     simp only [Metric.mem_eball, edist_zero_right] at hy ⊢
-    exact lt_of_le_of_lt (by simpa [enorm_eq_nnnorm, ← NNReal.coe_le_coe] using ht hmem) hy
+    exact lt_of_le_of_lt (by simpa [eNorm_eq_nnNorm, ← NNReal.coe_le_coe] using ht hmem) hy
 
 omit [SMulCommClass 𝕜 ℝ F] [CompleteSpace F] in
 /-- If `f` is analytic at `c`, and `L t` is an a.e.-strongly measurable family of continuous

@@ -314,10 +314,10 @@ variable {P : ℤ[X]}
 
 private theorem mulHeight_map_intCast_eq_finsupp (P : ℤ[X]) :
     (P.map (Int.castRingHom ℚ)).mulHeight =
-      (P.toFinsupp.coeff.mapRange ((↑) : ℤ → ℚ) Int.cast_zero).mulHeight := by
+      (P.coeff.mapRange ((↑) : ℤ → ℚ) Int.cast_zero).mulHeight := by
   rw [mulHeight_eq_finsupp]
   refine congrArg Finsupp.mulHeight (Finsupp.ext fun n ↦ ?_)
-  simp [toFinsupp_apply, coeff_map]
+  simp [coeff_map]
 
 /-- The height over `ℚ` of a nonzero integer polynomial is at most the largest absolute value of
 its coefficients. -/
@@ -359,7 +359,7 @@ theorem logHeight_map_intCast_le_log (hP : P ≠ 0) {B : ℝ}
   refine Real.log_le_log (mulHeight_pos _) ?_
   rw [mulHeight_map_intCast_eq_finsupp]
   exact Finsupp.mulHeight_mapRange_intCast_le_of_abs_le (by simpa using hP)
-    fun n ↦ by simpa [toFinsupp_apply] using hB n
+    hB
 
 end Polynomial
 
@@ -378,7 +378,7 @@ theorem max_abs_le_abs_eval_rpow_mul_mulHeight₁ {F : MvPolynomial (Fin 2) ℤ}
   obtain ⟨w, hvw, hw⟩ := Finset.univ.extract_gcd ![x, y] Finset.univ_nonempty
   set d := Finset.univ.gcd ![x, y]
   have hdw : ![x, y] = d • w := _root_.funext fun i ↦ by simp [← hvw i (Finset.mem_univ i)]
-  have heval : eval ![x, y] F = d ^ n * eval w F := by rw [hdw, hF.eval_smul, smul_eq_mul]
+  have heval : eval ![x, y] F = d ^ n * eval w F := by rw [hdw, hF.eval_smul]
   have hd : d ≠ 0 := by
     rintro hd
     rw [heval, hd, zero_pow hn, zero_mul] at h

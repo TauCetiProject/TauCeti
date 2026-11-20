@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.PlanInterpolation
-public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Subsolution
 import TauCeti.Analysis.PDE.HopfLax.Integrable
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
+import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Subsolution
 import TauCeti.MeasureTheory.OptimalTransport.Duality.LowerSemicontinuous
-import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 import TauCeti.Topology.Order.Interval
 
 /-!
@@ -61,7 +60,9 @@ endpoint is recovered by narrow continuity of `ν` at `b`.
 * L. Ambrosio, N. Gigli and G. Savaré, *Gradient Flows in Metric Spaces and in the Space of
   Probability Measures*, Birkhäuser, 2nd ed. 2008, §8.1 and §8.3.
 * C. Villani, *Optimal Transport: Old and New*, Grundlehren 338, Springer 2009, Chapter 7.
-* F. Santambrogio, *Optimal Transport for Applied Mathematicians*, Birkhäuser 2015, §5.3.
+* F. Santambrogio, *Optimal Transport for Applied Mathematicians*, Birkhäuser 2015, §5.3 and, in
+  §5.4 of the May 2015 preprint version, Theorem 5.28 (stated there for a compact convex domain
+  and `p > 1`).
 -/
 
 public section
@@ -199,11 +200,23 @@ theorem wassersteinEDist_rpow_le (h : IsContinuityEquation (fun t ↦ (ν t : Me
   rintro r ⟨φ, ψ, hfeas, rfl⟩
   refine ofReal_kantorovichDualValue_le h hν hab hp₁ φ ψ fun x y ↦ ?_
   have hxy := hfeas.ofReal_add_le x y
-  rwa [edist_eq_enorm_sub, ← ofReal_norm,
+  rwa [eDist_eq_eNorm_sub, ← ofReal_norm,
     ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) (zero_le_one.trans hp₁),
     ENNReal.ofReal_le_ofReal_iff (by positivity)] at hxy
 
 end IsContinuityEquation
+
+/-- `W_p (μ₀, μ₁) ^ p` is a lower bound for the `p`-actions of the narrowly continuous curves of
+finite measures from `μ₀` to `μ₁` solving the continuity equation on `(0, 1)`. -/
+private theorem wassersteinEDist_rpow_mem_lowerBounds_lintegral_isContinuityEquation
+    {μ₀ μ₁ : Measure E} [IsProbabilityMeasure μ₀] {p : ℝ≥0∞} (hp : 1 ≤ p) (hp_top : p ≠ ∞) :
+    wassersteinEDist p μ₀ μ₁ ^ p.toReal ∈ lowerBounds
+      {A | ∃ (ν : ℝ → FiniteMeasure E) (v : ℝ → E → E),
+        IsContinuityEquation (fun t ↦ (ν t : Measure E)) v 0 1 ∧ ContinuousOn ν (Icc 0 1) ∧
+          (ν 0 : Measure E) = μ₀ ∧ (ν 1 : Measure E) = μ₁ ∧
+          ∫⁻ t in Ioo 0 1, ∫⁻ x, ‖v t x‖ₑ ^ p.toReal ∂(ν t : Measure E) = A} := by
+  rintro A ⟨ν, v, hce, hν, rfl, rfl, rfl⟩
+  simpa using hce.wassersteinEDist_rpow_le hν zero_le_one hp hp_top
 
 /-- **The Benamou–Brenier formula.** For `1 ≤ p < ∞` and probability measures `μ₀`, `μ₁` on a
 finite-dimensional real normed space at finite Wasserstein distance, `W_p (μ₀, μ₁) ^ p` is the
@@ -218,12 +231,8 @@ theorem isLeast_lintegral_isContinuityEquation {μ₀ μ₁ : Measure E} [IsProb
           (ν 0 : Measure E) = μ₀ ∧ (ν 1 : Measure E) = μ₁ ∧
           ∫⁻ t in Ioo 0 1, ∫⁻ x, ‖v t x‖ₑ ^ p.toReal ∂(ν t : Measure E) = A}
       (wassersteinEDist p μ₀ μ₁ ^ p.toReal) := by
-  have hlow : wassersteinEDist p μ₀ μ₁ ^ p.toReal ∈ lowerBounds {A | ∃ (ν : ℝ → FiniteMeasure E)
-      (v : ℝ → E → E), IsContinuityEquation (fun t ↦ (ν t : Measure E)) v 0 1 ∧
-        ContinuousOn ν (Icc 0 1) ∧ (ν 0 : Measure E) = μ₀ ∧ (ν 1 : Measure E) = μ₁ ∧
-        ∫⁻ t in Ioo 0 1, ∫⁻ x, ‖v t x‖ₑ ^ p.toReal ∂(ν t : Measure E) = A} := by
-    rintro A ⟨ν, v, hce, hν, rfl, rfl, rfl⟩
-    simpa using hce.wassersteinEDist_rpow_le hν zero_le_one hp hp_top
+  have hlow := wassersteinEDist_rpow_mem_lowerBounds_lintegral_isContinuityEquation
+    (μ₀ := μ₀) (μ₁ := μ₁) hp hp_top
   refine ⟨?_, hlow⟩
   -- The displacement interpolation of an optimal coupling attains the bound.
   obtain ⟨π, hπ⟩ := exists_isOptimalCoupling μ₀ μ₁
@@ -265,8 +274,8 @@ theorem wassersteinEDist_rpow_eq_sInf_lintegral_isContinuityEquation {μ₀ μ�
           ∫⁻ t in Ioo 0 1, ∫⁻ x, ‖v t x‖ₑ ^ p.toReal ∂(ν t : Measure E) = A} := by
   by_cases hfin : wassersteinEDist p μ₀ μ₁ = ∞
   · refine le_antisymm (le_sInf ?_) ?_
-    · rintro A ⟨ν, v, hce, hν, rfl, rfl, rfl⟩
-      simpa using hce.wassersteinEDist_rpow_le hν zero_le_one hp hp_top
+    · exact fun A hA ↦ wassersteinEDist_rpow_mem_lowerBounds_lintegral_isContinuityEquation
+        hp hp_top hA
     · rw [hfin, ENNReal.top_rpow_of_pos (ENNReal.toReal_pos (zero_lt_one.trans_le hp).ne' hp_top)]
       exact le_top
   · exact (isLeast_lintegral_isContinuityEquation hp hp_top hfin).csInf_eq.symm

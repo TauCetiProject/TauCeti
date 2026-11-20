@@ -329,7 +329,7 @@ theorem exists_smoothIsotopy_line_of_four_le_finrank {n : ℕ∞ω} (hn₂ : 2 �
     refine htan (|R| + 1) a⁻¹ ?_
     rw [(hasDerivAt_of_eq_line hline' hRs).deriv, smul_smul, inv_mul_cancel₀ ha, one_smul]
   obtain ⟨φ, hφe, hφd⟩ :=
-    Submodule.exists_dual_forall_mem_eq_zero_eq_one (Submodule.closed_of_finiteDimensional _) hde
+    Submodule.exists_dual_forall_mem_eq_zero_eq_one (Submodule.isClosed_of_finiteDimensional _) hde
   replace hφe : φ e = 0 := hφe e (Submodule.mem_span_singleton_self e)
   /- The projection `g` of the arc along `d` onto the hyperplane `p + ker φ`. -/
   have hφline : ∀ s, R ≤ |s| → φ (γ s - p) = 0 := by

@@ -191,7 +191,7 @@ theorem isDistinguishedAt_monicOfCoeff_iff {x₀ : E} {d : ℕ}
         (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)) ↔
       ∀ i, eval 𝓘(ℂ, E) E x₀ (c i) = 0 := by
   refine ⟨fun h i ↦ ?_, fun hc ↦ ⟨⟨fun {n} hn ↦ ?_⟩, TauCeti.Polynomial.monic_monicOfCoeff c⟩⟩
-  · have hmem := h.mem (n := (i : ℕ)) (by simp [i.2])
+  · have hmem := h.mem (n := (i : ℕ)) (by simp [i.isLt])
     rwa [TauCeti.Polynomial.coeff_monicOfCoeff, maximalIdeal_stalk, RingHom.mem_ker] at hmem
   · rw [TauCeti.Polynomial.natDegree_monicOfCoeff] at hn
     rw [maximalIdeal_stalk, RingHom.mem_ker, ← Fin.val_mk hn,
@@ -1010,8 +1010,8 @@ theorem eventuallyEq_of_weierstrassDivision {x₀ : E} {w₀ : ℂ} {d : ℕ} {c
   refine ⟨Germ.coe_eq.1 ?_, fun i ↦ Germ.coe_eq.1 ?_⟩
   · rw [← hv _ le_rfl, ← hv' _ le_rfl, hvv']
   · have hai : a i = a' i := by
-      simpa [Polynomial.finsetSum_coeff, Polynomial.coeff_monomial, Fin.val_eq_val] using
-        congrArg (fun P ↦ P.coeff (i : ℕ)) haa'
+      simpa [Polynomial.finsetSum_coeff, Polynomial.coeff_monomial, Finsupp.single_apply,
+        Fin.val_eq_val] using congrArg (fun P ↦ P.coeff (i : ℕ)) haa'
     rw [← ha i _ le_rfl, ← ha' i _ le_rfl, hai]
 
 end TauCeti

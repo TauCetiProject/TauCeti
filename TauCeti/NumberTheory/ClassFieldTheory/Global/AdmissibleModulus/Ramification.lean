@@ -178,15 +178,15 @@ theorem ofAdicCompletion_mem_range_ideleClassNormMap_fixedField_iff (H : Subgrou
           (HeightOneSpectrum.decompositionEquiv v w).symm.toMonoidHom))) := by
   have := IsAbelianGalois.tower_bot K (fixedField H) L
   have := HeightOneSpectrum.isAbelianGalois_adicCompletion v w
-  obtain ⟨ρ, hρ⟩ : ∃ ρ, Abelianization.of ρ =
+  obtain ⟨ρ, hρ⟩ : ∃ ρ, Group.Abelianization.of ρ =
       normResidue (v.adicCompletion K) (w.adicCompletion L) u :=
     QuotientGroup.mk_surjective _
   -- Both sides say that the local Artin symbol of `u`, an element of the decomposition group of
   -- `w`, lies in `H`.
   rw [mem_normGroup_fixedField_iff _ hρ, ← globalArtinMap_eq_zero_iff K _ IsSepClosed.lift,
     globalArtinMap_local, ofMul_eq_zero, ← localArtinAt_comp v (fixedField H).val,
-    MonoidHom.comp_apply, localArtinAt_eq_map_normResidue v w, ← hρ, Abelianization.map_of,
-    Abelianization.map_of, IntermediateField.restrictNormalHom_val,
+    MonoidHom.comp_apply, localArtinAt_eq_map_normResidue v w, ← hρ, Group.Abelianization.map_of,
+    Group.Abelianization.map_of, IntermediateField.restrictNormalHom_val,
     abelianization_of_restrictNormalHom_fixedField_eq_one_iff, Subgroup.mem_comap]
 
 /-- **The conductor of a subextension at a finite place.** Let `L/K` be abelian, `H` a subgroup
@@ -271,7 +271,7 @@ theorem isUnramifiedAt_of_integralIdealsPrimeTo (h : IsAdmissibleModulus K L �
     (I : integralIdealsPrimeTo 𝔪)
     (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (I : Ideal (𝓞 K))] :
     Algebra.IsUnramifiedAt (𝓞 K) Q := by
-  obtain ⟨hI, hS⟩ := Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)
+  obtain ⟨hI, hS⟩ := Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.property)
   have : (I : Ideal (𝓞 K)).IsPrime := Ideal.isPrime_of_liesOver Q _
   let v : HeightOneSpectrum (𝓞 K) := ⟨I, inferInstance, hI⟩
   have : Q.LiesOver v.asIdeal := ‹Q.LiesOver (I : Ideal (𝓞 K))›
@@ -337,7 +337,7 @@ theorem isAdmissibleModulus_of_isUnramifiedAt [IsGalois K L]
   have hinf' (v : InfinitePlace K) : infiniteLocalArtinAt K L v (v.ideleInfiniteCoord x) = 1 := by
     by_cases hv : ∃ v' ∈ 𝔪.infinitePart, (v' : InfinitePlace K) = v
     · obtain ⟨v', hv', rfl⟩ := hv
-      exact infiniteLocalArtinAt_eq_one_of_pos v'.2
+      exact infiniteLocalArtinAt_eq_one_of_pos v'.property
         ((mem_ideleCongruenceSubgroup_iff.1 hx).2.2 v' hv')
     · push Not at hv
       obtain ⟨w, rfl⟩ := InfinitePlace.comap_surjective (K := L) v

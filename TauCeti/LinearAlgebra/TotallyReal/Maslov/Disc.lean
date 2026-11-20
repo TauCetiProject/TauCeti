@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Prod
 /-!
 # The boundary Maslov index on the disc
 
-Let `E` be a finite-dimensional complex normed space. A bundle pair `(E, F)` over the closed unit
+Let `E` be a complex normed space. A bundle pair `(E, F)` over the closed unit
 disc `D` is a complex vector bundle over `D` together with a maximal totally real subbundle `F`
 of its restriction to the boundary circle, that is, a totally real subbundle whose real rank is
 the complex rank of the bundle. Every complex bundle over `D` is trivial, and in a
@@ -68,8 +68,7 @@ namespace TauCeti
 
 namespace TotallyRealLoop
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  (Λ : TotallyRealLoop E)
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] (Λ : TotallyRealLoop E)
 
 /-- **Independence of the trivialization on the disc.** Let `B` be a continuous map from the closed
 unit disc to the complex-linear automorphisms of `E`, and `b t = B (e^{2πit})` its loop of

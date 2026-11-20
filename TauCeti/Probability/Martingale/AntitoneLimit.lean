@@ -70,12 +70,10 @@ lemma exists_integrable_tendsto_ae_condExp_of_antitone
   have hL1_bdd : ∀ n, eLpNorm (μ[f | 𝔽 n]) 1 μ ≤ eLpNorm f 1 μ :=
     fun n => eLpNorm_condExp_le_eLpNorm _ le_rfl
   have hf_Lp_ne_top : eLpNorm f 1 μ ≠ ⊤ := (memLp_one_iff_integrable.2 hf).eLpNorm_ne_top
-  set R := (eLpNorm f 1 μ).toNNReal with _
-  have hR : eLpNorm f 1 μ = ↑R := (ENNReal.coe_toNNReal hf_Lp_ne_top).symm
   -- Step 1: the liminf of the norms is a.e. finite.
-  have hbdd_liminf : ∀ᵐ ω ∂μ, (liminf (fun n => ENorm.enorm (μ[f | 𝔽 n] ω)) atTop) < ⊤ := by
-    refine ae_bdd_liminf_atTop_of_eLpNorm_bdd (R := R) one_ne_zero fun n => ?_
-    simpa [hR] using hL1_bdd n
+  have hbdd_liminf : ∀ᵐ ω ∂μ, (liminf (fun n => ENorm.eNorm (μ[f | 𝔽 n] ω)) atTop) < ⊤ := by
+    exact ae_bdd_liminf_atTop_of_eLpNorm_bdd one_ne_zero
+      (lt_of_le_of_lt (iSup_le hL1_bdd) (lt_top_iff_ne_top.2 hf_Lp_ne_top))
   -- Step 2: finitely many upcrossings a.e. for every rational interval.
   have hupcross : ∀ᵐ ω ∂μ, ∀ a b : ℚ, a < b →
       upcrossings (↑a) (↑b) (fun n => μ[f | 𝔽 n]) ω < ⊤ := by
@@ -85,8 +83,8 @@ lemma exists_integrable_tendsto_ae_condExp_of_antitone
   -- Step 3: pointwise convergence from the bounded liminf and finitely many upcrossings.
   have h_ae_conv : ∀ᵐ ω ∂μ, ∃ c, Tendsto (fun n => μ[f | 𝔽 n] ω) atTop (𝓝 c) := by
     filter_upwards [hbdd_liminf, hupcross] with ω hω₁ hω₂
-    have hω₁' : (liminf (fun n => ENNReal.ofNNReal (nnnorm (μ[f | 𝔽 n] ω))) atTop) < ⊤ := by
-      simpa only [enorm_eq_nnnorm] using hω₁
+    have hω₁' : (liminf (fun n => ENNReal.ofNNReal (nnNorm (μ[f | 𝔽 n] ω))) atTop) < ⊤ := by
+      simpa only [eNorm_eq_nnNorm] using hω₁
     exact tendsto_of_upcrossings_lt_top hω₁' hω₂
   -- Step 4: choose the limit and read off its two properties.
   classical

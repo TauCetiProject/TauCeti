@@ -44,7 +44,9 @@ theorem IntermediateField.isPurelyInseparable_fixedField_top (F E : Type*) [Fiel
     [Algebra F E] [Normal F E] :
     IsPurelyInseparable F (IntermediateField.fixedField (⊤ : Subgroup Gal(E/F))) := by
   refine ⟨inferInstance, fun x hx ↦ ?_⟩
-  have hsep : IsSeparable F (x : E) := hx.map (IsScalarTower.toAlgHom F _ E) (RingHom.injective _)
+  -- The explicit inclusion avoids inferring the intermediate field through a scalar tower.
+  have hsep : IsSeparable F (x : E) :=
+    hx.map (IntermediateField.val _) Subtype.val_injective
   -- Every conjugate of `x` is `σ x` for some automorphism `σ`, which fixes `x`; so `x` has no
   -- conjugate besides itself, and being separable it lies in `F`.
   have hbot : (x : E) ∈ (⊥ : Subalgebra F E) := by
@@ -52,7 +54,7 @@ theorem IntermediateField.isPurelyInseparable_fixedField_top (F E : Type*) [Fiel
     obtain ⟨y, hne, hy⟩ :=
       (notMem_iff_exists_ne_and_isConjRoot hsep (Normal.splits ‹_› _)).mp h
     obtain ⟨σ, rfl⟩ := hy.symm.exists_algEquiv
-    exact hne (x.2 ⟨σ, Subgroup.mem_top σ⟩).symm
+    exact hne (x.property ⟨σ, Subgroup.mem_top σ⟩).symm
   obtain ⟨a, ha⟩ := Algebra.mem_bot.mp hbot
   exact ⟨a, Subtype.ext <| (IntermediateField.coe_algebraMap_apply _ a).trans ha⟩
 

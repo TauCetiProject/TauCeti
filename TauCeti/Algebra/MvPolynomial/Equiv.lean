@@ -320,8 +320,7 @@ theorem optionEquivRight_rename_finSuccEquivLast_coeff_coeff (f : MvPolynomial (
       ite_and]
     split_ifs <;> simp [Polynomial.coeff_monomial, *]
   | add p q hp hq =>
-    simp only [map_add, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, Polynomial.coeff_add, hp,
-      hq]
+    simp only [map_add, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, hp, hq]
 
 /-- Singling out the last variable, specializing the variables `X₀, …, Xₙ₋₁` at `α` and then
 evaluating the polynomial variable at `β` is evaluating at the point `Fin.snoc α β`. -/

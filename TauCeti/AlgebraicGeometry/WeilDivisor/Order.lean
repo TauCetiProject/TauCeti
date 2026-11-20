@@ -61,6 +61,16 @@ lemma zsmul_ofPoint_lt_zero (x : X) {n : ℤ} (hn : n < 0) : n • ofPoint x < 0
 lemma le_add_ofPoint (D : WeilDivisor X) (x : X) : D ≤ D + ofPoint x :=
   le_add_of_nonneg_right (ofPoint_nonneg x)
 
+/-- Adding a point at which `D` is strictly below `E` keeps `D` below `E`. -/
+lemma add_ofPoint_le_of_coeff_lt {D E : WeilDivisor X} (h : D ≤ E) {x : X}
+    (hx : coeff D x < coeff E x) : D + ofPoint x ≤ E :=
+  le_iff.mpr fun y ↦ by
+    rcases eq_or_ne y x with rfl | hy
+    · rw [coeff_add, coeff_ofPoint_self]
+      omega
+    · rw [coeff_add, coeff_ofPoint_of_ne hy, add_zero]
+      exact coeff_le_coeff h y
+
 /-! ### Lattice operations -/
 
 /-- The coefficient of a pointwise maximum is the maximum of the coefficients. -/

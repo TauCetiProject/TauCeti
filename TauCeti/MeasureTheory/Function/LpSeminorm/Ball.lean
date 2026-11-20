@@ -97,10 +97,10 @@ theorem lintegral_eLpNorm_restrict_ball_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞) {g
   have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   have hpow : ∀ ν : Measure E, AEStronglyMeasurable g ν →
       eLpNorm g p ν ^ p.toReal = ∫⁻ x, ‖g x‖ₑ ^ p.toReal ∂ν := fun ν hν => by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hν, ← ENNReal.rpow_mul,
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hν, ← ENNReal.rpow_mul,
       one_div_mul_cancel hq.ne', ENNReal.rpow_one]
   simp_rw [hpow _ hg.restrict, hpow μ hg]
-  exact lintegral_setLIntegral_ball (hg.enorm.pow_const _) r
+  exact lintegral_setLIntegral_ball (hg.eNorm.pow_const _) r
 
 /-- **Global estimates from local ones on balls of one radius.** If `0 < r` and, for almost every
 centre `y`, the `Lᵖ` seminorm of `g` on `B(y, r)` is at most that of `h` on `B(y, R)`, then
@@ -163,7 +163,7 @@ theorem lpNorm_le_of_ae_lpNorm_restrict_ball_le_add (hp1 : 1 ≤ p) (hp : p ≠ 
   have hsmul : ∀ (ν : Measure E) {c : ℝ}, 0 ≤ c → ∀ k : E → ℝ, (∀ x, c * |k x| ≤ h x) →
       MemLp h p ν → c * lpNorm k p ν ≤ lpNorm h p ν := fun ν c hc k hk hhν => by
     have e := lpNorm_const_smul c k ν (p := p)
-    rw [coe_nnnorm, Real.norm_of_nonneg hc] at e
+    rw [coe_nnNorm, Real.norm_of_nonneg hc] at e
     rw [← e]
     refine lpNorm_mono_real hhν fun x => ?_
     rw [Pi.smul_apply, smul_eq_mul, norm_mul, Real.norm_of_nonneg hc, Real.norm_eq_abs]
@@ -172,7 +172,7 @@ theorem lpNorm_le_of_ae_lpNorm_restrict_ball_le_add (hp1 : 1 ≤ p) (hp : p ≠ 
       eLpNorm ((2 : ℝ) • h) p (μ.restrict (ball y (2 * r))) := hle.mono fun y hy => by
     have hhy := hh.restrict (ball y (2 * r))
     rw [← ofReal_lpNorm (hg.restrict _), ← ofReal_lpNorm ((hh.const_smul 2).restrict _),
-      lpNorm_const_smul, coe_nnnorm, Real.norm_of_nonneg zero_le_two]
+      lpNorm_const_smul, coe_nnNorm, Real.norm_of_nonneg zero_le_two]
     refine ENNReal.ofReal_le_ofReal (hy.trans ?_)
     have h₁ := hsmul _ hc₁ (fun x => ‖f₁ x‖) (fun x => by
       rw [h_def, abs_norm]; exact le_add_of_nonneg_right (by positivity)) hhy
@@ -194,15 +194,15 @@ theorem lpNorm_le_of_ae_lpNorm_restrict_ball_le_add (hp1 : 1 ≤ p) (hp : p ≠ 
     refine (lpNorm_add_le (hf₁.norm.const_mul c₁) hp1).trans_eq ?_
     have e₁ := lpNorm_const_smul c₁ (fun x => ‖f₁ x‖) μ (p := p)
     have e₂ := lpNorm_const_smul c₂ (fun x => ‖f₂ x‖) μ (p := p)
-    rw [coe_nnnorm, Real.norm_of_nonneg hc₁, lpNorm_norm hf₁.aestronglyMeasurable] at e₁
-    rw [coe_nnnorm, Real.norm_of_nonneg hc₂, lpNorm_norm hf₂.aestronglyMeasurable] at e₂
+    rw [coe_nnNorm, Real.norm_of_nonneg hc₁, lpNorm_norm hf₁.aestronglyMeasurable] at e₁
+    rw [coe_nnNorm, Real.norm_of_nonneg hc₂, lpNorm_norm hf₂.aestronglyMeasurable] at e₂
     rw [← e₁, ← e₂]
     rfl
   rw [← toReal_eLpNorm]
   refine (ENNReal.toReal_mono (ENNReal.mul_ne_top (by finiteness)
     (hh.const_smul 2).eLpNorm_ne_top) hglobal).trans ?_
   rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (by positivity),
-    toReal_eLpNorm, lpNorm_const_smul, coe_nnnorm, Real.norm_of_nonneg zero_le_two, pow_succ]
+    toReal_eLpNorm, lpNorm_const_smul, coe_nnNorm, Real.norm_of_nonneg zero_le_two, pow_succ]
   calc ((2 : ℝ) ^ finrank ℝ E) ^ p.toReal⁻¹ * (2 * lpNorm h p μ)
       ≤ 2 ^ finrank ℝ E * (2 * (c₁ * lpNorm f₁ p μ + c₂ * lpNorm f₂ p μ)) :=
         mul_le_mul hpow (by gcongr) (mul_nonneg zero_le_two lpNorm_nonneg) (by positivity)

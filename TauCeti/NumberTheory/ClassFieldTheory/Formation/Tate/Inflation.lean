@@ -147,7 +147,7 @@ refinement `L/F` gives the connecting class of the inflated character `χ ∘ π
 `π : Gal(L/F)^ab → Gal(K/F)^ab` is the quotient map. -/
 @[simp]
 theorem trivialTateInfl_characterConnectingClass (T : LayerRefinement old new)
-    (χ : Additive (Abelianization old.Gal) →+ AddCircle (1 : ℚ)) :
+    (χ : Additive (Group.Abelianization old.Gal) →+ AddCircle (1 : ℚ)) :
     (dsimp% only [Nat.cast_ofNat] (T.trivialTateInfl 2 (old.characterConnectingClass χ))) =
       new.characterConnectingClass (χ.comp T.quotientHom) := by
   rw [trivialTateInfl_eq_posMap, NormalLayer.characterConnectingClass_def,
@@ -163,7 +163,7 @@ of `a ∈ A^U` and a character `χ` of `Gal(K/F)^ab` to the refinement `L/F` giv
 inflated character. -/
 @[simp]
 theorem cohomologyInfl_artinCharacterCup (T : LayerRefinement old new) (F : Formation G)
-    (a : F.level old.ground) (χ : Additive (Abelianization old.Gal) →+ AddCircle (1 : ℚ)) :
+    (a : F.level old.ground) (χ : Additive (Group.Abelianization old.Gal) →+ AddCircle (1 : ℚ)) :
     T.cohomologyInfl F 2 (old.artinCharacterCup F a χ) =
       new.artinCharacterCup F (T.groundEquiv F a) (χ.comp T.quotientHom) := by
   obtain ⟨x, rfl⟩ := (old.groundLevelEquiv F).surjective a
@@ -226,7 +226,7 @@ character `χ` of `Gal(K/F)^ab`, the invariant over the refinement `L/F` of `a�
 invariant over `K/F` of `a₀ ∪ δχ`, where `π : Gal(L/F)^ab → Gal(K/F)^ab` is the quotient map. -/
 @[simp]
 theorem inv_artinCharacterCup_comp_quotientHom (cf : ClassFormation F) (T : LayerRefinement old new)
-    (a : F.level old.ground) (χ : Additive (Abelianization old.Gal) →+ AddCircle (1 : ℚ)) :
+    (a : F.level old.ground) (χ : Additive (Group.Abelianization old.Gal) →+ AddCircle (1 : ℚ)) :
     cf.inv new (new.artinCharacterCup F (T.groundEquiv F a) (χ.comp T.quotientHom)) =
       cf.inv old (old.artinCharacterCup F a χ) := by
   rw [← LayerRefinement.cohomologyInfl_artinCharacterCup, cf.inv_infl]

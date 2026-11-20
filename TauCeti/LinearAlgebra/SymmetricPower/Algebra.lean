@@ -51,7 +51,7 @@ universe v w
 variable (R : Type) (M : Type v) [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 private noncomputable def algebraMultilinear (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n ↦ M) (SymmetricAlgebra R M) :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ M) (SymmetricAlgebra R M) :=
   (MultilinearMap.mkPiAlgebra R (Fin n) (SymmetricAlgebra R M)).compLinearMap
     (fun _ ↦ SymmetricAlgebra.ι R M)
 
@@ -211,7 +211,7 @@ theorem toSymmetricAlgebra_symmetricPower_apply {κ : Type w} (b : Module.Basis 
   rw [map_prod, TauCeti.SymmetricAlgebra.equivMvPolynomial_symmetricAlgebraHomogeneous_apply]
   simp only [SymmetricAlgebra.equivMvPolynomial_ι_apply]
   rw [← List.prod_ofFn]
-  have hexp : (_root_.Sym.equivFinsuppDegree κ n (Sym.ofFn f)).1 =
+  have hexp : (_root_.Sym.equivFinsuppDegree κ n (Sym.ofFn f)).val =
       (List.ofFn f : Multiset κ).toFinsupp := by
     rw [_root_.Sym.coe_equivFinsuppDegree_apply, Sym.coe_ofFn]
   rw [hexp]

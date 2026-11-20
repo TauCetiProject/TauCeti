@@ -129,7 +129,7 @@ theorem exists_forall_inner_matrixCoeffLp_eq [IsAlgClosed 𝕜] (hunitary : IsUn
     (hf : f ∈ classFunctionLp 𝕜 𝕜 2 (haarProb G)) :
     ∃ c : 𝕜, ∀ v w : V, ⟪matrixCoeffLp π hπ v w, f⟫_𝕜 = c * ⟪w, v⟫_𝕜 := by
   classical
-  have _ : CompleteSpace V := FiniteDimensional.complete 𝕜 V
+  have _ : CompleteSpace V := FiniteDimensional.completeSpace 𝕜 V
   set e := stdOrthonormalBasis 𝕜 V
   -- The endomorphism representing the pairing `⟪(π)_{v,w}, f⟫` in its second vector.
   set T : V →ₗ[𝕜] V :=
@@ -318,7 +318,7 @@ theorem orthonormal_characterFamily
       IsEmpty (_root_.ContRepresentation.Equiv (models i).rep (models j).rep)) :
     Orthonormal 𝕜 (characterFamily models) := by
   have hL2 := _root_.ContRepresentation.orthonormal_characterLp (fun i ↦ (models i).rep)
-    (fun i ↦ (models i).continuous_rep) (fun i ↦ (models i).isUnitary)
+    (fun i ↦ (models i).continuous_rep)
     (fun i ↦ (models i).isIrreducible) hne
   exact hL2.codRestrict _ fun i ↦ ContRepresentation.characterLp_mem_classFunctionLp _ _
 
@@ -335,7 +335,7 @@ theorem orthogonal_span_characterFamily_eq_bot (h : IsIrrepSkeleton models) :
     have := (Submodule.mem_orthogonal _ _).1 hf (characterFamily models i)
       (Submodule.subset_span ⟨i, rfl⟩)
     rwa [Submodule.coe_inner, coe_characterFamily] at this
-  exact Subtype.ext (eq_zero_of_forall_inner_characterLp_eq_zero h f.2 horth)
+  exact Subtype.ext (eq_zero_of_forall_inner_characterLp_eq_zero h f.property horth)
 
 /-- **The irreducible characters are a Hilbert basis of the class functions.**  For a skeleton of
 the unitary dual of a compact Hausdorff group, the characters of the models are an orthonormal

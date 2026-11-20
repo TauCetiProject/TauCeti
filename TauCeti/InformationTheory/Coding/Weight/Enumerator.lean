@@ -84,20 +84,20 @@ theorem weightDistribution_eq_card_filter (hC : C.Finite) (w : ℕ) :
 theorem weightDistribution_eq_zero_of_card_lt {w : ℕ} (hw : Fintype.card ι < w) :
     C.weightDistribution w = 0 := by
   rw [weightDistribution_def, Nat.card_eq_zero]
-  exact .inl ⟨fun x ↦ (hammingNorm_le_card_fintype.trans_lt hw).ne x.2.2⟩
+  exact .inl ⟨fun x ↦ (hammingNorm_le_card_fintype.trans_lt hw).ne x.property.2⟩
 
 /-- A set of words containing the zero word has exactly one word of weight zero. -/
 @[simp]
 theorem weightDistribution_zero (h : 0 ∈ C) : C.weightDistribution 0 = 1 := by
   rw [weightDistribution_def, Nat.card_eq_one_iff_exists]
   refine ⟨⟨0, h, hammingNorm_zero⟩, fun x ↦ Subtype.ext ?_⟩
-  exact hammingNorm_eq_zero.mp x.2.2
+  exact hammingNorm_eq_zero.mp x.property.2
 
 /-- In a finite set of words, a weight occurs exactly when some word has that weight. -/
 theorem weightDistribution_ne_zero_iff (hC : C.Finite) {w : ℕ} :
     C.weightDistribution w ≠ 0 ↔ ∃ x ∈ C, hammingNorm x = w := by
   rw [weightDistribution_eq_card_filter hC, Ne, Finset.card_eq_zero, ← Ne,
-    ← Finset.nonempty_iff_ne_empty]
+    Finset.ne_empty_iff_nonempty]
   simp [Finset.Nonempty]
 
 /-- The weight distribution of a finite set of words sums to its cardinality. -/
@@ -201,7 +201,7 @@ theorem weightPolynomial_def (C : Set (∀ i, β i)) :
 theorem coeff_weightPolynomial (C : Set (∀ i, β i)) (w : ℕ) :
     C.weightPolynomial.coeff w = C.weightDistribution w := by
   rw [weightPolynomial_def, Polynomial.finsetSum_coeff]
-  simp_rw [Polynomial.coeff_monomial]
+  simp_rw [Polynomial.coeff_monomial_apply]
   rw [sum_ite_eq', ite_eq_left_iff]
   intro hw
   rw [weightDistribution_eq_zero_of_card_lt (by simpa [Nat.lt_succ_iff] using hw),

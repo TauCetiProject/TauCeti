@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.PermutationTriple.Passport.Label
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.String
 import TauCeti.Data.String.SplitOn
 import Std.Data.String.ToNat
+import Batteries.Data.Char.Basic
 
 /-!
 # Parsing Belyi passport and map labels

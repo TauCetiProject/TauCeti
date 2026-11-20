@@ -268,8 +268,8 @@ private lemma δ_comp_cechIsoOne_hom (F : Sheaf J AddCommGrpCat.{v}) (hF : IsLer
       (homologyZeroCechIso U hT hU _).hom ≫ AddCommGrpCat.ofHom
         (_root_.CategoryTheory.Sheaf.H.δ (injectiveCokernelSequence_shortExact F) 0 1 rfl) := by
   have := epi_δ_cechSeq U hF 0
-  exact CokernelCofork.π_mapOfIsColimit
-    ((cechSeq_shortExact hF).homology_exact₃ 0 1 rfl).gIsCokernel _ _
+  exact CokernelCofork.π_mapOfIsColimit _
+    ((cechSeq_shortExact hF).homology_exact₃ 0 1 rfl).gIsCokernel _
 
 /-- **Leray's theorem, in the form constructed by induction.** The comparison is defined by
 dimension shifting along the chosen injective cokernel sequence `0 ⟶ F ⟶ I ⟶ Q ⟶ 0`: in degree

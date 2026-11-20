@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Function.Holder
+import Mathlib.Analysis.InnerProductSpace.Continuous
 
 /-!
 # Hölder estimates for pointwise pairings
@@ -20,11 +22,15 @@ integration-by-parts arguments:
   `ContinuousLinearMap.memLp_of_bilin` to evaluation.
 * `MeasureTheory.MemLp.integrable_bilinear_apply`: more generally, an essentially bounded field of
   continuous bilinear maps applied to an `L^p` function and an `L^q` function is integrable.
+* `MeasureTheory.MemLp.integrable_inner_of_holderConjugate`: Hölder's inequality makes the
+  pointwise inner product `⟪h, g⟫` of `h ∈ L^q` and `g ∈ L^{q'}` integrable.
 * `ContinuousLinearMap.lpPairing_mul_eq_integral`: the Hölder pairing
   `ContinuousLinearMap.lpPairing` of the multiplication of a complete normed algebra is the
   integral of the product.
 * `TauCeti.enorm_integral_smul_le`: Hölder's inequality `‖∫ a • f‖ ≤ ‖a‖_p ‖f‖_q` for the
   Bochner integral of a pointwise scalar multiple, for any boundedly acting scalars.
+* `MeasureTheory.Lp.sum_smul` and `MeasureTheory.Lp.smul_sum`: the heterogeneous scalar
+  multiplication `Lᵖ × L^q → Lʳ` distributes over finite sums in each factor.
 -/
 
 public section
@@ -73,6 +79,23 @@ end Bilinear
 
 end MeasureTheory.MemLp
 
+namespace MeasureTheory
+
+open scoped InnerProductSpace
+
+variable {α 𝕜 H : Type*} [MeasurableSpace α] [RCLike 𝕜] [NormedAddCommGroup H]
+  [InnerProductSpace 𝕜 H] {μ : Measure α}
+
+/-- Hölder's inequality makes the pairing `x ↦ ⟪h x, g x⟫` integrable for `h ∈ L^q` and
+`g ∈ L^{q'}`. For `q = q' = 2` this is `MeasureTheory.MemLp.integrable_inner`. -/
+theorem MemLp.integrable_inner_of_holderConjugate {q q' : ℝ≥0∞} [q.HolderConjugate q']
+    {h g : α → H} (hh : MemLp h q μ) (hg : MemLp g q' μ) :
+    Integrable (fun x => ⟪h x, g x⟫_𝕜) μ :=
+  memLp_one_iff_integrable.1 <| hh.of_bilin (fun a b => ⟪a, b⟫_𝕜) 1 hg continuous_inner
+    (ae_of_all _ fun x => by simpa [← NNReal.coe_le_coe] using norm_inner_le_norm (h x) (g x))
+
+end MeasureTheory
+
 namespace ContinuousLinearMap
 
 open MeasureTheory
@@ -90,6 +113,31 @@ theorem lpPairing_mul_eq_integral (g : Lp R q μ) (f : Lp R q' μ) :
 
 end ContinuousLinearMap
 
+namespace MeasureTheory.Lp
+
+variable {α ι 𝕜 E : Type*} {mα : MeasurableSpace α} {μ : Measure α} {p q r : ℝ≥0∞}
+  [p.HolderTriple q r] [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+
+/-- The heterogeneous scalar multiplication of `Lp` functions distributes over finite sums in the
+scalar factor. -/
+protected theorem sum_smul (s : Finset ι) (f : ι → Lp 𝕜 p μ) (g : Lp E q μ) :
+    (∑ i ∈ s, f i) • g = ∑ i ∈ s, (f i • g : Lp E r μ) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi, Lp.smul_add, ih]
+
+/-- The heterogeneous scalar multiplication of `Lp` functions distributes over finite sums in the
+vector factor. -/
+protected theorem smul_sum (s : Finset ι) (f : Lp 𝕜 p μ) (g : ι → Lp E q μ) :
+    f • (∑ i ∈ s, g i) = ∑ i ∈ s, (f • g i : Lp E r μ) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi, Lp.add_smul, ih]
+
+end MeasureTheory.Lp
+
 namespace TauCeti
 
 open MeasureTheory
@@ -103,10 +151,10 @@ theorem enorm_integral_smul_le {α 𝕜 F : Type*} [MeasurableSpace α]
     {f : α → F} :
     ‖∫ x, a x • f x ∂μ‖ₑ ≤ eLpNorm a p μ * eLpNorm f q μ := by
   calc ‖∫ x, a x • f x ∂μ‖ₑ ≤ eLpNorm (fun x => a x • f x) 1 μ :=
-      (enorm_integral_le_lintegral_enorm _).trans lintegral_enorm_le_eLpNorm_one
+      (eNorm_integral_le_lintegral_eNorm _).trans lintegral_eNorm_le_eLpNorm_one
     _ ≤ eLpNorm a p μ * eLpNorm f q μ := by
-      simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_enorm_of_pos (· • ·) 1
+      simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_eNorm_of_pos (· • ·) 1
         continuous_smul.comp_aestronglyMeasurable₂
-        (.of_forall fun _ => by simpa using enorm_smul_le) zero_lt_one
+        (.of_forall fun _ => by simpa using eNorm_smul_le) zero_lt_one
 
 end TauCeti

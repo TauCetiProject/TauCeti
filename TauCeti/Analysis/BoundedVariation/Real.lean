@@ -117,6 +117,30 @@ private theorem sum_mul_smoothTransition_sub_eq_zero {m : ℕ} {x : Fin (m + 1) 
         _ ≤ c * (y - x j) := by gcongr; linarith [hx (Fin.le_last j)]
     simp [h]
 
+/-- The derivative of the smooth-step combination
+`∑ᵢ εᵢ (ψ (c (y - xᵢ)) - ψ (c (y - xᵢ₊₁)))`. -/
+private theorem hasDerivAt_sum_mul_smoothTransition_sub {m : ℕ} (ε : Fin m → ℝ)
+    (x : Fin (m + 1) → ℝ) {c : ℝ} (y : ℝ) :
+    HasDerivAt (fun y => ∑ i : Fin m, ε i * (Real.smoothTransition (c * (y - x i.castSucc)) -
+      Real.smoothTransition (c * (y - x i.succ))))
+      (∑ i : Fin m, ε i * (c * deriv Real.smoothTransition (c * (y - x i.castSucc)) -
+        c * deriv Real.smoothTransition (c * (y - x i.succ)))) y := by
+  have hstep (p y : ℝ) : HasDerivAt (fun y => Real.smoothTransition (c * (y - p)))
+      (c * deriv Real.smoothTransition (c * (y - p))) y :=
+    (((hasDerivAt_id y).sub_const p).const_mul c).smoothTransition.congr_deriv
+      (by rw [id, mul_one, mul_comm])
+  exact HasDerivAt.fun_sum fun i _ => ((hstep _ y).sub (hstep _ y)).const_mul (ε i)
+
+/-- The smooth-step combination `∑ᵢ εᵢ (ψ (c (y - xᵢ)) - ψ (c (y - xᵢ₊₁)))` is smooth. -/
+private theorem contDiff_sum_mul_smoothTransition_sub {m : ℕ} {c : ℝ} (ε : Fin m → ℝ)
+    (x : Fin (m + 1) → ℝ) :
+    ContDiff ℝ (⊤ : ℕ∞) fun y => ∑ i : Fin m, ε i *
+      (Real.smoothTransition (c * (y - x i.castSucc)) -
+        Real.smoothTransition (c * (y - x i.succ))) := by
+  have hstep (p : ℝ) : ContDiff ℝ (⊤ : ℕ∞) fun y => Real.smoothTransition (c * (y - p)) :=
+    Real.smoothTransition.contDiff.comp (contDiff_const.mul (contDiff_id.sub contDiff_const))
+  exact ContDiff.sum fun i _ => contDiff_const.mul ((hstep _).sub (hstep _))
+
 /-- **The smooth-step test function.** For monotone points `x₀ ≤ ⋯ ≤ xₘ` with
 `[x₀, xₘ + c⁻¹] ⊆ Ω` and coefficients `|εᵢ| ≤ 1`, the combination
 `∑ᵢ εᵢ (ψ (c (y - xᵢ)) - ψ (c (y - xᵢ₊₁)))` is a test function on `Ω` of sup norm at most one.
@@ -136,18 +160,8 @@ private theorem ofReal_sum_mul_sub_le_totalVariationOn {Ω : Opens ℝ} {u : ℝ
   set I : ℝ → ℝ := fun p => ∫ y, c * deriv Real.smoothTransition (c * (y - p)) * u y
   set g : ℝ → ℝ := fun y => ∑ i : Fin m, ε i * (Real.smoothTransition (c * (y - x i.castSucc)) -
     Real.smoothTransition (c * (y - x i.succ)))
-  have hstep (p y : ℝ) : HasDerivAt (fun y => Real.smoothTransition (c * (y - p)))
-      (c * deriv Real.smoothTransition (c * (y - p))) y :=
-    (((hasDerivAt_id y).sub_const p).const_mul c).smoothTransition.congr_deriv
-      (by rw [id, mul_one, mul_comm])
-  have hgd (y) : HasDerivAt g (∑ i : Fin m, ε i *
-      (c * deriv Real.smoothTransition (c * (y - x i.castSucc)) -
-        c * deriv Real.smoothTransition (c * (y - x i.succ)))) y :=
-    HasDerivAt.fun_sum fun i _ => ((hstep _ y).sub (hstep _ y)).const_mul (ε i)
-  have hgsmooth : ContDiff ℝ (⊤ : ℕ∞) g := by
-    have hstep (p : ℝ) : ContDiff ℝ (⊤ : ℕ∞) fun y => Real.smoothTransition (c * (y - p)) :=
-      Real.smoothTransition.contDiff.comp (contDiff_const.mul (contDiff_id.sub contDiff_const))
-    exact ContDiff.sum fun i _ => contDiff_const.mul ((hstep _).sub (hstep _))
+  have hgd (y) : HasDerivAt g _ y := hasDerivAt_sum_mul_smoothTransition_sub (c := c) ε x y
+  have hgsmooth : ContDiff ℝ (⊤ : ℕ∞) g := contDiff_sum_mul_smoothTransition_sub ε x
   have hg0 (y) (hy : y ∉ Icc (x 0) (x (Fin.last m) + c⁻¹)) : g y = 0 :=
     sum_mul_smoothTransition_sub_eq_zero hx ε hc hy
   have hts : tsupport g ⊆ Ω :=
@@ -175,7 +189,7 @@ private theorem ofReal_sum_mul_sub_le_totalVariationOn {Ω : Opens ℝ} {u : ℝ
     _ ≤ ‖(1 : ℝ)‖ₑ * ‖(T : ℝ →ᵇ ℝ)‖ₑ * totalVariationOn volume Ω u :=
         ofReal_abs_integral_lineDeriv_mul_le_enorm_mul_enorm_mul_totalVariationOn T 1
     _ ≤ totalVariationOn volume Ω u := by
-        rw [enorm_one, one_mul]
+        rw [eNorm_one, one_mul]
         exact mul_le_of_le_one_left zero_le hTnorm
 
 /-- **The variation along Lebesgue points is bounded by the total variation.** Let
@@ -357,5 +371,21 @@ theorem perimeter_eq_two_iff {s : Set ℝ} (hs : NullMeasurableSet s) (hfin : vo
       ((measure_congr hsI).symm ▸ hfin)
     exact hne a b hab (hsI.trans hIab)
   · rw [perimeter_congr_ae (ae_restrict_of_ae hsab), perimeter_Ioo hab]
+
+/-- A null-measurable set of finite length has perimeter at most two exactly when it agrees
+almost everywhere with an interval, possibly empty. -/
+theorem perimeter_le_two_iff {s : Set ℝ} (hs : NullMeasurableSet s) (hfin : volume s ≠ ∞) :
+    perimeter volume ⊤ s ≤ 2 ↔ ∃ I : Set ℝ, I.OrdConnected ∧ s =ᵐ[volume] I := by
+  refine ⟨fun hP ↦ ?_, fun ⟨I, hI, hsI⟩ ↦ ?_⟩
+  · by_contra! hbad
+    have hfour := four_le_perimeter hs hfin hbad
+    have : (4 : ℝ≥0∞) ≤ 2 := hfour.trans hP
+    norm_num at this
+  · by_cases hzero : volume s = 0
+    · rw [perimeter_congr_ae (ae_restrict_of_ae (ae_eq_empty.mpr hzero)), perimeter_empty]
+      exact zero_le
+    · obtain ⟨a, b, hab, hIab⟩ := hI.exists_ae_eq_Ioo
+        ((measure_congr hsI).symm ▸ hzero) ((measure_congr hsI).symm ▸ hfin)
+      exact (perimeter_eq_two_iff hs hfin).mpr ⟨a, b, hab, hsI.trans hIab⟩ |>.le
 
 end TauCeti.Real

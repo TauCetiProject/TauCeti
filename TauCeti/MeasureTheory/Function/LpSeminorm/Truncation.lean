@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 /-!
 # Truncated second moments
@@ -17,11 +18,17 @@ probability space the second moment splits as `E[X²] ≤ ε² + E[X²; ε ≤ |
 the quantity in the Lindeberg condition of the central limit theorem, and the split is how that
 condition controls each individual variance. Only almost-everywhere measurability is used, through
 `Integrable.indicator₀`.
+
+For functions in `Lᵖ`, with finite positive `p` and values in a seminormed group, cutting off
+values above increasing real norm levels makes the integral of the `p`-th power of the error
+norm tend to zero. This supplies bounded approximations without requiring the underlying measure
+to be finite.
 -/
 
 public section
 
 open Set
+open scoped ENNReal Topology
 
 namespace MeasureTheory
 
@@ -52,5 +59,72 @@ theorem MemLp.integral_sq_le_sq_add_integral_indicator [IsProbabilityMeasure P]
     _ = ε ^ 2 + ∫ ω, ({ω | ε ≤ |X ω|}.indicator fun ω ↦ X ω ^ 2) ω ∂P := by
         rw [integral_add (integrable_const _) h]
         simp
+
+/-- Cutting off an almost-everywhere strongly measurable function at a real norm level
+preserves almost-everywhere strong measurability. -/
+theorem AEStronglyMeasurable.ite_norm_le
+    {E : Type*} [SeminormedAddCommGroup E] {f : Ω → E}
+    (hf : AEStronglyMeasurable f P) (R : ℝ) :
+    AEStronglyMeasurable (fun x ↦ if ‖f x‖ ≤ R then f x else 0) P := by
+  exact (hf.indicator₀ (hf.norm.nullMeasurableSet_le aestronglyMeasurable_const)).congr
+    (Filter.Eventually.of_forall fun x ↦ Set.indicator_apply _ _ x)
+
+/-- Cutting off an `Lᵖ` function at a real norm level preserves `Lᵖ` membership,
+including for infinite measures and arbitrary exponents. -/
+theorem MemLp.ite_norm_le
+    {E : Type*} [SeminormedAddCommGroup E] {p : ℝ≥0∞} {f : Ω → E}
+    (hf : MemLp f p P) (R : ℝ) :
+    MemLp (fun x ↦ if ‖f x‖ ≤ R then f x else 0) p P := by
+  apply hf.of_le_eNorm (hf.aestronglyMeasurable.ite_norm_le R)
+  exact Filter.Eventually.of_forall fun x ↦ by split_ifs <;> simp
+
+/-- Cutting off an `Lᵖ` function above increasing real norm levels gives errors whose
+`p`-th norm-power integrals tend to zero, for finite positive `p`. No finiteness assumption
+on the measure is needed. -/
+theorem MemLp.tendsto_lintegral_eNorm_ite_sub_rpow
+    {E : Type*} [SeminormedAddCommGroup E] {p : ℝ≥0∞} {f : Ω → E}
+    (hf : MemLp f p P) (hp0 : p ≠ 0) (hp : p ≠ ∞) :
+    Filter.Tendsto (fun R : ℝ ↦ ∫⁻ x,
+      ‖(if ‖f x‖ ≤ R then f x else 0) - f x‖ₑ ^ p.toReal ∂P) Filter.atTop (nhds 0) := by
+  have hp_pos := ENNReal.toReal_pos hp0 hp
+  have hmeas (R : ℝ) : AEStronglyMeasurable
+      (fun x ↦ (if ‖f x‖ ≤ R then f x else 0) - f x) P :=
+    (hf.aestronglyMeasurable.ite_norm_le R).sub hf.aestronglyMeasurable
+  have hdom (R : ℝ) (x : Ω) :
+      ‖(if ‖f x‖ ≤ R then f x else 0) - f x‖ₑ ^ p.toReal ≤ ‖f x‖ₑ ^ p.toReal := by
+    split_ifs <;> simp [ENNReal.zero_rpow_of_pos hp_pos]
+  have hfinite : ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂P < ∞ :=
+    lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0 hp hf.eLpNorm_lt_top
+  have hlim (x : Ω) : Filter.Tendsto
+      (fun R : ℝ ↦ ‖(if ‖f x‖ ≤ R then f x else 0) - f x‖ₑ ^ p.toReal)
+        Filter.atTop (nhds 0) := by
+    apply tendsto_const_nhds.congr'
+    filter_upwards [Filter.eventually_ge_atTop ‖f x‖] with R hR
+    simp [hR, ENNReal.zero_rpow_of_pos hp_pos]
+  simpa using tendsto_lintegral_filter_of_dominated_convergence' (fun x ↦ ‖f x‖ₑ ^ p.toReal)
+    (Filter.Eventually.of_forall fun R ↦ (hmeas R).eNorm.pow_const p.toReal)
+    (Filter.Eventually.of_forall fun R ↦ Filter.Eventually.of_forall (hdom R))
+    hfinite.ne (Filter.Eventually.of_forall hlim)
+
+/-- The Bochner integral of the `p`-th power of the norm error from a norm cutoff
+converges to zero for finite positive `p`, on an arbitrary measure space. -/
+theorem MemLp.tendsto_integral_norm_ite_sub_rpow
+    {E : Type*} [SeminormedAddCommGroup E] {p : ℝ≥0∞} {f : Ω → E}
+    (hf : MemLp f p P) (hp0 : p ≠ 0) (hp : p ≠ ∞) :
+    Filter.Tendsto (fun R : ℝ ↦ ∫ x,
+      ‖(if ‖f x‖ ≤ R then f x else 0) - f x‖ ^ p.toReal ∂P) Filter.atTop (nhds 0) := by
+  have h := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
+    (hf.tendsto_lintegral_eNorm_ite_sub_rpow hp0 hp)
+  simp only [Function.comp_def, ENNReal.toReal_zero] at h
+  convert h using 1
+  ext R
+  rw [integral_eq_lintegral_of_nonneg_ae
+    (Filter.Eventually.of_forall fun _ ↦ Real.rpow_nonneg (norm_nonneg _) _) ?_]
+  · congr 1
+    apply lintegral_congr
+    intro x
+    rw [← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) ENNReal.toReal_nonneg, ofReal_norm]
+  · exact (Real.continuous_rpow_const ENNReal.toReal_nonneg).comp_aestronglyMeasurable
+      ((hf.aestronglyMeasurable.ite_norm_le R).sub hf.aestronglyMeasurable).norm
 
 end MeasureTheory

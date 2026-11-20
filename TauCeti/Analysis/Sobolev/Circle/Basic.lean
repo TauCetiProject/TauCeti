@@ -525,6 +525,15 @@ theorem inner_eq_tsum (a b : CircleSobolev s F) :
     inner ℂ a b = ∑' n, (weight (2 * s) n : ℂ) * inner ℂ (a.coeff n) (b.coeff n) :=
   (hasSum_inner a b).tsum_eq.symm
 
+/-- The real Hilbert structure of `H^s`, the real part of its complex inner product. Operators
+with real-linear coefficients, such as the linearized Hamiltonian operators on loops, are
+symmetric only for this inner product. -/
+noncomputable instance instInnerProductSpaceReal : InnerProductSpace ℝ (CircleSobolev s F) :=
+  InnerProductSpace.complexToReal
+
+theorem real_inner_eq_re_inner (a b : CircleSobolev s F) : inner ℝ a b = (inner ℂ a b).re :=
+  (rfl)
+
 end Inner
 
 /-! ### Fourier monomials and density of trigonometric polynomials -/
@@ -702,10 +711,10 @@ variable {s' t' : ℝ} (h : t ≤ s) (h' : t' ≤ s') (P : CircleSobolev t E ≃
 `P : H^t → H^t'` such that `P` carries `H^s` into `H^s'` and `P⁻¹` carries `H^s'` into `H^s`, for
 `t ≤ s` and `t' ≤ s'`, as a continuous linear isomorphism `H^s → H^s'`. -/
 def restrictEquiv [CompleteSpace E] : CircleSobolev s E ≃L[ℂ] CircleSobolev s' E :=
-  ContinuousLinearEquiv.equivOfInverse (restrict h h' P fun a ↦ by simpa using hP a)
+  ContinuousLinearEquiv.ofContinuousLinearMap (restrict h h' P fun a ↦ by simpa using hP a)
     (restrict h' h P.symm fun b ↦ by simpa using hP' b)
-    (fun a ↦ inclusion_injective h (by simp))
-    (fun b ↦ inclusion_injective h' (by simp))
+    (ContinuousLinearMap.ext fun b ↦ inclusion_injective h' (by simp))
+    (ContinuousLinearMap.ext fun a ↦ inclusion_injective h (by simp))
 
 /-- In `H^t'`, `restrictEquiv` is `P`. -/
 @[simp]
@@ -725,7 +734,7 @@ end RestrictEquiv
 `t < s` when `E` is finite-dimensional. -/
 theorem isCompactOperator_inclusion [FiniteDimensional ℂ E] (h : t < s) :
     IsCompactOperator (inclusion (E := E) h.le) := by
-  have := FiniteDimensional.complete ℂ E
+  have := FiniteDimensional.completeSpace ℂ E
   have := FiniteDimensional.proper ℂ E
   -- The inclusion is the operator-norm limit of the truncations `F N` of the Fourier series to the
   -- frequencies `|n| ≤ N`, which factor through finitely many copies of `E`.

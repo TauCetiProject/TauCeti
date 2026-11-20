@@ -276,7 +276,7 @@ theorem pathELength_le_eVariationOn (hγ : MDiff[Icc a b] γ) :
   calc Manifold.pathELength I γ a b
       = ∫⁻ t in Icc a b, ‖curveVelocityWithin I γ (Icc a b) t‖ₑ := by
         simp only [Manifold.pathELength_eq_lintegral_mfderivWithin_Icc, curveVelocityWithin_apply]
-        -- The two sides reach the fibre `enorm` through different, definitionally equal, topology
+        -- The two sides reach the fibre `eNorm` through different, definitionally equal, topology
         -- instances on the tangent space.
         rfl
     _ ≤ ∫⁻ t in Icc a b, ENNReal.ofReal (deriv V t) :=

@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 import Mathlib.Analysis.Analytic.Polynomial
 import TauCeti.Analysis.Calculus.ContDiffZPow
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
+import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # The line bundles `𝒪(k)` on projective space
@@ -208,6 +209,26 @@ theorem twistCore_coordChange_apply (k : ℤ) (i j : Fin (n + 1)) (x : ℙ 𝕜 
     (v : 𝕜) : (twistCore k).coordChange i j x v = twistTransition k i j x * v :=
   (rfl)
 
+/-- The coordinate change of `𝒪(k)` from the chart `i` to the chart `j` has determinant the
+transition function. -/
+theorem det_coordChange_twistCore (k : ℤ) (i j : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    ((twistCore k).coordChange i j x).det = twistTransition k i j x := by
+  have h : (twistCore k).coordChange i j x =
+      ContinuousLinearMap.toSpanSingleton 𝕜 (twistTransition k i j x) := by
+    ext
+    simp [mul_comm]
+  rw [h, ContinuousLinearMap.det_toSpanSingleton]
+
+/-- The coordinate change between the trivializations `i` and `j` of `𝒪(k)`, as a linear
+equivalence of the model fibre, has determinant the transition function. -/
+theorem det_coordChangeL_localTriv_twistCore (k : ℤ) {i j : Fin (n + 1)}
+    {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)} (hi : x ∈ affineOpen i) (hj : x ∈ affineOpen j) :
+    LinearMap.det ((((twistCore k).localTriv i).coordChangeL 𝕜
+      ((twistCore k).localTriv j) x).toLinearEquiv : 𝕜 →ₗ[𝕜] 𝕜) = twistTransition k i j x := by
+  rw [← det_coordChange_twistCore k i j x,
+    ← (twistCore k).localTriv_coordChangeL (i := i) (j := j) ⟨hi, hj⟩, ContinuousLinearMap.det,
+    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
+
 /-- **`𝒪(k)` is an analytic line bundle.** Its transition functions are analytic, so for
 `𝕜 = ℂ` it is a holomorphic line bundle on `ℂℙⁿ`. -/
 instance isContMDiff_twistCore (k : ℤ) :
@@ -330,7 +351,7 @@ theorem homogeneousSection_mk_eq_zero_iff {d : ℕ} {P : MvPolynomial (Fin (n + 
   have hi := (mem_affineOpen_iff _ _).1
     ((twistCore (𝕜 := 𝕜) (n := n) (d : ℤ)).mem_baseSet_at (mk 𝕜 v hv))
   have hrep : eval (mk 𝕜 v hv).rep P = (a : 𝕜) ^ d * eval v P := by
-    rw [← ha, Units.smul_def, hP.eval_smul, smul_eq_mul]
+    rw [← ha, Units.smul_def, hP.eval_smul]
   simp [homogeneousSection, hrep, hi]
 
 /-- **Distinct homogeneous polynomials give distinct sections.** A homogeneous polynomial of
@@ -344,7 +365,7 @@ theorem homogeneousSection_eq_zero_iff {d : ℕ} {P : MvPolynomial (Fin (n + 1))
     by_cases hv : v = 0
     · have hw : (Pi.single 0 1 : Fin (n + 1) → 𝕜) ≠ 0 := by simp
       rw [hv, ← zero_smul 𝕜 (Pi.single 0 1 : Fin (n + 1) → 𝕜),
-        hP.eval_smul, hz _ hw, smul_zero]
+        hP.eval_smul, hz _ hw, mul_zero]
     · exact hz v hv
   · funext x
     simp [homogeneousSection, h]

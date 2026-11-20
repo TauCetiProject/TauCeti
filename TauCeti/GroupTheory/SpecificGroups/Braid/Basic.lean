@@ -68,6 +68,9 @@ cause.
   strands.
 * `TauCeti.BraidGroup.not_commute_sigma` and `TauCeti.BraidGroup.exists_not_commute`: generators
   sharing a strand do not commute, so `BraidGroup n` is nonabelian for `n ≥ 3`.
+* `TauCeti.BraidGroup.revPerm_mul_transposition` and
+  `TauCeti.BraidGroup.revPerm_mul_transposition_mul_revPerm`: conjugation by `Fin.revPerm`
+  reverses the adjacent transpositions.
 * `TauCeti.BraidGroup.sigma_zpow_mem_pureSubgroup_iff` and
   `TauCeti.BraidGroup.sigma_pow_mem_pureSubgroup_iff`: precisely the even integer and natural
   powers of a generator are pure braids; in particular, the generator is not pure and its square
@@ -81,11 +84,8 @@ cause.
 * J. Birman, *Braids, Links, and Mapping Class Groups*, Annals of Mathematics Studies 82 (1974),
   Chapter 1.
 
-This is Layer 4 ("knot theory, done properly") of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`), which lists "braid closures (over
-`PresentedMonoid` braid groups with the Artin relations)" among the presentations of a knot, with
-the closure of a braid word and Markov's theorem as the edge joining that presentation to the
-diagram hub.
+In knot theory, braid closures present knots and links, and the closure of a braid word together
+with Markov's theorem relates this presentation to knot diagrams.
 -/
 
 public section
@@ -228,6 +228,22 @@ def strandSucc (i : Fin (n - 1)) : Fin n := ⟨i + 1, by have := i.isLt; omega�
 
 @[simp] theorem val_strandSucc (i : Fin (n - 1)) : (strandSucc i : ℕ) = i + 1 := (rfl)
 
+/-- Reversing the crossing index sends the lower crossed strand to the reversal of the upper
+crossed strand. -/
+@[simp]
+theorem strand_rev (i : Fin (n - 1)) : strand i.rev = (strandSucc i).rev := by
+  ext
+  simp only [val_strand, val_strandSucc, Fin.val_rev]
+  omega
+
+/-- Reversing the crossing index sends the upper crossed strand to the reversal of the lower
+crossed strand. -/
+@[simp]
+theorem strandSucc_rev (i : Fin (n - 1)) : strandSucc i.rev = (strand i).rev := by
+  ext
+  simp only [val_strand, val_strandSucc, Fin.val_rev]
+  omega
+
 /-- The two strands crossed by an elementary braid are distinct. -/
 theorem strand_ne_strandSucc (i : Fin (n - 1)) : strand i ≠ strandSucc i := by
   simp only [ne_eq, Fin.ext_iff, val_strand, val_strandSucc]
@@ -298,6 +314,21 @@ theorem transposition_mul_self (i : Fin (n - 1)) :
 theorem mul_transposition_mul_self (σ : Equiv.Perm (Fin n)) (i : Fin (n - 1)) :
     σ * transposition i * transposition i = σ :=
   Equiv.mul_swap_mul_self _ _ _
+
+/-- `Fin.revPerm` intertwines each adjacent transposition with the reversed one. -/
+theorem revPerm_mul_transposition (i : Fin (n - 1)) :
+    Fin.revPerm * transposition i = transposition i.rev * Fin.revPerm := by
+  rw [transposition_eq_swap, Equiv.mul_swap_eq_swap_mul, Fin.revPerm_apply, Fin.revPerm_apply,
+    Equiv.swap_comm, ← strand_rev, ← strandSucc_rev, ← transposition_eq_swap]
+
+/-- Conjugation by `Fin.revPerm` reverses the index of an adjacent transposition. -/
+@[simp]
+theorem revPerm_mul_transposition_mul_revPerm (i : Fin (n - 1)) :
+    Fin.revPerm * transposition i * Fin.revPerm = transposition i.rev := by
+  have hself : (Fin.revPerm : Equiv.Perm (Fin n)) * Fin.revPerm = 1 := by
+    ext x
+    simp
+  rw [revPerm_mul_transposition, mul_assoc, hself, mul_one]
 
 /-- Distinct braid indices have distinct adjacent transpositions. -/
 theorem transposition_injective : Function.Injective (transposition (n := n)) := by

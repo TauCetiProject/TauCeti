@@ -86,7 +86,7 @@ theorem cdf_map_cast_logarithmicSeriesMeasure_of_lt_one (hq0 : 0 < q) (hq1 : q <
   split_ifs with hx0
   · rfl
   · have hfloor : ⌊x⌋₊ = 0 := Nat.floor_eq_zero.mpr hx
-    simp [hfloor, ← Nat.range_succ_eq_Iic]
+    simp [hfloor]
 
 /-- At every real cutoff the logarithmic-series cdf is strictly less than one. -/
 theorem cdf_map_cast_logarithmicSeriesMeasure_lt_one (hq0 : 0 < q) (hq1 : q < 1) (x : ℝ) :

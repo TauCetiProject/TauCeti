@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E7.Lattice
 import TauCeti.Algebra.Group.Submonoid.Closure
-import TauCeti.LinearAlgebra.Matrix.Gram
+import TauCeti.LinearAlgebra.Matrix.Gram.Basic
 
 /-!
 # The simply connected root datum of type `E₇`
@@ -148,9 +148,9 @@ private lemma sum_smul_root_e7SimpleIndex (j : Fin 126) :
 
 private lemma linearIndependent_root_e7SimpleIndex :
     LinearIndependent ℤ fun i : Fin 7 ↦ e7Root (e7SimpleIndex i) := by
-  simpa only [root_e7SimpleIndex] using
-    linearIndependent_rows_of_det_ne_zero (A := CartanMatrix.E 7)
-      (by rw [CartanMatrix.E₇_det]; norm_num)
+  simp only [root_e7SimpleIndex]
+  exact linearIndependent_rows_of_det_ne_zero (A := CartanMatrix.E 7)
+    (by rw [CartanMatrix.E₇_det]; norm_num)
 
 private lemma linearIndependent_coroot_e7SimpleIndex :
     LinearIndependent ℤ fun i : Fin 7 ↦ e7Coroot (e7SimpleIndex i) := by

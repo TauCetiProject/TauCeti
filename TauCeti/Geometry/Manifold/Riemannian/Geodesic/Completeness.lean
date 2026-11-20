@@ -83,7 +83,7 @@ theorem lipschitzOnWith_maximalGeodesic :
       _ = ‖v‖ₑ * ENNReal.ofReal (t - s) := pathELength_maximalGeodesic hs ht
       _ = ‖v‖₊ * edist s t := by
         rw [edist_dist, Real.dist_eq, abs_sub_comm,
-          abs_of_nonneg (by linarith : (0 : ℝ) ≤ t - s), enorm_eq_nnnorm]
+          abs_of_nonneg (by linarith : (0 : ℝ) ≤ t - s), eNorm_eq_nnNorm]
   intro s hs t ht
   rcases le_total s t with h | h
   · exact key s hs t ht h
@@ -101,7 +101,7 @@ theorem edist_riemannianExp_le (p : M) (v : TangentSpace I p) :
       zero_mem_geodesicInterval (mem_expDomain_iff.1 hv)
     rw [(isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).base_eq] at h
     have h01 : edist (0 : ℝ) 1 = 1 := by simp [edist_dist, Real.dist_eq]
-    simpa [riemannianExp_def, enorm_eq_nnnorm, h01] using h
+    simpa [riemannianExp_def, eNorm_eq_nnNorm, h01] using h
   · simp [hv]
 
 section Metric
@@ -140,7 +140,7 @@ theorem closedBall_subset_expDomain_of_isCompact_closedBall {p : M} {R : ℝ}
   have hd := (lipschitzOnWith_maximalGeodesic (I := I) (M := M) (p := p) (v := v)).dist_le_mul
     0 h0 t (hsub ⟨ha.trans ht.1, ht.2⟩)
   rw [(isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).base_eq] at hd
-  simp only [coe_nnnorm, Real.dist_eq, zero_sub, abs_neg, abs_of_nonneg ht.1.le] at hd
+  simp only [coe_nnNorm, Real.dist_eq, zero_sub, abs_neg, abs_of_nonneg ht.1.le] at hd
   refine hnot (Metric.mem_closedBall'.mpr (hd.trans ?_))
   calc ‖v‖ * t ≤ ‖v‖ * 1 := mul_le_mul_of_nonneg_left (ht.2.le.trans hb1) (norm_nonneg _)
     _ ≤ R := by rwa [mul_one]
@@ -158,7 +158,7 @@ private theorem isCompact_closure_image_maximalGeodesic [CompleteSpace M] {a b :
   have htb : TotallyBounded (maximalGeodesic I M p v '' Ioo a b) := by
     have huniv : TotallyBounded (univ : Set (Ioo a b)) := by
       simpa using totallyBounded_preimage
-        (f := (Subtype.val : Ioo a b → ℝ)) isUniformEmbedding_subtype_val.isUniformInducing
+        (f := (Subtype.val : Ioo a b → ℝ)) isUniformEmbedding_subtypeVal.isUniformInducing
         ((isCompact_Icc (a := a) (b := b)).totallyBounded.subset Ioo_subset_Icc_self)
     have hlip : LipschitzWith ‖v‖₊ ((Ioo a b).domRestrict (maximalGeodesic I M p v)) :=
       ((lipschitzOnWith_maximalGeodesic (p := p) (v := v)).mono hab).to_restrict

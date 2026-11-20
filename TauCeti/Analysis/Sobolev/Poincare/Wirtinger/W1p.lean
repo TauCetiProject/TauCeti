@@ -60,6 +60,9 @@ on a subdomain `U` whose closure is a compact subset of `Ω`.  Two limits are th
   for a ball contained in `Ω` and any `u ∈ W^{1,p}(Ω)`.
 * `TauCeti.W1p.exists_value_ae_eq_const_of_gradient_eq_zero`: on a preconnected `Ω`, a Sobolev
   function with vanishing weak gradient is almost everywhere constant.
+* `TauCeti.W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq`: on a preconnected `Ω`, a Sobolev
+  function whose weak gradient agrees almost everywhere with `∇ q` for a `C¹` function `q` equals
+  `q + c` almost everywhere.
 
 ## References
 
@@ -116,7 +119,7 @@ private theorem norm_value_sub_setAverage_restrictL_ofTestFunctionₗ_le (hp : p
     (Fact.out : (1 : ℝ≥0∞) ≤ p) hp
   have hkey : ‖W1p.value w - Lp.const p (mu.restrict (U : Set E))
       (⨍ y in S, W1p.value w y ∂mu)‖ₑ ≤ ENNReal.ofReal C * ‖W1p.gradient w‖ₑ := by
-    rw [← eLpNorm_sub_const_eq_enorm, Lp.enorm_def]
+    rw [← eLpNorm_sub_const_eq_enorm, Lp.eNorm_def]
     calc eLpNorm (fun x ↦ W1p.value w x - ⨍ y in S, W1p.value w y ∂mu) p (mu.restrict U)
         = eLpNorm (fun x ↦ (phi : E → ℝ) x - ⨍ y in S, (phi : E → ℝ) y ∂mu) p
             (mu.restrict U) := by
@@ -224,11 +227,11 @@ private theorem eLpNorm_value_sub_setAverage_le_of_isCompact_closure (hp : p ≠
   have hgradle : ‖W1p.gradient v‖ₑ ≤ ‖W1p.gradient u‖ₑ :=
     calc ‖W1p.gradient v‖ₑ
         = eLpNorm (W1p.gradient u) p (mu.restrict V) := by
-          rw [Lp.enorm_def]
+          rw [Lp.eNorm_def]
           exact eLpNorm_congr_ae hgrad
       _ ≤ eLpNorm (W1p.gradient u) p (mu.restrict (Omega : Set E)) :=
           eLpNorm_mono_measure _ (Measure.restrict_mono hVsub le_rfl)
-      _ = ‖W1p.gradient u‖ₑ := (Lp.enorm_def _).symm
+      _ = ‖W1p.gradient u‖ₑ := (Lp.eNorm_def _).symm
   exact hcongr ▸ hbase.trans (mul_le_mul' (ENNReal.ofReal_le_ofReal hconst) hgradle)
 
 /-! ### The inequality on the whole domain -/
@@ -351,7 +354,7 @@ theorem W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset {c : E} {R : �
     (Lp.memLp (W1p.value uB)).sub (memLp_const m)
   -- Convert the `eLpNorm` bound into a bound on integrals of squares.
   have hnorm : ‖hmem.toLp _‖ ≤ 2 ^ (finrank ℝ E + 1) * R * ‖W1p.gradient uB‖ := by
-    rw [Lp.norm_toLp, ← toReal_enorm (W1p.gradient uB),
+    rw [Lp.norm_toLp, ← toReal_eNorm (W1p.gradient uB),
       ← ENNReal.toReal_ofReal (by positivity : (0 : ℝ) ≤ 2 ^ (finrank ℝ E + 1) * R),
       ← ENNReal.toReal_mul]
     exact ENNReal.toReal_mono (by finiteness) hP
@@ -388,9 +391,9 @@ theorem W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset {c : E} {R : 
   set uB : W1p mu B 1 := W1p.ofExponentLE (Fact.out : 1 ≤ p) (W1p.restrictL hB u)
   set m := ⨍ y in ball c R, W1p.value u y ∂mu
   have hval : W1p.value uB =ᵐ[mu.restrict (ball c R)] W1p.value u :=
-    (W1p.value_ofExponentLE_ae _ _).trans (W1p.value_restrictL_ae hB u)
+    (W1p.coeFn_value_ofExponentLE _ _).eventuallyEq.trans (W1p.value_restrictL_ae hB u)
   have hgrad : W1p.gradient uB =ᵐ[mu.restrict (ball c R)] W1p.gradient u :=
-    (W1p.gradient_ofExponentLE_ae _ _).trans (W1p.gradient_restrictL_ae hB u)
+    (W1p.coeFn_gradient_ofExponentLE _ _).eventuallyEq.trans (W1p.gradient_restrictL_ae hB u)
   have hP := W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball (p := 1) ENNReal.one_ne_top
     (rfl : (B : Set E) = ball c R) uB
   have havg : ⨍ y in (B : Set E), W1p.value uB y ∂mu = m := average_congr hval
@@ -401,13 +404,13 @@ theorem W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset {c : E} {R : 
   have hgint : IntegrableOn (W1p.gradient u) (ball c R) mu :=
     ((Lp.memLp (W1p.gradient u)).mono_measure hle).integrable Fact.out
   -- Both sides of `hP` are the integrals in the statement.
-  rw [eLpNorm_one_eq_lintegral_enorm (f := fun x ↦ W1p.value uB x - m)
+  rw [eLpNorm_one_eq_lintegral_eNorm (f := fun x ↦ W1p.value uB x - m)
       ((Lp.aestronglyMeasurable _).sub aestronglyMeasurable_const),
-    Lp.enorm_def, eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _)] at hP
+    Lp.eNorm_def, eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable _)] at hP
   simp_rw [← Real.norm_eq_abs]
   rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ENNReal.ofReal_mul (by positivity),
-    ofReal_integral_norm_eq_lintegral_enorm (f := fun x ↦ W1p.value u x - m)
-      (hint.sub (integrable_const m)), ofReal_integral_norm_eq_lintegral_enorm hgint]
+    ofReal_integral_norm_eq_lintegral_eNorm (f := fun x ↦ W1p.value u x - m)
+      (hint.sub (integrable_const m)), ofReal_integral_norm_eq_lintegral_eNorm hgint]
   refine le_of_eq_of_le (lintegral_congr_ae ?_) (hP.trans_eq ?_)
   · filter_upwards [hval] with x hx
     rw [hx]
@@ -448,5 +451,42 @@ theorem W1p.exists_value_ae_eq_const_of_gradient_eq_zero
   obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
   obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hxr
   exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩
+
+/-- **Integration up to a constant on a preconnected domain.** If `Ω` is preconnected and the weak
+gradient of `u ∈ W^{1,p}(Ω)` agrees almost everywhere on `Ω` with the classical gradient `∇ q` of
+a function `q` that is `C¹` on `Ω`, then `u` agrees almost everywhere on `Ω` with `q + c` for some
+constant `c : ℝ`. Neither boundedness of `Ω` nor global `Lᵖ` integrability of `q` is needed. -/
+theorem W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq
+    (hconn : IsPreconnected (Omega : Set E)) {u : W1p mu Omega p} {q : E → ℝ}
+    (hq : ContDiffOn ℝ 1 q Omega)
+    (hgrad : (W1p.gradient u : E → E) =ᵐ[mu.restrict Omega] ∇ q) :
+    ∃ c : ℝ, (W1p.value u : E → ℝ) =ᵐ[mu.restrict Omega] fun x ↦ q x + c := by
+  have hloc : ∃ c : ℝ, ∀ᵐ y ∂mu.restrict Omega, W1p.value u y - q y = c := by
+    refine hconn.exists_ae_eq_const_of_forall_nhds (HereditarilyLindelofSpace.isLindelof _)
+      fun x hx ↦ ?_
+    obtain ⟨R, hR, hxR⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
+    set r := R / 2
+    have hr : 0 < r := half_pos hR
+    let B : Opens E := ⟨ball x r, isOpen_ball⟩
+    have hKsub : closedBall x r ⊆ (Omega : Set E) :=
+      (closedBall_subset_ball (half_lt_self hR)).trans hxR
+    have hBO : B ≤ Omega := ball_subset_closedBall.trans hKsub
+    obtain ⟨v, hvval, hvgrad⟩ :=
+      W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact (mu := mu) (Omega := B) (p := p)
+        Omega.isOpen hq (isCompact_closedBall x r) ball_subset_closedBall hKsub
+    have hdiff_grad : W1p.gradient (W1p.restrictL hBO u - v) = 0 := by
+      rw [W1p.gradient_sub, sub_eq_zero]
+      apply Lp.ext
+      exact (W1p.gradient_restrictL_ae hBO u).trans <|
+        Filter.EventuallyEq.trans (ae_restrict_of_ae_restrict_of_subset hBO hgrad) hvgrad.symm
+    obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero
+      (Omega := B) (convex_ball x r).isPreconnected hdiff_grad
+    refine ⟨c, ball x r, ball_mem_nhds x hr, ?_⟩
+    filter_upwards [hc, W1p.value_sub_ae (W1p.restrictL hBO u) v,
+      W1p.value_restrictL_ae hBO u, hvval] with y hy hsub huB hvB
+    rw [← hy, hsub, Pi.sub_apply, huB, hvB]
+  obtain ⟨c, hc⟩ := hloc
+  refine ⟨c, hc.mono fun x hx ↦ ?_⟩
+  linarith
 
 end TauCeti

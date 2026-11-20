@@ -186,7 +186,7 @@ lemma inv_localEquation_mem_sections {D : SchemeWeilDivisor X} {U : X.Opens} [No
     (Scheme.rationalFunctionsEquiv U).symm
         ((Additive.toMul f : X.functionFieldˣ) : X.functionField)⁻¹ ∈ sections D U := by
   refine mem_sections.mpr fun y hy ↦ Or.inr ?_
-  rw [LinearEquiv.apply_symm_apply, Scheme.ord_inv, hf y hy, orderAt_apply]
+  rw [LinearEquiv.apply_symm_apply, AlgebraicGeometry.Scheme.ord_inv, hf y hy, orderAt_apply]
 
 /-- Locally principal divisors with the same sections over every open subset have the same
 coefficient at every codimension-one point: local equations at the point give sections of each
@@ -215,8 +215,10 @@ lemma coeff_eq_of_sections_eq {F E : SchemeWeilDivisor X}
   have b2 := (mem_sections.mp m2 y hyU).resolve_left (by
     simp only [LinearEquiv.apply_symm_apply, inv_eq_zero]
     exact Units.ne_zero _)
-  rw [LinearEquiv.apply_symm_apply, Scheme.ord_inv, ← orderAt_apply, ← hh₁ y hy₁] at b1
-  rw [LinearEquiv.apply_symm_apply, Scheme.ord_inv, ← orderAt_apply, ← hh₂ y hy₂] at b2
+  rw [LinearEquiv.apply_symm_apply, AlgebraicGeometry.Scheme.ord_inv, ← orderAt_apply,
+    ← hh₁ y hy₁] at b1
+  rw [LinearEquiv.apply_symm_apply, AlgebraicGeometry.Scheme.ord_inv, ← orderAt_apply,
+    ← hh₂ y hy₂] at b2
   omega
 
 end LocallyNoetherian

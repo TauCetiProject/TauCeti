@@ -206,7 +206,7 @@ noncomputable def tensorProductMap : A ⊗[(algebraMap A B).eqLocus t] A →ₐ[
   Algebra.TensorProduct.lift (Algebra.ofId A B)
     (AlgHom.mk t fun c ↦ by
       simpa [IsScalarTower.algebraMap_apply _ A B, Algebra.algebraMap_ofSubsemiring_apply] using
-        (mem_eqLocus.mp c.2).symm) fun _ _ ↦ .all _ _
+        (mem_eqLocus.mp c.property).symm) fun _ _ ↦ .all _ _
 
 variable (t) in
 /-- The map `A ⊗[C] A → B` is the lift of `Algebra.ofId A B` and of `t`, viewed as a map of
@@ -215,7 +215,7 @@ theorem tensorProductMap_def :
     tensorProductMap t = Algebra.TensorProduct.lift (Algebra.ofId A B)
       (AlgHom.mk t fun c ↦ by
         simpa [IsScalarTower.algebraMap_apply _ A B, Algebra.algebraMap_ofSubsemiring_apply] using
-          (mem_eqLocus.mp c.2).symm) fun _ _ ↦ .all _ _ :=
+          (mem_eqLocus.mp c.property).symm) fun _ _ ↦ .all _ _ :=
   (rfl)
 
 /-- The map `A ⊗[C] A → B` sends `x ⊗ y` to `s x * t y`. -/
@@ -346,7 +346,7 @@ theorem span_range_eq_top [Module.Finite A B] : Submodule.span A (Set.range t) =
   rw [← hS, eq_top_iff]
   rintro y -
   obtain ⟨z, rfl⟩ := hsurj y
-  exact z.2
+  exact z.property
 
 variable [Module.Finite A B] [Module.Projective A B]
 
@@ -374,7 +374,7 @@ theorem coeff_projectiveCharpolyRev_mem_eqLocus (f : A) (i : ℕ) :
     congr 1
     ext a
     simp
-  simpa using congr(coeff $hQ i)
+  simpa using congr(AddMonoidAlgebra.coeff $hQ i)
 
 /-- **Integrality over the invariants** (Stacks 03BK). If `Spec B ⇉ Spec A` is an equivalence
 relation whose first morphism is finite locally free, that is, `B` is a finite projective
@@ -452,7 +452,7 @@ private theorem exists_mem_forall_notMem_primesOver {q q' : PrimeSpectrum A}
   have := h.isIntegral
   have hC : t.comp (algebraMap C A) = (algebraMap A B).comp (algebraMap C A) := by
     ext x
-    exact x.2.symm
+    exact x.property.symm
   -- `q` is contained in none of the primes `t⁻¹ P` for `P` over `q'`
   have hnle : ∀ P ∈ q'.asIdeal.primesOver B, ¬ q.asIdeal ≤ P.comap t := by
     rintro P ⟨hP, hPq'⟩ hle
@@ -497,7 +497,7 @@ theorem comap_subtype_eqLocus_eq_iff {q q' : PrimeSpectrum A} :
   set C := (algebraMap A B).eqLocus t
   have hC : (algebraMap A B).comp C.subtype = t.comp C.subtype := by
     ext x
-    exact x.2
+    exact x.property
   refine ⟨fun hqq' ↦ ?_, ?_⟩
   · by_contra hne
     push Not at hne

@@ -284,7 +284,7 @@ theorem dist_le_mul_dist_tail_of_mem_image_horizontalShear
     rw [sub_pos]
     exact_mod_cast hz
   rw [horizontalShear_apply_zero, horizontalShear_apply_zero, NNReal.coe_div,
-    NNReal.coe_sub hz.le, NNReal.coe_mul, coe_nnnorm, NNReal.coe_one, div_mul_eq_mul_div,
+    NNReal.coe_sub hz.le, NNReal.coe_mul, coe_nnNorm, NNReal.coe_one, div_mul_eq_mul_div,
     le_div_iff₀ hz']
   calc dist (v 0) (w 0) * (1 - A * ‖z‖)
       ≤ A * dist (Fin.tail v) (Fin.tail w) * (1 - A * ‖z‖) :=
@@ -292,6 +292,6 @@ theorem dist_le_mul_dist_tail_of_mem_image_horizontalShear
     _ = A * ((1 - A * ‖z‖) * dist (Fin.tail v) (Fin.tail w)) := by ring
     _ ≤ A * dist (Fin.tail (horizontalShear z v)) (Fin.tail (horizontalShear z w)) :=
         mul_le_mul_of_nonneg_left
-          (mul_dist_tail_le_dist_tail_horizontalShear z (h v hv w hw)) A.2
+          (mul_dist_tail_le_dist_tail_horizontalShear z (h v hv w hw)) A.property
 
 end TauCeti

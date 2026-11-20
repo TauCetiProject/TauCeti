@@ -37,7 +37,7 @@ namespace TauCeti
 
 namespace IsMaximalTotallyReal
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- The Maslov phase relative to a fixed maximal totally real subspace varies continuously along
 any continuous frame `x ↦ A x L₁` of maximal totally real subspaces over a topological space

@@ -155,7 +155,7 @@ theorem cotangentLiouvilleForm_compContinuousLinearMap_fderiv_cotangentGeneratin
     (hS : DifferentiableAt ℝ (fderiv ℝ S) x) (hx : cotangentFamilyFiberDeriv S x = 0) :
     (cotangentLiouvilleForm (cotangentGeneratingSource S x)).compContinuousLinearMap
         (fderiv ℝ (cotangentGeneratingSource S) x) =
-      differentialOneForm S x := by
+      differentialOneForm ℝ S x := by
   -- The target covector `-∂_a S` vanishes, so the target term of the exactness of the generated
   -- relation drops out.
   have hP : (cotangentGeneratingTarget S x).2 = 0 := by
@@ -243,7 +243,8 @@ theorem isLagrangian_map_fderiv_cotangentGeneratingSource_ker [FiniteDimensional
       simp only [K]
       omega
     have hinj : Function.Injective (ι ∘ₗ K.subtype) := fun u v huv ↦
-      Subtype.ext (injOn_fderiv_cotangentGeneratingSource_ker hS hsymm hsurj u.2 v.2 huv)
+      Subtype.ext (injOn_fderiv_cotangentGeneratingSource_ker hS hsymm hsurj u.property v.property
+          huv)
     rw [← Submodule.range_subtype K, ← LinearMap.range_comp, LinearMap.finrank_range_of_inj hinj,
       hK, finrank_prod, dual_finrank_eq]
     ring
@@ -301,7 +302,7 @@ theorem range_mfderiv_coe_cotangentFamilyCriticalSet (z : {x | cotangentFamilyFi
     letI := cotangentFamilyCriticalSetChartedSpace hS hsurj
     (mfderiv 𝓘(ℝ, Fin (finrank ℝ V) → ℝ) 𝓘(ℝ, V × A)
       (Subtype.val : {x | cotangentFamilyFiberDeriv S x = 0} → V × A) z).range =
-      (fderiv ℝ (cotangentFamilyFiberDeriv S) z.1).ker :=
+      (fderiv ℝ (cotangentFamilyFiberDeriv S) z.val).ker :=
   range_mfderiv_coe_levelSet _ _ _ _ z
 
 /-- Along the inclusion of the fibre-critical set, the differential of a map which is
@@ -309,11 +310,11 @@ differentiable on `V × A` is its Fréchet derivative applied to the differentia
 inclusion. -/
 private theorem mfderiv_comp_coe_cotangentFamilyCriticalSet_apply {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] {g : V × A → F}
-    (z : {x | cotangentFamilyFiberDeriv S x = 0}) (hg : DifferentiableAt ℝ g z.1) :
+    (z : {x | cotangentFamilyFiberDeriv S x = 0}) (hg : DifferentiableAt ℝ g z.val) :
     letI := cotangentFamilyCriticalSetChartedSpace hS hsurj
     ∀ v : TangentSpace 𝓘(ℝ, Fin (finrank ℝ V) → ℝ) z, mfderiv 𝓘(ℝ, Fin (finrank ℝ V) → ℝ) 𝓘(ℝ, F)
         (g ∘ (Subtype.val : {x | cotangentFamilyFiberDeriv S x = 0} → V × A)) z v =
-      fderiv ℝ g z.1 (mfderiv 𝓘(ℝ, Fin (finrank ℝ V) → ℝ) 𝓘(ℝ, V × A)
+      fderiv ℝ g z.val (mfderiv 𝓘(ℝ, Fin (finrank ℝ V) → ℝ) 𝓘(ℝ, V × A)
         (Subtype.val : {x | cotangentFamilyFiberDeriv S x = 0} → V × A) z v) := by
   let _ := cotangentFamilyCriticalSetChartedSpace hS hsurj
   intro v
@@ -342,17 +343,17 @@ theorem isLagrangianImmersion_cotangentGeneratingSource_comp_coe :
   let _ := cotangentFamilyCriticalSetChartedSpace hS hsurj
   have := isManifold_cotangentFamilyCriticalSet hS hsurj
   have hι (z : {x | cotangentFamilyFiberDeriv S x = 0}) :
-      ContDiffAt ℝ ∞ (cotangentGeneratingSource S) z.1 :=
-    contDiffAt_cotangentGeneratingSource (by simpa using hS z z.2)
+      ContDiffAt ℝ ∞ (cotangentGeneratingSource S) z.val :=
+    contDiffAt_cotangentGeneratingSource (by simpa using hS z z.property)
   have hD (z : {x | cotangentFamilyFiberDeriv S x = 0}) :
-      DifferentiableAt ℝ (fderiv ℝ S) z.1 :=
-    ((hS z z.2).fderiv_right (m := 1) (by simp)).differentiableAt one_ne_zero
-  have hsymm (z : {x | cotangentFamilyFiberDeriv S x = 0}) : IsSymmSndFDerivAt ℝ S z.1 :=
-    (hS z z.2).isSymmSndFDerivAt (by simp)
+      DifferentiableAt ℝ (fderiv ℝ S) z.val :=
+    ((hS z z.property).fderiv_right (m := 1) (by simp)).differentiableAt one_ne_zero
+  have hsymm (z : {x | cotangentFamilyFiberDeriv S x = 0}) : IsSymmSndFDerivAt ℝ S z.val :=
+    (hS z z.property).isSymmSndFDerivAt (by simp)
   have hmem (z : {x | cotangentFamilyFiberDeriv S x = 0}) (v) :
       mfderiv 𝓘(ℝ, Fin (finrank ℝ V) → ℝ) 𝓘(ℝ, V × A)
         (Subtype.val : {x | cotangentFamilyFiberDeriv S x = 0} → V × A) z v ∈
-        LinearMap.ker (fderiv ℝ (cotangentFamilyFiberDeriv S) z.1).toLinearMap := by
+        LinearMap.ker (fderiv ℝ (cotangentFamilyFiberDeriv S) z.val).toLinearMap := by
     rw [← range_mfderiv_coe_cotangentFamilyCriticalSet hS hsurj z]
     exact ⟨v, rfl⟩
   have hsmooth : ContMDiff 𝓘(ℝ, Fin (finrank ℝ V) → ℝ) 𝓘(ℝ, V × StrongDual ℝ V) ∞
@@ -367,7 +368,7 @@ theorem isLagrangianImmersion_cotangentGeneratingSource_comp_coe :
       mfderiv_comp_coe_cotangentFamilyCriticalSet_apply hS hsurj z
         ((hι z).differentiableAt (by simp))] at hvw
     exact injective_mfderiv_coe_levelSet _ _ _ _ z
-      (injOn_fderiv_cotangentGeneratingSource_ker (hD z) (hsymm z) (hsurj z z.2) (hmem z v)
+      (injOn_fderiv_cotangentGeneratingSource_ker (hD z) (hsymm z) (hsurj z z.property) (hmem z v)
         (hmem z w) hvw)
   · rw [SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff]
     intro z v w
@@ -389,24 +390,26 @@ theorem cotangentLiouvilleForm_mfderiv_cotangentGeneratingSource_comp_coe
     (z : {x | cotangentFamilyFiberDeriv S x = 0}) :
     letI := cotangentFamilyCriticalSetChartedSpace hS hsurj
     ∀ v : TangentSpace 𝓘(ℝ, Fin (finrank ℝ V) → ℝ) z,
-      cotangentLiouvilleForm (cotangentGeneratingSource S z.1)
+      cotangentLiouvilleForm (cotangentGeneratingSource S z.val)
         (fun _ ↦ mfderiv 𝓘(ℝ, Fin (finrank ℝ V) → ℝ) 𝓘(ℝ, V × StrongDual ℝ V)
           (cotangentGeneratingSource S ∘
             (Subtype.val : {x | cotangentFamilyFiberDeriv S x = 0} → V × A)) z v) =
       mfderiv 𝓘(ℝ, Fin (finrank ℝ V) → ℝ) 𝓘(ℝ)
         (S ∘ (Subtype.val : {x | cotangentFamilyFiberDeriv S x = 0} → V × A)) z v := by
   let _ := cotangentFamilyCriticalSetChartedSpace hS hsurj
-  have hD : DifferentiableAt ℝ (fderiv ℝ S) z.1 :=
-    ((hS z z.2).fderiv_right (m := 1) (by simp)).differentiableAt one_ne_zero
+  have hD : DifferentiableAt ℝ (fderiv ℝ S) z.val :=
+    ((hS z z.property).fderiv_right (m := 1) (by simp)).differentiableAt one_ne_zero
   intro v
   rw [mfderiv_comp_coe_cotangentFamilyCriticalSet_apply hS hsurj z
-      ((contDiffAt_cotangentGeneratingSource (n := 1) ((hS z z.2).of_le (by simp))).differentiableAt
+      ((contDiffAt_cotangentGeneratingSource (n := 1) ((hS z z.property).of_le
+          (by simp))).differentiableAt
         one_ne_zero),
     mfderiv_comp_coe_cotangentFamilyCriticalSet_apply hS hsurj z
-      ((hS z z.2).differentiableAt (by simp))]
+      ((hS z z.property).differentiableAt (by simp))]
   exact
     (DFunLike.congr_fun
-      (cotangentLiouvilleForm_compContinuousLinearMap_fderiv_cotangentGeneratingSource hD z.2)
+      (cotangentLiouvilleForm_compContinuousLinearMap_fderiv_cotangentGeneratingSource hD
+          z.property)
       _).trans (differentialOneForm_apply _ _ _)
 
 end CriticalSet

@@ -115,7 +115,7 @@ theorem exists_isOpen_eLpNorm_restrict_sub_le_mul_eLpNorm_mgradient [LindelofSpa
   rw [← ENNReal.ofReal_eq_coe_nnreal]
   refine eLpNorm_le_eLpNorm_of_lintegral_rpow_le (by positivity) hp'
     (hu.continuous.sub continuous_const).aestronglyMeasurable ?_
-  simp only [enorm_norm]
+  simp only [eNorm_norm]
   -- The density and the derivative comparisons on `B` contribute the factor
   -- `2 ρ(c) · C₁ ^ q · (ρ(c) / 2)⁻¹ = 4 C₁ ^ q`.
   have hscal : ENNReal.ofReal (2 * ρ c) * (ENNReal.ofReal (K ^ q) *

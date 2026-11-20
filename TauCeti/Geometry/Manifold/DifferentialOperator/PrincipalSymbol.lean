@@ -126,7 +126,8 @@ private def covectorLift (hx : I.IsInteriorPoint x) :
 
 private theorem covectorLift_apply_self (hx : I.IsInteriorPoint x)
     (ξ : TangentSpace I x →L[ℝ] ℝ) : covectorLift hx ξ x = 0 :=
-  mem_smoothVanishingIdeal_iff.mp ((exists_vanishingIdealDifferential_comp_eq_id hx).choose ξ).2
+  mem_smoothVanishingIdeal_iff.mp ((exists_vanishingIdealDifferential_comp_eq_id hx).choose
+      ξ).property
 
 private theorem mvfderiv_covectorLift (hx : I.IsInteriorPoint x)
     (ξ : TangentSpace I x →L[ℝ] ℝ) : mvfderiv I (covectorLift hx ξ) x = ξ := by
@@ -150,7 +151,7 @@ at an interior point `x`: the real multilinear form on the cotangent space `T_x*
 symbol `TauCeti.smoothPrincipalSymbol`. -/
 def smoothCommutatorSymbol (hx : I.IsInteriorPoint x) {m : ℕ} :
     differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m →ₗ[ℝ]
-      MultilinearMap ℝ (fun _ : Fin m ↦ TangentSpace I x →L[ℝ] ℝ) ℝ where
+      MultilinearMap (RingHom.id ℝ) (fun _ : Fin m ↦ TangentSpace I x →L[ℝ] ℝ) ℝ where
   toFun D := ((evalOneAt x).compMultilinearMap
       ((commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) D)).compLinearMap
     fun _ ↦ covectorLift hx
@@ -299,7 +300,8 @@ theorem smoothPrincipalSymbol_smul_covector (hx : I.IsInteriorPoint x) {m : ℕ}
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I hx D (c • ξ) = c ^ m * smoothPrincipalSymbol I hx D ξ := by
   have h := (smoothCommutatorSymbol I hx D).map_smul_univ (fun _ ↦ c) fun _ ↦ ξ
-  simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul] at h
+  simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul,
+    RingHom.id_apply] at h
   rw [smoothPrincipalSymbol_def, smoothPrincipalSymbol_def, h]
   ring
 
@@ -323,7 +325,7 @@ theorem smoothPrincipalSymbol_comp (hx : I.IsInteriorPoint x) {m k : ℕ}
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     smoothPrincipalSymbol I hx
         ⟨(P : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∘ₗ (Q : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯),
-          comp_mem_differentialOperators P.2 Q.2⟩ ξ =
+          comp_mem_differentialOperators P.property Q.property⟩ ξ =
       smoothPrincipalSymbol I hx P ξ * smoothPrincipalSymbol I hx Q ξ := by
   obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ := ⟨_, mvfderiv_covectorLift hx ξ⟩
   -- The `(m + k)`-fold commutator of `P ∘ Q` with `f` is `(m + k).choose m` times the product of

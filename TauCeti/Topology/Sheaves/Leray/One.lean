@@ -268,7 +268,7 @@ private def lerayOneCokerSeqHom
   τ₁ := φ.τ₁
   τ₂ := φ.τ₂
   τ₃ := cokernel.map (cechInjectiveCokernelSequence U F).f (cechInjectiveCokernelSequence V G).f
-    φ.τ₁ φ.τ₂ φ.comm₁₂.symm
+    φ.τ₁ φ.τ₂ φ.comm₁₂
   comm₁₂ := φ.comm₁₂
   comm₂₃ := (cokernel.π_desc _ _ _).symm
 
@@ -277,7 +277,7 @@ private lemma lerayOneCokerSeqHom_comp_toQuotient
     (φ : cechInjectiveCokernelSequence U F ⟶ cechInjectiveCokernelSequence V G) :
     (lerayOneCokerSeqHom U V φ).τ₃ ≫ lerayOneCokerToQuotient V G =
       lerayOneCokerToQuotient U F ≫ φ.τ₃ := by
-  exact cokernel.map_desc _ _ _ _ _ _ _ _ _ φ.comm₁₂.symm φ.comm₂₃.symm
+  exact cokernel.map_desc _ _ _ _ _ _ _ _ _ φ.comm₂₃ φ.comm₁₂
 
 /-- The degree-zero identification is natural whenever the global-sections comparison is. -/
 @[reassoc]

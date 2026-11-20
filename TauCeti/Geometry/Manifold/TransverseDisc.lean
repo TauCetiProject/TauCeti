@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.TangentCone
+public import TauCeti.Geometry.Manifold.TangentCone.Basic
 import TauCeti.Analysis.Calculus.TangentCone.Chart
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.LinearAlgebra.Dimension.Submodule
@@ -91,14 +91,14 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
       (∀ᶠ z in 𝓝 0, ι z ∈ s ∧ g (ι z) = g y) ∧ HasStrictFDerivAt (fun z ↦ e (ι z)) ι' 0 ∧
       (P ∘L ι').IsInvertible ∧
       ∀ V ∈ 𝓝 (0 : F), ∀ᶠ w in 𝓝 y, w ∈ s → g w = g y → ∃ z ∈ V, ι z = w := by
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   set T := Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s y)
   -- The differential of `g` at `y`, as a linear form on the model space.
   set dg : E →L[𝕜] 𝕜 := mvfderiv 𝓘(𝕜, E) g y
   replace hgv : dg v ≠ 0 := hgv
   -- In finite dimensions every subspace is complemented.
   have hcc (p : Submodule 𝕜 E) : p.ClosedComplemented :=
-    .of_finiteDimensional_quotient (Submodule.closed_of_finiteDimensional _)
+    .of_finiteDimensional_quotient (Submodule.isClosed_of_finiteDimensional _)
   have hrange : dg.range = ⊤ :=
     LinearMap.range_eq_top_of_surjective _ (LinearMap.surjective_of_ne_zero fun h ↦
       hgv (by simpa using LinearMap.congr_fun h v))
@@ -127,7 +127,7 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   have hA'F : ∀ z ∈ F, A'.symm z ∈ F := by
     intro z hz
     rw [← SetLike.mem_coe, ← tangentConeAt_preimage_symm_eq hs₀
-      (Submodule.closed_of_finiteDimensional _) hyq' ⟨hys, rfl⟩,
+      (Submodule.isClosed_of_finiteDimensional _) hyq' ⟨hys, rfl⟩,
       ← image_mtangentConeAt_eq_tangentConeAt hyq' hA', hmT] at hz
     obtain ⟨u, hu, rfl⟩ := hz
     rwa [ContinuousLinearEquiv.symm_apply_apply]
@@ -149,12 +149,12 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   -- The parametrization `ι z = q'⁻¹ (q' y + z)` of the cut is read in `e` through the transition
   -- `e ∘ q'⁻¹`, whose derivative `D` at `q' y` satisfies `D ∘ A' = Ae`.
   set D := fderiv 𝕜 (q'.symm.trans e) (q' y)
-  have hDA : D ∘L (A' : E →L[𝕜] E) = Ae := fderiv_symm_trans_comp_eq hn hq' he hyq' hye hA' hAe
+  have hDA : D ∘L (A' : E →L[𝕜] E) = Ae := fderiv_symm_trans_comp_eq hyq' hA' hAe
   have hDF (z : E) : D z = Ae (A'.symm z) := by
     simpa using congrArg (fun B : E →L[𝕜] E ↦ B (A'.symm z)) hDA
   have hι0 : q'.symm (q' y + ((0 : F) : E)) = y := by simp [q'.left_inv hyq']
   have hcont : ContinuousAt (fun z : F ↦ q'.symm (q' y + (z : E))) 0 :=
-    (q'.continuousAt_symm_add hyq').comp_of_eq continuous_subtype_val.continuousAt rfl
+    (q'.continuousAt_symm_add hyq').comp_of_eq continuous_subtypeVal.continuousAt rfl
   have hmem := hs₀.eventually_symm_add_mem hyq' ⟨hys, rfl⟩
   have hreach := hs₀.eventually_exists_symm_add_eq hyq' ⟨hys, rfl⟩
   refine ⟨F, fun z ↦ q'.symm (q' y + z), D ∘L F.subtypeL, hι0, hcont, hmem,
@@ -163,7 +163,7 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   · refine ContinuousLinearMap.isInvertible_of_injective_of_finrank_eq
       (P ∘L D ∘L F.subtypeL) hdimF ?_
     refine (injective_iff_map_eq_zero (P ∘L D ∘L F.subtypeL)).2 fun z hz ↦ Subtype.ext ?_
-    have h0 := Submodule.disjoint_def.1 hπdisj _ (hA'F z z.2)
+    have h0 := Submodule.disjoint_def.1 hπdisj _ (hA'F z z.property)
       (LinearMap.mem_ker.2 (by simpa [π, hDF] using hz))
     simpa using h0
 

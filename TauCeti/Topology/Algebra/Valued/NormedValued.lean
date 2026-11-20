@@ -27,6 +27,8 @@ this is the completeness input for the ring of integers `𝒪_F` required to mak
 
 ## Main results
 
+* `TauCeti.NormedField.v_eq_valuation`: `Valued.v x = NormedField.valuation x` for any ultrametric
+  normed field `K`, without requiring the norm to be nontrivial.
 * `Valuation.Integers.mem_span_singleton_pow_iff_norm_le`: `x ∈ (ϖ) ^ n` exactly when
   `‖x‖ ≤ ‖ϖ‖ ^ n`.
 * `Valuation.Integers.radical_span_singleton_eq_of_norm_lt_one`: any two pseudouniformisers,
@@ -38,6 +40,20 @@ this is the completeness input for the ring of integers `𝒪_F` required to mak
 public section
 
 open Filter
+
+section NormedField
+
+open scoped NormedField
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K]
+
+/-- On an ultrametric normed field `K` equipped with `NormedField.toValued`, `Valued.v` agrees with
+`NormedField.valuation`, without requiring the norm to be nontrivial (generalizing Mathlib's
+`NormedField.v_eq_valuation`). -/
+@[simp]
+theorem TauCeti.NormedField.v_eq_valuation (x : K) : Valued.v x = NormedField.valuation x := rfl
+
+end NormedField
 
 namespace Valuation.Integers
 
@@ -104,7 +120,7 @@ theorem isAdicComplete_span_singleton (hv : (NormedField.valuation (K := K)).Int
       le_of_tendsto (tendsto_const_nhds.dist hL) (eventually_atTop.2 ⟨m, fun _ hn ↦ hf hn⟩)
     -- As a limit of elements of norm at most one, `L` is the image of some `l : O`.
     have hL1 : NormedField.valuation L ≤ 1 := by
-      rw [NormedField.valuation_apply, ← NNReal.coe_le_one, coe_nnnorm]
+      rw [NormedField.valuation_apply, ← NNReal.coe_le_one, coe_nnNorm]
       exact le_of_tendsto' hL.norm fun n ↦ by
         simpa [← NNReal.coe_le_one] using hv.map_le_one (f n)
     obtain ⟨l, rfl⟩ := hv.exists_of_le_one hL1

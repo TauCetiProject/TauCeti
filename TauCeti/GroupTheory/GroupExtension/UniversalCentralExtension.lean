@@ -116,7 +116,7 @@ the product of `G` with its abelianization, through the trivial and through the 
 the abelianization, are distinct homomorphisms over `G`. -/
 theorem IsUniversalCentralExtension.isPerfect {E : Type u} [Group E] {G : Type v} [Group G]
     {p : E →* G} (hp : p.IsUniversalCentralExtension.{max v u}) : Group.IsPerfect E := by
-  have hq : (fst G (Abelianization E)).IsCentralExtension := by
+  have hq : (fst G (Group.Abelianization E)).IsCentralExtension := by
     refine ⟨Prod.fst_surjective, fun x hx ↦ mem_center_iff.mpr fun y ↦ ?_⟩
     rw [mem_ker, coe_fst] at hx
     ext
@@ -124,11 +124,11 @@ theorem IsUniversalCentralExtension.isPerfect {E : Type u} [Group E] {G : Type v
     · exact mul_comm _ _
   obtain ⟨f, -, hf⟩ := hp.existsUnique_comp_eq hq
   have h₁ := hf (p.prod 1) (by ext; simp)
-  have h₂ := hf (p.prod Abelianization.of) (by ext; simp)
-  have hof : (Abelianization.of : E →* Abelianization E) = 1 := by
-    have := congrArg ((snd G (Abelianization E)).comp ·) (h₂.trans h₁.symm)
+  have h₂ := hf (p.prod Group.Abelianization.of) (by ext; simp)
+  have hof : (Group.Abelianization.of : E →* Group.Abelianization E) = 1 := by
+    have := congrArg ((snd G (Group.Abelianization E)).comp ·) (h₂.trans h₁.symm)
     simpa only [snd_comp_prod] using this
-  rw [Group.isPerfect_def, ← Abelianization.ker_of, hof]
+  rw [Group.isPerfect_def, ← Group.Abelianization.ker_of, hof]
   exact ker_one
 
 /-- The group `[F, F] / [F, R]` of a homomorphism `π : F →* G` with kernel `R`: the commutator
@@ -249,13 +249,13 @@ intersection with `[F, R]`. -/
 private def toKerProjection : ↥(π.ker ⊓ commutator F) →* (projection π).ker :=
   ((mk π).comp (inclusion inf_le_right)).codRestrict _ fun x ↦ by
     rw [ker_projection]
-    exact ⟨inclusion inf_le_right x, mem_subgroupOf.mpr (mem_inf.mp x.2).1, rfl⟩
+    exact ⟨inclusion inf_le_right x, mem_subgroupOf.mpr (mem_inf.mp x.property).1, rfl⟩
 
 private theorem toKerProjection_surjective : Function.Surjective (toKerProjection π) := by
   rintro ⟨_, hy⟩
   rw [ker_projection] at hy
   obtain ⟨x, hx, rfl⟩ := hy
-  exact ⟨⟨x, mem_inf.mpr ⟨mem_subgroupOf.mp hx, x.2⟩⟩, rfl⟩
+  exact ⟨⟨x, mem_inf.mpr ⟨mem_subgroupOf.mp hx, x.property⟩⟩, rfl⟩
 
 private theorem ker_toKerProjection :
     (toKerProjection π).ker = (⁅(⊤ : Subgroup F), π.ker⁆).subgroupOf (π.ker ⊓ commutator F) := by
@@ -358,7 +358,7 @@ theorem comp_lift (hp : p.IsCentralExtension) : p.comp (lift π hp) = projection
   refine MonoidHom.ext fun u ↦ ?_
   obtain ⟨x, rfl⟩ := mk_surjective π u
   exact DFunLike.congr_fun
-    ((FreeGroupBasis.ofFreeGroup X).exists_comp_eq_of_surjective hp.surjective π).choose_spec x.1
+    ((FreeGroupBasis.ofFreeGroup X).exists_comp_eq_of_surjective hp.surjective π).choose_spec x.val
 
 /-- **The central cover of a free presentation of a perfect group is a universal central
 extension**, for central extensions with total group in any universe. -/

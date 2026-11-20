@@ -95,7 +95,7 @@ def ofSubmodule (S : Submodule 𝕜 E) [FiniteDimensional 𝕜 S] (hn : 1 ≤ n)
   one_le := hn
   distribution _ := S
   isContMDiffDistribution := isContMDiffDistribution_const S
-  isInvolutiveDistribution := isInvolutiveDistribution_const S.closed_of_finiteDimensional
+  isInvolutiveDistribution := isInvolutiveDistribution_const S.isClosed_of_finiteDimensional
 
 @[simp]
 theorem ofSubmodule_distribution (S : Submodule 𝕜 E) [FiniteDimensional 𝕜 S] (hn : 1 ≤ n)

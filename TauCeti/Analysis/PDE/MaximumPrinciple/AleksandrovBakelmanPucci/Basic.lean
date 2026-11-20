@@ -16,7 +16,7 @@ import TauCeti.Analysis.InnerProductSpace.Spectrum
 import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
-import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
@@ -186,7 +186,7 @@ theorem setLIntegral_ofReal_negPart_div_card_pow_div_det_eq [Nonempty ι]
   filter_upwards [ha] with y hy
   have hdet := hy.det_pos
   have hgy : 0 ≤ g y := div_nonneg (negPart_nonneg _) (Real.rpow_nonneg hdet.le _)
-  rw [Real.enorm_eq_ofReal hgy, ← ENNReal.ofReal_pow hgy,
+  rw [Real.eNorm_eq_ofReal hgy, ← ENNReal.ofReal_pow hgy,
     ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   simp only [g, div_pow, Real.rpow_inv_natCast_pow hdet.le hn]

@@ -393,11 +393,11 @@ theorem eq_zero_of_coord_pow_mul_eq {m k k' j' : ℕ} (hk' : j' + m + 2 = k')
   have h₁ : dehomogenize R 0 (coord R 1) = X := dehomogenize_coord_rev R 0
   have hD := congrArg (dehomogenize R 0) h
   simp only [map_mul, map_pow, map_sub, dehomogenize_coord_self, one_pow, one_mul, h₁] at hD
-  refine (dehomogenize_eq_zero_iff R 0 hc).mp (Polynomial.ext fun i ↦ ?_)
+  refine (dehomogenize_eq_zero_iff R 0 hc).mp (AddMonoidAlgebra.ext <| Finsupp.ext fun i ↦ ?_)
   rw [coeff_zero]
   rcases lt_or_ge m i with hi | hi
   · exact coeff_eq_zero_of_natDegree_lt ((natDegree_dehomogenize_le R 0 hc).trans_lt hi)
-  have hcoeff := congrArg (fun p ↦ coeff p (i + k')) hD
+  have hcoeff := congrArg (fun p : R[X] ↦ p.coeff (i + k')) hD
   simp only [coeff_X_pow_mul, mul_sub, ← mul_assoc, ← pow_add, coeff_sub] at hcoeff
   rw [hcoeff, coeff_X_pow_mul', ite_eq_right (by omega), coeff_X_pow_mul', zero_sub, neg_eq_zero]
   split_ifs
@@ -734,10 +734,10 @@ theorem awayToSection_algebraMap (i : Fin 2) (c : R) :
 takes the value `r` in every localization. -/
 theorem val_map_baseRingToGlobalSections (r : R) (U : (projectiveLine R).Opens) (x : U) :
     ((((projectiveLine R).presheaf.map U.leTop.op
-      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).1 x).val) =
+      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).val x).val) =
         algebraMap R _ r := by
-  obtain ⟨i, hi⟩ : ∃ i, x.1 ∈ Proj.basicOpen 𝒜 (coord R i) := by
-    have hx : x.1 ∈ (⊤ : (projectiveLine R).Opens) := trivial
+  obtain ⟨i, hi⟩ : ∃ i, x.val ∈ Proj.basicOpen 𝒜 (coord R i) := by
+    have hx : x.val ∈ (⊤ : (projectiveLine R).Opens) := trivial
     rwa [← iSup_basicOpen_coord_eq_top R, TopologicalSpace.Opens.mem_iSup] at hx
   -- on the chart `D₊(Xᵢ)` containing `x`, the constant `r` is the fraction `r / 1`
   have hres : (projectiveLine R).presheaf.map (homOfLE le_top).op
@@ -747,14 +747,14 @@ theorem val_map_baseRingToGlobalSections (r : R) (U : (projectiveLine R).Opens) 
     exact (awayToSection_algebraMap R i r).symm
   -- restricting a section keeps its values, which is `Proj.res_apply`, true by `rfl`
   have hx : ((((projectiveLine R).presheaf.map U.leTop.op
-      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).1 x).val) =
+      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).val x).val) =
         ((((projectiveLine R).presheaf.map (homOfLE le_top).op
-          (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).1 ⟨x.1, hi⟩).val) :=
+          (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).val ⟨x.val, hi⟩).val) :=
     rfl
   refine hx.trans ((congrArg (fun s : Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R i)) ↦
-    (s.1 ⟨x.1, hi⟩).val) hres).trans ?_)
+    (s.val ⟨x.val, hi⟩).val) hres).trans ?_)
   refine (ProjectiveSpectrum.Proj.awayToSection_apply 𝒜 (coord R i)
-    ((algebraMap R (HomogeneousLocalization.Away 𝒜 (coord R i))) r) ⟨x.1, hi⟩).trans ?_
+    ((algebraMap R (HomogeneousLocalization.Away 𝒜 (coord R i))) r) ⟨x.val, hi⟩).trans ?_
   have hR (L : Type u) [CommRing L] [Algebra (_root_.SymmetricAlgebra R (Fin 2 → R)) L]
       [Algebra R L] [IsScalarTower R (_root_.SymmetricAlgebra R (Fin 2 → R)) L] :
       algebraMap R L r = algebraMap _ L (algebraMap R (_root_.SymmetricAlgebra R (Fin 2 → R)) r) :=

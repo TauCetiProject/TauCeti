@@ -62,7 +62,7 @@ theorem HasFPowerSeriesOnBall.hasSum_compact
     (hs : (s : ℝ≥0∞) < r) (hg : ∀ z, ‖g z - a‖ ≤ s) :
     HasSum (fun n ↦ (⟨fun z ↦ p n (fun _ ↦ g z - a), by fun_prop⟩ : C(K, F)))
       ⟨fun z ↦ f (g z), hf.continuousOn.comp_continuous g.continuous fun z ↦ by
-        rw [Metric.mem_eball, edist_eq_enorm_sub]
+        rw [Metric.mem_eball, eDist_eq_eNorm_sub]
         exact lt_of_le_of_lt (by exact_mod_cast hg z) hs⟩ := by
   let q : ℕ → C(K, F) := fun n ↦ ⟨fun z ↦ p n (fun _ ↦ g z - a), by fun_prop⟩
   have hq : Summable q := by
@@ -78,7 +78,7 @@ theorem HasFPowerSeriesOnBall.hasSum_compact
   have heval (z : K) : (∑' n, q n) z = f (g z) := by
     apply (hq.hasSum.mapL (ContinuousMap.evalCLM 𝕜 z)).unique
     exact hf.hasSum_sub (by
-      rw [Metric.mem_eball, edist_eq_enorm_sub]
+      rw [Metric.mem_eball, eDist_eq_eNorm_sub]
       exact lt_of_le_of_lt (by exact_mod_cast hg z) hs)
   convert hq.hasSum using 1
   exact (ContinuousMap.ext heval).symm

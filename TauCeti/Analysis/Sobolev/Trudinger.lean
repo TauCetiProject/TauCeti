@@ -461,7 +461,7 @@ theorem W1p.setLIntegral_exp_abs_value_div_rpow_le (hp : p = finrank ℝ E)
       rw [ENNReal.ofReal_mul (by positivity)]
       ring
   rw [Measure.restrict_apply_univ, ENNReal.toReal_mul, ENNReal.toReal_ofReal hK,
-    toReal_enorm] at h
+    toReal_eNorm] at h
   simpa only [K, Real.norm_eq_abs, mul_assoc] using h
 
 /-- **Local exponential integrability of `W^{1,n}(Ω)`.** Let `n ≥ 2` be the dimension. For every
@@ -481,7 +481,7 @@ theorem W1p.integrableOn_exp_mul_abs_value (hp : p = finrank ℝ E) (hn : 2 ≤ 
   obtain ⟨U, hU, hKU, T, hT⟩ := W1p.exists_zeroBoundaryLocalization (μ := mu) hp' (V := K)
     (by rwa [hK.isClosed.closure_eq]) (by rwa [hK.isClosed.closure_eq])
   set v : W1p mu U p := (T u : W1p mu U p)
-  have hv0 : v ∈ w1p0Submodule mu U p := (T u).2
+  have hv0 : v ∈ w1p0Submodule mu U p := (T u).property
   have hKU' : mu.restrict K ≤ mu.restrict U := Measure.restrict_mono hKU le_rfl
   have hum : AEStronglyMeasurable (W1p.value u : E → ℝ) (mu.restrict K) :=
     (Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hKO le_rfl)

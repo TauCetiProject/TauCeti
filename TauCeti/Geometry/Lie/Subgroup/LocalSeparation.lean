@@ -77,7 +77,7 @@ theorem exists_pos_forall_norm_lt_lieExp_mem_iff_eq_zero_of_disjoint {K : Subgro
     (isCompact_sphere (0 : LeftInvariantDerivation I G) 1).tendsto_subseq
       (fun n => by simpa [Metric.mem_sphere, dist_eq_norm] using hYnorm n)
   have hZM : Z ∈ M := by
-    apply M.closed_of_finiteDimensional.mem_of_tendsto hφ
+    apply M.isClosed_of_finiteDimensional.mem_of_tendsto hφ
     filter_upwards with n
     simp only [Function.comp_apply, Y, NormedSpace.normalize]
     exact M.smul_mem ‖X (φ n)‖⁻¹ (hXM (φ n))

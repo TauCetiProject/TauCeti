@@ -201,7 +201,7 @@ theorem bubble_zero_smul (t : ℝ) (x : E) :
   have hbase : 2 * t / (t ^ 2 + ‖t • x - 0‖ ^ 2) = (2 * 1 / (1 ^ 2 + ‖x - 0‖ ^ 2)) * t⁻¹ := by
     rw [sub_zero, sub_zero, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
     field_simp
-  rw [bubble_apply, bubble_apply, hbase, Real.mul_rpow_of_pos_left (by positivity),
+  rw [bubble_apply, bubble_apply, hbase, Real.mul_rpow_of_nonneg_left (by positivity),
     ← Real.rpow_neg_eq_inv_rpow, mul_comm]
 
 /-- The square of a bubble under translation and dilation:

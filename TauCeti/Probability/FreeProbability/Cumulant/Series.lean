@@ -203,7 +203,7 @@ products `∏_{B ∈ π} κ_{|B|}(a, …, a)` of the coefficients of the free cu
 theorem apply_pow_eq_sum_prod_coeff_freeCumulantSeries (hφ : φ 1 = 1) {α : Type*}
     [LinearOrder α] (s : Finset α) :
     φ (a ^ #s) =
-      ∑ π : NoncrossingPartition s, ∏ B ∈ π.1.parts, coeff #B (freeCumulantSeries φ a) := by
+      ∑ π : NoncrossingPartition s, ∏ B ∈ π.val.parts, coeff #B (freeCumulantSeries φ a) := by
   obtain rfl | hs := s.eq_empty_or_nonempty
   · rw [card_empty, pow_zero, hφ, Fintype.sum_unique,
       Finpartition.parts_eq_empty_iff.2 rfl, prod_empty]
@@ -281,7 +281,7 @@ theorem freeCumulantSeries_smul (φ : A →ₗ[R] R) (c : R) (a : A) :
   ext n
   have h := (freeCumulantMultilinear (α := Fin n) φ).map_smul_univ (fun _ => c) fun _ => a
   rw [freeCumulantMultilinear_apply, freeCumulantMultilinear_apply, prod_const, card_univ,
-    Fintype.card_fin, smul_eq_mul] at h
+    Fintype.card_fin, smul_eq_mul, RingHom.id_apply] at h
   rw [coeff_freeCumulantSeries, coeff_rescale, coeff_freeCumulantSeries, h]
 
 /-- For a normalised `φ`, adding the scalar `c` to `a` adds the constant `c` to its R-series:

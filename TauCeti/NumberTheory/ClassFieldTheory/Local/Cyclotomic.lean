@@ -152,7 +152,7 @@ private theorem absoluteGaloisGroupRestrictEquiv_apply_of_pow_natCard_pow_eq_sel
       frobeniusAlgEquiv (K := K) (L := 𝓤 f) := by
     have h := (artinMap_restrict K (𝓤 f) (𝓤 f).val π σ hσ).symm.trans
       (localArtinMap_uniformizer K (𝓤 f) (𝓤 f).val hπ)
-    exact Abelianization.equivOfComm.injective (Additive.ofMul.injective h)
+    exact Group.Abelianization.equivOfComm.injective (Additive.ofMul.injective h)
   have hy : (⟨x, hmem⟩ : 𝓤 f) ^ Nat.card 𝓀[K] ^ f = ⟨x, hmem⟩ := Subtype.ext hx
   have h := (𝓤 f).val.restrictNormalHom_commutes (absoluteGaloisGroupRestrictEquiv K σ)
     ⟨x, hmem⟩
@@ -166,7 +166,7 @@ represent the local Artin symbol of a uniformizer `π` in `Gal(L/K)ᵃᵇ`. Then
 theorem localArtinMap_cyclotomic_uniformizer (L : Type*) [Field L] [Algebra K L]
     [FiniteDimensional K L] [IsGalois K L] (ι : L →ₐ[K] SeparableClosure K) {π : Kˣ}
     (hπ : IsUniformizer K π) {σ : Gal(L/K)}
-    (hσ : localArtinMap K L ι (Additive.ofMul π) = Additive.ofMul (Abelianization.of σ))
+    (hσ : localArtinMap K L ι (Additive.ofMul π) = Additive.ofMul (Group.Abelianization.of σ))
     {m : ℕ} (hm : (Nat.card 𝓀[K]).Coprime m) {ζ : L} (hζ : ζ ^ m = 1) :
     σ ζ = ζ ^ Nat.card 𝓀[K] := by
   have hm0 : m ≠ 0 := by
@@ -192,7 +192,7 @@ theorem localArtinMap_cyclotomic_padic (p : ℕ) [Fact p.Prime] (L : Type*) [Fie
     (ι : L →ₐ[ℚ_[p]] SeparableClosure ℚ_[p]) {σ : Gal(L/ℚ_[p])}
     (hσ : localArtinMap ℚ_[p] L ι
         (Additive.ofMul (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero))) =
-      Additive.ofMul (Abelianization.of σ))
+      Additive.ofMul (Group.Abelianization.of σ))
     {m : ℕ} (hm : p.Coprime m) {ζ : L} (hζ : ζ ^ m = 1) :
     σ ζ = ζ ^ p := by
   have h := localArtinMap_cyclotomic_uniformizer ℚ_[p] L ι (Padic.isUniformizer_natCast_self p)
@@ -206,7 +206,7 @@ theorem localArtinMap_Q2_zeta5 (E : Type*) [Field E] [Algebra ℚ_[2] E]
     [FiniteDimensional ℚ_[2] E] [IsGalois ℚ_[2] E] (ι : E →ₐ[ℚ_[2]] SeparableClosure ℚ_[2])
     {σ : Gal(E/ℚ_[2])}
     (hσ : localArtinMap ℚ_[2] E ι (Additive.ofMul (Units.mk0 (2 : ℚ_[2]) two_ne_zero)) =
-      Additive.ofMul (Abelianization.of σ))
+      Additive.ofMul (Group.Abelianization.of σ))
     {ζ : E} (hζ : ζ ^ 5 = 1) :
     σ ζ = ζ ^ 2 :=
   localArtinMap_cyclotomic_padic 2 E ι (by simpa using hσ) (by norm_num) hζ
@@ -346,8 +346,9 @@ private theorem absoluteGaloisGroupRestrictEquiv_artinMap_padic_apply_of_pow_eq_
   have hres := (artinMap_restrict ℚ_[p] E E.val _ σ hσ).symm.trans
     ((localArtinMap_eq_zero_iff ℚ_[p] E E.val _).2 hmem)
   have h1 : E.val.restrictNormalHom (absoluteGaloisGroupRestrictEquiv ℚ_[p] σ) = 1 := by
-    have h := congrArg (Abelianization.lift (hζ'.autToPow ℚ_[p])) (Additive.ofMul.injective hres)
-    rw [Abelianization.lift_apply_of, map_one] at h
+    have h := congrArg (Group.Abelianization.lift (hζ'.autToPow ℚ_[p])) (Additive.ofMul.injective
+        hres)
+    rw [Group.Abelianization.lift_apply_of, map_one] at h
     exact hζ'.autToPow_injective ℚ_[p] (h.trans (map_one _).symm)
   have hfix : absoluteGaloisGroupRestrictEquiv ℚ_[p] σ ζ = ζ := by
     have h := E.val.restrictNormalHom_commutes (absoluteGaloisGroupRestrictEquiv ℚ_[p] σ) ζ'

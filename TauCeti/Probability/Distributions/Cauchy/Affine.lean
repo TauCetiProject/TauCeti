@@ -39,7 +39,7 @@ theorem cauchyMeasure_map_affine (m : ℝ) (γ : ℝ≥0) (a b : ℝ) :
   rw [charFun_map_affine, charFun_cauchyMeasure, charFun_cauchyMeasure,
     ← Complex.exp_add]
   congr 1
-  simp only [NNReal.coe_mul, coe_nnnorm, Real.norm_eq_abs, abs_mul]
+  simp only [NNReal.coe_mul, coe_nnNorm, Real.norm_eq_abs, abs_mul]
   push_cast
   ring
 

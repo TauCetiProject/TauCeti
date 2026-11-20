@@ -109,10 +109,10 @@ abelianized Galois group of the layer `V ◁ G_K`, and let `ψ : G_K → ℚ/ℤ
 on `G_K`. Then for `a ∈ Kˣ` the inflation to `Br K` of the class `a₀ ∪ δχ` of the character formula
 is the Brauer class of the carry cocycle of `ψ` and `a`. -/
 theorem brInfl_artinCharacterCup
-    (χ : Additive (Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ))
+    (χ : Additive (Group.Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ))
     (ψ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
     (hχψ : ∀ g : AbsoluteGaloisGroup K, ψ (.ofMul g) =
-      χ (.ofMul (Abelianization.of
+      χ (.ofMul (Group.Abelianization.of
         ((galOfOpenNormalEquiv V).symm (g : AbsoluteGaloisGroup K ⧸ V.toSubgroup)))))
     (a : Kˣ) :
     brInfl V ((ofOpenNormal V).artinCharacterCup (unitsFormation K)
@@ -173,10 +173,10 @@ theorem apply_characterCarryCocycle_of_mk_eq_fieldArtinMap
     AddMonoidHom.toMultiplicativeRight χ
   have hVχ : V.toSubgroup ≤ χm.ker := fun g hg ↦ by
     simpa [χm] using hV hg
-  let χbar : Additive (Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ) :=
-    MonoidHom.toAdditiveLeft (Abelianization.lift
+  let χbar : Additive (Group.Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ) :=
+    MonoidHom.toAdditiveLeft (Group.Abelianization.lift
       ((QuotientGroup.lift V.toSubgroup χm hVχ).comp (galOfOpenNormalEquiv V).toMonoidHom))
-  have hχbar (g : AbsoluteGaloisGroup K) : χ (.ofMul g) = χbar (.ofMul (Abelianization.of
+  have hχbar (g : AbsoluteGaloisGroup K) : χ (.ofMul g) = χbar (.ofMul (Group.Abelianization.of
       ((galOfOpenNormalEquiv V).symm (g : AbsoluteGaloisGroup K ⧸ V.toSubgroup)))) := by
     simp [χbar, χm]
   -- The character formula of the layer, with the Artin symbol of the layer read off `σ`.
@@ -272,11 +272,14 @@ theorem subgroupInvMap_characterCarryCocycle_of_mk_eq_artinMap {L : Type} [Field
         (unitsCoeffMapSymm K L σ) continuous_of_discreteTopology (unitsCoeffMapSymm_smul K L σ)
         ((unitsRepH2Equiv L).symm (unitsRepH2Equiv L
           (characterCarryCocycle χ hχ (baseUnitsEquivInvariants L (.ofMul b))))) := by
-    rw [AddEquiv.symm_apply_apply, explicitMap2_characterCarryCocycle]
+    rw [AddEquiv.symm_apply_apply, explicitMap2_characterCarryCocycle
+      (T.symm : ↥σ.fieldRange.fixingSubgroup →ₜ* AbsoluteGaloisGroup L) _ _
+      (unitsCoeffMapSymm_smul K L σ)]
     congr 2
     · simp only [hχψ]
-    · exact Subtype.ext ((unitsCoeffMapSymm_coe_baseUnitsEquivInvariants K L σ b).symm.trans
-        (coe_explicitMap0 _ _ _ _ _ _).symm)
+    · exact Subtype.ext
+        ((unitsCoeffMapSymm_coe_baseUnitsEquivInvariants K L σ (.ofMul b)).symm.trans
+          (coe_explicitMap0 _ _ _ _ _ _).symm)
   rw [hcarry, subgroupInvMap_explicitMap2,
     invMap_characterCarryCocycle_of_mk_eq_artinMap χ hχ b ρ hρ]
   -- `χ` is `ψ` read along `T`.

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Maps.Strict.Group
 public import TauCeti.Geometry.Lie.Exponential.Generation
 public import TauCeti.Geometry.Lie.Exponential.Trotter
 public import Mathlib.Algebra.Module.ZLattice.Basic
@@ -120,7 +121,7 @@ instance discreteTopology_ker_lieExpAddMonoidHom :
     simp only [mem_singleton_iff, mem_preimage, Subtype.ext_iff, ZeroMemClass.coe_zero]
     exact ⟨fun h => by rw [h]; exact h0, fun h => by rw [← hU X h, hX, lieLog_one]⟩
   rw [hsingleton]
-  exact hUopen.preimage continuous_subtype_val
+  exact hUopen.preimage continuous_subtypeVal
 
 /-- The exponential homomorphism is continuous. -/
 @[fun_prop]

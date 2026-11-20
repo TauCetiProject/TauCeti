@@ -31,6 +31,8 @@ field of `X(N)` by fractional linear maps, which fixes the functions pulled back
 
 ## Main declarations
 
+* `Subgroup.CompactifiedQuotient.meromorphicFunction_ext`: meromorphic functions on the
+  compactified quotient are determined by their values on the coarse quotient.
 * `Subgroup.exists_compactifiedQuotientMap_ne`: the map of compactified quotients is not
   constant.
 * `Subgroup.compactifiedQuotientComap`: the pullback of meromorphic functions, as a homomorphism of
@@ -87,6 +89,20 @@ theorem exists_compactifiedQuotientMap_ne [DiscreteTopology Γ] (h : Δ ≤ Γ) 
   have he' := CompactifiedQuotient.ofQuotient_injective he
   rw [TauCeti.Setoid.map_of_le_mk, TauCeti.Setoid.map_of_le_mk] at he'
   exact orbitRel_apply.mp (Quotient.exact he'.symm)
+
+/-- **Meromorphic functions are determined on the coarse quotient.** Two meromorphic functions on
+the compactified quotient that agree at the orbit of every point of the upper half-plane are equal,
+since the coarse quotient is dense and meromorphic functions are continuous maps to the Riemann
+sphere. -/
+theorem CompactifiedQuotient.meromorphicFunction_ext [DiscreteTopology Γ]
+    {F G : MeromorphicFunction Γ.CompactifiedQuotient}
+    (h : ∀ z : ℍ, F (CompactifiedQuotient.ofQuotient (Quotient.mk _ z)) =
+      G (CompactifiedQuotient.ofQuotient (Quotient.mk _ z))) : F = G :=
+  DFunLike.coe_injective <| F.continuous.ext_on CompactifiedQuotient.dense_range_ofQuotient
+    G.continuous <| by
+      rintro _ ⟨p, rfl⟩
+      induction p using Quotient.inductionOn with
+      | h z => exact h z
 
 /-- **The pullback of meromorphic functions** along the map of compactified quotients induced by
 an inclusion `Δ ≤ Γ` of discrete subgroups of `PSL(2, ℝ)`, as a homomorphism of `ℂ`-algebras
@@ -221,7 +237,7 @@ def compactifiedQuotientNormalizerComap :
     normalizer (Γ : Set PSL(2, ℝ)) →*
       (MeromorphicFunction Γ.CompactifiedQuotient ≃ₐ[ℂ]
         MeromorphicFunction Γ.CompactifiedQuotient)ᵐᵒᵖ where
-  toFun g := op (compactifiedQuotientConjComap (conjAct_pointwise_smul_iff.mpr g.2))
+  toFun g := op (compactifiedQuotientConjComap (conjAct_pointwise_smul_iff.mpr g.property))
   map_one' := congrArg op (compactifiedQuotientConjComap_of_mem Γ.one_mem _)
   map_mul' g g' := by
     rw [← op_mul, AlgEquiv.aut_mul]
@@ -249,7 +265,7 @@ theorem unop_compactifiedQuotientNormalizerComap_compactifiedQuotientComap (h : 
       compactifiedQuotientComap h F := by
   have hΓ : ConjAct.toConjAct (g : PSL(2, ℝ)) • Γ = Γ :=
     conjAct_pointwise_smul_eq_self (le_normalizer hg)
-  rw [unop_compactifiedQuotientNormalizerComap g (conjAct_pointwise_smul_iff.mpr g.2),
+  rw [unop_compactifiedQuotientNormalizerComap g (conjAct_pointwise_smul_iff.mpr g.property),
     compactifiedQuotientConjComap_compactifiedQuotientComap _ hΓ h h,
     compactifiedQuotientConjComap_of_mem hg, AlgEquiv.coe_refl, id]
 

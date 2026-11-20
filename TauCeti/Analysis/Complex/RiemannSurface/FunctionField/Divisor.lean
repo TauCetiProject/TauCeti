@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Order
 public import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Comap
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.RationalFunction
+import TauCeti.AlgebraicGeometry.WeilDivisor.Degree.Order
 
 /-!
 # Degree of principal divisors on compact Riemann surfaces
@@ -23,6 +24,11 @@ Consequently divisor degree is invariant under linear equivalence. This is the
 well-definedness input for taking degrees of canonical divisor classes and for
 Riemann–Roch on compact Riemann surfaces. No existence theorem for nonconstant
 meromorphic functions is needed.
+
+The same pullback computation bounds the degree of a finite holomorphic map `F : X → ℙ¹` by its
+poles. At a pole the affine part of `F` has order minus the local multiplicity, so if this order
+is at least `-D` everywhere, for an effective divisor `D`, then the fibre of `∞` counted with
+multiplicity is bounded by `D` and `deg F ≤ deg D`.
 
 ## References
 
@@ -154,3 +160,56 @@ theorem degree_eq_of_linearlyEquivalent {D E : WeilDivisor X}
     (orderSystem X).divisorClass_eq_iff.mpr h, OrderSystem.unweightedDegreeClass_divisorClass]
 
 end TauCeti.RiemannSurface.MeromorphicFunction
+
+namespace TauCeti.RiemannSurface.FiniteHolomorphicMap
+
+open TauCeti.AlgebraicGeometry (WeilDivisor)
+
+variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
+
+/-- **Order at a pole.** At a point `x` with `F x = ∞`, the affine part of a finite holomorphic
+map `F : X → ℙ¹` has order `-m`, where `m` is the local multiplicity of `F` at `x`. -/
+theorem meromorphicOrderAt_affineChart_comp_of_eq_infty
+    (F : FiniteHolomorphicMap X (OnePoint ℂ)) {x : X} (hx : F x = ∞) :
+    meromorphicOrderAt (fun y ↦ affineChart (F y)) x =
+      ((-(localMultiplicity F x : ℤ) : ℤ) : WithTop ℤ) := by
+  have h := meromorphicOrderAt_comp
+    (MeromorphicFunction.coordinate.meromorphicAt_finitePart (F x))
+    (.of_forall fun y ↦ F.holomorphic y) (F.not_eventuallyConst x)
+  rw [MeromorphicFunction.finitePart_coordinate, hx,
+    OnePoint.meromorphicOrderAt_affineChart_infty] at h
+  rw [← comp_def, h]
+  norm_cast
+  exact neg_one_mul _
+
+/-- **Poles bounded by an effective divisor.** If the affine part of a finite holomorphic map
+`F : X → ℙ¹` has order at least `-D` everywhere, for an effective divisor `D`, then the fibre of
+`∞`, counted with multiplicity, is bounded by `D`. -/
+theorem divisorPullback_ofPoint_infty_le_of_neg_le_meromorphicOrderAt
+    {D : WeilDivisor X} (hD : 0 ≤ D) (F : FiniteHolomorphicMap X (OnePoint ℂ))
+    (hF : ∀ x, ((-D x : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (fun y ↦ affineChart (F y)) x) :
+    divisorPullback F (WeilDivisor.ofPoint ∞) ≤ D := by
+  rw [WeilDivisor.le_iff]
+  intro x
+  rw [coeff_divisorPullback]
+  by_cases hx : F x = ∞
+  · have h := hF x
+    rw [meromorphicOrderAt_affineChart_comp_of_eq_infty F hx] at h
+    rw [hx, WeilDivisor.coeff_ofPoint_self, mul_one]
+    have h' : -WeilDivisor.coeff D x ≤ -(localMultiplicity F x : ℤ) := by exact_mod_cast h
+    omega
+  · rw [WeilDivisor.coeff_ofPoint_of_ne hx, mul_zero]
+    exact WeilDivisor.coeff_nonneg hD x
+
+/-- **Degree bound from a pole divisor.** If the affine part of a finite holomorphic map
+`F : X → ℙ¹` on a compact Riemann surface has order at least `-D` everywhere, for an effective
+divisor `D`, then `deg F ≤ deg D`. -/
+theorem degree_le_degree_of_neg_le_meromorphicOrderAt [CompactSpace X] [T2Space X]
+    {D : WeilDivisor X} (hD : 0 ≤ D) (F : FiniteHolomorphicMap X (OnePoint ℂ))
+    (hF : ∀ x, ((-D x : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (fun y ↦ affineChart (F y)) x) :
+    (degree F : ℤ) ≤ WeilDivisor.degree D := by
+  rw [← degree_divisorPullback_ofPoint F ∞]
+  exact WeilDivisor.degree_le_of_le
+    (divisorPullback_ofPoint_infty_le_of_neg_le_meromorphicOrderAt hD F hF)
+
+end TauCeti.RiemannSurface.FiniteHolomorphicMap

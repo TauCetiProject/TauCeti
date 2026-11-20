@@ -126,7 +126,7 @@ theorem gauge_posPart_le (Φ : OperatorIdealFamily.{u, v, v} 𝕜) (A : E →L[�
   by_cases ha : IsSelfAdjoint A
   · have h2 : (2 : 𝕜) • A⁺ = A.modulus + A := by
       rw [two_smul, ← two_nsmul, ← CFC.abs_add_self A ha, modulus_eq_abs]
-    have h2norm : ‖(2 : 𝕜)‖ₑ = 2 := by rw [enorm_eq_nnnorm]; norm_num
+    have h2norm : ‖(2 : 𝕜)‖ₑ = 2 := by rw [eNorm_eq_nnNorm]; norm_num
     calc Φ.gauge A⁺
         = 2⁻¹ * (2 * Φ.gauge A⁺) := by
           rw [← mul_assoc, ENNReal.inv_mul_cancel two_ne_zero ENNReal.ofNat_ne_top, one_mul]
@@ -182,7 +182,7 @@ variable {G : Type v} [NormedAddCommGroup G] [InnerProductSpace ℂ G] [Complete
 gauge at most that of the operator. -/
 theorem gauge_realPart_le (Φ : OperatorIdealFamily.{0, v, v} ℂ) (A : G →L[ℂ] G) :
     Φ.gauge (ℜ A : G →L[ℂ] G) ≤ Φ.gauge A := by
-  have h2 : ‖(2 : ℂ)⁻¹‖ₑ = 2⁻¹ := by rw [enorm_eq_nnnorm]; norm_num
+  have h2 : ‖(2 : ℂ)⁻¹‖ₑ = 2⁻¹ := by rw [eNorm_eq_nnNorm]; norm_num
   calc Φ.gauge (ℜ A : G →L[ℂ] G)
       = Φ.gauge ((2 : ℂ)⁻¹ • (A + star A)) := by
         rw [realPart_apply_coe, ← Complex.coe_smul, Complex.ofReal_inv, Complex.ofReal_ofNat]
@@ -196,7 +196,7 @@ theorem gauge_realPart_le (Φ : OperatorIdealFamily.{0, v, v} ℂ) (A : G →L[�
 gauge at most that of the operator. -/
 theorem gauge_imaginaryPart_le (Φ : OperatorIdealFamily.{0, v, v} ℂ) (A : G →L[ℂ] G) :
     Φ.gauge (ℑ A : G →L[ℂ] G) ≤ Φ.gauge A := by
-  simpa [enorm_eq_nnnorm] using gauge_realPart_le Φ (-Complex.I • A)
+  simpa [eNorm_eq_nnNorm] using gauge_realPart_le Φ (-Complex.I • A)
 
 /-- Every operator ideal in one universe over `ℂ` is closed under taking the real part of an
 endomorphism. -/

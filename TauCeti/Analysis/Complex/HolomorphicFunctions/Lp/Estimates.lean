@@ -87,8 +87,8 @@ theorem norm_le_Lp_norm {u : Lp F 2 (volume.restrict (U : Set ℂ))}
   rw [ENNReal.toReal_mul, ← Lp.norm_def] at hone
   have hint : ∫ y in ball x r, ‖f y‖ =
       (eLpNorm f 1 (volume.restrict (ball x r))).toReal := by
-    rw [eLpNorm_one_eq_lintegral_enorm hfm]
-    exact integral_norm_eq_lintegral_enorm hfm
+    rw [eLpNorm_one_eq_lintegral_eNorm hfm]
+    exact integral_norm_eq_lintegral_eNorm hfm
   refine (norm_le_ball_integral hf hr hball).trans ?_
   rw [hint, mul_assoc]
   exact mul_le_mul_of_nonneg_left (by simpa [mul_comm] using hone) (by positivity)

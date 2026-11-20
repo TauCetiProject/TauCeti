@@ -122,14 +122,14 @@ theorem IsCoupling.exists_seq_tendsto_ae_of_tendsto_kantorovichDualValue
       ENNReal.ofReal ((∫⁻ z, c z ∂π).toReal - kantorovichDualValue μ ν (φ n) (ψ n)) := by
     have hle : ∀ᵐ z ∂π, φ n z.1 + ψ n z.2 ≤ (c z).toReal := hlt.mono fun z hz ↦
       (ENNReal.ofReal_le_iff_le_toReal hz.ne).1 ((hf n).ofReal_add_le z.1 z.2)
-    rw [eLpNorm_one_eq_lintegral_enorm ((hg n).sub hcint).aestronglyMeasurable,
+    rw [eLpNorm_one_eq_lintegral_eNorm ((hg n).sub hcint).aestronglyMeasurable,
       ← integral_toReal hc hlt, kantorovichDualValue_eq_integral hπ (hφ n) (hψ n),
       ← integral_sub hcint (hg n),
       ofReal_integral_eq_lintegral_ofReal (f := fun z ↦ (c z).toReal - (φ n z.1 + ψ n z.2))
         (hcint.sub (hg n)) (hle.mono fun z hz ↦ sub_nonneg.2 hz)]
     refine lintegral_congr_ae (hle.mono fun z hz ↦ ?_)
     simp only [Pi.sub_apply]
-    rw [← enorm_neg, neg_sub, Real.enorm_of_nonneg (sub_nonneg.2 hz)]
+    rw [← eNorm_neg, neg_sub, Real.eNorm_of_nonneg (sub_nonneg.2 hz)]
   have hmeas : TendstoInMeasure π (fun n z ↦ φ n z.1 + ψ n z.2) atTop fun z ↦ (c z).toReal := by
     refine tendstoInMeasure_of_tendsto_eLpNorm one_ne_zero ?_
     simp_rw [hdist]

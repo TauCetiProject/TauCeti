@@ -219,7 +219,7 @@ variable [CommSemiring R] [Semiring A] [Algebra R A] (φ : A →ₗ[R] R)
 /-- The block moment `a ↦ φ_P(a)` of a finite partition `P` of all positions of a finite linear
 order `α`, as a multilinear map. -/
 def partitionMomentMultilinear (P : Finpartition (univ : Finset α)) :
-    MultilinearMap R (fun _ : α => A) R :=
+    MultilinearMap (RingHom.id R) (fun _ : α => A) R :=
   MultilinearMap.mk' (fun a => partitionMoment φ a P)
     (fun a _ x y => partitionMoment_update_add φ a P (mem_univ _) x y)
     (fun a _ c x => partitionMoment_update_smul φ a P (mem_univ _) c x)
@@ -239,7 +239,7 @@ variable [CommRing R] [Semiring A] [Algebra R A] (φ : A →ₗ[R] R)
 /-- The free cumulant `a ↦ κ_π(a)` of a noncrossing partition `π` of all positions of a finite
 linear order `α`, as a multilinear map. -/
 def partitionCumulantMultilinear (π : NoncrossingPartition (univ : Finset α)) :
-    MultilinearMap R (fun _ : α => A) R :=
+    MultilinearMap (RingHom.id R) (fun _ : α => A) R :=
   MultilinearMap.mk' (fun a => partitionCumulant φ a π)
     (fun a _ x y => partitionCumulant_update_add φ a π (mem_univ _) x y)
     (fun a _ c x => partitionCumulant_update_smul φ a π (mem_univ _) c x)
@@ -253,7 +253,7 @@ theorem partitionCumulantMultilinear_apply (π : NoncrossingPartition (univ : Fi
 /-- The free cumulant `a ↦ κ_α(a)` of the words indexed by a finite linear order `α`, as a
 multilinear map. For `α = Fin n` with `n ≥ 1` this is the `n`-th free cumulant
 `κ_n(a₁, …, aₙ)`. -/
-def freeCumulantMultilinear : MultilinearMap R (fun _ : α => A) R :=
+def freeCumulantMultilinear : MultilinearMap (RingHom.id R) (fun _ : α => A) R :=
   partitionCumulantMultilinear φ ⊤
 
 /-- Evaluating the bundled free cumulant at a word gives the free cumulant of the whole word. -/
@@ -270,7 +270,7 @@ theorem freeCumulant_sum_smul {ι : Type*} [DecidableEq α] [Fintype ι] (s : ι
     freeCumulant φ (fun m => ∑ i, c m i • s i) univ =
       ∑ v : α → ι, (∏ m, c m (v m)) * freeCumulant φ (s ∘ v) univ := by
   simp_rw [← freeCumulantMultilinear_apply, MultilinearMap.map_sum, MultilinearMap.map_smul_univ,
-    smul_eq_mul, comp_def]
+    RingHom.id_apply, smul_eq_mul, comp_def]
 
 end Cumulant
 

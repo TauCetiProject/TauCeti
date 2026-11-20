@@ -51,7 +51,7 @@ theorem ContDiff.exists_contDiff_setOf_pos_eq_setOf_lt {u : E → ℝ} (hu : Con
     rcases huc.eq_zero_or_finiteDimensional ℝ hu.continuous with rfl | hfin
     · obtain ⟨x₀, hx₀⟩ := hne
       exact absurd (ht.trans hx₀) (lt_irrefl _)
-    · exact FiniteDimensional.complete ℝ E
+    · exact FiniteDimensional.completeSpace ℝ E
   -- `G` is the gradient of `u` and `g = √(‖∇u‖² + (u - t)²)` is a smooth positive normalizer.
   let G : E → E := ∇ u
   have hG : ContDiff ℝ ∞ G := hu.gradient_right le_rfl

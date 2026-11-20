@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.MvPolynomial.Harmonic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.ContinuousMap.Algebra
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
+import TauCeti.Topology.Sphere.Coord
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
@@ -38,23 +39,17 @@ namespace MvPolynomial
 
 variable {σ : Type*} [Fintype σ]
 
-private def sphereCoord (i : σ) : C(Metric.sphere (0 : EuclideanSpace ℝ σ) 1, ℝ) :=
-  ⟨fun x ↦ x.val i, (EuclideanSpace.proj i).continuous.comp continuous_subtype_val⟩
-
-@[simp]
-private theorem sphereCoord_apply (i : σ)
-    (x : Metric.sphere (0 : EuclideanSpace ℝ σ) 1) : sphereCoord i x = x.val i := (rfl)
-
 /-- Restriction of a real polynomial to the Euclidean unit sphere, as a continuous function. -/
 def sphereEval : MvPolynomial σ ℝ →ₐ[ℝ] C(Metric.sphere (0 : EuclideanSpace ℝ σ) 1, ℝ) :=
-  aeval sphereCoord
+  aeval (TauCeti.sphereCoord ℝ)
 
 @[simp]
 theorem sphereEval_apply (p : MvPolynomial σ ℝ)
     (x : Metric.sphere (0 : EuclideanSpace ℝ σ) 1) :
     sphereEval p x = eval (fun i ↦ x.val i) p := by
   rw [sphereEval, ← ContinuousMap.evalAlgHom_apply ℝ ℝ x, comp_aeval_apply]
-  simp only [ContinuousMap.evalAlgHom_apply, sphereCoord_apply, aeval_eq_eval]
+  simp only [ContinuousMap.evalAlgHom_apply, TauCeti.sphereCoord_apply, Algebra.algebraMap_self,
+    RingHom.id_apply, aeval_eq_eval]
 
 /-- The squared-norm polynomial restricts to the constant function one. -/
 @[simp]
@@ -70,7 +65,7 @@ theorem IsHomogeneous.eval_eq_norm_pow_mul_sphereEval {p : MvPolynomial σ ℝ} 
     eval (fun i ↦ x i) p = ‖x‖ ^ d * sphereEval p
       ⟨‖x‖⁻¹ • x, mem_sphere_zero_iff_norm.2 (norm_smul_inv_norm hx)⟩ := by
   have hnorm : ‖x‖ ≠ 0 := norm_ne_zero_iff.2 hx
-  have hscale := hp.eval_smul (fun i ↦ (‖x‖⁻¹ • x) i) ‖x‖
+  have hscale := hp.eval_smul ‖x‖ (fun i ↦ (‖x‖⁻¹ • x) i)
   simpa only [sphereEval_apply, Pi.smul_def, PiLp.smul_apply, smul_eq_mul,
     ← mul_assoc, mul_inv_cancel₀ hnorm, one_mul] using hscale
 
@@ -87,7 +82,7 @@ theorem IsHomogeneous.eq_zero_of_sphereEval_eq_zero {p : MvPolynomial σ ℝ} {d
     have hz : eval (fun i ↦ u i) p = 0 := by
       simpa only [sphereEval_apply, ContinuousMap.zero_apply] using
         congrArg (fun f ↦ f ⟨u, mem_sphere_zero_iff_norm.2 hu⟩) h
-    have hscale := hp.eval_smul (fun i ↦ u i) 0
+    have hscale := hp.eval_smul 0 (fun i ↦ u i)
     simpa [hx, hz] using hscale
   · have hnonzero : (WithLp.toLp 2 x : EuclideanSpace ℝ σ) ≠ 0 := by
       simpa using hx

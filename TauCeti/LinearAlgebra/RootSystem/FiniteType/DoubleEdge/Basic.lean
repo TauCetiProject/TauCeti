@@ -323,13 +323,15 @@ theorem not_isFiniteType_doubleEdgeCartanMatrix_of_succ_mul_succ_le
 are nonempty has one vertex on the second chain (the family `Cₙ`), or one vertex on the first (the
 family `Bₙ`), or two on each (`F₄`).
 
-This is the exclusion half of the classification of the diagrams with a double edge. The converse,
-that these shapes are the diagrams of actual root systems, is the separate realization target of
-the same layer. That the two families are at least of finite type is
-`TauCeti.isFiniteType_doubleEdgeCartanMatrix_one_right` and
+This is the exclusion half of the classification of the diagrams with a double edge. That the two
+families are at least of finite type is `TauCeti.isFiniteType_doubleEdgeCartanMatrix_one_right` and
 `TauCeti.isFiniteType_doubleEdgeCartanMatrix_one_left`; the remaining shape,
 `TauCeti.doubleEdgeCartanMatrix 2 2`, is the diagram of `F₄`, but nothing here identifies it with
-`TauCeti.DynkinType.F4.cartanMatrix`, so its finite type is not established in this file. -/
+`TauCeti.DynkinType.F4.cartanMatrix`, so its finite type is not established in this file. That
+identification is `TauCeti.doubleEdgeCartanMatrix_two_two`, in
+`TauCeti/LinearAlgebra/RootSystem/FiniteType/DoubleEdge/Classification.lean`. That every valid
+Dynkin type, `Bₙ`, `Cₙ` and `F₄` among them, is the type of an actual root system is
+`TauCeti.DynkinType.hasCartanType_rationalRootSystem`. -/
 theorem eq_one_or_eq_one_or_eq_two_two_of_isFiniteType_doubleEdge (hp : 0 < p) (hq : 0 < q)
     (h : IsFiniteType (doubleEdgeCartanMatrix p q)) :
     q = 1 ∨ p = 1 ∨ (p = 2 ∧ q = 2) := by

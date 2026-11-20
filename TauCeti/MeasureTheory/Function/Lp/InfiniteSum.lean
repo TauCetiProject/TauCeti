@@ -47,9 +47,9 @@ theorem ae_enorm_le_tsum_enorm_of_hasSum {u : κ → Lp E p μ} {v : Lp E p μ} 
   have hsum : ∀ᵐ x ∂μ, ∀ n, (⇑(∑ i ∈ S n, u i) : α → E) x = ∑ i ∈ S n, u i x :=
     ae_all_iff.2 fun n => coeFn_fun_finsetSum (S n) _
   filter_upwards [hS, hsum] with x hx hxsum
-  refine le_of_tendsto' (continuous_enorm.tendsto _ |>.comp hx) fun n => ?_
+  refine le_of_tendsto' (continuous_eNorm.tendsto _ |>.comp hx) fun n => ?_
   simp only [Function.comp_apply, hxsum n]
-  exact (enorm_sum_le _ _).trans <| (_root_.sum_le_tsum _).trans <|
+  exact (eNorm_sum_le _ _).trans <| (_root_.sum_le_tsum _).trans <|
     tsum_comp_le_tsum_of_injective Subtype.val_injective fun i => ‖u i x‖ₑ
 
 /-- If a countable family `u` in `Lᵖ` has sum `v`, and at almost every point the values `u i x`

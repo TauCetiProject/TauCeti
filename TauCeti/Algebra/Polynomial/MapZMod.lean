@@ -46,7 +46,7 @@ variable {n : ℕ}
 @[simp]
 theorem map_intCastRingHom_zmod_eq_zero_iff (G : ℤ[X]) :
     G.map (Int.castRingHom (ZMod n)) = 0 ↔ (n : ℤ[X]) ∣ G := by
-  rw [← C_eq_natCast, C_dvd_iff_dvd_coeff, Polynomial.ext_iff]
+  rw [← C_eq_natCast, C_dvd_iff_dvd_coeff, AddMonoidAlgebra.ext_iff, DFunLike.ext_iff]
   simp only [coeff_map, coeff_zero, eq_intCast, ZMod.intCast_zmod_eq_zero_iff_dvd]
 
 /-- Two integer polynomials with the same reduction modulo `n` differ by `n` times an integer

@@ -120,11 +120,11 @@ def ptSimplexEquiv :
     exact (stdSimplex.yonedaEquiv_δ_comp p.map i).symm.trans
       ((congrArg SSet.yonedaEquiv (p.δ_map i)).trans (yonedaEquiv_const_zero G n))⟩
   invFun g :=
-    { map := (SSet.yonedaEquiv.symm g.1 : Δ[n + 1] ⟶ G ⋙ forget (ModuleCat R))
+    { map := (SSet.yonedaEquiv.symm g.val : Δ[n + 1] ⟶ G ⋙ forget (ModuleCat R))
       comm := by
         ext i : 1
         simp only [boundary.ι_ι_assoc]
-        exact δ_comp_yonedaEquiv_symm_eq_const G ((Submodule.mem_iInf _).1 g.2 i) }
+        exact δ_comp_yonedaEquiv_symm_eq_const G ((Submodule.mem_iInf _).1 g.property i) }
   left_inv p := by ext : 1; simp
   right_inv g := by ext : 1; simp
 
@@ -139,14 +139,14 @@ lemma coe_ptSimplexEquiv_apply
 @[simp]
 lemma ptSimplexEquiv_symm_apply_map (g : ↥(⨅ i : Fin (n + 2), LinearMap.ker (G.δ i).hom)) :
     ((ptSimplexEquiv G).symm g).map =
-      (SSet.yonedaEquiv.symm g.1 : Δ[n + 1] ⟶ G ⋙ forget (ModuleCat R)) :=
+      (SSet.yonedaEquiv.symm g.val : Δ[n + 1] ⟶ G ⋙ forget (ModuleCat R)) :=
   (rfl)
 
 /-- The faces of the element of `G_{n+1}` corresponding to a pointed simplex vanish. -/
 lemma δ_ptSimplexEquiv
     (p : SSet.PtSimplex (G ⋙ forget (ModuleCat R)) (n + 1) (0 : G _⦋0⦌)) (i : Fin (n + 2)) :
     G.δ i (ptSimplexEquiv G p) = 0 :=
-  (Submodule.mem_iInf _).1 (ptSimplexEquiv G p).2 i
+  (Submodule.mem_iInf _).1 (ptSimplexEquiv G p).property i
 
 /-- In the homotopy group of a simplicial module, the product of the classes of two pointed
 simplices is the class of their sum. -/
@@ -155,8 +155,8 @@ lemma mk_mul_mk_eq_mk_add
     KanComplex.π.mk p * KanComplex.π.mk q =
       KanComplex.π.mk ((ptSimplexEquiv G).symm (ptSimplexEquiv G p + ptSimplexEquiv G q)) := by
   -- The product is witnessed by the `(n + 2)`-simplex `s_{n+1} p + s_n q`.
-  set x : G _⦋n + 1⦌ := (ptSimplexEquiv G p).1
-  set y : G _⦋n + 1⦌ := (ptSimplexEquiv G q).1
+  set x : G _⦋n + 1⦌ := (ptSimplexEquiv G p).val
+  set y : G _⦋n + 1⦌ := (ptSimplexEquiv G q).val
   have hx (i : Fin (n + 2)) : G.δ i x = 0 := δ_ptSimplexEquiv p i
   have hy (i : Fin (n + 2)) : G.δ i y = 0 := δ_ptSimplexEquiv q i
   set w : G _⦋n + 2⦌ := G.σ (Fin.last (n + 1)) x + G.σ (Fin.last n).castSucc y
@@ -218,7 +218,7 @@ private def mooreCyclesHomologyClass :
     (Submodule.subtype _) fun z ↦ by
     rw [alternatingFaceMapComplex_d_apply]
     exact Finset.sum_eq_zero fun i _ ↦ by
-      simp [LinearMap.mem_ker.1 ((Submodule.mem_iInf _).1 z.2 i)]
+      simp [LinearMap.mem_ker.1 ((Submodule.mem_iInf _).1 z.property i)]
 
 /-- Two pointed simplices related by `SSet.PtSimplex.RelStruct₀` have the same homology class:
 if `y` has faces `p`, `q`, `0`, …, `0`, then `p - q` is the boundary of `y`. -/

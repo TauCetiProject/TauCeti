@@ -51,12 +51,12 @@ theorem contMDiff_normalBundle_snd
     haveI : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
     letI := normalFiberBundle (hf.of_le le_add_self) himm hdim
     ContMDiff (I.prod 𝓘(ℝ, F)) 𝓘(ℝ, V) n
-      (fun p : TotalSpace F (fun x => normalSubspace I f x) => (p.2 : V)) := by
+      (fun p : TotalSpace F (fun x => normalSubspace I f x) => (p.snd : V)) := by
   have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
   let := normalFiberBundle (hf.of_le le_add_self) himm hdim
   intro p
   let e := normalBundleTrivialization (hf.of_le le_add_self) himm hdim p.proj
-  have hid := (Bundle.contMDiffAt_totalSpace.mp
+  have hid := (Bundle.contMDiffAt_totalSpace_iff.mp
     (contMDiffAt_id (I := I.prod 𝓘(ℝ, F)) (n := n)
       (x := p)))
   have hc : ContMDiffAt (I.prod 𝓘(ℝ, F)) 𝓘(ℝ, F) n (fun q => (e q).2) p := by
@@ -75,7 +75,7 @@ theorem contMDiff_normalBundle_snd
   simpa [e, normalBundleTrivialization_apply] using
     (starProjection_normalCoordinateMap p.proj q.proj
       ((finrank_normalSubspace (himm p.proj)).trans
-        (finrank_normalSubspace (himm q.proj)).symm) hx q.2.property).symm
+        (finrank_normalSubspace (himm q.proj)).symm) hx q.snd.property).symm
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
@@ -92,15 +92,15 @@ theorem contMDiffWithinAt_normalBundle_iff
     letI := normalFiberBundle (hf.of_le le_add_self) himm hdim
     ContMDiffWithinAt J (I.prod 𝓘(ℝ, F)) n g s x ↔
       ContMDiffWithinAt J I n (fun y => (g y).proj) s x ∧
-      ContMDiffWithinAt J 𝓘(ℝ, V) n (fun y => ((g y).2 : V)) s x := by
+      ContMDiffWithinAt J 𝓘(ℝ, V) n (fun y => ((g y).snd : V)) s x := by
   have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
   let := normalFiberBundle (hf.of_le le_add_self) himm hdim
   constructor
   · intro hg
-    exact ⟨(Bundle.contMDiffWithinAt_totalSpace.mp hg).1,
+    exact ⟨(Bundle.contMDiffWithinAt_totalSpace_iff.mp hg).1,
       (contMDiff_normalBundle_snd hf himm hdim).contMDiffAt.comp_contMDiffWithinAt x hg⟩
   · rintro ⟨hbase, hvec⟩
-    rw [Bundle.contMDiffWithinAt_totalSpace]
+    rw [Bundle.contMDiffWithinAt_totalSpace_iff]
     refine ⟨hbase, ?_⟩
     have hcoord := (contMDiffAt_normalCoordinateMap (hf (g x).proj) (himm (g x).proj) (g x).proj
       (by simp)).comp_contMDiffWithinAt x hbase
@@ -122,7 +122,7 @@ theorem contMDiffAt_normalBundle_iff
     letI := normalFiberBundle (hf.of_le le_add_self) himm hdim
     ContMDiffAt J (I.prod 𝓘(ℝ, F)) n g x ↔
       ContMDiffAt J I n (fun y => (g y).proj) x ∧
-      ContMDiffAt J 𝓘(ℝ, V) n (fun y => ((g y).2 : V)) x := by
+      ContMDiffAt J 𝓘(ℝ, V) n (fun y => ((g y).snd : V)) x := by
   simp only [← contMDiffWithinAt_univ]
   exact contMDiffWithinAt_normalBundle_iff hf himm hdim
 
@@ -137,7 +137,7 @@ theorem contMDiffOn_normalBundle_iff
     letI := normalFiberBundle (hf.of_le le_add_self) himm hdim
     ContMDiffOn J (I.prod 𝓘(ℝ, F)) n g s ↔
       ContMDiffOn J I n (fun y => (g y).proj) s ∧
-      ContMDiffOn J 𝓘(ℝ, V) n (fun y => ((g y).2 : V)) s := by
+      ContMDiffOn J 𝓘(ℝ, V) n (fun y => ((g y).snd : V)) s := by
   simp only [ContMDiffOn, contMDiffWithinAt_normalBundle_iff hf himm hdim, forall_and]
 
 /-- A map into the normal bundle is `C^n` exactly when its base component and its ambient
@@ -151,7 +151,7 @@ theorem contMDiff_normalBundle_iff
     letI := normalFiberBundle (hf.of_le le_add_self) himm hdim
     ContMDiff J (I.prod 𝓘(ℝ, F)) n g ↔
       ContMDiff J I n (fun y => (g y).proj) ∧
-      ContMDiff J 𝓘(ℝ, V) n (fun y => ((g y).2 : V)) := by
+      ContMDiff J 𝓘(ℝ, V) n (fun y => ((g y).snd : V)) := by
   simp only [ContMDiff, contMDiffAt_normalBundle_iff hf himm hdim, forall_and]
 
 /-- Normal addition is `C^n` on the entire normal bundle of a `C^(n+1)` immersion.
@@ -163,7 +163,7 @@ theorem contMDiff_normalBundle_add
     haveI : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
     letI := normalFiberBundle (hf.of_le le_add_self) himm hdim
     ContMDiff (I.prod 𝓘(ℝ, F)) 𝓘(ℝ, V) n
-      (fun p : TotalSpace F (fun x => normalSubspace I f x) => f p.proj + (p.2 : V)) := by
+      (fun p : TotalSpace F (fun x => normalSubspace I f x) => f p.proj + (p.snd : V)) := by
   have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
   let := normalFiberBundle (hf.of_le le_add_self) himm hdim
   exact ((hf.of_le (by simp)).comp (Bundle.contMDiff_proj _)).add

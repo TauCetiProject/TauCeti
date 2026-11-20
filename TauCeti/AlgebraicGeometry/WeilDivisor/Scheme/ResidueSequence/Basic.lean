@@ -390,7 +390,7 @@ private lemma exists_toSkyscraperResidueField_app_eq_of_mem
     have hb := Scheme.ord_germToFunctionField_nonneg b hyW
     rw [X.algebraMap_germ_eq_germToFunctionField hyW] at ha0
     rw [hf, X.algebraMap_germ_eq_germToFunctionField hyW, Scheme.ord_mul (Units.ne_zero _) ha0,
-      Units.val_inv_eq_inv_val, Scheme.ord_inv, hg, WeilDivisor.coeff_add,
+      Units.val_inv_eq_inv_val, AlgebraicGeometry.Scheme.ord_inv, hg, WeilDivisor.coeff_add,
       WeilDivisor.coeff_ofPoint_self]
     omega
   obtain ⟨V, i, hyV, hV⟩ := (exists_map_mem_sections_iff_codimensionOne (D + WeilDivisor.ofPoint y)

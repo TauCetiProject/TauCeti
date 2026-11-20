@@ -294,7 +294,7 @@ private theorem eLpNorm_lineDerivOp_lineDerivOp_le_of_succ (v w : EuclideanSpace
   have hlim : Tendsto (fun R : ℝ => C * (A * b) + C * (‖R⁻¹ * R⁻¹‖ₑ * (B * c))) atTop
       (𝓝 (C * (A * b))) := by
     have h0 : Tendsto (fun R : ℝ => ‖R⁻¹ * R⁻¹‖ₑ) atTop (𝓝 0) := by
-      simpa using ((tendsto_inv_atTop_zero (𝕜 := ℝ)).mul tendsto_inv_atTop_zero).enorm
+      simpa using ((tendsto_inv_atTop_zero (𝕜 := ℝ)).mul tendsto_inv_atTop_zero).eNorm
     simpa using (ENNReal.Tendsto.const_mul (ENNReal.Tendsto.mul_const h0 (Or.inr hBc))
       (Or.inr ENNReal.coe_ne_top)).const_add (C * (A * b))
   have hAa : A * a ≤ A * (C * b) := by

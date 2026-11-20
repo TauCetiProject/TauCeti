@@ -78,17 +78,17 @@ variable {t n : ℤ}
 /-- A fibre of nonpositive determinant has weight sum zero: every matrix of nonzero weight has
 positive determinant. -/
 private theorem finsum_weight_traceDetFiber_of_nonpos (hn : n ≤ 0) :
-    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.1 = 0 :=
+    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = 0 :=
   finsum_eq_zero_of_forall_eq_zero fun M ↦ by
     by_contra h
     have := det_pos_of_weight_ne_zero h
-    rw [(mem_traceDetFiber.mp M.2).2] at this
+    rw [(mem_traceDetFiber.mp M.property).2] at this
     omega
 
 /-- **Negative trace.** If `t < 0` and `t² - 4 n ≥ 0`, then the weights of the integral matrices
 of trace `t` and determinant `n` sum to zero. -/
 theorem finsum_weight_traceDetFiber_eq_zero_of_neg (ht : t < 0) (hD : 4 * n ≤ t ^ 2) :
-    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.1 = 0 := by
+    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = 0 := by
   induction hk : n.toNat using Nat.strong_induction_on generalizing t n with
   | _ k ih =>
   rcases le_or_gt n 0 with hn | hn
@@ -188,7 +188,7 @@ private theorem sum_range_weight_upperTriangular (N : ℕ) (hN : 0 < N) :
   have hw : ∀ k ∈ Finset.range N, ((weight !![1, (k : ℤ); 0, (N : ℤ)] : ℤ) : ℚ) =
       12 * upperTriangularCoeff ((1 : ℕ) : ℤ) (k : ℤ) N := by
     intro k _
-    rw [weight_upperTriangular _ _ _ one_pos (by omega), upperTriangularCoeff_def]
+    rw [weight_upperTriangular _ _ _ one_pos, upperTriangularCoeff_def]
     push_cast
     split_ifs <;> norm_num
   rw [← Int.cast_inj (α := ℚ), Int.cast_sum, Finset.sum_congr rfl hw, ← Finset.mul_sum,
@@ -200,16 +200,16 @@ private theorem sum_range_weight_upperTriangular (N : ℕ) (hN : 0 < N) :
 /-- **The fibres with `0 < n < t`.** The weights of the matrices of trace `t` and determinant `n`
 sum to `12 (n - 1)`, or to `2` when `n = 1`, if `t = n + 1`, and to zero otherwise. -/
 private theorem finsum_weight_traceDetFiber_of_lt (hn : 0 < n) (ht : n < t) :
-    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.1 =
+    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val =
       if t = n + 1 then (if n = 1 then 2 else 12 * (n - 1)) else 0 := by
   classical
-  rw [finsum_congr fun M ↦ weight_eq_of_lt M.2 hn ht]
+  rw [finsum_congr fun M ↦ weight_eq_of_lt M.property hn ht]
   by_cases ht₁ : t = n + 1
   swap
   · -- a matrix `(1 b; 0 d)` of determinant `n` has trace `n + 1`
     rw [ite_eq_right ht₁]
     refine finsum_eq_zero_of_forall_eq_zero fun M ↦ ite_eq_right fun h ↦ ht₁ ?_
-    obtain ⟨htr, hdet⟩ := mem_traceDetFiber_fin_two.mp M.2
+    obtain ⟨htr, hdet⟩ := mem_traceDetFiber_fin_two.mp M.property
     simp only [h.1, h.2, one_mul, mul_zero, sub_zero] at htr hdet
     omega
   rw [ite_eq_left ht₁]
@@ -222,20 +222,20 @@ private theorem finsum_weight_traceDetFiber_of_lt (hn : 0 < n) (ht : n < t) :
     (Finset.range N).image fun k ↦ ⟨_, hmem k⟩ with hs
   -- the matrices of nonzero weight are the `(1 k; 0 N)` with `0 ≤ k < N`
   have hsub : (Function.support fun M : traceDetFiber (Fin 2) ((N : ℤ) + 1) N ↦
-      if M.1 0 0 = 1 ∧ M.1 1 0 = 0 then weight !![1, M.1 0 1; 0, M.1 1 1] else 0) ⊆ s := by
+      if M.val 0 0 = 1 ∧ M.val 1 0 = 0 then weight !![1, M.val 0 1; 0, M.val 1 1] else 0) ⊆ s := by
     intro M hM
     simp only [Function.mem_support, ne_eq, ite_eq_right_iff, Classical.not_imp] at hM
     obtain ⟨⟨ha, hc⟩, hne⟩ := hM
-    obtain ⟨htr, -⟩ := mem_traceDetFiber_fin_two.mp M.2
-    rw [weight_upperTriangular _ _ _ one_pos (by omega)] at hne
-    have hb : 0 ≤ M.1 0 1 ∧ M.1 0 1 < N := by split_ifs at hne <;> omega
-    refine Finset.mem_image.mpr ⟨(M.1 0 1).toNat, Finset.mem_range.mpr (by omega),
-      Subtype.ext (Eq.trans ?_ (eta_fin_two M.1).symm)⟩
-    simp only [Int.toNat_of_nonneg (show 0 ≤ M.1 0 1 by omega), ha, hc,
+    obtain ⟨htr, -⟩ := mem_traceDetFiber_fin_two.mp M.property
+    rw [weight_upperTriangular _ _ _ one_pos] at hne
+    have hb : 0 ≤ M.val 0 1 ∧ M.val 0 1 < N := by split_ifs at hne <;> omega
+    refine Finset.mem_image.mpr ⟨(M.val 0 1).toNat, Finset.mem_range.mpr (by omega),
+      Subtype.ext (Eq.trans ?_ (eta_fin_two M.val).symm)⟩
+    simp only [Int.toNat_of_nonneg (show 0 ≤ M.val 0 1 by omega), ha, hc,
       EmbeddingLike.apply_eq_iff_eq, vecCons_inj, and_true, true_and]
     omega
   rw [finsum_eq_sum_of_support_subset _ hsub, hs, Finset.sum_image fun k _ k' _ h ↦ by
-    simpa using congrArg (fun M : traceDetFiber (Fin 2) ((N : ℤ) + 1) N ↦ M.1 0 1) h]
+    simpa using congrArg (fun M : traceDetFiber (Fin 2) ((N : ℤ) + 1) N ↦ M.val 0 1) h]
   simp only [of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one, and_self,
     ite_true]
   rw [sum_range_weight_upperTriangular N (by omega)]
@@ -247,7 +247,7 @@ private theorem finsum_weight_traceDetFiber_of_lt (hn : 0 < n) (ht : n < t) :
 `12 k`, or to `2` when `k = 0`. -/
 private theorem finsum_weight_traceDetFiber_add_mul_add (k m : ℕ) :
     ∑ᶠ M : traceDetFiber (Fin 2) (((m : ℤ) + 1) + (((m : ℤ) + 1) + k))
-        (((m : ℤ) + 1) * (((m : ℤ) + 1) + k)), weight M.1 =
+        (((m : ℤ) + 1) * (((m : ℤ) + 1) + k)), weight M.val =
       if k = 0 then 2 else 12 * (k : ℤ) := by
   induction m with
   | zero =>
@@ -272,7 +272,7 @@ matrices of trace `a + d` and determinant `a d` sum to `12 |d - a|`: the coeffic
 Zagier's explicit element sum to `|d - a|` over these matrices. -/
 theorem finsum_weight_traceDetFiber_add_mul_eq_twelve_mul_abs_sub {a d : ℤ} (ha : 0 < a)
     (hd : 0 < d) (had : a ≠ d) :
-    ∑ᶠ M : traceDetFiber (Fin 2) (a + d) (a * d), weight M.1 = 12 * |d - a| := by
+    ∑ᶠ M : traceDetFiber (Fin 2) (a + d) (a * d), weight M.val = 12 * |d - a| := by
   wlog h : a < d generalizing a d
   · rw [add_comm, mul_comm, abs_sub_comm]
     exact this hd ha had.symm (by omega)
@@ -287,7 +287,7 @@ theorem finsum_weight_traceDetFiber_add_mul_eq_twelve_mul_abs_sub {a d : ℤ} (h
 and determinant `a²` sum to `2`: the coefficients of Popa and Zagier's explicit element sum to
 `1/6` over these matrices, which is the coefficient of the scalar matrix `a • 1`. -/
 theorem finsum_weight_traceDetFiber_two_mul_sq_eq_two {a : ℤ} (ha : 0 < a) :
-    ∑ᶠ M : traceDetFiber (Fin 2) (2 * a) (a ^ 2), weight M.1 = 2 := by
+    ∑ᶠ M : traceDetFiber (Fin 2) (2 * a) (a ^ 2), weight M.val = 2 := by
   obtain ⟨m, hm⟩ := Int.eq_ofNat_of_zero_le (show 0 ≤ a - 1 by omega)
   obtain rfl : a = (m : ℤ) + 1 := by omega
   have := finsum_weight_traceDetFiber_add_mul_add 0 m
@@ -298,7 +298,7 @@ theorem finsum_weight_traceDetFiber_two_mul_sq_eq_two {a : ℤ} (ha : 0 < a) :
 integral matrices of trace `t` and determinant `n` sum to zero. -/
 theorem finsum_weight_traceDetFiber_eq_zero_of_not_isSquare (hD : 4 * n ≤ t ^ 2)
     (hsq : ¬IsSquare (t ^ 2 - 4 * n)) :
-    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.1 = 0 := by
+    ∑ᶠ M : traceDetFiber (Fin 2) t n, weight M.val = 0 := by
   induction hk : n.toNat using Nat.strong_induction_on generalizing t n with
   | _ k ih =>
   rcases le_or_gt n 0 with hn | hn

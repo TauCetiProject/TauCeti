@@ -90,7 +90,7 @@ theorem IsSliceChart.ae_range_fderiv_comp_inl_sup_span_tangentConeAt_eq_top {G :
   -- The level equation `P ∘ e ∘ G = 0`, with `P` the projection onto a complement `C` of `L`.
   obtain ⟨C, hLC⟩ := L.exists_isCompl
   have hCL := (Submodule.IsCompl.isTopCompl_of_isClosed_of_finiteDimensional hLC
-    L.closed_of_finiteDimensional).symm
+    L.isClosed_of_finiteDimensional).symm
   set P : F →L[ℝ] C := C.projectionOntoL L hCL
   have hfinrank : finrank ℝ C = finrank ℝ F - finrank ℝ L := by
     rw [← Submodule.finrank_add_eq_of_isCompl hLC, Nat.add_sub_cancel_left]
@@ -110,7 +110,7 @@ theorem IsSliceChart.ae_range_fderiv_comp_inl_sup_span_tangentConeAt_eq_top {G :
     refine ⟨A, (P.hasFDerivAt.comp (G w) hA).comp w
       ((hcont w hw.1 hw.2 hwS).differentiableAt hn0).hasFDerivAt,
       LinearMap.range_eq_top.2 <| (Submodule.projectionOntoL_surjective hCL).comp A.surjective, ?_⟩
-    rw [hS.span_tangentConeAt_eq_comap L.closed_of_finiteDimensional hw.2 hwS hA]
+    rw [hS.span_tangentConeAt_eq_comap L.isClosed_of_finiteDimensional hw.2 hwS hA]
     ext v
     simp [P]
   have hreg : ∀ᵐ l ∂ν, IsRegularParameterOn (fun w ↦ P (e (G w))) W 0 l := by
@@ -156,9 +156,10 @@ theorem ae_range_fderiv_comp_inl_sup_span_tangentConeAt_eq_top {G : V × Λ → 
       (∀ y ∈ e.source, y ∈ S → ContDiffAt ℝ n e y) ∧
       (∀ y ∈ e.source, y ∈ S → DifferentiableAt ℝ e.symm (e y)) ∧ IsSliceChart e (L : Set F) S ∧
       (z : V × Λ) ∈ interior (G ⁻¹' e.source) := fun z ↦ by
-    obtain ⟨e, hze, he, hes, hS⟩ := hchart z z.2.1 z.2.2
+    obtain ⟨e, hze, he, hes, hS⟩ := hchart z z.property.1 z.property.2
     refine ⟨e, he, hes, hS, mem_interior_iff_mem_nhds.2 ?_⟩
-    exact ((hcont z z.2.1 z.2.2).continuousAt).preimage_mem_nhds (e.open_source.mem_nhds hze)
+    exact ((hcont z z.property.1 z.property.2).continuousAt).preimage_mem_nhds
+        (e.open_source.mem_nhds hze)
   choose e he hes hS hze using key
   -- Countably many of these neighbourhoods cover, and each chart contributes a null set.
   obtain ⟨T, hTc, hTZ⟩ := (HereditarilyLindelofSpace.isLindelof Z).elim_countable_subcover

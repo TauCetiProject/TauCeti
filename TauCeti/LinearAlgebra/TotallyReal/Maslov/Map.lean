@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 /-!
 # The Maslov index of a loop moved by a loop of automorphisms
 
-Let `Λ` be a loop of maximal totally real subspaces of a finite-dimensional complex normed space
+Let `Λ` be a loop of maximal totally real subspaces of a complex normed space
 `E` and `B` a loop of complex-linear automorphisms of `E`. The pointwise image
 `t ↦ B t (Λ t)` (`TauCeti.TotallyRealLoop.map`) is again such a loop, and its Maslov index is
 
@@ -60,8 +60,7 @@ namespace TauCeti
 
 namespace TotallyRealLoop
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  (Λ : TotallyRealLoop E)
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] (Λ : TotallyRealLoop E)
 
 /-- **The Maslov index under a loop of automorphisms.** If `B` is a loop of complex-linear
 automorphisms and `δ` is the circle loop of normalized determinants,

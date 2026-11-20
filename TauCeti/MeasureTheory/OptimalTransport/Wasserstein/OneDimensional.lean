@@ -82,7 +82,7 @@ theorem enorm_cdf_sub_le_measure_symmDiff {μ ν : Measure ℝ} [IsProbabilityMe
     rw [hμ, hν]
     exact MeasureTheory.abs_toReal_sub_le_toReal_symmDiff (measure_ne_top π _)
       (measure_ne_top π _)
-  rw [Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_toReal (measure_ne_top π _)]
+  rw [Real.eNorm_eq_ofReal_abs, ← ENNReal.ofReal_toReal (measure_ne_top π _)]
   exact ENNReal.ofReal_le_ofReal hbound
 
 /-- The `L¹ (0, 1)` distance of the two quantile functions is the area between the two cumulative
@@ -109,7 +109,7 @@ theorem lintegral_enorm_quantile_sub_eq_lintegral_enorm_cdf_sub (μ ν : Measure
   rw [Measure.restrict_apply hmeas, hset,
     volume_Ioc_inter_Ioo_of_le_of_le (le_min (cdf_nonneg μ s) (cdf_nonneg ν s))
       (max_le (cdf_le_one μ s) (cdf_le_one ν s)),
-    max_sub_min_eq_abs, abs_sub_comm, Real.enorm_eq_ofReal_abs]
+    max_sub_min_eq_abs, abs_sub_comm, Real.eNorm_eq_ofReal_abs]
 
 /-- **The one-dimensional Kantorovich formula.** The Wasserstein distance at exponent one of two
 probability laws on `ℝ` is the area between their cumulative distribution functions. -/
@@ -121,7 +121,7 @@ theorem wassersteinEDist_one_eq_lintegral_enorm_cdf_sub (μ ν : Measure ℝ)
     have hq : AEStronglyMeasurable (fun t ↦ μ.quantile t - ν.quantile t)
         (volume.restrict (Ioo (0 : ℝ) 1)) :=
       ((Measure.measurable_quantile μ).sub (Measure.measurable_quantile ν)).aestronglyMeasurable
-    rw [eLpNorm_one_eq_lintegral_enorm hq]
+    rw [eLpNorm_one_eq_lintegral_eNorm hq]
     exact lintegral_enorm_quantile_sub_eq_lintegral_enorm_cdf_sub μ ν
   · rw [wassersteinEDist_one_eq_transportCost measurable_edist]
     refine le_transportCost fun π hπ ↦ ?_
@@ -132,7 +132,7 @@ theorem wassersteinEDist_one_eq_lintegral_enorm_cdf_sub (μ ν : Measure ℝ)
       _ = ∫⁻ z, ‖z.1 - z.2‖ₑ ∂π :=
           (lintegral_enorm_sub_eq_lintegral_measure_symmDiff π measurable_fst.aemeasurable
             measurable_snd.aemeasurable).symm
-      _ = ∫⁻ z, edist z.1 z.2 ∂π := by simp_rw [edist_eq_enorm_sub]
+      _ = ∫⁻ z, edist z.1 z.2 ∂π := by simp_rw [eDist_eq_eNorm_sub]
 
 end RealLaws
 

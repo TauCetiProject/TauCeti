@@ -35,8 +35,8 @@ unimodular shear; the matrix before the shear is treated in
 `TauCeti.Examples.NumberTheory.Height.Arakelov.BombieriVaaler`.
 
 The Gram determinant `det (A * Aᵀ)` is mostly treated elsewhere: its behaviour under
-`A ↦ B * A` and its independence criterion are in `TauCeti.LinearAlgebra.Matrix.Gram`, and its
-positivity, a consequence of the Cauchy–Binet formula, is in
+`A ↦ B * A` and its independence criterion are in `TauCeti.LinearAlgebra.Matrix.Gram.Basic`, and
+its positivity, a consequence of the Cauchy–Binet formula, is in
 `TauCeti.LinearAlgebra.ExteriorPower.Plucker`. Only its integer case under independence over `ℚ`,
 `Matrix.det_mul_transpose_pos`, is stated here, next to the matching `Matrix.one_le_minorGcd`.
 
@@ -252,7 +252,7 @@ example : minorGcd !![(2 : ℤ), 2] = 2 := by
   exact dvd_minorGcd_iff.2 fun e ↦ (h e).symm ▸ dvd_rfl
 
 example : (!![(2 : ℤ), 2] * !![(2 : ℤ), 2]ᵀ).det = 8 := by
-  simp [det_unique, vecMul, dotProduct, Fin.sum_univ_two]
+  simp [det_unique, Function.swap, Matrix.vecHead, Matrix.vecTail]
 
 -- The shear `!![1, 1; 0, 1]` moves `!![1, 0, -1; 0, 1, -1]` to `!![1, 1, -2; 0, 1, -1]`. Both
 -- have minor gcd `1` and Gram determinant `3`, while the largest entry grows from `1` to `2`. The
@@ -263,6 +263,6 @@ example : minorGcd !![(1 : ℤ), 1, -2; 0, 1, -1] = 1 := by
     (by simpa [det_fin_two] using minorGcd_dvd !![(1 : ℤ), 1, -2; 0, 1, -1] ⟨![0, 1], by decide⟩)
 
 example : (!![(1 : ℤ), 1, -2; 0, 1, -1] * !![(1 : ℤ), 1, -2; 0, 1, -1]ᵀ).det = 3 := by
-  simp [det_fin_two, vecMul, dotProduct, Fin.sum_univ_three]
+  simp [det_fin_two, Function.swap, Matrix.vecHead, Matrix.vecTail]
 
 end Matrix

@@ -388,9 +388,9 @@ theorem isCurveOfMaximalSlope_of_hasGradientAt {f : E → ℝ} {u G : ℝ → E}
   obtain ⟨C, hC⟩ := isCompact_uIcc.exists_bound_of_continuousOn (hG.mono hsub)
   have hAC : AbsolutelyContinuousOnInterval u s t :=
     LipschitzOnWith.absolutelyContinuousOnInterval (K := C.toNNReal) <|
-      (convex_uIcc s t).lipschitzOnWith_of_nnnorm_hasDerivWithin_le
+      (convex_uIcc s t).lipschitzOnWith_of_nnNorm_hasDerivWithin_le
         (fun r hr ↦ (hu r (hsub hr)).hasDerivWithinAt) fun r hr ↦ by
-          rw [nnnorm_neg, ← NNReal.coe_le_coe, coe_nnnorm, Real.coe_toNNReal']
+          rw [nnNorm_neg, ← NNReal.coe_le_coe, coe_nnNorm, Real.coe_toNNReal']
           exact (hC r hr).trans (le_max_left _ _)
   refine ⟨hAC, ?_⟩
   -- The energy decreases at rate `‖G‖²`.
@@ -411,7 +411,7 @@ theorem isCurveOfMaximalSlope_of_hasGradientAt {f : E → ℝ} {u G : ℝ → E}
     refine setLIntegral_congr_fun measurableSet_uIoc fun r hr ↦ ?_
     have hr' := hsub (uIoc_subset_uIcc hr)
     rw [(hu r hr').metricDerivative_eq, (hf r hr').hasFDerivAt.descendingSlope_eq,
-      LinearIsometryEquiv.enorm_map, enorm_neg, Real.HolderConjugate.two_two.div_add_div_ennreal,
+      LinearIsometryEquiv.eNorm_map, eNorm_neg, Real.HolderConjugate.two_two.div_add_div_ennreal,
       ← ofReal_norm,
       ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) zero_le_two]
     norm_cast

@@ -24,7 +24,7 @@ naturals with product `≤ absNorm I` (distributing, for each rational prime `p`
 `p^{vₚ}` of the `i`-th prime above `p` into the `i`-th coordinate); the valuations of the
 tuple recover the ideal, and there are at most `X²·2ⁿ` such tuples.
 
-Mathlib's `Ideal.finite_setOfPred_absNorm_le` already gives finiteness (and `Ideal/Asymptotics`
+Mathlib's `Ideal.finite_absNorm_le` already gives finiteness (and `Ideal/Asymptotics`
 the sharp asymptotic `~ ρ·X`); the contribution here is the explicit elementary bound, the
 input to the effective class-number estimate.
 

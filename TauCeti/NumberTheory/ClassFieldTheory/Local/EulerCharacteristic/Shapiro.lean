@@ -118,14 +118,11 @@ theorem index_eq_finrank_of_range_absoluteGaloisGroupExtend_eq_comap {L : Type*}
   rw [← shapiroOpenSubgroup_index, shapiroOpenSubgroup_toSubgroup, ← hσ,
     index_range_absoluteGaloisGroupExtend]
 
-/-- The Shapiro fixed field is fixed exactly by the preimage of `C`: the preimage is open, hence
-closed, and infinite Galois theory recovers a closed subgroup from its fixed field. -/
-theorem fixingSubgroup_shapiroField [IsGalois F (AlgebraicClosure F)] :
+/-- The Shapiro fixed field is fixed exactly by the preimage of `C`. -/
+theorem fixingSubgroup_shapiroField :
     (shapiroField F V C).fixingSubgroup = (shapiroOpenSubgroup F V C).toSubgroup := by
   rw [shapiroField_def]
-  exact InfiniteGalois.fixingSubgroup_fixedField
-    (⟨(shapiroOpenSubgroup F V C).toSubgroup, (shapiroOpenSubgroup F V C).isClosed⟩ :
-      ClosedSubgroup (AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F))
+  exact fixingSubgroup_fixedField (shapiroOpenSubgroup F V C).isClosed
 
 /-- The degree of the Shapiro fixed field over `F` is the index of `C` in `G_F / V`. -/
 theorem finrank_shapiroField [IsGalois F (AlgebraicClosure F)] :
@@ -171,7 +168,7 @@ theorem range_absoluteGaloisGroupExtend_shapiroFieldEmbedding [IsGalois F (Algeb
   · exact (coe_absoluteGaloisGroupRestrictEquiv_apply (K := F) g _).symm.trans
       (congrArg Subtype.val (h ⟨x, hx⟩))
   · exact (coe_absoluteGaloisGroupRestrictEquiv_apply (K := F) g _).trans
-      ((IntermediateField.mem_fixingSubgroup_iff _ _).1 h x x.2)
+      ((IntermediateField.mem_fixingSubgroup_iff _ _).1 h x x.property)
 
 variable {R : Type v} [Field R]
 

@@ -59,9 +59,9 @@ theorem IsMulDistinguished.eq_and_eq_of_normalized_mul_eq (hf : IsMulDistinguish
   -- The constant coefficient of the common monic polynomial is inverse to both leading
   -- coefficients, so the two rescaling constants agree even over a ring with zero divisors.
   have h1 : P.leadingCoeff * ω.coeff 0 = 1 := by
-    rw [← smul_eq_mul, ← Polynomial.coeff_smul, ← hP, hP0]
+    rw [← smul_eq_mul, ← AddMonoidAlgebra.coeff_smul_apply, ← hP, hP0]
   have h2 : P'.leadingCoeff * ω.coeff 0 = 1 := by
-    rw [hω, Units.smul_def, Polynomial.coeff_smul, smul_eq_mul, ← mul_assoc,
+    rw [hω, Units.smul_def, AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul, ← mul_assoc,
       ha'.mul_val_inv, one_mul, hP0']
   have heq : P.leadingCoeff = P'.leadingCoeff :=
     calc P.leadingCoeff = P.leadingCoeff * (P'.leadingCoeff * ω.coeff 0) := by rw [h2, mul_one]
@@ -89,7 +89,7 @@ theorem exists_normalized_factors_of_mul_eq (he : IsUnit e) (hω : ω.IsMonicOfD
     rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, Algebra.algebraMap_self_apply,
       smul_eq_C_mul]
   refine ⟨a, U, ?_, ?_, ?_, ?_, ((a⁻¹).isUnit.map (algebraMap R _)).mul he, ?_, hU⟩
-  · rw [Units.smul_def, Polynomial.coeff_smul, smul_eq_mul]; exact h0
+  · rw [Units.smul_def, AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul]; exact h0
   · rw [Polynomial.natDegree_smul_of_smul_regular ω (IsSMulRegular.all _), hω.natDegree_eq]
   · rw [Polynomial.leadingCoeff_smul_of_smul_regular ω (IsSMulRegular.all _),
       hω.leadingCoeff_eq, Units.smul_def, smul_eq_mul, mul_one]

@@ -81,7 +81,7 @@ private theorem lieFamily_apply {n : ℕ} (ω : L [⋀^Fin n]→ₗ[R] M) (x : L
 /-- The differential with values in multilinear maps, defined by Cartan's formula
 `ι_x d ω = ⁅x, ω⁆ - d ι_x ω` before alternation is known. -/
 private def dAux :
-    (n : ℕ) → (L [⋀^Fin n]→ₗ[R] M) →ₗ[R] MultilinearMap R (fun _ : Fin (n + 1) ↦ L) M
+    (n : ℕ) → (L [⋀^Fin n]→ₗ[R] M) →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ L) M
   | 0 =>
     { toFun ω := (toMultilinearMapLM ∘ₗ lieFamily R L M ω).uncurryLeft
       map_add' ω ω' := by ext v; simp [lieFamily_apply]
@@ -334,7 +334,7 @@ def twoCochainEquiv : (L [⋀^Fin 2]→ₗ[R] M) ≃ₗ[R] twoCochain R L M wher
     simpa using ω.map_eq_zero_of_eq ![x, x] (i := 0) (j := 1) rfl (by decide)⟩
   map_add' _ _ := by ext; simp
   map_smul' _ _ := by ext; simp
-  invFun c := uncurryLeft ((oneCochainEquiv R L M).symm.toLinearMap ∘ₗ c.1) fun x ↦ by
+  invFun c := uncurryLeft ((oneCochainEquiv R L M).symm.toLinearMap ∘ₗ c.val) fun x ↦ by
     ext r
     simp
   left_inv ω := by

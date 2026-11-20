@@ -1,15 +1,17 @@
 /-
 Copyright (c) 2026 Taylor Dupuy, Thomas Tucker, Zhuoran Wang. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
+Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang, The Tau Ceti contributors
 -/
 module
 
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
+public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 
 /-!
-# The ramification index over a discrete valuation ring
+# Ramification and inertia over local rings and discrete valuation rings
 
 Let `S → T` be a local homomorphism from a local ring to a discrete valuation ring such that the
 maximal ideal `𝔪_S` of `S` does not map to zero. Then `𝔪_S T` is a nonzero ideal of `T`, hence a
@@ -20,6 +22,10 @@ exponent `e` with `π_S = u π_T ^ e` for uniformizers `π_S`, `π_T` and a unit
 
 ## Main results
 
+* `TauCeti.IsLocalRing.inertiaDeg_maximalIdeal`:
+  `(maximalIdeal B).inertiaDeg A = Module.finrank (ResidueField A) (ResidueField B)`.
+* `TauCeti.IsDiscreteValuationRing.asIdeal_maximalIdeal` and `maximalIdeal_liesOver`: bridge from
+  `IsDiscreteValuationRing.maximalIdeal` to `IsLocalRing.maximalIdeal`.
 * `TauCeti.IsDiscreteValuationRing.map_maximalIdeal_eq_pow_ramificationIdx`: `𝔪_S T = 𝔪_T ^ e` with
   `e` the ramification index of `𝔪_T` over `S`.
 * `TauCeti.IsDiscreteValuationRing.ramificationIdx_eq_of_map_maximalIdeal_eq_pow`: the index equals
@@ -38,9 +44,40 @@ exponent `e` with `π_S = u π_T ^ e` for uniformizers `π_S`, `π_T` and a unit
 
 public section
 
-open IsLocalRing IsDiscreteValuationRing
+open IsLocalRing
+open IsDiscreteValuationRing hiding maximalIdeal
+
+namespace TauCeti.IsLocalRing
+
+/-- For a local homomorphism `A → B` of local rings, `(maximalIdeal B).inertiaDeg A` equals the
+residue-field extension degree. -/
+theorem inertiaDeg_maximalIdeal {A B : Type*} [CommRing A] [IsLocalRing A] [CommRing B]
+    [IsLocalRing B] [Algebra A B] [IsLocalHom (algebraMap A B)] :
+    (maximalIdeal B).inertiaDeg A = Module.finrank (ResidueField A) (ResidueField B) := by
+  rw [Ideal.inertiaDeg_eq_of_isMaximal (maximalIdeal A) (maximalIdeal B)]
+  -- `ResidueField R` is defined as `R ⧸ maximalIdeal R` and its `Algebra` structure is
+  -- `Ideal.Quotient.algebraOfLiesOver`, so `RingEquiv.refl` identifies both sides definitionally.
+  exact Algebra.finrank_eq_of_equiv_equiv (RingEquiv.refl (ResidueField A))
+    (RingEquiv.refl (ResidueField B)) (RingHom.ext fun x ↦ by
+      obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+      rfl)
+
+end TauCeti.IsLocalRing
 
 namespace TauCeti.IsDiscreteValuationRing
+
+/-- The underlying ideal of `IsDiscreteValuationRing.maximalIdeal A` is `maximalIdeal A`. -/
+theorem asIdeal_maximalIdeal (A : Type*) [CommRing A] [IsDomain A] [IsDiscreteValuationRing A] :
+    (_root_.IsDiscreteValuationRing.maximalIdeal A).asIdeal = maximalIdeal A := rfl
+
+/-- For a local homomorphism of DVRs, the height-one maximal ideal of `B` lies over that of `A`. -/
+instance maximalIdeal_liesOver {A B : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
+    [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [Algebra A B]
+    [IsLocalHom (algebraMap A B)] :
+    (_root_.IsDiscreteValuationRing.maximalIdeal B).asIdeal.LiesOver
+      (_root_.IsDiscreteValuationRing.maximalIdeal A).asIdeal := by
+  rw [asIdeal_maximalIdeal, asIdeal_maximalIdeal]
+  infer_instance
 
 variable {S T : Type*} [CommRing S] [CommRing T] [IsLocalRing S] [IsDomain T]
   [IsDiscreteValuationRing T] [Algebra S T] [IsLocalHom (algebraMap S T)]

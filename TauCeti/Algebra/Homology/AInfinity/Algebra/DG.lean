@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Strict
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Unital
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Basic
 
 /-!
@@ -42,6 +43,8 @@ vanish.
 * `TauCeti.IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_one_apply`,
   `toAInfinityAlgebra_m_two_apply`, and `toAInfinityAlgebra_m_of_three_le`: its operations are the
   differential, the product, and zero.
+* `TauCeti.IsNonUnitalDGAlgebra.toAInfinityAlgebra_taylor`: its Taylor map is the differential on
+  single letters and the signed product on two-letter words.
 * `TauCeti.IsDGAlgebra.strictUnit_one`: the unit of a DG algebra is a strict unit.
 * `TauCeti.AInfinityAlgebra.isNonUnitalDGAlgebra_differential` and
   `TauCeti.AInfinityAlgebra.isDGAlgebra_differential`: the unary operation of an `A∞` algebra
@@ -79,10 +82,11 @@ namespace IsNonUnitalDGAlgebra
 /-- The `A∞` operations of a differential `d` on an algebra: `m₁ = d`, `m₂` is the product, and all
 other operations vanish. -/
 private noncomputable def operation (d : A →ₗ[R] A) :
-    ∀ n : ℕ, MultilinearMap R (fun _ : Fin n ↦ A) A
+    ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A
   | 0 => 0
-  | 1 => MultilinearMap.ofSubsingleton R A A 0 d
-  | 2 => (MultilinearMap.ofSubsingletonₗ R R A A (0 : Fin 1) ∘ₗ LinearMap.mul R A).uncurryLeft
+  | 1 => MultilinearMap.ofSubsingleton (RingHom.id R) A A 0 d
+  | 2 => (MultilinearMap.ofSubsingletonₗ R (RingHom.id R) A A (0 : Fin 1) ∘ₗ LinearMap.mul R
+      A).uncurryLeft
   | _ + 3 => 0
 
 private theorem operation_zero (d : A →ₗ[R] A) : operation d 0 = 0 := (rfl)
@@ -194,6 +198,20 @@ theorem toAInfinityAlgebra_mul (h : IsNonUnitalDGAlgebra 𝒜 d) :
     h.toAInfinityAlgebra.mul = LinearMap.mul R A := by
   ext x y
   simp
+
+/-- The Taylor map of the `A∞` algebra of a nonunital DG algebra: the differential on single
+letters, and the product on two-letter words, with the Koszul twist `a ↦ (-1) ^ |a| a` of the left
+letter carrying the suspension sign. -/
+theorem toAInfinityAlgebra_taylor (h : IsNonUnitalDGAlgebra 𝒜 d) :
+    h.toAInfinityAlgebra.taylor = d ∘ₗ ReducedTensorWords.letter R A +
+      LinearMap.mul' R A ∘ₗ
+        TensorProduct.map
+          ((InternalGrading.ofDecomposition 𝒜).koszulTwist 1 ∘ₗ ReducedTensorWords.letter R A)
+          (ReducedTensorWords.letter R A) ∘ₗ ReducedTensorWords.deconcatenation R A := by
+  have hμ : TensorProduct.lift (LinearMap.mul R A) = LinearMap.mul' R A :=
+    TensorProduct.ext' fun _ _ ↦ by simp
+  rw [h.toAInfinityAlgebra.taylor_eq_of_m_eq_zero fun _ ↦ h.toAInfinityAlgebra_m_of_three_le,
+    toAInfinityAlgebra_differential, toAInfinityAlgebra_mul, toAInfinityAlgebra_grading, hμ]
 
 end IsNonUnitalDGAlgebra
 
@@ -343,6 +361,14 @@ theorem toAInfinityStrictUnitalHom_comp (g : DGAlgHom hB hC) (f : DGAlgHom hA hB
       g.toAInfinityStrictUnitalHom.comp f.toAInfinityStrictUnitalHom := by
   ext a
   simp
+
+/-- The `A∞` morphism underlying a DG algebra morphism is strictly unital. -/
+@[simp]
+theorem isStrictlyUnital_toAInfinityHom (f : DGAlgHom hA hB) :
+    f.toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.IsStrictlyUnital
+      hA.strictUnit_one hB.strictUnit_one := by
+  simpa only [← DGAlgHom.toAInfinityStrictHom_toAInfinityStrictUnitalHom] using
+    f.toAInfinityStrictUnitalHom.isStrictlyUnital_toAInfinityHom
 
 end DGAlgHom
 

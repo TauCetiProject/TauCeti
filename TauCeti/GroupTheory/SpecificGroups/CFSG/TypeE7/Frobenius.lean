@@ -60,8 +60,8 @@ asserted to be finite, perfect, or simple.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate VI.
 -/
 
--- Reinstates the declarations of https://github.com/TauCetiProject/TauCeti/pull/5968 under the
--- names the CFSG roadmap fixes for every branch.
+-- Reinstates the declarations first formalized in
+-- https://github.com/TauCetiProject/TauCeti/pull/5968.
 
 public section
 
@@ -79,7 +79,7 @@ variable (d : TypeE7LieIndex)
 the carrier, for `q` the field order recorded by the index. The family is untwisted, so its
 Steinberg endomorphism is the Frobenius itself, with no graph automorphism. -/
 def steinberg : d.AmbientGroup →* d.AmbientGroup :=
-  E7Minuscule.frobenius d.1.characteristic d.1.fieldExponent d.1.Closure
+  E7Minuscule.frobenius d.val.characteristic d.val.fieldExponent d.val.Closure
 
 /-- The Steinberg endomorphism is the carrier Frobenius at the exponent recorded by the `E₇`
 index. -/
@@ -88,62 +88,62 @@ index. -/
 -- against, and unfolding to the carrier's Frobenius would keep them from firing.
 theorem steinberg_def :
     d.steinberg =
-      E7Minuscule.frobenius d.1.characteristic d.1.fieldExponent d.1.Closure :=
+      E7Minuscule.frobenius d.val.characteristic d.val.fieldExponent d.val.Closure :=
   (rfl)
 
 /-- The minuscule-carrier Frobenius raises every matrix entry to the `q`-th power. -/
 @[simp]
 theorem coe_steinberg_apply (g : d.AmbientGroup) (r c : Fin 56) :
-    ((d.steinberg g : Matrix.GeneralLinearGroup (Fin 56) d.1.Closure) :
-        Matrix (Fin 56) (Fin 56) d.1.Closure) r c =
-      ((g : Matrix.GeneralLinearGroup (Fin 56) d.1.Closure) :
-        Matrix (Fin 56) (Fin 56) d.1.Closure) r c ^ d.1.fieldOrder := by
-  rw [steinberg_def, d.1.fieldOrder_eq_characteristic_pow]
+    ((d.steinberg g : Matrix.GeneralLinearGroup (Fin 56) d.val.Closure) :
+        Matrix (Fin 56) (Fin 56) d.val.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 56) d.val.Closure) :
+        Matrix (Fin 56) (Fin 56) d.val.Closure) r c ^ d.val.fieldOrder := by
+  rw [steinberg_def, d.val.fieldOrder_eq_characteristic_pow]
   exact E7Minuscule.coe_frobenius_apply _ _ _ g r c
 
 /-- **The minuscule-carrier Frobenius fixes the Bourbaki numbering of a simple-root subgroup and
 raises its parameter to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. -/
 @[simp]
-theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem steinberg_simpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.steinberg (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [steinberg_def, simpleRootSubgroup_def,
     E7Minuscule.frobenius_rootSubgroupPoints,
-    d.1.fieldOrder_eq_characteristic_pow]
+    d.val.fieldOrder_eq_characteristic_pow]
 
 /-- **The prime-field Frobenius of the minuscule `E₇` carrier**, the `p`-power map for `p` the
 defining characteristic. The Steinberg endomorphism of the family, which is its `q`-power
 Frobenius, is the `e`-th power of this map, for `e` the field exponent the index records, by
 `steinberg_eq_primeFrobenius_pow`. -/
 def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
-  E7Minuscule.frobenius d.1.characteristic 1 d.1.Closure
+  E7Minuscule.frobenius d.val.characteristic 1 d.val.Closure
 
 /-- The prime-field Frobenius is the carrier's Frobenius at exponent one. -/
 -- Not `@[simp]`, for the reason `steinberg_def` is not.
 theorem primeFrobenius_def :
-    d.primeFrobenius = E7Minuscule.frobenius d.1.characteristic 1 d.1.Closure :=
+    d.primeFrobenius = E7Minuscule.frobenius d.val.characteristic 1 d.val.Closure :=
   (rfl)
 
 /-- The prime-field Frobenius raises every matrix entry to the `p`-th power. -/
 @[simp]
 theorem coe_primeFrobenius_apply (g : d.AmbientGroup) (r c : Fin 56) :
-    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 56) d.1.Closure) :
-        Matrix (Fin 56) (Fin 56) d.1.Closure) r c =
-      ((g : Matrix.GeneralLinearGroup (Fin 56) d.1.Closure) :
-        Matrix (Fin 56) (Fin 56) d.1.Closure) r c ^ d.1.characteristic := by
+    ((d.primeFrobenius g : Matrix.GeneralLinearGroup (Fin 56) d.val.Closure) :
+        Matrix (Fin 56) (Fin 56) d.val.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin 56) d.val.Closure) :
+        Matrix (Fin 56) (Fin 56) d.val.Closure) r c ^ d.val.characteristic := by
   rw [primeFrobenius_def]
   simpa only [pow_one] using
-    E7Minuscule.coe_frobenius_apply d.1.characteristic 1 d.1.Closure g r c
+    E7Minuscule.coe_frobenius_apply d.val.characteristic 1 d.val.Closure g r c
 
 /-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
 its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
 @[simp]
-theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.primeFrobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.characteristic)) := by
   rw [primeFrobenius_def, simpleRootSubgroup_def, E7Minuscule.frobenius_rootSubgroupPoints,
     pow_one]
 
@@ -153,32 +153,32 @@ theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative
 /-- **The Steinberg endomorphism is the `e`-th power of the prime-field Frobenius**, for `e` the
 field exponent the index records. -/
 theorem steinberg_eq_primeFrobenius_pow :
-    d.steinberg = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+    d.steinberg = (show Monoid.End _ from d.primeFrobenius) ^ d.val.fieldExponent := by
   rw [primeFrobenius_def, steinberg_def, E7Minuscule.frobenius_pow, Nat.one_mul]
 
 /-- **The prime-field Frobenius preserves the weight torus and raises each coordinate to the
 `p`-th power**, that is, `Frob_p (t(s)) = t(s ^ p)`. -/
 @[simp]
-theorem primeFrobenius_weightTorusPoints (s : Fin 7 → d.1.Closureˣ) :
-    d.primeFrobenius (E7Minuscule.weightTorusPoints d.1.Closure s) =
-      E7Minuscule.weightTorusPoints d.1.Closure (s ^ d.1.characteristic) := by
+theorem primeFrobenius_weightTorusPoints (s : Fin 7 → d.val.Closureˣ) :
+    d.primeFrobenius (E7Minuscule.weightTorusPoints d.val.Closure s) =
+      E7Minuscule.weightTorusPoints d.val.Closure (s ^ d.val.characteristic) := by
   rw [primeFrobenius_def, E7Minuscule.frobenius_weightTorusPoints, pow_one]
 
 /-- **The minuscule-carrier Frobenius preserves the weight torus and raises each coordinate to the
 `q`-th power**, that is, `Frob_q (t(s)) = t(s ^ q)`. -/
 @[simp]
-theorem steinberg_weightTorusPoints (s : Fin 7 → d.1.Closureˣ) :
-    d.steinberg (E7Minuscule.weightTorusPoints d.1.Closure s) =
-      E7Minuscule.weightTorusPoints d.1.Closure (s ^ d.1.fieldOrder) := by
+theorem steinberg_weightTorusPoints (s : Fin 7 → d.val.Closureˣ) :
+    d.steinberg (E7Minuscule.weightTorusPoints d.val.Closure s) =
+      E7Minuscule.weightTorusPoints d.val.Closure (s ^ d.val.fieldOrder) := by
   rw [steinberg_def, E7Minuscule.frobenius_weightTorusPoints,
-    d.1.fieldOrder_eq_characteristic_pow]
+    d.val.fieldOrder_eq_characteristic_pow]
 
 /-- **The fixed subgroup contains the `𝔽_q`-points of every numbered simple root subgroup.** A
 simple-root point `x_i(u)` is fixed by the carrier Frobenius as soon as its parameter lies in the
 field of definition, so the group `H` below is at least as large as the subgroup those points
 generate. -/
-theorem simpleRootSubgroup_mem_fixedSubgroup_steinberg (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) (hu : Multiplicative.toAdd u ∈ d.1.fixedField) :
+theorem simpleRootSubgroup_mem_fixedSubgroup_steinberg (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) (hu : Multiplicative.toAdd u ∈ d.val.fixedField) :
     d.simpleRootSubgroup i u ∈ fixedSubgroup d.steinberg := by
   rw [mem_fixedSubgroup, steinberg_simpleRootSubgroup,
     ValidLieTypeIndex.mem_fixedField.mp hu, ofAdd_toAdd]
@@ -186,9 +186,9 @@ theorem simpleRootSubgroup_mem_fixedSubgroup_steinberg (i : Fin d.1.rank)
 /-- **The fixed subgroup contains the weight-torus points with `𝔽_q` coordinates.** A torus point
 `t(s)` is fixed by the carrier Frobenius as soon as each of its coordinates lies in the field of
 definition. -/
-theorem weightTorusPoints_mem_fixedSubgroup_steinberg (s : Fin 7 → d.1.Closureˣ)
-    (hs : ∀ k, ((s k : d.1.Closure)) ∈ d.1.fixedField) :
-    E7Minuscule.weightTorusPoints d.1.Closure s ∈ fixedSubgroup d.steinberg := by
+theorem weightTorusPoints_mem_fixedSubgroup_steinberg (s : Fin 7 → d.val.Closureˣ)
+    (hs : ∀ k, ((s k : d.val.Closure)) ∈ d.val.fixedField) :
+    E7Minuscule.weightTorusPoints d.val.Closure s ∈ fixedSubgroup d.steinberg := by
   rw [mem_fixedSubgroup, steinberg_weightTorusPoints]
   congr 1
   funext k
@@ -205,11 +205,11 @@ whose entries lie in `𝔽_q`. -/
 -- the annotation.
 theorem mem_fixedSubgroup_steinberg_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.steinberg ↔
-      ∀ r c, ((g : Matrix.GeneralLinearGroup (Fin 56) d.1.Closure) :
-        Matrix (Fin 56) (Fin 56) d.1.Closure) r c ∈ d.1.fixedField := by
+      ∀ r c, ((g : Matrix.GeneralLinearGroup (Fin 56) d.val.Closure) :
+        Matrix (Fin 56) (Fin 56) d.val.Closure) r c ∈ d.val.fixedField := by
   rw [mem_fixedSubgroup, steinberg_def, E7Minuscule.frobenius_eq_self_iff]
   simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
-    d.1.fieldOrder_eq_characteristic_pow]
+    d.val.fieldOrder_eq_characteristic_pow]
 
 /-! ## The finite-group candidate -/
 

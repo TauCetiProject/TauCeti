@@ -10,10 +10,10 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 /-!
 # A transcribed presentation of the first Fischer group
 
-This file carries the `Fi₂₂` row of the sporadic presentation data required by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. It records the ATLAS presentation on the standard
-generators `a` and `b` as a `TauCeti.GroupPresentation`, together with its exact source, generator
-convention, transcription notes, expected counts, and the decidable count check.
+This file carries the `Fi₂₂` row of the sporadic presentation data. It records the ATLAS
+presentation on the standard generators `a` and `b` as a `TauCeti.GroupPresentation`, together with
+its exact source, generator convention, transcription notes, expected counts, and the decidable
+count check.
 
 The thirteen relators are
 
@@ -38,7 +38,7 @@ As an independent check, GAP 4.15.1 with AtlasRep 2.1.9 evaluates all thirteen d
 to the identity on the ATLAS standard generators in the 3510-point permutation representation of
 `Fi₂₂`. This is transcription provenance rather than a Lean theorem: the file asserts no order,
 finiteness, simplicity, or identification result. The separate comparison with the
-`FiniteSimpleGroups` development named by the roadmap is recorded below.
+`FiniteSimpleGroups` development is recorded below.
 
 ## Independent source-to-Lean read-through
 
@@ -63,7 +63,7 @@ two words represent the same central involution of `2·Fi₂₂`; killing either
 presentation. Thus the version 3 page's choice of `R1`, the omission of `R2`, and all twelve
 remaining source-order positions agree exactly with the sealed Lean row. This comparison was
 performed from the pinned source bytes independently of the original transcription and closes
-this row's S1 source-to-Lean read-through.
+this row's source-to-Lean read-through.
 
 ## Independent comparison with `FiniteSimpleGroups`
 
@@ -88,10 +88,8 @@ pair therefore generates that subgroup of order `64561751654400`.
 
 The check used Python 3.14.6, pynauty 2.8.8.1, and SymPy 1.14.0. Concatenating the transported
 forward image tables for `a` and then `b`, with each image stored as a two-byte little-endian
-integer, has SHA-256
-`66941048d1dd4532444563d0526fb210e2007d31ee8c58c51a9c8e1e8d7061de`. This is the independent
-comparison artifact required by S1; no external code or permutation data is imported into Tau
-Ceti.
+integer, has SHA-256 `66941048d1dd4532444563d0526fb210e2007d31ee8c58c51a9c8e1e8d7061de`. This is the
+independent comparison artifact; no external code or permutation data is imported into Tau Ceti.
 
 The row is a sealed definition, so it publishes an equation for each of its fields: the transcribed
 relator expressions with their generator indices written out, and the provenance a manifest row

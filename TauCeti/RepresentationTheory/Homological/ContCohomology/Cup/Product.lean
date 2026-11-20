@@ -138,7 +138,7 @@ def pairingLeft (m : H0 G M) : N →+[G] P where
   map_add' := map_add (μ (m : M))
   map_zero' := map_zero (μ (m : M))
   map_smul' g x := by
-    conv_lhs => rw [← m.2 g]
+    conv_lhs => rw [← m.property g]
     exact hequiv g (m : M) x
 
 /-- Partial application of an equivariant pairing at an **invariant** element of the second
@@ -148,7 +148,7 @@ def pairingRight (n : H0 G N) : M →+[G] P where
   map_add' m m' := by simp
   map_zero' := by simp
   map_smul' g m := by
-    conv_lhs => rw [← n.2 g]
+    conv_lhs => rw [← n.property g]
     exact hequiv g m (n : N)
 
 /-- The underlying additive homomorphism of `TauCeti.ContCohomology.pairingLeft`. -/
@@ -257,7 +257,7 @@ noncomputable def explicitCup01 : H0 G M →+ H1 G N →+ H1 G P :=
         rw [AddMonoidHom.add_apply, explicitCoeff1_mk, explicitCoeff1_mk, explicitCoeff1_mk,
           ← QuotientAddGroup.mk_add]
         exact congrArg (fun z : Z1 G P => (z : H1 G P))
-          (Subtype.ext (funext fun g => by simp [cocyclesMap1_coe]))
+          (Subtype.ext (funext fun g => by simp [coe_cocyclesMap1]))
 
 /-- The `(0,1)` cup is the coefficient map induced by the pairing at an invariant element. -/
 theorem explicitCup01_apply (m : H0 G M) :
@@ -269,11 +269,11 @@ theorem explicitCup01_apply (m : H0 G M) :
 @[simp]
 theorem explicitCup01_mk (m : H0 G M) (b : Z1 G N) :
     explicitCup01 G M N P μ hμ hequiv m (b : H1 G N) =
-      ((⟨fun g => μ (m : M) ((b : G → N) g), cup01_mem_Z1 G M N P μ hμ hequiv m b.2⟩ :
+      ((⟨fun g => μ (m : M) ((b : G → N) g), cup01_mem_Z1 G M N P μ hμ hequiv m b.property⟩ :
         Z1 G P) : H1 G P) := by
   rw [explicitCup01_apply, explicitCoeff1_mk]
   exact congrArg (fun z : Z1 G P => (z : H1 G P))
-    (Subtype.ext (funext fun g => by simp [cocyclesMap1_coe]))
+    (Subtype.ext (funext fun g => by simp [coe_cocyclesMap1]))
 
 end CupZeroOne
 
@@ -295,7 +295,7 @@ include hμ hequiv
 it disappears only because `n` is invariant. -/
 theorem cup10_mem_Z1 {a : G → M} (ha : a ∈ Z1 G M) (n : H0 G N) :
     (fun g => μ (a g) (g • (n : N))) ∈ Z1 G P := by
-  have hn : ∀ g : G, g • (n : N) = (n : N) := n.2
+  have hn : ∀ g : G, g • (n : N) = (n : N) := n.property
   convert cochainsMap1_mem_Z1 G M G P (ContinuousMonoidHom.id G)
     (pairingRight μ hequiv n).toAddMonoidHom (continuous_pairingRight μ hequiv hμ n)
     (fun g x => (pairingRight μ hequiv n).map_smul g x) ha using 1
@@ -315,7 +315,7 @@ noncomputable def explicitCup10 : H1 G M →+ H0 G N →+ H1 G P :=
         rw [AddMonoidHom.add_apply, explicitCoeff1_mk, explicitCoeff1_mk, explicitCoeff1_mk,
           ← QuotientAddGroup.mk_add]
         exact congrArg (fun z : Z1 G P => (z : H1 G P))
-          (Subtype.ext (funext fun g => by simp [cocyclesMap1_coe]))
+          (Subtype.ext (funext fun g => by simp [coe_cocyclesMap1]))
 
 /-- The `(1,0)` cup is the coefficient map induced by the pairing at an invariant element. -/
 theorem explicitCup10_apply (a : H1 G M) (n : H0 G N) :
@@ -327,12 +327,12 @@ theorem explicitCup10_apply (a : H1 G M) (n : H0 G N) :
 @[simp]
 theorem explicitCup10_mk (a : Z1 G M) (n : H0 G N) :
     explicitCup10 G M N P μ hμ hequiv (a : H1 G M) n =
-      ((⟨fun g => μ ((a : G → M) g) (g • (n : N)), cup10_mem_Z1 G M N P μ hμ hequiv a.2 n⟩ :
+      ((⟨fun g => μ ((a : G → M) g) (g • (n : N)), cup10_mem_Z1 G M N P μ hμ hequiv a.property n⟩ :
         Z1 G P) : H1 G P) := by
-  have hn : ∀ g : G, g • (n : N) = (n : N) := n.2
+  have hn : ∀ g : G, g • (n : N) = (n : N) := n.property
   rw [explicitCup10_apply, explicitCoeff1_mk]
   exact congrArg (fun z : Z1 G P => (z : H1 G P))
-    (Subtype.ext (funext fun g => by simp [cocyclesMap1_coe, hn g]))
+    (Subtype.ext (funext fun g => by simp [coe_cocyclesMap1, hn g]))
 
 end CupOneZero
 
@@ -371,7 +371,7 @@ noncomputable def explicitCup02 : H0 G M →+ H2 G N →+ H2 G P :=
         rw [AddMonoidHom.add_apply, explicitCoeff2_mk, explicitCoeff2_mk, explicitCoeff2_mk,
           ← QuotientAddGroup.mk_add]
         exact congrArg (fun z : Z2 G P => (z : H2 G P))
-          (Subtype.ext (funext fun q => by obtain ⟨g, h⟩ := q; simp [cocyclesMap2_coe]))
+          (Subtype.ext (funext fun q => by obtain ⟨g, h⟩ := q; simp [coe_cocyclesMap2]))
 
 /-- The `(0,2)` cup is the coefficient map induced by the pairing at an invariant element. -/
 theorem explicitCup02_apply (m : H0 G M) :
@@ -384,10 +384,10 @@ theorem explicitCup02_apply (m : H0 G M) :
 theorem explicitCup02_mk (m : H0 G M) (b : Z2 G N) :
     explicitCup02 G M N P μ hμ hequiv m (b : H2 G N) =
       ((⟨fun q : G × G => μ (m : M) ((b : G × G → N) q),
-        cup02_mem_Z2 G M N P μ hμ hequiv m b.2⟩ : Z2 G P) : H2 G P) := by
+        cup02_mem_Z2 G M N P μ hμ hequiv m b.property⟩ : Z2 G P) : H2 G P) := by
   rw [explicitCup02_apply, explicitCoeff2_mk]
   exact congrArg (fun z : Z2 G P => (z : H2 G P))
-    (Subtype.ext (funext fun q => by obtain ⟨g, h⟩ := q; simp [cocyclesMap2_coe]))
+    (Subtype.ext (funext fun q => by obtain ⟨g, h⟩ := q; simp [coe_cocyclesMap2]))
 
 end CupZeroTwo
 
@@ -408,7 +408,7 @@ include hμ hequiv
 `2`-cocycle.** -/
 theorem cup20_mem_Z2 {a : G × G → M} (ha : a ∈ Z2 G M) (n : H0 G N) :
     (fun q : G × G => μ (a q) ((q.1 * q.2) • (n : N))) ∈ Z2 G P := by
-  have hn : ∀ g : G, g • (n : N) = (n : N) := n.2
+  have hn : ∀ g : G, g • (n : N) = (n : N) := n.property
   convert cochainsMap2_mem_Z2 G M G P (ContinuousMonoidHom.id G)
     (pairingRight μ hequiv n).toAddMonoidHom (continuous_pairingRight μ hequiv hμ n)
     (fun g x => (pairingRight μ hequiv n).map_smul g x) ha using 1
@@ -428,7 +428,7 @@ noncomputable def explicitCup20 : H2 G M →+ H0 G N →+ H2 G P :=
         rw [AddMonoidHom.add_apply, explicitCoeff2_mk, explicitCoeff2_mk, explicitCoeff2_mk,
           ← QuotientAddGroup.mk_add]
         exact congrArg (fun z : Z2 G P => (z : H2 G P))
-          (Subtype.ext (funext fun q => by obtain ⟨g, h⟩ := q; simp [cocyclesMap2_coe]))
+          (Subtype.ext (funext fun q => by obtain ⟨g, h⟩ := q; simp [coe_cocyclesMap2]))
 
 /-- The `(2,0)` cup is the coefficient map induced by the pairing at an invariant element. -/
 theorem explicitCup20_apply (a : H2 G M) (n : H0 G N) :
@@ -441,12 +441,12 @@ theorem explicitCup20_apply (a : H2 G M) (n : H0 G N) :
 theorem explicitCup20_mk (a : Z2 G M) (n : H0 G N) :
     explicitCup20 G M N P μ hμ hequiv (a : H2 G M) n =
       ((⟨fun q : G × G => μ ((a : G × G → M) q) ((q.1 * q.2) • (n : N)),
-        cup20_mem_Z2 G M N P μ hμ hequiv a.2 n⟩ : Z2 G P) : H2 G P) := by
-  have hn : ∀ g : G, g • (n : N) = (n : N) := n.2
+        cup20_mem_Z2 G M N P μ hμ hequiv a.property n⟩ : Z2 G P) : H2 G P) := by
+  have hn : ∀ g : G, g • (n : N) = (n : N) := n.property
   rw [explicitCup20_apply, explicitCoeff2_mk]
   exact congrArg (fun z : Z2 G P => (z : H2 G P))
     (Subtype.ext (funext fun q => by
-      obtain ⟨g, h⟩ := q; simp [cocyclesMap2_coe, hn (g * h)]))
+      obtain ⟨g, h⟩ := q; simp [coe_cocyclesMap2, hn (g * h)]))
 
 end CupTwoZero
 
@@ -485,7 +485,7 @@ theorem cup11_mem_Z2 {a : G → M} (ha : a ∈ Z1 G M) {b : G → N} (hb : b ∈
 /-- The `(1,1)` cup of two continuous `1`-cocycles, as a continuous `2`-cocycle. -/
 private noncomputable def cup11Cocycle (a : Z1 G M) (b : Z1 G N) : Z2 G P :=
   ⟨fun q : G × G => μ ((a : G → M) q.1) (q.1 • (b : G → N) q.2),
-    cup11_mem_Z2 G M N P μ hμ hequiv a.2 b.2⟩
+    cup11_mem_Z2 G M N P μ hμ hequiv a.property b.property⟩
 
 /-- The `(1,1)` cup on cocycles is additive in the first variable. -/
 private theorem cup11Cocycle_add_left (a a' : Z1 G M) (b : Z1 G N) :
@@ -571,7 +571,7 @@ noncomputable def explicitCup11 : H1 G M →+ H1 G N →+ H2 G P :=
           ((QuotientAddGroup.mk' ((B2 G P).addSubgroupOf (Z2 G P))).comp
             (cocyclesCup11 G M N P μ hμ hequiv a))
           fun b hb => (QuotientAddGroup.eq_zero_iff _).2 <| AddSubgroup.mem_addSubgroupOf.2 <|
-            cup11_mem_B2_right G M N P μ hμ hequiv a.2 (AddSubgroup.mem_addSubgroupOf.1 hb)
+            cup11_mem_B2_right G M N P μ hμ hequiv a.property (AddSubgroup.mem_addSubgroupOf.1 hb)
       map_zero' := AddMonoidHom.ext fun x => by
         induction x using QuotientAddGroup.induction_on with
         | _ b =>
@@ -588,14 +588,14 @@ noncomputable def explicitCup11 : H1 G M →+ H1 G N →+ H2 G P :=
       induction x using QuotientAddGroup.induction_on with
       | _ b =>
         exact (QuotientAddGroup.eq_zero_iff _).2 <| AddSubgroup.mem_addSubgroupOf.2 <|
-          cup11_mem_B2_left G M N P μ hμ hequiv (AddSubgroup.mem_addSubgroupOf.1 ha) b.2
+          cup11_mem_B2_left G M N P μ hμ hequiv (AddSubgroup.mem_addSubgroupOf.1 ha) b.property
 
 /-- The cochain formula for the `(1,1)` cup on the classes of two continuous `1`-cocycles. -/
 @[simp]
 theorem explicitCup11_mk (a : Z1 G M) (b : Z1 G N) :
     explicitCup11 G M N P μ hμ hequiv (a : H1 G M) (b : H1 G N) =
       ((⟨fun q : G × G => μ ((a : G → M) q.1) (q.1 • (b : G → N) q.2),
-        cup11_mem_Z2 G M N P μ hμ hequiv a.2 b.2⟩ : Z2 G P) : H2 G P) :=
+        cup11_mem_Z2 G M N P μ hμ hequiv a.property b.property⟩ : Z2 G P) : H2 G P) :=
   (rfl)
 
 end CupOneOne
@@ -635,7 +635,7 @@ variable (G : Type uG) [Monoid G]
 translation factor `g •` the `(1,0)` formula carries acts on `m`, which is invariant. -/
 theorem cup01_eq_cup10_flip (m : H0 G M) (b : G → N) :
     (fun g => μ (m : M) (b g)) = fun g => μ.flip (b g) (g • (m : M)) := by
-  have hm : ∀ g : G, g • (m : M) = (m : M) := m.2
+  have hm : ∀ g : G, g • (m : M) = (m : M) := m.property
   funext g
   rw [AddMonoidHom.flip_apply, hm g]
 
@@ -644,7 +644,7 @@ theorem cup01_eq_cup10_flip (m : H0 G M) (b : G → N) :
 theorem cup02_eq_cup20_flip (m : H0 G M) (b : G × G → N) :
     (fun q : G × G => μ (m : M) (b q)) =
       fun q : G × G => μ.flip (b q) ((q.1 * q.2) • (m : M)) := by
-  have hm : ∀ g : G, g • (m : M) = (m : M) := m.2
+  have hm : ∀ g : G, g • (m : M) = (m : M) := m.property
   funext q
   rw [AddMonoidHom.flip_apply, hm (q.1 * q.2)]
 
@@ -775,7 +775,7 @@ theorem explicitCup11_eq_neg_flip (a : H1 G M) (b : H1 G N) :
     | _ y =>
       rw [explicitCup11_mk, explicitCup11_mk, eq_neg_iff_add_eq_zero, ← QuotientAddGroup.mk_add,
         H2pi_eq_zero_iff]
-      exact cup11_add_cup11_flip_mem_B2 G M N P μ hμ hequiv x.2 y.2
+      exact cup11_add_cup11_flip_mem_B2 G M N P μ hμ hequiv x.property y.property
 
 include hμ hequiv in
 /-- **Graded commutativity in bidegree `(1,1)` for `2`-torsion coefficients**: when every element

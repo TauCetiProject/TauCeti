@@ -87,7 +87,7 @@ private lemma setLIntegral_sphere_eq_mul_lintegral_toSphere (c : E) {r : ℝ} (h
         ∫⁻ u : sphere (0 : E) 1, f (c + r • (u : E)) ∂(volume : Measure E).toSphere := by
   rw [setLIntegral_sphere_eq_mul_setLIntegral_sphere_zero_one _ c hr,
     euclideanHausdorffMeasure_restrict_sphere,
-    (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).lintegral_map,
+    (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).lintegral_map,
     ENNReal.ofReal_pow hr.le]
 
 /-- Integration against Mathlib's surface measure on the unit sphere, transported to the sphere
@@ -98,7 +98,7 @@ private lemma setIntegral_sphere_eq_smul_integral_toSphere (c : E) {r : ℝ} (hr
       ∫ u : sphere (0 : E) 1, f (c + r • (u : E)) ∂(volume : Measure E).toSphere := by
   rw [setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one _ c hr,
     euclideanHausdorffMeasure_restrict_sphere,
-    (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).integral_map]
+    (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).integral_map]
 
 /-- **Integration in polar coordinates against Hausdorff measure.** In a nontrivial real inner
 product space of dimension `n`, the integral of a measurable nonnegative function is the integral
@@ -153,12 +153,13 @@ theorem ae_integrableOn_sphere (c : E) {f : E → F} (hf : Integrable f) :
   have hae : ∀ᵐ r : Ioi (0 : ℝ) ∂(volume.comap ((↑) : Ioi (0 : ℝ) → ℝ)),
       Integrable (fun u : sphere (0 : E) 1 ↦ f (c + (r : ℝ) • (u : E)))
         (volume : Measure E).toSphere :=
-    absolutelyContinuous_withDensity_ofReal (measurable_subtype_coe.pow_const _).aemeasurable
-      (ae_of_all _ fun r ↦ pow_pos r.2 _) hint.prod_left_ae
+    absolutelyContinuous_withDensity_ofReal (measurable_subtypeVal.pow_const _).aemeasurable
+      (ae_of_all _ fun r ↦ pow_pos r.property _) hint.prod_left_ae
   rw [ae_restrict_iff_subtype measurableSet_Ioi]
   filter_upwards [hae] with r hr
-  rw [integrableOn_sphere_iff _ c r.2, IntegrableOn, euclideanHausdorffMeasure_restrict_sphere,
-    (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).integrable_map_iff]
+  rw [integrableOn_sphere_iff _ c r.property, IntegrableOn,
+      euclideanHausdorffMeasure_restrict_sphere,
+    (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).integrable_map_iff]
   exact hr
 
 /-- For an integrable function, the integrals against `(n - 1)`-dimensional Hausdorff measure on
@@ -171,12 +172,12 @@ theorem integrableOn_Ioi_setIntegral_sphere (c : E) {f : E → F} (hf : Integrab
   have hint := (integrable_and_integral_eq_integral_prod_toSphere (μ := volume)
     (fun x ↦ f (c + (x : E))) (hf.comp_add_left c)).1.integral_prod_right
   rw [volumeIoiPow, integrable_withDensity_iff_integrable_smul'
-      (measurable_subtype_coe.pow_const _).ennreal_ofReal
+      (measurable_subtypeVal.pow_const _).ennreal_ofReal
       (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)] at hint
   rw [integrableOn_iff_comap_subtypeVal measurableSet_Ioi]
   refine hint.congr (ae_of_all _ fun r ↦ ?_)
-  simp only [Function.comp_apply, ENNReal.toReal_ofReal (pow_nonneg (le_of_lt r.2) _)]
-  exact (setIntegral_sphere_eq_smul_integral_toSphere c r.2 f).symm
+  simp only [Function.comp_apply, ENNReal.toReal_ofReal (pow_nonneg (le_of_lt r.property) _)]
+  exact (setIntegral_sphere_eq_smul_integral_toSphere c r.property f).symm
 
 /-- **Integration in polar coordinates against Hausdorff measure.** In a nontrivial real inner
 product space of dimension `n`, the integral of an integrable function is the integral over the
@@ -254,7 +255,7 @@ theorem volume_inter_ball_eq_lintegral_Ioo_euclideanHausdorffMeasure_inter_spher
   have h := setLIntegral_ball_eq_lintegral_Ioo_setLIntegral_sphere c R
     (measurable_one.indicator ht)
   simp_rw [lintegral_indicator_one ht, Measure.restrict_apply ht] at h
-  rw [measure_congr (hst.inter (ae_eq_refl _)), h]
+  rw [measure_congr (hst.inter Filter.EventuallyEqSet.rfl), h]
   exact lintegral_congr_ae (ae_restrict_of_ae
     ((ae_euclideanHausdorffMeasure_inter_sphere_eq_of_ae_eq c hst).mono fun r hr ↦ hr.symm))
 
@@ -340,7 +341,7 @@ theorem ae_hasDerivAt_measureReal_inter_ball (c : E) {s : Set E}
   have hm : (fun ρ ↦ volume.real (s ∩ ball c ρ)) = fun ρ ↦ ∫ x in ball c ρ, t.indicator 1 x := by
     funext ρ
     rw [integral_indicator_one ht, measureReal_restrict_apply ht,
-      measureReal_congr (hst.inter (ae_eq_refl _))]
+      measureReal_congr (hst.inter Filter.EventuallyEqSet.rfl)]
   filter_upwards [ae_hasDerivAt_setIntegral_ball (f := t.indicator 1) c
       ((locallyIntegrable_const (1 : ℝ)).indicator ht),
     ae_euclideanHausdorffMeasure_inter_sphere_eq_of_ae_eq c hst] with r hr hr'

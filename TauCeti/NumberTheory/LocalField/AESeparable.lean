@@ -71,7 +71,7 @@ private theorem encard_setOf_not_separable_le (x : Fin (n + 2) → K) (hx : x 1 
   set f := monicOfCoeff x
   have hf' : derivative f ≠ 0 := fun h ↦ hx (by
     rw [← coeff_monicOfCoeff x 1]
-    simpa [f, coeff_derivative] using congrArg (coeff · 0) h)
+    simpa [f, coeff_derivative] using congrArg (fun p : K[X] ↦ p.coeff 0) h)
   let L := AlgebraicClosure K
   -- A non-separable `f + C t` shares a root `β` with `(f + C t)' = f'`, and `t = -f(β)`.
   have hsub : algebraMap K L '' {t : K | ¬ (monicOfCoeff (x + t • Pi.single 0 1)).Separable} ⊆

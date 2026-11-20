@@ -16,7 +16,7 @@ import Mathlib.Tactic.LinearCombination
 Let `K` be a field of any characteristic, `n ≠ 0` and `a ∈ K`. **Capelli's theorem** says that
 `Xⁿ - a` is irreducible over `K` if and only if `a` is not a `p`-th power in `K` for any prime
 `p ∣ n`, and `a ∉ -4K⁴` when `4 ∣ n`. Mathlib proves the odd case
-(`X_pow_sub_C_irreducible_iff_forall_prime_of_odd`); the extra condition for `4 ∣ n` is needed
+(`irreducible_X_pow_sub_C_iff_forall_prime_of_odd`); the extra condition for `4 ∣ n` is needed
 because of Sophie Germain's identity `X⁴ + 4b⁴ = (X² - 2bX + 2b²)(X² + 2bX + 2b²)`, so for
 instance `X⁴ + 4` is reducible over `ℚ` although `-4` is not a square there.
 
@@ -191,7 +191,7 @@ theorem X_pow_sub_C_irreducible_of_forall_prime {n : ℕ} (hn : n ≠ 0) {a : K}
 /-- **Capelli's theorem.** Over any field `K` and for `n ≠ 0`, the binomial `Xⁿ - a` is
 irreducible if and only if `a` is not a `p`-th power for any prime `p ∣ n` and, when `4 ∣ n`,
 `a` is not of the form `-4b⁴`. For odd `n` this is Mathlib's
-`X_pow_sub_C_irreducible_iff_forall_prime_of_odd`. -/
+`irreducible_X_pow_sub_C_iff_forall_prime_of_odd`. -/
 theorem X_pow_sub_C_irreducible_iff_forall_prime {n : ℕ} (hn : n ≠ 0) {a : K} :
     Irreducible (X ^ n - C a) ↔
       (∀ p : ℕ, p.Prime → p ∣ n → ∀ b : K, b ^ p ≠ a) ∧ (4 ∣ n → ∀ b : K, -4 * b ^ 4 ≠ a) :=

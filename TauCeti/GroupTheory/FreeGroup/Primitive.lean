@@ -156,7 +156,7 @@ theorem not_isPrimitive_of_mem_commutator {G : Type u} [Group G] {x : G}
     (hx : x ∈ commutator G) : ¬ IsPrimitive x := by
   intro h
   obtain ⟨f, hf⟩ := h.exists_monoidHom_apply_eq_ofAdd_one
-  have hcomm : f x = 1 := (Abelianization.commutator_le_ker f hx)
+  have hcomm : f x = 1 := (Group.Abelianization.commutator_le_ker f hx)
   have hone : (Multiplicative.ofAdd (1 : ℤ)) ≠ 1 := by decide
   exact hone (hf ▸ hcomm)
 

@@ -171,7 +171,8 @@ theorem leadingCoeff_num_xRatFunc_mul_sq : φ.xRatFunc.num.leadingCoeff * c ^ 2 
   -- The same degree is the degree `d + 3 deg N` of the right-hand side.
   obtain ⟨hdeg, hlc⟩ := natDegree_and_leadingCoeff_rhs (φ := φ) hc0 h2
   have hidx : 2 * (2 * d) + 3 = d + 3 * N.natDegree := by omega
-  have h := congrArg (coeff · (2 * (2 * d) + 3)) (wronskian_xRatFunc_sq_mul_Ψ₂Sq hc)
+  have h := congrArg (fun p : F[X] ↦ p.coeff (2 * (2 * d) + 3))
+    (wronskian_xRatFunc_sq_mul_Ψ₂Sq hc)
   rw [hlhs, hidx, ← hdeg, coeff_natDegree, hlc] at h
   have h4 : (4 : F) * N.leadingCoeff ^ 2 ≠ 0 :=
     mul_ne_zero (four_ne_zero_of_two_ne_zero h2) (pow_ne_zero 2 hN0)

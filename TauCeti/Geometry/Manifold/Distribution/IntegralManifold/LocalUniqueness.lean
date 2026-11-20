@@ -78,7 +78,7 @@ theorem IsIntegralManifold.eventually_sub_mem_of_flatChart
     rw [(D z).map_mvfderiv_eq_map_mfderiv (I := I) (x := z) Φ]
     exact (hflat z hz).le
   exact hhor.eventually_sub_mem (hf.contMDiff.mdifferentiable hn0).mdifferentiableOn
-    isOpen_univ (hΦsmooth.mdifferentiableOn hn0) hΦopen W.closed_of_finiteDimensional
+    isOpen_univ (hΦsmooth.mdifferentiableOn hn0) hΦopen W.isClosed_of_finiteDimensional
     hDp (mem_univ x) hx
 
 /-- In `C^n` coordinates flattening its distribution onto a finite-dimensional subspace, an

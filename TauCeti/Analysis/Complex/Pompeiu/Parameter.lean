@@ -28,8 +28,8 @@ unnormalized integral `∫ (w - z)⁻¹ • f z`.
   convolution of the locally integrable Cauchy kernel with a compactly supported family, after the
   substitution `ζ = w - z`. Its derivative in `p` is the transform of the derivative of `g` in `p`,
   so every parameter derivative commutes with the transform. By
-  `TauCeti.differentiableOn_integral_sub_inv_smul_compl`, for every `p ∈ s` the transform of
-  `g p` is holomorphic off `k`, a region that does not depend on `p`.
+  `TauCeti.differentiableOn_cauchyTransform_compl_tsupport`, for every `p ∈ s` the transform of
+  `g p` is holomorphic off `tsupport (g p) ⊆ k`, so off `k`, a region that does not depend on `p`.
 * When the parameter space `Q` is complex, the conjugate Wirtinger derivative in `q` commutes with
   the transform. In particular, if `g q z` is holomorphic in `q` for every `z`, so is the
   transform of `g q` at every point `w`.

@@ -5,20 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Abelian.LeftDerived
+public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.CategoryTheory.ObjectProperty.EpiMono
 
 /-!
-# Object properties of homology and left derived functors
+# Object properties of homology
 
-A property closed under subobjects and quotients passes from the degree-`i` term of a complex
-to its degree-`i` homology. If an additive functor sends projective objects to objects with this
-property, all its left derived functors take values in the same class. In particular, tensor
-closure of a Serre class implies its closure under Tor.
+A property closed under subobjects and quotients, for instance a Serre class, passes from the
+middle object of a short complex to its homology, and so from the degree-`i` term of a complex to
+its degree-`i` homology. The consequence for left derived functors,
+`CategoryTheory.ObjectProperty.prop_leftDerived_obj`, is in
+`TauCeti.CategoryTheory.Abelian.LeftDerived`.
 
-## References
+## Main results
 
-* C. A. Weibel, *An Introduction to Homological Algebra*, Section 2.4.
+* `CategoryTheory.ObjectProperty.prop_homology_of_prop_X₂`: the homology of a short complex lies
+  in the class if its middle object does.
+* `CategoryTheory.ObjectProperty.prop_homology`: the same for the homology of a complex.
 -/
 
 public section
@@ -27,28 +30,25 @@ namespace CategoryTheory.ObjectProperty
 
 open Limits
 
-universe u v u' v'
+universe u v
 
-variable {C : Type u} [Category.{v} C] (P : ObjectProperty C)
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] (P : ObjectProperty C)
   [P.IsClosedUnderSubobjects] [P.IsClosedUnderQuotients]
+
+/-- The homology of a short complex lies in a class of objects closed under subobjects and
+quotients, for instance a Serre class, if its middle object does: it is a quotient of the cycles,
+which are a subobject of the middle object. -/
+lemma prop_homology_of_prop_X₂ {S : ShortComplex C} [S.HasHomology] (h : P S.X₂) :
+    P S.homology :=
+  P.prop_of_epi S.homologyπ (P.prop_of_mono S.iCycles h)
 
 /-- A property closed under subobjects and quotients passes from a term of a complex to homology
 in the same degree, whenever that homology exists. -/
-lemma prop_homology [HasZeroMorphisms C] {ι : Type*} {c : ComplexShape ι}
+lemma prop_homology {ι : Type*} {c : ComplexShape ι}
     (K : HomologicalComplex C c) (i : ι) [K.HasHomology i] (h : P (K.X i)) :
     P (K.homology i) :=
-  P.prop_of_epi (K.homologyπ i) (P.prop_of_mono (K.iCycles i) h)
-
-variable [Abelian C]
-
-/-- If an additive functor sends every projective object into a class closed under subobjects
-and quotients, all its left derived functors take values in that class. -/
-lemma prop_leftDerived_obj
-    {D : Type u'} [Category.{v'} D] [Abelian D] [HasProjectiveResolutions D]
-    (F : D ⥤ C) [F.Additive] (hF : ∀ (Y : D) [Projective Y], P (F.obj Y))
-    (X : D) (n : ℕ) : P ((F.leftDerived n).obj X) := by
-  let Q := projectiveResolution X
-  exact P.prop_of_iso (Q.isoLeftDerivedObj F n).symm
-    (P.prop_homology ((F.mapHomologicalComplex _).obj Q.complex) n (hF _))
+  -- `K.homology i` is by definition the homology of the short complex `K.sc i`, whose middle
+  -- object is `K.X i`.
+  P.prop_homology_of_prop_X₂ (S := K.sc i) h
 
 end CategoryTheory.ObjectProperty

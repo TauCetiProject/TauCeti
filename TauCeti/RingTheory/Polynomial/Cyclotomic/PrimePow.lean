@@ -88,12 +88,6 @@ theorem prod_range_cyclotomic_prime_pow_comp_X_add_one (n : ℕ) :
   | zero => simp
   | succ n ih => rw [prod_range_succ, ih, mul_comm, cyclotomic_prime_pow_comp_X_add_one_mul]
 
-/-- `ξ_m` divides `ω_n` for `m ≤ n`. -/
-theorem cyclotomic_prime_pow_comp_X_add_one_dvd {m n : ℕ} (h : m ≤ n) :
-    (cyclotomic (p ^ m) R).comp (X + 1) ∣ (1 + X) ^ p ^ n - 1 := by
-  rw [← prod_range_cyclotomic_prime_pow_comp_X_add_one]
-  exact dvd_prod_of_mem _ (mem_range.2 (Nat.lt_succ_of_le h))
-
 /-- The constant coefficient of `ξ_{n+1}` is `p`. -/
 @[simp]
 theorem coeff_zero_cyclotomic_prime_pow_comp_X_add_one (n : ℕ) :
