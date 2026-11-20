@@ -237,6 +237,13 @@ theorem map_katzCandidate {N : Type*} [AddCommGroup N] [Module R N] (D' : AddMon
   simp only [katzCandidate, map_sum, map_smul]
   exact sum_congr rfl fun j _ ↦ by rw [map_katzJetCoeff D e D' f hf]
 
+/-- The coordinates of Katz's candidate in a basis `b` are the sums
+`∑_{j < n} (x ^ j / j!) b.repr (c(0, j)) k`. -/
+theorem repr_katzCandidate {ι : Type*} (b : Basis ι R M) (x : R) (k : ι) :
+    b.repr (katzCandidate D e x) k =
+      ∑ j ∈ range n, (j ! : R)⁻¹ʳ * x ^ j * b.repr (katzJetCoeff D e 0 j) k := by
+  simp [katzCandidate_def, mul_assoc]
+
 /-! ### Iterates of the candidate -/
 
 section Iterates
