@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -40,6 +41,8 @@ Then `‖ξ‖²_{W^{1,2}} ≤ 64 C ‖P ξ‖²_{L²}` for every such section
 (`TauCeti.exists_contDiff_antitone_cutoff_abs_deriv_le`). The first piece lives where `P` is
 close to `P₁` and the second where it is close to `P₂`; the comparison errors are absorbed by the
 estimates of the pieces, and the cutoff errors `β' σ ξ`, of size `‖σ‖ / T`, by the left-hand side.
+Pointwise, the Leibniz rule gives `‖P (β ξ)‖ ≤ |β| ‖P ξ‖ + m ‖σ‖ ‖ξ‖` when `|β'| ≤ m`
+(`TauCeti.Floer.norm_apply_smul_fst_le`).
 
 **The linearized Floer operator.** For the linearized Floer operators
 `D ξ = ∂s ξ + J(z, u z) ∂t ξ + C(z) ξ` (`TauCeti.SymplecticForm.floerLinearization`) of three data
@@ -126,6 +129,18 @@ private theorem setIntegral_sobolev_le_of_norm_le_add {η : ℝ × ℝ → E} (h
         ((continuous_sobolev hη).const_mul _).integrableOn_Icc_prod_Icc) hrect hpt
   nlinarith [mul_le_mul_of_nonneg_left hint hC, mul_le_mul_of_nonneg_right hε hW]
 
+/-- **The Leibniz bound at a point.** If `P (β ξ) = β P ξ + β' σ ξ` at `z` and `|β'(s)| ≤ m` there,
+then `‖P (β ξ)‖ ≤ |β| ‖P ξ‖ + m ‖σ‖ ‖ξ‖` at `z`. -/
+theorem norm_apply_smul_fst_le {P : (ℝ × ℝ → E) → ℝ × ℝ → F} (σ : E →L[ℝ] F)
+    {ξ : ℝ × ℝ → E} {β β' : ℝ → ℝ} {z : ℝ × ℝ} {m : ℝ} (hm : |β' z.1| ≤ m)
+    (hPη : P (fun w ↦ β w.1 • ξ w) z = β z.1 • P ξ z + β' z.1 • σ (ξ z)) :
+    ‖P (fun w ↦ β w.1 • ξ w) z‖ ≤ |β z.1| * ‖P ξ z‖ + m * ‖σ‖ * ‖ξ z‖ := by
+  rw [hPη]
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+  · rw [norm_smul, Real.norm_eq_abs]
+  · rw [norm_smul, Real.norm_eq_abs, mul_assoc]
+    exact mul_le_mul hm (σ.le_opNorm _) (norm_nonneg _) ((abs_nonneg _).trans hm)
+
 /-- **The `L²` norm of `P` on a cut-off section.** If `P (β ξ) = β P ξ + β' σ ξ` for cutoffs
 `β(s)`, then for `|β| ≤ 1` and `|β'| ≤ M` the `L²` norm of `P (β ξ)` is bounded by those of `P ξ`
 and of `ξ`. -/
@@ -139,30 +154,20 @@ private theorem setIntegral_norm_sq_smul_fst_le {P : (ℝ × ℝ → E) → ℝ 
       2 * (∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖P ξ z‖ ^ 2) +
         2 * (M * ‖σ‖) ^ 2 * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2 := by
   have hβd (s : ℝ) : HasDerivAt β (deriv β s) s := (hβc.differentiable two_ne_zero s).hasDerivAt
-  have hβξ : ContDiff ℝ 2 fun w : ℝ × ℝ ↦ β w.1 • ξ w := (hβc.comp contDiff_fst).smul hξ
   have hPξ := hPc hξ
   have hξc := hξ.continuous
   have hrect : MeasurableSet (Icc a b ×ˢ Icc (0 : ℝ) 1) := measurableSet_Icc.prod measurableSet_Icc
   -- Pointwise, `‖β P ξ + β' σ ξ‖ ≤ ‖P ξ‖ + M ‖σ‖ ‖ξ‖`.
   have hpt (z : ℝ × ℝ) : ‖P (fun w ↦ β w.1 • ξ w) z‖ ^ 2 ≤
       2 * ‖P ξ z‖ ^ 2 + 2 * (M * ‖σ‖) ^ 2 * ‖ξ z‖ ^ 2 := by
-    have h : ‖P (fun w ↦ β w.1 • ξ w) z‖ ≤ ‖P ξ z‖ + M * ‖σ‖ * ‖ξ z‖ := by
-      rw [hP hξ hβd z]
-      refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-      · rw [norm_smul, Real.norm_eq_abs]
-        exact mul_le_of_le_one_left (norm_nonneg _) (hβ₁ z.1)
-      · rw [norm_smul, Real.norm_eq_abs, mul_assoc]
-        exact mul_le_mul (hM z.1) (σ.le_opNorm _) (norm_nonneg _)
-          ((abs_nonneg _).trans (hM z.1))
+    have h : ‖P (fun w ↦ β w.1 • ξ w) z‖ ≤ ‖P ξ z‖ + M * ‖σ‖ * ‖ξ z‖ :=
+      (norm_apply_smul_fst_le σ (hM z.1) (hP hξ hβd z)).trans
+        (add_le_add_left (mul_le_of_le_one_left (norm_nonneg _) (hβ₁ z.1)) _)
     nlinarith [norm_nonneg (P (fun w ↦ β w.1 • ξ w) z),
       sq_nonneg (‖P ξ z‖ - M * ‖σ‖ * ‖ξ z‖)]
-  rw [← integral_const_mul, ← integral_const_mul,
-    ← integral_add (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))
-      (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))]
-  exact setIntegral_mono_on (Continuous.integrableOn_Icc_prod_Icc (by have := hPc hβξ; fun_prop))
-    ((Continuous.integrableOn_Icc_prod_Icc (by fun_prop)).add
-      (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))) hrect
-    fun z _ ↦ by simpa [mul_pow] using hpt z
+  exact setIntegral_le_mul_add_mul_of_le hrect (fun z _ ↦ by positivity)
+    (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))
+    (Continuous.integrableOn_Icc_prod_Icc (by fun_prop)) fun z _ ↦ hpt z
 
 /-- **The estimate for one cut-off piece.** Let `β(s)` be a cutoff with `|β| ≤ 1` and `|β'| ≤ M`,
 which vanishes with its derivative off a set `U` of `s` on which `P` is `ε`-close to `P₁` for
@@ -209,10 +214,9 @@ private theorem setIntegral_sobolev_smul_fst_le {P P₁ : (ℝ × ℝ → E) →
       rw [h0, norm_zero]
       have hη0 : η z = 0 := by simp [η, hβU _ hz]
       have hηd : fderiv ℝ η z stdComplexLineImag = 0 := by
-        have hd : HasFDerivAt η _ z := ((hβd z.1).hasFDerivAt.comp z hasFDerivAt_fst).smul
-          ((hξ.differentiable two_ne_zero) z).hasFDerivAt
-        rw [hd.fderiv]
-        simp [hβU _ hz, hβ'U _ hz]
+        rw [fderiv_smul_fst_apply_stdComplexLineImag (hβd z.1).differentiableAt
+          ((hξ.differentiable two_ne_zero) z)]
+        simp [hβU _ hz]
       simp [hη0, hηd]
   have hηper (s t : ℝ) : η (s, t + 1) = η (s, t) := by simp only [η, hper]
   have hη₀ (s t : ℝ) (hs : s ∉ Ioo a b) : η (s, t) = 0 := by simp only [η, hξ₀ s t hs, smul_zero]
@@ -255,13 +259,9 @@ private theorem setIntegral_sobolev_le_add_of_cutoff {ξ : ℝ × ℝ → E} (h�
     ((contDiff_const.sub hβ).comp contDiff_fst).smul hξ
   have hsum : ξ = (fun w ↦ β w.1 • ξ w) + fun w ↦ (1 - β w.1) • ξ w :=
     funext fun w ↦ by simp [← add_smul]
-  have hi₁ := ((continuous_sobolev (hξ₁.of_le one_le_two)).integrableOn_Icc_prod_Icc
-    (a₁ := a) (b₁ := b) (a₂ := 0) (b₂ := 1)).const_mul 2
-  have hi₂ := ((continuous_sobolev (hξ₂.of_le one_le_two)).integrableOn_Icc_prod_Icc
-    (a₁ := a) (b₁ := b) (a₂ := 0) (b₂ := 1)).const_mul 2
-  rw [← integral_const_mul, ← integral_const_mul, ← integral_add hi₁ hi₂]
-  refine setIntegral_mono_on (continuous_sobolev (hξ.of_le one_le_two)).integrableOn_Icc_prod_Icc
-    (hi₁.add hi₂) (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ ?_
+  refine setIntegral_le_mul_add_mul_of_le (measurableSet_Icc.prod measurableSet_Icc)
+    (fun z _ ↦ by positivity) (continuous_sobolev (hξ₁.of_le one_le_two)).integrableOn_Icc_prod_Icc
+    (continuous_sobolev (hξ₂.of_le one_le_two)).integrableOn_Icc_prod_Icc fun z _ ↦ ?_
   have h := sobolev_add_le (hξ₁.differentiable two_ne_zero z) (hξ₂.differentiable two_ne_zero z)
   rwa [← hsum] at h
 

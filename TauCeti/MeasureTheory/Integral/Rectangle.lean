@@ -54,6 +54,9 @@ a doubly (twisted) periodic map are used.
   `TauCeti.eLpNorm_restrict_univ_prod_Icc_neg_one_two_le`: for a function of period one in the
   second coordinate, integrals over the horizontal strips `ℝ × [k, k + 1]` agree, and those over
   `ℝ × [-1, 2]` are controlled by those over the fundamental strip `ℝ × [0, 1]`.
+* `TauCeti.eq_zero_of_forall_setIntegral_rect_norm_sq_eq_zero`: a continuous function of period
+  one in the second coordinate whose `L²` norm vanishes on every rectangle `[-R, R] × [0, 1]` is
+  zero.
 
 Translation invariance of Lebesgue measure on `ℝ × ℝ` comes from
 `TauCeti.isAddHaarMeasure_volume_prod`.
@@ -323,6 +326,28 @@ theorem eLpNorm_restrict_univ_prod_Icc_neg_one_two_le {F : Type*} [NormedAddComm
           _ = 2 := by
               rw [show (4 : ℝ≥0∞) = 2 ^ (2 : ℝ) by norm_num, ← ENNReal.rpow_mul]
               norm_num
+
+omit [NormedSpace ℝ E] in
+/-- A continuous function `ξ : ℝ × ℝ → E` of period one in the second coordinate whose `L²` norm
+vanishes on every rectangle `[-R, R] × [0, 1]` is zero. -/
+theorem eq_zero_of_forall_setIntegral_rect_norm_sq_eq_zero {ξ : ℝ × ℝ → E} (hξ : Continuous ξ)
+    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t))
+    (h : ∀ R, 0 < R → ∫ z in Icc (-R) R ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2 = 0) : ξ = 0 := by
+  -- Periodicity in `t` moves every point into a rectangle `[-R, R] × [0, 1]`, where `‖ξ‖²`
+  -- vanishes.
+  funext z
+  obtain ⟨s, t⟩ := z
+  have hst := (show Function.Periodic (fun t ↦ ξ (s, t)) 1 from fun t ↦ hper s t).sub_int_mul_eq
+    (x := t) ⌊t⌋
+  rw [mul_one] at hst
+  rw [Pi.zero_apply, ← hst, ← norm_eq_zero, ← sq_eq_zero_iff]
+  have hR : (0 : ℝ) < |s| + 1 := by positivity
+  refine eqOn_zero_of_setIntegral_rect_eq_zero (by linarith) zero_lt_one (by fun_prop)
+    (fun z ↦ sq_nonneg ‖ξ z‖) (h _ hR) ⟨⟨?_, ?_⟩, ?_, ?_⟩
+  · linarith [neg_abs_le s]
+  · linarith [le_abs_self s]
+  · exact sub_nonneg.2 (Int.floor_le t)
+  · linarith [Int.lt_floor_add_one t]
 
 end TauCeti
 
