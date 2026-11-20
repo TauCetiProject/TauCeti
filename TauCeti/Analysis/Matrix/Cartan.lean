@@ -241,20 +241,20 @@ def cartanHomeomorph :
     simp only [hG, TauCeti.expUnit_coe]
     exact (forall_det_exp_smul_eq_one_iff_mem_sl x).trans LieAlgebra.SpecialLinear.mem_sl_iff
   let eK : specialUnitaryGroup n 𝕜 ≃ₜ {u : unitaryGroup n 𝕜 // Unitary.toUnits u ∈ G} :=
-    { toFun k := ⟨⟨k, (mem_specialUnitaryGroup_iff.1 k.2).1⟩,
-        (hG _).2 (mem_specialUnitaryGroup_iff.1 k.2).2⟩
-      invFun u := ⟨u.1, mem_specialUnitaryGroup_iff.2 ⟨u.1.2, (hG _).1 u.2⟩⟩
-      continuous_toFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
-      continuous_invFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _ }
+    { toFun k := ⟨⟨k, (mem_specialUnitaryGroup_iff.1 k.property).1⟩,
+        (hG _).2 (mem_specialUnitaryGroup_iff.1 k.property).2⟩
+      invFun u := ⟨u.val, mem_specialUnitaryGroup_iff.2 ⟨u.val.property, (hG _).1 u.property⟩⟩
+      continuous_toFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _ }
   let eP : {X : selfAdjoint (Matrix n n 𝕜) // (X : Matrix n n 𝕜).trace = 0} ≃ₜ
       {x : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ, TauCeti.expUnit (t • (x : Matrix n n 𝕜)) ∈ G} :=
-    { toFun X := ⟨X.1, (hline _).2 X.2⟩
-      invFun x := ⟨x.1, (hline _).1 x.2⟩
-      continuous_toFun := continuous_subtype_val.subtype_mk _
-      continuous_invFun := continuous_subtype_val.subtype_mk _ }
+    { toFun X := ⟨X.val, (hline _).2 X.property⟩
+      invFun x := ⟨x.val, (hline _).1 x.property⟩
+      continuous_toFun := continuous_subtypeVal.subtype_mk _
+      continuous_invFun := continuous_subtypeVal.subtype_mk _ }
   let eSL : G ≃ₜ SpecialLinearGroup n 𝕜 :=
     { toEquiv := toGLKerEquiv.symm.toEquiv
-      continuous_toFun := (Units.continuous_val.comp continuous_subtype_val).subtype_mk _
+      continuous_toFun := (Units.continuous_val.comp continuous_subtypeVal).subtype_mk _
       continuous_invFun := continuous_toGL.subtype_mk _ }
   exact (eK.prodCongr eP).trans
     ((G.cartanHomeomorph hstar fun x hx h ↦ (hline x).2 ((hexpG hx).1 h)).trans eSL)

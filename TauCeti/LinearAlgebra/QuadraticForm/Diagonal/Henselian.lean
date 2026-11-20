@@ -127,10 +127,10 @@ theorem equivalent_weightedSumSquares_mul_of_forall_fiber_of_isUnit_two
       (weightedSumSquares R fun i ↦ (v i : R) * s (k i)) := by
   refine equivalent_weightedSumSquares_mul_of_forall_fiber k s (fun i ↦ (u i : R))
     (fun i ↦ (v i : R)) fun m ↦ ?_
-  rw [← weightedSumSquares_units (fun i : {i : ι // k i = m} ↦ u i.1),
-    ← weightedSumSquares_units (fun i : {i : ι // k i = m} ↦ v i.1)]
+  rw [← weightedSumSquares_units (fun i : {i : ι // k i = m} ↦ u i.val),
+    ← weightedSumSquares_units (fun i : {i : ι // k i = m} ↦ v i.val)]
   refine (equivalent_weightedSumSquares_iff_isSquare_prod_mul_prod_of_isUnit_two h2 _ _).mpr ?_
-  have hsub (w : ι → Rˣ) : ∏ i : {i : ι // k i = m}, w i.1 = ∏ i with k i = m, w i :=
+  have hsub (w : ι → Rˣ) : ∏ i : {i : ι // k i = m}, w i.val = ∏ i with k i = m, w i :=
     (Finset.prod_subtype {i : ι | k i = m} (fun _ ↦ by simp) w).symm
   rw [hsub u, hsub v]
   exact hfiber m

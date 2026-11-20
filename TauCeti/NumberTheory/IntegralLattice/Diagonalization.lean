@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.BilinearForm.ValuationRing
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!

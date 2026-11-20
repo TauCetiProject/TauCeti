@@ -48,37 +48,37 @@ variable (A : FiniteQuadraticModule)
 `FiniteQuadraticModule.pi` of the prime-primary restrictions of `A` with `A.primaryComponents`. -/
 private def piPrimaryComponentsIsometry :
     Isometry
-      (pi fun p : (Nat.card A).primeFactors ↦ A.restrict (primaryComponent A p.1))
+      (pi fun p : (Nat.card A).primeFactors ↦ A.restrict (primaryComponent A p.val))
       A.primaryComponents where
   toLinearEquiv :=
-    { toFun := fun x p ↦ ⟨(x p).1, (x p).2⟩
-      invFun := fun y p ↦ ⟨(y p).1, (y p).2⟩
+    { toFun := fun x p ↦ ⟨(x p).val, (x p).property⟩
+      invFun := fun y p ↦ ⟨(y p).val, (y p).property⟩
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun _ _ ↦ rfl }
   map_app' x :=
-    (A.primaryComponents_quadratic (fun p ↦ ⟨(x p).1, (x p).2⟩)).trans <|
+    (A.primaryComponents_quadratic (fun p ↦ ⟨(x p).val, (x p).property⟩)).trans <|
       (Finset.sum_congr rfl fun p _ ↦
-        (A.restrict_quadratic (primaryComponent A p.1) ⟨(x p).1, (x p).2⟩).symm).trans
+        (A.restrict_quadratic (primaryComponent A p.val) ⟨(x p).val, (x p).property⟩).symm).trans
         (pi_quadratic _ x).symm
 
 /-- The Gauss-sum invariant of `A.primaryComponents` is the sum of the Gauss-sum invariants of the
 prime-primary restrictions of `A`. -/
 theorem gaussSign_primaryComponents (hA : A.IsNondegenerate) :
     A.primaryComponents.gaussSign =
-      ∑ p : (Nat.card A).primeFactors, (A.restrict (primaryComponent A p.1)).gaussSign := by
+      ∑ p : (Nat.card A).primeFactors, (A.restrict (primaryComponent A p.val)).gaussSign := by
   classical
   rw [← A.piPrimaryComponentsIsometry.gaussSign_eq]
   exact gaussSign_pi _ fun p ↦
-    A.isNondegenerate_restrict_primaryComponent hA (Nat.prime_of_mem_primeFactors p.2)
+    A.isNondegenerate_restrict_primaryComponent hA (Nat.prime_of_mem_primeFactors p.property)
 
 /-- **Primary decomposition of `gaussSign`.** The Gauss-sum invariant of a nondegenerate finite
 quadratic module is the sum of the Gauss-sum invariants of its prime-primary components over the
 prime factors of its order. -/
 theorem gaussSign_eq_sum_primaryComponents (hA : A.IsNondegenerate) :
     A.gaussSign =
-      ∑ p : (Nat.card A).primeFactors, (A.restrict (primaryComponent A p.1)).gaussSign := by
+      ∑ p : (Nat.card A).primeFactors, (A.restrict (primaryComponent A p.val)).gaussSign := by
   rw [← A.primaryDecomposition.gaussSign_eq, A.gaussSign_primaryComponents hA]
 
 /-- **Primary decomposition of `gaussSign` over any prime superset.** The Gauss-sum invariant of a

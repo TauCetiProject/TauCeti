@@ -107,7 +107,7 @@ private theorem carrierInDual_le_radical_dualCarrierHalfNormModOne
       LinearMap.BilinMap.polar_toQuadraticMap, dualCarrierHalfFormModOne_apply,
       dualCarrierHalfFormModOne_apply, L.isSymm.eq]
     obtain ⟨z, hz⟩ := Submodule.mem_one.mp
-      (y.2 x ((L.mem_carrierInDual_iff x).mp hx))
+      (y.property x ((L.mem_carrierInDual_iff x).mp hx))
     rw [← AddCircle.coe_add]
     refine (AddCircle.coe_eq_zero_iff_mem_one _).mpr (Submodule.mem_one.mpr ⟨z, ?_⟩)
     have hz' : L.form y x = (z : ℚ) := by simpa using hz.symm

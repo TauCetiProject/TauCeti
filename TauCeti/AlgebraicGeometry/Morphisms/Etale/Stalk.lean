@@ -62,8 +62,8 @@ theorem iSup_ringKrullDim_stalk_eq_of_etale (U : X.Opens) (V : Y.Opens) (hUV : f
   · have := (isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType f x).mpr (hU x)
     rw [← ringKrullDim_stalk_eq_of_etale f x]
     exact le_iSup (fun y : V ↦ ringKrullDim (Y.presheaf.stalk y))
-      ⟨f x, by rw [← SetLike.mem_coe, ← hUV]; exact ⟨x, x.2, rfl⟩⟩
-  · obtain ⟨x, hx, hxy⟩ : (y : Y) ∈ f '' U := by rw [hUV]; exact y.2
+      ⟨f x, by rw [← SetLike.mem_coe, ← hUV]; exact ⟨x, x.property, rfl⟩⟩
+  · obtain ⟨x, hx, hxy⟩ : (y : Y) ∈ f '' U := by rw [hUV]; exact y.property
     have := (isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType f x).mpr (hU ⟨x, hx⟩)
     rw [← hxy, ringKrullDim_stalk_eq_of_etale f x]
     exact le_iSup (fun x : U ↦ ringKrullDim (X.presheaf.stalk x)) ⟨x, hx⟩

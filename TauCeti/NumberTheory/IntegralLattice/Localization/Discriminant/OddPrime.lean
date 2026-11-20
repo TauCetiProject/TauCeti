@@ -177,7 +177,8 @@ private theorem localIntegralForm_equivalent_of_forall_fiber
     simpa only [Basis.reindex_apply, Equiv.symm_symm, hcv, hσ] using
       (hc.reindex σ.symm).equivalent_weightedSumSquares
   exact ((L.isSymm_localIntegralForm p).equivalent_iff_toQuadraticMap_equivalent
-    (M.isSymm_localIntegralForm p)).mpr (hL_quad.trans (hdiag.trans hM_quad.symm))
+    (M.isSymm_localIntegralForm p) (PadicInt.isUnit_two hp).mem_nonZeroDivisors).mpr
+    (hL_quad.trans (hdiag.trans hM_quad.symm))
 
 /-! ### Odd-prime classification theorems -/
 

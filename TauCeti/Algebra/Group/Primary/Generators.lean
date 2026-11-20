@@ -49,15 +49,15 @@ least numbers for its prime-primary components. -/
 theorem spanFinrank_eq_sup_primaryComponents (A : Type*) [AddCommGroup A] [Finite A] :
     (⊤ : Submodule ℤ A).spanFinrank =
       Finset.univ.sup (fun p : (Nat.card A).primeFactors ↦
-        (⊤ : Submodule ℤ (_root_.AddCommGroup.primaryComponent A p.1)).spanFinrank) := by
+        (⊤ : Submodule ℤ (_root_.AddCommGroup.primaryComponent A p.val)).spanFinrank) := by
   classical
   let M : (Nat.card A).primeFactors → Type _ :=
-    fun p ↦ _root_.AddCommGroup.primaryComponent A p.1
+    fun p ↦ _root_.AddCommGroup.primaryComponent A p.val
   have hcop : Pairwise fun p q ↦ (Nat.card (M p)).Coprime (Nat.card (M q)) := by
     intro p q hpq
     dsimp only [M]
-    have hp := Nat.prime_of_mem_primeFactors p.2
-    have hq := Nat.prime_of_mem_primeFactors q.2
+    have hp := Nat.prime_of_mem_primeFactors p.property
+    have hq := Nat.prime_of_mem_primeFactors q.property
     rw [natCard_primaryComponent A hp, natCard_primaryComponent A hq]
     exact ((Nat.coprime_primes hp hq).mpr (by simpa using hpq)).pow _ _
   let e : (∀ p, M p) ≃ₗ[ℤ] A := (primaryDecomposition A).toIntLinearEquiv
@@ -96,7 +96,7 @@ theorem rank_pi_zmod_pow {p : ℕ} [Fact p.Prime] {ι : Type*} [Fintype ι] (k :
   rw [AddGroup.rank_eq_spanFinrank_top]
   apply le_antisymm
   · -- Single-coordinate generators on `{i // k i ≠ 0}` span the product, as `ZMod 1` is trivial.
-    let g : {i // k i ≠ 0} → ∀ i, ZMod (p ^ k i) := fun j ↦ Pi.single j.1 1
+    let g : {i // k i ≠ 0} → ∀ i, ZMod (p ^ k i) := fun j ↦ Pi.single j.val 1
     have hspan : Submodule.span ℤ (Set.range g) = ⊤ := by
       refine top_unique fun x _ ↦ ?_
       rw [← Finset.univ_sum_single x]
@@ -121,8 +121,8 @@ theorem rank_pi_zmod_pow {p : ℕ} [Fact p.Prime] {ι : Type*} [Fintype ι] (k :
   · -- Reducing the nontrivial coordinates modulo `p` maps onto the `𝔽_p`-vector space `𝔽_p^S`.
     let π : (∀ i, ZMod (p ^ k i)) →ₗ[ℤ] ({i // k i ≠ 0} → ZMod p) :=
       LinearMap.pi fun j ↦
-        ((ZMod.castHom (dvd_pow_self p j.2) (ZMod p)).toAddMonoidHom.toIntLinearMap).comp
-          (LinearMap.proj j.1)
+        ((ZMod.castHom (dvd_pow_self p j.property) (ZMod p)).toAddMonoidHom.toIntLinearMap).comp
+          (LinearMap.proj j.val)
     have hsurj : Function.Surjective π := fun y ↦ by
       refine ⟨fun i ↦ if hi : k i ≠ 0 then ((y ⟨i, hi⟩).val : ZMod (p ^ k i)) else 0, ?_⟩
       ext ⟨i, hi⟩

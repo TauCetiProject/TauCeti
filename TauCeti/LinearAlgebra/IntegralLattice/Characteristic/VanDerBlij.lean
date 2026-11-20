@@ -194,9 +194,9 @@ private theorem isLagrangian_evenSublattice_primaryComponent_two [L.IsNondegener
   have hH2_iso : A₂.toFiniteBilinearModule.IsIsotropic H₂ :=
     A₂.toFiniteBilinearModule.isIsotropic_def.mpr fun x hx y hy ↦
       (A.restrict_pairing _ x y).trans <|
-        (N.discriminantBilinearModule_pairing x.1 y.1).trans <|
+        (N.discriminantBilinearModule_pairing x.val y.val).trans <|
           (IntermediateCarrier.isIntegral_iff_forall_discriminantPairing_eq_zero M₀).mp hI
-            x.1 hx y.1 hy
+            x.val hx y.val hy
   exact FiniteBilinearModule.IsIsotropic.isLagrangian_of_card_sq_eq A₂.toFiniteBilinearModule
     hH2_iso
     (A.isNondegenerate_restrict_primaryComponent
@@ -233,7 +233,8 @@ theorem gaussSign_primaryComponent_two_evenSublattice [L.IsNondegenerate]
       (N.discriminantQuadraticModule_quadratic L.isEven_evenSublattice _).trans <|
         (congrArg (N.discriminantQuadraticMap L.isEven_evenSublattice)
           (AddSubgroup.coe_add (AddCommGroup.primaryComponent A 2) a₂ (h : A₂))).trans <|
-          (L.discriminantQuadraticMap_mk_halfCharacteristicDual_add hw ⟨h.1.1, h.2⟩).trans <|
+          (L.discriminantQuadraticMap_mk_halfCharacteristicDual_add hw
+            ⟨h.val.val, h.property⟩).trans <|
             (N.discriminantQuadraticModule_quadratic L.isEven_evenSublattice _).symm.trans
               (A.restrict_quadratic _ a₂).symm
   have hG := FiniteQuadraticModule.gaussSum_eq_natCard_mul_expCircle_of_bilinear_isLagrangian

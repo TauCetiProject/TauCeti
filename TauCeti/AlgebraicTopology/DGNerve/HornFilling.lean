@@ -459,9 +459,9 @@ private lemma boundary_eq_bd (f : Coherences R X)
     boundary R f i j S d hij hS hd = bd F i j S (d + 1) := by
   rw [boundary_def, bd, ← sum_attach S]
   refine sum_congr rfl fun t _ ↦ ?_
-  have hc := card_filter_lt_add_card_filter_gt_add_one t.2
+  have hc := card_filter_lt_add_card_filter_gt_add_one t.property
   simp only [hF]
-  rw [dgComp_congr F rfl rfl rfl (q' := d + 1 + #{s ∈ S | s < t.1}) (by omega)]
+  rw [dgComp_congr F rfl rfl rfl (q' := d + 1 + #{s ∈ S | s < t.val}) (by omega)]
 
 /-- The defect of the dg nerve equation vanishes on coherences satisfying it. -/
 private lemma defect_get_eq_zero {f : Coherences R X} {i j : Fin (n + 1)}

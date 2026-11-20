@@ -91,7 +91,7 @@ theorem mem_V_conjugacy_iff {ι : G →* H} {c d b : G} (hb : d⁻¹ = b⁻¹ * 
     group
   simp only [mem_V, Set.mem_singleton_iff, forall_eq, map_mul, map_inv, eval_inl, eval_inr,
     FreeGroup.lift_apply_of, hd, h, conj_eq_one_iff, commutatorElement_eq_one_iff_commute,
-    mem_centralizer_singleton_iff, ← commute_iff_eq]
+    mem_centralizer_singleton_iff]
   exact Commute.symm_iff
 
 /-- **The conjugacy equation is equivalent to a system of commutators.** In a
@@ -105,7 +105,7 @@ theorem V_conjugacy_eq_V_commutator_centralizer {ι : G →* H} (hH : IsCommTran
   ext v
   simp only [mem_V_conjugacy_iff hb, mem_V, Set.forall_mem_image, SetLike.mem_coe,
     map_commutatorElement, map_mul, map_inv, eval_inl, eval_inr, FreeGroup.lift_apply_of,
-    commutatorElement_eq_one_iff_commute, mem_centralizer_singleton_iff, ← commute_iff_eq]
+    commutatorElement_eq_one_iff_commute, mem_centralizer_singleton_iff]
   exact ⟨fun hv h hh => (isCommTransitive_iff H).1 hH _ _ _ hc hv (hh.symm.map ι),
     fun hv => hv (Commute.refl c)⟩
 
@@ -178,9 +178,9 @@ theorem Rad_conjugacy_eq_normalClosure_self [Subsingleton X] (hBP : IsBP G) (hG 
   rintro _ ⟨_, hh, rfl⟩
   obtain ⟨k, rfl⟩ := hC hh
   -- The generic point of `G_S` solves `S`, so there `z b⁻¹` commutes with `c`, hence with `c ^ k`.
-  have hv := (mem_V_conjugacy_iff hb).1 (SystemGroup.homEquiv _ {S} (GHom.id _)).2
+  have hv := (mem_V_conjugacy_iff hb).1 (SystemGroup.homEquiv _ {S} (GHom.id _)).property
   simp only [SystemGroup.homEquiv_apply_coe, GHom.coe_id, id_eq, SystemGroup.coeff_apply,
-    mem_centralizer_singleton_iff, ← commute_iff_eq] at hv
+    mem_centralizer_singleton_iff] at hv
   simp only [SetLike.mem_coe]
   rw [← QuotientGroup.eq_one_iff, ← QuotientGroup.mk'_apply, map_commutatorElement,
     commutatorElement_eq_one_iff_commute]

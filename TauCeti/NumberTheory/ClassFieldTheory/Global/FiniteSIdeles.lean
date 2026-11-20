@@ -81,9 +81,9 @@ omit [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)] in
 variable (L) in
 /-- A choice of a place of `L` above each place of a finite set `S` of finite places of `K`. -/
 def placeAbove (S : Finset (HeightOneSpectrum (𝒪 K))) (v : S) :
-    {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.1.asIdeal} :=
-  have hw : ∃ w : HeightOneSpectrum (𝒪 L), w.asIdeal.LiesOver v.1.asIdeal := by
-    obtain ⟨w, hw⟩ := under_surjective (𝒪 K) (𝒪 L) v.1
+    {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.val.asIdeal} :=
+  have hw : ∃ w : HeightOneSpectrum (𝒪 L), w.asIdeal.LiesOver v.val.asIdeal := by
+    obtain ⟨w, hw⟩ := under_surjective (𝒪 K) (𝒪 L) v.val
     exact ⟨w, ⟨congrArg HeightOneSpectrum.asIdeal hw.symm⟩⟩
   ⟨hw.choose, hw.choose_spec⟩
 
@@ -113,21 +113,21 @@ def finiteSIdelesTateCohomologyEquiv (S : Finset (HeightOneSpectrum (𝒪 K)))
     (hS : ∀ w : HeightOneSpectrum (𝒪 L), w.under (𝒪 K) ∉ S →
       Algebra.IsUnramifiedAt (𝒪 K) w.asIdeal) (n : ℤ) :
     tateCohomology (finiteSIdelesRep L S) n ≃+
-      ∀ v : S, tateCohomology (semilocalUnitsRep L v.1) n :=
+      ∀ v : S, tateCohomology (semilocalUnitsRep L v.val) n :=
   -- the factors at the places outside `S` vanish, so dropping them is an isomorphism
   have (v : {v : HeightOneSpectrum (𝒪 K) // v ∉ S}) : Subsingleton (tateCohomology
-      (Sum.elim (fun v : S ↦ semilocalUnitsRep L v.1)
-        (fun v : {v : HeightOneSpectrum (𝒪 K) // v ∉ S} ↦ semilocalIntegralUnitsRep L v.1)
+      (Sum.elim (fun v : S ↦ semilocalUnitsRep L v.val)
+        (fun v : {v : HeightOneSpectrum (𝒪 K) // v ∉ S} ↦ semilocalIntegralUnitsRep L v.val)
         (Sum.inr v)) n) :=
     ModuleCat.subsingleton_of_isZero
-      (isZero_tateCohomology_semilocalIntegralUnitsRep_of_notMem hS v.2 n)
+      (isZero_tateCohomology_semilocalIntegralUnitsRep_of_notMem hS v.property n)
   have : Unique (∀ v : {v : HeightOneSpectrum (𝒪 K) // v ∉ S},
-      tateCohomology (Sum.elim (fun v : S ↦ semilocalUnitsRep L v.1)
-        (fun v : {v : HeightOneSpectrum (𝒪 K) // v ∉ S} ↦ semilocalIntegralUnitsRep L v.1)
+      tateCohomology (Sum.elim (fun v : S ↦ semilocalUnitsRep L v.val)
+        (fun v : {v : HeightOneSpectrum (𝒪 K) // v ∉ S} ↦ semilocalIntegralUnitsRep L v.val)
         (Sum.inr v)) n) :=
     { default := 0, uniq := fun _ ↦ Subsingleton.elim _ _ }
-  let e := TateCohomology.linearEquivPi (Sum.elim (fun v : S ↦ semilocalUnitsRep L v.1)
-    (fun v : {v : HeightOneSpectrum (𝒪 K) // v ∉ S} ↦ semilocalIntegralUnitsRep L v.1)) n
+  let e := TateCohomology.linearEquivPi (Sum.elim (fun v : S ↦ semilocalUnitsRep L v.val)
+    (fun v : {v : HeightOneSpectrum (𝒪 K) // v ∉ S} ↦ semilocalIntegralUnitsRep L v.val)) n
   ((tateCohomologyFunctor n).mapIso (finiteSIdelesPiIso L S)).toLinearEquiv.toAddEquiv.trans <|
     { e.toEquiv.trans ((Equiv.sumPiEquivProdPi _).trans (Equiv.prodUnique _ _)) with
       map_add' := fun x y ↦ funext fun v ↦ congrFun (map_add e x y) (Sum.inl v) }
@@ -154,9 +154,9 @@ fields and a finite set `S` of finite places of `K` outside which `L/K` is unram
 theorem herbrandQuotient_finiteSIdelesRep (S : Finset (HeightOneSpectrum (𝒪 K)))
     (hS : ∀ w : HeightOneSpectrum (𝒪 L), w.under (𝒪 K) ∉ S →
       Algebra.IsUnramifiedAt (𝒪 K) w.asIdeal)
-    (w : ∀ v : S, {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.1.asIdeal}) :
+    (w : ∀ v : S, {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.val.asIdeal}) :
     TateCohomology.herbrandQuotient (finiteSIdelesRep L S) =
-      ∏ v : S, (finrank (v.1.adicCompletion K) ((w v).1.adicCompletion L) : ℚ) := by
+      ∏ v : S, (finrank (v.val.adicCompletion K) ((w v).val.adicCompletion L) : ℚ) := by
   -- the integral factors at the places outside `S` have no Tate cohomology
   have hzero (v : HeightOneSpectrum (𝒪 K)) (hv : v ∉ S) (n : ℤ) :=
     ModuleCat.subsingleton_of_isZero
@@ -169,12 +169,12 @@ theorem herbrandQuotient_finiteSIdelesRep (S : Finset (HeightOneSpectrum (𝒪 K
     · exact ⟨v, rfl⟩
   rw [TateCohomology.herbrandQuotient_eq_of_iso (finiteSIdelesPiIso L S),
     TateCohomology.herbrandQuotient_pi _ (Finset.univ.map Function.Embedding.inl)
-      (fun i hi ↦ by obtain ⟨v, rfl⟩ := hS' i hi; exact hzero v.1 v.2 0)
-      (fun i hi ↦ by obtain ⟨v, rfl⟩ := hS' i hi; exact hzero v.1 v.2 (-1)),
+      (fun i hi ↦ by obtain ⟨v, rfl⟩ := hS' i hi; exact hzero v.val v.property 0)
+      (fun i hi ↦ by obtain ⟨v, rfl⟩ := hS' i hi; exact hzero v.val v.property (-1)),
     Finset.prod_map]
   refine Finset.prod_congr rfl fun v _ ↦ ?_
-  have := (w v).2
-  exact herbrandQuotient_semilocalUnitsRep v.1 (w v).1
+  have := (w v).property
+  exact herbrandQuotient_semilocalUnitsRep v.val (w v).val
 
 /-- For a cyclic extension `L/K` of number fields unramified outside a finite set `S` of finite
 places of `K`, the Herbrand quotient of the finite `S`-ideles is nonzero: by
@@ -185,8 +185,8 @@ theorem herbrandQuotient_finiteSIdelesRep_ne_zero (S : Finset (HeightOneSpectrum
     TateCohomology.herbrandQuotient (finiteSIdelesRep L S) ≠ 0 := by
   rw [herbrandQuotient_finiteSIdelesRep S hS (placeAbove L S), Finset.prod_ne_zero_iff]
   intro v _
-  have := (placeAbove L S v).2
-  rw [Nat.cast_ne_zero, ← card_stabilizer_eq_finrank_adicCompletion v.1]
+  have := (placeAbove L S v).property
+  rw [Nat.cast_ne_zero, ← card_stabilizer_eq_finrank_adicCompletion v.val]
   exact Nat.card_pos.ne'
 
 /-- **The Tate cohomology of the finite `S`-ideles is finite** in degrees `0` and `-1`, for a

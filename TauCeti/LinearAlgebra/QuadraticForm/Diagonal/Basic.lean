@@ -35,7 +35,8 @@ of squares.
 * `QuadraticMap.nondegenerate_weightedSumSquares`: over a ring in which two is invertible, a
   diagonal form with regular weights is nondegenerate.
 * `QuadraticMap.weightedSumSquares_units`: unit weights may be replaced by the scalars they name.
-* `QuadraticMap.neg_weightedSumSquares`: negating a diagonal form negates its weights.
+* `QuadraticMap.smul_weightedSumSquares` and `QuadraticMap.neg_weightedSumSquares`: scaling or
+  negating a diagonal form scales or negates its weights.
 * `QuadraticMap.weightedSumSquares_apply_single`, `QuadraticMap.isOrtho_weightedSumSquares_single`,
   and `QuadraticMap.isOrthoᵢ_associated_weightedSumSquares`: single-coordinate evaluation and
   orthogonality of distinct coordinate vectors and of the standard coordinate basis `Pi.basisFun`.
@@ -193,11 +194,11 @@ def weightedSumSquaresMulFiberIsometryEquiv {α : Type*} [DecidableEq α]
     (k : ι → α) (s : α → R) (u : ι → R) :
     (weightedSumSquares R fun i ↦ u i * s (k i)).IsometryEquiv
       (QuadraticMap.pi fun m : Finset.univ.image k ↦
-        s m.1 • weightedSumSquares R fun i : {i : ι // k i = m.1} ↦ u i.1) where
+        s m.val • weightedSumSquares R fun i : {i : ι // k i = m.val} ↦ u i.val) where
   toLinearEquiv :=
     let κ : ι → Finset.univ.image k := fun i ↦
       ⟨k i, Finset.mem_image_of_mem k (Finset.mem_univ i)⟩
-    let fiberEquiv (m : Finset.univ.image k) : {i : ι // κ i = m} ≃ {i : ι // k i = m.1} :=
+    let fiberEquiv (m : Finset.univ.image k) : {i : ι // κ i = m} ≃ {i : ι // k i = m.val} :=
       Equiv.subtypeEquivRight fun _ ↦ Subtype.ext_iff
     ((LinearEquiv.funCongrLeft R R (Equiv.sigmaFiberEquiv κ)).trans
       (LinearEquiv.piCurry R fun m (_ : {i : ι // κ i = m}) ↦ R)).trans
@@ -207,17 +208,17 @@ def weightedSumSquaresMulFiberIsometryEquiv {α : Type*} [DecidableEq α]
     rw [QuadraticMap.pi_apply, weightedSumSquares_apply]
     have hsum :
         ∑ m : Finset.univ.image k,
-            s m.1 * ∑ i : {i : ι // k i = m.1}, u i.1 * (x i.1 * x i.1) =
+            s m.val * ∑ i : {i : ι // k i = m.val}, u i.val * (x i.val * x i.val) =
           ∑ i : ι, u i * s (k i) * (x i * x i) := by
       calc
         ∑ m : Finset.univ.image k,
-            s m.1 * ∑ i : {i : ι // k i = m.1}, u i.1 * (x i.1 * x i.1)
+            s m.val * ∑ i : {i : ι // k i = m.val}, u i.val * (x i.val * x i.val)
             = ∑ m ∈ Finset.univ.image k,
                 s m * ∑ i with k i = m, u i * (x i * x i) := by
               rw [← Finset.sum_attach (Finset.univ.image k)]
               refine Finset.sum_congr rfl fun m _ ↦ ?_
               congr 1
-              exact (Finset.sum_subtype {i : ι | k i = m.1} (fun _ ↦ by simp)
+              exact (Finset.sum_subtype {i : ι | k i = m.val} (fun _ ↦ by simp)
                 (fun i ↦ u i * (x i * x i))).symm
         _ = ∑ m ∈ Finset.univ.image k,
               ∑ i with k i = m, u i * s (k i) * (x i * x i) := by
@@ -231,7 +232,7 @@ def weightedSumSquaresMulFiberIsometryEquiv {α : Type*} [DecidableEq α]
                 (fun i _ ↦ Finset.mem_image_of_mem k (Finset.mem_univ i)) _
     refine (Finset.sum_congr rfl fun m _ ↦ ?_).trans hsum
     rw [smul_apply, weightedSumSquares_apply, smul_eq_mul]
-    refine congrArg (s m.1 * ·) (Finset.sum_congr rfl fun i _ ↦ ?_)
+    refine congrArg (s m.val * ·) (Finset.sum_congr rfl fun i _ ↦ ?_)
     simp only [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
       LinearEquiv.piCongrRight_apply, LinearEquiv.piCurry_apply, Sigma.curry,
       LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply, Equiv.sigmaFiberEquiv_apply,
@@ -242,8 +243,8 @@ of `k`. -/
 @[simp]
 theorem weightedSumSquaresMulFiberIsometryEquiv_apply {α : Type*} [DecidableEq α]
     (k : ι → α) (s : α → R) (u : ι → R) (x : ι → R)
-    (m : Finset.univ.image k) (i : {i : ι // k i = m.1}) :
-    weightedSumSquaresMulFiberIsometryEquiv k s u x m i = x i.1 :=
+    (m : Finset.univ.image k) (i : {i : ι // k i = m.val}) :
+    weightedSumSquaresMulFiberIsometryEquiv k s u x m i = x i.val :=
   (rfl)
 
 /-- The inverse map of `weightedSumSquaresMulFiberIsometryEquiv` reads the `i`-th coordinate from
@@ -251,7 +252,7 @@ the fiber over `k i`. -/
 @[simp]
 theorem weightedSumSquaresMulFiberIsometryEquiv_symm_apply {α : Type*} [DecidableEq α]
     (k : ι → α) (s : α → R) (u : ι → R)
-    (y : (m : Finset.univ.image k) → {i : ι // k i = m.1} → R) (i : ι) :
+    (y : (m : Finset.univ.image k) → {i : ι // k i = m.val} → R) (i : ι) :
     (weightedSumSquaresMulFiberIsometryEquiv k s u).symm y i =
       y ⟨k i, Finset.mem_image_of_mem k (Finset.mem_univ i)⟩ ⟨i, rfl⟩ := by
   have h := congrFun (congrFun ((weightedSumSquaresMulFiberIsometryEquiv k s u).apply_symm_apply y)
@@ -263,19 +264,19 @@ forms `∑ᵢ wᵢ s(kᵢ) xᵢ²` and `∑ᵢ vᵢ s(kᵢ) xᵢ²`. -/
 theorem equivalent_weightedSumSquares_mul_of_forall_fiber {α : Type*} [DecidableEq α]
     (k : ι → α) (s : α → R) (w v : ι → R)
     (hfiber : ∀ m : α,
-      (weightedSumSquares R fun i : {i : ι // k i = m} ↦ w i.1).Equivalent
-        (weightedSumSquares R fun i : {i : ι // k i = m} ↦ v i.1)) :
+      (weightedSumSquares R fun i : {i : ι // k i = m} ↦ w i.val).Equivalent
+        (weightedSumSquares R fun i : {i : ι // k i = m} ↦ v i.val)) :
     (weightedSumSquares R fun i ↦ w i * s (k i)).Equivalent
       (weightedSumSquares R fun i ↦ v i * s (k i)) := by
   -- Split both forms into orthogonal sums indexed by the finite image of `k`, scale each fiber
   -- equivalence by `s m`, and recombine via `QuadraticMap.Equivalent.pi`.
   have hpi :
       (QuadraticMap.pi fun m : Finset.univ.image k ↦
-          s m.1 • weightedSumSquares R fun i : {i : ι // k i = m.1} ↦ w i.1).Equivalent
+          s m.val • weightedSumSquares R fun i : {i : ι // k i = m.val} ↦ w i.val).Equivalent
         (QuadraticMap.pi fun m : Finset.univ.image k ↦
-          s m.1 • weightedSumSquares R fun i : {i : ι // k i = m.1} ↦ v i.1) :=
+          s m.val • weightedSumSquares R fun i : {i : ι // k i = m.val} ↦ v i.val) :=
     QuadraticMap.Equivalent.pi fun m ↦ by
-      obtain ⟨e⟩ := hfiber m.1
+      obtain ⟨e⟩ := hfiber m.val
       exact ⟨{ toLinearEquiv := e.toLinearEquiv
                map_app' := fun x ↦ by
                  simp only [smul_apply, LinearMap.toFun_eq_coe, LinearEquiv.coe_coe,
@@ -289,6 +290,15 @@ theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :
       = QuadraticMap.weightedSumSquares R fun i => ((w i : R)) := by
   ext x
   simp [QuadraticMap.weightedSumSquares_apply, Units.smul_def]
+
+/-- Scaling a weighted sum of squares scales its weights. -/
+theorem _root_.QuadraticMap.smul_weightedSumSquares {S T : Type*} [Monoid S] [Monoid T]
+    [DistribMulAction S R] [SMulCommClass S R R]
+    [DistribMulAction T R] [SMulCommClass T R R]
+    [SMul S T] [IsScalarTower S T R] (c : S) (w : ι → T) :
+    c • QuadraticMap.weightedSumSquares R w = QuadraticMap.weightedSumSquares R (c • w) := by
+  ext x
+  simp [Finset.smul_sum, smul_assoc]
 
 /-- Evaluate a diagonal form on a single-coordinate vector `Pi.single i x`.
 

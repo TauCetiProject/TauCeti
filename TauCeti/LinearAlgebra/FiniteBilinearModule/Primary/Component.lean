@@ -123,15 +123,15 @@ theorem isNondegenerate_restrict_primaryComponent (hA : A.IsNondegenerate) {p : 
   apply eq_zero_of_coprime_nsmul_eq_zero
       ((Nat.coprime_ordCompl hp hcard).pow_left k)
   · have hmap := DFunLike.congr_fun
-      (map_nsmul A.pairing (p ^ k) (x.1 - y.1)) z
+      (map_nsmul A.pairing (p ^ k) (x.val - y.val)) z
     rw [hk, map_zero] at hmap
     calc
-      p ^ k • A.pairing (x.1 - y.1) z =
-          (p ^ k • A.pairing (x.1 - y.1)) z :=
+      p ^ k • A.pairing (x.val - y.val) z =
+          (p ^ k • A.pairing (x.val - y.val)) z :=
         (AddMonoidHom.nsmul_apply _ _ _).symm
       _ = (0 : CharacterModule A) z := hmap.symm
       _ = 0 := AddMonoidHom.zero_apply z
-  · rw [← map_nsmul (A.pairing (x.1 - y.1))]
+  · rw [← map_nsmul (A.pairing (x.val - y.val))]
     have hz := ordCompl_natCard_nsmul_mem_primaryComponent A p z
     have heval := DFunLike.congr_fun hxy
       (⟨ordCompl[p] (Nat.card A) • z, hz⟩ : AddCommGroup.primaryComponent A p)
@@ -172,23 +172,23 @@ def Isometry.restrictPrimaryComponent {A : FiniteBilinearModule.{u}} {B : Finite
     Isometry (A.restrict (AddCommGroup.primaryComponent A n))
       (B.restrict (AddCommGroup.primaryComponent B n)) where
   toAddEquiv :=
-    { toFun x := ⟨f x.1, by
-        obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.2
+    { toFun x := ⟨f x.val, by
+        obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp x.property
         exact AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩
-      invFun y := ⟨f.symm y.1, by
-        obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp y.2
+      invFun y := ⟨f.symm y.val, by
+        obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp y.property
         exact AddCommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_nsmul, hk, map_zero]⟩⟩
-      left_inv x := Subtype.ext (f.symm_apply_apply x.1)
-      right_inv y := Subtype.ext (f.apply_symm_apply y.1)
-      map_add' x y := Subtype.ext (map_add f x.1 y.1) }
-  map_pairing' x y := f.map_pairing x.1 y.1
+      left_inv x := Subtype.ext (f.symm_apply_apply x.val)
+      right_inv y := Subtype.ext (f.apply_symm_apply y.val)
+      map_add' x y := Subtype.ext (map_add f x.val y.val) }
+  map_pairing' x y := f.map_pairing x.val y.val
 
 /-- The restricted bilinear isometry on `n`-primary components acts as `f` on subtypes. -/
 @[simp]
 theorem Isometry.coe_restrictPrimaryComponent_apply {A : FiniteBilinearModule.{u}}
     {B : FiniteBilinearModule.{v}} (f : Isometry A B) (n : ℕ)
     (x : AddCommGroup.primaryComponent A n) :
-    (f.restrictPrimaryComponent n x : B) = f x.1 := by
+    (f.restrictPrimaryComponent n x : B) = f x.val := by
   rfl
 
 /-- Restricting a bilinear isometry to `n`-primary components commutes with inversion. -/
@@ -300,17 +300,17 @@ def Isometry.restrictPrimaryComponent {A : FiniteQuadraticModule.{u}}
       (f.toFiniteBilinearModule.restrictPrimaryComponent n).toAddEquiv
   map_app' x :=
     (congrArg B.quadratic ((FiniteBilinearModule.Isometry.coe_restrictPrimaryComponent_apply
-      f.toFiniteBilinearModule n x).trans (Isometry.toFiniteBilinearModule_apply f x.1))).trans
-      (f.map_app x.1)
+      f.toFiniteBilinearModule n x).trans (Isometry.toFiniteBilinearModule_apply f x.val))).trans
+      (f.map_app x.val)
 
 /-- The restricted quadratic isometry on `n`-primary components acts as `f` on subtypes. -/
 @[simp]
 theorem Isometry.coe_restrictPrimaryComponent_apply {A : FiniteQuadraticModule.{u}}
     {B : FiniteQuadraticModule.{v}} (f : Isometry A B) (n : ℕ)
     (x : A.restrict (AddCommGroup.primaryComponent A n)) :
-    (f.restrictPrimaryComponent n x).1 = f x.1 :=
+    (f.restrictPrimaryComponent n x).val = f x.val :=
   (FiniteBilinearModule.Isometry.coe_restrictPrimaryComponent_apply
-    f.toFiniteBilinearModule n x).trans (Isometry.toFiniteBilinearModule_apply f x.1)
+    f.toFiniteBilinearModule n x).trans (Isometry.toFiniteBilinearModule_apply f x.val)
 
 /-- Restricting a quadratic isometry to `n`-primary components commutes with inversion. -/
 @[simp]

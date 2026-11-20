@@ -336,9 +336,9 @@ theorem isEmpty_isometry_rankOne_one_thirtyNine_three_thirteen :
     by rw [integralNorm_apply, e.carrierEquiv_map_integralForm, ← integralNorm_apply, hv_norm]
   rw [integralNorm_orthogonalSum] at himg_norm
   obtain ⟨x, hx⟩ := (mem_rankOne_carrier_iff 3 _).mp
-    (orthogonalSumFst (rankOne 3) (rankOne 13) (e.carrierEquiv v)).2
+    (orthogonalSumFst (rankOne 3) (rankOne 13) (e.carrierEquiv v)).property
   obtain ⟨y, hy⟩ := (mem_rankOne_carrier_iff 13 _).mp
-    (orthogonalSumSnd (rankOne 3) (rankOne 13) (e.carrierEquiv v)).2
+    (orthogonalSumSnd (rankOne 3) (rankOne 13) (e.carrierEquiv v)).property
   rw [integralNorm_rankOne_eq _ hx.symm, integralNorm_rankOne_eq _ hy.symm] at himg_norm
   rcases eq_or_ne x 0 with rfl | hx0
   · rcases eq_or_ne y 0 with rfl | hy0

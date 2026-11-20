@@ -150,14 +150,14 @@ variable {p : ℤ}
 theorem isGradedCoderivationAlong (D : reducedTransformationCochains f g p) :
     ReducedTensorWords.IsGradedCoderivationAlong (AA.grading.shift 1) p f.barMap g.barMap
       (D : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) :=
-  D.2.1
+  D.property.1
 
 /-- A transformation of degree `p` raises the suspended total degree by `p`. -/
 theorem isHomogeneous (D : reducedTransformationCochains f g p) :
     LinearMap.IsHomogeneous (D : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B)
       (ReducedTensorWords.gradedPiece (AA.grading.shift 1))
       (ReducedTensorWords.gradedPiece (BB.grading.shift 1)) p :=
-  D.2.2
+  D.property.2
 
 /-- The suspended Taylor components of a transformation: the transformation followed by the
 projection onto single letters.  On words of length `n` this is the suspension of the component
@@ -245,7 +245,7 @@ degree `p` is sent to its graded commutator `b_B ∘ D - (-1)^p D ∘ b_A` with 
 differentials. -/
 noncomputable def reducedTransformationDifferential (p : ℤ) :
     reducedTransformationCochains f g p →ₗ[R] reducedTransformationCochains f g (p + 1) where
-  toFun D := ⟨_, sub_negOnePow_smul_mem_reducedTransformationCochains D.2⟩
+  toFun D := ⟨_, sub_negOnePow_smul_mem_reducedTransformationCochains D.property⟩
   map_add' D D' := by
     apply Subtype.ext
     simp only [Submodule.coe_add, LinearMap.comp_add, LinearMap.add_comp, smul_add]
@@ -386,12 +386,13 @@ def equivCochains :
     rw [coe_reducedTransformationDifferential_neg_one]
     exact h.barMap_sub_barMap.symm⟩
   invFun H :=
-    { barHomotopy := H.1
+    { barHomotopy := H.val
       isGradedCoderivationAlong_barHomotopy :=
         ReducedTensorWords.isGradedCoderivationAlong_neg_iff.1
-          (reducedTransformationCochains.isGradedCoderivationAlong H.1)
-      isHomogeneous_barHomotopy := reducedTransformationCochains.isHomogeneous H.1
-      barMap_sub_barMap := H.2.symm.trans (coe_reducedTransformationDifferential_neg_one H.1) }
+          (reducedTransformationCochains.isGradedCoderivationAlong H.val)
+      isHomogeneous_barHomotopy := reducedTransformationCochains.isHomogeneous H.val
+      barMap_sub_barMap := H.property.symm.trans (coe_reducedTransformationDifferential_neg_one
+          H.val) }
   left_inv _ := (rfl)
   right_inv _ := (rfl)
 
