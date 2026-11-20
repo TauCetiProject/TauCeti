@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Group.Continuity
 public import Mathlib.Analysis.Normed.Ring.Basic
 public import TauCeti.Topology.ApproximateUnit
 public import TauCeti.Topology.MetricSpace.SimultaneousApproximation
+import Mathlib.Analysis.Normed.Ring.Lemmas
 
 /-!
 # Bounded approximate identities in normed rings
@@ -31,7 +32,10 @@ We prove:
   approximate unit is eventually norm bounded. This allows a bounded approximate unit of a
   dense subalgebra to serve in its completion;
 * squaring an eventually bounded two-sided approximate identity gives another two-sided
-  approximate identity (`Filter.IsApproximateUnit.map_mul_self`).
+  approximate identity (`Filter.IsApproximateUnit.map_mul_self`);
+* `IsClosed.mem_of_tendsto_mul`: if an eventually norm-bounded filter of elements `e` is a
+  two-sided approximate unit for `x` and `e * x * e` eventually lies in a closed set `s`, then
+  `x ∈ s`.
 
 ## References
 
@@ -296,3 +300,26 @@ theorem map_mul_self {A : Type*} [NonUnitalSeminormedRing A] {l : Filter A}
   neBot := have := hl.neBot; inferInstance
 
 end Filter.IsApproximateUnit
+
+namespace IsClosed
+
+variable {A : Type*} [NonUnitalSeminormedRing A]
+
+/-- If `x * e → x` and `e * x → x` along a proper filter of eventually norm-bounded `e` with
+`e * x * e` eventually in a closed set `s`, then `x ∈ s`. -/
+theorem mem_of_tendsto_mul {s : Set A} {x : A} (hs : IsClosed s) {l : Filter A} [l.NeBot]
+    (hmem : ∀ᶠ e in l, e * x * e ∈ s) (hbdd : IsBoundedUnder (· ≤ ·) l (‖·‖))
+    (hr : Tendsto (x * ·) l (𝓝 x)) (hl : Tendsto (· * x) l (𝓝 x)) : x ∈ s := by
+  -- `e * x * e = (e * x - x) * e + (x * e - x) + x`, and `e` stays bounded.
+  have h₁ : Tendsto (fun e ↦ (e * x - x) * e) l (𝓝 0) :=
+    (tendsto_sub_nhds_zero_iff.mpr hl).zero_mul_isBoundedUnder_le hbdd
+  have h₂ : Tendsto (fun e ↦ x * e - x) l (𝓝 0) := tendsto_sub_nhds_zero_iff.mpr hr
+  have hlim : Tendsto (fun e ↦ e * x * e) l (𝓝 x) := by
+    convert (h₁.add h₂).add_const x using 1
+    · ext e
+      simp only [sub_mul]
+      abel
+    · simp
+  exact hs.mem_of_tendsto hlim hmem
+
+end IsClosed
