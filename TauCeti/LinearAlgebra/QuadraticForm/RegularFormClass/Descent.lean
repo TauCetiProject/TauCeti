@@ -103,7 +103,7 @@ private theorem lift_eq_of_equivalent {α : Type v}
         let r : RegularFormPresentation K := ⟨n, v ∘ Fin.cast hn⟩
         have hrq : (presentedForm r).Equivalent (presentedForm ⟨m, v⟩) := by
           rw [presentedForm_eq_weightedSumSquares, presentedForm_eq_weightedSumSquares]
-          exact (equivalent_weightedSumSquares_comp (fun i => (v i : K)) (finCongr hn)).symm
+          exact QuadraticForm.equivalent_weightedSumSquares_of_comp_eq (finCongr hn) rfl
         have hpr : (presentedForm ⟨n, w⟩).Equivalent (presentedForm r) := h.trans hrq.symm
         have hr : r = ⟨m, v⟩ := by
           apply RegularFormPresentation.ext hn

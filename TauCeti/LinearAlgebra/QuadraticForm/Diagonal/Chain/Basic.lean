@@ -114,7 +114,8 @@ theorem swap (w : Fin n → Rˣ) {i j : Fin n} (hij : i ≠ j) :
   · intro k hki hkj
     simp [Function.comp_apply, Equiv.swap_apply_def, hki, hkj]
   · simpa [Function.comp_apply, Equiv.swap_apply_def, hij, hij.symm] using
-      (equivalent_weightedSumSquares_comp ![(w i : R), (w j : R)] (Equiv.swap 0 1))
+      ⟨QuadraticForm.isometryEquivWeightedSumSquaresReindex (R := R) ![(w i : R), (w j : R)]
+        (Equiv.swap 0 1)⟩
 
 end BinaryStep
 
@@ -160,11 +161,9 @@ theorem equivalent {w w' : Fin n → Rˣ} (h : PermutationStep w w') :
       (weightedSumSquares R fun i => (w' i : R)) := by
   rw [PermutationStep] at h
   obtain ⟨σ, hσ⟩ := h
-  have hw : (fun i => (w' i : R)) = (fun i => (w i : R)) ∘ σ := by
-    funext i
-    exact congrArg Units.val (hσ i)
-  rw [hw]
-  exact equivalent_weightedSumSquares_comp (fun i => (w i : R)) σ
+  refine (QuadraticForm.equivalent_weightedSumSquares_of_comp_eq σ ?_).symm
+  funext i
+  exact (congrArg Units.val (hσ i)).symm
 
 end PermutationStep
 

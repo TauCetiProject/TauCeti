@@ -17,7 +17,9 @@ of squares.
 
 ## Main results
 
-* `TauCeti.equivalent_weightedSumSquares_comp`: reindexing the coefficients preserves equivalence.
+* `QuadraticForm.isometryEquivWeightedSumSquaresReindex` and
+  `QuadraticForm.equivalent_weightedSumSquares_of_comp_eq`: reindexing the weights along an
+  equivalence of index types gives an isometric diagonal form.
 * `TauCeti.equivalent_weightedSumSquares_of_pair`: a binary equivalence extends across fixed
   coordinates.
 * `QuadraticMap.associated_weightedSumSquares`, `QuadraticForm.toMatrix'_weightedSumSquares`, and
@@ -25,7 +27,8 @@ of squares.
   bilinear form of a diagonal form is the weighted dot product, its Gram matrix in the standard
   basis is the diagonal matrix of the weights, and its discriminant is their product.
 * `QuadraticMap.nondegenerate_weightedSumSquares`: over a ring in which two is invertible, a
-  diagonal form with regular weights is nondegenerate.
+  diagonal form with regular weights is nondegenerate; in particular so is `⟨1, a, -a⟩` for a unit
+  `a` (`QuadraticMap.nondegenerate_weightedSumSquares_one_self_neg`).
 * `QuadraticMap.weightedSumSquares_units`: unit weights may be replaced by the scalars they name.
 * `QuadraticMap.smul_weightedSumSquares` and `QuadraticMap.neg_weightedSumSquares`: scaling or
   negating a diagonal form scales or negates its weights.
@@ -78,21 +81,16 @@ private theorem replacePair_comp (f g : (Fin 2 → R) → (Fin 2 → R))
   funext k
   by_cases hki : k = i
   · subst k
-    simp only [replacePair_apply_left,
-      replacePair_apply_right (f := g) (i := i) (j := j) hij]
-    rw [finTwo_eta, hfg]
-    rfl
+    simp [replacePair_apply_left, replacePair_apply_right g hij, finTwo_eta, hfg _]
   by_cases hkj : k = j
   · subst k
-    simp only [replacePair_apply_right (f := f) (i := i) (j := j) hij,
-      replacePair_apply_left, replacePair_apply_right (f := g) (i := i) (j := j) hij]
-    rw [finTwo_eta, hfg]
-    rfl
+    simp [replacePair_apply_left, replacePair_apply_right _ hij, finTwo_eta, hfg _]
   · simp [replacePair, hki, hkj]
 
 end
 
-variable [CommSemiring R] [Fintype ι] {w w' : ι → R}
+variable [CommSemiring R] [Fintype ι] {S : Type*} [Monoid S] [DistribMulAction S R]
+  [SMulCommClass S R R] {w w' : ι → S}
 
 private def pairLinearEquiv [DecidableEq ι] (hij : i ≠ j)
     (e : (weightedSumSquares R ![w i, w j]).IsometryEquiv
@@ -106,23 +104,19 @@ private def pairLinearEquiv [DecidableEq ι] (hij : i ≠ j)
     funext k
     by_cases hki : k = i
     · subst k
-      simpa [replacePair, hij, hij.symm] using
-        congrFun (map_add e ![x i, x j] ![y i, y j]) 0
+      simpa [replacePair] using congrFun (map_add e ![x i, x j] ![y i, y j]) 0
     by_cases hkj : k = j
     · subst k
-      simpa [replacePair, hij, hij.symm] using
-        congrFun (map_add e ![x i, x j] ![y i, y j]) 1
+      simpa [replacePair, hij.symm] using congrFun (map_add e ![x i, x j] ![y i, y j]) 1
     · simp [replacePair, hki, hkj]
   map_smul' a x := by
     funext k
     by_cases hki : k = i
     · subst k
-      simpa [replacePair, hij, hij.symm] using
-        congrFun (map_smul e a ![x i, x j]) 0
+      simpa [replacePair] using congrFun (map_smul e a ![x i, x j]) 0
     by_cases hkj : k = j
     · subst k
-      simpa [replacePair, hij, hij.symm] using
-        congrFun (map_smul e a ![x i, x j]) 1
+      simpa [replacePair, hij.symm] using congrFun (map_smul e a ![x i, x j]) 1
     · simp [replacePair, hki, hkj]
 
 private def pairIsometryEquiv [DecidableEq ι] (hij : i ≠ j)
@@ -132,26 +126,18 @@ private def pairIsometryEquiv [DecidableEq ι] (hij : i ≠ j)
     (weightedSumSquares R w).IsometryEquiv (weightedSumSquares R w') where
   toLinearEquiv := pairLinearEquiv hij e
   map_app' x := by
-    simp only [weightedSumSquares_apply]
-    have sum_pair_add_rest (f : ι → R) :
-        ∑ k, f k = f i + f j + ∑ k ∈ (Finset.univ.erase i).erase j, f k := by
-      rw [← Finset.add_sum_erase _ f (Finset.mem_univ i),
-        ← Finset.add_sum_erase _ f
-          (Finset.mem_erase.mpr ⟨hij.symm, Finset.mem_univ j⟩), add_assoc]
-    rw [sum_pair_add_rest, sum_pair_add_rest]
-    simp only [pairLinearEquiv]
+    -- Split both sums into the coordinates `{i, j}`, where `e` preserves the binary form, and
+    -- the remaining coordinates, which are left unchanged.
     have hpair := e.map_app ![x i, x j]
     simp only [weightedSumSquares_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
-      Matrix.cons_val_one, smul_eq_mul] at hpair
-    rw [replacePair_apply_left, replacePair_apply_right (f := e) (i := i) (j := j) hij x]
-    simp only [smul_eq_mul]
-    rw [hpair]
+      Matrix.cons_val_one] at hpair
+    rw [weightedSumSquares_apply, weightedSumSquares_apply, ← Finset.sum_add_sum_compl {i, j},
+      ← Finset.sum_add_sum_compl {i, j}, Finset.sum_pair hij, Finset.sum_pair hij]
     congr 1
-    apply Finset.sum_congr rfl
-    intro k hk
-    have hki : k ≠ i := (Finset.mem_erase.mp (Finset.mem_erase.mp hk).2).1
-    have hkj : k ≠ j := (Finset.mem_erase.mp hk).1
-    simp [replacePair, hki, hkj, hrest k hki hkj]
+    · simpa [pairLinearEquiv, replacePair_apply_left, replacePair_apply_right _ hij] using hpair
+    · refine Finset.sum_congr rfl fun k hk => ?_
+      simp only [Finset.mem_compl, Finset.mem_insert, Finset.mem_singleton, not_or] at hk
+      simp [pairLinearEquiv, replacePair, hk.1, hk.2, hrest k hk.1 hk.2]
 
 /-- Replacing two distinct coefficients by an equivalent binary form, while fixing all other
 coefficients, produces an equivalent diagonal form. -/
@@ -170,15 +156,35 @@ section CommSemiring
 
 variable [CommSemiring R] [Fintype ι] [Fintype κ]
 
-/-- Reindexing the coefficients of a diagonal form does not change its equivalence class. -/
-theorem equivalent_weightedSumSquares_comp (w : ι → R) (σ : κ ≃ ι) :
-    (QuadraticMap.weightedSumSquares R w).Equivalent
-      (QuadraticMap.weightedSumSquares R (w ∘ σ)) := by
-  refine ⟨{
-    toLinearEquiv := LinearEquiv.funCongrLeft R R σ
-    map_app' := fun x => ?_ }⟩
-  simp only [QuadraticMap.weightedSumSquares_apply, Function.comp_apply, smul_eq_mul]
-  simpa using (Equiv.sum_comp σ.symm (fun i => w (σ i) * (x (σ i) * x (σ i)))).symm
+section Reindex
+
+variable {S : Type*} [Monoid S] [DistribMulAction S R] [SMulCommClass S R R]
+
+/-- Reindexing the weights of a weighted sum of squares along an equivalence of the index types
+gives an isometric quadratic form.  The isometry is precomposition with the equivalence. -/
+def _root_.QuadraticForm.isometryEquivWeightedSumSquaresReindex (w : ι → S) (e : κ ≃ ι) :
+    IsometryEquiv (weightedSumSquares R w) (weightedSumSquares R (w ∘ e)) where
+  __ := LinearEquiv.funCongrLeft R R e
+  map_app' x := by
+    simpa [weightedSumSquares_apply, LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply]
+      using e.sum_comp fun i ↦ w i • (x i * x i)
+
+/-- The reindexing isometry acts on a vector by precomposition with the equivalence. -/
+@[simp]
+theorem _root_.QuadraticForm.isometryEquivWeightedSumSquaresReindex_apply (w : ι → S) (e : κ ≃ ι)
+    (x : ι → R) (i : κ) :
+    QuadraticForm.isometryEquivWeightedSumSquaresReindex w e x i = x (e i) :=
+  -- The parentheses keep the proof opaque, so the definition need not be exposed.
+  (rfl)
+
+/-- Weighted sums of squares whose weights agree after reindexing are equivalent. -/
+theorem _root_.QuadraticForm.equivalent_weightedSumSquares_of_comp_eq
+    {w : ι → S} {w' : κ → S} (e : κ ≃ ι) (h : w ∘ e = w') :
+    (weightedSumSquares R w').Equivalent (weightedSumSquares R w) :=
+  ⟨((QuadraticForm.isometryEquivWeightedSumSquaresReindex w e).trans
+    (QuadraticForm.weightedSumSquaresCongr h)).symm⟩
+
+end Reindex
 
 /-- A diagonal form with unit weights is the diagonal form with the underlying scalar weights. -/
 theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :
@@ -216,13 +222,11 @@ theorem _root_.QuadraticMap.isOrtho_weightedSumSquares_single {S : Type*} [Monoi
   rw [QuadraticMap.isOrtho_def]
   simp only [QuadraticMap.weightedSumSquares_apply, ← Finset.sum_add_distrib, Pi.add_apply]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  by_cases hki : k = i
-  · subst hki
-    simp [hij]
-  · by_cases hkj : k = j
-    · subst hkj
-      simp [hki]
-    · simp [hki, hkj]
+  rcases eq_or_ne k i with rfl | hki
+  · simp [hij]
+  rcases eq_or_ne k j with rfl | hkj
+  · simp [hki]
+  · simp [hki, hkj]
 
 /-- Evaluate a binary diagonal form `⟨a, b⟩` on a vector of `R²`. -/
 theorem _root_.QuadraticMap.weightedSumSquares_fin_two_apply (a b : R) (x : Fin 2 → R) :
@@ -286,18 +290,9 @@ diagonally: it is the weighted dot product. -/
 theorem _root_.QuadraticMap.associated_weightedSumSquares (w : ι → R) (x y : ι → R) :
     QuadraticMap.associated (R := R) (QuadraticMap.weightedSumSquares R w) x y =
       ∑ i, w i * (x i * y i) := by
-  have h2 : (2 : R) * (QuadraticMap.associated (R := R) (QuadraticMap.weightedSumSquares R w) x) y
-      = (2 : R) * ∑ i, w i * (x i * y i) := by
-    have h := congrArg (fun B => B x y) (QuadraticMap.two_nsmul_associated R
-      (QuadraticMap.weightedSumSquares (S := R) R w))
-    simp only [LinearMap.smul_apply, nsmul_eq_mul] at h
-    rw [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar, Nat.cast_ofNat] at h
-    rw [h]
-    simp only [QuadraticMap.weightedSumSquares_apply, smul_eq_mul, Pi.add_apply]
-    rw [← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i _ => by ring
-  have h := congrArg (fun r : R => ⅟(2 : R) * r) h2
-  simpa only [← mul_assoc, invOf_mul_self, one_mul] using h
+  -- `weightedSumSquares R w` is by definition `∑ i, w i • proj i i`, `associated` is linear, and
+  -- `proj i i` is `linMulLin` of the `i`-th coordinate projection with itself.
+  simp [QuadraticMap.weightedSumSquares, QuadraticMap.proj, QuadraticMap.associated_linMulLin]
 
 /-- The standard coordinate basis `Pi.basisFun R ι` is orthogonal for any diagonal quadratic
 form. -/
@@ -317,13 +312,9 @@ weights. -/
 theorem _root_.QuadraticForm.toMatrix'_weightedSumSquares [DecidableEq ι] (w : ι → R) :
     QuadraticForm.toMatrix' (QuadraticMap.weightedSumSquares R w) = Matrix.diagonal w := by
   ext i j
-  rw [QuadraticForm.toMatrix', LinearMap.toMatrix₂'_apply,
-    QuadraticMap.associated_weightedSumSquares]
-  simp only [Matrix.diagonal_apply, Pi.single_apply, mul_ite, mul_one, mul_zero,
-    Finset.sum_ite_eq', Finset.mem_univ, ite_true]
-  by_cases h : i = j
-  · simp [h]
-  · simp [h, Ne.symm h]
+  rcases eq_or_ne i j with rfl | h
+  · simp [QuadraticForm.toMatrix', Pi.single_apply]
+  · simp [QuadraticForm.toMatrix', Pi.single_apply, h, h.symm]
 
 /-- The discriminant of a diagonal quadratic form is the product of its weights. -/
 @[simp]
@@ -364,38 +355,28 @@ theorem isSquare_prod_mul_prod_of_equivalent {w : ι → Rˣ} {v : κ → Rˣ}
       (QuadraticMap.weightedSumSquares R v)) :
     IsSquare ((∏ i, w i) * ∏ i, v i) := by
   classical
-  by_cases hR : Nontrivial R
-  swap
-  · have _ : Subsingleton R := not_nontrivial_iff_subsingleton.mp hR
-    exact ⟨1, Subsingleton.elim _ _⟩
-  let _ : Nontrivial R := hR
+  -- Over the zero ring every unit is a square; otherwise compare ranks to match the indices.
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact ⟨1, Subsingleton.elim _ _⟩
   obtain ⟨f⟩ := h
   let e : ι ≃ κ := Fintype.equivOfCardEq <| by
     simpa only [Module.finrank_fintype_fun_eq_card] using f.toLinearEquiv.finrank_eq
-  have hreindex : (QuadraticMap.weightedSumSquares R v).Equivalent
-      (QuadraticMap.weightedSumSquares R (v ∘ e)) := by
-    rw [QuadraticMap.weightedSumSquares_units, QuadraticMap.weightedSumSquares_units]
-    exact equivalent_weightedSumSquares_comp (fun i => ((v i : R))) e
-  have h' : (QuadraticMap.weightedSumSquares R w).Equivalent
-      (QuadraticMap.weightedSumSquares R (v ∘ e)) :=
-    QuadraticMap.Equivalent.trans ⟨f⟩ hreindex
-  obtain ⟨f⟩ := h'
-  obtain ⟨g, hg⟩ : ∃ g : (ι → R) ≃ₗ[R] (ι → R),
-      QuadraticMap.weightedSumSquares R w
-        = (QuadraticMap.weightedSumSquares R (v ∘ e)).comp g.toLinearMap :=
-    ⟨f.toLinearEquiv, by ext x; exact (f.map_app' x).symm⟩
-  have hdet : (∏ i, ((w i : R))) =
-      ((LinearEquiv.det g : Rˣ) : R) * ((LinearEquiv.det g : Rˣ) : R) *
-        ∏ i, (((v ∘ e) i : R)) := by
-    rw [← QuadraticForm.discr'_weightedSumSquares fun i => ((w i : R)),
-      ← QuadraticForm.discr'_weightedSumSquares fun i => (((v ∘ e) i : R)),
-      ← QuadraticMap.weightedSumSquares_units, ← QuadraticMap.weightedSumSquares_units, hg,
-      QuadraticForm.discr'_comp, LinearMap.det_toMatrix', LinearEquiv.coe_det]
-  refine ⟨LinearEquiv.det g * ∏ i, (v ∘ e) i, Units.ext ?_⟩
+  -- Reindex `v` along `e`; then `g` is an isometry `⟨w⟩ ≅ ⟨v ∘ e⟩` on `ι → R`.
+  let g := f.trans (QuadraticForm.isometryEquivWeightedSumSquaresReindex v e)
+  have hg : weightedSumSquares R w =
+      (weightedSumSquares R (v ∘ e)).comp g.toLinearEquiv.toLinearMap := by
+    ext x
+    exact (g.map_app x).symm
+  -- Keep only its linear automorphism `φ`, so that the unit weights can be rewritten as scalars.
+  generalize g.toLinearEquiv = φ at hg
+  rw [weightedSumSquares_units, weightedSumSquares_units] at hg
+  have hdet := congrArg QuadraticForm.discr' hg
+  simp only [QuadraticForm.discr'_comp, LinearMap.det_toMatrix', ← LinearEquiv.coe_det,
+    QuadraticForm.discr'_weightedSumSquares, Function.comp_apply,
+    Equiv.prod_comp e fun i => (v i : R)] at hdet
+  refine ⟨LinearEquiv.det φ * ∏ i, v i, Units.ext ?_⟩
   push_cast
-  have he : (∏ i, (((v ∘ e) i : R))) = ∏ i, ((v i : R)) :=
-    Equiv.prod_comp e fun i => ((v i : R))
-  rw [hdet, he]
+  rw [hdet]
   ring
 
 end Discriminant

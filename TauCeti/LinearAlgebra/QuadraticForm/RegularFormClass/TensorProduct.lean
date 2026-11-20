@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.TensorProduct
 
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
+
 /-!
 # Tensor products of regular-form classes
 
