@@ -508,6 +508,12 @@ theorem image_val_setOf_sphereHeight_eq (v : sphere (0 : E) 1) {c : ℝ} (hc : c
   have hv : ⟪(v : E), (v : E)⟫ = 1 := by
     rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere v, one_pow]
   have hr : √(1 - c ^ 2) ^ 2 = 1 - c ^ 2 := Real.sq_sqrt (by nlinarith [hc.1, hc.2])
+  -- `c v + w` with `w ⊥ v` is an orthogonal decomposition.
+  have hpyth : ∀ w ∈ (ℝ ∙ (v : E))ᗮ, ‖c • (v : E) + w‖ ^ 2 = c ^ 2 + ‖w‖ ^ 2 := fun w hw ↦ by
+    simp only [sq]
+    rw [norm_add_sq_eq_norm_sq_add_norm_sq_real (by rw [real_inner_smul_left,
+      Submodule.mem_orthogonal_singleton_iff_inner_right.1 hw, mul_zero]), norm_smul,
+      norm_eq_of_mem_sphere v, mul_one, Real.norm_eq_abs, abs_mul_abs_self]
   ext y
   simp only [mem_image, mem_ofPred_eq, sphereHeight_apply, Subtype.exists, exists_and_right,
     exists_eq_right, mem_sphere_zero_iff_norm]
@@ -518,23 +524,15 @@ theorem image_val_setOf_sphereHeight_eq (v : sphere (0 : E) 1) {c : ℝ} (hc : c
         real_inner_smul_left, hv, hyc]
       ring
     refine ⟨_, ⟨hyK, ?_⟩, add_sub_cancel _ _⟩
-    -- `y = c v + (y - c v)` is an orthogonal decomposition of a unit vector.
-    have h := norm_add_sq_eq_norm_sq_add_norm_sq_real (x := c • (v : E)) (y := y - c • (v : E))
-      (by rw [real_inner_smul_left, ← real_inner_comm,
-        Submodule.mem_orthogonal_singleton_iff_inner_left.1 hyK, mul_zero])
-    simp only [add_sub_cancel, hy, norm_smul, norm_eq_of_mem_sphere v, mul_one,
-      Real.norm_eq_abs, abs_mul_abs_self] at h
+    have h := hpyth _ hyK
+    rw [add_sub_cancel, hy] at h
     rw [← Submodule.norm_coe, Submodule.coe_mk, ← Real.sqrt_sq (norm_nonneg _)]
     congr 1
-    nlinarith
+    linarith
   · rintro ⟨w, ⟨hw, hwr⟩, rfl⟩
-    have hwv : ⟪c • (v : E), w⟫ = 0 := by
-      rw [real_inner_smul_left, Submodule.mem_orthogonal_singleton_iff_inner_right.1 hw,
-        mul_zero]
     refine ⟨?_, ?_⟩
-    · have h := norm_add_sq_eq_norm_sq_add_norm_sq_real hwv
-      simp only [norm_smul, norm_eq_of_mem_sphere v, mul_one, Real.norm_eq_abs,
-        (Submodule.norm_coe (⟨w, hw⟩ : (ℝ ∙ (v : E))ᗮ)).trans hwr, ← sq, hr, sq_abs] at h
+    · have h := hpyth w hw
+      rw [(Submodule.norm_coe (⟨w, hw⟩ : (ℝ ∙ (v : E))ᗮ)).trans hwr, hr] at h
       nlinarith [norm_nonneg (c • (v : E) + w)]
     · rw [inner_add_left, real_inner_smul_left, hv,
         Submodule.mem_orthogonal_singleton_iff_inner_left.1 hw]
