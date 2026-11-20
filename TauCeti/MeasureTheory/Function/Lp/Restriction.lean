@@ -47,6 +47,8 @@ finite-measure sets.
   on a measurable subset.
 * `MeasureTheory.Lp.toReal_eLpNorm_restrict_mono`: the `Lᵖ` seminorm of an element of `Lᵖ(Ω)` on
   subsets of `Ω` is monotone in the subset.
+* `MeasureTheory.LpToLpRestrictCLM_eq_zero_iff`: the restriction of an `Lᵖ` class to a set vanishes
+  exactly when the class vanishes almost everywhere on that set.
 -/
 
 public section
@@ -212,5 +214,14 @@ theorem Lp.toReal_eLpNorm_restrict_mono {α F : Type*} [MeasurableSpace α] [Nor
     (eLpNorm g p (μ.restrict s)).toReal ≤ (eLpNorm g p (μ.restrict t)).toReal :=
   ENNReal.toReal_mono ((eLpNorm_mono_measure _ (Measure.restrict_mono htΩ le_rfl)).trans_lt
     (Lp.eLpNorm_lt_top g)).ne (eLpNorm_mono_measure _ (Measure.restrict_mono hst le_rfl))
+
+/-- The restriction of an `Lᵖ` class to a set `s` vanishes exactly when the class vanishes almost
+everywhere on `s`. -/
+theorem LpToLpRestrictCLM_eq_zero_iff {E F 𝕜 : Type*} [MeasurableSpace E] [NormedAddCommGroup F]
+    [NormedRing 𝕜] [Module 𝕜 F] [IsBoundedSMul 𝕜 F] {μ : Measure E} {p : ENNReal} [Fact (1 ≤ p)]
+    (s : Set E) (f : Lp F p μ) :
+    LpToLpRestrictCLM E F 𝕜 μ p s f = 0 ↔ f =ᵐ[μ.restrict s] 0 :=
+  Lp.eq_zero_iff_ae_eq_zero.trans
+    ⟨(LpToLpRestrictCLM_coeFn 𝕜 s f).symm.trans, (LpToLpRestrictCLM_coeFn 𝕜 s f).trans⟩
 
 end MeasureTheory
