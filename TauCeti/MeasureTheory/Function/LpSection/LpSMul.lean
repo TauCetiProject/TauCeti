@@ -48,9 +48,9 @@ operators `MeasureTheory.Lp.multiplicationOperator` on `MeasureTheory.Lp`.
 * The `Module (Lp 𝕜 ∞ μ) (LpSection 𝕜 F E p μ)` instance, with `TauCeti.LpSection.coeFn_lpSMul`,
   and the `IsScalarTower` and `SMulCommClass` instances relating it to the action of `𝕜`.
 * `TauCeti.LpSection.norm_lpSMul_le`: `‖φ • f‖ ≤ ‖φ‖ ‖f‖`.
-* `TauCeti.LpSection.lpSMulL`: multiplication as a continuous bilinear map of norm at most `1`
-  (`TauCeti.LpSection.norm_lpSMulL_le`), with `TauCeti.LpSection.norm_lpSMulL_apply_le` and the
-  composition laws `TauCeti.LpSection.lpSMulL_mul` and `TauCeti.LpSection.lpSMulL_one`.
+* The `IsBoundedSMul` instance, and `TauCeti.LpSection.lpSMulL`: multiplication as a continuous
+  bilinear map, Mathlib's `ContinuousLinearMap.lsmul` for this action, with the composition laws
+  `TauCeti.LpSection.lpSMulL_mul` and `TauCeti.LpSection.lpSMulL_one`.
 * `TauCeti.LpSection.inner_lpSMul_left`, `inner_lpSMul_right` and `adjoint_lpSMulL`:
   `M_φ† = M_{star φ}`.
 * `TauCeti.LpSection.sum_star_lpSMul_lpSMul` and `TauCeti.LpSection.sum_norm_lpSMul_sq`:
@@ -173,28 +173,19 @@ instance : SMulCommClass 𝕜 (Lp 𝕜 ∞ μ) (LpSection 𝕜 F E p μ) where
       coeFn_lpSMul φ f] with x h₁ h₂ h₃ h₄
     rw [h₁, h₂, h₃, h₄, smul_comm]
 
+/-- The `L^∞` action on `Lᵖ` sections is bounded: `‖φ • f‖ ≤ ‖φ‖ ‖f‖`. -/
+instance [Fact (1 ≤ p)] : IsBoundedSMul (Lp 𝕜 ∞ μ) (LpSection 𝕜 F E p μ) :=
+  .of_norm_smul_le norm_lpSMul_le
+
 variable (𝕜 F E p μ) in
 /-- Multiplication of `Lᵖ` sections by essentially bounded functions, as a continuous bilinear map
-`L^∞(μ) → Lᵖ(E, μ) → Lᵖ(E, μ)` of norm at most `1`. Its value at `φ` is the multiplication
-operator `M_φ`, of norm at most `‖φ‖_{L^∞}` (`TauCeti.LpSection.norm_lpSMulL_apply_le`). -/
-def lpSMulL [Fact (1 ≤ p)] :
+`L^∞(μ) → Lᵖ(E, μ) → Lᵖ(E, μ)`: Mathlib's `ContinuousLinearMap.lsmul` for the module structure
+above. Its value at `φ` is the multiplication operator `M_φ`, of norm at most `‖φ‖_{L^∞}`
+(`ContinuousLinearMap.opNorm_lsmul_apply_le`), and it has norm at most `1`
+(`ContinuousLinearMap.opNorm_lsmul_le`). -/
+abbrev lpSMulL [Fact (1 ≤ p)] :
     Lp 𝕜 ∞ μ →L[𝕜] LpSection 𝕜 F E p μ →L[𝕜] LpSection 𝕜 F E p μ :=
-  LinearMap.mkContinuous₂
-    (LinearMap.mk₂ 𝕜 (· • ·) add_smul smul_assoc smul_add fun c φ f ↦ (smul_comm c φ f).symm) 1
-    fun φ f ↦ by rw [LinearMap.mk₂_apply, one_mul]; exact norm_lpSMul_le φ f
-
-@[simp]
-theorem lpSMulL_apply_apply [Fact (1 ≤ p)] : lpSMulL 𝕜 F E p μ φ f = φ • f :=
-  (rfl)
-
-variable (𝕜 F E p μ) in
-/-- The bilinear map `TauCeti.LpSection.lpSMulL` has norm at most `1`. -/
-theorem norm_lpSMulL_le [Fact (1 ≤ p)] : ‖lpSMulL 𝕜 F E p μ‖ ≤ 1 :=
-  LinearMap.mkContinuous₂_norm_le _ zero_le_one _
-
-/-- The multiplication operator `M_φ` has norm at most `‖φ‖_{L^∞}`. -/
-theorem norm_lpSMulL_apply_le [Fact (1 ≤ p)] : ‖lpSMulL 𝕜 F E p μ φ‖ ≤ ‖φ‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg φ) (norm_lpSMul_le φ)
+  ContinuousLinearMap.lsmul 𝕜 (Lp 𝕜 ∞ μ)
 
 /-- **Composition of multiplication operators**: `M_{φ ψ} = M_φ ∘ M_ψ`. -/
 @[simp]
@@ -231,7 +222,8 @@ conjugate function: `M_φ† = M_{star φ}`. -/
 theorem adjoint_lpSMulL [CompleteSpace (LpSection 𝕜 F E 2 μ)] :
     ContinuousLinearMap.adjoint (lpSMulL 𝕜 F E 2 μ φ) = lpSMulL 𝕜 F E 2 μ (star φ) :=
   ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun f g ↦ by
-    rw [lpSMulL_apply_apply, lpSMulL_apply_apply, inner_lpSMul_left, star_star]).symm
+    rw [ContinuousLinearMap.lsmul_apply, ContinuousLinearMap.lsmul_apply, inner_lpSMul_left,
+      star_star]).symm
 
 /-- A multiplication operator by a real-valued function, `star φ = φ`, is self-adjoint. -/
 theorem isSelfAdjoint_lpSMulL [CompleteSpace (LpSection 𝕜 F E 2 μ)] (hφ : star φ = φ) :
