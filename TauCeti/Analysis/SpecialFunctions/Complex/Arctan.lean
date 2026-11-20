@@ -13,12 +13,14 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Arctan
 Mathlib defines the complex arctangent through the Cayley transform `(1 + i z) / (1 - i z)`, as
 `arctan z = -i / 2 * log ((1 + i z) / (1 - i z))`, and shows it agrees with the real arctangent on
 real numbers (`Complex.ofReal_arctan`). Exponentiating gives the Cayley transform of a real number
-`x` as a point of the unit circle, `(1 + i x) / (1 - i x) = e^{2 i arctan x}`.
+`x` as a point of the unit circle, `(1 + i x) / (1 - i x) = e^{2 i arctan x}`. The polar form of
+`1 + i x` itself is `√(1 + x²) e^{i arctan x}`: its argument is `arctan x`.
 
 ## Main results
 
 * `Complex.one_add_mul_I_div_one_sub_mul_I_eq_exp`: `(1 + i x) / (1 - i x) = e^{2 i arctan x}` for
   real `x`.
+* `Complex.one_add_mul_I_eq_sqrt_mul_exp`: `1 + i x = √(1 + x²) e^{i arctan x}` for real `x`.
 -/
 
 public section
@@ -39,5 +41,11 @@ theorem one_add_mul_I_div_one_sub_mul_I_eq_exp (x : ℝ) :
     push_cast
     linear_combination -log ((1 + x * I) / (1 - x * I)) * I_sq
   rw [harg, exp_log (div_ne_zero h₁ h₂)]
+
+/-- **The polar form of `1 + i x`** for real `x`: `1 + i x = √(1 + x²) e^{i arctan x}`. -/
+theorem one_add_mul_I_eq_sqrt_mul_exp (x : ℝ) :
+    1 + x * I = (√(1 + x ^ 2) : ℝ) * exp (Real.arctan x * I) := by
+  rw [exp_mul_I, ← ofReal_cos, ← ofReal_sin, Real.cos_arctan, Real.sin_arctan]
+  apply Complex.ext <;> simp <;> field_simp
 
 end Complex

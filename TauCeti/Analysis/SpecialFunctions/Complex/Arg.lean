@@ -69,6 +69,8 @@ Since the argument is continuous on the slit plane and blind to positive real sc
   `Complex.re_mul_exp_mul_I_pos_of_mem_uIcc`: polar formula `(z * e^{iy}).re = ‖z‖ cos (arg z + y)`,
   bisecting-ray positivity on `slitPlane`, and angular convexity of `{θ | 0 < (z * e^{iθ}).re}`
   on intervals of length at most `π`.
+* `Complex.ofReal_mul_exp_mul_I_pos_iff`: for `r > 0`, `r e^{iθ}` is a positive real number
+  exactly when `θ = 0` as an angle.
 * `Complex.exp_mem_slitPlane_of_abs_im_lt`: `exp x` lies in the slit plane when `|im x| < π`.
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
@@ -286,6 +288,19 @@ theorem re_mul_exp_ofReal_mul_I_eq_norm_mul_cos (z : ℂ) (y : ℝ) :
     (z * exp ((y : ℂ) * I)).re = ‖z‖ * Real.cos (arg z + y) := by
   nth_rw 1 [(norm_mul_exp_arg_mul_I z).symm]
   rw [mul_assoc, ← exp_add, ← add_mul, ← ofReal_add, re_ofReal_mul, exp_ofReal_mul_I_re]
+
+open scoped ComplexOrder in
+/-- For `r > 0`, the complex number `r e^{iθ}` is a positive real number exactly when `θ` is a
+multiple of `2π`, that is, when `θ = 0` as an angle. -/
+theorem ofReal_mul_exp_mul_I_pos_iff {r : ℝ} (hr : 0 < r) (θ : ℝ) :
+    0 < (r : ℂ) * exp (θ * I) ↔ (θ : Real.Angle) = 0 := by
+  rw [Complex.pos_iff, re_ofReal_mul, im_ofReal_mul, exp_ofReal_mul_I_re, exp_ofReal_mul_I_im,
+    mul_pos_iff_of_pos_left hr, zero_eq_mul, or_iff_right hr.ne', ← Real.Angle.cos_coe,
+    ← Real.Angle.sin_coe]
+  refine ⟨fun ⟨hc, hs⟩ ↦ (Real.Angle.sin_eq_zero_iff.mp hs).resolve_right fun h ↦ ?_,
+    fun h ↦ by simp [h]⟩
+  rw [h, Real.Angle.cos_coe, Real.cos_pi] at hc
+  linarith
 
 /-- Rotating a point `z` of the slit plane by `-arg z / 2` lands in the open right half-plane,
 with real part `‖z‖ * cos (arg z / 2) > 0`. -/
