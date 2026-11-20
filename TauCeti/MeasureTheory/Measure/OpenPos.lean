@@ -84,7 +84,7 @@ theorem ext_closure_of_ae_eq {Y : Type*} [TopologicalSpace Y] [T2Space Y] {U : S
   have hyV : (y : X) ∈ V := by
     have : y ∈ (Subtype.val ⁻¹' V : Set (closure U)) := hVS ▸ hy
     exact this
-  have hne' : (V ∩ U).Nonempty := mem_closure_iff.1 y.2 V hV hyV
+  have hne' : (V ∩ U).Nonempty := mem_closure_iff.1 y.property V hV hyV
   have hpos : 0 < μ (V ∩ U) := (hV.inter hU).measure_pos μ hne'
   have hnull : μ (V ∩ U) = 0 := by
     refine measure_mono_null (fun x hx ↦ ?_) (ae_iff.1 h)

@@ -232,7 +232,7 @@ theorem sesqComplexification_gramForm_subtype_baseChange_eq_zero {k l : ℕ} (hk
     induction y using TensorProduct.inductionOn with
     | add y₁ y₂ hy₁ hy₂ => simp only [map_add, hy₁, hy₂, add_zero]
     | tmul w v =>
-      simp [gramForm_eq_zero_of_mem_exteriorPower hkl u.2 v.2]
+      simp [gramForm_eq_zero_of_mem_exteriorPower hkl u.property v.property]
 
 end ExteriorAlgebra
 

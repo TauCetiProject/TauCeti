@@ -312,7 +312,7 @@ noncomputable def intClassFunction (V : FDRep ℚ G) : TauCeti.ClassFunction ℤ
 omit [Finite G] in
 @[simp]
 theorem intClassFunction_apply (V : FDRep ℚ G) (g : G) :
-    (FDRep.intClassFunction V).1 g = FDRep.intCharacter V g := (rfl)
+    (FDRep.intClassFunction V).val g = FDRep.intCharacter V g := (rfl)
 
 omit [Finite G] in
 /-- Conjugate elements have the same integer character. -/

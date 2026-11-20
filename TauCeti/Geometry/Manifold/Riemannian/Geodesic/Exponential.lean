@@ -223,7 +223,7 @@ local instance tangentSpaceChartedSpace (p : M) :
 /-- **The domain of the exponential map in the tangent bundle is open**: the tangent vectors
 `z ∈ T_x M` lying in the natural domain of `exp_x` form an open subset of `TM`. -/
 theorem isOpen_setOfPred_mem_expDomain [T2Space M] :
-    IsOpen {z : TangentBundle I M | z.2 ∈ expDomain I M z.proj} := by
+    IsOpen {z : TangentBundle I M | z.snd ∈ expDomain I M z.proj} := by
   simp only [mem_expDomain_iff]
   exact isOpen_setOfPred_mem_geodesicInterval.preimage (continuous_id.prodMk continuous_const)
 
@@ -231,16 +231,16 @@ theorem isOpen_setOfPred_mem_expDomain [T2Space M] :
 tangent vector at `x`, is smooth on the open subset of `TM` where it is naturally defined: it is
 the geodesic flow at time `1` followed by the base projection. -/
 theorem contMDiffOn_riemannianExp_tangentBundle [T2Space M] :
-    ContMDiffOn I.tangent I ∞ (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
-      {z | z.2 ∈ expDomain I M z.proj} :=
+    ContMDiffOn I.tangent I ∞ (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.snd)
+      {z | z.snd ∈ expDomain I M z.proj} :=
   (contMDiffOn_maximalGeodesic.comp (contMDiff_id.prodMk contMDiff_const).contMDiffOn
-    fun _ hz ↦ mem_expDomain_iff.1 hz).congr fun z _ ↦ riemannianExp_def z.proj z.2
+    fun _ hz ↦ mem_expDomain_iff.1 hz).congr fun z _ ↦ riemannianExp_def z.proj z.snd
 
 /-- The exponential map is continuous on the open subset of the tangent bundle where it is
 naturally defined. -/
 theorem continuousOn_riemannianExp_tangentBundle [T2Space M] :
-    ContinuousOn (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
-      {z | z.2 ∈ expDomain I M z.proj} :=
+    ContinuousOn (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.snd)
+      {z | z.snd ∈ expDomain I M z.proj} :=
   contMDiffOn_riemannianExp_tangentBundle.continuousOn
 
 /-- The natural domain of the Riemannian exponential map is open. -/

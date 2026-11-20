@@ -484,12 +484,13 @@ noncomputable def detLineOrientationTransport (a b : ℝ) (hT : ContinuousOn T (
     (hF : ∀ t ∈ uIcc a b, IsFredholm (T t)) :
     Module.Ray ℝ (T a : E →ₗ[ℝ] F).detLine → Module.Ray ℝ (T b : E →ₗ[ℝ] F).detLine :=
   Quotient.lift (s := RayVector.Setoid ℝ _)
-    (fun u ↦ rayOfNeZero ℝ ((exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u.2).choose b)
-      ((exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u.2).choose_spec.2.ne_zero
+    (fun u ↦ rayOfNeZero ℝ ((exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u.property).choose
+        b)
+      ((exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u.property).choose_spec.2.ne_zero
         right_mem_uIcc))
     fun u u' (h : SameRay ℝ (u : (T a : E →ₗ[ℝ] F).detLine) u') ↦ by
-      have hu := (exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u.2).choose_spec
-      have hu' := (exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u'.2).choose_spec
+      have hu := (exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u.property).choose_spec
+      have hu' := (exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc u'.property).choose_spec
       exact (ray_eq_iff _ _).2 (hu.2.sameRay hT isPreconnected_uIcc hu'.2 left_mem_uIcc
         right_mem_uIcc (by rwa [hu.1, hu'.1]))
 

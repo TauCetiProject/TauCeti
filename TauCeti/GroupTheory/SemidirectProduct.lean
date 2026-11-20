@@ -106,7 +106,7 @@ theorem range_monoidHomSubgroup (hLE : K ≤ Subgroup.normalizer (H : Set G)) :
     fun t ht => ⟨inr ⟨t, ht⟩, by simp⟩)
   rintro _ ⟨x, rfl⟩
   rw [monoidHomSubgroup_apply]
-  exact Subgroup.mul_mem_sup x.left.2 x.right.2
+  exact Subgroup.mul_mem_sup x.left.property x.right.property
 
 /-- The kernel of the projection of a semidirect product to the acting group, together with the
 image of the acting group, generates the semidirect product. -/

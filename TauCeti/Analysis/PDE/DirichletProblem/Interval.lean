@@ -207,12 +207,12 @@ theorem dist_intervalDirichletSolution_le (hx : x₀ ≤ x₁) {g₀ g₁ g₀' 
     (integral_nonneg fun _ => abs_nonneg _))).2 fun y => ?_
   rw [intervalDirichletSolution_apply, intervalDirichletSolution_apply, Real.dist_eq,
     add_sub_add_comm, ← intervalIntegral.integral_sub
-      (hs.intervalIntegrable_of_mem_Icc (left_mem_Icc.2 hx) y.2)
-      (hs'.intervalIntegrable_of_mem_Icc (left_mem_Icc.2 hx) y.2)]
+      (hs.intervalIntegrable_of_mem_Icc (left_mem_Icc.2 hx) y.property)
+      (hs'.intervalIntegrable_of_mem_Icc (left_mem_Icc.2 hx) y.property)]
   refine (abs_add_le _ _).trans ?_
   gcongr
   simpa only [Real.norm_eq_abs, Pi.sub_apply] using
-    intervalIntegral.norm_integral_le_setIntegral_norm (hs.sub hs') (left_mem_Icc.2 hx) y.2
+    intervalIntegral.norm_integral_le_setIntegral_norm (hs.sub hs') (left_mem_Icc.2 hx) y.property
 
 /-- **Continuous dependence on the coefficient.** If `aₙ → a` almost everywhere with a uniform
 lower bound `λ ≤ aₙ`, the derivatives of the solutions of the linear problems converge in `L¹`. -/
@@ -508,7 +508,7 @@ theorem intervalRepresentativeL_eq_add_intervalIntegral_intervalDirichletSlope (
     W1p.integral_gradient_eq_intervalRepresentativeL_sub hx u ⟨x₀, left_mem_Icc.2 hx.le⟩ y
   rw [Measure.restrict_congr_set Ioo_ae_eq_Ioc] at hgrad
   rw [intervalIntegral.integral_congr_ae_restrict (ae_restrict_of_ae_restrict_of_subset
-    ((uIoc_of_le y.2.1).trans_subset (Ioc_subset_Ioc_right y.2.2)) hgrad)] at h
+    ((uIoc_of_le y.property.1).trans_subset (Ioc_subset_Ioc_right y.property.2)) hgrad)] at h
   have h₀ : (W1p.intervalTraceL hx u).1 =
       W1p.intervalRepresentativeL hx u ⟨x₀, left_mem_Icc.2 hx.le⟩ := by
     rw [W1p.intervalTraceL_apply]

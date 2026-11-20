@@ -173,7 +173,7 @@ theorem ord_add_eq_min_of_ord_ne (v : _root_.Valuation F ℤᵐ⁰) {f g : F}
   have hsum := v.map_add_of_distinct_val hne
   have hfg : v (f + g) ≠ 0 := by
     rw [hsum]
-    exact ne_of_gt (lt_max_of_lt_left (zero_lt_iff.mpr hf))
+    exact ne_of_gt (lt_max_of_lt_left (pos_iff_ne_zero.mpr hf))
   rw [valuation_eq_exp_neg_ord v hf, valuation_eq_exp_neg_ord v hg,
     valuation_eq_exp_neg_ord v hfg, exp_max, WithZero.exp_inj] at hsum
   omega
@@ -198,7 +198,7 @@ private theorem valuation_sum_eq_of_forall_ord_lt (v : _root_.Valuation F ℤᵐ
   rw [Finset.mem_sdiff, Finset.mem_singleton] at hi
   rcases eq_or_ne (v (f i)) 0 with h0 | h0
   · rw [h0]
-    exact zero_lt_iff.mpr hfj
+    exact pos_iff_ne_zero.mpr hfj
   · exact (ord_lt_ord_iff_valuation_gt v hfj h0).mp (hlt i hi.1 hi.2 h0)
 
 /-- A finite sum whose distinguished summand has nonzero valuation and strictly least order

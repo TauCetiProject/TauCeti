@@ -503,7 +503,7 @@ theorem finiteDimensional_of_isCompact_sublevel [T2Space M] {b : ℝ} (hf : Cont
       (fun x hx ↦ by
         have hlt : f x < b := hx
         simpa using hlt.le)
-      (U.isOpen.preimage continuous_subtype_val)).locallyCompactSpace
+      (U.isOpen.preimage continuous_subtypeVal)).locallyCompactSpace
   exact FiniteDimensional.of_locallyCompact_manifold U I
 
 end Boundaryless
@@ -652,7 +652,7 @@ and a critical point of index `m` in `S` exist. -/
 theorem finite_sigma_criticalPoints_inter {S : Set M} (hS : (criticalPoints I f ∩ S).Finite) :
     Finite (Σ m, ↥{x ∈ criticalPoints I f ∩ S | manifoldMorseIndex I f x = m}) :=
   have := hS.to_subtype
-  .of_injective (fun x ↦ (⟨x.2, x.2.2.1⟩ : ↥(criticalPoints I f ∩ S)))
+  .of_injective (fun x ↦ (⟨x.2, x.2.property.1⟩ : ↥(criticalPoints I f ∩ S)))
     fun ⟨_, _, hx⟩ ⟨_, _, hy⟩ hxy ↦ by
       cases Subtype.ext_iff.1 hxy
       cases hx.2.symm.trans hy.2
@@ -1048,7 +1048,7 @@ theorem two_mul_card_connectedComponents_le_totalCriticalCount [I.Boundaryless] 
   have : Nontrivial (ConnectedComponents.mk x).opens := ChartedSpace.nontrivial (H := H)
   have : CompactSpace (ConnectedComponents.mk x).opens :=
     isCompact_iff_compactSpace.1 (ConnectedComponents.isClopen_opens _).isClosed.isCompact
-  exact two_le_totalCriticalCount (hf.comp continuous_subtype_val)
+  exact two_le_totalCriticalCount (hf.comp continuous_subtypeVal)
 
 /-- A compact boundaryless manifold of positive dimension carrying a continuous function with fewer
 than four critical points is preconnected, hence connected when nonempty: each connected component
@@ -1182,7 +1182,7 @@ def IsMorse.criticalPointsIndexNegEquiv (hf : IsMorse I f) {j k : ℕ}
       {p : criticalPoints I f // manifoldMorseIndex I f p = k} :=
   (Set.equivOfEq criticalPoints_neg).subtypeEquiv fun p ↦ by
     have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      (by simpa using p.2)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+      (by simpa using p.property)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     simp only [Set.equivOfEq_apply]
     omega
 
