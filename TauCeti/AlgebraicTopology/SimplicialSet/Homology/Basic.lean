@@ -68,6 +68,10 @@ lemma ιChainComplex_chainComplexFunctor_map_app_f (f : R ⟶ R') {n : ℕ} (x :
   dsimp [chainComplexFunctor, ιChainComplex, chainComplex]
   simp
 
+/-- The identity of a simplicial set induces the identity chain map. -/
+lemma chainComplexMap_id (X : SSet.{w}) (R : C) : chainComplexMap (𝟙 X) R = 𝟙 _ :=
+  CategoryTheory.Functor.map_id _ _
+
 /-- The degreewise components of the chain maps induced by maps of simplicial sets compose like
 the maps themselves. -/
 @[reassoc]
