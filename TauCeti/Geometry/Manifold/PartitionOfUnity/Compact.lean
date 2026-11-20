@@ -10,6 +10,7 @@ import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.Monoid
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Geometry.Manifold.BumpFunction
 
 /-!
 # Smooth cutoff functions and finite partitions of unity around compact sets
@@ -28,11 +29,10 @@ and subordinate to any given neighbourhoods of its points
 (`IsCompact.exists_smoothBumpCovering_isSubordinate`), the input of Mathlib's Whitney embedding
 `SmoothBumpCovering.embeddingPiTangent`.
 
-On a `C^n` manifold (`n : ℕ∞`), each `SmoothBumpFunction` is of class `C^n`
-(`SmoothBumpFunction.contMDiff_of_isManifold`, adapted from Mathlib's
-`SmoothBumpFunction.contMDiff`), and any `BumpCovering` by `C^n` functions yields a `C^n` partition
-of unity (`BumpCovering.contMDiff_toPartitionOfUnity_of_contMDiff`, adapted from Mathlib's
-`BumpCovering.contMDiff_toPartitionOfUnity`). Combining these with
+Any `BumpCovering` by `C^n` functions yields a `C^n` partition of unity
+(`BumpCovering.contMDiff_toPartitionOfUnity_of_contMDiff`, adapted from Mathlib's
+`BumpCovering.contMDiff_toPartitionOfUnity`). Combining this with
+`SmoothBumpFunction.contMDiff_of_isManifold` and
 `IsCompact.exists_smoothBumpCovering_isSubordinate` gives a finite `C^n` partition of unity by
 compactly supported functions subordinate to any neighbourhood cover of `K`, without assuming
 σ-compactness (`IsCompact.exists_contMDiffMap_partitionOfUnity`, adapting Mathlib's
@@ -65,7 +65,8 @@ theorem IsCompact.exists_contMDiff_one_nhds_tsupport_subset {K W : Set M} (hK : 
   -- Bump functions at the points of `K` supported in `W`; finitely many of the open sets where
   -- one of them is `1` cover `K`.
   choose ρ hρ using fun x : K ↦
-    (SmoothBumpFunction.nhds_basis_tsupport (I := I) (x : M)).mem_iff.1 (hW.mem_nhds (hKW x.2))
+    (SmoothBumpFunction.nhds_basis_tsupport (I := I) (x : M)).mem_iff.1 (hW.mem_nhds
+        (hKW x.property))
   obtain ⟨t, ht⟩ := hK.elim_nhds_subcover' (fun x hx ↦ interior {y | ρ ⟨x, hx⟩ y = 1})
     fun x hx ↦ interior_mem_nhds.2 (ρ ⟨x, hx⟩).eventuallyEq_one
   -- Smoothing the sum of these bumps by a smooth step function gives a cutoff which is `1` where
@@ -103,29 +104,17 @@ theorem IsCompact.exists_smoothBumpCovering_isSubordinate {K : Set M} (hK : IsCo
   -- Bump functions at the points of `K` supported in `U`; finitely many of the open sets where
   -- one of them is `1` cover `K`.
   choose ρ hρ using fun x : K ↦
-    (SmoothBumpFunction.nhds_basis_tsupport (I := I) (x : M)).mem_iff.1 (hU x x.2)
+    (SmoothBumpFunction.nhds_basis_tsupport (I := I) (x : M)).mem_iff.1 (hU x x.property)
   obtain ⟨t, ht⟩ := hK.elim_nhds_subcover' (fun x hx ↦ interior {y | ρ ⟨x, hx⟩ y = 1})
     fun x hx ↦ interior_mem_nhds.2 (ρ ⟨x, hx⟩).eventuallyEq_one
-  refine ⟨t, inferInstance, ⟨fun i ↦ i.1, fun i ↦ ρ i.1, fun i ↦ i.1.2,
-    locallyFinite_of_finite _, fun x hx ↦ ?_⟩, fun i ↦ (hρ i.1).2⟩
+  refine ⟨t, inferInstance, ⟨fun i ↦ i.val, fun i ↦ ρ i.val, fun i ↦ i.val.property,
+    locallyFinite_of_finite _, fun x hx ↦ ?_⟩, fun i ↦ (hρ i.val).2⟩
   obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.1 (ht hx)
   exact ⟨⟨i, hi⟩, mem_interior_iff_mem_nhds.1 hxi⟩
 
 section FiniteOrder
 
 omit [IsManifold I ∞ M]
-
-/-- On a `C^n` manifold (`n : ℕ∞`), every `SmoothBumpFunction` is of class `C^n`. The proof is
-adapted from Mathlib's `SmoothBumpFunction.contMDiff`, which assumes `C^∞` manifold structure,
-whereas the coordinate bump is `C^∞` and only requires the extended chart to be `C^n`. -/
-theorem SmoothBumpFunction.contMDiff_of_isManifold {n : ℕ∞} [IsManifold I n M] {c : M}
-    (f : SmoothBumpFunction I c) : ContMDiff I 𝓘(ℝ) n f := by
-  refine contMDiff_of_tsupport fun x hx ↦ ?_
-  have hxs : x ∈ (chartAt H c).source := f.tsupport_subset_chartAt_source hx
-  refine ContMDiffAt.congr_of_eventuallyEq ?_ <| f.eqOn_source.eventuallyEq_of_mem <|
-    (chartAt H c).open_source.mem_nhds hxs
-  exact (f.contDiffAt.of_le (by exact_mod_cast le_top)).contMDiffAt.comp _
-    (contMDiffAt_extChartAt' hxs)
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- If every function in a `BumpCovering` is `C^n`, each weight of its associated partition of

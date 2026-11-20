@@ -153,7 +153,7 @@ omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSp
 @[simp]
 theorem timeExtension_of_mem (hab : a ≤ b) (f : slab (E := E) a b → F)
     (x : E) (t : Icc a b) : timeExtension hab f x t = f (slabMk x t) := by
-  simp [timeExtension, projIcc_of_mem hab t.2]
+  simp [timeExtension, projIcc_of_mem hab t.property]
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] in
 /-- A slab map is recovered from its total time slices. -/
@@ -297,17 +297,17 @@ theorem smul_apply (c : ℝ) (f : ParabolicC2HolderSpace α E F hab) (p : slab (
 
 /-- The spatial gradient is the actual Fréchet derivative of every time slice. -/
 theorem hasSpatialFDerivAt (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) (x : E) :
-    HasFDerivAt (fun y ↦ f (slabMk y t)) (spatialFDerivL f (slabMk x t)) x := f.2.1 t x
+    HasFDerivAt (fun y ↦ f (slabMk y t)) (spatialFDerivL f (slabMk x t)) x := f.property.1 t x
 
 /-- The Hessian is the actual Fréchet derivative of the gradient. -/
 theorem hasSpatialSecondFDerivAt (f : ParabolicC2HolderSpace α E F hab)
     (t : Icc a b) (x : E) : HasFDerivAt (fun y ↦ spatialFDerivL f (slabMk y t))
-      (spatialSecondFDerivL f (slabMk x t)) x := f.2.2.1 t x
+      (spatialSecondFDerivL f (slabMk x t)) x := f.property.2.1 t x
 
 /-- The recorded time derivative is the derivative within the closed time interval. -/
 theorem hasTimeDerivWithinAt (f : ParabolicC2HolderSpace α E F hab) (x : E) (t : Icc a b) :
     HasDerivWithinAt (timeExtension hab.le f x) (timeDerivL f (slabMk x t)) (Icc a b) t :=
-  f.2.2.2 x t
+  f.property.2.2 x t
 
 @[simp]
 theorem fderiv_eq (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) (x : E) :
@@ -330,13 +330,27 @@ theorem fderiv_fderiv_eq (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) (
 @[simp]
 theorem derivWithin_eq (f : ParabolicC2HolderSpace α E F hab) (x : E) (t : Icc a b) :
     derivWithin (timeExtension hab.le f x) (Icc a b) t = timeDerivL f (slabMk x t) :=
-  (f.hasTimeDerivWithinAt x t).derivWithin (uniqueDiffOn_Icc hab t t.2)
+  (f.hasTimeDerivWithinAt x t).derivWithin (uniqueDiffOn_Icc hab t t.property)
 
 /-- At an interior time, the same field agrees with the ordinary time derivative. -/
 theorem deriv_eq (f : ParabolicC2HolderSpace α E F hab) (x : E) (t : Icc a b)
     (ht : (t : ℝ) ∈ Ioo a b) : deriv (timeExtension hab.le f x) t =
       timeDerivL f (slabMk x t) :=
   ((f.hasTimeDerivWithinAt x t).hasDerivAt (Icc_mem_nhds ht.1 ht.2)).deriv
+
+/-- For each fixed `x`, the map `t ↦ u(x, t)` is Lipschitz, with the `C^{α,α/2}` norm of the time
+derivative as constant:
+`‖u(x, t) - u(x, s)‖ ≤ ‖∂ₜu‖_{C^{α,α/2}} |t - s|`. -/
+theorem norm_apply_slabMk_sub_le (f : ParabolicC2HolderSpace α E F hab) (x : E)
+    (t s : Icc a b) :
+    ‖f (slabMk x t) - f (slabMk x s)‖ ≤ ‖timeDerivL f‖ * |(t : ℝ) - s| := by
+  have h := (convex_Icc a b).norm_image_sub_le_of_norm_hasDerivWithin_le
+    (f := timeExtension hab.le f x)
+    (f' := fun τ ↦ timeDerivL f (slabMk x (projIcc a b hab.le τ)))
+    (fun τ hτ ↦ by
+      simpa only [projIcc_of_mem hab.le hτ] using f.hasTimeDerivWithinAt x ⟨τ, hτ⟩)
+    (fun τ _ ↦ HolderSpace.norm_apply_le _ _) s.property t.property
+  rwa [timeExtension_of_mem, timeExtension_of_mem, Real.norm_eq_abs] at h
 
 /-! ### Locality of the derivative fields -/
 

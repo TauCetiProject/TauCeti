@@ -181,8 +181,8 @@ variable [∀ x, Nonempty (V x)]
 
 /-- Restriction of a section to an open subset, in the pullback bundle along its inclusion. -/
 def restrict (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
-    Cₛ^n⟮I; F, (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V⟯ :=
-  s.pullback (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, U; I, M⟯)
+    Cₛ^n⟮I; F, (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V⟯ :=
+  s.pullback (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, U; I, M⟯)
 
 /-- Restriction keeps the value at each point of the open subset. -/
 -- Normalize the bundled inclusion in the implicit pullback-fibre type for simplification.
@@ -200,8 +200,8 @@ theorem tsupport_restrict (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
     (s.restrict U).tsupport = Subtype.val ⁻¹' s.tsupport := by
   rw [tsupport_def, tsupport_def]
   -- The open carrier and the subtype of its underlying set are the same manifold.
-  erw [U.isOpen.isOpenMap_subtype_val.preimage_closure_eq_closure_preimage
-    continuous_subtype_val {x | s x ≠ 0}]
+  erw [U.isOpen.isOpenMap_subtypeVal.preimage_closure_eq_closure_preimage
+    continuous_subtypeVal {x | s x ≠ 0}]
   -- Restriction evaluates at the inclusion, so the two nonzero loci agree.
   congr 1
 
@@ -225,15 +225,15 @@ theorem restrict_smul (c : 𝕜) (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
 @[simp]
 theorem restrict_smul_function (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
     (f • s).restrict U =
-      f.comp (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, U; I, M⟯) • s.restrict U :=
+      f.comp (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, U; I, M⟯) • s.restrict U :=
   pullback_smul_function f s _
 
 variable (I F n V) in
 /-- Restriction of sections to an open subset as a ground-field linear map. -/
 def restrictLinearMap (U : Opens M) :
     Cₛ^n⟮I; F, V⟯ →ₗ[𝕜]
-      Cₛ^n⟮I; F, (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V⟯ :=
-  pullbackLinearMap I F n V (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, U; I, M⟯)
+      Cₛ^n⟮I; F, (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V⟯ :=
+  pullbackLinearMap I F n V (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, U; I, M⟯)
 
 -- As for `restrict_apply`, normalize the inclusion in the implicit pullback-bundle type.
 @[simp]
@@ -297,7 +297,7 @@ theorem pullback_smul_function_of_normedAlgebra (f : C^n⟮I, M; 𝓘(𝕜, 𝕜
 theorem restrict_smul_function_of_normedAlgebra (f : C^n⟮I, M; 𝓘(𝕜, 𝕜'), 𝕜'⟯)
     (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
     (f • s).restrict U =
-      f.comp (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, U; I, M⟯) • s.restrict U :=
+      f.comp (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, U; I, M⟯) • s.restrict U :=
   pullback_smul_function_of_normedAlgebra f s _
 
 end Pullback
@@ -360,7 +360,7 @@ theorem smul_mem_compactlySupported_of_normedAlgebra (c : 𝕜') {s : Cₛ^n⟮I
 instance takes precedence and is definitionally equal. -/
 instance (priority := low) instSMulSupportedInOfNormedAlgebra {K : Set M} :
     SMul 𝕜' (supportedIn I F n V K) :=
-  ⟨fun c s ↦ ⟨c • s.1, smul_mem_supportedIn_of_normedAlgebra c s.2⟩⟩
+  ⟨fun c s ↦ ⟨c • s.val, smul_mem_supportedIn_of_normedAlgebra c s.property⟩⟩
 
 @[simp]
 theorem coe_smul_supportedIn_of_normedAlgebra {K : Set M} (c : 𝕜')
@@ -376,13 +376,13 @@ instance (priority := low) instModuleSupportedInOfNormedAlgebra {K : Set M} :
 
 instance instIsScalarTowerSupportedIn [∀ x, IsScalarTower 𝕜 𝕜' (V x)] {K : Set M} :
     IsScalarTower 𝕜 𝕜' (supportedIn I F n V K) where
-  smul_assoc r c s := Subtype.ext (smul_assoc r c s.1)
+  smul_assoc r c s := Subtype.ext (smul_assoc r c s.val)
 
 /-- Low-priority `SMul 𝕜'` instance on compactly supported sections; when `𝕜' = 𝕜`, the submodule
 instance takes precedence and is definitionally equal. -/
 instance (priority := low) instSMulCompactlySupportedOfNormedAlgebra :
     SMul 𝕜' (compactlySupported I F n V) :=
-  ⟨fun c s ↦ ⟨c • s.1, smul_mem_compactlySupported_of_normedAlgebra c s.2⟩⟩
+  ⟨fun c s ↦ ⟨c • s.val, smul_mem_compactlySupported_of_normedAlgebra c s.property⟩⟩
 
 @[simp]
 theorem coe_smul_compactlySupported_of_normedAlgebra (c : 𝕜')
@@ -398,7 +398,7 @@ instance (priority := low) instModuleCompactlySupportedOfNormedAlgebra :
 
 instance instIsScalarTowerCompactlySupported [∀ x, IsScalarTower 𝕜 𝕜' (V x)] :
     IsScalarTower 𝕜 𝕜' (compactlySupported I F n V) where
-  smul_assoc r c s := Subtype.ext (smul_assoc r c s.1)
+  smul_assoc r c s := Subtype.ext (smul_assoc r c s.val)
 
 variable (𝕜') in
 /-- Inclusion of a fixed-compact support stage into compactly supported sections, regarded as

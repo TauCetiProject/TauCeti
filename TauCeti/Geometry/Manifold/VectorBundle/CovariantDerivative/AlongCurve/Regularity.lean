@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Chart
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 
 /-!
@@ -57,7 +57,7 @@ theorem eventuallyEq_sectionCoord_alongCurveWithin {s : Set 𝕜} {t : 𝕜} {x 
     (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet)
     (hV : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s t) :
-    sectionCoord (F := E) γ (alongCurveWithin cov γ V s) x =ᶠ[𝓝[s] t]
+    sectionCoord 𝕜 (F := E) γ (alongCurveWithin cov γ V s) x =ᶠ[𝓝[s] t]
       alongCurveInChartWithin cov γ V s x := by
   let e := trivializationAt E (TangentSpace I) x
   have hγ : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I 1 γ s t :=
@@ -101,7 +101,7 @@ theorem contMDiffWithinAt_alongCurveWithin {s : Set 𝕜} {t : 𝕜} {x : M}
       (n := n + 1)).contMDiffAt.comp_contMDiffWithinAt t hV
   have hn : n ≤ n + 1 := le_self_add
   have h1 : (1 : ℕ∞ω) ≤ n + 1 := le_add_of_nonneg_left (zero_le : 0 ≤ n)
-  have hv : ContDiffWithinAt 𝕜 (n + 1) (sectionCoord (F := E) γ V x) s t :=
+  have hv : ContDiffWithinAt 𝕜 (n + 1) (sectionCoord 𝕜 (F := E) γ V x) s t :=
     (contDiffWithinAt_sectionCoord_iff γ V hγ hx).2 hV
   have hu : ContDiffWithinAt 𝕜 (n + 1) (extChartAt I x ∘ γ) s t :=
     ((contMDiffAt_extChartAt' (by
@@ -153,5 +153,34 @@ theorem contMDiff_alongCurve
   rw [← contMDiffOn_univ]
   simpa only [alongCurveWithin_univ] using
     contMDiffOn_alongCurveWithin cov γ V hcov uniqueDiffOn_univ hV.contMDiffOn
+
+/-- The covariant acceleration within a set with unique derivatives has a `C^n`
+tangent-bundle lift when the curve is `C^(n+2)` there and the connection is `C^n` locally. -/
+theorem contMDiffWithinAt_accelerationWithin {s : Set 𝕜} {t : 𝕜} {x : M}
+    [ContMDiffCovariantDerivativeOn E n cov.toFun
+      (trivializationAt E (TangentSpace I) x).baseSet]
+    (hs : UniqueDiffOn 𝕜 s) (ht : t ∈ s)
+    (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet)
+    (hγ : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I (n + 2) γ s t) :
+    ContMDiffWithinAt 𝓘(𝕜, 𝕜) I.tangent n
+      (fun r ↦ TotalSpace.mk' E (γ r) (accelerationWithin cov γ s r)) s t := by
+  simp only [accelerationWithin_def]
+  apply contMDiffWithinAt_alongCurveWithin cov γ _ hs ht hx
+  rw [← funext (curveVelocityLiftWithin_apply (I := I) γ s)]
+  exact hγ.contMDiffWithinAt_curveVelocityLiftWithin ht
+    (by simp only [add_assoc, one_add_one_eq_two, le_refl]) hs.uniqueMDiffOn
+
+/-- The covariant acceleration of a curve that is `C^(n+2)` at a parameter has a `C^n`
+tangent-bundle lift there, for a connection that is `C^n` near the image parameter. -/
+theorem contMDiffAt_acceleration {t : 𝕜} {x : M}
+    [ContMDiffCovariantDerivativeOn E n cov.toFun
+      (trivializationAt E (TangentSpace I) x).baseSet]
+    (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet)
+    (hγ : ContMDiffAt 𝓘(𝕜, 𝕜) I (n + 2) γ t) :
+    ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent n
+      (fun r ↦ TotalSpace.mk' E (γ r) (acceleration cov γ r)) t := by
+  simpa only [contMDiffWithinAt_univ, accelerationWithin_univ] using
+    contMDiffWithinAt_accelerationWithin cov γ uniqueDiffOn_univ (mem_univ t) hx
+      hγ.contMDiffWithinAt
 
 end CovariantDerivative

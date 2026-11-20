@@ -178,7 +178,7 @@ theorem exists_negative_disk_homotopy_polarFactor [CompleteSpace E] {W : Set M} 
   refine ⟨δ, hδ, ⟨fun p ↦ ψ₀.symm (H p), hcont₀'.comp_continuous H.continuous
     fun p ↦ (hH p).1.1⟩, fun u ↦ ?_, fun u ↦ ?_, fun p ↦ ⟨(hH p).1.2, ?_⟩⟩
   · have hu : ((u : E), (0 : F)) ∈ U := hδU <|
-      (closedBall_prod_same (0 : E) (0 : F) δ).subset ⟨u.2, Metric.mem_closedBall_self hδ.le⟩
+      (closedBall_prod_same (0 : E) (0 : F) δ).subset ⟨u.property, Metric.mem_closedBall_self hδ.le⟩
     simp only [ContinuousMap.coe_mk, hH₀]
     exact ψ₀.left_inv hu.2
   · simp only [ContinuousMap.coe_mk, hH₁]

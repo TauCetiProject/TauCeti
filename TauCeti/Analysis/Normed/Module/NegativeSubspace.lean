@@ -163,7 +163,7 @@ theorem det_fst_comp_pos_iff_exists_path_of_norm_snd_lt [FiniteDimensional ℝ E
     refine ⟨⟨fun t ↦ L₀.negativeContraction (1 - t), by fun_prop⟩, (fst ℝ E F).comp L₀,
       by simp, by simp, fun t u hu ↦ L₀.norm_snd_negativeContraction_lt hL₀ ?_ hu, hdet⟩
     rw [abs_le]
-    constructor <;> linarith [t.2.1, t.2.2]
+    constructor <;> linarith [t.property.1, t.property.2]
   · rintro ⟨L, B, h₀, h₁, hL, hB⟩
     rwa [← h₀, det_fst_comp_pos_iff_of_norm_snd_lt L.continuous hL 0 1, h₁, ← comp_assoc,
       fst_comp_inl, id_comp]
@@ -184,11 +184,12 @@ theorem sign_det_fst_comp_comp_of_norm_snd_lt [FiniteDimensional ℝ E] (A : E �
   -- `A ∘ inl ∘ fst ∘ L`, whose negative block is the product of the two negative blocks.
   have hfam (t : unitInterval) (u : E) (hu : u ≠ 0) :
       ‖(A.comp (L.negativeContraction t) u).2‖ < ‖(A.comp (L.negativeContraction t) u).1‖ :=
-    hA _ (L.norm_snd_negativeContraction_lt hL (abs_le.2 ⟨by linarith [t.2.1], t.2.2⟩) hu)
+    hA _ (L.norm_snd_negativeContraction_lt hL (abs_le.2 ⟨by linarith [t.property.1],
+        t.property.2⟩) hu)
   have hpos := det_fst_comp_pos_iff_of_norm_snd_lt
     (L := fun t : unitInterval ↦ A.comp (L.negativeContraction t))
     ((compL ℝ E (E × F) (E × F) A).continuous.comp
-      (L.continuous_negativeContraction.comp continuous_subtype_val)) hfam 1 0
+      (L.continuous_negativeContraction.comp continuous_subtypeVal)) hfam 1 0
   have hcomp : (fst ℝ E F).comp (A.comp (L.negativeContraction 0)) =
       ((fst ℝ E F).comp (A.comp (inl ℝ E F))).comp ((fst ℝ E F).comp L) := by
     ext u
