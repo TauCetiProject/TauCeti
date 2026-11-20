@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 
 /-!
@@ -50,9 +51,10 @@ a doubly (twisted) periodic map are used.
 * `TauCeti.neg_mul_setIntegral_le_setIntegral_deriv_mul`: for a monotone `C¹` profile `β` and
   `-B(t) ≤ f`, the lower bound `-(β(b₁) - β(a₁)) ∫ B ≤ ∫∫ β'(s) f`.
 * `TauCeti.setLIntegral_univ_prod_Icc_add_one_eq`,
+  `TauCeti.setLIntegral_univ_prod_Icc_add_one_eq_of_periodic`,
   `TauCeti.setLIntegral_univ_prod_Icc_neg_one_two_le`,
   `TauCeti.eLpNorm_restrict_univ_prod_Icc_neg_one_two_le`: for a function of period one in the
-  second coordinate, integrals over the horizontal strips `ℝ × [k, k + 1]` agree, and those over
+  second coordinate, integrals over the horizontal strips `ℝ × [c, c + 1]` agree, and those over
   `ℝ × [-1, 2]` are controlled by those over the fundamental strip `ℝ × [0, 1]`.
 * `TauCeti.eq_zero_of_forall_setIntegral_rect_norm_sq_eq_zero`: a continuous function of period
   one in the second coordinate whose `L²` norm vanishes on every rectangle `[-R, R] × [0, 1]` is
@@ -273,6 +275,24 @@ theorem setLIntegral_univ_prod_Icc_add_one_eq {g : ℝ × ℝ → ℝ≥0∞} (k
     constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
   rw [← hφ.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight _) g, hpre]
   simp only [hg]
+
+/-- For a measurable function of period one in `t`, the integrals over the strips
+`ℝ × [c, c + 1]` and `ℝ × [0, 1]` agree, for every real `c`. -/
+theorem setLIntegral_univ_prod_Icc_add_one_eq_of_periodic {g : ℝ × ℝ → ℝ≥0∞} (hgm : Measurable g)
+    (hg : ∀ s t, g (s, t + 1) = g (s, t)) (c : ℝ) :
+    ∫⁻ z in univ ×ˢ Icc c (c + 1), g z = ∫⁻ z in univ ×ˢ Icc 0 1, g z := by
+  -- By Tonelli, both integrals are integrals over `s` of the integrals of the `1`-periodic slices
+  -- `t ↦ g (s, t)` over a period, which are their integrals over the circle `ℝ ⧸ ℤ`.
+  have hgp (s : ℝ) : Function.Periodic (fun t ↦ g (s, t)) 1 := hg s
+  have key (a : ℝ) : ∫⁻ z in univ ×ˢ Icc a (a + 1), g z =
+      ∫⁻ s, ∫⁻ x : UnitAddCircle, (hgp s).lift x := by
+    rw [Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ,
+      lintegral_prod _ hgm.aemeasurable]
+    refine lintegral_congr fun s ↦ ?_
+    rw [setLIntegral_congr Ioc_ae_eq_Icc.symm, ← UnitAddCircle.lintegral_preimage a]
+    simp only [Function.Periodic.lift_coe]
+  rw [key c]
+  simpa using (key 0).symm
 
 /-- For a function of period one in `t`, the integral over `ℝ × [-1, 2]` is at most three times
 the integral over the strip `ℝ × [0, 1]`. -/
