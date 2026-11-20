@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.AddCircle
+public import Mathlib.MeasureTheory.Constructions.Pi
+import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Fourier.Uniqueness
 
 /-!
-# Completeness of the Fourier sine system on an interval
+# Completeness of the Fourier sine system on an interval and on a box
 
 On an interval `[a, b]` with `a < b`, the functions `x ↦ sin (k π (x - a) / (b - a))`,
 `k = 1, 2, …`, are the eigenfunctions of `-d²/dx²` with zero boundary values at both ends. This
@@ -25,10 +27,20 @@ on an interval (`MeasureTheory.IntegrableOn.ae_eq_zero_of_forall_fourierCoeffOn_
 coefficient of the odd extension is a multiple of `∫ g(x) sin (n π (x - a) / (b - a)) dx`, so all
 of them vanish, and uniqueness forces the extension, hence `g`, to vanish almost everywhere.
 
+The same holds on a box `∏ᵢ (aᵢ, bᵢ) ⊆ ℝ^ι` for the products of sines
+`∏ᵢ sin (kᵢ π (xᵢ - aᵢ) / (bᵢ - aᵢ))`, `kᵢ ≥ 1`, the separated Dirichlet eigenfunctions of `-Δ`
+on the box (`TauCeti.ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero`). The proof is by
+induction on the dimension. Split off the first coordinate, `x = (t, y)`. For each `k`, the
+coefficient `y ↦ ∫ g (t, y) sin (k π (t - a₀) / (b₀ - a₀)) dt` is orthogonal to every sine product
+in `y`, so it vanishes for almost every `y` by induction; for those `y` the slice `g (·, y)` is
+orthogonal to every sine, so it vanishes by the one-dimensional theorem, and Fubini concludes.
+
 ## Main results
 
 * `TauCeti.ae_eq_zero_of_forall_integral_mul_sin_eq_zero`: completeness of the sine system
   `sin (k π (x - a) / (b - a))`, `k ≥ 1`, among the integrable functions on `(a, b]`.
+* `TauCeti.ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero`: completeness of the products of
+  sines among the integrable functions on a box.
 
 ## References
 
@@ -192,5 +204,145 @@ theorem ae_eq_zero_of_forall_integral_mul_sin_eq_zero {g : ℝ → ℝ}
     rw [Pi.zero_apply, oddExtension_of_lt hxm.1] at hx
     exact_mod_cast hx
   · simp [Ioc_eq_empty_of_le (le_of_not_gt hab), Filter.EventuallyEq]
+
+/-- Completeness of the sine system in the first variable of a product, with a parameter `y`:
+if for every `k ≥ 1` the coefficient `y ↦ ∫ G (t, y) sin (k π (t - a) / (b - a)) dt` vanishes for
+almost every `y`, then `G` vanishes almost everywhere. For almost every `y` the slice `G (·, y)`
+is orthogonal to every sine, so it vanishes by the one-dimensional theorem, and Tonelli concludes.
+-/
+private theorem ae_eq_zero_prod_of_forall_integral_mul_sin_eq_zero {β : Type*}
+    [MeasurableSpace β] {ν : Measure β} [SFinite ν] {G : ℝ × β → ℝ}
+    (hG : Integrable G ((volume.restrict (Ioo a b)).prod ν))
+    (h : ∀ k : ℕ, 0 < k → (fun y => ∫ t, G (t, y) * Real.sin (k * π * (t - a) / (b - a))
+      ∂volume.restrict (Ioo a b)) =ᵐ[ν] 0) :
+    G =ᵐ[(volume.restrict (Ioo a b)).prod ν] 0 := by
+  have hslice : ∀ᵐ y ∂ν, (fun t => G (t, y)) =ᵐ[volume.restrict (Ioo a b)] 0 := by
+    have hall : ∀ᵐ y ∂ν, ∀ k : ℕ, 0 < k → ∫ t, G (t, y) *
+        Real.sin (k * π * (t - a) / (b - a)) ∂volume.restrict (Ioo a b) = 0 := by
+      rw [ae_all_iff]
+      intro k
+      by_cases hk : 0 < k
+      · filter_upwards [h k hk] with y hy _ using hy
+      · exact ae_of_all _ fun _ h => absurd h hk
+    filter_upwards [hall, hG.prod_left_ae] with y hy hyi
+    rcases le_or_gt a b with hab | hab
+    · have hIoc : volume.restrict (Ioo a b) = volume.restrict (Ioc a b) :=
+        Measure.restrict_congr_set Ioo_ae_eq_Ioc
+      have := ae_eq_zero_of_forall_integral_mul_sin_eq_zero (g := fun t => G (t, y))
+        (by simpa [IntegrableOn, hIoc] using hyi) fun k hk => by
+          rw [intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo]
+          exact hy k hk
+      simpa [hIoc] using this
+    · simp [Ioo_eq_empty_of_le hab.le, Filter.EventuallyEq]
+  have hlin : ∫⁻ z, ‖G z‖ₑ ∂(volume.restrict (Ioo a b)).prod ν = 0 := by
+    rw [lintegral_prod_symm _ hG.aestronglyMeasurable.eNorm]
+    refine lintegral_eq_zero_of_ae_eq_zero ?_
+    filter_upwards [hslice] with y hy
+    exact lintegral_eq_zero_of_ae_eq_zero (by filter_upwards [hy] with t ht; simp [ht])
+  filter_upwards [(lintegral_eq_zero_iff' hG.aestronglyMeasurable.eNorm).1 hlin] with z hz
+  simpa using hz
+
+/-- The sine system on a box, in the coordinates `Fin n → ℝ` and with the product of the
+restricted measures, by induction on the dimension. -/
+private theorem ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero_fin :
+    ∀ (n : ℕ) (a b : Fin n → ℝ) (g : (Fin n → ℝ) → ℝ),
+      Integrable g (Measure.pi fun i => volume.restrict (Ioo (a i) (b i))) →
+      (∀ k : Fin n → ℕ, (∀ i, 0 < k i) →
+        ∫ x, g x * ∏ i, Real.sin (k i * π * (x i - a i) / (b i - a i))
+          ∂Measure.pi (fun i => volume.restrict (Ioo (a i) (b i))) = 0) →
+      g =ᵐ[Measure.pi fun i => volume.restrict (Ioo (a i) (b i))] 0
+  | 0, a, b, g, _, h => by
+    -- On `Fin 0 → ℝ` the product measure is the Dirac mass at the only point.
+    have h0 := h Fin.elim0 fun i => i.elim0
+    rw [Measure.pi_of_empty _ (Fin.elim0 : Fin 0 → ℝ), integral_dirac] at h0
+    have hg : g = 0 := funext fun x => by
+      rw [Subsingleton.elim x Fin.elim0]
+      simpa using h0
+    exact hg ▸ Filter.EventuallyEq.rfl
+  | n + 1, a, b, g, hg, h => by
+    set μ : Fin (n + 1) → Measure ℝ := fun i => volume.restrict (Ioo (a i) (b i))
+    set ν : Measure (Fin n → ℝ) :=
+      Measure.pi fun j => volume.restrict (Ioo (a j.succ) (b j.succ))
+    -- Split off the first coordinate: `x = (x 0, tail)`.
+    let e := MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) 0
+    have hmp : MeasurePreserving e (Measure.pi μ) ((μ 0).prod ν) := by
+      have h := measurePreserving_piFinSuccAbove μ 0
+      simp only [Fin.succAbove_zero] at h
+      exact h
+    have he (t : ℝ) (y : Fin n → ℝ) : e.symm (t, y) = Fin.cons t y := by
+      simp [e, MeasurableEquiv.piFinSuccAbove_symm_apply]
+    set G : ℝ × (Fin n → ℝ) → ℝ := g ∘ e.symm
+    have hG : Integrable G ((μ 0).prod ν) :=
+      (hmp.symm e).integrable_comp_emb e.symm.measurableEmbedding |>.2 hg
+    set s : ℕ → ℝ → ℝ := fun k t => Real.sin (k * π * (t - a 0) / (b 0 - a 0))
+    have hGs (k : ℕ) : Integrable (fun z : ℝ × (Fin n → ℝ) => G z * s k z.1) ((μ 0).prod ν) :=
+      hG.mul_bdd (by fun_prop) (ae_of_all _ fun z => by simpa using Real.abs_sin_le_one _)
+    -- The coefficients of `G` in the first variable are orthogonal to every sine product in the
+    -- remaining ones, so they vanish by induction.
+    have hH (k : ℕ) (hk : 0 < k) : (fun y => ∫ t, G (t, y) * s k t ∂μ 0) =ᵐ[ν] 0 := by
+      refine ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero_fin n (fun j => a j.succ)
+        (fun j => b j.succ) _ (hGs k).integral_prod_right fun k' hk' => ?_
+      have hfull := h (Fin.cons k k') (Fin.cases hk hk')
+      rw [← (hmp.symm e).integral_comp'] at hfull
+      set P : (Fin n → ℝ) → ℝ :=
+        fun y => ∏ j, Real.sin (k' j * π * (y j - a j.succ) / (b j.succ - a j.succ))
+      have hP : Continuous P := by fun_prop
+      have hint : Integrable (fun z : ℝ × (Fin n → ℝ) => G z * s k z.1 * P z.2) ((μ 0).prod ν) :=
+        (hGs k).mul_bdd (hP.comp continuous_snd).aestronglyMeasurable (ae_of_all _ fun z => by
+          rw [norm_prod]
+          exact Finset.prod_le_one₀ (fun _ _ => norm_nonneg _)
+            fun _ _ => by simpa using Real.abs_sin_le_one _)
+      simp_rw [← MeasureTheory.integral_mul_const]
+      rw [← integral_prod_symm _ hint]
+      refine Eq.trans ?_ hfull
+      congr 1 with ⟨t, y⟩
+      simp only [G, s, P, Function.comp_apply, he, Fin.prod_univ_succ, Fin.cons_zero,
+        Fin.cons_succ]
+      ring
+    have hG0 : G =ᵐ[(μ 0).prod ν] 0 :=
+      ae_eq_zero_prod_of_forall_integral_mul_sin_eq_zero hG hH
+    have hGe : G ∘ e = g := funext fun x => by simp [G]
+    rw [← hGe]
+    exact hmp.quasiMeasurePreserving.ae_eq_comp hG0
+
+/-- **Completeness of the sine system on a box.** Let `g` be integrable on the open box
+`∏ᵢ (aᵢ, bᵢ) ⊆ ℝ^ι` and orthogonal to every product of sines
+
+`x ↦ ∏ᵢ sin (kᵢ π (xᵢ - aᵢ) / (bᵢ - aᵢ))`, `kᵢ ≥ 1`.
+
+Then `g` vanishes almost everywhere on the box. The products of the one-dimensional Dirichlet
+modes are the separated Dirichlet eigenfunctions of `-Δ` on the box, so this is the completeness
+half of their expansion. No relation between `aᵢ` and `bᵢ` is assumed: an empty factor makes the
+box empty. -/
+theorem ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero {ι : Type*} [Fintype ι]
+    {a b : ι → ℝ} {g : (ι → ℝ) → ℝ} (hg : IntegrableOn g (univ.pi fun i => Ioo (a i) (b i)))
+    (h : ∀ k : ι → ℕ, (∀ i, 0 < k i) →
+      ∫ x in univ.pi fun i => Ioo (a i) (b i),
+        g x * ∏ i, Real.sin (k i * π * (x i - a i) / (b i - a i)) = 0) :
+    g =ᵐ[volume.restrict (univ.pi fun i => Ioo (a i) (b i))] 0 := by
+  rw [IntegrableOn, volume_pi, Measure.restrict_pi_pi] at hg
+  simp only [volume_pi, Measure.restrict_pi_pi] at h ⊢
+  -- Relabel the coordinates by `Fin n`.
+  let f := (Fintype.equivFin ι).symm
+  let e := MeasurableEquiv.piCongrLeft (fun _ : ι => ℝ) f
+  have hmp : MeasurePreserving e
+      (Measure.pi fun i' => volume.restrict (Ioo (a (f i')) (b (f i'))))
+      (Measure.pi fun i => volume.restrict (Ioo (a i) (b i))) :=
+    measurePreserving_piCongrLeft (fun i => volume.restrict (Ioo (a i) (b i))) f
+  have happ (x : Fin (Fintype.card ι) → ℝ) (i' : Fin (Fintype.card ι)) : e x (f i') = x i' :=
+    MeasurableEquiv.piCongrLeft_apply_apply (β := fun _ => ℝ) f x i'
+  have hfin := ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero_fin _ (a ∘ f) (b ∘ f) (g ∘ e)
+    (hmp.integrable_comp_emb e.measurableEmbedding |>.2 hg) fun k hk => by
+      have := h (k ∘ f.symm) fun i => hk _
+      rw [← hmp.integral_comp'] at this
+      refine Eq.trans ?_ this
+      congr 1 with x
+      simp only [Function.comp_apply]
+      congr 1
+      rw [← f.prod_comp]
+      simp [happ]
+  have hge : (g ∘ e) ∘ e.symm = g := funext fun x => by simp
+  rw [← hge]
+  exact (hmp.symm e).quasiMeasurePreserving.ae_eq_comp hfin
 
 end TauCeti

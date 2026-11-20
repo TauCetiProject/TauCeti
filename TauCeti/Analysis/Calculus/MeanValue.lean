@@ -115,6 +115,20 @@ locally Lipschitz on `U ∩ C` (`Convex.locallyLipschitzOn_inter_of_contDiffOn`)
 compact subset `K ⊆ U ∩ C` with unique derivatives on `U ∩ C` it satisfies a uniform first-order
 Taylor remainder bound for nearby points in `C`
 (`Convex.exists_pos_norm_sub_fderivWithin_le_of_compact`).
+
+## Second differences of maps with Lipschitz derivative
+
+Let `f` be differentiable on a convex set `s`, with derivative of norm at most `C` and
+`L`-Lipschitz on `s`. Then the second difference of `f` satisfies
+
+`‖(f (a + b) - f a) - (f (a' + b') - f a')‖ ≤ C ‖b - b'‖ + L ‖b'‖ ‖a - a'‖`
+
+whenever `a`, `a'`, `a + b`, `a + b'` and `a' + b'` lie in `s`
+(`Convex.norm_image_sub_sub_sub_le_of_norm_fderiv_le`). The first term changes the increment `b`
+into `b'` at the base point `a`; the second moves the base point of `y ↦ f (y + b') - f y`, whose
+derivative `Df(y + b') - Df(y)` is at most `L ‖b'‖`, from `a'` to `a`. Both steps are Mathlib's
+mean value inequality `Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le`. This is the estimate
+that makes a nonlinear coefficient `x ↦ J(u(x))` Lipschitz in the map `u` for Hölder norms.
 -/
 
 public section
@@ -625,34 +639,74 @@ theorem Convex.exists_pos_norm_sub_fderivWithin_le_of_compact {C U K : Set E} (h
   have hf_diff : DifferentiableOn ℝ f (U ∩ C) := hf.differentiableOn one_ne_zero
   have hdf_cont : ContinuousOn (fderivWithin ℝ f (U ∩ C)) (U ∩ C) :=
     hf.continuousOn_fderivWithin hU_uniq le_rfl
-  have hloc (x : K) : ∃ r > 0, ball x.1 (2 * r) ⊆ U ∧
-      ∀ z ∈ ball x.1 (2 * r) ∩ C,
-        ‖fderivWithin ℝ f (U ∩ C) z - fderivWithin ℝ f (U ∩ C) x.1‖ ≤ η / 2 := by
-    obtain ⟨r₁, hr₁, hsubU⟩ := Metric.isOpen_iff.mp hU x.1 (hKsub x.2).1
+  have hloc (x : K) : ∃ r > 0, ball x.val (2 * r) ⊆ U ∧
+      ∀ z ∈ ball x.val (2 * r) ∩ C,
+        ‖fderivWithin ℝ f (U ∩ C) z - fderivWithin ℝ f (U ∩ C) x.val‖ ≤ η / 2 := by
+    obtain ⟨r₁, hr₁, hsubU⟩ := Metric.isOpen_iff.mp hU x.val (hKsub x.property).1
     obtain ⟨r₂, hr₂, hclose⟩ :=
-      Metric.continuousWithinAt_iff.mp (hdf_cont x.1 (hKsub x.2)) (η / 2) (half_pos hη)
+      Metric.continuousWithinAt_iff.mp (hdf_cont x.val (hKsub x.property)) (η / 2) (half_pos hη)
     have hmin1 : 2 * (min r₁ r₂ / 3) ≤ r₁ := by linarith [min_le_left r₁ r₂]
     refine ⟨min r₁ r₂ / 3, by positivity, (ball_subset_ball hmin1).trans hsubU, fun z hz ↦ ?_⟩
-    have hdist : dist z x.1 < r₂ := lt_of_lt_of_le hz.1 (by linarith [min_le_right r₁ r₂])
+    have hdist : dist z x.val < r₂ := lt_of_lt_of_le hz.1 (by linarith [min_le_right r₁ r₂])
     simpa [dist_eq_norm] using
       (hclose ⟨hsubU (ball_subset_ball hmin1 hz.1), hz.2⟩ hdist).le
   choose r hr_pos hr_U hr_df using hloc
-  obtain ⟨F, hFcov⟩ := hK.elim_finite_subcover (fun x : K ↦ ball x.1 (r x))
+  obtain ⟨F, hFcov⟩ := hK.elim_finite_subcover (fun x : K ↦ ball x.val (r x))
     (fun _ ↦ isOpen_ball) (fun x hx ↦ mem_iUnion.mpr ⟨⟨x, hx⟩, mem_ball_self (hr_pos ⟨x, hx⟩)⟩)
   rcases F.eq_empty_or_nonempty with rfl | hFne
   · exact ⟨1, zero_lt_one, fun _ hz₁ ↦ False.elim (by simpa using hFcov hz₁)⟩
   refine ⟨F.inf' hFne r, (Finset.lt_inf'_iff hFne).mpr fun x _ ↦ hr_pos x,
     fun z₁ hz₁ z₂ hz₂C hdist ↦ ?_⟩
   obtain ⟨x, hxF, hz₁x⟩ := mem_iUnion₂.mp (hFcov hz₁)
-  have hz₂x : z₂ ∈ ball x.1 (2 * r x) := by
+  have hz₂x : z₂ ∈ ball x.val (2 * r x) := by
     rw [mem_ball] at hz₁x ⊢
-    linarith [Finset.inf'_le r hxF, dist_triangle z₂ z₁ x.1]
-  have hsub : ball x.1 (2 * r x) ∩ C ⊆ U ∩ C := fun w hw ↦ ⟨hr_U x hw.1, hw.2⟩
-  exact ((convex_ball x.1 (2 * r x)).inter hC).norm_image_sub_le_of_norm_hasFDerivWithin_le'
+    linarith [Finset.inf'_le r hxF, dist_triangle z₂ z₁ x.val]
+  have hsub : ball x.val (2 * r x) ∩ C ⊆ U ∩ C := fun w hw ↦ ⟨hr_U x hw.1, hw.2⟩
+  exact ((convex_ball x.val (2 * r x)).inter hC).norm_image_sub_le_of_norm_hasFDerivWithin_le'
     (fun w hw ↦ (hf_diff w (hsub hw)).hasFDerivWithinAt.mono hsub)
-    (fun w hw ↦ (norm_sub_le_norm_sub_add_norm_sub _ (fderivWithin ℝ f (U ∩ C) x.1) _).trans
-      (by rw [norm_sub_rev (fderivWithin ℝ f (U ∩ C) x.1)]; linarith [hr_df x w hw,
+    (fun w hw ↦ (norm_sub_le_norm_sub_add_norm_sub _ (fderivWithin ℝ f (U ∩ C) x.val) _).trans
+      (by rw [norm_sub_rev (fderivWithin ℝ f (U ∩ C) x.val)]; linarith [hr_df x w hw,
         hr_df x z₁ ⟨ball_subset_ball (by linarith [hr_pos x]) hz₁x, (hKsub hz₁).2⟩]))
     ⟨ball_subset_ball (by linarith [hr_pos x]) hz₁x, (hKsub hz₁).2⟩ ⟨hz₂x, hz₂C⟩
 
 end OpenInterConvex
+
+section SecondDifference
+
+variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup G]
+  [NormedSpace ℝ G] {f : E → G} {s : Set E} {C L : ℝ}
+
+/-- **Second-difference estimate.** If `f` is differentiable on the convex set `s`, with
+`‖Df‖ ≤ C` and `Df` `L`-Lipschitz there, then
+`‖(f (a + b) - f a) - (f (a' + b') - f a')‖ ≤ C ‖b - b'‖ + L ‖b'‖ ‖a - a'‖`
+when `a`, `a'`, `a + b`, `a + b'` and `a' + b'` lie in `s`. -/
+theorem Convex.norm_image_sub_sub_sub_le_of_norm_fderiv_le (hs : Convex ℝ s)
+    (hd : ∀ x ∈ s, DifferentiableAt ℝ f x) (hC : ∀ x ∈ s, ‖fderiv ℝ f x‖ ≤ C)
+    (hL : ∀ x ∈ s, ∀ y ∈ s, ‖fderiv ℝ f x - fderiv ℝ f y‖ ≤ L * ‖x - y‖)
+    {a a' b b' : E} (ha : a ∈ s) (ha' : a' ∈ s) (hab : a + b ∈ s) (hab' : a + b' ∈ s)
+    (ha'b' : a' + b' ∈ s) :
+    ‖(f (a + b) - f a) - (f (a' + b') - f a')‖ ≤ C * ‖b - b'‖ + L * ‖b'‖ * ‖a - a'‖ := by
+  -- The first step changes `b` into `b'` at the base point `a`.
+  have hfirst : ‖f (a + b) - f (a + b')‖ ≤ C * ‖b - b'‖ := by
+    simpa using hs.norm_image_sub_le_of_norm_fderiv_le hd hC hab' hab
+  -- The second step moves the base point of `y ↦ f (y + b') - f y` from `a'` to `a`.
+  have hseg : ∀ y ∈ segment ℝ a' a, y ∈ s ∧ y + b' ∈ s := fun y hy ↦ by
+    refine ⟨hs.segment_subset ha' ha hy, hs.segment_subset ha'b' hab' ?_⟩
+    have h : b' + y ∈ segment ℝ (b' + a') (b' + a) := by
+      rw [← segment_translate_image]
+      exact ⟨y, hy, rfl⟩
+    simpa only [add_comm b'] using h
+  have hsecond : ‖(f (a + b') - f a) - (f (a' + b') - f a')‖ ≤ L * ‖b'‖ * ‖a - a'‖ := by
+    have hφd : ∀ y ∈ segment ℝ a' a, HasFDerivWithinAt (fun y ↦ f (y + b') - f y)
+        (fderiv ℝ f (y + b') - fderiv ℝ f y) (segment ℝ a' a) y := fun y hy ↦ by
+      have hshift := (hd _ (hseg y hy).2).hasFDerivAt.comp y ((hasFDerivAt_id y).add_const b')
+      rw [ContinuousLinearMap.comp_id] at hshift
+      exact (hshift.sub (hd y (hseg y hy).1).hasFDerivAt).hasFDerivWithinAt
+    refine (convex_segment a' a).norm_image_sub_le_of_norm_hasFDerivWithin_le hφd
+      (fun y hy ↦ ?_) (left_mem_segment ℝ a' a) (right_mem_segment ℝ a' a)
+    simpa using hL _ (hseg y hy).2 y (hseg y hy).1
+  calc _ = ‖(f (a + b) - f (a + b')) + ((f (a + b') - f a) - (f (a' + b') - f a'))‖ := by
+        congr 1; abel
+    _ ≤ _ := (norm_add_le _ _).trans (add_le_add hfirst hsecond)
+
+end SecondDifference

@@ -58,18 +58,17 @@ variable {X Y : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
   [TopologicalSpace Y] [ChartedSpace ℂ Y]
   [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
   [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace Y]
-  [FiniteCWType X] [FiniteCWType Y]
-  (f : FiniteHolomorphicMap X Y) [FiniteCWType ↥f.branchValuesᶜ]
+  (f : FiniteHolomorphicMap X Y)
 
-/-- **Riemann–Hurwitz in genus form**, for surfaces whose Euler numbers are `2 - 2 · genus`: if
-`X`, `Y` and the complement of the branch values have finite CW type, and
-`χ(X) = 2 - 2 · genus X` and `χ(Y) = 2 - 2 · genus Y`, then
+/-- **Riemann--Hurwitz in genus form**, for compact Riemann surfaces whose Euler numbers are
+`2 - 2 · genus`: if `χ(X) = 2 - 2 · genus X` and `χ(Y) = 2 - 2 · genus Y`, then
 `2 genus X - 2 = deg f · (2 genus Y - 2) + R(f)`, where `R(f)` is the ramification degree. The
 two Euler-number hypotheses hold for every compact connected Riemann surface; they are explicit
 here because they need Poincaré duality. -/
 theorem two_mul_genus_sub_two_eq_of_eulerChar_eq (hX : eulerChar X = 2 - 2 * genus X)
-    (hY : eulerChar Y = 2 - 2 * genus Y) :
-    2 * (genus X : ℤ) - 2 = degree f * (2 * (genus Y : ℤ) - 2) + ramificationDegree f := by
+    (hY : @eulerChar Y _ f.finiteCWType_codomain = 2 - 2 * @genus Y _ f.finiteCWType_codomain) :
+    2 * (genus X : ℤ) - 2 =
+      degree f * (2 * (@genus Y _ f.finiteCWType_codomain : ℤ) - 2) + ramificationDegree f := by
   linear_combination -f.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree + hX -
     (degree f : ℤ) * hY
 

@@ -167,10 +167,10 @@ private theorem eventually_norm_sub_dysonSeriesLeft_le {C U : Set E} (hC : Conve
   -- Step 1: Bound `‖DX (Φ s y₀)‖ ≤ CD` on `[0, τ]` and get a uniform Taylor radius `ρ` along `y₀`.
   have hM₀_cont : Continuous (fun s ↦ DX (Φ (projIcc 0 τ hτ.le s) y₀)) :=
     (hX.continuousOn_fderivWithin hU_uniq le_rfl).comp_continuous
-      ((hγ_cont hy₀).comp_continuous (continuous_subtype_val.comp continuous_projIcc)
-        fun s ↦ (projIcc 0 τ hτ.le s).2)
-      fun s ↦ ⟨h2rU (hmem y₀ hy₀ _ (projIcc 0 τ hτ.le s).2).1,
-        (hmem y₀ hy₀ _ (projIcc 0 τ hτ.le s).2).2⟩
+      ((hγ_cont hy₀).comp_continuous (continuous_subtypeVal.comp continuous_projIcc)
+        fun s ↦ (projIcc 0 τ hτ.le s).property)
+      fun s ↦ ⟨h2rU (hmem y₀ hy₀ _ (projIcc 0 τ hτ.le s).property).1,
+        (hmem y₀ hy₀ _ (projIcc 0 τ hτ.le s).property).2⟩
   obtain ⟨BD, hBD⟩ := isCompact_Icc.exists_bound_of_continuousOn
     ((hM₀_cont.norm).continuousOn (s := Icc 0 τ))
   set CD : ℝ := max BD 0
@@ -314,20 +314,20 @@ private theorem continuousOn_dysonSeriesLeft_forwardSemiflow {C U : Set E}
       (Icc 0 τ ×ˢ (ball x₀ r ∩ C)) := by
   let B := ↥(ball x₀ r ∩ C)
   let P : B → ℝ → E →L[ℝ] E := fun y s ↦
-    fderivWithin ℝ X (U ∩ C) (forwardSemiflow X (U ∩ C) (projIcc 0 τ hτ.le s) y.1)
+    fderivWithin ℝ X (U ∩ C) (forwardSemiflow X (U ∩ C) (projIcc 0 τ hτ.le s) y.val)
   have hΦP : Continuous (fun q : B × ℝ ↦
-      uncurry (forwardSemiflow X (U ∩ C)) ((projIcc 0 τ hτ.le q.2 : ℝ), q.1.1)) :=
-    hcontΦ.comp_continuous (((continuous_subtype_val.comp continuous_projIcc).comp
-      continuous_snd).prodMk (continuous_subtype_val.comp continuous_fst))
-      fun q ↦ ⟨(projIcc 0 τ hτ.le q.2).2, q.1.2⟩
+      uncurry (forwardSemiflow X (U ∩ C)) ((projIcc 0 τ hτ.le q.2 : ℝ), q.1.val)) :=
+    hcontΦ.comp_continuous (((continuous_subtypeVal.comp continuous_projIcc).comp
+      continuous_snd).prodMk (continuous_subtypeVal.comp continuous_fst))
+      fun q ↦ ⟨(projIcc 0 τ hτ.le q.2).property, q.1.property⟩
   have hP_cont : Continuous (uncurry P) :=
     (hX.continuousOn_fderivWithin hU_uniq le_rfl).comp_continuous hΦP fun q ↦
-      ⟨h2rU (hmem q.1.1 q.1.2 _ (projIcc 0 τ hτ.le q.2).2).1,
-        (hmem q.1.1 q.1.2 _ (projIcc 0 τ hτ.le q.2).2).2⟩
+      ⟨h2rU (hmem q.1.val q.1.property _ (projIcc 0 τ hτ.le q.2).property).1,
+        (hmem q.1.val q.1.property _ (projIcc 0 τ hτ.le q.2).property).2⟩
   rw [continuousOn_iff_continuous_domRestrict]
   exact (continuous_parametric_dysonSeriesLeft hP_cont).comp
-    (((continuous_snd.comp continuous_subtype_val).subtype_mk fun p ↦ p.2.2).prodMk
-      (continuous_fst.comp continuous_subtype_val))
+    (((continuous_snd.comp continuous_subtypeVal).subtype_mk fun p ↦ p.property.2).prodMk
+      (continuous_fst.comp continuous_subtypeVal))
 
 /-- Identification of the variational semiflow on `E × (E →L[ℝ] E)` starting at `(y, 1)` with the
 pair `(forwardSemiflow X (U ∩ C) · y, dysonSeriesLeft ·)`. -/
@@ -358,9 +358,10 @@ private theorem eq_forwardSemiflow_variational {C U : Set E} (hC : Convex ℝ C)
   let M_y : ℝ → E →L[ℝ] E := fun s ↦
     fderivWithin ℝ X (U ∩ C) (forwardSemiflow X (U ∩ C) (projIcc 0 τ₁ hτ₁.le s) y)
   have hMy_cont : Continuous M_y := hDX.continuousOn.comp_continuous
-    (hcont₁.comp_continuous (continuous_subtype_val.comp continuous_projIcc)
-      fun s ↦ (projIcc 0 τ₁ hτ₁.le s).2)
-    fun s ↦ ⟨h2r₁U (hmem₁ _ (projIcc 0 τ₁ hτ₁.le s).2).1, (hmem₁ _ (projIcc 0 τ₁ hτ₁.le s).2).2⟩
+    (hcont₁.comp_continuous (continuous_subtypeVal.comp continuous_projIcc)
+      fun s ↦ (projIcc 0 τ₁ hτ₁.le s).property)
+    fun s ↦ ⟨h2r₁U (hmem₁ _ (projIcc 0 τ₁ hτ₁.le s).property).1,
+      (hmem₁ _ (projIcc 0 τ₁ hτ₁.le s).property).2⟩
   refine (eqOn_forwardSemiflow (γ := fun s ↦ (forwardSemiflow X (U ∩ C) s y, dysonSeriesLeft M_y s))
     hX'_lip hb (Prod.ext (forwardSemiflow_zero _ _ _) (dysonSeriesLeft_zero _))
     (fun s hs ↦ ⟨⟨h2r₁U (hmem₁ s ⟨hs.1, hs.2.le.trans hb_le⟩).1, trivial⟩,

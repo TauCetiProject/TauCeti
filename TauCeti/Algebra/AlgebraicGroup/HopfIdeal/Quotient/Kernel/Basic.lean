@@ -126,12 +126,6 @@ theorem kernelHopfIdeal_comp_of_surjective (f : H ⟶ K)
   rw [kernelHopfIdeal_comp, kernelHopfIdeal_eq_augmentation_of_surjective f hf,
     ← kernelHopfIdeal_def]
 
--- Mathlib has no application lemma for `Bialgebra.unitBialgHom`; this contains its
--- definitional unfolding to `algebraMap` in one place (upstream candidate).
-private lemma unitBialgHom_apply {A : Type*} [Semiring A] [Bialgebra R A] (r : R) :
-    Bialgebra.unitBialgHom R A r = algebraMap R A r :=
-  rfl
-
 /-- The difference between a morphism value and the counit-unit value lies in the kernel
 Hopf ideal. -/
 private theorem sub_algebraMap_counit_mem_kernelHopfIdeal (f : H ⟶ K) (h : H) :
@@ -184,12 +178,12 @@ theorem comp_eq_unit_comp_counit_iff (f : H ⟶ K) {L : _root_.CommHopfAlgCat.{v
     ext h
     have hval := congrArg (fun ψ : H ⟶ L => ψ.hom h) heq
     simpa [_root_.CommHopfAlgCat.comp_apply, _root_.CommHopfAlgCat.hom_ofHom,
-      BialgHom.comp_apply, unitBialgHom_apply, Algebra.ofId_apply] using hval
+      BialgHom.comp_apply, Algebra.ofId_apply] using hval
   · intro heq
     ext h
     have hval := congrArg (fun ψ : ↥H →ₐ[R] ↥L => ψ h) heq
     simpa [_root_.CommHopfAlgCat.comp_apply, _root_.CommHopfAlgCat.hom_ofHom,
-      BialgHom.comp_apply, unitBialgHom_apply, Algebra.ofId_apply] using hval
+      BialgHom.comp_apply, Algebra.ofId_apply] using hval
 
 /-- The coordinate-ring triangle: composing `f` with the quotient by its kernel Hopf
 ideal is the counit-unit composite, i.e. the coordinate map of the trivial group-scheme

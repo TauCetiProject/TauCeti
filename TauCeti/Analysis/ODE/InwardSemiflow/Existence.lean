@@ -73,14 +73,14 @@ private theorem mem_ball_and_norm_sub_le_of_mem_inwardTube {C : Set E} {X : E �
     have hcb := mem_closedBall_iff_norm.mp ht_cb
     calc ‖γ t - x‖ = ‖(γ t - (x + (t : ℝ) • X x)) + (t : ℝ) • X x‖ := by congr 1; abel
       _ ≤ ε / 2 * (t : ℝ) + (t : ℝ) * ‖X x‖ :=
-          (norm_add_le _ _).trans (by rw [norm_smul, Real.norm_of_nonneg t.2.1]; linarith)
+          (norm_add_le _ _).trans (by rw [norm_smul, Real.norm_of_nonneg t.property.1]; linarith)
       _ = (‖X x‖ + ε / 2) * (t : ℝ) := by ring
-      _ ≤ (‖X x‖ + ε / 2) * b := mul_le_mul_of_nonneg_left t.2.2 (by positivity)
+      _ ≤ (‖X x‖ + ε / 2) * b := mul_le_mul_of_nonneg_left t.property.2 (by positivity)
   have hC_t : γ t ∈ C := by
-    rcases t.2.1.eq_or_lt with ht0 | ht_pos
+    rcases t.property.1.eq_or_lt with ht0 | ht_pos
     · have h0 : γ t ∈ closedBall x 0 := by simpa [← ht0] using ht_cb
       exact (mem_closedBall.mp h0 |> dist_le_zero.mp) ▸ hx.2
-    · exact hin t ⟨ht_pos, t.2.2⟩ ht_cb
+    · exact hin t ⟨ht_pos, t.property.2⟩ ht_cb
   refine ⟨⟨mem_ball.mpr ?_, hC_t⟩, hnorm⟩
   have hd_lt : dist (γ t) x < r := by simpa [dist_eq_norm] using hnorm.trans_lt hrad
   linarith [dist_triangle (γ t) x x₀, mem_ball.mp hx.1]
@@ -105,17 +105,17 @@ private theorem exists_Icc_trajectory_of_ball_subset {C : Set E} {X : E → E} {
     exact isClosed_iInter fun t ↦ isClosed_closedBall.preimage (by fun_prop)
   have : CompleteSpace S := hS_closed.completeSpace_coe
   have : Nonempty S := ⟨⟨⟨fun t ↦ x + (t : ℝ) • X x, by fun_prop⟩,
-    fun t ↦ mem_closedBall_self (mul_nonneg (half_pos hε).le t.2.1)⟩⟩
+    fun t ↦ mem_closedBall_self (mul_nonneg (half_pos hε).le t.property.1)⟩⟩
   have hS_mem (γ : S) (t : Icc 0 b) :=
-    mem_ball_and_norm_sub_le_of_mem_inwardTube hx hε hin hrad γ.2 t
-  let f : S → ℝ → E := fun γ s ↦ X (γ.1 (projIcc 0 b hb.le s))
+    mem_ball_and_norm_sub_le_of_mem_inwardTube hx hε hin hrad γ.property t
+  let f : S → ℝ → E := fun γ s ↦ X (γ.val (projIcc 0 b hb.le s))
   have hf_cont (γ : S) : Continuous (f γ) :=
-    hK.continuousOn.comp_continuous (γ.1.continuous.comp continuous_projIcc)
+    hK.continuousOn.comp_continuous (γ.val.continuous.comp continuous_projIcc)
       fun _ ↦ (hS_mem γ _).1
   -- Step 2: The Picard operator preserves `S` and contracts with Lipschitz constant `1 / 2`.
   let P₀ : S → C(Icc 0 b, E) := fun γ ↦ ⟨fun t ↦ x + ∫ s in (0 : ℝ)..(t : ℝ), f γ s,
     ((continuous_primitive (fun _ _ ↦ (hf_cont γ).intervalIntegrable _ _) 0).const_add x).comp
-      continuous_subtype_val⟩
+      continuous_subtypeVal⟩
   have hr_pos : 0 < r := dist_nonneg.trans_lt hx.1
   let P : S → S := fun γ ↦ ⟨P₀ γ, fun t ↦ by
     simp only [P₀, ContinuousMap.coe_mk, mem_closedBall, dist_eq_norm]
@@ -123,7 +123,7 @@ private theorem exists_Icc_trajectory_of_ball_subset {C : Set E} {X : E → E} {
       add_sub_add_left_eq_sub,
       ← intervalIntegral.integral_sub ((hf_cont γ).intervalIntegrable _ _) intervalIntegrable_const]
     refine (intervalIntegral.norm_integral_le_of_norm_le_const (C := ε / 2)
-      fun s _ ↦ ?_).trans (by rw [sub_zero, abs_of_nonneg t.2.1])
+      fun s _ ↦ ?_).trans (by rw [sub_zero, abs_of_nonneg t.property.1])
     rw [← dist_eq_norm]
     refine (hK.dist_le_mul _ (hS_mem γ _).1 x
       ⟨ball_subset_ball (by linarith) hx.1, hx.2⟩).trans ?_
@@ -141,17 +141,17 @@ private theorem exists_Icc_trajectory_of_ball_subset {C : Set E} {X : E → E} {
     · rw [← dist_eq_norm]
       exact (hK.dist_le_mul _ (hS_mem γ₁ _).1 _ (hS_mem γ₂ _).1).trans
         (mul_le_mul_of_nonneg_left (ContinuousMap.dist_apply_le_dist _) K.coe_nonneg)
-    · rw [sub_zero, abs_of_nonneg t.2.1]
+    · rw [sub_zero, abs_of_nonneg t.property.1]
       calc (K : ℝ) * dist γ₁ γ₂ * (t : ℝ) = ((K : ℝ) * (t : ℝ)) * dist γ₁ γ₂ := by ring
         _ ≤ ↑(1 / 2 : ℝ≥0) * dist γ₁ γ₂ := by
             rw [NNReal.coe_div, NNReal.coe_one, NNReal.coe_two]
             exact mul_le_mul_of_nonneg_right
-              ((mul_le_mul_of_nonneg_left t.2.2 K.coe_nonneg).trans hcontr) dist_nonneg
+              ((mul_le_mul_of_nonneg_left t.property.2 K.coe_nonneg).trans hcontr) dist_nonneg
   -- Step 3: Extract the Banach fixed point and verify its integral and derivative identities.
   set γstar : S := hP.fixedPoint
   let γ : ℝ → E := fun t ↦ x + ∫ s in (0 : ℝ)..t, f γstar s
-  have hγ_eq (t : ℝ) (ht : t ∈ Icc 0 b) : γ t = γstar.1 ⟨t, ht⟩ :=
-    congr_arg (fun z : S ↦ z.1 ⟨t, ht⟩) hP.fixedPoint_isFixedPt
+  have hγ_eq (t : ℝ) (ht : t ∈ Icc 0 b) : γ t = γstar.val ⟨t, ht⟩ :=
+    congr_arg (fun z : S ↦ z.val ⟨t, ht⟩) hP.fixedPoint_isFixedPt
   have hf_eq (t : ℝ) (ht : t ∈ Icc 0 b) : f γstar t = X (γ t) := by
     simp only [f, projIcc_of_mem hb.le ht, hγ_eq t ht]
   refine ⟨γ, by simp [γ], fun t ht ↦ hγ_eq t ht ▸ (hS_mem γstar ⟨t, ht⟩).1,
@@ -475,12 +475,12 @@ theorem exists_isOpen_inter_eq_forwardSemiflowDomain {C U : Set E} (hC : Convex 
     (hX_in : ∀ x ∈ U ∩ C, X x ∈ strictInwardCone C x) :
     ∃ Ω : Set (ℝ × E), IsOpen Ω ∧ Ω ∩ (Ici 0 ×ˢ (U ∩ C)) = forwardSemiflowDomain X (U ∩ C) := by
   have hloc (p : forwardSemiflowDomain X (U ∩ C)) :
-      ∃ W : Set (ℝ × E), IsOpen W ∧ p.1 ∈ W ∧
+      ∃ W : Set (ℝ × E), IsOpen W ∧ p.val ∈ W ∧
         W ∩ (Ici 0 ×ˢ (U ∩ C)) ⊆ forwardSemiflowDomain X (U ∩ C) := by
-    obtain ⟨hpU, hpJ⟩ := mem_forwardSemiflowDomain_iff.mp p.2
+    obtain ⟨hpU, hpJ⟩ := mem_forwardSemiflowDomain_iff.mp p.property
     obtain ⟨r, hr, δ, hδ, _, hsub, _⟩ :=
       exists_continuousOn_Icc_of_mem_forwardSemiflowInterval hC hU hX hX_in hpU hpJ
-    exact ⟨Iio (p.1.1 + 2 * δ) ×ˢ ball p.1.2 r, isOpen_Iio.prod isOpen_ball,
+    exact ⟨Iio (p.val.1 + 2 * δ) ×ˢ ball p.val.2 r, isOpen_Iio.prod isOpen_ball,
       ⟨mem_Iio.mpr (by linarith), mem_ball_self hr⟩, fun q hq ↦
         mem_forwardSemiflowDomain_iff.mpr ⟨hq.2.2, hsub q.2 ⟨hq.1.2, hq.2.2.2⟩ ⟨hq.2.1, hq.1.1⟩⟩⟩
   choose W hW_open hpW hW_sub using hloc

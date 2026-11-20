@@ -67,7 +67,7 @@ orbits and factors. -/
 theorem natCard_orbit_eq_natDegree_factor (x : g.rootSet E) :
     Nat.card (orbit (Subgroup.zpowers (_root_.FiniteField.frobeniusAlgEquivOfAlgebraic F E))
         (x : E))
-      = ((orbitQuotientEquivFactors g E (ne_zero_of_mem_rootSet x.2)
+      = ((orbitQuotientEquivFactors g E (ne_zero_of_mem_rootSet x.property)
         (Quotient.mk _ x) : g.Factors) : F[X]).natDegree := by
   rw [orbitQuotientEquivFactors_apply_mk, natCard_orbit_eq_natDegree_minpoly]
 
@@ -119,9 +119,9 @@ theorem fullCycleType_eq_map_natDegree_normalizedFactors (hg : Squarefree g)
       @Finset.mem_image _ _ (fun a b => Classical.propDecidable (a = b))]
     refine ⟨?_, fun hφ => ?_⟩
     · rintro ⟨x, -, rfl⟩
-      have hint : IsIntegral F (x : E) := (isAlgebraic_of_mem_rootSet x.2).isIntegral
+      have hint : IsIntegral F (x : E) := (isAlgebraic_of_mem_rootSet x.property).isIntegral
       exact ⟨minpoly.irreducible hint, minpoly.monic hint,
-        minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.2)⟩
+        minpoly.dvd F _ (aeval_eq_zero_of_mem_rootSet x.property)⟩
     · obtain ⟨x, hx⟩ := exists_mem_rootSet_minpoly_eq E hg0 ⟨φ, hφ⟩
       exact ⟨x, Finset.mem_univ _, hx⟩
   rw [himage, Multiset.toFinset_val,
@@ -130,7 +130,7 @@ theorem fullCycleType_eq_map_natDegree_normalizedFactors (hg : Squarefree g)
   obtain ⟨x, hx⟩ := exists_mem_rootSet_minpoly_eq E hg0
     ⟨φ, (Polynomial.mem_normalizedFactors_iff hg0).mp hφ⟩
   replace hx : minpoly F (x : E) = φ := hx
-  have hint : IsIntegral F (x : E) := (isAlgebraic_of_mem_rootSet x.2).isIntegral
+  have hint : IsIntegral F (x : E) := (isAlgebraic_of_mem_rootSet x.property).isIntegral
   have hsep : (minpoly F (x : E)).Separable :=
     PerfectField.separable_of_irreducible (minpoly.irreducible hint)
   rw [← hx, ← TauCeti.natCard_orbit_eq_natDegree_minpoly E x hsep, ← Fintype.card_subtype,
