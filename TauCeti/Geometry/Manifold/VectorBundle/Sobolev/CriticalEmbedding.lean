@@ -20,9 +20,9 @@ dimension `n`, let `V → M` be a real vector bundle with finite-dimensional mod
 Sobolev sections `W^{k,p}(V)` (`TauCeti.SobolevSection`) into continuous sections: for `k ≥ n`
 every element `w` of `W^{k,1}(V)` has a unique continuous representative, a continuous section of
 `V` whose chart expressions agree almost everywhere with the chart data of `w`
-(`TauCeti.SobolevSection.existsUnique_continuous_ae_eq_coord_one`). For `w ∈ W^{n+j,1}(V)` the
-chart expressions of this representative are moreover `Cʲ` on the chart images
-(`TauCeti.SobolevSection.exists_continuous_contDiffOn_coord_ae_eq_one`).
+(`TauCeti.SobolevSection.existsUnique_continuous_ae_eq_coord_of_finrank_le`). For
+`w ∈ W^{n+j,1}(V)` the chart expressions of this representative are moreover `Cʲ` on the chart
+images (`TauCeti.SobolevSection.exists_continuous_contDiffOn_coord_ae_eq_of_finrank_le`).
 
 Both statements are instances of general ones for any finite exponent `p`: if every element of the
 whole-space space `W^{k,p}(E)` has a continuous representative vanishing at infinity, then every
@@ -45,10 +45,11 @@ holds because two continuous sections whose chart expressions agree almost every
 * `TauCeti.SobolevSection.exists_continuous_contDiffOn_coord_ae_eq_of_forall_zeroAtInfty`,
   `TauCeti.SobolevSection.existsUnique_continuous_ae_eq_coord_of_forall_zeroAtInfty`: the general
   statements for a finite exponent `p` under a whole-space embedding hypothesis.
-* `TauCeti.SobolevSection.exists_continuous_contDiffOn_coord_ae_eq_one`: for `k ≥ n`, an element of
-  `W^{k+j,1}(V)` is represented by a continuous section whose chart expressions are `Cʲ`.
-* `TauCeti.SobolevSection.existsUnique_continuous_ae_eq_coord_one`: for `k ≥ n`, an element of
-  `W^{k,1}(V)` has exactly one continuous representative.
+* `TauCeti.SobolevSection.exists_continuous_contDiffOn_coord_ae_eq_of_finrank_le`: for `k ≥ n`,
+  an element of `W^{k+j,1}(V)` is represented by a continuous section whose chart expressions are
+  `Cʲ`.
+* `TauCeti.SobolevSection.existsUnique_continuous_ae_eq_coord_of_finrank_le`: for `k ≥ n`, an
+  element of `W^{k,1}(V)` has exactly one continuous representative.
 
 ## References
 
@@ -132,7 +133,7 @@ theorem existsUnique_continuous_ae_eq_coord_of_forall_zeroAtInfty {p : ℝ≥0�
 dimension `n ≤ k`. Every element `w` of `W^{k+j,1}(V)` is represented by a continuous section `s`
 of `V` whose chart expression `A.coord i s` is `Cʲ` on the chart image `A.image i` and agrees almost
 everywhere there with the chart-`i` data of `w`, for every chart `i`. -/
-theorem exists_continuous_contDiffOn_coord_ae_eq_one (hk : finrank ℝ E ≤ k) (j : ℕ)
+theorem exists_continuous_contDiffOn_coord_ae_eq_of_finrank_le (hk : finrank ℝ E ≤ k) (j : ℕ)
     (w : SobolevSection A volume 1 (k + j)) :
     ∃ s : ∀ x, V x, Continuous (fun x ↦ TotalSpace.mk' F x (s x)) ∧
       ∀ i, ContDiffOn ℝ j (A.coord i s) (A.image i) ∧
@@ -145,7 +146,7 @@ theorem exists_continuous_contDiffOn_coord_ae_eq_one (hk : finrank ℝ E ≤ k) 
 element `w` of `W^{k,1}(V)` has exactly one continuous representative: there is a unique continuous
 section `s` of `V` whose chart expression `A.coord i s` agrees, for every chart `i`, almost
 everywhere on `A.image i` with the chart-`i` data of `w`. -/
-theorem existsUnique_continuous_ae_eq_coord_one (hk : finrank ℝ E ≤ k)
+theorem existsUnique_continuous_ae_eq_coord_of_finrank_le (hk : finrank ℝ E ≤ k)
     (w : SobolevSection A volume 1 k) :
     ∃! s : ∀ x, V x, Continuous (fun x ↦ TotalSpace.mk' F x (s x)) ∧
       ∀ i, A.sectionChartData.chartValueL volume 1 k i w

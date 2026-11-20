@@ -55,9 +55,9 @@ The statements are for Lebesgue measure `volume`, the measure of the whole-space
   `TauCeti.Wkp.exists_contDiffOn_ae_eq_of_forall_zeroAtInfty`: the localization principle.
 * `TauCeti.Wkp.exists_continuousOn_ae_eq`: `W^{k,2}(Ω) ⊆ C(Ω)` for `2k > n`.
 * `TauCeti.Wkp.exists_contDiffOn_ae_eq`: `W^{k+j,2}(Ω) ⊆ Cʲ(Ω)` for `2k > n`.
-* `TauCeti.Wkp.exists_continuousOn_ae_eq_one`: the critical embedding `W^{k,1}(Ω) ⊆ C(Ω)` for
-  `k ≥ n`.
-* `TauCeti.Wkp.exists_contDiffOn_ae_eq_one`: `W^{k+j,1}(Ω) ⊆ Cʲ(Ω)` for `k ≥ n`.
+* `TauCeti.Wkp.exists_continuousOn_ae_eq_of_finrank_le`: the critical embedding
+  `W^{k,1}(Ω) ⊆ C(Ω)` for `k ≥ n`.
+* `TauCeti.Wkp.exists_contDiffOn_ae_eq_of_finrank_le`: `W^{k+j,1}(Ω) ⊆ Cʲ(Ω)` for `k ≥ n`.
 * `TauCeti.exists_contDiffOn_ae_eq_of_forall_wkp`: a function in `W^{m,2}(Ω)` for every `m` has a
   representative smooth on `Ω`.
 
@@ -163,7 +163,7 @@ theorem exists_contDiffOn_ae_eq (hk : finrank ℝ E < 2 * k) (j : ℕ)
 
 /-- **The critical interior Sobolev embedding into `C(Ω)`.** If `k ≥ dim E`, every
 `u ∈ W^{k,1}(Ω)` agrees almost everywhere on `Ω` with a function continuous on `Ω`. -/
-theorem exists_continuousOn_ae_eq_one (hk : finrank ℝ E ≤ k)
+theorem exists_continuousOn_ae_eq_of_finrank_le (hk : finrank ℝ E ≤ k)
     (u : Wkp (volume : Measure E) Omega 1 k) :
     ∃ g : E → ℝ, ContinuousOn g Omega ∧ (value k u : E → ℝ) =ᵐ[volume.restrict Omega] g :=
   exists_continuousOn_ae_eq_of_forall_zeroAtInfty ENNReal.one_ne_top
@@ -171,7 +171,7 @@ theorem exists_continuousOn_ae_eq_one (hk : finrank ℝ E ≤ k)
 
 /-- **The critical interior Sobolev embedding into `Cʲ(Ω)`.** If `k ≥ dim E`, every
 `u ∈ W^{k+j,1}(Ω)` agrees almost everywhere on `Ω` with a function that is `Cʲ` on `Ω`. -/
-theorem exists_contDiffOn_ae_eq_one (hk : finrank ℝ E ≤ k) (j : ℕ)
+theorem exists_contDiffOn_ae_eq_of_finrank_le (hk : finrank ℝ E ≤ k) (j : ℕ)
     (u : Wkp (volume : Measure E) Omega 1 (k + j)) :
     ∃ g : E → ℝ, ContDiffOn ℝ j g Omega ∧
       (value (k + j) u : E → ℝ) =ᵐ[volume.restrict Omega] g :=
