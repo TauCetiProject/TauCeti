@@ -71,6 +71,11 @@ along straight lines. Over the closed unit ball, the radial deformation
   `TauCeti.TopCat.isZero_singularHomology_preimage_ne_zero_preimage_sphere`: the acyclic pairs from
   which the computation is assembled, also used for the cohomological computation
   `TauCeti.TopCat.singularCohomologyPreimageSphereIso`.
+* `TauCeti.TopCat.SerreDisk.proj`, `TauCeti.TopCat.SerreDisk.pair`,
+  `TauCeti.TopCat.SerreDisk.botIso` and their naturality
+  `TauCeti.TopCat.SerreDisk.proj_apply_of_comp_eq`,
+  `TauCeti.TopCat.SerreDisk.botIso_hom_naturality`: the projection `E → K → V` and the pairs it
+  defines, shared with the cohomological computation.
 * `TauCeti.TopCat.isZero_singularHomology_preimage_ne_zero`,
   `TauCeti.TopCat.singularHomologyPreimageNeZeroIso`: the relative homology of `E` modulo the part
   over `K ∖ {0}`.
@@ -148,21 +153,13 @@ theorem isZero_singularHomology_preimage_compl_setOf_mem_and_nonpos (hp : serreF
 
 namespace SerreDisk
 
-/-- The composite `E → K → V` of the fibration with the inclusion of the base. -/
-private abbrev proj (p : E ⟶ _root_.TopCat.of K) : C(E, V) :=
+/-- The composite `E → K → V` of the fibration with the inclusion of the base. The preimage
+under it of a set `S ⊆ V` is the part of `E` over `K ∩ S` by definition. -/
+abbrev proj (p : E ⟶ _root_.TopCat.of K) : C(E, V) :=
   ⟨fun e ↦ (p e : V), continuous_subtype_val.comp p.hom.continuous⟩
 
-/-- `TauCeti.TopCat.isZero_singularHomology_preimage_compl_setOf_mem_and_nonpos`, stated with the
-preimages under `E → K → V` that `TauCeti.subspaceComplPairSingularHomologyIso` takes as its
-hypothesis. -/
-private lemma isZero_half (hp : serreFibrations p) (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V))
-    (W : Submodule ℝ V) (φ : V →ₗ[ℝ] ℝ) (v : V) (hv : v ∈ W) (hφv : φ v = 1) (m : ℕ) :
-    IsZero ((TopPair.ofSubset (proj p ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ)).singularHomology M m) :=
-  -- The preimage under `E → K → V` of a set `S` is the part of `E` over `K ∩ S` by definition.
-  isZero_singularHomology_preimage_compl_setOf_mem_and_nonpos M hp hK hK₀ W φ v hv hφv m
-
 /-- The pair `(E, p⁻¹(K ∖ W))`. -/
-private abbrev pair (p : E ⟶ _root_.TopCat.of K) (W : Submodule ℝ V) : TopPair.{u} :=
+abbrev pair (p : E ⟶ _root_.TopCat.of K) (W : Submodule ℝ V) : TopPair.{u} :=
   subspaceComplPair (proj p) W
 
 /-- `Hₙ(E, ∅) ≅ Hₙ(F)`: the base contracts onto `0` along straight lines, so the inclusion of the
@@ -180,7 +177,7 @@ private def emptyIso (hp : serreFibrations p) (hK : Convex ℝ K) (h₀ : (0 : V
       M n)).symm
 
 /-- The identification of `(E, p⁻¹(K ∖ {0}))` with `(E, p⁻¹(K ∖ ⊥))`. -/
-private def botIso (p : E ⟶ _root_.TopCat.of K) :
+def botIso (p : E ⟶ _root_.TopCat.of K) :
     TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ≠ 0}) ≅ pair p (⊥ : Submodule ℝ V) :=
   TopPair.ofSubsetIso (Homeomorph.refl _) fun e ↦ by
     simp only [mem_preimage, mem_ofPred_eq, mem_compl_iff, SetLike.mem_coe, Submodule.mem_bot]
@@ -200,7 +197,8 @@ theorem isZero_singularHomology_preimage_ne_zero (hp : serreFibrations p) (hK : 
     (hK₀ : K ∈ 𝓝 (0 : V)) {m : ℕ} (hm : m < finrank ℝ V) :
     IsZero ((TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ≠ 0})).singularHomology M m) :=
   (isZero_singularHomology_subspaceComplPair M (proj p)
-    (isZero_half M hp hK hK₀) m ⊥ (by simpa using hm)).of_iso
+    (isZero_singularHomology_preimage_compl_setOf_mem_and_nonpos M hp hK hK₀) m ⊥
+    (by simpa using hm)).of_iso
     (asIso (TopPair.singularHomologyMap (botIso p).hom M m))
 
 /-- **The homology of a Serre fibration over a convex neighbourhood of `0`, modulo the part over
@@ -217,7 +215,8 @@ def singularHomologyPreimageNeZeroIso (hp : serreFibrations p) (hK : Convex ℝ 
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
         M).obj (_root_.TopCat.of (p ⁻¹' {x : K | (x : V) = 0})) :=
   asIso (TopPair.singularHomologyMap (botIso p).hom M m) ≪≫
-    subspaceComplPairSingularHomologyIso M (proj p) (isZero_half M hp hK hK₀)
+    subspaceComplPairSingularHomologyIso M (proj p)
+      (isZero_singularHomology_preimage_compl_setOf_mem_and_nonpos M hp hK hK₀)
       (finrank ℝ V) ⊥ (by simp) n m h ≪≫
     emptyIso M hp hK (mem_of_mem_nhds hK₀) n
 
@@ -319,7 +318,8 @@ namespace SerreDisk
 variable {p' : E' ⟶ _root_.TopCat.of K} {f : E ⟶ E'}
 
 omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-private lemma proj_apply_of_comp_eq (hf : f ≫ p' = p) (e : E) : proj p' (f e) = proj p e :=
+/-- A map `f` over the base commutes with the projections `E → K → V` and `E' → K → V`. -/
+lemma proj_apply_of_comp_eq (hf : f ≫ p' = p) (e : E) : proj p' (f e) = proj p e :=
   congrArg Subtype.val (ConcreteCategory.congr_hom hf e)
 
 omit [FiniteDimensional ℝ V] in
@@ -368,7 +368,8 @@ private lemma emptyIso_hom_naturality (hp : serreFibrations p) (hp' : serreFibra
   rw [← Iso.comp_inv_eq, Category.assoc, key, Iso.hom_inv_id_assoc]
 
 omit [FiniteDimensional ℝ V] in
-private lemma botIso_hom_naturality (hf : f ≫ p' = p) :
+/-- The identification `TauCeti.TopCat.SerreDisk.botIso` is natural in maps over the base. -/
+lemma botIso_hom_naturality (hf : f ≫ p' = p) :
     (botIso p).hom ≫ subspaceComplPairMap f (proj_apply_of_comp_eq hf) ⊥ =
       TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf _) ≫ (botIso p').hom := by
   rw [subspaceComplPairMap_eq_ofSubsetMap f (proj_apply_of_comp_eq hf) ⊥ fun e he ↦ by
@@ -399,8 +400,10 @@ theorem singularHomologyPreimageNeZeroIso_hom_naturality {p' : E' ⟶ _root_.Top
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map g := by
   simp only [singularHomologyPreimageNeZeroIso, Iso.trans_hom, asIso_hom, Category.assoc]
   rw [emptyIso_hom_naturality M hp hp' hK (mem_of_mem_nhds hK₀) hf g hg,
-    subspaceComplPairSingularHomologyIso_hom_naturality_assoc M
-      (isZero_half M hp hK hK₀) (isZero_half M hp' hK hK₀) f (proj_apply_of_comp_eq hf),
+    subspaceComplPairSingularHomologyIso_hom_naturality_assoc M (q := proj p) (q' := proj p')
+      (isZero_singularHomology_preimage_compl_setOf_mem_and_nonpos M hp hK hK₀)
+      (isZero_singularHomology_preimage_compl_setOf_mem_and_nonpos M hp' hK hK₀) f
+      (proj_apply_of_comp_eq hf),
     ← TopPair.singularHomologyMap_comp_assoc (botIso p).hom, botIso_hom_naturality hf,
     TopPair.singularHomologyMap_comp_assoc]
 

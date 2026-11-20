@@ -55,7 +55,10 @@ onto `0` along straight lines (`TauCeti.TopCat.isZero_singularHomology_preimage_
 restriction `Hⁿ(E) ⟶ Hⁿ(F)` is an isomorphism. Over the closed unit ball, the part of `E` over the
 punctured ball is acyclic modulo the part over the sphere
 (`TauCeti.TopCat.isZero_singularHomology_preimage_ne_zero_preimage_sphere`), so restriction from
-`(E, p⁻¹(Dʳ ∖ {0}))` to `(E, p⁻¹(Sʳ⁻¹))` is an isomorphism.
+`(E, p⁻¹(Dʳ ∖ {0}))` to `(E, p⁻¹(Sʳ⁻¹))` is an isomorphism
+(`TauCeti.TopTriple.isIso_singularCohomologyMap_totalToOuter_of_isZero`). The projection
+`E → K → V`, the pairs it defines and their naturality are shared with the homology computation
+(`TauCeti.TopCat.SerreDisk.proj`, `TauCeti.TopCat.SerreDisk.botIso`).
 
 ## Main results
 
@@ -96,15 +99,9 @@ variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] {K : Set V}
   (R : ModuleCat.{u} A) [Projective R] (k : Type*) [Ring k] [Linear k (ModuleCat.{u} A)]
   (M : ModuleCat.{u} A)
 
+open SerreDisk
+
 namespace SerreDiskCohomology
-
-/-- The composite `E → K → V` of the fibration with the inclusion of the base. -/
-private abbrev proj (p : E ⟶ _root_.TopCat.of K) : C(E, V) :=
-  ⟨fun e ↦ (p e : V), continuous_subtype_val.comp p.hom.continuous⟩
-
-/-- The pair `(E, p⁻¹(K ∖ W))`. -/
-private abbrev pair (p : E ⟶ _root_.TopCat.of K) (W : Submodule ℝ V) : TopPair.{u} :=
-  subspaceComplPair (proj p) W
 
 /-- The part of `E` over the complement of a closed half-subspace has vanishing cohomology. -/
 private lemma isZero_half (hp : serreFibrations p) (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V))
@@ -119,6 +116,9 @@ straight lines, so restriction to the fibre is an isomorphism. -/
 private def emptyIso (hp : serreFibrations p) (hK : Convex ℝ K) (h₀ : (0 : V) ∈ K) (n : ℕ) :
     (pair p (⊤ : Submodule ℝ V)).singularCohomology R k M n ≅
       (_root_.TopCat.of (p ⁻¹' {x : K | (x : V) = 0})).singularCohomology R k M n :=
+  -- The fibre is written `p⁻¹{x | (x : V) ∈ {0}}` here, the form taken by
+  -- `TauCeti.TopCat.isZero_singularHomology_preimage_of_starConvex`. It is definitionally the
+  -- fibre `p⁻¹{x | (x : V) = 0}` of the statement, since `Set.mem_singleton_iff` is `Iff.rfl`.
   have h (m : ℕ) := TopPair.isZero_singularCohomology_of_isZero_singularHomology
     (TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ∈ ({0} : Set V)})) R (k := k) M m fun j _ ↦
       isZero_singularHomology_preimage_of_starConvex R hp hK h₀ (starConvex_singleton (0 : V)) rfl j
@@ -132,13 +132,6 @@ private lemma emptyIso_hom (hp : serreFibrations p) (hK : Convex ℝ K) (h₀ : 
         TopCat.singularCohomologyMap
           (TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ∈ ({0} : Set V)})).map n :=
   rfl
-
-/-- The identification of `(E, p⁻¹(K ∖ {0}))` with `(E, p⁻¹(K ∖ ⊥))`. -/
-private def botIso (p : E ⟶ _root_.TopCat.of K) :
-    TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ≠ 0}) ≅ pair p (⊥ : Submodule ℝ V) :=
-  TopPair.ofSubsetIso (Homeomorph.refl _) fun e ↦ by
-    simp only [mem_preimage, mem_ofPred_eq, mem_compl_iff, SetLike.mem_coe, Submodule.mem_bot]
-    rfl
 
 end SerreDiskCohomology
 
@@ -199,16 +192,12 @@ omit [FiniteDimensional ℝ V] in
 private lemma isIso_totalToOuter (hp : serreFibrations p) (m : ℕ) :
     IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
       (TopTriple.totalToOuter.app
-        (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero (p := p)))) m) := by
-  let T := TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero (p := p))
+        (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero (p := p)))) m) :=
   have h (j : ℕ) := TopPair.isZero_singularCohomology_of_isZero_singularHomology
-    (TopTriple.innerPair.obj T) R (k := k) M j fun i _ ↦
-      isZero_singularHomology_preimage_ne_zero_preimage_sphere R hp i
-  refine TopPair.isIso_singularCohomologyMap_of_forall_isIso _ (fun j ↦ ?_) (fun j ↦ ?_) m
-  · rw [TopTriple.totalToOuter_app_fst, TopCat.singularCohomologyMap_id]
-    infer_instance
-  · exact (TopTriple.innerPair.obj T).isIso_singularCohomologyMap_map_of_isZero R k M (h j)
-      (h (j + 1))
+    (TopTriple.innerPair.obj
+      (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero (p := p))))
+    R (k := k) M j fun i _ ↦ isZero_singularHomology_preimage_ne_zero_preimage_sphere R hp i
+  TopTriple.isIso_singularCohomologyMap_totalToOuter_of_isZero _ R k M m (h m) fun j _ ↦ h j
 
 /-- **A Serre fibration over a disk has vanishing cohomology modulo the part over the boundary
 sphere, below the dimension.** Let `p : E ⟶ Dʳ` be a Serre fibration over the closed unit ball of
@@ -255,10 +244,6 @@ namespace SerreDiskCohomology
 
 variable {p' : E' ⟶ _root_.TopCat.of K} {f : E ⟶ E'}
 
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-private lemma proj_apply_of_comp_eq (hf : f ≫ p' = p) (e : E) : proj p' (f e) = proj p e :=
-  congrArg Subtype.val (ConcreteCategory.congr_hom hf e)
-
 omit [FiniteDimensional ℝ V] in
 @[reassoc]
 private lemma emptyIso_hom_naturality (hp : serreFibrations p) (hp' : serreFibrations p')
@@ -269,6 +254,7 @@ private lemma emptyIso_hom_naturality (hp : serreFibrations p) (hp' : serreFibra
     TopPair.singularCohomologyMap (subspaceComplPairMap f (proj_apply_of_comp_eq hf) ⊤) n ≫
         (emptyIso R k M hp hK h₀ n).hom =
       (emptyIso R k M hp' hK h₀ n).hom ≫ TopCat.singularCohomologyMap g n := by
+  -- As in `emptyIso`, the fibres are written with `∈ {0}`, definitionally equal to `= 0`.
   let ι := (TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ∈ ({0} : Set V)})).map
   let ι' := (TopPair.ofSubset (p' ⁻¹' {x : K | (x : V) ∈ ({0} : Set V)})).map
   -- On the fibres, `g` followed by the inclusion is the inclusion followed by `f`.
@@ -286,7 +272,10 @@ private lemma emptyIso_hom_naturality (hp : serreFibrations p) (hp' : serreFibra
   rw [subspaceComplPairMap_fst] at hπ
   rw [emptyIso_hom, emptyIso_hom]
   -- Chase the square of `g` and `f` through the inclusions of the fibres, then use the
-  -- naturality of the map from relative to absolute cohomology.
+  -- naturality of the map from relative to absolute cohomology. The objects of these composites
+  -- (`(pair p ⊤).fst`, `(TopPair.ofSubset _).fst`, `E`) agree only after unfolding
+  -- `TopPair.ofSubset`, so `rw`, `simp` and `calc` cannot reassociate them and the chase is
+  -- assembled as a term, which is checked up to definitional unfolding.
   exact ((Category.assoc _ _ _).symm.trans
     (congrArg (· ≫ TopCat.singularCohomologyMap ι n) hπ.symm)).trans
       ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) hH.symm).trans
@@ -304,15 +293,6 @@ private lemma emptyIso_inv_naturality (hp : serreFibrations p) (hp' : serreFibra
       TopCat.singularCohomologyMap g n ≫ (emptyIso R k M hp hK h₀ n).inv := by
   rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv,
     emptyIso_hom_naturality R k M hp hp' hK h₀ hf g hg n]
-
-omit [FiniteDimensional ℝ V] in
-private lemma botIso_hom_naturality (hf : f ≫ p' = p) :
-    (botIso p).hom ≫ subspaceComplPairMap f (proj_apply_of_comp_eq hf) ⊥ =
-      TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf _) ≫ (botIso p').hom := by
-  rw [subspaceComplPairMap_eq_ofSubsetMap f (proj_apply_of_comp_eq hf) ⊥ fun e he ↦ by
-    rwa [mem_preimage, proj_apply_of_comp_eq hf]]
-  simp only [botIso, TopPair.ofSubsetIso_hom]
-  exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
 
 end SerreDiskCohomology
 
@@ -373,10 +353,22 @@ theorem singularCohomologyPreimageSphereIso_hom_naturality (hp : serreFibrations
       ext x
       exact (TopPair.ofSubsetMap_fst_apply f _ x).trans (TopPair.ofSubsetMap_fst_apply f
         (f.mapsTo_preimage_of_comp_eq hf {x | (x : V) ≠ 0}) x).symm)
-  have hTO := (TopPair.singularCohomologyMap_comp (R := R) (k := k) (M := M) _ _ m).symm.trans
-    ((congrArg (TopPair.singularCohomologyMap · m) hpair).trans
-      (TopPair.singularCohomologyMap_comp _ _ m))
+  have hTO : TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (TopTriple.totalToOuter.app
+        (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero (p := p')))) m ≫
+        TopPair.singularCohomologyMap (TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf _))
+          m =
+      TopPair.singularCohomologyMap (TopPair.ofSubsetMap f
+          (f.mapsTo_preimage_of_comp_eq hf {x | (x : V) ≠ 0})) m ≫
+        TopPair.singularCohomologyMap (TopTriple.totalToOuter.app
+          (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero (p := p)))) m :=
+    (TopPair.singularCohomologyMap_comp _ _ m).symm.trans
+      ((congrArg (TopPair.singularCohomologyMap · m) hpair).trans
+        (TopPair.singularCohomologyMap_comp _ _ m))
   rw [singularCohomologyPreimageSphereIso_hom, singularCohomologyPreimageSphereIso_hom]
+  -- Move the inclusion past `f` with `hTO`, then use the naturality of
+  -- `singularCohomologyPreimageNeZeroIso`. As in `emptyIso_hom_naturality`, the objects of these
+  -- composites agree only after unfolding `TopPair.ofSubset` and `TopTriple.outerPair`, so the
+  -- chase is assembled as a term rather than with `rw` or `simp`.
   exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) hTO).trans
     (((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _)
       (singularCohomologyPreimageNeZeroIso_hom_naturality R k M hp hp' (convex_closedBall 0 1)
