@@ -158,6 +158,18 @@ theorem insertZeroL_apply (k : Fin (n + 1)) (v : Fin n → ℂ) :
     insertZeroL k v = WithLp.toLp 2 (Fin.insertNth (α := fun _ ↦ ℂ) k 0 v) :=
   (rfl)
 
+/-- Inserting a zero coordinate in position `k` gives the entry `0` in position `k`. -/
+@[simp]
+theorem insertZeroL_apply_self (k : Fin (n + 1)) (v : Fin n → ℂ) : insertZeroL k v k = 0 := by
+  simp [insertZeroL_apply]
+
+/-- Inserting a zero coordinate in position `k` keeps the coordinates of `v` away from
+position `k`. -/
+@[simp]
+theorem insertZeroL_apply_succAbove (k : Fin (n + 1)) (v : Fin n → ℂ) (j : Fin n) :
+    insertZeroL k v (k.succAbove j) = v j := by
+  simp [insertZeroL_apply]
+
 /-- The unit representative `w / ‖w‖` of the point with affine coordinates `z` in the chart
 `X_k ≠ 0`, for its homogeneous coordinate vector `w = affineVector k z`. -/
 def affineUnitVector (k : Fin (n + 1)) :

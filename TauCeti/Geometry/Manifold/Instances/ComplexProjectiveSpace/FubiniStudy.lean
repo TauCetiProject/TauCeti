@@ -14,9 +14,10 @@ public import TauCeti.Topology.ComplexProjectiveSpace.Charts
 
 In the chart `X_k ≠ 0` of complex projective space, the point with affine coordinates
 `w : Fin n → ℂ` has the homogeneous coordinate vector `affineVector k w`, whose entry `k` is `1`
-and whose other entries are those of `w`. The derivative of `affineVector k` inserts a zero in
-position `k` (`TauCeti.ComplexProjectiveSpace.fderiv_affineVector_apply`). It lifts the coordinate
-tangent vectors of the chart to homogeneous representatives.
+and whose other entries are those of `w`. The derivative of `affineVector k` is the map
+`TauCeti.ComplexProjectiveSpace.insertZeroL k` inserting a zero in position `k`
+(`TauCeti.ComplexProjectiveSpace.fderiv_affineVector`). It lifts the coordinate tangent vectors of
+the chart to homogeneous representatives.
 
 Evaluating the homogeneous Fubini–Study form `TauCeti.fubiniStudyHermitian` on these lifts gives
 the Hermitian matrix of the Fubini–Study metric in the chart. With `r = 1 + ∑ |w_l|²`,
@@ -61,12 +62,19 @@ theorem differentiable_affineVector (k : Fin (n + 1)) :
     Differentiable ℂ (affineVector (n := n) k) :=
   fun w ↦ (hasFDerivAt_affineVector k w).differentiableAt
 
+/-- The derivative of the homogeneous coordinate vector of the chart `X_k ≠ 0` is
+`insertZeroL k`. -/
+@[simp]
+theorem fderiv_affineVector (k : Fin (n + 1)) (w : Fin n → ℂ) :
+    fderiv ℂ (affineVector k) w = insertZeroL k :=
+  (hasFDerivAt_affineVector k w).fderiv
+
 /-- The derivative of the homogeneous coordinate vector of the chart `X_k ≠ 0` inserts a zero in
 position `k`: it lifts a tangent vector of the chart to a homogeneous representative with
 coordinate `k` equal to zero. -/
 theorem fderiv_affineVector_apply (k : Fin (n + 1)) (w v : Fin n → ℂ) :
-    fderiv ℂ (affineVector k) w v = WithLp.toLp 2 (Fin.insertNth (α := fun _ ↦ ℂ) k 0 v) := by
-  rw [(hasFDerivAt_affineVector k w).fderiv, insertZeroL_apply]
+    fderiv ℂ (affineVector k) w v = insertZeroL k v := by
+  rw [fderiv_affineVector]
 
 /-- **The Fubini–Study form in an affine chart.** For the point with affine coordinates `w` in the
 chart `X_k ≠ 0`, with `r = 1 + ∑ |w_l|²`, the homogeneous Fubini–Study form evaluated on the lifts

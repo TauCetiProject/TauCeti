@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.ComplexProjectiveSpace.FubiniStudy
+public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.FubiniStudy
 
 /-!
 # Normalization checks for the Fubini–Study Hermitian form
@@ -23,7 +23,7 @@ coefficients:
   `diag (1, 2)` fixes `[e_0]` and doubles the tangent representative `e_1`, and
   `H_{e_0}(2 e_1, 2 e_1) = 4 / π ≠ 1 / π = H_{e_0}(e_1, e_1)`. So the Fubini–Study form is not
   invariant under all projective linear automorphisms, only under the unitary ones
-  (`TauCeti.fubiniStudyHermitian_map`).
+  (`LinearIsometry.fubiniStudyHermitian_map_map_map`).
 -/
 
 public section

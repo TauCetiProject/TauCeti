@@ -22,7 +22,7 @@ Fubini–Study Hermitian metric of the projective space of `E`, with the normali
 `ω_FS = (i / 2π) ∂ ∂bar log ‖z‖²`, written on homogeneous representatives: a tangent vector at the
 line `[z]` is represented by a vector `v` of `E`, up to adding multiples of `z`. Its value on the
 lifts of the coordinate vectors of an affine chart of `CPⁿ` is computed in
-`TauCeti.Topology.ComplexProjectiveSpace.FubiniStudy`.
+`TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.FubiniStudy`.
 
 The results below are the facts that make this a well-defined metric on the projective tangent
 space. `H_z` is Hermitian. It is `⟪Pv, Pw⟫ / (π ‖z‖²)`, where `P` is the orthogonal projection onto
@@ -48,7 +48,7 @@ preserved by linear isometries, so unitary maps act by isometries of the project
 * `TauCeti.fubiniStudyHermitian_apply_add_smul_add_smul`: `H_z` is unchanged when multiples of
   `z` are added to its arguments.
 * `TauCeti.fubiniStudyHermitian_smul_apply_smul_smul`: `H_{cz}(cv, cw) = H_z(v, w)` for `c ≠ 0`.
-* `TauCeti.fubiniStudyHermitian_map`: linear isometries preserve `H`.
+* `LinearIsometry.fubiniStudyHermitian_map_map_map`: linear isometries preserve `H`.
 
 ## References
 
@@ -204,7 +204,8 @@ theorem fubiniStudyHermitian_smul_apply_smul_smul {c : 𝕜} (hc : c ≠ 0) (z v
 `H_{f z}(f v, f w) = H_z(v, w)`. In particular unitary maps act by isometries of the
 Fubini–Study metric. -/
 @[simp]
-theorem fubiniStudyHermitian_map (f : E →ₗᵢ[𝕜] F) (z v w : E) :
+theorem _root_.LinearIsometry.fubiniStudyHermitian_map_map_map (f : E →ₗᵢ[𝕜] F)
+    (z v w : E) :
     fubiniStudyHermitian 𝕜 (f z) (f v) (f w) = fubiniStudyHermitian 𝕜 z v w := by
   simp only [fubiniStudyHermitian_apply, LinearIsometry.inner_map_map, LinearIsometry.norm_map]
 
