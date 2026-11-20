@@ -596,18 +596,19 @@ private lemma complement_cochain_square (K N S : Set X) (i : Fin 2)
     Iso.inv_hom_id, TopPair.singularCochainComplexMap_id, Category.comp_id]
 
 private lemma complement_inter_cochain_square (K N S : Set X) (hS : S ⊆ K ∪ N) :
+    let hmaps : ∀ x : (Set.univ ∩ Set.univ : Set X),
+        (x : X) ∈ Kᶜ ∩ Nᶜ → (x : X) ∈ Sᶜ :=
+      fun _ hx ↦ Set.compl_subset_compl.mpr hS (by simpa only [Set.compl_union] using hx)
     TopPair.singularCochainComplexMap
         (R := R) (k := k) (M := M) (TopPair.ofInclusionMap
           (Set.inter_subset_inter (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ))
           (Set.subset_univ Sᶜ) (ContinuousMap.inclusion Set.inter_subset_left)
-          (fun x hx ↦ by
-            -- Membership in a native subspace is membership of its ambient value.
-            change (x : X) ∈ Sᶜ
-            exact Set.compl_subset_compl.mpr hS (by simpa only [Set.compl_union] using hx))) ≫
+          hmaps) ≫
       TopPair.singularCochainComplexMap (TopCat.interComplPairIso K N).inv =
       TopPair.singularCochainComplexMap (TopCat.univComplPairIso S).inv ≫
         TopPair.singularCochainComplexMap
           (TopPair.ofSubsetMap (𝟙 X) (TopCat.mapsTo_id_compl hS)) := by
+  intro hmaps
   rw [← TopPair.singularCochainComplexMap_comp, ← TopPair.singularCochainComplexMap_comp]
   apply congrArg (fun f ↦ TopPair.singularCochainComplexMap
     (R := R) (k := k) (M := M) f)
@@ -615,10 +616,7 @@ private lemma complement_inter_cochain_square (K N S : Set X) (hS : S ⊆ K ∪ 
   exact TopPair.ofInclusionMap_inclusion_comp_ofInclusionIsoOfSubset_hom
     (fun x ↦ Set.mem_inter (Set.mem_univ x) (Set.mem_univ x)) Set.mem_univ
     (fun _ ↦ by rw [Set.compl_union]) (fun _ ↦ Iff.rfl) Set.inter_subset_left
-    (fun x hx ↦ by
-            -- Membership in a native subspace is membership of its ambient value.
-            change (x : X) ∈ Sᶜ
-            exact Set.compl_subset_compl.mpr hS (by simpa only [Set.compl_union] using hx))
+    hmaps
     (TopCat.mapsTo_id_compl hS)
 
 /-- Exact original-pair representatives of the native complement connecting class. -/

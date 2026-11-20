@@ -140,9 +140,8 @@ private lemma capInto_inclusion_relative (p q n : ℕ) (h : p + q = n)
       rw [TopPair.range_ofSubset_map]
       exact TopCat.range_toSSetObjEquiv_map_subset _ _ hA _), zero_comp]
 
-/-- Capping with the zero cochain gives zero. -/
-@[simp]
-lemma capInto_zero_of_front (p q n : ℕ) (h : p + q = n)
+/-- The support-local cap vanishes on a simplex whose front `p`-face is killed by the cochain. -/
+lemma ι_capInto_eq_zero_of_front (p q n : ℕ) (h : p + q = n)
     (φ : ((TopCat.toSSet.obj X).chainComplex ℤₘ).X p ⟶ L)
     (σ : S.toSSet _⦋n⦌)
     (hφ : (TopCat.toSSet.obj X).ιChainComplex
@@ -169,7 +168,7 @@ private lemma relative_capInto_zero (p q n : ℕ) (h : p + q = n)
   apply SSet.chainComplex_hom_ext
   intro τ
   erw [← Category.assoc, SSet.ι_chainComplexMap_f]
-  apply capInto_zero_of_front
+  apply ι_capInto_eq_zero_of_front
   have hA := (TopPair.mem_range_restrict_hom_app_iff (TopPair.ofSubset (A : Set X)) S
     (((TopPair.toSSetPair.obj (TopPair.ofSubset (A : Set X))).restrict S).hom.app _ τ)).1
     ⟨τ, rfl⟩
@@ -350,7 +349,7 @@ lemma capIntoCycles_i (φ : Q⁎[A].cycles p) :
           (Q⁎[A].iCycles p φ) :=
   HomologicalComplex.liftCycles_i _ _ _ _ _
 
-/-- The boundary of a relative localized cap satisfies the signed cap differential formula. -/
+/-- For a cocycle, the cap boundary is `(-1)^p` times the localized cap of the boundary. -/
 @[reassoc]
 lemma relativeCapInto_comp_d_of_cycles (φ : Q⁎[A].cycles p) :
     relativeCapInto L S U A p (q + 1) (n + 1) (by omega)

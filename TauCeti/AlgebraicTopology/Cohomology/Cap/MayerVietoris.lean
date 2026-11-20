@@ -104,6 +104,9 @@ private def openFundamentalClass (W : Opens Mₜ)
     (K : Compacts Mₜ) (hKW : (K : Set Mₜ) ⊆ W) :
     ((openSubspacePair W (K : Set Mₜ)ᶜ).singularChainComplex
       ℤₘ).homology d :=
+  -- By `openSubspacePair_compl` (rfl), this is `localHomology` along
+  -- `Opens.inclusion' W ⁻¹' K`. Native category/compact-carrier ascriptions
+  -- avoid the stock 200000-heartbeat timeout in this carrier identification.
   (show localHomology (A := ModuleCat.{0} ℤ) ℤₘ (Opens.inclusion' W ⁻¹' (K : Set Mₜ)) d from
     (o.comap (j := (Opens.inclusion' W).hom) W.isOpenEmbedding).fundamentalClassOn hn
       (show IsCompact (Opens.inclusion' W ⁻¹' (K : Set Mₜ)) from
