@@ -27,6 +27,8 @@ the topology of the fibre product `Function.Pullback f g`, a subspace of the pro
 * `Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp`: open maps are stable under
   pullback; the projection of a fibre product to one factor is open onto its range when the map
   from the other factor is.
+* `Topology.IsQuotientMap.isOpen_image_of_saturated`: a quotient map onto an open range sends open
+  sets closed under its fibres to open sets.
 * `Topology.IsQuotientMap.of_isClosedMap_of_isEmbedding`: a quotient map `q` restricts to a
   quotient map over a closed subset. More generally, `q` pulls back along a continuous closed map
   `i` over an embedding `j`, provided the range of `i` contains `q ⁻¹' range j`.
@@ -84,6 +86,20 @@ theorem isOpenEmbedding_domRestrict_quotient_mk_of_isOpen {U : Set X} (hU : IsOp
     exact hfix x.2 hxy ▸ mem_image_of_mem _ hx
 
 end Setoid
+
+/-- If `f` is a quotient map onto its open range, then the image under `f` of an open set closed
+under the fibres of `f` is open. -/
+theorem Topology.IsQuotientMap.isOpen_image_of_saturated {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] {f : X → Y} (hf : IsQuotientMap (rangeFactorization f))
+    (hrange : IsOpen (range f)) {W : Set X} (hW : IsOpen W)
+    (hsat : ∀ ⦃x y⦄, f x = f y → x ∈ W → y ∈ W) : IsOpen (f '' W) := by
+  have hpre : rangeFactorization f ⁻¹' (rangeFactorization f '' W) = W := by
+    refine Subset.antisymm (fun x ⟨y, hy, hyx⟩ ↦ ?_) (subset_preimage_image _ _)
+    exact hsat (congrArg Subtype.val hyx) hy
+  have hopen : IsOpen (rangeFactorization f '' W) := hf.isOpen_preimage.1 (by rwa [hpre])
+  have himage : f '' W = Subtype.val '' (rangeFactorization f '' W) := by
+    simp only [image_image, rangeFactorization_coe]
+  exact himage ▸ hrange.isOpenMap_subtype_val _ hopen
 
 section Pullback
 

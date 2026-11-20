@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Data.Finset.Update
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
+import TauCeti.Topology.Constructions.Basic
 
 /-!
 # Implicit atlases
@@ -267,20 +268,10 @@ theorem mem_footprint {I : Finset A} {y : X} :
 /-- The regular footprints are open. The set `X_I^reg ∩ Z_∅I` is open in `Z_∅I` and is a union
 of fibres of `ψ_∅I`, so its image is open in `U_∅I` by the quotient axiom, and `U_∅I` is open in
 `X_∅ ≃ₜ X`. -/
-theorem isOpen_footprint (I : Finset A) : IsOpen (𝒜.footprint I) := by
-  set ψ := 𝒜.footprintMap (Finset.empty_subset I)
-  set W : Set (kuranishiZeroSet 𝒜.kuranishi ∅ I) := {x | x.1 ∈ 𝒜.regLocus I}
-  have hW : IsOpen W := (𝒜.isOpen_regLocus I).preimage continuous_subtype_val
-  -- `W` is saturated for `ψ`, so its image in `range ψ` is open.
-  have hsat : rangeFactorization ψ ⁻¹' (rangeFactorization ψ '' W) = W := by
-    refine Subset.antisymm (fun x ⟨y, hy, hyx⟩ ↦ ?_) (subset_preimage_image _ _)
-    exact 𝒜.mem_regLocus_of_footprintMap_eq _ (congrArg Subtype.val hyx) hy
-  have hopen : IsOpen (rangeFactorization ψ '' W) :=
-    ((𝒜.isQuotientMap_footprintMap _).isOpen_preimage).1 (by rwa [hsat])
-  have himage : ψ '' W = Subtype.val '' (rangeFactorization ψ '' W) := by
-    simp only [image_image, rangeFactorization_coe]
-  exact 𝒜.baseHomeomorph.isOpenMap _ (himage ▸
-    (𝒜.isOpen_range_footprintMap _).isOpenMap_subtype_val _ hopen)
+theorem isOpen_footprint (I : Finset A) : IsOpen (𝒜.footprint I) :=
+  𝒜.baseHomeomorph.isOpenMap _ <| (𝒜.isQuotientMap_footprintMap _).isOpen_image_of_saturated
+    (𝒜.isOpen_range_footprintMap _) ((𝒜.isOpen_regLocus I).preimage continuous_subtype_val)
+    fun _ _ hxy hx ↦ 𝒜.mem_regLocus_of_footprintMap_eq _ hxy hx
 
 /-- The regular footprints cover `X`. -/
 theorem iUnion_footprint : ⋃ I, 𝒜.footprint I = univ :=

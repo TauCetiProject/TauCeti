@@ -274,19 +274,10 @@ theorem mem_footprint {I : Finset A} {y : X} :
 
 /-- The regular footprints are open: `X_I^reg ∩ Z_∅I` is an open union of fibres of `ψ_∅I`, so its
 image is open in the open image `U_∅I` by the quotient axiom. -/
-theorem isOpen_footprint (I : Finset A) : IsOpen (𝒜.footprint I) := by
-  set ψ := 𝒜.footprintMap (Finset.empty_subset I)
-  set W : Set (kuranishiZeroSet 𝒜.kuranishi ∅ I) := {x | x.1 ∈ 𝒜.regLocus I}
-  have hW : IsOpen W := (𝒜.isOpen_regLocus I).preimage continuous_subtype_val
-  have hsat : rangeFactorization ψ ⁻¹' (rangeFactorization ψ '' W) = W := by
-    refine Subset.antisymm (fun x ⟨y, hy, hyx⟩ ↦ ?_) (subset_preimage_image _ _)
-    exact 𝒜.mem_regLocus_of_footprintMap_eq _ (congrArg Subtype.val hyx) hy
-  have hopen : IsOpen (rangeFactorization ψ '' W) :=
-    ((𝒜.isQuotientMap_footprintMap _).isOpen_preimage).1 (by rwa [hsat])
-  have himage : ψ '' W = Subtype.val '' (rangeFactorization ψ '' W) := by
-    simp only [image_image, rangeFactorization_coe]
-  exact 𝒜.baseHomeomorph.isOpenMap _ (himage ▸
-    (𝒜.isOpen_range_footprintMap _).isOpenMap_subtype_val _ hopen)
+theorem isOpen_footprint (I : Finset A) : IsOpen (𝒜.footprint I) :=
+  𝒜.baseHomeomorph.isOpenMap _ <| (𝒜.isQuotientMap_footprintMap _).isOpen_image_of_saturated
+    (𝒜.isOpen_range_footprintMap _) ((𝒜.isOpen_regLocus I).preimage continuous_subtype_val)
+    fun _ _ hxy hx ↦ 𝒜.mem_regLocus_of_footprintMap_eq _ hxy hx
 
 /-- The regular footprints cover `X`. -/
 theorem iUnion_footprint : ⋃ I, 𝒜.footprint I = univ :=
