@@ -157,10 +157,8 @@ theorem Bundle.Pullback.isQuotientCoveringMap_lift {G : Type*} [Group G] [MulAct
       continuous_const_smul := fun g ↦ continuous_iff.2 ⟨?_, ?_⟩
       apply_eq_iff_mem_orbit := fun {z₁ z₂} ↦ ⟨fun h ↦ ?_, ?_⟩
       disjoint := fun z ↦ ?_ }
-  · have hw : w ∈ range (Pullback.lift (F := F) (E := E) f) := by
-      rw [range_lift]
-      exact hf.surjective w.proj
-    exact hw
+  · rw [← mem_range, range_lift]
+    exact hf.surjective w.proj
   · simp_rw [hproj]
     exact (continuous_const_smul g).comp (Pullback.continuous_proj F E f)
   · simp_rw [hlift]

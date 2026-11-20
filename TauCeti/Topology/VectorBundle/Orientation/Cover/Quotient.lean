@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.FiberBundle.Pullback
-public import TauCeti.Topology.VectorBundle.EulerClass
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
 
 /-!
@@ -48,8 +47,8 @@ homology of `(E', E'₀)` fixed by `ℤˣ`, by the transfer of a finite quotient
 * `TauCeti.VectorBundleOrientationCover.isQuotientCoveringMap_lift`: the total space of the bundle
   pulled back to the orientation double cover is the quotient of the free action of `ℤˣ` lifted
   from the cover.
-* `TauCeti.preimage_pullbackLift_zeroSectionCompl`: the canonical map of a pullback bundle sends
-  exactly the nonzero vectors to nonzero vectors.
+* `TauCeti.preimage_pullbackLift_zeroSectionCompl` (in `TauCeti.Topology.VectorBundle.EulerClass`):
+  the canonical map of a pullback bundle sends exactly the nonzero vectors to nonzero vectors.
 
 ## References
 
@@ -66,17 +65,6 @@ open Bundle Module Set Topology
 universe u
 
 namespace TauCeti
-
-/-- The canonical map from the total space of a pullback bundle `f *ᵖ E` to the total space of `E`
-keeps each vector, so the nonzero vectors of `f *ᵖ E` are exactly the points sent to nonzero vectors
-of `E`. -/
-theorem preimage_pullbackLift_zeroSectionCompl {B B' : Type u} {F : Type*} {E : B → Type u}
-    [∀ b, AddCommMonoid (E b)] (f : B' → B) :
-    Pullback.lift f ⁻¹' zeroSectionCompl F E = zeroSectionCompl F (f *ᵖ E) := by
-  ext z
-  simp only [mem_preimage, mem_zeroSectionCompl, Pullback.lift_snd]
-  -- The zero of the fibre of `f *ᵖ E` over `x` is, by definition, the zero of `E (f x)`.
-  rfl
 
 namespace VectorBundleOrientationCover
 
@@ -97,6 +85,16 @@ omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
 /-- The action of `ℤˣ` on the orientation double cover fixes the base point. -/
 @[simp]
 theorem proj_smul (u : ℤˣ) (p : VectorBundleOrientationCover F E ι) : (u • p).proj = p.proj :=
+  (rfl)
+
+omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [TopologicalSpace (TotalSpace F E)] in
+/-- A unit `u` multiplies the orientation of each point of the orientation double cover by the
+sign `u`. -/
+@[simp]
+theorem orientation_smul (u : ℤˣ) (p : VectorBundleOrientationCover F E ι) :
+    (proj_smul u p) ▸ (u • p).orientation =
+      Units.map (Int.castRingHom ℝ : ℤ →* ℝ) u • p.orientation :=
   (rfl)
 
 variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
@@ -122,33 +120,20 @@ projection are the orbits, and every point has a neighbourhood disjoint from its
 deck involution. -/
 theorem isQuotientCoveringMap_proj [Fintype ι] [FiniteDimensional ℝ F]
     (hι : Fintype.card ι = finrank ℝ F) :
-    IsQuotientCoveringMap (proj : VectorBundleOrientationCover F E ι → B) ℤˣ where
-  toIsQuotientMap := (isCoveringMap_proj hι).isQuotientMap (surjective_proj hι)
-  continuous_const_smul u := by
-    rcases smul_eq_or (F := F) (E := E) (ι := ι) u with h | h <;> rw [h]
+    IsQuotientCoveringMap (proj : VectorBundleOrientationCover F E ι → B) ℤˣ := by
+  refine (isQuotientCoveringMap_iff_isCoveringMap_and _ ℤˣ).2
+    ⟨isCoveringMap_proj hι, surjective_proj hι, ⟨fun u ↦ ?_⟩,
+      isCancelSMul_iff_eq_one_of_smul_eq.2 fun u p h ↦ ?_, fun {p q} ↦ ⟨fun h ↦ ?_, ?_⟩⟩
+  · rcases smul_eq_or (F := F) (E := E) (ι := ι) u with h | h <;> rw [h]
     exacts [continuous_id, deck.continuous]
-  apply_eq_iff_mem_orbit {p q} := by
-    refine ⟨fun h ↦ ?_, ?_⟩
-    · rcases eq_or_eq_deck hι h with rfl | rfl
-      exacts [⟨1, one_smul ℤˣ _⟩, ⟨-1, neg_one_smul_eq_deck _⟩]
-    · rintro ⟨u, rfl⟩
-      rfl
-  disjoint p := by
-    -- The sheet of `p` in the preferred trivialization at its base point.
-    set e := trivializationAt F E p.proj
-    have hp : p.proj ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' p.proj
-    set o := e.mapOrientation ι hp p.orientation
-    refine ⟨sheet e o,
-      (isOpen_sheet_trivializationAt p.proj o).mem_nhds (mem_sheet_iff.2 ⟨hp, rfl⟩),
-      fun u ⟨_, ⟨q, hq, rfl⟩, huq⟩ ↦ ?_⟩
+  · -- The unit `-1` acts by the deck involution, which fixes no point.
     rcases Int.units_eq_one_or u with rfl | rfl
     · rfl
-    -- Otherwise both `q` and its image under the deck involution lie on the sheet of `o`.
-    beta_reduce at huq
-    rw [neg_one_smul_eq_deck, deck_mem_sheet_iff] at huq
-    obtain ⟨_, hqo⟩ := mem_sheet_iff.1 hq
-    obtain ⟨_, hqo'⟩ := mem_sheet_iff.1 huq
-    exact absurd (hqo.symm.trans hqo') (Module.Ray.ne_neg_self o)
+    · exact absurd ((neg_one_smul_eq_deck p).symm.trans h) (deck_ne_self p)
+  · rcases eq_or_eq_deck hι h with rfl | rfl
+    exacts [⟨1, one_smul ℤˣ _⟩, ⟨-1, neg_one_smul_eq_deck _⟩]
+  · rintro ⟨u, rfl⟩
+    exact proj_smul u q
 
 /-- The units `ℤˣ` act on the total space of the bundle pulled back to the orientation double
 cover through their action on the cover, keeping the vector: the fibre over `u • p` is the fibre
