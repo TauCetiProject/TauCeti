@@ -422,19 +422,46 @@ theorem regularizedGamma_natCast {n : ℕ} (hn : n ≠ 0) (hx : 0 ≤ x) :
       ih hn', Real.rpow_natCast, Real.Gamma_nat_eq_factorial, Finset.sum_range_succ]
     ring
 
-/-- `∫₀ˣ tⁿ e^{-t} dt = n! (1 - e^{-x} ∑_{k ≤ n} x ^ k / k!)` for `0 ≤ x`: the lower incomplete
-gamma function `γ(n + 1, x)` at a natural shape, unregularized from
-`TauCeti.regularizedGamma_natCast`. -/
-theorem integral_pow_mul_exp_neg (n : ℕ) (hx : 0 ≤ x) :
+/-- `∫₀ˣ tⁿ e^{-t} dt = n! (1 - e^{-x} ∑_{k ≤ n} x ^ k / k!)` for every real `x`: for `0 ≤ x` this
+is the lower incomplete gamma function `γ(n + 1, x)` at a natural shape, the unregularized form of
+`TauCeti.regularizedGamma_natCast`. The proof is the fundamental theorem of calculus, since
+`-n! e^{-t} ∑_{k ≤ n} t ^ k / k!` is an antiderivative of `tⁿ e^{-t}`. -/
+theorem integral_pow_mul_exp_neg (n : ℕ) (x : ℝ) :
     ∫ t in (0 : ℝ)..x, t ^ n * Real.exp (-t) =
       n.factorial *
         (1 - Real.exp (-x) * ∑ k ∈ Finset.range (n + 1), x ^ k / (k.factorial : ℝ)) := by
-  have h := regularizedGamma_natCast (n := n + 1) n.succ_ne_zero hx
-  rw [regularizedGamma_eq_div, lowerIncompleteGamma_eq_integral hx] at h
-  push_cast at h
-  rw [Real.Gamma_nat_eq_factorial, add_sub_cancel_right] at h
-  rw [← h, mul_div_cancel₀ _ (by positivity)]
-  simp_rw [Real.rpow_natCast]
+  have hderiv (m : ℕ) (t : ℝ) : HasDerivAt
+      (fun s => -(m.factorial *
+        (Real.exp (-s) * ∑ k ∈ Finset.range (m + 1), s ^ k / (k.factorial : ℝ))))
+      (t ^ m * Real.exp (-t)) t := by
+    have hexp := (hasDerivAt_neg t).exp
+    induction m with
+    | zero =>
+      convert hexp.neg using 1
+      · funext s
+        simp
+      · simp
+    | succ m ih =>
+      have key : (fun s => -((m + 1).factorial *
+          (Real.exp (-s) * ∑ k ∈ Finset.range (m + 1 + 1), s ^ k / (k.factorial : ℝ)))) =
+          fun s => ((m : ℝ) + 1) * -(m.factorial *
+            (Real.exp (-s) * ∑ k ∈ Finset.range (m + 1), s ^ k / (k.factorial : ℝ))) -
+            s ^ (m + 1) * Real.exp (-s) := by
+        funext s
+        rw [Finset.sum_range_succ, Nat.factorial_succ]
+        push_cast
+        field_simp
+        ring
+      rw [key]
+      convert (ih.const_mul ((m : ℝ) + 1)).sub ((hasDerivAt_pow (m + 1) t).mul hexp) using 1
+      push_cast
+      ring
+  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ => hderiv n t)
+    ((by fun_prop : Continuous fun t : ℝ => t ^ n * Real.exp (-t)).intervalIntegrable _ _)]
+  have h0 : ∑ k ∈ Finset.range (n + 1), (0 : ℝ) ^ k / (k.factorial : ℝ) = 1 := by
+    simp [Finset.sum_range_succ']
+  rw [neg_zero, Real.exp_zero, one_mul, h0]
+  ring
 
 /-- `e^{-x} ∑_{k ≤ n} x ^ k / k! ≤ 1` for `0 ≤ x`, from `Real.sum_le_exp_of_nonneg`. -/
 theorem exp_neg_mul_sum_pow_div_factorial_le_one (n : ℕ) (hx : 0 ≤ x) :

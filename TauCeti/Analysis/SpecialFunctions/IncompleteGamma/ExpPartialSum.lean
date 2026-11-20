@@ -28,7 +28,7 @@ which are proved here for every `n` and `y`: `e^{-y} e_n(y) ≤ (y / n) ^ n e^{n
 and `1 - e^{-y} e_n(y) ≤ (y / (n + 1)) ^ (n + 1) e^{n + 1 - y}` for `0 ≤ y ≤ n + 1`.
 
 The case `x = 1` is Ramanujan's problem. Through `n! (1 - e^{-y} e_n(y)) = ∫₀ʸ tⁿ e^{-t} dt`
-(`TauCeti.regularizedGamma_natCast`), the two quantities `e^{-n} e_n(n)` and `1 - e^{-n} e_n(n)`
+(`TauCeti.integral_pow_mul_exp_neg`), the two quantities `e^{-n} e_n(n)` and `1 - e^{-n} e_n(n)`
 are the masses of `tⁿ e^{-t} dt / n!` to the right and to the left of its mode `t = n`. Reflecting
 the left half onto the right half, the density at `n - s` is at most the density at `n + s`
 (`tanh u ≤ u`), and for `s ≤ n v` with `v ≤ 1 / 8` it is at least
@@ -183,11 +183,11 @@ private lemma integral_reflect_left (n : ℕ) :
   have h := intervalIntegral.integral_comp_sub_left (fun t : ℝ => t ^ n * rexp (-t)) (n : ℝ)
     (a := 0) (b := n)
   simp only [sub_self, sub_zero] at h
-  rw [h, integral_pow_mul_exp_neg n n.cast_nonneg]
+  rw [h, integral_pow_mul_exp_neg]
 
 /-- The mass of `tⁿ e^{-t} dt` on `[n, n + w]`, translated to `[0, w]`, is
 `n! (e^{-n} e_n(n) - e^{-(n + w)} e_n(n + w))`. -/
-private lemma integral_reflect_right (n : ℕ) {w : ℝ} (hw : 0 ≤ w) :
+private lemma integral_reflect_right (n : ℕ) (w : ℝ) :
     ∫ s in (0 : ℝ)..w, ((n : ℝ) + s) ^ n * rexp (-((n : ℝ) + s)) =
       n ! * (rexp (-n) * (∑ k ∈ range (n + 1), (n : ℝ) ^ k / k !) -
         rexp (-((n : ℝ) + w)) * ∑ k ∈ range (n + 1), ((n : ℝ) + w) ^ k / k !) := by
@@ -198,7 +198,7 @@ private lemma integral_reflect_right (n : ℕ) {w : ℝ} (hw : 0 ≤ w) :
   rw [h, ← intervalIntegral.integral_interval_sub_left
     (hf.intervalIntegrable (μ := MeasureTheory.volume) 0 ((n : ℝ) + w))
     (hf.intervalIntegrable (μ := MeasureTheory.volume) 0 (n : ℝ)),
-    integral_pow_mul_exp_neg n (by positivity), integral_pow_mul_exp_neg n n.cast_nonneg]
+    integral_pow_mul_exp_neg, integral_pow_mul_exp_neg]
   ring
 
 /-! ### Ramanujan's problem: `e^{-n} e_n(n) → 1 / 2` -/
@@ -213,7 +213,7 @@ theorem one_le_two_mul_exp_neg_mul_sum_pow_div_factorial_self (n : ℕ) :
       (Continuous.intervalIntegrable (by fun_prop) _ _)
       (Continuous.intervalIntegrable (by fun_prop) _ _)
       fun s hs => pow_mul_exp_neg_sub_le n hs.1 hs.2
-  rw [integral_reflect_left, integral_reflect_right n n.cast_nonneg] at hmono
+  rw [integral_reflect_left, integral_reflect_right n n] at hmono
   have hT : 0 ≤ rexp (-(n + n : ℝ)) * ∑ k ∈ range (n + 1), ((n : ℝ) + n) ^ k / k ! := by
     positivity
   have hfac : (0 : ℝ) < n ! := by positivity
@@ -284,7 +284,7 @@ theorem two_mul_exp_neg_mul_sum_pow_div_factorial_self_sub_one_le (n : ℕ) {v :
     positivity
   -- `e^{-ε} n! (a - T) ≤ n! (1 - a)`, with `a = e^{-n} e_n(n)` and `T` the tail beyond `n + n v`.
   have hkey := (exp_neg_mul_integral_reflect_right_le hn hv0 (by linarith)).trans hdrop
-  rw [integral_reflect_right n (by positivity), integral_reflect_left] at hkey
+  rw [integral_reflect_right, integral_reflect_left] at hkey
   have hT := exp_neg_mul_sum_pow_div_factorial_add_le hn hv0 hv
   have ha1 := exp_neg_mul_sum_pow_div_factorial_le_one n hN.le
   have ha0 : 0 ≤ rexp (-n) * ∑ k ∈ range (n + 1), (n : ℝ) ^ k / k ! := by positivity
