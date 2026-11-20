@@ -340,6 +340,19 @@ theorem inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le {j : ℕ} {ξ : E}
   rw [inhomogeneousLittlewoodPaley_succ]
   exact φ.littlewoodPaley_eq_zero_of_norm_le (by simpa using hξ)
 
+/-- The piece `ψ_{j+1} = φ (2^{-(j+1)} ·) - φ (2^{-j} ·)` equals one where
+`2^j φ.rOut ≤ ‖ξ‖ ≤ 2^{j+1} φ.rIn`, since there its first term is `1` and its second is `0`. -/
+theorem inhomogeneousLittlewoodPaley_succ_eq_one_of_le_norm_of_norm_le {j : ℕ} {ξ : E}
+    (h₁ : 2 ^ j * φ.rOut ≤ ‖ξ‖) (h₂ : ‖ξ‖ ≤ 2 ^ (j + 1) * φ.rIn) :
+    φ.inhomogeneousLittlewoodPaley (j + 1) ξ = 1 := by
+  have h₁' : φ.rOut ≤ ‖((2 : ℝ) ^ (j : ℤ))⁻¹ • ξ‖ := le_norm_two_zpow_inv_smul_iff.2 (by simpa)
+  have h₂' : ‖((2 : ℝ) ^ ((j + 1 : ℕ) : ℤ))⁻¹ • ξ‖ ≤ φ.rIn :=
+    norm_two_zpow_inv_smul_le_iff.2 (by simpa)
+  rw [zpow_natCast] at h₁' h₂'
+  rw [inhomogeneousLittlewoodPaley_succ_apply,
+    φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 h₂'),
+    φ.zero_of_le_dist (by rwa [dist_zero_right]), sub_zero]
+
 /-- On a nontrivial space no piece `ψⱼ` of the inhomogeneous partition is identically zero:
 `ψ₀ = φ` is positive at the origin, and `ψⱼ`, `j ≥ 1`, is a dyadic cutoff. -/
 theorem exists_inhomogeneousLittlewoodPaley_pos [Nontrivial E] (j : ℕ) :
