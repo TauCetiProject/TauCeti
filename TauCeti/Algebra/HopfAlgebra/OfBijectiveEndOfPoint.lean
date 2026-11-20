@@ -31,8 +31,9 @@ hypothesis is imposed: neither finiteness nor a field of scalars.
 
 The first identity `∑ S(b₍₁₎) b₍₂₎ = ε(b)` is the equation `T⁻¹ (T (1 ⊗ b)) = 1 ⊗ b`, read
 through `id ⊗ ε`. For the second, the first identity and coassociativity show that
-`a ⊗ b ↦ a • ∑ S(b₍₂₎) ⊗ b₍₁₎` is a left inverse of `T`; since `T` is bijective it is `T⁻¹`, and
-`T (T⁻¹ (1 ⊗ b)) = 1 ⊗ b` read through multiplication is `∑ b₍₁₎ S(b₍₂₎) = ε(b)`.
+`a ⊗ b ↦ a • ∑ S(b₍₂₎) ⊗ b₍₁₎` is a left inverse of `T`; since `T` is bijective it is `T⁻¹`.
+Since `(id ⊗ ε) ∘ T` is multiplication, `T (T⁻¹ (1 ⊗ b)) = 1 ⊗ b` read through `id ⊗ ε` is
+`∑ b₍₁₎ S(b₍₂₎) = ε(b)`.
 
 This is how rigidity of finite comodules produces an antipode in Tannakian reconstruction: rigidity
 makes the point action invertible on every finite comodule, hence on the regular comodule.

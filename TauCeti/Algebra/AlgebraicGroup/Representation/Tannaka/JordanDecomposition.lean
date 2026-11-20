@@ -273,7 +273,7 @@ variable [PerfectField K]
 theorem isMonoidal_fgPointSemisimplePartNatIso_hom
     (g : WithConv (H →ₐ[k] K)) :
     NatTrans.IsMonoidal (fgPointSemisimplePartNatIso k H K g).asIso.hom := by
-  apply isMonoidal_of_endomorphism_components k H K
+  apply FGComoduleCat.isMonoidal_of_endomorphism_components k H K
     (fun M ↦ (GeneralLinearGroup.semisimplePart
       (LinearMap.GeneralLinearGroup.ofLinearEquiv (Comodule.pointsAction M g)) :
         Module.End K (K ⊗[k] M)))
@@ -292,7 +292,7 @@ theorem isMonoidal_fgPointSemisimplePartNatIso_hom
 theorem isMonoidal_fgPointUnipotentPartNatIso_hom
     (g : WithConv (H →ₐ[k] K)) :
     NatTrans.IsMonoidal (fgPointUnipotentPartNatIso k H K g).asIso.hom := by
-  apply isMonoidal_of_endomorphism_components k H K
+  apply FGComoduleCat.isMonoidal_of_endomorphism_components k H K
     (fun M ↦ (GeneralLinearGroup.unipotentPart
       (LinearMap.GeneralLinearGroup.ofLinearEquiv (Comodule.pointsAction M g)) :
         Module.End K (K ⊗[k] M)))
