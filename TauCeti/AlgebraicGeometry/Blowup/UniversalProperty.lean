@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Blowup.AwayFromCenter
 public import TauCeti.AlgebraicGeometry.Blowup.IdealSheaf
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Blowup.BaseChange
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.NonZeroDivisors
