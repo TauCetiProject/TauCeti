@@ -9,7 +9,8 @@ public import Mathlib.Analysis.MellinTransform
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
-import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
+import TauCeti.Data.Real.NegNatSeparation
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -21,7 +22,7 @@ For real `u`, `v` and `η > 0` there are `C > 0` and `K : ℕ` with
 
 whenever `u ≤ x ≤ v` and `x + i y` keeps the distance `η` from every pole `-n` of `Γ`. For large
 `|y|` this is Stirling's formula on vertical strips ([DLMF 5.11.9](https://dlmf.nist.gov/5.11.E9),
-`TauCeti.exists_abs_log_norm_Gamma_vertical_sub_le`) after exponentiation: the factor
+`exists_abs_log_norm_Gamma_vertical_sub_le`) after exponentiation: the factor
 `|y| ^ (x - 1/2)` is at most `(1 + |y|) ^ K` once `K ≥ v - 1/2`, and the bounded remainder goes
 into `C`. On the remaining bounded part of the strip the separation from the poles makes the set
 of admissible points compact, and `Γ` is continuous on it.
@@ -32,12 +33,12 @@ heights `|y| ≥ 1`, and on a vertical line through a point that is not a pole. 
 
 ## Main results
 
-* `Complex.exists_norm_Gamma_le`: the bound on a strip, away from the poles.
-* `Complex.exists_norm_Gamma_le_of_pos`: the bound at all heights on a strip `0 < u ≤ x ≤ v`.
-* `Complex.exists_norm_Gamma_le_of_one_le_abs`: the bound at heights `|y| ≥ 1` on any strip.
-* `Complex.exists_norm_Gamma_le_of_forall_ne_neg_natCast`: the bound at all heights on a vertical
+* `TauCeti.exists_norm_Gamma_le`: the bound on a strip, away from the poles.
+* `TauCeti.exists_norm_Gamma_le_of_pos`: the bound at all heights on a strip `0 < u ≤ x ≤ v`.
+* `TauCeti.exists_norm_Gamma_le_of_one_le_abs`: the bound at heights `|y| ≥ 1` on any strip.
+* `TauCeti.exists_norm_Gamma_le_of_forall_ne_neg_natCast`: the bound at all heights on a vertical
   line `Re z = x` with `x` not a nonpositive integer.
-* `Complex.verticalIntegrable_Gamma_mul_exp_mul_abs_im`: `Γ(z) exp (θ |Im z|)` is integrable on
+* `TauCeti.verticalIntegrable_Gamma_mul_exp_mul_abs_im`: `Γ(z) exp (θ |Im z|)` is integrable on
   every such line, for `θ < π / 2`.
 
 The proofs are new. The statements follow the lean-DLMF project
@@ -49,13 +50,15 @@ public section
 
 open Real Set Filter MeasureTheory
 
-namespace Complex
+namespace TauCeti
+
+open Complex
 
 /-- At large heights Stirling's formula gives the bound on the whole strip, poles or not. -/
 private theorem exists_norm_Gamma_le_of_le_abs (u v : ℝ) :
     ∃ C > 0, ∃ K : ℕ, ∃ T : ℝ, ∀ x y : ℝ, u ≤ x → x ≤ v → T ≤ |y| →
       ‖Gamma (x + y * I)‖ ≤ C * (1 + |y|) ^ K * Real.exp (-(π * |y|) / 2) := by
-  obtain ⟨C, T, h⟩ := TauCeti.exists_abs_log_norm_Gamma_vertical_sub_le u v
+  obtain ⟨C, T, h⟩ := exists_abs_log_norm_Gamma_vertical_sub_le u v
   set K := ⌈v - 1 / 2⌉₊
   refine ⟨Real.exp (|C| + Real.log (2 * π) / 2), Real.exp_pos _, K, max T 1,
     fun x y hux hxv hy ↦ ?_⟩
@@ -131,7 +134,7 @@ theorem exists_norm_Gamma_le {u v η : ℝ} (hη : 0 < η) :
           exact mul_le_mul_of_nonneg_right (le_add_of_nonneg_left hC.le) hB
 
 /-- On a closed strip `0 < u ≤ x ≤ v` in the right half-plane the bound of
-`Complex.exists_norm_Gamma_le` holds at all heights. -/
+`TauCeti.exists_norm_Gamma_le` holds at all heights. -/
 theorem exists_norm_Gamma_le_of_pos {u v : ℝ} (hu : 0 < u) :
     ∃ C > 0, ∃ K : ℕ, ∀ x y : ℝ, u ≤ x → x ≤ v →
       ‖Gamma (x + y * I)‖ ≤ C * (1 + |y|) ^ K * Real.exp (-(π * |y|) / 2) := by
@@ -142,7 +145,7 @@ theorem exists_norm_Gamma_le_of_pos {u v : ℝ} (hu : 0 < u) :
     add_zero, natCast_re]
   exact le_abs.2 (Or.inl (by linarith [n.cast_nonneg (α := ℝ)]))
 
-/-- At heights `|y| ≥ 1` the bound of `Complex.exists_norm_Gamma_le` holds on every bounded
+/-- At heights `|y| ≥ 1` the bound of `TauCeti.exists_norm_Gamma_le` holds on every bounded
 strip `u ≤ x ≤ v`. -/
 theorem exists_norm_Gamma_le_of_one_le_abs {u v : ℝ} :
     ∃ C > 0, ∃ K : ℕ, ∀ x y : ℝ, u ≤ x → x ≤ v → 1 ≤ |y| →
@@ -151,26 +154,12 @@ theorem exists_norm_Gamma_le_of_one_le_abs {u v : ℝ} :
   refine ⟨C, hC, K, fun x y hux hxv hy ↦ h x y hux hxv fun n ↦ hy.trans ?_⟩
   simpa using abs_im_le_norm ((x : ℂ) + y * I + n)
 
-/-- A real number that is not a nonpositive integer keeps a positive distance from all of them. -/
-private theorem exists_pos_forall_le_abs_add_natCast {x : ℝ} (hx : ∀ n : ℕ, x ≠ -n) :
-    ∃ η > 0, ∀ n : ℕ, η ≤ |x + n| := by
-  set N := ⌈-x⌉₊
-  have hne : (Finset.range (N + 1)).Nonempty := Finset.nonempty_range_add_one
-  refine ⟨min 1 ((Finset.range (N + 1)).inf' hne fun k ↦ |x + k|),
-    lt_min one_pos ((Finset.lt_inf'_iff hne).2 fun k _ ↦
-      abs_pos.2 fun h ↦ hx k (by linarith)), fun n ↦ ?_⟩
-  rcases le_or_gt n N with hn | hn
-  · exact (min_le_right _ _).trans (Finset.inf'_le _ (Finset.mem_range.2 (by omega)))
-  · refine (min_le_left _ _).trans (le_abs.2 (Or.inl ?_))
-    have hN : (N : ℝ) + 1 ≤ n := by exact_mod_cast hn
-    linarith [Nat.le_ceil (-x)]
-
 /-- On a vertical line `Re z = x` with `x` not a nonpositive integer the bound of
-`Complex.exists_norm_Gamma_le` holds at all heights. -/
+`TauCeti.exists_norm_Gamma_le` holds at all heights. -/
 theorem exists_norm_Gamma_le_of_forall_ne_neg_natCast {x : ℝ} (hx : ∀ n : ℕ, x ≠ -n) :
     ∃ C > 0, ∃ K : ℕ, ∀ y : ℝ,
       ‖Gamma (x + y * I)‖ ≤ C * (1 + |y|) ^ K * Real.exp (-(π * |y|) / 2) := by
-  obtain ⟨η, hη, hsep⟩ := exists_pos_forall_le_abs_add_natCast hx
+  obtain ⟨η, hη, hsep⟩ := Real.exists_pos_forall_le_abs_add_natCast hx
   obtain ⟨C, hC, K, h⟩ := exists_norm_Gamma_le (u := x) (v := x) hη
   refine ⟨C, hC, K, fun y ↦ h x y le_rfl le_rfl fun n ↦ (hsep n).trans ?_⟩
   simpa using abs_re_le_norm ((x : ℂ) + y * I + n)
@@ -183,8 +172,8 @@ theorem verticalIntegrable_Gamma_mul_exp_mul_abs_im {x θ : ℝ} (hx : ∀ n : �
   obtain ⟨C, hC, K, h⟩ := exists_norm_Gamma_le_of_forall_ne_neg_natCast hx
   set c := (π / 2 - θ) / 2
   have hc : 0 < c := by simp only [c]; linarith
-  obtain ⟨M, -, hM⟩ := TauCeti.exists_rpow_mul_exp_neg_mul_le (Nat.cast_nonneg K) hc
-  refine ((TauCeti.integrable_exp_neg_mul_abs hc).const_mul (C * M * Real.exp c)).mono'
+  obtain ⟨M, -, hM⟩ := exists_rpow_mul_exp_neg_mul_le (Nat.cast_nonneg K) hc
+  refine ((integrable_exp_neg_mul_abs hc).const_mul (C * M * Real.exp c)).mono'
     ((verticalIntegrable_Gamma hx).aestronglyMeasurable.mul (by fun_prop))
     (Eventually.of_forall fun y ↦ ?_)
   have hM' := hM (1 + |y|) (by positivity)
@@ -204,4 +193,4 @@ theorem verticalIntegrable_Gamma_mul_exp_mul_abs_im {x θ : ℝ} (hx : ∀ n : �
         ring
     _ ≤ C * M * Real.exp c * Real.exp (-(c * |y|)) := by gcongr
 
-end Complex
+end TauCeti
