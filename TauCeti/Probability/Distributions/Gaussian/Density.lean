@@ -13,6 +13,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.Probability.Distributions.Gaussian.Pi
 
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # The density of a multivariate Gaussian measure
@@ -43,13 +44,14 @@ form into the one of `S⁻¹`.
   is Lebesgue
   measure weighted by `(2π)^(-d/2) * exp (-‖x‖² / 2)`;
 * `TauCeti.Probability.stdGaussian_eq_withDensity_norm` — the same density on any
-  finite-dimensional real inner product space;
-* `TauCeti.Probability.map_smul_stdGaussian_eq_withDensity` — the density of a nonzero scalar
-  multiple of the standard Gaussian on any finite-dimensional real inner product space;
+  finite-dimensional real inner product space, and
+  `TauCeti.Probability.map_smul_stdGaussian_eq_withDensity_norm` for a nonzero scalar multiple;
 * `TauCeti.Probability.support_multivariateGaussian` — the support at a positive-semidefinite
   covariance is the affine range `m + range S`;
 * `TauCeti.Probability.ae_mem_affineRange_multivariateGaussian` — the law is almost surely in
   this affine range;
+* `TauCeti.Probability.ae_exists_sub_eq_mul_multivariateGaussian_vecMulVec_self` — at a rank-one
+  covariance `c cᵀ` the law is almost surely on the line through `m` in the direction `c`;
 * `TauCeti.Probability.multivariateGaussian_eq_withDensity` — the density presentation of the law;
 * `TauCeti.Probability.hasPDF_of_hasLaw_multivariateGaussian` and
   `TauCeti.Probability.pdf_eq_multivariateGaussianPDF_of_hasLaw_multivariateGaussian` — the `HasPDF`
@@ -197,41 +199,39 @@ theorem stdGaussian_eq_withDensity_norm (E : Type*) [NormedAddCommGroup E]
   funext x
   simp
 
-/-- **A nonzero scalar multiple of the standard Gaussian on a finite-dimensional real inner product
-space has the rescaled isotropic Gaussian density**
-`(2 * π * c ^ 2) ^ (-d / 2) * exp (-‖x‖ ^ 2 / (2 * c ^ 2))`, where `d` is the dimension. -/
-theorem map_smul_stdGaussian_eq_withDensity (E : Type*) [NormedAddCommGroup E]
+/-- Rescaling `ProbabilityTheory.stdGaussian` on a finite-dimensional real inner product space `E`
+by a nonzero scalar `c` yields Lebesgue measure weighted by
+`(2π * c ^ 2) ^ (-d / 2) * exp (-‖x‖ ^ 2 / (2 * c ^ 2))`, where `d = Module.finrank ℝ E`. -/
+theorem map_smul_stdGaussian_eq_withDensity_norm (E : Type*) [NormedAddCommGroup E]
     [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
     {c : ℝ} (hc : c ≠ 0) :
     (stdGaussian E).map (c • ·) =
       volume.withDensity fun x =>
-        ENNReal.ofReal ((2 * π * c ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 2) *
-          exp (-‖x‖ ^ 2 / (2 * c ^ 2))) := by
-  let A : E ≃L[ℝ] E := (LinearEquiv.smulOfNeZero ℝ E c hc).toContinuousLinearEquiv
-  have hdet : LinearMap.det (A : E →ₗ[ℝ] E) = c ^ Module.finrank ℝ E := by
-    have hA : (A : E →ₗ[ℝ] E) = c • LinearMap.id := by
-      ext x
-      simp [A]
-    rw [hA, LinearMap.det_smul, LinearMap.det_id, mul_one]
-  have hfun : (fun x : E => c • x) = fun x : E => (0 : E) + A x := by
-    funext x
-    simp [A]
-  rw [stdGaussian_eq_withDensity_norm E, hfun, Measure.map_affine_withDensity, hdet]
+        ENNReal.ofReal
+          ((2 * π * c ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 2) *
+            exp (-‖x‖ ^ 2 / (2 * c ^ 2))) := by
+  let u : ℝˣ := Units.mk0 c hc
+  let A : E ≃L[ℝ] E := ContinuousLinearEquiv.smulLeft u
+  have hc_abs : 0 < |c| := abs_pos.2 hc
+  have hAlin : (A : E →ₗ[ℝ] E) = c • LinearMap.id := LinearMap.ext fun x => by simp [A, u]
+  have hAsymm : ∀ z : E, A.symm z = c⁻¹ • z := fun z =>
+    A.symm_apply_eq.mpr <| by simp [A, u, smul_smul, hc]
+  have hAfun : (c • · : E → E) = fun x => 0 + A x :=
+    funext fun x => by simp [A, u]
+  rw [stdGaussian_eq_withDensity_norm E, hAfun, Measure.map_affine_withDensity volume A 0]
   refine withDensity_congr_ae (.of_forall fun y => ?_)
-  dsimp only
-  have hc2 : (0 : ℝ) < c ^ 2 := sq_pos_of_ne_zero hc
-  have habs : |(c ^ Module.finrank ℝ E)⁻¹| = (c ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 2) := by
-    rw [abs_inv, abs_pow, ← Real.rpow_natCast |c|, ← Real.rpow_neg (abs_nonneg c),
-      ← sq_abs c, ← Real.rpow_natCast |c| 2, ← Real.rpow_mul (abs_nonneg c)]
-    congr 1
-    push_cast
-    ring
-  have hAsymm : A.symm y = c⁻¹ • y := by simp [A, Units.smul_def]
+  have hdet : |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| =
+      (c ^ 2) ^ (-(Module.finrank ℝ E : ℝ) / 2) := by
+    rw [hAlin, LinearMap.det_smul, LinearMap.det_id, mul_one, abs_inv, abs_pow,
+      ← Real.rpow_natCast |c|, ← Real.rpow_neg hc_abs.le, ← sq_abs c,
+      ← Real.rpow_natCast |c| 2, ← Real.rpow_mul hc_abs.le]
+    exact congrArg _ (by ring)
   have hnorm : -‖A.symm (y - 0)‖ ^ 2 / 2 = -‖y‖ ^ 2 / (2 * c ^ 2) := by
-    rw [sub_zero, hAsymm, norm_smul, norm_inv, Real.norm_eq_abs, mul_pow, inv_pow, sq_abs]
+    rw [sub_zero, hAsymm, norm_smul, Real.norm_eq_abs, abs_inv, mul_pow, inv_pow, sq_abs]
     field_simp
-  rw [← ENNReal.ofReal_mul (abs_nonneg _), habs, hnorm, ← mul_assoc,
-    ← Real.mul_rpow hc2.le (by positivity), mul_comm (c ^ 2)]
+  dsimp only
+  rw [← ENNReal.ofReal_mul (abs_nonneg _), hdet, hnorm, ← mul_assoc, mul_comm ((c ^ 2) ^ _),
+    ← Real.mul_rpow (by positivity) (sq_nonneg c)]
 
 /-- The standard Gaussian measure on a finite-dimensional real inner product space has full
 support. -/
@@ -298,6 +298,22 @@ theorem ae_mem_affineRange_multivariateGaussian (hS : S.PosSemidef)
         Set (EuclideanSpace ℝ ι)) := by
   exact Filter.eventually_mem_set.mpr <|
     support_multivariateGaussian hS m ▸ (multivariateGaussian m S).support_mem_ae
+
+open Matrix in
+/-- A Gaussian vector with rank-one covariance `c cᵀ` lies almost surely on the line through
+its mean in the direction `c`. -/
+theorem ae_exists_sub_eq_mul_multivariateGaussian_vecMulVec_self (m : EuclideanSpace ℝ ι)
+    (c : ι → ℝ) :
+    ∀ᵐ x ∂multivariateGaussian m (vecMulVec c c), ∃ t : ℝ, ∀ j, x j - m j = t * c j := by
+  filter_upwards [ae_mem_affineRange_multivariateGaussian
+    (posSemidef_vecMulVec_self c) m] with x hx
+  simp only [SetLike.mem_coe, AffineSubspace.mem_mk', vsub_eq_sub, LinearMap.mem_range] at hx
+  obtain ⟨y, hy⟩ := hx
+  refine ⟨c ⬝ᵥ y, fun j ↦ ?_⟩
+  have hj := congrArg (fun z : EuclideanSpace ℝ ι ↦ z j) hy
+  simp only [Matrix.toLpLin_apply, vecMulVec_mulVec, PiLp.sub_apply] at hj
+  rw [← hj]
+  simp [MulOpposite.smul_eq_mul_unop, mul_comm]
 
 /-- **A nondegenerate multivariate Gaussian law is Lebesgue measure with the Gaussian density.** -/
 theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace ℝ ι) :

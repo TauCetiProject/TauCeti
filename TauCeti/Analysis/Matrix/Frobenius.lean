@@ -138,7 +138,9 @@ theorem frobenius_norm_sq_conj_unitary {ι : Type*} [Fintype ι] [DecidableEq ι
   have hright : U * Uᴴ = 1 := by
     simpa only [star_eq_conjTranspose] using (mem_unitaryGroup_iff.mp hU)
   have hnorm (B : Matrix ι ι 𝕜) : ((‖B‖ ^ 2 : ℝ) : 𝕜) = (Bᴴ * B).trace := by
-    rw [← frobenius_inner_eq_trace_conjTranspose_mul, inner_self_eq_norm_sq_to_K, RCLike.ofReal_pow]
+    rw [← frobenius_inner_eq_trace_conjTranspose_mul, inner_self_eq_norm_sq_to_K]
+    push_cast
+    ring
   apply RCLike.ofReal_injective (K := 𝕜)
   rw [hnorm, hnorm]
   have hmul : (Uᴴ * A * U)ᴴ * (Uᴴ * A * U) = Uᴴ * (Aᴴ * A) * U := by

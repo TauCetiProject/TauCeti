@@ -10,23 +10,26 @@ public import Mathlib.Probability.Independence.Basic
 import Mathlib.Probability.Independence.Process.Basic
 
 /-!
-# Independence and product laws on finite products
+# Independence of coordinate families and product laws
 
-This file collects two general facts relating independence to finite product measures `Measure.pi`:
+Let `(Xᵢ, Yᵢ)` be an independent family of pairs of random variables, and suppose that
+within each pair `Xᵢ` and `Yᵢ` are independent. Then the whole family `(Xᵢ)ᵢ` is independent of
+the whole family `(Yᵢ)ᵢ`. This is how the past and the future increments of a process with several
+independent coordinates, each with independent increments, are seen to be independent.
 
-1. If `(Xᵢ, Yᵢ)` is an independent family of pairs of random variables and `Xᵢ` is independent of
-   `Yᵢ` for each `i`, then the whole family `(Xᵢ)ᵢ` is independent of `(Yᵢ)ᵢ`. For a finite family
-   the proof compares laws via `MeasureTheory.measurePreserving_arrowProdEquivProdArrow`, and
-   `ProbabilityTheory.IndepFun.process_indepFun_process₀` reduces an arbitrary family to finite
-   ones.
-2. Under a measurable equivalence `e : E ≃ᵐ ((i : ι) → 𝓧 i)` pushing a measure `μ` forward to a
-   finite product of probability measures `Measure.pi ν`, a random variable `H` has law `μ` if and
-   only if its coordinates `i ↦ e (H ·) i` are independent with marginal laws `ν i`.
+For a finite family the proof compares laws: the joint law of the pairs is the product of the laws
+of the `Xᵢ` and the `Yᵢ`, and Mathlib's `MeasureTheory.measurePreserving_arrowProdEquivProdArrow`
+rearranges it into the product of the two coordinate laws. Mathlib's
+`ProbabilityTheory.IndepFun.process_indepFun_process₀` reduces an arbitrary family to finite ones.
+
+Conversely, whenever a measurable equivalence `e : E ≃ᵐ (∀ i, α i)` over a finite index type
+pushes a measure `μ` forward to a product of probability measures `Measure.pi ν`, having law `μ`
+is equivalent to the `e`-coordinates being mutually independent with marginal laws `ν i`.
 
 ## Main results
 
 * `ProbabilityTheory.iIndepFun.indepFun_pi_of_indepFun`
-* `MeasurableEquiv.hasLaw_iff_iIndepFun_and_hasLaw`
+* `TauCeti.Probability.hasLaw_iff_iIndepFun_of_map_eq_pi`
 -/
 
 public section
@@ -72,44 +75,37 @@ theorem iIndepFun.indepFun_pi_of_indepFun {X : ι → Ω → α} {Y : ι → Ω 
   refine IndepFun.process_indepFun_process₀ hX hY fun I J ↦ ?_
   have hK := iIndepFun.indepFun_pi_of_indepFun_of_finite (ι := ↥(I ∪ J)) (fun i ↦ hX i)
     (fun i ↦ hY i) (h.precomp Subtype.val_injective) fun i ↦ hXY i
-  exact hK.comp (φ := fun x (i : I) ↦ x ⟨i, Finset.mem_union_left J i.2⟩)
-    (ψ := fun y (j : J) ↦ y ⟨j, Finset.mem_union_right I j.2⟩) (by fun_prop) (by fun_prop)
+  exact hK.comp (φ := fun x (i : I) ↦ x ⟨i, Finset.mem_union_left J i.property⟩)
+    (ψ := fun y (j : J) ↦ y ⟨j, Finset.mem_union_right I j.property⟩) (by fun_prop) (by fun_prop)
 
 end ProbabilityTheory
 
-namespace MeasurableEquiv
+namespace TauCeti.Probability
 
 open ProbabilityTheory
 
-/-- A random variable `H` has law `μ` if and only if its coordinates under a measurable
-equivalence `e` pushing `μ` forward to a finite product of probability measures `Measure.pi ν`
-are independent with marginal laws `ν i`. -/
-theorem hasLaw_iff_iIndepFun_and_hasLaw {Ω E ι : Type*} [Fintype ι] [MeasurableSpace Ω]
-    {P : Measure Ω} [MeasurableSpace E] {μ : Measure E} {𝓧 : ι → Type*}
-    [∀ i, MeasurableSpace (𝓧 i)] {ν : (i : ι) → Measure (𝓧 i)}
-    [∀ i, IsProbabilityMeasure (ν i)] (e : E ≃ᵐ ((i : ι) → 𝓧 i))
-    (hmap : μ.map e = Measure.pi ν) {H : Ω → E} :
+/-- **Product-law equivalence through a measurable coordinate equivalence.** If a measurable
+equivalence `e : E ≃ᵐ (∀ i, α i)` over a finite index type `ι` pushes a measure `μ` forward to a
+product of probability measures `Measure.pi ν`, then a random variable `H` on a probability space
+has law `μ` if and only if its coordinates `i ↦ e (H ·) i` are mutually independent with marginal
+laws `ν i`. -/
+theorem hasLaw_iff_iIndepFun_of_map_eq_pi {Ω E ι : Type*} {α : ι → Type*}
+    [MeasurableSpace Ω] [MeasurableSpace E] [Fintype ι] [∀ i, MeasurableSpace (α i)]
+    {P : Measure Ω} [IsProbabilityMeasure P] {μ : Measure E} {ν : ∀ i, Measure (α i)}
+    [∀ i, IsProbabilityMeasure (ν i)] (e : E ≃ᵐ (∀ i, α i)) (hμ : μ.map e = Measure.pi ν)
+    {H : Ω → E} :
     HasLaw H μ P ↔
       iIndepFun (fun i ω ↦ e (H ω) i) P ∧ ∀ i, HasLaw (fun ω ↦ e (H ω) i) (ν i) P := by
-  have : IsProbabilityMeasure μ := ⟨by
-    have h := congrArg (fun m ↦ m _root_.Set.univ) hmap
-    simpa [Measure.map_apply e.measurable .univ] using h⟩
-  constructor
-  · intro hH
-    have : IsProbabilityMeasure P := hH.isProbabilityMeasure
-    have hcoord : HasLaw (fun ω ↦ e (H ω)) (Measure.pi ν) P :=
-      (⟨e.measurable.aemeasurable, hmap⟩ : HasLaw e (Measure.pi ν) μ).fun_comp hH
-    have hmarg : ∀ i, HasLaw (fun ω ↦ e (H ω) i) (ν i) P := fun i ↦ by
-      have heval : HasLaw (Function.eval i) (ν i) (Measure.pi ν) :=
-        ⟨(measurable_pi_apply i).aemeasurable, (measurePreserving_eval ν i).map_eq⟩
-      simpa only [Function.comp_def, Function.eval] using heval.fun_comp hcoord
-    exact ⟨(iIndepFun_iff_hasLaw_pi_pi hmarg).2 hcoord, hmarg⟩
-  · rintro ⟨hindep, hmarg⟩
-    have hcoord : HasLaw (fun ω ↦ e (H ω)) (Measure.pi ν) P := hindep.hasLaw_pi hmarg
-    have hback : HasLaw e.symm μ (Measure.pi ν) := by
-      refine ⟨e.symm.measurable.aemeasurable, ?_⟩
-      rw [← hmap, Measure.map_map e.symm.measurable e.measurable]
-      simp
-    simpa only [MeasurableEquiv.symm_apply_apply] using hback.fun_comp hcoord
+  have he : HasLaw H μ P ↔ HasLaw (fun ω ↦ e (H ω)) (Measure.pi ν) P := by
+    rw [← hμ]
+    refine ⟨fun h ↦ HasLaw.comp ⟨e.measurable.aemeasurable, rfl⟩ h, fun h ↦ ?_⟩
+    have hinv : HasLaw e.symm μ (μ.map e) := ⟨e.symm.measurable.aemeasurable, by
+      rw [Measure.map_map e.symm.measurable e.measurable]; simp⟩
+    simpa [Function.comp_def] using hinv.comp h
+  rw [he]
+  refine ⟨fun h ↦ ?_, fun ⟨hind, hc⟩ ↦ hind.hasLaw_pi hc⟩
+  have hc : ∀ i, HasLaw (fun ω ↦ e (H ω) i) (ν i) P := fun i ↦
+    HasLaw.comp ⟨(measurable_pi_apply i).aemeasurable, (measurePreserving_eval ν i).map_eq⟩ h
+  exact ⟨(iIndepFun_iff_hasLaw_pi_pi hc).2 h, hc⟩
 
-end MeasurableEquiv
+end TauCeti.Probability

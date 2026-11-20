@@ -146,7 +146,7 @@ theorem pi_gaussianReal_eq_map_sqrt_smul (v : ℝ≥0) :
   have hv : gaussianReal 0 v = (gaussianReal 0 1).map (Real.sqrt v * ·) := by
     rw [gaussianReal_map_const_mul, mul_zero, mul_one]
     congr
-    exact NNReal.eq (Real.sq_sqrt v.2).symm
+    exact NNReal.eq (Real.sq_sqrt v.property).symm
   rw [hv, ← Measure.pi_map_pi fun _ => by fun_prop]
   rfl
 

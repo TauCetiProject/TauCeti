@@ -6,52 +6,35 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.Frobenius
+public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 public import Mathlib.Analysis.InnerProductSpace.Subspace
 public import Mathlib.Analysis.Matrix.MeasurableSpace
+public import Mathlib.Analysis.RCLike.Lemmas
 public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
-public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.UniformSpace.Matrix
-import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
-# The Frobenius inner product and unitary conjugation on self-adjoint matrices
+# Frobenius geometry and unitary conjugation on self-adjoint matrix subspaces
 
-Distributions on real symmetric (`𝕜 = ℝ`) and complex Hermitian (`𝕜 = ℂ`) matrices live on
-Mathlib's real self-adjoint subspace `selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)`. By
-`Matrix.isHermitian_iff_isSelfAdjoint`, its elements are precisely the Hermitian `ι × ι` matrices
-over `𝕜` (which over `ℝ` are the symmetric matrices).
-
-This file equips `selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)` uniformly for every `[RCLike 𝕜]` and
-`[Fintype ι]` with the real Frobenius norm and inner product `⟪A, B⟫_ℝ = RCLike.re (A * B).trace`
-while preserving the subtype uniformity and topology definitionally: the norm is induced from
-`Matrix.frobeniusNormedAddCommGroup`, whose uniformity and topology are definitionally the product
-ones, and `volume` is supplied by `measureSpaceOfInnerProductSpace`.
-
-It also packages unitary (and, at `𝕜 = ℝ`, orthogonal) conjugation `A ↦ U * A * Uᴴ` as a single
-real linear isometry equivalence `Matrix.UnitaryGroup.selfAdjointConj U`, proves its group laws and
-trace invariance of powers, and shows that it preserves every additive Haar measure on the subspace
-(including Frobenius `volume`, `TauCeti.symmetricLebesgue`, and `TauCeti.hermitianLebesgue`).
+For `[RCLike 𝕜]`, `selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)` is the real symmetric
+subspace at `𝕜 = ℝ` and the complex Hermitian subspace at `𝕜 = ℂ`. This file equips it uniformly
+over `𝕜` with the ambient Frobenius norm and real inner product `⟪A, B⟫ = RCLike.re tr(B * A)` on
+the subtype uniformity, and builds `Matrix.UnitaryGroup.selfAdjointConj` as a real linear isometry
+equivalence preserving every additive Haar measure and traces of powers.
 
 ## Main declarations
 
-* `TauCeti.selfAdjointMatrixNormedAddCommGroup`, `TauCeti.selfAdjointMatrixInnerProductSpace` —
-  the real Frobenius structure on `selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)` for `[RCLike 𝕜]`
-  (with one-line syntactic specializations `*Real`/`*Complex` delegating directly to them so
-  `rw` matches concrete `ℝ`/`ℂ` goals at `reducible` transparency with zero diamonds).
-* `selfAdjoint.isHermitian_coe`, `selfAdjoint.conjTranspose_coe`, `selfAdjoint.coe_apply_conj` —
-  self-adjointness and entry symmetries of elements of `selfAdjoint.submodule S (Matrix ι ι R)`.
-* `selfAdjoint.coe_inner`, `selfAdjoint.inner_eq_re_trace_mul`,
-  `selfAdjoint.norm_sq_eq_re_trace_sq` — the Frobenius inner product agrees with the ambient real
-  Frobenius pairing and equals `RCLike.re (A * B).trace`.
-* `Matrix.UnitaryGroup.selfAdjointConj` — unitary/orthogonal conjugation `A ↦ U * A * Uᴴ` as a
-  real linear isometry equivalence of `selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)`, together with its
-  group laws (`selfAdjointConj_one`, `selfAdjointConj_mul`, `selfAdjointConj_symm`), power and
-  trace invariance (`coe_selfAdjointConj_pow`, `trace_selfAdjointConj_pow`,
-  `trace_selfAdjointConj`), and preservation of every additive Haar measure
-  (`measurePreserving_selfAdjointConj`).
+* `TauCeti.selfAdjointMatrixNormedAddCommGroup`, `TauCeti.selfAdjointMatrixInnerProductSpace`.
+* `selfAdjoint.coe_inner`, `selfAdjoint.isHermitian_coe`, `selfAdjoint.conjTranspose_coe`,
+  `selfAdjoint.inner_eq_rclike_re_trace_mul`, `selfAdjoint.norm_sq_eq_rclike_re_trace_sq`.
+* `Matrix.UnitaryGroup.selfAdjointConj`, `coe_selfAdjointConj_pow`, `trace_selfAdjointConj_pow`,
+  `trace_selfAdjointConj`, `measurePreserving_selfAdjointConj`,
+  `measurePreserving_selfAdjointConj_volume`.
 -/
 
 public section
@@ -59,338 +42,220 @@ public section
 noncomputable section
 
 open MeasureTheory Module
-open scoped RealInnerProductSpace Matrix
+open scoped ComplexConjugate Matrix RealInnerProductSpace
 
 namespace TauCeti
-
-/-! ### The real Frobenius structure on the self-adjoint matrix subspace -/
-
 section instances
+variable (p : ℕ) (𝕜 : Type*) [RCLike 𝕜]
 
-variable {ι 𝕜 : Type*} [Fintype ι] [RCLike 𝕜]
+/-! Scoped in `TauCeti.SelfAdjointMatrix` (and re-exported globally at `ℝ` and `ℂ`) so the global
+`ℝ` instance elaborates `selfAdjoint.submodule` with `Real.instAddCommMonoid` rather than
+`RCLike.toNormedAddCommGroup` and avoids `[RCLike ?𝕜]` branching on `ESeminormedAddMonoid`. -/
 
-/-- The real self-adjoint matrix subspace carries the Frobenius norm induced from the ambient
-matrices, with its metric rebuilt on the subtype uniformity so that the uniform and topological
-structures agree definitionally with the subtype instances. -/
-instance selfAdjointMatrixNormedAddCommGroup :
-    NormedAddCommGroup (selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) :=
-  letI : NormedAddCommGroup (Matrix ι ι 𝕜) := Matrix.frobeniusNormedAddCommGroup
-  letI base : NormedAddCommGroup (selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) :=
-    Submodule.normedAddCommGroup _
-  -- Forces the uniformity field of the metric to be the subtype uniformity itself, so that
-  -- downstream instance search unifies the two syntactically rather than only up to `rfl`.
+/-- The real self-adjoint matrix subspace over `𝕜` carries the ambient Frobenius norm rebuilt on
+the subtype uniformity. -/
+@[expose, instance_reducible] def selfAdjointMatrixNormedAddCommGroup :
+    NormedAddCommGroup (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :=
+  letI : NormedAddCommGroup (Matrix (Fin p) (Fin p) 𝕜) := Matrix.frobeniusNormedAddCommGroup
+  letI base := Submodule.normedAddCommGroup (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜))
   { base with toMetricSpace := base.toMetricSpace.replaceUniformity rfl }
 
-/-- The real self-adjoint matrix subspace carries the real Frobenius inner product
-`⟪A, B⟫_ℝ = ∑ i, ∑ j, ⟪A i j, B i j⟫_ℝ`, which equals `RCLike.re (A * B).trace`
-(`selfAdjoint.inner_eq_re_trace_mul`). -/
-instance selfAdjointMatrixInnerProductSpace :
-    InnerProductSpace ℝ (selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) :=
-  letI : NormedAddCommGroup (Matrix ι ι 𝕜) := Matrix.frobeniusNormedAddCommGroup
-  letI : NormedSpace ℝ (Matrix ι ι 𝕜) := Matrix.frobeniusNormedSpace
-  letI : InnerProductSpace ℝ (Matrix ι ι 𝕜) := Matrix.frobeniusInnerProductSpace
-  { __ := (inferInstance : Module ℝ (selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)))
-    norm_smul_le r A := norm_smul_le r (A : Matrix ι ι 𝕜)
-    inner A B := ⟪(A : Matrix ι ι 𝕜), (B : Matrix ι ι 𝕜)⟫
+attribute [local instance] selfAdjointMatrixNormedAddCommGroup
+
+/-- The real self-adjoint matrix subspace over `𝕜` carries the real Frobenius inner product
+(`selfAdjoint.inner_eq_rclike_re_trace_mul`). -/
+@[expose, instance_reducible] def selfAdjointMatrixInnerProductSpace :
+    InnerProductSpace ℝ (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :=
+  letI : NormedAddCommGroup (Matrix (Fin p) (Fin p) 𝕜) := Matrix.frobeniusNormedAddCommGroup
+  letI : NormedSpace ℝ (Matrix (Fin p) (Fin p) 𝕜) := Matrix.frobeniusNormedSpace
+  letI : InnerProductSpace ℝ (Matrix (Fin p) (Fin p) 𝕜) := Matrix.frobeniusInnerProductSpace
+  { __ := (inferInstance : Module ℝ (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)))
+    norm_smul_le r A := norm_smul_le r (A : Matrix (Fin p) (Fin p) 𝕜)
+    inner A B := ⟪(A : Matrix (Fin p) (Fin p) 𝕜), (B : Matrix (Fin p) (Fin p) 𝕜)⟫
     norm_sq_eq_re_inner A :=
-      InnerProductSpace.norm_sq_eq_re_inner (𝕜 := ℝ) (A : Matrix ι ι 𝕜)
+      InnerProductSpace.norm_sq_eq_re_inner (𝕜 := ℝ) (A : Matrix (Fin p) (Fin p) 𝕜)
     conj_inner_symm A B :=
-      InnerProductSpace.conj_inner_symm (𝕜 := ℝ) (A : Matrix ι ι 𝕜) ↑B
+      InnerProductSpace.conj_inner_symm (𝕜 := ℝ) (A : Matrix (Fin p) (Fin p) 𝕜) ↑B
     add_left A B C := by
       rw [Submodule.coe_add]
-      exact InnerProductSpace.add_left (𝕜 := ℝ) (A : Matrix ι ι 𝕜) ↑B ↑C
-    smul_left A B r := Matrix.frobenius_inner_smul_left r (A : Matrix ι ι 𝕜) ↑B }
+      exact InnerProductSpace.add_left (𝕜 := ℝ) (A : Matrix (Fin p) (Fin p) 𝕜) ↑B ↑C
+    smul_left A B r := Matrix.frobenius_inner_smul_left r (A : Matrix (Fin p) (Fin p) 𝕜) ↑B }
 
-instance selfAdjointMatrixContinuousENorm :
-    ContinuousENorm (selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) :=
+attribute [local instance] selfAdjointMatrixInnerProductSpace
+
+/-- Uniform additive group structure on the self-adjoint matrix subspace over `𝕜`. -/
+theorem selfAdjointMatrixIsUniformAddGroup :
+    IsUniformAddGroup (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :=
+  SeminormedAddCommGroup.to_isUniformAddGroup
+
+/-- Second-countable topology on the self-adjoint matrix subspace over `𝕜`. -/
+theorem selfAdjointMatrixSecondCountableTopology :
+    SecondCountableTopology (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :=
+  letI : ProperSpace (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :=
+    FiniteDimensional.proper ℝ _
+  secondCountable_of_proper
+
+/-- Completeness of the self-adjoint matrix subspace over `𝕜`. -/
+theorem selfAdjointMatrixCompleteSpace :
+    CompleteSpace (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :=
+  FiniteDimensional.completeSpace ℝ _
+
+/-- Continuous extended norm on the self-adjoint matrix subspace over `𝕜`. -/
+@[expose, instance_reducible] def selfAdjointMatrixContinuousENorm :
+    ContinuousENorm (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :=
   ESeminormedAddMonoid.toContinuousENorm
 
+/-- Borel measurable structure on the self-adjoint matrix subspace over `𝕜`. -/
+theorem selfAdjointMatrixBorelSpace [MeasurableSpace 𝕜] [BorelSpace 𝕜] :
+    BorelSpace (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) := Subtype.borelSpace _
+
+namespace SelfAdjointMatrix
+attribute [scoped instance] selfAdjointMatrixNormedAddCommGroup selfAdjointMatrixInnerProductSpace
+  selfAdjointMatrixIsUniformAddGroup selfAdjointMatrixSecondCountableTopology
+  selfAdjointMatrixCompleteSpace selfAdjointMatrixContinuousENorm selfAdjointMatrixBorelSpace
+end SelfAdjointMatrix
 end instances
-
-section concreteInstances
-
-variable {ι : Type*} [Fintype ι]
-
-/-- Syntactic specialization of `selfAdjointMatrixNormedAddCommGroup` at `𝕜 = ℝ`.
-Because `selfAdjoint.submodule ℝ (Matrix ι ι ℝ)` embeds `AddCommMonoid ℝ` and `Module ℝ ℝ` directly
-in its type expression, the polymorphic `[RCLike 𝕜]` instance carries `RCLike.toDenselyNormedField`
-rather than `Real.instAddCommMonoid`, which prevents `rw`/`kabstract` from matching goals at
-`reducible` transparency. Forwarding directly here eliminates the syntactic mismatch with zero
-duplicated logic and zero diamonds (verified in `sanityChecks` below via
-`with_reducible_and_instances rfl`). -/
-instance selfAdjointMatrixNormedAddCommGroupReal :
-    NormedAddCommGroup (selfAdjoint.submodule ℝ (Matrix ι ι ℝ)) :=
-  selfAdjointMatrixNormedAddCommGroup
-
-/-- Syntactic specialization of `selfAdjointMatrixInnerProductSpace` at `𝕜 = ℝ`; see
-`selfAdjointMatrixNormedAddCommGroupReal`. -/
-instance selfAdjointMatrixInnerProductSpaceReal :
-    InnerProductSpace ℝ (selfAdjoint.submodule ℝ (Matrix ι ι ℝ)) :=
-  selfAdjointMatrixInnerProductSpace
-
-/-- Syntactic specialization of `selfAdjointMatrixNormedAddCommGroup` at `𝕜 = ℂ`; see
-`selfAdjointMatrixNormedAddCommGroupReal`. -/
-instance selfAdjointMatrixNormedAddCommGroupComplex :
-    NormedAddCommGroup (selfAdjoint.submodule ℝ (Matrix ι ι ℂ)) :=
-  selfAdjointMatrixNormedAddCommGroup
-
-/-- Syntactic specialization of `selfAdjointMatrixInnerProductSpace` at `𝕜 = ℂ`; see
-`selfAdjointMatrixNormedAddCommGroupReal`. -/
-instance selfAdjointMatrixInnerProductSpaceComplex :
-    InnerProductSpace ℝ (selfAdjoint.submodule ℝ (Matrix ι ι ℂ)) :=
-  selfAdjointMatrixInnerProductSpace
-
-end concreteInstances
-
-section propInstances
-
-variable {ι 𝕜 : Type*} [Finite ι] [RCLike 𝕜]
-
-instance selfAdjointMatrixIsUniformAddGroup :
-    IsUniformAddGroup (selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) := by
-  have := Fintype.ofFinite ι
-  exact SeminormedAddCommGroup.to_isUniformAddGroup
-
-instance selfAdjointMatrixSecondCountableTopology :
-    SecondCountableTopology (selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) := by
-  have := Fintype.ofFinite ι
-  exact secondCountable_of_proper
-
-instance selfAdjointMatrixCompleteSpace :
-    CompleteSpace (selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) := by
-  have := Fintype.ofFinite ι
-  exact FiniteDimensional.completeSpace ℝ _
-
-/-- The measurable structure is the Borel structure of the subtype topology. Declared explicitly
-so that instance search finds it regardless of which (definitionally equal) route it takes to
-the topology. -/
-instance selfAdjointMatrixBorelSpace [MeasurableSpace 𝕜] [BorelSpace 𝕜] :
-    BorelSpace (selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) := by
-  have := Fintype.ofFinite ι
-  exact Subtype.borelSpace _
-
-end propInstances
-
-section sanityChecks
-
-variable {ι 𝕜 : Type*} [Fintype ι] [RCLike 𝕜]
-
-/-- The uniformity of the Frobenius structure is definitionally the subtype uniformity. -/
-example :
-    (selfAdjointMatrixNormedAddCommGroup (ι := ι) (𝕜 := 𝕜)).toMetricSpace.toUniformSpace =
-      (instUniformSpaceSubtype : UniformSpace (selfAdjoint.submodule ℝ (Matrix ι ι 𝕜))) := by
-  with_reducible_and_instances rfl
-
-/-- The uniformity of the Frobenius structure induces the subtype topology definitionally. -/
-example :
-    (selfAdjointMatrixNormedAddCommGroup (ι := ι) (𝕜 := 𝕜)).toUniformSpace.toTopologicalSpace =
-      (instTopologicalSpaceSubtype :
-        TopologicalSpace (selfAdjoint.submodule ℝ (Matrix ι ι 𝕜))) := by
-  with_reducible_and_instances rfl
-
-/-- The selected topology is the subtype topology. -/
-example :
-    (inferInstance : TopologicalSpace (selfAdjoint.submodule ℝ (Matrix ι ι 𝕜))) =
-      @instTopologicalSpaceSubtype _ _ inferInstance := by
-  with_reducible_and_instances rfl
-
-/-- `volume` is supplied by `measureSpaceOfInnerProductSpace`. -/
-example [MeasurableSpace 𝕜] [BorelSpace 𝕜] :
-    (inferInstance : MeasureSpace (selfAdjoint.submodule ℝ (Matrix ι ι 𝕜))) =
-      measureSpaceOfInnerProductSpace :=
-  rfl
-
-/-- The `ℝ` specialization agrees with the polymorphic instance with zero diamonds. -/
-example :
-    (selfAdjointMatrixNormedAddCommGroupReal (ι := ι)) =
-      selfAdjointMatrixNormedAddCommGroup := by
-  with_reducible_and_instances rfl
-
-/-- The `ℝ` inner-product specialization agrees with the polymorphic instance. -/
-example :
-    (selfAdjointMatrixInnerProductSpaceReal (ι := ι)) =
-      selfAdjointMatrixInnerProductSpace := by
-  with_reducible_and_instances rfl
-
-/-- The `ℂ` specialization agrees with the polymorphic instance with zero diamonds. -/
-example :
-    (selfAdjointMatrixNormedAddCommGroupComplex (ι := ι)) =
-      selfAdjointMatrixNormedAddCommGroup := by
-  with_reducible_and_instances rfl
-
-/-- The `ℂ` inner-product specialization agrees with the polymorphic instance. -/
-example :
-    (selfAdjointMatrixInnerProductSpaceComplex (ι := ι)) =
-      selfAdjointMatrixInnerProductSpace := by
-  with_reducible_and_instances rfl
-
-end sanityChecks
-
 end TauCeti
 
-/-! ### Self-adjointness, entry symmetries, and the trace pairing -/
+open scoped TauCeti.SelfAdjointMatrix
 
 namespace selfAdjoint
-
-/-- An element of `selfAdjoint.submodule S (Matrix ι ι R)` is a Hermitian matrix; over `ℝ` this
-says that it is symmetric. -/
-theorem isHermitian_coe {ι S R : Type*} [Semiring S] [StarMul S] [TrivialStar S]
-    [AddCommMonoid R] [StarAddMonoid R] [Module S R] [StarModule S R]
-    (A : selfAdjoint.submodule S (Matrix ι ι R)) :
-    (A : Matrix ι ι R).IsHermitian :=
-  Matrix.isHermitian_iff_isSelfAdjoint.2 A.2
-
-/-- An element of `selfAdjoint.submodule S (Matrix ι ι R)` is fixed by conjugate transposition. -/
-@[simp]
-theorem conjTranspose_coe {ι S R : Type*} [Semiring S] [StarMul S] [TrivialStar S]
-    [AddCommMonoid R] [StarAddMonoid R] [Module S R] [StarModule S R]
-    (A : selfAdjoint.submodule S (Matrix ι ι R)) :
-    (A : Matrix ι ι R)ᴴ = (A : Matrix ι ι R) :=
-  (isHermitian_coe A).eq
-
-/-- Swapping indices of a self-adjoint matrix applies `star` to the entry. -/
-theorem coe_apply_conj {ι S R : Type*} [Semiring S] [StarMul S] [TrivialStar S]
-    [AddCommMonoid R] [StarAddMonoid R] [Module S R] [StarModule S R]
-    (A : selfAdjoint.submodule S (Matrix ι ι R)) (i j : ι) :
-    (A : Matrix ι ι R) j i = star ((A : Matrix ι ι R) i j) :=
-  ((isHermitian_coe A).apply j i).symm
+variable {𝕜 : Type*} [RCLike 𝕜] {p : ℕ}
 
 open scoped Matrix.Norms.Frobenius in
-/-- The real inner product on the self-adjoint matrix subspace is the ambient real Frobenius inner
-product of the underlying matrices. -/
--- Mathlib's `Submodule.coe_inner` states this for the induced instance
--- `Submodule.innerProductSpace`; `TauCeti.selfAdjointMatrixInnerProductSpace` is built directly,
--- so that lemma does not apply to it.
-@[simp]
-theorem coe_inner {ι 𝕜 : Type*} [Fintype ι] [RCLike 𝕜]
-    (A B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) :
-    ⟪A, B⟫ = ⟪(A : Matrix ι ι 𝕜), (B : Matrix ι ι 𝕜)⟫ :=
-  (rfl)
+/-- The inner product on the self-adjoint subspace is the ambient real Frobenius inner product. -/
+@[simp] theorem coe_inner (A B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
+    ⟪A, B⟫ = ⟪(A : Matrix (Fin p) (Fin p) 𝕜), (B : Matrix (Fin p) (Fin p) 𝕜)⟫ := (rfl)
 
-/-- On the self-adjoint matrix subspace, the real Frobenius inner product is
-`RCLike.re (A * B).trace`. -/
-theorem inner_eq_re_trace_mul {ι 𝕜 : Type*} [Fintype ι] [RCLike 𝕜]
-    (A B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) :
-    ⟪A, B⟫ = RCLike.re ((A : Matrix ι ι 𝕜) * (B : Matrix ι ι 𝕜)).trace := by
-  let _ : NormedAddCommGroup (Matrix ι ι 𝕜) := Matrix.frobeniusNormedAddCommGroup
-  let _ : InnerProductSpace ℝ (Matrix ι ι 𝕜) := Matrix.frobeniusInnerProductSpace
-  let _ : InnerProductSpace 𝕜 (Matrix ι ι 𝕜) := Matrix.frobeniusInnerProductSpace
+/-- Every element of `selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)` is a Hermitian matrix. -/
+theorem isHermitian_coe (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
+    (A : Matrix (Fin p) (Fin p) 𝕜).IsHermitian := A.property
+
+/-- Every element of the self-adjoint matrix subspace equals its conjugate transpose. -/
+@[simp] theorem conjTranspose_coe (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
+    (A : Matrix (Fin p) (Fin p) 𝕜)ᴴ = (A : Matrix (Fin p) (Fin p) 𝕜) := (isHermitian_coe A).eq
+
+/-- Swapping indices conjugates the entry of an element of the self-adjoint matrix subspace. -/
+theorem conj_coe_apply (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) (i j : Fin p) :
+    conj ((A : Matrix (Fin p) (Fin p) 𝕜) j i) = (A : Matrix (Fin p) (Fin p) 𝕜) i j := by
+  simpa using (isHermitian_coe A).apply i j
+
+/-- On the self-adjoint matrix subspace over `𝕜`, `⟪A, Θ⟫ = RCLike.re tr(Θ * A)`. -/
+theorem inner_eq_rclike_re_trace_mul
+    (A Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
+    ⟪A, Θ⟫ = RCLike.re ((Θ : Matrix (Fin p) (Fin p) 𝕜) * (A : Matrix (Fin p) (Fin p) 𝕜)).trace := by
+  let _ : NormedAddCommGroup (Matrix (Fin p) (Fin p) 𝕜) := Matrix.frobeniusNormedAddCommGroup
+  let _ : InnerProductSpace ℝ (Matrix (Fin p) (Fin p) 𝕜) := Matrix.frobeniusInnerProductSpace
   rw [coe_inner, Matrix.frobenius_inner_def]
-  conv_rhs =>
-    rw [← conjTranspose_coe A, ← Matrix.frobenius_inner_eq_trace_conjTranspose_mul,
-      Matrix.frobenius_inner_def]
-  simp only [map_sum]
-  rfl
+  simp only [real_inner_eq_re_inner, RCLike.inner_apply', Matrix.trace, Matrix.diag_apply,
+    Matrix.mul_apply, map_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by
+    rw [conj_coe_apply A j i, mul_comm]
 
-/-- The squared Frobenius norm of a self-adjoint matrix is `RCLike.re (A ^ 2).trace`. -/
-theorem norm_sq_eq_re_trace_sq {ι 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [RCLike 𝕜]
-    (A : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) :
-    ‖A‖ ^ 2 = RCLike.re ((A : Matrix ι ι 𝕜) ^ 2).trace := by
-  rw [← real_inner_self_eq_norm_sq, inner_eq_re_trace_mul, sq]
+/-- On the self-adjoint matrix subspace over `𝕜`, `‖A‖ ^ 2 = RCLike.re tr(A ^ 2)`. -/
+theorem norm_sq_eq_rclike_re_trace_sq (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
+    ‖A‖ ^ 2 = RCLike.re (((A : Matrix (Fin p) (Fin p) 𝕜) ^ 2).trace) := by
+  rw [← real_inner_self_eq_norm_sq, inner_eq_rclike_re_trace_mul, sq]
 
 end selfAdjoint
 
-/-! ### Unitary conjugation on the self-adjoint matrix subspace -/
-
 namespace Matrix.UnitaryGroup
+section Algebra
+variable {𝕜 : Type*} [RCLike 𝕜] {p : ℕ}
 
-variable {ι 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [RCLike 𝕜]
+/-- Unitary conjugation `A ↦ U * A * Uᴴ` as a real linear isometry equivalence of
+`selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)`. -/
+def selfAdjointConj (U : Matrix.unitaryGroup (Fin p) 𝕜) :
+    selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜) ≃ₗᵢ[ℝ]
+      selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜) :=
+  let e := Unitary.conjStarAlgAut ℝ (Matrix (Fin p) (Fin p) 𝕜) U
+  { toLinearEquiv := LinearEquiv.ofLinearMap
+      (e.toAlgEquiv.toLinearMap.restrict (p := selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜))
+        fun _ hA ↦ IsSelfAdjoint.conjugate hA U)
+      (e.symm.toAlgEquiv.toLinearMap.restrict
+        (p := selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜))
+        fun _ hA ↦ by rw [Unitary.conjStarAlgAut_symm]; exact IsSelfAdjoint.conjugate hA (star U))
+      (LinearMap.ext fun A ↦ Subtype.ext (e.apply_symm_apply A.val))
+      (LinearMap.ext fun A ↦ Subtype.ext (e.symm_apply_apply A.val))
+    norm_map' A := by
+      let _ : NormedAddCommGroup (Matrix (Fin p) (Fin p) 𝕜) := Matrix.frobeniusNormedAddCommGroup
+      refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp ?_
+      have hsq := Matrix.frobenius_norm_sq_conj_unitary
+        (star (U : Matrix (Fin p) (Fin p) 𝕜)) (A : Matrix (Fin p) (Fin p) 𝕜) (star U).property
+      rwa [star_eq_conjTranspose, Matrix.conjTranspose_conjTranspose] at hsq }
 
-/-- Unitary (and, for `𝕜 = ℝ`, orthogonal) conjugation `A ↦ U * A * Uᴴ` as a real linear isometry
-equivalence of `selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)`. -/
-def selfAdjointConj (U : Matrix.unitaryGroup ι 𝕜) :
-    selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) ≃ₗᵢ[ℝ]
-      selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) where
-  toFun A :=
-    ⟨(U : Matrix ι ι 𝕜) * (A : Matrix ι ι 𝕜) * (U : Matrix ι ι 𝕜)ᴴ,
-      Matrix.isHermitian_iff_isSelfAdjoint.1
-        (Matrix.isHermitian_mul_mul_conjTranspose _ (selfAdjoint.isHermitian_coe A))⟩
-  invFun A :=
-    ⟨(U : Matrix ι ι 𝕜)ᴴ * (A : Matrix ι ι 𝕜) * (U : Matrix ι ι 𝕜),
-      Matrix.isHermitian_iff_isSelfAdjoint.1
-        (Matrix.isHermitian_conjTranspose_mul_mul _ (selfAdjoint.isHermitian_coe A))⟩
-  map_add' A B := Subtype.ext (by simp [Matrix.mul_add, Matrix.add_mul])
-  map_smul' r A := Subtype.ext (by simp)
-  left_inv A := Subtype.ext (by
-    have hU : (U : Matrix ι ι 𝕜)ᴴ * (U : Matrix ι ι 𝕜) = 1 :=
-      Matrix.mem_unitaryGroup_iff'.1 U.2
-    simp only [Matrix.mul_assoc, ← Matrix.mul_assoc (U : Matrix ι ι 𝕜)ᴴ, hU, one_mul, mul_one])
-  right_inv A := Subtype.ext (by
-    have hU : (U : Matrix ι ι 𝕜) * (U : Matrix ι ι 𝕜)ᴴ = 1 :=
-      Matrix.mem_unitaryGroup_iff.1 U.2
-    simp only [Matrix.mul_assoc, ← Matrix.mul_assoc (U : Matrix ι ι 𝕜), hU, one_mul, mul_one])
-  norm_map' A := by
-    let _ : NormedAddCommGroup (Matrix ι ι 𝕜) := Matrix.frobeniusNormedAddCommGroup
-    have hU' : (U : Matrix ι ι 𝕜)ᴴ ∈ Matrix.unitaryGroup ι 𝕜 := by
-      simpa [Matrix.star_eq_conjTranspose] using U⁻¹.2
-    have hsq := Matrix.frobenius_norm_sq_conj_unitary
-      (U : Matrix ι ι 𝕜)ᴴ (A : Matrix ι ι 𝕜) hU'
-    rw [Matrix.conjTranspose_conjTranspose] at hsq
-    exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 hsq
+/-- Ambient matrix coercion of `Matrix.UnitaryGroup.selfAdjointConj`. -/
+@[simp] theorem coe_selfAdjointConj_apply (U : Matrix.unitaryGroup (Fin p) 𝕜)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
+    (selfAdjointConj U A : Matrix (Fin p) (Fin p) 𝕜) =
+      (U : Matrix (Fin p) (Fin p) 𝕜) * A * (U : Matrix (Fin p) (Fin p) 𝕜)ᴴ := by rfl
 
-/-- Coercing `selfAdjointConj U A` yields `U * A * Uᴴ`. -/
-@[simp]
-theorem coe_selfAdjointConj_apply (U : Matrix.unitaryGroup ι 𝕜)
-    (A : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) :
-    (selfAdjointConj U A : Matrix ι ι 𝕜) =
-      (U : Matrix ι ι 𝕜) * (A : Matrix ι ι 𝕜) * (U : Matrix ι ι 𝕜)ᴴ :=
-  (rfl)
+/-- Ambient matrix coercion of the inverse of `Matrix.UnitaryGroup.selfAdjointConj`. -/
+@[simp] theorem coe_selfAdjointConj_symm_apply (U : Matrix.unitaryGroup (Fin p) 𝕜)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
+    ((selfAdjointConj U).symm A : Matrix (Fin p) (Fin p) 𝕜) =
+      (U : Matrix (Fin p) (Fin p) 𝕜)ᴴ * A * (U : Matrix (Fin p) (Fin p) 𝕜) := by rfl
 
-/-- Coercing `(selfAdjointConj U).symm A` yields `Uᴴ * A * U`. -/
-theorem coe_selfAdjointConj_symm_apply (U : Matrix.unitaryGroup ι 𝕜)
-    (A : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) :
-    ((selfAdjointConj U).symm A : Matrix ι ι 𝕜) =
-      (U : Matrix ι ι 𝕜)ᴴ * (A : Matrix ι ι 𝕜) * (U : Matrix ι ι 𝕜) :=
-  (rfl)
+/-- Conjugating by the identity unitary matrix is the identity isometry. -/
+@[simp] theorem selfAdjointConj_one :
+    selfAdjointConj (1 : Matrix.unitaryGroup (Fin p) 𝕜) = LinearIsometryEquiv.refl ℝ _ :=
+  LinearIsometryEquiv.ext fun _ ↦ Subtype.ext <| by simp
 
-/-- Conjugation by the identity matrix is the identity equivalence. -/
-@[simp]
-theorem selfAdjointConj_one :
-    selfAdjointConj (1 : Matrix.unitaryGroup ι 𝕜) = LinearIsometryEquiv.refl ℝ _ := by
-  refine LinearIsometryEquiv.ext fun A => Subtype.ext ?_
-  simp
+/-- Unitary conjugation is a left action of `Matrix.unitaryGroup`. -/
+theorem selfAdjointConj_mul (U V : Matrix.unitaryGroup (Fin p) 𝕜) :
+    selfAdjointConj (U * V) = (selfAdjointConj V).trans (selfAdjointConj U) :=
+  LinearIsometryEquiv.ext fun A ↦ Subtype.ext <| by
+    simpa only [coe_selfAdjointConj_apply, LinearIsometryEquiv.trans_apply,
+      Unitary.conjStarAlgAut_apply, Unitary.coe_star, star_eq_conjTranspose] using
+      Unitary.conjStarAlgAut_mul_apply (S := ℝ) U V (A : Matrix (Fin p) (Fin p) 𝕜)
 
-/-- Conjugation respects group multiplication in `Matrix.unitaryGroup`. -/
-theorem selfAdjointConj_mul (U V : Matrix.unitaryGroup ι 𝕜) :
-    selfAdjointConj (U * V) = (selfAdjointConj V).trans (selfAdjointConj U) := by
-  refine LinearIsometryEquiv.ext fun A => Subtype.ext ?_
-  simp [Matrix.conjTranspose_mul, Matrix.mul_assoc]
-
-/-- The inverse of unitary conjugation by `U` is conjugation by `U⁻¹`. -/
-@[simp]
-theorem selfAdjointConj_symm (U : Matrix.unitaryGroup ι 𝕜) :
-    (selfAdjointConj U).symm = selfAdjointConj U⁻¹ := by
-  refine LinearIsometryEquiv.ext fun A => Subtype.ext ?_
-  simp [coe_selfAdjointConj_symm_apply, Matrix.star_eq_conjTranspose]
+/-- Conjugating by `U⁻¹` is the inverse linear isometry equivalence. -/
+@[simp] theorem selfAdjointConj_inv (U : Matrix.unitaryGroup (Fin p) 𝕜) :
+    selfAdjointConj U⁻¹ = (selfAdjointConj U).symm :=
+  LinearIsometryEquiv.ext fun _ ↦ Subtype.ext <| by
+    rw [coe_selfAdjointConj_apply, coe_selfAdjointConj_symm_apply, ← Unitary.star_eq_inv,
+      Unitary.coe_star, star_eq_conjTranspose, Matrix.conjTranspose_conjTranspose]
 
 /-- Powers commute with unitary conjugation: `(U * A * Uᴴ) ^ k = U * A ^ k * Uᴴ`. -/
-theorem coe_selfAdjointConj_pow (U : Matrix.unitaryGroup ι 𝕜)
-    (A : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) (k : ℕ) :
-    (selfAdjointConj U A : Matrix ι ι 𝕜) ^ k =
-      (U : Matrix ι ι 𝕜) * (A : Matrix ι ι 𝕜) ^ k * (U : Matrix ι ι 𝕜)ᴴ := by
+theorem coe_selfAdjointConj_pow (U : Matrix.unitaryGroup (Fin p) 𝕜)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) (k : ℕ) :
+    (selfAdjointConj U A : Matrix (Fin p) (Fin p) 𝕜) ^ k =
+      (U : Matrix (Fin p) (Fin p) 𝕜) * (A : Matrix (Fin p) (Fin p) 𝕜) ^ k *
+        (U : Matrix (Fin p) (Fin p) 𝕜)ᴴ := by
   rw [coe_selfAdjointConj_apply]
-  simpa [Matrix.star_eq_conjTranspose] using (Unitary.toUnits U).conj_pow (A : Matrix ι ι 𝕜) k
+  simpa [Matrix.star_eq_conjTranspose] using
+    (Unitary.toUnits U).conj_pow (A : Matrix (Fin p) (Fin p) 𝕜) k
 
 /-- Unitary conjugation preserves the trace of every power of a self-adjoint matrix. -/
-theorem trace_selfAdjointConj_pow (U : Matrix.unitaryGroup ι 𝕜)
-    (A : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) (k : ℕ) :
-    ((selfAdjointConj U A : Matrix ι ι 𝕜) ^ k).trace = ((A : Matrix ι ι 𝕜) ^ k).trace := by
-  have hU : (U : Matrix ι ι 𝕜)ᴴ * (U : Matrix ι ι 𝕜) = 1 := Matrix.mem_unitaryGroup_iff'.1 U.2
+theorem trace_selfAdjointConj_pow (U : Matrix.unitaryGroup (Fin p) 𝕜)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) (k : ℕ) :
+    ((selfAdjointConj U A : Matrix (Fin p) (Fin p) 𝕜) ^ k).trace =
+      ((A : Matrix (Fin p) (Fin p) 𝕜) ^ k).trace := by
+  have hU : (U : Matrix (Fin p) (Fin p) 𝕜)ᴴ * (U : Matrix (Fin p) (Fin p) 𝕜) = 1 :=
+    Matrix.mem_unitaryGroup_iff'.1 U.property
   rw [coe_selfAdjointConj_pow, Matrix.trace_mul_cycle, hU, one_mul]
 
 /-- Unitary conjugation preserves the trace of a self-adjoint matrix. -/
-theorem trace_selfAdjointConj (U : Matrix.unitaryGroup ι 𝕜)
-    (A : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) :
-    (selfAdjointConj U A : Matrix ι ι 𝕜).trace = (A : Matrix ι ι 𝕜).trace := by
+theorem trace_selfAdjointConj (U : Matrix.unitaryGroup (Fin p) 𝕜)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)) :
+    (selfAdjointConj U A : Matrix (Fin p) (Fin p) 𝕜).trace =
+      (A : Matrix (Fin p) (Fin p) 𝕜).trace := by
   simpa only [pow_one] using trace_selfAdjointConj_pow U A 1
+
+end Algebra
 
 /-- Unitary conjugation preserves every additive Haar measure on the real self-adjoint matrix
 subspace (in particular Frobenius `volume`, `TauCeti.symmetricLebesgue`, and
 `TauCeti.hermitianLebesgue`). -/
-theorem measurePreserving_selfAdjointConj [MeasurableSpace 𝕜] [BorelSpace 𝕜]
-    (U : Matrix.unitaryGroup ι 𝕜)
-    (μ : Measure (selfAdjoint.submodule ℝ (Matrix ι ι 𝕜))) [μ.IsAddHaarMeasure] :
+theorem measurePreserving_selfAdjointConj {𝕜 : Type*} [RCLike 𝕜] [MeasurableSpace 𝕜]
+    [BorelSpace 𝕜] {p : ℕ} (U : Matrix.unitaryGroup (Fin p) 𝕜)
+    (μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜))) [μ.IsAddHaarMeasure] :
     MeasurePreserving (selfAdjointConj U) μ μ :=
   (selfAdjointConj U).measurePreserving_addHaar μ
+
+/-- Unitary conjugation preserves Frobenius `volume` on the self-adjoint matrix subspace. -/
+theorem measurePreserving_selfAdjointConj_volume {𝕜 : Type*} [RCLike 𝕜] [MeasurableSpace 𝕜]
+    [BorelSpace 𝕜] {p : ℕ} (U : Matrix.unitaryGroup (Fin p) 𝕜) :
+    MeasurePreserving (selfAdjointConj U) volume volume := (selfAdjointConj U).measurePreserving
 
 end Matrix.UnitaryGroup

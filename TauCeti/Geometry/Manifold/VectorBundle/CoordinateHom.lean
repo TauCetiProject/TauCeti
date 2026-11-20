@@ -330,7 +330,7 @@ theorem toDiffeomorph_symm_apply (a : CoordinateHom Z W)
     (ha : ∀ i j, ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] G) n
       (fun x ↦ Z.inChartCoordinates W i j x (a.fiberMap x)) (Z.baseSet i ∩ W.baseSet j))
     (hbij : ∀ x, Function.Bijective (a.fiberMap x)) (p : W.TotalSpace) :
-    (a.toDiffeomorph ha hbij).symm p = ⟨p.proj, (a.fiberEquiv hbij p.proj).symm p.2⟩ :=
+    (a.toDiffeomorph ha hbij).symm p = ⟨p.proj, (a.fiberEquiv hbij p.proj).symm p.snd⟩ :=
   TauCeti.bundleDiffeomorph_symm_apply _ _ p
 
 /-- Every `C^n` bundle equivalence between the bundles glued from two `C^n` cores, that is, every
@@ -339,7 +339,7 @@ chart operators. The cocycle morphism is unique by
 `VectorBundleCore.CoordinateHom.totalSpaceMap_injective`. -/
 theorem exists_toDiffeomorph_eq (e : ∀ x, Z.Fiber x ≃L[𝕜] W.Fiber x)
     (he : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n
-      (fun p : Z.TotalSpace ↦ TotalSpace.mk' G p.proj (e p.proj p.2))) :
+      (fun p : Z.TotalSpace ↦ TotalSpace.mk' G p.proj (e p.proj p.snd))) :
     ∃ (a : CoordinateHom Z W)
       (ha : ∀ i j, ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] G) n
         (fun x ↦ Z.inChartCoordinates W i j x (a.fiberMap x)) (Z.baseSet i ∩ W.baseSet j))

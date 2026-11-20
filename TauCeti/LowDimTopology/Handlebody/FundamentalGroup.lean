@@ -176,7 +176,7 @@ private theorem norm_retract_sub_holeCenter {z : ℂ} {k : Fin g}
     abel
   have hc : 0 ≤ 1 + (t : ℝ) * (2⁻¹ / ‖z - holeCenter g k‖ - 1) := by
     have := (one_lt_div ha).2 hk
-    nlinarith [t.2.1]
+    nlinarith [t.property.1]
   rw [h, norm_smul, Real.norm_eq_abs, abs_of_nonneg hc]
   field_simp
 
@@ -192,7 +192,7 @@ private theorem norm_retract_of_lt {z : ℂ} (hz : g + 1 < ‖z‖) (t : unitInt
     rw [retract, holePush_eq_zero hholes, add_zero, radialRetraction_of_le_norm hz.le]
     module
   have hc : 0 ≤ (1 - (t : ℝ)) + t * (((g : ℝ) + 1) / ‖z‖) :=
-    add_nonneg (sub_nonneg.2 t.2.2) (mul_nonneg t.2.1 (by positivity))
+    add_nonneg (sub_nonneg.2 t.property.2) (mul_nonneg t.property.1 (by positivity))
   rw [h, norm_smul, Real.norm_eq_abs, abs_of_nonneg hc]
   field_simp
 
@@ -210,7 +210,7 @@ private theorem two_le_norm_retract_sub_of_lt {z : ℂ} (hz : g + 1 < ‖z‖) (
   have h := norm_retract_of_lt hz t
   have := norm_sub_norm_le (retract g (t, z)) (holeCenter g j : ℂ)
   have hj := norm_holeCenter_le j
-  nlinarith [t.2.1, t.2.2]
+  nlinarith [t.property.1, t.property.2]
 
 /-- Within a hole, the deformation stays at distance at least `3 / 2` from the other centres. -/
 private theorem norm_retract_sub_holeCenter_ne {z : ℂ} {k j : Fin g}
@@ -221,7 +221,7 @@ private theorem norm_retract_sub_holeCenter_ne {z : ℂ} {k j : Fin g}
   have := norm_sub_le_norm_sub_add_norm_sub (holeCenter g j : ℂ) (retract g (t, z))
     (holeCenter g k)
   rw [norm_sub_rev (holeCenter g j : ℂ) (retract g (t, z))] at this
-  nlinarith [t.2.1, t.2.2]
+  nlinarith [t.property.1, t.property.2]
 
 private theorem retract_mem_compl_range {z : ℂ}
     (hz : z ∈ (range fun k ↦ (holeCenter g k : ℂ))ᶜ) (t : unitInterval) :
@@ -234,7 +234,7 @@ private theorem retract_mem_compl_range {z : ℂ}
     · have h := norm_retract_sub_holeCenter hk (hz j) t
       rw [hj, sub_self, norm_zero] at h
       have ha : 0 < ‖z - holeCenter g j‖ := norm_pos_iff.2 (sub_ne_zero.2 (hz j))
-      nlinarith [t.2.1]
+      nlinarith [t.property.1]
     · have h := norm_retract_sub_holeCenter_ne hk (hz k) hjk t
       rw [hj, sub_self, norm_zero] at h
       norm_num at h
@@ -277,16 +277,16 @@ private theorem continuous_retract :
     continuous_const.radialRetraction (fun _ ↦ by positivity) (by fun_prop)
   unfold retract holePush
   fun_prop (disch :=
-    exact fun p ↦ norm_ne_zero_iff.2 (sub_ne_zero.2 (mem_compl_range_iff.1 p.2.2 _)))
+    exact fun p ↦ norm_ne_zero_iff.2 (sub_ne_zero.2 (mem_compl_range_iff.1 p.2.property _)))
 
 /-- The closed disc with `g` holes is homotopy equivalent to the plane punctured at the centres of
 its holes, by inclusion. -/
 private def planarSurfaceHomotopyEquiv :
     planarSurface g ≃ₕ ↥(range fun k ↦ (holeCenter g k : ℂ))ᶜ :=
   .ofWeakDeformationRetraction planarSurface_subset_compl_range (fun p ↦ retract g (p.1, p.2))
-    continuous_retract (fun p ↦ retract_mem_compl_range p.2.2 p.1)
+    continuous_retract (fun p ↦ retract_mem_compl_range p.2.property p.1)
     (fun _ ↦ by simp [retract])
-    (fun z ↦ retract_one_mem z.2)
+    (fun z ↦ retract_one_mem z.property)
     (fun t _ hz ↦ by rwa [retract_of_mem hz t])
 
 /-! ### The fundamental groups -/
@@ -671,20 +671,23 @@ private theorem mem_boundaryNhd {x : handlebody g} : x ∈ boundaryNhd g ↔ 0 <
   Iff.rfl
 
 private theorem isOpen_boundaryNhd : IsOpen (boundaryNhd g) :=
-  isOpen_lt continuous_const (continuous_boundaryLevel.comp continuous_subtype_val)
+  isOpen_lt continuous_const (continuous_boundaryLevel.comp continuous_subtypeVal)
 
 /-- The deformation of the complement of the core onto the boundary surface, as a continuous map
 of subtypes. -/
 private def boundaryDeformMap : C(unitInterval × boundaryNhd g, boundaryNhd g) where
   toFun q := ⟨⟨boundaryDeform g q.1 q.2,
-      (boundaryDeform_spec q.2.1.2 q.2.2 q.1.2.1 q.1.2.2).1⟩, by
-    rw [mem_boundaryNhd, (boundaryDeform_spec q.2.1.2 q.2.2 q.1.2.1 q.1.2.2).2]
-    exact mul_pos (by nlinarith [q.1.2.1, one_le_inv₀ q.2.2 |>.2 (boundaryLevel_le_one q.2.1.2)])
-      q.2.2⟩
+      (boundaryDeform_spec q.2.val.property q.2.property q.1.property.1 q.1.property.2).1⟩, by
+    rw [mem_boundaryNhd, (boundaryDeform_spec q.2.val.property q.2.property q.1.property.1
+        q.1.property.2).2]
+    exact mul_pos
+      (by nlinarith [q.1.property.1,
+                one_le_inv₀ q.2.property |>.2 (boundaryLevel_le_one q.2.val.property)])
+      q.2.property⟩
   continuous_toFun := by
     refine (Continuous.subtype_mk (Continuous.subtype_mk ?_ _) _)
     unfold boundaryDeform
-    fun_prop (disch := exact fun q ↦ q.2.2.ne')
+    fun_prop (disch := exact fun q ↦ q.2.property.ne')
 
 private theorem boundaryDeformMap_apply_coe (q : unitInterval × boundaryNhd g) :
     ((boundaryDeformMap q : handlebody g) : ℂ × ℝ) = boundaryDeform g q.1 q.2 :=
@@ -692,9 +695,10 @@ private theorem boundaryDeformMap_apply_coe (q : unitInterval × boundaryNhd g) 
 
 private theorem mem_frontier_boundaryDeformMap_one (x : boundaryNhd g) :
     ((boundaryDeformMap (1, x) : handlebody g) : ℂ × ℝ) ∈ frontier (handlebody g) := by
-  rw [mem_frontier_handlebody_iff (boundaryDeformMap (1, x)).1.2, boundaryDeformMap_apply_coe]
-  have h := (boundaryDeform_spec (τ := 1) x.1.2 x.2 zero_le_one le_rfl).2
-  rwa [one_mul, add_sub_cancel, inv_mul_cancel₀ x.2.ne'] at h
+  rw [mem_frontier_handlebody_iff (boundaryDeformMap (1, x)).val.property,
+      boundaryDeformMap_apply_coe]
+  have h := (boundaryDeform_spec (τ := 1) x.val.property x.property zero_le_one le_rfl).2
+  rwa [one_mul, add_sub_cancel, inv_mul_cancel₀ x.property.ne'] at h
 
 /-! ### Path connectedness of the boundary surface -/
 
@@ -788,12 +792,13 @@ theorem exists_deformation_frontier_handlebody (g : ℕ) :
         ∀ t (x : V), ((x : handlebody g) : ℂ × ℝ) ∈ frontier (handlebody g) → F (t, x) = x := by
   have hsub : {x : handlebody g | (x : ℂ × ℝ) ∈ frontier (handlebody g)} ⊆ boundaryNhd g :=
     fun x hx ↦ by
-      rw [mem_boundaryNhd, (mem_frontier_handlebody_iff x.2).1 hx]
+      rw [mem_boundaryNhd, (mem_frontier_handlebody_iff x.property).1 hx]
       exact zero_lt_one
   have hfix : ∀ t (x : boundaryNhd g), ((x : handlebody g) : ℂ × ℝ) ∈ frontier (handlebody g) →
       boundaryDeformMap (t, x) = x := fun t x hx ↦ Subtype.ext <| Subtype.ext <| by
     rw [boundaryDeformMap_apply_coe]
-    exact boundaryDeform_of_boundaryLevel_eq_one ((mem_frontier_handlebody_iff x.1.2).1 hx) _
+    exact boundaryDeform_of_boundaryLevel_eq_one ((mem_frontier_handlebody_iff x.val.property).1 hx)
+        _
   have hconn : IsPathConnected {x : handlebody g | (x : ℂ × ℝ) ∈ frontier (handlebody g)} :=
     (isPathConnected_frontier_handlebody g).preimage_coe (isClosed_handlebody g).frontier_subset
   refine ⟨boundaryNhd g, isOpen_boundaryNhd, ?_, hsub, boundaryDeformMap,
@@ -804,10 +809,10 @@ theorem exists_deformation_frontier_handlebody (g : ℕ) :
   refine ⟨y, hsub hy, fun {x} hx ↦ ?_⟩
   have hpath : JoinedIn (boundaryNhd g) x (boundaryDeformMap (1, ⟨x, hx⟩)) :=
     ⟨⟨⟨fun t ↦ boundaryDeformMap (t, ⟨x, hx⟩),
-      continuous_subtype_val.comp (boundaryDeformMap.continuous.comp
+      continuous_subtypeVal.comp (boundaryDeformMap.continuous.comp
         (continuous_id.prodMk continuous_const))⟩,
       by simp [Subtype.ext_iff, boundaryDeformMap_apply_coe, boundaryDeform_zero], rfl⟩,
-      fun t ↦ (boundaryDeformMap (t, ⟨x, hx⟩)).2⟩
+      fun t ↦ (boundaryDeformMap (t, ⟨x, hx⟩)).property⟩
   exact ((hconn.joinedIn y hy _ (mem_frontier_boundaryDeformMap_one ⟨x, hx⟩)).mono hsub).trans
     hpath.symm
 
@@ -826,10 +831,10 @@ theorem fundamentalGroup_map_frontier_handlebody_surjective
         (FundamentalGroup.map (ContinuousMap.inclusion hK.frontier_subset) z) := by
     rintro K hK rfl
     exact fundamentalGroupMap_frontier_prod_Icc_surjective (isCompact_planarSurface g).isClosed
-  have h := hcyl _ (isClosed_handlebody g) (Set.ext fun _ ↦ mem_handlebody) ⟨x.1.1, x.2⟩
+  have h := hcyl _ (isClosed_handlebody g) (Set.ext fun _ ↦ mem_handlebody) ⟨x.val.val, x.property⟩
   -- The inclusion of the frontier factors through the boundary surface inside the handlebody.
   let φ : C(frontier (handlebody g), {y : handlebody g | (y : ℂ × ℝ) ∈ frontier (handlebody g)}) :=
-    ⟨fun z ↦ ⟨⟨z, (isClosed_handlebody g).frontier_subset z.2⟩, z.2⟩, by fun_prop⟩
+    ⟨fun z ↦ ⟨⟨z, (isClosed_handlebody g).frontier_subset z.property⟩, z.property⟩, by fun_prop⟩
   rw [show ContinuousMap.inclusion (isClosed_handlebody g).frontier_subset =
     (ContinuousMap.subtypeVal _).comp φ from rfl, _root_.FundamentalGroup.map_comp,
     MonoidHom.coe_comp] at h
