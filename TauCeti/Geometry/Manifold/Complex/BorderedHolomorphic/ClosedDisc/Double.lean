@@ -49,7 +49,7 @@ characteristic of the double is `2 = 2 · 1`, twice that of the disc.
   `Complex.UnitClosedDisc.cayleyMoebius ζ`, that is, `w ↦ ζ (I - w) / (w + I)`.
 * `Complex.UnitClosedDisc.schottkyDoubleDiffeomorph_swap`: the sheet swap becomes the inversion
   `OnePoint.unitCircleInversion`.
-* `Complex.UnitClosedDisc.schottkyDoubleDiffeomorph_image_fixed`: the fixed set of the sheet swap
+* `Complex.UnitClosedDisc.schottkyDoubleDiffeomorph_image_fixed_eq_sphere`: the fixed set of the sheet swap
   becomes the unit circle.
 * `Complex.UnitClosedDisc.eulerChar_schottkyDouble` and
   `Complex.UnitClosedDisc.eulerChar_schottkyDouble_eq_two_mul`: `χ = 2 = 2 · χ(𝕔𝔻)`, where
@@ -345,7 +345,7 @@ theorem schottkyDoubleDiffeomorph_symm_infty :
 
 /-- The biholomorphism carries the fixed set of the sheet swap, the boundary circle of the disc on
 the first sheet, onto the unit circle of the sphere. -/
-theorem schottkyDoubleDiffeomorph_image_fixed :
+theorem schottkyDoubleDiffeomorph_image_fixed_eq_sphere :
     schottkyDoubleDiffeomorph '' {p | DoubleAlong.swap (borderedInterior 𝕔𝔻 : Set 𝕔𝔻)ᶜ p = p} =
       (↑) '' sphere (0 : ℂ) 1 := by
   rw [← DoubleAlong.discDoubleHomeomorph_image_fixed_eq_sphere,
