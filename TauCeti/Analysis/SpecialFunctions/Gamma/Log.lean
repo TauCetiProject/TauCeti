@@ -78,10 +78,10 @@ theorem analyticOnNhd_logGamma : AnalyticOnNhd ℂ logGamma slitPlane :=
 /-- A holomorphic logarithm of Gamma on the slit plane vanishing at `2` is the chosen branch. -/
 theorem eqOn_logGamma {L : ℂ → ℂ} (hL : DifferentiableOn ℂ L slitPlane)
     (he : ∀ z ∈ slitPlane, Complex.exp (L z) = Complex.Gamma z) (h2 : L 2 = 0) :
-    EqOn L logGamma slitPlane := by
-  exact eqOn_of_eqOn_exp_comp isOpen_slitPlane
+    EqOn L logGamma slitPlane :=
+  hL.continuousOn.eqOn_of_eqOn_exp_comp differentiableOn_logGamma.continuousOn
     (starConvex_one_slitPlane.isPathConnected one_mem_slitPlane).isConnected.isPreconnected
-    hL differentiableOn_logGamma (fun z hz => he z hz) (fun _ hz => exp_logGamma hz)
+    (fun z hz => (he z hz).trans (exp_logGamma hz).symm)
     (ofNat_mem_slitPlane 2) (h2.trans logGamma_two.symm)
 
 /-- The real part of any value of the branch is the logarithm of the Gamma norm. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Basic
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Reparametrization
 
 /-!
@@ -28,6 +29,14 @@ constant field along a constant curve.
   reparametrized field.
 * `TauCeti.Manifold.IsJacobiFieldOn.comp_affine`: affine reparametrization preserves Jacobi
   fields.
+* `TauCeti.Manifold.IsJacobiFieldOn.comp_affine_of_eqOn` and
+  `TauCeti.Manifold.IsJacobiFieldOn.alongCurveWithin_comp_affine_of_eqOn`: transporting an
+  affinely reparametrized Jacobi field and its covariant derivative across a curve agreeing with
+  `γ ∘ φ` on `u`.
+* `TauCeti.Manifold.IsJacobiFieldOn.comp_sub_const_of_eqOn` and
+  `TauCeti.Manifold.IsJacobiFieldOn.alongCurveWithin_comp_sub_const_of_eqOn`:
+  time-shifting a Jacobi field and its covariant derivative by `t ↦ t - a` along a curve agreeing
+  with `t ↦ γ (t - a)`.
 * `TauCeti.Manifold.IsJacobiFieldOn.comp_add_const` and
   `TauCeti.Manifold.IsJacobiFieldOn.comp_mul_left`: the time-translation and scaling cases.
 
@@ -58,7 +67,7 @@ variable
 /-- The covariant derivative of a Jacobi field reparametrized by `t ↦ a * t + b` is `a` times the
 reparametrized covariant derivative. -/
 theorem IsJacobiFieldOn.alongCurveWithin_comp_affine (h : IsJacobiFieldOn I γ V s) (a b : ℝ)
-    (hu : UniqueDiffOn ℝ u) (hmaps : MapsTo (fun t : ℝ ↦ a * t + b) u s) (ht : t ∈ u) :
+    (hu : UniqueDiffWithinAt ℝ u t) (hmaps : MapsTo (fun t : ℝ ↦ a * t + b) u s) (ht : t ∈ u) :
     alongCurveWithin (leviCivitaConnection I M) (γ ∘ fun t : ℝ ↦ a * t + b)
         (fun r ↦ V (a * r + b)) u t =
       a • alongCurveWithin (leviCivitaConnection I M) γ V s (a * t + b) := by
@@ -68,7 +77,7 @@ theorem IsJacobiFieldOn.alongCurveWithin_comp_affine (h : IsJacobiFieldOn I γ V
       (hasDerivWithinAt_extChartAt_comp_curve (hasMFDerivWithinAt_curveVelocityWithin
         (h.isGeodesicCurveOn.mdifferentiableOn _ (hmaps ht)))).differentiableWithinAt
       (h.differentiableWithinAt_sectionCoord (hmaps ht)),
-    hφ.derivWithin (hu t ht)]
+    hφ.derivWithin hu]
 
 /-- **Affine reparametrization of Jacobi fields.** A Jacobi field along a geodesic remains a
 Jacobi field after the affine reparametrization `t ↦ a * t + b`, provided that map carries the
@@ -78,7 +87,7 @@ theorem IsJacobiFieldOn.comp_affine (h : IsJacobiFieldOn I γ V s) (a b : ℝ)
     IsJacobiFieldOn I (γ ∘ fun t : ℝ ↦ a * t + b) (fun r ↦ V (a * r + b)) u := by
   have hφ (r : ℝ) : HasDerivWithinAt (fun t : ℝ ↦ a * t + b) a u r :=
     ((hasDerivAt_const_mul a).add_const b).hasDerivWithinAt
-  have hfirst := fun r (hr : r ∈ u) ↦ h.alongCurveWithin_comp_affine a b hu hmaps hr
+  have hfirst := fun r (hr : r ∈ u) ↦ h.alongCurveWithin_comp_affine a b (hu r hr) hmaps hr
   refine ⟨h.isGeodesicCurveOn.comp_affine a b hu hmaps, ?_, fun r hr ↦ ?_⟩
   · have hφ' : ContDiff ℝ 2 (fun t : ℝ ↦ a * t + b) := by fun_prop
     exact h.contMDiffOn.comp hφ'.contMDiff.contMDiffOn hmaps
@@ -100,6 +109,74 @@ theorem IsJacobiFieldOn.comp_affine (h : IsJacobiFieldOn I γ V s) (a b : ℝ)
   -- Both terms of the Jacobi equation at `r` are `a²` times those of the original equation.
   rw [hsecond, hvel]
   simpa [smul_smul, ← smul_add] using congrArg ((a * a) • ·) (h.equation _ (hmaps hr))
+
+/-- Transporting an affinely reparametrized Jacobi field via `tangentSpaceCast` to a curve `δ`
+that agrees with `γ ∘ (t ↦ a * t + b)` on `u` produces a Jacobi field along `δ`. -/
+theorem IsJacobiFieldOn.comp_affine_of_eqOn {δ : ℝ → M} (h : IsJacobiFieldOn I γ V s)
+    (a b : ℝ) (hu : UniqueDiffOn ℝ u) (hmaps : MapsTo (fun t : ℝ ↦ a * t + b) u s)
+    (hcurve : EqOn δ (γ ∘ fun t : ℝ ↦ a * t + b) u) :
+    IsJacobiFieldOn I δ
+      (fun r ↦ tangentSpaceCast I (γ (a * r + b)) (δ r) (V (a * r + b))) u :=
+  (h.comp_affine a b hu hmaps).congr_totalSpace fun _ hr ↦
+    TotalSpace.ext (hcurve hr) (TauCeti.heq_tangentSpaceCast (hcurve hr).symm _)
+
+/-- The covariant derivative of a `tangentSpaceCast`-transported affine reparametrization of a
+Jacobi field is `a` times the `tangentSpaceCast` of the reparametrized covariant derivative. -/
+theorem IsJacobiFieldOn.alongCurveWithin_comp_affine_of_eqOn {δ : ℝ → M}
+    (h : IsJacobiFieldOn I γ V s) (a b : ℝ) (hu : UniqueDiffWithinAt ℝ u t)
+    (hmaps : MapsTo (fun t : ℝ ↦ a * t + b) u s)
+    (hcurve : EqOn δ (γ ∘ fun t : ℝ ↦ a * t + b) u) (ht : t ∈ u) :
+    alongCurveWithin (leviCivitaConnection I M) δ
+        (fun r ↦ tangentSpaceCast I (γ (a * r + b)) (δ r) (V (a * r + b))) u t =
+      a • tangentSpaceCast I (γ (a * t + b)) (δ t)
+        (alongCurveWithin (leviCivitaConnection I M) γ V s (a * t + b)) := by
+  have hheq : ∀ r ∈ u,
+      HEq (tangentSpaceCast I (γ (a * r + b)) (δ r) (V (a * r + b))) (V (a * r + b)) :=
+    fun r hr ↦ TauCeti.heq_tangentSpaceCast (hcurve hr).symm _
+  have hD := alongCurveWithin_congr_heq (leviCivitaConnection I M)
+    (fun r ↦ tangentSpaceCast I (γ (a * r + b)) (δ r) (V (a * r + b)))
+    (hcurve.eventuallyEq_of_mem self_mem_nhdsWithin) (hcurve ht)
+    (mem_of_superset self_mem_nhdsWithin hheq) (hheq t ht)
+  rw [h.alongCurveWithin_comp_affine a b hu hmaps ht] at hD
+  rw [← map_smul]
+  exact eq_of_heq (hD.trans (TauCeti.heq_tangentSpaceCast (hcurve ht).symm _).symm)
+
+/-- Transporting a Jacobi field shifted by `t ↦ t - a` via `tangentSpaceCast` to a curve `δ`
+that agrees with `fun t ↦ γ (t - a)` on `u` produces a Jacobi field along `δ`. -/
+theorem IsJacobiFieldOn.comp_sub_const_of_eqOn {δ : ℝ → M} (h : IsJacobiFieldOn I γ V s)
+    (a : ℝ) (hu : UniqueDiffOn ℝ u) (hmaps : MapsTo (fun t : ℝ ↦ t - a) u s)
+    (hcurve : EqOn δ (fun t ↦ γ (t - a)) u) :
+    IsJacobiFieldOn I δ
+      (fun r ↦ tangentSpaceCast I (γ (r - a)) (δ r) (V (r - a))) u :=
+  (h.comp_affine_of_eqOn 1 (-a) hu
+    (fun _ hr ↦ by simpa only [one_mul, ← sub_eq_add_neg] using hmaps hr)
+    (fun _ hr ↦ by
+      simpa only [Function.comp_apply, one_mul, ← sub_eq_add_neg] using hcurve hr)).congr fun r _ ↦
+    congrArg (fun x ↦ tangentSpaceCast I (γ x) (δ r) (V x)) (by ring)
+
+/-- The covariant derivative of a `tangentSpaceCast`-transported time-shifted Jacobi field is
+the `tangentSpaceCast` of the shifted covariant derivative. -/
+theorem IsJacobiFieldOn.alongCurveWithin_comp_sub_const_of_eqOn {δ : ℝ → M}
+    (h : IsJacobiFieldOn I γ V s) (a : ℝ) (hu : UniqueDiffWithinAt ℝ u t)
+    (hmaps : MapsTo (fun t : ℝ ↦ t - a) u s)
+    (hcurve : EqOn δ (fun t ↦ γ (t - a)) u) (ht : t ∈ u) :
+    alongCurveWithin (leviCivitaConnection I M) δ
+        (fun r ↦ tangentSpaceCast I (γ (r - a)) (δ r) (V (r - a))) u t =
+      tangentSpaceCast I (γ (t - a)) (δ t)
+        (alongCurveWithin (leviCivitaConnection I M) γ V s (t - a)) := by
+  have hcongr (r : ℝ) : tangentSpaceCast I (γ (r - a)) (δ r) (V (r - a)) =
+      tangentSpaceCast I (γ (1 * r + (-a))) (δ r) (V (1 * r + (-a))) :=
+    congrArg (fun x ↦ tangentSpaceCast I (γ x) (δ r) (V x)) (by ring)
+  rw [alongCurveWithin_congr _ δ _ (Eventually.of_forall hcongr) (hcongr t),
+    h.alongCurveWithin_comp_affine_of_eqOn 1 (-a) hu
+      (fun _ hr ↦ by simpa only [one_mul, ← sub_eq_add_neg] using hmaps hr)
+      (fun _ hr ↦ by simpa only [Function.comp_apply, one_mul, ← sub_eq_add_neg] using hcurve hr)
+      ht,
+    one_smul]
+  exact congrArg
+    (fun x ↦ tangentSpaceCast I (γ x) (δ t)
+      (alongCurveWithin (leviCivitaConnection I M) γ V s x))
+    (by ring)
 
 /-- **Time translation of Jacobi fields.** A Jacobi field remains a Jacobi field after the
 translation `t ↦ t + b` of its parameter. -/

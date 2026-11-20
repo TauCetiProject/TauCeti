@@ -187,6 +187,15 @@ theorem jetField_apply (u : W1p mu Omega p) (x : E) :
     unfold jetField
     rfl
 
+open scoped Gradient in
+/-- The jet of a test function, as an element of `W^{1,p}(Ω)`, is its value and gradient. -/
+theorem jetField_ofTestFunctionₗ_ae [FiniteDimensional ℝ E] (φ : 𝓓(Omega, ℝ)) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      jetField (W1p.ofTestFunctionₗ mu Omega p φ) x = (φ x, ∇ (φ : E → ℝ) x) := by
+  filter_upwards [W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := p) φ,
+    gradientTestFunctionLp_apply_ae (mu := mu) p φ] with x h1 h2
+  rw [jetField_apply, h1, W1p.gradient_ofTestFunctionₗ, h2]
+
 private theorem jetField_zero_ae :
     jetField (0 : W1p mu Omega p) =ᵐ[mu.restrict Omega] 0 := by
   have hval : W1p.value (0 : W1p mu Omega p) = 0 := by
@@ -202,23 +211,14 @@ private theorem jetField_zero_ae :
 
 private theorem jetField_add_ae (u v : W1p mu Omega p) :
     jetField (u + v) =ᵐ[mu.restrict Omega] fun x => jetField u x + jetField v x := by
-  have hval : W1p.value (u + v) = W1p.value u + W1p.value v := by
-    simp only [← W1p.valueL_apply, map_add]
-  have hgrad : W1p.gradient (u + v) = W1p.gradient u + W1p.gradient v := by
-    simp only [← W1p.gradientL_apply, map_add]
-  filter_upwards [Lp.coeFn_add (W1p.value u) (W1p.value v),
-    Lp.coeFn_add (W1p.gradient u) (W1p.gradient v)] with x hx hy
-  simp only [jetField_apply, hval, hgrad]
+  filter_upwards [W1p.value_add_ae u v, W1p.gradient_add_ae u v] with x hx hy
+  simp only [jetField_apply]
   exact Prod.ext hx hy
 
 private theorem jetField_smul_ae (r : ℝ) (u : W1p mu Omega p) :
     jetField (r • u) =ᵐ[mu.restrict Omega] fun x => r • jetField u x := by
-  have hval : W1p.value (r • u) = r • W1p.value u := by
-    simp only [← W1p.valueL_apply, map_smul]
-  have hgrad : W1p.gradient (r • u) = r • W1p.gradient u := by
-    simp only [← W1p.gradientL_apply, map_smul]
-  filter_upwards [Lp.coeFn_smul r (W1p.value u), Lp.coeFn_smul r (W1p.gradient u)] with x hx hy
-  simp only [jetField_apply, hval, hgrad]
+  filter_upwards [W1p.value_smul_ae r u, W1p.gradient_smul_ae r u] with x hx hy
+  simp only [jetField_apply]
   exact Prod.ext hx hy
 
 /-- The jet field of a Sobolev function belongs to `Lᵖ(Ω)`: both of its components do, by the
