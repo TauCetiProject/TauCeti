@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.MeasureTheory.Function.Lp.One
 public import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
 import Mathlib.MeasureTheory.Integral.Bochner.Set
@@ -28,10 +29,14 @@ sum of the indicator classes of the fibres of `G` with constants `φ w`.
 In `L∞` the indicator of any measurable set is essentially bounded, whatever its measure. The
 class `TauCeti.linftyIndicator μ s hs` of `1_s` in real `L∞(μ)` therefore needs no finiteness of
 `μ s`, unlike `indicatorConstLp`. It is additive on disjoint sets, nonnegative, vanishes on null
-sets, and equals the constant one at `univ`.
+sets, and equals the constant one at `univ`. Hölder multiplication by this class is the
+indicator cutoff on real `Lᵖ`, both almost everywhere and as a `MemLp.toLp` class; on
+constant indicator classes it intersects the supporting sets.
 
 ## Main declarations
 
+* `TauCeti.indicatorConstLp_eq_zero_iff`: an `Lᵖ` constant indicator class vanishes if and only if
+  the set has measure zero or the constant is zero.
 * `TauCeti.indicatorConstLp_smul`: the indicator class of `a • c` is `a` times that of `c`.
 * `TauCeti.norm_sum_indicatorConstLp_one`: the `L¹` norm of a sum of indicator classes of pairwise
   disjoint sets.
@@ -56,6 +61,27 @@ namespace TauCeti
 
 open MeasureTheory
 open scoped ENNReal
+
+section Zero
+
+variable {α E : Type*} [MeasurableSpace α] {μ : Measure α} {p : ℝ≥0∞} [NormedAddCommGroup E]
+
+/-- An `Lᵖ` constant indicator class vanishes if and only if either the set has measure zero or
+the constant is zero. -/
+@[simp]
+theorem indicatorConstLp_eq_zero_iff {s : Set α} {hs : MeasurableSet s} {hμs : μ s ≠ ∞} {c : E} :
+    indicatorConstLp p hs hμs c = 0 ↔ μ s = 0 ∨ c = 0 := by
+  by_cases hc : c = 0
+  · simp only [hc, or_true, iff_true]
+    refine Lp.ext ?_
+    filter_upwards [indicatorConstLp_coeFn (p := p) (hs := hs) (hμs := hμs) (c := (0 : E)),
+      Lp.coeFn_zero E p μ] with x h₁ h₂
+    rw [h₁, h₂, Pi.zero_apply]
+    simp
+  · simp only [hc, or_false, ← indicatorConstLp_empty (p := p) (μ := μ) (c := c),
+      indicatorConstLp_inj hs hμs .empty (by simp) hc, ae_eq_empty]
+
+end Zero
 
 variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} {p : ℝ≥0∞} [NormedAddCommGroup E]
   [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] {s : Set α}
@@ -104,24 +130,24 @@ theorem norm_sum_indicatorConstLp_one (hs : ∀ i, MeasurableSet (s i)) (hμs : 
 finite set `S` of values of `G` of the indicator classes of the fibres `G ⁻¹' {w}` with constants
 `φ w`, provided that `φ ∘ G` vanishes wherever `G` takes a value outside `S`. -/
 theorem eq_sum_indicatorConstLp_fiber {F : Type*} {G : SimpleFunc α F} {φ : F → E}
-    {S : Finset F} (hS : ∀ a, G a ∉ S → φ (G a) = 0) (hμS : ∀ w : S, μ (G ⁻¹' {w.1}) ≠ ∞)
+    {S : Finset F} (hS : ∀ a, G a ∉ S → φ (G a) = 0) (hμS : ∀ w : S, μ (G ⁻¹' {w.val}) ≠ ∞)
     {x : Lp E p μ} (hx : x =ᵐ[μ] fun a ↦ φ (G a)) :
-    x = ∑ w : S, indicatorConstLp p (G.measurableSet_fiber w.1) (hμS w) (φ w.1) := by
+    x = ∑ w : S, indicatorConstLp p (G.measurableSet_fiber w.val) (hμS w) (φ w.val) := by
   refine Lp.ext ?_
   filter_upwards [hx, Lp.coeFn_fun_finsetSum Finset.univ
-      fun w : S ↦ indicatorConstLp p (G.measurableSet_fiber w.1) (hμS w) (φ w.1),
-    ae_all_iff.2 fun w : S ↦ indicatorConstLp_coeFn (p := p) (hs := G.measurableSet_fiber w.1)
-      (hμs := hμS w) (c := φ w.1)] with a h₀ h₁ h₂
+      fun w : S ↦ indicatorConstLp p (G.measurableSet_fiber w.val) (hμS w) (φ w.val),
+    ae_all_iff.2 fun w : S ↦ indicatorConstLp_coeFn (p := p) (hs := G.measurableSet_fiber w.val)
+      (hμs := hμS w) (c := φ w.val)] with a h₀ h₁ h₂
   simp only [h₀, h₁, h₂]
   by_cases h : G a ∈ S
   · rw [Finset.sum_eq_single (⟨G a, h⟩ : S)]
     · simp
     · intro w _ hw
-      have hw' : a ∉ G ⁻¹' {w.1} := fun ha ↦ hw (Subtype.ext (Set.mem_singleton_iff.1 ha).symm)
+      have hw' : a ∉ G ⁻¹' {w.val} := fun ha ↦ hw (Subtype.ext (Set.mem_singleton_iff.1 ha).symm)
       simp [hw']
     · simp
   · refine (hS a h).trans (Finset.sum_eq_zero fun w _ ↦ ?_).symm
-    have hw : a ∉ G ⁻¹' {w.1} := fun ha ↦ h ((Set.mem_singleton_iff.1 ha) ▸ w.2)
+    have hw : a ∉ G ⁻¹' {w.val} := fun ha ↦ h ((Set.mem_singleton_iff.1 ha) ▸ w.property)
     simp [hw]
 
 end Disjoint
@@ -191,6 +217,45 @@ theorem coeFn_linftyIndicator (hs : MeasurableSet s) :
     (SimpleFunc.piecewise s hs (SimpleFunc.const α (1 : ℝ)) 0)] with x hx
   rw [linftyIndicator, hx]
   by_cases hxs : x ∈ s <;> simp [hxs]
+
+section Holder
+
+variable {p : ℝ≥0∞}
+
+/-- Hölder multiplication by an `L∞` indicator is almost everywhere the indicator cutoff. -/
+theorem coeFn_holder_mul_linftyIndicator (hs : MeasurableSet s) (f : Lp ℝ p μ) :
+    (ContinuousLinearMap.mul ℝ ℝ).holder p (linftyIndicator μ s hs) f =ᵐ[μ]
+      s.indicator f := by
+  filter_upwards [(ContinuousLinearMap.mul ℝ ℝ).coeFn_holder
+    (r := p) (linftyIndicator μ s hs) f, coeFn_linftyIndicator (μ := μ) hs] with x hx hsx
+  rw [hx, ContinuousLinearMap.mul_apply', hsx]
+  by_cases h : x ∈ s <;> simp [h]
+
+/-- Hölder multiplication by an `L∞` indicator agrees with the `MemLp.toLp` cutoff. -/
+theorem holder_mul_linftyIndicator_eq_toLp (hs : MeasurableSet s) (f : Lp ℝ p μ) :
+    (ContinuousLinearMap.mul ℝ ℝ).holder p (linftyIndicator μ s hs) f =
+      ((Lp.memLp f).indicator hs.nullMeasurableSet).toLp (s.indicator f) :=
+  Lp.ext ((coeFn_holder_mul_linftyIndicator hs f).trans
+    ((Lp.memLp f).indicator hs.nullMeasurableSet).coeFn_toLp.symm)
+
+/-- Cutting off a constant indicator class intersects its supporting set. -/
+@[simp]
+theorem holder_mul_linftyIndicator_indicatorConstLp (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (c : ℝ) :
+    (ContinuousLinearMap.mul ℝ ℝ).holder p (linftyIndicator μ s hs)
+        (indicatorConstLp p ht hμt c) =
+      indicatorConstLp p (hs.inter ht)
+        (ne_top_of_le_ne_top hμt (measure_mono inter_subset_right)) c := by
+  apply Lp.ext
+  filter_upwards [coeFn_holder_mul_linftyIndicator hs (indicatorConstLp p ht hμt c),
+    indicatorConstLp_coeFn (p := p) (hs := ht) (hμs := hμt) (c := c),
+    indicatorConstLp_coeFn (p := p) (hs := hs.inter ht)
+      (hμs := ne_top_of_le_ne_top hμt (measure_mono inter_subset_right)) (c := c)]
+      with x hx ht hst
+  rw [hx, hst]
+  by_cases h : x ∈ s <;> by_cases h' : x ∈ t <;> simp [h, h', ht]
+
+end Holder
 
 /-- The indicator of the empty set vanishes in `L∞`. -/
 @[simp]

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import Mathlib.Algebra.Category.ModuleCat.Products
+public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RingTheory.Flat.CategoryTheory
 public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
 public import TauCeti.Algebra.Homology.CyclesComplex
@@ -62,6 +64,11 @@ up to sign, the tensor products of the flat modules `Kₚ` with the connecting m
 cycle sequence of `L`, which are monomorphisms.  The long exact homology sequence therefore
 identifies `Hₙ(K ⊗ L)` with a cokernel, which is `⨁ Kₚ ⊗ H_q(L)` by right exactness.
 
+When the Künneth map is an isomorphism and the homology modules are free of finite rank, the ranks
+of the homology of `K ⊗ L` follow from the ranks of the degree `n` part of a tensor product of
+graded modules (`CategoryTheory.GradedObject.Monoidal.finrank_tensorObj`):
+`rank Hₙ(K ⊗ L) = ∑_{p + q = n} rank Hₚ(K) · rank H_q(L)`.
+
 ## Main definitions and results
 
 * `HomologicalComplex.homologyKunneth`: the Künneth map, characterized on summands by
@@ -80,6 +87,8 @@ identifies `Hₙ(K ⊗ L)` with a cokernel, which is `⨁ Kₚ ⊗ H_q(L)` by ri
   complexes of modules whose cycles split off.
 * `HomologicalComplex.isIso_homologyKunneth_of_d_eq_zero_of_flat`: the Künneth theorem when one
   complex of modules has zero differentials and flat terms.
+* `CategoryTheory.GradedObject.Monoidal.finrank_tensorObj`: the rank of the degree `n` part of
+  the tensor product of graded modules that are free of finite rank in each degree.
 
 ## References
 
@@ -503,4 +512,72 @@ theorem isIso_homologyKunneth_of_d_eq_zero_of_flat (n : ℕ) : IsIso (homologyKu
 
 end FlatZeroDifferential
 
+section ModuleCatCross
+
+/-! ### The cross product on classes of cycles of complexes of modules -/
+
+universe u
+
+open scoped TensorProduct
+
+variable {R : Type u} [CommRing R] {I : Type*} [AddMonoid I] {c : ComplexShape I}
+  [c.TensorSigns] [DecidableEq I] (K L : HomologicalComplex (ModuleCat.{u} R) c)
+  {M : HomologicalComplex (ModuleCat.{u} R) c} [HasTensor K L] (p q n : I) (h : p + q = n)
+  [K.HasHomology p] [L.HasHomology q] [(tensorObj K L).HasHomology n] [M.HasHomology n]
+  [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (K.homology p))]
+  [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.cycles q))]
+  [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.X (c.prev q)))]
+
+/-- Element-wise form of `HomologicalComplex.homologyπ_tensorHom_homologyCross`, followed by a
+chain map `φ` out of the tensor product: `φ` sends the cross product of the classes of cycles `z`
+and `w` to the class of the image under `φ` of the cycle `z ⊗ w`. -/
+theorem moduleCat_homologyMap_homologyCross_tmul (φ : tensorObj K L ⟶ M) (z : K.cycles p)
+    (w : L.cycles q) :
+    (homologyMap φ n).hom
+        ((homologyCross K L p q n h).hom (K.homologyπ p z ⊗ₜ L.homologyπ q w)) =
+      M.homologyπ n ((cyclesMap φ n).hom ((cyclesCross K L p q n h).hom (z ⊗ₜ w))) := by
+  have h' := congrArg (fun f ↦ f.hom (z ⊗ₜ w))
+    (homologyπ_tensorHom_homologyCross_assoc K L p q n h (homologyMap φ n))
+  rw [homologyπ_naturality] at h'
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
+    ModuleCat.MonoidalCategory.tensorHom_tmul] at h'
+  exact h'
+
+end ModuleCatCross
+
 end HomologicalComplex
+
+namespace CategoryTheory.GradedObject.Monoidal
+
+universe u v
+
+variable {k : Type u} [CommRing k] {I : Type v} [AddMonoid I] [Finset.HasAntidiagonal I]
+  (A B : GradedObject I (ModuleCat.{u} k)) [HasTensor A B]
+  [∀ p, Module.Free k (A p)] [∀ p, Module.Finite k (A p)]
+  [∀ q, Module.Free k (B q)] [∀ q, Module.Finite k (B q)]
+
+/-- **The rank of a tensor product of graded modules.** Over a nontrivial commutative ring, if `A`
+and `B` are free of finite rank in each degree, then the degree `n` part
+`⨁_{p + q = n} Aₚ ⊗ B_q` of their tensor product has rank `∑_{p + q = n} rank Aₚ · rank B_q`.
+Composed with a Künneth isomorphism, this computes the ranks of the homology of a tensor product
+of complexes. -/
+theorem finrank_tensorObj [Nontrivial k] (n : I) :
+    Module.finrank k (tensorObj A B n : ModuleCat.{u} k) =
+      ∑ x ∈ Finset.antidiagonal n, Module.finrank k (A x.1) * Module.finrank k (B x.2) := by
+  classical
+  let P := (fun x : I × I ↦ x.1 + x.2) ⁻¹' {n}
+  let e : P ≃ Finset.antidiagonal n := Equiv.subtypeEquivRight fun x ↦ by simp [P]
+  have := Fintype.ofEquiv _ e.symm
+  let ε := (Fintype.equivFin P).symm
+  -- The degree `n` part of the tensor product is by definition the coproduct of the summands.
+  -- Reindexing it by `Fin _` keeps the index type in universe `0`, as `coprodIsoDirectSum`
+  -- requires the index universe to be at most the module universe.
+  have iso : (tensorObj A B n : ModuleCat.{u} k) ≅ ModuleCat.of k
+      (DirectSum (Fin (Fintype.card P)) fun j ↦ TensorProduct k (A (ε j).val.1) (B (ε j).val.2)) :=
+    (Sigma.reindex ε fun i : P ↦ A i.val.1 ⊗ B i.val.2).symm ≪≫
+      ModuleCat.coprodIsoDirectSum fun j ↦ A (ε j).val.1 ⊗ B (ε j).val.2
+  rw [iso.toLinearEquiv.finrank_eq, Module.finrank_directSum,
+    ← Finset.sum_coe_sort (Finset.antidiagonal n)]
+  exact Fintype.sum_equiv (ε.trans e) _ _ fun x ↦ Module.finrank_tensorProduct
+
+end CategoryTheory.GradedObject.Monoidal

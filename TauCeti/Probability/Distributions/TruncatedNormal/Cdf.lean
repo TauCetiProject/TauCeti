@@ -36,10 +36,7 @@ cdf, even when the conditioning set is not an interval. -/
 theorem continuous_cdf_truncatedNormalMeasure (hv : v ≠ 0)
     (hs : gaussianReal m v s ≠ 0) : Continuous (cdf (truncatedNormalMeasure m v s)) := by
   let _ := isProbabilityMeasure_truncatedNormalMeasure hs
-  have : NullSingletonClass (truncatedNormalMeasure m v s) := by
-    rw [truncatedNormalMeasure_def]
-    exact ⟨fun x ↦ cond_absolutelyContinuous
-      (gaussianReal_absolutelyContinuous m hv (measure_singleton x))⟩
+  have := nullSingletonClass_truncatedNormalMeasure m hv s
   exact Measure.continuous_cdf_of_noAtoms _
 
 /-- The cdf of an interval-truncated positive-variance Gaussian is positive exactly above

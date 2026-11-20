@@ -49,6 +49,8 @@ maps valued in an arbitrary module.
   nondegeneracy without symmetry.
 * `LinearMap.BilinForm.anisotropic_toQuadraticMap_compl₁₂`: injective pullback preserves
   anisotropy of the diagonal.
+* `LinearMap.BilinForm.inf_eq_bot_of_forall_apply_self_eq_zero`: a subspace on which the diagonal
+  has no nonzero zeros meets every subspace of isotropic vectors trivially.
 * `LinearMap.BilinForm.exists_smul_eq_of_forall_dvd`: a form all of whose values are divisible
   by a regular element `a` is `a` times a form.
 * `LinearMap.BilinForm.IsRefl.compl₁₂`: pullback preserves reflexivity.
@@ -56,6 +58,8 @@ maps valued in an arbitrary module.
 * `LinearMap.BilinForm.IsSymm.of_smul`: cancel a non-zero-divisor from a symmetric scalar
   multiple of a bilinear form.
 * `LinearMap.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
+* `LinearMap.BilinForm.IsAlt.exists_sub_flip_eq`: on a free module every alternating form is
+  `B - B.flip` for some form `B`, in every characteristic.
 * `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_left`,
   `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_right`: a bilinear map with additively
   torsion-free values sees each argument only modulo elements of finite additive order.
@@ -148,6 +152,13 @@ theorem restrict_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R
   ext x y
   simp
 
+/-- Divisibility of self-pairings transports across a rescaling by a non-zero-divisor. -/
+theorem forall_dvd_iff_of_smul_eq {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    {B C : LinearMap.BilinForm R M} {a : R} (ha : IsLeftRegular a) (hC : a • C = B) (r : R) :
+    (∀ x, r ∣ C x x) ↔ ∀ x, r * a ∣ B x x := by
+  subst B
+  simp only [LinearMap.smul_apply, smul_eq_mul, mul_comm r a, ha.dvd_cancel_left]
+
 /-- If `a` is a regular element dividing every value of `B`, then `B` is `a` times a bilinear
 form. -/
 theorem exists_smul_eq_of_forall_dvd {R M : Type*} [CommSemiring R] [AddCommMonoid M]
@@ -161,6 +172,14 @@ theorem exists_smul_eq_of_forall_dvd {R M : Type*} [CommSemiring R] [AddCommMono
   · obtain ⟨c, hc⟩ := h x y
     exact LinearMap.mem_range.mpr ⟨c, by simp [hc]⟩
   · simpa using B.codRestrict₂_apply _ hi _ x y
+
+/-- A subspace on whose nonzero vectors the diagonal of a bilinear form does not vanish meets every
+subspace of isotropic vectors (those `x` with `B x x = 0`) trivially. -/
+theorem inf_eq_bot_of_forall_apply_self_eq_zero {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {B : LinearMap.BilinForm R M} {N W : Submodule R M}
+    (hN : ∀ x ∈ N, x ≠ 0 → B x x ≠ 0) (hW : ∀ x ∈ W, B x x = 0) : N ⊓ W = ⊥ :=
+  (Submodule.eq_bot_iff _).2 fun x hx ↦ by_contra fun hx0 ↦
+    hN x (Submodule.mem_inf.1 hx).1 hx0 (hW x (Submodule.mem_inf.1 hx).2)
 
 end LinearMap.BilinForm
 
@@ -200,6 +219,34 @@ theorem apply_add_self {R M : Type*} [CommSemiring R] [AddCommMonoid M]
 
 end LinearMap.BilinForm.IsSymm
 
+namespace LinearMap.BilinForm.IsAlt
+
+/-- **Every alternating form on a free module is `B - B.flip` for some form `B`**, in every
+characteristic and in any rank: order a basis and take for `B` the strictly upper triangular part
+of the alternating form in that basis. -/
+theorem exists_sub_flip_eq {R M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+    [Module.Free R M] {A : LinearMap.BilinForm R M} (hA : A.IsAlt) :
+    ∃ B : LinearMap.BilinForm R M, B - B.flip = A := by
+  classical
+  let b := Module.Free.chooseBasis R M
+  let : LinearOrder (Module.Free.ChooseBasisIndex R M) := linearOrderOfSTO WellOrderingRel
+  let B : LinearMap.BilinForm R M :=
+    b.constr R fun i => b.constr R fun j => if i < j then A (b i) (b j) else 0
+  have key (i j) : B (b i) (b j) = if i < j then A (b i) (b j) else 0 := by
+    simp [B, Module.Basis.constr_basis]
+  refine ⟨B, LinearMap.BilinForm.ext_basis b fun i j => ?_⟩
+  simp only [LinearMap.sub_apply, LinearMap.BilinForm.flip_apply, key]
+  rcases lt_trichotomy i j with h | rfl | h
+  · simp [h, h.not_gt]
+  · simp [hA.self_eq_zero]
+  · -- polarization: `A (b i + b j) (b i + b j) = 0` gives `A (b i) (b j) = -A (b j) (b i)`
+    have h0 := hA.self_eq_zero (b i + b j)
+    simp only [map_add, LinearMap.add_apply, hA.self_eq_zero, zero_add, add_zero] at h0
+    simp only [h, h.not_gt, ↓reduceIte, zero_sub]
+    linear_combination -h0
+
+end LinearMap.BilinForm.IsAlt
+
 namespace LinearMap
 
 variable {R M N P : Type*} [CommSemiring R] [AddCommGroup P] [IsAddTorsionFree P] [Module R P]
@@ -234,7 +281,8 @@ end LinearMap
 
 namespace LinearMap.BilinForm
 
-variable {H : Type*} [AddCommGroup H] {B : LinearMap.BilinForm ℤ H} {v t x : H} {a c : ℤ}
+variable {H : Type*} [AddCommGroup H] [Module ℤ H] {B : LinearMap.BilinForm ℤ H} {v t x : H}
+  {a c : ℤ}
 
 /-- A class `x = a v + c t` modulo torsion, for a hyperbolic pair `v, t` of a `ℤ`-valued form,
 has square `2ac`. -/

@@ -12,7 +12,6 @@ public import TauCeti.GroupTheory.Coset.Basic
 import Mathlib.Algebra.MonoidAlgebra.Basic
 import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.RingTheory.Finiteness.Projective
-import TauCeti.Algebra.Module.Projective.Trans
 
 /-!
 # Coset bases of group algebras
@@ -203,7 +202,7 @@ theorem _root_.Subgroup.restrictSubgroup_finite_projective (C : Subgroup G)
   have : Module.Free R[C] R[G] := .of_basis b
   have : Module.Finite R[C] R[G] := .of_basis b
   have hAX : IsScalarTower R[C] R[G] X := ⟨fun r s x ↦ by rw [hX r (s • x)]; exact mul_smul _ s x⟩
-  exact ⟨hAA, hAX, .trans R[G] X, .trans R[G] X⟩
+  exact ⟨hAA, hAX, .trans R[G] X, .trans R[C] R[G] X⟩
 
 /-- Restricting a finitely generated projective `R[G]`-module `X` of a group `G` to the
 group algebra of a finite-index subgroup `C` gives a finitely generated projective `R[C]`-module,

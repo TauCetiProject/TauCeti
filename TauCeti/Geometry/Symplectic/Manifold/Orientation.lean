@@ -100,7 +100,7 @@ private theorem transport_symplecticFormAt_apply {b x : M}
     (hx : x ∈ (trivializationAt E (TangentSpace I) b).baseSet) (u v : E) :
     (hσ.symplecticFormAt x).transport
         ((trivializationAt E (TangentSpace I) b).linearEquivAt ℝ x hx) u v =
-      RoughForm.inChartAt (I := I) σ.1 b (extChartAt I b x) ![u, v] := by
+      RoughForm.inChartAt (I := I) σ.val b (extChartAt I b x) ![u, v] := by
   have hx' : x ∈ (chartAt H b).source := by
     simpa only [TangentBundle.trivializationAt_baseSet] using hx
   rw [SymplecticForm.transport_apply, symplecticFormAt_apply, SmoothBundleForm.eval₂_apply,
@@ -133,7 +133,7 @@ private theorem eventually_mapOrientation_orientation_eq (b : M) :
     exact (SymplecticForm.isSymplectomorphism_iff_transport_eq.2 rfl).map_orientation hk
   -- An almost complex structure on `E` tamed by the form at `b` is tamed nearby.
   obtain ⟨J, hJ⟩ := (ωE b hb).exists_tames
-  set g : M → E [⋀^Fin 2]→L[ℝ] ℝ := fun x ↦ RoughForm.inChartAt (I := I) σ.1 b (extChartAt I b x)
+  set g : M → E [⋀^Fin 2]→L[ℝ] ℝ := fun x ↦ RoughForm.inChartAt (I := I) σ.val b (extChartAt I b x)
   have hgc : ContinuousAt g b :=
     (((SmoothForm.isSmoothForm σ).continuousOn_inChartAt b).comp (continuousOn_extChartAt b)
       (extChartAt I b).mapsTo).continuousAt (extChartAt_source_mem_nhds b)
