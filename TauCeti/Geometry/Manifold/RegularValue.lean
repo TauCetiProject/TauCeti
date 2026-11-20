@@ -55,6 +55,7 @@ to manifolds, including manifolds with boundary or corners.
   over a complete field, regularity is invertibility of the manifold derivative.
 * `TauCeti.isRegularPoint_comp_iff`: a composite of differentiable maps is regular exactly when
   the derivative of the outer map sends the tangent image of the inner map onto the target.
+* `IsLocalDiffeomorphAt.isRegularPoint`: a local diffeomorphism at a point is regular there.
 * `Diffeomorph.isRegularPoint_comp_iff`, `Diffeomorph.isRegularValue_comp_iff`: precomposing
   with a diffeomorphism preserves regular points and regular values.
 * `TauCeti.IsRegularPoint.mdifferentiableAt`: a map into a normed space is differentiable at its
@@ -277,11 +278,15 @@ theorem IsRegularValue.comp (hf : IsRegularValue I J f y)
 
 end Composition
 
+/-- A `C^n` local diffeomorphism at `x`, with `n ≠ 0`, has `x` as a regular point. -/
+theorem _root_.IsLocalDiffeomorphAt.isRegularPoint {n : WithTop ℕ∞}
+    (h : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) : IsRegularPoint I J f x :=
+  (h.isInvertible_mfderiv hn).surjective
+
 /-- Every point of an open subset is a regular point of its inclusion. -/
 theorem isRegularPoint_subtype_val {U : TopologicalSpace.Opens M} (x : U) :
     IsRegularPoint I I (Subtype.val : U → M) x :=
-  isRegularPoint_iff.2
-    ((isLocalDiffeomorph_subtype_val (n := 1) x).isInvertible_mfderiv one_ne_zero).surjective
+  (isLocalDiffeomorph_subtype_val (n := 1) x).isRegularPoint one_ne_zero
 
 /-- Restricting the source to an open subset preserves regular values. -/
 theorem IsRegularValue.restrict (hreg : IsRegularValue I J f y) (U : TopologicalSpace.Opens M) :

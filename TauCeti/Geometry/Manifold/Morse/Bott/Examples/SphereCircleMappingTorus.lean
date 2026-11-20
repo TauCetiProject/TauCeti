@@ -62,8 +62,12 @@ bundle is not. The trajectory spaces themselves are not studied here.
   submanifolds.
 * `TauCeti.sphereCircleReflection.mk_mem_criticalPoints_torusHeight_iff`: its critical points are
   the points of these four circles.
-* `TauCeti.sphereCircleReflection.manifoldMorseIndex_torusHeight_mk_self_one` and its three
-  companions: for `ε > 0` the four circles have Morse indices `3`, `2`, `1` and `0`.
+* `TauCeti.sphereCircleReflection.manifoldMorseIndex_torusHeight_mk_self_one`,
+  `TauCeti.sphereCircleReflection.manifoldMorseIndex_torusHeight_mk_self_neg_one`,
+  `TauCeti.sphereCircleReflection.manifoldMorseIndex_torusHeight_mk_neg_self_one` and
+  `TauCeti.sphereCircleReflection.manifoldMorseIndex_torusHeight_mk_neg_self_neg_one`: for `ε > 0`
+  the circles through `(u, 1)`, `(u, -1)`, `(-u, 1)` and `(-u, -1)` have Morse indices `3`, `2`,
+  `1` and `0`.
 
 ## References
 
@@ -173,13 +177,18 @@ theorem manifoldMorseIndex_sphereCircleHeight (hε : 0 < ε)
 
 variable {v : E}
 
+omit [Fact (finrank ℝ E = 2 + 1)] in
+/-- The reflection across `v^⊥` fixes a vector `u` orthogonal to `v`. -/
+private theorem reflection_eq_self_of_inner_eq_zero (huv : ⟪(u : E), v⟫ = 0) :
+    (ℝ ∙ v)ᗮ.reflection (u : E) = u :=
+  reflection_orthogonal_singleton_eq_self_of_inner_eq_zero (by rw [real_inner_comm, huv])
+
 /-- **The function `(p, w) ↦ ⟪p, u⟫ + ε Re w` is invariant under `τ`** when `u` is orthogonal to
 `v`: the reflection across `v^⊥` fixes `u`, and conjugation does not change real parts. -/
 theorem sphereCircleHeight_sphereCircleReflection (huv : ⟪(u : E), v⟫ = 0) (ε : ℝ)
     (q : sphere (0 : E) 1 × sphere (0 : ℂ) 1) :
     sphereCircleHeight u ε (sphereCircleReflection v q) = sphereCircleHeight u ε q := by
-  have hu : (ℝ ∙ v)ᗮ.reflection (u : E) = u :=
-    reflection_orthogonal_singleton_eq_self_of_inner_eq_zero (by rw [real_inner_comm, huv])
+  have hu := reflection_eq_self_of_inner_eq_zero huv
   rw [sphereCircleHeight_apply, sphereCircleHeight_apply, coe_sphereCircleReflection_apply_fst,
     coe_sphereCircleReflection_apply_snd, Complex.conj_re]
   congr 1
@@ -193,8 +202,7 @@ theorem isFixedPt_sphereCircleReflection_of_mem_criticalPoints (huv : ⟪(u : E)
     (hε : ε ≠ 0) {q : sphere (0 : E) 1 × sphere (0 : ℂ) 1}
     (hq : q ∈ criticalPoints ((𝓡 2).prod (𝓡 1)) (sphereCircleHeight u ε)) :
     IsFixedPt (sphereCircleReflection v) q := by
-  have hu : (ℝ ∙ v)ᗮ.reflection (u : E) = u :=
-    reflection_orthogonal_singleton_eq_self_of_inner_eq_zero (by rw [real_inner_comm, huv])
+  have hu := reflection_eq_self_of_inner_eq_zero huv
   obtain ⟨h₁, h₂⟩ := (mem_criticalPoints_sphereCircleHeight_iff hε).1 hq
   refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)
   · rw [coe_sphereCircleReflection_apply_fst]
@@ -297,7 +305,7 @@ theorem manifoldMorseIndex_torusHeight_mk_self_neg_one (hε : 0 < ε) (t : ℝ) 
     manifoldMorseIndex_sphereHeight_neg]
 
 /-- For `ε > 0`, the critical circle through `(-u, 1)` has Morse index `1`. -/
-theorem manifoldMorseIndex_torusHeight_mk_neg_one (hε : 0 < ε) (t : ℝ) :
+theorem manifoldMorseIndex_torusHeight_mk_neg_self_one (hε : 0 < ε) (t : ℝ) :
     manifoldMorseIndex (𝓘(ℝ).prod ((𝓡 2).prod (𝓡 1))) (torusHeight huv ε)
       (SmoothMappingTorus.mk _ t (-u, 1)) = 1 := by
   rw [manifoldMorseIndex_torusHeight_mk hε t (by simp), manifoldMorseIndex_sphereHeight_neg,
@@ -305,7 +313,7 @@ theorem manifoldMorseIndex_torusHeight_mk_neg_one (hε : 0 < ε) (t : ℝ) :
 
 /-- For `ε > 0`, the critical circle through `(-u, -1)` has Morse index `0`: there the height of
 the sphere and the real part on the circle are both minimal. -/
-theorem manifoldMorseIndex_torusHeight_mk_neg_neg_one (hε : 0 < ε) (t : ℝ) :
+theorem manifoldMorseIndex_torusHeight_mk_neg_self_neg_one (hε : 0 < ε) (t : ℝ) :
     manifoldMorseIndex (𝓘(ℝ).prod ((𝓡 2).prod (𝓡 1))) (torusHeight huv ε)
       (SmoothMappingTorus.mk _ t (-u, -1)) = 0 := by
   rw [manifoldMorseIndex_torusHeight_mk hε t (by simp), manifoldMorseIndex_sphereHeight_neg,
