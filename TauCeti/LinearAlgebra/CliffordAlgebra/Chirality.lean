@@ -63,7 +63,9 @@ generators along an orientation-preserving isometry intertwines the chirality el
 equivalence doing so restricts to the positive half-spinors. These are the frame changes and
 `Spinᶜ` transformations under which the Seiberg–Witten equations are invariant. The same holds for
 a semilinear map commuting with the generators whose twist fixes the real scalars, such as a
-conjugate-linear map of complex Clifford modules; a conjugate-linear isometric equivalence of
+conjugate-linear map of complex Clifford modules: it maps each eigenspace of `Γ` to the eigenspace
+of the twisted eigenvalue (`CliffordAlgebra.map_mem_eigenspace_chirality`), so it preserves the
+half-spinors, whose eigenvalues `±1` are real. A conjugate-linear isometric equivalence of
 Hermitian Clifford modules thus restricts to the positive half-spinors, as charge conjugation of
 spinors does.
 
@@ -730,18 +732,27 @@ variable {K W W' : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module 
 
 variable {o} in
 /-- A semilinear map `U` of Clifford modules over the same quadratic space, whose twist `σ` fixes
+the real scalars and which commutes with the generators, `U (c(v) w) = c(v) (U w)`, maps the
+`ε`-eigenspace of the chirality element `Γ` to its `σ ε`-eigenspace. For complex modules `U` can
+be conjugate-linear, as for charge conjugation of spinors; it then preserves the half-spinors
+`W^±`, the eigenspaces for the real eigenvalues `±1`. -/
+theorem map_mem_eigenspace_chirality (hσ : ∀ r : ℝ, σ (algebraMap ℝ K r) = algebraMap ℝ K r)
+    {U : W →ₛₗ[σ] W'} (hU : ∀ v w, U (ρ (ι Q v) w) = ρ' (ι Q v) (U w)) {ε : K} {w : W}
+    (hw : w ∈ Module.End.eigenspace (ρ (chirality Q o)) ε) :
+    U w ∈ Module.End.eigenspace (ρ' (chirality Q o)) (σ ε) := by
+  rw [Module.End.mem_eigenspace_iff] at hw ⊢
+  rw [← map_apply_of_forall_ιₛₗ hσ hU, hw, map_smulₛₗ]
+
+variable {o} in
+/-- A semilinear map `U` of Clifford modules over the same quadratic space, whose twist `σ` fixes
 the real scalars and which commutes with the generators, `U (c(v) w) = c(v) (U w)`, maps positive
 half-spinors to positive half-spinors. For complex modules `U` can be conjugate-linear, as for
 charge conjugation of spinors. -/
 theorem map_mem_positiveHalfSpinors (hσ : ∀ r : ℝ, σ (algebraMap ℝ K r) = algebraMap ℝ K r)
     {U : W →ₛₗ[σ] W'} (hU : ∀ v w, U (ρ (ι Q v) w) = ρ' (ι Q v) (U w)) {w : W}
     (hw : w ∈ positiveHalfSpinors o ρ) : U w ∈ positiveHalfSpinors o ρ' := by
-  have h := comp_eq_map_comp_of_forall_ιₛₗ (f := QuadraticMap.Isometry.id Q) hσ
-    (fun v ↦ LinearMap.ext (hU v)) (chirality Q o)
-  have hw' : U (ρ (chirality Q o) w) = ρ' (chirality Q o) (U w) := by
-    simpa [map_id] using LinearMap.congr_fun h w
-  rw [mem_positiveHalfSpinors] at hw ⊢
-  rw [← hw', hw]
+  rw [positiveHalfSpinors_eq_eigenspace] at hw ⊢
+  simpa using map_mem_eigenspace_chirality hσ hU hw
 
 end Semilinear
 

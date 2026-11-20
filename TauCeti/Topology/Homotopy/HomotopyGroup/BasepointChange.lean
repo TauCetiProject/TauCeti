@@ -55,7 +55,8 @@ product as the class of a concatenation `GenLoop.transAt i` in any cube directio
 * `TauCeti.homotopyGroupMulEquivOfPath`: **a path from `x` to `y` induces a group isomorphism
   `HomotopyGroup N X x ≃* HomotopyGroup N X y`.**
 * `TauCeti.nonempty_homotopyGroupMulEquiv`: on a path-connected space, all the homotopy groups
-  in a fixed dimension are isomorphic.
+  in a fixed dimension are isomorphic; in particular one of them is trivial exactly when all are
+  (`TauCeti.subsingleton_homotopyGroup_of_pathConnectedSpace`).
 
 ## References
 
@@ -551,5 +552,13 @@ theorem nonempty_homotopyGroupMulEquiv [Finite N] [Nonempty N] [DecidableEq N]
     Nonempty (HomotopyGroup N X x ≃* HomotopyGroup N X y) := by
   have : Fintype N := Fintype.ofFinite N
   exact ⟨homotopyGroupMulEquivOfPath (PathConnectedSpace.somePath x y)⟩
+
+omit [Fintype N] in
+/-- On a path-connected space, a homotopy group that is trivial at one base point is trivial at
+every base point. -/
+theorem subsingleton_homotopyGroup_of_pathConnectedSpace [Finite N] [PathConnectedSpace X]
+    (_ : Subsingleton (HomotopyGroup N X x)) : Subsingleton (HomotopyGroup N X y) :=
+  have : Fintype N := Fintype.ofFinite N
+  (homotopyGroupEquivOfPath (PathConnectedSpace.somePath y x)).subsingleton
 
 end TauCeti

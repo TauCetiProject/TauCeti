@@ -33,6 +33,9 @@ facts about these coproducts which are used to compare homology of tensor produc
   apply to it.
 * The inclusion of a summand `X i ⊗ Y j` into the tensor product is a split monomorphism in a
   category with zero morphisms (`CategoryTheory.GradedObject.Monoidal.isSplitMono_ιTensorObj`).
+  It is an isomorphism when one factor vanishes outside a single degree
+  (`CategoryTheory.GradedObject.Monoidal.isIso_ιTensorObj_of_isZero_right`,
+  `CategoryTheory.GradedObject.Monoidal.isIso_ιTensorObj_of_isZero_left`).
 * For graded objects indexed by `ℕ`, if `Y 0 = 0` then the summands of `X ⊗ Y` in degree
   `m + 1` are those of `X` tensored with `Y` shifted down by one, in degree `m`
   (`CategoryTheory.GradedObject.Monoidal.tensorObjSuccIso`).  This identifies the degree shift of
@@ -160,6 +163,38 @@ instance isSplitMono_ιTensorObj [AddMonoid I] [MonoidalCategory C] [HasZeroMorp
     IsSplitMono (ιTensorObj X₁ X₂ i₁ i₂ i₁₂ h) := by
   unfold ιTensorObj ιMapBifunctorMapObj GradedObject.ιMapObj
   exact isSplitMono_sigma_ι _ _
+
+/-- If `Y` vanishes outside degree `j`, the summand `X i ⊗ Y j` is all of the tensor product of
+graded objects in degree `i + j`. -/
+lemma isIso_ιTensorObj_of_isZero_right [AddMonoid I] [IsRightCancelAdd I] [MonoidalCategory C]
+    [HasZeroMorphisms C] (X Y : GradedObject I C) [HasTensor X Y]
+    [∀ i, (tensorLeft (X i)).PreservesZeroMorphisms] {j : I} (hY : ∀ j' ≠ j, IsZero (Y j'))
+    (i n : I) (h : i + j = n) : IsIso (ιTensorObj X Y i j n h) := by
+  classical
+  refine ⟨tensorObjDesc fun i' j' h' ↦ if hj : j' = j then
+      eqToHom (by subst hj; rw [add_right_cancel (h'.trans h.symm)]) else 0,
+    by simp, tensorObj_ext _ _ fun i' j' h' ↦ ?_⟩
+  by_cases hj : j' = j
+  · subst hj
+    obtain rfl : i' = i := add_right_cancel (h'.trans h.symm)
+    simp
+  · exact ((tensorLeft _).map_isZero (hY j' hj)).eq_of_src _ _
+
+/-- If `X` vanishes outside degree `i`, the summand `X i ⊗ Y j` is all of the tensor product of
+graded objects in degree `i + j`. -/
+lemma isIso_ιTensorObj_of_isZero_left [AddMonoid I] [IsLeftCancelAdd I] [MonoidalCategory C]
+    [HasZeroMorphisms C] (X Y : GradedObject I C) [HasTensor X Y]
+    [∀ j, (tensorRight (Y j)).PreservesZeroMorphisms] {i : I} (hX : ∀ i' ≠ i, IsZero (X i'))
+    (j n : I) (h : i + j = n) : IsIso (ιTensorObj X Y i j n h) := by
+  classical
+  refine ⟨tensorObjDesc fun i' j' h' ↦ if hi : i' = i then
+      eqToHom (by subst hi; rw [add_left_cancel (h'.trans h.symm)]) else 0,
+    by simp, tensorObj_ext _ _ fun i' j' h' ↦ ?_⟩
+  by_cases hi : i' = i
+  · subst hi
+    obtain rfl : j' = j := add_left_cancel (h'.trans h.symm)
+    simp
+  · exact ((tensorRight _).map_isZero (hX i' hi)).eq_of_src _ _
 
 variable [HasZeroMorphisms C] [MonoidalCategory C] (X Y : GradedObject ℕ C)
   [∀ p, (tensorLeft (X p)).PreservesZeroMorphisms] (hY : IsZero (Y 0))

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.HighestWeight.Decomposition
 public import TauCeti.Algebra.Lie.HighestWeight.Weyl.Character
+import Mathlib.LinearAlgebra.RootSystem.BaseExists
 
 /-!
 # Weyl-alternating inversion of isotypic multiplicities
@@ -28,12 +29,24 @@ expansion at the dominant integral weights: for a dominant integral weight `ν`,
 reading the isotypic multiplicity `m_ν = dim Hom_L(L(ν), M)` off `ch M` by **Weyl-alternating
 inversion** (`TauCeti.coeff_formalCharacter_mul_weylDenominator_eq_isotypicMultiplicity`).
 
+Consequently the formal character determines a finite-dimensional module up to equivalence. Two
+modules with the same character contain every `L(λ)` equally often, by this inversion, and two
+modules containing every `L(λ)` equally often are equivalent, because their packaged isotypic
+decompositions `M ≃ ⨁ L(λ)^{m_λ}` are the same direct sum
+(`TauCeti.nonempty_lieModuleEquiv_iff_forall_isotypicMultiplicity_irreducibleQuotient_eq`).
+So `M ≃ N` exactly when `ch M = ch N`
+(`TauCeti.nonempty_lieModuleEquiv_iff_formalCharacter_eq`). Equal dimension does not suffice: for
+`sl₂`, `V(1) ⊗ V(1)` and `V(1) × V(1)` both have dimension `4`, but only the first contains the
+weight `0`.
+
 ## Main results
 
 * `TauCeti.coeff_irreducibleFormalCharacter_mul_weylDenominator_of_isDominantIntegral`:
   orthogonality of irreducible characters against the Weyl denominator at dominant integral weights.
 * `TauCeti.coeff_formalCharacter_mul_weylDenominator_eq_isotypicMultiplicity`:
   multiplication by the Weyl denominator reads off the isotypic multiplicities.
+* `TauCeti.nonempty_lieModuleEquiv_iff_formalCharacter_eq`: **two finite-dimensional modules are
+  equivalent exactly when their formal characters agree.**
 
 ## References
 
@@ -124,5 +137,32 @@ theorem coeff_formalCharacter_mul_weylDenominator_eq_isotypicMultiplicity [Finit
     simp [Subtype.ext_iff.not.mp hlam]
 
 end Inversion
+
+/-! ### The character determines the module -/
+
+section Determination
+
+universe w₁
+
+variable {N : Type w₁} [AddCommGroup N] [Module K N] [LieRingModule L N] [LieModule K L N]
+
+variable (H) in
+/-- **The formal character determines a finite-dimensional module up to equivalence.** Two
+finite-dimensional modules over a Lie algebra with non-degenerate Killing form, over an
+algebraically closed field of characteristic zero, are equivalent exactly when their formal
+characters with respect to a Cartan subalgebra `H` agree. -/
+theorem nonempty_lieModuleEquiv_iff_formalCharacter_eq [FiniteDimensional K M]
+    [FiniteDimensional K N] :
+    Nonempty (M ≃ₗ⁅K,L⁆ N) ↔ formalCharacter K H M = formalCharacter K H N := by
+  refine ⟨fun ⟨e⟩ ↦ formalCharacter_congr (e.restrictLie H), fun h ↦ ?_⟩
+  -- For a base `b`, Weyl-alternating inversion reads every multiplicity off the character.
+  obtain ⟨b⟩ := (IsKilling.rootSystem H).nonempty_base
+  refine (nonempty_lieModuleEquiv_iff_forall_isotypicMultiplicity_irreducibleQuotient_eq b).mpr
+    fun nu hnu ↦ ?_
+  have hM := coeff_formalCharacter_mul_weylDenominator_eq_isotypicMultiplicity (M := M) b hnu
+  rw [h, coeff_formalCharacter_mul_weylDenominator_eq_isotypicMultiplicity b hnu] at hM
+  exact_mod_cast hM.symm
+
+end Determination
 
 end TauCeti

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.LinearAlgebra.Basis.Basic
 import Mathlib.LinearAlgebra.StdBasis
 
@@ -33,6 +34,13 @@ vectors indexed by `ι`.
   linear equivalence are the coordinates of the vector transported back.
 * `Module.Basis.linearIndependent_coe_basis`: the vectors of a basis of a submodule `U`, viewed in
   the ambient module, are linearly independent.
+* `Module.Basis.span_range_coe`: the vectors of a basis of a submodule `U`, viewed in the ambient
+  module, span `U`.
+* `Module.Basis.span_range_map_coe`, `Module.Basis.linearIndependent_map_coe_basis`: their images
+  under a linear map `f` span the image of `U`, and are linearly independent when `f` is injective
+  on `U`.
+* `Module.Basis.range_eq_span_comp`: the range of a linear map is spanned by its values on a basis.
+* `Module.Basis.ofSpanEq`: a linearly independent family spanning a submodule `U` is a basis of `U`.
 * `Module.Basis.eq_sum_repr_smul_of_mem`: an ambient vector in a submodule `U` expands as the
   coordinate sum of any finite basis of `U`.
 * `Module.Basis.repr_eq_zero_of_mem_of_notMem`: a vector of a submodule spanned by basis vectors has
@@ -44,6 +52,9 @@ vectors indexed by `ι`.
   values on a finite integer basis, weighted by the coordinates.
 * `Module.Basis.ringHom_comp_ne_zero`: the values of a ring homomorphism to a nontrivial ring on
   an integer basis do not all vanish.
+* `Module.Basis.map_sum_mul_eq_map_mul_apply`: pushing a scaled finite-basis expansion of an
+  algebra element through a ring homomorphism `f` when scalar multiples of the coordinates and the
+  basis vectors lift through a ring homomorphism `g`.
 * `Module.Basis.ne_neg`: over a ring in which `2 ≠ 0`, no basis vector is the negative of a basis
   vector.
 * `Module.Basis.constrSumInrEquiv`: the linear maps with prescribed values on the basis vectors
@@ -133,6 +144,44 @@ theorem linearIndependent_coe_basis (b : Module.Basis n R U) :
     LinearIndependent R fun i ↦ (b i : M) :=
   b.linearIndependent.map_injOn U.subtype U.injective_subtype.injOn
 
+/-- The vectors of a basis of a submodule `U`, viewed in the ambient module, span `U`. -/
+@[simp]
+theorem span_range_coe (b : Module.Basis n R U) :
+    Submodule.span R (Set.range fun i ↦ (b i : M)) = U := by
+  have h := congrArg (Submodule.map U.subtype) b.span_eq
+  rwa [Submodule.map_span, Submodule.map_subtype_top, ← Set.range_comp] at h
+
+/-- The images under a linear map `f` of the vectors of a basis of a submodule `U`, viewed in the
+ambient module, span the image of `U`. -/
+@[simp]
+theorem span_range_map_coe {N : Type*} [AddCommMonoid N] [Module R N] (b : Module.Basis n R U)
+    (f : M →ₗ[R] N) : Submodule.span R (Set.range fun i ↦ f (b i)) = U.map f := by
+  have h := congrArg (Submodule.map f) b.span_range_coe
+  rwa [Submodule.map_span, ← Set.range_comp] at h
+
+/-- The images under a linear map `f`, injective on a submodule `U`, of the vectors of a basis of
+`U`, viewed in the ambient module, are linearly independent. -/
+theorem linearIndependent_map_coe_basis {N : Type*} [AddCommMonoid N] [Module R N]
+    (b : Module.Basis n R U) {f : M →ₗ[R] N} (hf : Set.InjOn f U) :
+    LinearIndependent R fun i ↦ f (b i) :=
+  b.linearIndependent_coe_basis.map_injOn f (by rwa [b.span_range_coe])
+
+/-- The range of a linear map is spanned by its values on a basis. -/
+theorem range_eq_span_comp {N : Type*} [AddCommMonoid N] [Module R N] (b : Module.Basis n R M)
+    (f : M →ₗ[R] N) : LinearMap.range f = Submodule.span R (Set.range (f ∘ b)) := by
+  rw [LinearMap.range_eq_map, ← b.span_eq, Submodule.map_span, ← Set.range_comp]
+
+/-- A linearly independent family `v` spanning a submodule `U` is a basis of `U`. -/
+noncomputable def ofSpanEq {v : n → M} (hv : LinearIndependent R v)
+    (h : Submodule.span R (Set.range v) = U) : Module.Basis n R U :=
+  (Basis.span hv).map (LinearEquiv.ofEq _ _ h)
+
+/-- The vectors of `Module.Basis.ofSpanEq hv h`, viewed in the ambient module, are those of `v`. -/
+@[simp]
+theorem coe_ofSpanEq {v : n → M} (hv : LinearIndependent R v)
+    (h : Submodule.span R (Set.range v) = U) (i : n) : (ofSpanEq hv h i : M) = v i := by
+  simp [ofSpanEq, Basis.span_apply]
+
 /-- An ambient vector belonging to a submodule `U` expands in any finite basis of `U`. -/
 theorem eq_sum_repr_smul_of_mem [Fintype n] (b : Module.Basis n R U) {x : M} (hx : x ∈ U) :
     x = ∑ i, b.repr ⟨x, hx⟩ i • (b i : M) := by
@@ -168,6 +217,29 @@ theorem ringHom_comp_ne_zero [Nontrivial S] (ψ : R →+* S) : ⇑ψ ∘ ⇑b �
   simpa using LinearMap.congr_fun this 1
 
 end RingHom
+
+/-- Pushing a scaled finite-basis expansion of an `R`-algebra element `x : A` through a ring
+homomorphism `f : A →+* T`: if `r'`, `c j`, and `v j` in `S` lift `f (algebraMap R A r)`,
+`f (algebraMap R A (r * b.repr x j))`, and `f (b j)` along a ring homomorphism `g : S →+* T`,
+then `g (∑ j, c j * v j) = g r' * f x`. -/
+theorem map_sum_mul_eq_map_mul_apply {R A S T G H : Type*} [Fintype ι]
+    [CommSemiring R] [Semiring A] [Algebra R A] [Semiring S] [Semiring T]
+    [FunLike G S T] [RingHomClass G S T] [FunLike H A T] [RingHomClass H A T]
+    (b : Basis ι R A) (g : G) (f : H)
+    {x : A} {r : R} {r' : S} {c v : ι → S}
+    (hr : f (algebraMap R A r) = g r')
+    (hc : ∀ j, f (algebraMap R A (r * b.repr x j)) = g (c j))
+    (hv : ∀ j, f (b j) = g (v j)) :
+    g (∑ j, c j * v j) = g r' * f x := by
+  calc
+    g (∑ j, c j * v j)
+        = ∑ j, g (c j) * g (v j) := by simp only [map_sum, map_mul]
+      _ = ∑ j, f (algebraMap R A (r * b.repr x j)) * f (b j) := by simp only [hc, hv]
+      _ = ∑ j, f (algebraMap R A r * (b.repr x j • b j)) := by
+          refine Finset.sum_congr rfl fun j _ ↦ ?_
+          simp only [map_mul, Algebra.smul_def, mul_assoc]
+      _ = g r' * f x := by
+          rw [← map_sum, ← Finset.mul_sum, b.sum_repr, map_mul, hr]
 
 section Ring
 

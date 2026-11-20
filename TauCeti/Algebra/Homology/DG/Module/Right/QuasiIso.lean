@@ -43,6 +43,8 @@ roofs `M ← P → N` are Mathlib's right fractions for it.
   over the ground ring is a quasi-isomorphism.
 * `TauCeti.DGRightModuleHom.isQuasiIso_iff_forall_exists`: quasi-isomorphisms are the morphisms
   whose relative cycles are relative boundaries.
+* `TauCeti.DGRightModuleHom.isQuasiIso_of_subsingleton`: a morphism between modules without
+  nonzero elements is a quasi-isomorphism.
 * `TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyRetract`: a morphism is a quasi-isomorphism
   when it is, compatibly, a homotopy retract of a map whose relative cycles are relative
   boundaries.
@@ -205,6 +207,12 @@ theorem isQuasiIso_iff_forall_exists (f : DGRightModuleHom hM hN) :
       refine ⟨-v, ?_⟩
       rw [Submodule.coe_sub, cyclesMap_apply_coe, map_neg, ← huv]
       exact (sub_add_cancel_left _ _).symm
+
+/-- A morphism between DG right modules without nonzero elements is a quasi-isomorphism. -/
+theorem isQuasiIso_of_subsingleton [Subsingleton M] [Subsingleton N]
+    (f : DGRightModuleHom hM hN) : f.IsQuasiIso := by
+  rw [isQuasiIso_iff_forall_exists]
+  exact fun _ _ _ _ ↦ ⟨0, 0, Subsingleton.elim _ _, Subsingleton.elim _ _⟩
 
 /-- **Quasi-isomorphisms through homotopy retracts.** Let `f₀ : M₀ → N₀` be a map of complexes
 over the ground ring whose relative cycles are relative boundaries, as for a quasi-isomorphism

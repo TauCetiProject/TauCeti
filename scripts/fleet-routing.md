@@ -2,8 +2,11 @@
 
 PR builds prefer eligible Fleet PR runners (with a small bounded waiting queue),
 then Namespace (when enabled via `NAMESPACE_ENABLED` and `NAMESPACE_BUILD_CAP`),
-then GitHub-hosted runners. Maintenance builds use GitHub-hosted capacity. The full
-clean nightly build uses the Fleet PR pool and retains its twelve-hour budget;
+then GitHub-hosted runners. Maintenance builds (bot Mathlib bump and lint-repair PRs
+and their dispatched rebuilds) take a priority Namespace runner outside the capped
+scheduler groups when `NAMESPACE_ENABLED` is unset, empty or `true` and
+`NAMESPACE_BUILD_CAP` is not `0`; otherwise they use the GitHub-hosted bulk slots
+(see `scripts/namespace-controls.md`). The full clean nightly build uses the Fleet PR pool and retains its twelve-hour budget;
 staging-only and queue-control reservations cannot be taken by that class.
 
 Staging runs only on tauchonki2. It prefers the exact available staging guest and

@@ -49,7 +49,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M]
 
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
-    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M one_ne_zero
+    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M
 
 /-- Restriction of the source signs to boundary charts, with the outward-first model orientation. -/
 def boundary (l : OrientationLift (𝓡∂ (n + 1)) M (Fin (n + 1))) :
@@ -116,7 +116,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M]
 
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
-    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M one_ne_zero
+    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M
 
 /-- The canonical boundary orientation, with the outward vector first. -/
 def boundaryOrientation (o : Manifold.Orientation (𝓡∂ (n + 1)) M (Fin (n + 1))) :
@@ -236,7 +236,7 @@ theorem boundaryOrientation_spec_of_isOrientationPreservingAt
   -- Pull the basis `b'` back to the tangent space of `M` by the derivative of `φ`.
   have hval : MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
       (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x :=
-    ((isImmersion_subtypeVal_boundary M one_ne_zero).contMDiff x).mdifferentiableAt one_ne_zero
+    ((isImmersion_subtypeVal_boundary (k := 1) M).contMDiff x).mdifferentiableAt one_ne_zero
   have hφx : MDifferentiableAt (𝓡∂ (n + 1)) I φ x :=
     mdifferentiableAt_of_isInvertible_mfderiv ⟨D, hD⟩
   have hb'' : ⇑(b'.map D.symm.toLinearEquiv) = Fin.cons v (fun i ↦
@@ -271,7 +271,7 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (0 +
   [IsManifold (𝓡∂ (0 + 1)) 1 M]
 
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1 ((𝓡∂ (0 + 1)).boundary M) :=
-  isManifold_boundary M one_ne_zero
+  isManifold_boundary M
 
 /-- The boundary sign at `x`, read against any basis `e` of the zero-dimensional tangent space,
 is `1` exactly when an outward tangent vector at `x`, taken as a basis of the tangent line, is

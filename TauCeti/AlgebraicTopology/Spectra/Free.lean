@@ -181,6 +181,16 @@ noncomputable abbrev free (n : ℕ) : PointedSSet.{0} ⥤ SymmetricSpectrum :=
 noncomputable def freeEvaluationAdjunction (n : ℕ) : free n ⊣ evaluation n :=
   (SymmetricSequence.freeEvaluationAdjunction n).comp (freeModAdjunction SymmetricSequence.sphere)
 
+/-- The free spectrum functor at level `n` is a left adjoint, hence preserves colimits of all
+sizes. -/
+instance (n : ℕ) : (free n).IsLeftAdjoint :=
+  (freeEvaluationAdjunction n).isLeftAdjoint
+
+/-- Level-`n` evaluation of symmetric spectra is a right adjoint, hence preserves limits of all
+sizes. -/
+instance (n : ℕ) : (evaluation n).IsRightAdjoint :=
+  (freeEvaluationAdjunction n).isRightAdjoint
+
 /-- The free spectrum `F_n (K₊)` on a simplicial set with a disjoint basepoint is left adjoint to
 the underlying simplicial set of level `n`. -/
 noncomputable def freeAddBasepointAdjunction (n : ℕ) :

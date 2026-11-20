@@ -99,7 +99,7 @@ theorem _root_.TangentSpace.exists_smooth_initialData (u w : TangentSpace I p) :
     change alongCurve (leviCivitaConnection I M) γ V 0 = w₀
     dsimp only [V]
     rw [← alongCurveWithin_univ, alongCurveWithin_add _ _ _ _ Set.univ hcoordA
-      (by rw [sectionCoord_smul]; exact differentiableWithinAt_id.fun_smul hcoordB),
+      (by rw [sectionCoord_fun_smul]; exact differentiableWithinAt_id.fun_smul hcoordB),
       alongCurveWithin_smul _ _ _ (fun q : ℝ ↦ q) Set.univ
         differentiableWithinAt_id hcoordB,
       alongCurveWithin_pullback_curveVelocityWithin _ _ _ uniqueDiffWithinAt_univ

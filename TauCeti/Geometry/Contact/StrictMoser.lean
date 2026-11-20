@@ -77,6 +77,22 @@ This Moser step, with `α_t` the linear interpolation of two contact forms and `
 Reeb-direction equation, is how strict normal forms such as the neighbourhood theorem for
 Legendrian submanifolds are proved.
 
+Without compactness the flow need not be defined for all times, but its domain is open. The time
+map from `s` to `t` is then a smooth partial diffeomorphism
+`TauCeti.SmoothForm.strictMoserPartialDiffeomorph`, defined on the open set of points whose
+trajectory exists from time `s` up to time `t`. The Moser computation only reads the
+Reeb-direction equation along trajectories: if `h_u` solves it near the point `φ_(s,u) x` at every
+time `u` between `s` and `t`, then `φ_(s,t)` pulls `α_t` back to `α_s` at `x`
+(`TauCeti.SmoothForm.mpullback_strictMoserPartialDiffeomorph_apply_of_forall_mem_uIcc`). A point
+at which the field vanishes at all times has a constant trajectory, so it lies in the source and
+the target and is fixed. This gives the **relative strict Moser theorem**
+(`TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq`): if the field vanishes at all times
+on a set `K`, and `h_t` solves the Reeb-direction equation on an open set `U ⊆ ℝ × M` containing
+`(u, x)` for every `x ∈ K` and every time `u` between `s` and `t`, the partial isotopy restricted
+to the points whose trajectories stay in `U` is a partial diffeomorphism fixing `K`, defined on
+open neighbourhoods of `K`, which pulls `α_t` back to `α_s` exactly. Neither `K` nor `M` need be
+compact, and the Reeb-direction equation need only hold near `K`.
+
 ## Main declarations
 
 * `TauCeti.SmoothForm.strictContactMoserVectorField`: the strict contact-Moser vector field.
@@ -88,6 +104,12 @@ Legendrian submanifolds are proved.
 * `TauCeti.SmoothForm.mlieDerivForm_strictMoserVectorField_add`: `L_(X_t) α_t + ∂_t α_t = 0`.
 * `TauCeti.SmoothForm.mpullback_timeDependentFlowOf_strictMoserVectorField`: a complete flow of
   the strict Moser vector field pulls `α_t` back to `α_s`.
+* `TauCeti.SmoothForm.strictMoserPartialDiffeomorph`: its flow from time `s` to time `t` as a
+  partial diffeomorphism, with no compactness.
+* `TauCeti.SmoothForm.mpullback_strictMoserPartialDiffeomorph_apply_of_forall_mem_uIcc`: the
+  partial flow pulls `α_t` back to `α_s` at every point along whose trajectory `h` solves the
+  Reeb-direction equation.
+* `TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq`: the relative strict Moser theorem.
 * `TauCeti.SmoothForm.strictMoserDiffeomorph`: on a compact manifold, its flow as a diffeomorphism.
 * `TauCeti.SmoothForm.isStrictContactomorphism_strictMoserDiffeomorph`: the flow pulls `α_t` back
   to `α_s`.
@@ -517,6 +539,25 @@ theorem strictMoserVectorField_eq_zero_iff :
 
 end ReebDirection
 
+/-- **The strict Moser equation for a family, at a point.** If the slice `α_t` is a contact form,
+`h_t` is `C²` and `h_t` solves the Reeb-direction equation `R_(α_t) h_t = -(∂_t α_t)(R_(α_t))` on a
+neighbourhood of `x`, then `L_(X_t) α_t + ∂_t α_t = 0` at `x`, evaluated on a tangent vector. -/
+theorem mlieDerivForm_strictMoserVectorField_add_apply
+    (hh : ContMDiff I 𝓘(ℝ) 2 fun y ↦ h (t, y)) {x : M}
+    (hR : ∀ᶠ y in 𝓝 x, mvfderiv I (fun z ↦ h (t, z)) y
+      ((mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField y) =
+        -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 y
+          ![(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField y])
+    (v : TangentSpace I x) :
+    mlieDerivForm (α.strictMoserVectorField h t)
+        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v] +
+      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x ![v] = 0 := by
+  have hL := hc.mlieDerivForm_strictContactMoserVectorField_apply
+    (hc.mdifferentiable_strictContactMoserVectorField _ hh x)
+    (hR.mono fun _ hy ↦ mvfderiv_eq_mpullback_neg_timeDeriv hy)
+  rw [strictMoserVectorField_def, hL, map_neg, neg_toRoughForm, Pi.neg_apply,
+    ContinuousAlternatingMap.neg_apply, neg_add_cancel]
+
 /-- **The strict Moser equation for a family.** If the slice `α_t` is a contact form and `h_t` is
 `C²` and solves the Reeb-direction equation `R_(α_t) h_t = -(∂_t α_t)(R_(α_t))` everywhere, then
 `L_(X_t) α_t + ∂_t α_t = 0`, evaluated on a tangent vector. -/
@@ -528,11 +569,8 @@ theorem mlieDerivForm_strictMoserVectorField_add (hh : ContMDiff I 𝓘(ℝ) 2 f
     (x : M) (v : TangentSpace I x) :
     mlieDerivForm (α.strictMoserVectorField h t)
         (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v] +
-      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x ![v] = 0 := by
-  have hL := congrFun (hc.mlieDerivForm_strictContactMoserVectorField hh
-    fun y ↦ mvfderiv_eq_mpullback_neg_timeDeriv (hR y)) x
-  rw [strictMoserVectorField_def, hL, map_neg, neg_toRoughForm, Pi.neg_apply,
-    ContinuousAlternatingMap.neg_apply, neg_add_cancel]
+      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x ![v] = 0 :=
+  mlieDerivForm_strictMoserVectorField_add_apply hc hh (.of_forall hR) v
 
 end Slice
 
@@ -567,6 +605,31 @@ theorem contMDiff_strictMoserVectorField {n : WithTop ℕ∞} (hn : n ≤ ∞)
       (fun p : ℝ × M ↦ (⟨p.2, α.strictMoserVectorField h p.1 p.2⟩ : TangentBundle I M)) :=
   fun p ↦ contMDiffAt_strictMoserVectorField hn hh ((hc p.1).isInvertible_contactFlat p.2)
 
+/-- **The strict Moser equation for a family**, as an identity of forms at a point. If `h` is `C²`
+and `h_t` solves the Reeb-direction equation `R_(α_t) h_t = -(∂_t α_t)(R_(α_t))` on a
+neighbourhood of `x`, then the rate `ι_t^* L_{∂_t} α + L_{X_t} α_t` of the family along the strict
+Moser vector field vanishes at `x`. This is the hypothesis of Moser's principle for families of
+forms. -/
+private theorem mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_strictMoserVectorField_apply
+    (hh : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 h) {t : ℝ} {x : M}
+    (hR : ∀ᶠ y in 𝓝 x, mvfderiv I (fun z ↦ h (t, z)) y
+      ((mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField y) =
+        -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 y
+          ![(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField y]) :
+    (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
+          (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1) +
+        mlieDerivForm (α.strictMoserVectorField h t)
+          (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1)) x = 0 := by
+  ext v
+  have hv : v = ![v 0] := funext fun i ↦ by fin_cases i; rfl
+  have hv0 := mlieDerivForm_strictMoserVectorField_add_apply (hc t)
+    (hh.comp ((contMDiff_const (c := t)).prodMk contMDiff_id)) hR (v 0)
+  rw [hv]
+  simp only [coe_mpullback, coe_timeDeriv] at hv0
+  simp only [Pi.add_apply, ContinuousAlternatingMap.add_apply,
+    ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
+  rw [add_comm, hv0]
+
 variable (hR : ∀ t x, mvfderiv I (fun y ↦ h (t, y)) x
     ((mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField x) =
       -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x
@@ -586,27 +649,196 @@ theorem mpullback_timeDependentFlowOf_strictMoserVectorField
     (s t : ℝ) :
     TauCeti.mpullback I I (timeDependentFlowOf (α.strictMoserVectorField h) s t)
         (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1) =
-      TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α.1 := by
-  -- The rate `∂_t α_t + L_{X_t} α_t` of the family vanishes.
-  have hL (t : ℝ) :
-      TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
-          (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1) +
-        mlieDerivForm (α.strictMoserVectorField h t)
-          (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1) = 0 := by
-    funext y
-    ext v
-    have hv : v = ![v 0] := funext fun i ↦ by fin_cases i; rfl
-    have hv0 := mlieDerivForm_strictMoserVectorField_add (hc t)
-      ((hh.comp ((contMDiff_const (c := t)).prodMk contMDiff_id)).of_le (by norm_num)) (hR t) y
-      (v 0)
-    rw [hv]
-    simp only [coe_mpullback, coe_timeDeriv] at hv0
-    simp only [Pi.add_apply, ContinuousAlternatingMap.add_apply,
-      ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
-    rw [add_comm, hv0]
-  exact mpullback_timeDependentFlowOf_mpullback_prodMk_eq
+      TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α.1 :=
+  mpullback_timeDependentFlowOf_mpullback_prodMk_eq
     (contMDiff_strictMoserVectorField hc (n := 2) (by norm_num) hh) hcomplete
-    (α.contMDiff.of_le (by simp)) hL s t
+    (α.contMDiff.of_le (by simp))
+    (fun t ↦ funext fun _ ↦
+      mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_strictMoserVectorField_apply hc
+        (hh.of_le (by norm_num)) (.of_forall (hR t)))
+    s t
+
+/-! ### The relative strict Moser isotopy -/
+
+section Relative
+
+variable (hh : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ h)
+include hh
+
+/-- **The strict Moser partial isotopy.** The time-dependent flow of the strict Moser vector field
+of a smooth family of contact forms `α_t` and a smooth function `h`, from time `s` to time `t`, as
+a smooth partial diffeomorphism of `M`. Its source is the open set of points from which the flow
+is defined from time `s` up to time `t`, and its inverse is the flow from `t` back to `s`. Where
+`h_t` solves the Reeb-direction equation `R_(α_t) h_t = -(∂_t α_t)(R_(α_t))` along a trajectory,
+it pulls `α_t` back to `α_s` at its starting point
+(`TauCeti.SmoothForm.mpullback_strictMoserPartialDiffeomorph_apply_of_forall_mem_uIcc`). No
+compactness is needed. -/
+def strictMoserPartialDiffeomorph (s t : ℝ) : PartialDiffeomorph I I M M ∞ :=
+  timeDependentFlowPartialDiffeomorph le_top
+    (contMDiff_strictMoserVectorField hc le_rfl (hh.of_le (by simp))) s t
+
+/-- The strict Moser partial isotopy is the time-dependent flow of the strict Moser vector
+field. -/
+@[simp]
+theorem strictMoserPartialDiffeomorph_apply (s t : ℝ) (x : M) :
+    strictMoserPartialDiffeomorph hc hh s t x =
+      timeDependentFlowOf (α.strictMoserVectorField h) s t x :=
+  timeDependentFlowPartialDiffeomorph_apply _ _ s t x
+
+/-- The inverse of the strict Moser partial isotopy from `s` to `t` is the time-dependent flow of
+the strict Moser vector field from `t` to `s`. -/
+@[simp]
+theorem strictMoserPartialDiffeomorph_symm_apply (s t : ℝ) (x : M) :
+    (strictMoserPartialDiffeomorph hc hh s t).toPartialEquiv.symm x =
+      timeDependentFlowOf (α.strictMoserVectorField h) t s x :=
+  timeDependentFlowPartialDiffeomorph_symm_apply _ _ s t x
+
+/-- A point lies in the source of the strict Moser partial isotopy from `s` to `t` exactly when
+the flow of the strict Moser vector field from `(s, x)` is defined up to time `t`. -/
+@[simp]
+theorem mem_strictMoserPartialDiffeomorph_source_iff {s t : ℝ} {x : M} :
+    x ∈ (strictMoserPartialDiffeomorph hc hh s t).source ↔
+      ((s, t), x) ∈ timeDependentFlowDomain (α.strictMoserVectorField h) :=
+  mem_timeDependentFlowPartialDiffeomorph_source_iff _ _
+
+/-- A point lies in the target of the strict Moser partial isotopy from `s` to `t` exactly when
+the flow of the strict Moser vector field from `(t, x)` is defined back to time `s`. -/
+@[simp]
+theorem mem_strictMoserPartialDiffeomorph_target_iff {s t : ℝ} {x : M} :
+    x ∈ (strictMoserPartialDiffeomorph hc hh s t).target ↔
+      ((t, s), x) ∈ timeDependentFlowDomain (α.strictMoserVectorField h) :=
+  mem_timeDependentFlowPartialDiffeomorph_target_iff _ _
+
+/-- The strict Moser partial isotopy depends smoothly on the final time and the point, on the open
+set of pairs `(t, x)` for which the flow from `(s, x)` is defined up to time `t`. -/
+theorem contMDiffOn_strictMoserPartialDiffeomorph (s : ℝ) :
+    ContMDiffOn (𝓘(ℝ, ℝ).prod I) I ∞
+      (fun p : ℝ × M ↦ strictMoserPartialDiffeomorph hc hh s p.1 p.2)
+      {p | ((s, p.1), p.2) ∈ timeDependentFlowDomain (α.strictMoserVectorField h)} := by
+  simp only [strictMoserPartialDiffeomorph_apply]
+  exact (contMDiffOn_timeDependentFlowOf le_top
+    (contMDiff_strictMoserVectorField hc le_rfl (hh.of_le (by simp)))).comp
+    (((contMDiff_const (c := s)).prodMk contMDiff_fst).prodMk contMDiff_snd).contMDiffOn
+    fun _ hp ↦ hp
+
+/-- **The strict Moser theorem along a trajectory.** Let `α_t` be a smooth family of contact forms
+on a boundaryless manifold, `h` a smooth time-dependent function and `x` a point of the source of
+the strict Moser partial isotopy `φ_(s,t)`. If at every time `u` between `s` and `t` the slice
+`h_u` solves the Reeb-direction equation `R_(α_u) h_u = -(∂_t α_u)(R_(α_u))` on a neighbourhood of
+the point `φ_(s,u) x` of the trajectory of `x`, then `φ_(s,t)` pulls `α_t` back to `α_s` at `x`.
+The Reeb-direction equation is assumed only near the trajectory of `x`; `h` must still be smooth
+everywhere. -/
+theorem mpullback_strictMoserPartialDiffeomorph_apply_of_forall_mem_uIcc {s t : ℝ} {x : M}
+    (hx : x ∈ (strictMoserPartialDiffeomorph hc hh s t).source)
+    (hR : ∀ u ∈ Set.uIcc s t, ∀ᶠ y in 𝓝 (strictMoserPartialDiffeomorph hc hh s u x),
+      mvfderiv I (fun z ↦ h (u, z)) y
+        ((mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField y) =
+          -(mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 y
+            ![(mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField
+              y]) :
+    TauCeti.mpullback I I (strictMoserPartialDiffeomorph hc hh s t)
+        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x =
+      (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x := by
+  have hφ (u : ℝ) : ⇑(strictMoserPartialDiffeomorph hc hh s u) =
+      timeDependentFlowOf (α.strictMoserVectorField h) s u :=
+    funext (strictMoserPartialDiffeomorph_apply hc hh s u)
+  have hpull := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_uIcc_of_mem
+    (contMDiff_strictMoserVectorField hc (n := 2) (by norm_num) (hh.of_le (by simp)))
+    ((mem_strictMoserPartialDiffeomorph_source_iff hc hh).1 hx)
+    (fun _ _ ↦ (α.contMDiff.of_le (by simp)).contMDiffAt)
+    (fun u hu ↦ mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_strictMoserVectorField_apply hc
+      (hh.of_le (by simp)) (by simpa only [hφ] using hR u hu))
+  simpa only [coe_mpullback, hφ] using hpull
+
+include hR in
+/-- **The strict Moser theorem along the domain of the flow.** On a manifold without boundary, let
+`α_t` be a smooth family of contact forms and let `h_t` be a smooth time-dependent function solving
+the Reeb-direction equation `R_(α_t) h_t = -(∂_t α_t)(R_(α_t))`. On the source of the strict Moser
+partial isotopy `φ_(s,t)`, it pulls `α_t` back to `α_s`. -/
+theorem mpullback_strictMoserPartialDiffeomorph_apply {s t : ℝ} {x : M}
+    (hx : x ∈ (strictMoserPartialDiffeomorph hc hh s t).source) :
+    TauCeti.mpullback I I (strictMoserPartialDiffeomorph hc hh s t)
+        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x =
+      (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x :=
+  mpullback_strictMoserPartialDiffeomorph_apply_of_forall_mem_uIcc hc hh hx
+    fun u _ ↦ .of_forall (hR u)
+
+/-- A point at which the strict Moser vector field vanishes at all times lies in the source of the
+strict Moser partial isotopy between any two times. -/
+theorem mem_strictMoserPartialDiffeomorph_source {x : M}
+    (hx : ∀ u, α.strictMoserVectorField h u x = 0) (s t : ℝ) :
+    x ∈ (strictMoserPartialDiffeomorph hc hh s t).source :=
+  (mem_strictMoserPartialDiffeomorph_source_iff hc hh).2
+    (mem_timeDependentFlowDomain_of_forall_eq_zero hx s t)
+
+/-- A point at which the strict Moser vector field vanishes at all times lies in the target of the
+strict Moser partial isotopy between any two times. -/
+theorem mem_strictMoserPartialDiffeomorph_target {x : M}
+    (hx : ∀ u, α.strictMoserVectorField h u x = 0) (s t : ℝ) :
+    x ∈ (strictMoserPartialDiffeomorph hc hh s t).target :=
+  (mem_strictMoserPartialDiffeomorph_target_iff hc hh).2
+    (mem_timeDependentFlowDomain_of_forall_eq_zero hx t s)
+
+/-- The strict Moser partial isotopy fixes every point at which the strict Moser vector field
+vanishes at all times. -/
+theorem strictMoserPartialDiffeomorph_apply_eq_self {x : M}
+    (hx : ∀ u, α.strictMoserVectorField h u x = 0) (s t : ℝ) :
+    strictMoserPartialDiffeomorph hc hh s t x = x := by
+  rw [strictMoserPartialDiffeomorph_apply]
+  exact timeDependentFlowOf_eq_self_of_forall_eq_zero
+    (contMDiff_strictMoserVectorField hc (n := 1) (by simp) (hh.of_le (by simp))) hx s t
+
+/-- **The relative strict Moser theorem.** Let `α_t` be a smooth family of contact forms on a
+boundaryless manifold and `h` a smooth time-dependent function. Let `K` be a set of points at each
+of which the strict Moser vector field vanishes at all times, and let `U ⊆ ℝ × M` be an open set
+on which `h_t` solves the Reeb-direction equation `R_(α_t) h_t = -(∂_t α_t)(R_(α_t))` and which
+contains `(u, x)` for every `x ∈ K` and every time `u` between `s` and `t`. Then there is a smooth
+partial diffeomorphism `φ` of `M`, whose source and target are open neighbourhoods of `K`, which
+fixes every point of `K` and pulls `α_t` back to `α_s` on its source. Neither `K` nor `M` need be
+compact, and `K` need not be closed. -/
+theorem exists_partialDiffeomorph_mpullback_eq {K : Set M}
+    (hK : ∀ x ∈ K, ∀ u, α.strictMoserVectorField h u x = 0) {U : Set (ℝ × M)} (hU : IsOpen U)
+    {s t : ℝ} (hKU : ∀ x ∈ K, ∀ u ∈ Set.uIcc s t, (u, x) ∈ U)
+    (hR : ∀ p ∈ U, mvfderiv I (fun y ↦ h (p.1, y)) p.2
+      ((mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField p.2) =
+        -(mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 p.2
+          ![(mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField
+            p.2]) :
+    ∃ φ : PartialDiffeomorph I I M M ∞, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
+      ∀ x ∈ φ.source, TauCeti.mpullback I I φ
+          (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x =
+        (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x := by
+  have hX := contMDiff_strictMoserVectorField hc (n := 1) (by simp) (hh.of_le (by simp))
+  set W := {x | ∀ u ∈ Set.uIcc s t,
+    ((s, u), x) ∈ timeDependentFlowDomain (α.strictMoserVectorField h) ∧
+      (u, timeDependentFlowOf (α.strictMoserVectorField h) s u x) ∈ U}
+  have hW : IsOpen W := isOpen_setOf_forall_timeDependentFlowOf_mem hX isCompact_uIcc hU s
+  -- The points of `K` stay put, so their trajectories stay in `U`.
+  have hKW (x : M) (hx : x ∈ K) : x ∈ W := fun u hu ↦
+    ⟨mem_timeDependentFlowDomain_of_forall_eq_zero (hK x hx) s u, by
+      rw [← strictMoserPartialDiffeomorph_apply hc hh,
+        strictMoserPartialDiffeomorph_apply_eq_self hc hh (hK x hx)]
+      exact hKU x hx u hu⟩
+  refine ⟨(strictMoserPartialDiffeomorph hc hh s t).restrOpen W hW, fun x hx ↦ ?_,
+    fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
+  · rw [PartialDiffeomorph.restrOpen_source]
+    exact ⟨mem_strictMoserPartialDiffeomorph_source hc hh (hK x hx) s t, hKW x hx⟩
+  · rw [PartialDiffeomorph.restrOpen_target, Set.mem_inter_iff, Set.mem_preimage,
+      strictMoserPartialDiffeomorph_symm_apply,
+      timeDependentFlowOf_eq_self_of_forall_eq_zero hX (hK x hx)]
+    exact ⟨mem_strictMoserPartialDiffeomorph_target hc hh (hK x hx) s t, hKW x hx⟩
+  · rw [PartialDiffeomorph.coe_restrOpen]
+    exact strictMoserPartialDiffeomorph_apply_eq_self hc hh (hK x hx) s t
+  · -- Along the trajectory of a point of the source, `h` solves the Reeb-direction equation.
+    rw [PartialDiffeomorph.restrOpen_source] at hx
+    rw [PartialDiffeomorph.coe_restrOpen]
+    refine mpullback_strictMoserPartialDiffeomorph_apply_of_forall_mem_uIcc hc hh hx.1
+      fun u hu ↦ ?_
+    rw [strictMoserPartialDiffeomorph_apply]
+    exact Filter.mem_of_superset
+      ((hU.preimage (Continuous.prodMk_right u)).mem_nhds (hx.2 u hu).2) fun y hy ↦ hR (u, y) hy
+
+end Relative
 
 /-! ### The strict Moser isotopy on compact manifolds -/
 

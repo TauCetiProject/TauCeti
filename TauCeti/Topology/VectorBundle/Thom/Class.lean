@@ -65,7 +65,9 @@ Two linear trivializations whose base sets contain `b` read a class of `(F, F �
 the fibre pair over `b` differing by the sign of the determinant of their coordinate change at `b`
 (`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`): an invertible
 linear map acts on `Hⁿ(F, F ∖ {0})` by the sign of its determinant. This is the transition rule
-for the fibre classes of an oriented bundle.
+for the fibre classes of an oriented bundle. In homology, the maps
+`Hₙ(E_b, E_b ∖ {0}) ⟶ Hₙ(F, F ∖ {0})` induced by the two trivializations differ by the same sign
+(`Bundle.Trivialization.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul`).
 
 ## Main definitions and results
 
@@ -98,6 +100,8 @@ for the fibre classes of an oriented bundle.
   the top degree is determined on the fibres.
 * `Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`: fibre classes
   read in two trivializations differ by the sign of the coordinate change.
+* `Bundle.Trivialization.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul`: the maps on
+  the homology of the fibre pairs induced by two linear trivializations differ by the same sign.
 
 ## References
 
@@ -329,6 +333,17 @@ theorem thomPairOverIso_inv_snd_apply (p : (prodThomPair W F).snd) :
   (congrArg Subtype.val ((TopPair.Hom.w_apply (e.thomPairOverIso R hW).inv p).trans
     (e.thomPairOverIso_inv_fst_apply R hW p.1)) :)
 
+/-- The trivialization isomorphism `(E|_W, E₀|_W) ≅ (W × F, W × (F ∖ {0}))` commutes with the
+projections `TauCeti.thomPairOverProj` and `TauCeti.prodThomPairProj` onto `W`. -/
+@[reassoc]
+theorem thomPairOverIso_hom_fst_comp_prodThomPairProj
+    [∀ b, TopologicalSpace (E b)] [FiberBundle F E] :
+    TopPair.Hom.fst (e.thomPairOverIso R hW).hom ≫ prodThomPairProj W F =
+      thomPairOverProj F E W := by
+  refine TopCat.ext fun v ↦ (TopCat.comp_app _ _ v).trans ?_
+  exact (congrArg (prodThomPairProj W F) (e.thomPairOverIso_hom_fst_apply R hW v)).trans
+    ((prodThomPairProj_apply F _).trans (thomPairOverProj_apply F E v).symm)
+
 end ThomPairOver
 
 section ThomPairOverFiber
@@ -357,6 +372,17 @@ theorem fiberThomPairOverMap_comp_thomPairOverIso_hom {b : B} (hb : b ∈ W) :
   rw [fiberThomPairOverMap_fst_apply, thomPairOverIso_hom_fst_apply,
     ContinuousLinearEquiv.complZeroPairIso_hom_fst_apply,
     prodThomPairFiberMap_fst_apply, continuousLinearEquivAt_apply]
+
+/-- The inverse form of `Bundle.Trivialization.fiberThomPairOverMap_comp_thomPairOverIso_hom`: on
+the fibre over `b ∈ W`, the identification of the Thom pair of `W × F` with `(E|_W, E₀|_W)` is the
+inverse of the isomorphism of fibre pairs given by the trivialization at `b`. -/
+@[reassoc]
+theorem prodThomPairFiberMap_comp_thomPairOverIso_inv (b : W) :
+    prodThomPairFiberMap F b ≫ (e.thomPairOverIso 𝕜 hW).inv =
+      (e.continuousLinearEquivAt 𝕜 b (hW b.2)).complZeroPairIso.inv ≫
+        fiberThomPairOverMap F E b.2 := by
+  rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
+    e.fiberThomPairOverMap_comp_thomPairOverIso_hom 𝕜 hW b.2]
 
 include hW in
 /-- **Local classes over a trivializing set.** For `W` contained in the base set of a linear
@@ -399,18 +425,14 @@ theorem singularCohomology_thomPairOver_ext
     (h : ∀ b (hb : b ∈ W), TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) _ u =
       TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) _ v) : u = v := by
   let φ := e.thomPairOverIso ℝ hW
-  have hφ (b : W) : prodThomPairFiberMap F b ≫ φ.inv =
-      (e.continuousLinearEquivAt ℝ b (hW b.2)).complZeroPairIso.inv ≫
-        fiberThomPairOverMap F E b.2 := by
-    rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
-      e.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ hW b.2]
   -- Transport `u` and `v` to the product bundle and compare them there, fibre by fibre.
   have hφu (w : (thomPairOver F E W).singularCohomology R' K M' (finrank ℝ F)) :
       TopPair.singularCohomologyMap φ.hom _ (TopPair.singularCohomologyMap φ.inv _ w) = w := by
     simp [← TopPair.singularCohomologyMap_comp_apply]
   refine (hφu u).symm.trans ((congrArg _ (singularCohomology_prodThomPair_ext fun b ↦ ?_)).trans
     (hφu v))
-  simp only [← TopPair.singularCohomologyMap_comp_apply, hφ]
+  simp only [← TopPair.singularCohomologyMap_comp_apply, φ,
+    e.prodThomPairFiberMap_comp_thomPairOverIso_inv ℝ hW b]
   simp only [TopPair.singularCohomologyMap_comp_apply, h b b.2]
 
 end ThomPairOverExt
@@ -534,6 +556,30 @@ theorem singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul {b : B} (hb 
   rw [hcomp, TopPair.singularCohomologyMap_comp,
     singularCohomologyMap_continuousLinearMap_compl_zero, Preadditive.zsmul_comp, Category.id_comp]
   exact congr($(ModuleCat.hom_zsmul _ _) g)
+
+/-- **Fibre classes read in two trivializations differ by the sign of the coordinate change**, in
+homology: for linear trivializations `e` and `e'` whose base sets contain `b`, the map
+`Hₙ(E_b, E_b ∖ {0}) ⟶ Hₙ(F, F ∖ {0})` induced by `e'` is the one induced by `e`, multiplied by
+the sign of the determinant of the coordinate change from `e` to `e'` at `b`. This is the homology
+counterpart of `Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`.
+-/
+theorem singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul {b : B} (hb : b ∈ e.baseSet)
+    (hb' : b ∈ e'.baseSet) (R : C) (n : ℕ) :
+    TopPair.singularHomologyMap (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom R n =
+      (SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det : ℤ) •
+        TopPair.singularHomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom R
+          n := by
+  have hf : Set.MapsTo (e.coordChangeL ℝ e' b : F →L[ℝ] F) ({0}ᶜ : Set F) {0}ᶜ :=
+    (e.coordChangeL ℝ e' b).mapsTo_compl_zero
+  -- The fibre of `e'` at `b` is the fibre of `e` followed by the coordinate change.
+  have hcomp : (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom =
+      (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom ≫
+        TopPair.ofSubsetMap (TopCat.ofHom ((e.coordChangeL ℝ e' b : F →L[ℝ] F) : C(F, F))) hf := by
+    rw [← e.continuousLinearEquivAt_trans_coordChangeL ℝ e' hb hb',
+      ContinuousLinearEquiv.complZeroPairIso_trans, Iso.trans_hom]
+    exact congrArg _ (ContinuousLinearEquiv.complZeroPairIso_hom _)
+  rw [hcomp, TopPair.singularHomologyMap_comp, singularHomologyMap_continuousLinearMap_compl_zero,
+    Preadditive.comp_zsmul, Category.comp_id]
 
 end CoordChange
 

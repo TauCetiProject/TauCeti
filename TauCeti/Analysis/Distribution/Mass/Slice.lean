@@ -195,17 +195,7 @@ private theorem mass_slice_le_liminf {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] 
     fun x _ => Real.smoothTransition.abs_le_one _
   have hlim (x : Ω) : Tendsto (fun m : ℕ => Real.smoothTransition (((m : ℝ) + 1) * (t - u x)))
       atTop (𝓝 ({y : Ω | u y < t}.indicator 1 x)) := by
-    refine tendsto_const_nhds.congr' ?_
-    by_cases hxt : u x < t
-    · have htop : Tendsto (fun m : ℕ => ((m : ℝ) + 1) * (t - u x)) atTop atTop :=
-        (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds).atTop_mul_const
-          (sub_pos.2 hxt)
-      filter_upwards [htop.eventually_ge_atTop 1] with m hm
-      simp [Real.smoothTransition.one_of_one_le hm, hxt]
-    · refine .of_forall fun m => ?_
-      have hle : ((m : ℝ) + 1) * (t - u x) ≤ 0 :=
-        mul_nonpos_of_nonneg_of_nonpos (by positivity) (sub_nonpos.2 (not_lt.1 hxt))
-      simp [Real.smoothTransition.zero_of_nonpos hle, hxt]
+    simpa [sub_pos] using Real.smoothTransition.tendsto_indicator (fun y : Ω => t - u y) 0 x
   -- By the Leibniz rule `∂(fT) = f ∂T - T ⌞ df`, the slice is the weak limit of `-T ⌞ dfₘ`.
   refine (mass_le_liminf (fs := fun m =>
       -(T ∘ oneFormWedgeCLM (k := k) (contDiff_infty_iff_fderiv.1 (hf m)).2)) fun φ => ?_).trans
