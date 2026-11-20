@@ -167,6 +167,7 @@ noncomputable def descOne (x y : X _⦋0⦌) : (∂Δ[1] : SSet.{u}) ⟶ X :=
 
 /-- The face of `descOne x y` opposite to the vertex `i` is constant at the other vertex: at `y`
 for `i = 0` and at `x` for `i = 1`. -/
+@[reassoc (attr := simp)]
 lemma ι_descOne (x y : X _⦋0⦌) (i : Fin 2) :
     ι i ≫ descOne x y = ![const y, const x] i :=
   IsCompatible.ι_desc _ _
