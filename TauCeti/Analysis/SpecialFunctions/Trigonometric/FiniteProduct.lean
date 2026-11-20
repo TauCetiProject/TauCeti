@@ -90,14 +90,14 @@ private theorem exp_sum_pi_div {m : ℕ} (hm : 0 < m) :
     rw [← Finset.sum_div, ← mul_sum, div_eq_iff hm0]
     push_cast
     linear_combination (I * π / 2) * hgauss
-  rw [Nat.add_sub_cancel, hsum, exp_nat_mul, exp_pi_div_two_mul_I]
+  rw [Nat.add_sub_cancel, hsum, exp_natCast_mul, exp_pi_div_two_mul_I]
 
 /-- With `ω = e^(2πi/m)`: `1 - ω^(k+1) = -2i e^(iπ(k+1)/m) sin(π(k + 1)/m)`. -/
 private theorem one_sub_root_eq_sin {m k : ℕ} (hm : 0 < m) :
     (1 : ℂ) - exp (2 * π * I / m) ^ (k + 1) =
       -2 * I * exp (I * π * (k + 1) / m) * (Real.sin (π * (k + 1 : ℝ) / m) : ℂ) := by
   have hpow : exp (2 * π * I / m) ^ (k + 1) = exp (I * (2 * π * (k + 1) / m)) := by
-    rw [← exp_nat_mul]
+    rw [← exp_natCast_mul]
     congr 1
     push_cast
     ring

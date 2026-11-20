@@ -55,28 +55,28 @@ quotient the product of the corresponding local degrees. The primes above each p
 be chosen arbitrarily. -/
 private theorem herbrandQuotient_ofMulAction_sigma_primesOver
     (S : Finset (HeightOneSpectrum (𝓞 K)))
-    (w : ∀ v : S, {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.1.asIdeal}) :
+    (w : ∀ v : S, {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.val.asIdeal}) :
     TateCohomology.herbrandQuotient
-      (Rep.ofMulAction ℤ (L ≃ₐ[K] L) (Σ v : S, v.1.asIdeal.primesOver (𝓞 L))) =
-        ∏ v : S, (Module.finrank (v.1.adicCompletion K) ((w v).1.adicCompletion L) : ℚ) := by
+      (Rep.ofMulAction ℤ (L ≃ₐ[K] L) (Σ v : S, v.val.asIdeal.primesOver (𝓞 L))) =
+        ∏ v : S, (Module.finrank (v.val.adicCompletion K) ((w v).val.adicCompletion L) : ℚ) := by
   classical
-  let x (v : S) := HeightOneSpectrum.liesOverEquivPrimesOver (𝓞 L) v.1 (w v)
+  let x (v : S) := HeightOneSpectrum.liesOverEquivPrimesOver (𝓞 L) v.val (w v)
   rw [TateCohomology.herbrandQuotient_ofMulAction_sigma_of_isPretransitive x]
   apply Finset.prod_congr rfl
   intro v _
   rw [stabilizer_primesOver_ringOfIntegers,
     HeightOneSpectrum.liesOverEquivPrimesOver_apply,
-    HeightOneSpectrum.card_stabilizer_eq_finrank_adicCompletion v.1 (w v).1]
+    HeightOneSpectrum.card_stabilizer_eq_finrank_adicCompletion v.val (w v).val]
 
 /-- The permutation lattice on the canonical carrier of primes above a finite set of finite
 places has Herbrand quotient the product of their local degrees. The prime above each place
 may be chosen arbitrarily. -/
 theorem herbrandQuotient_ofMulAction_primesAbove
     (S : Finset (HeightOneSpectrum (𝓞 K)))
-    (w : ∀ v : S, {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.1.asIdeal}) :
+    (w : ∀ v : S, {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.val.asIdeal}) :
     TateCohomology.herbrandQuotient
       (Rep.ofMulAction ℤ (L ≃ₐ[K] L) ↥(HeightOneSpectrum.primesAbove (𝓞 K) (𝓞 L) ↑S)) =
-        ∏ v : S, (Module.finrank (v.1.adicCompletion K) ((w v).1.adicCompletion L) : ℚ) := by
+        ∏ v : S, (Module.finrank (v.val.adicCompletion K) ((w v).val.adicCompletion L) : ℚ) := by
   let e := ofMulActionIsoCongr ℤ (sigmaPrimesOverEquivPrimesAbove (𝓞 K) (𝓞 L) ↑S)
     (sigmaPrimesOverEquivPrimesAbove_smul K L ↑S)
   rw [← TateCohomology.herbrandQuotient_eq_of_iso e]
@@ -88,11 +88,11 @@ by the global degree. This is the finite-place augmentation calculation, not yet
 Herbrand quotient of the `S`-units. -/
 theorem herbrandQuotient_augmentationSubrepresentation_primesAbove
     [IsCyclic (L ≃ₐ[K] L)] (S : Finset (HeightOneSpectrum (𝓞 K))) (hS : S.Nonempty)
-    (w : ∀ v : S, {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.1.asIdeal}) :
+    (w : ∀ v : S, {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.val.asIdeal}) :
     TateCohomology.herbrandQuotient (Rep.of
       (augmentationSubrepresentation ℤ (L ≃ₐ[K] L)
         ↥(HeightOneSpectrum.primesAbove (𝓞 K) (𝓞 L) ↑S)).toRepresentation) =
-      (∏ v : S, (Module.finrank (v.1.adicCompletion K) ((w v).1.adicCompletion L) : ℚ)) /
+      (∏ v : S, (Module.finrank (v.val.adicCompletion K) ((w v).val.adicCompletion L) : ℚ)) /
         Module.finrank K L := by
   obtain ⟨v, hv⟩ := hS
   have : Nonempty ↥(HeightOneSpectrum.primesAbove (𝓞 K) (𝓞 L) ↑S) :=

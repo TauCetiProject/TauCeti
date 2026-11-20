@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
-public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import TauCeti.Algebra.Homology.LinearYoneda
 
 /-!
@@ -15,7 +14,12 @@ public import TauCeti.Algebra.Homology.LinearYoneda
 For a ring `k` and a `k`-module `M`, evaluation on the unit chain of each simplex identifies
 `Hom_k(C_n(K; k), M)` with functions from the `n`-simplices of `K` to `M`. This identification
 is integral-linear, including for noncommutative rings. The cochain differential becomes the
-alternating sum of values on faces, and pullback becomes precomposition on simplices.
+alternating sum of values on faces, pullback becomes precomposition on simplices, and a change
+of coefficients acts on the values.
+The simplicial set `K : SSet.{u}` may live in a different universe from `k`. The file assumes
+`HasCoproducts.{u} (ModuleCat k)`, that is, coproducts of `k`-modules indexed by every type in
+the universe `u` of `K`, as Mathlib's `SSet.chainComplex` requires. They exist, for example, when
+`u` is no larger than the universe of `k`.
 
 The construction uses Mathlib's `SSet.isColimitChainComplexXCofan` and
 `Cofan.IsColimit.desc`, the coproduct universal property also used by `TauCeti.chainsDesc`.
@@ -34,13 +38,14 @@ noncomputable section
 open CategoryTheory Limits SSet
 open scoped Simplicial
 
-universe w
+universe u w
 
 namespace TauCeti
 
 section Ring
 
-variable (k : Type w) [Ring k] (M : ModuleCat.{w} k) (K : SSet.{w})
+variable (k : Type w) [Ring k] (M : ModuleCat.{w} k) (K : SSet.{u})
+  [HasCoproducts.{u} (ModuleCat.{w} k)]
 
 /-- Evaluation on unit simplex chains identifies simplicial cochains with functions on
 simplices, as modules over the integers. -/
@@ -67,12 +72,8 @@ def cochainValuesEquiv (n : ℕ) :
         apply LinearMap.ext_ring
         exact desc_apply _ σ
       right_inv := fun v ↦ funext (desc_apply v)
-      map_add' := fun φ ψ ↦ by
-        funext σ
-        rfl
-      map_smul' := fun a φ ↦ by
-        funext σ
-        rfl }
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl }
 
 /-- The value coordinate of a cochain is its value on the unit chain of the simplex. -/
 @[simp]
@@ -89,11 +90,7 @@ lemma cochainValuesEquiv_symm_apply (n : ℕ) (v : K _⦋n⦌ → M) (σ : K _�
       a • v σ := by
   have h := congrFun ((cochainValuesEquiv k M K n).apply_symm_apply v) σ
   rw [cochainValuesEquiv_apply] at h
-  calc
-    _ = (cochainValuesEquiv k M K n).symm v
-        (a • K.ιChainComplex (R := ModuleCat.of k k) σ 1) := by
-      rw [← map_smul, smul_eq_mul, mul_one]
-    _ = a • v σ := by rw [map_smul, h]
+  rw [← h, ← map_smul, ← map_smul, smul_eq_mul, mul_one]
 
 /-- The cochain differential, in simplex coordinates, is the alternating sum over faces. -/
 lemma cochainValuesEquiv_d (n : ℕ)
@@ -101,27 +98,48 @@ lemma cochainValuesEquiv_d (n : ℕ)
     cochainValuesEquiv k M K (n + 1)
         ((K.chainComplex (ModuleCat.of k k)).d (n + 1) n ≫ φ) σ =
       ∑ i : Fin (n + 2), (-1 : ℤ) ^ i.val • cochainValuesEquiv k M K n φ (K.δ i σ) := by
-  rw [cochainValuesEquiv_apply]
-  rw [← ModuleCat.comp_apply, K.ιChainComplex_d_assoc]
+  rw [cochainValuesEquiv_apply, ← ModuleCat.comp_apply, K.ιChainComplex_d_assoc]
   simp only [Preadditive.sum_comp, Preadditive.zsmul_comp, ModuleCat.hom_sum,
     ModuleCat.hom_zsmul, LinearMap.sum_apply, LinearMap.smul_apply, ModuleCat.hom_comp,
     LinearMap.comp_apply, cochainValuesEquiv_apply]
 
+/-- The value of the coboundary of a `0`-cochain on a `1`-simplex. -/
+lemma cochainValuesEquiv_d_one_zero (φ : (K.chainComplex (ModuleCat.of k k)).X 0 ⟶ M)
+    (σ : K _⦋1⦌) :
+    cochainValuesEquiv k M K 1 ((K.chainComplex (ModuleCat.of k k)).d 1 0 ≫ φ) σ =
+      cochainValuesEquiv k M K 0 φ (K.δ 0 σ) - cochainValuesEquiv k M K 0 φ (K.δ 1 σ) := by
+  refine (cochainValuesEquiv_d k M K 0 φ σ).trans ?_
+  simp [Fin.sum_univ_two, sub_eq_add_neg]
+
+/-- The value of the coboundary of a `1`-cochain on a `2`-simplex. -/
+lemma cochainValuesEquiv_d_two_one (φ : (K.chainComplex (ModuleCat.of k k)).X 1 ⟶ M)
+    (σ : K _⦋2⦌) :
+    cochainValuesEquiv k M K 2 ((K.chainComplex (ModuleCat.of k k)).d 2 1 ≫ φ) σ =
+      cochainValuesEquiv k M K 1 φ (K.δ 0 σ) - cochainValuesEquiv k M K 1 φ (K.δ 1 σ) +
+        cochainValuesEquiv k M K 1 φ (K.δ 2 σ) := by
+  refine (cochainValuesEquiv_d k M K 1 φ σ).trans ?_
+  simp [Fin.sum_univ_three, sub_eq_add_neg]
+
 /-- Pullback of cochains is precomposition of their value functions with the simplicial map. -/
-lemma cochainValuesEquiv_chainComplexMap {L : SSet.{w}} (f : K ⟶ L) (n : ℕ)
+lemma cochainValuesEquiv_chainComplexMap {L : SSet.{u}} (f : K ⟶ L) (n : ℕ)
     (φ : (L.chainComplex (ModuleCat.of k k)).X n ⟶ M) (σ : K _⦋n⦌) :
     cochainValuesEquiv k M K n ((chainComplexMap f (ModuleCat.of k k)).f n ≫ φ) σ =
       cochainValuesEquiv k M L n φ (f.app _ σ) := by
-  simp only [cochainValuesEquiv_apply]
-  have h := ConcreteCategory.congr_hom
-    (ι_chainComplexMap_f (R := ModuleCat.of k k) K _ f σ) (1 : k)
-  exact congrArg φ.hom h
+  rw [cochainValuesEquiv_apply, cochainValuesEquiv_apply, ← ModuleCat.comp_apply,
+    ι_chainComplexMap_f_assoc, ModuleCat.comp_apply]
+
+/-- Changing the coefficients of a cochain along `g : M ⟶ N` applies `g` to each of its values. -/
+lemma cochainValuesEquiv_comp {N : ModuleCat.{w} k} (n : ℕ)
+    (φ : (K.chainComplex (ModuleCat.of k k)).X n ⟶ M) (g : M ⟶ N) (σ : K _⦋n⦌) :
+    cochainValuesEquiv k N K n (φ ≫ g) σ = g (cochainValuesEquiv k M K n φ σ) := by
+  rw [cochainValuesEquiv_apply, cochainValuesEquiv_apply, ModuleCat.comp_apply]
 
 end Ring
 
 section CommRing
 
-variable (k : Type w) [CommRing k] (M : ModuleCat.{w} k) (K : SSet.{w})
+variable (k : Type w) [CommRing k] (M : ModuleCat.{w} k) (K : SSet.{u})
+  [HasCoproducts.{u} (ModuleCat.{w} k)]
 
 /-- For a commutative ring `k`, the identification `TauCeti.cochainValuesEquiv` of cochains with
 functions on simplices is `k`-linear. -/
@@ -148,6 +166,27 @@ lemma cochainValuesEquiv_linearYonedaObj_d (n : ℕ)
       ∑ i : Fin (n + 2), (-1 : ℤ) ^ i.val • cochainValuesEquiv k M K n φ (K.δ i σ) := by
   rw [ChainComplex.linearYonedaObj_d_apply]
   exact cochainValuesEquiv_d k M K n φ σ
+
+/-- The values of the coboundary of a `0`-cochain in `Hom(C(K; k), M)` on a `1`-simplex `σ`: the
+value at its endpoint `δ₀ σ` minus the value at its starting point `δ₁ σ`. -/
+lemma cochainValuesEquiv_linearYonedaObj_d_zero_one
+    (φ : ((K.chainComplex (ModuleCat.of k k)).linearYonedaObj k M).X 0) (σ : K _⦋1⦌) :
+    cochainValuesEquiv k M K 1
+        (((K.chainComplex (ModuleCat.of k k)).linearYonedaObj k M).d 0 1 φ) σ =
+      cochainValuesEquiv k M K 0 φ (K.δ 0 σ) - cochainValuesEquiv k M K 0 φ (K.δ 1 σ) := by
+  refine (cochainValuesEquiv_linearYonedaObj_d k M K 0 φ σ).trans ?_
+  simp [Fin.sum_univ_two, sub_eq_add_neg]
+
+/-- The values of the coboundary of a `1`-cochain in `Hom(C(K; k), M)` on a `2`-simplex `σ`: the
+alternating sum of its values on the edges `δ₀ σ`, `δ₁ σ` and `δ₂ σ`. -/
+lemma cochainValuesEquiv_linearYonedaObj_d_one_two
+    (φ : ((K.chainComplex (ModuleCat.of k k)).linearYonedaObj k M).X 1) (σ : K _⦋2⦌) :
+    cochainValuesEquiv k M K 2
+        (((K.chainComplex (ModuleCat.of k k)).linearYonedaObj k M).d 1 2 φ) σ =
+      cochainValuesEquiv k M K 1 φ (K.δ 0 σ) - cochainValuesEquiv k M K 1 φ (K.δ 1 σ) +
+        cochainValuesEquiv k M K 1 φ (K.δ 2 σ) := by
+  refine (cochainValuesEquiv_linearYonedaObj_d k M K 1 φ σ).trans ?_
+  simp [Fin.sum_univ_three, sub_eq_add_neg]
 
 end CommRing
 

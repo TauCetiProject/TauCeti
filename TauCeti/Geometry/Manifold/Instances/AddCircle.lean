@@ -79,6 +79,8 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   `AddCircle.mfderiv_prodMap_coe`: the quotient map
   `ℝ × ℝ → AddCircle p × AddCircle q` is an analytic local diffeomorphism whose differential is the
   identity of `ℝ × ℝ`.
+* `AddCircle.mvfderiv_eq_smulRight_of_hasDerivAt`: the differential of a vector-valued function on
+  `AddCircle p` is the derivative of its lift to `ℝ`.
 * `AddCircle.mvfderiv_prodMap_coe_apply`: the differential of a vector-valued function on
   `AddCircle p × AddCircle q` is the derivative of its lift to `ℝ × ℝ`.
 * `AddCircle.hasMFDerivAt_add_coe_comp`: the velocity of a curve `s ↦ x + [f s]` is the derivative
@@ -477,6 +479,19 @@ theorem mfderiv_comp_coe {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 
     ((isLocalDiffeomorph_coe p 1 t).mdifferentiableAt_comp_iff one_ne_zero).not.mpr hg
   rw [mfderiv_zero_of_not_mdifferentiableAt hg, mfderiv_zero_of_not_mdifferentiableAt hgc]
   -- Both `TangentSpace`s unfold to `ℝ`, so the two zero maps coincide.
+  rfl
+
+variable {p} in
+/-- If the lift `f ∘ (↑)` of a function `f` on `AddCircle p` with values in a normed space has
+derivative `c` at `t`, the differential of `f` at the image of `t` is `u ↦ u • c`, the tangent
+line of `AddCircle p` being read in its charts as `ℝ`. -/
+theorem mvfderiv_eq_smulRight_of_hasDerivAt {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : AddCircle p → F} {c : F} {t : ℝ}
+    (h : HasDerivAt (f ∘ (↑)) c t) :
+    mvfderiv 𝓘(ℝ) f (t : AddCircle p) = (1 : ℝ →L[ℝ] ℝ).smulRight c := by
+  rw [mvfderiv, ← mfderiv_comp_coe, h.hasFDerivAt.hasMFDerivAt.mfderiv]
+  -- The tangent lines of `ℝ` and of the circle are `ℝ` by definition, and so is the
+  -- identification `NormedSpace.fromTangentSpace`.
   rfl
 
 variable {p} in

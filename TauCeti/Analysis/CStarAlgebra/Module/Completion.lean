@@ -694,7 +694,7 @@ self-module `A`, intertwining the extended right `A`-action with multiplication 
 noncomputable def completionEquiv : Completion S ≃ₗᵢ[ℂ] A :=
   equivOfDenseInner (subtype S).op Subtype.val
     (fun _ _ ↦ by rw [CStarModule.inner_mulOpposite, inner_mulOpposite_apply])
-    (denseRange_subtype_val.mpr hS)
+    (denseRange_subtypeVal.mpr hS)
 
 @[simp] theorem completionEquiv_coe (x : S) : S.completionEquiv hS (x : Completion S) = (x : A) :=
   equivOfDenseInner_coe _ _ _ _ x

@@ -85,7 +85,7 @@ namespace FreeCancelEquiv
 
 /-- Free-cancellation equivalence is an equivalence relation. -/
 theorem equivalence : Equivalence (FreeCancelEquiv (n := n)) :=
-  Relation.EqvGen.is_equivalence FreeCancelStep
+  Relation.EqvGen.equivalence FreeCancelStep
 
 /-- Free-cancellation equivalence is reflexive. -/
 @[refl]

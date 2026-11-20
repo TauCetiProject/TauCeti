@@ -11,10 +11,13 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 /-!
 # Completion of continuous semilinear maps and equivalences
 
+Subtraction of continuous semilinear maps between uniform modules commutes with extension to the
+separated completions (`ContinuousLinearMap.completion_sub`).
+
 A continuous semilinear equivalence of uniform additive groups extends to their separated
-completions. The construction completes its forward and inverse continuous semilinear maps
-using Mathlib's `ContinuousLinearMap.completion`. No separation or completeness assumption on
-the original spaces is needed.
+completions (`ContinuousLinearEquiv.completion`). The construction completes its forward and
+inverse continuous semilinear maps using Mathlib's `ContinuousLinearMap.completion`. No separation
+or completeness assumption on the original spaces is needed.
 
 This file also records the universal property of `ContinuousLinearMap.fromCompletion`
 (`ContinuousLinearMap.comp_toComplL_eq_iff`) and equivariance criteria for `fromCompletion` and
@@ -75,6 +78,26 @@ theorem comp_toComplL_eq_iff [T0Space β] [CompleteSpace β]
   ⟨fun h ↦ (f.fromCompletion_unique g fun u ↦ (DFunLike.congr_fun h u).symm).symm,
     fun h ↦ by ext x; simp [h]⟩
 
+section Sub
+
+variable {R S E F : Type*} [Ring R] [Ring S]
+  [AddCommGroup E] [UniformSpace E] [IsUniformAddGroup E]
+  [AddCommGroup F] [UniformSpace F] [IsUniformAddGroup F]
+  [Module R E] [UniformContinuousConstSMul R E]
+  [Module S F] [UniformContinuousConstSMul S F]
+  {σ : R →+* S}
+
+/-- Completing a difference of continuous semilinear maps is the difference of their
+completions. -/
+@[simp]
+theorem completion_sub (f g : E →SL[σ] F) : (f - g).completion = f.completion - g.completion := by
+  ext x
+  induction x using Completion.induction_on with
+  | hp => exact isClosed_eq (f - g).completion.continuous (f.completion - g.completion).continuous
+  | ih x => simp [← Completion.coe_sub]
+
+end Sub
+
 end ContinuousLinearMap
 
 namespace ContinuousLinearEquiv
@@ -90,11 +113,11 @@ variable {R S E F : Type*} [Semiring R] [Semiring S]
 noncomputable def completion (e : E ≃SL[σ] F) : Completion E ≃SL[σ] Completion F := by
   let f := e.toContinuousLinearMap.completion
   let g := e.symm.toContinuousLinearMap.completion
-  refine ContinuousLinearEquiv.equivOfInverse f g ?_ ?_
-  · exact congr_fun (Completion.ext (g.continuous.comp f.continuous) continuous_id
-      (fun x => by simp [f, g]))
-  · exact congr_fun (Completion.ext (f.continuous.comp g.continuous) continuous_id
-      (fun x => by simp [f, g]))
+  refine ContinuousLinearEquiv.ofContinuousLinearMap f g ?_ ?_
+  · exact ContinuousLinearMap.ext (congr_fun (Completion.ext (f.continuous.comp g.continuous)
+      continuous_id (fun x => by simp [f, g])))
+  · exact ContinuousLinearMap.ext (congr_fun (Completion.ext (g.continuous.comp f.continuous)
+      continuous_id (fun x => by simp [f, g])))
 
 /-- On the original space, the completed equivalence agrees with the original equivalence. -/
 @[simp]

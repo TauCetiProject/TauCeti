@@ -665,7 +665,7 @@ private theorem exists_linearIndepOn_mkQ_pbwMonomial_of_directed {ι : Type*} [N
   set V := Submodule.span K ((fun j ↦ (bC j : L)) '' S)
   have hVC : V ≤ C := Submodule.span_le.2 <| by
     rintro _ ⟨j, -, rfl⟩
-    exact (bC j).2
+    exact (bC j).property
   have : FiniteDimensional K V := FiniteDimensional.span_of_finite K (S.finite_toSet.image _)
   obtain ⟨i, hVi⟩ := Submodule.exists_disjoint_of_directed V (fun j ↦ (B j : Submodule K L))
     (hB.mono_comp (· ≥ ·) fun _ _ h ↦ (LieSubalgebra.toSubmodule_le_toSubmodule _ _).2 h)
@@ -701,7 +701,7 @@ theorem iInf_span_range_ι_sub_algebraMap {ι : Type*} [Nonempty ι] {B : ι →
     (Set.range fun x : B' ↦ _root_.UniversalEnvelopingAlgebra.ι K (x : L) - algebraMap K UK (χ x))
   have hJ (i : ι) : J Binf ≤ J (B i) := Submodule.span_mono <| by
     rintro _ ⟨x, rfl⟩
-    exact ⟨⟨x, hmem.1 x.2 i⟩, rfl⟩
+    exact ⟨⟨x, hmem.1 x.property i⟩, rfl⟩
   refine le_antisymm ?_ (le_iInf hJ)
   have hχinf : ∀ x ∈ Binf, ∀ y ∈ Binf, χ ⁅x, y⁆ = 0 := fun x hx y hy ↦
     hχ (Classical.arbitrary ι) x (hmem.1 hx _) y (hmem.1 hy _)

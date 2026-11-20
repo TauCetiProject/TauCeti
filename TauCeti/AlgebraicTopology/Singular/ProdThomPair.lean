@@ -110,7 +110,7 @@ lemma prodThomPairMap_fst_apply (g : C(B, B')) (p : B × F) :
 
 @[simp]
 lemma prodThomPairMap_snd_apply (g : C(B, B')) (p : (prodThomPair B F).snd) :
-    (TopPair.Hom.snd (prodThomPairMap F g) p).1 = (g p.1.1, p.1.2) :=
+    (TopPair.Hom.snd (prodThomPairMap F g) p).val = (g p.val.1, p.val.2) :=
   TopPair.ofSubsetMap_snd_apply _ _ _
 
 @[simp]
@@ -194,7 +194,7 @@ def prodThomPairPuncturedProj : (prodThomPair B F).snd ⟶ TopCat.of B :=
 
 @[simp]
 lemma prodThomPairPuncturedProj_apply (p : (prodThomPair B F).snd) :
-    prodThomPairPuncturedProj B F p = p.1.1 :=
+    prodThomPairPuncturedProj B F p = p.val.1 :=
   (rfl)
 
 /-- The projection of the punctured product bundle is the restriction of the projection of the
@@ -223,8 +223,8 @@ open MonoidalCategory CartesianMonoidalCategory
 /-- In the coordinates `e`, the punctured product `B × (F ∖ {0})` is `B × (ℝᵈ⁺¹ ∖ {0})`. -/
 private def prodThomPairPuncturedHomeomorph (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 1))) :
     (prodThomPair B F).snd ≃ₜ B × ({0}ᶜ : Set (EuclideanSpace ℝ (Fin (d + 1)))) where
-  toFun p := (p.1.1, ⟨e p.1.2, by simpa using p.2⟩)
-  invFun q := ⟨(q.1, e.symm q.2), fun h ↦ q.2.2 (by simpa using congrArg e h)⟩
+  toFun p := (p.val.1, ⟨e p.val.2, by simpa using p.property⟩)
+  invFun q := ⟨(q.1, e.symm q.2), fun h ↦ q.2.property (by simpa using congrArg e h)⟩
   left_inv p := Subtype.ext (by simp)
   right_inv q := Prod.ext rfl (Subtype.ext (by simp))
   continuous_toFun := by fun_prop
@@ -247,7 +247,7 @@ def prodThomPairPuncturedHomotopyEquiv (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 
 @[simp]
 theorem prodThomPairPuncturedHomotopyEquiv_apply_snd (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 1)))
     (p : (prodThomPair B F).snd) :
-    (prodThomPairPuncturedHomotopyEquiv B e p).2 = p.1.1 :=
+    (prodThomPairPuncturedHomotopyEquiv B e p).2 = p.val.1 :=
   (rfl)
 
 /-- The first component of `TauCeti.prodThomPairPuncturedHomotopyEquiv` is the radial projection
@@ -256,8 +256,8 @@ theorem prodThomPairPuncturedHomotopyEquiv_apply_snd (e : F ≃L[ℝ] EuclideanS
 theorem coe_prodThomPairPuncturedHomotopyEquiv_apply_fst
     (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 1))) (p : (prodThomPair B F).snd) :
     ((prodThomPairPuncturedHomotopyEquiv B e p).1.down : EuclideanSpace ℝ (Fin (d + 1))) =
-      ‖e p.1.2‖⁻¹ • e p.1.2 :=
-  (coe_complSingletonHomotopyEquivSphere_apply _ ⟨e p.1.2, _⟩).trans (by simp)
+      ‖e p.val.2‖⁻¹ • e p.val.2 :=
+  (coe_complSingletonHomotopyEquivSphere_apply _ ⟨e p.val.2, _⟩).trans (by simp)
 
 /-- The homotopy inverse of `TauCeti.prodThomPairPuncturedHomotopyEquiv` is
 `(s, b) ↦ (b, e⁻¹ s)`. -/
@@ -265,7 +265,7 @@ theorem coe_prodThomPairPuncturedHomotopyEquiv_apply_fst
 theorem coe_prodThomPairPuncturedHomotopyEquiv_symm_apply
     (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 1)))
     (q : ↑(TopCat.sphere.{w} d ⊗ TopCat.of B : TopCat.{w})) :
-    ((prodThomPairPuncturedHomotopyEquiv B e).symm q).1 = (q.2, e.symm q.1.down) :=
+    ((prodThomPairPuncturedHomotopyEquiv B e).symm q).val = (q.2, e.symm q.1.down) :=
   Prod.ext rfl (congrArg e.symm
     ((coe_complSingletonHomotopyEquivSphere_symm_apply _ q.1.down).trans (add_zero _)))
 
@@ -300,7 +300,6 @@ variable (B) in
 private lemma isZero_singularHomology_halfCompl (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) (v : F)
     (hv : v ∈ W) (hφv : φ v = 1) (n : ℕ) :
     IsZero ((TopPair.ofSubset (halfCompl B W φ)).singularHomology R n) := by
-  let P := TopPair.ofSubset (halfCompl B W φ)
   have hmem : ∀ p : B × F, (p.1, v) ∈ halfCompl B W φ := fun p h ↦
     (hφv ▸ one_pos : 0 < φ v).not_ge h.2
   let c : TopCat.of (B × F) ⟶ TopCat.of (B × F) :=
@@ -310,22 +309,14 @@ private lemma isZero_singularHomology_halfCompl (W : Submodule ℝ F) (φ : F �
       continuous_toFun := by fun_prop
       map_zero_left _ := by simp
       map_one_left _ := by simp [c] }
-  have hH := TopPair.ofSubsetHomotopy (B := halfCompl B W φ) (B' := halfCompl B W φ) H
-    fun τ p hp ↦ starConvex_compl_setOf_mem_and_nonpos hv (by simp [hφv]) hp τ.2.1
-      (sub_nonneg.2 τ.2.2) (add_sub_cancel _ _)
-  let g : P.fst ⟶ P.snd :=
-    TopCat.ofHom ⟨fun p ↦ ⟨(p.1, v), hmem p⟩, by fun_prop⟩
-  refine TopPair.isZero_singularHomology_of_homotopy
-    (f := TopPair.ofSubsetMap c fun p _ ↦ hmem p) ?_ g ?_ R n
-  · rw [← TopPair.ofSubsetMap_id (B := halfCompl B W φ) fun _ hx ↦ hx]
-    exact hH
-  · ext p
-    exact (TopPair.ofSubsetMap_fst_apply _ _ p).symm
+  exact TopPair.isZero_singularHomology_ofSubset_of_homotopy H
+    (fun τ p hp ↦ starConvex_compl_setOf_mem_and_nonpos hv (by simp [hφv]) hp τ.property.1
+      (sub_nonneg.2 τ.property.2) (add_sub_cancel _ _)) hmem R n
 
 variable (B)
 
 private instance : IsEmpty (pair B (⊤ : Submodule ℝ F)).snd :=
-  ⟨fun p ↦ p.2 Submodule.mem_top⟩
+  ⟨fun p ↦ p.property Submodule.mem_top⟩
 
 variable (F) in
 /-- `Hₙ(B × F, ∅) ≅ Hₙ(B)`, through the projection. -/
