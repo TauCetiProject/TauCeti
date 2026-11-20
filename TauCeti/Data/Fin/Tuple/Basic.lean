@@ -75,6 +75,9 @@ once.
   change the set of entries.
 * `Fin.existsUnique_isLeft_castSucc_and_isRight_succ`: a tuple in `α ⊕ β` from the left summand to
   the right one that never steps back steps from left to right exactly once.
+* `Fin.comp_succ_succAbove_comp_predAbove`: when adjacent entries at `p.castSucc` and `p.succ`
+  agree, deleting `p.succ` via `p.succ.succAbove` and pulling back along `p.predAbove` recovers the
+  tuple.
 -/
 
 public section
@@ -479,5 +482,16 @@ theorem existsUnique_isLeft_castSucc_and_isRight_succ {α β : Type*} {n : ℕ}
     omega
   · have := hmono (castSucc_lt_iff_succ_le.mp (castSucc_lt_castSucc_iff.mpr h))
     omega
+
+/-- When `f` takes equal values at the adjacent indices `p.castSucc` and `p.succ`, deleting
+`p.succ` via `p.succ.succAbove` and pulling back along `p.predAbove` recovers `f`. -/
+theorem comp_succ_succAbove_comp_predAbove {α : Type*} {n : ℕ} {f : Fin (n + 1) → α} {p : Fin n}
+    (hf : f p.castSucc = f p.succ) :
+    (f ∘ p.succ.succAbove) ∘ p.predAbove = f := by
+  funext i
+  by_cases hi : i = p.succ
+  · subst hi
+    simp [hf]
+  · simp [Function.comp_apply, Fin.succ_succAbove_predAbove hi]
 
 end Fin
