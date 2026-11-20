@@ -120,13 +120,13 @@ theorem eval₂_mfderiv_hamiltonianFlowAction_section_eq_zero_iff
   simp only [hσ.eval₂_mfderiv_hamiltonianFlowAction_section hF hcomm hc hs hFs hh, hL, zero_add,
     sub_eq_zero]
 
-/-- **Two isotropic sections differ by a gradient.** Let `s` be an isotropic `C¹` section of `F`
-over an open set `D`, star-convex with respect to `c₀`, and let `h` be a `Cʳ` map on `D`, `r ≥ 1`,
-such that the moved section `h • s` is isotropic on `D` as well. Then `h` is the gradient of a
-`Cʳ⁺¹` function `S` on `D`: `dS = ∑ⱼ hⱼ dcⱼ`. -/
+/-- **Two isotropic sections differ by a gradient.** Let `s` be an isotropic differentiable
+section of `F` over an open set `D`, star-convex with respect to `c₀`, and let `h` be a `Cʳ` map
+on `D`, `r ≥ 1`, such that the moved section `h • s` is isotropic on `D` as well. Then `h` is the
+gradient of a `Cʳ⁺¹` function `S` on `D`: `dS = ∑ⱼ hⱼ dcⱼ`. -/
 theorem exists_contDiffOn_hasFDerivAt_of_eval₂_mfderiv_hamiltonianFlowAction_section_eq_zero
     {D : Set (ι → ℝ)} {c₀ : ι → ℝ} (hDo : IsOpen D) (hD : StarConvex ℝ c₀ D)
-    (hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I 1 s D) (hFs : ∀ c ∈ D, F (s c) = c)
+    (hs : MDifferentiableOn 𝓘(ℝ, ι → ℝ) I s D) (hFs : ∀ c ∈ D, F (s c) = c)
     (hL : ∀ c ∈ D, ∀ b b' : ι → ℝ, SmoothBundleForm.eval₂ σ (s c)
       (mfderiv 𝓘(ℝ, ι → ℝ) I s c b) (mfderiv 𝓘(ℝ, ι → ℝ) I s c b') = 0)
     {r : ℕ∞} (hr : 1 ≤ r) (hh : ContDiffOn ℝ r h D)
@@ -144,7 +144,7 @@ theorem exists_contDiffOn_hasFDerivAt_of_eval₂_mfderiv_hamiltonianFlowAction_s
     fun c hcD ↦ ?_
   have hcn := hDo.mem_nhds hcD
   exact (hσ.eval₂_mfderiv_hamiltonianFlowAction_section_eq_zero_iff hF hcomm hc
-    ((hs.contMDiffAt hcn).mdifferentiableAt one_ne_zero) (eventually_of_mem hcn hFs) (hL c hcD)
+    ((hs c hcD).mdifferentiableAt hcn) (eventually_of_mem hcn hFs) (hL c hcD)
     ((hh.differentiableOn hr' c hcD).differentiableAt hcn)).1 (hL' c hcD)
 
 /-- **Moving an isotropic section along a gradient keeps it isotropic.** Let `s` be a section of
@@ -198,14 +198,14 @@ theorem angleMap_hamiltonianFlowAction_section_of_fderiv {p : ι → (ι → ℝ
     hσ.hamiltonianFlowAction_apply_angleMap_of_fderiv hF hcomm hc hA hg]
 
 /-- **Action-angle data are unique up to integral affine changes and angle gauge.** Let `s` be an
-isotropic `C¹` section of `F` over an open set `D` of values, star-convex with respect to `c₀`, and
-let `h` be a `C¹` map on `D` such that the moved section `s' = h • s`, through the same orbits, is
-isotropic as well. Let `λ⁽ⁱ⁾` and `λ'⁽ⁱ⁾` be continuous families of vectors on `D`, the `λ⁽ⁱ⁾(c)`
-linearly independent, with action variables `A` and `A'`: `dAᵢ = (2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ` and
-`dA'ᵢ = (2π)⁻¹ ∑ⱼ λ'⁽ⁱ⁾ⱼ dcⱼ`. Suppose both describe the period lattice: for every `c ∈ D`, the
-periods of `s c` form the transpose lattice `2π (DA_c)ᵀ ℤ^ι`, and the periods of `s' c` form
-`2π (DA'_c)ᵀ ℤ^ι`. Then there are `P ∈ GL(ι, ℤ)`, `b : ι → ℝ`, a `C²` function `S` on `D` and
-angle shifts `g(c)` such that on `D`
+isotropic differentiable section of `F` over an open set `D` of values, star-convex with respect
+to `c₀`, and let `h` be a `C¹` map on `D` such that the moved section `s' = h • s`, through the
+same orbits, is isotropic as well. Let `λ⁽ⁱ⁾` and `λ'⁽ⁱ⁾` be continuous families of vectors on `D`,
+the `λ⁽ⁱ⁾(c)` linearly independent, with action variables `A` and `A'`:
+`dAᵢ = (2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ` and `dA'ᵢ = (2π)⁻¹ ∑ⱼ λ'⁽ⁱ⁾ⱼ dcⱼ`. Suppose both describe the period
+lattice: for every `c ∈ D`, the periods of `s c` form the transpose lattice `2π (DA_c)ᵀ ℤ^ι`, and
+the periods of `s' c` form `2π (DA'_c)ᵀ ℤ^ι`. Then there are `P ∈ GL(ι, ℤ)`, `b : ι → ℝ`, a `C²`
+function `S` on `D` and angle shifts `g(c)` such that on `D`
 
 * the actions change by the integral affine map `A' = P A + b`;
 * the periods change by `λ'⁽ⁱ⁾ = ∑ₖ Pᵢₖ λ⁽ᵏ⁾`;
@@ -217,7 +217,7 @@ In action-angle coordinates `(θ, I)` this is the composite of the integral affi
 `(θ, I) ↦ (P⁻ᵀ θ, P I + b)` with the angle gauge `(θ, I) ↦ (θ + ∂S/∂I, I)`. -/
 theorem exists_eq_mulVec_add_and_angleMap_hamiltonianFlowAction_section_eq [DecidableEq ι]
     {D : Set (ι → ℝ)} {c₀ : ι → ℝ} (hDo : IsOpen D) (hD : StarConvex ℝ c₀ D)
-    (hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I 1 s D) (hFs : ∀ c ∈ D, F (s c) = c)
+    (hs : MDifferentiableOn 𝓘(ℝ, ι → ℝ) I s D) (hFs : ∀ c ∈ D, F (s c) = c)
     (hL : ∀ c ∈ D, ∀ b b' : ι → ℝ, SmoothBundleForm.eval₂ σ (s c)
       (mfderiv 𝓘(ℝ, ι → ℝ) I s c b) (mfderiv 𝓘(ℝ, ι → ℝ) I s c b') = 0)
     (hh : ContDiffOn ℝ 1 h D)

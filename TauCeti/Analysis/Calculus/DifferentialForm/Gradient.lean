@@ -22,9 +22,10 @@ covector field, `r ≥ 1`, is the gradient of a `Cʳ⁺¹` function
 (`StarConvex.exists_contDiffOn_forall_hasFDerivAt_of_extDeriv_eq_zero`), by the Poincaré lemma
 `StarConvex.exists_contDiffOn_forall_extDeriv_eq`. Equivalently, a `Cʳ` covector field with
 symmetric derivative is a gradient
-(`StarConvex.exists_contDiffOn_forall_hasFDerivAt_of_fderiv_symmetric`). This extends Mathlib's
-`Convex.exists_forall_hasFDerivAt_of_fderiv_symmetric` from convex to star-convex sets, and adds
-the regularity of the potential.
+(`StarConvex.exists_contDiffOn_forall_hasFDerivAt_of_fderiv_symmetric`). Mathlib's
+`Convex.exists_forall_hasFDerivAt_of_fderiv_symmetric` gives a potential on convex sets for a
+covector field that is only differentiable. The star-convex version here instead needs `L` to be
+`Cʳ` with `r ≥ 1`, and it also shows that the potential is `Cʳ⁺¹`.
 
 In coordinates on `ι → ℝ`, the gradient field of `h : (ι → ℝ) → (ι → ℝ)` is the one-form
 `∑ⱼ hⱼ dcⱼ`, with value `v ↦ h ⬝ v` (`TauCeti.sum_smul_proj_apply`). Its derivative is
@@ -155,8 +156,8 @@ theorem exists_contDiffOn_forall_hasFDerivAt_of_fderiv_symmetric (hD : StarConve
     ext i
     fin_cases i <;> rfl
   rw [hm, TauCeti.extDeriv_ofSubsingletonLIE_apply_pair
-      ((hL.differentiableOn hr' c hcD).differentiableAt (hDo.mem_nhds hcD)),
-    hsym c hcD, sub_self, ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
+      ((hL.differentiableOn hr' c hcD).differentiableAt (hDo.mem_nhds hcD))]
+  simp [hsym c hcD]
 
 end General
 

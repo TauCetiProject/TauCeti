@@ -198,9 +198,8 @@ theorem exists_forall_hasFDerivAt_of_mem_hamiltonianFlowStabilizer {D : Set (ι 
     ((hs c hcD).mdifferentiableAt (hDo.mem_nhds hcD))
     (eventually_of_mem (hDo.mem_nhds hcD) hFs) (hpd c hcD)
     (eventually_of_mem (hDo.mem_nhds hcD) hps) u w
-  rw [fderiv_fun_const_smul (hω c hcD), smul_apply, smul_apply, smul_apply, smul_apply,
-    TauCeti.fderiv_sum_smul_proj_apply (hpd c hcD), TauCeti.fderiv_sum_smul_proj_apply (hpd c hcD),
-    hsym]
+  simp only [fderiv_fun_const_smul (hω c hcD), smul_apply,
+    TauCeti.fderiv_sum_smul_proj_apply (hpd c hcD), hsym]
 
 /-- **Action variables near a compact Liouville torus.** On a manifold of dimension `2 · |ι|`, let
 the connected component of `x` in its level `F⁻¹(F x)` be compact and consist of regular points of
