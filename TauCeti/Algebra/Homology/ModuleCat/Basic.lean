@@ -20,8 +20,11 @@ public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 For a homological complex `K` of modules over a ring, the inclusion of the degree-`n` cycles into
 `K.X n` is injective and the class map from the cycles onto the degree-`n` homology is surjective.
 These are the elementwise forms of the facts that `K.iCycles n` is a monomorphism and
-`K.homologyπ n` is an epimorphism.  Chain maps commute with the differentials and the square of
-the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
+`K.homologyπ n` is an epimorphism.  Dually, the inclusion of the homology into the
+opcycles is injective and the projection of `K.X n` onto the opcycles is surjective
+(`HomologicalComplex.moduleCat_homologyι_injective`,
+`HomologicalComplex.moduleCat_pOpcycles_surjective`).  Chain maps commute with the differentials
+and the square of the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
 `HomologicalComplex.d_comp_d_apply`), cycles have zero boundary, on elements
 (`HomologicalComplex.iCycles_d_apply`), and an element killed by the differential to degree
 `c.next i` is killed by every differential out of degree `i`
@@ -284,6 +287,16 @@ lemma moduleCat_iCycles_injective : Function.Injective (K.iCycles n) :=
 /-- The class map from the degree-`n` cycles of a homological complex of modules onto its
 degree-`n` homology is surjective. -/
 lemma moduleCat_homologyπ_surjective : Function.Surjective (K.homologyπ n) :=
+  (ModuleCat.epi_iff_surjective _).1 inferInstance
+
+/-- The inclusion of the degree-`n` homology of a homological complex of modules into its
+degree-`n` opcycles is injective. -/
+lemma moduleCat_homologyι_injective : Function.Injective (K.homologyι n) :=
+  (ModuleCat.mono_iff_injective _).1 inferInstance
+
+/-- The projection of the degree-`n` term of a homological complex of modules onto its degree-`n`
+opcycles is surjective. -/
+lemma moduleCat_pOpcycles_surjective : Function.Surjective (K.pOpcycles n) :=
   (ModuleCat.epi_iff_surjective _).1 inferInstance
 
 /-- The differential out of degree `n` of a complex of modules kills every cycle of degree `n`, on
