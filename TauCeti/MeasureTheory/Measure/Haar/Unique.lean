@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
+import Mathlib.MeasureTheory.Measure.WithDensity
 
 /-!
 # Consequences of the uniqueness of Haar measure
@@ -33,6 +34,10 @@ a single set of positive finite measure are equal.
 * `MeasureTheory.Measure.haar_apply_le_haar_apply_iff`: two Haar measures on a second-countable
   locally compact group compare sets the same way, since they differ by a positive finite factor.
   The additive version is `MeasureTheory.Measure.addHaar_apply_le_addHaar_apply_iff`.
+* `MeasureTheory.Measure.withDensity_eq_withDensity_haarScalarFactor`: rewriting a weighted
+  left-invariant measure against a Haar measure multiplies the density by
+  `Measure.haarScalarFactor`. The additive version is
+  `MeasureTheory.Measure.withDensity_eq_withDensity_addHaarScalarFactor`.
 * `MeasureTheory.Measure.isMulLeftInvariant_eq_of_measure_univ_eq`: a left-invariant measure
   with the same total mass as a finite Haar measure coincides with it.
 * `MeasureTheory.Measure.isMulLeftInvariant_eq_of_apply_eq`: a left-invariant measure that is
@@ -173,6 +178,21 @@ theorem haar_apply_le_haar_apply_iff {G : Type*} [Group G] [TopologicalSpace G]
     {s t : Set G} : μ s ≤ μ t ↔ ν s ≤ ν t := by
   rw [isMulLeftInvariant_eq_smul μ ν]
   simp [ENNReal.mul_le_mul_iff_right, (haarScalarFactor_pos_of_isHaarMeasure μ ν).ne']
+
+/-- Rewriting a weighted regular left-invariant measure against a regular Haar measure on a
+locally compact group multiplies the density by `Measure.haarScalarFactor`. -/
+@[to_additive /-- Rewriting a weighted regular additively left-invariant measure against a regular
+additive Haar measure on a locally compact additive group multiplies the density by
+`Measure.addHaarScalarFactor`. -/]
+theorem withDensity_eq_withDensity_haarScalarFactor {G : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
+    (μ' μ : Measure G) [IsHaarMeasure μ] [IsMulLeftInvariant μ'] [Regular μ] [Regular μ']
+    (f : G → ℝ≥0∞) :
+    μ'.withDensity f = μ.withDensity fun x ↦ (haarScalarFactor μ' μ : ℝ≥0∞) * f x := by
+  have hμ : μ' = (haarScalarFactor μ' μ : ℝ≥0∞) • μ := isMulLeftInvariant_eq_smul_of_regular μ' μ
+  conv_lhs => rw [hμ]
+  rw [withDensity_smul_measure, ← withDensity_smul' _ _ ENNReal.coe_ne_top]
+  simp only [Pi.smul_def, smul_eq_mul]
 
 end MeasureTheory.Measure
 
