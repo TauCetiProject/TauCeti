@@ -9,6 +9,7 @@ public import TauCeti.LowDimTopology.Bordered.TypeDA
 import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Fin.Crossing
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.Data.Matrix.Update
 
 /-!
 # The box tensor product of a type `A` module with a type `DA` bimodule

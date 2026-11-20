@@ -1442,11 +1442,12 @@ theorem typeABoxMapOfHom_toUngradedAInfinityRightModuleHom [CharP R 2] [Module A
   have hmap := IsUngradedDGRightModule.toUngradedAInfinityRightModuleHom_map_add_one hM hM' g hg
   -- The operations of differential modules and the components of chain maps vanish from arity 2.
   rw [N.typeABoxMapOfHom_apply_eq_map_zero _ hmap (K := 2)
-    (N.cone_matrixAct_eq_zero_of_act_eq_zero (fun n hn => ?_) (fun n hn => ?_) fun n hn => ?_)]
+    (N.cone_matrixAct_eq_zero_of_act_eq_zero
+      (fun _ => hM.toUngradedAInfinityRightModule_act_eq_zero_of_two_le)
+      (fun _ => hM'.toUngradedAInfinityRightModule_act_eq_zero_of_two_le) fun n hn => ?_)]
   · simp
-  all_goals obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  exacts [hM.toUngradedAInfinityRightModule_act_add_two n,
-    hM'.toUngradedAInfinityRightModule_act_add_two n, hmap (n + 1)]
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  exact hmap (n + 1)
 
 end ModuleHom
 

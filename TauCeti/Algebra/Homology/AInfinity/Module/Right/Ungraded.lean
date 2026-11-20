@@ -13,6 +13,7 @@ import Mathlib.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Data.Fin.StrictMono
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.Data.Matrix.Update
 import TauCeti.LinearAlgebra.Multilinear.CompSplit
 
 /-!
@@ -107,7 +108,6 @@ product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordere
   differential of a Maurer–Cartan element squares to zero.
 * `TauCeti.UngradedAInfinityRightModule.matrixAct_apply`: the components of the matrix operations
   are sums over paths.
-* `Matrix.update_apply_path`: updating one matrix of a tuple updates one entry along every path.
 * `TauCeti.UngradedAInfinityRightModule.matrixAct_eq_zero_of_act_eq_zero` and
   `TauCeti.UngradedAInfinityRightModule.matrixAct_eq_zero_of_lt`: the matrix operations vanish
   when those of `M` do, and along matrices whose nonzero entries strictly increase a bounded
@@ -135,19 +135,6 @@ product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordere
 public section
 
 open Finset MulOpposite
-
-namespace Matrix
-
-/-- Updating one matrix of a tuple updates one entry along every path: reading the `t`-th matrix
-at the `t`-th step of a path `x`, after replacing the `l`-th matrix by `G`, replaces the `l`-th
-entry by `G (x l.castSucc) (x l.succ)`. -/
-theorem update_apply_path {X C : Type*} {k : ℕ} (F : Fin k → Matrix X X C)
-    (x : Fin (k + 1) → X) (l : Fin k) (G : Matrix X X C) :
-    (fun t => Function.update F l G t (x t.castSucc) (x t.succ)) =
-      Function.update (fun t => F t (x t.castSucc) (x t.succ)) l (G (x l.castSucc) (x l.succ)) :=
-  funext (Function.apply_update (fun t (G : Matrix X X C) => G (x t.castSucc) (x t.succ)) F l G)
-
-end Matrix
 
 namespace TauCeti
 
