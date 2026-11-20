@@ -84,12 +84,11 @@ theorem singularHomologyMap_eq_degree_smul_id (k : Type) [CommRing k] [Module.Fl
   have hb : (o.degree o hE f • LinearMap.id :
       ((singularChains ℤ).obj (TopCat.of M)).homology n →ₗ[ℤ] _).baseChange k =
       o.degree o hE f • LinearMap.id := by
-    ext x
-    simp only [zsmul_eq_mul, TensorProduct.AlgebraTensorModule.curry_apply,
-      TensorProduct.curry_apply, LinearMap.coe_restrictScalars, LinearMap.baseChange_tmul,
-      mul_apply_eq_comp, LinearMap.id_coe, id_eq, intCast_apply_eq_smul,
-      LinearMap.restrictScalars_smul, LinearMap.smul_apply]
-    rw [← TensorProduct.mk_apply (R := ℤ) (1 : k) x, ← map_zsmul, TensorProduct.mk_apply]
+    -- The scalar action here is the `zsmul` of the additive group of linear maps, not the module
+    -- action `LinearMap.baseChange_smul` is stated for, so go through the additive map
+    -- `LinearMap.baseChangeHom`.
+    rw [← LinearMap.baseChangeHom_apply, map_zsmul, LinearMap.baseChangeHom_apply,
+      LinearMap.baseChange_id]
   have hd : ModuleCat.ofHom (o.degree o hE f • LinearMap.id) =
       o.degree o hE f •
         𝟙 (ModuleCat.of k (k ⊗[ℤ] ((singularChains ℤ).obj (TopCat.of M)).homology n)) :=
