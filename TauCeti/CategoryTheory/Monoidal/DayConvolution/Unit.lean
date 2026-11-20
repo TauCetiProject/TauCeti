@@ -10,35 +10,67 @@ public import Mathlib.CategoryTheory.Monoidal.DayConvolution.DayFunctor
 /-!
 # Values of the Day convolution unit
 
-The unit `𝟙_ (C ⊛⥤ V)` of the Day convolution monoidal structure is the left Kan extension of
-`𝟙_ V` along the inclusion of `𝟙_ C`, so its value at `d : C` is the colimit of the constant
-diagram `𝟙_ V` indexed by the morphisms `𝟙_ C ⟶ d`. We compute this value in the two extreme
-cases:
+In a lawful Day convolution monoidal category `D` over `C ⥤ V`, the unit `𝟙_ D` is interpreted
+as the left Kan extension of `𝟙_ V` along the inclusion of `𝟙_ C`, so its value at `d : C` is the
+colimit of the constant diagram `𝟙_ V` indexed by the morphisms `𝟙_ C ⟶ d`. We compute this value
+in the two extreme cases:
 
-* when `𝟙_ C` has no endomorphism other than the identity, Mathlib's canonical map
-  `ν : 𝟙_ V ⟶ (𝟙_ (C ⊛⥤ V)).functor.obj (𝟙_ C)` is an isomorphism;
+* when `𝟙_ C` has no endomorphism other than the identity, the structure map
+  `unitUnit C V D : 𝟙_ V ⟶ ((ι C V D).obj (𝟙_ D)).obj (𝟙_ C)` is an isomorphism;
 * when there is no morphism `𝟙_ C ⟶ d`, the value at `d` is an initial object.
 
-For the finite-bijection groupoid both cases apply: the unit symmetric sequence is `𝟙_ V` in
-level zero and initial in every positive level.
+We record both for Mathlib's Day functor category `C ⊛⥤ V`, where the structure map is
+`DayFunctor.ν`. For the finite-bijection groupoid both cases apply: the unit symmetric sequence is
+`𝟙_ V` in level zero and initial in every positive level.
 
 ## Main statements
 
-* `DayFunctor.isIso_ν`: `ν` is an isomorphism when `𝟙_ C` has only the identity endomorphism.
-* `DayFunctor.isInitialUnitObj`: the unit is initial at objects receiving no morphism from
+* `LawfulDayConvolutionMonoidalCategoryStruct.isIso_unitUnit` and its specialisation
+  `DayFunctor.isIso_ν`: the unit structure map is an isomorphism when `𝟙_ C` has only the
+  identity endomorphism.
+* `LawfulDayConvolutionMonoidalCategoryStruct.isInitialUnitObj` and its specialisation
+  `DayFunctor.isInitialUnitObj`: the unit is initial at objects receiving no morphism from
   `𝟙_ C`.
 -/
 
 public section
 
-universe v₁ v₂ u₁ u₂
+universe v₁ v₂ v₃ u₁ u₂ u₃
 
-namespace CategoryTheory.MonoidalCategory.DayFunctor
+namespace CategoryTheory.MonoidalCategory
 
 open scoped ExternalProduct
-open Limits LawfulDayConvolutionMonoidalCategoryStruct
+open Limits
 
 noncomputable section
+
+namespace LawfulDayConvolutionMonoidalCategoryStruct
+
+variable (C : Type u₁) [Category.{v₁} C] (V : Type u₂) [Category.{v₂} V]
+  [MonoidalCategory C] [MonoidalCategory V]
+  (D : Type u₃) [Category.{v₃} D] [MonoidalCategoryStruct D]
+  [LawfulDayConvolutionMonoidalCategoryStruct C V D]
+
+/-- If the only endomorphism of `𝟙_ C` is the identity, then the structure map
+`unitUnit C V D : 𝟙_ V ⟶ ((ι C V D).obj (𝟙_ D)).obj (𝟙_ C)` is an isomorphism: the unit of a
+lawful Day convolution takes the value `𝟙_ V` at `𝟙_ C`. -/
+instance isIso_unitUnit [Subsingleton (𝟙_ C ⟶ 𝟙_ C)] : IsIso (unitUnit C V D) := by
+  -- With a single endomorphism of `𝟙_ C`, the inclusion of `𝟙_ C` is fully faithful.
+  have : (Functor.fromPUnit.{0} (𝟙_ C)).Full :=
+    ⟨fun _ ↦ ⟨Discrete.eqToHom (Subsingleton.elim _ _), Subsingleton.elim (α := 𝟙_ C ⟶ 𝟙_ C) _ _⟩⟩
+  exact (isPointwiseLeftKanExtensionUnitUnit C V D (𝟙_ C)).isIso_hom_app (X := ⟨⟨⟩⟩)
+
+/-- If there is no morphism `𝟙_ C ⟶ d`, then the unit of a lawful Day convolution takes an
+initial value at `d`. -/
+def isInitialUnitObj {d : C} [IsEmpty (𝟙_ C ⟶ d)] :
+    IsInitial (((ι C V D).obj (𝟙_ D)).obj d) :=
+  have : IsEmpty (CostructuredArrow (Functor.fromPUnit.{0} (𝟙_ C)) d) :=
+    ⟨fun f ↦ IsEmpty.false (α := 𝟙_ C ⟶ d) f.hom⟩
+  isColimitEquivIsInitialOfIsEmpty _ _ (isPointwiseLeftKanExtensionUnitUnit C V D d)
+
+end LawfulDayConvolutionMonoidalCategoryStruct
+
+namespace DayFunctor
 
 variable {C : Type u₁} [Category.{v₁} C] {V : Type u₂} [Category.{v₂} V]
     [MonoidalCategory C] [MonoidalCategory V]
@@ -61,21 +93,17 @@ variable {C : Type u₁} [Category.{v₁} C] {V : Type u₂} [Category.{v₂} V]
 /-- If the only endomorphism of `𝟙_ C` is the identity, then the canonical map
 `ν : 𝟙_ V ⟶ (𝟙_ (C ⊛⥤ V)).functor.obj (𝟙_ C)` is an isomorphism: the Day convolution unit takes
 the value `𝟙_ V` at `𝟙_ C`. -/
-instance isIso_ν [Subsingleton (𝟙_ C ⟶ 𝟙_ C)] : IsIso (ν C V) := by
-  have : (Functor.fromPUnit.{0} (𝟙_ C)).Full :=
-    ⟨fun _ ↦ ⟨Discrete.eqToHom (Subsingleton.elim _ _), Subsingleton.elim (α := 𝟙_ C ⟶ 𝟙_ C) _ _⟩⟩
-  exact (Functor.isPointwiseLeftKanExtensionOfIsLeftKanExtension _ (νNatTrans C V)
-    (𝟙_ C)).isIso_hom_app (X := ⟨⟨⟩⟩)
+instance isIso_ν [Subsingleton (𝟙_ C ⟶ 𝟙_ C)] : IsIso (ν C V) :=
+  LawfulDayConvolutionMonoidalCategoryStruct.isIso_unitUnit C V (C ⊛⥤ V)
 
 /-- If there is no morphism `𝟙_ C ⟶ d`, then the Day convolution unit takes an initial value
 at `d`. -/
 def isInitialUnitObj {d : C} [IsEmpty (𝟙_ C ⟶ d)] :
     IsInitial ((𝟙_ (C ⊛⥤ V)).functor.obj d) :=
-  have : IsEmpty (CostructuredArrow (Functor.fromPUnit.{0} (𝟙_ C)) d) :=
-    ⟨fun f ↦ IsEmpty.false (α := 𝟙_ C ⟶ d) f.hom⟩
-  isColimitEquivIsInitialOfIsEmpty _ _
-    (Functor.isPointwiseLeftKanExtensionOfIsLeftKanExtension _ (νNatTrans C V) d)
+  LawfulDayConvolutionMonoidalCategoryStruct.isInitialUnitObj C V (C ⊛⥤ V)
+
+end DayFunctor
 
 end
 
-end CategoryTheory.MonoidalCategory.DayFunctor
+end CategoryTheory.MonoidalCategory
