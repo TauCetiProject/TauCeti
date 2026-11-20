@@ -225,8 +225,8 @@ theorem codifferential_hodgeStar_ofFunction_const (o : Manifold.Orientation I M 
     (hkl : k + 1 + 0 = m) (hl : 0 + (k + 1) = m) (c : ℝ) :
     codifferential o hkl (hodgeStar o hl (ofFunction (ContMDiffMap.const c : C^∞⟮I, M; ℝ⟯))) =
       0 := by
-  rw [codifferential_apply o hkl (by omega), hodgeStar_hodgeStar, map_smul,
-    mextDerivₗ_ofFunction_const, smul_zero, map_zero, smul_zero]
+  rw [codifferential_apply o hkl (by omega), hodgeStar_hodgeStar]
+  simp only [map_smul, mextDerivₗ_ofFunction_const, smul_zero, map_zero]
 
 /-- The codifferential does not enlarge supports. -/
 theorem tsupport_codifferential_subset (o : Manifold.Orientation I M (Fin m))
@@ -628,8 +628,8 @@ private theorem extDerivWedgeₗ_apply_eq_gradWedge (f : C^∞⟮I, M; ℝ⟯) (
     ext w
     rw [innerSL_apply_apply, Manifold.inner_mgradient]
   ext v
-  rw [extDerivWedgeₗ_def, cast_apply, coe_wedge_apply, mextDerivₗ_apply, coe_ofFunction,
-    mextDeriv_ofFunction, hdf]
+  rw [extDerivWedgeₗ_apply, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
+    ← ContinuousAlternatingMap.wedge_def, mextDeriv_ofFunction, hdf]
   simp only [gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
     alternatingFormEquiv_wedgeLeft_apply, LinearEquiv.apply_symm_apply]
 

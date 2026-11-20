@@ -511,8 +511,9 @@ theorem wittenHessianTerm_ofFunction (o : Manifold.Orientation I M (Fin m)) (f :
       rw [SmoothForm.ofFunction_eq_funSMulₗ_one f, SmoothForm.mextDerivₗ_funSMulₗ, hd1, map_zero]
       exact (add_zero _).symm
     rw [wittenHessianTerm_def, LinearMap.add_apply, SmoothForm.laplacian_zero_add_one _ _ hl
-      (by omega), SmoothForm.laplacian_zero_add_one _ _ hl (by omega), hd1, map_zero, zero_add, hε,
-      SmoothForm.hodgeLaplacian_zero_add_one_eq_comp o hl (by omega), LinearMap.comp_apply]
+      (by omega), SmoothForm.laplacian_zero_add_one _ _ hl (by omega), hd1, hε,
+      SmoothForm.hodgeLaplacian_zero_add_one_eq_comp o hl (by omega)]
+    simp only [map_zero, zero_add, LinearMap.comp_apply]
 
 /-- **On top-degree forms the Hessian term is multiplication by `-Δf`**: `K_f α = -(Δf) α` for the
 Hodge Laplacian `Δf = -div grad f` of `f`. Indeed `d^*` annihilates the volume form, and
@@ -537,9 +538,8 @@ theorem wittenHessianTerm_apply_top (o : Manifold.Orientation I M (Fin m)) (f : 
   have hK : (wittenHessianTerm o f hkl vol : RoughForm I M ℝ (k + 1)) =
       fun y ↦ Manifold.divergence I (Manifold.mgradient I f) y • riemannianVolumeForm o y := by
     rw [wittenHessianTerm_def, LinearMap.add_apply, SmoothForm.laplacian_add_one_zero,
-      SmoothForm.laplacian_add_one_zero,
-      SmoothForm.codifferential_hodgeStar_ofFunction_const, map_zero, add_zero, mextDerivₗ_apply,
-      SmoothForm.coe_gradInteriorₗ, hvol]
+      SmoothForm.laplacian_add_one_zero, SmoothForm.codifferential_hodgeStar_ofFunction_const]
+    simp only [map_zero, add_zero, mextDerivₗ_apply, SmoothForm.coe_gradInteriorₗ, hvol]
     exact mextDeriv_interior_riemannianVolumeForm o
       (Manifold.mdifferentiable_mgradient (f.contMDiff.of_le (by simp)))
   -- `Δf = -div grad f`.
@@ -547,7 +547,7 @@ theorem wittenHessianTerm_apply_top (o : Manifold.Orientation I M (Fin m)) (f : 
     (SmoothForm.ofFunction f)) x
   have hΔ0 : (SmoothForm.hodgeLaplacian o hl (SmoothForm.ofFunction f)).1 x 0 =
       -Manifold.divergence I (Manifold.mgradient I f) x := by
-    rw [hΔ, RoughForm.ofFunction_apply, Pi.neg_apply, Manifold.laplaceBeltrami_def,
+    simp only [hΔ, RoughForm.ofFunction_apply, Pi.neg_apply, Manifold.laplaceBeltrami_def,
       SmoothForm.ofFunction_apply_zero]
   conv_lhs => rw [hα, wittenHessianTerm_funSMulₗ, SmoothForm.coe_funSMulₗ]
   rw [hK, hΔ0, neg_neg, hα, SmoothForm.coe_funSMulₗ, hvol, smul_comm]
