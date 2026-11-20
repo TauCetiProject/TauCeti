@@ -105,7 +105,8 @@ products.
 differential of the mapping cone of `f` (`TauCeti.UngradedAInfinityRightModuleHom.cone`), which is
 block triangular with diagonal blocks the box tensor differentials of `M` and `M'`; since that
 differential squares to zero, `∂' ∘ T_f = T_f ∘ ∂` under either boundedness hypothesis. For a
-bounded type `D` structure, the identity morphism induces the identity. For any type `D` structure,
+bounded type `D` structure or a bounded module, the identity morphism induces the identity. For any
+type `D` structure,
 an `A`-linear chain map `g` of differential modules induces `φ ↦ g ∘ φ`.
 
 ## Main definitions
@@ -176,10 +177,11 @@ an `A`-linear chain map `g` of differential modules induces `φ ↦ g ∘ φ`.
   modules and the morphism, are bounded.
 * `TauCeti.TypeDStructure.typeABoxMapOfHom_apply_eq_sum`: the induced map as a finite sum over
   paths of generators.
-* `TauCeti.TypeDStructure.typeABoxMapOfHom_id_of_isBounded` and
+* `TauCeti.TypeDStructure.typeABoxMapOfHom_id_of_isBounded`,
+  `TauCeti.TypeDStructure.typeABoxMapOfHom_id_of_act_eq_zero` and
   `TauCeti.TypeDStructure.typeABoxMapOfHom_toUngradedAInfinityRightModuleHom`: for a bounded type
-  `D` structure, the identity induces the identity; for any type `D` structure, a chain map `g` of
-  differential modules induces `φ ↦ g ∘ φ`.
+  `D` structure or a bounded module, the identity induces the identity; for any type `D`
+  structure, a chain map `g` of differential modules induces `φ ↦ g ∘ φ`.
 
 ## References
 
@@ -1430,6 +1432,21 @@ theorem typeABoxMapOfHom_id_of_isBounded [CharP R 2] (N : TypeDStructure d ι X)
   refine LinearMap.ext fun φ => funext fun z => ?_
   rw [N.typeABoxMapOfHom_apply_eq_map_zero _ UngradedAInfinityRightModuleHom.id_map_add_one
     (hK _)]
+  simp
+
+/-- **The identity morphism of a bounded module induces the identity.** If the operations of `M`
+vanish from some arity on, the identity morphism of `M` induces the identity map of row vectors,
+for every type `D` structure. -/
+theorem typeABoxMapOfHom_id_of_act_eq_zero [CharP R 2] (N : TypeDStructure d ι X) {K : ℕ}
+    (hM : ∀ n, K ≤ n → Mm.act n = 0) :
+    N.typeABoxMapOfHom (UngradedAInfinityRightModuleHom.id Mm) = LinearMap.id := by
+  -- The operations of the mapping cone of the identity vanish from arity `K + 1` on, and the
+  -- identity has no higher components.
+  refine LinearMap.ext fun φ => funext fun z => ?_
+  rw [N.typeABoxMapOfHom_apply_eq_map_zero _ UngradedAInfinityRightModuleHom.id_map_add_one
+    (N.cone_matrixAct_eq_zero_of_act_eq_zero (K := K + 1) (fun n hn => hM n (by omega))
+      (fun n hn => hM n (by omega))
+      fun n hn => UngradedAInfinityRightModuleHom.id_map_eq_zero (by omega))]
   simp
 
 /-- **The map induced by a chain map of differential modules.** For an `A`-linear map `g` of
