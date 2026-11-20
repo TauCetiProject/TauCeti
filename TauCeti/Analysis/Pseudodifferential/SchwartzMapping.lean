@@ -11,7 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
-import TauCeti.Analysis.Fourier.FourierCharDeriv
+import TauCeti.Analysis.Fourier.FourierChar.Deriv
 
 /-!
 # Quantizations of uniform symbols map Schwartz space to itself
