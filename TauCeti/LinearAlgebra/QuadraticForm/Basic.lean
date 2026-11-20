@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Two
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 
 /-!
@@ -17,6 +18,9 @@ This file records elementary consequences of the quadratic-map axioms.
 * `QuadraticMap.Anisotropic.comp`: injective pullback preserves anisotropy.
 * `QuadraticMap.anisotropic_smul_iff`: scaling by a unit preserves anisotropy.
 * `QuadraticMap.nontrivial_of_ne_zero`: the source of a nonzero quadratic map is nontrivial.
+* `QuadraticMap.map_sum_of_polar_eq_zero`: a quadratic map is additive on a finite family of
+  pairwise polar-orthogonal vectors.
+* `QuadraticMap.isAlt_polarBilin`: in characteristic two the polar form is alternating.
 * `RingEquiv.congrPiQuadraticForm`: additive equivalence of coordinate quadratic forms induced by
   a ring isomorphism of scalars, preserving scalar multiplication and anisotropy.
 -/
@@ -50,6 +54,28 @@ theorem anisotropic_smul_iff {S R M N : Type*} [Monoid S] [CommSemiring R]
     (Q : QuadraticMap R M N) :
     (a • Q).Anisotropic ↔ Q.Anisotropic := by
   simp only [Anisotropic, smul_apply, ha.smul_eq_zero]
+
+/-- A quadratic map is additive on a finite family of vectors whose distinct members are
+orthogonal for its polar form. -/
+theorem map_sum_of_polar_eq_zero {R M N ι : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] (Q : QuadraticMap R M N) (s : Finset ι) (f : ι → M)
+    (hf : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → polar Q (f i) (f j) = 0) :
+    Q (∑ i ∈ s, f i) = ∑ i ∈ s, Q (f i) := by
+  classical
+  rw [Q.map_sum, add_eq_left]
+  refine Finset.sum_eq_zero fun ij hij => ?_
+  induction ij using Sym2.ind with
+  | _ i j =>
+    rw [Finset.mem_filter, Finset.mk_mem_sym2_iff, Sym2.mk_isDiag_iff] at hij
+    rw [Sym2.map_mk, polarSym2_sym2Mk]
+    exact hf i hij.1.1 j hij.1.2 hij.2
+
+/-- In characteristic two the polar form of a quadratic map is alternating, since
+`polar Q x x = 2 • Q x`. -/
+theorem isAlt_polarBilin {R M N : Type*} [CommRing R] [CharP R 2] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] (Q : QuadraticMap R M N) : Q.polarBilin.IsAlt := fun x => by
+  rw [polarBilin_apply_apply, polar_self, ← Nat.cast_smul_eq_nsmul R, Nat.cast_ofNat,
+    CharTwo.two_eq_zero, zero_smul]
 
 end QuadraticMap
 

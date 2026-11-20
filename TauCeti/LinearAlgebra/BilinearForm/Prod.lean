@@ -34,6 +34,8 @@ product of perfect pairings is a perfect pairing.
 * `LinearMap.BilinForm.nondegenerate_prod_iff`: the product form is nondegenerate exactly when
   both factors are.
 * `LinearMap.BilinForm.instIsPerfPairProd`: a product of perfect pairings is a perfect pairing.
+* `QuadraticMap.nondegenerate_polarBilin_prod_iff`: the polar form of an orthogonal sum of
+  quadratic forms is nondegenerate exactly when both polar forms are.
 -/
 
 public section
@@ -120,3 +122,17 @@ instance instIsPerfPairProd {B : LinearMap.BilinForm R M} {C : LinearMap.BilinFo
     exact bijective_prod (IsPerfPair.bijective_right B) (IsPerfPair.bijective_right C)
 
 end LinearMap.BilinForm
+
+namespace QuadraticMap
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- The polar form of an orthogonal sum of quadratic forms is nondegenerate exactly when both
+polar forms are. -/
+theorem nondegenerate_polarBilin_prod_iff {Q₁ : QuadraticForm R M} {Q₂ : QuadraticForm R N} :
+    (Q₁.prod Q₂).polarBilin.Nondegenerate ↔
+      Q₁.polarBilin.Nondegenerate ∧ Q₂.polarBilin.Nondegenerate := by
+  rw [polarBilin_prod]
+  exact LinearMap.BilinForm.nondegenerate_prod_iff
+
+end QuadraticMap
