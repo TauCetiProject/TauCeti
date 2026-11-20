@@ -1073,7 +1073,7 @@ theorem commute_coefficient_term {a : ClassicalSymbol n V V m} {T : V →L[ℂ] 
     (term_eq_of_toSymbol_eq
       (a := a.map (((ContinuousLinearMap.compL ℂ V V V).flip T).restrictScalars ℝ))
       (b := a.map ((ContinuousLinearMap.compL ℂ V V V T).restrictScalars ℝ))
-      (Symbol.ext (funext fun q => by simpa [← ContinuousLinearMap.mul_def] using (h q).eq)) j)
+      (Symbol.map_compL_flip_eq_map_compL h) j)
   simpa [commute_iff_eq, ContinuousLinearMap.mul_def] using hterm
 
 end Map

@@ -802,26 +802,22 @@ theorem coefficient_map (p : X × E) : (a.map Φ).coefficient p = Φ (a.coeffici
 theorem map_castDegree (h : m = m') : (a.castDegree h).map Φ = (a.map Φ).castDegree h :=
   (rfl)
 
-/-- The derivative of the image under `Φ` in the direction `q` is the image of the derivative. -/
-private theorem fderiv_coefficient_map {p : X × E} (hp : p.2 ≠ 0) (q : X × E) :
-    fderiv ℝ (a.map Φ).coefficient p q = Φ (fderiv ℝ a.coefficient p q) := by
-  rw [show (a.map Φ).coefficient = Φ ∘ a.coefficient from (rfl),
-    (Φ.hasFDerivAt.comp p (a.differentiableAt_coefficient hp).hasFDerivAt).fderiv]
-  rfl
-
 /-- Spatial derivatives commute with the image under a continuous linear map. -/
 @[simp]
 theorem spatialDeriv_map (v : X) : (a.map Φ).spatialDeriv v = (a.spatialDeriv v).map Φ :=
   ext_of_ne_zero fun x ξ hξ ↦ by
-    simp only [coefficient_spatialDeriv_eq_fderiv, coefficient_map]
-    exact fderiv_coefficient_map Φ a (p := (x, ξ)) hξ _
+    rw [coefficient_spatialDeriv_eq_fderiv, coefficient_map, coefficient_spatialDeriv_eq_fderiv,
+      show (a.map Φ).coefficient = Φ ∘ a.coefficient from funext (coefficient_map Φ a),
+      Φ.fderiv_comp_left (a.differentiableAt_coefficient hξ), ContinuousLinearMap.comp_apply]
 
 /-- Frequency derivatives commute with the image under a continuous linear map. -/
 @[simp]
 theorem frequencyDeriv_map (w : E) : (a.map Φ).frequencyDeriv w = (a.frequencyDeriv w).map Φ :=
   ext_of_ne_zero fun x ξ hξ ↦ by
-    simp only [coefficient_frequencyDeriv_eq_fderiv _ _ hξ, coefficient_map]
-    exact fderiv_coefficient_map Φ a (p := (x, ξ)) hξ _
+    rw [coefficient_frequencyDeriv_eq_fderiv _ _ hξ, coefficient_map,
+      coefficient_frequencyDeriv_eq_fderiv _ _ hξ,
+      show (a.map Φ).coefficient = Φ ∘ a.coefficient from funext (coefficient_map Φ a),
+      Φ.fderiv_comp_left (a.differentiableAt_coefficient hξ), ContinuousLinearMap.comp_apply]
 
 end Map
 
