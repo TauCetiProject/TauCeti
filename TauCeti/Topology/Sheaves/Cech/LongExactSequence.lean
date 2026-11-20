@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Sites.Homology
+public import TauCeti.Topology.Sheaves.Cech.Homeomorph
+public import TauCeti.Topology.Sheaves.Homeomorph
 public import TauCeti.Topology.Sheaves.Cech.Flasque
 public import TauCeti.Topology.Sheaves.Cech.Sheafification
 
@@ -191,6 +193,51 @@ theorem cechCohomologyδ_naturality_of_presheaf (hS : S.ShortExact)
           (presheafCokernelSequence_map_shortExact hS) n := by
     rw [← hkc, Functor.map_comp, Category.assoc, cechCohomology_map_cokernelToX₃_comp_δ]
   exact h.trans h'.symm
+
+/-- The native sheaf connecting map is preserved by transport through a homeomorphism. -/
+@[reassoc]
+theorem cechCohomologyδ_comp_homeomorphIso
+    {Y : TopCat.{u}} [CompactSpace Y] [NormalSpace Y]
+    (h : X ≃ₜ Y) (hS : S.ShortExact) (n : ℕ) :
+    hS.cechCohomologyδ n ≫
+        (cechCohomologyHomeomorphIso (A := ModuleCat.{u} R) h (n + 1)).hom.app S.X₁.obj ≫
+        (cechCohomology Y (ModuleCat.{u} R) (n + 1)).map
+          ((h.sheafCongrForgetIso (ModuleCat.{u} R)).inv.app S.X₁) =
+      (cechCohomologyHomeomorphIso (A := ModuleCat.{u} R) h n).hom.app S.X₃.obj ≫
+        (cechCohomology Y (ModuleCat.{u} R) n).map
+          ((h.sheafCongrForgetIso (ModuleCat.{u} R)).inv.app S.X₃) ≫
+        (hS.map_of_exact (h.sheafCongr (ModuleCat.{u} R)).functor).cechCohomologyδ n := by
+  let W := (Functor.whiskeringLeft (Opens Y)ᵒᵖ (Opens X)ᵒᵖ (ModuleCat.{u} R)).obj
+    h.opensCongr.symm.equivalence.functor.op
+  let α := h.sheafCongrForgetIso (ModuleCat.{u} R)
+  let T := presheafCokernelSequence S
+  let hT := presheafCokernelSequence_shortExact hS
+  let S' := S.map (h.sheafCongr (ModuleCat.{u} R)).functor
+  let hS' : S'.ShortExact := hS.map_of_exact _
+  let φ : T.map W ⟶ S'.map (sheafToPresheaf _ _) :=
+    { τ₁ := α.inv.app S.X₁
+      τ₂ := α.inv.app S.X₂
+      τ₃ := W.map (cokernelToX₃ S) ≫ α.inv.app S.X₃
+      comm₁₂ := (α.inv.naturality S.f).symm
+      comm₂₃ := (α.inv.naturality S.g).symm.trans
+        (((W.map_comp _ _ =≫ α.inv.app S.X₃).symm.trans
+          ((congrArg W.map (cokernel_π_cokernelToX₃ S)) =≫ α.inv.app S.X₃)).symm.trans
+            (Category.assoc _ _ _)) }
+  have ht := hS'.cechCohomologyδ_naturality_of_presheaf (hT.map_of_exact W) φ n
+  have hd := cechCohomologyHomeomorphIso_hom_app_δ h hT n
+  have hc := (cechCohomologyHomeomorphIso (A := ModuleCat.{u} R) h n).hom.naturality
+    (cokernelToX₃ S)
+  dsimp only [Functor.comp_map] at hc
+  have := isIso_cechCohomology_map_cokernelToX₃ hS n
+  apply (cancel_epi ((cechCohomology X (ModuleCat.{u} R) n).map (cokernelToX₃ S))).mp
+  rw [← Category.assoc, cechCohomology_map_cokernelToX₃_comp_δ]
+  have hm := (cechCohomology Y (ModuleCat.{u} R) n).map_comp
+    (W.map (cokernelToX₃ S)) (α.inv.app S.X₃)
+  exact (Category.assoc _ _ _).symm.trans ((hd =≫ _).trans
+    ((Category.assoc _ _ _).trans ((_ ≫= ht).trans
+      ((_ ≫= (hm =≫ _)).trans ((_ ≫= Category.assoc _ _ _).trans
+        ((Category.assoc _ _ _).symm.trans
+          ((hc.symm =≫ _).trans (Category.assoc _ _ _))))))))
 
 /-- **Naturality of the connecting map** in morphisms of short exact sequences of sheaves. -/
 @[reassoc]
