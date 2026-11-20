@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.Jacobson.Ideal
 import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.Algebra.Polynomial.Derivative
-import TauCeti.RingTheory.Idempotents.Jacobson
+import TauCeti.RingTheory.Idempotents.Nakayama
 import TauCeti.RingTheory.Idempotents.Projective
 
 /-!

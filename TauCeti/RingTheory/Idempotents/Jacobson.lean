@@ -6,8 +6,6 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 module
 
 public import Mathlib.RingTheory.Jacobson.Ideal
-public import Mathlib.RingTheory.Nakayama
-import TauCeti.RingTheory.Ideal.Extended
 import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
@@ -35,9 +33,6 @@ idempotents whose difference lies in the Jacobson radical.
   idempotents whose difference lies in the Jacobson radical are equal.
 * `Ideal.injOn_quotient_mk_isIdempotentElem`: modulo an ideal in the Jacobson radical of a
   commutative ring, the quotient map is injective on idempotents.
-* `IsIdempotentElem.exists_smul_eq_mul_of_mul_sub_smul_mem`: in a not necessarily commutative
-  `S`-algebra `T`, an idempotent `e` with `e T` finitely generated over `S` and
-  `e T ⊆ S e + JT`, for `J` in the Jacobson radical of `S`, has `e T = S e`.
 
 ## References
 
@@ -94,27 +89,3 @@ on idempotents. -/
 theorem Ideal.injOn_quotient_mk_isIdempotentElem {R : Type*} [CommRing R] {I : Ideal R}
     (hI : I ≤ Ring.jacobson R) : Set.InjOn (Ideal.Quotient.mk I) {e | IsIdempotentElem e} :=
   fun _ he _ he' h ↦ he.eq_of_sub_mem_jacobson he' (.all _ _) (hI (Ideal.Quotient.eq.mp h))
-
-/-- **Nakayama's lemma for an idempotent.** Let `T` be a not necessarily commutative `S`-algebra,
-`J` an ideal of `S` in the Jacobson radical, and `e` an idempotent of `T` such that `e T` is a
-finitely generated `S`-module. If `e T ⊆ S e + JT`, then `e T = S e`. -/
-theorem IsIdempotentElem.exists_smul_eq_mul_of_mul_sub_smul_mem {S T : Type*} [CommRing S]
-    [Ring T] [Algebra S T] {J : Ideal S} (hJ : J ≤ Ring.jacobson S) {e : T}
-    (he : IsIdempotentElem e) (hfg : (LinearMap.mulLeft S e).range.FG)
-    (h : ∀ x : T, ∃ s : S, e * x - s • e ∈ J.map (algebraMap S T)) (x : T) :
-    ∃ s : S, s • e = e * x := by
-  let f := LinearMap.mulLeft S e
-  have hle : LinearMap.range f ≤ S ∙ e := by
-    refine Submodule.le_of_le_smul_of_le_jacobson hfg hJ fun z hz ↦ ?_
-    obtain ⟨y, rfl⟩ := LinearMap.mem_range.mp hz
-    obtain ⟨s, hs⟩ := h y
-    have hmem : e * (e * y - s • e) ∈ J • LinearMap.range f := by
-      rw [LinearMap.range_eq_map, ← Submodule.map_smul'']
-      exact Submodule.mem_map.mpr
-        ⟨_, (Ideal.mem_map_algebraMap_iff J).mp hs, LinearMap.mulLeft_apply S e _⟩
-    have hy : f y = s • e + e * (e * y - s • e) := by
-      rw [LinearMap.mulLeft_apply, mul_sub, ← mul_assoc, he.eq, mul_smul_comm, he.eq]
-      abel
-    rw [hy]
-    exact Submodule.add_mem_sup (Submodule.smul_mem _ s (Submodule.mem_span_singleton_self e)) hmem
-  exact Submodule.mem_span_singleton.mp (hle (LinearMap.mem_range_self f x))

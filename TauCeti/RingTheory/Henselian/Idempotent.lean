@@ -23,12 +23,13 @@ idempotent is a root of `X² - X`, and every root of `X² - X` modulo `J` is sim
 control whether `S` is local. An Artinian ring with only the trivial idempotents is local, and a
 ring whose quotient by an ideal in its Jacobson radical is local is itself local.
 
-Lifts of idempotents are unique modulo any ideal in the Jacobson radical
-(`IsIdempotentElem.eq_of_sub_mem_jacobson`), and along an integral ring map the
-extension of an ideal in the Jacobson radical stays in the Jacobson radical
+Commuting idempotents congruent modulo the Jacobson radical are equal
+(`IsIdempotentElem.eq_of_sub_mem_jacobson`), so in a commutative ring lifts of idempotents are
+unique modulo any ideal in the Jacobson radical. Along an integral ring map the extension of an
+ideal in the Jacobson radical stays in the Jacobson radical
 (`Ideal.map_le_jacobson_of_isIntegral`). Since a Henselian ideal lies in the Jacobson radical,
-lifts are unique over a Henselian pair and in every integral, in particular every finite, algebra
-over it.
+lifts are unique over a Henselian pair and in every commutative integral, in particular every
+commutative finite, algebra over it.
 
 The typical example is a finite algebra over a complete Noetherian local ring, Henselian along the
 extension of the maximal ideal: such an algebra with no nontrivial idempotents is local. This is
@@ -48,8 +49,8 @@ local rings.
   of orthogonal idempotents of `S ⧸ J` lifts uniquely to such a family in `S` for a Henselian
   pair `(S, J)`.
 * `TauCeti.HenselianRing.injOn_quotient_mk_map_isIdempotentElem`: for a Henselian pair `(S, J)`
-  and an integral `S`-algebra `T`, the quotient map `T → T ⧸ JT` is injective on idempotents (the
-  injectivity half of conditions (3) and (4) of 09XI).
+  and a commutative integral `S`-algebra `T`, the quotient map `T → T ⧸ JT` is injective on
+  idempotents (the injectivity half of conditions (3) and (4) of 09XI).
 * `TauCeti.HenselianRing.exists_isIdempotentElem_sub_mem_map`: for a Henselian pair `(S, J)` and
   a finite `S`-algebra `T`, an idempotent of `T ⧸ JT` cutting out a summand that is cyclic over
   `S ⧸ J` lifts to an idempotent of `T`.
@@ -192,8 +193,8 @@ theorem bijOn_quotient_mk_isIdempotentElem (J : Ideal S) [HenselianRing S J] :
     fun _ ht ↦ (existsUnique_isIdempotentElem_mk_eq J ht).exists⟩
 
 /-- **Uniqueness of idempotent lifts in integral algebras.** If `S` is Henselian along `J` and `T`
-is an integral `S`-algebra, for instance a finite one, then idempotents of `T` congruent modulo
-`JT` are equal. -/
+is a commutative integral `S`-algebra, for instance a commutative finite one, then idempotents of
+`T` congruent modulo `JT` are equal. -/
 @[stacks 09XI "(1) ⇒ (3) and (4), injectivity on idempotents only"]
 theorem injOn_quotient_mk_map_isIdempotentElem {T : Type*} [CommRing T] [Algebra S T]
     [Algebra.IsIntegral S T] (J : Ideal S) [HenselianRing S J] :
