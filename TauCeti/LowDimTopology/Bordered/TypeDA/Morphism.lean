@@ -64,6 +64,8 @@ here.
 
 * `TauCeti.TypeDAStructure.boxMorphism_mem_morphisms`: `P ⊠ F` is compatible with the idempotents
   of `P ⊠ N` and `P ⊠ N'`.
+* `TauCeti.TypeDAStructure.boxMorphism_eq_sum_of_coeff_eq_zero` and
+  `TauCeti.TypeDAStructure.boxMorphism_eq_sum_of_lt`: `P ⊠ F` as a finite sum over paths.
 * `TauCeti.TypeDAStructure.typeABoxMap_boxModule_apply_of_coeff_eq_zero` and
   `TauCeti.TypeDAStructure.typeABoxMap_boxModule_apply_of_lt`: `(M ⊠ P) ⊠ F = M ⊠ (P ⊠ F)`.
 * `TauCeti.TypeDAStructure.morphismDifferential_boxMorphism_of_coeff_eq_zero` and
@@ -156,58 +158,47 @@ private theorem coeff_update_eq_zero_of_lt (h : X → ℕ) (hh : ∀ x y, N.coef
     P.coeff n (fun t => Function.update (fun _ => Matrix.fromBlocks N.coeff 0 0 N'.coeff) l
       (Matrix.fromBlocks 0 F 0 0) t (r t.castSucc) (r t.succ)) = 0 := by
   by_contra hne
-  have hnz (t : Fin n) : Function.update (fun _ => Matrix.fromBlocks N.coeff 0 0 N'.coeff) l
-      (Matrix.fromBlocks 0 F 0 0) t (r t.castSucc) (r t.succ) ≠ 0 := fun h0 =>
-    hne ((P.coeff n).map_coord_zero t h0)
-  -- The height of `X'` is shifted above that of `X`, so it rises at every step of the path.
-  set g : X ⊕ X' → ℕ := Sum.elim h fun y => univ.sup h + 1 + h' y with hg
-  have hle (x : X) : h x ≤ univ.sup h := le_sup (f := h) (mem_univ x)
-  have hle' (y : X') : h' y ≤ univ.sup h' := le_sup (f := h') (mem_univ y)
-  have hcross (x : X) (y : X') : g (Sum.inl x) < g (Sum.inr y) := by
-    have := hle x
-    simp only [hg, Sum.elim_inl, Sum.elim_inr]
-    omega
-  have hdiag (a b : X ⊕ X') (hab : Matrix.fromBlocks N.coeff 0 0 N'.coeff a b ≠ 0) : g a < g b := by
-    rcases a with x | x <;> rcases b with y | y
-    · rw [Matrix.fromBlocks_apply₁₁] at hab
-      simpa only [hg, Sum.elim_inl] using hh x y hab
-    · exact hcross x y
-    · rw [Matrix.fromBlocks_apply₂₁, Matrix.zero_apply] at hab
-      exact absurd rfl hab
-    · rw [Matrix.fromBlocks_apply₂₂] at hab
-      have := hh' x y hab
-      simp only [hg, Sum.elim_inr]
-      omega
-  have hoff (a b : X ⊕ X')
-      (hab : Matrix.fromBlocks (0 : Matrix X X A) F 0 (0 : Matrix X' X' A) a b ≠ 0) :
-      g a < g b := by
-    rcases a with x | x <;> rcases b with y | y
-    · rw [Matrix.fromBlocks_apply₁₁, Matrix.zero_apply] at hab
-      exact absurd rfl hab
-    · exact hcross x y
-    · rw [Matrix.fromBlocks_apply₂₁, Matrix.zero_apply] at hab
-      exact absurd rfl hab
-    · rw [Matrix.fromBlocks_apply₂₂, Matrix.zero_apply] at hab
-      exact absurd rfl hab
-  have hstep (t : Fin n) : g (r t.castSucc) < g (r t.succ) := by
-    have ht := hnz t
+  -- Every entry along `r` is nonzero, so `sumHeight h h'` rises at every step of the path.
+  have hstep (t : Fin n) : TypeDStructure.sumHeight h h' (r t.castSucc) <
+      TypeDStructure.sumHeight h h' (r t.succ) := by
+    have ht : Function.update (fun _ => Matrix.fromBlocks N.coeff 0 0 N'.coeff) l
+        (Matrix.fromBlocks 0 F 0 0) t (r t.castSucc) (r t.succ) ≠ 0 := fun h0 =>
+      hne ((P.coeff n).map_coord_zero t h0)
     rcases eq_or_ne t l with rfl | htl
     · rw [Function.update_self] at ht
-      exact hoff _ _ ht
+      exact TypeDStructure.sumHeight_lt_of_fromBlocks h (by simp) h' (by simp) F ht
     · rw [Function.update_of_ne htl] at ht
-      exact hdiag _ _ ht
-  have hr : StrictMono (g ∘ r) := Fin.strictMono_iff_lt_succ.mpr hstep
-  have := hr.add_sub_le_nat (Fin.zero_le (Fin.last n))
-  simp only [Function.comp_apply, Fin.val_last, Fin.val_zero, Nat.sub_zero] at this
-  have hlast : g (r (Fin.last n)) ≤ univ.sup h + 1 + univ.sup h' := by
-    rcases r (Fin.last n) with x | y
-    · have := hle x
-      simp only [hg, Sum.elim_inl]
-      omega
-    · have := hle' y
-      simp only [hg, Sum.elim_inr]
-      omega
+      exact TypeDStructure.sumHeight_lt_of_fromBlocks h hh h' hh' 0 ht
+  have hr : StrictMono (TypeDStructure.sumHeight h h' ∘ r) := Fin.strictMono_iff_lt_succ.mpr hstep
+  have := hr.le_univ_sup_nat
+  have := TypeDStructure.univ_sup_sumHeight_le h h'
   omega
+
+/-- **`P ⊠ F` for a bounded bimodule as a finite sum.** If the operations of `P` vanish from arity
+`K` on, the coefficients of `P ⊠ F` are the sums over the lengths `n < K`. -/
+theorem boxMorphism_eq_sum_of_coeff_eq_zero {K : ℕ} (hP : ∀ k, K ≤ k → P.coeff k = 0)
+    (F : Matrix X X' A) (p : Y × X) (q : Y × X') :
+    P.boxMorphism N N' F p q = ∑ n ∈ range K, ∑ l : Fin n, ∑ r : Fin (n + 1) → X ⊕ X',
+      if r 0 = Sum.inl p.2 ∧ r (Fin.last n) = Sum.inr q.2 then
+        P.coeff n (fun t => Function.update (fun _ => Matrix.fromBlocks N.coeff 0 0 N'.coeff) l
+          (Matrix.fromBlocks 0 F 0 0) t (r t.castSucc) (r t.succ)) p.1 q.1
+      else 0 :=
+  P.boxMorphism_eq_sum N N' F (fun n hn _ _ => by rw [hP n hn, zero_apply]) p q
+
+/-- **`P ⊠ F` for bounded type `D` structures as a finite sum.** If heights on the generators of
+`N` and of `N'` strictly increase along their nonzero coefficients, the coefficients of `P ⊠ F` are
+the sums over the lengths `n` less than the sum of the largest heights plus two. -/
+theorem boxMorphism_eq_sum_of_lt (h : X → ℕ) (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y)
+    (h' : X' → ℕ) (hh' : ∀ x y, N'.coeff x y ≠ 0 → h' x < h' y) (F : Matrix X X' A) (p : Y × X)
+    (q : Y × X') :
+    P.boxMorphism N N' F p q =
+      ∑ n ∈ range (univ.sup h + univ.sup h' + 2), ∑ l : Fin n, ∑ r : Fin (n + 1) → X ⊕ X',
+        if r 0 = Sum.inl p.2 ∧ r (Fin.last n) = Sum.inr q.2 then
+          P.coeff n (fun t => Function.update (fun _ => Matrix.fromBlocks N.coeff 0 0 N'.coeff) l
+            (Matrix.fromBlocks 0 F 0 0) t (r t.castSucc) (r t.succ)) p.1 q.1
+        else 0 :=
+  P.boxMorphism_eq_sum N N' F
+    (fun _ hn l r => P.coeff_update_eq_zero_of_lt N N' h hh h' hh' F hn l r) p q
 
 /-- The core of `TauCeti.TypeDAStructure.boxMorphism_add_of_coeff_eq_zero` and
 `TauCeti.TypeDAStructure.boxMorphism_add_of_lt`: `P ⊠ –` is additive when a single length bounds
