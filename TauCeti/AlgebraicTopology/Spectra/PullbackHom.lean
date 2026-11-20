@@ -265,6 +265,15 @@ lemma levelTrivialFibrations_cotensorBifunctor_map_app {K L : PointedSSet.{0}} {
     (levelFibrations_terminal_from E)
     (Functor.PullbackObjObj.ofIsTerminal cotensorBifunctor j (terminal.from E) terminalIsTerminal)
 
+/-- Precomposing a cotensor `E^L ⟶ E^K` along an anodyne based map `j : K ⟶ L` gives a level
+equivalence whenever every level of `E` is a Kan complex. -/
+lemma levelEquivalences_cotensorBifunctor_map_app {K L : PointedSSet.{0}} {j : K ⟶ L}
+    (hj : SSet.anodyneExtensions j.right) (E : SymmetricSpectrum)
+    [∀ n, SSet.KanComplex ((evaluation n).obj E).right] :
+    levelEquivalences ((cotensorBifunctor.map j.op).app E) :=
+  levelTrivialFibrations_le_levelEquivalences _
+    (levelTrivialFibrations_cotensorBifunctor_map_app hj E)
+
 /-- Level `n` of the cotensor `E^K` is a Kan complex whenever level `n` of `E` is a Kan
 complex. -/
 instance kanComplex_cotensor_level (K : PointedSSet.{0}) (E : SymmetricSpectrum) (n : ℕ)
@@ -396,6 +405,15 @@ lemma llp_levelFibrations_levelSmash_map_of_anodyne {X : SymmetricSpectrum}
     (hj : SSet.anodyneExtensions j.right) :
     levelFibrations.llp ((levelSmash X).map j) :=
   llp_levelFibrations_levelSmashBifunctor_pushoutObjObjι_of_anodyne hX hj
+    (Functor.PushoutObjObj.ofIsInitialLeft levelSmashBifunctor (initial.to X) j initialIsInitial)
+
+/-- If `⊥ ⟶ X` lifts against all level fibrations, then smashing `X` with any based
+monomorphism gives a map lifting against all level fibrations. -/
+lemma llp_levelFibrations_levelSmash_map_of_llp {X : SymmetricSpectrum}
+    (hX : levelFibrations.llp (initial.to X)) {K L : PointedSSet.{0}} (j : K ⟶ L)
+    [Mono j.right] :
+    levelFibrations.llp ((levelSmash X).map j) :=
+  llp_levelFibrations_levelSmashBifunctor_pushoutObjObjι_of_llp hX
     (Functor.PushoutObjObj.ofIsInitialLeft levelSmashBifunctor (initial.to X) j initialIsInitial)
 
 /-! ### Pullback-hom corners for mapping spaces -/

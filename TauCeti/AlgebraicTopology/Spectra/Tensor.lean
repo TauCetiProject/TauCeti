@@ -454,6 +454,79 @@ lemma homSimplicialCotensorEquiv_naturality_right {K : SSet.{0}} {X Y Y' : Symme
     (simplicialTensorCotensorAdjunction₂.homEquiv_symm_naturality_three g f)).trans
     (simplicialTensorHomEquiv_comp _ g)
 
+/-- The unit isomorphism `X ∧ S⁰ ≅ X` is natural in `X`. -/
+@[reassoc]
+lemma levelSmashBifunctor_map_app_comp_levelSmashUnitIso_hom {X X' : SymmetricSpectrum}
+    (f : X ⟶ X') :
+    (levelSmashBifunctor.map f).app (𝟙_ _) ≫ (levelSmashUnitIso X').hom =
+      (levelSmashUnitIso X).hom ≫ f := by
+  apply Mod.Hom.ext
+  change ((levelSmashRight (𝟙_ _)).map f).hom ≫ (levelSmashUnitIso X').hom.hom =
+    (levelSmashUnitIso X).hom.hom ≫ f.hom
+  simp only [Mod.Hom.mk'_hom, levelSmashUnitIso_hom_hom, Category.assoc]
+  rw [← whisker_exchange_assoc, rightUnitor_naturality]
+
+/-- Postcomposing the vertex classified by `X' ⟶ Y` with `Map(f, Y)` classifies `X ⟶ X' ⟶ Y`. -/
+@[reassoc]
+lemma unitHomMappingSpaceEquiv_symm_comp_mappingSpaceBifunctor_map_app {X X' Y : SymmetricSpectrum}
+    (f : X ⟶ X') (g : X' ⟶ Y) :
+    (unitHomMappingSpaceEquiv X' Y).symm g ≫ (mappingSpaceBifunctor.map f.op).app Y =
+      (unitHomMappingSpaceEquiv X Y).symm (f ≫ g) := by
+  let m : (mappingSpace X').obj Y ⟶ (mappingSpace X).obj Y :=
+    (mappingSpaceBifunctor.map f.op).app Y
+  change (unitHomMappingSpaceEquiv X' Y).symm g ≫ m = (unitHomMappingSpaceEquiv X Y).symm (f ≫ g)
+  rw [unitHomMappingSpaceEquiv_symm_apply, unitHomMappingSpaceEquiv_symm_apply]
+  have h1 := levelSmashMappingSpaceAdjunction₂.homEquiv_naturality_one f
+    ((levelSmashUnitIso X').hom ≫ g)
+  have h2 : (levelSmashMappingSpaceAdjunction X).homEquiv _ Y
+      ((levelSmashBifunctor.map f).app (𝟙_ _) ≫ (levelSmashUnitIso X').hom ≫ g) =
+      (levelSmashMappingSpaceAdjunction X).homEquiv _ Y ((levelSmashUnitIso X).hom ≫ f ≫ g) :=
+    congrArg ((levelSmashMappingSpaceAdjunction X).homEquiv _ Y)
+      (levelSmashBifunctor_map_app_comp_levelSmashUnitIso_hom_assoc f g)
+  exact h1.symm.trans h2
+
+/-- Postcomposing a vertex `S⁰ ⟶ Map(X', Y)` with `Map(f, Y)` precomposes the corresponding
+spectrum map `X' ⟶ Y` with `f : X ⟶ X'`. -/
+lemma unitHomMappingSpaceEquiv_comp_mappingSpaceBifunctor_map_app {X X' Y : SymmetricSpectrum}
+    (f : X ⟶ X') (g : 𝟙_ PointedSSet.{0} ⟶ (mappingSpace X').obj Y) :
+    unitHomMappingSpaceEquiv X Y (g ≫ (mappingSpaceBifunctor.map f.op).app Y) =
+      f ≫ unitHomMappingSpaceEquiv X' Y g := by
+  apply (unitHomMappingSpaceEquiv X Y).symm.injective
+  rw [Equiv.symm_apply_apply, ← unitHomMappingSpaceEquiv_symm_comp_mappingSpaceBifunctor_map_app,
+    Equiv.symm_apply_apply]
+  rfl
+
+/-- Applying `Map(f, Y)` to an `m`-simplex of `Map(X', Y)` precomposes the corresponding
+spectrum map `X' ∧ Δ[m]₊ ⟶ Y` with `f ∧ Δ[m]₊`. -/
+lemma mappingSpaceSimplexEquiv_mappingSpaceBifunctor_map_app {X X' Y : SymmetricSpectrum}
+    (f : X ⟶ X') (n : SimplexCategory)
+    (x : ((mappingSpace X').obj Y).right.obj (Opposite.op n)) :
+    mappingSpaceSimplexEquiv X Y n (((mappingSpaceBifunctor.map f.op).app Y).right.app _ x) =
+      (levelSmashBifunctor.map f).app _ ≫ mappingSpaceSimplexEquiv X' Y n x := by
+  let m : (mappingSpace X').obj Y ⟶ (mappingSpace X).obj Y :=
+    (mappingSpaceBifunctor.map f.op).app Y
+  change mappingSpaceSimplexEquiv X Y n (m.right.app _ x) =
+    (levelSmashBifunctor.map f).app _ ≫ mappingSpaceSimplexEquiv X' Y n x
+  rw [mappingSpaceSimplexEquiv_apply, mappingSpaceSimplexEquiv_apply,
+    ← SSet.yonedaEquiv_symm_comp,
+    ← PointedSSet.addBasepointHomEquiv_symm_comp (X := (mappingSpace X').obj Y)]
+  exact levelSmashMappingSpaceAdjunction₂.homEquiv_symm_naturality_one f
+    ((PointedSSet.addBasepointHomEquiv (SSet.stdSimplex.obj n) ((mappingSpace X').obj Y)).symm
+      (SSet.yonedaEquiv.symm x))
+
+/-- Applying `Map(f, Y)` to the `m`-simplex classified by `X' ∧ Δ[m]₊ ⟶ Y` classifies its
+precomposition with `f ∧ Δ[m]₊`. -/
+lemma mappingSpaceBifunctor_map_app_mappingSpaceSimplexEquiv_symm {X X' Y : SymmetricSpectrum}
+    (f : X ⟶ X') (n : SimplexCategory)
+    (g : (levelSmash X').obj (PointedSSet.addBasepoint.obj (SSet.stdSimplex.obj n)) ⟶ Y) :
+    ((mappingSpaceBifunctor.map f.op).app Y).right.app _
+        ((mappingSpaceSimplexEquiv X' Y n).symm g) =
+      (mappingSpaceSimplexEquiv X Y n).symm ((levelSmashBifunctor.map f).app _ ≫ g) := by
+  apply (mappingSpaceSimplexEquiv X Y n).injective
+  rw [mappingSpaceSimplexEquiv_mappingSpaceBifunctor_map_app, Equiv.apply_symm_apply,
+    Equiv.apply_symm_apply]
+  rfl
+
 /-! ### Adjointness and limit preservation in each variable -/
 
 instance (X : SymmetricSpectrum) : (levelSmashBifunctor.obj X).IsLeftAdjoint :=

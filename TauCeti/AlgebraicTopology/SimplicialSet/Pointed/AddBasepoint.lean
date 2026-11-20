@@ -152,6 +152,26 @@ lemma addBasepointHomEquiv_comp {K : SSet.{u}} {X Y : PointedSSet.{u}}
     addBasepointHomEquiv K Y (f ≫ g) = addBasepointHomEquiv K X f ≫ g.right :=
   (rfl)
 
+/-- Extending an unpointed map to `K₊` is natural in the source: precomposing with `g₊`
+corresponds to precomposing with `g`. -/
+@[reassoc]
+lemma addBasepoint_map_comp_addBasepointHomEquiv_symm {K' K : SSet.{u}} {X : PointedSSet.{u}}
+    (g : K' ⟶ K) (f : K ⟶ X.right) :
+    addBasepoint.map g ≫ (addBasepointHomEquiv K X).symm f =
+      (addBasepointHomEquiv K' X).symm (g ≫ f) := by
+  apply (addBasepointHomEquiv K' X).injective
+  rw [addBasepointHomEquiv_map_comp, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+
+/-- Extending an unpointed map to `K₊` is natural in the target: postcomposing with a based map
+`g` corresponds to postcomposing with `g.right`. -/
+@[reassoc]
+lemma addBasepointHomEquiv_symm_comp {K : SSet.{u}} {X Y : PointedSSet.{u}}
+    (f : K ⟶ X.right) (g : X ⟶ Y) :
+    (addBasepointHomEquiv K X).symm f ≫ g =
+      (addBasepointHomEquiv K Y).symm (f ≫ g.right) := by
+  apply (addBasepointHomEquiv K Y).injective
+  rw [addBasepointHomEquiv_comp, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+
 /-- Forget the basepoint of a pointed simplicial set. -/
 abbrev forgetBasepoint : PointedSSet.{u} ⥤ SSet.{u} :=
   Under.forget _
@@ -228,5 +248,10 @@ lemma addBasepoint_map_right_mem (W : MorphismProperty SSet.{u})
 instance mono_addBasepoint_map_right {K L : SSet.{u}} (f : K ⟶ L) [Mono f] :
     Mono (addBasepoint.map f).right :=
   addBasepoint_map_right_mem (MorphismProperty.monomorphisms SSet.{u}) (.infer_property f)
+
+/-- Adjoining a disjoint basepoint preserves monomorphisms of simplicial sets. -/
+instance : addBasepoint.{u}.PreservesMonomorphisms where
+  preserves f _ :=
+    (Under.forget _).mono_of_mono_map (inferInstance : Mono (addBasepoint.map f).right)
 
 end TauCeti.PointedSSet

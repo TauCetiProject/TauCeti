@@ -264,6 +264,14 @@ it is the right unitor `X_n ∧ S⁰ ≅ X_n` (`tensorFreeZeroι_comp_levelSmash
 noncomputable def levelSmashUnitIso (X : SymmetricSpectrum) : (levelSmash X).obj (𝟙_ _) ≅ X :=
   (Mod.tensorLeft X).mapIso SymmetricSequence.freeZeroUnitIso ≪≫ Mod.tensorLeftUnitIso X
 
+/-- The underlying map of the unit isomorphism `X ∧ S⁰ ≅ X`. -/
+lemma levelSmashUnitIso_hom_hom (X : SymmetricSpectrum) :
+    (levelSmashUnitIso X).hom.hom =
+      X.X ◁ SymmetricSequence.freeZeroUnitIso.hom ≫ (ρ_ X.X).hom := by
+  simp only [levelSmashUnitIso, Iso.trans_hom, Functor.mapIso_hom, Mod.comp_hom',
+    Mod.tensorLeftUnitIso_hom_hom]
+  rfl
+
 /-- In level `n`, the unit isomorphism `X ∧ S⁰ ≅ X` is the right unitor `X_n ∧ S⁰ ≅ X_n`. -/
 @[reassoc (attr := simp)]
 lemma tensorFreeZeroι_comp_levelSmashUnitIso_hom (X : SymmetricSpectrum) (n : ℕ) :

@@ -30,9 +30,11 @@ sphere monoid of symmetric sequences, it is the function spectrum.
 
 * `Mod.tensorLeft M`: the functor `K ↦ M ⊗ K` from `C` to left `A`-modules.
 * `Mod.tensorRight K`: the functor `M ↦ M ⊗ K` on left `A`-modules.
+* `Mod.curriedTensor`: the bifunctor `M ↦ K ↦ M ⊗ K`.
 * `Mod.ihom M`: the functor `N ↦ Hom_A(M, N)` from left `A`-modules to `C`, with the inclusion
   `Mod.ihomι M N : Hom_A(M, N) ⟶ [M, N]` and the factorization `Mod.ihomLift`.
-* `Mod.ihomAdjunction M : Mod.tensorLeft M ⊣ Mod.ihom M`.
+* `Mod.ihomAdjunction M : Mod.tensorLeft M ⊣ Mod.ihom M`, together with `Mod.ihomPre`,
+  `Mod.ihomFunctor`, and the parametrized adjunction `Mod.ihomAdjunction₂`.
 * `Mod.internalHom M`: over a commutative monoid, `Hom_A(M, -)` as a functor of left
   `A`-modules.
 
@@ -100,6 +102,18 @@ abbrev tensorRight (V : C) : Mod C A ⥤ Mod C A where
     simp only [tensorLeft_smul, selfLeftAction_actionHomRight, Category.assoc]
     rw [associator_inv_naturality_middle_assoc, ← comp_whiskerRight,
       IsModHom.smul_hom, comp_whiskerRight, selfLeftAction_actionHomRight])
+  map_id M := by ext; simp
+  map_comp f g := by ext; simp
+
+/-- Tensoring a left `A`-module on the right with an object of `C`, curried in both variables:
+`M ↦ K ↦ M ⊗ K`, with `A` acting on `M`. -/
+abbrev curriedTensor : Mod C A ⥤ C ⥤ Mod C A where
+  obj M := tensorLeft M
+  map f :=
+    { app K := (tensorRight K).map f
+      naturality _ _ g := by
+        ext
+        simp only [comp_hom', Hom.mk'_hom, whisker_exchange] }
   map_id M := by ext; simp
   map_comp f g := by ext; simp
 
@@ -270,6 +284,59 @@ lemma ihomAdjunction_counit_app_hom (M N : Mod C A) :
     ((ihomAdjunction M).counit.app N).hom = uncurry (ihomι M N) := by
   simp only [ihomAdjunction, Adjunction.mkOfHomEquiv_counit_app]
   exact (ihomHomEquiv_symm_apply_hom M (𝟙 _)).trans (by rw [Category.id_comp]; rfl)
+
+instance (M : Mod C A) : (tensorLeft M).IsLeftAdjoint :=
+  (ihomAdjunction M).isLeftAdjoint
+
+instance (M : Mod C A) : (ihom M).IsRightAdjoint :=
+  (ihomAdjunction M).isRightAdjoint
+
+/-- Precomposition with a map `M ⟶ M'` of left `A`-modules gives a natural transformation
+`Hom_A(M', -) ⟶ Hom_A(M, -)`, conjugate to `M ⊗ - ⟶ M' ⊗ -`. -/
+noncomputable def ihomPre {M M' : Mod C A} (f : M ⟶ M') : ihom M' ⟶ ihom M :=
+  conjugateEquiv (ihomAdjunction M') (ihomAdjunction M) ((curriedTensor (A := A)).map f)
+
+/-- Precomposition on `A`-linear maps agrees with ambient precomposition after the inclusion
+`Hom_A(-, N) ⟶ [-, N]`. -/
+@[reassoc (attr := simp)]
+lemma ihomPre_app_comp_ihomι {M M' : Mod C A} (f : M ⟶ M') (N : Mod C A) :
+    (ihomPre f).app N ≫ ihomι M N = ihomι M' N ≫ (MonoidalClosed.pre f.hom).app N.X := by
+  have h := congrArg Hom.hom
+    (conjugateEquiv_counit (ihomAdjunction M') (ihomAdjunction M)
+      ((curriedTensor (A := A)).map f) N)
+  simp only [comp_hom', ihomAdjunction_counit_app_hom] at h
+  apply uncurry_injective
+  rw [uncurry_natural_left, uncurry_pre_app]
+  exact h
+
+@[simp]
+lemma ihomPre_id (M : Mod C A) : ihomPre (𝟙 M) = 𝟙 (ihom M) := by
+  ext N
+  simp
+
+@[simp]
+lemma ihomPre_comp {M₁ M₂ M₃ : Mod C A} (f : M₁ ⟶ M₂) (g : M₂ ⟶ M₃) :
+    ihomPre (f ≫ g) = ihomPre g ≫ ihomPre f := by
+  ext N
+  simp
+
+/-- The bifunctor `(M, N) ↦ Hom_A(M, N)` of `A`-linear maps, contravariant in `M` and covariant
+in `N`. -/
+noncomputable abbrev ihomFunctor : (Mod C A)ᵒᵖ ⥤ Mod C A ⥤ C where
+  obj M := ihom M.unop
+  map f := ihomPre f.unop
+
+/-- The parametrized adjunction between `(M, K) ↦ M ⊗ K` and `(M, N) ↦ Hom_A(M, N)`. -/
+noncomputable def ihomAdjunction₂ : curriedTensor (A := A) ⊣₂ ihomFunctor where
+  adj := ihomAdjunction
+  unit_whiskerRight_map f := by
+    ext K
+    exact (unit_conjugateEquiv (ihomAdjunction _) (ihomAdjunction _)
+      ((curriedTensor (A := A)).map f) K).symm
+
+@[simp]
+lemma ihomAdjunction₂_adj (M : Mod C A) :
+    (ihomAdjunction₂ (A := A)).adj M = ihomAdjunction M := (rfl)
 
 end ihom
 
