@@ -104,7 +104,7 @@ private theorem shift_mul_shift_apply {f : R[X]} {c : R} {A : Matrix (Fin n) (Fi
   rw [Matrix.mul_apply]
   simp_rw [shift_mul_apply_of_X_sub_C_pow_dvd hA, of_apply]
   have hdeg : ((X + C (-f.eval c)) ^ (i : ℕ)).natDegree < n :=
-    natDegree_pow_le.trans_lt (by rw [natDegree_X_add_C, mul_one]; exact i.2)
+    natDegree_pow_le.trans_lt (by rw [natDegree_X_add_C, mul_one]; exact i.isLt)
   have hsum : ((X + C (-f.eval c)) ^ (i : ℕ)).comp (taylor c f) =
       ∑ m ∈ Finset.range n,
         C (((X + C (-f.eval c)) ^ (i : ℕ)).coeff m) * (taylor c f) ^ m := by

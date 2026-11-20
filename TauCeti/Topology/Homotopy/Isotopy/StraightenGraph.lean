@@ -133,13 +133,13 @@ private def disp (κ : ℝ) (q : I × (X × W)) : W :=
 omit [NormedSpace ℝ W] in
 private theorem coeff_mem_Icc (κ : ℝ) (q : I × (X × W)) :
     (q.1 : ℝ) * weight κ ‖g q.2.1‖ ‖q.2.2‖ ∈ Icc (0 : ℝ) q.1 :=
-  ⟨mul_nonneg q.1.2.1 (weight_nonneg _ _ _),
-    mul_le_of_le_one_right q.1.2.1 (weight_le_one _ _ _)⟩
+  ⟨mul_nonneg q.1.property.1 (weight_nonneg _ _ _),
+    mul_le_of_le_one_right q.1.property.1 (weight_le_one _ _ _)⟩
 
 private theorem norm_disp_le (κ : ℝ) (q : I × (X × W)) : ‖disp g κ q‖ ≤ ‖g q.2.1‖ := by
   obtain ⟨h₀, h₁⟩ := coeff_mem_Icc g κ q
   rw [disp, norm_smul, Real.norm_of_nonneg h₀]
-  exact mul_le_of_le_one_left (norm_nonneg _) (h₁.trans q.1.2.2)
+  exact mul_le_of_le_one_left (norm_nonneg _) (h₁.trans q.1.property.2)
 
 /-- The displacement is continuous. Where `g x ≠ 0` this is continuity of the weight; where
 `g x = 0` the displacement vanishes and is bounded by `‖g x‖` nearby. -/
@@ -157,7 +157,7 @@ private theorem continuous_disp (hκ : 1 < κ) : Continuous (disp g κ) := by
       refine ContinuousAt.sup (continuousAt_const.sub (ContinuousAt.sup ?_ continuousAt_const))
         continuousAt_const
       exact ContinuousAt.div (by fun_prop) (by fun_prop) hden
-    exact ((continuous_subtype_val.comp continuous_fst).continuousAt.mul hw).smul
+    exact ((continuous_subtypeVal.comp continuous_fst).continuousAt.mul hw).smul
       (by fun_prop)
 
 /-- In each fibre, at each time, the straightening is a bijection of `W`: it is the identity over
@@ -199,10 +199,38 @@ private theorem bijective_sub_disp (hκ : 2 < κ) (t : I) (x : X) :
   simp only [disp, weight, push_apply, vsub_eq_sub, sub_zero, vadd_eq_add, smul_neg, μ, ← ha_def]
   abel
 
-/-- The level-preserving total map of the straightening is a homeomorphism of `I × (X × W)`. It
-is a continuous bijection, and a closed map: a point `q` is `G (F q, s)` for the map `G` moving
-back by `s • g x` and some `s ∈ [0, 1]`, so the image of a closed set is the projection, along the
-compact factor `[0, 1]`, of a closed set. -/
+/-- The level-preserving total map of the straightening is a closed map. -/
+private theorem isClosedMap_straightenGraph_total (hκ : 2 < κ) :
+    IsClosedMap fun q : I × (X × W) => (q.1, (q.2.1, q.2.2 - disp g κ q)) := by
+  set F := fun q : I × (X × W) => (q.1, (q.2.1, q.2.2 - disp g κ q))
+  have := continuous_disp g (κ := κ) (by linarith)
+  let G : (I × (X × W)) × I → I × (X × W) :=
+    fun p => (p.1.1, (p.1.2.1, p.1.2.2 + (p.2 : ℝ) • g p.1.2.1))
+  have hG : Continuous G := by fun_prop
+  have hFG : ∀ p, (F (G p)).1 = p.1.1 ∧ (F (G p)).2.1 = p.1.2.1 := fun _ => ⟨rfl, rfl⟩
+  intro C hC
+  -- Every `q` is `G (F q, s)` for some `s ∈ [0, 1]`, so `F '' C` is the projection, along the
+  -- compact factor `[0, 1]`, of a closed set.
+  have hR : IsClosed {p : (I × (X × W)) × I | (F (G p)).2.2 = p.1.2.2} :=
+    isClosed_eq (by fun_prop) (by fun_prop)
+  have heq : F '' C = Prod.fst '' ({p | (F (G p)).2.2 = p.1.2.2} ∩ G ⁻¹' C) := by
+    ext y
+    constructor
+    · rintro ⟨q, hq, rfl⟩
+      have hs := coeff_mem_Icc g κ q
+      let s : I := ⟨_, hs.1, hs.2.trans q.1.property.2⟩
+      have hGF : G (F q, s) = q := by
+        simp only [G, F, s, disp, sub_add_cancel]
+      refine ⟨(F q, s), ⟨?_, ?_⟩, rfl⟩
+      · simp only [mem_ofPred_eq, hGF]
+      · simpa only [mem_preimage, hGF] using hq
+    · rintro ⟨p, ⟨hp, hpC⟩, rfl⟩
+      refine ⟨G p, hpC, ?_⟩
+      exact Prod.ext (hFG p).1 (Prod.ext (hFG p).2 hp)
+  rw [heq]
+  exact isClosedMap_fst_of_compactSpace _ (hR.inter (hC.preimage hG))
+
+/-- The level-preserving total map of the straightening is a homeomorphism of `I × (X × W)`. -/
 private theorem isHomeomorph_straightenGraph_total (hκ : 2 < κ) :
     IsHomeomorph fun q : I × (X × W) => (q.1, (q.2.1, q.2.2 - disp g κ q)) := by
   set F := fun q : I × (X × W) => (q.1, (q.2.1, q.2.2 - disp g κ q))
@@ -219,30 +247,7 @@ private theorem isHomeomorph_straightenGraph_total (hκ : 2 < κ) :
     · obtain ⟨t, x, z⟩ := y
       obtain ⟨w, hw⟩ := (bijective_sub_disp g hκ t x).surjective z
       exact ⟨(t, (x, w)), by simpa [F] using hw⟩
-  let G : (I × (X × W)) × I → I × (X × W) :=
-    fun p => (p.1.1, (p.1.2.1, p.1.2.2 + (p.2 : ℝ) • g p.1.2.1))
-  have hG : Continuous G := by fun_prop
-  have hFG : ∀ p, (F (G p)).1 = p.1.1 ∧ (F (G p)).2.1 = p.1.2.1 := fun _ => ⟨rfl, rfl⟩
-  have hclosed : IsClosedMap F := by
-    intro C hC
-    have hR : IsClosed {p : (I × (X × W)) × I | (F (G p)).2.2 = p.1.2.2} :=
-      isClosed_eq (by fun_prop) (by fun_prop)
-    have heq : F '' C = Prod.fst '' ({p | (F (G p)).2.2 = p.1.2.2} ∩ G ⁻¹' C) := by
-      ext y
-      constructor
-      · rintro ⟨q, hq, rfl⟩
-        have hs := coeff_mem_Icc g κ q
-        let s : I := ⟨_, hs.1, hs.2.trans q.1.2.2⟩
-        have hGF : G (F q, s) = q := by
-          simp only [G, F, s, disp, sub_add_cancel]
-        refine ⟨(F q, s), ⟨?_, ?_⟩, rfl⟩
-        · simp only [mem_ofPred_eq, hGF]
-        · simpa only [mem_preimage, hGF] using hq
-      · rintro ⟨p, ⟨hp, hpC⟩, rfl⟩
-        refine ⟨G p, hpC, ?_⟩
-        exact Prod.ext (hFG p).1 (Prod.ext (hFG p).2 hp)
-    rw [heq]
-    exact isClosedMap_fst_of_compactSpace _ (hR.inter (hC.preimage hG))
+  have hclosed := isClosedMap_straightenGraph_total g hκ
   exact isHomeomorph_iff_continuous_isClosedMap_bijective.2 ⟨hF, hclosed, hbij⟩
 
 variable (κ) in
@@ -352,7 +357,7 @@ private theorem exists_chordProfile {γ : ℝ → E} {a b : ℝ} (hγ : Continuo
     · rw [projIcc_of_right_le _ hr, sub_eq_iff_eq_add', ← hφb] at h1
       rw [hg, projIcc_of_right_le _ hr, hφ.injOn (hτ_mem r) hb h1]
       simp [div_self hL.ne']
-  · have hc := (projIcc 0 L hL.le r).2
+  · have hc := (projIcc 0 L hL.le r).property
     have hc0 : 0 ≤ (projIcc 0 L hL.le r : ℝ) / L := div_nonneg hc.1 hL.le
     have hc1 : (projIcc 0 L hL.le r : ℝ) / L ≤ 1 := (div_le_one hL).2 hc.2
     calc ‖(g r : E)‖ ≤ ‖γ (τ r) - γ a‖ + ‖((projIcc 0 L hL.le r : ℝ) / L) • (γ b - γ a)‖ := by

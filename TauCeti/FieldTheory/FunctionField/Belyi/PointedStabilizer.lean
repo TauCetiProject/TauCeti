@@ -126,13 +126,13 @@ theorem apply_algebraMap_X_of_mem_semilinearAut {p : RingAut X × (k ≃ₐ[ℚ]
 /-- **Semilinear automorphisms act on places**: `(φ, g)` carries a place `P` of `F` to the place
 with valuation `v_P ∘ φ⁻¹`. -/
 noncomputable instance : SMul (semilinearAut X) (Place k X) where
-  smul p := Place.equivOfRingEquiv ((p : RingAut X × (k ≃ₐ[ℚ] k)).2 : k ≃+* k) p.1.1
-    (apply_algebraMap_of_mem_semilinearAut p.2)
+  smul p := Place.equivOfRingEquiv ((p : RingAut X × (k ≃ₐ[ℚ] k)).2 : k ≃+* k) p.val.1
+    (apply_algebraMap_of_mem_semilinearAut p.property)
 
 /-- The action of a semilinear automorphism `(φ, g)` on places is transport along `φ`. -/
 theorem smul_def (p : semilinearAut X) (P : Place k X) :
-    p • P = Place.equivOfRingEquiv ((p : RingAut X × (k ≃ₐ[ℚ] k)).2 : k ≃+* k) p.1.1
-      (apply_algebraMap_of_mem_semilinearAut p.2) P :=
+    p • P = Place.equivOfRingEquiv ((p : RingAut X × (k ≃ₐ[ℚ] k)).2 : k ≃+* k) p.val.1
+      (apply_algebraMap_of_mem_semilinearAut p.property) P :=
   (rfl)
 
 /-- The valuation of the transported place `(φ, g) • P` is `v_P ∘ φ⁻¹`. -/
@@ -194,7 +194,7 @@ theorem restrict_smul (p : semilinearAut X) (P : Place k X) :
         (RatFunc.mapRingEquiv ((p : RingAut X × (k ≃ₐ[ℚ] k)).2 : k ≃+* k))
         (RatFunc.mapRingEquiv_algebraMap_const _) (P.restrict k (RatFunc k)) := by
   rw [smul_def]
-  exact Place.restrict_equivOfRingEquiv _ _ _ _ (mem_semilinearAut_iff.mp p.2) _ P
+  exact Place.restrict_equivOfRingEquiv _ _ _ _ (mem_semilinearAut_iff.mp p.property) _ P
 
 variable (X) in
 /-- **The automorphisms of `k` underlying semilinear automorphisms of `X` form the stabilizer of
@@ -251,7 +251,7 @@ theorem mem_pointedStabilizer_iff {P : Place k X} {g : k ≃ₐ[ℚ] k} :
   rw [pointedStabilizer_def, Subgroup.mem_map]
   constructor
   · rintro ⟨p, hp, rfl⟩
-    exact ⟨(p : RingAut X × (k ≃ₐ[ℚ] k)).1, mem_semilinearAut_iff.mp p.2,
+    exact ⟨(p : RingAut X × (k ≃ₐ[ℚ] k)).1, mem_semilinearAut_iff.mp p.property,
       smul_eq_self_iff_valuation_apply_eq.mp hp⟩
   · rintro ⟨φ, hφ, hφP⟩
     exact ⟨⟨(φ, g), mem_semilinearAut_iff.mpr hφ⟩, smul_eq_self_iff_valuation_apply_eq.mpr hφP, rfl⟩
@@ -327,7 +327,8 @@ private theorem eq_one_of_smul_eq_self_of_snd_eq_one {p : semilinearAut X} (hp :
     (h1 : (p : RingAut X × (k ≃ₐ[ℚ] k)).2 = 1) : p = 1 := by
   have hφ (r : RatFunc k) : (p : RingAut X × (k ≃ₐ[ℚ] k)).1 (algebraMap (RatFunc k) X r) =
       algebraMap (RatFunc k) X r := by
-    rw [mem_semilinearAut_iff.mp p.2 r, h1, AlgEquiv.toRingEquiv_one, RatFunc.mapRingEquiv_refl,
+    rw [mem_semilinearAut_iff.mp p.property r, h1, AlgEquiv.toRingEquiv_one,
+        RatFunc.mapRingEquiv_refl,
       RingEquiv.refl_apply]
   let σ : X ≃ₐ[RatFunc k] X := AlgEquiv.ofRingEquiv hφ
   have hσφ (x : X) : σ x = (p : RingAut X × (k ≃ₐ[ℚ] k)).1 x := AlgEquiv.ofRingEquiv_apply hφ x
@@ -360,7 +361,7 @@ noncomputable def pointedStabilizerEquiv :
     (((MonoidHom.snd _ _).comp (semilinearAut X).subtype).subgroupMap
       (MulAction.stabilizer (semilinearAut X) P))
     ⟨fun p p' h ↦ Subtype.ext
-        (eq_of_smul_eq_self_of_snd_eq he hf p.2 p'.2 (congrArg Subtype.val h)),
+        (eq_of_smul_eq_self_of_snd_eq he hf p.property p'.property (congrArg Subtype.val h)),
       MonoidHom.subgroupMap_surjective _ _⟩
 
 /-- The pointed stabilizer equivalence remembers the action on `k`. -/

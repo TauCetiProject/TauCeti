@@ -249,13 +249,13 @@ intersection with `[F, R]`. -/
 private def toKerProjection : ↥(π.ker ⊓ commutator F) →* (projection π).ker :=
   ((mk π).comp (inclusion inf_le_right)).codRestrict _ fun x ↦ by
     rw [ker_projection]
-    exact ⟨inclusion inf_le_right x, mem_subgroupOf.mpr (mem_inf.mp x.2).1, rfl⟩
+    exact ⟨inclusion inf_le_right x, mem_subgroupOf.mpr (mem_inf.mp x.property).1, rfl⟩
 
 private theorem toKerProjection_surjective : Function.Surjective (toKerProjection π) := by
   rintro ⟨_, hy⟩
   rw [ker_projection] at hy
   obtain ⟨x, hx, rfl⟩ := hy
-  exact ⟨⟨x, mem_inf.mpr ⟨mem_subgroupOf.mp hx, x.2⟩⟩, rfl⟩
+  exact ⟨⟨x, mem_inf.mpr ⟨mem_subgroupOf.mp hx, x.property⟩⟩, rfl⟩
 
 private theorem ker_toKerProjection :
     (toKerProjection π).ker = (⁅(⊤ : Subgroup F), π.ker⁆).subgroupOf (π.ker ⊓ commutator F) := by
@@ -358,7 +358,7 @@ theorem comp_lift (hp : p.IsCentralExtension) : p.comp (lift π hp) = projection
   refine MonoidHom.ext fun u ↦ ?_
   obtain ⟨x, rfl⟩ := mk_surjective π u
   exact DFunLike.congr_fun
-    ((FreeGroupBasis.ofFreeGroup X).exists_comp_eq_of_surjective hp.surjective π).choose_spec x.1
+    ((FreeGroupBasis.ofFreeGroup X).exists_comp_eq_of_surjective hp.surjective π).choose_spec x.val
 
 /-- **The central cover of a free presentation of a perfect group is a universal central
 extension**, for central extensions with total group in any universe. -/

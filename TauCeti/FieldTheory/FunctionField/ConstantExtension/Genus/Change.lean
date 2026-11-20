@@ -206,12 +206,12 @@ private noncomputable def localMap (P : Place k F) :
     ((LinearMap.mulLeft k' (algebraMap F F' (s P))).comp
       (riemannRochSpace (Divisor.conorm k' F' D)).subtype).codRestrict _ fun z ↦ by
         simpa [Algebra.smul_def] using
-          (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.2 P
+          (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.property P
 
 private theorem localMap_apply (P : Place k F) (z : riemannRochSpace (Divisor.conorm k' F' D)) :
     localMap hF' hs0 hs P z = Submodule.Quotient.mk ⟨algebraMap F F' (s P) * z, by
       simpa [Algebra.smul_def] using
-        (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.2 P⟩ :=
+        (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.property P⟩ :=
   (rfl)
 
 private theorem localMap_eq_zero_iff (P : Place k F) (z : riemannRochSpace
@@ -273,11 +273,11 @@ private theorem pi_localMap_surjective
     have hle := P.constantSpanIntegers_le_integralClosureSubmodule k' F' (hloc P)
     by_cases hP : P ∈ S
     · rw [dite_eq_left hP] at hle
-      simpa using add_mem hle (y' ⟨P, hP⟩).2
+      simpa using add_mem hle (y' ⟨P, hP⟩).property
     · rwa [dite_eq_right hP, sub_zero] at hle
   refine ⟨⟨z, hzmem⟩, funext fun P ↦ ?_⟩
   have hP := hloc P
-  rw [dite_eq_left P.2] at hP
+  rw [dite_eq_left P.property] at hP
   rw [LinearMap.pi_apply, ← hy' P]
   simp only [localMap, LinearMap.coe_comp, Function.comp_apply, Submodule.mkQ_apply]
   rw [Submodule.Quotient.eq]
@@ -293,7 +293,7 @@ private theorem span_le_ker_pi_localMap (S : Finset (Place k F)) :
   funext P
   rw [LinearMap.pi_apply, Pi.zero_apply, localMap_eq_zero_iff]
   have hspan : Submodule.span k' (algebraMap F F' '' riemannRochSpace D) ≤
-      (P.1.constantSpanIntegers k' F').comap (LinearMap.mulLeft k' (algebraMap F F' (s P))) := by
+      (P.val.constantSpanIntegers k' F').comap (LinearMap.mulLeft k' (algebraMap F F' (s P))) := by
     refine Submodule.span_le.2 ?_
     rintro _ ⟨f, hf, rfl⟩
     rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.mulLeft_apply, ← map_mul]
@@ -318,7 +318,7 @@ private theorem ker_pi_localMap_le_span (S : Finset (Place k F))
     · rw [← localMap_eq_zero_iff hF' hs0 hs]
       simpa using congrFun hz ⟨P, hP⟩
     · rw [hreg P hP]
-      exact (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.2 P
+      exact (mem_riemannRochSpace_conorm_iff_forall_smul_mem hF' hs0 hs).1 z.property P
   -- so the coordinates of `z` lie in `L(D)`
   have hcoord (j) : c.repr z j ∈ riemannRochSpace D := by
     refine mem_riemannRochSpace_iff.2 fun P ↦ (Place.mul_mem_integers_iff (hs0 P) (hs P)).1 ?_
@@ -724,7 +724,8 @@ private theorem exists_intermediate_exact_genus_eq {K E : Type*} {k'' : Type w} 
   let _ : Algebra M M₁ :=
     (((algebraMap k' k'').comp (algebraMap M k')).codRestrict M₁ hM_mem).toAlgebra
   have hmEM (c : M₁) : algebraMap M₁ F' c ∈ EM := by
-    rw [IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply]; exact c.2
+    rw [IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply]
+    exact c.property
   let _ : Algebra M₁ EM := ((algebraMap M₁ F').codRestrict EM hmEM).toAlgebra
   have : IsScalarTower M₁ EM F' := .of_algebraMap_eq fun c ↦ by
     rw [IntermediateField.algebraMap_apply, RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
@@ -743,7 +744,7 @@ private theorem exists_intermediate_exact_genus_eq {K E : Type*} {k'' : Type w} 
     isIntegrallyClosedIn_iff.2 ⟨(algebraMap M₁ EM).injective, fun {y} hy ↦ by
       have hy'' : IsIntegral k'' (y : F') := (hy.map (IsScalarTower.toAlgHom M₁ EM F')).tower_top
       obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.isIntegral_iff.1 hy''
-      refine ⟨⟨c, (hmemM₁ c).2 (hc.symm ▸ y.2)⟩, Subtype.ext ?_⟩
+      refine ⟨⟨c, (hmemM₁ c).2 (hc.symm ▸ y.property)⟩, Subtype.ext ?_⟩
       rw [RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply,
         IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply]
       exact hc⟩
@@ -842,7 +843,7 @@ private theorem finite_exact_and_finrank_eq_of_one_le_genus [FiniteDimensional k
   have := isScalarTower_base_constantCompositum k F L₀ F'
   have hE₀ : constantCompositum F L₀ E₀ = ⊤ := (constantCompositum_eq_top_iff F L₀ F' E₀).2 rfl
   have hbot : E₀ = ⊥ := le_antisymm ((constantCompositum_le_iff F L₀ F').2 fun c ↦ by
-    obtain ⟨a, ha⟩ := IntermediateField.mem_bot.1 c.2
+    obtain ⟨a, ha⟩ := IntermediateField.mem_bot.1 c.property
     rw [IsScalarTower.algebraMap_apply L₀ k' F', IntermediateField.algebraMap_apply, ← ha,
       ← IsScalarTower.algebraMap_apply k k' F', IsScalarTower.algebraMap_apply k F F']
     exact IntermediateField.algebraMap_mem _ _) bot_le
@@ -946,7 +947,7 @@ theorem isIntegrallyClosedIn_of_one_le_genus_of_genus_eq [Algebra.IsAlgebraic k 
   have hz_FM : IsIntegral k (⟨z, hzM⟩ : FM) :=
     (isIntegral_algHom_iff (IsScalarTower.toAlgHom k FM F') (algebraMap FM F').injective).1 hz_k
   obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.isIntegral_iff.1 (hz_FM.tower_top (A := M))
-  refine ⟨c.1, ?_⟩
+  refine ⟨c.val, ?_⟩
   have hval := congrArg Subtype.val hc
   rwa [← IntermediateField.algebraMap_apply, ← IsScalarTower.algebraMap_apply M FM F',
     IsScalarTower.algebraMap_apply M k' F', IntermediateField.algebraMap_apply] at hval
@@ -1113,7 +1114,7 @@ private theorem dim_nsmul_poles_le_of_forall_exists {M E : Type*} [Field M] [Fie
     Units.ext (IsScalarTower.algebraMap_apply F E F' z).symm
   let v : ι → riemannRochSpace (l • Divisor.poles hFE (Units.map (algebraMap F E : F →* E) z)) :=
     fun i ↦ ⟨y i, (mem_riemannRochSpace_nsmul_poles_map_iff hFE hF' l
-      (Units.map (algebraMap F E : F →* E) z) (y i)).1 (by rw [hy i, hz_eq]; exact (b i).2)⟩
+      (Units.map (algebraMap F E : F →* E) z) (y i)).1 (by rw [hy i, hz_eq]; exact (b i).property)⟩
   have hcomp : ((IsScalarTower.toAlgHom M E F').toLinearMap.comp
       (riemannRochSpace _).subtype) ∘ v = (riemannRochSpace _).subtype ∘ b :=
     funext fun i ↦ hy i

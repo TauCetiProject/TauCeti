@@ -117,7 +117,7 @@ private noncomputable def Place.constantSpanSubmodule [Algebra.IsIntegral F F']
   smul_mem' r x hx := by
     rw [Set.mem_ofPred_eq, Algebra.smul_def, Subring.coe_mul, Place.coe_algebraMap_integers]
     exact Place.mul_mem_constantSpanIntegers k' F'
-      (Place.algebraMap_mem_constantSpanIntegers k' F' r.2) hx
+      (Place.algebraMap_mem_constantSpanIntegers k' F' r.property) hx
 
 private theorem Place.mem_constantSpanSubmodule_iff [Algebra.IsIntegral F F']
     (P' : Place k' F') {x : P'.integers} :
@@ -176,8 +176,8 @@ private noncomputable def Place.singularityQuotientLinearEquiv [Algebra.IsIntegr
     exact ⟨fun hz ↦ hz P' rfl,
       fun hz Q' hQ' ↦ Place.restrict_injective_of_isPurelyInseparable k F hQ' ▸ hz⟩
   let eTop : P'.integers ≃ₗ[k] ↥(P.integralClosureSubmodule k' F') :=
-    { toFun := fun x ↦ ⟨x.1, (hmem x.1).2 x.2⟩
-      invFun := fun x ↦ ⟨x.1, (hmem x.1).1 x.2⟩
+    { toFun := fun x ↦ ⟨x.val, (hmem x.val).2 x.property⟩
+      invFun := fun x ↦ ⟨x.val, (hmem x.val).1 x.property⟩
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl
       map_add' := fun _ _ ↦ rfl
@@ -381,8 +381,8 @@ private theorem Place.two_mul_ramificationIdx_mul_toNat_ord_eq {p : ℕ} (hp : p
   rw [Place.coe_algebraMap_integers, Place.ord_algebraMap_restrict k F P', Subring.coe_pow,
     P'.ord_pow (d : F')] at hval
   have hx_nn : 0 ≤ (P'.restrict k F).ord (x : F) :=
-    (P'.restrict k F).mem_integers_iff_ord_nonneg.1 x.2
-  have hd_nn : 0 ≤ P'.ord (d : F') := P'.mem_integers_iff_ord_nonneg.1 d.2
+    (P'.restrict k F).mem_integers_iff_ord_nonneg.1 x.property
+  have hd_nn : 0 ≤ P'.ord (d : F') := P'.mem_integers_iff_ord_nonneg.1 d.property
   have h2 : 2 * (p * (p - 1) / 2) = p * (p - 1) :=
     Nat.mul_div_cancel' (Nat.even_mul_pred_self p).two_dvd
   have h2z : (2 : ℤ) * ↑(p * (p - 1) / 2) = ↑p * (↑p - 1) := by
@@ -424,7 +424,7 @@ theorem Place.exists_two_mul_singularityDegree_restrict_eq_of_finrank_eq_prime {
     (by simp [hFF']) (pb.gen : F')
   rw [pow_one] at hb₀
   let b : (P'.restrict k F).integers :=
-    ⟨b₀, (Place.mem_integers_iff_of_algebraMap_eq_pow k F P' hp.ne_zero hb₀).1 pb.gen.2⟩
+    ⟨b₀, (Place.mem_integers_iff_of_algebraMap_eq_pow k F P' hp.ne_zero hb₀).1 pb.gen.property⟩
   have hb : algebraMap (P'.restrict k F).integers P'.integers b = pb.gen ^ pb.dim := by
     rw [hdim]
     exact Subtype.ext hb₀
@@ -605,7 +605,7 @@ private theorem exists_step_of_finrank_eq_prime {K M : Type u'} {E F' : Type v'}
   let L₁ : IntermediateField L M := IntermediateField.extendScalars hLL₀
   have hmEL (m : L₁) : algebraMap L₁ F' m ∈ EL := by
     rw [IsScalarTower.algebraMap_apply L₁ M F', IntermediateField.algebraMap_apply]
-    exact (hmemL₀ (m : M)).1 ((IntermediateField.mem_extendScalars hLL₀).1 m.2)
+    exact (hmemL₀ (m : M)).1 ((IntermediateField.mem_extendScalars hLL₀).1 m.property)
   let _ : Algebra L₁ EL := ((algebraMap L₁ F').codRestrict EL hmEL).toAlgebra
   have hst : IsScalarTower L₁ EL F' := .of_algebraMap_eq fun m ↦ by
     rw [IntermediateField.algebraMap_apply, RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
@@ -619,7 +619,7 @@ private theorem exists_step_of_finrank_eq_prime {K M : Type u'} {E F' : Type v'}
     isIntegrallyClosedIn_iff.2 ⟨(algebraMap L₁ EL).injective, fun {y} hy ↦ by
       have hyM : IsIntegral M (y : F') := (hy.map (IsScalarTower.toAlgHom L₁ EL F')).tower_top
       obtain ⟨m, hm⟩ := IsIntegrallyClosedIn.isIntegral_iff.1 hyM
-      have hm₀ : m ∈ L₀ := (hmemL₀ m).2 (hm.symm ▸ y.2)
+      have hm₀ : m ∈ L₀ := (hmemL₀ m).2 (hm.symm ▸ y.property)
       refine ⟨⟨m, (IntermediateField.mem_extendScalars hLL₀).2 hm₀⟩, Subtype.ext ?_⟩
       rw [RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply,
         IsScalarTower.algebraMap_apply L₁ M F', IntermediateField.algebraMap_apply]

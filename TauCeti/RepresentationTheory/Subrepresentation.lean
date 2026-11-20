@@ -234,12 +234,12 @@ private noncomputable def asModuleSubtype (σ : Subrepresentation ρ) :
   (Representation.IntertwiningMap.equivLinearMapAsModule _ _ σ.subtype).codRestrict
     σ.asSubmodule (fun x =>
       (mem_asSubmodule_iff (v := (σ.toRepresentation.asModuleEquiv x : W))).mpr
-        (σ.toRepresentation.asModuleEquiv x).2)
+        (σ.toRepresentation.asModuleEquiv x).property)
 
 /-- The corestricted inclusion evaluates through the two representation/module identifications. -/
 private theorem coe_asModuleSubtype_apply (σ : Subrepresentation ρ)
     (x : σ.toRepresentation.asModule) :
-    (asModuleSubtype σ x).1 = ρ.asModuleEquiv.symm (σ.toRepresentation.asModuleEquiv x).1 :=
+    (asModuleSubtype σ x).val = ρ.asModuleEquiv.symm (σ.toRepresentation.asModuleEquiv x).val :=
   (LinearMap.codRestrict_apply _ _ x).trans
     (Representation.IntertwiningMap.equivLinearMapAsModule_apply σ.subtype x)
 
@@ -254,16 +254,16 @@ noncomputable def asModuleEquivAsSubmodule (σ : Subrepresentation ρ) :
       ρ.asModuleEquiv.symm.injective <| (coe_asModuleSubtype_apply σ x).symm.trans
         ((congrArg Subtype.val h).trans (coe_asModuleSubtype_apply σ y)), fun x =>
       ⟨σ.toRepresentation.asModuleEquiv.symm
-        ⟨ρ.asModuleEquiv x.1, (mem_asSubmodule_iff (v := ρ.asModuleEquiv x.1)).mp x.2⟩,
+        ⟨ρ.asModuleEquiv x.val, (mem_asSubmodule_iff (v := ρ.asModuleEquiv x.val)).mp x.property⟩,
         Subtype.ext <| by
           rw [coe_asModuleSubtype_apply, LinearEquiv.apply_symm_apply]
-          exact ρ.asModuleEquiv.symm_apply_apply x.1⟩⟩
+          exact ρ.asModuleEquiv.symm_apply_apply x.val⟩⟩
 
 @[simp]
 theorem coe_asModuleEquivAsSubmodule_apply (σ : Subrepresentation ρ)
     (x : σ.toRepresentation.asModule) :
-    (σ.asModuleEquivAsSubmodule x).1 =
-      (σ.toRepresentation.asModuleEquiv x).1 := by
+    (σ.asModuleEquivAsSubmodule x).val =
+      (σ.toRepresentation.asModuleEquiv x).val := by
   refine (congrArg Subtype.val (LinearEquiv.ofBijective_apply _
     (hf := σ.asModuleEquivAsSubmodule.bijective) x)).trans ?_
   exact coe_asModuleSubtype_apply σ x
@@ -271,8 +271,8 @@ theorem coe_asModuleEquivAsSubmodule_apply (σ : Subrepresentation ρ)
 @[simp]
 theorem coe_asModuleEquivAsSubmodule_symm_apply (σ : Subrepresentation ρ)
     (x : σ.asSubmodule) :
-    (σ.asModuleEquivAsSubmodule.symm x).1 =
-      _root_.Representation.asModuleEquiv ρ x.1 := by
+    (σ.asModuleEquivAsSubmodule.symm x).val =
+      _root_.Representation.asModuleEquiv ρ x.val := by
   exact (coe_asModuleEquivAsSubmodule_apply σ (σ.asModuleEquivAsSubmodule.symm x)).symm.trans
     (congrArg Subtype.val (σ.asModuleEquivAsSubmodule.apply_symm_apply x))
 

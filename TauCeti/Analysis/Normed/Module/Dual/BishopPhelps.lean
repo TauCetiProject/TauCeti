@@ -122,7 +122,7 @@ theorem exists_pos_norm_sub_ofReal_smul_le (f h : StrongDual 𝕜 E) {k : ℝ} (
   let N : Submodule ℝ E := LinearMap.ker (H : E →ₗ[ℝ] ℝ)
   obtain ⟨F₁, hF₁, hF₁norm⟩ := exists_extension_norm_eq N (F.comp N.subtypeL)
   have hF₁le : ‖F₁‖ ≤ k * ‖f‖ := hF₁norm ▸ (F.comp N.subtypeL).opNorm_le_bound hkf fun y ↦ by
-    simpa [Real.norm_eq_abs] using hker y y.2
+    simpa [Real.norm_eq_abs] using hker y y.property
   -- `F - F₁` vanishes on `ker H`, so it is a real multiple of `H`.
   obtain ⟨c, hc⟩ : ∃ c : ℝ, ∀ x, F x - F₁ x = c * H x := by
     have hle : ⨅ _ : Unit, LinearMap.ker (H : E →ₗ[ℝ] ℝ) ≤
@@ -192,10 +192,10 @@ theorem Convex.exists_isMaxOn_re_of_bddAbove (hconv : Convex ℝ C) (hC : IsComp
   have : CompleteSpace C := hC.completeSpace_coe
   obtain ⟨M, hM⟩ := hbdd
   have hcont : Continuous fun y : C ↦ -re (f y) :=
-    (continuous_re.comp (f.continuous.comp continuous_subtype_val)).neg
+    (continuous_re.comp (f.continuous.comp continuous_subtypeVal)).neg
   obtain ⟨⟨x, hx⟩, hxz, hmin⟩ :=
     hcont.lowerSemicontinuous.exists_add_mul_dist_le_and_lt_add_mul_dist
-      ⟨-M, by rintro _ ⟨y, rfl⟩; exact neg_le_neg (hM (mem_image_of_mem _ y.2))⟩ hkf ⟨z, hz⟩
+      ⟨-M, by rintro _ ⟨y, rfl⟩; exact neg_le_neg (hM (mem_image_of_mem _ y.property))⟩ hkf ⟨z, hz⟩
   simp only [Subtype.dist_eq, dist_eq_norm] at hxz hmin
   refine ⟨x, hx, by simp only [map_sub]; linarith, ?_⟩
   -- The open cone `s` with vertex `x` is convex, open and disjoint from `C`.

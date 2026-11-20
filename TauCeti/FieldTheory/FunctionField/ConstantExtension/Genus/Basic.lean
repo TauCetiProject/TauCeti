@@ -247,7 +247,7 @@ private theorem linearDisjoint_fieldRange_of_ringEquiv {K₁ K₂ E₁ E₂ : Ty
   let A₂ := (IsScalarTower.toAlgHom K₂ k' F').fieldRange
   let b₂ := Module.Basis.ofVectorSpace K₂ A₂
   have hmem (i) : (b₂ i : F') ∈ A₁ := by
-    obtain ⟨c, hc⟩ := (b₂ i).2
+    obtain ⟨c, hc⟩ := (b₂ i).property
     exact ⟨c, hc⟩
   let u : _ → A₁ := fun i ↦ ⟨(b₂ i : F'), hmem i⟩
   have hu : LinearIndependent K₁ u := by
@@ -340,7 +340,7 @@ private theorem exists_finiteDimensional_linearDisjoint_aux (n : ℕ) :
     let := constantCompositumAlgebra E L F'
     have := isScalarTower_constantCompositum E L F'
     have hbot : EL = ⊥ := le_antisymm ((constantCompositum_le_iff E L F').2 fun c ↦ by
-      obtain ⟨a, ha⟩ := IntermediateField.mem_bot.1 c.2
+      obtain ⟨a, ha⟩ := IntermediateField.mem_bot.1 c.property
       rw [IsScalarTower.algebraMap_apply L k' F', IntermediateField.algebraMap_apply, ← ha,
         ← IsScalarTower.algebraMap_apply K k' F', IsScalarTower.algebraMap_apply K E F']
       exact IntermediateField.algebraMap_mem _ _) bot_le

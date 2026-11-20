@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Analysis.Calculus.ParametricFDeriv
+public import Mathlib.Topology.EMetricSpace.Lipschitz
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import TauCeti.Algebra.Order.Floor.Ring
 
 /-!
 # Variations of Hamiltonian vector fields
@@ -15,7 +18,9 @@ For a constant symplectic form, taking the Hamiltonian vector field commutes wit
 variation: `δX_H = X_(δH)`. Joint `C²` regularity of the Hamiltonians justifies exchanging the
 parameter and target derivatives. We also record joint regularity of the vector fields, with
 one derivative lost. These are the coefficient calculus needed to differentiate inhomogeneous
-Cauchy–Riemann equations in local coordinates.
+Cauchy–Riemann equations in local coordinates. For a jointly `C²`, `1`-periodic family the vector
+fields `X_{H_t}` are Lipschitz on each bounded set with a constant independent of `t`
+(`TauCeti.SymplecticForm.exists_forall_lipschitzOnWith_hamiltonianVectorField`).
 
 The contraction convention is `ω(X_H, ·) = dH`. See McDuff–Salamon, *Introduction to Symplectic
 Topology*, the discussion of Hamiltonian vector fields. Mixed derivatives use
@@ -49,6 +54,26 @@ theorem contDiff_hamiltonianVectorField_uncurry (ω : SymplecticForm V)
     {K : P → V → ℝ} {n : WithTop ℕ∞} (hK : ContDiff ℝ (n + 1) (Function.uncurry K)) :
     ContDiff ℝ n (fun w : P × V ↦ ω.hamiltonianVectorField (K w.1) w.2) :=
   contDiff_iff_contDiffAt.2 fun _ ↦ ω.contDiffAt_hamiltonianVectorField_uncurry hK.contDiffAt
+
+/-- **A uniform Lipschitz bound.** For a jointly `C²`, `1`-periodic Hamiltonian family `H`, the
+vector fields `X_{H_t}` are Lipschitz on every bounded set `s`, with a constant independent of
+`t`. -/
+theorem exists_forall_lipschitzOnWith_hamiltonianVectorField (ω : SymplecticForm V)
+    {H : ℝ → V → ℝ} (hH : ContDiff ℝ 2 (Function.uncurry H)) (hHper : Function.Periodic H 1)
+    {s : Set V} (hs : Bornology.IsBounded s) :
+    ∃ L, ∀ t, LipschitzOnWith L (ω.hamiltonianVectorField (H t)) s := by
+  obtain ⟨R, hR⟩ := hs.subset_closedBall 0
+  obtain ⟨L, hL⟩ := (ω.contDiff_hamiltonianVectorField_uncurry (n := 1)
+    hH).contDiffOn.exists_lipschitzOnWith one_ne_zero
+    ((convex_Icc (0 : ℝ) 1).prod (convex_closedBall (0 : V) R))
+    (isCompact_Icc.prod (isCompact_closedBall (0 : V) R))
+  refine ⟨L, fun t ↦ ?_⟩
+  -- Reduce `t` to `fract t ∈ [0, 1]` and restrict to the slice `{fract t} × closedBall 0 R`.
+  have hft : Int.fract t ∈ Set.Icc (0 : ℝ) 1 := ⟨Int.fract_nonneg t, (Int.fract_lt_one t).le⟩
+  have h := (hL.comp (LipschitzWith.prodMk_left (Int.fract t)).lipschitzOnWith
+    fun y hy ↦ Set.mk_mem_prod hft hy).mono hR
+  rw [mul_one] at h
+  simpa only [Function.comp_def, hHper.apply_fract t] using h
 
 /-- Along a continuous path `x`, the linearized Hamiltonian vector fields
 `S_t = dX_{H_t}(x(t))` of a jointly `C²` Hamiltonian depend continuously on `t`. -/
