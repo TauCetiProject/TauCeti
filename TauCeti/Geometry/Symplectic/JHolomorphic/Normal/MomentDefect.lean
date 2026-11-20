@@ -94,8 +94,7 @@ theorem exists_normalLinearization_apply_eq (hJ₀ : ∀ v, J (z, 0) (v, 0) = (I
   have hanti (w : ℂ) (v : V) : A w (I • v) = -(I * A w v) := by
     have h := normalLinearization_apply_normalLinearization_apply (p := (z, w))
       (fun v ↦ by simp [hJ₀]) hJ₂ (v, 0)
-    have hv : ((I • v, A w v) : V × ℂ) = (I • v, 0) + (0, A w v) := by simp
-    rw [hA, hv, map_add, hA, normalLinearization_apply_zero_mk, hJ₁] at h
+    rw [hA, normalLinearization_apply_mk, hA, hJ₁] at h
     have h₂ := congrArg Prod.snd h
     simp only [Prod.snd_add, Prod.snd_neg, neg_zero] at h₂
     linear_combination h₂
@@ -119,9 +118,7 @@ theorem exists_normalLinearization_apply_eq (hJ₀ : ∀ v, J (z, 0) (v, 0) = (I
     push_cast
     linear_combination ((I * A 1 v - A I v) / 8) * I_sq
   refine ⟨νR.complexAntilinearPart, μR.complexAntilinearPart, fun w v ↦ ?_⟩
-  have hcw : conj w = w.re - w.im * I := by
-    apply Complex.ext <;> simp
-  rw [hA, hν, hμ, hlin w v, hcw]
+  rw [hA, hν, hμ, hlin w v, RCLike.conj_eq_re_sub_im w]
   refine Prod.ext rfl ?_
   linear_combination (A 1 v * w.re + A I v * w.im) * I_sq -
     (I * (I * A 1 v + A I v) / 2) * re_add_im w
@@ -162,8 +159,7 @@ theorem normalLinearization_prod_eq_iff_conjWirtingerDeriv_add_add {ν μ : V �
       conjWirtingerDeriv s z + s z • ν + conj (s z) • μ = 0 := by
   have hsplit (v : V) : normalLinearization J (z, s z) (v, fderiv ℝ s z v) =
       (I • v, 2 * I * (ν v * s z + μ v * conj (s z)) + I * fderiv ℝ s z v) := by
-    have hv : ((v, fderiv ℝ s z v) : V × ℂ) = (v, 0) + (0, fderiv ℝ s z v) := by simp
-    rw [hv, map_add, hνμ, normalLinearization_apply_zero_mk, hJ₁]
+    rw [normalLinearization_apply_mk, hνμ, hJ₁]
     simp
   simp only [hsplit, Prod.mk.injEq, true_and]
   constructor

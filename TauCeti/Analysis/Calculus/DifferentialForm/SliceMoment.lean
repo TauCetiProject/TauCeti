@@ -104,7 +104,7 @@ curve, and let `L w` be the complex structure of `V × ℂ` at `(z, w)` whose ho
 `TauCeti.conjWirtingerDeriv_sliceMoment_pow_add_add_apply`, with the norm bound
 `TauCeti.norm_conjWirtingerDeriv_sliceMoment_add_add_apply_le`). The coefficients `ν` and `μ` are
 absorbed exactly; if `T` is invariant under `L w` along the fibre, the moments solve the moment
-equations of `D` (`TauCeti.conjWirtingerDeriv_sliceMoment_pow_add_add_eq_zero`).
+equations of `D` (`TauCeti.conjWirtingerDeriv_sliceMoment_add_add_eq_zero`).
 
 The derivative formula comes from differentiating under the integral sign and the closedness
 `dT = 0`, which trades the base derivative of the slice density for fibre derivatives of the
@@ -578,6 +578,12 @@ theorem sliceMoment_eq_sliceMoment_of_abs_le (hK : IsCompact K) (hTc : ContDiff 
 
 open scoped ComplexConjugate
 
+/-- A real endomorphism `L` of `V × ℂ` acting on the vertical directions by multiplication by `i`
+sends `∂_x` to `∂_y` and `∂_y` to `-∂_x`. -/
+private theorem apply_zero_one_and_apply_zero_I {L : V × ℂ →L[ℝ] V × ℂ}
+    (hL₂ : ∀ n, L (0, n) = (0, I * n)) : L (0, 1) = (0, I) ∧ L (0, I) = (0, -1) := by
+  simp [hL₂]
+
 /-- The pointwise identity behind `TauCeti.conjWirtingerDeriv_sliceMoment_add_add_apply`. Let `L`
 be a real endomorphism of `V × ℂ` with `L (0, n) = (0, i n)` and `L (v, 0) = (i v, c)`. The
 integrand of `TauCeti.conjWirtingerDeriv_sliceMoment_apply`, built from the part of `θ`
@@ -594,10 +600,8 @@ private theorem antiInvariant_eq_add (θ : (V × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) 
       (I • v, 0) + (c.re • ((0 : V), (1 : ℂ)) + c.im • ((0 : V), I)) := by
     refine Prod.ext (by simp) ?_
     simp
-  have h₁ : L (0, 1) = (0, I) := by simpa using hL₂ 1
-  have h₂ : L (0, I) = (-1 : ℝ) • ((0 : V), (1 : ℂ)) := by
-    rw [hL₂, I_mul_I]
-    simp
+  obtain ⟨h₁, h₂⟩ := apply_zero_one_and_apply_zero_I hL₂
+  rw [show ((0, -1) : V × ℂ) = (-1 : ℝ) • ((0 : V), (1 : ℂ)) by simp] at h₂
   -- `θ` is linear in its second slot as well.
   have hsmul (x y : V × ℂ) (r : ℝ) : θ ![x, r • y] = r * θ ![x, y] := by
     rw [θ.apply_vecCons_swap, ContinuousAlternatingMap.vecCons_smul, θ.apply_vecCons_swap y x]
@@ -716,8 +720,8 @@ theorem norm_conjWirtingerDeriv_sliceMoment_add_add_apply_le (hK : IsCompact K)
       (|(T (z, w) ![(v, 0), (0, 1)] - T (z, w) ![L w (v, 0), L w (0, 1)]) / 2| +
         |(T (z, w) ![(v, 0), (0, I)] - T (z, w) ![L w (v, 0), L w (0, I)]) / 2|) := by
   -- Rewrite `L w` explicitly, so that the integrand is visibly continuous in `w`.
-  have hL₃ (w : ℂ) : L w (0, 1) = (0, I) := by simpa using hL₂ w 1
-  have hL₄ (w : ℂ) : L w (0, I) = (0, -1) := by simpa using hL₂ w I
+  have hL₃ (w : ℂ) := (apply_zero_one_and_apply_zero_I (hL₂ w)).1
+  have hL₄ (w : ℂ) := (apply_zero_one_and_apply_zero_I (hL₂ w)).2
   rw [conjWirtingerDeriv_sliceMoment_add_add_apply hK hTc hg hT hdT ν μ hL₁ hL₂ v]
   simp only [hL₁, hL₃, hL₄]
   have hcT : Continuous fun w : ℂ ↦ T (z, w) :=
@@ -740,25 +744,25 @@ theorem norm_conjWirtingerDeriv_sliceMoment_add_add_apply_le (hK : IsCompact K)
   simp only [norm_mul, norm_I, one_mul, Complex.norm_real, Real.norm_eq_abs]
 
 /-- **The moments of a form of type `(1,1)` solve the moment equations exactly.** If, in addition
-to the hypotheses of `TauCeti.conjWirtingerDeriv_sliceMoment_pow_add_add_apply`, the form `T` is
-invariant under the complex structure `L w` along the fibre over `z`, then the moments
-`M_k = ∫ wᵏ dμ_z` and mixed moments `Q_ℓ = ∫ w^ℓ \bar w dμ_z` satisfy the moment equations of
-`D = \bar∂ + ν W + μ \bar W` at `z`:
+to the hypotheses of `TauCeti.conjWirtingerDeriv_sliceMoment_add_add_apply`, the form `T` is
+invariant under the complex structure `L w` along the fibre over `z`, then the slice moment
+`∫ g dμ_z` satisfies the moment equation of `D = \bar∂ + ν W + μ \bar W` at `z`:
 
-`\bar∂ M_k + k M_k ν + k Q_{k-1} μ = 0`.
+`\bar∂ (∫ g dμ_z) + (∫ w g'(w) dμ_z) ν + (∫ \bar w g'(w) dμ_z) μ = 0`.
 
-For `ν = μ = 0` this is `TauCeti.conjWirtingerDeriv_sliceMoment_eq_zero` for `g = wᵏ`. -/
-theorem conjWirtingerDeriv_sliceMoment_pow_add_add_eq_zero (hK : IsCompact K)
-    (hTc : ContDiff ℝ 1 T) (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) {z : V}
+For `g = wᵏ` this is `\bar∂ M_k + k M_k ν + k Q_{k-1} μ = 0`
+(`TauCeti.conjWirtingerDeriv_sliceMoment_pow_add_add_apply`), and for `ν = μ = 0` it is
+`TauCeti.conjWirtingerDeriv_sliceMoment_eq_zero`. -/
+theorem conjWirtingerDeriv_sliceMoment_add_add_eq_zero (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
+    (hg : Differentiable ℂ g) (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) {z : V}
     (hdT : ∀ w, extDeriv T (z, w) = 0) {L : ℂ → V × ℂ →L[ℝ] V × ℂ} (ν μ : V →L⋆[ℂ] ℂ)
     (hL₁ : ∀ w v, L w (v, 0) = (I • v, 2 * I * (ν v * w + μ v * conj w)))
     (hL₂ : ∀ w n, L w (0, n) = (0, I * n))
-    (hJ : ∀ w, ∀ u u' : V × ℂ, T (z, w) ![L w u, L w u'] = T (z, w) ![u, u']) (k : ℕ) :
-    conjWirtingerDeriv (sliceMoment T (· ^ k)) z + (k * sliceMoment T (· ^ k) z) • ν +
-        (k * sliceMoment T (fun w ↦ w ^ (k - 1) * conj w) z) • μ = 0 := by
+    (hJ : ∀ w, ∀ u u' : V × ℂ, T (z, w) ![L w u, L w u'] = T (z, w) ![u, u']) :
+    conjWirtingerDeriv (sliceMoment T g) z + sliceMoment T (fun w ↦ w * deriv g w) z • ν +
+        sliceMoment T (fun w ↦ conj w * deriv g w) z • μ = 0 := by
   refine ContinuousLinearMap.ext fun v ↦ ?_
-  rw [conjWirtingerDeriv_sliceMoment_pow_add_add_apply hK hTc hT hdT ν μ hL₁ hL₂ k v,
-    zero_apply]
+  rw [conjWirtingerDeriv_sliceMoment_add_add_apply hK hTc hg hT hdT ν μ hL₁ hL₂ v, zero_apply]
   simp [hJ]
 
 end Holomorphic
