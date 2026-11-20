@@ -288,9 +288,9 @@ private theorem map_flatMap_patterns_blockInsertAll {α ι : Type*} (W : List (�
       simp [List.map_map, Function.comp_def, blockInsertAll_substituteLetter,
         map_prodMap_substituteLetter]
 
-/-- If substituting reduced words `U z` for the letters `z` of a word `W` gives the identity, so does
-substituting the words with the variables of `l` inserted into the blocks `b a^{m x} b`, for some
-exponents `m x` taken from given lists `ms x` of more than `|W|²` distinct exponents. -/
+/-- If substituting reduced words `U z` for the letters `z` of a word `W` gives the identity, so
+does substituting the words with the variables of `l` inserted into the blocks `b a^{m x} b`, for
+some exponents `m x` taken from given lists `ms x` of more than `|W|²` distinct exponents. -/
 theorem exists_lift_mk_blockInsertAll_eq_one (hab : a ≠ b) {α : Type*} {W : List (α × Bool)}
     {U : α → List (A × Bool)} (hU : ∀ c ∈ W, IsReduced (U c.1))
     (hW : lift (fun z ↦ mk (U z)) (mk W) = 1)
@@ -321,30 +321,21 @@ section MerzljakovWord
 
 variable {A X : Type*} [DecidableEq A] [DecidableEq X] {a b : A} {m : X → ℕ}
 
-/-- Once `x` is inserted into its block `b a^n b` of a Merzljakov word, neither the block nor its
-formal inverse occurs any more: sending `x` to `a` gives the Merzljakov word with the exponent
-`n + 1` in place of `n`. -/
-private theorem not_isInfix_insert_merzljakovWord (hab : a ≠ b) {ms₁ ms₂ : List ℕ} {n : ℕ}
-    (h₁ : n ∉ ms₁) (h₂ : n ∉ ms₂) (x : X) :
-    ¬ merzljakovBlock (Sum.inr a) (Sum.inr b) n <:+:
-        (merzljakovWord a b ms₁ ++ replicate n (a, true)).map (Prod.map Sum.inr id) ++
-          (Sum.inl x, true) :: (merzljakovWord a b ms₂).map (Prod.map Sum.inr id) ∧
-      ¬ invRev (merzljakovBlock (Sum.inr a) (Sum.inr b) n) <:+:
-        (merzljakovWord a b ms₁ ++ replicate n (a, true)).map (Prod.map Sum.inr id) ++
-          (Sum.inl x, true) :: (merzljakovWord a b ms₂).map (Prod.map Sum.inr id) := by
-  let f : (X ⊕ A) × Bool → A × Bool := Prod.map (Sum.elim (fun _ ↦ a) id) id
-  have hR : ((merzljakovWord a b ms₁ ++ replicate n (a, true)).map (Prod.map Sum.inr id) ++
-      (Sum.inl x, true) :: (merzljakovWord a b ms₂).map (Prod.map Sum.inr id)).map f =
-        merzljakovWord a b (ms₁ ++ (n + 1) :: ms₂) := by
-    simp [f, List.map_map, Function.comp_def, merzljakovWord_append_cons, replicate_succ']
-  have hblock : (merzljakovBlock (Sum.inr a : X ⊕ A) (Sum.inr b) n).map f =
-      merzljakovBlock a b n := by
-    simp [f, map_prodMap_merzljakovBlock]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have := h.map f
-    rw [hblock, hR, merzljakovBlock_isInfix_merzljakovWord_iff hab] at this
-    simp [h₁, h₂] at this
-  · have := h.map f
+omit [DecidableEq A] [DecidableEq X] in
+/-- A word over `X ⊕ A` which becomes a Merzljakov word without the exponent `n` when every
+variable is sent to `a` contains neither the block `b a^n b` nor its formal inverse. -/
+private theorem not_isInfix_of_map_eq_merzljakovWord (hab : a ≠ b) {ms : List ℕ} {n : ℕ}
+    (hn : n ∉ ms) {R : List ((X ⊕ A) × Bool)}
+    (hR : R.map (Prod.map (Sum.elim (fun _ ↦ a) id) id) = merzljakovWord a b ms) :
+    ¬ merzljakovBlock (Sum.inr a) (Sum.inr b) n <:+: R ∧
+      ¬ invRev (merzljakovBlock (Sum.inr a) (Sum.inr b) n) <:+: R := by
+  have hblock : (merzljakovBlock (Sum.inr a : X ⊕ A) (Sum.inr b) n).map
+      (Prod.map (Sum.elim (fun _ ↦ a) id) id) = merzljakovBlock a b n := by
+    simp [map_prodMap_merzljakovBlock]
+  refine ⟨fun h ↦ hn ?_, fun h ↦ ?_⟩
+  · have := h.map (Prod.map (Sum.elim (fun _ ↦ a) id) id)
+    rwa [hblock, hR, merzljakovBlock_isInfix_merzljakovWord_iff hab] at this
+  · have := h.map (Prod.map (Sum.elim (fun _ ↦ a) id) id)
     rw [map_prodMap_invRev, hblock, hR] at this
     exact not_invRev_merzljakovBlock_isInfix_merzljakovWord a b _ _ this
 
@@ -365,14 +356,22 @@ private theorem blockInsertAll_merzljakovWord (hab : a ≠ b) {l : List X} {x : 
       ⟨fun h ↦ hdisj x' hx' (by simpa using hne)
         ((merzljakovBlock_isInfix_merzljakovWord_iff hab).1 h),
       not_invRev_merzljakovBlock_isInfix_merzljakovWord a b _ _⟩, filter_eq, hk]
+  clear hk
   induction k with
   | zero =>
     rw [zero_add, replicate_one, blockInsertAll_cons, blockInsertAll_nil,
       map_prodMap_merzljakovWord, blockInsert_merzljakovWord (Sum.inr_injective.ne hab) hm₁ hm₂]
     simp [map_prodMap_merzljakovWord]
   | succ k ih =>
-    have hnot := not_isInfix_insert_merzljakovWord hab hm₁ hm₂ x
-    rw [replicate_succ, blockInsertAll_cons, ih, blockInsert_eq_self hnot.1 hnot.2]
+    -- sending `x` to `a` turns the inserted word into the Merzljakov word with `m x + 1`
+    have hR : ((merzljakovWord a b ms₁ ++ replicate (m x) (a, true)).map (Prod.map Sum.inr id) ++
+        (Sum.inl x, true) :: (merzljakovWord a b ms₂).map (Prod.map Sum.inr id)).map
+          (Prod.map (Sum.elim (fun _ ↦ a) id) id) =
+        merzljakovWord a b (ms₁ ++ (m x + 1) :: ms₂) := by
+      simp [merzljakovWord_append_cons, replicate_succ']
+    obtain ⟨hnot, hnot'⟩ :=
+      not_isInfix_of_map_eq_merzljakovWord hab (n := m x) (by simp [hm₁, hm₂]) hR
+    rw [replicate_succ, blockInsertAll_cons, ih, blockInsert_eq_self hnot hnot']
 
 /-- The Merzljakov word `u v` of a variable `x`, after the insertion of the variables of `l`,
 becomes `u x v` when `x ∈ l`, provided the exponent lists are nodup and contain the exponents of

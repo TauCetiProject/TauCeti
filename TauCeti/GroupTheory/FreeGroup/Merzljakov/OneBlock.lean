@@ -118,11 +118,12 @@ theorem exists_formalSolution_lift_eq_of_skolem {A X Y : Type*} {a b : A} (hab :
   have hU : (fun z ↦ mk (U z)) = Sum.elim (Sum.elim g (f g)) of := by
     ext ((x | j) | c) <;> simp [U, g, of, mk_toWord]
   obtain ⟨m, hm, hU'⟩ := exists_lift_mk_blockInsertAll_eq_one hab (U := U)
-    (by rintro ((x | j) | c) <;> simp [U, isReduced_toWord]) (hU ▸ hw g) (fun x ↦ (hms x).1)
+    (fun ⟨z, _⟩ _ ↦ by rcases z with (x | j) | c <;> simp [U, isReduced_toWord]) (hU ▸ hw g)
+    (fun x ↦ (hms x).1)
     (fun x ↦ by rw [(hms x).2]; lia) xs
   -- the inserted Merzljakov word of `x ∈ xs` is `u x * x * v x`, with `g x = u x * v x`
-  choose u v hg hx₀ using exists_mk_blockInsertAll_merzljakovWord hab (nodup_dedup _)
-    (fun x ↦ (hms x).1) hm hdisj
+  choose u v hg hx₀ using exists_mk_blockInsertAll_merzljakovWord hab (fun x ↦ (hms x).1) hm
+    fun x hx x' _ ↦ hdisj x hx x'
   obtain ⟨y, hy, hyg⟩ := exists_formalSolution_of_mul (mk W)
     (y₀ := fun j ↦
       mk (blockInsertAll a b m xs ((U (Sum.inl (Sum.inr j))).map (Prod.map Sum.inr id))))

@@ -197,11 +197,12 @@ theorem exists_formalSolution_of_skolem {A : Type*} {k : ℕ} {a b : A} (hab : a
   have hU : (fun z ↦ mk (U z)) = Sum.elim (Sum.elim g (f g)) of := by
     ext ((i | j) | c) <;> simp [U, g, of, mk_toWord]
   obtain ⟨m, hm, hU'⟩ := exists_lift_mk_blockInsertAll_eq_one hab (U := U)
-    (by rintro ((i | j) | c) <;> simp [U, isReduced_merzljakovWord, isReduced_toWord])
+    (fun ⟨z, _⟩ _ ↦ by
+      rcases z with (i | j) | c <;> simp [U, isReduced_merzljakovWord, isReduced_toWord])
     (hU ▸ hw g) hms.nodup (fun i ↦ by rw [hlen i]; lia) (finRange k)
   -- the inserted Merzljakov word of `x_i` is `u i * x_i * v i`
-  choose u v _ huv using exists_mk_blockInsertAll_merzljakovWord hab (nodup_finRange k)
-    hms.nodup hm fun i _ i' _ hn hn' ↦ by_contra fun hne ↦ hms.disjoint_of_ne hne hn hn'
+  choose u v _ huv using exists_mk_blockInsertAll_merzljakovWord hab hms.nodup hm
+    fun i _ i' _ _ hn hn' ↦ by_contra fun hne ↦ hms.disjoint_of_ne hne hn hn'
   have hU'_eq : (fun z ↦ mk (blockInsertAll a b m (finRange k) ((U z).map (Prod.map Sum.inr id))))
       = Sum.elim (Sum.elim (fun i ↦ map Sum.inr (u i) * of (Sum.inl i) * map Sum.inr (v i))
         fun j ↦ mk (blockInsertAll a b m (finRange k) ((U (Sum.inl (Sum.inr j))).map
