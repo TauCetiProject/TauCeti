@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.InnerProductSpace.OperatorIdentities
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Basic
 import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.LinearAlgebra.LinearEquiv.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Intersection
@@ -71,6 +72,7 @@ restrictions of `P` and `Q` to pairs of finite-dimensional eigenspaces of `P†P
   is `(ker A ⊗ ker B) ⊕ (ker A† ⊗ ker B†)`.
 * `ContinuousLinearMap.kerExternalProductBlockEquiv`: the corresponding linear equivalence, and
   `ContinuousLinearMap.finrank_ker_externalProductBlock` for its dimension.
+  It is built from `ContinuousLinearMap.kerEquivProdOfInjective`.
 * `ContinuousLinearMap.kerExternalProductBlockAdjointNegEquiv` and
   `ContinuousLinearMap.finrank_ker_externalProductBlock_adjoint_neg`: the kernel of the formal
   adjoint `externalProductBlock A† (-B)` is `(ker A† ⊗ ker B) × (ker A ⊗ ker B†)`.
@@ -260,24 +262,12 @@ theorem externalProductBlock_apply_eq_zero_iff_mem_range (A : V₀ →L[𝕜] V�
 noncomputable def kerExternalProductBlockEquiv (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁) :
     (externalProductBlock A B).ker ≃ₗ[𝕜]
       (A.ker ⊗[𝕜] B.ker) × (A.adjoint.ker ⊗[𝕜] B.adjoint.ker) :=
-  (LinearEquiv.ofInjective
-      ((WithLp.linearEquiv 2 𝕜 _).symm.toLinearMap ∘ₗ
-        (TensorProduct.map A.ker.subtype B.ker.subtype).prodMap
-          (TensorProduct.map A.adjoint.ker.subtype B.adjoint.ker.subtype))
-      ((WithLp.linearEquiv 2 𝕜 _).symm.injective.comp <| Prod.map_injective.mpr
-        ⟨TensorProduct.map_injective_of_flat_flat _ _ (Submodule.injective_subtype _)
-            (Submodule.injective_subtype _),
-          TensorProduct.map_injective_of_flat_flat _ _ (Submodule.injective_subtype _)
-            (Submodule.injective_subtype _)⟩) ≪≫ₗ
-    LinearEquiv.ofEq _ _ (by
-      ext w
-      rw [LinearMap.mem_ker, coe_coe, externalProductBlock_apply_eq_zero_iff_mem_range]
-      constructor
-      · rintro ⟨⟨x, y⟩, rfl⟩
-        exact ⟨⟨x, rfl⟩, ⟨y, rfl⟩⟩
-      · rintro ⟨⟨x, hx⟩, ⟨y, hy⟩⟩
-        exact ⟨(x, y),
-          WithLp.ofLp_injective 2 <| Prod.ext (by simpa using hx) (by simpa using hy)⟩)).symm
+  kerEquivProdOfInjective _
+    (TensorProduct.map_injective_of_flat_flat _ _ (Submodule.injective_subtype _)
+      (Submodule.injective_subtype _))
+    (TensorProduct.map_injective_of_flat_flat _ _ (Submodule.injective_subtype _)
+      (Submodule.injective_subtype _))
+    (externalProductBlock_apply_eq_zero_iff_mem_range A B)
 
 /-- `kerExternalProductBlockEquiv` sends a pair of tensors of kernel vectors to the pair of the
 corresponding tensors in the source of the external product block. -/
@@ -402,7 +392,7 @@ private theorem isInvertible_externalProductBlock_of_injective {A : V₀ →L[�
     (hdim : Module.finrank 𝕜 V₀ = Module.finrank 𝕜 V₁ ∨
       Module.finrank 𝕜 W₀ = Module.finrank 𝕜 W₁) :
     (externalProductBlock A B).IsInvertible := by
-  refine isInvertible_of_injective_of_finrank_eq _ ?_ h
+  refine (isInvertible_iff_injective_of_finrank_eq ?_).2 h
   rw [(WithLp.linearEquiv 2 𝕜 _).finrank_eq, (WithLp.linearEquiv 2 𝕜 _).finrank_eq,
     Module.finrank_prod, Module.finrank_prod, Module.finrank_tensorProduct,
     Module.finrank_tensorProduct, Module.finrank_tensorProduct, Module.finrank_tensorProduct]
