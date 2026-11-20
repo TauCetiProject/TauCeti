@@ -77,7 +77,10 @@ theorem laurentSeriesPrimitive_single (n : ℤ) (a : V) :
   · have h' : m - 1 ≠ n := by omega
     simp [h, h']
 
-/-- Differentiating the termwise integral removes exactly the residue term. -/
+/-- Differentiating the termwise integral removes exactly the residue term.
+The priority is `high` so that `simp` uses this before Mathlib's simp lemma
+`LaurentSeries.derivative_apply` rewrites the outer `derivative R` to `hasseDeriv R 1`. -/
+@[simp high]
 theorem derivative_laurentSeriesPrimitive (f : LaurentSeries V) :
     LaurentSeries.derivative R (laurentSeriesPrimitive R f) =
       f - single (-1) (f.coeff (-1)) := by
@@ -105,7 +108,9 @@ theorem derivative_laurentSeriesPrimitive_of_coeff_neg_one_eq_zero
   rw [derivative_laurentSeriesPrimitive]
   simp [hf]
 
-/-- The derivative image consists exactly of the residue-zero Laurent series. -/
+/-- The derivative image consists exactly of the residue-zero Laurent series.
+The priority is `high` so that `simp` uses this before the generic `LinearMap.mem_range`. -/
+@[simp high]
 theorem mem_range_laurentSeries_derivative_iff (f : LaurentSeries V) :
     f ∈ LinearMap.range (LaurentSeries.derivative R) ↔ f.coeff (-1) = 0 := by
   constructor
