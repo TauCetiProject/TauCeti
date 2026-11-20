@@ -42,7 +42,8 @@ each critical point lies on exactly one of them
 (`TauCeti.IsMorseBottFamily.existsUnique_mem_range`), only finitely many of them meet a compact set
 (by `LocallyFinite.finite_nonempty_inter_compact`), and on a compact manifold there are finitely
 many (`TauCeti.IsMorseBottFamily.finite`). Each piece is closed
-(`TauCeti.IsMorseBottFamily.isClosed_range`). The function takes a single value on each piece
+(`TauCeti.IsMorseBottFamily.isClosed_range`) and preconnected
+(`TauCeti.IsMorseBottFamily.preconnectedSpace`). The function takes a single value on each piece
 (`TauCeti.IsMorseBottFamily.subsingleton_image_range`), so a critical point on a level lies on a
 piece on that level (`TauCeti.IsMorseBottFamily.mem_iUnion_range_of_apply_eq`), and on a compact
 manifold `f` has finitely many critical values
@@ -183,16 +184,19 @@ theorem isClosed_range [IsManifold I 1 M] (a : ι) : IsClosed (range (i a)) := b
   rw [h.range_eq_connectedComponentIn a s]
   exact (isClosed_criticalPoints (h.contMDiff.of_le (by simp))).connectedComponentIn
 
+/-- Each piece is preconnected, since its image is a connected component of the critical set. -/
+theorem preconnectedSpace (a : ι) : PreconnectedSpace (S a) := by
+  obtain ⟨s₀⟩ := h.nonempty a
+  refine ⟨(i a).isEmbedding.isInducing.isPreconnected_image.1 ?_⟩
+  rw [image_univ, h.range_eq_connectedComponentIn a s₀]
+  exact isPreconnected_connectedComponentIn
+
 /-- **A Morse–Bott function takes a single value on each piece**, its critical value: `f ∘ i a` is
 locally constant, and the piece is connected because its image is a connected component of the
 critical set. -/
 theorem subsingleton_image_range [∀ a, IsManifold (J a) 1 (S a)] (hn : n ≠ 0) (a : ι) :
     (f '' range (i a)).Subsingleton := by
-  obtain ⟨s₀⟩ := h.nonempty a
-  have : PreconnectedSpace (S a) := by
-    refine ⟨(i a).isEmbedding.isInducing.isPreconnected_image.1 ?_⟩
-    rw [image_univ, h.range_eq_connectedComponentIn a s₀]
-    exact isPreconnected_connectedComponentIn
+  have := h.preconnectedSpace a
   have hloc :=
     (h.isNondegenerateCriticalSubmanifold a).toIsCriticalSubmanifold.isLocallyConstant_comp hn
   rintro _ ⟨_, ⟨s, rfl⟩, rfl⟩ _ ⟨_, ⟨s', rfl⟩, rfl⟩
