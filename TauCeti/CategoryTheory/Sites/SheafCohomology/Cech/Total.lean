@@ -92,7 +92,7 @@ lemma cechTotalComplexMap_def (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.m
 
 /-- On each total summand, refinement is the corresponding component of the extended
 Čech refinement map. -/
-@[reassoc, simp]
+@[reassoc]
 lemma ι_cechTotalComplexMap
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (p q n : ℤ)
     (hpq : p + q = n) :
@@ -146,7 +146,7 @@ def cechTotalComplexMapHomotopy
 
 /-- On each total summand the refinement prism is the extended Čech prism, with no extra
 sign. The inclusion on the right has bidegree `(p - 1,q)`. -/
-@[reassoc, simp]
+@[reassoc]
 lemma ι_cechTotalComplexMapHomotopy_hom
     (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (p q n : ℤ)
     (hpq : p + q = n) :
