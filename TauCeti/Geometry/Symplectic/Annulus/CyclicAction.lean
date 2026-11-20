@@ -275,7 +275,7 @@ theorem exists_intCast_add_eq_iff_of_isStripGeneratingFunction
     have hchain := periodic_add (fun k ↦ hT k m) p.2
     refine ⟨m, fun k ↦ ?_⟩
     have hk : p.1 k + ((m : ℝ), 0) = p'.1 k :=
-      congrFun (eq_of_apply_zero_eq (z := fun k ↦ p.1 k + ((m : ℝ), 0))
+      congrFun (periodicChain_eq_of_apply_zero_eq (z := fun k ↦ p.1 k + ((m : ℝ), 0))
         (fun k ↦ (hchain k).2) (fun k ↦ (p'.2 k).2) h0.symm) k
     rw [← hpos' k, ← hpos k, ← hk, Prod.fst_add]
 

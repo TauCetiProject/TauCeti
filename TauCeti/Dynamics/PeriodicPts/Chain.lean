@@ -18,7 +18,7 @@ Let `f : X → X` be a map, read as a partial map defined on a set `D ⊆ X`, an
 the periodic chains with the points `x` with `f^[N] x = x` whose iterates `x, f x, …, f^[N-1] x`
 all lie in `D` (`Function.periodicChainEquiv`). The least period of such a point need only
 divide `N`. More generally, a chain of a family of maps `f i`, with `f i (z i) = z (i + 1)`, is
-determined by its value at `0` (`TauCeti.eq_of_apply_zero_eq`).
+determined by its value at `0` (`TauCeti.periodicChain_eq_of_apply_zero_eq`).
 
 Under this identification the cyclic shift `z ↦ z (· + 1)` of a chain becomes `f`: shifting a
 chain moves its marked point one step along the same periodic orbit
@@ -50,7 +50,7 @@ theorem apply_eq_iterate_val_apply_zero [NeZero N] {z : ZMod N → X}
 
 /-- **A periodic chain is determined by its first state.** Two sequences on `ℤ/N` along which a
 family of maps `f i` steps forward, `f i (z i) = z (i + 1)`, agree once they agree at `0`. -/
-theorem eq_of_apply_zero_eq [NeZero N] {f : ZMod N → X → X} {z z' : ZMod N → X}
+theorem periodicChain_eq_of_apply_zero_eq [NeZero N] {f : ZMod N → X → X} {z z' : ZMod N → X}
     (hz : ∀ i, f i (z i) = z (i + 1)) (hz' : ∀ i, f i (z' i) = z' (i + 1)) (h : z 0 = z' 0) :
     z = z' := by
   have key (n : ℕ) : z n = z' n := by
