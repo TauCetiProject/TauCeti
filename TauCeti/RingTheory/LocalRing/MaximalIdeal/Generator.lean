@@ -132,8 +132,8 @@ theorem ne_zero_of_span_pair_eq_maximalIdeal (hprin : ¬ (maximalIdeal R).IsPrin
 end CommSemiring
 
 /-- In a local ring whose maximal ideal is not principal, each element of a pair
-generating the maximal ideal is a regular parameter: it does not lie in the square of the maximal
-ideal. -/
+generating the maximal ideal does not lie in the square of the maximal ideal: its image in the
+cotangent space `maximalIdeal R / maximalIdeal R ^ 2` is nonzero. -/
 theorem notMem_sq_of_span_pair_eq_maximalIdeal {R : Type*} [CommRing R] [IsLocalRing R]
     (hprin : ¬ (maximalIdeal R).IsPrincipal) {x y : R} (hxy : span {x, y} = maximalIdeal R) :
     x ∉ maximalIdeal R ^ 2 := fun hx ↦ by
