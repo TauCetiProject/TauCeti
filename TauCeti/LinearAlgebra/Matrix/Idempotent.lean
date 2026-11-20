@@ -9,7 +9,9 @@ public import Mathlib.Data.Matrix.Block
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.Finiteness.Projective
+public import TauCeti.Algebra.Module.Projective.Complement
 public import TauCeti.Data.Matrix.Block
+public import TauCeti.Data.Matrix.Mul
 public import TauCeti.LinearAlgebra.Matrix.Range
 public import TauCeti.LinearAlgebra.Matrix.ToLin
 
@@ -100,8 +102,7 @@ theorem IsIdempotentElem.matrix_map {B : Type*} [Semiring B] {e : Matrix ι ι A
 vectors, hence a projective module. -/
 theorem IsIdempotentElem.projective_range_vecMulLinear {e : Matrix ι ι A}
     (he : IsIdempotentElem e) : Module.Projective A (range e.vecMulLinear) :=
-  .of_split (range e.vecMulLinear).subtype e.vecMulLinear.rangeRestrict <|
-    LinearMap.ext fun v ↦ Subtype.ext ((he.vecMulLinear.mem_range_iff).1 v.2)
+  he.vecMulLinear.projective_range
 
 /-- The range of right multiplication by an idempotent matrix `e` consists of the row vectors
 fixed by `e`. -/
@@ -267,21 +268,6 @@ theorem idempotentEquivalent_fromBlocks_one_sub {A : Type*} [Ring A] [DecidableE
   · rw [fromRows_mul_fromCols, hf.eq, hf.mul_one_sub_self, hf.one_sub_mul_self, hf.one_sub.eq]
   · rw [fromCols_mul_fromRows, hf.eq, hf.one_sub.eq, add_sub_cancel]
 
-omit [Fintype ι'] [Fintype κ'] in
-/-- Transposing a product of matrices and passing to the opposite ring reverses the factors. -/
-theorem transpose_mul_map_op (x : Matrix ι' ι A) (y : Matrix ι κ' A) :
-    (x * y)ᵀ.map MulOpposite.op = yᵀ.map MulOpposite.op * xᵀ.map MulOpposite.op := by
-  ext i j
-  simp [Matrix.mul_apply]
-
-omit [Fintype ι'] [Fintype κ'] in
-/-- Transposing a product of matrices over the opposite ring and passing back to the ring reverses
-the factors. -/
-theorem transpose_mul_map_unop (x : Matrix ι' ι Aᵐᵒᵖ) (y : Matrix ι κ' Aᵐᵒᵖ) :
-    (x * y)ᵀ.map MulOpposite.unop = yᵀ.map MulOpposite.unop * xᵀ.map MulOpposite.unop := by
-  ext i j
-  simp [Matrix.mul_apply]
-
 /-- **Opposite rings.** Equivalent idempotents stay equivalent after transposing and passing to
 the opposite ring, which turns the column action of `e` into the row action of `eᵀ` over `Aᵐᵒᵖ`.
 -/
@@ -296,10 +282,9 @@ theorem IdempotentEquivalent.transpose_map_op {e : Matrix ι ι A} {f : Matrix �
 passing back to `A`. -/
 theorem IdempotentEquivalent.transpose_map_unop {e : Matrix ι ι Aᵐᵒᵖ} {f : Matrix κ κ Aᵐᵒᵖ}
     (h : IdempotentEquivalent e f) :
-    IdempotentEquivalent (eᵀ.map MulOpposite.unop) (fᵀ.map MulOpposite.unop) := by
-  obtain ⟨x, y, hxy, hyx, hex, hxf, hfy, hye⟩ := h
-  refine ⟨yᵀ.map MulOpposite.unop, xᵀ.map MulOpposite.unop, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    rw [← transpose_mul_map_unop] <;> simp only [*]
+    IdempotentEquivalent (eᵀ.map MulOpposite.unop) (fᵀ.map MulOpposite.unop) :=
+  -- Over `Aᵐᵒᵖ`, `op` followed by `Aᵐᵒᵖᵐᵒᵖ ≃+* A` is `unop`.
+  h.transpose_map_op.map (RingEquiv.opOp A).symm.toRingHom
 
 /-- The transpose of an idempotent matrix, with entries in the opposite ring, is idempotent. -/
 theorem _root_.IsIdempotentElem.matrix_transpose_map_op {e : Matrix ι ι A}
@@ -317,7 +302,8 @@ in the opposite ring, are. -/
 theorem idempotentEquivalent_transpose_map_op_iff {e : Matrix ι ι A} {f : Matrix κ κ A} :
     IdempotentEquivalent (eᵀ.map MulOpposite.op) (fᵀ.map MulOpposite.op) ↔
       IdempotentEquivalent e f :=
-  ⟨fun h ↦ by simpa [Matrix.transpose_map, Function.comp_def] using h.transpose_map_unop,
+  ⟨fun h ↦ by
+    simpa only [transpose_map_op_transpose_map_unop] using h.transpose_map_unop,
     IdempotentEquivalent.transpose_map_op⟩
 
 end IdempotentEquivalent

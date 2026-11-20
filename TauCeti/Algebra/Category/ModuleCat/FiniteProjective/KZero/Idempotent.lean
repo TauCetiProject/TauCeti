@@ -36,6 +36,8 @@ idempotent matrix `e` and some `m`.
   sum.
 * `TauCeti.IdempotentMonoid.mk e he`: the class of an idempotent matrix `e` over any finite index
   type.
+* `TauCeti.IdempotentMonoid.lift`: a function on idempotent matrices that respects equivalence of
+  idempotents descends to `V(A)`.
 * `TauCeti.IdempotentMonoid.toSplitK0`: the class map `V(A) → K₀(A)`, `[e] ↦ [Aⁿe]`, for left
   modules.
 * `TauCeti.IdempotentMonoid.splitK0Equiv`: the group completion of `V(A)` is the split `K₀` of
@@ -80,7 +82,7 @@ variable (A : Type u) [Semiring A]
 
 /-- Equivalence of idempotents (`Matrix.IdempotentEquivalent`), on idempotent square matrices of
 every size `n`. -/
-@[expose] def idempotentSetoid :
+def idempotentSetoid :
     Setoid (Σ n : ℕ, {e : Matrix (Fin n) (Fin n) A // IsIdempotentElem e}) where
   r e f := IdempotentEquivalent e.2.1 f.2.1
   iseqv := ⟨fun e ↦ .refl e.2.2, .symm, .trans⟩
@@ -88,7 +90,7 @@ every size `n`. -/
 /-- **The idempotent monoid `V(A)`.** Idempotent square matrices over `A`, of every size, up to
 equivalence of idempotents (`Matrix.IdempotentEquivalent`). Addition is the block sum, see
 `TauCeti.IdempotentMonoid.mk_add_mk`. -/
-@[expose] def IdempotentMonoid : Type u :=
+def IdempotentMonoid : Type u :=
   Quotient (idempotentSetoid A)
 
 namespace IdempotentMonoid
@@ -110,6 +112,7 @@ def mk (e : Matrix ι ι A) (he : IsIdempotentElem e) : IdempotentMonoid A :=
 
 /-- **Equality in `V(A)`.** Two idempotent matrices have the same class exactly when they are
 equivalent idempotents. -/
+@[simp]
 theorem mk_eq_mk_iff {e : Matrix ι ι A} {f : Matrix κ κ A} (he : IsIdempotentElem e)
     (hf : IsIdempotentElem f) : mk e he = mk f hf ↔ IdempotentEquivalent e f := by
   refine Quotient.eq.trans ⟨fun h ↦ ?_, fun h ↦ ?_⟩
@@ -131,6 +134,27 @@ theorem ind {motive : IdempotentMonoid A → Prop}
     (mk : ∀ (n : ℕ) (e : Matrix (Fin n) (Fin n) A) (he : IsIdempotentElem e), motive (mk e he))
     (x : IdempotentMonoid A) : motive x :=
   Quotient.ind (fun ⟨n, e, he⟩ ↦ quotient_mk_eq_mk e he ▸ mk n e he) x
+
+/-- **The eliminator of `V(A)`.** A function on idempotent square matrices over `A` that takes
+equal values on equivalent idempotents descends to `V(A)`; see
+`TauCeti.IdempotentMonoid.lift_mk`. -/
+def lift {β : Sort*} (F : ∀ {n : ℕ} (e : Matrix (Fin n) (Fin n) A), IsIdempotentElem e → β)
+    (hF : ∀ {n m : ℕ} (e : Matrix (Fin n) (Fin n) A) (f : Matrix (Fin m) (Fin m) A)
+      (he : IsIdempotentElem e) (hf : IsIdempotentElem f), IdempotentEquivalent e f →
+        F e he = F f hf) :
+    IdempotentMonoid A → β :=
+  Quotient.lift (s := idempotentSetoid A) (fun e ↦ F e.2.1 e.2.2) fun _ _ h ↦ hF _ _ _ _ h
+
+/-- `TauCeti.IdempotentMonoid.lift` computes `F` on the class of an idempotent matrix. -/
+@[simp]
+theorem lift_mk {β : Sort*} {F : ∀ {n : ℕ} (e : Matrix (Fin n) (Fin n) A), IsIdempotentElem e → β}
+    {hF : ∀ {n m : ℕ} (e : Matrix (Fin n) (Fin n) A) (f : Matrix (Fin m) (Fin m) A)
+      (he : IsIdempotentElem e) (hf : IsIdempotentElem f), IdempotentEquivalent e f →
+        F e he = F f hf}
+    {n : ℕ} (e : Matrix (Fin n) (Fin n) A) (he : IsIdempotentElem e) :
+    lift F hF (mk e he) = F e he := by
+  rw [← quotient_mk_eq_mk]
+  rfl
 
 /-- The zero of `V(A)` is the class of the empty matrix. -/
 instance : Zero (IdempotentMonoid A) :=
@@ -154,7 +178,7 @@ theorem mk_eq_zero_iff {e : Matrix ι ι A} (he : IsIdempotentElem e) : mk e he 
   simp [Matrix.mul_apply]
 
 /-- The addition of `V(A)` is the block sum of idempotent matrices. -/
-instance : Add (IdempotentMonoid A) where
+@[no_expose] instance : Add (IdempotentMonoid A) where
   add := Quotient.lift₂ (s₁ := idempotentSetoid A) (s₂ := idempotentSetoid A)
     (fun e f ↦ mk (fromBlocks e.2.1 0 0 f.2.1) (e.2.2.fromBlocks_zero₁₂_zero₂₁ f.2.2))
     fun _ _ _ _ h h' ↦ mk_eq_mk (IdempotentEquivalent.fromBlocks h h')
@@ -224,9 +248,9 @@ private def rangeObj {n : ℕ} (e : Matrix (Fin n) (Fin n) A) (he : IsIdempotent
 matrix; it depends only on the class of the idempotent in `V(A)`. -/
 private def toSplitK0Fun :
     IdempotentMonoid A → SplitK0.{u} (finiteProjectiveModules A).FullSubcategory :=
-  Quotient.lift (s := idempotentSetoid A) (fun e ↦ SplitK0.of (rangeObj e.2.1 e.2.2))
-    fun e f h ↦ SplitK0.of_congr <| ObjectProperty.isoMk _ <| LinearEquiv.toModuleIso <|
-      ((nonempty_linearEquiv_range_vecMulLinear_iff e.2.2 f.2.2).2 h).some
+  lift (fun e he ↦ SplitK0.of (rangeObj e he))
+    fun _ _ he hf h ↦ SplitK0.of_congr <| ObjectProperty.isoMk _ <| LinearEquiv.toModuleIso <|
+      ((nonempty_linearEquiv_range_vecMulLinear_iff he hf).2 h).some
 
 private theorem toSplitK0Fun_mk {e : Matrix ι ι A} (he : IsIdempotentElem e)
     (X : (finiteProjectiveModules A).FullSubcategory) (θ : X.obj ≃ₗ[A] range e.vecMulLinear) :
@@ -243,9 +267,9 @@ def toSplitK0 : IdempotentMonoid A →+ SplitK0.{u} (finiteProjectiveModules A).
   map_zero' := by
     refine (toSplitK0Fun_mk .zero (rangeObj (0 : Matrix (Fin 0) (Fin 0) A) .zero)
       (.refl _ _)).trans (SplitK0.of_eq_zero_of_isZero ?_)
-    have : Subsingleton (range (0 : Matrix (Fin 0) (Fin 0) A).vecMulLinear) := inferInstance
     exact Limits.IsZero.of_full_of_faithful_of_isZero (finiteProjectiveModules A).ι _
-      (@ModuleCat.isZero_of_subsingleton _ _ _ this)
+      (ModuleCat.isZero_of_subsingleton
+        (ModuleCat.of A (range (0 : Matrix (Fin 0) (Fin 0) A).vecMulLinear)))
   map_add' x y := by
     induction x using ind with | mk n e he
     induction y using ind with | mk m f hf
@@ -282,15 +306,12 @@ private def ofModuleInvariant :
       (GrothendieckAddGroup (IdempotentMonoid A)) where
   obj X := GrothendieckAddGroup.of (ofModule X)
   map_iso X Y φ := by
-    obtain ⟨he, ⟨θ⟩⟩ :=
-      (Module.Finite.exists_linearEquiv_range_vecMulLinear A Y.obj).choose_spec.choose_spec
+    obtain ⟨_, _, he, ⟨θ⟩⟩ := Module.Finite.exists_linearEquiv_range_vecMulLinear A Y.obj
     rw [ofModule_eq he X (((finiteProjectiveModules A).ι.mapIso φ).toLinearEquiv.trans θ),
       ofModule_eq he Y θ]
   map_biprod X Y := by
-    obtain ⟨he, ⟨θ⟩⟩ :=
-      (Module.Finite.exists_linearEquiv_range_vecMulLinear A X.obj).choose_spec.choose_spec
-    obtain ⟨hf, ⟨θ'⟩⟩ :=
-      (Module.Finite.exists_linearEquiv_range_vecMulLinear A Y.obj).choose_spec.choose_spec
+    obtain ⟨_, _, he, ⟨θ⟩⟩ := Module.Finite.exists_linearEquiv_range_vecMulLinear A X.obj
+    obtain ⟨_, _, hf, ⟨θ'⟩⟩ := Module.Finite.exists_linearEquiv_range_vecMulLinear A Y.obj
     rw [ofModule_eq he X θ, ofModule_eq hf Y θ', ← map_add, mk_add_mk,
       ofModule_eq _ (X ⊞ Y) ((FiniteProjectiveModules.biprodLinearEquiv X Y).trans
         ((θ.prodCongr θ').trans (rangeVecMulLinearFromBlocksEquiv _ _).symm))]
@@ -338,12 +359,13 @@ def splitK0Equiv :
       rw [GrothendieckAddGroup.lift_apply_of, toSplitK0_mk he (rangeObj e he) (.refl _ _),
         SplitK0.lift_of, ofModuleInvariant_obj, ofModule_eq he (rangeObj e he) (.refl _ _)])
     (SplitK0.hom_ext fun X ↦ by
-      obtain ⟨he, ⟨θ⟩⟩ :=
-        (Module.Finite.exists_linearEquiv_range_vecMulLinear A X.obj).choose_spec.choose_spec
+      obtain ⟨_, _, he, ⟨θ⟩⟩ := Module.Finite.exists_linearEquiv_range_vecMulLinear A X.obj
       simp only [AddMonoidHom.comp_apply, SplitK0.lift_of, AddMonoidHom.id_apply]
       rw [ofModuleInvariant_obj, ofModule_eq he X θ, GrothendieckAddGroup.lift_apply_of,
         toSplitK0_mk he X θ])
 
+-- Not `@[simp]`: the simp normal form of `GrothendieckAddGroup.of x` is
+-- `AddLocalization.addMonoidOf ⊤ x`, as for `Algebra.GrothendieckAddGroup.lift_apply_of`.
 /-- On `V(A)`, the isomorphism `TauCeti.IdempotentMonoid.splitK0Equiv` is the class map
 `TauCeti.IdempotentMonoid.toSplitK0`. -/
 theorem splitK0Equiv_of (x : IdempotentMonoid A) :
@@ -375,15 +397,13 @@ private theorem mk_congr {R : Type u} [Semiring R] {e f : Matrix ι ι R} (h : e
 
 /-- Transposing over the opposite ring, on classes of idempotent matrices. -/
 private def opFun (R : Type u) [Semiring R] : IdempotentMonoid R → IdempotentMonoid Rᵐᵒᵖ :=
-  Quotient.lift (s := idempotentSetoid R)
-    (fun e ↦ mk (e.2.1ᵀ.map MulOpposite.op) e.2.2.matrix_transpose_map_op)
-    fun _ _ h ↦ mk_eq_mk (IdempotentEquivalent.transpose_map_op h)
+  lift (fun e he ↦ mk (eᵀ.map MulOpposite.op) he.matrix_transpose_map_op)
+    fun _ _ _ _ h ↦ mk_eq_mk (IdempotentEquivalent.transpose_map_op h)
 
 /-- Transposing back from the opposite ring, on classes of idempotent matrices. -/
 private def unopFun (R : Type u) [Semiring R] : IdempotentMonoid Rᵐᵒᵖ → IdempotentMonoid R :=
-  Quotient.lift (s := idempotentSetoid Rᵐᵒᵖ)
-    (fun e ↦ mk (e.2.1ᵀ.map MulOpposite.unop) e.2.2.matrix_transpose_map_unop)
-    fun _ _ h ↦ mk_eq_mk (IdempotentEquivalent.transpose_map_unop h)
+  lift (fun e he ↦ mk (eᵀ.map MulOpposite.unop) he.matrix_transpose_map_unop)
+    fun _ _ _ _ h ↦ mk_eq_mk (IdempotentEquivalent.transpose_map_unop h)
 
 private theorem opFun_mk {R : Type u} [Semiring R] {e : Matrix ι ι R} (he : IsIdempotentElem e) :
     opFun R (mk e he) = mk (eᵀ.map MulOpposite.op) he.matrix_transpose_map_op :=
@@ -406,11 +426,11 @@ def opEquiv : IdempotentMonoid R ≃+ IdempotentMonoid Rᵐᵒᵖ where
   left_inv x := by
     induction x using ind with | mk n e he
     rw [opFun_mk, unopFun_mk]
-    exact mk_congr (by ext; simp) _ _
+    exact mk_congr (transpose_map_op_transpose_map_unop e) _ _
   right_inv x := by
     induction x using ind with | mk n e he
     rw [unopFun_mk, opFun_mk]
-    exact mk_congr (by ext; simp) _ _
+    exact mk_congr (transpose_map_unop_transpose_map_op e) _ _
   map_add' x y := by
     induction x using ind with | mk n e he
     induction y using ind with | mk m f hf
@@ -420,9 +440,18 @@ def opEquiv : IdempotentMonoid R ≃+ IdempotentMonoid Rᵐᵒᵖ where
 variable {R} in
 /-- `TauCeti.IdempotentMonoid.opEquiv` sends the class of `e` to the class of `eᵀ` with entries in
 `Rᵐᵒᵖ`. -/
+@[simp]
 theorem opEquiv_mk {e : Matrix ι ι R} (he : IsIdempotentElem e) :
     opEquiv R (mk e he) = mk (eᵀ.map MulOpposite.op) he.matrix_transpose_map_op :=
   opFun_mk he
+
+variable {R} in
+/-- The inverse of `TauCeti.IdempotentMonoid.opEquiv` sends the class of an idempotent `e` over
+`Rᵐᵒᵖ` to the class of `eᵀ` with entries in `R`. -/
+@[simp]
+theorem opEquiv_symm_mk {e : Matrix ι ι Rᵐᵒᵖ} (he : IsIdempotentElem e) :
+    (opEquiv R).symm (mk e he) = mk (eᵀ.map MulOpposite.unop) he.matrix_transpose_map_unop :=
+  unopFun_mk he
 
 end IdempotentMonoid
 
@@ -457,6 +486,8 @@ theorem kZeroEquiv_of_mk {e : Matrix ι ι R} (he : IsIdempotentElem e) (X : Fin
   rw [kZeroEquiv, AddEquiv.trans_apply, h, opEquiv_mk]
   exact splitK0Equiv_of_mk _ X (θ.trans (rangeVecMulLinearTransposeMapOpEquiv e).symm)
 
+-- Not `@[simp]`: the simp normal form of `GrothendieckAddGroup.of x` is
+-- `AddLocalization.addMonoidOf ⊤ x`, as for `Algebra.GrothendieckAddGroup.lift_apply_of`.
 /-- `TauCeti.IdempotentMonoid.kZeroEquiv` sends the class of the identity matrix of size `m` to
 `m[R]`, the class of the free right module `Rᵐ`. -/
 theorem kZeroEquiv_of_mk_one (m : ℕ) :
