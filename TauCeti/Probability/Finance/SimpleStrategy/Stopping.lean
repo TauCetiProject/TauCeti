@@ -138,13 +138,13 @@ theorem exists_simpleHolding_simpleGains_dyadicCeilTime
         MeasureTheory.stoppedProcess (simpleGains σ n a X)
           (fun ω ↦ dyadicCeilTime k (τ ω)) s ω := by
   let M : ℕ := ⌈T * 2 ^ k⌉₊
-  let l (p : Fin M × Fin n) : ℝ≥0 := max (σ p.2.1) (dyadicGrid k p.1.1)
-  let u (p : Fin M × Fin n) : ℝ≥0 := min (σ (p.2.1 + 1)) (dyadicGrid k (p.1.1 + 1))
-  let α (p : Fin M × Fin n) (ω : Ω) : ℝ := dyadicStopHeight τ k p.1.1 ω * a p.2.1 ω
+  let l (p : Fin M × Fin n) : ℝ≥0 := max (σ p.2.val) (dyadicGrid k p.1.val)
+  let u (p : Fin M × Fin n) : ℝ≥0 := min (σ (p.2.val + 1)) (dyadicGrid k (p.1.val + 1))
+  let α (p : Fin M × Fin n) (ω : Ω) : ℝ := dyadicStopHeight τ k p.1.val ω * a p.2.val ω
   obtain ⟨N, γ, c, hγ0, hγ, hcm, hcb, hhold, hgains⟩ :=
     exists_simpleHolding_simpleGains_eq_sum ℱ (univ : Finset (Fin M × Fin n)) l u α fun p _ ↦
-      ((stronglyMeasurable_dyadicStopHeight hτ k p.1.1).mono (ℱ.mono (le_max_right _ _))).mul
-        ((ha p.2.1 p.2.2).mono (ℱ.mono (le_max_left _ _)))
+      ((stronglyMeasurable_dyadicStopHeight hτ k p.1.val).mono (ℱ.mono (le_max_right _ _))).mul
+        ((ha p.2.val p.2.isLt).mono (ℱ.mono (le_max_left _ _)))
   refine ⟨N, γ, c, hγ0, hγ, hcm, fun j hj ω ↦ (hcb j hj ω).trans ?_,
     fun t ht ω ↦ ?_, fun X s hs ω ↦ ?_⟩
   · rw [Fintype.sum_prod_type]

@@ -9,11 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Probability.Process.Indistinguishable
 
 /-!
-# Continuous processes and almost-everywhere identities
-
-Modifications with almost surely continuous paths on a separable time space into a Hausdorff
-space are indistinguishable (`ProbabilityTheory.indist_of_ae_continuous`), by intersecting the
-fixed-time full-measure events along a countable dense time set.
+# Continuous processes and time-product almost-everywhere identities
 
 A time-product almost-everywhere identity between processes with almost surely continuous
 paths holds simultaneously at all times of a half-open interval. The left endpoint is
@@ -24,27 +20,17 @@ For continuous fields evaluated along a process with a deterministic starting po
 recovers equality of the fields at that point. This is useful when an identity first obtained
 almost everywhere along trajectories must be evaluated at the initial state.
 
-The main inputs are countable dense subsets, Mathlib's product-measure section theorem
-`ae_ae_of_ae_prod`, and `Measure.eqOn_Ico_of_ae_eq`, which extends equality from a full-measure
-dense subset.
+Over a separable time domain, processes with almost surely continuous paths which agree
+almost surely at each fixed time are indistinguishable. This identifies continuous versions,
+for instance of stochastic integrals determined separately at each time.
+
+The main inputs are Mathlib's product-measure section theorem `ae_ae_of_ae_prod` and
+`Measure.eqOn_Ico_of_ae_eq`, which extends equality from a full-measure dense subset.
 -/
 
 public section
 
-open MeasureTheory ProbabilityTheory Set
-
-/-- Modifications with almost surely continuous paths on a separable time domain into a
-Hausdorff space are indistinguishable. No measurability of the processes or sigma-finiteness of
-the sample measure is required. -/
-theorem ProbabilityTheory.indist_of_ae_continuous {ι Ω Y : Type*} [TopologicalSpace ι]
-    [TopologicalSpace.SeparableSpace ι] {mΩ : MeasurableSpace Ω} {P : Measure Ω}
-    [TopologicalSpace Y] [T2Space Y] {X Z : ι → Ω → Y}
-    (hX : ∀ᵐ ω ∂P, Continuous (fun t ↦ X t ω))
-    (hZ : ∀ᵐ ω ∂P, Continuous (fun t ↦ Z t ω))
-    (hXZ : ∀ t, X t =ᵐ[P] Z t) : X ≡ᵐ[P] Z := by
-  obtain ⟨D, hD_count, hD_dense⟩ := TopologicalSpace.exists_countable_dense ι
-  filter_upwards [hX, hZ, (ae_ball_iff hD_count).2 fun t _ ↦ hXZ t] with ω hXω hZω hω t
-  exact (isClosed_eq hXω hZω).closure_subset_iff.2 hω (hD_dense t)
+open MeasureTheory Set
 
 namespace TauCeti
 
@@ -84,5 +70,17 @@ theorem eq_of_ae_eq_along_process [TopologicalSpace E] [NeZero P]
     exact hG.comp (hS.prodMk continuousOn_id) hD
   obtain ⟨ω, heq, hstart⟩ := ((ae_eqOn_Ico_of_ae_eq_prod hf hg hfg).and hstart).exists
   simpa only [hstart] using heq (left_mem_Ico.mpr hab)
+
+omit [SFinite P] in
+/-- Processes with almost surely continuous paths over a separable time domain are
+indistinguishable once they agree almost surely at each fixed time. Only a countable dense
+set of times is used, so no measurability of the paths is required. -/
+theorem indist_of_forall_ae_eq {ι : Type*} [TopologicalSpace ι] [TopologicalSpace.SeparableSpace ι]
+    {X X' : ι → Ω → Y} (hX : ∀ᵐ ω ∂P, Continuous fun t ↦ X t ω)
+    (hX' : ∀ᵐ ω ∂P, Continuous fun t ↦ X' t ω) (h : ∀ t, X t =ᵐ[P] X' t) :
+    ProbabilityTheory.Indistinguishable P X X' := by
+  obtain ⟨D, hDc, hDd⟩ := TopologicalSpace.exists_countable_dense ι
+  filter_upwards [hX, hX', (ae_ball_iff hDc).2 fun t _ ↦ h t] with ω hω hω' hD
+  exact congr_fun (Continuous.ext_on hDd hω hω' fun t ht ↦ hD t ht)
 
 end TauCeti

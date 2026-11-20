@@ -22,9 +22,11 @@ any finite family, preserving both holdings and gains against every price path. 
 bottom time and has strictly increasing dates, including when some input intervals are empty or
 reversed. The new heights are bounded pointwise by the sum of the original absolute heights;
 thus boundedness and Lᵖ control survive refinement without additional moment assumptions.
+`exists_simpleHolding_simpleGains_eq_sub` specializes this to the difference of two simple
+strategies on monotone grids, subtracting both their holdings and their gains.
 
 This bridges finite sums of predictable rectangles and finite-grid trading strategies. In
-particular, `exists_simpleHolding_simpleGains_add` and `exists_simpleHolding_simpleGains_sub`
+particular, `exists_simpleHolding_simpleGains_eq_add` and `exists_simpleHolding_simpleGains_eq_sub`
 evaluate sums and differences of elementary stochastic-integral approximants on one common grid
 before applying an isometry or energy estimate. All equalities are pointwise, including at
 trading dates, with no regularity assumption on the price path.
@@ -174,60 +176,66 @@ theorem exists_simpleHolding_simpleGains_eq_sum [OrderBot ι] {mΩ : MeasurableS
       exact hτ.le_iff_le (hL i hi).1 (hU i hi).1 |>.symm
     simp only [horder, (hL i hi).2, (hU i hi).2]
 
-/-- Two left-measurable simple strategies admit a single strictly increasing common grid starting
-at `⊥` whose holdings and gains against every price path are the pointwise sums of the original
-holdings and gains. -/
-theorem exists_simpleHolding_simpleGains_add [OrderBot ι] {mΩ : MeasurableSpace Ω}
-    (ℱ : Filtration ι mΩ) {n₁ n₂ : ℕ} {τ₁ τ₂ : ℕ → ι} {a₁ a₂ : ℕ → Ω → ℝ}
-    (hτ₁ : MonotoneOn τ₁ (Set.Iic n₁)) (hτ₂ : MonotoneOn τ₂ (Set.Iic n₂))
-    (ha₁ : ∀ i < n₁, StronglyMeasurable[ℱ (τ₁ i)] (a₁ i))
-    (ha₂ : ∀ j < n₂, StronglyMeasurable[ℱ (τ₂ j)] (a₂ j)) :
-    ∃ (n : ℕ) (τ : ℕ → ι) (b : ℕ → Ω → ℝ),
-      τ 0 = ⊥ ∧ StrictMonoOn τ (Set.Iic n) ∧
-      (∀ j < n, StronglyMeasurable[ℱ (τ j)] (b j)) ∧
-      (∀ j < n, ∀ ω, ‖b j ω‖ ≤ (∑ i ∈ range n₁, ‖a₁ i ω‖) + ∑ i ∈ range n₂, ‖a₂ i ω‖) ∧
-      (∀ t ω, simpleHolding τ n b t ω =
-        simpleHolding τ₁ n₁ a₁ t ω + simpleHolding τ₂ n₂ a₂ t ω) ∧
-      ∀ (X : ι → Ω → ℝ) t ω, simpleGains τ n b X t ω =
-        simpleGains τ₁ n₁ a₁ X t ω + simpleGains τ₂ n₂ a₂ X t ω := by
-  let l : Fin n₁ ⊕ Fin n₂ → ι := Sum.elim (fun i ↦ τ₁ i.1) (fun j ↦ τ₂ j.1)
-  let u : Fin n₁ ⊕ Fin n₂ → ι := Sum.elim (fun i ↦ τ₁ (i.1 + 1)) (fun j ↦ τ₂ (j.1 + 1))
-  let α : Fin n₁ ⊕ Fin n₂ → Ω → ℝ := Sum.elim (fun i ↦ a₁ i.1) (fun j ↦ a₂ j.1)
-  obtain ⟨n, τ, b, hτ₀, hτ, hbm, hbb, hhold, hgains⟩ :=
-    exists_simpleHolding_simpleGains_eq_sum ℱ univ l u α fun x _ ↦
-      x.casesOn (fun i ↦ ha₁ i.1 i.2) (fun j ↦ ha₂ j.1 j.2)
-  refine ⟨n, τ, b, hτ₀, hτ, hbm, fun j hj ω ↦ ?_, fun t ω ↦ ?_, fun X t ω ↦ ?_⟩
-  · rw [← Fin.sum_univ_eq_sum_range, ← Fin.sum_univ_eq_sum_range]
-    simpa only [Fintype.sum_sum_type, α, Sum.elim_inl, Sum.elim_inr] using hbb j hj ω
-  · rw [hhold t ω, Fintype.sum_sum_type, simpleHolding_def τ₁, simpleHolding_def τ₂,
-      ← Fin.sum_univ_eq_sum_range, ← Fin.sum_univ_eq_sum_range]; rfl
-  · rw [hgains X t ω, Fintype.sum_sum_type, simpleGains_def τ₁, simpleGains_def τ₂,
-      ← Fin.sum_univ_eq_sum_range, ← Fin.sum_univ_eq_sum_range]
-    congr 1 <;> refine sum_congr rfl fun i _ ↦ ?_
-    · simp [l, u, α, hτ₁ i.2.le i.2 (Nat.le_succ _)]
-    · simp [l, u, α, hτ₂ i.2.le i.2 (Nat.le_succ _)]
+/-- The sum of two simple strategies is one simple strategy on a strictly increasing common grid
+starting at the bottom time, with heights still chosen at the left endpoints of their intervals.
+Holdings and gains against every price path are added. -/
+theorem exists_simpleHolding_simpleGains_eq_add [OrderBot ι] {mΩ : MeasurableSpace Ω}
+    (ℱ : Filtration ι mΩ) {τ σ : ℕ → ι} {n m : ℕ} {a b : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n)) (hσ : MonotoneOn σ (Set.Iic m))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < m, StronglyMeasurable[ℱ (σ j)] (b j)) :
+    ∃ (N : ℕ) (ρ : ℕ → ι) (c : ℕ → Ω → ℝ),
+      ρ 0 = ⊥ ∧ StrictMonoOn ρ (Set.Iic N) ∧
+      (∀ j < N, StronglyMeasurable[ℱ (ρ j)] (c j)) ∧
+      (∀ t ω, simpleHolding ρ N c t ω = simpleHolding τ n a t ω + simpleHolding σ m b t ω) ∧
+      ∀ (X : ι → Ω → ℝ) t ω, simpleGains ρ N c X t ω =
+        simpleGains τ n a X t ω + simpleGains σ m b X t ω := by
+  obtain ⟨N, ρ, c, hρ₀, hρ, hc, -, hhold, hgain⟩ := exists_simpleHolding_simpleGains_eq_sum ℱ
+    ((range n).disjSum (range m)) (Sum.elim τ σ) (Sum.elim (fun j ↦ τ (j + 1)) fun j ↦ σ (j + 1))
+    (Sum.elim a b) (by
+      rintro (j | j) hj <;> simp only [inl_mem_disjSum, inr_mem_disjSum, mem_range] at hj
+      · exact ha j hj
+      · exact hb j hj)
+  refine ⟨N, ρ, c, hρ₀, hρ, hc, fun t ω ↦ ?_, fun X t ω ↦ ?_⟩
+  · rw [hhold, sum_disjSum, simpleHolding_def, simpleHolding_def]
+    simp only [Sum.elim_inl, Sum.elim_inr]
+  · rw [hgain, sum_disjSum, simpleGains_def, simpleGains_def]
+    simp only [Sum.elim_inl, Sum.elim_inr]
+    congr 1 <;> refine sum_congr rfl fun j hj ↦ ?_
+    · simp [hτ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
+    · simp [hσ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
 
-/-- Two left-measurable simple strategies admit a single strictly increasing common grid starting
-at `⊥` whose holdings and gains against every price path are the pointwise differences of the
-original holdings and gains. -/
-theorem exists_simpleHolding_simpleGains_sub [OrderBot ι] {mΩ : MeasurableSpace Ω}
-    (ℱ : Filtration ι mΩ) {n₁ n₂ : ℕ} {τ₁ τ₂ : ℕ → ι} {a₁ a₂ : ℕ → Ω → ℝ}
-    (hτ₁ : MonotoneOn τ₁ (Set.Iic n₁)) (hτ₂ : MonotoneOn τ₂ (Set.Iic n₂))
-    (ha₁ : ∀ i < n₁, StronglyMeasurable[ℱ (τ₁ i)] (a₁ i))
-    (ha₂ : ∀ j < n₂, StronglyMeasurable[ℱ (τ₂ j)] (a₂ j)) :
-    ∃ (n : ℕ) (τ : ℕ → ι) (b : ℕ → Ω → ℝ),
-      τ 0 = ⊥ ∧ StrictMonoOn τ (Set.Iic n) ∧
-      (∀ j < n, StronglyMeasurable[ℱ (τ j)] (b j)) ∧
-      (∀ j < n, ∀ ω, ‖b j ω‖ ≤ (∑ i ∈ range n₁, ‖a₁ i ω‖) + ∑ i ∈ range n₂, ‖a₂ i ω‖) ∧
-      (∀ t ω, simpleHolding τ n b t ω =
-        simpleHolding τ₁ n₁ a₁ t ω - simpleHolding τ₂ n₂ a₂ t ω) ∧
-      ∀ (X : ι → Ω → ℝ) t ω, simpleGains τ n b X t ω =
-        simpleGains τ₁ n₁ a₁ X t ω - simpleGains τ₂ n₂ a₂ X t ω := by
-  obtain ⟨n, τ, b, hτ₀, hτ, hbm, hbb, hhold, hgains⟩ :=
-    exists_simpleHolding_simpleGains_add ℱ hτ₁ hτ₂ ha₁
-      (a₂ := (-1 : ℝ) • a₂) (fun j hj ↦ (ha₂ j hj).const_smul (-1 : ℝ))
-  refine ⟨n, τ, b, hτ₀, hτ, hbm, fun j hj ω ↦ by simpa [Pi.smul_apply] using hbb j hj ω,
-    fun t ω ↦ by rw [hhold, simpleHolding_smul, neg_one_mul, ← sub_eq_add_neg],
-    fun X t ω ↦ by rw [hgains, simpleGains_smul, neg_one_mul, ← sub_eq_add_neg]⟩
+/-- The difference of two simple strategies is one simple strategy on a strictly increasing
+common grid starting at the bottom time, with heights still chosen at the left endpoints of
+their intervals. Holdings and gains against every price path are subtracted. -/
+theorem exists_simpleHolding_simpleGains_eq_sub [OrderBot ι] {mΩ : MeasurableSpace Ω}
+    (ℱ : Filtration ι mΩ) {τ σ : ℕ → ι} {n m : ℕ} {a b : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n)) (hσ : MonotoneOn σ (Set.Iic m))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < m, StronglyMeasurable[ℱ (σ j)] (b j)) :
+    ∃ (N : ℕ) (ρ : ℕ → ι) (c : ℕ → Ω → ℝ),
+      ρ 0 = ⊥ ∧ StrictMonoOn ρ (Set.Iic N) ∧
+      (∀ j < N, StronglyMeasurable[ℱ (ρ j)] (c j)) ∧
+      (∀ t ω, simpleHolding ρ N c t ω = simpleHolding τ n a t ω - simpleHolding σ m b t ω) ∧
+      ∀ (X : ι → Ω → ℝ) t ω, simpleGains ρ N c X t ω =
+        simpleGains τ n a X t ω - simpleGains σ m b X t ω := by
+  obtain ⟨N, ρ, c, hρ₀, hρ, hc, -, hhold, hgain⟩ := exists_simpleHolding_simpleGains_eq_sum ℱ
+    ((range n).disjSum (range m)) (Sum.elim τ σ) (Sum.elim (fun j ↦ τ (j + 1)) fun j ↦ σ (j + 1))
+    (Sum.elim a fun j ω ↦ -b j ω) (by
+      rintro (j | j) hj <;> simp only [inl_mem_disjSum, inr_mem_disjSum, mem_range] at hj
+      · exact ha j hj
+      · exact (hb j hj).neg)
+  refine ⟨N, ρ, c, hρ₀, hρ, hc, fun t ω ↦ ?_, fun X t ω ↦ ?_⟩
+  · rw [hhold, sum_disjSum, simpleHolding_def, simpleHolding_def, sub_eq_add_neg,
+      ← sum_neg_distrib]
+    simp only [Sum.elim_inl, Sum.elim_inr]
+    congr 1
+    refine sum_congr rfl fun j _ ↦ ?_
+    by_cases ht : t ∈ Set.Ioc (σ j) (σ (j + 1)) <;> simp [ht]
+  · rw [hgain, sum_disjSum, simpleGains_def, simpleGains_def, sub_eq_add_neg, ← sum_neg_distrib]
+    simp only [Sum.elim_inl, Sum.elim_inr]
+    congr 1 <;> refine sum_congr rfl fun j hj ↦ ?_
+    · simp [hτ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
+    · simp [hσ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
 
 end TauCeti.Finance

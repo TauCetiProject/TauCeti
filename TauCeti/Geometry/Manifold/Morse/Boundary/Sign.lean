@@ -83,6 +83,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `trajectorySign_flow`: the sign is constant along each trajectory.
 * `trajectorySign_neg_left`, `trajectorySign_neg_right`: reversing an orientation reverses the
   signs.
+* `signBasis_mul_trajectorySign`: changing the orientation at the target to that of a basis
+  multiplies the sign by their relative sign.
 * `intCast_signedTrajectoryCount`,
   `IsMorseSmale.morseBoundaryCoeff_eq_intCast_signedTrajectoryCount`: the signed count reduces
   modulo two to the number of trajectories, the coefficient of the mod-two Morse boundary.
@@ -115,6 +117,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 namespace MorseChart
 
 variable {x : M} (φ : MorseChart E f x)
+
+/-- An orientation of the space of coordinates of negative weight of a Morse chart, indexed by the
+Morse index: the orientation of a basis. It serves wherever some orientation is needed and the
+result does not depend on which. -/
+noncomputable def negativeOrientation :
+    Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)) :=
+  (Module.finBasisOfFinrankEq ℝ _ φ.finrank_negativeWeight_fun).orientation
 
 /-- The orientation of `ℝ × V`, for `V` the space of coordinates of negative weight of a Morse
 chart at `q`, against which the signs of the trajectories from a critical point `p` of index
@@ -153,7 +162,7 @@ theorem eq_or_eq_neg_trajectoryTargetOrientation
     (o : Orientation ℝ (ℝ × ({i // φ.weight i < 0} → ℝ)) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p))) :
     o = φ.trajectoryTargetOrientation oq hpq ∨ o = -φ.trajectoryTargetOrientation oq hpq :=
   o.eq_or_eq_neg _ (by
-    rw [Fintype.card_fin, Module.finrank_prod, Module.finrank_self, φ.finrank_negativeWeight_fun]
+    rw [Nat.card_fin, Module.finrank_prod, Module.finrank_self, φ.finrank_negativeWeight_fun]
     omega)
 
 /-- Transporting the orientation `oq` of the coordinates of negative weight of `φ` to those of
@@ -279,6 +288,16 @@ theorem trajectorySign_neg_right (y : M) :
     · simp [(Module.Ray.ne_neg_self _).symm]
   · rw [trajectorySign_of_not_bijective h, trajectorySign_of_not_bijective h, neg_zero]
 
+/-- **Measuring signs against a basis at the target.** The sign of a trajectory for the
+orientation of a basis `b` of the coordinates of negative weight at the target is its sign for
+`oq`, multiplied by the sign of `oq` relative to `b`. -/
+theorem signBasis_mul_trajectorySign
+    (b : Module.Basis (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q)) ℝ ({i // φq.weight i < 0} → ℝ))
+    (y : M) :
+    (oq.signBasis b : ℤ) * hX.trajectorySign φp φq op oq hpq y =
+      hX.trajectorySign φp φq op b.orientation hpq y := by
+  rcases b.orientation_eq_or_eq_neg oq with rfl | rfl <;> simp
+
 /-- Reversing the orientation at the source reverses the signed count. -/
 @[simp]
 theorem signedTrajectoryCount_neg_left :
@@ -346,7 +365,6 @@ theorem bijective_trajectoryComparison (hMS : hX.IsMorseSmale) (hf : IsMorse �
     (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
     Bijective (hX.trajectoryComparison φp φq y) := by
   have hne : p ≠ q := by rintro rfl; omega
-  obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφp hf hy.1).exists
   have hcrit := hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hne hy
   have hinj : Injective (hX.trajectoryComparison φp φq y) := by
     refine (injective_iff_map_eq_zero (hX.trajectoryComparison φp φq y)).2 fun v hv ↦ ?_
@@ -359,7 +377,7 @@ theorem bijective_trajectoryComparison (hMS : hX.IsMorseSmale) (hf : IsMorse �
       rw [hc, map_smul, smul_eq_mul] at h
       exact (mul_eq_zero.1 h).resolve_right (hX.mvfderiv_apply_lt_zero y hcrit).ne
     rw [hc0, zero_smul] at hc
-    exact hX.injective_unstableFrame hφp hT (hc.trans (map_zero _).symm)
+    exact hX.injective_unstableFrame_of_mem hφp hf hy.1 (hc.trans (map_zero _).symm)
   refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
   rw [Module.finrank_prod, Module.finrank_self, φp.finrank_negativeWeight_fun,
     φq.finrank_negativeWeight_fun]

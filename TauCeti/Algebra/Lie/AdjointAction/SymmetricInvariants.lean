@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.AdjointAction.GradingAut
 public import TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup
+public import TauCeti.LinearAlgebra.LinearMap.EqOn
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
 import TauCeti.Algebra.Lie.Dual
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.Eigenspace

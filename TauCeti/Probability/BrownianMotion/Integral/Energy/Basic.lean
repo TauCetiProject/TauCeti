@@ -130,18 +130,39 @@ theorem eLpNorm_simpleGains_sub_eq (hW : IsFilteredPreBrownianReal ℱ W P)
     eLpNorm (simpleGains τ₁ n₁ a₁ W T - simpleGains τ₂ n₂ a₂ W T) 2 P =
       eLpNorm (fun p ↦ simpleHolding τ₁ n₁ a₁ p.1 p.2 - simpleHolding τ₂ n₂ a₂ p.1 p.2) 2
         ((timeMeasure T).prod P) := by
-  obtain ⟨m, σ, b, -, hσ, hbm, hbb, hhold, hgains⟩ :=
-    exists_simpleHolding_simpleGains_sub ℱ hτ₁ hτ₂ ha₁ ha₂
-  have hdom : MemLp (fun ω ↦ (∑ i ∈ range n₁, ‖a₁ i ω‖) + ∑ j ∈ range n₂, ‖a₂ j ω‖) 2 P :=
-    (memLp_finsetSum _ fun i hi ↦ (ha₁₂ i (mem_range.mp hi)).norm).add
-      (memLp_finsetSum _ fun j hj ↦ (ha₂₂ j (mem_range.mp hj)).norm)
+  obtain ⟨m, σ, b, -, hσ, hbm, hbb, hhold, hgains⟩ := exists_simpleHolding_simpleGains_eq_sum ℱ
+    ((range n₁).disjSum (range n₂)) (Sum.elim τ₁ τ₂)
+    (Sum.elim (fun j ↦ τ₁ (j + 1)) fun j ↦ τ₂ (j + 1)) (Sum.elim a₁ fun j ω ↦ -a₂ j ω) (by
+      rintro (i | j) hij <;>
+        simp only [inl_mem_disjSum, inr_mem_disjSum, Finset.mem_range] at hij
+      · exact ha₁ i hij
+      · exact (ha₂ j hij).neg)
+  have hdom : MemLp (fun ω ↦ ∑ i ∈ (range n₁).disjSum (range n₂),
+      ‖Sum.elim a₁ (fun j ω ↦ -a₂ j ω) i ω‖) 2 P :=
+    memLp_finsetSum _ fun i hi ↦ by
+      rcases mem_disjSum.mp hi with ⟨i', hi', rfl⟩ | ⟨j', hj', rfl⟩
+      · exact (ha₁₂ i' (Finset.mem_range.mp hi')).norm
+      · simpa only [Sum.elim_inr, norm_neg] using (ha₂₂ j' (Finset.mem_range.mp hj')).norm
   have hb₂ (k : ℕ) (hk : k < m) : MemLp (b k) 2 P :=
     hdom.mono' ((hbm k hk).mono (ℱ.le _)).aestronglyMeasurable (.of_forall (hbb k hk))
   have hge : simpleGains σ m b W T = simpleGains τ₁ n₁ a₁ W T - simpleGains τ₂ n₂ a₂ W T :=
-    funext fun ω ↦ hgains W T ω
+    funext fun ω ↦ by
+      simp only [Pi.sub_apply]
+      rw [hgains W T ω, sum_disjSum, simpleGains_def, simpleGains_def, sub_eq_add_neg,
+        ← sum_neg_distrib]
+      simp only [Sum.elim_inl, Sum.elim_inr]
+      congr 1 <;> refine sum_congr rfl fun j hj ↦ ?_
+      · simp [hτ₁ (Finset.mem_range.mp hj).le (Finset.mem_range.mp hj) (Nat.le_succ j)]
+      · simp [hτ₂ (Finset.mem_range.mp hj).le (Finset.mem_range.mp hj) (Nat.le_succ j)]
   have hhe : Function.uncurry (simpleHolding σ m b) =
       fun p ↦ simpleHolding τ₁ n₁ a₁ p.1 p.2 - simpleHolding τ₂ n₂ a₂ p.1 p.2 :=
-    funext fun ⟨s, ω⟩ ↦ hhold s ω
+    funext fun ⟨s, ω⟩ ↦ by
+      dsimp only [Function.uncurry]
+      rw [hhold s ω, sum_disjSum, simpleHolding_def, simpleHolding_def, sub_eq_add_neg,
+        ← sum_neg_distrib]
+      simp only [Sum.elim_inl, Sum.elim_inr]
+      congr 1; refine sum_congr rfl fun j _ ↦ ?_
+      by_cases hs : s ∈ Ioc (τ₂ j) (τ₂ (j + 1)) <;> simp [hs]
   rw [← hge, ← hhe, hW.eLpNorm_simpleGains_eq hσ.monotoneOn hbm hb₂ T]
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
