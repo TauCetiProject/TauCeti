@@ -143,7 +143,8 @@ theorem lieCartanRestriction_injOn_lieInvariants :
   refine eq_zero_of_mem_lieInvariants_of_lift_eval_eq_zero (H := H)
     ((killingSymmetricEquiv_mem_lieInvariants_iff K L).mpr (sub_mem hp hq)) fun h hh ↦ ?_
   -- evaluating at a point of `H` factors through restricting the polynomial function to `H`
-  rw [show h = H.incl.toLinearMap ⟨h, hh⟩ from rfl, ← lift_eval_map_dualMap,
-    map_dualMap_killingSymmetricEquiv, map_sub, hpq, sub_self, map_zero, map_zero]
+  have hincl : H.incl.toLinearMap ⟨h, hh⟩ = h := by simp
+  rw [← hincl, ← lift_eval_map_dualMap, map_dualMap_killingSymmetricEquiv, map_sub, hpq, sub_self,
+    map_zero, map_zero]
 
 end LieSubalgebra
