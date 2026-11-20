@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Convex.Topology
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Sharp Lipschitz representatives on convex domains
@@ -30,7 +31,10 @@ A `W^{1,p}` function of any exponent whose value is essentially bounded on an op
 class on `V`, so its precise representative is `M`-Lipschitz on `V`
 (`TauCeti.W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le`). This is how a weak
 solution of an elliptic equation whose gradient is known to be locally bounded, for instance
-Hölder continuous, is shown to be locally Lipschitz.
+Hölder continuous, is shown to be locally Lipschitz. If the precise representatives of the value
+and of the gradient are bounded on the `ρ`-thickening of a set `S`, the precise representative of
+the value is therefore Hölder on the `ρ / 2`-thickening with every exponent at most one
+(`TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le`).
 
 ## References
 
@@ -181,5 +185,61 @@ theorem W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le {p : �
   intro x hx y hy
   rw [← heq x hx, ← heq y hy]
   exact hL hx hy
+
+/-- A Sobolev function whose precise representative and the precise representative of whose
+gradient are bounded on the `ρ`-thickening of a set `S` inside its domain has a precise
+representative that is Lipschitz on the balls of radius `ρ / 2` about the points of the
+`ρ / 2`-thickening, hence Hölder on the `ρ / 2`-thickening with every exponent at most one. -/
+theorem W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] (u : W1p μ Ω p) {S : Set E} {ρ : ℝ} (hρ : 0 < ρ)
+    (hρS : thickening ρ S ⊆ Ω) {M₁ M₂ : ℝ}
+    (hv : ∀ x ∈ thickening ρ S, ‖preciseRepresentative μ (W1p.value u) x‖ ≤ M₁)
+    (hg : ∀ x ∈ thickening ρ S, ‖preciseRepresentative μ (W1p.gradient u) x‖ ≤ M₂)
+    {γ : NNReal} (hγ : γ ≤ 1) :
+    ∃ C : NNReal,
+      HolderOnWith C γ (preciseRepresentative μ (W1p.value u)) (thickening (ρ / 2) S) := by
+  have hval : (W1p.value u : E → ℝ) =ᵐ[μ.restrict Ω] preciseRepresentative μ (W1p.value u) :=
+    W1p.ae_eq_preciseRepresentative u
+  have hgrad : (W1p.gradient u : E → E) =ᵐ[μ.restrict Ω]
+      preciseRepresentative μ (W1p.gradient u) :=
+    ae_eq_restrict_preciseRepresentative Ω.isOpen
+      (W1p.hasWeakFDerivOn u).locallyIntegrableOn_gradient
+  have hball : ∀ x ∈ thickening (ρ / 2) S, ball x (ρ / 2) ⊆ thickening ρ S := fun x hx =>
+    (ball_subset_thickening hx _).trans
+      ((thickening_thickening_subset _ _ _).trans (by rw [add_halves]))
+  -- On each such ball, the value and the gradient of `u` are essentially bounded.
+  have hlip : ∀ x ∈ thickening (ρ / 2) S,
+      LipschitzOnWith M₂.toNNReal (preciseRepresentative μ (W1p.value u)) (ball x (ρ / 2)) := by
+    intro x hx
+    let V : Opens E := ⟨ball x (ρ / 2), isOpen_ball⟩
+    have hVU : (V : Set E) ⊆ thickening ρ S := hball x hx
+    have hV : V ≤ Ω := hVU.trans hρS
+    have hae : ae (μ.restrict (V : Set E)) ≤ ae (μ.restrict Ω) :=
+      ae_mono (Measure.restrict_mono hV le_rfl)
+    refine W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le u hV
+      (convex_ball x _) ?_ ?_
+    · refine memLp_top_of_bound ((Lp.aestronglyMeasurable _).mono_measure
+        (Measure.restrict_mono hV le_rfl)) M₁ ?_
+      filter_upwards [ae_restrict_mem V.isOpen.measurableSet, hval.filter_mono hae] with y hy hy'
+      rw [hy']
+      exact hv y (hVU hy)
+    · filter_upwards [ae_restrict_mem V.isOpen.measurableSet, hgrad.filter_mono hae] with y hy hy'
+      rw [hy']
+      exact (hg y (hVU hy)).trans (Real.le_coe_toNNReal _)
+  have hρ2 : ((ρ / 2).toNNReal : ℝ) = ρ / 2 := Real.coe_toNNReal _ (by positivity)
+  refine ⟨_, HolderOnWith.of_le_of_dist_le (K := M₂.toNNReal) (D := (2 * M₁).toNNReal)
+    (δ := (ρ / 2).toNNReal) (β := 1) (fun x hx y _ hxy => ?_) (fun x hx y hy => ?_) hγ
+    (by rw [← NNReal.coe_pos, hρ2]; positivity)⟩
+  · rw [hρ2] at hxy
+    rw [NNReal.coe_one, Real.rpow_one]
+    exact (hlip x hx).dist_le_mul x (mem_ball_self (by positivity)) y
+      (mem_ball_comm.1 (mem_ball.2 hxy))
+  · have hsub : thickening (ρ / 2) S ⊆ thickening ρ S := thickening_mono (by linarith) S
+    calc dist (preciseRepresentative μ (W1p.value u) x)
+          (preciseRepresentative μ (W1p.value u) y)
+        ≤ ‖preciseRepresentative μ (W1p.value u) x‖ +
+          ‖preciseRepresentative μ (W1p.value u) y‖ := dist_le_norm_add_norm _ _
+      _ ≤ 2 * M₁ := by linarith [hv x (hsub hx), hv y (hsub hy)]
+      _ ≤ (2 * M₁).toNNReal := Real.le_coe_toNNReal _
 
 end TauCeti

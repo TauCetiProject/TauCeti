@@ -22,10 +22,10 @@ Let `Ω ⊆ ℝⁿ⁺¹` be open and consider the quasilinear divergence-form eq
 
 whose coefficient matrix depends on the solution itself. Suppose that `A(·, s)` is uniformly
 elliptic with constants `λ, Λ` for every `s`, that `A` is `α`-Hölder in `x` uniformly in `s` and
-Lipschitz in `s` uniformly in `x`, with `0 < α < 1`, that `G` is `α`-Hölder, and that
-`f ∈ L^q(Ω)` with `q ≥ 2` and `q > n + 1`. This file proves that the gradient of every weak
+Lipschitz in `s` uniformly in `x`, with `0 < α`, that `G` is `α`-Hölder, and that
+`f ∈ L^q(Ω)` with `q ≥ 2`. This file proves that the gradient of every weak
 solution `u ∈ H¹(Ω)` is Hölder continuous in the interior of `Ω`, with every exponent
-`0 < β ≤ α` with `β ≤ 1 - (n + 1) / q`
+`0 < β < 1` with `β ≤ α` and `β ≤ 1 - (n + 1) / q`; such exponents exist when `q > n + 1`
 (`exists_holderOnWith_preciseRepresentative_gradient_of_forall_energyFormH1_quasilinear_eq`, in
 the `TauCeti.PDE` namespace).
 These are the exponents of the linear theory with `α`-Hölder coefficients, so the dependence of the
@@ -42,9 +42,9 @@ A weak solution `u` solves the linear equation with the frozen coefficient `a(x)
 * **Schauder.** Then `x ↦ A(x, ū(x))` is Hölder continuous with exponent `min γ₀ α`, and the
   Schauder estimate for divergence-form equations with Hölder coefficients makes `∇u` Hölder
   continuous with a small positive exponent.
-* **Lipschitz.** A Hölder gradient is locally bounded, so `ū` is locally Lipschitz
-  (`TauCeti.W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le`), and the frozen
-  coefficient is `α`-Hölder.
+* **Lipschitz.** A Hölder gradient is locally bounded, so `ū` is locally Lipschitz, hence
+  `β`-Hölder (`TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le`), and the
+  frozen coefficient is `β`-Hölder.
 * **Schauder again.** A second application of the Schauder estimate gives the exponents above.
 
 ## References
@@ -181,9 +181,9 @@ private theorem holderOnWith_matrixBilinearForm_comp {T : Set (EuclideanSpace �
 /-- **The Schauder step.** If the precise representative `ū` of a weak solution is `γ`-Hölder on
 the `ρ`-thickening of a bounded set `S`, the coefficient `A(x, ū(x))` is `γ`-Hölder there, so the
 Schauder estimate for divergence-form equations makes the precise representative of `∇u`
-`β`-Hölder on `S` for every `0 < β ≤ γ` with `β ≤ 1 - (n + 1) / q`. -/
+`β`-Hölder on `S` for every `0 < β < 1` with `β ≤ γ` and `β ≤ 1 - (n + 1) / q`. -/
 private theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_value
-    (hα1 : α < 1) (hq2 : 2 ≤ q)
+    (hq2 : 2 ≤ q)
     (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
       (fun x => A x s) lam Lam)
     (hAx : ∀ s, HolderOnWith Kx α (fun x => matrixBilinearForm (A x s)) Omega)
@@ -193,7 +193,8 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWi
         (W1p.ofTestFunctionₗ volume Omega 2 φ) =
       (∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) +
         ∫ x in Omega, f x * φ x)
-    {γ₀ γ β : ℝ≥0} (hγγ₀ : γ ≤ γ₀) (hγα : γ ≤ α) (hβ : 0 < β) (hβγ : β ≤ γ)
+    {γ₀ γ β : ℝ≥0} (hγγ₀ : γ ≤ γ₀) (hγα : γ ≤ α) (hβ : 0 < β) (hβ1 : β < 1)
+    (hβγ : β ≤ γ)
     (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal)
     {S : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hS : Bornology.IsBounded S) {ρ : ℝ}
     (hρ : 0 < ρ) (hρS : thickening ρ S ⊆ Omega) {Cv : ℝ≥0}
@@ -220,88 +221,31 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWi
     rw [← hu φ]
     exact energyFormH1_congr_ae ((W1p.ae_eq_preciseRepresentative u).mono fun x hx => by
       rw [hx]) .rfl .rfl _ _
-  have hβ1 : β < 1 := lt_of_le_of_lt (hβγ.trans hγα) hα1
   obtain ⟨C, -, h⟩ :=
     exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm_of_memLp
       (n := n) hβ hβ1 hβγ hq2 hβq (lam := lam) (Lam := Lam)
       (M := ↑(Kx * D ^ ((α : ℝ) - γ) + L * (Cv * D ^ ((γ₀ : ℝ) - γ))) * ρ ^ (γ : ℝ))
   exact ⟨_, h hell haK hGK le_rfl (hf.mono_measure (Measure.restrict_mono hρS le_rfl)) hu' hρ hρS⟩
 
-/-- **The Lipschitz step.** A Sobolev function whose precise representative and the precise
-representative of whose gradient are bounded on the `ρ`-thickening of `S` has a precise
-representative that is Lipschitz on the balls of radius `ρ / 2` about the points of the
-`ρ / 2`-thickening, hence Hölder there with every exponent at most one. -/
-private theorem exists_holderOnWith_preciseRepresentative_value_of_forall_norm_le
-    (u : W1p volume Omega 2) {S : Set (EuclideanSpace ℝ (Fin (n + 1)))} {ρ : ℝ} (hρ : 0 < ρ)
-    (hρS : thickening ρ S ⊆ Omega) {M₁ M₂ : ℝ}
-    (hv : ∀ x ∈ thickening ρ S, ‖preciseRepresentative volume (W1p.value u) x‖ ≤ M₁)
-    (hg : ∀ x ∈ thickening ρ S, ‖preciseRepresentative volume (W1p.gradient u) x‖ ≤ M₂)
-    {γ : ℝ≥0} (hγ : γ ≤ 1) :
-    ∃ C : ℝ≥0,
-      HolderOnWith C γ (preciseRepresentative volume (W1p.value u)) (thickening (ρ / 2) S) := by
-  have hval : (W1p.value u : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) =ᵐ[volume.restrict Omega]
-      preciseRepresentative volume (W1p.value u) := W1p.ae_eq_preciseRepresentative u
-  have hgrad : (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
-      =ᵐ[volume.restrict Omega] preciseRepresentative volume (W1p.gradient u) :=
-    ae_eq_restrict_preciseRepresentative Omega.isOpen
-      (W1p.hasWeakFDerivOn u).locallyIntegrableOn_gradient
-  have hball : ∀ x ∈ thickening (ρ / 2) S, ball x (ρ / 2) ⊆ thickening ρ S := fun x hx =>
-    (ball_subset_thickening hx _).trans
-      ((thickening_thickening_subset _ _ _).trans (by rw [add_halves]))
-  -- On each such ball, the value and the gradient of `u` are essentially bounded.
-  have hlip : ∀ x ∈ thickening (ρ / 2) S,
-      LipschitzOnWith M₂.toNNReal (preciseRepresentative volume (W1p.value u))
-        (ball x (ρ / 2)) := by
-    intro x hx
-    let V : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball x (ρ / 2), isOpen_ball⟩
-    have hVU : (V : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ thickening ρ S := hball x hx
-    have hV : V ≤ Omega := hVU.trans hρS
-    have hae : ae (volume.restrict (V : Set (EuclideanSpace ℝ (Fin (n + 1))))) ≤
-        ae (volume.restrict Omega) := ae_mono (Measure.restrict_mono hV le_rfl)
-    refine W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le u hV
-      (convex_ball x _) ?_ ?_
-    · refine memLp_top_of_bound ((Lp.aestronglyMeasurable _).mono_measure
-        (Measure.restrict_mono hV le_rfl)) M₁ ?_
-      filter_upwards [ae_restrict_mem V.isOpen.measurableSet, hval.filter_mono hae] with y hy hy'
-      rw [hy']
-      exact hv y (hVU hy)
-    · filter_upwards [ae_restrict_mem V.isOpen.measurableSet, hgrad.filter_mono hae] with y hy hy'
-      rw [hy']
-      exact (hg y (hVU hy)).trans (Real.le_coe_toNNReal _)
-  have hρ2 : ((ρ / 2).toNNReal : ℝ) = ρ / 2 := Real.coe_toNNReal _ (by positivity)
-  refine ⟨_, HolderOnWith.of_le_of_dist_le (K := M₂.toNNReal) (D := (2 * M₁).toNNReal)
-    (δ := (ρ / 2).toNNReal) (β := 1) (fun x hx y _ hxy => ?_) (fun x hx y hy => ?_) hγ
-    (by rw [← NNReal.coe_pos, hρ2]; positivity)⟩
-  · rw [hρ2] at hxy
-    rw [NNReal.coe_one, Real.rpow_one]
-    exact (hlip x hx).dist_le_mul x (mem_ball_self (by positivity)) y
-      (mem_ball_comm.1 (mem_ball.2 hxy))
-  · have hsub : thickening (ρ / 2) S ⊆ thickening ρ S := thickening_mono (by linarith) S
-    calc dist (preciseRepresentative volume (W1p.value u) x)
-          (preciseRepresentative volume (W1p.value u) y)
-        ≤ ‖preciseRepresentative volume (W1p.value u) x‖ +
-          ‖preciseRepresentative volume (W1p.value u) y‖ := dist_le_norm_add_norm _ _
-      _ ≤ 2 * M₁ := by linarith [hv x (hsub hx), hv y (hsub hy)]
-      _ ≤ (2 * M₁).toNNReal := Real.le_coe_toNNReal _
-
 /-- **Interior `C^{1,β}` regularity for quasilinear divergence-form equations.** Let `Ω ⊆ ℝⁿ⁺¹`
 be open and let `A(x, s)` be a field of matrices, uniformly elliptic with constants `λ, Λ` in `x`
 for every `s`, `α`-Hölder in `x` with a constant independent of `s`, and Lipschitz in `s` with a
-constant independent of `x`, where `0 < α < 1`. Let `G` be `α`-Hölder on `Ω` and `f ∈ L^q(Ω)`
-with `q ≥ 2` and `q > n + 1`. If `u ∈ H¹(Ω)` is a weak solution of the quasilinear equation
+constant independent of `x`, where `0 < α`. Let `G` be `α`-Hölder on `Ω` and `f ∈ L^q(Ω)`
+with `q ≥ 2`. If `u ∈ H¹(Ω)` is a weak solution of the quasilinear equation
 
 `-∂ᵢ(Aⁱʲ(x, u) ∂ⱼu) = f - div G` in `Ω`,
 
 that is `∫_Ω ⟨A(x, u) ∇u, ∇φ⟩ = ∫_Ω ⟨G, ∇φ⟩ + ∫_Ω f φ` for every test function `φ`, then the
 precise representative of `∇u` is `β`-Hölder on every bounded set `S` with `S_R ⊆ Ω` for some
-`R > 0`, for every `0 < β ≤ α` with `β ≤ 1 - (n + 1) / q`, where `(n + 1) / ∞ = 0`. These are the
-exponents of the linear estimate with Hölder coefficients
+`R > 0`, for every `0 < β < 1` with `β ≤ α` and `β ≤ 1 - (n + 1) / q`, where
+`(n + 1) / ∞ = 0`; such `β` exist exactly when `q > n + 1`. These are the exponents of the
+linear estimate with Hölder coefficients
 (`exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm_of_memLp`
 in `TauCeti.PDE`).
 The precise representative agrees with `∇u` almost everywhere on `Ω`
 (`TauCeti.MeasureTheory.ae_eq_restrict_preciseRepresentative`). -/
 theorem exists_holderOnWith_preciseRepresentative_gradient_of_forall_energyFormH1_quasilinear_eq
-    (hα1 : α < 1) (hq2 : 2 ≤ q) (hqn : (n : ℝ≥0∞) + 1 < q)
+    (hq2 : 2 ≤ q)
     (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
       (fun x => A x s) lam Lam)
     (hAx : ∀ s, HolderOnWith Kx α (fun x => matrixBilinearForm (A x s)) Omega)
@@ -311,19 +255,21 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_forall_energyFormH
         (W1p.ofTestFunctionₗ volume Omega 2 φ) =
       (∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) +
         ∫ x in Omega, f x * φ x)
-    {β : ℝ≥0} (hβ : 0 < β) (hβα : β ≤ α) (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal)
+    {β : ℝ≥0} (hβ : 0 < β) (hβ1 : β < 1) (hβα : β ≤ α)
+    (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal)
     {S : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hS : Bornology.IsBounded S) {R : ℝ}
     (hR : 0 < R) (hRS : thickening R S ⊆ Omega) :
     ∃ C : ℝ≥0, HolderOnWith C β (preciseRepresentative volume (W1p.gradient u)) S := by
   have hα : 0 < α := hβ.trans_le hβα
-  -- The datum costs `(n + 1) / q < 1` of a derivative.
-  have hq1 : ((n : ℝ) + 1) / q.toReal < 1 := by
+  -- The datum costs `(n + 1) / q < 1` of a derivative, so `q > n + 1`.
+  have hβ' : (0 : ℝ) < β := hβ
+  have hqn : (n : ℝ≥0∞) + 1 < q := by
     rcases eq_or_ne q ⊤ with rfl | hqt
     · simp
-    · have hlt : ((n : ℝ≥0∞) + 1).toReal < q.toReal := ENNReal.toReal_strict_mono hqt hqn
-      rw [ENNReal.toReal_add (by simp) (by simp), ENNReal.toReal_natCast,
-        ENNReal.toReal_one] at hlt
-      exact (div_lt_one (by have : (0 : ℝ) ≤ n := n.cast_nonneg; linarith)).2 hlt
+    · have hq0 : 0 < q.toReal := ENNReal.toReal_pos (by rintro rfl; simp at hq2) hqt
+      refine (ENNReal.toReal_lt_toReal (by simp) hqt).1 ?_
+      rw [ENNReal.toReal_add (by simp) (by simp), ENNReal.toReal_natCast, ENNReal.toReal_one]
+      exact (div_lt_one hq0).1 (by linarith)
   -- De Giorgi: `ū` is `γ₀`-Hölder on `S_{R/2}`.
   obtain ⟨γ₀, C₀, hγ₀, h₀⟩ :=
     exists_holderOnWith_preciseRepresentative_value hα hq2 hqn hA hAx hAs hG hf hu hS hR hRS
@@ -332,27 +278,24 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_forall_energyFormH
     (thickening_mono (by linarith) S).trans hRS
   have hUU : thickening (R / 4) (thickening (R / 4) S) ⊆ thickening (R / 2) S :=
     (thickening_thickening_subset _ _ _).trans (by rw [show R / 4 + R / 4 = R / 2 by ring])
-  -- First Schauder pass, on `S_{R/4}`, with a small positive exponent `β₁`.
-  set β₁ : ℝ≥0 := min (min γ₀ α) (1 - ((n : ℝ) + 1) / q.toReal).toNNReal
-  have hβ₁0 : 0 < β₁ :=
-    lt_min (lt_min hγ₀ hα) (Real.toNNReal_pos.2 (by linarith))
-  have hβ₁q : (β₁ : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal :=
-    (NNReal.coe_le_coe.2 (min_le_right _ _)).trans_eq (Real.coe_toNNReal _ (by linarith))
+  -- First Schauder pass, on `S_{R/4}`, with the small positive exponent `β₁ = min γ₀ β`.
+  have hβ₁0 : 0 < min γ₀ β := lt_min hγ₀ hβ
   obtain ⟨C₁, h₁⟩ := exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_value
-    hα1 hq2 hA hAx hAs hG hf hu (min_le_left γ₀ α) (min_le_right γ₀ α) hβ₁0 (min_le_left _ _)
-    hβ₁q hU (by positivity) (hUU.trans ((thickening_mono (by linarith) S).trans hRS))
-    (h₀.mono hUU)
-  -- The Lipschitz step: `ū` is `α`-Hölder on `S_{R/8}`.
+    hq2 hA hAx hAs hG hf hu (min_le_left γ₀ β) ((min_le_right γ₀ β).trans hβα) hβ₁0
+    ((min_le_right γ₀ β).trans_lt hβ1) le_rfl
+    ((NNReal.coe_le_coe.2 (min_le_right γ₀ β)).trans hβq) hU (by positivity)
+    (hUU.trans ((thickening_mono (by linarith) S).trans hRS)) (h₀.mono hUU)
+  -- The Lipschitz step: `ū` is `β`-Hölder on `S_{R/8}`.
   obtain ⟨M₁, hM₁⟩ :=
     ((h₀.mono (thickening_mono (by linarith) S)).isBounded_image hU).exists_norm_le
   obtain ⟨M₂, hM₂⟩ := (h₁.isBounded_image hU).exists_norm_le
-  obtain ⟨C₂, h₂⟩ := exists_holderOnWith_preciseRepresentative_value_of_forall_norm_le u
-    (by positivity) hUΩ (forall_mem_image.1 hM₁) (forall_mem_image.1 hM₂) hα1.le
+  obtain ⟨C₂, h₂⟩ := W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le u
+    (by positivity) hUΩ (forall_mem_image.1 hM₁) (forall_mem_image.1 hM₂) hβ1.le
   -- Second Schauder pass, on `S`, with the exponent `β`.
   have hR8 : R / 4 / 2 = R / 8 := by ring
   rw [hR8] at h₂
-  exact exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_value hα1 hq2 hA hAx
-    hAs hG hf hu le_rfl le_rfl hβ hβα hβq hS (by positivity)
+  exact exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_value hq2 hA hAx
+    hAs hG hf hu le_rfl hβα hβ hβ1 le_rfl hβq hS (by positivity)
     ((thickening_mono (by linarith) S).trans hRS) h₂
 
 end PDE
