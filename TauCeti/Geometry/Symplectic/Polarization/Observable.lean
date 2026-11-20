@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Distribution.BasicFunctions
 public import TauCeti.Geometry.Symplectic.Hamiltonian.LieAlgebra
 public import TauCeti.Geometry.Symplectic.Polarization.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive
 
 /-!
 # Observables preserving a polarization
@@ -212,22 +213,12 @@ namespace IsNondegenerate
 
 variable {hσ : σ.IsNondegenerate}
 
-/-- If the differential of `f` at `x` vanishes on a coisotropic subspace `W` of `T_x M`, then the
-Hamiltonian vector field of `f` at `x` lies in `W`: `σ(X_f, v) = df(v)` vanishes for `v ∈ W`, so
-`X_f ∈ W^σ ⊆ W`. -/
-theorem hamiltonianVectorField_mem_of_forall_mvfderiv_eq_zero {x : M}
-    {W : Submodule ℝ (TangentSpace I x)} (hW : (hσ.symplecticFormAt x).IsCoisotropic W)
-    (hf : ∀ v ∈ W, mvfderiv I f x v = 0) : σ.hamiltonianVectorField f x ∈ W :=
-  hσ.mem_of_forall_eval₂_eq_zero_of_isCoisotropic hW fun w hw ↦ by
-    rw [hσ.eval₂_hamiltonianVectorField]
-    exact hf w hw
-
 /-- **The Hamiltonian vector field of a basic function is tangent to a coisotropic distribution**,
 for instance a real polarization. -/
 theorem hamiltonianVectorField_mem_of_mem_basicFunctions {x : M}
     (hPx : (hσ.symplecticFormAt x).IsCoisotropic (P x)) {a : C^∞⟮I, M; ℝ⟯}
     (ha : a ∈ basicFunctions I P) : σ.hamiltonianVectorField a x ∈ P x :=
-  hamiltonianVectorField_mem_of_forall_mvfderiv_eq_zero hPx fun _ hv ↦
+  hσ.hamiltonianVectorField_mem_of_forall_mvfderiv_eq_zero hPx fun _ hv ↦
     mvfderiv_apply_eq_zero_of_mem_basicFunctions ha hv
 
 /-- **Basic functions preserve an involutive coisotropic distribution**, for instance a real
