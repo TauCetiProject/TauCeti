@@ -115,8 +115,7 @@ theorem existsUnique_continuous_ae_eq_coord (hp : 2 < p) (w : SobolevSection A v
     ∃! s : ∀ x, V x, Continuous (fun x ↦ TotalSpace.mk' F x (s x)) ∧
       ∀ i, A.sectionChartData.chartValueL volume p 1 i w
         =ᵐ[volume.restrict (A.image i)] A.coord i s := by
-  obtain ⟨s, hs⟩ := A.sectionChartData.exists_section volume p 1 w
-  replace hs (i : Fin A.n) := (hs i).trans (A.sectionChartData_coord_ae_eq volume i s)
+  obtain ⟨s, hs⟩ := exists_ae_eq_coord A volume p 1 w
   obtain ⟨t, ht, hts⟩ :=
     exists_continuous_eqOn_preciseRepresentative hp fun i ↦ memWkpLoc_coord w hs i
   have hae (i : Fin A.n) :
@@ -249,8 +248,7 @@ continuous with exponent `1 - 2 / p` on every compact subset of the chart image.
 theorem exists_holderOnWith_coord_toSection (hp : 2 < p) (w : SobolevSection A volume p 1)
     (i : Fin A.n) {K : Set ℂ} (hK : IsCompact K) (hKi : K ⊆ A.image i) :
     ∃ C : ℝ≥0, HolderOnWith C ((1 : ℝ≥0∞) - 2 / p).toNNReal (A.coord i (toSection hp w)) K := by
-  obtain ⟨s, hs⟩ := A.sectionChartData.exists_section volume p 1 w
-  replace hs (i : Fin A.n) := (hs i).trans (A.sectionChartData_coord_ae_eq volume i s)
+  obtain ⟨s, hs⟩ := exists_ae_eq_coord A volume p 1 w
   obtain ⟨C, hC⟩ :=
     (memWkpLoc_coord w hs i).exists_holderOnWith_preciseRepresentative_of_isCompact hp hK hKi
   refine ⟨C, fun x hx y hy ↦ ?_⟩
