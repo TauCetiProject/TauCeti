@@ -76,8 +76,9 @@ annulus `r₁ ≤ |z - z₀| ≤ r₂`, and `κ = 2c / (1 + M)²`.
 * **No energy is lost in the necks.** Consequently, along a sequence (or any filter) of solutions
   with common constants `c > 0` and `M`, if the energies of the collars of both boundary circles
   tend to `0`, so do the energies of the necks
-  (`TauCeti.SymplecticForm.tendsto_integral_norm_fderiv_one_sq_annulus_of_tendsto`), and the
-  middles `2a ≤ |w - z₀| ≤ 2b / 3` of the necks are mapped into sets of diameter tending to `0`
+  (`TauCeti.SymplecticForm.tendsto_integral_norm_fderiv_one_sq_annulus_of_tendsto`), and, if
+  moreover the necks themselves have image in `K` and `0 < a`, the middles
+  `2a ≤ |w - z₀| ≤ 2b / 3` of the necks are mapped into sets of diameter tending to `0`
   (`TauCeti.SymplecticForm.eventually_forall_norm_sub_lt_annulus_of_tendsto`). In the bubbling
   analysis of Gromov compactness these are applied along a diagonal sequence whose collars shrink
   to the bubbling point of the limit map and to the node of the rescaled bubble; there they say
