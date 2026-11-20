@@ -5,77 +5,63 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.InnerProductSpace.Frame
 
 /-!
 # Rank-one projections and orthonormal bases
 
-Complete orthogonal families of unit rank-one projections correspond exactly to
-orthonormal bases.
+A finite family of rank-one orthogonal projections comes from an orthonormal basis exactly when
+the projections sum to the identity. This identifies the decompositions of the identity into
+rank-one projections that can be used to express the basis-sum condition for frame functions.
+The converse uses `TauCeti.re_inner_frameOperator_apply_self` to recover orthogonality.
 
-A. M. Gleason, *Measures on the Closed Subspaces of a Hilbert Space*, 1957, §1.
+For the frame-function condition, see A. M. Gleason,
+*Measures on the Closed Subspaces of a Hilbert Space*, 1957, §1.
 -/
 
 public section
 
 namespace TauCeti
 
-/-- A complete orthogonal family of unit rank-one projections comes from an orthonormal basis. -/
-theorem exists_orthonormalBasis_iff_complete_orthogonal_rankOne
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
-    {ι : Type*} [Fintype ι] {p : ι → E →L[ℂ] E} :
-    (∃ b : OrthonormalBasis ι ℂ E,
-        ∀ i, p i = InnerProductSpace.rankOne ℂ (b i) (b i)) ↔
-      (∀ i, ∃ v : E, ‖v‖ = 1 ∧ p i = InnerProductSpace.rankOne ℂ v v) ∧
-        (∀ i j, i ≠ j → p i * p j = 0) ∧ (∑ i, p i = 1) := by
+open InnerProductSpace
+open scoped InnerProductSpace
+
+/-- A finite family consists of the projections onto the lines of an orthonormal basis exactly
+when each term is the rank-one projection of a unit vector and the terms sum to the identity. -/
+theorem exists_orthonormalBasis_eq_rankOne_iff
+    {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    [Fintype ι] {p : ι → E →L[𝕜] E} :
+    (∃ b : OrthonormalBasis ι 𝕜 E, ∀ i, p i = rankOne 𝕜 (b i) (b i)) ↔
+      (∀ i, ∃ v : E, ‖v‖ = 1 ∧ p i = rankOne 𝕜 v v) ∧ (∑ i, p i = 1) := by
   constructor
   · rintro ⟨b, hb⟩
-    refine ⟨?_, ?_, ?_⟩
-    · intro i
-      exact ⟨b i, b.norm_eq_one i, hb i⟩
-    · intro i j hij
-      rw [hb i, hb j, ContinuousLinearMap.mul_def,
-        InnerProductSpace.rankOne_comp_rankOne]
-      simp [b.inner_eq_zero hij]
-    · calc
-        ∑ i, p i = ∑ i, InnerProductSpace.rankOne ℂ (b i) (b i) :=
-          Finset.sum_congr rfl fun i _ => hb i
-        _ = 1 := b.sum_rankOne_eq_id
-  · rintro ⟨hunit, horth, hsum⟩
+    exact ⟨fun i ↦ ⟨b i, b.norm_eq_one i, hb i⟩,
+      (Finset.sum_congr rfl fun i _ ↦ hb i).trans b.sum_rankOne_eq_id⟩
+  · rintro ⟨hunit, hsum⟩
     classical
-    choose v hvnorm hp using hunit
-    have hv_ne : ∀ i, v i ≠ 0 := fun i => by
-      intro h
-      have h' : (0 : ℝ) = 1 := by simpa [h] using hvnorm i
-      exact zero_ne_one h'
-    -- Orthogonality of the projections forces orthogonality of their unit vectors.
-    have hv_orth : Orthonormal ℂ v := by
-      constructor
-      · exact hvnorm
-      · intro i j hij
-        have hzero : InnerProductSpace.rankOne ℂ (v i) (v i) *
-            InnerProductSpace.rankOne ℂ (v j) (v j) = 0 := by
-          simpa only [hp i, hp j] using horth i j hij
-        rw [ContinuousLinearMap.mul_def,
-          InnerProductSpace.rankOne_comp_rankOne] at hzero
-        exact (smul_eq_zero.mp hzero).resolve_right
-          (InnerProductSpace.rankOne_ne_zero (hv_ne i) (hv_ne j))
-    have hsum' : ∑ i, InnerProductSpace.rankOne ℂ (v i) (v i) = 1 := by
-      rw [← hsum]
-      exact Finset.sum_congr rfl fun i _ => (hp i).symm
-    -- Completeness of the projection family makes the vectors span the whole space.
-    have hsp : ⊤ ≤ Submodule.span ℂ (Set.range v) := by
+    choose v hv hp using hunit
+    have hframe : frameOperator 𝕜 v = LinearMap.id := by
+      ext x
+      simpa only [frameOperator_apply, LinearMap.id_apply, sum_apply, rankOne_apply,
+        one_apply_eq_self, hp] using DFunLike.congr_fun hsum x
+    have hon : Orthonormal 𝕜 v := by
+      refine ⟨hv, fun i j hij ↦ ?_⟩
+      -- In the sum of squared inner products with `v j`, the diagonal term is already one.
+      have hsq := (re_inner_frameOperator_apply_self (𝕜 := 𝕜) v (v j)).symm
+      rw [hframe, LinearMap.id_apply, inner_self_eq_norm_sq, hv j, one_pow] at hsq
+      have hdiag : ‖⟪v j, v j⟫_𝕜‖ ^ 2 = 1 := by
+        rw [inner_self_eq_one_of_norm_eq_one (hv j), norm_one, one_pow]
+      rw [← Finset.sum_erase_add _ _ (Finset.mem_univ j), hdiag, add_eq_right] at hsq
+      have hi := (Finset.sum_sq_eq_zero_iff _ _).mp hsq i
+        (Finset.mem_erase.mpr ⟨hij, Finset.mem_univ i⟩)
+      exact norm_eq_zero.mp hi
+    have hspan : ⊤ ≤ Submodule.span 𝕜 (Set.range v) := by
       intro x _
-      have hx : (∑ i, InnerProductSpace.rankOne ℂ (v i) (v i)) x = x := by
-        rw [hsum']
-        simp
-      rw [← hx]
-      simp only [sum_apply, InnerProductSpace.rankOne_apply]
-      exact Submodule.sum_mem _ fun i _ =>
-        Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
-    let b : OrthonormalBasis ι ℂ E := OrthonormalBasis.mk hv_orth hsp
-    refine ⟨b, fun i => ?_⟩
-    simpa [b] using hp i
+      apply (Submodule.mem_span_range_iff_exists_fun 𝕜).mpr
+      refine ⟨fun i ↦ ⟪v i, x⟫_𝕜, ?_⟩
+      simpa only [frameOperator_apply, LinearMap.id_apply] using DFunLike.congr_fun hframe x
+    refine ⟨OrthonormalBasis.mk hon hspan, fun i ↦ ?_⟩
+    simpa only [OrthonormalBasis.coe_mk] using hp i
 
 end TauCeti
