@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.LocalRing.RingHom
 public import TauCeti.RingTheory.StableRange
 public import Mathlib.RingTheory.HopkinsLevitzki
-public import Mathlib.RingTheory.Ideal.Quotient.Noetherian
-public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
+public import Mathlib.RingTheory.OrderOfVanishing.Basic
 
 /-!
 # Bass stable range of semilocal rings and of one-dimensional domains
@@ -17,9 +17,8 @@ This file bounds the Bass stable range `TauCeti.HasStableRangeLE` of two classes
 rings, the bounds used for elementary reduction of invertible matrices in algebraic `K₁`.
 
 * A commutative **semilocal** ring, one with finitely many maximal ideals, has stable range at
-  most `1`. If `a` and `b` are coprime, the Chinese remainder theorem gives `c` which is `1`
-  modulo the maximal ideals containing `a` and `0` modulo the others; then `a + b * c` lies in
-  no maximal ideal, so it is a unit.
+  most `1`. If `a` and `b` are coprime, then `a` is a unit modulo `b`; units lift along the
+  quotient map `R → R ⧸ (b)` of a semilocal ring, so some `a + b * c` is a unit.
 * **Bass's reduction step.** If every quotient `R ⧸ (x)` by a nonzero element has stable range at
   most `s`, then `R` has stable range at most `s + 1`. One first moves a nonzero entry into the
   leading coordinate of a unimodular row and then shortens the remaining coordinates modulo it.
@@ -61,29 +60,18 @@ variable {R : Type*} [CommRing R] [Finite (MaximalSpectrum R)]
 `c`. -/
 theorem exists_isUnit_add_mul_of_isCoprime {a b : R} (hab : IsCoprime a b) :
     ∃ c, IsUnit (a + b * c) := by
-  classical
-  -- By the Chinese remainder theorem choose `c` congruent to `1` modulo the maximal ideals
-  -- containing `a` and to `0` modulo the others; then `a + b * c` lies in no maximal ideal.
-  let I : MaximalSpectrum R → Ideal R := fun m ↦ m.asIdeal
-  have hI : Pairwise (IsCoprime on I) := fun m n hmn ↦
-    Ideal.isCoprime_of_isMaximal fun h ↦ hmn (MaximalSpectrum.ext h)
-  obtain ⟨c', hc'⟩ := Ideal.quotientInfToPiQuotient_surj hI
-    fun m ↦ Ideal.Quotient.mk (I m) (if a ∈ I m then 1 else 0)
-  obtain ⟨c, rfl⟩ := Ideal.Quotient.mk_surjective c'
-  refine ⟨c, by_contra fun hu ↦ ?_⟩
-  obtain ⟨m, hm, hmem⟩ := exists_max_ideal_of_mem_nonunits hu
-  have hc : Ideal.Quotient.mk m c = Ideal.Quotient.mk m (if a ∈ m then 1 else 0) :=
-    congrFun hc' ⟨m, hm⟩
+  -- Lift the unit `a` of `R ⧸ (b)` to a unit `w` of `R`; then `w - a` is a multiple of `b`.
+  let f := Ideal.Quotient.mk (Ideal.span {b})
   obtain ⟨u, v, huv⟩ := hab
-  have hmk : Ideal.Quotient.mk m (u * a + v * b) = 1 := by rw [huv, map_one]
-  have hmem' : Ideal.Quotient.mk m (a + b * c) = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr hmem
-  rw [map_add, map_mul, hc] at hmem'
-  by_cases ha : a ∈ m
-  · have ha' : Ideal.Quotient.mk m a = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr ha
-    simp only [ha, ite_true, map_one, ha', mul_one, zero_add] at hmem'
-    simp [ha', hmem'] at hmk
-  · simp only [ha, ite_false, map_zero, mul_zero, add_zero] at hmem'
-    exact ha (Ideal.Quotient.eq_zero_iff_mem.mp hmem')
+  have hfb : f b = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self b)
+  have hfa : IsUnit (f a) :=
+    .of_mul_eq_one_right (f u) (by simpa [hfb] using congrArg f huv)
+  obtain ⟨w, hw⟩ := f.surjective_units_map_of_surjective Ideal.Quotient.mk_surjective hfa.unit
+  have hmem : (w : R) - a ∈ Ideal.span {b} := by
+    rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, sub_eq_zero]
+    exact congrArg Units.val hw
+  obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.mp hmem
+  exact ⟨c, by rw [mul_comm, hc, add_sub_cancel]; exact w.isUnit⟩
 
 /-- **Semilocal rings have stable range one.** A commutative ring with finitely many maximal ideals
 (in particular a commutative local ring, or a commutative artinian ring) has Bass stable range at
@@ -158,11 +146,11 @@ at most `1`. -/
 theorem hasStableRangeLE_two_of_krullDimLE_one (R : Type*) [CommRing R] [IsDomain R]
     [IsNoetherianRing R] [Ring.KrullDimLE 1 R] : HasStableRangeLE R 2 := by
   refine hasStableRangeLE_succ_of_forall_ne_zero fun x hx ↦ ?_
-  have : IsArtinianRing (R ⧸ Ideal.span {x}) := by
-    rw [isArtinianRing_iff_krullDimLE_zero, Ring.KrullDimLE, Order.krullDimLE_iff,
-      ← ENat.WithBot.add_le_add_one_right_iff, Nat.cast_zero, zero_add]
-    exact (ringKrullDim_quotient_succ_le_of_nonZeroDivisor
-      (mem_nonZeroDivisors_of_ne_zero hx)).trans Order.KrullDimLE.krullDim_le
+  -- `R ⧸ (x)` has finite length as an `R`-module, so it is an artinian ring.
+  have : IsArtinianRing (R ⧸ Ideal.span {x}) :=
+    have := (isFiniteLength_iff_isNoetherian_isArtinian.mp
+      (isFiniteLength_quotient_span_singleton R (mem_nonZeroDivisors_of_ne_zero hx))).2
+    isArtinian_of_tower R this
   exact hasStableRangeLE_one_of_finite_maximalSpectrum _
 
 end Reduction
