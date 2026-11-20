@@ -159,12 +159,8 @@ open TemperedDistribution
 theorem toTemperedDistribution_toLp_fourierChar_inner (ξ : E) :
     (((memLp_top_fourierChar_inner ξ).toLp _ : Lp ℂ ∞ (volume : Measure E)) : 𝓢'(E, ℂ)) =
       𝓕⁻ (delta ξ) := by
-  ext g
-  rw [Lp.toTemperedDistribution_apply, fourierInv_apply, delta_apply, SchwartzMap.fourierInv_coe,
-    Real.fourierInv_eq]
-  refine integral_congr_ae ?_
-  filter_upwards [(memLp_top_fourierChar_inner ξ).coeFn_toLp] with x hx
-  simp [hx, Circle.smul_def, mul_comm]
+  rw [MemLp.toTemperedDistribution_toLp _ (hasTemperateGrowth_fourierChar_inner ξ),
+    fourierInv_delta]
 
 /-- **The constant of Bernstein's inequality is at least `2π`.** Suppose that `C` is a constant in
 Bernstein's inequality for one derivative in `L^∞` at a radius `R > 0`: every `f ∈ L^∞` whose

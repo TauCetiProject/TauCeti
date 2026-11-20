@@ -48,6 +48,8 @@ function by a function of temperate growth multiplies the function pointwise
 
 * `MeasureTheory.Lp.toTemperedDistribution_add`, `MeasureTheory.Lp.toTemperedDistribution_smul`
   and their companions: the embedding `Lᵖ → 𝓢'` is linear, stated on the coercion.
+* `MeasureTheory.MemLp.toTemperedDistribution_toLp`: the `Lᵖ` class of a function of temperate
+  growth is its tempered distribution `Function.HasTemperateGrowth.toTemperedDistribution`.
 * `MeasureTheory.Lp.toTemperedDistribution_injective`: an `Lᵖ` function is determined by its
   tempered distribution.
 * `MeasureTheory.Lp.ae_eq_of_toTemperedDistribution_apply_eq`: an `Lᵖ` function whose pairings
@@ -131,6 +133,15 @@ theorem toTemperedDistribution_smul (c : ℂ) (f : Lp F p μ) :
 theorem toTemperedDistribution_sum {ι : Type*} (t : Finset ι) (f : ι → Lp F p μ) :
     ((∑ i ∈ t, f i : Lp F p μ) : 𝓢'(E, F)) = ∑ i ∈ t, (f i : 𝓢'(E, F)) :=
   map_sum (toTemperedDistributionCLM F μ p) f t
+
+/-- The `Lᵖ` class of a function `f` of temperate growth is, as a tempered distribution,
+integration against `f`. -/
+theorem _root_.MeasureTheory.MemLp.toTemperedDistribution_toLp [SecondCountableTopology E]
+    {f : E → F} (hmem : MemLp f p μ) (hf : f.HasTemperateGrowth) :
+    ((hmem.toLp f : Lp F p μ) : 𝓢'(E, F)) = hf.toTemperedDistribution μ := by
+  ext g
+  rw [Lp.toTemperedDistribution_apply]
+  exact integral_congr_ae <| hmem.coeFn_toLp.mono fun x hx ↦ by simp [hx]
 
 end Linear
 
