@@ -34,7 +34,8 @@ and the subfield ones about an arbitrary field of exponential characteristic `p`
 
 ## Main results
 
-* `TauCeti.mem_frobeniusFixedSubring`: membership is the equation `a ^ p ^ n = a`.
+* `TauCeti.mem_frobeniusFixedSubring`: membership is the equation `a ^ p ^ n = a`, and
+  `TauCeti.mem_frobeniusFixedSubring_one` is its form `a ^ p = a` at `n = 1`.
 * `TauCeti.mem_frobeniusFixedSubring_mul_iff_iterate_eq`: at exponent `m * k`, membership is being
   fixed by the `k`-th iterate of the `p ^ m`-power Frobenius.
 * `TauCeti.frobeniusFixedSubring_zero` and `TauCeti.frobeniusFixedSubfield_zero`: the zeroth
@@ -79,6 +80,11 @@ variable {A p n}
 @[simp]
 theorem mem_frobeniusFixedSubring {a : A} :
     a ∈ frobeniusFixedSubring A p n ↔ a ^ p ^ n = a := Iff.rfl
+
+/-- Membership in the subring fixed by the `p`-power Frobenius is the equation `a ^ p = a`. -/
+theorem mem_frobeniusFixedSubring_one {a : A} :
+    a ∈ frobeniusFixedSubring A p 1 ↔ a ^ p = a := by
+  rw [mem_frobeniusFixedSubring, pow_one]
 
 /-- At an exponent `m * k`, being fixed by the `p ^ (m * k)`-power Frobenius is being fixed by the
 `k`-th iterate of the `p ^ m`-power one, since that iterate *is* the `p ^ (m * k)`-power
