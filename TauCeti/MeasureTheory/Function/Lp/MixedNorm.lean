@@ -300,9 +300,8 @@ private theorem eLpNorm_indicator_truncNorm_le (hq : q ≠ ∞) (hr : r ≠ ∞)
     ((measurable_truncNorm (𝕜 := 𝕜) N r hΦ).indicator hA).aestronglyMeasurable
   -- `f` is bounded by `K` and vanishes off `A`, which has finite measure.
   have hX : eLpNorm f q ρ ≠ ∞ := by
-    refine ((memLp_top_of_bound hf (max K 0) (ae_of_all _ fun b ↦ ?_)
-      ).mono_exponent_of_measure_support_ne_top (fun b hb ↦ Set.indicator_of_notMem hb _) hρA
-      le_top).eLpNorm_ne_top
+    refine (memLp_of_norm_le_of_measure_support_ne_top hf (c := max K 0) (ae_of_all _ fun b ↦ ?_)
+      hρA (fun b hb ↦ Set.indicator_of_notMem hb _) q).eLpNorm_ne_top
     by_cases hb : b ∈ A
     · rw [hf_def, Set.indicator_of_mem hb, Real.norm_of_nonneg (hpos b hb).le]
       exact (hAψ b hb).2.1.trans (le_max_left _ _)
