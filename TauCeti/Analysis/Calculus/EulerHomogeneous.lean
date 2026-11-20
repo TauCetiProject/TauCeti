@@ -13,8 +13,8 @@ public import Mathlib.Analysis.Calculus.MeanValue
 /-!
 # Functions satisfying Euler's identity of degree one
 
-Let `v` be a real function, differentiable on a ball `B_r(0)` of a real normed space, satisfying
-Euler's identity of degree one, `v(y) = Dv(y) y`. Along each ray, `t ↦ v(ty) / t` is then
+Let `v` map between real normed spaces, be differentiable on a ball `B_r(0)`, and satisfy
+Euler's identity of degree one, `v(y) = Dv(y) y`. Along each ray, `t ↦ t⁻¹ • v(ty)` is then
 constant on `(0, 1]`, so `v` is positively homogeneous of degree one on the ball, and it is
 linear there with slope `Dv(0)`. In particular, if also `Dv(0) = 0`, then `v = 0` on the ball.
 
@@ -36,11 +36,12 @@ open Filter Metric Set Topology
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- **Euler's identity of degree one forces linearity.** If `v` is differentiable on `B_r(0)`,
 `v(y) = Dv(y) y` on `B_r(0)`, then `v(y) = Dv(0) y` on `B_r(0)`. -/
-theorem eq_fderiv_apply_of_forall_eq_fderiv_apply {v : E → ℝ} {r : ℝ}
+theorem eq_fderiv_apply_of_forall_eq_fderiv_apply {v : E → F} {r : ℝ}
     (hv : DifferentiableOn ℝ v (ball 0 r))
     (heuler : ∀ y ∈ ball (0 : E) r, v y = fderiv ℝ v y y) {y : E} (hy : y ∈ ball (0 : E) r) :
     v y = fderiv ℝ v 0 y := by
@@ -57,32 +58,27 @@ theorem eq_fderiv_apply_of_forall_eq_fderiv_apply {v : E → ℝ} {r : ℝ}
     have := hd.comp_hasDerivAt t ((hasDerivAt_id t).smul_const y)
     simp only [one_smul] at this
     exact this
-  set h : ℝ → ℝ := fun t ↦ v (t • y) / t
+  set h : ℝ → F := fun t ↦ t⁻¹ • v (t • y)
   have hconst (t : ℝ) (ht : t ∈ Ioc (0 : ℝ) 1) : h t = h 1 := by
     have hcont : ContinuousOn h (Icc t 1) := fun s hs ↦
-      ((hg s ⟨ht.1.le.trans hs.1, hs.2⟩).continuousAt.div continuousAt_id
-        (ht.1.trans_le hs.1).ne').continuousWithinAt
+      ((continuousAt_id.inv₀ (ht.1.trans_le hs.1).ne').smul
+        (hg s ⟨ht.1.le.trans hs.1, hs.2⟩).continuousAt).continuousWithinAt
     have hderiv : ∀ s ∈ Ico t 1, HasDerivWithinAt h 0 (Ici s) s := by
       intro s hs
       have hs0 : 0 < s := ht.1.trans_le hs.1
       have hsI : s ∈ Icc (0 : ℝ) 1 := ⟨hs0.le, hs.2.le⟩
-      have hd := (hg s hsI).div (hasDerivAt_id s) hs0.ne'
+      have hd := (hasDerivAt_inv hs0.ne').smul (hg s hsI)
       have he := heuler (s • y) (hmem s hsI)
-      rw [map_smul, smul_eq_mul] at he
       refine (hd.congr_deriv ?_).hasDerivWithinAt
-      simp only [id, mul_one]
-      rw [he]
+      simp only [he, map_smul, smul_smul, ← add_smul]
+      convert zero_smul ℝ (fderiv ℝ v (s • y) y) using 2
+      field_simp
       ring
     exact (constant_of_has_deriv_right_zero hcont hderiv 1 ⟨ht.2, le_rfl⟩).symm
   have hlim : Tendsto h (𝓝[>] 0) (𝓝 (fderiv ℝ v 0 y)) := by
     have h0 := hg 0 ⟨le_rfl, zero_le_one⟩
     rw [zero_smul] at h0
-    have := h0.tendsto_slope_zero_right
-    simp only [zero_add, zero_smul, hv0, sub_zero, smul_eq_mul] at this
-    refine this.congr' ?_
-    filter_upwards [self_mem_nhdsWithin] with t _
-    simp only [h]
-    ring
+    simpa only [zero_add, zero_smul, hv0, sub_zero] using h0.tendsto_slope_zero_right
   have hlim' : Tendsto h (𝓝[>] 0) (𝓝 (h 1)) := by
     refine tendsto_const_nhds.congr' ?_
     filter_upwards [Ioc_mem_nhdsGT zero_lt_one] with t ht
@@ -93,7 +89,7 @@ theorem eq_fderiv_apply_of_forall_eq_fderiv_apply {v : E → ℝ} {r : ℝ}
 /-- **A cone through the origin which is flat at the vertex vanishes.** If `v` is differentiable
 on `B_r(0)`, `Dv(0) = 0` and `v(y) = Dv(y) y` on `B_r(0)`, then `v = 0` on
 `B_r(0)`. -/
-theorem eq_zero_of_forall_eq_fderiv_apply {v : E → ℝ} {r : ℝ}
+theorem eq_zero_of_forall_eq_fderiv_apply {v : E → F} {r : ℝ}
     (hv : DifferentiableOn ℝ v (ball 0 r)) (hdv0 : fderiv ℝ v 0 = 0)
     (heuler : ∀ y ∈ ball (0 : E) r, v y = fderiv ℝ v y y) {y : E} (hy : y ∈ ball (0 : E) r) :
     v y = 0 := by
@@ -102,7 +98,7 @@ theorem eq_zero_of_forall_eq_fderiv_apply {v : E → ℝ} {r : ℝ}
 
 /-- **A graph which is curved at the vertex is not a cone.** If `r > 0`, `v` is differentiable on
 `B_r(0)` and `D²v(0) ≠ 0`, then `v(y) ≠ Dv(y) y` for some `y ∈ B_r(0)`. -/
-theorem exists_ne_fderiv_apply_of_iteratedFDeriv_two_ne_zero {v : E → ℝ} {r : ℝ} (hr : 0 < r)
+theorem exists_ne_fderiv_apply_of_iteratedFDeriv_two_ne_zero {v : E → F} {r : ℝ} (hr : 0 < r)
     (hv : DifferentiableOn ℝ v (ball 0 r))
     (h2 : iteratedFDeriv ℝ 2 v 0 ≠ 0) : ∃ y ∈ ball (0 : E) r, v y ≠ fderiv ℝ v y y := by
   by_contra h
