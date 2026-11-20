@@ -22,8 +22,8 @@ standard one.
 The shape is `TauCeti.Nat.Partition.singletonSecondRow n`, the partition `(n+1, 1)` of `n+2`; the
 offset keeps both parts positive without a hypothesis on `n`.  The structural fact this file rests
 on is proved with the rest of the Young-subgroup theory, in
-`TauCeti.RepresentationTheory.Symmetric.YoungSubgroup`: the two blocks of `(n+1, 1)` are all the
-labels but the last one and the last one alone, so
+`TauCeti.RepresentationTheory.Symmetric.YoungSubgroup.Basic`: the two blocks of `(n+1, 1)` are all
+the labels but the last one and the last one alone, so
 `TauCeti.youngSubgroup_singletonSecondRow` identifies the Young subgroup with the stabilizer of
 `Fin.last (n+1)`.
 

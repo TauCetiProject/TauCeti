@@ -596,7 +596,7 @@ private theorem rotatedCosZero_ne_zero (θ : ℝ) (n : ℕ) : rotatedCosZero θ 
 private theorem arg_rotatedCosZero {θ : ℝ} (hθ₀ : -Real.pi < θ) (hθ₁ : θ ≤ Real.pi) (n : ℕ) :
     (rotatedCosZero θ n).arg = θ := by
   have hpos : 0 < ((n : ℝ) + 1 / 2) * Real.pi := mul_pos (by positivity) Real.pi_pos
-  rw [rotatedCosZero, Complex.arg_real_mul _ hpos, Complex.arg_exp_mul_I]
+  rw [rotatedCosZero, Complex.arg_ofReal_mul hpos, Complex.arg_exp_mul_I]
   exact toIocMod_eq_self Real.two_pi_pos |>.mpr ⟨by linarith, by linarith⟩
 
 /-- Classification of the sector zeros of `z ↦ cos (exp (-i θ) * z)` when
@@ -638,7 +638,7 @@ private theorem mem_sectorZeros_cos_iff {θ₁ θ₂ θ : ℝ}
             add_mul (θ : ℂ) (Real.pi : ℂ) Complex.I, Complex.exp_add, Complex.exp_pi_mul_I]
           ring
         have hz_arg : z.arg = θ + Real.pi := by
-          rw [hz_neg, Complex.arg_real_mul _ hneg, Complex.arg_exp_mul_I]
+          rw [hz_neg, Complex.arg_ofReal_mul hneg, Complex.arg_exp_mul_I]
           exact toIocMod_eq_self Real.two_pi_pos |>.mpr ⟨by linarith [Real.pi_pos], by linarith⟩
         linarith
       · have hz_neg : z = Complex.ofReal (-((2 * (m : ℝ) + 1) * Real.pi / 2)) *
@@ -647,7 +647,7 @@ private theorem mem_sectorZeros_cos_iff {θ₁ θ₂ θ : ℝ}
             sub_mul (θ : ℂ) (Real.pi : ℂ) Complex.I, Complex.exp_sub, Complex.exp_pi_mul_I]
           ring
         have hz_arg : z.arg = θ - Real.pi := by
-          rw [hz_neg, Complex.arg_real_mul _ hneg, Complex.arg_exp_mul_I]
+          rw [hz_neg, Complex.arg_ofReal_mul hneg, Complex.arg_exp_mul_I]
           exact toIocMod_eq_self Real.two_pi_pos |>.mpr ⟨by linarith, by linarith [Real.pi_pos]⟩
         linarith
   · rintro ⟨n, rfl⟩
