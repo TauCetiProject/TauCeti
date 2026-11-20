@@ -83,8 +83,9 @@ order four, with `2 • (1, 0) = (0, 0)`.
 * `TauCeti.exists_variableChange_smul_F2Model_eq_iff`: the models lie in distinct orbits.
 * `TauCeti.existsUnique_variableChange_smul_eq_F2Model`: every elliptic equation over `ZMod 2`
   lies in the orbit of exactly one model, the one with the same number of points.
-* `TauCeti.exists_variableChange_smul_eq_iff_pointCount_eq`: two elliptic equations over `ZMod 2`
-  are related by a change of variables exactly when they have the same number of points.
+* `WeierstrassCurve.exists_variableChange_smul_eq_iff_pointCount_eq`: two elliptic equations
+  over `ZMod 2` are related by a change of variables exactly when they have the same number of
+  points.
 * `TauCeti.addOrderOf_F2Model_three_some_one_zero` and `TauCeti.isAddCyclic_F2Model_three`: the
   point `(1, 0)` of model `3` has order four, so the four-point group of model `3` is cyclic.
 
@@ -268,6 +269,12 @@ theorem existsUnique_variableChange_smul_eq_F2Model (W : WeierstrassCurve (ZMod 
   refine (exists_variableChange_smul_F2Model_eq_iff i j).1 ⟨D * C⁻¹, ?_⟩ |>.symm
   rw [mul_smul, ← hC, inv_smul_smul, hD]
 
+end TauCeti
+
+namespace WeierstrassCurve
+
+open TauCeti
+
 /-- **The point count classifies elliptic equations over `𝔽₂`**: two of them are related by a
 change of variables exactly when they have the same number of points. Ellipticity is needed: the
 cuspidal equation `y² = x³` has three points, as does the elliptic `y² + y = x³`. -/
@@ -279,6 +286,12 @@ theorem exists_variableChange_smul_eq_iff_pointCount_eq (W V : WeierstrassCurve 
   obtain ⟨D, hD⟩ := (exists_variableChange_smul_eq_F2Model_iff V i).2 <| by
     rw [← h, ← variableChange_pointCount W C, hC, pointCount_F2Model]
   exact ⟨D⁻¹ * C, by rw [mul_smul, hC, ← hD, inv_smul_smul]⟩
+
+end WeierstrassCurve
+
+namespace TauCeti
+
+open WeierstrassCurve
 
 /-! ### The point group of model `3` -/
 
