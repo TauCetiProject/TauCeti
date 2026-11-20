@@ -52,14 +52,13 @@ private def W1p.morreyHolderSpace (hp : (finrank ℝ E : ℝ≥0) < p)
     have hvalue : MemLp (W1p.value u) (p : ℝ≥0∞) mu := by
       simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.memLp (W1p.value u)
     exact MemLp.ae_eq (W1p.value_ae_eq_morreyRepresentative u hp) hvalue
-  exact (W1p.holderWith_morreyRepresentative u hp).toHolderSpace hα Fact.out
-    ENNReal.coe_ne_top hmem
+  exact (W1p.holderWith_morreyRepresentative u hp).toHolderSpace hα Fact.out hmem
 
 private theorem W1p.morreyHolderSpace_apply (hp : (finrank ℝ E : ℝ≥0) < p)
     (u : W1p mu ⊤ (p : ℝ≥0∞)) (x : E) :
     W1p.morreyHolderSpace hp u x = W1p.morreyRepresentative u hp x := by
   rw [W1p.morreyHolderSpace]
-  exact HolderWith.toHolderSpace_apply _ _ _ _ _ _
+  exact HolderWith.toHolderSpace_apply _ _ _ _ _
 
 private def W1p.morreyEmbeddingLinearMap (hp : (finrank ℝ E : ℝ≥0) < p) :
     W1p mu ⊤ (p : ℝ≥0∞) →ₗ[ℝ] HolderSpace (1 - finrank ℝ E / p) E ℝ where
@@ -96,7 +95,7 @@ private theorem W1p.norm_morreyHolderSpace_le_aux
           (1 - 1 / (p : ℝ)) * 2 ^ (1 - finrank ℝ E / (p : ℝ))) *
             ‖W1p.gradient u‖₊) := by
   rw [W1p.morreyHolderSpace]
-  exact HolderWith.norm_toHolderSpace_le _ _ _ _ _
+  exact HolderWith.norm_toHolderSpace_le _ _ _ _
 
 omit [FiniteDimensional ℝ E] in
 private theorem W1p.toReal_morreyEmbedding_bound (A : ℝ≥0) (V : ℝ≥0∞) (hV : V ≠ ∞)
