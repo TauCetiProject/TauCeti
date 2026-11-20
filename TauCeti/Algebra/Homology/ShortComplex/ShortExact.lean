@@ -95,7 +95,7 @@ section Comp
 variable {X Y Z : C} (a : X ⟶ Y) (b : Y ⟶ Z)
 
 /-- The sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` of the composable pair `(a, b)`,
-whose maps are induced by `b` and by `a`. It is the last row of Mathlib's
+whose maps are induced by `b` and by `𝟙 Z`. It is the last row of Mathlib's
 `kernelCokernelCompSequence.snakeInput a b` (`TauCeti.cokernelCompSequence_eq`), with its objects
 written as cokernels. -/
 @[simps]
