@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.MovingEnds
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Complex.Line
+import TauCeti.Topology.Instances.Real.Periodic
 
 /-!
 # Normalizing the Hamiltonians of a sphere with moving input ends
@@ -39,12 +39,15 @@ target-independent Hamiltonians `k i` and `kout`, which has no Hamiltonian vecto
   depend on the target point
   (`TauCeti.SmoothTwoForm.hamiltonianCurvature_puncturedSpherePerturbation_add_const`,
   `TauCeti.SmoothTwoForm.hamiltonianCurvature_puncturedSpherePerturbation_const_target`);
-* whatever the configuration of the input ends, the curvature of `κ` integrates over the sphere
-  minus its punctures to `∑ i, ∫₀¹ k i - ∫₀¹ kout`
+* for nonzero scales and pairwise disjoint end discs inside the disc of radius `2 exp(2π)`, the
+  hypotheses of the moving-ends energy identity, and period-one `C¹` functions `k i` and `kout`,
+  the curvature of `κ` integrates over the sphere minus its punctures to
+  `∑ i, ∫₀¹ k i - ∫₀¹ kout`
   (`TauCeti.SmoothTwoForm.setIntegral_hamiltonianCurvature_puncturedSpherePerturbation_const`).
 
-So along every map whose curvature for `H` and `Hout` is integrable, the integrated curvature
-changes by `∑ i, ∫₀¹ k i - ∫₀¹ kout`
+So, under the same hypotheses on the input ends, for period-one `C¹` Hamiltonians `H i`, `Hout`
+and normalizations `k i`, `kout`, along every map whose curvature for `H` and `Hout` is
+integrable, the integrated curvature changes by `∑ i, ∫₀¹ k i - ∫₀¹ kout`
 (`TauCeti.SmoothTwoForm.setIntegral_hamiltonianCurvature_puncturedSpherePerturbation_add_const`),
 which is exactly the change of the Hamiltonian terms at the asymptotic loops. The two changes
 cancel in the energy identity, as they must, since the energy itself is unchanged.
@@ -52,6 +55,12 @@ cancel in the energy identity, as they must, since the energy itself is unchange
 The curvature of `κ` is the exterior derivative `∂_s κ_t - ∂_t κ_s` of a one-form on the domain,
 the same for every target. Its integral is computed once, on `ℂ` with its standard symplectic
 form, by the energy identity along the constant map `0`, whose energy and area vanish.
+
+This file adapts the normalization bookkeeping of the pair of pants,
+`TauCeti/Geometry/Symplectic/Floer/PairOfPants/Normalization.lean`, with the same structure and
+proof method, to the `ι`-indexed datum `TauCeti.Floer.puncturedSpherePerturbation`; the pair of
+pants is its case of two input ends
+(`TauCeti.Floer.puncturedSpherePerturbation_eq_pairOfPantsPerturbation`).
 
 ## References
 
@@ -95,17 +104,6 @@ private theorem puncturedSpherePerturbation_add_const_fun (c a : ι → ℂ) (H 
   rw [puncturedSpherePerturbation_add_const, add_apply,
     puncturedSpherePerturbation_const_target c a k kout _ x y]
 
-/-- A period-one function of time is a period-one target-independent Hamiltonian. -/
-private theorem periodic_const_target {k : ℝ → ℝ} (hk : Periodic k 1) :
-    Periodic (fun t (_ : M) ↦ k t) 1 :=
-  fun t ↦ funext fun _ ↦ hk t
-
-/-- A continuous periodic function is bounded. -/
-private theorem exists_forall_abs_le {k : ℝ → ℝ} (hk : Periodic k 1) (hks : Continuous k) :
-    ∃ B, ∀ t, |k t| ≤ B := by
-  obtain ⟨B, hB⟩ := isBounded_iff_forall_norm_le.1 (hk.isBounded_of_continuous one_ne_zero hks)
-  exact ⟨B, fun t ↦ hB _ (mem_range_self t)⟩
-
 end Floer
 
 namespace SmoothTwoForm
@@ -116,12 +114,6 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
   {ι : Type*} [Fintype ι] {c a : ι → ℂ} {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
   {k : ι → ℝ → ℝ} {kout : ℝ → ℝ}
-
-omit [IsManifold I ⊤ M] in
-/-- `C¹` normalizations give `C¹` target-independent Hamiltonians on `M`. -/
-private theorem contMDiff_uncurry_const_target {k : ℝ → ℝ} (hks : ContDiff ℝ 1 k) :
-    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t (_ : M) ↦ k t) :=
-  hks.contMDiff.comp contMDiff_fst
 
 omit [IsManifold I ⊤ M] in
 /-- Off the centers, the components of the datum of `C¹` Hamiltonians on a manifold are
@@ -269,8 +261,8 @@ theorem setIntegral_hamiltonianCurvature_puncturedSpherePerturbation_const (ω :
       (∑ i, ∫ t in (0 : ℝ)..1, k i t) - ∫ t in (0 : ℝ)..1, kout t := by
   rw [integral_congr_ae (Eventually.of_forall fun z ↦
     hamiltonianCurvature_puncturedSpherePerturbation_const_eq_complex ω c a k kout z (u z))]
-  choose B hB using fun i ↦ exists_forall_abs_le (hk i) (hks i).continuous
-  obtain ⟨Bout, hBout⟩ := exists_forall_abs_le hkout hkouts.continuous
+  choose B hB using fun i ↦ (hk i).exists_bound_of_continuous one_ne_zero (hks i).continuous
+  obtain ⟨Bout, hBout⟩ := hkout.exists_bound_of_continuous one_ne_zero hkouts.continuous
   -- Along the constant map `0`, the energy density and the area density vanish.
   have hE : stdComplexSymplecticForm.constSmooth.floerEnergyDensity
       (fun z x ↦ puncturedSpherePerturbation c a (fun i t (_ : ℂ) ↦ k i t)
@@ -334,8 +326,8 @@ theorem setIntegral_hamiltonianCurvature_puncturedSpherePerturbation_add_const
           (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
             Complex.I) z (u z)) +
         ((∑ i, ∫ t in (0 : ℝ)..1, k i t) - ∫ t in (0 : ℝ)..1, kout t) := by
-  choose B hB using fun i ↦ exists_forall_abs_le (hk i) (hks i).continuous
-  obtain ⟨Bout, hBout⟩ := exists_forall_abs_le hkout hkouts.continuous
+  choose B hB using fun i ↦ (hk i).exists_bound_of_continuous one_ne_zero (hks i).continuous
+  obtain ⟨Bout, hBout⟩ := hkout.exists_bound_of_continuous one_ne_zero hkouts.continuous
   have hS : IsOpen {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} := by
     simp only [ofPred_forall]
     exact isOpen_iInter_of_finite fun i ↦

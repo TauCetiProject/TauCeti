@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Complex.Line
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
+import TauCeti.Topology.Instances.Real.Periodic
 
 /-!
 # Normalizing the end Hamiltonians of the pair of pants
@@ -94,21 +95,6 @@ private theorem pairOfPantsPerturbation_add_const_fun (H : Puncture → ℝ → 
   rw [pairOfPantsPerturbation_add_const, add_apply,
     pairOfPantsPerturbation_const_target c _ x y]
 
-/-- Periodic normalizations `c_q` give period-one target-independent Hamiltonians. -/
-private theorem periodic_const_target (hc : ∀ q, Periodic (c q) 1) (q : Puncture) :
-    Periodic (fun t (_ : M) ↦ c q t) 1 :=
-  fun t ↦ funext fun _ ↦ hc q t
-
-/-- Continuous periodic normalizations `c_q` are bounded. -/
-private theorem exists_forall_abs_le (hc : ∀ q, Periodic (c q) 1)
-    (hcs : ∀ q, ContDiff ℝ 1 (c q)) : ∃ B : Puncture → ℝ, ∀ q t, |c q t| ≤ B q := by
-  have hb : ∀ q, ∃ B, ∀ t, |c q t| ≤ B := fun q ↦ by
-    obtain ⟨B, hB⟩ := isBounded_iff_forall_norm_le.1
-      ((hc q).isBounded_of_continuous one_ne_zero (hcs q).continuous)
-    exact ⟨B, fun t ↦ hB _ (mem_range_self t)⟩
-  choose B hB using hb
-  exact ⟨B, hB⟩
-
 end Floer
 
 /-! ### Symplectic vector spaces: the Floer equation and the curvature of a normalization -/
@@ -189,7 +175,7 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_const (ω : Sym
         (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : V) ↦ c q t)
           (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) =
       ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, c q t := by
-  obtain ⟨B, hB⟩ := exists_forall_abs_le hc hcs
+  choose B hB using fun q ↦ (hc q).exists_bound_of_continuous one_ne_zero (hcs q).continuous
   -- Along the constant map `0`, the energy density and the area density vanish.
   have hE : ω.floerEnergyDensity
       (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : V) ↦ c q t)
@@ -205,7 +191,8 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_const (ω : Sym
     funext z
     simp
   -- The energy identity for the constant map `0` leaves only the curvature and the end terms.
-  have h := ω.integral_floerEnergyDensity_pairOfPantsPerturbation (periodic_const_target hc)
+  have h := ω.integral_floerEnergyDensity_pairOfPantsPerturbation
+    (fun q ↦ periodic_const_target (hc q))
     (contDiff_uncurry_const_target hcs) (B := B) (fun q t _ ↦ hB q t) (u := fun _ ↦ (0 : V))
     contDiffOn_const (x := fun _ _ ↦ 0) (fun _ _ ↦ tendsto_const_nhds)
     (by rw [hE]; exact integrableOn_zero) (by rw [hA]; exact integrableOn_zero)
@@ -237,12 +224,6 @@ open Floer
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
   {H : Puncture → ℝ → M → ℝ} {c : Puncture → ℝ → ℝ}
-
-omit [IsManifold I ⊤ M] in
-/-- `C¹` normalizations `c_q` give `C¹` target-independent Hamiltonians on `M`. -/
-private theorem contMDiff_uncurry_const_target (hcs : ∀ q, ContDiff ℝ 1 (c q)) (q : Puncture) :
-    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t (_ : M) ↦ c q t) :=
-  (hcs q).contMDiff.comp contMDiff_fst
 
 /-- **Normalizing the end Hamiltonians does not change the Floer equation, for a manifold
 target.** The perturbed derivative `du - X_K` of any map into `M` is the same for the end
@@ -317,8 +298,8 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_add_const (ω : SmoothTwoFo
             (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t)
             (Complex.equivRealProdCLM.symm z) x Complex.I) z x := by
-  have hc' := periodic_const_target (M := M) hc
-  have hcs' := contMDiff_uncurry_const_target (I := I) (M := M) hcs
+  have hc' q := periodic_const_target (M := M) (hc q)
+  have hcs' q := contMDiff_uncurry_const_target (I := I) (M := M) (hcs q)
   rw [pairOfPantsPerturbation_add_const_fun H c x, pairOfPantsPerturbation_add_const_fun H c x,
     hamiltonianCurvature_add_const ω (differentiableAt_pairOfPantsPerturbation_domain hH hHs hz x 1)
       (differentiableAt_pairOfPantsPerturbation_domain hH hHs hz x Complex.I)
@@ -389,7 +370,7 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_add_const (ω :
   -- The curvature of the normalization does not depend on the target point, so it is integrable
   -- along `u` because it is along a constant map.
   have hk := (ω.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation
-    (periodic_const_target hc) (contMDiff_uncurry_const_target hcs)
+    (fun q ↦ periodic_const_target (hc q)) (fun q ↦ contMDiff_uncurry_const_target (hcs q))
     (u := fun _ ↦ u 0) continuousOn_const).congr_fun
     (fun z _ ↦ ω.hamiltonianCurvature_pairOfPantsPerturbation_const_target c z (u 0) (u z))
     isOpen_thricePuncturedSphereReal.measurableSet

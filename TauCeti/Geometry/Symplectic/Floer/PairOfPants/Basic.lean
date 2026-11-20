@@ -33,6 +33,9 @@ along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results ar
 * `TauCeti.Floer.pairOfPantsPerturbation_add_const`: adding functions `c_q` of time to the end
   Hamiltonians adds the perturbation of the target-independent Hamiltonians `c_q`, which does
   not depend on the target point (`TauCeti.Floer.pairOfPantsPerturbation_const_target`).
+* `TauCeti.Floer.periodic_const_target`, `TauCeti.Floer.contMDiff_uncurry_const_target`: a
+  periodic, respectively `Cⁿ`, function of time is a periodic, respectively `Cⁿ`,
+  target-independent Hamiltonian, as such normalizations require.
 * `TauCeti.Floer.contDiffAt_pairOfPantsPerturbation_prod`: for a vector space target and `Cⁿ`
   Hamiltonians, the perturbation is `Cⁿ` jointly in the domain and target points.
 * `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift_of_pos`: on the part `±s > 0` of the
@@ -115,6 +118,12 @@ theorem pairOfPantsPerturbation_smul (c : ℝ) (H : Puncture → ℝ → M → �
   funext w x
   simp only [pairOfPantsPerturbation_def, Pi.smul_apply, smul_eq_mul, Finset.smul_sum, smul_smul,
     mul_left_comm c]
+
+/-- A periodic function `k` of time, viewed as a target-independent Hamiltonian `(t, x) ↦ k t` on
+`M`, is periodic with the same period. -/
+theorem periodic_const_target {k : ℝ → ℝ} {T : ℝ} (hk : Function.Periodic k T) :
+    Function.Periodic (fun t (_ : M) ↦ k t) T :=
+  fun t ↦ funext fun _ ↦ hk t
 
 variable {H : Puncture → ℝ → M → ℝ}
 
@@ -324,6 +333,12 @@ theorem smoothTransition_neg_endCoord_inf_eq_zero_of_norm_le {w : ℂ}
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+
+/-- A `Cⁿ` function `k` of time, viewed as a target-independent Hamiltonian `(t, x) ↦ k t` on the
+manifold `M`, is `Cⁿ` on `ℝ × M`. -/
+theorem contMDiff_uncurry_const_target {n : WithTop ℕ∞} {k : ℝ → ℝ} (hk : ContDiff ℝ n k) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (Function.uncurry fun t (_ : M) ↦ k t) :=
+  hk.contMDiff.comp contMDiff_fst
 
 /-- Away from the center of the end `q`, the shifted cutoff `β(±s_q - c)` is `C^n` along a `C^n`
 family `f` of points of `ℂ` and a `C^n` family `c` of shifts. -/
