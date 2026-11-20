@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Sheaves.SheafCondition.Sites
 public import Mathlib.Topology.Sheaves.Skyscraper
+public import TauCeti.Topology.Category.TopCat.Opens
 
 /-!
 # Skyscraper sheaves: restriction maps and the stalk adjunction unit
@@ -130,15 +131,8 @@ end TauCeti.Topology
 
 namespace IsOpenMap
 
-variable {X Y : TopCat.{u}} {f : Y ⟶ X} (hf : IsOpenMap f)
-
-/-- For an injective open map `f`, the point `f y` lies in the image of an open set `V` exactly when
-`y` lies in `V`. -/
-theorem apply_mem_functor_obj_iff (hf' : Function.Injective f) {y : Y} {V : Opens Y} :
-    f y ∈ hf.functor.obj V ↔ y ∈ V :=
-  hf'.mem_set_image
-
-variable (hf' : Function.Injective f) (y : Y) {C : Type*} [Category* C] [HasTerminal C]
+variable {X Y : TopCat.{u}} {f : Y ⟶ X} (hf : IsOpenMap f) (hf' : Function.Injective f) (y : Y)
+  {C : Type*} [Category* C] [HasTerminal C]
   [∀ V : Opens X, Decidable (f y ∈ V)] [∀ V : Opens Y, Decidable (y ∈ V)]
 
 variable (C) in
