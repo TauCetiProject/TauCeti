@@ -21,8 +21,8 @@ vertex admit fillers. It supplies the zero objects needed for stability of the e
 
 The Hom complexes with a zero argument vanish in every degree, so the initial and terminal
 criteria apply directly. No abelian or boundedness hypothesis is needed. Consequently a zero
-complex is a zero vertex, and the dg nerve of complexes is pointed whenever the underlying
-category has a zero object.
+complex is a zero vertex, and the dg nerve of complexes has a zero vertex (is pointed) whenever
+the underlying category has a zero object.
 
 ## References
 
@@ -60,10 +60,11 @@ theorem isZeroVertex_cochainComplex_of_isZero {K : CochainComplex C ℤ} (hK : I
   (SSet.isZeroVertex_iff _).2
     ⟨isInitialVertex_cochainComplex_of_isZero R hK, isTerminalVertex_cochainComplex_of_isZero R hK⟩
 
-/-- The dg nerve of complexes in a linear category with a zero object is pointed. -/
-theorem isPointed_cochainComplex [HasZeroObject C] :
-    (dgNerve R (CochainComplex C ℤ)).IsPointed :=
+/-- The dg nerve of complexes in a linear category with a zero object has a zero vertex: it is
+pointed. -/
+theorem hasZeroVertex_cochainComplex [HasZeroObject C] :
+    (dgNerve R (CochainComplex C ℤ)).HasZeroVertex :=
   let ⟨_, hK⟩ := HasZeroObject.zero (C := CochainComplex C ℤ)
-  SSet.isPointed_iff.2 ⟨_, isZeroVertex_cochainComplex_of_isZero R hK⟩
+  SSet.hasZeroVertex_iff.2 ⟨_, isZeroVertex_cochainComplex_of_isZero R hK⟩
 
 end TauCeti.dgNerve

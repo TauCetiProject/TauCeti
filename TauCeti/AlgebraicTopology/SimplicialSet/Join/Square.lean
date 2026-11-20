@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.ProdStdSimplex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Join.StdSimplex
+public import TauCeti.AlgebraicTopology.SimplicialSet.Subcomplex
 
 /-!
 # The square as a cone and as a cocone
@@ -40,9 +41,10 @@ the cocone through `Δ[2] ⋆ Δ[0] ≅ Δ[3]`.
 ## Implementation notes
 
 The three embeddings into `Δ[3]` are monomorphisms with the same image, which gives the
-isomorphisms. The image of the cone contains the two faces because the cone on a face of
-`Λ[2, 2]` is a face of `Δ[3]`; it contains nothing else because a simplex of the cone meeting
-both `1` and `2` would contain an edge of `Λ[2, 2]` from `0` to `1`, and dually for the cocone.
+isomorphisms (`SSet.Subcomplex.isoOfRangeEq`). The image of the cone contains the two faces
+because the cone on a face of `Λ[2, 2]` is a face of `Δ[3]`; it contains nothing else because a
+simplex of the cone meeting both `1` and `2` would contain an edge of `Λ[2, 2]` from `0` to `1`,
+and dually for the cocone.
 
 ## References
 
@@ -85,6 +87,10 @@ private noncomputable def toStdSimplex : (Δ[1] ⊗ Δ[1] : SSet.{u}) ⟶ Δ[3] 
       (f := fun x : ULift.{u} (Fin 2 × Fin 2) ↦ ULift.up (vertexMap x.down))
       fun _ _ h ↦ vertexMap.monotone h) ≫ (stdSimplex.isoNerve 3).inv
 
+-- Each of the three maps composing `toStdSimplex` acts on a simplex by composing its vertex map
+-- with a monotone map: the nerve isomorphisms are identities on vertex maps and `nerveMap` composes
+-- with `vertexMap`. The vertex formula therefore holds by definitional unfolding, which is the
+-- intended route; the same holds for `yonedaEquiv_lift_comp_toStdSimplex_apply` below.
 private lemma toStdSimplex_app_apply {n : ℕ} (x : (Δ[1] ⊗ Δ[1] : SSet.{u}) _⦋n⦌)
     (i : Fin (n + 1)) :
     toStdSimplex.app _ x i = vertexMap (prodStdSimplex.objEquiv x i) :=
@@ -109,6 +115,29 @@ private lemma mem_image_iff {n : ℕ} (x : (Δ[3] : SSet.{u}) _⦋n⦌) :
     x ∈ image.obj _ ↔ (∀ i, x i ≠ 1) ∨ ∀ i, x i ≠ 2 := by
   simp [image]
 
+/-- A map to `Δ[3]` taking no edge to the edge from `1` to `2` has its range in the union of the
+faces opposite to `1` and to `2`: a simplex meeting both `1` and `2` would contain that edge. -/
+private lemma range_le_image {Y : SSet.{u}} (f : Y ⟶ Δ[3])
+    (hf : ∀ s : Y _⦋1⦌, f.app _ s ≠ stdSimplex.edge 3 1 2 (by decide)) :
+    Subcomplex.range f ≤ image := by
+  rintro ⟨n⟩ x ⟨s, rfl⟩
+  induction n using SimplexCategory.rec with | _ n
+  rw [mem_image_iff]
+  by_contra! h
+  obtain ⟨⟨i, hi⟩, ⟨j, hj⟩⟩ := h
+  have hij : i ≤ j := by
+    by_contra! hji
+    have := stdSimplex.monotone_apply (f.app _ s) hji.le
+    dsimp only at this
+    rw [hi, hj] at this
+    exact absurd this (by decide)
+  exact hf (Y.map (SimplexCategory.mkOfLe i j hij).op s)
+    (stdSimplex.ext _ _ fun t ↦ by
+      rw [NatTrans.naturality_apply]
+      fin_cases t
+      · exact hi
+      · exact hj)
+
 private lemma range_toStdSimplex : Subcomplex.range toStdSimplex.{u} = image := by
   ext ⟨n⟩ x
   induction n using SimplexCategory.rec with | _ n
@@ -119,10 +148,7 @@ private lemma range_toStdSimplex : Subcomplex.range toStdSimplex.{u} = image := 
     obtain ⟨⟨i, hi⟩, ⟨j, hj⟩⟩ := h
     rw [toStdSimplex_app_apply] at hi hj
     have hmono := (prodStdSimplex.objEquiv y).monotone
-    rcases le_total i j with hij | hij
-    · have := hmono hij
-      simp only [Fin.ext_iff, val_vertexMap, Prod.le_def, Fin.le_def] at hi hj this
-      omega
+    rcases le_total i j with hij | hij <;>
     · have := hmono hij
       simp only [Fin.ext_iff, val_vertexMap, Prod.le_def, Fin.le_def] at hi hj this
       omega
@@ -166,8 +192,8 @@ private lemma mem_joinFiber_one_of_coneMap {n : ℕ} (s : (join Δ[0] (Λ[2, 2] 
       coneMap ≫ (join.stdSimplexIso 0 2).inv ≫ join.π _ _ := by
     simp [coneMap, join.map_π]
   have key : (join.π _ _).app _ s =
-      ((join.stdSimplexIso 0 2).inv ≫ join.π _ _).app _ (coneMap.app _ s) :=
-    (ConcreteCategory.congr_hom (NatTrans.congr_app hπ _) s :)
+      ((join.stdSimplexIso 0 2).inv ≫ join.π _ _).app _ (coneMap.app _ s) := by
+    rw [hπ, NatTrans.comp_app_apply]
   rw [key, stdSimplex.hom_app_apply]
   have ht := h t
   -- `Δ[3]` is `Δ[0 + 2 + 1]` only up to definitional unfolding, so the vertex formula for the
@@ -181,8 +207,9 @@ private lemma coneMap_inr_app_apply {n : ℕ} (s : (Λ[2, 2] : SSet.{u}) _⦋n�
       Λ[2, 2].ι ≫ join.inr _ _ ≫ (join.stdSimplexIso 0 2).hom := by
     simp [coneMap]
   have key : coneMap.app _ ((join.inr _ _).app _ s) =
-      (join.inr Δ[0] Δ[2] ≫ (join.stdSimplexIso 0 2).hom).app _ s.1 :=
-    (ConcreteCategory.congr_hom (NatTrans.congr_app h _) s :)
+      (join.inr Δ[0] Δ[2] ≫ (join.stdSimplexIso 0 2).hom).app _ s.1 := by
+    rw [← NatTrans.comp_app_apply, h, NatTrans.comp_app_apply, Subfunctor.ι_app,
+      TypeCat.ofHom_apply]
   rw [key, stdSimplex.hom_app_apply]
   -- As above, the vertex formula for `stdSimplexIso` is applied by `Eq.trans`.
   exact (congrArg Fin.val (join.yonedaEquiv_inr_comp_stdSimplexIso_hom (n := 0) (m := 2) _)).trans
@@ -205,46 +232,19 @@ private lemma coneMap_app_ne {s : (join Δ[0] (Λ[2, 2] : SSet.{u})) _⦋1⦌}
   · exact ⟨1, Fin.ext (by simp at h1 ⊢; omega)⟩
   · exact absurd rfl hj
 
-private lemma range_coneMap_le : Subcomplex.range coneMap.{u} ≤ image := by
-  rintro ⟨n⟩ x ⟨s, rfl⟩
-  induction n using SimplexCategory.rec with | _ n
-  rw [mem_image_iff]
-  by_contra! h
-  obtain ⟨⟨i, hi⟩, ⟨j, hj⟩⟩ := h
-  have hij : i ≤ j := by
-    by_contra! hji
-    have := stdSimplex.monotone_apply (coneMap.app _ s) hji.le
-    dsimp only at this
-    rw [hi, hj] at this
-    exact absurd this (by decide)
-  exact coneMap_app_ne (s := (join Δ[0] _).map (SimplexCategory.mkOfLe i j hij).op s)
-    (stdSimplex.ext _ _ fun t ↦ by
-      rw [NatTrans.naturality_apply]
-      fin_cases t
-      · exact hi
-      · exact hj)
-
-private lemma coneIso_two_hom : (join.coneIso.{u} 2).hom = (join.stdSimplexIso 0 2).hom := by
-  refine join.hom_ext_stdSimplex ?_ ?_
-  · rw [join.inl_comp_coneIso_hom, join.inl_comp_stdSimplexIso_hom]
-  · rw [join.inr_comp_coneIso_hom]
-    apply yonedaEquiv.injective
-    refine stdSimplex.ext _ _ fun t ↦ Fin.ext ?_
-    -- `Δ[3]` is `Δ[0 + 2 + 1]` only up to definitional unfolding, so the vertex formula for
-    -- `stdSimplexIso` is applied by `Eq.trans` rather than by rewriting.
-    refine Eq.trans ?_
-      (congrArg Fin.val (join.yonedaEquiv_inr_comp_stdSimplexIso_hom (n := 0) (m := 2) t)).symm
-    exact (congrArg Fin.val (stdSimplex.yonedaEquiv_map_apply.{u} (SimplexCategory.δ 0) t)).trans
-      (by simp [SimplexCategory.δ]; omega)
+private lemma range_coneMap_le : Subcomplex.range coneMap.{u} ≤ image :=
+  range_le_image _ fun _ ↦ coneMap_app_ne
 
 /-- The cone on the face of `Λ[2, 2]` opposite to the vertex `j` is the face of `Δ[3]` opposite to
 the vertex `j + 1`. -/
 private lemma coneIso_inv_comp_map_ι_comp_coneMap (j : Fin 3) (hj : j ≠ 2) :
     (join.coneIso 1).inv ≫ join.map (𝟙 _) (horn.ι 2 j hj) ≫ coneMap.{u} =
       stdSimplex.map (SimplexCategory.δ j.succ) := by
+  have h := join.map_comp_coneIso_hom.{u} (SimplexCategory.δ j)
+  rw [join.coneIso_hom_eq 2, eqToHom_refl, Category.comp_id] at h
   rw [Iso.inv_comp_eq, coneMap, ← join.map_comp_assoc, Category.comp_id, horn.ι_ι,
-    ← coneIso_two_hom, ← SimplexCategory.vertexJoin_map_δ]
-  exact join.map_comp_coneIso_hom (SimplexCategory.δ j)
+    ← SimplexCategory.vertexJoin_map_δ]
+  exact h
 
 private lemma image_le_range_coneMap : image ≤ Subcomplex.range coneMap.{u} := by
   have h (j : Fin 3) (hj : j ≠ 2) :
@@ -276,16 +276,18 @@ private lemma mem_joinFiber_zero_of_coconeMap {n : ℕ}
       coconeMap ≫ (join.stdSimplexIso 2 0).inv ≫ join.π _ _ := by
     simp [coconeMap, join.map_π]
   have key : (join.π _ _).app _ s =
-      ((join.stdSimplexIso 2 0).inv ≫ join.π _ _).app _ (coconeMap.app _ s) :=
-    (ConcreteCategory.congr_hom (NatTrans.congr_app hπ _) s :)
+      ((join.stdSimplexIso 2 0).inv ≫ join.π _ _).app _ (coconeMap.app _ s) := by
+    rw [hπ, NatTrans.comp_app_apply]
   rw [key, stdSimplex.hom_app_apply]
   have ht := h t
   -- `Δ[3]` is `Δ[2 + 0 + 1]` only up to definitional unfolding, so the vertex formula for the
   -- inverse of `stdSimplexIso` is applied by `Eq.trans` rather than by rewriting.
   exact (join.yonedaEquiv_stdSimplexIso_inv_comp_π (n := 2) (m := 0) _).trans
-    (ite_eq_left_iff.2 fun h' ↦ absurd (Fin.ext (by
+    (ite_eq_left_iff.2 fun h' ↦ absurd (by
       have := (coconeMap.app _ s t).isLt
-      exact (by omega : (_ : ℕ) = 3).trans rfl)) ht)
+      rw [Fin.ext_iff]
+      simp only [Fin.coe_ofNat_eq_mod]
+      omega) ht)
 
 private lemma coconeMap_inl_app_apply {n : ℕ} (s : (Λ[2, 0] : SSet.{u}) _⦋n⦌) (t : Fin (n + 1)) :
     (coconeMap.app _ ((join.inl _ _).app _ s) t : ℕ) = s.1 t := by
@@ -293,8 +295,9 @@ private lemma coconeMap_inl_app_apply {n : ℕ} (s : (Λ[2, 0] : SSet.{u}) _⦋n
       Λ[2, 0].ι ≫ join.inl _ _ ≫ (join.stdSimplexIso 2 0).hom := by
     simp [coconeMap]
   have key : coconeMap.app _ ((join.inl _ _).app _ s) =
-      (join.inl Δ[2] Δ[0] ≫ (join.stdSimplexIso 2 0).hom).app _ s.1 :=
-    (ConcreteCategory.congr_hom (NatTrans.congr_app h _) s :)
+      (join.inl Δ[2] Δ[0] ≫ (join.stdSimplexIso 2 0).hom).app _ s.1 := by
+    rw [← NatTrans.comp_app_apply, h, NatTrans.comp_app_apply, Subfunctor.ι_app,
+      TypeCat.ofHom_apply]
   rw [key, stdSimplex.hom_app_apply]
   -- As above, the vertex formula for `stdSimplexIso` is applied by `Eq.trans`.
   exact (congrArg Fin.val (join.yonedaEquiv_inl_comp_stdSimplexIso_hom (n := 2) (m := 0) _)).trans
@@ -317,24 +320,8 @@ private lemma coconeMap_app_ne {s : (join (Λ[2, 0] : SSet.{u}) Δ[0]) _⦋1⦌}
   · exact ⟨0, Fin.ext (by simp at h0 ⊢; omega)⟩
   · exact ⟨1, Fin.ext (by simp at h1 ⊢; omega)⟩
 
-private lemma range_coconeMap_le : Subcomplex.range coconeMap.{u} ≤ image := by
-  rintro ⟨n⟩ x ⟨s, rfl⟩
-  induction n using SimplexCategory.rec with | _ n
-  rw [mem_image_iff]
-  by_contra! h
-  obtain ⟨⟨i, hi⟩, ⟨j, hj⟩⟩ := h
-  have hij : i ≤ j := by
-    by_contra! hji
-    have := stdSimplex.monotone_apply (coconeMap.app _ s) hji.le
-    dsimp only at this
-    rw [hi, hj] at this
-    exact absurd this (by decide)
-  exact coconeMap_app_ne (s := (join _ Δ[0]).map (SimplexCategory.mkOfLe i j hij).op s)
-    (stdSimplex.ext _ _ fun t ↦ by
-      rw [NatTrans.naturality_apply]
-      fin_cases t
-      · exact hi
-      · exact hj)
+private lemma range_coconeMap_le : Subcomplex.range coconeMap.{u} ≤ image :=
+  range_le_image _ fun _ ↦ coconeMap_app_ne
 
 /-- The cocone on the face of `Λ[2, 0]` opposite to the vertex `j` is the face of `Δ[3]` opposite
 to the vertex `j`. -/
@@ -377,25 +364,12 @@ private lemma image_le_range_coconeMap : image ≤ Subcomplex.range coconeMap.{u
 
 /-! ### The isomorphisms -/
 
-/-- Two monomorphisms into the same simplicial set with the same range have isomorphic sources. -/
-private noncomputable def isoOfRangeEq {X Y Z : SSet.{u}} (f : X ⟶ Z) (g : Y ⟶ Z) [Mono f]
-    [Mono g] (h : Subcomplex.range f = Subcomplex.range g) : X ≅ Y :=
-  asIso (Subcomplex.toRange f) ≪≫ Subcomplex.eqToIso h ≪≫ (asIso (Subcomplex.toRange g)).symm
-
-private lemma isoOfRangeEq_hom_comp {X Y Z : SSet.{u}} (f : X ⟶ Z) (g : Y ⟶ Z) [Mono f] [Mono g]
-    (h : Subcomplex.range f = Subcomplex.range g) : (isoOfRangeEq f g h).hom ≫ g = f := by
-  simp only [isoOfRangeEq, Iso.trans_hom, asIso_hom, Subcomplex.eqToIso_hom, Iso.symm_hom,
-    asIso_inv, Category.assoc]
-  have hg : inv (Subcomplex.toRange g) ≫ g = (Subcomplex.range g).ι := by
-    rw [IsIso.inv_comp_eq, Subcomplex.toRange_ι]
-  rw [hg, Subcomplex.homOfLE_ι, Subcomplex.toRange_ι]
-
 /-- **The square is a cone on a cospan**: `Δ[1] ⊗ Δ[1]` is the cone `Δ[0] ⋆ Λ[2, 2]`, with cone
 point the vertex `(0, 0)` (`SSet.square.inl_comp_coneIso_hom`) and with the cospan
 `(1, 0) ⟶ (1, 1) ⟵ (0, 1)` as its base (`SSet.square.ι_one_comp_inr_comp_coneIso_hom`,
 `SSet.square.ι_zero_comp_inr_comp_coneIso_hom`). -/
 noncomputable def coneIso : join Δ[0] (Λ[2, 2] : SSet.{u}) ≅ Δ[1] ⊗ Δ[1] :=
-  isoOfRangeEq coneMap toStdSimplex
+  Subcomplex.isoOfRangeEq coneMap toStdSimplex
     ((le_antisymm range_coneMap_le image_le_range_coneMap).trans range_toStdSimplex.symm)
 
 /-- **The square is a cocone on a span**: `Δ[1] ⊗ Δ[1]` is the cocone `Λ[2, 0] ⋆ Δ[0]`, with cone
@@ -403,14 +377,14 @@ point the vertex `(1, 1)` (`SSet.square.inr_comp_coconeIso_hom`) and with the sp
 `(1, 0) ⟵ (0, 0) ⟶ (0, 1)` as its base (`SSet.square.ι_two_comp_inl_comp_coconeIso_hom`,
 `SSet.square.ι_one_comp_inl_comp_coconeIso_hom`). -/
 noncomputable def coconeIso : join (Λ[2, 0] : SSet.{u}) Δ[0] ≅ Δ[1] ⊗ Δ[1] :=
-  isoOfRangeEq coconeMap toStdSimplex
+  Subcomplex.isoOfRangeEq coconeMap toStdSimplex
     ((le_antisymm range_coconeMap_le image_le_range_coconeMap).trans range_toStdSimplex.symm)
 
 private lemma coneIso_hom_comp_toStdSimplex : coneIso.{u}.hom ≫ toStdSimplex = coneMap :=
-  isoOfRangeEq_hom_comp _ _ _
+  Subcomplex.isoOfRangeEq_hom_comp _ _ _
 
 private lemma coconeIso_hom_comp_toStdSimplex : coconeIso.{u}.hom ≫ toStdSimplex = coconeMap :=
-  isoOfRangeEq_hom_comp _ _ _
+  Subcomplex.isoOfRangeEq_hom_comp _ _ _
 
 private lemma yonedaEquiv_lift_comp_toStdSimplex_apply {n : ℕ} (f g : Δ[n] ⟶ (Δ[1] : SSet.{u}))
     (t : Fin (n + 1)) :
@@ -423,7 +397,8 @@ private lemma inl_comp_coneMap :
   rw [coneMap, join.inl_map_assoc, Category.id_comp, join.inl_comp_stdSimplexIso_hom]
 
 private lemma inr_comp_coneMap : join.inr _ _ ≫ coneMap.{u} = Λ[2, 2].ι ≫ stdSimplex.δ 0 := by
-  rw [coneMap, join.inr_map_assoc, ← coneIso_two_hom, join.inr_comp_coneIso_hom]
+  rw [coneMap, join.inr_map_assoc, ← join.inr_comp_coneIso_hom, join.coneIso_hom_eq,
+    eqToHom_refl, Category.comp_id]
 
 private lemma inl_comp_coconeMap : join.inl _ _ ≫ coconeMap.{u} =
     Λ[2, 0].ι ≫ join.inl _ _ ≫ (join.stdSimplexIso 2 0).hom := by

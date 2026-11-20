@@ -9,19 +9,20 @@ public import Mathlib.CategoryTheory.Limits.Shapes.ZeroObjects
 public import TauCeti.AlgebraicTopology.Quasicategory.InitialVertex
 
 /-!
-# Zero vertices and pointed simplicial sets
+# Zero vertices and pointed quasicategories
 
 A vertex of a simplicial set is a *zero vertex* (`SSet.IsZeroVertex`) if it is both an initial
-and a terminal vertex; in a quasicategory these are the zero objects. A simplicial set is
-*pointed* (`SSet.IsPointed`) if it has a zero vertex. Pointedness is the first condition in the
-definition of a stable quasicategory, whose fibres and cofibres are pullbacks and pushouts along a
-zero object.
+and a terminal vertex; in a quasicategory these are the zero objects. A quasicategory with a zero
+vertex (`SSet.HasZeroVertex`) is *pointed* in the sense of Lurie. Pointedness is the first
+condition in the definition of a stable quasicategory, whose fibres and cofibres are pullbacks and
+pushouts along a zero object. The name `HasZeroVertex`, after `HasZeroObject`, avoids the other
+meaning of a pointed simplicial set, one with a chosen basepoint.
 
 In the nerve of a category the zero vertices are the zero objects
-(`CategoryTheory.nerve.isZeroVertex_iff`), so the nerve is pointed exactly when the category has a
-zero object (`CategoryTheory.nerve.isPointed_iff`). Every vertex of a terminal simplicial set, such
-as `Δ[0]`, is a zero vertex (`SSet.isZeroVertex_of_isTerminal`), while `Δ[1]` is not pointed
-(`SSet.stdSimplex.not_isPointed_one`): its initial and terminal vertices differ.
+(`CategoryTheory.nerve.isZeroVertex_iff`), so the nerve has a zero vertex exactly when the
+category has a zero object (`CategoryTheory.nerve.hasZeroVertex_iff`). Every vertex of a terminal
+simplicial set, such as `Δ[0]`, is a zero vertex (`SSet.isZeroVertex_of_isTerminal`), while `Δ[1]`
+has none (`SSet.stdSimplex.not_hasZeroVertex_one`): its initial and terminal vertices differ.
 
 ## References
 
@@ -74,25 +75,26 @@ lemma isZeroVertex_of_isTerminal (hX : IsTerminal X) (x : X _⦋0⦌) : X.IsZero
   ⟨isInitialVertex_of_isTerminal hX x, isTerminalVertex_of_isTerminal hX x⟩
 
 variable (X) in
-/-- A simplicial set is *pointed* if it has a zero vertex. -/
-def IsPointed : Prop :=
+/-- A simplicial set *has a zero vertex* if some vertex is both initial and terminal. For a
+quasicategory this is Lurie's condition of being *pointed*. -/
+def HasZeroVertex : Prop :=
   ∃ x : X _⦋0⦌, X.IsZeroVertex x
 
-lemma isPointed_iff : X.IsPointed ↔ ∃ x : X _⦋0⦌, X.IsZeroVertex x :=
+lemma hasZeroVertex_iff : X.HasZeroVertex ↔ ∃ x : X _⦋0⦌, X.IsZeroVertex x :=
   Iff.rfl
 
-/-- Pointedness is invariant under isomorphisms of simplicial sets. -/
-lemma IsPointed.of_iso (hX : X.IsPointed) (e : X ≅ Y) : Y.IsPointed :=
+/-- Having a zero vertex is invariant under isomorphisms of simplicial sets. -/
+lemma HasZeroVertex.of_iso (hX : X.HasZeroVertex) (e : X ≅ Y) : Y.HasZeroVertex :=
   let ⟨x, hx⟩ := hX
   ⟨e.hom.app _ x, hx.map_iso e⟩
 
-/-- The point `Δ[0]` is pointed. -/
-lemma stdSimplex.isPointed_zero : (Δ[0] : SSet.{u}).IsPointed :=
+/-- The point `Δ[0]` has a zero vertex. -/
+lemma stdSimplex.hasZeroVertex_zero : (Δ[0] : SSet.{u}).HasZeroVertex :=
   ⟨stdSimplex.obj₀Equiv.symm 0, isZeroVertex_of_isTerminal stdSimplex.isTerminalObj₀ _⟩
 
-/-- The interval `Δ[1]` is not pointed: a zero vertex would have edges to and from both
+/-- The interval `Δ[1]` has no zero vertex: a zero vertex would have edges to and from both
 vertices, but `Δ[1]` has no edge from `1` to `0`. -/
-lemma stdSimplex.not_isPointed_one : ¬ (Δ[1] : SSet.{u}).IsPointed := by
+lemma stdSimplex.not_hasZeroVertex_one : ¬ (Δ[1] : SSet.{u}).HasZeroVertex := by
   rintro ⟨x, hx⟩
   obtain ⟨i, rfl⟩ := stdSimplex.obj₀Equiv.symm.surjective x
   obtain ⟨e₁⟩ := hx.isInitialVertex.nonempty_edge (stdSimplex.obj₀Equiv.symm 0)
@@ -115,9 +117,9 @@ theorem isZeroVertex_iff {C : Type u} [Category.{v} C] (x : C) :
     ⟨fun ⟨⟨h₁⟩, ⟨h₂⟩⟩ ↦ ⟨fun y ↦ ⟨⟨⟨h₁.to y⟩, fun _ ↦ h₁.hom_ext _ _⟩⟩,
       fun y ↦ ⟨⟨⟨h₂.from y⟩, fun _ ↦ h₂.hom_ext _ _⟩⟩⟩, fun h ↦ ⟨⟨h.isInitial⟩, ⟨h.isTerminal⟩⟩⟩
 
-/-- The nerve of a category is pointed exactly when the category has a zero object. -/
-theorem isPointed_iff {C : Type u} [Category.{v} C] :
-    (nerve C).IsPointed ↔ HasZeroObject C := by
+/-- The nerve of a category has a zero vertex exactly when the category has a zero object. -/
+theorem hasZeroVertex_iff {C : Type u} [Category.{v} C] :
+    (nerve C).HasZeroVertex ↔ HasZeroObject C := by
   refine ⟨fun ⟨x, hx⟩ ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨x, rfl⟩ := nerveEquiv.symm.surjective x
     exact ((isZeroVertex_iff x).1 hx).hasZeroObject
