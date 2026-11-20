@@ -672,25 +672,6 @@ theorem integrable_energyIntegrand_jetField
   filter_upwards [jetLpL_apply_ae u, jetLpL_apply_ae v] with x hu hv
   rw [hu, hv]
 
-open scoped InnerProductSpace in
-/-- Subtracting a constant from the mass coefficient subtracts the corresponding `L²` mass pairing
-from the Sobolev energy form. No boundary or coercivity assumption is needed. -/
-theorem energyFormH1_mass_sub_const
-    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
-    (kappa : ℝ) (u v : W1p mu Omega 2) :
-    energyFormH1 a b (fun x ↦ c x - kappa) u v =
-      energyFormH1 a b c u v - kappa * ⟪W1p.value u, W1p.value v⟫_ℝ := by
-  have hmass : Integrable (fun x ↦ W1p.value u x * W1p.value v x) (mu.restrict Omega) := by
-    simpa only [RCLike.inner_apply, conj_trivial, mul_comm] using
-      L2.integrable_inner (𝕜 := ℝ) (W1p.value u) (W1p.value v)
-  rw [energyFormH1_def, energyFormH1_def, W1p.inner_value_eq_setIntegral,
-    ← integral_const_mul, ← integral_sub (integrable_energyIntegrand_jetField hcoeff u v)
-      (hmass.const_mul kappa)]
-  apply integral_congr_ae
-  filter_upwards with x
-  simp only [energyIntegrand_apply, massForm_apply, jetField_apply]
-  ring
-
 /-- Adding an essentially bounded function `c'` to the mass coefficient adds the weighted `L²`
 pairing `∫_Ω c' u v` to the Sobolev energy form. No boundary or coercivity assumption is
 needed. -/
@@ -709,6 +690,19 @@ theorem energyFormH1_mass_add
   filter_upwards with x
   simp only [energyIntegrand_apply, massForm_apply, jetField_apply]
   ring
+
+open scoped InnerProductSpace in
+/-- Subtracting a constant from the mass coefficient subtracts the corresponding `L²` mass pairing
+from the Sobolev energy form. No boundary or coercivity assumption is needed. -/
+theorem energyFormH1_mass_sub_const
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (kappa : ℝ) (u v : W1p mu Omega 2) :
+    energyFormH1 a b (fun x ↦ c x - kappa) u v =
+      energyFormH1 a b c u v - kappa * ⟪W1p.value u, W1p.value v⟫_ℝ := by
+  simp only [sub_eq_add_neg]
+  rw [energyFormH1_mass_add hcoeff (memLp_top_const (-kappa)) u v,
+    W1p.inner_value_eq_setIntegral, ← integral_const_mul]
+  simp only [neg_mul, integral_neg, mul_assoc]
 
 /-- The energy form on `H¹(Ω)` as a continuous bilinear form, obtained by restricting the
 existing variable-coefficient `L²` energy form along the continuous Sobolev jet inclusion. -/
