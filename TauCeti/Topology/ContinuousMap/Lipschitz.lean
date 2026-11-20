@@ -100,8 +100,8 @@ def lipschitzStarSubalgebra : StarSubalgebra 𝕜 C(X, 𝕜) where
   carrier := {f | eHolderNorm 1 ⇑f ≠ ∞}
   mul_mem' {f g} hf hg := by
     refine ne_top_of_le_ne_top ?_ (eHolderNorm_mul_le (A := ‖f‖₊) (B := ‖g‖₊)
-      (fun x ↦ NNReal.coe_le_coe.1 (f.norm_coe_le_norm x))
-      fun x ↦ NNReal.coe_le_coe.1 (g.norm_coe_le_norm x))
+      (fun x ↦ by exact_mod_cast f.norm_coe_le_norm x)
+      fun x ↦ by exact_mod_cast g.norm_coe_le_norm x)
     exact ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top ENNReal.coe_ne_top hg,
       ENNReal.mul_ne_top ENNReal.coe_ne_top hf⟩
   add_mem' {f g} hf hg :=
