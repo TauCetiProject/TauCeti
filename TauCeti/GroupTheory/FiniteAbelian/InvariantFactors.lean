@@ -9,7 +9,6 @@ public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.Data.ZMod.ChineseRemainder
 import TauCeti.Data.ZMod.Torsion
-import Mathlib.Algebra.DirectSum.Module
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.List
 
 /-!
@@ -64,10 +63,9 @@ namespace TauCeti.AddCommGroup
 private abbrev ZModPi (l : List ℕ) : Type := (i : Fin l.length) → ZMod l[i]
 
 /-- Splitting off the first factor of `ZModPi (d :: l)`. Both `(d :: l)[0]` and
-`(d :: l)[i.succ]` reduce to `d` and `l[i]`, so `Fin.consEquiv` applies directly. -/
-private def consAddEquiv (d : ℕ) (l : List ℕ) : ZModPi (d :: l) ≃+ ZMod d × ZModPi l where
-  toEquiv := (Fin.consEquiv fun i : Fin (l.length + 1) ↦ ZMod (d :: l)[i]).symm
-  map_add' _ _ := rfl
+`(d :: l)[i.succ]` reduce to `d` and `l[i]`, so `Fin.consLinearEquiv` applies directly. -/
+private def consAddEquiv (d : ℕ) (l : List ℕ) : ZModPi (d :: l) ≃+ ZMod d × ZModPi l :=
+  (Fin.consLinearEquiv ℤ fun i : Fin (l.length + 1) ↦ ZMod (d :: l)[i]).toAddEquiv.symm
 
 /-- The empty product `ZModPi []` is trivial: `[].length` reduces to `0`, so it is indexed by
 `Fin 0`. -/
@@ -322,6 +320,7 @@ theorem card_torsionBy_eq_prod_map_gcd (m : ℕ) :
   exact card_torsionBy_zmodPi _ (fun _ hd ↦ (one_lt_of_mem_invariantFactors hd).ne_bot) m
 
 /-- The invariant factors multiply to the order of the group. -/
+@[simp]
 theorem prod_invariantFactors : (invariantFactors A).prod = Nat.card A := by
   have htop : AddSubgroup.torsionBy A ((0 : ℕ) : ℤ) = ⊤ := by
     ext
@@ -329,6 +328,7 @@ theorem prod_invariantFactors : (invariantFactors A).prod = Nat.card A := by
   rw [← prod_map_gcd_zero, ← card_torsionBy_eq_prod_map_gcd, htop, AddSubgroup.card_top]
 
 /-- A finite abelian group has no invariant factors exactly when it is trivial. -/
+@[simp]
 theorem invariantFactors_eq_nil_iff : invariantFactors A = [] ↔ Subsingleton A := by
   rw [← Finite.card_le_one_iff_subsingleton, ← prod_invariantFactors]
   refine ⟨fun h ↦ by simp [h], fun h ↦ List.eq_nil_iff_forall_not_mem.2 fun d hd ↦ ?_⟩
@@ -354,12 +354,14 @@ theorem getLast_invariantFactors (h : invariantFactors A ≠ []) :
   · simp [hi]
 
 /-- A cyclic group `ZMod n` with `n > 1` has the single invariant factor `n`. -/
+@[simp]
 theorem invariantFactors_zmod {n : ℕ} [NeZero n] (hn : n ≠ 1) :
     invariantFactors (ZMod n) = [n] :=
   invariantFactors_eq_iff.2 ⟨List.pairwise_singleton _ _,
     by simpa [Nat.one_lt_iff_ne_zero_and_ne_one] using ⟨NeZero.ne n, hn⟩, ⟨singletonAddEquiv n⟩⟩
 
 /-- For `a ∣ b` with `a > 1`, the group `ZMod a × ZMod b` has invariant factors `[a, b]`. -/
+@[simp]
 theorem invariantFactors_zmod_prod {a b : ℕ} [NeZero a] [NeZero b] (ha : a ≠ 1) (hab : a ∣ b) :
     invariantFactors (ZMod a × ZMod b) = [a, b] := by
   have hb : b ≠ 1 := fun hb ↦ ha (Nat.dvd_one.1 (hb ▸ hab))
