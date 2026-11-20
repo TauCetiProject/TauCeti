@@ -31,6 +31,8 @@ covariant tensor, making it independent of any choice of basis.
   product.
 * `LinearMap.BilinMap.metricTrace_eq_sum`: in an orthonormal basis, the metric trace is the sum of
   the diagonal values.
+* `LinearMap.BilinMap.metricTrace_eq_sum_dualBasis`: in an arbitrary basis, the metric trace pairs
+  the basis with its metric dual basis.
 * `LinearMap.BilinMap.metricTrace_eq_sum_inv_gram`: in an arbitrary basis, the metric trace
   contracts the form against the inverse Gram matrix of the basis.
 * `LinearMap.BilinMap.metricTrace_compr₂`: the metric trace commutes with a linear map applied to
@@ -71,14 +73,14 @@ variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDim
 canonical covariant tensor of the inner product. -/
 noncomputable def metricTrace : BilinMap ℝ W N →ₗ[ℝ] N :=
   (LinearMap.applyₗ (InnerProductSpace.canonicalCovariantTensor W)).comp
-    (TensorProduct.lift.equiv (RingHom.id ℝ) W W N).toLinearMap
+    (TensorProduct.uncurry (.id ℝ) W W N)
 
 /-- The metric trace is evaluation on the canonical covariant tensor. -/
 theorem metricTrace_apply (B : BilinMap ℝ W N) :
     metricTrace B = TensorProduct.lift B (InnerProductSpace.canonicalCovariantTensor W) := by
-  have h : TensorProduct.lift.equiv (.id ℝ) W W N B = TensorProduct.lift B :=
-    TensorProduct.ext' fun m n ↦ by rw [TensorProduct.lift.equiv_apply, TensorProduct.lift.tmul]
-  rw [metricTrace, LinearMap.comp_apply, LinearEquiv.coe_coe, h, LinearMap.applyₗ_apply_apply]
+  have h : TensorProduct.uncurry (.id ℝ) W W N B = TensorProduct.lift B :=
+    TensorProduct.ext' fun m n ↦ by rw [TensorProduct.uncurry_apply, TensorProduct.lift.tmul]
+  rw [metricTrace, LinearMap.comp_apply, h, LinearMap.applyₗ_apply_apply]
 
 /-- In an orthonormal basis, the metric trace is the sum of the diagonal values. -/
 theorem metricTrace_eq_sum {ι : Type*} [Fintype ι] (B : BilinMap ℝ W N)
@@ -86,14 +88,22 @@ theorem metricTrace_eq_sum {ι : Type*} [Fintype ι] (B : BilinMap ℝ W N)
   rw [metricTrace_apply, InnerProductSpace.canonicalCovariantTensor_eq_sum W b, map_sum]
   simp only [TensorProduct.lift.tmul]
 
+/-- In an arbitrary basis `b`, the metric trace is `∑ᵢ B(bᵢ, b'ᵢ)`, where `b'` is the dual basis of
+`b` for the inner product. The basis need not be orthogonal. -/
+theorem metricTrace_eq_sum_dualBasis {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (B : BilinMap ℝ W N) (b : Module.Basis ι ℝ W) :
+    metricTrace B =
+      ∑ i, B (b i) (LinearMap.BilinForm.dualBasis (innerₗ W) TauCeti.nondegenerate_inner b i) := by
+  simp only [metricTrace_apply, InnerProductSpace.canonicalCovariantTensor_eq_sum_dualBasis W b,
+    map_sum, TensorProduct.lift.tmul]
+
 /-- In an arbitrary basis `b`, the metric trace contracts the form against the inverse Gram
 matrix of `b`: `tr_g B = ∑ i j, (G⁻¹)ᵢⱼ B(bᵢ, bⱼ)` with `Gᵢⱼ = ⟪bᵢ, bⱼ⟫`. This is the classical
 index formula `gⁱʲ Bᵢⱼ`; the basis need not be orthogonal. -/
 theorem metricTrace_eq_sum_inv_gram {ι : Type*} [Fintype ι] [DecidableEq ι]
     (B : BilinMap ℝ W N) (b : Module.Basis ι ℝ W) :
     metricTrace B = ∑ i, ∑ j, (Matrix.gram ℝ b)⁻¹ i j • B (b i) (b j) := by
-  simp only [metricTrace_apply, InnerProductSpace.canonicalCovariantTensor_eq_sum_dualBasis W b,
-    map_sum, TensorProduct.lift.tmul, b.dualBasis_innerₗ_eq_sum, map_smul]
+  simp only [metricTrace_eq_sum_dualBasis B b, b.dualBasis_innerₗ_eq_sum, map_sum, map_smul]
 
 /-- The metric trace commutes with a linear map `f` applied to the values of the form. -/
 @[simp]

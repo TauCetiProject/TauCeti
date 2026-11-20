@@ -54,20 +54,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
-section DualFrame
-
-variable [IsManifold I 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-
-/-- On the chart domain, the metric trace of a bilinear form is `∑ᵢ B(Fᵢ, Dᵢ)`. -/
-private theorem metricTrace_eq_sum_chartDualFrame (α : M) {y : M}
-    (hy : y ∈ (chartAt H α).source) (B : LinearMap.BilinForm ℝ (TangentSpace I y)) :
-    LinearMap.BilinMap.metricTrace B =
-      ∑ i, B (chartLocalFrame (I := I) α i y) (chartDualFrame (I := I) α i y) := by
-  rw [metricTrace_eq_sum_chartInvGramMatrix α hy]
-  simp only [chartDualFrame_apply, map_sum, map_smul, smul_eq_mul]
-
-end DualFrame
-
 variable [IsManifold I 2 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 

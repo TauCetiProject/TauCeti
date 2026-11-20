@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Affine.Isometry
+public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Normed.Operator.Basic
@@ -76,8 +77,10 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `TauCeti.laplacian_comp_homothety_right`: `Δ` scales by `c ^ 2` under
   `AffineMap.homothety a c`.
 * `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
-* `TauCeti.traceL`: the trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a bilinear map, as a continuous linear
-  functional.
+* `TauCeti.traceL`: the trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a continuous bilinear map, as a continuous
+  linear functional.
+* `TauCeti.traceL_apply_eq_metricTrace`: it is the metric trace
+  `LinearMap.BilinMap.metricTrace` of the underlying bilinear map.
 * `TauCeti.laplacian_eq_traceL`: the Laplacian as the trace of the second Fréchet derivative.
 * `TauCeti.laplacian_eq_traceL_iteratedFDeriv`: the same trace, as a continuous linear functional
   of the second iterated Fréchet derivative.
@@ -120,18 +123,28 @@ variable
   {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- The trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a continuous bilinear map in the standard orthonormal basis `e`
-of `E`, as a continuous linear functional. The Laplacian is the trace of the second Fréchet
+/-- The metric trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a continuous bilinear map, as a continuous linear
+functional: `LinearMap.BilinMap.metricTrace` of the underlying bilinear map, which is bounded by
+the dimension of `E` times the norm of `H`. The Laplacian is the trace of the second Fréchet
 derivative (`TauCeti.laplacian_eq_traceL`). -/
 noncomputable def traceL : (E →L[ℝ] E →L[ℝ] F) →L[ℝ] F :=
-  ∑ i, (ContinuousLinearMap.apply ℝ F (stdOrthonormalBasis ℝ E i)).comp
-    (ContinuousLinearMap.apply ℝ (E →L[ℝ] F) (stdOrthonormalBasis ℝ E i))
+  (LinearMap.BilinMap.metricTrace ∘ₗ ContinuousLinearMap.toLinearMap₁₂).mkContinuous
+    (Module.finrank ℝ E) fun H : E →L[ℝ] E →L[ℝ] F ↦ by
+      simpa [LinearMap.BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ E)] using
+        H.norm_sum_apply_apply_le Finset.univ fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le
+
+/-- The continuous trace of a bilinear map is the metric trace of the underlying bilinear map. -/
+theorem traceL_apply_eq_metricTrace (H : E →L[ℝ] E →L[ℝ] F) :
+    traceL H = LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ H) := by
+  rw [traceL, LinearMap.mkContinuous_apply, LinearMap.comp_apply]
 
 /-- The trace of a bilinear map is the sum of its diagonal values on the standard orthonormal
 basis. -/
 theorem traceL_apply (H : E →L[ℝ] E →L[ℝ] F) :
     traceL H = ∑ i, H (stdOrthonormalBasis ℝ E i) (stdOrthonormalBasis ℝ E i) := by
-  simp [traceL]
+  rw [traceL_apply_eq_metricTrace,
+    LinearMap.BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ E)]
+  simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
 
 /-- The Laplacian of a function is the trace of its second Fréchet derivative, expressed as the
 continuous linear functional `traceL` of `fderiv ℝ (fderiv ℝ f) x`. -/
@@ -182,12 +195,9 @@ theorem _root_.ContDiff.laplacian {n m : WithTop ℕ∞} {f : E → F}
   have hD1 : ContDiff ℝ (m + 1) (fderiv ℝ f) :=
     hf.fderiv_right (by convert hm using 1; norm_num [add_assoc])
   have hD : ContDiff ℝ m (fderiv ℝ (fderiv ℝ f)) := hD1.fderiv_right le_rfl
-  let L : (E →L[ℝ] E →L[ℝ] F) →L[ℝ] F :=
-    ∑ i, (ContinuousLinearMap.apply ℝ F (stdOrthonormalBasis ℝ E i)).comp
-      (ContinuousLinearMap.apply ℝ (E →L[ℝ] F) (stdOrthonormalBasis ℝ E i))
-  have hΔ : Δ f = L ∘ fderiv ℝ (fderiv ℝ f) := funext (laplacian_eq_traceL f)
+  have hΔ : Δ f = traceL ∘ fderiv ℝ (fderiv ℝ f) := funext (laplacian_eq_traceL f)
   rw [hΔ]
-  exact L.contDiff.comp hD
+  exact traceL.contDiff.comp hD
 
 /-- The Laplacian is the sum of the second directional derivatives along an orthonormal basis:
 if `fderiv ℝ f` is differentiable at `x`, then `Δ f x = ∑ᵢ ∂ᵥᵢ (∂ᵥᵢ f) x`. -/

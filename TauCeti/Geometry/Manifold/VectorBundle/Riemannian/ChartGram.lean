@@ -63,6 +63,8 @@ API replace them.
 * `Riemannian.Tensor.metricTrace_eq_sum_chartInvGramMatrix`: on the chart domain, the metric
   trace of a (vector-valued) bilinear map is the contraction `gⁱʲ B(eᵢ, eⱼ)` in the chart-local
   frame.
+* `Riemannian.Tensor.metricTrace_eq_sum_chartDualFrame`: equivalently, it is `∑ᵢ B(Fᵢ, Dᵢ)`, the
+  chart-local frame paired with its metric-dual frame.
 * `Riemannian.Tensor.inner_chartDualFrame` and
   `Riemannian.Tensor.sum_inner_chartDualFrame_smul`: duality and vector expansion in the frames.
 * `Riemannian.Tensor.contMDiffAt_chartDualFrame`: regularity of the metric-dual frame.
@@ -388,6 +390,19 @@ theorem metricTrace_eq_sum_chartInvGramMatrix (α : M) {x : M}
     funext fun i ↦ (chartLocalFrame_apply_of_mem_chart_source (I := I) α hx i).symm
   rw [LinearMap.BilinMap.metricTrace_eq_sum_inv_gram _ b, hb, ← chartGramMatrix,
     ← chartInvGramMatrix_def]
+
+/-- On the chart domain, the metric trace of a bilinear map `B` with values in a real vector space
+`N` is `∑ᵢ B(Fᵢ, Dᵢ)`, where `Fᵢ` is the chart-local frame at `α` and `Dᵢ` its metric-dual frame. -/
+theorem metricTrace_eq_sum_chartDualFrame (α : M) {x : M}
+    (hx : x ∈ (chartAt H α).source) {N : Type*} [AddCommMonoid N] [Module ℝ N]
+    (B : LinearMap.BilinMap ℝ (TangentSpace I x) N) :
+    LinearMap.BilinMap.metricTrace B =
+      ∑ i, B (chartLocalFrame (I := I) α i x) (chartDualFrame (I := I) α i x) := by
+  have hx' : x ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
+    simpa only [TangentBundle.trivializationAt_baseSet] using hx
+  rw [LinearMap.BilinMap.metricTrace_eq_sum_dualBasis _
+    ((trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hx')]
+  simp only [dualBasis_basisAt_eq_chartDualFrame, chartLocalFrame_apply_of_mem_chart_source α hx]
 
 /-- On the chart domain, the dual frame pairs with the chart-local frame to the identity
 matrix. -/
