@@ -268,6 +268,15 @@ instance : (cechComplexFunctor U : (Cᵒᵖ ⥤ A) ⥤ CochainComplex A ℕ).Add
         (congrArg₂ (· + ·) (cechComplexFunctor_map_f_π U P α n a).symm
           (cechComplexFunctor_map_f_π U P β n a).symm).trans (Preadditive.add_comp _ _ _ _ _ _).symm
 
+/-- An empty family has zero Čech complex, without requiring any value of the presheaf to
+vanish. -/
+lemma isZero_cechComplexFunctor_obj [IsEmpty ι] :
+    IsZero ((cechComplexFunctor U).obj P) := by
+  refine (IsZero.iff_id_eq_zero _).2 ?_
+  apply HomologicalComplex.hom_ext
+  intro p
+  exact Pi.hom_ext _ _ fun a ↦ isEmptyElim (a 0)
+
 /-! ### Maps of families
 
 A morphism `φ` from the family `U` to a family `V : κ → C`, as a morphism of formal coproducts,
