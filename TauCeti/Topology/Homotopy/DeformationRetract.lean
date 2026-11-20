@@ -118,15 +118,17 @@ theorem exists_inter_deformation_trans (hBA : B ⊆ A) (hSB : A ∩ S ⊆ B)
   have e₁ : range (ContinuousMap.inclusion hBA) = {x : A | (x : X) ∈ B} := range_inclusion hBA
   have e₂ : range (ContinuousMap.inclusion (inter_subset_left : B ∩ S ⊆ B)) =
       {x : B | (x : X) ∈ S} :=
-    Set.ext fun x ↦ ⟨by rintro ⟨y, rfl⟩; exact y.2.2, fun hx ↦ ⟨⟨x, x.2, hx⟩, rfl⟩⟩
+    Set.ext fun x ↦ ⟨by rintro ⟨y, rfl⟩; exact y.property.2, fun hx ↦ ⟨⟨x, x.property, hx⟩, rfl⟩⟩
   obtain ⟨H⟩ := comp_retractions (e₁ ▸ ⟨H₁.symm⟩) (by rw [e₂]; exact ⟨H₂.symm⟩) hr₁
   have e : range ((ContinuousMap.inclusion hBA).comp
       (ContinuousMap.inclusion (inter_subset_left : B ∩ S ⊆ B))) = {x : A | (x : X) ∈ S} :=
-    Set.ext fun x ↦ ⟨by rintro ⟨y, rfl⟩; exact y.2.2, fun hx ↦ ⟨⟨x, hSB ⟨x.2, hx⟩, hx⟩, rfl⟩⟩
+    Set.ext fun x ↦
+        ⟨by rintro ⟨y, rfl⟩; exact y.property.2, fun hx ↦ ⟨⟨x, hSB ⟨x.property, hx⟩, hx⟩, rfl⟩⟩
   rw [e] at H
   -- The retraction fixes `A ∩ S`, since the homotopy does.
   exact ⟨(ContinuousMap.inclusion (inter_subset_inter_left S hBA)).comp (r₂.comp r₁),
-    fun a ↦ Subtype.ext congr(Subtype.val $(H.symm.fst_eq_snd (x := ⟨a, a.2.1⟩) a.2.2)),
+    fun a ↦ Subtype.ext congr(Subtype.val $(H.symm.fst_eq_snd (x := ⟨a,
+        a.property.1⟩) a.property.2)),
     ⟨H.symm⟩⟩
 
 end ContinuousMap.HomotopicRel
@@ -162,7 +164,7 @@ theorem exists_deformation_of_image_eq (e : X ≃ₜ Y) {A B : Set X} {A' B' : S
       prop' := fun t a ha => by
         obtain ⟨b, rfl⟩ : ∃ b : e '' B, ContinuousMap.inclusion hBA' b = a := ⟨⟨a, ha⟩, rfl⟩
         have hb := H.eq_snd t (x := ContinuousMap.inclusion hBA ((e.image B).symm b))
-          ((e.image B).symm b).2
+          ((e.image B).symm b).property
         simp only [ContinuousMap.id_apply] at hb
         exact Subtype.ext (by simp [hsymm, hb, hr]) }
 
@@ -229,7 +231,7 @@ def ofWeakDeformationRetraction (hAB : A ⊆ B) (H : I × B → X) (hH : Continu
   toFun := ContinuousMap.inclusion hAB
   invFun := ⟨fun x ↦ ⟨H (1, x), h₁ x⟩, by fun_prop⟩
   left_inv := ⟨ContinuousMap.Homotopy.symm
-    { toFun := fun p ↦ ⟨H (p.1, ContinuousMap.inclusion hAB p.2), hHA p.1 _ p.2.2⟩
+    { toFun := fun p ↦ ⟨H (p.1, ContinuousMap.inclusion hAB p.2), hHA p.1 _ p.2.property⟩
       continuous_toFun := by fun_prop
       map_zero_left := fun a ↦ Subtype.ext (h₀ _)
       map_one_left := fun _ ↦ rfl }⟩
@@ -308,10 +310,10 @@ theorem exists_deformation_of_preimage (hj : IsOpenEmbedding j) {S T V : Set X} 
   -- Restricted to `j ⁻¹' S`, `j` is an open embedding into `S`, along which `H` extends.
   let k : j ⁻¹' S → S := S.restrictPreimage j
   have hkS {x : S} (hx : x ∉ range k) : (x : X) ∈ V :=
-    hSV ⟨x.2, fun ⟨y, hy⟩ ↦ hx ⟨⟨y, by simp [hy, x.2]⟩, Subtype.ext hy⟩⟩
+    hSV ⟨x.property, fun ⟨y, hy⟩ ↦ hx ⟨⟨y, by simp [hy, x.property]⟩, Subtype.ext hy⟩⟩
   obtain ⟨G, hGk, hG⟩ := (S.restrictPreimage_isOpenEmbedding hj).exists_continuousMap_extend_id
-    (hV.preimage continuous_subtype_val) (fun _ ↦ hkS) H.toContinuousMap
-    fun t y hy ↦ H.eq_snd t (hVT ⟨y.2, hy⟩)
+    (hV.preimage continuous_subtypeVal) (fun _ ↦ hkS) H.toContinuousMap
+    fun t y hy ↦ H.eq_snd t (hVT ⟨y.property, hy⟩)
   -- The extended deformation fixes every point of `T` and starts inside `T`.
   have hGT (t : I) (x : S) (hx : (x : X) ∈ T) : G (t, x) = x := by
     by_cases hxk : x ∈ range k
@@ -322,11 +324,11 @@ theorem exists_deformation_of_preimage (hj : IsOpenEmbedding j) {S T V : Set X} 
     by_cases hxk : x ∈ range k
     · obtain ⟨y, rfl⟩ := hxk
       rw [hGk, ContinuousMap.HomotopyWith.coe_toContinuousMap, H.apply_zero]
-      exact (r y).2
+      exact (r y).property
     · rw [hG 0 x (hkS hxk)]
-      exact hVT ⟨x.2, hkS hxk⟩
+      exact hVT ⟨x.property, hkS hxk⟩
   refine ⟨⟨fun x ↦ ⟨G (0, x), hG₀ x⟩, by fun_prop⟩,
-    fun x ↦ Subtype.ext congr(Subtype.val $(hGT 0 (ContinuousMap.inclusion hTS x) x.2)), ⟨
+    fun x ↦ Subtype.ext congr(Subtype.val $(hGT 0 (ContinuousMap.inclusion hTS x) x.property)), ⟨
       { toFun := G
         map_zero_left := fun _ ↦ rfl
         map_one_left := fun x ↦ ?_
@@ -350,7 +352,7 @@ theorem exists_strong_deformation_retraction_of_homotopy {X : Type*} [Topologica
       ((ContinuousMap.id X).HomotopyRel ((ContinuousMap.subtypeVal S).comp r) S) := by
   let r : C(X, S) := ⟨fun x => ⟨F (1, x), hone x⟩,
     (hFc.comp (continuous_const.prodMk continuous_id)).subtype_mk _⟩
-  refine ⟨r, fun x => Subtype.ext (hfix 1 x.1 x.2), ⟨?_⟩⟩
+  refine ⟨r, fun x => Subtype.ext (hfix 1 x.val x.property), ⟨?_⟩⟩
   exact
     { toFun := F
       continuous_toFun := hFc

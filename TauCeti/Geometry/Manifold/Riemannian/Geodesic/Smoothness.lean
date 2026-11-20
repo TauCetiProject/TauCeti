@@ -94,7 +94,7 @@ private theorem trivializationAt_geodesicSpray_coord [IsManifold I 2 M]
     ← Bundle.Trivialization.continuousLinearMapAt_apply_of_mem ℝ _ hze,
     TangentBundle.continuousLinearMapAt_trivializationAt_eq_core hz,
     TangentBundle.continuousLinearMapAt_trivializationAt_eq_core hzT]
-  exact tangentCoordChange_geodesicSpray (I := I) (M := M) hbase z.2
+  exact tangentCoordChange_geodesicSpray (I := I) (M := M) hbase z.snd
 
 /-- In the trivialisation of the tangent bundle at `z₀`, the geodesic spray is
 `(x, v) ↦ (v, -Γₓ(v, v))`, which is `C^n` on the source of the trivialisation. -/
@@ -301,7 +301,7 @@ theorem isGeodesicCurveOnFrom_proj
     {z : ℝ → TangentBundle I M} {s : Set ℝ} {w : TangentBundle I M}
     (hz : IsMIntegralCurveOn z (geodesicSpray I M) s) (hs : UniqueDiffOn ℝ s)
     (h0s : (0 : ℝ) ∈ s) (h0 : z 0 = w) :
-    IsGeodesicCurveOnFrom I (fun t ↦ (z t).proj) s w.proj w.2 := by
+    IsGeodesicCurveOnFrom I (fun t ↦ (z t).proj) s w.proj w.snd := by
   refine ⟨isGeodesicCurveOn_proj_of_isMIntegralCurveOn hs hz, h0s, ?_⟩
   simpa only [curveVelocityLiftWithin_apply] using
     (eq_curveVelocityLiftWithin_of_isMIntegralCurveOn (hs 0 h0s) hz h0s).symm.trans h0

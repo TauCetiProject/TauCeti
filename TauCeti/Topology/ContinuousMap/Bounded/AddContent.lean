@@ -216,13 +216,13 @@ characteristic functions. The inverse integrates a bounded function against the 
 def addContentEquiv :
     ((X →ᵇ ℝ) →ₚ[ℝ] ℝ) ≃ {ν : AddContent ℝ (univ : Set (Set X)) // ∀ s, 0 ≤ ν s} where
   toFun m := ⟨m.toLinearMap.toAddContent, m.toAddContent_nonneg⟩
-  invFun ν := mk₀ (integral ν.1).toLinearMap fun _ hf => integral_nonneg ν.2 hf
+  invFun ν := mk₀ (integral ν.val).toLinearMap fun _ hf => integral_nonneg ν.property hf
   left_inv m := by
     ext f
     exact integral_toAddContent m f
   right_inv ν := by
     ext s
-    exact integral_indicator ν.2 s
+    exact integral_indicator ν.property s
 
 @[simp]
 theorem coe_addContentEquiv_apply (m : (X →ᵇ ℝ) →ₚ[ℝ] ℝ) :
@@ -235,14 +235,14 @@ function of `s`. -/
 theorem addContentEquiv_symm_apply_indicator
     (ν : {ν : AddContent ℝ (univ : Set (Set X)) // ∀ s, 0 ≤ ν s}) (s : Set X) :
     (addContentEquiv X).symm ν (BoundedContinuousFunction.indicator s (isClopen_discrete s)) =
-      ν.1 s :=
-  integral_indicator ν.2 s
+      ν.val s :=
+  integral_indicator ν.property s
 
 /-- The functional associated to a content takes its total mass at the constant one. -/
 @[simp]
 theorem addContentEquiv_symm_apply_one
     (ν : {ν : AddContent ℝ (univ : Set (Set X)) // ∀ s, 0 ≤ ν s}) :
-    (addContentEquiv X).symm ν 1 = ν.1 univ := by
+    (addContentEquiv X).symm ν 1 = ν.val univ := by
   simpa using addContentEquiv_symm_apply_indicator ν univ
 
 end PositiveLinearMap

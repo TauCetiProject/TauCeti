@@ -151,14 +151,14 @@ theorem continuous_circleCayleyInv_restrict :
     Continuous fun z : {z : Circle // z ≠ 1} ↦ circleCayleyInv z := by
   unfold circleCayleyInv
   exact Continuous.div₀ (by fun_prop) (by fun_prop) fun z ↦
-    one_sub_re_ne_zero_of_ne_one z.2
+    one_sub_re_ne_zero_of_ne_one z.property
 
 /-- The boundary Cayley homeomorphism from the real line onto the circle punctured at `1`. -/
 def boundaryCayleyHomeomorph : ℝ ≃ₜ {z : Circle // z ≠ 1} where
   toFun x := ⟨boundaryCayley x, boundaryCayley_ne_one x⟩
   invFun z := circleCayleyInv z
   left_inv := circleCayleyInv_boundaryCayley
-  right_inv z := Subtype.ext (boundaryCayley_circleCayleyInv z.2)
+  right_inv z := Subtype.ext (boundaryCayley_circleCayleyInv z.property)
   continuous_toFun := continuous_boundaryCayley.subtype_mk _
   continuous_invFun := continuous_circleCayleyInv_restrict
 
@@ -415,8 +415,8 @@ theorem I_mul_herglotzTransform_cayley_eq (mu : Measure Circle) [IsFiniteMeasure
     simpa only [tau, i, UpperHalfPlane.coe_mk, map_neg, conj_I, sub_neg_eq_add,
       mem_ball_zero_iff, w] using h
   have hcont : Continuous fun u : Circle ↦ I * (((u : ℂ) + w) / ((u : ℂ) - w)) :=
-    continuous_const.mul <| (continuous_subtype_val.add continuous_const).div
-      (continuous_subtype_val.sub continuous_const) fun u hu ↦ by
+    continuous_const.mul <| (continuous_subtypeVal.add continuous_const).div
+      (continuous_subtypeVal.sub continuous_const) fun u hu ↦ by
         have hnorm := Circle.norm_coe u
         rw [sub_eq_zero] at hu
         rw [hu] at hnorm

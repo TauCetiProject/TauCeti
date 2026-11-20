@@ -60,9 +60,9 @@ variable (𝕜 : Type*) {𝕜' : Type*}
 preferred model coordinates. Continuity is established separately using bundle charts. -/
 private def restrictScalarsEquiv : TangentBundle 𝓘(𝕜', E) M ≃ TangentBundle 𝓘(𝕜, E) M where
   toFun p := ⟨p.proj, (tangentSpaceCastModel 𝓘(𝕜, E) p.proj).symm
-    (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.2)⟩
+    (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.snd)⟩
   invFun p := ⟨p.proj, (tangentSpaceCastModel 𝓘(𝕜', E) p.proj).symm
-    (tangentSpaceCastModel 𝓘(𝕜, E) p.proj p.2)⟩
+    (tangentSpaceCastModel 𝓘(𝕜, E) p.proj p.snd)⟩
   left_inv p := by simp
   right_inv p := by simp
 
@@ -78,9 +78,9 @@ private theorem trivializationAt_restrictScalarsEquiv (x : M)
   -- The carrier equivalence is defined through the model casts; the coordinate changes
   -- below act on the resulting vectors in E.
   change (p.proj, tangentCoordChange 𝓘(𝕜, E) p.proj x p.proj
-    (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.2)) =
+    (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.snd)) =
     (p.proj, tangentCoordChange 𝓘(𝕜', E) p.proj x p.proj
-      (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.2))
+      (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.snd))
   rw [h]
   rfl
 

@@ -30,6 +30,10 @@ A monoid endomorphism fixing every letter of a word, or fixing the product of tw
 letters and every other letter, fixes the product of the word (`List.map_prod_ofFn_of_forall`,
 `List.map_prod_ofFn_of_adjacent`). In a division monoid the inverse of a product is the product
 of the inverses in the reverse order (`List.inv_prod_ofFn`).
+
+For a natural-indexed family `b`, the product `b 0 ⋯ b (n - 1)` of its first `n` entries splits
+off its last entry (`List.prod_ofFn_val_succ`), only reads the entries below `n`
+(`List.prod_ofFn_val_congr`) and splits along a concatenation (`List.prod_ofFn_val_add`).
 -/
 
 public section
@@ -131,5 +135,31 @@ theorem inv_prod_ofFn {M : Type*} [DivisionMonoid M] :
     rw [List.ofFn_succ, List.ofFn_succ', List.concat_eq_append, List.prod_cons, List.prod_append,
       mul_inv_rev, inv_prod_ofFn]
     simp [Fin.rev_castSucc]
+
+section Nat
+
+variable {M : Type*} [Monoid M]
+
+/-- The product of the first `n + 1` entries of a natural-indexed family splits off its last
+entry. -/
+theorem prod_ofFn_val_succ (b : ℕ → M) (n : ℕ) :
+    (ofFn fun j : Fin (n + 1) ↦ b j).prod = (ofFn fun j : Fin n ↦ b j).prod * b n := by
+  rw [ofFn_succ', prod_concat]
+  simp
+
+/-- The product of the first `n` entries of a natural-indexed family only reads the entries
+below `n`. -/
+theorem prod_ofFn_val_congr {n : ℕ} {b b' : ℕ → M} (h : ∀ i < n, b i = b' i) :
+    (ofFn fun j : Fin n ↦ b j).prod = (ofFn fun j : Fin n ↦ b' j).prod :=
+  congrArg prod (ofFn_inj.2 (funext fun j ↦ h j j.isLt))
+
+/-- The product of the first `p + d` entries of a natural-indexed family is the product of the
+first `p` entries times the product of the `d` entries after them. -/
+theorem prod_ofFn_val_add (b : ℕ → M) (p d : ℕ) :
+    (ofFn fun j : Fin (p + d) ↦ b j).prod =
+      (ofFn fun j : Fin p ↦ b j).prod * (ofFn fun j : Fin d ↦ b (p + j)).prod := by
+  simp only [ofFn_add, prod_append, Fin.val_castLE, Fin.val_natAdd]
+
+end Nat
 
 end List
