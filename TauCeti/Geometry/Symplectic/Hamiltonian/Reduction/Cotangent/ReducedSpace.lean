@@ -26,7 +26,7 @@ stabilizer of `0 ∈ 𝔤*`, is all of `G`.
 * **Regularity.** An element of `G` fixing a covector fixes its base point, so the lifted action is
   free (`TauCeti.CotangentBundle.instIsCancelSMul`), hence so is the action of the coadjoint
   stabilizer of any value on its level, and every value of `μ` is a regular value
-  (`TauCeti.CotangentBundle.surjective_differential_momentMap`). The lifted action is proper since
+  (`TauCeti.CotangentBundle.differential_momentMap_surjective`). The lifted action is proper since
   the bundle projection is equivariant (`TauCeti.CotangentBundle.properSMul`). So the
   Marsden–Weinstein–Meyer theorem (`existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback`
   in `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`) makes `μ⁻¹(0) / G_0` a symplectic manifold.
@@ -52,7 +52,7 @@ proof `h` that `μ` is an equivariant moment map, a proof `hreg` that `0` is a r
 dimension `n = dim T*Q - dim 𝔤` of the level and an embedded Lie subgroup structure `d` on `G_0`.
 The statements take these as arguments, as the Marsden–Weinstein–Meyer theorem does; `h` and
 `hreg` hold by `TauCeti.CotangentBundle.isEquivariantMomentMap_momentMap` and
-`TauCeti.CotangentBundle.surjective_differential_momentMap`.
+`TauCeti.CotangentBundle.differential_momentMap_surjective`.
 
 ## Main definitions
 
@@ -61,8 +61,6 @@ The statements take these as arguments, as the Marsden–Weinstein–Meyer theor
 
 ## Main results
 
-* `TauCeti.CotangentBundle.surjective_differential_momentMap`: for a free action, every value of
-  the cotangent moment map is regular.
 * `TauCeti.CotangentBundle.zeroReducedSpaceDiffeomorph_mk`: the diffeomorphism sends the orbit of
   a covector in `μ⁻¹(0)` to its reduced covector.
 * `TauCeti.CotangentBundle.mpullback_zeroReducedSpaceDiffeomorph_symplecticForm`: **cotangent
@@ -101,25 +99,21 @@ variable {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [FiniteDim
   [ContMDiffSMul IG I ∞ G Q] [ContMDiffConstSMul I ∞ G Q] [IsCancelSMul G Q]
   {h : (symplecticForm I Q).IsEquivariantMomentMap (momentMap IG G)}
 
-/-! ### Regularity of the cotangent moment map of a free action -/
-
-variable (h) in
-/-- **For a free action, every value of the cotangent moment map is regular.** An element of `G`
-fixing a covector fixes its base point, so the cotangent-lifted action of a free action is free,
-and freeness makes the differential of a moment map of a symplectic form surjective. The moment
-map property `h` holds by `TauCeti.CotangentBundle.isEquivariantMomentMap_momentMap`. -/
-theorem surjective_differential_momentMap [T2Space Q] (z : CotangentBundle I Q) :
-    Surjective (h.differential z) :=
-  h.toIsMomentMap.differential_surjective_of_stabilizer_eq_bot
-    (isSymplectic_symplecticForm.isNondegenerate.nondegenerate_bilinFormAt z)
-    (isCancelSMul_iff_stabilizer_eq_bot.1 inferInstance z)
-
 /-! ### The reduced space at zero is the cotangent bundle of the orbit space -/
 
 section ReducedSpace
 
 variable [ProperSMul G Q] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F] {n : ℕ}
+
+omit [I.Boundaryless] [IsCancelSMul G Q] [ProperSMul G Q] in
+/-- The coadjoint stabilizer of zero acts on the zero level through its inclusion into `G`. This
+holds by definition; `SubMulAction.val_smul` does not apply, since instance search would read the
+right-hand side with the cotangent lift of the restricted action on `Q`, a different instance. -/
+private theorem coe_stabilizer_smul_levelSubMulAction
+    (k : (Lie.coadjointRepresentation ℝ IG G).stabilizer 0) (z : h.levelSubMulAction 0) :
+    ((k • z : h.levelSubMulAction 0) : CotangentBundle I Q) = (k : G) • (z : CotangentBundle I Q) :=
+  rfl
 
 variable (h) in
 /-- The reduction map, descended to the reduced space at zero. -/
@@ -134,11 +128,7 @@ private def zeroReducedSpaceMap :
     obtain ⟨k, hk⟩ := MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 hzz')
     refine (ProperSMul.reductionMap_eq_reductionMap_iff_quotientMk
       (h.mem_levelSubMulAction.1 z.2) (h.mem_levelSubMulAction.1 z'.2)).2 ⟨(k : G)⁻¹, ?_⟩
-    -- The stabilizer acts on the level through its inclusion into `G`. This holds by definition;
-    -- `SubMulAction.val_smul` does not apply, since instance search would read the right-hand
-    -- side with the cotangent lift of the restricted action on `Q`, a different instance.
-    have hk' : (k : G) • (z' : CotangentBundle I Q) = z := congrArg Subtype.val hk
-    rw [← hk', inv_smul_smul]
+    rw [← hk, coe_stabilizer_smul_levelSubMulAction, inv_smul_smul]
 
 private theorem zeroReducedSpaceMap_mk (z : h.levelSubMulAction 0) :
     letI := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
@@ -162,11 +152,8 @@ private theorem bijective_zeroReducedSpaceMap : Bijective (zeroReducedSpaceMap h
       Representation.mem_stabilizer.2 (map_zero _)
     refine Quotient.sound (MulAction.orbitRel_apply.2
       (MulAction.mem_orbit_iff.2 ⟨(⟨g, hg0⟩ : _)⁻¹, Subtype.ext ?_⟩))
-    -- The stabilizer acts on the level through its inclusion into `G`, by definition (see
-    -- `zeroReducedSpaceMap`).
-    have hsmul : (((⟨g, hg0⟩ : (Lie.coadjointRepresentation ℝ IG G).stabilizer 0)⁻¹ • z' :
-        _) : CotangentBundle I Q) = g⁻¹ • (z' : CotangentBundle I Q) := rfl
-    rw [hsmul, ← hg, inv_smul_smul]
+    rw [coe_stabilizer_smul_levelSubMulAction, Subgroup.coe_inv, Subgroup.coe_mk, ← hg,
+      inv_smul_smul]
   · obtain ⟨z, hz, rfl⟩ := ProperSMul.exists_momentMap_eq_zero_and_reductionMap_eq_quotientMk w
     exact ⟨Quotient.mk _ ⟨z, h.mem_levelSubMulAction.2 hz⟩, rfl⟩
 
@@ -317,7 +304,7 @@ form to the canonical symplectic form of `T*(Q ⧸ G)`
 
 The hypotheses `h` and `hreg` are those of the atlas: they hold by
 `TauCeti.CotangentBundle.isEquivariantMomentMap_momentMap` and
-`TauCeti.CotangentBundle.surjective_differential_momentMap`. -/
+`TauCeti.CotangentBundle.differential_momentMap_surjective`. -/
 def zeroReducedSpaceDiffeomorph :
     haveI := properSMul (IG := IG) (G := G) (I := I) (M := Q)
     letI := h.orbitRelQuotientChartedSpace 0 hreg hn d
