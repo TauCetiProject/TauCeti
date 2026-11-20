@@ -112,8 +112,8 @@ theorem complementEquiv_mem_stage_iff {n : ℕ} {x : BalancedProjectionAlgebra R
 
 /-- The complement automorphism restricted to `stage R τ n`. -/
 def stageComplementEquiv (n : ℕ) : stage R τ n ≃ₐ[R] stage R τ n where
-  toFun x := ⟨complementEquiv τ x, (complementEquiv_mem_stage_iff τ).2 x.2⟩
-  invFun x := ⟨complementEquiv τ x, (complementEquiv_mem_stage_iff τ).2 x.2⟩
+  toFun x := ⟨complementEquiv τ x, (complementEquiv_mem_stage_iff τ).2 x.property⟩
+  invFun x := ⟨complementEquiv τ x, (complementEquiv_mem_stage_iff τ).2 x.property⟩
   left_inv x := Subtype.ext (complementEquiv_complementEquiv τ x)
   right_inv x := Subtype.ext (complementEquiv_complementEquiv τ x)
   map_mul' x y := Subtype.ext (map_mul (complementEquiv τ) (x : BalancedProjectionAlgebra R τ) y)
