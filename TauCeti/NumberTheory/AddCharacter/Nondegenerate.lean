@@ -18,7 +18,7 @@ An additive character `ψ : ZMod p → Λ` of the prime field with values in a c
 *nondegenerate* when `ψ 1 - 1` is a unit of `Λ`. This is the condition under which the finite
 Fourier transform of `Λ`-valued functions on a finite vector space is invertible, and the
 coefficient condition for the Artin–Schreier sheaves in the `ℓ`-adic Fourier transform of
-Deligne, Katz and Laumon. Over a domain, or more generally over a local ring whose residue
+Deligne, Katz and Laumon. Over a field, or more generally over a local ring whose residue
 characteristic is not `p`, it says that `ψ` is nontrivial. Over a ring such as `ZMod 7 × ZMod 7`
 nontriviality is too weak, and nondegeneracy is what makes the orthogonality relations hold.
 
@@ -43,7 +43,7 @@ nontriviality is too weak, and nondegeneracy is what makes the orthogonality rel
   reduction modulo every maximal ideal is nontrivial.
 * `AddChar.isNondegenerate_iff_of_isLocalRing`: over a local ring, `ψ` is nondegenerate if and
   only if `p` is a unit and `ψ` is nontrivial.
-* `AddChar.IsNondegenerate.exists_eq_apply`: if `Spec Λ` is connected, every `p`-th root of
+* `AddChar.IsNondegenerate.exists_apply_eq`: if `Spec Λ` is preconnected, every `p`-th root of
   unity of `Λ` is a value of `ψ`.
 * `AddChar.IsNondegenerate.existsUnique_trace_mul`: if `Spec Λ` is connected, every additive
   character of a finite field `k` of characteristic `p` is `x ↦ ψ (Tr (c * x))` for a unique
@@ -138,8 +138,7 @@ theorem IsNondegenerate.compAddMonoidHom_trace_eq_traceChar [Nontrivial Λ] (hψ
     ψ.compAddMonoidHom (Algebra.trace (ZMod p) A).toAddMonoidHom =
       traceChar A hψ.isPrimitiveRoot := by
   ext x
-  rw [coe_compAddMonoidHom, Function.comp_apply, traceChar_apply, ← map_nsmul_eq_pow, nsmul_one,
-    ZMod.natCast_zmod_val, LinearMap.toAddMonoidHom_coe]
+  simp [traceChar_apply, ← map_nsmul_eq_pow]
 
 /-- The prime `p` is a unit in a ring carrying a nondegenerate character of `ZMod p`. -/
 theorem IsNondegenerate.isUnit_natCast (hψ : ψ.IsNondegenerate) : IsUnit (p : Λ) := by
@@ -192,11 +191,9 @@ if `b = 0` and `0` otherwise. Over a domain and for primitive `ψ` this is
 theorem IsNondegenerate.sum_mulShift (hψ : ψ.IsNondegenerate) (b : ZMod p) :
     ∑ x : ZMod p, ψ (x * b) = if b = 0 then (p : Λ) else 0 := by
   classical
-  have := hψ.sum_comp_eq_ite (AddMonoidHom.mulRight b)
-  simp only [AddMonoidHom.coe_mulRight, ZMod.card] at this
-  rw [this]
-  congr 1
-  exact propext ⟨fun h ↦ by simpa using DFunLike.congr_fun h 1, fun h ↦ by ext; simp [h]⟩
+  have hb : AddMonoidHom.mulRight b = 0 ↔ b = 0 :=
+    ⟨fun h ↦ by simpa using DFunLike.congr_fun h 1, fun h ↦ by ext; simp [h]⟩
+  simpa [hb] using hψ.sum_comp_eq_ite (AddMonoidHom.mulRight b)
 
 /-- **Orthogonality over a finite field.** For a finite field `k` of characteristic `p` and a
 nondegenerate character `ψ`, `∑ x : k, ψ (Tr (x * y))` is the cardinality of `k` if `y = 0`
@@ -206,17 +203,14 @@ theorem IsNondegenerate.sum_trace_mul_eq_ite (hψ : ψ.IsNondegenerate) {k : Typ
     ∑ x : k, ψ (Algebra.trace (ZMod p) k (x * y)) =
       if y = 0 then (Fintype.card k : Λ) else 0 := by
   classical
-  have := hψ.sum_comp_eq_ite
+  -- `x ↦ Tr (x * y)` vanishes only for `y = 0`, by nondegeneracy of the trace form
+  have hy : (Algebra.trace (ZMod p) k).toAddMonoidHom.comp (AddMonoidHom.mulRight y) = 0 ↔
+      y = 0 :=
+    ⟨fun h ↦ (traceForm_nondegenerate (ZMod p) k).1 y fun x ↦ by
+      simpa [Algebra.traceForm_apply, mul_comm] using DFunLike.congr_fun h x,
+      fun h ↦ by ext x; simp [h]⟩
+  simpa [hy] using hψ.sum_comp_eq_ite
     ((Algebra.trace (ZMod p) k).toAddMonoidHom.comp (AddMonoidHom.mulRight y))
-  simp only [AddMonoidHom.comp_apply, AddMonoidHom.coe_mulRight, LinearMap.toAddMonoidHom_coe]
-    at this
-  rw [this]
-  congr 1
-  refine propext ⟨fun h ↦ ?_, fun h ↦ by ext x; simp [h]⟩
-  by_contra hy
-  obtain ⟨z, hz⟩ := DFunLike.ne_iff.1 (Algebra.trace_ne_zero (ZMod p) k)
-  refine hz ?_
-  simpa [inv_mul_cancel_right₀ hy] using DFunLike.congr_fun h (z * y⁻¹)
 
 /-- A nondegenerate character remains nondegenerate after composing with a ring homomorphism,
 for instance a reduction modulo an ideal. -/
@@ -243,9 +237,11 @@ theorem isNondegenerate_iff_forall_isMaximal :
   simp_rw [zmod_char_ne_one_iff, MonoidHom.compAddChar_apply, Function.comp_apply,
     RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, ne_eq, ← map_one (Ideal.Quotient.mk _),
     Ideal.Quotient.eq]
-  refine ⟨fun hψ m hm hmem ↦ hm.ne_top (m.eq_top_of_isUnit_mem hmem hψ), fun h ↦ ?_⟩
+  refine ⟨fun hψ m hm hmem ↦ hm.ne_top (m.eq_top_of_isUnit_mem hmem (isNondegenerate_iff.1 hψ)),
+    fun h ↦ ?_⟩
   by_contra hψ
-  obtain ⟨m, hm, hmem⟩ := exists_max_ideal_of_mem_nonunits hψ
+  obtain ⟨m, hm, hmem⟩ :=
+    exists_max_ideal_of_mem_nonunits (mem_nonunits_iff.2 (isNondegenerate_iff.not.1 hψ))
   exact h m hm hmem
 
 /-- Over a local ring, a character of `ZMod p` is nondegenerate if and only if `p` is a unit and
@@ -257,7 +253,8 @@ theorem isNondegenerate_iff_of_isLocalRing [IsLocalRing Λ] :
   refine ⟨fun hψ ↦ ⟨hψ.isUnit_natCast, hψ.ne_one⟩, fun ⟨hp, hψ⟩ ↦ ?_⟩
   rw [zmod_char_ne_one_iff, ne_eq, ← sub_eq_zero] at hψ
   by_contra hunit
-  have hmem : ψ 1 - 1 ∈ IsLocalRing.maximalIdeal Λ := hunit
+  have hmem : ψ 1 - 1 ∈ IsLocalRing.maximalIdeal Λ :=
+    (IsLocalRing.mem_maximalIdeal _).2 (mem_nonunits_iff.2 (isNondegenerate_iff.not.1 hunit))
   -- `∑ i < p, ψ 1 ^ i` is congruent to `p` modulo the maximal ideal, hence a unit.
   have hsum : IsUnit (∑ i ∈ range p, ψ 1 ^ i) := by
     by_contra hns
@@ -294,6 +291,7 @@ theorem IsNondegenerate.exists_apply_eq [PreconnectedSpace (PrimeSpectrum Λ)]
     simp only [e, mul_left_comm (χ j i), (χ j).apply_mul_sum]
   have hidem (j : ZMod p) : IsIdempotentElem (e j) := by
     have h : u * ∑ i, χ j i * e j = e j * e j := by
+      simp only [e]
       rw [← sum_mul, ← mul_assoc]
     rw [IsIdempotentElem, ← h]
     simp only [hfix, sum_const, card_univ, ZMod.card, nsmul_eq_mul, ← mul_assoc, hup, one_mul]
@@ -308,8 +306,8 @@ theorem IsNondegenerate.exists_apply_eq [PreconnectedSpace (PrimeSpectrum Λ)]
     rw [h1, mul_one] at h
     simp only [χ, φ, mul_apply, inv_apply, mulShift_apply, zmodChar_apply, ZMod.val_one,
       pow_one, mul_neg, mul_one] at h
-    rw [← mul_one (ψ j), ← h, ← mul_assoc, mul_comm (ψ j), mul_assoc, ← map_add_eq_mul,
-      add_neg_cancel, map_zero_eq_one, mul_one]
+    have hj : ψ j * ψ (-j) = 1 := by rw [← map_add_eq_mul, add_neg_cancel, map_zero_eq_one]
+    linear_combination η * hj - ψ j * h
   have : Subsingleton Λ := subsingleton_of_zero_eq_one <| by
     simpa only [hzero, sum_const_zero] using hsum
   exact hne 0 (Subsingleton.elim _ _)
@@ -368,6 +366,22 @@ example : (zmodChar 3 (by decide : ((2, 2) : ZMod 7 × ZMod 7) ^ 3 = 1)).IsNonde
   refine ⟨by rw [isNondegenerate_zmodChar_iff]; decide, fun a ↦ ?_⟩
   rw [zmodChar_apply]
   fin_cases a <;> decide
+
+/-- Over the zero ring, which has an empty, hence preconnected but not connected, spectrum, the
+trivial character is nondegenerate but not primitive: the `Nontrivial` and connectedness
+hypotheses cannot be dropped. -/
+example : (1 : AddChar (ZMod 3) Unit).IsNondegenerate ∧ ¬(1 : AddChar (ZMod 3) Unit).IsPrimitive :=
+  ⟨isUnit_of_subsingleton _, fun h ↦ h one_ne_zero (DFunLike.ext _ _ fun _ ↦ Subsingleton.elim _ _)⟩
+
+/-- No character of `ZMod 3` with values in `ZMod 5` is nondegenerate: `ψ 1` would be a root of
+`1 + X + X ^ 2`, which has no root in `ZMod 5`. -/
+example : ∀ ψ : AddChar (ZMod 3) (ZMod 5), ¬ψ.IsNondegenerate := by
+  intro ψ hψ
+  have h := hψ.isRoot_cyclotomic
+  rw [Polynomial.IsRoot, Polynomial.cyclotomic_prime, Polynomial.eval_geom_sum] at h
+  generalize ψ 1 = x at h
+  revert x
+  decide
 
 /-- Nontriviality is not enough over a ring that is not local: the character of `ZMod 3` sending
 `1` to `(2, 1)` in `ZMod 7 × ZMod 7` is nontrivial, but `(2, 1) - 1 = (1, 0)` is not a unit. -/
