@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 public import Mathlib.GroupTheory.FreeGroup.Center
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
+import Mathlib.Tactic.Group
+import Mathlib.Tactic.Linarith
 import TauCeti.Algebra.Group.Subgroup.Centralizer
 import TauCeti.Algebra.Group.Torsion
 import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced

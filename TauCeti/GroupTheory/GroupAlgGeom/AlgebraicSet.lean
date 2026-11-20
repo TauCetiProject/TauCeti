@@ -13,6 +13,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.Data.ZMod.Defs
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Algebra.Group.TypeTags.Finite
 import TauCeti.GroupTheory.FreeGroup.Centralizer
 import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import Mathlib.Order.Concept

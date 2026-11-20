@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Coprod.Basic
 public import Mathlib.GroupTheory.FreeGroup.NielsenSchreier
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 import Mathlib.Data.ZMod.Basic
+import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import TauCeti.GroupTheory.FreeGroup.Basis
 import TauCeti.GroupTheory.FreeGroup.Centralizer
 import TauCeti.GroupTheory.FreeGroup.Hopfian
