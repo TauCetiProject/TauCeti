@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
+import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
@@ -84,6 +85,7 @@ whose Laplacian is computed in powers of `t` by `TauCeti.SmoothForm.laplacian_ad
 * `TauCeti.SmoothForm.hodgeStar_codifferential`: `⋆d*β = (-1) ^ (k + 1) d⋆β`.
 * `TauCeti.SmoothForm.codifferential_neg_orientation`: `d*` does not depend on the orientation.
 * `TauCeti.SmoothForm.codifferential_codifferential`: `d* d* = 0`.
+* `TauCeti.SmoothForm.codifferential_hodgeStar_ofFunction_const`: `d* (c vol) = 0`.
 * `TauCeti.SmoothForm.mextDeriv_wedge_hodgeStar`: Green's formula
   `d (α ∧ ⋆β) = ⟨dα, β⟩ vol - ⟨α, d*β⟩ vol`.
 * `TauCeti.SmoothForm.integralTopForm_inner_mextDeriv_eq_inner_codifferential`: `d*` is the
@@ -215,6 +217,16 @@ theorem codifferential_comp_codifferential {l' : ℕ} (o : Manifold.Orientation 
     (hkl : k + 1 + l = m) (hkl' : k + 1 + 1 + l' = m) :
     codifferential o hkl ∘ₗ codifferential o hkl' = 0 :=
   LinearMap.ext (codifferential_codifferential o hkl hkl')
+
+/-- **Constant multiples of the volume form are coclosed**: `d* (c vol) = 0`, since
+`⋆(c vol) = c` is constant and `d c = 0`. -/
+@[simp]
+theorem codifferential_hodgeStar_ofFunction_const (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + 1 + 0 = m) (hl : 0 + (k + 1) = m) (c : ℝ) :
+    codifferential o hkl (hodgeStar o hl (ofFunction (ContMDiffMap.const c : C^∞⟮I, M; ℝ⟯))) =
+      0 := by
+  rw [codifferential_apply o hkl (by omega), hodgeStar_hodgeStar, map_smul,
+    mextDerivₗ_ofFunction_const, smul_zero, map_zero, smul_zero]
 
 /-- The codifferential does not enlarge supports. -/
 theorem tsupport_codifferential_subset (o : Manifold.Orientation I M (Fin m))

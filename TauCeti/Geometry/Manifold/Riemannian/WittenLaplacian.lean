@@ -533,16 +533,12 @@ theorem wittenHessianTerm_apply_top (o : Manifold.Orientation I M (Fin m)) (f : 
   set vol := SmoothForm.hodgeStar o hl one
   have hvol : (vol : RoughForm I M ℝ (k + 1)) = riemannianVolumeForm o :=
     SmoothForm.coe_hodgeStar_ofFunction_one o hl
-  -- `K_f vol = d ι_(grad f) vol + df ∧ d^* vol`, and `d^* vol = ±⋆ d (⋆⋆1) = ±⋆ d 1 = 0`.
-  have hcod : SmoothForm.codifferential o hkl vol = 0 := by
-    have h2 := SmoothForm.hodgeStar_hodgeStar o hl hkl one
-    rw [zero_mul, pow_zero, one_smul] at h2
-    rw [SmoothForm.codifferential_apply o hkl (by omega), h2, mextDerivₗ_ofFunction_const,
-      map_zero, smul_zero]
+  -- `K_f vol = d ι_(grad f) vol + df ∧ d^* vol`, and `d^* vol = 0`.
   have hK : (wittenHessianTerm o f hkl vol : RoughForm I M ℝ (k + 1)) =
       fun y ↦ Manifold.divergence I (Manifold.mgradient I f) y • riemannianVolumeForm o y := by
     rw [wittenHessianTerm_def, LinearMap.add_apply, SmoothForm.laplacian_add_one_zero,
-      SmoothForm.laplacian_add_one_zero, hcod, map_zero, add_zero, mextDerivₗ_apply,
+      SmoothForm.laplacian_add_one_zero,
+      SmoothForm.codifferential_hodgeStar_ofFunction_const, map_zero, add_zero, mextDerivₗ_apply,
       SmoothForm.coe_gradInteriorₗ, hvol]
     exact mextDeriv_interior_riemannianVolumeForm o
       (Manifold.mdifferentiable_mgradient (f.contMDiff.of_le (by simp)))
