@@ -232,9 +232,12 @@ lemma derivedRestrictComp_comp_id (f : X ⟶ Y) [IsOpenImmersion f] :
 /-- Derived restriction along an isomorphism of schemes is an equivalence: it is the functor of
 the derived equivalence induced by `Scheme.Modules.restrictEquivalence`. -/
 instance (f : X ⟶ Y) [IsIso f] : f.derivedRestrict.IsEquivalence := by
-  have : (restrictEquivalence (asIso f)).functor.Additive := restrictFunctorAdditive f
+  have : (restrictEquivalence (asIso f)).functor.Additive := by
+    rw [restrictEquivalence_functor]
+    exact restrictFunctorAdditive f
   have := ((restrictEquivalence (asIso f)).mapDerivedCategory).isEquivalence_functor
-  rwa [Equivalence.mapDerivedCategory_functor] at this
+  simpa only [Equivalence.mapDerivedCategory_functor, restrictEquivalence_functor, asIso_hom]
+    using this
 
 end AlgebraicGeometry.Scheme.Hom
 

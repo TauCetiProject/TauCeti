@@ -154,9 +154,6 @@ lemma restrictFunctorInvCompHomIso_inv_app_app {X Y : Scheme.{u}} (e : X ≅ Y)
 /-- Restriction along an isomorphism of schemes `e : X ≅ Y` is an equivalence
 `Y.Modules ≌ X.Modules`, with inverse the restriction along `e.inv` and with unit and counit
 given by `Scheme.Modules.restrictFunctorInvCompHomIso`. -/
--- Exposed so that the functors of derived equivalences built from it, such as the derived
--- restriction along an isomorphism, are identified with the corresponding restrictions.
-@[expose]
 noncomputable def restrictEquivalence {X Y : Scheme.{u}} (e : X ≅ Y) : Y.Modules ≌ X.Modules :=
   CategoryTheory.Equivalence.mk (restrictFunctor e.hom) (restrictFunctor e.inv)
     (restrictFunctorInvCompHomIso e.symm).symm (restrictFunctorInvCompHomIso e)
@@ -165,13 +162,13 @@ noncomputable def restrictEquivalence {X Y : Scheme.{u}} (e : X ≅ Y) : Y.Modul
 @[simp]
 lemma restrictEquivalence_functor {X Y : Scheme.{u}} (e : X ≅ Y) :
     (restrictEquivalence e).functor = restrictFunctor e.hom :=
-  rfl
+  (rfl)
 
 /-- The inverse of `restrictEquivalence e` is the restriction along `e.inv`. -/
 @[simp]
 lemma restrictEquivalence_inverse {X Y : Scheme.{u}} (e : X ≅ Y) :
     (restrictEquivalence e).inverse = restrictFunctor e.inv :=
-  rfl
+  (rfl)
 
 /-- Restriction to an open subscheme preserves injective module sheaves. In particular,
 restricting the terms of an injective resolution gives injective terms. -/

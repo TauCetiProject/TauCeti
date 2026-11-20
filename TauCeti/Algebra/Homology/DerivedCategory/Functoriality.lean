@@ -133,19 +133,6 @@ lemma mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategory_app_Q_obj (τ : 
     congr_app (NatTrans.mapHomologicalComplex_id (.up ℤ) (F ⋙ G)) K
   simp [mapDerivedCategoryCompIso_hom_app_Q_obj, NatTrans.mapDerivedCategory_app_Q_obj, this]
 
-/-- The comparison of `mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategory_app_Q_obj`
-followed by the identification of `H'` on complexes: the form used to compare composites of
-such comparisons. -/
-@[reassoc]
-private lemma mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategory_app_Q_obj_comp
-    (τ : F ⋙ G ⟶ H) (K : CochainComplex C₁ ℤ) :
-    (mapDerivedCategoryCompIso F G).hom.app (Q.obj K) ≫
-      (NatTrans.mapDerivedCategory τ).app (Q.obj K) ≫ H.mapDerivedCategoryFactors.hom.app K =
-      G.mapDerivedCategory.map (F.mapDerivedCategoryFactors.hom.app K) ≫
-        G.mapDerivedCategoryFactors.hom.app ((F.mapHomologicalComplex _).obj K) ≫
-          Q.map ((NatTrans.mapHomologicalComplex τ (.up ℤ)).app K) := by
-  simp [mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategory_app_Q_obj_assoc]
-
 end Comp
 
 section Associativity
@@ -177,7 +164,7 @@ theorem mapDerivedCategoryCompIso_associativity (τ₁ : F ⋙ G ⟶ FG) (τ₂ 
       (mapDerivedCategoryCompIso F GH).hom ≫ NatTrans.mapDerivedCategory τ₄ := by
   -- Both sides are determined by their values on complexes `Q.obj K`, followed by the
   -- identification of `FGH'` on complexes. There, each comparison is computed by
-  -- `mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategory_app_Q_obj_comp`, after moving
+  -- `mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategory_app_Q_obj`, after moving
   -- `F'(Q.obj K)` to `Q.obj (F K)` by naturality on the right. Both sides become `Q` of chain
   -- maps, which agree termwise by `h` (`hK`).
   refine Localization.natTrans_ext Q (HomologicalComplex.quasiIso C₁ (.up ℤ)) fun K ↦ ?_
@@ -190,14 +177,15 @@ theorem mapDerivedCategoryCompIso_associativity (τ₁ : F ⋙ G ⟶ FG) (τ₂ 
   rw [← cancel_mono (FGH.mapDerivedCategoryFactors.hom.app K)]
   simp only [NatTrans.comp_app, whiskerRight_app, whiskerLeft_app, associator_hom_app,
     Category.id_comp, Category.assoc,
-    mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategory_app_Q_obj_comp]
+    mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategory_app_Q_obj_assoc, Iso.inv_hom_id_app,
+    Functor.comp_obj, Category.comp_id]
   rw [← NatTrans.naturality_assoc, ← NatTrans.naturality_assoc,
     ← H.mapDerivedCategory.map_comp_assoc]
   dsimp only [Functor.comp_obj, Functor.comp_map]
   simp only [Category.assoc,
-    mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategory_app_Q_obj_comp,
-    mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategory_app_Q_obj_comp_assoc,
-    Functor.map_comp, mapDerivedCategoryFactors_hom_naturality_assoc]
+    mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategory_app_Q_obj_assoc, Iso.inv_hom_id_app,
+    Iso.inv_hom_id_app_assoc, Functor.comp_obj, Category.comp_id, Functor.map_comp,
+    mapDerivedCategoryFactors_hom_naturality_assoc]
   simp only [← Q.map_comp, hK]
 
 end Associativity
@@ -224,7 +212,8 @@ theorem mapDerivedCategoryCompIso_left_unitality {F : C₁ ⥤ C₁} {G : C₁ �
     simpa using congr_app h (K.X n)
   rw [← cancel_mono (G.mapDerivedCategoryFactors.hom.app K)]
   simp only [NatTrans.comp_app, Category.assoc,
-    mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategory_app_Q_obj_comp]
+    mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategory_app_Q_obj_assoc, Iso.inv_hom_id_app,
+    Functor.comp_obj, Category.comp_id]
   simp only [whiskerRight_app, leftUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
     Category.id_comp, NatTrans.comp_app, NatTrans.mapDerivedCategory_app_Q_obj,
     mapDerivedCategoryIdIso_hom_app, Category.assoc, Iso.inv_hom_id_app_assoc, ← Q.map_comp, hK]
@@ -255,8 +244,9 @@ theorem mapDerivedCategoryCompIso_right_unitality {F : C₁ ⥤ C₂} {G : C₂ 
   simp only [NatTrans.comp_app, Functor.comp_obj, Functor.id_map, Category.assoc] at hF
   rw [← cancel_mono (F.mapDerivedCategoryFactors.hom.app K)]
   simp only [NatTrans.comp_app, Category.assoc,
-    mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategory_app_Q_obj_comp, whiskerLeft_app,
-    rightUnitor_hom_app, Functor.comp_obj, Functor.id_obj, Category.id_comp, ← hF]
+    mapDerivedCategoryCompIso_hom_app_comp_mapDerivedCategory_app_Q_obj_assoc, Iso.inv_hom_id_app,
+    Category.comp_id, whiskerLeft_app, rightUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
+    ← hF]
   simp only [NatTrans.mapDerivedCategory_app_Q_obj, mapDerivedCategoryIdIso_hom_app,
     Category.assoc, Iso.inv_hom_id_app_assoc, ← Q.map_comp, hK]
 
