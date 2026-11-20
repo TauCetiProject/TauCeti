@@ -374,6 +374,14 @@ def IsComplexPositiveTMulDual (t : detLine ℝ E ⊗[ℝ] Dual ℝ (detLine ℝ 
     IsComplexPositiveDual φ ∧ t = x ⊗ₜ φ
 
 omit [IsScalarTower ℝ ℂ E] [IsScalarTower ℝ ℂ F] in
+/-- An element of `det E ⊗ (det F)^*` is complex positive exactly when it is `x ⊗ φ` for a complex
+positive `x` and a complex positive functional `φ`. -/
+theorem isComplexPositiveTMulDual_iff :
+    IsComplexPositiveTMulDual t ↔ ∃ (x : detLine ℝ E) (φ : Dual ℝ (detLine ℝ F)),
+      IsComplexPositive x ∧ IsComplexPositiveDual φ ∧ t = x ⊗ₜ φ :=
+  Iff.rfl
+
+omit [IsScalarTower ℝ ℂ E] [IsScalarTower ℝ ℂ F] in
 /-- The tensor product of a complex positive element and a complex positive functional is complex
 positive. -/
 theorem IsComplexPositive.isComplexPositiveTMulDual_tmul {x : detLine ℝ E}
