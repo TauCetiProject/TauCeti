@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ImplicitContDiff
 public import Mathlib.Analysis.Matrix.Spectrum
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Matrix
 import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 import TauCeti.Analysis.Matrix.Normed
 import TauCeti.Analysis.Matrix.Spectrum
@@ -28,8 +29,7 @@ for every unit eigenvector `u` of `M x₀` with eigenvalue `λᵢ`. For the stra
 of Hermitian matrices this reads `d/dt λᵢ (A + t • B) |_{t = 0} = Re ⟪u, B u⟫`
 (`Matrix.IsHermitian.hasDerivAt_eigenvalues₀_add_smul`). These are the first-order inputs to the
 Itô computation for the eigenvalues of matrix-valued diffusions: there the parameter is the vector
-of real noise coordinates, and simplicity holds off the collision set. Along the way, the entrywise
-derivative of a Hermitian family is itself Hermitian (`Matrix.isHermitian_fderiv_apply`).
+of real noise coordinates, and simplicity holds off the collision set.
 
 The value `k = ω` is allowed, so analytic families have analytic simple eigenvalues. At a repeated
 eigenvalue the ordered eigenvalues are in general only Lipschitz
@@ -332,18 +332,6 @@ eigenvalues. -/
 private theorem eigenvalues₀_selfAdjointPart {A : Matrix n n 𝕜} (hA : A.IsHermitian) :
     (isHermitian_selfAdjointPart A).eigenvalues₀ = hA.eigenvalues₀ :=
   IsHermitian.eigenvalues₀_congr (hA.isSelfAdjoint.coe_selfAdjointPart_apply ℝ) _ hA
-
-omit [Fintype n] [DecidableEq n] in
-/-- The entrywise derivative of a family of Hermitian matrices is Hermitian in every direction. -/
-theorem isHermitian_fderiv_apply {M : E → Matrix n n 𝕜} (hM : ∀ x, (M x).IsHermitian)
-    (x₀ v : E) :
-    (of fun a b ↦ fderiv ℝ (fun x ↦ M x a b) x₀ v).IsHermitian := by
-  refine IsHermitian.ext fun a b ↦ ?_
-  have h : (fun x ↦ M x a b) = (RCLike.conjCLE (K := 𝕜)) ∘ fun x ↦ M x b a :=
-    funext fun x ↦ by
-      rw [Function.comp_apply, RCLike.conjCLE_apply, ← RCLike.star_def, (hM x).apply]
-  rw [of_apply, of_apply, h, ContinuousLinearEquiv.comp_fderiv]
-  simp [RCLike.star_def]
 
 /-! ### Smoothness and first variation -/
 

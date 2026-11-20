@@ -14,6 +14,9 @@ public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Topology.Instances.Int
 public import TauCeti.Topology.Algebra.Module.Matrix
+public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
 
 /-!
 # Derivatives of matrix-vector products
@@ -28,7 +31,9 @@ normed field. Neither completeness nor independence of the directions is require
 differentiability of a rectangular matrix field `M : E → Matrix κ ι 𝕜` also implies
 differentiability of the induced continuous-linear-map family `x ↦ (M x).mulVecCLM`
 (`Matrix.differentiableWithinAt_mulVecCLM`, `Matrix.differentiableAt_mulVecCLM`,
-`Matrix.differentiableOn_mulVecCLM`, `Matrix.differentiable_mulVecCLM`).
+`Matrix.differentiableOn_mulVecCLM`, `Matrix.differentiable_mulVecCLM`). Over `RCLike 𝕜`, the
+real entrywise derivative of a family of Hermitian matrices is Hermitian in every direction
+(`Matrix.isHermitian_fderiv_apply`).
 
 For a constant matrix `M`, a map that agrees near `x` with `M *ᵥ f + b` has derivative `M f'(x)`
 at `x` (`HasFDerivAt.of_eventuallyEq_mulVec_add`). Conversely, if the derivatives of two `C¹`
@@ -121,6 +126,23 @@ theorem differentiable_mulVecCLM {κ : Type*} [Finite κ]
     (hM : ∀ i j, Differentiable 𝕜 (fun y ↦ M y i j)) :
     Differentiable 𝕜 (fun y ↦ (M y).mulVecCLM) :=
   fun x ↦ differentiableAt_mulVecCLM fun i j ↦ hM i j x
+
+end Matrix
+
+namespace Matrix
+
+variable {n E 𝕜 : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The entrywise derivative of a family of Hermitian matrices is Hermitian in every direction. -/
+theorem isHermitian_fderiv_apply {M : E → Matrix n n 𝕜} (hM : ∀ x, (M x).IsHermitian)
+    (x₀ v : E) :
+    (of fun a b ↦ fderiv ℝ (fun x ↦ M x a b) x₀ v).IsHermitian := by
+  refine IsHermitian.ext fun a b ↦ ?_
+  have h : (fun x ↦ M x a b) = (RCLike.conjCLE (K := 𝕜)) ∘ fun x ↦ M x b a :=
+    funext fun x ↦ by
+      rw [Function.comp_apply, RCLike.conjCLE_apply, ← RCLike.star_def, (hM x).apply]
+  rw [of_apply, of_apply, h, ContinuousLinearEquiv.comp_fderiv]
+  simp [RCLike.star_def]
 
 end Matrix
 
