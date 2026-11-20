@@ -15,17 +15,17 @@ import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 import TauCeti.Topology.ContinuousMap.LocallyConstant
 
 /-!
-# Extension of coefficients of measures from the unit ball
+# Extension of coefficients of measures along bounded homomorphisms
 
 Let `X` be a profinite space, `O` a topological commutative ring, `K` a complete ultrametric
-normed field and `j : O →+* K` a ring homomorphism with `‖j a‖ ≤ 1` for every `a`. A measure
-`μ ∈ D(X, O)` takes values in `O` only on `O`-valued test functions; this file extends it to a
-`K`-valued measure `ι_j(μ) = extendCoefficients j hj μ ∈ D(X, K)`.
+normed commutative ring and `j : O →+* K` a ring homomorphism with `‖j a‖ ≤ B` for every `a`.
+The extension of an `O`-valued measure `μ ∈ D(X, O)` is the `K`-valued measure
+`ι_j(μ) = extendCoefficients j hj μ ∈ D(X, K)`.
 
 On a locally constant function `Σ_i c_i 1_{U_i}` attached to a finite clopen partition the
-extension is `Σ_i c_i j(μ(1_{U_i}))`. This does not depend on the partition, and by the ultrametric
-inequality it is bounded by `max_i ‖c_i‖`, so it extends by density and completeness of `K` to all
-of `C(X, K)`. The resulting measure is characterised by its finite projections: along every map
+extension is `Σ_i c_i j(μ(1_{U_i}))`. This is independent of the partition. The ultrametric
+inequality bounds it by `B * max_i ‖c_i‖`, so it extends by density and completeness of `K` to
+all of `C(X, K)`. The resulting measure is characterised by its finite projections: along every map
 `q : X → A` to a finite discrete space, the coefficients of `ι_j(μ)` are the images under `j` of
 those of `μ`. In particular `ι_j(μ)(j ∘ f) = j(μ(f))` for every `f ∈ C(X, O)` when `j` is
 continuous, and this property determines `ι_j(μ)`. If `j` is moreover a topological embedding
@@ -33,7 +33,7 @@ onto the closed unit ball of `K`, the measures `ι_j(μ)` are exactly the `K`-va
 operator norm at most `1`: such a measure sends test functions `j ∘ f` into the closed unit ball,
 hence into the image of `j`.
 
-The bound `‖j a‖ ≤ 1` cannot be dropped: give `O = ℚ_p` the norm `max(1, |a|_p)` for `a ≠ 0`, so
+A uniform bound on `‖j a‖` is needed. Give `O = ℚ_p` the norm `max(1, |a|_p)` for `a ≠ 0`, so
 that its topology is discrete. Then Haar averaging `f ↦ p^{-n} Σ_{a mod p^n} f(a)` is an
 `O`-valued measure on `ℤ_p` with `μ(1_{p^n ℤ_p}) = p^{-n}`, and for `j = id` into the usual `ℚ_p`
 no continuous extension exists, since `p^n 1_{p^n ℤ_p} → 0` would have integral `1`.
@@ -50,7 +50,10 @@ no continuous extension exists, since `p^n 1_{p^n ℤ_p} → 0` would have integ
   through a finite discrete quotient.
 * `AbstractMeasure.extendCoefficients_apply_locallyConstant`: agreement with `j` on
   locally constant source-valued tests, without assuming continuity of `j`.
-* `AbstractMeasure.norm_toCLMEquiv_extendCoefficients_le`: the extension has norm at most `1`.
+* `AbstractMeasure.norm_extendCoefficients_apply_le`: the evaluation is bounded by `B` times the
+  supremum norm of the test function.
+* `AbstractMeasure.norm_toCLMEquiv_extendCoefficients_le`: over a nontrivially normed field, the
+  extension has operator norm at most `B`.
 * `AbstractMeasure.extendCoefficients_apply_comp`: `ι_j(μ)(j ∘ f) = j(μ(f))` for continuous `j`.
 * `AbstractMeasure.eq_extendCoefficients_of_apply_comp`: this property characterises `ι_j(μ)`.
 * `AbstractMeasure.exists_apply_comp_eq_of_norm_le_one`: for an embedding `j` onto the closed unit
@@ -79,7 +82,7 @@ variable {X : Type*} [TopologicalSpace X]
 
 section TopologicalRing
 
-variable {K O : Type*} [NormedField K] [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
+variable {K O : Type*} [NormedCommRing K] [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
   (j : O →+* K) (μ : D(X, O))
 
 section Cylinder
@@ -178,46 +181,86 @@ private theorem locallyConstantIntegral_apply (φ : LocallyConstant X K) {A : Ty
     locallyConstantIntegral j μ φ = cylinderSum j μ q g :=
   locallyConstantSum_eq j μ φ q g h
 
-variable [IsUltrametricDist K]
+variable [IsUltrametricDist K] {B : ℝ}
 
-/-- The ultrametric bound: on a locally constant function the extension is bounded by the
-supremum norm, because `j` takes values in the unit ball. -/
-private theorem norm_locallyConstantIntegral_le (hj : ∀ a, ‖j a‖ ≤ 1)
+/-- The ultrametric bound on a locally constant function. -/
+private theorem norm_locallyConstantIntegral_le (hj : ∀ a, ‖j a‖ ≤ B)
     (φ : LocallyConstant X K) :
-    ‖locallyConstantIntegral j μ φ‖ ≤ 1 * ‖LocallyConstant.toContinuousMapLinearMap K φ‖ := by
-  rw [one_mul, locallyConstantIntegral_apply j μ φ (quotientMap φ) φ.lift
-    (lift_quotientMap φ)]
-  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (norm_nonneg _) fun a _ ↦ ?_
+    ‖locallyConstantIntegral j μ φ‖ ≤ B * ‖LocallyConstant.toContinuousMapLinearMap K φ‖ := by
+  rw [locallyConstantIntegral_apply j μ φ (quotientMap φ) φ.lift (lift_quotientMap φ), cylinderSum]
+  have hB : 0 ≤ B := (norm_nonneg _).trans (hj 0)
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (mul_nonneg hB (norm_nonneg _))
+    fun a _ ↦ ?_
   obtain ⟨x, rfl⟩ := φ.discreteQuotient.proj_surjective a
-  calc ‖φ.lift (quotientMap φ x) * j (finiteProjection (quotientMap φ) μ _)‖
-      ≤ ‖φ x‖ * 1 := by
-        rw [norm_mul, lift_quotientMap]
-        exact mul_le_mul_of_nonneg_left (hj _) (norm_nonneg _)
-    _ ≤ ‖LocallyConstant.toContinuousMapLinearMap K φ‖ := by
-        rw [mul_one]
-        exact (LocallyConstant.toContinuousMapLinearMap K φ).norm_coe_le_norm x
+  have hx : φ.lift (φ.discreteQuotient.proj x) = φ x := lift_quotientMap φ x
+  rw [hx, mul_comm B]
+  exact (norm_mul_le _ _).trans <|
+    mul_le_mul ((LocallyConstant.toContinuousMapLinearMap K φ).norm_coe_le_norm x)
+      (hj _) (norm_nonneg _) (norm_nonneg _)
 
 variable [T2Space X] [TotallyDisconnectedSpace X] [CompleteSpace K]
 
-/-- The extension of `μ` as a continuous linear functional on `C(X, K)`. -/
-private def extendCoefficientsCLM : C(X, K) →L[K] K :=
-  (locallyConstantIntegral j μ).extendOfNorm (LocallyConstant.toContinuousMapLinearMap K)
+variable (K) in
+private abbrev locallyConstantTests :=
+  (LocallyConstant.toContinuousMapLinearMap K (X := X) (Y := K)).range
 
-private theorem extendCoefficientsCLM_apply_comp (hj : ∀ a, ‖j a‖ ≤ 1) {A : Type*}
+variable (K) in
+private def locallyConstantTestEquiv : LocallyConstant X K ≃ₗ[K] locallyConstantTests (X := X) K :=
+  LinearEquiv.ofInjective (LocallyConstant.toContinuousMapLinearMap K)
+    LocallyConstant.toContinuousMap_injective
+
+variable (K) in
+omit [IsUltrametricDist K] [CompleteSpace K] in
+private theorem dense_locallyConstantTests :
+    DenseRange ((locallyConstantTests (X := X) K).subtypeL) := by
+  rw [Submodule.coe_subtypeL]
+  apply denseRange_subtype_val.mpr
+  rw [SetLike.setOfPred_mem_eq, LinearMap.coe_range]
+  exact LocallyConstant.denseRange_toContinuousMap
+
+private def integralOnLocallyConstantTests (hj : ∀ a, ‖j a‖ ≤ B) :
+    locallyConstantTests (X := X) K →L[K] K :=
+  ((locallyConstantIntegral j μ).comp (locallyConstantTestEquiv K).symm.toLinearMap).mkContinuous B
+    (by
+      intro f
+      have hf := LinearEquiv.ofInjective_symm_apply (LocallyConstant.toContinuousMapLinearMap K)
+        (h := LocallyConstant.toContinuousMap_injective) f
+      simpa only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, locallyConstantTestEquiv, hf,
+        Submodule.norm_coe] using
+        norm_locallyConstantIntegral_le j μ hj ((locallyConstantTestEquiv K).symm f))
+
+/-- The extension of `μ` as a continuous linear functional on `C(X, K)`. -/
+private def extendCoefficientsCLM (hj : ∀ a, ‖j a‖ ≤ B) : C(X, K) →L[K] K :=
+  (integralOnLocallyConstantTests j μ hj).extend (locallyConstantTests (X := X) K).subtypeL
+
+private theorem extendCoefficientsCLM_apply_test (hj : ∀ a, ‖j a‖ ≤ B) (φ : LocallyConstant X K) :
+    extendCoefficientsCLM j μ hj (LocallyConstant.toContinuousMapLinearMap K φ) =
+      locallyConstantIntegral j μ φ := by
+  let e := locallyConstantTestEquiv (X := X) K
+  have hφ : (locallyConstantTests (X := X) K).subtypeL (e φ) =
+      LocallyConstant.toContinuousMapLinearMap K φ :=
+    LinearEquiv.ofInjective_apply (LocallyConstant.toContinuousMapLinearMap K)
+      (h := LocallyConstant.toContinuousMap_injective) φ
+  rw [← hφ, extendCoefficientsCLM, (integralOnLocallyConstantTests j μ hj).extend_eq
+    (e := (locallyConstantTests (X := X) K).subtypeL) (dense_locallyConstantTests K)
+    isUniformEmbedding_subtype_val.isUniformInducing (e φ)]
+  simp only [integralOnLocallyConstantTests, LinearMap.mkContinuous_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_toLinearMap, e, LinearEquiv.symm_apply_apply]
+
+private theorem extendCoefficientsCLM_apply_comp (hj : ∀ a, ‖j a‖ ≤ B) {A : Type*}
     [TopologicalSpace A] [DiscreteTopology A] [Fintype A] (q : C(X, A)) (g : A → K) :
-    extendCoefficientsCLM j μ ((equivFnOfDiscrete.symm g).comp q) = cylinderSum j μ q g := by
+    extendCoefficientsCLM j μ hj ((equivFnOfDiscrete.symm g).comp q) = cylinderSum j μ q g := by
   let φ : LocallyConstant X K :=
     ⟨g ∘ q, (IsLocallyConstant.of_discrete g).comp_continuous q.continuous⟩
   have hφ : (equivFnOfDiscrete.symm g).comp q = LocallyConstant.toContinuousMapLinearMap K φ := by
     ext
     simp [φ]
-  rw [hφ, extendCoefficientsCLM, LinearMap.extendOfNorm_eq
-    LocallyConstant.denseRange_toContinuousMap ⟨1, norm_locallyConstantIntegral_le j μ hj⟩]
+  rw [hφ, extendCoefficientsCLM_apply_test]
   exact locallyConstantIntegral_apply j μ φ q g fun _ ↦ rfl
 
-private theorem finiteProjection_extendCoefficientsCLM (hj : ∀ a, ‖j a‖ ≤ 1) {A : Type*}
+private theorem finiteProjection_extendCoefficientsCLM (hj : ∀ a, ‖j a‖ ≤ B) {A : Type*}
     [TopologicalSpace A] [DiscreteTopology A] [Finite A] (q : C(X, A)) :
-    finiteProjection q (toCLMEquiv.symm (extendCoefficientsCLM j μ)) =
+    finiteProjection q (toCLMEquiv.symm (extendCoefficientsCLM j μ hj)) =
       (finiteProjection q μ).mapRange j (map_zero j) := by
   classical
   let := Fintype.ofFinite A
@@ -229,15 +272,15 @@ private theorem finiteProjection_extendCoefficientsCLM (hj : ∀ a, ‖j a‖ �
   rw [finiteProjection_apply, coe_symm_toCLMEquiv, hfib, extendCoefficientsCLM_apply_comp j μ hj,
     cylinderSum_ite, Finsupp.mapRange_apply]
 
-/-- **Extension of coefficients from the unit ball.** For a ring homomorphism `j : O →+* K`
-into the closed unit ball of a complete ultrametric field, `extendCoefficients j hj μ` is the
+/-- **Extension of coefficients along a bounded homomorphism.** If `j : O →+* K` is uniformly
+bounded and `K` is a complete ultrametric normed ring, then `extendCoefficients j hj μ` is the
 `K`-valued measure on the profinite space `X` whose coefficient on each fibre of a map to a finite
 discrete space is the image under `j` of the coefficient of `μ`
 (`finiteProjection_extendCoefficients`). When `j` is continuous it is the unique `K`-valued measure
 with `ι_j(μ)(j ∘ f) = j(μ(f))` for all `f ∈ C(X, O)` (`extendCoefficients_apply_comp`,
 `eq_extendCoefficients_of_apply_comp`). -/
-def extendCoefficients (hj : ∀ a, ‖j a‖ ≤ 1) : D(X, O) →+ D(X, K) where
-  toFun μ := toCLMEquiv.symm (extendCoefficientsCLM j μ)
+def extendCoefficients (hj : ∀ a, ‖j a‖ ≤ B) : D(X, O) →+ D(X, K) where
+  toFun μ := toCLMEquiv.symm (extendCoefficientsCLM j μ hj)
   map_zero' := finiteProjection_ext _ _ fun q ↦ by
     rw [finiteProjection_extendCoefficientsCLM j 0 hj]
     simp
@@ -247,10 +290,10 @@ def extendCoefficients (hj : ∀ a, ‖j a‖ ≤ 1) : D(X, O) →+ D(X, K) wher
     ext a
     simp
 
-variable (hj : ∀ a, ‖j a‖ ≤ 1)
+variable (hj : ∀ a, ‖j a‖ ≤ B)
 
 private theorem toCLMEquiv_extendCoefficients :
-    toCLMEquiv (extendCoefficients j hj μ) = extendCoefficientsCLM j μ :=
+    toCLMEquiv (extendCoefficients j hj μ) = extendCoefficientsCLM j μ hj :=
   toCLMEquiv.apply_symm_apply _
 
 /-- The finite projections of `extendCoefficients j hj μ` are those of `μ`, with `j` applied to
@@ -262,6 +305,16 @@ theorem finiteProjection_extendCoefficients {A : Type*} [TopologicalSpace A] [Di
       (finiteProjection q μ).mapRange j (map_zero j) :=
   finiteProjection_extendCoefficientsCLM j μ hj q
 
+/-- The coefficient extension depends only on `j`. A choice of uniform bound gives the same
+additive map for every valid bound. -/
+theorem extendCoefficients_eq_of_bound {B' : ℝ} (hj' : ∀ a, ‖j a‖ ≤ B') :
+    extendCoefficients (X := X) j hj = extendCoefficients j hj' := by
+  apply AddMonoidHom.ext
+  intro μ
+  apply finiteProjection_ext
+  intro q
+  simp only [finiteProjection_extendCoefficients]
+
 /-- Integrating a function that factors through a finite discrete quotient against
 `extendCoefficients j hj μ` is the finite sum of its values against the coefficients of `μ`
 transported by `j`. -/
@@ -271,6 +324,22 @@ theorem extendCoefficients_apply_comp_eq_sum {A : Type*} [TopologicalSpace A]
       ∑ a, g a * j (finiteProjection q μ a) := by
   rw [← coe_toCLMEquiv, toCLMEquiv_extendCoefficients, extendCoefficientsCLM_apply_comp j μ hj,
     cylinderSum]
+
+/-- The integral of a continuous test is bounded by the uniform coefficient bound times its
+supremum norm. -/
+theorem norm_extendCoefficients_apply_le (f : C(X, K)) :
+    ‖extendCoefficients j hj μ f‖ ≤ B * ‖f‖ := by
+  rw [← coe_toCLMEquiv, toCLMEquiv_extendCoefficients]
+  refine LocallyConstant.denseRange_toContinuousMap.induction_on (p := fun g : C(X, K) ↦
+    ‖extendCoefficientsCLM j μ hj g‖ ≤ B * ‖g‖) f
+    (isClosed_le ((extendCoefficientsCLM j μ hj).continuous.norm)
+      (continuous_const.mul continuous_norm)) ?_
+  intro φ
+  -- The dense map here is the coercion, presented linearly in the evaluation equation.
+  change ‖extendCoefficientsCLM j μ hj (LocallyConstant.toContinuousMapLinearMap K φ)‖ ≤
+    B * ‖LocallyConstant.toContinuousMapLinearMap K φ‖
+  rw [extendCoefficientsCLM_apply_test]
+  exact norm_locallyConstantIntegral_le j μ hj φ
 
 /-- Extension agrees with the coefficient homomorphism on locally constant source-valued tests,
 without assuming that the coefficient homomorphism is continuous. -/
@@ -353,22 +422,31 @@ theorem extendCoefficients_injective [T2Space O] (hinj : Function.Injective j) :
     rw [finiteProjection_extendCoefficients, finiteProjection_extendCoefficients] at this
     exact Finsupp.mapRange_injective _ (map_zero j) hinj this
 
+/-- Extending coefficients along the identity preserves the measure. -/
+@[simp]
+theorem extendCoefficients_id (h : ∀ a : K, ‖a‖ ≤ B) (ν : D(X, K)) :
+    extendCoefficients (RingHom.id K) h ν = ν := by
+  apply finiteProjection_ext
+  intro q
+  ext a
+  simp
+
 end TopologicalRing
 
 section OperatorNorm
 
 variable [CompactSpace X] [T2Space X] [TotallyDisconnectedSpace X] {K O : Type*}
   [NontriviallyNormedField K] [CompleteSpace K] [IsUltrametricDist K] [CommRing O]
-  [TopologicalSpace O] [IsTopologicalRing O] (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1)
+  [TopologicalSpace O] [IsTopologicalRing O] (j : O →+* K)
 
-/-- The extension of coefficients has operator norm at most `1`. -/
-theorem norm_toCLMEquiv_extendCoefficients_le (μ : D(X, O)) :
-    ‖toCLMEquiv (extendCoefficients j hj μ)‖ ≤ 1 := by
-  rw [toCLMEquiv_extendCoefficients]
-  exact ContinuousLinearMap.opNorm_le_bound _ zero_le_one
-    (LinearMap.norm_extendOfNorm_apply_le LocallyConstant.denseRange_toContinuousMap 1
-      (norm_locallyConstantIntegral_le j μ hj))
+/-- The extension of coefficients has operator norm bounded by the uniform coefficient bound. -/
+theorem norm_toCLMEquiv_extendCoefficients_le {B : ℝ} (hj : ∀ a, ‖j a‖ ≤ B) (μ : D(X, O)) :
+    ‖toCLMEquiv (extendCoefficients j hj μ)‖ ≤ B :=
+  ContinuousLinearMap.opNorm_le_bound _ ((norm_nonneg _).trans (hj 0)) fun f ↦ by
+    rw [coe_toCLMEquiv]
+    exact norm_extendCoefficients_apply_le j μ hj f
 
+variable (hj : ∀ a, ‖j a‖ ≤ 1)
 variable {j}
 
 omit [T2Space X] [TotallyDisconnectedSpace X] [CompleteSpace K] in

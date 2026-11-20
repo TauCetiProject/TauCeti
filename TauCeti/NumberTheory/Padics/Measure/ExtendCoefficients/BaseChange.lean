@@ -84,7 +84,7 @@ unit ball, extending `extendScalars O μ` along `j` agrees with extending `μ` a
 theorem extendCoefficients_algHom_extendScalars [Algebra R K] (j : O →ₐ[R] K)
     (hj : ∀ a, ‖j a‖ ≤ 1) (μ : D(X, R)) :
     extendCoefficients (j : O →+* K) hj (extendScalars O μ) =
-      extendCoefficients (algebraMap R K)
+      extendCoefficients (B := 1) (algebraMap R K)
         (fun r ↦ by simpa only [AlgHom.commutes] using hj (algebraMap R O r)) μ :=
   (extendCoefficients_extendScalars (j : O →+* K) hj μ).trans <| by
     simp only [j.comp_algebraMap]
