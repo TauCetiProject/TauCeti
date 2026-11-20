@@ -59,6 +59,7 @@ theorem fderiv_ofReal_comp_apply (f : E → ℝ) (x v : E) :
     simp [fderiv_zero_of_not_differentiableAt hf, fderiv_zero_of_not_differentiableAt hf']
 
 /-- The imaginary part, as a map `ℂ → ℂ`, is `ℝ`-linear, so it is its own derivative. -/
+@[simp]
 theorem fderiv_ofReal_im (z : ℂ) :
     fderiv ℝ (fun w : ℂ ↦ (w.im : ℂ)) z = ofRealCLM.comp imCLM :=
   (ofRealCLM.comp imCLM).hasFDerivAt.fderiv

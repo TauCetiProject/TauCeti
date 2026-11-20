@@ -101,6 +101,7 @@ theorem thetaFactor_def (m n : ℤ) (z : ℂ) :
 
 variable {k τ α β}
 
+@[simp]
 theorem thetaFactor_ne_zero (m n : ℤ) (z : ℂ) : thetaFactor k τ α β m n z ≠ 0 :=
   Complex.exp_ne_zero _
 
