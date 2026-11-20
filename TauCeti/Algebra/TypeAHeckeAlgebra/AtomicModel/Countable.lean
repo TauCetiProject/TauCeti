@@ -279,7 +279,7 @@ theorem tendsto_atomicTrace_finset (p : ι → R) (hp : Summable fun a ↦ ‖p 
     fun s ↦ ?_
   rw [comp_apply, atomicTrace_eq_sum]; symm
   refine Finset.sum_bij (fun (w : Fin n → s) _ ↦ Subtype.val ∘ w)
-    (fun w _ ↦ Fintype.mem_piFinset.mpr fun i ↦ (w i).2)
+    (fun w _ ↦ Fintype.mem_piFinset.mpr fun i ↦ (w i).property)
     (fun _ _ _ _ h ↦ funext fun i ↦ Subtype.ext (congrFun h i))
     (fun w hw ↦ ⟨fun i ↦ ⟨w i, Fintype.mem_piFinset.mp hw i⟩, Finset.mem_univ _, rfl⟩) fun w _ ↦ ?_
   rw [signedChecked_strictMono_single_apply pos q (fun a : s ↦ pos a)

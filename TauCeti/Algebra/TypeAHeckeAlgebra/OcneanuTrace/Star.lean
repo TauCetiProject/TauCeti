@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace
+public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Star
 
 /-!
