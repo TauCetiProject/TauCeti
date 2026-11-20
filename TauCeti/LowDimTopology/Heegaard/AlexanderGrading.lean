@@ -405,16 +405,6 @@ theorem isAlexanderFunction_relativeAlexanderGrading [Fintype Basepoint] {w z : 
 
 variable [Fintype Point] [DecidableEq Region] [Fintype Region]
 
-variable (ι χ x y) in
-/-- A domain counted by the hat differential of `H` avoids all the basepoints, so it is counted
-by the hat differential of the diagram that keeps only some of them. -/
-theorem hatDomains_subset_hatDomains_withBasepoints :
-    H.hatDomains χ x y ⊆ (H.withBasepoints (H.basepoint ∘ ι)).hatDomains χ x y :=
-  fun _ hD =>
-    have ⟨hD, hz, hD0, hμ⟩ := mem_hatDomains_iff.mp hD
-    mem_hatDomains_iff.mpr ⟨(isDomainBetween_withBasepoints _).mpr hD, fun _ => hz _, hD0,
-      by rwa [maslovIndex_withBasepoints]⟩
-
 namespace IsAlexanderFunction
 
 variable [Fintype Basepoint]

@@ -129,6 +129,16 @@ theorem mem_hatDomains_iff : D ∈ H.hatDomains χ x y ↔
       H.maslovIndex χ x y D = 1 :=
   Iff.rfl
 
+/-- A domain counted by the hat differential of `H` avoids all the basepoints, so it is counted
+by the hat differential of the diagram that keeps only some of them. -/
+theorem hatDomains_subset_hatDomains_withBasepoints {W : Type*} (ι : W → Basepoint)
+    (χ : Region → ℤ) (x y : H.Generator) :
+    H.hatDomains χ x y ⊆ (H.withBasepoints (H.basepoint ∘ ι)).hatDomains χ x y :=
+  fun _ hD =>
+    have ⟨hD, hz, hD0, hμ⟩ := mem_hatDomains_iff.mp hD
+    mem_hatDomains_iff.mpr ⟨(isDomainBetween_withBasepoints _).mpr hD, fun _ => hz _, hD0,
+      by rwa [maslovIndex_withBasepoints]⟩
+
 /-- In a diagram weakly admissible at `y` only finitely many domains are counted by the hat
 differential from any generator to `y`. -/
 theorem WeaklyAdmissibleAt.finite_hatDomains (hW : H.WeaklyAdmissibleAt χ y) (x : H.Generator) :
