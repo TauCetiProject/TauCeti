@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Fourier.NonstationaryPhase
 import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Normed.Module.Cone
 
 /-!

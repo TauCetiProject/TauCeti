@@ -17,6 +17,7 @@ import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
@@ -44,7 +45,9 @@ orthogonal complement of `x`, multiplying `x` itself by `s³`. The second is `r`
 
 A change of variables `f` in a Fourier integral produces the phases `y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫`. Their
 derivative in a direction `v` is `⟪v, (Df(x))† ζ - ξ⟫`, and their derivatives of order at least one
-are bounded by `‖ζ‖` times those of `f`, plus `‖ξ‖`.
+are bounded by `‖ζ‖` times those of `f`, plus `‖ξ‖`. A change of variables also transports
+covectors by the adjoints of its derivatives, and for an open partial homeomorphism `e` these
+adjoints `(De_p)†` and `(De⁻¹_{e p})†` are mutually inverse.
 
 ## Main results
 
@@ -52,6 +55,10 @@ are bounded by `‖ζ‖` times those of `f`, plus `‖ξ‖`.
   direction `v` is `⟪v, (Df(x))† ζ - ξ⟫`.
 * `TauCeti.norm_iteratedFDeriv_succ_inner_sub_inner_le`: the bound on the derivatives of order at
   least one of `y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫`.
+* `OpenPartialHomeomorph.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_mem_source`,
+  `OpenPartialHomeomorph.adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_mem_source`: between
+  inner product spaces, the transposed derivatives `(De_p)†` and `(De⁻¹_{e p})†` at a point `p` of
+  the source are mutually inverse.
 * `HasDerivAt.inner_comp_conj`: if `f` has derivative `f'` at `conj z` and `g` has derivative `g'`
   at `z`, then `w ↦ ⟪f (conj w), g w⟫` has derivative `⟪f', g z⟫ + ⟪f (conj z), g'⟫` at `z`.
 * `OpenPartialHomeomorph.hasFDerivAt_univUnitBall`: the derivative of the radial map onto the
@@ -165,3 +172,34 @@ theorem fderiv_inner_sub_inner_apply [CompleteSpace E] [CompleteSpace F] {f : E 
 end TauCeti
 
 end Phase
+
+section Adjoint
+
+variable {𝕜 : Type*} [RCLike 𝕜] {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+namespace OpenPartialHomeomorph
+
+/-- Adjoint form of `OpenPartialHomeomorph.fderiv_symm_comp_fderiv_of_mem_source`: for `p` in the
+source, `(De_p)† ((De⁻¹_{e p})† v) = v`. -/
+theorem adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_mem_source (e : OpenPartialHomeomorph E F)
+    {p : E} (hp : p ∈ e.source) (hd : DifferentiableAt 𝕜 e p)
+    (hds : DifferentiableAt 𝕜 e.symm (e p)) (v : E) :
+    ((fderiv 𝕜 e p)†) (((fderiv 𝕜 e.symm (e p))†) v) = v := by
+  rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
+    e.fderiv_symm_comp_fderiv_of_mem_source hp hd hds, ContinuousLinearMap.adjoint_id,
+    ContinuousLinearMap.id_apply]
+
+/-- Adjoint form of `OpenPartialHomeomorph.fderiv_comp_fderiv_symm_of_mem_source`: for `p` in the
+source, `(De⁻¹_{e p})† ((De_p)† w) = w`. -/
+theorem adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_mem_source (e : OpenPartialHomeomorph E F)
+    {p : E} (hp : p ∈ e.source) (hd : DifferentiableAt 𝕜 e p)
+    (hds : DifferentiableAt 𝕜 e.symm (e p)) (w : F) :
+    ((fderiv 𝕜 e.symm (e p))†) (((fderiv 𝕜 e p)†) w) = w := by
+  rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
+    e.fderiv_comp_fderiv_symm_of_mem_source hp hd hds, ContinuousLinearMap.adjoint_id,
+    ContinuousLinearMap.id_apply]
+
+end OpenPartialHomeomorph
+
+end Adjoint
