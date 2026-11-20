@@ -18,6 +18,8 @@ Write a field as `x = (b₁, b₂, p, q)`, representing the imaginary connection
 `|b|² + |δα|² / 4` is then the Euclidean metric on variations of `x`.
 Fields take values in `EuclideanSpace ℝ (Fin 4)` and equation defects in
 `EuclideanSpace ℝ (Fin 3)`, with these Euclidean coefficient norms.
+`sectionValue x` is the section `α` of a field `x`, and `sectionVariation F` is the variation
+of the section alone by `F`, with no connection part.
 `equation x` has three real components: the defect in
 `*iF_a = (1 - |α|²) / 8` and the real and imaginary parts of `∂bar_a α`.
 The convention is `∂bar_a α = (∇₁α + i ∇₂α) / 2`, with `∇ = d + a`.
@@ -134,12 +136,70 @@ theorem apply_eq_of_sectionValue_eq {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {
   · simp only [Fin.reduceFinMk, Fin.isValue]
     linarith
 
+/-- The **variation of the section alone** by `F`: zero connection variation and section
+variation `δα = F`, in the real coordinates of `TauCeti.Vortex.equation`. -/
+def sectionVariation (F : ℂ → ℂ) (z : ℂ) : EuclideanSpace ℝ (Fin 4) :=
+  !₂[0, 0, (F z).re / 2, (F z).im / 2]
+
+/-- The first connection component of the variation of the section alone vanishes. -/
+@[simp]
+theorem sectionVariation_apply_zero (F : ℂ → ℂ) (z : ℂ) : sectionVariation F z 0 = 0 :=
+  (rfl)
+
+/-- The second connection component of the variation of the section alone vanishes. -/
+@[simp]
+theorem sectionVariation_apply_one (F : ℂ → ℂ) (z : ℂ) : sectionVariation F z 1 = 0 :=
+  (rfl)
+
+/-- The real section component of the variation of the section alone by `F`. -/
+@[simp]
+theorem sectionVariation_apply_two (F : ℂ → ℂ) (z : ℂ) :
+    sectionVariation F z 2 = (F z).re / 2 :=
+  (rfl)
+
+/-- The imaginary section component of the variation of the section alone by `F`. -/
+@[simp]
+theorem sectionVariation_apply_three (F : ℂ → ℂ) (z : ℂ) :
+    sectionVariation F z 3 = (F z).im / 2 :=
+  (rfl)
+
+/-- The section variation of `sectionVariation F` is `F`. -/
+@[simp]
+theorem sectionValue_sectionVariation (F : ℂ → ℂ) (z : ℂ) :
+    sectionValue (sectionVariation F) z = F z := by
+  apply Complex.ext <;> simp [sectionValue_apply] <;> ring
+
+/-- A field is the variation of the section alone by `F` at a point exactly when its connection
+coordinates vanish there and its section is `F`. -/
+theorem eq_sectionVariation_iff {y : ℂ → EuclideanSpace ℝ (Fin 4)} {F : ℂ → ℂ} {z : ℂ} :
+    y z = sectionVariation F z ↔ y z 0 = 0 ∧ y z 1 = 0 ∧ sectionValue y z = F z := by
+  refine ⟨fun h ↦ ?_, fun ⟨h₀, h₁, hs⟩ ↦ apply_eq_of_sectionValue_eq h₀ h₁ (by simp [hs])⟩
+  have hs : sectionValue y z = sectionValue (sectionVariation F) z := by
+    simp only [sectionValue_apply, h]
+  simp [h, hs]
+
+/-- The variation of the section alone by a `Cⁿ` function is `Cⁿ`. -/
+theorem contDiff_sectionVariation {F : ℂ → ℂ} {n : WithTop ℕ∞} (hF : ContDiff ℝ n F) :
+    ContDiff ℝ n (sectionVariation F) := by
+  refine contDiff_euclidean.2 fun i ↦ ?_
+  fin_cases i
+  · simpa [sectionVariation] using contDiff_const
+  · simpa [sectionVariation] using contDiff_const
+  · simpa [sectionVariation] using (reCLM.contDiff.comp hF).div_const 2
+  · simpa [sectionVariation] using (imCLM.contDiff.comp hF).div_const 2
+
 /-- The squared modulus `|α|² = 4 (p² + q²)` of the section in the real field coordinates. -/
 theorem sq_norm_sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     ‖sectionValue x z‖ ^ 2 = 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
   rw [sectionValue_apply, ← normSq_eq_norm_sq, normSq_apply]
   simp only [mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
   ring
+
+/-- The potential `P = |α|² / 4` in terms of the section `α`. -/
+theorem ofReal_potential_eq (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ((x z 2 ^ 2 + x z 3 ^ 2 : ℝ) : ℂ) =
+      starRingEnd ℂ (sectionValue x z) * sectionValue x z / 4 := by
+  apply Complex.ext <;> simp [sectionValue_apply, sq] <;> ring
 
 /-- The section of a field is bounded by the field: `|α| ≤ 2 |x|`. -/
 theorem norm_sectionValue_le (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
