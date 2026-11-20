@@ -48,7 +48,11 @@ cumulants into moments. This file develops the operation itself:
   `f₁ g₁`.
 * `PowerSeries.boxedConvolution_comm` — commutativity.
 * `PowerSeries.boxedConvolution_one_add_X` and `PowerSeries.one_add_X_boxedConvolution` — `1 + z`
-  is a two-sided unit.
+  is a two-sided unit, with `PowerSeries.boxedConvolution_X_of_constantCoeff_eq_zero` and
+  `PowerSeries.X_boxedConvolution_of_constantCoeff_eq_zero` showing that `z` is a two-sided unit
+  on series with zero constant coefficient.
+* `PowerSeries.rescale_boxedConvolution` and `PowerSeries.boxedConvolution_rescale` — rescaling
+  either factor rescales the boxed convolution.
 * `PowerSeries.boxedConvolution_mk_one_eq_of_subst_eq` — the zeta series turns `C` into the
   solution `M` of `M(z) = C(z M(z))`.
 * `PowerSeries.boxedConvolution_mk_one_mobius` — the zeta series and the Möbius series are
@@ -169,6 +173,39 @@ theorem boxedConvolution_one_add_X (f : R⟦X⟧) : boxedConvolution f (1 + X) =
 @[simp]
 theorem one_add_X_boxedConvolution (f : R⟦X⟧) : boxedConvolution (1 + X) f = f := by
   rw [boxedConvolution_comm, boxedConvolution_one_add_X]
+
+/-- Rescaling the first factor of a boxed convolution rescales the result:
+`(rescale c f).boxedConvolution g = rescale c (f.boxedConvolution g)`. -/
+theorem rescale_boxedConvolution (c : R) (f g : R⟦X⟧) :
+    (rescale c f).boxedConvolution g = rescale c (f.boxedConvolution g) := by
+  ext n
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [← coeff_zero_eq_constantCoeff_apply (rescale _ _), coeff_rescale]
+  -- For every `π ∈ NC(n)`, the sizes of the parts of `π` sum to `n`.
+  rw [coeff_boxedConvolution hn, coeff_rescale, coeff_boxedConvolution hn, mul_sum]
+  refine sum_congr rfl fun π _ => ?_
+  simp only [coeff_rescale, prod_mul_distrib, prod_pow_eq_pow_sum, π.1.sum_card_parts,
+    card_univ, Fintype.card_fin, mul_assoc]
+
+/-- Rescaling the second factor of a boxed convolution rescales the result:
+`f.boxedConvolution (rescale c g) = rescale c (f.boxedConvolution g)`. -/
+theorem boxedConvolution_rescale (c : R) (f g : R⟦X⟧) :
+    f.boxedConvolution (rescale c g) = rescale c (f.boxedConvolution g) := by
+  rw [boxedConvolution_comm, rescale_boxedConvolution, boxedConvolution_comm]
+
+/-- On series with zero constant coefficient, `X` is a right identity for boxed convolution. -/
+theorem boxedConvolution_X_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantCoeff f = 0) :
+    f.boxedConvolution X = f := by
+  ext n
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [hf]
+  rw [coeff_boxedConvolution_congr hn (fun _ _ => rfl)
+    (g' := 1 + X) (fun k hk => by simp [coeff_one, hk]), boxedConvolution_one_add_X]
+
+/-- On series with zero constant coefficient, `X` is a left identity for boxed convolution. -/
+theorem X_boxedConvolution_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantCoeff f = 0) :
+    X.boxedConvolution f = f := by
+  rw [boxedConvolution_comm, boxedConvolution_X_of_constantCoeff_eq_zero hf]
 
 end CommSemiring
 
