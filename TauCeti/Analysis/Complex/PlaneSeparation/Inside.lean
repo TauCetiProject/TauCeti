@@ -61,6 +61,10 @@ components of `Jᶜ`.
   is a Jordan curve is the inside of the curve, hence connected.
 * `TauCeti.IsJordanCurve.natCard_connectedComponents_compl_eq_two` — **the Jordan curve theorem**:
   the complement of a Jordan curve in the plane has exactly two connected components.
+* `TauCeti.sdiff_biUnion_closure_filledHull_sdiff`,
+  `TauCeti.IsJordanCurve.closure_filledHull_sdiff_biUnion`, and
+  `TauCeti.IsJordanCurve.frontier_filledHull_sdiff_biUnion` — closure and frontier of a finitely
+  connected Jordan region `(filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)`.
 
 ## References
 
@@ -282,5 +286,119 @@ theorem IsJordanCurve.natCard_connectedComponents_compl_eq_two {C : Set ℂ}
     rw [← hC.filledHull_sdiff_eq_connectedComponentIn hx,
       ← compl_filledHull_eq_connectedComponentIn hrank hC.isCompact.isBounded hw]
     exact hC.connectedComponentIn_eq_filledHull_sdiff_or_compl hz
+
+/-! ### Finitely connected Jordan regions -/
+
+section JordanRegionTopology
+
+variable {ι : Type*} {C₀ : Set ℂ} {s : Finset ι} {C : ι → Set ℂ}
+
+/-- Since `closure (filledHull (C i) \ C i) = filledHull (C i)` for each Jordan curve `C i`,
+deleting the closures of the hole insides is the same as deleting their filled hulls. -/
+theorem sdiff_biUnion_closure_filledHull_sdiff (C₀ : Set ℂ)
+    (hC : ∀ i ∈ s, IsJordanCurve (C i)) :
+    (filledHull C₀ \ C₀) \ (⋃ i ∈ s, closure (filledHull (C i) \ C i)) =
+      (filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i) :=
+  congrArg _ (iUnion₂_congr fun i hi ↦ (hC i hi).closure_filledHull_sdiff)
+
+private theorem subset_closure_filledHull_sdiff_biUnion_of_mem_outer
+    (hC₀ : IsJordanCurve C₀) (hC : ∀ i ∈ s, IsJordanCurve (C i))
+    (hsub : ∀ i ∈ s, filledHull (C i) ⊆ filledHull C₀ \ C₀) {z : ℂ} (hz : z ∈ C₀) :
+    z ∈ closure ((filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)) := by
+  have hK : IsClosed (⋃ i ∈ s, filledHull (C i)) :=
+    s.finite_toSet.isClosed_biUnion fun i hi ↦ (hC i hi).isClosed.isClosed_filledHull
+  have hzcl : z ∈ closure (filledHull C₀ \ C₀) := by
+    rw [hC₀.closure_filledHull_sdiff]; exact subset_filledHull hz
+  rw [_root_.mem_closure_iff] at hzcl ⊢
+  intro O hO hzO
+  obtain ⟨w, ⟨hwO, hwK⟩, hwU⟩ := hzcl (O ∩ (⋃ i ∈ s, filledHull (C i))ᶜ)
+    (hO.inter hK.isOpen_compl) ⟨hzO, fun h ↦ (iUnion₂_subset hsub h).2 hz⟩
+  exact ⟨w, hwO, hwU, hwK⟩
+
+private theorem subset_closure_filledHull_sdiff_biUnion_of_mem_hole
+    (hC₀ : IsJordanCurve C₀) (hC : ∀ i ∈ s, IsJordanCurve (C i))
+    (hsub : ∀ i ∈ s, filledHull (C i) ⊆ filledHull C₀ \ C₀)
+    (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (C i))
+    {i : ι} (hi : i ∈ s) {z : ℂ} (hz : z ∈ C i) :
+    z ∈ closure ((filledHull C₀ \ C₀) \ ⋃ j ∈ s, filledHull (C j)) := by
+  classical
+  have hU₀ : IsOpen (filledHull C₀ \ C₀) := hC₀.interior_filledHull ▸ isOpen_interior
+  have hK' : IsClosed (⋃ j ∈ s.erase i, filledHull (C j)) :=
+    (s.erase i).finite_toSet.isClosed_biUnion fun j hj ↦
+      (hC j (Finset.mem_of_mem_erase hj)).isClosed.isClosed_filledHull
+  have hzK' : z ∉ ⋃ j ∈ s.erase i, filledHull (C j) := by
+    rintro h
+    obtain ⟨j, hj, hzj⟩ := mem_iUnion₂.mp h
+    exact Set.disjoint_left.mp
+      (hdisj hi (Finset.mem_of_mem_erase hj) (Finset.ne_of_mem_erase hj).symm)
+      (subset_filledHull hz) hzj
+  have hzcl : z ∈ closure (filledHull (C i))ᶜ := by
+    have hf : z ∈ frontier (filledHull (C i))ᶜ := by
+      rwa [frontier_compl, (hC i hi).frontier_filledHull]
+    exact hf.1
+  rw [_root_.mem_closure_iff] at hzcl ⊢
+  intro O hO hzO
+  obtain ⟨w, ⟨⟨hwO, hwU₀⟩, hwK'⟩, hwi⟩ :=
+    hzcl (O ∩ (filledHull C₀ \ C₀) ∩ (⋃ j ∈ s.erase i, filledHull (C j))ᶜ)
+      ((hO.inter hU₀).inter hK'.isOpen_compl) ⟨⟨hzO, hsub i hi (subset_filledHull hz)⟩, hzK'⟩
+  refine ⟨w, hwO, hwU₀, fun h ↦ ?_⟩
+  obtain ⟨j, hj, hzj⟩ := mem_iUnion₂.mp h
+  exact if hji : j = i then hwi (hji ▸ hzj)
+    else hwK' (mem_iUnion₂.mpr ⟨j, Finset.mem_erase.mpr ⟨hji, hj⟩, hzj⟩)
+
+/-- The closure of `(filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)` is `filledHull C₀` minus the
+open hole interiors `filledHull (C i) \ C i`. -/
+theorem IsJordanCurve.closure_filledHull_sdiff_biUnion (hC₀ : IsJordanCurve C₀)
+    (hC : ∀ i ∈ s, IsJordanCurve (C i))
+    (hsub : ∀ i ∈ s, filledHull (C i) ⊆ filledHull C₀ \ C₀)
+    (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (C i)) :
+    closure ((filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)) =
+      filledHull C₀ \ ⋃ i ∈ s, (filledHull (C i) \ C i) := by
+  refine Subset.antisymm (subset_sdiff.mpr ⟨closure_minimal (sdiff_subset.trans sdiff_subset)
+    hC₀.isClosed.isClosed_filledHull, Set.disjoint_iUnion₂_right.mpr fun i hi ↦
+      Disjoint.closure_left (Set.disjoint_left.mpr fun z hz hzi ↦
+        hz.2 (mem_iUnion₂.mpr ⟨i, hi, hzi.1⟩))
+        ((hC i hi).interior_filledHull ▸ isOpen_interior)⟩) ?_
+  intro z ⟨hz₀, hzh⟩
+  by_cases hzC₀ : z ∈ C₀
+  · exact subset_closure_filledHull_sdiff_biUnion_of_mem_outer hC₀ hC hsub hzC₀
+  · by_cases hzK : z ∈ ⋃ i ∈ s, filledHull (C i)
+    · obtain ⟨i, hi, hzi⟩ := mem_iUnion₂.mp hzK
+      have hzCi : z ∈ C i := by_contra fun h ↦ hzh (mem_iUnion₂.mpr ⟨i, hi, hzi, h⟩)
+      exact subset_closure_filledHull_sdiff_biUnion_of_mem_hole hC₀ hC hsub hdisj hi hzCi
+    · exact subset_closure ⟨⟨hz₀, hzC₀⟩, hzK⟩
+
+/-- **Frontier of a finitely connected Jordan region.** The frontier of
+`(filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)` is the union `C₀ ∪ ⋃ i ∈ s, C i` of the outer
+and inner Jordan curves. -/
+theorem IsJordanCurve.frontier_filledHull_sdiff_biUnion (hC₀ : IsJordanCurve C₀)
+    (hC : ∀ i ∈ s, IsJordanCurve (C i))
+    (hsub : ∀ i ∈ s, filledHull (C i) ⊆ filledHull C₀ \ C₀)
+    (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (C i)) :
+    frontier ((filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)) = C₀ ∪ ⋃ i ∈ s, C i := by
+  have hopen : IsOpen ((filledHull C₀ \ C₀) \ ⋃ i ∈ s, filledHull (C i)) :=
+    hC₀.isClosed.isOpen_filledHull_sdiff_biUnion s fun i hi ↦ (hC i hi).isClosed
+  rw [frontier, hopen.interior_eq, hC₀.closure_filledHull_sdiff_biUnion hC hsub hdisj]
+  ext z
+  constructor
+  · rintro ⟨⟨hz₀, hzh⟩, hzΔ⟩
+    by_cases hzC₀ : z ∈ C₀
+    · exact Or.inl hzC₀
+    · obtain ⟨i, hi, hzi⟩ := mem_iUnion₂.mp (by_contra fun h ↦ hzΔ ⟨⟨hz₀, hzC₀⟩, h⟩)
+      exact Or.inr (mem_iUnion₂.mpr
+        ⟨i, hi, by_contra fun h ↦ hzh (mem_iUnion₂.mpr ⟨i, hi, hzi, h⟩)⟩)
+  · rintro (hzC₀ | hzCi)
+    · refine ⟨⟨subset_filledHull hzC₀, fun h ↦ ?_⟩, fun h ↦ h.1.2 hzC₀⟩
+      obtain ⟨i, hi, hzi, -⟩ := mem_iUnion₂.mp h
+      exact (hsub i hi hzi).2 hzC₀
+    · obtain ⟨i, hi, hzCi⟩ := mem_iUnion₂.mp hzCi
+      refine ⟨⟨(hsub i hi (subset_filledHull hzCi)).1, fun h ↦ ?_⟩,
+        fun h ↦ h.2 (mem_iUnion₂.mpr ⟨i, hi, subset_filledHull hzCi⟩)⟩
+      obtain ⟨j, hj, hzj, hzjC⟩ := mem_iUnion₂.mp h
+      by_cases hji : j = i
+      · exact hzjC (hji ▸ hzCi)
+      · exact Set.disjoint_left.mp (hdisj hi hj (Ne.symm hji)) (subset_filledHull hzCi) hzj
+
+end JordanRegionTopology
 
 end TauCeti

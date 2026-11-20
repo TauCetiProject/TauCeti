@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Cycle.Basic
+public import TauCeti.Analysis.Contour.Cycle.Winding
 public import TauCeti.Analysis.Contour.Curve.Circle.Basic
 public import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
 
@@ -31,6 +32,8 @@ such as Banach-algebra resolvents.
 * `TauCeti.Contour.Cycle.trace_circleCycle`: its trace is the sphere.
 * `TauCeti.Contour.Cycle.windingNumber_circleCycle_eq_one_of_dist_lt`,
   `TauCeti.Contour.Cycle.windingNumber_circleCycle_eq_zero_of_lt_dist`: its winding numbers.
+* `TauCeti.Contour.Cycle.windingWeight_circleCycle`: for `R ≥ 0`, its trace-zero winding weight is
+  the indicator of `ball c R`.
 -/
 
 public section
@@ -71,6 +74,11 @@ theorem circleCurve_apply {c : ℂ} {R t : ℝ} (ht : t ∈ uIcc 0 (2 * π)) :
 def circleCycle (c : ℂ) (R : ℝ) : Cycle :=
   FreeAddCommGroup.of (circleCurve c R)
 
+/-- Defining formula for `TauCeti.Contour.circleCycle`. -/
+theorem circleCycle_def (c : ℂ) (R : ℝ) :
+    circleCycle c R = FreeAddCommGroup.of (circleCurve c R) :=
+  (rfl)
+
 namespace Cycle
 
 /-- Integrating over the circle cycle gives Mathlib's circle integral. -/
@@ -96,6 +104,23 @@ theorem windingNumber_circleCycle_eq_zero_of_lt_dist {c w : ℂ} {R : ℝ} (hR :
     (hw : R < dist w c) : windingNumber w (circleCycle c R) = 0 := by
   rw [circleCycle, circleCurve, windingNumber_of_raw,
     Contour.windingNumber_circleMap_eq_zero_of_lt_dist hR hw]
+
+/-- For `R ≥ 0`, the trace-zero `windingWeight` of `circleCycle c R` is the indicator of
+`ball c R`. -/
+theorem windingWeight_circleCycle (c : ℂ) {R : ℝ} (hR : 0 ≤ R) :
+    (circleCycle c R).windingWeight = (ball c R).indicator 1 := by
+  have htr : trace (circleCycle c R) = sphere c R := by
+    rw [trace_circleCycle, abs_of_nonneg hR]
+  ext z
+  rcases lt_trichotomy (dist z c) R with hlt | heq | hgt
+  · rw [windingWeight_eq_of_notMem _ (by rw [htr, mem_sphere]; exact hlt.ne),
+      windingNumber_circleCycle_eq_one_of_dist_lt hlt,
+      indicator_of_mem (mem_ball.mpr hlt), Pi.one_apply, Complex.one_re]
+  · rw [windingWeight_eq_zero_of_mem _ (by rw [htr, mem_sphere]; exact heq),
+      indicator_of_notMem (by simp [mem_ball, heq])]
+  · rw [windingWeight_eq_of_notMem _ (by rw [htr, mem_sphere]; exact hgt.ne'),
+      windingNumber_circleCycle_eq_zero_of_lt_dist hR hgt,
+      indicator_of_notMem (by simp [mem_ball, hgt.le]), Complex.zero_re]
 
 end Cycle
 

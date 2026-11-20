@@ -89,6 +89,24 @@ instance : CoeFun PiecewiseC1ClosedCurve fun _ ↦ ℝ → ℂ :=
 theorem coe_apply (γ : PiecewiseC1ClosedCurve) (t : uIcc γ.a γ.b) : γ t = γ.toFun t :=
   Subtype.val_injective.extend_apply γ.toFun 0 t
 
+/-- Outside its parameter interval `uIcc γ.a γ.b`, the canonical extension of a bundled closed curve
+to `ℝ` vanishes. -/
+theorem coe_apply_of_notMem (γ : PiecewiseC1ClosedCurve) {t : ℝ}
+    (ht : t ∉ uIcc γ.a γ.b) : γ t = 0 :=
+  Function.extend_apply' _ _ _ fun ⟨s, hs⟩ ↦ ht (hs ▸ s.property)
+
+/-- Two bundled closed curves with equal initial and terminal parameters that agree on their
+parameter interval are equal. -/
+theorem ext_of_eqOn {γ₁ γ₂ : PiecewiseC1ClosedCurve} (ha : γ₁.a = γ₂.a) (hb : γ₁.b = γ₂.b)
+    (h : EqOn (γ₁ : ℝ → ℂ) (γ₂ : ℝ → ℂ) (uIcc γ₁.a γ₁.b)) : γ₁ = γ₂ := by
+  rcases γ₁ with ⟨a₁, b₁, f₁, _, _⟩
+  rcases γ₂ with ⟨a₂, b₂, f₂, _, _⟩
+  dsimp only at ha hb
+  subst ha hb
+  refine PiecewiseC1ClosedCurve.ext rfl rfl (heq_of_eq (funext fun t ↦ ?_))
+  have ht := h t.property
+  rwa [coe_apply, coe_apply] at ht
+
 /-- Bundle a raw closed piecewise-`C¹` curve by restricting it to its parameter interval. -/
 def of {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b) :
     PiecewiseC1ClosedCurve where
@@ -254,6 +272,11 @@ theorem trace_add_subset (C D : Cycle) : trace (C + D) ⊆ trace C ∪ trace D :
   rcases Finset.mem_union.mp (FreeAddCommGroup.support_add C D hγ) with hγC | hγD
   · exact Set.mem_union_left _ (mem_trace_iff.mpr ⟨γ, hγC, hz⟩)
   · exact Set.mem_union_right _ (mem_trace_iff.mpr ⟨γ, hγD, hz⟩)
+
+/-- The trace of a difference is contained in the union of the traces. -/
+theorem trace_sub_subset (C D : Cycle) : trace (C - D) ⊆ trace C ∪ trace D := by
+  rw [sub_eq_add_neg, ← trace_neg D]
+  exact trace_add_subset C (-D)
 
 /-- The trace of a finite sum of cycles is contained in the union of the traces. -/
 theorem trace_sum_subset {ι : Type*} (s : Finset ι) (C : ι → Cycle) :

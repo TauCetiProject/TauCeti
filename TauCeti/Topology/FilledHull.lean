@@ -73,7 +73,9 @@ Carathéodory boundary correspondence in `TauCeti/Analysis/Complex/Conformal/Car
   changes nothing.
 * `IsClosed.isOpen_filledHull_sdiff`, `IsClosed.isClosed_filledHull`, and
   `IsClosed.frontier_filledHull_sdiff_subset` — for a closed set in a locally connected space,
-  the bounded complementary components form an open set whose frontier lies in that set.
+  the bounded complementary components form an open set whose frontier lies in that set;
+  `IsClosed.isOpen_filledHull_sdiff_biUnion` keeps openness after removing finitely many
+  closed filled hulls.
 * `TauCeti.filledHull_eq_self_of_isPreconnected_frontier` — an open set with preconnected frontier
   and unbounded complement has no holes: filling it changes nothing.
 * `IsPreconnected.subset_filledHull` — a preconnected set disjoint from `K` that meets the
@@ -147,6 +149,15 @@ theorem _root_.IsClosed.isClosed_filledHull [LocallyConnectedSpace E] (hK : IsCl
   refine Filter.mem_of_superset
     ((hK.isOpen_compl.connectedComponentIn).mem_nhds (mem_connectedComponentIn hxK)) ?_
   exact fun y hy hyH => hx ((mem_filledHull_iff_of_mem_connectedComponentIn hy).mp hyH)
+
+/-- Removing the filled hulls of finitely many closed sets from the bounded complementary
+components of a closed set produces an open set in a locally connected space. -/
+theorem _root_.IsClosed.isOpen_filledHull_sdiff_biUnion [LocallyConnectedSpace E]
+    (hK : IsClosed K) {ι : Type*} (s : Finset ι) {C : ι → Set E}
+    (hC : ∀ i ∈ s, IsClosed (C i)) :
+    IsOpen ((filledHull K \ K) \ ⋃ i ∈ s, filledHull (C i)) :=
+  hK.isOpen_filledHull_sdiff.sdiff <|
+    s.finite_toSet.isClosed_biUnion fun i hi ↦ (hC i hi).isClosed_filledHull
 
 /-- The frontier of the bounded complementary components of a closed set lies in the set
 itself. In particular, filling introduces no new boundary points. -/
