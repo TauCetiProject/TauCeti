@@ -213,7 +213,7 @@ this describes the tangent-bundle charts completely. -/
 @[simp, mfld_simps]
 theorem coe_chartAt_snd [IsManifold I 1 M] {p q : TangentBundle I M} :
     (chartAt (ModelProd H E) q p).2 =
-      tangentCoordChange I p.1 q.1 p.1 p.2 := by
+      tangentCoordChange I p.proj q.proj p.proj p.snd := by
   -- After unfolding the tangent-bundle chart, the fibre-to-model-space conversion is
   -- definitionally the tangent coordinate change; no separate conversion lemma is needed.
   rw [TangentBundle.chartAt]
@@ -260,15 +260,15 @@ theorem continuousLinearMapAt_trivializationAt_self (x : M) (v : TangentSpace I 
 /-- In its own preferred chart, a tangent vector `z` has coordinates the chart image of its base
 point and its own fibre coordinate. -/
 theorem _root_.TangentBundle.extChartAt_self (z : TangentBundle I M) :
-    extChartAt I.tangent z z = (extChartAt I z.proj z.proj, (z.2 : E)) := by
+    extChartAt I.tangent z z = (extChartAt I z.proj z.proj, (z.snd : E)) := by
   simp only [FiberBundle.extChartAt, PartialEquiv.coe_trans, Function.comp_apply,
     PartialEquiv.prod_coe, PartialEquiv.refl_coe, id_eq,
     OpenPartialHomeomorph.coe_toPartialEquiv, Trivialization.coe_coe,
     TangentBundle.trivializationAt_fst]
   refine Prod.ext rfl ?_
   exact ((trivializationAt E (TangentSpace I) z.proj).continuousLinearMapAt_apply_of_mem (R := 𝕜)
-    (FiberBundle.mem_baseSet_trivializationAt' z.proj) z.2).symm.trans
-    (continuousLinearMapAt_trivializationAt_self z.proj z.2)
+    (FiberBundle.mem_baseSet_trivializationAt' z.proj) z.snd).symm.trans
+    (continuousLinearMapAt_trivializationAt_self z.proj z.snd)
 
 /-- The inverse form of `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self`: over its
 own base point, the inverse of the canonical trivialization is the identity. -/
@@ -282,7 +282,7 @@ theorem symmL_trivializationAt_self (x : M) (v : E) :
 fibres through the tangent coordinate change from the chart at `v.proj` to itself, which is the
 identity at `v.proj`. -/
 theorem extChartAt_tangent_self_snd (v : TangentBundle I M) :
-    (extChartAt I.tangent v v).2 = v.2 := by
+    (extChartAt I.tangent v v).2 = v.snd := by
   simp only [extChartAt_coe, Function.comp_apply, modelWithCorners_prod_coe, Prod.map_snd,
     modelWithCornersSelf_coe, id_eq, TangentBundle.coe_chartAt_snd]
   exact tangentCoordChange_self (mem_extChartAt_source v.proj)
@@ -497,9 +497,9 @@ private theorem extChartAt_tangent_symm_trans_eq [IsManifold I 1 M] (z q : Tange
     have h := congrArg Prod.fst hright
     change extChartAt I z.proj b.proj = a.1 at h
     exact h
-  have hfiber : tangentCoordChange I b.proj z.proj b.proj b.2 = a.2 := by
+  have hfiber : tangentCoordChange I b.proj z.proj b.proj b.snd = a.2 := by
     have h := congrArg Prod.snd hright
-    change tangentCoordChange I b.proj z.proj b.proj b.2 = a.2 at h
+    change tangentCoordChange I b.proj z.proj b.proj b.snd = a.2 at h
     exact h
   have hy : (extChartAt I z.proj).symm a.1 = b.proj := by
     rw [← hbase]
@@ -508,11 +508,11 @@ private theorem extChartAt_tangent_symm_trans_eq [IsManifold I 1 M] (z q : Tange
       tangentCoordChange I z.proj q.proj b.proj a.2 := by
     rw [← hfiber]
     have hcomp := tangentCoordChange_comp (I := I) (w := b.proj) (x := z.proj)
-      (y := q.proj) (z := b.proj) (v := b.2)
+      (y := q.proj) (z := b.proj) (v := b.snd)
       ⟨⟨mem_extChartAt_source b.proj, hbz⟩, hbq⟩
     -- The domain and codomain tangent spaces are modelled by `E`; expose that representation to
     -- apply the coordinate-change composition theorem.
-    change tangentCoordChange I b.proj q.proj b.proj b.2 = _
+    change tangentCoordChange I b.proj q.proj b.proj b.snd = _
     exact hcomp.symm
   -- Compare the two product coordinates separately.
   apply Prod.ext
@@ -817,7 +817,7 @@ private theorem eventually_tangentBundleCore_coordChange_open_eq
         (tangentBundleCore I M).coordChange
           (achart H (x : M)) (achart H (y : M)) (y : M) := by
   rcases mem_nhds_iff.mp
-      (Opens.chartAt_subtype_val_symm_eventuallyEq (H := H) U (x := x)) with
+      (Opens.chartAt_subtypeVal_symm_eventuallyEq (H := H) U (x := x)) with
     ⟨V, hV, hVopen, hxV⟩
   have hxV' : chartAt H x x ∈ V := by
     simpa [Opens.chartAt_eq] using hxV
@@ -856,7 +856,7 @@ theorem mfderiv_subtype_val {U : Opens M} (x : U) :
       (tangentSpaceOpenEquiv (I := I) x).toContinuousLinearMap := by
   ext v
   rw [ContinuousLinearEquiv.coe_coe, tangentSpaceOpenEquiv_apply, mfderiv]
-  simp only [contMDiff_subtype_val.mdifferentiableAt one_ne_zero, ↓reduceIte]
+  simp only [contMDiff_subtypeVal.mdifferentiableAt one_ne_zero, ↓reduceIte]
   have h : writtenInExtChartAt I I x (Subtype.val : U → M) =ᶠ[
       nhdsWithin (extChartAt I x x) (Set.range I)] id := by
     have hmem : I.symm ⁻¹' (chartAt H x).target ∩ Set.range I ∈
@@ -896,7 +896,7 @@ ambient tangent vectors through `tangentSpaceOpenEquiv`. -/
 theorem tangentMap_subtype_val {U : Opens M}
     (p : TangentBundle I U) :
     tangentMap I I (Subtype.val : U → M) p =
-      ⟨(p.proj : M), tangentSpaceOpenEquiv (I := I) p.proj p.2⟩ := by
+      ⟨(p.proj : M), tangentSpaceOpenEquiv (I := I) p.proj p.snd⟩ := by
   simp only [tangentMap, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
 
 section RestrictOpen
@@ -910,7 +910,7 @@ subset is. -/
 @[simp]
 theorem mdifferentiableAt_comp_subtype_val_iff {U : Opens N} {f : N → M} {x : U} :
     MDifferentiableAt J I (f ∘ (Subtype.val : U → N)) x ↔ MDifferentiableAt J I f (x : N) :=
-  (differentiableWithinAt_localInvariantProp.liftPropAt_iff_comp_subtype_val f x).symm
+  (differentiableWithinAt_localInvariantProp.liftPropAt_iff_comp_subtypeVal f x).symm
 
 /-- A map into an open subset is differentiable at a point exactly when its composition with the
 inclusion is. -/
@@ -924,7 +924,7 @@ theorem mfderiv_comp_subtype_val_apply {U : Opens N} {f : N → M} {x : U}
     (v : TangentSpace J x) :
     mfderiv J I (f ∘ (Subtype.val : U → N)) x v = mfderiv J I f (x : N) v := by
   by_cases hf : MDifferentiableAt J I f (x : N)
-  · rw [mfderiv_comp x hf (contMDiff_subtype_val.mdifferentiableAt one_ne_zero),
+  · rw [mfderiv_comp x hf (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero),
       ContinuousLinearMap.comp_apply, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
       tangentSpaceOpenEquiv_apply]
   · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
@@ -936,7 +936,7 @@ theorem mfderiv_subtype_val_comp_apply {U : Opens M} {f : N → U} {x : N}
     (v : TangentSpace J x) :
     mfderiv J I ((Subtype.val : U → M) ∘ f) x v = mfderiv J I f x v := by
   by_cases hf : MDifferentiableAt J I f x
-  · rw [mfderiv_comp x (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) hf,
+  · rw [mfderiv_comp x (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) hf,
       ContinuousLinearMap.comp_apply, mfderiv_subtype_val]
     exact tangentSpaceOpenEquiv_apply _ _
   · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
@@ -1020,7 +1020,7 @@ theorem eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq
   filter_upwards [
     (trivializationAt E (TangentSpace I : U → Type _) x).open_baseSet.mem_nhds
       (mem_baseSet_trivializationAt E (TangentSpace I : U → Type _) x),
-    continuousAt_subtype_val.eventually
+    continuousAt_subtypeVal.eventually
       ((trivializationAt E (TangentSpace I : M → Type _) (x : M)).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) (x : M))),
     eventually_tangentBundleCore_coordChange_open_eq (I := I) x] with y hyU hyM hcoord
@@ -1073,15 +1073,15 @@ theorem contMDiffAt_restrictOpenTangentSpaceBilinear [IsManifold I 1 M] {n : ℕ
   -- Pull ambient `C^n` regularity back along the inclusion and compare the inherited and ambient
   -- tangent-bundle coordinates on a common neighbourhood of `x`.
   rw [contMDiffAt_section_iff]
-  have h := hb.comp x (contMDiff_subtype_val (I := I) (U := U)).contMDiffAt
+  have h := hb.comp x (contMDiff_subtypeVal (I := I) (U := U)).contMDiffAt
   rw [contMDiffAt_totalSpace_iff] at h
   apply h.2.congr_of_eventuallyEq
   filter_upwards [
     (trivializationAt E (TangentSpace I : U → Type _) x).open_baseSet.mem_nhds
       (mem_baseSet_trivializationAt E (TangentSpace I : U → Type _) x),
-    continuousAt_subtype_val.eventually
-      ((trivializationAt E (TangentSpace I : M → Type _) x.1).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) x.1)),
+    continuousAt_subtypeVal.eventually
+      ((trivializationAt E (TangentSpace I : M → Type _) x.val).open_baseSet.mem_nhds
+        (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) x.val)),
     eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq (I := I) x] with y hyU hyM hsymm
   have hyU' : y ∈ (chartAt H x).source := by simpa using hyU
   have hyM' : (y : M) ∈ (chartAt H (x : M)).source := hyM

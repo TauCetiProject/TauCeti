@@ -345,10 +345,10 @@ private theorem exists_hasFPowerSeriesOnBall_setIntegral_Icc
     ∃ P : FormalMultilinearSeries ℝ ℍ ℍ,
       HasFPowerSeriesOnBall (fun q ↦ ∫ u in Icc a b, F (cauchyFueterKernel (γ u) q) (g u))
         P q₀ (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) := by
-  let γ' : C(Icc a b, ℍ) := ⟨fun z ↦ γ z.1, hγ.domRestrict⟩
+  let γ' : C(Icc a b, ℍ) := ⟨fun z ↦ γ z.val, hγ.domRestrict⟩
   have hne : ∀ z : Icc a b, γ' z ≠ q₀ :=
-    fun z ↦ sub_ne_zero.1 (norm_pos_iff.1 (hδ₀.trans_le (hδ z.1 z.2)))
-  obtain ⟨P, hP⟩ := hF γ' hne (fun z ↦ hδ z.1 z.2)
+    fun z ↦ sub_ne_zero.1 (norm_pos_iff.1 (hδ₀.trans_le (hδ z.val z.property)))
+  obtain ⟨P, hP⟩ := hF γ' hne (fun z ↦ hδ z.val z.property)
     ((integrableOn_iff_comap_subtypeVal measurableSet_Icc).mp
       (hg.integrableOn_compact (μ := volume) isCompact_Icc))
   exact ⟨P, hP.congr fun q _ ↦

@@ -38,7 +38,7 @@ inequality. -/
 theorem smul_seminorm {p : Seminorm R V} (hp : IsNonarchimedean p) (c : ℝ≥0) :
     IsNonarchimedean (c • p) := fun x y ↦ by
   simp only [FunLike.coe_smul, Pi.smul_apply, NNReal.smul_def, smul_eq_mul]
-  exact (mul_le_mul_of_nonneg_left (hp x y) c.2).trans_eq (mul_max_of_nonneg _ _ c.2)
+  exact (mul_le_mul_of_nonneg_left (hp x y) c.property).trans_eq (mul_max_of_nonneg _ _ c.property)
 
 /-- The pointwise supremum of two nonarchimedean seminorms is nonarchimedean. -/
 theorem sup_seminorm {p q : Seminorm R V} (hp : IsNonarchimedean p) (hq : IsNonarchimedean q) :

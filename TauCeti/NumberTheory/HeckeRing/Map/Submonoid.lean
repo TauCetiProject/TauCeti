@@ -70,7 +70,7 @@ theorem mem_range_map_of_le_iff [IsHeckeTriple Δ₁ H₁ H₂] (hΔ : Δ₁ ≤
   rintro ⟨D, rfl⟩
   have hmem : ((D.map hΔ le_rfl le_rfl).rep : G) ∈ doubleCoset (D.rep : G) H₁ H₂ := by
     rw [← toSet_eq_doubleCoset_rep, ← toSet_map_of_le hΔ]; exact rep_mem _
-  exact IsHeckeTriple.mem_of_mem_doubleCoset D.rep.2 hmem
+  exact IsHeckeTriple.mem_of_mem_doubleCoset D.rep.property hmem
 
 end HeckeCoset
 
@@ -156,7 +156,8 @@ theorem mapSubmonoid_structureConstants [IsHeckeTriple Δ₁ H₁ H₂] [IsHecke
     obtain ⟨w, hw, k, hk, hEq⟩ := mem_doubleCoset.mp (multiplicity_ne_zero_iff.mp hne)
     have : IsHeckeTriple Δ₁ H₁ H₃ := IsHeckeTriple.trans (H₂ := H₂)
     exact hE ((HeckeCoset.mem_range_map_of_le_iff hΔ).mpr (hEq ▸
-      Δ₁.mul_mem (Δ₁.mul_mem (IsHeckeTriple.mem_of_mem_doubleCoset D₁.rep.2 hw) D₂.rep.2)
+      Δ₁.mul_mem (Δ₁.mul_mem (IsHeckeTriple.mem_of_mem_doubleCoset D₁.rep.property hw)
+          D₂.rep.property)
         (IsHeckeTriple.mem_of_mem_right H₂ hk)))
 
 /-- `mapSubmonoid` intertwines the bimodule convolution product `HeckeCosetModule.mul`. -/

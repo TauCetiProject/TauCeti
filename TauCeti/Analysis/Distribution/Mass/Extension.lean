@@ -322,17 +322,17 @@ theorem tendsto_apply_smulLeftCLM_massRestrict (hT : HasLocallyFiniteMass T)
   refine tendsto_lintegral_of_dominated_convergence' (fun x => (‖C‖ₑ + 1) * ‖φ x‖ₑ)
     (fun i => ?_) (fun i => ae_of_all _ fun x => ?_) ?_ (ae_of_all _ fun x => ?_)
   · have hc : Continuous fun x : Ω => f i x • φ x :=
-      (((hf i).continuous.comp continuous_subtype_val).smul
-        (φ.continuous.comp continuous_subtype_val))
+      (((hf i).continuous.comp continuous_subtypeVal).smul
+        (φ.continuous.comp continuous_subtypeVal))
     exact (hc.aestronglyMeasurable.sub ((φ.continuous.comp
-      continuous_subtype_val).aestronglyMeasurable.indicator hA)).eNorm.congr
+      continuous_subtypeVal).aestronglyMeasurable.indicator hA)).eNorm.congr
       (ae_of_all _ fun x => by by_cases hx : x ∈ A <;> simp [hx, sub_smul])
   · dsimp only
     rw [eNorm_smul]
     gcongr
     refine (eNorm_sub_le).trans (add_le_add ?_ ?_)
     · rw [← ofReal_norm, ← ofReal_norm, Real.norm_eq_abs]
-      exact ENNReal.ofReal_le_ofReal ((hfC i x x.2).trans (le_abs_self C))
+      exact ENNReal.ofReal_le_ofReal ((hfC i x x.property).trans (le_abs_self C))
     · by_cases hx : x ∈ A <;> simp [hx]
   · rw [lintegral_const_mul' _ _ (by simp), ← TestFunction.enorm_toLp_one]
     exact ENNReal.mul_ne_top (by simp) eNorm_ne_top

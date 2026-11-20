@@ -219,7 +219,7 @@ private lemma exists_bound_of_isControlled {X : Type*} [NormedAddCommGroup X] [N
         C * s.sup (schwartzSeminormFamily ℂ (CoordinateSpace n) V) u := by
   obtain ⟨q, hq, hle⟩ := IsControlled.sum (Finset.univ : Finset (Fin k → Fin n)) fun w _ ↦ h w
   obtain ⟨s, C, -, hqC⟩ := Seminorm.bound_of_continuous (schwartz_withSeminorms ℂ _ _) q hq
-  refine ⟨s, C, C.2, fun u x ↦ ?_⟩
+  refine ⟨s, C, C.property, fun u x ↦ ?_⟩
   calc ‖x‖ ^ k * ‖iteratedFDeriv ℝ N (F u) x‖ ≤
         (∑ j, |x j|) ^ k * ‖iteratedFDeriv ℝ N (F u) x‖ := by
         gcongr
@@ -630,7 +630,7 @@ private lemma continuous_integrandFDeriv (c : Symbol n V W m) (u : 𝓢(Coordina
   refine continuous_clm_apply.2 fun h ↦ ?_
   simp only [integrandFDeriv_apply]
   have he : Continuous fun y : CoordinateSpace n ↦ (𝐞 (-⟪y, ζ⟫) : ℂ) :=
-    (Real.continuous_fourierChar.comp (by fun_prop)).subtype_val
+    (Real.continuous_fourierChar.comp (by fun_prop)).subtypeVal
   refine (he.smul ((hD.clm_apply continuous_const).clm_apply u.continuous)).add ?_
   exact (((continuous_const.mul (Complex.continuous_ofReal.comp (by fun_prop))).mul he).smul
     (hc.clm_apply u.continuous))

@@ -191,7 +191,7 @@ private theorem surjective_of_splitting (hT₀ : IsFredholm (T x₀)) (hsurj : S
     simpa [LinearMap.range_eq_top.2 hsurj] using hS.isCompl.inf_eq_bot
   refine ⟨W, hWo, hx₀W, fun x hx ↦ ?_⟩
   have hTR : ∀ y, T x (R x y) = y := fun y ↦ by
-    have hP : (P x y : F) = 0 := by simpa [hS] using (P x y).2
+    have hP : (P x y : F) = 0 := by simpa [hS] using (P x y).property
     simpa [hP] using (hRP x hx.1).1 y
   have hsurjx : Surjective (T x) := fun y ↦ ⟨R x y, hTR y⟩
   exact ⟨hTR, (hW x hx.2).2

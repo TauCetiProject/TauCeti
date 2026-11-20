@@ -681,7 +681,7 @@ theorem primitive_iterate_multiplicity (γ : ClosedOrbit ϕ) :
 iterations, by taking the iterate. -/
 def equivPrimitiveProdPNat : ClosedOrbit ϕ ≃ {γ : ClosedOrbit ϕ // γ.IsPrimitive} × ℕ+ where
   toFun γ := (⟨γ.primitive, γ.isPrimitive_primitive⟩, γ.multiplicity)
-  invFun p := p.1.1.iterate p.2
+  invFun p := p.1.val.iterate p.2
   left_inv γ := γ.primitive_iterate_multiplicity
   right_inv := fun ⟨⟨γ, hγ⟩, k⟩ ↦ by
     refine Prod.ext (Subtype.ext ?_) ?_
@@ -695,7 +695,7 @@ theorem equivPrimitiveProdPNat_apply (γ : ClosedOrbit ϕ) :
 
 @[simp]
 theorem equivPrimitiveProdPNat_symm_apply (p : {γ : ClosedOrbit ϕ // γ.IsPrimitive} × ℕ+) :
-    equivPrimitiveProdPNat.symm p = p.1.1.iterate p.2 :=
+    equivPrimitiveProdPNat.symm p = p.1.val.iterate p.2 :=
   (rfl)
 
 /-- The period of a closed orbit is an integer multiple of its minimal period. -/
@@ -912,7 +912,7 @@ def equivMarkersOver (γ : PeriodicTrajectory ϕ) {p : α} {θ₀ : AddCircle γ
   toFun k := ⟨θ₀ + (γ.zmodEquivReparamSubgroup k : AddCircle γ.period),
     (γ.mem_markersOver_iff_sub_mem_reparamSubgroup hθ₀).2 <| by simp⟩
   invFun θ := γ.zmodEquivReparamSubgroup.symm
-    ⟨θ.1 - θ₀, (γ.mem_markersOver_iff_sub_mem_reparamSubgroup hθ₀).1 θ.2⟩
+    ⟨θ.val - θ₀, (γ.mem_markersOver_iff_sub_mem_reparamSubgroup hθ₀).1 θ.property⟩
   left_inv k := by
     apply γ.zmodEquivReparamSubgroup.injective
     rw [AddEquiv.apply_symm_apply]
@@ -921,7 +921,7 @@ def equivMarkersOver (γ : PeriodicTrajectory ϕ) {p : α} {θ₀ : AddCircle γ
   right_inv θ := Subtype.ext <| by
     dsimp only
     rw [AddEquiv.apply_symm_apply]
-    exact add_sub_cancel θ₀ θ.1
+    exact add_sub_cancel θ₀ θ.val
 
 @[simp]
 theorem coe_equivMarkersOver_apply (γ : PeriodicTrajectory ϕ) {p : α}

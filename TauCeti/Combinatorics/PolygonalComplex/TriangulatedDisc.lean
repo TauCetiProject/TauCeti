@@ -171,8 +171,8 @@ private theorem sideCount_triangulatedDisc (e : triangulatedDiscGraph.E) :
 side. -/
 private theorem nonempty_path_of_corner {x : triangulatedDiscGraph.V}
     {a y : (triangulatedDisc.vertexLink x).V} (b : (triangulatedDisc.vertexLink x).V)
-    (c : triangulatedDisc.Corner) (ha : a.1 = triangulatedDisc.side c.1 c.2)
-    (hb : b.1 = triangulatedDiscGraph.rev (triangulatedDisc.side c.1 ((finRotate 3).symm c.2)))
+    (c : triangulatedDisc.Corner) (ha : a.val = triangulatedDisc.side c.1 c.2)
+    (hb : b.val = triangulatedDiscGraph.rev (triangulatedDisc.side c.1 ((finRotate 3).symm c.2)))
     (h : Nonempty ((triangulatedDisc.vertexLink x).Path b y)) :
     Nonempty ((triangulatedDisc.vertexLink x).Path a y) :=
   Quiver.Reachable.trans (triangulatedDisc.nonempty_vertexLink_path_of_corner c

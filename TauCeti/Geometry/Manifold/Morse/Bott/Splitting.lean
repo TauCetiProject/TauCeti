@@ -233,7 +233,7 @@ theorem coe_negativeNormalSpaceEquiv_apply {s : S} (v : h.negativeNormalSpace hn
 theorem negativeNormalSpaceEquiv_self (s : S) :
     h.negativeNormalSpaceEquiv hn g g s = LinearEquiv.refl ℝ _ := by
   ext v
-  simp [Submodule.projection_apply_of_mem_left _ v.2]
+  simp [Submodule.projection_apply_of_mem_left _ v.property]
 
 /-- **The positive normal spaces for two fibre metrics are isomorphic.** The positive normal
 space relative to `g` is identified with the positive normal space relative to `g'` by projecting
@@ -264,7 +264,7 @@ theorem coe_positiveNormalSpaceEquiv_apply {s : S} (v : h.positiveNormalSpace hn
 theorem positiveNormalSpaceEquiv_self (s : S) :
     h.positiveNormalSpaceEquiv hn g g s = LinearEquiv.refl ℝ _ := by
   ext v
-  simp [Submodule.projection_apply_of_mem_left _ v.2]
+  simp [Submodule.projection_apply_of_mem_left _ v.property]
 
 /-- **The rank of the negative normal space is locally constant** along a Morse–Bott
 submanifold. -/

@@ -565,7 +565,7 @@ theorem exists_hasFPowerSeriesOnBall_of_hasSum {f : (ι → 𝕜) → F} {x : ι
     exact_mod_cast h
   -- Sum the given expansion fiberwise by total degree; each fiber is finite.
   let e : (Σ k : ℕ, {α // α ∈ univ.piAntidiag k}) ≃ (ι → ℕ) :=
-    { toFun := fun x ↦ x.2.1
+    { toFun := fun x ↦ x.2.val
       invFun := fun α ↦ ⟨∑ i, α i, ⟨α, mem_piAntidiag.2 ⟨rfl, by simp⟩⟩⟩
       left_inv := by rintro ⟨_, α, hα⟩; obtain ⟨rfl, -⟩ := mem_piAntidiag.1 hα; rfl
       right_inv := fun _ ↦ rfl }

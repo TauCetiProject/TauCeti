@@ -78,7 +78,7 @@ theorem exists_finiteIndex_isDomain {R : Type*} [CommRing R] [IsDomain R] [AddGr
   -- The projection to `ℤⁿ` is injective on `K`, so `K` is torsion-free.
   have hinj : Function.Injective ((AddMonoidHom.fst _ _).comp (f.toAddMonoidHom.comp K.subtype)) :=
     fun x y hxy ↦ Subtype.ext <| f.injective <| Prod.ext hxy <|
-      (AddMonoidHom.mem_ker.mp x.2).trans (AddMonoidHom.mem_ker.mp y.2).symm
+      (AddMonoidHom.mem_ker.mp x.property).trans (AddMonoidHom.mem_ker.mp y.property).symm
   have := hinj.hasUniqueDiv _
   exact isDomain_of_fg _
 

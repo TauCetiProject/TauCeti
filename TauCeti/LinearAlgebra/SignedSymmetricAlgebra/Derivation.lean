@@ -100,7 +100,7 @@ private theorem eq_zero_of_leibniz {A : Type*} [Ring A] [Algebra R A]
   ext a
   induction a using DirectSum.Decomposition.inductionOn (signedSymPiece G) with
   | zero => simp
-  | homogeneous a => exact hhom a.2
+  | homogeneous a => exact hhom a.property
   | add a b ha hb => simp_all
 
 /-- A graded algebra map out of `A(V)` intertwines signed Leibniz maps if it does so on
