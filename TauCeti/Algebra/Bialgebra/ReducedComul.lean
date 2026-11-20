@@ -22,7 +22,7 @@ commute with it.
 * `TauCeti.Bialgebra.reducedComul_apply`: its value as an explicit formula.
 * `TauCeti.Bialgebra.reducedComul_algebraMap`, `Bialgebra.IsPrimitiveElem.reducedComul_eq_zero`:
   it vanishes on scalars and on primitive elements.
-* `TauCeti.Bialgebra.map_reducedComul`: bialgebra maps commute with it.
+* `BialgHom.map_reducedComul`: bialgebra maps commute with it.
 -/
 
 public section
@@ -55,15 +55,22 @@ theorem reducedComul_algebraMap {B : Type*} [Ring B] [Bialgebra k B] (c : k) :
     ← Algebra.TensorProduct.algebraMap_apply, ← Algebra.TensorProduct.algebraMap_apply']
   abel
 
+end TauCeti.Bialgebra
+
+namespace BialgHom
+
+open TauCeti.Bialgebra
+
+variable {k B C : Type*} [CommRing k] [Ring B] [Bialgebra k B] [Ring C] [Bialgebra k C]
+
 /-- Bialgebra maps commute with the reduced coproduct defect. -/
-theorem map_reducedComul {B C : Type*} [Ring B] [Bialgebra k B] [Ring C] [Bialgebra k C]
-    (φ : B →ₐc[k] C) (x : B) :
+theorem map_reducedComul (φ : B →ₐc[k] C) (x : B) :
     TensorProduct.map (φ : B →ₗ[k] C) (φ : B →ₗ[k] C) (reducedComul k B x) =
       reducedComul k C (φ x) := by
   simp [reducedComul_apply, CoalgHomClass.map_comp_comul_apply, Algebra.algebraMap_eq_smul_one,
     Algebra.TensorProduct.one_def]
 
-end TauCeti.Bialgebra
+end BialgHom
 
 namespace Bialgebra.IsPrimitiveElem
 

@@ -13,6 +13,7 @@ import Mathlib.Algebra.Algebra.Rat
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.RingTheory.Flat.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # Bialgebra maps out of a symmetric algebra
@@ -113,13 +114,10 @@ filtration by one. -/
 private theorem mul_mem_tensorFiltration_succ {d : ℕ} {t : S ⊗[k] S}
     (ht : t ∈ tensorFiltration k M d) {a b : S} (ha : a ∈ F 1) (hb : b ∈ F 1) :
     t * (a ⊗ₜ[k] b) ∈ tensorFiltration k M (d + 1) := by
-  obtain ⟨u, rfl⟩ := ht
-  induction u using TensorProduct.inductionOn with
-  | tmul p q =>
-    simpa [Algebra.TensorProduct.tmul_mul_tmul] using
-      tmul_mem_tensorFiltration (mul_mem_wordFiltration _ p.2 ha)
-        (mul_mem_wordFiltration _ q.2 hb)
-  | add u v hu hv => simpa [add_mul] using add_mem hu hv
+  have h := Submodule.map₂_tmul_mul_le (F d) (F 1) (F d) (F 1)
+  rw [wordFiltration_mul] at h
+  rw [tensorFiltration, ← TensorProduct.mapIncl, TensorProduct.range_mapIncl] at ht ⊢
+  exact h (Submodule.mul_mem_mul ht (Submodule.apply_mem_map₂ _ ha hb))
 
 /-- The reduced coproduct of a product with a generator. -/
 private theorem reducedComul_mul_ι (a : S) (m : M) :
@@ -200,7 +198,7 @@ private theorem reducedComul_eq_zero_of_injOn {φ : S →ₐc[k] A} {d : ℕ}
     Subtype.ext (hd p.2 q.2 hpq)
   have hu0 : u = 0 := by
     apply TensorProduct.map_injective_of_flat_flat _ _ hinj hinj
-    rw [map_zero, TensorProduct.map_comp, LinearMap.comp_apply, hu, map_reducedComul, hφx,
+    rw [map_zero, TensorProduct.map_comp, LinearMap.comp_apply, hu, φ.map_reducedComul, hφx,
       map_zero]
   rw [← hu, hu0, map_zero]
 
