@@ -10,14 +10,14 @@ public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.Algebra
 import TauCeti.NumberTheory.Padics.Measure.IntegralUnitBall
 
 /-!
-# Compatibility of finite free base change with unit-ball coefficient extension
+# Compatibility of finite projective base change with unit-ball coefficient extension
 
-Let `X` be a profinite space, `R` a compact topological commutative ring, `O` a Hausdorff
-topological `R`-algebra with continuous `R`-action, and `j : O →+* K` a ring homomorphism into the
-closed unit ball of a complete ultrametric field `K`. Two operations move measures across the
-diagram `R → O → K`:
+Let `X` be a profinite space, `R` a topological commutative ring, `O` a topological `R`-algebra
+carrying the `R`-module topology (`IsModuleTopology R O`), and `j : O →+* K` a ring homomorphism
+into the closed unit ball of a complete ultrametric field `K`. Two operations move measures across
+the diagram `R → O → K`:
 
-* when `O` is finite and free over `R`, `AbstractMeasure.extendScalars O :
+* when `O` is finitely generated and projective over `R`, `AbstractMeasure.extendScalars O :
   D(X, R) →ₛₗ[algebraMap R O] D(X, O)` and its tensor lift
   `AbstractMeasure.baseChangeLinearEquiv O : O ⊗[R] D(X, R) ≃ₗ[O] D(X, O)`;
 * `AbstractMeasure.extendCoefficients j hj : D(X, O) →+ D(X, K)`, extending integral coefficients
@@ -25,10 +25,11 @@ diagram `R → O → K`:
 
 This file proves that these constructions are compatible without assuming continuity of `j`:
 
-* for finite free `O`, `extendCoefficients j hj (extendScalars O μ)` equals the coefficient
+* for finite projective `O`, `extendCoefficients j hj (extendScalars O μ)` equals the coefficient
   extension of `μ` along `j.comp (algebraMap R O)`
-  (`AbstractMeasure.extendCoefficients_extendScalars`), and for an `R`-algebra map `j : O →ₐ[R] K`
-  into the closed unit ball it equals the extension along `algebraMap R K`
+  (`AbstractMeasure.extendCoefficients_extendScalars`), `extendCoefficients_baseChange_tmul` gives
+  the formula on pure tensors, and for an `R`-algebra map `j : O →ₐ[R] K` into the closed unit
+  ball it equals the extension along `algebraMap R K`
   (`AbstractMeasure.extendCoefficients_algHom_extendScalars`);
 * in any finite `R`-basis `b` of `O`, the extension of every `ν ∈ D(X, O)` decomposes via the
   coordinate retractions `AbstractMeasure.mapScalars (b.coord i) ν`
@@ -61,9 +62,9 @@ section ProfiniteSpace
 
 variable {X R O K : Type*} [TopologicalSpace X] [CompactSpace X] [T2Space X]
   [TotallyDisconnectedSpace X]
-  [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [CompactSpace R]
-  [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-  [Algebra R O] [ContinuousSMul R O] [Module.Free R O] [Module.Finite R O]
+  [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
+  [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
+  [Algebra R O] [IsModuleTopology R O] [Module.Projective R O] [Module.Finite R O]
   [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
 
 /-- Extending scalars from `R` to `O` and then extending coefficients along `j : O →+* K` into the
@@ -77,6 +78,14 @@ theorem extendCoefficients_extendScalars (j : O →+* K) (hj : ∀ a, ‖j a‖ 
     ext a
     simp
 
+/-- Extending coefficients of a base-changed pure tensor `a ⊗ₜ μ` scales the coefficient extension
+of `μ` by `j a`. -/
+theorem extendCoefficients_baseChange_tmul (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (a : O)
+    (μ : D(X, R)) :
+    extendCoefficients j hj (baseChangeLinearEquiv O (a ⊗ₜ[R] μ)) =
+      j a • extendCoefficients (j.comp (algebraMap R O)) (fun r ↦ hj (algebraMap R O r)) μ := by
+  rw [baseChangeLinearEquiv_tmul, extendCoefficients_smul, extendCoefficients_extendScalars]
+
 /-- When `K` is an `R`-algebra and `j : O →ₐ[R] K` is an `R`-algebra homomorphism into the closed
 unit ball, extending `extendScalars O μ` along `j` agrees with extending `μ` along
 `algebraMap R K`. -/
@@ -89,7 +98,7 @@ theorem extendCoefficients_algHom_extendScalars [Algebra R K] (j : O →ₐ[R] K
   (extendCoefficients_extendScalars (j : O →+* K) hj μ).trans <| by
     simp only [j.comp_algebraMap]
 
-omit [Module.Free R O] in
+omit [Module.Projective R O] [Module.Finite R O] in
 /-- In any finite `R`-basis `b` of `O`, the coefficient extension of an arbitrary `O`-valued
 measure `ν ∈ D(X, O)` decomposes as a `K`-linear combination of the extensions of its `R`-valued
 coordinate retractions `mapScalars (b.coord i) ν`. -/
@@ -99,7 +108,8 @@ theorem extendCoefficients_eq_sum_basis {ι : Type*} [Fintype ι] (b : Module.Ba
       ∑ i : ι, j (b i) •
         extendCoefficients (j.comp (algebraMap R O)) (fun r ↦ hj (algebraMap R O r))
           (mapScalars (b.coord i) ν) := by
-  have : Module.Free R O := Module.Free.of_basis b
+  have : Module.Projective R O := Module.Projective.of_basis b
+  have : Module.Finite R O := Module.Finite.of_basis b
   have hν : ν = baseChangeLinearEquiv O (∑ i : ι, b i ⊗ₜ[R] mapScalars (b.coord i) ν) := by
     rw [← baseChangeLinearEquiv_symm_apply b ν, LinearEquiv.apply_symm_apply]
   conv_lhs => rw [hν]
@@ -115,12 +125,12 @@ open AbstractMeasure
 
 variable {G R O K : Type*} [TopologicalSpace G] [CompactSpace G] [T2Space G]
   [TotallyDisconnectedSpace G] [Monoid G] [ContinuousMul G]
-  [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [CompactSpace R]
-  [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-  [Algebra R O] [ContinuousSMul R O] [Module.Free R O] [Module.Finite R O]
+  [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
+  [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
+  [Algebra R O] [IsModuleTopology R O] [Module.Projective R O] [Module.Finite R O]
   [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
 
-omit [Module.Free R O] in
+omit [Module.Projective R O] [Module.Finite R O] in
 /-- In any finite `R`-basis `b` of `O`, extended character integration of an arbitrary `O`-valued
 measure `ν ∈ D(G, O)` decomposes as a `K`-linear combination of the extended character integrals
 of its `R`-valued coordinate retractions `mapScalars (b.coord i) ν`. -/
@@ -130,7 +140,8 @@ theorem extendedCharacterRingHom_eq_sum_basis {ι : Type*} [Fintype ι] (b : Mod
       ∑ i : ι, j (b i) *
         χ.extendedCharacterRingHom (j.comp (algebraMap R O))
           (fun r ↦ hj (algebraMap R O r)) (mapScalars (b.coord i) ν) := by
-  have : Module.Free R O := Module.Free.of_basis b
+  have : Module.Projective R O := Module.Projective.of_basis b
+  have : Module.Finite R O := Module.Finite.of_basis b
   have hν : ν = baseChangeAlgEquiv O (∑ i : ι, b i ⊗ₜ[R] mapScalars (b.coord i) ν) := by
     rw [← baseChangeLinearEquiv_symm_apply b ν, ← coe_symm_baseChangeAlgEquiv,
       AlgEquiv.apply_symm_apply]
@@ -152,21 +163,27 @@ variable {p : ℕ} [Fact p.Prime] {O : Type*} [NormedCommRing O] [Algebra ℤ_[p
 /-! Sanity checks on Dirac tensors, character evaluations, and Amice transforms. -/
 
 example (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (a : O) (x : ℤ_[p]) :
+    let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
     extendCoefficients j hj (baseChangeLinearEquiv O (a ⊗ₜ[ℤ_[p]] dirac ℤ_[p] x)) =
       j a • dirac K x := by
+  let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
   simp
 
 example {G : Type*} [TopologicalSpace G] [CompactSpace G] [T2Space G]
     [TotallyDisconnectedSpace G] [Monoid G] [ContinuousMul G]
     (χ : G →ₜ* K) (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (a : O) (x : G) :
+    let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
     χ.extendedCharacterRingHom j hj (baseChangeAlgEquiv O (a ⊗ₜ[ℤ_[p]] dirac ℤ_[p] x)) =
       j a * χ x := by
+  let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
   simp
 
 example [Algebra ℤ_[p] K] [ContinuousSMul ℤ_[p] K] (j : O →ₐ[ℤ_[p]] K) (hj : ∀ a, ‖j a‖ ≤ 1)
     (a : O) (μ : D(ℤ_[p], ℤ_[p])) :
+    let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
     (extendCoefficients (j : O →+* K) hj (baseChangeLinearEquiv O (a ⊗ₜ[ℤ_[p]] μ))).amiceTransform =
       j a • PowerSeries.map (algebraMap ℤ_[p] K) μ.amiceTransform := by
+  let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
   ext n
   simp
 

@@ -5,42 +5,64 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
-public import Mathlib.RingTheory.TensorProduct.Basic
+public import Mathlib.RingTheory.Finiteness.Projective
+public import Mathlib.RingTheory.TensorProduct.Maps
+public import Mathlib.Topology.Algebra.Module.ModuleTopology
+public import TauCeti.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Basic
+import TauCeti.LinearAlgebra.Dual.FiniteProjective
 
 /-!
-# Change of coefficients for the completed group algebra
+# Change of coefficients and base change for the completed group algebra
 
 An additive homomorphism `f : R →+ S` applies coefficientwise at every open-normal quotient level
 `R[Γ ⧸ U] → S[Γ ⧸ U]`, and compatibility along the quotient maps `Γ ⧸ U → Γ ⧸ V` assembles these
 level maps into an additive homomorphism
 `completedGroupAlgebra.mapAddMonoidHom Γ f : R[[Γ]] →+ S[[Γ]]`. For a ring homomorphism
-`f : R →+* S` this upgrades to a ring homomorphism
-`completedGroupAlgebra.mapRingHom Γ f : R[[Γ]] →+* S[[Γ]]` sending each group element `of R Γ γ`
-to `of S Γ γ`. When `S` is an `R`-algebra, scalar multiplication on the left combines with
-`mapRingHom Γ (algebraMap R S)` into an `S`-algebra homomorphism
-`completedGroupAlgebra.baseChange R S Γ : S ⊗[R] R[[Γ]] →ₐ[S] S[[Γ]]`.
+`f : R →+* S` (or isomorphism `e : R ≃+* S`) this upgrades to a ring homomorphism
+`completedGroupAlgebra.mapRingHom Γ f : R[[Γ]] →+* S[[Γ]]` (and
+`mapRingEquiv Γ e : R[[Γ]] ≃+* S[[Γ]]`) sending each group element `of R Γ γ` to `of S Γ γ`. Each
+is continuous for the inverse-limit topologies whenever the underlying coefficient map is
+continuous.
 
-In general an inverse limit does not commute with tensor products. When `S` is finite and free as
-an `R`-module, however, choosing a finite `R`-basis `(b_i)` of `S` splits every coefficient in
-`S[Γ ⧸ U]` into finitely many `R`-coordinates. Each coordinate linear form `b.coord i : S →ₗ[R] R`
-acts levelwise on `S[[Γ]]` through `mapAddMonoidHom`, and reassembling along `(b_i)` furnishes the
-two-sided inverse to `baseChange R S Γ`. Thus
-`completedGroupAlgebra.baseChangeEquiv R S Γ : S ⊗[R] R[[Γ]] ≃ₐ[S] S[[Γ]]` is an isomorphism of
-`S`-algebras: `R` and `S` carry no topology, while `Γ` requires no topological-group or
-compactness/finite-quotient hypotheses beyond `[Group Γ] [TopologicalSpace Γ]`.
+When `S` is an `R`-algebra, scalar multiplication on the left combines with
+`mapRingHom Γ (algebraMap R S)` into an `S`-algebra homomorphism
+`completedGroupAlgebra.baseChange R S Γ : S ⊗[R] R[[Γ]] →ₐ[S] S[[Γ]]`. Because infinite inverse
+limits do not commute with arbitrary tensor products, this map need not be an isomorphism in
+general:
+* without finite generation (`S = 𝔽_p[T]` over `R = 𝔽_p` and `Γ = ℤ_p`), elements of
+  `S ⊗[R] R[[Γ]]` have bounded `T`-degree across all open normal quotients whereas `S[[Γ]]`
+  contains power series of unbounded `T`-degree;
+* without projectivity (`R = 𝔽_p⟦x_0, x_1, …⟧`, `S = 𝔽_p`, `Γ = ℤ_p`), an infinite series whose
+  coefficients lie in varying generators of the augmentation ideal maps to `0` in `S[[Γ]]` while
+  remaining nonzero in `S ⊗[R] R[[Γ]]`.
+
+When `S` is finitely generated and projective over `R`, a finite dual basis from
+`TauCeti.exists_sum_dual_smul_eq` supplies a two-sided inverse, upgrading `baseChange R S Γ` to an
+`S`-algebra isomorphism
+`completedGroupAlgebra.baseChangeEquiv R S Γ : S ⊗[R] R[[Γ]] ≃ₐ[S] S[[Γ]]`: `R` and `S` carry no
+topology, while `Γ` requires no topological-group or compactness/finite-quotient hypotheses beyond
+`[Group Γ] [TopologicalSpace Γ]`. When `S` admits a finite `R`-basis `b`, taking `b`-coordinates of
+levelwise coefficients yields an additive isomorphism `coordAddEquiv Γ b : S[[Γ]] ≃+ (ι → R[[Γ]])`,
+which upgrades to a topological additive isomorphism
+`coordContinuousAddEquiv Γ b : S[[Γ]] ≃ₜ+ (ι → R[[Γ]])` for the inverse-limit topologies when `R`
+is a topological ring and `S` carries the `R`-module topology.
 
 ## Main definitions
 
 * `TauCeti.completedGroupAlgebra.mapAddMonoidHom Γ f`: the additive homomorphism
   `R[[Γ]] →+ S[[Γ]]` applying `f : R →+ S` to every level coefficient.
-* `TauCeti.completedGroupAlgebra.mapRingHom Γ f`: the ring homomorphism `R[[Γ]] →+* S[[Γ]]`
-  induced coefficientwise by `f : R →+* S`.
+* `TauCeti.completedGroupAlgebra.mapRingHom Γ f`,
+  `TauCeti.completedGroupAlgebra.mapRingEquiv Γ e`: the ring homomorphism `R[[Γ]] →+* S[[Γ]]` and
+  ring isomorphism `R[[Γ]] ≃+* S[[Γ]]` induced coefficientwise by `f : R →+* S` or `e : R ≃+* S`.
 * `TauCeti.completedGroupAlgebra.baseChange R S Γ`: the canonical `S`-algebra homomorphism
   `S ⊗[R] R[[Γ]] →ₐ[S] S[[Γ]]`.
 * `TauCeti.completedGroupAlgebra.baseChangeEquiv R S Γ`: the `S`-algebra isomorphism
-  `S ⊗[R] R[[Γ]] ≃ₐ[S] S[[Γ]]` when `S` is finite and free over `R`.
+  `S ⊗[R] R[[Γ]] ≃ₐ[S] S[[Γ]]` when `S` is finitely generated and projective over `R`.
+* `TauCeti.completedGroupAlgebra.coordAddEquiv`,
+  `TauCeti.completedGroupAlgebra.coordContinuousAddEquiv`: the additive equivalence
+  `S[[Γ]] ≃+ (ι → R[[Γ]])` attached to a finite `R`-basis of `S`, upgraded to
+  `S[[Γ]] ≃ₜ+ (ι → R[[Γ]])` when `S` carries the `R`-module topology.
 
 ## Main results
 
@@ -54,17 +76,21 @@ compactness/finite-quotient hypotheses beyond `[Group Γ] [TopologicalSpace Γ]`
   `mapAddMonoidHom_toAddMonoidHom`, `mapAddMonoidHom_injective`, and `continuous_mapAddMonoidHom`.
 * `TauCeti.completedGroupAlgebra.proj_mapRingHom`,
   `TauCeti.completedGroupAlgebra.coeff_proj_mapRingHom`,
-  `TauCeti.completedGroupAlgebra.mapRingHom_of`: levelwise and group-element formulas for
-  `mapRingHom`, together with `mapRingHom_id`, `mapRingHom_comp`, `mapRingHom_injective`, and
-  `continuous_mapRingHom`.
+  `TauCeti.completedGroupAlgebra.mapRingHom_of`,
+  `TauCeti.completedGroupAlgebra.mapRingHom_smul`: levelwise, group-element, and semilinearity
+  formulas for `mapRingHom`, together with `mapRingHom_id`, `mapRingHom_comp`,
+  `mapRingHom_injective`, and `continuous_mapRingHom`.
 * `TauCeti.completedGroupAlgebra.baseChange_bijective`: `baseChange R S Γ` is bijective whenever
-  `S` is finite and free over `R`.
-* `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_baseChange`,
+  `S` is finitely generated and projective over `R`.
+* `TauCeti.completedGroupAlgebra.baseChange_self`,
+  `TauCeti.completedGroupAlgebra.baseChangeEquiv_self`,
+  `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_baseChange`,
   `TauCeti.completedGroupAlgebra.baseChange_baseChangeEquiv_symm`,
   `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_mapRingHom`,
   `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_of`,
-  `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_apply`: inverse cancellation, pure-tensor and
-  generator normal forms, and basis decomposition of `(baseChangeEquiv R S Γ).symm`.
+  `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_apply`: inverse cancellation, self-base-change
+  normalization, pure-tensor and generator normal forms, and basis decomposition of
+  `(baseChangeEquiv R S Γ).symm`.
 
 ## References
 
@@ -90,16 +116,10 @@ variable {R : Type u} [CommRing R] {S : Type w} [CommRing S] {T : Type z} [CommR
 
 /-- Applying an additive homomorphism `f : R →+ S` to every coefficient at every open-normal
 quotient level defines an additive homomorphism `R[[Γ]] →+ S[[Γ]]`. For coordinate forms of a
-finite basis, this extracts the scalar coordinates of an element of `S[[Γ]]`. -/
+finite basis or dual pair, this extracts the scalar coordinates of an element of `S[[Γ]]`. -/
 def mapAddMonoidHom (f : R →+ S) : completedGroupAlgebra R Γ →+ completedGroupAlgebra S Γ where
-  toFun x := mk S Γ
-    (fun U ↦ MonoidAlgebra.map f (proj R Γ U x))
-    fun U V hUV ↦ by
-      apply MonoidAlgebra.coeff_injective
-      rw [MonoidAlgebra.coeff_mapDomain, MonoidAlgebra.coeff_map, MonoidAlgebra.coeff_map,
-        ← mapDomain_mapOfLE_proj hUV x, MonoidAlgebra.coeff_mapDomain]
-      exact Finsupp.mapDomain_mapRange (QuotientGroup.mapOfLE hUV) (proj R Γ U x).coeff f
-        (map_zero f) (map_add f)
+  toFun x := mk S Γ (fun U ↦ MonoidAlgebra.map f (proj R Γ U x)) fun U V hUV ↦ by
+    rw [MonoidAlgebra.mapDomain_map, mapDomain_mapOfLE_proj hUV]
   map_zero' := ext fun U ↦ by simp [proj_mk]
   map_add' x y := ext fun U ↦ by simp [proj_mk, MonoidAlgebra.map_add]
 
@@ -236,6 +256,12 @@ theorem mapRingHom_algebraMap (f : R →+* S) (r : R) :
   ext fun U ↦ by
     simp [Algebra.algebraMap_eq_smul_one, MonoidAlgebra.one_def, MonoidAlgebra.smul_single]
 
+/-- `mapRingHom Γ f` is semilinear with respect to `f`. -/
+@[simp]
+theorem mapRingHom_smul (f : R →+* S) (r : R) (x : completedGroupAlgebra R Γ) :
+    mapRingHom Γ f (r • x) = f r • mapRingHom Γ f x := by
+  rw [Algebra.smul_def, map_mul, mapRingHom_algebraMap, ← Algebra.smul_def]
+
 variable (Γ) in
 /-- Coefficient change along the identity ring homomorphism is the identity. -/
 @[simp]
@@ -264,6 +290,39 @@ theorem continuous_mapRingHom [TopologicalSpace R] [TopologicalSpace S] {f : R �
     continuous_mapAddMonoidHom (Γ := Γ) (f := (f : R →+ S))
       (by simpa only [AddMonoidHom.coe_ofClass] using hf)
 
+variable (Γ) in
+/-- A ring isomorphism `e : R ≃+* S` induces a ring isomorphism `R[[Γ]] ≃+* S[[Γ]]`. -/
+def mapRingEquiv (e : R ≃+* S) :
+    completedGroupAlgebra R Γ ≃+* completedGroupAlgebra S Γ :=
+  RingEquiv.ofRingHom (mapRingHom Γ (e : R →+* S)) (mapRingHom Γ (e.symm : S →+* R))
+    (by simp [← mapRingHom_comp]) (by simp [← mapRingHom_comp])
+
+@[simp]
+theorem coe_mapRingEquiv (e : R ≃+* S) :
+    ⇑(mapRingEquiv Γ e) = mapRingHom Γ (e : R →+* S) :=
+  (rfl)
+
+@[simp]
+theorem toRingHom_mapRingEquiv (e : R ≃+* S) :
+    (mapRingEquiv Γ e : completedGroupAlgebra R Γ →+* completedGroupAlgebra S Γ) =
+      mapRingHom Γ (e : R →+* S) :=
+  (rfl)
+
+@[simp]
+theorem mapRingEquiv_symm (e : R ≃+* S) :
+    (mapRingEquiv Γ e).symm = mapRingEquiv Γ e.symm :=
+  (rfl)
+
+@[simp]
+theorem mapRingEquiv_refl :
+    mapRingEquiv Γ (RingEquiv.refl R) = RingEquiv.refl (completedGroupAlgebra R Γ) :=
+  RingEquiv.ext fun x ↦ by simp
+
+@[simp]
+theorem mapRingEquiv_trans (e₁ : R ≃+* S) (e₂ : S ≃+* T) :
+    mapRingEquiv Γ (e₁.trans e₂) = (mapRingEquiv Γ e₁).trans (mapRingEquiv Γ e₂) :=
+  RingEquiv.ext fun x ↦ by simp
+
 end MapCoefficients
 
 section BaseChange
@@ -281,6 +340,14 @@ theorem mapAddMonoidHom_smul_mapRingHom (g : S →ₗ[R] R) (s : S) (x : complet
     simp only [coeff_proj_mapAddMonoidHom, map_smul, MonoidAlgebra.coeff_smul,
       Finsupp.smul_apply, coeff_proj_mapRingHom, LinearMap.toAddMonoidHom_coe, smul_eq_mul]
     rw [mul_comm s, ← Algebra.smul_def, map_smul, smul_eq_mul, mul_comm]
+
+variable {R S Γ} in
+/-- Applying an `R`-linear form `g : S →ₗ[R] R` coefficientwise to `mapRingHom Γ (algebraMap R S) x`
+multiplies `x` by `g 1`. -/
+@[simp]
+theorem mapAddMonoidHom_mapRingHom (g : S →ₗ[R] R) (x : completedGroupAlgebra R Γ) :
+    mapAddMonoidHom Γ g.toAddMonoidHom (mapRingHom Γ (algebraMap R S) x) = g 1 • x := by
+  simpa using mapAddMonoidHom_smul_mapRingHom g 1 x
 
 variable {R S Γ} in
 /-- Applying an `R`-linear form `g : S →ₗ[R] R` coefficientwise to `s • of S Γ γ` gives
@@ -317,55 +384,71 @@ theorem baseChange_tmul (s : S) (x : completedGroupAlgebra R Γ) :
     baseChange R S Γ (s ⊗ₜ[R] x) = s • mapRingHom Γ (algebraMap R S) x :=
   (rfl)
 
-section FiniteFree
+/-- Self-base-change on the completed group algebra recovers `Algebra.TensorProduct.lid`. -/
+@[simp]
+theorem baseChange_self :
+    baseChange R R Γ =
+      (Algebra.TensorProduct.lid R (completedGroupAlgebra R Γ)).toAlgHom := by
+  ext x
+  simp
+
+/-- Projecting `baseChange R S Γ z` at an open normal subgroup `U` recovers levelwise base change
+of `proj R Γ U`. -/
+@[simp]
+theorem proj_baseChange (U : OpenNormalSubgroup Γ)
+    (z : S ⊗[R] completedGroupAlgebra R Γ) :
+    proj S Γ U (baseChange R S Γ z) =
+      LinearMap.liftBaseChange S
+        (MonoidAlgebra.mapAlgHom (Γ ⧸ U.toSubgroup) (Algebra.ofId R S)).toLinearMap
+        (LinearMap.lTensor S (proj R Γ U).toLinearMap z) := by
+  induction z using TensorProduct.inductionOn with
+  | tmul s x =>
+    simp only [baseChange_tmul, map_smul, proj_mapRingHom, LinearMap.lTensor_tmul,
+      AlgHom.toLinearMap_apply, LinearMap.liftBaseChange_tmul]
+    ext g
+    simp
+  | add z₁ z₂ hz₁ hz₂ => simp [hz₁, hz₂]
+
+section FiniteProjective
 
 variable (R S Γ)
 
-/-- Coordinate decomposition map `S[[Γ]] →+ S ⊗[R] R[[Γ]]` associated to a finite `R`-basis of `S`,
-used to invert `baseChange R S Γ`. -/
-private def baseChangeInvAux {ι : Type*} [Fintype ι] (b : Module.Basis ι R S) :
-    completedGroupAlgebra S Γ →+ S ⊗[R] completedGroupAlgebra R Γ where
-  toFun y := ∑ i : ι, b i ⊗ₜ[R] mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y
-  map_zero' := by simp
-  map_add' y z := by simp [TensorProduct.tmul_add, Finset.sum_add_distrib]
+private theorem baseChange_bijective_of_dual [Module.Projective R S] [Module.Finite R S] :
+    Function.Bijective (baseChange R S Γ) := by
+  obtain ⟨n, b, φ, hsum⟩ := TauCeti.exists_sum_dual_smul_eq (R := R) (M := S)
+  let inv (y : completedGroupAlgebra S Γ) : S ⊗[R] completedGroupAlgebra R Γ :=
+    ∑ i : Fin n, b i ⊗ₜ[R] mapAddMonoidHom Γ (φ i).toAddMonoidHom y
+  refine Function.bijective_iff_has_inverse.mpr ⟨inv, ?_, ?_⟩
+  · have hadd : ∀ u v : completedGroupAlgebra S Γ, inv (u + v) = inv u + inv v :=
+      fun u v ↦ by simp [inv, TensorProduct.tmul_add, Finset.sum_add_distrib]
+    intro z
+    induction z using TensorProduct.inductionOn with
+    | tmul s x =>
+      simp only [baseChange_tmul, inv, mapAddMonoidHom_smul_mapRingHom, ← TensorProduct.smul_tmul,
+        ← TensorProduct.sum_tmul]
+      exact congrArg (· ⊗ₜ[R] x) (hsum s)
+    | add z₁ z₂ hz₁ hz₂ => rw [map_add, hadd, hz₁, hz₂]
+  · intro y
+    dsimp only [inv]
+    rw [map_sum]
+    refine ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun a ↦ ?_
+    simp only [baseChange_tmul, map_sum, map_smul, MonoidAlgebra.coeff_sum,
+      MonoidAlgebra.coeff_smul, Finsupp.finsetSum_apply, Finsupp.smul_apply, coeff_proj_mapRingHom,
+      coeff_proj_mapAddMonoidHom, LinearMap.toAddMonoidHom_coe, smul_eq_mul, mul_comm (b _),
+      ← Algebra.smul_def]
+    exact hsum ((proj S Γ U y).coeff a)
 
-private theorem baseChangeInvAux_comp_baseChange {ι : Type*} [Fintype ι]
-    (b : Module.Basis ι R S) (z : S ⊗[R] completedGroupAlgebra R Γ) :
-    baseChangeInvAux R S Γ b (baseChange R S Γ z) = z := by
-  refine TensorProduct.inductionOn z ?_ ?_
-  · intro s x
-    simp only [baseChange_tmul, baseChangeInvAux, AddMonoidHom.coe_mk, ZeroHom.coe_mk,
-      mapAddMonoidHom_smul_mapRingHom]
-    simp_rw [← TensorProduct.smul_tmul, ← TensorProduct.sum_tmul, Module.Basis.coord_apply,
-      b.sum_repr]
-  · intro z₁ z₂ hz₁ hz₂
-    rw [map_add, map_add, hz₁, hz₂]
+variable [Module.Projective R S] [Module.Finite R S]
 
-private theorem baseChange_comp_baseChangeInvAux {ι : Type*} [Fintype ι]
-    (b : Module.Basis ι R S) (y : completedGroupAlgebra S Γ) :
-    baseChange R S Γ (baseChangeInvAux R S Γ b y) = y := by
-  simp only [baseChangeInvAux, AddMonoidHom.coe_mk, ZeroHom.coe_mk, map_sum, baseChange_tmul]
-  apply ext
-  intro U
-  apply MonoidAlgebra.coeff_injective
-  ext a
-  simp only [map_sum, map_smul, MonoidAlgebra.coeff_sum, MonoidAlgebra.coeff_smul,
-    Finsupp.finsetSum_apply, Finsupp.smul_apply, coeff_proj_mapRingHom,
-    coeff_proj_mapAddMonoidHom, LinearMap.toAddMonoidHom_coe, Module.Basis.coord_apply,
-    smul_eq_mul, mul_comm (b _), ← Algebra.smul_def]
-  exact b.sum_repr ((proj S Γ U y).coeff a)
-
-variable [Module.Free R S] [Module.Finite R S]
-
-/-- **Finite free base change of the completed group algebra.** When `S` is finite and free over
-`R`, `baseChange R S Γ : S ⊗[R] R[[Γ]] →ₐ[S] S[[Γ]]` is bijective. -/
+/-- **Finite projective base change of the completed group algebra.** When `S` is finitely
+generated and projective over `R`, `baseChange R S Γ : S ⊗[R] R[[Γ]] →ₐ[S] S[[Γ]]` is
+bijective. -/
 theorem baseChange_bijective : Function.Bijective (baseChange R S Γ) :=
-  let b := Module.Free.chooseBasis R S
-  ⟨Function.LeftInverse.injective (baseChangeInvAux_comp_baseChange R S Γ b),
-    Function.RightInverse.surjective (baseChange_comp_baseChangeInvAux R S Γ b)⟩
+  baseChange_bijective_of_dual R S Γ
 
-/-- **Finite free base-change equivalence for the completed group algebra.** When `S` is finite and
-free as an `R`-module, `S ⊗[R] R[[Γ]]` is canonically isomorphic as an `S`-algebra to `S[[Γ]]`. -/
+/-- **Finite projective base-change equivalence for the completed group algebra.** When `S` is
+finitely generated and projective as an `R`-module, `S ⊗[R] R[[Γ]]` is canonically isomorphic as an
+`S`-algebra to `S[[Γ]]`. -/
 def baseChangeEquiv : S ⊗[R] completedGroupAlgebra R Γ ≃ₐ[S] completedGroupAlgebra S Γ :=
   AlgEquiv.ofBijective (baseChange R S Γ) (baseChange_bijective R S Γ)
 
@@ -419,20 +502,115 @@ theorem baseChangeEquiv_symm_apply {ι : Type*} [Fintype ι] (b : Module.Basis �
     (baseChangeEquiv R S Γ).symm y =
       ∑ i : ι, b i ⊗ₜ[R] mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y := by
   apply (baseChangeEquiv R S Γ).injective
-  rw [AlgEquiv.apply_symm_apply, coe_baseChangeEquiv]
-  exact (baseChange_comp_baseChangeInvAux R S Γ b y).symm
+  rw [AlgEquiv.apply_symm_apply, coe_baseChangeEquiv, map_sum]
+  refine ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun a ↦ ?_
+  simp only [baseChange_tmul, map_sum, map_smul, MonoidAlgebra.coeff_sum, MonoidAlgebra.coeff_smul,
+    Finsupp.finsetSum_apply, Finsupp.smul_apply, coeff_proj_mapRingHom,
+    coeff_proj_mapAddMonoidHom, LinearMap.toAddMonoidHom_coe, Module.Basis.coord_apply,
+    smul_eq_mul, mul_comm (b _), ← Algebra.smul_def]
+  exact (b.sum_repr ((proj S Γ U y).coeff a)).symm
 
-end FiniteFree
-
-/-! Over `S = R`, scalar extension recovers the left identity of the tensor product. -/
-
-example (R : Type u) [CommRing R] (Γ : Type v) [Group Γ] [TopologicalSpace Γ] :
+/-- Base change from `R` to `R` itself recovers `Algebra.TensorProduct.lid`. -/
+@[simp]
+theorem baseChangeEquiv_self :
     baseChangeEquiv R R Γ = Algebra.TensorProduct.lid R (completedGroupAlgebra R Γ) :=
-  AlgEquiv.ext fun z ↦
-    TensorProduct.inductionOn z (fun r x ↦ by simp) fun z₁ z₂ hz₁ hz₂ ↦ by
-      rw [map_add, map_add, hz₁, hz₂]
+  AlgEquiv.coe_toAlgHom_injective (by simp)
+
+end FiniteProjective
 
 end BaseChange
+
+section Coordinates
+
+variable {R : Type u} [CommRing R] {S : Type w} [CommRing S] [Algebra R S]
+  (Γ : Type v) [Group Γ] [TopologicalSpace Γ] {ι : Type*} (b : Module.Basis ι R S)
+
+/-- Given a finite `R`-basis `b` of `S`, taking the `b`-coordinates of every levelwise coefficient
+identifies `S[[Γ]]` with `ι → R[[Γ]]` as an additive group. -/
+def coordAddEquiv [Finite ι] :
+    completedGroupAlgebra S Γ ≃+ (ι → completedGroupAlgebra R Γ) where
+  toFun y i := mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y
+  invFun c :=
+    let _ := Fintype.ofFinite ι
+    ∑ i : ι, b i • mapRingHom Γ (algebraMap R S) (c i)
+  left_inv y := by
+    let _ := Fintype.ofFinite ι
+    refine ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun q ↦ ?_
+    simp only [map_sum, MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply, map_smul,
+      MonoidAlgebra.coeff_smul_apply, coeff_proj_mapRingHom, coeff_proj_mapAddMonoidHom,
+      LinearMap.toAddMonoidHom_coe, Module.Basis.coord_apply, smul_eq_mul, mul_comm (b _),
+      ← Algebra.smul_def]
+    exact b.sum_repr ((proj S Γ U y).coeff q)
+  right_inv c := by
+    classical
+    let _ := Fintype.ofFinite ι
+    exact funext fun i ↦ by simp [b.repr_self]
+  map_add' x y := funext fun i ↦ map_add _ x y
+
+variable {Γ}
+
+@[simp]
+theorem coordAddEquiv_apply [Finite ι]
+    (y : completedGroupAlgebra S Γ) (i : ι) :
+    coordAddEquiv Γ b y i = mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y :=
+  (rfl)
+
+@[simp]
+theorem coordAddEquiv_symm_apply [Fintype ι]
+    (c : ι → completedGroupAlgebra R Γ) :
+    (coordAddEquiv Γ b).symm c =
+      ∑ i : ι, b i • mapRingHom Γ (algebraMap R S) (c i) := by
+  simp only [coordAddEquiv, AddEquiv.symm_apply_eq]
+  ext i
+  classical
+  simp [b.repr_self]
+
+variable [TopologicalSpace R] [IsTopologicalRing R] [TopologicalSpace S] [IsModuleTopology R S]
+
+variable (Γ) in
+/-- Given a finite `R`-basis `b` of `S`, when `S` carries the `R`-module topology, taking the
+`b`-coordinates of every levelwise coefficient identifies `S[[Γ]]` with `ι → R[[Γ]]` as a
+topological additive group. -/
+def coordContinuousAddEquiv [Finite ι] :
+    completedGroupAlgebra S Γ ≃ₜ+ (ι → completedGroupAlgebra R Γ) where
+  __ := coordAddEquiv Γ b
+  continuous_toFun := continuous_pi fun i ↦
+    continuous_mapAddMonoidHom (IsModuleTopology.continuous_of_linearMap (b.coord i))
+  continuous_invFun := by
+    let _ : ContinuousAdd S := IsModuleTopology.toContinuousAdd R S
+    have := IsModuleTopology.toContinuousSMul R S
+    let _ := Fintype.ofFinite ι
+    refine continuous_iff.mpr fun U q ↦ ?_
+    simp only [AddEquiv.invFun_eq_symm, coordAddEquiv_symm_apply, map_sum,
+      MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply, map_smul,
+      MonoidAlgebra.coeff_smul_apply, coeff_proj_mapRingHom, smul_eq_mul, mul_comm (b _),
+      ← Algebra.smul_def]
+    exact continuous_finsetSum _ fun i _ ↦
+      ((continuous_coeff_proj R Γ U q).comp (continuous_apply i)).smul continuous_const
+
+@[simp]
+theorem toAddEquiv_coordContinuousAddEquiv [Finite ι] :
+    (coordContinuousAddEquiv Γ b :
+      completedGroupAlgebra S Γ ≃+ (ι → completedGroupAlgebra R Γ)) =
+        coordAddEquiv Γ b :=
+  (rfl)
+
+@[simp]
+theorem coordContinuousAddEquiv_apply [Finite ι]
+    (y : completedGroupAlgebra S Γ) (i : ι) :
+    coordContinuousAddEquiv Γ b y i = mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y :=
+  (rfl)
+
+@[simp]
+theorem coordContinuousAddEquiv_symm_apply [Fintype ι]
+    (c : ι → completedGroupAlgebra R Γ) :
+    (coordContinuousAddEquiv Γ b).symm c =
+      ∑ i : ι, b i • mapRingHom Γ (algebraMap R S) (c i) := by
+  rw [ContinuousAddEquiv.symm_apply_eq, ← coordAddEquiv_symm_apply]
+  ext i
+  rw [coordContinuousAddEquiv_apply, ← coordAddEquiv_apply, AddEquiv.apply_symm_apply]
+
+end Coordinates
 
 end completedGroupAlgebra
 
