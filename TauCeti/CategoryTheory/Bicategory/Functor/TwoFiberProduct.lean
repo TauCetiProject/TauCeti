@@ -333,11 +333,11 @@ abbrev liftFunctor (b : B) : K.obj b ⥤ (twoFiberProduct f g).obj b where
   obj k :=
     { fst := (a.app b).toFunctor.obj k
       snd := (c.app b).toFunctor.obj k
-      iso :=
-        { hom := (e.hom.as.app b).toNatTrans.app k
-          inv := (e.inv.as.app b).toNatTrans.app k
-          hom_inv_id := by simpa using Cat.Hom.hom_inv_id_toNatTrans_app (isoApp e b) k
-          inv_hom_id := by simpa using Cat.Hom.inv_hom_id_toNatTrans_app (isoApp e b) k } }
+      -- `hom` and `inv` are restated so that `simp` sees the components of `e` in the
+      -- coherence proofs of `lift`; the inverse laws come from `Cat.Hom.toNatIso`.
+      iso := { (Cat.Hom.toNatIso (isoApp e b)).app k with
+        hom := (e.hom.as.app b).toNatTrans.app k
+        inv := (e.inv.as.app b).toNatTrans.app k } }
   map u :=
     { fst := (a.app b).toFunctor.map u
       snd := (c.app b).toFunctor.map u
@@ -541,16 +541,8 @@ def isoMk (α : l₁ ≫ fst f g ≅ l₂ ≫ fst f g) (β : l₁ ≫ snd f g �
           (g.app b).toFunctor.map ((β.hom.as.app b).toNatTrans.app k)) :
     l₁ ≅ l₂ :=
   StrongTrans.isoMk (fun b ↦ Cat.Hom.isoMk (NatIso.ofComponents
-    (fun k ↦ mkIso
-      { hom := (α.hom.as.app b).toNatTrans.app k
-        inv := (α.inv.as.app b).toNatTrans.app k
-        hom_inv_id := by simpa using Cat.Hom.hom_inv_id_toNatTrans_app (isoApp α b) k
-        inv_hom_id := by simpa using Cat.Hom.inv_hom_id_toNatTrans_app (isoApp α b) k }
-      { hom := (β.hom.as.app b).toNatTrans.app k
-        inv := (β.inv.as.app b).toNatTrans.app k
-        hom_inv_id := by simpa using Cat.Hom.hom_inv_id_toNatTrans_app (isoApp β b) k
-        inv_hom_id := by simpa using Cat.Hom.inv_hom_id_toNatTrans_app (isoApp β b) k }
-      (w b k))
+    (fun k ↦ mkIso ((Cat.Hom.toNatIso (isoApp α b)).app k)
+      ((Cat.Hom.toNatIso (isoApp β b)).app k) (w b k))
     fun u ↦ ((homMk f g α.hom β.hom w).as.app b).toNatTrans.naturality u))
     fun φ ↦ (homMk f g α.hom β.hom w).as.naturality φ
 
