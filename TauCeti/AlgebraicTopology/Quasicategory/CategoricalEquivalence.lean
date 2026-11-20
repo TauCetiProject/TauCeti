@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.Quasicategory.Nerve
 public import Mathlib.AlgebraicTopology.Quasicategory.StrictBicategory
 public import Mathlib.AlgebraicTopology.SimplicialSet.NerveAdjunction
+public import TauCeti.AlgebraicTopology.Quasicategory.HomotopyCategory
 public import TauCeti.AlgebraicTopology.SimplicialSet.HoFunctorIhom
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.FunctorCategory
 public import TauCeti.CategoryTheory.Bicategory.Adjunction.Basic
@@ -38,6 +39,9 @@ two notions agree with equivalence of categories.
   closed under composition.
 * `SSet.QCat.IsCategoricalEquivalence.isEquivalence_mapHomotopyCategory`: a categorical
   equivalence induces an equivalence of homotopy categories.
+* `SSet.QCat.IsCategoricalEquivalence.exists_isEquivalence`: a categorical equivalence is
+  essentially surjective, every vertex of the target being joined by an equivalence to a vertex of
+  the image.
 * `CategoryTheory.Iso.nerveMap`: a natural isomorphism of functors gives an invertible natural
   transformation between their nerves, with components computed by
   `CategoryTheory.Iso.nerveMap_hom_base` and `CategoryTheory.Iso.nerveMap_inv_base`.
@@ -144,6 +148,14 @@ lemma isEquivalence_mapHomotopyCategory {f : X ⟶ Y} (hf : IsCategoricalEquival
   exact (CategoryTheory.Equivalence.mk (mapHomotopyCategory f.hom) (mapHomotopyCategory g.hom)
     (eqToIso (hid X).symm ≪≫ e η ≪≫ eqToIso (hcomp f g))
     (eqToIso (hcomp g f).symm ≪≫ e ε ≪≫ eqToIso (hid Y))).isEquivalence_functor
+
+/-- A categorical equivalence of quasicategories is essentially surjective: every vertex of the
+target is joined by an equivalence to a vertex in its image. -/
+lemma exists_isEquivalence {f : X ⟶ Y} (hf : IsCategoricalEquivalence f) (y : Y.obj _⦋0⦌) :
+    ∃ (x : X.obj _⦋0⦌) (e : Edge (f.hom.app _ x) y), e.IsEquivalence :=
+  have := Y.property
+  have := hf.isEquivalence_mapHomotopyCategory
+  (essSurj_mapHomotopyCategory_iff f.hom).1 inferInstance y
 
 end IsCategoricalEquivalence
 
