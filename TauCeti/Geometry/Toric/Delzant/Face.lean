@@ -62,6 +62,8 @@ In particular the vertices of a Delzant polytope are exactly its points lying on
 * `TauCeti.Toric.isExposed_facetFace`, `TauCeti.Toric.exists_facetFace_eq_of_isExtreme`: the
   sets `F_s` are the faces of the facet polyhedron.
 * `TauCeti.Toric.IsDelzant.linearIndepOn_activeSet`: a Delzant polytope is simple.
+  `TauCeti.Toric.IsDelzant.linearIndepOn_real_activeSet` is the same over `ℝ`, for the real
+  vectors `i (u j)` of an integral lattice.
 * `TauCeti.Toric.IsDelzant.exists_activeSet_eq`: a nonempty face `F_s` has a point lying on
   exactly the facets in `s`.
 * `TauCeti.Toric.IsDelzant.facetFace_subset_facetFace_iff`,
@@ -223,6 +225,15 @@ theorem linearIndepOn_activeSet [FiniteDimensional ℝ V] (hx : x ∈ facetPolyh
     LinearIndepOn ℤ u (activeSet (facetPairing i u) c x) := by
   obtain ⟨v, hvs, hsub⟩ := hΔ.exists_isSmoothVertex_activeSet_subset hx
   exact (isSmoothVertex_iff_linearIndepOn.1 hvs).1.mono hsub
+
+/-- The real vectors `i (u j)` given by the normals of the facets through a point of a Delzant
+polytope in an integral lattice are linearly independent over `ℝ`. -/
+theorem linearIndepOn_real_activeSet (hi : IsIntegralLattice i)
+    (hx : x ∈ facetPolyhedron i u c) :
+    LinearIndepOn ℝ (fun j ↦ i (u j)) (activeSet (facetPairing i u) c x) := by
+  have := hi.finiteDimensional
+  exact (linearIndependent_comp_iff_of_liftBaseChange_injective
+    hi.isBaseChange.liftBaseChange_injective).2 (hΔ.linearIndepOn_activeSet hx)
 
 /-- The normals of the facets cutting out a nonempty face are linearly independent. -/
 theorem linearIndepOn_of_nonempty [FiniteDimensional ℝ V] (hs : (facetFace i u c s).Nonempty) :
