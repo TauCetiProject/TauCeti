@@ -44,9 +44,9 @@ direction combine into one condition on the whole frequency space.
   coefficients, bounded by a weighted `ℓ¹` norm of the coefficients.
 * `TauCeti.one_add_norm_pow_mul_norm_le_of_hasSum`: the same decay at a single `η`, for
   coefficients that may depend on `η`, from bounds on the coefficients at large shifts.
-* `TauCeti.one_add_norm_pow_mul_norm_le_of_norm_le`,
-  `TauCeti.one_add_norm_pow_mul_norm_le_of_lt_norm`: the bounds on a single translate with a
-  small or a large shift.
+* `TauCeti.one_add_norm_pow_mul_norm_apply_sub_le_of_norm_le`,
+  `TauCeti.one_add_norm_pow_mul_norm_apply_sub_le_of_lt_norm`: the bounds on a single translate
+  `F (η - v)` with a small or a large shift `v`.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_apply_sub_le`: the pointwise bound behind
   `TauCeti.exists_one_add_norm_pow_mul_norm_le_of_hasSum` and its integral form: for `η ∈ Γ'`
   and every shift `θ`, `(1 + ‖η‖) ^ N (1 + ‖η - θ‖) ^ M ‖F (η - θ)‖` is at most a constant times a
@@ -121,8 +121,8 @@ variable {E : Type*} [NormedAddCommGroup E]
 /-- **A translate by a small shift.** If `‖v‖ ≤ c ‖η‖` with `c ≤ 1 / 2` and the closed ball of
 radius `c ‖η‖` about `η` lies in a set `Γ` on which `(1 + ‖ζ‖) ^ n ‖F ζ‖ ≤ C₁`, then
 `(1 + ‖η‖) ^ n ‖F (η - v)‖ ≤ 2 ^ n C₁`, since `‖η - v‖ ≥ ‖η‖ / 2`. -/
-theorem one_add_norm_pow_mul_norm_le_of_norm_le {G : Type*} [NormedAddCommGroup G] {F : E → G}
-    {Γ : Set E} {n : ℕ} {C₁ : ℝ} (hdecay : ∀ ζ ∈ Γ, (1 + ‖ζ‖) ^ n * ‖F ζ‖ ≤ C₁) {c : ℝ}
+theorem one_add_norm_pow_mul_norm_apply_sub_le_of_norm_le {G : Type*} [NormedAddCommGroup G]
+    {F : E → G} {Γ : Set E} {n : ℕ} {C₁ : ℝ} (hdecay : ∀ ζ ∈ Γ, (1 + ‖ζ‖) ^ n * ‖F ζ‖ ≤ C₁) {c : ℝ}
     (hc1 : c ≤ 1 / 2) {η v : E} (hη : closedBall η (c * ‖η‖) ⊆ Γ) (hv : ‖v‖ ≤ c * ‖η‖) :
     (1 + ‖η‖) ^ n * ‖F (η - v)‖ ≤ 2 ^ n * C₁ := by
   have hmem : η - v ∈ Γ := hη (by
@@ -137,8 +137,8 @@ theorem one_add_norm_pow_mul_norm_le_of_norm_le {G : Type*} [NormedAddCommGroup 
 /-- **A translate by a large shift.** If `F` grows at most like `(1 + ‖ζ‖) ^ k` and
 `c ‖η‖ < ‖v‖` with `0 < c ≤ 1`, then `(1 + ‖η‖) ^ N ‖F (η - v)‖` is bounded by
 `C₀ c⁻¹ ^ (N + k) (1 + ‖v‖) ^ (N + 2 k)`, since `1 + ‖η‖ ≤ c⁻¹ (1 + ‖v‖)`. -/
-theorem one_add_norm_pow_mul_norm_le_of_lt_norm {G : Type*} [NormedAddCommGroup G] {F : E → G}
-    {C₀ : ℝ} {k : ℕ} (hF : ∀ ζ, ‖F ζ‖ ≤ C₀ * (1 + ‖ζ‖) ^ k) (N : ℕ) {c : ℝ} (hc : 0 < c)
+theorem one_add_norm_pow_mul_norm_apply_sub_le_of_lt_norm {G : Type*} [NormedAddCommGroup G]
+    {F : E → G} {C₀ : ℝ} {k : ℕ} (hF : ∀ ζ, ‖F ζ‖ ≤ C₀ * (1 + ‖ζ‖) ^ k) (N : ℕ) {c : ℝ} (hc : 0 < c)
     (hc1 : c ≤ 1) {η v : E} (hv : c * ‖η‖ < ‖v‖) :
     (1 + ‖η‖) ^ N * ‖F (η - v)‖ ≤ C₀ * c⁻¹ ^ (N + k) * (1 + ‖v‖) ^ (N + 2 * k) := by
   have hC₀ : 0 ≤ C₀ := (norm_nonneg (F 0)).trans (by simpa using hF 0)
@@ -240,13 +240,14 @@ theorem exists_one_add_norm_pow_mul_norm_le_of_hasSum {ι 𝕜 G : Type*} [Norme
     by_cases hv : ‖v i‖ ≤ c' * ‖η‖
     · -- Small shifts stay in `Γ`, where `F` decays rapidly.
       calc (1 + ‖η‖) ^ N * ‖F (η - v i)‖ ≤ 2 ^ N * C₁ :=
-            one_add_norm_pow_mul_norm_le_of_norm_le hC₁ hc'1 ((closedBall_subset_closedBall
-              (by gcongr; exact min_le_left _ _)).trans (hΓ' η hη)) hv
+            one_add_norm_pow_mul_norm_apply_sub_le_of_norm_le hC₁ hc'1
+              ((closedBall_subset_closedBall (by gcongr; exact min_le_left _ _)).trans
+                (hΓ' η hη)) hv
         _ ≤ D := le_max_left _ _
         _ ≤ D * (1 + ‖v i‖) ^ (N + 2 * k) := le_mul_of_one_le_right hD h1
     · -- Large shifts have `‖v i‖` comparable to `‖η‖`; use the polynomial growth of `F`.
       push Not at hv
-      refine (one_add_norm_pow_mul_norm_le_of_lt_norm hF N hc' (by linarith) hv).trans ?_
+      refine (one_add_norm_pow_mul_norm_apply_sub_le_of_lt_norm hF N hc' (by linarith) hv).trans ?_
       gcongr
       exact le_max_right _ _
   have hp : 0 < (1 + ‖η‖) ^ N := by positivity
@@ -291,7 +292,7 @@ theorem one_add_norm_pow_mul_norm_le_of_hasSum {ι 𝕜 G : Type*} [NormedField 
         _ = A₀ * ((1 + ‖η‖) ^ (N + q) * ‖F (η - v i)‖) := by rw [pow_add]; ring
         _ ≤ A₀ * (2 ^ (N + q) * C₁) := by
             gcongr A₀ * ?_
-            exact one_add_norm_pow_mul_norm_le_of_norm_le hdecay hc1 hη hvi
+            exact one_add_norm_pow_mul_norm_apply_sub_le_of_norm_le hdecay hc1 hη hvi
         _ ≤ _ := le_add_of_le_of_nonneg (by rw [mul_assoc]) (by positivity)
     · -- Large shifts: the coefficient decays at order `N + 2 k + q` in `‖v i‖`.
       push Not at hvi
@@ -308,7 +309,7 @@ theorem one_add_norm_pow_mul_norm_le_of_hasSum {ι 𝕜 G : Type*} [NormedField 
           = ‖a i‖ * ((1 + ‖η‖) ^ N * ‖F (η - v i)‖) * (1 + ‖v i‖) ^ q := by ring
         _ ≤ ‖a i‖ * (C₀ * c⁻¹ ^ (N + k) * (1 + ‖v i‖) ^ (N + 2 * k)) * (1 + ‖v i‖) ^ q := by
             gcongr ‖a i‖ * ?_ * _
-            exact one_add_norm_pow_mul_norm_le_of_lt_norm hF N hc (by linarith) hvi
+            exact one_add_norm_pow_mul_norm_apply_sub_le_of_lt_norm hF N hc (by linarith) hvi
         _ = C₀ * c⁻¹ ^ (N + k) * ((1 + ‖v i‖) ^ (N + 2 * k + q) * ‖a i‖) := by
             rw [pow_add _ (N + 2 * k) q]; ring
         _ ≤ C₀ * c⁻¹ ^ (N + k) * (2 ^ (N + 2 * k + q) * (A₀ + A₁)) := by gcongr

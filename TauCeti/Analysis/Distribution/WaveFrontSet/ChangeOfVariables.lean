@@ -43,7 +43,8 @@ Let `T` be microlocally smooth at `(y₀, η₀)` with `y₀ = e x₀` and `η�
 at `ξ` pairs `T` with `ψ(y) 𝐞(-⟪e⁻¹ y, ξ⟫)`, where `ψ` is the pushforward of `φ`. Factoring out the
 linear part of the phase, this is the localized Fourier transform of `T` at `η = Bᵀ ξ` with the
 cutoff `G_ξ(y) = ψ(y) 𝐞(⟪y, Bᵀ ξ⟫ - ⟪e⁻¹ y, ξ⟫)`, which depends on `ξ`. Expanding `G_ξ` in a
-Fourier series on a box (`Distribution.hasSum_localFourier_ofSupportedIn`) gives
+Fourier series on a compact set meeting none of its nonzero lattice translates
+(`Distribution.hasSum_localFourier_ofSupportedIn`) gives
 
 `T (G_ξ e_η) = ∑ m, a_m(ξ) T (χ e_(η - m))`,  `a_m(ξ) = (covolume)⁻¹ 𝓕 G_ξ (m)`.
 
@@ -111,11 +112,11 @@ omit [FiniteDimensional ℝ E] in
 /-- **Decay of the localized Fourier transforms with phase-modulated cutoffs.** Let `T` have
 localized Fourier transforms decaying rapidly on a cone `Γ` for all cutoffs supported in `W`, and
 let `Γ'` have conic neighbourhoods of relative size `c ≤ 1 / 2` inside `Γ`. Let `ψ` be supported
-in a set `K₁` on which a smooth function `χ` supported in a box `K ⊆ W ∩ Ω` equals one, the box
-meeting none of its nonzero translates by a lattice `L`. If `‖ζ‖ ≤ a ‖Bᵀ ζ‖` and `Dσ` stays within
-`c / (2 a)` of `B` on the support of `ψ`, then `T` with the cutoffs
+in a set `K₁` on which a smooth function `χ` supported in a compact set `K ⊆ W ∩ Ω` equals one,
+`K` meeting none of its nonzero translates by a lattice `L`. If `‖ζ‖ ≤ a ‖Bᵀ ζ‖` and `Dσ` stays
+within `c / (2 a)` of `B` on the support of `ψ`, then `T` with the cutoffs
 `G ζ = ψ 𝐞(⟪·, Bᵀ ζ⟫ - ⟪σ ·, ζ⟫)` has localized Fourier transform at `Bᵀ ζ` decaying rapidly in
-`Bᵀ ζ ∈ Γ'`. The Fourier series of `G ζ` on the box is split into the frequencies `m` small
+`Bᵀ ζ ∈ Γ'`. The Fourier series of `G ζ` on `K` is split into the frequencies `m` small
 compared with `Bᵀ ζ`, which stay in `Γ`, and the large ones, where `𝓕 (G ζ)` decays by
 non-stationary phase. -/
 private theorem exists_one_add_norm_pow_mul_norm_localFourier_le [MeasurableSpace E]
@@ -196,7 +197,7 @@ theorem IsMicrolocallySmoothAt.compCLMOfOpenPartialHomeomorph {T : 𝓓'(Ω, ℂ
   have hc' : 0 < c' := lt_min hc (by norm_num)
   have hΓ'' : ∀ η ∈ Γ', closedBall η (c' * ‖η‖) ⊆ Γ := fun η hη ↦
     (closedBall_subset_closedBall (by gcongr; exact min_le_left _ _)).trans (hΓ' η hη)
-  -- A box `K ⊆ W ∩ Ω` around `e x`, a lattice, and a cutoff `χ` equal to one on `K₁ ∋ e x`.
+  -- A compact set `K ⊆ W ∩ Ω` around `e x`, a lattice, and a cutoff `χ` equal to one on `K₁ ∋ e x`.
   obtain ⟨K, K₁, hKW, hK₁, hK₁K, ⟨χ, hχ⟩, L, _, _, hL⟩ :=
     ContDiffMapSupportedIn.exists_compacts_cutoff_lattice
       (inter_mem hW (Ω.isOpen.mem_nhds (hUΩ hx)))
