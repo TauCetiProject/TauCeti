@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Fiberwise
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Twisted
 public import TauCeti.Geometry.Symplectic.Hamiltonian.AlmostExistence
 
 /-!
@@ -18,7 +18,10 @@ is the **exact magnetic symplectic form**
 `ω_σ = ω + π^*dσ`
 
 (`TauCeti.CotangentBundle.magneticSymplecticForm`), which models a charged particle in the
-magnetic field `dσ`. It changes the symplectic form exactly when `σ` is not closed
+magnetic field `dσ`. It is the twisted symplectic form `ω + π^*β` of
+`TauCeti.Geometry.Symplectic.Cotangent.Bundle.Twisted` for the exact magnetic term `β = dσ`
+(`TauCeti.CotangentBundle.magneticSymplecticForm_eq_twistedSymplecticForm`). It changes the
+symplectic form exactly when `σ` is not closed
 (`TauCeti.CotangentBundle.magneticSymplecticForm_eq_symplecticForm_iff`).
 
 The magnetic term is removed by translating the fibres: the translation `τ(p) = p - σ_x` of a
@@ -42,6 +45,8 @@ replaced by `τ(U)`, whose maps from closed manifolds have the same projections 
 
 * `TauCeti.CotangentBundle.magneticSymplecticForm`: the exact magnetic symplectic form
   `ω + π^*dσ`.
+* `TauCeti.CotangentBundle.magneticSymplecticForm_eq_twistedSymplecticForm`: it is the twisted
+  symplectic form with magnetic term `dσ`.
 * `TauCeti.CotangentBundle.mpullback_vectorBundleTranslateDiffeomorph_neg_symplecticForm`: the
   fibre translation by `-σ` pulls `ω` back to `ω_σ`.
 * `TauCeti.CotangentBundle.isSymplectic_magneticSymplecticForm`: `ω_σ` is symplectic.
@@ -83,6 +88,12 @@ theorem magneticSymplecticForm_def (σ : SmoothForm I M ℝ 1) :
       SmoothForm.mpullback (TotalSpace.proj : CotangentBundle I M → M) (contMDiff_proj _)
         (mextDerivₗ I 1 σ) :=
   (rfl)
+
+/-- The exact magnetic symplectic form of `σ` is the twisted symplectic form `ω + π^*β` with the
+exact magnetic term `β = dσ`. -/
+theorem magneticSymplecticForm_eq_twistedSymplecticForm (σ : SmoothForm I M ℝ 1) :
+    magneticSymplecticForm σ = twistedSymplecticForm (mextDerivₗ I 1 σ) := by
+  rw [magneticSymplecticForm_def, twistedSymplecticForm_def]
 
 /-- Without a magnetic field the magnetic symplectic form is the canonical one. -/
 @[simp]
