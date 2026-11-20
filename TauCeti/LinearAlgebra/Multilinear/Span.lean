@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Alternating.Basic
 public import Mathlib.LinearAlgebra.Multilinear.Basic
-import Mathlib.Data.Fintype.Pigeonhole
 
 /-!
 # Values of a multilinear map on spans
@@ -19,10 +18,11 @@ all but finitely many arguments already lie in the sets `s i`. This is the multi
 `Submodule.map₂_span_span` for bilinear maps. It reduces statements about all values of a
 determinant-like expression to its values on generators.
 
-For an alternating map, with any index type, this shows that the value vanishes when more than `k`
-of the arguments lie in the span of `k` vectors. Over a commutative domain and with a torsion-free
-codomain this also follows from `AlternatingMap.map_linearDependent`, but over an arbitrary ring
-no cancellation is available.
+For an alternating map, over any semiring and with any index type, this shows that the value
+vanishes when more than `k` of the arguments lie in the span of `k` vectors. No domain or
+torsion-freeness assumption is needed. Over a commutative domain and with a torsion-free codomain
+this also follows from `AlternatingMap.map_linearDependent`, but over a general semiring no
+cancellation is available.
 
 ## Main results
 
@@ -83,9 +83,10 @@ variable {ι R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddComm
   [Module R N]
 
 /-- **An alternating map vanishes when too many arguments lie in a small span.** If more than `k`
-of the arguments lie in the span of `k` vectors, then the value is zero. The index type may be
-infinite. Over a commutative domain and with a torsion-free codomain this also follows from
-`AlternatingMap.map_linearDependent`; here the ring is arbitrary. -/
+of the arguments lie in the span of `k` vectors, then the value is zero. This holds over any
+semiring, without a domain or torsion-freeness assumption, and the index type may be infinite. Over
+a commutative domain and with a torsion-free codomain it also follows from
+`AlternatingMap.map_linearDependent`. -/
 theorem map_eq_zero_of_mem_span (f : M [⋀^ι]→ₗ[R] N) {v : ι → M} {t : Finset ι}
     {k : ℕ} (c : Fin k → M) (ht : k < t.card)
     (hv : ∀ i ∈ t, v i ∈ Submodule.span R (Set.range c)) : f v = 0 := by
@@ -96,10 +97,10 @@ theorem map_eq_zero_of_mem_span (f : M [⋀^ι]→ₗ[R] N) {v : ι → M} {t : 
     f.toMultilinearMap.map_mem_span_image_pi_of_finset s t
       (fun i hi ↦ by simpa [s, hi] using hv i hi) fun i hi ↦ by simp [s, hi]
   rintro _ ⟨w, hw, rfl⟩
-  -- Each expanded family takes more than `k` values in `range c` on `t`, so two coincide.
-  have hwc (i : t) : w i ∈ Set.range c := by simpa [s, i.property] using hw i trivial
-  choose e he using hwc
-  obtain ⟨i, j, hij, heij⟩ := Fintype.exists_ne_map_eq_of_card_lt e (by simpa using ht)
-  simpa using f.map_eq_zero_of_eq w (by rw [← he i, ← he j, heij]) (Subtype.coe_ne_coe.2 hij)
+  -- Each expanded family maps `t` into the at most `k` values of `c`, so two coincide.
+  obtain ⟨i, -, j, -, hij, hwij⟩ := Finset.exists_ne_map_eq_of_card_lt_of_maps_to
+    (t := Finset.univ.image c) (Finset.card_image_le.trans_lt (by simpa using ht))
+    fun i (hi : i ∈ t) ↦ mem_image_univ_iff_mem_range.2 (by simpa [s, hi] using hw i trivial)
+  exact f.map_eq_zero_of_eq w hwij hij
 
 end AlternatingMap
