@@ -434,6 +434,10 @@ lemma ιTwistedHomology₀_twistedHomologyConstantIso_hom (M : ModuleCat.{max v 
     rw [ιTwistedChainComplex_pOpcycles_zero, constantFunctor_obj_map]
     exact (Category.id_comp _).symm
   rw [h, twistedHomologyConstantIso_hom]
+  -- After `rw [h]`, the inner composite runs from the fibre over `initialVertex σ` to
+  -- `homology (twistedChainComplex _) 0`, which are the fibre over `TopCat.toSSetObj₀Equiv σ` and
+  -- `twistedHomology _ 0` only definitionally, so the goal is not type-correct at reducible
+  -- transparency and plain `rw` cannot match `Category.assoc`.
   erw [Category.assoc, Category.assoc,
     ChainComplex.isoHomologyι₀_inv_naturality, HomologicalComplex.p_opcyclesMap_assoc,
     ιTwistedChainComplex_twistedChainComplexConstantIso_hom_f_assoc]

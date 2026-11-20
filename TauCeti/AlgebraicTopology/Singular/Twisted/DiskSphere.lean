@@ -176,14 +176,7 @@ theorem twistedHomologyDiskBoundaryPairIso_one_inv_comp_twistedHomologyδ
       L.map pMinus ≫ ιTwistedHomology₀ ((diskBoundaryPair.{v} 1).subspaceSystem L) sphereMinus -
         L.map pPlus ≫ ιTwistedHomology₀ ((diskBoundaryPair.{v} 1).subspaceSystem L) spherePlus := by
   let P := diskBoundaryPair.{v} 1
-  let M := L.obj (FundamentalGroupoid.mk (diskCenter.{v} 1))
-  have hdisk : (twistedHomologyDiskBoundaryPairIso 1 L).inv =
-      (singularHomologyDiskBoundaryPairIso M 1).inv ≫
-        (P.twistedHomologyIsoOfHomotopy (diskContraction 1) L 1).inv := by
-    apply Iso.inv_ext
-    rw [twistedHomologyDiskBoundaryPairIso_hom, Category.assoc, Iso.hom_inv_id_assoc,
-      Iso.hom_inv_id]
-  rw [hdisk, Category.assoc,
+  rw [twistedHomologyDiskBoundaryPairIso_inv, Category.assoc,
     P.twistedHomologyIsoOfHomotopy_inv_comp_twistedHomologyδ (diskContraction 1) L 1 0 rfl,
     ← Category.assoc, singularHomologyDiskBoundaryPairIso_inv_comp_singularHomologyδ]
   -- `TopCat.sphere 0` is the boundary of the `1`-disk.

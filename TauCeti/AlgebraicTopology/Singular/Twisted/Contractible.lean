@@ -121,4 +121,15 @@ lemma twistedHomologyDiskBoundaryPairIso_hom (n : ℕ)
           (L.obj (FundamentalGroupoid.mk (diskCenter n))) n).hom :=
   (rfl)
 
+/-- The inverse of `TauCeti.twistedHomologyDiskBoundaryPairIso` is the inverse computation of the
+relative homology of the disk with constant coefficients, followed by the inverse identification of
+the coefficients with a constant system along `TauCeti.diskContraction`. -/
+lemma twistedHomologyDiskBoundaryPairIso_inv (n : ℕ)
+    (L : LocalCoefficientSystem.{u, v, max v w} R (diskBoundaryPair.{v} n).fst) :
+    (twistedHomologyDiskBoundaryPairIso n L).inv =
+      (singularHomologyDiskBoundaryPairIso
+          (L.obj (FundamentalGroupoid.mk (diskCenter n))) n).inv ≫
+        ((diskBoundaryPair.{v} n).twistedHomologyIsoOfHomotopy (diskContraction n) L n).inv :=
+  (rfl)
+
 end TauCeti
