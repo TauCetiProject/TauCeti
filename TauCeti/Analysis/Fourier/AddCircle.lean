@@ -444,8 +444,10 @@ theorem star_fourierLp (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : ℤ) :
   rw [h, Pi.star_apply, hn, hneg, fourier_neg, RCLike.star_def]
 
 /-- Multiplying an `Lᵖ` function by the bounded Fourier monomial `e_n` shifts its Fourier
-coefficients by `n`. -/
-@[simp]
+coefficients by `n`.
+
+Not a `simp` lemma: `simp` tries `SetLike.val_smul` on the product, whose search for an `SMul`
+of `L^∞` on almost-everywhere-equal functions times out in large environments. -/
 theorem fourierCoeff_fourierLp_smul {p : ℝ≥0∞} (n : ℤ) (f : Lp ℂ p (haarAddCircle (T := T)))
     (m : ℤ) :
     fourierCoeff (fourierLp (T := T) ∞ n • f : Lp ℂ p (haarAddCircle (T := T))) m =
