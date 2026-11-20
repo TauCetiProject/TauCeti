@@ -10,12 +10,12 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.NumberTheory.Bernoulli
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.NumberTheory.Harmonic.ZetaAsymp
+import Mathlib.NumberTheory.LSeries.MellinEqDirichlet
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
+import TauCeti.Analysis.SpecialFunctions.Exp.InvSubOne
 
 /-!
 # The Bernoulli kernel `t / (exp t - 1)`
@@ -92,6 +92,7 @@ theorem bernoulliKernel_pos (t : ℝ) : 0 < bernoulliKernel t :=
   inv_pos.2 (Real.dslope_exp_pos 0 t)
 
 /-- The defining identity of the Bernoulli kernel, valid for every real `t`, including `0`. -/
+@[simp]
 theorem exp_sub_one_mul_bernoulliKernel (t : ℝ) : (Real.exp t - 1) * bernoulliKernel t = t := by
   rcases eq_or_ne t 0 with rfl | ht
   · simp
@@ -159,15 +160,6 @@ theorem iteratedDeriv_bernoulliKernel_zero (n : ℕ) :
 
 /-! ### Exponential decay of the derivatives -/
 
-/-- The derivative of `g = (exp t - 1)⁻¹` is `-(g + g²)`. -/
-private theorem hasDerivAt_inv_exp_sub_one {t : ℝ} (ht : t ≠ 0) :
-    HasDerivAt (fun s ↦ (Real.exp s - 1)⁻¹)
-      (-((Real.exp t - 1)⁻¹ + (Real.exp t - 1)⁻¹ ^ 2)) t := by
-  have hne : Real.exp t - 1 ≠ 0 := sub_ne_zero.2 ((Real.exp_eq_one_iff t).not.2 ht)
-  convert ((Real.hasDerivAt_exp t).sub_const 1).inv hne using 1
-  field_simp
-  ring
-
 /-- The polynomial `D A = -(1 + X) (A + X A')`, chosen so that the derivative of `g A(g)` is
 `g (D A)(g)` for `g = (exp t - 1)⁻¹`. -/
 private noncomputable def derivPoly (A : ℝ[X]) : ℝ[X] :=
@@ -176,9 +168,9 @@ private noncomputable def derivPoly (A : ℝ[X]) : ℝ[X] :=
 private theorem hasDerivAt_mul_eval_inv_exp_sub_one {t : ℝ} (ht : t ≠ 0) (A : ℝ[X]) :
     HasDerivAt (fun s ↦ (Real.exp s - 1)⁻¹ * A.eval (Real.exp s - 1)⁻¹)
       ((Real.exp t - 1)⁻¹ * (derivPoly A).eval (Real.exp t - 1)⁻¹) t := by
-  have hg := hasDerivAt_inv_exp_sub_one ht
+  have hg := Real.hasDerivAt_inv_exp_sub_one ht
   convert hg.fun_mul ((A.hasDerivAt _).comp t hg) using 1
-  · rfl
+  · simp only [Function.comp_def]
   · simp only [derivPoly, eval_neg, eval_mul, eval_add, eval_one, eval_X, Function.comp_apply]
     ring
 
@@ -205,18 +197,6 @@ private theorem exists_iteratedDeriv_bernoulliKernel_eq (n : ℕ) :
     simp only [id, eval_add]
     ring
 
-/-- `(exp t - 1)⁻¹ = O(exp (-t))` as `t → ∞`. -/
-private theorem isBigO_inv_exp_sub_one :
-    (fun t ↦ (Real.exp t - 1)⁻¹) =O[atTop] fun t ↦ Real.exp (-t) := by
-  refine IsBigO.of_bound 2 ?_
-  filter_upwards [eventually_ge_atTop (Real.log 2)] with t ht
-  have h2 : 2 ≤ Real.exp t := (Real.exp_log two_pos).symm.le.trans (Real.exp_le_exp.2 ht)
-  have hpos : 0 < Real.exp t - 1 := by linarith
-  rw [Real.norm_of_nonneg (inv_pos.2 hpos).le, Real.norm_of_nonneg (Real.exp_pos _).le,
-    Real.exp_neg]
-  calc (Real.exp t - 1)⁻¹ ≤ (Real.exp t / 2)⁻¹ := inv_anti₀ (by positivity) (by linarith)
-    _ = 2 * (Real.exp t)⁻¹ := by rw [inv_div, div_eq_mul_inv]
-
 /-- The functions `t g A(g) + g B(g)` decay like `exp (-c t)` for every `c < 1`. -/
 private theorem isBigO_mul_eval_inv_exp_sub_one (A B : ℝ[X]) {c : ℝ} (hc : c < 1) :
     (fun t ↦ t * ((Real.exp t - 1)⁻¹ * A.eval (Real.exp t - 1)⁻¹) +
@@ -227,7 +207,7 @@ private theorem isBigO_mul_eval_inv_exp_sub_one (A B : ℝ[X]) {c : ℝ} (hc : c
       fun t ↦ Real.exp (-t) := by
     have h1 : (fun t ↦ P.eval (Real.exp t - 1)⁻¹) =O[atTop] fun _ ↦ (1 : ℝ) :=
       ((P.continuous.tendsto 0).comp hg).isBigO_one ℝ
-    simpa using isBigO_inv_exp_sub_one.mul h1
+    simpa using Real.isBigO_inv_exp_sub_one.mul h1
   -- `t exp (-t) = O(exp (-c t))` because `t = o(exp ((1 - c) t))`.
   have hlin : (fun t : ℝ ↦ t * Real.exp (-t)) =O[atTop] fun t ↦ Real.exp (-(c * t)) := by
     have h := (isLittleO_pow_exp_pos_mul_atTop 1 (sub_pos.2 hc)).isBigO.mul
@@ -252,82 +232,29 @@ theorem isBigO_iteratedDeriv_bernoulliKernel (n : ℕ) {c : ℝ} (hc : c < 1) :
 
 /-! ### The Mellin transform -/
 
-/-- For `t > 0`, the geometric expansion `(exp t - 1)⁻¹ = ∑_{k ≥ 0} exp (-((k + 1) t))`. -/
-private theorem hasSum_exp_neg_mul {t : ℝ} (ht : 0 < t) :
-    HasSum (fun k : ℕ ↦ Real.exp (-((k + 1) * t))) (Real.exp t - 1)⁻¹ := by
-  have h1 : 1 < Real.exp t := Real.one_lt_exp_iff.2 ht
-  convert (hasSum_geometric_of_lt_one (Real.exp_pos (-t)).le
-    (Real.exp_lt_one_iff.2 (neg_neg_of_pos ht))).mul_left (Real.exp (-t)) using 1
-  · funext k
-    rw [← Real.exp_nat_mul, ← Real.exp_add]
-    ring_nf
-  · have h2 : Real.exp t - 1 ≠ 0 := by linarith
-    rw [Real.exp_neg]
-    field_simp
-
-/-- For `t > 0` and complex `s`, the Mellin integrand of the Bernoulli kernel is the sum of the
-Gamma integrands `t ^ s exp (-((k + 1) t))`. -/
-private theorem hasSum_mellin_integrand {t : ℝ} (ht : 0 < t) (s : ℂ) :
-    HasSum (fun k : ℕ ↦ (t : ℂ) ^ (s + 1 - 1) * Complex.exp (-(((k : ℝ) + 1 : ℝ) * t)))
-      ((t : ℂ) ^ (s - 1) • (bernoulliKernel t : ℂ)) := by
-  have h := (Complex.ofRealCLM.hasSum ((hasSum_exp_neg_mul ht).mul_left t)).mul_left
-    ((t : ℂ) ^ (s - 1))
-  rw [bernoulliKernel_of_ne_zero ht.ne', div_eq_mul_inv, smul_eq_mul]
-  convert h using 1
-  · funext k
-    have ht' : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 ht.ne'
-    rw [add_sub_cancel_right, Complex.ofRealCLM_apply]
-    push_cast
-    nth_rw 1 [show s = s - 1 + 1 by ring]
-    rw [Complex.cpow_add _ _ ht', Complex.cpow_one]
-    ring
-  · simp
-
 /-- The Mellin transform of the Bernoulli kernel is `Γ(s + 1) ζ(s + 1)` on `Re s > 0`. -/
 theorem mellin_bernoulliKernel {s : ℂ} (hs : 0 < s.re) :
     mellin (fun t ↦ (bernoulliKernel t : ℂ)) s = Complex.Gamma (s + 1) * riemannZeta (s + 1) := by
-  set F : ℕ → ℝ → ℂ := fun k t ↦ (t : ℂ) ^ (s + 1 - 1) * Complex.exp (-(((k : ℝ) + 1 : ℝ) * t))
   have hs1 : 0 < (s + 1).re := by simp; linarith
-  have hr (k : ℕ) : (0 : ℝ) < k + 1 := by positivity
-  have hI (k : ℕ) : ∫ t in Set.Ioi 0, F k t =
-      (1 / (((k : ℝ) + 1 : ℝ) : ℂ)) ^ (s + 1) * Complex.Gamma (s + 1) :=
-    Complex.integral_cpow_mul_exp_neg_mul_Ioi hs1 (hr k)
-  have hInt (k : ℕ) : MeasureTheory.IntegrableOn (F k) (Set.Ioi 0) := by
-    refine MeasureTheory.Integrable.of_integral_ne_zero ?_
-    rw [hI k]
-    refine mul_ne_zero ?_ (Complex.Gamma_ne_zero_of_re_pos hs1)
-    rw [Ne, Complex.cpow_eq_zero_iff]
-    simp only [one_div, inv_eq_zero, Complex.ofReal_eq_zero, not_and]
-    intro h
-    linarith [hr k]
-  have hnorm (k : ℕ) : ∫ t in Set.Ioi 0, ‖F k t‖ =
-      (1 / ((k : ℝ) + 1)) ^ (s.re + 1) * Real.Gamma (s.re + 1) := by
-    rw [← Real.integral_rpow_mul_exp_neg_mul_Ioi (by linarith) (hr k)]
-    refine MeasureTheory.setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
-    simp only [F, norm_mul, Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.norm_exp]
-    simp
-  have hsum : Summable fun k : ℕ ↦ ∫ t in Set.Ioi 0, ‖F k t‖ := by
-    simp_rw [hnorm]
-    refine Summable.mul_right _ ?_
-    have h := (summable_nat_add_iff 1).2 (Real.summable_nat_rpow_inv.2 (by linarith :
-      1 < s.re + 1))
-    refine h.congr fun k ↦ ?_
-    rw [one_div, Real.inv_rpow (by positivity)]
-    push_cast
-    rfl
-  rw [mellin, ← MeasureTheory.setIntegral_congr_fun measurableSet_Ioi
-      fun t ht ↦ (hasSum_mellin_integrand ht s).tsum_eq,
-    ← MeasureTheory.integral_tsum_of_summable_integral_norm hInt hsum]
-  simp_rw [hI]
-  rw [tsum_mul_right, zeta_eq_tsum_one_div_nat_add_one_cpow (by simp; linarith), mul_comm]
-  congr 1
+  -- On `t > 0`, `β(t) = t ^ 1 • (exp t - 1)⁻¹`, so `M(β, s) = M((exp t - 1)⁻¹, s + 1)`, which is
+  -- the Dirichlet series `Γ(s + 1) ∑_k (k + 1) ^ -(s + 1)` of the geometric expansion.
+  have hcongr : mellin (fun t ↦ (bernoulliKernel t : ℂ)) s =
+      mellin (fun t : ℝ ↦ (t : ℂ) ^ (1 : ℂ) • (((Real.exp t - 1)⁻¹ : ℝ) : ℂ)) s :=
+    MeasureTheory.setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ by
+      simp [bernoulliKernel_of_ne_zero (ne_of_gt ht), div_eq_mul_inv]
+  have h := hasSum_mellin (a := fun _ : ℕ ↦ (1 : ℂ)) (p := fun k : ℕ ↦ (k : ℝ) + 1)
+    (F := fun t : ℝ ↦ (((Real.exp t - 1)⁻¹ : ℝ) : ℂ)) (fun k ↦ Or.inr (by positivity)) hs1
+    (fun t ht ↦ by
+      simpa only [Complex.ofRealCLM_apply, one_mul, neg_mul] using
+        Complex.ofRealCLM.hasSum (Real.hasSum_exp_neg_nat_succ_mul ht))
+    (by
+      simpa [Real.inv_rpow, Nat.cast_add, Nat.cast_one, div_eq_mul_inv, add_comm] using
+        (summable_nat_add_iff 1).2 (Real.summable_nat_rpow_inv.2 (by simpa using hs)))
+  rw [hcongr, mellin_cpow_smul, ← h.tsum_eq,
+    zeta_eq_tsum_one_div_nat_add_one_cpow (by simp; linarith), ← tsum_mul_left]
   refine tsum_congr fun k ↦ ?_
-  have harg : ((k : ℂ) + 1).arg ≠ Real.pi := by
-    rw [show (k : ℂ) + 1 = (((k : ℝ) + 1 : ℝ) : ℂ) by push_cast; rfl,
-      Complex.arg_ofReal_of_nonneg (hr k).le]
-    exact Real.pi_pos.ne
   push_cast
-  rw [one_div, one_div, Complex.inv_cpow _ _ harg]
+  ring
 
 /-- The normalized Mellin transform `M(β, s) / Γ(s)` of the Bernoulli kernel extends to an
 entire function, equal to `s ζ(s + 1)` for `s ≠ 0` and to `1` at the removable point `s = 0`
