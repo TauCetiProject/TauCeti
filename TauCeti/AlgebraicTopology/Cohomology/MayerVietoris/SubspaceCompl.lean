@@ -138,13 +138,6 @@ private lemma stepIso_hom (s : W.LineExtension) (n : ℕ) :
         TopPair.singularCohomologyMap (interIso q s).hom (n + 1) := by
   simp only [stepIso, Iso.trans_hom, TopPair.singularCohomologyMapIso_hom, asIso_hom]
 
-omit hq [FiniteDimensional ℝ F] [NormedSpace ℝ F] in
-/-- A map `f : X ⟶ X'` over `F` carries complements of preimages under `q` into complements of
-preimages under `q'`. -/
-private lemma mapsTo_compl_preimage (f : X ⟶ X') (hf : ∀ x, q' (f x) = q x) (S : Set F) :
-    Set.MapsTo f (q ⁻¹' S)ᶜ (q' ⁻¹' S)ᶜ :=
-  fun x hx h ↦ hx (by rw [Set.mem_preimage, hf] at h; exact h)
-
 variable {q} (hq' : ∀ (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) (v : F), v ∈ W → φ v = 1 → ∀ n,
   IsZero ((TopPair.ofSubset (q' ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ)).singularCohomology R k M n))
   (f : X ⟶ X') (hf : ∀ x, q' (f x) = q x)
@@ -154,8 +147,8 @@ private lemma stepIso_hom_naturality (s : W.LineExtension) (n : ℕ) :
         TopPair.singularCohomologyMap (subspaceComplPairMap f hf W) (n + 1) =
       TopPair.singularCohomologyMap (subspaceComplPairMap f hf s.W') n ≫
         (stepIso R k M q hq s n).hom := by
-  have hS := mapsTo_compl_preimage q f hf {y | y ∈ s.W' ∧ s.extension y ≤ 0}
-  have hT := mapsTo_compl_preimage q f hf {y | y ∈ s.W' ∧ (-s.extension) y ≤ 0}
+  have hS := f.mapsTo_preimage_of_apply_eq hf {y | y ∈ s.W' ∧ s.extension y ≤ 0}ᶜ
+  have hT := f.mapsTo_preimage_of_apply_eq hf {y | y ∈ s.W' ∧ (-s.extension) y ≤ 0}ᶜ
   have hU : Set.MapsTo f (closedHalf q s.W' s.extension ∪ closedHalf q s.W' (-s.extension))ᶜ
       (closedHalf q' s.W' s.extension ∪ closedHalf q' s.W' (-s.extension))ᶜ :=
     fun x hx h ↦ hx (by simpa only [Set.mem_union, Set.mem_preimage, hf] using h)
@@ -165,12 +158,12 @@ private lemma stepIso_hom_naturality (s : W.LineExtension) (n : ℕ) :
   have hunion : (unionIso q s).hom ≫ subspaceComplPairMap f hf s.W' =
       TopPair.ofSubsetMap f hU ≫ (unionIso q' s).hom := by
     simp only [unionIso, subspaceComplPairMap_eq_ofSubsetMap f hf _
-      (mapsTo_compl_preimage q f hf _), TopPair.ofSubsetIso_hom]
+      (f.mapsTo_preimage_of_apply_eq hf _), TopPair.ofSubsetIso_hom]
     exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
   have hinter : (interIso q s).hom ≫ TopPair.ofSubsetMap f hI =
       subspaceComplPairMap f hf W ≫ (interIso q' s).hom := by
     simp only [interIso, subspaceComplPairMap_eq_ofSubsetMap f hf _
-      (mapsTo_compl_preimage q f hf _), TopPair.ofSubsetIso_hom]
+      (f.mapsTo_preimage_of_apply_eq hf _), TopPair.ofSubsetIso_hom]
     exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
   rw [stepIso_hom, stepIso_hom, Category.assoc, Category.assoc]
   rw [← TopPair.singularCohomologyMap_comp, ← hinter, TopPair.singularCohomologyMap_comp,
@@ -223,7 +216,7 @@ theorem subspaceComplPairSingularCohomologyIso_hom_naturality :
     have h : (topIso q (Submodule.eq_top_of_finrank_eq hW)).hom ≫ subspaceComplPairMap f hf ⊤ =
         subspaceComplPairMap f hf W ≫ (topIso q' (Submodule.eq_top_of_finrank_eq hW)).hom := by
       simp only [topIso, subspaceComplPairMap_eq_ofSubsetMap f hf _
-        (mapsTo_compl_preimage q f hf _), TopPair.ofSubsetIso_hom]
+        (f.mapsTo_preimage_of_apply_eq hf _), TopPair.ofSubsetIso_hom]
       exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
     rw [subspaceComplPairSingularCohomologyIso, subspaceComplPairSingularCohomologyIso,
       TopPair.singularCohomologyMapIso_hom, TopPair.singularCohomologyMapIso_hom,

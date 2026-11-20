@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Relative
 public import TauCeti.LinearAlgebra.Submodule.LineExtension
+public import TauCeti.Topology.Category.TopCat.Fiber
 
 /-!
 # Relative homology modulo the preimage of the complement of a subspace
@@ -60,17 +61,11 @@ instance : IsEmpty (subspaceComplPair q (⊤ : Submodule ℝ F)).snd :=
 
 variable {q} {X' X'' : TopCat.{w}} {q' : C(X', F)} {q'' : C(X'', F)}
 
-omit [NormedSpace ℝ F] in
-/-- A map `f : X ⟶ X'` over `F` carries preimages under `q` into preimages under `q'`. -/
-private lemma mapsTo_preimage (f : X ⟶ X') (hf : ∀ x, q' (f x) = q x) (S : Set F) :
-    Set.MapsTo f (q ⁻¹' S) (q' ⁻¹' S) :=
-  fun x hx ↦ by rw [Set.mem_preimage, hf]; exact hx
-
 /-- The map of pairs `(X, q⁻¹(F ∖ W)) ⟶ (X', q'⁻¹(F ∖ W))` induced by a map `f : X ⟶ X'` over
 `F`. -/
 def subspaceComplPairMap (f : X ⟶ X') (hf : ∀ x, q' (f x) = q x) (W : Submodule ℝ F) :
     subspaceComplPair q W ⟶ subspaceComplPair q' W :=
-  TopPair.ofSubsetMap f (mapsTo_preimage f hf _)
+  TopPair.ofSubsetMap f (f.mapsTo_preimage_of_apply_eq hf _)
 
 /-- `subspaceComplPairMap f hf W` is the map of pairs `TopPair.ofSubsetMap` induced by `f`. -/
 lemma subspaceComplPairMap_eq_ofSubsetMap (f : X ⟶ X') (hf : ∀ x, q' (f x) = q x)
@@ -203,17 +198,17 @@ private lemma stepIso_hom_naturality (s : W.LineExtension) (n : ℕ) :
         TopPair.singularHomologyMap (subspaceComplPairMap f hf s.W') R n =
       TopPair.singularHomologyMap (subspaceComplPairMap f hf W) R (n + 1) ≫
         (stepIso R q' hq' s n).hom := by
-  have hU := mapsTo_preimage f hf {y | y ∈ s.W' ∧ s.extension y ≤ 0}ᶜ
-  have hV := mapsTo_preimage f hf {y | y ∈ s.W' ∧ (-s.extension) y ≤ 0}ᶜ
+  have hU := f.mapsTo_preimage_of_apply_eq hf {y | y ∈ s.W' ∧ s.extension y ≤ 0}ᶜ
+  have hV := f.mapsTo_preimage_of_apply_eq hf {y | y ∈ s.W' ∧ (-s.extension) y ≤ 0}ᶜ
   have hinter : (interIso q s).hom ≫ subspaceComplPairMap f hf s.W' =
       TopPair.ofSubsetMap f (hU.inter_inter hV) ≫ (interIso q' s).hom := by
-    simp only [interIso, subspaceComplPairMap_eq_ofSubsetMap f hf _ (mapsTo_preimage f hf _),
-      TopPair.ofSubsetIso_hom]
+    simp only [interIso, subspaceComplPairMap_eq_ofSubsetMap f hf _
+      (f.mapsTo_preimage_of_apply_eq hf _), TopPair.ofSubsetIso_hom]
     exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
   have hunion : (unionIso q s).hom ≫ TopPair.ofSubsetMap f (hU.union_union hV) =
       subspaceComplPairMap f hf W ≫ (unionIso q' s).hom := by
-    simp only [unionIso, subspaceComplPairMap_eq_ofSubsetMap f hf _ (mapsTo_preimage f hf _),
-      TopPair.ofSubsetIso_hom]
+    simp only [unionIso, subspaceComplPairMap_eq_ofSubsetMap f hf _
+      (f.mapsTo_preimage_of_apply_eq hf _), TopPair.ofSubsetIso_hom]
     exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
   simp only [stepIso, Iso.trans_hom, asIso_hom, Category.assoc]
   rw [← TopPair.singularHomologyMap_comp, hinter, TopPair.singularHomologyMap_comp,
@@ -279,8 +274,8 @@ theorem subspaceComplPairSingularHomologyIso_hom_naturality :
   | 0, W, hW, n, _, rfl => by
     have h : (topIso q (Submodule.eq_top_of_finrank_eq hW)).hom ≫ subspaceComplPairMap f hf ⊤ =
         subspaceComplPairMap f hf W ≫ (topIso q' (Submodule.eq_top_of_finrank_eq hW)).hom := by
-      simp only [topIso, subspaceComplPairMap_eq_ofSubsetMap f hf _ (mapsTo_preimage f hf _),
-        TopPair.ofSubsetIso_hom]
+      simp only [topIso, subspaceComplPairMap_eq_ofSubsetMap f hf _
+        (f.mapsTo_preimage_of_apply_eq hf _), TopPair.ofSubsetIso_hom]
       exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
     rw [subspaceComplPairSingularHomologyIso, subspaceComplPairSingularHomologyIso, asIso_hom,
       asIso_hom, ← TopPair.singularHomologyMap_comp, h, TopPair.singularHomologyMap_comp]

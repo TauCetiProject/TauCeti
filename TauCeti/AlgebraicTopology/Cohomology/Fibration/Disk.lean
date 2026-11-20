@@ -106,9 +106,9 @@ namespace SerreDiskCohomology
 /-- The part of `E` over the complement of a closed half-subspace has vanishing cohomology. -/
 private lemma isZero_half (hp : serreFibrations p) (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V))
     (W : Submodule ℝ V) (φ : V →ₗ[ℝ] ℝ) (v : V) (hv : v ∈ W) (hφv : φ v = 1) (n : ℕ) :
-    IsZero ((TopPair.ofSubset (proj p ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ)).singularCohomology R k M n) :=
-  -- The preimage under `E → K → V` of a set `S` is the part of `E` over `K ∩ S` by definition.
-  TopPair.isZero_singularCohomology_of_isZero_singularHomology _ R M n fun j _ ↦
+    IsZero ((TopPair.ofSubset (proj p ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ)).singularCohomology R k M n) := by
+  rw [preimage_proj]
+  exact TopPair.isZero_singularCohomology_of_isZero_singularHomology _ R M n fun j _ ↦
     isZero_singularHomology_preimage_compl_setOf_mem_and_nonpos R hp hK hK₀ W φ v hv hφv j
 
 /-- `Hⁿ(E, ∅) ≅ Hⁿ(F)`: the pair `(E, F)` is acyclic, since the base contracts onto `0` along
@@ -180,22 +180,16 @@ section Sphere
 
 variable {p : E ⟶ _root_.TopCat.of (closedBall (0 : V) 1)}
 
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The inclusion of the part of `E` over the unit sphere into the part over the punctured ball. -/
-private lemma preimage_sphere_subset_preimage_ne_zero :
-    p ⁻¹' {x | (x : V) ∈ sphere (0 : V) 1} ⊆ p ⁻¹' {x | (x : V) ≠ 0} :=
-  preimage_mono fun _ hx h ↦ by simp [h] at hx
-
 omit [FiniteDimensional ℝ V] in
 /-- Restriction from `(E, p⁻¹(Dʳ ∖ {0}))` to `(E, p⁻¹(Sʳ⁻¹))` is an isomorphism, since the part of
 `E` over the punctured ball is acyclic modulo the part over the sphere. -/
 private lemma isIso_totalToOuter (hp : serreFibrations p) (m : ℕ) :
     IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
       (TopTriple.totalToOuter.app
-        (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero (p := p)))) m) :=
+        (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero p))) m) :=
   have h (j : ℕ) := TopPair.isZero_singularCohomology_of_isZero_singularHomology
     (TopTriple.innerPair.obj
-      (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero (p := p))))
+      (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero p)))
     R (k := k) M j fun i _ ↦ isZero_singularHomology_preimage_ne_zero_preimage_sphere R hp i
   TopTriple.isIso_singularCohomologyMap_totalToOuter_of_isZero _ R k M m (h m) fun j _ ↦ h j
 
@@ -231,7 +225,7 @@ private lemma singularCohomologyPreimageSphereIso_hom (hp : serreFibrations p) (
       (singularCohomologyPreimageNeZeroIso R k M hp (convex_closedBall 0 1)
         (closedBall_mem_nhds 0 one_pos) n m h).hom ≫
         TopPair.singularCohomologyMap (TopTriple.totalToOuter.app
-          (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero (p := p)))) m :=
+          (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero p))) m :=
   rfl
 
 end Sphere
@@ -345,22 +339,22 @@ theorem singularCohomologyPreimageSphereIso_hom_naturality (hp : serreFibrations
   -- The inclusion `(E, p⁻¹(Sʳ⁻¹)) ⟶ (E, p⁻¹(Dʳ ∖ {0}))` commutes with the maps induced by `f`.
   have hpair : TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf _) ≫
         TopTriple.totalToOuter.app
-          (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero (p := p'))) =
+          (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero p')) =
       TopTriple.totalToOuter.app
-          (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero (p := p))) ≫
+          (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero p)) ≫
         TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf {x | (x : V) ≠ 0}) :=
     TopPair.hom_ext_of_fst _ (by
       ext x
       exact (TopPair.ofSubsetMap_fst_apply f _ x).trans (TopPair.ofSubsetMap_fst_apply f
         (f.mapsTo_preimage_of_comp_eq hf {x | (x : V) ≠ 0}) x).symm)
   have hTO : TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (TopTriple.totalToOuter.app
-        (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero (p := p')))) m ≫
+        (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero p'))) m ≫
         TopPair.singularCohomologyMap (TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf _))
           m =
       TopPair.singularCohomologyMap (TopPair.ofSubsetMap f
           (f.mapsTo_preimage_of_comp_eq hf {x | (x : V) ≠ 0})) m ≫
         TopPair.singularCohomologyMap (TopTriple.totalToOuter.app
-          (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero (p := p)))) m :=
+          (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero p))) m :=
     (TopPair.singularCohomologyMap_comp _ _ m).symm.trans
       ((congrArg (TopPair.singularCohomologyMap · m) hpair).trans
         (TopPair.singularCohomologyMap_comp _ _ m))

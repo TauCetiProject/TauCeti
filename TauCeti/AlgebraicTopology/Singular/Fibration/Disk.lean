@@ -154,9 +154,22 @@ theorem isZero_singularHomology_preimage_compl_setOf_mem_and_nonpos (hp : serreF
 namespace SerreDisk
 
 /-- The composite `E → K → V` of the fibration with the inclusion of the base. The preimage
-under it of a set `S ⊆ V` is the part of `E` over `K ∩ S` by definition. -/
+under it of a set `S ⊆ V` is the part of `E` over `K ∩ S`
+(`TauCeti.TopCat.SerreDisk.preimage_proj`). -/
 abbrev proj (p : E ⟶ _root_.TopCat.of K) : C(E, V) :=
   ⟨fun e ↦ (p e : V), continuous_subtype_val.comp p.hom.continuous⟩
+
+omit [NormedSpace ℝ V] in
+/-- The projection `E → K → V` sends a point of `E` to its image in the base, read in `V`. -/
+lemma proj_apply (p : E ⟶ _root_.TopCat.of K) (e : E) : proj p e = p e :=
+  (rfl)
+
+omit [NormedSpace ℝ V] in
+/-- The preimage of a set `S ⊆ V` under the projection `E → K → V` is the part of `E` over
+`K ∩ S`. -/
+lemma preimage_proj (p : E ⟶ _root_.TopCat.of K) (S : Set V) :
+    proj p ⁻¹' S = p ⁻¹' {x : K | (x : V) ∈ S} :=
+  (rfl)
 
 /-- The pair `(E, p⁻¹(K ∖ W))`. -/
 abbrev pair (p : E ⟶ _root_.TopCat.of K) (W : Submodule ℝ V) : TopPair.{u} :=
@@ -231,9 +244,11 @@ private abbrev puncturedBall : Set (closedBall (0 : V) 1) := {x | (x : V) ≠ 0}
 private abbrev unitSphere : Set (closedBall (0 : V) 1) := {x | (x : V) ∈ sphere (0 : V) 1}
 
 omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-private lemma unitSphere_subset_puncturedBall : unitSphere (V := V) ⊆ puncturedBall := by
-  intro x hx h
-  simp [h] at hx
+/-- The part of `E` over the unit sphere lies in the part over the punctured closed unit ball. -/
+lemma preimage_sphere_subset_preimage_ne_zero
+    (p : E ⟶ _root_.TopCat.of (closedBall (0 : V) 1)) :
+    p ⁻¹' {x | (x : V) ∈ sphere (0 : V) 1} ⊆ p ⁻¹' {x | (x : V) ≠ 0} :=
+  preimage_mono fun _ hx h ↦ by simp [h] at hx
 
 /-- The radial deformation of the punctured closed unit ball onto the unit sphere: the
 straight-line homotopy `StarConvex.radialHomotopy` from the radial projection to the identity, run
@@ -252,9 +267,8 @@ boundary sphere.** Let `p : E ⟶ Dʳ` be a Serre fibration over the closed unit
 sphere. -/
 theorem isZero_singularHomology_preimage_ne_zero_preimage_sphere (hp : serreFibrations p)
     (m : ℕ) :
-    IsZero ((TopTriple.innerPair.obj (TopTriple.ofSubset (preimage_mono (f := p)
-      (s := {x | (x : V) ∈ sphere (0 : V) 1}) (t := {x | (x : V) ≠ 0})
-      fun _ hx h ↦ by simp [h] at hx))).singularHomology M m) := by
+    IsZero ((TopTriple.innerPair.obj
+      (TopTriple.ofSubset (preimage_sphere_subset_preimage_ne_zero p))).singularHomology M m) := by
   have hz := isZero_singularHomology_preimage_of_deformation
     (mem_serreFibrations_restrictPreimage hp puncturedBall)
     (A := Subtype.val ⁻¹' unitSphere) radial
@@ -267,14 +281,13 @@ theorem isZero_singularHomology_preimage_ne_zero_preimage_sphere (hp : serreFibr
       have hx' : ‖(x : V)‖ = 1 := mem_sphere_zero_iff_norm.1 hx
       simp [radial, hx']) M m
   exact hz.of_iso (asIso (TopPair.singularHomologyMap
-    (TopPair.ofSubsetPreimageValIso (X := E) (preimage_mono (f := p)
-      (unitSphere_subset_puncturedBall (V := V)))).hom M m)).symm
+    (TopPair.ofSubsetPreimageValIso (X := E) (preimage_sphere_subset_preimage_ne_zero p)).hom M
+      m)).symm
 
 omit [FiniteDimensional ℝ V] in
 private lemma isIso_totalToOuter (hp : serreFibrations p) (m : ℕ) :
     IsIso (TopPair.singularHomologyMap (TopTriple.totalToOuter.app (TopTriple.ofSubset
-      (preimage_mono (f := p) (unitSphere_subset_puncturedBall (V := V))))) M
-      m) :=
+      (preimage_sphere_subset_preimage_ne_zero p))) M m) :=
   TopTriple.isIso_singularHomologyMap_totalToOuter_of_isZero _ _ m
     (isZero_singularHomology_preimage_ne_zero_preimage_sphere M hp m)
     fun m' _ ↦ isZero_singularHomology_preimage_ne_zero_preimage_sphere M hp m'
@@ -428,9 +441,9 @@ theorem singularHomologyPreimageSphereIso_hom_naturality (hp : serreFibrations p
   -- The inclusion `(E, p⁻¹(Sʳ⁻¹)) ⟶ (E, p⁻¹(Dʳ ∖ {0}))` commutes with the maps induced by `f`.
   have hpair : TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf unitSphere) ≫
         TopTriple.totalToOuter.app (TopTriple.ofSubset
-          (preimage_mono (f := p') (unitSphere_subset_puncturedBall (V := V)))) =
+          (preimage_sphere_subset_preimage_ne_zero p')) =
       TopTriple.totalToOuter.app (TopTriple.ofSubset
-          (preimage_mono (f := p) (unitSphere_subset_puncturedBall (V := V)))) ≫
+          (preimage_sphere_subset_preimage_ne_zero p)) ≫
         TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hf puncturedBall) :=
     TopPair.hom_ext_of_fst _ (by
       ext x
