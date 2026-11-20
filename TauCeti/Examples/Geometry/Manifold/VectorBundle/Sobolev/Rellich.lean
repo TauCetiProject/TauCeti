@@ -52,21 +52,17 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   (p : ℝ≥0∞) [Fact (1 ≤ p)] (k d : ℕ)
 
 example (hp : p ≠ ⊤) :
-    let : Fact (1 ≤ (∞ : ℝ≥0∞)) := ⟨le_top⟩
     IsCompactOperator ((A.sectionChartData.lowerOrdersL μ p k (d + 1)).comp
       (A.sectionChartData.ofExponentLEL (p := p) (q := ∞) μ (k + (d + 1)) le_top)) := by
-  let : Fact (1 ≤ (∞ : ℝ≥0∞)) := ⟨le_top⟩
   exact SobolevSection.isCompactOperator_lowerOrdersL_comp_ofExponentLEL A μ p k hp le_top d
 
 -- Arbitrary order bounds recover an actual compact inclusion with the chart formula.
 example (hp : p ≠ ⊤) (l n : ℕ) (hln : l < n) :
-    let : Fact (1 ≤ (∞ : ℝ≥0∞)) := ⟨le_top⟩
     ∃ K : SobolevSection A μ ∞ n →L[ℝ] SobolevSection A μ p l,
       IsCompactOperator K ∧ ∀ w i,
         A.sectionChartData.chartValueL μ p l i (K w) =
           Lp.ofExponentLEL ℝ F (p := p) (q := ∞) le_top
             (A.sectionChartData.chartValueL μ ∞ n i w) := by
-  let : Fact (1 ≤ (∞ : ℝ≥0∞)) := ⟨le_top⟩
   obtain ⟨e, he⟩ := Nat.exists_eq_add_of_le (Nat.succ_le_of_lt hln)
   have hn : n = l + (e + 1) := by omega
   clear he
@@ -115,19 +111,15 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℂ F V]
   (A : FiniteBundleAtlas ℂ M F V) (μ : Measure ℂ) [μ.IsAddHaarMeasure] (k d : ℕ)
 
--- The true exponent facts form the native endpoint carriers.
+-- Mathlib's existing exponent fact supplies the infinite-exponent carriers.
 example :
-    let : Fact (1 ≤ (∞ : ℝ≥0∞)) := ⟨le_top⟩
     ∀ w : zeroOneSobolevSections A μ ∞ k, zeroOneLowerOrdersL A μ ∞ k 0 w = w := by
-  let : Fact (1 ≤ (∞ : ℝ≥0∞)) := ⟨le_top⟩
   exact fun w ↦ zeroOneLowerOrdersL_zero w
 
 example :
-    let : Fact (1 ≤ (∞ : ℝ≥0∞)) := ⟨le_top⟩
     ∀ w : SobolevSection A.tangentHom μ ∞ (k + d),
       zeroOneLowerOrdersL A μ ∞ k d (zeroOnePartSobolevL A μ ∞ (k + d) w) =
         zeroOnePartSobolevL A μ ∞ k (A.tangentHom.sectionChartData.lowerOrdersL μ ∞ k d w) := by
-  let : Fact (1 ≤ (∞ : ℝ≥0∞)) := ⟨le_top⟩
   exact fun w ↦ zeroOneLowerOrdersL_zeroOnePartSobolevL d w
 
 -- At loss one, the inclusion forgets the highest derivative.

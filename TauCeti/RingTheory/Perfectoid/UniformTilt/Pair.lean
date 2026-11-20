@@ -77,7 +77,7 @@ theorem isIntegrallyClosedIn_plusSubring [IsTateRing (uniformTilt p B)]
     refine ⟨plusSharp p h₀ (i a), ?_, (sharpQuot_apply h₀ I hpI (i a)).symm⟩
     apply Subring.mem_comap.mpr
     simpa only [Subring.subtype_apply, coe_plusSharp, i, Subring.coe_inclusion]
-      using mem_plusSubring_iff_coeff_zero.mp a.2
+      using mem_plusSubring_iff_coeff_zero.mp a.property
   refine Subring.isIntegrallyClosedIn_iff.mpr fun x hx ↦ ?_
   -- First put the integral element in the integral tilt of `B°`, where sharp is additive
   -- after reduction; then descend its integrality to the image of `B⁺` in that reduction.

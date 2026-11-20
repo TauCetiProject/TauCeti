@@ -354,14 +354,14 @@ theorem chartValueL_zeroOnePartSobolevL_ae_coord {w : SobolevSection A.tangentHo
 @[simp]
 theorem zeroOnePartSobolevL_coe (w : zeroOneSobolevSections A μ p k) :
     zeroOnePartSobolevL A μ p k w = w :=
-  Subtype.ext (zeroOnePartEnd_of_mem w.2)
+  Subtype.ext (zeroOnePartEnd_of_mem w.property)
 
 /-- An element of `W^{k,p}` of `V`-valued one-forms is fixed by the `(0,1)`-projection exactly when
 it is a `(0,1)`-form. -/
 theorem coe_zeroOnePartSobolevL_eq_self_iff {w : SobolevSection A.tangentHom μ p k} :
     (zeroOnePartSobolevL A μ p k w : SobolevSection A.tangentHom μ p k) = w ↔
       w ∈ zeroOneSobolevSections A μ p k :=
-  ⟨fun h ↦ h ▸ (zeroOnePartSobolevL A μ p k w).2, zeroOnePartEnd_of_mem⟩
+  ⟨fun h ↦ h ▸ (zeroOnePartSobolevL A μ p k w).property, zeroOnePartEnd_of_mem⟩
 
 /-- The `(0,1)`-projection is onto the `(0,1)`-forms. -/
 theorem zeroOnePartSobolevL_surjective : Function.Surjective (zeroOnePartSobolevL A μ p k) :=
@@ -391,7 +391,7 @@ def zeroOneLowerOrdersL (d : ℕ) :
     zeroOneSobolevSections A μ p (k + d) →L[ℝ] zeroOneSobolevSections A μ p k :=
   ((A.tangentHom.sectionChartData.lowerOrdersL μ p k d).comp
     (zeroOneSobolevSections A μ p (k + d)).subtypeL).codRestrict _
-      fun w ↦ lowerOrdersL_mem_zeroOneSobolevSections d w.2
+      fun w ↦ lowerOrdersL_mem_zeroOneSobolevSections d w.property
 
 /-- As a function, the native order inclusion is the restriction of the canonical order map. -/
 theorem zeroOneLowerOrdersL_eq_codRestrict (d : ℕ) :
@@ -400,7 +400,7 @@ theorem zeroOneLowerOrdersL_eq_codRestrict (d : ℕ) :
         (⇑(A.tangentHom.sectionChartData.lowerOrdersL μ p k d) ∘
           ⇑(zeroOneSobolevSections A μ p (k + d)).subtypeL)
         (zeroOneSobolevSections A μ p k)
-        (fun w ↦ lowerOrdersL_mem_zeroOneSobolevSections d w.2) := by
+        (fun w ↦ lowerOrdersL_mem_zeroOneSobolevSections d w.property) := by
   rfl
 
 /-- The inclusion acts by the canonical order inclusion on the underlying one-form. -/

@@ -162,7 +162,7 @@ theorem finrank_ker_fderiv_fderiv_le_one (hf : ContDiffAt ℝ 2 (uncurry f) (t, 
   let K := LinearMap.ker (fderiv ℝ (fderiv ℝ (f t)) x).toLinearMap
   let w : StrongDual ℝ E := deriv (fun s ↦ fderiv ℝ (f s) x) t
   have hinj : Injective ((w : E →ₗ[ℝ] ℝ) ∘ₗ K.subtype) :=
-    (injective_iff_map_eq_zero _).2 fun v hv ↦ Subtype.ext (hk v v.2 hv)
+    (injective_iff_map_eq_zero _).2 fun v hv ↦ Subtype.ext (hk v v.property hv)
   simpa using LinearMap.finrank_le_finrank_of_injective hinj
 
 /-! ### Genericity -/

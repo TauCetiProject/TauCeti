@@ -270,7 +270,7 @@ theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Countable σ]
   choose a₀ ha₀ using hs₀
   have hs₀_F_ne : algebraMap T' F' (Ψ s₀) ≠ 0 := by
     rw [← norm_ne_zero_iff, norm_algebraMap_gaussFractionField, hΨ_norm, norm_ne_zero_iff]
-    exact nonZeroDivisors.ne_zero s₀.2
+    exact nonZeroDivisors.ne_zero s₀.property
   have hu₀_ne : ∑ j, Ψ (a₀ j) * rootG j ≠ 0 := fun h0 ↦ by
     have hmul : algebraMap T' F' (Ψ s₀) * ι x₀ = 0 := by
       rw [← hι_clear x₀ s₀ a₀ ha₀, h0, map_zero]
@@ -297,7 +297,7 @@ theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Countable σ]
         norm_algebraMap_gaussFractionField σ K' r _, hΨ_norm, hι_norm]
     have hs_pos : 0 < ‖(s : T)‖ := by
       rw [← norm_algebraMap_gaussFractionField σ K c (s : T), norm_pos_iff]
-      exact IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors s.2
+      exact IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors s.property
     refine le_of_mul_le_mul_left ?_ hs_pos
     calc ‖(s : T)‖ * ‖φ y‖
         = ‖algebraMap T F s * φ y‖ := by rw [norm_mul, norm_algebraMap_gaussFractionField σ K c _]

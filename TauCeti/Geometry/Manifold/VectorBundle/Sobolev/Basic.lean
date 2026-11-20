@@ -474,7 +474,7 @@ variable (C μ p k)
 /-- An element of the Sobolev sections consists of the chartwise components of a section. -/
 theorem exists_section (w : C.sobolevSections μ p k) :
     ∃ s : S, ∀ i, C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.coord i s :=
-  w.2
+  w.property
 
 /-- Two elements of the Sobolev sections are equal when their components have equal values. -/
 theorem sobolevSections_ext {w w' : C.sobolevSections μ p k}
@@ -544,7 +544,7 @@ forgetting the highest derivative of every component. -/
 def lowerOrderL : C.sobolevSections μ p (k + 1) →L[ℝ] C.sobolevSections μ p k :=
   ((SobolevData.mapL fun _ ↦ Wkp.lowerOrderL k).comp
     (C.sobolevSections μ p (k + 1)).subtypeL).codRestrict (C.sobolevSections μ p k) fun w ↦ by
-      obtain ⟨s, hs⟩ := w.2
+      obtain ⟨s, hs⟩ := w.property
       refine ⟨s, fun i ↦ ?_⟩
       convert hs i using 2
       rw [← C.chartValueL_lowerOrderL μ p k i w]
@@ -733,7 +733,7 @@ def constMapL (L : F →L[ℝ] F) (Ψ : S → S)
     (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y)) :
     C.sobolevSections μ p k →L[ℝ] C.sobolevSections μ p k :=
   ((constMapData C μ p k L).comp (C.sobolevSections μ p k).subtypeL).codRestrict _ fun w ↦ by
-    obtain ⟨s, hs⟩ := (C.mem_sobolevSections_iff μ p k).1 w.2
+    obtain ⟨s, hs⟩ := (C.mem_sobolevSections_iff μ p k).1 w.property
     exact (C.mem_sobolevSections_iff μ p k).2
       ⟨Ψ s, fun i ↦ chartValueL_constMapData_ae_coord (hΨ i s) (hs i)⟩
 

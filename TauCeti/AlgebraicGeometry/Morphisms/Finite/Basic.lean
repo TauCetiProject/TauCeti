@@ -82,10 +82,10 @@ theorem Scheme.Hom.projective_app {Y S : Scheme.{u}} (g : Y ⟶ S) [IsFinite g] 
     [LocallyOfFinitePresentation g] (U : S.affineOpens) :
     letI := (g.app U).hom.toAlgebra
     Module.Projective Γ(S, U) Γ(Y, g ⁻¹ᵁ U) := by
-  have hflat := g.flat_appLE U.2 (U.2.preimage g) le_rfl
-  have hfp := g.finitePresentation_appLE U.2 (U.2.preimage g) le_rfl
+  have hflat := g.flat_appLE U.property (U.property.preimage g) le_rfl
+  have hfp := g.finitePresentation_appLE U.property (U.property.preimage g) le_rfl
   rw [Scheme.Hom.appLE_eq_app] at hflat hfp
-  have hfin := g.finite_app U U.2
+  have hfin := g.finite_app U U.property
   algebraize [(g.app U).hom]
   have := Module.FinitePresentation.of_finite_of_finitePresentation (R := Γ(S, U))
     (S := Γ(Y, g ⁻¹ᵁ U))

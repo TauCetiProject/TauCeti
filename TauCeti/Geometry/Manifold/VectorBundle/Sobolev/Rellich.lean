@@ -90,7 +90,7 @@ theorem SectionChartData.isCompactOperator_of_forall_apply (hC : C.AETransition 
     (hf : ∀ i m, IsCompactOperator fun x ↦ (f x : C.SobolevData μ p k) i m) :
     IsCompactOperator f :=
   (IsCompactOperator.pi fun i ↦ IsCompactOperator.pi fun m ↦ hf i m).codRestrict
-    (fun x ↦ (f x).2) (isClosed_sobolevSections hC)
+    (fun x ↦ (f x).property) (isClosed_sobolevSections hC)
 
 end Components
 
@@ -147,7 +147,7 @@ theorem isCompactOperator_lowerOrderL [T2Space M] (hp : p ≠ ⊤) :
   convert (hrel i).clm_comp ((ContinuousLinearMap.proj m).comp
     (A.transferL μ p k hp i j (hPc i j) (hPD i j) (hPQ i j))) using 1
   funext w
-  exact A.restrictL_eq_transferL μ p k hp (A.sectionChartData.lowerOrderL μ p k w).2 (hP i j)
+  exact A.restrictL_eq_transferL μ p k hp (A.sectionChartData.lowerOrderL μ p k w).property (hP i j)
     (hPc i j) (hPD i j) (hQi i) (hPQ i j) m
 
 /-- **Rellich's theorem for Sobolev sections**, for any loss of derivatives: the inclusion

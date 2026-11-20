@@ -385,11 +385,11 @@ theorem existsUnique_isMinimalCosetRep_mul (J : Set B) (w : W) :
 `cs.parabolic J` with `W`, by `CoxeterSystem.existsUnique_isMinimalCosetRep_mul`. -/
 noncomputable def minimalCosetRepProdParabolicEquiv (J : Set B) :
     {u : W // cs.IsMinimalCosetRep J u} × cs.parabolic J ≃ W :=
-  Equiv.ofBijective (fun p ↦ p.1.1 * p.2.1) <| by
+  Equiv.ofBijective (fun p ↦ p.1.val * p.2.val) <| by
     refine ⟨fun ⟨u, v⟩ ⟨u', v'⟩ h ↦ ?_, fun w ↦ ?_⟩
-    · obtain ⟨_, -, huniq⟩ := cs.existsUnique_isMinimalCosetRep_mul J (u.1 * v.1)
-      have h₁ := huniq (u.1, v.1) ⟨u.2, v.2, rfl⟩
-      have h₂ := huniq (u'.1, v'.1) ⟨u'.2, v'.2, h⟩
+    · obtain ⟨_, -, huniq⟩ := cs.existsUnique_isMinimalCosetRep_mul J (u.val * v.val)
+      have h₁ := huniq (u.val, v.val) ⟨u.property, v.property, rfl⟩
+      have h₂ := huniq (u'.val, v'.val) ⟨u'.property, v'.property, h⟩
       rw [← h₂, Prod.mk.injEq] at h₁
       exact Prod.ext (Subtype.ext h₁.1) (Subtype.ext h₁.2)
     · obtain ⟨⟨u, v⟩, ⟨hu, hv, hw⟩, -⟩ := cs.existsUnique_isMinimalCosetRep_mul J w
@@ -399,7 +399,7 @@ noncomputable def minimalCosetRepProdParabolicEquiv (J : Set B) :
 @[simp]
 theorem minimalCosetRepProdParabolicEquiv_apply (J : Set B)
     (p : {u : W // cs.IsMinimalCosetRep J u} × cs.parabolic J) :
-    cs.minimalCosetRepProdParabolicEquiv J p = p.1.1 * p.2.1 :=
+    cs.minimalCosetRepProdParabolicEquiv J p = p.1.val * p.2.val :=
   (rfl)
 
 /-- **Minimal coset representatives are unique.** Two minimal representatives of the same left
@@ -537,11 +537,11 @@ identifies pairs of an element `x` of `cs.parabolic J` and an element `v` with n
 `J` with `W`, by `CoxeterSystem.existsUnique_mem_parabolic_mul`. -/
 noncomputable def parabolicProdEquiv (J : Set B) :
     cs.parabolic J × {v : W // ∀ i ∈ J, ¬ cs.IsLeftDescent v i} ≃ W :=
-  Equiv.ofBijective (fun p ↦ p.1.1 * p.2.1) <| by
+  Equiv.ofBijective (fun p ↦ p.1.val * p.2.val) <| by
     refine ⟨fun ⟨x, v⟩ ⟨x', v'⟩ h ↦ ?_, fun w ↦ ?_⟩
-    · obtain ⟨_, -, huniq⟩ := cs.existsUnique_mem_parabolic_mul J (x.1 * v.1)
-      have h₁ := huniq (x.1, v.1) ⟨x.2, v.2, rfl⟩
-      have h₂ := huniq (x'.1, v'.1) ⟨x'.2, v'.2, h⟩
+    · obtain ⟨_, -, huniq⟩ := cs.existsUnique_mem_parabolic_mul J (x.val * v.val)
+      have h₁ := huniq (x.val, v.val) ⟨x.property, v.property, rfl⟩
+      have h₂ := huniq (x'.val, v'.val) ⟨x'.property, v'.property, h⟩
       rw [← h₂, Prod.mk.injEq] at h₁
       exact Prod.ext (Subtype.ext h₁.1) (Subtype.ext h₁.2)
     · obtain ⟨⟨x, v⟩, ⟨hx, hv, hw⟩, -⟩ := cs.existsUnique_mem_parabolic_mul J w
@@ -551,7 +551,7 @@ noncomputable def parabolicProdEquiv (J : Set B) :
 @[simp]
 theorem parabolicProdEquiv_apply (J : Set B)
     (p : cs.parabolic J × {v : W // ∀ i ∈ J, ¬ cs.IsLeftDescent v i}) :
-    cs.parabolicProdEquiv J p = p.1.1 * p.2.1 :=
+    cs.parabolicProdEquiv J p = p.1.val * p.2.val :=
   (rfl)
 
 end CoxeterSystem

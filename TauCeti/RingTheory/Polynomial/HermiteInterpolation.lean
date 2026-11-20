@@ -125,7 +125,7 @@ theorem hasseJet_map [Semiring S] (ψ : R →+* S) (a : ι → R) (m : ι → �
 theorem hasseJet_eq_zero_iff_forall (a : ι → R) (m : ι → ℕ) (f : R[X]) :
     hasseJet a m f = 0 ↔ ∀ i, ∀ k < m i, (hasseDeriv k f).eval (a i) = 0 := by
   simp only [funext_iff, hasseJet_apply, Pi.zero_apply]
-  exact ⟨fun h i k hk => h i ⟨k, hk⟩, fun h i k => h i k k.2⟩
+  exact ⟨fun h i k hk => h i ⟨k, hk⟩, fun h i k => h i k k.isLt⟩
 
 variable [Fintype ι]
 
@@ -149,7 +149,7 @@ theorem hermiteJet_eq_hasseJet (a : ι → R) (m : ι → ℕ) (f : degreeLT R (
 /-- The Hermite jet map commutes with mapping coefficients and nodes by a ring homomorphism. -/
 theorem hermiteJet_map [Semiring S] (ψ : R →+* S) (a : ι → R) (m : ι → ℕ)
     (f : degreeLT R (∑ i, m i)) :
-    hermiteJet (ψ ∘ a) m ⟨(f : R[X]).map ψ, map_mem_degreeLT ψ f.2⟩ =
+    hermiteJet (ψ ∘ a) m ⟨(f : R[X]).map ψ, map_mem_degreeLT ψ f.property⟩ =
       fun i k => ψ (hermiteJet a m f i k) := by
   rw [hermiteJet_eq_hasseJet, hermiteJet_eq_hasseJet]
   exact hasseJet_map ψ a m f
@@ -327,7 +327,7 @@ theorem eval_hasseDeriv_hermiteJetEquiv_symm (c : ∀ i, Fin (m i) → R) (i : �
 /-- The Hermite interpolation polynomial of a jet datum has degree below `∑ i, m i`. -/
 theorem degree_hermiteJetEquiv_symm_lt (c : ∀ i, Fin (m i) → R) :
     ((hermiteJetEquiv ha m).symm c : R[X]).degree < (∑ i, m i : ℕ) :=
-  mem_degreeLT.1 ((hermiteJetEquiv ha m).symm c).2
+  mem_degreeLT.1 ((hermiteJetEquiv ha m).symm c).property
 
 /-- The characteristic property of Hermite interpolation: the interpolation polynomial of the jet
 datum `c` is the unique polynomial of degree below `∑ i, m i` whose Hasse jet of order `k < m i`
@@ -350,7 +350,7 @@ theorem existsUnique_hermite_interpolation_of_pairwise_isUnit_sub (c : ∀ i, Fi
     ∃! f : R[X], f ∈ degreeLT R (∑ i, m i) ∧
       ∀ i (k : Fin (m i)), (hasseDeriv k f).eval (a i) = c i k :=
   ⟨(hermiteJetEquiv ha m).symm c,
-    ⟨((hermiteJetEquiv ha m).symm c).2, eval_hasseDeriv_hermiteJetEquiv_symm ha m c⟩,
+    ⟨((hermiteJetEquiv ha m).symm c).property, eval_hasseDeriv_hermiteJetEquiv_symm ha m c⟩,
     fun _ ⟨hf, hc⟩ => (eq_hermiteJetEquiv_symm_iff ha m).2 ⟨mem_degreeLT.1 hf, hc⟩⟩
 
 /-- Hermite interpolation commutes with ring homomorphisms: the interpolation polynomial of the
@@ -411,7 +411,7 @@ theorem ordinaryHermiteJet_bijective_of_pairwise_isUnit_sub
     (hm : ∀ i, ∀ k < m i, IsUnit (k ! : R)) : Bijective (ordinaryHermiteJet a m) := by
   let e : (∀ i, Fin (m i) → R) ≃ₗ[R] ∀ i, Fin (m i) → R :=
     LinearEquiv.piCongrRight fun i =>
-      LinearEquiv.piCongrRight fun k => LinearEquiv.smulOfUnit (hm i k k.2).unit
+      LinearEquiv.piCongrRight fun k => LinearEquiv.smulOfUnit (hm i k k.isLt).unit
   have h : ⇑(ordinaryHermiteJet a m) = ⇑e ∘ ⇑(hermiteJet a m) := by
     ext f i k
     rw [Function.comp_apply, ordinaryHermiteJet_eq_factorial_mul]
@@ -462,7 +462,7 @@ theorem hermiteJet_injective (ha : Injective a) (m : ι → ℕ) : Injective (he
     (hasseJet_eq_zero_iff ha m f).1 (hermiteJet_eq_hasseJet a m f ▸ hf)
   refine Subtype.ext (eq_zero_of_dvd_of_degree_lt hdvd ?_)
   rw [degree_eq_natDegree (monic_prod_X_sub_C_pow univ a m).ne_zero, natDegree_prod_X_sub_C_pow]
-  exact mem_degreeLT.1 f.2
+  exact mem_degreeLT.1 f.property
 
 /-- Over an integral domain, for injective nodes, the ordinary-derivative jet map is injective when
 `k ! ≠ 0` in `R` for every order `k < m i`. -/
@@ -473,7 +473,7 @@ theorem ordinaryHermiteJet_injective (ha : Injective a) (m : ι → ℕ)
   ext i k
   have h := congr_fun (congr_fun hf i) k
   rw [ordinaryHermiteJet_eq_factorial_mul, Pi.zero_apply, Pi.zero_apply, mul_eq_zero] at h
-  exact h.resolve_left (hm i k k.2)
+  exact h.resolve_left (hm i k k.isLt)
 
 end NoZeroDivisors
 
