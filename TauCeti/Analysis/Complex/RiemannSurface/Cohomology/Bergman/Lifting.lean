@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.Cohomology.BergmanCochains
+public import TauCeti.Analysis.Complex.RiemannSurface.Cohomology.Bergman.Cochains
 import TauCeti.Analysis.Complex.RiemannSurface.Cohomology.DolbeaultGluing
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Tactic.LinearCombination
@@ -95,7 +95,6 @@ theorem middleProjection_surjective
     (hg_mul : ∀ i j k, ∀ x ∈ U i ∩ U j ∩ U k, g i j x * g j k x = g i k x) :
     Function.Surjective (middleProjection (W'' := W'') g hW h'
       (fun i ↦ subset_closure.trans (hIW i))) := by
-  classical
   let h'' : ∀ i, W'' i ≤ W' i := fun i ↦ subset_closure.trans (hIW i)
   intro ξ
   obtain ⟨ζ, η, hζ, hζc, hη, hζη⟩ :=
@@ -105,8 +104,8 @@ theorem middleProjection_surjective
     have hxU := hWU i hx
     rw [hU i] at hxU
     exact hxU.1
-  have houter := @exists_cocycle_representative_eq X inferInstance inferInstance
-    ι e W U g he hW hKW hWU hKeW ζ hζ hζc
+  have houter := exists_cocycle_representative_eq (e := e) (W := W) (U := U)
+    g he hKW hWU hKeW ζ hζ hζc
   obtain ⟨Z, hZc, hZ⟩ := houter
   have hKI (i : ι) : IsCompact (closure (W'' i : Set X)) :=
     (hKW i).of_isClosed_subset isClosed_closure
@@ -154,17 +153,16 @@ theorem exists_uniform_middle_lift [Fintype ι]
       (fun i ↦ subset_closure.trans (hIW i))
   have hT : Function.Surjective T :=
     middleProjection_surjective g he hW h' hR hU hKW hWU hcov hIW hg hg_one hg_mul
-  let : CompleteSpace (compatibleTriples (e := e) (W := W) (W' := W') (W'' := W'')
+  -- Native instance search through the imported subtype exceeds the stock heartbeat budget.
+  -- Explicit source and target avoid unification through the unexposed middle projection.
+  have : CompleteSpace (compatibleTriples (e := e) (W := W) (W' := W') (W'' := W'')
       g hW h' (fun i ↦ subset_closure.trans (hIW i))) :=
     completeSpace_compatibleTriples g hW h' (fun i ↦ subset_closure.trans (hIW i))
-  let : CompleteSpace (cocycles₁ (e := e) (W := W') g (subset_source_of_le hW h')) :=
-    completeSpace_cocycles₁ g (subset_source_of_le hW h')
-  obtain ⟨C, hC, hL⟩ := ContinuousLinearMap.exists_preimage_norm_le
-    (𝕜 := ℂ) (𝕜' := ℂ) (σ := RingHom.id ℂ) (σ' := RingHom.id ℂ)
+  exact ContinuousLinearMap.exists_preimage_norm_le
+    (σ := RingHom.id ℂ) (σ' := RingHom.id ℂ)
     (E := compatibleTriples (e := e) (W := W) (W' := W') (W'' := W'')
-        g hW h' (fun i ↦ subset_closure.trans (hIW i)))
-    (F := cocycles₁ g (subset_source_of_le hW h')) T hT
-  exact ⟨C, hC, hL⟩
+      g hW h' (fun i ↦ subset_closure.trans (hIW i)))
+    (F := cocycles₁ (e := e) (W := W') g (subset_source_of_le hW h')) T hT
 
 omit [Finite ι] in
 /-- Positive coordinate balls at radii `r, 2r, 3r, 4r, 5r` give uniformly bounded native lifts.

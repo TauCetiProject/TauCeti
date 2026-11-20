@@ -55,7 +55,7 @@ For the structure sheaf, these spaces are realized with its native holomorphic s
 
 The continuous linear `middleProjection` retains the middle cocycle of a compatible triple.
 Compact holomorphic realization identifies functions and cocycles with their native Bergman
-classes. `BergmanLifting` proves surjectivity and uniform bounded lifting of the middle projection.
+classes. `Bergman.Lifting` proves surjectivity and uniform bounded lifting of the middle projection.
 These Banach spaces and compact restrictions enter the analytic finiteness argument for `H¹`.
 
 ## References
@@ -387,7 +387,6 @@ native Bergman cocycle with the same pointwise readings. -/
 theorem exists_cocycle_representative_eq
     (g : ι → ι → M → ℂ)
     (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 M)
-    (hW : ∀ i, (W i : Set M) ⊆ (e i).source)
     (hKW : ∀ i, IsCompact (closure (W i : Set M)))
     (hWU : ∀ i, closure (W i : Set M) ⊆ U i)
     (hKeW : ∀ i, closure (W i : Set M) ⊆ (e i).source)
@@ -396,9 +395,8 @@ theorem exists_cocycle_representative_eq
     (hζc : ∀ i j k, ∀ x ∈ U i ∩ U j ∩ U k,
       ζ i j x + g i j x • ζ j k x = ζ i k x) :
     ∃ Z : (i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W i ⊓ W j)),
-      Z ∈ cocycles₁ g hW ∧ ∀ i j, ∀ x ∈ W i ⊓ W j,
+      Z ∈ cocycles₁ g (fun i ↦ subset_closure.trans (hKeW i)) ∧ ∀ i j, ∀ x ∈ W i ⊓ W j,
         BergmanSpace.representative (Z i j) (e i x) = ζ i j x := by
-  classical
   have hKij (i j : ι) : IsCompact (closure ((W i ⊓ W j : Opens M) : Set M)) :=
     (hKW i).of_isClosed_subset isClosed_closure (closure_mono inter_subset_left)
   have hKUij (i j : ι) : closure ((W i ⊓ W j : Opens M) : Set M) ⊆ U i ∩ U j :=
