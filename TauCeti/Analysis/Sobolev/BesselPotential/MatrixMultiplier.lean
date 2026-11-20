@@ -12,6 +12,7 @@ import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.Distribution.TemperedDistribution.MulLeft
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 
@@ -203,18 +204,7 @@ theorem hasSobolevExtension_bilinLeftCLM_apply (s : ℝ) {A : E → F →L[ℂ] 
     fun i ↦ LinearMap.toContinuousLinearMap (b.coord i)
   have hℓA (i) : (fun x ↦ ℓ i (A x)).HasTemperateGrowth :=
     hA.continuousLinearMap_comp (ℓ i)
-  have hsum : bilinLeftCLM (ContinuousLinearMap.apply ℂ G) hA =
-      ∑ i, (postcompCLM (b i)).comp (smulLeftCLM F fun x ↦ ℓ i (A x)) := by
-    ext u x
-    have key (i) : smulLeftCLM F (fun x ↦ ℓ i (A x)) u x = ℓ i (A x) • u x :=
-      smulLeftCLM_apply_apply (hℓA i) u x
-    simp only [bilinLeftCLM_apply, ContinuousLinearMap.apply_apply, FunLike.coe_sum,
-      Finset.sum_apply, ContinuousLinearMap.coe_comp, Function.comp_apply, postcompCLM_apply, key,
-      map_smul]
-    simp only [ℓ, LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply]
-    conv_lhs => rw [← b.sum_repr (A x)]
-    simp only [FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul, Pi.smul_apply]
-  rw [hsum]
+  rw [bilinLeftCLM_apply_eq_sum Finset.univ (fun i _ ↦ hℓA i) b hA fun x ↦ by simp [ℓ]]
   refine Finset.sum_induction _ (fun T ↦ HasSobolevExtension T s s)
     (fun _ _ ↦ HasSobolevExtension.add) (hasSobolevExtension_zero s s) fun i _ ↦ ?_
   refine HasSobolevExtension.comp (hasSobolevExtension_iff.2

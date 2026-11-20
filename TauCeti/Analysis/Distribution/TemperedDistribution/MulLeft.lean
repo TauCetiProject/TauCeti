@@ -54,6 +54,8 @@ basis. It reduces statements about `A u` to the scalar multiplication and to con
   invertible `A` whose inverse is again of temperate growth acts invertibly.
 * `TemperedDistribution.mulLeftCLM_toTemperedDistributionCLM_eq`: on Schwartz functions `A u` is
   the pointwise product.
+* `SchwartzMap.bilinLeftCLM_apply_eq_sum`: the pointwise product of Schwartz functions with
+  `A x = ∑ i ∈ s, c i x • L i` is `∑ i ∈ s, L i (c i f)`.
 -/
 
 public section
@@ -62,6 +64,27 @@ noncomputable section
 
 open MeasureTheory
 open scoped SchwartzMap
+
+namespace SchwartzMap
+
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedAddCommGroup G] [NormedSpace ℂ G]
+
+/-- **The pointwise product with a decomposed function.** If `A x = ∑ i ∈ s, c i x • L i` for
+scalar functions `c i` of temperate growth and operators `L i`, then multiplying a Schwartz
+function by `A` is the sum over `i ∈ s` of multiplying it by `c i` and then applying `L i`. -/
+theorem bilinLeftCLM_apply_eq_sum {ι : Type*} (s : Finset ι) {c : ι → E → ℂ}
+    (hc : ∀ i ∈ s, (c i).HasTemperateGrowth) (L : ι → F →L[ℂ] G) {A : E → F →L[ℂ] G}
+    (hA : A.HasTemperateGrowth) (hAs : ∀ x, A x = ∑ i ∈ s, c i x • L i) :
+    bilinLeftCLM (ContinuousLinearMap.apply ℂ G) hA =
+      ∑ i ∈ s, postcompCLM (L i) ∘L smulLeftCLM F (c i) := by
+  ext u x
+  simp only [bilinLeftCLM_apply, ContinuousLinearMap.apply_apply, hAs x, sum_apply, smul_apply,
+    ContinuousLinearMap.comp_apply, postcompCLM_apply]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [smulLeftCLM_apply_apply (hc i hi), map_smul]
+
+end SchwartzMap
 
 namespace TemperedDistribution
 
@@ -223,15 +246,10 @@ theorem mulLeftCLM_toTemperedDistributionCLM_eq {A : E → F →L[ℂ] G}
         𝓢(E, F)) : 𝓢'(E, F)) φ := by
     rw [← smulLeftCLM_apply_apply, smulLeftCLM_toTemperedDistributionCLM_eq]
   simp_rw [hφ, ← SchwartzMap.toTemperedDistributionCLM_postcompCLM_apply]
-  rw [← sum_apply, ← map_sum]
-  congr 2
-  ext x
-  simp only [sum_apply, SchwartzMap.postcompCLM_apply,
-    SchwartzMap.smulLeftCLM_apply_apply (hA.continuousLinearMap_comp _),
-    SchwartzMap.bilinLeftCLM_apply,
-    ContinuousLinearMap.apply_apply, map_smul]
-  rw [← b.sum_repr (A x), sum_apply]
-  simp
+  rw [← sum_apply, ← map_sum, SchwartzMap.bilinLeftCLM_apply_eq_sum Finset.univ
+    (fun k _ ↦ hA.continuousLinearMap_comp (LinearMap.toContinuousLinearMap (b.coord k))) b hA
+    fun x ↦ by simp]
+  simp only [sum_apply, ContinuousLinearMap.comp_apply]
 
 end InnerProductSpace
 
