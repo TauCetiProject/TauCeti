@@ -112,8 +112,8 @@ section Lp
 
 variable {μ : Measure ℂ}
 
-/-- The linear action of a continuous gauge preserves `Lᵖ` fields. -/
-theorem memLp_gaugeLinearAction {u : ℂ → Circle} (hu : Continuous u) {p : ENNReal}
+/-- The linear action of an almost everywhere strongly measurable gauge preserves `Lᵖ` fields. -/
+theorem memLp_gaugeLinearAction {u : ℂ → Circle} (hu : AEStronglyMeasurable u μ) {p : ENNReal}
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y p μ) :
     MemLp (gaugeLinearAction u y) p μ := by
   have h : gaugeLinearAction u y =
@@ -123,7 +123,7 @@ theorem memLp_gaugeLinearAction {u : ℂ → Circle} (hu : Continuous u) {p : EN
   refine hy.of_le ?_ (ae_of_all _ fun z ↦ (norm_gaugeLinearAction u y z).le)
   rw [h]
   exact continuous_gaugeLinearAction_uncurry.comp_aestronglyMeasurable
-    (hu.aestronglyMeasurable.prodMk hy.aestronglyMeasurable)
+    (hu.prodMk hy.aestronglyMeasurable)
 
 /-- The value of the linear gauge action at a point only depends on the value of the variation
 there, so the action respects almost everywhere equality. -/
@@ -134,7 +134,7 @@ theorem gaugeLinearAction_ae_eq (u : ℂ → Circle) {y w : ℂ → EuclideanSpa
 /-- The linear gauge action on `L²`, as a linear map. -/
 private def gaugeLpₗ (μ : Measure ℂ) (u : C(ℂ, Circle)) :
     Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ where
-  toFun f := (memLp_gaugeLinearAction u.continuous (Lp.memLp f)).toLp _
+  toFun f := (memLp_gaugeLinearAction u.continuous.aestronglyMeasurable (Lp.memLp f)).toLp _
   map_add' f g := by
     rw [← MemLp.toLp_add]
     refine MemLp.toLp_congr _ _ ((gaugeLinearAction_ae_eq u (Lp.coeFn_add f g)).trans ?_)
@@ -146,7 +146,7 @@ private def gaugeLpₗ (μ : Measure ℂ) (u : C(ℂ, Circle)) :
 
 private theorem coeFn_gaugeLpₗ (u : C(ℂ, Circle)) (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
     gaugeLpₗ μ u f =ᵐ[μ] gaugeLinearAction u f :=
-  (memLp_gaugeLinearAction u.continuous (Lp.memLp f)).coeFn_toLp
+  (memLp_gaugeLinearAction u.continuous.aestronglyMeasurable (Lp.memLp f)).coeFn_toLp
 
 private theorem gaugeLpₗ_gaugeLpₗ_inv (u : C(ℂ, Circle)) (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
     gaugeLpₗ μ u (gaugeLpₗ μ u⁻¹ f) = f := by
@@ -172,7 +172,7 @@ def gaugeLp (μ : Measure ℂ) (u : C(ℂ, Circle)) :
     change ‖gaugeLpₗ μ u f‖ = ‖f‖
     rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (coeFn_gaugeLpₗ u f),
       eLpNorm_congr_norm_ae
-      (memLp_gaugeLinearAction u.continuous (Lp.memLp f)).aestronglyMeasurable
+      (memLp_gaugeLinearAction u.continuous.aestronglyMeasurable (Lp.memLp f)).aestronglyMeasurable
       (Lp.aestronglyMeasurable f) (ae_of_all _ (norm_gaugeLinearAction u f))]
 
 theorem coeFn_gaugeLp (u : C(ℂ, Circle)) (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
