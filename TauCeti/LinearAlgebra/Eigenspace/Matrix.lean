@@ -17,7 +17,7 @@ it defines (`Matrix.spectrum_toLin'`), and the spectrum of an endomorphism of a 
 vector space with its eigenvalues (`Module.End.hasEigenvalue_iff_mem_spectrum`). This file records
 the composite in matrix language: a scalar lies in the spectrum of a matrix over a field exactly
 when the matrix has a nonzero eigenvector for it. It also records that conjugate matrices have
-eigenspaces of the same dimension.
+eigenspaces of the same dimension, and so do an endomorphism and its matrix in a basis.
 
 ## Main results
 
@@ -25,6 +25,8 @@ eigenspaces of the same dimension.
   `A *ᵥ v = μ • v` for some nonzero vector `v`.
 * `Matrix.finrank_eigenspace_toLin'_conj`: the eigenspaces of `P X P⁻¹` and of `X` have the same
   dimension.
+* `LinearMap.finrank_eigenspace_toLin'_toMatrix`: the eigenspaces of an endomorphism and of its
+  matrix in a basis have the same dimension.
 -/
 
 public section
@@ -66,3 +68,20 @@ theorem finrank_eigenspace_toLin'_conj (P : GL n R) (X : Matrix n n R) (μ : R) 
 end Conj
 
 end Matrix
+
+namespace LinearMap
+
+variable {n R M : Type*} [Fintype n] [DecidableEq n] [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- An endomorphism and its matrix in a basis have eigenspaces of the same dimension: the
+coordinates of the basis intertwine the two. -/
+theorem finrank_eigenspace_toLin'_toMatrix (b : Module.Basis n R M) (f : Module.End R M) (μ : R) :
+    Module.finrank R (Module.End.eigenspace (Matrix.toLin' (LinearMap.toMatrix b b f)) μ) =
+      Module.finrank R (Module.End.eigenspace f μ) := by
+  rw [TauCeti.eigenspace_eq_comap_of_intertwine (e := b.equivFun)
+    (g := Matrix.toLin' (LinearMap.toMatrix b b f)) (fun x ↦ by
+      rw [Matrix.toLin'_apply, Module.Basis.equivFun_apply, Module.Basis.equivFun_apply,
+        LinearMap.toMatrix_mulVec_repr]) μ,
+    Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq]
+
+end LinearMap
