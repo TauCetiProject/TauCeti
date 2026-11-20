@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.ComposableArrows.Basic
 public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.RingTheory.Length
 public import TauCeti.Algebra.Category.ModuleCat.Indecomposable
@@ -17,14 +18,16 @@ Let `M₀ → M₁ → ⋯ → Mₙ` be a chain of non-isomorphisms between inde
 length at most `b`. The **Harada–Sai lemma** says that the composite vanishes as soon as
 `n ≥ 2 ^ b - 1`. It is the basic finiteness statement of Auslander–Reiten theory: when the
 indecomposable modules over a representation-finite algebra have length at most `b`, it makes the
-`(2 ^ b - 1)`-th power of the radical of the module category vanish, and it is the first step
+`(2 ^ b - 1)`-th power of the radical of the module category vanish
+(`TauCeti.jacobsonRadicalIdeal_pow_eq_bot_of_length_le`), and it is the first step
 towards Auslander's theorem and the first Brauer–Thrall conjecture.
 
 A chain of morphisms is encoded as a functor `F : ℕ ⥤ ModuleCat A`: the morphism `i ⟶ j` of `ℕ`
 is sent to the composite `F.obj i ⟶ F.obj j`, and `F.map (homOfLE (Nat.le_add_right i 1))` is the
 `i`-th link. A sequence of morphisms `f i : M i ⟶ M (i + 1)` gives such a functor through
 Mathlib's `CategoryTheory.Functor.ofSequence`, whose value on `0 ⟶ n` is the composite of the
-first `n` links.
+first `n` links. A finite chain of `n` links is Mathlib's `CategoryTheory.ComposableArrows`, a
+functor `Fin (n + 1) ⥤ ModuleCat A` whose composite is `F.hom`.
 
 ## Main results
 
@@ -38,6 +41,8 @@ first `n` links.
 * `TauCeti.map_eq_zero_of_length_le`: **the Harada–Sai lemma**, the case `n = b` of the bound.
 * `TauCeti.ofSequence_map_eq_zero_of_length_le`: the same statement for a sequence of morphisms,
   and `TauCeti.map_op_eq_zero_of_length_le` for a descending chain.
+* `TauCeti.composableArrows_hom_eq_zero_of_length_le`: the same statement for a finite chain
+  `F : ComposableArrows (ModuleCat A) n`, continued by zero morphisms to a sequence.
 
 ## Implementation notes
 
@@ -234,6 +239,49 @@ theorem map_op_eq_zero_of_length_le {G : ℕᵒᵖ ⥤ ModuleCat.{v} A}
     subst hm
     rwa [Subsingleton.elim φ (homOfLE h)]
   exact key _ _ (by omega) h0
+
+/-- **The Harada–Sai lemma for a finite chain.** Let `F` be a chain
+`F.obj 0 ⟶ F.obj 1 ⟶ ⋯ ⟶ F.obj n` of `n` morphisms that are not isomorphisms, between
+indecomposable modules of length at most `b`. If `n ≥ 2 ^ b - 1`, its composite `F.hom` is zero. -/
+theorem composableArrows_hom_eq_zero_of_length_le {n : ℕ}
+    (F : ComposableArrows (ModuleCat.{v} A) n) (hF : ∀ i, Indecomposable (F.obj i))
+    (hlen : ∀ i, Module.length A (F.obj i) ≤ b)
+    (hf : ∀ (i : ℕ) (hi : i < n), ¬ IsIso (F.map' i (i + 1))) (hn : 2 ^ b - 1 ≤ n) :
+    F.hom = 0 := by
+  classical
+  -- Continue the chain by zero endomorphisms of its last object.
+  let g (i : ℕ) : F.obj ⟨min i n, by omega⟩ ⟶ F.obj ⟨min (i + 1) n, by omega⟩ :=
+    if i < n then F.map (homOfLE (by simp only [Fin.mk_le_mk]; omega)) else 0
+  -- A statement about a morphism of `F` transfers along equalities of its endpoints.
+  have key {a c a' c' : Fin (n + 1)} (h : a ≤ c) (h' : a' ≤ c') (ha : a = a') (hc : c = c')
+      (P : ∀ {X Y : ModuleCat.{v} A}, (X ⟶ Y) → Prop) :
+      P (F.map (homOfLE h)) ↔ P (F.map (homOfLE h')) := by
+    subst ha hc
+    rfl
+  have hg (i : ℕ) : ¬ IsIso (g i) := by
+    by_cases hi : i < n
+    · simp only [g, hi, ↓reduceIte]
+      exact fun hiso ↦ hf i hi ((key _ _ (Fin.ext (Nat.min_eq_left hi.le))
+        (Fin.ext (Nat.min_eq_left hi)) fun φ ↦ IsIso φ).mp hiso)
+    · simp only [g, hi, ↓reduceIte]
+      intro h
+      exact (hF _).1 ((Limits.IsZero.iff_id_eq_zero _).mpr
+        ((IsIso.hom_inv_id (0 : F.obj ⟨min i n, _⟩ ⟶ F.obj ⟨min (i + 1) n, _⟩)).symm.trans
+          Limits.zero_comp))
+  have hcomp (m : ℕ) (hm : m ≤ n) : (Functor.ofSequence g).map (homOfLE (Nat.zero_le m)) =
+      F.map (homOfLE (by simp only [Fin.mk_le_mk]; omega) :
+        (⟨min 0 n, by omega⟩ : Fin (n + 1)) ⟶ ⟨min m n, by omega⟩) := by
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      have hmn : m < n := by omega
+      rw [← homOfLE_comp (Nat.zero_le m) (Nat.le_succ m), Functor.map_comp, ih (by omega),
+        Functor.ofSequence_map_homOfLE_succ]
+      simp only [g, hmn, ↓reduceIte]
+      exact (F.map_comp _ _).symm
+  have h0 := ofSequence_map_eq_zero_of_length_le g (fun i ↦ hF _) (fun i ↦ hlen _) hg hn
+  rw [hcomp n le_rfl] at h0
+  exact (key _ _ (Fin.ext (Nat.zero_min n)) (Fin.ext (min_self n)) fun φ ↦ φ = 0).mp h0
 
 end Chain
 
