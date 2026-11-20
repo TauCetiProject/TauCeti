@@ -224,7 +224,8 @@ private noncomputable def toSphere (x : OnePoint ℂ) :
 private theorem bijective_toSphere : Function.Bijective toSphere := by
   refine ⟨fun x y h ↦ sphereCoords_injective ?_, fun v ↦ ?_⟩
   · simpa [toSphere] using h
-  · obtain ⟨x, hx⟩ := mem_range_sphereCoords (EuclideanSpace.toLp_mem_sphere_zero_one_iff.mp v.2)
+  · obtain ⟨x, hx⟩ := mem_range_sphereCoords (EuclideanSpace.toLp_mem_sphere_zero_one_iff.mp
+      v.property)
     exact ⟨x, Subtype.ext (by simp [toSphere, hx])⟩
 
 /-- **The Riemann sphere is the round sphere.** `sphereCoords` is a homeomorphism from `OnePoint ℂ`
@@ -252,7 +253,7 @@ theorem sphereCoords_toUnits_smul (U : unitaryGroup (Fin 2) ℂ) (x : OnePoint �
   refine pauli_injective ?_
   rw [pauli_pauliRotation_mulVec, pauli_sphereCoords, pauli_sphereCoords,
     equivProjectivization_smul, hermitianProjector_unitary_smul]
-  have hU := mem_unitaryGroup_iff.mp U.2
+  have hU := mem_unitaryGroup_iff.mp U.property
   simp only [two_mul, mul_add, add_mul, mul_sub, sub_mul, mul_one, hU, mul_assoc]
 
 end Matrix.UnitaryGroup

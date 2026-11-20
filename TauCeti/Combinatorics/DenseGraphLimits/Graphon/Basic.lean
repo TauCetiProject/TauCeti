@@ -157,9 +157,9 @@ def const (μ : Measure Ω) [IsProbabilityMeasure μ] (p : I) : Graphon Ω μ wh
   symm' _ _ := rfl
   meas' := measurable_const
   bdd' := ⟨1, fun _ _ => by
-    rw [abs_of_nonneg p.2.1]
-    exact p.2.2⟩
-  mem01' _ _ := p.2
+    rw [abs_of_nonneg p.property.1]
+    exact p.property.2⟩
+  mem01' _ _ := p.property
 
 /-- The constant graphon evaluates to its parameter at every pair of points. -/
 @[simp]

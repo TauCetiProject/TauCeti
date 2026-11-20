@@ -184,8 +184,9 @@ private theorem exteriorTwoValue_apply (α : SmoothBundleForm I F V 2)
       α.eval₂ x (VectorField.mlieBracket I X Y x) (Z x) -
       α.eval₂ x (VectorField.mlieBracket I Y Z x) (X x) -
       α.eval₂ x (VectorField.mlieBracket I Z X x) (Y x) := by
-  rw [exteriorTwoValue,
-    hom_twoFormTensor_apply cov covT α hY hZ,
+  rw [exteriorTwoValue]
+  dsimp only
+  rw [hom_twoFormTensor_apply cov covT α hY hZ,
     hom_twoFormTensor_apply cov covT α hZ hX,
     hom_twoFormTensor_apply cov covT α hX hY,
     covT.torsion_apply hX hY, covT.torsion_apply hY hZ, covT.torsion_apply hZ hX]

@@ -112,7 +112,7 @@ theorem getD_rowLens (μ : YoungDiagram) (i : ℕ) : μ.rowLens.getD i 0 = μ.ro
 decreasing. This is stated for `List.mergeSort` in the shape `simp` produces from
 `Multiset.sort` on a coerced list (via `Multiset.coe_sort` and `ge_iff_le`), making it the
 `simp` normal form for sorted row-length expressions; the public statement is
-`TauCeti.YoungDiagram.sort_coe_rowLens`. -/
+`YoungDiagram.sort_coe_rowLens`. -/
 @[simp]
 private theorem mergeSort_rowLens (μ : YoungDiagram) :
     μ.rowLens.mergeSort (fun a b => decide (b ≤ a)) = μ.rowLens :=
@@ -396,12 +396,12 @@ def transposeCellsEquiv (μ : YoungDiagram) : ↥μ.transpose.cells ≃ ↥μ.ce
 
 @[simp]
 theorem transposeCellsEquiv_apply (μ : YoungDiagram) (c : ↥μ.transpose.cells) :
-    μ.transposeCellsEquiv c = ⟨(c : ℕ × ℕ).swap, mem_transpose.mp c.2⟩ :=
+    μ.transposeCellsEquiv c = ⟨(c : ℕ × ℕ).swap, mem_transpose.mp c.property⟩ :=
   (rfl)
 
 @[simp]
 theorem transposeCellsEquiv_symm_apply (μ : YoungDiagram) (c : ↥μ.cells) :
-    μ.transposeCellsEquiv.symm c = ⟨(c : ℕ × ℕ).swap, mem_transpose.mpr c.2⟩ :=
+    μ.transposeCellsEquiv.symm c = ⟨(c : ℕ × ℕ).swap, mem_transpose.mpr c.property⟩ :=
   (rfl)
 
 end YoungDiagram

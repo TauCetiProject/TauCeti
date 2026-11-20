@@ -87,21 +87,21 @@ summand of `Subtype.val ⁻¹' S(E) ∪ π_D ⁻¹' ∅`. -/
 def bundleSphereRelCWBaseHomeomorph :
     ↥(Subtype.val ⁻¹' sphereBundle F E ∪ discBundleProj F E ⁻¹' (∅ : Set X)) ≃ₜ
       sphereBundle F E where
-  toFun x := ⟨x.1.1, x.2.elim id False.elim⟩
-  invFun s := ⟨⟨s.1, mem_discBundle.2 (mem_sphereBundle.1 s.2).le⟩, Or.inl s.2⟩
+  toFun x := ⟨x.val.val, x.property.elim id False.elim⟩
+  invFun s := ⟨⟨s.val, mem_discBundle.2 (mem_sphereBundle.1 s.property).le⟩, Or.inl s.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-  continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
+  continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+  continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
 
 theorem coe_bundleSphereRelCWBaseHomeomorph_apply
     (x : ↥(Subtype.val ⁻¹' sphereBundle F E ∪ discBundleProj F E ⁻¹' (∅ : Set X))) :
-    (bundleSphereRelCWBaseHomeomorph F E x : TotalSpace F E) = x.1.1 :=
+    (bundleSphereRelCWBaseHomeomorph F E x : TotalSpace F E) = x.val.val :=
   (rfl)
 
 theorem coe_bundleSphereRelCWBaseHomeomorph_symm_apply (s : sphereBundle F E) :
     ((bundleSphereRelCWBaseHomeomorph F E).symm s : discBundle F E) =
-      ⟨s.1, mem_discBundle.2 (mem_sphereBundle.1 s.2).le⟩ :=
+      ⟨s.val, mem_discBundle.2 (mem_sphereBundle.1 s.property).le⟩ :=
   (rfl)
 
 /-- Transport an attaching map `g : S(E) → Z` along `bundleSphereRelCWBaseHomeomorph` to the
@@ -143,9 +143,9 @@ private def liftedRelAttachingMap {Z : Type v} [TopologicalSpace Z]
     C(↥(ULift.down ⁻¹' (Subtype.val ⁻¹' sphereBundle F E ∪ discBundleProj F E ⁻¹' A) :
         Set (ULift.{v, u} (discBundle F E))),
       ULift.{u, v} Z) :=
-  ⟨fun x ↦ ULift.up (g ⟨x.1.down, x.2⟩),
+  ⟨fun x ↦ ULift.up (g ⟨x.val.down, x.property⟩),
     continuous_uliftUp.comp
-      (g.continuous.comp ((continuous_uliftDown.comp continuous_subtype_val).subtype_mk _))⟩
+      (g.continuous.comp ((continuous_uliftDown.comp continuous_subtypeVal).subtype_mk _))⟩
 
 variable {Z : Type v} [TopologicalSpace Z]
   (g : C(↥(Subtype.val ⁻¹' sphereBundle F E ∪ discBundleProj F E ⁻¹' A), Z))
@@ -185,24 +185,24 @@ private lemma bundleDiskRelAttachmentInl_apply (v : discBundle F E) :
 `bundleDiskRelAttachmentInr ∘ g`. -/
 theorem bundleDiskRelAttachmentInl_eq_inr
     (b : ↥(Subtype.val ⁻¹' sphereBundle F E ∪ discBundleProj F E ⁻¹' A)) :
-    bundleDiskRelAttachmentInl F E A hr g b.1 =
+    bundleDiskRelAttachmentInl F E A hr g b.val =
       bundleDiskRelAttachmentInr F E A hr g (g b) :=
   letI := bundleDiskSphereRelCWUlift.{u, v} F E A hr
   ConcreteCategory.congr_hom
     (pushout.condition
       (f := relCWBaseInclusion (univ : Set (ULift.{v, u} (discBundle F E))))
       (g := TopCat.ofHom (liftedRelAttachingMap F E A g)))
-    ⟨ULift.up b.1, b.2⟩
+    ⟨ULift.up b.val, b.property⟩
 
 private def bundleDiskRelAttachmentDescLeft {W : Type w} [TopologicalSpace W]
     (f : C(discBundle F E, W)) :
     TopCat.uliftFunctor.{w, max u v}.obj
         (TopCat.of (univ : Set (ULift.{v, u} (discBundle F E)))) ⟶
       TopCat.of (ULift.{max u v, w} W) :=
-  TopCat.ofHom ⟨fun x ↦ ULift.up (f ((TopCat.uliftFunctorObjHomeo _).symm x).1.down),
+  TopCat.ofHom ⟨fun x ↦ ULift.up (f ((TopCat.uliftFunctorObjHomeo _).symm x).val.down),
     continuous_uliftUp.comp (f.continuous.comp
       (continuous_uliftDown.comp
-        (continuous_subtype_val.comp (TopCat.uliftFunctorObjHomeo _).symm.continuous)))⟩
+        (continuous_subtypeVal.comp (TopCat.uliftFunctorObjHomeo _).symm.continuous)))⟩
 
 private def bundleDiskRelAttachmentDescRight {W : Type w} [TopologicalSpace W] (h : C(Z, W)) :
     TopCat.uliftFunctor.{w, max u v}.obj (TopCat.of (ULift.{u, v} Z)) ⟶
@@ -212,7 +212,7 @@ private def bundleDiskRelAttachmentDescRight {W : Type w} [TopologicalSpace W] (
       (continuous_uliftDown.comp (TopCat.uliftFunctorObjHomeo _).symm.continuous))⟩
 
 private lemma bundleDiskRelAttachmentDesc_compat {W : Type w} [TopologicalSpace W]
-    (f : C(discBundle F E, W)) (h : C(Z, W)) (hfg : ∀ b, f b.1 = h (g b)) :
+    (f : C(discBundle F E, W)) (h : C(Z, W)) (hfg : ∀ b, f b.val = h (g b)) :
     letI := bundleDiskSphereRelCWUlift.{u, v} F E A hr
     TopCat.uliftFunctor.{w, max u v}.map
         (relCWBaseInclusion (univ : Set (ULift.{v, u} (discBundle F E)))) ≫
@@ -230,23 +230,24 @@ private lemma bundleDiskRelAttachmentDesc_compat {W : Type w} [TopologicalSpace 
       (TopCat.uliftFunctor.{w, max u v}.map
           (relCWBaseInclusion (univ : Set (ULift.{v, u} (discBundle F E)))) ≫
           bundleDiskRelAttachmentDescLeft.{u, v, w} F E f) x =
-        ULift.up (f y.1.down) := by
+        ULift.up (f y.val.down) := by
     rw [ConcreteCategory.comp_apply]
-    exact congrArg (fun p : (univ : Set (ULift.{v, u} (discBundle F E))) ↦ ULift.up (f p.1.down))
+    exact congrArg (fun p : (univ : Set (ULift.{v, u} (discBundle F E))) ↦ ULift.up (f p.val.down))
       h1
   have hR :
       (TopCat.uliftFunctor.{w, max u v}.map (TopCat.ofHom (liftedRelAttachingMap F E A g)) ≫
           bundleDiskRelAttachmentDescRight.{u, v, w} h) x =
-        ULift.up (h (g ⟨y.1.down, y.2⟩)) := by
+        ULift.up (h (g ⟨y.val.down, y.property⟩)) := by
     rw [ConcreteCategory.comp_apply]
     exact congrArg (fun z : ULift.{u, v} Z ↦ ULift.up (h z.down)) h2
-  exact (congrArg ULift.down (hL.trans <| (congrArg ULift.up (hfg ⟨y.1.down, y.2⟩)).trans hR.symm))
+  exact congrArg ULift.down
+    (hL.trans <| (congrArg ULift.up (hfg ⟨y.val.down, y.property⟩)).trans hR.symm)
 
 /-- **Pushout eliminator for `bundleDiskRelAttachmentSpace`.** Compatible continuous maps out of
 `D(E)` and `Z` into a space `W` in an arbitrary universe descend uniquely to a continuous map
 `Z ∪_g D(E) → W`. -/
 def bundleDiskRelAttachmentDesc {W : Type w} [TopologicalSpace W]
-    (f : C(discBundle F E, W)) (h : C(Z, W)) (hfg : ∀ b, f b.1 = h (g b)) :
+    (f : C(discBundle F E, W)) (h : C(Z, W)) (hfg : ∀ b, f b.val = h (g b)) :
     C(bundleDiskRelAttachmentSpace F E A hr g, W) :=
   letI := bundleDiskSphereRelCWUlift.{u, v} F E A hr
   let sq := IsPushout.of_hasPushout
@@ -264,7 +265,7 @@ def bundleDiskRelAttachmentDesc {W : Type w} [TopologicalSpace W]
 
 @[simp]
 theorem bundleDiskRelAttachmentDesc_inl {W : Type w} [TopologicalSpace W]
-    (f : C(discBundle F E, W)) (h : C(Z, W)) (hfg : ∀ b, f b.1 = h (g b)) (v : discBundle F E) :
+    (f : C(discBundle F E, W)) (h : C(Z, W)) (hfg : ∀ b, f b.val = h (g b)) (v : discBundle F E) :
     bundleDiskRelAttachmentDesc F E A hr g f h hfg (bundleDiskRelAttachmentInl F E A hr g v) =
       f v := by
   let _ := bundleDiskSphereRelCWUlift.{u, v} F E A hr
@@ -289,13 +290,13 @@ theorem bundleDiskRelAttachmentDesc_inl {W : Type w} [TopologicalSpace W]
             (TopCat.of (univ : Set (ULift.{v, u} (discBundle F E))))).symm
           (TopCat.uliftFunctorObjHomeo.{w}
             (TopCat.of (univ : Set (ULift.{v, u} (discBundle F E))))
-            ⟨ULift.up v, mem_univ _⟩)).1.down :=
+            ⟨ULift.up v, mem_univ _⟩)).val.down :=
     congrArg ULift.down hcomp
   rwa [Homeomorph.symm_apply_apply] at hval
 
 @[simp]
 theorem bundleDiskRelAttachmentDesc_inr {W : Type w} [TopologicalSpace W]
-    (f : C(discBundle F E, W)) (h : C(Z, W)) (hfg : ∀ b, f b.1 = h (g b)) (z : Z) :
+    (f : C(discBundle F E, W)) (h : C(Z, W)) (hfg : ∀ b, f b.val = h (g b)) (z : Z) :
     bundleDiskRelAttachmentDesc F E A hr g f h hfg (bundleDiskRelAttachmentInr F E A hr g z) =
       h z := by
   let _ := bundleDiskSphereRelCWUlift.{u, v} F E A hr
@@ -322,14 +323,14 @@ theorem bundleDiskRelAttachmentDesc_inr {W : Type w} [TopologicalSpace W]
 
 @[simp]
 theorem bundleDiskRelAttachmentDesc_comp_inl {W : Type w} [TopologicalSpace W]
-    (f : C(discBundle F E, W)) (h : C(Z, W)) (hfg : ∀ b, f b.1 = h (g b)) :
+    (f : C(discBundle F E, W)) (h : C(Z, W)) (hfg : ∀ b, f b.val = h (g b)) :
     (bundleDiskRelAttachmentDesc F E A hr g f h hfg).comp
       (bundleDiskRelAttachmentInl F E A hr g) = f :=
   ContinuousMap.ext (bundleDiskRelAttachmentDesc_inl F E A hr g f h hfg)
 
 @[simp]
 theorem bundleDiskRelAttachmentDesc_comp_inr {W : Type w} [TopologicalSpace W]
-    (f : C(discBundle F E, W)) (h : C(Z, W)) (hfg : ∀ b, f b.1 = h (g b)) :
+    (f : C(discBundle F E, W)) (h : C(Z, W)) (hfg : ∀ b, f b.val = h (g b)) :
     (bundleDiskRelAttachmentDesc F E A hr g f h hfg).comp
       (bundleDiskRelAttachmentInr F E A hr g) = h :=
   ContinuousMap.ext (bundleDiskRelAttachmentDesc_inr F E A hr g f h hfg)
@@ -506,8 +507,8 @@ theorem openCell_bundleDiskRelAttachmentCWModel (q : ℕ)
         (thomCellDimension r q) i =
       bundleDiskRelAttachmentInl F E A hr g ''
         {v : discBundle F E |
-          v.1.proj ∈ openCell q (bundleDiskRelAttachmentCellEquiv F E A hr g q i) ∧
-            ‖v.1.2‖ < 1} := by
+          v.val.proj ∈ openCell q (bundleDiskRelAttachmentCellEquiv F E A hr g q i) ∧
+            ‖v.val.snd‖ < 1} := by
   let _ := bundleDiskRelAttachmentCWModel F E A hr g
   let _ := bundleDiskSphereRelCW F E A hr
   have heq : EqOn
@@ -604,15 +605,15 @@ private def liftedRelAttachingMapUlift
     C(↥(ULift.down ⁻¹' (Subtype.val ⁻¹' sphereBundle F E ∪ discBundleProj F E ⁻¹' A) :
         Set (ULift.{max v w, u} (discBundle F E))),
       ULift.{max u w, v} Z) :=
-  ⟨fun x ↦ ULift.up (g ⟨x.1.down, x.2⟩),
+  ⟨fun x ↦ ULift.up (g ⟨x.val.down, x.property⟩),
     continuous_uliftUp.comp
-      (g.continuous.comp ((continuous_uliftDown.comp continuous_subtype_val).subtype_mk _))⟩
+      (g.continuous.comp ((continuous_uliftDown.comp continuous_subtypeVal).subtype_mk _))⟩
 
 private lemma exists_homeomorph_bundleDiskRelAttachmentSpace_ulift
     (a : C(↥(ULift.down ⁻¹' (Subtype.val ⁻¹' sphereBundle F E ∪ discBundleProj F E ⁻¹' A) :
         Set (ULift.{max v w, u} (discBundle F E))),
       ULift.{max u w, v} Z))
-    (ha : ∀ x, a x = ULift.up (g ⟨x.1.down, x.2⟩)) :
+    (ha : ∀ x, a x = ULift.up (g ⟨x.val.down, x.property⟩)) :
     letI := bundleDiskSphereRelCWUlift.{u, max v w} F E A hr
     ∃ Φ : bundleDiskRelAttachmentSpace.{u, v} F E A hr g ≃ₜ
         relCWAdjunctionSpace (univ : Set (ULift.{max v w, u} (discBundle F E))) a,
@@ -632,19 +633,19 @@ private lemma exists_homeomorph_bundleDiskRelAttachmentSpace_ulift
   let inrBig : C(Z, relCWAdjunctionSpace
       (univ : Set (ULift.{max v w, u} (discBundle F E))) a) :=
     (pushout.inr ι (TopCat.ofHom a)).hom.comp ⟨ULift.up, continuous_uliftUp⟩
-  have hcompat : ∀ b, inlBig b.1 = inrBig (g b) := fun b ↦ by
+  have hcompat : ∀ b, inlBig b.val = inrBig (g b) := fun b ↦ by
     have hc := ConcreteCategory.congr_hom (pushout.condition (f := ι) (g := TopCat.ofHom a))
-      ⟨ULift.up b.1, b.2⟩
+      ⟨ULift.up b.val, b.property⟩
     rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hc
-    exact hc.trans (congrArg (pushout.inr ι (TopCat.ofHom a)) (ha ⟨ULift.up b.1, b.2⟩))
+    exact hc.trans (congrArg (pushout.inr ι (TopCat.ofHom a)) (ha ⟨ULift.up b.val, b.property⟩))
   let toF : C(bundleDiskRelAttachmentSpace.{u, v} F E A hr g,
       relCWAdjunctionSpace (univ : Set (ULift.{max v w, u} (discBundle F E))) a) :=
     bundleDiskRelAttachmentDesc F E A hr g inlBig inrBig hcompat
   let invL : TopCat.of (univ : Set (ULift.{max v w, u} (discBundle F E))) ⟶
       TopCat.of (ULift.{w, max u v} (bundleDiskRelAttachmentSpace.{u, v} F E A hr g)) :=
-    TopCat.ofHom ⟨fun x ↦ ULift.up (bundleDiskRelAttachmentInl F E A hr g x.1.down),
+    TopCat.ofHom ⟨fun x ↦ ULift.up (bundleDiskRelAttachmentInl F E A hr g x.val.down),
       continuous_uliftUp.comp ((bundleDiskRelAttachmentInl F E A hr g).continuous.comp
-        (continuous_uliftDown.comp continuous_subtype_val))⟩
+        (continuous_uliftDown.comp continuous_subtypeVal))⟩
   let invR : TopCat.of (ULift.{max u w, v} Z) ⟶
       TopCat.of (ULift.{w, max u v} (bundleDiskRelAttachmentSpace.{u, v} F E A hr g)) :=
     TopCat.ofHom ⟨fun z ↦ ULift.up (bundleDiskRelAttachmentInr F E A hr g z.down),
@@ -653,7 +654,7 @@ private lemma exists_homeomorph_bundleDiskRelAttachmentSpace_ulift
   have hinv : ι ≫ invL = TopCat.ofHom a ≫ invR := by
     ext x
     simp only [ConcreteCategory.comp_apply, TopCat.hom_ofHom, ContinuousMap.coe_mk, invL, invR, ha]
-    exact bundleDiskRelAttachmentInl_eq_inr F E A hr g ⟨x.1.down, x.2⟩
+    exact bundleDiskRelAttachmentInl_eq_inr F E A hr g ⟨x.val.down, x.property⟩
   let invUp : relCWAdjunctionSpace (univ : Set (ULift.{max v w, u} (discBundle F E))) a ⟶
       TopCat.of (ULift.{w, max u v} (bundleDiskRelAttachmentSpace.{u, v} F E A hr g)) :=
     pushout.desc invL invR hinv
@@ -712,12 +713,13 @@ theorem exists_homotopyEquiv_bundleDiskRelAttachmentSpace {Z' : Type w} [Topolog
       ∀ z', H.symm (bundleDiskRelAttachmentInr F E A hr (e.toFun.comp g) z') =
         bundleDiskRelAttachmentInr F E A hr g (e.symm z') := by
   let _ := bundleDiskSphereRelCWUlift.{u, max v w} F E A hr
-  have hgW : ∀ x, liftedRelAttachingMapUlift.{u, v, w} F E A g x = ULift.up (g ⟨x.1.down, x.2⟩) :=
+  have hgW : ∀ x,
+      liftedRelAttachingMapUlift.{u, v, w} F E A g x = ULift.up (g ⟨x.val.down, x.property⟩) :=
     fun _ ↦ rfl
   have hegW : ∀ x,
       ((e.uliftCongr.{max u w, max u v}).toFun.comp
           (liftedRelAttachingMapUlift.{u, v, w} F E A g)) x =
-        ULift.up ((e.toFun.comp g) ⟨x.1.down, x.2⟩) :=
+        ULift.up ((e.toFun.comp g) ⟨x.val.down, x.property⟩) :=
     fun x ↦ e.uliftCongr_apply.{max u w, max u v} _
   obtain ⟨Hw, hHw, hHwsymm⟩ :=
     (e.uliftCongr.{max u w, max u v}).exists_homotopyEquiv_relCWAdjunctionSpace
@@ -767,7 +769,7 @@ def bundleDiskAttachmentInl : C(discBundle F E, bundleDiskAttachmentSpace F E hr
 /-- On the unit sphere bundle `S(E)`, `bundleDiskAttachmentInl` glues each vector `s` to `g s` in
 `Z`. -/
 theorem bundleDiskAttachmentInl_sphere (s : sphereBundle F E) :
-    bundleDiskAttachmentInl F E hr g ⟨s.1, mem_discBundle.2 (mem_sphereBundle.1 s.2).le⟩ =
+    bundleDiskAttachmentInl F E hr g ⟨s.val, mem_discBundle.2 (mem_sphereBundle.1 s.property).le⟩ =
       bundleDiskAttachmentInr F E hr g (g s) :=
   bundleDiskRelAttachmentInl_eq_inr F E (∅ : Set X) hr (bundleSphereBaseAttachingMap F E g)
     ((bundleSphereRelCWBaseHomeomorph F E).symm s)
@@ -778,7 +780,7 @@ uniquely to a continuous map `Z ∪_g D(E) → W`. -/
 def bundleDiskAttachmentDesc {W : Type w} [TopologicalSpace W]
     (f : C(discBundle F E, W)) (h : C(Z, W))
     (hfg : ∀ s : sphereBundle F E,
-      f ⟨s.1, mem_discBundle.2 (mem_sphereBundle.1 s.2).le⟩ = h (g s)) :
+      f ⟨s.val, mem_discBundle.2 (mem_sphereBundle.1 s.property).le⟩ = h (g s)) :
     C(bundleDiskAttachmentSpace F E hr g, W) :=
   bundleDiskRelAttachmentDesc F E (∅ : Set X) hr (bundleSphereBaseAttachingMap F E g) f h fun b ↦
     hfg (bundleSphereRelCWBaseHomeomorph F E b)
@@ -787,7 +789,7 @@ def bundleDiskAttachmentDesc {W : Type w} [TopologicalSpace W]
 theorem bundleDiskAttachmentDesc_inl {W : Type w} [TopologicalSpace W]
     (f : C(discBundle F E, W)) (h : C(Z, W))
     (hfg : ∀ s : sphereBundle F E,
-      f ⟨s.1, mem_discBundle.2 (mem_sphereBundle.1 s.2).le⟩ = h (g s))
+      f ⟨s.val, mem_discBundle.2 (mem_sphereBundle.1 s.property).le⟩ = h (g s))
     (v : discBundle F E) :
     bundleDiskAttachmentDesc F E hr g f h hfg (bundleDiskAttachmentInl F E hr g v) = f v :=
   bundleDiskRelAttachmentDesc_inl F E (∅ : Set X) hr (bundleSphereBaseAttachingMap F E g) f h _ v
@@ -796,7 +798,7 @@ theorem bundleDiskAttachmentDesc_inl {W : Type w} [TopologicalSpace W]
 theorem bundleDiskAttachmentDesc_inr {W : Type w} [TopologicalSpace W]
     (f : C(discBundle F E, W)) (h : C(Z, W))
     (hfg : ∀ s : sphereBundle F E,
-      f ⟨s.1, mem_discBundle.2 (mem_sphereBundle.1 s.2).le⟩ = h (g s))
+      f ⟨s.val, mem_discBundle.2 (mem_sphereBundle.1 s.property).le⟩ = h (g s))
     (z : Z) :
     bundleDiskAttachmentDesc F E hr g f h hfg (bundleDiskAttachmentInr F E hr g z) = h z :=
   bundleDiskRelAttachmentDesc_inr F E (∅ : Set X) hr (bundleSphereBaseAttachingMap F E g) f h _ z
@@ -805,7 +807,7 @@ theorem bundleDiskAttachmentDesc_inr {W : Type w} [TopologicalSpace W]
 theorem bundleDiskAttachmentDesc_comp_inl {W : Type w} [TopologicalSpace W]
     (f : C(discBundle F E, W)) (h : C(Z, W))
     (hfg : ∀ s : sphereBundle F E,
-      f ⟨s.1, mem_discBundle.2 (mem_sphereBundle.1 s.2).le⟩ = h (g s)) :
+      f ⟨s.val, mem_discBundle.2 (mem_sphereBundle.1 s.property).le⟩ = h (g s)) :
     (bundleDiskAttachmentDesc F E hr g f h hfg).comp (bundleDiskAttachmentInl F E hr g) = f :=
   ContinuousMap.ext (bundleDiskAttachmentDesc_inl F E hr g f h hfg)
 
@@ -813,7 +815,7 @@ theorem bundleDiskAttachmentDesc_comp_inl {W : Type w} [TopologicalSpace W]
 theorem bundleDiskAttachmentDesc_comp_inr {W : Type w} [TopologicalSpace W]
     (f : C(discBundle F E, W)) (h : C(Z, W))
     (hfg : ∀ s : sphereBundle F E,
-      f ⟨s.1, mem_discBundle.2 (mem_sphereBundle.1 s.2).le⟩ = h (g s)) :
+      f ⟨s.val, mem_discBundle.2 (mem_sphereBundle.1 s.property).le⟩ = h (g s)) :
     (bundleDiskAttachmentDesc F E hr g f h hfg).comp (bundleDiskAttachmentInr F E hr g) = h :=
   ContinuousMap.ext (bundleDiskAttachmentDesc_inr F E hr g f h hfg)
 
@@ -922,8 +924,9 @@ theorem openCell_bundleDiskAttachmentCWModel (q : ℕ)
         (thomCellDimension r q) i =
       bundleDiskAttachmentInl F E hr g ''
         {v : discBundle F E |
-          v.1.proj ∈ openCell (C := (univ : Set X)) q (bundleDiskAttachmentCellEquiv F E hr g q i) ∧
-            ‖v.1.2‖ < 1} :=
+          v.val.proj ∈
+              openCell (C := (univ : Set X)) q (bundleDiskAttachmentCellEquiv F E hr g q i) ∧
+            ‖v.val.snd‖ < 1} :=
   openCell_bundleDiskRelAttachmentCWModel F E (∅ : Set X) hr
     (bundleSphereBaseAttachingMap F E g) q i
 

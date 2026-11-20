@@ -172,8 +172,8 @@ theorem contMDiffAt_cappedWeight {F G N : Type*} [NormedAddCommGroup F] [NormedS
     (contDiffAt_const.mul (q.contDiffAt_re_endCoord hq)).contMDiffAt.comp y₀ hf
   -- Products of real functions are scalar products.
   simp only [cappedWeight_def]
-  exact (hβ.contMDiffAt.comp y₀ hr).smul ((contMDiffAt_smoothTransition_endCoord_comp q 1 hf
-    hq).smul (hβ.contMDiffAt.comp y₀ ((hL.add contMDiffAt_const).sub hσ)))
+  exact (hβ.contMDiffAt.comp y₀ hr).smul ((contMDiffAt_smoothTransition_endCoord_comp q hf
+    contMDiffAt_const hq).smul (hβ.contMDiffAt.comp y₀ ((hL.add contMDiffAt_const).sub hσ)))
 
 end Weight
 

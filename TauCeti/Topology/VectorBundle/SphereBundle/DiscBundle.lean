@@ -66,20 +66,21 @@ def discBundle (e : Trivialization F (π F E))
     (he : ∀ b ∈ e.baseSet, ∀ v : E b, ‖(e ⟨b, v⟩).2‖ = ‖v‖) :
     Trivialization (closedBall (0 : F) 1) (discBundleProj F E) where
   toFun v := (discBundleProj F E v,
-    if hb : v.1.proj ∈ e.baseSet then
-      ⟨(e v.1).2,
-        mem_closedBall_zero_iff.2 ((he v.1.proj hb v.1.2).trans_le (mem_discBundle.1 v.2))⟩
+    if hb : v.val.proj ∈ e.baseSet then
+      ⟨(e v.val).2,
+        mem_closedBall_zero_iff.2
+          ((he v.val.proj hb v.val.snd).trans_le (mem_discBundle.1 v.property))⟩
     else ⟨0, mem_closedBall_self zero_le_one⟩)
   invFun p :=
     if hb : p.1 ∈ e.baseSet then
-      ⟨e.toOpenPartialHomeomorph.symm (p.1, p.2.1), by
-        have hproj : (e.toOpenPartialHomeomorph.symm (p.1, p.2.1)).proj = p.1 :=
+      ⟨e.toOpenPartialHomeomorph.symm (p.1, p.2.val), by
+        have hproj : (e.toOpenPartialHomeomorph.symm (p.1, p.2.val)).proj = p.1 :=
           e.proj_symm_apply' hb
-        have happ : e (e.toOpenPartialHomeomorph.symm (p.1, p.2.1)) = (p.1, p.2.1) :=
+        have happ : e (e.toOpenPartialHomeomorph.symm (p.1, p.2.val)) = (p.1, p.2.val) :=
           e.apply_symm_apply (e.mem_target.2 hb)
-        have hiso := he _ (hproj.symm ▸ hb) (e.toOpenPartialHomeomorph.symm (p.1, p.2.1)).2
+        have hiso := he _ (hproj.symm ▸ hb) (e.toOpenPartialHomeomorph.symm (p.1, p.2.val)).snd
         rw [mem_discBundle, ← hiso, happ]
-        exact mem_closedBall_zero_iff.1 p.2.2⟩
+        exact mem_closedBall_zero_iff.1 p.2.property⟩
     else ⟨TotalSpace.mk' F p.1 0, by simp⟩
   source := discBundleProj F E ⁻¹' e.baseSet
   target := e.baseSet ×ˢ univ
@@ -109,7 +110,7 @@ def discBundle (e : Trivialization F (π F E))
     refine (discBundleProj F E).continuous.continuousOn.prodMk ?_
     rw [Topology.IsInducing.subtypeVal.continuousOn_iff]
     refine (continuous_snd.comp_continuousOn <|
-      e.continuousOn.comp continuous_subtype_val.continuousOn fun v hv ↦
+      e.continuousOn.comp continuous_subtypeVal.continuousOn fun v hv ↦
         e.mem_source.2 (by simpa only [mem_preimage, discBundleProj_apply] using hv)).congr
       fun v hv ↦ ?_
     have hv' : (v : TotalSpace F E).proj ∈ e.baseSet := by
@@ -119,7 +120,7 @@ def discBundle (e : Trivialization F (π F E))
   continuousOn_invFun := by
     rw [Topology.IsInducing.subtypeVal.continuousOn_iff]
     refine (e.toOpenPartialHomeomorph.continuousOn_symm.comp
-      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)).continuousOn
+      (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd)).continuousOn
       fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ e.mem_target.2 hp.1).congr fun p hp ↦ ?_
     dsimp only [Function.comp_apply]
     rw [dite_eq_left hp.1]
@@ -140,7 +141,7 @@ open Classical in
 theorem coe_discBundle_apply_snd (e : Trivialization F (π F E))
     (he : ∀ b ∈ e.baseSet, ∀ v : E b, ‖(e ⟨b, v⟩).2‖ = ‖v‖)
     {v : TauCeti.discBundle F E} (hv : (v : TotalSpace F E).proj ∈ e.baseSet) :
-    ((e.discBundle he v).2 : F) = (e v.1).2 := by
+    ((e.discBundle he v).2 : F) = (e v.val).2 := by
   simp [discBundle, hv]
 
 open Classical in
@@ -150,7 +151,7 @@ theorem coe_discBundle_symm_apply (e : Trivialization F (π F E))
     (he : ∀ b ∈ e.baseSet, ∀ v : E b, ‖(e ⟨b, v⟩).2‖ = ‖v‖)
     {b : B} (hb : b ∈ e.baseSet) (w : closedBall (0 : F) 1) :
     ((e.discBundle he).toOpenPartialHomeomorph.symm (b, w) : TotalSpace F E) =
-      e.toOpenPartialHomeomorph.symm (b, w.1) := by
+      e.toOpenPartialHomeomorph.symm (b, w.val) := by
   simp [discBundle, hb]
 
 end Bundle.Trivialization
@@ -192,7 +193,7 @@ variable {B : Type*} (F₁ F₂ : Type*) {E₁ : B → Type*} {E₂ : B → Type
 /-- Radial rescaling of a family of fibrewise linear equivalences `Φ b : E₁ b ≃L[ℝ] E₂ b`: sends
 `v` over `b` to `(‖v‖ / ‖Φ b v‖) • Φ b v` (which is `0` when `v = 0`). -/
 def radialBundleMap (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b) (v : TotalSpace F₁ E₁) : TotalSpace F₂ E₂ :=
-  TotalSpace.mk' F₂ v.proj ((‖v.2‖ / ‖Φ v.proj v.2‖) • Φ v.proj v.2)
+  TotalSpace.mk' F₂ v.proj ((‖v.snd‖ / ‖Φ v.proj v.snd‖) • Φ v.proj v.snd)
 
 @[simp]
 theorem radialBundleMap_mk (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b) (b : B) (u : E₁ b) :
@@ -211,7 +212,7 @@ theorem radialBundleMap_zero (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b) (b : B) :
 /-- Radial rescaling preserves the fibre norm identically. -/
 @[simp]
 theorem norm_radialBundleMap (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b) (v : TotalSpace F₁ E₁) :
-    ‖(radialBundleMap F₁ F₂ Φ v).2‖ = ‖v.2‖ := by
+    ‖(radialBundleMap F₁ F₂ Φ v).snd‖ = ‖v.snd‖ := by
   rcases v with ⟨b, u⟩
   rw [radialBundleMap_mk]
   dsimp only
@@ -258,30 +259,31 @@ omit [TopologicalSpace F₁] in
 /-- Near any base point `b₀`, the radial distortion `‖u‖ / ‖Φ b u‖` is uniformly bounded on fibres
 over a neighbourhood of `b₀`. -/
 private lemma exists_nhds_radial_ratio_le [FiniteDimensional ℝ F₂] (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b)
-    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.2‖)
-    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.2‖)
-    (hΦ_symm : Continuous fun w : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.2))
+    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.snd‖)
+    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.snd‖)
+    (hΦ_symm : Continuous fun w : TotalSpace F₂ E₂ ↦
+      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.snd))
     (b₀ : B) :
     ∃ U ∈ 𝓝 b₀, ∃ C : ℝ, 0 ≤ C ∧ ∀ (b : B), b ∈ U → ∀ u : E₁ b, ‖u‖ / ‖Φ b u‖ ≤ C := by
   let e₂ := trivializationAt F₂ E₂ b₀
   have hb₀ : b₀ ∈ e₂.baseSet := mem_baseSet_trivializationAt F₂ E₂ b₀
   let g : e₂.baseSet × sphere (0 : F₂) 1 → TotalSpace F₂ E₂ :=
-    fun q ↦ TotalSpace.mk' F₂ q.1.1 (e₂.symmL ℝ q.1.1 q.2.1)
+    fun q ↦ TotalSpace.mk' F₂ q.1.val (e₂.symmL ℝ q.1.val q.2.val)
   have hg : Continuous g :=
     (e₂.continuousOn_symm.comp_continuous
-      ((continuous_subtype_val.comp continuous_fst).prodMk
-        (continuous_subtype_val.comp continuous_snd))
-      fun q ↦ ⟨q.1.2, mem_univ _⟩).congr fun q ↦ by simp [g]
-  let φ₁ : e₂.baseSet × sphere (0 : F₂) 1 → ℝ := fun q ↦ ‖(Φ q.1.1).symm (g q).2‖
-  let φ₂ : e₂.baseSet × sphere (0 : F₂) 1 → ℝ := fun q ↦ ‖(g q).2‖
+      ((continuous_subtypeVal.comp continuous_fst).prodMk
+        (continuous_subtypeVal.comp continuous_snd))
+      fun q ↦ ⟨q.1.property, mem_univ _⟩).congr fun q ↦ by simp [g]
+  let φ₁ : e₂.baseSet × sphere (0 : F₂) 1 → ℝ := fun q ↦ ‖(Φ q.1.val).symm (g q).snd‖
+  let φ₂ : e₂.baseSet × sphere (0 : F₂) 1 → ℝ := fun q ↦ ‖(g q).snd‖
   have hφ₁ : Continuous φ₁ := hnorm₁.comp (hΦ_symm.comp hg)
   have hφ₂ : Continuous φ₂ := hnorm₂.comp hg
   have hφ₂_pos (y : sphere (0 : F₂) 1) : 0 < φ₂ (⟨b₀, hb₀⟩, y) := by
     refine norm_pos_iff.2 fun h0 ↦ ?_
     dsimp only [φ₂, g] at h0
     have hy : (y : F₂) = 0 := by
-      rw [← e₂.continuousLinearMapAt_symmL (R := ℝ) hb₀ y.1, h0, map_zero]
-    have hmem := y.2
+      rw [← e₂.continuousLinearMapAt_symmL (R := ℝ) hb₀ y.val, h0, map_zero]
+    have hmem := y.property
     rw [mem_sphere_zero_iff_norm, hy, norm_zero] at hmem
     exact zero_ne_one hmem
   have : CompactSpace (sphere (0 : F₂) 1) := isCompact_iff_compactSpace.1 (isCompact_sphere 0 1)
@@ -303,7 +305,7 @@ private lemma exists_nhds_radial_ratio_le [FiniteDimensional ℝ F₂] (Φ : ∀
     exact (div_lt_iff₀ (hφ₂_pos y)).1 (hle.trans_lt ((le_max_left M 0).trans_lt (lt_add_one _)))
   obtain ⟨V, W, hVo, -, hb₀V, hKW, hVW⟩ := generalized_tube_lemma isCompact_singleton isCompact_univ
     (isOpen_lt hφ₁ (continuous_const.mul hφ₂)) hKC
-  refine ⟨Subtype.val '' V, (e₂.open_baseSet.isOpenMap_subtype_val V hVo).mem_nhds
+  refine ⟨Subtype.val '' V, (e₂.open_baseSet.isOpenMap_subtypeVal V hVo).mem_nhds
     ⟨⟨b₀, hb₀⟩, hb₀V (mem_singleton _), rfl⟩, C, hC₀, ?_⟩
   rintro _ ⟨⟨b, hb⟩, hbV, rfl⟩ u
   by_cases hu : u = 0
@@ -315,7 +317,7 @@ private lemma exists_nhds_radial_ratio_le [FiniteDimensional ℝ F₂] (Φ : ∀
     have hz : z ≠ 0 := fun hz0 ↦ hw (by rw [← hzw, hz0, map_zero])
     let y : sphere (0 : F₂) 1 := ⟨‖z‖⁻¹ • z, by simp [norm_smul, norm_ne_zero_iff.2 hz]⟩
     have hlt : φ₁ (⟨b, hb⟩, y) < C * φ₂ (⟨b, hb⟩, y) := hVW ⟨hbV, hKW (mem_univ y)⟩
-    have hgy : (g (⟨b, hb⟩, y)).2 = ‖z‖⁻¹ • w := by simp [g, y, map_smul, hzw]
+    have hgy : (g (⟨b, hb⟩, y)).snd = ‖z‖⁻¹ • w := by simp [g, y, map_smul, hzw]
     have hΦw : (Φ b).symm w = u := (Φ b).symm_apply_apply u
     have hpos_z : 0 < ‖z‖⁻¹ := inv_pos.2 (norm_pos_iff.2 hz)
     simp only [φ₁, φ₂, hgy, map_smul, hΦw, norm_smul, Real.norm_of_nonneg hpos_z.le] at hlt
@@ -327,11 +329,11 @@ private lemma exists_nhds_radial_ratio_le [FiniteDimensional ℝ F₂] (Φ : ∀
 norms and `F₂` is finite-dimensional. -/
 theorem continuous_radialBundleMap [FiberBundle F₁ E₁] [FiniteDimensional ℝ F₂]
     (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b)
-    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.2‖)
-    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.2‖)
-    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.2))
+    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.snd‖)
+    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.snd‖)
+    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.snd))
     (hΦ_symm : Continuous fun w : TotalSpace F₂ E₂ ↦
-      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.2)) :
+      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.snd)) :
     Continuous (radialBundleMap F₁ F₂ Φ) := by
   refine continuous_iff_continuousAt.2 fun v₀ ↦ ?_
   obtain ⟨U, hU, C, -, hbound⟩ :=
@@ -341,13 +343,13 @@ theorem continuous_radialBundleMap [FiberBundle F₁ E₁] [FiniteDimensional �
   have hWo : IsOpen W := hVo.preimage (FiberBundle.continuous_proj F₁ E₁)
   have hsub : Continuous (W.domRestrict (radialBundleMap F₁ F₂ Φ)) := by
     refine Continuous.smul_totalSpace_of_norm_le (C := C)
-      (φ := fun v : W ↦ TotalSpace.mk' F₂ v.1.proj (Φ v.1.proj v.1.2))
-      (c := fun v : W ↦ ‖v.1.2‖ / ‖Φ v.1.proj v.1.2‖) (hΦ.comp continuous_subtype_val)
+      (φ := fun v : W ↦ TotalSpace.mk' F₂ v.val.proj (Φ v.val.proj v.val.snd))
+      (c := fun v : W ↦ ‖v.val.snd‖ / ‖Φ v.val.proj v.val.snd‖) (hΦ.comp continuous_subtypeVal)
       (fun v ↦ ?_) (fun v hv ↦ ?_)
     · rw [Real.norm_of_nonneg (by positivity)]
-      exact hbound v.1.proj (hVU v.2) v.1.2
-    · exact (hnorm₁.comp continuous_subtype_val).continuousAt.div
-        (hnorm₂.comp (hΦ.comp continuous_subtype_val)).continuousAt (norm_ne_zero_iff.2 hv)
+      exact hbound v.val.proj (hVU v.property) v.val.snd
+    · exact (hnorm₁.comp continuous_subtypeVal).continuousAt.div
+        (hnorm₂.comp (hΦ.comp continuous_subtypeVal)).continuousAt (norm_ne_zero_iff.2 hv)
   exact (continuousOn_iff_continuous_domRestrict.2 hsub).continuousAt (hWo.mem_nhds hb₀V)
 
 end Continuity
@@ -368,11 +370,11 @@ radial rescaling `v ↦ (‖v‖ / ‖Φ v‖) • Φ v` is a homeomorphism `Tot
 covering the identity of `B` and preserving norms on every fibre. -/
 def radialBundleHomeomorph [FiniteDimensional ℝ F₁] [FiniteDimensional ℝ F₂]
     (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b)
-    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.2‖)
-    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.2‖)
-    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.2))
+    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.snd‖)
+    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.snd‖)
+    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.snd))
     (hΦ_symm : Continuous fun w : TotalSpace F₂ E₂ ↦
-      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.2)) :
+      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.snd)) :
     TotalSpace F₁ E₁ ≃ₜ TotalSpace F₂ E₂ where
   toFun := radialBundleMap F₁ F₂ Φ
   invFun := radialBundleMap F₂ F₁ fun b ↦ (Φ b).symm
@@ -385,11 +387,11 @@ def radialBundleHomeomorph [FiniteDimensional ℝ F₁] [FiniteDimensional ℝ F
 @[simp]
 theorem radialBundleHomeomorph_apply [FiniteDimensional ℝ F₁] [FiniteDimensional ℝ F₂]
     (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b)
-    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.2‖)
-    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.2‖)
-    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.2))
+    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.snd‖)
+    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.snd‖)
+    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.snd))
     (hΦ_symm : Continuous fun w : TotalSpace F₂ E₂ ↦
-      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.2))
+      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.snd))
     (v : TotalSpace F₁ E₁) :
     radialBundleHomeomorph F₁ F₂ Φ hnorm₁ hnorm₂ hΦ hΦ_symm v = radialBundleMap F₁ F₂ Φ v :=
   (rfl)
@@ -397,11 +399,11 @@ theorem radialBundleHomeomorph_apply [FiniteDimensional ℝ F₁] [FiniteDimensi
 @[simp]
 theorem radialBundleHomeomorph_symm_apply [FiniteDimensional ℝ F₁] [FiniteDimensional ℝ F₂]
     (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b)
-    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.2‖)
-    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.2‖)
-    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.2))
+    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.snd‖)
+    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.snd‖)
+    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.snd))
     (hΦ_symm : Continuous fun w : TotalSpace F₂ E₂ ↦
-      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.2))
+      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.snd))
     (w : TotalSpace F₂ E₂) :
     (radialBundleHomeomorph F₁ F₂ Φ hnorm₁ hnorm₂ hΦ hΦ_symm).symm w =
       radialBundleMap F₂ F₁ (fun b ↦ (Φ b).symm) w :=
@@ -424,70 +426,70 @@ variable {B : Type w} [TopologicalSpace B]
 /-- **Metric-change radial homeomorphism of unit disc bundles.** -/
 def discBundleRadialHomeomorph [FiniteDimensional ℝ F₁] [FiniteDimensional ℝ F₂]
     (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b)
-    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.2‖)
-    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.2‖)
-    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.2))
+    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.snd‖)
+    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.snd‖)
+    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.snd))
     (hΦ_symm : Continuous fun w : TotalSpace F₂ E₂ ↦
-      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.2)) :
+      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.snd)) :
     discBundle F₁ E₁ ≃ₜ discBundle F₂ E₂ :=
   (radialBundleHomeomorph F₁ F₂ Φ hnorm₁ hnorm₂ hΦ hΦ_symm).subtype fun v ↦ by simp
 
 @[simp]
 theorem coe_discBundleRadialHomeomorph_apply [FiniteDimensional ℝ F₁] [FiniteDimensional ℝ F₂]
     (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b)
-    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.2‖)
-    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.2‖)
-    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.2))
+    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.snd‖)
+    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.snd‖)
+    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.snd))
     (hΦ_symm : Continuous fun w : TotalSpace F₂ E₂ ↦
-      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.2))
+      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.snd))
     (v : discBundle F₁ E₁) :
     (discBundleRadialHomeomorph F₁ F₂ Φ hnorm₁ hnorm₂ hΦ hΦ_symm v : TotalSpace F₂ E₂) =
-      radialBundleMap F₁ F₂ Φ v.1 :=
+      radialBundleMap F₁ F₂ Φ v.val :=
   (rfl)
 
 @[simp]
 theorem coe_discBundleRadialHomeomorph_symm_apply [FiniteDimensional ℝ F₁] [FiniteDimensional ℝ F₂]
     (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b)
-    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.2‖)
-    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.2‖)
-    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.2))
+    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.snd‖)
+    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.snd‖)
+    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.snd))
     (hΦ_symm : Continuous fun w : TotalSpace F₂ E₂ ↦
-      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.2))
+      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.snd))
     (w : discBundle F₂ E₂) :
     ((discBundleRadialHomeomorph F₁ F₂ Φ hnorm₁ hnorm₂ hΦ hΦ_symm).symm w : TotalSpace F₁ E₁) =
-      radialBundleMap F₂ F₁ (fun b ↦ (Φ b).symm) w.1 :=
+      radialBundleMap F₂ F₁ (fun b ↦ (Φ b).symm) w.val :=
   (rfl)
 
 omit [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [FiberBundle F₁ E₁] [VectorBundle ℝ F₁ E₁] in
 private lemma continuous_radialBundleMap_sphere (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b)
-    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.2‖)
-    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.2‖)
-    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.2)) :
-    Continuous fun v : sphereBundle F₁ E₁ ↦ radialBundleMap F₁ F₂ Φ v.1 := by
+    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.snd‖)
+    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.snd‖)
+    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.snd)) :
+    Continuous fun v : sphereBundle F₁ E₁ ↦ radialBundleMap F₁ F₂ Φ v.val := by
   have hΦ' : Continuous fun v : sphereBundle F₁ E₁ ↦
-      TotalSpace.mk' F₂ v.1.proj (Φ v.1.proj v.1.2) := hΦ.comp continuous_subtype_val
+      TotalSpace.mk' F₂ v.val.proj (Φ v.val.proj v.val.snd) := hΦ.comp continuous_subtypeVal
   refine Continuous.smul_totalSpace ?_ hΦ'
-  exact (hnorm₁.comp continuous_subtype_val).div (hnorm₂.comp hΦ') fun v ↦
-    norm_ne_zero_iff.2 <| (map_ne_zero_iff _ (Φ v.1.proj).injective).2 <|
-      norm_ne_zero_iff.1 ((mem_sphereBundle.1 v.2).symm ▸ one_ne_zero)
+  exact (hnorm₁.comp continuous_subtypeVal).div (hnorm₂.comp hΦ') fun v ↦
+    norm_ne_zero_iff.2 <| (map_ne_zero_iff _ (Φ v.val.proj).injective).2 <|
+      norm_ne_zero_iff.1 ((mem_sphereBundle.1 v.property).symm ▸ one_ne_zero)
 
 -- Unlike `discBundleRadialHomeomorph`, vectors on `sphereBundle` stay away from the zero section,
 -- so continuity holds without `FiniteDimensional` and does not factor via `radialBundleHomeomorph`.
 /-- **Metric-change radial homeomorphism of unit sphere bundles.** Holds in arbitrary rank (no
 `FiniteDimensional` hypothesis is needed since unit vectors stay away from the zero section). -/
 def sphereBundleRadialHomeomorph (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b)
-    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.2‖)
-    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.2‖)
-    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.2))
+    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.snd‖)
+    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.snd‖)
+    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.snd))
     (hΦ_symm : Continuous fun w : TotalSpace F₂ E₂ ↦
-      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.2)) :
+      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.snd)) :
     sphereBundle F₁ E₁ ≃ₜ sphereBundle F₂ E₂ where
-  toFun v := ⟨radialBundleMap F₁ F₂ Φ v.1,
-    mem_sphereBundle.2 ((norm_radialBundleMap F₁ F₂ Φ v.1).trans (mem_sphereBundle.1 v.2))⟩
-  invFun w := ⟨radialBundleMap F₂ F₁ (fun b ↦ (Φ b).symm) w.1,
-    mem_sphereBundle.2 ((norm_radialBundleMap F₂ F₁ _ w.1).trans (mem_sphereBundle.1 w.2))⟩
-  left_inv v := Subtype.ext (radialBundleMap_symm_radialBundleMap F₁ F₂ Φ v.1)
-  right_inv w := Subtype.ext (radialBundleMap_symm_radialBundleMap F₂ F₁ (fun b ↦ (Φ b).symm) w.1)
+  toFun v := ⟨radialBundleMap F₁ F₂ Φ v.val,
+    mem_sphereBundle.2 ((norm_radialBundleMap F₁ F₂ Φ v.val).trans (mem_sphereBundle.1 v.property))⟩
+  invFun w := ⟨radialBundleMap F₂ F₁ (fun b ↦ (Φ b).symm) w.val,
+    mem_sphereBundle.2 ((norm_radialBundleMap F₂ F₁ _ w.val).trans (mem_sphereBundle.1 w.property))⟩
+  left_inv v := Subtype.ext (radialBundleMap_symm_radialBundleMap F₁ F₂ Φ v.val)
+  right_inv w := Subtype.ext (radialBundleMap_symm_radialBundleMap F₂ F₁ (fun b ↦ (Φ b).symm) w.val)
   continuous_toFun := (continuous_radialBundleMap_sphere F₁ F₂ Φ hnorm₁ hnorm₂ hΦ).subtype_mk _
   continuous_invFun :=
     (continuous_radialBundleMap_sphere F₂ F₁ (fun b ↦ (Φ b).symm) hnorm₂ hnorm₁
@@ -495,26 +497,26 @@ def sphereBundleRadialHomeomorph (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b)
 
 @[simp]
 theorem coe_sphereBundleRadialHomeomorph_apply (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b)
-    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.2‖)
-    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.2‖)
-    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.2))
+    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.snd‖)
+    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.snd‖)
+    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.snd))
     (hΦ_symm : Continuous fun w : TotalSpace F₂ E₂ ↦
-      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.2))
+      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.snd))
     (v : sphereBundle F₁ E₁) :
     (sphereBundleRadialHomeomorph F₁ F₂ Φ hnorm₁ hnorm₂ hΦ hΦ_symm v : TotalSpace F₂ E₂) =
-      radialBundleMap F₁ F₂ Φ v.1 :=
+      radialBundleMap F₁ F₂ Φ v.val :=
   (rfl)
 
 @[simp]
 theorem coe_sphereBundleRadialHomeomorph_symm_apply (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ b)
-    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.2‖)
-    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.2‖)
-    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.2))
+    (hnorm₁ : Continuous fun v : TotalSpace F₁ E₁ ↦ ‖v.snd‖)
+    (hnorm₂ : Continuous fun w : TotalSpace F₂ E₂ ↦ ‖w.snd‖)
+    (hΦ : Continuous fun v : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ v.proj (Φ v.proj v.snd))
     (hΦ_symm : Continuous fun w : TotalSpace F₂ E₂ ↦
-      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.2))
+      TotalSpace.mk' F₁ w.proj ((Φ w.proj).symm w.snd))
     (w : sphereBundle F₂ E₂) :
     ((sphereBundleRadialHomeomorph F₁ F₂ Φ hnorm₁ hnorm₂ hΦ hΦ_symm).symm w : TotalSpace F₁ E₁) =
-      radialBundleMap F₂ F₁ (fun b ↦ (Φ b).symm) w.1 :=
+      radialBundleMap F₂ F₁ (fun b ↦ (Φ b).symm) w.val :=
   (rfl)
 
 end Subbundles

@@ -117,7 +117,7 @@ private lemma bundleCoordIso_mem_sphere_iff {q r n : ℕ} (hqr : thomCellDimensi
 continuous map `D^q → X`. -/
 private def baseCellContMap {C D : Set X} [RelCWComplex C D] {q : ℕ} (j : cell C q) :
     C(closedBall (0 : Fin q → ℝ) 1, X) :=
-  ⟨fun u ↦ map q j u.1, (continuousOn q j).comp_continuous continuous_subtype_val Subtype.prop⟩
+  ⟨fun u ↦ map q j u.val, (continuousOn q j).comp_continuous continuous_subtypeVal Subtype.prop⟩
 
 private lemma exists_pullback_trivialization {C D : Set X} [RelCWComplex C D] {q : ℕ}
     (j : cell C q) :
@@ -154,7 +154,7 @@ private lemma cellPullbackHomeomorph_symm_apply {C D : Set X} [RelCWComplex C D]
 private lemma lift_cellPullbackHomeomorph_symm {C D : Set X} [RelCWComplex C D] {q : ℕ}
     (j : cell C q) (u : closedBall (0 : Fin q → ℝ) 1) (y : F) :
     Pullback.lift (baseCellContMap j) ((cellPullbackHomeomorph F E j).symm (u, y)) =
-      ⟨map q j u.1, (cellPullbackFrame F E j u).symm y⟩ := by
+      ⟨map q j u.val, (cellPullbackFrame F E j u).symm y⟩ := by
   rw [cellPullbackHomeomorph_symm_apply]
   rfl
 
@@ -163,13 +163,13 @@ omit [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   [FiberBundle F E] [VectorBundle ℝ F E] [IsContinuousRiemannianBundle F E] in
 private lemma norm_lift_snd {C D : Set X} [RelCWComplex C D] {q : ℕ} (j : cell C q)
     (z : TotalSpace F ((baseCellContMap j : _ → X) *ᵖ E)) :
-    ‖(Pullback.lift (baseCellContMap j) z).2‖ = ‖z.2‖ := by
+    ‖(Pullback.lift (baseCellContMap j) z).snd‖ = ‖z.snd‖ := by
   rcases z with ⟨_, _⟩
   rfl
 
 private lemma norm_cellPullbackHomeomorph_symm_snd {C D : Set X} [RelCWComplex C D] {q : ℕ}
     (j : cell C q) (u : closedBall (0 : Fin q → ℝ) 1) (y : F) :
-    ‖((cellPullbackHomeomorph F E j).symm (u, y)).2‖ = ‖y‖ := by
+    ‖((cellPullbackHomeomorph F E j).symm (u, y)).snd‖ = ‖y‖ := by
   rw [cellPullbackHomeomorph_symm_apply]
   exact (cellPullbackFrame F E j u).symm.norm_map y
 
@@ -178,10 +178,10 @@ private def cellProdMap {C D : Set X} [RelCWComplex C D] {q r : ℕ} (hr : Modul
     (j : cell C q) (p : closedBall (0 : Fin q → ℝ) 1 × closedBall (0 : Fin r → ℝ) 1) :
     discBundle F E :=
   ⟨Pullback.lift (baseCellContMap j)
-      ((cellPullbackHomeomorph F E j).symm (p.1, fiberRadialHomeomorph F hr p.2.1)), by
+      ((cellPullbackHomeomorph F E j).symm (p.1, fiberRadialHomeomorph F hr p.2.val)), by
     rw [mem_discBundle, norm_lift_snd, norm_cellPullbackHomeomorph_symm_snd,
       norm_fiberRadialHomeomorph_le_one_iff]
-    exact mem_closedBall_zero_iff.1 p.2.2⟩
+    exact mem_closedBall_zero_iff.1 p.2.property⟩
 
 private lemma continuous_cellProdMap {C D : Set X} [RelCWComplex C D] {q r : ℕ}
     (hr : Module.finrank ℝ F = r) (j : cell C q) :
@@ -190,42 +190,42 @@ private lemma continuous_cellProdMap {C D : Set X} [RelCWComplex C D] {q r : ℕ
     (cellPullbackHomeomorph F E j).symm.continuous.comp <|
       continuous_fst.prodMk
         ((fiberRadialHomeomorph F hr).continuous.comp
-          (continuous_subtype_val.comp continuous_snd)))).subtype_mk _
+          (continuous_subtypeVal.comp continuous_snd)))).subtype_mk _
 
 private lemma cellProdMap_proj {C D : Set X} [RelCWComplex C D] {q r : ℕ}
     (hr : Module.finrank ℝ F = r) (j : cell C q)
     (p : closedBall (0 : Fin q → ℝ) 1 × closedBall (0 : Fin r → ℝ) 1) :
-    (cellProdMap F E hr j p : TotalSpace F E).proj = map q j p.1.1 := by
+    (cellProdMap F E hr j p : TotalSpace F E).proj = map q j p.1.val := by
   dsimp only [cellProdMap]
   rw [lift_cellPullbackHomeomorph_symm]
 
 private lemma norm_cellProdMap_snd {C D : Set X} [RelCWComplex C D] {q r : ℕ}
     (hr : Module.finrank ℝ F = r) (j : cell C q)
     (p : closedBall (0 : Fin q → ℝ) 1 × closedBall (0 : Fin r → ℝ) 1) :
-    ‖(cellProdMap F E hr j p : TotalSpace F E).2‖ = ‖fiberRadialHomeomorph F hr p.2.1‖ :=
+    ‖(cellProdMap F E hr j p : TotalSpace F E).snd‖ = ‖fiberRadialHomeomorph F hr p.2.val‖ :=
   (norm_lift_snd F E j _).trans (norm_cellPullbackHomeomorph_symm_snd F E j _ _)
 
 /-- Lift `v ∈ D(E)` with `v.proj = map q j u` to the pullback `(baseCellContMap j)* E`. -/
 private def pullbackPointOfEq {C D : Set X} [RelCWComplex C D] {q : ℕ} (j : cell C q)
     (u : closedBall (0 : Fin q → ℝ) 1) (v : discBundle F E)
-    (hproj : map q j u.1 = v.1.proj) :
+    (hproj : map q j u.val = v.val.proj) :
     TotalSpace F ((baseCellContMap j : _ → X) *ᵖ E) :=
-  ⟨u, cast (congrArg E hproj.symm) v.1.2⟩
+  ⟨u, cast (congrArg E hproj.symm) v.val.snd⟩
 
 omit [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   [TopologicalSpace (TotalSpace F E)] [∀ x, InnerProductSpace ℝ (E x)]
   [FiberBundle F E] [VectorBundle ℝ F E] [IsContinuousRiemannianBundle F E] in
 private lemma lift_pullbackPointOfEq {C D : Set X} [RelCWComplex C D] {q : ℕ} (j : cell C q)
-    (u : closedBall (0 : Fin q → ℝ) 1) (v : discBundle F E) (hproj : map q j u.1 = v.1.proj) :
-    Pullback.lift (baseCellContMap j) (pullbackPointOfEq F E j u v hproj) = v.1 := by
+    (u : closedBall (0 : Fin q → ℝ) 1) (v : discBundle F E) (hproj : map q j u.val = v.val.proj) :
+    Pullback.lift (baseCellContMap j) (pullbackPointOfEq F E j u v hproj) = v.val := by
   rcases v with ⟨⟨b, val⟩, _⟩
   dsimp only at hproj
   subst hproj
   rfl
 
 private lemma norm_pullbackPointOfEq {C D : Set X} [RelCWComplex C D] {q : ℕ} (j : cell C q)
-    (u : closedBall (0 : Fin q → ℝ) 1) (v : discBundle F E) (hproj : map q j u.1 = v.1.proj) :
-    ‖(cellPullbackHomeomorph F E j (pullbackPointOfEq F E j u v hproj)).2‖ = ‖v.1.2‖ := by
+    (u : closedBall (0 : Fin q → ℝ) 1) (v : discBundle F E) (hproj : map q j u.val = v.val.proj) :
+    ‖(cellPullbackHomeomorph F E j (pullbackPointOfEq F E j u v hproj)).2‖ = ‖v.val.snd‖ := by
   dsimp only [pullbackPointOfEq]
   rw [cellPullbackHomeomorph_apply, LinearIsometryEquiv.norm_map]
   rcases v with ⟨⟨b, val⟩, _⟩
@@ -236,26 +236,26 @@ private lemma norm_pullbackPointOfEq {C D : Set X} [RelCWComplex C D] {q : ℕ} 
 /-- Explicit cube coordinates in `D^{q + r}` lifting `(u, v)` with `map q j u = v.proj`. -/
 private def bundleCellPreimage {C D : Set X} [RelCWComplex C D] {q r n : ℕ}
     (hr : Module.finrank ℝ F = r) (hqr : thomCellDimension r q = n) (j : cell C q)
-    (u : closedBall (0 : Fin q → ℝ) 1) (v : discBundle F E) (hproj : map q j u.1 = v.1.proj) :
+    (u : closedBall (0 : Fin q → ℝ) 1) (v : discBundle F E) (hproj : map q j u.val = v.val.proj) :
     Fin n → ℝ :=
   (bundleCoordIso hqr).symm
-    (u.1, (fiberRadialHomeomorph F hr).symm
+    (u.val, (fiberRadialHomeomorph F hr).symm
       (cellPullbackHomeomorph F E j (pullbackPointOfEq F E j u v hproj)).2)
 
 private lemma bundleCellPreimage_mem_closedBall {C D : Set X} [RelCWComplex C D] {q r n : ℕ}
     (hr : Module.finrank ℝ F = r) (hqr : thomCellDimension r q = n) (j : cell C q)
-    (u : closedBall (0 : Fin q → ℝ) 1) (v : discBundle F E) (hproj : map q j u.1 = v.1.proj) :
+    (u : closedBall (0 : Fin q → ℝ) 1) (v : discBundle F E) (hproj : map q j u.val = v.val.proj) :
     bundleCellPreimage F E hr hqr j u v hproj ∈ closedBall (0 : Fin n → ℝ) 1 := by
   rw [bundleCoordIso_mem_closedBall_iff hqr, bundleCellPreimage, IsometryEquiv.apply_symm_apply]
-  refine ⟨u.2, mem_closedBall_zero_iff.2 ?_⟩
+  refine ⟨u.property, mem_closedBall_zero_iff.2 ?_⟩
   rw [norm_fiberRadialHomeomorph_symm_le_one_iff, norm_pullbackPointOfEq]
-  exact mem_discBundle.1 v.2
+  exact mem_discBundle.1 v.property
 
 /-- Evaluating `cellProdMap` at the coordinates `bundleCellPreimage F E hr hqr j u v hproj`
 recovers `v`. -/
 private lemma cellProdMap_bundleCellPreimage {C D : Set X} [RelCWComplex C D] {q r n : ℕ}
     (hr : Module.finrank ℝ F = r) (hqr : thomCellDimension r q = n) (j : cell C q)
-    (u : closedBall (0 : Fin q → ℝ) 1) (v : discBundle F E) (hproj : map q j u.1 = v.1.proj)
+    (u : closedBall (0 : Fin q → ℝ) 1) (v : discBundle F E) (hproj : map q j u.val = v.val.proj)
     (hxc : bundleCellPreimage F E hr hqr j u v hproj ∈ closedBall (0 : Fin n → ℝ) 1) :
     cellProdMap F E hr j
       (⟨(bundleCoordIso hqr (bundleCellPreimage F E hr hqr j u v hproj)).1,
@@ -288,20 +288,20 @@ private lemma bundleCellPreimage_cellProdMap {C D : Set X} [RelCWComplex C D] {q
     let v₀ := cellProdMap F E hr j
       (⟨(bundleCoordIso hqr x).1, (bundleCoordIso_mem_closedBall_iff hqr).1 hxc |>.1⟩,
         ⟨(bundleCoordIso hqr x).2, (bundleCoordIso_mem_closedBall_iff hqr).1 hxc |>.2⟩)
-    ∀ (hv₀_t : v₀.1.proj ∈ (map q j).target),
+    ∀ (hv₀_t : v₀.val.proj ∈ (map q j).target),
       bundleCellPreimage F E hr hqr j
-        ⟨(map q j).symm v₀.1.proj,
+        ⟨(map q j).symm v₀.val.proj,
           ball_subset_closedBall ((source_eq q j) ▸ (map q j).map_target hv₀_t)⟩
         v₀ ((map q j).right_inv hv₀_t) = x := by
   intro hxc v₀ hv₀_t
   obtain ⟨hx₁, -⟩ := (bundleCoordIso_mem_ball_iff hqr).1 hx
-  have hv₀_proj : v₀.1.proj = map q j (bundleCoordIso hqr x).1 := cellProdMap_proj F E hr j _
-  have hu_eq : (map q j).symm v₀.1.proj = (bundleCoordIso hqr x).1 := by
+  have hv₀_proj : v₀.val.proj = map q j (bundleCoordIso hqr x).1 := cellProdMap_proj F E hr j _
+  have hu_eq : (map q j).symm v₀.val.proj = (bundleCoordIso hqr x).1 := by
     rw [hv₀_proj]
     exact (map q j).left_inv ((source_eq q j).symm ▸ hx₁)
   have hpt_eq :
       pullbackPointOfEq F E j
-          ⟨(map q j).symm v₀.1.proj,
+          ⟨(map q j).symm v₀.val.proj,
             ball_subset_closedBall ((source_eq q j) ▸ (map q j).map_target hv₀_t)⟩
           v₀ ((map q j).right_inv hv₀_t) =
         (cellPullbackHomeomorph F E j).symm
@@ -331,14 +331,14 @@ private def bundleCellMap {C D : Set X} [RelCWComplex C D] {r n : ℕ}
           cellProdMap F E hr j
             (⟨0, mem_closedBall_self zero_le_one⟩, ⟨0, mem_closedBall_self zero_le_one⟩)
       invFun v :=
-        if hv : v.1.proj ∈ (map q j).target then
+        if hv : v.val.proj ∈ (map q j).target then
           bundleCellPreimage F E hr hqr j
-            ⟨(map q j).symm v.1.proj,
+            ⟨(map q j).symm v.val.proj,
               mem_closedBall.2 (mem_ball.1 ((source_eq q j) ▸ (map q j).map_target hv)).le⟩
             v ((map q j).right_inv hv)
         else 0
       source := ball (0 : Fin n → ℝ) 1
-      target := {v : discBundle F E | v.1.proj ∈ (map q j).target ∧ ‖v.1.2‖ < 1}
+      target := {v : discBundle F E | v.val.proj ∈ (map q j).target ∧ ‖v.val.snd‖ < 1}
       map_source' x hx := by
         have hxc : x ∈ closedBall (0 : Fin n → ℝ) 1 := ball_subset_closedBall hx
         obtain ⟨hx₁, hx₂⟩ := (bundleCoordIso_mem_ball_iff hqr).1 hx
@@ -346,7 +346,7 @@ private def bundleCellMap {C D : Set X} [RelCWComplex C D] {r n : ℕ}
         · rw [dite_eq_left hxc, cellProdMap_proj]
           exact (map q j).map_source ((source_eq q j).symm ▸ hx₁)
         · refine lt_of_eq_of_lt
-            ((congrArg (fun v : discBundle F E ↦ ‖v.1.2‖) (dite_eq_left hxc)).trans
+            ((congrArg (fun v : discBundle F E ↦ ‖v.val.snd‖) (dite_eq_left hxc)).trans
               (norm_cellProdMap_snd F E hr j _)) ?_
           exact (norm_fiberRadialHomeomorph_lt_one_iff hr).2 (mem_ball_zero_iff.1 hx₂)
       map_target' v hv := by
@@ -370,7 +370,7 @@ private def bundleCellMap {C D : Set X} [RelCWComplex C D] {r n : ℕ}
       right_inv' v hv := by
         rw [dite_eq_left hv.1]
         have hxc := bundleCellPreimage_mem_closedBall F E hr hqr j
-          ⟨(map q j).symm v.1.proj,
+          ⟨(map q j).symm v.val.proj,
             mem_closedBall.2 (mem_ball.1 ((source_eq q j) ▸ (map q j).map_target hv.1)).le⟩
           v ((map q j).right_inv hv.1)
         rw [dite_eq_left hxc]
@@ -386,10 +386,10 @@ private lemma bundleCellMap_apply_of_mem_closedBall {C D : Set X} [RelCWComplex 
 
 private lemma bundleCellMap_symm_apply_of_mem_target {C D : Set X} [RelCWComplex C D] {q r n : ℕ}
     (hr : Module.finrank ℝ F = r) (hqr : thomCellDimension r q = n) (j : cell C q)
-    {v : discBundle F E} (hv : v.1.proj ∈ (map q j).target) :
+    {v : discBundle F E} (hv : v.val.proj ∈ (map q j).target) :
     (bundleCellMap F E hr ⟨q, hqr, j⟩).symm v =
       bundleCellPreimage F E hr hqr j
-        ⟨(map q j).symm v.1.proj,
+        ⟨(map q j).symm v.val.proj,
           ball_subset_closedBall ((source_eq q j) ▸ (map q j).map_target hv)⟩
         v ((map q j).right_inv hv) := by
   simp only [bundleCellMap, PartialEquiv.coe_symm_mk, dite_eq_left hv]
@@ -400,52 +400,52 @@ private lemma continuousOn_bundleCellMap {C D : Set X} [RelCWComplex C D] {r n :
   rcases c with ⟨q, hqr, j⟩
   rw [continuousOn_iff_continuous_domRestrict]
   have hpair : Continuous (fun x : closedBall (0 : Fin n → ℝ) 1 ↦
-      ((⟨(bundleCoordIso hqr x.1).1, (bundleCoordIso_mem_closedBall_iff hqr).1 x.2 |>.1⟩ :
+      ((⟨(bundleCoordIso hqr x.val).1, (bundleCoordIso_mem_closedBall_iff hqr).1 x.property |>.1⟩ :
           closedBall (0 : Fin q → ℝ) 1),
-        (⟨(bundleCoordIso hqr x.1).2, (bundleCoordIso_mem_closedBall_iff hqr).1 x.2 |>.2⟩ :
+        (⟨(bundleCoordIso hqr x.val).2, (bundleCoordIso_mem_closedBall_iff hqr).1 x.property |>.2⟩ :
           closedBall (0 : Fin r → ℝ) 1))) :=
-    ((continuous_fst.comp ((bundleCoordIso hqr).continuous.comp continuous_subtype_val)).subtype_mk
+    ((continuous_fst.comp ((bundleCoordIso hqr).continuous.comp continuous_subtypeVal)).subtype_mk
       _).prodMk
       ((continuous_snd.comp
-        ((bundleCoordIso hqr).continuous.comp continuous_subtype_val)).subtype_mk _)
+        ((bundleCoordIso hqr).continuous.comp continuous_subtypeVal)).subtype_mk _)
   exact ((continuous_cellProdMap F E hr j).comp hpair).congr fun x ↦
-    (bundleCellMap_apply_of_mem_closedBall F E hr hqr j x.2).symm
+    (bundleCellMap_apply_of_mem_closedBall F E hr hqr j x.property).symm
 
 private lemma continuousOn_bundleCellMap_symm {C D : Set X} [RelCWComplex C D] {r n : ℕ}
     (hr : Module.finrank ℝ F = r) (c : BundleCell C r n) :
     ContinuousOn (bundleCellMap F E hr c).symm (bundleCellMap F E hr c).target := by
   rcases c with ⟨q, hqr, j⟩
   rw [continuousOn_iff_continuous_domRestrict]
-  let S : Set (discBundle F E) := {v | v.1.proj ∈ (map q j).target ∧ ‖v.1.2‖ < 1}
-  have hu : Continuous fun v : S ↦ (map q j).symm v.1.1.proj :=
+  let S : Set (discBundle F E) := {v | v.val.proj ∈ (map q j).target ∧ ‖v.val.snd‖ < 1}
+  have hu : Continuous fun v : S ↦ (map q j).symm v.val.val.proj :=
     continuousOn_iff_continuous_domRestrict.1 <|
       (continuousOn_symm q j).comp
-        ((FiberBundle.continuous_proj F E).comp continuous_subtype_val).continuousOn
+        ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal).continuousOn
         fun _ (hv : _ ∈ S) ↦ hv.1
   let g : S → TotalSpace F ((baseCellContMap j : _ → X) *ᵖ E) := fun v ↦
     pullbackPointOfEq F E j
-      ⟨(map q j).symm v.1.1.proj,
-        ball_subset_closedBall ((source_eq q j) ▸ (map q j).map_target v.2.1)⟩
-      v.1 ((map q j).right_inv v.2.1)
+      ⟨(map q j).symm v.val.val.proj,
+        ball_subset_closedBall ((source_eq q j) ▸ (map q j).map_target v.property.1)⟩
+      v.val ((map q j).right_inv v.property.1)
   have hg : Continuous g := by
     rw [Bundle.Pullback.continuous_iff]
     refine ⟨hu.subtype_mk _, ?_⟩
-    exact (continuous_subtype_val.comp continuous_subtype_val).congr fun v ↦
-      (lift_pullbackPointOfEq F E j _ v.1 _).symm
+    exact (continuous_subtypeVal.comp continuous_subtypeVal).congr fun v ↦
+      (lift_pullbackPointOfEq F E j _ v.val _).symm
   have hmain : Continuous fun v : S ↦
       bundleCellPreimage F E hr hqr j
-        ⟨(map q j).symm v.1.1.proj,
-          ball_subset_closedBall ((source_eq q j) ▸ (map q j).map_target v.2.1)⟩
-        v.1 ((map q j).right_inv v.2.1) :=
+        ⟨(map q j).symm v.val.val.proj,
+          ball_subset_closedBall ((source_eq q j) ▸ (map q j).map_target v.property.1)⟩
+        v.val ((map q j).right_inv v.property.1) :=
     (bundleCoordIso hqr).symm.continuous.comp <|
       hu.prodMk ((fiberRadialHomeomorph F hr).symm.continuous.comp
         (continuous_snd.comp ((cellPullbackHomeomorph F E j).continuous.comp hg)))
-  exact hmain.congr fun v ↦ (bundleCellMap_symm_apply_of_mem_target F E hr hqr j v.2.1).symm
+  exact hmain.congr fun v ↦ (bundleCellMap_symm_apply_of_mem_target F E hr hqr j v.property.1).symm
 
 private lemma image_ball_bundleCellMap {C D : Set X} [RelCWComplex C D] {q r n : ℕ}
     (hr : Module.finrank ℝ F = r) (hqr : thomCellDimension r q = n) (j : cell C q) :
     bundleCellMap F E hr ⟨q, hqr, j⟩ '' ball 0 1 =
-      {v : discBundle F E | v.1.proj ∈ openCell q j ∧ ‖v.1.2‖ < 1} := by
+      {v : discBundle F E | v.val.proj ∈ openCell q j ∧ ‖v.val.snd‖ < 1} := by
   have hsrc : (bundleCellMap F E hr ⟨q, hqr, j⟩).source = ball 0 1 := rfl
   have hopen : (map q j).target = openCell q j := by
     rw [← (map q j).image_source_eq_target, source_eq, openCell]
@@ -454,7 +454,7 @@ private lemma image_ball_bundleCellMap {C D : Set X} [RelCWComplex C D] {q r n :
 
 private lemma bundleCellMap_bundleCellPreimage {C D : Set X} [RelCWComplex C D] {q r n : ℕ}
     (hr : Module.finrank ℝ F = r) (hqr : thomCellDimension r q = n) (j : cell C q)
-    (u : closedBall (0 : Fin q → ℝ) 1) (v : discBundle F E) (hproj : map q j u.1 = v.1.proj) :
+    (u : closedBall (0 : Fin q → ℝ) 1) (v : discBundle F E) (hproj : map q j u.val = v.val.proj) :
     bundleCellMap F E hr ⟨q, hqr, j⟩ (bundleCellPreimage F E hr hqr j u v hproj) = v := by
   have hxc := bundleCellPreimage_mem_closedBall F E hr hqr j u v hproj
   rw [bundleCellMap_apply_of_mem_closedBall F E hr hqr j hxc]
@@ -505,7 +505,7 @@ private lemma image_sphere_bundleCellMap {C D : Set X} [RelCWComplex C D] {q r n
       rw [bundleCoordIso_mem_sphere_iff hqr, bundleCellPreimage, IsometryEquiv.apply_symm_apply]
       refine Or.inl ⟨hu, mem_closedBall_zero_iff.2 ?_⟩
       rw [norm_fiberRadialHomeomorph_symm_le_one_iff, norm_pullbackPointOfEq]
-      exact mem_discBundle.1 v.2
+      exact mem_discBundle.1 v.property
     · rw [discBundleProj_apply] at hmap
       let u' : closedBall (0 : Fin q → ℝ) 1 := ⟨u, hu⟩
       refine ⟨bundleCellPreimage F E hr hqr j u' v hmap, ?_,
@@ -601,8 +601,7 @@ def bundleDiskSphereRelCWOver (C : Set X) {D : Set X} [RelCWComplex C D] {r : �
       exact hbase.inter ((RelCWComplex.isClosedBase (C := C)).preimage
         (discBundleProj F E).continuous)
   isClosedBase :=
-    (((isClosed_sphereBundle F E (continuous_norm_bundle F E)).preimage
-      continuous_subtype_val).inter
+    (((isClosed_sphereBundle F E).preimage continuous_subtypeVal).inter
       ((RelCWComplex.isClosed (C := C)).preimage (discBundleProj F E).continuous)).union
       ((RelCWComplex.isClosedBase (C := C)).preimage (discBundleProj F E).continuous)
   union' := by
@@ -694,30 +693,30 @@ theorem exists_orthonormal_trivialization_map_bundleDiskSphereRelCWOver (q : ℕ
       (thomCellDimension r q)) :
     let j := bundleDiskSphereCellEquivOver F E C hr q c
     let f : C(closedBall (0 : Fin q → ℝ) 1, X) :=
-      ⟨fun u ↦ map q j u.1,
-        (continuousOn q j).comp_continuous continuous_subtype_val Subtype.prop⟩
+      ⟨fun u ↦ map q j u.val,
+        (continuousOn q j).comp_continuous continuous_subtypeVal Subtype.prop⟩
     ∃ (h : TotalSpace F ((f : _ → X) *ᵖ E) ≃ₜ closedBall (0 : Fin q → ℝ) 1 × F)
       (L : ∀ u : closedBall (0 : Fin q → ℝ) 1, ((f : _ → X) *ᵖ E) u ≃ₗᵢ[ℝ] F),
       (∀ (u : closedBall (0 : Fin q → ℝ) 1) (v : ((f : _ → X) *ᵖ E) u), h ⟨u, v⟩ = (u, L u v)) ∧
       ∀ (u : closedBall (0 : Fin q → ℝ) 1) (w : closedBall (0 : Fin r → ℝ) 1),
         (@RelCWComplex.map _ _ _ _ (bundleDiskSphereRelCWOver F E C hr)
             (thomCellDimension r q) c
-            (Fin.appendIsometryOfEq (thomCellDimension_def r q).symm (u.1, w.1)) :
+            (Fin.appendIsometryOfEq (thomCellDimension_def r q).symm (u.val, w.val)) :
           TotalSpace F E) =
-          ⟨map q j u.1, (L u).symm (fiberRadialHomeomorph F hr w.1)⟩ := by
+          ⟨map q j u.val, (L u).symm (fiberRadialHomeomorph F hr w.val)⟩ := by
   rcases c with ⟨q', hq', j⟩
   obtain rfl := thomCellDimension_injective r hq'
   refine ⟨cellPullbackHomeomorph F E j, cellPullbackFrame F E j,
     cellPullbackHomeomorph_apply F E j, fun u w ↦ ?_⟩
-  have hmem : Fin.appendIsometryOfEq (thomCellDimension_def r q').symm (u.1, w.1) ∈
+  have hmem : Fin.appendIsometryOfEq (thomCellDimension_def r q').symm (u.val, w.val) ∈
       closedBall 0 1 := by
     rw [bundleCoordIso_mem_closedBall_iff (rfl : thomCellDimension r q' = _)]
     simp only [bundleCoordIso, IsometryEquiv.symm_apply_apply]
-    exact ⟨u.2, w.2⟩
+    exact ⟨u.property, w.property⟩
   rw [map_bundleDiskSphereRelCWOver, bundleCellMap_apply_of_mem_closedBall F E hr rfl j hmem]
   dsimp only [cellProdMap]
   simp only [bundleCoordIso, IsometryEquiv.symm_apply_apply, Subtype.coe_eta]
-  exact lift_cellPullbackHomeomorph_symm F E j u (fiberRadialHomeomorph F hr w.1)
+  exact lift_cellPullbackHomeomorph_symm F E j u (fiberRadialHomeomorph F hr w.val)
 
 /-- On the closed `(q + r)`-cube, the bundle projection of the characteristic map of
 `bundleDiskSphereRelCWOver` is the base characteristic map evaluated on the first `q`
@@ -742,7 +741,7 @@ theorem norm_map_bundleDiskSphereRelCWOver (q : ℕ)
     (c : @RelCWComplex.cell _ _ _ _ (bundleDiskSphereRelCWOver F E C hr) (thomCellDimension r q))
     {x : Fin (thomCellDimension r q) → ℝ} (hx : x ∈ closedBall 0 1) :
     ‖(@RelCWComplex.map _ _ _ _ (bundleDiskSphereRelCWOver F E C hr)
-        (thomCellDimension r q) c x : TotalSpace F E).2‖ =
+        (thomCellDimension r q) c x : TotalSpace F E).snd‖ =
       ‖fiberRadialHomeomorph F hr
         ((Fin.appendIsometryOfEq (thomCellDimension_def r q).symm).symm x).2‖ := by
   rcases c with ⟨q', hq', j⟩
@@ -757,7 +756,8 @@ theorem openCell_bundleDiskSphereRelCWOver (q : ℕ)
     (c : @RelCWComplex.cell _ _ _ _ (bundleDiskSphereRelCWOver F E C hr) (thomCellDimension r q)) :
     @RelCWComplex.openCell _ _ _ _ (bundleDiskSphereRelCWOver F E C hr) (thomCellDimension r q) c =
       {v : discBundle F E |
-        v.1.proj ∈ openCell q (bundleDiskSphereCellEquivOver F E C hr q c) ∧ ‖v.1.2‖ < 1} := by
+        v.val.proj ∈ openCell q (bundleDiskSphereCellEquivOver F E C hr q c) ∧
+          ‖v.val.snd‖ < 1} := by
   rcases c with ⟨q', hq', j⟩
   obtain rfl := thomCellDimension_injective r hq'
   exact image_ball_bundleCellMap F E hr rfl j
@@ -861,17 +861,17 @@ theorem exists_orthonormal_trivialization_map_bundleDiskSphereRelCW (q : ℕ)
     (c : @RelCWComplex.cell _ _ _ _ (bundleDiskSphereRelCW F E A hr) (thomCellDimension r q)) :
     let j := bundleDiskSphereCellEquiv F E A hr q c
     let f : C(closedBall (0 : Fin q → ℝ) 1, X) :=
-      ⟨fun u ↦ map q j u.1,
-        (continuousOn q j).comp_continuous continuous_subtype_val Subtype.prop⟩
+      ⟨fun u ↦ map q j u.val,
+        (continuousOn q j).comp_continuous continuous_subtypeVal Subtype.prop⟩
     ∃ (h : TotalSpace F ((f : _ → X) *ᵖ E) ≃ₜ closedBall (0 : Fin q → ℝ) 1 × F)
       (L : ∀ u : closedBall (0 : Fin q → ℝ) 1, ((f : _ → X) *ᵖ E) u ≃ₗᵢ[ℝ] F),
       (∀ (u : closedBall (0 : Fin q → ℝ) 1) (v : ((f : _ → X) *ᵖ E) u), h ⟨u, v⟩ = (u, L u v)) ∧
       ∀ (u : closedBall (0 : Fin q → ℝ) 1) (w : closedBall (0 : Fin r → ℝ) 1),
         (@RelCWComplex.map _ _ _ _ (bundleDiskSphereRelCW F E A hr)
             (thomCellDimension r q) c
-            (Fin.appendIsometryOfEq (thomCellDimension_def r q).symm (u.1, w.1)) :
+            (Fin.appendIsometryOfEq (thomCellDimension_def r q).symm (u.val, w.val)) :
           TotalSpace F E) =
-          ⟨map q j u.1, (L u).symm (fiberRadialHomeomorph F hr w.1)⟩ := by
+          ⟨map q j u.val, (L u).symm (fiberRadialHomeomorph F hr w.val)⟩ := by
   obtain ⟨h, L, hL, hmap⟩ :=
     exists_orthonormal_trivialization_map_bundleDiskSphereRelCWOver F E (univ : Set X) hr q
       ((bundleDiskSphereRelCWOver F E (univ : Set X) (D := A) hr).copyCellEquiv univ _
@@ -900,7 +900,7 @@ theorem norm_map_bundleDiskSphereRelCW (q : ℕ)
     (c : @RelCWComplex.cell _ _ _ _ (bundleDiskSphereRelCW F E A hr) (thomCellDimension r q))
     {x : Fin (thomCellDimension r q) → ℝ} (hx : x ∈ closedBall 0 1) :
     ‖(@RelCWComplex.map _ _ _ _ (bundleDiskSphereRelCW F E A hr)
-        (thomCellDimension r q) c x : TotalSpace F E).2‖ =
+        (thomCellDimension r q) c x : TotalSpace F E).snd‖ =
       ‖fiberRadialHomeomorph F hr
         ((Fin.appendIsometryOfEq (thomCellDimension_def r q).symm).symm x).2‖ := by
   rw [(bundleDiskSphereRelCWOver F E (univ : Set X) (D := A) hr).map_copy univ _ preimage_univ
@@ -914,7 +914,7 @@ theorem openCell_bundleDiskSphereRelCW (q : ℕ)
     (c : @RelCWComplex.cell _ _ _ _ (bundleDiskSphereRelCW F E A hr) (thomCellDimension r q)) :
     @RelCWComplex.openCell _ _ _ _ (bundleDiskSphereRelCW F E A hr) (thomCellDimension r q) c =
       {v : discBundle F E |
-        v.1.proj ∈ openCell q (bundleDiskSphereCellEquiv F E A hr q c) ∧ ‖v.1.2‖ < 1} := by
+        v.val.proj ∈ openCell q (bundleDiskSphereCellEquiv F E A hr q c) ∧ ‖v.val.snd‖ < 1} := by
   rw [(bundleDiskSphereRelCWOver F E (univ : Set X) (D := A) hr).openCell_copy univ _ preimage_univ
     (by rw [preimage_univ, inter_univ]) (thomCellDimension r q) c]
   exact openCell_bundleDiskSphereRelCWOver F E (univ : Set X) hr q _

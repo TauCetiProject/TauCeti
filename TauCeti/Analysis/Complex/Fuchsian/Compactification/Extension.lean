@@ -117,7 +117,7 @@ theorem exists_meromorphicAt_comp_ofQuotient_iff
   constructor
   · rintro ⟨F, hF, hpull⟩ C
     apply (Subgroup.CuspDatum.meromorphicAt_cuspExtension_zero_iff
-      (D C) f (fun g ↦ hinv g.1)).1
+      (D C) f (fun g ↦ hinv g.val)).1
     exact (meromorphicAt_ofCusp_iff (D C) (congrFun hpull)).1 (hF _)
   · intro hgrowth
     apply exists_meromorphicAt_comp_ofQuotient hinv hmero

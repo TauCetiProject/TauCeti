@@ -38,6 +38,8 @@ homotopy equivalence is automatically a right homotopy inverse.
 
 * `ContinuousMap.HomotopyEquiv.symm_symm`: the double inverse of a homotopy equivalence is itself.
 * `ContinuousMap.HomotopyEquiv.uliftCongr`: transport of a homotopy equivalence across `ULift`.
+* `ContinuousMap.HomotopyEquiv.nonempty` and `ContinuousMap.HomotopyEquiv.nonempty_iff`:
+  nonemptiness is invariant under homotopy equivalence.
 * `ContinuousMap.HomotopyEquiv.pathConnectedSpace`: a space homotopy equivalent to a path
   connected space is path connected.
 * `ContinuousMap.HomotopyEquiv.zerothHomotopyCongr`: a homotopy equivalence induces a bijection
@@ -89,6 +91,14 @@ theorem HomotopyEquiv.uliftCongr_symm_apply {X : Type u₁} {Y : Type u₂} [Top
     [TopologicalSpace Y] (e : X ≃ₕ Y) (y : ULift.{v₂, u₂} Y) :
     e.uliftCongr.{v₁, v₂}.symm y = ULift.up (e.symm y.down) :=
   (rfl)
+
+/-- A space homotopy equivalent to a nonempty space is nonempty. -/
+theorem HomotopyEquiv.nonempty [Nonempty X] (e : X ≃ₕ Y) : Nonempty Y :=
+  ‹Nonempty X›.map e
+
+/-- Homotopy equivalent spaces are simultaneously nonempty. -/
+theorem HomotopyEquiv.nonempty_iff (e : X ≃ₕ Y) : Nonempty X ↔ Nonempty Y :=
+  ⟨fun _ ↦ e.nonempty, fun _ ↦ e.symm.nonempty⟩
 
 /-- **Path connectedness is a homotopy invariant.** A space homotopy equivalent to a path
 connected space is path connected. -/

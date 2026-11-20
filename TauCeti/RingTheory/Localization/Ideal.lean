@@ -119,7 +119,7 @@ theorem exists_notMem_smul_le_span_singleton_of_map_eq [IsNoetherianRing A] {P :
       have hb' : algebraMap A S b = 0 := isSMulRegular_iff_right_eq_zero_of_smul.mp hreg _ <| by
         rw [smul_eq_mul, ← map_mul, mul_comm a b, hb, map_zero]
       obtain ⟨u, hu⟩ := (IsLocalization.map_eq_zero_iff P.primeCompl S b).mp hb'
-      exact ⟨u, u.2, Subtype.ext hu⟩
+      exact ⟨u, u.property, Subtype.ext hu⟩
   refine ⟨r₁ * r₂, fun h ↦ (‹P.IsPrime›.mem_or_mem h).elim hr₁P hr₂P, fun x hx ↦ ?_, fun b hb ↦ ?_⟩
   · obtain ⟨b, hb, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
     have := hr₁ (Submodule.smul_mem_pointwise_smul b r₁ q hb)
