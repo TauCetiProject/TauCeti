@@ -187,7 +187,7 @@ variable [CharZero K]
 Laurent series `g` exactly when its residue vanishes. -/
 theorem exists_D_eq_iff (ω : ContinuousKaehlerDifferential K) :
     (∃ g, D K g = ω) ↔ residue K ω = 0 := by
-  rw [residue_apply, ← mem_range_laurentSeries_derivative_iff]
+  rw [residue_apply, ← mem_range_laurentSeries_derivative_iff (R := K)]
   refine exists_congr fun g ↦ ?_
   rw [← (equivLaurentSeries K).injective.eq_iff, equivLaurentSeries_D]
 
