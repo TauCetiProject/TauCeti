@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Continuation
-import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # Compactness of continuation cylinders and Floer cylinders

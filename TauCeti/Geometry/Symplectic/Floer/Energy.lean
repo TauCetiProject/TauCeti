@@ -101,10 +101,10 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   (`SymplecticForm.perturbedFDeriv_congr_of_eventuallyEq`,
   `SymplecticForm.perturbedFDeriv_comp_add_right`) and the energy density
   (`SymplecticForm.floerEnergyDensity_congr_of_eventuallyEq`,
-  `SymplecticForm.floerEnergyDensity_comp_add_right`,
-  `SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`, and its consequence
-  `SymplecticForm.floerEnergyDensity_add_one_of_periodic` for data of period one in `t`); hence
-  translations preserve the energy
+  `SymplecticForm.floerEnergyDensity_comp_add_right`, with its consequence
+  `SymplecticForm.floerEnergyDensity_add_one_of_periodic` for data of period one in `t`, and
+  `SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`); hence translations preserve
+  the energy
   (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
 * `SymplecticForm.tendsto_floerEnergyDensity`,
   `SymplecticForm.setLIntegral_floerEnergyDensity_le_liminf`: the energy density depends
