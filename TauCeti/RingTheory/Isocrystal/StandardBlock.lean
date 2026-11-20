@@ -16,7 +16,7 @@ Let `L` be a field with a field automorphism `σ`, and let `π ∈ L`. For `s : 
 standard block `D(s, r)` is the `L`-vector space `L^r` with the `σ`-semilinear Frobenius which
 cycles through the standard basis and multiplies the wraparound by `π ^ s`:
 `Φ(e_i) = e_(i+1)` for `i < r - 1` and `Φ(e_(r-1)) = π ^ s • e_0`. This file defines that
-Frobenius, `TauCeti.standardBlock σ π s r`, and proves its basic properties.
+Frobenius, `TauCeti.standardBlockFrobenius σ π s r`, and proves its basic properties.
 
 In the motivating case `L` is the completion of the maximal unramified extension of a
 nonarchimedean local field `E` with uniformizer `π`, or `k((π))` in equal characteristic, and `σ`
@@ -28,20 +28,21 @@ coprime. Under the functor from isocrystals to vector bundles on the Fargues–F
 
 ## Main definitions
 
-* `TauCeti.standardBlock σ π s r`: the `σ`-semilinear Frobenius of `D(s, r)` on `Fin r → L`.
+* `TauCeti.standardBlockFrobenius σ π s r`: the `σ`-semilinear Frobenius of `D(s, r)` on
+  `Fin r → L`.
 
 ## Main results
 
-* `TauCeti.standardBlock_single_castSucc`, `TauCeti.standardBlock_single_last`: the Frobenius on
-  the standard basis, including the `π ^ s` wraparound.
-* `TauCeti.standardBlock_bijective`: the Frobenius is bijective when `π ≠ 0`, so `D(s, r)` is an
-  isocrystal.
-* `TauCeti.standardBlock_iterate_rank`: if `σ` fixes `π`, then `Φ ^ r = π ^ s • σ ^ r`, with
-  `σ ^ r` acting on coordinates.
-* `TauCeti.eq_zero_of_intertwines_standardBlock`: if `σ` preserves a valuation `v` with
-  `v π ≠ 1`, there is no nonzero Frobenius-equivariant `L`-linear map `D(s, r) → D(s', r')`
+* `TauCeti.standardBlockFrobenius_single_castSucc`, `TauCeti.standardBlockFrobenius_single_last`:
+  the Frobenius on the standard basis, including the `π ^ s` wraparound.
+* `TauCeti.standardBlockFrobenius_bijective`: the Frobenius is bijective when `π ≠ 0`, so `D(s, r)`
+  is an isocrystal.
+* `TauCeti.standardBlockFrobenius_iterate_rank`: if `σ` fixes `π`, then `Φ ^ r = π ^ s • σ ^ r`,
+  with `σ ^ r` acting on coordinates.
+* `TauCeti.eq_zero_of_intertwines_standardBlock`: if `σ` fixes `π ≠ 0` and preserves a valuation
+  `v` with `v π ≠ 1`, there is no nonzero Frobenius-equivariant `L`-linear map `D(s, r) → D(s', r')`
   between blocks of different slopes `s / r ≠ s' / r'`.
-* `TauCeti.standardBlock_one_apply_zero_eq_frobenius`: for Witt vectors, the rank-one block
+* `TauCeti.standardBlockFrobenius_one_apply_zero_eq_frobenius`: for Witt vectors, the rank-one block
   `D(m, 1)` with `π = p` is Mathlib's `WittVector.StandardOneDimIsocrystal p k m`.
 
 ## References
@@ -63,7 +64,7 @@ variable {L : Type*} [Field L] (σ : L ≃+* L) (π : L) (s : ℤ) (r : ℕ)
 /-- The Frobenius of the standard block `D(s, r)`: the `σ`-semilinear map on `L^r` sending the
 standard basis vector `e_i` to `e_(i+1)` for `i < r - 1` and `e_(r-1)` to `π ^ s • e_0`. In
 coordinates, `(Φ x)_0 = π ^ s * σ (x_(r-1))` and `(Φ x)_i = σ (x_(i-1))` for `0 < i`. -/
-def standardBlock : (Fin r → L) →ₛₗ[(σ : L →+* L)] (Fin r → L) where
+def standardBlockFrobenius : (Fin r → L) →ₛₗ[(σ : L →+* L)] (Fin r → L) where
   toFun x i := (if (i : ℕ) = 0 then π ^ s else 1) * σ (x ((finRotate r).symm i))
   map_add' x y := by
     ext i
@@ -75,27 +76,27 @@ def standardBlock : (Fin r → L) →ₛₗ[(σ : L →+* L)] (Fin r → L) wher
 
 variable {σ π s r}
 
-theorem standardBlock_apply (x : Fin r → L) (i : Fin r) :
-    standardBlock σ π s r x i =
+theorem standardBlockFrobenius_apply (x : Fin r → L) (i : Fin r) :
+    standardBlockFrobenius σ π s r x i =
       (if (i : ℕ) = 0 then π ^ s else 1) * σ (x ((finRotate r).symm i)) := (rfl)
 
 @[simp]
-theorem standardBlock_apply_zero {n : ℕ} (x : Fin (n + 1) → L) :
-    standardBlock σ π s (n + 1) x 0 = π ^ s * σ (x (Fin.last n)) := by
-  rw [standardBlock_apply, (finRotate _).symm_apply_eq.2 finRotate_last.symm]
+theorem standardBlockFrobenius_apply_zero {n : ℕ} (x : Fin (n + 1) → L) :
+    standardBlockFrobenius σ π s (n + 1) x 0 = π ^ s * σ (x (Fin.last n)) := by
+  rw [standardBlockFrobenius_apply, (finRotate _).symm_apply_eq.2 finRotate_last.symm]
   simp
 
 @[simp]
-theorem standardBlock_apply_succ {n : ℕ} (x : Fin (n + 1) → L) (i : Fin n) :
-    standardBlock σ π s (n + 1) x i.succ = σ (x i.castSucc) := by
+theorem standardBlockFrobenius_apply_succ {n : ℕ} (x : Fin (n + 1) → L) (i : Fin n) :
+    standardBlockFrobenius σ π s (n + 1) x i.succ = σ (x i.castSucc) := by
   have hi : (finRotate (n + 1)).symm i.succ = i.castSucc :=
     (finRotate _).symm_apply_eq.2 (by rw [finRotate_apply, Fin.coeSucc_eq_succ])
-  simp [standardBlock_apply, hi]
+  simp [standardBlockFrobenius_apply, hi]
 
 /-- The Frobenius of `D(s, r)` moves the basis vector `e_i` to `e_(i+1)` below the last index. -/
 @[simp]
-theorem standardBlock_single_castSucc {n : ℕ} (i : Fin n) (c : L) :
-    standardBlock σ π s (n + 1) (Pi.single i.castSucc c) = Pi.single i.succ (σ c) := by
+theorem standardBlockFrobenius_single_castSucc {n : ℕ} (i : Fin n) (c : L) :
+    standardBlockFrobenius σ π s (n + 1) (Pi.single i.castSucc c) = Pi.single i.succ (σ c) := by
   ext j
   refine Fin.cases ?_ (fun j => ?_) j
   · simp [Fin.castSucc_ne_last, (Fin.succ_ne_zero i).symm]
@@ -103,15 +104,17 @@ theorem standardBlock_single_castSucc {n : ℕ} (i : Fin n) (c : L) :
 
 /-- The Frobenius of `D(s, r)` sends the last basis vector to `π ^ s` times the first one. -/
 @[simp]
-theorem standardBlock_single_last {n : ℕ} (c : L) :
-    standardBlock σ π s (n + 1) (Pi.single (Fin.last n) c) = Pi.single 0 (π ^ s * σ c) := by
+theorem standardBlockFrobenius_single_last {n : ℕ} (c : L) :
+    standardBlockFrobenius σ π s (n + 1) (Pi.single (Fin.last n) c) =
+      Pi.single 0 (π ^ s * σ c) := by
   ext j
   refine Fin.cases ?_ (fun j => ?_) j
   · simp
   · simp [Fin.castSucc_ne_last, Fin.succ_ne_zero]
 
 /-- For `π ≠ 0` the Frobenius of `D(s, r)` is bijective, so `D(s, r)` is an isocrystal. -/
-theorem standardBlock_bijective (hπ : π ≠ 0) : Bijective (standardBlock σ π s r) := by
+theorem standardBlockFrobenius_bijective (hπ : π ≠ 0) :
+    Bijective (standardBlockFrobenius σ π s r) := by
   have hw (i : Fin r) : (if (i : ℕ) = 0 then π ^ s else 1) ≠ 0 := by
     split_ifs
     exacts [zpow_ne_zero s hπ, one_ne_zero]
@@ -119,11 +122,11 @@ theorem standardBlock_bijective (hπ : π ≠ 0) : Bijective (standardBlock σ �
     ((if (finRotate r j : ℕ) = 0 then π ^ s else 1)⁻¹ * y (finRotate r j)), ?_, ?_⟩
   · intro x
     ext j
-    simp only [standardBlock_apply, Equiv.symm_apply_apply, inv_mul_cancel_left₀ (hw _),
+    simp only [standardBlockFrobenius_apply, Equiv.symm_apply_apply, inv_mul_cancel_left₀ (hw _),
       RingEquiv.symm_apply_apply]
   · intro y
     ext i
-    simp only [standardBlock_apply, Equiv.apply_symm_apply, RingEquiv.apply_symm_apply,
+    simp only [standardBlockFrobenius_apply, Equiv.apply_symm_apply, RingEquiv.apply_symm_apply,
       mul_inv_cancel_left₀ (hw _)]
 
 /-! ### Powers of the Frobenius -/
@@ -134,9 +137,9 @@ open Fin.NatCast
 
 /-- The `k`-th power of the Frobenius of `D(s, r)` in coordinates: its `i`-th coordinate is
 `σ ^ k` of the `(i - k)`-th one, times `π ^ s` for each wraparound. -/
-private theorem standardBlock_iterate_apply [NeZero r] (hσπ : σ π = π) (k : ℕ) (x : Fin r → L)
-    (i : Fin r) :
-    (standardBlock σ π s r)^[k] x i =
+private theorem standardBlockFrobenius_iterate_apply [NeZero r] (hσπ : σ π = π) (k : ℕ)
+    (x : Fin r → L) (i : Fin r) :
+    (standardBlockFrobenius σ π s r)^[k] x i =
       (∏ t ∈ range k, if ((i - t : Fin r) : ℕ) = 0 then π ^ s else 1) *
         σ^[k] (x (i - k)) := by
   induction k generalizing i with
@@ -148,40 +151,38 @@ private theorem standardBlock_iterate_apply [NeZero r] (hσπ : σ π = π) (k :
     have hidx (t : ℕ) : i - 1 - (t : Fin r) = i - ((t + 1 : ℕ) : Fin r) := by
       push_cast
       abel
-    rw [iterate_succ_apply', standardBlock_apply, finRotate_symm_apply, ih, map_mul, map_prod,
-      prod_range_succ', ← iterate_succ_apply' σ]
+    rw [iterate_succ_apply', standardBlockFrobenius_apply, finRotate_symm_apply, ih, map_mul,
+      map_prod, prod_range_succ', ← iterate_succ_apply' σ]
     simp only [hσw, hidx, Nat.cast_zero, sub_zero]
     ring
 
-/-- The product of the wraparound factors over a full cycle is `π ^ s`. -/
-private theorem prod_range_rank_ite [NeZero r] (i : Fin r) :
-    (∏ t ∈ range r, if ((i - t : Fin r) : ℕ) = 0 then π ^ s else 1) = π ^ s := by
+/-- If `σ` fixes `π`, then the `r`-th power of the Frobenius of `D(s, r)` is `π ^ s • σ ^ r`,
+with `σ ^ r` acting on coordinates. -/
+theorem standardBlockFrobenius_iterate_rank (hσπ : σ π = π) (x : Fin r → L) (i : Fin r) :
+    (standardBlockFrobenius σ π s r)^[r] x i = π ^ s * σ^[r] (x i) := by
+  have := i.neZero
+  rw [standardBlockFrobenius_iterate_apply hσπ, Fin.natCast_self, sub_zero]
+  -- Over a full cycle only the step `t = i` wraps around, so the product of factors is `π ^ s`.
   rw [prod_eq_single (i : ℕ)]
   · simp
   · intro t ht hti
     rw [ite_eq_right_iff]
     intro h
     rw [Fin.val_eq_zero_iff, sub_eq_zero] at h
-    exact absurd (by rw [h, Fin.val_natCast, Nat.mod_eq_of_lt (mem_range.1 ht)]) hti
+    exact (hti (by rw [h, Fin.val_natCast, Nat.mod_eq_of_lt (mem_range.1 ht)])).elim
   · simp
-
-/-- If `σ` fixes `π`, then the `r`-th power of the Frobenius of `D(s, r)` is `π ^ s • σ ^ r`,
-with `σ ^ r` acting on coordinates. -/
-theorem standardBlock_iterate_rank (hσπ : σ π = π) (x : Fin r → L) (i : Fin r) :
-    (standardBlock σ π s r)^[r] x i = π ^ s * σ^[r] (x i) := by
-  have := i.neZero
-  rw [standardBlock_iterate_apply hσπ, prod_range_rank_ite, Fin.natCast_self, sub_zero]
 
 /-- If `σ` fixes `π`, then the `(r * m)`-th power of the Frobenius of `D(s, r)` is
 `π ^ (s * m) • σ ^ (r * m)`, with `σ ^ (r * m)` acting on coordinates. -/
-theorem standardBlock_iterate_rank_mul (hσπ : σ π = π) (m : ℕ) (x : Fin r → L) (i : Fin r) :
-    (standardBlock σ π s r)^[r * m] x i = π ^ (s * m) * σ^[r * m] (x i) := by
+theorem standardBlockFrobenius_iterate_rank_mul (hσπ : σ π = π) (m : ℕ) (x : Fin r → L)
+    (i : Fin r) :
+    (standardBlockFrobenius σ π s r)^[r * m] x i = π ^ (s * m) * σ^[r * m] (x i) := by
   induction m generalizing x with
   | zero => simp
   | succ m ih =>
     have hσs : σ (π ^ s) = π ^ s := by rw [map_zpow₀, hσπ]
-    rw [Nat.mul_succ, iterate_add_apply, ih, standardBlock_iterate_rank hσπ, iterate_map_mul,
-      iterate_fixed hσs, ← iterate_add_apply σ]
+    rw [Nat.mul_succ, iterate_add_apply, ih, standardBlockFrobenius_iterate_rank hσπ,
+      iterate_map_mul, iterate_fixed hσs, ← iterate_add_apply σ]
     simp only [zpow_mul, zpow_natCast, pow_succ]
     ring
 
@@ -196,7 +197,8 @@ theorem eq_zero_of_intertwines_standardBlock {Γ₀ : Type*} [LinearOrderedCommG
     {v : Valuation L Γ₀} (hv : ∀ x, v (σ x) = v x) (hπ : π ≠ 0) (hvπ : v π ≠ 1)
     (hσπ : σ π = π) {s' : ℤ} {r' : ℕ} (hslope : (s : ℚ) / r ≠ (s' : ℚ) / r')
     {f : (Fin r → L) →ₗ[L] (Fin r' → L)}
-    (hf : ∀ x, f (standardBlock σ π s r x) = standardBlock σ π s' r' (f x)) : f = 0 := by
+    (hf : ∀ x, f (standardBlockFrobenius σ π s r x) = standardBlockFrobenius σ π s' r' (f x)) :
+    f = 0 := by
   refine (Pi.basisFun L (Fin r)).ext fun j => funext fun i => ?_
   have := j.neZero
   have := i.neZero
@@ -208,17 +210,17 @@ theorem eq_zero_of_intertwines_standardBlock {Γ₀ : Type*} [LinearOrderedCommG
   set y := f (Pi.basisFun L (Fin r) j)
   -- Compare the `(r * r')`-th powers of the two Frobenii on `e_j`: they are `π ^ (s * r')` and
   -- `π ^ (s' * r)` times the coordinatewise action of `σ ^ (r * r')`, which fixes `e_j`.
-  have hx : (standardBlock σ π s r)^[r * r'] (Pi.basisFun L (Fin r) j) =
+  have hx : (standardBlockFrobenius σ π s r)^[r * r'] (Pi.basisFun L (Fin r) j) =
       π ^ (s * r') • Pi.basisFun L (Fin r) j := by
     ext l
-    rw [standardBlock_iterate_rank_mul hσπ, Pi.smul_apply, smul_eq_mul, Pi.basisFun_apply,
+    rw [standardBlockFrobenius_iterate_rank_mul hσπ, Pi.smul_apply, smul_eq_mul, Pi.basisFun_apply,
       Pi.single_apply]
     split_ifs <;> simp
+  have hsc : Semiconj f (standardBlockFrobenius σ π s r) (standardBlockFrobenius σ π s' r') := hf
   have hy : π ^ (s * r') * y i = π ^ (s' * r) * σ^[r * r'] (y i) := by
-    have := congrFun ((show Semiconj f _ _ from hf).iterate_right (r * r')
-      (Pi.basisFun L (Fin r) j)) i
+    have := congrFun (hsc.iterate_right (r * r') (Pi.basisFun L (Fin r) j)) i
     rw [hx, map_smul, Pi.smul_apply, smul_eq_mul, mul_comm r r',
-      standardBlock_iterate_rank_mul hσπ] at this
+      standardBlockFrobenius_iterate_rank_mul hσπ] at this
     rwa [mul_comm r' r] at this
   -- Taking valuations, a nonzero coordinate of `y` would force `s * r' = s' * r`.
   by_contra hyi
@@ -237,13 +239,13 @@ open WittVector Isocrystal
 with `σ` the Witt vector Frobenius and `π = p`, the rank-one block `D(m, 1)` is Mathlib's standard
 one-dimensional isocrystal `StandardOneDimIsocrystal p k m`: the identification `L^1 ≅ L` given by
 the only coordinate intertwines the two Frobenii. -/
-theorem standardBlock_one_apply_zero_eq_frobenius (p : ℕ) [Fact p.Prime] (k : Type*)
+theorem standardBlockFrobenius_one_apply_zero_eq_frobenius (p : ℕ) [Fact p.Prime] (k : Type*)
     [CommRing k] [IsDomain k] [CharP k p] [PerfectRing k p] (m : ℤ) (x : Fin 1 → K(p, k)) :
-    standardBlock (FractionRing.frobenius p k) (p : K(p, k)) m 1 x 0 =
+    standardBlockFrobenius (FractionRing.frobenius p k) (p : K(p, k)) m 1 x 0 =
       Isocrystal.frobenius p k (V := StandardOneDimIsocrystal p k m) (x 0) := by
   -- `StandardOneDimIsocrystal p k m` is a type synonym for `K(p, k)`, and its scalar action is
   -- multiplication in `K(p, k)`.
-  rw [standardBlock_apply_zero]
+  rw [standardBlockFrobenius_apply_zero]
   exact (StandardOneDimIsocrystal.frobenius_apply p k m (x 0)).symm
 
 end TauCeti
