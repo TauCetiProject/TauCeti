@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.MonoidLocalization.GrothendieckGroup
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
 public import TauCeti.LinearAlgebra.Matrix.Idempotent
+public import TauCeti.RingTheory.GrothendieckRing
 
 /-!
 # The idempotent monoid and projective `K₀`
@@ -305,11 +306,7 @@ theorem exists_of_mk_sub_of_mk_one_eq (y : GrothendieckAddGroup (IdempotentMonoi
     ∃ (n : ℕ) (e : Matrix (Fin n) (Fin n) A) (he : IsIdempotentElem e) (m : ℕ),
       GrothendieckAddGroup.of (mk e he) -
         GrothendieckAddGroup.of (mk (1 : Matrix (Fin m) (Fin m) A) .one) = y := by
-  obtain ⟨a, ⟨b, -⟩, rfl⟩ := (AddLocalization.addMonoidOf ⊤).mk'_surjective y
-  have hspec : (AddLocalization.addMonoidOf ⊤).mk' a ⟨b, trivial⟩ =
-      GrothendieckAddGroup.of a - GrothendieckAddGroup.of b :=
-    eq_sub_of_add_eq ((AddLocalization.addMonoidOf ⊤).mk'_spec _ _)
-  rw [hspec]
+  obtain ⟨a, b, rfl⟩ := GrothendieckAddGroup.exists_eq_sub_of y
   induction a using ind with | mk n e he
   induction b using ind with | mk m f hf
   have he' := he.fromBlocks_zero₁₂_zero₂₁ hf.one_sub
@@ -326,10 +323,6 @@ theorem exists_of_mk_sub_of_mk_one_eq (y : GrothendieckAddGroup (IdempotentMonoi
     exact mk_eq_mk (idempotentEquivalent_fromBlocks_one_sub hf).symm
   rw [h₁, h₂, map_add, map_add, add_sub_add_right_eq_sub]
 
-private theorem lift_toSplitK0_of (x : IdempotentMonoid A) :
-    GrothendieckAddGroup.lift toSplitK0 (GrothendieckAddGroup.of x) = toSplitK0 x :=
-  (AddLocalization.addMonoidOf ⊤).lift_eq _ x
-
 variable (A) in
 /-- **`K₀` is the group completion of the idempotent monoid.** The group completion of `V(A)` is
 the split `K₀` of finitely generated projective left `A`-modules, the class of an idempotent matrix
@@ -339,23 +332,23 @@ def splitK0Equiv :
     GrothendieckAddGroup (IdempotentMonoid A) ≃+
       SplitK0.{u} (finiteProjectiveModules A).FullSubcategory :=
   AddMonoidHom.toAddEquiv (GrothendieckAddGroup.lift toSplitK0) (SplitK0.lift ofModuleInvariant)
-    (GrothendieckAddGroup.lift.symm.injective <| AddMonoidHom.ext fun x ↦ by
+    (GrothendieckAddGroup.addHom_ext fun x ↦ by
       induction x using ind with | mk n e he
-      simp only [GrothendieckAddGroup.lift_symm_apply, AddMonoidHom.comp_apply,
-        AddMonoidHom.id_apply]
-      rw [lift_toSplitK0_of, toSplitK0_mk he (rangeObj e he) (.refl _ _),
+      simp only [AddMonoidHom.comp_apply, AddMonoidHom.id_apply]
+      rw [GrothendieckAddGroup.lift_apply_of, toSplitK0_mk he (rangeObj e he) (.refl _ _),
         SplitK0.lift_of, ofModuleInvariant_obj, ofModule_eq he (rangeObj e he) (.refl _ _)])
     (SplitK0.hom_ext fun X ↦ by
       obtain ⟨he, ⟨θ⟩⟩ :=
         (Module.Finite.exists_linearEquiv_range_vecMulLinear A X.obj).choose_spec.choose_spec
       simp only [AddMonoidHom.comp_apply, SplitK0.lift_of, AddMonoidHom.id_apply]
-      rw [ofModuleInvariant_obj, ofModule_eq he X θ, lift_toSplitK0_of, toSplitK0_mk he X θ])
+      rw [ofModuleInvariant_obj, ofModule_eq he X θ, GrothendieckAddGroup.lift_apply_of,
+        toSplitK0_mk he X θ])
 
 /-- On `V(A)`, the isomorphism `TauCeti.IdempotentMonoid.splitK0Equiv` is the class map
 `TauCeti.IdempotentMonoid.toSplitK0`. -/
 theorem splitK0Equiv_of (x : IdempotentMonoid A) :
     splitK0Equiv A (GrothendieckAddGroup.of x) = toSplitK0 x :=
-  lift_toSplitK0_of x
+  GrothendieckAddGroup.lift_apply_of _ x
 
 /-- The isomorphism `TauCeti.IdempotentMonoid.splitK0Equiv` sends the class of an idempotent
 matrix `e` to the class of any module isomorphic to the image `Aⁿe` of its action on row vectors. -/
