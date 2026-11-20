@@ -74,13 +74,13 @@ For `0 < α < 1` the isomorphism takes the little Hölder functions exactly to t
 weighted blocks vanish at high frequency. A bounded continuous function
 representing `u ∈ 𝒞^α` is little `α`-Hölder, with `α`-Hölder difference quotients tending to zero
 at small scales, exactly when the weighted blocks vanish at high frequency, `2^{jα} ‖Δⱼ u‖_∞ → 0`.
-If they do, `u` is the limit in `𝒞^α` of its low-pass truncations, which are represented by
+If they do, `u` is the limit in `𝒞^α` of its dyadic partial sums, which are represented by
 Lipschitz functions; conversely a little Hölder function is the limit in `C^{0,α}` of smooth
 Lipschitz functions, whose weighted blocks of order `α < 1` vanish at high frequency. The little
 Hölder–Zygmund space `c^α`, the closure of the Schwartz functions in `𝒞^α`, lies inside this
 block-decay subspace (strictly so, as nonzero constants show), so every element of `c^α` is little
 Hölder. The cusp `x ↦ ‖x‖ ^ α`, truncated at height `1`, is not: its weighted blocks are
-bounded but do not tend to zero, so `c^α` is a proper closed subspace of `𝒞^α`.
+bounded but do not tend to zero, so it is an explicit element of `𝒞^α` outside `c^α`.
 
 ## Main declarations
 
@@ -118,9 +118,6 @@ bounded but do not tend to zero, so `c^α` is a proper closed subspace of `𝒞^
   `TauCeti.BesovSpace.notMem_littleBesov_of_eqOn_norm_rpow`: for `0 < α < 1`, an element of `𝒞^α`
   represented by a function of norm `‖x‖ ^ α` near `0` has weighted blocks `2^{jα} ‖Δⱼ u‖_∞`
   that do not tend to zero, and lies outside `c^α`.
-* `TauCeti.BesovSpace.littleBesov_ne_top` and `SchwartzMap.not_denseRange_toBesovSpaceCLM`: for
-  `0 < α < 1`, in positive dimension and with a nontrivial target, `c^α` is a proper subspace of
-  `𝒞^α`, so the Schwartz functions are not dense in `𝒞^α`.
 
 ## References
 
@@ -455,9 +452,8 @@ theorem exists_toLpTop_eq_and_contDiff_and_norm_iteratedFDeriv_le_and_holderWith
       (toLpTop volume ℂ f : 𝓢'(E, F)) = u.toDistr ∧ ContDiff ℝ k f ∧
         (∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i f x‖ ≤ C * ‖u‖) ∧
           HolderWith (C * ‖u‖₊) α (iteratedFDeriv ℝ k f) := by
-  obtain ⟨n₀, hn₀⟩ : ∃ n₀ : ℕ, φ.rOut ≤ 2 ^ n₀ * φ.rIn := by
-    obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) (one_lt_two (α := ℝ))
-    exact ⟨n, ((div_lt_iff₀ φ.rIn_pos).1 hn).le⟩
+  obtain ⟨n₀, hn₀⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
+  replace hn₀ := hn₀.le
   obtain ⟨C₀, hC₀⟩ := exists_holderWith_tsum_of_rpow_mul_le (X := E) (Y := E [×k]→L[ℝ] F) hα0 hα1
   -- `B m = 2^{n₀ m} ‖D^m K₀‖₁` bounds the `m`-th derivatives of the smoothed blocks, and
   -- `q = 2^{-α}` is the ratio of the geometric series they form.
@@ -1028,46 +1024,37 @@ theorem holderSpaceEquiv_symm_apply {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 
 
 /-! ### The little Hölder–Zygmund space and the little Hölder space -/
 
-/-- A band-limited element of `𝒞^α`, whose tempered distribution is an `L^∞` function with
-vanishing blocks from some index on, is represented by a Lipschitz function, which is little
-`α`-Hölder for `α < 1`: it also lies in `𝒞^{1+α}`, so its representative is `C¹` with bounded
-derivative. -/
-private theorem toHolderSpace_mem_littleHolder_of_littlewoodPaleyBlock_eq_zero (hα0 : 0 < α)
-    (hα1 : α < 1) {v : BesovSpace F φ α ∞ ∞} {r : Lp F ∞ (volume : Measure E)}
-    (hvr : v.toDistr = r) {M : ℕ}
-    (hr : ∀ k, M ≤ k → littlewoodPaleyBlock F φ k (r : 𝓢'(E, F)) = 0) :
+/-- An element of `𝒞^α` with the same tempered distribution as an element of `𝒞^{1+α}` is
+represented by a Lipschitz function, which is little `α`-Hölder for `α < 1`: the representative is
+`C¹` with bounded derivative. -/
+private theorem toHolderSpace_mem_littleHolder_of_toDistr_eq (hα0 : 0 < α) (hα1 : α < 1)
+    {v : BesovSpace F φ α ∞ ∞} {w : BesovSpace F φ (((1 : ℕ) : ℝ) + α) ∞ ∞}
+    (hvw : v.toDistr = w.toDistr) :
     toHolderSpace F φ hα0 hα1 v ∈ HolderSpace.littleHolder α E F := by
-  obtain ⟨_, -, hband⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero F φ
-  obtain ⟨w, hw, -⟩ := hband (((1 : ℕ) : ℝ) + α) M r hr
   set g := toCkHolderSpace F φ 1 hα0 hα1 w
   have hvg : (toHolderSpace F φ hα0 hα1 v).toBoundedContinuousFunction =
       g.toBoundedContinuousFunction :=
-    repr_eq φ (toLpTop_toHolderSpace φ hα0 hα1) (by rw [toLpTop_toCkHolderSpace, hw, hvr])
+    repr_eq φ (toLpTop_toHolderSpace φ hα0 hα1) (by rw [toLpTop_toCkHolderSpace, hvw])
   rw [HolderSpace.mem_littleHolder_iff, ← HolderSpace.coe_toBoundedContinuousFunction, hvg,
     CkHolderSpace.coe_toBoundedContinuousFunction]
   exact g.lipschitzWith.memLittleHolder hα1
 
 /-- If the weighted blocks of `u ∈ 𝒞^α` vanish at high frequency, then its Hölder representative
-is little Hölder: it is a limit in `C^{0,α}` of the representatives of the low-pass truncations
-`S_N u`, which are band-limited, and the little Hölder space is closed. -/
+is little Hölder: it is a limit in `C^{0,α}` of the representatives of the dyadic partial sums
+`S_N u`, which come from `𝒞^{1+α}`, and the little Hölder space is closed. -/
 private theorem toHolderSpace_mem_littleHolder_of_tendsto (hα0 : 0 < α) (hα1 : α < 1)
     {u : BesovSpace F φ α ∞ ∞}
     (hu : Tendsto (fun j : ℕ ↦ 2 ^ ((α : ℝ) * j) * ‖u.block j‖) atTop (𝓝 0)) :
     toHolderSpace F φ hα0 hα1 u ∈ HolderSpace.littleHolder α E F := by
-  -- `u` is a limit of the truncations `v = S_N u`, which have vanishing blocks from `N + L` on.
-  obtain ⟨L, hL⟩ := exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
-  have hmem : u ∈ closure {v : BesovSpace F φ α ∞ ∞ | ∃ (r : Lp F ∞ (volume : Measure E)) (M : ℕ),
-      v.toDistr = r ∧ ∀ k, M ≤ k → littlewoodPaleyBlock F φ k (r : 𝓢'(E, F)) = 0} := by
-    refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
-    obtain ⟨N, v, hv, huv⟩ := exists_toDistr_eq_sum_block_and_norm_sub_le hu (half_pos hε)
-    refine ⟨v, ⟨_, N + L, hv, fun k hk ↦ ?_⟩, ?_⟩
-    · simp only [Lp.toTemperedDistribution_sum, coe_block]
-      exact (hL k N).2 hk u.toDistr
-    · rw [dist_eq_norm]
-      linarith
-  exact HolderSpace.isClosed_littleHolder.closure_subset
-    (map_mem_closure (toHolderSpace F φ hα0 hα1).continuous hmem fun _ ⟨_, _, hvr, hr⟩ ↦
-      toHolderSpace_mem_littleHolder_of_littlewoodPaleyBlock_eq_zero φ hα0 hα1 hvr hr)
+  have hlt : (α : ℝ) < ((1 : ℕ) : ℝ) + α := by
+    rw [Nat.cast_one]
+    exact lt_one_add _
+  refine HolderSpace.isClosed_littleHolder.mem_of_tendsto
+    (((toHolderSpace F φ hα0 hα1).continuous.tendsto u).comp
+      (tendsto_partialSumCLM_top_of_tendsto hu)) (Eventually.of_forall fun N ↦ ?_)
+  obtain ⟨w, hw⟩ := partialSumCLM_mem_range_inclusionOfLT hlt ∞ N u
+  rw [Function.comp_apply, ← hw]
+  exact toHolderSpace_mem_littleHolder_of_toDistr_eq φ hα0 hα1 (toDistr_inclusionOfLT hlt w)
 
 /-- If the Hölder representative of `u ∈ 𝒞^α` is little Hölder, then the weighted blocks of `u`
 vanish at high frequency: the representative is a limit in `C^{0,α}` of smooth Lipschitz functions
@@ -1078,7 +1065,7 @@ private theorem tendsto_of_toHolderSpace_mem_littleHolder (hα0 : 0 < α) (hα1 
     Tendsto (fun j : ℕ ↦ 2 ^ ((α : ℝ) * j) * ‖u.block j‖) atTop (𝓝 0) := by
   rw [← SetLike.mem_coe, HolderSpace.littleHolder_eq_closure hα1] at hu
   rw [← ofHolderSpace_toHolderSpace φ hα0 hα1 u]
-  refine isClosed_setOfPred_tendsto_rpow_mul_norm_block.closure_subset
+  refine isClosed_setOf_tendsto_rpow_mul_norm_block.closure_subset
     (map_mem_closure (ofHolderSpace F φ α).continuous hu fun g ⟨_, K, hK⟩ ↦ ?_)
   -- The Lipschitz function `g` is an element `w` of `𝒞¹`, so its weighted blocks of order
   -- `α < 1` vanish at high frequency.
@@ -1138,28 +1125,6 @@ theorem notMem_littleBesov_of_eqOn_norm_rpow [Nontrivial E] (hα0 : 0 < α) (hα
   not_tendsto_rpow_mul_norm_block_of_eqOn_norm_rpow φ hα0 hα1 hf hr hfr
     (tendsto_rpow_mul_norm_block_of_mem_littleBesov hu)
 
-/-- **The little Hölder–Zygmund space is a proper subspace** of `𝒞^α`, for `0 < α < 1`, in positive
-dimension and for a nontrivial target: a bounded `α`-Hölder function that is not little Hölder,
-such as a truncated cusp, is an element of `𝒞^α` outside `c^α`. -/
-theorem littleBesov_ne_top [Nontrivial E] [Nontrivial F] (hα0 : 0 < α) (hα1 : α < 1) :
-    littleBesov F φ α ∞ ≠ ⊤ := by
-  obtain ⟨f, hf⟩ : ∃ f : HolderSpace α E F, f ∉ HolderSpace.littleHolder α E F := by
-    by_contra! h
-    exact HolderSpace.littleHolder_ne_top hα0 hα1.le (eq_top_iff.2 fun f _ ↦ h f)
-  refine fun htop ↦ hf ?_
-  rw [HolderSpace.mem_littleHolder_iff, ← HolderSpace.coe_toBoundedContinuousFunction]
-  exact memLittleHolder_of_mem_littleBesov φ hα0 hα1
-    (htop ▸ Submodule.mem_top (x := ofHolderSpace F φ α f)) (toDistr_ofHolderSpace φ f).symm
-
 end BesovSpace
-
-/-- **The Schwartz functions are not dense in `𝒞^α`**, for `0 < α < 1`, in positive dimension and
-for a nontrivial target: their closure is the little Hölder–Zygmund space `c^α`, a proper
-subspace. -/
-theorem _root_.SchwartzMap.not_denseRange_toBesovSpaceCLM [Nontrivial E] [Nontrivial F]
-    (φ : ContDiffBump (0 : E)) {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) :
-    ¬ DenseRange (SchwartzMap.toBesovSpaceCLM F φ α ∞ ∞) := fun h ↦
-  BesovSpace.littleBesov_ne_top (F := F) φ hα0 hα1 <| SetLike.coe_injective <| by
-    rw [BesovSpace.coe_littleBesov, h.closure_range, Submodule.top_coe]
 
 end TauCeti

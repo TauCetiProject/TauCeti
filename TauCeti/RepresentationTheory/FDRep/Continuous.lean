@@ -201,6 +201,11 @@ abbrev ContFDRep : Type (max (u + 1) v) :=
 instance [ContinuousAdd k] : HasBinaryBiproducts (ContFDRep k G) :=
   HasBinaryBiproducts.of_hasBinaryProducts
 
+/-- The inclusion of continuous finite representations preserves binary biproducts. -/
+instance ContFDRep.preservesBinaryBiproducts_ι :
+    PreservesBinaryBiproducts ((FDRep.isContinuous k G).ι) :=
+  preservesBinaryBiproducts_of_preservesBinaryProducts _
+
 variable {G}
 
 /-- A continuous representation `π` of `G` on a finite-dimensional normed space `V` over a complete
