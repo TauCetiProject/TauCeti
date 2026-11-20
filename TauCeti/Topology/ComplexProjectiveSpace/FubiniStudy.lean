@@ -45,23 +45,9 @@ noncomputable section
 
 variable {n : ℕ}
 
-/-- Inserting a zero coordinate in position `k`, as a continuous linear map into
-`EuclideanSpace ℂ (Fin (n + 1))`. -/
-private def insertZeroL (k : Fin (n + 1)) : (Fin n → ℂ) →L[ℂ] EuclideanSpace ℂ (Fin (n + 1)) :=
-  LinearMap.toContinuousLinearMap
-    { toFun := fun v ↦ WithLp.toLp 2 (Fin.insertNth (α := fun _ ↦ ℂ) k 0 v)
-      map_add' := fun v w ↦ by
-        ext i
-        induction i using Fin.succAboveCases k <;> simp
-      map_smul' := fun c v ↦ by
-        ext i
-        induction i using Fin.succAboveCases k <;> simp }
-
-private theorem insertZeroL_apply (k : Fin (n + 1)) (v : Fin n → ℂ) :
-    insertZeroL k v = WithLp.toLp 2 (Fin.insertNth (α := fun _ ↦ ℂ) k 0 v) :=
-  (rfl)
-
-private theorem hasFDerivAt_affineVector (k : Fin (n + 1)) (w : Fin n → ℂ) :
+/-- The derivative of the homogeneous coordinate vector of the chart `X_k ≠ 0` inserts a zero in
+position `k`. -/
+theorem hasFDerivAt_affineVector (k : Fin (n + 1)) (w : Fin n → ℂ) :
     HasFDerivAt (affineVector k) (insertZeroL k) w := by
   have h : affineVector k = fun v ↦ affineVector k 0 + insertZeroL k v := by
     ext v i
@@ -70,6 +56,7 @@ private theorem hasFDerivAt_affineVector (k : Fin (n + 1)) (w : Fin n → ℂ) :
   exact (insertZeroL k).hasFDerivAt.const_add _
 
 /-- The homogeneous coordinate vector of the chart `X_k ≠ 0` is differentiable. -/
+@[fun_prop]
 theorem differentiable_affineVector (k : Fin (n + 1)) :
     Differentiable ℂ (affineVector (n := n) k) :=
   fun w ↦ (hasFDerivAt_affineVector k w).differentiableAt
@@ -80,13 +67,6 @@ coordinate `k` equal to zero. -/
 theorem fderiv_affineVector_apply (k : Fin (n + 1)) (w v : Fin n → ℂ) :
     fderiv ℂ (affineVector k) w v = WithLp.toLp 2 (Fin.insertNth (α := fun _ ↦ ℂ) k 0 v) := by
   rw [(hasFDerivAt_affineVector k w).fderiv, insertZeroL_apply]
-
-/-- The squared norm of the homogeneous coordinate vector of the point with affine coordinates `w`
-is `1 + ∑ |w_j|²`. -/
-theorem norm_affineVector_sq (k : Fin (n + 1)) (w : Fin n → ℂ) :
-    ‖affineVector k w‖ ^ 2 = 1 + ∑ j, ‖w j‖ ^ 2 := by
-  rw [EuclideanSpace.norm_sq_eq, Fin.sum_univ_succAbove _ k]
-  simp
 
 /-- **The Fubini–Study form in an affine chart.** For the point with affine coordinates `w` in the
 chart `X_k ≠ 0`, with `r = 1 + ∑ |w_l|²`, the homogeneous Fubini–Study form evaluated on the lifts

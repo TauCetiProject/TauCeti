@@ -45,7 +45,7 @@ preserved by linear isometries, so unitary maps act by isometries of the project
 * `TauCeti.isSymm_fubiniStudyHermitian`: `H_z` is Hermitian.
 * `TauCeti.re_fubiniStudyHermitian_apply_self_pos_iff`, `TauCeti.ker_fubiniStudyHermitian`: for
   `z ≠ 0`, `H_z` is positive away from the line `𝕜 ∙ z`, which is its kernel.
-* `TauCeti.fubiniStudyHermitian_add_smul_apply_add_smul`: `H_z` is unchanged when multiples of
+* `TauCeti.fubiniStudyHermitian_apply_add_smul_add_smul`: `H_z` is unchanged when multiples of
   `z` are added to its arguments.
 * `TauCeti.fubiniStudyHermitian_smul_apply_smul_smul`: `H_{cz}(cv, cw) = H_z(v, w)` for `c ≠ 0`.
 * `TauCeti.fubiniStudyHermitian_map`: linear isometries preserve `H`.
@@ -100,15 +100,12 @@ theorem fubiniStudyHermitian_apply_eq_inner_starProjection (z v w : E) :
       ⟪(𝕜 ∙ z)ᗮ.starProjection v, (𝕜 ∙ z)ᗮ.starProjection w⟫_𝕜 / ((π * ‖z‖ ^ 2 : ℝ) : 𝕜) := by
   rcases eq_or_ne z 0 with rfl | hz
   · simp
-  have hzz : ⟪z, z⟫_𝕜 = ((‖z‖ ^ 2 : ℝ) : 𝕜) := by simp [inner_self_eq_norm_sq_to_K]
-  have h4 : ((π * ‖z‖ ^ 4 : ℝ) : 𝕜) = (π : 𝕜) * ((‖z‖ ^ 2 : ℝ) : 𝕜) ^ 2 := by push_cast; ring
-  have h2 : ((π * ‖z‖ ^ 2 : ℝ) : 𝕜) = (π : 𝕜) * ((‖z‖ ^ 2 : ℝ) : 𝕜) := by push_cast; ring
-  have hN : ((‖z‖ ^ 2 : ℝ) : 𝕜) ≠ 0 := by simpa using hz
+  have hN : (‖z‖ : 𝕜) ≠ 0 := by simpa using hz
   have hπ : ((π : ℝ) : 𝕜) ≠ 0 := ofReal_ne_zero.2 pi_ne_zero
   simp only [Submodule.starProjection_orthogonal_val, Submodule.starProjection_singleton,
     inner_sub_left, inner_sub_right, inner_smul_left, inner_smul_right, map_div₀, conj_ofReal,
-    inner_conj_symm, hzz, fubiniStudyHermitian_apply, h4, h2]
-  generalize ((‖z‖ ^ 2 : ℝ) : 𝕜) = N at hN ⊢
+    inner_conj_symm, inner_self_eq_norm_sq_to_K, fubiniStudyHermitian_apply]
+  push_cast
   field_simp
   ring
 
@@ -157,12 +154,12 @@ theorem fubiniStudyHermitian_self_left (z w : E) : fubiniStudyHermitian 𝕜 z z
 argument: `H_z(v, z) = 0`. -/
 @[simp]
 theorem fubiniStudyHermitian_self_right (z v : E) : fubiniStudyHermitian 𝕜 z v z = 0 := by
-  rw [fubiniStudyHermitian_apply, inner_self_eq_norm_sq_to_K, ofReal_pow, mul_comm, sub_self,
-    zero_div]
+  rw [fubiniStudyHermitian_apply, inner_self_eq_norm_sq_to_K, ofReal_pow]
+  ring
 
 /-- The homogeneous Fubini–Study form is unchanged when multiples of `z` are added to its
 arguments, so it descends to `E ⧸ 𝕜 ∙ z`. -/
-theorem fubiniStudyHermitian_add_smul_apply_add_smul (z v w : E) (a b : 𝕜) :
+theorem fubiniStudyHermitian_apply_add_smul_add_smul (z v w : E) (a b : 𝕜) :
     fubiniStudyHermitian 𝕜 z (v + a • z) (w + b • z) = fubiniStudyHermitian 𝕜 z v w := by
   simp
 
@@ -184,33 +181,24 @@ theorem fubiniStudyHermitian_smul_apply (c : 𝕜) (z v w : E) :
   · simp
   rcases eq_or_ne z 0 with rfl | hz
   · simp
-  have hcc : conj c * c = ((‖c‖ ^ 2 : ℝ) : 𝕜) := by rw [mul_comm, mul_conj, ofReal_pow]
-  have hinner : ⟪v, c • z⟫_𝕜 * ⟪c • z, w⟫_𝕜 = ((‖c‖ ^ 2 : ℝ) : 𝕜) * (⟪v, z⟫_𝕜 * ⟪z, w⟫_𝕜) := by
-    rw [inner_smul_right, inner_smul_left, ← hcc]
-    ring
-  have h2 : (((‖c‖ * ‖z‖) ^ 2 : ℝ) : 𝕜) = ((‖c‖ ^ 2 : ℝ) : 𝕜) * ((‖z‖ ^ 2 : ℝ) : 𝕜) := by
-    push_cast; ring
-  have h4 : ((π * (‖c‖ * ‖z‖) ^ 4 : ℝ) : 𝕜) =
-      (π : 𝕜) * ((‖c‖ ^ 2 : ℝ) : 𝕜) ^ 2 * ((‖z‖ ^ 2 : ℝ) : 𝕜) ^ 2 := by
-    push_cast; ring
-  have h4' : ((π * ‖z‖ ^ 4 : ℝ) : 𝕜) = (π : 𝕜) * ((‖z‖ ^ 2 : ℝ) : 𝕜) ^ 2 := by push_cast; ring
-  have hC : ((‖c‖ ^ 2 : ℝ) : 𝕜) ≠ 0 := by simpa using hc
-  have hN : ((‖z‖ ^ 2 : ℝ) : 𝕜) ≠ 0 := by simpa using hz
+  have hC : (‖c‖ : 𝕜) ≠ 0 := by simpa using hc
+  have hN : (‖z‖ : 𝕜) ≠ 0 := by simpa using hz
   have hπ : ((π : ℝ) : 𝕜) ≠ 0 := ofReal_ne_zero.2 pi_ne_zero
-  rw [fubiniStudyHermitian_apply, fubiniStudyHermitian_apply, hinner, norm_smul, h2, h4, h4',
-    ofReal_inv]
-  generalize ((‖c‖ ^ 2 : ℝ) : 𝕜) = C at hC ⊢
-  generalize ((‖z‖ ^ 2 : ℝ) : 𝕜) = N at hN ⊢
+  simp only [fubiniStudyHermitian_apply, inner_smul_right, inner_smul_left, norm_smul]
+  push_cast
   field_simp
+  linear_combination -(⟪v, z⟫_𝕜 * ⟪z, w⟫_𝕜) * RCLike.conj_mul c
 
 /-- The homogeneous Fubini–Study form does not depend on the representative of the line:
 `H_{cz}(cv, cw) = H_z(v, w)` for every nonzero scalar `c`. -/
 theorem fubiniStudyHermitian_smul_apply_smul_smul {c : 𝕜} (hc : c ≠ 0) (z v w : E) :
     fubiniStudyHermitian 𝕜 (c • z) (c • v) (c • w) = fubiniStudyHermitian 𝕜 z v w := by
-  have hC : ((‖c‖ ^ 2 : ℝ) : 𝕜) ≠ 0 := by simpa using hc
-  have hcc : conj c * c = ((‖c‖ ^ 2 : ℝ) : 𝕜) := by rw [mul_comm, mul_conj, ofReal_pow]
-  rw [fubiniStudyHermitian_smul_apply, LinearMap.map_smulₛₗ₂, LinearMap.map_smul, smul_eq_mul,
-    smul_eq_mul, ← mul_assoc (conj c), hcc, ofReal_inv, inv_mul_cancel_left₀ hC]
+  have hC : (‖c‖ : 𝕜) ≠ 0 := by simpa using hc
+  simp only [fubiniStudyHermitian_smul_apply, LinearMap.map_smulₛₗ₂, LinearMap.map_smul,
+    smul_eq_mul]
+  push_cast
+  rw [← mul_assoc, RCLike.conj_mul]
+  field_simp
 
 /-- Linear isometries preserve the homogeneous Fubini–Study form:
 `H_{f z}(f v, f w) = H_z(v, w)`. In particular unitary maps act by isometries of the

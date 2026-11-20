@@ -134,6 +134,30 @@ theorem continuous_affineVector (k : Fin (n + 1)) : Continuous (affineVector (n 
   (PiLp.continuous_toLp 2 (fun _ : Fin (n + 1) ↦ ℂ)).comp
     (continuous_const.finInsertNth k continuous_id)
 
+/-- The squared norm of the homogeneous coordinate vector of the point with affine coordinates `z`
+is `1 + ∑ |z_j|²`. -/
+theorem norm_affineVector_sq (k : Fin (n + 1)) (z : Fin n → ℂ) :
+    ‖affineVector k z‖ ^ 2 = 1 + ∑ j, ‖z j‖ ^ 2 := by
+  rw [EuclideanSpace.norm_sq_eq, Fin.sum_univ_succAbove _ k]
+  simp
+
+/-- Inserting a zero coordinate in position `k`, as a continuous linear map into
+`EuclideanSpace ℂ (Fin (n + 1))`. It is the derivative of `affineVector k`. -/
+def insertZeroL (k : Fin (n + 1)) : (Fin n → ℂ) →L[ℂ] EuclideanSpace ℂ (Fin (n + 1)) :=
+  LinearMap.toContinuousLinearMap
+    { toFun := fun v ↦ WithLp.toLp 2 (Fin.insertNth (α := fun _ ↦ ℂ) k 0 v)
+      map_add' := fun v w ↦ by
+        ext i
+        induction i using Fin.succAboveCases k <;> simp
+      map_smul' := fun c v ↦ by
+        ext i
+        induction i using Fin.succAboveCases k <;> simp }
+
+/-- The value of `insertZeroL k` at `v` is `v` with a zero inserted in position `k`. -/
+theorem insertZeroL_apply (k : Fin (n + 1)) (v : Fin n → ℂ) :
+    insertZeroL k v = WithLp.toLp 2 (Fin.insertNth (α := fun _ ↦ ℂ) k 0 v) :=
+  (rfl)
+
 /-- The unit representative `w / ‖w‖` of the point with affine coordinates `z` in the chart
 `X_k ≠ 0`, for its homogeneous coordinate vector `w = affineVector k z`. -/
 def affineUnitVector (k : Fin (n + 1)) :
