@@ -125,14 +125,16 @@ noncomputable def minusLattice : Submodule (ZMod 2)[X] (H.Generator →₀ (ZMod
 coefficients. -/
 theorem mem_minusLattice_iff_exists {c : H.Generator →₀ (ZMod 2)[T;T⁻¹]} :
     c ∈ H.minusLattice ↔ ∃ d : H.Generator →₀ (ZMod 2)[X],
-      Finsupp.mapRange toLaurent (map_zero _) d = c :=
-  Iff.rfl
+      Finsupp.mapRange toLaurent (map_zero _) d = c := by
+  have h : algebraMap (ZMod 2)[X] (ZMod 2)[T;T⁻¹] = toLaurent := RingHom.ext algebraMap_eq_toLaurent
+  simp only [minusLattice, LinearMap.mem_range, Finsupp.mapRange.linearMap_apply,
+    Algebra.coe_linearMap, h]
 
 /-- A chain of `CF^∞` lies in `CF⁻` exactly when each of its coefficients is a polynomial in
 `U`. -/
 theorem mem_minusLattice_iff {c : H.Generator →₀ (ZMod 2)[T;T⁻¹]} :
-    c ∈ H.minusLattice ↔ ∀ x, c x ∈ Set.range (toLaurent : (ZMod 2)[X] → (ZMod 2)[T;T⁻¹]) :=
-  Set.ext_iff.mp (Finsupp.range_mapRange _ (map_zero toLaurent)) c
+    c ∈ H.minusLattice ↔ ∀ x, c x ∈ Set.range (toLaurent : (ZMod 2)[X] → (ZMod 2)[T;T⁻¹]) := by
+  rw [mem_minusLattice_iff_exists, ← Set.mem_range, Finsupp.range_mapRange, Set.mem_ofPred_eq]
 
 /-- The image of a chain with polynomial coefficients lies in `CF⁻`. -/
 @[simp]
@@ -308,21 +310,18 @@ variable {χ : Region → ℤ}
 `TauCeti.HeegaardRegionSystem.minusCoefficient`. -/
 @[simp]
 theorem minusDifferential_single_apply (x y : H.Generator) (a : (ZMod 2)[X]) :
-    H.minusDifferential χ (Finsupp.single x a) y = a * H.minusCoefficient χ x y := by
-  simp [minusDifferential]
+    H.minusDifferential χ (Finsupp.single x a) y = a * H.minusCoefficient χ x y :=
+  linearCombination_equivFunOnFinite_symm_single_apply _ x y a
 
 /-- The coefficient of `y` in the minus differential of a chain `c`. -/
 theorem minusDifferential_apply (c : H.Generator →₀ (ZMod 2)[X]) (y : H.Generator) :
-    H.minusDifferential χ c y = c.sum fun x a => a * H.minusCoefficient χ x y := by
-  simp [minusDifferential, Finsupp.linearCombination_apply, Finsupp.sum_apply]
+    H.minusDifferential χ c y = c.sum fun x a => a * H.minusCoefficient χ x y :=
+  linearCombination_equivFunOnFinite_symm_apply _ c y
 
 /-- The minus differential vanishes exactly when all of its coefficients vanish. -/
 theorem minusDifferential_eq_zero_iff :
-    H.minusDifferential χ = 0 ↔ ∀ x y, H.minusCoefficient χ x y = 0 := by
-  refine ⟨fun h x y => ?_, fun h => ?_⟩
-  · simpa using DFunLike.congr_fun (LinearMap.congr_fun h (Finsupp.single x 1)) y
-  · ext x y
-    simp [h]
+    H.minusDifferential χ = 0 ↔ ∀ x y, H.minusCoefficient χ x y = 0 :=
+  linearCombination_equivFunOnFinite_symm_eq_zero_iff
 
 /-- **Setting `U = 0` gives the hat differential.** When the counts are finite, reducing the
 coefficients of a chain of `CF⁻` modulo `U` (taking constant coefficients) intertwines the minus
@@ -359,22 +358,19 @@ Laurent polynomials. -/
 @[simp]
 theorem infinityDifferential_single_apply (x y : H.Generator) (a : (ZMod 2)[T;T⁻¹]) :
     H.infinityDifferential χ (Finsupp.single x a) y =
-      a * toLaurent (H.minusCoefficient χ x y) := by
-  simp [infinityDifferential]
+      a * toLaurent (H.minusCoefficient χ x y) :=
+  linearCombination_equivFunOnFinite_symm_single_apply _ x y a
 
 /-- The coefficient of `y` in the infinity differential of a chain `c`. -/
 theorem infinityDifferential_apply (c : H.Generator →₀ (ZMod 2)[T;T⁻¹]) (y : H.Generator) :
-    H.infinityDifferential χ c y = c.sum fun x a => a * toLaurent (H.minusCoefficient χ x y) := by
-  simp [infinityDifferential, Finsupp.linearCombination_apply, Finsupp.sum_apply]
+    H.infinityDifferential χ c y = c.sum fun x a => a * toLaurent (H.minusCoefficient χ x y) :=
+  linearCombination_equivFunOnFinite_symm_apply _ c y
 
 /-- The infinity differential vanishes exactly when all of the minus coefficients vanish, that is
 exactly when the minus differential vanishes (`minusDifferential_eq_zero_iff`). -/
 theorem infinityDifferential_eq_zero_iff :
-    H.infinityDifferential χ = 0 ↔ ∀ x y, H.minusCoefficient χ x y = 0 := by
-  refine ⟨fun h x y => ?_, fun h => ?_⟩
-  · simpa using DFunLike.congr_fun (LinearMap.congr_fun h (Finsupp.single x 1)) y
-  · ext x y
-    simp [h]
+    H.infinityDifferential χ = 0 ↔ ∀ x y, H.minusCoefficient χ x y = 0 :=
+  linearCombination_equivFunOnFinite_symm_eq_zero_iff.trans (by simp)
 
 /-- On chains with polynomial coefficients the infinity differential is the minus differential:
 including `CF⁻` into `CF^∞` intertwines the two differentials. -/

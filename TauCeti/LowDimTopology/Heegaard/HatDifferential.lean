@@ -100,6 +100,37 @@ public section
 
 namespace TauCeti
 
+section MatrixCoefficients
+
+variable {ι κ R : Type*} [Semiring R] [Finite κ]
+
+/-- The coefficient of `j` in the image of a chain `c` under the `R`-linear map on free modules
+with matrix coefficients `f`, which sends the basis vector `i` to `∑ j, f i j • j`. -/
+theorem linearCombination_equivFunOnFinite_symm_apply (f : ι → κ → R) (c : ι →₀ R) (j : κ) :
+    Finsupp.linearCombination R (fun i => Finsupp.equivFunOnFinite.symm (f i)) c j =
+      c.sum fun i a => a * f i j := by
+  simp [Finsupp.linearCombination_apply, Finsupp.sum_apply]
+
+/-- The matrix coefficients of the `R`-linear map on free modules with matrix coefficients `f`
+are the entries of `f`. -/
+theorem linearCombination_equivFunOnFinite_symm_single_apply (f : ι → κ → R) (i : ι) (j : κ)
+    (a : R) :
+    Finsupp.linearCombination R (fun i => Finsupp.equivFunOnFinite.symm (f i))
+      (Finsupp.single i a) j = a * f i j := by
+  simp
+
+/-- The `R`-linear map on free modules with matrix coefficients `f` vanishes exactly when all of
+its coefficients vanish. -/
+theorem linearCombination_equivFunOnFinite_symm_eq_zero_iff {f : ι → κ → R} :
+    Finsupp.linearCombination R (fun i => Finsupp.equivFunOnFinite.symm (f i)) = 0 ↔
+      ∀ i j, f i j = 0 := by
+  refine ⟨fun h i j => ?_, fun h => ?_⟩
+  · simpa using DFunLike.congr_fun (LinearMap.congr_fun h (Finsupp.single i 1)) j
+  · ext i j
+    simp [h]
+
+end MatrixCoefficients
+
 namespace HeegaardRegionSystem
 
 universe u v w
@@ -257,21 +288,18 @@ variable {χ : Region → ℤ}
 `TauCeti.HeegaardRegionSystem.hatCoefficient`. -/
 @[simp]
 theorem hatDifferential_single_apply (x y : H.Generator) (a : ZMod 2) :
-    H.hatDifferential χ (Finsupp.single x a) y = a * H.hatCoefficient χ x y := by
-  simp [hatDifferential]
+    H.hatDifferential χ (Finsupp.single x a) y = a * H.hatCoefficient χ x y :=
+  linearCombination_equivFunOnFinite_symm_single_apply _ x y a
 
 /-- The coefficient of `y` in the hat differential of a chain `c`. -/
 theorem hatDifferential_apply (c : H.Generator →₀ ZMod 2) (y : H.Generator) :
-    H.hatDifferential χ c y = c.sum fun x a => a * H.hatCoefficient χ x y := by
-  simp [hatDifferential, Finsupp.linearCombination_apply, Finsupp.sum_apply]
+    H.hatDifferential χ c y = c.sum fun x a => a * H.hatCoefficient χ x y :=
+  linearCombination_equivFunOnFinite_symm_apply _ c y
 
 /-- The hat differential vanishes exactly when all of its coefficients vanish. -/
 theorem hatDifferential_eq_zero_iff :
-    H.hatDifferential χ = 0 ↔ ∀ x y, H.hatCoefficient χ x y = 0 := by
-  refine ⟨fun h x y => ?_, fun h => ?_⟩
-  · simpa using DFunLike.congr_fun (LinearMap.congr_fun h (Finsupp.single x 1)) y
-  · ext x y
-    simp [h]
+    H.hatDifferential χ = 0 ↔ ∀ x y, H.hatCoefficient χ x y = 0 :=
+  linearCombination_equivFunOnFinite_symm_eq_zero_iff
 
 end Differential
 
