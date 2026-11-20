@@ -47,7 +47,9 @@ the position and the frequency.
   linear combinations of symbols of different orders
   (`TauCeti.Symbol.coefficient_sharpTerm_eq_sum_left` and its companions), and near a point
   only on their values near that point
-  (`TauCeti.Symbol.coefficient_sharpTerm_of_eq_smul_of_eventuallyEq`). For a constant symbol
+  (`TauCeti.Symbol.coefficient_sharpTerm_of_eq_smul_of_eventuallyEq`). The terms of positive index
+  vanish at `(x, ξ)` when `a(x, ·)` is constant near `ξ` or `b(·, ξ)` is constant near `x`
+  (`TauCeti.Symbol.coefficient_sharpTerm_eq_zero_of_eventuallyEq`). For a constant symbol
   only the pointwise composition survives (`TauCeti.Symbol.const_sharpTerm_succ`,
   `TauCeti.Symbol.sharpTerm_const_succ`), and on the right this holds for every symbol that does
   not depend on the position (`TauCeti.Symbol.sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero`).
@@ -62,8 +64,11 @@ the position and the frequency.
   every term of the expansion. If those of `a` do and `b` has compact spatial support (hence is
   uniform, `TauCeti.Symbol.HasCompactSpatialSupport.isUniform`), then so do those of every
   remainder, so the expansion holds in the uniform symbol classes.
-* `TauCeti.Symbol.isSmoothing_sharp_sub_comp`: if `a` vanishes outside `K` and `b` does not depend
-  on the position near `K`, then `a # b` and `a ∘ b` differ by a smoothing symbol.
+* `TauCeti.Symbol.isSmoothing_sharp_sub_comp_of_eventuallyEq`: if at every large frequency `ξ`
+  and every position `x`, `a(x, ·)` is constant near `ξ` or `b(·, ξ)` is constant near `x`, then
+  `a # b` and `a ∘ b` differ by a smoothing symbol. In particular
+  (`TauCeti.Symbol.isSmoothing_sharp_sub_comp`) this holds if `a` vanishes outside `K` and `b`
+  does not depend on the position near `K`.
 * `TauCeti.Symbol.isAsymptoticSum_sharp`: `a # b ∼ ∑ₖ sharpTerm a b k` as an asymptotic sum
   (`TauCeti.Symbol.IsAsymptoticSum`), so the terms determine `a # b` modulo smoothing symbols.
 * `TauCeti.Symbol.exists_coefficient_eq_sharp_sub_sharp`: if `a` and `b` both have compact
@@ -197,6 +202,24 @@ theorem coefficient_sharpTerm (a : Symbol n W U m') (b : Symbol n V W m) (k : �
     push_cast
     field_simp
     ring
+
+/-- The terms of the composition expansion `a # b` vanish at every point near which `a` vanishes:
+they only involve frequency derivatives of `a` at the point. -/
+theorem coefficient_sharpTerm_eq_zero_of_eventuallyEq_zero_left {a : Symbol n W U m'}
+    {x ξ : CoordinateSpace n} (ha : a.coefficient =ᶠ[𝓝 (x, ξ)] 0) (b : Symbol n V W m) (k : ℕ) :
+    (a.sharpTerm b k).coefficient (x, ξ) = 0 := by
+  rw [coefficient_sharpTerm, Finset.sum_eq_zero, smul_zero]
+  intro w _
+  rw [ha.mixedDeriv_eq, mixedDeriv_zero, ContinuousLinearMap.zero_comp]
+
+/-- The terms of the composition expansion `a # b` vanish at every point near which `b` vanishes:
+they only involve position derivatives of `b` at the point. -/
+theorem coefficient_sharpTerm_eq_zero_of_eventuallyEq_zero_right {b : Symbol n V W m}
+    {x ξ : CoordinateSpace n} (hb : b.coefficient =ᶠ[𝓝 (x, ξ)] 0) (a : Symbol n W U m') (k : ℕ) :
+    (a.sharpTerm b k).coefficient (x, ξ) = 0 := by
+  rw [coefficient_sharpTerm, Finset.sum_eq_zero, smul_zero]
+  intro w _
+  rw [hb.mixedDeriv_eq, mixedDeriv_zero, ContinuousLinearMap.comp_zero]
 
 /-- The terms of the composition expansion only depend on the coefficients of the two symbols, not
 on the orders at which the symbols are considered. -/
@@ -367,22 +390,23 @@ theorem IsUniform.sharpTerm {a : Symbol n W U m'} {b : Symbol n V W m} (ha : a.I
     refine ((IsUniform.sum fun j _ ↦ ?_).smul _).inclusion _
     exact ih (ha.frequencyDeriv j) (hb.spatialDeriv j)
 
-/-- The terms of positive index `k` of the expansion of `a # b` vanish when `a` vanishes at
-positions outside `K` and `b` does not depend on the position near each point of `K`: every such
-term contains a frequency derivative of `a` and a position derivative of `b`. -/
-private theorem coefficient_sharpTerm_eq_zero {a : Symbol n W U m'} {b : Symbol n V W m}
-    {K : Set (CoordinateSpace n)} (haK : ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0)
-    (hbK : ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ ξ, b.coefficient (y, ξ) = b.coefficient (x, ξ))
-    {k : ℕ} (hk : k ≠ 0) (p : CoordinateSpace n × CoordinateSpace n) :
-    (a.sharpTerm b k).coefficient p = 0 := by
-  obtain ⟨x, ξ⟩ := p
+/-- **Locality of the terms of the expansion.** The terms of positive index `k` of the expansion of
+`a # b` vanish at `(x, ξ)` when `a(x, ·)` is constant near `ξ` or `b(·, ξ)` is constant near `x`:
+every such term contains a frequency derivative of `a` and a position derivative of `b` at
+`(x, ξ)`. -/
+theorem coefficient_sharpTerm_eq_zero_of_eventuallyEq {a : Symbol n W U m'} {b : Symbol n V W m}
+    {x ξ : CoordinateSpace n}
+    (h : (fun η ↦ a.coefficient (x, η)) =ᶠ[𝓝 ξ] (fun _ ↦ a.coefficient (x, ξ)) ∨
+      (fun y ↦ b.coefficient (y, ξ)) =ᶠ[𝓝 x] fun _ ↦ b.coefficient (x, ξ))
+    {k : ℕ} (hk : k ≠ 0) : (a.sharpTerm b k).coefficient (x, ξ) = 0 := by
   rw [coefficient_sharpTerm, Finset.sum_eq_zero fun w _ ↦ ?_, smul_zero]
-  by_cases hx : x ∈ K
-  · have hw : List.ofFn w ≠ [] := by simpa using hk
-    rw [mixedDeriv_congr_of_eventually (b := fun q ↦ b.coefficient (x, q.2))
-      ((hbK x hx).mono fun y hy η ↦ hy η),
-      mixedDeriv_comp_snd (fun η ↦ b.coefficient (x, η)) hw, ContinuousLinearMap.comp_zero]
-  · simp [mixedDeriv_def, haK x hx, ← Pi.zero_def]
+  have hw : List.ofFn w ≠ [] := by simpa using hk
+  rcases h with ha | hb
+  · rw [mixedDeriv_def, coordinateDeriv_nil, (ha.coordinateDeriv _).eq_of_nhds,
+      coordinateDeriv_const _ hw, Pi.zero_apply, ContinuousLinearMap.zero_comp]
+  · simp only [mixedDeriv_def (List.ofFn w) [], coordinateDeriv_nil]
+    rw [(hb.coordinateDeriv _).eq_of_nhds, coordinateDeriv_const _ hw, Pi.zero_apply,
+      ContinuousLinearMap.comp_zero]
 
 end Term
 
@@ -755,6 +779,33 @@ theorem sharp_eq_comp_add_sharpRemainder_one (hb : b.HasCompactSpatialSupport) :
   funext p
   simp
 
+/-- **Microlocality of the composition symbol.** Let `b` have compact spatial support. If at every
+`(x, ξ)` with `‖ξ‖ ≥ R` either `a(x, ·)` is constant near `ξ` or `b(·, ξ)` is constant near `x`,
+then `a # b` agrees with the pointwise composition `a ∘ b` up to a smoothing symbol: all the
+correction terms of the composition expansion vanish at large frequencies. -/
+theorem isSmoothing_sharp_sub_comp_of_eventuallyEq (hb : b.HasCompactSpatialSupport) (R : ℝ)
+    (h : ∀ x ξ, R ≤ ‖ξ‖ →
+      (fun η ↦ a.coefficient (x, η)) =ᶠ[𝓝 ξ] (fun _ ↦ a.coefficient (x, ξ)) ∨
+        (fun y ↦ b.coefficient (y, ξ)) =ᶠ[𝓝 x] fun _ ↦ b.coefficient (x, ξ)) :
+    (a.sharp b hb - a.comp b).IsSmoothing := by
+  rw [isSmoothing_iff]
+  intro m''
+  obtain ⟨N, hN⟩ := exists_nat_ge (m' + m - m'')
+  -- `a # b - a ∘ b` is the remainder after `N + 1` terms plus the correction terms of index
+  -- `1, …, N`, and the latter vanish at frequencies of norm at least `R`.
+  set S := ∑ k ∈ range N, inclusion (sub_le_self _ (Nat.cast_nonneg (k + 1)))
+    (a.sharpTerm b (k + 1))
+  have hS : S.IsSmoothing := isSmoothing_of_coefficient_eq_zero R fun x ξ hξ ↦ by
+    simp [S, coefficient_sum, coefficient_sharpTerm_eq_zero_of_eventuallyEq (h x ξ hξ)]
+  obtain ⟨s, hs⟩ := isSmoothing_iff.1 hS m''
+  refine ⟨inclusion (by push_cast; linarith) (a.sharpRemainder b hb (N + 1)) + s, ?_⟩
+  rw [coefficient_add, coefficient_inclusion, coefficient_sharpRemainder, hs,
+    Finset.sum_range_succ', coefficient_sub]
+  funext p
+  simp only [S, coefficient_sum, coefficient_inclusion, coefficient_sharpTerm_zero, Pi.sub_apply,
+    Pi.add_apply, Finset.sum_apply, coefficient_comp]
+  abel
+
 /-- **Locality of the composition symbol.** Let `b` have compact spatial support. If `a` vanishes
 at positions outside `K` and `b` does not depend on the position near each point of `K`, for
 instance if `b` is the symbol of multiplication by a compactly supported smooth function equal to
@@ -763,14 +814,11 @@ smoothing symbol. -/
 theorem isSmoothing_sharp_sub_comp (hb : b.HasCompactSpatialSupport)
     {K : Set (CoordinateSpace n)} (haK : ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0)
     (hbK : ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ ξ, b.coefficient (y, ξ) = b.coefficient (x, ξ)) :
-    (a.sharp b hb - a.comp b).IsSmoothing := by
-  rw [isSmoothing_iff]
-  intro m''
-  obtain ⟨N, hN⟩ := exists_nat_ge (m' + m - m'')
-  refine ⟨inclusion (by push_cast; linarith) (a.sharpRemainder b hb (N + 1)), ?_⟩
-  rw [coefficient_inclusion, coefficient_sharpRemainder, Finset.sum_range_succ', coefficient_sub]
-  funext p
-  simp [coefficient_sharpTerm_eq_zero haK hbK]
+    (a.sharp b hb - a.comp b).IsSmoothing :=
+  isSmoothing_sharp_sub_comp_of_eventuallyEq hb 0 fun x ξ _ ↦ by
+    by_cases hx : x ∈ K
+    · exact Or.inr ((hbK x hx).mono fun y hy ↦ hy ξ)
+    · exact Or.inl (Filter.Eventually.of_forall fun η ↦ by simp [haK x hx])
 
 /-- The composition symbol is an asymptotic sum `a # b ∼ ∑ₖ sharpTerm a b k` of the terms of the
 expansion, of orders `m' + m - k`. In particular it is determined by the terms modulo smoothing

@@ -348,7 +348,7 @@ theorem fiberMap_J_apply_eq_I_smul {b₀ b : B} (hb : b ∈ J.unitSet b₀) (v :
 
 /-- The pretrivialization of `J.Fiber` at `b₀`, with base set `J.unitSet b₀`. -/
 def pretrivializationAt (b₀ : B) : Pretrivialization G (π G J.Fiber) where
-  toFun p := (p.1, J.fiberMap G b₀ p.1 (J.fiberEquiv p.1 p.2))
+  toFun p := (p.proj, J.fiberMap G b₀ p.proj (J.fiberEquiv p.proj p.snd))
   invFun p := ⟨p.1, (J.fiberEquiv p.1).symm ((trivializationAt F V b₀).symm p.1
     (J.complexLinearPart b₀ p.1 (J.modelEquiv G b₀ p.2)))⟩
   source := TotalSpace.proj ⁻¹' J.unitSet b₀
@@ -383,7 +383,8 @@ def pretrivializationAt (b₀ : B) : Pretrivialization G (π G J.Fiber) where
 
 @[simp]
 theorem pretrivializationAt_apply (b₀ : B) (p : TotalSpace G J.Fiber) :
-    J.pretrivializationAt G b₀ p = (p.1, J.fiberMap G b₀ p.1 (J.fiberEquiv p.1 p.2)) := (rfl)
+    J.pretrivializationAt G b₀ p = (p.proj, J.fiberMap G b₀ p.proj (J.fiberEquiv p.proj p.snd)) :=
+        (rfl)
 
 @[simp]
 theorem baseSet_pretrivializationAt (b₀ : B) :
@@ -495,7 +496,8 @@ instance : VectorBundle ℂ G J.Fiber := (J.vectorPrebundle G).toVectorBundle
 
 @[simp]
 theorem trivializationAt_apply (b₀ : B) (p : TotalSpace G J.Fiber) :
-    trivializationAt G J.Fiber b₀ p = (p.1, J.fiberMap G b₀ p.1 (J.fiberEquiv p.1 p.2)) := (rfl)
+    trivializationAt G J.Fiber b₀ p = (p.proj, J.fiberMap G b₀ p.proj (J.fiberEquiv p.proj p.snd))
+        := (rfl)
 
 @[simp]
 theorem baseSet_trivializationAt (b₀ : B) :
@@ -510,24 +512,26 @@ theorem trivializationAt_symm_apply {b₀ b : B} (hb : b ∈ J.unitSet b₀) (z 
 -/
 private theorem continuous_ofTotalSpace :
     Continuous fun p : TotalSpace F V ↦
-      (⟨p.1, (J.fiberEquiv p.1).symm p.2⟩ : TotalSpace G J.Fiber) := by
+      (⟨p.proj, (J.fiberEquiv p.proj).symm p.snd⟩ : TotalSpace G J.Fiber) := by
   have := FiniteDimensional.completeSpace ℝ F
   refine continuous_iff_continuousAt.mpr fun q₀ ↦ ?_
   rw [FiberBundle.continuousAt_totalSpace]
   refine ⟨(FiberBundle.continuous_proj F V).continuousAt, ?_⟩
   -- Near `q₀`, the complex coordinate of `q` is `φ⁻¹ (A⁻¹ w)`, where `w` is its coordinate in
   -- the trivialization of `V` at `q₀.1`.
-  have hU : J.unitSet q₀.1 ∈ 𝓝 q₀.1 := (J.isOpen_unitSet q₀.1).mem_nhds (J.mem_unitSet_self q₀.1)
+  have hU : J.unitSet q₀.proj ∈ 𝓝 q₀.proj := (J.isOpen_unitSet q₀.proj).mem_nhds
+      (J.mem_unitSet_self q₀.proj)
   have hA :
-      ContinuousAt (fun q : TotalSpace F V ↦ Ring.inverse (J.complexLinearPart q₀.1 q.1)) q₀ :=
-    ((J.continuousOn_inverse_complexLinearPart q₀.1).continuousAt hU).comp
+      ContinuousAt (fun q : TotalSpace F V ↦ Ring.inverse (J.complexLinearPart q₀.proj q.proj)) q₀
+          :=
+    ((J.continuousOn_inverse_complexLinearPart q₀.proj).continuousAt hU).comp
       (FiberBundle.continuous_proj F V).continuousAt
-  have he : ContinuousAt (fun q ↦ (trivializationAt F V q₀.1 q).2) q₀ :=
-    ((trivializationAt F V q₀.1).continuousAt FiberBundle.mem_trivializationAt_proj_source).snd
-  refine ((J.modelEquiv G q₀.1).symm.continuous.continuousAt.comp
+  have he : ContinuousAt (fun q ↦ (trivializationAt F V q₀.proj q).2) q₀ :=
+    ((trivializationAt F V q₀.proj).continuousAt FiberBundle.mem_trivializationAt_proj_source).snd
+  refine ((J.modelEquiv G q₀.proj).symm.continuous.continuousAt.comp
     (hA.clm_apply he)).congr_of_eventuallyEq ?_
   filter_upwards [(FiberBundle.continuous_proj F V).continuousAt.preimage_mem_nhds hU] with q hq
-  have hq' : q.1 ∈ (trivializationAt F V q₀.1).baseSet := J.unitSet_subset _ hq
+  have hq' : q.proj ∈ (trivializationAt F V q₀.proj).baseSet := J.unitSet_subset _ hq
   simp only [Function.comp_apply, trivializationAt_apply, fiberMap, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
     Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hq']
@@ -544,12 +548,12 @@ def totalSpaceHomeomorph : TotalSpace G J.Fiber ≃ₜ TotalSpace F V :=
 
 @[simp]
 theorem totalSpaceHomeomorph_apply (p : TotalSpace G J.Fiber) :
-    J.totalSpaceHomeomorph G p = ⟨p.1, J.fiberEquiv p.1 p.2⟩ :=
+    J.totalSpaceHomeomorph G p = ⟨p.proj, J.fiberEquiv p.proj p.snd⟩ :=
   bundleHomeomorph_symm_apply _ _ p
 
 @[simp]
 theorem totalSpaceHomeomorph_symm_apply (p : TotalSpace F V) :
-    (J.totalSpaceHomeomorph G).symm p = ⟨p.1, (J.fiberEquiv p.1).symm p.2⟩ :=
+    (J.totalSpaceHomeomorph G).symm p = ⟨p.proj, (J.fiberEquiv p.proj).symm p.snd⟩ :=
   bundleHomeomorph_apply _ _ p
 
 end Model

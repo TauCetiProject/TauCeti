@@ -100,41 +100,41 @@ private def classify {U V : Set X} (hU : IsOpen U) (hV : IsOpen V) (h : Disjoint
       ((continuous_Prop.2 hU).prodMk (continuous_Prop.2 hV)).subtype_mk _⟩
 
 private lemma setOf_classify_fst {U V : Set X} (hU : IsOpen U) (hV : IsOpen V)
-    (h : Disjoint U V) : {x | (classify hU hV h x).down.1.1} = U :=
+    (h : Disjoint U V) : {x | (classify hU hV h x).down.val.1} = U :=
   rfl
 
 private lemma setOf_classify_snd {U V : Set X} (hU : IsOpen U) (hV : IsOpen V)
-    (h : Disjoint U V) : {x | (classify hU hV h x).down.1.2} = V :=
+    (h : Disjoint U V) : {x | (classify hU hV h x).down.val.2} = V :=
   rfl
 
 private lemma preimage_setOf_fst {Y : TopCat.{u}} (f : X ⟶ Y)
     (σ : Y ⟶ disjointOpensClassifier.{u}) :
-    f ⁻¹' {y | (σ y).down.1.1} = {x | ((f ≫ σ) x).down.1.1} :=
+    f ⁻¹' {y | (σ y).down.val.1} = {x | ((f ≫ σ) x).down.val.1} :=
   rfl
 
 private lemma preimage_setOf_snd {Y : TopCat.{u}} (f : X ⟶ Y)
     (σ : Y ⟶ disjointOpensClassifier.{u}) :
-    f ⁻¹' {y | (σ y).down.1.2} = {x | ((f ≫ σ) x).down.1.2} :=
+    f ⁻¹' {y | (σ y).down.val.2} = {x | ((f ≫ σ) x).down.val.2} :=
   rfl
 
 private lemma isOpen_setOf_fst (σ : X ⟶ disjointOpensClassifier.{u}) :
-    IsOpen {x | (σ x).down.1.1} :=
-  continuous_Prop.1 <| continuous_fst.comp <| continuous_subtype_val.comp <|
+    IsOpen {x | (σ x).down.val.1} :=
+  continuous_Prop.1 <| continuous_fst.comp <| continuous_subtypeVal.comp <|
     continuous_uliftDown.comp σ.hom.continuous
 
 private lemma isOpen_setOf_snd (σ : X ⟶ disjointOpensClassifier.{u}) :
-    IsOpen {x | (σ x).down.1.2} :=
-  continuous_Prop.1 <| continuous_snd.comp <| continuous_subtype_val.comp <|
+    IsOpen {x | (σ x).down.val.2} :=
+  continuous_Prop.1 <| continuous_snd.comp <| continuous_subtypeVal.comp <|
     continuous_uliftDown.comp σ.hom.continuous
 
 private lemma disjoint_setOf (σ : X ⟶ disjointOpensClassifier.{u}) :
-    Disjoint {x | (σ x).down.1.1} {x | (σ x).down.1.2} :=
-  Set.disjoint_left.2 fun x h₁ h₂ ↦ (σ x).down.2 ⟨h₁, h₂⟩
+    Disjoint {x | (σ x).down.val.1} {x | (σ x).down.val.2} :=
+  Set.disjoint_left.2 fun x h₁ h₂ ↦ (σ x).down.property ⟨h₁, h₂⟩
 
 /-- Two maps to `disjointOpensClassifier` agree if they classify the same pair of open sets. -/
 private lemma hom_ext_classifier {σ τ : X ⟶ disjointOpensClassifier.{u}}
-    (h₁ : {x | (σ x).down.1.1} = {x | (τ x).down.1.1})
-    (h₂ : {x | (σ x).down.1.2} = {x | (τ x).down.1.2}) : σ = τ := by
+    (h₁ : {x | (σ x).down.val.1} = {x | (τ x).down.val.1})
+    (h₂ : {x | (σ x).down.val.2} = {x | (τ x).down.val.2}) : σ = τ := by
   ext x
   exacts [Set.ext_iff.1 h₁ x, Set.ext_iff.1 h₂ x]
 

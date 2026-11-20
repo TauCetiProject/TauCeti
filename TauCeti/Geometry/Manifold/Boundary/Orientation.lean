@@ -29,6 +29,15 @@ function cutting out a sublevel, detects the outward direction.
 The sign convention follows J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Proposition
 15.33, adapted to Mathlib's convention that the constrained coordinate is in slot `0`.
 
+In the preferred chart at a boundary point, a vector is outward exactly when its normal
+coordinate is negative (`isOutwardPointing_iff_proj`) and inward, that is its negative is outward,
+exactly when that coordinate is positive (`isOutwardPointing_neg_iff_proj`,
+`isOutwardPointing_neg_iff_tangentCoordChange`). Hence no vector is both
+(`IsOutwardPointing.not_isOutwardPointing_neg`), and the outward and the inward vectors form open
+sets (`isOpen_setOf_isOutwardPointing`, `isOpen_setOf_isOutwardPointing_neg`). The velocity at `0`
+of a curve on `[0, ∞)`, taken within `[0, ∞)`, is never outward
+(`not_isOutwardPointing_mfderivWithin_Ici`).
+
 The standard half-space supplies a concrete witness: the constant negative first-coordinate
 vector is outward at every boundary point.
 -/
@@ -83,7 +92,7 @@ tangent vector `v` at `x` points outward exactly when `s` times the derivative o
 on it. For `s = -1` this says that `g` increases along outward vectors. -/
 theorem isOutwardPointing_iff_mul_mvfderiv_neg {x : M}
     (hx : x ∈ (𝓡∂ (n + 1)).boundary M) {g : M → ℝ} {c s : ℝ} (hs : s ≠ 0)
-    (hchart : ∀ᶠ w in 𝓝 x, (chartAt (EuclideanHalfSpace (n + 1)) x w).1 0 = s * (g w - c))
+    (hchart : ∀ᶠ w in 𝓝 x, (chartAt (EuclideanHalfSpace (n + 1)) x w).val 0 = s * (g w - c))
     (v : TangentSpace (𝓡∂ (n + 1)) x) :
     IsOutwardPointing x v ↔ s * mvfderiv (𝓡∂ (n + 1)) g x v < 0 := by
   -- The inward coordinate `t` of the preferred chart, and its derivative at `x`.
@@ -175,6 +184,111 @@ theorem ne_zero {x : M} {v : TangentSpace (𝓡∂ (n + 1)) x}
   exact (lt_irrefl 0) (by simp at hv)
 
 end IsOutwardPointing
+
+/-! ### Outward and inward vectors in the preferred chart -/
+
+section PreferredChart
+
+/-- At a boundary point, a vector is outward exactly when its normal coordinate in the preferred
+chart is negative. -/
+theorem isOutwardPointing_iff_proj {x : M} (hx : x ∈ (𝓡∂ (n + 1)).boundary M)
+    {v : TangentSpace (𝓡∂ (n + 1)) x} :
+    IsOutwardPointing x v ↔ EuclideanSpace.proj (0 : Fin (n + 1)) v < 0 := by
+  rw [isOutwardPointing_iff, and_iff_right hx, (hasMFDerivAt_extChartAt_self x).mfderiv]
+  rfl
+
+/-- At a boundary point, a vector is inward exactly when its normal coordinate in the preferred
+chart is positive. -/
+theorem isOutwardPointing_neg_iff_proj {x : M} (hx : x ∈ (𝓡∂ (n + 1)).boundary M)
+    {v : TangentSpace (𝓡∂ (n + 1)) x} :
+    IsOutwardPointing x (-v) ↔ 0 < EuclideanSpace.proj (0 : Fin (n + 1)) v := by
+  -- `TangentSpace` is a type synonym of the model space, so the target `proj 0 (-v)` is not
+  -- type-correct at instance transparency and `rw [map_neg]` finds no match; the `show` states
+  -- the instance of `map_neg` at the tangent space.
+  rw [isOutwardPointing_iff_proj hx,
+    show EuclideanSpace.proj (0 : Fin (n + 1)) (-v) = -EuclideanSpace.proj (0 : Fin (n + 1)) v from
+      map_neg _ _, neg_lt_zero]
+
+/-- An outward vector is not inward: its negative is not outward. -/
+theorem IsOutwardPointing.not_isOutwardPointing_neg {x : M} {v : TangentSpace (𝓡∂ (n + 1)) x}
+    (hv : IsOutwardPointing x v) : ¬IsOutwardPointing x (-v) := by
+  have hx := hv.mem_boundary
+  rw [isOutwardPointing_iff_proj hx] at hv
+  rw [isOutwardPointing_neg_iff_proj hx]
+  exact hv.asymm
+
+/-- The outward vectors at a point form an open set (empty away from the boundary). -/
+theorem isOpen_setOf_isOutwardPointing (x : M) :
+    IsOpen {v : TangentSpace (𝓡∂ (n + 1)) x | IsOutwardPointing x v} := by
+  by_cases hx : x ∈ (𝓡∂ (n + 1)).boundary M
+  · simp_rw [isOutwardPointing_iff_proj hx]
+    exact isOpen_lt (EuclideanSpace.proj (0 : Fin (n + 1))).continuous continuous_const
+  · have h : {v : TangentSpace (𝓡∂ (n + 1)) x | IsOutwardPointing x v} = ∅ :=
+      eq_empty_of_forall_notMem fun _ hv ↦ hx (IsOutwardPointing.mem_boundary hv)
+    rw [h]
+    exact isOpen_empty
+
+/-- The inward vectors at a point form an open set (empty away from the boundary). -/
+theorem isOpen_setOf_isOutwardPointing_neg (x : M) :
+    IsOpen {v : TangentSpace (𝓡∂ (n + 1)) x | IsOutwardPointing x (-v)} :=
+  (isOpen_setOf_isOutwardPointing x).preimage continuous_neg
+
+/-- The preferred chart at a boundary point `x` reads every point with nonnegative normal
+coordinate, and reads `x` itself with normal coordinate zero. -/
+theorem isMinOn_extChartAt_apply_zero {x : M} (hx : x ∈ (𝓡∂ (n + 1)).boundary M)
+    (s : Set M) : IsMinOn (fun y ↦ extChartAt (𝓡∂ (n + 1)) x y 0) s x := by
+  have h0 : 0 = extChartAt (𝓡∂ (n + 1)) x x 0 := by
+    have h := (𝓡∂ (n + 1)).isBoundaryPoint_iff.mp hx
+    rw [frontier_range_modelWithCornersEuclideanHalfSpace] at h
+    exact h
+  intro y _
+  simp only [mem_ofPred_eq, ← h0]
+  simp only [extChartAt_coe, Function.comp_apply, modelWithCornersEuclideanHalfSpace_toFun]
+  exact (chartAt (EuclideanHalfSpace (n + 1)) x y).property
+
+/-- The normal coordinate, in the preferred chart at `c 0`, of the velocity of a curve `c` within
+`s` at `0` is the derivative of the normal coordinate of `c`. -/
+theorem hasFDerivWithinAt_extChartAt_comp_apply_zero {c : ℝ → M} {s : Set ℝ}
+    (hc : MDifferentiableWithinAt 𝓘(ℝ) (𝓡∂ (n + 1)) c s 0) :
+    HasFDerivWithinAt (fun t ↦ extChartAt (𝓡∂ (n + 1)) (c 0) (c t) 0)
+      ((EuclideanSpace.proj (0 : Fin (n + 1))).comp
+        (mfderivWithin 𝓘(ℝ) (𝓡∂ (n + 1)) c s 0)) s 0 := by
+  have hd := (hasMFDerivAt_extChartAt_self (I := 𝓡∂ (n + 1)) (c 0)).comp_hasMFDerivWithinAt
+    (0 : ℝ) hc.hasMFDerivWithinAt
+  rw [hasMFDerivWithinAt_iff_hasFDerivWithinAt] at hd
+  exact (EuclideanSpace.proj (0 : Fin (n + 1))).hasFDerivAt.comp_hasFDerivWithinAt (0 : ℝ) hd
+
+/-- The velocity at `0` of a curve `c` on `[0, ∞)`, taken within `[0, ∞)`, is not outward. When
+`c 0 ∈ ∂M` it is therefore tangent to the boundary or inward. (Without differentiability the
+velocity is `0` by convention, which is not outward either.) -/
+theorem not_isOutwardPointing_mfderivWithin_Ici (c : ℝ → M) :
+    ¬IsOutwardPointing (c 0) (mfderivWithin 𝓘(ℝ) (𝓡∂ (n + 1)) c (Ici 0) 0 (1 : ℝ)) := by
+  intro hv
+  by_cases hc : MDifferentiableWithinAt 𝓘(ℝ) (𝓡∂ (n + 1)) c (Ici 0) 0
+  swap
+  · rw [mfderivWithin_zero_of_not_mdifferentiableWithinAt hc] at hv
+    exact hv.ne_zero rfl
+  have hmin : IsLocalMinOn (fun t ↦ extChartAt (𝓡∂ (n + 1)) (c 0) (c t) 0) (Ici 0) 0 :=
+    ((isMinOn_extChartAt_apply_zero hv.mem_boundary univ).comp_of_mapsTo
+      (mapsTo_univ c (Ici 0)) rfl).isLocalMinOn
+  have hcone : (1 : ℝ) ∈ posTangentConeAt (Ici (0 : ℝ)) 0 :=
+    mem_posTangentConeAt_of_segment_subset ((convex_Ici 0).segment_subset self_mem_Ici
+      (by norm_num))
+  have h := hmin.hasFDerivWithinAt_nonneg (hasFDerivWithinAt_extChartAt_comp_apply_zero hc) hcone
+  rw [isOutwardPointing_iff_proj hv.mem_boundary] at hv
+  exact (not_lt.mpr h) hv
+
+/-- Inwardness, that is outwardness of the negative, can be tested in any preferred chart
+containing the boundary point: the normal coordinate is positive. -/
+theorem isOutwardPointing_neg_iff_tangentCoordChange [IsManifold (𝓡∂ (n + 1)) 1 M] {x α : M}
+    (hx : x ∈ (𝓡∂ (n + 1)).boundary M) (hα : x ∈ (extChartAt (𝓡∂ (n + 1)) α).source)
+    (v : TangentSpace (𝓡∂ (n + 1)) x) :
+    IsOutwardPointing x (-v) ↔ 0 < (tangentCoordChange (𝓡∂ (n + 1)) x α x v) 0 := by
+  obtain ⟨a, ha, hnormal⟩ := tangentCoordChange_normal_pos hx (mem_extChartAt_source _) hα
+  rw [isOutwardPointing_neg_iff_proj hx, hnormal v, mul_pos_iff_of_pos_left ha]
+  rfl
+
+end PreferredChart
 
 /-- On the standard half-space, the constant vector `-e₀` is outward at every boundary point. -/
 theorem isOutwardPointing_standard_halfSpace

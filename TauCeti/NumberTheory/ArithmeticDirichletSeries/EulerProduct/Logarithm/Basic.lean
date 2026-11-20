@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Complex.LogBounds
+public import TauCeti.Analysis.SpecialFunctions.Complex.Log.Bounds
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 
 import Mathlib.NumberTheory.EulerProduct.ExpLog

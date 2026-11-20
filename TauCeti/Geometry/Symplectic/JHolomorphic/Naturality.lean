@@ -21,6 +21,13 @@ applied to the variation and the nonlinear defect. Thus tensorial transformation
 solutions without assuming that `J` is integrable or that the coordinate change is affine.
 The endomorphisms need not square to minus one for these chain-rule identities.
 
+Source maps need no correction term. If the differential of `ψ : U' → U` at `y` intertwines
+the source endomorphisms `j'` and `j`, as a holomorphic change of source coordinate does, then
+both the defect and the linearization of `u ∘ ψ`, on the variation `ξ ∘ ψ`, are those of `u` at
+`ψ y` composed with `dψ y`, whether or not `u` is pseudoholomorphic. This needs only first
+derivatives at the point, and `dψ y` need not be invertible: branched maps such as `z ↦ z ^ k`
+are included. When `dψ y` is surjective, the defects of `u ∘ ψ` and `u` vanish together.
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
@@ -136,5 +143,57 @@ theorem cauchyRiemannLinearization_comp_of_cauchyRiemannOperator_eq_zero
       (fderiv ℝ Φ (u x)).comp (cauchyRiemannLinearization j J u ξ x) := by
   rw [cauchyRiemannLinearization_comp j J K u ξ Φ x hu hξ hΦ hJ hK hJK, hhol, comp_zero,
     add_zero]
+
+/-! ### Source maps -/
+
+section Source
+
+variable {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℝ U']
+
+/-- The nonlinear Cauchy–Riemann defect is natural under a source map whose differential
+intertwines the source endomorphisms: the defect of `u ∘ ψ` at `y` is the defect of `u` at
+`ψ y` composed with `dψ y`. -/
+theorem cauchyRiemannOperator_comp_right
+    (j' : U' →L[ℝ] U') (j : U →L[ℝ] U) (J : V → V →L[ℝ] V) (u : U → V) (ψ : U' → U) (y : U')
+    (hu : DifferentiableAt ℝ u (ψ y)) (hψ : DifferentiableAt ℝ ψ y)
+    (hj : (fderiv ℝ ψ y).comp j' = j.comp (fderiv ℝ ψ y)) :
+    cauchyRiemannOperator j' J (u ∘ ψ) y =
+      (cauchyRiemannOperator j J u (ψ y)).comp (fderiv ℝ ψ y) := by
+  ext w
+  have h := congrArg (fun L : U' →L[ℝ] U ↦ L w) hj
+  simp only [comp_apply] at h
+  simp only [cauchyRiemannOperator_apply, fderiv_comp y hu hψ, comp_apply, Function.comp_apply,
+    h]
+
+/-- Under a source map with surjective differential intertwining the source endomorphisms,
+`u ∘ ψ` has vanishing Cauchy–Riemann defect at `y` exactly when `u` does at `ψ y`. -/
+theorem cauchyRiemannOperator_comp_right_eq_zero_iff
+    (j' : U' →L[ℝ] U') (j : U →L[ℝ] U) (J : V → V →L[ℝ] V) (u : U → V) (ψ : U' → U) (y : U')
+    (hu : DifferentiableAt ℝ u (ψ y)) (hψ : DifferentiableAt ℝ ψ y)
+    (hj : (fderiv ℝ ψ y).comp j' = j.comp (fderiv ℝ ψ y))
+    (h : Function.Surjective (fderiv ℝ ψ y)) :
+    cauchyRiemannOperator j' J (u ∘ ψ) y = 0 ↔ cauchyRiemannOperator j J u (ψ y) = 0 := by
+  rw [cauchyRiemannOperator_comp_right j' j J u ψ y hu hψ hj]
+  refine ⟨fun h0 ↦ ?_, fun h0 ↦ by rw [h0, zero_comp]⟩
+  ext v
+  obtain ⟨w, rfl⟩ := h v
+  simpa using congrArg (fun L : U' →L[ℝ] V ↦ L w) h0
+
+/-- The Cauchy–Riemann linearization is natural under a source map whose differential
+intertwines the source endomorphisms: the linearization of `u ∘ ψ` on `ξ ∘ ψ` at `y` is that
+of `u` on `ξ` at `ψ y` composed with `dψ y`. No holomorphicity of `u` is needed. -/
+theorem cauchyRiemannLinearization_comp_right
+    (j' : U' →L[ℝ] U') (j : U →L[ℝ] U) (J : V → V →L[ℝ] V) (u ξ : U → V) (ψ : U' → U)
+    (y : U') (hu : DifferentiableAt ℝ u (ψ y)) (hξ : DifferentiableAt ℝ ξ (ψ y))
+    (hψ : DifferentiableAt ℝ ψ y) (hj : (fderiv ℝ ψ y).comp j' = j.comp (fderiv ℝ ψ y)) :
+    cauchyRiemannLinearization j' J (u ∘ ψ) (ξ ∘ ψ) y =
+      (cauchyRiemannLinearization j J u ξ (ψ y)).comp (fderiv ℝ ψ y) := by
+  ext w
+  have h := congrArg (fun L : U' →L[ℝ] U ↦ L w) hj
+  simp only [comp_apply] at h
+  simp only [cauchyRiemannLinearization_apply, fderiv_comp y hu hψ, fderiv_comp y hξ hψ,
+    comp_apply, Function.comp_apply, h]
+
+end Source
 
 end TauCeti

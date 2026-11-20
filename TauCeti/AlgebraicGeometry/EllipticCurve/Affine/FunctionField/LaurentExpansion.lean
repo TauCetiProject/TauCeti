@@ -20,8 +20,9 @@ import TauCeti.RingTheory.Valuation.Discrete.Order
 The coordinate-ring expansion at infinity extends to the function field. Its parameter
 `z = -x/y` expands to `X`, and its valuation equals the place at infinity.
 Consequently a rational function is regular at infinity exactly when its expansion is a
-power series. This lets local expansions of morphisms be constructed from their actual
-function-field pullbacks.
+power series, and the expansion commutes with base change of the coefficient field
+(`WeierstrassCurve.functionFieldLaurentExpansion_map`). This lets local expansions of morphisms be
+constructed from their actual function-field pullbacks.
 
 ## References
 
@@ -65,27 +66,10 @@ theorem functionFieldLaurentExpansion_genericY :
   rw [Affine.genericY_def, AdjoinRoot.mk_X, functionFieldLaurentExpansion_algebraMap,
     laurentExpansion_root]
 
-/-- The Laurent expansion of the generic ordinate `y` is nonzero. -/
-theorem functionFieldLaurentExpansion_genericY_ne_zero :
+private theorem functionFieldLaurentExpansion_genericY_ne_zero :
     W.functionFieldLaurentExpansion W.toAffine.genericY ≠ 0 :=
   (map_ne_zero_iff W.functionFieldLaurentExpansion
     W.functionFieldLaurentExpansion.injective).mpr W.toAffine.genericY_ne_zero
-
-/-- The product of the Laurent expansion of `y` with the `w`-expansion `w(z)` is `-1`. -/
-theorem functionFieldLaurentExpansion_genericY_mul_formalW :
-    W.functionFieldLaurentExpansion W.toAffine.genericY * (formalW W : K⸨X⸩) = -1 := by
-  rw [Affine.genericY_def, AdjoinRoot.mk_X, functionFieldLaurentExpansion_algebraMap,
-    laurentExpansion_root_mul_formalW]
-
-/-- The Laurent expansion of the generic abscissa `x` is `-X` times that of `y`, reflecting
-`z = -x/y`. -/
-theorem functionFieldLaurentExpansion_genericX_eq_neg_X_mul_functionFieldLaurentExpansion_genericY :
-    W.functionFieldLaurentExpansion W.toAffine.genericX =
-      -((PowerSeries.X : K⟦X⟧) * W.functionFieldLaurentExpansion W.toAffine.genericY) := by
-  rw [Affine.genericX_def, Affine.genericY_def,
-    Affine.CoordinateRing.mk_C_eq_algebraMap, AdjoinRoot.mk_X,
-    functionFieldLaurentExpansion_algebraMap, functionFieldLaurentExpansion_algebraMap]
-  exact W.laurentExpansion_of_X_eq_neg_X_mul_laurentExpansion_root
 
 /-- The function `-1/y` expands to the formal power series `w(z)`. -/
 @[simp]
@@ -93,8 +77,9 @@ theorem functionFieldLaurentExpansion_neg_inv_genericY :
     W.functionFieldLaurentExpansion (-W.toAffine.genericY⁻¹) = (formalW W : K⸨X⸩) := by
   have hy := W.functionFieldLaurentExpansion_genericY_ne_zero
   apply (mul_right_inj' hy).mp
-  rw [map_neg, map_inv₀, mul_neg, mul_inv_cancel₀ hy,
-    W.functionFieldLaurentExpansion_genericY_mul_formalW]
+  rw [map_neg, map_inv₀, mul_neg, mul_inv_cancel₀ hy]
+  rw [Affine.genericY_def, AdjoinRoot.mk_X, functionFieldLaurentExpansion_algebraMap,
+    laurentExpansion_root_mul_formalW]
 
 /-- The local parameter `-x/y` expands to the power-series variable. -/
 -- Rewrite the parameter before simplification distributes the algebra map over division.
@@ -102,12 +87,16 @@ theorem functionFieldLaurentExpansion_neg_inv_genericY :
 theorem functionFieldLaurentExpansion_neg_genericX_div_genericY :
     W.functionFieldLaurentExpansion (-W.toAffine.genericX / W.toAffine.genericY) =
       (PowerSeries.X : K⟦X⟧) := by
-  rw [map_div₀, map_neg,
-    W.functionFieldLaurentExpansion_genericX_eq_neg_X_mul_functionFieldLaurentExpansion_genericY,
-    neg_neg, mul_div_cancel_right₀ _ W.functionFieldLaurentExpansion_genericY_ne_zero]
+  have hy := W.functionFieldLaurentExpansion_genericY_ne_zero
+  have hx : W.functionFieldLaurentExpansion W.toAffine.genericX =
+      -((PowerSeries.X : K⟦X⟧) * W.functionFieldLaurentExpansion W.toAffine.genericY) := by
+    rw [Affine.genericX_def, Affine.genericY_def,
+      Affine.CoordinateRing.mk_C_eq_algebraMap, AdjoinRoot.mk_X,
+      functionFieldLaurentExpansion_algebraMap, functionFieldLaurentExpansion_algebraMap]
+    exact W.laurentExpansion_of_X_eq_neg_X_mul_laurentExpansion_root
+  rw [map_div₀, map_neg, hx, neg_neg, mul_div_cancel_right₀ _ hy]
 
-/-- Laurent expansion at infinity commutes with base change along a field homomorphism. -/
-@[simp]
+/-- Laurent expansion at infinity commutes with base change along a field homomorphism `σ`. -/
 theorem functionFieldLaurentExpansion_map {L : Type*} [Field L] (σ : K →+* L)
     (f : W.toAffine.FunctionField) :
     (W.map σ).functionFieldLaurentExpansion (Affine.FunctionField.map W.toAffine σ f) =
@@ -120,20 +109,22 @@ theorem functionFieldLaurentExpansion_map {L : Type*} [Field L] (σ : K →+* L)
       (W.functionFieldLaurentExpansion : W.toAffine.FunctionField →+* K⸨X⸩)
   have hparam : A (-W.toAffine.genericX / W.toAffine.genericY) =
       B (-W.toAffine.genericX / W.toAffine.genericY) := by
-    simp only [A, B, RingHom.comp_apply, RingHom.coe_coe]
-    rw [Affine.FunctionField.map_neg_genericX_div_genericY,
+    have hp : Affine.FunctionField.map W.toAffine σ
+        (-W.toAffine.genericX / W.toAffine.genericY) =
+        -(W.map σ).toAffine.genericX / (W.map σ).toAffine.genericY := by
+      simp [Affine.FunctionField.map_genericX, Affine.FunctionField.map_genericY]
+    rw [RingHom.comp_apply, RingHom.comp_apply, hp, AlgHom.coe_toRingHom, AlgHom.coe_toRingHom,
       functionFieldLaurentExpansion_neg_genericX_div_genericY,
-      functionFieldLaurentExpansion_neg_genericX_div_genericY,
-      HahnSeries.mapRingHom_apply, map_ofPowerSeries, PowerSeries.map_X]
+      functionFieldLaurentExpansion_neg_genericX_div_genericY, HahnSeries.mapRingHom_apply,
+      HahnSeries.map_ofPowerSeries, PowerSeries.map_X]
   have hw : A (-W.toAffine.genericY⁻¹) = B (-W.toAffine.genericY⁻¹) := by
-    have h1 : (W.map σ).functionFieldLaurentExpansion
-        (-(Affine.FunctionField.map W.toAffine σ W.toAffine.genericY)⁻¹) =
-        HahnSeries.mapRingHom σ
-          (W.functionFieldLaurentExpansion (-W.toAffine.genericY⁻¹)) := by
-      rw [Affine.FunctionField.map_genericY, functionFieldLaurentExpansion_neg_inv_genericY,
-        functionFieldLaurentExpansion_neg_inv_genericY, HahnSeries.mapRingHom_apply,
-        map_ofPowerSeries, map_formalW]
-    simpa only [A, B, RingHom.comp_apply, RingHom.coe_coe, map_neg, map_inv₀] using h1
+    have hinv : Affine.FunctionField.map W.toAffine σ (-W.toAffine.genericY⁻¹) =
+        -(W.map σ).toAffine.genericY⁻¹ := by
+      simp [Affine.FunctionField.map_genericY]
+    rw [RingHom.comp_apply, RingHom.comp_apply, hinv, AlgHom.coe_toRingHom, AlgHom.coe_toRingHom,
+      functionFieldLaurentExpansion_neg_inv_genericY,
+      functionFieldLaurentExpansion_neg_inv_genericY, HahnSeries.mapRingHom_apply,
+      HahnSeries.map_ofPowerSeries, map_formalW]
   have hY : A W.toAffine.genericY = B W.toAffine.genericY := by
     simpa only [map_neg, map_inv₀, neg_inj, inv_inj] using hw
   have hX : A W.toAffine.genericX = B W.toAffine.genericX := by
@@ -141,9 +132,11 @@ theorem functionFieldLaurentExpansion_map {L : Type*} [Field L] (σ : K →+* L)
       (map_ne_zero_iff B B.injective).mpr W.toAffine.genericY_ne_zero
     simpa only [map_div₀, map_neg, hY, div_left_inj₀ hy, neg_inj] using hparam
   have hAB : A = B := Affine.FunctionField.ringHom_ext
-    (fun c ↦ by simp only [A, B, RingHom.comp_apply, RingHom.coe_coe,
-      Affine.FunctionField.map_algebraMap, AlgHom.commutes, _root_.LaurentSeries.algebraMap_apply,
-      HahnSeries.mapRingHom_apply, HahnSeries.map_C])
+    (fun c ↦ by
+      simp only [A, B, RingHom.comp_apply, Affine.FunctionField.map_algebraMap,
+        AlgHom.coe_toRingHom, AlgHom.commutes]
+      ext n
+      by_cases hn : n = 0 <;> simp [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_eq, hn])
     hX hY
   exact RingHom.congr_fun hAB f
 
