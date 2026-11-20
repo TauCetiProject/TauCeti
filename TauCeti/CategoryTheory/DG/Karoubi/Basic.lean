@@ -424,7 +424,7 @@ theorem closedHomMk_comp {P Q S : DGKaroubi R C} (f : DGHom R 0 P.X Q.X)
     (hg : g ∈ homSubmodule Q S 0) (hdg : dgDifferential R 0 g = 0) :
     closedHomMk f hf hdf ≫ closedHomMk g hg hdg =
       closedHomMk (dgComp R f g (zero_add 0)) (dgComp_mem_homSubmodule hf hg _)
-        (by rw [dgDifferential_dgComp, hdf, hdg, zero_dgComp, dgComp_zero, smul_zero, add_zero]) :=
+        (by rw [dgDifferential_dgComp_of_dgDifferential_eq_zero_left R hdf, hdg, dgComp_zero]) :=
   closedHom_ext <| by
     rw [dgHomVal_dgClosedHom_comp, dgHomVal_dgClosedHom_closedHomMk,
       dgHomVal_dgClosedHom_closedHomMk, dgHomVal_dgClosedHom_closedHomMk]
