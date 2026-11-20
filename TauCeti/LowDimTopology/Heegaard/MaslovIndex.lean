@@ -448,11 +448,27 @@ theorem IsDomainBetween.inv_four_le_pointMeasure_point_right (hD : H.IsDomainBet
   rw [hD.alphaArcBoundary_alphaBoundary_point_right hi, Int.cast_one, abs_one] at this
   linarith
 
+/-- The arithmetic of a convex corner: if four corners of a nonnegative domain `D` at `p`, listed
+as `a`, `b`, `c`, `d`, satisfy `D a - D b - D c + D d = -1`, then `D` has point measure `1 / 4` at
+`p` exactly when it vanishes at `a` and `d` and has total multiplicity one at `b` and `c`. -/
+private theorem pointMeasure_eq_inv_four_iff_of_corners (hD0 : 0 ≤ D) {p : Point}
+    {a b c d : Region} (hp : H.pointMeasure D p = ((D a : ℚ) + D b + D c + D d) / 4)
+    (hb : D a - D b - D c + D d = -1) :
+    H.pointMeasure D p = 4⁻¹ ↔ D a = 0 ∧ D d = 0 ∧ D b + D c = 1 := by
+  have h₁ := hD0 a
+  have h₂ := hD0 b
+  have h₃ := hD0 c
+  have h₄ := hD0 d
+  simp only [Pi.zero_apply] at h₁ h₂ h₃ h₄
+  rw [hp, div_eq_iff (by norm_num), inv_mul_cancel₀ (by norm_num)]
+  norm_cast
+  omega
+
 /-- **Convex corners at `x`.** Let `D` be a nonnegative domain from `x` to `y` and `p` the point
 of `x` on an `α`-curve where `x` and `y` differ. Then `D` has the minimal point measure `1 / 4`
 at `p` exactly when it has multiplicity one in a single quadrant at `p`, which is either the
 region to the right of the `α`-arc ending at `p` or the region to the left of the `α`-arc
-starting at `p`, and multiplicity zero in the two other quadrants. -/
+starting at `p`, and multiplicity zero in the three other quadrants. -/
 theorem IsDomainBetween.pointMeasure_point_left_eq_inv_four_iff (hD : H.IsDomainBetween x y D)
     (hD0 : 0 ≤ D) {i : Fin n} (hi : H.point x i ≠ H.point y i) :
     H.pointMeasure D (H.point x i) = 4⁻¹ ↔
@@ -462,20 +478,14 @@ theorem IsDomainBetween.pointMeasure_point_left_eq_inv_four_iff (hD : H.IsDomain
             1 := by
   have h := hD.alphaArcBoundary_alphaBoundary_point_left hi
   simp only [alphaArcBoundary_apply, alphaBoundary_apply] at h
-  have h₁ := hD0 (H.alphaLeft (H.alphaNext.symm (H.point x i)))
-  have h₂ := hD0 (H.alphaRight (H.alphaNext.symm (H.point x i)))
-  have h₃ := hD0 (H.alphaLeft (H.point x i))
-  have h₄ := hD0 (H.alphaRight (H.point x i))
-  simp only [Pi.zero_apply] at h₁ h₂ h₃ h₄
-  rw [pointMeasure_apply, div_eq_iff (by norm_num), inv_mul_cancel₀ (by norm_num)]
-  norm_cast
-  omega
+  exact pointMeasure_eq_inv_four_iff_of_corners hD0 (by rw [pointMeasure_apply])
+    (by omega)
 
 /-- **Convex corners at `y`.** Let `D` be a nonnegative domain from `x` to `y` and `q` the point
 of `y` on an `α`-curve where `x` and `y` differ. Then `D` has the minimal point measure `1 / 4`
 at `q` exactly when it has multiplicity one in a single quadrant at `q`, which is either the
 region to the left of the `α`-arc ending at `q` or the region to the right of the `α`-arc
-starting at `q`, and multiplicity zero in the two other quadrants. -/
+starting at `q`, and multiplicity zero in the three other quadrants. -/
 theorem IsDomainBetween.pointMeasure_point_right_eq_inv_four_iff (hD : H.IsDomainBetween x y D)
     (hD0 : 0 ≤ D) {i : Fin n} (hi : H.point x i ≠ H.point y i) :
     H.pointMeasure D (H.point y i) = 4⁻¹ ↔
@@ -485,40 +495,40 @@ theorem IsDomainBetween.pointMeasure_point_right_eq_inv_four_iff (hD : H.IsDomai
             1 := by
   have h := hD.alphaArcBoundary_alphaBoundary_point_right hi
   simp only [alphaArcBoundary_apply, alphaBoundary_apply] at h
-  have h₁ := hD0 (H.alphaLeft (H.alphaNext.symm (H.point y i)))
-  have h₂ := hD0 (H.alphaRight (H.alphaNext.symm (H.point y i)))
-  have h₃ := hD0 (H.alphaLeft (H.point y i))
-  have h₄ := hD0 (H.alphaRight (H.point y i))
-  simp only [Pi.zero_apply] at h₁ h₂ h₃ h₄
-  rw [pointMeasure_apply, div_eq_iff (by norm_num), inv_mul_cancel₀ (by norm_num)]
-  norm_cast
-  omega
+  exact pointMeasure_eq_inv_four_iff_of_corners hD0 (by rw [pointMeasure_apply]; ring)
+    (by omega)
 
 variable [DecidableEq Point]
+
+/-- If a nonnegative domain `D` has point measure at least `1 / 4` at the point of `w` on every
+`α`-curve where `x` and `y` differ, then each such curve contributes at least `1 / 4` to
+`n_w(D)`. -/
+private theorem hammingDist_le_four_mul_generatorPointMeasure_of_inv_four_le (hD0 : 0 ≤ D)
+    (w : H.Generator)
+    (hw : ∀ i, H.point x i ≠ H.point y i → 4⁻¹ ≤ H.pointMeasure D (H.point w i)) :
+    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure w D := by
+  rw [hammingDist, generatorPointMeasure_apply, mul_sum, card_filter, Nat.cast_sum]
+  refine sum_le_sum fun i _ => ?_
+  split_ifs with hi
+  · push_cast
+    linarith [hw i hi]
+  · simpa using H.pointMeasure_nonneg hD0 (H.point w i)
 
 /-- For a nonnegative domain `D` from `x` to `y`, every `α`-curve on which `x` and `y` differ
 contributes at least `1 / 4` to `n_x(D)`. -/
 theorem IsDomainBetween.hammingDist_le_four_mul_generatorPointMeasure_left
     (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D) :
-    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure x D := by
-  rw [hammingDist, generatorPointMeasure_apply, mul_sum, card_filter, Nat.cast_sum]
-  refine sum_le_sum fun i _ => ?_
-  split_ifs with hi
-  · push_cast
-    linarith [hD.inv_four_le_pointMeasure_point_left hD0 hi]
-  · simpa using H.pointMeasure_nonneg hD0 (H.point x i)
+    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure x D :=
+  hammingDist_le_four_mul_generatorPointMeasure_of_inv_four_le hD0 x fun _ hi =>
+    hD.inv_four_le_pointMeasure_point_left hD0 hi
 
 /-- For a nonnegative domain `D` from `x` to `y`, every `α`-curve on which `x` and `y` differ
 contributes at least `1 / 4` to `n_y(D)`. -/
 theorem IsDomainBetween.hammingDist_le_four_mul_generatorPointMeasure_right
     (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D) :
-    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure y D := by
-  rw [hammingDist, generatorPointMeasure_apply, mul_sum, card_filter, Nat.cast_sum]
-  refine sum_le_sum fun i _ => ?_
-  split_ifs with hi
-  · push_cast
-    linarith [hD.inv_four_le_pointMeasure_point_right hD0 hi]
-  · simpa using H.pointMeasure_nonneg hD0 (H.point y i)
+    (hammingDist (H.point x) (H.point y) : ℚ) ≤ 4 * H.generatorPointMeasure y D :=
+  hammingDist_le_four_mul_generatorPointMeasure_of_inv_four_le hD0 y fun _ hi =>
+    hD.inv_four_le_pointMeasure_point_right hD0 hi
 
 /-- The excess `n_{xᵢ}(D) + n_{yᵢ}(D) - 1 / 2` of the point measures on an `α`-curve where `x`
 and `y` differ over the two corners forced there, and `n_{xᵢ}(D) + n_{yᵢ}(D)` on a curve where
@@ -553,9 +563,8 @@ private theorem sum_excess_eq (χ : Region → ℤ) :
         if H.point x i = H.point y i then 0 else 2⁻¹) =
       H.maslovIndex χ x y D - H.eulerMeasure χ D -
         hammingDist (H.point x) (H.point y) / 2 := by
-  rw [sum_sub_distrib, sum_add_distrib, sum_ite, sum_const_zero, sum_const, zero_add,
-    nsmul_eq_mul, maslovIndex_apply, generatorPointMeasure_apply, generatorPointMeasure_apply,
-    hammingDist]
+  simp only [sum_sub_distrib, sum_add_distrib, sum_ite, sum_const_zero, sum_const,
+    nsmul_eq_mul, maslovIndex_apply, generatorPointMeasure_apply, hammingDist]
   ring
 
 /-- When the index estimate is an equality, every excess of the point measures vanishes. -/

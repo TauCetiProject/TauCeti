@@ -127,21 +127,6 @@ theorem isNice_iff : H.IsNice χ ↔
 
 variable [Fintype Region]
 
-/-- In a nice diagram, a nonnegative domain avoiding the basepoints has nonnegative Euler
-measure: bigons have Euler measure `1 / 2` and squares have Euler measure `0`. -/
-theorem IsNice.eulerMeasure_nonneg (h : H.IsNice χ) (hD0 : 0 ≤ D)
-    (hz : ∀ z, D (H.basepoint z) = 0) : 0 ≤ H.eulerMeasure χ D := by
-  rw [eulerMeasure_apply]
-  refine sum_nonneg fun r _ => ?_
-  by_cases hr : ∃ z, H.basepoint z = r
-  · obtain ⟨z, rfl⟩ := hr
-    simp [hz z]
-  · push Not at hr
-    have hDr : (0 : ℚ) ≤ D r := by exact_mod_cast hD0 r
-    obtain ⟨hχ, hk | hk⟩ := h r hr <;>
-    · rw [hχ, hk]
-      exact mul_nonneg hDr (by norm_num)
-
 /-- In a nice diagram, the Euler measure of a domain avoiding the basepoints is half its total
 multiplicity on the bigons, the regions with two corners: a bigon has Euler measure `1 / 2` and
 a square has Euler measure `0`. -/
@@ -157,6 +142,13 @@ theorem IsNice.eulerMeasure_eq (h : H.IsNice χ) (hz : ∀ z, D (H.basepoint z) 
     · simp [hχ, hk]
       ring
     · simp [hχ, hk]
+
+/-- In a nice diagram, a nonnegative domain avoiding the basepoints has nonnegative Euler
+measure: bigons have Euler measure `1 / 2` and squares have Euler measure `0`. -/
+theorem IsNice.eulerMeasure_nonneg (h : H.IsNice χ) (hD0 : 0 ≤ D)
+    (hz : ∀ z, D (H.basepoint z) = 0) : 0 ≤ H.eulerMeasure χ D := by
+  rw [h.eulerMeasure_eq hz]
+  exact div_nonneg (sum_nonneg fun r _ => by exact_mod_cast hD0 r) zero_le_two
 
 /-- In a nice diagram, a nonnegative domain avoiding the basepoints has Euler measure zero
 exactly when it has multiplicity zero on every bigon. -/
@@ -283,9 +275,7 @@ theorem IsNice.maslovIndex_le_eulerMeasure_add_half_hammingDist_of_cornerCount_e
     (hDr : D r ≠ 0) :
     H.maslovIndex χ x y D ≤ H.eulerMeasure χ D + hammingDist (H.point x) (H.point y) / 2 := by
   have hm : (1 : ℚ) ≤ hammingDist (H.point x) (H.point y) := by
-    have : hammingDist (H.point x) (H.point y) ≠ 0 := fun h0 =>
-      hxy (H.point_injective (hammingDist_eq_zero.mp h0))
-    exact_mod_cast Nat.one_le_iff_ne_zero.mpr this
+    exact_mod_cast hammingDist_pos.mpr (H.point_injective.ne hxy)
   have hsum : (D r : ℚ) ≤ ∑ r with H.cornerCount r = 2, (D r : ℚ) :=
     single_le_sum (f := fun r => (D r : ℚ)) (fun r _ => by exact_mod_cast hD0 r)
       (mem_filter.mpr ⟨mem_univ r, hr⟩)
