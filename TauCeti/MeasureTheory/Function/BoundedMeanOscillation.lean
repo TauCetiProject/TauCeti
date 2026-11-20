@@ -650,20 +650,22 @@ theorem bmoSeminorm_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace �
 
 /-- **Nonzero linear maps have unbounded mean oscillation.** On a finite-dimensional real normed
 space with an additive Haar measure, a nonzero continuous linear map `ℓ` into a Banach space has
-infinite BMO seminorm. Dilation by `2` leaves the seminorm unchanged and multiplies `ℓ` by `2`, so
-the seminorm is `0` or `∞`, and it is not `0` since `ℓ` is not a.e. constant. For instance the
-identity of `ℝ` does not have bounded mean oscillation. -/
+infinite BMO seminorm. For instance the identity of `ℝ` does not have bounded mean
+oscillation. -/
 theorem _root_.ContinuousLinearMap.bmoSeminorm_eq_top {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] {μ : Measure E}
     [μ.IsAddHaarMeasure] [CompleteSpace F] {ℓ : E →L[ℝ] F} (hℓ : ℓ ≠ 0) :
     bmoSeminorm ℓ μ = ∞ := by
+  -- Dilation by `2` leaves the seminorm unchanged and multiplies `ℓ` by `2`, so the seminorm is
+  -- `0` or `∞`, and it is not `0` since `ℓ` is not a.e. constant.
   have h2 : bmoSeminorm ℓ μ = 2 * bmoSeminorm ℓ μ := by
     have hfun : (fun x => ℓ ((2 : ℝ) • x)) = (2 : ℝ) • (ℓ : E → F) :=
       funext fun x => ℓ.map_smul 2 x
     calc bmoSeminorm ℓ μ = bmoSeminorm (fun x => ℓ ((2 : ℝ) • x)) μ :=
           (bmoSeminorm_comp_smul ℓ two_ne_zero).symm
       _ = 2 * bmoSeminorm ℓ μ := by
-        rw [hfun, bmoSeminorm_const_smul, ← Nat.cast_ofNat, Real.eNorm_natCast, Nat.cast_ofNat]
+        rw [hfun, bmoSeminorm_const_smul]
+        norm_num [Real.eNorm_eq_ofReal_abs]
   have h0 : bmoSeminorm ℓ μ ≠ 0 := by
     rw [Ne, bmoSeminorm_eq_zero_iff (ℓ.continuous.locallyIntegrable)]
     rintro ⟨b, hb⟩

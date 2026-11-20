@@ -280,8 +280,7 @@ theorem ae_smul_rieszTransform_sub_rieszTransform_eq_smul_integral (v : ℝ)
 
 `‖x • R_v f - R_v (x • f)‖_p ≤ C ‖f‖_p`
 
-for all `f ∈ L²` with `x • f ∈ L²`: for `f` the indicator of `[0, 1]` times `c ≠ 0`, the
-commutator is the nonzero constant `(v / π) • c` on `(1, ∞)`. This is consistent with the
+for all `f ∈ L²` with `x • f ∈ L²`. This is consistent with the
 Coifman–Rochberg–Weiss theorem `TauCeti.exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow`, which
 bounds `[b, T]` for `b` of bounded mean oscillation, since `x` does not have bounded mean
 oscillation (`ContinuousLinearMap.bmoSeminorm_eq_top`). -/
@@ -290,6 +289,9 @@ theorem not_exists_eLpNorm_smul_rieszTransform_sub_rieszTransform_le [Nontrivial
     ¬ ∃ C : ℝ≥0, ∀ f g : Lp F 2 (volume : Measure ℝ), (∀ᵐ x, g x = x • f x) →
       eLpNorm (fun x ↦ x • rieszTransform F v f x - rieszTransform F v g x) p volume ≤
         C * eLpNorm f p volume := by
+  -- Test against `f`, the indicator of `[0, 1]` times `c ≠ 0`: by
+  -- `ae_smul_rieszTransform_sub_rieszTransform_eq_smul_integral`, the commutator is the nonzero
+  -- constant `(v / π) • c` on `(1, ∞)`, so its `Lᵖ` norm is infinite while `‖f‖_p` is finite.
   rintro ⟨C, hC⟩
   obtain ⟨c, hc⟩ := exists_ne (0 : F)
   set f : Lp F 2 (volume : Measure ℝ) :=
@@ -309,8 +311,7 @@ theorem not_exists_eLpNorm_smul_rieszTransform_sub_rieszTransform_le [Nontrivial
     rw [hgx, hfx]
     by_cases hx : x ∈ Icc (0 : ℝ) 1 <;> simp [hx]
   have hint : ∫ y, f y = c := by
-    rw [integral_indicatorConstLp, Measure.real, Real.volume_Icc, sub_zero,
-      ENNReal.toReal_ofReal zero_le_one, one_smul]
+    rw [integral_indicatorConstLp, Real.volume_real_Icc_of_le zero_le_one, sub_zero, one_smul]
   set w : F := (v / π) • c
   have hw : w ≠ 0 := smul_ne_zero (div_ne_zero hv Real.pi_ne_zero) hc
   -- On `(1, ∞)` the commutator is the nonzero constant `w`, so its `Lᵖ` norm is infinite.
