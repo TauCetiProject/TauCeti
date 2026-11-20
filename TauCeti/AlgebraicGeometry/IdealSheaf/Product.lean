@@ -53,9 +53,9 @@ theorem sup_eq_top_iff_disjoint_support {X : Scheme} {I J : X.IdealSheafData} :
 
 /-- A finite product of ideal sheaves with pairwise disjoint supports equals their intersection. -/
 theorem prod_eq_iInf_of_pairwise_disjoint_support
-    {X : Scheme} {ι : Type*} [Fintype ι] (I : ι → X.IdealSheafData)
-    (h : Pairwise fun i j ↦ Disjoint (I i).support (I j).support) :
-    ∏ i, I i = ⨅ i, I i := by
+    {X : Scheme} {ι : Type*} {s : Finset ι} {I : ι → X.IdealSheafData}
+    (h : (s : Set ι).Pairwise fun i j ↦ Disjoint (I i).support (I j).support) :
+    ∏ i ∈ s, I i = ⨅ i ∈ s, I i := by
   ext U : 2
   -- Evaluating ideal sheaves on `U` is multiplicative, and turns disjoint supports into coprime
   -- ideals of `Γ(X, U)`.
@@ -64,11 +64,13 @@ theorem prod_eq_iInf_of_pairwise_disjoint_support
       map_one' := by simp
       map_mul' _ _ := rfl }
   have he (J : X.IdealSheafData) : e J = J.ideal U := rfl
-  have hcop (i j : ι) (hij : i ≠ j) : IsCoprime ((I i).ideal U) ((I j).ideal U) := by
+  have hcop (i : ι) (hi : i ∈ s) (j : ι) (hj : j ∈ s) (hij : i ≠ j) :
+      IsCoprime ((I i).ideal U) ((I j).ideal U) := by
     simpa [Ideal.isCoprime_iff_sup_eq] using
-      congr(($(sup_eq_top_iff_disjoint_support.mpr (h hij))).ideal U)
-  simpa [he] using (map_prod e I .univ).trans
-    (Ideal.prod_eq_iInf_of_pairwise_isCoprime fun i _ j _ hij ↦ hcop i j hij)
+      congr(($(sup_eq_top_iff_disjoint_support.mpr (h hi hj hij))).ideal U)
+  have hinf : (⨅ i ∈ s, I i).ideal = ⨅ i ∈ s, (I i).ideal := by
+    simpa using ideal_biInf I s.finite_toSet
+  simpa [he, hinf] using (map_prod e I s).trans (Ideal.prod_eq_iInf_of_pairwise_isCoprime hcop)
 
 universe u
 
