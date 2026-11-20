@@ -40,7 +40,7 @@ with smooth coefficients `c_α`; the coefficients are unique. No continuity of `
 * `Module.Basis.coordinateOperator_eq_zero_iff`: the coefficients of a coordinate expression of
   order `m` are unique.
 * `TauCeti.tsupport_coordinateOperator_apply_subset`: coordinate expressions do not enlarge
-  supports. For general differential operators on a boundaryless manifold this is
+  supports. For general differential operators on a manifold this is
   `TauCeti.tsupport_differentialOperators_apply_subset`.
 
 ## References
