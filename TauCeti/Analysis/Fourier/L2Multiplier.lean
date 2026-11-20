@@ -70,6 +70,8 @@ defined, it agrees with Mathlib's multipliers.
 * `MeasureTheory.Lp.tendsto_fourierMultiplierCLM_apply`: if the symbols `m i` are eventually
   uniformly bounded and converge to `m₀` almost everywhere along a countably generated filter,
   then `T_{m i} f → T_{m₀} f` in `L²`.
+* `MeasureTheory.Lp.tendsto_fourierMultiplierCLM_apply_self`: symbols uniformly bounded and
+  tending to `1` almost everywhere give `T_{m i} f → f` in `L²`.
 * `MeasureTheory.Lp.hasDerivAt_fourierMultiplierCLM_toLp_apply`: if symbols `m s` depending on a
   real parameter are differentiable in `s` at almost every frequency, with derivative `a ξ m' ξ`
   and increments bounded by `C ‖a ξ‖ |s - t|`, then `s ↦ T_{m s} f` has derivative `T_{m'} h` in
@@ -450,6 +452,21 @@ theorem tendsto_fourierMultiplierCLM_apply {ι : Type*} {l : Filter ι} [l.IsCou
       coeFn_lpSMul (r := 2) m₀ (𝓕 f), hm] with ξ h₁ h₂ h₃
     simp only [h₁, h₂, Pi.smul_apply']
     exact h₃.smul_const _
+
+/-- **Approximate identities among multipliers.** If the symbols `m i` are eventually bounded
+almost everywhere by a constant along a countably generated filter `l` and tend to `1` almost
+everywhere along `l`, then `T_{m i} f → f` in `L²` along `l` for every `f ∈ L²`. -/
+theorem tendsto_fourierMultiplierCLM_apply_self {ι : Type*} {l : Filter ι}
+    [l.IsCountablyGenerated] {m : ι → Lp ℂ ∞ (volume : Measure E)} {C : ℝ}
+    (hC : ∀ᶠ i in l, ∀ᵐ ξ, ‖m i ξ‖ ≤ C) (hm : ∀ᵐ ξ, Tendsto (fun i ↦ m i ξ) l (𝓝 1))
+    (f : Lp F 2 (volume : Measure E)) :
+    Tendsto (fun i ↦ fourierMultiplierCLM F (m i) f) l (𝓝 f) := by
+  have hC' : ∀ᶠ i in l, ‖m i‖ ≤ max C 0 := hC.mono fun i hi ↦
+    Lp.norm_top_le_of_ae_bound (le_max_right C 0) (hi.mono fun ξ hξ ↦ hξ.trans (le_max_left C 0))
+  have h1 : MemLp (fun _ : E ↦ (1 : ℂ)) ∞ volume := memLp_top_const 1
+  have h := tendsto_fourierMultiplierCLM_apply (F := F) (m₀ := h1.toLp _) hC'
+    (by filter_upwards [hm, h1.coeFn_toLp] with ξ h₁ h₂; rwa [h₂]) f
+  rwa [fourierMultiplierCLM_of_ae_eq_const h1.coeFn_toLp, one_smul, id_apply] at h
 
 /-- The `L²` distance between a difference quotient of `s ↦ T_{m s} f` and `T_{m'} h`, computed on
 the Fourier side. -/
