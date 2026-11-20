@@ -489,7 +489,7 @@ theorem exists_map_zpowers_subtype_eq_toCochain {V Γ : Type*} [Fintype V] [Grou
   rcases eq_or_ne c 1 with rfl | hc1
   · refine ⟨⊥, ?_⟩
     ext u v _
-    rcases (Subgroup.mem_zpowers_iff_of_sq_eq_one (by simp)).mp (γ u v).2 with h | h <;>
+    rcases (Subgroup.mem_zpowers_iff_of_sq_eq_one (by simp)).mp (γ u v).property with h | h <;>
       simp [h]
   · let G : SimpleGraph V :=
       { Adj u v := γ u v ≠ 1
@@ -497,7 +497,7 @@ theorem exists_map_zpowers_subtype_eq_toCochain {V Γ : Type*} [Fintype V] [Grou
         loopless := ⟨fun u h ↦ h (γ.apply_self u)⟩ }
     refine ⟨G, ?_⟩
     ext u v _
-    rcases (Subgroup.mem_zpowers_iff_of_sq_eq_one (sq c ▸ hc)).mp (γ u v).2 with h | h
+    rcases (Subgroup.mem_zpowers_iff_of_sq_eq_one (sq c ▸ hc)).mp (γ u v).property with h | h
     · have h1 : γ u v = 1 := Subtype.ext h
       rw [map_apply, Subgroup.coe_subtype, h,
         SimpleGraph.toCochain_apply_of_not_adj hc (by simp [G, h1])]
@@ -523,7 +523,8 @@ theorem gaugeDist_map_zpowers_subtype {V α : Type*} [Fintype V] [LinearOrder V]
     apply MonoidHom.ext
     intro x
     apply Subtype.ext
-    rcases (Subgroup.mem_zpowers_iff_of_sq_eq_one (sq t ▸ ht.mul_self)).mp x.2 with hx | hx <;>
+    rcases (Subgroup.mem_zpowers_iff_of_sq_eq_one (sq t ▸ ht.mul_self)).mp x.property with
+      hx | hx <;>
       simp [ρ, hx]
   have hmap : (γ.map (Subgroup.zpowers t).subtype).map ρ = γ := by
     rw [map_map, hρ_id, map_id]

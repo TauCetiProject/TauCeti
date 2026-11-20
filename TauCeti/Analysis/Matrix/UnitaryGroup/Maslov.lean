@@ -10,7 +10,17 @@ public import Mathlib.Basic.Real.Sign
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+public import TauCeti.Basic.Real.Sign
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Sum
+public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 public import TauCeti.Topology.Circle.Degree
+
+import Mathlib.Analysis.CStarAlgebra.Matrix
+import Mathlib.Analysis.CStarAlgebra.Spectrum
+import Mathlib.Analysis.Complex.Polynomial.Basic
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
+import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # The Maslov index of a path of Lagrangian frames
@@ -18,7 +28,8 @@ public import TauCeti.Topology.Circle.Degree
 A unitary matrix `U ∈ U(n)` is a frame of the Lagrangian subspace `Λ = U ℝⁿ` of `ℂⁿ`, for the
 standard symplectic form `Im ⟪·, ·⟫`. Two frames of the same Lagrangian differ by a real orthogonal
 matrix, so the **Souriau map** `W = U Uᵀ` (`Matrix.UnitaryGroup.souriau`) depends only on `Λ`
-(`Matrix.UnitaryGroup.souriau_mul_of_mul_transpose_eq_one`). It is a symmetric unitary matrix,
+(`Matrix.UnitaryGroup.souriau_mul_of_mul_transpose_eq_one`,
+`Matrix.UnitaryGroup.souriau_eq_of_realImage_eq`). It is a symmetric unitary matrix,
 and `Λ ∩ ℝⁿ` is the real part of the eigenspace of `W` at the eigenvalue `1`.
 
 The **Maslov index** of a path `U : [0, 1] → U(n)` of frames (`Matrix.UnitaryGroup.maslovIndex`)
@@ -42,7 +53,9 @@ The index has the formal properties of the Robbin–Salamon Maslov index for pat
   (`Matrix.UnitaryGroup.maslovIndex_eq_of_homotopic`);
 * it is additive under catenation (`Matrix.UnitaryGroup.maslovIndex_trans`) and changes sign under
   reversal (`Matrix.UnitaryGroup.maslovIndex_symm`);
-* it is additive under direct sums (`Matrix.UnitaryGroup.maslovIndex_sum`);
+* it is additive under direct sums (`Matrix.UnitaryGroup.maslovIndex_sum`), also when they are
+  read in the regrouped coordinates of symplectic direct sums
+  (`Matrix.UnitaryGroup.maslovIndex_eq_add_of_coe_eq_symplecticSum`);
 * on a path whose Lagrangians close up, it is the degree of the loop `t ↦ det (U t) ^ 2`, the
   Maslov index of the loop of Lagrangians (`Matrix.UnitaryGroup.maslovIndex_eq_degree`), and on a
   loop of frames it is twice the degree of `t ↦ det (U t)`
@@ -65,15 +78,27 @@ frames by a fixed real orthogonal matrix does not change it
 (`Matrix.UnitaryGroup.maslovIndex_map_mul_left`). The localization axiom for nondiagonal `A` is
 deduced from the diagonal case in `TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization`.
 For paths of graphs, the comparison with the definition of the index by crossing forms is in
-`TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Crossing`. The zero axiom of Robbin and Salamon, that
-the index vanishes on a path along which the dimension of `U t ℝⁿ ∩ ℝⁿ` is constant, is not proved
-here.
+`TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Crossing`.
+
+The index also satisfies the zero axiom of Robbin and Salamon: it vanishes on a path along which
+the eigenvalue `1` of the Souriau maps keeps the same multiplicity, which is the dimension of
+`U t ℝⁿ ∩ ℝⁿ` (`Matrix.UnitaryGroup.maslovIndex_eq_zero_of_rootMultiplicity_eq`). The determinant
+of a unitary matrix `W` is `(-1) ^ (n - k) e^{2πi s(W)}`, where `k` is that multiplicity
+(`Matrix.det_eq_neg_one_pow_mul_exp_spectralAngleSum`), and `s` is continuous along a family of
+unitary matrices in which `k` is constant (`Matrix.continuousAt_spectralAngleSum`), since no other
+eigenvalue can then reach `1`. So `2π s(W t) + (n - k) π` is a continuous angle of `det (W t)`, and
+the two terms of the index cancel.
 
 ## Main declarations
 
 * `Matrix.spectralAngleSum`: the sum of `arg (-λ) / (2π)` over the eigenvalues `λ ≠ 1`.
 * `Matrix.UnitaryGroup.souriau`: the Souriau map `U ↦ U Uᵀ`.
 * `Matrix.UnitaryGroup.maslovIndex`: the Maslov index of a path of Lagrangian frames.
+* `Matrix.det_eq_neg_one_pow_mul_exp_spectralAngleSum`: the determinant of a unitary matrix through
+  its spectral angle sum.
+* `Matrix.continuousAt_spectralAngleSum`: the spectral angle sum is continuous where the
+  multiplicity of the eigenvalue `1` is locally constant.
+* `Matrix.UnitaryGroup.maslovIndex_eq_zero_of_rootMultiplicity_eq`: the zero axiom.
 
 ## References
 
@@ -89,8 +114,8 @@ here.
 
 public section
 
-open Complex Polynomial
-open scoped unitInterval
+open Complex Filter Polynomial
+open scoped ComplexOrder Topology unitInterval
 
 namespace Matrix
 
@@ -127,6 +152,17 @@ theorem spectralAngleSum_fromBlocks_zero₂₁ (A : Matrix n n ℂ) (B : Matrix 
     roots_mul (mul_ne_zero (charpoly_monic A).ne_zero (charpoly_monic D).ne_zero),
     Multiset.map_add, Multiset.sum_add, spectralAngleSum, spectralAngleSum]
 
+/-- The spectral angle sum is additive under symplectic direct sums, which are block-diagonal sums
+read in regrouped coordinates. -/
+@[simp]
+theorem spectralAngleSum_symplecticSum (A : Matrix (n ⊕ n) (n ⊕ n) ℂ)
+    (B : Matrix (m ⊕ m) (m ⊕ m) ℂ) :
+    spectralAngleSum (symplecticSum A B) = spectralAngleSum A + spectralAngleSum B := by
+  have h : symplecticSum A B = reindex (Equiv.sumSumSumComm n m n m).symm
+      (Equiv.sumSumSumComm n m n m).symm (fromBlocks A 0 0 B) := by
+    rw [symplecticSum_def, reindex_apply, Equiv.symm_symm]
+  rw [h, spectralAngleSum, charpoly_reindex, ← spectralAngleSum, spectralAngleSum_fromBlocks_zero₂₁]
+
 /-- The spectral angle sum is invariant under conjugation by an invertible matrix `P` with
 inverse `Q`. -/
 theorem spectralAngleSum_conj {P Q : Matrix n n ℂ} (hPQ : P * Q = 1) (hQP : Q * P = 1)
@@ -134,6 +170,67 @@ theorem spectralAngleSum_conj {P Q : Matrix n n ℂ} (hPQ : P * Q = 1) (hQP : Q 
   have h := charpoly_units_conj (⟨P, Q, hPQ, hQP⟩ : (Matrix n n ℂ)ˣ) W
   rw [Units.val_mk, inv_eq_left_inv hQP] at h
   rw [spectralAngleSum, spectralAngleSum, h]
+
+/-- Away from `1`, on the unit circle, the angle offset is continuous: there `-z` lies in the slit
+plane, where the argument is continuous. -/
+private theorem continuousAt_angleOffset {z : ℂ} (hz : ‖z‖ = 1) (hz1 : z ≠ 1) :
+    ContinuousAt angleOffset z := by
+  have hslit : -z ∈ slitPlane := by
+    rw [mem_slitPlane_iff_not_le_zero, neg_nonpos]
+    intro h
+    exact hz1 (by rw [eq_coe_norm_of_nonneg h, hz, ofReal_one])
+  refine ContinuousAt.congr (((continuousAt_arg hslit).comp continuous_neg.continuousAt).div_const
+    (2 * Real.pi)) ?_
+  filter_upwards [isOpen_ne.mem_nhds hz1] with w hw
+  simp [angleOffset, hw]
+
+/-- A product of complex numbers of modulus one is `(-1) ^ m e^{2πi s}`, where `s` is the sum of
+their angle offsets and `m` the number of factors different from `1`: each factor `z ≠ 1` is
+`-e^{i arg (-z)}`. -/
+private theorem multiset_prod_eq_neg_one_pow_mul_exp {s : Multiset ℂ} (hs : ∀ z ∈ s, ‖z‖ = 1) :
+    s.prod = (-1) ^ (Multiset.card s - s.count 1) *
+      exp (↑(2 * Real.pi * (s.map angleOffset).sum) * Complex.I) := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a s ih =>
+    rw [Multiset.prod_cons, ih fun z hz => hs z (Multiset.mem_cons_of_mem hz), Multiset.map_cons,
+      Multiset.sum_cons, mul_add, ofReal_add, add_mul, exp_add, Multiset.card_cons]
+    by_cases ha : a = 1
+    · rw [ha, Multiset.count_cons_self]
+      simp [angleOffset]
+    · have h := norm_mul_exp_arg_mul_I (-a)
+      rw [norm_neg, hs a (Multiset.mem_cons_self a s), ofReal_one, one_mul] at h
+      rw [Multiset.count_cons_of_ne (Ne.symm ha), Nat.sub_add_comm (Multiset.count_le_card 1 s),
+        pow_succ, angleOffset, ite_eq_right ha, mul_div_cancel₀ _ (by positivity), h]
+      ring
+
+open scoped Matrix.Norms.L2Operator in
+/-- The determinant of a unitary matrix `W` through its spectral angle sum:
+`det W = (-1) ^ (n - k) e^{2πi s(W)}`, where `k` is the multiplicity of the eigenvalue `1`.
+Equivalently, `e^{2πi s(W)}` is the product of `-λ` over the eigenvalues `λ ≠ 1` of `W`, counted
+with multiplicity. -/
+theorem det_eq_neg_one_pow_mul_exp_spectralAngleSum {W : Matrix n n ℂ}
+    (hW : W ∈ unitaryGroup n ℂ) :
+    W.det = (-1) ^ (Fintype.card n - W.charpoly.rootMultiplicity 1) *
+      exp (↑(2 * Real.pi * spectralAngleSum W) * Complex.I) := by
+  rw [det_eq_prod_roots_charpoly_of_splits (IsAlgClosed.splits _), ← count_roots,
+    ← charpoly_natDegree_eq_dim W, ← IsAlgClosed.card_roots_eq_natDegree, spectralAngleSum]
+  exact multiset_prod_eq_neg_one_pow_mul_exp fun z hz =>
+    spectrum.norm_eq_one_of_unitary hW (mem_spectrum_of_isRoot_charpoly (isRoot_of_mem_roots hz))
+
+open scoped Matrix.Norms.L2Operator in
+/-- The spectral angle sum is continuous at a unitary matrix `W x₀` along a continuous family of
+matrices `W x` in which the multiplicity of the eigenvalue `1` is locally constant. Without that
+hypothesis it jumps by an integer whenever an eigenvalue passes through `1`. -/
+theorem continuousAt_spectralAngleSum {X : Type*} [TopologicalSpace X] {W : X → Matrix n n ℂ}
+    {x₀ : X} (hW : ContinuousAt W x₀) (hu : W x₀ ∈ unitaryGroup n ℂ)
+    (h1 : ∀ᶠ x in 𝓝 x₀, (W x).charpoly.rootMultiplicity 1 = (W x₀).charpoly.rootMultiplicity 1) :
+    ContinuousAt (fun x => spectralAngleSum (W x)) x₀ :=
+  continuousAt_sum_map_roots (d := Fintype.card n)
+    (fun i _ => (continuous_charpoly_coeff i).continuousAt.comp hW)
+    (Eventually.of_forall fun x => charpoly_degree_eq_dim (W x))
+    (fun _ hz hz1 => continuousAt_angleOffset (spectrum.norm_eq_one_of_unitary hu
+      (mem_spectrum_of_isRoot_charpoly (isRoot_of_mem_roots hz))) hz1) h1
 
 namespace UnitaryGroup
 
@@ -152,7 +249,7 @@ theorem coe_souriau (U : unitaryGroup n α) :
 /-- The Souriau map is continuous. -/
 theorem continuous_souriau [TopologicalSpace α] [IsTopologicalRing α] :
     Continuous (souriau : unitaryGroup n α → unitaryGroup n α) :=
-  Continuous.subtype_mk (continuous_subtype_val.matrix_mul continuous_subtype_val.matrix_transpose)
+  Continuous.subtype_mk (continuous_subtypeVal.matrix_mul continuous_subtypeVal.matrix_transpose)
     _
 
 /-- Changing the frame `U` by a matrix `O` with `O Oᵀ = 1`, for instance a real orthogonal
@@ -162,6 +259,19 @@ theorem souriau_mul_of_mul_transpose_eq_one (U O : unitaryGroup n α)
   refine Subtype.ext ?_
   simp only [coe_souriau, Submonoid.coe_mul, transpose_mul]
   rw [Matrix.mul_assoc, ← Matrix.mul_assoc (O : Matrix n n α), hO, Matrix.one_mul]
+
+/-- **The Souriau map depends only on the Lagrangian.** Two unitary frames `U` and `V` of the same
+subspace `U ℝⁿ = V ℝⁿ` differ by a real orthogonal matrix, so they have the same Souriau map. -/
+theorem souriau_eq_of_realImage_eq {U V : unitaryGroup n ℂ}
+    (h : (U : Matrix n n ℂ).realImage = (V : Matrix n n ℂ).realImage) : souriau U = souriau V := by
+  have hgram (W : unitaryGroup n ℂ) : ((W : Matrix n n ℂ)ᴴ * W).map Complex.re = 1 := by
+    rw [← star_eq_conjTranspose, Unitary.star_mul_self_of_mem W.property,
+      Matrix.map_one _ Complex.zero_re Complex.one_re]
+  obtain ⟨O, hO, hVO⟩ := exists_mem_orthogonalGroup_eq_mul_map_ofReal
+    (M := Unitary.toUnits U) (M' := Unitary.toUnits V) h (hgram U) (hgram V)
+  have hOu := map_ofReal_mem_unitaryGroup hO
+  rw [show V = U * ⟨_, hOu⟩ from Subtype.ext hVO,
+    souriau_mul_of_mul_transpose_eq_one U _ (map_ofReal_mul_transpose_map_ofReal_eq_one hO)]
 
 /-- Moving a frame by `O` conjugates its Souriau map: `(O U) (O U)ᵀ = O (U Uᵀ) Oᵀ`. -/
 theorem coe_souriau_mul_left (O U : unitaryGroup n α) :
@@ -268,6 +378,29 @@ theorem maslovIndex_sum {U V : unitaryGroup n ℂ} {U' V' : unitaryGroup m ℂ} 
   simp only [souriau_sum, coe_sum, spectralAngleSum_fromBlocks_zero₂₁]
   ring
 
+/-- **The direct-sum axiom for symplectic direct sums.** A path of frames that is pointwise the
+symplectic direct sum `Matrix.symplecticSum` of two paths of frames, the block-diagonal sum read in
+the coordinates `(n ⊕ m) ⊕ (n ⊕ m)`, has the sum of their Maslov indices. -/
+theorem maslovIndex_eq_add_of_coe_eq_symplecticSum {U V : unitaryGroup (n ⊕ n) ℂ}
+    {U' V' : unitaryGroup (m ⊕ m) ℂ} {W W' : unitaryGroup ((n ⊕ m) ⊕ (n ⊕ m)) ℂ}
+    (γ₁ : Path U V) (γ₂ : Path U' V') (δ : Path W W')
+    (h : ∀ t, (δ t : Matrix ((n ⊕ m) ⊕ (n ⊕ m)) ((n ⊕ m) ⊕ (n ⊕ m)) ℂ) =
+      symplecticSum (γ₁ t : Matrix (n ⊕ n) (n ⊕ n) ℂ) (γ₂ t : Matrix (m ⊕ m) (m ⊕ m) ℂ)) :
+    maslovIndex δ = maslovIndex γ₁ + maslovIndex γ₂ := by
+  have hs (t : I) : (souriau (δ t) : Matrix ((n ⊕ m) ⊕ (n ⊕ m)) ((n ⊕ m) ⊕ (n ⊕ m)) ℂ) =
+      symplecticSum (souriau (γ₁ t) : Matrix (n ⊕ n) (n ⊕ n) ℂ)
+        (souriau (γ₂ t) : Matrix (m ⊕ m) (m ⊕ m) ℂ) := by
+    rw [coe_souriau, h t, symplecticSum_transpose, ← symplecticSum_mul, coe_souriau, coe_souriau]
+  have hpath : Circle.angleChange (detSouriauPath δ) =
+      Circle.angleChange ((detSouriauPath γ₁).mul (detSouriauPath γ₂)) :=
+    Circle.angleChange_congr _ _ fun t => Circle.ext (by simp [h t, mul_pow])
+  have h₀ := hs 0
+  have h₁ := hs 1
+  simp only [Path.source, Path.target] at h₀ h₁
+  rw [maslovIndex, hpath, Circle.angleChange_mul, maslovIndex, maslovIndex, h₀, h₁,
+    spectralAngleSum_symplecticSum, spectralAngleSum_symplecticSum]
+  ring
+
 /-- **Naturality under the real orthogonal group.** Moving a path of frames by a fixed unitary
 matrix `O` with `O Oᵀ = 1`, that is, a real orthogonal matrix, which preserves `ℝⁿ`, does not
 change its Maslov index: the Souriau maps are conjugated by `O`, which preserves their
@@ -308,6 +441,45 @@ theorem maslovIndex_eq_two_mul_degree {U : unitaryGroup n ℂ} (γ : Path U U) :
     Circle.degree_map_pow]
   push_cast
   ring
+
+/-- **The zero axiom.** If the eigenvalue `1` of the Souriau maps `γ t γ tᵀ` keeps the same
+multiplicity `k` along a path of frames, the Maslov index of the path vanishes. For a symmetric
+unitary matrix this multiplicity is the dimension of the intersection of the Lagrangian with `ℝⁿ`,
+so this is the zero axiom of Robbin and Salamon, stated through the Souriau maps: a path of
+Lagrangians `γ t ℝⁿ` whose intersections with `ℝⁿ` keep the same dimension has index zero. -/
+theorem maslovIndex_eq_zero_of_rootMultiplicity_eq {U V : unitaryGroup n ℂ} (γ : Path U V) {k : ℕ}
+    (h : ∀ t, (souriau (γ t) : Matrix n n ℂ).charpoly.rootMultiplicity 1 = k) :
+    maslovIndex γ = 0 := by
+  have hW : Continuous fun t => (souriau (γ t) : Matrix n n ℂ) :=
+    continuous_subtypeVal.comp (continuous_souriau.comp γ.continuous)
+  have hs : Continuous fun t => spectralAngleSum (souriau (γ t) : Matrix n n ℂ) :=
+    continuous_iff_continuousAt.2 fun t => continuousAt_spectralAngleSum hW.continuousAt
+      (souriau (γ t)).property (Eventually.of_forall fun t' => (h t').trans (h t).symm)
+  -- A continuous angle `θ` of the determinants `det (W t)` of the Souriau maps and the angle
+  -- `2π s(W t) + (n - k) π` are continuous lifts of the same path in the circle, so they differ
+  -- by a constant and the change of `θ / (2π)` cancels the change of `s`.
+  obtain ⟨θ, hθ⟩ := Circle.exists_lift (detSouriauPath γ)
+  obtain ⟨m, hm⟩ := Circle.exists_int_forall_eq_add_of_exp_eq (G' := fun t =>
+      2 * Real.pi * spectralAngleSum (souriau (γ t) : Matrix n n ℂ) +
+        (Fintype.card n - k : ℕ) * Real.pi) θ.continuous
+      ((continuous_const.mul hs).add continuous_const) fun t => by
+    refine Circle.ext ?_
+    rw [hθ, detSouriauPath_apply, coe_detCircle,
+      det_eq_neg_one_pow_mul_exp_spectralAngleSum (souriau (γ t)).property, h t, Circle.coe_exp]
+    push_cast
+    have hsign : exp (((Fintype.card n - k : ℕ) : ℂ) * Real.pi * Complex.I) =
+        (-1) ^ (Fintype.card n - k) := by
+      rw [mul_assoc, exp_natCast_mul, exp_pi_mul_I]
+    rw [add_mul, exp_add, hsign, mul_comm]
+  rw [maslovIndex, Circle.angleChange_eq_sub _ θ.continuous hθ, hm 1, hm 0, γ.source, γ.target]
+  field_simp
+  ring
+
+/-- A path of frames whose Souriau maps never have the eigenvalue `1`, that is, a path of
+Lagrangians transverse to `ℝⁿ`, has Maslov index zero. -/
+theorem maslovIndex_eq_zero_of_forall_not_isRoot {U V : unitaryGroup n ℂ} (γ : Path U V)
+    (h : ∀ t, ¬(souriau (γ t) : Matrix n n ℂ).charpoly.IsRoot 1) : maslovIndex γ = 0 :=
+  maslovIndex_eq_zero_of_rootMultiplicity_eq γ fun t => rootMultiplicity_eq_zero (h t)
 
 /-- For `x = φ / π`, the difference `x - angleOffset (e^{2iφ})` is the half-integer
 `(⌊x⌋ + ⌈x⌉) / 2`: it is `⌊x⌋ + 1/2` if `x` is not an integer and `x` if it is. -/
@@ -362,7 +534,7 @@ theorem maslovIndex_eq_sum_of_diagonal {U V : unitaryGroup n ℂ} (γ : Path U V
     rw [coe_souriau_of_coe_eq_diagonal (hγ t)]
     congr 1
     funext j
-    rw [← Complex.exp_nat_mul]
+    rw [← Complex.exp_natCast_mul]
     push_cast
     ring_nf
   -- `t ↦ 2 ∑ j, φ_j t` is a continuous angle of `det (γ t γ tᵀ)`.
@@ -399,7 +571,7 @@ theorem maslovIndex_eq_card_of_halfTurn {U V : unitaryGroup n ℂ} (γ : Path U 
     (hγ : ∀ t, (γ t : Matrix n n ℂ) = Complex.exp (↑(Real.pi * t) * Complex.I) • 1) :
     maslovIndex γ = Fintype.card n := by
   rw [maslovIndex_eq_sum_of_diagonal γ (φ := fun _ t => Real.pi * t)
-    (fun _ => continuous_const.mul continuous_subtype_val) fun t => by
+    (fun _ => continuous_const.mul continuous_subtypeVal) fun t => by
       rw [hγ t, smul_one_eq_diagonal]]
   have hπ : Real.pi ≠ 0 := Real.pi_ne_zero
   simp [hπ]
@@ -418,24 +590,13 @@ theorem maslovIndex_eq_sum_sign_of_diagonal_arctan {U V : unitaryGroup n ℂ} (�
   -- Since `|arctan a| < π / 2`, the half-integer count of `arctan a` is `sign a / 2`.
   have key (b : ℝ) : ((⌊Real.arctan b / Real.pi⌋ + ⌈Real.arctan b / Real.pi⌉ : ℤ) : ℝ) / 2 =
       Real.sign b / 2 := by
-    have hlo : -1 / 2 < Real.arctan b / Real.pi := by
-      rw [lt_div_iff₀ Real.pi_pos]; linarith [Real.neg_pi_div_two_lt_arctan b]
-    have hhi : Real.arctan b / Real.pi < 1 / 2 := by
-      rw [div_lt_iff₀ Real.pi_pos]; linarith [Real.arctan_lt_pi_div_two b]
+    rw [TauCeti.floor_add_ceil_div_eq_sign_of_abs_lt (abs_lt.2
+      ⟨by linarith [Real.neg_pi_div_two_lt_arctan b, Real.pi_pos],
+        by linarith [Real.arctan_lt_pi_div_two b, Real.pi_pos]⟩)]
     rcases lt_trichotomy b 0 with hb | rfl | hb
-    · have hneg : Real.arctan b / Real.pi < 0 :=
-        div_neg_of_neg_of_pos (Real.arctan_lt_zero.2 hb) Real.pi_pos
-      rw [(Int.floor_eq_iff (z := -1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-        (Int.ceil_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-        Real.sign_of_neg hb]
-      norm_num
+    · rw [Real.sign_of_neg hb, Real.sign_of_neg (Real.arctan_lt_zero.2 hb)]
     · simp
-    · have hpos : 0 < Real.arctan b / Real.pi :=
-        div_pos (Real.arctan_pos.2 hb) Real.pi_pos
-      rw [(Int.floor_eq_iff (z := 0)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-        (Int.ceil_eq_iff (z := 1)).2 ⟨by push_cast; linarith, by push_cast; linarith⟩,
-        Real.sign_of_pos hb]
-      norm_num
+    · rw [Real.sign_of_pos hb, Real.sign_of_pos (Real.arctan_pos.2 hb)]
   simp only [Function.comp_apply]
   rw [key, key]
   ring

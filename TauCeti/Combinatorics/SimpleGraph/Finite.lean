@@ -124,11 +124,11 @@ strictly increasing adjacent vertex pairs. -/
 def edgeSetEquivLtAdj [LinearOrder V] (G : SimpleGraph V) :
     G.edgeSet ≃ {p : V × V // p.1 < p.2 ∧ G.Adj p.1 p.2} where
   toFun e :=
-    have hadj : G.Adj e.1.inf e.1.sup := G.mem_edgeSet.mp (e.1.mk_inf_sup.symm ▸ e.2)
-    ⟨(e.1.inf, e.1.sup), lt_of_le_of_ne (Sym2.inf_le_sup e.1) hadj.ne, hadj⟩
-  invFun p := ⟨s(p.1.1, p.1.2), G.mem_edgeSet.mpr p.2.2⟩
-  left_inv e := Subtype.ext e.1.mk_inf_sup
-  right_inv p := Subtype.ext (by simp [p.2.1.le])
+    have hadj : G.Adj e.val.inf e.val.sup := G.mem_edgeSet.mp (e.val.mk_inf_sup.symm ▸ e.property)
+    ⟨(e.val.inf, e.val.sup), lt_of_le_of_ne (Sym2.inf_le_sup e.val) hadj.ne, hadj⟩
+  invFun p := ⟨s(p.val.1, p.val.2), G.mem_edgeSet.mpr p.property.2⟩
+  left_inv e := Subtype.ext e.val.mk_inf_sup
+  right_inv p := Subtype.ext (by simp [p.property.1.le])
 
 /-- `SimpleGraph.edgeSetEquivLtAdj` sends an edge `e` to `(e.inf, e.sup)`. -/
 @[simp]
@@ -141,7 +141,7 @@ unordered edge `s(u, v)`. -/
 @[simp]
 theorem coe_edgeSetEquivLtAdj_symm_apply [LinearOrder V] (G : SimpleGraph V)
     (p : {p : V × V // p.1 < p.2 ∧ G.Adj p.1 p.2}) :
-    (G.edgeSetEquivLtAdj.symm p : Sym2 V) = s(p.1.1, p.1.2) :=
+    (G.edgeSetEquivLtAdj.symm p : Sym2 V) = s(p.val.1, p.val.2) :=
   (rfl)
 
 /-- On a finite linearly ordered vertex type, a product over `G.edgeFinset` equals the product over
@@ -154,7 +154,7 @@ theorem prod_edgeFinset_eq_prod_filter_lt [Fintype V] [LinearOrder V] [CommMonoi
   rw [prod_subtype G.edgeFinset (p := (· ∈ G.edgeSet)) (fun _ ↦ G.mem_edgeFinset),
     prod_subtype ({p : V × V | p.1 < p.2 ∧ G.Adj p.1 p.2} : Finset (V × V))
       (p := fun p : V × V ↦ p.1 < p.2 ∧ G.Adj p.1 p.2) (F := inferInstance) (by simp),
-    ← G.edgeSetEquivLtAdj.symm.prod_comp (fun e : G.edgeSet ↦ f e.1)]
+    ← G.edgeSetEquivLtAdj.symm.prod_comp (fun e : G.edgeSet ↦ f e.val)]
   simp only [coe_edgeSetEquivLtAdj_symm_apply]
 
 /-- On a finite linearly ordered vertex type, `#G.edgeFinset` counts the strictly increasing

@@ -108,7 +108,7 @@ theorem le_dualAnnihilator_comap_binaryFormsSocle
     intro f hf
     obtain ⟨g, -, rfl⟩ := Subcomodule.mem_map.mp hf
     rw [Subcomodule.subtype_apply]
-    exact g.2
+    exact g.property
   have hne : N.map (Subcomodule.subtype (binaryForms k d)) ≠ ⊥ := by
     obtain ⟨g, hg, hg₀⟩ := Subcomodule.ne_bot_iff.mp hN
     refine Subcomodule.ne_bot_iff.mpr ⟨g, ?_, fun h ↦ hg₀ (Subtype.ext h)⟩

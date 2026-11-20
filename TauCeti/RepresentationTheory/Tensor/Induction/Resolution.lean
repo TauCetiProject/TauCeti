@@ -537,7 +537,7 @@ coinduced-resolution augmentation in every coset factor. -/
 theorem smoothTensorInducedGradedResolutionContraction_ι_apply (hA : ∀ a : A.obj.V, a + a = 0)
     (x : ((toSmoothDiscrete R G).obj
       (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))).obj.V) :
-    ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).1 =
+    ((smoothTensorInducedGradedResolutionContraction U hU s A hA).ι.hom x).val =
       PiTensorProduct.map (fun _ ↦ A.obj.gradedResolutionAugmentation) x := by
   rw [smoothTensorInducedGradedResolutionContraction_ι]
   exact (TopRep.gradedCochainComplexLift_apply _ _ _ _ _ _ 0 _ _ x).trans
@@ -555,7 +555,7 @@ theorem smoothTensorInducedGradedResolutionContraction_proj_apply
       (isHomogeneous_smoothTensorInducedGradedResolutionDifferential U hU s A)
       (smoothTensorInducedGradedResolutionDifferential_sq U hU s A hA)).X 0).V) :
     (smoothTensorInducedGradedResolutionContraction U hU s A hA).proj v =
-      smoothTensorInducedGradedResolutionProjection U A v.1 :=
+      smoothTensorInducedGradedResolutionProjection U A v.val :=
   TopRep.ResolutionContraction.ofGraded_proj_apply ..
 
 /-- The contracting homotopy of the contraction of the tensor-induced total resolution is
@@ -569,8 +569,8 @@ theorem smoothTensorInducedGradedResolutionContraction_hom_apply
       (smoothTensorInducedGradedResolutionDifferential U hU s A).hom
       (isHomogeneous_smoothTensorInducedGradedResolutionDifferential U hU s A)
       (smoothTensorInducedGradedResolutionDifferential_sq U hU s A hA)).X (n + 1)).V) :
-    ((smoothTensorInducedGradedResolutionContraction U hU s A hA).hom n v).1 =
-      smoothTensorInducedGradedResolutionHomotopy U A v.1 :=
+    ((smoothTensorInducedGradedResolutionContraction U hU s A hA).hom n v).val =
+      smoothTensorInducedGradedResolutionHomotopy U A v.val :=
   TopRep.ResolutionContraction.ofGraded_hom_apply ..
 
 omit [LinearOrder (G ⧸ U)]

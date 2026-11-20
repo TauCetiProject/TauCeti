@@ -134,13 +134,13 @@ private theorem exists_mem_pow_smul_top_eq [IsPrecomplete I P]
     (hφ : ∀ n, Function.Surjective (F.limπ n ∘ₗ φ)) {n : ℕ} {z : F.lim}
     (hz : F.limπ n z = 0) : ∃ a ∈ I ^ (n + 1) • (⊤ : Submodule A P), φ a = z := by
   choose c hc hcz using fun m (w : {w : F.lim // F.limπ m w = 0}) ↦
-    hF.exists_mem_pow_smul_top_limπ_sub_eq_zero hφ w.2
+    hF.exists_mem_pow_smul_top_limπ_sub_eq_zero hφ w.property
   -- The remainders `wⱼ = z - φ(sⱼ)`, vanishing in `Mₙ₊ⱼ`, and the partial sums `sⱼ`.
   let w : ∀ j, {w : F.lim // F.limπ (n + j) w = 0} := fun j ↦
-    Nat.rec ⟨z, hz⟩ (fun j wj ↦ ⟨wj.1 - φ (c (n + j) wj), hcz (n + j) wj⟩) j
+    Nat.rec ⟨z, hz⟩ (fun j wj ↦ ⟨wj.val - φ (c (n + j) wj), hcz (n + j) wj⟩) j
   let s : ℕ → P := fun j ↦ ∑ i ∈ Finset.range j, c (n + i) (w i)
   have hs_succ (j : ℕ) : s (j + 1) = s j + c (n + j) (w j) := Finset.sum_range_succ _ _
-  have hs (j : ℕ) : z - φ (s j) = (w j).1 := by
+  have hs (j : ℕ) : z - φ (s j) = (w j).val := by
     induction j with
     | zero => simp [s, w]
     | succ j ih => rw [hs_succ, map_add, ← sub_sub, ih]
@@ -165,7 +165,7 @@ private theorem exists_mem_pow_smul_top_eq [IsPrecomplete I P]
     hF.pow_smul_top_le_ker (F.limπ m ∘ₗ φ) (has (m + 1))
   have h₂ : F.limπ m (z - φ (s (m + 1))) = 0 := by
     rw [hs, ← LinearMap.congr_fun (F.transitionOfLE_comp_limπ (by omega : m ≤ n + (m + 1))),
-      LinearMap.comp_apply, (w (m + 1)).2, map_zero]
+      LinearMap.comp_apply, (w (m + 1)).property, map_zero]
   have hdiff : φ a - z = φ (a - s (m + 1)) - (z - φ (s (m + 1))) := by
     rw [map_sub]; abel
   have h : F.limπ m (φ a) = F.limπ m z := by

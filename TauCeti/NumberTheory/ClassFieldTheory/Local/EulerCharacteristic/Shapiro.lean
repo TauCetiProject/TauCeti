@@ -168,7 +168,7 @@ theorem range_absoluteGaloisGroupExtend_shapiroFieldEmbedding [IsGalois F (Algeb
   · exact (coe_absoluteGaloisGroupRestrictEquiv_apply (K := F) g _).symm.trans
       (congrArg Subtype.val (h ⟨x, hx⟩))
   · exact (coe_absoluteGaloisGroupRestrictEquiv_apply (K := F) g _).trans
-      ((IntermediateField.mem_fixingSubgroup_iff _ _).1 h x x.2)
+      ((IntermediateField.mem_fixingSubgroup_iff _ _).1 h x x.property)
 
 variable {R : Type v} [Field R]
 

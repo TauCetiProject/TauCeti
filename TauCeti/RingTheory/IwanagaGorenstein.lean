@@ -6,9 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Injective
-public import TauCeti.Algebra.Module.Injective.DivisionRing
 public import Mathlib.Algebra.Field.Opposite
 public import Mathlib.CategoryTheory.Abelian.Injective.Dimension
+public import Mathlib.RingTheory.Ideal.Quotient.Defs
+public import Mathlib.RingTheory.Ideal.Span
+public import TauCeti.Algebra.Module.Injective.DivisionRing
+public import TauCeti.RingTheory.GlobalDimension
+public import TauCeti.RingTheory.Noetherian.MulOpposite
+import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
+import Mathlib.Algebra.Module.Equiv.Opposite
+import Mathlib.RingTheory.Ideal.Quotient.Noetherian
+import TauCeti.Algebra.Homology.Ext.Equivalence
+import TauCeti.RingTheory.GlobalDimension.MulOpposite
+import TauCeti.RingTheory.Regular.InjectiveDimension
 
 /-!
 # Iwanaga–Gorenstein rings
@@ -21,18 +31,31 @@ Gorenstein-projective modules and the singularity category.
 A left and right noetherian ring that is self-injective on both sides, a quasi-Frobenius ring, is
 Iwanaga–Gorenstein with both injective dimensions zero
 (`TauCeti.IsIwanagaGorenstein.of_injective`). In particular division rings are
-Iwanaga–Gorenstein.
+Iwanaga–Gorenstein. More generally, any left and right noetherian ring of finite global dimension
+is Iwanaga–Gorenstein (`TauCeti.IsIwanagaGorenstein.of_globalDimension_lt_top`), since its left
+and right global dimensions coincide by Auslander's theorem. Finally, if `R` is an
+Iwanaga–Gorenstein commutative ring and `x` is a nonzerodivisor of `R`, then the hypersurface
+quotient `R ⧸ (x)` is again Iwanaga–Gorenstein
+(`TauCeti.IsIwanagaGorenstein.quotient_span_singleton`).
 
-## Main definitions
+## Main definitions and results
 
 * `TauCeti.IsIwanagaGorenstein`: left and right noetherian with both self-injective dimensions
   finite.
+* `TauCeti.IsIwanagaGorenstein.of_exists_hasInjectiveDimensionLE`: for a commutative noetherian
+  ring, finite left self-injective dimension suffices.
+* `TauCeti.IsIwanagaGorenstein.of_globalDimension_lt_top` and
+  `TauCeti.IsIwanagaGorenstein.of_hasProjectiveDimensionLE`: left and right noetherian rings of
+  finite global dimension are Iwanaga–Gorenstein.
+* `TauCeti.IsIwanagaGorenstein.quotient_span_singleton`: the quotient of a commutative
+  Iwanaga–Gorenstein ring by a nonzerodivisor is Iwanaga–Gorenstein.
 
 ## References
 
 * Yasuo Iwanaga, *On rings with finite self-injective dimension*, Comm. Algebra **7** (1979).
 * Ragnar-Olaf Buchweitz, *Maximal Cohen–Macaulay Modules and Tate Cohomology*, Section 4.
 * Edgar E. Enochs and Overtoun M. G. Jenda, *Relative Homological Algebra*, Section 9.1.
+* D. Rees, *A theorem of homological algebra*, Proc. Cambridge Philos. Soc. **52** (1956), 605–610.
 -/
 
 public section
@@ -71,6 +94,56 @@ theorem of_injective (A : Type u) [Ring A] [IsNoetherianRing A] [IsNoetherianRin
 /-- Division rings are Iwanaga–Gorenstein. -/
 instance (D : Type u) [DivisionRing D] : IsIwanagaGorenstein D :=
   of_injective D
+
+/-- For a commutative noetherian ring, finite injective dimension of the regular module on one
+side implies `IsIwanagaGorenstein`: `RingEquiv.toOpposite` identifies left and right modules. -/
+theorem of_exists_hasInjectiveDimensionLE (R : Type u) [CommRing R] [IsNoetherianRing R]
+    (h : ∃ n : ℕ, HasInjectiveDimensionLE (ModuleCat.of R R) n) : IsIwanagaGorenstein R where
+  isNoetherianRing := inferInstance
+  isNoetherianRing_op := inferInstance
+  exists_hasInjectiveDimensionLE := h
+  exists_hasInjectiveDimensionLE_op := by
+    obtain ⟨n, hn⟩ := h
+    let e : Rᵐᵒᵖ ≃+* R := (RingEquiv.toOpposite R).symm
+    have : HasInjectiveDimensionLE
+        ((ModuleCat.restrictScalars e.toRingHom).obj (ModuleCat.of R R)) n :=
+      ((ModuleCat.restrictScalarsEquivalenceOfRingEquiv e).hasInjectiveDimensionLT_functor_obj_iff
+        (ModuleCat.of R R) (n + 1)).mpr hn
+    exact ⟨n, hasInjectiveDimensionLT_of_iso
+      (ModuleCat.restrictScalarsIsoOfEquiv e ≪≫
+        (MulOpposite.opLinearEquiv Rᵐᵒᵖ (M := R)).symm.toModuleIso) (n + 1)⟩
+
+/-- **Noetherian rings of finite global dimension are Iwanaga–Gorenstein.** By Auslander's theorem
+(`TauCeti.globalDimension_mulOpposite`), left and right global dimensions agree, bounding both
+self-injective dimensions. -/
+theorem of_globalDimension_lt_top (A : Type u) [Ring A] [IsNoetherianRing A]
+    [IsNoetherianRing Aᵐᵒᵖ] (h : globalDimension.{u} A < ⊤) : IsIwanagaGorenstein A := by
+  obtain ⟨n, hn⟩ : ∃ n : ℕ, globalDimension.{u} A ≤ n := by
+    cases hd : globalDimension.{u} A with
+    | bot => exact ⟨0, bot_le⟩
+    | coe d => lift d to ℕ using fun he ↦ h.ne (by simp [hd, he]); exact ⟨d, le_rfl⟩
+  exact ⟨inferInstance, inferInstance,
+    ⟨n, (globalDimension_le_iff_hasInjectiveDimensionLE A n).mp hn _⟩,
+    ⟨n, (globalDimension_le_iff_hasInjectiveDimensionLE Aᵐᵒᵖ n).mp
+      ((globalDimension_mulOpposite A).trans_le hn) _⟩⟩
+
+/-- A left and right noetherian ring over which every left module in the ring's universe has
+projective dimension at most `d` is Iwanaga–Gorenstein. -/
+theorem of_hasProjectiveDimensionLE (A : Type u) [Ring A] [IsNoetherianRing A]
+    [IsNoetherianRing Aᵐᵒᵖ] (d : ℕ)
+    (hd : ∀ M : ModuleCat.{u} A, HasProjectiveDimensionLE M d) : IsIwanagaGorenstein A :=
+  of_globalDimension_lt_top A <|
+    ((globalDimension_le_iff_hasProjectiveDimensionLE A d).mpr hd).trans_lt
+      (WithBot.coe_lt_coe.mpr (ENat.natCast_lt_top d))
+
+/-- **Hypersurface quotients of Iwanaga–Gorenstein commutative rings.** If `R` is a commutative
+Iwanaga–Gorenstein ring and `x` is a nonzerodivisor of `R`, then `R ⧸ (x)` is Iwanaga–Gorenstein.
+-/
+theorem quotient_span_singleton {R : Type u} [CommRing R] [IsIwanagaGorenstein R] {x : R}
+    (hx : x ∈ nonZeroDivisors R) : IsIwanagaGorenstein (R ⧸ Ideal.span {x}) := by
+  obtain ⟨n, _⟩ := exists_hasInjectiveDimensionLE (A := R)
+  exact of_exists_hasInjectiveDimensionLE _
+    ⟨n, ModuleCat.hasInjectiveDimensionLE_quotient_span_singleton hx n⟩
 
 end IsIwanagaGorenstein
 

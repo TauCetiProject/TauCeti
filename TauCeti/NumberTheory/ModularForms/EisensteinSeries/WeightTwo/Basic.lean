@@ -69,7 +69,7 @@ private lemma correctedE2_slash (γ : SL(2, ℤ)) (hγ : γ ∈ Gamma0 t) :
   obtain ⟨c, hc⟩ := mem_Gamma0_iff_dvd.mp hγ
   have H := _root_.EisensteinSeries.E2_slash_action γ
   have H' := _root_.EisensteinSeries.E2_slash_action (conjScale t γ c hc)
-  rw [SL_slash, TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] at H H'
+  rw [SL_slash, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] at H H'
   rw [sub_eq_add_neg, SlashAction.add_slash, SlashAction.neg_slash, H,
     slash_scaleGL_slash_mapGL _ γ hc, H']
   simp only [sub_eq_add_neg, SlashAction.add_slash, SlashAction.neg_slash, ModularForm.smul_slash,

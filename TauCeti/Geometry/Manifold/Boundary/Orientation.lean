@@ -83,7 +83,7 @@ tangent vector `v` at `x` points outward exactly when `s` times the derivative o
 on it. For `s = -1` this says that `g` increases along outward vectors. -/
 theorem isOutwardPointing_iff_mul_mvfderiv_neg {x : M}
     (hx : x ∈ (𝓡∂ (n + 1)).boundary M) {g : M → ℝ} {c s : ℝ} (hs : s ≠ 0)
-    (hchart : ∀ᶠ w in 𝓝 x, (chartAt (EuclideanHalfSpace (n + 1)) x w).1 0 = s * (g w - c))
+    (hchart : ∀ᶠ w in 𝓝 x, (chartAt (EuclideanHalfSpace (n + 1)) x w).val 0 = s * (g w - c))
     (v : TangentSpace (𝓡∂ (n + 1)) x) :
     IsOutwardPointing x v ↔ s * mvfderiv (𝓡∂ (n + 1)) g x v < 0 := by
   -- The inward coordinate `t` of the preferred chart, and its derivative at `x`.

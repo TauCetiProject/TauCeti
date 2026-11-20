@@ -49,7 +49,9 @@ inequality on the mean-zero slices (`TauCeti.integral_norm_sub_average_sq_le`, w
 constant `2π`) bounds `∫₀¹ ‖∂s ξ‖² = ∫₀¹ ‖∂t ξ - dX_H(u) ξ‖²` below by `(2π - a)² f`, and
 `‖∂s S‖ ≤ c M`. Hence `f'' ≥ (4 (2π - a)² - 2 c M) f` with a positive constant. A nonnegative
 bounded function with `f'' ≥ κ f`, `κ > 0`, is convex and bounded, hence zero
-(`TauCeti.eq_zero_of_hasDerivAt_of_mul_le_of_bddAbove`). So `ξ = 0`.
+(`TauCeti.eq_zero_of_hasDerivAt_of_mul_le_of_bddAbove`). So `ξ = 0`
+(`TauCeti.SymplecticForm.eq_zero_of_fderiv_apply_real_eq`). This step only uses that `ξ` is a
+bounded solution of the linearized equation along `u` with mean-zero slices.
 
 The constant structure `J` covers flat targets. On a torus `V / Λ` with a flat compatible
 structure, a Floer cylinder whose loops are contractible lifts to a solution on `V` of period one
@@ -326,7 +328,7 @@ private theorem integral_inner_fderiv_slice_eq (hg : ∀ v w, ω v (J w) = ⟪v,
 bounded `C²` solution of `∂s ξ = -J ∂t ξ + J dX_H(u) ξ`, of period one in `t`, whose slices
 `t ↦ ξ(s, t)` have mean zero. If `‖dX_H‖ ≤ a < 2π`, `‖d²X_H‖ ≤ c`, `‖du‖ ≤ M` and
 `c M < 2 (2π - a)²`, then `ξ = 0`. -/
-private theorem eq_zero_of_fderiv_apply_real_eq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {a c M B : ℝ}
+theorem eq_zero_of_fderiv_apply_real_eq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {a c M B : ℝ}
     (hH : ContDiff ℝ 3 H) (ha : ∀ x, ‖fderiv ℝ (ω.hamiltonianVectorField H) x‖ ≤ a)
     (hc : ∀ x, ‖fderiv ℝ (fderiv ℝ (ω.hamiltonianVectorField H)) x‖ ≤ c)
     (ha2π : a < 2 * π) (hcM : c * M < 2 * (2 * π - a) ^ 2)
