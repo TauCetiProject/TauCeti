@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Spectrum.Prime.RingHom
-public import TauCeti.RingTheory.Localization.FractionRing
+public import TauCeti.RingTheory.Localization.Defs
 public import TauCeti.RingTheory.NovikovSeries.TotalQuotient
 import Mathlib.Algebra.Ring.Hom.InjSurj
 import Mathlib.RingTheory.Spectrum.Prime.Noetherian
