@@ -119,16 +119,6 @@ private theorem continuousOn_comp_log_one_add_div {g : ℝ → ℝ} (hg : Contin
       (Real.continuous_sqrt.comp (continuous_const.add continuous_id)).continuousOn)
     fun r hr ↦ (mul_pos two_pos (Real.sqrt_pos.2 (by linarith [mem_Ici.1 hr]))).ne'
 
-private theorem exp_neg_half_mul_exp (u : ℝ) :
-    Real.exp (-(u / 2)) * Real.exp u = (Real.exp (-(u / 2)))⁻¹ := by
-  rw [← Real.exp_neg, ← Real.exp_add]
-  ring_nf
-
-private theorem sqrt_one_add_mul_exp_neg_half_log {r : ℝ} (hr : 0 ≤ r) :
-    √(1 + r) * Real.exp (-(Real.log (1 + r) / 2)) = 1 := by
-  have hs : (0 : ℝ) < 1 + r := by linarith
-  rw [Real.exp_neg, Real.exp_half, Real.exp_log hs, mul_inv_cancel₀ (Real.sqrt_pos.2 hs).ne']
-
 /-- **Scalar core of the time changes.** Let `ξ r = x + ω r + ∫₀ʳ (D + b ξ)` on `[0, ∞)`, and let
 `c`, `τ` be time-change data with `τ 0 = 0`. If the drift transforms by
 `c (D ∘ τ + b ξ ∘ τ) τ' = E + (a c - c') ξ ∘ τ`, then `c ξ(τ ·)` satisfies the integral equation
@@ -438,7 +428,7 @@ theorem ouTimeChangeInv_ouTimeChange (X : ℝ≥0 → Fin n → ℝ) :
   ext s i
   rw [ouTimeChangeInv_apply, ouTimeChange_apply, coe_toNNReal_log_one_add s.coe_nonneg,
     Real.exp_log (by positivity), add_sub_cancel_left, Real.toNNReal_coe, ← mul_assoc,
-    sqrt_one_add_mul_exp_neg_half_log s.coe_nonneg, one_mul]
+    Real.sqrt_mul_exp_neg_half_log (by positivity), one_mul]
 
 /-- The exponential time change of a continuous path is continuous. -/
 theorem continuous_ouTimeChange {X : ℝ≥0 → Fin n → ℝ} (hX : Continuous X) :
@@ -537,10 +527,8 @@ theorem ouTimeChangeForcing_ouTimeChangeInvForcing {w : ℝ≥0 → Fin n → �
     rw [ouTimeChangeForcing]
     linear_combination key + hsum + w t i * Real.exp_half_mul_exp_neg_half t
   · simp only [add_sub_cancel, Real.log_exp, ← Real.exp_half]
-    have h1 : Real.exp (-(u / 2)) * Real.exp u = Real.exp (u / 2) := by
-      rw [exp_neg_half_mul_exp, Real.exp_neg, inv_inv]
     rw [show ∀ A : ℝ, Real.exp (-(u / 2)) * A * Real.exp u = A * (Real.exp (-(u / 2)) *
-      Real.exp u) from fun A ↦ by ring, h1]
+      Real.exp u) from fun A ↦ by ring, Real.exp_neg_half_mul_exp]
     field_simp
 
 /-- **The inverse forcing transform undoes the forward one.** For a continuous Dyson forcing path
@@ -582,7 +570,8 @@ theorem ouTimeChangeInvForcing_ouTimeChangeForcing {w : ℝ≥0 → Fin n → �
     simp [Real.exp_log (by positivity : (0 : ℝ) < 1 + t)]
   rw [hwt] at key
   rw [ouTimeChangeInvForcing]
-  linear_combination key + hsplit + w t i * sqrt_one_add_mul_exp_neg_half_log t.coe_nonneg
+  linear_combination key + hsplit +
+    w t i * Real.sqrt_mul_exp_neg_half_log (by positivity : (0 : ℝ) < 1 + t)
 
 end TimeChange
 
@@ -611,7 +600,7 @@ private theorem intervalIntegrable_sum_inv_ouTimeChange {X : ℝ≥0 → Fin n �
   rw [uIoo_of_le t.coe_nonneg] at hu
   simp only [ouTimeChange_apply, Real.coe_toNNReal u hu.1.le, ← mul_sub, mul_inv,
     ← Finset.mul_sum]
-  rw [← mul_assoc, exp_neg_half_mul_exp]
+  rw [← mul_assoc, Real.exp_neg_half_mul_exp, Real.exp_neg, inv_inv]
 
 /-- Integrability of the repulsion sums is preserved by the inverse exponential time change. -/
 private theorem intervalIntegrable_sum_inv_ouTimeChangeInv {Y : ℝ≥0 → Fin n → ℝ}
@@ -671,8 +660,8 @@ theorem IsDysonPath.isDysonOUPath_ouTimeChange {w X : ℝ≥0 → Fin n → ℝ}
     refine intervalIntegral.integral_congr fun s hs ↦ ?_
     rw [uIcc_of_le t.coe_nonneg] at hs
     simp only [hY s hs.1, Pi.smul_apply, smul_eq_mul]
-  · simp only [hY u hu.le, dysonDrift_smul, Pi.smul_apply, smul_eq_mul]
-    linear_combination dysonDrift n (X (Real.exp u - 1).toNNReal) i * exp_neg_half_mul_exp u
+  · simp only [hY u hu.le, dysonDrift_smul, Pi.smul_apply, smul_eq_mul, ← Real.exp_neg, neg_neg]
+    linear_combination dysonDrift n (X (Real.exp u - 1).toNNReal) i * Real.exp_neg_half_mul_exp u
 
 /-- **Ornstein–Uhlenbeck Dyson trajectories time-change to Dyson trajectories.** If `Y` is an
 Ornstein–Uhlenbeck Dyson trajectory driven by `w`, then `√(1 + s) Y (log (1 + s))` is a Dyson
@@ -741,7 +730,7 @@ theorem sum_sub_sq_le_of_le (hX : IsDysonOUPath n x w X) (hY : IsDysonOUPath n y
   have h := hX.isDysonPath_ouTimeChangeInv.sum_sub_sq_le_of_le hY.isDysonPath_ouTimeChangeInv
     (Real.toNNReal_le_toNNReal (by gcongr) :
       (Real.exp s - 1).toNNReal ≤ (Real.exp t - 1).toNNReal)
-  have he (u : ℝ) : Real.exp (u / 2) ^ 2 = Real.exp u := by rw [sq, ← Real.exp_add, add_halves]
+  have he (u : ℝ) : Real.exp (u / 2) ^ 2 = Real.exp u := by rw [sq, Real.exp_half_mul_exp_half]
   simp only [ouTimeChangeInv_exp_sub_one, Pi.smul_apply, smul_eq_mul, ← mul_sub, mul_pow,
     ← Finset.mul_sum, he] at h
   have hts : Real.exp t * Real.exp (-((t : ℝ) - s)) = Real.exp s := by
