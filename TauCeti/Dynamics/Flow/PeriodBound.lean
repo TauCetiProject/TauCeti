@@ -62,7 +62,7 @@ theorem exists_pos_period_le_of_isCompact {K : Set X} (hK : IsCompact K)
   classical
   -- Compactness makes the local bounds uniform.
   choose ε hε U hU hbound using fun x : K ↦
-    ϕ.exists_pos_period_le_nhds (hmove x x.2)
+    ϕ.exists_pos_period_le_nhds (hmove x x.property)
   obtain ⟨c, hc⟩ := hK.elim_nhds_subcover' (fun x hx ↦ U ⟨x, hx⟩)
     (fun x hx ↦ hU ⟨x, hx⟩)
   -- A finite family of positive local bounds admits a common positive lower bound.

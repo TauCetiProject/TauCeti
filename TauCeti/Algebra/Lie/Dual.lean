@@ -130,7 +130,7 @@ theorem lieInvariant_coe (f : M →ₗ⁅R,L⁆ Dual R M) :
     LinearMap.BilinForm.lieInvariant L (f : LinearMap.BilinForm R M) := by
   rw [LinearMap.BilinForm.lieInvariant_iff,
     ← LieModule.toLinearMap_maxTrivLinearMapEquivLieModuleHom_symm f]
-  exact (LieModule.maxTrivLinearMapEquivLieModuleHom.symm f).2
+  exact (LieModule.maxTrivLinearMapEquivLieModuleHom.symm f).property
 
 end LieModuleHom
 

@@ -84,7 +84,7 @@ noncomputable def normDatum : TateNormDatum R where
   pseudoUniformizer := ϖ.unitRoot 0
   isTopologicallyNilpotent_pseudoUniformizer := by
     simpa using ϖ.isPseudoUniformizer_root_zero.isTopologicallyNilpotent
-  pseudoUniformizer_mem := by simpa using (ϖ.rootPB 0).2
+  pseudoUniformizer_mem := by simpa using (ϖ.rootPB 0).property
   radius := 1 / 2
   radius_pos := by norm_num
   radius_lt_one := by norm_num
@@ -196,7 +196,7 @@ theorem gauge_le_one_iff {x : R} : ϖ.gauge x ≤ 1 ↔ x ∈ powerBoundedSubrin
     rw [coe_unitRoot, gauge_root_zero_mul]
     linarith [ϖ.gauge_pow_le_one hx k]
   refine mem_powerBoundedSubring.mpr <| isPowerBounded_iff.mpr <|
-    ((isBounded_singleton ((ϖ.unitRoot 0)⁻¹ : Rˣ).1).mul
+    ((isBounded_singleton ((ϖ.unitRoot 0)⁻¹ : Rˣ).val).mul
       IsUniform.isBounded_powerBoundedSubring).subset ?_
   rintro _ ⟨k, rfl⟩
   exact ⟨_, rfl, _, hpow k, Units.inv_mul_cancel_left _ _⟩

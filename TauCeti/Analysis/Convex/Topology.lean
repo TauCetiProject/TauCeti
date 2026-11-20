@@ -6,11 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Topology
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Sets.Compacts
 public import TauCeti.Analysis.Convex.Join
+import Mathlib.Analysis.Normed.Affine.AddTorsorBases
 
 /-!
 # Topological properties of convex sets and segment unions
+
+In a Hausdorff finite-dimensional real topological vector space, the interior of the closure of a
+convex set equals its interior (`Convex.interior_closure`, Rockafellar, *Convex Analysis*,
+Theorem 6.3); unlike Mathlib's `Convex.interior_closure_eq_interior_of_nonempty_interior`, no
+nonempty-interior assumption is needed, because an affine subspace in finite dimension is closed and
+so a convex set with empty interior lies in a closed proper affine subspace.
 
 A convex set symmetric about the origin has `0` in its interior as soon as its interior is
 nonempty. This lets volume arguments obtain the neighbourhood of the origin needed to use the
@@ -34,6 +42,30 @@ public section
 
 open Filter Set
 open scoped Pointwise Topology
+
+private lemma interior_closure_eq_interior_normed {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] {t : Set F} (ht : Convex ℝ t) :
+    interior (closure t) = interior t := by
+  by_cases hne : (interior t).Nonempty
+  · exact ht.interior_closure_eq_interior_of_nonempty_interior hne
+  · refine subset_antisymm (fun x hx ↦ False.elim (hne ?_)) (interior_mono subset_closure)
+    rw [ht.interior_nonempty_iff_affineSpan_eq_top, ← top_le_iff,
+      ← ht.closure.interior_nonempty_iff_affineSpan_eq_top.1 ⟨x, hx⟩, affineSpan_le]
+    exact closure_minimal (subset_affineSpan ℝ t) (affineSpan ℝ t).isClosed_of_finiteDimensional
+
+/-- In a Hausdorff finite-dimensional real topological vector space, the interior of the closure of
+a convex set equals its interior (Rockafellar, *Convex Analysis*, Theorem 6.3). Both hypotheses on
+the ambient space are necessary: in the indiscrete topology on `ℝ` the singleton `{0}` is convex
+with empty interior and closure `univ`, and in an infinite-dimensional Banach space a dense proper
+subspace is convex with empty interior and closure `univ`. -/
+theorem Convex.interior_closure {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [T2Space E] [FiniteDimensional ℝ E]
+    {s : Set E} (hs : Convex ℝ s) : interior (closure s) = interior s := by
+  let e : E ≃L[ℝ] (Fin (Module.finrank ℝ E) → ℝ) :=
+    (Module.finBasis ℝ E).equivFun.toContinuousLinearEquiv
+  apply e.toHomeomorph.injective.image_injective
+  rw [e.toHomeomorph.image_interior, e.toHomeomorph.image_closure, e.toHomeomorph.image_interior]
+  exact interior_closure_eq_interior_normed (hs.linear_image e.toLinearMap)
 
 /-- The interior of a sum of convex sets with nonempty interiors is the sum of their
 interiors. -/
@@ -200,7 +232,7 @@ variable {𝕜 y K} in
 `y`. -/
 theorem starHull_subset {s : Set E} (hs : StarConvex 𝕜 y s) (hy : y ∈ s) (hK : (K : Set E) ⊆ s) :
     (K.starHull 𝕜 y : Set E) ⊆ s := by
-  rw [coe_starHull, convexJoin_singleton_left]
-  exact iUnion₂_subset fun z hz ↦ hs.segment_subset (insert_subset hy hK hz)
+  rw [coe_starHull]
+  exact hs.convexJoin_singleton_subset (insert_subset hy hK)
 
 end TopologicalSpace.Compacts
