@@ -83,13 +83,8 @@ theorem ae_contraction_iteratedGradient_extendByZeroₗᵢ_eq_indicator
         (Wkp.iteratedGradient 1 (Wkp0.extendByZeroₗᵢ le_top 2 w : Wkp volume ⊤ p 2) x) =
       (Omega : Set (EuclideanSpace ℝ (Fin n))).indicator g x := by
   have hΩ : MeasurableSet (Omega : Set (EuclideanSpace ℝ (Fin n))) := Omega.isOpen.measurableSet
-  have htop : ae ((volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
-      ((⊤ : Opens (EuclideanSpace ℝ (Fin n))) : Set (EuclideanSpace ℝ (Fin n)))) = ae volume := by
-    rw [Opens.coe_top, Measure.restrict_univ]
-  have h1 := coeFn_extendByZeroLpₗᵢ ℝ hΩ.nullMeasurableSet (SetLike.coe_subset_coe.mpr le_top)
-    (Wkp.iteratedGradient 1 (w : Wkp volume Omega p 2))
-  rw [Filter.EventuallyEq, htop] at h1
-  rw [Wkp0.iteratedGradient_extendByZeroₗᵢ]
+  have h1 := Wkp0.iteratedGradient_extendByZeroₗᵢ_ae_eq_indicator le_top 1 w
+  simp only [Opens.coe_top, Measure.restrict_univ] at h1
   filter_upwards [h1, (ae_restrict_iff' hΩ).1 hg] with x h1 hg
   rw [h1]
   by_cases hx : x ∈ (Omega : Set (EuclideanSpace ℝ (Fin n)))
@@ -204,11 +199,8 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
       Matrix.contraction (a x) (Wkp.iteratedGradient 1 w x) = FL x := by
     filter_upwards [hf, hD, Lp.coeFn_add (hζf.toLp _) (hE.toLp _), hζf.coeFn_toLp,
       hE.coeFn_toLp] with x hxf hxD h h' h''
-    -- `hxf` applies the Hessian through the instances of `IteratedGradient`, which unfold to those
-    -- of `ContinuousLinearMap` used by `Matrix.contraction_apply`.
-    replace hxf : Matrix.contraction (a x) (Wkp.iteratedGradient 1 u x) = f x := by
-      rw [Matrix.contraction_apply]
-      exact hxf
+    replace hxf : Matrix.contraction (a x) (Wkp.iteratedGradient 1 u x) = f x :=
+      (Matrix.contraction_iteratedGradient_apply _ _).trans hxf
     rw [h, Pi.add_apply, h', h'', hxD, map_add, map_smul, smul_eq_mul, ← hxf]
   have hwK : ∀ᵐ x ∂volume.restrict Omega, x ∉ tsupport zeta → Wkp.value 2 w x = 0 := by
     filter_upwards [hwv] with x hx hxs
@@ -216,11 +208,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
   obtain ⟨hWzero, hWeq⟩ := ae_extendByZeroₗᵢ_of_ae (w := ⟨w, hw0⟩) hwK hweq
   -- The whole-space estimate, and `ζ D²u = D²(ζ u) - T`.
   have hkey := hCZ hlam hA (isClosed_tsupport zeta) hε ha _ _ hWzero
-    (by
-      -- As for `hxf`, the two sides differ only by unfolding the instances of `IteratedGradient`.
-      filter_upwards [hWeq] with x hx
-      rw [← Matrix.contraction_apply]
-      exact hx)
+    (hWeq.mono fun x hx => (Matrix.contraction_iteratedGradient_apply _ _).symm.trans hx)
   rw [Wkp0.iteratedGradient_extendByZeroₗᵢ, LinearIsometry.norm_map, LinearIsometry.norm_map]
     at hkey
   rw [hζD]

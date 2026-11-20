@@ -193,10 +193,7 @@ theorem memLp_of_ae_sum_mul_inner_eq {Omega : Opens (EuclideanSpace ℝ (Fin n))
     (Lp.memLp _).mono_measure (Measure.restrict_mono hS le_rfl)
   refine (Matrix.memLp_contraction_and_lpNorm_le ha ((ae_restrict_iff' hSm).2 haΛ) hH).1.ae_eq ?_
   filter_upwards [heq] with x hx
-  -- `hx` applies the Hessian through the instances of `IteratedGradient`, which unfold to those of
-  -- `ContinuousLinearMap` used by `Matrix.contraction_apply`.
-  rw [Matrix.contraction_apply]
-  exact hx
+  exact (Matrix.contraction_iteratedGradient_apply _ _).trans hx
 
 /-- **The interior Calderón–Zygmund estimate on balls for coefficients of small oscillation.**
 Let `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on `n` and `p`,

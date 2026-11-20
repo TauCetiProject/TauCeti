@@ -197,24 +197,14 @@ private theorem exists_lpNorm_iteratedGradient_le_of_mem_wkp0Submodule (hp : 2 <
   have hW : ∀ᵐ x, Wkp.iteratedGradient 1 W x =
       (U : Set _).indicator (Wkp.iteratedGradient 1 w : EuclideanSpace ℝ (Fin (n + 1)) →
         EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) x := by
-    have h1 := coeFn_extendByZeroLpₗᵢ ℝ (μ := volume) U.isOpen.nullMeasurableSet
-      (SetLike.coe_subset_coe.mpr (le_top : U ≤ ⊤)) (Wkp.iteratedGradient 1 w)
-    have htop : ae ((volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))).restrict
-        ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) : Set (EuclideanSpace ℝ (Fin (n + 1))))) =
-          ae volume := by
-      rw [Opens.coe_top, Measure.restrict_univ]
-    rw [Filter.EventuallyEq, htop] at h1
-    filter_upwards [h1] with x h1
-    rw [Wkp0.iteratedGradient_extendByZeroₗᵢ, h1]
+    simpa only [Filter.EventuallyEq, Opens.coe_top, Measure.restrict_univ] using
+      Wkp0.iteratedGradient_extendByZeroₗᵢ_ae_eq_indicator le_top 1 ⟨w, hw0⟩
   have hWeq : ∀ᵐ x, ∑ i, ∑ j, a x i j *
       ⟪Wkp.iteratedGradient 1 W x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
         (U : Set _).indicator F x := by
     filter_upwards [ae_contraction_iteratedGradient_extendByZeroₗᵢ_eq_indicator (w := ⟨w, hw0⟩)
       heq] with x hx
-    -- The two sides differ only by unfolding the instances of `IteratedGradient` to those of
-    -- `ContinuousLinearMap` used by `Matrix.contraction_apply`.
-    rw [← Matrix.contraction_apply]
-    exact hx
+    exact (Matrix.contraction_iteratedGradient_apply _ _).symm.trans hx
   have hkey := hCZ ha (fun x => haΛ.opNorm_matrixBilinearForm_le (mem_univ x)) hosc W _ hWeq
     (((integrable_indicator_iff hUm).2 (hwp.integrable Fact.out)).congr
       (hW.mono fun _ h => h.symm))
@@ -469,9 +459,7 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_vmoModulus_le (hp : 2 < p)
     (fun _ => lpNorm_nonneg)
     (fun σ hσ => hmono _ hσ.2.le) (fun σ hσ => hmono _ hσ.2.le) (fun σ hσ => hmono _ hσ.2.le)
     (fun {s t} hs hst htR => hKΛ ▸ hstep hloc hell hη hR u hf
-      -- `hx` applies the Hessian through the instances of `IteratedGradient`, which unfold to
-      -- those of `ContinuousLinearMap` used by `Matrix.contraction_apply`.
-      (heq.mono fun x hx => by rw [Matrix.contraction_apply]; exact hx) hs hst htR)
+      (heq.mono fun x hx => (Matrix.contraction_iteratedGradient_apply _ _).trans hx) hs hst htR)
     (fun {s t} hs hst htR {ε} hε => by
       simpa only [finrank_euclideanSpace_fin] using
         hinterp u hs hst ((ball_subset_ball htR).trans hR) hε)
