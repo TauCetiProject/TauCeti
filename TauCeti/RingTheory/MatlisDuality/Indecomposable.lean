@@ -42,14 +42,14 @@ universe u v w t
 variable {R : Type u} [CommRing R] {E : Type v} [AddCommGroup E] [Module R E]
   [Module.Injective R E] [Small.{v} R] {A : Type t} [Ring A] [Algebra R A]
   {N : Type w} [AddCommGroup N] [Module R N]
-  (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
 
+/-- For a cogenerator `E`, the dual of a module is nonzero exactly when the module is. -/
+private theorem nontrivial_iff (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Nontrivial (R ⧸ 𝔪 →ₗ[R] E)) :
+    Nontrivial (MatlisDual R E N) ↔ Nontrivial N := by
+  simp only [← not_subsingleton_iff_nontrivial, subsingleton_matlisDual_iff hE]
+
+variable (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
 include hE
-
-/-- The dual of a module of finite length over `R` is nonzero exactly when the module is. -/
-private theorem nontrivial_iff : Nontrivial (MatlisDual R E N) ↔ Nontrivial N := by
-  simp only [← not_subsingleton_iff_nontrivial,
-    subsingleton_matlisDual_iff (nontrivial_linearMap_of_isMaximal hE)]
 
 /-- **Matlis duality preserves and reflects indecomposability of right modules**: for a right
 `A`-module `N` of finite length over `R`, the left module `D_R N` is indecomposable exactly when
@@ -65,7 +65,8 @@ theorem isIndecomposableModule_iff [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐ�
        map_zero' := LinearMap.ext fun _ ↦ MatlisDual.ext fun _ ↦ by simp
        map_add' _ _ := LinearMap.ext fun _ ↦ MatlisDual.ext fun _ ↦ by simp } :
       (Module.End Aᵐᵒᵖ N)ᵐᵒᵖ →+* Module.End A (MatlisDual R E N))
-    ((bijective_mapOp hE hN hN).comp unop_bijective)) (nontrivial_iff hE)
+    ((bijective_mapOp hE hN hN).comp unop_bijective))
+    (nontrivial_iff (nontrivial_linearMap_of_isMaximal hE))
 
 /-- **Matlis duality preserves and reflects indecomposability of left modules**: for a left
 `A`-module `N` of finite length over `R`, the right module `D_R N` is indecomposable exactly when
@@ -80,6 +81,7 @@ theorem isIndecomposableModule_op_iff [Module A N] [IsScalarTower R A N]
        map_zero' := LinearMap.ext fun _ ↦ MatlisDual.ext fun _ ↦ by simp
        map_add' _ _ := LinearMap.ext fun _ ↦ MatlisDual.ext fun _ ↦ by simp } :
       (Module.End A N)ᵐᵒᵖ →+* Module.End Aᵐᵒᵖ (MatlisDual R E N))
-    ((bijective_map hE hN hN).comp unop_bijective)) (nontrivial_iff hE)
+    ((bijective_map hE hN hN).comp unop_bijective))
+    (nontrivial_iff (nontrivial_linearMap_of_isMaximal hE))
 
 end TauCeti.MatlisDual

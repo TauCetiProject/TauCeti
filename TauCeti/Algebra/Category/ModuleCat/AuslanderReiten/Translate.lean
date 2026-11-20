@@ -111,21 +111,25 @@ instance [Module.Finite R E] (M : ModuleCat.{max u v w} A) [Module.Finite A M] :
   inferInstanceAs (Module.Finite A (AuslanderReitenTranslate R E (arPresentation R M).p))
 
 variable {R E} [Module.Injective R E]
-  (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
-include hE
 
-/-- The translate vanishes precisely on the projective modules. -/
-theorem isZero_arTranslate_iff (M : ModuleCat.{max u v w} A) [Module.Finite A M] :
+/-- The translate vanishes precisely on the projective modules, for an injective `E` receiving a
+nonzero map from every simple `R`-module. -/
+theorem isZero_arTranslate_iff (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Nontrivial (R ⧸ 𝔪 →ₗ[R] E))
+    (M : ModuleCat.{max u v w} A) [Module.Finite A M] :
     IsZero (arTranslate R E M) ↔ Projective M :=
   isZero_iff_subsingleton.trans
     (((arPresentation_isMinimal R M).subsingleton_auslanderReitenTranslate_iff_projective
-      (nontrivial_linearMap_of_isMaximal hE)).trans (IsProjective.iff_projective (R := A) M))
+      hE).trans (IsProjective.iff_projective (R := A) M))
+
+variable (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
+include hE
 
 /-- The translate of a finitely generated indecomposable module is indecomposable exactly when
 the module is not projective. -/
 theorem indecomposable_arTranslate_iff (M : ModuleCat.{max u v w} A) [Module.Finite A M]
     (hiM : Indecomposable M) : Indecomposable (arTranslate R E M) ↔ ¬ Projective M := by
-  refine ⟨fun h hp ↦ h.1 ((isZero_arTranslate_iff hE M).mpr hp), fun hp ↦ ?_⟩
+  refine ⟨fun h hp ↦ h.1 ((isZero_arTranslate_iff (nontrivial_linearMap_of_isMaximal hE) M).mpr hp),
+    fun hp ↦ ?_⟩
   let P := arPresentation R M
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
   have htr := (P.isIndecomposableModule_auslanderReitenTranspose_iff
@@ -279,17 +283,22 @@ theorem nonempty_iso_arTranslate_arInverseTranslate (N : ModuleCat.{max u v w} A
       (arPresentation_isMinimal R _)
   exact ⟨f.toModuleIso⟩
 
+end InverseTranslate
+
+variable {R E} [Module.Injective R E]
+
 /-- Every finitely generated non-injective indecomposable module is, up to isomorphism, the
 translate of a finitely generated non-projective indecomposable module, its inverse translate. -/
-theorem exists_nonempty_iso_arTranslate (N : ModuleCat.{max u v w} A) [Module.Finite A N]
-    (hiN : Indecomposable N) (hinj : ¬ Injective N) :
+theorem exists_nonempty_iso_arTranslate
+    (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
+    (N : ModuleCat.{max u v w} A) [Module.Finite A N] (hiN : Indecomposable N)
+    (hinj : ¬ Injective N) :
     ∃ (M : ModuleCat.{max u v w} A) (_ : Module.Finite A M),
       Indecomposable M ∧ ¬ Projective M ∧ Nonempty (arTranslate R E M ≅ N) :=
+  have := finite_of_forall_isMaximal hE
   ⟨arInverseTranslate R E N, inferInstance,
     (indecomposable_arInverseTranslate_iff hE N hiN).mpr hinj,
     fun h ↦ hinj ((projective_arInverseTranslate_iff hE N).mp h),
     nonempty_iso_arTranslate_arInverseTranslate hE N hiN hinj⟩
-
-end InverseTranslate
 
 end ModuleCat

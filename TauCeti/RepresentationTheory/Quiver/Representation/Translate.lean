@@ -109,8 +109,8 @@ theorem isZero_arTranslate_iff (M : QuiverRep.{u, v, w, max u v w t} k Q)
     ⟨fun h ↦ IsZero.of_full_of_faithful_of_isZero (F) T h, (F).map_isZero⟩
   rw [arTranslate_eq_quiverRepFunctor_obj]
   exact hzero.trans ((ModuleCat.isZero_arTranslate_iff.{u, max u v w, t}
-      (length_quotient_linearMap_self_eq_one k) _).trans
-    ((E).map_projective_iff M))
+    (nontrivial_linearMap_of_isMaximal (length_quotient_linearMap_self_eq_one k)) _).trans
+      ((E).map_projective_iff M))
 
 /-- The translate of a finite-dimensional indecomposable representation is indecomposable
 exactly when the representation is not projective. -/
