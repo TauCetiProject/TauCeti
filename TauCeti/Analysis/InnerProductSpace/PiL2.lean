@@ -51,6 +51,8 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.abs_sub_sum_mul_basisFun_le_sqrt`: consequently a `K`-Lipschitz function at a
   point of the standard simplex is within `K * √(1 - ‖x‖ ^ 2)` of the coordinate-weighted average
   of its values at the vertices.
+* `EuclideanSpace.ofRealCLM`: the real-linear inclusion `ℝ^ι → ℂ^ι` of the real points, which
+  preserves inner products (`EuclideanSpace.inner_ofRealCLM`).
 * `EuclideanSpace.consEquivL`: splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with
   `𝕜 × 𝕜ⁿ`.
 * `EuclideanSpace.finTwoEquivProd`: the two coordinates identify `𝕜²` isometrically with the `L²`
@@ -189,6 +191,29 @@ theorem abs_sub_sum_mul_basisFun_le_sqrt {x : EuclideanSpace ℝ ι} (hx0 : ∀ 
       exact Finset.sum_congr rfl fun i _ ↦ by ring
     _ ≤ K * √(1 - ‖x‖ ^ 2) :=
       mul_le_mul_of_nonneg_left (sum_mul_dist_basisFun_le_sqrt hx0 hx1) K.coe_nonneg
+
+section ofReal
+
+variable (ι) in
+/-- The real-linear inclusion `ℝ^ι → ℂ^ι` of the real points of complex Euclidean space. -/
+noncomputable def ofRealCLM : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℂ ι :=
+  LinearMap.toContinuousLinearMap
+    { toFun x := WithLp.toLp 2 fun k ↦ (x k : ℂ)
+      map_add' x y := by ext k; simp
+      map_smul' c x := by ext k; simp }
+
+@[simp]
+theorem ofRealCLM_apply (x : EuclideanSpace ℝ ι) (k : ι) : ofRealCLM ι x k = x k :=
+  (rfl)
+
+open scoped InnerProductSpace in
+/-- The inclusion of the real points preserves inner products. -/
+@[simp]
+theorem inner_ofRealCLM (x y : EuclideanSpace ℝ ι) :
+    ⟪ofRealCLM ι x, ofRealCLM ι y⟫_ℂ = (⟪x, y⟫_ℝ : ℂ) := by
+  simp [PiLp.inner_apply, mul_comm]
+
+end ofReal
 
 section take
 

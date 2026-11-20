@@ -24,7 +24,9 @@ of the Cayley transforms of the entries; for a real number `x`,
 For a real symmetric matrix `A`, the Cayley transform is the Souriau map `U Uᵀ` of any unitary
 frame `U` of the Lagrangian graph `{x + i A x}` of `A` in `ℂⁿ`, which is how the Maslov index of
 paths of graphs is computed (`TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization`). Its
-determinant is `z / conj z` for `z = det (1 + i A)` (`Matrix.IsHermitian.det_cayley`).
+determinant is `z / conj z` for `z = det (1 + i A)` (`Matrix.IsHermitian.det_cayley`), and `z`
+itself is `∏ⱼ (1 + i λⱼ) = (∏ⱼ √(1 + λⱼ²)) e^{i ∑ⱼ arctan λⱼ}` in terms of the eigenvalues `λⱼ`
+of `A`.
 
 ## Main definitions
 
@@ -42,6 +44,10 @@ determinant is `z / conj z` for `z = det (1 + i A)` (`Matrix.IsHermitian.det_cay
 * `Matrix.cayley_conj`: naturality under conjugation.
 * `Matrix.cayley_diagonal_ofReal`: the Cayley transform of a real diagonal matrix.
 * `Matrix.IsHermitian.det_cayley`: the determinant of the Cayley transform.
+* `Matrix.IsHermitian.det_one_sub_smul_map_ofReal`: for a real symmetric matrix `A` with
+  eigenvalues `λⱼ`, `det (1 - c A) = ∏ⱼ (1 - c λⱼ)` over `ℂ`.
+* `Matrix.IsHermitian.det_one_add_I_smul_map_ofReal_eq_mul_exp`: the polar form
+  `det (1 + i A) = (∏ⱼ √(1 + λⱼ²)) e^{i ∑ⱼ arctan λⱼ}`.
 
 ## References
 
@@ -174,6 +180,53 @@ theorem det_cayley (hA : A.IsHermitian) :
     det (cayley A) = det (1 + I • A) / (starRingEnd ℂ) (det (1 + I • A)) := by
   rw [cayley, det_mul, det_nonsing_inv, Ring.inverse_eq_inv', hA.det_one_sub_I_smul,
     div_eq_mul_inv]
+
+end IsHermitian
+
+/-! ### The factor `1 + i A` of a real symmetric matrix -/
+
+namespace IsHermitian
+
+variable {A : Matrix n n ℝ}
+
+/-- For a real symmetric matrix `A` with eigenvalues `λⱼ` and a complex number `c`,
+`det (1 - c A) = ∏ⱼ (1 - c λⱼ)` over `ℂ`. -/
+theorem det_one_sub_smul_map_ofReal (hA : A.IsHermitian) (c : ℂ) :
+    det (1 - c • A.map ((↑) : ℝ → ℂ)) = ∏ j, (1 - c * (hA.eigenvalues j : ℂ)) := by
+  -- Diagonalize `A = U D Uᵀ` over `ℝ` and complexify: `1 - c A = U (1 - c D) Uᵀ` with `U Uᵀ = 1`.
+  set U : Matrix n n ℝ := (hA.eigenvectorUnitary : Matrix n n ℝ)
+  have hUU : U.map ofRealHom * (star U).map ofRealHom = 1 := by
+    rw [← Matrix.map_mul, mem_unitaryGroup_iff.mp hA.eigenvectorUnitary.property,
+      Matrix.map_one _ (map_zero _) (map_one _)]
+  have hAU : A.map ofRealHom =
+      U.map ofRealHom * diagonal (fun j ↦ (hA.eigenvalues j : ℂ)) * (star U).map ofRealHom := by
+    conv_lhs => rw [hA.spectral_theorem]
+    simp [U, Matrix.map_mul, diagonal_map]
+  have hd : diagonal (fun j ↦ 1 - c * (hA.eigenvalues j : ℂ)) =
+      1 - c • diagonal fun j ↦ (hA.eigenvalues j : ℂ) := by
+    ext i j
+    rcases eq_or_ne i j with rfl | h <;> simp [*]
+  have hconj : 1 - c • A.map ofRealHom =
+      U.map ofRealHom * diagonal (fun j ↦ 1 - c * (hA.eigenvalues j : ℂ)) *
+        (star U).map ofRealHom := by
+    rw [hd, Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_one, hUU, hAU, Matrix.mul_smul,
+      Matrix.smul_mul]
+  have hdet : det ((star U).map ofRealHom) * det (U.map ofRealHom) = 1 := by
+    rw [← det_mul, mul_eq_one_comm.mp hUU, det_one]
+  -- The coercion `ℝ → ℂ` is the ring hom `ofRealHom`, the form `Matrix.map_mul` uses above.
+  rw [show A.map ((↑) : ℝ → ℂ) = A.map ofRealHom from rfl, hconj, det_mul, det_mul, mul_comm,
+    ← mul_assoc, hdet, one_mul, det_diagonal]
+
+/-- **The polar form of `det (1 + i A)`** for a real symmetric matrix `A` with eigenvalues `λⱼ`:
+`det (1 + i A) = (∏ⱼ √(1 + λⱼ²)) e^{i ∑ⱼ arctan λⱼ}`. Its argument is the sum of the
+`arctan λⱼ` modulo `2π`. -/
+theorem det_one_add_I_smul_map_ofReal_eq_mul_exp (hA : A.IsHermitian) :
+    det (1 + I • A.map ((↑) : ℝ → ℂ)) =
+      ((∏ j, √(1 + hA.eigenvalues j ^ 2) : ℝ) : ℂ) *
+        exp ((∑ j, Real.arctan (hA.eigenvalues j) : ℝ) * I) := by
+  rw [← sub_neg_eq_add, ← neg_smul, hA.det_one_sub_smul_map_ofReal]
+  simp_rw [neg_mul, sub_neg_eq_add, mul_comm I, one_add_mul_I_eq_sqrt_mul_exp,
+    Finset.prod_mul_distrib, ofReal_prod, ofReal_sum, Finset.sum_mul, exp_sum]
 
 end IsHermitian
 
