@@ -84,6 +84,13 @@ theorem restrict_sub (f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (U : Opens M) :
   ext x
   simp
 
+/-- Restriction to an open subset commutes with multiplication of scalar functions. -/
+@[simp]
+theorem restrict_mul (f g : C^n⟮I, M; 𝕜⟯) (U : Opens M) :
+    (f * g).restrict U = f.restrict U * g.restrict U := by
+  ext x
+  simp
+
 /-- Restriction to an open source is continuous for the native weak Whitney topologies. -/
 theorem continuous_restrict [IsManifold I n M] [IsManifold J n N] [LocallyCompactSpace E]
     (U : Opens M) : Continuous (fun f : C^n⟮I, M; J, N⟯ ↦ f.restrict U) := by
