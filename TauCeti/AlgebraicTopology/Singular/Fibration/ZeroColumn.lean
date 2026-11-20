@@ -169,6 +169,16 @@ private lemma cellULiftMap_ballPoint (j : cell C 1) (c : ℝ) (hc : |c| ≤ 1) :
     cellULiftMap C 1 j (ballPoint c hc) = map 1 j (fun _ ↦ c) :=
   cellULiftMap_apply 1 j _
 
+omit [T2Space B] in
+/-- A point of the pullback `Pⱼ` along a `1`-cell `j` lies in the part `∂Pⱼ` over the boundary
+exactly when its point of the ball lies in the unit sphere. -/
+private lemma mem_cellDiskPullbackPair_snd_iff (j : cell C 1)
+    (y : {x : closedBall (0 : ULift.{u} (Fin 1 → ℝ)) 1 × E // cellULiftMap C 1 j x.1 = p x.2}) :
+    y ∈ _root_.TopCat.pullbackFst (cellULiftMap C 1 j) p ⁻¹'
+        {x | (x : ULift.{u} (Fin 1 → ℝ)) ∈ sphere 0 1} ↔
+      (y.1.1 : ULift.{u} (Fin 1 → ℝ)) ∈ sphere 0 1 := by
+  rw [Set.mem_preimage, Set.mem_ofPred_eq, _root_.TopCat.pullbackFst_apply]
+
 variable (p) in
 /-- The inclusion of the fibre of `p` over the end point `χⱼ(c)`, `c = ±1`, of a `1`-cell `j` into
 the part `∂Pⱼ` of the pullback `Pⱼ` of `p` along the characteristic map over the boundary. -/
@@ -176,10 +186,8 @@ private def cellBoundaryFiberι (j : cell C 1) (c : ℝ) (hc : |c| = 1) :
     p.fiber (map 1 j fun _ ↦ c) ⟶ (cellDiskPullbackPair p C 1 j).snd :=
   _root_.TopCat.ofHom ⟨fun e ↦ ⟨⟨(ballPoint c hc.le, e.1),
       (cellULiftMap_ballPoint j c hc.le).trans (p.apply_coe_fiber _ e).symm⟩, by
-        -- Membership in `∂Pⱼ` is membership of the point of the ball in the unit sphere.
-        change (ballPoint c hc.le : ULift.{u} (Fin 1 → ℝ)) ∈ sphere 0 1
-        rw [mem_sphere_zero_iff_norm, ← ULift.norm_down, ballPoint_down, pi_norm_const,
-          Real.norm_eq_abs, hc]⟩,
+        rw [mem_cellDiskPullbackPair_snd_iff, mem_sphere_zero_iff_norm, ← ULift.norm_down,
+          ballPoint_down, pi_norm_const, Real.norm_eq_abs, hc]⟩,
     by fun_prop⟩
 
 omit [T2Space B] in
@@ -238,7 +246,8 @@ omit [T2Space B] in
 /-- A point of the boundary sphere of the closed unit ball of `ℝ¹` is `-1` or `1`. -/
 private lemma abs_down_eq_one (j : cell C 1) (x : (cellDiskPullbackPair p C 1 j).snd) :
     |(x.1.1.1 : ULift.{u} (Fin 1 → ℝ)).down 0| = 1 := by
-  have hx : ‖(x.1.1.1 : ULift.{u} (Fin 1 → ℝ))‖ = 1 := mem_sphere_zero_iff_norm.1 x.2
+  have hx : ‖(x.1.1.1 : ULift.{u} (Fin 1 → ℝ))‖ = 1 := mem_sphere_zero_iff_norm.1
+    ((mem_cellDiskPullbackPair_snd_iff j x.1).1 x.2)
   have hv : (x.1.1.1 : ULift.{u} (Fin 1 → ℝ)).down =
       fun _ ↦ (x.1.1.1 : ULift.{u} (Fin 1 → ℝ)).down 0 :=
     funext fun i ↦ by rw [Subsingleton.elim i 0]
