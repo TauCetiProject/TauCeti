@@ -28,15 +28,20 @@ onto them commute with the continuation maps
 the subcomplexes (`TauCeti.ContinuationCocycle.ofRestrict_continuationHom_comp`) this gives a
 morphism of short exact sequences (`TauCeti.ContinuationCocycle.restrictShortComplexMap`), so the
 connecting morphisms of the two long exact sequences commute with the maps induced by `ν`
-(`TauCeti.ContinuationCocycle.restrictShortComplexMap_δ`). The restrictions themselves, and their
-functoriality, are in `TauCeti.Algebra.Homology.DG.Twisted.Restrict`.
+(`TauCeti.ContinuationCocycle.restrictShortComplexMap_δ`). These morphisms are functorial: the
+Kronecker cocycle induces the identity (`TauCeti.ContinuationCocycle.restrictShortComplexMap_refl`)
+and composites induce composites (`TauCeti.ContinuationCocycle.restrictShortComplexMap_comp`). The
+restrictions themselves, and their functoriality, are in
+`TauCeti.Algebra.Homology.DG.Twisted.Restrict`.
 
 For action windows: if the twisted differentials do not raise the actions and `ν` raises the action
 by at most `δ`, then `ν` maps the sequence at level `a` to the sequence at level `a + δ`
 (`TauCeti.ContinuationCocycle.actionShortComplexMap`), through its restrictions to the generators
 of action `< a` (`TauCeti.ContinuationCocycle.actionSublevel`) and of action `≥ a`
 (`TauCeti.ContinuationCocycle.actionSuperlevel`), and the connecting morphisms commute with these
-maps (`TauCeti.ContinuationCocycle.actionShortComplexMap_δ`). For `δ = 0`, the case of monotone
+maps (`TauCeti.ContinuationCocycle.actionShortComplexMap_δ`). The morphism of a composite at
+levels `a` and `a + δ₁ + δ₂` is the composite of the morphisms at levels `a` and `a + δ₁`
+(`TauCeti.ContinuationCocycle.actionShortComplexMap_comp`). For `δ = 0`, the case of monotone
 homotopies of Hamiltonians, the long exact sequence between the zero-energy and positive-energy
 parts is therefore natural in the continuation maps along which symplectic homology is the direct
 limit over the slopes. A parametrized cocycle which raises the action by at most `δ` makes the
@@ -135,6 +140,67 @@ end ContinuationCocycle
 
 end ShortComplexMap
 
+/-! ### Functoriality of the morphisms of short exact sequences -/
+
+section ShortComplexMapFunctoriality
+
+variable {R : Type uR} {A : Type uA} {M : Type uM}
+  [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [Module R M]
+  {P Q W : Type uP} {ind : P → ℤ} {indQ : Q → ℤ} {indW : W → ℤ} [Fintype P] [Fintype Q]
+  [Fintype W] [DecidableEq P] [DecidableEq Q] [DecidableEq W]
+  [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
+  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} (h : IsDGAlgebra 𝒜 d)
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ] {dM : M →ₗ[R] M}
+  (hM : IsDGRightModule h ℳ dM)
+  {mP : TwistingCocycle 𝒜 d P ind} {mQ : TwistingCocycle 𝒜 d Q indQ}
+  {mW : TwistingCocycle 𝒜 d W indW}
+
+namespace ContinuationCocycle
+
+variable (S₁ T₁ : Set P) [DecidablePred (· ∈ S₁)] [DecidablePred (· ∈ T₁)]
+  (hS₁ : ∀ x y, x ∈ S₁ → y ∉ S₁ → mP.m x y = 0) (hST₁ : ∀ x, x ∈ T₁ ↔ x ∉ S₁)
+  (S₂ T₂ : Set Q) [DecidablePred (· ∈ S₂)] [DecidablePred (· ∈ T₂)]
+  (hS₂ : ∀ x y, x ∈ S₂ → y ∉ S₂ → mQ.m x y = 0) (hST₂ : ∀ x, x ∈ T₂ ↔ x ∉ S₂)
+  (S₃ T₃ : Set W) [DecidablePred (· ∈ S₃)] [DecidablePred (· ∈ T₃)]
+  (hS₃ : ∀ x y, x ∈ S₃ → y ∉ S₃ → mW.m x y = 0) (hST₃ : ∀ x, x ∈ T₃ ↔ x ∉ S₃)
+
+/-- The Kronecker cocycle induces the identity morphism of the short exact sequence of a
+subcomplex. -/
+@[simp]
+theorem restrictShortComplexMap_refl
+    (hν : ∀ x y, x ∈ S₁ → y ∉ S₁ → (refl h.map_one_eq_zero mP).ν x y = 0) :
+    (refl h.map_one_eq_zero mP).restrictShortComplexMap h hM S₁ T₁ hS₁ hST₁ S₁ T₁ hS₁ hST₁ hν =
+      𝟙 _ := by
+  ext1
+  · exact (congrArg (continuationHom · hM) (restrictSubcomplex_refl _ S₁ hS₁ hν)).trans
+      (continuationHom_refl hM)
+  · exact continuationHom_refl hM
+  · exact (congrArg (continuationHom · hM) (restrictQuotient_refl _ T₁ _ _)).trans
+      (continuationHom_refl hM)
+
+/-- **The morphisms of short exact sequences are functorial**: the morphism induced by a
+composite of continuation cocycles is the composite of the morphisms they induce. -/
+theorem restrictShortComplexMap_comp (ν₁ : ContinuationCocycle mP mQ)
+    (ν₂ : ContinuationCocycle mQ mW) (hν₁ : ∀ x y, x ∈ S₁ → y ∉ S₂ → ν₁.ν x y = 0)
+    (hν₂ : ∀ x y, x ∈ S₂ → y ∉ S₃ → ν₂.ν x y = 0)
+    (hν : ∀ x y, x ∈ S₁ → y ∉ S₃ → (ν₁.comp h ν₂).ν x y = 0) :
+    (ν₁.comp h ν₂).restrictShortComplexMap h hM S₁ T₁ hS₁ hST₁ S₃ T₃ hS₃ hST₃ hν =
+      ν₁.restrictShortComplexMap h hM S₁ T₁ hS₁ hST₁ S₂ T₂ hS₂ hST₂ hν₁ ≫
+        ν₂.restrictShortComplexMap h hM S₂ T₂ hS₂ hST₂ S₃ T₃ hS₃ hST₃ hν₂ := by
+  ext1
+  · exact (congrArg (continuationHom · hM)
+      (restrictSubcomplex_comp h ν₁ ν₂ S₁ hS₁ S₂ hS₂ S₃ hS₃ hν₁ hν₂ hν)).trans
+      (continuationHom_comp _ _ hM)
+  · exact continuationHom_comp _ _ hM
+  · exact (congrArg (continuationHom · hM) (restrictQuotient_comp h ν₁ ν₂ T₁ _ T₂ _ T₃ _
+      (ν₁.forall_eq_zero_of_compl hν₁ hST₁ hST₂) (ν₂.forall_eq_zero_of_compl hν₂ hST₂ hST₃)
+      _)).trans (continuationHom_comp _ _ hM)
+
+end ContinuationCocycle
+
+end ShortComplexMapFunctoriality
+
 /-! ### Action windows -/
 
 section ActionShortComplexMap
@@ -170,8 +236,9 @@ noncomputable def actionShortComplexMap :
 @[simp]
 theorem actionShortComplexMap_τ₁ :
     (ν.actionShortComplexMap h hM hmP hmQ a hν).τ₁ =
-      (ν.actionSublevel hmP hmQ hν a).continuationHom hM :=
-  (rfl)
+      (ν.actionSublevel hmP hmQ hν a).continuationHom hM := by
+  rw [actionSublevel_eq_restrictSubcomplex]
+  rfl
 
 @[simp]
 theorem actionShortComplexMap_τ₂ :
@@ -181,8 +248,27 @@ theorem actionShortComplexMap_τ₂ :
 @[simp]
 theorem actionShortComplexMap_τ₃ :
     (ν.actionShortComplexMap h hM hmP hmQ a hν).τ₃ =
-      (ν.actionSuperlevel hmP hmQ hν a).continuationHom hM :=
-  (rfl)
+      (ν.actionSuperlevel hmP hmQ hν a).continuationHom hM := by
+  rw [actionSuperlevel_eq_restrictQuotient]
+  rfl
+
+/-- **The morphisms of action exact sequences compose.** If `ν` raises the action by at most `δ`
+and `ν₂` by at most `δ₂`, the morphism of `ν` from level `a` followed by that of `ν₂` from level
+`a + δ` is the morphism of short exact sequences induced by their composite, from the generators
+of action `< a` to those of action `< a + δ + δ₂`. -/
+theorem actionShortComplexMap_comp {W : Type uP} {indW : W → ℤ} [Fintype W] [DecidableEq W]
+    {mW : TwistingCocycle 𝒜 d W indW} {actW : W → Γ}
+    (hmW : ∀ x y, actW x < actW y → mW.m x y = 0) (ν₂ : ContinuationCocycle mQ mW) {δ₂ : Γ}
+    (hν₂ : ∀ x y, actQ x + δ₂ < actW y → ν₂.ν x y = 0)
+    (hνν₂ : ∀ x y, x ∈ {x | actP x < a} → y ∉ {x | actW x < a + δ + δ₂} →
+      (ν.comp h ν₂).ν x y = 0) :
+    ν.actionShortComplexMap h hM hmP hmQ a hν ≫
+        ν₂.actionShortComplexMap h hM hmQ hmW (a + δ) hν₂ =
+      (ν.comp h ν₂).restrictShortComplexMap h hM {x | actP x < a} {x | a ≤ actP x}
+        (mP.m_eq_zero_of_mem_setOf_lt hmP) (fun _ ↦ not_lt.symm) {x | actW x < a + δ + δ₂}
+        {x | a + δ + δ₂ ≤ actW x} (mW.m_eq_zero_of_mem_setOf_lt hmW) (fun _ ↦ not_lt.symm) hνν₂ :=
+  (restrictShortComplexMap_comp h hM _ _ _ _ _ _ _ _ _ _ _ _ ν ν₂ (ν.ν_eq_zero_of_mem_setOf_lt hν)
+    (ν₂.ν_eq_zero_of_mem_setOf_lt hν₂) hνν₂).symm
 
 /-- **Naturality of the action long exact sequence.** If the twisted differentials do not raise
 the actions and the continuation cocycle `ν` raises the action by at most `δ`, the connecting
@@ -193,9 +279,10 @@ theorem actionShortComplexMap_δ (i j : ℤ) (hij : i + 1 = j) :
     (mP.actionShortComplex_shortExact hmP hM a).δ i j hij ≫
         HomologicalComplex.homologyMap ((ν.actionSublevel hmP hmQ hν a).continuationHom hM) j =
       HomologicalComplex.homologyMap ((ν.actionSuperlevel hmP hmQ hν a).continuationHom hM) i ≫
-        (mQ.actionShortComplex_shortExact hmQ hM (a + δ)).δ i j hij :=
-  HomologicalComplex.HomologySequence.δ_naturality (ν.actionShortComplexMap h hM hmP hmQ a hν)
-    _ _ i j hij
+        (mQ.actionShortComplex_shortExact hmQ hM (a + δ)).δ i j hij := by
+  rw [← actionShortComplexMap_τ₁ h, ← actionShortComplexMap_τ₃ h]
+  exact HomologicalComplex.HomologySequence.δ_naturality
+    (ν.actionShortComplexMap h hM hmP hmQ a hν) _ _ i j hij
 
 end ContinuationCocycle
 

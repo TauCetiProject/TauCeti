@@ -60,7 +60,10 @@ restricts from the generators of action `≥ a` to those of action `≥ a + δ`
 (`TauCeti.ContinuationCocycle.actionSuperlevel`), and a parametrized cocycle which raises the
 action by at most `δ` restricts to both (`TauCeti.ParametrizedCocycle.actionSublevel`,
 `TauCeti.ParametrizedCocycle.actionSuperlevel`). Such bounds add under composition
-(`TauCeti.ContinuationCocycle.comp_ν_eq_zero_of_add_lt`).
+(`TauCeti.ContinuationCocycle.comp_ν_eq_zero_of_add_lt`), and the action sublevels and
+superlevels of a composite at levels `a` and `a + δ₁ + δ₂` are the composites of those at levels
+`a` and `a + δ₁` (`TauCeti.ContinuationCocycle.actionSublevel_comp`,
+`TauCeti.ContinuationCocycle.actionSuperlevel_comp`).
 
 ## References
 
@@ -840,7 +843,6 @@ a `TauCeti.ContinuationCocycle.restrictSubcomplex`
 (`TauCeti.ContinuationCocycle.actionSublevel_eq_restrictSubcomplex`), so by
 `TauCeti.ContinuationCocycle.ofRestrict_continuationHom_comp` the continuation morphism of `ν`
 carries the first subcomplex into the second. -/
-@[expose]
 def actionSublevel :
     ContinuationCocycle
       (mP.restrict {x | actP x < a}
@@ -870,7 +872,6 @@ do not raise the actions and the continuation cocycle `ν` raises the action by 
 `≥ a` to that of the generators of action `≥ a + δ`. It is a
 `TauCeti.ContinuationCocycle.restrictQuotient`
 (`TauCeti.ContinuationCocycle.actionSuperlevel_eq_restrictQuotient`). -/
-@[expose]
 def actionSuperlevel :
     ContinuationCocycle
       (mP.restrict {x | a ≤ actP x}
@@ -893,6 +894,34 @@ theorem actionSuperlevel_eq_restrictQuotient :
         {x | a + δ ≤ actQ x} (mQ.m_eq_zero_of_notMem_setOf_le hmQ)
         (ν.ν_eq_zero_of_notMem_setOf_le hν) :=
   (rfl)
+
+/-- **Action sublevels compose.** If `ν` raises the action by at most `δ` and `ν₂` by at most
+`δ₂`, the action sublevel of `ν` at level `a` followed by that of `ν₂` at level `a + δ` is the
+restriction of their composite to the generators of action `< a` and `< a + δ + δ₂`. -/
+theorem actionSublevel_comp [GradedAlgebra 𝒜] (h : IsDGAlgebra 𝒜 d)
+    (ν₂ : ContinuationCocycle mQ mS) (hmS : ∀ x y, actS x < actS y → mS.m x y = 0) {δ₂ : Γ}
+    (hν₂ : ∀ x y, actQ x + δ₂ < actS y → ν₂.ν x y = 0)
+    (hνν₂ : ∀ x y, x ∈ {x | actP x < a} → y ∉ {x | actS x < a + δ + δ₂} →
+      (ν.comp h ν₂).ν x y = 0) :
+    (ν.actionSublevel hmP hmQ hν a).comp h (ν₂.actionSublevel hmQ hmS hν₂ (a + δ)) =
+      (ν.comp h ν₂).restrictSubcomplex {x | actP x < a} (mP.m_eq_zero_of_mem_setOf_lt hmP)
+        {x | actS x < a + δ + δ₂} (mS.m_eq_zero_of_mem_setOf_lt hmS) hνν₂ :=
+  (restrictSubcomplex_comp h ν ν₂ _ _ _ _ _ _ (ν.ν_eq_zero_of_mem_setOf_lt hν)
+    (ν₂.ν_eq_zero_of_mem_setOf_lt hν₂) hνν₂).symm
+
+/-- **Action superlevels compose.** If `ν` raises the action by at most `δ` and `ν₂` by at most
+`δ₂`, the action superlevel of `ν` at level `a` followed by that of `ν₂` at level `a + δ` is the
+restriction of their composite to the generators of action `≥ a` and `≥ a + δ + δ₂`. -/
+theorem actionSuperlevel_comp [GradedAlgebra 𝒜] (h : IsDGAlgebra 𝒜 d)
+    (ν₂ : ContinuationCocycle mQ mS) (hmS : ∀ x y, actS x < actS y → mS.m x y = 0) {δ₂ : Γ}
+    (hν₂ : ∀ x y, actQ x + δ₂ < actS y → ν₂.ν x y = 0)
+    (hνν₂ : ∀ x y, x ∉ {x | a ≤ actP x} → y ∈ {x | a + δ + δ₂ ≤ actS x} →
+      (ν.comp h ν₂).ν x y = 0) :
+    (ν.actionSuperlevel hmP hmQ hν a).comp h (ν₂.actionSuperlevel hmQ hmS hν₂ (a + δ)) =
+      (ν.comp h ν₂).restrictQuotient {x | a ≤ actP x} (mP.m_eq_zero_of_notMem_setOf_le hmP)
+        {x | a + δ + δ₂ ≤ actS x} (mS.m_eq_zero_of_notMem_setOf_le hmS) hνν₂ :=
+  (restrictQuotient_comp h ν ν₂ _ _ _ _ _ _ (ν.ν_eq_zero_of_notMem_setOf_le hν)
+    (ν₂.ν_eq_zero_of_notMem_setOf_le hν₂) hνν₂).symm
 
 end ContinuationCocycle
 
