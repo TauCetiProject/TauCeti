@@ -335,7 +335,7 @@ theorem awayLift_mem_iff (hinj : Function.Injective (awayLift 𝒜 hf φ hφ)) {
     refine hinj ((hφ.pow n).mul_left_inj.mp ?_)
     rw [← hφa] at h
     exact h.trans (lift_mk_mul_pow (g := φ.toRingHom) hφ n (decompose 𝒜 a (d + n • e))).symm
-  exact hx' ▸ mk_mem_awayGrading (decompose 𝒜 a (d + n • e)).2
+  exact hx' ▸ mk_mem_awayGrading (decompose 𝒜 a (d + n • e)).property
 
 end Lift
 
