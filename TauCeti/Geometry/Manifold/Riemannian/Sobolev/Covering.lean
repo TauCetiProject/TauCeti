@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Covering.Deck
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Isometry
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Covering
+import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
 
 /-!
@@ -98,11 +99,7 @@ private theorem exists_comp_eq_smul_sum_comp_deckIsometry [CompleteSpace E]
   set a : C^∞⟮I, M; ℝ⟯ :=
     (Fintype.card G : ℝ)⁻¹ • ∑ g : G, u.comp (hq.deckIsometry hf g).toDiffeomorph.toContMDiffMap
   have ha (x : M) : a x = (Fintype.card G : ℝ)⁻¹ * ∑ g : G, u (g • x) := by
-    have hsum := congrFun (map_sum (ContMDiffMap.coeFnLinearMap (𝕜 := ℝ) (I := I) (N := M)
-      (n := ∞) (V := ℝ)) (fun g ↦ u.comp (hq.deckIsometry hf g).toDiffeomorph.toContMDiffMap)
-      Finset.univ) x
-    simp only [ContMDiffMap.coeFnLinearMap_apply, Finset.sum_apply] at hsum
-    simp [a, hsum]
+    simp [a, ContMDiffMap.coe_sum]
   have hinv (h : G) (x : M) : a (h • x) = a x := by
     rw [ha, ha]
     congr 1
@@ -262,8 +259,11 @@ theorem mem_range_normalizedPullback_iff (hq : IsQuotientCoveringMap q G)
   obtain ⟨v, hv⟩ := exists_comp_eq_smul_sum_comp_deckIsometry hq hf u
   have hG : (0 : ℝ) < Nat.card G := Nat.cast_pos.2 Nat.card_pos
   refine ⟨(Nat.card G : ℝ) ^ (1 / 2 : ℝ) • ofSmooth v, ?_⟩
-  rw [map_smul, normalizedPullback_ofSmooth, smul_smul, ← Real.rpow_add hG, add_neg_cancel,
-    Real.rpow_zero, one_smul, hv, hA]
+  -- the normalizing scalars `|G| ^ (1/2)` and `|G| ^ (-1/2)` cancel
+  have hc : (Nat.card G : ℝ) ^ (1 / 2 : ℝ) * (Nat.card G : ℝ) ^ (-(1 / 2 : ℝ)) = 1 := by
+    rw [← Real.rpow_add hG]
+    simp
+  rw [map_smul, normalizedPullback_ofSmooth, smul_smul, hc, one_smul, hv, hA]
   simp only [map_smul, map_sum, compRiemannianIsometry_ofSmooth]
 
 end Range

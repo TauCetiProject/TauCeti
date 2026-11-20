@@ -78,13 +78,19 @@ theorem inner_mfderiv_smul [IsManifold I 1 M] [IsManifold I' 1 N]
 
 variable [IsManifold I ∞ M] [IsManifold I' ∞ N]
 
+/-- If a quotient covering map `q : M → N` for an action of `G` is a local Riemannian isometry,
+then `G` acts on `M` by smooth maps. -/
+theorem contMDiffConstSMul_of_isLocalRiemannianIsometry (hq : IsQuotientCoveringMap q G)
+    (hf : TauCeti.IsLocalRiemannianIsometry I I' q) : ContMDiffConstSMul I ∞ G M :=
+  hq.contMDiffConstSMul (hf.isLocalDiffeomorph (n := ∞) (by simp) le_rfl)
+
 /-- **Deck transformations are isometries.** If a quotient covering map `q : M → N` for an action
 of `G` is a local Riemannian isometry, then each deck transformation `x ↦ g • x` is a Riemannian
 isometry of `M` (`IsQuotientCoveringMap.coe_deckIsometry`). -/
 def deckIsometry (hq : IsQuotientCoveringMap q G)
     (hf : TauCeti.IsLocalRiemannianIsometry I I' q) (g : G) :
     TauCeti.RiemannianIsometry I I M M :=
-  letI := hq.contMDiffConstSMul (hf.isLocalDiffeomorph (n := ∞) (by simp) le_rfl)
+  letI := hq.contMDiffConstSMul_of_isLocalRiemannianIsometry hf
   TauCeti.RiemannianIsometry.constSMul g (hq.inner_mfderiv_smul hf g)
 
 /-- The deck isometry given by `g` is the map `x ↦ g • x`. -/
@@ -92,7 +98,7 @@ def deckIsometry (hq : IsQuotientCoveringMap q G)
 theorem coe_deckIsometry (hq : IsQuotientCoveringMap q G)
     (hf : TauCeti.IsLocalRiemannianIsometry I I' q) (g : G) :
     ⇑(hq.deckIsometry hf g) = (g • ·) :=
-  letI := hq.contMDiffConstSMul (hf.isLocalDiffeomorph (n := ∞) (by simp) le_rfl)
+  letI := hq.contMDiffConstSMul_of_isLocalRiemannianIsometry hf
   TauCeti.RiemannianIsometry.coe_constSMul
 
 end IsQuotientCoveringMap
