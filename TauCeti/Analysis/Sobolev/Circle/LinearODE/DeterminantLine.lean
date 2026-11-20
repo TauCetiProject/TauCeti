@@ -430,6 +430,13 @@ private def evalZeroProd : CircleSobolev 1 E × E →ₗ[ℝ] E × E :=
   ((evalZero T : CircleSobolev 1 E × E →L[ℝ] E) : CircleSobolev 1 E × E →ₗ[ℝ] E).prod
     (LinearMap.snd ℝ _ _)
 
+private theorem evalZeroProd_snd (y : CircleSobolev 1 E × E) : (evalZeroProd T y).2 = y.2 :=
+  (rfl)
+
+private theorem fst_evalZeroProd (y : CircleSobolev 1 E × E) :
+    ContinuousLinearMap.fst ℝ E E (evalZeroProd T y) = evalZero T y :=
+  (rfl)
+
 /-- The endomorphism `1 - Ψ(T)` of `E`, as a continuous linear map whose underlying linear map is
 literally the map `1 - Ψ(T)` of `TauCeti.CircleSobolev.detLineLoopOperatorEquiv`. -/
 private def returnEnd : E →L[ℝ] E :=
@@ -476,10 +483,10 @@ private theorem exists_detLineChartEquiv_detLineLoopOperatorEquiv_symm
   have hΦ := evalZeroProd_ker T S r
   have hK := evalZeroProd_inl T S
   have hC := quotientRangeLoopOperatorEquiv_mkQ_loopStab T S r
-  refine ⟨ContinuousLinearMap.isInvertible_prod_coprod_of_kerCokerEquiv hΦ hK (fun _ _ ↦ rfl)
-    hC (fun _ _ ↦ rfl) h', ?_⟩
-  rw [← ContinuousLinearMap.detLineChartEquiv_detLineCongrKerCoker hΦ hK (fun _ _ ↦ rfl) hC
-    (fun _ _ ↦ rfl) _ h']
+  refine ⟨ContinuousLinearMap.isInvertible_prod_coprod_of_kerCokerEquiv hΦ hK
+    (fun y _ ↦ evalZeroProd_snd T y) hC (fun y _ ↦ fst_evalZeroProd T y) h', ?_⟩
+  rw [← ContinuousLinearMap.detLineChartEquiv_detLineCongrKerCoker hΦ hK
+    (fun y _ ↦ evalZeroProd_snd T y) hC (fun y _ ↦ fst_evalZeroProd T y) _ h']
   exact congrArg _ ((detLineLoopOperatorEquiv T S).apply_symm_apply _)
 
 variable {X : Type*} [TopologicalSpace X] {M : X → C(AddCircle T, E →L[ℝ] E)}
@@ -516,23 +523,14 @@ private theorem continuous_endpointStab (hM : Continuous M) :
 
 variable (M) in
 /-- **The determinant lines of a family of loop operators and of its return maps are coherently
-identified.** Let `M` be a continuous family of continuous loops of real-linear maps of `E`, with
-loop operators `L_x ζ = ζ' - M x ζ`, `H¹(E) → H⁰(E)`, and return maps `P_x = Ψ_x(T)` of
-`w' = M x w`. Transporting the normalized generator of the determinant line of the endomorphism
-`1 - P_x` (`LinearMap.detLineEndGenerator`) to the determinant line of `L_x` along
-`TauCeti.CircleSobolev.detLineLoopOperatorEquiv` gives a coherent family
+identified.** Let `M` be a family of continuous loops of real-linear maps of `E`, continuous on a
+parameter set `s`, with loop operators `L_x ζ = ζ' - M x ζ`, `H¹(E) → H⁰(E)`, and return maps
+`P_x = Ψ_x(T)` of `w' = M x w`. Transporting the normalized generator of the determinant line of
+the endomorphism `1 - P_x` (`LinearMap.detLineEndGenerator`) to the determinant line of `L_x` along
+`TauCeti.CircleSobolev.detLineLoopOperatorEquiv` gives a coherent family on `s`
 (`TauCeti.IsDetLineCoherentOn`): a continuous orientation of the determinant line bundle of the
-family `L_x`, although the kernels and cokernels of `L_x` jump.
-
-The proof compares kernel charts. A right inverse `r` of the endpoint map at a base parameter `x₀`
-gives continuous loops `r l` stabilizing `L_x`, with kernel coordinate the value at `0`; they
-correspond to the stabilizer `l ↦ E_x (r l)` of `1 - P_x`, where `E_x` is the endpoint map, which
-is the identity at `x₀`. Evaluation at `0` identifies the two stabilized kernels, so the two
-kernel charts read the corresponding elements of the determinant lines in the same way
-(`ContinuousLinearMap.detLineChartEquiv_detLineCongrKerCoker`). The finite-dimensional chart moves
-continuously with `x`, and the normalized generators are coherent
-(`TauCeti.isDetLineCoherentOn_detLineEndGenerator`). -/
-theorem isDetLineCoherentOn_detLineLoopOperatorEquiv_symm (hM : Continuous M) (s : Set X) :
+family `L_x` over `s`, although the kernels and cokernels of `L_x` jump. -/
+theorem isDetLineCoherentOn_detLineLoopOperatorEquiv_symm (s : Set X) (hM : ContinuousOn M s) :
     IsDetLineCoherentOn (fun x ↦ loopOperator T (M x))
       (fun x ↦ (detLineLoopOperatorEquiv T (M x)).symm
         (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ M x t) T) : E →ₗ[ℝ] E)).detLineEndGenerator) s := by
@@ -541,8 +539,13 @@ theorem isDetLineCoherentOn_detLineLoopOperatorEquiv_symm (hM : Continuous M) (s
   obtain ⟨r, hr⟩ := LinearMap.exists_rightInverse_of_surjective
     (twistedEndpoint (AddCircle.continuous_comp_coe (M x₀)) T 1)
     (LinearMap.range_eq_top.2 (twistedEndpoint_surjective _ hT.out one_ne_zero))
-  have hA := continuous_returnEnd T hM
-  have hK := continuous_endpointStab T r hM
+  -- The chart data are continuous on `s`: restrict the family to the subtype `s`.
+  have hA : ContinuousOn (fun x ↦ returnEnd T (M x)) s :=
+    continuousOn_iff_continuous_domRestrict.2
+      (continuous_returnEnd T (M := s.domRestrict M) hM.domRestrict)
+  have hK : ContinuousOn (fun x ↦ endpointStab T (M x) r) s :=
+    continuousOn_iff_continuous_domRestrict.2
+      (continuous_endpointStab T r (M := s.domRestrict M) hM.domRestrict)
   -- At `x₀` the stabilizer of `1 - Ψ(T)` is the identity, so its kernel chart is valid there.
   have h₀ : (((returnEnd T (M x₀)).coprod (endpointStab T (M x₀) r)).prod
       (ContinuousLinearMap.fst ℝ E E)).IsInvertible := by
@@ -553,16 +556,16 @@ theorem isDetLineCoherentOn_detLineLoopOperatorEquiv_symm (hM : Continuous M) (s
     exact ContinuousLinearMap.isInvertible_coprod_id_prod_fst _
   obtain ⟨h₁, hc₀⟩ := exists_detLineChartEquiv_detLineLoopOperatorEquiv_symm T (M x₀) r h₀
   refine isDetLineCoherentWithinAt_of_eventually_sameRay
-    ((continuous_loopOperator T).comp hM).continuousWithinAt (isFredholm_loopOperator T (M x₀))
+    ((continuous_loopOperator T).comp_continuousOn hM x₀ hx₀) (isFredholm_loopOperator T (M x₀))
     ((LinearEquiv.map_ne_zero_iff _).2 (LinearMap.detLineEndGenerator_ne_zero _)) h₁ ?_
   -- Near `x₀`, the chart of `1 - Ψ(T)` with moving stabilizer is a positive multiple of the frozen
   -- one, which reads the coherent normalized generators on the ray of their reading at `x₀`.
   have ev₁ := (isDetLineCoherentOn_iff.1
     (isDetLineCoherentOn_detLineEndGenerator (fun x ↦ returnEnd T (M x)) s) x₀
-      hx₀).eventually_sameRay hA.continuousWithinAt h₀
+      hx₀).eventually_sameRay (hA x₀ hx₀) h₀
   have ev₂ := ContinuousLinearMap.eventually_detLineChartEquiv_eq_smul
-    (q := fun _ ↦ ContinuousLinearMap.fst ℝ E E) (s := s) hA.continuousWithinAt
-    hK.continuousWithinAt continuousWithinAt_const h₀
+    (q := fun _ ↦ ContinuousLinearMap.fst ℝ E E) (hA x₀ hx₀) (hK x₀ hx₀)
+    continuousWithinAt_const h₀
   filter_upwards [ev₁, ev₂] with x hx₁ hx₂
   obtain ⟨h₃, hsr⟩ := hx₁
   obtain ⟨h₂, h₄, c, hc, hcu⟩ := hx₂
@@ -572,13 +575,13 @@ theorem isDetLineCoherentOn_detLineLoopOperatorEquiv_symm (hM : Continuous M) (s
   exact (congrArg₂ (SameRay ℝ) hx hc₀).mpr
     ((congrArg₂ (SameRay ℝ) (hcu _) rfl).mpr (hsr.pos_smul_left hc))
 
-/-- **Orientation transport along loop operators follows the return maps.** Along a continuous
-path `M` of coefficient loops, transport of orientations of the determinant lines of the loop
-operators `L_t ζ = ζ' - M t ζ` carries the orientation of the transported normalized generator of
-`1 - Ψ_a(T)` to that of `1 - Ψ_b(T)`. -/
+/-- **Orientation transport along loop operators follows the return maps.** Along a path `M` of
+coefficient loops, continuous on `[a, b]`, transport of orientations of the determinant lines of
+the loop operators `L_t ζ = ζ' - M t ζ` carries the orientation of the transported normalized
+generator of `1 - Ψ_a(T)` to that of `1 - Ψ_b(T)`. -/
 theorem detLineOrientationTransport_rayOfNeZero_detLineLoopOperatorEquiv_symm
-    {M : ℝ → C(AddCircle T, E →L[ℝ] E)} (hM : Continuous M) (a b : ℝ) :
-    detLineOrientationTransport a b ((continuous_loopOperator T).comp hM).continuousOn
+    {M : ℝ → C(AddCircle T, E →L[ℝ] E)} {a b : ℝ} (hM : ContinuousOn M (Set.uIcc a b)) :
+    detLineOrientationTransport a b ((continuous_loopOperator T).comp_continuousOn hM)
         (fun t _ ↦ isFredholm_loopOperator T (M t))
         (rayOfNeZero ℝ _ ((LinearEquiv.map_ne_zero_iff _).2 (LinearMap.detLineEndGenerator_ne_zero
           (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ M a t) T) : E →ₗ[ℝ] E))) :
@@ -587,7 +590,7 @@ theorem detLineOrientationTransport_rayOfNeZero_detLineLoopOperatorEquiv_symm
           (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ M b t) T) : E →ₗ[ℝ] E))) :
           (detLineLoopOperatorEquiv T (M b)).symm _ ≠ 0) :=
   detLineOrientationTransport_rayOfNeZero _ _
-    (isDetLineCoherentOn_detLineLoopOperatorEquiv_symm T M hM _)
+    (isDetLineCoherentOn_detLineLoopOperatorEquiv_symm T M _ hM)
 
 end CircleSobolev
 
