@@ -68,8 +68,8 @@ by a monic irreducible polynomial determines it, by
 `IsDedekindDomain.HeightOneSpectrum.existsUnique_monic_irreducible_span`. -/
 noncomputable def monicIrreducibleEquiv :
     {q : k[X] // q.Monic ∧ Irreducible q} ≃ HeightOneSpectrum k[X] :=
-  Equiv.ofBijective (fun q => ofIrreducible q.2.2)
-    ⟨fun q r h => Subtype.ext (eq_of_monic_of_associated q.2.1 r.2.1
+  Equiv.ofBijective (fun q => ofIrreducible q.property.2)
+    ⟨fun q r h => Subtype.ext (eq_of_monic_of_associated q.property.1 r.property.1
         ((ofIrreducible_eq_ofIrreducible_iff _ _).mp h)),
       fun p => by
         obtain ⟨q, hqi, hqm, rfl⟩ := p.exists_monic_irreducible_eq_ofIrreducible
@@ -77,14 +77,15 @@ noncomputable def monicIrreducibleEquiv :
 
 @[simp]
 theorem monicIrreducibleEquiv_apply (q : {q : k[X] // q.Monic ∧ Irreducible q}) :
-    monicIrreducibleEquiv q = ofIrreducible q.2.2 :=
+    monicIrreducibleEquiv q = ofIrreducible q.property.2 :=
   (rfl)
 
 @[simp]
 theorem span_monicIrreducibleEquiv_symm (p : HeightOneSpectrum k[X]) :
     Ideal.span {((monicIrreducibleEquiv.symm p : {q : k[X] // q.Monic ∧ Irreducible q}) : k[X])} =
       p.asIdeal := by
-  rw [← ofIrreducible_asIdeal (monicIrreducibleEquiv.symm p).2.2, ← monicIrreducibleEquiv_apply,
+  rw [← ofIrreducible_asIdeal (monicIrreducibleEquiv.symm p).property.2,
+      ← monicIrreducibleEquiv_apply,
     Equiv.apply_symm_apply]
 
 end IsDedekindDomain.HeightOneSpectrum

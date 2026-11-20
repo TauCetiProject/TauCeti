@@ -132,14 +132,14 @@ open Classical in
 /-- Restricting a `tsum` over `A` to the wild-exponent fiber `L.wildExponent = j`. -/
 private theorem tsum_ite_wildExponent_eq (A : Set (IntermediateField K (SeparableClosure K)))
     (j : ℕ) (g : IntermediateField K (SeparableClosure K) → ℝ≥0∞) :
-    (∑' L : A, if L.1.wildExponent = j then g L.1 else 0) =
-      ∑' E : {E ∈ A | E.wildExponent = j}, g E.1 := by
-  refine Eq.trans ?_ ((_root_.tsum_subtype {L : A | L.1.wildExponent = j}
-    (fun L : A ↦ g L.1)).symm.trans
+    (∑' L : A, if L.val.wildExponent = j then g L.val else 0) =
+      ∑' E : {E ∈ A | E.wildExponent = j}, g E.val := by
+  refine Eq.trans ?_ ((_root_.tsum_subtype {L : A | L.val.wildExponent = j}
+    (fun L : A ↦ g L.val)).symm.trans
       ((Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ A) fun E ↦ E.wildExponent = j).tsum_eq
-        fun E ↦ g E.1))
+        fun E ↦ g E.val))
   refine tsum_congr fun L ↦ ?_
-  by_cases h : L.1.wildExponent = j <;> simp [Set.indicator, h]
+  by_cases h : L.val.wildExponent = j <;> simp [Set.indicator, h]
 
 private theorem one_sub_one_div_natCard_residueField_ne_zero :
     1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ≠ 0 := by
@@ -165,15 +165,15 @@ private theorem encard_wildExponent_eq_mul_eq_mul_measure_eisensteinBox {n j : �
   set w : ℝ≥0∞ := 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (n + j) * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞))
   have := (countable_totallyRamifiedOfDegree hn (K := K)).to_subtype
   calc ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.encard : ℝ≥0∞) * w
-      = ∑' L : totallyRamifiedOfDegree K n, if L.1.wildExponent = j then w else 0 :=
+      = ∑' L : totallyRamifiedOfDegree K n, if L.val.wildExponent = j then w else 0 :=
           ((tsum_ite_wildExponent_eq (totallyRamifiedOfDegree K n) j fun _ ↦ w).trans
             (ENNReal.tsum_set_const _ w)).symm
     _ = ∑' L : totallyRamifiedOfDegree K n,
-          ∫⁻ a in eisensteinBox K n j, (L.1.rootCount a : ℝ≥0∞) ∂μ :=
-          tsum_congr fun L ↦ (L.1.lintegral_rootCount_eisensteinBox L.2 μ hμ).symm
+          ∫⁻ a in eisensteinBox K n j, (L.val.rootCount a : ℝ≥0∞) ∂μ :=
+          tsum_congr fun L ↦ (L.val.lintegral_rootCount_eisensteinBox L.property μ hμ).symm
     _ = ∫⁻ a in eisensteinBox K n j,
-          (∑' L : totallyRamifiedOfDegree K n, (L.1.rootCount a : ℝ≥0∞)) ∂μ :=
-          (lintegral_tsum fun L ↦ aemeasurable_rootCount_restrict_eisensteinBox μ L.2).symm
+          (∑' L : totallyRamifiedOfDegree K n, (L.val.rootCount a : ℝ≥0∞)) ∂μ :=
+          (lintegral_tsum fun L ↦ aemeasurable_rootCount_restrict_eisensteinBox μ L.property).symm
     _ = ∫⁻ _ in eisensteinBox K n j, (n : ℝ≥0∞) ∂μ := by
           refine setLIntegral_congr_fun measurableSet_eisensteinBox fun a ha ↦ ?_
           obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp
@@ -342,11 +342,11 @@ theorem finite_mem_totallyRamifiedOfDegree_discriminantExponent_le (n D : ℕ) :
 /-- Fiberwise summation of `w (L.wildExponent)` over `L ∈ σ_K(n)` weighted by stratum counts. -/
 private theorem tsum_ncard_wildExponent_mul (n : ℕ) (w : ℕ → ℝ≥0∞) :
     (∑' j : ℕ, ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ≥0∞) * w j) =
-      ∑' L : totallyRamifiedOfDegree K n, w L.1.wildExponent := by
-  let g : totallyRamifiedOfDegree K n → ℕ := fun L ↦ L.1.wildExponent
+      ∑' L : totallyRamifiedOfDegree K n, w L.val.wildExponent := by
+  let g : totallyRamifiedOfDegree K n → ℕ := fun L ↦ L.val.wildExponent
   rw [← tsum_fiberwise (fun L : totallyRamifiedOfDegree K n ↦ w (g L)) g]
   refine tsum_congr fun j ↦ ?_
-  have hconst : ∀ L : g ⁻¹' {j}, w (g L.1) = w j := fun L ↦ congrArg w L.2
+  have hconst : ∀ L : g ⁻¹' {j}, w (g L.val) = w j := fun L ↦ congrArg w L.property
   have heq : (∑' _ : g ⁻¹' {j}, w j) =
       ∑' _ : {E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}, w j :=
     (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ totallyRamifiedOfDegree K n)
@@ -403,7 +403,7 @@ classes in `σ_K(n)`, the Serre mass `∑_{M ∈ R, c(M) = j} 1 / #Aut_K(M)` equ
 `#{E ∈ σ_K(n) | c(E) = j} / n`. -/
 theorem IsRepresentativeSet.tsum_one_div_natCard_algEquiv_wildExponent_eq {n : ℕ}
     {R : Set (IntermediateField K (SeparableClosure K))} (hR : IsRepresentativeSet n R) (j : ℕ) :
-    ∑' M : {M ∈ R | M.wildExponent = j}, (1 / (Nat.card (M.1 ≃ₐ[K] M.1) : ℝ≥0∞)) =
+    ∑' M : {M ∈ R | M.wildExponent = j}, (1 / (Nat.card (M.val ≃ₐ[K] M.val) : ℝ≥0∞)) =
       ({E ∈ totallyRamifiedOfDegree K n | E.wildExponent = j}.ncard : ℝ≥0∞) / n := by
   classical
   rcases n.eq_zero_or_pos with rfl | hn
@@ -422,10 +422,10 @@ theorem IsRepresentativeSet.tsum_one_div_natCard_algEquiv_wildExponent_eq {n : �
   let gR : IntermediateField K (SeparableClosure K) → ℝ≥0∞ :=
     fun M ↦ 1 / (Nat.card (M ≃ₐ[K] M) : ℝ≥0∞)
   have hrhs : ∑' M : R, (n : ℝ≥0∞) / Nat.card (M ≃ₐ[K] M) * f M =
-      (n : ℝ≥0∞) * ∑' M : {M ∈ R | M.wildExponent = j}, gR M.1 := by
+      (n : ℝ≥0∞) * ∑' M : {M ∈ R | M.wildExponent = j}, gR M.val := by
     rw [← tsum_ite_wildExponent_eq R j gR, ← ENNReal.tsum_mul_left]
     refine tsum_congr fun M ↦ ?_
-    by_cases h : M.1.wildExponent = j <;> simp [f, gR, h, div_eq_mul_inv]
+    by_cases h : M.val.wildExponent = j <;> simp [f, gR, h, div_eq_mul_inv]
   rw [hlhs, hrhs] at hf
   exact (ENNReal.eq_div_iff (by exact_mod_cast hn.ne') (ENNReal.natCast_ne_top n)).mpr hf.symm
 
