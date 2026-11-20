@@ -181,8 +181,7 @@ theorem qDerivative_mul (f g : R[X]) :
     induction g using Polynomial.induction_on' with
     | add g₁ g₂ hg₁ hg₂ => rw [mul_add, map_add, hg₁, hg₂, map_add]; ring
     | monomial n b =>
-      rw [monomial_comp_C_mul_X, monomial_mul_monomial, qDerivative_monomial,
-        qDerivative_monomial, qDerivative_monomial, monomial_mul_monomial, monomial_mul_monomial]
+      simp only [monomial_comp_C_mul_X, monomial_mul_monomial, qDerivative_monomial]
       rcases m with _ | m
       · simp [mul_assoc]
       rcases n with _ | n
@@ -192,11 +191,9 @@ theorem qDerivative_mul (f g : R[X]) :
           ∑ i ∈ range (m + 1), q ^ i + q ^ (m + 1) * ∑ i ∈ range (n + 1), q ^ i := by
         rw [sum_range_add, mul_sum]
         simp only [pow_add]
-      rw [show m + 1 + (n + 1) - 1 = m + n + 1 by omega,
-        show m + 1 - 1 + (n + 1) = m + n + 1 by omega,
-        show m + 1 + (n + 1 - 1) = m + n + 1 by omega, ← map_add, hsum]
-      congr 1
-      ring
+      ext k
+      simp only [coeff_add, coeff_monomial, Finsupp.single_apply, hsum]
+      split_ifs <;> first | omega | ring
 
 /-- The chain rule for `X ↦ X ^ m`: `∇_q (f(X ^ m)) = (∇_{q ^ m} f)(X ^ m) · [m]_q X ^ (m - 1)`.
 It is the `q`-analogue of `Polynomial.derivative_expand`. -/
@@ -213,7 +210,7 @@ theorem qDerivative_expand (m : ℕ) (f : R[X]) :
     rcases m with _ | m
     · simp
     rw [show (n + 1) * (m + 1) - 1 = (n + 1 - 1) * (m + 1) + (m + 1 - 1) by
-        rw [Nat.add_sub_cancel, Nat.add_sub_cancel, Nat.succ_mul, Nat.add_succ_sub_one],
+        simp only [Nat.add_sub_cancel, add_mul, one_mul]; omega,
       mul_comm (n + 1), TauCeti.geom_sum_range_mul]
     congr 1
     ring

@@ -142,7 +142,7 @@ theorem geom_sum_range_mul {R : Type*} [Semiring R] (x : R) (m n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [Nat.mul_succ, sum_range_add, ih, sum_range_succ, mul_add, ← pow_mul, sum_mul _ _ (x ^ _)]
+    rw [Nat.mul_add_one, sum_range_add, ih, sum_range_succ, mul_add, ← pow_mul, sum_mul _ _ (x ^ _)]
     simp only [add_comm (m * n), pow_add]
 
 end TauCeti
