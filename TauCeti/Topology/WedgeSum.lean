@@ -262,15 +262,15 @@ def homotopyRelOfIncl {f g : C(WedgeSum x, Y)} (hbase : f (base x) = g (base x))
     fun i t => by simpa using (H i).eq_fst t (Set.mem_singleton (x i))
   map_zero_left w := by
     induction w using ind with
-    | base => rfl
-    | incl i y => exact (H i).apply_zero y
+    | base => simp
+    | incl i y => simp
   map_one_left w := by
     induction w using ind with
-    | base => exact hbase
-    | incl i y => exact (H i).apply_one y
+    | base => simpa using hbase
+    | incl i y => simp
   prop' t w hw := by
     rw [Set.mem_singleton_iff.1 hw]
-    rfl
+    simp
 
 @[simp]
 lemma homotopyRelOfIncl_apply_incl {f g : C(WedgeSum x, Y)} (hbase : f (base x) = g (base x))
