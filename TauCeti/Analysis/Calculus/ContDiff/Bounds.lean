@@ -58,12 +58,16 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   the Japanese bracket `(1 + ‖ξ‖ ^ 2) ^ (1 / 2)`.
 * `ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm`: a smooth map which agrees outside a
   ball with a map of bounded order-`n` derivative has a bounded order-`n` derivative.
+* `ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le`: composing on the left with a
+  continuous linear map preserves a bound on the `k`-th derivative by a multiple of a weight.
 * `ContinuousLinearMap.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear`: the Leibniz bound for
   `x ↦ B (f x) (g x)` when the derivatives of `f` and `g` have uniform bounds;
   `TauCeti.norm_iteratedFDeriv_mul_le_of_tsupport_subset` is the version for a product `f g`
   where `f` is only controlled near the support of `g`.
 * `ContDiff.norm_iteratedFDeriv_mul_le_two_pow`: the same for a product `f * g` in a normed
   algebra, with one bound for all orders at most `N`.
+* `ContDiffAt.norm_iteratedFDeriv_smul_const_le`: the order-`k` derivative of `y ↦ f y • v` is at
+  most that of `f` times `‖v‖`.
 * `ContDiff.norm_iteratedFDeriv_comp_const_smul_le`: rescaling the variable by `c` with
   `1 ≤ ‖c‖` multiplies uniform derivative bounds of order at most `N` by at most `‖c‖ ^ N`.
 * `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear`: along any filter, if the derivatives of
@@ -263,6 +267,19 @@ theorem ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm [ProperSpace E] 
   rw [(hfg'.iteratedFDeriv 𝕜 n).eq_of_nhds]
   exact (hg x hx).trans (le_max_right _ _)
 
+/-- Composing on the left with a continuous linear map `L` preserves a bound
+`‖D^k g x‖ ≤ C w x` on the `k`-th derivative of a `C^k` map `g` by a multiple of a weight `w`. -/
+theorem ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le (L : F →L[𝕜] G) {g : E → F}
+    {k : ℕ} (hg : ContDiff 𝕜 k g) {w : E → ℝ}
+    (hgk : ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 k g x‖ ≤ C * w x) :
+    ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 k (fun x ↦ L (g x)) x‖ ≤ C * w x := by
+  obtain ⟨C, hC⟩ := hgk
+  refine ⟨‖L‖ * C, fun x ↦ ?_⟩
+  calc ‖iteratedFDeriv 𝕜 k (fun x ↦ L (g x)) x‖ ≤ ‖L‖ * ‖iteratedFDeriv 𝕜 k g x‖ :=
+        L.norm_iteratedFDeriv_comp_left hg.contDiffAt le_rfl
+    _ ≤ ‖L‖ * (C * w x) := mul_le_mul_of_nonneg_left (hC x) (norm_nonneg L)
+    _ = ‖L‖ * C * w x := (mul_assoc _ _ _).symm
+
 /-- **Leibniz bound with uniform constants.** If the derivatives of order at most `N` of `f` and
 `g` are bounded by `C` and `D` everywhere, those of `x ↦ B (f x) (g x)` of order `p ≤ N` are
 bounded by `2 ^ p * (C * D)`, for a bilinear map `B` of norm at most one. -/
@@ -312,6 +329,18 @@ theorem ContDiff.norm_iteratedFDeriv_comp_const_smul_le {N : ℕ} {f : E → F}
   rw [iteratedFDeriv_comp_const_smul c (hf.of_le (by exact_mod_cast hp)), norm_smul, norm_pow]
   exact mul_le_mul (pow_le_pow_right₀ hc hp) (hC p hp _) (norm_nonneg _) (by positivity)
 
+/-- The order-`k` derivative of `y ↦ f y • v` at `x`, for a scalar-valued `f` that is `C^k` at `x`
+and a fixed vector `v`, is at most that of `f` times `‖v‖`. -/
+theorem ContDiffAt.norm_iteratedFDeriv_smul_const_le {A : Type*} [NormedRing A]
+    [NormedAlgebra 𝕜 A] [Module A F] [IsBoundedSMul A F] [IsScalarTower 𝕜 A F] {f : E → A} {k : ℕ}
+    {x : E} (hf : ContDiffAt 𝕜 k f x) (v : F) :
+    ‖iteratedFDeriv 𝕜 k (fun y ↦ f y • v) x‖ ≤ ‖iteratedFDeriv 𝕜 k f x‖ * ‖v‖ := by
+  rw [iteratedFDeriv_smul_const_apply hf, mul_comm]
+  refine (ContinuousLinearMap.norm_compContinuousMultilinearMap_le _ _).trans ?_
+  gcongr
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg v) fun z ↦ ?_
+  simpa [mul_comm] using norm_smul_le z v
+
 open Asymptotics in
 /-- **Asymptotic bounds on the derivatives of a bilinear expression.** Along any filter, if the
 derivatives of order at most `n` of `f` and `g` are `O(ρ₁)` and `O(ρ₂)`, then the order-`n`
@@ -343,7 +372,7 @@ theorem ContDiff.isBigO_iteratedFDeriv_smulRight {D : Type*} [NormedAddCommGroup
     (hfn : ∀ i ≤ n, iteratedFDeriv 𝕜 i f =O[l] ρ₁)
     (hgn : ∀ i ≤ n, iteratedFDeriv 𝕜 i g =O[l] ρ₂) :
     iteratedFDeriv 𝕜 n (fun y ↦ (f y).smulRight (g y)) =O[l] fun y ↦ ρ₁ y * ρ₂ y := by
-  simpa using (ContinuousLinearMap.smulRightL 𝕜 E G).isBigO_iteratedFDeriv_of_bilinear hf hg hn
+  simpa using (StrongDual.smulRightL 𝕜 E G).isBigO_iteratedFDeriv_of_bilinear hf hg hn
     hfn hgn
 
 open Asymptotics in

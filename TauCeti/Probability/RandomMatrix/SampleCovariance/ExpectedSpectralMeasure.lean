@@ -36,7 +36,7 @@ omit [IsProbabilityMeasure P] in
 private theorem aemeasurable_covarianceMeasure (hX : AEMeasurable X P) :
     AEMeasurable (fun ω ↦ ((X ω).sampleCovariance.spectralMeasure
       (Matrix.isHermitian_sampleCovariance (X ω)) : Measure ℝ)) P :=
-  measurable_subtype_coe.comp_aemeasurable
+  measurable_subtypeVal.comp_aemeasurable
     (Matrix.measurable_spectralMeasure_sampleCovariance.comp_aemeasurable hX)
 
 /-- The probability measure obtained by averaging the empirical covariance spectral measures. -/

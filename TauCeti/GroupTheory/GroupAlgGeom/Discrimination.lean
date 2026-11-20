@@ -310,7 +310,7 @@ theorem isDiscriminatedBy_multiplicative_pi_int (ι : Type*) :
   -- Each element of `s` is nonzero at some coordinate; collect these coordinates in `J`, so that
   -- the restrictions to `J` stay nonzero, and take a linear form in them vanishing on none.
   have hi (g : s) : ∃ i, (g : Multiplicative (ι → ℤ)).toAdd i ≠ 0 :=
-    Function.ne_iff.1 fun h => hs g g.2 (toAdd_eq_zero.1 h)
+    Function.ne_iff.1 fun h => hs g g.property (toAdd_eq_zero.1 h)
   choose i hi using hi
   let J : Finset ι := Finset.univ.image i
   let r : Multiplicative (ι → ℤ) → J → ℤ := fun g j => g.toAdd j

@@ -63,7 +63,7 @@ private theorem measureReal_abs_cdf_sampleCovariance_sub_expected_ge_le
   have hf : Measurable f := by
     simp only [f, cdf_eq_real, measureReal_def]
     exact ((Measure.measurable_coe measurableSet_Iic).comp
-      (measurable_subtype_coe.comp
+      (measurable_subtypeVal.comp
         (Matrix.measurable_spectralMeasure_sampleCovariance.comp hF))).ennreal_toReal
   have hdiff (i : ι) (a b : ι → E) (hab : ∀ j ≠ i, a j = b j) :
       |f a - f b| ≤ ((2 / (Fintype.card p : ℝ≥0) : ℝ≥0) : ℝ) := by

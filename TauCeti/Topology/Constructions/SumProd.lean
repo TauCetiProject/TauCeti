@@ -21,6 +21,10 @@ In particular, graphs with values in a space without isolated points have empty 
 The file also records the underlying function of the homeomorphism between functions on a
 sum type and pairs of functions, and identifies a disjoint union of copies of one space, indexed by
 a discrete space, with a product (`Homeomorph.sigmaEquivProd`).
+
+Finally, a function on a product that is eventually constant near a point has eventually constant
+slices through that point (`Filter.EventuallyEq.prodMk_right_nhds`,
+`Filter.EventuallyEq.prodMk_left_nhds`).
 -/
 
 public section
@@ -56,6 +60,22 @@ theorem Homeomorph.sigmaEquivProd_symm_apply {ι X : Type*} [TopologicalSpace ι
     (Homeomorph.sigmaEquivProd ι X).symm p = ⟨p.1, p.2⟩ :=
   (rfl)
 
+/-- If `f` is eventually constant near `(x, y)`, then its slice `y' ↦ f (x, y')` is eventually
+equal to `f (x, y)` near `y`. -/
+theorem Filter.EventuallyEq.prodMk_right_nhds {X Y A : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] {f : X × Y → A} {x : X} {y : Y} {a : A} (h : f =ᶠ[𝓝 (x, y)] fun _ ↦ a) :
+    (fun y' ↦ f (x, y')) =ᶠ[𝓝 y] fun _ ↦ f (x, y) := by
+  rw [h.self_of_nhds]
+  exact h.comp_tendsto ((Continuous.prodMk_right x).tendsto y)
+
+/-- If `f` is eventually constant near `(x, y)`, then its slice `x' ↦ f (x', y)` is eventually
+equal to `f (x, y)` near `x`. -/
+theorem Filter.EventuallyEq.prodMk_left_nhds {X Y A : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] {f : X × Y → A} {x : X} {y : Y} {a : A} (h : f =ᶠ[𝓝 (x, y)] fun _ ↦ a) :
+    (fun x' ↦ f (x', y)) =ᶠ[𝓝 x] fun _ ↦ f (x, y) := by
+  rw [h.self_of_nhds]
+  exact h.comp_tendsto ((Continuous.prodMk_left y).tendsto x)
+
 namespace TauCeti
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
@@ -66,7 +86,7 @@ theorem interior_eq_empty_of_dense_setOf_interior_preimage_prodMk_eq_empty {s : 
     (hs : Dense {x | interior (Prod.mk x ⁻¹' s) = ∅}) : interior s = ∅ := by
   by_contra h
   obtain ⟨_, hx, ⟨x, y⟩, hxy, rfl⟩ := hs.exists_mem_open (isOpenMap_fst _ isOpen_interior)
-    ((nonempty_iff_ne_empty.mpr h).image _)
+    ((ne_empty_iff_nonempty.mp h).image _)
   exact hx.le (preimage_interior_subset_interior_preimage (Continuous.prodMk_right x) hxy)
 
 /-- A subset of a product has empty interior if every vertical fibre has empty interior. -/

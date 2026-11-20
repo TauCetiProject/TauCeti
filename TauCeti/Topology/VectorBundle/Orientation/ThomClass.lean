@@ -275,7 +275,8 @@ private theorem orientedFiberClass_eq (hι : Fintype.card ι = finrank ℝ F) (�
   all_goals
     split_ifs with h
     · exact Or.inl ⟨h, rfl⟩
-    · exact Or.inr ⟨(Orientation.eq_or_eq_neg _ ω hι).resolve_left h, rfl⟩
+    · exact Or.inr
+        ⟨(Orientation.eq_or_eq_neg _ ω (Nat.card_eq_fintype_card.trans hι)).resolve_left h, rfl⟩
 
 variable [VectorBundle ℝ F E]
 
@@ -302,7 +303,8 @@ private theorem fiber_eq_and_fiber_eq_neg_iff (hι : Fintype.card ι = finrank �
         TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
           orientedFiberClass ω g e hb (o b) := by
   refine ⟨fun ⟨h₁, h₂⟩ e _ b hb ↦ ?_, fun h ↦ ⟨fun e _ b hb hω ↦ ?_, fun e _ b hb hω ↦ ?_⟩⟩
-  · rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω hι with hω | hω
+  · rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω
+      (Nat.card_eq_fintype_card.trans hι) with hω | hω
     · simp [orientedFiberClass, hω, h₁ e b hb hω]
     · simp [orientedFiberClass, hω, h₂ e b hb hω, (Module.Ray.ne_neg_self ω).symm]
   · simp [h e b hb, orientedFiberClass, hω]
@@ -465,7 +467,8 @@ theorem exists_singularCohomologyMap_fiberThomPairMap_thomClassOfModel
         TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ (o.thomClassOfModel hι ω g) =
           TopPair.singularCohomologyMap (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _
             g' := by
-  rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω hι with h | h
+  rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω
+    (Nat.card_eq_fintype_card.trans hι) with h | h
   · exact ⟨g, Or.inl ⟨h, rfl⟩,
       o.singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq e hb h⟩
   · exact ⟨-g, Or.inr ⟨h, rfl⟩,
@@ -490,7 +493,8 @@ theorem isThomClass_thomClassOfModel (o : VectorBundleOrientation F E ι)
     let L := ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
       (finrank ℝ F)).mapIso (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.op).toLinearEquiv
     exact L.span_singleton_apply_eq_top_iff.2 hg
-  rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω hι with h | h
+  rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω
+    (Nat.card_eq_fintype_card.trans hι) with h | h
   · rw [o.singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq e hb h]
     exact hge
   · rw [o.singularCohomologyMap_fiberThomPairMap_thomClassOfModel_of_mapOrientation_eq_neg e hb h,
