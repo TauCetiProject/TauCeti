@@ -205,38 +205,7 @@ private lemma cechComplexPushforwardIso_hom_comp_cechComplexMap {κ : Type u} (V
 
 variable [IsAffineHom f] (hU : ∀ i, IsAffineOpen (U i))
 
-include hU in
-/-- On the cover of `X` by the preimages under the affine morphism `f` of an affine cover `U` of a
-scheme with affine diagonal, a quasi-coherent sheaf has no cohomology in positive degrees on a
-nonempty finite intersection: it is the preimage of an affine open, hence affine. -/
-private lemma subsingleton_cohomologyOn_inf_preimage_succ
-    [IsAffineHom (pullback.diagonal (terminal.from Y))] (M : X.Modules) [M.IsQuasicoherent]
-    (s : Finset ι) (hs : s.Nonempty) (k : ℕ) :
-    Subsingleton (cohomologyOn M (k + 1) (s.inf fun i ↦ f ⁻¹ᵁ U i)) :=
-  subsingleton_cohomologyOn_succ_of_isAffineOpen M
-    (f.isAffineOpen_finset_inf_preimage (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ hU i)
-      s hs) k
-
 variable [IsAffineHom (pullback.diagonal (terminal.from Y))] (hcover : ⨆ i, U i = ⊤)
-
-/-- Leray's theorem for the cover of `X` by the preimages `f⁻¹ U i`. -/
-private def homologyCechComplexPreimageIsoCohomology (M : X.Modules) [M.IsQuasicoherent]
-    (n : ℕ) :
-    ((cechComplexFunctor fun i ↦ f ⁻¹ᵁ U i).obj
-        ((SheafOfModules.toSheaf X.ringCatSheaf).obj M).obj).homology n ≅
-      AddCommGrpCat.of (Cohomology M n) :=
-  TauCeti.Topology.homologyCechComplexIsoH (fun i ↦ f ⁻¹ᵁ U i) (f.iSup_preimage_eq_top hcover)
-    _ (subsingleton_cohomologyOn_inf_preimage_succ f U hU M) n
-
-/-- Leray's theorem for the cover of `X` by the preimages `f⁻¹ U i` is natural in `M`. -/
-private lemma homologyMap_comp_homologyCechComplexPreimageIsoCohomology_hom {M N : X.Modules}
-    [M.IsQuasicoherent] [N.IsQuasicoherent] (α : M ⟶ N) (n : ℕ) :
-    HomologicalComplex.homologyMap ((cechComplexFunctor fun i ↦ f ⁻¹ᵁ U i).map
-          ((SheafOfModules.toSheaf X.ringCatSheaf).map α).hom) n ≫
-        (homologyCechComplexPreimageIsoCohomology f U hU hcover N n).hom =
-      (homologyCechComplexPreimageIsoCohomology f U hU hcover M n).hom ≫
-        (cohomologyFunctor X n).map α :=
-  TauCeti.Topology.homologyMap_comp_homologyCechComplexIsoH_hom _ _ _ _ _ n
 
 /-- Cohomology along an affine morphism, computed with the Čech complexes of a family `U` of
 affine opens covering `Y` and of the preimages `f⁻¹ U i`. -/
@@ -246,7 +215,10 @@ private def cohomologyPushforwardIsoOfCover (M : X.Modules) [M.IsQuasicoherent] 
   (homologyCechComplexIsoCohomology U (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ hU i)
       hcover ((pushforward f).obj M) n).symm ≪≫
     HomologicalComplex.homologyMapIso (cechComplexPushforwardIso f U M) n ≪≫
-    homologyCechComplexPreimageIsoCohomology f U hU hcover M n
+    homologyCechComplexIsoCohomology (fun i ↦ f ⁻¹ᵁ U i)
+      (f.isAffineOpen_finset_inf_preimage fun s hs ↦
+        IsAffineOpen.finset_inf s hs fun i _ ↦ hU i)
+      (f.iSup_preimage_eq_top hcover) M n
 
 /-- The comparison `cohomologyPushforwardIsoOfCover` commutes with maps of quasi-coherent
 coefficient sheaves. -/
@@ -262,7 +234,10 @@ private lemma cohomologyPushforwardIsoOfCover_naturality {M N : X.Modules} [M.Is
     (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ hU i) hcover ((pushforward f).map α) n
   have hC := congrArg (HomologicalComplex.homologyMap · n)
     (cechComplexPushforwardIso_naturality f U α)
-  have hX := homologyMap_comp_homologyCechComplexPreimageIsoCohomology_hom f U hU hcover α n
+  have hX := homologyMap_comp_homologyCechComplexIsoCohomology_hom (fun i ↦ f ⁻¹ᵁ U i)
+    (f.isAffineOpen_finset_inf_preimage fun s hs ↦
+      IsAffineOpen.finset_inf s hs fun i _ ↦ hU i)
+    (f.iSup_preimage_eq_top hcover) α n
   simp only [HomologicalComplex.homologyMap_comp] at hC
   simp only [cohomologyPushforwardIsoOfCover, Iso.trans_hom, Iso.symm_hom,
     HomologicalComplex.homologyMapIso_hom]
@@ -324,15 +299,19 @@ theorem homologyCechComplexIsoCohomology_hom_comp_cohomologyPushforwardIsoOfIsAf
   have hX := TauCeti.Topology.homologyMap_cechComplexMap_comp_homologyCechComplexIsoH_hom
     (fun i ↦ f ⁻¹ᵁ U i) (f.iSup_preimage_eq_top hcover) _
     (f.iSup_preimage_eq_top (iSup_affineOpens_eq_top Y)) _
-    (subsingleton_cohomologyOn_inf_preimage_succ f U hU M)
-    (subsingleton_cohomologyOn_inf_preimage_succ f _ (fun i ↦ i.property) M)
+    (subsingleton_cohomologyOn_inf_succ _
+      (f.isAffineOpen_finset_inf_preimage fun s hs ↦
+        IsAffineOpen.finset_inf s hs fun i _ ↦ hU i) M)
+    (subsingleton_cohomologyOn_inf_succ _
+      (f.isAffineOpen_finset_inf_preimage fun s hs ↦
+        IsAffineOpen.finset_inf s hs fun i _ ↦ i.property) M)
     ⟨φ.f, fun i ↦ (Opens.map f.base).map (φ.φ i)⟩ n
   have hC := congrArg (HomologicalComplex.homologyMap · n)
     (cechComplexPushforwardIso_hom_comp_cechComplexMap f U _ M φ)
   simp only [HomologicalComplex.homologyMap_comp] at hC
   have hY' := (Iso.inv_comp_eq _).2 ((Iso.eq_comp_inv _).2 hY)
   simp only [cohomologyPushforwardIsoOfIsAffineHom, cohomologyPushforwardIsoOfCover,
-    homologyCechComplexPreimageIsoCohomology, homologyCechComplexIsoCohomology, Iso.trans_hom,
+    homologyCechComplexIsoCohomology, Iso.trans_hom,
     Iso.symm_hom, HomologicalComplex.homologyMapIso_hom]
   rw [← hX, reassoc_of% hC, reassoc_of% hY', Iso.hom_inv_id_assoc]
   -- `cechComplexPushforwardIso` is by definition the inverse of `cechComplexCompIso`, and the two

@@ -50,14 +50,6 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
   {S : ShortComplex (Cᵒᵖ ⥤ A)}
   (hS : ∀ j, (S.map (cechComplexFunctor (E j).obj)).ShortExact)
 
-private def cechRefinementShortComplexHom {i j : J} (φ : E j ⟶ E i) :
-    S.map (cechComplexFunctor (E i).obj) ⟶ S.map (cechComplexFunctor (E j).obj) where
-  τ₁ := cechComplexMap S.X₁ φ
-  τ₂ := cechComplexMap S.X₂ φ
-  τ₃ := cechComplexMap S.X₃ φ
-  comm₁₂ := (cechComplexMap_naturality S.X₁ S.f φ).symm
-  comm₂₃ := (cechComplexMap_naturality S.X₂ S.g φ).symm
-
 /-- The fixed-family connecting maps form a morphism of diagrams on the refinement preorder. -/
 private def cechCohomologyδDiagram (n : ℕ) :
     (cechCohomologyDiagram A E hE n).flip.obj S.X₃ ⟶
@@ -68,9 +60,12 @@ private def cechCohomologyδDiagram (n : ℕ) :
     rw [cechCohomologyDiagram_map A E hE n f (hE (leOfHom f)).some,
       cechCohomologyDiagram_map A E hE (n + 1) f (hE (leOfHom f)).some,
       cechComplexHomologyMap_app, cechComplexHomologyMap_app]
-    exact (HomologicalComplex.HomologySequence.δ_naturality
-      (cechRefinementShortComplexHom E (hE (leOfHom f)).some)
+    have h := (HomologicalComplex.HomologySequence.δ_naturality
+      (cechRefinementShortComplexHom (E j).obj (E i).obj S (hE (leOfHom f)).some)
       (hS i) (hS j) n (n + 1) rfl).symm
+    simp only [cechRefinementShortComplexHom_τ₁, cechRefinementShortComplexHom_τ₃] at h
+    exact h
+
 
 variable [HasColimitsOfShape J A]
 

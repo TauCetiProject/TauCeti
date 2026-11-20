@@ -140,6 +140,44 @@ end FiniteColimits
 
 end Preservation
 
+section Refinement
+
+variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
+  {A : Type u'} [Category.{v'} A] [Preadditive A] [HasProducts.{w} A]
+  {ι κ : Type w} (U : ι → C) (V : κ → C)
+
+/-- A morphism of families induces a morphism of Čech short complexes, naturally in all three
+coefficient presheaves. -/
+def cechRefinementShortComplexHom (S : ShortComplex (Cᵒᵖ ⥤ A))
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    S.map (cechComplexFunctor V) ⟶ S.map (cechComplexFunctor U) :=
+  S.mapNatTrans
+    { app P := cechComplexMap P φ
+      naturality _ _ α := cechComplexMap_naturality _ α φ }
+
+/-- The refinement map acts on a term by the corresponding Čech refinement. -/
+@[simp]
+theorem cechRefinementShortComplexHom_τ₁ (S : ShortComplex (Cᵒᵖ ⥤ A))
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    (cechRefinementShortComplexHom U V S φ).τ₁ = cechComplexMap S.X₁ φ :=
+  (rfl)
+
+/-- The refinement map acts on a term by the corresponding Čech refinement. -/
+@[simp]
+theorem cechRefinementShortComplexHom_τ₂ (S : ShortComplex (Cᵒᵖ ⥤ A))
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    (cechRefinementShortComplexHom U V S φ).τ₂ = cechComplexMap S.X₂ φ :=
+  (rfl)
+
+/-- The refinement map acts on a term by the corresponding Čech refinement. -/
+@[simp]
+theorem cechRefinementShortComplexHom_τ₃ (S : ShortComplex (Cᵒᵖ ⥤ A))
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    (cechRefinementShortComplexHom U V S φ).τ₃ = cechComplexMap S.X₃ φ :=
+  (rfl)
+
+end Refinement
+
 variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
   {A : Type u'} [Category.{v'} A] [Abelian A] [HasProducts.{w} A]
   {ι : Type w} (U : ι → C)
