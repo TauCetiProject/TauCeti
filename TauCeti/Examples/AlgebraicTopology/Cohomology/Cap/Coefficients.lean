@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicTopology.Cohomology.DegreeZero
 public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.Topology.Instances.Discrete
-public import Mathlib.Topology.Homotopy.Contractible
 
 /-!
 # Nonzero and degenerate clients of cap coefficient naturality
@@ -55,28 +54,20 @@ abbrev point : TopCat := TopCat.of PUnit
 
 variable (R : Type u) [CommRing R]
 
-/-- The degree-zero unit cohomology class. -/
-def unitClass : point.singularCohomology (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) 0 :=
-  (point.singularCochainComplex (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R))).homologyπ 0
-    (point.constSingularCocycle R (𝟙 (𝟙_ (ModuleCat.{u} R))))
-
-/-- The point homology class whose augmentation is one. -/
-def pointClass :
-    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) 0).obj
-      (𝟙_ (ModuleCat.{u} R))).obj point :=
-  inv (point.singularHomology₀ε (𝟙_ (ModuleCat.{u} R))) (1 : R)
-
-/-- The normalization uses the augmentation. -/
-@[simp]
-theorem augmentation_pointClass :
-    point.singularHomology₀ε (𝟙_ (ModuleCat.{u} R)) (pointClass R) = (1 : R) :=
-  ConcreteCategory.congr_hom (IsIso.inv_hom_id (point.singularHomology₀ε (𝟙_ (ModuleCat.{u} R)))) 1
-
 /-- The normalized point class is nonzero over a nontrivial coefficient ring. -/
-theorem pointClass_ne_zero [Nontrivial R] : pointClass R ≠ 0 := by
+theorem pointClass_ne_zero [Nontrivial R] : (singularHomology₀Section (X :=
+    CapCoefficientClients.point.{u}) (𝟙_ (ModuleCat R)) (PUnit.unit : CapCoefficientClients.point)
+    (1 : R)) ≠ 0 := by
   intro h
   have hh := congrArg (point.singularHomology₀ε (𝟙_ (ModuleCat.{u} R))) h
-  exact one_ne_zero ((augmentation_pointClass R).symm.trans (hh.trans (map_zero _)))
+  have hε : point.singularHomology₀ε (𝟙_ (ModuleCat.{u} R))
+      (singularHomology₀Section (X := point.{u}) (𝟙_ (ModuleCat.{u} R)) (PUnit.unit : point) (1 :
+          R)) = 1 := by
+    simpa only [ConcreteCategory.comp_apply, ConcreteCategory.id_apply] using
+      ConcreteCategory.congr_hom
+        (singularHomology₀Section_singularHomology₀ε (X := point.{u}) (𝟙_ (ModuleCat.{u} R))
+          (PUnit.unit : point)) (1 : R)
+  exact one_ne_zero (hε.symm.trans (hh.trans (map_zero _)))
 
 /-- The relative pair is the point with its empty subspace. -/
 abbrev emptyBoundaryPair : TopPair := TopPair.incl.obj point
@@ -87,7 +78,7 @@ def negativeClass : point.singularCohomology (𝟙_ (ModuleCat.{u} R)) R
   homologyMap (((TopCat.toSSet.obj point).chainComplex
     (𝟙_ (ModuleCat.{u} R))).linearYonedaObjMap R (-𝟙 (𝟙_ (ModuleCat.{u} R)))) 0
       (point.singularCohomologyChainCoefficientMap R (𝟙_ (ModuleCat.{u} R))
-        (𝟙 (𝟙_ (ModuleCat.{u} R))) 0 (unitClass R))
+        (𝟙 (𝟙_ (ModuleCat.{u} R))) 0 ((point.singularCohomologyZeroOne (k := R))))
 
 /-- The full coefficient square computes the cap of the transported class as negative identity. -/
 theorem cap_negativeClass :
@@ -99,9 +90,12 @@ theorem cap_negativeClass :
   have hh := TopCat.singularCap_coefficient_naturality point R
     (λ_ U).inv (λ_ U).inv (λ_ U).hom (λ_ U).hom
     (𝟙 U) (𝟙 U) (𝟙 U) (-𝟙 U) (-𝟙 U)
-    (idUnit_diagonal_square R) (negUnit_action_square R) 0 0 0 rfl (unitClass R)
-  have hunit : point.singularCap R (λ_ U).inv (λ_ U).hom 0 0 0 rfl (unitClass R) = 𝟙 _ :=
-    TauCeti.singularCap_unit R U 0
+    (idUnit_diagonal_square R) (negUnit_action_square R) 0 0 0 rfl
+        ((point.singularCohomologyZeroOne (k := R)))
+  have hunit : point.singularCap R (λ_ U).inv (λ_ U).hom 0 0 0 rfl
+      (point.singularCohomologyZeroOne (k := R)) = 𝟙 _ := by
+    rw [TopCat.singularCohomologyZeroOne_def]
+    exact TauCeti.singularCap_unit (X := point) R U 0
   rw [hunit] at hh
   rw [CategoryTheory.Functor.map_id, CategoryTheory.NatTrans.id_app,
     Category.id_comp, Category.id_comp] at hh
@@ -115,15 +109,24 @@ theorem cap_negativeClass :
 /-- The negative coefficient acts on the point class by negation. -/
 theorem cap_negativeClass_pointClass :
     point.singularCap R (λ_ (𝟙_ (ModuleCat.{u} R))).inv (λ_ (𝟙_ (ModuleCat.{u} R))).hom
-      0 0 0 rfl (negativeClass R) (pointClass R) = -pointClass R := by
+      0 0 0 rfl (negativeClass R) ((singularHomology₀Section (X :=
+          CapCoefficientClients.point.{u}) (𝟙_ (ModuleCat R)) (PUnit.unit :
+          CapCoefficientClients.point) (1 : R))) = -(singularHomology₀Section (X :=
+          CapCoefficientClients.point.{u}) (𝟙_ (ModuleCat R)) (PUnit.unit :
+          CapCoefficientClients.point) (1 : R)) := by
   rw [cap_negativeClass]
   simp
 
 /-- The sign change is observable over the coefficients modulo three. -/
-theorem negative_pointClass_ne_pointClass : -pointClass (ZMod 3) ≠ pointClass (ZMod 3) := by
+theorem negative_pointClass_ne_pointClass : -(singularHomology₀Section (X :=
+    CapCoefficientClients.point.{0}) (𝟙_ (ModuleCat (ZMod 3))) (PUnit.unit :
+    CapCoefficientClients.point) (1 : (ZMod 3))) ≠ (singularHomology₀Section (X :=
+    CapCoefficientClients.point.{0}) (𝟙_ (ModuleCat (ZMod 3))) (PUnit.unit :
+    CapCoefficientClients.point) (1 : (ZMod 3))) := by
   intro h
   have hh := congrArg (point.singularHomology₀ε (𝟙_ (ModuleCat (ZMod 3)))) h
-  simp only [map_neg, augmentation_pointClass] at hh
+  simp only [map_neg, ← ConcreteCategory.comp_apply,
+    singularHomology₀Section_singularHomology₀ε, ConcreteCategory.id_apply] at hh
   exact (by decide : (-1 : ZMod 3) ≠ 1) hh
 
 /-- On the point's singular chains, negative coefficient transport keeps the odd-degree minus. -/
@@ -237,57 +240,45 @@ theorem relativeIndicatorClass_image :
     properPair.singularCohomologyπ (𝟙_ (ModuleCat k)) k (𝟙_ (ModuleCat k)) 0
       (relativeIndicatorClass k) = indicatorClass k := (exists_relativeIndicatorClass k).choose_spec
 
-/-- The right point as a continuous map. -/
-def rightPointMap : CapCoefficientClients.point ⟶ twoPoints :=
-  TopCat.ofHom (ContinuousMap.const _ 1)
-
-/-- The right-point map has constant value one. -/
-@[simp]
-theorem rightPointMap_apply (x : CapCoefficientClients.point) : rightPointMap x = 1 := by
-  simp only [rightPointMap, ConcreteCategory.hom_ofHom, ContinuousMap.const_apply]
-
 /-- Restriction of the indicator to the right point is the unit. -/
 theorem indicatorClass_restrict_right :
-    TopCat.singularCohomologyMap rightPointMap 0 (indicatorClass k) =
+    TopCat.singularCohomologyMap (TopCat.const (X := CapCoefficientClients.point) (1 : twoPoints))
+        0 (indicatorClass k) =
       CapCoefficientClients.point.singularCohomologyZeroOne (k := k) := by
   apply singularCohomologyZero_ext
   intro x
-  have hn := singularCohomologyZeroEval_naturality rightPointMap x (indicatorClass k)
+  have hn := singularCohomologyZeroEval_naturality (TopCat.const (X :=
+      CapCoefficientClients.point) (1 : twoPoints)) x (indicatorClass k)
   have hu : singularCohomologyZeroEval x
       (CapCoefficientClients.point.singularCohomologyZeroOne (k := k)) = 1 :=
     singularCohomologyZeroEval_singularCohomologyZeroOne x
-  have hv : singularCohomologyZeroEval (rightPointMap x) (indicatorClass k) = (1 : k) :=
-    by rw [indicatorClass_eval, rightPointMap_apply, ite_eq_left rfl]
+  have hv : singularCohomologyZeroEval ((TopCat.const (X := CapCoefficientClients.point) (1 :
+      twoPoints)) x) (indicatorClass k) = (1 : k) :=
+    by rw [indicatorClass_eval, TopCat.const_apply, ite_eq_left rfl]
   exact hn.trans (hv.trans hu.symm)
 
-/-- The ambient right-point generator uses the singular pushforward. -/
-def rightPointClass :
-    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) 0).obj
-      (𝟙_ (ModuleCat k))).obj twoPoints :=
-  ((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) 0).obj
-    (𝟙_ (ModuleCat k))).map rightPointMap (CapCoefficientClients.pointClass k)
-
-/-- The augmentation detects the ambient right-point class. -/
-@[simp]
-theorem augmentation_rightPointClass :
-    twoPoints.singularHomology₀ε (𝟙_ (ModuleCat k)) (rightPointClass k) = (1 : k) := by
-  exact (ConcreteCategory.congr_hom
-    (singularHomologyMap_singularHomology₀ε (𝟙_ (ModuleCat k)) rightPointMap)
-    (CapCoefficientClients.pointClass k)).trans (CapCoefficientClients.augmentation_pointClass k)
-
 /-- The class that will be the relative cap output is nonzero. -/
-theorem rightPointClass_ne_zero [Nontrivial k] : rightPointClass k ≠ 0 := by
+theorem rightPointClass_ne_zero [Nontrivial k] : (singularHomology₀Section (X := twoPoints) (𝟙_
+    (ModuleCat k)) (1 : twoPoints) (1 : k)) ≠ 0 := by
   intro h
   have hh := congrArg (twoPoints.singularHomology₀ε (𝟙_ (ModuleCat k))) h
-  exact (one_ne_zero : (1 : k) ≠ 0)
-    ((augmentation_rightPointClass k).symm.trans (hh.trans (map_zero _)))
+  have hε : twoPoints.singularHomology₀ε (𝟙_ (ModuleCat k))
+      (singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat k))
+        (1 : twoPoints) (1 : k)) = 1 := by
+    simpa only [ConcreteCategory.comp_apply, ConcreteCategory.id_apply] using
+      ConcreteCategory.congr_hom
+        (singularHomology₀Section_singularHomology₀ε (𝟙_ (ModuleCat k)) (1 : twoPoints))
+        (1 : k)
+  exact (one_ne_zero : (1 : k) ≠ 0) (hε.symm.trans (hh.trans (map_zero _)))
 
 /-- Capping the ambient right-point generator with the indicator fixes that generator. -/
 theorem cap_indicatorClass_rightPointClass :
     twoPoints.singularCap k (λ_ (𝟙_ (ModuleCat k))).inv
-      (λ_ (𝟙_ (ModuleCat k))).hom 0 0 0 rfl (indicatorClass k) (rightPointClass k) =
-        rightPointClass k := by
-  have hh := TopCat.singularCap_naturality rightPointMap k
+      (λ_ (𝟙_ (ModuleCat k))).hom 0 0 0 rfl (indicatorClass k) ((singularHomology₀Section (X :=
+          twoPoints) (𝟙_ (ModuleCat k)) (1 : twoPoints) (1 : k))) =
+        (singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat k)) (1 : twoPoints) (1 : k)) := by
+  have hh := TopCat.singularCap_naturality (TopCat.const (X := CapCoefficientClients.point) (1 :
+      twoPoints)) k
     (λ_ (𝟙_ (ModuleCat k))).inv (λ_ (𝟙_ (ModuleCat k))).hom 0 0 0 rfl (indicatorClass k)
   rw [indicatorClass_restrict_right] at hh
   have hunit : CapCoefficientClients.point.singularCap k
@@ -296,26 +287,43 @@ theorem cap_indicatorClass_rightPointClass :
     rw [TopCat.singularCohomologyZeroOne_def]
     exact TauCeti.singularCap_unit (X := CapCoefficientClients.point) k (𝟙_ (ModuleCat k)) 0
   rw [hunit] at hh
-  have he := ConcreteCategory.congr_hom hh (CapCoefficientClients.pointClass k)
-  exact he.symm.trans (ConcreteCategory.comp_apply _ _ _ |>.trans
-    (congrArg (((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) 0).obj
-      (𝟙_ (ModuleCat k))).map rightPointMap) (ConcreteCategory.id_apply _)))
+  have hpoint :
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) 0).obj
+        (𝟙_ (ModuleCat k))).map (TopCat.const (X := CapCoefficientClients.point) (1 : twoPoints))
+          (singularHomology₀Section (X := CapCoefficientClients.point.{0}) (𝟙_ (ModuleCat k))
+            (PUnit.unit : CapCoefficientClients.point) (1 : k)) =
+        singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat k)) (1 : twoPoints) (1 : k) := by
+    have hc := TopCat.const_apply (X := CapCoefficientClients.point) (Y := twoPoints)
+      (1 : twoPoints) PUnit.unit
+    have hn := singularHomology₀Section_naturality (𝟙_ (ModuleCat k))
+      (TopCat.const (X := CapCoefficientClients.point) (1 : twoPoints)) PUnit.unit
+    have ht := congrArg (fun z : twoPoints ↦
+      singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat k)) z) hc
+    exact (ConcreteCategory.comp_apply _ _ _).symm.trans
+      (ConcreteCategory.congr_hom (hn.trans ht) (1 : k))
+  have he := ConcreteCategory.congr_hom hh
+    (singularHomology₀Section (X := CapCoefficientClients.point.{0}) (𝟙_ (ModuleCat k))
+      (PUnit.unit : CapCoefficientClients.point) (1 : k))
+  simpa only [ConcreteCategory.comp_apply, ConcreteCategory.id_apply, hpoint] using he.symm
 
 /-- The relative right-point generator. -/
 def relativeRightPointClass :
     properPair.singularHomology (C := ModuleCat k) (𝟙_ (ModuleCat k)) 0 :=
-  properPair.singularHomologyπ (𝟙_ (ModuleCat k)) 0 (rightPointClass k)
+  properPair.singularHomologyπ (𝟙_ (ModuleCat k)) 0 ((singularHomology₀Section (X := twoPoints)
+      (𝟙_ (ModuleCat k)) (1 : twoPoints) (1 : k)))
 
 /-- The relative cap equals the ambient right-point class on this proper pair. -/
 theorem cap_relativeIndicatorClass_relativeRightPointClass :
     properPair.singularCap k (λ_ (𝟙_ (ModuleCat k))).inv
       (λ_ (𝟙_ (ModuleCat k))).hom 0 0 0 rfl
-        (relativeIndicatorClass k) (relativeRightPointClass k) = rightPointClass k := by
+        (relativeIndicatorClass k) (relativeRightPointClass k) = (singularHomology₀Section (X :=
+            twoPoints) (𝟙_ (ModuleCat k)) (1 : twoPoints) (1 : k)) := by
   have hh := TopPair.singularCap_singularCohomologyπ properPair k
     (λ_ (𝟙_ (ModuleCat k))).inv (λ_ (𝟙_ (ModuleCat k))).hom
     0 0 0 rfl (relativeIndicatorClass k)
   rw [relativeIndicatorClass_image] at hh
-  exact (ConcreteCategory.congr_hom hh (rightPointClass k)).symm.trans
+  exact (ConcreteCategory.congr_hom hh ((singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat
+      k)) (1 : twoPoints) (1 : k)))).symm.trans
     (cap_indicatorClass_rightPointClass k)
 
 /-- In particular the relative generator is not killed by the quotient modulo the left point. -/
@@ -388,7 +396,8 @@ theorem cap_doubledRelativeIndicatorClass_relativeRightPointClass :
     properPair.singularCap k (λ_ (𝟙_ (ModuleCat k))).inv
       (λ_ (𝟙_ (ModuleCat k))).hom 0 0 0 rfl
         (doubledRelativeIndicatorClass k) (relativeRightPointClass k) =
-          2 • rightPointClass k := by
+          2 • (singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat k)) (1 : twoPoints) (1 :
+              k)) := by
   let U : ModuleCat k := 𝟙_ (ModuleCat k)
   have hμ : (𝟙 U ▷ U) ≫ (λ_ U).hom = (U ◁ 𝟙 U) ≫ (λ_ U).hom ≫ 𝟙 U := by simp
   have hh := TopPair.singularCap_coefficient_naturality properPair k
@@ -425,7 +434,14 @@ theorem augmentation_cap_doubledRelativeIndicatorClass :
           (doubledRelativeIndicatorClass k) (relativeRightPointClass k)) = (2 : k) := by
   rw [cap_doubledRelativeIndicatorClass_relativeRightPointClass]
   exact (map_nsmul (twoPoints.singularHomology₀ε (𝟙_ (ModuleCat k))).hom
-    2 (rightPointClass k)).trans (by rw [augmentation_rightPointClass]; simp)
+    2 ((singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat k)) (1 : twoPoints) (1 :
+        k)))).trans (by
+      have hε := ConcreteCategory.congr_hom
+        (singularHomology₀Section_singularHomology₀ε (𝟙_ (ModuleCat k)) (1 : twoPoints))
+        (1 : k)
+      simp only [ConcreteCategory.comp_apply, ConcreteCategory.id_apply] at hε
+      rw [hε]
+      simp)
 
 /-- The doubled relative cap value with the coefficient action selected by `k`. -/
 def doubledRelativeCapValue :
@@ -434,10 +450,6 @@ def doubledRelativeCapValue :
   properPair.singularCap k (λ_ (𝟙_ (ModuleCat k))).inv
     (λ_ (𝟙_ (ModuleCat k))).hom 0 0 0 rfl
       (doubledRelativeIndicatorClass k) (relativeRightPointClass k)
-
-/-- Evaluation of the named cap output in the two-point homology group. -/
-theorem doubledRelativeCapValue_eq : doubledRelativeCapValue k = 2 • rightPointClass k :=
-  cap_doubledRelativeIndicatorClass_relativeRightPointClass k
 
 /-- Over the integers, coefficient doubling produces a nonzero cap output. -/
 theorem integral_doubled_cap_ne_zero : doubledRelativeCapValue ℤ ≠ 0 := by
@@ -450,7 +462,11 @@ theorem integral_doubled_cap_ne_zero : doubledRelativeCapValue ℤ ≠ 0 := by
 
 /-- In characteristic two, the transported proper-pair cap vanishes. -/
 theorem mod_two_doubled_cap_eq_zero : doubledRelativeCapValue (ZMod 2) = 0 := by
-  rw [doubledRelativeCapValue_eq, ← Nat.cast_smul_eq_nsmul (ZMod 2)]
+  have hv : doubledRelativeCapValue (ZMod 2) =
+      (2 : ℕ) • singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat (ZMod 2)))
+        (1 : twoPoints) (1 : ZMod 2) := by
+    exact cap_doubledRelativeIndicatorClass_relativeRightPointClass (ZMod 2)
+  rw [hv, ← Nat.cast_smul_eq_nsmul (ZMod 2)]
   simp [show (2 : ZMod 2) = 0 from by decide]
 
 /-- Modulo four, the same nonidentity coefficient transport has nonzero output. -/
@@ -465,22 +481,33 @@ theorem mod_four_doubled_cap_ne_zero : doubledRelativeCapValue (ZMod 4) ≠ 0 :=
 /-- Its modulo-four output is killed by another multiplication by two. -/
 theorem two_smul_mod_four_doubled_cap :
     (2 : ZMod 4) • doubledRelativeCapValue (ZMod 4) = 0 := by
-  rw [doubledRelativeCapValue_eq, ← Nat.cast_smul_eq_nsmul (ZMod 4), smul_smul]
+  have hv : doubledRelativeCapValue (ZMod 4) =
+      (2 : ℕ) • singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat (ZMod 4)))
+        (1 : twoPoints) (1 : ZMod 4) := by
+    exact cap_doubledRelativeIndicatorClass_relativeRightPointClass (ZMod 4)
+  rw [hv, ← Nat.cast_smul_eq_nsmul (ZMod 4), smul_smul]
   simp [show (2 : ZMod 4) * 2 = 0 from by decide]
 
 /-- The same proper-pair expression imposes no nontriviality assumption on coefficients. -/
 theorem zero_ring_doubled_cap_eq_zero : doubledRelativeCapValue (ZMod 1) = 0 := by
-  rw [doubledRelativeCapValue_eq, ← Nat.cast_smul_eq_nsmul (ZMod 1)]
+  have hv : doubledRelativeCapValue (ZMod 1) =
+      (2 : ℕ) • singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat (ZMod 1)))
+        (1 : twoPoints) (1 : ZMod 1) := by
+    exact cap_doubledRelativeIndicatorClass_relativeRightPointClass (ZMod 1)
+  rw [hv, ← Nat.cast_smul_eq_nsmul (ZMod 1)]
   simp [show (2 : ZMod 1) = 0 from by decide]
 
 /-- Inclusion of the right point, from the point with empty subspace into the proper pair. -/
 def rightPointPairMap : CapCoefficientClients.emptyBoundaryPair ⟶ properPair :=
-  TopPair.incl.map rightPointMap ≫ TopPair.j properPair
+  TopPair.incl.map (TopCat.const (X := CapCoefficientClients.point) (1 : twoPoints)) ≫ TopPair.j
+      properPair
 
 /-- The ambient component is the right-point inclusion. -/
 @[simp]
-theorem rightPointPairMap_fst : TopPair.Hom.fst rightPointPairMap = rightPointMap := by
-  exact (TopPair.Hom.fst_comp (TopPair.incl.map rightPointMap)
+theorem rightPointPairMap_fst : TopPair.Hom.fst rightPointPairMap = (TopCat.const (X :=
+    CapCoefficientClients.point) (1 : twoPoints)) := by
+  exact (TopPair.Hom.fst_comp (TopPair.incl.map (TopCat.const (X := CapCoefficientClients.point)
+      (1 : twoPoints)))
     (TopPair.j properPair)).trans (Category.comp_id _)
 
 /-- The indicator after changing its value coefficient by negative identity. -/
@@ -495,12 +522,15 @@ def negativeIndicatorClass :
 theorem negative_indicator_space_square :
     CapCoefficientClients.point.singularCap k (λ_ (𝟙_ (ModuleCat k))).inv
       (λ_ (𝟙_ (ModuleCat k))).hom 0 0 0 rfl
-        (TopCat.singularCohomologyMap rightPointMap 0
+        (TopCat.singularCohomologyMap (TopCat.const (X := CapCoefficientClients.point) (1 :
+            twoPoints)) 0
           (negativeIndicatorClass k)) ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) 0).obj
-          (𝟙_ (ModuleCat k))).map rightPointMap =
+          (𝟙_ (ModuleCat k))).map (TopCat.const (X := CapCoefficientClients.point) (1 :
+              twoPoints)) =
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) 0).obj
-          (𝟙_ (ModuleCat k))).map rightPointMap ≫
+          (𝟙_ (ModuleCat k))).map (TopCat.const (X := CapCoefficientClients.point) (1 :
+              twoPoints)) ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) 0).map
           (𝟙 (𝟙_ (ModuleCat k)))).app twoPoints ≫
         twoPoints.singularCap k (λ_ (𝟙_ (ModuleCat k))).inv
@@ -508,7 +538,8 @@ theorem negative_indicator_space_square :
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) 0).map
           (-𝟙 (𝟙_ (ModuleCat k)))).app twoPoints := by
   let U : ModuleCat k := 𝟙_ (ModuleCat k)
-  exact TopCat.singularCap_coefficient_naturality_map rightPointMap k
+  exact TopCat.singularCap_coefficient_naturality_map (TopCat.const (X :=
+      CapCoefficientClients.point) (1 : twoPoints)) k
     (λ_ U).inv (λ_ U).inv (λ_ U).hom (λ_ U).hom
     (𝟙 U) (𝟙 U) (𝟙 U) (-𝟙 U) (-𝟙 U) (idUnit_diagonal_square k)
     (negUnit_action_square k)
@@ -520,21 +551,42 @@ def negativeIndicatorSpaceValue :
       (𝟙_ (ModuleCat k))).obj twoPoints :=
   (CapCoefficientClients.point.singularCap k (λ_ (𝟙_ (ModuleCat k))).inv
     (λ_ (𝟙_ (ModuleCat k))).hom 0 0 0 rfl
-      (TopCat.singularCohomologyMap rightPointMap 0 (negativeIndicatorClass k)) ≫
+      (TopCat.singularCohomologyMap (TopCat.const (X := CapCoefficientClients.point) (1 :
+          twoPoints)) 0 (negativeIndicatorClass k)) ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) 0).obj
-          (𝟙_ (ModuleCat k))).map rightPointMap) (CapCoefficientClients.pointClass k)
+          (𝟙_ (ModuleCat k))).map (TopCat.const (X := CapCoefficientClients.point) (1 :
+              twoPoints))) ((singularHomology₀Section (X := CapCoefficientClients.point.{0}) (𝟙_
+              (ModuleCat k)) (PUnit.unit : CapCoefficientClients.point) (1 : k)))
 
 /-- Evaluating the combined square gives the negative right-point generator. -/
-theorem negativeIndicatorSpaceValue_eq : negativeIndicatorSpaceValue k = -rightPointClass k := by
+theorem negativeIndicatorSpaceValue_eq : negativeIndicatorSpaceValue k =
+    -(singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat k)) (1 : twoPoints) (1 : k)) := by
   let U : ModuleCat k := 𝟙_ (ModuleCat k)
   have hs := negative_indicator_space_square k
   simp only [CategoryTheory.Functor.map_neg, CategoryTheory.Functor.map_id,
     CategoryTheory.NatTrans.app_neg, CategoryTheory.NatTrans.id_app, Category.id_comp] at hs
-  have hv := ConcreteCategory.congr_hom hs (CapCoefficientClients.pointClass k)
+  have hpoint :
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) 0).obj
+        (𝟙_ (ModuleCat k))).map (TopCat.const (X := CapCoefficientClients.point) (1 : twoPoints))
+          (singularHomology₀Section (X := CapCoefficientClients.point.{0}) (𝟙_ (ModuleCat k))
+            (PUnit.unit : CapCoefficientClients.point) (1 : k)) =
+        singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat k)) (1 : twoPoints) (1 : k) := by
+    have hc := TopCat.const_apply (X := CapCoefficientClients.point) (Y := twoPoints)
+      (1 : twoPoints) PUnit.unit
+    have hn := singularHomology₀Section_naturality (𝟙_ (ModuleCat k))
+      (TopCat.const (X := CapCoefficientClients.point) (1 : twoPoints)) PUnit.unit
+    have ht := congrArg (fun z : twoPoints ↦
+      singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat k)) z) hc
+    exact (ConcreteCategory.comp_apply _ _ _).symm.trans
+      (ConcreteCategory.congr_hom (hn.trans ht) (1 : k))
+  have hv := ConcreteCategory.congr_hom hs ((singularHomology₀Section (X :=
+      CapCoefficientClients.point.{0}) (𝟙_ (ModuleCat k)) (PUnit.unit :
+      CapCoefficientClients.point) (1 : k)))
   have heval : negativeIndicatorSpaceValue k =
       -(twoPoints.singularCap k (λ_ U).inv (λ_ U).hom 0 0 0 rfl
-        (indicatorClass k) (rightPointClass k)) := by
-    simpa only [negativeIndicatorSpaceValue, rightPointClass, ConcreteCategory.comp_apply,
+        (indicatorClass k) ((singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat k)) (1 :
+            twoPoints) (1 : k)))) := by
+    simpa only [negativeIndicatorSpaceValue, ConcreteCategory.comp_apply, hpoint,
       ModuleCat.hom_neg, LinearMap.neg_apply, ModuleCat.hom_id, LinearMap.id_apply] using hv
   exact heval.trans (congrArg (- ·) (cap_indicatorClass_rightPointClass k))
 
@@ -543,7 +595,12 @@ theorem augmentation_negativeIndicatorSpaceValue :
     twoPoints.singularHomology₀ε (𝟙_ (ModuleCat k)) (negativeIndicatorSpaceValue k) = (-1 : k) := by
   rw [negativeIndicatorSpaceValue_eq]
   exact (map_neg (twoPoints.singularHomology₀ε (𝟙_ (ModuleCat k))).hom
-    (rightPointClass k)).trans (congrArg (- ·) (augmentation_rightPointClass k))
+    ((singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat k)) (1 : twoPoints) (1 :
+        k)))).trans (congrArg (- ·) (by
+      simpa only [ConcreteCategory.comp_apply, ConcreteCategory.id_apply] using
+        ConcreteCategory.congr_hom
+          (singularHomology₀Section_singularHomology₀ε (𝟙_ (ModuleCat k)) (1 : twoPoints))
+          (1 : k)))
 
 /-- Modulo three this evaluated cap is nonzero, so its sign is observable. -/
 theorem negativeIndicatorSpaceValue_mod_three_ne_zero :
@@ -555,12 +612,19 @@ theorem negativeIndicatorSpaceValue_mod_three_ne_zero :
 
 /-- It differs from the positive generator even though the underlying point inclusion is fixed. -/
 theorem negativeIndicatorSpaceValue_mod_three_ne_rightPointClass :
-    negativeIndicatorSpaceValue (ZMod 3) ≠ rightPointClass (ZMod 3) := by
+    negativeIndicatorSpaceValue (ZMod 3) ≠ (singularHomology₀Section (X := twoPoints) (𝟙_
+        (ModuleCat (ZMod 3))) (1 : twoPoints) (1 : (ZMod 3))) := by
   intro h
   have hh := congrArg (twoPoints.singularHomology₀ε (𝟙_ (ModuleCat (ZMod 3)))) h
+  have hε : twoPoints.singularHomology₀ε (𝟙_ (ModuleCat (ZMod 3)))
+      (singularHomology₀Section (X := twoPoints) (𝟙_ (ModuleCat (ZMod 3)))
+        (1 : twoPoints) (1 : ZMod 3)) = 1 := by
+    simpa only [ConcreteCategory.comp_apply, ConcreteCategory.id_apply] using
+      ConcreteCategory.congr_hom
+        (singularHomology₀Section_singularHomology₀ε
+          (𝟙_ (ModuleCat (ZMod 3))) (1 : twoPoints)) (1 : ZMod 3)
   exact (by decide : (-1 : ZMod 3) ≠ 1)
-    ((augmentation_negativeIndicatorSpaceValue (ZMod 3)).symm.trans
-      (hh.trans (augmentation_rightPointClass (ZMod 3))))
+    ((augmentation_negativeIndicatorSpaceValue (ZMod 3)).symm.trans (hh.trans hε))
 
 /-- The same nonidentity value transport is compatible with the map of proper pairs. -/
 theorem negative_indicator_pair_square :
