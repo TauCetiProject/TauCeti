@@ -43,9 +43,9 @@ the structure sheaf of holomorphic functions has no first cohomology on open sub
   `Ω ⊆ ℂ`.
 * `TauCeti.exists_contDiff_conjWirtingerDeriv_apply_one_eq`: every `Cⁿ` function on the plane is
   `\bar∂` of a `Cⁿ` function, without any support condition.
-* `TauCeti.exists_contDiffOn_differentiableOn_sub_of_eball`: smooth functions `g k` on open sets
-  covering a disc `Metric.eball c R`, `R ≤ ∞`, with holomorphic pairwise differences, are all `f`
-  plus a holomorphic function for one smooth `f` on the disc.
+* `IsOpen.exists_contDiffOn_differentiableOn_sub`: smooth functions `g k` on open sets covering
+  an open set `U ⊆ ℂ`, with holomorphic pairwise differences, are all `f` plus a holomorphic
+  function for one smooth `f` on `U`.
 
 ## References
 
@@ -126,21 +126,20 @@ theorem exists_contDiff_conjWirtingerDeriv_apply_one_eq {f : ℂ → W} (hn : 1 
 /-! ### Smooth data with holomorphic differences
 
 Smooth functions `g k` on open sets `Ω k ⊆ ℂ` whose pairwise differences are holomorphic have
-conjugate Wirtinger derivatives that agree on overlaps. On a disc covered by the `Ω k` these glue
-to one smooth function, and the Dolbeault lemma solves for it: some smooth `f` on the disc has
-every `f - g k` holomorphic. -/
+conjugate Wirtinger derivatives that agree on overlaps. On an open set `U` covered by the `Ω k`
+these glue to one smooth function, and the Dolbeault lemma solves for it: some smooth `f` on `U`
+has every `f - g k` holomorphic. -/
 
-/-- **Smooth data with holomorphic differences glue on a disc.** Let `g k` be smooth on open sets
-`Ω k` covering the disc `eball c R`, `R ≤ ∞`, with `g k - g l` complex differentiable on
-`Ω k ∩ Ω l`. Then some `f`, smooth on the disc, has `f - g k` complex differentiable on
-`eball c R ∩ Ω k` for every `k`. -/
-theorem exists_contDiffOn_differentiableOn_sub_of_eball {ι : Type*} {Ω : ι → Set ℂ}
-    {g : ι → ℂ → W} {c : ℂ} {R : ℝ≥0∞} (hΩ : ∀ k, IsOpen (Ω k))
+/-- **Smooth data with holomorphic differences glue on an open set.** Let `g k` be smooth on open
+sets `Ω k` covering an open set `U ⊆ ℂ`, with `g k - g l` complex differentiable on `Ω k ∩ Ω l`.
+Then some `f`, smooth on `U`, has `f - g k` complex differentiable on `U ∩ Ω k` for every `k`. -/
+theorem _root_.IsOpen.exists_contDiffOn_differentiableOn_sub {U : Set ℂ} (hU : IsOpen U)
+    {ι : Type*} {Ω : ι → Set ℂ} {g : ι → ℂ → W} (hΩ : ∀ k, IsOpen (Ω k))
     (hg : ∀ k, ContDiffOn ℝ (⊤ : ℕ∞) (g k) (Ω k))
     (hgg : ∀ k l, DifferentiableOn ℂ (g k - g l) (Ω k ∩ Ω l))
-    (hcov : eball c R ⊆ ⋃ k, Ω k) :
-    ∃ f : ℂ → W, ContDiffOn ℝ (⊤ : ℕ∞) f (eball c R) ∧
-      ∀ k, DifferentiableOn ℂ (f - g k) (eball c R ∩ Ω k) := by
+    (hcov : U ⊆ ⋃ k, Ω k) :
+    ∃ f : ℂ → W, ContDiffOn ℝ (⊤ : ℕ∞) f U ∧
+      ∀ k, DifferentiableOn ℂ (f - g k) (U ∩ Ω k) := by
   classical
   -- The real differentiability of `g k` at points of `Ω k`.
   have hgd (k : ι) {z : ℂ} (hz : z ∈ Ω k) : DifferentiableAt ℝ (g k) z :=
@@ -160,7 +159,7 @@ theorem exists_contDiffOn_differentiableOn_sub_of_eball {ι : Type*} {Ω : ι �
     have h : ∃ k, z ∈ Ω k := ⟨k, hz⟩
     simp only [θ, h, ↓reduceDIte]
     exact hagree _ _ h.choose_spec hz
-  have hθs : ContDiffOn ℝ (⊤ : ℕ∞) θ (eball c R) := by
+  have hθs : ContDiffOn ℝ (⊤ : ℕ∞) θ U := by
     refine contDiffOn_of_locally_contDiffOn fun z hz ↦ ?_
     obtain ⟨k, hk⟩ := mem_iUnion.1 (hcov hz)
     refine ⟨Ω k, hΩ k, hk, ?_⟩
@@ -168,10 +167,10 @@ theorem exists_contDiffOn_differentiableOn_sub_of_eball {ι : Type*} {Ω : ι �
       inter_subset_right).congr ?_
     exact fun w hw ↦ hθ k hw.2
   obtain ⟨f, hf, hfθ⟩ :=
-    isOpen_eball.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq (n := ⊤) le_top hθs
+    hU.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq (n := ⊤) le_top hθs
   refine ⟨f, hf, fun k z hz ↦ ?_⟩
   have hfd : DifferentiableAt ℝ f z :=
-    (hf.contDiffAt (isOpen_eball.mem_nhds hz.1)).differentiableAt (by simp)
+    (hf.contDiffAt (hU.mem_nhds hz.1)).differentiableAt (by simp)
   have hd : DifferentiableAt ℝ (f - g k) z := hfd.sub (hgd k hz.2)
   refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero hd).2 ?_)
     |>.differentiableWithinAt
