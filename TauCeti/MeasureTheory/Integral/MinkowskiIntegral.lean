@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 
 /-!
 # Minkowski's integral inequality
@@ -44,6 +46,8 @@ Off-diagonal Marcinkiewicz interpolation uses it with the sets cut out by a heig
 * `TauCeti.lintegral_Lp_lintegral_le`: Minkowski's integral inequality.
 * `TauCeti.lintegral_mul_setLIntegral_rpow_le`: Minkowski's integral inequality for weighted
   truncations.
+* `TauCeti.lintegral_mul_setLIntegral_rpow_le_of_le`: its form for a power weight `t ^ s` on
+  `(0, ∞)`, given a bound on each truncation of the weight.
 
 ## References
 
@@ -219,5 +223,46 @@ theorem lintegral_mul_setLIntegral_rpow_le [SFinite ν] [SFinite μ] {R : β →
         refine lintegral_congr fun x ↦ ?_
         rw [hsec, ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hr0.le), ← ENNReal.rpow_mul,
           mul_inv_cancel₀ hr0.ne', ENNReal.rpow_one]
+
+/-- **Minkowski's integral inequality for power-weighted truncations.** If the truncation of the
+weight `t ^ s` at each point `x` is at most `K f(x) ^ (qᵢ (p - pᵢ) / pᵢ)`, then the weighted
+`L^{qᵢ / pᵢ}` norm in `t` of the truncated integrals of `f ^ pᵢ` is at most
+`K (∫⁻ f ^ p) ^ (qᵢ / pᵢ)`. This is the estimate for one endpoint in Marcinkiewicz interpolation
+and in the real interpolation of `Lᵖ` spaces, where the truncations cut `f` at a power `c t ^ γ` of
+the parameter. -/
+theorem lintegral_mul_setLIntegral_rpow_le_of_le [SFinite μ] {f : α → ℝ≥0∞} {p : ℝ}
+    {R : ℝ → α → Prop} (hR : MeasurableSet {z : ℝ × α | R z.1 z.2}) (hf : AEMeasurable f μ)
+    {pᵢ qᵢ s K : ℝ} (hpᵢ : 0 < pᵢ) (hpq : pᵢ ≤ qᵢ)
+    (hinner : ∀ x, ∫⁻ t in Ioi (0 : ℝ),
+        {t : ℝ | R t x}.indicator (fun t => ENNReal.ofReal (t ^ s)) t ≤
+      ENNReal.ofReal K * f x ^ (qᵢ * (p - pᵢ) / pᵢ)) :
+    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
+        (∫⁻ x in {x | R t x}, f x ^ pᵢ ∂μ) ^ (qᵢ / pᵢ) ≤
+      ENNReal.ofReal K * (∫⁻ x, f x ^ p ∂μ) ^ (qᵢ / pᵢ) := by
+  have hqᵢ : 0 < qᵢ := hpᵢ.trans_le hpq
+  have hr : 1 ≤ qᵢ / pᵢ := (one_le_div hpᵢ).2 hpq
+  have hr0 : 0 < qᵢ / pᵢ := by positivity
+  have hexp : qᵢ * (p - pᵢ) / pᵢ * (qᵢ / pᵢ)⁻¹ = p - pᵢ := by
+    field_simp
+  have hpt : ∀ x, f x ^ pᵢ * (∫⁻ t in Ioi (0 : ℝ),
+        {t : ℝ | R t x}.indicator (fun t => ENNReal.ofReal (t ^ s)) t) ^ (qᵢ / pᵢ)⁻¹ ≤
+      ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * f x ^ p := fun x =>
+    calc _ ≤ f x ^ pᵢ * (ENNReal.ofReal K * f x ^ (qᵢ * (p - pᵢ) / pᵢ)) ^ (qᵢ / pᵢ)⁻¹ := by
+          gcongr
+          exact hinner x
+      _ = ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * (f x ^ pᵢ * f x ^ (p - pᵢ)) := by
+          rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul, hexp]
+          ring
+      _ ≤ ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * f x ^ p := by
+          gcongr
+          simpa using ENNReal.le_rpow_add (f x) pᵢ (p - pᵢ)
+  calc _ ≤ _ := lintegral_mul_setLIntegral_rpow_le hR
+        (measurable_id.pow_const s).ennreal_ofReal.aemeasurable (hf.pow_const pᵢ) hr
+    _ ≤ (∫⁻ x, ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * f x ^ p ∂μ) ^ (qᵢ / pᵢ) :=
+        ENNReal.rpow_le_rpow (lintegral_mono hpt) hr0.le
+    _ = ENNReal.ofReal K * (∫⁻ x, f x ^ p ∂μ) ^ (qᵢ / pᵢ) := by
+        rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg (by positivity)
+          ENNReal.ofReal_ne_top), ENNReal.mul_rpow_of_nonneg _ _ hr0.le, ← ENNReal.rpow_mul,
+          inv_mul_cancel₀ hr0.ne', ENNReal.rpow_one]
 
 end TauCeti

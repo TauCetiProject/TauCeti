@@ -92,45 +92,6 @@ open scoped ENNReal
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α} {ν : Measure β}
   {f : α → ℝ≥0∞} {u : β → ℝ≥0∞} {p p₀ p₁ q q₀ q₁ γ c : ℝ} {A₀ A₁ : ℝ≥0∞}
 
-/-- A truncated weighted integral, for one endpoint of the interpolation. If the truncation of the
-weight `t ^ s` at each point `x` is at most `K f(x) ^ (qᵢ (p - pᵢ) / pᵢ)`, then the weighted
-`L^{qᵢ / pᵢ}` norm in `t` of the truncated integrals of `f ^ pᵢ` is at most
-`K (∫⁻ f ^ p) ^ (qᵢ / pᵢ)`. -/
-private theorem lintegral_mul_setLIntegral_rpow_le_of_le [SFinite μ] {R : ℝ → α → Prop}
-    (hR : MeasurableSet {z : ℝ × α | R z.1 z.2}) (hf : AEMeasurable f μ) {pᵢ qᵢ s K : ℝ}
-    (hpᵢ : 0 < pᵢ) (hpq : pᵢ ≤ qᵢ)
-    (hinner : ∀ x, ∫⁻ t in Ioi (0 : ℝ),
-        {t : ℝ | R t x}.indicator (fun t => ENNReal.ofReal (t ^ s)) t ≤
-      ENNReal.ofReal K * f x ^ (qᵢ * (p - pᵢ) / pᵢ)) :
-    ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ s) *
-        (∫⁻ x in {x | R t x}, f x ^ pᵢ ∂μ) ^ (qᵢ / pᵢ) ≤
-      ENNReal.ofReal K * (∫⁻ x, f x ^ p ∂μ) ^ (qᵢ / pᵢ) := by
-  have hqᵢ : 0 < qᵢ := hpᵢ.trans_le hpq
-  have hr : 1 ≤ qᵢ / pᵢ := (one_le_div hpᵢ).2 hpq
-  have hr0 : 0 < qᵢ / pᵢ := by positivity
-  have hexp : qᵢ * (p - pᵢ) / pᵢ * (qᵢ / pᵢ)⁻¹ = p - pᵢ := by
-    field_simp
-  have hpt : ∀ x, f x ^ pᵢ * (∫⁻ t in Ioi (0 : ℝ),
-        {t : ℝ | R t x}.indicator (fun t => ENNReal.ofReal (t ^ s)) t) ^ (qᵢ / pᵢ)⁻¹ ≤
-      ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * f x ^ p := fun x =>
-    calc _ ≤ f x ^ pᵢ * (ENNReal.ofReal K * f x ^ (qᵢ * (p - pᵢ) / pᵢ)) ^ (qᵢ / pᵢ)⁻¹ := by
-          gcongr
-          exact hinner x
-      _ = ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * (f x ^ pᵢ * f x ^ (p - pᵢ)) := by
-          rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul, hexp]
-          ring
-      _ ≤ ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * f x ^ p := by
-          gcongr
-          simpa using ENNReal.le_rpow_add (f x) pᵢ (p - pᵢ)
-  calc _ ≤ _ := lintegral_mul_setLIntegral_rpow_le hR
-        (measurable_id.pow_const s).ennreal_ofReal.aemeasurable (hf.pow_const pᵢ) hr
-    _ ≤ (∫⁻ x, ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * f x ^ p ∂μ) ^ (qᵢ / pᵢ) :=
-        ENNReal.rpow_le_rpow (lintegral_mono hpt) hr0.le
-    _ = ENNReal.ofReal K * (∫⁻ x, f x ^ p ∂μ) ^ (qᵢ / pᵢ) := by
-        rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg (by positivity)
-          ENNReal.ofReal_ne_top), ENNReal.mul_rpow_of_nonneg _ _ hr0.le, ← ENNReal.rpow_mul,
-          inv_mul_cancel₀ hr0.ne', ENNReal.rpow_one]
-
 /-- The exponent relations of the interpolation force `γ ≠ 0`, and they place the target exponent
 `q` strictly between `q₀` and `q₁`, so that `0 < q`. -/
 private theorem ne_zero_and_pos_of_div_eq (hp₀ : 0 < p₀) (hlt₀ : p₀ < p) (hlt₁ : p < p₁)
@@ -287,17 +248,10 @@ private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_of_measurable
   -- `μ` restricted to `{f > 0}` is σ-finite, so in particular s-finite.
   have hσ : SigmaFinite (μ.restrict {x | 0 < f x}) :=
     sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top hf.aemeasurable hp htop
-  have hpos : MeasurableSet {x | 0 < f x} := measurableSet_lt measurable_const hf
   -- A positive power of `f` vanishes off `{f > 0}`, so no truncated integral sees the complement.
   have key : ∀ r : ℝ, 0 < r → ∀ S : Set α,
-      ∫⁻ x in S, f x ^ r ∂(μ.restrict {x | 0 < f x}) = ∫⁻ x in S, f x ^ r ∂μ := by
-    intro r hr S
-    have hsupp : Function.support (fun x => f x ^ r) ⊆ {x | 0 < f x} := by
-      refine Function.support_subset_iff'.2 fun x hx => ?_
-      have hx0 : f x = 0 := by simpa [Set.mem_ofPred, nonpos_iff_eq_zero] using hx
-      simp [hx0, ENNReal.zero_rpow_of_pos hr]
-    rw [Measure.restrict_restrict' hpos, Set.inter_comm, ← Measure.restrict_restrict hpos]
-    exact setLIntegral_eq_of_support_subset hsupp
+      ∫⁻ x in S, f x ^ r ∂(μ.restrict {x | 0 < f x}) = ∫⁻ x in S, f x ^ r ∂μ :=
+    fun _ hr S => setLIntegral_rpow_restrict_pos hf hr S
   have ep : ∫⁻ x, f x ^ p ∂(μ.restrict {x | 0 < f x}) = ∫⁻ x, f x ^ p ∂μ := by
     simpa using key p hp Set.univ
   have hmain := lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_of_measurable_of_sFinite
