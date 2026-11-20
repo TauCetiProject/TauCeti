@@ -16,7 +16,8 @@ public import Mathlib.RingTheory.MvPowerSeries.Equiv
 single variable `i`. Mathlib records that it is an algebra map, how it acts on `C` and `X`, that
 it is injective, and that its coefficients vanish off the powers of `i`
 (`PowerSeries.toMvPowerSeries_coeff_eq_zero`); this file adds the remaining half, the value of
-the coefficients that do not vanish.
+the coefficients that do not vanish. Consequently a product `∏ s, g_s(X_s)` of one-variable
+series placed in distinct variables has the coefficients `∏ s, coeff (e s) g_s`.
 
 ## Separating two families of variables
 
@@ -30,6 +31,8 @@ identification of restricted series in two families of variables with iterated r
 ## Main results
 
 * `PowerSeries.coeff_toMvPowerSeries`: the coefficients of `w.toMvPowerSeries i`.
+* `PowerSeries.coeff_prod_toMvPowerSeries`: the coefficients of a product of one-variable series
+  placed in separate variables.
 * `MvPowerSeries.sumAlgEquiv`: the algebra isomorphism
   `MvPowerSeries (σ ⊕ τ) A ≃ₐ[R] MvPowerSeries σ (MvPowerSeries τ A)`.
 * `MvPowerSeries.coeff_coeff_sumAlgEquiv` and
@@ -76,6 +79,34 @@ theorem coeff_toMvPowerSeries (i : σ) (w : PowerSeries R) (d : σ →₀ ℕ) :
   · refine MvPowerSeries.coeff_rename_eq_zero _ _ fun ⟨y, hy⟩ => h ?_
     rw [← hy, Finsupp.unique_single y, Finsupp.mapDomain_single]
     simp
+
+omit [DecidableEq σ] in
+/-- The coefficients of a product `∏ s, g_s(X_s)` of one-variable power series, each placed in
+its own variable: the coefficient of the monomial `e` is `∏ s, coeff (e s) g_s`. -/
+@[simp]
+theorem coeff_prod_toMvPowerSeries [Fintype σ] (g : σ → PowerSeries R) (e : σ →₀ ℕ) :
+    MvPowerSeries.coeff e (∏ s, (g s).toMvPowerSeries s) = ∏ s, coeff (e s) (g s) := by
+  classical
+  -- Only the splitting `e = ∑ s, single s (e s)` of `e` into its coordinates contributes.
+  let l₀ : σ →₀ σ →₀ ℕ := Finsupp.equivFunOnFinite.symm fun s ↦ Finsupp.single s (e s)
+  rw [MvPowerSeries.coeff_prod, Finset.sum_eq_single l₀]
+  · simp [l₀]
+  · intro l hl hne
+    rw [Finset.mem_finsuppAntidiag] at hl
+    by_contra h
+    have hs (s : σ) : l s = Finsupp.single s (l s s) := by
+      by_contra hs
+      exact h (Finset.prod_eq_zero (Finset.mem_univ s) (by simp [hs]))
+    refine hne (Finsupp.ext fun s ↦ ?_)
+    have he : e s = l s s := by
+      rw [← hl.1, Finsupp.finsetSum_apply, Finset.sum_eq_single s]
+      · intro t _ hts
+        rw [hs t, Finsupp.single_eq_of_ne hts.symm]
+      · simp
+    rw [hs s, ← he]
+    simp [l₀]
+  · intro h
+    exact absurd (by simp [l₀, Finset.mem_finsuppAntidiag, Finsupp.univ_sum_single]) h
 
 omit [DecidableEq σ] in
 /-- Base change commutes with viewing a one-variable series in a single variable `i`. -/
