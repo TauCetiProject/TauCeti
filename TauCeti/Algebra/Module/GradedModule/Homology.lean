@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.SquareZero
+public import TauCeti.Algebra.Homology.SquareZero.Quotient
+public import TauCeti.Algebra.Module.GradedModule.Prod
 public import TauCeti.Algebra.Module.GradedModule.Quotient
+public import TauCeti.Algebra.Module.GradedModule.Shift
 
 /-!
 # The grading of the homology of a homogeneous endomorphism
@@ -26,9 +28,24 @@ polynomial ring. An element of `S` which moves every homogeneous piece of `M` by
 moves every homogeneous piece of the homology by the same degree
 (`TauCeti.InternalGrading.smul_mem_homology_piece`).
 
+The same applies to the homology `d.quotientHomology hd N hN` of the endomorphism induced on a
+quotient `M ⧸ N` by a homogeneous `d`-stable submodule `N`
+(`TauCeti.InternalGrading.quotientHomology`): its classes of degree `p` are the classes of the
+elements `m` of degree `p` with `d m ∈ N`. Passing to a larger quotient `M ⧸ N'` along a
+null-homotopic regular endomorphism splits the homology as two copies of the smaller one
+(`LinearMap.quotientHomologyProdEquiv`). When the homotopy `h` is homogeneous of degree `s`, the
+second copy is shifted by `s`: the splitting has degree zero from the product of the grading with
+its shift by `-s` (`TauCeti.InternalGrading.isHomogeneous_quotientHomologyProdEquiv`), and the
+degree-`p` piece of the larger quotient is the product of the degree-`p` and degree-`(p - s)`
+pieces of the smaller one (`TauCeti.InternalGrading.quotientHomologyProdPieceEquiv`).
+
 ## Main definitions
 
 * `TauCeti.InternalGrading.homology`: the grading of the homology of a homogeneous endomorphism.
+* `TauCeti.InternalGrading.quotientHomology`: the grading of the homology of the endomorphism
+  induced on a quotient by a homogeneous stable submodule.
+* `TauCeti.InternalGrading.quotientHomologyProdPieceEquiv`: the splitting along a homogeneous
+  homotopy of degree `s`, restricted to the pieces `H_p × H_(p - s) ≃ H'_p`.
 
 ## Main results
 
@@ -39,6 +56,11 @@ moves every homogeneous piece of the homology by the same degree
   (`TauCeti.InternalGrading.isHomogeneous_homologyπ`).
 * `TauCeti.InternalGrading.smul_mem_homology_piece`: a scalar moving the degree of `M` by `q`
   moves the degree of the homology by `q`.
+* `TauCeti.InternalGrading.mem_quotientHomology_piece_iff`: a class of quotient homology is
+  homogeneous of degree `p` exactly when it is the class of an element of degree `p`.
+* `TauCeti.InternalGrading.isHomogeneous_quotientHomologyProdEquiv`: the splitting along a
+  homogeneous homotopy of degree `s` has degree zero from the product of the grading with its
+  shift by `-s`.
 -/
 
 public section
@@ -110,5 +132,132 @@ theorem smul_mem_homology_piece {s : S} {q : ι}
   exact G.homologyπ_mem_homology_piece hhom hd (z := s • z) (hs hz)
 
 end Ring
+
+section QuotientHomology
+
+variable [Ring R] [Ring S] [SMul R S]
+  [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M]
+  (G : InternalGrading R M ι) {r : ι}
+  {d : M →ₗ[S] M} (hdG : LinearMap.IsHomogeneous d G.piece G.piece r)
+  (hd : d ∘ₗ d = 0) {N : Submodule S M} (hN : N ≤ N.comap d)
+  (hNG : SetLike.IsHomogeneous G.piece N)
+
+include hdG in
+/-- The endomorphism of `M ⧸ N` induced by a homogeneous `d` is homogeneous of the same degree
+for the quotient grading. -/
+theorem isHomogeneous_mapQ :
+    LinearMap.IsHomogeneous (N.mapQ N d hN) (G.quotient N hNG).piece (G.quotient N hNG).piece r :=
+  LinearMap.isHomogeneous_def.2 fun _ y hy ↦ by
+    obtain ⟨x, hx, rfl⟩ := (G.mem_quotient_piece_iff N hNG).1 hy
+    rw [Submodule.mapQ_apply]
+    exact G.mk_mem_quotient_piece N hNG (hdG.map_mem hx)
+
+/-- The internal grading of the homology of the endomorphism induced by `d` on `M ⧸ N`, for a
+homogeneous `d` and a homogeneous `d`-stable submodule `N`: its degree-`p` piece consists of the
+classes of the elements of degree `p` whose image under `d` lies in `N`. -/
+noncomputable def quotientHomology : InternalGrading R (d.quotientHomology hd N hN) ι :=
+  (G.quotient N hNG).homology (G.isHomogeneous_mapQ hdG hN hNG) (d.mapQ_comp_mapQ_eq_zero hd N hN)
+
+/-- A class of quotient homology is homogeneous of degree `p` exactly when it is the class of an
+element `m` of degree `p` with `d m ∈ N`. -/
+theorem mem_quotientHomology_piece_iff {p : ι} {y : d.quotientHomology hd N hN} :
+    y ∈ (G.quotientHomology hdG hd hN hNG).piece p ↔
+      ∃ m ∈ G.piece p, ∃ hm : d m ∈ N, LinearMap.quotientHomologyClass hd hN m hm = y := by
+  rw [quotientHomology, mem_homology_piece_iff]
+  constructor
+  · rintro ⟨⟨q, hq⟩, hqp, rfl⟩
+    obtain ⟨m, hm, rfl⟩ := (G.mem_quotient_piece_iff N hNG).1 hqp
+    exact ⟨m, hm, (Submodule.mk_mem_ker_mapQ_iff m).1 hq, by
+      rw [LinearMap.quotientHomologyClass_def, LinearMap.homologyπ_apply]⟩
+  · rintro ⟨m, hm, hdm, rfl⟩
+    exact ⟨⟨_, (Submodule.mk_mem_ker_mapQ_iff m).2 hdm⟩, G.mk_mem_quotient_piece N hNG hm, by
+      rw [LinearMap.quotientHomologyClass_def, LinearMap.homologyπ_apply]⟩
+
+/-- The class of an element of degree `p` is a class of quotient homology of degree `p`. -/
+theorem quotientHomologyClass_mem_quotientHomology_piece {p : ι} {m : M} (hmp : m ∈ G.piece p)
+    (hm : d m ∈ N) :
+    LinearMap.quotientHomologyClass hd hN m hm ∈ (G.quotientHomology hdG hd hN hNG).piece p :=
+  (G.mem_quotientHomology_piece_iff hdG hd hN hNG).2 ⟨m, hmp, hm, rfl⟩
+
+end QuotientHomology
+
+end TauCeti.InternalGrading
+
+namespace TauCeti.InternalGrading
+
+section Splitting
+
+variable {ι : Type*} [DecidableEq ι] [AddCommGroup ι] {R S M : Type*}
+  [Ring R] [Ring S] [SMul R S]
+  [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M]
+  (G : InternalGrading R M ι) {r : ι}
+  {d : M →ₗ[S] M} (hdG : LinearMap.IsHomogeneous d G.piece G.piece r)
+  (hd : d ∘ₗ d = 0) {N : Submodule S M} (hN : N ≤ N.comap d)
+  (hNG : SetLike.IsHomogeneous G.piece N) {h v : M →ₗ[S] M} {N' : Submodule S M}
+  (hN' : N' ≤ N'.comap d)
+  (hN'G : SetLike.IsHomogeneous G.piece N') (hNN' : N ≤ N') (hvN' : ∀ m, v m ∈ N')
+  (hN'N : ∀ x ∈ N', ∃ u, x - v u ∈ N) (hh : ∀ m ∈ N, h m ∈ N) (hvd : ∀ m, d (v m) = v (d m))
+  (hreg : ∀ m, v m ∈ N → m ∈ N) (hhom : ∀ m, d (h m) + h (d m) - v m ∈ N) {s : ι}
+  (hhG : LinearMap.IsHomogeneous h G.piece G.piece s)
+
+include hhG in
+/-- **The splitting along a homogeneous homotopy is homogeneous.** If the homotopy `h` in
+`LinearMap.quotientHomologyProdEquiv` is homogeneous of degree `s`, then the splitting
+`H(M ⧸ N) × H(M ⧸ N) ≃ H(M ⧸ N')`, `(a, b) ↦ a + h b`, has degree zero when its second factor is
+graded by the shift by `-s`. -/
+theorem isHomogeneous_quotientHomologyProdEquiv :
+    LinearMap.IsHomogeneous
+      ((LinearMap.quotientHomologyProdEquiv hd hN hN' hNN' hvN' hN'N hh hvd hreg
+        hhom).restrictScalars R).toLinearMap
+      ((G.quotientHomology hdG hd hN hNG).prod
+        ((G.quotientHomology hdG hd hN hNG).shift (-s))).piece
+      (G.quotientHomology hdG hd hN' hN'G).piece 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  rintro p ⟨x, y⟩ hxy
+  rw [prod_piece, Submodule.mem_prod, shift_piece] at hxy
+  obtain ⟨a, hap, ha, rfl⟩ := (G.mem_quotientHomology_piece_iff hdG hd hN hNG).1 hxy.1
+  obtain ⟨b, hbp, hb, rfl⟩ := (G.mem_quotientHomology_piece_iff hdG hd hN hNG).1 hxy.2
+  have hhb : h b ∈ G.piece p := by
+    simpa only [neg_add_cancel_right] using hhG.map_mem hbp
+  rw [add_zero, LinearEquiv.coe_coe, LinearEquiv.restrictScalars_apply,
+    LinearMap.quotientHomologyClass_def, LinearMap.quotientHomologyClass_def,
+    LinearMap.quotientHomologyProdEquiv_mk hd hN hN' hNN' hvN' hN'N hh hvd hreg hhom a b ha hb]
+  have hab : d (a + h b) ∈ N' := by
+    have : d (a + h b) = d a + (d (h b) + h (d b) - v b) - h (d b) + v b := by
+      rw [map_add]
+      abel
+    rw [this]
+    exact N'.add_mem (N'.sub_mem (N'.add_mem (hNN' ha) (hNN' (hhom b))) (hNN' (hh _ hb)))
+      (hvN' b)
+  exact (G.mem_quotientHomology_piece_iff hdG hd hN' hN'G).2
+    ⟨a + h b, add_mem hap hhb, hab, by rw [LinearMap.quotientHomologyClass_def]⟩
+
+include hhG in
+/-- **Graded doubling of quotient homology.** If the homotopy `h` in
+`LinearMap.quotientHomologyProdEquiv` is homogeneous of degree `s`, its splitting restricts to an
+equivalence from the product of the degree-`p` and degree-`(p - s)` pieces of `H(M ⧸ N)` onto the
+degree-`p` piece of `H(M ⧸ N')`. -/
+noncomputable def quotientHomologyProdPieceEquiv (p : ι) :
+    ((G.quotientHomology hdG hd hN hNG).piece p ×
+        (G.quotientHomology hdG hd hN hNG).piece (p - s)) ≃ₗ[R]
+      (G.quotientHomology hdG hd hN' hN'G).piece p :=
+  (Submodule.prodEquiv _ _).symm ≪≫ₗ
+    LinearEquiv.ofEq _ _ (by rw [prod_piece, shift_piece, sub_eq_add_neg]) ≪≫ₗ
+    (G.isHomogeneous_quotientHomologyProdEquiv hdG hd hN hNG hN' hN'G hNN' hvN' hN'N hh hvd hreg
+      hhom hhG).pieceEquiv p
+
+/-- The graded splitting is the splitting `LinearMap.quotientHomologyProdEquiv` on underlying
+classes. -/
+@[simp]
+theorem coe_quotientHomologyProdPieceEquiv_apply (p : ι)
+    (x : (G.quotientHomology hdG hd hN hNG).piece p ×
+      (G.quotientHomology hdG hd hN hNG).piece (p - s)) :
+    (G.quotientHomologyProdPieceEquiv hdG hd hN hNG hN' hN'G hNN' hvN' hN'N hh hvd hreg hhom hhG
+        p x : d.quotientHomology hd N' hN') =
+      LinearMap.quotientHomologyProdEquiv hd hN hN' hNN' hvN' hN'N hh hvd hreg hhom
+        ((x.1 : d.quotientHomology hd N hN), (x.2 : d.quotientHomology hd N hN)) := by
+  simp [quotientHomologyProdPieceEquiv]
+
+end Splitting
 
 end TauCeti.InternalGrading
