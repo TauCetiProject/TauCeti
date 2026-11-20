@@ -126,19 +126,6 @@ private lemma isLeray_cokernel {F : Sheaf (Opens.grothendieckTopology X) (Module
     (Sheaf.shortExact_map_sheafCompose_forget₂_moduleCat (godementSeq_shortExact F)) _ (k + 1)
     (subsingleton_H'_godement F _ k) (hF s hs (k + 1))
 
-variable (U) in
-/-- The Godement sheaf is flasque, so it has no Čech cohomology in positive degrees for a finite
-cover. -/
-private lemma isZero_homology_cechComplex_godement [Finite ι] (hU : IsOpenCover U)
-    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) (k : ℕ) :
-    IsZero (((cechComplexFunctor U).obj ((godement (ModuleCat.{u} R) X).obj F).obj).homology
-      (k + 1)) := by
-  have : QuasiIso (cechAugmentation U isTerminalTop ((godement (ModuleCat.{u} R) X).obj F).obj) :=
-    TopCat.Sheaf.quasiIso_cechAugmentation_of_isFlasque_moduleCat _ U hU.iSup_eq_top
-  exact (CochainComplex.exactAt_succ_single_obj _ k).isZero_homology.of_iso
-    (asIso (HomologicalComplex.homologyMap
-      (cechAugmentation U isTerminalTop ((godement (ModuleCat.{u} R) X).obj F).obj) (k + 1))).symm
-
 variable [CompactSpace X] [NormalSpace X]
 
 /-- In degree one, `toCechCohomology` is an isomorphism for a Leray sheaf: on both sides, the
@@ -149,7 +136,9 @@ private lemma isIso_toCechCohomology_app_one [Finite ι] (hU : IsOpenCover U)
     IsIso ((toCechCohomology (ModuleCat.{u} R) 1 U hU).app F.obj) := by
   let hS := godementSeq_shortExact F
   let hSU := shortExact_cechComplex_godementSeq hF
-  have := hSU.epi_δ 0 1 rfl (isZero_homology_cechComplex_godement U hU F 0)
+  have := hSU.epi_δ 0 1 rfl
+    (isZero_homology_cechComplex_succ_of_isFlasque U hU.iSup_eq_top
+      ((godement (ModuleCat.{u} R) X).obj F) 0)
   have := hS.epi_cechCohomologyδ_zero_of_isFlasque
   have := isIso_toCechCohomology_app_zero (ModuleCat.{u} R) U hU (godementSeq F).X₂
   have := isIso_toCechCohomology_app_zero (ModuleCat.{u} R) U hU (godementSeq F).X₃
@@ -183,8 +172,11 @@ private lemma isIso_toCechCohomology_app_aux [Finite ι] (hU : IsOpenCover U) :
   | n + 2, F, hF => by
     let hS := godementSeq_shortExact F
     let hSU := shortExact_cechComplex_godementSeq hF
-    have := hSU.isIso_δ (n + 1) (n + 1 + 1) rfl (isZero_homology_cechComplex_godement U hU F n)
-      (isZero_homology_cechComplex_godement U hU F (n + 1))
+    have := hSU.isIso_δ (n + 1) (n + 1 + 1) rfl
+      (isZero_homology_cechComplex_succ_of_isFlasque U hU.iSup_eq_top
+        ((godement (ModuleCat.{u} R) X).obj F) n)
+      (isZero_homology_cechComplex_succ_of_isFlasque U hU.iSup_eq_top
+        ((godement (ModuleCat.{u} R) X).obj F) (n + 1))
     have := hS.isIso_cechCohomologyδ_succ_of_isFlasque n
     have := isIso_toCechCohomology_app_aux hU (n + 1) _ (isLeray_cokernel hF)
     have : IsIso ((toCechCohomology (ModuleCat.{u} R) (n + 1) U hU).app (godementSeq F).X₃.obj ≫
