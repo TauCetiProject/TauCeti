@@ -16,6 +16,8 @@ public import Mathlib.Data.Set.Function
   itself.
 * `Set.MapsTo.image_inter_eq_preimage_of_involutive`: such an involution carries `s ∩ t` onto
   `s ∩ f ⁻¹' t`.
+* `Set.mapsTo_preimage_of_apply_eq`: a map compatible with maps `q` and `q'` to a common type
+  carries preimages under `q` into preimages under `q'`.
 * `Function.Injective.mapsTo_of_eq_self`: an injective self-map fixing every point outside a
   set `K` maps `K` into itself.
 * `Function.Injective.apply_mem_iff_of_eq_self`: such a map preserves membership in every set
@@ -46,6 +48,12 @@ theorem MapsTo.image_inter_eq_preimage_of_involutive {f : α → α} {s : Set α
     (hf : Function.Involutive f) (h : MapsTo f s s) : f '' (s ∩ t) = s ∩ f ⁻¹' t := by
   have hs : f ⁻¹' s = s := by rw [← hf.image_eq_preimage_symm, h.image_eq_of_involutive hf]
   rw [hf.image_eq_preimage_symm, preimage_inter, hs]
+
+/-- A map `f` compatible with maps `q` and `q'` to a common type, that is with `q' ∘ f = q`,
+carries preimages under `q` into preimages under `q'`. -/
+theorem mapsTo_preimage_of_apply_eq {γ : Type*} (f : α → β) {q : α → γ} {q' : β → γ}
+    (hf : ∀ x, q' (f x) = q x) (S : Set γ) : MapsTo f (q ⁻¹' S) (q' ⁻¹' S) :=
+  fun x hx ↦ by rw [mem_preimage, hf]; exact hx
 
 end Set
 
