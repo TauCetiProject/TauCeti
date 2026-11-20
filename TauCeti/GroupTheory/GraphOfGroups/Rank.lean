@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Cycle.SpanningTree
+public import TauCeti.Combinatorics.Graph.Serre.Parallel
 public import TauCeti.GroupTheory.Coprod.Finiteness
 public import TauCeti.GroupTheory.GraphOfGroups.GraphPresentation
 public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
@@ -30,7 +31,9 @@ particular generating family. Loops and parallel edges remain distinct basis ind
 For a connected graph with finitely many vertices whose path group is finitely generated, a
 spanning tree has one positive dart fewer than there are vertices, which gives the Euler form
 of the rank: the rank plus the number of vertices is the number of geometric edges plus one.
-In particular the path group of a rose has rank its number of petals.
+In particular the path group of a rose has rank its number of petals, and the fundamental group of
+`n` parallel edges, `0 < n`, has rank `n - 1`, both as a reduced path group and in the
+presentation relative to any spanning tree.
 
 The fundamental group of a graph of groups with finitely many vertices and geometric edges and
 finitely generated vertex groups is finitely generated, relative to any set of darts. For a
@@ -123,6 +126,28 @@ theorem rank_pathGroup_rose (α : Type*) (v : (rose α).V) [Group.FG (PathGroup 
     Group.rank (PathGroup (rose α) v) = Nat.card α := by
   have h := (rose_connected α).rank_pathGroup_add_card v
   rwa [Nat.card_congr (roseGeomEdgeEquiv α), Nat.card_unique, add_left_inj] at h
+
+/-- The reduced path group of `n` parallel edges, `0 < n`, has rank `n - 1`. -/
+theorem rank_pathGroup_parallelGraph_add_one {α : Type*} [Nonempty α] (v : (parallelGraph α).V)
+    [Group.FG (PathGroup (parallelGraph α) v)] :
+    Group.rank (PathGroup (parallelGraph α) v) + 1 = Nat.card α := by
+  have h := (parallelGraph_connected_iff.mpr ‹Nonempty α›).rank_pathGroup_add_card v
+  have hV : Nat.card (parallelGraph α).V = 2 := Nat.card_eq_fintype_card.trans rfl
+  rw [hV, Nat.card_congr (parallelGraphGeomEdgeEquiv α)] at h
+  omega
+
+/-- Relative to any spanning tree, the presentation of the fundamental group of `n` parallel
+edges has rank `n - 1`. -/
+theorem rank_graphPresentation_parallelGraph_add_one {α : Type*}
+    (T : (parallelGraph α).SpanningTree)
+    [Group.FG ((parallelGraph α).GraphPresentation T.darts)] :
+    Group.rank ((parallelGraph α).GraphPresentation T.darts) + 1 = Nat.card α := by
+  have : Nonempty α := parallelGraph_connected_iff.mp ((nonempty_spanningTree_iff _).mp ⟨T⟩)
+  have : Group.FG (PathGroup (parallelGraph α) false) :=
+    Group.fg_of_surjective (f := (T.pathGroupEquivGraphPresentation false).symm.toMonoidHom)
+      (MulEquiv.surjective _)
+  rw [← Group.rank_congr (T.pathGroupEquivGraphPresentation false)]
+  exact rank_pathGroup_parallelGraph_add_one false
 
 end TauCeti.SerreGraph
 
