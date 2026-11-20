@@ -96,7 +96,7 @@ This is the form `simp` can use: the summand index `i` is read off the type of `
 @[simp]
 theorem internalProjection_apply_of_ne (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤) {i j : ι}
     (hij : i ≠ j) (x : Q i) : internalProjection hQi hQt j (x : M) = 0 :=
-  internalProjection_apply_eq_zero_of_mem_of_ne hQi hQt hij x.2
+  internalProjection_apply_eq_zero_of_mem_of_ne hQi hQt hij x.property
 
 /-- The projection onto `Q i` is surjective, being the identity on `Q i`. -/
 theorem internalProjection_surjective (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤) (i : ι) :

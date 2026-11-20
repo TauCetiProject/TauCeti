@@ -90,12 +90,12 @@ real embedding at `w` is the sign of their cohomological Hilbert invariant at `w
 theorem hilbertSymbol_unitAtRealPlace_eq_hilbertSign (w : {w : InfinitePlace K // w.IsReal})
     (a b : Kˣ) :
     hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) =
-      hilbertSign (ClassFieldTheory.infiniteHilbertInvariantAt K w.1 a b) := by
-  let e := Completion.ringEquivRealOfIsReal w.2
-  have : CharZero w.1.Completion :=
+      hilbertSign (ClassFieldTheory.infiniteHilbertInvariantAt K w.val a b) := by
+  let e := Completion.ringEquivRealOfIsReal w.property
+  have : CharZero w.val.Completion :=
     charZero_of_injective_algebraMap (algebraMap K _).injective
-  let : Invertible (2 : w.1.Completion) := invertibleOfNonzero two_ne_zero
-  rw [ClassFieldTheory.infiniteHilbertInvariantAt_of_isReal K w.2,
+  let : Invertible (2 : w.val.Completion) := invertibleOfNonzero two_ne_zero
+  rw [ClassFieldTheory.infiniteHilbertInvariantAt_of_isReal K w.property,
     ← hilbertSymbol_completion_eq_unitAtRealPlace]
   -- The invariant reads the Kummer-cup class over `K_w` through the injective map
   -- `Br K_w ≃ Br ℝ ≃ ZMod 2`.
@@ -129,7 +129,7 @@ theorem finprod_hilbertSymbol_mul_prod_hilbertSymbol_eq_hilbertSign (a b : Kˣ) 
     rw [← Fintype.prod_subtype_mul_prod_subtype (fun w : InfinitePlace K ↦ w.IsReal),
       Fintype.prod_eq_one (fun w : {w : InfinitePlace K // ¬w.IsReal} ↦ _) fun w ↦ by
         rw [ClassFieldTheory.infiniteHilbertInvariantAt_eq_zero_of_isComplex K
-          (not_isReal_iff_isComplex.mp w.2), hilbertSign_zero], mul_one]
+          (not_isReal_iff_isComplex.mp w.property), hilbertSign_zero], mul_one]
     exact Fintype.prod_congr _ _ fun w ↦ hilbertSymbol_unitAtRealPlace_eq_hilbertSign w a b
 
 end TauCeti

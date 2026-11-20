@@ -123,20 +123,20 @@ noncomputable def contMDiffMapEquiv :
     { toFun := fun g ↦ ⟨fun i ↦ ⟨g ∘ D.toGlueData.ι i,
         g.contMDiff.comp ((h.contMDiff_ι i).of_le hm)⟩, fun i j x ↦
           congrArg g (D.glue_condition_apply i j x).symm⟩
-      invFun := fun f ↦ h.descContMDiffMap hm f.1 f.2
+      invFun := fun f ↦ h.descContMDiffMap hm f.val f.property
       left_inv := fun g ↦ D.contMDiffMap_ext fun i x ↦ h.descContMDiffMap_ι hm _ _ i x
       right_inv := fun f ↦ by
         apply Subtype.ext
         funext i
         ext x
-        exact h.descContMDiffMap_ι hm f.1 f.2 i x }
+        exact h.descContMDiffMap_ι hm f.val f.property i x }
 
 /-- The forward universal-property equivalence restricts a map to each piece. -/
 @[simp]
 theorem contMDiffMapEquiv_apply :
     letI := D.chartedSpace H
     ∀ (g : C^m⟮I, D.toGlueData.glued; I', N⟯) (i : D.J) (x : D.U i),
-      (h.contMDiffMapEquiv hm g).1 i x = g (D.toGlueData.ι i x) := by
+      (h.contMDiffMapEquiv hm g).val i x = g (D.toGlueData.ι i x) := by
   intros
   rfl
 
@@ -146,8 +146,8 @@ theorem contMDiffMapEquiv_symm_apply_ι
     (f : {f : ∀ i, C^m⟮I, D.U i; I', N⟯ //
       ∀ i j (x : D.V (i, j)), f i (D.f i j x) = f j (D.f j i (D.t i j x))})
     (i : D.J) (x : D.U i) :
-    (h.contMDiffMapEquiv hm).symm f (D.toGlueData.ι i x) = f.1 i x :=
-  h.descContMDiffMap_ι hm f.1 f.2 i x
+    (h.contMDiffMapEquiv hm).symm f (D.toGlueData.ι i x) = f.val i x :=
+  h.descContMDiffMap_ι hm f.val f.property i x
 
 variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
   {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''}

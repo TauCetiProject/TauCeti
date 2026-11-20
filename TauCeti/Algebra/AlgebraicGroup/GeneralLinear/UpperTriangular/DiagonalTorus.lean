@@ -55,10 +55,9 @@ theorem diagonalTorusPoints_mem
         (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
         (CommAlgCat.of R A) := by
   rw [mem_definingPointsSubgroup_iff,
-    GeneralLinear.pointsMulEquiv_diagonalTorusPoints, UpperTriangularGroup.mem_iff]
-  intro i j hji
-  rw [diagGL_coe]
-  exact Matrix.diagonal_apply_ne _ (ne_of_gt hji)
+    GeneralLinear.pointsMulEquiv_diagonalTorusPoints, UpperTriangularGroup.mem_iff,
+    diagGL_coe]
+  exact Matrix.blockTriangular_diagonal _
 
 end Points
 
@@ -83,7 +82,7 @@ noncomputable def diagonalTorusCoordinateMap :
 
 /-- Precomposing the factored diagonal-torus coordinate morphism with the upper-triangular
 quotient map recovers the ambient diagonal-torus coordinate morphism. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem coordinateMap_comp_diagonalTorusCoordinateMap :
     coordinateMap R n ≫ diagonalTorusCoordinateMap R n =
       GeneralLinear.diagonalTorusCoordinateMap (R := R) (N := n) := by
@@ -114,7 +113,7 @@ theorem diagonalTorus_def :
 
 /-- Composing the diagonal torus inside the upper-triangular subgroup with its inclusion into
 `GLₙ` gives the standard diagonal torus of `GLₙ`. -/
-@[simp]
+@[reassoc (attr := simp)]
 theorem diagonalTorus_comp_inclusion :
     diagonalTorus R n ≫ inclusion R n =
       GeneralLinear.diagonalTorus (R := R) (N := n) := by
@@ -129,7 +128,7 @@ variable {A : Type w} [CommRing A] [Algebra R A]
 
 /-- Under the upper-triangular and general-linear point equivalences, the factored coordinate
 morphism gives the same diagonal matrix as the ambient diagonal-torus morphism. -/
-@[simp]
+-- Not `@[simp]`: `simp` never fires it, even on its own left-hand side; use it by name.
 theorem pointsMulEquiv_diagonalTorusCoordinateMap
     (f : WithConv
       (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin n) →₀ ℤ)) →ₐ[R] A)) :
