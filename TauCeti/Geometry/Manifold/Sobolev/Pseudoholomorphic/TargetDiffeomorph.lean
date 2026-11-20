@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.PullbackGroupoid
 
 /-!
@@ -74,21 +75,6 @@ private theorem extendTrans_eventuallyEq_comp (happly : ∀ y ∈ ψ.source, ψ 
       ψ'.extendTrans I (Homeomorph.refl E) ∘ Ψ :=
   eventually_of_mem (ψ.open_source.mem_nhds hy) fun w hw ↦ by simp [happly w hw]
 
-omit [IsManifold I ∞ M] [IsManifold I ∞ M'] in
-/-- **The chain rule for corresponding charts.** For charts with `ψ = ψ' ∘ Ψ` on the source of `ψ`,
-the differential of `ψ` read in `E` is that of `ψ'` after the differential of `Ψ`. -/
-private theorem mfderiv_extendTrans_eq_comp (hψ' : ψ' ∈ IsManifold.maximalAtlas I ∞ M')
-    (hsource : ψ.source = Ψ ⁻¹' ψ'.source) (happly : ∀ y ∈ ψ.source, ψ y = ψ' (Ψ y)) {y : M}
-    (hy : y ∈ ψ.source) :
-    mfderiv I 𝓘(ℝ, E) (ψ.extendTrans I (Homeomorph.refl E)) y =
-      (mfderiv I 𝓘(ℝ, E) (ψ'.extendTrans I (Homeomorph.refl E)) (Ψ y)).comp
-        (mfderiv I I Ψ y) := by
-  have hΨy : Ψ y ∈ ψ'.source := by rw [hsource] at hy; exact hy
-  rw [(extendTrans_eventuallyEq_comp happly hy).mfderiv_eq]
-  exact mfderiv_comp y
-    ((ψ'.contMDiffAt_extendTrans hψ' contDiff_id hΨy).mdifferentiableAt (by simp))
-    (Ψ.mdifferentiable (by simp) y)
-
 end Charts
 
 /-! ### Invariance of the weak equation -/
@@ -138,8 +124,8 @@ private theorem isWeakCauchyRiemannOn_diffeomorph_comp_iff (Ψ : M ≃ₘ⟮I, I
   all_goals
     have hzD : z ∈ φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source) := interior_subset hz
     have hy : u (φ.symm z) ∈ ψ.source := hzD.2.2
-  · have hΨy : Ψ (u (φ.symm z)) ∈ ψ'.source := by rw [hsource] at hy; exact hy
-    simp only [ContMDiffAlmostComplexStructureFamily.chartField_apply, Function.comp_apply]
+    have hΨy : Ψ (u (φ.symm z)) ∈ ψ'.source := hsource.subset hy
+  · simp only [ContMDiffAlmostComplexStructureFamily.chartField_apply, Function.comp_apply]
     exact ((J.freeze (φ.symm z)).chartPushforward_eq_of_eventuallyEq_comp (J'.freeze (φ.symm z))
       (by simpa [χ] using hy) (by simpa [χ'] using hΨy) (extendTrans_eventuallyEq_comp happly hy)
       (Ψ.mdifferentiable (by simp) _)
@@ -150,7 +136,6 @@ private theorem isWeakCauchyRiemannOn_diffeomorph_comp_iff (Ψ : M ≃ₘ⟮I, I
         (χ'.map_source (by simpa [χ'] using hΨy))).mdifferentiableAt (by simp))
       (hJ (φ.symm z) _)).symm
   · set y := u (φ.symm z)
-    have hΨy : Ψ y ∈ ψ'.source := by rw [hsource] at hy; exact hy
     have hχy : y ∈ χ.source := by simpa [χ] using hy
     have hχ'y : Ψ y ∈ χ'.source := by simpa [χ'] using hΨy
     have hs : χ.symm (χ y) = y := χ.left_inv hχy
@@ -165,9 +150,10 @@ private theorem isWeakCauchyRiemannOn_diffeomorph_comp_iff (Ψ : M ≃ₘ⟮I, I
       rintro _ _ rfl rfl
       congr 1
       rw [← hν]
-      exact (congrArg (fun L : E →L[ℝ] E ↦
-        L (ν.val.tangentHom (φ.symm z, y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm z (1 : ℂ))))
-          (mfderiv_extendTrans_eq_comp hψ' hsource happly hy)).symm
+      exact mfderiv_apply_mfderiv_of_eventuallyEq_comp
+        (extendTrans_eventuallyEq_comp happly hy).symm
+        ((ψ'.contMDiffAt_extendTrans hψ' contDiff_id hΨy).mdifferentiableAt (by simp))
+        (Ψ.mdifferentiable (by simp) y) _
     exact key _ _ hs' hs
 
 /-- **Invariance under diffeomorphisms of the target.** Let `Ψ : M → M'` be a smooth
@@ -184,8 +170,7 @@ theorem _root_.Diffeomorph.isWeakPseudoholomorphicOn_diffeomorph_comp_iff (Ψ : 
   simp only [isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn]
   refine and_congr ?_ ⟨fun h φ hφ ψ hψ ↦ ?_, fun h φ hφ ψ' hψ' ↦ ?_⟩
   · -- Continuity transfers along the homeomorphism `Ψ`.
-    refine ⟨fun h ↦ ?_, fun h ↦ Ψ.continuous.comp_continuousOn h⟩
-    exact (Ψ.symm.continuous.comp_continuousOn h).congr fun x _ ↦ by simp
+    exact Ψ.toHomeomorph.comp_continuousOn_iff u s
   · -- Transport the chart `ψ` of `M` to the chart `ψ ∘ Ψ⁻¹` of `M'`.
     have hψ' := Ψ.symm.transOpenPartialHomeomorph_mem_maximalAtlas hψ
     refine (isWeakCauchyRiemannOn_diffeomorph_comp_iff Ψ hJ hν hψ hψ' ?_ (fun y _ ↦ ?_) φ).1

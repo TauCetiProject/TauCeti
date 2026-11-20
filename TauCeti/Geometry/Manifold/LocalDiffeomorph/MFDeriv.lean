@@ -37,6 +37,7 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
 * `OpenPartialHomeomorph.mfderiv_symm_apply_mfderiv_apply`,
   `OpenPartialHomeomorph.mfderiv_apply_mfderiv_symm_apply`: where an open partial homeomorphism
   and its inverse are differentiable, their differentials are mutually inverse.
+* `OpenPartialHomeomorph.surjective_mfderiv`: there, the differential is surjective.
 * `PartialDiffeomorph.mfderivWithin_source`: the differential within the source is the differential.
 * `PartialDiffeomorph.mfderiv_symm_apply_mfderiv_apply`: the differential of the inverse undoes the
   differential.
@@ -95,6 +96,20 @@ theorem mfderiv_apply_mfderiv_symm_apply (Φ : OpenPartialHomeomorph M N) {y : N
     (hΦs : MDifferentiableAt J I Φ.symm y) (v : TangentSpace J y) :
     mfderiv I J Φ (Φ.symm y) (mfderiv J I Φ.symm y v) = v :=
   Φ.symm.mfderiv_symm_apply_mfderiv_apply hy hΦs hΦ v
+
+/-- The differential of an open partial homeomorphism is surjective at a point of the source where
+it and its inverse are differentiable. Unlike
+`OpenPartialHomeomorph.MDifferentiable.mfderiv_surjective`, this needs differentiability only at
+the two points. -/
+theorem surjective_mfderiv (Φ : OpenPartialHomeomorph M N) {x : M} (hx : x ∈ Φ.source)
+    (hΦ : MDifferentiableAt I J Φ x) (hΦs : MDifferentiableAt J I Φ.symm (Φ x)) :
+    Function.Surjective (mfderiv I J Φ x) := by
+  intro w
+  have h := Φ.mfderiv_apply_mfderiv_symm_apply (Φ.map_source hx) (by rwa [Φ.left_inv hx]) hΦs w
+  -- Replace the base point `Φ⁻¹ (Φ x)` by `x`, together with its tangent space.
+  generalize hz : Φ.symm (Φ x) = z at h
+  obtain rfl : z = x := hz.symm.trans (Φ.left_inv hx)
+  exact ⟨_, h⟩
 
 end OpenPartialHomeomorph
 
