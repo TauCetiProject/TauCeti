@@ -110,7 +110,7 @@ theorem sphereCircleHeight_sphereCircleReflection (huv : ⟪v, (u : E)⟫_ℝ = 
   rw [LinearIsometryEquiv.inner_map_map]
 
 /-- A space of dimension `2 + 1` is finite-dimensional, so its unit sphere is compact. -/
-local instance : FiniteDimensional ℝ E :=
+local instance finiteDimensional_of_fact_finrank_eq_three : FiniteDimensional ℝ E :=
   .of_fact_finrank_eq_succ 2
 
 omit [Fact (finrank ℝ E = 2 + 1)] in
