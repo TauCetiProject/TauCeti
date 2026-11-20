@@ -15,6 +15,7 @@ import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 
 /-!
 # Orthogonal complements of bilinear forms
@@ -610,13 +611,11 @@ variable {B : LinearMap.BilinForm R M}
 /-- Two vectors whose value under an alternating form is a non-zero-divisor are linearly
 independent. -/
 theorem IsAlt.linearIndependent_pair_of_mem_nonZeroDivisors (hB : B.IsAlt) {e f : M}
-    (hd : B e f ∈ nonZeroDivisors R) : LinearIndependent R ![e, f] := by
-  refine LinearIndependent.pair_iff.2 fun s t hst => ?_
-  have h1 := congrArg (B e) hst
-  have h2 := congrArg (B f) hst
-  simp only [map_add, map_smul, smul_eq_mul, hB.self_eq_zero, ← hB.neg_eq e f, mul_zero,
-    zero_add, add_zero, map_zero, mul_neg, neg_eq_zero] at h1 h2
-  exact ⟨mem_nonZeroDivisors_iff_right.1 hd s h2, mem_nonZeroDivisors_iff_right.1 hd t h1⟩
+    (hd : B e f ∈ nonZeroDivisors R) : LinearIndependent R ![e, f] :=
+  -- The Gram matrix of `![e, f]` is `B e f • !![0, 1; -1, 0]`, of determinant `1`.
+  linearIndependent_of_isUnit_det (B := B) hd (G := !![0, 1; -1, 0])
+    (fun i j => by fin_cases i <;> fin_cases j <;> simp [hB.self_eq_zero, ← hB.neg_eq e f])
+    (by simp)
 
 /-- **A pair whose value divides its pairings splits off orthogonally.** If `B e f` is a
 non-zero-divisor dividing every `B e u` and every `B f u`, then the span of `e` and `f` and its
