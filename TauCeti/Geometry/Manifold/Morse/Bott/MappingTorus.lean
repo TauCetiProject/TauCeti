@@ -170,8 +170,7 @@ theorem isNondegenerateCriticalSubmanifold_closedOrbitEmbedding (hx : IsPeriodic
     · rw [hu2, Prod.smul_snd, smul_zero]
   refine ⟨a, ?_⟩
   rw [hu', map_smul, ← timeVectorField_mk]
-  -- The domain of the velocity is `ℝ` only up to the tangent space synonym, which blocks rewriting
-  -- with `ContinuousLinearMap.smulRight_apply`; `exact` sees through it.
+  -- `exact` sees through the tangent space synonym `TangentSpace 𝓘(ℝ) t = ℝ` that blocks `rw`.
   exact ContinuousLinearMap.smulRight_apply.trans
     (congrArg (· • _) (one_apply_eq_self (F := ℝ →L[ℝ] ℝ) a))
 
