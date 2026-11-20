@@ -26,9 +26,9 @@ family of Fredholm operators are compared, as soon as it comes from a *reduction
 * `A (r e) + M w = 0` whenever `T e + σ w = 0`.
 
 Under these conditions, `T` has the kernel chart with stabilizer `σ` and coordinate `(e, w) ↦ r e`
-(`ContinuousLinearMap.isInvertible_coprod_prod_comp_fst`), and every linear map `A` of
+(`ContinuousLinearMap.isInvertible_prod_coprod_comp_fst`), and every linear map `A` of
 finite-dimensional spaces has the kernel chart with stabilizer the identity of `W` and coordinate
-`(v, w) ↦ v` (`ContinuousLinearMap.isInvertible_coprod_id_prod_fst`). Both charts take values in
+`(v, w) ↦ v` (`ContinuousLinearMap.isInvertible_prod_coprod_id_fst`). Both charts take values in
 the line `det V ⊗ (det W)^*`, and the first reads `v ∈ det T` as `det M` times the reading of
 `ρ v` in the second
 (`ContinuousLinearMap.detLineChartEquiv_eq_det_smul_detLineChartEquiv_detLineCongrKerCoker`). The
@@ -48,7 +48,7 @@ sign of `det (M x₀)` near `x₀`, so it does not change the orientations.
 
 ## Main results
 
-* `ContinuousLinearMap.isInvertible_coprod_prod_comp_fst`: a reduction gives a kernel chart of
+* `ContinuousLinearMap.isInvertible_prod_coprod_comp_fst`: a reduction gives a kernel chart of
   `T`.
 * `ContinuousLinearMap.detLineChartEquiv_eq_det_smul_detLineChartEquiv_detLineCongrKerCoker`: the
   kernel charts of `T` and `A` are related by `ρ` and the factor `det M`.
@@ -82,7 +82,7 @@ variable {E F V W : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAdd
 /-- The pair `(v, w) ↦ (A v + w, v)` is invertible, so every linear map `A` of finite-dimensional
 spaces has the kernel chart stabilizing by the identity of its target, with coordinate the first
 factor. -/
-theorem isInvertible_coprod_id_prod_fst (A : V →L[ℝ] W) :
+theorem isInvertible_prod_coprod_id_fst (A : V →L[ℝ] W) :
     ((A.coprod (ContinuousLinearMap.id ℝ W)).prod (fst ℝ V W)).IsInvertible := by
   refine isInvertible_iff_bijective.2 ⟨fun x y hxy ↦ ?_, fun y ↦ ⟨(y.2, y.1 - A y.2), ?_⟩⟩
   · simp only [prod_apply, coprod_apply, id_apply, coe_fst', Prod.mk.injEq] at hxy
@@ -97,7 +97,7 @@ variable {T : E →L[ℝ] F} {A : V →L[ℝ] W} {r : E →L[ℝ] V} {σ : W →
 
 omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ W] in
 /-- The pair `(e, w) ↦ (T e + σ w, r e)` of a reduction is injective. -/
-private theorem injective_coprod_prod_comp_fst (hM : Function.Injective M)
+private theorem injective_prod_coprod_comp_fst (hM : Function.Injective M)
     (hK : ∀ e w, T e + σ w = 0 → A (r e) + M w = 0) (heK : ∀ k, (eK k : V) = r k) :
     Function.Injective ((T.coprod σ).prod (r ∘L fst ℝ E W)) := by
   refine (injective_iff_map_eq_zero _).2 fun ⟨e, w⟩ h ↦ ?_
@@ -150,12 +150,12 @@ variable [CompleteSpace E] [CompleteSpace F]
 `eC : coker T ≃ coker A` sending the class of `σ w` to that of `M w`, and suppose
 `A (r e) + M w = 0` whenever `T e + σ w = 0`. Then `(e, w) ↦ (T e + σ w, r e)` is invertible: `σ`
 stabilizes `T`, with kernel coordinate `r`. -/
-theorem isInvertible_coprod_prod_comp_fst (hr : Function.Surjective r)
+theorem isInvertible_prod_coprod_comp_fst (hr : Function.Surjective r)
     (hM : Function.Bijective M) (hK : ∀ e w, T e + σ w = 0 → A (r e) + M w = 0)
     (heK : ∀ k, (eK k : V) = r k)
     (heC : ∀ w, eC (Submodule.Quotient.mk (σ w)) = Submodule.Quotient.mk (M w)) :
     ((T.coprod σ).prod (r ∘L fst ℝ E W)).IsInvertible := by
-  refine isInvertible_iff_bijective.2 ⟨injective_coprod_prod_comp_fst hM.1 hK heK, ?_⟩
+  refine isInvertible_iff_bijective.2 ⟨injective_prod_coprod_comp_fst hM.1 hK heK, ?_⟩
   rintro ⟨f, v⟩
   -- The class of `f` is that of some `σ w₁`, so `f = T e₂ + σ w₁`; correct the coordinate
   -- `r e₂` by a pair `(e₃, w₃)` of the stabilized kernel with `r e₃ = v - r e₂`.
@@ -175,7 +175,7 @@ omit [CompleteSpace E] [CompleteSpace F] in
 kernel as `v`; its kernel section sends `v` to `(v, -A v)`. -/
 private theorem kerSection_coprod_id_fst_apply (v : V) :
     (A.coprod (ContinuousLinearMap.id ℝ W)).kerSection (fst ℝ V W) v = (v, -A v) := by
-  have h := isInvertible_coprod_id_prod_fst A
+  have h := isInvertible_prod_coprod_id_fst A
   refine h.injective ?_
   rw [prod_apply_kerSection h]
   simp
@@ -187,10 +187,10 @@ private theorem exists_kerEquiv (hK : ∀ e w, T e + σ w = 0 → A (r e) + M w 
     (h : ((T.coprod σ).prod (r ∘L fst ℝ E W)).IsInvertible) :
     ∃ Φ : (T.coprod σ).ker ≃ₗ[ℝ] (A.coprod (ContinuousLinearMap.id ℝ W)).ker,
       (∀ x, (Φ x : V × W) = (r (x : E × W).1, M (x : E × W).2)) ∧
-        Φ.trans (kerEquivOfProd _ _ (isInvertible_coprod_id_prod_fst A)).toLinearEquiv.symm =
+        Φ.trans (kerEquivOfProd _ _ (isInvertible_prod_coprod_id_fst A)).toLinearEquiv.symm =
           (kerEquivOfProd _ _ h).toLinearEquiv.symm := by
   refine ⟨(kerEquivOfProd _ _ h).toLinearEquiv.symm.trans
-    (kerEquivOfProd _ _ (isInvertible_coprod_id_prod_fst A)).toLinearEquiv, fun x ↦ ?_,
+    (kerEquivOfProd _ _ (isInvertible_prod_coprod_id_fst A)).toLinearEquiv, fun x ↦ ?_,
     by ext x; simp⟩
   have hx := hK (x : E × W).1 (x : E × W).2 (by simpa using x.2)
   have h₁ : (kerEquivOfProd _ _ h).toLinearEquiv.symm x = r (x : E × W).1 :=
@@ -262,35 +262,9 @@ private theorem detLineCongrKerCoker_detLineStabilizationEquiv {Mₑ : W ≃ₗ[
   rw [detLineStabilizationEquiv_apply, detLineStabilizationEquiv_apply, LinearEquiv.map_smul,
     hsign, detLineCongrKerCoker_detLineCoprodEquiv hMₑ heK heC hΦ]
 
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ W] in
-/-- Transporting `t ∈ det K ⊗ (det W)^*` along `Φ : K ≃ K'` and an automorphism `M` of `W`, and
-then reading `K'` in coordinates `k' : K' ≃ V`, is reading `K` in the coordinates `Φ` followed by
-`k'`, divided by `det M`. -/
-private theorem rTensor_congr_eq_inv_det_smul {K K' : Type*} [AddCommGroup K] [Module ℝ K]
-    [AddCommGroup K'] [Module ℝ K'] {Φ : K ≃ₗ[ℝ] K'} {k : K ≃ₗ[ℝ] V} {k' : K' ≃ₗ[ℝ] V}
-    (hk : Φ.trans k' = k) (Mₑ : W ≃ₗ[ℝ] W)
-    (t : TauCeti.detLine ℝ K ⊗[ℝ] Dual ℝ (TauCeti.detLine ℝ W)) :
-    LinearEquiv.rTensor _ k'.detLineCongr
-        (TensorProduct.congr Φ.detLineCongr Mₑ.detLineCongr.symm.dualMap t) =
-      (LinearMap.det (Mₑ : W →ₗ[ℝ] W))⁻¹ • LinearEquiv.rTensor _ k.detLineCongr t := by
-  have hdet : LinearMap.det (Mₑ : W →ₗ[ℝ] W) ≠ 0 := (LinearEquiv.isUnit_det' Mₑ).ne_zero
-  have hdual (φ : Dual ℝ (TauCeti.detLine ℝ W)) :
-      Mₑ.detLineCongr.symm.dualMap φ = (LinearMap.det (Mₑ : W →ₗ[ℝ] W))⁻¹ • φ := by
-    refine LinearMap.ext fun y ↦ ?_
-    have hy : Mₑ.detLineCongr.symm y = (LinearMap.det (Mₑ : W →ₗ[ℝ] W))⁻¹ • y := by
-      rw [eq_inv_smul_iff₀ hdet, ← LinearEquiv.detLineCongr_apply_eq_det_smul,
-        LinearEquiv.apply_symm_apply]
-    simp only [LinearEquiv.dualMap_apply, hy, map_smul, smul_eq_mul, LinearMap.smul_apply]
-  induction t using TensorProduct.inductionOn with
-  | tmul a φ =>
-    rw [TensorProduct.congr_tmul, LinearEquiv.rTensor_tmul, LinearEquiv.rTensor_tmul, hdual,
-      TensorProduct.tmul_smul, ← LinearEquiv.trans_apply, ← LinearEquiv.detLineCongr_trans, hk]
-  | add x y hx hy => rw [LinearEquiv.map_add, LinearEquiv.map_add, LinearEquiv.map_add, hx, hy,
-      smul_add]
-
 omit [CompleteSpace E] [CompleteSpace F] in
 /-- **The kernel charts of a reduction.** In the situation of
-`ContinuousLinearMap.isInvertible_coprod_prod_comp_fst`, the kernel chart of `T` with stabilizer
+`ContinuousLinearMap.isInvertible_prod_coprod_comp_fst`, the kernel chart of `T` with stabilizer
 `σ` and coordinate `(e, w) ↦ r e` reads `v ∈ det T` as `det M` times the reading of
 `ρ v = LinearMap.detLineCongrKerCoker eK eC v ∈ det A` in the kernel chart of `A` with stabilizer
 the identity of `W` and coordinate `(v, w) ↦ v`. Both charts take values in `det V ⊗ (det W)^*`. -/
@@ -302,18 +276,22 @@ theorem detLineChartEquiv_eq_det_smul_detLineChartEquiv_detLineCongrKerCoker
     detLineChartEquiv T σ (r ∘L fst ℝ E W) h v =
       LinearMap.det (M : W →ₗ[ℝ] W) •
         detLineChartEquiv A (ContinuousLinearMap.id ℝ W) (fst ℝ V W)
-          (isInvertible_coprod_id_prod_fst A) (LinearMap.detLineCongrKerCoker eK eC v) := by
+          (isInvertible_prod_coprod_id_fst A) (LinearMap.detLineCongrKerCoker eK eC v) := by
   have := finiteDimensional_ker_of_isInvertible_prod_coprod h
   obtain ⟨Mₑ, hMₑ⟩ : ∃ Mₑ : W ≃ₗ[ℝ] W, (Mₑ : W →ₗ[ℝ] W) = M :=
     ⟨LinearEquiv.ofBijective (M : W →ₗ[ℝ] W) hM, rfl⟩
   obtain ⟨Φ, hΦ, hkΦ⟩ := exists_kerEquiv hK h
   obtain ⟨t, rfl⟩ :=
     (detLineStabilizationEquiv T σ (surjective_of_isInvertible_prod h)).surjective v
-  have hdet : LinearMap.det (M : W →ₗ[ℝ] W) ≠ 0 := hMₑ ▸ (LinearEquiv.isUnit_det' Mₑ).ne_zero
+  -- Reading after `Φ` in the coordinates of `A` is reading in those of `T`; the dual factor is
+  -- rescaled by `det M⁻¹`.
   rw [detLineCongrKerCoker_detLineStabilizationEquiv hMₑ heK heC hΦ _
-      (surjective_of_isInvertible_prod (isInvertible_coprod_id_prod_fst A)),
+      (surjective_of_isInvertible_prod (isInvertible_prod_coprod_id_fst A)),
     detLineChartEquiv_detLineStabilizationEquiv, detLineChartEquiv_detLineStabilizationEquiv,
-    rTensor_congr_eq_inv_det_smul hkΦ, ← hMₑ, smul_inv_smul₀ (hMₑ ▸ hdet)]
+    ← LinearEquiv.trans_apply, LinearEquiv.congr_trans_rTensor, ← LinearEquiv.detLineCongr_trans,
+    hkΦ, ← LinearEquiv.lTensor_trans_rTensor, LinearEquiv.trans_apply,
+    LinearEquiv.lTensor_detLineCongr_symm_dualMap_apply, LinearEquiv.map_smul, smul_smul, ← hMₑ,
+    LinearEquiv.det_mul_det_symm, one_smul]
 
 end ContinuousLinearMap
 
@@ -333,7 +311,7 @@ variable {E F V W X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Complet
 /-- **Reductions transport coherent families.** Let `T x : E →L[ℝ] F` and `A x : V →L[ℝ] W` be
 families continuous within `s` at `x₀`, with `V`, `W` finite-dimensional, and let
 `eK x : ker (T x) ≃ ker (A x)` and `eC x : coker (T x) ≃ coker (A x)` come from a reduction
-(`ContinuousLinearMap.isInvertible_coprod_prod_comp_fst`): a fixed map `r : E →L[ℝ] V` onto `V`
+(`ContinuousLinearMap.isInvertible_prod_coprod_comp_fst`): a fixed map `r : E →L[ℝ] V` onto `V`
 restricting to `eK x`, a fixed stabilization `σ : W →L[ℝ] F` and a family `M x` of endomorphisms
 of `W`, continuous within `s` at `x₀` and invertible at `x₀`, with `eC x [σ w] = [M x w]` and
 `A x (r e) + M x w = 0` whenever `T x e + σ w = 0`. If `u` is coherent for `A` within `s` at
@@ -361,17 +339,17 @@ theorem IsDetLineCoherentWithinAt.detLineCongrKerCoker_symm
     have hunit : IsUnit (M x : W →ₗ[ℝ] W) := (LinearMap.isUnit_iff_isUnit_det _).2
       (isUnit_iff_ne_zero.2 (left_ne_zero_of_mul hx.ne'))
     exact (Module.End.isUnit_iff _).1 hunit
-  have h₀ := isInvertible_coprod_prod_comp_fst hr hM₀ (hK x₀) (heK x₀) (heC x₀)
+  have h₀ := isInvertible_prod_coprod_comp_fst hr hM₀ (hK x₀) (heK x₀) (heC x₀)
   -- `T x₀` is Fredholm, its kernel and cokernel being those of the linear map `A x₀` of
   -- finite-dimensional spaces.
   have hF : IsFredholm (T x₀) := (isFredholm_iff_finite_ker_coker (T x₀)).2
     ⟨(eK x₀).symm.finiteDimensional, (eC x₀).symm.finiteDimensional⟩
   refine isDetLineCoherentWithinAt_of_eventually_sameRay hT hF
     ((LinearEquiv.map_ne_zero_iff _).2 hu.ne_zero) h₀ ?_
-  filter_upwards [hu.eventually_sameRay hA (isInvertible_coprod_id_prod_fst (A x₀)), hdet]
+  filter_upwards [hu.eventually_sameRay hA (isInvertible_prod_coprod_id_fst (A x₀)), hdet]
     with x hux hx
   obtain ⟨_, hsr⟩ := hux
-  refine ⟨isInvertible_coprod_prod_comp_fst hr (hbij hx) (hK x) (heK x) (heC x), ?_⟩
+  refine ⟨isInvertible_prod_coprod_comp_fst hr (hbij hx) (hK x) (heK x) (heC x), ?_⟩
   rw [detLineChartEquiv_eq_det_smul_detLineChartEquiv_detLineCongrKerCoker (hbij hx) (hK x)
       (heK x) (heC x), detLineChartEquiv_eq_det_smul_detLineChartEquiv_detLineCongrKerCoker hM₀
       (hK x₀) (heK x₀) (heC x₀), LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]

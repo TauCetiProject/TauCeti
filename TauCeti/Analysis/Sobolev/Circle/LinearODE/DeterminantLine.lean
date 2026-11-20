@@ -586,39 +586,6 @@ theorem detLineOrientationTransport_rayOfNeZero_detLineLoopOperatorEquiv_symm
   detLineOrientationTransport_rayOfNeZero _ _
     (isDetLineCoherentOn_detLineLoopOperatorEquiv_symm hS _)
 
-/-- The orientation of the determinant line of a bijective `L_{S a}` given by bijectivity is
-transported to the ray of `det (1 - Ψ_a(T)) * det (1 - Ψ_b(T))` times the generator of the
-trivialization by bijectivity at a bijective `L_{S b}`. -/
-private theorem detLineOrientationTransport_detLineEquivOfBijective_loopOperator
-    (hS : Continuous S) (ha : Function.Bijective (loopOperator T (S a)))
-    (hb : Function.Bijective (loopOperator T (S b)))
-    (hc : (LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S a t) T) : E →ₗ[ℝ] E)) *
-      LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S b t) T) : E →ₗ[ℝ] E))) •
-        ((loopOperator T (S b) : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLineEquivOfBijective
-          hb).symm 1 ≠ 0) :
-    detLineOrientationTransport (T := fun t ↦ loopOperator T (S t)) a b
-        ((continuous_loopOperator (E := E) T).comp hS).continuousOn
-        (fun t _ ↦ isFredholm_loopOperator T (S t))
-        (rayOfNeZero ℝ _ ((LinearMap.detLineEquivOfBijective ha).symm.map_ne_zero_iff.2
-          one_ne_zero)) =
-      rayOfNeZero ℝ _ hc := by
-  have hda : LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S a t) T) : E →ₗ[ℝ] E)) ≠ 0 :=
-    (isInvertible_loopOperator_iff_det_ne_zero T (S a)).1
-      (ContinuousLinearMap.isInvertible_iff_bijective.2 ha)
-  -- Scaling the coherent family by `det (1 - Ψ_a(T))` gives `det (1 - Ψ_a(T)) ^ 2` times the
-  -- generator of bijectivity at `a`, and `det (1 - Ψ_a(T)) * det (1 - Ψ_b(T))` times the generator
-  -- of bijectivity at `b`.
-  have key := detLineOrientationTransport_rayOfNeZero (T := fun t ↦ loopOperator T (S t))
-    ((continuous_loopOperator (E := E) T).comp hS).continuousOn
-    (fun t _ ↦ isFredholm_loopOperator T (S t))
-    ((isDetLineCoherentOn_detLineLoopOperatorEquiv_symm hS (Set.uIcc a b)).smul hda)
-  have hva := detLineLoopOperatorEquiv_symm_detLineEndGenerator_eq_det_smul (S a) ha
-  have hvb := detLineLoopOperatorEquiv_symm_detLineEndGenerator_eq_det_smul (S b) hb
-  refine (congrArg _ ((ray_eq_iff _ _).2 ?_)).trans (key.trans ((ray_eq_iff _ _).2 ?_))
-  · rw [hva, smul_smul]
-    exact SameRay.sameRay_pos_smul_right _ (mul_self_pos.2 hda)
-  · rw [hvb, smul_smul]
-
 /-- **Transport preserves the orientations of invertibility when the determinants have the same
 sign.** Along a continuous path `S` of coefficient loops from a bijective `L_{S a}` to a bijective
 `L_{S b}` with `det (1 - Ψ_a(T)) * det (1 - Ψ_b(T)) > 0`, transport of orientations carries the
@@ -635,11 +602,11 @@ theorem detLineOrientationTransport_detLineEquivOfBijective_loopOperator_of_pos
         (rayOfNeZero ℝ _ ((LinearMap.detLineEquivOfBijective ha).symm.map_ne_zero_iff.2
           one_ne_zero)) =
       rayOfNeZero ℝ _ ((LinearMap.detLineEquivOfBijective hb).symm.map_ne_zero_iff.2
-        one_ne_zero) := by
-  have hb₀ := (LinearMap.detLineEquivOfBijective hb).symm.map_ne_zero_iff.2 (one_ne_zero (α := ℝ))
-  rw [detLineOrientationTransport_detLineEquivOfBijective_loopOperator hS ha hb
-    (smul_ne_zero h.ne' hb₀)]
-  exact (ray_eq_iff _ _).2 (SameRay.sameRay_pos_smul_left _ h)
+        one_ne_zero) :=
+  detLineOrientationTransport_rayOfNeZero_of_mul_pos _ _
+    (isDetLineCoherentOn_detLineLoopOperatorEquiv_symm hS _)
+    (detLineLoopOperatorEquiv_symm_detLineEndGenerator_eq_det_smul (S a) ha)
+    (detLineLoopOperatorEquiv_symm_detLineEndGenerator_eq_det_smul (S b) hb) _ _ h
 
 /-- **Transport reverses the orientations of invertibility when the determinants have opposite
 signs.** Along a continuous path `S` of coefficient loops from a bijective `L_{S a}` to a bijective
@@ -658,16 +625,11 @@ theorem detLineOrientationTransport_detLineEquivOfBijective_loopOperator_of_neg
         (rayOfNeZero ℝ _ ((LinearMap.detLineEquivOfBijective ha).symm.map_ne_zero_iff.2
           one_ne_zero)) =
       -rayOfNeZero ℝ _ ((LinearMap.detLineEquivOfBijective hb).symm.map_ne_zero_iff.2
-        one_ne_zero) := by
-  have hb₀ := (LinearMap.detLineEquivOfBijective hb).symm.map_ne_zero_iff.2 (one_ne_zero (α := ℝ))
-  rw [detLineOrientationTransport_detLineEquivOfBijective_loopOperator hS ha hb
-    (smul_ne_zero h.ne hb₀)]
-  -- Negation of orientations of determinant lines is `Module.Ray`'s negation for the additive
-  -- group structure of the tensor product (`LinearMap.instNegRayDetLine`).
-  let : AddCommGroup (loopOperator T (S b) : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).detLine :=
-    TensorProduct.addCommGroup
-  exact ((ray_eq_iff _ (neg_ne_zero.2 hb₀)).2
-    ((sameRay_neg_smul_left_iff_of_ne hb₀ h.ne).2 h)).trans (neg_rayOfNeZero ℝ _ hb₀).symm
+        one_ne_zero) :=
+  detLineOrientationTransport_rayOfNeZero_of_mul_neg _ _
+    (isDetLineCoherentOn_detLineLoopOperatorEquiv_symm hS _)
+    (detLineLoopOperatorEquiv_symm_detLineEndGenerator_eq_det_smul (S a) ha)
+    (detLineLoopOperatorEquiv_symm_detLineEndGenerator_eq_det_smul (S b) hb) _ _ h
 
 end Coherent
 
