@@ -121,7 +121,7 @@ private theorem contMDiffAt_of_eq_torusFamilyLogGaugeEquiv
     ).contMDiffAt_comp_iff le_rfl]
   have hopen : IsOpen {x : AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E) |
       ((torusFamilyProjection (powPullbackPeriod m r P) x : rootsOfUnityBall m r) : ℂ) ≠ 0} :=
-    isOpen_ne_fun (continuous_subtype_val.comp (continuous_torusFamilyProjection _))
+    isOpen_ne_fun (continuous_subtypeVal.comp (continuous_torusFamilyProjection _))
       continuous_const
   refine (contMDiffAt_torusFamilyLogGauge P hP hinj l hx₀).congr_of_eventuallyEq ?_
   filter_upwards [hopen.mem_nhds hx₀] with x hx
@@ -195,7 +195,7 @@ private theorem contMDiffAt_of_eq_torusFamilyLogGaugeEquiv_symm
     (contMDiffAt_snd.add (((hL.comp (t₀, e₀) contMDiffAt_fst).div_const (2 * π * I)).smul
       ((hP l).comp contMDiff_fst).contMDiffAt)))).congr_of_eventuallyEq ?_
   have hopen : IsOpen {p : Metric.ball (0 : ℂ) (r ^ m) × E | (p.1 : ℂ) ≠ 0} :=
-    isOpen_ne_fun (continuous_subtype_val.comp continuous_fst) continuous_const
+    isOpen_ne_fun (continuous_subtypeVal.comp continuous_fst) continuous_const
   filter_upwards [hopen.mem_nhds ht₀] with p hp
   obtain ⟨t, e⟩ := p
   have hy : ((torusFamilyProjection P (Quotient.mk _ (t, e)) :
@@ -239,7 +239,7 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv :
         {y : AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E) //
           ((torusFamilyProjection P y : Metric.ball (0 : ℂ) (r ^ m)) : ℂ) ≠ 0} :=
       Opens.instChartedSpace ⟨_, isOpen_ne_fun
-        (continuous_subtype_val.comp (continuous_torusFamilyProjection P)) continuous_const⟩
+        (continuous_subtypeVal.comp (continuous_torusFamilyProjection P)) continuous_const⟩
     ContMDiff (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n (torusFamilyLogGaugeEquiv P l hr) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
@@ -273,11 +273,11 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv :
       {y : AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E) //
         ((torusFamilyProjection P y : Metric.ball (0 : ℂ) (r ^ m)) : ℂ) ≠ 0} :=
     Opens.instChartedSpace ⟨_, isOpen_ne_fun
-      (continuous_subtype_val.comp (continuous_torusFamilyProjection P)) continuous_const⟩
+      (continuous_subtypeVal.comp (continuous_torusFamilyProjection P)) continuous_const⟩
   intro q
   -- Pass to the ambient manifolds, through the inclusions of the open subsets.
   refine (TauCeti.ContMDiffAt.subtypeVal_comp_iff
-    ⟨_, isOpen_ne_fun (continuous_subtype_val.comp (continuous_torusFamilyProjection P))
+    ⟨_, isOpen_ne_fun (continuous_subtypeVal.comp (continuous_torusFamilyProjection P))
       continuous_const⟩ (torusFamilyLogGaugeEquiv P l hr) q).1 ?_
   refine (contMDiffAt_extend_subtypeVal_iff (U := ⟨_, isOpen_ne_fun
     (continuous_torusFamilyCyclicQuotientProjection (fun _ _ ↦ AddMonoidHom.id E)
@@ -285,7 +285,7 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv :
       (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
       (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
       (logTranslationSection_mul P l)) continuous_const⟩)
-    (fun _ ↦ (torusFamilyLogGaugeEquiv P l hr q).1)).1 ?_
+    (fun _ ↦ (torusFamilyLogGaugeEquiv P l hr q).val)).1 ?_
   obtain ⟨q, hq⟩ := q
   obtain ⟨x, rfl⟩ := Quotient.exists_rep q
   refine contMDiffAt_of_eq_torusFamilyLogGaugeEquiv P l hr hP hinj hfree _
@@ -327,7 +327,7 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv_symm :
         {y : AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E) //
           ((torusFamilyProjection P y : Metric.ball (0 : ℂ) (r ^ m)) : ℂ) ≠ 0} :=
       Opens.instChartedSpace ⟨_, isOpen_ne_fun
-        (continuous_subtype_val.comp (continuous_torusFamilyProjection P)) continuous_const⟩
+        (continuous_subtypeVal.comp (continuous_torusFamilyProjection P)) continuous_const⟩
     ContMDiff (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n
       (torusFamilyLogGaugeEquiv P l hr).symm := by
   let _ := periodAddAction P
@@ -362,7 +362,7 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv_symm :
       {y : AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E) //
         ((torusFamilyProjection P y : Metric.ball (0 : ℂ) (r ^ m)) : ℂ) ≠ 0} :=
     Opens.instChartedSpace ⟨_, isOpen_ne_fun
-      (continuous_subtype_val.comp (continuous_torusFamilyProjection P)) continuous_const⟩
+      (continuous_subtypeVal.comp (continuous_torusFamilyProjection P)) continuous_const⟩
   intro y
   refine (TauCeti.ContMDiffAt.subtypeVal_comp_iff ⟨_, isOpen_ne_fun
     (continuous_torusFamilyCyclicQuotientProjection (fun _ _ ↦ AddMonoidHom.id E)
@@ -372,8 +372,8 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv_symm :
       (logTranslationSection_mul P l)) continuous_const⟩
     (torusFamilyLogGaugeEquiv P l hr).symm y).1 ?_
   refine (contMDiffAt_extend_subtypeVal_iff (U := ⟨_, isOpen_ne_fun
-    (continuous_subtype_val.comp (continuous_torusFamilyProjection P)) continuous_const⟩)
-    (fun _ ↦ ((torusFamilyLogGaugeEquiv P l hr).symm y).1)).1 ?_
+    (continuous_subtypeVal.comp (continuous_torusFamilyProjection P)) continuous_const⟩)
+    (fun _ ↦ ((torusFamilyLogGaugeEquiv P l hr).symm y).val)).1 ?_
   obtain ⟨y, hy⟩ := y
   obtain ⟨⟨t, e⟩, rfl⟩ := Quotient.exists_rep y
   exact contMDiffAt_of_eq_torusFamilyLogGaugeEquiv_symm P l hr hP hinj hfree _
@@ -422,7 +422,7 @@ noncomputable def torusFamilyLogGaugeDiffeomorph :
         {y : AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E) //
           ((torusFamilyProjection P y : Metric.ball (0 : ℂ) (r ^ m)) : ℂ) ≠ 0} :=
       Opens.instChartedSpace ⟨_, isOpen_ne_fun
-        (continuous_subtype_val.comp (continuous_torusFamilyProjection P)) continuous_const⟩
+        (continuous_subtypeVal.comp (continuous_torusFamilyProjection P)) continuous_const⟩
     Diffeomorph (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E))
       {q : orbitRel.Quotient (rootsOfUnity m ℂ)
           (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) //
@@ -465,7 +465,7 @@ noncomputable def torusFamilyLogGaugeDiffeomorph :
       {y : AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E) //
         ((torusFamilyProjection P y : Metric.ball (0 : ℂ) (r ^ m)) : ℂ) ≠ 0} :=
     Opens.instChartedSpace ⟨_, isOpen_ne_fun
-      (continuous_subtype_val.comp (continuous_torusFamilyProjection P)) continuous_const⟩
+      (continuous_subtypeVal.comp (continuous_torusFamilyProjection P)) continuous_const⟩
   { toEquiv := torusFamilyLogGaugeEquiv P l hr
     contMDiff_toFun := contMDiff_torusFamilyLogGaugeEquiv P l hr hP hinj hfree
     contMDiff_invFun := contMDiff_torusFamilyLogGaugeEquiv_symm P l hr hP hinj hfree }
@@ -505,7 +505,7 @@ underlying map. -/
         {y : AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E) //
           ((torusFamilyProjection P y : Metric.ball (0 : ℂ) (r ^ m)) : ℂ) ≠ 0} :=
       Opens.instChartedSpace ⟨_, isOpen_ne_fun
-        (continuous_subtype_val.comp (continuous_torusFamilyProjection P)) continuous_const⟩
+        (continuous_subtypeVal.comp (continuous_torusFamilyProjection P)) continuous_const⟩
     ⇑(torusFamilyLogGaugeDiffeomorph P l hr hP hinj hfree) = torusFamilyLogGaugeEquiv P l hr :=
   (rfl)
 
@@ -544,7 +544,7 @@ underlying map. -/
         {y : AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E) //
           ((torusFamilyProjection P y : Metric.ball (0 : ℂ) (r ^ m)) : ℂ) ≠ 0} :=
       Opens.instChartedSpace ⟨_, isOpen_ne_fun
-        (continuous_subtype_val.comp (continuous_torusFamilyProjection P)) continuous_const⟩
+        (continuous_subtypeVal.comp (continuous_torusFamilyProjection P)) continuous_const⟩
     ⇑(torusFamilyLogGaugeDiffeomorph P l hr hP hinj hfree).symm =
       (torusFamilyLogGaugeEquiv P l hr).symm :=
   (rfl)

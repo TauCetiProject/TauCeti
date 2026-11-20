@@ -253,8 +253,8 @@ lemma coe_closureHomeomorph_symm_apply (hUb : Bornology.IsBounded U)
   have hFsymm : F ((closureHomeomorph hUb hFc hFf hFi).symm y : ℂ) = (y : ℂ) := by
     rw [← coe_closureHomeomorph_apply hUb hFc hFf hFi, Homeomorph.apply_symm_apply]
   have hex : ∃ x ∈ closure U, F x = (y : ℂ) :=
-    ⟨_, ((closureHomeomorph hUb hFc hFf hFi).symm y).2, hFsymm⟩
-  exact hFi ((closureHomeomorph hUb hFc hFf hFi).symm y).2 (Function.invFunOn_mem hex)
+    ⟨_, ((closureHomeomorph hUb hFc hFf hFi).symm y).property, hFsymm⟩
+  exact hFi ((closureHomeomorph hUb hFc hFf hFi).symm y).property (Function.invFunOn_mem hex)
     (by rw [hFsymm, Function.invFunOn_eq hex])
 
 /-! ## Closed-disc extensions of a Riemann map -/

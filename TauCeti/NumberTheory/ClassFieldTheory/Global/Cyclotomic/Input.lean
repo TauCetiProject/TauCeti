@@ -14,7 +14,7 @@ import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 # Characters for the cyclotomic input to global class field theory
 
 Let `q > 1` and `N > 0`, and put `m = q ^ N - 1`. The class of `q` in `(ZMod m)ˣ` has exact
-order `N` (`TauCeti.ZMod.orderOf_unitOfCoprime_pow_sub_one`). Consequently there is an additive
+order `N` (`ZMod.orderOf_unitOfCoprime_pow_sub_one`). Consequently there is an additive
 character of `(ZMod m)ˣ` taking `q` to `1 / N` in `ℚ / ℤ`. Composing this character with the
 action on a primitive `m`-th root of unity gives a character of a cyclotomic Galois group with the
 same prescribed value.

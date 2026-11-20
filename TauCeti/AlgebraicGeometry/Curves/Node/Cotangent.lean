@@ -60,7 +60,7 @@ theorem _root_.AlgebraicGeometry.Scheme.finrank_residueField_tensor_kaehlerDiffe
     {R : Type u} [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R))) {x : X}
     (hx : letI := hnodal.syntomic; x ∈ (X.singularLocus R).support)
-    {U : X.affineOpens} (hxU : x ∈ U.1) :
+    {U : X.affineOpens} (hxU : x ∈ U.val) :
     letI := (X.evaluation U x hxU).hom.toAlgebra
     letI : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
     Module.finrank (X.residueField x) (X.residueField x ⊗[Γ(X, U)] Ω[Γ(X, U)⁄R]) = 2 := by

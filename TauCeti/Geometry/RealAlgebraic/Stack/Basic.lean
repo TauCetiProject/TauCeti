@@ -446,7 +446,7 @@ theorem mem_image_cylinder {A : Set (S × α)} {y : Fin (n + 1) → α} :
     y ∈ cylinder S '' A ↔ ∃ h : Fin.tail y ∈ S, (⟨Fin.tail y, h⟩, y 0) ∈ A := by
   refine ⟨?_, fun ⟨h, hA⟩ ↦ ⟨_, hA, Fin.cons_self_tail y⟩⟩
   rintro ⟨z, hz, rfl⟩
-  exact ⟨z.1.2, hz⟩
+  exact ⟨z.1.property, hz⟩
 
 /-- Forgetting the distinguished coordinate of the image of a subset `A` of the cylinder over `S`
 gives the projection of `A` to `S`, as a subset of `α ^ n`. -/
@@ -479,7 +479,7 @@ open embedding. -/
 theorem isOpenEmbedding_tail_image_cylinder_sectionSet {θ : Fin k → S → α} (i : Fin k)
     (hc : Continuous (θ i)) :
     IsOpenEmbedding fun y : cylinder S '' sectionSet θ i ↦
-      (⟨Fin.tail y.1, (mem_image_cylinder.mp y.2).1⟩ : S) := by
+      (⟨Fin.tail y.val, (mem_image_cylinder.mp y.property).1⟩ : S) := by
   let e : S ≃ₜ cylinder S '' sectionSet θ i :=
     (isEmbedding_graph hc).toHomeomorph.trans <|
       (Homeomorph.setCongr (sectionSet_eq_range _ _).symm).trans <|
@@ -499,7 +499,8 @@ theorem isOpenEmbedding_cons_image_cylinder_sectorSet {S : Set (Fin n → ℝ)} 
     {θ : Fin k → S → ℝ} {f : S → Fin d → ℝ} (hf : IsOpenEmbedding f)
     (hc : ∀ i, Continuous (θ i)) (j : Fin (k + 1)) :
     IsOpenEmbedding fun y : cylinder S '' sectorSet θ j ↦
-      (Fin.cons (y.1 0) (f ⟨Fin.tail y.1, (mem_image_cylinder.mp y.2).1⟩) : Fin (d + 1) → ℝ) := by
+      (Fin.cons (y.val 0) (f ⟨Fin.tail y.val, (mem_image_cylinder.mp y.property).1⟩) : Fin
+          (d + 1) → ℝ) := by
   let e := isEmbedding_cylinder (S := S).homeomorphImage (sectorSet θ j)
   let g : S × ℝ → Fin (d + 1) → ℝ :=
     (Fin.consEquivL ℝ fun _ ↦ ℝ).toHomeomorph ∘ Prod.swap ∘ Prod.map f id
@@ -560,14 +561,14 @@ variable {m : ℕ} (θ : Fin k → C → α) (f : (Fin m → α) → Fin n → �
 omit [LinearOrder α] in
 /-- Pullback of an ambient section along a base map. The height coordinate is unchanged. -/
 theorem image_cylinder_sectionSet_comp (i : Fin k) :
-    cylinder (f ⁻¹' C) '' sectionSet (fun i x ↦ θ i ⟨f x.1, x.2⟩) i =
+    cylinder (f ⁻¹' C) '' sectionSet (fun i x ↦ θ i ⟨f x.val, x.property⟩) i =
       (fun y ↦ Fin.cons (y 0) (f (Fin.tail y))) ⁻¹' (cylinder C '' sectionSet θ i) := by
   ext y
   simp only [mem_image_cylinder, mem_sectionSet, mem_preimage, Fin.tail_cons, Fin.cons_zero]
 
 /-- Pullback of an ambient sector along a base map, including either unbounded sector. -/
 theorem image_cylinder_sectorSet_comp (j : Fin (k + 1)) :
-    cylinder (f ⁻¹' C) '' sectorSet (fun i x ↦ θ i ⟨f x.1, x.2⟩) j =
+    cylinder (f ⁻¹' C) '' sectorSet (fun i x ↦ θ i ⟨f x.val, x.property⟩) j =
       (fun y ↦ Fin.cons (y 0) (f (Fin.tail y))) ⁻¹' (cylinder C '' sectorSet θ j) := by
   ext y
   simp only [mem_image_cylinder, mem_sectorSet, mem_preimage, Fin.tail_cons, Fin.cons_zero]
@@ -575,7 +576,7 @@ theorem image_cylinder_sectorSet_comp (j : Fin (k + 1)) :
 /-- The cells of a pulled-back stack are precisely the inverse images of the original cells.
 This holds even when the base map is not injective or surjective. -/
 theorem stackCells_comp :
-    stackCells (f ⁻¹' C) (fun i x ↦ θ i ⟨f x.1, x.2⟩) =
+    stackCells (f ⁻¹' C) (fun i x ↦ θ i ⟨f x.val, x.property⟩) =
       (fun E ↦ (fun y ↦ Fin.cons (y 0) (f (Fin.tail y))) ⁻¹' E) '' stackCells C θ := by
   ext E
   simp only [mem_stackCells, mem_image]

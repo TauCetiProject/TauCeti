@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Variation
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Variation
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Regularity
 
@@ -25,6 +26,17 @@ This file proves that the curvature `R^s(X, Y) Z` varies by
 
 where `(∇_X Γ')(Z, Y) = ∇_X (Γ'(Z, Y)) - Γ'(∇_X Z, Y) - Γ'(Z, ∇_X Y)`.
 
+Since `Γ'` is a smooth section of `Hom(TM, Hom(TM, TM))`
+(`contMDiff_deriv_difference_of_isLeviCivitaConnection`), `∇ᵗΓ'` is the covariant derivative of
+`Γ'` for the connection `∇ᵗ` induced on this iterated Hom bundle (`CovariantDerivative.hom`), and
+the formula becomes the pointwise identity
+
+`∂ₛ R^s(u, v) w = (∇ᵗ_u Γ')(w, v) - (∇ᵗ_v Γ')(w, u)`
+
+for the curvature tensors `R^s` at a point, which is what the Ricci variation contracts. This is
+the general pointwise formula `TauCeti.Manifold.hasDerivAt_curvatureTensor_of_hasDerivAt_difference`
+for families of connections.
+
 The curvature formula is the general variation formula for torsion-free families of connections,
 `TauCeti.Manifold.hasDerivAt_curvatureOperator_of_hasDerivAt_difference`. Its hypotheses hold for
 Levi-Civita connections: the difference tensors are differentiable in `s` by the first variation
@@ -38,6 +50,8 @@ transferred to `∇ˢ` by uniqueness of the Levi-Civita connection.
 In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily`:
 
 * `hasDerivAt_curvatureOperator_of_isLeviCivitaConnection`: the first variation of the curvature.
+* `hasDerivAt_curvatureTensor_of_isLeviCivitaConnection`: the first variation of the curvature
+  tensor at a point, in terms of the covariant derivative of `Γ'`.
 
 ## References
 
@@ -89,18 +103,45 @@ theorem hasDerivAt_curvatureOperator_of_isLeviCivitaConnection
         (cov t (fun y ↦ deriv (fun s ↦ (cov s).difference (cov t) y) t (Z y) (X y)) x (Y x) -
           deriv (fun s ↦ (cov s).difference (cov t) x) t (cov t Z x (Y x)) (X x) -
           deriv (fun s ↦ (cov s).difference (cov t) x) t (Z x) (cov t X x (Y x)))) t := by
-  have hC (y : M) : HasDerivAt (F := E →L[ℝ] E →L[ℝ] E)
-      (fun s ↦ (cov s).difference (cov t) y)
-      (deriv (fun s ↦ (cov s).difference (cov t) y) t) t :=
-    DifferentiableAt.hasDerivAt (𝕜 := ℝ) (F := E →L[ℝ] E →L[ℝ] E)
-      (g.differentiableAt_difference_of_isLeviCivitaConnection hc hcov y)
   have hZ' : ∀ᶠ y in 𝓝 x, MDiffAt (T% Z) y :=
     ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp hZ).mono fun y hy ↦
       hy.mdifferentiableAt (by simp)
-  exact hasDerivAt_curvatureOperator_of_hasDerivAt_difference (Eventually.of_forall hC)
+  exact hasDerivAt_curvatureOperator_of_hasDerivAt_difference
+    (Eventually.of_forall (g.hasDerivAt_difference_of_isLeviCivitaConnection hc hcov))
     (congrFun (hcov t).torsion x) (hX.mdifferentiableAt (by simp))
     (hY.mdifferentiableAt (by simp)) hZ'
     (g.contMDiffAt_covariantDerivative_apply_of_isLeviCivitaConnection hc hcov hX hZ)
     (g.contMDiffAt_covariantDerivative_apply_of_isLeviCivitaConnection hc hcov hY hZ)
+
+variable [T2Space M]
+
+/-- **The first variation of the curvature tensor of a family of nondegenerate metrics.** Let `g`
+be a smooth family of nondegenerate metrics parametrized by `P`, let `c` be a parameter curve which
+is `C²` at `t`, and let `∇ˢ` be a Levi-Civita connection of `g_{c s}` for every `s`. Write `Γ'` for
+the derivative at `t` of the difference tensors `∇ˢ - ∇ᵗ`, and `∇ᵗΓ'` for its covariant derivative
+along the connection induced by `∇ᵗ` on `Hom(TM, Hom(TM, TM))`, so that `∇ᵗΓ' x u w v` is
+`(∇ᵗ_u Γ')(w, v)`. Then for `u, v, w ∈ T_x M` the curvature tensors satisfy
+
+`∂ₛ R^s(u, v) w = (∇ᵗ_u Γ')(w, v) - (∇ᵗ_v Γ')(w, u)` at `s = t`.
+
+The smoothness instances of the connections `∇ˢ` are needed to state the curvature tensor; they
+hold for Levi-Civita connections of smooth metrics by
+`ContMDiffNondegenerateMetric.IsLeviCivitaConnection.contMDiffCovariantDerivative`. -/
+theorem hasDerivAt_curvatureTensor_of_isLeviCivitaConnection
+    [∀ s, CovariantDerivative.ContMDiffCovariantDerivative (cov s) ∞]
+    (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
+    (hcov : ∀ s, (g.metric (c s)).IsLeviCivitaConnection (cov s)) (x : M)
+    (u v w : TangentSpace I x) :
+    HasDerivAt (fun s ↦ (cov s).curvatureTensor x u v w)
+      ((cov t).hom ((cov t).hom (cov t))
+          (fun y ↦ deriv (fun s ↦ (cov s).difference (cov t) y) t) x u w v -
+        (cov t).hom ((cov t).hom (cov t))
+          (fun y ↦ deriv (fun s ↦ (cov s).difference (cov t) y) t) x v w u) t :=
+  hasDerivAt_curvatureTensor_of_hasDerivAt_difference
+    (Eventually.of_forall (g.hasDerivAt_difference_of_isLeviCivitaConnection hc hcov))
+    (congrFun (hcov t).torsion x)
+    (fun _ _ hX hZ ↦ g.contMDiffAt_covariantDerivative_apply_of_isLeviCivitaConnection hc hcov
+      ((hX x).of_le (by simp)) ((hZ x).of_le (by simp)))
+    u v w
 
 end TauCeti.Manifold.ContMDiffNondegenerateMetricFamily

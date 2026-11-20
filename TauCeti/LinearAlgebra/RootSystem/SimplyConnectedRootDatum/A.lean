@@ -68,8 +68,8 @@ cocharacter map, and `TauCeti.DynkinType.typeAGraphAut` bundles it with the indu
 the `n * (n + 1)` root indices as an element of `RootPairing.Aut`. It restricts to the reversal
 `Fin.revPerm` on the Bourbaki-numbered simple roots, which is `TauCeti.graphPermA n`, the
 permutation that
-`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations.lean` pins for the `²Aₙ` family; that module
-is deliberately not imported here, since only the `Fin`-level reversal is used.
+`TauCeti/LinearAlgebra/RootSystem/DiagramPermutations/Basic.lean` pins for the `²Aₙ` family; that
+module is deliberately not imported here, since only the `Fin`-level reversal is used.
 
 The sign in `e_a ↦ -e_{rev a}` is forced: `e_a ↦ e_{rev a}` sends `αᵢ = e_i - e_{i+1}` to
 `e_{rev i} - e_{rev (i + 1)} = -α_{rev i}`, a negative root, so it does not preserve the base. The
@@ -194,23 +194,23 @@ private lemma typeAPairing (p q : TypeAIndex n) :
 
 private lemma typeAPairRoot_self (p : TypeAIndex n) : typeAPairRoot p ⬝ᵥ typeAPairCoroot p = 2 := by
   rw [typeAPairing]
-  have h := p.2
+  have h := p.property
   split_ifs <;> simp_all
 
 private lemma typeAPairRoot_injective : Injective (typeAPairRoot (n := n)) := by
   intro p q hpq
   have h2 : typeAPairRoot q ⬝ᵥ typeAPairCoroot p = 2 := by rw [← hpq]; exact typeAPairRoot_self p
   rw [typeAPairing] at h2
-  have _ := p.2
-  have hq := q.2
+  have _ := p.property
+  have hq := q.property
   refine Subtype.ext (Prod.ext ?_ ?_) <;> (split_ifs at h2 <;> simp_all)
 
 private lemma typeAPairCoroot_injective : Injective (typeAPairCoroot (n := n)) := by
   intro p q hpq
   have h2 : typeAPairRoot p ⬝ᵥ typeAPairCoroot q = 2 := by rw [← hpq]; exact typeAPairRoot_self p
   rw [typeAPairing] at h2
-  have hp := p.2
-  have _ := q.2
+  have hp := p.property
+  have _ := q.property
   refine Subtype.ext (Prod.ext ?_ ?_) <;> (split_ifs at h2 <;> simp_all)
 
 /-- Reflection in the root indexed by `p`, as the transposition of the two entries of `p` acting on
@@ -536,27 +536,17 @@ def typeASimplyConnectedBase (n : ℕ) : (typeASimplyConnectedRootDatum n).Base 
         typeAWeight n (((typeAIndexEquiv n).symm k).val.1 : ℕ) -
           typeAWeight n (((typeAIndexEquiv n).symm k).val.2 : ℕ) := rfl
     rw [image_root_typeASimpleSupport, hroot]
-    rcases le_total ((((typeAIndexEquiv n).symm k).val.1 : Fin (n + 1)) : ℕ)
-        ((((typeAIndexEquiv n).symm k).val.2 : Fin (n + 1)) : ℕ) with h | h
-    · exact Or.inl (sub_mem_closure_of_le (typeAWeight n)
-        (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.2).isLt) h)
-    · refine Or.inr ?_
-      rw [neg_sub]
-      exact sub_mem_closure_of_le (typeAWeight n)
-        (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.1).isLt) h
+    exact sub_mem_or_neg_mem_closure (typeAWeight n)
+      (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.1).isLt)
+      (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.2).isLt)
   coroot_mem_or_neg_mem k := by
     have hcoroot : (typeASimplyConnectedRootDatum n).coroot k =
         typeACoweight n (((typeAIndexEquiv n).symm k).val.1 : ℕ) -
           typeACoweight n (((typeAIndexEquiv n).symm k).val.2 : ℕ) := rfl
     rw [image_coroot_typeASimpleSupport, hcoroot]
-    rcases le_total ((((typeAIndexEquiv n).symm k).val.1 : Fin (n + 1)) : ℕ)
-        ((((typeAIndexEquiv n).symm k).val.2 : Fin (n + 1)) : ℕ) with h | h
-    · exact Or.inl (sub_mem_closure_of_le (typeACoweight n)
-        (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.2).isLt) h)
-    · refine Or.inr ?_
-      rw [neg_sub]
-      exact sub_mem_closure_of_le (typeACoweight n)
-        (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.1).isLt) h
+    exact sub_mem_or_neg_mem_closure (typeACoweight n)
+      (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.1).isLt)
+      (Nat.lt_succ_iff.mp (((typeAIndexEquiv n).symm k).val.2).isLt)
 
 /-- Membership in the pinned base support is exactly membership among the first `n` root indices. -/
 @[simp] theorem mem_typeASimplyConnectedBase_support {k : Fin (n * (n + 1))} :

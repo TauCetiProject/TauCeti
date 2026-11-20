@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.PartitionOfUnity
 public import Mathlib.Topology.EMetricSpace.Paracompact
+public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import Mathlib.Topology.Metrizable.Uniformity
 public import Mathlib.Topology.UniformSpace.Compact
 
@@ -34,6 +35,12 @@ Similarly, an open subset of `ℝ × X` containing `{0} × X` contains a tube
 `{(t, x) | |t| < ε x}` of positive continuous width over a normal paracompact space `X`
 (`IsOpen.exists_continuous_pos_forall_abs_lt`). This is the shape of a collar of variable width
 around a noncompact hypersurface.
+
+Along a continuous map `G` into a pseudometric space, an open set `U` has a continuous margin
+`ε ≥ 0`, positive wherever `G z ∈ U`, such that every point within `ε z` of `G z` lies in `U`
+(`IsOpen.exists_continuous_forall_dist_lt`, and `IsOpen.exists_continuousOn_forall_dist_lt` for
+a map continuous on a set). It is the distance to the complement of `U`; for
+the open set of invertible operators it is a margin of invertibility.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition,
 Theorem 6.24, the variable-radius shrinking argument.
@@ -143,5 +150,40 @@ theorem exists_continuous_pos_forall_abs_lt [NormalSpace X] [ParacompactSpace X]
       huv ⟨hcu (by rwa [Metric.mem_ball, Real.dist_0_eq_abs]), hy⟩⟩⟩
   obtain ⟨ε, hε⟩ := exists_continuous_forall_mem_convex_of_local_const hconv hlocal
   exact ⟨ε, fun x ↦ (hε x).1, fun x ↦ (hε x).2⟩
+
+/-- **A continuous margin inside an open set.** Along a map `G` into a pseudometric space that is
+continuous on `s`, an open set `U` has a margin `ε ≥ 0`, continuous on `s` and positive wherever
+`G z ∈ U`, such that every point within `ε z` of `G z` lies in `U`. -/
+theorem exists_continuousOn_forall_dist_lt {M : Type*} [PseudoMetricSpace M] {U : Set M}
+    (hU : IsOpen U) {G : X → M} {s : Set X} (hG : ContinuousOn G s) :
+    ∃ ε : X → ℝ, ContinuousOn ε s ∧ (∀ x, 0 ≤ ε x) ∧ (∀ x, G x ∈ U → 0 < ε x) ∧
+      ∀ x y, dist y (G x) < ε x → y ∈ U := by
+  classical
+  -- The distance to the closed complement of `U`, or `1` if `U` is the whole space.
+  refine ⟨fun x ↦ if Uᶜ.Nonempty then infDist (G x) Uᶜ else 1, ?_, fun x ↦ ?_, fun x hx ↦ ?_,
+    fun x y hy ↦ ?_⟩
+  · split_ifs
+    · exact (continuous_infDist_pt _).comp_continuousOn hG
+    · exact continuousOn_const
+  · split_ifs
+    · exact infDist_nonneg
+    · exact zero_le_one
+  · split_ifs with hne
+    · exact (hU.isClosed_compl.notMem_iff_infDist_pos hne).mp fun h ↦ h hx
+    · exact one_pos
+  · split_ifs at hy with hne
+    · exact ball_infDist_compl_subset (mem_ball.2 hy)
+    · by_contra hyU
+      exact hne ⟨y, hyU⟩
+
+/-- **A continuous margin inside an open set.** Along a continuous map `G` into a pseudometric
+space, an open set `U` has a continuous margin `ε ≥ 0`, positive wherever `G z ∈ U`, such that
+every point within `ε z` of `G z` lies in `U`. -/
+theorem exists_continuous_forall_dist_lt {M : Type*} [PseudoMetricSpace M] {U : Set M}
+    (hU : IsOpen U) {G : X → M} (hG : Continuous G) :
+    ∃ ε : X → ℝ, Continuous ε ∧ (∀ x, 0 ≤ ε x) ∧ (∀ x, G x ∈ U → 0 < ε x) ∧
+      ∀ x y, dist y (G x) < ε x → y ∈ U := by
+  obtain ⟨ε, hε, h⟩ := hU.exists_continuousOn_forall_dist_lt hG.continuousOn
+  exact ⟨ε, continuousOn_univ.mp hε, h⟩
 
 end IsOpen
