@@ -44,17 +44,17 @@ variable {X : Type w} [TopologicalSpace X]
 the subtype. -/
 lemma continuous_map_closedBall {n : ℕ} (j : cell C n) :
     Continuous fun y : closedBall (0 : Fin n → ℝ) 1 ↦ map n j y :=
-  (continuousOn n j).comp_continuous continuous_subtype_val fun y ↦ y.2
+  (continuousOn n j).comp_continuous continuous_subtypeVal fun y ↦ y.property
 
 /-- The characteristic map of an `n`-cell, as a continuous map from the closed unit ball of
 `Fin n → ℝ` into the complex. -/
 def cellMap {n : ℕ} (j : cell C n) : C(closedBall (0 : Fin n → ℝ) 1, C) :=
-  ⟨fun y ↦ ⟨map n j y, closedCell_subset_complex n j ⟨y, y.2, rfl⟩⟩,
+  ⟨fun y ↦ ⟨map n j y, closedCell_subset_complex n j ⟨y, y.property, rfl⟩⟩,
     (continuous_map_closedBall j).subtype_mk _⟩
 
 /-- The value of `TauCeti.cellMap` as a point of the complex. -/
 lemma cellMap_apply {n : ℕ} (j : cell C n) (y : closedBall (0 : Fin n → ℝ) 1) :
-    cellMap j y = ⟨map n j y, closedCell_subset_complex n j ⟨y, y.2, rfl⟩⟩ :=
+    cellMap j y = ⟨map n j y, closedCell_subset_complex n j ⟨y, y.property, rfl⟩⟩ :=
   (rfl)
 
 /-- The value of `TauCeti.cellMap` in the ambient space is the characteristic map. -/
@@ -146,7 +146,7 @@ lemma mapsTo_skeletonLT_succ_iff {Y : Type*} {n : ℕ} {g : C → Y} {T : Set Y}
     MapsTo g {x : C | (x : X) ∈ skeletonLT C ((n + 1 : ℕ) : ℕ∞)} T ↔
       MapsTo g {x : C | (x : X) ∈ skeletonLT C n} T ∧ ∀ (j : cell C n) y, g (cellMap j y) ∈ T := by
   refine ⟨fun h ↦ ⟨h.mono_left fun x hx ↦ skeletonLT_mono (by exact_mod_cast n.le_succ) hx,
-    fun j y ↦ h (map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.2))⟩,
+    fun j y ↦ h (map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 y.property))⟩,
     fun ⟨h, hcell⟩ x hx ↦ ?_⟩
   obtain hx' | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map (x := (x : X)) hx
   · exact h hx'

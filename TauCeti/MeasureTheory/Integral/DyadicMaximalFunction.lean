@@ -202,7 +202,7 @@ private theorem setLAverage_ball_le_of_forall_dyadicCube {r : ℝ} (hr : 0 < r)
       _ ≤ ∑' m : M, t * volume (dyadicCube k (m : ι → ℤ)) := by
           refine tsum_le_tsum fun m => ?_
           rw [← measure_mul_setLAverage _ (volume_dyadicCube_ne_top _ _), mul_comm]
-          exact mul_le_mul_left (h m m.2) _
+          exact mul_le_mul_left (h m m.property) _
       _ = t * volume (⋃ m ∈ M, dyadicCube k m) := by
           rw [measure_biUnion M.to_countable hdisj fun m _ => measurableSet_dyadicCube k m,
             ENNReal.tsum_mul_left]
@@ -266,7 +266,7 @@ theorem volume_lt_maximalFunction_le_mul_volume_lt_dyadicMaximalFunction [Nonemp
       ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by norm_num), ENNReal.ofReal_ofNat]
   calc volume {x | 3 ^ n * t < maximalFunction volume f x}
       ≤ volume (⋃ q ∈ C, ball (c q) (3 * 2 ^ q.1 / 2)) := measure_mono hsub
-    _ ≤ ∑' q : C, volume (ball (c q) (3 * 2 ^ q.1.1 / 2)) :=
+    _ ≤ ∑' q : C, volume (ball (c q) (3 * 2 ^ q.val.1 / 2)) :=
         measure_biUnion_le _ C.to_countable _
     _ = 3 ^ n * volume (⋃ q ∈ C, dyadicCube q.1 q.2) := by
         rw [measure_biUnion C.to_countable pairwiseDisjoint_calderonZygmundCubes

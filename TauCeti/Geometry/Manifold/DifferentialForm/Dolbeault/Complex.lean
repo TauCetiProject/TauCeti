@@ -107,7 +107,7 @@ variable {E M F}
 @[simp]
 theorem mem_closedForms (p q : ℕ)
     (φ : (ofComplexManifold E M).typeForms (F := F) p q) :
-    φ ∈ closedForms E M F p q ↔ (ofComplexManifold E M).delBar φ.1 = 0 := by
+    φ ∈ closedForms E M F p q ↔ (ofComplexManifold E M).delBar φ.val = 0 := by
   simp only [closedForms, LinearMap.mem_ker, Subtype.ext_iff, coe_delBarType,
     Submodule.coe_zero]
 
@@ -121,7 +121,7 @@ theorem mem_exactForms_succ (p q : ℕ)
     (φ : (ofComplexManifold E M).typeForms (F := F) p (q + 1)) :
     φ ∈ exactForms E M F p (q + 1) ↔
       ∃ ψ : (ofComplexManifold E M).typeForms (F := F) p q,
-        (ofComplexManifold E M).delBar ψ.1 = φ.1 := by
+        (ofComplexManifold E M).delBar ψ.val = φ.val := by
   simp only [exactForms, LinearMap.mem_range, Subtype.ext_iff, coe_delBarType]
 
 /-- A type form is exact if, after identifying its antiholomorphic degree with a successor,
@@ -130,7 +130,7 @@ theorem mem_exactForms_of_eq_delBar {p q n : ℕ} (hq : q = n + 1)
     (φ : (ofComplexManifold E M).typeForms (F := F) p q)
     (α : (ofComplexManifold E M).typeForms (F := F) p n)
     (hφ : LinearEquiv.cast (R := ℝ) (M := fun k ↦ SmoothForm 𝓘(ℝ, E) M F k)
-      (congrArg (p + ·) hq) φ.1 = (ofComplexManifold E M).delBar α.1) :
+      (congrArg (p + ·) hq) φ.val = (ofComplexManifold E M).delBar α.val) :
     φ ∈ exactForms E M F p q := by
   subst q
   exact (mem_exactForms_succ p n φ).mpr ⟨α, hφ.symm⟩
@@ -185,7 +185,7 @@ def mk (p q : ℕ) : closedForms E M F p q →ₗ[ℂ] dolbeaultCohomology E M F
 theorem mk_eq_homologyπ (p q : ℕ) (φ : closedForms E M F p q)
     (z : (dolbeaultComplex E M F p).cycles q)
     (hz : (dolbeaultComplexXIso p q).hom
-      ((dolbeaultComplex E M F p).iCycles q z) = φ.1) :
+      ((dolbeaultComplex E M F p).iCycles q z) = φ.val) :
     mk p q φ = (dolbeaultComplex E M F p).homologyπ q z :=
   (dolbeaultComplex E M F p).moduleCatCohomologyClassOfIso_eq_homologyπ
     (fun q ↦ (ofComplexManifold E M).typeForms (F := F) p q) (closedForms E M F p)
@@ -200,7 +200,7 @@ theorem mk_surjective (p q : ℕ) : Function.Surjective (mk (E := E) (M := M) (F
 /-- A closed type form represents zero exactly when it is `∂bar`-exact. -/
 @[simp]
 theorem mk_eq_zero_iff (p q : ℕ) (φ : closedForms E M F p q) :
-    mk p q φ = 0 ↔ φ.1 ∈ exactForms E M F p q :=
+    mk p q φ = 0 ↔ φ.val ∈ exactForms E M F p q :=
   (dolbeaultComplex E M F p).moduleCatCohomologyClassOfIso_eq_zero_iff
     (fun q ↦ (ofComplexManifold E M).typeForms (F := F) p q)
     (closedForms E M F p) (exactForms E M F p) (dolbeaultComplexXIso p)
@@ -208,7 +208,7 @@ theorem mk_eq_zero_iff (p q : ℕ) (φ : closedForms E M F p q) :
 
 /-- Two closed type forms represent the same class exactly when their difference is exact. -/
 theorem mk_eq_iff (p q : ℕ) (φ ψ : closedForms E M F p q) :
-    mk p q φ = mk p q ψ ↔ (φ - ψ).1 ∈ exactForms E M F p q :=
+    mk p q φ = mk p q ψ ↔ (φ - ψ).val ∈ exactForms E M F p q :=
   (dolbeaultComplex E M F p).moduleCatCohomologyClassOfIso_eq_iff
     (fun q ↦ (ofComplexManifold E M).typeForms (F := F) p q)
     (closedForms E M F p) (exactForms E M F p) (dolbeaultComplexXIso p)

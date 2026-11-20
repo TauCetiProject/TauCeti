@@ -6,13 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
-public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
-public import Mathlib.Analysis.InnerProductSpace.StarOrder
 import TauCeti.Algebra.Star.Basic
+import TauCeti.Analysis.CStarAlgebra.Compression
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.PosPart.Basic
-import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -29,9 +25,7 @@ this order exactly when its finite quadratic forms are positive in `A`:
 No self-adjointness hypothesis is needed for the converse: positivity of all the quadratic forms
 already forces `M` to be self-adjoint, by polarization over `ℂ`. The criterion is the standard way
 to recognise positive matrices over a C⋆-algebra, for instance Gram matrices of vectors in a
-Hilbert C⋆-module. Specializing `A` to `H →L[ℂ] H` for a complex Hilbert space `H` characterizes
-positivity of operator matrices by nonnegativity of all vector quadratic forms
-`∑ i, ∑ j, ⟪ξ i, M i j (ξ j)⟫_ℂ`.
+Hilbert C⋆-module.
 
 The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: entries of finite
 sums and of `1 × 1` matrices, entrywise images under sums and scalar multiples of linear maps,
@@ -58,8 +52,6 @@ and the transpose as a linear map.
   matrix.
 * `CStarMatrix.norm_sq_smul_sub_mulLeft_nonneg`: positivity of the matrix
   `(‖c‖ ^ 2 • (star (a i) * a j) - star (c * a i) * (c * a j))`.
-* `CStarMatrix.nonneg_iff_forall_sum_inner_nonneg`: the vector quadratic-form criterion for
-  positivity of operator matrices in `CStarMatrix n n (H →L[ℂ] H)`.
 
 ## References
 
@@ -224,33 +216,26 @@ theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
   have hsa : IsSelfAdjoint M := isSelfAdjoint_of_forall_isSelfAdjoint_sum fun x => by
     rw [hform]
     exact .of_nonneg (hQ x)
-  -- It remains to show that the negative part `N` of `M` vanishes.
-  refine CStarAlgebra.nonneg_iff_isSelfAdjoint_and_negPart_eq_zero.mpr ⟨hsa, ?_⟩
-  set N := M⁻
-  have hN : 0 ≤ N := CFC.negPart_nonneg M
-  obtain ⟨R, hR⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hN
-  have hMN : M * N = -(star R * R * N) := by
-    conv_lhs => rw [← CFC.posPart_sub_negPart M hsa]
-    rw [sub_mul, CFC.posPart_mul_negPart, zero_sub, ← hR]
-  -- Evaluating the quadratic form at `N y` shows `R N y = 0` for every `y`.
-  have hRN : R * N = 0 := by
-    classical
-    have hv (y : n → A) : ofMatrix.symm (R * N) *ᵥ y = 0 := by
-      have hneg : ofMatrix.symm (-(star R * R * N)) = -ofMatrix.symm (star R * R * N) :=
-        ofMatrix.symm_apply_eq.mpr (by rw [← neg_of, Equiv.apply_symm_apply])
-      have h := hQ (ofMatrix.symm N *ᵥ y)
-      rw [mulVec_mulVec, ← ofMatrix_symm_mul, hMN, hneg, neg_mulVec, dotProduct_neg,
-        ofMatrix_symm_mul, ← mulVec_mulVec, key, Left.nonneg_neg_iff] at h
-      rw [ofMatrix_symm_mul, ← mulVec_mulVec]
-      exact dotProduct_star_self_eq_zero.mp (le_antisymm h (dotProduct_star_self_nonneg _))
-    refine ext fun i j => ?_
-    have h := congrFun (hv (Pi.single j (star ((R * N) i j)))) i
-    simp only [mulVec_single, Pi.smul_apply, col_apply, MulOpposite.smul_eq_mul_unop,
-      MulOpposite.unop_op, ofMatrix_symm_apply, Pi.zero_apply, mul_star_self_eq_zero] at h
-    rw [h, zero_apply]
-  rw [← star_mul_self_eq_zero, hN.star_eq]
-  calc N * N = star R * (R * N) := by rw [← mul_assoc, ← hR]
-    _ = 0 := by rw [hRN, mul_zero]
+  -- Reduce positivity to showing no compression `star N * M * N` equals a nonzero `-(star R * R)`.
+  refine hsa.nonneg_of_star_mul_mul_eq_neg_imp_eq_zero fun R N hRN => ?_
+  classical
+  have hv (y : n → A) : ofMatrix.symm R *ᵥ y = 0 := by
+    have hneg : ofMatrix.symm (-(star R * R)) = -ofMatrix.symm (star R * R) :=
+      ofMatrix.symm_apply_eq.mpr (by rw [← neg_of, Equiv.apply_symm_apply])
+    have hpair : star (ofMatrix.symm N *ᵥ y) ⬝ᵥ (ofMatrix.symm M *ᵥ (ofMatrix.symm N *ᵥ y)) =
+        -(star (ofMatrix.symm R *ᵥ y) ⬝ᵥ (ofMatrix.symm R *ᵥ y)) := by
+      calc star (ofMatrix.symm N *ᵥ y) ⬝ᵥ (ofMatrix.symm M *ᵥ (ofMatrix.symm N *ᵥ y))
+          = star y ⬝ᵥ (ofMatrix.symm (star N * M * N) *ᵥ y) := by
+            simp [star_mulVec, ← dotProduct_mulVec, mul_assoc]
+        _ = -(star (ofMatrix.symm R *ᵥ y) ⬝ᵥ (ofMatrix.symm R *ᵥ y)) := by
+            rw [hRN, hneg, neg_mulVec, dotProduct_neg, key]
+    have h := Left.nonneg_neg_iff.mp (hpair ▸ hQ (ofMatrix.symm N *ᵥ y))
+    exact dotProduct_star_self_eq_zero.mp (le_antisymm h (dotProduct_star_self_nonneg _))
+  refine ext fun i j => ?_
+  have h := congrFun (hv (Pi.single j (star (R i j)))) i
+  simp only [mulVec_single, Pi.smul_apply, col_apply, MulOpposite.smul_eq_mul_unop,
+    MulOpposite.unop_op, ofMatrix_symm_apply, Pi.zero_apply, mul_star_self_eq_zero] at h
+  rw [h, zero_apply]
 
 /-- The diagonal entries of a positive matrix over a C⋆-algebra are positive. -/
 theorem diag_nonneg_of_nonneg {M : CStarMatrix n n A} (hM : 0 ≤ M) (i : n) : 0 ≤ M i i := by
@@ -312,50 +297,5 @@ theorem norm_sq_smul_sub_mulLeft_nonneg (c : A) (a : n → A) :
   exact CStarAlgebra.star_left_conjugate_le_norm_smul z (star c * c)
 
 end Nonneg
-
-section HilbertSpace
-
-open scoped ComplexOrder InnerProductSpace
-
-variable {n H : Type*} [Fintype n] [NormedAddCommGroup H] [InnerProductSpace ℂ H]
-  [CompleteSpace H]
-
-/-- An operator matrix in `CStarMatrix n n (H →L[ℂ] H)` is positive if and only if all its vector
-quadratic forms `∑ i, ∑ j, ⟪ξ i, M i j (ξ j)⟫_ℂ` are nonnegative in `ℂ`. -/
-theorem nonneg_iff_forall_sum_inner_nonneg {M : CStarMatrix n n (H →L[ℂ] H)} :
-    0 ≤ M ↔ ∀ ξ : n → H, 0 ≤ ∑ i, ∑ j, ⟪ξ i, M i j (ξ j)⟫_ℂ := by
-  have hsum (X : n → (H →L[ℂ] H)) (v : H) :
-      ⟪v, (∑ i, ∑ j, star (X i) * M i j * X j) v⟫_ℂ = ∑ i, ∑ j, ⟪X i v, M i j (X j v)⟫_ℂ := by
-    simp only [FunLike.coe_sum, Finset.sum_apply, inner_sum, ContinuousLinearMap.mul_def,
-      ContinuousLinearMap.comp_apply, ContinuousLinearMap.star_eq_adjoint,
-      ContinuousLinearMap.adjoint_inner_right]
-  rw [nonneg_iff_forall_sum_nonneg]
-  refine ⟨fun hM ξ => ?_, fun hξ X => ?_⟩
-  · by_cases hv : ∃ v : H, v ≠ 0
-    · obtain ⟨v, hv⟩ := hv
-      set u : H := (‖v‖⁻¹ : ℝ) • v
-      have hu : ‖u‖ = 1 := by simp [u, norm_smul, norm_eq_zero.not.mpr hv]
-      let X : n → (H →L[ℂ] H) := fun i => (innerSL ℂ u).smulRight (ξ i)
-      have hpos := (ContinuousLinearMap.nonneg_iff_isPositive.mp (hM X)).inner_nonneg_right u
-      rw [hsum X u] at hpos
-      simpa [X, hu] using hpos
-    · simp only [not_exists, not_not] at hv
-      simp [hv]
-  · set T : H →L[ℂ] H := ∑ i, ∑ j, star (X i) * M i j * X j
-    rw [ContinuousLinearMap.nonneg_iff_isPositive, ContinuousLinearMap.isPositive_iff_complex]
-    intro v
-    have hz : 0 ≤ ⟪v, T v⟫_ℂ := (hsum X v).symm ▸ hξ fun i => X i v
-    obtain ⟨hre, him⟩ := Complex.nonneg_iff.mp hz
-    have hTv : ⟪T v, v⟫_ℂ = ⟪v, T v⟫_ℂ :=
-      (inner_conj_symm _ v).symm.trans (IsSelfAdjoint.of_nonneg hz).star_eq
-    exact hTv ▸ ⟨by apply Complex.ext <;> simp [← him], by simpa using hre⟩
-
-/-- Every vector quadratic form of a positive operator matrix in `CStarMatrix n n (H →L[ℂ] H)` is
-nonnegative in `ℂ`. -/
-theorem sum_inner_nonneg {M : CStarMatrix n n (H →L[ℂ] H)} (hM : 0 ≤ M) (ξ : n → H) :
-    0 ≤ ∑ i, ∑ j, ⟪ξ i, M i j (ξ j)⟫_ℂ :=
-  nonneg_iff_forall_sum_inner_nonneg.mp hM ξ
-
-end HilbertSpace
 
 end CStarMatrix
