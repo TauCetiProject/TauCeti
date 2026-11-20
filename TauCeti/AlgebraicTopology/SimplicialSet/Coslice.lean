@@ -63,6 +63,9 @@ simplicial set on these edges.
 * `SSet.coslice.isIso_π`: the coslice under the empty diagram is the whole simplicial set.
 * `SSet.coslice.opSliceIso_inv_comp_map`: through `SSet.coslice.opSliceIso`, a map of coslices
   is the image under the reversal functor `SSet.opFunctor` of a map of slices.
+* `SSet.coslice.opSliceIsoOfEq p hp`: for a diagram `p'` equal to `pᵒᵖ`, the identification of
+  the opposite of the slice `Cᵒᵖ_{/p'}` with the coslice `C_{p/}`; it is natural in maps of slices
+  (`SSet.coslice.opFunctor_map_slice_map_comp_opSliceIsoOfEq_hom`).
 * `SSet.coslice.opSliceRestrictionMapArrowIso j p τ`: applying the reversal functor
   `SSet.opFunctor` to the relative slice map for `jᵒᵖ`, `pᵒᵖ` and `τᵒᵖ` gives an arrow isomorphic
   to the relative coslice map for `j`, `p` and `τ`.
@@ -349,6 +352,46 @@ lemma opSliceIso_inv_comp_map (i : L ⟶ K) (g : C ⟶ D) (h : i ≫ p ≫ g = q
         rw [opIso_inv_comp_opFunctor_map_homEquiv_coe, ← opHomEquiv_comp_opFunctor_map,
           Category.id_comp]
 
+variable (p) in
+/-- For a diagram `p'` equal to `pᵒᵖ`, the identification of the opposite of the slice
+`Cᵒᵖ_{/p'}` with the coslice `C_{p/}`: the image under `SSet.opFunctor` of the isomorphism of
+slices `Cᵒᵖ_{/p'} ≅ Cᵒᵖ_{/pᵒᵖ}` induced by identities, followed by the inverse of
+`SSet.coslice.opSliceIso`. It identifies, for instance, the opposite of the slice indexed by the
+composite `jᵒᵖ ≫ τᵒᵖ` with the coslice under `j ≫ τ`. -/
+noncomputable def opSliceIsoOfEq {p' : K.op ⟶ C.op} (hp : p' = opFunctor.map p) :
+    (slice p').op ≅ coslice p :=
+  opFunctor.mapIso (asIso (slice.map (𝟙 _) (𝟙 _) (by simp [hp]) :
+    slice p' ⟶ slice (opFunctor.map p))) ≪≫ (opSliceIso p).symm
+
+/-- The isomorphism `SSet.coslice.opSliceIsoOfEq` is the image under `SSet.opFunctor` of the map of
+slices induced by identities, followed by the inverse of `SSet.coslice.opSliceIso`. -/
+lemma opSliceIsoOfEq_hom {p' : K.op ⟶ C.op} (hp : p' = opFunctor.map p) :
+    (opSliceIsoOfEq p hp).hom = opFunctor.map (slice.map (𝟙 _) (𝟙 _) (by simp [hp]) :
+      slice p' ⟶ slice (opFunctor.map p)) ≫ (opSliceIso p).inv :=
+  (rfl)
+
+variable (p) in
+/-- For the diagram `pᵒᵖ` itself, `SSet.coslice.opSliceIsoOfEq` is the inverse of
+`SSet.coslice.opSliceIso`. -/
+@[simp]
+lemma opSliceIsoOfEq_rfl : opSliceIsoOfEq p rfl = (opSliceIso p).symm := by
+  ext1
+  simp [opSliceIsoOfEq_hom]
+
+/-- **Naturality of `SSet.coslice.opSliceIsoOfEq`**: through these identifications, the opposite
+of the map of slices induced by `iᵒᵖ` and `gᵒᵖ` is the map of coslices induced by `i` and `g`. The
+maps `i'` and `g'` are any maps equal to `iᵒᵖ` and `gᵒᵖ`. -/
+@[reassoc]
+lemma opFunctor_map_slice_map_comp_opSliceIsoOfEq_hom {p' : K.op ⟶ C.op} {q' : L.op ⟶ D.op}
+    (hp : p' = opFunctor.map p) (hq : q' = opFunctor.map q) (i : L ⟶ K) (g : C ⟶ D)
+    (h : i ≫ p ≫ g = q) {i' : L.op ⟶ K.op} {g' : C.op ⟶ D.op} (hi : opFunctor.map i = i')
+    (hg : opFunctor.map g = g') (h' : i' ≫ p' ≫ g' = q') :
+    opFunctor.map (slice.map i' g' h') ≫ (opSliceIsoOfEq q hq).hom =
+      (opSliceIsoOfEq p hp).hom ≫ map i g h := by
+  rw [opSliceIsoOfEq_hom, opSliceIsoOfEq_hom, Category.assoc, opSliceIso_inv_comp_map i g h hi hg,
+    ← Functor.map_comp_assoc, ← Functor.map_comp_assoc, slice.map_comp, slice.map_comp]
+  simp only [Category.id_comp, Category.comp_id]
+
 /-- Pushing cocones forward along an isomorphism is an isomorphism of coslices: through
 `SSet.coslice.opSliceIso`, it is the image under `SSet.opFunctor` of the map of slices pushing
 cones forward along `gᵒᵖ` (`SSet.coslice.opSliceIso_inv_comp_map`), which is an isomorphism
@@ -411,10 +454,10 @@ namespace coslice
 relative slice map for `jᵒᵖ`, `pᵒᵖ` and `τᵒᵖ` gives an arrow isomorphic to the relative coslice map
 `X_{τ/} ⟶ X_{j ≫ τ/} ×_{S_{j ≫ τ ≫ p/}} S_{τ ≫ p/}`. On sources the isomorphism is the
 identification of coslices with opposite slices (`SSet.coslice.opSliceIso`). On targets it is the
-comparison of pullbacks, since `SSet.opFunctor` preserves pullbacks and maps of coslices are the
-opposites of maps of slices (`SSet.coslice.opSliceIso_inv_comp_map`); the slices indexed by the
-composites `jᵒᵖ ≫ τᵒᵖ`, `τᵒᵖ ≫ pᵒᵖ` and `jᵒᵖ ≫ τᵒᵖ ≫ pᵒᵖ` are identified with those indexed by the
-opposites of `j ≫ τ`, `τ ≫ p` and `j ≫ τ ≫ p` through `Functor.map_comp`. -/
+comparison of pullbacks, since `SSet.opFunctor` preserves pullbacks; the opposites of the slices
+indexed by the composites `jᵒᵖ ≫ τᵒᵖ`, `τᵒᵖ ≫ pᵒᵖ` and `jᵒᵖ ≫ τᵒᵖ ≫ pᵒᵖ` are identified with the
+coslices under `j ≫ τ`, `τ ≫ p` and `j ≫ τ ≫ p` by `SSet.coslice.opSliceIsoOfEq`, which is
+natural in maps of slices (`SSet.coslice.opFunctor_map_slice_map_comp_opSliceIsoOfEq_hom`). -/
 noncomputable def opSliceRestrictionMapArrowIso (j : A ⟶ B) (p : X ⟶ S) (τ : B ⟶ X) :
     Arrow.mk (opFunctor.map
       (slice.restrictionMap (opFunctor.map j) (opFunctor.map p) (opFunctor.map τ))) ≅
@@ -426,44 +469,25 @@ noncomputable def opSliceRestrictionMapArrowIso (j : A ⟶ B) (p : X ⟶ S) (τ 
           slice (opFunctor.map j ≫ opFunctor.map τ ≫ opFunctor.map p))
       (slice.map (opFunctor.map j) (𝟙 _) (by simp) :
         slice (opFunctor.map τ ≫ opFunctor.map p) ⟶ _)).map opFunctor).of_iso (Iso.refl _)
-    (opFunctor.mapIso (asIso (slice.map (𝟙 _) (𝟙 _) (by simp) :
-      slice (opFunctor.map j ≫ opFunctor.map τ) ⟶ slice (opFunctor.map (j ≫ τ)))) ≪≫
-        (opSliceIso (j ≫ τ)).symm)
-    (opFunctor.mapIso (asIso (slice.map (𝟙 _) (𝟙 _) (by simp) :
-      slice (opFunctor.map τ ≫ opFunctor.map p) ⟶ slice (opFunctor.map (τ ≫ p)))) ≪≫
-        (opSliceIso (τ ≫ p)).symm)
-    (opFunctor.mapIso (asIso (slice.map (𝟙 _) (𝟙 _) (by simp) :
-      slice (opFunctor.map j ≫ opFunctor.map τ ≫ opFunctor.map p) ⟶
-        slice (opFunctor.map (j ≫ τ ≫ p)))) ≪≫ (opSliceIso (j ≫ τ ≫ p)).symm)
-    (fst' := opFunctor.map (pullback.fst _ _) ≫ opFunctor.map (slice.map (𝟙 _) (𝟙 _) (by simp) :
-      slice (opFunctor.map j ≫ opFunctor.map τ) ⟶ slice (opFunctor.map (j ≫ τ))) ≫
-        (opSliceIso (j ≫ τ)).inv)
-    (snd' := opFunctor.map (pullback.snd _ _) ≫ opFunctor.map (slice.map (𝟙 _) (𝟙 _) (by simp) :
-      slice (opFunctor.map τ ≫ opFunctor.map p) ⟶ slice (opFunctor.map (τ ≫ p))) ≫
-        (opSliceIso (τ ≫ p)).inv)
-    (f' := map (𝟙 A) p (by simp)) (g' := map j (𝟙 S) (by simp)) (Category.id_comp _).symm
-    (Category.id_comp _).symm
-    (by
-      simp only [Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom, asIso_hom]
-      rw [Category.assoc _ (opSliceIso (j ≫ τ)).inv,
-        opSliceIso_inv_comp_map (p := j ≫ τ) (𝟙 A) p _ (CategoryTheory.Functor.map_id _ _) rfl]
-      simp only [← Functor.map_comp_assoc, slice.map_comp, Category.id_comp, Category.comp_id])
-    (by
-      simp only [Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom, asIso_hom]
-      rw [Category.assoc _ (opSliceIso (τ ≫ p)).inv,
-        opSliceIso_inv_comp_map (p := τ ≫ p) j (𝟙 S) _ rfl (CategoryTheory.Functor.map_id _ _)]
-      simp only [← Functor.map_comp_assoc, slice.map_comp, Category.id_comp, Category.comp_id])
+    (opSliceIsoOfEq (j ≫ τ) (Functor.map_comp _ _ _).symm)
+    (opSliceIsoOfEq (τ ≫ p) (Functor.map_comp _ _ _).symm)
+    (opSliceIsoOfEq (j ≫ τ ≫ p) (by simp)) (f' := map (𝟙 A) p (by simp))
+    (g' := map j (𝟙 S) (by simp)) (Category.id_comp _).symm (Category.id_comp _).symm
+    (opFunctor_map_slice_map_comp_opSliceIsoOfEq_hom _ _ (𝟙 A) p _
+      (CategoryTheory.Functor.map_id _ _) rfl _)
+    (opFunctor_map_slice_map_comp_opSliceIsoOfEq_hom _ _ j (𝟙 S) _ rfl
+      (CategoryTheory.Functor.map_id _ _) _)
   refine Arrow.isoMk (opSliceIso τ).symm hP.isoPullback (pullback.hom_ext ?_ ?_)
   · simp only [Arrow.mk_hom, Iso.symm_hom, Category.assoc]
-    rw [restrictionMap_fst, hP.isoPullback_hom_fst,
-      opSliceIso_inv_comp_map (p := τ) j (𝟙 X) _ rfl (CategoryTheory.Functor.map_id _ _)]
-    simp only [← Functor.map_comp_assoc, slice.restrictionMap_fst_assoc,
-      slice.map_comp, Category.id_comp, Category.comp_id]
+    simp only [restrictionMap_fst, hP.isoPullback_hom_fst, ← Functor.map_comp_assoc,
+      slice.restrictionMap_fst]
+    rw [opFunctor_map_slice_map_comp_opSliceIsoOfEq_hom rfl _ j (𝟙 X) _ rfl
+        (CategoryTheory.Functor.map_id _ _), opSliceIsoOfEq_rfl, Iso.symm_hom]
   · simp only [Arrow.mk_hom, Iso.symm_hom, Category.assoc]
-    rw [restrictionMap_snd, hP.isoPullback_hom_snd,
-      opSliceIso_inv_comp_map (p := τ) (𝟙 B) p _ (CategoryTheory.Functor.map_id _ _) rfl]
-    simp only [← Functor.map_comp_assoc, slice.restrictionMap_snd_assoc,
-      slice.map_comp, Category.comp_id]
+    simp only [restrictionMap_snd, hP.isoPullback_hom_snd, ← Functor.map_comp_assoc,
+      slice.restrictionMap_snd]
+    rw [opFunctor_map_slice_map_comp_opSliceIsoOfEq_hom rfl _ (𝟙 B) p _
+        (CategoryTheory.Functor.map_id _ _) rfl, opSliceIsoOfEq_rfl, Iso.symm_hom]
 
 /-- On sources, the isomorphism `SSet.coslice.opSliceRestrictionMapArrowIso` is the identification
 `(Xᵒᵖ_{/τᵒᵖ})ᵒᵖ ≅ X_{τ/}` of `SSet.coslice.opSliceIso`. -/
@@ -482,6 +506,7 @@ lemma opSliceRestrictionMapArrowIso_hom_right_fst (j : A ⟶ B) (p : X ⟶ S) (�
       opFunctor.map (pullback.fst _ _) ≫ opFunctor.map (slice.map (𝟙 _) (𝟙 _) (by simp) :
         slice (opFunctor.map j ≫ opFunctor.map τ) ⟶ slice (opFunctor.map (j ≫ τ))) ≫
           (opSliceIso (j ≫ τ)).inv := by
+  rw [← opSliceIsoOfEq_hom (p := j ≫ τ) (Functor.map_comp _ _ _).symm]
   apply IsPullback.isoPullback_hom_fst
 
 /-- On targets, the second component of the isomorphism
@@ -494,6 +519,7 @@ lemma opSliceRestrictionMapArrowIso_hom_right_snd (j : A ⟶ B) (p : X ⟶ S) (�
       opFunctor.map (pullback.snd _ _) ≫ opFunctor.map (slice.map (𝟙 _) (𝟙 _) (by simp) :
         slice (opFunctor.map τ ≫ opFunctor.map p) ⟶ slice (opFunctor.map (τ ≫ p))) ≫
           (opSliceIso (τ ≫ p)).inv := by
+  rw [← opSliceIsoOfEq_hom (p := τ ≫ p) (Functor.map_comp _ _ _).symm]
   apply IsPullback.isoPullback_hom_snd
 
 /-- For an isomorphism `p`, the map `SSet.coslice.restrictionMap j p τ` is an isomorphism: through

@@ -9,23 +9,18 @@ public import TauCeti.AlgebraicTopology.Quasicategory.RightFibration
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Slice
 
 /-!
-# Relative slices of inner fibrations
+# Slices and coslices of quasicategories
 
-Let `p : X ⟶ S` be an inner fibration, `i : L ⟶ K` a monomorphism and `σ : K ⟶ X` a diagram. The
-relative slice map `SSet.slice.restrictionMap i p σ`,
-`X_{/σ} ⟶ X_{/i ≫ σ} ×_{S_{/i ≫ σ ≫ p}} S_{/σ ≫ p}`,
-which restricts a cone over `σ` along `i` and pushes it forward along `p`, is a right fibration
-(HTT Proposition 2.1.2.1). Dually, the relative coslice map `SSet.coslice.restrictionMap i p σ` is
-a left fibration. Taking `S` a point, the restriction of cones `C_{/p} ⟶ C_{/j ≫ p}` along a
-monomorphism `j` is a right fibration for a quasicategory `C`; taking moreover `L` empty, so is the
-projection `C_{/p} ⟶ C`, and the slice `C_{/p}` is a quasicategory (Joyal). The same holds dually
-for coslices.
-
-The relative fibration results and their join horn proofs are in
-`TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Slice`. The unrestricted
-pushout-join lifting correspondence ranges over all diagrams. For a fixed slice diagram
-`σ : K ⟶ X`, the map `A ⋆ K ⟶ X` must restrict to `σ` on `K`; for a fixed coslice diagram
-`τ : B ⟶ X`, the map `B ⋆ L ⟶ X` must restrict to `τ` on `B`.
+For a quasicategory `C`, a diagram `p : K ⟶ C` and a monomorphism `j : L ⟶ K`, the restriction
+of cones `C_{/p} ⟶ C_{/j ≫ p}` is a right fibration; taking `L` empty, so is the projection
+`C_{/p} ⟶ C`, and the slice `C_{/p}` is a quasicategory (Joyal). The same holds dually for
+coslices, with left fibrations. These are the special cases, for `S` a point, of the relative
+results `SSet.slice.rightFibration_restrictionMap` and `SSet.coslice.leftFibration_restrictionMap`
+of `TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Slice`: for an inner
+fibration `p : X ⟶ S`, the relative slice and coslice maps are right and left fibrations
+(HTT Proposition 2.1.2.1). Those are proved through the pushout-join lifting criteria
+`SSet.slice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout` and
+`SSet.coslice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout`.
 
 ## Main results
 
