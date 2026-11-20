@@ -26,16 +26,13 @@ transported through the bounded embedding `TauCeti.Wkp.toBesselPotentialSpace` o
 into `H^{k,2}(E, ℂ)`, whose range is the real-valued elements and whose inverse is bounded on
 that range.
 
-For classical functions this gives the two estimates that make the `L²` norms of the derivatives
-through order `k` behave like a Banach algebra norm. If `f` and `g` are `Cᵏ` on `E` and their
-derivatives through order `k` are square integrable, then
-
-* `sup_x |f(x)| ≤ C ∑_{i ≤ k} ‖Dⁱ f‖₂`
-  (`TauCeti.exists_norm_le_mul_sum_lpNorm_iteratedFDeriv`), from the Sobolev embedding
-  `TauCeti.Wkp.toZeroAtInfty`;
-* the derivatives of `f g` through order `k` are square integrable, and
-  `∑_{i ≤ k} ‖Dⁱ (f g)‖₂ ≤ C (∑_{i ≤ k} ‖Dⁱ f‖₂) (∑_{i ≤ k} ‖Dⁱ g‖₂)`
-  (`TauCeti.exists_sum_lpNorm_iteratedFDeriv_mul_le`).
+For classical functions this gives the estimate that, together with the sup bound
+`sup_x |f(x)| ≤ C ∑_{i ≤ k} ‖Dⁱ f‖₂` (`TauCeti.exists_norm_le_mul_sum_lpNorm_iteratedFDeriv`),
+makes the `L²` norms of the derivatives through order `k` behave like a Banach algebra norm. If
+`f` and `g` are `Cᵏ` on `E` and their derivatives through order `k` are square integrable, then
+the derivatives of `f g` through order `k` are square integrable, and
+`∑_{i ≤ k} ‖Dⁱ (f g)‖₂ ≤ C (∑_{i ≤ k} ‖Dⁱ f‖₂) (∑_{i ≤ k} ‖Dⁱ g‖₂)`
+(`TauCeti.exists_sum_lpNorm_iteratedFDeriv_mul_le`).
 
 These are the estimates behind nonlinear analysis on the scale of `L²` derivatives of order
 `k > n / 2`: polynomial expressions of such functions stay in the scale, with norms controlled by
@@ -137,41 +134,7 @@ theorem exists_norm_mul_le (hk : finrank ℝ E < 2 * k) :
         hTw.trans (mul_le_mul_of_nonneg_left hPle (le_max_right _ _))
     _ = max C₁ 0 * (‖M‖ * ‖T‖ * ‖T‖) * ‖u‖ * ‖v‖ := by ring
 
-/-- A function that is `Cᵏ` on the whole space with square-integrable derivatives through order
-`k` is the value of an element of `W^{k,2}(E)` whose norm is at most the sum of the `L²` norms of
-these derivatives. -/
-private theorem exists_value_ae_eq_and_norm_le {f : E → ℝ} (hf : ContDiff ℝ k f)
-    (hmem : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2) :
-    ∃ u : Wkp (volume : Measure E) ⊤ 2 k, (value k u : E → ℝ) =ᵐ[volume] f ∧
-      ‖u‖ ≤ ∑ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i f) 2 volume := by
-  have hres : (volume : Measure E).restrict ((⊤ : Opens E) : Set E) = volume :=
-    Measure.restrict_coe_opens_top volume
-  obtain ⟨u, hu⟩ := exists_value_ae_eq_of_contDiffOn (mu := volume) (Omega := ⊤) (p := 2) k
-    hf.contDiffOn (by simpa only [hres] using hmem)
-  refine ⟨u, by simpa only [hres] using hu, ?_⟩
-  simpa only [hres] using norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn k u hf.contDiffOn hu
-
 end Wkp
-
-/-- **The Sobolev embedding for classical functions.** If `2k > dim E`, there is a constant `C`
-such that every function `f` that is `Cᵏ` on `E` with square-integrable derivatives through
-order `k` satisfies `|f(x)| ≤ C ∑_{i ≤ k} ‖Dⁱ f‖₂` at every point. -/
-theorem exists_norm_le_mul_sum_lpNorm_iteratedFDeriv (hk : finrank ℝ E < 2 * k) :
-    ∃ C, ∀ f : E → ℝ, ContDiff ℝ k f → (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2) →
-      ∀ x, ‖f x‖ ≤ C * ∑ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i f) 2 volume := by
-  set S := Wkp.toZeroAtInfty (E := E) hk
-  refine ⟨‖S‖, fun f hf hmem x ↦ ?_⟩
-  obtain ⟨u, hu, hnorm⟩ := Wkp.exists_value_ae_eq_and_norm_le hf hmem
-  -- The continuous representative of `u` is `f` itself, since both are continuous.
-  have hSf : ⇑(S u) = f :=
-    Continuous.ae_eq_iff_eq volume (S u).continuous hf.continuous |>.1 <|
-      (Wkp.value_ae_eq_toZeroAtInfty hk u).symm.trans hu
-  calc ‖f x‖ = ‖S u x‖ := by rw [hSf]
-    _ ≤ ‖S u‖ := by
-      rw [← ZeroAtInftyContinuousMap.norm_toBCF_eq_norm]
-      exact (S u).toBCF.norm_coe_le_norm x
-    _ ≤ ‖S‖ * ‖u‖ := S.le_opNorm u
-    _ ≤ ‖S‖ * ∑ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i f) 2 volume := by gcongr
 
 /-- **Products of classical functions with square-integrable derivatives.** If `2k > dim E`, there
 is a constant `C` such that for all functions `f` and `g` that are `Cᵏ` on `E` with

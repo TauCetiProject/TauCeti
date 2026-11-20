@@ -236,7 +236,7 @@ theorem mul_semiclassicalSobolevNorm_fderiv_le {k : ℕ} {f : E → F} (hf : Con
   have hD : ∀ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i (fderiv ℝ f)) 2 volume =
       lpNorm (iteratedFDeriv ℝ (i + 1) f) 2 volume := fun i hi ↦ by
     have hi : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
-    simp only [lpNorm]
+    rw [← toReal_eLpNorm, ← toReal_eLpNorm]
     congr 1
     refine eLpNorm_congr_norm_ae
       (((hf.fderiv_right (m := k) (by norm_cast)).continuous_iteratedFDeriv
@@ -279,9 +279,7 @@ theorem rpow_mul_semiclassicalSobolevNorm_le_semiclassicalSobolevNorm_one (k : �
   · rwa [rpow_mul_semiclassicalSobolevNorm k hh]
   -- At scale zero the left side vanishes, unless `E` is zero dimensional.
   rcases eq_or_ne (finrank ℝ E) 0 with hn | hn
-  · rw [semiclassicalSobolevNorm, hn, Nat.cast_zero, neg_zero, zero_div, Real.rpow_zero, one_mul,
-      one_mul]
-    exact hle
+  · simpa [semiclassicalSobolevNorm_def, hn] using hle
   · rw [Real.zero_rpow (by positivity), zero_mul, semiclassicalSobolevNorm_one]
     exact Finset.sum_nonneg fun i _ ↦ lpNorm_nonneg
 
