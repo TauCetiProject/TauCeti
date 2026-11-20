@@ -51,7 +51,8 @@ the series `θ_{γ+y+M}` over those classes, and in particular `Θ_L` as the sum
 
 * `Complex.norm_exp_pi_mul_I_mul_ofReal_mul`: `‖exp (π i t z)‖ = exp (-π t im z)` for real `t`,
   so the term of index `v` has norm `exp (-π ‖γ + v‖² im τ)`.
-* `ZLattice.thetaSeries_bot`: the theta series of the zero lattice is `1`.
+* `ZLattice.thetaSeries_bot`, `ZLattice.thetaSeries_of_subsingleton`: the theta series of the zero
+  lattice, and of every lattice in the zero space, is `1`.
 * `ZLattice.thetaCoset_eq_of_sub_mem`, `ZLattice.thetaCoset_neg`: `θ_{γ+L}` depends only on
   `γ` modulo `L`, and `θ_{-γ+L} = θ_{γ+L}`.
 * `ZLattice.summable_norm_thetaCoset`, `ZLattice.summable_thetaCoset`: the series converge
@@ -183,6 +184,11 @@ theorem thetaCoset_bot (γ : E) (τ : ℍ) :
 theorem thetaSeries_bot : thetaSeries (⊥ : Submodule ℤ E) = 1 := by
   ext τ
   simp [← thetaCoset_zero]
+
+/-- Every lattice in the zero space has theta series `1`, being the zero lattice. -/
+@[simp]
+theorem thetaSeries_of_subsingleton [Subsingleton E] (L : Submodule ℤ E) : thetaSeries L = 1 :=
+  Subsingleton.elim (⊥ : Submodule ℤ E) L ▸ thetaSeries_bot
 
 /-- The sum of the terms of `θ_{γ+L}` over the fiber of the quotient map `L → L / M` is the theta
 series of the translate of `M` by `γ` plus a representative of that class. -/

@@ -92,6 +92,11 @@ theorem IsEven.mono {L M : Submodule ℤ E} (hM : IsEven M) (h : L ≤ M) : IsEv
 theorem isEven_bot : IsEven (⊥ : Submodule ℤ E) :=
   fun x hx ↦ ⟨0, by simp [(mem_bot ℤ).mp hx]⟩
 
+/-- Every lattice in the zero space is even, being the zero lattice. -/
+@[simp]
+theorem isEven_of_subsingleton [Subsingleton E] (L : Submodule ℤ E) : IsEven L :=
+  Subsingleton.elim (⊥ : Submodule ℤ E) L ▸ isEven_bot
+
 /-- The lattice spanned by a single vector `v` is even if and only if `‖v‖²` is an even
 integer. -/
 theorem isEven_span_singleton_iff [NormSMulClass ℤ E] {v : E} :

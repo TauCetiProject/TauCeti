@@ -292,8 +292,7 @@ theorem IsEven.level_eq_one_of_isUnimodular (h : IsEven L) (hu : IsUnimodular L)
 /-- Every lattice in the zero space has level one, being the even unimodular zero lattice. -/
 @[simp]
 theorem level_of_subsingleton [Subsingleton E] : level L = 1 :=
-  (Subsingleton.elim L ⊥ ▸ isEven_bot).level_eq_one_of_isUnimodular
-    (isUnimodular_of_subsingleton L)
+  (isEven_of_subsingleton L).level_eq_one_of_isUnimodular (isUnimodular_of_subsingleton L)
 
 /-! ### Lattices in a finite-dimensional space -/
 
@@ -675,21 +674,11 @@ theorem level_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι] [Nonempt
     (b : OrthonormalBasis ι ℝ E) {m : ℕ} :
     level (√(m : ℝ) • span ℤ (Set.range b)) = 2 * m := by
   rcases eq_or_ne m 0 with rfl | hm
-  · -- The lattice is `0`, whose dual is the whole space, so no `N > 0` makes `N ‖x‖² / 2` an
-    -- integer.
+  · -- The lattice is `0`, whose dual is the whole space, so its level is `0`.
     obtain ⟨i⟩ := ‹Nonempty ι›
     rw [Nat.cast_zero, Real.sqrt_zero, zero_smul, mul_zero]
-    by_contra hne
-    have hpos : (0 : ℝ) < level (⊥ : Submodule ℤ E) := by exact_mod_cast Nat.pos_of_ne_zero hne
-    have hx : (√(level (⊥ : Submodule ℤ E) : ℝ))⁻¹ • b i ∈ dual (⊥ : Submodule ℤ E) :=
-      mem_dual.2 fun y hy ↦ by
-        rw [Submodule.mem_bot] at hy
-        exact ⟨0, by simp [hy]⟩
-    obtain ⟨k, hk⟩ := exists_level_mul_norm_sq_eq hx
-    rw [norm_smul, mul_pow, norm_inv, Real.norm_of_nonneg (Real.sqrt_nonneg _), inv_pow,
-      Real.sq_sqrt hpos.le, b.orthonormal.1 i, one_pow, mul_one, mul_inv_cancel₀ hpos.ne'] at hk
-    have hk' : (1 : ℤ) = 2 * k := by exact_mod_cast hk
-    omega
+    have : Nontrivial E := ⟨⟨b i, 0, b.orthonormal.ne_zero i⟩⟩
+    exact level_bot
   have hs : 0 < √(m : ℝ) := Real.sqrt_pos.mpr (by positivity)
   have hsq : √(m : ℝ) ^ 2 = m := Real.sq_sqrt (Nat.cast_nonneg m)
   have hnorm (y : E) : ‖(√(m : ℝ))⁻¹ • y‖ ^ 2 = ‖y‖ ^ 2 / m := by
