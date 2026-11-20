@@ -149,7 +149,7 @@ theorem injective_lift_of_pow_of_ne (hab : a ≠ b) (hn : n ≠ 0) :
     Function.Injective (FreeGroup.lift ![of a ^ n, of b]) := by
   -- An element commuting with `b` is a power of `b`, and `aⁿ = bᵐ` forces `n = 0`.
   refine IsFreeGroup.injective_lift_of_not_commute fun h => ?_
-  obtain ⟨m, hm⟩ := Subgroup.mem_zpowers_iff.1 (mem_zpowers_of_of_commute h)
+  obtain ⟨m, hm⟩ := Subgroup.mem_zpowers_iff.1 (commute_of_iff.mp h.symm)
   have := eq_of_of_zpow_eq_of_zpow hab (n := n) (m := m) (by simpa using hm.symm)
   lia
 

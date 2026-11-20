@@ -8,9 +8,14 @@ module
 public import Mathlib.Algebra.Group.Even
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
+import Mathlib.Algebra.Ring.Int.Parity
 
 /-!
-# Squares and finite products
+# Squares, powers and finite products
+
+For integer powers of a common element `r` of a group, one of `r ^ m`, `r ^ n` and `r ^ m * r ^ n`
+is a square (`isSquare_zpow_or_isSquare_zpow_or_isSquare_zpow_mul_zpow`), since one of `m`, `n`
+and `m + n` is even.
 
 A unit square factor does not change whether an element is a square
 (`IsUnit.isSquare_sq_mul_iff`).
@@ -46,3 +51,13 @@ theorem IsUnit.isSquare_sq_mul_iff {M : Type*} [CommMonoid M] {u x : M} (hu : Is
   refine ⟨fun h ↦ ?_, fun ⟨r, hr⟩ ↦ ⟨u * r, by rw [hr, mul_mul_mul_comm, sq]⟩⟩
   have := (IsSquare.sq (↑hu.unit⁻¹ : M)).mul h
   rwa [← mul_assoc, ← mul_pow, hu.val_inv_mul, one_pow, one_mul] at this
+
+/-- For integer powers of a common element `r` of a group, one of `r ^ m`, `r ^ n` and
+`r ^ m * r ^ n` is a square: one of `m`, `n` and `m + n` is even. -/
+theorem isSquare_zpow_or_isSquare_zpow_or_isSquare_zpow_mul_zpow {G : Type*} [Group G] (r : G)
+    (m n : ℤ) : IsSquare (r ^ m) ∨ IsSquare (r ^ n) ∨ IsSquare (r ^ m * r ^ n) := by
+  obtain hm | hm := Int.even_or_odd m
+  · exact .inl (hm.isSquare_zpow r)
+  obtain hn | hn := Int.even_or_odd n
+  · exact .inr (.inl (hn.isSquare_zpow r))
+  · exact .inr (.inr (by rw [← zpow_add]; exact (hm.add_odd hn).isSquare_zpow r))
