@@ -79,10 +79,11 @@ the Sylvester equation `M.map D = M * P - Q * M`, then `D (det M) = det M * (tr 
 theorem leibniz_det_of_map_eq_mul_sub_mul {n : Type*} [Fintype n] [DecidableEq n]
     {M P Q : Matrix n n A} (h : M.map D = M * P - Q * M) :
     D M.det = M.det * (P.trace - Q.trace) := by
-  rw [leibniz_det, h, Matrix.mul_sub, trace_sub, ← Matrix.mul_assoc, adjugate_mul,
-    ← Matrix.mul_assoc, trace_mul_comm _ M, ← Matrix.mul_assoc, mul_adjugate, Matrix.smul_mul,
-    Matrix.smul_mul, Matrix.one_mul, Matrix.one_mul, trace_smul, trace_smul, smul_eq_mul,
-    smul_eq_mul, mul_sub]
+  have hP : trace (adjugate M * (M * P)) = M.det * P.trace := by
+    rw [← Matrix.mul_assoc, adjugate_mul, smul_one_mul, trace_smul, smul_eq_mul]
+  have hQ : trace (adjugate M * (Q * M)) = M.det * Q.trace := by
+    rw [trace_mul_comm, Matrix.mul_assoc, mul_adjugate, mul_smul_one, trace_smul, smul_eq_mul]
+  rw [leibniz_det, h, Matrix.mul_sub, trace_sub, hP, hQ, mul_sub]
 
 open Polynomial in
 /-- If a derivation `D` acts on a square matrix `M` as the commutator with a matrix `B`, then it
@@ -90,33 +91,22 @@ kills every coefficient of the characteristic polynomial of `M`. This is the inf
 the invariance of the characteristic polynomial under conjugation. -/
 theorem charpoly_coeff_eq_zero_of_map_eq_mul_sub_mul {n : Type*} [Fintype n] [DecidableEq n]
     {M B : Matrix n n A} (h : M.map D = B * M - M * B) (i : ℕ) : D (M.charpoly.coeff i) = 0 := by
-  -- `D'` is the derivation of `A[X]` applying `D` to every coefficient.
-  let D' : Derivation ℤ A[X] A[X] :=
-    (PolynomialModule.equivPolynomialSelf (R := A)).toLinearMap.compDer
-      (D.restrictScalars ℤ).mapCoeffs
-  -- Mathlib has no coefficient lemma for `PolynomialModule.equivPolynomialSelf`, which reads the
-  -- coefficients off unchanged; `Derivation.mapCoeffs_apply` holds by `rfl` in the same way.
-  have hD' (p : A[X]) (j : ℕ) : (D' p).coeff j = D (p.coeff j) := (rfl)
-  have hC (a : A) : D' (C a) = C (D a) := by
-    ext j
-    rw [hD', coeff_C, coeff_C]
-    split_ifs <;> simp
-  have hX : D' X = 0 := by
-    ext j
-    rw [hD', coeff_X, coeff_zero]
-    split_ifs <;> simp
-  -- `D'` acts on the characteristic matrix as the commutator with `B`, up to sign.
-  have hN : (charmatrix M).map D' =
+  -- Applying `D` to every coefficient is the derivation `Differential.mapCoeffs` of `A[X]`.
+  let : Differential A := ⟨D.restrictScalars ℤ⟩
+  have hderiv (a : A) : Differential.deriv a = D a := rfl
+  -- It acts on the characteristic matrix as the commutator with `B`, up to sign.
+  have hN : (charmatrix M).map Differential.mapCoeffs =
       charmatrix M * -B.map C - -B.map C * charmatrix M := by
-    have hmap : (charmatrix M).map D' = -(M.map D).map C := by
+    have hmap : (charmatrix M).map Differential.mapCoeffs = -(M.map D).map C := by
       ext p q
-      by_cases hpq : p = q <;> simp [hpq, hC, hX]
+      by_cases hpq : p = q <;> simp [hpq, hderiv]
     have hcomm := Matrix.scalar_commute (n := n) (X : A[X]) (fun _ ↦ Commute.all _ _) (B.map C)
     rw [hmap, h, Matrix.map_sub _ (map_sub C), Matrix.map_mul, Matrix.map_mul, charmatrix,
       RingHom.mapMatrix_apply]
     simp only [Matrix.mul_neg, Matrix.neg_mul, Matrix.mul_sub, Matrix.sub_mul, hcomm.eq]
     abel
-  rw [← hD', charpoly, leibniz_det_of_map_eq_mul_sub_mul D' hN, sub_self, mul_zero, coeff_zero]
+  rw [← hderiv, ← Differential.coeff_mapCoeffs, charpoly,
+    leibniz_det_of_map_eq_mul_sub_mul _ hN, sub_self, mul_zero, coeff_zero]
 
 variable {R' S : Type*} [CommSemiring R'] [CommRing S] [Algebra A S] [Algebra R' S]
   (D' : Derivation R' S S) (hD : ∀ a, D' (algebraMap A S a) = algebraMap A S (D a))

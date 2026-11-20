@@ -45,9 +45,9 @@ The same holds for the coefficients of the characteristic polynomial of the gene
 commutators, which kill every characteristic coefficient. All of them except the leading one
 vanish at the origin (`TauCeti.algebraMapInv_charpoly_coeff_genericActionMatrix_of_lt`).
 
-For a semisimple Lie algebra over an algebraically closed field of characteristic zero, these
-invariant polynomials restrict on a Cartan subalgebra to the power sums of the weights of `M`, and
-they are the invariant polynomial functions used in the surjectivity half of Chevalley's
+For a semisimple Lie algebra over an algebraically closed field of characteristic zero, the
+trace-power polynomials restrict on a Cartan subalgebra to the power sums of the weights of `M`,
+and they are the invariant polynomial functions used in the surjectivity half of Chevalley's
 restriction theorem and of the Harish-Chandra isomorphism.
 
 ## Main definitions

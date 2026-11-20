@@ -17,6 +17,7 @@ public import TauCeti.Algebra.Lie.TracePowerPolynomial
 public import TauCeti.Algebra.Lie.Reductive.InvariantZeroLocus
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import TauCeti.Algebra.Lie.Basic
+import TauCeti.Algebra.Polynomial.Degree.Map
 
 /-!
 # The nilpotent cone of an affine group
@@ -474,12 +475,9 @@ theorem charpoly_map_genericActionMatrix_eq_X_pow_of_nilpotentConeIdeal_le_ker {
       (algebraMapInv_charpoly_coeff_genericActionMatrix_of_lt k 𝔤 c hi))
     rw [adjointInvariantPolynomials_eq_lieInvariants]
     exact charpoly_coeff_genericActionMatrix_mem_lieInvariants k 𝔤 c i
-  rw [Matrix.charpoly_map, (Matrix.charpoly_monic A).as_sum, Matrix.charpoly_natDegree_eq_dim,
-    Polynomial.map_add, Polynomial.map_pow, Polynomial.map_X, Polynomial.map_sum,
-    add_eq_left]
-  refine Finset.sum_eq_zero fun i hi ↦ ?_
-  rw [Polynomial.map_mul, Polynomial.map_C, Polynomial.map_pow, Polynomial.map_X,
-    hcoeff i (Finset.mem_range.mp hi), map_zero, zero_mul]
+  rw [Matrix.charpoly_map, ← Matrix.charpoly_natDegree_eq_dim A]
+  exact (Matrix.charpoly_monic A).map_eq_X_pow_of_map_coeff_eq_zero fun i hi ↦
+    hcoeff i (A.charpoly_natDegree_eq_dim ▸ hi)
 
 /-- **The uniform nilpotency bound on the nilpotent cone.** For a connected affine group over an
 algebraically closed field of characteristic zero, let `M` be a Lie module over its Lie algebra

@@ -45,7 +45,9 @@ Thus, over a reduced ring, a nilpotent summand contributes nothing to a Fredholm
 
 Conversely, over every commutative ring, the Cayley–Hamilton theorem turns the characteristic
 polynomial `(X - μ) ^ n` into the explicit nilpotency bound `(f - μ • 1) ^ n = 0`
-(`LinearMap.pow_sub_smul_eq_zero_of_charpoly_eq`); no reducedness is needed in this direction.
+(`LinearMap.pow_sub_smul_eq_zero_of_charpoly_eq`, and
+`LinearMap.pow_sub_one_eq_zero_of_charpoly_eq` for `μ = 1`); no reducedness is needed in this
+direction.
 -/
 
 public section
@@ -66,6 +68,13 @@ theorem pow_sub_smul_eq_zero_of_charpoly_eq {f : Module.End R M} {μ : R} {n : �
   have hX : (f - μ • 1).charpoly = X ^ n := by
     rw [charpoly_sub_smul, h, pow_comp, Polynomial.sub_comp, X_comp, C_comp, add_sub_cancel_right]
   rw [← aeval_X_pow (R := R), ← hX, aeval_self_charpoly]
+
+/-- **Cayley–Hamilton for the eigenvalue `1`.** If an endomorphism of a finite free module over a
+commutative ring has characteristic polynomial `(X - 1) ^ n`, then `(f - 1) ^ n = 0`. -/
+theorem pow_sub_one_eq_zero_of_charpoly_eq {f : Module.End R M} {n : ℕ}
+    (h : f.charpoly = (X - 1) ^ n) : (f - 1) ^ n = 0 := by
+  rw [← one_smul R (1 : Module.End R M)]
+  exact pow_sub_smul_eq_zero_of_charpoly_eq (by rwa [map_one])
 
 end Free
 
