@@ -88,7 +88,10 @@ the difference of two weak solutions with the same initial value.
   solutions, for the continuous `L²(Ω)`-valued representative at every time and for the
   `H¹₀(Ω)`-valued solution almost everywhere.
 * `TauCeti.PDE.norm_sq_add_two_mul_integral_energyFormH1_eq_of_hasWeakLineDerivOn_gelfandDual`:
-  the energy identity `‖u(t)‖² + 2 ∫ₛᵗ a_r(u, u) = ‖u(s)‖² + 2 ∫ₛᵗ f(u)` for weak solutions.
+  the energy identity `‖u(t)‖² + 2 ∫ₛᵗ a_r(u, u) = ‖u(s)‖² + 2 ∫ₛᵗ f(u)` for weak solutions, and
+  its unforced case
+  `norm_sq_add_two_mul_integral_energyFormH1_eq_norm_sq_of_hasWeakLineDerivOn_gelfandDual`,
+  `‖u(t)‖² + 2 ∫ₛᵗ a_r(u, u) = ‖u(s)‖²`.
 
 ## References
 
@@ -419,6 +422,33 @@ theorem norm_sq_add_two_mul_integral_energyFormH1_eq_of_hasWeakLineDerivOn_gelfa
     hae hs ht
   -- Testing the equation with `u(r)` itself.
   filter_upwards [heq] with r hr using hr (u r)
+
+/-- **The energy identity for the unforced parabolic Dirichlet problem.** Every weak solution of
+`∂ₜu + L(t) u = 0` in `(t₀, t₁) × Ω`, `u = 0` on `(t₀, t₁) × ∂Ω`, with continuous `L²(Ω)`-valued
+representative `w`, satisfies `‖w t‖² + 2 ∫ₛᵗ a_r(u(r), u(r)) dr = ‖w s‖²` for all
+`s, t ∈ [t₀, t₁]`. This is
+`TauCeti.PDE.norm_sq_add_two_mul_integral_energyFormH1_eq_of_hasWeakLineDerivOn_gelfandDual` with
+`f = 0`. -/
+theorem norm_sq_add_two_mul_integral_energyFormH1_eq_norm_sq_of_hasWeakLineDerivOn_gelfandDual
+    {u : ℝ → W1p0 mu Omega 2} {u' : ℝ → StrongDual ℝ (W1p0 mu Omega 2)}
+    {w : ℝ → Lp ℝ 2 (mu.restrict Omega)}
+    (hd : HasWeakLineDerivOn volume ⟨Ioo t₀ t₁, isOpen_Ioo⟩
+      (fun t => (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)).gelfandDual
+        (W1p0.valueL (u t))) u' 1)
+    (hu : MemLp u 2 (volume.restrict (Ioo t₀ t₁)))
+    (hu' : MemLp u' 2 (volume.restrict (Ioo t₀ t₁)))
+    (heq : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 mu Omega 2,
+      u' t v + energyFormH1 (a t) (b t) (c t) (u t : W1p mu Omega 2) (v : W1p mu Omega 2) = 0)
+    (hw : ContinuousOn w (Icc t₀ t₁))
+    (hae : (fun t => W1p0.valueL (u t)) =ᵐ[volume.restrict (Ioo t₀ t₁)] w)
+    {s t : ℝ} (hs : s ∈ Icc t₀ t₁) (ht : t ∈ Icc t₀ t₁) :
+    ‖w t‖ ^ 2 + 2 * ∫ r in s..t,
+        energyFormH1 (a r) (b r) (c r) (u r : W1p mu Omega 2) (u r : W1p mu Omega 2) =
+      ‖w s‖ ^ 2 := by
+  have h := norm_sq_add_two_mul_integral_energyFormH1_eq_of_hasWeakLineDerivOn_gelfandDual
+    (a := a) (b := b) (c := c) (f := fun _ => 0) hd hu hu'
+    (memLp_const (0 : StrongDual ℝ (W1p0 mu Omega 2))) heq hw hae hs ht
+  simpa using h
 
 end PDE
 

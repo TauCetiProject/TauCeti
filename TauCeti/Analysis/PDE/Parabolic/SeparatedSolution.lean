@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.DirichletProblem
 public import TauCeti.Analysis.PDE.Spectrum.Interval
-import TauCeti.Analysis.PDE.Parabolic.EnergyEstimate
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -318,15 +317,10 @@ theorem norm_sq_add_two_mul_integral_energyFormH1_eq_of_value_ae_eq_sin (hab : a
     ‖w t‖ ^ 2 + 2 * ∫ r in t₀..t, energyFormH1 (fun _ => 1) 0 0
         (u r : W1p volume (intervalDomain a b) 2) (u r : W1p volume (intervalDomain a b) 2) =
       (b - a) / 2 := by
-  -- The energy identity, for the equation tested with `u(r)` and right-hand side `0`.
-  have h := hd.norm_sq_add_two_mul_integral_eq_of_gelfandDual (g := fun _ => 0) hu hu'
-    integrableOn_zero (by filter_upwards [heq] with r hr using hr (u r)) hw hae
-    ⟨le_rfl, ht.1.trans ht.2⟩ ht
-  have hnorm : ‖w t₀‖ ^ 2 = (b - a) / 2 := by
-    rw [h₀, W1p0.valueL_apply]
-    exact norm_value_sq_of_value_ae_eq_sin hab hk hs
-  rw [intervalIntegral.integral_zero, mul_zero, add_zero, hnorm] at h
-  exact h
+  rw [norm_sq_add_two_mul_integral_energyFormH1_eq_norm_sq_of_hasWeakLineDerivOn_gelfandDual
+    (a := fun _ _ => 1) (b := fun _ => 0) (c := fun _ => 0) hd hu hu' heq hw hae
+    ⟨le_rfl, ht.1.trans ht.2⟩ ht, h₀, W1p0.valueL_apply]
+  exact norm_value_sq_of_value_ae_eq_sin hab hk hs
 
 /-- **The backward heat equation is ill-posed.** On the interval `(a, b)` and a time interval
 `(t₀, t₁)`, `t₀ < t₁`, consider weak solutions of the backward heat equation `∂ₜu + Δu = 0` with
