@@ -71,7 +71,7 @@ private def detLineSingle (h : ∀ i, Even (finrank K (U i))) (i : ι) :
     detLine K (U i) →ₗ[K] Subalgebra.center K (ExteriorAlgebra K ((i : ι) → U i)) where
   toFun x := ⟨ExteriorAlgebra.map (LinearMap.single K U i) (x : ExteriorAlgebra K (U i)),
     ExteriorAlgebra.mem_center_of_mem_of_even
-      ((LinearMap.single K U i).exteriorAlgebra_map_mem_exteriorPower x.2) (h i)⟩
+      ((LinearMap.single K U i).exteriorAlgebra_map_mem_exteriorPower x.property) (h i)⟩
   map_add' x y := Subtype.ext (by simp)
   map_smul' r x := Subtype.ext (by simp)
 
@@ -92,7 +92,7 @@ private theorem coe_prod_detLineSingle_mem (h : ∀ i, Even (finrank K (U i)))
   | insert a s ha ih =>
     rw [Finset.prod_insert ha, Finset.sum_insert ha, Subalgebra.coe_mul]
     exact SetLike.mul_mem_graded
-      ((LinearMap.single K U a).exteriorAlgebra_map_mem_exteriorPower (x a).2) ih
+      ((LinearMap.single K U a).exteriorAlgebra_map_mem_exteriorPower (x a).property) ih
 
 variable [∀ i, FiniteDimensional K (U i)] [Fintype ι]
 

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.ODE.DysonSeries
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
-public import TauCeti.Geometry.Symplectic.Floer.Linearization
+public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
@@ -30,6 +30,8 @@ Floer operator `∂s u + J(∂t u - X_{H_t}(u))` has linearization
 slice `s = const` the operator `D = TauCeti.Floer.stationaryCylinderOperator` is `∂s + A` for the
 asymptotic operator `A ζ = J_t (ζ' - S_t ζ)` acting on loops
 (`TauCeti.Floer.asymptoticOperator`, `Floer.stationaryCylinderOperator_eq_add_asymptoticOperator`).
+On a product section `φ(s) e(t)` whose loop solves `e' = S_t e - λ J_t e`, so that `A e = λ e`, it
+is the scalar operator `(φ' + λ φ) e` (`Floer.stationaryCylinderOperator_smul_of_hasDerivAt`).
 These are the operators which describe the linearized Floer equation on cylindrical ends
 asymptotic to `x`.
 
@@ -466,7 +468,40 @@ theorem stationaryCylinderOperator_of_notMem_tsupport (hz : z ∉ tsupport ξ) :
     fderiv_of_notMem_tsupport ℝ hz]
   simp
 
+/-- **Product sections with an eigenmode.** If a loop `e` solves `e' = S_t e - λ J_t e`, then on
+the product section `φ(s) e(t)` the stationary cylinder operator acts as the scalar operator
+`d/ds + λ`: `D (φ e) = (φ' + λ φ) e`. -/
+theorem stationaryCylinderOperator_smul_of_hasDerivAt {e : ℝ → V} {lam : ℝ}
+    (he : ∀ y, HasDerivAt e (S y (e y) - lam • J y (e y)) y) {φ : ℝ → ℝ}
+    (hφ : Differentiable ℝ φ) (z : ℝ × ℝ) :
+    stationaryCylinderOperator J S (fun w ↦ φ w.1 • e w.2) z =
+      (deriv φ z.1 + lam * φ z.1) • e z.2 := by
+  have h1 : HasFDerivAt (fun w : ℝ × ℝ ↦ φ w.1)
+      (deriv φ z.1 • ContinuousLinearMap.fst ℝ ℝ ℝ) z :=
+    (hφ z.1).hasDerivAt.comp_hasFDerivAt z hasFDerivAt_fst
+  have h2 := (he z.2).hasFDerivAt.comp z (hasFDerivAt_snd (p := z))
+  have h : HasFDerivAt (fun w : ℝ × ℝ ↦ φ w.1 • e w.2) _ z := h1.smul h2
+  have hJ : J z.2 (J z.2 (e z.2)) = -e z.2 := AlmostComplexStructure.apply_apply _ _
+  rw [stationaryCylinderOperator_def, h.fderiv]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.coe_snd', ContinuousLinearMap.toSpanSingleton_apply,
+    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.coe_fst', stdComplexLineReal_fst,
+    stdComplexLineReal_snd, stdComplexLineImag_fst, stdComplexLineImag_snd, smul_eq_mul,
+    mul_one, mul_zero, zero_smul, one_smul, smul_zero, zero_add, add_zero, map_smul,
+    AlmostComplexStructure.apply_sub]
+  rw [hJ]
+  module
+
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V}
+
+/-- For continuous `J_t` and `S_t`, the stationary cylinder operator of a `C¹` map is continuous. -/
+theorem continuous_stationaryCylinderOperator
+    (hJc : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) (hSc : Continuous S)
+    (hξ : ContDiff ℝ 1 ξ) : Continuous (stationaryCylinderOperator J S ξ) := by
+  have h := hξ.continuous_fderiv one_ne_zero
+  simp only [funext (stationaryCylinderOperator_def J S ξ)]
+  exact (h.clm_apply continuous_const).add (((hJc.comp continuous_snd).clm_apply
+    ((h.clm_apply continuous_const).sub ((hSc.comp continuous_snd).clm_apply hξ.continuous))))
 
 /-- **Shifting the stationary cylinder operator by a weight.** Replacing `S_t` by `S_t - δ J_t`
 shifts the stationary cylinder operator by `-δ`. -/
@@ -848,8 +883,7 @@ theorem isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero
 time-dependent Hamiltonian `H` whose suspended vector field is globally Lipschitz, with `x(0)` a
 nondegenerate fixed point of the time-one map. Then the return map `Ψ(1)` of the linearized
 Hamiltonian equation `ζ' = S_t ζ`, with `S_t = dX_{H_t}(x(t))`, satisfies `det (1 - Ψ(1)) ≠ 0`:
-`Ψ(1)` is the derivative of the time-one map at `x(0)`
-(`fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft`), which fixes no nonzero vector. -/
+`Ψ(1)` fixes no nonzero vector (`eq_zero_of_dysonSeriesLeft_apply_eq_self`). -/
 theorem det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt (ω : SymplecticForm V)
     {H : ℝ → V → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
     (hH : ContDiff ℝ 2 (uncurry H)) {x : ℝ → V}
@@ -860,13 +894,10 @@ theorem det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt (ω : Symp
       0 := by
   intro h
   obtain ⟨v, hv, hv0⟩ := (Submodule.ne_bot_iff _).1 (LinearMap.det_eq_zero_iff_ker_ne_bot.1 h)
-  refine hv0 (hnd.eq_zero_of_mfderiv_apply_eq ?_)
-  rw [hnd.mdifferentiableAt.differentiableAt.hasFDerivAt.hasMFDerivAt.mfderiv,
-    ω.fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft hX hH hx 0 1]
+  refine hv0 (ω.eq_zero_of_dysonSeriesLeft_apply_eq_self hX hH hx hnd ?_)
   have hv' : v - dysonSeriesLeft
       (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 v = 0 := by
     simpa using hv
-  simp only [zero_add, sub_zero]
   exact (sub_eq_zero.1 hv').symm
 
 /-- **Small weights preserve nondegeneracy.** At a nondegenerate one-periodic orbit `x` of a
