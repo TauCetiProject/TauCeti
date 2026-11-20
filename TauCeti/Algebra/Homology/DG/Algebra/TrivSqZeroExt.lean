@@ -36,8 +36,9 @@ homotopy theory, where `R = M = K[t]` and `D` is differentiation
 ## Main results
 
 * `Derivation.isDGAlgebra_trivSqZeroExtDifferential`: `R ⊕ M` is a differential graded algebra.
-* `Derivation.unitHom_cohomologyMap_bijective_iff`: the unit `S → R ⊕ M` is a quasi-isomorphism
-  exactly when `S → R` is injective and `D` is surjective with kernel the scalars.
+* `Derivation.trivSqZeroExtUnitHom_cohomologyMap_bijective_iff`: the unit `S → R ⊕ M` is a
+  quasi-isomorphism exactly when `S → R` is injective and `D` is surjective with kernel the
+  scalars.
 * `Derivation.trivSqZeroExtAugmentation_cohomologyMap_bijective_iff`: the same criterion for
   every augmentation.
 -/
@@ -121,7 +122,7 @@ private theorem cohomologyMap_unitHom_mk_eq_iff (s : S)
 /-- The unit `S → R ⊕ M` of the differential graded algebra of a derivation `D : R → M` is a
 quasi-isomorphism exactly when `S → R` is injective, every `r` with `D r = 0` is a scalar, and `D`
 is surjective: the cohomology of `R ⊕ M` is `ker D` in degree `0` and `coker D` in degree `1`. -/
-theorem unitHom_cohomologyMap_bijective_iff :
+theorem trivSqZeroExtUnitHom_cohomologyMap_bijective_iff :
     Function.Bijective D.isDGAlgebra_trivSqZeroExtDifferential.unitHom.cohomologyMap ↔
       Function.Injective (algebraMap S R) ∧ (∀ r, D r = 0 → ∃ s, algebraMap S R s = r) ∧
         Function.Surjective D := by
@@ -170,6 +171,7 @@ theorem trivSqZeroExtAugmentation_cohomologyMap_bijective_iff (φ : R →ₐ[S] 
     Function.Bijective (D.trivSqZeroExtAugmentation φ).cohomologyMap ↔
       Function.Injective (algebraMap S R) ∧ (∀ r, D r = 0 → ∃ s, algebraMap S R s = r) ∧
         Function.Surjective D :=
-  (DGAlgAugmentation.cohomologyMap_bijective_iff _).trans D.unitHom_cohomologyMap_bijective_iff
+  (DGAlgAugmentation.cohomologyMap_bijective_iff _).trans
+    D.trivSqZeroExtUnitHom_cohomologyMap_bijective_iff
 
 end Derivation

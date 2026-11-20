@@ -100,10 +100,12 @@ theorem fst_dt : (dt : PolynomialInterval K).fst = 0 :=
 theorem snd_dt : (dt : PolynomialInterval K).snd = 1 :=
   (rfl)
 
-theorem t_mem_grading_zero : (t : PolynomialInterval K) ∈ trivSqZeroExtGrading K K[X] K[X] 0 :=
+theorem t_mem_trivSqZeroExtGrading_zero :
+    (t : PolynomialInterval K) ∈ trivSqZeroExtGrading K K[X] K[X] 0 :=
   inl_mem_trivSqZeroExtGrading_zero _
 
-theorem dt_mem_grading_one : (dt : PolynomialInterval K) ∈ trivSqZeroExtGrading K K[X] K[X] 1 :=
+theorem dt_mem_trivSqZeroExtGrading_one :
+    (dt : PolynomialInterval K) ∈ trivSqZeroExtGrading K K[X] K[X] 1 :=
   inr_mem_trivSqZeroExtGrading_one _
 
 /-- The form `q dt` is the product of the function `q` with `dt`. -/
@@ -140,7 +142,7 @@ quasi-isomorphism, since a polynomial with zero derivative is constant and every
 antiderivative. -/
 theorem unitHom_cohomologyMap_bijective [CharZero K] :
     Function.Bijective (isDGAlgebra K).unitHom.cohomologyMap :=
-  derivative'.unitHom_cohomologyMap_bijective_iff.mpr
+  derivative'.trivSqZeroExtUnitHom_cohomologyMap_bijective_iff.mpr
     ⟨C_injective, fun p hp ↦ ⟨p.coeff 0, (eq_C_of_derivative_eq_zero hp).symm⟩,
       derivative_surjective⟩
 
@@ -155,7 +157,7 @@ is a cycle that is not exact, so the unit `K → Λ(t, dt)` is not a quasi-isomo
 theorem unitHom_cohomologyMap_not_bijective_of_charP (p : ℕ) [CharP K p] [NeZero p] :
     ¬Function.Bijective (isDGAlgebra K).unitHom.cohomologyMap := fun h ↦
   derivative_not_surjective_of_charP p
-    (derivative'.unitHom_cohomologyMap_bijective_iff.mp h).2.2
+    (derivative'.trivSqZeroExtUnitHom_cohomologyMap_bijective_iff.mp h).2.2
 
 /-- The algebra map underlying `TauCeti.PolynomialInterval.pullback`. -/
 private noncomputable def pullbackAlgHom (s : K[X]) :

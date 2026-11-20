@@ -24,7 +24,7 @@ graded-commutative.
 
 ## Main results
 
-* `TrivSqZeroExt.instGradedAlgebraGrading`: `R ⊕ M` is a graded algebra.
+* `TauCeti.instGradedAlgebraTrivSqZeroExtGrading`: `R ⊕ M` is a graded algebra.
 * `TauCeti.mul_eq_negOnePow_smul_mul_of_mem_trivSqZeroExtGrading`: `R ⊕ M` is graded-commutative.
 -/
 
@@ -165,7 +165,7 @@ instance : Decomposition (trivSqZeroExtGrading S R M) :=
 
 /-- The degree-`0` component of an element of `R ⊕ M` is its `R`-component. -/
 @[simp]
-theorem _root_.TrivSqZeroExt.coe_decompose_zero (x : tsze R M) :
+theorem _root_.TrivSqZeroExt.coe_decompose_trivSqZeroExtGrading_zero (x : tsze R M) :
     (decompose (trivSqZeroExtGrading S R M) x 0 : tsze R M) = inl x.fst := by
   conv_lhs => rw [← inl_fst_add_inr_snd_eq x]
   simp [decompose_of_mem_same _ (inl_mem_trivSqZeroExtGrading_zero _),
@@ -173,7 +173,7 @@ theorem _root_.TrivSqZeroExt.coe_decompose_zero (x : tsze R M) :
 
 /-- The degree-`1` component of an element of `R ⊕ M` is its `M`-component. -/
 @[simp]
-theorem _root_.TrivSqZeroExt.coe_decompose_one (x : tsze R M) :
+theorem _root_.TrivSqZeroExt.coe_decompose_trivSqZeroExtGrading_one (x : tsze R M) :
     (decompose (trivSqZeroExtGrading S R M) x 1 : tsze R M) = inr x.snd := by
   conv_lhs => rw [← inl_fst_add_inr_snd_eq x]
   simp [decompose_of_mem_ne _ (inl_mem_trivSqZeroExtGrading_zero _) zero_ne_one,
