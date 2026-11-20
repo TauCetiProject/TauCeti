@@ -8,11 +8,14 @@ module
 public import Mathlib.Analysis.Normed.Group.Constructions
 
 /-!
-# Powers of the norm on a finite product
+# Norms on products
 
 The norm on a finite product of seminormed groups is the maximum of the coordinate norms, so for
 every positive exponent `n` its `n`-th power is at most the sum of the `n`-th powers of the
 coordinate norms (`Pi.norm_pow_le_sum_norm_pow`).
+
+Over an arbitrary index type, every coordinate of `Pi.single i c` has norm at most `‖c‖`
+(`Pi.norm_single_apply_le`).
 -/
 
 public section
@@ -30,3 +33,11 @@ theorem Pi.norm_pow_le_sum_norm_pow {ι : Type*} [Fintype ι] {E : ι → Type*}
   rw [hf]
   exact Finset.single_le_sum (f := fun i ↦ ‖f i‖ ^ n) (fun _ _ ↦ by positivity)
     (Finset.mem_univ i)
+
+/-- Every coordinate of `Pi.single i c` has norm at most `‖c‖`, over any index type. -/
+theorem Pi.norm_single_apply_le {ι : Type*} [DecidableEq ι] {E : ι → Type*}
+    [∀ i, SeminormedAddGroup (E i)] (i j : ι) (c : E i) :
+    ‖(Pi.single i c : ∀ j, E j) j‖ ≤ ‖c‖ := by
+  rcases eq_or_ne j i with rfl | h
+  · simp
+  · simp [Pi.single_eq_of_ne h]

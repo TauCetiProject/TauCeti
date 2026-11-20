@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Robba.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 import Mathlib.Topology.Instances.Int
-import TauCeti.Topology.Algebra.InfiniteSum.DiscreteConvolution
+import TauCeti.Analysis.Normed.Group.Pi
 
 /-!
 # The Amice ring
@@ -34,17 +34,19 @@ cofinite filter: as `y → -∞` because `b_y → 0` and `a` is bounded, and as 
 ## Main definitions
 
 * `TauCeti.amiceCoeff`: the `R`-module of bounded families tending to zero at `-∞`.
-* `TauCeti.AmiceRing`: the Amice ring, with its `Ring`, `CommRing` and `Algebra` instances.
-* `TauCeti.AmiceRing.monomial`: the Laurent monomial `c tⁿ`.
-* `TauCeti.AmiceRing.integral`: the integral subring `O_E`.
+* `TauCeti.AmiceRing`: the Amice ring, with its `Ring`, `CommRing` and `Algebra` instances, its
+  Laurent monomials and its integral subring
+  `O_E = TauCeti.IsConvolutionRing.integral (amiceCoeff R)`, all from
+  `TauCeti.instIsConvolutionRingAmiceCoeff`.
 * `TauCeti.RobbaRing.boundedToAmice`: the embedding of the bounded Robba ring into `E`.
 
 ## Main results
 
 * `TauCeti.addRingConvolution_mem_amiceCoeff`: the convolution of two Amice families is an Amice
   family.
-* `TauCeti.AmiceRing.hasSum_coeff_mul`: the coefficients of a product are the convergent
-  convolution sums.
+* `TauCeti.instIsConvolutionRingAmiceCoeff`: over a complete ultrametric ring, the coefficients
+  of a product of Amice families are convergent convolution sums, and the triple products are
+  summable.
 * `TauCeti.RobbaRing.boundedToAmice_injective`, `TauCeti.RobbaRing.mem_range_boundedToAmice`: the
   bounded Robba ring is the subring of the Amice ring of series converging on some annulus.
 
@@ -93,7 +95,7 @@ theorem mem_amiceCoeff {a : ℤ → R} :
   (Iff.rfl)
 
 theorem single_mem_amiceCoeff (n : ℤ) (c : R) : Pi.single n c ∈ amiceCoeff R := by
-  refine ⟨⟨‖c‖, Set.forall_mem_range.2 (norm_single_apply_le n · c)⟩,
+  refine ⟨⟨‖c‖, Set.forall_mem_range.2 (Pi.norm_single_apply_le (E := fun _ ↦ R) n · c)⟩,
     tendsto_const_nhds.congr' ?_⟩
   filter_upwards [eventually_lt_atBot n] with m hm
   simp [Pi.single_eq_of_ne hm.ne]
@@ -116,7 +118,7 @@ end Coeff
 
 section Convolution
 
-variable [NormedRing R] {a b c : ℤ → R}
+variable [SeminormedRing R] {a b c : ℤ → R}
 
 /-- The terms `a (n - y) * b y` of the `n`-th convolution coefficient of two Amice families tend
 to zero along the cofinite filter. -/
@@ -168,7 +170,8 @@ theorem addRingConvolution_mem_amiceCoeff (ha : a ∈ amiceCoeff R) (hb : b ∈ 
   obtain ⟨A, -, hA⟩ := exists_norm_le_of_mem_amiceCoeff ha
   obtain ⟨B, -, hB⟩ := exists_norm_le_of_mem_amiceCoeff hb
   -- every coefficient has norm at most `A B`
-  refine ⟨⟨A * B, Set.forall_mem_range.2 (norm_addRingConvolution_apply_le hA hB)⟩,
+  refine ⟨⟨A * B,
+    Set.forall_mem_range.2 (DiscreteConvolution.norm_addRingConvolution_apply_le hA hB)⟩,
     Metric.tendsto_nhds.2 fun ε hε ↦ ?_⟩
   -- below `N` both families are small against the other's bound, and a coefficient of degree
   -- `n ≤ N + N` has in each term `a (n - y) * b y` a factor of degree at most `N`
@@ -216,6 +219,14 @@ theorem summable_sigma_addFiber_mul_mul_of_mem_amiceCoeff (ha : a ∈ amiceCoeff
   congr 2
   omega
 
+/-- Over a complete ultrametric ring the Amice coefficient families form a ring under
+convolution. -/
+instance instIsConvolutionRingAmiceCoeff : IsConvolutionRing (amiceCoeff R) where
+  single_mem := single_mem_amiceCoeff
+  addRingConvolution_mem := addRingConvolution_mem_amiceCoeff
+  addConvolutionExists := addConvolutionExists_of_mem_amiceCoeff
+  summable_sigma_addFiber_mul_mul := summable_sigma_addFiber_mul_mul_of_mem_amiceCoeff
+
 end Convolution
 
 /-! ### The Amice ring -/
@@ -223,161 +234,20 @@ end Convolution
 variable (R) in
 /-- **The Amice ring** `E` over `R`: the Laurent series `∑_{n ∈ ℤ} aₙ tⁿ` with bounded
 coefficients tending to zero as `n → -∞`, with the convolution product. Its ring structure needs
-`R` complete and ultrametric (`TauCeti.AmiceRing.instRing`). -/
+`R` complete and ultrametric (`TauCeti.instIsConvolutionRingAmiceCoeff`). -/
 abbrev AmiceRing [SeminormedRing R] : Type _ :=
   amiceCoeff R
 
-namespace AmiceRing
-
-section One
-
-variable [SeminormedRing R]
-
 @[ext]
-theorem ext {f g : AmiceRing R} (h : ∀ n, (f : ℤ → R) n = (g : ℤ → R) n) : f = g :=
+theorem AmiceRing.ext [SeminormedRing R] {f g : AmiceRing R}
+    (h : ∀ n, (f : ℤ → R) n = (g : ℤ → R) n) : f = g :=
   Subtype.ext <| funext h
-
-instance instOne : One (AmiceRing R) where
-  one := ⟨Pi.single 0 1, single_mem_amiceCoeff 0 1⟩
-
-@[simp, norm_cast]
-theorem coe_one : ((1 : AmiceRing R) : ℤ → R) = Pi.single 0 1 :=
-  (rfl)
-
-/-- **The Laurent monomial `c tⁿ`** of the Amice ring. -/
-def monomial (n : ℤ) (c : R) : AmiceRing R :=
-  ⟨Pi.single n c, single_mem_amiceCoeff n c⟩
-
-@[simp, norm_cast]
-theorem coe_monomial (n : ℤ) (c : R) : (monomial n c : ℤ → R) = Pi.single n c :=
-  (rfl)
-
-@[simp]
-theorem monomial_zero_one : monomial 0 (1 : R) = 1 :=
-  (rfl)
-
-end One
-
-section Ring
-
-variable [NormedRing R] [IsUltrametricDist R]
-
-noncomputable instance instMul : Mul (AmiceRing R) where
-  mul f g := ⟨f ⋆ᵣ₊ g, addRingConvolution_mem_amiceCoeff f.2 g.2⟩
-
-/-- The coefficient family of a product is the convolution of the coefficient families. -/
-@[simp, norm_cast]
-theorem coe_mul (f g : AmiceRing R) : ((f * g : AmiceRing R) : ℤ → R) = ↑f ⋆ᵣ₊ ↑g :=
-  (rfl)
-
-/-- **Laurent monomials multiply by adding degrees**: `(a tᵐ)(b tⁿ) = ab tᵐ⁺ⁿ`. -/
-@[simp]
-theorem monomial_mul_monomial (m n : ℤ) (a b : R) :
-    monomial m a * monomial n b = monomial (m + n) (a * b) :=
-  Subtype.ext <| DiscreteConvolution.single_addRingConvolution_single m n a b
-
-variable [CompleteSpace R]
-
-/-- **The coefficients of a product are convergent convolution sums**: the `n`-th coefficient of
-`f g` is the sum of the convergent series `∑_{y ∈ ℤ} fₙ₋ᵧ gᵧ`. -/
-theorem hasSum_coeff_mul (f g : AmiceRing R) (n : ℤ) :
-    HasSum (fun y ↦ (f : ℤ → R) (n - y) * (g : ℤ → R) y) (((f * g : AmiceRing R) : ℤ → R) n) := by
-  rw [coe_mul]
-  exact (addConvolutionExists_of_mem_amiceCoeff f.2 g.2 n).hasSum_sub
-
-/-- **The Amice ring is a ring** over a complete ultrametric normed ring. -/
-noncomputable instance instRing : Ring (AmiceRing R) where
-  mul_assoc f g h := Subtype.ext <| by
-    simp only [coe_mul]
-    exact DiscreteConvolution.addRingConvolution_assoc
-      (addConvolutionExists_of_mem_amiceCoeff f.2 g.2)
-      (addConvolutionExists_of_mem_amiceCoeff g.2 h.2)
-      (summable_sigma_addFiber_mul_mul_of_mem_amiceCoeff f.2 g.2 h.2)
-  one_mul f := Subtype.ext <| by
-    rw [coe_mul, coe_one, DiscreteConvolution.single_addRingConvolution]
-  mul_one f := Subtype.ext <| by
-    rw [coe_mul, coe_one, DiscreteConvolution.addRingConvolution_single]
-  zero_mul f := Subtype.ext <| by
-    rw [coe_mul, Submodule.coe_zero, DiscreteConvolution.zero_addRingConvolution]
-  mul_zero f := Subtype.ext <| by
-    rw [coe_mul, Submodule.coe_zero, DiscreteConvolution.addRingConvolution_zero]
-  left_distrib f g h := Subtype.ext <| by
-    rw [coe_mul, Submodule.coe_add, Submodule.coe_add, coe_mul, coe_mul]
-    exact DiscreteConvolution.addRingConvolution_add _ _ _
-      (addConvolutionExists_of_mem_amiceCoeff f.2 g.2)
-      (addConvolutionExists_of_mem_amiceCoeff f.2 h.2)
-  right_distrib f g h := Subtype.ext <| by
-    rw [coe_mul, Submodule.coe_add, Submodule.coe_add, coe_mul, coe_mul]
-    exact DiscreteConvolution.add_addRingConvolution _ _ _
-      (addConvolutionExists_of_mem_amiceCoeff f.2 h.2)
-      (addConvolutionExists_of_mem_amiceCoeff g.2 h.2)
-
-/-- **A monomial with a unit coefficient is a unit**: the inverse of `a tⁿ` is `a⁻¹ t⁻ⁿ`. In
-particular the variable `t = monomial 1 1` is a unit of the Amice ring. -/
-theorem isUnit_monomial (n : ℤ) {a : R} (ha : IsUnit a) : IsUnit (monomial n a) := by
-  obtain ⟨u, rfl⟩ := ha
-  exact isUnit_iff_exists.2 ⟨monomial (-n) ↑u⁻¹, by simp, by simp⟩
-
-section Integral
-
-variable [NormOneClass R]
-
-variable (R) in
-/-- **The integral Amice ring** `O_E`: the subring of series whose coefficients lie in the closed
-unit ball. -/
-def integral : Subring (AmiceRing R) where
-  carrier := {f | ∀ n, ‖(f : ℤ → R) n‖ ≤ 1}
-  mul_mem' hf hg n := (norm_addRingConvolution_apply_le hf hg n).trans_eq (one_mul 1)
-  one_mem' n := (norm_single_apply_le 0 n (1 : R)).trans_eq norm_one
-  add_mem' hf hg n := (IsUltrametricDist.norm_add_le_max _ _).trans (max_le (hf n) (hg n))
-  zero_mem' n := by simp
-  neg_mem' hf n := by simpa using hf n
-
-@[simp]
-theorem mem_integral {f : AmiceRing R} : f ∈ integral R ↔ ∀ n, ‖(f : ℤ → R) n‖ ≤ 1 :=
-  (Iff.rfl)
-
-/-- A monomial `c tⁿ` with `‖c‖ ≤ 1` is integral. -/
-theorem monomial_mem_integral (n : ℤ) {c : R} (hc : ‖c‖ ≤ 1) : monomial n c ∈ integral R :=
-  fun m ↦ (norm_single_apply_le n m c).trans hc
-
-end Integral
-
-end Ring
-
-section CommRing
-
-variable [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
-
-/-- **The Amice ring over a commutative ring is commutative.** -/
-noncomputable instance instCommRing : CommRing (AmiceRing R) where
-  mul_comm f g := Subtype.ext <| by
-    rw [coe_mul, coe_mul, DiscreteConvolution.addRingConvolution_comm]
-
-/-- **The Amice ring is an `R`-algebra**, with the coefficientwise scalar action. -/
-noncomputable instance instAlgebra : Algebra R (AmiceRing R) :=
-  .ofModule
-    (fun c f g ↦ Subtype.ext <| by
-      rw [Submodule.coe_smul, coe_mul, coe_mul, Submodule.coe_smul]
-      exact DiscreteConvolution.smul_addRingConvolution c _ _
-        (addConvolutionExists_of_mem_amiceCoeff f.2 g.2))
-    (fun c f g ↦ Subtype.ext <| by
-      rw [Submodule.coe_smul, coe_mul, coe_mul, Submodule.coe_smul]
-      exact DiscreteConvolution.addRingConvolution_smul c _ _
-        (addConvolutionExists_of_mem_amiceCoeff f.2 g.2))
-
-/-- The structure map sends `c` to the constant series `c = c t⁰`. -/
-@[simp, norm_cast]
-theorem coe_algebraMap (c : R) : (algebraMap R (AmiceRing R) c : ℤ → R) = Pi.single 0 c := by
-  simp [Algebra.algebraMap_eq_smul_one, ← Pi.single_smul]
-
-end CommRing
-
-end AmiceRing
 
 /-! ### The bounded Robba ring inside the Amice ring -/
 
 namespace RobbaRing
+
+open IsConvolutionRing
 
 variable [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
 
@@ -411,7 +281,7 @@ theorem boundedToAmice_injective : Function.Injective (boundedToAmice R) :=
 monomial `c tⁿ`. -/
 @[simp]
 theorem boundedToAmice_monomial (n : ℤ) (c : R) :
-    boundedToAmice R ⟨monomial n c, monomial_mem_bounded n c⟩ = AmiceRing.monomial n c :=
+    boundedToAmice R ⟨monomial n c, monomial_mem_bounded n c⟩ = (monomial n c : AmiceRing R) :=
   Subtype.ext <| by simp
 
 /-- **`R^bd = R ∩ E`**: an element of the Amice ring comes from the bounded Robba ring exactly when

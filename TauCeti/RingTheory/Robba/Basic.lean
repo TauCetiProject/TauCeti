@@ -8,11 +8,11 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Ring.Lemmas
-public import Mathlib.Topology.Algebra.InfiniteSum.DiscreteConvolution
+public import TauCeti.Topology.Algebra.InfiniteSum.ConvolutionRing
 import Mathlib.Algebra.Order.Archimedean.Real.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 import Mathlib.Topology.Instances.Int
-import TauCeti.Topology.Algebra.InfiniteSum.DiscreteConvolution
+import TauCeti.Analysis.Normed.Group.Pi
 
 /-!
 # The Robba ring and its annular coefficient algebras
@@ -31,10 +31,11 @@ converging on half-open annuli `r < |t| < 1` and their union, the Robba ring.
   on some annulus `r < |t| < 1`.
 * `TauCeti.RobbaRing R` is `robbaCoeff R` with the convolution product
   `(ab)ₙ = ∑_{i ∈ ℤ} aᵢ bₙ₋ᵢ`, a ring when `R` is complete, and a commutative `R`-algebra when `R`
-  is commutative. It contains the annular algebras `TauCeti.RobbaRing.annulus R r`, the subalgebra
-  `TauCeti.RobbaRing.bounded R` of series with bounded coefficients (the bounded Robba ring, written
-  `R^bd` or `E†`) and the subring `TauCeti.RobbaRing.integral R` of series with coefficients in the
-  closed unit ball (`R^int`).
+  is commutative: over a complete ultrametric ring `robbaCoeff R` satisfies
+  `TauCeti.IsConvolutionRing`, which supplies these structures, the monomials and the integral
+  subring `TauCeti.IsConvolutionRing.integral (robbaCoeff R)` (`R^int`). It contains the annular
+  algebras `TauCeti.RobbaRing.annulus R r` and the subalgebra `TauCeti.RobbaRing.bounded R` of
+  series with bounded coefficients (the bounded Robba ring, written `R^bd` or `E†`).
 
 Each coefficient of a product is an infinite series: for `ρ` in the convergence domain of both
 factors, its terms satisfy `‖aᵢ bₙ₋ᵢ‖ ρⁿ ≤ (‖aᵢ‖ ρⁱ)(‖bₙ₋ᵢ‖ ρⁿ⁻ⁱ)`, and the right side tends to
@@ -49,18 +50,15 @@ inductive-limit topologies are not constructed here.
   radius.
 * `TauCeti.annularCoeff`, `TauCeti.robbaCoeff`: the coefficient modules of an annulus and of the
   Robba ring.
-* `TauCeti.RobbaRing`: the Robba ring, with its `Ring`, `CommRing` and `Algebra` instances.
-* `TauCeti.RobbaRing.monomial`: the Laurent monomial `c tⁿ`.
-* `TauCeti.RobbaRing.annulus`, `TauCeti.RobbaRing.bounded`, `TauCeti.RobbaRing.integral`: the
-  annular, bounded and integral subrings.
+* `TauCeti.RobbaRing`: the Robba ring, with its `Ring`, `CommRing` and `Algebra` instances from
+  `TauCeti.instIsConvolutionRingRobbaCoeff`.
+* `TauCeti.RobbaRing.annulus`, `TauCeti.RobbaRing.bounded`: the annular and bounded subrings.
 
 ## Main results
 
 * `TauCeti.LaurentConvergesAt.addRingConvolution`: convergence at a radius is preserved by
   convolution.
-* `TauCeti.RobbaRing.hasSum_coeff_mul`: the coefficients of a product are the convergent
-  convolution sums.
-* `TauCeti.RobbaRing.monomial_mul_monomial`: `(a tᵐ)(b tⁿ) = ab tᵐ⁺ⁿ`; in particular `t t⁻¹ = 1`.
+* `TauCeti.RobbaRing.isUnit_monomial_bounded`: `t` is a unit of the bounded Robba ring.
 * `TauCeti.RobbaRing.iSup_annulus`: the Robba ring is the union of its annular algebras.
 
 ## References
@@ -139,13 +137,6 @@ theorem laurentGaussNorm_nonneg (ρ : ℝ) (a : ℤ → R) : 0 ≤ laurentGaussN
   by_cases h : BddAbove (Set.range fun n ↦ ‖a n‖ * ρ ^ n)
   · exact le_ciSup_of_le h 0 (by simp)
   · rw [laurentGaussNorm, Real.iSup_of_not_bddAbove h]
-
-/-- A coefficient of `Pi.single i c` has norm at most `‖c‖`. -/
-theorem norm_single_apply_le {ι : Type*} [DecidableEq ι] (i j : ι) (c : R) :
-    ‖(Pi.single i c : ι → R) j‖ ≤ ‖c‖ := by
-  rcases eq_or_ne j i with rfl | h
-  · simp
-  · simp [Pi.single_eq_of_ne h]
 
 @[simp]
 theorem laurentGaussNorm_neg (ρ : ℝ) (a : ℤ → R) :
@@ -235,7 +226,7 @@ theorem LaurentConvergesAt.laurentGaussNorm_smul_le [SeminormedRing R] {ρ : ℝ
 
 section Convolution
 
-variable [NormedRing R] {ρ : ℝ} {a b c : ℤ → R}
+variable [SeminormedRing R] {ρ : ℝ} {a b c : ℤ → R}
 
 /-- A term of a product coefficient is bounded by the product of the weighted norms of its
 factors: `‖aᵢ bⱼ‖ ρⁱ⁺ʲ ≤ (‖aᵢ‖ ρⁱ)(‖bⱼ‖ ρʲ)`. -/
@@ -262,16 +253,6 @@ private theorem LaurentConvergesAt.tendsto_mul_sub (hρ : 0 < ρ) (ha : LaurentC
   simpa using norm_mul_mul_zpow_le hρ a b (n - y) y
 
 variable [IsUltrametricDist R]
-
-/-- In an ultrametric ring, if the coefficient norms of `a` and `b` are bounded by `A` and `B`,
-those of `a ⋆ᵣ₊ b` are bounded by `A B`. -/
-theorem norm_addRingConvolution_apply_le {A B : ℝ} (ha : ∀ n, ‖a n‖ ≤ A) (hb : ∀ n, ‖b n‖ ≤ B)
-    (n : ℤ) : ‖(a ⋆ᵣ₊ b) n‖ ≤ A * B := by
-  have hA : 0 ≤ A := (norm_nonneg _).trans (ha 0)
-  rw [DiscreteConvolution.addRingConvolution_eq_tsum_sub]
-  exact IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
-    (mul_nonneg hA ((norm_nonneg _).trans (hb 0))) fun y ↦
-      (norm_mul_le _ _).trans (mul_le_mul (ha _) (hb _) (norm_nonneg _) hA)
 
 /-- Over a complete ultrametric ring, every convolution coefficient of two families converging at a
 radius `ρ > 0` is a convergent series. -/
@@ -443,7 +424,7 @@ end Coeff
 
 section Mul
 
-variable [NormedRing R] [IsUltrametricDist R]
+variable [SeminormedRing R] [IsUltrametricDist R]
 
 /-- The convolution of two families converging on the annulus `r < |t| < 1` converges there. -/
 theorem addRingConvolution_mem_annularCoeff {r : ℝ} {a b : ℤ → R} (ha : a ∈ annularCoeff R r)
@@ -464,6 +445,18 @@ theorem addConvolutionExists_of_mem_robbaCoeff [CompleteSpace R] {a b : ℤ → 
     (mem_robbaCoeff_iff_eventually.1 ha).and (mem_robbaCoeff_iff_eventually.1 hb)
   exact ha.addConvolutionExists h₀ hb
 
+/-- Over a complete ultrametric ring the Robba coefficient families form a ring under convolution:
+three families converge at a common radius `ρ > 0`, where their triple products are summable. -/
+instance instIsConvolutionRingRobbaCoeff [CompleteSpace R] : IsConvolutionRing (robbaCoeff R) where
+  single_mem n c := annularCoeff_le_robbaCoeff zero_lt_one (single_mem_annularCoeff 0 n c)
+  addRingConvolution_mem := addRingConvolution_mem_robbaCoeff
+  addConvolutionExists := addConvolutionExists_of_mem_robbaCoeff
+  summable_sigma_addFiber_mul_mul ha hb hc := by
+    obtain ⟨ρ, h₀, ha, hb, hc⟩ := exists_pos_of_eventually <|
+      (mem_robbaCoeff_iff_eventually.1 ha).and <|
+        (mem_robbaCoeff_iff_eventually.1 hb).and (mem_robbaCoeff_iff_eventually.1 hc)
+    exact ha.summable_sigma_addFiber_mul_mul h₀ hb hc
+
 end Mul
 
 /-! ### The Robba ring -/
@@ -472,174 +465,22 @@ variable (R) in
 /-- **The Robba ring** `R_R`: the Laurent series `∑_{n ∈ ℤ} aₙ tⁿ` with coefficients in `R`
 converging on some annulus `r < |t| < 1`, with the convolution product
 `(ab)ₙ = ∑_{i ∈ ℤ} aᵢ bₙ₋ᵢ`. Its ring structure needs `R` complete and ultrametric
-(`TauCeti.RobbaRing.instRing`). -/
+(`TauCeti.instIsConvolutionRingRobbaCoeff`). -/
 abbrev RobbaRing [SeminormedRing R] : Type _ :=
   robbaCoeff R
 
 namespace RobbaRing
 
-section Additive
-
-variable [SeminormedRing R]
-
 @[ext]
-theorem ext {f g : RobbaRing R} (h : ∀ n, (f : ℤ → R) n = (g : ℤ → R) n) : f = g :=
+theorem ext [SeminormedRing R] {f g : RobbaRing R} (h : ∀ n, (f : ℤ → R) n = (g : ℤ → R) n) :
+    f = g :=
   Subtype.ext <| funext h
 
-/-- **The Laurent monomial `c tⁿ`** of the Robba ring. -/
-def monomial (n : ℤ) (c : R) : RobbaRing R :=
-  ⟨Pi.single n c, annularCoeff_le_robbaCoeff zero_lt_one (single_mem_annularCoeff 0 n c)⟩
-
-@[simp, norm_cast]
-theorem coe_monomial (n : ℤ) (c : R) : (monomial n c : ℤ → R) = Pi.single n c :=
-  (rfl)
-
-@[simp]
-theorem monomial_zero_right (n : ℤ) : monomial n (0 : R) = 0 :=
-  Subtype.ext <| by simp
-
-@[simp]
-theorem monomial_add (n : ℤ) (c d : R) : monomial n (c + d) = monomial n c + monomial n d :=
-  Subtype.ext <| by simp [Pi.single_add]
-
-/-- `c (a tⁿ) = (ca) tⁿ`. -/
-@[simp]
-theorem smul_monomial (c : R) (n : ℤ) (a : R) : c • monomial n a = monomial n (c * a) :=
-  Subtype.ext <| by simp [← smul_eq_mul, Pi.single_smul']
-
-instance instOne : One (RobbaRing R) where
-  one := ⟨Pi.single 0 1, annularCoeff_le_robbaCoeff zero_lt_one (single_mem_annularCoeff 0 0 1)⟩
-
-@[simp, norm_cast]
-theorem coe_one : ((1 : RobbaRing R) : ℤ → R) = Pi.single 0 1 :=
-  (rfl)
-
-@[simp]
-theorem monomial_zero_one : monomial 0 (1 : R) = 1 :=
-  Subtype.ext <| by simp
-
-end Additive
-
-section Ring
-
-variable [NormedRing R] [IsUltrametricDist R]
-
-noncomputable instance instMul : Mul (RobbaRing R) where
-  mul f g := ⟨f ⋆ᵣ₊ g, addRingConvolution_mem_robbaCoeff f.2 g.2⟩
-
-/-- The coefficient family of a product is the convolution of the coefficient families. -/
-@[simp, norm_cast]
-theorem coe_mul (f g : RobbaRing R) : ((f * g : RobbaRing R) : ℤ → R) = ↑f ⋆ᵣ₊ ↑g :=
-  (rfl)
-
-/-- **Laurent monomials multiply by adding degrees**: `(a tᵐ)(b tⁿ) = ab tᵐ⁺ⁿ`. In particular
-`t t⁻¹ = 1`. -/
-@[simp]
-theorem monomial_mul_monomial (m n : ℤ) (a b : R) :
-    monomial m a * monomial n b = monomial (m + n) (a * b) :=
-  Subtype.ext <| DiscreteConvolution.single_addRingConvolution_single m n a b
-
-variable [CompleteSpace R]
-
-/-- **The coefficients of a product are convergent convolution sums**: the `n`-th coefficient of
-`f g` is the sum of the convergent series `∑_{y ∈ ℤ} fₙ₋ᵧ gᵧ`. -/
-theorem hasSum_coeff_mul (f g : RobbaRing R) (n : ℤ) :
-    HasSum (fun y ↦ (f : ℤ → R) (n - y) * (g : ℤ → R) y) (((f * g : RobbaRing R) : ℤ → R) n) := by
-  rw [coe_mul]
-  exact (addConvolutionExists_of_mem_robbaCoeff f.2 g.2 n).hasSum_sub
-
-/-- **The Robba ring is a ring** over a complete ultrametric normed ring. -/
-noncomputable instance instRing : Ring (RobbaRing R) where
-  mul_assoc f g h := by
-    obtain ⟨ρ, h₀, hf, hg, hh⟩ := exists_pos_of_eventually <|
-      (mem_robbaCoeff_iff_eventually.1 f.2).and <|
-        (mem_robbaCoeff_iff_eventually.1 g.2).and (mem_robbaCoeff_iff_eventually.1 h.2)
-    refine Subtype.ext ?_
-    simp only [coe_mul]
-    exact DiscreteConvolution.addRingConvolution_assoc
-      (hf.addConvolutionExists h₀ hg) (hg.addConvolutionExists h₀ hh)
-      (hf.summable_sigma_addFiber_mul_mul h₀ hg hh)
-  one_mul f := Subtype.ext <| by
-    rw [coe_mul, coe_one, DiscreteConvolution.single_addRingConvolution]
-  mul_one f := Subtype.ext <| by
-    rw [coe_mul, coe_one, DiscreteConvolution.addRingConvolution_single]
-  zero_mul f := Subtype.ext <| by
-    rw [coe_mul, Submodule.coe_zero, DiscreteConvolution.zero_addRingConvolution]
-  mul_zero f := Subtype.ext <| by
-    rw [coe_mul, Submodule.coe_zero, DiscreteConvolution.addRingConvolution_zero]
-  left_distrib f g h := Subtype.ext <| by
-    rw [coe_mul, Submodule.coe_add, Submodule.coe_add, coe_mul, coe_mul]
-    exact DiscreteConvolution.addRingConvolution_add _ _ _
-      (addConvolutionExists_of_mem_robbaCoeff f.2 g.2)
-      (addConvolutionExists_of_mem_robbaCoeff f.2 h.2)
-  right_distrib f g h := Subtype.ext <| by
-    rw [coe_mul, Submodule.coe_add, Submodule.coe_add, coe_mul, coe_mul]
-    exact DiscreteConvolution.add_addRingConvolution _ _ _
-      (addConvolutionExists_of_mem_robbaCoeff f.2 h.2)
-      (addConvolutionExists_of_mem_robbaCoeff g.2 h.2)
-
-/-- **A monomial with a unit coefficient is a unit**: the inverse of `a tⁿ` is `a⁻¹ t⁻ⁿ`. In
-particular the variable `t = monomial 1 1` is a unit of the Robba ring. -/
-theorem isUnit_monomial (n : ℤ) {a : R} (ha : IsUnit a) : IsUnit (monomial n a) := by
-  obtain ⟨u, rfl⟩ := ha
-  exact isUnit_iff_exists.2 ⟨monomial (-n) ↑u⁻¹, by simp, by simp⟩
-
-section Integral
-
-variable [NormOneClass R]
-
-variable (R) in
-/-- **The integral Robba ring** `R^int`: the subring of series whose coefficients lie in the closed
-unit ball. -/
-def integral : Subring (RobbaRing R) where
-  carrier := {f | ∀ n, ‖(f : ℤ → R) n‖ ≤ 1}
-  mul_mem' hf hg n := (norm_addRingConvolution_apply_le hf hg n).trans_eq (one_mul 1)
-  one_mem' n := (norm_single_apply_le 0 n (1 : R)).trans_eq norm_one
-  add_mem' hf hg n := (IsUltrametricDist.norm_add_le_max _ _).trans (max_le (hf n) (hg n))
-  zero_mem' n := by simp
-  neg_mem' hf n := by simpa using hf n
-
-@[simp]
-theorem mem_integral {f : RobbaRing R} : f ∈ integral R ↔ ∀ n, ‖(f : ℤ → R) n‖ ≤ 1 :=
-  (Iff.rfl)
-
-/-- A monomial `c tⁿ` with `‖c‖ ≤ 1` is integral. -/
-theorem monomial_mem_integral (n : ℤ) {c : R} (hc : ‖c‖ ≤ 1) : monomial n c ∈ integral R :=
-  fun m ↦ (norm_single_apply_le n m c).trans hc
-
-end Integral
-
-end Ring
+open IsConvolutionRing
 
 section CommRing
 
 variable [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
-
-/-- **The Robba ring over a commutative ring is commutative.** -/
-noncomputable instance instCommRing : CommRing (RobbaRing R) where
-  mul_comm f g := Subtype.ext <| by
-    rw [coe_mul, coe_mul, DiscreteConvolution.addRingConvolution_comm]
-
-/-- **The Robba ring is an `R`-algebra**, with the coefficientwise scalar action. -/
-noncomputable instance instAlgebra : Algebra R (RobbaRing R) :=
-  .ofModule
-    (fun c f g ↦ Subtype.ext <| by
-      rw [Submodule.coe_smul, coe_mul, coe_mul, Submodule.coe_smul]
-      exact DiscreteConvolution.smul_addRingConvolution c _ _
-        (addConvolutionExists_of_mem_robbaCoeff f.2 g.2))
-    (fun c f g ↦ Subtype.ext <| by
-      rw [Submodule.coe_smul, coe_mul, coe_mul, Submodule.coe_smul]
-      exact DiscreteConvolution.addRingConvolution_smul c _ _
-        (addConvolutionExists_of_mem_robbaCoeff f.2 g.2))
-
-/-- The structure map sends `c` to the constant series `c = c t⁰`. -/
-@[simp, norm_cast]
-theorem coe_algebraMap (c : R) : (algebraMap R (RobbaRing R) c : ℤ → R) = Pi.single 0 c := by
-  simp [Algebra.algebraMap_eq_smul_one, ← Pi.single_smul]
-
-@[simp]
-theorem monomial_zero_left (c : R) : monomial 0 c = algebraMap R (RobbaRing R) c :=
-  Subtype.ext <| by simp
 
 /-! ### Annular, bounded and integral subrings -/
 
@@ -660,8 +501,8 @@ theorem annulus_mono {r s : ℝ} (h : r ≤ s) : annulus R r ≤ annulus R s :=
   fun _ hf ↦ annularCoeff_mono h hf
 
 /-- Every monomial `c tⁿ` converges on every annulus. -/
-theorem monomial_mem_annulus (r : ℝ) (n : ℤ) (c : R) : monomial n c ∈ annulus R r :=
-  single_mem_annularCoeff r n c
+theorem monomial_mem_annulus (r : ℝ) (n : ℤ) (c : R) : monomial n c ∈ annulus R r := by
+  simpa using single_mem_annularCoeff r n c
 
 /-- **The Robba ring is the directed union of its annular subalgebras** over the inner radii
 `r < 1`. -/
@@ -678,14 +519,15 @@ def bounded : Subalgebra R (RobbaRing R) where
   mul_mem' := by
     rintro f g ⟨A, hA⟩ ⟨B, hB⟩
     exact ⟨A * B, Set.forall_mem_range.2 <|
-      norm_addRingConvolution_apply_le (fun n ↦ hA ⟨n, rfl⟩) (fun n ↦ hB ⟨n, rfl⟩)⟩
+      DiscreteConvolution.norm_addRingConvolution_apply_le (fun n ↦ hA ⟨n, rfl⟩)
+        (fun n ↦ hB ⟨n, rfl⟩)⟩
   add_mem' := by
     rintro f g ⟨A, hA⟩ ⟨B, hB⟩
     refine ⟨max A B, Set.forall_mem_range.2 fun n ↦ ?_⟩
     exact (IsUltrametricDist.norm_add_le_max _ _).trans
       (max_le_max (hA ⟨n, rfl⟩) (hB ⟨n, rfl⟩))
   algebraMap_mem' c := ⟨‖c‖, Set.forall_mem_range.2 fun n ↦ by
-    simpa using norm_single_apply_le 0 n c⟩
+    simpa using Pi.norm_single_apply_le (E := fun _ ↦ R) 0 n c⟩
 
 @[simp]
 theorem mem_bounded {f : RobbaRing R} :
@@ -694,7 +536,8 @@ theorem mem_bounded {f : RobbaRing R} :
 
 /-- Every monomial `c tⁿ` has bounded coefficients. -/
 theorem monomial_mem_bounded (n : ℤ) (c : R) : monomial n c ∈ bounded R :=
-  ⟨‖c‖, Set.forall_mem_range.2 (norm_single_apply_le n · c)⟩
+  ⟨‖c‖, Set.forall_mem_range.2 fun m ↦ by
+    simpa using Pi.norm_single_apply_le (E := fun _ ↦ R) n m c⟩
 
 /-- A monomial `a tⁿ` with a unit coefficient is a unit of the bounded Robba ring: its inverse
 `a⁻¹ t⁻ⁿ` is bounded too. In particular `t` is a unit of `R^bd`. -/
@@ -707,8 +550,8 @@ theorem isUnit_monomial_bounded (n : ℤ) {a : R} (ha : IsUnit a) :
 variable [NormOneClass R]
 
 /-- Integral series have bounded coefficients. -/
-theorem integral_le_bounded : integral R ≤ (bounded R).toSubring :=
-  fun _ hf ↦ ⟨1, Set.forall_mem_range.2 hf⟩
+theorem integral_le_bounded : integral (robbaCoeff R) ≤ (bounded R).toSubring :=
+  fun _ hf ↦ ⟨1, Set.forall_mem_range.2 (mem_integral.1 hf)⟩
 
 end CommRing
 
