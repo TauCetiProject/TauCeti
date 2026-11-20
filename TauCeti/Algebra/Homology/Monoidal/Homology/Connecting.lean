@@ -345,7 +345,6 @@ variable [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (S.X₃.homol
   [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (S.X₁.homology p'))]
   [PreservesColimitsOfShape WalkingParallelPair (tensorRight (K.cycles q))]
   [PreservesColimitsOfShape WalkingParallelPair (tensorRight (K.X (c.prev q)))]
-  [(tensorRight (K.cycles q)).PreservesEpimorphisms]
 
 /-- **The connecting morphism on a cross product, tensoring on the right.**  If `S` is a short
 exact sequence of complexes and `S ⊗ K` is again short exact, then the connecting morphism of
@@ -359,6 +358,8 @@ theorem homologyCross_comp_δ_tensorRight :
   -- `HomologicalComplex.homologyCross_comp_δ`
   obtain ⟨_, a₃, a₂, a₁, h₂, h₁, ha₁, _, hδS⟩ := hS.exists_cycles_lift_δ hp
   -- both sides agree on `a₃ ⊗ x`, and these generate `Hₚ(S.X₃) ⊗ H_q(K)`
+  -- `tensorRight (K.cycles q)` preserves cokernels, hence epimorphisms
+  have := NormalMonoCategory.preservesEpimorphisms_of_preservesCokernels (tensorRight (K.cycles q))
   have : Epi (a₃ ▷ K.cycles q) := (tensorRight (K.cycles q)).map_epi a₃
   refine homology_tensor_homology_hom_ext S.X₃ K p q ?_
   have hl : (a₃ ▷ K.cycles q) ≫ (S.X₃.homologyπ p ⊗ₘ K.homologyπ q) ≫

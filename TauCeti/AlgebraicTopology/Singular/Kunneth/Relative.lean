@@ -358,8 +358,7 @@ connecting morphism of `(X, B)` and `δ a × b ∈ Hₙ₋₁(B × Y; R ⊗ S)` 
 theorem singularHomologyCrossRel_comp_singularHomologyδ {p' n' : ℕ} (hp : p' + 1 = p)
     (h' : p' + q = n')
     [PreservesColimitsOfShape WalkingParallelPair
-      (tensorLeft (((toSSet.obj (TopPair.ofSubset B).snd).chainComplex R).homology p'))]
-    [(tensorRight (((toSSet.obj Y).chainComplex S).cycles q)).PreservesEpimorphisms] :
+      (tensorLeft (((toSSet.obj (TopPair.ofSubset B).snd).chainComplex R).homology p'))] :
     singularHomologyCrossRel X Y B R S p q n h ≫
         (TopPair.ofSubset (fst X Y ⁻¹' B)).singularHomologyδ (R ⊗ S) n n' (by omega) =
       ((TopPair.ofSubset B).singularHomologyδ R p p' hp ▷
