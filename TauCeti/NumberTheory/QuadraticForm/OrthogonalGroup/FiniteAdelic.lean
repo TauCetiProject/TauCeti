@@ -198,7 +198,7 @@ theorem mem_range_finiteAdelicSpecialOrthogonalToOrthogonal_iff (x : U.finiteAde
     simp_rw [← range_specialOrthogonalToOrthogonal, MonoidHom.mem_range] at hx
     choose y hy using hx
     refine ⟨⟨y, ?_⟩, ?_⟩
-    · filter_upwards [x.2] with p hp
+    · filter_upwards [x.property] with p hp
       rw [SetLike.mem_coe, mem_specialOrthogonal_iff, hy p]
       exact hp
     · ext p : 1

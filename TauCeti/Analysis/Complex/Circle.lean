@@ -10,6 +10,8 @@ public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Algebra.Star.Unitary
+public import Mathlib.GroupTheory.OrderOfElement
+public import Mathlib.NumberTheory.Real.Irrational
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
@@ -43,12 +45,15 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   `z + z⁻¹ = 2 Re z` on the circle, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
   identity for a point of `sphere (0 : ℂ) 1`.
 * `Complex.zpow_mul_conj_zpow_of_mem_sphere`: `z ^ k * conj (z ^ m) = z ^ (k - m)` for a point
-  of `sphere (0 : ℂ) 1`.
+  of `sphere (0 : ℂ) 1`, and `Complex.zpow_mul_conj_sub_eq_neg_of_mem_sphere`: there
+  `z ^ k * conj a - a = -(z ^ k * conj (z ^ k * conj a - a))`.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
 * `Circle.exp_pow_eq_one_iff`: `exp (i θ)` is an `n`-th root of unity exactly when `θ` is an
   integer multiple of `2π / n`.
+* `Circle.isOfFinOrder_exp_two_pi_mul_iff`: `exp (2π i x)` has finite order exactly when `x` is
+  rational.
 * `Circle.exp_neg_arg_mul_self`: rotating `x : ℂ` by `exp (-i arg x)` gives `‖x‖`.
 * `Circle.inv_eq_self_iff`: the points of the circle equal to their inverses are `1` and `-1`.
 * `Circle.im_coe_eq_zero_iff`: the real points of the circle are `1` and `-1`.
@@ -57,6 +62,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   meeting the lower semicircle only at `±1` (`Circle.upperSemicircle_eq_inv_iff`).
 * `Circle.differentiableAt_coe_inv`: the pointwise inverse of a differentiable circle-valued map
   is differentiable.
+* `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
+  `unitary ℂ` and the topological group isomorphism `Circle ≃ₜ* unitary ℂ`.
 * `TauCeti.hasDerivAt_coe_circleExp`: the velocity of `t ↦ exp (t i)` at `t` is `i exp (t i)`.
 -/
 
@@ -101,6 +108,15 @@ theorem _root_.Complex.zpow_mul_conj_zpow_of_mem_sphere {z : ℂ} (hz : z ∈ sp
   have hz0 : z ≠ 0 := by rintro rfl; simp at hz1
   rw [map_zpow₀, ← Complex.inv_eq_conj hz1, inv_zpow', ← zpow_add₀ hz0, sub_eq_add_neg]
 
+/-- On the unit sphere of `ℂ`, `z ^ k * conj a - a` is fixed by `b ↦ -(z ^ k * conj b)`: at
+`z = e^{iθ}` it lies on the line `i e^{ikθ/2} ℝ`. -/
+theorem _root_.Complex.zpow_mul_conj_sub_eq_neg_of_mem_sphere {z : ℂ}
+    (hz : z ∈ sphere (0 : ℂ) 1) (k : ℤ) (a : ℂ) :
+    z ^ k * conj a - a = -(z ^ k * conj (z ^ k * conj a - a)) := by
+  rw [map_sub, map_mul, Complex.conj_conj, mul_sub, ← mul_assoc,
+    Complex.zpow_mul_conj_zpow_of_mem_sphere hz, sub_self, zpow_zero]
+  ring
+
 /-- For a point of the circle, `z + z⁻¹ = 2 Re z`. -/
 theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ).re := by
   rw [← coe_inv, coe_inv_eq_conj, Complex.add_conj, Complex.ofReal_mul, Complex.ofReal_ofNat]
@@ -108,7 +124,7 @@ theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ
 /-- Raising `exp (π * I / d)` to a nonzero natural power `d` gives `-1`. -/
 theorem exp_pow_eq_neg_one (d : ℕ) (hd : d ≠ 0) :
     (Circle.exp (Real.pi / d) : ℂ) ^ d = -1 := by
-  rw [Circle.coe_exp, ← Complex.exp_nat_mul]
+  rw [Circle.coe_exp, ← Complex.exp_natCast_mul]
   have hmul : (d : ℂ) * (↑(Real.pi / d) * Complex.I) = Real.pi * Complex.I := by
     push_cast
     field_simp
@@ -163,6 +179,27 @@ theorem exp_pow_eq_one_iff {n : ℕ} (hn : n ≠ 0) {θ : ℝ} :
   rw [← exp_natCast_mul, exp_eq_one]
   refine exists_congr fun m ↦ ?_
   rw [mul_div_assoc', eq_div_iff hn', mul_comm θ]
+
+/-- **Rational rotations.** `exp (2π i x)` has finite order in the circle group exactly when `x` is
+rational. -/
+theorem isOfFinOrder_exp_two_pi_mul_iff {x : ℝ} :
+    IsOfFinOrder (exp (2 * Real.pi * x)) ↔ ¬Irrational x := by
+  have hπ : 2 * Real.pi ≠ 0 := by positivity
+  rw [isOfFinOrder_iff_pow_eq_one, Irrational, not_not]
+  constructor
+  · rintro ⟨n, hn, hpow⟩
+    obtain ⟨m, hm⟩ := (exp_pow_eq_one_iff hn.ne').1 hpow
+    refine ⟨m / n, ?_⟩
+    have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn.ne'
+    rw [mul_div_assoc', eq_div_iff hn'] at hm
+    push_cast
+    rw [div_eq_iff hn']
+    exact mul_left_cancel₀ hπ (by linear_combination -hm)
+  · rintro ⟨q, rfl⟩
+    refine ⟨q.den, q.den_pos, (exp_pow_eq_one_iff q.den_ne_zero).2 ⟨q.num, ?_⟩⟩
+    have hd : (q.den : ℝ) ≠ 0 := Nat.cast_ne_zero.2 q.den_ne_zero
+    rw [Rat.cast_def]
+    field_simp
 
 /-- Rotating a complex number by minus its argument puts it on the nonnegative real axis. -/
 theorem exp_neg_arg_mul_self (x : ℂ) : (exp (-Complex.arg x) : ℂ) * x = ‖x‖ := by
@@ -230,7 +267,8 @@ its inverse, the point `x - √(1 - x²) I` of the lower semicircle, it parametr
 its real part. -/
 def upperSemicircle (x : Set.Icc (-1 : ℝ) 1) : Circle :=
   ⟨(x : ℝ) + √(1 - (x : ℝ) ^ 2) * Complex.I, mem_sphere_zero_iff_norm.2 (by
-    rw [Complex.norm_add_mul_I, Real.sq_sqrt (by nlinarith [x.2.1, x.2.2]), add_sub_cancel,
+    rw [Complex.norm_add_mul_I, Real.sq_sqrt (by nlinarith [x.property.1, x.property.2]),
+        add_sub_cancel,
       Real.sqrt_one])⟩
 
 theorem coe_upperSemicircle (x : Set.Icc (-1 : ℝ) 1) :
@@ -269,7 +307,7 @@ theorem upperSemicircle_eq_inv_iff {x y : Set.Icc (-1 : ℝ) 1} :
     obtain rfl : x = y := Subtype.ext hre
     refine ⟨rfl, ?_⟩
     have h0 : √(1 - (x : ℝ) ^ 2) = 0 := by linarith [Real.sqrt_nonneg (1 - (x : ℝ) ^ 2)]
-    nlinarith [Real.sqrt_eq_zero'.1 h0, x.2.1, x.2.2]
+    nlinarith [Real.sqrt_eq_zero'.1 h0, x.property.1, x.property.2]
   · rintro ⟨rfl, hx⟩
     exact (inv_upperSemicircle_of_sq_eq_one hx).symm
 
@@ -295,11 +333,34 @@ theorem exists_upperSemicircle_eq_or_inv_eq (v : Circle) :
     · simp
     · simp [hsqrt, abs_of_neg him]
 
+/-- Every point of `Circle` belongs to `unitary ℂ`. -/
+theorem coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ := by
+  simp [Unitary.mem_iff_self_mul_star, RCLike.star_def, RCLike.mul_conj]
+
 end Circle
 
 namespace TauCeti
 
 open Complex
+
+/-- The unit circle `Circle` in `ℂ` is topologically isomorphic as a group to `unitary ℂ`. -/
+def circleEquivUnitary : Circle ≃ₜ* unitary ℂ where
+  toFun z := ⟨(z : ℂ), z.coe_mem_unitary⟩
+  invFun u := ⟨(u : ℂ), mem_sphere_zero_iff_norm.2 <| CStarRing.norm_of_mem_unitary u.property⟩
+  left_inv _ := Circle.ext rfl
+  right_inv _ := Subtype.ext rfl
+  map_mul' _ _ := Subtype.ext rfl
+  continuous_toFun := Continuous.subtype_mk
+    (continuous_subtypeVal : Continuous ((↑) : Circle → ℂ)) Circle.coe_mem_unitary
+  continuous_invFun := Continuous.subtype_mk continuous_subtypeVal _
+
+@[simp]
+theorem coe_circleEquivUnitary (z : Circle) : (circleEquivUnitary z : ℂ) = z :=
+  (rfl)
+
+@[simp]
+theorem coe_circleEquivUnitary_symm (u : unitary ℂ) : (circleEquivUnitary.symm u : ℂ) = u :=
+  (rfl)
 
 /-- Read in `ℂ`, the circle exponential `t ↦ exp (t i)` has velocity `i exp (t i)`. -/
 theorem hasDerivAt_coe_circleExp (t : ℝ) :

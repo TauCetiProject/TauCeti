@@ -170,7 +170,7 @@ theorem IsTorus.subgroupOf {T K : Subgroup G} (hT : IsTorus T) (hTK : T ≤ K) :
   let _ : ConnectedSpace T := isConnected_iff_connectedSpace.mp hT.isConnected
   let _ : IsMulCommutative T := hT.isMulCommutative
   have h := (isTorus_top (G := T)).map (Subgroup.inclusion hTK)
-    (continuous_subtype_val.subtype_mk fun t ↦ hTK t.property)
+    (continuous_subtypeVal.subtype_mk fun t ↦ hTK t.property)
   simpa only [← MonoidHom.range_eq_map, Subgroup.inclusion_range] using h
 
 /-- A maximal torus remains maximal in any subgroup containing it. -/
@@ -180,7 +180,7 @@ theorem IsMaximalTorus.subgroupOf {T K : Subgroup G} (hT : IsMaximalTorus T) (hT
   have hle' : T ≤ S.map K.subtype := by
     rw [← Subgroup.map_subgroupOf_eq_of_le hTK]
     exact Subgroup.map_mono hle
-  have heq := hT.eq_of_le (hS.map K.subtype continuous_subtype_val) hle'
+  have heq := hT.eq_of_le (hS.map K.subtype continuous_subtypeVal) hle'
   intro s hs
   exact Subgroup.mem_subgroupOf.mpr (heq.ge ⟨s, hs, rfl⟩)
 
@@ -283,10 +283,10 @@ theorem IsTorus.exists_closedZpowers_eq [IsTopologicalGroup G] {T : Subgroup G}
     intros
     obtain ⟨t, ht⟩ :=
       exists_closedZpowers_eq_top 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) (G := T)
-    refine ⟨t, t.2, ?_⟩
+    refine ⟨t, t.property, ?_⟩
     -- The closed cyclic subgroup of `t` in `T`, which is compact, pushes forward to the closed
     -- cyclic subgroup of `t` in `G`.
-    rw [← T.coe_subtype, ← T.subtype.map_closedZpowers continuous_subtype_val
+    rw [← T.coe_subtype, ← T.subtype.map_closedZpowers continuous_subtypeVal
       (isClosed_closedZpowers t).isCompact, ht, ← MonoidHom.range_eq_map, Subgroup.range_subtype]
 
 end Generator
@@ -311,13 +311,13 @@ theorem IsMaximalTorus.lieSubalgebraOfSubgroup_centralizer {T : Subgroup G}
     intro t s
     obtain ⟨s, rfl⟩ := Multiplicative.ofAdd.surjective s
     rw [oneParameterSubgroup_apply]
-    exact Subgroup.mem_centralizer_iff.mp (hX s) t t.2
+    exact Subgroup.mem_centralizer_iff.mp (hX s) t t.property
   let φ : T × Multiplicative ℝ →* G :=
     T.subtype.noncommCoprod (oneParameterSubgroup (I := I) X).toMonoidHom hcomm
   have hφ : Continuous φ := by
     have hcont : Continuous fun p : T × Multiplicative ℝ =>
         (p.1 : G) * oneParameterSubgroup (I := I) X p.2 :=
-      (continuous_subtype_val.comp continuous_fst).mul
+      (continuous_subtypeVal.comp continuous_fst).mul
         ((oneParameterSubgroup (I := I) X).continuous.comp continuous_snd)
     exact hcont.congr fun p => by
       rw [MonoidHom.noncommCoprod_apply, Subgroup.coe_subtype, ContinuousMonoidHom.coe_toMonoidHom,

@@ -92,8 +92,8 @@ theorem exists_equiv_exponents_of_pi_pow_addEquiv {b : ℕ} (hb : 1 < b)
   have hcard (k : ℕ) : Fintype.card {i // e i = k} = Fintype.card {j // e' j = k} := by
     cases k with
     | zero =>
-      have : IsEmpty {i // e i = 0} := ⟨fun i ↦ (he i.1).ne' i.2⟩
-      have : IsEmpty {j // e' j = 0} := ⟨fun j ↦ (he' j.1).ne' j.2⟩
+      have : IsEmpty {i // e i = 0} := ⟨fun i ↦ (he i.val).ne' i.property⟩
+      have : IsEmpty {j // e' j = 0} := ⟨fun j ↦ (he' j.val).ne' j.property⟩
       simp
     | succ k =>
       -- The multiplicity of the exponent `k + 1` is a second difference of `k ↦ ∑ i, min k (e i)`.

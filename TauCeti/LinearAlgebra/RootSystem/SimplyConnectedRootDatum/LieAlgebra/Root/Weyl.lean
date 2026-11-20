@@ -189,8 +189,8 @@ Chevalley involution. -/
       (t.simplyConnectedRootDatum ht).reflectionPerm
         ((t.simplyConnectedRootDatum ht).reflectionPerm α β)
         ((t.simplyConnectedRootDatum ht).reflectionPerm α β) :=
-    (RootPairing.Equiv.reflection (t.simplyConnectedRootDatum ht) α).toHom.indexEquiv_reflectionPerm
-      β β
+    (RootPairing.Equiv.reflection
+      (t.simplyConnectedRootDatum ht) α).toHom.indexEquiv_reflectionPerm β β
   have H := congrArg (t.chevalleyInvolution ht) (t.weylAut_chevalleySystem ht α β)
   simpa only [t.chevalleyInvolution_weylAut ht α, chevalleyInvolution_chevalleySystem,
     map_neg, map_zsmul, smul_neg, neg_inj, hp] using H

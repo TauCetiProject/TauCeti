@@ -84,7 +84,7 @@ private noncomputable def continuousLinearEquivRangeDomRestrict [TopologicalSpac
   have : (𝓤 M).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
   set g : P →ₗ[A] M := f.toLinearMap.domRestrict P
   have hg : Function.Injective g :=
-    (injective_iff_map_eq_zero g).2 fun p hp ↦ Subtype.ext (hf p.1 p.2 hp)
+    (injective_iff_map_eq_zero g).2 fun p hp ↦ Subtype.ext (hf p.val p.property hp)
   have hQ_closed : IsClosed (LinearMap.range g : Set M) :=
     isClosed_of_isNoetherian (LinearMap.range g)
   have : CompleteSpace (LinearMap.range g) := hQ_closed.completeSpace_coe
@@ -93,14 +93,14 @@ private noncomputable def continuousLinearEquivRangeDomRestrict [TopologicalSpac
   let e : P ≃ₗ[A] LinearMap.range g := LinearEquiv.ofInjective g hg
   exact
     { e with
-      continuous_toFun := (f.continuous.comp continuous_subtype_val).subtype_mk _
+      continuous_toFun := (f.continuous.comp continuous_subtypeVal).subtype_mk _
       continuous_invFun := IsModuleTopology.continuous_of_linearMap e.symm.toLinearMap }
 
 @[simp]
 private theorem continuousLinearEquivRangeDomRestrict_coe [TopologicalSpace V]
     [ContinuousAdd V] [ContinuousSMul A V] (P : Submodule A V) [Module.Finite A P]
     (f : V →L[A] M) (hf : ∀ p ∈ P, f p = 0 → p = 0) (p : P) :
-    (continuousLinearEquivRangeDomRestrict P f hf p : M) = f p.1 := (rfl)
+    (continuousLinearEquivRangeDomRestrict P f hf p : M) = f p.val := (rfl)
 
 /-- A module-finite submodule injected by a continuous linear map into a complete Hausdorff
 first-countable Noetherian module over a complete Hausdorff Tate ring carries the canonical module
@@ -123,16 +123,16 @@ theorem isClosed_of_apply_eq_zero [TopologicalSpace V] [ContinuousAdd V] [T2Spac
     (hf : ∀ p ∈ P, f p = 0 → p = 0) : IsClosed (P : Set V) := by
   have : (𝓤 M).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
   let e := continuousLinearEquivRangeDomRestrict P f hf
-  have he_coe (p : P) : (e p : M) = f p.1 := continuousLinearEquivRangeDomRestrict_coe P f hf p
+  have he_coe (p : P) : (e p : M) = f p.val := continuousLinearEquivRangeDomRestrict_coe P f hf p
   let Q : Submodule A M := LinearMap.range (f.toLinearMap.domRestrict P)
   have hQ : IsClosed (Q : Set M) := isClosed_of_isNoetherian Q
   have hW : IsClosed (f ⁻¹' (Q : Set M)) := hQ.preimage f.continuous
-  let r : f ⁻¹' (Q : Set M) → V := fun w ↦ (e.symm ⟨f w.1, w.2⟩ : V)
+  let r : f ⁻¹' (Q : Set M) → V := fun w ↦ (e.symm ⟨f w.val, w.property⟩ : V)
   have hr : Continuous r :=
-    continuous_subtype_val.comp <|
-      e.symm.continuous.comp ((f.continuous.comp continuous_subtype_val).subtype_mk _)
-  have hZ : IsClosed {w : f ⁻¹' (Q : Set M) | r w = w.1} :=
-    isClosed_eq hr continuous_subtype_val
+    continuous_subtypeVal.comp <|
+      e.symm.continuous.comp ((f.continuous.comp continuous_subtypeVal).subtype_mk _)
+  have hZ : IsClosed {w : f ⁻¹' (Q : Set M) | r w = w.val} :=
+    isClosed_eq hr continuous_subtypeVal
   convert hW.isClosedEmbedding_subtypeVal.isClosedMap _ hZ using 1
   ext v
   simp only [Set.mem_image, Set.mem_ofPred_eq, Subtype.exists, Set.mem_preimage, SetLike.mem_coe]
@@ -140,7 +140,7 @@ theorem isClosed_of_apply_eq_zero [TopologicalSpace V] [ContinuousAdd V] [T2Spac
   · have hfe : (⟨f v, ⟨⟨v, hv⟩, rfl⟩⟩ : Q) = e ⟨v, hv⟩ := Subtype.ext (he_coe ⟨v, hv⟩).symm
     exact congrArg Subtype.val (hfe ▸ e.symm_apply_apply ⟨v, hv⟩)
   · rintro ⟨w, hfw, hrw, rfl⟩
-    exact hrw ▸ (e.symm ⟨f w, hfw⟩).2
+    exact hrw ▸ (e.symm ⟨f w, hfw⟩).property
 
 /-- A module-finite submodule of a uniform additive group module over a complete Hausdorff Tate
 ring is complete whenever some continuous linear map into a complete Hausdorff first-countable
@@ -174,8 +174,8 @@ theorem isModuleTopology_of_forall_apply_eq_zero [TopologicalSpace V] [Continuou
     (φ : ι → V →L[A] M) (hφ : ∀ p ∈ P, (∀ i, φ i p = 0) → p = 0) :
     IsModuleTopology A P := by
   obtain ⟨S, hS⟩ := TauCeti.exists_finset_eq_zero_of_forall_apply_eq_zero
-    (fun i : ι ↦ (φ i).toLinearMap.domRestrict P) (fun p hp ↦ Subtype.ext (hφ p.1 p.2 hp))
-  exact P.isModuleTopology_of_apply_eq_zero (ContinuousLinearMap.pi fun i : S ↦ φ i.1)
+    (fun i : ι ↦ (φ i).toLinearMap.domRestrict P) (fun p hp ↦ Subtype.ext (hφ p.val p.property hp))
+  exact P.isModuleTopology_of_apply_eq_zero (ContinuousLinearMap.pi fun i : S ↦ φ i.val)
     fun p hp hpS ↦ congrArg Subtype.val <| hS ⟨p, hp⟩ fun i hi ↦ congrFun hpS ⟨i, hi⟩
 
 /-- **Closedness of finite submodules from separating functionals** (Buzzard, *Eigenvarieties*,
@@ -187,8 +187,8 @@ theorem isClosed_of_forall_apply_eq_zero [TopologicalSpace V] [ContinuousAdd V] 
     (φ : ι → V →L[A] M) (hφ : ∀ p ∈ P, (∀ i, φ i p = 0) → p = 0) :
     IsClosed (P : Set V) := by
   obtain ⟨S, hS⟩ := TauCeti.exists_finset_eq_zero_of_forall_apply_eq_zero
-    (fun i : ι ↦ (φ i).toLinearMap.domRestrict P) (fun p hp ↦ Subtype.ext (hφ p.1 p.2 hp))
-  exact P.isClosed_of_apply_eq_zero (ContinuousLinearMap.pi fun i : S ↦ φ i.1)
+    (fun i : ι ↦ (φ i).toLinearMap.domRestrict P) (fun p hp ↦ Subtype.ext (hφ p.val p.property hp))
+  exact P.isClosed_of_apply_eq_zero (ContinuousLinearMap.pi fun i : S ↦ φ i.val)
     fun p hp hpS ↦ congrArg Subtype.val <| hS ⟨p, hp⟩ fun i hi ↦ congrFun hpS ⟨i, hi⟩
 
 /-- **Completeness of finite submodules from separating functionals**: in a uniform additive group
@@ -200,8 +200,8 @@ theorem completeSpace_of_forall_apply_eq_zero [UniformSpace V] [IsUniformAddGrou
     (φ : ι → V →L[A] M) (hφ : ∀ p ∈ P, (∀ i, φ i p = 0) → p = 0) :
     CompleteSpace P := by
   obtain ⟨S, hS⟩ := TauCeti.exists_finset_eq_zero_of_forall_apply_eq_zero
-    (fun i : ι ↦ (φ i).toLinearMap.domRestrict P) (fun p hp ↦ Subtype.ext (hφ p.1 p.2 hp))
-  exact P.completeSpace_of_apply_eq_zero (ContinuousLinearMap.pi fun i : S ↦ φ i.1)
+    (fun i : ι ↦ (φ i).toLinearMap.domRestrict P) (fun p hp ↦ Subtype.ext (hφ p.val p.property hp))
+  exact P.completeSpace_of_apply_eq_zero (ContinuousLinearMap.pi fun i : S ↦ φ i.val)
     fun p hp hpS ↦ congrArg Subtype.val <| hS ⟨p, hp⟩ fun i hi ↦ congrFun hpS ⟨i, hi⟩
 
 end Family

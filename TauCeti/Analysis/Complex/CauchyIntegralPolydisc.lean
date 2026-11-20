@@ -239,7 +239,7 @@ private theorem analyticAt_of_continuousOn_closedBall_pi [CompleteSpace E] {f : 
   -- On the torus `X = ∏ sphere (z i) R`, the Cauchy kernel is a unit of `C(X, ℂ)` at `w = z`.
   let F : C((i : Fin n) → sphere (z i) |R|, E) :=
     ⟨fun x => f fun i => x i, hc.comp_continuous (by fun_prop) fun x i _ =>
-      sphere_subset_closedBall (by simpa only [abs_of_pos hR] using (x i).2)⟩
+      sphere_subset_closedBall (by simpa only [abs_of_pos hR] using (x i).property)⟩
   let K : (Fin n → ℂ) → C((i : Fin n) → sphere (z i) |R|, ℂ) := fun w =>
     ∏ i, (⟨fun x => (x i : ℂ), by fun_prop⟩ - algebraMap ℂ _ (w i))
   have hKapply : ∀ w x, K w x = ∏ i, ((x i : ℂ) - w i) := fun w x => by
@@ -251,7 +251,7 @@ private theorem analyticAt_of_continuousOn_closedBall_pi [CompleteSpace E] {f : 
   have hunit : IsUnit (K z) := (ContinuousMap.isUnit_iff_forall_ne_zero _).2 fun x => by
     rw [hKapply]
     exact Finset.prod_ne_zero_iff.2 fun i _ =>
-      sub_ne_zero.2 (ne_of_mem_sphere (x i).2 (abs_pos.mpr hR.ne').ne')
+      sub_ne_zero.2 (ne_of_mem_sphere (x i).property (abs_pos.mpr hR.ne').ne')
   have hinv : AnalyticAt ℂ (fun w => Ring.inverse (K w)) z := by
     have h := analyticAt_inverse (𝕜 := ℂ) hunit.unit
     rw [hunit.unit_spec] at h
