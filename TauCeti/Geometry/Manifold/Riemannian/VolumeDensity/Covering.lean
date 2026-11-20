@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Covering.Quotient
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
 public import TauCeti.MeasureTheory.Function.Lp.QuotientCovering
+public import TauCeti.Topology.Covering.Quotient
 
 /-!
 # Riemannian volume under finite quotient coverings
@@ -65,23 +65,6 @@ open scoped ENNReal InnerProductSpace Manifold Pointwise
 noncomputable section
 
 namespace IsQuotientCoveringMap
-
-/-- If `U` is disjoint from its nontrivial translates, then `q` is injective on `U`. -/
-private theorem injOn_of_disjoint {M N G : Type*} [TopologicalSpace M] [TopologicalSpace N]
-    [Group G] [MulAction G M] {q : M → N} (hq : IsQuotientCoveringMap q G) {U : Set M}
-    (hU : ∀ g : G, ((g • ·) '' U ∩ U).Nonempty → g = 1) : InjOn q U := by
-  intro a ha b hb hab
-  obtain ⟨k, rfl⟩ := hq.apply_eq_iff_mem_orbit.1 hab
-  obtain rfl := hU k ⟨_, ⟨b, hb, rfl⟩, ha⟩
-  simp
-
-/-- If `q` is injective on `S`, then it is injective on every translate of `S`, since
-`q (g • x) = q x`. -/
-private theorem injOn_smul {M N G : Type*} [TopologicalSpace M] [TopologicalSpace N]
-    [Group G] [MulAction G M] {q : M → N} (hq : IsQuotientCoveringMap q G) {S : Set M}
-    (hS : InjOn q S) (g : G) : InjOn q (g • S) := by
-  rw [← image_smul]
-  exact InjOn.image_of_comp (by simpa [comp_def, hq.map_smul] using hS)
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
