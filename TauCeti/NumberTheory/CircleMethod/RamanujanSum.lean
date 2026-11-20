@@ -171,14 +171,19 @@ private theorem ramanujanSum_eq_moebius_mul (q : ℕ) (n : ℤ) :
     (fun q _ => sum_divisors_ramanujanSum q n) q hq).symm.trans ?_
   simp [dvdWeight_apply]
 
+/-- The convolution `μ * dvdWeight n` at `q`, written as a sum over the divisors of `q`. -/
+private theorem ramanujanSum_eq_sum_divisors_dvdWeight (q : ℕ) (n : ℤ) :
+    ramanujanSum q n = ∑ d ∈ q.divisors, (μ (q / d) : ℂ) * dvdWeight n d := by
+  rw [ramanujanSum_eq_moebius_mul, ArithmeticFunction.mul_apply,
+    Nat.sum_divisorsAntidiagonal' (f := fun a b => (μ : ArithmeticFunction ℂ) a * dvdWeight n b)]
+  simp only [ArithmeticFunction.intCoe_apply]
+
 /-- The divisor formula `c_q(n) = ∑_{d ∣ q, d ∣ n} d μ(q/d)`. -/
 theorem ramanujanSum_eq_sum_divisors (q : ℕ) (n : ℤ) :
     ramanujanSum q n = ∑ d ∈ q.divisors with ((d : ℕ) : ℤ) ∣ n, (d : ℂ) * μ (q / d) := by
-  rw [ramanujanSum_eq_moebius_mul, ArithmeticFunction.mul_apply,
-    Nat.sum_divisorsAntidiagonal' (f := fun a b => (μ : ArithmeticFunction ℂ) a * dvdWeight n b),
-    Finset.sum_filter]
+  rw [ramanujanSum_eq_sum_divisors_dvdWeight, Finset.sum_filter]
   refine Finset.sum_congr rfl fun d _ => ?_
-  simp only [ArithmeticFunction.intCoe_apply, dvdWeight_apply]
+  rw [dvdWeight_apply]
   split_ifs <;> ring
 
 /-- `c_q(n)` is an integer. -/
@@ -232,22 +237,14 @@ theorem ramanujanSum_prime_pow_succ {p : ℕ} (hp : p.Prime) (k : ℕ) (n : ℤ)
     ramanujanSum (p ^ (k + 1)) n =
       (if (p : ℤ) ^ (k + 1) ∣ n then (p : ℂ) ^ (k + 1) else 0) -
         if (p : ℤ) ^ k ∣ n then (p : ℂ) ^ k else 0 := by
-  have hk : p ^ (k + 1) / p ^ k = p := by
-    rw [Nat.pow_div k.le_succ hp.pos]
-    simp
-  rw [ramanujanSum_eq_moebius_mul, ArithmeticFunction.mul_apply,
-    Nat.sum_divisorsAntidiagonal' (f := fun a b => (μ : ArithmeticFunction ℂ) a * dvdWeight n b),
-    Nat.sum_divisors_prime_pow hp, Finset.sum_range_succ, Finset.sum_range_succ,
-    Finset.sum_eq_zero, hk, Nat.div_self (pow_pos hp.pos _)]
-  · simp only [ArithmeticFunction.intCoe_apply, ArithmeticFunction.moebius_apply_prime hp,
-      ArithmeticFunction.moebius_apply_one, dvdWeight_apply]
-    push_cast
-    split_ifs <;> ring
-  · intro i hi
-    rw [mem_range] at hi
-    rw [Nat.pow_div (show i ≤ k + 1 by omega) hp.pos, ArithmeticFunction.intCoe_apply,
-      ArithmeticFunction.moebius_apply_prime_pow hp (show k + 1 - i ≠ 0 by omega)]
-    simp [show k + 1 - i ≠ 1 by omega]
+  -- Only the divisors `p ^ (k + 1)` and `p ^ k` contribute: `μ (p ^ j) = 0` for `j ≥ 2`.
+  rw [ramanujanSum_eq_sum_divisors_dvdWeight, Nat.sum_divisors_prime_pow hp,
+    Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_eq_zero fun i hi => by
+      have hi : i < k := mem_range.1 hi
+      rw [Nat.pow_div (by omega) hp.pos, ArithmeticFunction.moebius_apply_prime_pow hp (by omega)]
+      simp [show k + 1 - i ≠ 1 by omega]]
+  simp [Nat.pow_div, hp.pos, ArithmeticFunction.moebius_apply_prime hp, dvdWeight_apply]
+  split_ifs <;> ring
 
 /-- `c_p(n)` is `p - 1` if `p ∣ n` and `-1` otherwise. -/
 theorem ramanujanSum_prime {p : ℕ} (hp : p.Prime) (n : ℤ) :
@@ -276,13 +273,9 @@ private theorem norm_ramanujanSum_prime_pow_le {p : ℕ} (hp : p.Prime) (k : ℕ
       (Int.natCast_dvd_natCast.1 (Int.dvd_coe_gcd hm (Int.natCast_dvd_natCast.2 hmq)))
   rw [ramanujanSum_prime_pow_succ hp]
   split_ifs with h1 h2 h2
-  · have hpk : (p : ℝ) ^ k ≤ (p : ℝ) ^ (k + 1) :=
-      pow_le_pow_right₀ (by exact_mod_cast hp.one_lt.le) k.le_succ
-    have := hle (m := p ^ (k + 1)) (by exact_mod_cast h1) dvd_rfl
-    rw [Nat.cast_pow (α := ℝ)] at this
-    rw [show (p : ℂ) ^ (k + 1) - (p : ℂ) ^ k = (((p : ℝ) ^ (k + 1) - (p : ℝ) ^ k : ℝ) : ℂ) by
-      push_cast; rfl, Complex.norm_real, Real.norm_of_nonneg (sub_nonneg.2 hpk)]
-    linarith [pow_nonneg (Nat.cast_nonneg (α := ℝ) p) k]
+  · rw [← Nat.cast_pow, ← Nat.cast_pow,
+      ← Nat.cast_sub (Nat.pow_le_pow_right hp.pos k.le_succ), Complex.norm_natCast]
+    exact (Nat.cast_le.2 (Nat.sub_le _ _)).trans (hle (by exact_mod_cast h1) dvd_rfl)
   · rw [sub_zero, ← Nat.cast_pow, Complex.norm_natCast]
     exact hle (by exact_mod_cast h1) dvd_rfl
   · rw [zero_sub, norm_neg, ← Nat.cast_pow, Complex.norm_natCast]
