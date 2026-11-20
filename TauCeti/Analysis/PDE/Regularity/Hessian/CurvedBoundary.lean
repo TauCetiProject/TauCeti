@@ -49,11 +49,11 @@ curved boundary point the boundary is flattened, as in Gilbarg–Trudinger's pro
   near the boundary point; `Φ` and its inverse `Ψ = G ∘ e` are changes of variables of order two
   (`TauCeti.exists_isChangeOfVariables_normalHalfSpace_of_contDiff`).
 * **The transformed equation.** `v = u ∘ Φ` solves an equation of the same form on the flat side
-  (`TauCeti.PDE.ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq`), with principal
-  coefficient `DΨ ∘ A ∘ DΨ†` composed with `Φ`, which is again continuous and elliptic since `DΨ`
-  is continuous and invertible, a drift picking up the second derivatives of `Ψ`, which stays
-  bounded since `A` is bounded near the boundary point, and right-hand side `f ∘ Φ`. Zero
-  boundary values are carried along by
+  (`TauCeti.PDE.ae_traceCLM_nondivPullbackPrincipal_comp_add_inner_nondivPullbackDrift_add_mul_eq`),
+  with principal coefficient `DΨ ∘ A ∘ DΨ†` composed with `Φ`, which is again continuous and
+  elliptic since `DΨ` is continuous and invertible, a drift picking up the second derivatives of
+  `Ψ`, which stays bounded since `A` is bounded near the boundary point, and right-hand side
+  `f ∘ Φ`. Zero boundary values are carried along by
   `TauCeti.Wkp.IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_w1pCompL`.
 * **Pushing back.** On a smaller neighbourhood `u = v ∘ Ψ`, so the norm bound of precomposition
   with `Ψ` (`TauCeti.Wkp.norm_compL_le`) bounds `D²u` by `D²v` and the first-order part of `v`,
@@ -83,95 +83,6 @@ section Pullback
 variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] [FiniteDimensional ℝ G]
   {U' U : Opens G} {Φ Ψ : G → G} {L₁ c₁ L₂ c₂ : ℝ}
 
-/-- The principal coefficient `x ↦ DΨ(Φ x) ∘ A(Φ x) ∘ DΨ(Φ x)†` of the equation satisfied by `u ∘ Φ`
-when `u` solves `tr (A ∘ D²u) + ⟪b, ∇u⟫ + c u = f` and `Ψ` is the inverse of `Φ`. -/
-private def nondivPullbackPrincipal (Φ Ψ : G → G) (A : G → G →L[ℝ] G) (x : G) : G →L[ℝ] G :=
-  fderiv ℝ Ψ (Φ x) ∘L A (Φ x) ∘L (fderiv ℝ Ψ (Φ x)).adjoint
-
-/-- The drift `x ↦ DΨ(Φ x) b(Φ x) + ∑ᵢ D²Ψ(Φ x) (eᵢ, A(Φ x)† eᵢ)` of the equation satisfied by
-`u ∘ Φ`, for the standard orthonormal basis `(eᵢ)`. -/
-private def nondivPullbackDrift (Φ Ψ : G → G) (A : G → G →L[ℝ] G) (b : G → G) (x : G) : G :=
-  fderiv ℝ Ψ (Φ x) (b (Φ x)) + ∑ i, iteratedFDeriv ℝ 2 Ψ (Φ x)
-    ![stdOrthonormalBasis ℝ G i, (A (Φ x)).adjoint (stdOrthonormalBasis ℝ G i)]
-
-/-- The pulled-back principal coefficient `A'` is elliptic wherever `A` is: if
-`λ ‖η‖² ≤ ⟪A(Φ x) η, η⟫` and `‖DΦ(x)‖ ≤ L₁`, then `λ / max L₁ 1 ^ 2 ‖ξ‖² ≤ ⟪A'(x) ξ, ξ⟫`. -/
-private theorem nondivPullbackPrincipal_elliptic (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L₁ c₁)
-    (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L₂ c₂) (hΨΦ : ∀ x, Ψ (Φ x) = x)
-    (hΦΨ : ∀ y, Φ (Ψ y) = y) {A : G → G →L[ℝ] G} {x : G} (hx : x ∈ U') {lam : ℝ}
-    (hlam : 0 < lam) (hA : ∀ η, lam * ‖η‖ ^ 2 ≤ ⟪A (Φ x) η, η⟫_ℝ) :
-    0 < lam / max L₁ 1 ^ 2 ∧
-      ∀ ξ, lam / max L₁ 1 ^ 2 * ‖ξ‖ ^ 2 ≤ ⟪nondivPullbackPrincipal Φ Ψ A x ξ, ξ⟫_ℝ := by
-  refine ⟨by positivity, fun ξ => ?_⟩
-  set N := fderiv ℝ Ψ (Φ x)
-  -- `ξ = DΦ(x)† (N† ξ)`, since `N ∘ DΦ(x) = id`.
-  have hid : N ∘L fderiv ℝ Φ x = ContinuousLinearMap.id ℝ G :=
-    hΦ.fderiv_comp_fderiv_eq_id hΨ (fun y _ => hΨΦ y) (fun y _ => hΦΨ y) hx
-  have hξ : (fderiv ℝ Φ x).adjoint (N.adjoint ξ) = ξ := by
-    rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp, hid,
-      ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
-  have hnorm : ‖ξ‖ ≤ max L₁ 1 * ‖N.adjoint ξ‖ := by
-    calc ‖ξ‖ = ‖(fderiv ℝ Φ x).adjoint (N.adjoint ξ)‖ := by rw [hξ]
-      _ ≤ ‖(fderiv ℝ Φ x).adjoint‖ * ‖N.adjoint ξ‖ := ContinuousLinearMap.le_opNorm _ _
-      _ ≤ max L₁ 1 * ‖N.adjoint ξ‖ := by
-        gcongr
-        rw [LinearIsometryEquiv.norm_map]
-        exact (hΦ.norm_fderiv_le x hx).trans (le_max_left _ _)
-  have hinner :
-      ⟪nondivPullbackPrincipal Φ Ψ A x ξ, ξ⟫_ℝ = ⟪A (Φ x) (N.adjoint ξ), N.adjoint ξ⟫_ℝ := by
-    simp only [nondivPullbackPrincipal, ContinuousLinearMap.coe_comp, Function.comp_apply]
-    rw [← ContinuousLinearMap.adjoint_inner_right]
-  rw [hinner]
-  calc lam / max L₁ 1 ^ 2 * ‖ξ‖ ^ 2 ≤ lam / max L₁ 1 ^ 2 * (max L₁ 1 * ‖N.adjoint ξ‖) ^ 2 := by
-        gcongr
-    _ = lam * ‖N.adjoint ξ‖ ^ 2 := by field_simp
-    _ ≤ _ := hA _
-
-/-- The pulled-back principal coefficient is continuous within `s` at `x` when `Φ` maps `s` into
-`t`, `Φ x ∈ U` and `A` is continuous within `t` at `Φ x`. -/
-private theorem continuousWithinAt_nondivPullbackPrincipal
-    (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L₂ c₂)
-    (hΦc : Continuous Φ) {s t : Set G} (hst : MapsTo Φ s t) {A : G → G →L[ℝ] G} {x : G}
-    (hxU : Φ x ∈ U) (hA : ContinuousWithinAt A t (Φ x)) :
-    ContinuousWithinAt (nondivPullbackPrincipal Φ Ψ A) s x := by
-  have hM : ContinuousAt (fun y => fderiv ℝ Ψ (Φ y)) x :=
-    ((hΨ.contDiffOn.continuousOn_fderiv_of_isOpen U.isOpen (by norm_num)).continuousAt
-      (U.isOpen.mem_nhds hxU)).comp hΦc.continuousAt
-  have hconj : Continuous fun q : (G →L[ℝ] G) × (G →L[ℝ] G) => q.1 ∘L q.2 ∘L q.1.adjoint := by
-    fun_prop
-  exact hconj.continuousAt.comp_continuousWithinAt
-    (hM.continuousWithinAt.prodMk (hA.comp hΦc.continuousWithinAt hst))
-
-/-- The drift of the pulled-back equation is bounded by `L₂ β + n L₂ Λ`, `n = dim G`, at points
-where `‖b(Φ x)‖ ≤ β` and `‖A(Φ x)‖ ≤ Λ`. -/
-private theorem norm_nondivPullbackDrift_le (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L₂ c₂)
-    {A : G → G →L[ℝ] G} {b : G → G} {x : G} (hxU : Φ x ∈ U) {β Λ : ℝ} (hb : ‖b (Φ x)‖ ≤ β)
-    (hA : ‖A (Φ x)‖ ≤ Λ) :
-    ‖nondivPullbackDrift Φ Ψ A b x‖ ≤ L₂ * β + Module.finrank ℝ G * (L₂ * Λ) := by
-  have hL₂ : ‖fderiv ℝ Ψ (Φ x)‖ ≤ L₂ := hΨ.norm_fderiv_le (Φ x) hxU
-  have hL₂' : ‖iteratedFDeriv ℝ 2 Ψ (Φ x)‖ ≤ L₂ :=
-    hΨ.norm_iteratedFDeriv_le 2 one_le_two le_rfl (Φ x) hxU
-  have h0 : 0 ≤ L₂ := (norm_nonneg _).trans hL₂
-  have hterm : ∀ i, ‖iteratedFDeriv ℝ 2 Ψ (Φ x)
-      ![stdOrthonormalBasis ℝ G i, (A (Φ x)).adjoint (stdOrthonormalBasis ℝ G i)]‖ ≤ L₂ * Λ :=
-    fun i => by
-      refine ((iteratedFDeriv ℝ 2 Ψ (Φ x)).le_opNorm _).trans ?_
-      rw [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
-        (stdOrthonormalBasis ℝ G).orthonormal.1 i, one_mul]
-      have ha : ‖(A (Φ x)).adjoint (stdOrthonormalBasis ℝ G i)‖ ≤ Λ := by
-        refine ((A (Φ x)).adjoint.le_opNorm _).trans ?_
-        rw [LinearIsometryEquiv.norm_map, (stdOrthonormalBasis ℝ G).orthonormal.1 i, mul_one]
-        exact hA
-      exact mul_le_mul hL₂' ha (norm_nonneg _) h0
-  unfold nondivPullbackDrift
-  refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-  · exact ((fderiv ℝ Ψ (Φ x)).le_opNorm _).trans (mul_le_mul hL₂ hb (norm_nonneg _) h0)
-  · refine (norm_sum_le _ _).trans ?_
-    calc ∑ i, ‖iteratedFDeriv ℝ 2 Ψ (Φ x)
-            ![stdOrthonormalBasis ℝ G i, (A (Φ x)).adjoint (stdOrthonormalBasis ℝ G i)]‖
-        ≤ ∑ _i : Fin (Module.finrank ℝ G), L₂ * Λ := Finset.sum_le_sum fun i _ => hterm i
-      _ = _ := by simp
-
 omit [FiniteDimensional ℝ G] in
 /-- A closed ball about `y₀ ∈ U'` which `Φ` maps into `W`, and on whose image the norm of `A`
 stays below `‖A(Φ y₀)‖ + 1` at the points of `Ω`, by the continuity of `A` within `Ω` at
@@ -189,56 +100,6 @@ private theorem exists_closedBall_subset_of_continuousWithinAt {U' W : Opens G} 
       (hΦc.continuousAt.preimage_mem_nhds hAbd)))
 
 variable [MeasurableSpace G] [BorelSpace G] {mu : Measure G} [mu.IsAddHaarMeasure]
-
-omit [mu.IsAddHaarMeasure] in
-/-- The coefficients of the pulled-back equation are almost everywhere strongly measurable on an
-open set `s` that `Φ` maps into `U`, when `A ∘ Φ` and `b ∘ Φ` are. -/
-private theorem aestronglyMeasurable_nondivPullbackPrincipal_and_nondivPullbackDrift
-    (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L₂ c₂) (hΦc : Continuous Φ) {s : Set G}
-    (hs : MeasurableSet s) (hsU : MapsTo Φ s U) {A : G → G →L[ℝ] G} {b : G → G}
-    (hA : AEStronglyMeasurable (fun x => A (Φ x)) (mu.restrict s))
-    (hb : AEStronglyMeasurable (fun x => b (Φ x)) (mu.restrict s)) :
-    AEStronglyMeasurable (nondivPullbackPrincipal Φ Ψ A) (mu.restrict s) ∧
-      AEStronglyMeasurable (nondivPullbackDrift Φ Ψ A b) (mu.restrict s) := by
-  have hM : AEStronglyMeasurable (fun x => fderiv ℝ Ψ (Φ x)) (mu.restrict s) :=
-    ((hΨ.contDiffOn.continuousOn_fderiv_of_isOpen U.isOpen (by norm_num)).comp
-      hΦc.continuousOn hsU).aestronglyMeasurable hs
-  have hD2 : AEStronglyMeasurable (fun x => iteratedFDeriv ℝ 2 Ψ (Φ x)) (mu.restrict s) :=
-    (((hΨ.contDiffOn.continuousOn_iteratedFDerivWithin le_rfl U.isOpen.uniqueDiffOn).congr
-      fun y hy => (iteratedFDerivWithin_of_isOpen 2 U.isOpen hy).symm).comp
-        hΦc.continuousOn hsU).aestronglyMeasurable hs
-  have hconj : Continuous fun q : (G →L[ℝ] G) × (G →L[ℝ] G) => q.1 ∘L q.2 ∘L q.1.adjoint := by
-    fun_prop
-  have happ : Continuous fun q : (G →L[ℝ] G) × G => q.1 q.2 := by fun_prop
-  refine ⟨hconj.comp_aestronglyMeasurable₂ (g := fun M A => M ∘L A ∘L M.adjoint) hM hA,
-    (happ.comp_aestronglyMeasurable₂ (g := fun M v => M v) hM hb).add
-      (Finset.aestronglyMeasurable_fun_sum _ fun i _ => ?_)⟩
-  have hev : Continuous fun q : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => G) G × (G →L[ℝ] G) =>
-      q.1 ![stdOrthonormalBasis ℝ G i, q.2.adjoint (stdOrthonormalBasis ℝ G i)] := by
-    fun_prop
-  exact hev.comp_aestronglyMeasurable₂
-    (g := fun T A => T ![stdOrthonormalBasis ℝ G i, A.adjoint (stdOrthonormalBasis ℝ G i)]) hD2 hA
-
-/-- **The pulled-back equation.** If `u ∈ W^{2,p}(V)` solves `tr (A ∘ D²u) + ⟪b, ∇u⟫ + c u = f`
-almost everywhere on `V`, then `u ∘ Φ` solves the equation with coefficients
-`nondivPullbackPrincipal Φ Ψ A`, `nondivPullbackDrift Φ Ψ A b` and `c ∘ Φ` and right-hand side
-`f ∘ Φ` almost everywhere on `V'`. -/
-private theorem ae_pullback_eq {p : ℝ≥0∞} [Fact (1 ≤ p)] {V' V : Opens G}
-    (hΦ : Wkp.IsChangeOfVariables 2 V' V Φ L₁ c₁) (hΨ : Wkp.IsChangeOfVariables 2 V V' Ψ L₂ c₂)
-    (hΦΨ : RightInvOn Ψ Φ V) (hp : p ≠ ⊤) (u : Wkp mu V p 2) {A : G → G →L[ℝ] G} {b : G → G}
-    {c f : G → ℝ}
-    (hu : ∀ᵐ y ∂mu.restrict V, traceCLM ℝ G (A y ∘L Wkp.iteratedGradient 1 u y) +
-      ⟪b y, Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) y⟫_ℝ + c y * Wkp.value 2 u y = f y) :
-    ∀ᵐ x ∂mu.restrict V',
-      traceCLM ℝ G (nondivPullbackPrincipal Φ Ψ A x ∘L
-          Wkp.iteratedGradient 1 (Wkp.compL hΦ hp u) x) +
-        ⟪nondivPullbackDrift Φ Ψ A b x,
-          Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 (Wkp.compL hΦ hp u)) x⟫_ℝ +
-        c (Φ x) * Wkp.value 2 (Wkp.compL hΦ hp u) x = f (Φ x) := by
-  filter_upwards [PDE.ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq
-    (stdOrthonormalBasis ℝ G) hΦ hΨ hΦΨ hp u hu] with x hx
-  simpa only [nondivPullbackPrincipal, nondivPullbackDrift, iteratedFDeriv_two_apply,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] using hx
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
@@ -334,9 +195,9 @@ private theorem ae_pullback_eq_compL_restrictL (hp : p ≠ ⊤) {Omega O Ω' : O
     (f : Lp ℝ p (mu.restrict Omega))
     (heq : ∀ᵐ x ∂mu.restrict Omega, traceCLM ℝ G (A x ∘L iteratedGradient 1 u x) +
       ⟪b x, iteratedGradient 0 (lowerOrder 1 u) x⟫_ℝ + c x * value 2 u x = f x) :
-    ∀ᵐ x ∂mu.restrict Ω', traceCLM ℝ G (nondivPullbackPrincipal Φ Ψ A x ∘L
+    ∀ᵐ x ∂mu.restrict Ω', traceCLM ℝ G (PDE.nondivPullbackPrincipal Φ Ψ A x ∘L
         iteratedGradient 1 (compL hΦ hp (restrictL (inf_le_left : Omega ⊓ O ≤ Omega) 2 u)) x) +
-      ⟪nondivPullbackDrift Φ Ψ A b x, iteratedGradient 0
+      ⟪PDE.nondivPullbackDrift Φ Ψ A b x, iteratedGradient 0
         (lowerOrder 1 (compL hΦ hp (restrictL (inf_le_left : Omega ⊓ O ≤ Omega) 2 u))) x⟫_ℝ +
       c (Φ x) * value 2 (compL hΦ hp (restrictL (inf_le_left : Omega ⊓ O ≤ Omega) 2 u)) x =
         compL (hΦ.mono (Nat.zero_le 2)) hp (restrictL (inf_le_left : Omega ⊓ O ≤ Omega) 0 f) x := by
@@ -351,7 +212,10 @@ private theorem ae_pullback_eq_compL_restrictL (hp : p ≠ ⊤) {Omega O Ω' : O
       iteratedGradient_restrictL_ae hD 1 u, iteratedGradient_restrictL_ae hD 0 (lowerOrder 1 u),
       value_restrictL_ae hD 2 u] with y h1 h2 h3 h4
     rw [h2, h3, h4, h1]
-  filter_upwards [ae_pullback_eq hΦ hΨ (fun y _ => hΦΨ y) hp _ huD,
+  have hpull :=
+    PDE.ae_traceCLM_nondivPullbackPrincipal_comp_add_inner_nondivPullbackDrift_add_mul_eq hΦ hΨ
+      (fun y _ => hΦΨ y) hp _ huD
+  filter_upwards [hpull,
     value_compL_ae (hΦ.mono (Nat.zero_le 2)) hp (restrictL hD 0 f),
     hΦ.ae_comp (value_restrictL_ae hD 0 f)] with x h1 h2 h3
   rw [h1, ← value_zero (compL (hΦ.mono (Nat.zero_le 2)) hp (restrictL hD 0 f)), h2, h3, value_zero]
@@ -378,8 +242,8 @@ private theorem lpNorm_iteratedGradient_le_of_pullback (hp : p ≠ ⊤)
         ∃ w : W1p0 mu Ω' p,
           W1p.value (w : W1p mu Ω' p) =ᵐ[mu.restrict Ω'] fun x => ψ x * value 2 v x) →
       (∀ᵐ x ∂mu.restrict Ω',
-        traceCLM ℝ G (nondivPullbackPrincipal Φ Ψ A x ∘L iteratedGradient 1 v x) +
-          ⟪nondivPullbackDrift Φ Ψ A b x, iteratedGradient 0 (lowerOrder 1 v) x⟫_ℝ +
+        traceCLM ℝ G (PDE.nondivPullbackPrincipal Φ Ψ A x ∘L iteratedGradient 1 v x) +
+          ⟪PDE.nondivPullbackDrift Φ Ψ A b x, iteratedGradient 0 (lowerOrder 1 v) x⟫_ℝ +
             c (Φ x) * value 2 v x = g x) →
       lpNorm (iteratedGradient 1 v) p (mu.restrict ((Ω' : Set G) ∩ K)) ≤
         C₁ * (‖g‖ + ‖iteratedGradient 0 (lowerOrder 1 v)‖ + ‖value 2 v‖))
@@ -413,8 +277,7 @@ private theorem lpNorm_iteratedGradient_le_of_pullback (hp : p ≠ ⊤)
       max C₁ 0 * (compLBound p 0 L₁ c₁ * ‖f‖ + 2 * ‖lowerOrder 1 v‖) := by
     have hmem : MemLp (iteratedGradient 1 v) p (mu.restrict ((Ω' : Set G) ∩ K)) :=
       (Lp.memLp _).mono_measure (Measure.restrict_mono inter_subset_left le_rfl)
-    refine (ENNReal.toReal_mono hmem.eLpNorm_ne_top
-      (eLpNorm_mono_measure _ (Measure.restrict_mono hΩ''K le_rfl))).trans
+    refine (lpNorm_mono_measure hmem (Measure.restrict_mono hΩ''K le_rfl)).trans
         (((hC₁ v g hv0 hveq).trans (mul_le_mul_of_nonneg_right (le_max_left _ _)
           (by positivity))).trans (mul_le_mul_of_nonneg_left ?_ (le_max_right _ _)))
     linarith
@@ -477,23 +340,24 @@ private theorem exists_lpNorm_iteratedGradient_le_of_pullback (hp : 1 < p) (hp_t
           W1p.value (w : W1p volume Ω' p) =ᵐ[volume.restrict (Ω' : Set (WithLp 2 (ℝ × E)))]
             fun x => ψ x * value 2 v x) →
       (∀ᵐ x ∂volume.restrict (Ω' : Set (WithLp 2 (ℝ × E))),
-        traceCLM ℝ (WithLp 2 (ℝ × E)) (nondivPullbackPrincipal Φ Ψ A x ∘L iteratedGradient 1 v x) +
-          ⟪nondivPullbackDrift Φ Ψ A b x, iteratedGradient 0 (lowerOrder 1 v) x⟫_ℝ +
+        traceCLM ℝ (WithLp 2 (ℝ × E))
+            (PDE.nondivPullbackPrincipal Φ Ψ A x ∘L iteratedGradient 1 v x) +
+          ⟪PDE.nondivPullbackDrift Φ Ψ A b x, iteratedGradient 0 (lowerOrder 1 v) x⟫_ℝ +
             c (Φ x) * value 2 v x = g x) →
       lpNorm (iteratedGradient 1 v) p
           (volume.restrict ((Ω' : Set (WithLp 2 (ℝ × E))) ∩ K)) ≤
         C * (‖g‖ + ‖iteratedGradient 0 (lowerOrder 1 v)‖ + ‖value 2 v‖) := by
   have hΦΩ : MapsTo Φ Ω' Omega := hΦmaps.mono_right inter_subset_left
-  have hm := aestronglyMeasurable_nondivPullbackPrincipal_and_nondivPullbackDrift hΨ hΦc
+  have hm := PDE.aestronglyMeasurable_nondivPullbackPrincipal_and_nondivPullbackDrift hΨ hΦc
     Ω'.isOpen.measurableSet (fun x hx => (hΦmaps hx).2) hAΦ hbΦ
   refine exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_normalHalfSpace hp hp_top 0
-    hΩ'B hK hKB hm.1 (fun x hx => continuousWithinAt_nondivPullbackPrincipal hΨ hΦc hΦΩ
+    hΩ'B hK hKB hm.1 (fun x hx => PDE.continuousWithinAt_nondivPullbackPrincipal hΨ hΦc hΦΩ
       (hΦ.mapsTo (hKU' hx)) (hcont _ (hKW hx))) (fun x hx hxcl => ?_) hm.2
     (β := L₂ * β + Module.finrank ℝ (WithLp 2 (ℝ × E)) * (L₂ * Λ)) ?_ hcΦ hcγ
   · obtain ⟨lam, hlam, hA⟩ := hell (Φ x) (hKW hx) (map_mem_closure hΦc hxcl hΦΩ)
-    exact ⟨_, nondivPullbackPrincipal_elliptic hΦ hΨ hΨΦ hΦΨ (hKU' hx) hlam hA⟩
+    exact ⟨_, PDE.nondivPullbackPrincipal_elliptic hΦ hΨ hΨΦ hΦΨ (hKU' hx) hlam hA⟩
   · filter_upwards [hbβ, ae_restrict_mem Ω'.isOpen.measurableSet] with x hx hxΩ'
-    exact norm_nondivPullbackDrift_le hΨ (hΦmaps hxΩ').2 hx (hAΛ x hxΩ')
+    exact PDE.norm_nondivPullbackDrift_le hΨ (hΦmaps hxΩ').2 hx (hAΛ x hxΩ')
 
 open Wkp in
 /-- **The estimate near a straightened boundary portion.** Let `Φ` and `Ψ` be mutually inverse
@@ -635,7 +499,6 @@ theorem exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_contDiff_grap
   -- Flatten the boundary by `Φ = e⁻¹ ∘ G⁻¹`, `G` graph flattening by `φ`, with inverse `G ∘ e`.
   obtain ⟨U', U, L₁, c₁, L₂, c₂, h0, hΦ, hΨ, himage⟩ :=
     exists_isChangeOfVariables_normalHalfSpace_of_contDiff one_le_two hh₀ hr₀ hφ0 hφ hgraph
-  rw [← coe_normalHalfSpace] at himage
   set G := graphFlattening φ hφ.continuous
   have hΨΦ (y : WithLp 2 (ℝ × E)) : (G ∘ e) ((e.symm ∘ G.symm) y) = y := by simp
   have hΦΨ (x : WithLp 2 (ℝ × E)) : (e.symm ∘ G.symm) ((G ∘ e) x) = x := by simp
@@ -697,8 +560,8 @@ private theorem exists_lpNorm_iteratedGradient_le_of_mem (hp : 1 < p) (hp_top : 
   have hmem : MemLp (iteratedGradient 1 u) p
       (volume.restrict ((Omega : Set (WithLp 2 (ℝ × E))) ∩ closedBall x (ρ / 2))) :=
     (Lp.memLp _).mono_measure (Measure.restrict_mono inter_subset_left le_rfl)
-  exact (ENNReal.toReal_mono hmem.eLpNorm_ne_top (eLpNorm_mono_measure _
-    (Measure.restrict_mono (inter_subset_inter_right _ ball_subset_closedBall) le_rfl))).trans
+  exact (lpNorm_mono_measure hmem
+    (Measure.restrict_mono (inter_subset_inter_right _ ball_subset_closedBall) le_rfl)).trans
       (hC u f (fun ψ hψ hψc _ => hu0 ψ hψ hψc) heq)
 
 open Wkp in

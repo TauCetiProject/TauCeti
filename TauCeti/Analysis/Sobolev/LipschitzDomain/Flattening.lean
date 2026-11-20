@@ -251,7 +251,7 @@ theorem exists_isChangeOfVariables_normalHalfSpace_of_contDiff
       Wkp.IsChangeOfVariables k U' U (e.symm ∘ (graphFlattening γ hγ.continuous).symm) L₁ c₁ ∧
       Wkp.IsChangeOfVariables k U U' (graphFlattening γ hγ.continuous ∘ e) L₂ c₂ ∧
       (e.symm ∘ (graphFlattening γ hγ.continuous).symm) ''
-        ({x | 0 < x.fst} ∩ U') = Omega ∩ U := by
+        ((normalHalfSpace (E := E) 0 : Set (WithLp 2 (ℝ × E))) ∩ U') = Omega ∩ U := by
   -- `Φ = e⁻¹ ∘ G⁻¹` and `Ψ = G ∘ e` are mutually inverse homeomorphisms of class `Cᵏ`.
   obtain ⟨H, hHΦ, hHΨ⟩ : ∃ H : WithLp 2 (ℝ × E) ≃ₜ WithLp 2 (ℝ × E),
       ⇑H = e.symm ∘ (graphFlattening γ hγ.continuous).symm ∧
@@ -288,6 +288,7 @@ theorem exists_isChangeOfVariables_normalHalfSpace_of_contDiff
       fun x hx => hx
   refine ⟨U', U, L₁, c₁, L₂, c₂, mem_ball_self hρ, hΦ, hΨ, ?_⟩
   -- `H` maps the part of `U'` in the half-space onto `Ω ∩ U`.
+  rw [coe_normalHalfSpace]
   ext z
   constructor
   · rintro ⟨y, ⟨hyH, hyU'⟩, rfl⟩
