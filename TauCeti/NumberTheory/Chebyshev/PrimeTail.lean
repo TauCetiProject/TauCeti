@@ -27,10 +27,12 @@ The second half keeps the logarithm in the unweighted tails. Mathlib's
 `Chebyshev.pi_le_log4_mul_div` gives `π(x) ≤ (2 log 4 + 2) x / log x` for every `x > 1`
 (`primeCounting_le_mul_div_log`). Partial summation against `t ^ (-s)` then bounds the sum of
 `p ^ (-s)` over primes `p > y` by `s / (s - 1) · (2 log 4 + 2) · y ^ (1 - s) / log y`, for real
-`s > 1` and `y > 1`, both for finite ranges `y < p ≤ b` (`sum_primesLE_rpow_neg_le`) and for the
-whole tail (`tsum_prime_rpow_neg_gt_le`). For an integer exponent `k ≥ 2` the constant
-`s / (s - 1)` is at most `2`, so `∑_{y < p ≤ b} 1 / p ^ k ≤ 2 (2 log 4 + 2) / (y ^ (k - 1) log y)`
-uniformly in `k` (`sum_primesLE_inv_pow_le`). Compared with the elementary bound
+`s > 1` and `y > 1`, for finite ranges `y < p ≤ b` (`sum_primesLE_rpow_neg_le`); the whole tail,
+with the sharper constant `s log 4 / (s - 1)`, is bounded in
+`TauCeti.NumberTheory.Chebyshev.PowerTail` (`tsum_prime_rpow_neg_gt_le`). For an integer
+exponent `k ≥ 2` the constant `s / (s - 1)` is at most `2`, so
+`∑_{y < p ≤ b} 1 / p ^ k ≤ 2 (2 log 4 + 2) / (y ^ (k - 1) log y)` uniformly in `k`
+(`sum_primesLE_inv_pow_le`). Compared with the elementary bound
 `∑_{p > y} 1 / p² ≤ 4 / y`, these save the factor `log y`, which is what the large-prime parts
 of geometric sieves need.
 
@@ -496,23 +498,6 @@ theorem summable_prime_rpow_neg_gt {s : ℝ} (hs : 1 < s) (y : ℝ) :
     Summable (fun n : ℕ ↦ if n.Prime ∧ y < (n : ℝ) then (n : ℝ) ^ (-s) else 0) :=
   (Real.summable_nat_rpow.mpr (neg_lt_neg hs)).of_nonneg_of_le
     (fun n ↦ by split_ifs <;> positivity) (fun n ↦ by split_ifs <;> simp [Real.rpow_nonneg])
-
-/-- For `s > 1` and `y > 1`, the sum of `p ^ (-s)` over primes `p > y` is at most
-`s / (s - 1) · (2 log 4 + 2) · y ^ (1 - s) / log y`. -/
-theorem tsum_prime_rpow_neg_gt_le {s y : ℝ} (hs : 1 < s) (hy : 1 < y) :
-    (∑' n : ℕ, if n.Prime ∧ y < (n : ℝ) then (n : ℝ) ^ (-s) else 0) ≤
-      s / (s - 1) * (2 * Real.log 4 + 2) * y ^ (1 - s) / Real.log y := by
-  apply Real.tsum_le_of_sum_le
-  · intro n
-    simp only [Pi.zero_apply]
-    split_ifs <;> positivity
-  · intro t
-    rw [← sum_filter]
-    refine (sum_le_sum_of_subset_of_nonneg ?_ fun _ _ _ ↦ by positivity).trans
-      (sum_primesLE_rpow_neg_le hs hy ((t.sup id : ℕ) : ℝ))
-    intro n hn
-    simp only [mem_filter, Nat.mem_primesLE, Nat.floor_natCast] at hn ⊢
-    exact ⟨⟨le_sup (f := id) hn.1, hn.2.1⟩, hn.2.2⟩
 
 /-- For an integer exponent `k ≥ 2` and `a > 1`, the sum of `1 / p ^ k` over primes
 `a < p ≤ b` is at most `2 (2 log 4 + 2) / (a ^ (k - 1) log a)`, with a constant independent of
