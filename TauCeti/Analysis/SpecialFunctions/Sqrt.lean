@@ -23,7 +23,8 @@ modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschi
 to `0` as
 `u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
-`t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`.
+`t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`. Finally, it describes
+the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of two rays.
 
 ## Main results
 
@@ -52,6 +53,8 @@ to `0` as
   is positive, has an explicit derivative, and maps `ℝ` onto `(0, ∞)` for `p > 0`.
 * `Real.contDiff_div_sqrt_pow`: if `ψ` is `C^k` with support in `(0, ∞)`, then
   `t ↦ ψ (√t) / (√t) ^ n` is `C^k`.
+* `Real.setOf_sq_le_eq_Icc`: for `0 ≤ a`, `{x | x² ≤ a} = [-√a, √a]`.
+* `Real.setOf_le_sq_eq_union`: `{x | a ≤ x²} = (-∞, -√a] ∪ [√a, ∞)`.
 
 ## References
 
@@ -300,6 +303,19 @@ theorem sqrt_add_le_add_sqrt (a b : ℝ) : √(a + b) ≤ √a + √b := by
       exact sqrt_le_sqrt (by linarith)
   · rw [sqrt_eq_zero_of_nonpos ha.le, zero_add]
     exact sqrt_le_sqrt (by linarith)
+
+/-- The closed sublevel `{x² ≤ a}` of the square, for `0 ≤ a`, is the interval `[-√a, √a]`. -/
+theorem setOf_sq_le_eq_Icc {a : ℝ} (ha : 0 ≤ a) : {x : ℝ | x ^ 2 ≤ a} = Set.Icc (-√a) √a := by
+  ext x
+  simp [sq_le ha]
+
+/-- The closed superlevel `{a ≤ x²}` of the square is the union of the two rays
+`(-∞, -√a]` and `[√a, ∞)`; for `a ≤ 0` they cover the line, since then `√a = 0`. -/
+theorem setOf_le_sq_eq_union (a : ℝ) :
+    {x : ℝ | a ≤ x ^ 2} = Set.Iic (-√a) ∪ Set.Ici √a := by
+  ext x
+  simp only [Set.mem_ofPred_eq, Set.mem_union, Set.mem_Iic, Set.mem_Ici]
+  rw [← sqrt_le_sqrt_iff (sq_nonneg x), sqrt_sq_eq_abs, le_abs']
 
 end Real
 
