@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
-public import TauCeti.MeasureTheory.Integral.RieszPotential
+public import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # The non-endpoint `TT*` argument
@@ -83,7 +84,7 @@ variable {𝕜 X E H : Type*} [RCLike 𝕜] {mX : MeasurableSpace X} {μ : Measu
 
 /-- A single time pairing: Hölder's inequality in space and the decay of `U(s) U(t)*` bound
 `|⟪U(s)* f, U(t)* g⟫|` by `A |s - t| ^ (-γ) ‖f‖_{r'} ‖g‖_{r'}`. -/
-private theorem enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞} {γ : ℝ}
+theorem enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A : ℝ≥0∞} {γ : ℝ}
     (hU : ∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
       eLpNorm (U s (((U t)†) g)) r μ ≤ A * ‖s - t‖ₑ ^ (-γ) * eLpNorm g r' μ)
     {s t : ℝ} (hst : s ≠ t) (f g : Lp E 2 μ) :
@@ -100,10 +101,7 @@ region `s < t` is bounded by the integral of its absolute value over the whole `
 theorem enorm_integral_setIntegral_Iio_le_lintegral_lintegral_enorm {V : Type*}
     [NormedAddCommGroup V] [NormedSpace ℝ V] (f : ℝ → ℝ → V) :
     ‖∫ t, ∫ s in Set.Iio t, f s t‖ₑ ≤ ∫⁻ t, ∫⁻ s, ‖f s t‖ₑ :=
-  calc _ ≤ ∫⁻ t, ‖∫ s in Set.Iio t, f s t‖ₑ := eNorm_integral_le_lintegral_eNorm _
-    _ ≤ ∫⁻ t, ∫⁻ s in Set.Iio t, ‖f s t‖ₑ :=
-        lintegral_mono fun _ ↦ eNorm_integral_le_lintegral_eNorm _
-    _ ≤ _ := lintegral_mono fun _ ↦ setLIntegral_le_lintegral _ _
+  enorm_integral_setIntegral_le_lintegral_lintegral f
 
 /-- **The bilinear `TT*` estimate.** Let `2 < q < ∞` with Hölder conjugate `p`, and let
 `U(t) : H → L²(X, μ)` be bounded operators whose time pairings decay from `L^{r'}` to `L^r`,

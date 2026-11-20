@@ -68,7 +68,6 @@ private theorem integrable_abs_rpow_standardStableMeasure_iff
     Integrable (fun x : ℝ ↦ |x| ^ q) (stableMeasure α β 1 0) ↔ q < α := by
   obtain ⟨μ, hμ, -⟩ := existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ
     (by norm_num : (0 : ℝ) < 1)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β 1
   constructor
   · intro h
     rw [← hμ] at h
@@ -87,7 +86,7 @@ private theorem integrable_abs_rpow_standardStableMeasure_iff
             ENNReal.ofReal_le_ofReal (hqα.trans hα.2).le
            _ = 2 := by norm_num
     have hsmall := (memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq
-      hα zero_lt_one hμ).mono_exponent hq_two
+      zero_lt_one hμ).mono_exponent hq_two
     have hlarge := (memLp_id_ofReal_iff_integrable_abs_rpow hq _).2
       ((integrable_abs_rpow_stableCompensatedPoissonMeasure_iff hα hβ zero_lt_one hq).2 hqα)
     apply (memLp_id_ofReal_iff_integrable_abs_rpow hq _).1

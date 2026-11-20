@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Tensor
+public import TauCeti.Topology.Homotopy.Monodromy.Basic
+public import TauCeti.Topology.IsLocalHomeomorph
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
 
 /-!
@@ -30,6 +32,13 @@ identifies cohomology twisted by it with ordinary cohomology. Independently of o
 `TauCeti.VectorBundleOrientationCover.signLocalSystemTensorIso` identifies its tensor square
 with the constant coefficient system: evaluate both factors at either orientation and multiply.
 
+Every loop acts on a fibre of `o(E)` by `1` or by `-1`
+(`VectorBundleOrientationCover.monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one`).
+Over a connected, locally path-connected base, a non-orientable bundle has a loop acting by `-1`
+(`VectorBundleOrientationCover.exists_monodromyRepresentation_signLocalSystem_eq_neg_one`):
+its orientation double cover is connected, hence path-connected, so a path in the cover joins the
+two orientations of a fibre, and it projects to a loop whose monodromy exchanges them.
+
 ## Main definitions
 
 * `TauCeti.VectorBundleOrientationCover.signLocalSystem`: the orientation local system `o(E)`.
@@ -39,6 +48,12 @@ with the constant coefficient system: evaluate both factors at either orientatio
   of the fibre.
 * `TauCeti.VectorBundleOrientation.signLocalSystemIso`: the trivialization given by an
   orientation.
+
+## Main results
+
+* `TauCeti.VectorBundleOrientationCover.exists_monodromyRepresentation_signLocalSystem_eq_neg_one`:
+  a non-orientable bundle over a connected, locally path-connected base has an
+  orientation-reversing loop.
 
 ## References
 
@@ -79,6 +94,13 @@ def signLocalSystem (hι : Fintype.card ι = finrank ℝ F) :
   (isCoveringMap_proj (F := F) (E := E) hι).signLocalSystem R _ proj_comp_deck
 
 variable {R} (hι : Fintype.card ι = finrank ℝ F)
+
+/-- The orientation local system is the sign local system of the orientation double cover with
+respect to its deck involution. -/
+theorem signLocalSystem_def :
+    signLocalSystem F E R hι =
+      (isCoveringMap_proj (F := F) (E := E) hι).signLocalSystem R _ proj_comp_deck :=
+  (rfl)
 
 /-- The fibre of the orientation local system over `x` is the module of functions on the
 orientations over `x` that change sign under reversal. -/
@@ -127,9 +149,44 @@ theorem signLocalSystemFiberEquiv_neg {b : B} (o : Orientation ℝ (E b) ι)
       (⟨⟨b, -o⟩, rfl⟩ : (proj ⁻¹' {b} : Set (VectorBundleOrientationCover F E ι))) :=
     Subtype.ext (by simp [deck_apply])
   rw [signLocalSystemFiberEquiv_apply, signLocalSystemFiberEquiv_apply, ← h]
-  exact mem_signFiber_iff.1 (signLocalSystemObjEquiv hι _ f).2 _
+  exact mem_signFiber_iff.1 (signLocalSystemObjEquiv hι _ f).property _
+
+/-- Every loop at `b` acts by `1` or by `-1` on the fibre of the orientation local system over
+`b`. -/
+theorem monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one (b : B)
+    (g : FundamentalGroup (TopCat.of B) b) :
+    LocalCoefficientSystem.monodromyRepresentation (signLocalSystem F E R hι) b g = 1 ∨
+      LocalCoefficientSystem.monodromyRepresentation (signLocalSystem F E R hι) b g = -1 := by
+  rw [signLocalSystem_def]
+  exact (isCoveringMap_proj hι).monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one
+    (hσ := proj_comp_deck) deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) g
 
 variable [FiniteDimensional ℝ F]
+
+/-- **A non-orientable bundle has an orientation-reversing loop.** Over a connected, locally
+path-connected base, if `E` is not orientable, some loop at `b` acts by `-1` on the fibre of the
+orientation local system over `b`. -/
+theorem exists_monodromyRepresentation_signLocalSystem_eq_neg_one [ConnectedSpace B]
+    [LocallyPathConnectedSpace B] (h : IsEmpty (VectorBundleOrientation F E ι)) (b : B) :
+    ∃ g : FundamentalGroup (TopCat.of B) b,
+      LocalCoefficientSystem.monodromyRepresentation (signLocalSystem F E R hι) b g = -1 := by
+  have hp := isCoveringMap_proj (F := F) (E := E) hι
+  have : ConnectedSpace (VectorBundleOrientationCover F E ι) :=
+    not_not.1 fun hc ↦
+      h.false ((VectorBundleOrientation.nonempty_iff_not_connectedSpace hι).2 hc).some
+  have : LocallyPathConnectedSpace (VectorBundleOrientationCover F E ι) :=
+    hp.isLocalHomeomorph.locallyPathConnectedSpace
+  have : PathConnectedSpace (VectorBundleOrientationCover F E ι) :=
+    PathConnectedSpace.of_locallyPathConnectedSpace
+  -- A path in the cover from a point `q` over `b` to `deck q` projects to a loop at `b` whose
+  -- monodromy carries `q` to `deck q`.
+  obtain ⟨q, hq⟩ := surjective_proj (F := F) (E := E) hι b
+  obtain ⟨g, hg⟩ := hp.exists_monodromy_eq_of_joined (X := TopCat.of B) (e := ⟨q, hq⟩)
+    (e' := ⟨deck q, (proj_deck q).trans hq⟩) (PathConnectedSpace.joined _ _)
+  rw [signLocalSystem_def]
+  refine ⟨g, hp.monodromyRepresentation_signLocalSystem_eq_neg_one (hσ := proj_comp_deck)
+    deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) (e := ⟨q, hq⟩) (hg.trans (Subtype.ext ?_))⟩
+  exact (Function.fiberMap_apply_coe _ proj_comp_deck b ⟨q, hq⟩).symm
 
 section Tensor
 

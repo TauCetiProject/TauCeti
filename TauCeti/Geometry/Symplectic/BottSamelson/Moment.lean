@@ -37,7 +37,8 @@ For nonnegative weights `a, b, c`, every value of `μ` lies in the hexagon
 projector lie in `[0, 1]` and sum to its rank, which gives the trace and the first five bounds, and
 the third diagonal entry of `Π_{L₁}` vanishes because `L₁ ⊆ P₀`, which gives `z ≤ b + c`. This is
 one inclusion of the description of the image of `μ` as the hexagon; the other one, that every
-point of the hexagon is a moment value, is the content of the convexity theorem for torus actions.
+point of the hexagon is a moment value, is proved in
+`TauCeti.Geometry.Symplectic.BottSamelson.Image`.
 
 ## Main definitions
 
