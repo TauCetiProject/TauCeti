@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.Adjoint
-public import TauCeti.Analysis.InnerProductSpace.Dual
 
 /-!
 # Compatibility conditions for Fredholm operators
@@ -15,10 +14,10 @@ For a continuous linear map `T : E → F` between Hilbert spaces with closed ran
 `T x = y` is solvable exactly when `y` is orthogonal to the kernel of the adjoint `T†`. If
 `z₁, …, z_m` is a basis of `ker T†`, the solvability conditions are the `m` equations
 `⟪zᵢ, y⟫ = 0`: these compatibility functionals are continuous and linearly independent (by
-`LinearIndependent.innerSL` applied to the basis), and their
-number `m` is the dimension of `ker T†`, which is isomorphic to the cokernel of `T`. That no
-family of fewer than `dim coker T` linear functionals, continuous or not, has the range of `T` as
-its common kernel is the general codimension count of the module
+`LinearIndependent.innerSL` of the module `TauCeti.Analysis.InnerProductSpace.Dual`, applied to
+the basis), and their number `m` is the dimension of `ker T†`, which is isomorphic to the
+cokernel of `T`. That no family of fewer than `dim coker T` linear functionals, continuous or not,
+has the range of `T` as its common kernel is the general codimension count of the module
 `TauCeti.LinearAlgebra.Dual.Codimension`.
 
 For a Fredholm operator of index zero this gives the **Fredholm alternative** in its quantitative
@@ -89,7 +88,7 @@ theorem iInf_ker_innerSL_basis_eq_range (T : E →L[𝕜] F)
 spaces: either `T` is bijective, or `T` has a nonzero kernel and the kernel of the adjoint has a
 basis `zᵢ` indexed by `Fin (dim ker T)` such that `T x = y` is solvable exactly when
 `⟪zᵢ, y⟫ = 0` for every `i`. The compatibility functionals `⟪zᵢ, ·⟫` are linearly independent
-by `LinearIndependent.innerSL`. -/
+by `LinearIndependent.innerSL` of the module `TauCeti.Analysis.InnerProductSpace.Dual`. -/
 theorem IsFredholm.bijective_or_exists_basis_of_index_eq_zero {T : E →L[𝕜] F}
     (hT : T.IsFredholm) (h0 : T.index = 0) :
     Function.Bijective T ∨
