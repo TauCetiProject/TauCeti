@@ -77,7 +77,8 @@ The estimates are proved at one point `p = ((x, ξ), z)` at a time. Pulling a fu
 `v ↦ p + parameterDilation n t v`, with `t` the weight at `p`, turns the dilated derivatives at
 `p` into ordinary iterated derivatives at `0`
 (`TauCeti.parameterIteratedFDeriv_eq_iteratedFDeriv_comp`), where the uniform Leibniz bound
-`TauCeti.exists_norm_iteratedFDeriv_bilinear_le` applies. The inverse estimates come from
+`TauCeti.exists_norm_iteratedFDeriv_bilinear_le` applies
+(`TauCeti.exists_norm_parameterIteratedFDeriv_bilinear_le`). The inverse estimates come from
 `TauCeti.exists_norm_iteratedFDeriv_clm_inverse_le`, an induction on the order from
 `∂ᵤ(a⁻¹) = -a⁻¹ (∂ᵤ a) a⁻¹`, as for the cut-off inverse `TauCeti.Symbol.cutoffInverse` of a
 symbol.
@@ -328,6 +329,31 @@ theorem contDiffOn_comp_parameterDilation {Λ : Set ℂ} (hΛ : IsOpen Λ)
   exact hf.comp (contDiff_const.add (parameterDilation n t).contDiff).contDiffOn
     (mapsTo_preimage _ _)
 
+/-- **Leibniz rule** for dilated derivatives: at a point `p` with `p.2 ∈ Λ`, if the dilated
+derivatives of order at most `k` of `f` and `g`, smooth on `univ ×ˢ Λ`, are bounded by `C` and `D`,
+those of `B (f ·) (g ·)` are bounded by `E * (C * D)`, with `E` depending only on `B` and `k`. -/
+theorem exists_norm_parameterIteratedFDeriv_bilinear_le (B : X →L[ℝ] Y →L[ℝ] Z) (k : ℕ) :
+    ∃ E : ℝ, 0 ≤ E ∧ ∀ {Λ : Set ℂ}, IsOpen Λ →
+      ∀ (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → X)
+        (g : (CoordinateSpace n × CoordinateSpace n) × ℂ → Y),
+      ContDiffOn ℝ ∞ f (univ ×ˢ Λ) → ContDiffOn ℝ ∞ g (univ ×ˢ Λ) →
+      ∀ p : (CoordinateSpace n × CoordinateSpace n) × ℂ, p.2 ∈ Λ → ∀ C D : ℝ,
+      (∀ i ≤ k, ‖parameterIteratedFDeriv i f p‖ ≤ C) →
+      (∀ i ≤ k, ‖parameterIteratedFDeriv i g p‖ ≤ D) →
+      ∀ j ≤ k, ‖parameterIteratedFDeriv j (fun q => B (f q) (g q)) p‖ ≤ E * (C * D) := by
+  obtain ⟨E, hE, hB⟩ := exists_norm_iteratedFDeriv_bilinear_le
+    ((CoordinateSpace n × CoordinateSpace n) × ℂ) B k
+  refine ⟨E, hE, fun hΛ f g hf hg p hp C D hC hD j hj => ?_⟩
+  obtain ⟨hU, h0, hfT⟩ := contDiffOn_comp_parameterDilation hΛ hf hp (parameterWeight p.1.2 p.2)
+  obtain ⟨-, -, hgT⟩ := contDiffOn_comp_parameterDilation hΛ hg hp (parameterWeight p.1.2 p.2)
+  have hk : ((k : ℕ∞ω)) ≤ ∞ := by exact_mod_cast le_top
+  rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
+  refine hB _ _ _ 0 hU h0 (hfT.of_le hk) (hgT.of_le hk) C D (fun i hi => ?_) (fun i hi => ?_) j hj
+  · rw [← parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
+    exact hC i hi
+  · rw [← parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
+    exact hD i hi
+
 /-- The estimates of order `m` for a function of positions, frequencies and spectral parameters in
 `Λ`: on every compact set of positions, `‖parameterIteratedFDeriv k f ((x, ξ), z)‖` is at most a
 constant times `parameterWeight ξ z ^ m`. -/
@@ -420,23 +446,12 @@ private theorem Bounds.bilinear (hΛ : IsOpen Λ) (B : X →L[ℝ] Y →L[ℝ] Z
     (hbg : Bounds Λ m' g) : Bounds Λ (m + m') (fun p => B (f p) (g p)) := fun K hK k => by
   obtain ⟨C, hC, hf'⟩ := hbf.exists_forall_le hK k
   obtain ⟨D, hD, hg'⟩ := hbg.exists_forall_le hK k
-  obtain ⟨E, hE, hB⟩ := exists_norm_iteratedFDeriv_bilinear_le
-    ((CoordinateSpace n × CoordinateSpace n) × ℂ) B k
+  obtain ⟨E, hE, hB⟩ := exists_norm_parameterIteratedFDeriv_bilinear_le (n := n) B k
   refine ⟨E * (C * D), by positivity, fun x hx ξ z hz => ?_⟩
-  obtain ⟨hU, h0, hfT⟩ := contDiffOn_comp_parameterDilation hΛ hf (p := ((x, ξ), z)) hz
-    (parameterWeight ξ z)
-  obtain ⟨-, -, hgT⟩ := contDiffOn_comp_parameterDilation hΛ hg (p := ((x, ξ), z)) hz
-    (parameterWeight ξ z)
-  have hk : ((k : ℕ∞ω)) ≤ ∞ := by exact_mod_cast le_top
-  rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
-  refine (hB _ _ _ 0 hU h0 (hfT.of_le hk) (hgT.of_le hk) (C * parameterWeight ξ z ^ m)
-    (D * parameterWeight ξ z ^ m') (fun i hi => ?_) (fun i hi => ?_) k le_rfl).trans_eq ?_
-  · rw [← parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
-    exact hf' i hi x hx ξ z hz
-  · rw [← parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
-    exact hg' i hi x hx ξ z hz
-  · rw [Real.rpow_add (parameterWeight_pos ξ z)]
-    ring
+  refine (hB hΛ f g hf hg _ hz (C * parameterWeight ξ z ^ m) (D * parameterWeight ξ z ^ m')
+    (fun i hi => hf' i hi x hx ξ z hz) (fun i hi => hg' i hi x hx ξ z hz) k le_rfl).trans_eq ?_
+  rw [Real.rpow_add (parameterWeight_pos ξ z)]
+  ring
 
 /-- The pointwise inverse of a function of order `m` whose inverse has the bound of order `-m`
 has order `-m`. -/
