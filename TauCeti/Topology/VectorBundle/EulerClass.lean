@@ -526,6 +526,17 @@ end ThomClass
 
 section Pullback
 
+/-- The canonical map from the total space of a pullback bundle `f *ᵖ E` to the total space of `E`
+keeps each vector, so the nonzero vectors of `f *ᵖ E` are exactly the points sent to nonzero vectors
+of `E`. -/
+theorem preimage_pullbackLift_zeroSectionCompl {B B' : Type w} {F : Type*} {E : B → Type w}
+    [∀ b, AddCommMonoid (E b)] (f : B' → B) :
+    Pullback.lift f ⁻¹' zeroSectionCompl F E = zeroSectionCompl F (f *ᵖ E) := by
+  ext z
+  simp only [mem_preimage, mem_zeroSectionCompl, Pullback.lift_snd]
+  -- The zero of the fibre of `f *ᵖ E` over `x` is, by definition, the zero of `E (f x)`.
+  rfl
+
 variable {B : Type w} [TopologicalSpace B] (F : Type*) (E : B → Type w)
   [TopologicalSpace (TotalSpace F E)] [∀ b, Zero (E b)] {B' : Type w}
   [TopologicalSpace B'] (f : C(B', B))
