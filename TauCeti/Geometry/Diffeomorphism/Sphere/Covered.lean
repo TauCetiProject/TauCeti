@@ -251,7 +251,7 @@ private theorem exists_ne_zero_isCoveredByDiffeomorphisms_sphereNorthPole [NeZer
     ∃ ℓ : ℤ, ℓ ≠ 0 ∧
       o.IsCoveredByDiffeomorphisms finrank_euclideanSpace_fin m (sphereNorthPole (n + 1)) ℓ := by
   have : ConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1) :=
-    connectedSpace_euclideanSphere (by omega)
+    connectedSpace_euclideanSphere (by rw [Fintype.card_fin]; omega)
   let R := ModuleCat.of ℤ (ULift.{0} ℤ)
   obtain ⟨k, hk, b, hb⟩ := exists_map_rotationOrbitMap_eq_pow h
   -- The Hurewicz class of the generator is a multiple `c • [Sⁿ⁺¹]` of the fundamental class.
