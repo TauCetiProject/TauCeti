@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
 public import TauCeti.Geometry.Manifold.Degree.StiefelRotation
 import TauCeti.Geometry.Manifold.Degree.Homological
-import TauCeti.Geometry.Manifold.Instances.Stiefel.Homogeneous
+import TauCeti.Geometry.Manifold.Instances.Stiefel.Projection
 import TauCeti.Geometry.Sphere.Connected
 import TauCeti.Geometry.Sphere.Equator
 
@@ -41,7 +41,7 @@ The degree is read in homology through
 `TauCeti.Manifold.Orientation.exists_singularHomologyMap_eq_degreeAtRegularValue_smul`, which
 applies to manifolds with product models such as these, at the regular values `(p, q)` with `q ≠ ±p`
 (`TauCeti.isRegularValue_stiefelRotationFamily`). It needs `V₂(E) × S¹` to be connected, which
-holds for `n ≥ 1` (`TauCeti.stiefel.pathConnectedSpace`). For `n = 0` the Stiefel manifold is
+holds for `n ≥ 1` (`TauCeti.pathConnectedSpace_stiefel`). For `n = 0` the Stiefel manifold is
 `O(2)`, with two components, on which a fundamental class may carry independent signs.
 
 ## Main results
@@ -89,7 +89,7 @@ theorem exists_singularHomologyMap_stiefelRotationFamily_eq_smul (hn : n ≠ 0)
         (s * (1 + (-1) ^ n)) • ν := by
   have hE : finrank ℝ E = n + 1 + 1 := Fact.out
   -- Both products are connected.
-  have := stiefel.pathConnectedSpace (E := E) (k := 2) (by omega)
+  have := pathConnectedSpace_stiefel (E := E) (k := 2) (by omega)
   have := connectedSpace_sphere (E := E) (n + 1)
   have := connectedSpace_sphere (E := ℂ) 1
   -- Orientations of `V₂(E) × S¹` and `Sⁿ⁺¹ × Sⁿ⁺¹`.

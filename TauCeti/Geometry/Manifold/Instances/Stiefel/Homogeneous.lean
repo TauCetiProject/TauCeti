@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Instances.Stiefel
 public import TauCeti.Geometry.Sphere.LinearIsometry
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.Topology.Grassmannian.Orthonormal
-import TauCeti.Topology.Grassmannian.StiefelFibration.ForgetLast
 
 /-!
 # The Stiefel manifold as a homogeneous space
@@ -46,8 +45,6 @@ homeomorphism; the composites are not provided as separate declarations.
   to the orthonormal frames of the Grassmannian theory.
 * `TauCeti.stiefel.finiteOrthonormalFrameHomeomorph_smul`: the homeomorphism intertwines the
   actions of orthogonal matrices.
-* `TauCeti.stiefel.pathConnectedSpace`: the orthonormal `k`-frames of `E` are path connected for
-  `k < dim E`.
 
 ## References
 
@@ -152,30 +149,5 @@ theorem stiefel.finiteOrthonormalFrameHomeomorph_symm_standard (h : r ≤ N) (i 
   simp
 
 end Comparison
-
-/-! ### Connectedness -/
-
-section Connected
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {k : ℕ}
-
-/-- **The Stiefel manifold is path connected below the dimension**: for `k < dim E`, the
-orthonormal `k`-frames of `E` form a path-connected space. An orthonormal basis of `E` identifies
-them with the orthonormal `k`-frames of `ℝᴺ`, which are path connected for `k < N`. -/
-theorem stiefel.pathConnectedSpace (hk : k < finrank ℝ E) : PathConnectedSpace (stiefel E k) := by
-  have := finiteOrthonormalFrame.pathConnectedSpace hk
-  have := (finiteOrthonormalFrameHomeomorph k (finrank ℝ E)).symm.pathConnectedSpace
-  let L := (stdOrthonormalBasis ℝ E).repr
-  let φ : stiefel (EuclideanSpace ℝ (Fin (finrank ℝ E))) k → stiefel E k := fun v ↦
-    ⟨L.symm ∘ v.1, mem_stiefel_iff.2 ((mem_stiefel_iff.1 v.2).comp_linearIsometryEquiv L.symm)⟩
-  refine Surjective.pathConnectedSpace (f := φ) (fun w ↦ ?_) ?_
-  · refine ⟨⟨L ∘ w.1, mem_stiefel_iff.2 ((mem_stiefel_iff.1 w.2).comp_linearIsometryEquiv L)⟩,
-      Subtype.ext (funext fun i ↦ ?_)⟩
-    simp [φ]
-  · exact continuous_induced_rng.2 <| continuous_pi fun i ↦
-      L.symm.continuous.comp ((continuous_apply i).comp continuous_subtype_val)
-
-end Connected
 
 end TauCeti
