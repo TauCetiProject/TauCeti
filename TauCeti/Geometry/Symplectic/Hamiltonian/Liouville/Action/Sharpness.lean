@@ -133,15 +133,9 @@ theorem not_subsingleton_inter_preimage_of_image_eq [Nonempty ι]
     ¬(U ∩ F ⁻¹' {F y}).Subsingleton := by
   intro hsub
   obtain ⟨g, hg, hgU⟩ := exists_injective_mem_preimage_of_image_eq hΦ hF hy
-  have hp : 0 < p := Fact.out
-  -- The points `0` and `p / 2` of `ℝ` are distinct in `AddCircle p`.
-  have hne : ((0 : ℝ) : AddCircle p) ≠ ((p / 2 : ℝ) : AddCircle p) := by
-    rw [Ne, AddCircle.coe_eq_coe_iff_of_mem_Ico (a := 0) ⟨le_rfl, by linarith⟩
-      ⟨by linarith, by linarith⟩]
-    linarith
   have hmem (θ : ι → AddCircle p) : g θ ∈ U ∩ F ⁻¹' {F y} := ⟨(hgU θ).1, (hgU θ).2.1⟩
-  have h := hg (hsub (hmem fun _ ↦ ((0 : ℝ) : AddCircle p)) (hmem fun _ ↦ ((p / 2 : ℝ) : _)))
-  exact hne (congrFun h (Classical.arbitrary ι))
+  obtain ⟨θ, θ', hθθ'⟩ := exists_pair_ne (ι → AddCircle p)
+  exact hθθ' (hg (hsub (hmem θ) (hmem θ')))
 
 end Torus
 
