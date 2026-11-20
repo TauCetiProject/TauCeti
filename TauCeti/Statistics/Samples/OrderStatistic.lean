@@ -110,7 +110,8 @@ theorem hasDensity_map_orderStatistic_pi_self [IsProbabilityMeasure P] [NullSing
   rw [hweight]
   calc
     _ = (U.map P.quantile).withDensity (fun x ↦ ENNReal.ofReal (w (cdf P x))) :=
-      Measure.map_withDensity_comp P.measurable_quantile (hw.comp hF).ennreal_ofReal
+      Measure.map_withDensity_comp P.measurable_quantile.aemeasurable
+        (hw.comp hF).ennreal_ofReal.aemeasurable
     _ = _ := congrArg (fun μ ↦ μ.withDensity (fun x ↦ ENNReal.ofReal (w (cdf P x)))) hU
 
 /-- The marginal density of the `k`-th order statistic from a law with density `f` is
