@@ -59,9 +59,10 @@ equivalent to a nonarchimedean absolute value.
 * `NumberField.InfinitePlace.even_nrComplexPlaces_iff_zero_lt_discr`: Brill's theorem in parity
   form, the number of complex places is even exactly when the discriminant is positive; hence
   `nrComplexPlaces_eq_zero_of_zero_lt_discr` (degree less than `4`),
-  `nrComplexPlaces_eq_one_of_discr_lt_zero` (degree less than `6`) and
-  `NumberField.IsTotallyReal.of_zero_lt_discr` read the signature off the sign of the
-  discriminant in low degree.
+  `nrComplexPlaces_eq_one_of_discr_lt_zero` (degree less than `6`),
+  `NumberField.IsTotallyReal.of_zero_lt_discr`, and
+  `NumberField.isTotallyComplex_iff_discr_lt_zero` (degree `2`) read the signature off the sign of
+  the discriminant in low degree.
 * `NumberField.InfinitePlace.finrank_sub_nrRealPlaces_div_two_eq_nrComplexPlaces`: halving the
   degree less the real places counts the complex places, for any number field.
 * `NumberField.InfinitePlace.embedding_of_isReal_comap`: the real embedding of a restricted real
@@ -277,6 +278,24 @@ theorem InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero (hd : discr K < 0)
 theorem IsTotallyReal.of_zero_lt_discr (hd : 0 < discr K) (hK : Module.finrank ℚ K < 4) :
     IsTotallyReal K :=
   nrComplexPlaces_eq_zero_iff.mp (InfinitePlace.nrComplexPlaces_eq_zero_of_zero_lt_discr hd hK)
+
+/-- **A quadratic field is totally complex if and only if its discriminant is negative.** By Brill's
+parity theorem, a degree-`2` number field has `nrComplexPlaces K = 1` (hence `nrRealPlaces K = 0`)
+precisely when `discr K < 0`. -/
+theorem isTotallyComplex_iff_discr_lt_zero (hK : Module.finrank ℚ K = 2) :
+    IsTotallyComplex K ↔ discr K < 0 := by
+  constructor
+  · intro _
+    have h1 := InfinitePlace.nrComplexPlaces_eq_one_of_finrank_eq_two hK
+    have hnot : ¬ 0 < discr K := by
+      rw [← InfinitePlace.even_nrComplexPlaces_iff_zero_lt_discr, h1]
+      decide
+    exact lt_of_le_of_ne (not_lt.mp hnot) (discr_ne_zero K)
+  · intro hd
+    have h1 := InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero hd (by omega)
+    have hcard := InfinitePlace.card_add_two_mul_card_eq_rank K
+    rw [hK, h1] at hcard
+    exact nrRealPlaces_eq_zero_iff.mp (by omega)
 
 end NumberField
 

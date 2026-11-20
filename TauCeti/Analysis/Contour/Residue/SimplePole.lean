@@ -44,6 +44,9 @@ direction one uses in practice to read off a residue.
   `(z − z₀) · f z` forces `−1 ≤ meromorphicOrderAt f z₀`, with no meromorphy hypothesis: if `f` is
   not meromorphic at `z₀` the order is `0` by convention. When `MeromorphicAt f z₀` holds, this
   says the pole is at worst simple.
+* `TauCeti.Contour.residue_mul_of_analyticAt` — simple-pole product rule: if `g` is analytic at
+  `z₀` and `−1 ≤ meromorphicOrderAt f z₀`, then
+  `residue (fun z => g z * f z) z₀ = g z₀ * residue f z₀`.
 * `TauCeti.Contour.residue_sub_inv` — `residue (fun z => (z − z₀)⁻¹) z₀ = 1`, and
   `TauCeti.Contour.residue_const_mul_sub_inv` — `residue (fun z => c · (z − z₀)⁻¹) z₀ = c`: the
   elementary simple-pole residues, read off from the converse rule.
@@ -163,6 +166,28 @@ theorem residue_eq_of_tendsto_sub_mul {L : ℂ} (hf : MeromorphicAt f z₀)
     residue f z₀ = L := by
   exact tendsto_nhds_unique
     (tendsto_sub_mul_nhds_residue hf (neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul h)) h
+
+/-- **Simple-pole product rule with an analytic weight.** Multiplying a function `f` with at most a
+simple pole at `z₀` (`−1 ≤ meromorphicOrderAt f z₀`) by an analytic factor `g` scales the residue
+at `z₀` by `g z₀`. No meromorphy hypothesis on `f` is needed: when `f` is not meromorphic at `z₀`,
+both sides vanish. -/
+theorem residue_mul_of_analyticAt {g : ℂ → ℂ} (hg : AnalyticAt ℂ g z₀)
+    (hord : -1 ≤ meromorphicOrderAt f z₀) :
+    residue (fun z => g z * f z) z₀ = g z₀ * residue f z₀ := by
+  by_cases hf : MeromorphicAt f z₀
+  · have hlim : Tendsto (fun z => (z - z₀) * (g z * f z)) (𝓝[≠] z₀) (𝓝 (g z₀ * residue f z₀)) :=
+      ((hg.continuousAt.tendsto.mono_left nhdsWithin_le_nhds).mul
+        (tendsto_sub_mul_nhds_residue hf hord)).congr fun z => by ring
+    exact residue_eq_of_tendsto_sub_mul (hg.meromorphicAt.mul hf) hlim
+  · rw [residue_of_not_meromorphicAt hf, mul_zero]
+    rcases hg.eventually_eq_zero_or_eventually_ne_zero with h0 | hne
+    · rw [residue_congr_nhdsNE (g := fun _ => (0 : ℂ))
+        ((h0.filter_mono nhdsWithin_le_nhds).mono fun z hz => by simp [hz])]
+      exact residue_eq_zero_of_analyticAt analyticAt_const
+    · refine residue_of_not_meromorphicAt fun hgf => hf ?_
+      refine (hg.meromorphicAt.inv.mul hgf).congr ?_
+      filter_upwards [hne] with z hz
+      simp [inv_mul_cancel_left₀ hz]
 
 /-- The reciprocal `(· − z₀)⁻¹` of the simple factor `(· − z₀)` is meromorphic at `z₀`. -/
 theorem meromorphicAt_sub_inv (z₀ : ℂ) : MeromorphicAt (fun z => (z - z₀)⁻¹) z₀ :=
