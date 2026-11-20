@@ -174,7 +174,7 @@ theorem range_torusFamilyCyclicQuotientProjection (hr : 0 ≤ r) :
     | h x =>
       rw [torusFamilyCyclicQuotientProjection_mk]
       exact mem_image_of_mem _
-        (mem_ball_zero_iff.2 (mem_rootsOfUnityBall.1 (torusFamilyProjection P x).2))
+        (mem_ball_zero_iff.2 (mem_rootsOfUnityBall.1 (torusFamilyProjection P x).property))
   · rintro ⟨u, hu, rfl⟩
     obtain ⟨x, hx⟩ := torusFamilyProjection_surjective P
       ⟨u, mem_rootsOfUnityBall.2 (mem_ball_zero_iff.1 hu)⟩

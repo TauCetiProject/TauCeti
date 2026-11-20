@@ -66,7 +66,7 @@ variable {E H M E' H' M' : Type*}
   [TopologicalSpace M'] [ChartedSpace H' M'] {I' : ModelWithCorners ℝ E' H'}
   [IsManifold I ∞ M] [IsManifold I' ∞ M'] [I.Boundaryless]
   {f : M → M'} {hf : IsSubmersion I I' ∞ f} {hsurj : Surjective f} {σ : SmoothTwoForm I M}
-  {hσ : RoughForm.IsBasic (V := ℝ) I' f σ.1}
+  {hσ : RoughForm.IsBasic (V := ℝ) I' f σ.val}
 
 /-- The descent `β` of a basic two-form `σ` evaluates on images under the derivative of `f` as
 `σ`: `σ_x(u, w) = β_(f x)(df_x u, df_x w)`. -/
@@ -116,7 +116,7 @@ whose null space at every point is the kernel of the derivative of `p`, there is
 symplectic two-form `η` with `p^* η = σ`. -/
 theorem existsUnique_isSymplectic_mpullback_eq (hp : IsSubmersion I J ∞ p)
     (hsurj : Surjective p) (hσ : σ.IsClosed)
-    (hbasic : RoughForm.IsBasic (V := ℝ) (k := 2) J p σ.1)
+    (hbasic : RoughForm.IsBasic (V := ℝ) (k := 2) J p σ.val)
     (hker : ∀ z, LinearMap.ker (σ.bilinFormAt z) = (mfderiv I J p z).ker) :
     ∃! η : SmoothTwoForm J Q, η.IsSymplectic ∧ SmoothForm.mpullback p hp.contMDiff η = σ :=
   ⟨SmoothForm.descendedForm hp hsurj σ hbasic,

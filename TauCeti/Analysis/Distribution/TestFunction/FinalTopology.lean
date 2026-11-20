@@ -39,12 +39,12 @@ exactly the native LF topology, not the final topology of topological spaces. -/
 theorem finalLocallyConvexTopology_eq :
     TauCeti.finalLocallyConvexTopology
       (fun K : {K : Compacts E // (K : Set E) ⊆ Ω} ↦
-        (ofSupportedInCLM ℝ K.2 : 𝓓^{n}_{K.1}(E, F) →L[ℝ] 𝓓^{n}(Ω, F)).toLinearMap) =
+        (ofSupportedInCLM ℝ K.property : 𝓓^{n}_{K.val}(E, F) →L[ℝ] 𝓓^{n}(Ω, F)).toLinearMap) =
       topologicalSpace Ω F n := by
   let f := fun K : {K : Compacts E // (K : Set E) ⊆ Ω} ↦
-    (ofSupportedInCLM ℝ K.2 : 𝓓^{n}_{K.1}(E, F) →L[ℝ] 𝓓^{n}(Ω, F)).toLinearMap
+    (ofSupportedInCLM ℝ K.property : 𝓓^{n}_{K.val}(E, F) →L[ℝ] 𝓓^{n}(Ω, F)).toLinearMap
   apply le_antisymm ((TauCeti.FinalLocallyConvexTopology.le_iff f _).2 fun K ↦
-    (ofSupportedInCLM ℝ K.2).continuous)
+    (ofSupportedInCLM ℝ K.property).continuous)
   have hid : @Continuous 𝓓^{n}(Ω, F) 𝓓^{n}(Ω, F) (topologicalSpace Ω F n)
       (TauCeti.finalLocallyConvexTopology f) id := by
     let := TauCeti.finalLocallyConvexTopology f

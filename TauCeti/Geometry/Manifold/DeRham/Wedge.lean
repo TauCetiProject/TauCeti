@@ -70,7 +70,7 @@ namespace SmoothForm
 derivative of a smooth `m`-form `β` has every degree-indexed property that `dβ` has. -/
 private theorem of_apply_eq_mextDeriv {n m : ℕ} (h : n = m + 1) {φ : SmoothForm I M ℝ n}
     (β : SmoothForm I M ℝ m)
-    (hφ : ∀ x (v : Fin (m + 1) → TangentSpace I x), φ.1 x (v ∘ Fin.cast h) = mextDeriv β.1 x v)
+    (hφ : ∀ x (v : Fin (m + 1) → TangentSpace I x), φ.val x (v ∘ Fin.cast h) = mextDeriv β.val x v)
     (P : (n : ℕ) → SmoothForm I M ℝ n → Prop) (hβ : P (m + 1) (mextDerivₗ I m β)) : P n φ := by
   subst h
   suffices hφβ : φ = mextDerivₗ I m β from hφβ ▸ hβ
@@ -82,7 +82,8 @@ private theorem of_apply_eq_mextDeriv {n m : ℕ} (h : n = m + 1) {φ : SmoothFo
 exterior derivative of a smooth `m`-form. -/
 private theorem mem_exactForms_of_apply_eq {n m : ℕ} (h : n = m + 1) {φ : SmoothForm I M ℝ n}
     (β : SmoothForm I M ℝ m)
-    (hφ : ∀ x (v : Fin (m + 1) → TangentSpace I x), φ.1 x (v ∘ Fin.cast h) = mextDeriv β.1 x v) :
+    (hφ : ∀ x (v : Fin (m + 1) → TangentSpace I x), φ.val x (v ∘ Fin.cast h) = mextDeriv β.val x v)
+        :
     φ ∈ exactForms I M n :=
   of_apply_eq_mextDeriv h β hφ (fun n φ ↦ φ ∈ exactForms I M n)
     (by rw [exactForms_succ]; exact LinearMap.mem_range_self _ β)
@@ -92,7 +93,8 @@ identification of degrees `n = m + 1`, it is the exterior derivative of a compac
 smooth `m`-form. -/
 private theorem mem_exactCompactlySupportedForms_of_apply_eq {n m : ℕ} (h : n = m + 1)
     {φ : SmoothForm I M ℝ n} {β : SmoothForm I M ℝ m} (hβc : β ∈ compactlySupportedForms I M m)
-    (hφ : ∀ x (v : Fin (m + 1) → TangentSpace I x), φ.1 x (v ∘ Fin.cast h) = mextDeriv β.1 x v) :
+    (hφ : ∀ x (v : Fin (m + 1) → TangentSpace I x), φ.val x (v ∘ Fin.cast h) = mextDeriv β.val x v)
+        :
     φ ∈ exactCompactlySupportedForms I M n :=
   of_apply_eq_mextDeriv h β hφ (fun n φ ↦ φ ∈ exactCompactlySupportedForms I M n)
     (by rw [exactCompactlySupportedForms_succ]; exact Submodule.mem_map_of_mem hβc)
@@ -103,10 +105,10 @@ The right-hand side is a `(k + (l + 1))`-form while the left-hand side is a `(k 
 so its argument is reindexed along the associativity equality `k + (l + 1) = k + l + 1`, as in
 `mextDeriv_wedge`. -/
 private theorem mextDeriv_wedge_of_left_closed {φ : SmoothForm I M ℝ k}
-    (hφ : mextDeriv φ.1 = 0) (β : SmoothForm I M ℝ l) (x : M)
+    (hφ : mextDeriv φ.val = 0) (β : SmoothForm I M ℝ l) (x : M)
     (v : Fin (k + l + 1) → TangentSpace I x) :
-    mextDeriv (RoughForm.wedge φ.1 β.1) x v =
-      (-1 : ℝ) ^ k • RoughForm.wedge φ.1 (mextDeriv β.1) x
+    mextDeriv (RoughForm.wedge φ.val β.val) x v =
+      (-1 : ℝ) ^ k • RoughForm.wedge φ.val (mextDeriv β.val) x
         (v ∘ Fin.cast (Nat.add_assoc k l 1).symm) := by
   have h := mextDeriv_wedge_apply φ β x v
   rw [hφ] at h
@@ -163,7 +165,7 @@ theorem wedge_mem_compactlySupportedForms (φ : SmoothForm I M ℝ k) {ψ : Smoo
   rw [mem_compactlySupportedForms] at hψ ⊢
   rw [coe_wedge, RoughForm.wedge_def]
   exact hψ.of_isClosed_subset (_root_.isClosed_tsupport (α := E [⋀^Fin (k + l)]→L[ℝ] ℝ) _)
-    (RoughForm.tsupport_wedgeWith_subset_right _ φ.1 ψ.1)
+    (RoughForm.tsupport_wedgeWith_subset_right _ φ.val ψ.val)
 
 /-- The wedge of a closed smooth form with a compactly supported closed smooth form is
 compactly supported and closed. -/
@@ -226,7 +228,7 @@ namespace deRhamCohomology
 private def wedgeClass (k l : ℕ) :
     closedForms I M k →ₗ[ℝ] closedForms I M l →ₗ[ℝ] deRhamCohomology I M (k + l) :=
   LinearMap.mk₂ ℝ
-    (fun φ ψ ↦ mk I (k + l) ⟨_, SmoothForm.wedge_mem_closedForms φ.2 ψ.2⟩)
+    (fun φ ψ ↦ mk I (k + l) ⟨_, SmoothForm.wedge_mem_closedForms φ.property ψ.property⟩)
     (fun φ φ' ψ ↦ by
       rw [← map_add]
       congr 1
@@ -245,7 +247,7 @@ private def wedgeClass (k l : ℕ) :
       exact Subtype.ext (map_smul _ _ _))
 
 private theorem wedgeClass_apply (φ : closedForms I M k) (ψ : closedForms I M l) :
-    wedgeClass k l φ ψ = mk I (k + l) ⟨_, SmoothForm.wedge_mem_closedForms φ.2 ψ.2⟩ :=
+    wedgeClass k l φ ψ = mk I (k + l) ⟨_, SmoothForm.wedge_mem_closedForms φ.property ψ.property⟩ :=
   LinearMap.mk₂_apply ℝ _ φ ψ
 
 /-- Exact forms in the second factor are killed by the wedge followed by the cycle-class map. -/
@@ -256,7 +258,7 @@ private theorem ker_mk_le_ker_wedgeClass_flip (k l : ℕ) :
   rw [LinearMap.mem_ker]
   ext φ
   rw [LinearMap.flip_apply, wedgeClass_apply, LinearMap.zero_apply, mk_eq_zero_iff]
-  exact SmoothForm.wedge_mem_exactForms_of_right_mem φ.2 hψ
+  exact SmoothForm.wedge_mem_exactForms_of_right_mem φ.property hψ
 
 /-- The wedge of a closed form with a cohomology class, linear in both arguments. -/
 private def wedgeClassRight (k l : ℕ) :
@@ -280,7 +282,7 @@ private theorem ker_mk_le_ker_wedgeClassRight_flip (k l : ℕ) :
   obtain ⟨ψ, rfl⟩ := mk_surjective I l c
   rw [LinearMap.flip_apply, wedgeClassRight_mk, wedgeClass_apply, LinearMap.zero_apply,
     mk_eq_zero_iff]
-  exact SmoothForm.wedge_mem_exactForms_of_left_mem hφ ψ.2
+  exact SmoothForm.wedge_mem_exactForms_of_left_mem hφ ψ.property
 
 variable (I M) in
 /-- The wedge product on de Rham cohomology, `H^k_dR(M) → H^l_dR(M) → H^(k+l)_dR(M)`,
@@ -296,7 +298,7 @@ def wedge (k l : ℕ) :
 @[simp]
 theorem wedge_mk (φ : closedForms I M k) (ψ : closedForms I M l) :
     wedge I M k l (mk I k φ) (mk I l ψ) =
-      mk I (k + l) ⟨_, SmoothForm.wedge_mem_closedForms φ.2 ψ.2⟩ := by
+      mk I (k + l) ⟨_, SmoothForm.wedge_mem_closedForms φ.property ψ.property⟩ := by
   rw [wedge, LinearMap.equivOfSurjective_apply, LinearMap.flip_apply, wedgeClassRight_mk,
     wedgeClass_apply]
 
@@ -310,7 +312,8 @@ private def wedgeClass (k l : ℕ) :
     closedForms I M k →ₗ[ℝ] compactlySupportedClosedForms I M l →ₗ[ℝ]
       compactlySupportedDeRhamCohomology I M (k + l) :=
   LinearMap.mk₂ ℝ
-    (fun φ ψ ↦ mk I (k + l) ⟨_, SmoothForm.wedge_mem_compactlySupportedClosedForms φ.2 ψ.2⟩)
+    (fun φ ψ ↦ mk I (k + l) ⟨_, SmoothForm.wedge_mem_compactlySupportedClosedForms φ.property
+        ψ.property⟩)
     (fun φ φ' ψ ↦ by
       rw [← map_add]
       congr 1
@@ -330,7 +333,7 @@ private def wedgeClass (k l : ℕ) :
 
 private theorem wedgeClass_apply (φ : closedForms I M k) (ψ : compactlySupportedClosedForms I M l) :
     wedgeClass k l φ ψ =
-      mk I (k + l) ⟨_, SmoothForm.wedge_mem_compactlySupportedClosedForms φ.2 ψ.2⟩ :=
+      mk I (k + l) ⟨_, SmoothForm.wedge_mem_compactlySupportedClosedForms φ.property ψ.property⟩ :=
   LinearMap.mk₂_apply ℝ _ φ ψ
 
 /-- Compactly supported exact forms in the second factor are killed by the wedge followed by the
@@ -342,7 +345,7 @@ private theorem ker_mk_le_ker_wedgeClass_flip (k l : ℕ) :
   rw [LinearMap.mem_ker]
   ext φ
   rw [LinearMap.flip_apply, wedgeClass_apply, LinearMap.zero_apply, mk_eq_zero_iff]
-  exact SmoothForm.wedge_mem_exactCompactlySupportedForms_of_right_mem φ.2 hψ
+  exact SmoothForm.wedge_mem_exactCompactlySupportedForms_of_right_mem φ.property hψ
 
 /-- The wedge of a closed form with a compactly supported class, linear in both arguments. -/
 private def wedgeClassRight (k l : ℕ) :
@@ -370,7 +373,7 @@ private theorem ker_mk_le_ker_wedgeClassRight_flip (k l : ℕ) :
   obtain ⟨ψ, rfl⟩ := mk_surjective I l c
   rw [LinearMap.flip_apply, wedgeClassRight_mk, wedgeClass_apply, LinearMap.zero_apply,
     mk_eq_zero_iff]
-  exact SmoothForm.wedge_mem_exactCompactlySupportedForms_of_left_mem hφ ψ.2
+  exact SmoothForm.wedge_mem_exactCompactlySupportedForms_of_left_mem hφ ψ.property
 
 variable (I M) in
 /-- The wedge product `H^k_dR(M) → H^l_c(M) → H^(k+l)_c(M)` of a de Rham class with a
@@ -391,7 +394,8 @@ is the compactly supported class of their wedge. -/
 @[simp]
 theorem wedge_mk (φ : closedForms I M k) (ψ : compactlySupportedClosedForms I M l) :
     wedge I M k l (deRhamCohomology.mk I k φ) (mk I l ψ) =
-      mk I (k + l) ⟨_, SmoothForm.wedge_mem_compactlySupportedClosedForms φ.2 ψ.2⟩ := by
+      mk I (k + l) ⟨_, SmoothForm.wedge_mem_compactlySupportedClosedForms φ.property ψ.property⟩
+          := by
   rw [wedge, LinearMap.equivOfSurjective_apply, LinearMap.flip_apply, wedgeClassRight_mk,
     wedgeClass_apply]
 

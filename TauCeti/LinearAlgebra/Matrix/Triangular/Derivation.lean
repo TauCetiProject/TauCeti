@@ -131,9 +131,11 @@ theorem triangularDerivation_mul [Semiring A] [Algebra R A]
     induction hc using Algebra.adjoin_induction with
     | mem x hx => exact hgen x hx
     | algebraMap r => simp [Matrix.algebraMap_matrix_apply]
-    | add x y _ _ hx hy => simp [hx.1, hx.2.1, hx.2.2, hy.1, hy.2.1, hy.2.2]
+    | add x y _ _ hx hy =>
+      simp [hx.left, hx.right.left, hx.right.right, hy.left, hy.right.left, hy.right.right]
     | mul x y _ _ hx hy =>
-      simp [Matrix.mul_apply, Fin.sum_univ_two, hx.1, hx.2.1, hx.2.2, hy.1, hy.2.1, hy.2.2]
-  simp [Matrix.mul_apply, Fin.sum_univ_two, (hdiag a).2.2, (hdiag b).1]
+      simp [Matrix.mul_apply, Fin.sum_univ_two, hx.left, hx.right.left, hx.right.right,
+        hy.left, hy.right.left, hy.right.right]
+  simp [Matrix.mul_apply, Fin.sum_univ_two, (hdiag a).right.right, (hdiag b).left]
 
 end TauCeti

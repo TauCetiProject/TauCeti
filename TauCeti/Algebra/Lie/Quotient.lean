@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Quotient
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.Algebra.Lie.Abelian
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # Homomorphisms from quotients by Lie ideals

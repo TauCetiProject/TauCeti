@@ -14,8 +14,9 @@ public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
 /-!
 # The input-degree grading of the signed symmetric algebra
 
-The images of the input-degree pieces of the tensor algebra form an internal integer grading
-of `TauCeti.SignedSym G`. Equivalently, its degree-`p` piece is spanned by words of homogeneous
+The images of the input-degree pieces of the tensor algebra form an internal grading of
+`TauCeti.SignedSym G` over any commutative semiring `ι` equipped with `Module ι (Additive ℤˣ)`
+(such as `ℤ` or `ZMod 2`). Equivalently, its degree-`p` piece is spanned by words of homogeneous
 generators whose degrees sum to `p`. Homogeneous induction retains this total input degree.
 Multiplication adds degrees, generators preserve parity, and a degree-preserving (or
 coarsened-degree-compatible) linear map satisfying the Koszul relations extends homogeneously, in
@@ -36,10 +37,13 @@ universe u v w
 
 variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
+section General
+
+variable {ι : Type*} [DecidableEq ι] [CommSemiring ι] [Module ι (Additive ℤˣ)]
 
 namespace SignedSym
 
-variable (G : InternalGrading R V ℤ)
+variable (G : InternalGrading R V ι)
 
 /-- The Koszul relation ideal is homogeneous for tensor input degree. -/
 theorem isHomogeneous_ker_quotient :
@@ -51,47 +55,47 @@ theorem isHomogeneous_ker_quotient :
     refine ⟨p + q, Submodule.sub_mem _
       (SetLike.mul_mem_graded (ι_mem_tensorAlgebraPiece G hx)
         (ι_mem_tensorAlgebraPiece G hy)) ?_⟩
-    exact zsmul_mem (by
+    exact Submodule.smul_of_tower_mem _ ((-1 : ℤˣ) ^ (p * q)) (by
       simpa only [add_comm] using SetLike.mul_mem_graded
-        (ι_mem_tensorAlgebraPiece G hy) (ι_mem_tensorAlgebraPiece G hx)) _
+        (ι_mem_tensorAlgebraPiece G hy) (ι_mem_tensorAlgebraPiece G hx))
 
 end SignedSym
 
 /-- The degree-`p` piece of the signed symmetric algebra: the image of the input-degree-`p`
 piece of the tensor algebra. -/
-noncomputable def signedSymPiece (G : InternalGrading R V ℤ) (p : ℤ) :
+def signedSymPiece (G : InternalGrading R V ι) (p : ι) :
     Submodule R (SignedSym G) :=
   (tensorAlgebraPiece G p).map (SignedSym.quotient G).toLinearMap
 
-variable (G : InternalGrading R V ℤ)
+variable (G : InternalGrading R V ι)
 
 /-- The piece is the image under the canonical tensor-algebra quotient map. -/
-theorem signedSymPiece_def (p : ℤ) :
+theorem signedSymPiece_def (p : ι) :
     signedSymPiece G p = (tensorAlgebraPiece G p).map (SignedSym.quotient G).toLinearMap := (rfl)
 
 /-- A homogeneous class has a tensor representative of the same input degree. -/
 @[simp]
-theorem mem_signedSymPiece_iff {p : ℤ} {a : SignedSym G} :
+theorem mem_signedSymPiece_iff {p : ι} {a : SignedSym G} :
     a ∈ signedSymPiece G p ↔
       ∃ x ∈ tensorAlgebraPiece G p, SignedSym.quotient G x = a :=
   Submodule.mem_map
 
 /-- The quotient map preserves input degree. -/
-theorem quotient_mem_signedSymPiece {p : ℤ} {x : TensorAlgebra R V}
+theorem quotient_mem_signedSymPiece {p : ι} {x : TensorAlgebra R V}
     (hx : x ∈ tensorAlgebraPiece G p) :
     SignedSym.quotient G x ∈ signedSymPiece G p :=
   (mem_signedSymPiece_iff G).2 ⟨x, hx, rfl⟩
 
 /-- A homogeneous generator retains its degree in the signed symmetric algebra. -/
-theorem generator_mem_signedSymPiece {p : ℤ} {x : V} (hx : x ∈ G.piece p) :
+theorem generator_mem_signedSymPiece {p : ι} {x : V} (hx : x ∈ G.piece p) :
     SignedSym.generator G x ∈ signedSymPiece G p := by
   simpa only [SignedSym.quotient_ι] using
     quotient_mem_signedSymPiece G (ι_mem_tensorAlgebraPiece G hx)
 
 /-- A homogeneous piece is spanned by words in homogeneous generators of the indicated total
 degree. The empty word is allowed, with total degree zero. -/
-theorem signedSymPiece_eq_span (p : ℤ) :
-    signedSymPiece G p = Submodule.span R {a | ∃ (n : ℕ) (d : Fin n → ℤ) (x : Fin n → V),
+theorem signedSymPiece_eq_span (p : ι) :
+    signedSymPiece G p = Submodule.span R {a | ∃ (n : ℕ) (d : Fin n → ι) (x : Fin n → V),
       (∀ i, x i ∈ G.piece (d i)) ∧ ∑ i, d i = p ∧
         a = (List.ofFn fun i => SignedSym.generator G (x i)).prod} := by
   rw [signedSymPiece_def, tensorAlgebraPiece_eq_span, Submodule.map_span]
@@ -109,14 +113,14 @@ namespace SignedSym
 /-- Induction on homogeneous expressions in the signed symmetric algebra, keeping track of
 input degree. The zero and addition steps take place in each fixed degree. -/
 @[elab_as_elim]
-theorem homogeneous_induction {P : ℤ → SignedSym G → Prop}
+theorem homogeneous_induction {P : ι → SignedSym G → Prop}
     (one : P 0 1)
-    (generator : ∀ (p : ℤ) (x : V), x ∈ G.piece p → P p (SignedSym.generator G x))
-    (mul : ∀ (p q : ℤ) (a b : SignedSym G), P p a → P q b → P (p + q) (a * b))
+    (generator : ∀ (p : ι) (x : V), x ∈ G.piece p → P p (SignedSym.generator G x))
+    (mul : ∀ (p q : ι) (a b : SignedSym G), P p a → P q b → P (p + q) (a * b))
     (zero : ∀ p, P p 0)
-    (add : ∀ (p : ℤ) (a b : SignedSym G), P p a → P p b → P p (a + b))
-    (smul : ∀ (p : ℤ) (r : R) (a : SignedSym G), P p a → P p (r • a))
-    {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiece G p) : P p a := by
+    (add : ∀ (p : ι) (a b : SignedSym G), P p a → P p b → P p (a + b))
+    (smul : ∀ (p : ι) (r : R) (a : SignedSym G), P p a → P p (r • a))
+    {p : ι} {a : SignedSym G} (ha : a ∈ signedSymPiece G p) : P p a := by
   rw [signedSymPiece_eq_span] at ha
   induction ha using Submodule.span_induction with
   | mem a ha =>
@@ -163,13 +167,13 @@ theorem isHomogeneous_signedSymQuotient :
 
 /-- Homogeneous projection commutes with the tensor-algebra quotient map. -/
 @[simp]
-theorem decompose_signedSymQuotient (x : TensorAlgebra R V) (p : ℤ) :
+theorem decompose_signedSymQuotient (x : TensorAlgebra R V) (p : ι) :
     (DirectSum.decompose (signedSymPiece G) (SignedSym.quotient G x) p : SignedSym G) =
       SignedSym.quotient G
-        (DirectSum.decompose (tensorAlgebraPiece G) x p : TensorAlgebra R V) := by
-  have h := (isHomogeneous_signedSymQuotient G).map_decompose p x
-  rw [add_zero] at h
-  exact h.symm
+        (DirectSum.decompose (tensorAlgebraPiece G) x p : TensorAlgebra R V) :=
+  (DirectSum.map_decompose_shift (tensorAlgebraPiece G) (signedSymPiece G)
+    (SignedSym.quotient G).toLinearMap.toAddMonoidHom id Function.injective_id
+    (fun _ _ hx ↦ quotient_mem_signedSymPiece G hx) p x).symm
 
 /-- The generator map has degree zero for the input-degree grading. -/
 theorem isHomogeneous_signedSymGenerator :
@@ -179,27 +183,33 @@ theorem isHomogeneous_signedSymGenerator :
 
 /-- The degree-`p` component of a generator is the generator of its degree-`p` component. -/
 @[simp]
-theorem decompose_signedSymGenerator (x : V) (p : ℤ) :
+theorem decompose_signedSymGenerator (x : V) (p : ι) :
     (DirectSum.decompose (signedSymPiece G) (SignedSym.generator G x) p : SignedSym G) =
-      SignedSym.generator G (DirectSum.decompose G.piece x p : V) := by
-  have h := (isHomogeneous_signedSymGenerator G).map_decompose p x
-  rw [add_zero] at h
-  exact h.symm
+      SignedSym.generator G (DirectSum.decompose G.piece x p : V) :=
+  (DirectSum.map_decompose_shift G.piece (signedSymPiece G)
+    (SignedSym.generator G).toAddMonoidHom id Function.injective_id
+    (fun _ _ hx ↦ generator_mem_signedSymPiece G hx) p x).symm
 
 namespace SignedSym
 
-/-- The canonical generator map preserves parity. -/
-theorem generator_mem_parityGrading {k : ZMod 2} {x : V} (hx : x ∈ parityGrading G.piece k) :
-    generator G x ∈ parityGrading (signedSymPiece G) k := by
-  simpa only [add_zero] using (isHomogeneous_signedSymGenerator G).parityGrading_zero.map_mem hx
+/-- The canonical generator map preserves coarsened pieces along any index map. -/
+theorem generator_mem_coarsenGrading {κ : Type*} (f : ι → κ) {k : κ} {x : V}
+    (hx : x ∈ coarsenGrading G.piece f k) :
+    generator G x ∈ coarsenGrading (signedSymPiece G) f k := by
+  have hle : coarsenGrading G.piece f k ≤
+      (coarsenGrading (signedSymPiece G) f k).comap (generator G) :=
+    coarsenGrading_le_iff.2 fun _ hp _ hy ↦ by
+      simpa only [Submodule.mem_comap, ← hp] using
+        mem_coarsenGrading_of_mem f (generator_mem_signedSymPiece G hy)
+  exact hle hx
 
 variable {A : Type w} [Ring A] [Algebra R A]
-variable (𝒜 : ℤ → Submodule R A)
+variable (𝒜 : ι → Submodule R A)
 
 /-- The universal extension preserves input degree when its generator assignment does. -/
 theorem isHomogeneous_lift [SetLike.GradedMonoid 𝒜] (f : V →ₗ[R] A)
-    (hr : ∀ (p q : ℤ) (x y : V), x ∈ G.piece p → y ∈ G.piece q →
-      f x * f y = ((p * q).negOnePow : ℤ) • (f y * f x))
+    (hr : ∀ (p q : ι) (x y : V), x ∈ G.piece p → y ∈ G.piece q →
+      f x * f y = ((-1 : ℤˣ) ^ (p * q)) • (f y * f x))
     (hf : LinearMap.IsHomogeneous f G.piece 𝒜 0) :
     LinearMap.IsHomogeneous (lift G f hr).toLinearMap (signedSymPiece G) 𝒜 0 := by
   refine LinearMap.isHomogeneous_def.2 fun p a ha => ?_
@@ -208,12 +218,13 @@ theorem isHomogeneous_lift [SetLike.GradedMonoid 𝒜] (f : V →ₗ[R] A)
     (isHomogeneous_tensorAlgebraLift G 𝒜 hf).map_mem hx
 
 /-- The universal extension is homogeneous of degree zero for a grading `ℬ` along an additive
-homomorphism `φ : ℤ →+ κ` when each degree-`p` generator maps into `ℬ (φ p)`. -/
-theorem isHomogeneous_lift_coarsenGrading {κ : Type*} [AddMonoid κ]
-    (φ : ℤ →+ κ) (ℬ : κ → Submodule R A) [SetLike.GradedMonoid ℬ] (f : V →ₗ[R] A)
-    (hr : ∀ (p q : ℤ) (x y : V), x ∈ G.piece p → y ∈ G.piece q →
-      f x * f y = ((p * q).negOnePow : ℤ) • (f y * f x))
-    (hf : ∀ (p : ℤ) {x : V}, x ∈ G.piece p → f x ∈ ℬ (φ p)) :
+homomorphism `φ` from `ι` to `κ` when each degree-`p` generator maps into `ℬ (φ p)`. -/
+theorem isHomogeneous_lift_coarsenGrading {κ : Type*} {F : Type*} [AddMonoid κ]
+    [FunLike F ι κ] [AddMonoidHomClass F ι κ]
+    (φ : F) (ℬ : κ → Submodule R A) [SetLike.GradedMonoid ℬ] (f : V →ₗ[R] A)
+    (hr : ∀ (p q : ι) (x y : V), x ∈ G.piece p → y ∈ G.piece q →
+      f x * f y = ((-1 : ℤˣ) ^ (p * q)) • (f y * f x))
+    (hf : ∀ (p : ι) {x : V}, x ∈ G.piece p → f x ∈ ℬ (φ p)) :
     LinearMap.IsHomogeneous (lift G f hr).toLinearMap
       (coarsenGrading (signedSymPiece G) φ) ℬ 0 := by
   have : SetLike.GradedOne (ℬ ∘ φ) :=
@@ -237,8 +248,8 @@ variable [GradedAlgebra 𝒜]
 /-- The graded universal extension of a degree-preserving generator assignment satisfying
 the Koszul relations. Its underlying algebra map is `SignedSym.lift`. -/
 noncomputable def gradedLift (f : V →ₗ[R] A)
-    (hr : ∀ (p q : ℤ) (x y : V), x ∈ G.piece p → y ∈ G.piece q →
-      f x * f y = ((p * q).negOnePow : ℤ) • (f y * f x))
+    (hr : ∀ (p q : ι) (x y : V), x ∈ G.piece p → y ∈ G.piece q →
+      f x * f y = ((-1 : ℤˣ) ^ (p * q)) • (f y * f x))
     (hf : LinearMap.IsHomogeneous f G.piece 𝒜 0) : signedSymPiece G →ₐᵍ[R] 𝒜 where
   toAlgHom := lift G f hr
   map_mem hx := by
@@ -271,16 +282,16 @@ theorem gradedLift_unique (f : V →ₗ[R] A) (hr hf) (φ : signedSymPiece G →
 
 section Map
 
-variable {W : Type*} [AddCommGroup W] [Module R W] (H : InternalGrading R W ℤ)
+variable {W : Type*} [AddCommGroup W] [Module R W] (H : InternalGrading R W ι)
 
 /-- Functorial maps induced by degree-preserving linear maps preserve the quotient grading. -/
 theorem isHomogeneous_map (f : V →ₗ[R] W)
     (hf : LinearMap.IsHomogeneous f G.piece H.piece 0) :
     LinearMap.IsHomogeneous (map G H f hf).toLinearMap
       (signedSymPiece G) (signedSymPiece H) 0 := by
-  have hr : ∀ (p q : ℤ) (x y : V), x ∈ G.piece p → y ∈ G.piece q →
+  have hr : ∀ (p q : ι) (x y : V), x ∈ G.piece p → y ∈ G.piece q →
       (generator H).comp f x * (generator H).comp f y =
-        ((p * q).negOnePow : ℤ) • ((generator H).comp f y * (generator H).comp f x) := by
+        ((-1 : ℤˣ) ^ (p * q)) • ((generator H).comp f y * (generator H).comp f x) := by
     intro p q x y hx hy
     exact generator_mul_generator H
       (by simpa only [add_zero] using hf.map_mem hx)
@@ -306,8 +317,79 @@ theorem gradedMap_toAlgHom (f : V →ₗ[R] W) (hf) :
 theorem gradedMap_apply (f : V →ₗ[R] W) (hf) (a : SignedSym G) :
     gradedMap G H f hf a = map G H f hf a := (rfl)
 
+/-- The graded functorial map induced by the identity linear map is the identity. -/
+@[simp]
+theorem gradedMap_id :
+    gradedMap G G LinearMap.id (LinearMap.isHomogeneous_id G.piece) =
+      GradedAlgHom.id R (signedSymPiece G) := by
+  ext x
+  simp
+
+variable {U : Type*} [AddCommGroup U] [Module R U] in
+/-- Graded functorial maps of signed symmetric algebras respect composition. -/
+theorem gradedMap_comp (K : InternalGrading R U ι) (f : V →ₗ[R] W) (g : W →ₗ[R] U)
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece 0)
+    (hg : LinearMap.IsHomogeneous g H.piece K.piece 0) :
+    gradedMap G K (g.comp f) (by simpa using hg.comp hf) =
+      (gradedMap H K g hg).comp (gradedMap G H f hf) := by
+  ext x
+  simp
+
+-- Not `@[simp]`: `mem_signedSymPiece_iff` is `@[simp]` and already unfolds the LHS.
+/-- `SignedSym.congr` reflects and preserves membership in each input-degree piece. -/
+theorem congr_mem_signedSymPiece_iff (e : V ≃ₗ[R] W)
+    (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0)
+    {p : ι} {a : SignedSym G} :
+    congr G H e he a ∈ signedSymPiece H p ↔ a ∈ signedSymPiece G p := by
+  have hto : (congr G H e he).toAlgHom = map G H e.toLinearMap he :=
+    hom_ext G fun v ↦ by simp
+  have hsymm : (congr G H e he).symm.toAlgHom =
+      map H G e.symm.toLinearMap he.linearEquiv_symm :=
+    hom_ext H fun v ↦ by simp
+  have hto_apply (x : SignedSym G) : congr G H e he x = map G H e.toLinearMap he x :=
+    DFunLike.congr_fun hto x
+  have hsymm_apply (y : SignedSym H) :
+      (congr G H e he).symm y = map H G e.symm.toLinearMap he.linearEquiv_symm y :=
+    DFunLike.congr_fun hsymm y
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have h' := (isHomogeneous_map H G e.symm.toLinearMap he.linearEquiv_symm).map_mem h
+    rw [add_zero, AlgHom.toLinearMap_apply, ← hsymm_apply, AlgEquiv.symm_apply_apply] at h'
+    exact h'
+  · have h' := (isHomogeneous_map G H e.toLinearMap he).map_mem h
+    rw [add_zero, AlgHom.toLinearMap_apply, ← hto_apply] at h'
+    exact h'
+
+/-- `SignedSym.congr` maps each input-degree piece of `SignedSym G` onto the corresponding
+piece of `SignedSym H`. -/
+theorem signedSymPiece_map_congr (e : V ≃ₗ[R] W)
+    (he : LinearMap.IsHomogeneous e.toLinearMap G.piece H.piece 0) (p : ι) :
+    (signedSymPiece G p).map (congr G H e he).toLinearMap = signedSymPiece H p := by
+  ext b
+  simp only [Submodule.mem_map, AlgEquiv.toLinearMap_apply]
+  exact ⟨fun ⟨a, ha, hab⟩ ↦ hab ▸ (congr_mem_signedSymPiece_iff G H e he).2 ha,
+    fun hb ↦ ⟨(congr G H e he).symm b,
+      (congr_mem_signedSymPiece_iff G H e he).1
+        (by rw [(congr G H e he).apply_symm_apply b]; exact hb),
+      (congr G H e he).apply_symm_apply b⟩⟩
+
 end Map
 
 end SignedSym
+
+end General
+
+section Int
+
+namespace SignedSym
+
+/-- The canonical generator map preserves parity. -/
+theorem generator_mem_parityGrading (G : InternalGrading R V ℤ) {k : ZMod 2} {x : V}
+    (hx : x ∈ parityGrading G.piece k) :
+    generator G x ∈ parityGrading (signedSymPiece G) k :=
+  generator_mem_coarsenGrading G (Int.castAddHom (ZMod 2)) hx
+
+end SignedSym
+
+end Int
 
 end TauCeti

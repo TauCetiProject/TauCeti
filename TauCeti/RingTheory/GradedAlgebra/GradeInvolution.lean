@@ -78,8 +78,8 @@ private theorem gradeInvolutionLinear_mul (a b : A) :
     induction b using DirectSum.Decomposition.inductionOn 𝒜 with
     | zero => simp
     | @homogeneous j b =>
-      rw [gradeInvolutionLinear_of_mem 𝒜 (SetLike.mul_mem_graded a.2 b.2),
-        gradeInvolutionLinear_of_mem 𝒜 a.2, gradeInvolutionLinear_of_mem 𝒜 b.2,
+      rw [gradeInvolutionLinear_of_mem 𝒜 (SetLike.mul_mem_graded a.property b.property),
+        gradeInvolutionLinear_of_mem 𝒜 a.property, gradeInvolutionLinear_of_mem 𝒜 b.property,
         uzpow_add, smul_mul_assoc, mul_smul_comm, mul_smul]
     | add x y hx hy => simp [mul_add, hx, hy]
   | add x y hx hy => simp [add_mul, hx, hy]
@@ -91,9 +91,9 @@ private theorem gradeInvolutionLinear_involutive (a : A) :
   | zero => simp
   | @homogeneous i a =>
     have hmem : gradeInvolutionLinear 𝒜 a ∈ 𝒜 i := by
-      rw [gradeInvolutionLinear_of_mem 𝒜 a.2, Units.smul_def]
-      exact DirectSum.Decomposition.zsmul_mem a.2 _
-    rw [gradeInvolutionLinear_of_mem 𝒜 hmem, gradeInvolutionLinear_of_mem 𝒜 a.2,
+      rw [gradeInvolutionLinear_of_mem 𝒜 a.property, Units.smul_def]
+      exact DirectSum.Decomposition.zsmul_mem a.property _
+    rw [gradeInvolutionLinear_of_mem 𝒜 hmem, gradeInvolutionLinear_of_mem 𝒜 a.property,
       ← mul_smul, ← uzpow_add, htwo i]
     simp
   | add x y hx hy => simp [hx, hy]
@@ -188,7 +188,7 @@ theorem gradeInvolution_mem_iff {i : ZMod 2} {a : A} :
 /-- The grade involution has degree zero. -/
 theorem isHomogeneous_gradeInvolution :
     LinearMap.IsHomogeneous (gradeInvolution 𝒜).toLinearMap 𝒜 𝒜 0 :=
-  LinearMap.isHomogeneous_def.2 fun _ _ ha ↦ by
+  LinearMap.isHomogeneous_def.mpr fun _ _ ha ↦ by
     simpa only [add_zero, AlgEquiv.toLinearMap_apply] using gradeInvolution_mem ha
 
 /-- On the parity-`i` component of `a`, the grade involution scales by `(-1) ^ i`. -/
@@ -201,7 +201,7 @@ theorem decompose_gradeInvolution (a : A) (i : ZMod 2) :
       simpa only [LinearMap.toAddMonoidHom_coe, AlgEquiv.toLinearMap_apply, id_eq] using
         gradeInvolution_mem hx) i a
   simp only [LinearMap.toAddMonoidHom_coe, AlgEquiv.toLinearMap_apply, id_eq] at h
-  rw [← h, gradeInvolution_apply_of_mem (DirectSum.decompose 𝒜 a i).2]
+  rw [← h, gradeInvolution_apply_of_mem (DirectSum.decompose 𝒜 a i).property]
 
 -- Not `@[simp]`: `GradedAlgebra.proj_apply` is `@[simp]`, so `simp` normalizes the LHS via
 -- `decompose_gradeInvolution`.
@@ -224,7 +224,7 @@ theorem gradeInvolution_comp_proj (i : ZMod 2) :
     (gradeInvolution 𝒜).toLinearMap ∘ₗ GradedAlgebra.proj 𝒜 i =
       ((-1 : ℤˣ) ^ i) • GradedAlgebra.proj 𝒜 i := by
   ext a
-  simp [gradeInvolution_apply_of_mem (DirectSum.decompose 𝒜 a i).2, Units.smul_def]
+  simp [gradeInvolution_apply_of_mem (DirectSum.decompose 𝒜 a i).property, Units.smul_def]
 
 /-- A parity-homogeneous linear map of degree `j` intertwines the grade involutions up to the sign
 `(-1) ^ j`. -/
@@ -238,8 +238,8 @@ theorem LinearMap.IsHomogeneous.gradeInvolution_apply
   induction a using DirectSum.Decomposition.inductionOn 𝒜 with
   | zero => simp
   | @homogeneous i a =>
-    rw [gradeInvolution_apply_of_mem (hf.map_mem a.2), gradeInvolution_apply_of_mem a.2,
-      uzpow_add, mul_comm, mul_smul]
+    rw [gradeInvolution_apply_of_mem (hf.map_mem a.property),
+      gradeInvolution_apply_of_mem a.property, uzpow_add, mul_comm, mul_smul]
     congr 1
     simp only [Units.smul_def, map_zsmul]
   | add x y hx hy => simp [hx, hy, smul_add]
