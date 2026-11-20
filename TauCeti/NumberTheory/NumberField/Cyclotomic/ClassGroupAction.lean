@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
-public import TauCeti.NumberTheory.ClassGroup.Equiv
+public import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
 
 /-!
 # The Galois action on the ideal class group of a cyclotomic field
@@ -53,30 +53,18 @@ variable (R : Type*) [Ring R] (m : ℕ) [NeZero m] (K : Type*) [Field K] [Number
 
 /-- The covariant action of `(ZMod m)ˣ ≃* Gal(K/ℚ)` on the ideal class group of the `m`-th
 cyclotomic field `K`: the residue `a` acts by the class-group automorphism induced by the
-automorphism `σ_a` of `𝓞 K`, where `σ_a ζ = ζ ^ a` for every `m`-th root of unity `ζ`. -/
-noncomputable def cyclotomicClassGroupAction : (ZMod m)ˣ →* MulAut (ClassGroup (𝓞 K)) where
-  toFun a := ClassGroup.mulEquivHom
-    (RingOfIntegers.mapRingEquiv ((galEquivZMod m K).symm a).toRingEquiv)
-  map_one' := by
-    have h : RingOfIntegers.mapRingEquiv ((galEquivZMod m K).symm 1).toRingEquiv = 1 :=
-      RingEquiv.ext fun _ ↦ RingOfIntegers.ext <| by simp
-    rw [h, map_one]
-  map_mul' a b := by
-    have h : RingOfIntegers.mapRingEquiv ((galEquivZMod m K).symm (a * b)).toRingEquiv =
-        RingOfIntegers.mapRingEquiv ((galEquivZMod m K).symm a).toRingEquiv *
-          RingOfIntegers.mapRingEquiv ((galEquivZMod m K).symm b).toRingEquiv :=
-      RingEquiv.ext fun _ ↦ RingOfIntegers.ext <| by simp
-    rw [h, map_mul]
+automorphism `σ_a` of `𝓞 K`, where `σ_a ζ = ζ ^ a` for every `m`-th root of unity `ζ`. It is the
+Galois action `classGroupAction` transported along `galEquivZMod m K`. -/
+noncomputable def cyclotomicClassGroupAction : (ZMod m)ˣ →* MulAut (ClassGroup (𝓞 K)) :=
+  (classGroupAction (K ≃ₐ[ℚ] K) K).comp (galEquivZMod m K).symm.toMonoidHom
 
 variable {m K} in
-/-- The residue `a` acts on ideal classes through the class-group automorphism induced by the
-ring-of-integers automorphism `σ_a = (galEquivZMod m K).symm a`. -/
+/-- The residue `a` acts on ideal classes through the class-group isomorphism
+`RingEquiv.classGroupEquiv` of the automorphism `σ_a = (galEquivZMod m K).symm a` of `K`. -/
 theorem cyclotomicClassGroupAction_apply (a : (ZMod m)ˣ) (c : ClassGroup (𝓞 K)) :
     cyclotomicClassGroupAction m K a c =
-      ClassGroup.mulEquiv
-        (RingOfIntegers.mapRingEquiv ((galEquivZMod m K).symm a).toRingEquiv) c := by
-  simp only [cyclotomicClassGroupAction, MonoidHom.coe_mk, OneHom.coe_mk,
-    ClassGroup.mulEquivHom_apply]
+      ((galEquivZMod m K).symm a).toRingEquiv.classGroupEquiv c :=
+  DFunLike.congr_fun (classGroupAction_apply _) c
 
 variable {m K} in
 /-- **The action on ideal classes.** The residue `a` sends the class of a nonzero ideal `𝔞` of
@@ -87,8 +75,8 @@ theorem cyclotomicClassGroupAction_mk0 (a : (ZMod m)ˣ) (I : (Ideal (𝓞 K))⁰
       ⟨I.1.map (RingOfIntegers.mapRingEquiv ((galEquivZMod m K).symm a).toRingEquiv),
         mem_nonZeroDivisors_iff_ne_zero.mpr <|
           (Ideal.map_eq_bot_iff_of_injective (RingEquiv.injective _)).not.mpr
-            (mem_nonZeroDivisors_iff_ne_zero.mp I.2)⟩ := by
-  rw [cyclotomicClassGroupAction_apply, ClassGroup.mulEquiv_mk0]
+            (mem_nonZeroDivisors_iff_ne_zero.mp I.2)⟩ :=
+  (cyclotomicClassGroupAction_apply a _).trans (RingEquiv.classGroupEquiv_mk0 _ I)
 
 /-- **The cyclotomic class action.** The scalar extension, to `R ⊗[ℤ] Additive (ClassGroup (𝓞 K))`,
 of the covariant action `cyclotomicClassGroupAction m K` of `(ZMod m)ˣ` on the ideal class group of
