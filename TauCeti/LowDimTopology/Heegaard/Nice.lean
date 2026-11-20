@@ -77,8 +77,8 @@ and is not proved here; neither is the remaining bigon case of a domain made of 
 * `IsNice.maslovIndex_le_eulerMeasure_add_half_hammingDist_of_hammingDist_eq_two`
   and `TauCeti.HeegaardRegionSystem.IsNice.eulerMeasure_eq_zero_of_hammingDist_eq_two`: a domain
   of index at most one moving two points attains the index estimate and avoids the bigons.
-* `TauCeti.HeegaardRegionSystem.IsNice.sum_cornerCount_eq_two_le_one_of_hammingDist_eq_one`: a
-  domain of index at most one moving one point has total multiplicity at most one on the bigons.
+* `TauCeti.HeegaardRegionSystem.IsNice.sum_cornerCount_eq_two_le_one_of_ne`: a domain of index
+  at most one between distinct generators has total multiplicity at most one on the bigons.
 * `IsNice.maslovIndex_le_eulerMeasure_add_half_hammingDist_of_cornerCount_eq_two`:
   a domain of index at most one meeting a bigon attains the index estimate.
 
@@ -246,16 +246,19 @@ theorem IsNice.eulerMeasure_eq_zero_of_hammingDist_eq_two [DecidableEq Point] (h
   rw [hm] at this
   linarith [h.eulerMeasure_nonneg hD0 hz]
 
-/-- In a nice diagram, a nonnegative domain from `x` to `y` avoiding the basepoints, with Maslov
-index at most one, that moves the point of `x` on a single `α`-curve has total multiplicity at
-most one on the bigons. -/
-theorem IsNice.sum_cornerCount_eq_two_le_one_of_hammingDist_eq_one [DecidableEq Point]
-    (h : H.IsNice χ) (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D)
-    (hz : ∀ z, D (H.basepoint z) = 0) (hm : hammingDist (H.point x) (H.point y) = 1)
+/-- In a nice diagram, a nonnegative domain from `x` to `y ≠ x` avoiding the basepoints, with
+Maslov index at most one, has total multiplicity at most one on the bigons. When it moves the
+points of `x` on two `α`-curves, this total is zero
+(`TauCeti.HeegaardRegionSystem.IsNice.eulerMeasure_eq_zero_of_hammingDist_eq_two`). -/
+theorem IsNice.sum_cornerCount_eq_two_le_one_of_ne (h : H.IsNice χ)
+    (hD : H.IsDomainBetween x y D) (hD0 : 0 ≤ D) (hz : ∀ z, D (H.basepoint z) = 0) (hxy : x ≠ y)
     (hμ : H.maslovIndex χ x y D ≤ 1) :
     ∑ r with H.cornerCount r = 2, D r ≤ 1 := by
+  classical
   have := hD.eulerMeasure_add_half_hammingDist_le_maslovIndex χ hD0
-  rw [hm, h.eulerMeasure_eq hz] at this
+  have hm : (1 : ℚ) ≤ hammingDist (H.point x) (H.point y) := by
+    exact_mod_cast hammingDist_pos.mpr (H.point_injective.ne hxy)
+  rw [h.eulerMeasure_eq hz] at this
   have h1 : ((∑ r with H.cornerCount r = 2, D r : ℤ) : ℚ) ≤ 1 := by
     push_cast
     linarith
