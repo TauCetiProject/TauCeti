@@ -106,10 +106,8 @@ lemma homologyπ_khovanovHomologyMirrorKronecker (i j : ℤ)
         HomComplex.Cochain.toSingleEquiv (neg_add_cancel i)
           ((D.khovanovComplexMirrorIso hD R j hD').hom.f i
             ((D.mirror.khovanovComplex hD' R j).iCycles i z)) := by
-  rw [khovanovHomologyMirrorKronecker, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    mirrorHomologyEquiv, Iso.toLinearEquiv_apply, Functor.mapIso_hom, homologyFunctor_map,
-    moduleCat_homologyMap_homologyπ, homologyπ_linearHomComplexSingleKronecker,
-    moduleCat_iCycles_cyclesMap_apply]
+  simp [khovanovHomologyMirrorKronecker, mirrorHomologyEquiv, moduleCat_homologyMap_homologyπ,
+    moduleCat_iCycles_cyclesMap_apply, -linearHomComplex_X]
 
 section Injective
 
