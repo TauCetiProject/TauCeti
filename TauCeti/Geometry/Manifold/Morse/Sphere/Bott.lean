@@ -34,10 +34,10 @@ Morse indices.
   `φ''(c) < 0` (`TauCeti.manifoldMorseIndex_comp_sphereHeight_eq_one_of_iteratedDeriv_two_neg`).
 * **The Morse–Bott family.** When `n ≥ 2` every level of `h` is connected
   (`TauCeti.isConnected_setOf_sphereHeight_eq`). So if `φ'(±1) ≠ 0` and `φ'' ≠ 0` at the critical
-  points of `φ` in `(-1, 1)`, the inclusions of the two poles, as points, and of the critical
-  latitudes, as regular levels, form a Morse–Bott family for `φ ∘ h`
-  (`TauCeti.exists_isMorseBottFamily_comp_sphereHeight`), and the connected component of a critical
-  point in the critical set is the level of `h` through it
+  points of `φ` in `(-1, 1)`, the inclusions of the two poles, as `0`-dimensional manifolds, and
+  of the critical latitudes, as `(n - 1)`-dimensional manifolds, form a Morse–Bott family for
+  `φ ∘ h` (`TauCeti.exists_isMorseBottFamily_comp_sphereHeight`), and the connected component of
+  a critical point in the critical set is the level of `h` through it
   (`TauCeti.connectedComponentIn_criticalPoints_comp_sphereHeight`).
 
 Two examples are worked out, the standard test cases for Morse–Bott complexes on the sphere.
@@ -366,6 +366,12 @@ section Family
 of `φ ∘ h`. -/
 private abbrev CriticalHeight (φ : ℝ → ℝ) : Type := {t : ℝ // t ∈ Ioo (-1) 1 ∧ deriv φ t = 0}
 
+private theorem CriticalHeight.val_ne_one (t : CriticalHeight φ) : (t : ℝ) ≠ 1 :=
+  t.2.1.2.ne
+
+private theorem CriticalHeight.val_ne_neg_one (t : CriticalHeight φ) : (t : ℝ) ≠ -1 :=
+  t.2.1.1.ne'
+
 /-- The height of a critical level of `φ ∘ h`: the poles `1` and `-1`, indexed by `Bool`, and the
 critical points of `φ` in `(-1, 1)`. -/
 private def levelHeight : Bool ⊕ CriticalHeight φ → ℝ
@@ -395,7 +401,7 @@ private theorem isEmpty_fin_levelDim_inl (b : Bool) :
 
 private theorem isRegularValue_sphereHeight_criticalHeight (v : sphere (0 : E) 1)
     (t : CriticalHeight φ) : IsRegularValue (𝓡 n) 𝓘(ℝ) (sphereHeight v) t :=
-  isRegularValue_sphereHeight v t.2.1.2.ne (by linarith [t.2.1.1])
+  isRegularValue_sphereHeight v (CriticalHeight.val_ne_one t) (CriticalHeight.val_ne_neg_one t)
 
 private theorem finrank_sub_finrank_eq_levelDim_inr (t : CriticalHeight φ) :
     finrank ℝ (EuclideanSpace ℝ (Fin n)) - finrank ℝ ℝ = levelDim (φ := φ) n (.inr t) := by
@@ -458,19 +464,14 @@ private theorem levelHeight_mem_Icc (a : Bool ⊕ CriticalHeight φ) : levelHeig
   · exact Ioo_subset_Icc_self t.2.1
 
 private theorem injective_levelHeight : Injective (levelHeight (φ := φ)) := by
-  have hne (t : CriticalHeight φ) : (t : ℝ) ≠ 1 ∧ (t : ℝ) ≠ -1 :=
-    ⟨t.2.1.2.ne, by linarith [t.2.1.1]⟩
   rintro ((_ | _) | s) ((_ | _) | t) h <;>
-    simp only [levelHeight, Bool.cond_true, Bool.cond_false] at h
-  · rfl
-  · norm_num at h
-  · exact absurd h.symm (hne t).2
-  · norm_num at h
-  · rfl
-  · exact absurd h.symm (hne t).1
-  · exact absurd h (hne s).2
-  · exact absurd h (hne s).1
-  · exact congrArg Sum.inr (Subtype.ext h)
+    grind [levelHeight, CriticalHeight.val_ne_one, CriticalHeight.val_ne_neg_one]
+
+private theorem levelDim_eq_ite (a : Bool ⊕ CriticalHeight φ) :
+    levelDim n a = if levelHeight a = 1 ∨ levelHeight a = -1 then 0 else n - 1 := by
+  rcases a with b | t
+  · cases b <;> simp [levelDim, levelHeight]
+  · simp [levelDim, levelHeight, CriticalHeight.val_ne_one, CriticalHeight.val_ne_neg_one]
 
 /-- The height of a critical point of `φ ∘ h` is that of a pole or a critical point of `φ` in
 `(-1, 1)`. -/
@@ -494,8 +495,8 @@ smooth with `φ'(±1) ≠ 0` and with `φ''(c) ≠ 0` at every critical point `c
 `φ ∘ h` is a Morse–Bott function whose critical components are the two poles and the latitudes
 `h = c` at the critical points `c ∈ (-1, 1)` of `φ`, each latitude being connected. Precisely,
 the inclusions of the levels `h = c a`, for an injective family of heights `c` running through
-`1`, `-1` and these critical points, are smooth embeddings, with the poles modelled on `ℝ⁰` and
-the latitudes on `ℝⁿ⁻¹`, and they form a Morse–Bott family for `φ ∘ h`. -/
+`1`, `-1` and these critical points, are smooth embeddings, with model dimension `d a` equal to
+`0` at the poles and `n - 1` along the latitudes, and they form a Morse–Bott family for `φ ∘ h`. -/
 theorem exists_isMorseBottFamily_comp_sphereHeight (hn : 2 ≤ n) (v : sphere (0 : E) 1)
     (hφ : ContDiff ℝ ∞ φ) (hφ₁ : deriv φ 1 ≠ 0) (hφ₂ : deriv φ (-1) ≠ 0)
     (hφ'' : ∀ c ∈ Ioo (-1) 1, deriv φ c = 0 → iteratedDeriv 2 φ c ≠ 0) :
@@ -504,6 +505,7 @@ theorem exists_isMorseBottFamily_comp_sphereHeight (hn : 2 ≤ n) (v : sphere (0
       (i : ∀ a, SmoothEmbedding 𝓘(ℝ, Fin (d a) → ℝ) (𝓡 n) ∞
         {x : sphere (0 : E) 1 // sphereHeight v x = c a} (sphere (0 : E) 1)),
       Injective c ∧ range c = {1, -1} ∪ {t ∈ Ioo (-1) 1 | deriv φ t = 0} ∧
+        (∀ a, d a = if c a = 1 ∨ c a = -1 then 0 else n - 1) ∧
         (∀ a, ⇑(i a) = Subtype.val) ∧ IsMorseBottFamily i (φ ∘ sphereHeight v) := by
   have hrange (a : Bool ⊕ CriticalHeight φ) :
       range (levelEmbedding (n := n) v a) = {x | sphereHeight v x = levelHeight a} := by
@@ -517,7 +519,7 @@ theorem exists_isMorseBottFamily_comp_sphereHeight (hn : 2 ≤ n) (v : sphere (0
       PreconnectedSpace {x : sphere (0 : E) 1 // sphereHeight v x = levelHeight a} :=
     Subtype.preconnectedSpace (hconn a).isPreconnected
   refine ⟨_, levelHeight, levelDim n, levelChartedSpace v, levelEmbedding v, injective_levelHeight,
-    range_levelHeight, coe_levelEmbedding v, ?_⟩
+    range_levelHeight, levelDim_eq_ite, coe_levelEmbedding v, ?_⟩
   refine .of_pairwise_disjoint (by simp) (hφ.comp_contMDiff (contMDiff_sphereHeight v))
     (fun a ↦ ?_) (fun a b hab ↦ ?_) fun x hx ↦ ?_
   · rcases a with b | t
@@ -532,8 +534,8 @@ theorem exists_isMorseBottFamily_comp_sphereHeight (hn : 2 ≤ n) (v : sphere (0
           (hφ.contDiffAt.of_le (by simp)) hφ₁
     · -- A critical latitude is a regular hypersurface, Morse–Bott since `φ''` does not vanish.
       exact (levelEmbedding v (.inr t)).isNondegenerateCriticalSubmanifold_comp_sphereHeight
-        (by simp) (fun s ↦ by rw [coe_levelEmbedding]; exact s.2) t.2.1.2.ne
-        (by linarith [t.2.1.1]) (by rw [levelDim, Module.finrank_fin_fun]; omega)
+        (by simp) (fun s ↦ by rw [coe_levelEmbedding]; exact s.2) (CriticalHeight.val_ne_one t)
+        (CriticalHeight.val_ne_neg_one t) (by rw [levelDim, Module.finrank_fin_fun]; omega)
         (hφ.contDiffAt.of_le (by simp))
         t.2.2 (hφ'' t t.2.1 t.2.2)
   · rw [onFun, hrange, hrange]
@@ -551,7 +553,7 @@ theorem connectedComponentIn_criticalPoints_comp_sphereHeight (hn : 2 ≤ n)
     {x : sphere (0 : E) 1} (hx : x ∈ criticalPoints (𝓡 n) (φ ∘ sphereHeight v)) :
     connectedComponentIn (criticalPoints (𝓡 n) (φ ∘ sphereHeight v)) x =
       {y | sphereHeight v y = sphereHeight v x} := by
-  obtain ⟨ι, c, d, _, i, -, -, hi, hfam⟩ :=
+  obtain ⟨ι, c, d, _, i, -, -, -, hi, hfam⟩ :=
     exists_isMorseBottFamily_comp_sphereHeight hn v hφ hφ₁ hφ₂ hφ''
   obtain ⟨a, s, rfl⟩ := mem_iUnion.1 (hfam.criticalPoints_subset_iUnion_range hx)
   rw [← hfam.range_eq_connectedComponentIn a s, hi, Subtype.range_coe_subtype, s.2]
@@ -564,25 +566,18 @@ theorem exists_isMorseBottFamily_sq_comp_sphereHeight (hn : 2 ≤ n) (v : sphere
       (_ : ∀ a, ChartedSpace (Fin (d a) → ℝ) {x : sphere (0 : E) 1 // sphereHeight v x = c a})
       (i : ∀ a, SmoothEmbedding 𝓘(ℝ, Fin (d a) → ℝ) (𝓡 n) ∞
         {x : sphere (0 : E) 1 // sphereHeight v x = c a} (sphere (0 : E) 1)),
-      Injective c ∧ range c = {1, -1, 0} ∧ (∀ a, ⇑(i a) = Subtype.val) ∧
+      Injective c ∧ range c = {1, -1, 0} ∧
+        (∀ a, d a = if c a = 1 ∨ c a = -1 then 0 else n - 1) ∧ (∀ a, ⇑(i a) = Subtype.val) ∧
         IsMorseBottFamily i ((fun t : ℝ ↦ t ^ 2) ∘ sphereHeight v) := by
-  obtain ⟨ι, c, d, inst, i, hinj, hc, hi, hfam⟩ :=
+  obtain ⟨ι, c, d, inst, i, hinj, hc, hd, hi, hfam⟩ :=
     exists_isMorseBottFamily_comp_sphereHeight (φ := fun t : ℝ ↦ t ^ 2) hn v (by fun_prop)
       (by simp) (by simp) fun _ _ _ ↦ by simp
-  refine ⟨ι, c, d, inst, i, hinj, ?_, hi, hfam⟩
+  refine ⟨ι, c, d, inst, i, hinj, ?_, hd, hi, hfam⟩
   rw [hc]
   ext t
   simp only [deriv_pow_field, mem_union, mem_insert_iff, mem_singleton_iff, mem_ofPred_eq,
     mem_Ioo]
-  constructor
-  · rintro ((h | h) | ⟨-, h⟩)
-    · exact .inl h
-    · exact .inr (.inl h)
-    · exact .inr (.inr (by simpa using h))
-  · rintro (h | h | rfl)
-    · exact .inl (.inl h)
-    · exact .inl (.inr h)
-    · exact .inr ⟨by norm_num, by simp⟩
+  grind
 
 /-- **The four-level function is Morse–Bott.** On `Sⁿ` with `n ≥ 2` and `0 < b < 3`, put
 `a = √(b / 3)`. The critical components of `b h - h³` are the two poles and the two latitudes
@@ -597,33 +592,24 @@ theorem exists_isMorseBottFamily_mul_sub_pow_three_comp_sphereHeight (hn : 2 ≤
       (_ : ∀ a, ChartedSpace (Fin (d a) → ℝ) {x : sphere (0 : E) 1 // sphereHeight v x = c a})
       (i : ∀ a, SmoothEmbedding 𝓘(ℝ, Fin (d a) → ℝ) (𝓡 n) ∞
         {x : sphere (0 : E) 1 // sphereHeight v x = c a} (sphere (0 : E) 1)),
-      Injective c ∧ range c = {1, -1, √(b / 3), -√(b / 3)} ∧ (∀ a, ⇑(i a) = Subtype.val) ∧
+      Injective c ∧ range c = {1, -1, √(b / 3), -√(b / 3)} ∧
+        (∀ a, d a = if c a = 1 ∨ c a = -1 then 0 else n - 1) ∧ (∀ a, ⇑(i a) = Subtype.val) ∧
         IsMorseBottFamily i ((fun t : ℝ ↦ b * t - t ^ 3) ∘ sphereHeight v) := by
   have ha := sqrt_div_three_mem_Ioo hb₀ hb₃
   have hcrit (t : ℝ) : deriv (fun t : ℝ ↦ b * t - t ^ 3) t = 0 ↔ t = √(b / 3) ∨ t = -√(b / 3) := by
     rw [← sq_eq_sq_iff_eq_or_eq_neg, sq_sqrt_div_three hb₀.le, deriv_mul_sub_pow_three]
     constructor <;> intro h <;> linarith
-  obtain ⟨ι, c, d, inst, i, hinj, hc, hi, hfam⟩ :=
+  obtain ⟨ι, c, d, inst, i, hinj, hc, hd, hi, hfam⟩ :=
     exists_isMorseBottFamily_comp_sphereHeight (φ := fun t : ℝ ↦ b * t - t ^ 3) hn v
       (by fun_prop) (by simp only [deriv_mul_sub_pow_three]; linarith)
       (by simp only [deriv_mul_sub_pow_three]; linarith) fun t _ ht ↦ by
         rw [iteratedDeriv_two_mul_sub_pow_three]
         rcases (hcrit t).1 ht with rfl | rfl <;> linarith [ha.1]
-  refine ⟨ι, c, d, inst, i, hinj, ?_, hi, hfam⟩
+  refine ⟨ι, c, d, inst, i, hinj, ?_, hd, hi, hfam⟩
   rw [hc]
   ext t
-  simp only [mem_union, mem_insert_iff, mem_singleton_iff, mem_ofPred_eq, hcrit]
-  constructor
-  · rintro ((h | h) | ⟨-, h | h⟩)
-    · exact .inl h
-    · exact .inr (.inl h)
-    · exact .inr (.inr (.inl h))
-    · exact .inr (.inr (.inr h))
-  · rintro (h | h | rfl | rfl)
-    · exact .inl (.inl h)
-    · exact .inl (.inr h)
-    · exact .inr ⟨⟨by linarith [ha.1], ha.2⟩, .inl rfl⟩
-    · exact .inr ⟨⟨by linarith [ha.2], by linarith [ha.1]⟩, .inr rfl⟩
+  simp only [mem_union, mem_insert_iff, mem_singleton_iff, mem_ofPred_eq, mem_Ioo, hcrit]
+  grind
 
 end Family
 
