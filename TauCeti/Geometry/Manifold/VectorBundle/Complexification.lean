@@ -497,6 +497,17 @@ variable {IB F n E}
     (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) (x : B) :
     conjEquiv IB F n E σ x = tmulConj (E x) (σ x) := (rfl)
 @[simp] theorem conjEquiv_symm : (conjEquiv IB F n E).symm = conjEquiv IB F n E := (rfl)
+/-- A section fixed by native tensor conjugation is reconstructed from its real coordinate. -/
+theorem oneTmulLinearMap_realPartLinearMap_of_conjEquiv_eq
+    {σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯}
+    (hσ : conjEquiv IB F n E σ = σ) :
+    oneTmulLinearMap IB F n E (realPartLinearMap IB F n E σ) = σ := by
+  ext x
+  have hfix := congrArg (fun τ : Cₛ^n⟮IB; Complexification F, fun y ↦ ℂ ⊗[ℝ] E y⟯ ↦ τ x) hσ
+  obtain ⟨v, hv⟩ := (tmulConj_eq_self_iff (E x) (σ x)).mp
+    (by simpa only [conjEquiv_apply] using hfix)
+  simp [hv]
+
 @[simp] theorem complexificationEquivProd_apply
     (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) :
     complexificationEquivProd IB F n E σ =
