@@ -21,19 +21,21 @@ fundamental group `π₁(𝔸, a)`. The stabilizer of the vertex `p A_b` is the 
   `T`. Since ellipticity is invariant under conjugation, one embedding of each vertex group
   suffices: for the amalgamated product `A ∗_C B` (the segment graph of groups) the Bass–Serre tree
   dominates `T` exactly when `A` and `B` are elliptic in `T`;
-* over a graph without edges (a trivial splitting) the Bass–Serre tree is a point, so it dominates
-  exactly the trees in which `π₁(𝔸, a)` is elliptic (`GTree.dominates_iff_of_subsingleton`) and is
-  dominated by every tree (`GTree.dominates_of_subsingleton`).
+* over a graph without edges (a trivial splitting) the Bass–Serre tree is a point
+  (`TauCeti.GraphOfGroups.instUniqueVBassSerreTreeOfIsEmptyE`), so it dominates exactly the trees
+  in which `π₁(𝔸, a)` is elliptic (`GTree.dominates_iff_of_subsingleton`) and is dominated by every
+  tree (`GTree.dominates_of_subsingleton`).
 
 For a dart `e : b ⟶ c` and an `𝔸`-path `p` from `a` to `b`, the elements `p g p⁻¹` with
 `g ∈ A_b` fix the vertex `p A_b`, and they fix the dart `p α_e(A_e)` from `p A_b` to `p e A_c`
 exactly when `g ∈ α_e(A_e)`; similarly the elements `(p e) h (p e)⁻¹` with `h ∈ A_c` fix
 `p e A_c`, and fix the dart exactly when `h ∈ ω_e(A_e)`. By Serre's criterion for products of
-elliptic elements (`GTree.isHyperbolic_mul_of_isReduced`), the product `(p g p⁻¹) ((p e) h (p e)⁻¹)`
-is hyperbolic exactly when `g ∉ α_e(A_e)` and `h ∉ ω_e(A_e)`. For `A ∗_C B` this says that `a b` is
-hyperbolic for `a ∈ A ∖ C` and `b ∈ B ∖ C`; so if `C` is a proper subgroup of both `A` and `B`, then
-`A ∗_C B` fixes no vertex of its Bass–Serre tree: the action is not trivial, and the one-vertex
-tree does not dominate the Bass–Serre tree (`GTree.point_dominates_iff`).
+elliptic elements, in the form `GTree.isHyperbolic_mul_iff_of_smul_src_eq_of_smul_tgt_eq` for one
+dart, the product `(p g p⁻¹) ((p e) h (p e)⁻¹)` is hyperbolic exactly when `g ∉ α_e(A_e)` and
+`h ∉ ω_e(A_e)`. For `A ∗_C B` this says that `a b` is hyperbolic for `a ∈ A ∖ C` and `b ∈ B ∖ C`;
+so if `C` is a proper subgroup of both `A` and `B`, then `A ∗_C B` fixes no vertex of its Bass–Serre
+tree: the action is not trivial, and the one-vertex tree does not dominate the Bass–Serre tree
+(`GTree.point_dominates_iff`).
 
 ## Main results
 
@@ -42,8 +44,6 @@ tree does not dominate the Bass–Serre tree (`GTree.point_dominates_iff`).
   those contained in conjugates of vertex groups.
 * `TauCeti.GraphOfGroups.bassSerreTree_dominates_iff`,
   `TauCeti.GraphOfGroups.bassSerreTree_dominates_iff_of_paths`: domination by the Bass–Serre tree.
-* `TauCeti.GraphOfGroups.instUniqueVBassSerreTreeOfIsEmptyE`: over a graph without edges, the
-  Bass–Serre tree has exactly one vertex.
 * `TauCeti.GraphOfGroups.bassSerreTree_isHyperbolic_vertexHom_mul_vertexHom_iff`: hyperbolic
   products of elements of adjacent vertex groups.
 * `TauCeti.GraphOfGroups.bassSerreTree_segment_dominates_iff`,
@@ -128,35 +128,7 @@ theorem bassSerreTree_dominates_iff_of_paths (q : ∀ b : Γ.V, 𝔸.Path ⟨a�
   rw [MonoidHom.range_eq_map] at h ⊢
   exact (isEllipticSubgroup_map_vertexHom_iff ⊤ (q b) p).1 h
 
-/-! ### Graphs without edges -/
-
-/-- Over a graph without edges, for instance for the trivial splitting of a group as a single
-vertex group, the Bass–Serre tree is a point: every `𝔸`-path from `a` stays at `a` and is homotopic
-to a single element of `A_a`. -/
-noncomputable instance [IsEmpty Γ.E] : Unique (bassSerreTree 𝔸 a).V where
-  default := bassSerreVertex (Quiver.Path.nil : 𝔸.Path ⟨a⟩ ⟨a⟩)
-  uniq y := by
-    obtain ⟨b, p, rfl⟩ := bassSerreVertex_surjective y
-    obtain rfl : a = b := Γ.eq_of_path_of_forall_src_eq_tgt isEmptyElim (Path.edgePath p)
-    obtain ⟨g, hg⟩ := π₁.exists_homotopic_ofVertex_of_isEmpty p
-    rw [bassSerreVertex_congr hg, Path.ofVertex_eq_nil_cons, bassSerreVertex_cons_vertex]
-
 /-! ### Hyperbolic elements -/
-
-/-- The element `p g p⁻¹` fixes the dart `p α_e(A_e)` exactly when `g ∈ α_e(A_e)`. -/
-private theorem vertexHom_mem_stabilizer_bassSerreDart_iff {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩)
-    (e : b ⟶ c) (g : 𝔸.vertexGroup b) : π₁.vertexHom p g ∈ stabilizer (π₁ 𝔸 a) (bassSerreDart p e) ↔
-      g ∈ (𝔸.αArrow e).range := by
-  rw [stabilizer_bassSerreDart, Subgroup.mem_map_iff_mem (π₁.vertexHom_injective p)]
-
-/-- The element `(p e) h (p e)⁻¹` fixes the dart `p α_e(A_e)` exactly when `h ∈ ω_e(A_e)`: it
-fixes the reverse dart `(p e) α_{rev e}(A_e)`, and `α_{rev e}(A_e) = ω_e(A_e)`. -/
-private theorem vertexHom_cons_mem_stabilizer_bassSerreDart_iff {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩)
-    (e : b ⟶ c) (h : 𝔸.vertexGroup c) :
-    π₁.vertexHom (p.cons (.dart e)) h ∈ stabilizer (π₁ 𝔸 a) (bassSerreDart p e) ↔
-      h ∈ (𝔸.ωArrow e).range := by
-  rw [← GTree.stabilizer_rev, rev_bassSerreDart, stabilizer_bassSerreDart, range_αArrow_reverse,
-    Subgroup.mem_map_iff_mem (π₁.vertexHom_injective _)]
 
 /-- Let `e : b ⟶ c` be a dart and `p` an `𝔸`-path from `a` to `b`, and let `g ∈ A_b` and
 `h ∈ A_c`. In the Bass–Serre tree, the product `(p g p⁻¹) ((p e) h (p e)⁻¹)` is hyperbolic exactly
@@ -165,33 +137,12 @@ theorem bassSerreTree_isHyperbolic_vertexHom_mul_vertexHom_iff {b c : Γ.V} (p :
     (e : b ⟶ c) (g : 𝔸.vertexGroup b) (h : 𝔸.vertexGroup c) :
     (bassSerreTree 𝔸 a).IsHyperbolic (π₁.vertexHom p g * π₁.vertexHom (p.cons (.dart e)) h) ↔
       g ∉ (𝔸.αArrow e).range ∧ h ∉ (𝔸.ωArrow e).range := by
-  set X := bassSerreTree 𝔸 a
-  set d := bassSerreDart p e
-  have hs : π₁.vertexHom p g ∈ stabilizer (π₁ 𝔸 a) (X.src d) := by
-    rw [src_bassSerreDart, stabilizer_bassSerreVertex]
-    exact ⟨g, rfl⟩
-  have ht : π₁.vertexHom (p.cons (.dart e)) h ∈ stabilizer (π₁ 𝔸 a) (X.tgt d) := by
-    rw [tgt_bassSerreDart, stabilizer_bassSerreVertex]
-    exact ⟨h, rfl⟩
-  refine ⟨fun hX ↦ ⟨fun hg ↦ GTree.not_isHyperbolic_iff.2 ?_ hX,
-    fun hh ↦ GTree.not_isHyperbolic_iff.2 ?_ hX⟩, fun ⟨hg, hh⟩ ↦ ?_⟩
-  · -- If `g ∈ α_e(A_e)`, both factors fix the target of the dart.
-    refine (X.isEllipticSubgroup_stabilizer _).isElliptic (mul_mem ?_ ht)
-    exact X.stabilizer_dart_le_stabilizer_tgt d
-      ((vertexHom_mem_stabilizer_bassSerreDart_iff p e g).2 hg)
-  · -- If `h ∈ ω_e(A_e)`, both factors fix the source of the dart.
-    refine (X.isEllipticSubgroup_stabilizer _).isElliptic (mul_mem hs ?_)
-    exact X.stabilizer_dart_le_stabilizer_src d
-      ((vertexHom_cons_mem_stabilizer_bassSerreDart_iff p e h).2 hh)
-  · -- Otherwise neither factor fixes the dart, and Serre's criterion applies to the path `d`.
-    refine GTree.isHyperbolic_mul_of_isReduced (p := (X.dart d).toPath)
-      (SerreGraph.Path.isReduced_toPath _ _) (X.isAcyclic.src_ne_tgt d) (mem_stabilizer_iff.1 hs)
-      (fun f hf hfix ↦ ?_) (mem_stabilizer_iff.1 ht) fun f hf hfix ↦ ?_
-    · obtain rfl : d = f := by simpa using hf
-      exact hg ((vertexHom_mem_stabilizer_bassSerreDart_iff p e g).1 (mem_stabilizer_iff.2 hfix))
-    · obtain rfl : d = f := by simpa using hf
-      exact hh ((vertexHom_cons_mem_stabilizer_bassSerreDart_iff p e h).1
-        (mem_stabilizer_iff.2 hfix))
+  -- The two factors fix the source `p A_b` and the target `p e A_c` of the dart `p α_e(A_e)`.
+  rw [GTree.isHyperbolic_mul_iff_of_smul_src_eq_of_smul_tgt_eq (d := bassSerreDart p e)
+    (by rw [src_bassSerreDart, ← mem_stabilizer_iff, stabilizer_bassSerreVertex]; exact ⟨g, rfl⟩)
+    (by rw [tgt_bassSerreDart, ← mem_stabilizer_iff, stabilizer_bassSerreVertex]; exact ⟨h, rfl⟩),
+    Ne, Ne, ← mem_stabilizer_iff, ← mem_stabilizer_iff, vertexHom_mem_stabilizer_bassSerreDart_iff,
+    vertexHom_cons_mem_stabilizer_bassSerreDart_iff]
 
 /-! ### Amalgamated products -/
 
