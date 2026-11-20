@@ -12,8 +12,8 @@ public import Mathlib.Algebra.Group.Subgroup.Ker
 
 This file supplies the characteristic membership equation for the subgroup equality locus, the
 invariance of the range of a group homomorphism under precomposition with a surjection, the
-compatibility of ranges with a commutative square, and the range and kernel of the pointwise
-inverse of a homomorphism into a commutative group.
+compatibility of ranges and kernels with a commutative square, and the range and kernel of the
+pointwise inverse of a homomorphism into a commutative group.
 
 ## Main results
 
@@ -21,6 +21,8 @@ inverse of a homomorphism into a commutative group.
 * `MonoidHom.range_comp_of_surjective`: precomposition with a surjection preserves the range.
 * `MonoidHom.range_le_comap_range_of_comp_eq`: in a commutative square, the range of one side is
   carried into the range of the opposite side.
+* `MonoidHom.ker_le_comap_ker_of_comp_eq`: in a commutative square, the kernel of one side is
+  carried into the kernel of the opposite side.
 * `MonoidHom.range_inv`, `MonoidHom.ker_inv`: the pointwise inverse `f⁻¹` has the same range and
   kernel as `f`.
 * `Subgroup.sup_hom_ext`: homomorphisms out of a join are determined by their restrictions.
@@ -56,6 +58,18 @@ theorem range_le_comap_range_of_comp_eq {H G' H' : Type*} [Group H] [Group G'] [
     d.range ≤ d'.range.comap f₁ := by
   rintro _ ⟨a, rfl⟩
   exact ⟨f₀ a, (DFunLike.congr_fun h a).symm⟩
+
+/-- In a commutative square `f₁ ∘ d = d' ∘ f₀` of group homomorphisms, `f₀` carries the kernel of
+`d` into the kernel of `d'`; this is what makes the square restrict to a map of kernels
+`ker d → ker d'`. -/
+@[to_additive /-- In a commutative square `f₁ ∘ d = d' ∘ f₀` of additive group homomorphisms, `f₀`
+carries the kernel of `d` into the kernel of `d'`; this is what makes the square restrict to a map
+`ker d → ker d'` of kernels. -/]
+theorem ker_le_comap_ker_of_comp_eq {H G' H' : Type*} [Group H] [Group G'] [Group H']
+    {d : G →* H} {d' : G' →* H'} {f₀ : G →* G'} {f₁ : H →* H'} (h : f₁.comp d = d'.comp f₀) :
+    d.ker ≤ d'.ker.comap f₀ := by
+  rw [comap_ker, ← h, ← comap_ker]
+  exact ker_le_comap d _
 
 /-- The pointwise inverse of a homomorphism into a commutative group has the same range. -/
 @[to_additive (attr := simp) /-- The pointwise negation of a homomorphism into a commutative

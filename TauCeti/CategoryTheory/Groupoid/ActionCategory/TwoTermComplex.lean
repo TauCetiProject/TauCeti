@@ -481,8 +481,8 @@ theorem isEquivalence_map_iff :
   constructor
   · intro hF
     have hfull := (full_map_iff f₀ f₁ h).mp hF.full
-    refine ⟨⟨fun a ha => ?_, hF.faithful, hfull.1⟩, hfull.2, hF.essSurj⟩
-    rw [SetLike.mem_coe, mem_ker, ← comp_apply d', ← h, comp_apply, mem_ker.mp ha, map_zero]
+    exact ⟨⟨fun a ha => AddSubgroup.mem_comap.mp (ker_le_comap_ker_of_comp_eq h ha), hF.faithful,
+      hfull.1⟩, hfull.2, hF.essSurj⟩
   · rintro ⟨⟨-, hfaith, hsurj⟩, hcoker, hess⟩
     have := (full_map_iff f₀ f₁ h).mpr ⟨hsurj, hcoker⟩
     exact { faithful := hfaith, full := this, essSurj := hess }
