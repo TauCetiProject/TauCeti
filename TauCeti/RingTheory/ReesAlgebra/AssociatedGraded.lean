@@ -46,7 +46,6 @@ the quotient.
 
 ## Main results
 
-* `reesAlgebra.isHomogeneous_map_algebraMap`: the ideal `I R[It]` is homogeneous.
 * `reesAlgebra.toAssociatedGraded_apply`: the degree-`n` component of the symbol of `f` is the
   class of the `n`-th coefficient of `f`.
 * `reesAlgebra.ker_toAssociatedGraded` and `reesAlgebra.toAssociatedGraded_surjective`: the symbol
@@ -200,17 +199,6 @@ theorem toAssociatedGraded_surjective : Function.Surjective (toAssociatedGraded 
     obtain ⟨g, rfl⟩ := hz
     exact ⟨f + g, map_add _ f g⟩
 
-/-- The extended ideal `I R[It]` is homogeneous for the grading of the Rees algebra. -/
-theorem isHomogeneous_map_algebraMap :
-    (I.map (algebraMap R (reesAlgebra I))).IsHomogeneous (grade I) := by
-  intro m f hf
-  rw [mem_map_algebraMap_reesAlgebra_iff] at hf ⊢
-  intro n
-  rw [coe_decompose_apply, coeff_monomial, Finsupp.single_apply]
-  split_ifs with h
-  · exact h ▸ hf m
-  · exact zero_mem _
-
 end reesAlgebra
 
 namespace Ideal
@@ -274,6 +262,8 @@ theorem equivAssociatedGraded_symm_mk (n : ℕ) (x : ↥(I ^ n)) :
 
 /-- The class of `x ∈ Iⁿ` in degree `n` of the Rees quotient vanishes exactly when
 `x ∈ Iⁿ⁺¹`. -/
+-- Not `@[simp]`: the `simpNF` linter times out synthesizing `Nontrivial I.ReesQuotient` on the
+-- left-hand side.
 theorem mk_eq_zero_iff {n : ℕ} (x : ↥(I ^ n)) : mk I n x = 0 ↔ (x : R) ∈ I ^ (n + 1) := by
   rw [← AssociatedGraded.mk_eq_zero_iff, ← equivAssociatedGraded_mk,
     map_eq_zero_iff _ (equivAssociatedGraded I).injective]
@@ -302,7 +292,7 @@ theorem mk_zero (r : ↥(I ^ 0)) : mk I 0 r = algebraMap R I.ReesQuotient r := b
     ← IsScalarTower.algebraMap_apply]
 
 variable (I) in
-/-- The degree-zero part of the Rees quotient is a copy of `R ⧸ I`. -/
+/-- The algebra map `R ⧸ I → R[It] ⧸ I R[It]` is injective. -/
 theorem algebraMap_quotient_injective :
     Function.Injective (algebraMap (R ⧸ I) I.ReesQuotient) := by
   have h : ⇑(algebraMap (R ⧸ I) I.ReesQuotient) =
@@ -348,6 +338,7 @@ noncomputable def of (n : ℕ) : I.GradedPiece n →ₗ[R] I.ReesQuotient :=
     DirectSum.lof R ℕ I.GradedPiece n
 
 /-- The degree-`n` inclusion corresponds to the summand inclusion of `gr_I R`. -/
+@[simp]
 theorem equivAssociatedGraded_of (n : ℕ) (x : I.GradedPiece n) :
     equivAssociatedGraded I (of I n x) = DirectSum.of I.GradedPiece n x := by
   rw [of, LinearMap.comp_apply, LinearMap.restrictScalars_apply, AlgEquiv.toLinearMap_apply,
@@ -395,10 +386,10 @@ theorem range_mk (n : ℕ) :
   rw [LinearMap.mem_range, TauCeti.GradedAlgebra.mem_quotientPiece_iff]
   constructor
   · rintro ⟨x, rfl⟩
-    exact ⟨_, reesAlgebra.monomial_mem_grade x.2, rfl⟩
+    exact ⟨_, reesAlgebra.monomial_mem_grade x.2, (mk_apply n x).symm⟩
   · rintro ⟨f, hf, rfl⟩
     obtain ⟨x, hx, hxf⟩ := reesAlgebra.mem_grade_iff.mp hf
-    exact ⟨⟨x, hx⟩, congrArg (Ideal.Quotient.mk _) (Subtype.ext hxf)⟩
+    exact ⟨⟨x, hx⟩, (mk_apply n ⟨x, hx⟩).trans (congrArg (Ideal.Quotient.mk _) (Subtype.ext hxf))⟩
 
 variable (I) in
 /-- The image of the degree-`n` inclusion is the degree-`n` piece of the grading that the
