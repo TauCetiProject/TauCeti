@@ -38,6 +38,10 @@ and in particular of continuous functions, which is `upperSemicontinuous_iInf`.
   semicontinuous function over a compact first factor is lower semicontinuous.
 * `Continuous.iInf_of_compactSpace`, `Continuous.iSup_of_compactSpace`: the partial infimum and
   supremum of a jointly continuous function over a compact first factor are continuous.
+* `Continuous.iInf_apply_of_compactSpace`, `Continuous.iSup_apply_of_compactSpace`: the same for a
+  curried function `f : Y → X → β`, as `y ↦ ⨅ x, f y x` and `y ↦ ⨆ x, f y x`.
+* `Continuous.bddAbove_range_apply`, `Continuous.le_iSup_apply`: for a jointly continuous curried
+  `f : Y → X → β` with `X` compact, each `f y` is bounded above, so `f y x ≤ ⨆ x', f y x'`.
 -/
 
 public section
@@ -110,3 +114,34 @@ theorem Continuous.iSup_of_compactSpace [CompactSpace X] [TopologicalSpace β] [
     {f : X × Y → β} (hf : Continuous f) :
     Continuous fun y => ⨆ x, f (x, y) :=
   Continuous.iInf_of_compactSpace (β := βᵒᵈ) hf
+
+namespace Continuous
+
+variable [CompactSpace X] [TopologicalSpace β] [OrderTopology β] {f : Y → X → β}
+
+/-- The infimum `y ↦ ⨅ x, f y x` of a jointly continuous curried function over a compact factor is
+continuous; this is `Continuous.iInf_of_compactSpace` for `f : Y → X → β`. -/
+theorem iInf_apply_of_compactSpace (hf : Continuous (Function.uncurry f)) :
+    Continuous fun y => ⨅ x, f y x :=
+  Continuous.iInf_of_compactSpace (hf.comp continuous_swap)
+
+/-- The supremum `y ↦ ⨆ x, f y x` of a jointly continuous curried function over a compact factor is
+continuous; this is `Continuous.iSup_of_compactSpace` for `f : Y → X → β`. -/
+theorem iSup_apply_of_compactSpace (hf : Continuous (Function.uncurry f)) :
+    Continuous fun y => ⨆ x, f y x :=
+  Continuous.iSup_of_compactSpace (hf.comp continuous_swap)
+
+/-- For a jointly continuous `f : Y → X → β` with `X` compact, each `f y` is bounded above. -/
+theorem bddAbove_range_apply (hf : Continuous (Function.uncurry f)) (y : Y) :
+    BddAbove (range (f y)) := by
+  rcases isEmpty_or_nonempty X with hX | ⟨⟨x⟩⟩
+  · simp [range_eq_empty]
+  · have : Nonempty β := ⟨f y x⟩
+    exact (isCompact_range (hf.comp (Continuous.prodMk_right y))).bddAbove
+
+/-- For a jointly continuous `f : Y → X → β` with `X` compact, `f y x ≤ ⨆ x', f y x'`. -/
+theorem le_iSup_apply (hf : Continuous (Function.uncurry f)) (y : Y) (x : X) :
+    f y x ≤ ⨆ x', f y x' :=
+  le_ciSup (hf.bddAbove_range_apply y) x
+
+end Continuous

@@ -35,7 +35,7 @@ values unless each `H t` is bounded above and `t ↦ ⨆ x, H t x` is integrable
 supremum of an unbounded or empty family is `0`, and so is the integral of a non-integrable
 function. The results are therefore stated for a compact space `M` and a jointly continuous `H`, as
 for Hamiltonians on a closed manifold, where the maxima are attained and depend continuously on
-`t` (`Continuous.le_iSup_apply`, `Continuous.integrableOn_iSup_apply`).
+`t` (`Continuous.le_iSup_apply`, `Continuous.iSup_apply_of_compactSpace`).
 
 * `E⁺` is monotone, subadditive, positively homogeneous, and shifted by `∫₀¹ c` when a function
   `c(t)` of time alone is added (`TauCeti.hoferPlus_mono`, `TauCeti.hoferPlus_add_le`,
@@ -45,8 +45,8 @@ for Hamiltonians on a closed manifold, where the maxima are attained and depend 
   `TauCeti.hoferNorm_smul`). It does not see functions of time alone
   (`TauCeti.hoferNorm_add_const`), and it vanishes exactly when each `H t`, `t ∈ [0, 1]`, is
   constant on `M` (`TauCeti.hoferNorm_eq_zero_iff`). So `‖H₀ - H₁‖` is a pseudometric on
-  jointly continuous Hamiltonians on a compact `M`
-  (`TauCeti.hoferNorm_sub_le_hoferNorm_sub_add_hoferNorm_sub`), the Hofer distance, which
+  jointly continuous Hamiltonians on a compact `M` (`TauCeti.hoferNorm_sub_comm`,
+  `TauCeti.hoferNorm_sub_le_hoferNorm_sub_add_hoferNorm_sub`), the Hofer distance, which
   identifies two Hamiltonians exactly when, at each time `t ∈ [0, 1]`, they differ by a constant.
 * When `H t` changes sign at every time, for instance when it is normalized to have mean zero
   for a volume form or vanishes somewhere, both parts are nonnegative and hence at most the
@@ -126,6 +126,10 @@ theorem hoferMinus_neg (H : ℝ → M → ℝ) : hoferMinus (-H) = hoferPlus H :
 theorem hoferNorm_neg (H : ℝ → M → ℝ) : hoferNorm (-H) = hoferNorm H := by
   rw [hoferNorm_def, hoferNorm_def, hoferPlus_neg, hoferMinus_neg, add_comm]
 
+/-- **Symmetry of the Hofer distance.** `‖F - G‖ = ‖G - F‖`. -/
+theorem hoferNorm_sub_comm (F G : ℝ → M → ℝ) : hoferNorm (F - G) = hoferNorm (G - F) := by
+  rw [← neg_sub, hoferNorm_neg]
+
 /-- The negative part of the Hofer norm is minus the integral of the minimum,
 `E⁻(H) = -∫₀¹ min_x H(t, x) dt`. -/
 theorem hoferMinus_eq (H : ℝ → M → ℝ) :
@@ -175,35 +179,13 @@ theorem hoferMinus_le_hoferNorm {H : ℝ → M → ℝ} (h : ∀ t ∈ Icc (0 : 
 
 variable [TopologicalSpace M] [CompactSpace M]
 
-/-- For a jointly continuous `H` on `T × M` with `M` compact, each `H t` is bounded above. -/
-theorem _root_.Continuous.bddAbove_range_apply {T : Type*} [TopologicalSpace T] {H : T → M → ℝ}
-    (hH : Continuous (uncurry H)) (t : T) : BddAbove (range (H t)) :=
-  (isCompact_range (hH.comp (Continuous.prodMk_right t))).bddAbove
-
-/-- For a jointly continuous `H` on `T × M` with `M` compact, `H(t, x) ≤ max_y H(t, y)`. -/
-theorem _root_.Continuous.le_iSup_apply {T : Type*} [TopologicalSpace T] {H : T → M → ℝ}
-    (hH : Continuous (uncurry H)) (t : T) (x : M) : H t x ≤ ⨆ y, H t y :=
-  le_ciSup (hH.bddAbove_range_apply t) x
-
-/-- The maximum `t ↦ max_x H(t, x)` of a jointly continuous `H` over a compact `M` is continuous;
-this is `Continuous.iSup_of_compactSpace` for the curried `H`. -/
-private theorem continuous_iSup_apply {H : ℝ → M → ℝ} (hH : Continuous (uncurry H)) :
-    Continuous fun t ↦ ⨆ x, H t x :=
-  Continuous.iSup_of_compactSpace (hH.comp continuous_swap)
-
-/-- For a jointly continuous `H` on `ℝ × M` with `M` compact, the maximum `t ↦ max_x H(t, x)` is
-integrable on `[0, 1]`, so `TauCeti.hoferPlus H` is its integral. -/
-theorem _root_.Continuous.integrableOn_iSup_apply {H : ℝ → M → ℝ} (hH : Continuous (uncurry H)) :
-    IntegrableOn (fun t ↦ ⨆ x, H t x) (Icc (0 : ℝ) 1) :=
-  (continuous_iSup_apply hH).continuousOn.integrableOn_compact isCompact_Icc
-
 variable {F G H : ℝ → M → ℝ}
 
 /-- **Monotonicity of `E⁺`.** If `F ≤ G` on `[0, 1] × M`, then `E⁺(F) ≤ E⁺(G)`. -/
 theorem hoferPlus_mono (hF : Continuous (uncurry F)) (hG : Continuous (uncurry G))
     (h : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, F t x ≤ G t x) : hoferPlus F ≤ hoferPlus G := by
-  refine setIntegral_mono_on hF.integrableOn_iSup_apply hG.integrableOn_iSup_apply
-    measurableSet_Icc fun t ht ↦ ?_
+  refine setIntegral_mono_on hF.iSup_apply_of_compactSpace.integrableOn_Icc
+    hG.iSup_apply_of_compactSpace.integrableOn_Icc measurableSet_Icc fun t ht ↦ ?_
   rcases isEmpty_or_nonempty M with _ | _
   · simp
   · exact ciSup_mono (hG.bddAbove_range_apply t) (h t ht)
@@ -211,12 +193,14 @@ theorem hoferPlus_mono (hF : Continuous (uncurry F)) (hG : Continuous (uncurry G
 /-- **Subadditivity of `E⁺`.** `E⁺(F + G) ≤ E⁺(F) + E⁺(G)`. -/
 theorem hoferPlus_add_le (hF : Continuous (uncurry F)) (hG : Continuous (uncurry G)) :
     hoferPlus (F + G) ≤ hoferPlus F + hoferPlus G := by
-  rw [hoferPlus_def, hoferPlus_def, hoferPlus_def,
-    ← integral_add hF.integrableOn_iSup_apply hG.integrableOn_iSup_apply]
+  have hFi : IntegrableOn (fun t ↦ ⨆ x, F t x) (Icc (0 : ℝ) 1) :=
+    hF.iSup_apply_of_compactSpace.integrableOn_Icc
+  have hGi : IntegrableOn (fun t ↦ ⨆ x, G t x) (Icc (0 : ℝ) 1) :=
+    hG.iSup_apply_of_compactSpace.integrableOn_Icc
+  rw [hoferPlus_def, hoferPlus_def, hoferPlus_def, ← integral_add hFi hGi]
   have hFG : Continuous (uncurry (F + G)) := hF.add hG
-  refine setIntegral_mono_on hFG.integrableOn_iSup_apply
-    (hF.integrableOn_iSup_apply.add hG.integrableOn_iSup_apply) measurableSet_Icc
-    fun t _ ↦ ?_
+  refine setIntegral_mono_on hFG.iSup_apply_of_compactSpace.integrableOn_Icc (hFi.add hGi)
+    measurableSet_Icc fun t _ ↦ ?_
   rcases isEmpty_or_nonempty M with _ | _
   · simp
   · exact ciSup_le fun x ↦ add_le_add (hF.le_iSup_apply t x) (hG.le_iSup_apply t x)
@@ -226,7 +210,8 @@ theorem hoferPlus_add_le (hF : Continuous (uncurry F)) (hG : Continuous (uncurry
 theorem hoferPlus_add_const [Nonempty M] (hH : Continuous (uncurry H)) {c : ℝ → ℝ}
     (hc : IntegrableOn c (Icc (0 : ℝ) 1)) :
     hoferPlus (fun t x ↦ H t x + c t) = hoferPlus H + ∫ t in Icc (0 : ℝ) 1, c t := by
-  rw [hoferPlus_def, hoferPlus_def, ← integral_add hH.integrableOn_iSup_apply hc]
+  rw [hoferPlus_def, hoferPlus_def,
+    ← integral_add hH.iSup_apply_of_compactSpace.integrableOn_Icc hc]
   refine setIntegral_congr_fun measurableSet_Icc fun t _ ↦ ?_
   exact ((OrderIso.addRight (c t)).map_ciSup (hH.bddAbove_range_apply t)).symm
 
@@ -234,11 +219,8 @@ theorem hoferPlus_add_const [Nonempty M] (hH : Continuous (uncurry H)) {c : ℝ 
 `‖H‖ = ∫₀¹ (max_x H(t, x) - min_x H(t, x)) dt`. -/
 theorem hoferNorm_eq (hH : Continuous (uncurry H)) :
     hoferNorm H = ∫ t in Icc (0 : ℝ) 1, ((⨆ x, H t x) - ⨅ x, H t x) := by
-  have hmin : IntegrableOn (fun t ↦ ⨅ x, H t x) (Icc (0 : ℝ) 1) :=
-    (Continuous.iInf_of_compactSpace (hH.comp continuous_swap)).continuousOn.integrableOn_compact
-      isCompact_Icc
-  rw [hoferNorm_def, hoferMinus_eq, integral_sub hH.integrableOn_iSup_apply hmin, hoferPlus_def,
-    sub_eq_add_neg]
+  rw [hoferNorm_def, hoferMinus_eq, integral_sub hH.iSup_apply_of_compactSpace.integrableOn_Icc
+    hH.iInf_apply_of_compactSpace.integrableOn_Icc, hoferPlus_def, sub_eq_add_neg]
 
 /-- The integrand of the Hofer norm, the oscillation `max_x H(t, x) - min_x H(t, x)`, written as
 `max_x H(t, x) + max_x (-H(t, x))`. It is nonnegative. -/
@@ -247,15 +229,15 @@ private theorem iSup_add_iSup_neg_nonneg (hH : Continuous (uncurry H)) (t : ℝ)
   rcases isEmpty_or_nonempty M with _ | ⟨⟨x⟩⟩
   · simp
   · have h₁ := hH.le_iSup_apply t x
-    have h₂ := Continuous.le_iSup_apply (H := -H) hH.neg t x
+    have h₂ := Continuous.le_iSup_apply (f := -H) hH.neg t x
     simp only [Pi.neg_apply] at h₂ ⊢
     linarith
 
 private theorem hoferNorm_eq_integral_iSup_add (hH : Continuous (uncurry H)) :
     hoferNorm H = ∫ t in Icc (0 : ℝ) 1, ((⨆ x, H t x) + ⨆ x, (-H) t x) := by
   rw [hoferNorm_def, hoferMinus_def, hoferPlus_def, hoferPlus_def,
-    integral_add hH.integrableOn_iSup_apply
-      (Continuous.integrableOn_iSup_apply (H := -H) hH.neg)]
+    integral_add hH.iSup_apply_of_compactSpace.integrableOn_Icc
+      ((Continuous.iSup_apply_of_compactSpace (f := -H) hH.neg).integrableOn_Icc)]
 
 /-- The Hofer norm is nonnegative. -/
 theorem hoferNorm_nonneg (hH : Continuous (uncurry H)) : 0 ≤ hoferNorm H := by
@@ -299,8 +281,8 @@ theorem hoferNorm_eq_zero_iff (hH : Continuous (uncurry H)) :
     hoferNorm H = 0 ↔ ∀ t ∈ Icc (0 : ℝ) 1, ∀ x y, H t x = H t y := by
   set g : ℝ → ℝ := fun t ↦ (⨆ x, H t x) + ⨆ x, (-H) t x with hg
   have hgc : Continuous g :=
-    (continuous_iSup_apply hH).add (continuous_iSup_apply (H := -H) hH.neg)
-  have hgi : IntegrableOn g (Icc (0 : ℝ) 1) := hgc.continuousOn.integrableOn_compact isCompact_Icc
+    hH.iSup_apply_of_compactSpace.add (Continuous.iSup_apply_of_compactSpace (f := -H) hH.neg)
+  have hgi : IntegrableOn g (Icc (0 : ℝ) 1) := hgc.integrableOn_Icc
   have hg0 : 0 ≤ᵐ[volume.restrict (Icc (0 : ℝ) 1)] g :=
     Filter.Eventually.of_forall fun t ↦ iSup_add_iSup_neg_nonneg hH t
   rw [hoferNorm_eq_integral_iSup_add hH, setIntegral_eq_zero_iff_of_nonneg_ae hg0 hgi]
@@ -309,9 +291,9 @@ theorem hoferNorm_eq_zero_iff (hH : Continuous (uncurry H)) :
     have hzero : g t = 0 := Measure.eqOn_Icc_of_ae_eq volume zero_ne_one h hgc.continuousOn
       continuousOn_const ht
     have hx := hH.le_iSup_apply t x
-    have hy := Continuous.le_iSup_apply (H := -H) hH.neg t y
+    have hy := Continuous.le_iSup_apply (f := -H) hH.neg t y
     have hy' := hH.le_iSup_apply t y
-    have hx' := Continuous.le_iSup_apply (H := -H) hH.neg t x
+    have hx' := Continuous.le_iSup_apply (f := -H) hH.neg t x
     simp only [hg, Pi.neg_apply] at hzero hy hx'
     linarith
   · intro h
