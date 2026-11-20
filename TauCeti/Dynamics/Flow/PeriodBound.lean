@@ -78,7 +78,9 @@ theorem exists_pos_period_le_closedOrbit_of_isCompact {K : Set X} (hK : IsCompac
   rw [ClosedOrbit.support_mk, mem_orbit_iff] at hx
   obtain ⟨s, rfl⟩ := hx
   rw [ClosedOrbit.period_mk]
-  exact hbound.self_of_nhdsSet (ϕ s c.point) hxK c.period c.period_pos (s +ᵥ c).apply_period
+  apply hbound.self_of_nhdsSet (ϕ s c.point) hxK c.period c.period_pos
+  simpa only [PeriodicTrajectory.period_vadd, PeriodicTrajectory.point_vadd] using
+    (s +ᵥ c).apply_period
 
 /-- On a compact space without stationary points, closed orbits of `ϕ` have periods uniformly
 bounded away from zero. -/

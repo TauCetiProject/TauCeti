@@ -8,9 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Flow.Complete
 public import TauCeti.Geometry.Manifold.Flow.NondegenerateOrbit
 public import TauCeti.Geometry.Manifold.MFDeriv.Parametric.FixedPoint
-import TauCeti.Dynamics.Flow.PeriodBound
 import TauCeti.Geometry.Manifold.Flow.Related
-import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -67,8 +65,9 @@ orbits of bounded period in a compact window is an open condition on the vector 
   `TauCeti.flowOf_verticalField`: the flow of the vertical field is the flow of the fields of the
   family, with the parameter fixed.
 * `ContMDiff.apply_param`: the fields of a `C^n` family are `C^n`.
-* `TauCeti.exists_pos_eventually_period_le_of_isCompact_param`: positive return times on a compact
-  set where one field does not vanish have a uniform positive lower bound for nearby parameters.
+* `TauCeti.exists_pos_eventually_period_le_of_isCompact_param`: positive return times in the maximal
+  flow domain on a compact set where one field does not vanish have a uniform positive lower bound
+  for nearby parameters, without completeness of the fields.
 * `TauCeti.eventually_mem_flowDomain_param`, `TauCeti.contMDiffAt_flowOf_param`: the flow of a
   `C^n` family is defined on an open set of parameters, times and points, and is `C^n` there.
 * `TauCeti.eventually_contMDiffAt_and_mvfderiv_apply_ne_zero`: transversality of a function to
@@ -273,46 +272,95 @@ theorem eventually_contMDiffAt_and_mvfderiv_apply_ne_zero [IsManifold I 1 M] {F'
 
 /-! ### The flows of the fields of a family -/
 
+/-- Near a point where a `C¹` field does not vanish, positive return times in its maximal
+flow domain are uniformly bounded away from zero. Repeated returns use the domain-aware flow law,
+so the field need not be complete. The integer-multiple argument adapts
+`Flow.exists_pos_period_le_nhds` to the maximal flow. -/
+private theorem exists_pos_period_le_nhds_flowOf [T2Space M] [BoundarylessManifold I M]
+    [CompleteSpace E] [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {x : M} (hx : v x ≠ 0) :
+    ∃ ε > 0, ∃ U ∈ 𝓝 x, ∀ y ∈ U, ∀ T > 0,
+      (T, y) ∈ flowDomain v → flowOf v T y = y → ε ≤ T := by
+  have hex : ∃ s, flowOf v s x ≠ x := by
+    by_contra! h
+    have hd : @Eq E (Manifold.curveVelocity I (fun s ↦ flowOf v s x) 0) (v x) :=
+      (curveVelocity_flowOf hv (mem_flowDomain_zero hv x)).trans
+        (congrArg (fun y : M ↦ (v y : E)) (flowOf_zero v x))
+    rw [show (fun s ↦ flowOf v s x) = (fun _ : ℝ ↦ x) from funext h,
+      Manifold.curveVelocity_const] at hd
+    exact hx hd.symm
+  obtain ⟨s, hs⟩ := hex
+  have hsdom : (s, x) ∈ flowDomain v := by
+    by_contra hdom
+    apply hs
+    rw [flowOf_apply, maximalIntegralCurve_eq_of_not_mem
+      (by simpa only [mem_flowDomain] using hdom)]
+  have hflow := (contMDiffAt_flowOf_comp (z := (s, x)) le_rfl hv contMDiffAt_fst contMDiffAt_snd
+    hsdom).continuousAt
+  have hne : ∀ᶠ p : ℝ × M in 𝓝 (s, x), flowOf v p.1 p.2 ≠ p.2 :=
+    (hflow.prodMk continuousAt_snd).preimage_mem_nhds
+      ((isOpen_ne_fun continuous_fst continuous_snd).mem_nhds hs)
+  -- A sufficiently small return time has an integer multiple near this nonreturn time.
+  obtain ⟨u, hu, U, hU, hsub⟩ := mem_nhds_prod_iff.mp hne
+  obtain ⟨ε, hε, hεu⟩ := Metric.mem_nhds_iff.mp hu
+  refine ⟨ε, hε, U, hU, fun y hy T hT hdom hfix ↦ ?_⟩
+  by_contra h
+  obtain ⟨k, hk, -⟩ := existsUnique_zsmul_near_of_pos hT s
+  have hk' : (k : ℝ) * T ≤ s ∧ s < (k : ℝ) * T + T := by
+    simpa only [zsmul_eq_mul, Int.cast_add, Int.cast_one, add_mul, one_mul] using hk
+  have htime : (k : ℝ) * T ∈ u := by
+    apply hεu
+    rw [Metric.mem_ball, Real.dist_eq, abs_of_nonpos (sub_nonpos.mpr hk'.1)]
+    linarith [hk'.2]
+  have hreturn : flowOf v ((k : ℝ) * T) y = y := by
+    cases k with
+    | ofNat n => exact (flowOf_natCast_mul_of_flowOf_eq hv hdom hfix n).2
+    | negSucc n =>
+      have hn := flowOf_natCast_mul_of_flowOf_eq hv hdom hfix (n + 1)
+      have hneg := flowOf_neg_flowOf hv hn.1
+      rw [hn.2] at hneg
+      simpa only [Int.cast_negSucc, Nat.cast_add, Nat.cast_one, neg_mul] using hneg
+  exact (@hsub ((k : ℝ) * T, y) ⟨htime, hy⟩) hreturn
+
 section Flow
 
 variable [T2Space M] [BoundarylessManifold I M] [CompleteSpace E] [CompleteSpace F] [T2Space N]
   [BoundarylessManifold J N] [IsManifold I 1 M] [IsManifold J 1 N]
   {v : N → (x : M) → TangentSpace I x} {a₀ : N} {t : ℝ} {x : M}
 
-/-- Positive return times on a compact set are uniformly bounded away from zero for nearby
-parameters of a jointly `C¹` family of complete vector fields, provided the reference field
-vanishes nowhere on the compact set. The compact set need not be flow invariant. -/
+/-- Positive return times in the maximal flow domain on a compact set are uniformly bounded
+away from zero for nearby parameters of a jointly `C¹` family, provided the reference field
+vanishes nowhere on the compact set. The fields need not be complete, and the compact set need
+not be flow invariant. Domain membership excludes the junk values of `flowOf` outside the
+maximal interval of existence. -/
 theorem exists_pos_eventually_period_le_of_isCompact_param
     (hv : ContMDiff (J.prod I) I.tangent 1
       (fun z : N × M ↦ (⟨z.2, v z.1 z.2⟩ : TangentBundle I M)))
-    (hc : ∀ a, IsCompleteVectorField (v a)) {K : Set M} (hK : IsCompact K)
-    (hmove : ∀ x ∈ K, v a₀ x ≠ 0) :
+    {K : Set M} (hK : IsCompact K) (hmove : ∀ x ∈ K, v a₀ x ≠ 0) :
     ∃ ε > 0, ∀ᶠ a in 𝓝 a₀, ∀ x ∈ K, ∀ T > 0,
-      flowOf (v a) T x = x → ε ≤ T := by
-  let V := verticalField J v
+      (T, x) ∈ flowDomain (v a) → flowOf (v a) T x = x → ε ≤ T := by
   have hV := contMDiff_verticalField hv
-  have hcV : IsCompleteVectorField V := by
-    apply isCompleteVectorField_iff_maximalIntegralCurveInterval.2
-    rintro ⟨a, x⟩
-    rw [maximalIntegralCurveInterval_verticalField]
-    exact (hc a).maximalIntegralCurveInterval_eq_univ x
-  let ϕ := globalFlow V hV hcV
-  have hflow (t : ℝ) (a : N) (x : M) :
-      ϕ t (a, x) = (a, flowOf (v a) t x) := by
-    rw [← flowOf_eq_globalFlow hV hcV]
-    exact flowOf_verticalField (hv.apply_param a) t x
-  obtain ⟨ε, hε, hbound⟩ :=
-    ϕ.exists_pos_eventually_period_le_of_isCompact
-      (isCompact_singleton.prod hK) (fun z hz ↦ by
-        rcases hz with ⟨ha, hx⟩
-        have ha : z.1 = a₀ := ha
-        apply exists_globalFlow_ne_self hV hcV
-        intro hzero
-        exact hmove z.2 hx (ha ▸ congrArg Prod.snd hzero))
+  have hK' := isCompact_singleton.prod hK (s := {a₀})
+  have hbound : ∀ᶠ p : ℝ × (N × M) in 𝓝 0 ×ˢ 𝓝ˢ ({a₀} ×ˢ K),
+      ∀ T > 0, (T, p.2) ∈ flowDomain (verticalField J v) →
+        flowOf (verticalField J v) T p.2 = p.2 → p.1 ≤ T := by
+    apply hK'.mem_prod_nhdsSet_of_forall
+    intro z hz
+    have hnonzero : verticalField J v z ≠ 0 := by
+      intro hzero
+      have hsnd : v z.1 z.2 = 0 := by
+        rw [← verticalField_snd (J := J) v z, hzero]
+        rfl
+      exact hmove z.2 hz.2 (hz.1 ▸ hsnd)
+    obtain ⟨ε, hε, U, hU, hbound⟩ := exists_pos_period_le_nhds_flowOf hV hnonzero
+    filter_upwards [(eventually_lt_nhds hε).prod_mk hU] with p hp T hT hdom hfix
+    exact hp.1.le.trans (hbound p.2 hp.2 T hT hdom hfix)
+  obtain ⟨ε, hε, hbound⟩ := hbound.curry.exists_gt
   rw [isCompact_singleton.nhdsSet_prod_eq hK, nhdsSet_singleton] at hbound
   refine ⟨ε, hε, ?_⟩
-  filter_upwards [hbound.curry] with a ha x hx T hT hfix
-  exact ha.self_of_nhdsSet x hx T hT (by rw [hflow, hfix])
+  filter_upwards [hbound.curry] with a ha x hx T hT hdom hfix
+  exact ha.self_of_nhdsSet x hx T hT (mem_flowDomain_verticalField_iff.2 hdom)
+    (by rw [flowOf_verticalField (hv.apply_param a), hfix])
 
 /-- **The flow domain of a family is open.** If the flow of `v a₀` is defined at `(t, x)`,
 then for `(a, t', x')` near `(a₀, t, x)` the flow of `v a` is defined at `(t', x')`, provided the

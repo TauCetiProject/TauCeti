@@ -16,8 +16,9 @@ import TauCeti.Geometry.Manifold.Flow.Persistence
 For a family of contact forms on a compact boundaryless phase manifold with jointly `C¹` Reeb
 fields, parametrized by a boundaryless manifold, the parameters for which every closed Reeb orbit
 of action at most `A` is nondegenerate form an open set. The action is the period, and the
-condition includes every positive period and all covers. The parameters with nondegenerate
-closed Reeb orbits at every action form a Gδ set. Density requires a separate perturbation argument.
+condition includes orbits and covers whose own positive periods are at most `A`, including
+equality with `A`. The parameters with nondegenerate closed Reeb orbits at every action form a Gδ
+set. Density requires a separate perturbation argument.
 
 The parameter manifold may be modelled on an infinite-dimensional Banach space. A smooth
 one-form on the product whose slices are contact provides such a family.
@@ -69,7 +70,8 @@ private theorem eventually_forall_isNondegenerateOrbit_period_le
   let hc (a : N) := (hα a).isCompleteVectorField_reebVectorField
   -- The uniform period bound supplies the lower endpoint for compact-window persistence.
   obtain ⟨ε, hε, hbound⟩ :=
-    exists_pos_eventually_period_le_of_isCompact_param hv hc (a₀ := a₀) isCompact_univ
+    exists_pos_eventually_period_le_of_isCompact_param
+      (v := fun a ↦ (α a).reebVectorField) hv (a₀ := a₀) isCompact_univ
       (fun x _ ↦ (hα a₀).reebVectorField_ne_zero x)
   have hsections : ∀ z ∈ Icc ε A ×ˢ (univ : Set M),
       flowOf (α a₀).reebVectorField z.1 z.2 = z.2 → ∃ g : M → ℝ,
@@ -80,8 +82,7 @@ private theorem eventually_forall_isNondegenerateOrbit_period_le
       (by rwa [(hα a₀).reebFlow_apply])
     have hδ := hnd (Flow.ClosedOrbit.mk δ)
       (by simpa only [Flow.ClosedOrbit.period_mk, δ, (hα a₀).period_reebTrajectory] using htA)
-    rw [(hα a₀).isNondegenerateOrbit_mk_iff, (hα a₀).periodicLinearizedReturn_def,
-      (hα a₀).not_hasEigenvalue_one_linearizedReebReturn_iff_exists_returnDerivative] at hδ
+    rw [(hα a₀).isNondegenerateOrbit_mk_iff_exists_not_hasEigenvalue_returnDerivative] at hδ
     have hpoint : δ.point = x := (hα a₀).point_reebTrajectory _ _ _ _
     have hperiod : δ.period = t := (hα a₀).period_reebTrajectory _ _ _ _
     rwa [hpoint, hperiod] at hδ
@@ -91,17 +92,17 @@ private theorem eventually_forall_isNondegenerateOrbit_period_le
   filter_upwards [hbound, hpersist] with a ha hpa γ hγ
   induction γ using Flow.ClosedOrbit.ind with | h δ => ?_
   rw [Flow.ClosedOrbit.period_mk] at hγ
-  rw [(hα a).isNondegenerateOrbit_mk_iff, (hα a).periodicLinearizedReturn_def,
-    (hα a).not_hasEigenvalue_one_linearizedReebReturn_iff_exists_returnDerivative]
+  rw [(hα a).isNondegenerateOrbit_mk_iff_exists_not_hasEigenvalue_returnDerivative]
   have hp : flowOf (α a).reebVectorField δ.period δ.point = δ.point := by
     rw [← (hα a).reebFlow_apply]; exact δ.apply_period
   exact hpa.2 (δ.period, δ.point)
-    ⟨⟨ha δ.point (mem_univ _) δ.period δ.period_pos hp, hγ⟩, mem_univ _⟩ hp
+    ⟨⟨ha δ.point (mem_univ _) δ.period δ.period_pos ((hc a).mem_flowDomain _ _) hp, hγ⟩,
+      mem_univ _⟩ hp
 
 /-- For a family of contact forms on a compact boundaryless phase manifold, parametrized by a
 boundaryless manifold and with jointly `C¹` Reeb fields, the parameters where all closed Reeb
-orbits of action at most `A` are nondegenerate form an open set. The action equals the period,
-including the period of every cover. -/
+orbits of action at most `A` are nondegenerate form an open set. The action equals the period.
+This includes orbits and covers whose own periods are at most `A`, including equality. -/
 theorem isOpen_setOf_forall_isNondegenerateOrbit_period_le
     {α : N → SmoothForm I M ℝ 1} (hα : ∀ a, (α a).IsContactForm)
     (hv : ContMDiff (J.prod I) I.tangent 1
@@ -145,7 +146,8 @@ variable [IsManifold J ∞ N]
 
 /-- For the contact slices of a smooth product form on a compact boundaryless phase manifold
 and a boundaryless parameter manifold, nondegeneracy of every closed Reeb orbit of action at most
-`A` is open in the parameter. This includes all covers and periods equal to `A`. -/
+`A` is open in the parameter. This includes orbits and covers whose own periods are at most `A`,
+including equality. -/
 theorem isOpen_setOf_forall_isNondegenerateOrbit_period_le_mpullback_prodMk
     (α : SmoothForm (J.prod I) (N × M) ℝ 1)
     (hα : ∀ a, (mpullback (Prod.mk a) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm)
