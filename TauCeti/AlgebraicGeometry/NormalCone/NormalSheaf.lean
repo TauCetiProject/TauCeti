@@ -88,6 +88,13 @@ def symmetricAlgebraToNormalConeAlgebra :
     (gradedSymmetricAlgebra X).obj i.conormal ⟶ i.normalConeAlgebra :=
   gradedSymmetricAlgebraLift (eqToHom i.conormal_eq_degreeOne)
 
+/-- `Sym (I/I²) ⟶ ⨁ₙ Iⁿ/Iⁿ⁺¹` is the extension to the symmetric algebra of the identification of
+`I/I²` with the degree-one component of the normal cone algebra. -/
+theorem symmetricAlgebraToNormalConeAlgebra_def :
+    i.symmetricAlgebraToNormalConeAlgebra =
+      gradedSymmetricAlgebraLift (eqToHom i.conormal_eq_degreeOne) :=
+  (rfl)
+
 /-- In degree one, `Sym (I/I²) ⟶ ⨁ₙ Iⁿ/Iⁿ⁺¹` is the identification `Sym¹ (I/I²) ≅ I/I²` followed by
 the identification of `I/I²` with the degree-one component of the normal cone algebra. -/
 @[simp]
@@ -102,7 +109,7 @@ theorem degreeOne_map_symmetricAlgebraToNormalConeAlgebra :
 `⨁ₙ Symⁿ (I/I²) ⟶ ⨁ₙ Iⁿ/Iⁿ⁺¹` is an epimorphism of module sheaves: it is the pullback along
 `j = i.liftCoborder` of `⨁ₙ Symⁿ I ⟶ ⨁ₙ Iⁿ`, which is surjective because the Rees algebra is
 generated in degree one. -/
-theorem epi_toQuasicoherentAlgebra_map_symmetricAlgebraToNormalConeAlgebra :
+instance epi_toQuasicoherentAlgebra_map_symmetricAlgebraToNormalConeAlgebra :
     Epi (toQuasicoherentAlgebra.map i.symmetricAlgebraToNormalConeAlgebra).hom.hom.hom := by
   have h : Epi (toQuasicoherentAlgebra.map
       (gradedSymmetricAlgebraLift (𝟙 (degreeOne.obj i.normalConeAlgebra)))).hom.hom.hom := by
@@ -165,9 +172,22 @@ schemes over `X`: the relative spectrum of `Sym (I/I²) ⟶ ⨁ₙ Iⁿ/Iⁿ⁺�
 def normalConeToNormalSheafOver : i.normalConeOver ⟶ i.normalSheafOver :=
   (relativeSpec X).map (toQuasicoherentAlgebra.map i.symmetricAlgebraToNormalConeAlgebra).op
 
+/-- The embedding of the normal cone into the normal sheaf, over `X`, is the relative spectrum of
+the morphism of direct sums `⨁ₙ Symⁿ (I/I²) ⟶ ⨁ₙ Iⁿ/Iⁿ⁺¹`. -/
+theorem normalConeToNormalSheafOver_def :
+    i.normalConeToNormalSheafOver =
+      (relativeSpec X).map (toQuasicoherentAlgebra.map i.symmetricAlgebraToNormalConeAlgebra).op :=
+  (rfl)
+
 /-- The embedding `C_X Y ⟶ N_X Y` of the normal cone into the normal sheaf. -/
 def normalConeToNormalSheaf : i.normalCone ⟶ i.normalSheaf :=
   i.normalConeToNormalSheafOver.left
+
+/-- The underlying scheme morphism of the embedding over `X` is `normalConeToNormalSheaf`. -/
+@[simp]
+theorem normalConeToNormalSheafOver_left :
+    i.normalConeToNormalSheafOver.left = i.normalConeToNormalSheaf :=
+  (rfl)
 
 /-- The embedding of the normal cone into the normal sheaf is the relative spectrum of the
 morphism of direct sums `⨁ₙ Symⁿ (I/I²) ⟶ ⨁ₙ Iⁿ/Iⁿ⁺¹`. -/
@@ -187,7 +207,6 @@ theorem normalConeToNormalSheaf_normalSheafToBase :
 the embedding `C_X Y = Spec_X (⨁ₙ Iⁿ/Iⁿ⁺¹) ⟶ Spec_X (Sym (I/I²)) = N_X Y` is a closed immersion. -/
 instance isClosedImmersion_normalConeToNormalSheaf :
     IsClosedImmersion i.normalConeToNormalSheaf := by
-  have := i.epi_toQuasicoherentAlgebra_map_symmetricAlgebraToNormalConeAlgebra
   rw [normalConeToNormalSheaf_eq_relativeSpecMap]
   exact CommMon.isClosedImmersion_relativeSpecMap_of_epi _
 

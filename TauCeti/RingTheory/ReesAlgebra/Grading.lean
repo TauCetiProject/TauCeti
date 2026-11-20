@@ -279,7 +279,7 @@ theorem adjoin_grade_one_eq_top : Algebra.adjoin R (grade I 1 : Set (reesAlgebra
   let e := Subalgebra.equivOfEq _ _ (reesAlgebra_eq_coeffSubalgebra I)
   have h : (grade I 1 : Set (reesAlgebra I)) =
       e.symm '' TauCeti.coeffSubalgebra.grade (fun n ↦ I ^ n) 1 :=
-    (e.toEquiv.image_symm_eq_preimage _).symm
+    (Set.ext fun _ ↦ mem_grade_iff_equivOfEq).trans (e.toEquiv.image_symm_eq_preimage _).symm
   rw [h, ← AlgEquiv.coe_toAlgHom, ← AlgHom.map_adjoin,
     TauCeti.coeffSubalgebra.adjoin_grade_one_eq_top_iff.mpr fun n ↦ by rw [pow_one],
     Algebra.map_top, AlgHom.range_eq_top]

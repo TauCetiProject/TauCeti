@@ -117,16 +117,18 @@ theorem symmetricAlgebraι_comp_toQuasicoherentAlgebra_map_gradedSymmetricAlgebr
       φ.hom ≫ eqToHom (degree_obj_obj A 1) ≫ ιTotal A 1 := by
   have h := congrArg (·.hom) (gradedSymmetricAlgebraDegreeOneIso_inv_app_comp_degreeOne_map_lift φ)
   simp only [ObjectProperty.FullSubcategory.comp_hom, degree_map_hom] at h
-  -- The composites are typed partly in `SheafOfModules X.ringCatSheaf` and partly in
-  -- `X.Modules`, which `rw` does not identify, so they are rearranged for abstract modules.
-  have key {P Q R S S' M N : X.Modules} (a : P ⟶ Q) (h₁ : Q = R) (ι : R ⟶ M) (T : M ⟶ N)
-      (L : R ⟶ S) (h₂ : S = S') (h₃ : S' = S) (ιA : S ⟶ N) (φ : P ⟶ S')
-      (hT : ι ≫ T = L ≫ ιA) (hφ : a ≫ eqToHom h₁ ≫ L ≫ eqToHom h₂ = φ) :
-      (a ≫ eqToHom h₁ ≫ ι) ≫ T = φ ≫ eqToHom h₃ ≫ ιA := by
-    subst h₁ h₂
-    simp [← hφ, hT]
   rw [symmetricAlgebraι_def]
-  exact key _ _ _ _ _ _ _ _ _ (ιTotal_toQuasicoherentAlgebra_map _ 1) h
+  -- On the summand `Sym¹ F`, the morphism of direct sums is the degree-one component of the
+  -- extension (`ιTotal_toQuasicoherentAlgebra_map`), whose restriction along `F ≅ Sym¹ F` is `φ`
+  -- (`h`). The composites are typed partly in `SheafOfModules X.ringCatSheaf` and partly in
+  -- `X.Modules`, which `rw` does not identify, so the associativity steps are chained as terms.
+  refine (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
+    (congrArg (_ ≫ ·) (ιTotal_toQuasicoherentAlgebra_map _ 1)))).trans ?_)
+  rw [← h]
+  exact ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
+    (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
+      ((eqToHom_trans_assoc _ _ _).trans ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans
+        (Category.id_comp _))))))))).symm
 
 variable {Y : Scheme.{u}} (f : Y ⟶ X)
 
@@ -186,16 +188,13 @@ theorem epi_toQuasicoherentAlgebra_map_gradedSymmetricAlgebraLift_pullback
   -- The `Epi` instances of the factors are supplied by hand: the carriers of quasicoherent
   -- algebras are typed partly in `SheafOfModules _.ringCatSheaf`, where typeclass search does not
   -- find the instances stated in `_.Modules`.
-  have epi_iso {P Q : QuasicoherentAlgebra Y} (e : P ≅ Q) : Epi e.hom.hom.hom.hom :=
-    SplitEpi.epi ⟨e.inv.hom.hom.hom, congrArg (fun φ ↦ φ.hom.hom.hom) e.inv_hom_id⟩
-  have epi_eqToHom {P Q : Y.Modules} (p : P = Q) : Epi (eqToHom p) :=
-    (eqToIso p).isIso_hom.epi_of_iso
   rw [toQuasicoherentAlgebra_map_gradedSymmetricAlgebraLift_pullback]
-  refine epi_comp' (epi_iso ((symmetricAlgebra Y).mapIso ((pullbackDegreeIso f 1).app A)))
-    (epi_comp' (epi_iso (pullbackSymmetricAlgebraIso f _).symm)
-      (epi_comp' ?_ (epi_iso ((pullbackToQuasicoherentAlgebraIso f).app A))))
+  refine epi_comp' (QuasicoherentAlgebra.epi_hom_hom_hom_of_isIso _)
+    (epi_comp' (QuasicoherentAlgebra.epi_hom_hom_hom_of_isIso _)
+      (epi_comp' ?_ (QuasicoherentAlgebra.epi_hom_hom_hom_of_isIso _)))
   rw [QuasicoherentAlgebra.pullback_map_hom_hom_hom]
-  exact epi_comp' (epi_eqToHom _)
-    (epi_comp' (@Functor.map_epi _ _ _ _ (Scheme.Modules.pullback f) _ _ _ _ h) (epi_eqToHom _))
+  exact epi_comp' (eqToIso (QuasicoherentAlgebra.pullback_obj_X f _)).isIso_hom.epi_of_iso
+    (epi_comp' (@Functor.map_epi _ _ _ _ (Scheme.Modules.pullback f) _ _ _ _ h)
+      (eqToIso (QuasicoherentAlgebra.pullback_obj_X f _).symm).isIso_hom.epi_of_iso)
 
 end TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra

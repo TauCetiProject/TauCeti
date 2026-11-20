@@ -314,14 +314,14 @@ theorem epi_toQuasicoherentAlgebra_map {A B : GradedQuasicoherentAlgebra X} (g :
     Epi (toQuasicoherentAlgebra.map g).hom.hom.hom := by
   refine ⟨fun {Z} u v h ↦ toQuasicoherentAlgebra_hom_ext fun n ↦ ?_⟩
   -- The composites are typed partly in `SheafOfModules X.ringCatSheaf` and partly in
-  -- `X.Modules`, which `rw` does not identify, so they are rearranged by explicit equations.
+  -- `X.Modules`, which `rw` does not identify, so the equations are chained as terms.
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · have e (w : (toQuasicoherentAlgebra.obj B).obj.X ⟶ Z) :
         B.obj.toMon.one ≫ ιTotal B 0 ≫ w = η[(toQuasicoherentAlgebra.obj A).obj.X] ≫
           (toQuasicoherentAlgebra.map g).hom.hom.hom ≫ w :=
-      (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ w) ((one_ιTotal B).trans
-        (IsMonHom.one_hom (toQuasicoherentAlgebra.map g).hom.hom.hom).symm)).trans
-          (Category.assoc _ _ _))
+      (one_ιTotal_assoc B w).trans
+        (IsMonHom.one_hom_assoc (self := (toQuasicoherentAlgebra.map g).hom.hom.isMonHom_hom) _
+          w).symm
     exact (cancel_epi B.obj.toMon.one).1 ((e u).trans ((congrArg (_ ≫ ·) h).trans (e v).symm))
   · have := hg n hn
     exact (cancel_epi (g.hom.hom.hom n)).1

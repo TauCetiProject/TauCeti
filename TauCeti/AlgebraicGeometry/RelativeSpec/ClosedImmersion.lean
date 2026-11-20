@@ -27,8 +27,9 @@ This is how a surjection of graded algebras, such as `Sym(I/I²) ⟶ ⨁ₙ Iⁿ
 * `CategoryTheory.CommMon.isPullback_relativeSpecCover_f_relativeSpecMap`: over an affine open
   `U`, the chart `Spec Γ(B, U)` of `Spec_X(B)` is the pullback of `Spec_X(B) ⟶ Spec_X(A)` along
   the chart `Spec Γ(A, U)` of `Spec_X(A)`.
-* `CategoryTheory.CommMon.isClosedImmersion_relativeSpecMap_of_epi`: an epimorphism `A ⟶ B` of
-  quasi-coherent algebras induces a closed immersion `Spec_X(B) ⟶ Spec_X(A)`.
+* `CategoryTheory.CommMon.isClosedImmersion_relativeSpecMap_of_epi`: a morphism `A ⟶ B` of
+  quasi-coherent algebras that is an epimorphism of module sheaves induces a closed immersion
+  `Spec_X(B) ⟶ Spec_X(A)`.
 
 ## References
 
@@ -71,8 +72,9 @@ theorem isPullback_relativeSpecCover_f_relativeSpecMap (f : A ⟶ B) (U : X.Affi
   rw [CommMon.relativeSpecMap_relativeSpecToBase]
   exact e ▸ (B.isPullback_relativeSpecCover U).flip
 
-/-- **A quotient algebra gives a closed subscheme.** If `f : A ⟶ B` is an epimorphism of
-quasi-coherent commutative `𝒪_X`-algebras, then `Spec_X(B) ⟶ Spec_X(A)` is a closed immersion. -/
+/-- **A quotient algebra gives a closed subscheme.** If `f : A ⟶ B` is a morphism of
+quasi-coherent commutative `𝒪_X`-algebras whose underlying morphism of module sheaves is an
+epimorphism (i.e. `f` is surjective), then `Spec_X(B) ⟶ Spec_X(A)` is a closed immersion. -/
 theorem isClosedImmersion_relativeSpecMap_of_epi (f : A ⟶ B) [Epi f.hom.hom] :
     IsClosedImmersion (CommMon.relativeSpecMap f) := by
   refine IsZariskiLocalAtTarget.of_openCover A.relativeSpecCover fun U ↦ ?_
