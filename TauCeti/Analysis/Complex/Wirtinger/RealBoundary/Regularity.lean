@@ -74,26 +74,6 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {Ω : Opens ℂ}
 
 /-! ### Complex test functions on the closed upper half-plane -/
 
-private theorem isClosed_setOf_im_nonneg : IsClosed {z : ℂ | 0 ≤ z.im} :=
-  isClosed_le continuous_const Complex.continuous_im
-
-private theorem isLocallyClosed_inter_setOf_im_nonneg :
-    IsLocallyClosed ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) :=
-  Ω.isOpen.isLocallyClosed.inter isClosed_setOf_im_nonneg.isLocallyClosed
-
-/-- A complex test function on `Ω` times a function locally integrable on `Ω ∩ {0 ≤ im}` is
-integrable on the closed upper half-plane. -/
-private theorem integrableOn_testFunction_smul {g : ℂ → F}
-    (hg : LocallyIntegrableOn g ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im})) (χ : 𝓓(Ω, ℂ)) :
-    IntegrableOn (fun z ↦ χ z • g z) {z : ℂ | 0 ≤ z.im} := by
-  set K := tsupport (χ : ℂ → ℂ) ∩ {z : ℂ | 0 ≤ z.im}
-  have hK : IsCompact K := χ.hasCompactSupport.isCompact.inter_right isClosed_setOf_im_nonneg
-  have hgK : IntegrableOn g K :=
-    hg.integrableOn_compact_subset (fun z hz ↦ ⟨χ.tsupport_subset hz.1, hz.2⟩) hK
-  refine (hgK.continuousOn_smul χ.continuous.continuousOn hK).of_forall_sdiff_eq_zero
-    isClosed_setOf_im_nonneg.measurableSet fun z hz ↦ ?_
-  simp [image_eq_zero_of_notMem_tsupport fun h ↦ hz.2 ⟨h, hz.1⟩]
-
 /-- Tangential integration by parts up to the real axis, against complex test functions, in the
 form used by the weak real-boundary equation. -/
 private theorem setIntegral_lineDerivOp_one_smul_eq_neg {g g' : ℂ → F}
@@ -102,7 +82,7 @@ private theorem setIntegral_lineDerivOp_one_smul_eq_neg {g g' : ℂ → F}
     (hg' : LocallyIntegrableOn g' ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) (χ : 𝓓(Ω, ℂ)) :
     ∫ z in {z : ℂ | 0 ≤ z.im}, (∂_{(1 : ℂ)} χ : 𝓓(Ω, ℂ)) z • g z =
       -∫ z in {z : ℂ | 0 ≤ z.im}, χ z • g' z := by
-  have hU := isLocallyClosed_inter_setOf_im_nonneg (Ω := Ω)
+  have hU := Ω.isOpen.isLocallyClosed_inter_setOfPred_le_im 0
   have e := hgW.setIntegral_fderiv_smul_eq_neg_of_complex
     ((memLpLoc_one_iff_locallyIntegrableOn hU).2 hg)
     ((memLpLoc_one_iff_locallyIntegrableOn hU).2 hg') χ.contDiff χ.hasCompactSupport
@@ -110,21 +90,6 @@ private theorem setIntegral_lineDerivOp_one_smul_eq_neg {g g' : ℂ → F}
   simp only [TestFunction.lineDerivOp_apply_eq_fderiv]
   rwa [← setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0),
     ← setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0)] at e
-
-/-- The tangential derivative of a complex test function real on the real axis is real on the real
-axis. -/
-private theorem im_lineDerivOp_one_ofReal (χ : 𝓓(Ω, ℂ)) (hχ : ∀ x : ℝ, (χ (x : ℂ)).im = 0)
-    (x : ℝ) : ((∂_{(1 : ℂ)} χ : 𝓓(Ω, ℂ)) (x : ℂ)).im = 0 := by
-  rw [TestFunction.lineDerivOp_apply_eq_fderiv]
-  have hd : HasFDerivAt (χ : ℂ → ℂ) (fderiv ℝ (χ : ℂ → ℂ) x) x :=
-    (χ.contDiff.differentiable (by simp) x).hasFDerivAt
-  have hγ : HasDerivAt (fun t : ℝ ↦ ((x + t : ℝ) : ℂ)) 1 0 := by
-    simpa using ((hasDerivAt_id (0 : ℝ)).const_add x).ofReal_comp
-  have him := imCLM.hasFDerivAt.comp_hasDerivAt (0 : ℝ) (hd.comp_hasDerivAt_of_eq (0 : ℝ) hγ
-    (by simp))
-  have h0 := him.unique ((hasDerivAt_const (0 : ℝ) (0 : ℝ)).congr_of_eventuallyEq
-    (Eventually.of_forall fun t ↦ by simpa using hχ (x + t)))
-  simpa using h0
 
 variable [StarAddMonoid F] [StarModule ℂ F] {ξ η : ℂ → F}
 
@@ -144,7 +109,7 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.weakLineDeriv_one {ξ' η' : ℂ
   obtain ⟨hF, hξl, hηl, hw⟩ := hasWeakConjWirtingerDerivRealBoundaryOn_iff.1 h
   refine hasWeakConjWirtingerDerivRealBoundaryOn_iff.2 ⟨hF, hξ', hη', fun χ hχ ↦ ?_⟩
   -- The equation for `ξ`, tested against `∂ₛχ`, which is real on the axis.
-  have hh := hw (∂_{(1 : ℂ)} χ) (im_lineDerivOp_one_ofReal χ hχ)
+  have hh := hw (∂_{(1 : ℂ)} χ) (by simpa using χ.im_lineDerivOp_ofReal_apply_ofReal hχ 1)
   have e₁ := setIntegral_lineDerivOp_one_smul_eq_neg hξ hξl hξ' (∂_{(1 : ℂ)} χ)
   have eI := setIntegral_lineDerivOp_one_smul_eq_neg hξ hξl hξ' (∂_{(I : ℂ)} χ)
   have eη := setIntegral_lineDerivOp_one_smul_eq_neg hη hηl hη' χ
@@ -152,10 +117,14 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.weakLineDeriv_one {ξ' η' : ℂ
       (a b : 𝓓(Ω, ℂ)) :
       ∫ z in {z : ℂ | 0 ≤ z.im}, (a z + I * b z) • f z =
         (∫ z in {z : ℂ | 0 ≤ z.im}, a z • f z) + I • ∫ z in {z : ℂ | 0 ≤ z.im}, b z • f z := by
-    have hb : IntegrableOn (fun z ↦ I • (b z • f z)) {z : ℂ | 0 ≤ z.im} :=
-      (integrableOn_testFunction_smul hf b).smul I
+    have hf' := hf.restrict_of_inter Ω.isOpen (isClosed_setOfPred_le_im 0)
+    have hc (c : 𝓓(Ω, ℂ)) :
+        Integrable (fun z ↦ c z • f z) (volume.restrict {z : ℂ | 0 ≤ z.im}) := by
+      simpa using c.integrable_bilin (lsmul ℂ ℂ) hf'
+    have hb : Integrable (fun z ↦ I • (b z • f z)) (volume.restrict {z : ℂ | 0 ≤ z.im}) :=
+      (hc b).smul I
     simp_rw [add_smul, mul_smul]
-    rw [integral_add (integrableOn_testFunction_smul hf a) hb, integral_smul]
+    rw [integral_add (hc a) hb, integral_smul]
   -- Write both pairings through the test functions `∂ₛχ` and `∂ₜχ`, using `∂ₜ∂ₛχ = ∂ₛ∂ₜχ`.
   have hl : (fun z ↦ (lineDeriv ℝ (χ : ℂ → ℂ) z 1 + I * lineDeriv ℝ (χ : ℂ → ℂ) z I) • ξ' z) =
       fun z ↦ ((∂_{(1 : ℂ)} χ : 𝓓(Ω, ℂ)) z + I * (∂_{(I : ℂ)} χ : 𝓓(Ω, ℂ)) z) • ξ' z := by
@@ -167,10 +136,9 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.weakLineDeriv_one {ξ' η' : ℂ
     funext z
     rw [TestFunction.lineDeriv_lineDerivOp_comm χ (1 : ℂ) I z, ← TestFunction.lineDerivOp_apply,
       ← TestFunction.lineDerivOp_apply]
-  rw [hr, hsplit hξl, eη] at hh
-  rw [hl, hsplit hξ', ← neg_neg (∫ z in {z : ℂ | 0 ≤ z.im}, (∂_{(1 : ℂ)} χ : 𝓓(Ω, ℂ)) z • ξ' z),
-    ← neg_neg (∫ z in {z : ℂ | 0 ≤ z.im}, (∂_{(I : ℂ)} χ : 𝓓(Ω, ℂ)) z • ξ' z), ← e₁, ← eI,
-    smul_neg, ← neg_add, map_neg, hh, map_neg, smul_neg, neg_neg]
+  rw [hr, hsplit hξl, eη, e₁, eI] at hh
+  rw [hl, hsplit hξ']
+  simpa only [smul_neg, ← neg_add, map_neg, neg_neg] using congrArg Neg.neg hh
 
 /-! ### Regularity -/
 
@@ -230,7 +198,7 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.memWkpLoc_succ (hp : 1 < p) (hp_
     MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) ξ := by
   have := FiniteDimensional.completeSpace ℂ F
   have hp1 : 1 ≤ p := hp.le
-  have hU := isLocallyClosed_inter_setOf_im_nonneg (Ω := Ω)
+  have hU := Ω.isOpen.isLocallyClosed_inter_setOfPred_le_im 0
   induction k generalizing ξ η with
   | zero => exact h.memWkpLoc_one hp hp_top hξ (memWkpLoc_zero_iff.1 hη)
   | succ k ih =>
@@ -250,7 +218,7 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.memWkpLoc_succ (hp : 1 < p) (hp_
     -- The equation `∂ₛξ + i ∂ₜξ = 2η` recovers the normal derivative.
     have hae := h.hasWeakConjWirtingerDerivOn_interior.ae_eq hD.hasWeakConjWirtingerDerivOn
     let J : F →L[ℝ] F := (I • ContinuousLinearMap.id ℂ F).restrictScalars ℝ
-    have hJ (v : F) : J v = I • v := rfl
+    have hJ (v : F) : J v = I • v := by simp [J]
     refine memWkpLoc_succ_of_ae_cauchyRiemann (Ω := Ω) (n := ⊤) (J := fun _ ↦ J) (S := 0)
       (η := (2 : ℝ) • η) contDiffOn_const contDiffOn_const le_top inter_subset_left
       (fun _ _ ↦ ?_) hξk (hη.const_smul 2) hD hD1k ?_

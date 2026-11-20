@@ -252,7 +252,7 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g'
   have hgK : IntegrableOn g K := memLp_one_iff_integrable.1 (memLpLoc_iff.1 hg K hKU hK)
   have hHsub : H ⊆ {z : ℂ | 0 ≤ z.im} :=
     fun z (hz : 0 < z.im) => show (0 : ℝ) ≤ z.im from le_of_lt hz
-  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := isClosed_le continuous_const continuous_im
+  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := Complex.isClosed_setOfPred_le_im 0
   -- A continuous factor supported in `tsupport χ` makes `g` or `g'` integrable on `H`.
   have hint {f : ℂ → ℝ} {h : ℂ → F} (hh : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) h)
       (hf : Continuous f) (hfχ : tsupport f ⊆ tsupport χ) :
@@ -390,7 +390,6 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_complex {G : Type*}
     (hχΩ : tsupport χ ∩ {z : ℂ | 0 ≤ z.im} ⊆ Ω) (hv : v.im = 0 ∨ ∀ x : ℝ, χ x = 0) :
     ∫ z in {z : ℂ | 0 < z.im}, fderiv ℝ χ z v • g z =
       -∫ z in {z : ℂ | 0 < z.im}, χ z • g' z := by
-  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := isClosed_le continuous_const continuous_im
   have hIg := hg.clm_comp ((I • ContinuousLinearMap.id ℂ G).restrictScalars ℝ)
   have hIg' := hg'.clm_comp ((I • ContinuousLinearMap.id ℂ G).restrictScalars ℝ)
   simp only [ContinuousLinearMap.coe_restrictScalars', smul_apply,
@@ -403,9 +402,8 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_complex {G : Type*}
   have hℓv (ℓ : ℂ →L[ℝ] ℝ) : v.im = 0 ∨ ∀ x : ℝ, ℓ (χ x) = 0 :=
     hv.imp_right fun h x ↦ by simp [h x]
   have hd (ℓ : ℂ →L[ℝ] ℝ) (z : ℂ) : fderiv ℝ (fun z ↦ ℓ (χ z)) z v = ℓ (fderiv ℝ χ z v) := by
-    rw [show (fun z ↦ ℓ (χ z)) = ℓ ∘ χ from rfl,
-      (ℓ.hasFDerivAt.comp z (hχ.differentiable (by simp) z).hasFDerivAt).fderiv]
-    rfl
+    rw [fderiv_fun_comp z ℓ.differentiableAt (hχ.differentiable (by simp) z), ℓ.fderiv,
+      ContinuousLinearMap.comp_apply]
   have er := hgW.setIntegral_fderiv_smul_eq_neg hg hg' (hℓ reCLM) (hℓc reCLM)
     (fun z hz ↦ hχΩ ⟨hℓs reCLM hz.1, hz.2⟩) (hℓv reCLM)
   have ei := (hgW.const_smul I).setIntegral_fderiv_smul_eq_neg hIg hIg' (hℓ imCLM) (hℓc imCLM)
@@ -416,7 +414,8 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_complex {G : Type*}
   have hint {f : ℂ → ℝ} {h : ℂ → G} (hh : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) h)
       (hf : Continuous f) (hfχ : tsupport f ⊆ tsupport χ) :
       IntegrableOn (fun z ↦ f z • h z) {z : ℂ | 0 < z.im} :=
-    (hh.integrableOn_smul hf (hχc.mono' ((subset_tsupport f).trans hfχ)) hclosed
+    (hh.integrableOn_smul hf (hχc.mono' ((subset_tsupport f).trans hfχ))
+      (Complex.isClosed_setOfPred_le_im 0)
       fun z hz ↦ ⟨hχΩ ⟨hfχ hz.1, hz.2⟩, hz.2⟩).mono_set fun z (hz : 0 < z.im) ↦ hz.le
   have hdc : Continuous fun z ↦ fderiv ℝ χ z v :=
     (hχ.continuous_fderiv (by simp)).clm_apply continuous_const
@@ -476,7 +475,7 @@ private theorem integral_smul_planarReflection {Ω : Set ℂ}
       ∑ j, (d j * |higherReflectionNode j|⁻¹) •
         ∫ w in {z : ℂ | 0 < z.im}, f (imDilation (higherReflectionNode j)⁻¹ w) • h w := by
   have hL : MeasurableSet {z : ℂ | z.im < 0} := measurableSet_lt measurable_im measurable_const
-  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := isClosed_le continuous_const continuous_im
+  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := Complex.isClosed_setOfPred_le_im 0
   have hint : Integrable fun z => f z • planarReflection d h z := by
     have h1 := (hh.planarReflection hΩ d).integrableOn_smul hf hfc isClosed_univ
       (by simpa using hfΩ)
@@ -578,7 +577,7 @@ theorem HasWeakLineDerivOn.planarReflection_I {Ω : Opens ℂ}
   have hφd : Differentiable ℝ φ := hφ.differentiable (by simp)
   have hdφ : Continuous fun z => fderiv ℝ φ z I :=
     (hφ.continuous_fderiv (by simp)).clm_apply continuous_const
-  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := isClosed_le continuous_const continuous_im
+  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := Complex.isClosed_setOfPred_le_im 0
   have hHsub : {z : ℂ | 0 < z.im} ⊆ {z : ℂ | 0 ≤ z.im} :=
     fun z (hz : 0 < z.im) => show (0 : ℝ) ≤ z.im from le_of_lt hz
   simp_rw [(hφd _).lineDeriv_eq_fderiv]

@@ -83,11 +83,8 @@ variable {F : Type*} [NormedAddCommGroup F] {Ω : Opens ℂ}
 
 /-! ### Measure-theoretic preliminaries -/
 
-private theorem isClosed_im_nonneg : IsClosed {z : ℂ | 0 ≤ z.im} :=
-  isClosed_le continuous_const Complex.continuous_im
-
 private theorem measurableSet_im_nonneg : MeasurableSet {z : ℂ | 0 ≤ z.im} :=
-  isClosed_im_nonneg.measurableSet
+  (isClosed_setOfPred_le_im 0).measurableSet
 
 section LocallyIntegrable
 
@@ -112,11 +109,12 @@ theorem MemLpLoc.ite_conj {Ω : Set ℂ} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) 
   refine MemLp.add ?_ ?_
   · rw [memLp_indicator_iff_restrict measurableSet_im_nonneg.nullMeasurableSet,
       Measure.restrict_restrict measurableSet_im_nonneg]
-    exact memLpLoc_iff.1 hf _ (fun z hz ↦ ⟨hKΩ hz.2, hz.1⟩) (hK.inter_left isClosed_im_nonneg)
+    exact memLpLoc_iff.1 hf _ (fun z hz ↦ ⟨hKΩ hz.2, hz.1⟩)
+      (hK.inter_left (isClosed_setOfPred_le_im 0))
   · rw [memLp_indicator_iff_restrict hL.nullMeasurableSet, Measure.restrict_restrict hL]
     let K' : Set ℂ := (conjLIE : ℂ → ℂ) ⁻¹' K ∩ {z | 0 ≤ z.im}
     have hK' : IsCompact K' :=
-      (conjLIE.toHomeomorph.isCompact_preimage.2 hK).inter_right isClosed_im_nonneg
+      (conjLIE.toHomeomorph.isCompact_preimage.2 hK).inter_right (isClosed_setOfPred_le_im 0)
     have hK'Ω : K' ⊆ Ω ∩ {z | 0 ≤ z.im} := fun z hz ↦
       ⟨by simpa using hΩ (hKΩ hz.1), hz.2⟩
     have h2 := (memLpLoc_iff.1 hf _ hK'Ω hK').comp_measurePreserving
@@ -147,7 +145,7 @@ theorem locallyIntegrableOn_starSchwarzReflection
     LocallyIntegrableOn (starSchwarzReflection f) Ω := by
   have hf' : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) f :=
     (memLpLoc_one_iff_locallyIntegrableOn
-      (Ω.isOpen.isLocallyClosed.inter isClosed_im_nonneg.isLocallyClosed)).2 hf
+      (Ω.isOpen.isLocallyClosed_inter_setOfPred_le_im 0)).2 hf
   exact (memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).1
     (hf'.starSchwarzReflection hΩ)
 
@@ -273,8 +271,8 @@ private theorem halfPairing_add (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω 
   have hsum (v : ℂ) (z : ℂ) : lineDeriv ℝ ((ψ₁ + ψ₂ : 𝓓(Ω, ℝ)) : ℂ → ℝ) z v =
       lineDeriv ℝ (ψ₁ : ℂ → ℝ) z v + lineDeriv ℝ (ψ₂ : ℂ → ℝ) z v := by
     rw [hd, hd ψ₁, hd ψ₂, map_add, add_apply]
-  have hξ := h.2.1.restrict_of_inter Ω.isOpen isClosed_im_nonneg
-  have hη := h.2.2.1.restrict_of_inter Ω.isOpen isClosed_im_nonneg
+  have hξ := h.2.1.restrict_of_inter Ω.isOpen (isClosed_setOfPred_le_im 0)
+  have hη := h.2.2.1.restrict_of_inter Ω.isOpen (isClosed_setOfPred_le_im 0)
   simp only [halfPairing, hsum, add_smul, add_apply]
   rw [integral_add (integrable_lineDeriv_smul_of_locallyIntegrableOn hξ ψ₁ 1)
       (integrable_lineDeriv_smul_of_locallyIntegrableOn hξ ψ₂ 1),
@@ -297,8 +295,8 @@ half-plane pairing of `ψ`. -/
 private theorem realPart_smul_halfPairing (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η)
     (ψ : 𝓓(Ω, ℝ)) (c : ℂ) (hc : ∀ x : ℝ, ψ (x : ℂ) * c.im = 0) :
     ℜ (c • halfPairing ξ η ψ) = 0 := by
-  have hξ := h.2.1.restrict_of_inter Ω.isOpen isClosed_im_nonneg
-  have _ := h.2.2.1.restrict_of_inter Ω.isOpen isClosed_im_nonneg
+  have hξ := h.2.1.restrict_of_inter Ω.isOpen (isClosed_setOfPred_le_im 0)
+  have _ := h.2.2.1.restrict_of_inter Ω.isOpen (isClosed_setOfPred_le_im 0)
   have key := h.2.2.2 (smulTest ψ c) fun x ↦ by simpa [smulTest_apply] using hc x
   have h1 : ∫ z in {z : ℂ | 0 ≤ z.im},
       (lineDeriv ℝ (smulTest ψ c : ℂ → ℂ) z 1 + I * lineDeriv ℝ (smulTest ψ c : ℂ → ℂ) z I) •
