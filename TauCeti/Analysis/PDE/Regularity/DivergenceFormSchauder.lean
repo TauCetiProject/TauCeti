@@ -352,7 +352,7 @@ private theorem exists_setIntegral_norm_gradient_sq_le_rpow {α : ℝ≥0} (hα 
       (hGK.mono (ball_subset_ball hrR)) hu
       (hf.mono_measure (Measure.restrict_mono (ball_subset_ball hrR) le_rfl))
       ((ball_subset_ball hrR).trans hball) hρ hρr
-    exact le_mul_add_mul_rpow_of_le_of_mul_rpow_le hA hr hR hrθ hrR (by positivity) Ka.2 hM
+    exact le_mul_add_mul_rpow_of_le_of_mul_rpow_le hA hr hR hrθ hrR (by positivity) Ka.property hM
       (hD r hr hrR) hV0 (setIntegral_nonneg measurableSet_ball fun _ _ => by positivity)
       (by linarith) h1
   have hit' := hit (φ := fun t => ∫ x in ball z t, ‖W1p.gradient u x‖ ^ 2) (R := θ * R)
@@ -457,7 +457,7 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_rpow {α :
       (hGK.mono (ball_subset_ball hrR)) hu
       (hf.mono_measure (Measure.restrict_mono (ball_subset_ball hrR) le_rfl))
       ((ball_subset_ball hrR).trans hball) hρ hρr
-    exact le_mul_add_mul_rpow_of_le_of_le_mul_rpow hA hr hR hrR Ka.2 hM (hD r hr hrR) hV0
+    exact le_mul_add_mul_rpow_of_le_of_le_mul_rpow hA hr hR hrR Ka.property hM (hD r hr hrR) hV0
       (setIntegral_nonneg measurableSet_ball fun _ _ => by positivity) (hΦ r hr hrθ) hτβ hτγ h1
   have hit' := hit (φ := fun t =>
       ∫ x in ball z t, ‖W1p.gradient u x - ⨍ y in ball z t, W1p.gradient u y‖ ^ 2) (R := θ * R)
@@ -505,17 +505,13 @@ private theorem sq_setAverage_closedBall_norm_gradient_sub_mul_le
       ∫ x in ball z t, ‖W1p.gradient u x - ⨍ y in ball z t, W1p.gradient u y‖ ^ 2 := by
   rw [volume.restrict_closedBall_eq_restrict_ball z t]
   have hpos := measureReal_ball_pos volume z ht
-  have hint := (Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two hball
-    measure_ball_lt_top.ne
-  have hJ := sq_setAverage_norm_le_setAverage_norm_sq (measure_ball_pos volume z ht).ne'
-    measure_ball_lt_top.ne (hint.sub (integrableOn_const measure_ball_lt_top.ne))
+  have hJ := sq_setAverage_norm_le_setAverage_norm_sq
     ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset hball measure_ball_lt_top.ne
       (⨍ y in ball z t, W1p.gradient u y))
   have hav : ⨍ x in ball z t, ‖W1p.gradient u x - ⨍ y in ball z t, W1p.gradient u y‖ ^ 2 =
       (volume.real (ball z t))⁻¹ *
         ∫ x in ball z t, ‖W1p.gradient u x - ⨍ y in ball z t, W1p.gradient u y‖ ^ 2 := by
     rw [setAverage_eq, smul_eq_mul]
-  simp only [Pi.sub_apply] at hJ
   rw [hav] at hJ
   calc _ ≤ _ := mul_le_mul_of_nonneg_right hJ hpos.le
     _ = _ := by field_simp
@@ -963,7 +959,7 @@ theorem
         4 * r ^ 2 * ∫ x in ball z r, f x ^ 2 ≤
           c₀ * X ^ 2 * (r / R) ^ ((n : ℝ) + 1 + 2 * β) := fun z hz r hr hrR => by
     rw [hc₀def, hωdef]
-    exact rpow_mul_add_mul_setIntegral_sq_le hq hf (by exact_mod_cast hβα) hβq KG.2 hGQ
+    exact rpow_mul_add_mul_setIntegral_sq_le hq hf (by exact_mod_cast hβα) hβq KG.property hGQ
       (hKf ▸ hfQ) hr hrR ((ball_subset_ball hrR).trans (ball_subset_thickening hz R))
   -- The mean oscillation of `∇u` on `closedBall z t` is at most `√(C₀ c₀ / ω) Q t^β`.
   have hosc : ∀ z ∈ S, ∀ t, 0 < t → t ≤ θ * R →

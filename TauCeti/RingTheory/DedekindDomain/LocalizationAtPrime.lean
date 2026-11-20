@@ -86,7 +86,7 @@ theorem integers_valuation_of_isLocalizationAtPrime (S : Type*) [CommRing S]
     dsimp only
     rw [← IsLocalization.mk'_eq_algebraMap_mk'_of_submonoid_le (S := S) (T := K)
       v.asIdeal.primeCompl_le_nonZeroDivisors, valuation_of_mk',
-      (v.intValuation_eq_one_iff_mem_primeCompl s).mpr s.2, div_one]
+      (v.intValuation_eq_one_iff_mem_primeCompl s).mpr s.property, div_one]
     exact v.intValuation_le_one r
   exists_of_le_one {x} hx := by
     obtain ⟨a, s, hs⟩ := v.exists_primeCompl_mul_eq_of_integer x hx

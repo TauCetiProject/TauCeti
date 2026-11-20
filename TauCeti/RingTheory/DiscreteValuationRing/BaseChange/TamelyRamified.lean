@@ -234,7 +234,7 @@ private theorem exists_unramified_overfield_of_etale_cover
     rw [← hspan, Submodule.map_span, Submodule.span_le]
     rintro _ ⟨_, ⟨b, rfl⟩, rfl⟩
     have hbB₁ : algebraMap L L₁ b ∈ B₁ :=
-      (b.2.map (IsScalarTower.toAlgHom A L L₁)).tower_top
+      (b.property.map (IsScalarTower.toAlgHom A L L₁)).tower_top
     let b₁ : B₁ := ⟨algebraMap L L₁ b, hbB₁⟩
     refine ⟨1 ⊗ₜ[A'₁] (1 ⊗ₜ[A₁] b₁), ?_⟩
     dsimp only [χ₀, ψ, ψ_A₁, gB₁, S]
@@ -284,7 +284,7 @@ private theorem isTamelyRamifiedWRT_baseChange_of_isAlgClosed
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible A
   obtain ⟨π', hπ'⟩ := IsDiscreteValuationRing.exists_irreducible A'
   obtain ⟨r, u', hπA'⟩ := exists_uniformizer_eq_unit_mul_pow K K' hπ hπ'
-  obtain ⟨e, he_κA, hdvd⟩ := h.exists_isUnit_ramificationIdx_dvd K
+  obtain ⟨e, he_κA, hdvd⟩ := h.exists_isUnit_forall_ramificationIdx_dvd K
   have he_A' : IsUnit (e : A') := by
     have he_A : IsUnit (e : A) := (isUnit_map_iff (IsLocalRing.residue A) _).mp (by
       rw [map_natCast]; exact he_κA)
@@ -303,12 +303,12 @@ private theorem isTamelyRamifiedWRT_baseChange_of_isAlgClosed
       ← IsScalarTower.algebraMap_apply A A' Ω]
   -- By global Abhyankar's lemma, `L(α)` is unramified over `A₁ = integralClosure A K(α)`.
   let := (TauCeti.IntermediateField.adjoinBaseChange K L α).toAlgebra
-  obtain ⟨_, hU_A₁⟩ := h.isUnramifiedWRT_adjoin_root (K := K) hπ hα hdvd
+  obtain ⟨_, hU_A₁⟩ := h.isUnramifiedWRT_adjoin_root (K := K) hπ hα fun P _ _ ↦ hdvd P
   let A₁ := integralClosure A K⟮α⟯
   have := TauCeti.IntermediateField.isScalarTower_adjoinBaseChange K L A α
   have : IsScalarTower A A₁ L⟮α⟯ := .to₁₂₄ A A₁ K⟮α⟯ L⟮α⟯
   have hαK : AdjoinSimple.gen K α ^ e = algebraMap A K⟮α⟯ π :=
-    TauCeti.adjoinSimple_gen_pow_eq_algebraMap_iff.mpr hα
+    AdjoinSimple.gen_pow_eq_algebraMap_iff.mpr hα
   have : IsFractionRing A₁ K⟮α⟯ :=
     IsDiscreteValuationRing.isFractionRing_integralClosure_of_pow_eq_of_irreducible hπ hαK
       (adjoin_adjoinSimple_gen_eq_top α)
@@ -319,7 +319,7 @@ private theorem isTamelyRamifiedWRT_baseChange_of_isAlgClosed
   -- Build the Kummer DVR `A'₁ = integralClosure A' K'(β)` and the standard tame cover `T`.
   let A'₁ := integralClosure A' K'⟮β⟯
   have hβK' : AdjoinSimple.gen K' β ^ e = algebraMap A' K'⟮β⟯ π' :=
-    TauCeti.adjoinSimple_gen_pow_eq_algebraMap_iff.mpr hβ
+    AdjoinSimple.gen_pow_eq_algebraMap_iff.mpr hβ
   have hgenβ : K'⟮AdjoinSimple.gen K' β⟯ = ⊤ := adjoin_adjoinSimple_gen_eq_top β
   have : IsDiscreteValuationRing A'₁ :=
     IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible

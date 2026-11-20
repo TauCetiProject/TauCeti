@@ -335,7 +335,7 @@ theorem conj_mem_frobeniusKernel_sdiff_singleton (g : G) {y : G}
 Frobenius kernel.**  This instance records only the underlying map; that it is an action is the
 `MulAction` instance below. -/
 instance : SMul H ↥(frobeniusKernel H \ {1}) where
-  smul h y := ⟨(h : G) * y * (h : G)⁻¹, conj_mem_frobeniusKernel_sdiff_singleton (h : G) y.2⟩
+  smul h y := ⟨(h : G) * y * (h : G)⁻¹, conj_mem_frobeniusKernel_sdiff_singleton (h : G) y.property⟩
 
 @[simp]
 theorem coe_smul_frobeniusKernel_sdiff_singleton (h : H) (y : ↥(frobeniusKernel H \ {1})) :
@@ -381,9 +381,9 @@ theorem IsTISubgroup.stabilizer_eq_bot (hH : IsTISubgroup H)
   by_contra hh1
   have hconj : (h : G) * (y : G) * (h : G)⁻¹ = (y : G) := by
     rw [← coe_smul_frobeniusKernel_sdiff_singleton, hh]
-  refine hH.conj_ne_self_of_mem_frobeniusKernel h.2 ?_ y.2.1 ?_ hconj
+  refine hH.conj_ne_self_of_mem_frobeniusKernel h.property ?_ y.property.1 ?_ hconj
   · simpa using hh1
-  · simpa using y.2.2
+  · simpa using y.property.2
 
 /-- **The conjugation action of a trivial-intersection subgroup on the nonidentity part of its
 Frobenius kernel is cancellative**, the typeclass form of

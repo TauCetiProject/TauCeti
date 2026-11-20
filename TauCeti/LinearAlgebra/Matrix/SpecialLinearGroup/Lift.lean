@@ -58,9 +58,9 @@ theorem exists_map_eq_of_map_eq (φ : R →+* S) [IsLocalHom φ] (A : SpecialLin
     have hu_inv : φ ↑u⁻¹ = 1 := by simpa [hu, hdet] using congrArg φ u.inv_mul
     let N : Matrix n n R := M.updateRow i₀ ((↑u⁻¹ : R) • M i₀)
     have hNdet : N.det = 1 := by rw [det_updateRow_smul, updateRow_eq_self, ← hu, Units.inv_mul]
-    refine ⟨⟨N, hNdet⟩, Subtype.ext <| (map_apply_coe φ ⟨N, hNdet⟩).trans ?_,
+    refine ⟨.mk N hNdet, Subtype.ext <| (map_apply_coe φ (.mk N hNdet)).trans ?_,
       fun i j hij ↦ ?_⟩
-    · rw [RingHom.mapMatrix_apply, coe_mk, ← hM]
+    · rw [coe_mk, ← hM]
       ext i j
       rcases eq_or_ne i i₀ with rfl | hi
       · simp [N, hu_inv]

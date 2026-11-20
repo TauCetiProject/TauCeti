@@ -7,9 +7,11 @@ module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
+import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 import TauCeti.Algebra.Algebra.Hom
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
+import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
 import TauCeti.RingTheory.LocalRing.Roots
@@ -23,8 +25,8 @@ Let `A` be a discrete valuation ring with fraction field `K` and uniformizer `π
 let `L = K(α)` be a field generated over `K` by an `n`-th root `α` of `π`. Then
 
 1. `[L : K] = n`, and the minimal polynomial of `α` over `A` is `X ^ n - π`;
-2. the integral closure `A₁` of `A` in `L` is `A[α]`, so that `A₁ ≅ A[X] ⧸ (X ^ n - π)` by
-   Mathlib's `minpoly.equivAdjoin`;
+2. the integral closure `A₁` of `A` in `L` is `A[α]`, so that `A₁` has `A`-power basis `α` of
+   dimension `n` and `A₁ ≅ A[X] ⧸ (X ^ n - π)` by Mathlib's `minpoly.equivAdjoin`;
 3. `A₁` is a discrete valuation ring with uniformizer `α`;
 4. the maximal ideal of `A₁` has ramification index `n` over `A`;
 5. `L` is totally ramified with respect to `A`;
@@ -52,6 +54,10 @@ tame ramification.
 * `TauCeti.IsDiscreteValuationRing.integralClosure_eq_adjoin_of_pow_eq_of_irreducible` and
   `TauCeti.IsDiscreteValuationRing.isFractionRing_integralClosure_of_pow_eq_of_irreducible`: the
   integral closure of `A` in `L` is `A[α]` and has fraction field `L`.
+* `TauCeti.IsDiscreteValuationRing.powerBasisIntegralClosureOfPowEq` and
+  `TauCeti.IsDiscreteValuationRing.liftIntegralClosureOfPowEq`: the `A`-power basis of
+  `integralClosure A L` with generator `α` of dimension `n`, and the universal-property `A`-algebra
+  homomorphism out of `integralClosure A L` induced by any `n`-th root of `π`.
 * `TauCeti.IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible`
   and `TauCeti.IsDiscreteValuationRing.irreducible_mk_of_pow_eq_of_irreducible`: it is a discrete
   valuation ring with uniformizer `α`.
@@ -66,9 +72,9 @@ tame ramification.
 * `TauCeti.IsDiscreteValuationRing.eq_adjoin_pow_finrank_of_pow_eq_of_irreducible`: if `n` is
   invertible in `κ_A`, every intermediate field `M` of `L / K` is `K(α ^ [L : M])`.
 * `TauCeti.IsDiscreteValuationRing.isTamelyRamifiedWRT_of_isUnramifiedWRT_of_pow_eq_of_irreducible`:
-  a finite separable extension of `K` contained in an extension of `K(π ^ (1 / e))` unramified
-  with respect to `A[π ^ (1 / e)]`, with `e` invertible in the residue field of `A`, is tamely
-  ramified with respect to `A`.
+  a finite extension of `K` contained in an extension of `K(π ^ (1 / e))` unramified with respect to
+  `A[π ^ (1 / e)]`, with `e` invertible in the residue field of `A`, is tamely ramified with respect
+  to `A`.
 
 ## References
 
@@ -178,7 +184,73 @@ theorem integralClosure_eq_adjoin_of_pow_eq_of_irreducible (hπ : Irreducible π
   -- So `A[α]` is the integral closure of `A` in its fraction field `L`.
   refine le_antisymm (fun z hz ↦ ?_) (Algebra.adjoin_le (Set.singleton_subset_iff.mpr hint))
   obtain ⟨y, rfl⟩ := (IsIntegralClosure.isIntegral_iff (A := B)).mp hz
-  exact y.2
+  exact y.property
+
+/-- **Power basis of the integral closure in a Kummer extension of a discrete valuation ring.**
+If `L` is generated over the fraction field `K` of a discrete valuation ring `A` by an `n`-th root
+`α` of a uniformizer `π` of `A`, then `α` defines an `A`-power basis of `integralClosure A L`. -/
+noncomputable def powerBasisIntegralClosureOfPowEq (hπ : Irreducible π)
+    (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) :
+    PowerBasis A (integralClosure A L) :=
+  have : Module.IsTorsionFree A L := .trans_faithfulSMul A K L
+  have hn := ne_zero_of_pow_eq_of_irreducible K hπ hα
+  have hint : IsIntegral A α :=
+    IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap)
+  (Algebra.adjoin.powerBasis' hint).map
+    (Subalgebra.equivOfEq _ _ (integralClosure_eq_adjoin_of_pow_eq_of_irreducible hπ hα hgen).symm)
+
+/-- The generator of `powerBasisIntegralClosureOfPowEq` coerces to `α` in `L`. -/
+@[simp]
+theorem coe_powerBasisIntegralClosureOfPowEq_gen (hπ : Irreducible π)
+    (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) :
+    ((powerBasisIntegralClosureOfPowEq hπ hα hgen).gen : L) = α := by
+  simp [powerBasisIntegralClosureOfPowEq]
+
+/-- The dimension of `powerBasisIntegralClosureOfPowEq` is the root exponent `n`. -/
+@[simp]
+theorem powerBasisIntegralClosureOfPowEq_dim (hπ : Irreducible π)
+    (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) :
+    (powerBasisIntegralClosureOfPowEq hπ hα hgen).dim = n := by
+  have : Module.IsTorsionFree A L := .trans_faithfulSMul A K L
+  rw [powerBasisIntegralClosureOfPowEq, PowerBasis.map_dim, Algebra.adjoin.powerBasis'_dim,
+    minpoly_eq_of_pow_eq_of_irreducible hπ hα, natDegree_X_pow_sub_C]
+
+/-- **Universal property of the integral closure in a Kummer extension of a discrete valuation
+ring.** If `L = K(α)` is generated over the fraction field `K` of a discrete valuation ring `A` by
+an `n`-th root `α` of a uniformizer `π` of `A`, then any `n`-th root `s` of `π` in an `A`-algebra
+`R` induces an `A`-algebra homomorphism `integralClosure A L →ₐ[A] R` sending `α` to `s`. -/
+noncomputable def liftIntegralClosureOfPowEq {R : Type*} [Ring R] [Algebra A R]
+    (hπ : Irreducible π) (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤)
+    (s : R) (hs : s ^ n = algebraMap A R π) : integralClosure A L →ₐ[A] R :=
+  have := FaithfulSMul.trans A K L
+  have : Module.IsTorsionFree A (integralClosure A L) := FaithfulSMul.to_isTorsionFree ..
+  (powerBasisIntegralClosureOfPowEq hπ hα hgen).lift s <| by
+    have hgen_pow : (powerBasisIntegralClosureOfPowEq hπ hα hgen).gen ^ n =
+        algebraMap A (integralClosure A L) π :=
+      Subtype.ext (by simpa only [Subalgebra.coe_pow, Subalgebra.coe_algebraMap,
+        coe_powerBasisIntegralClosureOfPowEq_gen] using hα)
+    rw [minpoly_eq_of_pow_eq_of_irreducible hπ hgen_pow, map_sub, map_pow, aeval_X, aeval_C,
+      hs, sub_self]
+
+/-- `liftIntegralClosureOfPowEq` sends the generator of `powerBasisIntegralClosureOfPowEq` to `s`.
+-/
+@[simp]
+theorem liftIntegralClosureOfPowEq_gen {R : Type*} [Ring R] [Algebra A R]
+    (hπ : Irreducible π) (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤)
+    (s : R) (hs : s ^ n = algebraMap A R π) :
+    liftIntegralClosureOfPowEq hπ hα hgen s hs
+      (powerBasisIntegralClosureOfPowEq hπ hα hgen).gen = s := by
+  rw [liftIntegralClosureOfPowEq, PowerBasis.lift_gen]
+
+/-- `liftIntegralClosureOfPowEq` sends the Kummer generator `α` to the chosen root `s`. -/
+@[simp]
+theorem liftIntegralClosureOfPowEq_mk {R : Type*} [Ring R] [Algebra A R]
+    (hπ : Irreducible π) (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤)
+    (s : R) (hs : s ^ n = algebraMap A R π) (h : α ∈ integralClosure A L) :
+    liftIntegralClosureOfPowEq hπ hα hgen s hs ⟨α, h⟩ = s := by
+  have hmk : (⟨α, h⟩ : integralClosure A L) = (powerBasisIntegralClosureOfPowEq hπ hα hgen).gen :=
+    Subtype.ext (by simp)
+  rw [hmk, liftIntegralClosureOfPowEq_gen]
 
 /-- The integral closure of a discrete valuation ring `A` in a Kummer extension `L` of its
 fraction field has `L` as its fraction field. -/
@@ -365,7 +437,7 @@ theorem eq_adjoin_pow_finrank_of_pow_eq_of_irreducible (hπ : Irreducible π)
     have : α ^ m = algebraMap M L (β / algebraMap K M c) := by
       rw [map_div₀, ← IsScalarTower.algebraMap_apply K M L, hc, div_div_cancel₀ hβ0]
     rw [this]
-    exact (β / algebraMap K M c).2
+    exact (β / algebraMap K M c).property
   -- `α ^ m` is an `[M : K]`-th root of `π`, so by part (1) both fields have degree `[M : K]`.
   have hmd : m * Module.finrank K M = n := by
     rw [mul_comm, Module.finrank_mul_finrank K M L, hfin]
@@ -376,11 +448,10 @@ theorem eq_adjoin_pow_finrank_of_pow_eq_of_irreducible (hπ : Irreducible π)
     (IntermediateField.adjoin_simple_le_iff.mpr hmem) hd).symm
 
 /-- **Tame ramification from an unramified extension of a Kummer extension.** Let `L` be a finite
-separable extension of the fraction field `K` of a discrete valuation ring `A`, let `K₁` be
-generated over `K` by an `n`-th root `β` of a uniformizer `π` of `A` with `n` invertible in the
-residue field of `A`, and let `E` be a common overfield of `L` and `K₁` (compatibly over `A`). If
-`E` is unramified with respect to the integral closure of `A` in `K₁`, then `L` is tamely ramified
-with respect to `A`.
+extension of the fraction field `K` of a discrete valuation ring `A`, let `K₁` be generated over `K`
+by an `n`-th root `β` of a uniformizer `π` of `A` with `n` invertible in the residue field of `A`,
+and let `E` be a common overfield of `L` and `K₁` (compatibly over `A`). If `E` is unramified with
+respect to the integral closure of `A` in `K₁`, then `L` is tamely ramified with respect to `A`.
 
 This is the implication (2) ⇒ (1) of Stacks, Lemma 15.116.7. The integral closure of `A` in
 `K₁` is a discrete valuation ring by
@@ -388,8 +459,8 @@ This is the implication (2) ⇒ (1) of Stacks, Lemma 15.116.7. The integral clos
 so the local ring hypothesis, needed to state unramifiedness with respect to it, always holds. -/
 @[stacks 0EXW "(2) ⇒ (1)"]
 theorem isTamelyRamifiedWRT_of_isUnramifiedWRT_of_pow_eq_of_irreducible [FiniteDimensional K L]
-    [Algebra.IsSeparable K L] {K₁ E : Type*} [Field K₁] [Algebra K K₁] [Algebra A K₁]
-    [IsScalarTower A K K₁] [Field E] [Algebra A E] [Algebra L E] [IsScalarTower A L E]
+    {K₁ E : Type*} [Field K₁] [Algebra K K₁] [Algebra A K₁] [IsScalarTower A K K₁]
+    [Field E] [Algebra A E] [Algebra L E] [IsScalarTower A L E]
     [Algebra K₁ E] [IsScalarTower A K₁ E] [IsLocalRing (integralClosure A K₁)]
     {β : K₁} (hπ : Irreducible π) (hn : IsUnit (n : A ⧸ maximalIdeal A))
     (hβ : β ^ n = algebraMap A K₁ π) (hgen : K⟮β⟯ = ⊤)

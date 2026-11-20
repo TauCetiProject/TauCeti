@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.PiLp
+public import Mathlib.Analysis.Normed.Operator.Basic
+import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
 
 /-!
 # Comparisons of finite product norms and distances
@@ -14,14 +16,18 @@ The finite `Lᵖ` norm is nonnegative for every exponent and respects coordinate
 norms, including when the two families have different target spaces. This compares scalar
 evaluations of a vector family with the vector family's `Lᵖ` norm. For constant fibres we
 deduce the bound for the image of a family under a map of bounded growth, the norm of a family
-of multiples of one vector, and the invariance of the norm under reindexing.
+of multiples of one vector, and the invariance of the norm under reindexing. For `p ≥ 1`, a
+linear combination `∑ i, s i • v i` with the coordinates of `s` as coefficients has norm at most
+`‖s‖ * ∑ i, ‖v i‖`.
 
 For `p ≥ 1`, the `Lᵖ` distance dominates the sup distance. In the other direction, the `L²`
 distance is at most the square root of the number of coordinates times the sup distance.
 These estimates give inclusions between balls in the two metrics. The corresponding
 Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` times the `L²` norm.
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
-distance comparisons.
+distance comparisons. A squared-norm bound of `(k + 1) * t²` for a vector of `L²`
+also bounds the number of coordinates with norm exceeding a nonnegative `t` by `k`
+(`PiLp.card_filter_lt_norm_le`).
 
 Extending a vector of `Lᵖ(ι, E)` by zero along an embedding `f : ι ↪ ι'` places its coordinate `i`
 in the slot `f i`, and the vectors so obtained are those whose coordinates outside the range of
@@ -31,6 +37,11 @@ vectors so obtained are those whose coordinates `j ≥ k` vanish.
 The finite sum against a zero-extended vector reduces to the sum over its original coordinates.
 Over an index type with at most one element, the `Lᵖ` norm is the norm of the coordinate.
 Reindexing the coordinates along the identity bijection is the identity.
+Maps into `PiLp p β` converge uniformly exactly when each coordinate does.
+
+We also record `PiLp.univ_sum_single`, the coordinate isometry `PiLp.singleLI` (and the
+continuous coordinate inclusion `PiLp.singleCLM`), the power identity `PiLp.norm_rpow_eq_sum`,
+and coordinatewise submodule restriction `LinearIsometryEquiv.submodulePiLp`.
 
 ## Source
 
@@ -47,6 +58,12 @@ open scoped ENNReal
 namespace PiLp
 
 variable {ι : Type*} [Fintype ι] {p : ℝ≥0∞} {E F : ι → Type*}
+
+/-- Every finite `PiLp` vector is the sum of its coordinate `PiLp.single` vectors; compare
+`Finset.univ_sum_single`. -/
+theorem univ_sum_single [DecidableEq ι] [∀ i, AddCommGroup (E i)] (x : PiLp p E) :
+    ∑ i, single p i (x i) = x :=
+  WithLp.ofLp_injective p <| by simp [WithLp.ofLp_sum, Finset.univ_sum_single]
 
 /-- Coordinatewise domination of norms implies domination of finite `Lᵖ` norms.
 The dominating family only needs a norm: the coordinate bounds ensure its nonnegativity. -/
@@ -79,7 +96,52 @@ protected theorem norm_nonneg' [∀ i, SeminormedAddGroup (E i)] (x : PiLp p E) 
   · rw [norm_eq_sum hp]
     exact Real.rpow_nonneg (Finset.sum_nonneg fun _ _ ↦ Real.rpow_nonneg (norm_nonneg _) _) _
 
+/-- For `0 < p < ∞`, the `p`-th power of the finite `PiLp` norm equals the sum of the `p`-th powers
+of the coordinate norms. -/
+theorem norm_rpow_eq_sum [∀ i, SeminormedAddGroup (E i)] (hp : 0 < p.toReal) (x : PiLp p E) :
+    ‖x‖ ^ p.toReal = ∑ i, ‖x i‖ ^ p.toReal := by
+  rw [norm_eq_sum hp, ← Real.rpow_mul (Finset.sum_nonneg fun _ _ ↦ by positivity),
+    one_div_mul_cancel hp.ne', Real.rpow_one]
+
 variable [∀ i, SeminormedAddCommGroup (E i)]
+
+/-- At most `k` coordinates have norm exceeding a nonnegative threshold `t` when the squared
+norm is at most `(k + 1) * t²`. -/
+theorem card_filter_lt_norm_le {x : PiLp 2 E} {k : ℕ} {t : ℝ}
+    (ht : 0 ≤ t) (hxt : ‖x‖ ^ 2 ≤ (k + 1 : ℝ) * t ^ 2) :
+    (Finset.univ.filter fun i ↦ t < ‖x i‖).card ≤ k := by
+  classical
+  by_contra h
+  let s := Finset.univ.filter fun i ↦ t < ‖x i‖
+  have hcard : k + 1 ≤ s.card := Nat.succ_le_of_lt (Nat.lt_of_not_ge h)
+  have hsum : (s.card : ℝ) * t ^ 2 < ∑ i ∈ s, ‖x i‖ ^ 2 := by
+    calc
+      _ = ∑ _i ∈ s, t ^ 2 := by simp
+      _ < _ := Finset.sum_lt_sum_of_nonempty (Finset.card_pos.mp (by omega)) fun i hi ↦
+        pow_lt_pow_left₀ ((Finset.mem_filter.mp hi).2) ht (by norm_num : 2 ≠ 0)
+  have htotal : ∑ i ∈ s, ‖x i‖ ^ 2 ≤ ‖x‖ ^ 2 := by
+    rw [PiLp.norm_sq_eq_of_L2]
+    exact Finset.sum_le_univ_sum_of_nonneg fun _ ↦ sq_nonneg _
+  have hcard' : (k + 1 : ℝ) ≤ s.card := by exact_mod_cast hcard
+  exact (mul_le_mul_of_nonneg_right hcard' (sq_nonneg t)).not_gt
+    (hsum.trans_le (htotal.trans hxt))
+
+section SingleLI
+
+variable (p E) [Fact (1 ≤ p)] [DecidableEq ι] {𝕜 : Type*} [Semiring 𝕜] [∀ i, Module 𝕜 (E i)]
+
+/-- Coordinate inclusion `v ↦ PiLp.single p i v` into `PiLp p E` as a linear isometry. -/
+noncomputable def singleLI (i : ι) : E i →ₗᵢ[𝕜] PiLp p E where
+  toLinearMap := (WithLp.linearEquiv p 𝕜 (∀ j, E j)).symm.toLinearMap ∘ₗ LinearMap.single 𝕜 E i
+  norm_map' v := by simp
+
+variable {p E}
+
+/-- `PiLp.singleLI` evaluates as `PiLp.single`. -/
+@[simp] theorem singleLI_apply (i : ι) (v : E i) :
+    singleLI (𝕜 := 𝕜) p E i v = single p i v := by simp [singleLI]
+
+end SingleLI
 
 /-- Taking coordinate norms preserves the finite `Lᵖ` norm. -/
 @[simp]
@@ -149,6 +211,15 @@ theorem norm_toLp_smul_const {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜
     _ = ‖WithLp.toLp p a‖ * ‖y‖ := by
       rw [norm_smul, _root_.norm_norm, norm_norm (WithLp.toLp p a), mul_comm]
 
+/-- A linear combination `∑ i, s i • v i` whose coefficients are the coordinates of a vector `s`
+of `Lᵖ`, `p ≥ 1`, has norm at most `‖s‖ * ∑ i, ‖v i‖`. -/
+theorem norm_sum_smul_le {𝕜 : Type*} [SeminormedAddCommGroup 𝕜] [SMulZeroClass 𝕜 F]
+    [IsBoundedSMul 𝕜 F] (s : PiLp p fun _ : ι ↦ 𝕜) (v : ι → F) :
+    ‖∑ i, s i • v i‖ ≤ ‖s‖ * ∑ i, ‖v i‖ := by
+  rw [Finset.mul_sum]
+  exact (norm_sum_le _ _).trans <| Finset.sum_le_sum fun i _ ↦
+    (norm_smul_le _ _).trans <| mul_le_mul_of_nonneg_right (norm_apply_le s i) (norm_nonneg _)
+
 end Constant
 
 section PseudoMetricSpace
@@ -195,6 +266,79 @@ theorem preimage_ofLp_ball_subset_ball [Nonempty ι] (x : PiLp 2 β) (r : ℝ) :
     (mul_lt_mul_of_pos_left hy (Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)))
 
 end PseudoMetricSpace
+
+section UniformSpace
+
+variable {β : ι → Type*} [∀ i, UniformSpace (β i)]
+
+omit [Fintype ι] in
+/-- Maps into `PiLp p β` converge uniformly exactly when each coordinate does. -/
+theorem tendstoUniformly_iff {κ α : Type*} {l : Filter κ} {F : κ → α → PiLp p β}
+    {g : α → PiLp p β} :
+    TendstoUniformly F g l ↔ ∀ i, TendstoUniformly (fun k z ↦ F k z i) (fun z ↦ g z i) l := by
+  refine ⟨fun h i ↦ ((Pi.uniformContinuous_proj β i).comp (uniformContinuous_ofLp p β))
+    |>.comp_tendstoUniformly h, fun h ↦ ?_⟩
+  have hpi : TendstoUniformly (fun k z ↦ WithLp.ofLp (F k z)) (fun z ↦ WithLp.ofLp (g z)) l := by
+    have hi : Filter.Tendsto (fun k (i : ι) ↦ UniformFun.ofFun fun z ↦ F k z i) l
+        (nhds fun i ↦ UniformFun.ofFun fun z ↦ g z i) :=
+      tendsto_pi_nhds.2 fun i ↦ UniformFun.tendsto_iff_tendstoUniformly.2 (h i)
+    exact UniformFun.tendsto_iff_tendstoUniformly.1
+      ((UniformFun.uniformEquivPiComm α β).symm.continuous.tendsto _ |>.comp hi)
+  exact (uniformContinuous_toLp p β).comp_tendstoUniformly hpi
+
+end UniformSpace
+
+section Single
+
+variable [DecidableEq ι]
+
+omit [Fintype ι] in
+/-- Scalar multiplication commutes with `PiLp.single`. -/
+@[simp]
+theorem single_smul {𝕜 : Type*} {β : ι → Type*} [∀ i, Zero (β i)] [∀ i, SMulZeroClass 𝕜 (β i)]
+    (p : ℝ≥0∞) (i : ι) (c : 𝕜) (a : β i) :
+    single p i (c • a) = c • single p i a := by
+  simp_rw [← toLp_single, ← WithLp.toLp_smul]
+  exact congrArg (WithLp.toLp p)
+    (Pi.single_op (fun i ↦ (c • · : β i → β i)) (fun _ ↦ smul_zero _) i a)
+
+omit [Fintype ι] in
+/-- Inclusion of the `i`-th coordinate into `PiLp p β` as a continuous linear map. -/
+def singleCLM (p : ℝ≥0∞) (𝕜 : Type*) [Semiring 𝕜] (β : ι → Type*)
+    [∀ i, TopologicalSpace (β i)] [∀ i, AddCommGroup (β i)] [∀ i, Module 𝕜 (β i)] (i : ι) :
+    β i →L[𝕜] PiLp p β :=
+  (continuousLinearEquiv p 𝕜 β).symm.toContinuousLinearMap.comp (.single 𝕜 β i)
+
+omit [Fintype ι] in
+@[simp]
+theorem singleCLM_apply {𝕜 : Type*} [Semiring 𝕜] {β : ι → Type*}
+    [∀ i, TopologicalSpace (β i)] [∀ i, AddCommGroup (β i)] [∀ i, Module 𝕜 (β i)]
+    (i : ι) (a : β i) :
+    singleCLM p 𝕜 β i a = single p i a := by
+  simp [singleCLM]
+
+@[simp]
+theorem toContinuousLinearMap_singleLI [Fact (1 ≤ p)] {𝕜 : Type*} [Semiring 𝕜]
+    {β : ι → Type*} [∀ i, SeminormedAddCommGroup (β i)] [∀ i, Module 𝕜 (β i)] (i : ι) :
+    (singleLI (𝕜 := 𝕜) p β i).toContinuousLinearMap = singleCLM p 𝕜 β i := by
+  ext a
+  simp
+
+/-- The coordinate projections and inclusions decompose the identity on `PiLp p β`. -/
+theorem sum_singleCLM_comp_proj [Fact (1 ≤ p)] {𝕜 : Type*} [Semiring 𝕜] {β : ι → Type*}
+    [∀ i, NormedAddCommGroup (β i)] [∀ i, Module 𝕜 (β i)] :
+    ∑ i, (singleCLM p 𝕜 β i).comp (proj p β i) = ContinuousLinearMap.id 𝕜 (PiLp p β) := by
+  ext x j
+  simp
+
+/-- The operator norm of `PiLp.singleCLM` is at most `1`. -/
+theorem norm_singleCLM_le [Fact (1 ≤ p)] {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {β : ι → Type*} [∀ i, SeminormedAddCommGroup (β i)] [∀ i, NormedSpace 𝕜 (β i)] (i : ι) :
+    ‖singleCLM p 𝕜 β i‖ ≤ 1 := by
+  rw [← toContinuousLinearMap_singleLI]
+  exact (singleLI (𝕜 := 𝕜) p β i).norm_toContinuousLinearMap_le
+
+end Single
 
 end PiLp
 
@@ -265,6 +409,8 @@ end LinearIsometry
 
 namespace LinearIsometryEquiv
 
+section CongrLeft
+
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 E : Type*} [Semiring 𝕜] [SeminormedAddCommGroup E]
   [Module 𝕜 E] {ι : Type*} [Fintype ι]
 
@@ -274,5 +420,45 @@ theorem piLpCongrLeft_refl :
     piLpCongrLeft p 𝕜 E (Equiv.refl ι) = LinearIsometryEquiv.refl 𝕜 (PiLp p fun _ : ι ↦ E) := by
   ext x i
   simp [piLpCongrLeft_apply, Equiv.piCongrLeft'_refl]
+
+end CongrLeft
+
+section SubmodulePiLp
+variable {ι 𝕜 X : Type*} [Fintype ι] {p : ℝ≥0∞} [Fact (1 ≤ p)] [Ring 𝕜]
+  [SeminormedAddCommGroup X] [Module 𝕜 X] {F : ι → Type*} [∀ i, SeminormedAddCommGroup (F i)]
+  [∀ i, Module 𝕜 (F i)] (e : X ≃ₗᵢ[𝕜] PiLp p F) (M : Submodule 𝕜 X)
+  (N : ∀ i, Submodule 𝕜 (F i)) (hMN : ∀ x, x ∈ M ↔ ∀ i, e x i ∈ N i)
+
+/-- Restrict a linear isometry equivalence `e : X ≃ₗᵢ[𝕜] PiLp p F` to a submodule `M` of `X`
+characterized coordinatewise by `x ∈ M ↔ ∀ i, e x i ∈ N i`. -/
+noncomputable def submodulePiLp : ↥M ≃ₗᵢ[𝕜] PiLp p (fun i ↦ ↥(N i)) where
+  toFun x := WithLp.toLp p fun i ↦ ⟨e x.val i, (hMN x.val).mp x.property i⟩
+  invFun g := ⟨e.symm (WithLp.toLp p fun i ↦ (g i : F i)),
+    (hMN _).mpr fun i ↦ by rw [e.apply_symm_apply, PiLp.toLp_apply]; exact (g i).property⟩
+  map_add' _ _ := by ext i : 2; simp [map_add]
+  map_smul' _ _ := by ext i : 2; simp
+  left_inv x := Subtype.ext <| by have hx := WithLp.toLp_ofLp p (e x.val); simp [hx]
+  right_inv _ := by ext i : 2; simp
+  norm_map' x := (le_antisymm (PiLp.norm_mono fun _ ↦ by simp [PiLp.toLp_apply])
+    (PiLp.norm_mono fun _ ↦ by simp [PiLp.toLp_apply])).trans
+      ((e.norm_map x.val).trans (Submodule.norm_coe x))
+
+/-- Coordinatewise evaluation of `e.submodulePiLp M N hMN` in `F i`. -/
+@[simp] theorem coe_submodulePiLp_apply (x : ↥M) (i : ι) :
+    (e.submodulePiLp M N hMN x i : F i) = e x.val i := (rfl)
+
+/-- Coordinatewise evaluation of `(e.submodulePiLp M N hMN).symm` under `e`. -/
+@[simp] theorem apply_coe_submodulePiLp_symm (g : PiLp p (fun i ↦ ↥(N i))) (i : ι) :
+    e ((e.submodulePiLp M N hMN).symm g : X) i = (g i : F i) := by
+  rw [← e.coe_submodulePiLp_apply M N hMN, LinearIsometryEquiv.apply_symm_apply]
+
+/-- On `PiLp.single`, `(e.submodulePiLp M N hMN).symm` embeds via `e.symm`. -/
+theorem coe_submodulePiLp_symm_single [DecidableEq ι] (j : ι) (h : ↥(N j)) :
+    ((e.submodulePiLp M N hMN).symm (PiLp.single p j h) : X) =
+      e.symm (PiLp.single p j (h : F j)) :=
+  e.injective <| by
+    rw [e.apply_symm_apply]; ext k : 1; rw [e.apply_coe_submodulePiLp_symm M N hMN]
+    rcases eq_or_ne k j with rfl | hkj <;> simp [*]
+end SubmodulePiLp
 
 end LinearIsometryEquiv

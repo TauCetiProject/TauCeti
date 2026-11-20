@@ -260,7 +260,7 @@ theorem IsTamelyRamifiedWRT.isUnramifiedWRT_adjoin_root (h : IsTamelyRamifiedWRT
   have : IsScalarTower A L Ω := .to₁₃₄ A K L Ω
   have := TauCeti.IntermediateField.isScalarTower_adjoinBaseChange K L A β
   have hβK : AdjoinSimple.gen K β ^ e = algebraMap A K⟮β⟯ π :=
-    TauCeti.adjoinSimple_gen_pow_eq_algebraMap_iff.mpr hβ
+    AdjoinSimple.gen_pow_eq_algebraMap_iff.mpr hβ
   have hgenK : K⟮AdjoinSimple.gen K β⟯ = ⊤ := adjoin_adjoinSimple_gen_eq_top β
   let A₁ := integralClosure A K⟮β⟯
   have : IsDiscreteValuationRing A₁ :=
@@ -317,7 +317,7 @@ theorem isTamelyRamifiedWRT_tfae [IsAlgClosed Ω] {π : A} (hπ : Irreducible π
             IsUnramifiedWRT (integralClosure A K⟮β⟯) L⟮β⟯
     ] := by
   tfae_have 1 → 3 := fun h ↦ by
-    obtain ⟨e₀, he₀, hdvd⟩ := h.exists_isUnit_ramificationIdx_dvd K
+    obtain ⟨e₀, he₀, hdvd⟩ := h.exists_isUnit_forall_ramificationIdx_dvd K
     exact ⟨e₀, he₀, fun e β he hβ ↦
       h.isUnramifiedWRT_adjoin_root hπ hβ fun P _ _ ↦ (hdvd P).trans he⟩
   tfae_have 3 → 2 := by
@@ -331,7 +331,7 @@ theorem isTamelyRamifiedWRT_tfae [IsAlgClosed Ω] {π : A} (hπ : Irreducible π
     have : IsScalarTower A L Ω := .to₁₃₄ A K L Ω
     have := TauCeti.IntermediateField.isScalarTower_adjoinBaseChange K L A β
     have hβK : AdjoinSimple.gen K β ^ e = algebraMap A K⟮β⟯ π :=
-      TauCeti.adjoinSimple_gen_pow_eq_algebraMap_iff.mpr hβ
+      AdjoinSimple.gen_pow_eq_algebraMap_iff.mpr hβ
     exact IsDiscreteValuationRing.isTamelyRamifiedWRT_of_isUnramifiedWRT_of_pow_eq_of_irreducible
       hπ he hβK (adjoin_adjoinSimple_gen_eq_top β) hU
   tfae_finish

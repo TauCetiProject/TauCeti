@@ -493,12 +493,13 @@ theorem continuousOn_sphericalPendulumRotationAngle :
       (c : ℝ × ℝ).2 θ
   have hG : Continuous (Function.uncurry G) :=
     continuousOn_sphericalPendulumRotationAngleSinIntegrand.comp_continuous
-      (by fun_prop : Continuous fun p : R × ℝ ↦ ((p.1 : ℝ × ℝ), p.2)) fun p ↦ ⟨p.1.2, trivial⟩
+      (by fun_prop : Continuous fun p : R × ℝ ↦ ((p.1 : ℝ × ℝ), p.2)) fun p ↦ ⟨p.1.property,
+          trivial⟩
   rw [continuousOn_iff_continuous_domRestrict]
   refine ((continuous_const (y := (2 : ℝ))).mul
     (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (μ := volume) hG
       (-(π / 2)) (π / 2))).congr fun c ↦ ?_
-  obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 c.2
+  obtain ⟨hj, z, hz, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 c.property
   simp only [G, domRestrict_apply]
   exact (sphericalPendulumRotationAngle_eq_integral_sin hj hz hV).symm
 
