@@ -277,8 +277,8 @@ theorem involute_eq_or_eq_neg_of_mem_monomialGroup {u : (CliffordAlgebra Q)ˣ}
 /-- **The grade involution as an automorphism of the group of signed monomials.** For an orthogonal
 basis it sends the signed monomial `±e_s` to `±(-1) ^ #s e_s`. -/
 noncomputable def monomialGroupInvolute : monomialGroup Q v ≃* monomialGroup Q v where
-  toFun g := ⟨_, units_map_involute_mem_monomialGroup v g.2⟩
-  invFun g := ⟨_, units_map_involute_mem_monomialGroup v g.2⟩
+  toFun g := ⟨_, units_map_involute_mem_monomialGroup v g.property⟩
+  invFun g := ⟨_, units_map_involute_mem_monomialGroup v g.property⟩
   left_inv _ := Subtype.ext (Units.ext (involute_involute _))
   right_inv _ := Subtype.ext (Units.ext (involute_involute _))
   map_mul' _ _ := Subtype.ext (map_mul _ _ _)
@@ -495,7 +495,7 @@ theorem mul_self_mem_monomialGroupSign (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i
       rw [← mul_inv_rev]
       rcases ih with h | h <;> simp [h]
   refine (mem_monomialGroupSign_iff v).mpr ?_
-  rcases key u.2 with h | h
+  rcases key u.property with h | h
   · exact Or.inl (Subtype.ext h)
   · exact Or.inr (Subtype.ext h)
 
@@ -516,10 +516,10 @@ the characters with values in the units of a ring as well as the sign characters
 def monomialGroupSignCharEquiv {H : Type*} [Group H] :
     {χ : monomialGroup Q v →* H // χ (monomialGroupEpsilon Q v) = 1} ≃
       ((monomialGroup Q v ⧸ monomialGroupSign Q v) →* H) where
-  toFun χ := QuotientGroup.lift _ χ.1 fun u hu ↦ by
+  toFun χ := QuotientGroup.lift _ χ.val fun u hu ↦ by
     rcases (mem_monomialGroupSign_iff v).mp hu with rfl | rfl
     · exact map_one _
-    · exact χ.2
+    · exact χ.property
   invFun ψ := ⟨ψ.comp (QuotientGroup.mk' (monomialGroupSign Q v)), by
     have hε := (QuotientGroup.eq_one_iff (N := monomialGroupSign Q v)
       (monomialGroupEpsilon Q v)).mpr (monomialGroupEpsilon_mem_monomialGroupSign v)
@@ -534,7 +534,7 @@ quotient taking the class of a group element to its value. -/
 theorem monomialGroupSignCharEquiv_apply_mk {H : Type*} [Group H]
     (χ : {χ : monomialGroup Q v →* H // χ (monomialGroupEpsilon Q v) = 1})
     (u : monomialGroup Q v) :
-    monomialGroupSignCharEquiv v χ (QuotientGroup.mk u) = χ.1 u :=
+    monomialGroupSignCharEquiv v χ (QuotientGroup.mk u) = χ.val u :=
   (rfl)
 
 /-- The inverse of `CliffordAlgebra.monomialGroupSignCharEquiv` sends a monoid map of the quotient
@@ -542,7 +542,7 @@ to its composite with the quotient map. -/
 @[simp]
 theorem monomialGroupSignCharEquiv_symm_apply_coe {H : Type*} [Group H]
     (ψ : (monomialGroup Q v ⧸ monomialGroupSign Q v) →* H) (u : monomialGroup Q v) :
-    ((monomialGroupSignCharEquiv v).symm ψ).1 u = ψ (QuotientGroup.mk u) :=
+    ((monomialGroupSignCharEquiv v).symm ψ).val u = ψ (QuotientGroup.mk u) :=
   (rfl)
 
 /-! ### The group algebra of the group of signed monomials -/
@@ -641,11 +641,8 @@ theorem mem_monomialGroup_iff (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     | mul u v _ _ hu hv =>
       obtain ⟨s, hs⟩ := hu
       obtain ⟨t, ht⟩ := hv
-      refine ⟨s ∆ t, ?_⟩
       rw [Units.val_mul]
-      rcases basis_mul_basis_eq_or hb hQ s t with h | h <;>
-        rcases hs with hs | hs <;> rcases ht with ht | ht <;>
-        simp only [hs, ht, neg_mul, mul_neg, neg_neg, h, true_or, or_true]
+      exact ⟨s ∆ t, mul_eq_or_of_eq_basis_or hb hQ hs ht⟩
     | inv u _ hu =>
       obtain ⟨s, hs⟩ := hu
       refine ⟨s, ?_⟩
@@ -726,7 +723,7 @@ noncomputable def monomialGroupEquiv [Nontrivial R]
       · exact ((basis Q b).ne_neg (Invertible.ne_zero 2) s t h).elim
       · exact ((basis Q b).ne_neg (Invertible.ne_zero 2) t s h.symm).elim
       · rw [(basis Q b).injective h]
-    · obtain ⟨s, hs | hs⟩ := (mem_monomialGroup_iff hb hQ).mp u.2
+    · obtain ⟨s, hs | hs⟩ := (mem_monomialGroup_iff hb hQ).mp u.property
       · exact ⟨(s, 1), Subtype.ext (Units.ext (by rw [hval, hs, Units.val_one, one_smul]))⟩
       · exact ⟨(s, -1), Subtype.ext (Units.ext (by rw [hval, hs, Units.val_neg, Units.val_one,
           neg_one_smul]))⟩
@@ -859,7 +856,7 @@ theorem ker_monomialGroupAlgHom (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
       z - ψ (monomialGroupAlgHom Q b z) ∈ Ideal.span {x} := by
     induction z using MonoidAlgebra.induction_on with
     | of g =>
-      obtain ⟨s, hs | hs⟩ := (mem_monomialGroup_iff hb hQ).mp g.2
+      obtain ⟨s, hs | hs⟩ := (mem_monomialGroup_iff hb hQ).mp g.property
       · obtain rfl : g = u s := Subtype.ext (Units.ext (hs.trans (hu s).symm))
         rw [monomialGroupAlgHom_of, hu, Module.Basis.constr_basis, sub_self]
         exact zero_mem _
@@ -915,7 +912,7 @@ private noncomputable def monomialGroupLiftAux (hb : (QuadraticMap.associated Q)
     CliffordAlgebra Q →ₐ[R] A :=
   (Ideal.Quotient.liftₐ _ (MonoidAlgebra.lift R A _ f) fun _ hz ↦
       RingHom.mem_ker.mp ((Ideal.span_le.mpr (Set.singleton_subset_iff.mpr
-        (by simp [RingHom.mem_ker, f.2]))) hz)).comp
+        (by simp [RingHom.mem_ker, f.property]))) hz)).comp
     (monomialGroupAlgebraQuotientEquiv hb hQ).symm.toAlgHom
 
 /-- `CliffordAlgebra.monomialGroupLiftAux hb hQ f` sends the value of `g` to `f g`. -/
@@ -923,7 +920,7 @@ private theorem monomialGroupLiftAux_apply_coe (hb : (QuadraticMap.associated Q)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {A : Type*} [Ring A] [Algebra R A]
     (f : {f : monomialGroup Q b →* A // f (monomialGroupEpsilon Q b) = -1})
     (g : monomialGroup Q b) :
-    monomialGroupLiftAux hb hQ f ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = f.1 g := by
+    monomialGroupLiftAux hb hQ f ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = f.val g := by
   simp only [monomialGroupLiftAux, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
     monomialGroupAlgebraQuotientEquiv_symm_apply_coe]
   exact MonoidAlgebra.lift_of ..
@@ -955,7 +952,7 @@ theorem monomialGroupLift_apply_coe (hb : (QuadraticMap.associated Q).IsOrthoᵢ
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {A : Type*} [Ring A] [Algebra R A]
     (f : {f : monomialGroup Q b →* A // f (monomialGroupEpsilon Q b) = -1})
     (g : monomialGroup Q b) :
-    monomialGroupLift hb hQ f ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = f.1 g :=
+    monomialGroupLift hb hQ f ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = f.val g :=
   monomialGroupLiftAux_apply_coe hb hQ f g
 
 /-- The monoid map attached by `CliffordAlgebra.monomialGroupLift` to an algebra map `F` from the
@@ -964,7 +961,7 @@ Clifford algebra is `F` applied to the values of the group elements. -/
 theorem monomialGroupLift_symm_apply_coe (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {A : Type*} [Ring A] [Algebra R A]
     (F : CliffordAlgebra Q →ₐ[R] A) (g : monomialGroup Q b) :
-    ((monomialGroupLift hb hQ).symm F).1 g = F ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
+    ((monomialGroupLift hb hQ).symm F).val g = F ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
   (rfl)
 
 /-! ### Conjugacy classes -/
@@ -1153,23 +1150,6 @@ private theorem monomialGroupEquiv_symm_fst_of_val_eq
     · exact ⟨-1, Subtype.ext (Units.ext (by simp [hg]))⟩
   rw [← he, Equiv.symm_apply_apply]
 
-omit [Nontrivial R] [Fintype I] in
-/-- The product of signed monomials `±e_s` and `±e_t` is a signed monomial `±e_{s ∆ t}`. -/
-private theorem val_mul_eq_or_of_val_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
-    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {g h : monomialGroup Q b} {s t : Finset I}
-    (hs : ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = basis Q b s ∨
-      ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = -basis Q b s)
-    (ht : ((h : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = basis Q b t ∨
-      ((h : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = -basis Q b t) :
-    (((g * h : monomialGroup Q b) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
-        basis Q b (s ∆ t) ∨
-      (((g * h : monomialGroup Q b) : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
-        -basis Q b (s ∆ t) := by
-  rw [Subgroup.coe_mul, Units.val_mul]
-  rcases basis_mul_basis_eq_or hb hQ s t with hst | hst <;>
-    rcases hs with hs | hs <;> rcases ht with ht | ht <;>
-    simp only [hs, ht, neg_mul, mul_neg, neg_neg, hst, true_or, or_true]
-
 omit [Fintype I] in
 /-- **The support homomorphism.** For an orthogonal basis whose generators square to `±1`, the
 signed monomial `±e_s` is sent to the indicator vector of `s` in `(ZMod 2) ^ I`, written
@@ -1185,9 +1165,11 @@ noncomputable def monomialGroupSupport (hb : (QuadraticMap.associated Q).IsOrtho
     rw [monomialGroupEquiv_symm_fst_of_val_eq hb hQ (s := ∅) (Or.inl (by simp)),
       Finset.coe_empty, Set.indicator_empty', ofAdd_zero]
   map_mul' g h := by
-    obtain ⟨s, hs⟩ := (mem_monomialGroup_iff hb hQ).mp g.2
-    obtain ⟨t, ht⟩ := (mem_monomialGroup_iff hb hQ).mp h.2
-    rw [monomialGroupEquiv_symm_fst_of_val_eq hb hQ (val_mul_eq_or_of_val_eq_or hb hQ hs ht),
+    obtain ⟨s, hs⟩ := (mem_monomialGroup_iff hb hQ).mp g.property
+    obtain ⟨t, ht⟩ := (mem_monomialGroup_iff hb hQ).mp h.property
+    have hst := mul_eq_or_of_eq_basis_or hb hQ hs ht
+    rw [← Units.val_mul, ← Subgroup.coe_mul] at hst
+    rw [monomialGroupEquiv_symm_fst_of_val_eq hb hQ hst,
       monomialGroupEquiv_symm_fst_of_val_eq hb hQ hs,
       monomialGroupEquiv_symm_fst_of_val_eq hb hQ ht, ← ofAdd_add]
     classical

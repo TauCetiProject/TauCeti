@@ -20,7 +20,7 @@ Consequently every point `p` has a *uniformly normal* neighbourhood: there are a
 `W` of `p` and a radius `r > 0` such that, for every `q ∈ W`, the ball of radius `r` in `T_q M`
 is a normal domain at `q` and its exponential image contains all of `W`. The radius is uniform
 in the base point, unlike the radius of `TauCeti.Manifold.exists_isNormalDomain_ball`, which
-depends on the point. On a compact set of base points a single positive radius gives normal
+depends on the point. Near a compact set of base points a single positive radius gives normal
 domains at all of them.
 
 These neighbourhoods are the starting point for geodesically convex neighbourhoods and for
@@ -30,8 +30,8 @@ coordinates built from the Riemannian distance to finitely many nearby centres.
 
 * `TauCeti.Manifold.exists_mem_nhds_forall_isNormalDomain_ball`: every point has a uniformly
   normal neighbourhood.
-* `IsCompact.exists_pos_forall_isNormalDomain_ball`: on a compact set, one positive radius gives
-  normal domains at every point.
+* `IsCompact.exists_pos_exists_isOpen_superset_forall_isNormalDomain_ball`: on an open
+  neighbourhood of a compact set, one positive radius gives normal domains at every point.
 
 ## References
 
@@ -60,10 +60,10 @@ variable
 /-- A tangent ball at `q` is a normal domain as soon as all its vectors lie in a set of tangent
 vectors on which `(x, v) ↦ (x, exp_x v)` is injective, a local diffeomorphism and defined. -/
 private theorem isNormalDomain_ball_of_injOn {O : Set (TangentBundle I M)}
-    (hinj : InjOn (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)) O)
+    (hinj : InjOn (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd)) O)
     (hO : ∀ z ∈ O, IsLocalDiffeomorphAt I.tangent (I.prod I) ∞
-      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)) z ∧
-        z.2 ∈ expDomain I M z.proj)
+      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd)) z ∧
+        z.snd ∈ expDomain I M z.proj)
     {q : M} {r : ℝ} (hr : 0 < r)
     (hball : ∀ v : TangentSpace I q, ‖v‖ < r → TotalSpace.mk' E q v ∈ O) :
     IsNormalDomain I M q (Metric.ball 0 r) := by
@@ -73,7 +73,8 @@ private theorem isNormalDomain_ball_of_injOn {O : Set (TangentBundle I M)}
     (convex_ball 0 r).starConvex (Metric.mem_ball_self hr), fun v hv ↦ (hmem v hv).2,
     fun v hv w hw hvw ↦ TotalSpace.mk_inj.1 (hinj (hball v (mem_ball_zero_iff.1 hv))
       (hball w (mem_ball_zero_iff.1 hw)) (by simp only [hvw])),
-    fun v ↦ isLocalDiffeomorphAt_riemannianExp_of_prodMk (hmem v v.2).2 (hmem v v.2).1⟩
+    fun v ↦ isLocalDiffeomorphAt_riemannianExp_of_prodMk (hmem v v.property).2
+        (hmem v v.property).1⟩
 
 /-- **Uniformly normal neighbourhoods.** Every point `p` has a neighbourhood `W` with a radius
 `r > 0` such that, for every `q ∈ W`, the tangent ball of radius `r` at `q` is a normal domain whose
@@ -82,7 +83,7 @@ points. -/
 theorem exists_mem_nhds_forall_isNormalDomain_ball (p : M) :
     ∃ r : ℝ, 0 < r ∧ ∃ W ∈ 𝓝 p, ∀ q ∈ W, IsNormalDomain I M q (Metric.ball 0 r) ∧
       W ⊆ riemannianExp I M q '' Metric.ball 0 r := by
-  set F := fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)
+  set F := fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd)
   have hloc := isLocalDiffeomorphAt_prodMk_proj_riemannianExp_zeroSection (I := I) (M := M) p
   have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
@@ -90,7 +91,7 @@ theorem exists_mem_nhds_forall_isNormalDomain_ball (p : M) :
   -- `hloc.localInverse`), and the exponential map is defined.
   set O : Set (TangentBundle I M) := hloc.localInverse.target ∩
     ({z | IsLocalDiffeomorphAt I.tangent (I.prod I) ∞ F z} ∩
-      {z | z.2 ∈ expDomain I M z.proj})
+      {z | z.snd ∈ expDomain I M z.proj})
   have hOopen : IsOpen O := hloc.localInverse.open_target.inter
     ((isOpen_iff_mem_nhds.2 fun _ (hz : IsLocalDiffeomorphAt I.tangent (I.prod I) ∞ F _) ↦
       hz.eventually).inter isOpen_setOfPred_mem_expDomain)
@@ -98,10 +99,10 @@ theorem exists_mem_nhds_forall_isNormalDomain_ball (p : M) :
     ⟨hloc.localInverse_mem_target, hloc, zero_mem_expDomain p⟩
   obtain ⟨r, hr, hball⟩ := hOopen.exists_pos_forall_norm_le_subset_bundle hpO
   obtain ⟨A, hAball, hAopen, hpA⟩ := eventually_nhds_iff.1 hball
-  have hnorm : Continuous fun z : TangentBundle I M ↦ ‖z.2‖ :=
+  have hnorm : Continuous fun z : TangentBundle I M ↦ ‖z.snd‖ :=
     TauCeti.continuous_norm_bundle E (TangentSpace I)
   set S : Set (TangentBundle I M) :=
-    O ∩ (TotalSpace.proj ⁻¹' A ∩ {z | ‖z.2‖ < r})
+    O ∩ (TotalSpace.proj ⁻¹' A ∩ {z | ‖z.snd‖ < r})
   have hSopen : IsOpen S := hOopen.inter
     ((hAopen.preimage (FiberBundle.continuous_proj E _)).inter
       (isOpen_lt hnorm continuous_const))
@@ -111,7 +112,7 @@ theorem exists_mem_nhds_forall_isNormalDomain_ball (p : M) :
     ⟨hpO, hpA, by rw [mem_ofPred_eq]; convert hr using 1; exact norm_zero (E := TangentSpace I p)⟩
   -- The image of `S` is a neighbourhood of `F (0_p) = (p, p)`.
   have hFS : F '' S ∈ 𝓝 (p, p) := by
-    have hlocS : IsLocalDiffeomorphOn I.tangent (I.prod I) ∞ F S := fun z ↦ z.2.1.2.1
+    have hlocS : IsLocalDiffeomorphOn I.tangent (I.prod I) ∞ F S := fun z ↦ z.property.1.2.1
     have hFp : F (zeroSection E (TangentSpace I) p) = (p, p) := by simp [F, zeroSection]
     exact (hlocS.isLocalHomeomorphOn.isOpen_image hSopen).mem_nhds ⟨_, hpS, hFp⟩
   obtain ⟨W₁, hW₁, W₂, hW₂, hW⟩ := mem_nhds_prod_iff.1 hFS
@@ -128,17 +129,22 @@ theorem exists_mem_nhds_forall_isNormalDomain_ball (p : M) :
     obtain ⟨rfl, rfl⟩ := hz
     exact ⟨w, mem_ball_zero_iff.2 hzr, rfl⟩
 
-/-- **A uniform normal radius on a compact set.** For a compact set `K` of points there is one
-radius `r > 0` such that the tangent ball of radius `r` at every point of `K` is a normal domain. -/
-theorem _root_.IsCompact.exists_pos_forall_isNormalDomain_ball {K : Set M} (hK : IsCompact K) :
-    ∃ r : ℝ, 0 < r ∧ ∀ q ∈ K, IsNormalDomain I M q (Metric.ball 0 r) := by
+/-- **A uniform normal radius near a compact set.** For a compact set `K` of points there are a
+radius `r > 0` and an open set `U ⊇ K` such that the tangent ball of radius `r` at every point of
+`U` is a normal domain. -/
+theorem _root_.IsCompact.exists_pos_exists_isOpen_superset_forall_isNormalDomain_ball {K : Set M}
+    (hK : IsCompact K) :
+    ∃ r : ℝ, 0 < r ∧ ∃ U : Set M, IsOpen U ∧ K ⊆ U ∧
+      ∀ q ∈ U, IsNormalDomain I M q (Metric.ball 0 r) := by
   choose! R hR W hW hRW using exists_mem_nhds_forall_isNormalDomain_ball (I := I) (M := M)
-  obtain ⟨t, -, hKt⟩ := hK.elim_nhds_subcover W fun p _ ↦ hW p
+  obtain ⟨t, -, hKt⟩ :=
+    hK.elim_nhds_subcover (fun p ↦ interior (W p)) fun p _ ↦ interior_mem_nhds.2 (hW p)
   rcases t.eq_empty_or_nonempty with rfl | ht
-  · exact ⟨1, one_pos, fun q hq ↦ by simpa using hKt hq⟩
-  refine ⟨t.inf' ht R, (Finset.lt_inf'_iff ht).2 fun p _ ↦ hR p, fun q hq ↦ ?_⟩
-  obtain ⟨p, hpt, hqp⟩ := mem_iUnion₂.1 (hKt hq)
-  exact (hRW p q hqp).1.ball (Metric.ball_subset_ball (Finset.inf'_le R hpt))
-    ((Finset.lt_inf'_iff ht).2 fun p _ ↦ hR p)
+  · exact ⟨1, one_pos, ∅, isOpen_empty, by simpa using hKt, fun q hq ↦ hq.elim⟩
+  have hRt : 0 < t.inf' ht R := (Finset.lt_inf'_iff ht).2 fun p _ ↦ hR p
+  refine ⟨t.inf' ht R, hRt, ⋃ p ∈ t, interior (W p),
+    isOpen_biUnion fun _ _ ↦ isOpen_interior, hKt, fun q hq ↦ ?_⟩
+  obtain ⟨p, hpt, hqp⟩ := mem_iUnion₂.1 hq
+  exact (hRW p q (interior_subset hqp)).1.ball (Metric.ball_subset_ball (Finset.inf'_le R hpt)) hRt
 
 end TauCeti.Manifold

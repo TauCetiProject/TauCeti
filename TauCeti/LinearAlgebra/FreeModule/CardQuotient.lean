@@ -87,13 +87,17 @@ theorem card_quotient_range_eq_card_quotient_span_det {f : M →ₗ[R] M} (hf : 
         rw [Ideal.prod_span_singleton, ← Ideal.span_singleton_eq_span_singleton.mpr hassoc,
           hnorm hf]
 
-omit [IsPrincipalIdealRing R] in
+omit [IsPrincipalIdealRing R] [Module.Free R M] [Module.Finite R M] in
 /-- **An endomorphism with vanishing determinant has infinite cokernel.** Over an infinite domain,
 if `det f = 0` then `M ⧸ range f` is infinite. Together with
-`card_quotient_range_eq_card_quotient_span_det`, over an infinite principal ideal domain the
-cokernel of `f` is finite exactly when `det f ≠ 0` and `R ⧸ (det f)` is finite. -/
+`card_quotient_range_eq_card_quotient_span_det`, for a finite free module `M` over an infinite
+principal ideal domain the cokernel of `f` is finite exactly when `det f ≠ 0` and `R ⧸ (det f)` is
+finite. -/
 theorem infinite_quotient_range_of_det_eq_zero [Infinite R] {f : M →ₗ[R] M} (hf : f.det = 0) :
     Infinite (M ⧸ range f) := by
+  -- A vanishing determinant is not `1`, so `M` is finite and free.
+  have := LinearMap.finite_of_det_ne_one (f := f) (by simp [hf])
+  have := LinearMap.free_of_det_ne_one (f := f) (by simp [hf])
   -- The kernel of `f` is nonzero, so by rank-nullity the cokernel has positive rank, and the
   -- multiples of an element of positive rank are pairwise distinct.
   have hker : 0 < Module.rank R (ker f) := by

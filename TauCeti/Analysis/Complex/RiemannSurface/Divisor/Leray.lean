@@ -114,7 +114,7 @@ theorem exists_finite_cover_subsingleton_H'_one_divisorSheaf [CompactSpace X]
       ((V (k x)).isOpen.mem_nhds (hk x))
   have hWc : IsOpenCover W := .mk <| eq_top_iff.2 fun x _ ↦ Opens.mem_iSup.2 ⟨x, hxW x⟩
   obtain ⟨s, hs⟩ := hWc.exists_finite_of_compactSpace
-  exact ⟨s, inferInstance, fun i ↦ W i.1, hs.iSup_eq_top, fun i ↦ ⟨k i.1, hWV i.1⟩,
-    fun i ↦ hW i.1⟩
+  exact ⟨s, inferInstance, fun i ↦ W i.val, hs.iSup_eq_top, fun i ↦ ⟨k i.val, hWV i.val⟩,
+    fun i ↦ hW i.val⟩
 
 end TauCeti.RiemannSurface

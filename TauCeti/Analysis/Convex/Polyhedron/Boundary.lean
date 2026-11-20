@@ -73,7 +73,7 @@ theorem mem_intrinsicInterior_iff_forall_lt [Finite ι] (g : ι → (V →ᴬ[�
       have heq : U = ⋂ j : J, {y : A | g j.val (y : V) < 0} := by ext y; simp [U]
       rw [heq]
       exact isOpen_iInter_of_finite fun j =>
-        isOpen_lt ((g j.val).continuous.comp continuous_subtype_val) continuous_const
+        isOpen_lt ((g j.val).continuous.comp continuous_subtypeVal) continuous_const
     have hxU : xA ∈ U := fun j => hxstrict j.val j.property
     have hUP : U ⊆ ((↑) ⁻¹' P : Set A) := by
       intro y hy
@@ -105,7 +105,7 @@ theorem intrinsicFrontier_eq_iUnion_active [Finite ι] (g : ι → (V →ᴬ[ℝ
     exact (isConvexPolyhedron_setOf_forall g).isClosed
   have hrel : intrinsicClosure ℝ P = P :=
     IsClosed.intrinsicClosure (hclosed.preimage
-      (continuous_subtype_val : Continuous ((↑) : affineSpan ℝ P → V)))
+      (continuous_subtypeVal : Continuous ((↑) : affineSpan ℝ P → V)))
   rw [← intrinsicClosure_sdiff_intrinsicInterior, hrel]
   ext x
   rw [Set.mem_sdiff, mem_intrinsicInterior_iff_forall_lt g hP]
