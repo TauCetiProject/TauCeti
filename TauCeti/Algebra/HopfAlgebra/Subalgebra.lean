@@ -306,9 +306,8 @@ private theorem tensorShearMulRight_mem_range
         TensorProduct.AlgebraTensorModule.map_eq]
       exact hs
     refine ⟨(a ⊗ₜ[k] (1 : A)) * s, ?_⟩
-    rw [AlgHom.toLinearMap_apply, map_mul, hs, Algebra.TensorProduct.map_tmul,
-      Algebra.TensorProduct.map_tmul, TauCeti.HopfAlgebra.tensorShearMulRight_tmul, map_one,
-      Subalgebra.coe_val]
+    rw [AlgHom.toLinearMap_apply, map_mul, hs]
+    simp [TauCeti.HopfAlgebra.tensorShearMulRight_tmul]
 
 /-- **A finite-dimensional subbialgebra is a Hopf subalgebra.** Over a field, a
 finite-dimensional subalgebra of a commutative Hopf algebra which comultiplication maps into the
@@ -345,9 +344,9 @@ theorem of_finiteDimensional [FiniteDimensional k A]
     rw [Algebra.TensorProduct.toLinearMap_map, TensorProduct.AlgebraTensorModule.map_eq] at ht
     have h := congrArg (LinearMap.tensorComponent (Coalgebra.counit (R := k))) ht
     rw [LinearMap.tensorComponent_map, LinearMap.tensorComponent_map, LinearMap.comp_id,
-      LinearMap.tensorComponent_def (Coalgebra.counit (R := k) (A := H)), LinearMap.comp_apply,
-      Coalgebra.lTensor_counit_comul, LinearEquiv.coe_coe, TensorProduct.rid_tmul,
-      one_smul] at h
+      LinearMap.tensorComponent_def (Coalgebra.counit (R := k) (A := H))] at h
+    simp only [AlgHom.toLinearMap_apply, coe_val, LinearMap.coe_comp, LinearEquiv.coe_coe,
+      Function.comp_apply, Coalgebra.lTensor_counit_comul, TensorProduct.rid_tmul, one_smul] at h
     rw [← h]
     exact (LinearMap.tensorComponent _ t).2
 
