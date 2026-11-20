@@ -64,7 +64,8 @@ defined.
   `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseChainProdEquiv_comp_morseBoundary`: the Morse
   chains of the product are the tensor product of the Morse chains of the factors, and the mod-two
   Morse boundary corresponds to `∂ ⊗ 1 + 1 ⊗ ∂`. This is a chain-level statement; the Künneth
-  formula for Morse homology is not proved here.
+  formula for Morse homology is deduced from it in
+  `TauCeti.Geometry.Manifold.Morse.Boundary.Kunneth`.
 
 ## References
 
@@ -281,13 +282,13 @@ theorem morseBoundaryCoeff_prod (p p' : criticalPoints 𝓘(ℝ, E) f)
   by_cases hpp : p = p'
   · subst hpp
     have hqq : q ≠ q' := by rintro rfl; omega
-    rw [hX.morseTrajectorySlice_prod_left hY p.2,
+    rw [hX.morseTrajectorySlice_prod_left hY p.property,
       ncard_image_of_injective _ (Prod.mk_right_injective _),
       hYs.morseBoundaryCoeff_eq_ncard hg (p := q) (q := q') (by omega)]
     simp [hqq]
   by_cases hqq : q = q'
   · subst hqq
-    rw [hX.morseTrajectorySlice_prod_right hY q.2,
+    rw [hX.morseTrajectorySlice_prod_right hY q.property,
       ncard_image_of_injective _ (Prod.mk_left_injective _),
       hXs.morseBoundaryCoeff_eq_ncard hf (p := p) (q := p') (by omega)]
     simp [hpp]
@@ -298,8 +299,8 @@ theorem morseBoundaryCoeff_prod (p p' : criticalPoints 𝓘(ℝ, E) f)
 /-- **The mod-two Morse complex of a product is the tensor product complex.** Under the
 identification of the mod-two Morse chains of `M × N` with the tensor product of the chains of `M`
 and of `N`, the Morse boundary of the product field `(X, Y)` is `∂ ⊗ 1 + 1 ⊗ ∂`. This is a
-chain-level statement: the Künneth formula for the homology of these complexes is not proved
-here. -/
+chain-level statement: the Künneth formula for the homology of these complexes is
+`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseHomologyKunnethIso`. -/
 theorem morseChainProdEquiv_comp_morseBoundary :
     (morseChainProdEquiv f g (ZMod 2) hX.mdifferentiable hY.mdifferentiable).toLinearMap ∘ₗ
         (hXs.prod hYs).morseBoundary (hf.comp_fst_add_comp_snd_chartedSpaceProd hg) =

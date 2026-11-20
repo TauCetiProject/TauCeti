@@ -31,7 +31,7 @@ theorem Gammaℂ_eq_zero_iff (z : ℂ) : Gammaℂ z = 0 ↔ ∃ n : ℕ, z = -(n
 at `z`, including at the nonpositive integers where both sides vanish. -/
 theorem two_mul_Gammaℝ_two_mul (z : ℂ) : 2 * Gammaℝ (2 * z) = 2 ^ z * Gammaℂ z := by
   have h2π : ((2 : ℂ) * Real.pi) ^ (-z) = (2 : ℂ) ^ (-z) * (Real.pi : ℂ) ^ (-z) := by
-    simpa using mul_cpow_ofReal_nonneg zero_le_two Real.pi_pos.le (-z)
+    simpa using ofReal_mul_cpow zero_le_two (Real.pi : ℂ) (-z)
   have h2 : (2 : ℂ) ^ z * (2 : ℂ) ^ (-z) = 1 := by
     rw [← cpow_add _ _ two_ne_zero, add_neg_cancel, cpow_zero]
   rw [Gammaℝ_def, Gammaℂ_def, neg_div, mul_div_cancel_left₀ _ two_ne_zero, h2π]

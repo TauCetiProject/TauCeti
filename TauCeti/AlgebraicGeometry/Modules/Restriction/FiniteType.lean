@@ -73,9 +73,9 @@ theorem isFiniteType_of_isFiniteType_restrict {X : Scheme.{u}} {ι : Type*}
 
 /-- Finite type can be checked on restrictions to all affine open subschemes. -/
 theorem isFiniteType_of_isFiniteType_restrict_affineOpens {X : Scheme.{u}}
-    (M : X.Modules) (h : ∀ U : X.affineOpens, (M.restrict U.1.ι).IsFiniteType) :
+    (M : X.Modules) (h : ∀ U : X.affineOpens, (M.restrict U.val.ι).IsFiniteType) :
     M.IsFiniteType :=
-  isFiniteType_of_isFiniteType_restrict M (fun U : X.affineOpens ↦ U.1)
+  isFiniteType_of_isFiniteType_restrict M (fun U : X.affineOpens ↦ U.val)
     (iSup_affineOpens_eq_top X) h
 
 end TauCeti.AlgebraicGeometry

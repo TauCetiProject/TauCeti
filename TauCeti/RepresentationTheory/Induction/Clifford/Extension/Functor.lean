@@ -186,7 +186,7 @@ theorem cliffordReconstructionFunctor_obj_projection_tmul (M : ModuleCat.{w} B)
         (CrossedSystem.Algebra.inc (cliffordCrossedSystem A s hs).opInv
           (op (↑d⁻¹ : End A)) •
             (CrossedSystem.Algebra.basis (cliffordCrossedSystem A s hs).opInv q • m))
-        (p.1.2 x) := by
+        (p.val.2 x) := by
   dsimp only [cliffordReconstructionFunctor, Rep.of_ρ]
   erw [cliffordReconstructionRepresentation_projection_tmul, hp, map_mul,
     mul_apply_eq_comp, cliffordReconstructionMultiplicityRepresentation_section,

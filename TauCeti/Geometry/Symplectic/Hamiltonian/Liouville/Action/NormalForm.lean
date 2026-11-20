@@ -93,7 +93,7 @@ variable {p a A}
 
 /-- The actions of `rescaledCover p a A (θ, c)` are `a⁻¹ A(c)`. -/
 private theorem rescaledCover_snd_apply_single [DecidableEq ι] (q : (ι → ℝ) × (ι → ℝ)) :
-    (fun i ↦ (rescaledCover p a A q).2 (Pi.single i 1)) = a⁻¹ • A q.2 :=
+    (fun i ↦ (rescaledCover p a A q).snd (Pi.single i 1)) = a⁻¹ • A q.2 :=
   funext fun i ↦ CotangentBundle.actionAngleCover_snd_apply_single p _ i
 
 private theorem contMDiffAt_rescaledCover {q : (ι → ℝ) × (ι → ℝ)}
@@ -210,7 +210,7 @@ theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, �
       (Φ : M → CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p))
       (h : (ι → ℝ) → ι → ℝ),
       IsOpen U ∧ connectedComponentIn (F ⁻¹' {F x}) x ⊆ U ∧ IsOpen D ∧ InjOn Φ U ∧
-      Φ '' U = {z | (fun i ↦ z.2 (Pi.single i 1)) ∈ D} ∧
+      Φ '' U = {z | (fun i ↦ z.snd (Pi.single i 1)) ∈ D} ∧
       (∀ y ∈ U, IsLocalDiffeomorphAt I
         ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞ Φ y) ∧
       (∀ y ∈ U, ∀ v w : TangentSpace I y,
@@ -222,7 +222,7 @@ theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, �
             (mfderiv I ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
               Φ y w) =
           SmoothBundleForm.eval₂ σ y v w) ∧
-      ContDiffOn ℝ ∞ h D ∧ ∀ y ∈ U, F y = h (fun i ↦ (Φ y).2 (Pi.single i 1)) := by
+      ContDiffOn ℝ ∞ h D ∧ ∀ y ∈ U, F y = h (fun i ↦ (Φ y).snd (Pi.single i 1)) := by
   -- Start from the local action-angle coordinates `Ψ(θ, c)`, `2π`-periodic in `θ`, with actions
   -- `A`. On `W = ℝ^ι × U₀`, where `A` is a diffeomorphism, `Ψ` and the rescaled model
   -- `κ(θ, c) = ∑ j, (a⁻¹ A(c))_j dθ_j` at `[a θ]`, `a = p / 2π`, identify the same points, so `κ`
@@ -256,7 +256,7 @@ theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, �
     extend (fun q : W ↦ Ψ q) (fun q : W ↦ κ q) fun _ ↦ κ 0
   have hΦΨ (q : (ι → ℝ) × (ι → ℝ)) (hq : q ∈ W) : Φ (Ψ q) = κ q :=
     FactorsThrough.extend_apply (f := fun q : W ↦ Ψ q) (g := fun q : W ↦ κ q)
-      (fun q q' h ↦ (hκeq q q' q.2 q'.2).2 h) _ ⟨q, hq⟩
+      (fun q q' h ↦ (hκeq q q' q.property q'.property).2 h) _ ⟨q, hq⟩
   have hΨloc (q : (ι → ℝ) × (ι → ℝ)) (hq : q ∈ W) :
       IsLocalDiffeomorphAt 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I ∞ Ψ q :=
     (hΨ q.2 hq.2.1).2.1 q.1
@@ -282,7 +282,8 @@ theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, �
   refine ⟨Ψ '' W, (fun c ↦ a⁻¹ • A c) '' U₀, Φ, fun J ↦ ΦA.symm (a • J), ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_⟩
   · -- `Ψ` is a local homeomorphism on the open set `W`, so `Ψ '' W` is open.
-    exact ((isLocalDiffeomorphOn_iff W).2 fun q ↦ hΨloc q q.2).isLocalHomeomorphOn.isOpen_image hW
+    exact ((isLocalDiffeomorphOn_iff W).2 fun q ↦ hΨloc q
+        q.property).isLocalHomeomorphOn.isOpen_image hW
   · -- The component is swept out by the angles at the value `F x ∈ U₀`.
     rw [← hrange]
     rintro _ ⟨θ, rfl⟩

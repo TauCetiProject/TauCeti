@@ -40,9 +40,9 @@ curve through `1` with the constant `C`; the latter involves no inversion.
   `M * ‖B - A‖ < 1`, then `B` is invertible with `‖B⁻¹‖ ≤ M / (1 - M * ‖B - A‖)`.
 * `HasDerivAt.clm_inverse`: differentiates `(A t)⁻¹`.
 * `HasDerivAt.clm_inverse_apply`: differentiates `(A t)⁻¹ (w t)`.
-* `ContDiffWithinAt.clm_inverse`, `ContDiffAt.clm_inverse`, `ContDiffOn.clm_inverse`: the
-  inverse of a `C^n` family of maps between Banach spaces, on any domain, is `C^n` where the
-  family is invertible.
+* `ContDiffWithinAt.clm_inverse`, `ContDiffAt.clm_inverse`, `ContDiffOn.clm_inverse`,
+  `ContDiff.clm_inverse`: the inverse of a `C^n` family of maps between Banach spaces, on any
+  domain, is `C^n` where the family is invertible.
 * `DifferentiableAt.clm_inverse_of_completeSpace`: the inverse of a differentiable family between
   Banach spaces, on any domain, is differentiable at an invertible base point.
 * `HasFDerivAt.clm_inverse`, `HasFDerivAt.clm_inverse_of_completeSpace`,
@@ -115,7 +115,7 @@ theorem ContinuousLinearMap.isInvertible_of_norm_sub_le_half [CompleteSpace E]
     (L : E ≃L[𝕜] F) {A : E →L[𝕜] F}
     (h : ‖A - (L : E →L[𝕜] F)‖₊ ≤ ‖(L.symm : F →L[𝕜] E)‖₊⁻¹ / 2) : A.IsInvertible := by
   rcases eq_or_ne (‖(L.symm : F →L[𝕜] E)‖₊)⁻¹ 0 with h0 | h0
-  · rw [h0, zero_div, le_zero_iff, nnNorm_eq_zero, sub_eq_zero] at h
+  · rw [h0, zero_div, nonpos_iff_eq_zero, nnNorm_eq_zero, sub_eq_zero] at h
     exact h ▸ ContinuousLinearMap.isInvertible_equiv
   · exact ContinuousLinearMap.isInvertible_of_norm_sub_lt L (h.trans_lt (NNReal.half_lt_self h0))
 
@@ -215,6 +215,13 @@ theorem ContDiffOn.clm_inverse [CompleteSpace G] (hf : ContDiffOn 𝕜 n f s)
     (hinv : ∀ y ∈ s, (f y).IsInvertible) :
     ContDiffOn 𝕜 n (fun y => (f y).inverse) s :=
   fun y hy => (hf y hy).clm_inverse (hinv y hy)
+
+/-- The inverse of a `C^n` family of continuous linear maps between Banach spaces that is invertible
+everywhere is `C^n`. -/
+theorem ContDiff.clm_inverse [CompleteSpace G] (hf : ContDiff 𝕜 n f)
+    (hinv : ∀ y, (f y).IsInvertible) :
+    ContDiff 𝕜 n (fun y => (f y).inverse) :=
+  contDiff_iff_contDiffAt.2 fun y => hf.contDiffAt.clm_inverse (hinv y)
 
 /-- The derivative of an inverse family of continuous linear maps, assuming the family is
 invertible at the base point and the inverse family is differentiable there:

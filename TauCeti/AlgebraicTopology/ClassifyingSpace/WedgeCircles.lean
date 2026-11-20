@@ -174,7 +174,7 @@ circles into the cellular classifying space is a homotopy equivalence
 def wedgeCirclesHomotopyEquivCellularClassifyingSpace :
     (WedgeSum fun _ : S ↦ (1 : Circle)) ≃ₕ cellularClassifyingSpace (∅ : Set (FreeGroup S)) :=
   let e := TwoCellAttachment.inclHomeomorphOfIsEmpty
-    fun r : (∅ : Set (FreeGroup S)) ↦ PresentationComplex.attachingLoop r.1
+    fun r : (∅ : Set (FreeGroup S)) ↦ PresentationComplex.attachingLoop r.val
   e.toHomotopyEquiv.trans <| PresentationComplex.homotopyEquivCellularClassifyingSpace <|
     (isEilenbergMacLaneSpaceOne_circle S).isAspherical.of_homotopyEquiv e.toHomotopyEquiv _
 

@@ -103,7 +103,7 @@ variable (W) [W.IsElliptic]
 projective point classes. -/
 def Point.equivUnimodularLift : W.Point ≃ {P : PointClass F // W.UnimodularLift P} where
   toFun P := ⟨P.point, unimodularLift_iff_nonsingularLift.mpr P.nonsingular⟩
-  invFun P := ⟨unimodularLift_iff_nonsingularLift.mp P.2⟩
+  invFun P := ⟨unimodularLift_iff_nonsingularLift.mp P.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
 

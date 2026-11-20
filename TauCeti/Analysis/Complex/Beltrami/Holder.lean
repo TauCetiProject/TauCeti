@@ -180,10 +180,10 @@ theorem exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv (hα : 0 < α) (hα1 : �
   have hT : cauchyTransform (h : HolderSpace α ℂ ℂ) = T := funext (cauchyTransform_apply _)
   have hTC : ContDiffOn ℝ 1 T (ball c (r + 1)) := by
     rw [← hT]
-    exact (contDiff_cauchyTransform_of_mem_supportedHolderSubmodule hα hα1 hr h.2).contDiffOn
+    exact (contDiff_cauchyTransform_of_mem_supportedHolderSubmodule hα hα1 hr h.property).contDiffOn
   have hTbar : ∀ z, conjWirtingerDeriv T z 1 = (h : HolderSpace α ℂ ℂ) z := by
     rw [← hT]
-    exact conjWirtingerDeriv_cauchyTransform_of_mem_supportedHolderSubmodule hα hα1 hr h.2
+    exact conjWirtingerDeriv_cauchyTransform_of_mem_supportedHolderSubmodule hα hα1 hr h.property
   have hDT : ∀ z (hz : z ∈ closedBall c r), fderiv ℝ T z = D h ⟨z, hz⟩ := fun z hz ↦
     (cauchyDerivativeCLM_apply hα hα1 hr hr h ⟨z, hz⟩).symm
   have hsub : closedBall c r ⊆ ball c (r + 1) := closedBall_subset_ball (by linarith)
@@ -215,13 +215,13 @@ theorem exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv (hα : 0 < α) (hα1 : �
     fun z hz ↦ by
       rw [conjWirtingerDeriv_add differentiableAt_id (hTd z hz), conjWirtingerDeriv_id, zero_add]
       exact hTbar z
-  refine ⟨h, h.2, hh, contDiffOn_id.add hTC, hψbar, fun z hz ↦ ?_, fun z hz ↦ ?_,
+  refine ⟨h, h.property, hh, contDiffOn_id.add hTC, hψbar, fun z hz ↦ ?_, fun z hz ↦ ?_,
     ?_, fun z hz ↦ ?_⟩
   · rw [hψT, hψbar z hz,
       wirtingerDeriv_add differentiableAt_id (hTd z hz), wirtingerDeriv_id]
     by_cases hz' : z ∈ closedBall c r
     · exact hpt z hz'
-    · rw [mem_supportedHolderSubmodule_iff.mp h.2 z hz',
+    · rw [mem_supportedHolderSubmodule_iff.mp h.property z hz',
         mem_supportedHolderSubmodule_iff.mp hμ z hz', zero_mul]
   · rw [hψT, (hψ z (hsub hz)).fderiv, add_sub_cancel_left]
     push_cast

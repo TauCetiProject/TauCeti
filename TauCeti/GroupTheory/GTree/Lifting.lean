@@ -144,14 +144,14 @@ private noncomputable def liftPathEnd (x₀ : T.V) :
     ∀ {b : T.quotient.V}, T.quotient.Path (T.quotientMap.mapV x₀) b →
       {a : T.V // T.quotientMap.mapV a = b}
   | _, .nil => ⟨x₀, rfl⟩
-  | _, .cons p f => ⟨T.tgt (liftDart (f.2.1.trans (liftPathEnd x₀ p).2.symm)), by
-      rw [← Hom.map_tgt, quotientMap_liftDart, f.2.2]⟩
+  | _, .cons p f => ⟨T.tgt (liftDart (f.property.1.trans (liftPathEnd x₀ p).property.symm)), by
+      rw [← Hom.map_tgt, quotientMap_liftDart, f.property.2]⟩
 
 /-- The lifts of a path and of the path extended by a dart `f` are joined by a lift of `f`. -/
 private theorem exists_liftPathEnd_cons (x₀ : T.V) {b c : T.quotient.V}
     (p : T.quotient.Path (T.quotientMap.mapV x₀) b) (f : Quiver.Hom b c) :
-    ∃ e : T.E, T.src e = (liftPathEnd x₀ p).1 ∧ T.quotientMap.mapE e = f.1 ∧
-      T.tgt e = (liftPathEnd x₀ (p.cons f)).1 :=
+    ∃ e : T.E, T.src e = (liftPathEnd x₀ p).val ∧ T.quotientMap.mapE e = f.val ∧
+      T.tgt e = (liftPathEnd x₀ (p.cons f)).val :=
   ⟨_, src_liftDart _, quotientMap_liftDart _, rfl⟩
 
 /-- The lift of a spanning tree of the quotient graph: lifts of the vertices, with a prescribed
@@ -162,7 +162,7 @@ private theorem exists_lift_spanningTree (S : T.quotient.SpanningTree) (x₀ : T
       s (T.quotientMap.mapV x₀) = x₀ ∧ ∀ y ∈ S.darts, ∃ e : T.E,
         T.src e = s (T.quotient.src y) ∧ T.tgt e = s (T.quotient.tgt y) ∧
           T.quotientMap.mapE e = y := by
-  refine ⟨fun b => (liftPathEnd x₀ (S.path _ b)).1, fun b => (liftPathEnd x₀ _).2,
+  refine ⟨fun b => (liftPathEnd x₀ (S.path _ b)).val, fun b => (liftPathEnd x₀ _).property,
     by simp [liftPathEnd], fun y hy => ?_⟩
   rcases S.path_eq_cons_or_path_eq_cons_reverse (T.quotientMap.mapV x₀) (T.quotient.dart y)
     (by rwa [dart_val]) with h | h
@@ -321,18 +321,18 @@ theorem iSup_stabilizer_sup_closure_range_twist :
     | nil => exact hu
     | @cons w z _ f ih =>
       obtain ⟨r, hr, b, hrb⟩ := ih
-      have hsrc : T.src (r⁻¹ • f.1) = D.vertex b := by
-        rw [src_smul, f.2.1, ← hrb, inv_smul_smul]
+      have hsrc : T.src (r⁻¹ • f.val) = D.vertex b := by
+        rw [src_smul, f.property.1, ← hrb, inv_smul_smul]
       obtain ⟨h, hh, hdart⟩ := D.exists_smul_dart_eq hsrc
-      refine ⟨r * h * D.twist (T.quotientMap.mapE (r⁻¹ • f.1)),
+      refine ⟨r * h * D.twist (T.quotientMap.mapE (r⁻¹ • f.val)),
         mul_mem (mul_mem hr (hstab b hh)) (htwist _),
-        T.quotient.tgt (T.quotientMap.mapE (r⁻¹ • f.1)), ?_⟩
-      calc (r * h * D.twist (T.quotientMap.mapE (r⁻¹ • f.1))) •
-            D.vertex (T.quotient.tgt (T.quotientMap.mapE (r⁻¹ • f.1)))
-          = r • h • T.tgt (D.dart (T.quotientMap.mapE (r⁻¹ • f.1))) := by
+        T.quotient.tgt (T.quotientMap.mapE (r⁻¹ • f.val)), ?_⟩
+      calc (r * h * D.twist (T.quotientMap.mapE (r⁻¹ • f.val))) •
+            D.vertex (T.quotient.tgt (T.quotientMap.mapE (r⁻¹ • f.val)))
+          = r • h • T.tgt (D.dart (T.quotientMap.mapE (r⁻¹ • f.val))) := by
             rw [D.tgt_dart, mul_smul, mul_smul]
-        _ = r • T.tgt (r⁻¹ • f.1) := by rw [← tgt_smul, hdart]
-        _ = z := by rw [tgt_smul, smul_inv_smul, f.2.2]
+        _ = r • T.tgt (r⁻¹ • f.val) := by rw [← tgt_smul, hdart]
+        _ = z := by rw [tgt_smul, smul_inv_smul, f.property.2]
   rw [eq_top_iff]
   intro g _
   let b₀ : T.quotient.V := T.quotientMap.mapV (Classical.arbitrary T.V)
