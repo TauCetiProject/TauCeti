@@ -88,25 +88,15 @@ def coordChange (i j y : M) : SymmetricJet 𝕜 E F r →L[𝕜] SymmetricJet �
   symmetricJetCoordChange r (extChartAt I i ∘ (extChartAt I j).symm)
     (fiberCoordChange I F V i j) (extChartAt I j y)
 
+omit [I.Boundaryless] in
+/-- `JetBundle.coordChange` is the coordinate change of symmetric jets for the change of charts
+and the coordinate change of `V`, at the point with chart coordinate `extChartAt I j y`. -/
+theorem coordChange_apply (i j y : M) (v : SymmetricJet 𝕜 E F r) :
+    coordChange I F V r i j y v = symmetricJetCoordChange r (extChartAt I i ∘ (extChartAt I j).symm)
+      (fiberCoordChange I F V i j) (extChartAt I j y) v :=
+  (rfl)
+
 variable {I F V}
-
-omit [NormedSpace 𝕜 F] [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V] in
-/-- Near the image of a point of the first-jet chart domain at `i` that lies in the chart domain
-at `j`, the inverse of the extended chart at `j` lands in the first-jet chart domain at `i`. On a
-boundaryless manifold this is a neighbourhood statement. -/
-private theorem eventually_extChartAt_symm_mem_baseSet {i j y : M}
-    (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ (chartAt H j).source) :
-    ∀ᶠ z in 𝓝 (extChartAt I j y), (extChartAt I j).symm z ∈ baseSet (H := H) F V i := by
-  simpa [I.range_eq_univ] using FirstJetBundle.eventually_extChartAt_symm_mem_baseSet I hi hj
-
-/-- The coordinate change of `V` from `i` to `j`, written in the chart at `j`, is `C^n` at the
-image of a point of the domains. -/
-private theorem contDiffAt_fiberCoordChange {n : ℕ∞ω} [IsManifold I n M]
-    [ContMDiffVectorBundle n F V I] {i j y : M} (hi : y ∈ (trivializationAt F V i).baseSet)
-    (hj : y ∈ baseSet (H := H) F V j) :
-    ContDiffAt 𝕜 n (fiberCoordChange I F V i j) (extChartAt I j y) := by
-  have h := contDiffWithinAt_fiberCoordChange (I := I) (n := n) hi hj
-  rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
 
 /-- The `r`-jet coordinate changes of a `C^(n+r)` vector bundle over a boundaryless `C^(n+r)`
 manifold are `C^n`. -/
@@ -149,13 +139,13 @@ theorem coordChange_self_apply {i y : M} (hy : y ∈ baseSet (H := H) F V i)
     exact (extChartAt I i).right_inv hz
   have hg : fiberCoordChange I F V i i =ᶠ[𝓝 (extChartAt I i y)]
       fun _ ↦ ContinuousLinearMap.id 𝕜 F := by
-    filter_upwards [eventually_extChartAt_symm_mem_baseSet hy ((mem_baseSet_iff F V).1 hy).2]
+    filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I hy ((mem_baseSet_iff F V).1 hy).2]
       with z hz
     ext w
     rw [fiberCoordChange_apply]
     exact (trivializationAt F V i).coordChangeL_same_apply 𝕜 ((mem_baseSet_iff F V).1 hz).1 w
-  rw [coordChange, symmetricJetCoordChange_congr hh hg, symmetricJetCoordChange_id]
-  rfl
+  rw [coordChange_apply, symmetricJetCoordChange_congr hh hg, symmetricJetCoordChange_id,
+    ContinuousLinearMap.id_apply]
 
 variable [IsManifold I r M] [ContMDiffVectorBundle r F V I]
 
@@ -175,17 +165,18 @@ theorem coordChange_comp_apply {i j k y : M} (hi : y ∈ baseSet (H := H) F V i)
     (hpt ▸ contDiffAt_fiberCoordChange (I := I) hi.1 ((mem_baseSet_iff F V).2 hj)) hn
     (contDiffAt_ext_coord_change_extChartAt (I := I) hj.2 hk.2)
     (contDiffAt_fiberCoordChange (I := I) hj.1 ((mem_baseSet_iff F V).2 hk))
-  rw [coordChange, coordChange, hpt, ← ContinuousLinearMap.comp_apply, hcomp, coordChange]
+  rw [coordChange_apply, coordChange_apply, hpt, ← ContinuousLinearMap.comp_apply, hcomp,
+    coordChange_apply]
   -- The composite coordinate maps agree with those from `i` to `k` near the image of `y`.
   congr 1
   refine symmetricJetCoordChange_congr ?_ ?_
-  · filter_upwards [eventually_extChartAt_symm_mem_baseSet ((mem_baseSet_iff F V).2 hj) hk.2]
+  · filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I ((mem_baseSet_iff F V).2 hj) hk.2]
       with z hz
     simp only [Function.comp_apply,
       (extChartAt I j).left_inv (mem_extChartAt_source_of_mem_baseSet I hz)]
-  · filter_upwards [eventually_extChartAt_symm_mem_baseSet ((mem_baseSet_iff F V).2 hi) hk.2,
-      eventually_extChartAt_symm_mem_baseSet ((mem_baseSet_iff F V).2 hj) hk.2,
-      eventually_extChartAt_symm_mem_baseSet ((mem_baseSet_iff F V).2 hk) hk.2]
+  · filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I ((mem_baseSet_iff F V).2 hi) hk.2,
+      eventually_extChartAt_symm_mem_baseSet_nhds I ((mem_baseSet_iff F V).2 hj) hk.2,
+      eventually_extChartAt_symm_mem_baseSet_nhds I ((mem_baseSet_iff F V).2 hk) hk.2]
       with z hzi hzj hzk
     ext w
     simp only [fiberCoordChange_apply, Function.comp_apply, ContinuousLinearMap.coe_comp,
@@ -298,22 +289,20 @@ section Jet
 
 variable [IsManifold I r M] [ContMDiffVectorBundle r F V I]
 
-/-- In the chart and trivialization at `i`, the local representative of a section that is `C^n`
-at a point `y` of the first-jet chart domain at `i` is `C^n` at the image of `y`. -/
-private theorem contDiffAt_localRep {n : ℕ∞ω} [IsManifold I n M] [ContMDiffVectorBundle n F V I]
-    {s : ∀ x, V x} {i y : M}
-    (hs : ContMDiffAt I (I.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F x (s x)) y)
-    (hi : y ∈ baseSet (H := H) F V i) :
-    ContDiffAt 𝕜 n (localRep I F s i) (extChartAt I i y) := by
-  have h := contDiffWithinAt_localRep I F hs hi
-  rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
-
 variable (I F r) in
 /-- The `r`-jet `jʳs(x)` of a section `s` of `V` at `x`: the iterated derivatives up to order `r`
 at `x` of the local representative of `s` in the chart and trivialization at `x`, symmetrized.
 The symmetrization does nothing when `s` is `C^r` at `x` (`TauCeti.JetBundle.coeFn_jet`). -/
 def jet (s : ∀ x, V x) (x : M) : JetBundle I F V r x :=
   jetSymmetrize 𝕜 E F r fun k ↦ iteratedFDeriv 𝕜 k.val (localRep I F s x) (extChartAt I x x)
+
+/-- The components of the `r`-jet of a section are the symmetrized iterated derivatives of its
+local representative in the chart and trivialization at the base point. -/
+@[simp]
+theorem jet_apply (s : ∀ x, V x) (x : M) (k : Fin (r + 1)) :
+    jet I F r s x k = ContinuousMultilinearMap.symmetrize 𝕜 (Fin k) E F
+      (iteratedFDeriv 𝕜 k (localRep I F s x) (extChartAt I x x)) := by
+  rw [jet, SymmetricJet.subtypeL_apply, jetSymmetrize_apply]
 
 /-- **The components of an `r`-jet.** For a section which is `C^r` at `x`, the components of
 `jʳs(x)` are the iterated derivatives at `x` of its local representative in the chart and
@@ -324,7 +313,7 @@ theorem coeFn_jet {s : ∀ x, V x} {x : M}
       fun k : Fin (r + 1) ↦ iteratedFDeriv 𝕜 k.val (localRep I F s x) (extChartAt I x x) := by
   rw [coeFn_eq, jet, SymmetricJet.subtypeL_apply]
   exact coeFn_jetSymmetrize_of_mem (iteratedFDeriv_mem_symmetricJets
-    (contDiffAt_localRep hs (mem_baseSet_self F V x)) (by simp))
+    (contDiffAt_localRep I F hs (mem_baseSet_self F V x)) (by simp))
 
 /-- The preferred trivialization of `JᵣV` at `i` reads an `r`-jet in the chart and
 trivialization of `V` at `i`. -/
@@ -346,18 +335,14 @@ theorem coeFn_coordChange_jet {s : ∀ x, V x} {y : M}
   have hpt : extChartAt I y y = (extChartAt I y ∘ (extChartAt I i).symm) (extChartAt I i y) := by
     rw [Function.comp_apply, (extChartAt I i).left_inv hyi]
   have hn : minSmoothness 𝕜 r ≤ r := by simp
-  have hrep := contDiffAt_localRep hs hy
+  have hrep := contDiffAt_localRep I F hs hy
   rw [hpt] at hrep
   have hh := contDiffAt_ext_coord_change_extChartAt (I := I) (n := r)
     ((mem_baseSet_iff F V).1 hy).2 ((mem_baseSet_iff F V).1 hi).2
   have hg := contDiffAt_fiberCoordChange (I := I) (n := r) ((mem_baseSet_iff F V).1 hy).1 hi
-  have hjet : ⇑(jetSymmetrize 𝕜 E F r fun k : Fin (r + 1) ↦
-      iteratedFDeriv 𝕜 k.val (localRep I F s y) (extChartAt I y y)) =
-      fun k : Fin (r + 1) ↦ iteratedFDeriv 𝕜 k.val (localRep I F s y) (extChartAt I y y) :=
-    coeFn_jetSymmetrize_of_mem (iteratedFDeriv_mem_symmetricJets
-      (contDiffAt_localRep hs hy) hn)
-  rw [coordChange, jet, coeFn_symmetricJetCoordChange hh hg hn, hjet, hpt,
-    linearJetCoordChange_iteratedFDeriv hrep hn hh hg]
+  rw [coordChange_apply I F V r y i y (jet I F r s y), jet, hpt,
+    jetSymmetrize_of_mem (iteratedFDeriv_mem_symmetricJets hrep hn),
+    coeFn_symmetricJetCoordChange_iteratedFDeriv hrep hh hg hn]
   -- Near the image of `y`, the local representative at `i` is the transformed one at `y`.
   have heq := localRep_eventuallyEq_fiberCoordChange I F s hy hi
   rw [I.range_eq_univ, nhdsWithin_univ] at heq
@@ -395,7 +380,7 @@ theorem exists_contMDiffAt_jet_eq {n : ℕ∞ω} (x : M) (j : JetBundle I F V r 
   · -- Near `φ x`, the local representative is the Taylor polynomial `a`.
     have hrep : localRep I F (fun y ↦ e.symm y (a (extChartAt I x y))) x =ᶠ[𝓝 (extChartAt I x x)]
         a := by
-      filter_upwards [eventually_extChartAt_symm_mem_baseSet hx hx'.2,
+      filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I hx hx'.2,
         extChartAt_target_mem_nhds x] with z hz hzt
       rw [localRep_apply, hsg _ ((mem_baseSet_iff F V).1 hz).1, (extChartAt I x).right_inv hzt]
     refine SymmetricJet.ext fun k ↦ ?_
@@ -405,7 +390,8 @@ theorem exists_contMDiffAt_jet_eq {n : ℕ∞ω} (x : M) (j : JetBundle I F V r 
 
 end Jet
 
-/-- **The `r`-jet of a `C^(n+r)` section is a `C^n` section of `JᵣV`.** -/
+/-- **The `r`-jet of a section that is `C^(n+r)` on an open set `U` is `C^n` on `U`** as a section
+of `JᵣV`. -/
 theorem contMDiffOn_jet {n : ℕ∞ω} [IsManifold I (n + r) M] [ContMDiffVectorBundle (n + r) F V I]
     {s : ∀ x, V x} {U : Set M} (hU : IsOpen U)
     (hs : ContMDiffOn I (I.prod 𝓘(𝕜, F)) (n + r) (fun x ↦ TotalSpace.mk' F x (s x)) U) :
@@ -421,7 +407,7 @@ theorem contMDiffOn_jet {n : ℕ∞ω} [IsManifold I (n + r) M] [ContMDiffVector
   refine ContMDiffAt.contMDiffWithinAt ((contMDiffAt_section_iff x₀).2 ?_)
   -- In the chart at `x₀`, the jet is the symmetrized tuple of derivatives of the local
   -- representative at `x₀`, which is `C^n` since that representative is `C^(n+r)`.
-  have hrep := contDiffAt_localRep (hs.contMDiffAt (hU.mem_nhds hx₀)) hx₀b
+  have hrep := contDiffAt_localRep I F (hs.contMDiffAt (hU.mem_nhds hx₀)) hx₀b
   have htuple : ContDiffAt 𝕜 n (fun z ↦ jetSymmetrize 𝕜 E F r fun k ↦
       iteratedFDeriv 𝕜 k (localRep I F s x₀) z) (extChartAt I x₀ x₀) :=
     (jetSymmetrize 𝕜 E F r).contDiff.contDiffAt.comp _ (contDiffAt_pi.2 fun k ↦
@@ -457,6 +443,9 @@ trivialization. -/
 theorem value_apply (x : M) (j : JetBundle I F V r x) :
     value x j = (trivializationAt F V x).symm x (j 0 0) := by
   rw [coeFn_eq, ← Trivialization.symmL_apply (R := 𝕜) _ (mem_baseSet_trivializationAt F V x)]
+  -- Both sides are now `value` unfolded: the composite of `symmL`, evaluation at `0`, projection to
+  -- order `0` and the inclusion. The `comp_apply` simp lemmas do not fire here because the fibre
+  -- `JetBundle I F V r x` is only a type synonym of `SymmetricJet 𝕜 E F r`, so close by `rfl`.
   rfl
 
 /-- The value of the `r`-jet of a section is the value of the section. -/
@@ -515,6 +504,8 @@ theorem value_truncate (hr : r' ≤ r) (x : M) (j : JetBundle I F V r x) :
     value x (truncate hr x j) = value x j := by
   have h : truncate hr x j 0 0 = j 0 0 := by
     rw [truncate_apply]
+    -- `Fin.castLE _ 0` reduces to `0`, so both sides are the same term; a rewrite would have to
+    -- change the number of arguments `(Fin.castLE _ 0).val` in the dependent type of `j _`.
     rfl
   rw [value_apply, value_apply, h]
 

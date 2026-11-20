@@ -24,19 +24,21 @@ spaces of symmetric jets carry their operator norm.
 The coordinate change of jets `TauCeti.linearJetCoordChange` is defined on all tuples, but it
 satisfies the identity law only on symmetric tuples, and it takes symmetric tuples to symmetric
 tuples only where the coordinate maps are `C^r`. The symmetrization `TauCeti.jetSymmetrize`,
-applied componentwise, is a continuous linear projection of all tuples onto the symmetric ones.
-Composing with it gives `TauCeti.symmetricJetCoordChange`, a continuous linear map between spaces
-of symmetric jets which is defined for all coordinate maps, agrees with `linearJetCoordChange`
-wherever the coordinate maps are `C^r`, satisfies the identity and cocycle laws exactly, and
-is as smooth in the base point as `linearJetCoordChange`. These are the transition maps of the jet
+applied componentwise, takes all tuples to symmetric ones, and in characteristic zero it is a
+continuous linear projection onto them. Composing with it gives `TauCeti.symmetricJetCoordChange`,
+a continuous linear map between spaces of symmetric jets which is defined for all coordinate maps
+and is as smooth in the base point as `linearJetCoordChange`. In characteristic zero it agrees
+with `linearJetCoordChange` wherever the coordinate maps are `C^r` (analytic over fields other
+than `ℝ` and `ℂ`), satisfies the identity law, and satisfies the cocycle law wherever the
+coordinate maps are `C^r` (analytic over other fields). These are the transition maps of the jet
 bundle.
 
 ## Main declarations
 
 * `TauCeti.symmetricJets`: the closed subspace of symmetric `r`-jet tuples, and
   `TauCeti.SymmetricJet`: the corresponding normed space.
-* `TauCeti.jetSymmetrize`: the componentwise symmetrization, a continuous linear projection onto
-  the symmetric jets (`TauCeti.jetSymmetrize_coeFn`).
+* `TauCeti.jetSymmetrize`: the componentwise symmetrization, in characteristic zero a continuous
+  linear projection onto the symmetric jets (`TauCeti.jetSymmetrize_coeFn`).
 * `TauCeti.iteratedFDeriv_mem_symmetricJets`: derivative tuples of `C^r` maps are symmetric.
 * `TauCeti.symmetricJetCoordChange`: the coordinate change of symmetric `r`-jets, with
   `TauCeti.coeFn_symmetricJetCoordChange` comparing it with `TauCeti.linearJetCoordChange`.
@@ -209,8 +211,9 @@ end SymmetricJet
 
 variable (𝕜 E F) in
 /-- The **symmetrization of jets**: the componentwise symmetrization
-`ContinuousMultilinearMap.symmetrize`, a continuous linear projection of all `r`-jet tuples onto
-the symmetric jets (`TauCeti.jetSymmetrize_coeFn`). -/
+`ContinuousMultilinearMap.symmetrize`, a continuous linear map from all `r`-jet tuples to the
+symmetric jets. In characteristic zero it is a projection onto the symmetric jets
+(`TauCeti.jetSymmetrize_coeFn`). -/
 def jetSymmetrize (r : ℕ) : ((i : Fin (r + 1)) → E [×i]→L[𝕜] F) →L[𝕜] SymmetricJet 𝕜 E F r :=
   (ContinuousLinearMap.pi fun i : Fin (r + 1) ↦
     (ContinuousMultilinearMap.symmetrize 𝕜 (Fin i) E F).comp
@@ -237,7 +240,7 @@ theorem jetSymmetrize_of_mem [CharZero 𝕜] {r : ℕ} {A : (i : Fin (r + 1)) �
     (hA : A ∈ symmetricJets 𝕜 E F r) : jetSymmetrize 𝕜 E F r A = SymmetricJet.mk A hA :=
   SymmetricJet.coeFn_injective (coeFn_jetSymmetrize_of_mem hA)
 
-/-- **The symmetrization is a projection onto the symmetric jets.** -/
+/-- **The symmetrization is a projection onto the symmetric jets** in characteristic zero. -/
 @[simp]
 theorem jetSymmetrize_coeFn [CharZero 𝕜] {r : ℕ} (A : SymmetricJet 𝕜 E F r) :
     jetSymmetrize 𝕜 E F r ⇑A = A :=
@@ -374,6 +377,8 @@ theorem SymmetricJet.truncate_symmetricJetCoordChange {r' r : ℕ} (hr : r' ≤ 
       symmetricJetCoordChange r' h g x (SymmetricJet.truncate 𝕜 E F hr A) := by
   rw [symmetricJetCoordChange_apply, SymmetricJet.truncate_jetSymmetrize,
     linearJetCoordChange_truncate hr hh hg, symmetricJetCoordChange_apply]
+  -- The components `fun i ↦ A (Fin.castLE _ i)` of the truncation are `⇑(truncate 𝕜 E F hr A)`
+  -- by definition (`SymmetricJet.truncate_apply` is `rfl`), so both sides agree definitionally.
   rfl
 
 end TauCeti
