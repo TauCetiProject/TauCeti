@@ -209,15 +209,6 @@ private def locallyConstantTestEquiv : LocallyConstant X K ≃ₗ[K] locallyCons
   LinearEquiv.ofInjective (LocallyConstant.toContinuousMapLinearMap K)
     LocallyConstant.toContinuousMap_injective
 
-variable (K) in
-omit [IsUltrametricDist K] [CompleteSpace K] in
-private theorem dense_locallyConstantTests :
-    DenseRange ((locallyConstantTests (X := X) K).subtypeL) := by
-  rw [Submodule.coe_subtypeL]
-  apply denseRange_subtype_val.mpr
-  rw [SetLike.setOfPred_mem_eq, LinearMap.coe_range]
-  exact LocallyConstant.denseRange_toContinuousMap
-
 private def integralOnLocallyConstantTests (hj : ∀ a, ‖j a‖ ≤ B) :
     locallyConstantTests (X := X) K →L[K] K :=
   ((locallyConstantIntegral j μ).comp (locallyConstantTestEquiv K).symm.toLinearMap).mkContinuous B
@@ -242,7 +233,8 @@ private theorem extendCoefficientsCLM_apply_test (hj : ∀ a, ‖j a‖ ≤ B) (
     LinearEquiv.ofInjective_apply (LocallyConstant.toContinuousMapLinearMap K)
       (h := LocallyConstant.toContinuousMap_injective) φ
   rw [← hφ, extendCoefficientsCLM, (integralOnLocallyConstantTests j μ hj).extend_eq
-    (e := (locallyConstantTests (X := X) K).subtypeL) (dense_locallyConstantTests K)
+    (e := (locallyConstantTests (X := X) K).subtypeL)
+    (LocallyConstant.denseRange_toContinuousMapLinearMap_range_subtype K)
     isUniformEmbedding_subtype_val.isUniformInducing (e φ)]
   simp only [integralOnLocallyConstantTests, LinearMap.mkContinuous_apply, LinearMap.comp_apply,
     LinearEquiv.coe_toLinearMap, e, LinearEquiv.symm_apply_apply]
