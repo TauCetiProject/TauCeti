@@ -10,8 +10,8 @@ public import Mathlib.NumberTheory.LocalField.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.LinearAlgebra.FreeModule.CardQuotient
 import TauCeti.NumberTheory.LocalField.Topology
-import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
+import TauCeti.RingTheory.Valuation.ValuationRing
 
 /-!
 # Scaling of Haar measure on `ι → K` under integral matrices
@@ -163,7 +163,7 @@ theorem isClosed_univ_pi_image_maximalIdeal_pow (e : ι → ℕ) :
     IsClosed (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) := by
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   refine isClosed_set_pi fun i _ ↦ ?_
-  rw [image_maximalIdeal_pow_eq_smul hϖ]
+  rw [hϖ.image_maximalIdeal_pow_eq_smul]
   exact IsClosed.smul₀ _ Valuation.isClosed_integer
 
 /-- A box of ideal powers is measurable. -/
@@ -252,7 +252,7 @@ theorem measure_univ_pi_image_maximalIdeal_pow (μ : Measure (ι → K)) [μ.IsA
     funext fun _ ↦ funext fun _ ↦ Matrix.mulVec_diagonal ..
   rw [hdiag, integerBox_def, piMap_image_univ_pi]
   refine pi_congr rfl fun i _ ↦ ?_
-  rw [image_maximalIdeal_pow_eq_smul hϖ, ← image_smul, Algebra.algebraMap_ofSubsemiring_apply,
+  rw [hϖ.image_maximalIdeal_pow_eq_smul, ← image_smul, Algebra.algebraMap_ofSubsemiring_apply,
     SubmonoidClass.coe_pow]
   simp only [smul_eq_mul]
 

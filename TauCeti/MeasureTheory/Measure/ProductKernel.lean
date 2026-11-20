@@ -233,6 +233,19 @@ theorem measurable_infinitePi_const {α : Type*} [MeasurableSpace α] :
       Measure.infinitePi (fun _ : ℕ ↦ (p : Measure α)) :=
   measurable_infinitePi.comp (Measurable.of_eval fun _ ↦ measurable_id)
 
+/-- The mixture `∫ P^{⊗ι} dπ(P)` of the powers of `P` indexed by an arbitrary type `ι` has the same
+total mass as the mixing measure `π`, since every infinite product of probability measures is itself
+a probability measure. -/
+@[simp]
+theorem _root_.MeasureTheory.Measure.bind_infinitePi_univ {α ι : Type*} [MeasurableSpace α]
+    (π : Measure (ProbabilityMeasure α)) :
+    (π.bind fun P => Measure.infinitePi fun _ : ι => (P : Measure α)) Set.univ = π Set.univ := by
+  have hm : Measurable fun P : ProbabilityMeasure α ↦
+      Measure.infinitePi fun _ : ι ↦ (P : Measure α) :=
+    measurable_infinitePi.comp (Measurable.of_eval fun _ ↦ measurable_id)
+  rw [Measure.bind_apply MeasurableSet.univ hm.aemeasurable]
+  simp
+
 /-- **Parameter-tagged product kernel.** For a measurable family of probability measures
 `P : T → ProbabilityMeasure α`, the random measure `t ↦ δ_t ⊗ (P t)^{⊗ι}` on `T × (ι → α)` is
 measurable, over an arbitrary index type `ι`.

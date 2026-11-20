@@ -20,8 +20,8 @@ automorphism group.
 
 Joint continuity holds over a commutative base ring when the quadratic space carries its module
 topology and multiplication in the Clifford algebra is continuous. Over a topological field, the
-representation is continuous when the quadratic space is finite-dimensional and carries its module
-topology.
+representation is continuous whenever the quadratic space is finite-dimensional, with no topology
+required on it.
 
 ## Main results
 
@@ -108,7 +108,6 @@ section FiniteDimensional
 
 variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalSemiring K]
   [Invertible (2 : K)] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-  [TopologicalSpace V] [IsModuleTopology K V]
   (Q : QuadraticForm K V)
 
 local instance : IsTopologicalRing K := IsTopologicalSemiring.toIsTopologicalRing inferInstance
@@ -118,6 +117,8 @@ local instance : IsTopologicalRing K := IsTopologicalSemiring.toIsTopologicalRin
 theorem continuous_lipschitzVectorAction_toLinearMap :
     Continuous (fun x : lipschitzGroup Q =>
       (lipschitzVectorAction Q x : Module.End K V)) := by
+  let _ : TopologicalSpace V := moduleTopology K V
+  have : IsModuleTopology K V := ⟨rfl⟩
   let b := Module.finBasis K V
   rw [b.continuous_iff_apply]
   intro j

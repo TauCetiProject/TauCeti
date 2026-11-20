@@ -75,7 +75,7 @@ public section
 
 noncomputable section
 
-open Module TauCeti
+open Module
 
 namespace Submodule
 
@@ -148,8 +148,6 @@ theorem exists_basis_intPoints_prod_norm_le_subspaceHeight (V : Submodule ℚ (�
 end Submodule
 
 namespace Matrix
-
-open scoped Matrix
 
 variable {ι : Type*} [Fintype ι] {p : ℕ}
 

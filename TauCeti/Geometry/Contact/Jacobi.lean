@@ -224,8 +224,8 @@ private theorem mextDeriv_mlieBracket_apply [CompleteSpace E]
       (fun y ↦ mvfderiv I g y (α.reebVectorField y) * α.1 y ![W y]) x := hRg.mul hαW
   have hRfαW : MDifferentiableAt I 𝓘(ℝ)
       (fun y ↦ mvfderiv I f y (α.reebVectorField y) * α.1 y ![W y]) x := hRf.mul hαW
-  have hdgW := mdifferentiableAt_mvfderiv_apply hg h2 hW
-  have hdfW := mdifferentiableAt_mvfderiv_apply hf h2 hW
+  have hdgW := mdifferentiableAt_mvfderiv_apply hg le_rfl hW
+  have hdfW := mdifferentiableAt_mvfderiv_apply hf le_rfl hW
   -- `d(dα)(X, Y, W) = 0`, expanded by the invariant formula.
   have hdd := SmoothForm.mextDeriv_apply_two (φ := mextDerivₗ I 1 α) hXd hYd hW
   simp only [mextDerivₗ_apply, SmoothForm.mextDeriv_mextDeriv, Pi.zero_apply,
@@ -430,10 +430,10 @@ theorem jacobiBracket_jacobi (hf : ContMDiff I 𝓘(ℝ) 2 f) (hg : ContMDiff I 
     funext fun y ↦ by rw [hα.jacobiBracket_eq_neg_mvfderiv]; ring
   have hkf : MDifferentiableAt I 𝓘(ℝ) (α.jacobiBracket k f) x := by
     rw [funext (hα.jacobiBracket_eq_mvfderiv k f)]
-    exact (mdifferentiableAt_mvfderiv_apply (hf x) h2 hXk).sub hfRk
+    exact (mdifferentiableAt_mvfderiv_apply (hf x) le_rfl hXk).sub hfRk
   have hfg : MDifferentiableAt I 𝓘(ℝ) (α.jacobiBracket f g) x := by
     rw [funext (hα.jacobiBracket_eq_neg_mvfderiv f g)]
-    exact (mdifferentiableAt_mvfderiv_apply (hf x) h2 hXg).neg.add hfRg
+    exact (mdifferentiableAt_mvfderiv_apply (hf x) le_rfl hXg).neg.add hfRg
   -- Expand `{f, {g, k}} = -[X_g, X_k](f) + f R_α({g, k})`.
   have h1 := hα.jacobiBracket_eq_neg_mvfderiv f (α.jacobiBracket g k) x
   rw [hα.contactHamiltonianVectorField_jacobiBracket hg hk,

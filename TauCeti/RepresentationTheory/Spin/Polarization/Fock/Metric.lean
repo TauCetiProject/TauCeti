@@ -9,6 +9,8 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.HermitianMetric
 public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Basic
 public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
+-- Private: the polar form of `Q v = -‖v‖²` is used only inside a proof.
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
 # The Hermitian metric of the normalized Fock module
@@ -49,6 +51,8 @@ exists: it is `√2 u₁^(1,0), …, √2 u_ℓ^(1,0)` for an adapted orthonorma
 
 * `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_apply_eq_polar`: an orthonormal basis of `W`
   is orthonormal for the intrinsic form `h (x, y) = -(1/2) polar Q_ℂ (conj x, y)`.
+* `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_ιMulti_ιMulti`: the Gram-determinant formula
+  `H (x₁ ∧ ⋯ ∧ xₚ) (y₁ ∧ ⋯ ∧ yₚ) = det (h (xᵢ, yⱼ))` in every degree `p`.
 * `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_wedge_left` and
   `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_contract_left`: creation and annihilation are
   adjoint.
@@ -70,6 +74,8 @@ exists: it is `√2 u₁^(1,0), …, √2 u_ℓ^(1,0)` for an adapted orthonorma
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
+* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, 3rd ed., World Scientific (2020),
+  §2.2.4 and §12.1.
 -/
 
 public section
@@ -109,6 +115,22 @@ theorem toLinearMapₛₗ₂_apply_eq_polar (x y : (J.spinPolarizationData hQJ h
     split_ifs <;> norm_num
   simp only [hB, LinearMap.smul_apply, B, LinearMap.compl₂_apply, LinearMap.comp_apply,
     Submodule.subtype_apply, polarBilin_apply_apply, smul_eq_mul]
+
+/-- **The Gram-determinant formula for the Fock metric**: for an orthonormal basis `b` of `W` and
+the metric `H` making its wedge basis orthonormal, the pairing of two decomposable wedges of
+degree `p` is the determinant of `h (xᵢ, yⱼ) = -(1/2) polar Q_ℂ (conj xᵢ, yⱼ)`, in every degree
+`p` including degree zero and degrees above the rank. -/
+theorem toLinearMapₛₗ₂_ιMulti_ιMulti (p : ℕ)
+    (x y : Fin p → (J.spinPolarizationData hQJ hQ).W) :
+    toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset ι) (Finset ι) ℂ)
+        (ExteriorAlgebra.ιMulti ℂ p x) (ExteriorAlgebra.ιMulti ℂ p y) =
+      (Matrix.of fun i j ↦
+        -(2 : ℂ)⁻¹ * polar (Q.baseChange ℂ) (tmulConj V (x i)) (y j)).det := by
+  rw [ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti_ιMulti]
+  congr 1
+  ext i j
+  exact J.toLinearMapₛₗ₂_apply_eq_polar hQJ hQ b hb (x i) (y j)
 
 /-- The polar pairing of the conjugate of `x` is `-2` times the Hermitian form `h (x, ·)`. -/
 private theorem pairingEquiv_tmulConj (x : (J.spinPolarizationData hQJ hQ).W) :
@@ -349,9 +371,7 @@ theorem exists_basis_polar_tmulConj (hQ : ∀ v, Q v = -‖v‖ ^ 2) (ℓ : ℕ)
     have h := hQJ v
     rw [hQ, hQ, neg_inj] at h
     exact (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).mp h
-  have hpolar (a c : V) : polar Q a c = -(2 * ⟪a, c⟫) := by
-    rw [polar, hQ, hQ, hQ, norm_add_sq_real]
-    ring
+  have hpolar := QuadraticMap.polar_eq_neg_two_inner hQ
   obtain ⟨u, hu⟩ := J.exists_adapted_orthonormalBasis hJ ℓ hdim
   have hinner (a c : Fin (2 * ℓ)) : ⟪u a, u c⟫ = if a = c then 1 else 0 :=
     orthonormal_iff_ite.mp u.orthonormal a c

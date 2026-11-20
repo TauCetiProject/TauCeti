@@ -23,8 +23,8 @@ says that the base field is dense in the completion, and
 `NumberField.InfinitePlace.Completion.funext_of_continuous` says that continuous maps out of the
 completion are determined by their values on it. The normalized value is continuous.
 
-Archimedean completions are nontrivially normed fields, and the diagonal embeddings form scalar
-towers over any commutative semiring base.
+Archimedean completions are nontrivially normed fields of characteristic zero, and the diagonal
+embeddings form scalar towers over any commutative semiring base.
 
 ## References
 
@@ -49,6 +49,10 @@ instance Completion.instNontriviallyNormedField (v : InfinitePlace K) :
     rw [← (Completion.isometry_extensionEmbedding v).norm_map_of_map_zero
       (map_zero _), map_ofNat]
     norm_num
+
+/-- An archimedean completion has characteristic zero. -/
+instance Completion.instCharZero (w : InfinitePlace K) : CharZero w.Completion :=
+  (Completion.extensionEmbedding w).charZero
 
 /-- The algebra map of `K` into its completion at an infinite place is the coercion. -/
 theorem Completion.algebraMap_apply_eq_coe (w : InfinitePlace K) (x : K) :

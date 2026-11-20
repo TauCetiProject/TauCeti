@@ -266,7 +266,7 @@ theorem mem_periodicSolutions_of_forall_integral_eq_zero [I.Boundaryless]
   have hg₀ : 0 < g t₀ := he
   have hgper : Periodic g 1 := fun t ↦ by
     simp only [g]
-    rw [hγp.curveVelocity_add (hγd _), hP, hγper]
+    rw [hγp.curveVelocity_add, hP, hγper]
   -- the bump of radius `r ≤ δ`, supported where `cos (2π(t - t₀)) > cos (πr)`, has a chart
   -- variation, so `∫₀¹ φ g = 0` with `φ g` continuous
   have hcosr : ∀ r, 0 < r → r ≤ 1 / 2 → cos (2 * π * r) < cos (π * r) :=

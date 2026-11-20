@@ -98,7 +98,9 @@ noncomputable def arrowTensorDifferentialComplexHom :
   gradedCochainComplexHom ((arrowTensorDifferential k Q).restrictScalars k)
     (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦
       (isHomogeneous_arrowTensorDifferential k Q wt).map_mem hx)
-    (LinearMap.ext fun x ↦ (arrowTensorDifferential_arrowTensorBimoduleDifferential hd hdε x).symm)
+    (by
+      intro _ x
+      exact (arrowTensorDifferential_arrowTensorBimoduleDifferential hd hdε x).symm)
 
 /-- Multiplication, identifying the diagonal bimodule with the original path algebra,
 as a map of cochain complexes. -/
@@ -114,7 +116,7 @@ noncomputable def vertexTensorComplexAugmentation :
       simpa only [add_zero, InternalGrading.mem_map_piece_iff, LinearMap.comp_apply,
         LinearEquiv.coe_coe, LinearMap.restrictScalars_apply] using h)
     (by
-      ext x
+      intro _ x
       simpa only [LinearMap.comp_apply, LinearMap.restrictScalars_apply,
         LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply] using
         congrArg (Bimodule.of (AlgHom.id k A)).symm
@@ -128,8 +130,8 @@ theorem arrowTensorDifferentialComplexHom_f_apply (n : ℤ)
       (((arrowTensorDifferentialComplexHom k Q wt d hd hdε).f n).hom x) :
         vertexTensorBimodule k Q) =
       arrowTensorDifferential k Q (gradedCochainComplexXEquiv n x) := by
-  simp only [arrowTensorDifferentialComplexHom,
-    gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply, LinearMap.restrictScalars_apply]
+  unfold arrowTensorDifferentialComplexHom
+  exact gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply _ _ _ n x
 
 omit [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)] in
 /-- The augmentation multiplies the two tensor factors on every homogeneous piece. -/
@@ -151,7 +153,9 @@ noncomputable def arrowTensorDerivationComplexHom :
   gradedCochainComplexHom (arrowTensorDerivation k Q)
     (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦
       (isHomogeneous_arrowTensorDerivation k Q wt).map_mem hx)
-    (LinearMap.ext fun x ↦ arrowTensorBimoduleDifferential_arrowTensorDerivation hd hdε x)
+    (by
+      intro _ x
+      exact arrowTensorBimoduleDifferential_arrowTensorDerivation hd hdε x)
 
 /-- On each homogeneous piece the complex-level derivation is the universal derivation. -/
 @[simp]

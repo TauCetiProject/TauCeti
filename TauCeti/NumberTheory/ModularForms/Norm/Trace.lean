@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 public import TauCeti.NumberTheory.ModularForms.GaloisProd
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # Analytic properties of the translate package, and the norm decomposition at `∞`

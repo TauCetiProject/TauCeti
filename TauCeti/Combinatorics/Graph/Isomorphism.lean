@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Graph.Basic
 public import Mathlib.Data.Set.Card
+public import TauCeti.Combinatorics.Graph.EdgeEnds
 
 /-!
 # Isomorphisms of multigraphs
@@ -15,8 +16,9 @@ An isomorphism between Mathlib multigraphs consists of equivalences between thei
 and edge types which preserve the link relation. Edge identities are part of the data, so this
 notion distinguishes parallel edges and retains loops.
 
-This file supplies identity, inverse, composition, the groupoid laws, and transport of ambient
-vertex and edge sets for multigraph isomorphisms.
+This file supplies identity, inverse, composition, the groupoid laws, transport of ambient
+vertex and edge sets, and preservation of incidence, loops, adjacency and the edges and loops at a
+vertex for multigraph isomorphisms.
 
 ## Main definitions
 
@@ -78,61 +80,57 @@ def symm (f : Iso G H) : Iso H G where
       (f.vertexEquiv.symm y)]
     simp
 
-/-- The identity isomorphism fixes actual vertices. -/
+/-- The vertex equivalence of the identity is the identity equivalence. -/
 @[simp]
-theorem refl_vertexEquiv_apply (G : Graph α β) (x : G.vertexSet) :
-    (refl G).vertexEquiv x = x :=
+theorem refl_vertexEquiv (G : Graph α β) : (refl G).vertexEquiv = Equiv.refl G.vertexSet :=
   (rfl)
 
-/-- The identity isomorphism fixes actual edges. -/
+/-- The edge equivalence of the identity is the identity equivalence. -/
 @[simp]
-theorem refl_edgeEquiv_apply (G : Graph α β) (e : G.edgeSet) :
-    (refl G).edgeEquiv e = e :=
+theorem refl_edgeEquiv (G : Graph α β) : (refl G).edgeEquiv = Equiv.refl G.edgeSet :=
   (rfl)
 
-/-- A composite isomorphism applies the two vertex equivalences in order. -/
+/-- Composition of graph isomorphisms composes their vertex equivalences. -/
 @[simp]
-theorem trans_vertexEquiv_apply (f : Iso G H) (g : Iso H K) (x : G.vertexSet) :
-    (f.trans g).vertexEquiv x = g.vertexEquiv (f.vertexEquiv x) :=
+theorem trans_vertexEquiv (f : Iso G H) (g : Iso H K) :
+    (f.trans g).vertexEquiv = f.vertexEquiv.trans g.vertexEquiv :=
   (rfl)
 
-/-- A composite isomorphism applies the two edge equivalences in order. -/
+/-- Composition of graph isomorphisms composes their edge equivalences. -/
 @[simp]
-theorem trans_edgeEquiv_apply (f : Iso G H) (g : Iso H K) (e : G.edgeSet) :
-    (f.trans g).edgeEquiv e = g.edgeEquiv (f.edgeEquiv e) :=
+theorem trans_edgeEquiv (f : Iso G H) (g : Iso H K) :
+    (f.trans g).edgeEquiv = f.edgeEquiv.trans g.edgeEquiv :=
   (rfl)
 
-/-- The inverse isomorphism applies the inverse vertex equivalence. -/
+/-- Inversion of a graph isomorphism inverts its vertex equivalence. -/
 @[simp]
-theorem symm_vertexEquiv_apply (f : Iso G H) (x : H.vertexSet) :
-    f.symm.vertexEquiv x = f.vertexEquiv.symm x :=
+theorem symm_vertexEquiv (f : Iso G H) : f.symm.vertexEquiv = f.vertexEquiv.symm :=
   (rfl)
 
-/-- The inverse isomorphism applies the inverse edge equivalence. -/
+/-- Inversion of a graph isomorphism inverts its edge equivalence. -/
 @[simp]
-theorem symm_edgeEquiv_apply (f : Iso G H) (e : H.edgeSet) :
-    f.symm.edgeEquiv e = f.edgeEquiv.symm e :=
+theorem symm_edgeEquiv (f : Iso G H) : f.symm.edgeEquiv = f.edgeEquiv.symm :=
   (rfl)
 
 /-- Applying an isomorphism and then its inverse fixes an actual vertex. -/
 theorem symm_vertexEquiv_apply_vertexEquiv (f : Iso G H) (x : G.vertexSet) :
     f.symm.vertexEquiv (f.vertexEquiv x) = x := by
-  rw [symm_vertexEquiv_apply, Equiv.symm_apply_apply]
+  rw [symm_vertexEquiv, Equiv.symm_apply_apply]
 
 /-- Applying an inverse isomorphism and then the original fixes an actual vertex. -/
 theorem vertexEquiv_apply_symm_vertexEquiv (f : Iso G H) (x : H.vertexSet) :
     f.vertexEquiv (f.symm.vertexEquiv x) = x := by
-  rw [symm_vertexEquiv_apply, Equiv.apply_symm_apply]
+  rw [symm_vertexEquiv, Equiv.apply_symm_apply]
 
 /-- Applying an isomorphism and then its inverse fixes an actual edge. -/
 theorem symm_edgeEquiv_apply_edgeEquiv (f : Iso G H) (e : G.edgeSet) :
     f.symm.edgeEquiv (f.edgeEquiv e) = e := by
-  rw [symm_edgeEquiv_apply, Equiv.symm_apply_apply]
+  rw [symm_edgeEquiv, Equiv.symm_apply_apply]
 
 /-- Applying an inverse isomorphism and then the original fixes an actual edge. -/
 theorem edgeEquiv_apply_symm_edgeEquiv (f : Iso G H) (e : H.edgeSet) :
     f.edgeEquiv (f.symm.edgeEquiv e) = e := by
-  rw [symm_edgeEquiv_apply, Equiv.apply_symm_apply]
+  rw [symm_edgeEquiv, Equiv.apply_symm_apply]
 
 /-- Inverting a graph isomorphism twice returns the original isomorphism. -/
 @[simp]
@@ -227,6 +225,48 @@ theorem encard_mapEdgeSet (f : Iso G H) {F : Set β} (hF : F ⊆ E(G)) :
       left_inv := fun e ↦ by simp
       right_inv := fun e ↦ by simp }
 
+/-- Transport preserves the cardinality of a set of actual edges. -/
+@[simp]
+theorem ncard_mapEdgeSet (f : Iso G H) {F : Set β} (hF : F ⊆ E(G)) :
+    (f.mapEdgeSet F).ncard = F.ncard := by
+  rw [Set.ncard_def, Set.ncard_def, f.encard_mapEdgeSet hF]
+
+/-- Transport preserves the extended cardinality of a set of actual vertices. -/
+@[simp]
+theorem encard_mapVertexSet (f : Iso G H) {S : Set α} (hS : S ⊆ V(G)) :
+    (f.mapVertexSet S).encard = S.encard := by
+  apply Set.encard_congr
+  exact
+    { toFun := fun y ↦ ⟨(f.vertexEquiv.symm ⟨y, f.mapVertexSet_subset_vertexSet S y.2⟩ : α),
+        (f.mem_mapVertexSet_iff S ⟨y, f.mapVertexSet_subset_vertexSet S y.2⟩).mp y.2⟩
+      invFun := fun x ↦ ⟨(f.vertexEquiv ⟨x, hS x.2⟩ : α'), by simp⟩
+      left_inv := fun y ↦ by simp
+      right_inv := fun x ↦ by simp }
+
+/-- Transport preserves the cardinality of a set of actual vertices. -/
+@[simp]
+theorem ncard_mapVertexSet (f : Iso G H) {S : Set α} (hS : S ⊆ V(G)) :
+    (f.mapVertexSet S).ncard = S.ncard := by
+  rw [Set.ncard_def, Set.ncard_def, f.encard_mapVertexSet hS]
+
+/-- Vertex-set transport commutes with set difference. -/
+@[simp]
+theorem mapVertexSet_sdiff (f : Iso G H) (S T : Set α) :
+    f.mapVertexSet (S \ T) = f.mapVertexSet S \ f.mapVertexSet T := by
+  ext y
+  simp only [mapVertexSet, mem_sdiff, mem_ofPred_eq]
+  exact ⟨fun ⟨hy, h, h'⟩ ↦ ⟨⟨hy, h⟩, fun ⟨_, h''⟩ ↦ h' h''⟩,
+    fun ⟨⟨hy, h⟩, h'⟩ ↦ ⟨hy, h, fun h'' ↦ h' ⟨hy, h''⟩⟩⟩
+
+/-- Edge-set transport commutes with set difference. -/
+@[simp]
+theorem mapEdgeSet_sdiff (f : Iso G H) (F F' : Set β) :
+    f.mapEdgeSet (F \ F') = f.mapEdgeSet F \ f.mapEdgeSet F' := by
+  ext e
+  simp only [mapEdgeSet, mem_sdiff, mem_ofPred_eq]
+  exact ⟨fun ⟨he, h, h'⟩ ↦ ⟨⟨he, h⟩, fun ⟨_, h''⟩ ↦ h' h''⟩,
+    fun ⟨⟨he, h⟩, h'⟩ ↦ ⟨he, h, fun h'' ↦ h' ⟨he, h''⟩⟩⟩
+
 /-- Transporting a vertex set along the identity isomorphism intersects it with the actual
 vertex set. -/
 @[simp]
@@ -317,6 +357,23 @@ theorem mapEdgeSet_singleton (f : Iso G H) (e : G.edgeSet) :
       he' (h ▸ (f.edgeEquiv e).2)
     exact iff_of_false hleft hright
 
+/-- Transporting the ambient image of a set of actual vertices gives the ambient image of its image
+under the vertex equivalence. -/
+theorem mapVertexSet_image_val (f : Iso G H) (S : Set G.vertexSet) :
+    f.mapVertexSet (Subtype.val '' S) = Subtype.val '' (f.vertexEquiv '' S) := by
+  ext y
+  by_cases hy : y ∈ V(H)
+  · let y' : H.vertexSet := ⟨y, hy⟩
+    have hy' : (y' : α') = y := rfl
+    rw [← hy', f.mem_mapVertexSet_iff, Subtype.val_injective.mem_set_image,
+      Subtype.val_injective.mem_set_image, f.vertexEquiv.image_eq_preimage_symm, mem_preimage]
+  · have hleft : y ∉ f.mapVertexSet (Subtype.val '' S) := fun h ↦
+      hy (f.mapVertexSet_subset_vertexSet _ h)
+    have hright : y ∉ Subtype.val '' (f.vertexEquiv '' S) := by
+      rintro ⟨y', -, rfl⟩
+      exact hy y'.2
+    exact iff_of_false hleft hright
+
 /-- Vertex-set transport is monotone. -/
 theorem mapVertexSet_mono (f : Iso G H) {S T : Set α} (hST : S ⊆ T) :
     f.mapVertexSet S ⊆ f.mapVertexSet T := by
@@ -357,6 +414,14 @@ theorem map_isLink (f : Iso G H) {e : β} {x y : α} (he : G.IsLink e x y) :
       (f.vertexEquiv ⟨y, he.right_mem⟩) :=
   (f.map_isLink_iff ⟨e, he.edge_mem⟩ ⟨x, he.left_mem⟩ ⟨y, he.right_mem⟩).2 he
 
+/-- A graph isomorphism maps the ends of an actual edge to the ends of the corresponding edge. -/
+@[simp]
+theorem edgeEnds_edgeEquiv (f : Iso G H) (e : G.edgeSet) :
+    H.edgeEnds (f.edgeEquiv e) = (G.edgeEnds e).map f.vertexEquiv := by
+  induction hp : G.edgeEnds e using Sym2.ind with
+  | _ x y =>
+    rw [Sym2.map_mk, edgeEnds_eq_iff_isLink, f.map_isLink_iff, ← edgeEnds_eq_iff_isLink, hp]
+
 /-- A graph isomorphism preserves and reflects incidence between actual edges and vertices. -/
 @[simp]
 theorem map_inc_iff (f : Iso G H) (e : G.edgeSet) (x : G.vertexSet) :
@@ -364,6 +429,69 @@ theorem map_inc_iff (f : Iso G H) (e : G.edgeSet) (x : G.vertexSet) :
   refine ⟨fun ⟨y, hy⟩ ↦ ⟨_, (f.map_isLink_iff e x (f.vertexEquiv.symm ⟨y, hy.right_mem⟩)).1 ?_⟩,
     fun ⟨y, hy⟩ ↦ ⟨_, (f.map_isLink_iff e x ⟨y, hy.right_mem⟩).2 hy⟩⟩
   simpa using hy
+
+/-- A graph isomorphism preserves and reflects loops at actual vertices. -/
+@[simp]
+theorem map_isLoopAt_iff (f : Iso G H) (e : G.edgeSet) (x : G.vertexSet) :
+    H.IsLoopAt (f.edgeEquiv e) (f.vertexEquiv x) ↔ G.IsLoopAt e x :=
+  f.map_isLink_iff e x x
+
+/-- A graph isomorphism preserves and reflects adjacency between actual vertices. -/
+@[simp]
+theorem map_adj_iff (f : Iso G H) (x y : G.vertexSet) :
+    H.Adj (f.vertexEquiv x) (f.vertexEquiv y) ↔ G.Adj x y := by
+  refine ⟨fun ⟨e, he⟩ ↦ ⟨_, (f.map_isLink_iff (f.edgeEquiv.symm ⟨e, he.edge_mem⟩) x y).1 ?_⟩,
+    fun ⟨e, he⟩ ↦ ⟨_, f.map_isLink he⟩⟩
+  simpa using he
+
+/-- A graph isomorphism carries the edges at a vertex to the edges at its image. -/
+@[simp]
+theorem mapEdgeSet_incidenceSet (f : Iso G H) (x : V(G)) :
+    f.mapEdgeSet (G.incidenceSet x) = H.incidenceSet (f.vertexEquiv x) := by
+  ext e
+  by_cases he : e ∈ E(H)
+  · lift e to E(H) using he
+    rw [f.mem_mapEdgeSet_iff, mem_incidenceSet, mem_incidenceSet, ← f.map_inc_iff,
+      Equiv.apply_symm_apply]
+  · exact iff_of_false (fun h ↦ he (f.mapEdgeSet_subset_edgeSet _ h))
+      (fun h ↦ he (H.incidenceSet_subset_edgeSet _ h))
+
+/-- A graph isomorphism carries the loops at a vertex to the loops at its image. -/
+@[simp]
+theorem mapEdgeSet_loopSet (f : Iso G H) (x : V(G)) :
+    f.mapEdgeSet (G.loopSet x) = H.loopSet (f.vertexEquiv x) := by
+  ext e
+  by_cases he : e ∈ E(H)
+  · lift e to E(H) using he
+    rw [f.mem_mapEdgeSet_iff, mem_loopSet, mem_loopSet, ← f.map_isLoopAt_iff,
+      Equiv.apply_symm_apply]
+  · exact iff_of_false (fun h ↦ he (f.mapEdgeSet_subset_edgeSet _ h))
+      (fun h ↦ he ((H.loopSet_subset_incidenceSet _).trans (H.incidenceSet_subset_edgeSet _) h))
+
+/-- A graph isomorphism preserves the extended number of edges at each vertex. -/
+@[simp]
+theorem encard_incidenceSet_vertexEquiv (f : Iso G H) (x : V(G)) :
+    (H.incidenceSet (f.vertexEquiv x)).encard = (G.incidenceSet x).encard := by
+  rw [← f.mapEdgeSet_incidenceSet, f.encard_mapEdgeSet (G.incidenceSet_subset_edgeSet x)]
+
+/-- A graph isomorphism preserves the number of edges at each vertex. -/
+@[simp]
+theorem ncard_incidenceSet_vertexEquiv (f : Iso G H) (x : V(G)) :
+    (H.incidenceSet (f.vertexEquiv x)).ncard = (G.incidenceSet x).ncard := by
+  rw [Set.ncard_def, Set.ncard_def, f.encard_incidenceSet_vertexEquiv]
+
+/-- A graph isomorphism preserves the extended number of loops at each vertex. -/
+@[simp]
+theorem encard_loopSet_vertexEquiv (f : Iso G H) (x : V(G)) :
+    (H.loopSet (f.vertexEquiv x)).encard = (G.loopSet x).encard := by
+  rw [← f.mapEdgeSet_loopSet, f.encard_mapEdgeSet
+    ((G.loopSet_subset_incidenceSet x).trans (G.incidenceSet_subset_edgeSet x))]
+
+/-- A graph isomorphism preserves the number of loops at each vertex. -/
+@[simp]
+theorem ncard_loopSet_vertexEquiv (f : Iso G H) (x : V(G)) :
+    (H.loopSet (f.vertexEquiv x)).ncard = (G.loopSet x).ncard := by
+  rw [Set.ncard_def, Set.ncard_def, f.encard_loopSet_vertexEquiv]
 
 end Iso
 

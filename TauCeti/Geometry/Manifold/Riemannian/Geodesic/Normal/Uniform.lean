@@ -20,7 +20,7 @@ Consequently every point `p` has a *uniformly normal* neighbourhood: there are a
 `W` of `p` and a radius `r > 0` such that, for every `q ∈ W`, the ball of radius `r` in `T_q M`
 is a normal domain at `q` and its exponential image contains all of `W`. The radius is uniform
 in the base point, unlike the radius of `TauCeti.Manifold.exists_isNormalDomain_ball`, which
-depends on the point. On a compact set of base points a single positive radius gives normal
+depends on the point. Near a compact set of base points a single positive radius gives normal
 domains at all of them.
 
 These neighbourhoods are the starting point for geodesically convex neighbourhoods and for
@@ -30,8 +30,8 @@ coordinates built from the Riemannian distance to finitely many nearby centres.
 
 * `TauCeti.Manifold.exists_mem_nhds_forall_isNormalDomain_ball`: every point has a uniformly
   normal neighbourhood.
-* `IsCompact.exists_pos_forall_isNormalDomain_ball`: on a compact set, one positive radius gives
-  normal domains at every point.
+* `IsCompact.exists_pos_exists_isOpen_superset_forall_isNormalDomain_ball`: on an open
+  neighbourhood of a compact set, one positive radius gives normal domains at every point.
 
 ## References
 
@@ -128,17 +128,22 @@ theorem exists_mem_nhds_forall_isNormalDomain_ball (p : M) :
     obtain ⟨rfl, rfl⟩ := hz
     exact ⟨w, mem_ball_zero_iff.2 hzr, rfl⟩
 
-/-- **A uniform normal radius on a compact set.** For a compact set `K` of points there is one
-radius `r > 0` such that the tangent ball of radius `r` at every point of `K` is a normal domain. -/
-theorem _root_.IsCompact.exists_pos_forall_isNormalDomain_ball {K : Set M} (hK : IsCompact K) :
-    ∃ r : ℝ, 0 < r ∧ ∀ q ∈ K, IsNormalDomain I M q (Metric.ball 0 r) := by
+/-- **A uniform normal radius near a compact set.** For a compact set `K` of points there are a
+radius `r > 0` and an open set `U ⊇ K` such that the tangent ball of radius `r` at every point of
+`U` is a normal domain. -/
+theorem _root_.IsCompact.exists_pos_exists_isOpen_superset_forall_isNormalDomain_ball {K : Set M}
+    (hK : IsCompact K) :
+    ∃ r : ℝ, 0 < r ∧ ∃ U : Set M, IsOpen U ∧ K ⊆ U ∧
+      ∀ q ∈ U, IsNormalDomain I M q (Metric.ball 0 r) := by
   choose! R hR W hW hRW using exists_mem_nhds_forall_isNormalDomain_ball (I := I) (M := M)
-  obtain ⟨t, -, hKt⟩ := hK.elim_nhds_subcover W fun p _ ↦ hW p
+  obtain ⟨t, -, hKt⟩ :=
+    hK.elim_nhds_subcover (fun p ↦ interior (W p)) fun p _ ↦ interior_mem_nhds.2 (hW p)
   rcases t.eq_empty_or_nonempty with rfl | ht
-  · exact ⟨1, one_pos, fun q hq ↦ by simpa using hKt hq⟩
-  refine ⟨t.inf' ht R, (Finset.lt_inf'_iff ht).2 fun p _ ↦ hR p, fun q hq ↦ ?_⟩
-  obtain ⟨p, hpt, hqp⟩ := mem_iUnion₂.1 (hKt hq)
-  exact (hRW p q hqp).1.ball (Metric.ball_subset_ball (Finset.inf'_le R hpt))
-    ((Finset.lt_inf'_iff ht).2 fun p _ ↦ hR p)
+  · exact ⟨1, one_pos, ∅, isOpen_empty, by simpa using hKt, fun q hq ↦ hq.elim⟩
+  have hRt : 0 < t.inf' ht R := (Finset.lt_inf'_iff ht).2 fun p _ ↦ hR p
+  refine ⟨t.inf' ht R, hRt, ⋃ p ∈ t, interior (W p),
+    isOpen_biUnion fun _ _ ↦ isOpen_interior, hKt, fun q hq ↦ ?_⟩
+  obtain ⟨p, hpt, hqp⟩ := mem_iUnion₂.1 hq
+  exact (hRW p q (interior_subset hqp)).1.ball (Metric.ball_subset_ball (Finset.inf'_le R hpt)) hRt
 
 end TauCeti.Manifold

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Int.Cast.Basic
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Data.Finset.Card
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
@@ -28,8 +29,8 @@ a characterization of permutations with a unique fixed point, functions constant
 orbit, the orbit relation of an involution, a positive-power representative of a relation inside a
 periodic orbit, a function whose difference `z ↦ c (σ⁻¹ z) - c z` joins points in the same orbit
 (`Equiv.Perm.SameCycle.exists_comp_symm_sub_eq`, `Equiv.Perm.exists_comp_symm_sub_eq_sum`), a
-transposition forming one cycle on a `Fin 2` fibre over `Fin 1`, a
-permutation transported along an injection, the combination of two
+transposition of the only two points of a type forming one cycle on each fibre over a
+subsingleton, a permutation transported along an injection, the combination of two
 permutations transported along injections with disjoint ranges, a fiber-preserving permutation
 carrying one finite family to another with the same equality pattern
 (`TauCeti.exists_perm_apply_eq_of_eq_iff`), the fact that a permutation
@@ -59,8 +60,10 @@ with `σ` off the pair (`Function.Involutive.swap_mul`,
 (`Function.Involutive.swap_mul_mul_swap`). An involutive permutation of an infinite type has
 infinitely many cycles (`Equiv.Perm.infinite_quotient_sameCycle_of_involutive`). A permutation of a
 finite type sends as many points into a set as out of it
-(`Equiv.Perm.card_filter_not_and_apply_eq`), and the total decrease of a natural-number valued
-function along it equals the total increase (`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`).
+(`Equiv.Perm.card_filter_not_and_apply_eq`), the total decrease of a natural-number valued
+function along it equals the total increase (`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`), and a
+permutation fixing every point except possibly one is the identity
+(`Equiv.Perm.eq_one_of_forall_ne_apply_eq_self`).
 -/
 
 public section
@@ -177,12 +180,14 @@ end Equiv.Perm.SameCycle
 
 namespace TauCeti
 
-/-- The transposition of `Fin 2` is one cycle on every fibre of a map to `Fin 1`. -/
-theorem isCycleOn_swap_fin_two_fiber (f : Fin 2 → Fin 1) (i : Fin 1) :
-    (Equiv.swap (0 : Fin 2) 1).IsCycleOn {p | f p = i} := by
-  convert Equiv.Perm.isCycleOn_swap (a := (0 : Fin 2)) (b := 1) using 1
+/-- The transposition of the only two points of a type is one cycle on every fibre of a map to a
+subsingleton. -/
+theorem isCycleOn_swap_fiber {α β : Type*} [DecidableEq α] [Subsingleton β] {a b : α}
+    (hα : ∀ p, p = a ∨ p = b) (f : α → β) (i : β) :
+    (Equiv.swap a b).IsCycleOn {p | f p = i} := by
+  convert Equiv.Perm.isCycleOn_swap (a := a) (b := b) using 1
   ext p
-  fin_cases p <;> simp [Subsingleton.elim (f _) i]
+  rcases hα p with rfl | rfl <;> simp [Subsingleton.elim (f _) i]
 
 end TauCeti
 
@@ -351,12 +356,23 @@ theorem card_filter_not_and_apply_eq [Fintype α] (p : α → Prop) [DecidablePr
 `x ↦ σ x` equals its total increase. -/
 theorem sum_tsub_comp_eq_sum_comp_tsub [Fintype α] (f : α → ℕ) :
     ∑ x, (f x - f (σ x)) = ∑ x, (f (σ x) - f x) := by
-  have key (a b : ℕ) : ((a - b : ℕ) : ℤ) - ((b - a : ℕ) : ℤ) = a - b := by omega
   have h : ((∑ x, (f x - f (σ x)) : ℕ) : ℤ) - ((∑ x, (f (σ x) - f x) : ℕ) : ℤ) = 0 := by
     push_cast [← Finset.sum_sub_distrib]
-    simp_rw [key]
+    simp_rw [Nat.cast_sub_sub_cast_sub]
     rw [Finset.sum_sub_distrib, Equiv.sum_comp σ (fun x ↦ (f x : ℤ)), sub_self]
   omega
+
+variable {σ} in
+/-- A permutation that fixes every point other than `x` also fixes `x`, and is therefore the
+identity. -/
+theorem eq_one_of_forall_ne_apply_eq_self (x : α) (h : ∀ y ≠ x, σ y = y) : σ = 1 := by
+  ext y
+  rw [one_apply]
+  by_cases hy : y = x
+  · subst hy
+    by_contra hne
+    exact hne (σ.injective (h (σ y) hne))
+  · exact h y hy
 
 end Equiv.Perm
 
@@ -498,33 +514,20 @@ theorem exists_pair_perm_fixed {α : Type*} {s : Set α}
     exact Equiv.swap_apply_of_ne_of_ne hτji'.symm hi'j'
   · rw [Equiv.trans_apply, Equiv.swap_apply_left]
 
-/-- Two points lie in the same orbit of an involution exactly when they are equal or one is the
-image of the other. -/
-theorem sameCycle_toPerm_iff {α : Type*} (f : α → α) (hf : Function.Involutive f) (a b : α) :
-    (hf.toPerm f).SameCycle a b ↔ a = b ∨ a = f b := by
-  constructor
-  · intro h
-    obtain ⟨i, hi⟩ := h.symm
-    rcases Equiv.Perm.zpow_apply_eq_of_apply_apply_eq_self
-      (f := hf.toPerm f) (x := b) (hf b) i with h | h
-    · exact Or.inl (hi.symm.trans h)
-    · exact Or.inr (hi.symm.trans h)
-  · rintro (rfl | h)
-    · exact Equiv.Perm.SameCycle.rfl
-    · refine ⟨1, ?_⟩
-      have : f a = b := by
-        calc
-          f a = f (f b) := congrArg f h
-          _ = b := hf b
-      simpa using this
-
 /-- Two points of an involutive permutation lie in one cycle exactly when they coincide or
 one is the image of the other. -/
 theorem _root_.Function.Involutive.sameCycle_iff {α : Type*} {f : Equiv.Perm α}
     (hf : Function.Involutive f) (x y : α) :
     f.SameCycle x y ↔ x = y ∨ x = f y := by
-  have he : Function.Involutive.toPerm f hf = f := Equiv.ext fun _ ↦ rfl
-  exact he ▸ sameCycle_toPerm_iff _ hf x y
+  constructor
+  · intro h
+    obtain ⟨i, hi⟩ := h.symm
+    rcases Equiv.Perm.zpow_apply_eq_of_apply_apply_eq_self (f := f) (x := y) (hf y) i with h | h
+    · exact Or.inl (hi.symm.trans h)
+    · exact Or.inr (hi.symm.trans h)
+  · rintro (rfl | rfl)
+    · exact Equiv.Perm.SameCycle.rfl
+    · exact ⟨1, by simpa using hf y⟩
 
 /-- An involutive permutation of an infinite type has infinitely many orbits, since each orbit has
 at most two points. -/

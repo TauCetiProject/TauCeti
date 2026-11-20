@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-public import Mathlib.Analysis.RCLike.Lemmas
-public import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+import Mathlib.Analysis.RCLike.Lemmas
+import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 
 /-!
 # The Banach–Mazur distance
@@ -30,14 +30,14 @@ same dimension (`FiniteDimensional.nonempty_continuousLinearEquiv_iff_finrank_eq
 
 * `TauCeti.banachMazurDist_comm`: the distance is symmetric.
 * `TauCeti.banachMazurDist_triangle`: the multiplicative triangle inequality
-  `d(E, G) ≤ d(E, F) d(F, G)`.
+  `d(E, G) ≤ d(E, F) d(F, G)`, when `E` and `F` are isomorphic.
 * `TauCeti.one_le_banachMazurDist`: between isomorphic spaces with nontrivial topology the
   distance is at least `1`.
 * `LinearIsometryEquiv.banachMazurDist_congr_left` and
   `LinearIsometryEquiv.banachMazurDist_congr_right`: the distance is invariant under replacing
   either space by an isometric copy.
 * `TauCeti.exists_norm_mul_norm_symm_eq_banachMazurDist`: over a locally compact field, the
-  infimum is attained for finite-dimensional normed spaces.
+  infimum is attained between isomorphic finite-dimensional normed spaces.
 * `TauCeti.banachMazurDist_eq_one_iff`: over `ℝ` or `ℂ`, two nonzero finite-dimensional spaces
   are at distance one exactly when they are isometric.
 
@@ -208,6 +208,31 @@ section Attained
 variable [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
+/-- The set of mutually inverse pairs `(A, B)` with `‖A‖ ≤ 1` and `‖B‖ ≤ r` is compact when
+`E →L[𝕜] F` and `F →L[𝕜] E` are proper spaces. -/
+private theorem isCompact_inverse_pairs [ProperSpace (E →L[𝕜] F)] [ProperSpace (F →L[𝕜] E)]
+    (r : ℝ) : IsCompact ((Metric.closedBall (0 : E →L[𝕜] F) 1 ×ˢ
+        Metric.closedBall (0 : F →L[𝕜] E) r) ∩
+      {p | p.1.comp p.2 = .id 𝕜 F ∧ p.2.comp p.1 = .id 𝕜 E}) := by
+  refine (isCompact_closedBall _ _).prod (isCompact_closedBall _ _) |>.inter_right ?_
+  exact (isClosed_eq (continuous_fst.clm_comp continuous_snd) continuous_const).inter
+    (isClosed_eq (continuous_snd.clm_comp continuous_fst) continuous_const)
+
+/-- If `1 < ‖c‖` and the equivalence `T` satisfies `‖T‖ * ‖T⁻¹‖ ≤ P`, then there is a mutually
+inverse pair `(A, B)` with `‖A‖ ≤ 1`, `‖B‖ ≤ ‖c‖ * P` and `‖A‖ * ‖B‖ = ‖T‖ * ‖T⁻¹‖`. -/
+private theorem exists_mem_inverse_pairs_of_norm_mul_norm_symm_le {c : 𝕜} (hc : 1 < ‖c‖)
+    {P : ℝ} (T : E ≃L[𝕜] F) (hT : ‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖ ≤ P) :
+    ∃ p ∈ ((Metric.closedBall (0 : E →L[𝕜] F) 1 ×ˢ
+        Metric.closedBall (0 : F →L[𝕜] E) (‖c‖ * P)) ∩
+      {p | p.1.comp p.2 = .id 𝕜 F ∧ p.2.comp p.1 = .id 𝕜 E}),
+      ‖p.1‖ * ‖p.2‖ = ‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖ := by
+  obtain ⟨U, hU₁, hU₂, hU⟩ := T.exists_norm_le_one_and_norm_symm_le hc
+  refine ⟨((U : E →L[𝕜] F), (U.symm : F →L[𝕜] E)), ⟨⟨?_, ?_⟩, ?_, ?_⟩, hU⟩
+  · simpa using hU₁
+  · simpa using hU₂.trans (by gcongr)
+  · exact U.coe_comp_coe_symm
+  · exact U.coe_symm_comp_coe
+
 /-- Over a locally compact field, the infimum defining the Banach–Mazur distance between
 isomorphic finite-dimensional spaces is attained. -/
 theorem exists_norm_mul_norm_symm_eq_banachMazurDist [LocallyCompactSpace 𝕜]
@@ -227,18 +252,10 @@ theorem exists_norm_mul_norm_symm_eq_banachMazurDist [LocallyCompactSpace 𝕜]
   set K : Set ((E →L[𝕜] F) × (F →L[𝕜] E)) :=
     (Metric.closedBall 0 1 ×ˢ Metric.closedBall 0 (‖c‖ * P)) ∩
       {p | p.1.comp p.2 = .id 𝕜 F ∧ p.2.comp p.1 = .id 𝕜 E}
-  have hK : IsCompact K := by
-    refine (isCompact_closedBall _ _).prod (isCompact_closedBall _ _) |>.inter_right ?_
-    exact (isClosed_eq (continuous_fst.clm_comp continuous_snd) continuous_const).inter
-      (isClosed_eq (continuous_snd.clm_comp continuous_fst) continuous_const)
+  have hK : IsCompact K := isCompact_inverse_pairs _
   have hmem {T : E ≃L[𝕜] F} (hT : ‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖ ≤ P) :
-      ∃ p ∈ K, g p = ‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖ := by
-    obtain ⟨U, hU₁, hU₂, hU⟩ := T.exists_norm_le_one_and_norm_symm_le hc
-    refine ⟨((U : E →L[𝕜] F), (U.symm : F →L[𝕜] E)), ⟨⟨?_, ?_⟩, ?_, ?_⟩, hU⟩
-    · simpa using hU₁
-    · simpa using hU₂.trans (by gcongr)
-    · exact U.coe_comp_coe_symm
-    · exact U.coe_symm_comp_coe
+      ∃ p ∈ K, g p = ‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖ :=
+    exists_mem_inverse_pairs_of_norm_mul_norm_symm_le hc T hT
   obtain ⟨p₀, hp₀K, -⟩ := hmem le_rfl
   obtain ⟨p, ⟨-, hp₁, hp₂⟩, hmin⟩ := hK.exists_isMinOn ⟨p₀, hp₀K⟩
     ((continuous_fst.norm.mul continuous_snd.norm).continuousOn)

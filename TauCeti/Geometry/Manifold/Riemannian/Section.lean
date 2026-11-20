@@ -70,14 +70,11 @@ theorem convex_positiveDefiniteBilinearSections :
   rintro b hb c hc a d ha hd had
   refine ⟨(symmetricBilinearSections (IB := IB) (F := F) (V := V)
     (G := ℝ) (n := n)).add_mem
-      (Submodule.smul_mem _ a hb.1) (Submodule.smul_mem _ d hc.1), fun x v hv ↦ ?_⟩
-  have heval : (a • b + d • c) x v v = a * b x v v + d * c x v v := by simp
-  rw [heval]
-  rcases ha.eq_or_lt with rfl | ha
-  · have hd1 : d = 1 := by simpa using had
-    simpa [hd1] using hc.2 x v hv
-  · exact add_pos_of_pos_of_nonneg (mul_pos ha (hb.2 x v hv))
-      (mul_nonneg hd (hc.2 x v hv).le)
+      (Submodule.smul_mem _ a hb.1) (Submodule.smul_mem _ d hc.1), fun x ↦ ?_⟩
+  have h := convex_setOfPred_symm_pos
+    ⟨(mem_symmetricBilinearSections b).1 hb.1 x, hb.2 x⟩
+    ⟨(mem_symmetricBilinearSections c).1 hc.1 x, hc.2 x⟩ ha hd had
+  simpa using h.2
 
 /-! ### The cone in the bundle of symmetric bilinear forms -/
 

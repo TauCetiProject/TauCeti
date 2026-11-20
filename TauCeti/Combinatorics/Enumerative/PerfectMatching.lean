@@ -49,11 +49,15 @@ travel.
 * `TauCeti.PerfectMatching.restrict`: the perfect matching induced on the complement of an arc.
 * `TauCeti.PerfectMatching.extend`: the perfect matching obtained by adjoining an arc.
 * `TauCeti.PerfectMatching.fiberEquiv`: the two constructions above are mutually inverse.
+* `TauCeti.PerfectMatching.partnerEquiv`: decomposing a matching by a distinguished point's
+  partner and the matching on their complement.
 * `TauCeti.PerfectMatching.restrictInl`: the perfect matching induced on `α` by a perfect matching
   of `α ⊕ β` that pairs the points of `β` among themselves.
 
 ## Main results
 
+* `TauCeti.PerfectMatching.exists_val_eq_sumCongr`: a perfect matching of `α ⊕ β` containing
+  every arc of a permutation of `α` is that permutation together with a perfect matching of `β`.
 * `TauCeti.PerfectMatching.ext_of_eqOn`: two perfect matchings agreeing on a set containing a
   partner of every point are equal.
 * `TauCeti.even_card_of_nonempty_perfectMatching`: a matched type has even cardinality, and so
@@ -132,6 +136,12 @@ instance [DecidableEq α] [Fintype α] : Fintype (PerfectMatching α) :=
 instance [DecidableEq α] [Fintype α] : DecidableEq (PerfectMatching α) :=
   inferInstanceAs (DecidableEq {f : Equiv.Perm α // IsPerfectMatching f})
 
+/-- The empty type has exactly one perfect matching. -/
+instance [IsEmpty α] : Unique (PerfectMatching α) where
+  default := ⟨Equiv.refl α, isPerfectMatching_iff.mpr
+    ⟨fun a ↦ isEmptyElim a, fun a ↦ isEmptyElim a⟩⟩
+  uniq _ := Subtype.ext (Equiv.ext fun a ↦ isEmptyElim a)
+
 /-- Bundle a permutation that is an involution with no fixed point as a perfect matching. -/
 def mk (f : Equiv.Perm α) (hinv : ∀ a, f (f a) = a) (hne : ∀ a, f a ≠ a) : PerfectMatching α :=
   ⟨f, hinv, hne⟩
@@ -169,6 +179,11 @@ theorem apply_eq_of_apply_eq (D : PerfectMatching α) {x y : α} (h : D.val x = 
 /-- The arc joining `x` to `y` joins `y` to `x`. -/
 theorem apply_eq_comm (D : PerfectMatching α) {x y : α} : D.val x = y ↔ D.val y = x :=
   ⟨D.apply_eq_of_apply_eq, D.apply_eq_of_apply_eq⟩
+
+/-- Two perfect matchings are equal when every vertex has the same partner. -/
+@[ext]
+theorem ext {D E : PerfectMatching α} (h : ∀ a, D.val a = E.val a) : D = E :=
+  Subtype.ext (Equiv.ext h)
 
 /-- Two perfect matchings are equal as soon as they agree on a set `s` containing the partner, under
 the first matching, of every point outside `s`. For instance `s` may be the set of half-edges
@@ -333,6 +348,30 @@ theorem fiberEquiv_apply (hab : a ≠ b) (D : {D : PerfectMatching α // D.val a
 theorem fiberEquiv_symm_apply (hab : a ≠ b) (E : PerfectMatching {x : α // x ≠ a ∧ x ≠ b}) :
     ((fiberEquiv hab).symm E : PerfectMatching α) = extend hab E := (rfl)
 
+/-- Group all perfect matchings by the partner of `a`, and remove that pair. -/
+def partnerEquiv (a : α) : PerfectMatching α ≃
+    (b : {b : α // b ≠ a}) × PerfectMatching {x : α // x ≠ a ∧ x ≠ b.val} :=
+  (Equiv.sigmaSubtypeFiberEquiv (fun D : PerfectMatching α ↦ D.val a)
+    (· ≠ a) (fun D ↦ D.apply_ne a)).symm.trans
+      (Equiv.sigmaCongrRight fun b ↦ fiberEquiv b.2.symm)
+
+/-- The matching reconstructed from a partner and a matching of the complement adjoins
+exactly that pair. -/
+@[simp]
+theorem partnerEquiv_symm_apply (a : α)
+    (p : (b : {b : α // b ≠ a}) × PerfectMatching {x : α // x ≠ a ∧ x ≠ b.val}) :
+    (partnerEquiv a).symm p = extend p.1.2.symm p.2 := by
+  rcases p with ⟨b, E⟩
+  simp [partnerEquiv, Equiv.sigmaSubtypeFiberEquiv, Equiv.sigmaSubtypeEquivOfSubset,
+    Equiv.subtypeSigmaEquiv, Equiv.sigmaCongrRight]
+
+/-- The partner decomposition records the partner and restricts away its edge. -/
+@[simp]
+theorem partnerEquiv_apply (a : α) (D : PerfectMatching α) :
+    partnerEquiv a D = ⟨⟨D.val a, D.apply_ne a⟩, D.restrict rfl⟩ := by
+  apply (partnerEquiv a).symm.injective
+  simp only [Equiv.symm_apply_apply, partnerEquiv_symm_apply, extend_restrict]
+
 end Extend
 
 section Congr
@@ -387,11 +426,32 @@ theorem congr_trans (e : α ≃ β) (e' : β ≃ γ) (D : PerfectMatching α) :
     rw [congr_val_apply, congr_val_apply, congr_val_apply, Equiv.symm_trans_apply,
       Equiv.trans_apply]
 
+/-- Transporting along a product of permutations applies the right factor and then the left. -/
+theorem congr_mul (σ τ : Equiv.Perm α) (D : PerfectMatching α) :
+    congr (σ * τ) D = congr σ (congr τ D) := by
+  rw [Equiv.Perm.mul_def, congr_trans]
+
 /-- Transporting back along `e` is transporting along `e.symm`, since transports compose. -/
 @[simp]
 theorem congr_symm (e : α ≃ β) : (congr e).symm = congr e.symm :=
   Equiv.ext fun D => by
     rw [Equiv.symm_apply_eq, congr_trans, Equiv.symm_trans_self, congr_refl]
+
+/-- A perfect matching of `α ⊕ β` containing every arc of a permutation `X` of `α` is
+`Equiv.Perm.sumCongr X π` for a perfect matching `π` of `β`. This is a converse to
+`TauCeti.PerfectMatching.restrictInl`. -/
+theorem exists_val_eq_sumCongr (M : PerfectMatching (α ⊕ β)) {X : Equiv.Perm α}
+    (hM : ∀ a, M.val (.inl a) = .inl (X a)) :
+    ∃ π : PerfectMatching β, M.val = Equiv.Perm.sumCongr X π.val := by
+  have hr (a : α) : ((congr (Equiv.sumComm α β) M).val (.inr a)).isRight := by
+    simp [hM]
+  refine ⟨(congr (Equiv.sumComm α β) M).restrictInl hr, Equiv.ext fun x ↦ ?_⟩
+  rcases x with a | b
+  · simp [hM]
+  · have h := (congr (Equiv.sumComm α β) M).inl_restrictInl_val hr b
+    simp only [congr_val_apply, Equiv.sumComm_symm, Equiv.sumComm_apply, Sum.swap_inl] at h
+    rw [Equiv.Perm.sumCongr_apply, Sum.map_inr, ← Sum.swap_swap (M.val (.inr b)), ← h,
+      Sum.swap_inl]
 
 end Congr
 
@@ -405,6 +465,19 @@ transposition of `D.val a` with `b`. The arcs at `a` and `b` are distinct when `
 `b ≠ D.val a`; when `b = D.val a` the transposition is trivial and the result is `D` itself. -/
 def reconnect (D : PerfectMatching α) (a b : α) : PerfectMatching α :=
   congr (Equiv.swap (D.val a) b) D
+
+/-- Reconnecting two arcs is transporting the perfect matching along `Equiv.swap (D.val a) b`. -/
+theorem reconnect_def (D : PerfectMatching α) (a b : α) :
+    D.reconnect a b = congr (Equiv.swap (D.val a) b) D :=
+  (rfl)
+
+/-- Transporting a perfect matching along an equivalence commutes with reconnecting two arcs. -/
+@[simp]
+theorem congr_reconnect [DecidableEq β] (e : α ≃ β) (D : PerfectMatching α) (a b : α) :
+    congr e (D.reconnect a b) = (congr e D).reconnect (e a) (e b) := by
+  have he : (Equiv.swap (D.val a) b).trans e = e.trans (Equiv.swap (e (D.val a)) (e b)) :=
+    Equiv.ext (e.injective.map_swap (D.val a) b)
+  rw [reconnect_def, reconnect_def, congr_val_apply_apply, congr_trans, congr_trans, he]
 
 /-- The involution underlying a reconnected matching is the old one conjugated by the
 transposition of `D.val a` with `b`. -/
@@ -557,16 +630,6 @@ theorem IsPerfectMatching.even_card_of_mapsTo {f : Equiv.Perm α} (hf : IsPerfec
   exact even_card_of_nonempty_perfectMatching _ ⟨⟨f.subtypePerm hiff,
     fun x => Subtype.ext (hf.1 x), fun x h => hf.2 x (congrArg Subtype.val h)⟩⟩
 
-/-- An empty type has exactly one perfect matching, the empty one. -/
-private theorem card_perfectMatching_of_isEmpty (α : Type u) [Fintype α] [DecidableEq α]
-    [IsEmpty α] :
-    Fintype.card (PerfectMatching α) = 1 := by
-  have : Subsingleton (PerfectMatching α) :=
-    ⟨fun D E => Subtype.ext (Equiv.ext fun x => isEmptyElim x)⟩
-  have : Unique (PerfectMatching α) :=
-    uniqueOfSubsingleton ⟨1, fun a => isEmptyElim a, fun a => isEmptyElim a⟩
-  exact Fintype.card_unique
-
 /-- There are as many perfect matchings pairing a fixed `a` with a fixed `b ≠ a` as there are
 perfect matchings of the complement of `{a, b}`. -/
 private theorem card_filter_val_eq_card_perfectMatching_compl {α : Type u} [Fintype α]
@@ -617,7 +680,7 @@ private theorem card_perfectMatching_aux :
   | zero =>
     intro α _ _ hcard
     have : IsEmpty α := Fintype.card_eq_zero_iff.mp (by omega)
-    rw [card_perfectMatching_of_isEmpty α]
+    rw [Fintype.card_unique]
     rfl
   | succ m ih =>
     intro α _ _ hcard

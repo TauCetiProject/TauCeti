@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Idempotents.Quotient
+public import TauCeti.RingTheory.Idempotents.Quotient.Basic
 public import TauCeti.RingTheory.Jacobson.Basic
 import Mathlib.Tactic.NoncommRing
 
@@ -26,8 +26,8 @@ elementwise descriptions of the radical (`TauCeti.Ring.mem_jacobson_iff_isUnit_o
 and its right-handed form) and the swap `1 + ab ↦ 1 + ba` (`TauCeti.isUnit_one_add_mul_comm`),
 this compares the radicals.
 
-Combined with the quotient calculation of `TauCeti.RingTheory.Idempotents.Quotient`, the radical
-quotient of the corner is the corner of the radical quotient,
+Combined with the quotient calculation of `TauCeti.RingTheory.Idempotents.Quotient.Basic`, the
+radical quotient of the corner is the corner of the radical quotient,
 `eAe ⧸ J(eAe) ≃ ē (A ⧸ J(A)) ē` (`IsIdempotentElem.cornerQuotientJacobsonEquiv`). This is how
 the semisimple part of a corner ring is read off from that of the ambient ring, for instance to
 recognise a corner ring as basic.

@@ -69,6 +69,8 @@ than for an abstract proper map.
   continuous extension carries `frontier U` onto `frontier (f '' U)`.
 * `TauCeti.bijOn_closure_closure_image` and `TauCeti.closureHomeomorph` — for bounded `U`, an
   extension injective on `closure U` is a homeomorphism `closure U ≃ₜ closure (f '' U)`.
+* `TauCeti.bijOn_sphere_frontier` — for a holomorphic bijection of the open unit disc onto `Ω`,
+  continuous on the closed disc and injective on the circle, the circle goes onto `frontier Ω`.
 
 ## References
 
@@ -254,5 +256,24 @@ lemma coe_closureHomeomorph_symm_apply (hUb : Bornology.IsBounded U)
     ⟨_, ((closureHomeomorph hUb hFc hFf hFi).symm y).2, hFsymm⟩
   exact hFi ((closureHomeomorph hUb hFc hFf hFi).symm y).2 (Function.invFunOn_mem hex)
     (by rw [hFsymm, Function.invFunOn_eq hex])
+
+/-! ## Closed-disc extensions of a Riemann map -/
+
+section ClosedDisc
+
+variable {g : ℂ → ℂ} {Ω : Set ℂ}
+
+/-- A holomorphic bijection `g` of the open unit disc onto `Ω`, continuous on the closed disc and
+injective on the unit circle, is a bijection of the unit circle onto `frontier Ω`. -/
+theorem bijOn_sphere_frontier (hgc : ContinuousOn g (closedBall 0 1))
+    (hgd : DifferentiableOn ℂ g (ball 0 1)) (hgi : InjOn g (sphere 0 1))
+    (hgbij : BijOn g (ball 0 1) Ω) : BijOn g (sphere 0 1) (frontier Ω) := by
+  have hcl : closure (ball (0 : ℂ) 1) = closedBall 0 1 := closure_ball 0 one_ne_zero
+  have himg : g '' sphere 0 1 = frontier Ω := by
+    rw [← frontier_ball (0 : ℂ) one_ne_zero, image_frontier_eq_frontier_image isOpen_ball
+      isBounded_ball hgd hgbij.injOn (by rwa [hcl]) fun _ _ => rfl, hgbij.image_eq]
+  exact himg ▸ hgi.bijOn_image
+
+end ClosedDisc
 
 end TauCeti

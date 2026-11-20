@@ -82,13 +82,6 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
   (C : WeierstrassCurve (u.adicCompletionIntegers F))
   [(C.baseChange (u.adicCompletion F)).IsElliptic]
 
-local instance : IsLinearTopology (u.adicCompletionIntegers F) (u.adicCompletionIntegers F) :=
-  u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸
-    Ideal.isLinearTopology (IsLocalRing.maximalIdeal (u.adicCompletionIntegers F))
-
-local instance : Fact (IsAdic (IsLocalRing.maximalIdeal (u.adicCompletionIntegers F))) :=
-  ⟨u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)⟩
-
 open scoped Classical in
 /-- The kernel of reduction is uniquely divisible by integers prime to the residue
 characteristic. -/

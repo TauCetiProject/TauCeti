@@ -35,7 +35,8 @@ and `1/w` accounts for the roots of unity, which act trivially on the parameters
 * `exists_norm_mellinKernel_sub_le`: for a bounded measurable `D` the kernel tends to
   `(2^r₂ / w) vol(D)` with error `O(exp(-c u^(1/n)))`, uniformly from the decay of the theta
   series on bounded subsets of `S`, the second half of Neukirch (5.8);
-  `isBigO_mellinKernel_sub_rpow` is the resulting decay faster than every power.
+  `exists_norm_mellinKernel_sub_le_on_Ici` promotes this to any ray `[a, ∞)` (`a > 0`) via
+  continuity, and `isBigO_mellinKernel_sub_rpow` is the resulting decay faster than every power.
 * `mellinKernel_mixedDual_idealLattice`: for the lattice `σ(I)` of a fractional ideal, the dual
   side is again the kernel of an ideal lattice, that of the trace dual `J = I^∨`, over the
   translate of `D` by the point `traceShift K` of `S`. The Euclidean dual of `σ(I)` is
@@ -293,6 +294,27 @@ theorem exists_norm_mellinKernel_sub_le {D : Set (realSpace K)} (hDm : Measurabl
     _ = ‖A‖ * (C * (surfaceHaar K).real S) * e := by ring
 
 open scoped Classical in
+/-- Over any bounded measurable set `D` of parameters, `mellinKernel D L` minus its asymptotic
+constant `(2 ^ r₂ / w) vol(D)` satisfies a stretched-exponential bound with exponent
+`[K : ℚ]⁻¹` on every ray `[a, ∞)` with `a > 0`. -/
+theorem exists_norm_mellinKernel_sub_le_on_Ici {D : Set (realSpace K)} (hDm : MeasurableSet D)
+    (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] {a : ℝ} (ha : 0 < a) :
+    ∃ c > 0, ∃ C ≥ 0, ∀ u ∈ Ici a,
+      ‖mellinKernel D L u - (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
+          ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ)‖ ≤
+        C * Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹) := by
+  obtain ⟨c, hc, C₀, _, hev⟩ := exists_norm_mellinKernel_sub_le hDm hD L
+  have hcont : ContinuousOn
+      (fun u ↦ mellinKernel D L u - (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
+        ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ)) (Ici a) :=
+    ((continuousOn_mellinKernel hDm hD L).mono (Ici_subset_Ioi.mpr ha)).sub
+      continuousOn_const
+  obtain ⟨C, hC, hbound⟩ :=
+    exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_eventually (.inl ha) hcont hev
+  exact ⟨c, hc, C, hC, hbound⟩
+
+open scoped Classical in
 /-- Over a bounded measurable set `D` of parameters the kernel of a full lattice minus
 `(2^r₂ / w) vol(D)` decays faster than every power, as the Mellin principle requires. -/
 theorem isBigO_mellinKernel_sub_rpow {D : Set (realSpace K)} (hDm : MeasurableSet D)
@@ -372,7 +394,7 @@ theorem mellinKernel_mixedDual_idealLattice {I J : (FractionalIdeal (𝓞 K)⁰ 
     congr 1
     ext w
     simp only [Pi.mul_apply, surfaceScale_apply, hc, traceShift_def, surfacePart_apply _ hN.le,
-      Real.mul_rpow_of_pos_left hN]
+      Real.mul_rpow_of_nonneg_left hN.le]
     field_simp
   have hpre : surfaceMul c ⁻¹' (Subtype.val ⁻¹' ((traceShift K * ·) '' D)) =
       Subtype.val ⁻¹' D := by

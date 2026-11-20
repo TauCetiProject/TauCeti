@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.FiberBundle.Basic
+public import TauCeti.Topology.FiberBundle.Trivialization
 public import TauCeti.Topology.Homotopy.SerreFibration.Basic
 import TauCeti.Order.Interval.Set.Pi
 
@@ -404,7 +404,7 @@ cube. -/
 theorem hasHomotopyLiftingProperty_proj_cube (κ : Type*) [Finite κ] :
     TauCeti.HasHomotopyLiftingProperty (TotalSpace.proj : TotalSpace F E → B) (κ → I) :=
   TauCeti.hasHomotopyLiftingProperty_cube_of_exists_trivialization
-    (fun b ↦ ⟨trivializationAt F E b, mem_baseSet_trivializationAt F E b⟩) κ
+    (exists_trivialization_mem_baseSet F E) κ
 
 end FiberBundle
 

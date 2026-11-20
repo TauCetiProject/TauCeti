@@ -51,6 +51,12 @@ its own primitivization in degree.
   genus at most that of the passport.
 * `TauCeti.PermutationTriple.LMFDB.BelyiRecord.IsPrimitivizationOf.isPrimitive_eq_true_iff`: the
   stored primitivity flag is set exactly when the primitivization has the same degree.
+* [of_card_primitivizationBlock_eq_one][one-sheet]:
+  when a passport row has a one-sheet primitivization block, a map row of the same degree carrying
+  its primitivization label and valid for a passport of `t` certifies its primitivization at `t`.
+
+[one-sheet]:
+#TauCeti.PermutationTriple.LMFDB.BelyiRecord.IsPrimitivizationOf.of_card_primitivizationBlock_eq_one
 
 ## References
 
@@ -121,33 +127,43 @@ theorem g_le (hr : r.IsValidAt t) (h : q.IsPrimitivizationOf r t) : q.g ≤ r.g 
 has the same degree, that is, when the primitivization block is a single sheet. -/
 theorem isPrimitive_eq_true_iff (hr : r.IsValidAt t) (h : q.IsPrimitivizationOf r t) :
     r.isPrimitive = true ↔ q.deg = r.deg := by
-  have := t.2.isPretransitive
   have hmul := h.card_mul_deg hr
   have hn : r.deg ≠ 0 := by
     rw [hr.deg_eq]
     exact t.2.ne_zero
-  have hB := hr.isBlock_primitivizationBlock
-  have hmax := hr.eq_or_eq_univ_of_primitivizationBlock_subset
-  rw [hr.isPrimitive_eq_true_iff, isPrimitive_iff]
+  rw [← hr.card_primitivizationBlock_eq_one_iff]
   constructor
-  · -- A maximal proper block of a primitive action is a single sheet, unless there is only one.
-    intro hprim
-    suffices r.primitivizationBlock.card = 1 by rwa [this, one_mul] at hmul
-    rcases hprim.isTrivialBlock_of_isBlock hB with hsub | huniv
-    · obtain ⟨x, hx⟩ := hr.primitivizationBlock_nonempty
-      rw [Finset.card_eq_one]
-      exact ⟨x, Finset.coe_injective (by simpa using hsub.eq_singleton_of_mem hx)⟩
-    · have huniv : r.primitivizationBlock = Finset.univ := Finset.coe_eq_univ.mp huniv
-      rw [huniv, Finset.card_univ, Fintype.card_fin]
-      exact hr.deg_eq_one_of_primitivizationBlock_eq_univ huniv
-  · -- A single sheet that is a maximal block shows that every block through it is trivial.
-    intro hdeg
-    rw [hdeg, Nat.mul_eq_right hn, Finset.card_eq_one] at hmul
-    obtain ⟨x, hx⟩ := hmul
-    refine IsPreprimitive.of_isTrivialBlock_base x fun {C} hxC hC ↦ ?_
-    rcases hmax C hC (by simpa [hx] using hxC) with h | h
-    · exact Or.inl (h ▸ by simp [hx])
-    · exact Or.inr h
+  · intro hcard
+    simpa [hcard] using hmul
+  · intro hdeg
+    rwa [hdeg, Nat.mul_eq_right hn] at hmul
+
+/-- **A one-sheet primitivization block.** If the primitivization block of the passport row `r` is
+a single sheet, as it is for every valid primitive row, then a map row of the same degree carrying
+the stored primitivization label certifies the primitivization of `r` at `t` as soon as it is valid
+for some passport of `t`: the quotient of `t` by the translates of a single sheet is isomorphic to
+`t`. -/
+theorem of_card_primitivizationBlock_eq_one {q : BelyiRecord n} {P : PassportSpec n}
+    (hB : r.primitivizationBlock.card = 1) (hlabel : q.label = r.primitivization)
+    (hP : PassportSpec.HasPassport t P) (hq : q.IsValidFor P) : q.IsPrimitivizationOf r t := by
+  have ht := t.2.isPretransitive
+  obtain ⟨x, hx⟩ := Finset.card_eq_one.mp hB
+  have hBc : (r.primitivizationBlock : Set (Fin n)) = {x} := by simp [hx]
+  have hblock : IsBlock t.1.monodromyGroup (r.primitivizationBlock : Set (Fin n)) :=
+    hBc ▸ IsBlock.of_subsingleton Set.subsingleton_singleton
+  have hne : (r.primitivizationBlock : Set (Fin n)).Nonempty := hBc ▸ Set.singleton_nonempty x
+  -- The translates of a single sheet are the single sheets, so there are `n` of them.
+  have hcard := ncard_mul_eq_of_isBlock ht hblock hne
+    (Finite.equivFin (orbit t.1.monodromyGroup (r.primitivizationBlock : Set (Fin n))))
+  have hncard : (r.primitivizationBlock : Set (Fin n)).ncard = 1 := by
+    rw [hBc, Set.ncard_singleton]
+  rw [hncard, one_mul] at hcard
+  let e := Finite.equivFinOfCardEq hcard
+  refine ⟨hlabel, e, hq.of_hasPassport hP ?_⟩
+  refine (PassportSpec.hasPassport_iff_of_equivalent (ConnectedIsoClass.mk_eq_mk_iff.mp
+    (ConnectedIsoClass.mk_eq_mk_iff_equivalent.mpr ?_)) _).mp
+    (ConnectedTriple.hasPassport_passportOf _)
+  exact equivalent_blockQuotient_self ht hblock hne e
 
 end IsPrimitivizationOf
 

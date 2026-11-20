@@ -16,9 +16,11 @@ this action transports solution sets and radicals, and induces an isomorphism of
 groups. The results apply to inconsistent systems and arbitrary coefficient homomorphisms.
 
 A `G`-isomorphism `φ : G[X] ≃* G[Y]` induces a bijection `imageEquivV` between the solutions of a
-system `S` and those of its image `φ S`. The change of coordinates `x ↦ x g` of one variable, a
-transvection, fixes the commutator equation `[x, g] = 1`, so it carries its solutions, the
-centralizer of `ι g`, onto themselves.
+system `S` and those of its image `φ S`; it carries the radical of `S` to that of `φ S`
+(`Rad_image_mulEquiv`) and induces the isomorphism of coordinate groups
+`CoordGroup.imageMulEquiv`. The change of coordinates `x ↦ x g` of one variable, a transvection,
+fixes the commutator equation `[x, g] = 1`, so it carries its solutions, the centralizer of
+`ι g`, onto themselves.
 
 ## Main definitions
 
@@ -29,6 +31,8 @@ centralizer of `ι g`, onto themselves.
   coordinate groups.
 * `TauCeti.GroupAlgGeom.imageEquivV`: the bijection of solution sets induced by a
   `G`-isomorphism.
+* `TauCeti.GroupAlgGeom.CoordGroup.imageMulEquiv`: the isomorphism of coordinate groups induced
+  by a `G`-isomorphism.
 
 ## Main results
 
@@ -36,6 +40,8 @@ centralizer of `ι g`, onto themselves.
   `V_H(S)` onto `V_H(σ⁻¹(S))`.
 * `TauCeti.GroupAlgGeom.mem_V_image_mulEquiv_iff`: membership in the solutions of the image of a
   system under a `G`-isomorphism.
+* `TauCeti.GroupAlgGeom.Rad_image_mulEquiv`: a `G`-isomorphism carries the radical of a system
+  to the radical of its image.
 * `TauCeti.GroupAlgGeom.image_transvection_V_singleton_commutatorElement`: the transvection
   `x ↦ x g` carries the solutions of `[x, g] = 1` onto themselves.
 
@@ -179,6 +185,41 @@ theorem equivOfCoordinateChange_symm_coeff (S : Set (GX G X)) (g : G) :
   apply (equivOfCoordinateChange ι σ hσ S).injective
   simp
 
+/-- The coordinate-group isomorphism sends a coordinate `y` of the generic point of the
+transformed system to the class of the word `σ y`. -/
+@[simp]
+theorem equivOfCoordinateChange_genericPoint (S : Set (GX G X)) (y : Y) :
+    equivOfCoordinateChange ι σ hσ S (genericPoint ι (σ ⁻¹' S) y) =
+      (σ (inr (FreeGroup.of y)) : CoordGroup ι S) := by
+  simp [genericPoint_apply]
+
+/-- The inverse coordinate-group isomorphism sends a coordinate `x` of the generic point of the
+system to the class of the word `σ⁻¹ x`. -/
+@[simp]
+theorem equivOfCoordinateChange_symm_genericPoint (S : Set (GX G X)) (x : X) :
+    (equivOfCoordinateChange ι σ hσ S).symm (genericPoint ι S x) =
+      ((σ.symmOfBijective hσ) (inr (FreeGroup.of x)) : CoordGroup ι (σ ⁻¹' S)) := by
+  simp [genericPoint_apply]
+
+/-- The coordinate-group isomorphism sends the generic point of the transformed system to the
+image of the generic point of the system under the word map of `σ`. -/
+@[simp]
+theorem equivOfCoordinateChange_comp_genericPoint (S : Set (GX G X)) :
+    ⇑(equivOfCoordinateChange ι σ hσ S) ∘ genericPoint ι (σ ⁻¹' S) =
+      wordMap (coeff ι S) (fun y => σ (inr (FreeGroup.of y))) (genericPoint ι S) := by
+  funext y
+  simp
+
+/-- The inverse coordinate-group isomorphism sends the generic point of the system to the image
+of the generic point of the transformed system under the word map of `σ⁻¹`. -/
+@[simp]
+theorem equivOfCoordinateChange_symm_comp_genericPoint (S : Set (GX G X)) :
+    ⇑(equivOfCoordinateChange ι σ hσ S).symm ∘ genericPoint ι S =
+      wordMap (coeff ι (σ ⁻¹' S)) (fun x => (σ.symmOfBijective hσ) (inr (FreeGroup.of x)))
+        (genericPoint ι (σ ⁻¹' S)) := by
+  funext x
+  simp
+
 end CoordGroup
 
 end CoordinateChange
@@ -216,6 +257,86 @@ the point with coordinates its values at the words `φ x` is a solution of `S`. 
 theorem mem_V_image_mulEquiv_iff (S : Set (GX G X)) (v : Y → H) :
     v ∈ V ι (φ '' S) ↔ wordMap ι (fun x => φ (inr (FreeGroup.of x))) v ∈ V ι S := by
   simpa using (Set.ext_iff.1 (preimage_wordMap_V_eq_V_image ι (GHom.ofMulEquiv φ hφ) S) v).symm
+
+include hφ in
+/-- A `G`-isomorphism `φ : G[X] ≃* G[Y]` carries the radical of a system to the radical of its
+image. -/
+theorem Rad_image_mulEquiv (S : Set (GX G X)) :
+    Rad ι (φ '' S) = (Rad ι S).map (φ : GX G X →* GX G Y) := by
+  rw [Set.image_eq_preimage_of_inverse φ.symm_apply_apply φ.apply_symm_apply,
+    Subgroup.map_equiv_eq_comap_symm]
+  ext w
+  simpa using SetLike.ext_iff.1 (Rad_preimage ι
+    (GHom.ofMulEquiv φ.symm fun g => φ.symm_apply_eq.2 (hφ g).symm)
+    (GHom.ofMulEquiv_bijective _ _) S) w
+
+namespace CoordGroup
+
+/-- A `G`-isomorphism `φ : G[X] ≃* G[Y]` induces an isomorphism from the coordinate group of a
+system to the coordinate group of its image, given by `φ` on representatives. -/
+noncomputable def imageMulEquiv (S : Set (GX G X)) : CoordGroup ι S ≃* CoordGroup ι (φ '' S) :=
+  QuotientGroup.congr _ _ φ (Rad_image_mulEquiv ι φ hφ S).symm
+
+@[simp]
+theorem imageMulEquiv_mk (S : Set (GX G X)) (w : GX G X) :
+    imageMulEquiv ι φ hφ S (w : CoordGroup ι S) = (φ w : CoordGroup ι (φ '' S)) :=
+  QuotientGroup.congr_mk _ _ _ _ w
+
+@[simp]
+theorem imageMulEquiv_symm_mk (S : Set (GX G X)) (w : GX G Y) :
+    (imageMulEquiv ι φ hφ S).symm (w : CoordGroup ι (φ '' S)) =
+      (φ.symm w : CoordGroup ι S) := by
+  simp [imageMulEquiv]
+
+/-- The coordinate-group isomorphism induced by a `G`-isomorphism commutes with the coefficient
+maps. -/
+theorem imageMulEquiv_coeff (S : Set (GX G X)) (g : G) :
+    imageMulEquiv ι φ hφ S (coeff ι S g) = coeff ι (φ '' S) g := by
+  simp [coeff_apply, hφ]
+
+/-- The inverse of the coordinate-group isomorphism induced by a `G`-isomorphism commutes with the
+coefficient maps. -/
+theorem imageMulEquiv_symm_coeff (S : Set (GX G X)) (g : G) :
+    (imageMulEquiv ι φ hφ S).symm (coeff ι (φ '' S) g) = coeff ι S g := by
+  rw [MulEquiv.symm_apply_eq, imageMulEquiv_coeff]
+
+/-- The coordinate-group isomorphism induced by a `G`-isomorphism `φ` sends a coordinate `x` of
+the generic point of the system to the class of the word `φ x`. -/
+@[simp]
+theorem imageMulEquiv_genericPoint (S : Set (GX G X)) (x : X) :
+    imageMulEquiv ι φ hφ S (genericPoint ι S x) =
+      (φ (inr (FreeGroup.of x)) : CoordGroup ι (φ '' S)) := by
+  simp [genericPoint_apply]
+
+/-- The inverse of the coordinate-group isomorphism induced by a `G`-isomorphism `φ` sends a
+coordinate `y` of the generic point of the image system to the class of the word `φ⁻¹ y`. -/
+@[simp]
+theorem imageMulEquiv_symm_genericPoint (S : Set (GX G X)) (y : Y) :
+    (imageMulEquiv ι φ hφ S).symm (genericPoint ι (φ '' S) y) =
+      (φ.symm (inr (FreeGroup.of y)) : CoordGroup ι S) := by
+  simp [genericPoint_apply]
+
+/-- The coordinate-group isomorphism induced by a `G`-isomorphism `φ` sends the generic point of
+the system to the image of the generic point of the image system under the word map of `φ`. -/
+@[simp]
+theorem imageMulEquiv_comp_genericPoint (S : Set (GX G X)) :
+    ⇑(imageMulEquiv ι φ hφ S) ∘ genericPoint ι S =
+      wordMap (coeff ι (φ '' S)) (fun x => φ (inr (FreeGroup.of x)))
+        (genericPoint ι (φ '' S)) := by
+  funext x
+  simp
+
+/-- The inverse of the coordinate-group isomorphism induced by a `G`-isomorphism `φ` sends the
+generic point of the image system to the image of the generic point of the system under the word
+map of `φ⁻¹`. -/
+@[simp]
+theorem imageMulEquiv_symm_comp_genericPoint (S : Set (GX G X)) :
+    ⇑(imageMulEquiv ι φ hφ S).symm ∘ genericPoint ι (φ '' S) =
+      wordMap (coeff ι S) (fun y => φ.symm (inr (FreeGroup.of y))) (genericPoint ι S) := by
+  funext y
+  simp
+
+end CoordGroup
 
 end MulEquiv
 

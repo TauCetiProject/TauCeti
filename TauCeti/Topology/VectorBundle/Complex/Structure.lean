@@ -242,7 +242,7 @@ theorem coord_complexLinearPart_apply {b₀ b : B} (hb : b ∈ (trivializationAt
       (J.coord b₀ b' : F →ₗ[ℝ] F) ∘ₗ (J.coord b₀ b' : F →ₗ[ℝ] F) = -LinearMap.id :=
     LinearMap.ext fun w ↦ by simp [J.coord_coord_apply hb']
   simpa only [← coe_complexLinearPart, ContinuousLinearMap.coe_coe] using
-    ((TauCeti.complexLinearPart_isComplexLinear
+    ((TauCeti.isComplexLinear_complexLinearPart
       (hJ (mem_baseSet_trivializationAt F V b₀)) (hJ hb) LinearMap.id).apply w).symm
 
 /-- The neighbourhood of `b₀` on which `J.complexLinearPart b₀` is invertible: the base set of the

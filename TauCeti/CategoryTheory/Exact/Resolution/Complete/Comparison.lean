@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.HomotopyCategory
 public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.CategoryTheory.Exact.Resolution.Complete.Basic
 public import TauCeti.CategoryTheory.Exact.HomologicalComplex.Injective.Basic
+import TauCeti.CategoryTheory.Exact.HomologicalComplex.Projective.Basic
 
 /-!
 # The comparison theorem for complete resolutions
@@ -214,6 +215,8 @@ acyclic complexes to complexes of injectives, applied to `r.acyclicData`.
 Downwards, a correction `ω : Xⁿ⁺¹ ⟶ X'ⁿ⁺¹` vanishing after `X'ⁿ⁺¹ ↠ Z'ⁿ⁺²`, and agreeing with `φⁿ⁺¹`
 before the differential, corestricts to `Xⁿ⁺¹ ⟶ Z'ⁿ⁺¹`; its lift along `X'ⁿ ↠ Z'ⁿ⁺¹`, out of the
 projective `Xⁿ⁺¹`, is a component `h'` with `h' ≫ d = ω`. The next correction is `φⁿ - d ≫ h'`.
+This is the step `TauCeti.ExactStructure.AcyclicData.homotopyStepDown`, applied to
+`r'.acyclicData`.
 
 The corrections in degree zero and `-1` are `φ⁰ - c ≫ d` and `φ⁻¹ - d ≫ c`. -/
 
@@ -244,19 +247,22 @@ private noncomputable def homUp (n : ℤ) (h : r.X (n + 1) ⟶ r'.X n)
     rw [← r'.complex_d]
     exact r.acyclicData.i_comp_sub_homotopyStep_comp_d φ _ h hh'⟩
 
-/-- The downward step of the null-homotopy. -/
-private noncomputable def homDown (n : ℤ) (ω : r.X (n + 1) ⟶ r'.X (n + 1))
-    (hω : ω ≫ r'.π (n + 1) = 0) (hdω : r.d n ≫ ω = r.d n ≫ φ.f (n + 1)) :
+/-- The downward step of the null-homotopy: the shared step
+`TauCeti.ExactStructure.AcyclicData.homotopyStepDown` for the acyclicity data of `r'` and the
+projective terms of `r`, with the differentials of the spliced complexes written as those of the
+resolutions. -/
+private noncomputable def homDown (n : ℤ) (h : r.X (n + 1 + 1) ⟶ r'.X (n + 1))
+    (hh : (φ.f (n + 1) - r.d (n + 1) ≫ h) ≫ r'.π (n + 1) = 0) :
     { h' : r.X (n + 1) ⟶ r'.X n //
-      h' ≫ r'.d n = ω ∧ (φ.f n - r.d n ≫ h') ≫ r'.π n = 0 } :=
-  let h' := (r.isProjective_X (n + 1)).factorThru (r'.isDeflation_π n) (r'.liftZ (n + 1) ω hω)
-  have hd : h' ≫ r'.d n = ω := by simp [h', d_def]
-  ⟨h', hd, sub_comp_π_eq_zero_of φ n h' (by rw [hd, hdω])⟩
-
-/-- The correction following a downward step agrees with `φ` before the differential. -/
-private theorem d_comp_sub_eq (n : ℤ) (h' : r.X (n + 1 + 1) ⟶ r'.X (n + 1)) :
-    r.d n ≫ (φ.f (n + 1) - r.d (n + 1) ≫ h') = r.d n ≫ φ.f (n + 1) := by
-  rw [Preadditive.comp_sub, d_d_assoc, zero_comp, sub_zero]
+      h' ≫ r'.d n = φ.f (n + 1) - r.d (n + 1) ≫ h ∧ (φ.f n - r.d n ≫ h') ≫ r'.π n = 0 } :=
+  have hh' : (φ.f (n + 1) - r.complex.d (n + 1) (n + 1 + 1) ≫ h) ≫
+      r'.acyclicData.p (n + 1) = 0 := by
+    rwa [r.complex_d]
+  ⟨r'.acyclicData.homotopyStepDown φ (r.isProjective_X (n + 1)) h hh', by
+    rw [← r.complex_d, ← r'.complex_d]
+    exact r'.acyclicData.homotopyStepDown_comp_d φ _ h hh', by
+    rw [← r.complex_d]
+    exact r'.acyclicData.sub_d_comp_homotopyStepDown_comp_p φ _ h hh'⟩
 
 variable {f : r.Z 0 ⟶ r'.Z 0} (hφ : r.ι 0 ≫ φ.f 0 = f ≫ r'.ι 0)
   (c : r.X 0 ⟶ r'.X (Int.negSucc 0)) (hc : f = r.ι 0 ≫ c ≫ r'.π (Int.negSucc 0))
@@ -292,11 +298,6 @@ private theorem sub_comp_π_eq_zero :
     rw [d_negSucc_zero, d_negSucc_zero, Category.assoc, Category.assoc, h]
   exact sub_comp_π_eq_zero_of φ (Int.negSucc 0) c H
 
-private theorem d_comp_sub_eq_zero :
-    r.d (Int.negSucc 1) ≫ (φ.f (Int.negSucc 0) - r.d (Int.negSucc 0) ≫ c) =
-      r.d (Int.negSucc 1) ≫ φ.f (Int.negSucc 0) :=
-  d_comp_sub_eq φ (Int.negSucc 1) c
-
 /-- The components `Xᵏ⁺¹ ⟶ X'ᵏ` of the null-homotopy in nonnegative degrees, by upward steps from
 the correction `φ⁰ - c ≫ d` in degree zero. -/
 private noncomputable def homPos : ∀ k : ℕ,
@@ -316,11 +317,10 @@ private noncomputable def homNeg : ∀ k : ℕ,
       (φ.f (Int.negSucc (k + 1)) - r.d (Int.negSucc (k + 1)) ≫ h) ≫
         r'.π (Int.negSucc (k + 1)) = 0 }
   | 0 =>
-      let H := homDown φ (Int.negSucc 1) _ (sub_comp_π_eq_zero φ hφ c hc) (d_comp_sub_eq_zero φ c)
+      let H := homDown φ (Int.negSucc 1) c (sub_comp_π_eq_zero φ hφ c hc)
       ⟨H.1, H.2.2⟩
   | k + 1 =>
-      let H := homDown φ (Int.negSucc (k + 2)) _ (homNeg k).2
-        (d_comp_sub_eq φ (Int.negSucc (k + 2)) (homNeg k).1)
+      let H := homDown φ (Int.negSucc (k + 2)) (homNeg k).1 (homNeg k).2
       ⟨H.1, H.2.2⟩
 
 /-- The components `Xⁿ⁺¹ ⟶ X'ⁿ` of the null-homotopy. -/
@@ -344,12 +344,12 @@ private theorem homPos_succ (k : ℕ) :
 
 private theorem homNeg_zero :
     (homNeg φ hφ c hc 0).1 =
-      (homDown φ (Int.negSucc 1) _ (sub_comp_π_eq_zero φ hφ c hc) (d_comp_sub_eq_zero φ c)).1 :=
+      (homDown φ (Int.negSucc 1) c (sub_comp_π_eq_zero φ hφ c hc)).1 :=
   rfl
 
 private theorem homNeg_succ (k : ℕ) :
-    (homNeg φ hφ c hc (k + 1)).1 = (homDown φ (Int.negSucc (k + 2)) _ (homNeg φ hφ c hc k).2
-      (d_comp_sub_eq φ (Int.negSucc (k + 2)) (homNeg φ hφ c hc k).1)).1 :=
+    (homNeg φ hφ c hc (k + 1)).1 = (homDown φ (Int.negSucc (k + 2)) (homNeg φ hφ c hc k).1
+      (homNeg φ hφ c hc k).2).1 :=
   rfl
 
 private theorem homotopyHom_ofNat (k : ℕ) :
@@ -395,8 +395,7 @@ private theorem comm_negSucc_one :
       r.d (Int.negSucc 1 + 1) ≫ homotopyHom φ hφ c hc (Int.negSucc 1 + 1) +
         homotopyHom φ hφ c hc (Int.negSucc 1) ≫ r'.d (Int.negSucc 1) := by
   rw [← sub_eq_iff_eq_add', homotopyHom_negSucc_one_add_one, homotopyHom_negSucc_succ, homNeg_zero]
-  exact (homDown φ (Int.negSucc 1) _ (sub_comp_π_eq_zero φ hφ c hc)
-    (d_comp_sub_eq_zero φ c)).2.1.symm
+  exact (homDown φ (Int.negSucc 1) c (sub_comp_π_eq_zero φ hφ c hc)).2.1.symm
 
 private theorem comm_negSucc_add_two (k : ℕ) :
     φ.f (Int.negSucc (k + 2) + 1) =
@@ -404,8 +403,8 @@ private theorem comm_negSucc_add_two (k : ℕ) :
         homotopyHom φ hφ c hc (Int.negSucc (k + 2)) ≫ r'.d (Int.negSucc (k + 2)) := by
   rw [← sub_eq_iff_eq_add', homotopyHom_negSucc_add_two_add_one, homotopyHom_negSucc_succ,
     homNeg_succ]
-  exact (homDown φ (Int.negSucc (k + 2)) _ (homNeg φ hφ c hc k).2
-    (d_comp_sub_eq φ (Int.negSucc (k + 2)) (homNeg φ hφ c hc k).1)).2.1.symm
+  exact (homDown φ (Int.negSucc (k + 2)) (homNeg φ hφ c hc k).1
+    (homNeg φ hφ c hc k).2).2.1.symm
 
 /-- The null-homotopy of a map of complexes lifting `f = ι₀ ≫ c ≫ π₋₁`. -/
 private noncomputable def homotopyZeroOfEq : Homotopy φ 0 :=

@@ -24,6 +24,8 @@ of measures.
 
 * `MeasureTheory.Measure.measurable_sum` — countable superposition is measurable for the
   evaluation sigma-algebra on measures.
+* `MeasureTheory.Measure.measurable_restrict` — restricting a measure to a fixed measurable set is
+  measurable for the evaluation sigma-algebra.
 * `Measurable.measure_of_isPiSystem_of_iUnion` — measurability on a generating π-system
   suffices for measures finite on each set of a fixed countable cover by π-system sets,
   without finite total mass.
@@ -66,6 +68,15 @@ namespace MeasureTheory.Measure
   simp only [Measure.sum_apply _ hs]
   exact Measurable.tsum fun i => (measurable_coe hs).comp (measurable_pi_apply i)
 
+/-- Restricting a measure to a fixed measurable set is measurable for the evaluation
+sigma-algebra on measures. -/
+@[fun_prop]
+theorem measurable_restrict {X : Type*} [MeasurableSpace X] {s : Set X}
+    (hs : MeasurableSet s) :
+    Measurable (fun μ : Measure X ↦ μ.restrict s) := by
+  refine measurable_of_measurable_coe _ fun A hA ↦ ?_
+  simpa only [restrict_apply hA] using measurable_coe (hA.inter hs)
+
 end MeasureTheory.Measure
 
 namespace TauCeti
@@ -91,15 +102,21 @@ theorem measurable_sum_smul_dirac {β ι α : Type*} [MeasurableSpace β] [Measu
   simp only [Measure.sum_apply _ hs, _root_.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hs]
   exact Measurable.tsum fun i => (hf i).mul_const _
 
+/-- Summing a countable family of measures is measurable for the Giry measurable structure. -/
+@[fun_prop]
+theorem measurable_measure_sum {ι α : Type*} [Countable ι] [MeasurableSpace α] :
+    Measurable (Measure.sum : (ι → Measure α) → Measure α) := by
+  refine Measure.measurable_measure.2 fun s hs => ?_
+  simp only [Measure.sum_apply _ hs]
+  exact Measurable.tsum fun i => (Measure.measurable_coe hs).comp (measurable_pi_apply i)
+
 /-- The counting measure of a countable tuple is measurable in the tuple. Repeated entries
 contribute separate Dirac occurrences. -/
 @[fun_prop]
 theorem measurable_sum_dirac {ι α : Type*} [Countable ι] [MeasurableSpace α] :
-    Measurable fun x : ι → α => Measure.sum fun i => Measure.dirac (x i) := by
-  refine Measure.measurable_measure.2 fun s hs => ?_
-  simp only [Measure.sum_apply _ hs]
-  exact Measurable.tsum fun i => (Measure.measurable_coe hs).comp
-    (Measure.measurable_dirac.comp (measurable_pi_apply i))
+    Measurable fun x : ι → α => Measure.sum fun i => Measure.dirac (x i) :=
+  measurable_measure_sum.comp
+    (Measurable.of_eval fun i => Measure.measurable_dirac.comp (measurable_pi_apply i))
 
 /-- Pushing a probability measure forward along a fixed measurable map is measurable for the Giry
 structure that `ProbabilityMeasure` inherits as a subtype of `Measure`. -/

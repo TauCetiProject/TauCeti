@@ -24,11 +24,18 @@ uniform order statements:
   space with empty interior has at most one point.
 * `IsPreconnected.subsingleton_image_of_interior_eq_empty`: a continuous function on `s` with values
   in a set with empty interior, for instance a null set of `ℝ`, is constant on `s`.
+
+A continuous function on `Ioo a b` which lies above `c` just to the right of `a` and is at most
+`c` somewhere in `Ioo a b` has a least such point, `ContinuousOn.exists_mem_Ioo_le_and_forall_gt`.
+
+A function continuous and strictly monotone on a neighbourhood `s` of `x` maps it onto a
+neighbourhood of `f x`, `StrictMonoOn.image_mem_nhds`.
 -/
 
 public section
 
 open Set
+open scoped Topology
 
 variable {X α : Type*} [TopologicalSpace X] [LinearOrder α] [TopologicalSpace α]
   [OrderClosedTopology α] {s : Set X}
@@ -100,3 +107,38 @@ theorem IsPreconnected.subsingleton_image_of_interior_eq_empty (hs : IsPreconnec
     (f '' s).Subsingleton :=
   (hs.image f hf).subsingleton_of_interior_eq_empty
     (subset_empty_iff.1 (ht ▸ interior_mono (image_subset_iff.2 hft)))
+
+/-- A function continuous on `Ioo a b`, eventually above `c` to the right of `a` and at most `c`
+somewhere in `Ioo a b`, has a least such point `t₁ ∈ Ioo a b`: `f t₁ ≤ c` and `c < f` on
+`Ioo a t₁`. -/
+theorem ContinuousOn.exists_mem_Ioo_le_and_forall_gt
+    [ConditionallyCompleteLinearOrder X] [OrderTopology X] {f : X → α} {a b : X} {c : α}
+    (hf : ContinuousOn f (Ioo a b)) (hpos : ∀ᶠ r in 𝓝[>] a, c < f r)
+    (hne : ∃ t ∈ Ioo a b, f t ≤ c) : ∃ t₁ ∈ Ioo a b, f t₁ ≤ c ∧ ∀ r ∈ Ioo a t₁, c < f r := by
+  obtain ⟨t, ht, hft⟩ := hne
+  set Z := Ioo a b ∩ {t | f t ≤ c}
+  have hZ : Z.Nonempty := ⟨t, ht, hft⟩
+  obtain ⟨u, hu, hsub⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' (ht.1.trans ht.2)).1 hpos
+  have hbdd : BddBelow Z := ⟨a, fun z hz ↦ hz.1.1.le⟩
+  have hut₁ : u ≤ sInf Z := le_csInf hZ fun z hz ↦ le_of_not_gt fun h ↦
+    hz.2.not_gt (hsub ⟨hz.1.1, h⟩)
+  have ht₁ : sInf Z ∈ Ioo a b :=
+    ⟨lt_of_lt_of_le hu hut₁, (csInf_le hbdd ⟨ht, hft⟩).trans_lt ht.2⟩
+  refine ⟨sInf Z, ht₁, ?_, fun r hr ↦ lt_of_not_ge fun h ↦
+    hr.2.not_ge (csInf_le hbdd ⟨⟨hr.1, hr.2.trans ht₁.2⟩, h⟩)⟩
+  exact ContinuousWithinAt.closure_le (csInf_mem_closure hZ hbdd)
+    ((hf _ ht₁).mono inter_subset_left) continuousWithinAt_const fun _ hz ↦ hz.2
+
+/-- A function continuous and strictly monotone on a neighbourhood `s` of `x` maps `s` onto a
+neighbourhood of `f x`. -/
+theorem StrictMonoOn.image_mem_nhds [ConditionallyCompleteLinearOrder X] [OrderTopology X]
+    [DenselyOrdered X] [NoMinOrder X] [NoMaxOrder X] {f : X → α} (hf : StrictMonoOn f s)
+    (hcont : ContinuousOn f s) {x : X} (hs : s ∈ 𝓝 x) : f '' s ∈ 𝓝 (f x) := by
+  obtain ⟨l, u, ⟨hl, hu⟩, hsub⟩ := mem_nhds_iff_exists_Ioo_subset.1 hs
+  obtain ⟨a, hla, hax⟩ := exists_between hl
+  obtain ⟨b, hxb, hbu⟩ := exists_between hu
+  have hab : Icc a b ⊆ s := fun y hy ↦ hsub ⟨hla.trans_le hy.1, hy.2.trans_lt hbu⟩
+  have hx : x ∈ s := mem_of_mem_nhds hs
+  exact Filter.mem_of_superset (Icc_mem_nhds (hf (hab ⟨le_rfl, (hax.trans hxb).le⟩) hx hax)
+    (hf hx (hab ⟨(hax.trans hxb).le, le_rfl⟩) hxb))
+    ((intermediate_value_Icc (hax.trans hxb).le (hcont.mono hab)).trans (image_mono hab))

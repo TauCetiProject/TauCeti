@@ -270,6 +270,23 @@ theorem torsionCoeffWeilPairing_torsionCoeffBaseChange (P Q : W.TorsionCoeff m) 
   exact Additive.toMul.injective <| Subtype.ext <| Units.ext <| by
     simp [restrictRootsOfUnity_coe_apply]
 
+/-- The torsion Weil pairing commutes with field extension at propositionally equal levels.
+The hypotheses specify the underlying images of the points, and values are compared in the
+ambient separable closure to avoid casts between the roots-of-unity subgroups. -/
+theorem coe_torsionCoeffWeilPairing_baseChange (n : ℕ) (hn : IsUnit (n : L)) (hmn : n = m)
+    (P Q : W.TorsionCoeff m) (P' Q' : (W⁄L).TorsionCoeff n)
+    (hP : (P' : (W⁄L).PointCoeff) = W.pointCoeffBaseChange τ P)
+    (hQ : (Q' : (W⁄L).PointCoeff) = W.pointCoeffBaseChange τ Q) :
+    ((W⁄L).torsionCoeffWeilPairing n hn P' Q').toMul.val.val =
+      τ ((W.torsionCoeffWeilPairing m hm P Q).toMul.val.val) := by
+  subst n
+  have hP' : P' = W.torsionCoeffBaseChange τ m P :=
+    Subtype.ext (by simpa only [coe_torsionCoeffBaseChange] using hP)
+  have hQ' : Q' = W.torsionCoeffBaseChange τ m Q :=
+    Subtype.ext (by simpa only [coe_torsionCoeffBaseChange] using hQ)
+  rw [hP', hQ', W.torsionCoeffWeilPairing_torsionCoeffBaseChange hm τ P Q]
+  simp only [toMul_kummerCoeffBaseChange, Units.coe_map, MonoidHom.coe_ofClass]
+
 end BaseChange
 
 /-! ### The coefficient map attached to a rational torsion point -/

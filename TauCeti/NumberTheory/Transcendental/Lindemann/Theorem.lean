@@ -52,7 +52,6 @@ algebraic numbers are linearly independent over the field `integralClosure ℚ �
 numbers. -/
 theorem linearIndependent_exp {ι : Type*} (u : ι → integralClosure ℚ ℂ) (u_inj : u.Injective) :
     LinearIndependent (integralClosure ℚ ℂ) fun i ↦ exp (u i) := by
-  classical
   refine linearIndependent_iff'.2 fun s g hg i hi ↦ ?_
   -- The exponents `u j` and the coefficients `g j`, `j ∈ s`, lie in a finite Galois subfield `K`
   -- of `ℂ`.
@@ -85,7 +84,6 @@ algebraically independent over the field `integralClosure ℚ ℂ` of algebraic 
 theorem algebraicIndependent_exp {ι : Type*} (u : ι → integralClosure ℚ ℂ)
     (hu : LinearIndependent ℕ u) :
     AlgebraicIndependent (integralClosure ℚ ℂ) fun i ↦ exp (u i) := by
-  classical
   refine algebraicIndependent_iff.2 fun p hp ↦ ?_
   -- The monomial `∏ exp (u i) ^ m i` is the exponential of `∑ m i • u i`, and distinct exponents
   -- `m` give distinct values of this sum.

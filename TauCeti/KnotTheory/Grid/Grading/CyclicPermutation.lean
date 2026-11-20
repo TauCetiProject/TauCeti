@@ -40,6 +40,9 @@ and that constant is zero because the marking state `𝕆` has grading `1 - n` i
 * `TauCeti.OddComponentGridDiagram.alexanderℤ_relabelRows_finRotate`,
   `TauCeti.OddComponentGridDiagram.alexanderℤ_relabelColumns_finRotate`: the integer Alexander
   grading is invariant under both cyclic permutations.
+* `TauCeti.OddComponentGridDiagram.bidegree_relabelRows_finRotate`,
+  `TauCeti.OddComponentGridDiagram.bidegree_relabelColumns_finRotate`: so is the integer
+  `(O-Maslov, Alexander)` bidegree.
 
 ## References
 
@@ -162,6 +165,32 @@ theorem alexanderℤ_relabelColumns_finRotate (x : GridState n) :
   have h := G.1.alexander_relabelColumns_finRotate x
   rw [← val_relabelColumns, alexander_eq_intCast, alexander_eq_intCast] at h
   exact_mod_cast h
+
+/-- The integer `(O-Maslov, Alexander)` bidegree is invariant under a cyclic permutation of the
+rows. -/
+@[simp]
+theorem bidegree_relabelRows_finRotate (x : GridState n) :
+    (G.relabelRows (finRotate n)).bidegree (x.relabelRows (finRotate n)) = G.bidegree x := by
+  have h := G.1.maslovO_relabelRows_finRotate x
+  rw [← val_relabelRows, GridDiagram.maslovO_eq_intCast, GridDiagram.maslovO_eq_intCast] at h
+  refine Prod.ext ?_ ?_
+  · rw [bidegree_fst, bidegree_fst]
+    exact_mod_cast h
+  · rw [bidegree_snd, bidegree_snd, alexanderℤ_relabelRows_finRotate]
+
+/-- The integer `(O-Maslov, Alexander)` bidegree is invariant under a cyclic permutation of the
+columns. -/
+@[simp]
+theorem bidegree_relabelColumns_finRotate (x : GridState n) :
+    (G.relabelColumns (finRotate n)).bidegree (x.relabelColumns (finRotate n)) =
+      G.bidegree x := by
+  have h := G.1.maslovO_relabelColumns_finRotate x
+  rw [← val_relabelColumns, GridDiagram.maslovO_eq_intCast,
+    GridDiagram.maslovO_eq_intCast] at h
+  refine Prod.ext ?_ ?_
+  · rw [bidegree_fst, bidegree_fst]
+    exact_mod_cast h
+  · rw [bidegree_snd, bidegree_snd, alexanderℤ_relabelColumns_finRotate]
 
 end OddComponentGridDiagram
 

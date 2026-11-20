@@ -78,7 +78,7 @@ theorem cuspOrbitOfSL2Z_inv_eq_of_cuspTranslationOrbit_mk_eq {γ γ' : SL(2, ℤ
     Subgroup.mem_map.mp (Subgroup.mem_subgroupOf.mp (QuotientGroup.eq.mp hmk))
   have hcoe : (((TSL ^ j * (mapGL ℝ).rangeRestrict γ')⁻¹ * (mapGL ℝ).rangeRestrict γ : 𝒮ℒ) :
       GL (Fin 2) ℝ) = mapGL ℝ ((ModularGroup.T ^ j * γ')⁻¹ * γ) := by
-    simp only [coe_TSL_zpow, TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, map_mul, map_inv,
+    simp only [coe_TSL_zpow, Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, map_mul, map_inv,
       Subgroup.coe_mul, InvMemClass.coe_inv, MonoidHom.coe_rangeRestrict]
   have hγ : γ = ModularGroup.T ^ j * γ' * h₀ := by
     rw [mapGL_injective (he.trans hcoe)]

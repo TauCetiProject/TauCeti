@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.GroupTheory.SemidirectProduct
 public import TauCeti.Analysis.Normed.Group.Prod
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
+public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Coercive
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 
@@ -162,6 +162,49 @@ def toProdDiffeomorph : Nil ≃ₘ⟮𝓘(ℝ, ℝ × ℝ × ℝ), 𝓘(ℝ, ℝ
 @[simp] theorem coe_toProdDiffeomorph : ⇑toProdDiffeomorph = toProd := (rfl)
 
 @[simp] theorem coe_toProdDiffeomorph_symm : ⇑toProdDiffeomorph.symm = toProd.symm := (rfl)
+
+/-- The differential of global coordinates reads the tangent vector in the model space. -/
+@[simp] theorem mfderiv_toProd_apply (p : Nil) (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
+    mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd p v =
+      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p v :=
+  congrArg (fun L => L v) (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).mfderiv_eq
+
+/-- The differential of inverse global coordinates retains the model vector. -/
+@[simp] theorem tangentSpaceCastModel_mfderiv_toProd_symm (r : ℝ × ℝ × ℝ)
+    (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) r) :
+    tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (toProd.symm r)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) toProd.symm r v) = v :=
+  congrArg (fun L => L v) (ContinuousLinearMap.id ℝ (ℝ × ℝ × ℝ)).mfderiv_eq
+
+/-- Global coordinates are `C^n` for every `n`. -/
+theorem contMDiff_toProd {n : WithTop ℕ∞} :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n (toProd : Nil → ℝ × ℝ × ℝ) :=
+  contDiff_id.contMDiff
+
+/-- Inverse global coordinates are `C^n` for every `n`. -/
+theorem contMDiff_toProd_symm {n : WithTop ℕ∞} :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n (toProd.symm : ℝ × ℝ × ℝ → Nil) :=
+  contDiff_id.contMDiff
+
+/-- A self-map of `Nil` is `C^n` exactly when it is `C^n` in the global coordinates. -/
+theorem contDiff_toProd_conj_iff {n : WithTop ℕ∞} {f : Nil → Nil} :
+    ContDiff ℝ n (toProd ∘ f ∘ toProd.symm) ↔
+      ContMDiff 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) n f :=
+  contMDiff_iff_contDiff.symm
+
+/-- The ordinary derivative of a map of `Nil` in global coordinates is its manifold derivative,
+read through the canonical tangent-space identifications. -/
+@[simp]
+theorem fderiv_toProd_conj_apply (f : Nil → Nil) (p : Nil)
+    (u : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
+    fderiv ℝ (toProd ∘ f ∘ toProd.symm) (toProd p)
+        (tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) p u) =
+      tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (f p)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) f p u) := by
+  -- Nil has the inherited model-space charts. In those charts both tangent casts
+  -- are identities, and the coordinate map is the same function as the original map.
+  exact congrArg (fun L => L u) (mfderiv_eq_fderiv
+    (𝕜 := ℝ) (f := toProd ∘ f ∘ toProd.symm) (x := toProd p)).symm
 
 /-! ### The group structure -/
 
@@ -349,39 +392,24 @@ private theorem inner_mfderiv_mul_left (p q : Nil) (v w : TangentSpace 𝓘(ℝ,
     ContinuousLinearMap.coe_comp, Function.comp_apply, smul_eq_mul]
   ring
 
-/-- Left multiplication by `p`, as an isometry of `Nil`. -/
-private def mulLeft (p : Nil) : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil where
-  toFun := (p * ·)
-  invFun := (p⁻¹ * ·)
-  left_inv q := inv_mul_cancel_left p q
-  right_inv q := mul_inv_cancel_left p q
-  contMDiff_toFun := contMDiff_mul_left p
-  contMDiff_invFun := contMDiff_mul_left p⁻¹
-  inner_mfderiv' q v w := by
-    -- The underlying map of the diffeomorphism under construction is `(p * ·)` by definition;
-    -- `change` states the goal in terms of that function, so that its differential applies.
-    change inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (p * ·) q v)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (p * ·) q w) = inner ℝ v w
-    exact inner_mfderiv_mul_left p q v w
-
-private theorem mulLeft_apply (p q : Nil) : mulLeft p q = p * q := (rfl)
+/-- Left multiplication by an element of `Nil` is smooth. -/
+instance contMDiffConstSMul : ContMDiffConstSMul 𝓘(ℝ, ℝ × ℝ × ℝ) ∞ Nil Nil :=
+  ⟨fun p ↦ contMDiff_mul_left p⟩
 
 /-- Left multiplication, as a group homomorphism from `Nil` to its isometry group: the metric
 of `Nil` is left-invariant. -/
-def toIsom : Nil →* Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil where
-  toFun := mulLeft
-  map_one' := RiemannianIsometry.ext fun q ↦ by
-    rw [mulLeft_apply, RiemannianIsometry.one_apply, one_mul]
-  map_mul' p p' := RiemannianIsometry.ext fun q ↦ by
-    rw [RiemannianIsometry.mul_apply, mulLeft_apply, mulLeft_apply, mulLeft_apply, mul_assoc]
+def toIsom : Nil →* Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil :=
+  RiemannianIsometry.constSMulHom inner_mfderiv_mul_left
 
 /-- The isometry `toIsom p` is left multiplication by `p`. -/
 @[simp]
-theorem toIsom_apply (p q : Nil) : toIsom p q = p * q := (rfl)
+theorem toIsom_apply (p q : Nil) : toIsom p q = p * q := by
+  rw [toIsom, RiemannianIsometry.constSMulHom_apply, RiemannianIsometry.constSMul_apply,
+    smul_eq_mul]
 
 /-- Distinct elements of `Nil` act by distinct isometries. -/
-theorem toIsom_injective : Function.Injective toIsom := fun p p' h ↦ by
-  simpa using DFunLike.congr_fun h 1
+theorem toIsom_injective : Function.Injective toIsom :=
+  RiemannianIsometry.constSMulHom_injective _
 
 /-- The isometry group of `Nil` acts transitively: `Nil` is a homogeneous Riemannian manifold.
 This is transferred along `toIsom` from the transitive action of `Nil` on itself by left

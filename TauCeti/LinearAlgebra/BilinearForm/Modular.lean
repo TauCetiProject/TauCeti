@@ -94,27 +94,6 @@ namespace LinearMap.BilinForm
 open LinearMap (BilinForm)
 open Module Matrix
 
-section Division
-
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M} {a : R}
-
-/-- If `a` is a non-zero-divisor dividing every value of `B`, then `B` is `a` times a bilinear
-form. -/
-theorem exists_smul_eq_of_forall_dvd (ha : a ∈ nonZeroDivisors R) (h : ∀ x y, a ∣ B x y) :
-    ∃ C : BilinForm R M, a • C = B := by
-  choose c hc using h
-  have hcan : ∀ r s, a * r = a * s → r = s := fun r s ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp
-  refine ⟨LinearMap.mk₂ R c (fun x₁ x₂ y ↦ hcan _ _ ?_) (fun r x y ↦ hcan _ _ ?_)
-    (fun x y₁ y₂ ↦ hcan _ _ ?_) (fun r x y ↦ hcan _ _ ?_), ?_⟩
-  · rw [← hc, mul_add, ← hc, ← hc, map_add, LinearMap.add_apply]
-  · rw [← hc, smul_eq_mul, mul_left_comm, ← hc, map_smul, LinearMap.smul_apply, smul_eq_mul]
-  · rw [← hc, mul_add, ← hc, ← hc, map_add]
-  · rw [← hc, smul_eq_mul, mul_left_comm, ← hc, map_smul, smul_eq_mul]
-  · ext x y
-    simp [hc]
-
-end Division
-
 section Basic
 
 variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
@@ -263,7 +242,7 @@ represented by a vector for every linear functional `f`. -/
 theorem isModular_iff (hB : B.IsSymm) (ha : a ∈ nonZeroDivisors R) :
     B.IsModular a ↔ (∀ x y, a ∣ B x y) ∧ (∀ x, (∀ y, B x y = 0) → x = 0) ∧
       ∀ f : Dual R M, ∃ x, ∀ y, B x y = a * f y := by
-  have hcan : ∀ r s, a * r = a * s → r = s := fun r s ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp
+  have ha' : IsLeftRegular a := (isRegular_iff_mem_nonZeroDivisors.mpr ha).left
   constructor
   · intro h
     refine ⟨h.dvd, (h.nondegenerate ha).1, fun f ↦ ?_⟩
@@ -271,14 +250,13 @@ theorem isModular_iff (hB : B.IsSymm) (ha : a ∈ nonZeroDivisors R) :
     obtain ⟨x, hx⟩ := hC.bijective_left.2 f
     exact ⟨x, fun y ↦ by rw [LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul, hx]⟩
   · rintro ⟨hdvd, hsep, hrep⟩
-    obtain ⟨C, rfl⟩ := exists_smul_eq_of_forall_dvd ha hdvd
+    obtain ⟨C, rfl⟩ := exists_smul_eq_of_forall_dvd ha' hdvd
     have hbij : Function.Bijective C := by
       refine ⟨(injective_iff_map_eq_zero C).mpr fun x hx ↦ hsep x fun y ↦ ?_, fun f ↦ ?_⟩
       · simp [hx]
       · obtain ⟨x, hx⟩ := hrep f
-        exact ⟨x, LinearMap.ext fun y ↦ hcan _ _ (by simpa using hx y)⟩
-    have hflip : C.flip = C := LinearMap.ext₂ fun x y ↦ hcan _ _ (by
-      simpa using hB.eq y x)
+        exact ⟨x, LinearMap.ext fun y ↦ ha' (by simpa using hx y)⟩
+    have hflip : C.flip = C := LinearMap.ext₂ fun x y ↦ ha' (by simpa using hB.eq y x)
     exact ⟨C, rfl, ⟨hbij, hflip ▸ hbij⟩⟩
 
 /-- **The unimodular rescaling of a modular form.** If `B` is `a`-modular with `a` a
@@ -299,7 +277,8 @@ theorem IsModular.exists_eq_smul_of_forall_dvd (h : B.IsModular a) (ha : a ∈ n
   have hdvd : ∀ y, r ∣ C x y := fun y ↦ by
     obtain ⟨c, hc⟩ := hx y
     exact ⟨c, (mul_cancel_left_mem_nonZeroDivisors ha).mp (by simpa [mul_assoc] using hc)⟩
-  obtain ⟨f, hf⟩ := LinearMap.exists_smul_eq_of_forall_dvd hr hdvd
+  obtain ⟨f, hf⟩ := LinearMap.exists_smul_eq_of_forall_dvd
+    (isRegular_iff_mem_nonZeroDivisors.mpr hr).left hdvd
   obtain ⟨z, rfl⟩ := hC.bijective_left.2 f
   exact ⟨z, hC.bijective_left.1 (by rw [map_smul, hf])⟩
 
@@ -345,10 +324,10 @@ its orthogonal complement. -/
 theorem IsModular.isCompl_orthogonal (ha : a ∈ nonZeroDivisors R)
     (hdvd : ∀ x y, a ∣ B x y) {S : Submodule R M} (h : (B.restrict S).IsModular a) :
     IsCompl S (B.orthogonal S) := by
-  have hcan : ∀ r s, a * r = a * s → r = s := fun r s ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp
-  obtain ⟨B', rfl⟩ := exists_smul_eq_of_forall_dvd ha hdvd
+  have ha' : IsLeftRegular a := (isRegular_iff_mem_nonZeroDivisors.mpr ha).left
+  obtain ⟨B', rfl⟩ := exists_smul_eq_of_forall_dvd ha' hdvd
   obtain ⟨C, hC, hCp⟩ := h
-  have hCB : C = B'.restrict S := LinearMap.ext₂ fun x y ↦ hcan _ _ (by
+  have hCB : C = B'.restrict S := LinearMap.ext₂ fun x y ↦ ha' (by
     simpa using congrArg (fun D : BilinForm R S ↦ D x y) hC)
   have horth : (a • B').orthogonal S = B'.orthogonal S := by
     ext m

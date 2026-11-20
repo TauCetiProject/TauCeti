@@ -10,10 +10,10 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.Analysis.Normed.Group.BallSphere
 
 /-!
-# Hörmander's condition from the tail of an integrable kernel
+# Hörmander's condition from the integrable tail of a kernel
 
-For a function `f` on a seminormed additive group with a right-invariant measure, integrable on
-`{‖x‖ > r}`, translating by `h` maps `{‖x‖ > s}` into `{‖x‖ > r}` whenever `r + ‖h‖ ≤ s`, so
+Let `f` be a function on a seminormed additive group with a right-invariant measure, integrable
+on `{‖x‖ > r}`. Since `x ↦ x - h` maps `{‖x‖ > s}` into `{‖x‖ > r}` whenever `r + ‖h‖ ≤ s`,
 
 `∫_{‖x‖ > s} ‖f (x - h) - f x‖ dx ≤ 2 ∫_{‖x‖ > r} ‖f x‖ dx`.
 
@@ -40,8 +40,8 @@ namespace MeasureTheory.IntegrableOn
 variable {G E : Type*} [SeminormedAddGroup G] {h : G} {r s : ℝ} [MeasurableSpace G]
   [MeasurableAdd G] [NormedAddCommGroup E] {μ : Measure G} [μ.IsAddRightInvariant] {f : G → E}
 
-/-- If `r + ‖h‖ ≤ s`, translating by `h` maps `{‖x‖ > s}` into `{‖x‖ > r}`, so the integral of
-`‖f (x - h)‖` over the first set is at most that of `‖f x‖` over the second. -/
+/-- If `f` is integrable on `{‖x‖ > r}` and `r + ‖h‖ ≤ s`, the integral of `‖f (x - h)‖` over
+`{‖x‖ > s}` is at most that of `‖f x‖` over `{‖x‖ > r}`. -/
 theorem setIntegral_norm_comp_sub_le (hf : IntegrableOn f {x | r < ‖x‖} μ) (hrs : r + ‖h‖ ≤ s) :
     ∫ x in {x | s < ‖x‖}, ‖f (x - h)‖ ∂μ ≤ ∫ x in {x | r < ‖x‖}, ‖f x‖ ∂μ := by
   rw [← (measurePreserving_sub_right μ h).setIntegral_image_emb

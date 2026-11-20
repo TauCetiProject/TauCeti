@@ -189,6 +189,18 @@ theorem closedHom_coneDesc :
     closedHom (coneDesc f g hfg) = (closedHom g).comp (LinearMap.snd Aᵐᵒᵖ M N) :=
   closedHom_closedHomOf _ _ _
 
+/-- The differential of the iterated cone on its three components. This is the differential
+used in the totalization of a short complex. -/
+theorem cone_coneDesc_differential_apply (x : M) (y : N) (z : P) :
+    (cone (coneDesc f g hfg)).differential ((x, y), z) =
+      ((M.differential x, -closedHom f x - N.differential y),
+        closedHom g y + P.differential z) := by
+  rw [cone_differential_apply, cone_differential_apply, closedHom_coneDesc]
+  -- Cone carriers have componentwise product operations; expose their projections here.
+  change ((- -M.differential x, -(closedHom f x + N.differential y)),
+    closedHom g y + P.differential z) = _
+  simp only [neg_neg, neg_add, sub_eq_add_neg]
+
 /-- The cone inclusion followed by the induced map out of the cone is the original map. -/
 @[reassoc (attr := simp)]
 theorem coneInclusion_comp_coneDesc : coneInclusion f ≫ coneDesc f g hfg = g := by

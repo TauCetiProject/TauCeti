@@ -284,7 +284,7 @@ theorem normalCore_comap_subgroupB :
   rw [comap_subgroupB]
   exact Subgroup.normalCore_comap_of_forall_exists_mul_eq f fun g ↦
     let ⟨x, t, ht, h⟩ := hf g
-    ⟨x, t, ht.1, h⟩
+    ⟨x, t, Subgroup.le_normalizer ht.1, h⟩
 
 /-- **A pulled-back Tits system is irreducible exactly when the original one is**, since the two
 Weyl groups are identified together with their simple reflections. -/

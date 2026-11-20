@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Restriction
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStructure
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStructure.Basic
 
 /-!
 # The `m`-Selmer group and the Shafarevich–Tate group of an elliptic curve

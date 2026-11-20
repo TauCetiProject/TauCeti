@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.SquareClasses
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Uniformizer
 public import TauCeti.NumberTheory.LocalField.Squares
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
@@ -21,7 +22,8 @@ they are congruent modulo `(2)`, or equivalently modulo the `v_K(2)`-th power of
 maximal ideal. This separates the parameters in the finite residue quotient used to
 count the unit norm classes, including in residue characteristic two.
 `ncard_range_uniformizerNormSquareClass` computes their number as `q ^ v_K(2)`, and
-`mem_range_uniformizerNormSquareClass_iff` identifies the counted range with unit norms.
+`mem_range_uniformizerNormSquareClass_iff` and `coe_unitQuadraticNormSquareClasses_irreducible`
+identify the counted range with `TauCeti.unitQuadraticNormSquareClasses (π : K)`.
 
 The proof uses the sharp local square theorem and the obstruction to a square differing
 from one to odd order below `2 v_K(2)`.
@@ -254,5 +256,15 @@ theorem ncard_range_uniformizerNormSquareClass (h2 : (2 : K) ≠ 0)
     exact ⟨q t, (hf t (r (q t))).mpr (hqr (q t))⟩
   rw [← hrange, Set.ncard_range_of_injective hinj]
   exact IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow _
+
+/-- For an irreducible `π` of `𝒪[K]`, the underlying set of `unitQuadraticNormSquareClasses (π : K)`
+is the range of `uniformizerNormSquareClass K hπ`. -/
+theorem coe_unitQuadraticNormSquareClasses_irreducible {π : 𝒪[K]} (hπ : Irreducible π) :
+    (unitQuadraticNormSquareClasses (π : K) : Set (MultiplicativeSquareClassGroup K)) =
+      Set.range (uniformizerNormSquareClass K hπ) := by
+  ext c
+  rw [SetLike.mem_coe, mem_unitQuadraticNormSquareClasses_iff,
+    mem_range_uniformizerNormSquareClass_iff]
+  exact ⟨fun ⟨b, hb, hv, hc⟩ ↦ ⟨b, hv, hb, hc⟩, fun ⟨b, hv, hb, hc⟩ ↦ ⟨b, hb, hv, hc⟩⟩
 
 end TauCeti

@@ -44,6 +44,8 @@ This file constructs the connecting map and proves the exactness statements whic
   map are the orbits of `B(C)`.
 * `CategoryTheory.Sheaf.NonabelianH1.mk_mem_range_connecting`: an `A`-torsor with an
   `i`-equivariant morphism to `B` is a torsor of lifts.
+* `CategoryTheory.Sheaf.NonabelianH1.connecting_eq_connecting_of_comp_eq`: the connecting map is
+  natural in morphisms of extensions of `A` which are the identity on `A`.
 
 ## References
 
@@ -201,6 +203,47 @@ lemma liftsObjEquiv_map {U V : Cᵒᵖ} (f : U ⟶ V) (b : (hE.lifts q).sheaf.ob
       B.obj.map f (hE.liftsObjEquiv q U b).1 :=
   (rfl)
 
+section Naturality
+
+variable {A' B' Q' : Sheaf J GrpCat.{w}} {i' : A' ⟶ B'} {π' : B' ⟶ Q'}
+  (hE' : IsGroupExtension i' π') (β : B ⟶ B') (γ : Q ⟶ Q')
+  (hγ : β ≫ π' = π ≫ γ) (q' : (Q'.obj ⋙ forget GrpCat).sections)
+  (hq : ∀ U, γ.hom.app U (q.1 U) = q'.1 U)
+
+/-- A commuting square between the projections of two group extensions sends local lifts of
+`q` to local lifts of its image `q'`, by applying the map `β` of middle sheaves. -/
+def liftsMap : (hE.lifts q).sheaf ⟶ (hE'.lifts q').sheaf :=
+  ObjectProperty.homMk
+    { app U := ↾fun b ↦ (hE'.liftsObjEquiv q' U).symm
+        ⟨β.hom.app U (hE.liftsObjEquiv q U b).1, by
+          simpa [(hE.liftsObjEquiv q U b).2, hq] using
+            ConcreteCategory.congr_hom (NatTrans.congr_app (congrArg (·.hom) hγ) U)
+              (hE.liftsObjEquiv q U b).1⟩
+      naturality U V f := by
+        ext b
+        refine (hE'.liftsObjEquiv q' V).injective (Subtype.ext ?_)
+        simp [NatTrans.naturality_apply] }
+
+/-- On local lifts, `liftsMap` applies `β` to the underlying section. -/
+@[simp]
+lemma liftsObjEquiv_liftsMap_hom_app (U : Cᵒᵖ) (b : (hE.lifts q).sheaf.obj.obj U) :
+    (hE'.liftsObjEquiv q' U ((hE.liftsMap q hE' β γ hγ q' hq).hom.app U b)).1 =
+      β.hom.app U (hE.liftsObjEquiv q U b).1 :=
+  (rfl)
+
+/-- If the square on kernels also commutes, the map on local lifts is equivariant for the
+corresponding map `α` of kernels. -/
+lemma liftsMap_smul (α : A ⟶ A') (hα : i ≫ β = α ≫ i')
+    (U : Cᵒᵖ) (a : A.obj.obj U) (b : (hE.lifts q).sheaf.obj.obj U) :
+    (hE.liftsMap q hE' β γ hγ q' hq).hom.app U (a • b) =
+      α.hom.app U a • (hE.liftsMap q hE' β γ hγ q' hq).hom.app U b := by
+  refine (hE'.liftsObjEquiv q' U).injective (Subtype.ext ?_)
+  simp only [liftsObjEquiv_liftsMap_hom_app, liftsObjEquiv_smul, map_mul]
+  exact congrArg (· * _) (ConcreteCategory.congr_hom
+    (NatTrans.congr_app (congrArg (·.hom) hα) U) a)
+
+end Naturality
+
 /-- Global sections of the torsor of lifts of `q` are the global sections of `B` lifting `q`. -/
 def liftsSectionsEquiv : (hE.lifts q).sheaf.obj.sections ≃
     {b : (B.obj ⋙ forget GrpCat).sections // ∀ U, π.hom.app U (b.1 U) = q.1 U} where
@@ -348,6 +391,18 @@ theorem mk_mem_range_connecting {P : Torsor A} (u : P.sheaf ⟶ (Torsor.trivial 
     Equiv.apply_symm_apply]
   -- The action of `B` on the trivial torsor is multiplication.
   exact hu U a p
+
+/-- The connecting map is natural in extensions of `A`: for a morphism from the extension
+`1 → A → B → Q → 1` to an extension `1 → A → B' → Q' → 1` which is the identity on `A`, given by
+`β : B ⟶ B'` and `γ : Q ⟶ Q'`, the torsor of lifts of a global section `q` of `Q` is isomorphic
+to the torsor of lifts of its image in `Q'`, through `b ↦ β b`. -/
+theorem connecting_eq_connecting_of_comp_eq {B' Q' : Sheaf J GrpCat.{w}} {i' : A ⟶ B'}
+    {π' : B' ⟶ Q'} (hE' : IsGroupExtension i' π') (β : B ⟶ B') (γ : Q ⟶ Q') (hβ : i ≫ β = i')
+    (hγ : β ≫ π' = π ≫ γ) (q : (Q.obj ⋙ forget GrpCat).sections)
+    (q' : (Q'.obj ⋙ forget GrpCat).sections) (hq : ∀ U, γ.hom.app U (q.1 U) = q'.1 U) :
+    connecting hE q = connecting hE' q' :=
+  mk_eq_mk_of_hom ⟨hE.liftsMap q hE' β γ hγ q' hq,
+    hE.liftsMap_smul q hE' β γ hγ q' hq (𝟙 A) (by simpa using hβ)⟩
 
 end NonabelianH1
 

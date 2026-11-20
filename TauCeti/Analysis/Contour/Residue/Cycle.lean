@@ -241,7 +241,7 @@ theorem classicalResidueTheorem_nullHomologous {f : ℂ → ℂ} {S : Finset ℂ
         hs (by rw [isNullHomologous_iff.mp hnull s hsU, zero_mul])).symm⟩
   rw [hsum]
   exact PolarPartDecomposition.intervalIntegral_deriv_smul_eq_sum_windingNumber_mul_residue
-    (.ofMeromorphic hU hfT hmeroT) hU hγ hγU hclosed
+    (.ofMeromorphic hfT hmeroT) hU hγ hγU hclosed
     (fun t ht h => hoff t ht (Finset.mem_coe.mpr (hTS _ (Finset.mem_coe.mp h)))) hnull
 
 end TauCeti.Contour

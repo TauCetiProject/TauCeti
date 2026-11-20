@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Invertible
 public import TauCeti.AlgebraicGeometry.IdealSheaf.TensorProduct
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
+import TauCeti.Algebra.BigOperators.Group.Finset.Attach
 
 /-!
 # Ideal sheaves of sums of effective Cartier divisors
@@ -170,15 +171,16 @@ def tensorProductSheafIso :
 /-- On a pure tensor of local sections, the isomorphism `I ⊗ J ≅ I * J` multiplies the two
 functions. The sheafification unit sends the sectionwise pure tensor into the tensor product
 sheaf. -/
-@[simp]
 theorem tensorProductSheafIso_hom_tmul (U : X.Opens) (s : Γ(I.sheaf, U)) (t : Γ(J.sheaf, U)) :
-    Scheme.Modules.Hom.app
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
+      Functor.id_obj]
+    (Scheme.Modules.Hom.app
       ((TauCeti.SheafOfModules.tensorProductIso X.sheaf I.sheaf J.sheaf).inv ≫
         (tensorProductSheafIso I hJ).hom) U
       (((PresheafOfModules.sheafificationAdjunction (𝟙 X.ringCatSheaf.obj)).unit.app
         (PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := X.sheaf.obj)
           I.sheaf.val J.sheaf.val)).app (op U) (s ⊗ₜ t)) =
-      sectionsMul I J U s t := by
+      sectionsMul I J U s t) := by
   let P := PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := X.sheaf.obj)
     I.sheaf.val J.sheaf.val
   let F := PresheafOfModules.sheafification (R := X.ringCatSheaf) (𝟙 X.ringCatSheaf.obj)
@@ -270,9 +272,7 @@ theorem mk_toInvertibleSheaf_prod {ι : Type*} (s : Finset ι) {I : ι → X.Ide
     rw [mk_toInvertibleSheaf_congr _ (TauCeti.isEffectiveCartier_mul
         (hI i (Finset.mem_insert_self i s)) (TauCeti.isEffectiveCartier_prod hs))
         (Finset.prod_insert hi),
-      mk_toInvertibleSheaf_mul _ (TauCeti.isEffectiveCartier_prod hs), ih hs, Finset.attach_insert,
-      Finset.prod_insert, Finset.prod_image]
-    · exact fun x _ y _ h ↦ Subtype.ext (congrArg Subtype.val h :)
-    · simpa using hi
+      mk_toInvertibleSheaf_mul _ (TauCeti.isEffectiveCartier_prod hs), ih hs,
+      Finset.prod_attach_insert hi]
 
 end TauCeti.AlgebraicGeometry.LineBundleClass

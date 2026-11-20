@@ -35,9 +35,12 @@ No unit, separability or σ-finiteness is assumed, and the Hilbert space may lie
   representation of the full crossed product.
 * `NonUnitalStarAlgHom.integratedFull_toCovariantRepresentation`: its integrated form is the
   given representation.
-* `TauCeti.CStarAction.CovariantRepresentation.toCovariantRepresentation_integratedFull`: a
-  covariant pair with nondegenerate coefficient representation is recovered from its integrated
-  form.
+* `TauCeti.CStarAction.CovariantRepresentation.toCovariantRepresentation_integratedFull`,
+  `CovariantRepresentation.multiplierExtension_integratedFull_coefficientMultiplier`,
+  `CovariantRepresentation.multiplierExtension_integratedFull_groupMultiplier`,
+  `CovariantRepresentation.eq_integratedFull_iff`: a covariant pair with nondegenerate coefficient
+  representation is recovered from the multiplier extension of its integrated form, characterizing
+  `P.integratedFull μ` among nondegenerate representations.
 * `NonUnitalStarAlgHom.IsNondegenerate.existsUnique_covariantRepresentation_integratedFull`: every
   nondegenerate representation is the integrated form of a unique covariant pair with
   nondegenerate coefficient representation.
@@ -178,5 +181,43 @@ theorem toCovariantRepresentation_integratedFull (P : CovariantRepresentation α
     (P.integratedFull μ).toCovariantRepresentation hP = P :=
   ((NonUnitalStarAlgHom.eq_toCovariantRepresentation_iff _ hP).2
     ⟨(isNondegenerate_integratedFull_iff μ P).1 hP, rfl⟩).symm
+
+/-- Applying `P.integratedFull`'s multiplier extension to `i_A(a)` recovers `P.coefficient a`. -/
+@[simp]
+theorem multiplierExtension_integratedFull_coefficientMultiplier (P : CovariantRepresentation α H)
+    (hP : (P.integratedFull μ).IsNondegenerate) (a : A) :
+    (P.integratedFull μ).multiplierExtension hP (FullCrossedProduct.coefficientMultiplier α μ a) =
+      P.coefficient a := by
+  simpa only [NonUnitalStarAlgHom.toCovariantRepresentation_coefficient_apply] using
+    congrArg (·.coefficient a) (P.toCovariantRepresentation_integratedFull hP)
+
+/-- Applying `P.integratedFull`'s multiplier extension to `i_G(r)` recovers `P.group r`. -/
+@[simp]
+theorem multiplierExtension_integratedFull_groupMultiplier (P : CovariantRepresentation α H)
+    (hP : (P.integratedFull μ).IsNondegenerate) (r : G) :
+    (P.integratedFull μ).multiplierExtension hP (FullCrossedProduct.groupMultiplier α μ r) =
+      P.group r := by
+  simpa only [NonUnitalStarAlgHom.toCovariantRepresentation_group_apply] using
+    congrArg (·.group r) (P.toCovariantRepresentation_integratedFull hP)
+
+/-- Universal property of `(A ⋊_α G, i_A, i_G)` for nondegenerate Hilbert-space representations:
+`L = P.integratedFull μ` iff `L.multiplierExtension hL` sends `i_A` to `P.coefficient` and `i_G` to
+`P.group`. -/
+theorem eq_integratedFull_iff {P : CovariantRepresentation α H}
+    {L : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hL : L.IsNondegenerate) :
+    L = P.integratedFull μ ↔
+      (∀ a, L.multiplierExtension hL (FullCrossedProduct.coefficientMultiplier α μ a) =
+        P.coefficient a) ∧
+        ∀ r, L.multiplierExtension hL (FullCrossedProduct.groupMultiplier α μ r) = P.group r :=
+  ⟨fun h => by
+      subst h
+      exact ⟨P.multiplierExtension_integratedFull_coefficientMultiplier hL,
+        P.multiplierExtension_integratedFull_groupMultiplier hL⟩,
+    fun ⟨hA, hG⟩ => (L.integratedFull_toCovariantRepresentation hL).symm.trans <|
+      congrArg (CovariantRepresentation.integratedFull μ) <| CovariantRepresentation.ext
+        (NonUnitalStarAlgHom.ext fun a => by
+          rw [NonUnitalStarAlgHom.toCovariantRepresentation_coefficient_apply, hA])
+        (DFunLike.ext _ _ fun r => by
+          rw [NonUnitalStarAlgHom.toCovariantRepresentation_group_apply, hG])⟩
 
 end TauCeti.CStarAction.CovariantRepresentation

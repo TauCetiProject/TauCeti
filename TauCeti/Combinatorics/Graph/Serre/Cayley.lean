@@ -219,11 +219,20 @@ def cayleyMulLeft : FreeGroup α →* (cayley α).Aut where
   -- The coordinates are identity maps, and the identity automorphism and a product of
   -- automorphisms are the identity and the composite of the underlying equivalences. So the
   -- compatibility with reversal and both laws reduce to the monoid laws of the free group.
-  map_one' := Aut.ext (fun v => cayleyVertexEquiv.injective (one_mul (cayleyVertexEquiv v)))
-    fun e => cayleyDartEquiv.injective (Prod.ext (one_mul (cayleyDartEquiv e).1) rfl)
-  map_mul' x y := Aut.ext
-    (fun v => cayleyVertexEquiv.injective (mul_assoc x y (cayleyVertexEquiv v)))
-    fun e => cayleyDartEquiv.injective (Prod.ext (mul_assoc x y (cayleyDartEquiv e).1) rfl)
+  map_one' := Iso.ext
+    (fun v => by
+      rw [Aut.one_equivV]
+      exact cayleyVertexEquiv.injective (one_mul (cayleyVertexEquiv v)))
+    fun e => by
+      rw [Aut.one_equivE]
+      exact cayleyDartEquiv.injective (Prod.ext (one_mul (cayleyDartEquiv e).1) rfl)
+  map_mul' x y := Iso.ext
+    (fun v => by
+      rw [Aut.mul_equivV]
+      exact cayleyVertexEquiv.injective (mul_assoc x y (cayleyVertexEquiv v)))
+    fun e => by
+      rw [Aut.mul_equivE]
+      exact cayleyDartEquiv.injective (Prod.ext (mul_assoc x y (cayleyDartEquiv e).1) rfl)
 
 /-- Left multiplication acts on the vertices of the Cayley graph. -/
 @[simp] theorem cayleyVertexEquiv_cayleyMulLeft_smul (g : FreeGroup α) (v : (cayley α).V) :

@@ -119,7 +119,7 @@ theorem compactSpace [CompactSpace M] [CompactSpace N] (h₁ : IsOpenEmbedding e
         refine Or.inl ⟨⟨_, hx⟩, ?_, ?_⟩
         · rintro ⟨v, hv, hvw⟩
           exact hinv hw0 (mem_ball_zero_iff.1 hw) (mem_ball_zero_iff.1 hv) (h₁.injective hvw).symm
-        · exact (inl_inversion_eq_inr hw0 hx (hyw ▸ y.2)).trans (congrArg _ (Subtype.ext hyw))
+        · exact (inl_inversion_eq_inr hx (hyw ▸ y.2)).trans (congrArg _ (Subtype.ext hyw))
       · exact Or.inr ⟨y, hy, rfl⟩
   rw [hcov]
   exact ((isCompact_preimage_compl_image_ball h₁).image (continuous_inl e₁ e₂)).union
@@ -136,7 +136,7 @@ theorem connectedSpace [ConnectedSpace M] [ConnectedSpace N] (h : 1 < Module.ran
   have hy := apply_inversion_mem_puncture h₂.injective hv
   have := Subtype.preconnectedSpace (isPreconnected_puncture h h₁)
   have := Subtype.preconnectedSpace (isPreconnected_puncture h h₂)
-  have hmem : inl e₁ e₂ ⟨_, hx⟩ ∈ range (inr e₁ e₂) := ⟨_, (inl_eq_inr v hv hx hy).symm⟩
+  have hmem : inl e₁ e₂ ⟨_, hx⟩ ∈ range (inr e₁ e₂) := ⟨_, (inl_eq_inr v hx hy).symm⟩
   have : PreconnectedSpace (ConnectedSum e₁ e₂) := ⟨by
     rw [← range_inl_union_range_inr]
     exact (isPreconnected_range (continuous_inl e₁ e₂)).union _ (mem_range_self _) hmem

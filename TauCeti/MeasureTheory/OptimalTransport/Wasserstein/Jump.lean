@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.UnitInterval
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
-public import Mathlib.Topology.Order.Cadlag
 public import TauCeti.MeasureTheory.OptimalTransport.DynamicPlan
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Bernoulli
@@ -64,30 +63,6 @@ theorem boundedVariationOn_jumpPath (a : I) : BoundedVariationOn (jumpPath a) un
   refine ((monotone_jumpPath a).monotoneOn univ).boundedVariationOn (C := 1) fun t _ ↦ ?_
   rw [jumpPath_def]
   split_ifs <;> norm_num
-
-/-- A jump path is right-continuous and has a left limit at every time. -/
-theorem isCadlag_jumpPath (a : I) : IsCadlag (jumpPath a) where
-  isRightContinuous t := by
-    by_cases hat : a ≤ t
-    · rw [ContinuousWithinAt, jumpPath_def, ite_eq_left hat]
-      apply Filter.Tendsto.congr' _ tendsto_const_nhds
-      filter_upwards [self_mem_nhdsWithin] with u hu
-      simp [hat.trans hu.le]
-    · rw [ContinuousWithinAt, jumpPath_def, ite_eq_right hat]
-      apply Filter.Tendsto.congr' _ tendsto_const_nhds
-      filter_upwards [eventually_nhdsWithin_of_eventually_nhds
-        (gt_mem_nhds (not_le.mp hat))] with u hu
-      simp [jumpPath_def, not_le.mpr hu]
-  tendsto_nhdsLT t := by
-    by_cases hta : t ≤ a
-    · refine ⟨0, Filter.Tendsto.congr' ?_ tendsto_const_nhds⟩
-      filter_upwards [self_mem_nhdsWithin] with u hu
-      have hua : ¬ a ≤ u := not_le.mpr (lt_of_lt_of_le hu hta)
-      simp only [jumpPath_def, ite_eq_right hua]
-    · refine ⟨1, Filter.Tendsto.congr' ?_ tendsto_const_nhds⟩
-      filter_upwards [eventually_nhdsWithin_of_eventually_nhds
-        (lt_mem_nhds (not_le.mp hta))] with u hu
-      simp [hu.le]
 
 /-- At a fixed time, the jump path is a measurable function of its jump time. -/
 @[fun_prop] theorem measurable_jumpPath (t : I) : Measurable fun a ↦ jumpPath a t := by

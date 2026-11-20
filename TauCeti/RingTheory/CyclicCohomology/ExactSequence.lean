@@ -80,7 +80,7 @@ cohomology.
 ## References
 
 * A. Connes, *Noncommutative Geometry*, Chapter III, §1.
-* J.-L. Loday, *Cyclic Homology*, §§2.1–2.2.
+* J.-L. Loday, *Cyclic Homology*, §§2.1–2.2 and §2.4.
 -/
 
 public section
@@ -131,16 +131,6 @@ private theorem coe_cyclicTotalDifferential_cyclicTotalLift {m : ℕ}
     (hφ : hochschildCoboundary R A M (m + 1) φ = 0) :
     (cyclicTotalDifferential R A M (m + 1) (cyclicTotalLift φ)).1 =
       Pi.single m (connesB R A M m φ) := by
-  -- the column-one component `ψ = s (1 - λ) φ` satisfies `b' ψ = (1 - λ) φ`
-  have hψ : barCoboundary R A M m
-      (barContraction R A M m ((1 - cyclicOperator R A M (m + 1)) φ)) =
-        (1 - cyclicOperator R A M (m + 1)) φ := by
-    have hb := LinearMap.congr_fun
-      (one_sub_cyclicOperator_comp_hochschildCoboundary R A M (m + 1)) φ
-    simp only [LinearMap.comp_apply, hφ, map_zero] at hb
-    have h := barCoboundary_barContraction_add_barContraction_barCoboundary
-      ((1 - cyclicOperator R A M (m + 1)) φ)
-    rwa [← hb, map_zero, add_zero] at h
   funext q
   obtain hq | hq | hq | hq | hq : q < m ∨ q = m ∨ q = m + 1 ∨ q = m + 2 ∨ m + 2 < q := by omega
   · rw [Pi.single_eq_of_ne hq.ne]
@@ -166,7 +156,7 @@ private theorem coe_cyclicTotalDifferential_cyclicTotalLift {m : ℕ}
     have h₁ : m + 1 - m = 1 := by omega
     rw [h₁, Nat.sub_self, cyclicTotalLift_apply_column_zero, cyclicTotalLift_apply_column_one,
       cyclicBicomplexVertical_of_odd odd_one, cyclicBicomplexHorizontal_of_even Even.zero,
-      LinearMap.neg_apply, hψ, neg_add_cancel]
+      LinearMap.neg_apply, barCoboundary_barContraction_one_sub_cyclicOperator hφ, neg_add_cancel]
   · subst q
     rw [Pi.single_eq_of_ne (show m + 2 ≠ m by omega), cyclicTotalDifferential_apply_succ]
     simp [cyclicTotalLift, hφ]
@@ -257,7 +247,6 @@ instance isIso_homologyMap_cyclicTotalComplexToHochschild_zero :
     congr 1
     exact Subtype.ext (by simp)
 
-variable {R A M} in
 /-- For a possibly nonunital algebra, the projection onto column zero
 `H^1(Tot) → HH^1(A, Hom_R(A, M))` is injective. This is the exactness of the SBI sequence at
 `H^1(Tot)`. -/
@@ -288,17 +277,22 @@ theorem injective_homologyMap_cyclicTotalComplexToHochschild_one :
 
 end NonUnital
 
+/-! ### Vanishing of total classes and surjectivity of the periodicity map -/
+
 section Unital
 
 variable {R : Type*} {A : Type u} {M : Type*} [CommRing R] [Semiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
-/-- A total cocycle of degree `m` has zero class exactly when the image under the periodicity map is
-the total differential of a total cochain vanishing in column zero. -/
+/-- A total cocycle `x` of degree `m` has zero class exactly when its image under the periodicity
+map is the total differential of a total cochain `u` of degree `m + 1` whose projection onto
+column zero vanishes. -/
 theorem cyclicTotalHomologyMk_eq_zero_iff {m : ℕ}
     (x : LinearMap.ker (cyclicTotalDifferential R A M m)) :
     cyclicTotalHomologyMk R A M m x = 0 ↔ ∃ u : cyclicTotalCochains R A M (m + 1),
-      u.1 (m + 1) = 0 ∧ (cyclicTotalDifferential R A M (m + 1) u).1 = x.1.1 := by
+      cyclicTotalToHochschild R A M (m + 1) u = 0 ∧
+        cyclicTotalDifferential R A M (m + 1) u = cyclicTotalPeriodicity R A M m x.1 := by
+  simp only [cyclicTotalToHochschild_apply, Subtype.ext_iff, coe_cyclicTotalPeriodicity_apply]
   cases m with
   | zero =>
     rw [cyclicTotalHomologyMk_zero_eq_zero_iff]
@@ -357,6 +351,7 @@ theorem cyclicTotalHomologyConnesB_mk {m : ℕ} (φ : hochschildCocycles R A M (
   rw [cyclicTotalHomologyConnesB_def, ModuleCat.comp_apply, hochschildCohomology.connesB_mk,
     homologyMap_cyclicCochainComplexToTotal_mk]
 
+variable (R A M) in
 /-- **Exactness of `H^(m+1)(Tot) → HH^(m+1) → H^m(Tot)`.** For a unital algebra, a Hochschild
 class is killed by `B` exactly when it is the projection onto column zero of a class in the
 cohomology of the total cyclic bicomplex. -/
@@ -366,6 +361,8 @@ theorem exact_homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyConn
   refine fun c ↦ ⟨fun hc ↦ ?_, ?_⟩
   · obtain ⟨φ, rfl⟩ := hochschildCohomology.mk_surjective R A M (m + 1) c
     rw [cyclicTotalHomologyConnesB_mk, cyclicTotalHomologyMk_eq_zero_iff] at hc
+    simp only [cyclicTotalToHochschild_apply, Subtype.ext_iff,
+      coe_cyclicTotalPeriodicity_apply] at hc
     obtain ⟨u, hu, hDu⟩ := hc
     -- the lift of `φ` minus `u` is a total cocycle whose column-zero component is `φ`
     have hx : cyclicTotalLift φ.1 - u ∈ LinearMap.ker (cyclicTotalDifferential R A M (m + 1)) := by
@@ -381,6 +378,7 @@ theorem exact_homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyConn
     obtain ⟨x, rfl⟩ := cyclicTotalHomologyMk_surjective (m + 1) c
     rw [homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMk,
       cyclicTotalHomologyConnesB_mk, cyclicTotalHomologyMk_eq_zero_iff]
+    simp only [cyclicTotalToHochschild_apply, Subtype.ext_iff, coe_cyclicTotalPeriodicity_apply]
     have hD : cyclicTotalDifferential R A M (m + 1) x.1 = 0 := LinearMap.mem_ker.1 x.2
     have hφ : hochschildCoboundary R A M (m + 1) (x.1.1 (m + 1)) = 0 := by
       rw [← cyclicTotalToHochschild_apply, ← cyclicTotalToHochschild_cyclicTotalDifferential, hD,
@@ -398,9 +396,10 @@ theorem homologyMap_cyclicTotalComplexToHochschild_comp_cyclicTotalHomologyConne
     HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) (m + 1) ≫
       cyclicTotalHomologyConnesB R A M m = 0 :=
   ModuleCat.hom_ext (LinearMap.ext fun c ↦
-    (exact_homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyConnesB
+    (exact_homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyConnesB R A M
       m).apply_apply_eq_zero c)
 
+variable (R A M) in
 /-- **Exactness of `HH^(m+1) → H^m(Tot) → H^(m+2)(Tot)`.** For a unital algebra, a class in the
 cohomology of the total cyclic bicomplex is killed by the periodicity map exactly when it is the
 image under `B` of a Hochschild class. -/
@@ -421,6 +420,7 @@ theorem exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity (m : ℕ
     refine ⟨hochschildCohomology.mk R A M (m + 1) ⟨_, mem_hochschildCocycles_iff.2 hφ⟩, ?_⟩
     rw [← sub_eq_zero, cyclicTotalHomologyConnesB_mk, ← map_sub,
       cyclicTotalHomologyMk_eq_zero_iff]
+    simp only [cyclicTotalToHochschild_apply, Subtype.ext_iff, coe_cyclicTotalPeriodicity_apply]
     refine ⟨cyclicTotalLift (y.1 (m + 1)) - y, by simp [cyclicTotalLift_apply_column_zero], ?_⟩
     rw [map_sub, Submodule.coe_sub, coe_cyclicTotalDifferential_cyclicTotalLift hφ, hy]
     simp
@@ -438,7 +438,7 @@ variable (R A M) in
 theorem cyclicTotalHomologyConnesB_comp_cyclicTotalHomologyPeriodicity (m : ℕ) :
     cyclicTotalHomologyConnesB R A M m ≫ cyclicTotalHomologyPeriodicity R A M m = 0 :=
   ModuleCat.hom_ext (LinearMap.ext
-    (exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity m).apply_apply_eq_zero)
+    (exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity R A M m).apply_apply_eq_zero)
 
 /-- For a unital algebra, the periodicity map `S : H^m(Tot) → H^(m+2)(Tot)` is injective when
 `HH^(m+1)(A, Hom_R(A, M))` vanishes. -/
@@ -446,10 +446,12 @@ theorem injective_cyclicTotalHomologyPeriodicity_of_isZero {m : ℕ}
     (h : Limits.IsZero (hochschildCohomology R A M (m + 1))) :
     Function.Injective (cyclicTotalHomologyPeriodicity R A M m) := by
   refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
-  obtain ⟨b, rfl⟩ := (exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity m c).1 hc
+  obtain ⟨b, rfl⟩ :=
+    (exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity R A M m c).1 hc
   have := ModuleCat.isZero_iff_subsingleton.1 h
   rw [Subsingleton.elim b 0, map_zero]
 
+variable (R A M) in
 /-- **Exactness of `HC^(m+1) → HH^(m+1) → HC^m`.** For a unital algebra over a ring in which
 `1, 2, …, m + 1` are invertible (for instance a ring containing `ℚ`), a Hochschild class is killed
 by Connes' operator `B` exactly when it is the image under `I` of a cyclic cohomology class. -/
@@ -466,7 +468,7 @@ theorem cyclicCohomology.exact_toHochschild_connesB (m : ℕ)
     (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (m + 1)).hom LinearMap.id
     (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m).hom ?_ ?_
     (hbij (m + 1) le_rfl).2 Function.bijective_id (hbij m m.le_succ).1).2
-    (exact_homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyConnesB m)
+    (exact_homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyConnesB R A M m)
   · rw [LinearMap.id_comp,
       ← homologyMap_cyclicCochainComplexToTotal_comp_homologyMap_cyclicTotalComplexToHochschild]
     exact (ModuleCat.hom_comp _ _).symm
@@ -490,6 +492,7 @@ theorem hochschildCohomology.connesB_comp_periodicity (m : ℕ) :
     Linear.comp_smul, ← Category.assoc, ← cyclicTotalHomologyConnesB_def,
     cyclicTotalHomologyConnesB_comp_cyclicTotalHomologyPeriodicity, smul_zero]
 
+variable (R A M) in
 /-- **Exactness of `HH^(m+1) →B HC^m →S HC^(m+2)`.** For a unital algebra over a ring containing
 `ℚ`, a cyclic cohomology class is killed by Connes' periodicity operator `S` if and only if it lies
 in the image of Connes' operator `B`. -/
@@ -509,7 +512,7 @@ theorem cyclicCohomology.exact_connesB_periodicity (m : ℕ) :
       rw [hc, map_zero] at heq
       exact heq.symm
     obtain ⟨b, hb⟩ :=
-      (exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity m _).1 hc'
+      (exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity R A M m _).1 hc'
     refine ⟨b, hbij₀.1 ?_⟩
     rw [← hb, cyclicTotalHomologyConnesB_def, ModuleCat.comp_apply]
   · rintro ⟨b, rfl⟩
@@ -521,7 +524,7 @@ theorem cyclicCohomology.injective_periodicity_of_isZero {m : ℕ}
     (h : Limits.IsZero (hochschildCohomology R A M (m + 1))) :
     Function.Injective (cyclicCohomology.periodicity R A M m) := by
   refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
-  obtain ⟨b, rfl⟩ := (cyclicCohomology.exact_connesB_periodicity m c).1 hc
+  obtain ⟨b, rfl⟩ := (cyclicCohomology.exact_connesB_periodicity R A M m c).1 hc
   have := ModuleCat.isZero_iff_subsingleton.1 h
   rw [Subsingleton.elim b 0, map_zero]
 

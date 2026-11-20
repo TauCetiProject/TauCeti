@@ -35,6 +35,7 @@ along a middle boundary and counts the circles closed there, is not defined here
 ## Main definitions
 
 * `TauCeti.TLDiagram n m`: Temperley–Lieb diagrams `n → m`.
+* `TauCeti.TLDiagram.cast`: transport of diagrams along equalities of the numbers of points.
 * `TauCeti.TLDiagram.rotate n m`: rotation, a permutation of `TLDiagram n m`.
 * `TauCeti.TLDiagram.dragRight n m`, `TauCeti.TLDiagram.dragLeft n m`: dragging the bottom-right
   or bottom-left corner point to the top, `TLDiagram (n + 1) m ≃ TLDiagram n (m + 1)`.
@@ -87,6 +88,12 @@ namespace TLDiagram
 
 variable {n m n' m' : ℕ}
 
+/-- There is a diagram `n → m` exactly when the total number `n + m` of boundary points is
+even. -/
+theorem nonempty_iff : Nonempty (TLDiagram n m) ↔ Even (n + m) :=
+  ⟨fun ⟨x⟩ => PlanarMatching.nonempty_iff.mp ⟨x.matching⟩,
+    fun h => ⟨⟨(PlanarMatching.nonempty_iff.mpr h).some, 0⟩⟩⟩
+
 /-- Relabelling the matching of a diagram along an equivalence of planar matchings, keeping the
 circles. Every operation of this file is of this form. -/
 private def congrMatching (e : PlanarMatching (n + m) ≃ PlanarMatching (n' + m')) :
@@ -107,6 +114,37 @@ private theorem circles_congrMatching (e : PlanarMatching (n + m) ≃ PlanarMatc
 @[simp]
 private theorem congrMatching_symm (e : PlanarMatching (n + m) ≃ PlanarMatching (n' + m')) :
     (congrMatching e).symm = congrMatching e.symm := (rfl)
+
+/-! ### Changing the number of points -/
+
+/-- Transport of diagrams along equalities `n = n'` and `m = m'` of the numbers of bottom and top
+points, keeping every label and the circles. -/
+def cast (hn : n = n') (hm : m = m') : TLDiagram n m ≃ TLDiagram n' m' :=
+  congrMatching (PlanarMatching.cast (by rw [hn, hm]))
+
+@[simp]
+theorem matching_cast (hn : n = n') (hm : m = m') (x : TLDiagram n m) :
+    (cast hn hm x).matching = PlanarMatching.cast (by rw [hn, hm]) x.matching := (rfl)
+
+@[simp]
+theorem circles_cast (hn : n = n') (hm : m = m') (x : TLDiagram n m) :
+    (cast hn hm x).circles = x.circles := (rfl)
+
+/-- Transport along `n = n` and `m = m` is the identity. -/
+@[simp]
+theorem cast_refl (hn : n = n) (hm : m = m) : cast hn hm = Equiv.refl (TLDiagram n m) :=
+  Equiv.ext fun x => TLDiagram.ext (by simp) (by simp)
+
+/-- Transporting back along `n = n'` and `m = m'` is transporting along `n' = n` and `m' = m`. -/
+@[simp]
+theorem cast_symm (hn : n = n') (hm : m = m') : (cast hn hm).symm = cast hn.symm hm.symm :=
+  Equiv.ext fun x => TLDiagram.ext (by simp [cast]) (by simp [cast])
+
+/-- Transports compose. -/
+@[simp]
+theorem cast_cast {n'' m'' : ℕ} (hn : n = n') (hm : m = m') (hn' : n' = n'') (hm' : m' = m'')
+    (x : TLDiagram n m) : cast hn' hm' (cast hn hm x) = cast (hn.trans hn') (hm.trans hm') x :=
+  TLDiagram.ext (by simp) (by simp)
 
 /-! ### Rotation -/
 

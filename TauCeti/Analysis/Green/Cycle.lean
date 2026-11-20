@@ -49,20 +49,6 @@ private theorem sum_windingWeight_comp_lineMap_ae (C : Contour.Cycle) :
     (γ.isPiecewiseC1On.absolutelyContinuousOnInterval).windingNumber_comp_lineMap hzγ]
   simp
 
-/-- The boundary integrals of the affine normalizations of the generators of a cycle, weighted by
-the cycle coefficients, equal the circulation of the cycle. -/
-private theorem sum_integral_circulationFun_comp_lineMap (C : Contour.Cycle) {U : Set ℂ}
-    {P Q : ℂ → ℝ} (hP : ContinuousOn P U) (hQ : ContinuousOn Q U)
-    (htr : ∀ γ ∈ FreeAbelianGroup.support C, γ '' uIcc γ.a γ.b ⊆ U) :
-    (∑ γ ∈ FreeAbelianGroup.support C, (FreeAbelianGroup.coeff γ C : ℝ) *
-        ∫ t in (0 : ℝ)..1, circulationFun P Q (γ ∘ AffineMap.lineMap γ.a γ.b) t) =
-      ∑ γ ∈ FreeAbelianGroup.support C, (FreeAbelianGroup.coeff γ C : ℝ) *
-        ∫ t in γ.a..γ.b, circulationFun P Q γ t := by
-  apply Finset.sum_congr rfl
-  intro γ hγ
-  rw [(γ.isPiecewiseC1On.absolutelyContinuousOnInterval).integral_circulationFun_comp_lineMap
-    (hP.mono (htr γ hγ)) (hQ.mono (htr γ hγ))]
-
 /-- Green's theorem for an existing contour cycle, with its actual total winding number.
 The circulation uses the cycle's canonical support and coefficients. Only the total index must
 vanish outside the field domain. -/
@@ -118,7 +104,7 @@ theorem _root_.TauCeti.Contour.Cycle.green_winding (C : Contour.Cycle) {U : Set 
   refine ⟨fun γ hγ ↦ AbsolutelyContinuousOnInterval.intervalIntegrable_circulationFun (hac γ)
     (hP.continuousOn.mono (htr γ hγ)) (hQ.continuousOn.mono (htr γ hγ)), ?_, ?_⟩
   · exact hi.congr (haeU.mono fun z hz ↦ congrArg (· * curl P Q z) hz)
-  · rw [sum_integral_circulationFun_comp_lineMap C hP.continuousOn hQ.continuousOn htr] at heq
+  · simp only [η, integral_circulationFun_comp_lineMap] at heq
     exact heq.trans (integral_congr_ae (haeU.mono fun z hz ↦ congrArg (· * curl P Q z) hz))
 
 end TauCeti.Green

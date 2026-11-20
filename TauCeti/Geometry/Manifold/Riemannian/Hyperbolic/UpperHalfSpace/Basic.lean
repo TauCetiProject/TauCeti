@@ -191,6 +191,27 @@ theorem contMDiff_coe :
       (coe : UpperHalfSpace E → WithLp 2 (E × ℝ)) :=
   contMDiff_subtype_val (U := upperHalfSpaceOpens E)
 
+/-- The height function of the upper half-space is analytic. -/
+theorem contMDiff_height :
+    ContMDiff 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ) ω (height : UpperHalfSpace E → ℝ) :=
+  (WithLp.sndL 2 ℝ E ℝ).contDiff.contMDiff.comp contMDiff_coe
+
+/-- The differential of the height function is the last coordinate of a tangent vector. -/
+theorem mvfderiv_height_apply (x : UpperHalfSpace E)
+    (v : TangentSpace 𝓘(ℝ, WithLp 2 (E × ℝ)) x) :
+    mvfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) height x v =
+      (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v).snd := by
+  -- By definition `height x = (coe x).snd`, which is `WithLp.sndL 2 ℝ E ℝ (coe x)`.
+  rw [show height = WithLp.sndL 2 ℝ E ℝ ∘ coe from rfl,
+    mvfderiv_comp_apply x (WithLp.sndL 2 ℝ E ℝ).differentiableAt.mdifferentiableAt
+      ((contMDiff_coe x).mdifferentiableAt (by simp)) v, mvfderiv_eq_fderiv,
+    ContinuousLinearMap.fderiv,
+    show mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) coe x = _ from
+      TauCeti.Manifold.mfderiv_subtype_val (show upperHalfSpaceOpens E from x)]
+  -- The open-subset and model-space identifications of tangent vectors are both the identity.
+  exact congrArg (WithLp.sndL 2 ℝ E ℝ)
+    (TauCeti.Manifold.tangentSpaceOpenEquiv_apply (show upperHalfSpaceOpens E from x) v)
+
 /-- The conformal factor `t⁻²` of the hyperbolic metric is analytic on the upper half-space. -/
 theorem contMDiff_inv_height_sq :
     ContMDiff 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ) ω fun x : UpperHalfSpace E ↦ (height x ^ 2)⁻¹ := by
@@ -222,19 +243,11 @@ theorem tangentSpaceCastModel_mfderiv_apply {f : UpperHalfSpace E → UpperHalfS
     tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) (f x)
         (mfderiv 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) f x v) =
       L (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v) := by
-  -- The map `f` is differentiable, since its composite with the inclusion is.
-  have hf : MDifferentiableAt 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) f x := by
-    have hcoe : MDifferentiableAt 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ))
-        (coe ∘ f) x := by
-      rw [hcomp]
-      exact hA.differentiableAt.mdifferentiableAt.comp x
-        ((contMDiff_coe (E := E)).mdifferentiableAt (by simp))
-    exact (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff (U := upperHalfSpaceOpens E) f
-      Set.univ x).1 hcoe
   -- Read the base point of `hA` as a point of the open subset, as in the general lemma.
   have hA' : HasFDerivAt A L (show upperHalfSpaceOpens E from x).1 := hA
   have h := TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply
-    (U := upperHalfSpaceOpens E) (V := upperHalfSpaceOpens E) (f := f) hf hcomp v
+    (I := 𝓘(ℝ, WithLp 2 (E × ℝ))) (I' := 𝓘(ℝ, WithLp 2 (E × ℝ)))
+    (U := upperHalfSpaceOpens E) (V := upperHalfSpaceOpens E) (f := f) hcomp v
   rw [hA'.hasMFDerivAt.mfderiv] at h
   -- Both the open-subset identification and `tangentSpaceCastModel` are the identity of the model.
   have e₁ := TauCeti.Manifold.tangentSpaceOpenEquiv_apply (I := 𝓘(ℝ, WithLp 2 (E × ℝ)))

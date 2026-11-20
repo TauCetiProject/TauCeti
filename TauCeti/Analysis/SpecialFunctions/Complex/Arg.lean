@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Normed.Module.Normalize
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 /-!
@@ -38,6 +40,8 @@ Since the argument is continuous on the slit plane and blind to positive real sc
 * `Complex.arg_div_of_im_pos`: if `0 < x.im` and `0 < y.im`, then `arg (x / y) = arg x - arg y`.
 * `Complex.arg_div_of_im_neg`: if `x.im < 0` and `y.im < 0`, then `arg (x / y) = arg x - arg y`.
 * `Complex.arg_div_of_re_pos`: if `0 < x.re` and `0 < y.re`, then `arg (x / y) = arg x - arg y`.
+* `Complex.arg_eq_pi_div_two_sub_arctan_of_im_pos`: in the open upper half-plane,
+  `arg w = π / 2 - arctan (re w / im w)`.
 * `Complex.abs_arg_div_comm`: swapping numerator and denominator preserves `|arg (x / y)|`.
 * `Complex.exists_norm_eq_one_mul_sq_eq_neg_norm`: every `c` has a unit `ω` with `c ω² = -‖c‖`.
 * `Complex.exp_arg_mul_I`: `exp (i arg z) = z / |z|` for `z ≠ 0`.
@@ -115,6 +119,15 @@ theorem abs_arg_sub_pi_div_two_lt_of_im_pos {w : ℂ} (hw : 0 < w.im) :
   have hlt := arg_lt_pi_iff.mpr (Or.inr hw.ne')
   exact abs_lt.mpr ⟨by linarith, by linarith⟩
 
+/-- In the open upper half-plane the argument is measured from the imaginary axis by an arctangent:
+`arg w = π / 2 - arctan (re w / im w)`. -/
+theorem arg_eq_pi_div_two_sub_arctan_of_im_pos {w : ℂ} (hw : 0 < w.im) :
+    w.arg = π / 2 - Real.arctan (w.re / w.im) := by
+  obtain ⟨h1, h2⟩ := abs_lt.1 (abs_arg_sub_pi_div_two_lt_of_im_pos hw)
+  rw [Real.arctan_eq_of_tan_eq (x := π / 2 - w.arg) ?_ ⟨by linarith, by linarith⟩]
+  · ring
+  · rw [Real.tan_pi_div_two_sub, tan_arg, inv_div]
+
 /-- Every complex number `c` is rotated onto the nonpositive real axis by the square of a unit:
 `c ω² = -‖c‖`. -/
 theorem exists_norm_eq_one_mul_sq_eq_neg_norm (c : ℂ) :
@@ -168,6 +181,12 @@ theorem inv_exp_arg_mul_le_exp_pi_mul_abs (u : ℂ) (r : ℝ) :
 theorem exp_arg_mul_I {z : ℂ} (hz : z ≠ 0) : exp (arg z * I) = z / (‖z‖ : ℂ) := by
   rw [eq_div_iff (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)), mul_comm]
   exact norm_mul_exp_arg_mul_I z
+
+/-- The unit direction `z / |z|` is homogeneous of degree `0` under positive dilations. -/
+theorem smul_div_norm_smul {t : ℝ} (ht : 0 < t) (z : ℂ) :
+    t • z / (‖t • z‖ : ℂ) = z / (‖z‖ : ℂ) := by
+  simpa [NormedSpace.normalize, real_smul, div_eq_inv_mul] using
+    NormedSpace.normalize_smul_of_pos ht z
 
 /-- The power `(z / |z|)^m` of the unit direction is smooth away from the origin. -/
 theorem contDiffOn_div_norm_pow (m : ℕ) {N : WithTop ℕ∞} :

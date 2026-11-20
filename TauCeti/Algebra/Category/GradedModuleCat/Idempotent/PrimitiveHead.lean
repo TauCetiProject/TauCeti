@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.Head
 public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.ProjectiveCover
-public import TauCeti.RingTheory.Idempotents.Simple
+public import TauCeti.RingTheory.Idempotents.Simple.Basic
 import TauCeti.Algebra.Polynomial.Laurent.Units
 
 /-!

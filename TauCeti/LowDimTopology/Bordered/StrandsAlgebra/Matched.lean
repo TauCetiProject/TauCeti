@@ -123,6 +123,10 @@ spanning the matched subalgebra are generators.
   `a(ρ, h)` is the matched subalgebra.
 * `TauCeti.StrandsAlgebra.differential_mem_matchedAlgebra`: the algebra of a matching is closed
   under the differential.
+* `TauCeti.StrandsAlgebra.repr_matchedIdem_apply_idOn`: the coefficient of `I(s)` at the identity
+  diagram of a set of points over `s` is `1`.
+* `TauCeti.StrandsAlgebra.repr_apply_idOn_eq`: an element of the matched subalgebra takes the same
+  value at the identity diagrams of any two sets of points over the same pairs.
 
 ## References
 
@@ -588,6 +592,19 @@ theorem mem_matchedChoices {h : Finset β} {U : Finset α} :
   refine and_congr_right fun hU ↦ ?_
   rw [← card_image_iff, hU, eq_comm]
 
+omit [LinearOrder α] in
+/-- There is a choice of one point of each pair in `h` exactly when `h` consists of pairs of
+`M`. -/
+@[simp]
+theorem matchedChoices_nonempty_iff {h : Finset β} :
+    (matchedChoices M h).Nonempty ↔ h ⊆ univ.image M := by
+  refine ⟨fun ⟨U, hU⟩ ↦ (mem_matchedChoices.1 hU).1 ▸ image_subset_image (subset_univ U),
+    fun hh ↦ ?_⟩
+  classical
+  obtain ⟨u, -, hu, hus⟩ :=
+    exists_subset_injOn_image_eq_of_surjOn Set.univ h fun b hb ↦ by simpa using hh hb
+  exact ⟨u, mem_matchedChoices.2 ⟨hus, hu⟩⟩
+
 variable (M) in
 /-- The element `a(ρ, h)` of the algebra of the matching `M`: the sum of the diagrams obtained from
 `ρ` by adding a horizontal strand at one point of each pair in `h`, over all such choices `U`. When
@@ -931,6 +948,12 @@ theorem isMatchedGenerator_idOn_empty (s : Finset β) :
   disjoint_source := by simp
   disjoint_target := by simp
 
+/-- The single strand of a chord `i < j`, with no horizontal strands added, indexes a generator. -/
+theorem isMatchedGenerator_single_empty {i j : α} (h : i < j) :
+    IsMatchedGenerator M (single i j h.le) ∅ :=
+  ⟨fun _ hk ↦ h.ne ((mem_single.1 hk).1.symm.trans (mem_single.1 hk).2), by simp, by simp,
+    disjoint_empty_right _, disjoint_empty_right _⟩
+
 /-- The idempotent `I(s)` is the generator `a(∅, s)`: the empty diagram with a horizontal strand
 added at one point of each pair in `s`. -/
 theorem matchedIdem_eq_horizontalCompletion (s : Finset β) :
@@ -1249,6 +1272,32 @@ theorem differential_mem_matchedAlgebra {x : StrandsAlgebra R α} (hx : x ∈ ma
   exact differential_mem_matchedSubalgebra hx
 
 end Span
+
+/-! ### The idempotents `I(s)` and the identity diagrams -/
+
+section IdemIdOn
+
+variable [DecidableEq β] {M : α → β} {s : Finset β}
+
+/-- The coefficient of `I(s)` at the identity diagram of a set `S` of points over `s` is `1`. -/
+@[simp]
+theorem repr_matchedIdem_apply_idOn {S : Finset α} (hS : S ∈ matchedChoices M s) :
+    (basis R α).repr (matchedIdem R M s) (idOn S) = 1 := by
+  rw [mem_matchedChoices] at hS
+  have hcard : #S = #s := by rw [← hS.1, card_image_of_injOn hS.2]
+  simp [repr_matchedIdem_apply, hS.1, hcard]
+
+/-- An element of the matched subalgebra takes the same value at the identity diagrams of any two
+sets of points over the same pairs: they differ by moving horizontal strands within matched
+pairs. -/
+theorem repr_apply_idOn_eq {x : StrandsAlgebra R α} (hx : x ∈ matchedSubalgebra R M)
+    {S T : Finset α} (hS : S ∈ matchedChoices M s) (hT : T ∈ matchedChoices M s) :
+    (basis R α).repr x (idOn S) = (basis R α).repr x (idOn T) := by
+  refine repr_eq_of_matchedSetoid hx ?_
+  simpa [idOn_addHorizontal] using
+    (isMatchedGenerator_idOn_empty M s).matchedSetoid_addHorizontal hS hT
+
+end IdemIdOn
 
 /-! ### The unit of the matched subalgebra -/
 

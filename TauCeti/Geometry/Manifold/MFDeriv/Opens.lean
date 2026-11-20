@@ -39,44 +39,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
   [TopologicalSpace N] [ChartedSpace H' N]
 
-/-- A map is differentiable at a point of an open subset exactly when its restriction to that
-subset is. -/
-@[simp]
-theorem mdifferentiableAt_comp_subtype_val_iff {U : Opens N} {f : N → M} {x : U} :
-    MDifferentiableAt J I (f ∘ (Subtype.val : U → N)) x ↔ MDifferentiableAt J I f (x : N) :=
-  (differentiableWithinAt_localInvariantProp.liftPropAt_iff_comp_subtype_val f x).symm
-
-/-- A map into an open subset is differentiable at a point exactly when its composition with the
-inclusion is. -/
-@[simp]
-theorem mdifferentiableAt_subtype_val_comp_iff {U : Opens M} {f : N → U} {x : N} :
-    MDifferentiableAt J I ((Subtype.val : U → M) ∘ f) x ↔ MDifferentiableAt J I f x :=
-  ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff f Set.univ x
-
-/-- Restricting a map to an open source does not change its differential. -/
-theorem mfderiv_comp_subtype_val_apply {U : Opens N} {f : N → M} {x : U}
-    (v : TangentSpace J x) :
-    mfderiv J I (f ∘ (Subtype.val : U → N)) x v = mfderiv J I f (x : N) v := by
-  by_cases hf : MDifferentiableAt J I f (x : N)
-  · rw [mfderiv_comp x hf (contMDiff_subtype_val.mdifferentiableAt one_ne_zero),
-      ContinuousLinearMap.comp_apply, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
-      tangentSpaceOpenEquiv_apply]
-  · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
-      mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_comp_subtype_val_iff.not.mpr hf)]
-    rfl
-
-/-- Following a map into an open target by the inclusion does not change its differential. -/
-theorem mfderiv_subtype_val_comp_apply {U : Opens M} {f : N → U} {x : N}
-    (v : TangentSpace J x) :
-    mfderiv J I ((Subtype.val : U → M) ∘ f) x v = mfderiv J I f x v := by
-  by_cases hf : MDifferentiableAt J I f x
-  · rw [mfderiv_comp x (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) hf,
-      ContinuousLinearMap.comp_apply, mfderiv_subtype_val]
-    exact tangentSpaceOpenEquiv_apply _ _
-  · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
-      mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_subtype_val_comp_iff.not.mpr hf)]
-    rfl
-
 /-- Restricting a map to an open source preserves its tangent image. No differentiability is
 assumed: where the map is not differentiable, neither is its restriction. -/
 theorem range_mfderiv_comp_subtype_val {U : Opens N} {f : N → M} (x : U) :

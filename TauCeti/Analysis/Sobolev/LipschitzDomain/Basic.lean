@@ -123,6 +123,12 @@ theorem isBounded_normalCylinder (a b : ℝ) :
   (WithLp.prod_antilipschitzWith_ofLp 2 ℝ E).isBounded_preimage
     ((isBounded_Ioo (-a) a).prod isBounded_ball)
 
+/-- A normal product cylinder is convex. -/
+theorem convex_normalCylinder [NormedSpace ℝ E] (a b : ℝ) :
+    Convex ℝ (normalCylinder (E := E) a b) :=
+  ((convex_Ioo (-a) a).linear_preimage (WithLp.fstL 2 ℝ ℝ E).toLinearMap).inter
+    ((convex_ball (0 : E) b).linear_preimage (WithLp.sndL 2 ℝ ℝ E).toLinearMap)
+
 /-- Shrinking either radius shrinks the normal product cylinder. -/
 theorem normalCylinder_mono {a b a' b' : ℝ} (ha : a' ≤ a) (hb : b' ≤ b) :
     normalCylinder (E := E) a' b' ⊆ normalCylinder a b := by

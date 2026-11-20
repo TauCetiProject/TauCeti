@@ -79,7 +79,7 @@ noncomputable section
 
 universe u v
 
-open CategoryTheory Set
+open Set
 open scoped unitInterval Topology Topology.Homotopy
 
 namespace TauCeti
@@ -397,12 +397,9 @@ theorem homotopic_transport_of_path_homotopic {γ γ' : Path X.basepoint b} (h :
     (p : RelGenLoop N X) : Homotopic (transport γ p) (transport γ' p) := by
   obtain ⟨G⟩ := h
   let G' : C(I × I, X.pair.fst) := X.pair.map.hom.comp G.toContinuousMap
-  have hFG : ∀ s : I, ∀ v ∈ Cube.boundary (Option N),
-      ((double p : C(I^(Option N), X.pair.fst)).comp ContinuousMap.snd) (s, v) = G' (s, 0) := by
-    intro s v hv
-    simp [G', (double p).2 v hv]
   let K := collar (ContinuousMap.const I (1 / 2 : ℝ))
-    ((double p : C(I^(Option N), X.pair.fst)).comp ContinuousMap.snd) G' (fun _ => le_rfl) hFG
+    ((double p : C(I^(Option N), X.pair.fst)).comp ContinuousMap.snd) G' (fun _ => le_rfl)
+    fun s v hv => by simp [G', (double p).2 v hv]
   have hK (s : I) (y : I × (I^N)) : K (s, unfoldCube y) =
       if cubeRadius (unfoldCube y) ≤ 1 / 2 then double p (cubeScale (1 / (1 / 2)) (unfoldCube y))
       else X.pair.map (G (s, projIcc 0 1 zero_le_one
@@ -416,13 +413,9 @@ theorem homotopic_transport_of_path_homotopic {γ γ' : Path X.basepoint b} (h :
        map_one_left := fun y => ?_
        prop' := fun s => mem_iff.2 ⟨fun z => ?_, fun s' z hsz => ?_⟩ }⟩
   · rw [hK, coe_coe, transport_apply_eq]
-    split_ifs
-    · rfl
-    · exact congrArg X.pair.map (G.apply_zero _)
+    split_ifs <;> simp
   · rw [hK, coe_coe, transport_apply_eq]
-    split_ifs
-    · rfl
-    · exact congrArg X.pair.map (G.apply_one _)
+    split_ifs <;> simp
   · simp only [ContinuousMap.coe_mk]
     rw [hK]
     exact ite_double_unfoldCube_zero_mem_range p le_rfl z ⟨_, rfl⟩
@@ -713,11 +706,13 @@ def equivOfPath (γ : Path X.basepoint b) :
   left_inv := transport_symm_transport γ
   right_inv := transport_transport_symm γ
 
+/-- `equivOfPath γ` is the base-point change map `transport γ`. -/
 @[simp]
 theorem equivOfPath_apply (γ : Path X.basepoint b) (x : RelHomotopyGroup N X) :
     equivOfPath γ x = transport γ x :=
   (rfl)
 
+/-- The inverse of `equivOfPath γ` is the base-point change map `transport` along `γ.symm`. -/
 @[simp]
 theorem equivOfPath_symm_apply (γ : Path X.basepoint b) (x : RelHomotopyGroup N ⟨X.pair, b⟩) :
     (equivOfPath γ).symm x = transport (X := ⟨X.pair, b⟩) γ.symm x :=
@@ -818,11 +813,13 @@ def mulEquivOfPath (γ : Path X.basepoint b) :
   toEquiv := equivOfPath γ
   map_mul' := transport_mul γ
 
+/-- `mulEquivOfPath γ` is the base-point change map `transport γ`. -/
 @[simp]
 theorem mulEquivOfPath_apply (γ : Path X.basepoint b) (x : RelHomotopyGroup N X) :
     mulEquivOfPath γ x = transport γ x :=
   (rfl)
 
+/-- The inverse of `mulEquivOfPath γ` is the base-point change map `transport` along `γ.symm`. -/
 @[simp]
 theorem mulEquivOfPath_symm_apply (γ : Path X.basepoint b)
     (x : RelHomotopyGroup N ⟨X.pair, b⟩) :

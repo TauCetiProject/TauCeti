@@ -110,7 +110,7 @@ private theorem transition_mul {U V : X.AffineZariskiSite} (i : U ⟶ V) (m n : 
     (congrArg₂ (fun a b ↦ chartMul A W U m n a b) (h₂ s).symm (h₃ t).symm))
   exact Proj.res_twistingSheafMap_app_mul
     (A.restrictGradedSectionsGradedHom ((Scheme.AffineZariskiSite.toOpensFunctor X).map i))
-    (A.irrelevant_le_map_restrictGradedSectionsGradedHom_toOpensFunctor i) _ _ s t
+    (A.irrelevant_le_map_restrictGradedSections_toOpensFunctor i) _ _ s t
 
 /-- The products, in the charts, of the images of two sections of twisting sheaves of the relative
 `Proj` are compatible under the transition maps, hence the images of a single section. -/
@@ -466,11 +466,12 @@ private theorem relativeProjTwistingSheafTensorProductIso_hom :
 
 /-- On a pure tensor `s ⊗ t` of sections over `W`, sent into `𝒪(m) ⊗ 𝒪(n)` by the unit of
 sheafification, the isomorphism `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` is multiplication of sections. -/
-@[simp]
 theorem _root_.CategoryTheory.CommMon.relativeProjTwistingSheafTensorProductIso_hom_tmul
     (W : A.relativeProj.Opens) (s : Γ(A.relativeProjTwistingSheaf m, W))
     (t : Γ(A.relativeProjTwistingSheaf n, W)) :
-    Scheme.Modules.Hom.app
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
+      Functor.id_obj]
+    (Scheme.Modules.Hom.app
       ((TauCeti.SheafOfModules.tensorProductIso A.relativeProj.sheaf (A.relativeProjTwistingSheaf m)
         (A.relativeProjTwistingSheaf n)).inv ≫
           (A.relativeProjTwistingSheafTensorProductIso m n h).hom) W
@@ -478,7 +479,7 @@ theorem _root_.CategoryTheory.CommMon.relativeProjTwistingSheafTensorProductIso_
         (PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := A.relativeProj.sheaf.obj)
           (A.relativeProjTwistingSheaf m).val (A.relativeProjTwistingSheaf n).val)).app (op W)
             (s ⊗ₜ t)) =
-      A.relativeProjTwistingSheafMul W m n s t := by
+      A.relativeProjTwistingSheafMul W m n s t) := by
   let P := PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := A.relativeProj.sheaf.obj)
     (A.relativeProjTwistingSheaf m).val (A.relativeProjTwistingSheaf n).val
   let F := PresheafOfModules.sheafification (R := A.relativeProj.ringCatSheaf)

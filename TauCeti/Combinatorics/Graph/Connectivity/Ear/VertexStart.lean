@@ -408,19 +408,13 @@ theorem toVertexStart_eq_self {d : G.EarDecomposition H} (h : d.IsVertexStart) :
   obtain ⟨_, _, hstart₀⟩ := EarStart.toVertexDecomposition_of_not_isCycle d.start hnc
   have hlen : d.toVertexStart.length = d.length := d.length_toVertexStart_of_isVertexStart h
   refine (ext d d.toVertexStart hlen.symm
-    ((Fin.heq_fun_iff (congrArg (· + 1) hlen.symm)).mpr fun i ↦ ?_)
     (((d.heq_start_replaceInitial d.normalizedStart).trans
       (d.start.toVertexDecomposition.heq_start_copy _)).trans hstart₀).symm
     ((Fin.heq_fun_iff hlen.symm).mpr fun i ↦ ?_)).symm
-  · have hi : (⟨i, congrArg (· + 1) hlen.symm ▸ i.2⟩ : Fin (d.toVertexStart.length + 1)) =
-        Fin.cast ((Nat.add_assoc _ d.length 1).symm.trans
-          (congrArg (· + 1) d.length_toVertexStart.symm))
-          (Fin.natAdd (if d.start.IsCycle then 1 else 0) i) := Fin.ext (by simp [hnc])
-    rw [hi, d.graphAfter_toVertexStart_natAdd i]
-  · have hi : (⟨i, hlen.symm ▸ i.2⟩ : Fin d.toVertexStart.length) =
-        Fin.cast d.length_toVertexStart.symm
-          (Fin.natAdd (if d.start.IsCycle then 1 else 0) i) := Fin.ext (by simp [hnc])
-    rw [hi, d.earAt_toVertexStart_natAdd i]
+  have hi : (⟨i, hlen.symm ▸ i.2⟩ : Fin d.toVertexStart.length) =
+      Fin.cast d.length_toVertexStart.symm
+        (Fin.natAdd (if d.start.IsCycle then 1 else 0) i) := Fin.ext (by simp [hnc])
+  rw [hi, d.earAt_toVertexStart_natAdd i]
 
 private theorem toVertexDecomposition_of_heq_cycle {K : Graph α β} (start : G.EarStart K)
     {s : α} {walk : G.Walk s s} {isCycle : walk.IsCycle}

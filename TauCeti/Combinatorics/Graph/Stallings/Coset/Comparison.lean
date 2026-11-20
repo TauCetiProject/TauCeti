@@ -16,6 +16,7 @@ the based core of that coset graph. Consequently it is isomorphic to the canonic
 graph, and two folded based cores accept the same subgroup precisely when they are
 isomorphic. Such a based labelled isomorphism is unique. No finiteness or finite-alphabet
 assumption is needed, and the isolated base vertex of the trivial subgroup is retained.
+For example, the subgroup graph of the whole free group is the rose.
 
 ## References
 
@@ -51,7 +52,7 @@ theorem Hom.range_mapE_cosetGraph_eq_coreDarts
         SerreGraph.Path.IsReduced (S.subgroup S.base).cosetGraph.graph q ∧
           f.graphHom.mapE e ∈ SerreGraph.Path.darts (S.subgroup S.base).cosetGraph.graph q := by
       refine ⟨f.graphHom.toPrefunctor.mapPath p,
-        (f.graphHom.isReduced_mapPath_iff S.graph hfE p).mpr hp, ?_⟩
+        f.graphHom.isReduced_mapPath (fun _ _ _ h => hfE h) p hp, ?_⟩
       -- Substitution avoids `rw`'s transparency mismatch at the mapped path's endpoints.
       exact (f.graphHom.darts_mapPath S.graph p).symm ▸ List.mem_map_of_mem he
     apply ((S.subgroup S.base).cosetGraph.graph.mem_coreDarts_iff _ _).mpr
@@ -73,7 +74,7 @@ theorem Hom.range_mapE_cosetGraph_eq_coreDarts
     obtain ⟨q, hq, hread⟩ := S.mem_subgroup_iff_exists_reduced_path.mp hg
     have hmap : f.graphHom.toPrefunctor.mapPath q = p :=
       (S.subgroup S.base).cosetGraph_isFolded.path_eq_of_read_eq _ _ _
-        ((f.graphHom.isReduced_mapPath_iff S.graph hfE q).mpr hq) hp
+        (f.graphHom.isReduced_mapPath (fun _ _ _ h => hfE h) q hq) hp
         ((f.read_mapPath q).trans hread)
     rw [← hmap] at he
     have he' := f.graphHom.darts_mapPath S.graph q ▸ he
@@ -164,5 +165,11 @@ theorem nonempty_unique_iso_of_subgroup_eq (hS : S.IsFolded) (hT : T.IsFolded)
   obtain ⟨f⟩ := (nonempty_iso_iff_subgroup_eq hS hT hSc hTc).mpr h
   exact ⟨⟨⟨f⟩, fun g => Iso.eq_of_isFolded_of_reachable hT
     ((S.graph.isCore_iff S.base).mp hSc).1 g f⟩⟩
+
+/-- The subgroup graph of the whole free group is the rose with one petal for each letter. -/
+theorem nonempty_iso_rose_subgroupGraph_top (α : Type*) :
+    Nonempty (Iso (rose α) (⊤ : Subgroup (FreeGroup α)).subgroupGraph) := by
+  simpa [rose_subgroup_top] using
+    nonempty_iso_subgroupGraph (rose_isFolded α) (SerreGraph.rose_isCore α)
 
 end TauCeti.StallingsGraph

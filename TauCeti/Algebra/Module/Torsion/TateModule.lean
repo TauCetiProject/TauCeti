@@ -243,6 +243,35 @@ theorem map_comp {C : Type*} [AddCommGroup C] (g : B →+ C) (f : A →+ B) :
   ext x n
   rfl
 
+/-- A map injective on every torsion level induces an injective map on Tate modules. -/
+theorem map_injective (f : A →+ B)
+    (hf : ∀ n, Function.Injective (levelMap (p := p) f n)) :
+    Function.Injective (map (p := p) f) := by
+  intro x y h
+  exact ext fun n ↦ hf n (by simpa only [proj_map] using congrArg (proj n) h)
+
+/-- If a homomorphism is injective on each torsion level, a Tate-module point lies in its
+image exactly when each component lies in the corresponding finite-level image. Uniqueness
+of the finite-level preimages ensures their compatibility. -/
+theorem mem_range_map_iff (f : A →+ B)
+    (hf : ∀ n, Function.Injective (levelMap (p := p) f n)) (x : TateModule p B) :
+    x ∈ (map f).range ↔ ∀ n, proj n x ∈ (levelMap f n).range := by
+  constructor
+  · rintro ⟨y, rfl⟩ n
+    exact ⟨proj n y, (proj_map f y n).symm⟩
+  · intro hx
+    choose y hy using hx
+    have hcompat (n : ℕ) : tateModuleTransition p A n (y (n + 1)) = y n := by
+      apply hf n
+      apply Subtype.ext
+      simp only [levelMap_apply, tateModuleTransition_apply, map_nsmul]
+      have hnext := congrArg Subtype.val (hy (n + 1))
+      have hnow := congrArg Subtype.val (hy n)
+      simp only [levelMap_apply] at hnext hnow
+      rw [hnext, hnow]
+      exact congrArg Subtype.val (proj_succ x n)
+    exact ⟨mk y hcompat, ext fun n ↦ by simpa only [proj_map, proj_mk] using hy n⟩
+
 end Map
 
 section PadicModule
@@ -303,6 +332,26 @@ def mapLinearMap (f : A →+ B) : TateModule p A →ₗ[ℤ_[p]] TateModule p B 
 @[simp]
 theorem mapLinearMap_apply (f : A →+ B) (x : TateModule p A) : mapLinearMap f x = map f x :=
   (rfl)
+
+/-- An additive equivalence induces a `ℤ_p`-linear equivalence of Tate modules. -/
+def mapLinearEquiv (e : A ≃+ B) : TateModule p A ≃ₗ[ℤ_[p]] TateModule p B :=
+  LinearEquiv.ofLinearMap (mapLinearMap e.toAddMonoidHom)
+    (mapLinearMap e.symm.toAddMonoidHom)
+    (by ext x n; simp)
+    (by ext x n; simp)
+
+/-- The equivalence induced on Tate modules is the map induced by the additive equivalence. -/
+@[simp]
+theorem mapLinearEquiv_apply (e : A ≃+ B) (x : TateModule p A) :
+    mapLinearEquiv e x = map e.toAddMonoidHom x :=
+  (rfl)
+
+/-- The inverse equivalence on Tate modules is induced by the inverse additive equivalence. -/
+@[simp]
+theorem mapLinearEquiv_symm (e : A ≃+ B) :
+    (mapLinearEquiv (p := p) e).symm = mapLinearEquiv e.symm := by
+  ext x n
+  rfl
 
 end Map
 

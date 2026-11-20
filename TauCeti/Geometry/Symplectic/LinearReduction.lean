@@ -166,6 +166,12 @@ theorem ReducedSpace.mk_eq_mk_iff {u v : U} :
       (u : V) - v ∈ ω.orthogonal U := by
   rw [Submodule.Quotient.eq, mem_ker_restrict_iff, Submodule.coe_sub]
 
+variable {ω U} in
+/-- A vector of `U` has zero class in the reduced space exactly when it lies in `U^ω`. -/
+theorem ReducedSpace.mk_eq_zero_iff {u : U} :
+    (Submodule.Quotient.mk u : ω.ReducedSpace U) = 0 ↔ (u : V) ∈ ω.orthogonal U := by
+  rw [Submodule.Quotient.mk_eq_zero, mem_ker_restrict_iff]
+
 /-- The reduced space is trivial exactly when `U` is isotropic. -/
 theorem subsingleton_reducedSpace_iff :
     Subsingleton (ω.ReducedSpace U) ↔ ω.IsIsotropic U := by

@@ -103,7 +103,7 @@ theorem _root_.Matrix.SpecialLinearGroup.map_diag2nUnit
     Matrix.SpecialLinearGroup.map f (Matrix.SpecialLinearGroup.diag2nUnit hij a) =
       Matrix.SpecialLinearGroup.diag2nUnit hij (Units.map f a) := by
   ext r s
-  simp [Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+  simp [Matrix.SpecialLinearGroup.map_apply_coe,
     Matrix.diagonal_apply, apply_ite f]
 
 /-- The unit diagonal family takes the identity unit to the identity matrix. -/
@@ -200,6 +200,9 @@ variable (R n) in
 the preimage of the diagonal torus of `GL_n(R)`. -/
 def diagonalTorus : Subgroup (SpecialLinearGroup (Fin n) R) :=
   (TauCeti.diagonalTorus R n).comap toGL
+
+instance : IsMulCommutative (diagonalTorus R n) :=
+  (TauCeti.diagonalTorus R n).comap_injective_isMulCommutative toGL_injective
 
 /-- An element of `SL_n(R)` lies in its diagonal torus exactly when it lies in the diagonal torus
 of `GL_n(R)`. -/
