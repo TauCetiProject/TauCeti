@@ -10,6 +10,7 @@ public import Mathlib.Data.Option.Basic
 public import Mathlib.Data.Sym.Sym2
 public import Mathlib.Logic.Equiv.Defs
 public import Mathlib.Data.Fintype.Pi
+public import Mathlib.Data.Fintype.Prod
 import Mathlib.Data.Finset.Prod
 
 /-!
@@ -20,7 +21,9 @@ involution describing how colors change when the vertices are exchanged. This pe
 symmetric colors and genuinely oriented colors in the lower skeleton of a hypergraph complex.
 
 `PairColorSystem.colorOfPair` extends the coloring to all vertex pairs with values in `Option`:
-only diagonal pairs have color `none`. `PairColorSystem.ofRaw` makes any directed coloring
+only diagonal pairs have color `none`, so `PairColorSystem.card_color_ne_eq_card_colorOfPair_ne`
+identifies ordered distinct-pair edits with `colorOfPair` edits across `V × V`.
+`PairColorSystem.ofRaw` makes any directed coloring
 coherent by recording its colors in both orientations, using the product palette.
 `PairColorSystem.relabel` renames the palette along an equivalence.
 `PairColorSystem.split` refines a coloring by a symmetric labelling of the unordered pairs.
@@ -96,6 +99,24 @@ theorem colorOfPair_swap_eq_some_iff (S : PairColorSystem κ V) (u v : V) (c : �
     S.colorOfPair v u = some (S.rev c) ↔ S.colorOfPair u v = some c := by
   rw [S.colorOfPair_swap, Option.map_eq_some_iff]
   simp only [S.rev_involutive.injective.eq_iff, exists_eq_right]
+
+open Classical Finset in
+/-- Ordered distinct pairs whose color in `T` differs from the `f`-mapped color in `S` are in
+bijection with all vertex pairs `(u, v)` whose `colorOfPair` in `T` differs from
+`(S.colorOfPair u v).map f`, since diagonal pairs have `colorOfPair = none` on both sides. -/
+theorem card_color_ne_eq_card_colorOfPair_ne [Fintype V] [DecidableEq V] {κ' : Type*}
+    (S : PairColorSystem κ V) (T : PairColorSystem κ' V) (f : κ → κ') :
+    #{p : {p : V × V // p.1 ≠ p.2} | T.color p ≠ f (S.color p)} =
+      #{p : V × V | T.colorOfPair p.1 p.2 ≠ (S.colorOfPair p.1 p.2).map f} := by
+  classical
+  refine card_bij (fun p _ ↦ p.1) (fun p hp ↦ ?_) (fun _ _ _ _ h ↦ Subtype.ext h) fun p hp ↦ ?_
+  · simp only [mem_filter, mem_univ, true_and, colorOfPair_of_ne _ p.2, Option.map_some, ne_eq,
+      Option.some.injEq] at hp ⊢
+    exact hp
+  · simp only [mem_filter, mem_univ, true_and] at hp
+    have hne : p.1 ≠ p.2 := fun heq ↦ hp (by simp [heq])
+    refine ⟨⟨p, hne⟩, ?_, rfl⟩
+    simpa [colorOfPair_of_ne _ hne] using hp
 
 /-- Make a directed coloring coherent by retaining the colors in both orientations.
 The palette is `κ × κ`, and reversal exchanges the coordinates. -/

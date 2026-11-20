@@ -1185,7 +1185,10 @@ jobs:
           export PATH="$HOME/.elan/bin:$PATH"
           # The sandboxed build/audit/lint body comes from the separately mounted, workflow-pinned
           # gate checkout; candidate scripts are never invoked. Bulk extraction is a temporary
-          # workaround until the pinned toolchain includes leanprover/lean4#15868.
+          # workaround for Lake starting one `leantar` process per cached module. The upstream change
+          # expected to make it unnecessary is https://github.com/leanprover/lean4/pull/16418 (libuv
+          # process spawning, in v4.37.0-rc1); https://github.com/leanprover/lean4/pull/15868 (native
+          # bulk unpacking) is still open. Remove it once measurement on the pinned toolchain agrees.
           # Keeping the bwrap bash payload a fixed, comment-free one-liner is deliberate: a comment's apostrophe once closed this single-quoted string
           # early and reddened every PR build (#694). All prose now lives in the script.
           export TAUCETI_PROJECT_ROOT="$PWD/pr"

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 
 /-!
@@ -22,7 +23,6 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
 
 ## Main results
 
-* `Circle.coe_mem_unitary`: a point of the circle is a unitary complex number.
 * `Matrix.exists_circle_smul_mem_specialUnitaryGroup`: every complex unitary matrix becomes
   special unitary after multiplication by a suitable scalar of modulus one.
 * `Matrix.mem_unitaryGroup_of_star_mul_self_eq_scalar`: over `ℝ` or `ℂ`, a matrix `A` for which
@@ -43,10 +43,6 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
 -/
 
 public section
-
-/-- A point of the circle is a unitary complex number. -/
-theorem Circle.coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ :=
-  Unitary.mem_iff_star_mul_self.mpr <| by simp [← Complex.normSq_eq_conj_mul_self]
 
 namespace Matrix
 
