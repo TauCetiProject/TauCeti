@@ -58,16 +58,10 @@ is an isometry of the bilinear form `σ_x`. -/
 theorem isIsometry_fixedPointDerivative (hf : ContMDiff I I ∞ f)
     (hσ : SmoothForm.mpullback f hf σ = σ) (x : {x // f x = x}) :
     BilinForm.IsIsometry (σ.bilinFormAt x.1) (fixedPointDerivative I f x) := by
-  -- Every tangent space is the model space, so `σ` may be evaluated at `f x` and at `x` on the
-  -- same pair of vectors; the two values agree because `f x = x`.
-  have key : ∀ {y : M} (_ : y = x.1) (v w : E),
-      SmoothBundleForm.eval₂ σ y v w = SmoothBundleForm.eval₂ σ x.1 v w := by
-    rintro _ rfl v w
-    rfl
   refine BilinForm.isIsometry_iff.2 fun v w ↦ ?_
   have hfx : σ.bilinFormAt x.1 (mfderiv I I f x.1 v) (mfderiv I I f x.1 w) =
       SmoothBundleForm.eval₂ σ (f x.1) (mfderiv I I f x.1 v) (mfderiv I I f x.1 w) :=
-    (SmoothForm.bilinFormAt_apply σ x.1 _ _).trans (key x.2 _ _).symm
+    (SmoothForm.bilinFormAt_apply σ x.1 _ _).trans (SmoothForm.eval₂_congr_basePoint σ x.2 _ _).symm
   rw [fixedPointDerivative_apply, fixedPointDerivative_apply, hfx,
     ← SmoothForm.eval₂_mpullback f hf, hσ, SmoothForm.bilinFormAt_apply]
 

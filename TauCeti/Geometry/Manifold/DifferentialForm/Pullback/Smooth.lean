@@ -25,8 +25,10 @@ The relative theorem uses derivatives within the source set, so it applies at bo
 corner points. No invertibility, finite dimensionality, or completeness is required.
 
 For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map on smooth forms.
-Its underlying rough form is the existing `TauCeti.mpullback`. Restriction to an open subset does
-not change the values of a smooth form (`TauCeti.SmoothForm.coe_mpullback_subtype_val_apply`).
+Its underlying rough form is the existing `TauCeti.mpullback`. Along a map smooth on a set of a
+normed space, the within-set pullback of a smooth form is a smooth flat form there
+(`TauCeti.SmoothForm.contDiffOn_mpullbackWithin`). Restriction to an open subset does not change
+the values of a smooth form (`TauCeti.SmoothForm.coe_mpullback_subtype_val_apply`).
 A product map `Prod.map f g` pulls a form pulled back from either factor back through the
 corresponding component (`TauCeti.SmoothForm.mpullback_prodMap_mpullback_fst`,
 `TauCeti.SmoothForm.mpullback_prodMap_mpullback_snd`), and so the wedge of two such forms
@@ -314,6 +316,16 @@ theorem mpullback_apply_one (f : M → M') (hf : ContMDiff I I' ∞ f)
   ext i
   fin_cases i
   rfl
+
+/-- Along a map smooth on a set `s` of a normed space with unique derivatives, the within-set
+pullback of a smooth form is a smooth function on `s` into the alternating maps. -/
+theorem contDiffOn_mpullbackWithin {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (φ : SmoothForm I' M' F k) {f : V → M'} {s : Set V} (hs : UniqueDiffOn ℝ s)
+    (hf : ContMDiffOn 𝓘(ℝ, V) I' ∞ f s) :
+    ContDiffOn ℝ (E := V) (F := V [⋀^Fin k]→L[ℝ] F) ∞ (mpullbackWithin 𝓘(ℝ, V) I' f s φ.1) s :=
+  fun x hx ↦ RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace
+    ((φ.contMDiff.contMDiffOn (s := univ)).mpullbackWithin_form hf (by simp) (mapsTo_univ _ _)
+      hs.uniqueMDiffOn x hx)
 
 /-- Pullback of smooth forms along a surjective smooth map whose derivatives are all surjective is
 injective. -/
