@@ -305,13 +305,13 @@ theorem IsRowCompact.ringOpNorm_resolventCoeff_le {u : C₀(I, R) →L[R] C₀(I
     ⟨a, mem_insert_self _ _⟩ ⟨b, mem_insert_of_mem (mem_insert_self _ _)⟩
 
 /-- **Uniform tail bound for the Fredholm resolvent.** Suppose `u` is row compact and `r i`
-bounds the `i`-th row of its matrix, and let `ρ > 0`, `0 ≤ q`, `1 ≤ B`, and `T` a finite
+bounds the `i`-th row of its matrix, and let `0 ≤ ρ`, `0 ≤ q`, `1 ≤ B`, and `T` a finite
 set of indices with `ρ * r i ≤ q` off `T` and `ρ * r i ≤ B` everywhere. Then
 `‖u.resolventCoeff m‖ * ρ ^ m ≤ B ^ #T * q ^ (m - #T)`, with truncated subtraction in the
 exponent. The bound depends on `u` only through `r`. -/
 theorem IsRowCompact.ringOpNorm_resolventCoeff_mul_pow_le {u : C₀(I, R) →L[R] C₀(I, R)}
     (hu : u.IsRowCompact) {r : I → ℝ} (hr : ∀ i j, ‖u.matrixCoeff i j‖ ≤ r i)
-    {ρ q B : ℝ} (hρ : 0 < ρ) (hq₀ : 0 ≤ q) (hB : 1 ≤ B) (T : Finset I)
+    {ρ q B : ℝ} (hρ : 0 ≤ ρ) (hq₀ : 0 ≤ q) (hB : 1 ≤ B) (T : Finset I)
     (hT : ∀ i ∉ T, ρ * r i ≤ q) (hrB : ∀ i, ρ * r i ≤ B) (m : ℕ) :
     ‖u.resolventCoeff m‖ * ρ ^ m ≤ B ^ T.card * q ^ (m - T.card) :=
   TauCeti.mul_pow_le_of_forall_prod_le (fun i ↦ (norm_nonneg _).trans (hr i i))
