@@ -67,7 +67,7 @@ lemma spectralObject_δ_comp_spectralObjectHIsoCokernel_hom {i j k : ι} (f : i 
     [Mono (F.map f)] [Mono (F.map g)] (n₀ n₁ : ℤ) (h : n₀ + 1 = n₁) :
     (spectralObject F).δ f g n₀ n₁ h ≫ (spectralObjectHIsoCokernel F f n₁).hom =
       (spectralObjectHIsoCokernel F g n₀).hom ≫
-        (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact (F.map f) (F.map g)).δ
+        (TauCeti.cokernelCompSequence_shortExact (F.map f) (F.map g)).δ
           n₀ n₁ (by simp [← h]) := by
   rw [spectralObject_δ, spectralObjectHIsoCokernel_hom, spectralObjectHIsoCokernel_hom]
   let A := (spectralObjectHIso F g n₀).hom
@@ -88,7 +88,7 @@ short exact sequences of cokernels. -/
 lemma spectralObjectHIsoCokernel_inv_comp_spectralObject_δ {i j k : ι} (f : i ⟶ j) (g : j ⟶ k)
     [Mono (F.map f)] [Mono (F.map g)] (n₀ n₁ : ℤ) (h : n₀ + 1 = n₁) :
     (spectralObjectHIsoCokernel F g n₀).inv ≫ (spectralObject F).δ f g n₀ n₁ h =
-      (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact (F.map f) (F.map g)).δ
+      (TauCeti.cokernelCompSequence_shortExact (F.map f) (F.map g)).δ
           n₀ n₁ (by simp [← h]) ≫ (spectralObjectHIsoCokernel F f n₁).inv :=
   (Iso.inv_comp_eq _).2 (((Iso.eq_comp_inv _).2
     (spectralObject_δ_comp_spectralObjectHIsoCokernel_hom F f g n₀ n₁ h)).trans
@@ -112,7 +112,7 @@ theorem spectralSequence_first_page_d_eq (p q : ℤ)
     [Mono (F.map (homOfLE (coe_le_coe_of_eq_add_one (show q = q from rfl) rfl)))] :
     ((spectralSequence F).page 2).d (p, q) (p + 2, q - 1) =
       (spectralSequenceFirstPageXIsoCokernel F (p, q) q (q + 1) rfl rfl (p + q) rfl).hom ≫
-        (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
+        (TauCeti.cokernelCompSequence_shortExact
           (F.map (homOfLE (coe_le_coe_of_eq_add_one (show q - 1 = q - 1 from rfl)
             (show q = q - 1 + 1 by lia))))
           (F.map (homOfLE (coe_le_coe_of_eq_add_one (show q = q from rfl) rfl)))).δ
@@ -129,9 +129,8 @@ theorem spectralSequence_first_page_d_eq (p q : ℤ)
     (by simp [ComplexShape.up']; lia) ((q - 1 : ℤ) : EInt) q ((q + 1 : ℤ) : EInt) rfl rfl rfl
     (p + q) (p + q + 1) rfl, key]
   rw [spectralSequenceFirstPageXIsoCokernel_eq, spectralSequenceFirstPageXIsoCokernel_eq,
-    Iso.trans_hom, Iso.trans_inv, Category.assoc]
-  congr 1
-  exact (Category.assoc _ _ _).trans (Category.assoc _ _ _)
+    Iso.trans_hom, Iso.trans_inv]
+  simp only [Category.assoc]
 
 /-- The form of `CochainComplex.spectralSequence_first_page_d_eq` in which the bidegrees, the
 filtration indices `i ≤ j ≤ k` and the cohomological degrees are given together with equations, for

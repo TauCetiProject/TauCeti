@@ -45,7 +45,7 @@ lemma shiftMap_mappingConeCompTriangle_mor₃ (n₀ n₁ : ℤ) (h : 1 + n₀ = 
         (descShortComplex (ShortComplex.cokernelSequence a)) n₁ =
     HomologicalComplex.homologyMap
         (descShortComplex (ShortComplex.cokernelSequence b)) n₀ ≫
-      (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact a b).δ n₀ n₁
+      (TauCeti.cokernelCompSequence_shortExact a b).δ n₀ n₁
         (by simp [← h, add_comm]) := by
   -- The connecting map of the triangle of `b` alone, through `homologySequenceδ_triangleh`.
   have hb := homologySequenceδ_triangleh (TauCeti.cokernelSequence_shortExact b) n₀ n₁ (by lia)
@@ -62,7 +62,7 @@ lemma shiftMap_mappingConeCompTriangle_mor₃ (n₀ n₁ : ℤ) (h : 1 + n₀ = 
   -- The naturality of connecting maps along `(Y ⟶ Z ⟶ cokernel b) ⟶ (cokernel a ⟶ … )`.
   have hnat := HomologicalComplex.HomologySequence.δ_naturality
     (TauCeti.cokernelSequenceToSnakeInputL₃ a b) (TauCeti.cokernelSequence_shortExact b)
-    (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact a b) n₀ n₁
+    (TauCeti.cokernelCompSequence_shortExact a b) n₀ n₁
     (by simp [← h, add_comm])
   simp only [TauCeti.cokernelSequenceToSnakeInputL₃_τ₃,
     TauCeti.cokernelSequenceToSnakeInputL₃_τ₁] at hnat

@@ -28,8 +28,9 @@ simultaneously.
   if and only if the final map splits.
 * `TauCeti.kernelSequence_shortExact`: the kernel sequence of an epimorphism is short exact.
 * `TauCeti.cokernelSequence_shortExact`: the cokernel sequence of a monomorphism is short exact.
-* `TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact`: for composable `a` and `b` with
-  `b` a monomorphism, `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` is short exact.
+* `TauCeti.cokernelCompSequence`: the sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` of
+  composable `a` and `b`, with `TauCeti.cokernelCompSequence_shortExact` its short exactness when
+  `b` is a monomorphism.
 * `TauCeti.kernelCokernelCompSequence_snakeInput_L₀_shortExact`: for composable `a` and `b` with
   `a` an epimorphism, `kernel a ⟶ kernel (a ≫ b) ⟶ kernel b` is short exact.
 * `TauCeti.kernelCokernelCompSequence_shortExact_of_mono_of_epi`: for composable `a` and `b` with
@@ -41,8 +42,6 @@ simultaneously.
   `a` is the target of `a`.
 * `TauCeti.cokernelSequenceToSnakeInputL₃`: the morphism from `Y ⟶ Z ⟶ cokernel b` to that
   sequence.
-* `TauCeti.cokernelCompSequence`: the sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b`,
-  with `TauCeti.cokernelCompSequence_shortExact` its short exactness when `b` is a monomorphism.
 * `TauCeti.cokernelCompSequenceMap`: the morphism between two such sequences induced by a
   commutative ladder between the composable pairs.
 * `CategoryTheory.ShortComplex.shortExact_of_forall_evaluation`: a short complex of functors is
@@ -95,10 +94,24 @@ section Comp
 
 variable {X Y Z : C} (a : X ⟶ Y) (b : Y ⟶ Z)
 
-/-- The sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b`, the last row of Mathlib's
-`kernelCokernelCompSequence.snakeInput a b`, is short exact when `b` is a monomorphism. -/
-lemma kernelCokernelCompSequence_snakeInput_L₃_shortExact [Mono b] :
-    (kernelCokernelCompSequence.snakeInput a b).L₃.ShortExact := by
+/-- The sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` of the composable pair `(a, b)`,
+whose maps are induced by `b` and by `a`. It is the last row of Mathlib's
+`kernelCokernelCompSequence.snakeInput a b` (`TauCeti.cokernelCompSequence_eq`), with its objects
+written as cokernels. -/
+@[simps]
+noncomputable abbrev cokernelCompSequence : ShortComplex C :=
+  ShortComplex.mk (cokernel.map a (a ≫ b) (𝟙 _) b (by simp))
+    (cokernel.map (a ≫ b) b a (𝟙 _) (by simp)) (by ext; simp)
+
+/-- The sequence `TauCeti.cokernelCompSequence a b` is the last row of Mathlib's
+`kernelCokernelCompSequence.snakeInput a b`. -/
+lemma cokernelCompSequence_eq :
+    cokernelCompSequence a b = (kernelCokernelCompSequence.snakeInput a b).L₃ :=
+  rfl
+
+/-- The sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` is short exact when `b` is a
+monomorphism. -/
+lemma cokernelCompSequence_shortExact [Mono b] : (cokernelCompSequence a b).ShortExact := by
   have hE := kernelCokernelCompSequence_exact a b
   refine ShortComplex.ShortExact.mk' (kernelCokernelCompSequence.snakeInput a b).L₃_exact ?_ ?_
   · exact (hE.exact 2).mono_g (by
@@ -139,26 +152,6 @@ lemma kernelCokernelCompSequence_shortExact_of_mono_of_epi [Mono a] [Epi (a ≫ 
   · dsimp
     rw [kernelCokernelCompSequence.δ_fac]
     simp
-
-/-- The sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` of the composable pair `(a, b)`,
-whose maps are induced by `b` and by `a`. It is the last row of Mathlib's
-`kernelCokernelCompSequence.snakeInput a b` (`TauCeti.cokernelCompSequence_eq`), with its objects
-written as cokernels. -/
-@[simps]
-noncomputable abbrev cokernelCompSequence : ShortComplex C :=
-  ShortComplex.mk (cokernel.map a (a ≫ b) (𝟙 _) b (by simp))
-    (cokernel.map (a ≫ b) b a (𝟙 _) (by simp)) (by ext; simp)
-
-/-- The sequence `TauCeti.cokernelCompSequence a b` is the last row of Mathlib's
-`kernelCokernelCompSequence.snakeInput a b`. -/
-lemma cokernelCompSequence_eq :
-    cokernelCompSequence a b = (kernelCokernelCompSequence.snakeInput a b).L₃ :=
-  rfl
-
-/-- The sequence `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` is short exact when `b` is a
-monomorphism. -/
-lemma cokernelCompSequence_shortExact [Mono b] : (cokernelCompSequence a b).ShortExact :=
-  kernelCokernelCompSequence_snakeInput_L₃_shortExact a b
 
 variable {a b} in
 /-- The short complex `S ⟶ T ⟶ kernel b` for subobjects `S = kernelSubobject a` and

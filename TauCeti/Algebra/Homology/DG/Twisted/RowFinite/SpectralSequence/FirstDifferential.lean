@@ -225,7 +225,7 @@ private theorem page_two_d_comp_eq (a b : ℤ) :
       (m.indexSpectralSequenceFirstPageXIsoOfEq hM hm (a + 2, b - 1) (b - 1) b rfl (by omega)
         (a + b + 1) (by simp only; omega)).hom =
     HomologicalComplex.homologyMap (m.indexCokernelIsoOfEq hM hm b (b + 1) rfl).inv (a + b) ≫
-      (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _).δ (a + b) (a + b + 1)
+      (TauCeti.cokernelCompSequence_shortExact _ _).δ (a + b) (a + b + 1)
         rfl ≫
       HomologicalComplex.homologyMap
         (m.indexCokernelIsoOfEq hM hm (b - 1) b (by omega)).hom (a + b + 1) := by
@@ -235,8 +235,6 @@ private theorem page_two_d_comp_eq (a b : ℤ) :
   simp only [indexSpectralSequenceFirstPageXIsoOfEq_eq, Iso.trans_inv, Iso.trans_hom,
     HomologicalComplex.homologyMapIso_inv, HomologicalComplex.homologyMapIso_hom,
     Category.assoc, Iso.inv_hom_id_assoc]
-  congr 1
-  exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) (Iso.inv_hom_id_assoc _ _))
 
 /-- **A cycle of a graded piece lifts to the index filtration.** A cycle `f` of the graded piece
 of index `b + 1` is the projection of an element `s` of the `(b + 1)`-st stage of the filtration,

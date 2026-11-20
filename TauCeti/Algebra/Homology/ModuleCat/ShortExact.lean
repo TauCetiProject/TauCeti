@@ -37,7 +37,7 @@ equivalent (`CategoryTheory.ShortComplex.ShortExact.homologyMap_g_surjective_iff
 
 For maps `φ : X ⟶ Y` and `ψ : Y ⟶ Z` of complexes of modules with `ψ` a monomorphism, the short
 exact sequence `cokernel φ ⟶ cokernel (φ ≫ ψ) ⟶ cokernel ψ`
-(`TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact`) also has a connecting map on
+(`TauCeti.cokernelCompSequence_shortExact`) also has a connecting map on
 homology, computed on classes of elements in `TauCeti.exists_δ_kernelCokernelSequence_L₃_eq`.
 
 ## Main declarations
@@ -186,11 +186,11 @@ theorem exists_δ_kernelCokernelSequence_L₃_eq {R : Type*} [Ring R]
     (x : (cokernel ψ).X n) (hx : ((cokernel ψ).d n (n + 1)).hom x = 0)
     (hsx : ((cokernel.π ψ).f n).hom s = x) :
     ∃ hc : ((cokernel φ).d (n + 1) (n + 1 + 1)).hom (((cokernel.π φ).f (n + 1)).hom t) = 0,
-      ((kernelCokernelCompSequence_snakeInput_L₃_shortExact φ ψ).δ n (n + 1) rfl).hom
+      ((cokernelCompSequence_shortExact φ ψ).δ n (n + 1) rfl).hom
           (((cokernel ψ).homologyπ n).hom ((cokernel ψ).moduleCatCyclesMk x (n + 1) (by simp) hx)) =
         ((cokernel φ).homologyπ (n + 1)).hom ((cokernel φ).moduleCatCyclesMk
           (((cokernel.π φ).f (n + 1)).hom t) (n + 1 + 1) (by simp) hc) := by
-  have hS := kernelCokernelCompSequence_snakeInput_L₃_shortExact φ ψ
+  have hS := cokernelCompSequence_shortExact φ ψ
   have hLg : cokernel.π (φ ≫ ψ) ≫ (kernelCokernelCompSequence.snakeInput φ ψ).L₃.g =
       cokernel.π ψ := by
     simp [kernelCokernelCompSequence.snakeInput]
