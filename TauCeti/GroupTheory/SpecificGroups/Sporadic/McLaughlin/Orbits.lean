@@ -385,7 +385,7 @@ exactly when `y` is adjacent to `x`. Its row at `0` is the orbit `orbit_stabiliz
     |>.getD (i.val % 25) 0
 
 /-- Adjacency in the McLaughlin graph on the 275 points of the ATLAS model, read off the bit
-rows `relationRows`. Every element of `McL` preserves it (`related_apply`). -/
+rows `relationRows`. Every element of `McL` preserves it (`related_apply_apply`). -/
 @[expose] def related (x y : Fin 275) : Bool := (relationRows x).testBit y.val
 
 private theorem related_a : ∀ x y : Fin 275, related (a x) (a y) = related x y := by
@@ -395,7 +395,7 @@ private theorem related_b : ∀ x y : Fin 275, related (b x) (b y) = related x y
   decide +kernel
 
 /-- Every element of the McLaughlin model preserves the adjacency relation `related`. -/
-theorem related_apply {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) :
+theorem related_apply_apply {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) :
     ∀ x y, related (g x) (g y) = related x y := by
   rw [McL_def] at hg
   induction hg using Subgroup.closure_induction with
@@ -412,10 +412,10 @@ theorem related_apply {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) :
     simpa using (hg (g⁻¹ x) (g⁻¹ y)).symm
 
 /-- An element of the McLaughlin model fixing `s` preserves adjacency to `s`. -/
-theorem related_fixed {g : Equiv.Perm (Fin 275)} {s : Fin 275}
+theorem related_apply_of_apply_eq {g : Equiv.Perm (Fin 275)} {s : Fin 275}
     (hg : g ∈ McL) (hs : g s = s) (x : Fin 275) :
     related s (g x) = related s x := by
-  simpa only [hs] using related_apply hg s x
+  simpa only [hs] using related_apply_apply hg s x
 
 private def stabilizerWords : Fin 275 → ℕ := fun i ↦
   (#[
@@ -454,7 +454,7 @@ private theorem mem_orbit_stabilizer_iff (x : Fin 275) :
       related 0 x = true := by
   constructor
   · rintro ⟨g, rfl⟩
-    have h := related_apply g.property.1 0 1
+    have h := related_apply_apply g.property.1 0 1
     have hg0 : (g : Equiv.Perm (Fin 275)) 0 = 0 := g.property.2
     rw [hg0] at h
     exact h.trans (by decide +kernel)
@@ -587,9 +587,9 @@ private theorem mem_orbit_fixing_zero_one_iff (x : Fin 275) :
   · rintro ⟨g, rfl⟩
     have hgfix := (mem_fixingSubgroup_iff (Equiv.Perm (Fin 275))).mp g.property.2
     have hg1 : (g : Equiv.Perm (Fin 275)) 1 = 1 := hgfix 1 (by simp)
-    have h0 := (related_fixed g.property.1 (hgfix 0 (by simp)) 2).trans
+    have h0 := (related_apply_of_apply_eq g.property.1 (hgfix 0 (by simp)) 2).trans
       (by decide +kernel : related 0 2 = true)
-    have h1 := (related_fixed g.property.1 hg1 2).trans
+    have h1 := (related_apply_of_apply_eq g.property.1 hg1 2).trans
       (by decide +kernel : related 1 2 = false)
     refine ⟨h0, h1, ?_⟩
     -- Subgroup scalar multiplication is evaluation of the underlying permutation.
@@ -676,11 +676,11 @@ private theorem mem_orbit_fixing_zero_one_two_iff (x : Fin 275) :
   constructor
   · rintro ⟨g, rfl⟩
     have hgfix := (mem_fixingSubgroup_iff (Equiv.Perm (Fin 275))).mp g.property.2
-    have h0 := (related_fixed g.property.1 (hgfix 0 (by simp)) 3).trans
+    have h0 := (related_apply_of_apply_eq g.property.1 (hgfix 0 (by simp)) 3).trans
       (by decide +kernel : related 0 3 = false)
-    have h1 := (related_fixed g.property.1 (hgfix 1 (by simp)) 3).trans
+    have h1 := (related_apply_of_apply_eq g.property.1 (hgfix 1 (by simp)) 3).trans
       (by decide +kernel : related 1 3 = false)
-    have h2 := (related_fixed g.property.1 (hgfix 2 (by simp)) 3).trans
+    have h2 := (related_apply_of_apply_eq g.property.1 (hgfix 2 (by simp)) 3).trans
       (by decide +kernel : related 2 3 = true)
     -- Subgroup scalar multiplication is evaluation of the underlying permutation.
     simpa only [subgroup_smul_def, Equiv.Perm.smul_def] using And.intro h0 (And.intro h1 h2)
@@ -907,7 +907,7 @@ private theorem fixed_of_rank {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) (n : �
     (hseed : ∀ x : Fin 275, rigidRank x < n → x.val < 6 → g x = x) :
     ∀ x, rigidRank x < n → g x = x := by
   apply Function.apply_eq_self_of_rank (⇑g) (seed := fun x ↦ x.val < 6)
-    (related_apply hg) n hseed
+    (related_apply_apply hg) n hseed
   intro x _ hx y hy
   apply rigidAnchors_unique x (by omega) y
   exact List.map_congr_left fun z hz ↦ hy z (rigidAnchors_rank x z hz)
@@ -926,7 +926,7 @@ private theorem image_five {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL)
   apply hbound
   intro z hz
   have hr : ∀ z ∈ ([0, 4, 88, 93] : List (Fin 275)), rigidRank z < 35 := by decide +kernel
-  exact related_fixed hg (hf z (hr z hz)) 5
+  exact related_apply_of_apply_eq hg (hf z (hr z hz)) 5
 
 private theorem eq_one_of_fix_six {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL)
     (hfix : ∀ x : Fin 275, x.val < 6 → g x = x) : g = 1 := by

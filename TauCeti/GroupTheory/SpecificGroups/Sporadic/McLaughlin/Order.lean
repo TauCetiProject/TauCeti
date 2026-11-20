@@ -604,7 +604,7 @@ private theorem adjacencyCount_smul {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) 
     adjacencyCount p (g • T) = adjacencyCount p T := by
   rw [adjacencyCount, adjacencyCount, Finset.smul_finset_def, Finset.filter_image,
     Finset.card_image_of_injective _ (MulAction.injective g)]
-  simp only [Equiv.Perm.smul_def, related_fixed hg hgp]
+  simp only [Equiv.Perm.smul_def, related_apply_of_apply_eq hg hgp]
 
 /- The four adjacency counts of a coclique, as one number. -/
 private def countCode (T : Finset (Fin 275)) : ℕ :=
