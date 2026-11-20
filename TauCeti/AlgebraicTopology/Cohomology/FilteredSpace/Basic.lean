@@ -26,11 +26,13 @@ on `X (p - 1)`.
 * **Graded pieces.** For `X a ⊆ X b`, the quotient of the cochains relative to `X a` by those
   relative to `X b` is the relative singular cochain complex of the pair `(X b, X a)`
   (`TauCeti.singularCochainFiltrationCokernelIso`), because the cochain sequence of the triple
-  `(Y, X b, X a)` is short exact.
+  `(Y, X b, X a)` is short exact. So the quotient has no cohomology where the pair has none
+  (`TauCeti.isZero_homology_cokernel_singularCochainFiltration`).
 * **First page.** The object at `(p, q)` on the first page is the relative singular cohomology
   `Hⁿ(X p, X (p - 1))` with `p + q = n`
   (`TauCeti.filteredSpaceCohomologySpectralSequenceFirstPageXIso`); it vanishes when `p + q < 0`.
-* **Convergence.** The abutment in degree `n` is `Hⁿ(Y)`
+* **Convergence.** The abutment of the spectral object
+  `TauCeti.filteredSpaceCohomologySpectralObject` in degree `n` is `Hⁿ(Y)`
   (`TauCeti.filteredSpaceCohomologyAbutmentIso`). When `X a = ∅` and `X b = Y`, the filtration is
   finite and the spectral sequence converges strongly: on late pages the object at `(p, q)` is the
   graded piece `F^p H / F^{p+1} H` of the filtration of `H^{p+q}(Y)` by the images `F^p H` of the
@@ -40,10 +42,10 @@ on `X (p - 1)`.
 Filtering the total space of a fibration by the preimages of the skeleta of the base gives the
 cohomology Serre spectral sequence, with `E₁^{p,q} = H^{p+q}(Eₚ, Eₚ₋₁)`. Over an
 infinite-dimensional base that filtration is not finite in any degree. Its convergence, through
-the completeness of the cochain filtration
-(`TauCeti.Algebra.Homology.SpectralSequence.Filtered.Complete`), is not treated here; neither is
-the identification of the first differential with the connecting map of the triple
-`(X (p + 1), X p, X (p - 1))` (`TauCeti.TopTriple.singularCohomologyδ`).
+the completeness of the cochain filtration, is proved in
+`TauCeti.AlgebraicTopology.Cohomology.FilteredSpace.Complete`. The identification of the first
+differential with the connecting map of the triple `(X (p + 1), X p, X (p - 1))`
+(`TauCeti.TopTriple.singularCohomologyδ`) is not treated here.
 
 This is the cohomological counterpart of `TauCeti.filteredSpaceSpectralSequence`
 (`TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic`), whose construction it dualises.
@@ -214,6 +216,21 @@ lemma π_singularCochainFiltrationCokernelIso_hom {a b : ℤ} (hab : X a ⊆ X b
   (cokernel.π_desc_assoc _ _ _ _).trans <| (Category.assoc _ _ _).trans <|
     congrArg (_ ≫ ·) (IsColimit.comp_coconePointUniqueUpToIso_hom _ _ WalkingParallelPair.one)
 
+/-- The quotient `F_a / F_b` of two stages of the filtration of singular cochains has vanishing
+cohomology in degree `m` when the relative singular cohomology `Hⁿ(X b, X a)` vanishes for
+`m = n`. In negative degrees `m` there is nothing to check. -/
+lemma isZero_homology_cokernel_singularCochainFiltration {a b : ℤ} (hab : X a ⊆ X b) (m : ℤ)
+    (h : ∀ n : ℕ, m = n → IsZero ((TopPair.ofInclusion hab).singularCohomology R k M n)) :
+    IsZero ((cokernel (Subobject.ofLE _ _ (singularCochainFiltration_anti R k M hab))).homology
+      m) := by
+  refine IsZero.of_iso ?_
+    ((homologyFunctor _ _ m).mapIso (singularCochainFiltrationCokernelIso R k M hab))
+  by_cases hm : ∃ n : ℕ, ComplexShape.embeddingUpNat.f n = m
+  · obtain ⟨n, hn⟩ := hm
+    exact (h n hn.symm).of_iso (extendHomologyIso _ _ hn)
+  · push Not at hm
+    exact (extend_exactAt _ _ m hm).isZero_homology
+
 section SpectralSequence
 
 variable (hX : Monotone X)
@@ -232,6 +249,15 @@ filtration of the singular cochains of `Y` whose stage `F^p` is the cochains van
 abbrev filteredSpaceCohomologySpectralSequence :=
   CochainComplex.decreasingFiltrationSpectralSequence _
     (antitone_singularCochainFiltration_sub_one R k M hX)
+
+/-- **The spectral object of the cohomology spectral sequence of a filtered space**: the spectral
+object of the increasing filtration `t ↦ F^{-t}` of the singular cochains of `Y`, whose spectral
+sequence, reindexed, is `TauCeti.filteredSpaceCohomologySpectralSequence`. Its abutment in degree
+`n` is `Hⁿ(Y)` (`TauCeti.filteredSpaceCohomologyAbutmentIso`), and the piece at `-p` of the induced
+filtration of the abutment is the image of the cohomology of `Y` relative to `X (p - 1)`. -/
+abbrev filteredSpaceCohomologySpectralObject :=
+  CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
+    ((antitone_singularCochainFiltration_sub_one R k M hX).comp fun _ _ h ↦ neg_le_neg h))
 
 /-- The object at `(p, q)` on the first page is the cohomology in degree `p + q` of the reindexed
 relative singular cochains of `(X b, X a)`, for `a = p - 1` and `b = p`. -/
@@ -268,9 +294,7 @@ lemma isZero_filteredSpaceCohomologySpectralSequence_page_one_X (p q : ℤ) (h :
 /-- **The abutment of the cohomology spectral sequence of a filtered space** in degree `n` is the
 singular cohomology `Hⁿ(Y)`. -/
 def filteredSpaceCohomologyAbutmentIso (n : ℕ) :
-    (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-        ((antitone_singularCochainFiltration_sub_one R k M hX).comp
-          fun _ _ h ↦ neg_le_neg h))).abutment n ≅
+    (filteredSpaceCohomologySpectralObject R k M hX).abutment n ≅
       Y.singularCohomology R k M n :=
   CochainComplex.filtrationAbutmentIso _ _ _ ≪≫
     extendHomologyIso _ ComplexShape.embeddingUpNat rfl
@@ -284,9 +308,8 @@ def filteredSpaceCohomologySpectralSequencePageXIsoGradedOfFinite {a b : ℤ} (h
     (hb : X b = Set.univ) (r : ℤ) (hr : 1 ≤ r) (p q : ℤ) (hra : b + 1 ≤ p + r)
     (hrb : p - r ≤ a) :
     ((filteredSpaceCohomologySpectralSequence R k M hX).page r).X (p, q) ≅
-      cokernel ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-        ((antitone_singularCochainFiltration_sub_one R k M hX).comp
-          fun _ _ h ↦ neg_le_neg h))).abutmentFiltrationMap (-p - 1) (p + q)) :=
+      cokernel ((filteredSpaceCohomologySpectralObject R k M hX).abutmentFiltrationMap (-p - 1)
+        (p + q)) :=
   CochainComplex.decreasingFiltrationSpectralSequencePageXIsoGradedOfFinite _ _
     (a := b + 1) (b := a + 1)
     (by rw [add_sub_cancel_right]; exact singularCochainFiltration_eq_bot R k M hb)
