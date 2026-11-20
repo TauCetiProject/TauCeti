@@ -109,6 +109,13 @@ locally constant function taking the value `m` on `K` and `0` off `K`. -/
 noncomputable def compactOpenIndicator (K : CompactOpens X) (m : M) : LocallyConstant X M :=
   (const X m).indicator K.toClopens.isClopen
 
+/-- The underlying function of `compactOpenIndicator K m` is the set indicator of `K` with value
+`m`. -/
+@[simp]
+theorem coe_compactOpenIndicator (K : CompactOpens X) (m : M) :
+    ⇑(compactOpenIndicator K m) = (K : Set X).indicator fun _ => m :=
+  funext fun x => indicator_apply _ _ x
+
 @[simp]
 theorem compactOpenIndicator_of_mem {K : CompactOpens X} {x : X} (hx : x ∈ K) (m : M) :
     compactOpenIndicator K m x = m :=
@@ -131,6 +138,35 @@ theorem compactOpenIndicator_bot (m : M) : compactOpenIndicator (⊥ : CompactOp
 end Indicator
 
 end Zero
+
+section Indicator
+
+variable [T2Space X]
+
+/-- The indicator `1_K • m` is additive in the coefficient `m`. -/
+theorem compactOpenIndicator_add [AddZeroClass M] (K : CompactOpens X) (m n : M) :
+    compactOpenIndicator K (m + n) = compactOpenIndicator K m + compactOpenIndicator K n :=
+  ext fun x => by by_cases hx : x ∈ K <;> simp [hx]
+
+/-- The indicator `1_K • m` commutes with scalar multiplication of the coefficient `m`. -/
+theorem compactOpenIndicator_smul [Zero M] [SMulZeroClass R M] (K : CompactOpens X) (c : R)
+    (m : M) : compactOpenIndicator K (c • m) = c • compactOpenIndicator K m :=
+  ext fun x => by by_cases hx : x ∈ K <;> simp [hx]
+
+/-- The indicator of the union of two disjoint compact open sets is the sum of their
+indicators. -/
+theorem compactOpenIndicator_sup_of_disjoint [AddZeroClass M] {K L : CompactOpens X}
+    (hKL : Disjoint K L) (m : M) :
+    compactOpenIndicator (K ⊔ L) m = compactOpenIndicator K m + compactOpenIndicator L m := by
+  have h : Disjoint (K : Set X) L :=
+    Set.disjoint_iff_inter_eq_empty.2 (by rw [← CompactOpens.coe_inf, hKL.eq_bot,
+      CompactOpens.coe_bot])
+  refine ext fun x => ?_
+  by_cases hK : x ∈ (K : Set X)
+  · simp [Set.indicator_of_mem, hK, Set.disjoint_left.1 h hK]
+  · by_cases hL : x ∈ (L : Set X) <;> simp [hK, hL]
+
+end Indicator
 
 section Module
 
@@ -177,7 +213,7 @@ the finite sum `∑ m ∈ s, 1_{K m} • m` over finitely many nonzero values `m
 `K m = f⁻¹(m)` are pairwise disjoint compact open sets. -/
 theorem exists_pairwiseDisjoint_sum_indicator {f : LocallyConstant X M}
     (hf : HasCompactSupport f) :
-    ∃ (s : Finset M) (K : M → CompactOpens X), 0 ∉ s ∧
+    ∃ (s : Finset M) (K : M → CompactOpens X), 0 ∉ s ∧ (∀ m ∈ s, (K m : Set X) = f ⁻¹' {m}) ∧
       (s : Set M).PairwiseDisjoint (fun m => (K m : Set X)) ∧
       ⇑f = ∑ m ∈ s, (K m : Set X).indicator fun _ => m := by
   classical
@@ -189,7 +225,12 @@ theorem exists_pairwiseDisjoint_sum_indicator {f : LocallyConstant X M}
       (f.isLocallyConstant.isClopen_fiber m).isOpen.inter f.isClopen_support.isOpen⟩
   have hK (m : M) (x : X) : x ∈ (K m : Set X) ↔ f x = m ∧ f x ≠ 0 := Iff.rfl
   refine ⟨(finite_range_of_hasCompactSupport hf).toFinset.erase 0, K, Finset.notMem_erase 0 _,
-    fun m _ m' _ hmm' => disjoint_left.2 fun x hx hx' => hmm' ?_, funext fun x => ?_⟩
+    fun m hm => ?_, fun m _ m' _ hmm' => disjoint_left.2 fun x hx hx' => hmm' ?_,
+    funext fun x => ?_⟩
+  · -- For `m ≠ 0`, the condition `f x ≠ 0` is implied by `f x = m`.
+    ext x
+    simp only [hK, mem_preimage, mem_singleton_iff, and_iff_left_iff_imp]
+    exact fun h => h ▸ Finset.ne_of_mem_erase hm
   · exact ((hK m x).1 hx).1.symm.trans ((hK m' x).1 hx').1
   rw [Finset.sum_apply]
   by_cases hx : f x = 0
@@ -204,10 +245,13 @@ theorem compactlySupported_eq_span [T2Space X] :
     compactlySupported R X M = Submodule.span R
       (range fun p : CompactOpens X × M => compactOpenIndicator p.1 p.2) := by
   refine le_antisymm (fun f hf => ?_) (Submodule.span_le.2 ?_)
-  · obtain ⟨s, K, -, -, hfs⟩ := exists_pairwiseDisjoint_sum_indicator hf
-    have hf' : f = ∑ m ∈ s, compactOpenIndicator (K m) m :=
-      coe_injective (by rw [hfs]; exact (map_sum (coeFnAddMonoidHom (X := X) (Y := M))
-        (fun m => compactOpenIndicator (K m) m) s).symm)
+  · obtain ⟨s, K, -, -, -, hfs⟩ := exists_pairwiseDisjoint_sum_indicator hf
+    have hf' : f = ∑ m ∈ s, compactOpenIndicator (K m) m := by
+      refine coe_injective ?_
+      simp_rw [hfs, ← coe_compactOpenIndicator]
+      -- `coeFnAddMonoidHom` is the coercion to functions, as an additive monoid hom.
+      exact (map_sum (coeFnAddMonoidHom (X := X) (Y := M))
+        (fun m => compactOpenIndicator (K m) m) s).symm
     rw [hf']
     exact Submodule.sum_mem _ fun m _ => Submodule.subset_span ⟨(K m, m), rfl⟩
   · rintro _ ⟨⟨K, m⟩, rfl⟩
