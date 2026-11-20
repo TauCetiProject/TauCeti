@@ -96,6 +96,14 @@ theorem addCorrection_comm (x y : A) : addCorrection p x y = addCorrection p y x
   rw [Nat.sub_sub_self hi.2.le, Nat.choose_symm hi.2.le]
   ring
 
+/-- If `x` lies in an ideal `I`, so does `addCorrection p x y`: each of its monomials
+`x ^ i * y ^ (p - i)` has `0 < i`. -/
+theorem addCorrection_mem_of_mem_left {I : Ideal A} {x : A} (y : A) (hx : x ∈ I) :
+    addCorrection p x y ∈ I := by
+  rw [addCorrection_def]
+  refine I.neg_mem (I.sum_mem fun i hi => ?_)
+  exact I.mul_mem_right _ (I.mul_mem_right _ (I.pow_mem_of_mem hx i (Finset.mem_Ioo.mp hi).1))
+
 end DeltaRing
 
 /-- A `δ`-structure on a commutative ring `A` for the prime `p` (Bhatt and Scholze, *Prisms and
@@ -123,6 +131,13 @@ variable {p : ℕ} {A : Type*} [CommRing A]
 
 attribute [simp] delta_zero delta_one
 
+/-- If `δ x = 0`, then `δ (x ^ n) = 0` for every `n`. -/
+theorem delta_pow_eq_zero [DeltaRing p A] {x : A} (hx : delta p x = 0) (n : ℕ) :
+    delta p (x ^ n) = 0 := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, delta_mul, ih, hx]; ring
+
 section Frobenius
 
 variable [Fact p.Prime] [DeltaRing p A]
@@ -146,6 +161,11 @@ theorem frobenius_apply (x : A) : frobenius p A x = x ^ p + p * delta p x := (rf
 theorem frobenius_sub_pow (x : A) : frobenius p A x - x ^ p = p * delta p x := by
   rw [frobenius_apply]
   ring
+
+/-- An element with `δ x = 0` has Frobenius `x ^ p`. -/
+theorem frobenius_eq_pow_of_delta_eq_zero {x : A} (hx : delta p x = 0) :
+    frobenius p A x = x ^ p := by
+  rw [frobenius_apply, hx, mul_zero, add_zero]
 
 /-- The Frobenius of a `δ`-ring lifts the `p`-th power map modulo `p`. -/
 theorem natCast_dvd_frobenius_sub_pow (x : A) : (p : A) ∣ frobenius p A x - x ^ p :=
