@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.Wang
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.AlgebraicTopology.Singular.Coefficients.ExtendScalars
+import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
 # The first Betti number of a mapping torus
@@ -26,6 +28,14 @@ is `1` exactly when `det (𝟙 - φ_*) ≠ 0` on `H₁(F; k)`, that is, when `φ
 one. This is the criterion used for surface mapping tori `Y_φ` with `b₁(Y_φ) = 1`, where
 `1 - φ_*` is then invertible over `ℚ` or `ℝ`.
 
+The computations of `H¹(T_φ; ℤ)` and of the torsion of `H₁(T_φ; ℤ)` through the Wang sequence
+assume instead that the integral determinant `det (𝟙 - φ_*)` on `H₁(F; ℤ)` is nonzero. When
+`H₁(F; ℤ)` is free of finite rank, as for a closed orientable surface, the two conditions agree:
+for a field `K` of characteristic zero, `H₁(F; K) ≅ K ⊗ H₁(F; ℤ)` compatibly with `φ_*`, so the
+determinant over `K` is the image of the integral one
+(`RingHom.Flat.det_id_sub_singularHomologyMap_eq`), and `b₁(T_φ; K) = 1` if and only if the integral
+determinant is nonzero.
+
 ## Main results
 
 * `TauCeti.MappingTorus.rank_homology_one`: `rank H₁(T_φ; k) = rank coker (𝟙 - φ_*) + 1`.
@@ -33,6 +43,9 @@ one. This is the criterion used for surface mapping tori `Y_φ` with `b₁(Y_φ)
   `H₁(F; k)` is finite-dimensional.
 * `TauCeti.MappingTorus.finrank_homology_one_eq_one_iff`: `b₁(T_φ; k) = 1` if and only if
   `det (𝟙 - φ_*) ≠ 0`.
+* `TauCeti.MappingTorus.finrank_homology_one_eq_one_iff_det_int_ne_zero`: for a field `K` of
+  characteristic zero and `H₁(F; ℤ)` free of finite rank, `b₁(T_φ; K) = 1` if and only if the
+  integral determinant `det (𝟙 - φ_*)` on `H₁(F; ℤ)` is nonzero.
 
 See A. Hatcher, *Algebraic Topology*, Section 2.2, Example 2.48, for the Wang sequence of a
 mapping torus.
@@ -120,5 +133,29 @@ theorem finrank_homology_one_eq_one_iff
     LinearMap.det_eq_zero_iff_ker_ne_bot, not_not]
 
 end Field
+
+section Integral
+
+variable {F : Type} [TopologicalSpace F] [PathConnectedSpace F] (φ : F ≃ₜ F)
+
+/-- **The first Betti number of a mapping torus through the integral determinant**: for a
+path-connected fibre whose first integral homology is free of finite rank and a field `K` of
+characteristic zero, `b₁(T_φ; K) = 1` if and only if `det (𝟙 - φ_*) ≠ 0` on `H₁(F; ℤ)`. -/
+theorem finrank_homology_one_eq_one_iff_det_int_ne_zero (K : Type) [Field K] [CharZero K]
+    [Module.Free ℤ ((((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj
+      (ModuleCat.of ℤ ℤ)).obj (TopCat.of F)).homology 1)]
+    [Module.Finite ℤ ((((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj
+      (ModuleCat.of ℤ ℤ)).obj (TopCat.of F)).homology 1)] :
+    finrank K ((((singularChainComplexFunctor (ModuleCat.{0} K)).obj
+        (ModuleCat.of K K)).obj (TopCat.of (MappingTorus φ))).homology 1) = 1 ↔
+      (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0 := by
+  have hf : (Int.castRingHom K).Flat := by
+    rw [← algebraMap_int_eq, RingHom.flat_algebraMap_iff]
+    infer_instance
+  have := hf.finite_singularHomology (TopCat.of F) 1
+  rw [finrank_homology_one_eq_one_iff, monodromyChainMap_def, monodromyChainMap_def,
+    hf.det_id_sub_singularHomologyMap_eq, eq_intCast, Int.cast_ne_zero]
+
+end Integral
 
 end TauCeti.MappingTorus
