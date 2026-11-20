@@ -156,4 +156,4 @@ theorem AlgHom.exists_ofId_comp_eq_of_padic {A : Type*} [Semiring A] [Algebra �
   ext x
   have h := (Algebra.botEquiv ℚ Ω).symm_apply_apply (a.codRestrict ⊥ hbot x)
   rw [Algebra.botEquiv_symm_apply] at h
-  exact congrArg Subtype.val h
+  simpa using congrArg Subtype.val h

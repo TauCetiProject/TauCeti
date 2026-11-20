@@ -69,9 +69,8 @@ theorem RingHom.exists_inertiaDeg_eq_one_of_padic {K : Type*} [Field K] [NumberF
   have hunder : 𝔓.under (𝓞 ℚ) = 𝔭 := by
     refine HeightOneSpectrum.ext
       ((𝔭.isMaximal.eq_of_le (Ideal.IsPrime.under _ _).ne_top ?_).symm)
-    rw [Rat.HeightOneSpectrum.asIdeal_eq_span_natGenerator,
-      ← Rat.HeightOneSpectrum.absNorm_asIdeal, h𝔭, Ideal.span_singleton_le_iff_mem,
-      Ideal.mem_comap, map_natCast, h𝔓]
+    rw [← Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔭.asIdeal, h𝔭,
+      Ideal.span_singleton_le_iff_mem, Ideal.mem_comap, map_natCast, h𝔓]
     exact hpker
   have := HeightOneSpectrum.under_eq_iff_liesOver.mp hunder
   refine ⟨𝔓, hunder, ?_⟩
