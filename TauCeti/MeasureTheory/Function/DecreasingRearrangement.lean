@@ -67,6 +67,11 @@ from it.
   `MeasureTheory.Measure.decreasingRearrangement_sub_const`,
   `MeasureTheory.Measure.decreasingRearrangement_rpow`: indicators, multiplication by and
   subtraction of constants, and positive real powers;
+  `MeasureTheory.Measure.decreasingRearrangement_indicator_le`,
+  `MeasureTheory.Measure.decreasingRearrangement_indicator_setOf_lt_eq_zero`,
+  `MeasureTheory.Measure.decreasingRearrangement_indicator_compl_setOf_lt_le`: restrictions, and
+  the two parts of `f` cut at the level `f* s`, whose rearrangements vanish from `s` on and are at
+  most `min (f* t) (f* s)`;
   `MeasureTheory.Measure.lintegral_decreasingRearrangement_indicator`: the formula
   `∫₀ᵗ (c 1_A)* = c min (t, μ A)`.
 * `MeasureTheory.Measure.volume_restrict_setOf_lt_decreasingRearrangement`: equimeasurability,
@@ -245,6 +250,38 @@ theorem decreasingRearrangement_indicator (A : Set α) (c : ℝ≥0∞) (s : ℝ
       by_cases hy : y ∈ A <;> simp [hy, hbc]
     rw [this, measure_empty]
     split_ifs <;> simp [hbc]
+
+/-- Restricting `f` to a set does not increase its decreasing rearrangement. -/
+theorem decreasingRearrangement_indicator_le (A : Set α) (f : α → ℝ≥0∞) (s : ℝ) :
+    μ.decreasingRearrangement (A.indicator f) s ≤ μ.decreasingRearrangement f s :=
+  μ.decreasingRearrangement_mono (indicator_le_self A f) s
+
+/-- The part of `f` above the level `f* s` is supported on a set of measure at most `s`, so its
+decreasing rearrangement vanishes from `s` on. -/
+theorem decreasingRearrangement_indicator_setOf_lt_eq_zero (f : α → ℝ≥0∞) (hst : s ≤ t) :
+    μ.decreasingRearrangement ({y | μ.decreasingRearrangement f s < f y}.indicator f) t = 0 := by
+  refine nonpos_iff_eq_zero.1 (μ.decreasingRearrangement_le_iff.2 ((measure_mono ?_).trans
+    ((μ.measure_setOf_decreasingRearrangement_lt_le f s).trans (ENNReal.ofReal_le_ofReal hst))))
+  intro y hy
+  rw [mem_ofPred_eq] at hy
+  by_contra hyA
+  rw [indicator_of_notMem hyA] at hy
+  exact lt_irrefl _ hy
+
+/-- The part of `f` at or below the level `f* s` has decreasing rearrangement at most
+`min (f* t) (f* s)`. -/
+theorem decreasingRearrangement_indicator_compl_setOf_lt_le (f : α → ℝ≥0∞) (s t : ℝ) :
+    μ.decreasingRearrangement ({y | μ.decreasingRearrangement f s < f y}ᶜ.indicator f) t ≤
+      min (μ.decreasingRearrangement f t) (μ.decreasingRearrangement f s) := by
+  refine le_min (μ.decreasingRearrangement_indicator_le _ f t)
+    (μ.decreasingRearrangement_le_iff.2 ((measure_mono (t := ∅) ?_).trans (by simp)))
+  intro y hy
+  rw [mem_ofPred_eq] at hy
+  by_cases hyA : y ∈ {y | μ.decreasingRearrangement f s < f y}ᶜ
+  · rw [indicator_of_mem hyA] at hy
+    exact hyA hy
+  · rw [indicator_of_notMem hyA] at hy
+    exact ENNReal.not_lt_zero hy
 
 /-- Multiplication by a constant commutes with rearrangement. -/
 theorem decreasingRearrangement_const_mul (f : α → ℝ≥0∞) (a : ℝ≥0∞) (s : ℝ) :

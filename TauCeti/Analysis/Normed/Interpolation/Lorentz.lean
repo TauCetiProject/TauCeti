@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Interpolation.L1Linfty
-public import TauCeti.Analysis.Normed.Interpolation.RealMethod
+public import TauCeti.Analysis.Normed.Interpolation.RealMethod.Basic
 public import TauCeti.MeasureTheory.Function.Lorentz
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.Hardy

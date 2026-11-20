@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Interpolation.Lorentz
+import TauCeti.Analysis.SpecificLimits.DyadicSum
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
@@ -36,10 +37,13 @@ interpolation (`TauCeti.CompatibleCouple.kMethodENorm_apply_apply_le`) applies.
 Write `a = 1 / p`, `a₀ = 1 / p₀` and `a₁ = 1 / p₁`, so that `a₀ - a = θδ` and `a - a₁ = (1 - θ)δ`,
 and let `f*` be the decreasing rearrangement of `‖f‖`. For `s > 0` cut `f` at the level `f*(s)`:
 `f₀ = f 1_{‖f‖ > f*(s)}` and `f₁ = f - f₀`. Then the rearrangement of `‖f₀‖` is at most `f*` and
-vanishes beyond `s`, while that of `‖f₁‖` is at most `min(f*, f*(s))`. Since `f*` is antitone it is
-bounded on the dyadic intervals `(2^{-(n+1)} s, 2^{-n} s]` and `[2ⁿ s, 2ⁿ⁺¹ s)` by its values at
-their left endpoints, and Minkowski's inequality for series (`MeasureTheory.eLpNorm_tsum_le`) turns
-these step functions into the bounds
+vanishes beyond `s`, while that of `‖f₁‖` is at most `min(f*, f*(s))`
+(`MeasureTheory.Measure.decreasingRearrangement_indicator_setOf_lt_eq_zero`,
+`MeasureTheory.Measure.decreasingRearrangement_indicator_compl_setOf_lt_le`). Since `f*` is
+antitone it is bounded on the dyadic intervals `(2^{-(n+1)} s, 2^{-n} s]` and `[2ⁿ s, 2ⁿ⁺¹ s)` by
+its values at their left endpoints (`AntitoneOn.le_tsum_indicator_Ioc`,
+`AntitoneOn.le_tsum_indicator_Ico`), and Minkowski's inequality for series
+(`MeasureTheory.eLpNorm_tsum_indicator_const_le`) turns these step functions into the bounds
 `‖f₀‖_{p₀} ≤ ∑ₙ f*(2^{-(n+1)} s) (2^{-(n+1)} s)^{a₀}` and
 `‖f₁‖_{p₁} ≤ f*(s) s^{a₁} + ∑ₙ f*(2ⁿ s) (2ⁿ s)^{a₁}`. With `t = s^δ` and `F(u) = u^a f*(u)` this
 gives
@@ -82,10 +86,7 @@ theorem ofReal_kFunctional_lebesgue_le_eLpNorm_add_mul {v : (lebesgue 𝕜 E μ 
   by_cases hfin : eLpNorm f₀ p₀ μ + ENNReal.ofReal t * eLpNorm f₁ p₁ μ = ∞
   · rw [hfin]
     exact le_top
-  obtain ⟨hfin₀, hfin₁⟩ := ENNReal.add_ne_top.1 hfin
-  have h₀ : MemLp f₀ p₀ μ := memLp_iff.2 hfin₀.lt_top
-  have h₁ : MemLp f₁ p₁ μ := memLp_iff.2 <| lt_top_iff_ne_top.2 fun htop ↦ hfin₁ <| by
-    rw [htop, ENNReal.mul_top (by simpa using ht)]
+  obtain ⟨h₀, h₁⟩ := memLp_of_eLpNorm_add_mul_ne_top ht hfin
   have hdec : (lebesgue 𝕜 E μ p₀ p₁).fstToSum (h₀.toLp f₀) +
       (lebesgue 𝕜 E μ p₀ p₁).sndToSum (h₁.toLp f₁) = v := by
     refine (lebesgue 𝕜 E μ p₀ p₁).sumSpaceEmbed_injective (L1AddLinfty.toAEEqFun_injective ?_)
@@ -99,51 +100,12 @@ theorem ofReal_kFunctional_lebesgue_le_eLpNorm_add_mul {v : (lebesgue 𝕜 E μ 
       ≤ ENNReal.ofReal (‖h₀.toLp f₀‖ + t * ‖h₁.toLp f₁‖) :=
         ENNReal.ofReal_le_ofReal (kFunctional_le ht.le hdec)
     _ = eLpNorm f₀ p₀ μ + ENNReal.ofReal t * eLpNorm f₁ p₁ μ := by
-        rw [ENNReal.ofReal_add (norm_nonneg _) (by positivity), ENNReal.ofReal_mul ht.le,
-          Lp.norm_toLp, Lp.norm_toLp, ENNReal.ofReal_toReal hfin₀,
-          ENNReal.ofReal_toReal h₁.eLpNorm_ne_top]
+        rw [ofReal_norm_add_mul_norm _ _ ht.le, eLpNorm_congr_ae h₀.coeFn_toLp,
+          eLpNorm_congr_ae h₁.coeFn_toLp]
 
 /-! ### Dyadic bounds for the two parts of the cut -/
 
 section Dyadic
-
-/-- An antitone function is bounded on `(0, s]` by its values at the left endpoints of the
-dyadic intervals `(2⁻¹ ^ (n + 1) s, 2⁻¹ ^ n s]`. -/
-private theorem le_tsum_indicator_Ioc {R : ℝ → ℝ≥0∞} (hR : Antitone R) {s u : ℝ} (hu : 0 < u)
-    (hus : u ≤ s) :
-    R u ≤ ∑' n : ℕ, (Ioc (2⁻¹ ^ (n + 1) * s) (2⁻¹ ^ n * s)).indicator
-      (fun _ ↦ R (2⁻¹ ^ (n + 1) * s)) u := by
-  obtain ⟨n, hn₁, hn₂⟩ := exists_nat_pow_near ((one_le_div hu).2 hus) one_lt_two
-  have hmem : u ∈ Ioc (2⁻¹ ^ (n + 1) * s) (2⁻¹ ^ n * s) := by
-    rw [inv_pow, inv_pow, ← div_eq_inv_mul, ← div_eq_inv_mul]
-    rw [div_lt_iff₀ hu, mul_comm] at hn₂
-    rw [le_div_iff₀ hu, mul_comm] at hn₁
-    exact ⟨(div_lt_iff₀ (by positivity)).2 hn₂, (le_div_iff₀ (by positivity)).2 hn₁⟩
-  refine le_trans ?_ (le_tsum _ n)
-  rw [indicator_of_mem hmem]
-  exact hR hmem.1.le
-
-/-- An antitone function is bounded on `[s, ∞)` by its values at the left endpoints of the
-dyadic intervals `[2 ^ n s, 2 ^ (n + 1) s)`. -/
-private theorem le_tsum_indicator_Ico {R : ℝ → ℝ≥0∞} (hR : Antitone R) {s u : ℝ} (hs : 0 < s)
-    (hsu : s ≤ u) :
-    R u ≤ ∑' n : ℕ, (Ico (2 ^ n * s) (2 ^ (n + 1) * s)).indicator (fun _ ↦ R (2 ^ n * s)) u := by
-  obtain ⟨n, hn₁, hn₂⟩ := exists_nat_pow_near ((one_le_div hs).2 hsu) one_lt_two
-  have hmem : u ∈ Ico (2 ^ n * s) (2 ^ (n + 1) * s) :=
-    ⟨(le_div_iff₀ hs).1 hn₁, (div_lt_iff₀ hs).1 hn₂⟩
-  refine le_trans ?_ (le_tsum _ n)
-  rw [indicator_of_mem hmem]
-  exact hR hmem.1
-
-/-- The `Lʳ` seminorm of a step function `∑ₙ cₙ 1_{Iₙ}` is at most `∑ₙ cₙ ν(Iₙ) ^ (1 / r)`. -/
-private theorem eLpNorm_tsum_indicator_le {I : ℕ → Set ℝ} (hI : ∀ n, MeasurableSet (I n))
-    (c : ℕ → ℝ≥0∞) {r : ℝ≥0∞} (hr : 1 ≤ r) (ν : Measure ℝ) :
-    eLpNorm (fun u ↦ ∑' n, (I n).indicator (fun _ ↦ c n) u) r ν ≤
-      ∑' n, c n * ν (I n) ^ (1 / r.toReal) :=
-  (eLpNorm_tsum_le (fun n ↦ (measurable_const.indicator (hI n)).aemeasurable) hr).trans <|
-    tsum_le_tsum fun n ↦ by
-      simpa only [eNorm_eq_self] using
-        eLpNorm_indicator_const_le (c n) r (hI n).nullMeasurableSet (μ := ν)
 
 /-- A set `I ⊆ ℝ` of Lebesgue measure `ℓ` has measure at most `ℓ` for Lebesgue measure restricted
 to `(0, ∞)`, so its measure raised to `1 / r` is at most `ℓ ^ (1 / r)`. -/
@@ -173,23 +135,18 @@ private theorem eLpNorm_indicator_lt_le (hg : StronglyMeasurable g) (hr : 1 ≤ 
   -- The rearrangement of `‖g 1_A‖` is at most `g*` and vanishes beyond `s`.
   have hle : ∀ u, 0 < u → μ.decreasingRearrangement (fun x ↦ ‖A.indicator g x‖ₑ) u ≤ M u := by
     intro u hu
+    simp only [eNorm_indicator_eq_indicator_eNorm]
     rcases le_or_gt u s with hus | hsu
-    · refine (μ.decreasingRearrangement_mono (fun x ↦ ?_) u).trans
-        (le_tsum_indicator_Ioc (μ.antitone_decreasingRearrangement _) hu hus)
-      rw [eNorm_indicator_eq_indicator_eNorm]
-      exact indicator_le_self _ _ x
-    · have hsub : {x | 0 < ‖A.indicator g x‖ₑ} ⊆ A := fun x hx ↦ by
-        by_contra hxA
-        simp only [mem_ofPred_eq, indicator_of_notMem hxA, eNorm_zero, lt_self_iff_false] at hx
-      exact (μ.decreasingRearrangement_le_iff.2 <| (measure_mono hsub).trans <|
-        (μ.measure_setOf_decreasingRearrangement_lt_le _ s).trans
-          (ENNReal.ofReal_le_ofReal hsu.le)).trans zero_le
+    · exact (μ.decreasingRearrangement_indicator_le A _ u).trans
+        (((μ.antitone_decreasingRearrangement _).antitoneOn _).le_tsum_indicator_Ioc one_lt_two hu
+          hus)
+    · exact (μ.decreasingRearrangement_indicator_setOf_lt_eq_zero _ hsu.le).trans_le zero_le
   rw [← eLpNorm_eNorm _ (hg.indicator hA).aestronglyMeasurable,
     ← μ.eLpNorm_decreasingRearrangement hφ.aemeasurable]
   refine (eLpNorm_mono_eNorm_ae (g := M)
     (μ.measurable_decreasingRearrangement _).aestronglyMeasurable
     ((ae_restrict_mem measurableSet_Ioi).mono fun u hu ↦ ?_)).trans
-    ((eLpNorm_tsum_indicator_le (fun _ ↦ measurableSet_Ioc) _ hr _).trans
+    ((eLpNorm_tsum_indicator_const_le (fun _ ↦ measurableSet_Ioc.nullMeasurableSet) _ hr).trans
       (tsum_le_tsum fun n ↦ ?_))
   · simpa only [eNorm_eq_self] using hle u hu
   · gcongr
@@ -217,28 +174,21 @@ private theorem eLpNorm_indicator_compl_le (hg : StronglyMeasurable g) (hr : 1 �
   have hle : ∀ u, 0 < u →
       μ.decreasingRearrangement (fun x ↦ ‖Aᶜ.indicator g x‖ₑ) u ≤ (M₀ + M₁) u := by
     intro u hu
+    simp only [eNorm_indicator_eq_indicator_eNorm]
+    have h := μ.decreasingRearrangement_indicator_compl_setOf_lt_le (‖g ·‖ₑ) s u
     rcases le_or_gt u s with hus | hsu
-    · have hempty : {x | R s < ‖Aᶜ.indicator g x‖ₑ} = ∅ := by
-        refine eq_empty_of_forall_notMem fun x (hx : R s < _) ↦ ?_
-        by_cases hxA : x ∈ Aᶜ
-        · rw [indicator_of_mem hxA] at hx
-          exact hxA hx
-        · simp only [indicator_of_notMem hxA, eNorm_zero, ENNReal.not_lt_zero] at hx
-      refine le_add_right ((μ.decreasingRearrangement_le_iff.2 ?_).trans_eq
-        (indicator_of_mem (show u ∈ Ioc 0 s from ⟨hu, hus⟩) _).symm)
-      rw [hempty, measure_empty]
-      exact zero_le
-    · refine le_add_left ((μ.decreasingRearrangement_mono (fun x ↦ ?_) u).trans
-        (le_tsum_indicator_Ico (μ.antitone_decreasingRearrangement _) hs hsu.le))
-      rw [eNorm_indicator_eq_indicator_eNorm]
-      exact indicator_le_self _ _ x
+    · exact le_add_right ((h.trans (min_le_right _ _)).trans_eq
+        (indicator_of_mem (show u ∈ Ioc 0 s from ⟨hu, hus⟩) fun _ ↦ R s).symm)
+    · exact le_add_left ((h.trans (min_le_left _ _)).trans
+        (((μ.antitone_decreasingRearrangement _).antitoneOn _).le_tsum_indicator_Ico one_lt_two hs
+          hsu.le))
   rw [← eLpNorm_eNorm _ (hg.indicator hA).aestronglyMeasurable,
     ← μ.eLpNorm_decreasingRearrangement hφ.aemeasurable]
   refine (eLpNorm_mono_eNorm_ae (g := M₀ + M₁)
     (μ.measurable_decreasingRearrangement _).aestronglyMeasurable
     ((ae_restrict_mem measurableSet_Ioi).mono fun u hu ↦ ?_)).trans
-    ((eLpNorm_add_le hr).trans (add_le_add ?_ ((eLpNorm_tsum_indicator_le
-      (fun _ ↦ measurableSet_Ico) _ hr _).trans (tsum_le_tsum fun n ↦ ?_))))
+    ((eLpNorm_add_le hr).trans (add_le_add ?_ ((eLpNorm_tsum_indicator_const_le
+      (fun _ ↦ measurableSet_Ico.nullMeasurableSet) _ hr).trans (tsum_le_tsum fun n ↦ ?_))))
   · simpa only [eNorm_eq_self] using hle u hu
   · refine (eLpNorm_indicator_const_le _ r measurableSet_Ioc.nullMeasurableSet).trans ?_
     rw [eNorm_eq_self]

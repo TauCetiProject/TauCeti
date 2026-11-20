@@ -71,18 +71,18 @@ variable {𝕜 E : Type*} {α : Type*} {mα : MeasurableSpace α} {μ : Measure 
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] {t : ℝ}
 
 /-- The cost `‖g‖ + t ‖h‖` of a pair of `Lᵖ` functions, in terms of `eLpNorm`. -/
-private theorem ofReal_norm_add_mul_norm {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+theorem ofReal_norm_add_mul_norm {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
     (g : Lp E p μ) (h : Lp E q μ) (ht : 0 ≤ t) :
     ENNReal.ofReal (‖g‖ + t * ‖h‖) = eLpNorm g p μ + ENNReal.ofReal t * eLpNorm h q μ := by
   rw [ENNReal.ofReal_add (norm_nonneg _) (by positivity), ENNReal.ofReal_mul ht, Lp.norm_def,
     Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top g),
     ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top h)]
 
-/-- A splitting of finite cost `‖f₀‖₁ + t ‖f₁‖_∞`, with `t > 0`, is a pair of `L¹` and `L^∞`
-functions. -/
-private theorem memLp_of_eLpNorm_add_mul_ne_top {f₀ f₁ : α → E} (ht : 0 < t)
-    (hfin : eLpNorm f₀ 1 μ + ENNReal.ofReal t * eLpNorm f₁ ∞ μ ≠ ∞) :
-    MemLp f₀ 1 μ ∧ MemLp f₁ ∞ μ := by
+/-- A splitting of finite cost `‖f₀‖_{p₀} + t ‖f₁‖_{p₁}`, with `t > 0`, is a pair of `L^{p₀}` and
+`L^{p₁}` functions. -/
+theorem memLp_of_eLpNorm_add_mul_ne_top {p₀ p₁ : ℝ≥0∞} {f₀ f₁ : α → E} (ht : 0 < t)
+    (hfin : eLpNorm f₀ p₀ μ + ENNReal.ofReal t * eLpNorm f₁ p₁ μ ≠ ∞) :
+    MemLp f₀ p₀ μ ∧ MemLp f₁ p₁ μ := by
   obtain ⟨hfin₀, hfin₁⟩ := ENNReal.add_ne_top.1 hfin
   refine ⟨memLp_iff.2 hfin₀.lt_top, memLp_iff.2 (lt_top_iff_ne_top.2 fun htop => hfin₁ ?_)⟩
   rw [htop, ENNReal.mul_top (by simpa using ht)]
