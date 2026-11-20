@@ -256,16 +256,21 @@ theorem MemLpLoc.clm_comp_continuousOn {H : Type*} [NormedAddCommGroup H] [Norme
     (memLpLoc_iff.1 hB K hKU hK)
     ((hE.mono hKU).memLp_top_restrict_of_subset_isCompact hK hK.measurableSet subset_rfl)
 /-- **Hölder's inequality on compact subsets**: a locally `Lᵖ` field of continuous linear maps
+applied to a locally `L^q` field is locally `Lʳ` when `1/p + 1/q = 1/r`. -/
+theorem MemLpLoc.clm_apply {r : ENNReal} [ENNReal.HolderTriple p q r] {A : ℂ → F →L[ℝ] G}
+    {w : ℂ → F} (hA : MemLpLoc p U A) (hw : MemLpLoc q U w) :
+    MemLpLoc r U (fun z => A z (w z)) :=
+  fun K hK hc => (ContinuousLinearMap.id ℝ (F →L[ℝ] G)).memLp_of_bilin r (hA K hK hc)
+    (hw K hK hc)
+
+/-- **Hölder's inequality on compact subsets**: a locally `Lᵖ` field of continuous linear maps
 applied to a locally `L^q` field is locally integrable on a locally closed set when
 `1/p + 1/q ≤ 1`. -/
 theorem MemLpLoc.locallyIntegrableOn_clm_apply {A : ℂ → F →L[ℝ] G} {w : ℂ → F}
     (hA : MemLpLoc p U A) (hw : MemLpLoc q U w) (hpq : p⁻¹ + q⁻¹ ≤ 1)
     (hU : IsLocallyClosed U) : LocallyIntegrableOn (fun z => A z (w z)) U volume := by
   have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ⟨(inv_inv _).symm⟩
-  exact MemLpLoc.locallyIntegrableOn
-    (fun K hK hc => (ContinuousLinearMap.id ℝ (F →L[ℝ] G)).memLp_of_bilin _ (hA K hK hc)
-      (hw K hK hc))
-    (ENNReal.one_le_inv.2 hpq) hU
+  exact (hA.clm_apply hw).locallyIntegrableOn (ENNReal.one_le_inv.2 hpq) hU
 
 open TauCeti.MeasureTheory in
 /-- A locally `Lᵖ` function on an open set `Ω`, with `1 ≤ p`, agrees almost everywhere on `Ω` with
@@ -300,6 +305,12 @@ theorem MemLpLoc.clm_apply_continuousOn {A : ℂ → F →L[ℝ] G} (hA : MemLpL
     (memLpLoc_iff.1 hA K hK hc).of_bilin (fun B x => B x) 1
       (memLpLoc_iff.1 (hf.memLpLoc (p := ⊤)) K hK hc) isBoundedBilinearMap_apply.continuous
       (.of_forall fun z => by simpa using (A z).le_opNNNorm (f z))
+
+/-- A field of continuous linear maps continuous on `U`, applied to a locally `Lᵖ` field, is
+locally `Lᵖ` on `U`, since the operators are bounded on every compact subset of `U`. -/
+theorem MemLpLoc.continuousOn_clm_apply {A : ℂ → F →L[ℝ] G} {w : ℂ → F} (hw : MemLpLoc p U w)
+    (hA : ContinuousOn A U) : MemLpLoc p U (fun z => A z (w z)) :=
+  hA.memLpLoc.clm_apply (p := ⊤) hw
 
 /-- A continuous factor supported in `U` extends a local `Lᵖ` function on `U` by zero to a local
 `Lᵖ` function on the whole plane: on a compact set `K` the product only sees
