@@ -281,15 +281,14 @@ theorem val_reflection (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
 theorem reflection_mulVec_self (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
     (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) :
     ((reflection hA hA' v hv : GL n K) : Matrix n n K) *ᵥ v = -v := by
-  rw [val_reflection, sub_mulVec, one_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec,
-    op_smul_eq_smul, smul_smul, div_mul_cancel₀ _ hv, two_smul, sub_add_cancel_left]
+  simp [sub_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec, smul_smul,
+    div_mul_cancel₀ _ hv, two_smul]
 
 /-- The reflection in `v` fixes every vector `w` orthogonal to `v` for the form. -/
 theorem reflection_mulVec_of_dotProduct_eq_zero (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
     (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) {w : n → K} (hw : star v ⬝ᵥ A *ᵥ w = 0) :
     ((reflection hA hA' v hv : GL n K) : Matrix n n K) *ᵥ w = w := by
-  rw [val_reflection, sub_mulVec, one_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec,
-    hw, op_smul_eq_smul, zero_smul, smul_zero, sub_zero]
+  simp [sub_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec, hw]
 
 /-- For a Hermitian invertible Gram matrix `A`, an element of the centre of `unitaryGroupOf A`
 commutes with the rank-one matrix `v (star v ᵥ* A)` of every non-isotropic vector `v`, since it
@@ -398,7 +397,8 @@ theorem mem_range_fromBlocksHom_iff {g : indefiniteUnitaryGroup p q R} :
   set M : Matrix (p ⊕ q) (p ⊕ q) R := ((g : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R)
   have hM : M = fromBlocks M.toBlocks₁₁ M.toBlocks₁₂ 0 M.toBlocks₂₂ := by
     rw [← hC, fromBlocks_toBlocks]
-  have h : star M * indefiniteDiagonal p q R * M = indefiniteDiagonal p q R := g.2
+  have h : star M * indefiniteDiagonal p q R * M = indefiniteDiagonal p q R :=
+    mem_unitaryGroupOf_iff.mp g.2
   rw [hM, indefiniteDiagonal_eq_fromBlocks, star_eq_conjTranspose, fromBlocks_conjTranspose,
     fromBlocks_multiply, fromBlocks_multiply, fromBlocks_inj] at h
   simp only [conjTranspose_zero, Matrix.mul_one, Matrix.mul_zero, add_zero, Matrix.zero_mul,
