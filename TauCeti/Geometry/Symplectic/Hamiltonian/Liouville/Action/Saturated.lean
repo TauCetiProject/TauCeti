@@ -172,9 +172,10 @@ private theorem image_univ_prod_saturated (hF : ContMDiff I 𝓘(ℝ, ι → ℝ
       ((hloc c hc θ).mdifferentiableAt (by simp))
   · -- the part of the level of `y` in `V` is the connected image of `ℝ^ι × {F y}`, and compact
     have hyD : F y ∈ D := hFV ▸ mem_image_of_mem F hy
-    refine (IsPreconnected.connectedComponentIn_eq_of_isClosed
+    refine (IsPreconnected.connectedComponentIn_eq_of_closure_inter_subset
       (S := Ψ '' (univ ×ˢ D) ∩ F ⁻¹' {F y}) ?_ ⟨hy, rfl⟩ hVo rfl
-      (hcompact _ (singleton_subset_iff.2 hyD) isCompact_singleton).isClosed).symm
+      fun _ hz ↦ (hcompact _ (singleton_subset_iff.2 hyD) isCompact_singleton).isClosed
+        |>.closure_subset hz.1).symm
     rw [image_univ_prod_inter_preimage hFΨ, inter_eq_self_of_subset_right
       (singleton_subset_iff.2 hyD)]
     exact (isPreconnected_univ.prod isPreconnected_singleton).image Ψ
