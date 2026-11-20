@@ -95,8 +95,8 @@ example :
     pRootClosure p (Polynomial (ZMod p)) (Polynomial (ZMod p)) = ⊤ := by
   let := (Polynomial.expand (ZMod p) p).toRingHom.toAlgebra
   refine eq_top_iff.mpr fun f _ ↦ mem_pRootClosure_of_pow_pow_mem (n := 1) ⟨f, ?_⟩
-  rw [pow_one, ← ZMod.expand_card]
-  rfl
+  rw [pow_one, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
+    ZMod.expand_card]
 
 end Frobenius
 

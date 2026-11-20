@@ -22,14 +22,15 @@ if `s ^ p ∈ A` forces `s ∈ A`, and the *`p`-root closure* `R^†_S` of `R` i
 R ⊆ R^†_S ⊆ R^+_S ⊆ R^*_S ⊆ completeIntegralClosure R S,
 ```
 
-where `R^+_S` is the integral closure and the last inclusion needs `g` to be a nonzerodivisor.
+where `R^+_S` is the integral closure, the second inclusion needs `p > 0` and the last needs `g`
+to be a nonzerodivisor.
 `R^*_S` is the set of elements whose powers lie in one finitely generated `R`-submodule of `S`,
 which is André's complete integral closure; Mathlib's `completeIntegralClosure` allows any
 nonzerodivisor of `R` as multiplier.
 
-If `t = t 0 ∈ R` carries compatible `p`-power roots `t (k + 1) ^ p = t k`, the *root saturation*
-of a subalgebra `A` is `t^{-1/p^∞}A = {s | t k • s ∈ A for every k}`. For a `p`-root closed `A`
-the root saturation is the complete integral closure of `A` away from `t`; in general
+For `p > 1`, if `t = t 0 ∈ R` carries compatible `p`-power roots `t (k + 1) ^ p = t k`, the *root
+saturation* of a subalgebra `A` is `t^{-1/p^∞}A = {s | t k • s ∈ A for every k}`. For a `p`-root
+closed `A` the root saturation is the complete integral closure of `A` away from `t`; in general
 `R^*_S ⊆ t^{-1/p^∞}R^†_S`, with equality as soon as `t ^ N` maps `R^†_S` into `R`. Neither
 statement needs `t` to be a nonzerodivisor or `S` to be a localisation.
 
@@ -160,7 +161,7 @@ def pRootClosure : Subalgebra R S :=
 variable {p R S}
 
 /-- The `p`-root closure is `p`-root closed. -/
-theorem pRootClosure_isPRootClosed : (pRootClosure p R S).IsPRootClosed p :=
+theorem isPRootClosed_pRootClosure : (pRootClosure p R S).IsPRootClosed p :=
   isPRootClosed_sInf fun _ hA ↦ hA
 
 /-- The `p`-root closure lies in every `p`-root closed subalgebra. -/
@@ -170,14 +171,14 @@ theorem pRootClosure_le {A : Subalgebra R S} (hA : A.IsPRootClosed p) : pRootClo
 /-- `R` is `p`-root closed in `S` iff it equals its `p`-root closure. -/
 theorem pRootClosure_eq_bot_iff :
     pRootClosure p R S = ⊥ ↔ (⊥ : Subalgebra R S).IsPRootClosed p :=
-  ⟨fun h ↦ h ▸ pRootClosure_isPRootClosed, fun h ↦ le_bot_iff.mp (pRootClosure_le h)⟩
+  ⟨fun h ↦ h ▸ isPRootClosed_pRootClosure, fun h ↦ le_bot_iff.mp (pRootClosure_le h)⟩
 
 /-- A `p`-radicial element, one with `s ^ p ^ n ∈ R` for some `n`, lies in the `p`-root
 closure. -/
 theorem mem_pRootClosure_of_pow_pow_mem {s : S} {n : ℕ}
     (hs : s ^ p ^ n ∈ (algebraMap R S).range) : s ∈ pRootClosure p R S := by
   obtain ⟨r, hr⟩ := hs
-  exact pRootClosure_isPRootClosed.mem_of_pow_pow_mem (hr ▸ algebraMap_mem _ r)
+  exact isPRootClosed_pRootClosure.mem_of_pow_pow_mem (hr ▸ algebraMap_mem _ r)
 
 /-- In characteristic `p`, the `p`-radicial elements form a `p`-root closed subalgebra, so they
 are the `p`-root closure. -/
@@ -205,7 +206,7 @@ theorem map_pRootClosure_le {R' S' : Type*} [CommRing R'] [CommRing S'] [Algebra
     [Algebra R' S'] [Algebra R S'] [IsScalarTower R R' S'] (f : S →ₐ[R] S') :
     (pRootClosure p R S).map f ≤ (pRootClosure p R' S').restrictScalars R :=
   Subalgebra.map_le.mpr <| pRootClosure_le <|
-    (isPRootClosed_restrictScalars.mpr pRootClosure_isPRootClosed).comap f
+    (isPRootClosed_restrictScalars.mpr isPRootClosed_pRootClosure).comap f
 
 end PRootClosure
 
@@ -295,26 +296,31 @@ end TauCeti
 
 /-! ### Root saturation -/
 
-namespace Subalgebra
+namespace TauCeti
 
-variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] {p : ℕ} {t : ℕ → R}
-
-/-- `t (j + k) ^ p ^ k = t j` for compatible `p`-power roots, mapped to `S`. -/
-private theorem algebraMap_root_pow_pow (ht : ∀ k, t (k + 1) ^ p = t k) (j k : ℕ) :
-    algebraMap R S (t (j + k)) ^ p ^ k = algebraMap R S (t j) := by
-  rw [← map_pow]
-  congr 1
+/-- For compatible `p`-power roots `t (k + 1) ^ p = t k`, the root `t (j + k)` is a `p ^ k`-th
+root of `t j`. -/
+theorem pow_pow_of_succ_pow_eq {M : Type*} [Monoid M] {p : ℕ} {t : ℕ → M}
+    (ht : ∀ k, t (k + 1) ^ p = t k) (j k : ℕ) : t (j + k) ^ p ^ k = t j := by
   induction k with
   | zero => simp
   | succ k ih => rw [← ih, ← add_assoc, ← ht (j + k), ← pow_mul, pow_succ']
+
+end TauCeti
+
+namespace Subalgebra
+
+open TauCeti
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] {p : ℕ} {t : ℕ → R}
 
 /-- If `t k * s ∈ A` for every root `t k` of `t 0`, then `t 0 * s ^ n ∈ A` for every `n`. -/
 theorem algebraMap_mul_pow_mem_of_forall_algebraMap_mul_mem (hp : 1 < p)
     (ht : ∀ k, t (k + 1) ^ p = t k) {A : Subalgebra R S} {s : S}
     (hs : ∀ k, algebraMap R S (t k) * s ∈ A) (n : ℕ) : algebraMap R S (t 0) * s ^ n ∈ A := by
   have hle : n ≤ p ^ n := (Nat.lt_pow_self hp).le
-  rw [← algebraMap_root_pow_pow ht 0 n, zero_add, ← Nat.sub_add_cancel hle, pow_add, mul_assoc,
-    ← mul_pow]
+  rw [← pow_pow_of_succ_pow_eq ht 0 n, zero_add, map_pow, ← Nat.sub_add_cancel hle, pow_add,
+    mul_assoc, ← mul_pow]
   exact mul_mem (pow_mem (algebraMap_mem A _) _) (pow_mem (hs n) n)
 
 /-- If `A` is `p`-root closed and `t 0 ^ m * s ^ n ∈ A` for every `n`, then `t k * s ∈ A` for
@@ -326,13 +332,13 @@ theorem IsPRootClosed.algebraMap_mul_mem_of_forall_pow_mul_pow_mem (hp : 1 < p)
   -- `t (k + m) ^ m • s` has `p ^ (k + m)`-th power `t 0 ^ m • s ^ p ^ (k + m)`
   have hroot : algebraMap R S (t (k + m)) ^ m * s ∈ A := by
     refine hA.mem_of_pow_pow_mem (n := k + m) ?_
-    have h0 := algebraMap_root_pow_pow (S := S) ht 0 (k + m)
-    rw [zero_add] at h0
+    have h0 := congrArg (algebraMap R S) (pow_pow_of_succ_pow_eq ht 0 (k + m))
+    rw [zero_add, map_pow] at h0
     rw [mul_pow, ← pow_mul, mul_comm m, pow_mul, h0]
     exact hs _
   -- and `t k = t (k + m) ^ p ^ m` with `m ≤ p ^ m`
   have hle : m ≤ p ^ m := (Nat.lt_pow_self hp).le
-  rw [← algebraMap_root_pow_pow ht k m, ← Nat.sub_add_cancel hle, pow_add, mul_assoc]
+  rw [← pow_pow_of_succ_pow_eq ht k m, map_pow, ← Nat.sub_add_cancel hle, pow_add, mul_assoc]
   exact mul_mem (pow_mem (algebraMap_mem A _) _) hroot
 
 /-- The root saturation `t^{-1/p^∞}A = {s | t k • s ∈ A for every k}` of a subalgebra `A` along
@@ -381,8 +387,8 @@ theorem IsPRootClosed.restrictScalars_awayCompleteIntegralClosure_eq_rootSaturat
       S).restrictScalars R = A.rootSaturation hp ht := by
   ext s
   simp only [mk_algebraMap, mem_restrictScalars, TauCeti.mem_awayCompleteIntegralClosure,
-    range_algebraMap, smul_def, SubmonoidClass.coe_pow, SubalgebraClass.coe_algebraMap,
-    smul_eq_mul, Subring.mem_mk, mem_toSubsemiring, mem_rootSaturation]
+    range_algebraMap, mem_toSubring, smul_def, SubmonoidClass.coe_pow,
+    SubalgebraClass.coe_algebraMap, smul_eq_mul, mem_rootSaturation]
   refine ⟨fun ⟨_, hm⟩ ↦ hA.algebraMap_mul_mem_of_forall_pow_mul_pow_mem hp ht hm,
     fun h ↦ ⟨1, fun n ↦ ?_⟩⟩
   rw [pow_one]
@@ -404,7 +410,7 @@ theorem awayCompleteIntegralClosure_le_rootSaturation_pRootClosure (hp : 1 < p)
     awayCompleteIntegralClosure (t 0) S ≤ (pRootClosure p R S).rootSaturation hp ht := by
   rintro s ⟨m, hm⟩
   refine mem_rootSaturation.mpr <|
-    pRootClosure_isPRootClosed.algebraMap_mul_mem_of_forall_pow_mul_pow_mem hp ht (m := m)
+    isPRootClosed_pRootClosure.algebraMap_mul_mem_of_forall_pow_mul_pow_mem hp ht (m := m)
       fun n ↦ ?_
   obtain ⟨r, hr⟩ := hm n
   rw [← map_pow, ← Algebra.smul_def, ← hr]
