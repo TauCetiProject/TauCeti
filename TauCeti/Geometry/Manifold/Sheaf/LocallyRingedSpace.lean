@@ -19,8 +19,9 @@ finite-dimensional and `𝕜` is complete: every morphism of locally ringed spac
 `φ : locallyRingedSpace IM M ⟶ locallyRingedSpace IN N` which preserves values at points comes
 from a unique smooth map, namely its underlying continuous map.
 
-Preserving values means `φ.stalkMap x ≫ evalHom x = evalHom (φ.base x)` for every `x`: the
-induced map of residue fields `𝕜 → 𝕜` is the identity. This is the condition of a morphism of
+Preserving values (`ChartedSpace.PreservesValues`) means
+`φ.stalkMap x ≫ evalHom x = evalHom (φ.base x)` for every `x`: the induced map of residue fields
+`𝕜 → 𝕜` is the identity. This is the condition of a morphism of
 locally `𝕜`-ringed spaces, and it is not automatic: on a one-point complex manifold, whose
 structure sheaf is `ℂ`, complex conjugation is an endomorphism of the locally ringed space
 which is not induced by any map. By the usual residue-field argument, it suffices to check the
@@ -36,10 +37,13 @@ morphism induced by `φ.base` (`ChartedSpace.eq_locallyRingedSpaceMap`).
 
 ## Main declarations
 
+* `ChartedSpace.PreservesValues`: the morphisms inducing the identity on residue fields; this
+  holds for identities, compositions and `locallyRingedSpaceMap`.
 * `ChartedSpace.contMDiff_base`: the underlying map of a value-preserving morphism is smooth.
 * `ChartedSpace.eq_locallyRingedSpaceMap`: such a morphism is induced by its underlying map.
 * `ChartedSpace.locallyRingedSpaceMapEquiv`: smooth maps `M → N` correspond bijectively to
-  value-preserving morphisms of locally ringed spaces.
+  value-preserving morphisms of locally ringed spaces, compatibly with identities and
+  composition.
 
 For `𝕜 = ℂ` the smooth functions and maps are the holomorphic ones;
 `TauCeti.holomorphicMapLocalRingedEquiv` restates the correspondence for holomorphic maps.
@@ -67,15 +71,48 @@ variable {𝕜 : Type u} [NontriviallyNormedField 𝕜]
   {EN : Type*} [NormedAddCommGroup EN] [NormedSpace 𝕜 EN]
   {HN : Type*} [TopologicalSpace HN] {IN : ModelWithCorners 𝕜 EN HN}
   {N : Type u} [TopologicalSpace N] [ChartedSpace HN N]
+  {EP : Type*} [NormedAddCommGroup EP] [NormedSpace 𝕜 EP]
+  {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners 𝕜 EP HP}
+  {P : Type u} [TopologicalSpace P] [ChartedSpace HP P]
 
 namespace ChartedSpace
+
+/-- A morphism of locally ringed spaces between manifolds *preserves values* if at every point `x`
+its stalk map followed by evaluation at `x` is evaluation at the image of `x`, that is, it induces
+the identity on the residue fields `𝕜`. These are the morphisms of locally `𝕜`-ringed spaces. -/
+def PreservesValues (φ : locallyRingedSpace IM M ⟶ locallyRingedSpace IN N) : Prop :=
+  ∀ x : M, φ.stalkMap x ≫ smoothSheafCommRing.evalHom IM 𝓘(𝕜) M 𝕜 x =
+    smoothSheafCommRing.evalHom IN 𝓘(𝕜) N 𝕜 (φ.base x)
+
+/-- Unfolding `PreservesValues` into its pointwise condition. -/
+theorem preservesValues_iff (φ : locallyRingedSpace IM M ⟶ locallyRingedSpace IN N) :
+    PreservesValues φ ↔ ∀ x : M, φ.stalkMap x ≫ smoothSheafCommRing.evalHom IM 𝓘(𝕜) M 𝕜 x =
+      smoothSheafCommRing.evalHom IN 𝓘(𝕜) N 𝕜 (φ.base x) :=
+  Iff.rfl
+
+/-- The morphism induced by a smooth map preserves values. -/
+theorem preservesValues_locallyRingedSpaceMap (f : M → N) (hf : ContMDiff IM IN ∞ f) :
+    PreservesValues (locallyRingedSpaceMap f hf) :=
+  stalkMap_locallyRingedSpaceMap_evalHom f hf
+
+/-- The identity morphism preserves values. -/
+theorem preservesValues_id : PreservesValues (𝟙 (locallyRingedSpace IM M)) :=
+  locallyRingedSpace_id IM M ▸ preservesValues_locallyRingedSpaceMap id contMDiff_id
+
+/-- A composition of value-preserving morphisms preserves values. -/
+theorem PreservesValues.comp {φ : locallyRingedSpace IM M ⟶ locallyRingedSpace IN N}
+    {ψ : locallyRingedSpace IN N ⟶ locallyRingedSpace IP P} (hφ : PreservesValues φ)
+    (hψ : PreservesValues ψ) : PreservesValues (φ ≫ ψ) := fun x ↦ by
+  rw [LocallyRingedSpace.stalkMap_comp]
+  exact (Category.assoc _ _ _).trans
+    ((congrArg (ψ.stalkMap (φ.base x) ≫ ·) (hφ x)).trans (hψ (φ.base x)))
+
 
 /-- A morphism of locally ringed spaces between manifolds that preserves values at points acts on
 sections by composition with its underlying map. -/
 theorem locallyRingedSpace_c_app_apply
     (φ : locallyRingedSpace IM M ⟶ locallyRingedSpace IN N)
-    (hφ : ∀ x : M, φ.stalkMap x ≫ smoothSheafCommRing.evalHom IM 𝓘(𝕜) M 𝕜 x =
-      smoothSheafCommRing.evalHom IN 𝓘(𝕜) N 𝕜 (φ.base x))
+    (hφ : PreservesValues φ)
     {V : Opens N} (g : (smoothSheafCommRing IN 𝓘(𝕜) N 𝕜).presheaf.obj (op V))
     {x : M} (hx : φ.base x ∈ V) :
     (φ.c.app (op V) g).1 ⟨x, hx⟩ = g ⟨φ.base x, hx⟩ := by
@@ -96,8 +133,7 @@ private def chartCoordinateSection [IsManifold IN ∞ N] (y : N) (ℓ : EN →L[
 values at points is smooth, when the target is finite-dimensional. -/
 theorem contMDiff_base [CompleteSpace 𝕜] [FiniteDimensional 𝕜 EN] [IsManifold IN ∞ N]
     (φ : locallyRingedSpace IM M ⟶ locallyRingedSpace IN N)
-    (hφ : ∀ x : M, φ.stalkMap x ≫ smoothSheafCommRing.evalHom IM 𝓘(𝕜) M 𝕜 x =
-      smoothSheafCommRing.evalHom IN 𝓘(𝕜) N 𝕜 (φ.base x)) :
+    (hφ : PreservesValues φ) :
     ContMDiff (M := M) (M' := N) IM IN ∞ φ.base := by
   intro x
   -- Name the underlying map with its manifold types, so that the charted-space instances apply.
@@ -127,8 +163,7 @@ theorem contMDiff_base [CompleteSpace 𝕜] [FiniteDimensional 𝕜 EN] [IsManif
 morphism induced by its underlying smooth map, when the target is finite-dimensional. -/
 theorem eq_locallyRingedSpaceMap [CompleteSpace 𝕜] [FiniteDimensional 𝕜 EN] [IsManifold IN ∞ N]
     (φ : locallyRingedSpace IM M ⟶ locallyRingedSpace IN N)
-    (hφ : ∀ x : M, φ.stalkMap x ≫ smoothSheafCommRing.evalHom IM 𝓘(𝕜) M 𝕜 x =
-      smoothSheafCommRing.evalHom IN 𝓘(𝕜) N 𝕜 (φ.base x)) :
+    (hφ : PreservesValues φ) :
     φ = locallyRingedSpaceMap (M := M) (N := N) φ.base (contMDiff_base φ hφ) := by
   -- The two base maps agree definitionally, so the transport between them is the identity and
   -- the sheaf maps can be compared section by section.
@@ -167,11 +202,11 @@ theorem stalkMap_evalHom_of_forall_C
 /-- Smooth maps `M → N` into a finite-dimensional manifold are the morphisms of locally ringed
 spaces `locallyRingedSpace IM M ⟶ locallyRingedSpace IN N` which preserve values at points: a
 smooth map gives `locallyRingedSpaceMap`, and a morphism gives its underlying map. -/
+@[expose]
 def locallyRingedSpaceMapEquiv [CompleteSpace 𝕜] [FiniteDimensional 𝕜 EN] [IsManifold IN ∞ N] :
-    C^∞⟮IM, M; IN, N⟯ ≃ {φ : locallyRingedSpace IM M ⟶ locallyRingedSpace IN N //
-      ∀ x : M, φ.stalkMap x ≫ smoothSheafCommRing.evalHom IM 𝓘(𝕜) M 𝕜 x =
-        smoothSheafCommRing.evalHom IN 𝓘(𝕜) N 𝕜 (φ.base x)} where
-  toFun f := ⟨locallyRingedSpaceMap f f.contMDiff, stalkMap_locallyRingedSpaceMap_evalHom f _⟩
+    C^∞⟮IM, M; IN, N⟯ ≃
+      {φ : locallyRingedSpace IM M ⟶ locallyRingedSpace IN N // PreservesValues φ} where
+  toFun f := ⟨locallyRingedSpaceMap f f.contMDiff, preservesValues_locallyRingedSpaceMap f _⟩
   invFun φ := ⟨φ.1.base, contMDiff_base φ.1 φ.2⟩
   left_inv _ := rfl
   right_inv φ := Subtype.ext (eq_locallyRingedSpaceMap φ.1 φ.2).symm
@@ -185,9 +220,23 @@ theorem locallyRingedSpaceMapEquiv_apply_coe [CompleteSpace 𝕜] [FiniteDimensi
 /-- The smooth map attached to a value-preserving morphism is its underlying map. -/
 @[simp]
 theorem coe_locallyRingedSpaceMapEquiv_symm_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜 EN]
-    [IsManifold IN ∞ N] (φ : {φ : locallyRingedSpace IM M ⟶ locallyRingedSpace IN N //
-      ∀ x : M, φ.stalkMap x ≫ smoothSheafCommRing.evalHom IM 𝓘(𝕜) M 𝕜 x =
-        smoothSheafCommRing.evalHom IN 𝓘(𝕜) N 𝕜 (φ.base x)}) :
+    [IsManifold IN ∞ N]
+    (φ : {φ : locallyRingedSpace IM M ⟶ locallyRingedSpace IN N // PreservesValues φ}) :
     ⇑(locallyRingedSpaceMapEquiv.symm φ) = φ.1.base := (rfl)
+
+/-- The identity map corresponds to the identity morphism. -/
+theorem locallyRingedSpaceMapEquiv_id [CompleteSpace 𝕜] [FiniteDimensional 𝕜 EM]
+    [IsManifold IM ∞ M] :
+    (locallyRingedSpaceMapEquiv (ContMDiffMap.id : C^∞⟮IM, M; IM, M⟯)).1 =
+      𝟙 (locallyRingedSpace IM M) :=
+  locallyRingedSpace_id IM M
+
+/-- A composition of smooth maps corresponds to the composition of morphisms. -/
+theorem locallyRingedSpaceMapEquiv_comp [CompleteSpace 𝕜] [FiniteDimensional 𝕜 EN]
+    [IsManifold IN ∞ N] [FiniteDimensional 𝕜 EP] [IsManifold IP ∞ P]
+    (g : C^∞⟮IN, N; IP, P⟯) (f : C^∞⟮IM, M; IN, N⟯) :
+    (locallyRingedSpaceMapEquiv (g.comp f)).1 =
+      (locallyRingedSpaceMapEquiv f).1 ≫ (locallyRingedSpaceMapEquiv g).1 :=
+  locallyRingedSpace_comp IP f.contMDiff g.contMDiff
 
 end ChartedSpace

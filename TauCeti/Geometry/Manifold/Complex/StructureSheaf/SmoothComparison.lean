@@ -186,7 +186,7 @@ end TauCeti.holomorphicStructureSheaf
 
 namespace TauCeti
 
-open AlgebraicGeometry
+open AlgebraicGeometry CategoryTheory
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
@@ -194,6 +194,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] [FiniteDimensional ℂ E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'} [J.Boundaryless]
   {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y] [IsManifold J 1 Y]
+  {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℂ E''] [FiniteDimensional ℂ E'']
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℂ E'' H''} [K.Boundaryless]
+  {Z : Type} [TopologicalSpace Z] [ChartedSpace H'' Z] [IsManifold K 1 Z]
 
 /-- **Holomorphic maps are the morphisms of locally `ℂ`-ringed spaces.** Holomorphic maps
 between finite-dimensional complex manifolds without boundary correspond to the morphisms of
@@ -201,11 +204,10 @@ their native locally ringed spaces that preserve values at points, that is, indu
 on the residue fields `ℂ`. A holomorphic map gives the pullback of functions
 (`ChartedSpace.locallyRingedSpaceMap`), and such a morphism gives its underlying map, which is
 holomorphic. -/
+@[expose]
 def holomorphicMapLocalRingedEquiv :
     C^ω⟮I, X; J, Y⟯ ≃ {φ : ChartedSpace.locallyRingedSpace I X ⟶
-        ChartedSpace.locallyRingedSpace J Y //
-      ∀ x : X, φ.stalkMap x ≫ smoothSheafCommRing.evalHom I 𝓘(ℂ) X ℂ x =
-        smoothSheafCommRing.evalHom J 𝓘(ℂ) Y ℂ (φ.base x)} :=
+        ChartedSpace.locallyRingedSpace J Y // ChartedSpace.PreservesValues φ} :=
   haveI : IsManifold J ∞ Y := IsManifold.of_ne_zero ∞ one_ne_zero ‹_›
   haveI := FiniteDimensional.completeSpace ℂ E'
   Equiv.trans (β := C^∞⟮I, X; J, Y⟯)
@@ -215,27 +217,36 @@ def holomorphicMapLocalRingedEquiv :
       right_inv _ := rfl }
     ChartedSpace.locallyRingedSpaceMapEquiv
 
+-- `holomorphicMapLocalRingedEquiv` only rewraps maps between `C^ω` and `C^∞`, and the coercion of
+-- a rewrapped map `⟨f, _⟩` is `f` itself (`ContMDiffMap.coeFn_mk` holds by `rfl`), so the lemmas
+-- below are definitional: both equivalences are exposed for this purpose.
+
 /-- The morphism attached to a holomorphic map is its pullback of functions. -/
 @[simp]
 theorem holomorphicMapLocalRingedEquiv_apply_coe (f : C^ω⟮I, X; J, Y⟯) :
     (holomorphicMapLocalRingedEquiv f).1 =
-      ChartedSpace.locallyRingedSpaceMap f (f.contMDiff.of_le (by simp)) := by
-  have : IsManifold J ∞ Y := IsManifold.of_ne_zero ∞ one_ne_zero ‹_›
-  have := FiniteDimensional.completeSpace ℂ E'
-  rw [holomorphicMapLocalRingedEquiv, Equiv.trans_apply,
-    ChartedSpace.locallyRingedSpaceMapEquiv_apply_coe]
+      ChartedSpace.locallyRingedSpaceMap f (f.contMDiff.of_le (by simp)) :=
   rfl
 
 /-- The holomorphic map attached to a value-preserving morphism is its underlying map. -/
 @[simp]
 theorem coe_holomorphicMapLocalRingedEquiv_symm_apply
     (φ : {φ : ChartedSpace.locallyRingedSpace I X ⟶ ChartedSpace.locallyRingedSpace J Y //
-      ∀ x : X, φ.stalkMap x ≫ smoothSheafCommRing.evalHom I 𝓘(ℂ) X ℂ x =
-        smoothSheafCommRing.evalHom J 𝓘(ℂ) Y ℂ (φ.base x)}) :
-    ⇑(holomorphicMapLocalRingedEquiv.symm φ) = φ.1.base := by
-  have : IsManifold J ∞ Y := IsManifold.of_ne_zero ∞ one_ne_zero ‹_›
-  have := FiniteDimensional.completeSpace ℂ E'
-  rw [holomorphicMapLocalRingedEquiv, Equiv.symm_trans_apply]
-  exact ChartedSpace.coe_locallyRingedSpaceMapEquiv_symm_apply φ
+      ChartedSpace.PreservesValues φ}) :
+    ⇑(holomorphicMapLocalRingedEquiv.symm φ) = φ.1.base :=
+  rfl
+
+/-- The identity holomorphic map corresponds to the identity morphism. -/
+theorem holomorphicMapLocalRingedEquiv_id :
+    (holomorphicMapLocalRingedEquiv (ContMDiffMap.id : C^ω⟮I, X; I, X⟯)).1 =
+      𝟙 (ChartedSpace.locallyRingedSpace I X) :=
+  ChartedSpace.locallyRingedSpace_id I X
+
+/-- A composition of holomorphic maps corresponds to the composition of morphisms. -/
+theorem holomorphicMapLocalRingedEquiv_comp (g : C^ω⟮J, Y; K, Z⟯) (f : C^ω⟮I, X; J, Y⟯) :
+    (holomorphicMapLocalRingedEquiv (g.comp f)).1 =
+      (holomorphicMapLocalRingedEquiv f).1 ≫ (holomorphicMapLocalRingedEquiv g).1 :=
+  ChartedSpace.locallyRingedSpace_comp K (f.contMDiff.of_le (by simp))
+    (g.contMDiff.of_le (by simp))
 
 end TauCeti
