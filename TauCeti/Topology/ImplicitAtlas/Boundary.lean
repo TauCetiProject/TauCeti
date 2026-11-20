@@ -95,6 +95,8 @@ structure ImplicitAtlasWithBoundary [DecidableEq A] (Γ : A → Type*) [∀ α, 
   /-- The Kuranishi map `s_α : X_I → E_α`, for `α ∈ I`. -/
   kuranishi : ∀ (I : Finset A) (α : I), T I → E α
   continuous_kuranishi : ∀ (I : Finset A) (α : I), Continuous (kuranishi I α)
+  /-- The Kuranishi map `s_α` is `Γ_α`-equivariant, and the other factors of `Γ_I` act trivially
+  on `E_α`. -/
   kuranishi_act : ∀ (I : Finset A) (α : I) (g : (β : I) → Γ β) (x : T I),
     kuranishi I α (act I g x) = ρ α (g α) (kuranishi I α x)
   /-- The regular locus `X_I^reg ⊆ X_I`. -/
@@ -105,42 +107,54 @@ structure ImplicitAtlasWithBoundary [DecidableEq A] (Γ : A → Type*) [∀ α, 
   /-- The footprint map `ψ_IJ : Z_IJ → X_I`, for `I ⊆ J`. -/
   footprintMap : ∀ ⦃I J : Finset A⦄, I ⊆ J → kuranishiZeroSet kuranishi I J → T I
   continuous_footprintMap : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J), Continuous (footprintMap h)
+  /-- The footprint map `ψ_IJ` is equivariant, with `Γ_J` acting on `X_I` through the
+  restriction `Γ_J → Γ_I`. -/
   footprintMap_act : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J) (g : (α : J) → Γ α)
     (x : kuranishiZeroSet kuranishi I J)
     (hx : act J g x ∈ kuranishiZeroSet kuranishi I J),
     footprintMap h ⟨act J g x, hx⟩ = act I (Finset.restrict₂ (π := Γ) h g) (footprintMap h x)
   footprintMap_self : ∀ (I : Finset A) (x : T I),
     footprintMap (subset_refl I) ⟨x, mem_kuranishiZeroSet_self kuranishi x⟩ = x
+  /-- The cocycle condition `ψ_IJ ∘ ψ_JK = ψ_IK` on the common domain. -/
   footprintMap_footprintMap : ∀ ⦃I J K : Finset A⦄ (hIJ : I ⊆ J) (hJK : J ⊆ K)
     (x : kuranishiZeroSet kuranishi J K)
     (hx : footprintMap hJK x ∈ kuranishiZeroSet kuranishi I J)
     (hx' : x.1 ∈ kuranishiZeroSet kuranishi I K),
     footprintMap hIJ ⟨footprintMap hJK x, hx⟩ = footprintMap (hIJ.trans hJK) ⟨x, hx'⟩
+  /-- The Kuranishi maps are compatible with the footprint maps: `s_I ∘ ψ_IJ = s_I`. -/
   kuranishi_footprintMap : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J) (x : kuranishiZeroSet kuranishi I J)
     (α : I),
     kuranishi I α (footprintMap h x) = kuranishi J ⟨α, h α.2⟩ x
   isOpen_range_footprintMap : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J), IsOpen (range (footprintMap h))
+  /-- `U_IJ₁ ∩ U_IJ₂ = U_I(J₁ ∪ J₂)`. -/
   range_footprintMap_inter : ∀ ⦃I J₁ J₂ : Finset A⦄ (h₁ : I ⊆ J₁) (h₂ : I ⊆ J₂),
     range (footprintMap h₁) ∩ range (footprintMap h₂) =
       range (footprintMap (h₁.trans (Finset.subset_union_left (s₂ := J₂))))
+  /-- `ψ_IJ⁻¹(U_IK) = U_JK ∩ Z_IJ`. -/
   footprintMap_mem_range_iff : ∀ ⦃I J K : Finset A⦄ (hIJ : I ⊆ J) (hJK : J ⊆ K)
     (x : kuranishiZeroSet kuranishi I J),
     footprintMap hIJ x ∈ range (footprintMap (hIJ.trans hJK)) ↔ x.1 ∈ range (footprintMap hJK)
+  /-- The footprint map is a quotient map onto its image `U_IJ`. -/
   isQuotientMap_footprintMap : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J),
     IsQuotientMap (rangeFactorization (footprintMap h))
+  /-- The fibres of the footprint map `ψ_IJ` are the orbits of `Γ_(J \ I)`. -/
   footprintMap_eq_footprintMap_iff : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J)
     (x y : kuranishiZeroSet kuranishi I J),
     footprintMap h x = footprintMap h y ↔
       ∃ g : (α : J) → Γ α, Finset.restrict₂ (π := Γ) h g = 1 ∧ act J g x = y
+  /-- `ψ_IJ⁻¹(X_I^reg) ⊆ X_J^reg`. -/
   mem_regLocus_of_footprintMap_mem : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J)
     (x : kuranishiZeroSet kuranishi I J),
     footprintMap h x ∈ regLocus I → x.1 ∈ regLocus J
+  /-- `Γ_(J \ I)` acts freely on `ψ_IJ⁻¹(X_I^reg)`. -/
   eq_one_of_act_eq : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J) (x : kuranishiZeroSet kuranishi I J),
     footprintMap h x ∈ regLocus I → ∀ g : (α : J) → Γ α,
       Finset.restrict₂ (π := Γ) h g = 1 → act J g x = x → g = 1
   /-- The boundary `∂X_I ⊆ X_I`. -/
   boundary : ∀ I : Finset A, Set (T I)
+  /-- The boundary `∂X_I` is closed in `X_I`. -/
   isClosed_boundary : ∀ I : Finset A, IsClosed (boundary I)
+  /-- The boundary `∂X_I` is invariant under the action of `Γ_I`. -/
   act_mem_boundary : ∀ (I : Finset A) (g : (α : I) → Γ α) (x : T I),
     x ∈ boundary I → act I g x ∈ boundary I
   /-- The boundary `∂X_∅` is identified with `Y` by `X_∅ ≃ₜ X`. -/
