@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.Distribution
 public import TauCeti.Analysis.Distribution.ComplexPairing
-public import TauCeti.Analysis.Distribution.TestFunction.InnerProduct
+public import TauCeti.Analysis.Distribution.TestFunction.Inner
 public import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 public import TauCeti.Analysis.Pseudodifferential.Adjoint.Basic
 public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Basic
@@ -39,6 +39,13 @@ consequences that make properly supported operators act on all of `𝓓'(ℝⁿ)
   the distribution of its quantization (`TauCeti.Symbol.quantizeDistribution_ofFun`), and it does
   not enlarge the support of a distribution by more than `R`
   (`TauCeti.Symbol.dsupport_quantizeDistribution_subset`).
+
+* **Fixed supports.** `TauCeti.Symbol.quantizeSupportedInCLM` and
+  `TauCeti.Symbol.adjointSupportedInCLM` map stage `K` continuously to its closed `R`-thickening.
+  Their `ofSupportedInCLM_comp_*` laws identify these maps with the global test operators.
+* **Dual-valued tests.** `TauCeti.Symbol.transposeTestFunctionCLM` transports the formal adjoint
+  through the real Riesz equivalence twice, yielding a complex-linear transpose with the spatial
+  bilinear identity `TauCeti.Symbol.integral_apply_quantizeTestFunctionCLM`.
 
 On test functions supported in a compact set `K`, the operator `Op(a)` agrees with `Op(ψ a)` for a
 cutoff `ψ` equal to `1` near the `R`-neighbourhood of `K`. The symbol `ψ a` has compact spatial
@@ -480,21 +487,22 @@ formal adjoint and its original test-function topology. -/
 def transposeTestFunctionCLM (ha : a.HasNearDiagonalKernel R) :
     𝓓((⊤ : Opens (CoordinateSpace n)), StrongDual ℂ W) →L[ℂ]
       𝓓((⊤ : Opens (CoordinateSpace n)), StrongDual ℂ V) where
-  toFun φ := TestFunction.rieszEquiv (adjointTestFunctionCLM ha
-    ((TestFunction.rieszEquiv (V := W)).symm φ))
+  toFun φ := TestFunction.rieszEquiv (𝕜 := ℂ) (adjointTestFunctionCLM ha
+    ((TestFunction.rieszEquiv (𝕜 := ℂ) (V := W)).symm φ))
   map_add' φ ψ := by rw [map_add, map_add, map_add]
   map_smul' c φ := by
     rw [TestFunction.rieszEquiv_symm_smul, map_smul, TestFunction.rieszEquiv_smul]
     simp only [starRingEnd_self_apply, RingHom.id_apply]
-  cont := TestFunction.rieszEquiv.continuous.comp
-    ((adjointTestFunctionCLM ha).continuous.comp TestFunction.rieszEquiv.symm.continuous)
+  cont := (TestFunction.rieszEquiv (𝕜 := ℂ) (V := V)).continuous.comp
+    ((adjointTestFunctionCLM ha).continuous.comp
+      (TestFunction.rieszEquiv (𝕜 := ℂ) (V := W)).symm.continuous)
 
 /-- The native transpose is Riesz transport of the actual native formal adjoint. -/
 @[simp]
 theorem transposeTestFunctionCLM_apply (ha : a.HasNearDiagonalKernel R)
     (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), StrongDual ℂ W)) :
-    transposeTestFunctionCLM ha φ = TestFunction.rieszEquiv
-      (adjointTestFunctionCLM ha ((TestFunction.rieszEquiv (V := W)).symm φ)) := by
+    transposeTestFunctionCLM ha φ = TestFunction.rieszEquiv (𝕜 := ℂ)
+      (adjointTestFunctionCLM ha ((TestFunction.rieszEquiv (𝕜 := ℂ) (V := W)).symm φ)) := by
   rfl
 
 /-- The dual-valued native transpose has the spatial complex-bilinear pairing identity. -/
@@ -504,7 +512,7 @@ theorem integral_apply_quantizeTestFunctionCLM (ha : a.HasNearDiagonalKernel R)
     (∫ x, φ x (quantizeTestFunctionCLM ha u x)) =
       ∫ x, transposeTestFunctionCLM ha φ x (u x) := by
   have h := integral_inner_quantizeTestFunctionCLM ha u
-    ((TestFunction.rieszEquiv (V := W)).symm φ)
+    ((TestFunction.rieszEquiv (𝕜 := ℂ) (V := W)).symm φ)
   have hc := congrArg (starRingEnd ℂ) h
   rw [← integral_conj, ← integral_conj] at hc
   simp only [inner_conj_symm, TestFunction.rieszEquiv_symm_apply (V := W)] at hc

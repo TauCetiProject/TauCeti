@@ -45,7 +45,7 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
 * `SchwartzMap.conjnegCLM`: the continuous conjugate-linear reversed-conjugation involution,
-  with exact reflected-support and compact-support laws.
+  with exact reflected-support, compact-support and near-origin cutoff laws.
 * `SchwartzMap.conjCLM`: pointwise conjugation of scalar Schwartz functions, a continuous
   conjugate-linear map.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
@@ -381,6 +381,15 @@ theorem hasCompactSupport_conjnegCLM {f : 𝓢(E, 𝕜)} (hf : HasCompactSupport
   convert h using 1
   funext x
   exact conjnegCLM_apply f x
+
+open scoped Topology in
+/-- Reversed conjugation preserves the normalization equal to one near the origin. -/
+theorem conjnegCLM_eventually_one {f : 𝓢(E, 𝕜)} (hf : ⇑f =ᶠ[𝓝 0] 1) :
+    ⇑(conjnegCLM f) =ᶠ[𝓝 0] 1 := by
+  have ht : Filter.Tendsto (fun x : E ↦ -x) (𝓝 0) (𝓝 0) := by
+    simpa only [neg_zero] using continuous_neg.tendsto (0 : E)
+  filter_upwards [ht.eventually hf] with x hx
+  simp only [conjnegCLM_apply, hx, Pi.one_apply, map_one]
 
 end Conj
 

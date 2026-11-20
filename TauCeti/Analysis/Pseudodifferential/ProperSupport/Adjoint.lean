@@ -16,7 +16,7 @@ import TauCeti.MeasureTheory.Function.L2Space
 For an arbitrary local symbol `a` of real order `m`, `adjointKernelCutoff a χ hχ` is the left
 symbol of the proper-input amplitude `conj(χ(y-x)) a(y,ξ)†`. Its quantization is the actual
 native continuous adjoint of `kernelCutoff χ a` on compactly supported smooth tests, also
-between every pair of original fixed-support stages. Coefficient Hilbert spaces may have
+between each compact stage `K` and its closed `R`-thickening. Coefficient Hilbert spaces may have
 zero or infinite dimension, and no uniform position estimates on `a` are assumed.
 
 All truncation remainders are the native amplitude remainders. A cutoff equal to one near zero
@@ -521,15 +521,6 @@ theorem integral_inner_quantizeSchwartzValue_adjointKernelCutoff
       integral_congr_ae (.of_forall fun x ↦
         (inner_rightIntegrand_eq_integral_fixedPair hχ a u v x ζ).symm)
 
-omit [CompleteSpace V] [CompleteSpace W] in
-/-- The adjoint reversal and conjugation retain a cutoff equal to one near the diagonal. -/
-private theorem conjnegCLM_eventually_one {χ : 𝓢(CoordinateSpace n, ℂ)} (hχ : ⇑χ =ᶠ[𝓝 0] 1) :
-    ⇑(SchwartzMap.conjnegCLM χ) =ᶠ[𝓝 0] 1 := by
-  have ht : Tendsto (fun x : CoordinateSpace n ↦ -x) (𝓝 0) (𝓝 0) := by
-    simpa only [neg_zero] using continuous_neg.tendsto (0 : CoordinateSpace n)
-  filter_upwards [ht.eventually hχ] with x hx
-  simp only [SchwartzMap.conjnegCLM_apply, hx, Pi.one_apply, map_one]
-
 /-- The explicit adjoint is a native asymptotic sum of all right-amplitude terms. -/
 theorem isAsymptoticSum_adjointKernelCutoff (a : Symbol n V W m)
     (χ : 𝓢(CoordinateSpace n, ℂ)) (hχ : HasCompactSupport χ)
@@ -539,7 +530,7 @@ theorem isAsymptoticSum_adjointKernelCutoff (a : Symbol n V W m)
         (Amplitude.ofRight (a.map ContinuousLinearMap.adjointRealCLM)).leftTerm := by
   exact Amplitude.isAsymptoticSum_leftSymbol_ofRightCutoff
     ((SchwartzMap.conjnegCLM χ).smooth (⊤ : ℕ∞))
-    (SchwartzMap.hasCompactSupport_conjnegCLM hχ) (conjnegCLM_eventually_one hχ₁)
+    (SchwartzMap.hasCompactSupport_conjnegCLM hχ) (SchwartzMap.conjnegCLM_eventually_one hχ₁)
     (a.map ContinuousLinearMap.adjointRealCLM)
 
 /-- All truncation remainders are the native proper-input amplitude remainders of order `m - N`. -/
@@ -558,7 +549,7 @@ theorem adjointKernelCutoff_eq_sum_leftTerm_add_leftRemainder (a : Symbol n V W 
                 (SchwartzMap.hasCompactSupport_conjnegCLM hχ) _) N) := by
   exact Amplitude.leftSymbol_ofRightCutoff_eq_sum_leftTerm_add_leftRemainder
     ((SchwartzMap.conjnegCLM χ).smooth (⊤ : ℕ∞)) (SchwartzMap.hasCompactSupport_conjnegCLM hχ)
-      (conjnegCLM_eventually_one hχ₁)
+      (SchwartzMap.conjnegCLM_eventually_one hχ₁)
     (a.map ContinuousLinearMap.adjointRealCLM) N
 
 /-- The first remainder has order `m - 1` under only the exact normalization `χ 0 = 1`. -/
@@ -627,7 +618,8 @@ theorem integral_inner_quantizeTestFunctionCLM_adjointKernelCutoff {χ : 𝓢(Co
   simp only [Symbol.quantizeTestFunctionCLM_apply]
   simpa only [us, vs, HasCompactSupport.toSchwartzMap_toFun] using h
 
-/-- The explicit left symbol quantizes to main's actual native test-function adjoint. -/
+/-- The quantization of the explicit adjoint symbol equals `adjointTestFunctionCLM`
+of the kernel-cutoff operator. -/
 theorem adjointTestFunctionCLM_kernelCutoff {χ : 𝓢(CoordinateSpace n, ℂ)}
     (hχ : HasCompactSupport χ) (hχR : Function.support χ ⊆ Metric.ball 0 R)
     (a : Symbol n V W m) :
@@ -635,32 +627,13 @@ theorem adjointTestFunctionCLM_kernelCutoff {χ : 𝓢(CoordinateSpace n, ℂ)}
       Symbol.quantizeTestFunctionCLM (hasNearDiagonalKernel_adjointKernelCutoff hχ hχR a) := by
   apply ContinuousLinearMap.ext
   intro v
-  apply TestFunction.eq_of_forall_integral_inner_eq (μ := volume)
+  apply TestFunction.eq_of_forall_integral_inner_eq (𝕜 := ℂ) (μ := volume)
   intro u
   exact (Symbol.integral_inner_quantizeTestFunctionCLM
     (Symbol.hasNearDiagonalKernel_kernelCutoff χ hχR a) u v).symm.trans
       (integral_inner_quantizeTestFunctionCLM_adjointKernelCutoff hχ hχR a u v)
 
 namespace HasNearDiagonalKernel
-
-/-- A kernel cutoff that is one on the full propagation ball preserves the original operator. -/
-theorem quantizeSchwartzValue_kernelCutoff_eq
-    {a : Symbol n V W m} (ha : a.HasNearDiagonalKernel R) (χ : 𝓢(CoordinateSpace n, ℂ))
-    (hχ₁ : Set.EqOn (χ : CoordinateSpace n → ℂ) 1 (Metric.ball 0 R))
-    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue (Symbol.kernelCutoff χ a).coefficient u x =
-      quantizeSchwartzValue a.coefficient u x := by
-  rw [Symbol.quantizeSchwartzValue_kernelCutoff]
-  have hp : a.HasPropagationLE R :=
-    Symbol.hasPropagationLE_iff.mpr (Symbol.hasNearDiagonalKernel_iff.mp ha)
-  apply hp.quantizeSchwartzValue_congr
-  intro y hy
-  have hg : (fun z ↦ χ (x - z)).HasTemperateGrowth :=
-    χ.hasTemperateGrowth.comp ((Function.HasTemperateGrowth.const x).sub
-      Function.HasTemperateGrowth.id')
-  have hmem : x - y ∈ Metric.ball (0 : CoordinateSpace n) R := by
-    simpa only [Metric.mem_ball, dist_eq_norm, sub_zero, norm_sub_rev] using hy
-  simp only [SchwartzMap.smulLeftCLM_apply_apply hg, hχ₁ hmem, Pi.one_apply, one_smul]
 
 /-- The same explicit symbol gives the actual adjoint of any already near-diagonal quantization,
 provided the cutoff equals one on its complete propagation ball. -/
@@ -672,7 +645,7 @@ theorem adjointTestFunctionCLM_eq_quantizeTestFunctionCLM_adjointKernelCutoff
       Symbol.quantizeTestFunctionCLM (hasNearDiagonalKernel_adjointKernelCutoff hχ hχR' a) := by
   apply ContinuousLinearMap.ext
   intro v
-  apply TestFunction.eq_of_forall_integral_inner_eq (μ := volume)
+  apply TestFunction.eq_of_forall_integral_inner_eq (𝕜 := ℂ) (μ := volume)
   intro u
   calc (∫ x, inner ℂ (u x) (Symbol.adjointTestFunctionCLM ha v x))
       = ∫ x, inner ℂ (Symbol.quantizeTestFunctionCLM ha u x) (v x) :=
@@ -693,10 +666,10 @@ end HasNearDiagonalKernel
 theorem rieszEquiv_symm_comp_transposeTestFunctionCLM_kernelCutoff
     {χ : 𝓢(CoordinateSpace n, ℂ)} (hχ : HasCompactSupport χ)
     (hχR : Function.support χ ⊆ Metric.ball 0 R) (a : Symbol n V W m) :
-    (TestFunction.rieszEquiv (V := V)).symm.toContinuousLinearMap ∘L
+    (TestFunction.rieszEquiv (𝕜 := ℂ) (V := V)).symm.toContinuousLinearMap ∘L
         (transposeTestFunctionCLM (hasNearDiagonalKernel_kernelCutoff χ hχR a)).restrictScalars ℝ =
       (quantizeTestFunctionCLM (hasNearDiagonalKernel_adjointKernelCutoff hχ hχR a)).restrictScalars
-        ℝ ∘L (TestFunction.rieszEquiv (V := W)).symm.toContinuousLinearMap := by
+        ℝ ∘L (TestFunction.rieszEquiv (𝕜 := ℂ) (V := W)).symm.toContinuousLinearMap := by
   ext φ
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
     ContinuousLinearEquiv.coe_coe, transposeTestFunctionCLM_apply,

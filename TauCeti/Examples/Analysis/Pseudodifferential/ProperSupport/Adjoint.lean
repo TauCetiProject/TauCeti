@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 public import Mathlib.Analysis.InnerProductSpace.l2Space
+public import Mathlib.Topology.ContinuousMap.Compact
 public import TauCeti.Analysis.Pseudodifferential.Kernel
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
@@ -110,7 +111,7 @@ theorem adjoint_exponentialSymbol {χ : 𝓢(CoordinateSpace n, ℂ)}
     Symbol.quantizeTestFunctionCLM
       (Symbol.hasNearDiagonalKernel_adjointKernelCutoff hχ hχR (exponentialSymbol n)) v =
       TestFunction.smulLeftCLM (Real.contDiff_exp.comp (contDiff_norm_sq ℝ)) v := by
-  apply TestFunction.eq_of_forall_integral_inner_eq (μ := volume)
+  apply TestFunction.eq_of_forall_integral_inner_eq (𝕜 := ℂ) (μ := volume)
   intro u
   rw [← Symbol.integral_inner_quantizeTestFunctionCLM_adjointKernelCutoff hχ hχR]
   apply integral_congr_ae
@@ -181,7 +182,7 @@ theorem adjoint_imaginaryCutoff
         imaginaryCutoff_support
         (Symbol.ofSpatial (fun _ ↦ ContinuousLinearMap.id ℂ V) contDiff_const)) v =
       (-Complex.I) • v := by
-  apply TestFunction.eq_of_forall_integral_inner_eq (μ := volume)
+  apply TestFunction.eq_of_forall_integral_inner_eq (𝕜 := ℂ) (μ := volume)
   intro u
   rw [← Symbol.integral_inner_quantizeTestFunctionCLM_adjointKernelCutoff
     compact_imaginaryCutoff imaginaryCutoff_support]
@@ -311,14 +312,19 @@ private theorem positiveBump_e : positiveBump (EuclideanSpace.single (0 : Fin 1)
   apply positiveBump.one_of_mem_closedBall
   simp [Metric.mem_closedBall, positiveBump]
 
+/-- The exact open support ball of the asymmetric bump. -/
+theorem support_positiveBump : Function.support positiveBump =
+    Metric.ball (EuclideanSpace.single (0 : Fin 1) (1 : ℝ)) (1 / 2) := by
+  rw [positiveBump.support_eq]
+  rfl
+
 /-- The opposite half-line never meets the cutoff support. -/
 private theorem positiveBump_neg_mul (x : CoordinateSpace 1) : positiveBump (-x) * positiveBump
   x = 0 := by
   by_cases hx : positiveBump x = 0
   · rw [hx, mul_zero]
   have hxp : x ∈ Metric.ball (EuclideanSpace.single (0 : Fin 1) (1 : ℝ)) (1 / 2) := by
-    change x ∈ Metric.ball _ positiveBump.rOut
-    rw [← positiveBump.support_eq]
+    rw [← support_positiveBump]
     exact hx
   have hdist : dist (EuclideanSpace.single (0 : Fin 1) (1 : ℝ)) (-(EuclideanSpace.single (0 :
     Fin 1) (1 : ℝ))) = 2 := by
@@ -338,8 +344,7 @@ private theorem positiveBump_neg_mul (x : CoordinateSpace 1) : positiveBump (-x)
   have hz : positiveBump (-x) = 0 := by
     by_contra hz
     exact hn (by
-      change -x ∈ Metric.ball _ positiveBump.rOut
-      rw [← positiveBump.support_eq]
+      rw [← support_positiveBump]
       exact hz)
   rw [hz, zero_mul]
 
@@ -460,8 +465,7 @@ theorem unreversed_convolution_zero (m : ℝ) :
 private theorem kernelBump_one_of_positiveBump_ne_zero {y : CoordinateSpace 1}
     (hy : positiveBump y ≠ 0) : kernelBump (-y) = 1 := by
   have hd : dist y (EuclideanSpace.single (0 : Fin 1) (1 : ℝ)) < 1 / 2 := by
-    change y ∈ Metric.ball _ positiveBump.rOut
-    rw [← positiveBump.support_eq]
+    rw [← Metric.mem_ball, ← support_positiveBump]
     exact hy
   have hn : ‖y‖ < 3 / 2 := by
     have ht : ‖y‖ ≤ dist y (EuclideanSpace.single (0 : Fin 1) (1 : ℝ)) +
@@ -554,7 +558,7 @@ theorem integral_inner_convolution_cutoff (χ : 𝓢(CoordinateSpace 1, ℂ)) (m
   simp_rw [he₁, he₂]
   exact (integral_integral_swap (integrable_convolutionPair χ u v hu hv)).symm
 
-/-- The packet's explicit left symbol equals the reversed convolution on native tests. -/
+/-- The explicit adjoint symbol equals reversed convolution on test functions. -/
 theorem explicitAdjoint_convolution {χ : 𝓢(CoordinateSpace 1, ℂ)}
     (hχ : HasCompactSupport χ) {R : ℝ} (hχR : Function.support χ ⊆ Metric.ball 0 R)
     (m : ℝ) (v : 𝓓((⊤ : Opens (CoordinateSpace 1)), ℂ)) :
@@ -564,7 +568,7 @@ theorem explicitAdjoint_convolution {χ : 𝓢(CoordinateSpace 1, ℂ)}
         (Symbol.hasNearDiagonalKernel_kernelCutoff (SchwartzMap.conjnegCLM χ)
           (SchwartzMap.support_conjnegCLM_subset_ball hχR)
           (convolutionSymbol m)) v := by
-  apply TestFunction.eq_of_forall_integral_inner_eq (μ := volume)
+  apply TestFunction.eq_of_forall_integral_inner_eq (𝕜 := ℂ) (μ := volume)
   intro u
   rw [← Symbol.integral_inner_quantizeTestFunctionCLM_adjointKernelCutoff hχ hχR]
   let us := u.hasCompactSupport.toSchwartzMap u.contDiff
@@ -583,8 +587,7 @@ theorem explicitAdjoint_convolution {χ : 𝓢(CoordinateSpace 1, ℂ)}
     HasCompactSupport.toSchwartzMap_toFun] using
     integral_inner_convolution_cutoff χ m us vs hu hv
 
-/-- The positive cutoff has a bounded support in the native (innerSL ℝ (EuclideanSpace.single
-  (0 : Fin 1) (1 : ℝ))) space. -/
+/-- The asymmetric cutoff is supported in the open ball of radius two about zero. -/
 theorem positiveCutoff_support :
     Function.support (asymmetricCutoff) ⊆ Metric.ball 0 2 := by
   intro y hy
@@ -593,8 +596,7 @@ theorem positiveCutoff_support :
     simpa only [asymmetricCutoff_apply, ne_eq, Complex.ofReal_eq_zero]
       using hy'
   have hd : dist y (EuclideanSpace.single (0 : Fin 1) (1 : ℝ)) < 1 / 2 := by
-    change y ∈ Metric.ball _ positiveBump.rOut
-    rw [← positiveBump.support_eq]
+    rw [← Metric.mem_ball, ← support_positiveBump]
     exact hp
   have ht : ‖y‖ ≤ dist y (EuclideanSpace.single (0 : Fin 1) (1 : ℝ)) + ‖(EuclideanSpace.single
     (0 : Fin 1) (1 : ℝ))‖ := by
@@ -672,42 +674,6 @@ theorem nearDiagonal_coordinateDerivSymbol (k : ℕ) {R : ℝ} (hR : 0 < R) :
     SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv, hd]
   simp
 
-/-- The scalar Hilbert pairing as the native real bilinear multiplication/conjugation map. -/
-private def innerRealBilin : ℂ →L[ℝ] ℂ →L[ℝ] ℂ :=
-  ContinuousLinearMap.mul ℝ ℂ ∘L Complex.conjCLE.toContinuousLinearMap
-
-private theorem innerRealBilin_apply (x y : ℂ) : innerRealBilin x y = inner ℂ x y := by
-  simp [innerRealBilin, mul_comm]
-
-/-- Native directional integration by parts applies to the complex Hilbert pairing. -/
-private theorem integral_inner_lineDeriv (u v : 𝓢(CoordinateSpace 1, ℂ)) :
-    (∫ x, inner ℂ (u x) (∂_{(EuclideanSpace.single (0 : Fin 1) (1 : ℝ))} v x)) = -∫ x, inner ℂ
-      (∂_{(EuclideanSpace.single (0 : Fin 1) (1 : ℝ))} u x) (v x) := by
-  simpa only [innerRealBilin_apply] using
-    SchwartzMap.integral_bilinear_lineDerivOp_right_eq_neg_left u v innerRealBilin
-      (EuclideanSpace.single (0 : Fin 1) (1 : ℝ))
-
-/-- The sign is (-1)^k for every derivative order, not merely an integrable symbol range. -/
-private theorem integral_inner_iterate (k : ℕ) (u v : 𝓢(CoordinateSpace 1, ℂ)) :
-    (∫ x, inner ℂ (u x) (((∂_{(EuclideanSpace.single (0 : Fin 1) (1 : ℝ))})^[k] v) x)) =
-      (-1 : ℂ) ^ k * ∫ x, inner ℂ (((∂_{(EuclideanSpace.single (0 : Fin 1) (1 : ℝ))})^[k] u) x)
-        (v x) := by
-  induction k generalizing u with
-  | zero => simp
-  | succ k ih =>
-    rw [Function.iterate_succ_apply', integral_inner_lineDeriv, ih,
-      Function.iterate_succ_apply, pow_succ]
-    ring
-
-/-- The original native inclusion commutes with every iterated directional derivative. -/
-private theorem testSchwartz_iterate (k : ℕ) (u : 𝓓((⊤ : Opens (CoordinateSpace 1)), ℂ)) :
-    TestFunction.toSchwartzMapCLM ℂ ((∂_{(EuclideanSpace.single (0 : Fin 1) (1 : ℝ))})^[k] u) =
-      (∂_{(EuclideanSpace.single (0 : Fin 1) (1 : ℝ))})^[k] (TestFunction.toSchwartzMapCLM ℂ u)
-        := by
-  exact (Function.Semiconj.iterate_right
-    (fun φ ↦ TestFunction.toSchwartzMapCLM_lineDerivOp (𝕜 := ℂ)
-      (EuclideanSpace.single (0 : Fin 1) (1 : ℝ)) φ) k) u
-
 /-- Arbitrary positive orders have the coefficient derivative in their native adjoints. -/
 private theorem adjoint_coordinateDerivSymbol (k : ℕ)
     (v : 𝓓((⊤ : Opens (CoordinateSpace 1)), ℂ)) :
@@ -715,7 +681,7 @@ private theorem adjoint_coordinateDerivSymbol (k : ℕ)
       (-1 : ℂ) ^ (k + 1) •
         (∂_{(EuclideanSpace.single (0 : Fin 1) (1 : ℝ))})^[k + 1] (TestFunction.smulLeftCLM
           (innerSL ℝ (EuclideanSpace.single (0 : Fin 1) (1 : ℝ))).contDiff v) := by
-  apply TestFunction.eq_of_forall_integral_inner_eq (μ := volume)
+  apply TestFunction.eq_of_forall_integral_inner_eq (𝕜 := ℂ) (μ := volume)
   intro u
   rw [← Symbol.integral_inner_quantizeTestFunctionCLM]
   let us := TestFunction.toSchwartzMapCLM ℂ u
@@ -725,7 +691,8 @@ private theorem adjoint_coordinateDerivSymbol (k : ℕ)
     (vs x)) =
       (-1 : ℂ) ^ (k + 1) * ∫ x, inner ℂ (us x) (((∂_{(EuclideanSpace.single (0 : Fin 1) (1 :
         ℝ))})^[k + 1] vs) x) := by
-    rw [integral_inner_iterate, ← mul_assoc, ← mul_pow]
+    rw [SchwartzMap.integral_inner_iterate_lineDerivOp_right_eq us vs
+      (EuclideanSpace.single (0 : Fin 1) (1 : ℝ)) (k + 1), ← mul_assoc, ← mul_pow]
     simp
   calc
     _ = ∫ x, inner ℂ (((∂_{(EuclideanSpace.single (0 : Fin 1) (1 : ℝ))})^[k + 1] us) x) (vs x) := by
@@ -745,7 +712,11 @@ private theorem adjoint_coordinateDerivSymbol (k : ℕ)
       rw [← integral_const_mul]
       apply integral_congr_ae
       filter_upwards [] with x
-      rw [← testSchwartz_iterate]
+      rw [← (Function.Semiconj.iterate_right
+        (TestFunction.toSchwartzMapCLM_lineDerivOp (𝕜 := ℂ)
+          (EuclideanSpace.single (0 : Fin 1) (1 : ℝ))) (k + 1))
+        (TestFunction.smulLeftCLM
+          (innerSL ℝ (EuclideanSpace.single (0 : Fin 1) (1 : ℝ))).contDiff v)]
       simp only [us, TestFunction.toSchwartzMapCLM_apply, smul_apply, inner_smul_right]
 
 /-- The native Schwartz Leibniz formula gives the coordinate correction on original tests. -/
@@ -768,8 +739,12 @@ private theorem iterate_coordinate_smul (k : ℕ)
     simp only [TestFunction.toSchwartzMapCLM_apply, TestFunction.smulLeftCLM_apply,
       SchwartzMap.smulLeftCLM_apply_apply
         (innerSL ℝ (EuclideanSpace.single (0 : Fin 1) (1 : ℝ))).hasTemperateGrowth]
+  have hT (j : ℕ) (u : 𝓓((⊤ : Opens (CoordinateSpace 1)), ℂ)) :=
+    (Function.Semiconj.iterate_right
+      (TestFunction.toSchwartzMapCLM_lineDerivOp (𝕜 := ℂ)
+        (EuclideanSpace.single (0 : Fin 1) (1 : ℝ))) j) u
   apply TestFunction.toSchwartzMapCLM_injective (𝕜 := ℂ)
-  rw [testSchwartz_iterate, he]
+  rw [hT, he]
   have h := SchwartzMap.iterate_lineDerivOp_smulLeftCLM_clm
     (innerSL ℝ (EuclideanSpace.single (0 : Fin 1) (1 : ℝ)))
     (TestFunction.toSchwartzMapCLM ℂ v)
@@ -777,7 +752,8 @@ private theorem iterate_coordinate_smul (k : ℕ)
   have hs (r : ℝ) (u : 𝓓((⊤ : Opens (CoordinateSpace 1)), ℂ)) :
       TestFunction.toSchwartzMapCLM ℂ (r • u) = r • TestFunction.toSchwartzMapCLM ℂ u :=
     map_smul ((TestFunction.toSchwartzMapCLM ℂ).restrictScalars ℝ) r u
-  simpa only [map_add, hs, testSchwartz_iterate, he, innerSL_apply_apply,
+  simpa only [map_add, hs, hT, he,
+    innerSL_apply_apply,
     real_inner_self_eq_norm_sq, PiLp.norm_single, norm_one, one_pow, mul_one] using h
 
 /-- The explicit left symbol realizes every positive coordinateDerivSymbol order on native tests. -/
@@ -857,5 +833,32 @@ example {n : ℕ} {χ : 𝓢(CoordinateSpace n, ℂ)}
   rfl
 
 end Differential
+
+section Generality
+
+/-- The real specialization has a nonzero value on the original positive native test. -/
+example : TestFunction.rieszEquiv (𝕜 := ℝ)
+    (TestFunction.postcompCLM Complex.reCLM positiveTest)
+      (EuclideanSpace.single (0 : Fin 1) (1 : ℝ)) (1 : ℝ) = 1 := by
+  rw [TestFunction.rieszEquiv_apply, TestFunction.postcompCLM_apply, Function.comp_apply,
+    positiveTest_apply, positiveBump_e]
+  simp
+
+/-- The real inverse accepts arbitrary native dual-valued continuous tests. -/
+example (φ : 𝓓^{0}((⊤ : Opens ℝ), StrongDual ℝ ℝ)) (x y : ℝ) :
+    inner ℝ ((TestFunction.rieszEquiv (𝕜 := ℝ)).symm φ x) y = φ x y :=
+  TestFunction.rieszEquiv_symm_apply φ x y
+
+/-- The recovery law applies to Banach coefficient models without an inner-product structure. -/
+example {n : ℕ} {m R : ℝ}
+    {a : Symbol n C(Set.Icc (0 : ℝ) 1, ℂ) C(Set.Icc (0 : ℝ) 1, ℂ) m}
+    (ha : a.HasNearDiagonalKernel R) (χ : 𝓢(CoordinateSpace n, ℂ))
+    (hχ : Set.EqOn (χ : CoordinateSpace n → ℂ) 1 (Metric.ball 0 R))
+    (u : 𝓢(CoordinateSpace n, C(Set.Icc (0 : ℝ) 1, ℂ))) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (Symbol.kernelCutoff χ a).coefficient u x =
+      quantizeSchwartzValue a.coefficient u x :=
+  ha.quantizeSchwartzValue_kernelCutoff_eq χ hχ u x
+
+end Generality
 
 end TauCeti.Symbol.AdjointKernelCutoffExamples
