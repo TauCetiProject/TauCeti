@@ -47,11 +47,10 @@ compatible with the symplectic orientation of `σ` and has Kähler two-form `σ`
   `TauCeti.SmoothTwoForm.Compatible.eq_metric_iff`: `g(u, w) = σ(u, J w)`, and this characterizes
   the metric.
 * `TauCeti.SmoothTwoForm.Compatible.inner_eq_eval₂`: the same identity for the installed metric.
-* `TauCeti.SmoothAlmostComplexStructure.kahlerTwoForm_eq_of_inner_eq`: if the metric of `M` is
-  `σ(·, J ·)`, the Kähler two-form of `J` is `σ`.
-* `TauCeti.SmoothAlmostComplexStructure.compatible_kahlerTwoForm` and
-  `TauCeti.SmoothAlmostComplexStructure.metric_compatible_kahlerTwoForm`: the Kähler two-form of an
-  orthogonal `J` is compatible with `J`, and its compatible metric is the metric of `M`.
+* `TauCeti.SmoothAlmostComplexStructure.metric_compatible_kahlerTwoForm`: the Kähler two-form of an
+  orthogonal `J` is compatible with `J`
+  (`TauCeti.SmoothAlmostComplexStructure.compatible_kahlerTwoForm`), and its compatible metric is
+  the metric of `M`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.exists_isCompatibleOrientation_and_kahlerTwoForm_eq`:
   almost-Kähler data with Kähler form a prescribed nondegenerate two-form on a four-manifold.
 
@@ -135,27 +134,6 @@ namespace SmoothAlmostComplexStructure
 
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-
-/-- **The Kähler form of a compatible metric.** If the metric of `M` is `g(u, w) = σ(u, J w)`,
-the Kähler two-form `⟪J ·, ·⟫` of `J` is `σ`. -/
-theorem kahlerTwoForm_eq_of_inner_eq (hg : ∀ x u w, ⟪u, w⟫ = σ.eval₂ x u (J x w)) :
-    J.kahlerTwoForm (inner_apply_apply_of_inner_eq hg) = σ := by
-  ext x v
-  have hv : v = ![v 0, v 1] := funext fun i ↦ by fin_cases i <;> rfl
-  rw [hv, kahlerTwoForm_apply_two, inner_apply_left_of_inner_eq hg,
-    SmoothBundleForm.eval₂_apply]
-
-/-- The metric of `M` is `⟪u, w⟫ = ω(u, J w)` for the Kähler two-form `ω` of an orthogonal `J`. -/
-theorem inner_eq_eval₂_kahlerTwoForm
-    (hJ : ∀ (x : M) (u w : TangentSpace I x), ⟪J x u, J x w⟫ = ⟪u, w⟫) (x : M)
-    (u w : TangentSpace I x) : ⟪u, w⟫ = (J.kahlerTwoForm hJ).eval₂ x u (J x w) := by
-  rw [SmoothBundleForm.eval₂_apply, kahlerTwoForm_apply_two, hJ]
-
-/-- The Kähler two-form of an orthogonal smooth almost complex structure is compatible with it. -/
-theorem compatible_kahlerTwoForm
-    (hJ : ∀ (x : M) (u w : TangentSpace I x), ⟪J x u, J x w⟫ = ⟪u, w⟫) :
-    SmoothTwoForm.Compatible (J.kahlerTwoForm hJ) J :=
-  SmoothTwoForm.compatible_of_inner_eq (inner_eq_eval₂_kahlerTwoForm hJ)
 
 /-- The metric of the compatible pair formed by an orthogonal smooth almost complex structure and
 its Kähler two-form is the metric of `M`. -/
