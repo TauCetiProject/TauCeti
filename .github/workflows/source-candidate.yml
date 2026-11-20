@@ -10,6 +10,7 @@ permissions:
   pull-requests: read
   statuses: write
   actions: read
+  issues: write # the shared harness's runner-picker job asks for it, though this event skips that job
   id-token: write # required by the shared harness's telemetry job, outside the candidate sandbox
 
 jobs:
