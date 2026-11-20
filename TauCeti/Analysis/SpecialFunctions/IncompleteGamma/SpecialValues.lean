@@ -32,11 +32,12 @@ The case `n = 0` of the upper function, `Γ(1, z) = e^{−z}` (DLMF 8.4.5), is
 
 ## Implementation notes
 
-The formulas hold for every `z`, including the branch cut and `z = 0`. For the upper function
-this is because the integrand of the ray integral `Γ(n + 1, z)` is the polynomial `(z + t)ⁿ`
-times `e^{−t}`, which is integrated term by term after a binomial expansion. For the lower
-functions it follows from the recurrence `γ*(a, z) = z γ*(a + 1, z) + e^{−z} / Γ(a + 1)` of
-Tricomi's function, by induction on `n` from `γ*(0, z) = 1`. The proofs are new.
+The formulas hold for every `z`, including the branch cut and `z = 0`, so no hypothesis on `z`
+is needed. To evaluate an incomplete Gamma function at a positive integer parameter, write the
+parameter as `(n : ℂ) + 1` and rewrite with the theorem for that function: the result is
+expressed through the finite exponential sum `e^{−z} ∑_{k=0}^n zᵏ / k!`, which
+`norm_num [Finset.sum_range_succ]` expands for a concrete `n`, as in
+`Complex.upperIncompleteGamma_three_left`.
 
 ## References
 
