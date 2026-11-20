@@ -199,14 +199,14 @@ def classifyingSpaceDeckMulEquiv : G ≃* deck (classifyingSpaceProj G) :=
 /-- The deck transformation attached to a group element is translation by that element. -/
 @[simp]
 theorem classifyingSpaceDeckMulEquiv_apply (g : G) (x : universalGSpace G) :
-    (classifyingSpaceDeckMulEquiv G g).1 x = g • x :=
+    (classifyingSpaceDeckMulEquiv G g).val x = g • x :=
   (isQuotientCoveringMap_classifyingSpaceProj G).deckMulEquiv_apply g x
 
 /-- A deck transformation of the orbit map is translation by the group element it corresponds
 to. -/
 @[simp]
 theorem classifyingSpaceDeckMulEquiv_symm_apply (φ : deck (classifyingSpaceProj G))
-    (x : universalGSpace G) : (classifyingSpaceDeckMulEquiv G).symm φ • x = φ.1 x :=
+    (x : universalGSpace G) : (classifyingSpaceDeckMulEquiv G).symm φ • x = φ.val x :=
   (isQuotientCoveringMap_classifyingSpaceProj G).deckMulEquiv_symm_apply φ x
 
 end TauCeti

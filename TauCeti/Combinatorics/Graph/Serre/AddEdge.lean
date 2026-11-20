@@ -170,7 +170,8 @@ abbrev deleteEdge (d : Γ.E) : SerreGraph.{u, v} :=
 /-- The geometric edges of `Γ.deleteEdge d` are those of `Γ` other than the edge of `d`. -/
 noncomputable def deleteEdgeGeomEdgeEquiv (d : Γ.E) :
     (Γ.deleteEdge d).GeomEdge ≃ {q : Γ.GeomEdge // q ≠ Γ.toGeomEdge d} := by
-  refine Equiv.ofBijective (GeomEdge.lift _ (fun e => ⟨Γ.toGeomEdge e.1, e.2⟩) fun e => by simp)
+  refine Equiv.ofBijective (GeomEdge.lift _ (fun e => ⟨Γ.toGeomEdge e.val,
+      e.property⟩) fun e => by simp)
     ⟨fun q q' hq => ?_, fun ⟨q, hq⟩ => ?_⟩
   · obtain ⟨e, rfl⟩ := (Γ.deleteEdge d).toGeomEdge_surjective q
     obtain ⟨e', rfl⟩ := (Γ.deleteEdge d).toGeomEdge_surjective q'
@@ -182,8 +183,13 @@ noncomputable def deleteEdgeGeomEdgeEquiv (d : Γ.E) :
 
 @[simp] theorem coe_deleteEdgeGeomEdgeEquiv_toGeomEdge (d : Γ.E) (e : (Γ.deleteEdge d).E) :
     (Γ.deleteEdgeGeomEdgeEquiv d ((Γ.deleteEdge d).toGeomEdge e) : Γ.GeomEdge) =
-      Γ.toGeomEdge e.1 :=
+      Γ.toGeomEdge e.val :=
   congrArg Subtype.val (GeomEdge.lift_toGeomEdge ..)
+
+/-- Deleting an edge of a graph with finitely many geometric edges leaves finitely many geometric
+edges. -/
+instance [Finite Γ.GeomEdge] (d : Γ.E) : Finite (Γ.deleteEdge d).GeomEdge :=
+  .of_equiv _ (Γ.deleteEdgeGeomEdgeEquiv d).symm
 
 /-- Deleting an edge removes one geometric edge. -/
 theorem card_deleteEdge_geomEdge_add_one [Finite Γ.GeomEdge] (d : Γ.E) :
@@ -201,7 +207,7 @@ noncomputable def deleteEdgeSumEquiv (d : Γ.E) : (Γ.deleteEdge d).E ⊕ Bool �
     ⟨Subtype.val_injective.sumElim (fun b b' h => ?_) fun e b h => ?_, fun e => ?_⟩
   · cases b <;> cases b' <;>
       first | rfl | exact absurd h (Γ.rev_ne d) | exact absurd h.symm (Γ.rev_ne d)
-  · exact e.2 (by cases b <;> simp [h])
+  · exact e.property (by cases b <;> simp [h])
   · by_cases he : Γ.toGeomEdge e = Γ.toGeomEdge d
     · rcases Γ.toGeomEdge_eq_toGeomEdge_iff.1 he with rfl | rfl
       exacts [⟨.inr true, rfl⟩, ⟨.inr false, by simp⟩]
@@ -210,7 +216,7 @@ noncomputable def deleteEdgeSumEquiv (d : Γ.E) : (Γ.deleteEdge d).E ⊕ Bool �
 variable {Γ}
 
 @[simp] theorem deleteEdgeSumEquiv_inl (d : Γ.E) (e : (Γ.deleteEdge d).E) :
-    Γ.deleteEdgeSumEquiv d (.inl e) = e.1 :=
+    Γ.deleteEdgeSumEquiv d (.inl e) = e.val :=
   (rfl)
 
 @[simp] theorem deleteEdgeSumEquiv_inr (d : Γ.E) (b : Bool) :
@@ -243,7 +249,7 @@ variable (Γ) in
 darts of `Γ`. -/
 def deleteEdgeAddEdgeEquiv {d : (Γ.addEdge x y).E} {b : Bool} (hd : d = .inr b) :
     ((Γ.addEdge x y).deleteEdge d).E ≃ Γ.E where
-  toFun e := e.1.getLeft <| by
+  toFun e := e.val.getLeft <| by
     obtain ⟨_ | b', he⟩ := e
     · rfl
     · subst hd
@@ -254,11 +260,11 @@ def deleteEdgeAddEdgeEquiv {d : (Γ.addEdge x y).E} {b : Bool} (hd : d = .inr b)
 
 @[simp] theorem inl_deleteEdgeAddEdgeEquiv {d : (Γ.addEdge x y).E} {b : Bool} (hd : d = .inr b)
     (e : ((Γ.addEdge x y).deleteEdge d).E) :
-    (.inl (Γ.deleteEdgeAddEdgeEquiv hd e) : Γ.E ⊕ Bool) = e.1 :=
+    (.inl (Γ.deleteEdgeAddEdgeEquiv hd e) : Γ.E ⊕ Bool) = e.val :=
   Sum.inl_getLeft _ _
 
 @[simp] theorem coe_deleteEdgeAddEdgeEquiv_symm {d : (Γ.addEdge x y).E} {b : Bool}
-    (hd : d = .inr b) (e : Γ.E) : ((Γ.deleteEdgeAddEdgeEquiv hd).symm e).1 = .inl e :=
+    (hd : d = .inr b) (e : Γ.E) : ((Γ.deleteEdgeAddEdgeEquiv hd).symm e).val = .inl e :=
   (rfl)
 
 /-- Deleting the adjoined edge gives back the sources of `Γ`. -/

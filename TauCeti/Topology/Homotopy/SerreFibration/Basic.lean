@@ -177,7 +177,7 @@ theorem joined_of_mem_serreFibrations {p : E ⟶ B} (hp : serreFibrations p) {x 
   obtain ⟨Γ, hΓ0, hΓ⟩ := exists_path_lift_of_mem_serreFibrations hp h.somePath
   have hΓ1 : p (Γ 1) = p y := (congrFun hΓ 1).trans h.somePath.target
   exact Joined.trans ⟨⟨Γ, hΓ0, rfl⟩⟩ ((PathConnectedSpace.joined (⟨Γ 1, hΓ1⟩ : p.fiber (p y))
-    ⟨y, rfl⟩).map continuous_subtype_val)
+    ⟨y, rfl⟩).map continuous_subtypeVal)
 
 /-- **The total space is path-connected when the base and one fibre are.** For a Serre fibration
 `p : E → B` over a path-connected base, if the fibre over `b` is path-connected, then so is `E`:

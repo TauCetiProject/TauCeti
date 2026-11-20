@@ -145,8 +145,7 @@ theorem mextDeriv_interior_riemannianVolumeForm_apply
     (((isSmoothForm_riemannianVolumeForm (n := 1) o).contMDiff x).mdifferentiableAt one_ne_zero)
   have hV (i : Fin (m + 1)) : MDifferentiableAt I I.tangent
       (fun y ↦ (chartLocalFrame (I := I) x (σ.symm i) y : TangentBundle I M)) x :=
-    ((contMDiffOn_chartLocalFrame (n := 1) x (σ.symm i)).contMDiffAt
-      (e.open_baseSet.mem_nhds hx)).mdifferentiableAt one_ne_zero
+    (contMDiffAt_chartLocalFrame (n := 1) x (σ.symm i)).mdifferentiableAt one_ne_zero
   have hVV (i j : Fin (m + 1)) : VectorField.mlieBracket I (chartLocalFrame (I := I) x (σ.symm i))
       (chartLocalFrame x (σ.symm j)) x = 0 := by
     simpa only [chartLocalFrame_def] using Manifold.mlieBracket_localFrame_trivializationAt
