@@ -18,7 +18,7 @@ Serre graph has one, and every acyclic reversal-closed set of darts extends to o
 lemma: a maximal acyclic set of darts reaches every vertex, since a dart leaving the vertices it
 reaches could be added without creating a reduced closed path. Loops and parallel darts are
 allowed throughout, and no finiteness is assumed. A rose has exactly one spanning tree, with no
-darts.
+darts, while a spanning tree of a graph with two distinct vertices has a dart.
 
 Any two vertices are joined by a unique reduced path whose darts lie in a spanning tree `T`, the
 tree path `T.path a b`. Dart weights that agree on `T` agree along tree paths, so a weight that is
@@ -322,6 +322,14 @@ theorem src_ne_tgt {e : Γ.E} (he : e ∈ T.darts) : Γ.src e ≠ Γ.tgt e :=
 /-- A spanning tree of a graph with at most one vertex, such as a rose, has no darts. -/
 instance [Subsingleton Γ.V] : IsEmpty T.darts :=
   T.isTree.isAcyclic.isEmpty_dart_of_subsingleton
+
+/-- A spanning tree of a graph with two distinct vertices, such as a segment, has a dart. -/
+theorem darts_nonempty [Nontrivial Γ.V] : T.darts.Nonempty := by
+  obtain ⟨a, b, hab⟩ := exists_pair_ne Γ.V
+  obtain ⟨p, -, hp⟩ := T.exists_path a b
+  cases p with
+  | nil => exact absurd rfl hab
+  | cons p e => exact ⟨e.1, hp _ (by simp)⟩
 
 section Map
 
