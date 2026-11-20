@@ -456,11 +456,7 @@ private theorem oneVertexPlumbing_characteristicWeight_nonneg {p : ℤ}
     calc k.val 0 * x 0 ≤ |k.val 0 * x 0| := le_abs_self _
       _ = |k.val 0| * |x 0| := abs_mul _ _
       _ ≤ p * |x 0| := mul_le_mul_of_nonneg_right hk (abs_nonneg _)
-  have hx : |x 0| ≤ x 0 ^ 2 := by
-    rw [← sq_abs]
-    rcases (abs_nonneg (x 0)).eq_or_lt with h | h
-    · rw [← h]; norm_num
-    · nlinarith
+  have hx : |x 0| ≤ x 0 ^ 2 := Int.abs_eq_natAbs (x 0) ▸ Int.natAbs_le_self_sq (x 0)
   have hp : 0 ≤ p := (abs_nonneg _).trans hk
   nlinarith [mul_le_mul_of_nonneg_left hx hp]
 
@@ -500,7 +496,10 @@ theorem oneVertexPlumbing_neg_one_latticeCorrectionTerm
     refine ((oneVertexPlumbing (-1)).isSpinCEquivalent_iff _ _).2 ⟨fun _ => -m, ?_⟩
     funext v
     fin_cases v
-    simp [Matrix.mulVec, dotProduct, hm]
+    simp only [Int.reduceNeg, Fin.zero_eta, Fin.isValue, hm, Matrix.mulVec, dotProduct,
+      Finset.univ_unique, Fin.default_eq_zero, oneVertexPlumbing_intersectionMatrix,
+      Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_fin_one, mul_neg, neg_mul, one_mul,
+      neg_neg, Finset.sum_const, Finset.card_singleton, Int.nsmul_eq_mul, Nat.cast_one]
     ring
   have h := isNegativeDefinite_oneVertexPlumbing (w := -1) (by norm_num)
   rw [h.latticeCorrectionTerm_eq_of_isSpinCEquivalent hk,
