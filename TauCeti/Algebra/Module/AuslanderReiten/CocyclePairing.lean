@@ -124,11 +124,6 @@ section Field
 
 variable [Field k] [Algebra k A] [Module k N] [IsScalarTower k A N]
 
-/-- The additive group inherited from the dual, made available locally so that
-nested quotient instance synthesis can find it in the public quotient signatures. -/
-local instance (f : P₁ →ₗ[A] P₀) : AddCommGroup (AuslanderReitenTranslate k k f) :=
-  inferInstanceAs (AddCommGroup (Module.Dual k (AuslanderReitenTranspose f)))
-
 /-- Every functional on Hom cocycles modulo coboundaries is obtained by pairing
 with a map into the Auslander–Reiten translate. -/
 theorem auslanderReitenCocyclePairing_surjective (f : P₁ →ₗ[A] P₀) :
