@@ -140,8 +140,10 @@ theorem subsingleton_of_isUnit {x : R} (hx : IsUnit x) : Subsingleton (QuotSMulT
 /-- `M ⧸ x M` is trivial exactly when multiplication by `x` on `M` is surjective. -/
 theorem subsingleton_iff_smul_right_surjective {x : R} :
     Subsingleton (QuotSMulTop x M) ↔ Surjective (x • · : M → M) := by
-  rw [Submodule.Quotient.subsingleton_iff, eq_top_iff]
-  simp [IsConcreteLE.le_iff, Submodule.mem_smul_pointwise_iff_exists, Surjective]
+  -- `x • ⊤` is the image of `⊤` under `DistribSMul.toLinearMap R M x`, i.e. the range of `x • ·`.
+  rw [Submodule.Quotient.subsingleton_iff, Submodule.pointwise_smul_def, ← LinearMap.range_eq_map,
+    LinearMap.range_eq_top]
+  rfl
 
 /-- `Ideal.mapQSMulTop (x) f` is Mathlib's `QuotSMulTop.map x f`, up to the identification of
 `(x) • ⊤` with `x • ⊤`. -/

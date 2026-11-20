@@ -355,10 +355,9 @@ end
 theorem subsingleton_torsionBy_iff_smul_right_injective {R M : Type*} [CommSemiring R]
     [AddCommGroup M] [Module R M] {a : R} :
     Subsingleton (torsionBy R M a) ↔ Function.Injective (a • · : M → M) := by
-  rw [subsingleton_iff_eq_bot, Submodule.eq_bot_iff]
-  simp only [mem_torsionBy_iff]
-  exact ⟨fun h x y hxy ↦ sub_eq_zero.mp (h _ ((smul_sub a x y).trans (sub_eq_zero.mpr hxy))),
-    fun h x hx ↦ h (hx.trans (smul_zero a).symm)⟩
+  -- `torsionBy R M a` is defined as the kernel of `DistribSMul.toLinearMap R M a`, i.e. of `a • ·`.
+  rw [subsingleton_iff_eq_bot, torsionBy, LinearMap.ker_eq_bot']
+  exact (injective_iff_map_eq_zero (DistribSMul.toLinearMap R M a)).symm
 
 end Submodule
 
