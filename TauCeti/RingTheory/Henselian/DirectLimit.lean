@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Henselian
 public import TauCeti.Algebra.Colimit.Ring.Basic
 public import TauCeti.Algebra.Colimit.Ring.Ideal
+public import TauCeti.Algebra.Colimit.Ring.Polynomial
 
 /-!
 # Henselian pairs under directed colimits
@@ -19,11 +20,12 @@ result, `Ring.DirectLimit.henselianRing`, is that if every `(G i, I i)` is Hense
 
 For a nonempty index type, a monic polynomial over the colimit with a simple root modulo the
 colimit ideal comes, together with its approximate root and the witnesses for both conditions,
-from a single stage (using the descent lemmas of `TauCeti.Algebra.Colimit.Ring.Ideal`); the root
-found there maps to the required root in the colimit. For an empty index type the colimit ideal is
-`⊥`, and every ring is Henselian along `⊥`. This is the filtered-colimit case of the permanence
-properties of Henselian pairs. Directedness is essential: the coproduct of two copies of
-`(ℤ_[p], (p))`, which is not a directed colimit, is not Henselian along `p`.
+from a single stage (using the monic lift of `TauCeti.Algebra.Colimit.Ring.Polynomial` and the
+descent lemmas of `TauCeti.Algebra.Colimit.Ring.Ideal`); the root found there maps to the required
+root in the colimit. For an empty index type the colimit ideal is `⊥`, and every ring is Henselian
+along `⊥`. This is the filtered-colimit case of the permanence properties of Henselian pairs.
+Directedness is essential: the coproduct of two copies of `(ℤ_[p], (p))`, which is not a directed
+colimit, is not Henselian along `p`.
 
 ## Main results
 
@@ -63,7 +65,7 @@ private theorem henselianRing_of_nonempty [Nonempty ι] [IsDirectedOrder ι]
       simpa using hu.map (of G (f · · ·) k)
   is_henselian P hP a₀ h₁ h₂ := by
     -- Lift `P` to a monic polynomial `q` and `a₀` to an element `b`, at a common stage `k`.
-    obtain ⟨i, q, hqm, rfl⟩ := Polynomial.exists_monic_of hP
+    obtain ⟨i, q, hqm, -, rfl⟩ := Polynomial.exists_monic_of hP
     obtain ⟨j, b, rfl⟩ := exists_of a₀
     obtain ⟨k, hik, hjk⟩ := exists_ge_ge i j
     have hqm := hqm.map (f i k hik)

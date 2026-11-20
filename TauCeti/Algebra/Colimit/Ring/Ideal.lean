@@ -6,19 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Colimit.Ring
-public import Mathlib.Algebra.Polynomial.Lifts
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
-# Ideals and monic polynomials over directed colimits of rings
+# Ideals over directed colimits of rings
 
 Let `I i` be a compatible family of ideals in a directed system of commutative rings `G i`,
 indexed by a nonempty directed preorder: the transition maps `f i j` carry `I i` into `I j`. The
 colimit ideal of `Ring.DirectLimit G f` is `⨆ i, (I i).map (of G f i)`. This file shows that its
 elements are exactly the images of elements of the `I i`, and that the image of an element of a
 stage `i` lies in it, or is a unit modulo it, if and only if the same holds for the ideal `I j` at
-some stage `j ≥ i`. It also shows that monic polynomials over the colimit come from monic
-polynomials over some stage.
+some stage `j ≥ i`.
 
 ## Main results
 
@@ -27,13 +25,9 @@ polynomials over some stage.
   `TauCeti.Ring.DirectLimit.isUnit_quotientMk_of_iff`: the image of an element of a stage `i`
   lies in the colimit ideal, or is a unit modulo it, if and only if this holds for the ideal at
   some stage `j ≥ i`.
-* `Ring.DirectLimit.Polynomial.exists_monic_of`: a monic polynomial over the colimit comes from a
-  monic polynomial over some stage.
 -/
 
 public section
-
-open Polynomial
 
 namespace Ring.DirectLimit
 
@@ -66,15 +60,6 @@ theorem mem_iSup_map_of_iff [Nonempty ι] [IsDirectedOrder ι]
             by simp⟩ }
   exact (iSup_le fun i ↦ Ideal.map_le_iff_le_comap.2 fun x hx ↦ ⟨i, x, hx, rfl⟩ :
     ⨆ i, (I i).map (of G (f · · ·) i) ≤ J) hz
-
-/-- A monic polynomial over a directed colimit of rings is the image of a monic polynomial over
-some stage. -/
-theorem Polynomial.exists_monic_of [Nonempty ι] [IsDirectedOrder ι]
-    {P : (DirectLimit G (f · · ·))[X]} (hP : P.Monic) :
-    ∃ i, ∃ p : (G i)[X], p.Monic ∧ p.map (of G (f · · ·) i) = P := by
-  obtain ⟨i, p, hp⟩ := Ring.DirectLimit.Polynomial.exists_of P
-  obtain ⟨q, hq, -, hqm⟩ := lifts_and_natDegree_eq_and_monic ((mem_lifts P).2 ⟨p, hp⟩) hP
-  exact ⟨i, q, hqm, hq⟩
 
 end Ring.DirectLimit
 
