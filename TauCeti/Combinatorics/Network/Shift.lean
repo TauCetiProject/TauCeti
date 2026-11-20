@@ -18,6 +18,10 @@ need not be feasible. This gives equivalences for exact and interval excess prob
 subtracting the lower bound, reduces signed bounds to nonnegative capacities. Subtracting a
 feasible reference instead reduces its prescribed-excess problem to a circulation problem.
 
+`Network.shift` bundles the translated bounds without changing the arrow family. A zero shift is
+the identity, and successive shifts compose by adding their reference assignments. The exact- and
+interval-excess equivalences satisfy the same laws on their underlying assignments.
+
 `ExcessFlow` and `ExcessIntervalFlow` use the same arrow assignments and interval bounds as
 `BoundedFlow`; their extra constraint prescribes excess at every vertex. Excess is incoming minus
 outgoing, so the shifted demand is the original demand minus the reference excess.
@@ -36,6 +40,70 @@ open Finset
 universe u v w
 
 variable {V : Type u} {Q : V → V → Type v} {K : Type w}
+
+namespace Network
+
+section OrderedGroup
+
+variable [AddGroup K] [LE K] [AddRightMono K]
+
+/-- Translate both bounds of a network by subtracting a reference assignment. The arrow family
+is unchanged, and the translated bounds remain ordered. -/
+@[expose, reducible]
+def shift (N : Network K V) (h : N.Assignment K) : Network K V where
+  Hom := N.Hom
+  lower := N.lower - h
+  upper := N.upper - h
+  lower_le_upper e := sub_le_sub_right (N.lower_le_upper e) (h e)
+
+/-- Shifting bounds does not change the arrow family. -/
+@[simp]
+theorem shift_Hom (N : Network K V) (h : N.Assignment K) :
+    (N.shift h).Hom = N.Hom :=
+  (rfl)
+
+/-- The lower bound of a shifted network is the original lower bound minus the reference. -/
+@[simp]
+theorem shift_lower (N : Network K V) (h : N.Assignment K) {x y : V}
+    (e : (N.shift h).Hom x y) :
+    (N.shift h).lower e = N.lower e - h e :=
+  (rfl)
+
+/-- The upper bound of a shifted network is the original upper bound minus the reference. -/
+@[simp]
+theorem shift_upper (N : Network K V) (h : N.Assignment K) {x y : V}
+    (e : (N.shift h).Hom x y) :
+    (N.shift h).upper e = N.upper e - h e :=
+  (rfl)
+
+/-- Shifting a network by the zero assignment leaves it unchanged. -/
+@[simp]
+theorem shift_zero (N : Network K V) : N.shift 0 = N := by
+  cases N
+  simp [shift]
+
+end OrderedGroup
+
+section OrderedCommGroup
+
+variable [AddCommGroup K] [LE K] [AddRightMono K]
+
+/-- Shifting successively by two reference assignments is shifting by their sum. -/
+@[simp]
+theorem shift_shift (N : Network K V) (h k : N.Assignment K) :
+    (N.shift h).shift k = N.shift (h + k) := by
+  rcases N with ⟨Hom, lower, upper, hbounds⟩
+  simp only [shift, Network.mk.injEq, true_and, heq_eq_eq]
+  constructor
+  · funext x y e
+    exact sub_sub (lower e) (h e) (k e)
+  · funext x y e
+    exact sub_sub (upper e) (h e) (k e)
+
+end OrderedCommGroup
+
+end Network
+
 variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K]
 
 /-- Arrow assignments between `lo` and `hi` whose excess is the prescribed function `b`.
@@ -154,6 +222,22 @@ theorem shiftEquiv_symm_apply_val (lo hi h : Assignment Q K) (a b : V → K)
     ((shiftEquiv lo hi h a b).symm f).val = f.val + h :=
   (rfl)
 
+/-- Shifting interval excess by the zero assignment fixes the underlying assignment. -/
+theorem shiftEquiv_zero_apply_val (lo hi : Assignment Q K) (a b : V → K)
+    (f : ExcessIntervalFlow lo hi a b) :
+    (shiftEquiv lo hi 0 a b f).val = f.val := by
+  simp only [shiftEquiv_apply_val, sub_zero]
+
+/-- Successive interval-excess shifts by `h` and `k` agree arrowwise with the single shift by
+`h + k`. The two codomains present the same bounds with different parenthesizations. -/
+theorem shiftEquiv_add_apply_val (lo hi h k : Assignment Q K) (a b : V → K)
+    (f : ExcessIntervalFlow lo hi a b) :
+    (shiftEquiv (lo - h) (hi - h) k (a - excessAt h) (b - excessAt h)
+      (shiftEquiv lo hi h a b f)).val =
+        (shiftEquiv lo hi (h + k) a b f).val := by
+  ext x y e
+  simp only [shiftEquiv_apply_val, Pi.sub_apply, Pi.add_apply, sub_sub]
+
 /-- Interval-excess shifts also preserve any additive subgroup containing the reference. -/
 theorem shiftEquiv_apply_mem_iff (lo hi h : Assignment Q K) (a b : V → K)
     {M : Type*} [SetLike M K] [AddSubgroupClass M K] (H : M)
@@ -202,6 +286,22 @@ theorem shiftEquiv_symm_apply_val (lo hi h : Assignment Q K) (b : V → K)
     (f : ExcessFlow (lo - h) (hi - h) (b - excessAt h)) :
     ((shiftEquiv lo hi h b).symm f).val = f.val + h :=
   (rfl)
+
+/-- Shifting prescribed excess by the zero assignment fixes the underlying assignment. -/
+theorem shiftEquiv_zero_apply_val (lo hi : Assignment Q K) (b : V → K)
+    (f : ExcessFlow lo hi b) :
+    (shiftEquiv lo hi 0 b f).val = f.val := by
+  simp only [shiftEquiv_apply_val, sub_zero]
+
+/-- Successive prescribed-excess shifts by `h` and `k` agree arrowwise with the single shift by
+`h + k`. The two codomains present the same bounds with different parenthesizations. -/
+theorem shiftEquiv_add_apply_val (lo hi h k : Assignment Q K) (b : V → K)
+    (f : ExcessFlow lo hi b) :
+    (shiftEquiv (lo - h) (hi - h) k (b - excessAt h)
+      (shiftEquiv lo hi h b f)).val =
+        (shiftEquiv lo hi (h + k) b f).val := by
+  ext x y e
+  simp only [shiftEquiv_apply_val, Pi.sub_apply, Pi.add_apply, sub_sub]
 
 /-- A shift by a subgroup-valued reference preserves subgroup membership arrowwise. -/
 theorem shiftEquiv_apply_mem_iff (lo hi h : Assignment Q K) (b : V → K)
