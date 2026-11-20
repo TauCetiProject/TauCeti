@@ -12,9 +12,8 @@ import Mathlib.NumberTheory.Padics.ProperSpace
 /-!
 # Coefficient extension and clopen restriction
 
-Extending the coefficients of a measure from the closed unit ball commutes with restriction to
-any clopen subset. Thus one may restrict an integral measure before or after passing to field
-coefficients, without changing its integrals on that subset. Together with
+Extending the coefficients of a measure along a bounded ring homomorphism commutes with
+restriction to any clopen subset. Both orders give the same integrals on that subset. Together with
 `AbstractMeasure.extendCoefficients_map`, this also compares the ambient extensions by zero.
 
 The coefficient homomorphism need not be continuous: finite projections test only locally constant
@@ -34,10 +33,11 @@ open ContinuousMap TopologicalSpace
 namespace AbstractMeasure
 
 variable {X O K : Type*} [TopologicalSpace X] [CompactSpace X] [T2Space X]
-  [TotallyDisconnectedSpace X] [NormedCommRing O] [NormedField K] [CompleteSpace K]
-  [IsUltrametricDist K] (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1)
+  [TotallyDisconnectedSpace X] [NormedCommRing O]
+  [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K] {B : ℝ}
+  (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B)
 
-/-- Extension from unit-ball coefficients commutes with restriction to a clopen subset.
+/-- Extension of coefficients commutes with restriction to a clopen subset.
 Continuity of the coefficient homomorphism is not required. -/
 @[simp]
 theorem extendCoefficients_restrictClopen (s : Clopens X) (μ : D(X, O)) :
