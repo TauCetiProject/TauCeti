@@ -219,9 +219,7 @@ by the scalar `(-1)^k`. -/
 @[simp]
 theorem SL_slash_S_slash_S (k : ℤ) (f : ℍ → ℂ) :
     (f ∣[k] ModularGroup.S) ∣[k] ModularGroup.S = (-1 : ℂ) ^ k • f := by
-  have hS : ModularGroup.S * ModularGroup.S = (-1 : SL(2, ℤ)) :=
-    Subtype.ext (by simpa using ModularGroup.S_mul_S_eq)
-  rw [← SlashAction.slash_mul, hS, SL_slash_neg, SlashAction.slash_one]
+  rw [← SlashAction.slash_mul, ModularGroup.S_mul_S_eq, SL_slash_neg, SlashAction.slash_one]
 
 /-- Invariance under an element of `SL(2, ℤ)` passes to all its integer powers: the
 `SL(2, ℤ)` form of `slash_zpow_eq_self_of_slash_eq`. -/
@@ -653,7 +651,7 @@ theorem exists_mem_lowerLeft_ne_zero [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
     simp only [coe_mul, ModularGroup.S_inv, coe_neg, coe_S, coe_T_zpow]
     norm_num [Matrix.mul_apply, Fin.sum_univ_two]
   rw [← map_pow, mapGL_coe_matrix, map_apply_coe]
-  simp only [RingHom.mapMatrix_apply, Matrix.map_apply, he]
+  simp only [Matrix.map_apply, he]
   simp [algebraMap_int_eq, hn.ne']
 
 /-- A slash-invariant form of nonzero weight whose group has finite-index intersection with the

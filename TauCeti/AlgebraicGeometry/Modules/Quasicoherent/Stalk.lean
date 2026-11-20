@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.Stalk
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 
 /-!
 # Stalks of quasi-coherent modules

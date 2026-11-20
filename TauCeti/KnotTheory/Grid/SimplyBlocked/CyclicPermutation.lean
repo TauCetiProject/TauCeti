@@ -119,30 +119,13 @@ theorem simplyBlockedRelabelColumnsEquiv_mem_bigradedChainHatPiece_iff {g : ℤ 
     {c : GridChainHat R n i} :
     GridChain.simplyBlockedRelabelColumnsEquiv R (finRotate n) i c ∈
         (G.relabelColumns (finRotate n)).bigradedChainHatPiece R (finRotate n i) g ↔
-      c ∈ G.bigradedChainHatPiece R i g := by
-  classical
-  -- Renaming the surviving variables renames the monomials without changing their degrees.
-  have hs (x : GridState n) :
-      (GridChain.simplyBlockedRelabelColumnsEquiv R (finRotate n) i c
-        (x.relabelColumns (finRotate n))).support =
-          (c x).support.image (Finsupp.mapDomain ((finRotate n).subtypeEquiv
-            fun _ => not_congr (finRotate n).injective.eq_iff.symm)) := by
-    rw [GridChain.simplyBlockedRelabelColumnsEquiv_apply, GridState.relabelColumns_relabelColumns,
-      Equiv.self_trans_symm, GridState.relabelColumns_refl, simplyBlockedRenameEquiv_apply,
-      support_rename_of_injective (Equiv.injective _)]
-  rw [mem_bigradedChainHatPiece, mem_bigradedChainHatPiece]
-  constructor
-  · intro hc x e he
-    have hx := hc (x.relabelColumns (finRotate n)) (e.mapDomain _)
-      (by rw [hs]; exact Finset.mem_image_of_mem _ he)
-    rwa [bidegree_relabelColumns_finRotate, Finsupp.degree_mapDomain] at hx
-  · intro hc x e he
-    obtain ⟨x, rfl⟩ : ∃ x', x'.relabelColumns (finRotate n) = x :=
-      ⟨x.relabelColumns (finRotate n).symm, by simp⟩
-    rw [hs, Finset.mem_image] at he
-    obtain ⟨e, he, rfl⟩ := he
-    rw [bidegree_relabelColumns_finRotate, Finsupp.degree_mapDomain]
-    exact hc x e he
+      c ∈ G.bigradedChainHatPiece R i g :=
+  mem_bigradedChainHatPiece_iff_of_rename (φ := fun x => x.relabelColumns (finRotate n))
+    (κ := finRotate n) (fun x => ⟨x.relabelColumns (finRotate n).symm, by simp⟩)
+    G.bidegree_relabelColumns_finRotate fun x => by
+      rw [GridChain.simplyBlockedRelabelColumnsEquiv_apply,
+        GridState.relabelColumns_relabelColumns, Equiv.self_trans_symm,
+        GridState.relabelColumns_refl]
 
 end OddComponentGridDiagram
 
