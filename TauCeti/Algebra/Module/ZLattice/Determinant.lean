@@ -480,6 +480,12 @@ omit [DiscreteTopology L] [IsZLattice ℝ L] in
 theorem IsUnimodular.det_eq_one (h : IsUnimodular L) : det L = 1 := by
   rw [det_def, h.covolume_eq_one, one_pow]
 
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- Every lattice in the zero space has determinant one. -/
+@[simp]
+theorem det_of_subsingleton [Subsingleton E] : det L = 1 :=
+  (isUnimodular_of_subsingleton L).det_eq_one
+
 /-- An integral lattice is unimodular exactly when its determinant is one. -/
 theorem IsIntegral.isUnimodular_iff_det_eq_one (h : IsIntegral L) :
     IsUnimodular L ↔ det L = 1 := by
