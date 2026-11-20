@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Measure.HermitianMatrix.Lebesgue
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Orthogonal
 public import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Basic
 import TauCeti.MeasureTheory.Constructions.Pi
+import TauCeti.MeasureTheory.Measure.Smul
 import TauCeti.Probability.Distributions.Gaussian.Affine
 
 /-!
@@ -494,6 +495,76 @@ theorem map_mul_mul_conjTranspose_gaussianEnsembleLaw_two {n : ℕ}
   rw [← Function.comp_def Subtype.val (Matrix.UnitaryGroup.hermitianConj U),
     ← Measure.map_map measurable_subtypeVal
       (Matrix.UnitaryGroup.hermitianConj U).continuous.measurable, map_hermitianConj_gueMeasure]
+
+/-- **Orthogonal conjugation invariance of `gaussianEnsemble 1 n`.** With independent `N(0, v)`
+coordinates, conjugating `gaussianEnsemble 1 n` by a real orthogonal matrix lifted to `ℂ` preserves
+its distribution. -/
+theorem identDistrib_conj_gaussianEnsemble_one {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {n : ℕ} {g : Fin n × Fin n → Ω → ℝ} {v : ℝ≥0}
+    (hg : ∀ ij, HasLaw (g ij) (gaussianReal 0 v) P) (hindep : iIndepFun g P)
+    (O : Matrix.orthogonalGroup (Fin n) ℝ) :
+    IdentDistrib
+      (fun ω ↦
+        (O : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal *
+          gaussianEnsemble 1 n (fun ij ↦ g ij ω) *
+          ((O : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᵀ)
+      (fun ω ↦ gaussianEnsemble 1 n (fun ij ↦ g ij ω)) P P := by
+  have hlaw : HasLaw (fun ω ↦ gaussianEnsemble 1 n (fun ij ↦ g ij ω))
+      ((gaussianEnsembleLaw 1 n).map (Real.sqrt v • ·)) P := by
+    convert hasLaw_gaussianEnsemble 1 hg hindep using 2
+    rw [gaussianEnsembleLaw_def, Measure.map_map (by fun_prop) (by fun_prop)]
+    rfl
+  let conjO : Matrix (Fin n) (Fin n) ℂ → Matrix (Fin n) (Fin n) ℂ := fun H ↦
+    (O : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal * H *
+      ((O : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᵀ
+  have hconjO : Measurable conjO :=
+    ((continuous_const.mul continuous_id).mul continuous_const).measurable
+  have hconjLaw : ((gaussianEnsembleLaw 1 n).map (Real.sqrt v • ·)).map conjO =
+      (gaussianEnsembleLaw 1 n).map (Real.sqrt v • ·) := by
+    rw [Measure.map_map_const_smul _ hconjO _ (fun H ↦ by simp [conjO])]
+    have h1 := map_mul_mul_conjTranspose_gaussianEnsembleLaw_one O
+    have hconjEq : (fun H : Matrix (Fin n) (Fin n) ℂ ↦
+        (O : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal * H *
+          ((O : Matrix (Fin n) (Fin n) ℝ).map Complex.ofReal)ᴴ) = conjO := by
+      funext H; congr 1
+      ext i j; simp
+    rw [hconjEq] at h1
+    rw [h1]
+  have hL : HasLaw (fun ω ↦ conjO (gaussianEnsemble 1 n (fun ij ↦ g ij ω)))
+      ((gaussianEnsembleLaw 1 n).map (Real.sqrt v • ·)) P :=
+    (⟨hconjO.aemeasurable, hconjLaw⟩ : HasLaw conjO _ _).comp hlaw
+  exact ⟨hL.aemeasurable, hlaw.aemeasurable, hL.map_eq.trans hlaw.map_eq.symm⟩
+
+/-- **Unitary conjugation invariance of `gaussianEnsemble β n` (`β ≠ 1`, in particular GUE).**
+With independent `N(0, v)` coordinates, conjugating `gaussianEnsemble β n` by a unitary matrix
+`U ∈ U(n)` preserves its distribution. -/
+theorem identDistrib_conj_gaussianEnsemble_of_ne_one {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {β n : ℕ} (hβ : β ≠ 1) {g : Fin n × Fin n → Ω → ℝ} {v : ℝ≥0}
+    (hg : ∀ ij, HasLaw (g ij) (gaussianReal 0 v) P) (hindep : iIndepFun g P)
+    (U : Matrix.unitaryGroup (Fin n) ℂ) :
+    IdentDistrib
+      (fun ω ↦
+        (U : Matrix (Fin n) (Fin n) ℂ) *
+          gaussianEnsemble β n (fun ij ↦ g ij ω) *
+          (U : Matrix (Fin n) (Fin n) ℂ)ᴴ)
+      (fun ω ↦ gaussianEnsemble β n (fun ij ↦ g ij ω)) P P := by
+  have hlaw : HasLaw (fun ω ↦ gaussianEnsemble β n (fun ij ↦ g ij ω))
+      ((gaussianEnsembleLaw 2 n).map (Real.sqrt v • ·)) P := by
+    convert hasLaw_gaussianEnsemble β hg hindep using 2
+    rw [gaussianEnsembleLaw_def, Measure.map_map (by fun_prop) (by fun_prop)]
+    congr 1; funext x; simp [gaussianEnsemble_eq_gaussianEnsemble_two_of_ne_one hβ]
+  let conjU : Matrix (Fin n) (Fin n) ℂ → Matrix (Fin n) (Fin n) ℂ := fun H ↦
+    (U : Matrix (Fin n) (Fin n) ℂ) * H * (U : Matrix (Fin n) (Fin n) ℂ)ᴴ
+  have hconjU : Measurable conjU :=
+    ((continuous_const.mul continuous_id).mul continuous_const).measurable
+  have hconjLaw : ((gaussianEnsembleLaw 2 n).map (Real.sqrt v • ·)).map conjU =
+      (gaussianEnsembleLaw 2 n).map (Real.sqrt v • ·) := by
+    rw [Measure.map_map_const_smul _ hconjU _ (fun H ↦ by simp [conjU]),
+      map_mul_mul_conjTranspose_gaussianEnsembleLaw_two U]
+  have hL : HasLaw (fun ω ↦ conjU (gaussianEnsemble β n (fun ij ↦ g ij ω)))
+      ((gaussianEnsembleLaw 2 n).map (Real.sqrt v • ·)) P :=
+    (⟨hconjU.aemeasurable, hconjLaw⟩ : HasLaw conjU _ _).comp hlaw
+  exact ⟨hL.aemeasurable, hlaw.aemeasurable, hL.map_eq.trans hlaw.map_eq.symm⟩
 
 /-- Under `goeMeasure n`, the upper-triangular coordinates are independent Gaussians:
 `N(0, 2 / n)` on the diagonal and `N(0, 1 / n)` above it. -/
