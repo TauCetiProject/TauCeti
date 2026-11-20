@@ -94,8 +94,8 @@ theorem convolution_apply (v : NovikovSeries V H N) (w : NovikovSeries W H N) :
 of support exponents with `u + u' = h`. -/
 theorem coeff_convolution (v : NovikovSeries V H N) (w : NovikovSeries W H N) (h : H) :
     (convolution β v w).coeff h =
-      ∑ p ∈ (finite_setOf_add_eq v w h).toFinset, β (v.coeff p.1) (w.coeff p.2) :=
-  (rfl)
+      ∑ p ∈ (finite_setOf_add_eq v w h).toFinset, β (v.coeff p.1) (w.coeff p.2) := by
+  simp [convolution_apply, coeff_convolve]
 
 /-- Convolving monomials adds their exponents. -/
 @[simp]
@@ -105,8 +105,12 @@ theorem convolution_single_single (g g' : H) (x : V) (y : W) :
 
 /-- Convolution along the multiplication of `R` is the product of Novikov series. -/
 theorem convolution_mul (a b : NovikovSeries R H N) :
-    convolution (LinearMap.mul R R) a b = a * b :=
-  (rfl)
+    convolution (LinearMap.mul R R) a b = a * b := by
+  have hβ : LinearMap.toAddMonoidHom'.comp (LinearMap.mul R R).toAddMonoidHom =
+      AddMonoidHom.mul := by
+    ext x y
+    simp
+  rw [convolution_apply, mul_eq_convolve, hβ]
 
 end NovikovSeries
 

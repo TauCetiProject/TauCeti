@@ -48,17 +48,15 @@ combination with coefficient `b^*_i (v_A)` at `⟨i, A⟩`. It is an `R`-linear 
   the Novikov ring (`TauCeti.NovikovSeries.gradeByCoeff_ite_eq_gradeBy`);
 * it turns the Cauchy product, the convolution `TauCeti.NovikovSeries.convolution` along the
   tensor product `V → W → V ⊗ W`, into the kernel product
-  `TauCeti.NovikovModule.kernelProduct` of the kernel `TauCeti.NovikovSeries.cauchyKernel`, in
-  the tensor basis `b ⊗ b'` (`TauCeti.NovikovSeries.toNovikovModule_convolution_mk`). The kernel
-  has potential bound `0` (`TauCeti.NovikovSeries.sigmaPotential_le_of_cauchyKernel_ne_zero`),
-  a single output for each pair of inputs (`TauCeti.NovikovSeries.cauchyKernel_mem`), and is
-  invariant under translating an input and the output together
-  (`TauCeti.NovikovSeries.cauchyKernel_vadd_left`,
-  `TauCeti.NovikovSeries.cauchyKernel_vadd_right`). These are the hypotheses of
-  `TauCeti.NovikovModule.novikovKernelProduct`, which makes the kernel product Novikov-bilinear,
-  and the first two are those of `TauCeti.NovikovModule.continuous_kernelProduct`, its joint
-  continuity. The degree hypothesis of `TauCeti.NovikovModule.kernelProduct_mem_gradeBy` is not
-  proved here for the Cauchy kernel;
+  `TauCeti.NovikovModule.kernelProduct`, in the tensor basis `b ⊗ b'`
+  (`TauCeti.NovikovSeries.toNovikovModule_convolution_mk`). The kernel is
+  `TauCeti.NovikovModule.kernelOfMatrix` of the constant structure matrix with entry `1` at
+  `(i, j, (i, j))` and `0` elsewhere, relative to the lifts `⟨i, 0⟩`, so the existing API of
+  kernels of matrices supplies its completed outputs, its translation invariance and its potential
+  bound. These are the hypotheses of `TauCeti.NovikovModule.novikovKernelProduct`, which makes the
+  kernel product Novikov-bilinear, and the potential bound and completed outputs are those of
+  `TauCeti.NovikovModule.continuous_kernelProduct`, its joint continuity. The degree hypothesis
+  of `TauCeti.NovikovModule.kernelProduct_mem_gradeBy` is not proved here for this kernel;
 * for two bases `b` and `b₁`, the composite `κ_(b₁) ∘ κ_b⁻¹` is linear over the Novikov ring for
   the module structures `TauCeti.NovikovModule.module` of both sides
   (`TauCeti.NovikovSeries.changeOfBasis`), and its matrix in the Novikov bases of the lifts
@@ -74,7 +72,6 @@ For `V = R` with the basis `1`, the coordinate of `κ_1 v` at the lift `⟨i, 0�
 * `TauCeti.NovikovSeries.sigmaPotential`: the potential `⟨i, A⟩ ↦ -N A` of the generators.
 * `TauCeti.NovikovSeries.toNovikovModule`: the coordinate map `κ_b`, built from the coordinates
   `TauCeti.NovikovSeries.basisCoords` of `TauCeti.RingTheory.NovikovSeries.Map`.
-* `TauCeti.NovikovSeries.cauchyKernel`: the kernel of the Cauchy product in basis coordinates.
 * `TauCeti.NovikovSeries.changeOfBasis`: `κ_(b₁) ∘ κ_b⁻¹` as a Novikov-linear equivalence.
 
 ## References
@@ -222,73 +219,29 @@ end Grading
 
 section CauchyProduct
 
-variable {H : Type*} [AddGroup H] {N : H →+ ℝ} {ι κ : Type*} [CommSemiring R]
-
-variable (R H ι κ) in
-open scoped Classical in
-/-- The kernel of the Cauchy product in basis coordinates: the coefficient at the inputs
-`⟨i, A⟩`, `⟨j, A'⟩` and the output `⟨(k, l), C⟩` is `1` when `(k, l) = (i, j)` and `C = A + A'`,
-and `0` otherwise. -/
-def cauchyKernel (p : Σ _ : ι, H) (q : Σ _ : κ, H) (r : Σ _ : ι × κ, H) : R :=
-  if r.1 = (p.1, q.1) ∧ r.2 = p.2 + q.2 then 1 else 0
-
-/-- The Cauchy kernel for any decidability instance of its defining condition. -/
-theorem cauchyKernel_apply (p : Σ _ : ι, H) (q : Σ _ : κ, H) (r : Σ _ : ι × κ, H)
-    [Decidable (r.1 = (p.1, q.1) ∧ r.2 = p.2 + q.2)] :
-    cauchyKernel R H ι κ p q r = if r.1 = (p.1, q.1) ∧ r.2 = p.2 + q.2 then 1 else 0 := by
-  simp only [cauchyKernel]
-  congr
-
-/-- A nonzero coefficient of the Cauchy kernel sits at the output generator
-`⟨(i, j), A + A'⟩` of the inputs `⟨i, A⟩` and `⟨j, A'⟩`. -/
-theorem eq_and_eq_of_cauchyKernel_ne_zero {p : Σ _ : ι, H} {q : Σ _ : κ, H}
-    {r : Σ _ : ι × κ, H} (h : cauchyKernel R H ι κ p q r ≠ 0) :
-    r.1 = (p.1, q.1) ∧ r.2 = p.2 + q.2 := by
-  classical
-  rw [cauchyKernel_apply] at h
-  by_contra hr
-  exact h (by simp [hr])
-
-/-- The Cauchy kernel has potential bound `0`: the output potential is the sum of the input
-potentials. -/
-theorem sigmaPotential_le_of_cauchyKernel_ne_zero (p : Σ _ : ι, H) (q : Σ _ : κ, H)
-    (r : Σ _ : ι × κ, H) (h : cauchyKernel R H ι κ p q r ≠ 0) :
-    sigmaPotential N (ι × κ) r ≤ sigmaPotential N ι p + sigmaPotential N κ q + 0 := by
-  simp [(eq_and_eq_of_cauchyKernel_ne_zero h).2, add_comm]
-
-/-- Each pair of inputs has a single output generator. -/
-theorem cauchyKernel_mem (p : Σ _ : ι, H) (q : Σ _ : κ, H) :
-    cauchyKernel R H ι κ p q ∈ NovikovModule R (sigmaPotential N (ι × κ)) :=
-  NovikovModule.mem_of_finite_support <| (Set.finite_singleton
-    (⟨(p.1, q.1), p.2 + q.2⟩ : Σ _ : ι × κ, H)).subset fun r hr => by
-      obtain ⟨h₁, h₂⟩ := eq_and_eq_of_cauchyKernel_ne_zero hr
-      exact Sigma.ext h₁ (heq_of_eq h₂)
-
-/-- The Cauchy kernel is unchanged when the first input and the output are translated by the
-same class. -/
-theorem cauchyKernel_vadd_left (g : H) (i : ι) (p₁ : H) (p₂ : Σ _ : κ, H) (k : ι × κ)
-    (p₀ : H) :
-    cauchyKernel R H ι κ ⟨i, g +ᵥ p₁⟩ p₂ ⟨k, g +ᵥ p₀⟩ =
-      cauchyKernel R H ι κ ⟨i, p₁⟩ p₂ ⟨k, p₀⟩ := by
-  classical
-  simp only [cauchyKernel_apply, vadd_eq_add, add_assoc, add_right_inj]
-
-variable [Finite ι] [Finite κ] {V W : Type*} [AddCommMonoid V] [Module R V] [AddCommMonoid W]
-  [Module R W]
+variable {H : Type*} [AddCommGroup H] {N : H →+ ℝ} {ι κ : Type*} [Finite ι] [Finite κ]
+  [DecidableEq ι] [DecidableEq κ] [CommSemiring R] {V W : Type*} [AddCommMonoid V] [Module R V]
+  [AddCommMonoid W] [Module R W] {C : ℝ}
 
 /-- **The coordinate map turns the Cauchy product into the kernel product.** For bases `b` of `V`
-and `b'` of `W`, the coordinates of the Cauchy product `(v ⋆ w)_C = ∑_(A + A' = C) v_A ⊗ w_(A')`
-in the basis `b ⊗ b'` of `V ⊗ W` are the product of the coordinates of `v` and `w` for the Cauchy
-kernel. -/
+and `b'` of `W`, the coordinates of the Cauchy product `(v ⋆ w)_A₀ = ∑_(A + A' = A₀) v_A ⊗ w_(A')`
+in the basis `b ⊗ b'` of `V ⊗ W` are the product of the coordinates of `v` and `w` for the kernel
+`TauCeti.NovikovModule.kernelOfMatrix` of the constant matrix with entry `1` at `(i, j, (i, j))`
+and `0` elsewhere, relative to the lifts `⟨i, 0⟩`. The potential bound `hn` holds with `C = 0`
+over a ring, by `TauCeti.NovikovModule.potential_le_of_kernelOfMatrix_ne_zero`, and for some `C`
+in general, by `TauCeti.NovikovModule.exists_potential_le_of_kernelOfMatrix_ne_zero`. -/
 theorem toNovikovModule_convolution_mk (b : Module.Basis ι R V) (b' : Module.Basis κ R W)
+    (hn : ∀ p₁ p₂ p₀, NovikovModule.kernelOfMatrix (fun _ => (0 : H)) (fun _ => 0) (fun _ => 0)
+        (fun i j k => if k = (i, j) then (1 : NovikovSeries R H N) else 0) p₁ p₂ p₀ ≠ 0 →
+      sigmaPotential N (ι × κ) p₀ ≤ sigmaPotential N ι p₁ + sigmaPotential N κ p₂ + C)
     (v : NovikovSeries V H N) (w : NovikovSeries W H N) :
     toNovikovModule (b.tensorProduct b') (convolution (TensorProduct.mk R V W) v w) =
-      NovikovModule.kernelProduct sigmaPotential_le_of_cauchyKernel_ne_zero cauchyKernel_mem
+      NovikovModule.kernelProduct hn (NovikovModule.kernelOfMatrix_mem sigmaPotential_vadd _ _ _ _)
         (toNovikovModule b v) (toNovikovModule b' w) := by
   classical
-  ext ⟨⟨i, j⟩, C⟩
-  let T := (finite_setOf_add_eq v w C).toFinset
-  have hT : ∀ p ∈ T, p.1 + p.2 = C := fun p hp => ((Set.Finite.mem_toFinset _).1 hp).1
+  ext ⟨⟨i, j⟩, A₀⟩
+  let T := (finite_setOf_add_eq v w A₀).toFinset
+  have hT : ∀ p ∈ T, p.1 + p.2 = A₀ := fun p hp => ((Set.Finite.mem_toFinset _).1 hp).1
   let e : H × H ↪ (Σ _ : ι, H) × (Σ _ : κ, H) :=
     ⟨fun p => (⟨i, p.1⟩, ⟨j, p.2⟩), fun p p' hpp' => by
       simp only [Prod.mk.injEq, Sigma.mk.injEq, heq_eq_eq, true_and] at hpp'
@@ -297,35 +250,28 @@ theorem toNovikovModule_convolution_mk (b : Module.Basis ι R V) (b' : Module.Ba
     toNovikovModule_apply_val, coeff_convolution, sum_map, map_sum, Finsupp.finsetSum_apply]
   · refine sum_congr rfl fun p hp => ?_
     have he : e p = (⟨i, p.1⟩, ⟨j, p.2⟩) := rfl
+    have hA₀ : A₀ - p.1 - p.2 = 0 := by rw [← hT p hp]; abel
     simp only [he, TensorProduct.mk_apply, Module.Basis.tensorProduct_repr_tmul_apply,
-      toNovikovModule_apply_val, cauchyKernel_apply, hT p hp, and_self, ite_true, mul_one,
-      smul_eq_mul]
+      toNovikovModule_apply_val, NovikovModule.kernelOfMatrix_apply, vsub_eq_sub, sub_zero, hA₀,
+      ite_true, coeff_one, mul_one, smul_eq_mul]
     exact mul_comm _ _
   · obtain ⟨⟨i', A⟩, ⟨j', A'⟩⟩ := q
-    obtain ⟨h₁, h₂⟩ := eq_and_eq_of_cauchyKernel_ne_zero hn
-    simp only [Prod.mk.injEq] at h₁
-    obtain ⟨rfl, rfl⟩ := h₁
-    simp only [toNovikovModule_apply_val] at hq₁ hq₂
-    refine Finset.mem_map.2 ⟨(A, A'), (Set.Finite.mem_toFinset _).2 ⟨h₂.symm, ?_, ?_⟩, rfl⟩
-    · exact fun h0 => hq₁ (by simp [h0])
-    · exact fun h0 => hq₂ (by simp [h0])
+    simp only [NovikovModule.kernelOfMatrix_apply, vsub_eq_sub, sub_zero] at hn
+    split_ifs at hn with h₁
+    · simp only [Prod.mk.injEq] at h₁
+      obtain ⟨rfl, rfl⟩ := h₁
+      simp only [toNovikovModule_apply_val] at hq₁ hq₂
+      have h₂ : A₀ - A - A' = 0 := by
+        by_contra h₂
+        exact hn (by simp [h₂])
+      refine Finset.mem_map.2 ⟨(A, A'), (Set.Finite.mem_toFinset _).2 ⟨?_, ?_, ?_⟩, rfl⟩
+      · rw [sub_sub, sub_eq_zero] at h₂
+        exact h₂.symm
+      · exact fun h0 => hq₁ (by simp [h0])
+      · exact fun h0 => hq₂ (by simp [h0])
+    · exact absurd (coeff_zero _) hn
 
 end CauchyProduct
-
-section CauchyKernel
-
-variable {H : Type*} [AddCommGroup H] {ι κ : Type*} [CommSemiring R]
-
-/-- The Cauchy kernel is unchanged when the second input and the output are translated by the
-same class. -/
-theorem cauchyKernel_vadd_right (g : H) (p₁ : Σ _ : ι, H) (j : κ) (p₂ : H) (k : ι × κ)
-    (p₀ : H) :
-    cauchyKernel R H ι κ p₁ ⟨j, g +ᵥ p₂⟩ ⟨k, g +ᵥ p₀⟩ =
-      cauchyKernel R H ι κ p₁ ⟨j, p₂⟩ ⟨k, p₀⟩ := by
-  classical
-  simp only [cauchyKernel_apply, vadd_eq_add, add_left_comm p₁.2 g p₂, add_right_inj]
-
-end CauchyKernel
 
 section ChangeOfBasis
 
@@ -360,11 +306,8 @@ def changeOfBasis (b : Module.Basis ι R V) (b₁ : Module.Basis ι₁ R V) :
   { (toNovikovModule b).symm.trans (toNovikovModule b₁) with
     map_smul' c a := by
       apply (NovikovModule.coordinates sigmaPotential_vadd 0).injective
-      simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
-        LinearEquiv.trans_apply, RingHom.id_apply]
-      rw [NovikovModule.coordinates_smul, coordinates_toNovikovModule_toNovikovModule_symm,
-        coordinates_toNovikovModule_toNovikovModule_symm, NovikovModule.coordinates_smul,
-        Matrix.mulVec_smul] }
+      simp [-coordinates_toNovikovModule, coordinates_toNovikovModule_toNovikovModule_symm,
+        NovikovModule.coordinates_smul, Matrix.mulVec_smul] }
 
 /-- The change of basis is the composite `κ_(b₁) ∘ κ_b⁻¹` of the coordinate maps. -/
 @[simp]
@@ -387,9 +330,8 @@ theorem toMatrix_changeOfBasis [DecidableEq ι] (b : Module.Basis ι R V)
   let := NovikovModule.module (R := R) (sigmaPotential_vadd (N := N) (ι := ι))
   let := NovikovModule.module (R := R) (sigmaPotential_vadd (N := N) (ι := ι₁))
   refine Matrix.ext fun j i => ?_
-  rw [LinearMap.toMatrix_apply, NovikovModule.basis_repr_apply, LinearEquiv.coe_coe,
-    changeOfBasis_apply, coordinates_toNovikovModule_toNovikovModule_symm,
-    NovikovModule.coordinates_basis, Matrix.mulVec_single_one, Matrix.col_apply]
+  simp [-coordinates_toNovikovModule, LinearMap.toMatrix_apply, NovikovModule.basis_repr_apply,
+    coordinates_toNovikovModule_toNovikovModule_symm, NovikovModule.coordinates_basis]
 
 end ChangeOfBasis
 
