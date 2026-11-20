@@ -53,12 +53,12 @@ Two classical consequences follow from symmetries of the summand.
 * `WeierstrassCurve.frobeniusTrace_eq_zero_of_b₂_eq_zero_of_b₆_eq_zero` and
   `WeierstrassCurve.pointCount_eq_card_add_one_of_b₂_eq_zero_of_b₆_eq_zero`: when `-1` is a
   nonsquare, a model with odd `2`-division cubic has trace `0` and `q + 1` points.
-* `WeierstrassCurve.quadraticTwistOf_frobeniusTrace`: the trace of the quadratic twist by `(t, n)`
+* `WeierstrassCurve.frobeniusTrace_quadraticTwistOf`: the trace of the quadratic twist by `(t, n)`
   is `χ(t² - 4n)` times the trace of `W`, with the three cases
-  `WeierstrassCurve.quadraticTwistOf_frobeniusTrace_eq_zero`,
-  `WeierstrassCurve.quadraticTwistOf_frobeniusTrace_of_isSquare` and
-  `WeierstrassCurve.quadraticTwistOf_frobeniusTrace_of_not_isSquare`, and its form
-  `WeierstrassCurve.quadraticTwistOf_zero_neg_div_four_frobeniusTrace` for the classical twist
+  `WeierstrassCurve.frobeniusTrace_quadraticTwistOf_eq_zero`,
+  `WeierstrassCurve.frobeniusTrace_quadraticTwistOf_of_isSquare` and
+  `WeierstrassCurve.frobeniusTrace_quadraticTwistOf_of_not_isSquare`, and its form
+  `WeierstrassCurve.frobeniusTrace_quadraticTwistOf_zero_neg_div_four` for the classical twist
   `y² = x³ + da₂x² + d²a₄x + d³a₆` by `d`.
 
 ## References
@@ -181,19 +181,11 @@ theorem pointCount_eq_card_add_one_of_b₂_eq_zero_of_b₆_eq_zero (hF : ¬IsSqu
 /-- **The twist by a parameter pair of discriminant zero has trace zero**: if `t² - 4n = 0`, then
 `W.quadraticTwistOf t n` is a cusp, with `Δ = c₄ = 0`. No restriction on the characteristic is
 needed. -/
-theorem quadraticTwistOf_frobeniusTrace_eq_zero {t n : F} (h : t ^ 2 - 4 * n = 0) :
+theorem frobeniusTrace_quadraticTwistOf_eq_zero {t n : F} (h : t ^ 2 - 4 * n = 0) :
     (W.quadraticTwistOf t n).frobeniusTrace = 0 :=
   frobeniusTrace_eq_zero_of_c₄_eq_zero _ (by simp [h]) (by simp [h])
 
 end Finite
-
-/-- The `2`-division cubic of the twist by `(t, n)` at `D z` is `D³ Ψ₂Sq(z)`, with `D = t² - 4n`. -/
-private theorem eval_Ψ₂Sq_quadraticTwistOf (t n z : F) :
-    (W.quadraticTwistOf t n).Ψ₂Sq.eval ((t ^ 2 - 4 * n) * z) =
-      (t ^ 2 - 4 * n) ^ 3 * W.Ψ₂Sq.eval z := by
-  simp only [Ψ₂Sq, b₂_quadraticTwistOf, b₄_quadraticTwistOf, b₆_quadraticTwistOf, eval_add,
-    eval_mul, eval_C, eval_pow, eval_X]
-  ring
 
 section Twist
 
@@ -203,11 +195,11 @@ variable [Fintype F] [DecidableEq F]
 quadratic twist of `W` by `(t, n)` has trace `χ(t² - 4n) a_q(W)`, where `χ` is the quadratic
 character. At `(t, n) = (0, -d/4)` the twisting discriminant `t² - 4n` is `d`. No ellipticity is
 assumed, and `t² - 4n` may vanish. -/
-theorem quadraticTwistOf_frobeniusTrace (hF : ringChar F ≠ 2) (t n : F) :
+theorem frobeniusTrace_quadraticTwistOf (hF : ringChar F ≠ 2) (t n : F) :
     (W.quadraticTwistOf t n).frobeniusTrace =
       quadraticChar F (t ^ 2 - 4 * n) * W.frobeniusTrace := by
   rcases eq_or_ne (t ^ 2 - 4 * n) 0 with hD | hD
-  · rw [W.quadraticTwistOf_frobeniusTrace_eq_zero hD, hD, quadraticChar_zero, zero_mul]
+  · rw [W.frobeniusTrace_quadraticTwistOf_eq_zero hD, hD, quadraticChar_zero, zero_mul]
   -- substitute `x = (t² - 4n) z` in the character sum of the twist
   rw [frobeniusTrace_eq_neg_sum_quadraticChar _ hF, W.frobeniusTrace_eq_neg_sum_quadraticChar hF,
     mul_neg, mul_sum, neg_inj]
@@ -219,11 +211,11 @@ theorem quadraticTwistOf_frobeniusTrace (hF : ringChar F ≠ 2) (t n : F) :
 /-- **The Frobenius trace of the classical twist by `d`**: over a finite field of odd
 characteristic, the quadratic twist by `(0, -d/4)`, whose twisting discriminant is `d`, has trace
 `χ(d) a_q(W)`. For `y² = x³ + a₂x² + a₄x + a₆` this twist is `y² = x³ + da₂x² + d²a₄x + d³a₆`. -/
-theorem quadraticTwistOf_zero_neg_div_four_frobeniusTrace (hF : ringChar F ≠ 2) (d : F) :
+theorem frobeniusTrace_quadraticTwistOf_zero_neg_div_four (hF : ringChar F ≠ 2) (d : F) :
     (W.quadraticTwistOf 0 (-d / 4)).frobeniusTrace = quadraticChar F d * W.frobeniusTrace := by
   have h4 : (4 : F) ≠ 0 := by
     simpa [show (4 : F) = 2 ^ 2 by norm_num] using Ring.two_ne_zero hF
-  rw [W.quadraticTwistOf_frobeniusTrace hF, show (0 : F) ^ 2 - 4 * (-d / 4) = d by field_simp; ring]
+  rw [W.frobeniusTrace_quadraticTwistOf hF, show (0 : F) ^ 2 - 4 * (-d / 4) = d by field_simp; ring]
 
 end Twist
 
@@ -233,23 +225,23 @@ variable [Finite F]
 
 /-- **The twist by a nonzero square keeps the trace**: over a finite field of odd characteristic,
 if `t² - 4n` is a nonzero square then `W.quadraticTwistOf t n` has the same trace as `W`. -/
-theorem quadraticTwistOf_frobeniusTrace_of_isSquare (hF : ringChar F ≠ 2) {t n : F}
+theorem frobeniusTrace_quadraticTwistOf_of_isSquare (hF : ringChar F ≠ 2) {t n : F}
     (hD : t ^ 2 - 4 * n ≠ 0) (hsq : IsSquare (t ^ 2 - 4 * n)) :
     (W.quadraticTwistOf t n).frobeniusTrace = W.frobeniusTrace := by
   classical
   have := Fintype.ofFinite F
-  rw [W.quadraticTwistOf_frobeniusTrace hF, (quadraticChar_one_iff_isSquare hD).mpr hsq, one_mul]
+  rw [W.frobeniusTrace_quadraticTwistOf hF, (quadraticChar_one_iff_isSquare hD).mpr hsq, one_mul]
 
 /-- **The twist by a nonsquare negates the trace**: over a finite field, if `t² - 4n` is not a
 square then `W.quadraticTwistOf t n` has trace `-a_q(W)`. A nonsquare forces odd
 characteristic. -/
-theorem quadraticTwistOf_frobeniusTrace_of_not_isSquare {t n : F}
+theorem frobeniusTrace_quadraticTwistOf_of_not_isSquare {t n : F}
     (hsq : ¬IsSquare (t ^ 2 - 4 * n)) :
     (W.quadraticTwistOf t n).frobeniusTrace = -W.frobeniusTrace := by
   classical
   have := Fintype.ofFinite F
   have hF : ringChar F ≠ 2 := fun h ↦ hsq (FiniteField.isSquare_of_char_two h _)
-  rw [W.quadraticTwistOf_frobeniusTrace hF, quadraticChar_neg_one_iff_not_isSquare.mpr hsq,
+  rw [W.frobeniusTrace_quadraticTwistOf hF, quadraticChar_neg_one_iff_not_isSquare.mpr hsq,
     neg_one_mul]
 
 end TwistCases
