@@ -41,13 +41,10 @@ open _root_.AlgebraicGeometry
 
 universe u
 
-/-- The stack in setoids `h_T` of a scheme `T`: the discrete pseudofunctor of the functor of
-points `yoneda.obj T`, which is a stack because the fppf topology is subcanonical. -/
-def ofScheme (T : Scheme.{u}) : StackInGroupoids.{u} where
-  toSchPseudofunctor := Pseudofunctor.ofPresheaf.{u + 1} (yoneda.obj T)
-  isGroupoid _ := inferInstance
-  isStack := (Pseudofunctor.isStack_ofPresheaf_iff _ _).2
-    (GrothendieckTopology.Subcanonical.isSheaf_of_isRepresentable _)
+/-- The stack in setoids `h_T` of a scheme `T`: the stack `ofSheaf` of the functor of points of
+`T`, which is an fppf sheaf because the fppf topology is subcanonical. -/
+def ofScheme (T : Scheme.{u}) : StackInGroupoids.{u} :=
+  ofSheaf (Scheme.fppfTopology.yoneda.obj T)
 
 @[simp]
 lemma ofScheme_toSchPseudofunctor (T : Scheme.{u}) :

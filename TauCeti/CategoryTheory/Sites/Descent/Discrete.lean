@@ -92,8 +92,13 @@ def ofPresheafObjEquiv (X : LocallyDiscrete Cᵒᵖ) : (ofPresheaf.{w'} P).obj X
   right_inv _ := rfl
 
 @[simp]
-lemma ofPresheafObjEquiv_mk (X : LocallyDiscrete Cᵒᵖ) (s : P.obj X.as) :
-    ofPresheafObjEquiv.{w'} P X ⟨⟨s⟩⟩ = s :=
+lemma ofPresheafObjEquiv_apply (X : LocallyDiscrete Cᵒᵖ) (x : (ofPresheaf.{w'} P).obj X) :
+    ofPresheafObjEquiv.{w'} P X x = x.down.as :=
+  rfl
+
+@[simp]
+lemma ofPresheafObjEquiv_symm_apply (X : LocallyDiscrete Cᵒᵖ) (s : P.obj X.as) :
+    (ofPresheafObjEquiv.{w'} P X).symm s = ⟨⟨s⟩⟩ :=
   rfl
 
 /-- Pullback in the discrete pseudofunctor of `P` is pullback of sections of `P`. -/
