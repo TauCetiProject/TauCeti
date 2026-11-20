@@ -184,13 +184,6 @@ section Cosets
 
 variable [IsTopologicalGroup G]
 
-omit [IsTopologicalGroup G] in
-/-- A compact open subgroup `U` is a union of left cosets of each open subgroup `W ≤ U`. -/
-private theorem forall_mul_mem_toCompactOpens {U W : OpenSubgroup G} (hU : IsCompact (U : Set G))
-    (h : W ≤ U) : ∀ k ∈ U.toCompactOpens hU, ∀ w ∈ W, k * w ∈ U.toCompactOpens hU :=
-  fun _ hk _ hw ↦ OpenSubgroup.mem_toCompactOpens.2
-    (U.mul_mem (OpenSubgroup.mem_toCompactOpens.1 hk) (h hw))
-
 variable [AddCommMonoid A] (μ : HaarMeasureWithValues A G)
 
 /-- **Coset decomposition of volumes.** If a compact open set `K` is a union of left cosets of a
@@ -224,7 +217,7 @@ the volume of `W`. -/
 theorem apply_toCompactOpens_eq_relIndex_smul {U W : OpenSubgroup G} (hU : IsCompact (U : Set G))
     (hW : IsCompact (W : Set G)) (h : W ≤ U) :
     μ (U.toCompactOpens hU) = (W : Subgroup G).relIndex U • μ (W.toCompactOpens hW) := by
-  rw [μ.apply_eq_ncard_smul _ W hW (forall_mul_mem_toCompactOpens hU h),
+  rw [μ.apply_eq_ncard_smul _ W hW (OpenSubgroup.forall_mul_mem_toCompactOpens hU h),
     OpenSubgroup.ncard_image_mk_toCompactOpens hU h]
 
 end Cosets
@@ -380,7 +373,7 @@ theorem normalized_apply (K : CompactOpens G) {W : OpenSubgroup G} (hW : W ≤ U
 /-- The normalised measure gives `U₀` volume `1`. -/
 @[simp]
 theorem normalized_apply_self : normalized A U₀ hU₀ h (U₀.toCompactOpens hU₀) = 1 := by
-  rw [normalized_apply hU₀ h _ le_rfl (forall_mul_mem_toCompactOpens hU₀ le_rfl),
+  rw [normalized_apply hU₀ h _ le_rfl (OpenSubgroup.forall_mul_mem_toCompactOpens hU₀ le_rfl),
     OpenSubgroup.ncard_image_mk_toCompactOpens hU₀ le_rfl, Subgroup.relIndex_self, Nat.cast_one,
     Ring.inverse_one, mul_one]
 
@@ -420,7 +413,7 @@ theorem normalized_apply_toCompactOpens (U : OpenSubgroup G) (hU : IsCompact (U 
     normalized A U₀ hU₀ h (U.toCompactOpens hU) =
       ((U₀ : Subgroup G).relIndex U : A) * Ring.inverse ((U : Subgroup G).relIndex U₀ : A) := by
   rw [normalized_apply hU₀ h _ (W := U ⊓ U₀) inf_le_right
-      (forall_mul_mem_toCompactOpens hU inf_le_left),
+      (OpenSubgroup.forall_mul_mem_toCompactOpens hU inf_le_left),
     OpenSubgroup.ncard_image_mk_toCompactOpens hU inf_le_left]
   simp [Subgroup.inf_relIndex_left, Subgroup.inf_relIndex_right]
 

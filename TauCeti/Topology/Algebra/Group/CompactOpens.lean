@@ -36,6 +36,8 @@ locally profinite group are computed.
   subgroup.
 * `TopologicalSpace.CompactOpens.exists_openSubgroup_le_forall_mul_mem`: a compact open set is a
   union of left cosets of an open subgroup contained in a given open subgroup.
+* `OpenSubgroup.forall_mul_mem_toCompactOpens`: a compact open subgroup `U` is a union of left
+  cosets of each open subgroup `W ≤ U`.
 * `OpenSubgroup.ncard_image_mk_toCompactOpens`: a compact open subgroup `U` meets `[U : W]` left
   cosets of an open subgroup `W ≤ U`.
 -/
@@ -111,6 +113,11 @@ theorem coe_toCompactOpens (U : OpenSubgroup G) (hU : IsCompact (U : Set G)) :
 theorem mem_toCompactOpens {U : OpenSubgroup G} {hU : IsCompact (U : Set G)} {g : G} :
     g ∈ U.toCompactOpens hU ↔ g ∈ U :=
   Iff.rfl
+
+/-- A compact open subgroup `U` is a union of left cosets of each open subgroup `W ≤ U`. -/
+theorem forall_mul_mem_toCompactOpens {U W : OpenSubgroup G} (hU : IsCompact (U : Set G))
+    (h : W ≤ U) : ∀ k ∈ U.toCompactOpens hU, ∀ w ∈ W, k * w ∈ U.toCompactOpens hU :=
+  fun _ hk _ hw ↦ mem_toCompactOpens.2 (U.mul_mem (mem_toCompactOpens.1 hk) (h hw))
 
 /-- A compact open subgroup `U` meets exactly `[U : W]` left cosets of an open subgroup `W ≤ U`. -/
 theorem ncard_image_mk_toCompactOpens {U W : OpenSubgroup G} (hU : IsCompact (U : Set G))
