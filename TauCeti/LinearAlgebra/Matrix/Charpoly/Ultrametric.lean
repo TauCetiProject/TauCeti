@@ -57,7 +57,7 @@ theorem norm_le_one_of_mem_spectrum (hA : ∀ i j, ‖A i j‖ ≤ 1) {μ : K} (
     simp [B]
   have hcoeff (i : ℕ) : ‖A.charpoly.coeff i‖ ≤ 1 := by
     rw [← hB, charpoly_map, Polynomial.coeff_map]
-    exact Subring.mem_unitClosedBall.1 (B.charpoly.coeff i).2
+    exact Subring.mem_unitClosedBall.1 (B.charpoly.coeff i).property
   -- A root of a monic polynomial with such coefficients has norm at most one. The seminorm
   -- `normRingSeminorm K` is the norm of `K` by definition, so its bounds are norm bounds.
   obtain ⟨i, hi, hle⟩ := A.charpoly_monic.exists_apply_pow_le_apply_coeff_of_eval_eq_zero

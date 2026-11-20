@@ -78,7 +78,7 @@ theorem isMulTorsionFree_unitsBallSubgroup {p : ℕ} (hp : p.Prime) (hpK : ‖(p
   have hfin : IsOfFinOrder ((u : Kˣ) : K) :=
     Units.isOfFinOrder_val.2 ((unitsBallSubgroup K hr₀ hr₁).subtype.isOfFinOrder hu)
   have hdist : ‖((u : Kˣ) : K) - 1‖ ^ (p - 1) < ‖(p : K)‖ :=
-    (pow_lt_pow_left₀ (mem_unitsBallSubgroup.1 u.2) (norm_nonneg _)
+    (pow_lt_pow_left₀ (mem_unitsBallSubgroup.1 u.property) (norm_nonneg _)
       (Nat.sub_ne_zero_of_lt hp.one_lt)).trans_le hr
   exact Subtype.ext (Units.ext (hfin.eq_one_of_norm_sub_one_pow_lt hp hpK hdist))
 
