@@ -38,9 +38,9 @@ This file sets up these conditions at three levels.
   depend only on the multiset of eigenvalues.
 * For a square matrix `A` over a field `K`, `Matrix.IsGenericAt A q` and
   `Matrix.IsStronglyGenericAt A q` ask the same of the characteristic roots of `A` in an
-  algebraic closure of `K`. They can be tested on any listing of these roots in any field
-  extension (`Matrix.isGenericAt_iff_of_isRootEnumeration`), and are invariant under
-  conjugation, inversion and extension of scalars.
+  algebraic closure of `K`. They can be tested on any listing of these roots, with one entry per
+  row of `A`, in any field extension (`Matrix.isGenericAt_iff_of_isRootEnumeration`), and are
+  invariant under conjugation, inversion and extension of scalars.
 * For a representation `ρ : G →* GL n K`, a subgroup `I` (the inertia group) and an element
   `frob` (a Frobenius lift), `MonoidHom.IsGenericAt ρ I frob q` says that `I` acts trivially and
   `ρ frob` is generic at `q`; similarly `MonoidHom.IsStronglyGenericAt`. When `I` acts trivially
@@ -66,7 +66,7 @@ This file sets up these conditions at three levels.
   `TauCeti.isStronglyGenericEigenvalues_iff_of_map_univ_val_eq`: genericity and strong genericity
   depend only on the multiset of eigenvalues.
 * `Matrix.isGenericAt_iff_of_isRootEnumeration`: genericity of a matrix is genericity of any
-  listing of its characteristic roots.
+  listing of its characteristic roots with one entry per row of the matrix.
 * `Matrix.isGenericAt_one_iff`: a matrix is generic at `1` exactly when its characteristic
   polynomial is separable; in particular strongly generic matrices and representations have
   pairwise distinct Frobenius eigenvalues.
@@ -302,7 +302,8 @@ variable {n m K : Type*} [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m]
 /-- A square matrix `A` over a field `K` is **generic** at `q` if its characteristic roots in an
 algebraic closure of `K`, listed with multiplicity, are generic at `q`
 (`TauCeti.IsGenericEigenvalues`). By `Matrix.isGenericAt_iff_of_isRootEnumeration` the condition
-can be tested on any listing of the characteristic roots in any field extension of `K`. -/
+can be tested on any listing of the characteristic roots with as many entries as the size of `A`,
+in any field extension of `K`. -/
 def IsGenericAt (A : Matrix n n K) (q : K) : Prop :=
   ∃ α : n → AlgebraicClosure K, A.charpoly.IsRootEnumeration α ∧
     TauCeti.IsGenericEigenvalues (algebraMap K (AlgebraicClosure K) q) α
@@ -316,9 +317,9 @@ def IsStronglyGenericAt (A : Matrix n n K) (q : K) : Prop :=
 
 variable {A : Matrix n n K} {q : K}
 
-/-- A listing of the characteristic roots in a field extension `L` of `K` and one in an algebraic
-closure of `K` list generic families together: both are sent to the roots of the characteristic
-polynomial in an algebraic closure of `L`. -/
+/-- A listing of the characteristic roots in a field extension `L` of `K` with one entry per row
+of `A` and one in an algebraic closure of `K` list generic families together: both are sent to the
+roots of the characteristic polynomial in an algebraic closure of `L`. -/
 private theorem isGenericEigenvalues_iff_of_isRootEnumeration {ι L : Type*} [Fintype ι]
     [Field L] [Algebra K L] {α : ι → L} {β : n → AlgebraicClosure K}
     (hβ : A.charpoly.IsRootEnumeration β) (hα : A.charpoly.IsRootEnumeration α)
@@ -342,8 +343,8 @@ private theorem isGenericEigenvalues_iff_of_isRootEnumeration {ι L : Type*} [Fi
   exact TauCeti.isGenericEigenvalues_iff_of_map_univ_val_eq
     ((isRootEnumeration_iff.1 hβ').symm.trans (isRootEnumeration_iff.1 hα'))
 
-/-- A listing of the characteristic roots in a field extension `L` of `K` and one in an algebraic
-closure of `K` list strongly generic families together. -/
+/-- A listing of the characteristic roots in a field extension `L` of `K` with one entry per row
+of `A` and one in an algebraic closure of `K` list strongly generic families together. -/
 private theorem isStronglyGenericEigenvalues_iff_of_isRootEnumeration {ι L : Type*} [Fintype ι]
     [Field L] [Algebra K L] {α : ι → L} {β : n → AlgebraicClosure K}
     (hβ : A.charpoly.IsRootEnumeration β) (hα : A.charpoly.IsRootEnumeration α)
