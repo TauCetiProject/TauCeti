@@ -34,8 +34,7 @@ as the pushout over the original base rings.
 
 For a scheme `X` over `Spec k`, `Scheme.algebraOfOver` makes the sections of the structure
 sheaf over each open a `k`-algebra through `Scheme.baseRingToStructurePresheaf`, compatibly with
-restriction (`Scheme.presheaf_map_algebraMap`), so the structure sheaf is a sheaf of `k`-modules
-`Scheme.presheafInModuleCat` (`Scheme.isSheaf_presheafInModuleCat`). This `k`-algebra structure is
+restriction (`Scheme.presheaf_map_algebraMap`). This `k`-algebra structure is
 a definition rather than a global instance: for an affine scheme over `Spec k`, or for `Spec k`
 over itself, Mathlib already provides other `k`-algebra structures on (global) sections, which
 are only propositionally equal to it.
@@ -491,29 +490,6 @@ theorem algebraMap_eq_baseRingToStructurePresheaf_app (U : X.Opens) :
 theorem presheaf_map_algebraMap {U V : X.Opens} (i : V ⟶ U) (c : k) :
     X.presheaf.map i.op (algebraMap k Γ(X, U) c) = algebraMap k Γ(X, V) c :=
   (ConcreteCategory.congr_hom ((X.baseRingToStructurePresheaf k).naturality i.op) c).symm
-
-variable (X k)
-
-/-- The structure sheaf of a scheme over `Spec k`, as a presheaf of `k`-modules. -/
-@[expose] def presheafInModuleCat : X.Opensᵒᵖ ⥤ ModuleCat.{u} k where
-  obj U := ModuleCat.of k Γ(X, U.unop)
-  map {U V} i := ModuleCat.ofHom
-    { toFun := X.presheaf.map i
-      map_add' := map_add _
-      map_smul' c f := by
-        rw [Algebra.smul_def, Algebra.smul_def, map_mul, RingHom.id_apply,
-          ← presheaf_map_algebraMap i.unop c]
-        rfl }
-  map_id U := by ext; simp
-  map_comp f g := by ext; simp
-
-/-- The structure sheaf is a sheaf of `k`-modules. -/
-theorem isSheaf_presheafInModuleCat :
-    Presheaf.IsSheaf (Opens.grothendieckTopology X) (X.presheafInModuleCat k) := by
-  rw [Presheaf.isSheaf_iff_isSheaf_forget (s := CategoryTheory.forget (ModuleCat k))]
-  exact (Presheaf.isSheaf_of_iso_iff (NatIso.ofComponents fun _ ↦ Iso.refl _)).2
-    ((TopCat.Presheaf.isSheaf_iff_isSheaf_comp (CategoryTheory.forget CommRingCat)
-      X.presheaf).1 X.IsSheaf)
 
 end SectionsAlgebra
 

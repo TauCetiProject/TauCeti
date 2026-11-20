@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Limits
 public import Mathlib.CategoryTheory.Sites.SheafHom
 public import Mathlib.CategoryTheory.Sites.Subsheaf
-public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.Sections
 public import TauCeti.RingTheory.Derivation.DifferentialOperator
 
 /-!
@@ -17,7 +17,9 @@ public import TauCeti.RingTheory.Derivation.DifferentialOperator
 Let `k` be a commutative ring and `X` a scheme over `Spec k`. The sections of `O_X` over each
 open `U` form a `k`-algebra (`Scheme.algebraOfOver`, through
 `Scheme.baseRingToStructurePresheaf`), compatibly with restriction, so `O_X` is a
-sheaf of `k`-modules `X.presheafInModuleCat k`. A section of the sheaf of `k`-linear
+sheaf of `k`-modules: the presheaf of `k`-modules of sections
+`(Scheme.Modules.sectionsBasePresheafFunctor k).obj (SheafOfModules.unit X.ringCatSheaf)` of the
+unit sheaf of modules. A section of the sheaf of `k`-linear
 endomorphisms of `O_X` over `U` is an element `D` of the ring `X.StructureEnd k U`: a family of
 `k`-linear maps `Γ(X, V) → Γ(X, V)` for the opens `V ⊆ U`, compatible with restriction, and
 multiplied by composition. Its component on `V` is `Scheme.endApp D V`.
@@ -67,7 +69,8 @@ attribute [local instance] algebraOfOver
 family of `k`-linear maps `Γ(X, V) → Γ(X, V)` for the opens `V ⊆ U`, compatible with restriction.
 Multiplication is composition. -/
 abbrev StructureEnd (U : X.Opens) : Type u :=
-  End ((Over.forget U).op ⋙ X.presheafInModuleCat k)
+  End ((Over.forget U).op ⋙
+    (Modules.sectionsBasePresheafFunctor k).obj (SheafOfModules.unit X.ringCatSheaf))
 
 variable {X k}
 
@@ -121,7 +124,7 @@ noncomputable def StructureEnd.ofApp (app : ∀ V : Over U, Γ(X, V.left) →ₗ
       X.presheaf.map j.left.op (app V f) = app W (X.presheaf.map j.left.op f)) :
     X.StructureEnd k U :=
   End.of
-    { app V := ModuleCat.ofHom (app V.unop)
+    { app V := ModuleCat.ofHom (X := Γ(X, V.unop.left)) (Y := Γ(X, V.unop.left)) (app V.unop)
       naturality V W j := by
         ext f
         exact (naturality j.unop f).symm }
@@ -138,10 +141,12 @@ end endApp
 variable (X k) in
 /-- The presheaf of `k`-linear endomorphisms of the structure sheaf: its sections over `U` are
 the endomorphisms of `O_X` restricted to `U`, and restriction restricts the family of components.
-It is the internal hom `presheafHom` of `X.presheafInModuleCat k` with itself, with sections
-viewed as elements of the ring `X.StructureEnd k U`. -/
+It is the internal hom `presheafHom` of the structure sheaf as a presheaf of `k`-modules
+(`Scheme.Modules.sectionsBasePresheafFunctor` applied to the unit sheaf of modules) with itself,
+with sections viewed as elements of the ring `X.StructureEnd k U`. -/
 noncomputable abbrev endPresheaf : X.Opensᵒᵖ ⥤ Type u :=
-  (presheafHom (X.presheafInModuleCat k) (X.presheafInModuleCat k)).copyObj
+  (presheafHom ((Modules.sectionsBasePresheafFunctor k).obj (SheafOfModules.unit X.ringCatSheaf))
+    ((Modules.sectionsBasePresheafFunctor k).obj (SheafOfModules.unit X.ringCatSheaf))).copyObj
     (fun U ↦ X.StructureEnd k U.unop) fun _ ↦ Equiv.toIso End.homEquiv.symm
 
 variable (X k) in
@@ -149,7 +154,7 @@ variable (X k) in
 theorem isSheaf_endPresheaf :
     Presieve.IsSheaf (Opens.grothendieckTopology X) (X.endPresheaf k) :=
   Presieve.isSheaf_iso _ (Functor.isoCopyObj _ _ _) ((isSheaf_iff_isSheaf_of_type _ _).1
-    (Presheaf.IsSheaf.hom _ _ (X.isSheaf_presheafInModuleCat k)))
+    (Presheaf.IsSheaf.hom _ _ (Modules.isSheaf_sectionsBasePresheafFunctor_obj k _)))
 
 variable (k) in
 /-- Restriction of endomorphisms of the structure sheaf from `U` to an open subset `U'`. -/
@@ -478,8 +483,15 @@ theorem isSheaf_presheafOfDifferentialOperators :
 
 variable (X k) in
 /-- The sheaf of rings `D_X` of differential operators on a scheme `X` over `Spec k`. -/
-@[expose] noncomputable def sheafOfDifferentialOperators : TopCat.Sheaf RingCat.{u} X :=
+noncomputable def sheafOfDifferentialOperators : TopCat.Sheaf RingCat.{u} X :=
   ⟨X.presheafOfDifferentialOperators k, X.isSheaf_presheafOfDifferentialOperators k⟩
+
+variable (X k) in
+/-- The underlying presheaf of the sheaf of differential operators. -/
+@[simp]
+theorem sheafOfDifferentialOperators_obj :
+    (X.sheafOfDifferentialOperators k).obj = X.presheafOfDifferentialOperators k :=
+  (rfl)
 
 variable (X k) in
 /-- The ring map `O_X → D_X` sending a section to multiplication by it. -/
