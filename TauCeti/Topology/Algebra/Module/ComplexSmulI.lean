@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.Complex.Module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.Algebra.Module.Complement
-import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
 /-!
@@ -103,7 +102,8 @@ the average `x ↦ (P x - i • P (i • x)) / 2` of `P` over multiplication by 
 theorem Submodule.ClosedComplemented.of_restrictScalars {K : Submodule ℂ V}
     (hK : (K.restrictScalars ℝ).ClosedComplemented) : K.ClosedComplemented := by
   obtain ⟨P, hP⟩ := hK
-  -- `K.restrictScalars ℝ` and `K` have the same elements.
+  -- `P` lands in `K.restrictScalars ℝ`, whose carrier is definitionally that of `K`, so `P` is
+  -- retyped as a map into `K` by definitional unfolding.
   let P' : V →L[ℝ] K := P
   have hP' (x : K) : P' x = x := hP x
   -- `R x = P x - i • P (i • x)` commutes with `i`, and `R x = 2 x` on `K`.
@@ -111,13 +111,13 @@ theorem Submodule.ClosedComplemented.of_restrictScalars {K : Submodule ℂ V}
   have hR (v : V) : R v = P' v - I • P' (I • v) := by simp [R]
   have hRI (v : V) : R (I • v) = I • R v := by
     have hIIv : P' (I • I • v) = -P' v := by rw [smul_smul, I_mul_I, neg_one_smul, map_neg]
-    have hIIP : I • I • P' (I • v) = -P' (I • v) := by rw [smul_smul, I_mul_I, neg_one_smul]
-    rw [hR, hR, hIIv, smul_sub, hIIP, smul_neg, sub_neg_eq_add, sub_neg_eq_add, add_comm]
+    rw [hR, hR, hIIv]
+    match_scalars <;> simp [I_mul_I]
   refine ⟨(2⁻¹ : ℂ) • R.complexOfMapISmul hRI, fun x ↦ ?_⟩
   have hIx : P' (I • (x : V)) = I • x := hP' (I • x)
-  rw [smul_apply, ContinuousLinearMap.coe_complexOfMapISmul, hR, hP', hIx,
-    smul_smul, I_mul_I, neg_one_smul, sub_neg_eq_add, ← two_smul ℂ x, smul_smul,
-    inv_mul_cancel₀ two_ne_zero, one_smul]
+  rw [smul_apply, ContinuousLinearMap.coe_complexOfMapISmul, hR, hP', hIx]
+  match_scalars
+  norm_num [I_mul_I]
 
 end ClosedComplemented
 

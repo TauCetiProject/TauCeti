@@ -372,7 +372,8 @@ theorem exists_isOpen_isInvertible_prod_coprod_of_surjective
             (q.restrictScalars ℝ)).IsInvertible := by
   have : FiniteDimensional ℝ (T x₀).ker := (kerEquiv (T x₀)).symm.finiteDimensional
   have : FiniteDimensional ℂ (T x₀).ker := Module.Finite.of_restrictScalars_finite ℝ ℂ _
-  have : FiniteDimensional ℝ ((T x₀).ker.restrictScalars ℝ) := ‹FiniteDimensional ℝ (T x₀).ker›
+  have : FiniteDimensional ℝ ((T x₀).ker.restrictScalars ℝ) :=
+    ((Submodule.restrictScalarsEquiv ℝ ℂ E (T x₀).ker).restrictScalars ℝ).symm.finiteDimensional
   obtain ⟨P, hP⟩ := Submodule.ClosedComplemented.of_restrictScalars
     (Submodule.ClosedComplemented.of_finiteDimensional ((T x₀).ker.restrictScalars ℝ))
   -- Complex coordinates on the kernel, continuous since the kernel is finite-dimensional.

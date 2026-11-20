@@ -17,8 +17,9 @@ The gauge-fixed linearization `L_a = d₀* ⊕ d₁` of the plane vortex equatio
 operator `H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` with `L∞` coefficient class `a`
 (`TauCeti.Vortex.sobolevGaugeFixedOperator`), intertwines the signed coordinate permutation `J` on
 `H¹(ℂ)⁴` (`TauCeti.Vortex.sobolevVariationAlmostComplexStructure`) with the pointwise action `J'` of
-`TauCeti.Vortex.targetComplexStructure` on `L²(ℂ; ℝ⁴)`. This file packages `J'` as an almost
-complex structure on `L²(ℂ; ℝ⁴)` (`TauCeti.Vortex.sobolevTargetAlmostComplexStructure`) and `L_a`
+`TauCeti.Vortex.targetComplexStructure` on `L²(ℂ; ℝ⁴)`, the almost complex structure
+`TauCeti.Vortex.sobolevTargetAlmostComplexStructure`
+(`TauCeti.Vortex.isComplexLinearMap_sobolevGaugeFixedOperator`). This file packages `L_a`
 as a complex-linear operator for the complex vector space structures in which `i` acts by `J` and
 by `J'` (`TauCeti.Vortex.sobolevGaugeFixedComplexOperator`), depending continuously on `a`. The two
 complex structures are `TauCeti.Vortex.sobolevVariationComplexModule` and
@@ -44,8 +45,8 @@ coefficient.
 
 All in the namespace `TauCeti.Vortex`:
 
-* `sobolevTargetAlmostComplexStructure`: the almost complex structure `J'` on `L²(ℂ; ℝ⁴)`.
-* `isComplexLinearMap_sobolevGaugeFixedOperator`: `L_a` intertwines `J` and `J'`.
+* `sobolevVariationComplexModule`, `sobolevTargetComplexModule`: the complex structures of
+  `H¹(ℂ)⁴` and `L²(ℂ; ℝ⁴)` in which `i` acts by `J` and by `J'`.
 * `sobolevGaugeFixedComplexOperator`: `L_a` as a complex-linear operator, with
   `restrictScalars_sobolevGaugeFixedComplexOperator` and
   `continuous_restrictScalars_sobolevGaugeFixedComplexOperator`.
@@ -72,62 +73,6 @@ open scoped ENNReal
 namespace TauCeti.Vortex
 
 local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens ℂ) : Set ℂ)
-
-/-! ### The complex structure of the target -/
-
-/-- The almost complex structure `J'` on `L²(ℂ; ℝ⁴)`, the target of
-`TauCeti.Vortex.sobolevGaugeFixedOperator`: the pointwise action of `targetComplexStructure`,
-`(v₀, v₁, v₂, v₃) ↦ (v₁, -v₀, -v₃, v₂)`. -/
-def sobolevTargetAlmostComplexStructure :
-    AlmostComplexStructure (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) where
-  toLinearMap := (targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap.compLpL 2
-    μ⊤ : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤)
-  square_neg := LinearMap.ext fun f ↦ by
-    refine Lp.ext ?_
-    filter_upwards [ContinuousLinearMap.coeFn_compLpL (p := 2) (μ := μ⊤)
-        targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap
-        (targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap.compLpL 2 μ⊤ f),
-      ContinuousLinearMap.coeFn_compLpL (p := 2) (μ := μ⊤)
-        targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap f,
-      Lp.coeFn_neg f] with z h₁ h₂ h₃
-    simp only [LinearMap.comp_apply, LinearMap.neg_apply, LinearMap.id_apply,
-      ContinuousLinearMap.coe_coe, h₁, h₂, h₃]
-    simp
-
-/-- The almost complex structure `J'` on `L²(ℂ; ℝ⁴)` acts pointwise by `targetComplexStructure`. -/
-theorem sobolevTargetAlmostComplexStructure_apply (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
-    sobolevTargetAlmostComplexStructure f =
-      targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap.compLp f :=
-  (rfl)
-
-/-- The almost complex structure `J'` on `L²(ℂ; ℝ⁴)` is continuous. -/
-theorem continuous_sobolevTargetAlmostComplexStructure :
-    Continuous sobolevTargetAlmostComplexStructure :=
-  (targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap.compLpL 2 μ⊤).continuous
-
-/-- The almost complex structure `J` on `H¹(ℂ)⁴` is continuous. -/
-theorem continuous_sobolevVariationAlmostComplexStructure :
-    Continuous sobolevVariationAlmostComplexStructure := by
-  refine continuous_pi fun j ↦ ?_
-  fin_cases j
-  · simp only [Fin.zero_eta, sobolevVariationAlmostComplexStructure_apply_zero,
-      continuous_fun_neg_iff]
-    exact continuous_apply 1
-  · simp only [Fin.mk_one, sobolevVariationAlmostComplexStructure_apply_one]
-    exact continuous_apply 0
-  · simp only [Fin.reduceFinMk, sobolevVariationAlmostComplexStructure_apply_two,
-      continuous_fun_neg_iff]
-    exact continuous_apply 3
-  · simp only [Fin.reduceFinMk, sobolevVariationAlmostComplexStructure_apply_three]
-    exact continuous_apply 2
-
-/-- **The Sobolev realization of `L_a` intertwines `J` and `J'`**, for every `L∞` coefficient
-class `a`. -/
-theorem isComplexLinearMap_sobolevGaugeFixedOperator (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
-    IsComplexLinearMap sobolevVariationAlmostComplexStructure sobolevTargetAlmostComplexStructure
-      (sobolevGaugeFixedOperator a : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →ₗ[ℝ] _) :=
-  (isComplexLinearMap_iff_apply _ _ _).2 fun y ↦
-    sobolevGaugeFixedOperator_sobolevVariationAlmostComplexStructure a y
 
 /-! ### The complex-linear family -/
 
