@@ -19,10 +19,11 @@ Let `X` be a quasicategory and `f : x ⟶ y` an edge of `X`. The following are e
   lifting property with respect to all monomorphisms;
 * `f` is Cartesian for the map from `X` to a terminal simplicial set.
 
-The second and the third conditions agree for every simplicial set `X`: over a terminal
-simplicial set `S` every slice of `S` is terminal (`SSet.slice.isTerminal`), so the map
-`X_{/f} ⟶ X_{/y} ×_{S_{/p y}} S_{/p f}` defining Cartesian edges is the restriction of cones
-`X_{/f} ⟶ X_{/y}` followed by an isomorphism.
+The second and the third conditions agree for every simplicial set `X`
+(`SSet.Edge.isCartesian_iff_rlp_slice_map`, in `TauCeti.AlgebraicTopology.Quasicategory.Cartesian`):
+over a terminal simplicial set `S` every slice of `S` is terminal (`SSet.slice.isTerminal`), so
+the map `X_{/f} ⟶ X_{/y} ×_{S_{/p y}} S_{/p f}` defining Cartesian edges is the restriction of
+cones `X_{/f} ⟶ X_{/y}` followed by an isomorphism.
 
 For the first two, a lifting problem of the boundary inclusion `∂Δ[n] ⟶ Δ[n]` against
 `X_{/f} ⟶ X_{/y}` is, by the universal property of the slice, an extension problem for maps into
@@ -33,14 +34,15 @@ the horn, from `n + 1` to `n + 2`, is `f`. By Mathlib's description of the trivi
 as the maps lifting against boundary inclusions (`SSet.rlp_monomorphisms`), the restriction of
 cones is a trivial fibration exactly when all these horns can be filled, which by Joyal's
 characterization of equivalences (`SSet.Edge.isEquivalence_iff_hornFilling_last`) means that `f`
-is an equivalence.
+is an equivalence. This reduction of outer horn filling to lifting against a restriction of cones,
+through the identification of the horn with a pushout-join, is the method of Kerodon's proof of
+Joyal's theorem (Kerodon Theorem 4.4.2.6), used in the same way in
+`TauCeti.AlgebraicTopology.Quasicategory.OuterHorn`.
 
 ## Main results
 
 * `SSet.Edge.isEquivalence_iff_rlp_slice_map`: an edge `f : x ⟶ y` of a quasicategory is an
   equivalence exactly when the restriction of cones `X_{/f} ⟶ X_{/y}` is a trivial fibration.
-* `SSet.Edge.isCartesian_iff_rlp_slice_map`: over a terminal simplicial set, an edge is Cartesian
-  exactly when this restriction of cones is a trivial fibration.
 * `SSet.Edge.isEquivalence_iff_isCartesian`: **an edge of a quasicategory is an equivalence
   exactly when it is Cartesian over a point.**
 * `SSet.Edge.isCartesian_of_kanComplex`, `CategoryTheory.nerve.isCartesian_edgeMk_iff`,
@@ -53,6 +55,8 @@ is an equivalence.
 
 * J. Lurie, *Higher Topos Theory*, Proposition 1.2.4.3, Proposition 2.4.1.5 and Remark 2.4.1.4.
 * A. Joyal, *Quasi-categories and Kan complexes*, J. Pure Appl. Algebra 175 (2002), Theorem 1.3.
+* J. Lurie, *Kerodon*, Theorem 4.4.2.6 (the pushout-join description of outer horns, used for the
+  equivalence of the first two conditions).
 -/
 
 public section
@@ -231,24 +235,6 @@ theorem isEquivalence_iff_rlp_slice_map [Quasicategory X] (f : Edge x y) :
   refine ⟨fun H _ _ _ ⟨n⟩ ↦ hasLiftingProperty_of_hornFilling f.edge (H n), fun H n ↦ ?_⟩
   have := H _ (modelCategoryQuillen.boundary_ι_mem_I n)
   exact hornFilling_of_hasLiftingProperty f.edge
-
-/-- **Over a terminal simplicial set, an edge `f : x ⟶ y` is Cartesian exactly when the
-restriction of cones `X_{/f} ⟶ X_{/y}` is a trivial fibration**: all slices of a terminal
-simplicial set are terminal, so the map defining Cartesian edges is this restriction of cones
-followed by an isomorphism. -/
-theorem isCartesian_iff_rlp_slice_map (f : Edge x y) {S : SSet.{u}} (p : X ⟶ S)
-    (hS : IsTerminal S) :
-    f.IsCartesian p ↔ (monomorphisms SSet.{u}).rlp (slice.map (stdSimplex.δ 0) (𝟙 X) (by simp) :
-      slice (yonedaEquiv.symm f.edge) ⟶ slice (stdSimplex.δ 0 ≫ yonedaEquiv.symm f.edge)) := by
-  have : IsIso (slice.map (stdSimplex.δ 0) (𝟙 S) (by simp) :
-      slice (yonedaEquiv.symm f.edge ≫ p) ⟶
-        slice (stdSimplex.δ 0 ≫ yonedaEquiv.symm f.edge ≫ p)) :=
-    isIso_of_isTerminal (slice.isTerminal _ hS) (slice.isTerminal _ hS) _
-  have : (monomorphisms SSet.{u}).rlp.RespectsIso :=
-    respectsIso_of_isStableUnderComposition fun _ _ g (_ : IsIso g) ↦ rlp_of_isIso _ g
-  rw [isCartesian_iff, ← cancel_right_of_respectsIso (monomorphisms SSet.{u}).rlp
-    (slice.restrictionMap (stdSimplex.δ 0) p (yonedaEquiv.symm f.edge)) (pullback.fst _ _),
-    slice.restrictionMap_fst]
 
 /-- **An edge of a quasicategory is an equivalence exactly when it is Cartesian over a point**
 (HTT Proposition 2.4.1.5 over a point): for the map `p` to a terminal simplicial set, the
