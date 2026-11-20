@@ -334,8 +334,14 @@ theorem isCompl_range_fderiv_symChartAt_ofFn_iff {γ δ : Fin n → ℝ → α} 
     exact congrArg _ (Sym.ofFn_comp_perm σ fun j => δ j (u j)).symm
   have hP : LinearMap.range (P : (Fin n → ℝ) →ₗ[ℝ] Fin n → ℝ) = ⊤ :=
     LinearMap.range_eq_top.2 fun u => ⟨u ∘ σ.symm, funext fun i => by simp [P]⟩
-  have hbij : Function.Bijective (T'.restrictScalars ℝ : (Fin n → ℂ) →ₗ[ℝ] Fin n → ℂ) :=
-    ⟨hT', (LinearMap.injective_iff_surjective (f := (T' : (Fin n → ℂ) →ₗ[ℂ] Fin n → ℂ))).1 hT'⟩
+  -- `T'` is an injective endomorphism of the finite-dimensional space `Fin n → ℂ`, so it is
+  -- bijective, and so is its real restriction, which has the same underlying function
+  have hsurj : Function.Surjective T' := by
+    rw [← ContinuousLinearMap.coe_coe] at hT' ⊢
+    exact LinearMap.injective_iff_surjective.1 hT'
+  have hbij : Function.Bijective (T'.restrictScalars ℝ : (Fin n → ℂ) →ₗ[ℝ] Fin n → ℂ) := by
+    rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_restrictScalars']
+    exact ⟨hT', hsurj⟩
   simp only [(hD (fun _ => rfl) hγ hv).fderiv, hδσ.fderiv, ContinuousLinearMap.toLinearMap_comp]
   rw [LinearMap.range_comp_of_range_eq_top _ hP, LinearMap.range_comp, LinearMap.range_comp,
     ← Submodule.orderIsoMapComapOfBijective_apply _ hbij,
