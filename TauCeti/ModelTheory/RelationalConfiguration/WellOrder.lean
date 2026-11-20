@@ -60,6 +60,15 @@ model existence.
   of a `Σ¹₁` set of well-founded trees are bounded), whose relativisations are used here.
 * A. S. Kechris, *Classical Descriptive Set Theory*, Graduate Texts in Mathematics 156, Springer,
   1995, Section 31 (the boundedness theorem for analytic sets of well-founded trees).
+* Cameron Freer's `cameronfreer/infinitary-logic` (Apache-2.0) at commit
+  `518a366cba97b1ae8c4dc64a297a396939bc3e0b`, in `InfinitaryLogic/Descriptive/WellOrderClass.lean`,
+  `WellOrderNonBorel.lean` and `AnalyticWellOrderBoundedness.lean`, formalizes the same well-order
+  class, its coanalyticity and the boundedness of the order types of analytic sets of codes. This
+  file diverges from it: the source obtains non-Borelness from López–Escobar, fragment
+  Löwenheim–Skolem and the model-theoretic boundedness of well-ordered models, whereas here
+  non-analyticity, non-measurability and non-definability come from the descriptive boundedness
+  theorem for well-founded trees, on any countably infinite carrier and for languages with any
+  number of relation symbols.
 -/
 
 public section

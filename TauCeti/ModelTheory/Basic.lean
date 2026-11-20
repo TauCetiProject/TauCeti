@@ -97,7 +97,7 @@ theorem funMap_relStructure (lt : L.Relations 2) {M : Type*} (r : M → M → Pr
   (rfl)
 
 /-- In `relStructure lt r m`, every relation symbol of arity other than `2` is empty. -/
-theorem relMap_relStructure_of_ne (lt : L.Relations 2) {M : Type*} (r : M → M → Prop) (m : M)
+theorem not_relMap_relStructure_of_ne (lt : L.Relations 2) {M : Type*} (r : M → M → Prop) (m : M)
     {n : ℕ} (hn : n ≠ 2) (R : L.Relations n) (xs : Fin n → M) :
     ¬ @Structure.RelMap L M (relStructure lt r m) n R xs := by
   match n, hn with
