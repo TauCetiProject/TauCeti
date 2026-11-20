@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.FiniteEtale.AffineFiber
 public import TauCeti.RingTheory.AdjoinRoot.StandardTameCover.Basic
 
 import TauCeti.RingTheory.AdjoinRoot.Basic
+import TauCeti.RingTheory.RootsOfUnity.PowFiber
 
 /-!
 # Kummer covers and their geometric fibres
@@ -65,6 +66,8 @@ and their deck transformations, and computes them on geometric fibres:
   covers intertwine the deck transformations of `ζ` and of `ζ ^ (m / n)`.
 * `TauCeti.FiniteEtaleScheme.kummerCoverFiberEquiv_map_kummerCoverDeck`: on fibres, the deck
   transformation of `ζ` is multiplication by the image of `ζ`.
+* `TauCeti.FiniteEtaleScheme.exists_fiber_map_kummerCoverDeck_eq`: when every `n`-th root of unity
+  of `Ω` comes from `R`, the deck transformations act transitively on the geometric fibre.
 * `TauCeti.FiniteEtaleScheme.kummerCoverFiberEquivRootsOfUnity_map_kummerCoverMap`,
   `TauCeti.FiniteEtaleScheme.kummerCoverFiberEquivRootsOfUnity_map_kummerCoverDeck`: on the
   fibres `μ_n(Ω)` over `1`, the maps between covers are the power maps and the deck
@@ -304,6 +307,39 @@ theorem kummerCoverFiberEquiv_map_kummerCoverDeck (ζ : rootsOfUnity n R)
     (AdjoinRoot.root _)).trans ?_
   rw [AlgHom.comp_apply, kummerAlgebraDeck_hom_hom_hom]
   simp [-AdjoinRoot.algebraMap_eq]
+
+/-- The geometric fibre of a Kummer cover is nonempty: the separably closed field `Ω` contains an
+`n`-th root of the image of `t`, since `n` is invertible in `Ω`. -/
+theorem nonempty_fiber_kummerCover :
+    Nonempty ((fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn)) :=
+  haveI : NeZero (n : Ω) := ⟨by simpa using (hn.map (algebraMap R Ω)).ne_zero⟩
+  have ⟨ω, hω⟩ := IsSepClosed.exists_pow_nat_eq (algebraMap R Ω t) n
+  ⟨(kummerCoverFiberEquiv t Ω n hn).symm ⟨ω, hω⟩⟩
+
+/-- The `n`-th roots of `t` in `Ω` attached to points of the geometric fibre are nonzero. -/
+theorem kummerCoverFiberEquiv_ne_zero
+    (y : (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn)) :
+    (kummerCoverFiberEquiv t Ω n hn y : Ω) ≠ 0 := by
+  intro h
+  have := (kummerCoverFiberEquiv t Ω n hn y).2
+  rw [h, zero_pow (by rintro rfl; simpa using hn.map (algebraMap R Ω))] at this
+  exact (t.isUnit.map (algebraMap R Ω)).ne_zero this.symm
+
+/-- If every `n`-th root of unity of `Ω` comes from an `n`-th root of unity of `R`, the deck
+transformations of the Kummer cover act transitively on its geometric fibre: any two `n`-th roots
+of `t` in `Ω` differ by an `n`-th root of unity of `R`. -/
+theorem exists_fiber_map_kummerCoverDeck_eq
+    (hμ : Function.Surjective (restrictRootsOfUnity (algebraMap R Ω) n))
+    (y y' : (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn)) :
+    ∃ ζ : rootsOfUnity n R, (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).map
+      (kummerCoverDeck t hn ζ).hom y = y' := by
+  set e := kummerCoverFiberEquiv t Ω n hn
+  obtain ⟨ω, hω⟩ := (pow_eq_pow_iff_exists_rootsOfUnity_smul
+    (by rintro rfl; simpa using hn.map (algebraMap R Ω))).mp ((e y).2.trans (e y').2.symm)
+  obtain ⟨ζ, rfl⟩ := hμ ω
+  refine ⟨ζ, e.injective (Subtype.ext ?_)⟩
+  rw [kummerCoverFiberEquiv_map_kummerCoverDeck, ← hω, rootsOfUnity.smul_eq_mul,
+    restrictRootsOfUnity_coe_apply]
 
 variable (Ω n)
 
