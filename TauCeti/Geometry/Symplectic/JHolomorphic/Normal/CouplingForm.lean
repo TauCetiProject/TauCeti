@@ -47,8 +47,8 @@ currents near `C`. This file computes it and proves:
   `ω + (|w|² / 2) dA` at `z` (`TauCeti.forall_normalCouplingForm_apply_eq_zero_iff`): `ω_N` is
   nondegenerate at `(z, w)` exactly when `ω + (|w|² / 2) dA` is nondegenerate at `z`. For a flat
   connection, `dA = 0`, this is nondegeneracy of `ω`, on the whole normal line.
-* **Closedness.** `ω_N` is closed where `ω` is (`TauCeti.extDeriv_normalCouplingForm`), being the
-  sum of a pullback of `ω` and an exact form.
+* **Closedness.** `ω_N` is closed where `ω` is (`TauCeti.extDeriv_normalCouplingForm_eq_zero`),
+  being the sum of a pullback of `ω` and an exact form.
 * **Taming.** If `ω` tames the complex structure of the curve and the almost complex structure
   `J` acts by `i` on the normal fibres along `C`, then for every large `K` the coupling form of
   `K ω` tames the normal linearization `J_N` of `J` on each disk bundle over a compact set of
@@ -56,7 +56,8 @@ currents near `C`. This file computes it and proves:
   `TauCeti.exists_forall_div_two_mul_norm_sq_le_normalLinearization`.
 
 Under a change of unitary frame `w ↦ e^(iφ(z)) w` the connection form becomes `A - dφ`. Since
-`λ` is half the cutoff phase form for `χ = id` of the pair `(π^* A, w)`, its gauge invariance
+`λ` is half the cutoff phase form for `χ = id` of the pair `(π^* A, w)`
+(`TauCeti.normalCouplingPrimitive_eq_smul_cutoffPhaseForm`), its gauge invariance
 `TauCeti.SeibergWitten.cutoffPhaseForm_sub_phaseForm_mul`, which only needs `χ 0 = 0`, and its
 naturality under pullback `TauCeti.SeibergWitten.cutoffPhaseForm_comp` relate the coupling
 primitives of the two frames; that comparison is not stated here.
@@ -100,33 +101,44 @@ def normalCouplingPrimitive (A : E → E [⋀^Fin 1]→L[ℝ] ℝ) : E × ℂ �
   (2⁻¹ : ℝ) • cutoffPhaseForm id
     (fun p ↦ (A p.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ)) Prod.snd
 
+/-- The coupling primitive is half the cutoff phase form for `χ = id` of the fibre coordinate and
+the pulled-back connection form `π^* A`. -/
+theorem normalCouplingPrimitive_eq_smul_cutoffPhaseForm (A : E → E [⋀^Fin 1]→L[ℝ] ℝ) :
+    normalCouplingPrimitive A = (2⁻¹ : ℝ) • cutoffPhaseForm id
+      (fun p ↦ (A p.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ)) Prod.snd :=
+  (rfl)
+
 /-- The coupling primitive on a vector `(v, n)` at `(z, w)` is `Im (conj w (n + i A(v) w)) / 2`. -/
 @[simp]
 theorem normalCouplingPrimitive_apply (A : E → E [⋀^Fin 1]→L[ℝ] ℝ) (z : E) (w : ℂ) (v : E)
     (n : ℂ) :
     normalCouplingPrimitive A (z, w) (fun _ ↦ (v, n)) =
       (conj w * (n + I * A z (fun _ ↦ v) * w)).im / 2 := by
-  rw [normalCouplingPrimitive, Pi.smul_apply, ContinuousAlternatingMap.smul_apply,
-    cutoffPhaseForm_id_apply_eq_im, covariantDeriv_apply, fderiv_snd]
+  rw [normalCouplingPrimitive_eq_smul_cutoffPhaseForm, Pi.smul_apply,
+    ContinuousAlternatingMap.smul_apply, cutoffPhaseForm_id_apply_eq_im, covariantDeriv_apply,
+    fderiv_snd]
   simp only [compContinuousLinearMap_apply, Function.comp_def, ContinuousLinearMap.coe_fst',
     ContinuousLinearMap.coe_snd', smul_eq_mul]
   ring
 
+/-- The coupling primitive of a connection form that is `C^n` at `z` is `C^n` at every point
+`(z, w)` of the fibre over `z`. -/
+theorem contDiffAt_normalCouplingPrimitive {n : WithTop ℕ∞} (hA : ContDiffAt ℝ n A z) (w : ℂ) :
+    ContDiffAt ℝ n (normalCouplingPrimitive A) (z, w) :=
+  (contDiffAt_cutoffPhaseForm_id contDiff_snd.contDiffAt
+    (contDiffAt_pullback_continuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ) hA)).const_smul
+    (2⁻¹ : ℝ)
+
 /-- The coupling primitive of a `C^n` connection form is `C^n`. -/
 theorem contDiff_normalCouplingPrimitive {n : WithTop ℕ∞} (hA : ContDiff ℝ n A) :
-    ContDiff ℝ n (normalCouplingPrimitive A) := by
-  have hb : ContDiff ℝ n
-      (fun p : E × ℂ ↦ (A p.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ)) :=
-    (compContinuousLinearMapCLM (ι := Fin 1) (F := ℝ)
-      (ContinuousLinearMap.fst ℝ E ℂ)).contDiff.comp (hA.comp contDiff_fst)
-  exact (contDiff_cutoffPhaseForm_id contDiff_snd hb).const_smul (2⁻¹ : ℝ)
+    ContDiff ℝ n (normalCouplingPrimitive A) :=
+  contDiff_iff_contDiffAt.2 fun p ↦ contDiffAt_normalCouplingPrimitive hA.contDiffAt p.2
 
-/-- The pulled-back connection form `π^* A` is differentiable where `A` is. -/
-private theorem differentiableAt_pullback_fst (hA : DifferentiableAt ℝ A z) (w : ℂ) :
-    DifferentiableAt ℝ
-      (fun p : E × ℂ ↦ (A p.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ)) (z, w) :=
-  (compContinuousLinearMapCLM (ι := Fin 1) (F := ℝ)
-    (ContinuousLinearMap.fst ℝ E ℂ)).differentiableAt.comp _ (hA.comp _ differentiableAt_fst)
+/-- The first components of a pair of elements of a product. -/
+private theorem fst_comp_pair {α β : Type*} (u u' : α × β) :
+    Prod.fst ∘ ![u, u'] = ![u.1, u'.1] := by
+  funext i
+  fin_cases i <;> rfl
 
 /-- **The differential of the coupling primitive.** Where `A` is differentiable,
 
@@ -136,17 +148,17 @@ theorem extDeriv_normalCouplingPrimitive_apply_pair (hA : DifferentiableAt ℝ A
     extDeriv (normalCouplingPrimitive A) (z, w) ![(v, n), (v', n')] =
       (conj (n + I * A z (fun _ ↦ v) * w) * (n' + I * A z (fun _ ↦ v') * w)).im +
         normSq w / 2 * extDeriv A z ![v, v'] := by
-  have hb := differentiableAt_pullback_fst hA w
+  have hb := differentiableAt_pullback_continuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ)
+    (x := (z, w)) hA
   have hpull := (ContinuousLinearMap.fst ℝ E ℂ).extDeriv_pullback (ω := A) (x := (z, w)) hA
-  simp only [ContinuousLinearMap.coe_fst'] at hpull
-  have hfst : (ContinuousLinearMap.fst ℝ E ℂ) ∘ ![(v, n), (v', n')] = ![v, v'] := by
-    funext i
-    fin_cases i <;> rfl
-  rw [normalCouplingPrimitive, extDeriv_smul, ContinuousAlternatingMap.smul_apply,
+  simp only [ContinuousLinearMap.coe_fst'] at hb hpull
+  rw [normalCouplingPrimitive_eq_smul_cutoffPhaseForm, extDeriv_smul,
+    ContinuousAlternatingMap.smul_apply,
     extDeriv_cutoffPhaseForm_id_apply_pair contDiff_snd.contDiffAt hb]
   simp only [covariantDeriv_apply, fderiv_snd, ContinuousLinearMap.coe_snd',
     compContinuousLinearMap_apply, Function.comp_def, ContinuousLinearMap.coe_fst']
-  rw [hpull, compContinuousLinearMap_apply, hfst, smul_eq_mul]
+  rw [hpull, compContinuousLinearMap_apply, ContinuousLinearMap.coe_fst', fst_comp_pair,
+    smul_eq_mul]
   ring
 
 /-- On a normal fibre, the differential of the coupling primitive is the area form of `ℂ`:
@@ -184,19 +196,14 @@ theorem normalCouplingForm_apply_pair (hA : DifferentiableAt ℝ A z) (v v' : E)
       ω z ![v, v'] +
         (conj (n + I * A z (fun _ ↦ v) * w) * (n' + I * A z (fun _ ↦ v') * w)).im +
           normSq w / 2 * extDeriv A z ![v, v'] := by
-  have hfst : Prod.fst ∘ ![(v, n), (v', n')] = ![v, v'] := by
-    funext i
-    fin_cases i <;> rfl
-  rw [normalCouplingForm_apply, hfst, extDeriv_normalCouplingPrimitive_apply_pair hA, add_assoc]
+  rw [normalCouplingForm_apply, fst_comp_pair, extDeriv_normalCouplingPrimitive_apply_pair hA,
+    add_assoc]
 
 /-- **The coupling form on a normal fibre** is the area form of `ℂ`:
 `ω_N((0, n), (0, n')) = Im (conj n n')`. -/
 theorem normalCouplingForm_apply_inr_inr (hA : DifferentiableAt ℝ A z) (n n' : ℂ) :
     normalCouplingForm ω A (z, w) ![(0, n), (0, n')] = (conj n * n').im := by
-  have hfst : Prod.fst ∘ ![((0 : E), n), (0, n')] = ![0, 0] := by
-    funext i
-    fin_cases i <;> rfl
-  rw [normalCouplingForm_apply, hfst, extDeriv_normalCouplingPrimitive_apply_inr_inr hA,
+  rw [normalCouplingForm_apply, fst_comp_pair, extDeriv_normalCouplingPrimitive_apply_inr_inr hA,
     (ω z).map_coord_zero 0 rfl, zero_add]
 
 /-- The coupling form tames multiplication by `i` on the normal fibres:
@@ -242,10 +249,7 @@ theorem forall_normalCouplingForm_apply_eq_zero_iff (hA : DifferentiableAt ℝ A
     -- Pairing with the vertical vector `(0, i ∇w)` gives `|∇w|² = 0`.
     set c := n + I * A z (fun _ ↦ v) * w with hc
     have hvert := h (0, I * c)
-    have hfst : Prod.fst ∘ ![(v, n), ((0 : E), I * c)] = ![v, 0] := by
-      funext i
-      fin_cases i <;> rfl
-    rw [normalCouplingForm_apply, hfst, (ω z).map_coord_zero 1 rfl, zero_add,
+    rw [normalCouplingForm_apply, fst_comp_pair, (ω z).map_coord_zero 1 rfl, zero_add,
       extDeriv_normalCouplingPrimitive_apply_pair hA,
       (A z).map_coord_zero (m := fun _ ↦ (0 : E)) 0 rfl,
       (extDeriv A z).map_coord_zero 1 rfl, ← hc] at hvert
@@ -263,20 +267,19 @@ theorem forall_normalCouplingForm_apply_eq_zero_iff (hA : DifferentiableAt ℝ A
     simpa using hv v'
 
 /-- **The coupling form is closed** where `ω` is: if `ω` is differentiable and closed at `z` and
-`A` is `C²`, then `dω_N = 0` at every point `(z, w)` of the fibre over `z`. -/
-theorem extDeriv_normalCouplingForm (hω : DifferentiableAt ℝ ω z) (hdω : extDeriv ω z = 0)
-    (hA : ContDiff ℝ 2 A) : extDeriv (normalCouplingForm ω A) (z, w) = 0 := by
-  have hlam := contDiff_normalCouplingPrimitive hA
-  have hpull : DifferentiableAt ℝ
-      (fun p : E × ℂ ↦ (ω p.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ)) (z, w) :=
-    (compContinuousLinearMapCLM (ι := Fin 2) (F := ℝ)
-      (ContinuousLinearMap.fst ℝ E ℂ)).differentiableAt.comp _ (hω.comp _ differentiableAt_fst)
+`A` is `C²` at `z`, then `dω_N = 0` at every point `(z, w)` of the fibre over `z`. -/
+theorem extDeriv_normalCouplingForm_eq_zero (hω : DifferentiableAt ℝ ω z)
+    (hdω : extDeriv ω z = 0) (hA : ContDiffAt ℝ 2 A z) :
+    extDeriv (normalCouplingForm ω A) (z, w) = 0 := by
+  have hlam := contDiffAt_normalCouplingPrimitive hA w
+  have hpull := differentiableAt_pullback_continuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ)
+    (x := (z, w)) hω
   have hdlam : DifferentiableAt ℝ (extDeriv (normalCouplingPrimitive A)) (z, w) :=
-    ((contDiff_extDeriv hlam (r := 1) (by norm_num)).differentiable one_ne_zero) _
+    (contDiffAt_extDeriv hlam (r := 1) (by norm_num)).differentiableAt one_ne_zero
   have hsum : normalCouplingForm ω A =
-      (fun p : E × ℂ ↦ (ω p.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ)) +
-        extDeriv (normalCouplingPrimitive A) := rfl
-  rw [hsum, extDeriv_add hpull hdlam, extDeriv_extDeriv hlam (by simp), Pi.zero_apply, add_zero]
+      (fun p : E × ℂ ↦ (ω (ContinuousLinearMap.fst ℝ E ℂ p)).compContinuousLinearMap
+        (ContinuousLinearMap.fst ℝ E ℂ)) + extDeriv (normalCouplingPrimitive A) := rfl
+  rw [hsum, extDeriv_add hpull hdlam, extDeriv_extDeriv_apply hlam (by simp), add_zero]
   exact (ContinuousLinearMap.fst ℝ E ℂ).extDeriv_pullback_eq_zero hω hdω
 
 /-! ### Taming the normal linearization -/
@@ -321,12 +324,8 @@ theorem exists_forall_div_two_mul_norm_sq_le_normalCouplingForm
         sub_zero, zero_sub, neg_mul, mul_neg, neg_neg, sub_neg_eq_add, zero_add] using h1)
     (fun z hz W hW ↦ hS (z, W) ⟨hz, mem_closedBall_zero_iff.2 hW⟩)
   refine ⟨K₀, fun K hK z hz w hw u ↦ ?_⟩
-  have hfst : Prod.fst ∘ ![u, normalLinearization J (z, w) u] =
-      ![u.1, (normalLinearization J (z, w) u).1] := by
-    funext i
-    fin_cases i <;> rfl
   have h := hK₀ K hK z hz w hw u
-  rw [normalCouplingForm_apply, hfst, Pi.smul_apply, ContinuousAlternatingMap.smul_apply,
+  rw [normalCouplingForm_apply, fst_comp_pair, Pi.smul_apply, ContinuousAlternatingMap.smul_apply,
     smul_eq_mul]
   simpa [hσ] using h
 
