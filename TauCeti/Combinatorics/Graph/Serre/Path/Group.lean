@@ -14,7 +14,7 @@ At a vertex of a Serre graph, reduced closed paths form a group. Multiplication 
 paths and removes adjacent inverse darts; inversion reverses a path. The normal form identifies
 this group with backtrack-homotopy classes of closed paths. This is the path model to be compared
 with a spanning-tree presentation of the fundamental group of a graph. The reduced path groups of
-an acyclic graph are trivial.
+an acyclic graph are trivial. A petal loop of a rose and its reverse are distinct elements.
 
 ## References
 
@@ -160,6 +160,19 @@ instance : Group (PathGroup Γ v) where
   change ofPath p.reverse = inv (ofPath p)
   apply ext
   simp only [toPath_ofPath, toPath_inv_raw, Path.reduce_reverse]
+
+/-- A petal loop of a rose and its reverse are distinct elements of the reduced path group. -/
+theorem ofPath_reverse_rosePetal_ne {α : Type*} (a : α) :
+    ofPath (rosePetal a).reverse ≠ ofPath (rosePetal a) := fun h => by
+  -- The vertex type of `rose α` unfolds only at default transparency, so the homotopy is restated
+  -- between paths at the ends of the dart before rewriting.
+  have h' : Path.Homotopic (rose α) ((rose α).dart (a, true)).toPath
+      ((rose α).dart (a, true)).toPath.reverse :=
+    rosePetal_eq_toPath a ▸ ((ofPath_eq_iff_homotopic _ _).mp h).symm
+  have hrev : Quiver.reverse ((rose α).dart (a, true)) = (rose α).dart (a, false) :=
+    Subtype.ext ((reverse_val _ _).trans ((congrArg _ (dart_val _ _)).trans (dart_val _ _).symm))
+  rw [Quiver.Path.reverse_toPath, hrev] at h'
+  exact Path.rose_not_homotopic_reverse a h'
 
 /-- Reversal-compatible dart weights extend to a homomorphism on reduced closed paths. -/
 def lift {G : Type*} [Group G] (wt : Γ.E → G)
