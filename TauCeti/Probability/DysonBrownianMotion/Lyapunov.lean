@@ -54,7 +54,7 @@ inputs of the Lyapunov argument for noncollision and nonexplosion of Dyson Brown
   `TauCeti.Probability.dysonGenerator_logVandermonde`: the two generator identities.
 * `TauCeti.Probability.dysonLyapunov`, with `TauCeti.Probability.dysonGenerator_dysonLyapunov_le`,
   `TauCeti.Probability.bddBelow_image_dysonLyapunov` and
-  `TauCeti.Probability.exists_forall_le_sub_of_dysonLyapunov_le`.
+  `TauCeti.Probability.exists_forall_le_sub_and_sum_sq_le_of_dysonLyapunov_le`.
 
 ## References
 
@@ -382,7 +382,7 @@ theorem bddBelow_image_dysonLyapunov : BddBelow (dysonLyapunov n '' {x | StrictA
 /-- **Sublevel sets lie in the truncation regions.** For every level `M` there are `ε > 0` and `R`
 such that every configuration of the open Weyl chamber with `dysonLyapunov n x ≤ M` has all ordered
 gaps `xᵢ - xⱼ` (`i < j`) at least `ε` and `∑ᵢ xᵢ² ≤ R`. -/
-theorem exists_forall_le_sub_of_dysonLyapunov_le (n : ℕ) (M : ℝ) :
+theorem exists_forall_le_sub_and_sum_sq_le_of_dysonLyapunov_le (n : ℕ) (M : ℝ) :
     ∃ ε > 0, ∃ R : ℝ, ∀ x : Fin n → ℝ, StrictAnti x → dysonLyapunov n x ≤ M →
       (∀ i j, i < j → ε ≤ x i - x j) ∧ ∑ i, x i ^ 2 ≤ R := by
   obtain ⟨C, hC⟩ := exists_forall_sum_sq_le_and_neg_log_le n
