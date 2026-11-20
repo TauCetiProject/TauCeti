@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Category.Basic
 public import TauCeti.CategoryTheory.Dagger.Biproduct
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 
 /-!
 # Orthogonal sums in C*-categories
@@ -174,12 +175,7 @@ def isBilimitOrthogonalize {c : Bicone F} (hc : c.IsBilimit) : c.orthogonalize.I
   isBilimitOfTotal _ <| by
     -- With `u = √h` and `g = h⁻¹ = ∑ j, ι_j ι_j†`, the total is `u g u = g h = 1`.
     obtain ⟨hg, gh⟩ := gram_mul_coGram c hc
-    have hu : Commute (sqrtGram c) (coGram c) := by
-      have hh : Commute (sqrtGram c) (gram c) := by
-        rw [← CFC.sqrt_mul_sqrt_self _ (gram_nonneg c), ← sqrtGram]
-        exact (Commute.refl _).mul_right (Commute.refl _)
-      simpa only [Units.inv_mk, Units.val_mk] using
-        Commute.units_inv_right (u := ⟨gram c, coGram c, hg, gh⟩) hh
+    have hu : Commute (sqrtGram c) (coGram c) := Commute.cfcₙ_nnreal (hg.trans gh.symm) _
     have key : sqrtGram c * coGram c * sqrtGram c = 1 := by
       rw [hu.eq, mul_assoc, sqrtGram, CFC.sqrt_mul_sqrt_self _ (gram_nonneg c), gh]
     have := congrArg End.asHom key
