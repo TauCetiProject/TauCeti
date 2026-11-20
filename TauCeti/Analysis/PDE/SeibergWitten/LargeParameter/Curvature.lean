@@ -63,8 +63,9 @@ are:
   `(1,1)`-forms (`infDist_positiveCone_le_of_add_hodgeStar_eq`).
 * **The defect density.** The density `δ = (r / 4) |1 - |α|² - |β|²|` of Taubes's defect energy
   is bounded by the `ω`-component, `δ ≤ ⟪ω, F⟫ + K / 2 + √2 |η| / 2`
-  (`div_mul_abs_one_sub_sub_le_inner_add`), and, under the coarse anti-self-dual bound, it bounds
-  the Hermitian part from above,
+  (`div_mul_abs_one_sub_sub_le_inner_add`, from the real inequality
+  `r |1 - s - t| ≤ r (1 - s + t) + 2 K` of `mul_abs_one_sub_sub_le`), and, under the coarse
+  anti-self-dual bound, it bounds the Hermitian part from above,
   `B(v, v) ≤ ((1 + C / √r) δ + (1 + C) K + √2 |η| / 2 + C) |v|²`
   (`hermitianForm_apply_self_le_of_add_hodgeStar_eq`). These are the two pointwise inputs of
   Taubes's monotonicity inequality for the defect energy, with its factor `1 + C r^(-1/2)`.
@@ -164,6 +165,18 @@ private theorem sq_add_mul_le_sq_max_add {s b r K : ℝ} (hs : 0 ≤ s) (hb : 0 
     -- Here `0 ≤ s - 1 + b ≤ K u` and `b ≤ K u²`.
     have h1 : (s - 1 + b) ^ 2 ≤ (K * u) ^ 2 := pow_le_pow_left₀ (by linarith) (by linarith) 2
     nlinarith
+
+/-- **The spinor defect is controlled by the `ω`-component.** If `0 ≤ t`, `0 ≤ C` and
+`s + t ≤ 1 + C / r` with `r > 0`, then `r |1 - s - t| ≤ r (1 - s + t) + 2 C`. With `s = |α|²` and
+`t = |β|²`, the right side is the `ω`-component of the large-parameter curvature equation up to
+the constant `2 C`. -/
+theorem mul_abs_one_sub_sub_le {s t r C : ℝ} (hr : 0 < r) (hC : 0 ≤ C) (ht : 0 ≤ t)
+    (hst : s + t ≤ 1 + C / r) :
+    r * |1 - s - t| ≤ r * (1 - s + t) + 2 * C := by
+  have h : r * (s + t) ≤ r + C := by
+    calc r * (s + t) ≤ r * (1 + C / r) := mul_le_mul_of_nonneg_left hst hr.le
+      _ = r + C := by field_simp
+  rcases abs_cases (1 - s - t) with ⟨h₁, _⟩ | ⟨h₁, _⟩ <;> rw [h₁] <;> nlinarith
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
   {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)}
@@ -317,16 +330,8 @@ theorem div_mul_abs_one_sub_sub_le_inner_add (hr : 0 < r) {K : ℝ} (hK : 0 ≤ 
     r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2| ≤ ⟪ω, F⟫ + K / 2 + √2 * ‖η‖ / 2 := by
   have h := inner_div_two_eq_of_add_hodgeStar_eq hQ hkl hω hω₂ hφ hβ hr.le hF
   have hωη : ⟪ω, η⟫ ≤ √2 * ‖η‖ := (le_abs_self _).trans (abs_inner_le_sqrt_two_mul_norm hω₂ η)
-  have hb : 0 ≤ r * ‖β‖ ^ 2 := by positivity
-  rcases le_total 0 (1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2) with h0 | h0
-  · rw [abs_of_nonneg h0]
-    linarith
-  · -- Above the vacuum, `r (‖φ‖² + ‖β‖² - 1) ≤ K`.
-    have hφβ' : r * (‖φ‖ ^ 2 + ‖β‖ ^ 2) ≤ r + K :=
-      calc r * (‖φ‖ ^ 2 + ‖β‖ ^ 2) ≤ r * (1 + K / r) := mul_le_mul_of_nonneg_left hφβ hr.le
-        _ = r + K := by rw [mul_add, mul_one, mul_div_cancel₀ K hr.ne']
-    rw [abs_of_nonpos h0]
-    linarith
+  have := mul_abs_one_sub_sub_le hr hK (sq_nonneg ‖β‖) hφβ
+  linarith
 
 end SelfDual
 
