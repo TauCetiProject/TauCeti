@@ -177,18 +177,13 @@ theorem manifoldMorseIndex_sphereCircleHeight (hε : 0 < ε)
 
 variable {v : E}
 
-omit [Fact (finrank ℝ E = 2 + 1)] in
-/-- The reflection across `v^⊥` fixes a vector `u` orthogonal to `v`. -/
-private theorem reflection_eq_self_of_inner_eq_zero (huv : ⟪(u : E), v⟫ = 0) :
-    (ℝ ∙ v)ᗮ.reflection (u : E) = u :=
-  reflection_orthogonal_singleton_eq_self_of_inner_eq_zero (by rw [real_inner_comm, huv])
-
 /-- **The function `(p, w) ↦ ⟪p, u⟫ + ε Re w` is invariant under `τ`** when `u` is orthogonal to
 `v`: the reflection across `v^⊥` fixes `u`, and conjugation does not change real parts. -/
 theorem sphereCircleHeight_sphereCircleReflection (huv : ⟪(u : E), v⟫ = 0) (ε : ℝ)
     (q : sphere (0 : E) 1 × sphere (0 : ℂ) 1) :
     sphereCircleHeight u ε (sphereCircleReflection v q) = sphereCircleHeight u ε q := by
-  have hu := reflection_eq_self_of_inner_eq_zero huv
+  have hu : (ℝ ∙ v)ᗮ.reflection (u : E) = u :=
+    reflection_orthogonal_singleton_eq_self_of_inner_eq_zero (by rw [real_inner_comm, huv])
   rw [sphereCircleHeight_apply, sphereCircleHeight_apply, coe_sphereCircleReflection_apply_fst,
     coe_sphereCircleReflection_apply_snd, Complex.conj_re]
   congr 1
@@ -202,7 +197,8 @@ theorem isFixedPt_sphereCircleReflection_of_mem_criticalPoints (huv : ⟪(u : E)
     (hε : ε ≠ 0) {q : sphere (0 : E) 1 × sphere (0 : ℂ) 1}
     (hq : q ∈ criticalPoints ((𝓡 2).prod (𝓡 1)) (sphereCircleHeight u ε)) :
     IsFixedPt (sphereCircleReflection v) q := by
-  have hu := reflection_eq_self_of_inner_eq_zero huv
+  have hu : (ℝ ∙ v)ᗮ.reflection (u : E) = u :=
+    reflection_orthogonal_singleton_eq_self_of_inner_eq_zero (by rw [real_inner_comm, huv])
   obtain ⟨h₁, h₂⟩ := (mem_criticalPoints_sphereCircleHeight_iff hε).1 hq
   refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)
   · rw [coe_sphereCircleReflection_apply_fst]
@@ -216,19 +212,6 @@ theorem isFixedPt_sphereCircleReflection_of_mem_criticalPoints (huv : ⟪(u : E)
 
 namespace sphereCircleReflection
 
-/-- The function `(p, w) ↦ ⟪p, u⟫ + ε Re w` is invariant under every integer power of `τ`, which
-is how the mapping torus is cut out of `ℝ × S² × S¹`. -/
-private theorem sphereCircleHeight_zpow_apply (huv : ⟪(u : E), v⟫ = 0) (ε : ℝ) (k : ℤ)
-    (q : sphere (0 : E) 1 × sphere (0 : ℂ) 1) :
-    sphereCircleHeight u ε ((sphereCircleReflection v ^ k) q) = sphereCircleHeight u ε q := by
-  induction k using Int.induction_on generalizing q with
-  | zero => simp
-  | succ k ih =>
-    rw [zpow_add_one, Diffeomorph.mul_apply, ih, sphereCircleHeight_sphereCircleReflection huv]
-  | pred k ih =>
-    rw [zpow_sub_one, Diffeomorph.mul_apply, ih, Diffeomorph.inv_apply,
-      ← sphereCircleHeight_sphereCircleReflection huv, Diffeomorph.apply_symm_apply]
-
 /-- The function `[t, p, w] ↦ ⟪p, u⟫ + ε Re w` on the mapping torus of `τ`, induced by the
 `τ`-invariant function `TauCeti.sphereCircleHeight u ε` on `S² × S¹`
 (`TauCeti.sphereCircleReflection.torusHeight_mk`). -/
@@ -236,7 +219,11 @@ def torusHeight (huv : ⟪(u : E), v⟫ = 0) (ε : ℝ) :
     SmoothMappingTorus (sphereCircleReflection v) → ℝ :=
   MulAction.orbitRelQuotientLift
     (fun z ↦ sphereCircleHeight u ε ((SmoothMappingTorus.Cover.ofProd _).symm z).2) fun k z ↦ by
-      rw [SmoothMappingTorus.Cover.ofProd_symm_smul, sphereCircleHeight_zpow_apply huv]
+      -- Invariance under `τ` is invariance under all of its integer powers.
+      have h : Semiconj (sphereCircleHeight u ε) (sphereCircleReflection v)
+          (1 : ℝ ≃ₘ⟮𝓘(ℝ), 𝓘(ℝ)⟯ ℝ) := sphereCircleHeight_sphereCircleReflection huv ε
+      rw [SmoothMappingTorus.Cover.ofProd_symm_smul, h.diffeomorph_zpow_right, one_zpow,
+        Diffeomorph.coe_one, id_eq]
 
 variable (huv : ⟪(u : E), v⟫ = 0)
 
