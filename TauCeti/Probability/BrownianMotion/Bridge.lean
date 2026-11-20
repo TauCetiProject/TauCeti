@@ -23,11 +23,12 @@ law of variance `t (T - t) / T`, it vanishes at the horizon, and on `[0, T]` it 
 the endpoint `B T`. Consequently `B t = brownianBridge B T t + (t / T) B T` splits Brownian motion
 on `[0, T]` into the endpoint and an independent bridge.
 
-The law `TauCeti.brownianBridgeMeasure T` of the bridge path on `[0, T]` does not depend on the
-pre-Brownian motion, and the kernel `TauCeti.brownianBridgeKernel T`, the law of the bridge from
-`0` to `x`, disintegrates the law of the Brownian path on `[0, T]` with respect to its endpoint
-`B T`. This is the precise form of conditioning Brownian motion on its endpoint, an event of
-probability zero.
+The law `TauCeti.brownianBridgeMeasure T` of the bridge path on `[0, T]` is the same for every
+pre-Brownian motion whose path map `ω ↦ (B t ω)_{t ≤ T}` is almost everywhere measurable, and for
+such a process the kernel `TauCeti.brownianBridgeKernel T`, which for `T ≠ 0` sends `x` to the law
+of the bridge from `0` to `x`, disintegrates the law of the Brownian path on `[0, T]` with respect
+to its endpoint `B T`. This is the precise form of conditioning Brownian motion on its endpoint,
+an event of probability zero.
 
 The bridge of the standard horizon `T = 1`, `t ↦ B t - t B 1`, is the Gaussian limit of the
 uniform empirical process; the supremum of its absolute value and its squared integral are the
@@ -40,8 +41,9 @@ statements restricted to `t ≤ T` concern the single time `0`.
 
 * `TauCeti.brownianBridge B T`: the process `t ↦ B t - (t / T) B T`.
 * `TauCeti.brownianBridgeMeasure T`: the law of the Brownian bridge path on `[0, T]`.
-* `TauCeti.brownianBridgeKernel T`: the Markov kernel sending `x` to the law of the Brownian
-  bridge from `0` to `x` on `[0, T]`.
+* `TauCeti.brownianBridgeKernel T`: the Markov kernel sending `x` to the law of
+  `t ↦ X t + (t / T) x` for a Brownian bridge `X` on `[0, T]`; for `T ≠ 0` this is the Brownian
+  bridge from `0` to `x`.
 
 ## Main results
 
@@ -104,6 +106,22 @@ theorem brownianBridge_self (hT : T ≠ 0) (ω : Ω) : brownianBridge B T T ω =
 theorem brownianBridge_zero_right : brownianBridge B 0 = B := by
   ext t ω
   simp
+
+/-- Each value of the bridge is measurable when the process is measurable at `t` and at `T`. -/
+@[fun_prop]
+theorem measurable_brownianBridge [MeasurableSpace Ω] (ht : Measurable (B t))
+    (hT : Measurable (B T)) : Measurable (brownianBridge B T t) := by
+  rw [brownianBridge_def]
+  fun_prop
+
+/-- Each value of the bridge is almost everywhere measurable when the process is almost everywhere
+measurable at `t` and at `T`. -/
+@[fun_prop]
+theorem aemeasurable_brownianBridge [MeasurableSpace Ω] {P : Measure Ω}
+    (ht : AEMeasurable (B t) P) (hT : AEMeasurable (B T) P) :
+    AEMeasurable (brownianBridge B T t) P := by
+  rw [brownianBridge_def]
+  fun_prop
 
 /-- The path of the bridge at `ω` is continuous whenever the path of the process is. -/
 theorem continuous_brownianBridge {ω : Ω} (h : Continuous (B · ω)) :
@@ -191,8 +209,9 @@ theorem hasLaw_brownianBridge (hB : IsPreBrownianReal B P) (ht : t ≤ T) :
   refine ⟨hG.aemeasurable, ?_⟩
   rw [hG.map_eq_gaussianReal, integral_brownianBridge hB, variance_brownianBridge hB ht]
   congr 1
-  rw [← NNReal.coe_inj, NNReal.coe_div, NNReal.coe_mul, NNReal.coe_sub ht]
-  exact Real.coe_toNNReal _ (div_nonneg (mul_nonneg t.2 (sub_nonneg.2 ht)) T.2)
+  ext
+  have h : (0 : ℝ) ≤ t * (T - t) / T := div_nonneg (mul_nonneg t.2 (sub_nonneg.2 ht)) T.2
+  simpa [NNReal.coe_sub ht] using h
 
 /-- The bridge of a pre-Brownian motion on `[0, T]` is independent of the endpoint `B T`. -/
 theorem indepFun_brownianBridge (hB : IsPreBrownianReal B P) (T : ℝ≥0) :
@@ -239,7 +258,8 @@ variable {T : ℝ≥0}
 /-- The law of the Brownian bridge on `[0, T]`, a probability measure on paths `Set.Iic T → ℝ`
 with the product σ-algebra: the law of the bridge of the canonical pre-Brownian motion. By
 `ProbabilityTheory.IsPreBrownianReal.hasLaw_brownianBridgeMeasure` it is the law of the bridge
-of every pre-Brownian motion with measurable paths. -/
+of every pre-Brownian motion whose path map `ω ↦ (B t ω)_{t ≤ T}` is almost everywhere
+measurable. -/
 noncomputable def brownianBridgeMeasure (T : ℝ≥0) : Measure (Set.Iic T → ℝ) :=
   brownianProjectiveLimit.map fun ω (t : Set.Iic T) ↦ brownianBridge (fun t ω ↦ ω t) T t ω
 
@@ -251,12 +271,14 @@ instance (T : ℝ≥0) : IsProbabilityMeasure (brownianBridgeMeasure T) := by
 theorem ae_brownianBridgeMeasure_apply_eq_zero (hT : T ≠ 0) :
     ∀ᵐ g ∂brownianBridgeMeasure T, g ⟨T, le_rfl⟩ = 0 := by
   rw [brownianBridgeMeasure, ae_map_iff
-    (Measurable.of_eval fun t ↦ by unfold brownianBridge; fun_prop).aemeasurable
+    (Measurable.of_eval fun t ↦ by fun_prop).aemeasurable
     (measurableSet_eq_fun (measurable_pi_apply _) measurable_const)]
   exact Filter.Eventually.of_forall fun ω ↦ brownianBridge_self hT ω
 
-/-- The **endpoint kernel** of Brownian motion on `[0, T]`: the law of the Brownian bridge from
-`0` to `x`, that is, of `t ↦ X t + (t / T) x` for `X` with law `brownianBridgeMeasure T`.
+/-- The **endpoint kernel** of Brownian motion on `[0, T]`: the law of `t ↦ X t + (t / T) x` for
+`X` with law `brownianBridgeMeasure T`. For `T ≠ 0` this is the Brownian bridge from `0` to `x`.
+For `T = 0` the kernel is constant, equal to `brownianBridgeMeasure 0`, and the endpoint `x` only
+matters up to the `gaussianReal 0 0`-null set `{x ≠ 0}`.
 By `ProbabilityTheory.IsPreBrownianReal.map_prodMk_eq_compProd_brownianBridgeKernel` it
 disintegrates the law of a pre-Brownian path on `[0, T]` with respect to its endpoint. -/
 noncomputable def brownianBridgeKernel (T : ℝ≥0) : Kernel ℝ (Set.Iic T → ℝ) :=
@@ -301,7 +323,8 @@ private lemma map_restrict_brownianBridge (hB : IsPreBrownianReal B P) (I : Fins
   have hJ := hB.hasLaw J
   rw [← hJ.map_eq, AEMeasurable.map_map_of_aemeasurable (by fun_prop) hJ.aemeasurable]
   -- the bridge restricted to `I` is the linear image of the process restricted to `J`
-  rfl
+  refine congrArg (Measure.map · P) (funext fun ω ↦ funext fun i ↦ ?_)
+  simp
 
 /-- The path of the bridge of a pre-Brownian motion on `[0, T]` has law `brownianBridgeMeasure T`
 as soon as the path of the process on `[0, T]` is almost everywhere measurable. -/
@@ -314,7 +337,7 @@ theorem hasLaw_brownianBridgeMeasure (hB : IsPreBrownianReal B P)
   have hX : AEMeasurable (fun ω (t : Set.Iic T) ↦ brownianBridge B T t ω) P :=
     hΦ.comp_aemeasurable hm
   have hX₀ : Measurable fun (ω : ℝ≥0 → ℝ) (t : Set.Iic T) ↦ brownianBridge (fun t ω ↦ ω t) T t ω :=
-    Measurable.of_eval fun t ↦ by unfold brownianBridge; fun_prop
+    Measurable.of_eval fun t ↦ by fun_prop
   refine ⟨hX, IsProjectiveLimit.unique (P := fun I ↦ (P.map _).map I.restrict)
     (fun I ↦ rfl) fun I ↦ ?_⟩
   dsimp only
@@ -352,6 +375,7 @@ theorem map_prodMk_eq_compProd_brownianBridgeKernel (hB : IsPreBrownianReal B P)
   rw [brownianBridgeKernel_apply,
     Measure.map_apply (Measurable.of_eval fun t ↦ by fun_prop) (measurable_prodMk_left hs)]
   -- both sides measure `{g | (x, fun t ↦ g t + (t / T) * x) ∈ s}`
-  rfl
+  refine congrArg (brownianBridgeMeasure T) (Set.ext fun g ↦ ?_)
+  simp [G]
 
 end ProbabilityTheory.IsPreBrownianReal
