@@ -15,6 +15,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.ComoduleAlgebra
 public import TauCeti.Algebra.Lie.AdjointAction.InvariantZeroLocus
 public import TauCeti.Algebra.Lie.TracePowerPolynomial
 public import TauCeti.Algebra.Lie.Reductive.InvariantZeroLocus
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import TauCeti.Algebra.Lie.Basic
 
 /-!
@@ -56,6 +57,14 @@ the Killing form of `𝔤` is nondegenerate, the Lie-invariant functions of posi
 `ad`-nilpotent elements lie on the cone for every group with nondegenerate Killing form in
 characteristic zero, and points of the cone are `ad`-nilpotent for every connected group over an
 algebraically closed field of characteristic zero.
+
+The same comparison applies to the characteristic coefficients of the generic action matrix of a
+Lie module `M` with a basis of size `N`, which are Lie invariants vanishing at the origin. For a
+connected group they lie in the ideal of the cone, so at every point of the cone with values in a
+commutative ring, and in particular over the coordinate ring of the cone itself, this matrix has
+characteristic polynomial `X ^ N`. By the Cayley–Hamilton theorem it satisfies the uniform bound
+`X ^ N = 0` (`TauCeti.genericActionMatrix_map_pow_card_eq_zero_of_nilpotentConeIdeal_le_ker`).
+This is a statement about the scheme-theoretic zero fibre, not only about its `k`-points.
 
 When `𝔤` is only reductive, `𝔤 = Z(𝔤) ⊕ ⁅𝔤, 𝔤⁆`, the linear functions vanishing on `⁅𝔤, 𝔤⁆` are
 invariants of degree one, and the cone is cut out inside `⁅𝔤, 𝔤⁆`: its `k`-points are the
@@ -105,6 +114,13 @@ central element and a point of the cone
   (`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_add_iff`), while the `ad`-nilpotent elements are
   the sums of an arbitrary central element and a point of the cone
   (`TauCeti.isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_eval`).
+
+* `TauCeti.charpoly_map_genericActionMatrix_eq_X_pow_of_nilpotentConeIdeal_le_ker`,
+  `TauCeti.genericActionMatrix_map_pow_card_eq_zero_of_nilpotentConeIdeal_le_ker`, and
+  `TauCeti.genericActionMatrix_map_mk_nilpotentConeIdeal_pow_card_eq_zero`: for a connected group,
+  at every point of the cone with values in a commutative ring the generic action matrix of a Lie
+  module of rank `N` has characteristic polynomial `X ^ N`, hence `X ^ N = 0`, in particular over
+  the coordinate ring of the cone.
 
 ## References
 
@@ -439,6 +455,59 @@ theorem isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_
   rw [isNilpotent_ad_iff_exists_mem_center_add]
   simp only [nilpotentConeIdeal_le_ker_lift_eval_iff_mem_derivedSeries_and_isNilpotent_ad,
     and_assoc]
+
+/-- **The characteristic polynomial of a module on the nilpotent cone.** For a connected affine
+group over an algebraically closed field of characteristic zero, let `M` be a Lie module over its
+Lie algebra with a basis `c` of size `N`. At every point of the nilpotent cone with values in a
+commutative ring, that is after applying any ring homomorphism `f` killing the ideal of the cone,
+the generic action matrix of `M` has characteristic polynomial `X ^ N`: its other characteristic
+coefficients are invariant polynomial functions vanishing at the origin. -/
+theorem charpoly_map_genericActionMatrix_eq_X_pow_of_nilpotentConeIdeal_le_ker {B : Type*}
+    [CommRing B] {f : SymmetricAlgebra k (Module.Dual k 𝔤) →+* B}
+    (hf : nilpotentConeIdeal k H ≤ RingHom.ker f) {M : Type*} [AddCommGroup M] [Module k M]
+    [LieRingModule 𝔤 M] [LieModule k 𝔤 M] {κ : Type*} [Fintype κ] [DecidableEq κ]
+    (c : Module.Basis κ k M) :
+    ((genericActionMatrix k 𝔤 c).map f).charpoly = Polynomial.X ^ Fintype.card κ := by
+  set A := genericActionMatrix k 𝔤 c
+  have hcoeff (i : ℕ) (hi : i < Fintype.card κ) : f (A.charpoly.coeff i) = 0 := by
+    refine hf (mem_nilpotentConeIdeal_of_mem_adjointInvariantPolynomials ?_
+      (algebraMapInv_charpoly_coeff_genericActionMatrix_of_lt k 𝔤 c hi))
+    rw [adjointInvariantPolynomials_eq_lieInvariants]
+    exact charpoly_coeff_genericActionMatrix_mem_lieInvariants k 𝔤 c i
+  rw [Matrix.charpoly_map, (Matrix.charpoly_monic A).as_sum, Matrix.charpoly_natDegree_eq_dim,
+    Polynomial.map_add, Polynomial.map_pow, Polynomial.map_X, Polynomial.map_sum,
+    add_eq_left]
+  refine Finset.sum_eq_zero fun i hi ↦ ?_
+  rw [Polynomial.map_mul, Polynomial.map_C, Polynomial.map_pow, Polynomial.map_X,
+    hcoeff i (Finset.mem_range.mp hi), map_zero, zero_mul]
+
+/-- **The uniform nilpotency bound on the nilpotent cone.** For a connected affine group over an
+algebraically closed field of characteristic zero, let `M` be a Lie module over its Lie algebra
+with a basis `c` of size `N`. At every point of the nilpotent cone with values in a commutative
+ring, the generic action matrix of `M` satisfies `X ^ N = 0`, by the Cayley–Hamilton theorem.
+This applies in particular to the universal point, the quotient map onto the coordinate ring of the
+cone (`TauCeti.genericActionMatrix_map_mk_nilpotentConeIdeal_pow_card_eq_zero`). -/
+theorem genericActionMatrix_map_pow_card_eq_zero_of_nilpotentConeIdeal_le_ker {B : Type*}
+    [CommRing B] {f : SymmetricAlgebra k (Module.Dual k 𝔤) →+* B}
+    (hf : nilpotentConeIdeal k H ≤ RingHom.ker f) {M : Type*} [AddCommGroup M] [Module k M]
+    [LieRingModule 𝔤 M] [LieModule k 𝔤 M] {κ : Type*} [Fintype κ] [DecidableEq κ]
+    (c : Module.Basis κ k M) :
+    (genericActionMatrix k 𝔤 c).map f ^ Fintype.card κ = 0 := by
+  rw [← Polynomial.aeval_X_pow (R := B),
+    ← charpoly_map_genericActionMatrix_eq_X_pow_of_nilpotentConeIdeal_le_ker hf c,
+    Matrix.aeval_self_charpoly]
+
+/-- **The universal nilpotency bound on the nilpotent cone.** For a connected affine group over an
+algebraically closed field of characteristic zero and a Lie module `M` over its Lie algebra with a
+basis `c` of size `N`, the generic action matrix of `M` over the coordinate ring of the nilpotent
+cone satisfies `X ^ N = 0`. -/
+theorem genericActionMatrix_map_mk_nilpotentConeIdeal_pow_card_eq_zero {M : Type*}
+    [AddCommGroup M] [Module k M] [LieRingModule 𝔤 M] [LieModule k 𝔤 M] {κ : Type*} [Fintype κ]
+    [DecidableEq κ] (c : Module.Basis κ k M) :
+    (genericActionMatrix k 𝔤 c).map (Ideal.Quotient.mk (nilpotentConeIdeal k H)) ^
+      Fintype.card κ = 0 :=
+  genericActionMatrix_map_pow_card_eq_zero_of_nilpotentConeIdeal_le_ker
+    (Ideal.mk_ker (I := nilpotentConeIdeal k H)).ge c
 
 end Connected
 
