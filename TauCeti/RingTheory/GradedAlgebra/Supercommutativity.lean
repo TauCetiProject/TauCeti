@@ -94,7 +94,7 @@ end SignedComm
 for an odd `n` squares to zero: in a graded-commutative algebra, every element of odd degree
 squares to zero. -/
 theorem mul_self_eq_zero_of_negOnePow_odd {K B : Type*} [Semiring K] [Invertible (2 : K)]
-    [Ring B] [Module K B] {a : B} {n : ℤ} (hn : Odd n)
+    [NonUnitalNonAssocRing B] [Module K B] {a : B} {n : ℤ} (hn : Odd n)
     (ha : a * a = (n * n).negOnePow • (a * a)) : a * a = 0 :=
   eq_zero_of_eq_neg_of_invertible_two (R := K) <| by
     rwa [Int.negOnePow_mul_self, Int.negOnePow_odd _ hn, Units.neg_smul, one_smul] at ha
