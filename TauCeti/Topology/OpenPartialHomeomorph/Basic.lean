@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.ContinuousMap.Basic
+public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 public import Mathlib.Topology.LocallyClosed
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 public import TauCeti.Topology.PartialHomeomorph.Basic
-import Mathlib.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Basic properties of open partial homeomorphisms
@@ -35,6 +36,9 @@ or target are also sent to locally closed subsets of the ambient space.
   homeomorphism from a Hausdorff space maps compact subsets of its target to closed sets.
 * `OpenPartialHomeomorph.isClosed_image_of_closure_subset_target`: the image of a closed subset
   of the source is closed if its closure stays inside the target, without a compactness assumption.
+* `OpenPartialHomeomorph.sourceRestrict`: the restriction of an open partial homeomorphism to its
+  source, as a continuous map.
+
 * `OpenPartialHomeomorph.isLocallyClosed_image_of_subset_source`,
   `OpenPartialHomeomorph.isLocallyClosed_image_symm_of_subset_target`: an open partial homeomorphism
   and its inverse preserve locally closed subsets contained in their source or target.
@@ -58,6 +62,28 @@ theorem isClosed_image_of_closure_subset_target {s : Set X} (hs : IsClosed s)
     (hse : s ⊆ e.source) (hclosure : closure (e '' s) ⊆ e.target) :
     IsClosed (e '' s) :=
   e.toPartialHomeomorph.isClosed_image_of_closure_subset_target hs hse hclosure
+
+/-- Every point is in the source of the identity partial homeomorphism. -/
+theorem mem_refl_source (x : X) : x ∈ (OpenPartialHomeomorph.refl X).source :=
+  Set.mem_univ x
+
+/-- The restriction of an open partial homeomorphism to its source, as a continuous map. -/
+def sourceRestrict : C(e.source, Y) :=
+  ⟨e.source.domRestrict e, e.continuousOn.domRestrict⟩
+
+/-- Restricting to the source agrees pointwise with the partial homeomorphism. -/
+@[simp]
+theorem sourceRestrict_apply (x : e.source) : e.sourceRestrict x = e x :=
+  (rfl)
+
+/-- The restriction to the source is an open embedding. -/
+theorem isOpenEmbedding_sourceRestrict : Topology.IsOpenEmbedding e.sourceRestrict :=
+  e.isOpenEmbedding_restrict
+
+/-- A point of the source is the only point of the source that `e` sends to its image. -/
+theorem sourceRestrict_preimage {a : X} (ha : a ∈ e.source) :
+    e.sourceRestrict ⁻¹' {e a} ⊆ ContinuousMap.subtypeVal e.source ⁻¹' {a} :=
+  fun x hx ↦ e.injOn x.property ha hx
 
 /-- The image under an open partial homeomorphism of a locally closed subset of its source is
 locally closed in the ambient target space. -/
