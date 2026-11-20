@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Holder.Iterated
 public import TauCeti.Analysis.Sobolev.W1p.Convex
 public import TauCeti.Analysis.Sobolev.Wkp.HolderRepresentative
-import Mathlib.MeasureTheory.Measure.OpenPos
+import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -84,32 +84,6 @@ private theorem dense_setOf_mem_opens :
   rw [Subtype.dense_iff]
   exact closure_mono fun x hx ↦ ⟨⟨x, subset_closure hx⟩, hx, rfl⟩
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- An element of a Hölder space on `closure Ω` is determined by its values almost everywhere on
-`Ω`, for a measure that is positive on open sets. -/
-private theorem holderSpace_ext_ae {α : ℝ≥0} {G₁ G₂ : HolderSpace α (closure (Ω : Set E)) ℝ}
-    (h : ∀ᵐ x ∂μ, ∀ hx : x ∈ Ω, G₁ ⟨x, subset_closure hx⟩ = G₂ ⟨x, subset_closure hx⟩) :
-    G₁ = G₂ := by
-  classical
-  -- Extend both functions by zero off `closure Ω`; they are continuous on `Ω`.
-  let f : HolderSpace α (closure (Ω : Set E)) ℝ → E → ℝ := fun G x ↦
-    if hx : x ∈ closure (Ω : Set E) then G ⟨x, hx⟩ else 0
-  have hf (G : HolderSpace α (closure (Ω : Set E)) ℝ) (x : E) (hx : x ∈ Ω) :
-      f G x = G ⟨x, subset_closure hx⟩ := by
-    simp [f, subset_closure hx]
-  have hc (G : HolderSpace α (closure (Ω : Set E)) ℝ) : ContinuousOn (f G) Ω := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    refine (G.continuous.comp (continuous_inclusion subset_closure)).congr fun x ↦ ?_
-    simp [hf G x x.2, inclusion]
-  have heq : EqOn (f G₁) (f G₂) Ω := by
-    refine Measure.eqOn_open_of_ae_eq (μ := μ) ?_ Ω.isOpen (hc G₁) (hc G₂)
-    rw [EventuallyEq, ae_restrict_iff' Ω.isOpen.measurableSet]
-    filter_upwards [h] with x hx hxΩ
-    rw [hf G₁ x hxΩ, hf G₂ x hxΩ, hx hxΩ]
-  refine HolderSpace.ext fun x ↦ congrFun (Continuous.ext_on dense_setOf_mem_opens G₁.continuous
-    G₂.continuous fun y (hy : (y : E) ∈ Ω) ↦ ?_) x
-  simpa [hf G₁ y hy, hf G₂ y hy] using heq hy
-
 variable (hΩ : Convex ℝ (Ω : Set E))
 include hΩ
 
@@ -176,14 +150,18 @@ agreeing almost everywhere on `Ω` with `u` (`TauCeti.W1p.lipschitzRepresentativ
 def W1p.lipschitzRepresentativeL : W1p μ Ω ∞ →L[ℝ] HolderSpace 1 (closure (Ω : Set E)) ℝ :=
   LinearMap.mkContinuous
     { toFun := W1p.lipschitzRepresentative hΩ
-      map_add' u v := holderSpace_ext_ae (μ := μ) <| by
+      map_add' u v := HolderSpace.ext <| congrFun <|
+        Ω.isOpen.ext_closure_of_ae_eq (μ := μ) (HolderSpace.continuous _)
+          (HolderSpace.continuous _) <| by
         filter_upwards [W1p.ae_lipschitzRepresentative_eq hΩ (u + v),
           W1p.ae_lipschitzRepresentative_eq hΩ u, W1p.ae_lipschitzRepresentative_eq hΩ v,
           (ae_restrict_iff' Ω.isOpen.measurableSet).1
             (W1p.value_add u v ▸ Lp.coeFn_add (W1p.value u) (W1p.value v))]
           with x h h₁ h₂ h₃ hx
         rw [HolderSpace.add_apply, h hx, h₁ hx, h₂ hx, h₃ hx, Pi.add_apply]
-      map_smul' c u := holderSpace_ext_ae (μ := μ) <| by
+      map_smul' c u := HolderSpace.ext <| congrFun <|
+        Ω.isOpen.ext_closure_of_ae_eq (μ := μ) (HolderSpace.continuous _)
+          (HolderSpace.continuous _) <| by
         filter_upwards [W1p.ae_lipschitzRepresentative_eq hΩ (c • u),
           W1p.ae_lipschitzRepresentative_eq hΩ u,
           (ae_restrict_iff' Ω.isOpen.measurableSet).1
@@ -216,7 +194,8 @@ theorem W1p.lipschitzRepresentativeL_eq_iff (u : W1p μ Ω ∞)
     W1p.lipschitzRepresentativeL hΩ u = G ↔
       ∀ᵐ x ∂μ, ∀ hx : x ∈ Ω, G ⟨x, subset_closure hx⟩ = W1p.value u x := by
   refine ⟨fun h ↦ h ▸ W1p.ae_lipschitzRepresentativeL_eq hΩ u,
-    fun h ↦ holderSpace_ext_ae (μ := μ) ?_⟩
+    fun h ↦ HolderSpace.ext <| congrFun <| Ω.isOpen.ext_closure_of_ae_eq (μ := μ)
+      (HolderSpace.continuous _) (HolderSpace.continuous _) ?_⟩
   filter_upwards [W1p.ae_lipschitzRepresentativeL_eq hΩ u, h] with x h₁ h₂ hx
   rw [h₁ hx, h₂ hx]
 
