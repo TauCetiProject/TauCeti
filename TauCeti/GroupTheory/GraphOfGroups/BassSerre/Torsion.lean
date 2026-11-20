@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.HNNExtension
 public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
 import TauCeti.GroupTheory.GraphOfGroups.BassSerreTree
-import TauCeti.GroupTheory.GraphOfGroups.OneEdge
 import TauCeti.GroupTheory.GTree.Axis
 
 /-!
@@ -20,8 +18,7 @@ A finite group acting on a tree without inversions fixes a vertex
 `π₁(𝔸, a)` of a graph of groups on its Bass–Serre tree, whose vertex stabilizers are the
 conjugates `p A_b p⁻¹` of the vertex groups, this shows that every finite subgroup of `π₁(𝔸, a)`,
 and every element of finite order, lies in a conjugate of a vertex group. Consequently the
-fundamental group of a graph of torsion-free groups is torsion-free, and so is an HNN extension of
-a torsion-free group, the fundamental group of a loop of groups.
+fundamental group of a graph of torsion-free groups is torsion-free.
 
 ## Main results
 
@@ -32,7 +29,6 @@ a torsion-free group, the fundamental group of a loop of groups.
 * `TauCeti.GraphOfGroups.π₁.instIsMulTorsionFree`,
   `TauCeti.GraphOfGroups.π₁Tree.isMulTorsionFree`: the fundamental group of a graph of
   torsion-free groups is torsion-free.
-* `HNNExtension.instIsMulTorsionFree`: an HNN extension of a torsion-free group is torsion-free.
 
 ## References
 
@@ -41,8 +37,6 @@ a torsion-free group, the fundamental group of a loop of groups.
 * V. Guirardel, G. Levitt, *JSJ decompositions of groups*, Astérisque 395 (2017), §1.2, p. 16 (a
   subgroup is elliptic in the Bass–Serre tree exactly when it lies in a conjugate of a vertex
   group; finite groups have Serre's property (FA)).
-* R. C. Lyndon, P. E. Schupp, *Combinatorial Group Theory*, Chapter IV, Theorem 2.4 (elements of
-  finite order of an HNN extension are conjugate into the base group).
 -/
 
 public section
@@ -96,56 +90,3 @@ theorem π₁Tree.isMulTorsionFree [∀ b, IsMulTorsionFree (𝔸.vertexGroup b)
 end GraphOfGroups
 
 end TauCeti
-
-namespace HNNExtension
-
-open TauCeti GraphOfGroups
-
-variable {G : Type*} [Group G] {A B : Subgroup G} {φ : A ≃* B}
-
-/-- The second edge map `A →* G`, `a ↦ φ a`, of the loop of groups of `HNNExtension G A B φ`. -/
-private abbrev loopSnd (φ : A ≃* B) : A →* G :=
-  B.subtype.comp φ.toMonoidHom
-
-private theorem loopSnd_injective : Function.Injective (loopSnd φ) :=
-  B.subtype_injective.comp φ.injective
-
-/-- The HNN extension along the identification `loopEquiv` of the loop of groups with edge maps
-`A.subtype` and `loopSnd φ`, which is how `π₁Tree.equivHNNExtension` presents it. -/
-private abbrev LoopHNN (φ : A ≃* B) : Type _ :=
-  HNNExtension G A.subtype.range (loopSnd φ).range
-    (loopEquiv _ _ A.subtype_injective loopSnd_injective)
-
-/-- `HNNExtension G A B φ →* LoopHNN φ`, the identity on `G` and on the stable letter. -/
-private noncomputable def toLoopHNN : HNNExtension G A B φ →* LoopHNN φ :=
-  lift of t fun a ↦ by
-    simpa [MonoidHom.ofInjective_apply] using
-      t_mul_of (φ := loopEquiv _ _ A.subtype_injective (loopSnd_injective (φ := φ)))
-      (MonoidHom.ofInjective A.subtype_injective a)
-
-/-- `LoopHNN φ →* HNNExtension G A B φ`, the identity on `G` and on the stable letter. -/
-private noncomputable def ofLoopHNN : LoopHNN φ →* HNNExtension G A B φ :=
-  lift of t fun a ↦ by
-    obtain ⟨a, rfl⟩ := (MonoidHom.ofInjective A.subtype_injective).surjective a
-    simpa [MonoidHom.ofInjective_apply] using t_mul_of (φ := φ) a
-
-private theorem ofLoopHNN_comp_toLoopHNN :
-    (ofLoopHNN (φ := φ)).comp toLoopHNN = MonoidHom.id _ :=
-  hom_ext (MonoidHom.ext fun _ ↦ by simp [toLoopHNN, ofLoopHNN]) (by simp [toLoopHNN, ofLoopHNN])
-
-private theorem toLoopHNN_injective : Function.Injective (toLoopHNN (φ := φ)) :=
-  Function.LeftInverse.injective (DFunLike.congr_fun ofLoopHNN_comp_toLoopHNN)
-
-/-- **HNN extensions of torsion-free groups are torsion-free.** The HNN extension
-`⟨G, t | t a t⁻¹ = φ a⟩` of a torsion-free group `G` along an isomorphism `φ : A ≃* B` of two
-subgroups is torsion-free. -/
-instance instIsMulTorsionFree [IsMulTorsionFree G] : IsMulTorsionFree (HNNExtension G A B φ) := by
-  let 𝔸 := loop A.subtype (loopSnd φ) A.subtype_injective loopSnd_injective
-  have : ∀ b, IsMulTorsionFree (𝔸.vertexGroup b) := fun _ ↦ inferInstanceAs (IsMulTorsionFree G)
-  have h := π₁Tree.isMulTorsionFree (𝔸 := 𝔸) (SerreGraph.roseTree Unit)
-  rw [SerreGraph.roseTree_darts] at h
-  exact Function.Injective.isMulTorsionFree
-    ((π₁Tree.equivHNNExtension _ _ _ _).symm.toMonoidHom.comp toLoopHNN)
-    ((π₁Tree.equivHNNExtension _ _ _ _).symm.injective.comp toLoopHNN_injective)
-
-end HNNExtension

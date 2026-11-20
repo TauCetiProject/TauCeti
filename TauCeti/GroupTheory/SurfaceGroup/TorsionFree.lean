@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.SurfaceGroup.Basic
 import TauCeti.GroupTheory.FreeGroup.Centralizer
-import TauCeti.GroupTheory.GraphOfGroups.BassSerre.Torsion
+import TauCeti.GroupTheory.HNNExtension.Torsion
 import TauCeti.GroupTheory.SurfaceGroup.HNN
 import TauCeti.GroupTheory.SurfaceGroup.LowGenus
 
