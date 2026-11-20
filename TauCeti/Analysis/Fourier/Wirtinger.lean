@@ -410,19 +410,35 @@ private theorem integral_arcDouble_right {E : Type*} [NormedAddCommGroup E] [Nor
   intervalIntegral.integral_congr fun x hx ↦ by
     simp only [arcDouble_of_le K ((uIcc_of_le hab).subset hx).1]
 
+/-- An integral over `[2a - b, b]` splits at `a`. -/
+private theorem integral_add_adjacent_two_mul_sub {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (hab : a ≤ b) {g : ℝ → E} (hg : IntervalIntegrable g volume (2 * a - b) b) :
+    ∫ x in (2 * a - b)..b, g x = (∫ x in (2 * a - b)..a, g x) + ∫ x in a..b, g x := by
+  have hcb : 2 * a - b ≤ b := by linarith
+  have hamem : a ∈ Icc (2 * a - b) b := ⟨by linarith, hab⟩
+  exact (intervalIntegral.integral_add_adjacent_intervals
+    (hg.mono_set (uIcc_of_le hcb ▸ uIcc_subset_Icc ⟨le_rfl, hcb⟩ hamem))
+    (hg.mono_set (uIcc_of_le hcb ▸ uIcc_subset_Icc hamem ⟨hcb, le_rfl⟩))).symm
+
+/-- An integral over `[2a - b, b]` of the doubled arc is the sum of the integrals over `[a, b]`
+of the reflected arc and of the arc. -/
+private theorem integral_arcDouble {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (K : Submodule ℝ V) (hab : a ≤ b) {f : ℝ → V} (ha : f a ∈ K) {F : V → E}
+    (hF : IntervalIntegrable (fun x ↦ F (arcDouble K a f x)) volume (2 * a - b) b) :
+    ∫ x in (2 * a - b)..b, F (arcDouble K a f x) =
+      (∫ x in a..b, F (K.reflection (f x))) + ∫ x in a..b, F (f x) := by
+  rw [integral_add_adjacent_two_mul_sub hab hF, integral_arcDouble_left K hab ha F,
+    integral_arcDouble_right K hab F]
+
 /-- The mean of the doubled arc over `[2a - b, b]` is fixed by the reflection in `K`, so it lies
 in `K`. -/
 private theorem average_arcDouble_mem (K : Submodule ℝ V) (hab : a ≤ b) {f : ℝ → V}
     (hf : ContinuousOn f (Icc a b)) (ha : f a ∈ K) :
     ⨍ y in (2 * a - b)..b, arcDouble K a f y ∈ K := by
-  have hgc := continuousOn_arcDouble K hab hf ha
   have hint : ∫ x in (2 * a - b)..b, arcDouble K a f x =
       K.reflection (∫ x in a..b, f x) + ∫ x in a..b, f x := by
-    rw [← intervalIntegral.integral_add_adjacent_intervals
-        ((hgc.mono (uIcc_of_le (by linarith : 2 * a - b ≤ a) ▸
-          Icc_subset_Icc_right hab)).intervalIntegrable)
-        ((hgc.mono (uIcc_of_le hab ▸ Icc_subset_Icc_left (by linarith))).intervalIntegrable),
-      integral_arcDouble_left K hab ha fun v ↦ v, integral_arcDouble_right K hab fun v ↦ v]
+    rw [integral_arcDouble K hab ha (F := fun v ↦ v)
+      ((continuousOn_arcDouble K hab hf ha).intervalIntegrable_of_Icc (by linarith))]
     exact congrArg (· + _) (K.reflection.toLinearIsometry.intervalIntegral_comp_comm f)
   rw [← K.reflection_eq_self_iff, interval_average_eq, hint, map_smul, map_add,
     K.reflection_reflection, add_comm]
@@ -432,11 +448,9 @@ private theorem integral_norm_arcDoubleDeriv_sq (K : Submodule ℝ V) (hab : a �
     (hf' : MemLp f' 2 (volume.restrict (Ioc a b))) :
     ∫ x in (2 * a - b)..b, ‖arcDoubleDeriv K a f' x‖ ^ 2 = 2 * ∫ x in a..b, ‖f' x‖ ^ 2 := by
   have hg'2 := memLp_arcDoubleDeriv K hf'
-  have hcb : 2 * a - b ≤ b := by linarith
   have hF : IntervalIntegrable (fun x ↦ ‖arcDoubleDeriv K a f' x‖ ^ 2) volume (2 * a - b) b :=
-    (intervalIntegrable_iff_integrableOn_Ioc_of_le hcb).2
+    (intervalIntegrable_iff_integrableOn_Ioc_of_le (by linarith)).2
       ((memLp_two_iff_integrable_sq_norm hg'2.aestronglyMeasurable).1 hg'2)
-  have hamem : a ∈ Icc (2 * a - b) b := ⟨by linarith, hab⟩
   have hl : ∫ x in (2 * a - b)..a, ‖arcDoubleDeriv K a f' x‖ ^ 2 =
       ∫ x in (2 * a - b)..a, ‖f' (2 * a - x)‖ ^ 2 :=
     intervalIntegral.integral_congr fun x hx ↦ by
@@ -446,9 +460,7 @@ private theorem integral_norm_arcDoubleDeriv_sq (K : Submodule ℝ V) (hab : a �
     refine intervalIntegral.integral_congr_ae (Filter.Eventually.of_forall fun x hx ↦ ?_)
     rw [uIoc_of_le hab] at hx
     simp only [arcDoubleDeriv, piecewise_eq_of_mem _ _ _ (mem_Ioi.2 hx.1)]
-  rw [← intervalIntegral.integral_add_adjacent_intervals
-      (hF.mono_set (uIcc_of_le hcb ▸ uIcc_subset_Icc ⟨le_rfl, hcb⟩ hamem))
-      (hF.mono_set (uIcc_of_le hcb ▸ uIcc_subset_Icc hamem ⟨hcb, le_rfl⟩)), hl, hr,
+  rw [integral_add_adjacent_two_mul_sub hab hF, hl, hr,
     intervalIntegral.integral_comp_sub_left (fun x ↦ ‖f' x‖ ^ 2),
     show 2 * a - a = a by ring, show 2 * a - (2 * a - b) = b by ring]
   ring
@@ -489,14 +501,8 @@ theorem exists_mem_integral_norm_sub_sq_le (K : Submodule ℝ V) (hab : a < b) {
     rw [← K.reflection_mem_subspace_eq_self hmK, ← map_sub, LinearIsometryEquiv.norm_map,
       K.reflection_mem_subspace_eq_self hmK]
   have hdev : ∫ x in c..b, ‖arcDouble K a f x - m‖ ^ 2 = 2 * ∫ x in a..b, ‖f x - m‖ ^ 2 := by
-    have hamem : a ∈ Icc c b := ⟨by linarith, hab.le⟩
-    have hF : IntervalIntegrable (fun x ↦ ‖arcDouble K a f x - m‖ ^ 2) volume c b :=
-      ((hgc.sub continuousOn_const).norm.pow 2).intervalIntegrable_of_Icc hcb
-    rw [← intervalIntegral.integral_add_adjacent_intervals
-        (hF.mono_set (uIcc_of_le hcb ▸ uIcc_subset_Icc ⟨le_rfl, hcb⟩ hamem))
-        (hF.mono_set (uIcc_of_le hcb ▸ uIcc_subset_Icc hamem ⟨hcb, le_rfl⟩)),
-      integral_arcDouble_left K hab.le ha fun v ↦ ‖v - m‖ ^ 2,
-      integral_arcDouble_right K hab.le fun v ↦ ‖v - m‖ ^ 2]
+    rw [integral_arcDouble K hab.le ha (F := fun v ↦ ‖v - m‖ ^ 2)
+      (((hgc.sub continuousOn_const).norm.pow 2).intervalIntegrable_of_Icc hcb)]
     simp only [hnorm]
     ring
   rw [hdev, integral_norm_arcDoubleDeriv_sq K hab.le hf', show b - c = 2 * (b - a) by ring,

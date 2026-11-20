@@ -25,7 +25,7 @@ closed annulus is its positively oriented boundary integral. Zero inner radius g
 formula. Only C¹ regularity near the region of integration is required; in the annular
 case no regularity on the missing inner disc is needed. On a rectangle it suffices that the form
 be continuous on the closed rectangle and differentiable inside, with integrable exterior
-derivative (`TauCeti.integral_extDeriv_prod_Icc_of_continuousOn`). This gives the formula on a
+derivative (`TauCeti.integral_prod_Icc_eq_of_extDeriv_eq`). This gives the formula on a
 closed upper half-annulus for forms that are only regular up to its diameter, such as forms built
 from one-sided derivatives of maps on a half-plane, in terms of a continuous extension of the
 exterior derivative to the closed half-annulus
@@ -69,15 +69,17 @@ namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- Stokes' formula on a rectangle for a one-form that is continuous on the closed rectangle and
-differentiable in its interior, with integrable exterior derivative. The right and bottom edges
-have positive signs; the left and top edges have negative signs. -/
-theorem integral_extDeriv_prod_Icc_of_continuousOn
-    {ω : (ℝ × ℝ) → (ℝ × ℝ) [⋀^Fin 1]→L[ℝ] F} {a b : ℝ × ℝ} (hab : a ≤ b)
+/-- Stokes' formula on a rectangle for a one-form `ω` that is continuous on the closed rectangle
+and differentiable in its interior, where its exterior derivative on `((1, 0), (0, 1))` agrees with
+a function `dω` integrable on the closed rectangle. The right and bottom edges have positive signs;
+the left and top edges have negative signs. -/
+theorem integral_prod_Icc_eq_of_extDeriv_eq
+    {ω : (ℝ × ℝ) → (ℝ × ℝ) [⋀^Fin 1]→L[ℝ] F} {dω : ℝ × ℝ → F} {a b : ℝ × ℝ} (hab : a ≤ b)
     (hc : ContinuousOn ω (Icc a b))
-    (hd : ∀ z ∈ Ioo a.1 b.1 ×ˢ Ioo a.2 b.2, DifferentiableAt ℝ ω z)
-    (hi : IntegrableOn (fun z ↦ extDeriv ω z ![(1, 0), (0, 1)]) (Icc a b)) :
-    (∫ z in Icc a b, extDeriv ω z ![(1, 0), (0, 1)]) =
+    (hd : ∀ z ∈ Ioo a.1 b.1 ×ˢ Ioo a.2 b.2,
+      DifferentiableAt ℝ ω z ∧ extDeriv ω z ![(1, 0), (0, 1)] = dω z)
+    (hi : IntegrableOn dω (Icc a b)) :
+    (∫ z in Icc a b, dω z) =
       ((∫ t in a.2..b.2, ω (b.1, t) (fun _ ↦ (0, 1))) -
         ∫ t in a.2..b.2, ω (a.1, t) (fun _ ↦ (0, 1))) -
       ((∫ s in a.1..b.1, ω (s, b.2) (fun _ ↦ (1, 0))) -
@@ -86,15 +88,16 @@ theorem integral_extDeriv_prod_Icc_of_continuousOn
   let g := fun z ↦ -ω z (fun _ ↦ (1, 0))
   set U : Set (ℝ × ℝ) := Ioo a.1 b.1 ×ˢ Ioo a.2 b.2
   have hU : MeasurableSet U := measurableSet_Ioo.prod measurableSet_Ioo
-  have hf z (hz : z ∈ U) := (hd z hz).hasFDerivAt.continuousAlternatingMap_apply_const
+  have hf z (hz : z ∈ U) := (hd z hz).1.hasFDerivAt.continuousAlternatingMap_apply_const
     (fun _ ↦ ((0, 1) : ℝ × ℝ))
   have hg z (hz : z ∈ U) : HasFDerivAt g
       (-(fderiv ℝ ω z).flipAlternating fun _ ↦ ((1, 0) : ℝ × ℝ)) z :=
-    ((hd z hz).hasFDerivAt.continuousAlternatingMap_apply_const
+    ((hd z hz).1.hasFDerivAt.continuousAlternatingMap_apply_const
       (fun _ ↦ ((1, 0) : ℝ × ℝ))).neg
   have hcurl z (hz : z ∈ U) :
-      fderiv ℝ f z (1, 0) + fderiv ℝ g z (0, 1) = extDeriv ω z ![(1, 0), (0, 1)] := by
-    simp [f, g, extDeriv_apply_pair_of_differentiableAt (hd z hz), sub_eq_add_neg]
+      fderiv ℝ f z (1, 0) + fderiv ℝ g z (0, 1) = dω z := by
+    rw [← (hd z hz).2]
+    simp [f, g, extDeriv_apply_pair_of_differentiableAt (hd z hz).1, sub_eq_add_neg]
   -- The boundary of the rectangle is null, so only the interior matters.
   have hIoo : U =ᵐ[volume] Icc a b := by
     rw [Icc_prod_eq, Measure.volume_eq_prod]
@@ -126,9 +129,9 @@ theorem integral_extDeriv_prod_Icc
   have hsub : Ioo a.1 b.1 ×ˢ Ioo a.2 b.2 ⊆ Icc a b := by
     rw [Icc_prod_eq]
     exact prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self
-  exact integral_extDeriv_prod_Icc_of_continuousOn hab
+  exact integral_prod_Icc_eq_of_extDeriv_eq hab
     (fun z hz ↦ (hω z hz).continuousAt.continuousWithinAt)
-    (fun z hz ↦ (hω z (hsub hz)).differentiableAt one_ne_zero)
+    (fun z hz ↦ ⟨(hω z (hsub hz)).differentiableAt one_ne_zero, rfl⟩)
     ((continuousOn_of_forall_continuousAt fun z hz ↦
       continuousAt_extDeriv_apply (hω z hz) _).integrableOn_compact isCompact_Icc)
 
@@ -428,10 +431,6 @@ theorem integral_upperHalfAnnulus_eq_of_extDeriv_eq {ω : ℂ → ℂ [⋀^Fin 1
   set S : Set ℂ := {z | z₀.im ≤ z.im ∧ a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
   set P : ℝ × ℝ → ℂ := fun p ↦ z₀ + Complex.polarCoord.symm p
   set U : Set (ℝ × ℝ) := Ioo a b ×ˢ Ioo 0 π
-  have hU : MeasurableSet U := measurableSet_Ioo.prod measurableSet_Ioo
-  have hUR : U =ᵐ[volume] Icc (a, 0) (b, π) := by
-    simp only [U, Icc_prod_eq, Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq Ioo_ae_eq_Icc Ioo_ae_eq_Icc
   have hP : ContDiff ℝ 2 P := contDiff_add_polarCoord_symm z₀
   have hmem (p : ℝ × ℝ) (hp : p ∈ Icc (a, 0) (b, π)) : P p ∈ S :=
     add_polarCoord_symm_mem_upperHalfAnnulus z₀ ha hp
@@ -452,13 +451,11 @@ theorem integral_upperHalfAnnulus_eq_of_extDeriv_eq {ω : ℂ → ℂ [⋀^Fin 1
     exact extDeriv_pullback_polarCoord_symm_apply z₀ p (hd _ h₁ h₂ h₃).1
   have hcont : ContinuousOn (fun p : ℝ × ℝ ↦ p.1 • dω (P p)) (Icc (a, 0) (b, π)) :=
     continuous_fst.continuousOn.smul (hdω.comp hP.continuous.continuousOn hmem)
-  have hgreen := integral_extDeriv_prod_Icc_of_continuousOn
-    (a := (a, 0)) (b := (b, π)) ⟨hab, Real.pi_pos.le⟩ hηc (fun p hp ↦ (hηd p hp).1)
-    ((((hcont.integrableOn_compact isCompact_Icc).congr_set_ae hUR).congr_fun
-      (fun p hp ↦ (hηd p hp).2.symm) hU).congr_set_ae hUR.symm)
+  have hgreen := integral_prod_Icc_eq_of_extDeriv_eq
+    (a := (a, 0)) (b := (b, π)) ⟨hab, Real.pi_pos.le⟩ hηc hηd
+    (hcont.integrableOn_compact isCompact_Icc)
   -- The interior integral is the integral of `dω` over the half-annulus.
-  rw [setIntegral_congr_set hUR.symm, setIntegral_congr_fun hU fun p hp ↦ (hηd p hp).2,
-    setIntegral_congr_set hUR, Complex.integral_comp_polarCoord_symm_Icc_zero_pi _ z₀ ha] at hgreen
+  rw [Complex.integral_comp_polarCoord_symm_Icc_zero_pi _ z₀ ha] at hgreen
   -- The angular edges are the two half-circles, the radial edges the two segments.
   have hneg (z : ℂ) : ω z (fun _ ↦ (-1 : ℂ)) = -ω z (fun _ ↦ 1) := by
     simpa using (ω z).map_smul_univ (fun _ ↦ (-1 : ℝ)) (fun _ ↦ (1 : ℂ))
