@@ -357,26 +357,18 @@ theorem IsAlphaGammaDomainBetween.stronglyAdmissible_add_iff
 /-- A weakly admissible triple is weakly admissible at every triangle domain. -/
 theorem WeaklyAdmissible.weaklyAdmissibleAt (hT : T.WeaklyAdmissible) (χ : Region → ℤ)
     (x : T.alphaBeta.Generator) (w : T.alphaGamma.Generator) (E : Region → ℤ) :
-    T.WeaklyAdmissibleAt χ x w E := by
-  intro P hP _ hne
-  have h := weaklyAdmissible_iff.mp hT
-  refine ⟨?_, ?_⟩
-  · by_contra hpos
-    push Not at hpos
-    exact hne (neg_eq_zero.mp (h (-P) (neg_mem hP) fun r => by simpa using hpos r))
-  · by_contra hneg
-    push Not at hneg
-    exact hne (h P hP hneg)
+    T.WeaklyAdmissibleAt χ x w E := fun P hP _ =>
+  (AddSubgroup.forall_exists_pos_and_neg_iff_forall_nonneg_eq_zero _).mpr
+    (weaklyAdmissible_iff.mp hT) P hP
 
 /-- If no sum of doubly periodic domains changes the Maslov index of `E`, as for a torsion spin^c
 structure, then weak admissibility at `E` is weak admissibility. -/
 theorem weaklyAdmissibleAt_iff_weaklyAdmissible
     (h : ∀ P ∈ T.doublyPeriodicDomains, T.periodicMaslovIndex χ x w E P = 0) :
     T.WeaklyAdmissibleAt χ x w E ↔ T.WeaklyAdmissible :=
-  ⟨fun hT => weaklyAdmissible_iff.mpr fun P hP hP₀ => by
-    by_contra hne
-    obtain ⟨r, hr⟩ := (hT P hP (h P hP) hne).2
-    exact (hP₀ r).not_gt hr, fun hT => hT.weaklyAdmissibleAt χ x w E⟩
+  ⟨fun hT => weaklyAdmissible_iff.mpr <|
+    (AddSubgroup.forall_exists_pos_and_neg_iff_forall_nonneg_eq_zero _).mp
+      fun P hP => hT P hP (h P hP), fun hT => hT.weaklyAdmissibleAt χ x w E⟩
 
 /-- Strong admissibility at a triangle domain implies weak admissibility there: a sum of doubly
 periodic domains `P` not changing the Maslov index has a positive coefficient, and so has `-P`. -/
