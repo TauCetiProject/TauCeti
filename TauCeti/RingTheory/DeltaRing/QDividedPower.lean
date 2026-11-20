@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.RingTheory.Ideal.Maps
+public import TauCeti.Algebra.Ring.QInteger
 public import TauCeti.RingTheory.DeltaRing.Basic
 
 import Mathlib.Algebra.Polynomial.RingDivision
@@ -16,8 +16,8 @@ import Mathlib.RingTheory.Polynomial.Basic
 # The q-divided power operation on δ-rings
 
 Fix a prime `p`, a `δ`-ring `D` and an element `q : D`, and write
-`[p]_q = ∑ i ∈ range p, q ^ i` for the `q`-analogue of `p`, the finite geometric sum (so that
-`[p]_q * (q - 1) = q ^ p - 1` by `geom_sum_mul`, and `[p]_1 = p`). This file develops the
+`[p]_q = TauCeti.QCrys.qInteger q p = ∑ i ∈ range p, q ^ i` for the `q`-analogue of `p` (so that
+`[p]_q * (q - 1) = q ^ p - 1` and `[p]_1 = p`). This file develops the
 operation `γ` underlying `q`-divided powers and `q`-crystalline cohomology:
 
 * the ideal `N(D) = φ⁻¹([p]_q D)` of elements whose Frobenius is divisible by `[p]_q`
@@ -61,31 +61,31 @@ open DeltaRing
 variable (p : ℕ) [Fact p.Prime] {D : Type*} [CommRing D] [DeltaRing p D] (q : D)
 
 /-- The ideal `N(D) = φ⁻¹([p]_q D)` of a `δ`-ring `D` with an element `q`: the elements whose
-Frobenius is divisible by `[p]_q = ∑ i ∈ range p, q ^ i` (Bhatt and Scholze, *Prisms and prismatic
+Frobenius is divisible by `[p]_q = qInteger q p` (Bhatt and Scholze, *Prisms and prismatic
 cohomology*, Notation 16.1). -/
 def frobeniusPreimageIdeal : Ideal D :=
-  (Ideal.span {∑ i ∈ range p, q ^ i}).comap (frobenius p D)
+  (Ideal.span {qInteger q p}).comap (frobenius p D)
 
 variable {p q}
 
 theorem mem_frobeniusPreimageIdeal {x : D} :
-    x ∈ frobeniusPreimageIdeal p q ↔ (∑ i ∈ range p, q ^ i) ∣ frobenius p D x := by
+    x ∈ frobeniusPreimageIdeal p q ↔ qInteger q p ∣ frobenius p D x := by
   rw [frobeniusPreimageIdeal, Ideal.mem_comap, Ideal.mem_span_singleton]
 
 open scoped Classical in
 variable (p q) in
 /-- The `q`-divided power operation `γ x = φ x / [p]_q - δ x` on `N(D) = φ⁻¹([p]_q D)`, where
-`[p]_q = ∑ i ∈ range p, q ^ i` (Bhatt and Scholze, *Prisms and prismatic cohomology*,
+`[p]_q = qInteger q p` (Bhatt and Scholze, *Prisms and prismatic cohomology*,
 Notation 16.1). For `x ∈ N(D)` it is characterised by `[p]_q * (γ x + δ x) = φ x`
 (`pAnalog_mul_gamma`), uniquely when `[p]_q` is a nonzerodivisor (`gamma_eq_of_mul_eq`). Outside
 `N(D)` it is `0` (`gamma_of_notMem`). -/
 noncomputable def gamma (x : D) : D :=
-  if h : (∑ i ∈ range p, q ^ i) ∣ frobenius p D x then h.choose - delta p x else 0
+  if h : qInteger q p ∣ frobenius p D x then h.choose - delta p x else 0
 
 /-- The defining identity `[p]_q * (γ x + δ x) = φ x` of the `q`-divided power operation on
 `N(D)`. -/
 theorem pAnalog_mul_gamma {x : D} (hx : x ∈ frobeniusPreimageIdeal p q) :
-    (∑ i ∈ range p, q ^ i) * (gamma p q x + delta p x) = frobenius p D x := by
+    qInteger q p * (gamma p q x + delta p x) = frobenius p D x := by
   have h := mem_frobeniusPreimageIdeal.mp hx
   simp only [gamma, h, ↓reduceDIte, sub_add_cancel]
   exact h.choose_spec.symm
@@ -95,25 +95,25 @@ theorem gamma_of_notMem {x : D} (hx : x ∉ frobeniusPreimageIdeal p q) : gamma 
   simp [gamma, mem_frobeniusPreimageIdeal.not.mp hx]
 
 /-- When `[p]_q` is a nonzerodivisor, `γ x` is the unique `y` with `[p]_q * (y + δ x) = φ x`. -/
-theorem gamma_eq_of_mul_eq (hq : IsRegular (∑ i ∈ range p, q ^ i)) {x y : D}
-    (h : (∑ i ∈ range p, q ^ i) * (y + delta p x) = frobenius p D x) : gamma p q x = y := by
+theorem gamma_eq_of_mul_eq (hq : IsRegular (qInteger q p)) {x y : D}
+    (h : qInteger q p * (y + delta p x) = frobenius p D x) : gamma p q x = y := by
   have hx : x ∈ frobeniusPreimageIdeal p q := mem_frobeniusPreimageIdeal.mpr ⟨_, h.symm⟩
   exact add_right_cancel (hq.left ((pAnalog_mul_gamma hx).trans h.symm))
 
 /-- When `[p]_q` is a nonzerodivisor, `γ x = y` if and only if `[p]_q * (y + δ x) = φ x`, for
 `x ∈ N(D)`. -/
-theorem gamma_eq_iff (hq : IsRegular (∑ i ∈ range p, q ^ i)) {x y : D}
+theorem gamma_eq_iff (hq : IsRegular (qInteger q p)) {x y : D}
     (hx : x ∈ frobeniusPreimageIdeal p q) :
-    gamma p q x = y ↔ (∑ i ∈ range p, q ^ i) * (y + delta p x) = frobenius p D x :=
+    gamma p q x = y ↔ qInteger q p * (y + delta p x) = frobenius p D x :=
   ⟨fun h => h ▸ pAnalog_mul_gamma hx, gamma_eq_of_mul_eq hq⟩
 
 @[simp]
-theorem gamma_zero (hq : IsRegular (∑ i ∈ range p, q ^ i)) : gamma p q (0 : D) = 0 :=
+theorem gamma_zero (hq : IsRegular (qInteger q p)) : gamma p q (0 : D) = 0 :=
   gamma_eq_of_mul_eq hq (by simp)
 
 /-- The sum rule `γ (x + y) = γ x + γ y + ((x + y) ^ p - x ^ p - y ^ p) / p`, where the last
 quotient is the integral polynomial `-addCorrection p x y`. -/
-theorem gamma_add (hq : IsRegular (∑ i ∈ range p, q ^ i)) {x y : D}
+theorem gamma_add (hq : IsRegular (qInteger q p)) {x y : D}
     (hx : x ∈ frobeniusPreimageIdeal p q) (hy : y ∈ frobeniusPreimageIdeal p q) :
     gamma p q (x + y) = gamma p q x + gamma p q y - addCorrection p x y := by
   refine gamma_eq_of_mul_eq hq ?_
@@ -121,7 +121,7 @@ theorem gamma_add (hq : IsRegular (∑ i ∈ range p, q ^ i)) {x y : D}
   ring
 
 /-- The product rule `γ (f * x) = φ f * γ x - x ^ p * δ f` for `x ∈ N(D)` and any `f`. -/
-theorem gamma_mul (hq : IsRegular (∑ i ∈ range p, q ^ i)) (f : D) {x : D}
+theorem gamma_mul (hq : IsRegular (qInteger q p)) (f : D) {x : D}
     (hx : x ∈ frobeniusPreimageIdeal p q) :
     gamma p q (f * x) = frobenius p D f * gamma p q x - x ^ p * delta p f := by
   refine gamma_eq_of_mul_eq hq ?_
@@ -134,7 +134,7 @@ theorem natCast_mul_gamma_of_eq_one (hq : q = 1) {x : D} (hx : x ∈ frobeniusPr
     (p : D) * gamma p q x = x ^ p := by
   subst hq
   have h := pAnalog_mul_gamma hx
-  rw [one_geom_sum, frobenius_apply] at h
+  rw [qInteger_one_left, frobenius_apply] at h
   linear_combination h
 
 section DeltaZero
@@ -144,36 +144,35 @@ include hq
 
 /-- If `δ q = 0`, then `φ (q - 1) = [p]_q * (q - 1)`. -/
 theorem frobenius_sub_one_of_delta_eq_zero :
-    frobenius p D (q - 1) = (∑ i ∈ range p, q ^ i) * (q - 1) := by
-  rw [map_sub, map_one, frobenius_eq_pow_of_delta_eq_zero hq, geom_sum_mul]
+    frobenius p D (q - 1) = qInteger q p * (q - 1) := by
+  rw [map_sub, map_one, frobenius_eq_pow_of_delta_eq_zero hq, qInteger_mul_sub_one]
 
 /-- If `δ q = 0`, then `q - 1 ∈ N(D)`. -/
 theorem sub_one_mem_frobeniusPreimageIdeal : q - 1 ∈ frobeniusPreimageIdeal p q :=
   mem_frobeniusPreimageIdeal.mpr ⟨_, frobenius_sub_one_of_delta_eq_zero hq⟩
 
 /-- If `δ q = 0` and `[p]_q` is a nonzerodivisor, then `γ (q - 1) = (q - 1) - δ (q - 1)`. -/
-theorem gamma_sub_one (hreg : IsRegular (∑ i ∈ range p, q ^ i)) :
+theorem gamma_sub_one (hreg : IsRegular (qInteger q p)) :
     gamma p q (q - 1) = q - 1 - delta p (q - 1) :=
   gamma_eq_of_mul_eq hreg (by rw [sub_add_cancel, frobenius_sub_one_of_delta_eq_zero hq])
 
 omit [Fact p.Prime] in
-/-- If `δ q = 0`, then `δ [p]_q = ∑ k < p, addCorrection p [k]_q (q ^ k)`, where
-`[k]_q = ∑ i ∈ range k, q ^ i`. -/
-theorem delta_geom_sum_of_delta_eq_zero (n : ℕ) :
-    delta p (∑ i ∈ range n, q ^ i) =
-      ∑ k ∈ range n, addCorrection p (∑ i ∈ range k, q ^ i) (q ^ k) := by
+/-- If `δ q = 0`, then `δ [n]_q = ∑ k < n, addCorrection p [k]_q (q ^ k)`. -/
+theorem delta_qInteger_of_delta_eq_zero (n : ℕ) :
+    delta p (qInteger q n) = ∑ k ∈ range n, addCorrection p (qInteger q k) (q ^ k) := by
   induction n with
   | zero => simp
-  | succ n ih => rw [sum_range_succ, delta_add, ih, delta_pow_eq_zero hq, sum_range_succ, add_zero]
+  | succ n ih =>
+    rw [qInteger_succ, delta_add, ih, delta_pow_eq_zero hq, sum_range_succ, add_zero]
 
 end DeltaZero
 
 /-- The universal polynomial identity behind `delta_pAnalog_sub_one_mem`: in `ℤ[X]`, the
 polynomial `G = ∑ k < p, addCorrection p [k]_X (X ^ k)` satisfies `G ≡ 1` modulo
-`[p]_X = ∑ i ∈ range p, X ^ i`. -/
-private theorem geom_sum_X_dvd_addCorrection_sum_sub_one :
-    (∑ i ∈ range p, (X : ℤ[X]) ^ i) ∣
-      ∑ k ∈ range p, addCorrection p (∑ i ∈ range k, (X : ℤ[X]) ^ i) (X ^ k) - 1 := by
+`[p]_X`. -/
+private theorem qInteger_X_dvd_addCorrection_sum_sub_one :
+    qInteger (X : ℤ[X]) p ∣ ∑ k ∈ range p, addCorrection p (qInteger X k) (X ^ k) - 1 := by
+  simp only [qInteger]
   set Φ : ℤ[X] := ∑ i ∈ range p, X ^ i
   set G : ℤ[X] := ∑ k ∈ range p, addCorrection p (∑ i ∈ range k, (X : ℤ[X]) ^ i) (X ^ k)
   have hp : (p : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
@@ -203,19 +202,19 @@ private theorem geom_sum_X_dvd_addCorrection_sum_sub_one :
   rw [smul_modByMonic] at hdvd
   exact (smul_eq_zero.mp hdvd).resolve_left hp
 
-/-- If `δ q = 0`, then `δ [p]_q ≡ 1` modulo `[p]_q`, where `[p]_q = ∑ i ∈ range p, q ^ i`
+/-- If `δ q = 0`, then `δ [p]_q ≡ 1` modulo `[p]_q`, where `[p]_q = qInteger q p`
 (Bhatt and Scholze, *Prisms and prismatic cohomology*, Remark 16.6). This holds in every
 `δ`-ring, with no condition on `p`-torsion. -/
 theorem delta_pAnalog_sub_one_mem (hq : delta p q = 0) :
-    delta p (∑ i ∈ range p, q ^ i) - 1 ∈ Ideal.span {∑ i ∈ range p, q ^ i} := by
-  rw [Ideal.mem_span_singleton, delta_geom_sum_of_delta_eq_zero hq]
-  have := map_dvd (aeval q) (geom_sum_X_dvd_addCorrection_sum_sub_one (p := p))
-  simpa [map_addCorrection] using this
+    delta p (qInteger q p) - 1 ∈ Ideal.span {qInteger q p} := by
+  rw [Ideal.mem_span_singleton, delta_qInteger_of_delta_eq_zero hq]
+  have := map_dvd (aeval q) (qInteger_X_dvd_addCorrection_sum_sub_one (p := p))
+  simpa [map_addCorrection, map_qInteger] using this
 
 /-- For an ideal `I` of `D`, the ideal of `x ∈ I` with `φ x ∈ [p]_q D` and `γ x ∈ I`, where `[p]_q`
 is assumed to be a nonzerodivisor. The conditions `φ (I) ⊆ [p]_q D` and `γ (I) ⊆ I` say that
 `I ≤ gammaIdeal hq I`, and can be checked on generators (`span_le_gammaIdeal_iff`). -/
-def gammaIdeal (hq : IsRegular (∑ i ∈ range p, q ^ i)) (I : Ideal D) : Ideal D where
+def gammaIdeal (hq : IsRegular (qInteger q p)) (I : Ideal D) : Ideal D where
   carrier := {x | x ∈ I ∧ x ∈ frobeniusPreimageIdeal p q ∧ gamma p q x ∈ I}
   zero_mem' := ⟨I.zero_mem, Ideal.zero_mem _, by rw [gamma_zero hq]; exact I.zero_mem⟩
   add_mem' := by
@@ -231,27 +230,26 @@ def gammaIdeal (hq : IsRegular (∑ i ∈ range p, q ^ i)) (I : Ideal D) : Ideal
       (I.mul_mem_right _ (I.pow_mem_of_mem hxI p (Fact.out : p.Prime).pos))
 
 @[simp]
-theorem mem_gammaIdeal (hq : IsRegular (∑ i ∈ range p, q ^ i)) {I : Ideal D} {x : D} :
+theorem mem_gammaIdeal (hq : IsRegular (qInteger q p)) {I : Ideal D} {x : D} :
     x ∈ gammaIdeal hq I ↔ x ∈ I ∧ x ∈ frobeniusPreimageIdeal p q ∧ gamma p q x ∈ I :=
   Iff.rfl
 
-theorem gammaIdeal_le (hq : IsRegular (∑ i ∈ range p, q ^ i)) (I : Ideal D) :
+theorem gammaIdeal_le (hq : IsRegular (qInteger q p)) (I : Ideal D) :
     gammaIdeal hq I ≤ I :=
   fun _ hx => hx.1
 
-theorem gammaIdeal_le_frobeniusPreimageIdeal (hq : IsRegular (∑ i ∈ range p, q ^ i))
+theorem gammaIdeal_le_frobeniusPreimageIdeal (hq : IsRegular (qInteger q p))
     (I : Ideal D) : gammaIdeal hq I ≤ frobeniusPreimageIdeal p q :=
   fun _ hx => hx.2.1
 
 /-- The conditions defining `gammaIdeal hq I` hold on the ideal generated by `S` as soon as they
 hold on `S`. In particular `φ (span S) ⊆ [p]_q D` and `γ (span S) ⊆ span S` if and only if every
 `s ∈ S` has `φ s ∈ [p]_q D` and `γ s ∈ span S`. -/
-theorem span_le_gammaIdeal_iff (hq : IsRegular (∑ i ∈ range p, q ^ i)) {I : Ideal D}
+theorem span_le_gammaIdeal_iff (hq : IsRegular (qInteger q p)) {I : Ideal D}
     {S : Set D} :
     Ideal.span S ≤ gammaIdeal hq I ↔
       ∀ s ∈ S, s ∈ I ∧ s ∈ frobeniusPreimageIdeal p q ∧ gamma p q s ∈ I := by
-  rw [Ideal.span_le]
-  rfl
+  simp only [Ideal.span_le, Set.subset_def, SetLike.mem_coe, mem_gammaIdeal]
 
 end QCrys
 
