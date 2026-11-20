@@ -27,6 +27,10 @@ particular, the construction applies to varying full period lattices without rep
 by a constant family. This is a topological comparison; it makes no assertion of
 holomorphic local triviality.
 
+When the periods of `P` are discrete or form full lattices, the pulled-back family `P ∘ f`
+inherits those properties (`TauCeti.discreteTopology_range_baseChange`,
+`TauCeti.isZLattice_range_baseChange`).
+
 ## Main definitions
 
 * `TauCeti.torusFamilyBaseChangeMap`: the map `[z, v] ↦ [f z, v]` from `(Z × E)/Λ` to `(Y × E)/Λ`.
@@ -47,6 +51,20 @@ public section
 open Set Function Topology
 
 namespace TauCeti
+
+/-- Pulling back a family of discrete period subgroups along `f : Z → Y` preserves discreteness. -/
+instance discreteTopology_range_baseChange {Y Z Λ E : Type*} [AddCommGroup Λ] [AddCommGroup E]
+    [TopologicalSpace E] (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
+    (f : Z → Y) (z : Z) : DiscreteTopology (LinearMap.range ((P ∘ f) z)) :=
+  inferInstanceAs (DiscreteTopology (LinearMap.range (P (f z))))
+
+/-- Pulling back a family of full lattices along `f : Z → Y` preserves fullness. -/
+instance isZLattice_range_baseChange {K Y Z Λ E : Type*} [NormedField K] [AddCommGroup Λ]
+    [NormedAddCommGroup E] [NormedSpace K E]
+    (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
+    [∀ y, IsZLattice K (LinearMap.range (P y))]
+    (f : Z → Y) (z : Z) : IsZLattice K (LinearMap.range ((P ∘ f) z)) :=
+  inferInstanceAs (IsZLattice K (LinearMap.range (P (f z))))
 
 variable {Y Z W Λ E : Type*} [AddCommGroup Λ] [AddCommGroup E]
   (P : Y → Λ →ₗ[ℤ] E) (f : Z → Y)
@@ -163,7 +181,7 @@ def torusFamilyBaseChangeEquiv :
   letI := periodAddAction (P ∘ f)
   { toFun := fun x ↦ ⟨(torusFamilyProjection (P ∘ f) x, torusFamilyBaseChangeMap P f x),
       torusFamilyProjection_baseChangeMap P f x⟩
-    invFun := fun r ↦ torusFamilyBaseChangeInv P f r.1.1 r.1.2 r.2
+    invFun := fun r ↦ torusFamilyBaseChangeInv P f r.val.1 r.val.2 r.property
     left_inv := fun x ↦ by
       induction x using Quotient.ind with | _ a =>
         rcases a with ⟨z, v⟩
@@ -180,7 +198,7 @@ def torusFamilyBaseChangeEquiv :
 coordinate the base-change map. -/
 @[simp] theorem coe_torusFamilyBaseChangeEquiv
     (x : letI := periodAddAction (P ∘ f); AddAction.orbitRel.Quotient Λ (Z × E)) :
-    (torusFamilyBaseChangeEquiv P f x).1 =
+    (torusFamilyBaseChangeEquiv P f x).val =
       (torusFamilyProjection (P ∘ f) x, torusFamilyBaseChangeMap P f x) := (rfl)
 
 /-- On representatives, the algebraic pullback equivalence sends `[z, v]` to `(z, [f z, v])`. -/
@@ -200,7 +218,7 @@ coordinate the base-change map. -/
     {x : letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E)}
     (hx : torusFamilyProjection P x = f z) :
     torusFamilyProjection (P ∘ f) ((torusFamilyBaseChangeEquiv P f).symm ⟨(z, x), hx⟩) = z :=
-  congrArg (fun r ↦ r.1.1) ((torusFamilyBaseChangeEquiv P f).apply_symm_apply ⟨(z, x), hx⟩)
+  congrArg (fun r ↦ r.val.1) ((torusFamilyBaseChangeEquiv P f).apply_symm_apply ⟨(z, x), hx⟩)
 
 /-- Composing the inverse pullback equivalence with `torusFamilyBaseChangeMap` recovers the
 given point of `(Y × E)/Λ`. -/
@@ -208,7 +226,7 @@ given point of `(Y × E)/Λ`. -/
     {x : letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E)}
     (hx : torusFamilyProjection P x = f z) :
     torusFamilyBaseChangeMap P f ((torusFamilyBaseChangeEquiv P f).symm ⟨(z, x), hx⟩) = x :=
-  congrArg (fun r ↦ r.1.2) ((torusFamilyBaseChangeEquiv P f).apply_symm_apply ⟨(z, x), hx⟩)
+  congrArg (fun r ↦ r.val.2) ((torusFamilyBaseChangeEquiv P f).apply_symm_apply ⟨(z, x), hx⟩)
 
 /-- Two points of a pulled-back period quotient are equal as soon as they have the same base
 point in `Z` and the same image in `(Y × E)/Λ`. -/
@@ -300,15 +318,15 @@ noncomputable def torusFamilyBaseChangeHomeomorph
     {r | torusFamilyProjection P r.2 = f r.1}
   let e : Z × E ≃ₜ (Prod.map id q ⁻¹' S) :=
     { toFun := fun a ↦ ⟨(a.1, (f a.1, a.2)), torusFamilyProjection_mk P (f a.1, a.2)⟩
-      invFun := fun a ↦ (a.1.1, a.1.2.2)
+      invFun := fun a ↦ (a.val.1, a.val.2.2)
       left_inv := fun _ ↦ rfl
       right_inv := fun a ↦ Subtype.ext <| Prod.ext rfl (Prod.ext
-        (by simpa [S, q] using a.2.symm) rfl)
+        (by simpa [S, q] using a.property.symm) rfl)
       continuous_toFun :=
         (continuous_fst.prodMk ((hf.comp continuous_fst).prodMk continuous_snd)).subtype_mk _
       continuous_invFun :=
-        (continuous_fst.comp continuous_subtype_val).prodMk
-          (continuous_snd.comp (continuous_snd.comp continuous_subtype_val)) }
+        (continuous_fst.comp continuous_subtypeVal).prodMk
+          (continuous_snd.comp (continuous_snd.comp continuous_subtypeVal)) }
   letI := continuousConstVAdd_periodAddAction P hcont
   have hopen : IsOpenMap (torusFamilyBaseChangeEquiv P f ∘ (Quotient.mk _ : Z × E → _)) := by
     have heq : torusFamilyBaseChangeEquiv P f ∘ Quotient.mk _ =
@@ -341,7 +359,7 @@ pullback equivalence. -/
 coordinate the base-change map. -/
 @[simp] theorem coe_torusFamilyBaseChangeHomeomorph
     (x : letI := periodAddAction (P ∘ f); AddAction.orbitRel.Quotient Λ (Z × E)) :
-    (torusFamilyBaseChangeHomeomorph P f hcont hf x).1 =
+    (torusFamilyBaseChangeHomeomorph P f hcont hf x).val =
       (torusFamilyProjection (P ∘ f) x, torusFamilyBaseChangeMap P f x) := (rfl)
 
 /-- On representatives, the pullback homeomorphism sends `[z, v]` to `(z, [f z, v])`. -/

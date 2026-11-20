@@ -17,12 +17,15 @@ This file records that continuous linear maps commute with Mathlib's circle inte
 `ContinuousLinearMap.intervalIntegral_comp_comm`. It also writes a circle integral over the angle
 interval `[-π, π]` instead of `[0, 2π]`, and shows that for `f` continuous on a closed disc the
 circle integrals over the concentric circles depend continuously on the radius up to the
-boundary circle.
+boundary circle. By periodicity of `circleMap` a circle integral may also be computed over
+any parameter interval `[a, a + 2π]`.
 
 ## Main results
 
 * `ContinuousLinearMap.circleIntegral_comp_comm`: continuous linear maps commute with circle
   integrals.
+* `TauCeti.circleIntegral_eq_intervalIntegral_add_two_pi`: a circle integral may be computed over
+  any parameter interval of length `2π`.
 * `TauCeti.integral_neg_pi_pi_eq_circleIntegral`: a circle integral as an integral over
   `[-π, π]`.
 * `ContinuousOn.continuousOn_circleIntegral`: for `f` continuous on the closed disc
@@ -44,14 +47,20 @@ theorem ContinuousLinearMap.circleIntegral_comp_comm [CompleteSpace E] [Complete
 open Complex Metric Set
 open scoped Real
 
+/-- By periodicity of `circleMap`, a circle integral may be computed over any parameter interval
+`[a, a + 2π]` instead of `[0, 2π]`. -/
+theorem TauCeti.circleIntegral_eq_intervalIntegral_add_two_pi (f : ℂ → E) (c : ℂ) (R a : ℝ) :
+    (∮ z in C(c, R), f z) = ∫ θ in a..a + 2 * π, deriv (circleMap c R) θ • f (circleMap c R θ) := by
+  have hper : Function.Periodic
+      (fun θ ↦ deriv (circleMap c R) θ • f (circleMap c R θ)) (2 * π) := fun θ ↦ by
+    simp only [deriv_circleMap, periodic_circleMap 0 R θ, periodic_circleMap c R θ]
+  simpa [circleIntegral] using hper.intervalIntegral_add_eq 0 a
+
 /-- A circle integral written over the angle interval `[-π, π]`. -/
 theorem TauCeti.integral_neg_pi_pi_eq_circleIntegral (f : ℂ → E) (c : ℂ) (R : ℝ) :
     (∫ θ in -π..π, (circleMap 0 R θ * I) • f (circleMap c R θ)) = ∮ z in C(c, R), f z := by
-  have hper : Function.Periodic (fun θ ↦ (circleMap 0 R θ * I) • f (circleMap c R θ)) (2 * π) :=
-    fun θ ↦ by simp only [periodic_circleMap _ _ θ]
-  have := hper.intervalIntegral_add_eq (-π) 0
-  rw [show -π + 2 * π = π by ring, zero_add] at this
-  rw [this, circleIntegral]
+  rw [TauCeti.circleIntegral_eq_intervalIntegral_add_two_pi f c R (-π),
+    show -π + 2 * π = π by ring]
   simp only [deriv_circleMap]
 
 /-- For `f` continuous on the closed disc `|z - c| ≤ R`, the circle integrals

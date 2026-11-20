@@ -22,15 +22,10 @@ product topology, which is not discrete.
 The file also records when pairing two maps into a product, `(f, g) ↦ (x ↦ (f x, g x))`, is
 continuous for the compact-open topologies. Mathlib's `ContinuousMap.continuous_prodMk_const` is
 the case where the first map is constant. The case where the second map is constant follows by
-swapping the factors, and the general case holds for every R₁ source, in particular for every
-regular or Hausdorff one: a compact set `K` on which `(f, g)` lands in an open set `U` is covered
-by finitely many compact pieces on each of which `(f, g)` lands in a box inside `U`, and the pieces
-exist because `K` is a compact R₁ space, hence locally compact. The R₁ hypothesis cannot simply be
-dropped: for the one-point compactification of `ℚ` as source, which is not R₁, and the Sierpiński
-space as both targets, the maps `(f, g)` with `f ⁻¹' {⊤} ∪ g ⁻¹' {⊤} = univ` do not form an open
-set. Topological groups are regular, so these are the continuity statements behind the pointwise
-operations on the iterated function spaces `C(G, C(G, …))` of the coinduced resolution of a
-topological representation.
+swapping the factors. The general case, for every R₁ source and in particular for every regular
+or Hausdorff one, is Mathlib's `ContinuousMap.continuous_prodMk'`. Topological groups are regular,
+so these are the continuity statements behind the pointwise operations on the iterated function
+spaces `C(G, C(G, …))` of the coinduced resolution of a topological representation.
 
 Finally, the constant maps embed `Y` in `C(X, Y)` whenever `X` is nonempty
 (`ContinuousMap.isEmbedding_const`): evaluation at any point is a continuous left inverse.
@@ -72,39 +67,6 @@ theorem continuous_prodMk_const_right {Z : Type*} [TopologicalSpace Z] :
     ext p x <;> rfl
   rw [this]
   exact (continuous_postcomp _).comp (continuous_prodMk_const.comp continuous_swap)
-
-/-- Pairing two maps into a product is continuous for an R₁ source, in particular for a regular
-or a Hausdorff source, such as a topological group. -/
-theorem continuous_prodMk {Z : Type*} [TopologicalSpace Z] [R1Space X] :
-    Continuous fun p : C(X, Y) × C(X, Z) ↦ p.1.prodMk p.2 := by
-  simp_rw [continuous_iff_continuousAt, ContinuousAt, ContinuousMap.tendsto_nhds_compactOpen]
-  rintro ⟨f, g⟩ K hK U hU H
-  -- around each point of `K`, a compact neighbourhood within `K` on which `(f, g)` lands in a box
-  -- inside `U`; it exists because the subspace `K` is compact and R₁, hence locally compact
-  have key : ∀ x ∈ K, ∃ L ∈ nhdsWithin x K, IsCompact L ∧ ∃ V : Set Y, ∃ W : Set Z,
-      IsOpen V ∧ IsOpen W ∧ V ×ˢ W ⊆ U ∧ Set.MapsTo f L V ∧ Set.MapsTo g L W := by
-    intro x hx
-    obtain ⟨V, W, hV, hW, hfx, hgx, hVW⟩ := isOpen_prod_iff.mp hU (f x) (g x) (H hx)
-    obtain ⟨L, hL, hLc, hLVW⟩ := exists_mem_nhds_isCompact_mapsTo_of_isCompact_mem_nhds
-      (x := (⟨x, hx⟩ : K)) continuous_subtype_val (Filter.inter_mem
-        (f.continuous.continuousAt.preimage_mem_nhds (hV.mem_nhds hfx))
-        (g.continuous.continuousAt.preimage_mem_nhds (hW.mem_nhds hgx)))
-      (isCompact_iff_isCompact_univ.mp hK) Filter.univ_mem
-    exact ⟨_, mem_nhds_subtype_iff_nhdsWithin.mp hL, hLc.image continuous_subtype_val, V, W, hV,
-      hW, hVW, Set.mapsTo_image_iff.2 fun y hy ↦ (hLVW hy).1,
-      Set.mapsTo_image_iff.2 fun y hy ↦ (hLVW hy).2⟩
-  choose! L hLnhds hLc V W hV hW hVW hfL hgL using key
-  obtain ⟨t, htK, hKt⟩ := hK.elim_nhdsWithin_subcover L hLnhds
-  have hf : ∀ᶠ f' : C(X, Y) in nhds f, ∀ x ∈ t, Set.MapsTo f' (L x) (V x) :=
-    t.eventually_all.mpr fun x hx ↦
-      eventually_mapsTo (hLc x (htK x hx)) (hV x (htK x hx)) (hfL x (htK x hx))
-  have hg : ∀ᶠ g' : C(X, Z) in nhds g, ∀ x ∈ t, Set.MapsTo g' (L x) (W x) :=
-    t.eventually_all.mpr fun x hx ↦
-      eventually_mapsTo (hLc x (htK x hx)) (hW x (htK x hx)) (hgL x (htK x hx))
-  rw [nhds_prod_eq]
-  filter_upwards [hf.prod_mk hg] with p hp y hy
-  obtain ⟨x, hxt, hyL⟩ := Set.mem_iUnion₂.mp (hKt hy)
-  exact hVW x (htK x hxt) ⟨hp.1 x hxt hyL, hp.2 x hxt hyL⟩
 
 /-- Constant maps embed the target in the compact-open mapping space whenever the source is
 nonempty. Evaluation at any point is a continuous left inverse. -/

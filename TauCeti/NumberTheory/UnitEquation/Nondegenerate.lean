@@ -119,7 +119,7 @@ theorem restrict [DecidableEq ι] {I : Finset ι} (h : ∑ i, α i * x i = 1)
   · have hdisj : Disjoint (J.map (Function.Embedding.subtype _)) I :=
       disjoint_left.mpr fun i hi ↦ by
         obtain ⟨j, -, rfl⟩ := mem_map.mp hi
-        exact mem_compl.mp j.2
+        exact mem_compl.mp j.property
     simpa [sum_map] using hJ _ hJne.map hdisj
 
 end Semiring
@@ -227,7 +227,7 @@ theorem merge [DecidableEq ι] (h : IsNondegenerateHomogeneousSolution α x) {p 
     intro J
     have hpJ : p ∉ J.map e := fun hp ↦ by
       obtain ⟨j, -, hj⟩ := mem_map.mp hp
-      exact j.2 hj
+      exact j.property hj
     have hupd : ∀ j : {i // i ≠ p}, Function.update α q (α q + β * α p) j * x j =
         α j * x j + if j = q' then α p * x p else 0 := by
       intro j
@@ -252,7 +252,7 @@ theorem merge [DecidableEq ι] (h : IsNondegenerateHomogeneousSolution α x) {p 
       exact hJu (eq_univ_of_forall hall)
     have hj₀' : (j₀ : ι) ∉ insert p (J.map e) := by
       simp only [mem_insert, mem_map, not_or]
-      exact ⟨j₀.2, fun ⟨j, hj, hjj⟩ ↦ hj₀ (Subtype.ext hjj ▸ hj)⟩
+      exact ⟨j₀.property, fun ⟨j, hj, hjj⟩ ↦ hj₀ (Subtype.ext hjj ▸ hj)⟩
     rw [key]
     split_ifs
     · exact h.subsum_ne_zero (insert_nonempty _ _)

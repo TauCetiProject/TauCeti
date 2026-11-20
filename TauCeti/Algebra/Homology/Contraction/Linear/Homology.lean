@@ -65,13 +65,13 @@ namespace TauCeti.InternalGrading
 universe uK uM
 
 variable {K : Type uK} {M : Type uM} [DivisionRing K] [AddCommGroup M] [Module K M]
-  (G : InternalGrading K M) {d : Module.End K M}
+  (G : InternalGrading K M ℤ) {d : Module.End K M}
   (hhom : TauCeti.LinearMap.IsHomogeneous d G.piece G.piece 1) (hd : d ∘ₗ d = 0)
 
 /-! ### A homogeneous section of the differential onto its image -/
 
 /-- The grading of the image of `d` by its homogeneous elements. -/
-private noncomputable def rangeGrading : InternalGrading K (range d) :=
+private noncomputable def rangeGrading : InternalGrading K (range d) ℤ :=
   G.submodule (range d) hhom.isHomogeneous_range
 
 /-- A homogeneous section of degree `-1` of the corestriction of `d` to its image. -/
@@ -175,7 +175,7 @@ private theorem proj_apply (x : M) :
 
 private theorem cycleProjection_incl (y : d.homology hd) :
     G.cycleProjection hhom (G.incl hhom hd y) = G.representative hhom hd y :=
-  G.cycleProjection_of_mem_ker hhom (G.representative hhom hd y).2
+  G.cycleProjection_of_mem_ker hhom (G.representative hhom hd y).property
 
 private theorem proj_incl (y : d.homology hd) : G.proj hhom hd (G.incl hhom hd y) = y := by
   rw [proj_apply, cycleProjection_incl, homologyπ_representative]
@@ -256,7 +256,7 @@ noncomputable def homologyContraction :
   homotopy := G.homotopy hhom hd
   dM_comp_incl := LinearMap.ext fun y ↦ by
     rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.zero_apply, map_zero, incl_apply]
-    exact (G.representative hhom hd y).2
+    exact (G.representative hhom hd y).property
   proj_comp_dM := LinearMap.ext fun x ↦ by
     rw [LinearMap.comp_apply, proj_apply_apply, LinearMap.zero_comp, LinearMap.zero_apply]
   proj_comp_incl := LinearMap.ext (G.proj_incl hhom hd)
@@ -300,7 +300,7 @@ private theorem isHomogeneous_proj :
 theorem homologyContraction_incl_mem_ker (y : d.homology hd) :
     (G.homologyContraction hhom hd).incl y ∈ LinearMap.ker d := by
   rw [homologyContraction_incl, incl_apply]
-  exact (G.representative hhom hd y).2
+  exact (G.representative hhom hd y).property
 
 /-- The inclusion of the homology contraction chooses a cycle representing the given class. -/
 theorem homologyπ_homologyContraction_incl (y : d.homology hd) :

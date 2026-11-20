@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.StoppedValue
+public import Mathlib.Probability.Process.Stopping
 import TauCeti.MeasureTheory.Integral.Indicator
+import TauCeti.Probability.Process.StoppedValue
+import TauCeti.Probability.Process.StoppingApproximation
 
 /-!
 # Passing a fixed conditional law to a stopping time
@@ -15,8 +17,8 @@ Suppose that, at each deterministic time `s`, a measurable random variable `U s`
 law independently of a filtration through `s`. The same event identity holds at countable-range
 stopping times in any partially ordered index type. For nonnegative real time and discrete-valued
 `U` almost surely right-continuous at the stopping time, it holds on the event of finiteness,
-by upward dyadic approximation. No usual-conditions
-assumption on the filtration is needed.
+by upward dyadic approximation. Neither identity assumes a common law on the entire target
+space: it is enough to know the deterministic factorization for the single target event.
 
 The process `U` need not be adapted: for example, `U s` can be the increment over a fixed
 duration after `s`. The deterministic conditional-law identity is an explicit hypothesis,

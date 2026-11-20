@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
 public import TauCeti.Analysis.InnerProductSpace.Projection.PrincipalAngle
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Sylvester.Basic
-import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Projection
 
 /-!
 # The Davis–Kahan `sin 2Θ` theorem in unitarily invariant seminorms

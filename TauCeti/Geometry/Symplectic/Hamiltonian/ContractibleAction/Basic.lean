@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Action.Basic
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
 # The action functional on contractible loops of a weakly exact manifold
@@ -16,8 +17,9 @@ coordinate `t`, with `w (0, ·) = γ₀` and `w (1, ·) = γ₁`. Cylinders comp
 (`TauCeti.IsLoopCylinder.trans`, by `TauCeti.rectangleTrans`) and reverse
 (`TauCeti.IsLoopCylinder.symm`), and their images under `C²` maps are cylinders
 (`TauCeti.IsLoopCylinder.comp`). A **cap** of `γ` (`TauCeti.IsCap`) is a cylinder from `γ` to a
-constant loop: a disc bounding `γ`, with the centre of the disc at `s = 1`. A cylinder between two
-constant loops is a **sphere**.
+constant loop: a disc bounding `γ`, with the centre of the disc at `s = 1`. Every `C²` map of the
+plane, read in polar coordinates on the closed unit disc, caps its boundary loop
+(`TauCeti.isLoopCylinder_comp_polar`). A cylinder between two constant loops is a **sphere**.
 
 The integral `∫ w^* φ` of a two-form `φ` over a cylinder is `TauCeti.rectangleIntegral φ w (0, 0)
 (1, 1)`, oriented by the coordinates `(s, t)`.
@@ -200,6 +202,21 @@ theorem isLoopCylinder_comp_prodMap {w : ℝ × ℝ → M} (hwc : ContMDiff 𝓘
   apply_add_one z := hper (s + (s₀ - s) * z.1, z.2)
   apply_zero t := by simp
   apply_one t := by simp
+
+open Real in
+/-- **Every disc is a cap of its boundary loop.** For a `C²` map `u` of the plane, the map
+`(s, t) ↦ u ((1 - s) cos 2πt, (1 - s) sin 2πt)`, which runs over the closed unit disc in polar
+coordinates, is a cylinder from the boundary loop `t ↦ u (cos 2πt, sin 2πt)` to the constant loop
+at the centre `u 0`; in particular it is a cap of the boundary loop. -/
+theorem isLoopCylinder_comp_polar {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u) :
+    IsLoopCylinder I (fun z ↦ u ((1 - z.1) * cos (2 * π * z.2), (1 - z.1) * sin (2 * π * z.2)))
+      (fun t ↦ u (cos (2 * π * t), sin (2 * π * t))) fun _ ↦ u 0 where
+  contMDiff := hu.comp (by fun_prop : ContDiff ℝ 2 fun z : ℝ × ℝ ↦
+    ((1 - z.1) * cos (2 * π * z.2), (1 - z.1) * sin (2 * π * z.2))).contMDiff
+  apply_add_one z := by simp only [mul_add, mul_one, cos_add_two_pi, sin_add_two_pi]
+  apply_zero t := by simp
+  apply_one t := by simp [← Prod.mk_zero_zero]
 
 /-! ### Weakly exact forms and the cap area -/
 

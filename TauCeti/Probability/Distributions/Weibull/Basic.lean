@@ -51,7 +51,6 @@ antiderivative `-exp (-(x / lam) ^ k)` of the density.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 3, **Weibull**.
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
   2nd ed., Wiley (1994), chapter on Weibull distributions.
 -/
@@ -450,7 +449,7 @@ private lemma measureReal_weibullMeasure {s : Set ℝ} (hs : MeasurableSet s) :
     (weibullMeasure k lam).real s = ∫ y in s, weibullPDFReal k lam y := by
   rw [weibullMeasure_def, funext (weibullPDF_eq_ofReal k lam)]
   exact Probability.measureReal_withDensity_ofReal (ae_of_all _ (weibullPDFReal_nonneg k lam)) hs
-    (integrable_weibullPDFReal k lam).integrableOn
+    (measurable_weibullPDFReal k lam).aemeasurable
 
 /-- The real upper-tail mass of a valid Weibull law. -/
 theorem measureReal_Ioi_weibullMeasure (hk : 0 < k) (hlam : 0 < lam) (hx : 0 < x) :

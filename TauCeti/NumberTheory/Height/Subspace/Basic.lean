@@ -147,7 +147,7 @@ theorem relativeSubspaceHeight_bot : relativeSubspaceHeight (⊥ : Submodule K (
   have h := relativeSubspaceHeight_span_range (linearIndependent_empty_type (ι := Fin 0)
     (R := K) (v := fun _ ↦ (0 : ι → K)))
   rw [range_eq_empty, span_empty] at h
-  rw [h, funext (plucker_of_isEmpty _), ← Pi.one_def, mulHeight_one]
+  rw [h, funext (plucker_fin_zero _), ← Pi.one_def, mulHeight_one]
 
 /-- The whole space has relative height `1`. -/
 @[simp]
@@ -242,7 +242,7 @@ theorem relativeSubspaceHeight_euclideanDual :
   obtain ⟨c, hc, h⟩ :=
     exists_plucker_eq_mul_plucker_compl_or_eq_neg (finrank_add_finrank_euclideanDual U)
     b.linearIndependent_coe_basis b'.linearIndependent_coe_basis
-    fun i j ↦ mem_euclideanDual.1 (b' j).2 _ (b i).2
+    fun i j ↦ mem_euclideanDual.1 (b' j).property _ (b i).property
   rw [relativeSubspaceHeight_eq_mulHeight_plucker b', relativeSubspaceHeight_eq_mulHeight_plucker b,
     mulHeight_eq_of_forall_eq_or_eq_neg h]
   -- The tuple `fun t ↦ c * plucker _ (compl _ t)` is `c • (plucker _ ∘ compl _)` pointwise.

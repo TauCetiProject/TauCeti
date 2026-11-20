@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Gram
+public import TauCeti.LinearAlgebra.Matrix.Gram.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
 /-!

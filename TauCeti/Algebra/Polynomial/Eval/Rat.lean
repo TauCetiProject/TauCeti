@@ -38,21 +38,13 @@ theorem one_le_den_pow_mul_abs_aeval_sub_mul {P Q : ℤ[X]} {N : ℕ}
   have hF : F.natDegree ≤ N :=
     (natDegree_sub_le _ _).trans (max_le
       ((natDegree_C_mul_le _ _).trans hP) ((natDegree_C_mul_le _ _).trans hQ))
-  have heval : aeval x F = (y.den : ℚ) * (aeval x P - y * aeval x Q) := by
-    simp [F, mul_sub, ← mul_assoc, Rat.den_mul_eq_num]
-  have heval' : (F.map (algebraMap ℤ ℚ)).eval ((x.num : ℚ) / (x.den : ℤ)) =
+  have heval : (F.map (algebraMap ℤ ℚ)).eval ((x.num : ℚ) / (x.den : ℤ)) =
       (y.den : ℚ) * (aeval x P - y * aeval x Q) := by
-    simpa only [Int.cast_natCast, Rat.num_div_den, eval_map_algebraMap] using heval
-  have h := one_le_pow_mul_abs_eval_div (K := ℚ) (f := F)
-    (a := x.num) (b := x.den) (by exact_mod_cast x.den_pos)
-    (by rw [heval']; exact mul_ne_zero (by positivity) hne)
-  rw [heval', Int.cast_natCast, abs_mul, abs_of_pos (Nat.cast_pos.2 y.den_pos)] at h
-  calc
-    (1 : ℚ) ≤ (x.den : ℚ) ^ F.natDegree *
-        ((y.den : ℚ) * |aeval x P - y * aeval x Q|) := h
-    _ ≤ (x.den : ℚ) ^ N * y.den * |aeval x P - y * aeval x Q| := by
-      rw [mul_assoc]
-      gcongr
-      exact_mod_cast x.den_pos
+    rw [Int.cast_natCast, Rat.num_div_den, eval_map_algebraMap]
+    simp [F, mul_sub, ← mul_assoc, Rat.den_mul_eq_num]
+  have h := one_le_pow_mul_abs_eval_div (K := ℚ) (f := F) (a := x.num) (b := x.den)
+    (mod_cast x.den_pos) (by rw [heval]; exact mul_ne_zero (by positivity) hne)
+  rw [heval, Int.cast_natCast, abs_mul, abs_of_pos (by positivity), ← mul_assoc] at h
+  exact h.trans (by gcongr; exact_mod_cast x.den_pos)
 
 end TauCeti

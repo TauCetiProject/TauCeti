@@ -70,7 +70,7 @@ open TensorProduct TensorAlgebra InternalGrading
 universe uR uC
 
 variable {R : Type uR} {C : Type uC} [CommRing R] [AddCommGroup C] [Module R C]
-  (G : InternalGrading R C) (Δ : C →ₗ[R] C ⊗[R] C) (d : C →ₗ[R] C)
+  (G : InternalGrading R C ℤ) (Δ : C →ₗ[R] C ⊗[R] C) (d : C →ₗ[R] C)
 
 /-- The quadratic part `c' ⊗ c'' ↦ s⁻¹ c' * s⁻¹ c''` of the cobar differential, with the Koszul
 sign `(-1) ^ |c'|` of `s⁻¹ ⊗ s⁻¹`. -/
@@ -136,6 +136,14 @@ theorem cobarDifferential_mul {p : ℤ} {x : TensorAlgebra R C}
     cobarDifferential G Δ d (x * y) =
       cobarDifferential G Δ d x * y + p.negOnePow • (x * cobarDifferential G Δ d y) :=
   tensorAlgebraDerivation_mul_of_mem _ _ hx y
+
+/-- The graded Leibniz rule for `cobarDifferential`, expressed globally via the Koszul twist. -/
+theorem cobarDifferential_mul_koszulTwist (x y : TensorAlgebra R C) :
+    cobarDifferential G Δ d (x * y) =
+      cobarDifferential G Δ d x * y +
+        koszulTwistAlgEquiv (tensorAlgebraPiece (G.shift (-1))) 1 x *
+          cobarDifferential G Δ d y :=
+  tensorAlgebraDerivation_mul (G.shift (-1)) (cobarGenerator G Δ d) x y
 
 namespace IsNonCounitalDGCoalgebra
 

@@ -17,6 +17,8 @@ support. Consequently, an additive map on test functions which vanishes locally 
 continuity of the additive map is not required. Every compact subset of the domain also has a
 cutoff test function equal to one on a neighbourhood of it, and every point of the domain has a
 test function with a prescribed value there, supported in a given neighbourhood of the point.
+Every point of the domain also has a test function equal to one near it and supported in a given
+neighbourhood of it (`TestFunction.exists_eqOn_one_tsupport_subset`).
 Near a point where a complex test function `φ` does not vanish, every complex test function
 supported close enough to the point is a smooth multiple of `φ`
 (`TestFunction.exists_mem_nhds_forall_exists_contDiff_eq_mul`); this is how localization
@@ -89,6 +91,13 @@ theorem cutoffCLM_apply (hχ : ContDiff ℝ n χ) (hχU : tsupport χ ∩ Ω ⊆
   -- definitional unfolding happens inside the proof.
   exact rfl
 
+/-- Multiplying by a cutoff does not enlarge the support of a test function. -/
+theorem tsupport_cutoffCLM_subset (hχ : ContDiff ℝ n χ) (hχU : tsupport χ ∩ Ω ⊆ U)
+    (φ : 𝓓^{n}(Ω, F)) : tsupport (cutoffCLM hχ hχU φ : E → F) ⊆ tsupport χ ∩ tsupport φ := by
+  have h : (cutoffCLM hχ hχU φ : E → F) = χ • ⇑φ := funext (cutoffCLM_apply hχ hχU φ)
+  rw [h]
+  exact subset_inter (tsupport_smul_subset_left _ _) (tsupport_smul_subset_right _ _)
+
 end Cutoff
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -136,6 +145,15 @@ theorem exists_cutoff_tsupport_subset {K W : Set E} (hK : IsCompact K) (hW : IsO
   exact ⟨⟨χ, hχ.of_le (by simp), hχc, hχW.trans hWΩ⟩, fun x ↦ hχ01 ⟨x, rfl⟩,
     subset_interior_iff_mem_nhdsSet.1 hχ1, hχW⟩
 
+/-- A compact subset `K` of an open set `W` contained in the domain has a complex test function
+equal to one on a neighbourhood of `K` whose topological support lies in `W`. -/
+theorem exists_complex_cutoff_tsupport_subset {K W : Set E} (hK : IsCompact K) (hW : IsOpen W)
+    (hKW : K ⊆ W) (hWΩ : W ⊆ Ω) :
+    ∃ χ : 𝓓^{n}(Ω, ℂ), (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ tsupport χ ⊆ W := by
+  obtain ⟨χ, -, hχ1, hχW⟩ := exists_cutoff_tsupport_subset (n := n) hK hW hKW hWΩ
+  refine ⟨postcompCLM (𝕜 := ℝ) Complex.ofRealCLM χ, hχ1.mono fun x hx ↦ by simp [hx], ?_⟩
+  exact (tsupport_comp_subset (g := Complex.ofRealCLM) (by simp) χ).trans hχW
+
 /-- Every compact subset of the domain has a test function with values in `[0, 1]` that is equal
 to one on a neighbourhood of it. -/
 theorem exists_eventually_eq_one {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
@@ -151,6 +169,22 @@ theorem exists_tsupport_subset_apply_eq {x : E} {s : Set E} (hs : s ∈ 𝓝 x) 
   have hsupp : tsupport (fun y ↦ u y • v) ⊆ s := (tsupport_smul_subset_left _ _).trans hus
   exact ⟨⟨fun y ↦ u y • v, hud.smul contDiff_const, hu.smul_right, hsupp.trans hsΩ⟩, hsupp,
     by simp [hux]⟩
+
+/-- Every point `x` of the domain has a test function equal to one on an open neighbourhood of `x`
+and supported in a given neighbourhood of `x`. -/
+theorem exists_eqOn_one_tsupport_subset {𝕜 : Type*} [RCLike 𝕜] {x : E} {U : Set E}
+    (hU : U ∈ 𝓝 x) (hx : x ∈ Ω) :
+    ∃ χ : 𝓓^{n}(Ω, 𝕜), ∃ V, IsOpen V ∧ x ∈ V ∧ EqOn χ 1 V ∧ tsupport χ ⊆ U := by
+  obtain ⟨χ, -, hχ1, hχs⟩ := exists_cutoff_tsupport_subset (n := n) (isCompact_singleton (x := x))
+    (isOpen_interior.inter Ω.isOpen) (singleton_subset_iff.2 ⟨mem_interior_iff_mem_nhds.2 hU, hx⟩)
+    inter_subset_right
+  rw [nhdsSet_singleton] at hχ1
+  obtain ⟨V, hV1, hV, hxV⟩ := eventually_nhds_iff.1 hχ1
+  have hs : tsupport (fun y ↦ (χ y : 𝕜)) ⊆ tsupport χ := tsupport_comp_subset RCLike.ofReal_zero χ
+  exact ⟨⟨fun y ↦ (χ y : 𝕜), (RCLike.ofRealCLM (K := 𝕜)).contDiff.comp χ.contDiff,
+    χ.hasCompactSupport.comp_left RCLike.ofReal_zero, hs.trans χ.tsupport_subset⟩, V, hV, hxV,
+    fun y hy ↦ (congrArg (fun r : ℝ ↦ (r : 𝕜)) (hV1 y hy)).trans RCLike.ofReal_one,
+    hs.trans (hχs.trans (inter_subset_left.trans interior_subset))⟩
 
 /-- A real test function bounded in norm by one can realize the signs of arbitrary coefficients
 on a finite subset of its domain. -/
@@ -247,7 +281,7 @@ theorem eq_zero_of_locally_vanishing (T : 𝓓^{n}(Ω, F) →+ G)
     (h : ∀ x ∈ Ω, ∃ U : Set E, IsOpen U ∧ x ∈ U ∧
       ∀ φ : 𝓓^{n}(Ω, F), tsupport φ ⊆ U → T φ = 0) : T = 0 := by
   classical
-  choose U hU hxU hT using fun x : Ω ↦ h x x.2
+  choose U hU hxU hT using fun x : Ω ↦ h x x.property
   ext φ
   obtain ⟨s, ψ, hψ, hsum, -⟩ := φ.exists_sum_subordinate U hU fun x hx ↦
     mem_iUnion.mpr ⟨⟨x, φ.tsupport_subset hx⟩, hxU _⟩

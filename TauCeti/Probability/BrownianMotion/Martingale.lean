@@ -9,9 +9,9 @@ public import TauCeti.Probability.BrownianMotion.Filtered
 public import Mathlib.Probability.Martingale.Basic
 import Mathlib.Probability.ConditionalExpectation
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
-import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import TauCeti.Probability.Distributions.Gaussian.Moments
+import TauCeti.Probability.Martingale.Basic
 
 /-!
 # Brownian motion and its compensated square as martingales
@@ -105,33 +105,9 @@ theorem martingale (hB : IsFilteredPreBrownianReal ℱ B P) : Martingale B ℱ P
 theorem condExp_sq (hB : IsFilteredPreBrownianReal ℱ B P) (hst : s ≤ t) :
     P[fun ω => B t ω ^ 2 | ℱ s] =ᵐ[P] fun ω => B s ω ^ 2 + ((t : ℝ) - s) := by
   have := hB.isGaussianProcess.isProbabilityMeasure
-  let D := B t - B s
-  have hD : MemLp D 2 P := (hB.hasLaw_sub_of_le hst).memLp
-    (memLp_id_gaussianReal' 2 (by simp))
-  have hS : MemLp (B s) 2 P := hB.memLp_eval s (by simp)
-  have hpull := condExp_mul_of_stronglyMeasurable_left (m := ℱ s)
-    (hB.adapted s).stronglyMeasurable (hS.integrable_mul hD) (hD.integrable (by norm_num))
-  have hcross : P[B s * D | ℱ s] =ᵐ[P] fun _ => 0 := by
-    filter_upwards [hpull, hB.condExp_sub hst] with ω hp hz
-    rw [hp, Pi.mul_apply, hz, mul_zero]
-  have heq : (fun ω => B t ω ^ 2) =
-      (fun ω => B s ω ^ 2) + (2 : ℝ) • (B s * D) + (fun ω => D ω ^ 2) := by
-    ext ω
-    simp only [D, Pi.add_apply, Pi.smul_apply, Pi.mul_apply, Pi.sub_apply, smul_eq_mul]
-    ring
-  have hsum := condExp_add (m := ℱ s)
-    (hS.integrable_sq.add ((hS.integrable_mul hD).const_mul 2)) hD.integrable_sq
-  have hsum' := condExp_add (m := ℱ s) hS.integrable_sq
-    ((hS.integrable_mul hD).const_mul 2)
-  have hscale := condExp_smul (μ := P) (2 : ℝ) (B s * D) (ℱ s)
-  simp only [Pi.add_def, Pi.smul_def, Pi.mul_def, smul_eq_mul] at heq hsum hsum' hscale hcross
-  rw [heq]
-  filter_upwards [hsum, hsum', hscale, hcross, hB.condExp_sub_sq hst]
-    with ω h₁ h₂ h₃ hcross' hsquare
-  rw [h₁, h₂, h₃, hcross', mul_zero, add_zero,
-    condExp_of_stronglyMeasurable (ℱ.le s)
-      ((hB.adapted s).pow_const 2).stronglyMeasurable hS.integrable_sq]
-  exact congrArg (B s ω ^ 2 + ·) hsquare
+  filter_upwards [hB.martingale.condExp_sq hst (hB.memLp_eval t (by simp)),
+    hB.condExp_sub_sq hst] with ω h₁ h₂
+  rw [h₁, h₂]
 
 /-- The compensated Brownian square `B_t² - t` is a martingale. -/
 theorem martingale_sq_sub (hB : IsFilteredPreBrownianReal ℱ B P) :

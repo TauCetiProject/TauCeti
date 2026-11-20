@@ -145,8 +145,6 @@ private theorem recutTerminal_toRectangleDecomposition
       D.pentagon.right_eq).symm
   · simp only [toRectangleDecomposition_second_left]
     rfl
-  · simp only [toRectangleDecomposition_second_right]
-    rfl
 
 /-- The terminal promotion really recuts the underlying two-step domain. -/
 theorem isRecut_recutTerminal (D : GridPentagonRectangleDecomposition a s x z)
