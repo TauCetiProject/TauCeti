@@ -44,6 +44,10 @@ Integrating by parts against this pairing gives the **formal adjoint**
   by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since `D (e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`
   (`TauCeti.SymplecticForm.floerLinearization_exp_smul`), this is the weight dual to `e^{-δ s}`:
   both conjugated operators are `D - δ` and its adjoint `D^* - δ`.
+* **Translation and comparison.** Translating the data, the map and the covector field translates
+  the adjoint (`floerLinearizationAdjoint_comp_add_right`), and the adjoints of two data sets
+  differ by at most `‖ΔJ‖ ‖∂t η‖ + ‖ΔA‖ ‖η‖` in the coefficients `J` and `A = ∂t J - C` of the
+  Cauchy–Riemann form (`norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le`).
 * **Green's formula.** Pointwise,
   `η(D ξ) = (D^* η)(ξ) + ∂s (η(ξ)) + ∂t ((η ∘ J)(ξ))`
   (`apply_floerLinearization_eq_floerLinearizationAdjoint_apply_add`). Integrated, for a `C¹`
@@ -220,6 +224,45 @@ theorem floerLinearizationAdjoint_exp_smul (δ : ℝ) (hη : DifferentiableAt �
   have hβ : HasDerivAt (fun s ↦ Real.exp (δ * s)) (Real.exp (δ * z.1) * δ) z.1 := by
     simpa using ((hasDerivAt_id z.1).const_mul δ).exp
   rw [floerLinearizationAdjoint_smul_fst hβ hη hJu, smul_sub, smul_smul]
+
+/-! ### Translation and comparison of two adjoints -/
+
+/-- **Translating the formal adjoint.** Translating the data, the map and the covector field by
+`v` translates the formal adjoint by `v`. -/
+theorem floerLinearizationAdjoint_comp_add_right (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V)
+    (η : ℝ × ℝ → V →L[ℝ] ℝ) (v z : ℝ × ℝ) :
+    ω.floerLinearizationAdjoint (fun w ↦ J (w + v)) (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v))
+        (fun w ↦ u (w + v)) (fun w ↦ η (w + v)) z =
+      ω.floerLinearizationAdjoint J Ks Kt u η (z + v) := by
+  have hC : ω.floerLinearizationCoeff (fun w ↦ J (w + v)) (fun w ↦ Ks (w + v))
+      (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z = ω.floerLinearizationCoeff J Ks Kt u (z + v) := by
+    ext y
+    simp only [floerLinearizationCoeff_apply, fderiv_comp_add_right]
+  rw [floerLinearizationAdjoint_def, floerLinearizationAdjoint_def, hC, fderiv_comp_add_right,
+    fderiv_comp_add_right (f := fun w ↦ (η w).comp (J w (u w)))]
+
+/-- **Comparing two formal adjoints at a point.** For a covector field `η` differentiable at `z`,
+and `w ↦ J(w, u w)`, `w ↦ J₁(w, u₁ w)` differentiable there, the formal adjoints of two data sets
+differ at `z` by at most `‖J(z, u z) - J₁(z, u₁ z)‖ ‖∂t η‖ + ‖A(z) - A₁(z)‖ ‖η‖`. Here
+`A = ∂t J - C` is the zeroth-order coefficient of the Cauchy–Riemann form
+`floerLinearizationAdjoint_eq_neg`, with `∂t J` the `t`-derivative of `w ↦ J(w, u w)` and
+`C = floerLinearizationCoeff`. -/
+theorem norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le
+    {J₁ : ℝ × ℝ → V → V →L[ℝ] V} {Ks₁ Kt₁ : ℝ × ℝ → V → ℝ} {u₁ : ℝ × ℝ → V}
+    (hη : DifferentiableAt ℝ η z) (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z)
+    (hJu₁ : DifferentiableAt ℝ (fun w ↦ J₁ w (u₁ w)) z) :
+    ‖ω.floerLinearizationAdjoint J Ks Kt u η z - ω.floerLinearizationAdjoint J₁ Ks₁ Kt₁ u₁ η z‖ ≤
+      ‖J z (u z) - J₁ z (u₁ z)‖ * ‖fderiv ℝ η z stdComplexLineImag‖ +
+        ‖(fderiv ℝ (fun w ↦ J w (u w)) z stdComplexLineImag -
+            ω.floerLinearizationCoeff J Ks Kt u z) -
+          (fderiv ℝ (fun w ↦ J₁ w (u₁ w)) z stdComplexLineImag -
+            ω.floerLinearizationCoeff J₁ Ks₁ Kt₁ u₁ z)‖ * ‖η z‖ := by
+  rw [floerLinearizationAdjoint_eq_neg hη hJu, floerLinearizationAdjoint_eq_neg hη hJu₁,
+    show ∀ a b c b' c' : V →L[ℝ] ℝ, -(a + b + c) - -(a + b' + c') = -((b - b') + (c - c')) by
+      intro a b c b' c'; abel, norm_neg, ← comp_sub, ← comp_sub]
+  exact (norm_add_le _ _).trans (add_le_add ((opNorm_comp_le _ _).trans_eq (mul_comm _ _))
+    ((opNorm_comp_le _ _).trans_eq (mul_comm _ _)))
 
 /-! ### Green's formula -/
 
