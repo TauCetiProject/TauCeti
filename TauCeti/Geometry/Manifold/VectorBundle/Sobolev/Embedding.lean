@@ -96,7 +96,6 @@ theorem exists_sobolevEmbeddingL [T2Space M] {pstar : ℝ≥0∞} (hpstar : psta
       ∀ w i, A.sectionChartData.chartValueL μ pstar k i (T w) =ᵐ[μ.restrict (A.image i)]
         A.sectionChartData.chartValueL μ p (k + 1) i w := by
   let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
-  have hp : p ≠ ⊤ := ne_top_of_inv_add_inv_eq_inv hexp
   obtain ⟨P, Q, hP, hPc, hPD, hQc, hQ, hPQ, hcov⟩ := A.exists_transfer_cover
   have hPj (i j : Fin A.n) : P i j ≤ A.image j :=
     SetLike.coe_subset_coe.1 ((hP i j).trans (A.overlap_subset_image i j))
@@ -121,14 +120,14 @@ theorem exists_sobolevEmbeddingL [T2Space M] {pstar : ℝ≥0∞} (hpstar : psta
   let f (j : Fin A.n) (m : Fin (finrank ℝ F)) (i : Fin A.n) :
       SobolevSection A μ p (k + 1) →L[ℝ] Wkp μ (P i j) pstar k :=
     (ContinuousLinearMap.proj m).comp
-      ((A.transferL μ pstar k hpstar i j (hPc i j) (hPD i j) (hPQ i j)).comp (D i))
+      ((A.transferL μ pstar k i j (hPc i j) (hPD i j) (hPQ i j)).comp (D i))
   have hf (j : Fin A.n) (m : Fin (finrank ℝ F)) (i : Fin A.n) (w : SobolevSection A μ p (k + 1)) :
       (Wkp.value k (f j m i w) : E → ℝ) =ᵐ[μ.restrict (P i j)]
         Wkp.value (k + 1) ((w : A.sectionChartData.SobolevData μ p (k + 1)) j m) := by
     set u := (w : A.sectionChartData.SobolevData μ p (k + 1)) with hu
     -- Both sides are the coordinate change applied to the chart-`i` components at the image
     -- point, which agree almost everywhere.
-    have htr := A.restrictL_eq_transferL μ p (k + 1) hp w.property (hP i j) (hPc i j) (hPD i j)
+    have htr := A.restrictL_eq_transferL μ p (k + 1) w.property (hP i j) (hPc i j) (hPD i j)
         (hQi i)
       (hPQ i j) m
     have hl : ∀ᵐ y ∂μ.restrict (P i j), ∀ l,
@@ -138,9 +137,9 @@ theorem exists_sobolevEmbeddingL [T2Space M] {pstar : ℝ≥0∞} (hpstar : psta
       (A.exists_isChangeOfVariables_chart_symm_trans k (hPc i j) (hPD i j)
         (hPQ i j)).choose_spec.choose_spec.ae_comp (ae_all_iff.2 fun l ↦ (hEmb i (u i l)).trans
           (Wkp.value_restrictL_ae (hQi i) (k + 1) (u i l)).symm)
-    filter_upwards [A.value_transferL_ae μ pstar k hpstar i j (hPc i j) (hPD i j) (hPQ i j)
+    filter_upwards [A.value_transferL_ae μ pstar k i j (hPc i j) (hPD i j) (hPQ i j)
         (D i w) m,
-      A.value_transferL_ae μ p (k + 1) hp i j (hPc i j) (hPD i j) (hPQ i j)
+      A.value_transferL_ae μ p (k + 1) i j (hPc i j) (hPD i j) (hPQ i j)
         (fun l ↦ Wkp.restrictL (hQi i) (k + 1) (u i l)) m,
       Wkp.value_restrictL_ae (hPj i j) (k + 1) (u j m), hl] with y h₁ h₂ h₃ h₄
     refine Eq.trans ?_ h₃
