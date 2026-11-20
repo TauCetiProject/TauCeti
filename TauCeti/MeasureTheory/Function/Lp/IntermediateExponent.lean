@@ -334,10 +334,9 @@ theorem Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_le {E : Type*} [NormedAddCommGr
     rw [← ENNReal.rpow_mul, ← ENNReal.rpow_mul, mul_comm p.toReal, mul_comm p.toReal,
       ENNReal.rpow_mul, ENNReal.rpow_mul, ← ENNReal.mul_rpow_of_nonneg _ _ hp']
     gcongr
-    rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm,
-      ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hθ₁,
-      ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hθ.1, ← ENNReal.ofReal_mul (by positivity)]
-    exact ENNReal.ofReal_le_ofReal hx
+    simpa only [ofReal_norm, ENNReal.ofReal_mul (Real.rpow_nonneg (norm_nonneg _) _),
+      ← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hθ₁,
+      ← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hθ.1] using ENNReal.ofReal_le_ofReal hx
   have key : eLpNorm g p μ ≤ eLpNorm g₀ p μ ^ (1 - θ) * eLpNorm g₁ p μ ^ θ := by
     rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp (Lp.aestronglyMeasurable g),
       eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp (Lp.aestronglyMeasurable g₀),

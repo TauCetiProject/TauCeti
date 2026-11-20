@@ -31,7 +31,8 @@ normed complex `F`.
 
 * `SchwartzMap.toBesselPotentialSpaceCLM`: the inclusion `𝓢(E, F) →L[ℂ] H^{s,p}(E, F)`.
 * `SchwartzMap.denseRange_toBesselPotentialSpaceCLM`: its range is dense for `p < ∞`.
-* `SchwartzMap.toBesselPotentialSpaceCLM_injective`: it is injective.
+* `SchwartzMap.toBesselPotentialSpaceCLM_injective`: it is injective, so a nonzero Schwartz
+  function has positive `H^{s,p}` norm (`SchwartzMap.norm_toBesselPotentialSpaceCLM_pos`).
 * `SchwartzMap.toLp_toBesselPotentialSpaceCLM_zero`,
   `BesselPotentialSpace.toDistr_toLpₗᵢ_zero_symm_apply`: the identification `H^{0,p} = Lᵖ`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_zero`: on `H^{0,p}` the inclusion is isometric for
@@ -138,6 +139,11 @@ theorem toBesselPotentialSpaceCLM_injective (s : ℝ) :
     ← Lp.toTemperedDistribution_toLp_eq (p := p) v] at h
   exact injective_toLp p volume (LinearMap.ker_eq_bot.mp
     (Lp.ker_toTemperedDistributionCLM_eq_bot (F := F) (μ := (volume : Measure E)) (p := p)) h)
+
+/-- A nonzero Schwartz function has positive `H^{s,p}` norm. -/
+theorem norm_toBesselPotentialSpaceCLM_pos (s : ℝ) {u : 𝓢(E, F)} (hu : u ≠ 0) :
+    0 < ‖toBesselPotentialSpaceCLM s p u‖ :=
+  norm_pos_iff.2 fun h0 ↦ hu (toBesselPotentialSpaceCLM_injective s (h0.trans (map_zero _).symm))
 
 omit [CompleteSpace F] in
 /-- The weighted Fourier transform `⟨ξ⟩ ^ s 𝓕 u` of a Schwartz function is a Schwartz function,

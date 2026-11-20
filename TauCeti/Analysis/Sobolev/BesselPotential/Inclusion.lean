@@ -274,14 +274,6 @@ theorem toLp_inclusion_toBesselPotentialSpace (h : 0 ≤ s) {f : 𝓢'(E, G)} (h
 
 section Hilbert
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- For `r ≤ s` the Fourier weight `⟨ξ⟩ ^ (r - s)` of the inclusion `H^s ⊆ H^r` is at most `1`. -/
-private theorem norm_one_add_norm_sq_rpow_le_one (h : r ≤ s) (x : E) :
-    ‖(((1 + ‖x‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ)‖ ≤ 1 := by
-  rw [Complex.norm_real, Real.norm_of_nonneg (by positivity)]
-  exact Real.rpow_le_one_of_one_le_of_nonpos (by simp)
-    (div_nonpos_of_nonpos_of_nonneg (by linarith) zero_le_two)
-
 /-- **The inclusion on the Fourier side.** For `r ≤ s` and `u ∈ H^s`, the `L²` Fourier transform
 of the `L²` part of `u`, viewed in `H^r`, is `⟨ξ⟩ ^ (r - s)` times that of `u`. -/
 theorem coeFn_fourier_toLp_inclusion (h : r ≤ s) (u : H^{s}(E, F)) :
@@ -296,8 +288,9 @@ theorem coeFn_fourier_toLp_inclusion (h : r ≤ s) (u : H^{s}(E, F)) :
   have hmem : MemLp (fun x ↦ w x • G₀ x) 2 (volume : Measure E) :=
     (Lp.memLp G₀).of_le ((hw.1.continuous.aestronglyMeasurable).smul
       (Lp.aestronglyMeasurable G₀)) (.of_forall fun x ↦ by
-        rw [norm_smul]
-        exact mul_le_of_le_one_left (norm_nonneg _) (norm_one_add_norm_sq_rpow_le_one h x))
+        rw [norm_smul, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
+        exact mul_le_of_le_one_left (norm_nonneg _)
+          (TauCeti.one_add_norm_sq_rpow_le_one x (sub_nonpos.2 h)))
   have heq : 𝓕 (inclusion h u).toLp = hmem.toLp := by
     refine fourier_toLp_eq_of_smulLeftCLM_fourier_eq ?_
     -- `⟨ξ⟩ ^ r 𝓕 u = ⟨ξ⟩ ^ (r - s) ⟨ξ⟩ ^ s 𝓕 u = w • G₀`.
@@ -319,8 +312,9 @@ theorem coeFn_fourier_toLp_inclusion (h : r ≤ s) (u : H^{s}(E, F)) :
 theorem norm_inclusion_apply_le (h : r ≤ s) (u : H^{s}(E, F)) : ‖inclusion h u‖ ≤ ‖u‖ := by
   rw [← norm_fourier_toLp_eq, ← norm_fourier_toLp_eq u]
   refine Lp.norm_le_norm_of_ae_le ((coeFn_fourier_toLp_inclusion h u).mono fun x hx ↦ ?_)
-  rw [hx, norm_smul]
-  exact mul_le_of_le_one_left (norm_nonneg _) (norm_one_add_norm_sq_rpow_le_one h x)
+  rw [hx, norm_smul, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
+  exact mul_le_of_le_one_left (norm_nonneg _)
+    (TauCeti.one_add_norm_sq_rpow_le_one x (sub_nonpos.2 h))
 
 /-- For `p = 2` and a Hilbert space, the inclusion `H^s ⊆ H^r` has operator norm at most `1`. -/
 theorem norm_inclusion_le (h : r ≤ s) : ‖(inclusion h : H^{s}(E, F) →L[ℂ] H^{r}(E, F))‖ ≤ 1 :=

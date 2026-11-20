@@ -11,6 +11,7 @@ import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
+import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 
@@ -39,8 +40,8 @@ for elements with a common compact support, Ehrling's inequality is usually dedu
 compactness of the inclusion `H^s ⊆ H^t` (`IsCompactOperator.exists_norm_le_mul_norm_add_mul_norm`
 and the Rellich theorem `BesselPotentialSpace.isCompactOperator_inclusion_comp_smulLeftCLM`). On the
 `L²` Bessel-potential scale no support condition is needed, although the inclusion itself is never
-compact on `E ≠ 0`: translates of a fixed Schwartz function `u` form a bounded subset of `H^s`
-whose image in `H^r` has no convergent subsequence
+compact for `E ≠ 0` and `F ≠ 0`: translates of a fixed Schwartz function `u` form a bounded
+subset of `H^s` whose image in `H^r` has no convergent subsequence
 (`BesselPotentialSpace.not_isCompactOperator_inclusion`). Indeed the `H^r` inner product of two
 translates `u(· - a)` and `u(· - b)` is the Fourier transform of the integrable function
 `⟨ξ⟩ ^ (2 r) ‖𝓕 u ξ‖ ^ 2` at `b - a`, which tends to `0` as `‖b - a‖ → ∞` by the Riemann–Lebesgue
@@ -88,9 +89,8 @@ theorem norm_inclusion_le_norm_inclusion_rpow_mul_norm_rpow (hrt : r ≤ t) (hts
   filter_upwards [coeFn_fourier_toLp_inclusion hts u,
     coeFn_fourier_toLp_inclusion (hrt.trans hts) u] with ξ h₁ h₂
   have hpos : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-  rw [h₁, h₂, norm_smul, norm_smul, Complex.norm_real, Complex.norm_real,
-    Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
-    Real.mul_rpow (by positivity) (norm_nonneg _), ← Real.rpow_mul hpos.le, mul_assoc,
+  simp only [h₁, h₂, norm_smul, Complex.norm_real, Real.norm_of_nonneg (Real.rpow_nonneg hpos.le _)]
+  rw [Real.mul_rpow (by positivity) (norm_nonneg _), ← Real.rpow_mul hpos.le, mul_assoc,
     ← Real.rpow_add' (norm_nonneg _) (by norm_num), sub_add_cancel, Real.rpow_one]
   refine le_of_eq ?_
   congr 2
@@ -99,7 +99,7 @@ theorem norm_inclusion_le_norm_inclusion_rpow_mul_norm_rpow (hrt : r ≤ t) (hts
 
 /-- **Ehrling's inequality on the Bessel-potential scale.** For `r ≤ t < s` and `ε > 0` there is
 `C` such that `‖u‖_{H^t} ≤ ε ‖u‖_{H^s} + C ‖u‖_{H^r}` for every `u ∈ H^s(E, F)`. No support
-condition is needed, although the inclusion `H^s ⊆ H^t` is not compact
+condition is needed, although, for nontrivial `E` and `F`, the inclusion `H^s ⊆ H^t` is not compact
 (`BesselPotentialSpace.not_isCompactOperator_inclusion`). -/
 theorem exists_norm_inclusion_le_mul_norm_add_mul_norm (hrt : r ≤ t) (hts : t < s) {ε : ℝ}
     (hε : 0 < ε) :
@@ -147,10 +147,7 @@ private theorem inner_toBesselPotentialSpaceCLM_compSubConstCLM (r : ℝ) (u : �
     rw [Circle.smul_def, Circle.smul_def, inner_smul_left, inner_smul_right,
       inner_self_eq_norm_sq_to_K, Circle.coe_mul, Circle.coe_inv_eq_conj, ← mul_assoc]
     norm_cast
-  -- The inner product of `H^r` is by definition that of the `L²` parts.
-  change inner ℂ (SchwartzMap.toBesselPotentialSpaceCLM r 2 (u.compSubConstCLM ℂ a)).toLp
-    (SchwartzMap.toBesselPotentialSpaceCLM r 2 (u.compSubConstCLM ℂ b)).toLp = _
-  rw [← Lp.inner_fourier_eq, SchwartzMap.fourier_toLp_toBesselPotentialSpaceCLM,
+  rw [← inner_toLp_toLp, ← Lp.inner_fourier_eq, SchwartzMap.fourier_toLp_toBesselPotentialSpaceCLM,
     SchwartzMap.fourier_toLp_toBesselPotentialSpaceCLM, L2.inner_def]
   refine integral_congr_ae ?_
   filter_upwards [SchwartzMap.coeFn_toLp (SchwartzMap.smulLeftCLM F
@@ -158,9 +155,9 @@ private theorem inner_toBesselPotentialSpaceCLM_compSubConstCLM (r : ℝ) (u : �
     SchwartzMap.coeFn_toLp (SchwartzMap.smulLeftCLM F
       (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) (𝓕 (u.compSubConstCLM ℂ b))) 2 volume]
     with ξ ha hb
-  rw [ha, hb, SchwartzMap.smulLeftCLM_apply_apply hw, SchwartzMap.smulLeftCLM_apply_apply hw,
-    SchwartzMap.fourier_compSubConstCLM_apply, SchwartzMap.fourier_compSubConstCLM_apply,
-    smul_comm _ (𝐞 _), smul_comm _ (𝐞 _), hphase,
+  simp only [ha, hb, SchwartzMap.smulLeftCLM_apply_apply hw,
+    SchwartzMap.fourier_compSubConstCLM_apply]
+  rw [smul_comm _ (𝐞 _), smul_comm _ (𝐞 _), hphase,
     ← AddChar.map_neg_eq_inv, ← AddChar.map_add_eq_mul, Circle.smul_def, smul_eq_mul,
     inner_sub_right, real_inner_comm a, real_inner_comm b]
   congr 4
@@ -174,8 +171,7 @@ private theorem exists_norm_lt_norm_sub_compSubConstCLM (r : ℝ) {u : 𝓢(E, F
         ‖SchwartzMap.toBesselPotentialSpaceCLM r 2 (u.compSubConstCLM ℂ a) -
           SchwartzMap.toBesselPotentialSpaceCLM r 2 (u.compSubConstCLM ℂ b)‖ := by
   set N := ‖SchwartzMap.toBesselPotentialSpaceCLM r 2 u‖
-  have hN : 0 < N := norm_pos_iff.2 fun h0 ↦
-    hu (SchwartzMap.toBesselPotentialSpaceCLM_injective (p := 2) r (h0.trans (map_zero _).symm))
+  have hN : 0 < N := SchwartzMap.norm_toBesselPotentialSpaceCLM_pos r hu
   -- By the Riemann–Lebesgue lemma, the inner products of far apart translates are small.
   have hRL := (tendsto_integral_exp_inner_smul_cocompact fun ξ ↦
     ((‖(((1 + ‖ξ‖ ^ 2) ^ (r / 2) : ℝ) : ℂ) • 𝓕 u ξ‖ ^ 2 : ℝ) : ℂ)).eventually
@@ -186,13 +182,13 @@ private theorem exists_norm_lt_norm_sub_compSubConstCLM (r : ℝ) {u : 𝓢(E, F
   refine ⟨R, fun a b hab ↦ ?_⟩
   have hinner := hR ‖b - a‖ hab (b - a) rfl
   rw [dist_zero_right, ← inner_toBesselPotentialSpaceCLM_compSubConstCLM] at hinner
+  set x := SchwartzMap.toBesselPotentialSpaceCLM r 2 (u.compSubConstCLM ℂ a)
+  set y := SchwartzMap.toBesselPotentialSpaceCLM r 2 (u.compSubConstCLM ℂ b)
   -- `‖x - y‖² = ‖x‖² - 2 re ⟪x, y⟫ + ‖y‖²` with `‖x‖ = ‖y‖ = N` and `|⟪x, y⟫| < N² / 2`.
-  have hsq := @norm_sub_sq ℂ _ _ _ _ (SchwartzMap.toBesselPotentialSpaceCLM r 2
-    (u.compSubConstCLM ℂ a)) (SchwartzMap.toBesselPotentialSpaceCLM r 2 (u.compSubConstCLM ℂ b))
+  have hsq := norm_sub_sq (𝕜 := ℂ) x y
   rw [SchwartzMap.norm_toBesselPotentialSpaceCLM_compSubConstCLM,
     SchwartzMap.norm_toBesselPotentialSpaceCLM_compSubConstCLM] at hsq
-  have hre := RCLike.re_le_norm (inner ℂ (SchwartzMap.toBesselPotentialSpaceCLM r 2
-    (u.compSubConstCLM ℂ a)) (SchwartzMap.toBesselPotentialSpaceCLM r 2 (u.compSubConstCLM ℂ b)))
+  have hre := RCLike.re_le_norm (inner ℂ x y)
   refine lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) ?_
   rw [hsq]
   linarith
@@ -218,13 +214,7 @@ theorem not_isCompactOperator_inclusion [Nontrivial E] [Nontrivial F] (h : r ≤
   set a : ℕ → E := fun k ↦ ((k : ℝ) * R') • e
   have hsep (j k : ℕ) (hjk : j ≠ k) : R ≤ ‖a k - a j‖ := by
     have h1 : (1 : ℝ) ≤ |(k : ℝ) - j| := by
-      rcases Nat.lt_or_gt_of_ne hjk with hlt | hlt
-      · have : (j : ℝ) + 1 ≤ k := by exact_mod_cast hlt
-        rw [abs_of_pos (by linarith)]
-        linarith
-      · have : (k : ℝ) + 1 ≤ j := by exact_mod_cast hlt
-        rw [abs_of_neg (by linarith)]
-        linarith
+      exact_mod_cast Int.one_le_abs (sub_ne_zero.2 (by exact_mod_cast hjk.symm : (k : ℤ) ≠ j))
     rw [← sub_smul, norm_smul, he, mul_one, ← sub_mul, Real.norm_eq_abs, abs_mul, abs_of_pos hR']
     calc R ≤ 1 * R' := by rw [one_mul]; exact le_max_left _ _
       _ ≤ |(k : ℝ) - j| * R' := by gcongr
@@ -238,9 +228,8 @@ theorem not_isCompactOperator_inclusion [Nontrivial E] [Nontrivial F] (h : r ≤
       closure (inclusion h '' S) :=
     subset_closure ⟨_, ⟨k, rfl⟩, inclusion_toBesselPotentialSpaceCLM h _⟩
   obtain ⟨x, -, φ, hφ, hlim⟩ := (hc.isCompact_closure_image_of_bounded hbdd).tendsto_subseq hmem
-  have hN : 0 < ‖SchwartzMap.toBesselPotentialSpaceCLM r 2 u‖ := norm_pos_iff.2 fun h0 ↦
-    hu (SchwartzMap.toBesselPotentialSpaceCLM_injective (p := 2) r (h0.trans (map_zero _).symm))
-  obtain ⟨M, hM⟩ := Metric.cauchySeq_iff'.1 hlim.cauchySeq _ hN
+  obtain ⟨M, hM⟩ := Metric.cauchySeq_iff'.1 hlim.cauchySeq _
+    (SchwartzMap.norm_toBesselPotentialSpaceCLM_pos (p := 2) r hu)
   have hlt := hM (M + 1) (Nat.le_succ M)
   rw [dist_eq_norm] at hlt
   exact (hR _ _ (hsep _ _ (hφ.injective.ne (Nat.succ_ne_self M)))).not_gt hlt
