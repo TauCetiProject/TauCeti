@@ -43,7 +43,11 @@ namespace MultiplicativeGroup
 
 attribute [local instance 1100] HahnSeries.instAlgebra
 
-variable {k : Type*} [CommRing k] {R : Type*} [CommRing R] [Algebra k R]
+variable {k : Type*} [CommSemiring k]
+
+section Semiring
+
+variable {R : Type*} [CommSemiring R] [Algebra k R]
 
 /-- The loop `g` of `𝔾ₘ` sends `T` to the unit `pointsMulEquiv g`. -/
 private theorem ofConv_T_one (g : WithConv (k[T;T⁻¹] →ₐ[k] R⸨X⸩)) :
@@ -120,6 +124,12 @@ theorem exists_not_mem_poleBoundedLoops_T [Nontrivial R] (N : ℕ) :
     exact mem_poleBoundedLoops_T_iff.1 hmem
   omega
 
+end Semiring
+
+section Ring
+
+variable {R : Type*} [CommRing R] [Algebra k R]
+
 /-- **A nilpotent loop.** If `ε² = 0` in `R`, a loop of `𝔾ₘ` sending `T` to `1 + ε X^(-N)` sends
 `T⁻¹` to `1 - ε X^(-N)` and lies in `LG_(≤N)(R)`. -/
 theorem mem_poleBoundedLoops_one_add_single {N : ℕ} {ε : R} (hε : ε * ε = 0)
@@ -143,6 +153,8 @@ theorem mem_poleBoundedLoops_one_add_single {N : ℕ} {ε : R} (hε : ε * ε = 
   refine ⟨hinv, mem_poleBoundedLoops_T_T_inv_iff.2 ⟨?_, ?_⟩⟩
   · exact hmem _ (.inl ((ofConv_T_one g).symm.trans hg))
   · exact hmem _ (.inr ((ofConv_T_neg_one g).symm.trans hinv))
+
+end Ring
 
 end MultiplicativeGroup
 
