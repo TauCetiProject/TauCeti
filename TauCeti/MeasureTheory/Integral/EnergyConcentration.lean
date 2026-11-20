@@ -387,12 +387,11 @@ theorem eventually_tendsto_setIntegral_ball_congr {e e' : ℕ → X → ℝ} {f 
       (𝓝 (m + ∫ y in ball z ε \ {z}, f' y ∂μ))) :
     ∀ᶠ ε in 𝓝[>] 0, Tendsto (fun n ↦ ∫ y in ball z ε, e n y ∂μ) atTop
       (𝓝 (m + ∫ y in ball z ε \ {z}, f y ∂μ)) := by
-  obtain ⟨r, hr, hrsub⟩ := Metric.isOpen_iff.1
-    (hΩ.inter ((Z.finite_toSet.sdiff (t := {z})).isClosed.isOpen_compl)) z ⟨hz, fun h ↦ h.2 rfl⟩
+  obtain ⟨r, hr, hrΩ, hrS⟩ :=
+    exists_pos_ball_subset_and_ball_sdiff_singleton_subset_sdiff hΩ Z.finite_toSet hz
   filter_upwards [h, Ioc_mem_nhdsGT hr] with ε hlim hε
-  have hεΩ : ball z ε ⊆ Ω := fun y hy ↦ (hrsub (ball_subset_ball hε.2 hy)).1
-  have hεS : ball z ε \ {z} ⊆ Ω \ ↑Z := fun y hy ↦
-    ⟨hεΩ hy.1, fun hyZ ↦ (hrsub (ball_subset_ball hε.2 hy.1)).2 ⟨hyZ, hy.2⟩⟩
+  have hεΩ : ball z ε ⊆ Ω := (ball_subset_ball hε.2).trans hrΩ
+  have hεS : ball z ε \ {z} ⊆ Ω \ ↑Z := (sdiff_subset_sdiff_left (ball_subset_ball hε.2)).trans hrS
   rw [setIntegral_congr_fun (measurableSet_ball.diff (measurableSet_singleton z)) (hf.mono hεS)]
   exact hlim.congr fun n ↦ (setIntegral_congr_fun measurableSet_ball ((he n).mono hεΩ)).symm
 
@@ -415,9 +414,8 @@ private theorem setIntegral_add_sum_le_of_tendsto_setIntegral_ball {e : ℕ → 
   have hdisj : Pairwise (Disjoint on fun z : Z ↦ ball (z : X) r) := fun z w hzw ↦
     ball_disjoint_ball (by linarith [hsep z z.2 w w.2 (Subtype.coe_injective.ne hzw)])
   have hpunct (z : Z) : ball (z : X) r \ {(z : X)} ⊆ Ω \ ↑Z := fun y hy ↦
-    ⟨hballΩ z z.2 hy.1, fun hyZ ↦ by
-      have := hsep z z.2 y hyZ (Ne.symm hy.2)
-      linarith [mem_ball'.1 hy.1]⟩
+    ⟨hballΩ z z.2 hy.1, fun hyZ ↦
+      hy.2 (eq_of_mem_closedBall_of_lt_dist (hsep y hyZ z z.2) (ball_subset_closedBall hy.1))⟩
   have hsplit (n : ℕ) : ∫ y in Ω, e n y ∂μ =
       ∫ y in V, e n y ∂μ + ∑ z : Z, ∫ y in ball (z : X) r, e n y ∂μ :=
     setIntegral_eq_setIntegral_sdiff_iUnion_add_sum (fun _ ↦ measurableSet_ball) hdisj
@@ -530,11 +528,8 @@ theorem exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le
   obtain ⟨r, hr, hrΩ, hsep⟩ := exists_pos_closedBall_subset_and_lt_dist (T := Z)
     (U := fun _ ↦ Ω) fun w hw ↦ hΩ.mem_nhds (hZΩ hw)
   have hballΩ (z : X) (hz : z ∈ Z) : ball z r ⊆ Ω := ball_subset_closedBall.trans (hrΩ z hz)
-  have hZr (z : X) (hz : z ∈ Z) (w : X) (hw : w ∈ Z) (hwr : w ∈ closedBall z r) : w = z := by
-    by_contra hne
-    have := hsep z hz w hw (Ne.symm hne)
-    rw [mem_closedBall, dist_comm] at hwr
-    linarith
+  have hZr (z : X) (hz : z ∈ Z) (w : X) (hw : w ∈ Z) (hwr : w ∈ closedBall z r) : w = z :=
+    eq_of_mem_closedBall_of_lt_dist (hsep w hw z hz) hwr
   -- The energies of the balls of radius `r` lie in `[0, E]`; extract a convergent subsequence.
   set a : ℕ → Z → ℝ := fun n z ↦ ∫ y in ball (z : X) r, e n y ∂μ
   have ha (n : ℕ) : a n ∈ Set.pi univ fun _ ↦ Icc 0 E := fun z _ ↦
