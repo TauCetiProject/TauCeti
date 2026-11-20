@@ -91,7 +91,7 @@ theorem localQuotientHilbertSamuel_zero {I : Ideal A} (hI : I ≠ ⊤) :
   exact length_quotient_eq_one _
 
 /-- The Hilbert–Samuel function is monotone. -/
-theorem localQuotientHilbertSamuel_mono (I : Ideal A) : Monotone I.localQuotientHilbertSamuel :=
+theorem localQuotientHilbertSamuel_monotone (I : Ideal A) : Monotone I.localQuotientHilbertSamuel :=
   fun _ _ h ↦ TauCeti.length_quotient_anti
     (sup_le_sup_left (pow_le_pow_right (Nat.succ_le_succ h)) I)
 

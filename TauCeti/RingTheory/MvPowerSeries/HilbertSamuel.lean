@@ -30,12 +30,6 @@ in `n` variables.
 
 ## Main results
 
-* `MonomialOrder.finrank_complementSubmodule`: series supported on a finite complement of `D(I)`
-  form a free module of rank its cardinality.
-* `MonomialOrder.finrank_quotient_eq_ncard_compl_initialDiagram`: over a field, the quotient by
-  `I` has dimension `#(D(I)ᶜ)` when this complement is finite.
-* `MonomialOrder.initialDiagram_degLex_sup_pow_span_range_X`: the graded lexicographic initial
-  diagram of `I + (X) ^ n` is `D(I) ∪ {α | n ≤ |α|}`.
 * `Ideal.localQuotientHilbertSamuel_eq_ncard_diff_initialDiagram`: the Hilbert–Samuel function of
   `K[[X]] ⧸ I` at `ℓ` counts the exponents of degree at most `ℓ` outside `D(I)`.
 * `MvPowerSeries.localQuotientHilbertSamuel_bot_eq_choose`: the Hilbert–Samuel function of
@@ -51,82 +45,6 @@ in `n` variables.
 public section
 
 open scoped MonomialOrder
-
-namespace MonomialOrder
-
-variable {σ : Type*} (ord : MonomialOrder σ)
-
-/-- If the complement of the initial diagram of `I` is finite, the series supported on it form a
-free module of rank its cardinality: the coefficients on the complement are coordinates. -/
-theorem finrank_complementSubmodule {R : Type*} [Ring R] [StrongRankCondition R]
-    {I : Ideal (MvPowerSeries σ R)} (h : (ord.initialDiagram I)ᶜ.Finite) :
-    Module.finrank R (ord.complementSubmodule I) = (ord.initialDiagram I)ᶜ.ncard := by
-  classical
-  set S := (ord.initialDiagram I)ᶜ
-  have := h.fintype
-  let φ : ord.complementSubmodule I →ₗ[R] S → R :=
-    LinearMap.pi fun α ↦ (MvPowerSeries.coeff (α : σ →₀ ℕ)).comp (Submodule.subtype _)
-  have hφ : Function.Bijective φ := by
-    refine ⟨fun f g hfg ↦ Subtype.ext <| MvPowerSeries.ext fun β ↦ ?_, fun c ↦ ?_⟩
-    · by_cases hβ : β ∈ S
-      · exact congr_fun hfg ⟨β, hβ⟩
-      · -- Outside `S`, both coefficients vanish because the supports avoid `D(I)`.
-        have hf := (ord.mem_complementSubmodule_iff.mp f.2) β
-        have hg := (ord.mem_complementSubmodule_iff.mp g.2) β
-        simp only [S, Set.mem_compl_iff, not_not] at hβ
-        rw [MvPowerSeries.mem_support, not_imp_not] at hf hg
-        rw [hf hβ, hg hβ]
-    · refine ⟨⟨∑ α : S, MvPowerSeries.monomial (α : σ →₀ ℕ) (c α),
-        Submodule.sum_mem _ fun α _ ↦ (ord.monomial_mem_complementSubmodule_iff).mpr
-          (Or.inr α.2)⟩, funext fun β ↦ ?_⟩
-      simp only [φ, LinearMap.pi_apply, LinearMap.comp_apply, Submodule.subtype_apply, map_sum,
-        MvPowerSeries.coeff_monomial]
-      simp [Subtype.coe_inj]
-  rw [(LinearEquiv.ofBijective φ hφ).finrank_eq, Module.finrank_fintype_fun_eq_card,
-    ← Nat.card_eq_fintype_card, Nat.card_coe_set_eq]
-
-/-- **Dimension from the initial diagram.** Over a field, if the complement of the initial
-diagram of `I` is finite, then `K[[X]] ⧸ I` has dimension its cardinality. -/
-theorem finrank_quotient_eq_ncard_compl_initialDiagram {K : Type*} [Field K] [Finite σ]
-    {I : Ideal (MvPowerSeries σ K)} (h : (ord.initialDiagram I)ᶜ.Finite) :
-    Module.finrank K (MvPowerSeries σ K ⧸ I) = (ord.initialDiagram I)ᶜ.ncard :=
-  (ord.quotientEquivComplementSubmodule I).finrank_eq.trans (ord.finrank_complementSubmodule h)
-
-/-- Adding the `n`-th power of the ideal of variables to `I` adds to its graded lexicographic
-initial diagram exactly the exponents of degree at least `n`. A series of order at least `n`
-cannot affect a graded lexicographic initial exponent of degree below `n`. -/
-theorem initialDiagram_degLex_sup_pow_span_range_X {R : Type*} [CommRing R] [Nontrivial R]
-    [Finite σ] [LinearOrder σ] [WellFoundedGT σ] (I : Ideal (MvPowerSeries σ R)) (n : ℕ) :
-    degLex.initialDiagram (I ⊔ Ideal.span (Set.range MvPowerSeries.X) ^ n) =
-      degLex.initialDiagram I ∪ {α | n ≤ α.degree} := by
-  ext α
-  refine ⟨?_, ?_⟩
-  · intro hα
-    obtain ⟨f, hf, hf0, rfl⟩ := degLex.mem_initialDiagram_iff.mp hα
-    refine or_iff_not_imp_right.mpr fun hdeg ↦ ?_
-    simp only [Set.mem_ofPred_eq, not_le] at hdeg
-    obtain ⟨g, hg, h, hh, rfl⟩ := Submodule.mem_sup.mp hf
-    rw [MvPowerSeries.mem_pow_span_range_X_iff_le_order] at hh
-    -- Below degree `n`, the coefficients of `g + h` are those of `g`.
-    have key : ∀ β : σ →₀ ℕ, β.degree < n →
-        MvPowerSeries.coeff β (g + h) = MvPowerSeries.coeff β g := fun β hβ ↦ by
-      rw [map_add, MvPowerSeries.coeff_of_lt_order ((Nat.cast_lt.mpr hβ).trans_le hh), add_zero]
-    have hα := degLex.coeff_initialExp_ne_zero hf0
-    rw [key _ hdeg] at hα
-    refine degLex.mem_initialDiagram_iff.mpr ⟨g, hg, fun hg0 ↦ by simp [hg0] at hα, ?_⟩
-    refine degLex.initialExp_eq_of_coeff_ne_zero_of_forall_lt hα fun β hβ ↦ ?_
-    rw [← key β ((Finsupp.DegLex.monotone_degree hβ.le).trans_lt hdeg)]
-    exact degLex.coeff_eq_zero_of_lt_initialExp hβ
-  · rintro (hα | hα)
-    · exact degLex.initialDiagram_mono le_sup_left hα
-    · refine degLex.mem_initialDiagram_iff.mpr ⟨MvPowerSeries.monomial α 1,
-        Ideal.mem_sup_right ?_, fun h ↦ ?_, degLex.initialExp_monomial_of_ne_zero α one_ne_zero⟩
-      · rw [MvPowerSeries.mem_pow_span_range_X_iff_le_order,
-          MvPowerSeries.order_monomial_of_ne_zero one_ne_zero]
-        exact_mod_cast hα
-      · simpa using congrArg (MvPowerSeries.coeff α) h
-
-end MonomialOrder
 
 namespace Ideal
 
@@ -150,11 +68,7 @@ theorem localQuotientHilbertSamuel_eq_ncard_diff_initialDiagram {σ K : Type*} [
     hD ▸ (Finsupp.finite_of_degree_le ℓ).sdiff
   have hlen := TauCeti.finrank_eq_length_mul_finrank_residueField K (MvPowerSeries σ K)
     (MvPowerSeries σ K ⧸ (I ⊔ IsLocalRing.maximalIdeal _ ^ (ℓ + 1)))
-  have hκ : Module.finrank K (IsLocalRing.ResidueField (MvPowerSeries σ K)) = 1 :=
-    ((AlgEquiv.ofBijective (Algebra.ofId K _)
-      MvPowerSeries.bijective_algebraMap_residueField).toLinearEquiv.finrank_eq).symm.trans
-      (Module.finrank_self K)
-  rw [hκ, mul_one,
+  rw [MvPowerSeries.finrank_residueField, mul_one,
     degLex.finrank_quotient_eq_ncard_compl_initialDiagram hfin, hD] at hlen
   rw [hlen, ← localQuotientHilbertSamuel_def,
     ENat.natCast_toNat (I.localQuotientHilbertSamuel_ne_top ℓ)]
