@@ -343,6 +343,31 @@ theorem apply_symm_apply (e : Iso ρ σ) (y : N) : e (e.symm y) = y :=
   e.right_inv y
 
 @[simp]
+theorem symm_symm (e : Iso ρ σ) : e.symm.symm = e :=
+  ext fun x ↦ e.symm.injective <|
+    (e.symm.apply_symm_apply x).trans (e.symm_apply_apply x).symm
+
+@[simp]
+theorem refl_symm : (refl ρ).symm = refl ρ :=
+  ext fun _ ↦ (rfl)
+
+@[simp]
+theorem trans_refl (e : Iso ρ σ) : e.trans (refl σ) = e :=
+  ext fun _ ↦ (rfl)
+
+@[simp]
+theorem refl_trans (e : Iso ρ σ) : (refl ρ).trans e = e :=
+  ext fun _ ↦ (rfl)
+
+@[simp]
+theorem self_trans_symm (e : Iso ρ σ) : e.trans e.symm = refl ρ :=
+  ext e.symm_apply_apply
+
+@[simp]
+theorem symm_trans_self (e : Iso ρ σ) : e.symm.trans e = refl σ :=
+  ext e.apply_symm_apply
+
+@[simp]
 theorem toRepresentationEquiv_refl :
     (refl ρ).toRepresentationEquiv = .refl ρ.toRepresentation :=
   (rfl)
