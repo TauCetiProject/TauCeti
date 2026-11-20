@@ -6,14 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+import TauCeti.Algebra.Group.Center
 
 /-!
-# Centralizers under algebra isomorphisms
+# Centralizers under algebra homomorphisms and isomorphisms
 
-An algebra isomorphism `e : A ≃ₐ[R] B` carries the centralizer of a set `s ⊆ A` onto the
-centralizer of its image `e '' s` (`AlgEquiv.map_centralizer`). Together with
-`AlgEquiv.subalgebraMap`, this transports centralizers, and in particular their dimensions,
-between isomorphic algebras such as matrices and endomorphisms.
+* `AlgEquiv.map_centralizer`: an algebra isomorphism `e : A ≃ₐ[R] B` carries the centralizer of a
+  set `s ⊆ A` onto the centralizer of its image `e '' s`. Together with `AlgEquiv.subalgebraMap`,
+  this transports centralizers, and in particular their dimensions, between isomorphic algebras such
+  as matrices and endomorphisms.
+* `Subalgebra.apply_mem_centralizer_range`: every value of a multiplicative homomorphism from a
+  commutative magma into an `R`-algebra lies in the subalgebra centralizer of its range.
 -/
 
 public section
@@ -35,3 +38,17 @@ theorem map_centralizer (e : A ≃ₐ[R] B) (s : Set A) :
     exact ⟨e.symm b, fun x hx => e.injective (by simpa using h hx), by simp⟩
 
 end AlgEquiv
+
+namespace Subalgebra
+
+/-- Every value of a multiplicative homomorphism from a commutative magma into an `R`-algebra lies
+in the subalgebra centralizer of its range. -/
+@[simp]
+theorem apply_mem_centralizer_range (R : Type*) {A B F : Type*} [CommSemiring R]
+    [Semiring B] [Algebra R B] [Mul A] [IsMulCommutative A] [FunLike F A B]
+    [MulHomClass F A B] (f : F) (a : A) :
+    f a ∈ centralizer R (Set.range f) := by
+  rw [← SetLike.mem_coe, coe_centralizer]
+  exact Set.apply_mem_centralizer_range f a
+
+end Subalgebra
