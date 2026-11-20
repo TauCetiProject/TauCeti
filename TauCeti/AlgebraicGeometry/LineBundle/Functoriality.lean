@@ -20,7 +20,10 @@ the comparison `Scheme.Modules.pullbackObjUnitIso : f^* 𝒪_Y ≅ 𝒪_X`, and 
 bundles (`LineBundleClass.pullback_mul`), through the tensor comparison
 `f^*(L ⊗ K) ≅ f^*L ⊗ f^*K`, which is invertible because line bundles are quasicoherent
 (`Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent`). So pullback is a homomorphism of Picard
-groups (`LineBundleClass.pullbackHom`), as needed for the Picard functor `T ↦ Pic(X_T)`.
+groups (`LineBundleClass.pullbackHom`), as needed for the Picard functor `T ↦ Pic(X_T)`, and an
+isomorphism of schemes induces an equivalence of categories of line bundles
+(`InvertibleSheaf.pullbackEquiv`) and a group isomorphism of Picard groups
+(`LineBundleClass.pullbackEquiv`).
 
 The comparisons are restrictions of Mathlib's `Scheme.Modules.pullbackId` and
 `Scheme.Modules.pullbackComp`.
@@ -125,6 +128,24 @@ theorem pullbackComp_inv_app_hom (f : X ⟶ Y) (g : Y ⟶ Z) (L : InvertibleShea
   simp only [pullbackComp, NatIso.ofComponents_inv_app, ObjectProperty.isoMk_inv,
     Iso.trans_inv, eqToIso.inv, ObjectProperty.homMk_hom, Iso.app_inv, Category.assoc]
 
+/-- An isomorphism of schemes induces an equivalence between their categories of line bundles,
+with forward functor `pullback e.hom` and inverse functor `pullback e.inv`. -/
+def pullbackEquiv (e : X ≅ Y) : InvertibleSheaf Y ≌ InvertibleSheaf X :=
+  CategoryTheory.Equivalence.mk (pullback e.hom) (pullback e.inv)
+    ((pullbackId Y).symm ≪≫ eqToIso (congrArg pullback e.inv_hom_id.symm) ≪≫
+      (pullbackComp e.inv e.hom).symm)
+    (pullbackComp e.hom e.inv ≪≫ eqToIso (congrArg pullback e.hom_inv_id) ≪≫ pullbackId X)
+
+/-- The forward functor of `pullbackEquiv e` is `pullback e.hom`. -/
+@[simp]
+theorem pullbackEquiv_functor (e : X ≅ Y) : (pullbackEquiv e).functor = pullback e.hom :=
+  (rfl)
+
+/-- The inverse functor of `pullbackEquiv e` is `pullback e.inv`. -/
+@[simp]
+theorem pullbackEquiv_inverse (e : X ≅ Y) : (pullbackEquiv e).inverse = pullback e.inv :=
+  (rfl)
+
 end InvertibleSheaf
 
 namespace LineBundleClass
@@ -221,6 +242,45 @@ lemma pullbackHom_id (X : Scheme.{u}) : pullbackHom (𝟙 X) = MonoidHom.id _ :=
 lemma pullbackHom_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
     (pullbackHom f).comp (pullbackHom g) = pullbackHom (f ≫ g) :=
   MonoidHom.ext (pullback_comp f g)
+
+/-- An isomorphism of schemes `e : X ≅ Y` induces a group isomorphism
+`LineBundleClass Y ≃* LineBundleClass X` by pullback along `e.hom`, with inverse pullback along
+`e.inv`. -/
+def pullbackEquiv (e : X ≅ Y) : LineBundleClass Y ≃* LineBundleClass X where
+  toFun := pullback e.hom
+  invFun := pullback e.inv
+  left_inv a := by rw [pullback_comp, e.inv_hom_id, pullback_id]
+  right_inv a := by rw [pullback_comp, e.hom_inv_id, pullback_id]
+  map_mul' := pullback_mul e.hom
+
+/-- `pullbackEquiv e` acts by pullback along `e.hom`. -/
+@[simp]
+lemma pullbackEquiv_apply (e : X ≅ Y) (a : LineBundleClass Y) :
+    pullbackEquiv e a = pullback e.hom a :=
+  (rfl)
+
+/-- The inverse of `pullbackEquiv e` is `pullbackEquiv e.symm`. -/
+@[simp]
+lemma pullbackEquiv_symm (e : X ≅ Y) : (pullbackEquiv e).symm = pullbackEquiv e.symm :=
+  MulEquiv.ext fun _ ↦ rfl
+
+/-- The underlying group homomorphism of `pullbackEquiv e` is `pullbackHom e.hom`. -/
+@[simp]
+lemma toMonoidHom_pullbackEquiv (e : X ≅ Y) :
+    (pullbackEquiv e : LineBundleClass Y →* LineBundleClass X) = pullbackHom e.hom :=
+  MonoidHom.ext fun _ ↦ rfl
+
+/-- `pullbackEquiv` of the identity scheme isomorphism is the identity group equivalence. -/
+@[simp]
+lemma pullbackEquiv_refl (X : Scheme.{u}) :
+    pullbackEquiv (Iso.refl X) = MulEquiv.refl (LineBundleClass X) :=
+  MulEquiv.ext pullback_id
+
+/-- `pullbackEquiv` reverses composition of scheme isomorphisms. -/
+@[simp]
+lemma pullbackEquiv_trans (e : X ≅ Y) (f : Y ≅ Z) :
+    pullbackEquiv (e ≪≫ f) = (pullbackEquiv f).trans (pullbackEquiv e) :=
+  MulEquiv.ext fun a ↦ (pullback_comp e.hom f.hom a).symm
 
 end LineBundleClass
 

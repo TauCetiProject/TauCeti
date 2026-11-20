@@ -221,7 +221,7 @@ instance isGalois_unramifiedExtension (f : ℕ) : IsGalois K (unramifiedExtensio
   have hζ : IsPrimitiveRoot ((g : Ωˣ) : Ω) d :=
     IsPrimitiveRoot.coe_units_iff.2 (IsPrimitiveRoot.coe_submonoidClass_iff.2 (hg ▸ .orderOf g))
   have hζn : ((g : Ωˣ) : Ω) ^ n = 1 := by
-    rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity n (g : Ωˣ)).1 g.2, Units.val_one]
+    rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity n (g : Ωˣ)).1 g.property, Units.val_one]
   have hset : {x : Ω | x ^ n = 1} = {x | ∃ m ∈ ({d} : Set ℕ), m ≠ 0 ∧ x ^ m = 1} := by
     ext x
     simp only [Set.mem_ofPred_eq, Set.mem_singleton_iff, exists_eq_left]
@@ -345,7 +345,7 @@ theorem _root_.IntermediateField.eq_unramifiedExtension_finrank (E : Intermediat
   have hηΩ := hη.map_of_injective (f := E.val) E.val.injective
   refine (eq_of_le_of_finrank_eq ?_ (finrank_unramifiedExtension_of_isPrimitiveRoot hf hηΩ)).symm
   rw [unramifiedExtension_eq_adjoin_simple hf hηΩ, adjoin_simple_le_iff]
-  exact η.2
+  exact η.property
 
 section IsSepClosed
 

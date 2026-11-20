@@ -146,13 +146,13 @@ def brauerDiagramEquiv (k : ℕ) :
 @[simp]
 theorem coe_brauerDiagramEquiv_apply {k : ℕ} (x : PlanarMatching (k + k)) :
     (brauerDiagramEquiv k x : BrauerDiagram k) =
-      PerfectMatching.congr (finSumFinRevEquiv k k (k + k) rfl).symm x.1 :=
+      PerfectMatching.congr (finSumFinRevEquiv k k (k + k) rfl).symm x.val :=
   (rfl)
 
 @[simp]
 theorem coe_brauerDiagramEquiv_symm_apply {k : ℕ} (D : {D : BrauerDiagram k // D.IsPlanar}) :
     ((brauerDiagramEquiv k).symm D : PerfectMatching (Fin (k + k))) =
-      PerfectMatching.congr (finSumFinRevEquiv k k (k + k) rfl) D.1 := by
+      PerfectMatching.congr (finSumFinRevEquiv k k (k + k) rfl) D.val := by
   simp [brauerDiagramEquiv]
 
 end PlanarMatching
@@ -170,7 +170,9 @@ numbering. -/
 private theorem ext_finSumFinRevEquiv {D D' : BrauerDiagram k}
     (h : ∀ y, finSumFinRevEquiv k k (k + k) rfl (D.val y) =
       finSumFinRevEquiv k k (k + k) rfl (D'.val y)) : D = D' :=
-  Subtype.ext (Equiv.ext fun y => (finSumFinRevEquiv k k (k + k) rfl).injective (h y))
+  by
+    ext y
+    exact (finSumFinRevEquiv k k (k + k) rfl).injective (h y)
 
 end BrauerDiagram
 
@@ -193,14 +195,14 @@ in the counterclockwise numbering. -/
 @[simp]
 theorem finSumFinRevEquiv_toBrauerDiagram_val (x : TLDiagram n n) (y : Fin n ⊕ Fin n) :
     finSumFinRevEquiv n n (n + n) rfl (x.toBrauerDiagram.val y) =
-      x.matching.1.val (finSumFinRevEquiv n n (n + n) rfl y) := by
+      x.matching.val.val (finSumFinRevEquiv n n (n + n) rfl y) := by
   rw [toBrauerDiagram, PlanarMatching.coe_brauerDiagramEquiv_apply,
     PerfectMatching.congr_val_apply, Equiv.symm_symm, Equiv.apply_symm_apply]
 
 /-- The Brauer diagram of a Temperley–Lieb diagram is planar. -/
 @[simp]
 theorem isPlanar_toBrauerDiagram (x : TLDiagram n n) : x.toBrauerDiagram.IsPlanar :=
-  (PlanarMatching.brauerDiagramEquiv n x.matching).2
+  (PlanarMatching.brauerDiagramEquiv n x.matching).property
 
 /-- **The comparison is injective on matchings**: two Temperley–Lieb diagrams `n → n` have the
 same Brauer diagram exactly when they have the same matching. -/

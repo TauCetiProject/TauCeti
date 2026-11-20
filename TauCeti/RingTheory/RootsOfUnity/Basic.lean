@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Hom.Instances
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 public import Mathlib.RingTheory.RootsOfUnity.Minpoly
+import TauCeti.Algebra.Group.Hom.Instances
 
 /-!
 # Basic results on roots of unity
@@ -21,7 +23,8 @@ homomorphism into a domain, and with it the nonemptiness of `primitiveRoots n R`
 `p` it relates the triviality of the `p`th roots of unity to the absence of a primitive one. It
 also records that roots of unity, and hence the values of a character of a finite group, are
 integral over `ℤ`. It identifies the `n`-torsion of a unit group, written additively, and the
-kernel of the `n`-th power map of a commutative group with the `n`-th roots of unity.
+kernel of the `n`-th power map of a commutative group with the `n`-th roots of unity, and shows
+that homomorphisms out of an `n`-torsion monoid into `Mˣ` factor uniquely through `μₙ(M)`.
 Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th roots of unity.
 
 ## Main definitions
@@ -39,6 +42,9 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 
 ## Main results
 
+* `TauCeti.compHom_subtype_rootsOfUnity_bijective`: postcomposition with
+  `(rootsOfUnity n M).subtype` is bijective on homomorphisms out of a monoid whose elements satisfy
+  `g ^ n = 1`.
 * `IsOfFinOrder.isIntegral`: a finite-order element of a commutative ring is integral over `ℤ`.
 * `MonoidHom.isIntegral_coe_apply`: the values of a homomorphism from a finite group to the units
   of a commutative ring are integral over `ℤ`.
@@ -88,6 +94,16 @@ theorem restrictRootsOfUnity_injective {R S F : Type*} [CommMonoid R] [CommMonoi
     [FunLike F R S] [MonoidHomClass F R S] (f : F) (n : ℕ) (hf : Function.Injective f) :
     Function.Injective (restrictRootsOfUnity f n) :=
   fun _ _ h ↦ Subtype.ext (Units.map_injective hf (congrArg Subtype.val h))
+
+/-- Postcomposition with `(rootsOfUnity n M).subtype` is bijective on homomorphisms out of a
+monoid `G` whose elements satisfy `g ^ n = 1`: every homomorphism `G →* Mˣ` lands in `μₙ(M)`. -/
+theorem compHom_subtype_rootsOfUnity_bijective {G M : Type*} [Monoid G] [CommMonoid M] {n : ℕ}
+    (hG : ∀ g : G, g ^ n = 1) :
+    Function.Bijective
+      (MonoidHom.compHom (rootsOfUnity n M).subtype :
+        (G →* rootsOfUnity n M) →* (G →* Mˣ)) :=
+  MonoidHom.compHom_bijective_of_forall_pow_eq_one Subtype.val_injective hG
+    fun y hy ↦ ⟨⟨y, (mem_rootsOfUnity n y).2 hy⟩, rfl⟩
 
 variable {R : Type*} [CommRing R]
 
@@ -148,7 +164,7 @@ theorem _root_.rootsOfUnity.eq_one_or_eq_negOneRootsOfUnity [NoZeroDivisors R]
     (ζ : rootsOfUnity 2 R) :
     ζ = 1 ∨ ζ = negOneRootsOfUnity := by
   have h : ((ζ : Rˣ) : R) ∈ ({1, -1} : Set R) :=
-    Units.val_set_image_rootsOfUnity_two (R := R) ▸ Set.mem_image_of_mem _ ζ.2
+    Units.val_set_image_rootsOfUnity_two (R := R) ▸ Set.mem_image_of_mem _ ζ.property
   rcases h with h | h
   · exact Or.inl (Subtype.ext (Units.ext h))
   · exact Or.inr (Subtype.ext (Units.ext h))
@@ -288,13 +304,13 @@ theorem rootsOfUnity_eq_bot_iff {M : Type*} [CommMonoid M] {p : ℕ} [Fact p.Pri
 `n`-th roots of unity, written additively. -/
 def torsionByUnitsEquivRootsOfUnity {M : Type*} [CommMonoid M] (n : ℕ) :
     Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ) ≃+ Additive (rootsOfUnity n M) where
-  toFun x := Additive.ofMul ⟨x.1.toMul, (mem_rootsOfUnity _ _).2 <| by
-    have hx := congrArg Additive.toMul ((Submodule.mem_torsionBy_iff _ _).1 x.2)
+  toFun x := Additive.ofMul ⟨x.val.toMul, (mem_rootsOfUnity _ _).2 <| by
+    have hx := congrArg Additive.toMul ((Submodule.mem_torsionBy_iff _ _).1 x.property)
     rwa [natCast_zsmul, toMul_nsmul, toMul_zero] at hx⟩
   invFun ζ := ⟨Additive.ofMul (ζ.toMul : Mˣ), (Submodule.mem_torsionBy_iff _ _).2 <|
     Additive.toMul.injective <| by
       rw [natCast_zsmul, toMul_nsmul, toMul_ofMul, toMul_zero]
-      exact (mem_rootsOfUnity _ _).1 ζ.toMul.2⟩
+      exact (mem_rootsOfUnity _ _).1 ζ.toMul.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
@@ -302,7 +318,7 @@ def torsionByUnitsEquivRootsOfUnity {M : Type*} [CommMonoid M] (n : ℕ) :
 @[simp]
 theorem coe_torsionByUnitsEquivRootsOfUnity_apply {M : Type*} [CommMonoid M] (n : ℕ)
     (x : Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ)) :
-    ((torsionByUnitsEquivRootsOfUnity n x).toMul : Mˣ) = x.1.toMul :=
+    ((torsionByUnitsEquivRootsOfUnity n x).toMul : Mˣ) = x.val.toMul :=
   (rfl)
 
 @[simp]
@@ -369,7 +385,7 @@ theorem exists_rootsOfUnity_isPrimitiveRoot_of_dvd {M : Type*} [CommMonoid M] {k
     [NeZero k] (h : k ∣ m) [HasEnoughRootsOfUnity M k] :
     ∃ η : rootsOfUnity m M, IsPrimitiveRoot (η : Mˣ) k := by
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot M k
-  exact ⟨⟨hζ.toRootsOfUnity, rootsOfUnity_le_of_dvd h hζ.toRootsOfUnity.2⟩,
+  exact ⟨⟨hζ.toRootsOfUnity, rootsOfUnity_le_of_dvd h hζ.toRootsOfUnity.property⟩,
     IsPrimitiveRoot.coe_units_iff.mp (by simpa using hζ)⟩
 
 /-- The power transition at a nonzero order is the identity. -/
