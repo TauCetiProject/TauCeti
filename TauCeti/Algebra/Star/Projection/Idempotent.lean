@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Star.StarProjection
 public import TauCeti.Algebra.Star.SelfAdjoint
 import Mathlib.Algebra.Star.Module
 import Mathlib.Tactic.NoncommRing
+import TauCeti.Algebra.Group.Idempotent
 
 /-!
 # The range projection of an idempotent: algebraic identities
@@ -157,14 +158,8 @@ theorem isStarProjection_idempotentRangeProjection_of_isUnit (he : IsIdempotentE
     rw [idempotentRangeProjection_def]
     exact (IsSelfAdjoint.commute_iff (IsSelfAdjoint.mul_star_self e) hb).mp
       ((he.commute_inverse_denom hu).mul_left hbe.symm)
-  refine ⟨?_, hp⟩
-  calc
-    idempotentRangeProjection e * idempotentRangeProjection e =
-        idempotentRangeProjection e * (e * idempotentRangeProjection e) := by
-      rw [he.mul_idempotentRangeProjection]
-    _ = idempotentRangeProjection e := by
-      rw [← mul_assoc, he.idempotentRangeProjection_mul_of_isUnit hu,
-        he.mul_idempotentRangeProjection]
+  exact ⟨IsIdempotentElem.of_mul_eq_right (he.idempotentRangeProjection_mul_of_isUnit hu)
+    he.mul_idempotentRangeProjection, hp⟩
 
 /-- The range projection is characterized by being a star projection with the two
 multiplication identities. -/

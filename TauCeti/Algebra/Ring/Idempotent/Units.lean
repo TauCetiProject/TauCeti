@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Ring.Idempotent
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NoncommRing
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.Group.Idempotent
 import TauCeti.Algebra.Ring.Idempotent.Basic
 
 /-!
@@ -113,19 +114,13 @@ end IsIdempotentElem
 
 namespace TauCeti
 
-private theorem mul_self_of_mutual_absorption {S : Type*} [Semigroup S] {e p : S}
-    (hep : e * p = p) (hpe : p * e = e) : e * e = e := by
-  calc
-    e * e = e * (p * e) := by rw [hpe]
-    _ = e := by rw [← mul_assoc, hep, hpe]
-
 variable {R : Type*} [Ring R]
 
 /-- The unit `1 + e - p`, with inverse `1 - e + p`, conjugating `e` to `p` when
 `e * p = p` and `p * e = e`. These identities already imply idempotence. -/
 def idempotentConjUnit (e p : R) (hep : e * p = p) (hpe : p * e = e) : Rˣ := by
-  have hee := mul_self_of_mutual_absorption hep hpe
-  have hpp := mul_self_of_mutual_absorption hpe hep
+  have hee := (IsIdempotentElem.of_mul_eq_right hep hpe).eq
+  have hpp := (IsIdempotentElem.of_mul_eq_right hpe hep).eq
   exact
     { val := 1 + e - p
       inv := 1 - e + p
@@ -146,6 +141,6 @@ theorem coe_inv_idempotentConjUnit (e p : R) (hep : e * p = p) (hpe : p * e = e)
 theorem idempotentConjUnit_mul_mul_inv (e p : R) (hep : e * p = p) (hpe : p * e = e) :
     (idempotentConjUnit e p hep hpe : R) * e * ↑(idempotentConjUnit e p hep hpe)⁻¹ = p := by
   rw [coe_idempotentConjUnit, coe_inv_idempotentConjUnit]
-  noncomm_ring [mul_self_of_mutual_absorption hep hpe, hep, hpe]
+  noncomm_ring [(IsIdempotentElem.of_mul_eq_right hep hpe).eq, hep, hpe]
 
 end TauCeti
