@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Snoc
 public import TauCeti.Topology.Grassmannian.Orthonormal
 
 /-!
@@ -84,17 +85,8 @@ def complement (f : finiteOrthonormalFrame 𝕜 r N) : Submodule 𝕜 (Euclidean
 def snoc (f : finiteOrthonormalFrame 𝕜 r N) (v : Metric.sphere (0 : f.complement) 1) :
     finiteOrthonormalFrame 𝕜 (r + 1) N :=
   ⟨Fin.snoc f.1 (WithLp.ofLp v.1.1), by
-    classical
-    have hv : ‖(v.1.1 : EuclideanSpace 𝕜 (Fin N))‖ = 1 :=
-      mem_sphere_zero_iff_norm.1 v.2
-    have ho := (mem_complement f v.1.1).1 v.1.2
-    refine orthonormal_iff_ite.2 fun i j ↦ ?_
-    refine Fin.lastCases ?_ (fun i ↦ ?_) i <;>
-      refine Fin.lastCases ?_ (fun j ↦ ?_) j
-    · simp [inner_self_eq_norm_sq_to_K, hv]
-    · simpa [(Fin.castSucc_ne_last j).symm] using (inner_eq_zero_symm.2 (ho j))
-    · simpa using ho i
-    · simpa using orthonormal_iff_ite.1 f.2 i j⟩
+    simpa [← Function.comp_def, Fin.comp_snoc] using
+      f.2.snoc (mem_sphere_zero_iff_norm.1 v.2) ((mem_complement f v.1.1).1 v.1.2)⟩
 
 @[simp] theorem snoc_castSucc (f : finiteOrthonormalFrame 𝕜 r N)
     (v : Metric.sphere (0 : f.complement) 1) (i : Fin r) :
