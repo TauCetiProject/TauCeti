@@ -83,6 +83,8 @@ theorem counit_comp_of (i : ι) :
   LinearMap.ext (counit_of f i)
 
 /-- A directed colimit of coalgebras along coalgebra morphisms is a coalgebra. -/
+-- The proof is adapted from Mathlib's coalgebra instance on a quotient by a coideal, in
+-- `Mathlib/RingTheory/Coalgebra/Quotient.lean`.
 noncomputable instance instCoalgebra :
     Coalgebra R (DirectLimit C fun i j h ↦ (f i j h : C i →ₗ[R] C j)) := by
   constructor <;> ext i : 1 <;> simp only [coassoc_simps, comul_comp_of, counit_comp_of]
@@ -91,7 +93,7 @@ noncomputable instance instCoalgebra :
 
 /-- The canonical map from a stage into a directed colimit of coalgebras, as a coalgebra
 morphism. -/
-@[expose] noncomputable def ofCoalgHom (i : ι) :
+noncomputable def ofCoalgHom (i : ι) :
     C i →ₗc[R] DirectLimit C fun i j h ↦ (f i j h : C i →ₗ[R] C j) where
   __ := of R ι C (fun i j h ↦ (f i j h : C i →ₗ[R] C j)) i
   counit_comp := counit_comp_of f i
@@ -99,12 +101,12 @@ morphism. -/
 
 @[simp]
 theorem ofCoalgHom_apply (i : ι) (x : C i) :
-    ofCoalgHom f i x = of R ι C (fun i j h ↦ (f i j h : C i →ₗ[R] C j)) i x :=
+    ofCoalgHom f i x = of R ι C (fun i j h ↦ (f i j h : C i →ₗ[R] C j)) i x := by
   rfl
 
 @[simp]
 theorem toLinearMap_ofCoalgHom (i : ι) :
-    (ofCoalgHom f i : C i →ₗ[R] _) = of R ι C (fun i j h ↦ (f i j h : C i →ₗ[R] C j)) i :=
+    (ofCoalgHom f i : C i →ₗ[R] _) = of R ι C (fun i j h ↦ (f i j h : C i →ₗ[R] C j)) i := by
   rfl
 
 /-- The canonical coalgebra morphisms are compatible with the transition maps. -/
@@ -118,11 +120,11 @@ variable {D : Type*} [AddCommMonoid D] [Module R D] [Coalgebra R D]
 
 /-- The universal property of a directed colimit of coalgebras: a compatible family of coalgebra
 morphisms out of the stages induces a coalgebra morphism out of the colimit. -/
-@[expose] noncomputable def liftCoalgHom :
+noncomputable def liftCoalgHom :
     (DirectLimit C fun i j h ↦ (f i j h : C i →ₗ[R] C j)) →ₗc[R] D where
   __ := lift R ι C (fun i j h ↦ (f i j h : C i →ₗ[R] C j)) (fun i ↦ (g i : C i →ₗ[R] D))
-    -- `by exact` states the compatibility with the linear coercions that `lift` expects.
-    fun i j h x ↦ by exact CoalgHom.congr_fun (hg i j h) x
+    -- `by simpa` states the compatibility with the linear coercions that `lift` expects.
+    fun i j h x ↦ by simpa using CoalgHom.congr_fun (hg i j h) x
   counit_comp := hom_ext fun i ↦ LinearMap.ext fun x ↦ by
     simp only [LinearMap.comp_apply, lift_of, counit_of]
     exact CoalgHomClass.counit_comp_apply (g i) x

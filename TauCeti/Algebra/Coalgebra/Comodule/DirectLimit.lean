@@ -66,10 +66,12 @@ theorem exists_comoduleFactor_ofCoalgHom [Nonempty ι] [Module.FinitePresentatio
   -- Lift the coaction to some stage `i`, as a linear map.
   obtain ⟨i, ρ, hρ⟩ := TauCeti.DirectLimit.exists_comp_eq_of_finitePresentation
     (f := fun i j h ↦ (f i j h : C i →ₗ[R] C j).lTensor M)
-    (φ := fun i ↦ (ofCoalgHom f i).toLinearMap.lTensor M)
+    (φ := fun i ↦ (of R ι C (fun i j h ↦ (f i j h : C i →ₗ[R] C j)) i).lTensor M)
     (fun _ _ ↦ lTensor_of_lTensor_f M) (exists_lTensor_of_eq M)
     (fun _ _ _ h ↦ exists_lTensor_eq_of_lTensor_of_eq
       (f := fun i j h ↦ (f i j h : C i →ₗ[R] C j)) h) coact
+  replace hρ : (ofCoalgHom f i).toLinearMap.lTensor M ∘ₗ ρ = coact := by
+    simpa only [CoalgHom.toLinearMap_eq_ofClass, toLinearMap_ofCoalgHom] using hρ
   -- The two sides of coassociativity of the lift agree in `M ⊗ (colim Cₖ ⊗ colim Cₖ)`, so they
   -- agree in `M ⊗ (Cⱼ ⊗ Cⱼ)` for some later stage `j`.
   have hc := CoalgHom.lTensor_map_comp_coassoc_of_factor (ofCoalgHom f i) ρ hρ
@@ -92,6 +94,7 @@ theorem exists_comoduleFactor_ofCoalgHom [Nonempty ι] [Module.FinitePresentatio
   · rw [← LinearMap.comp_assoc, ← LinearMap.lTensor_comp, CoalgHomClass.counit_comp]
     exact CoalgHom.lTensor_counit_comp_of_factor (ofCoalgHom f i) ρ hρ
   · rw [← hρ]
+    simp only [CoalgHom.toLinearMap_eq_ofClass, toLinearMap_ofCoalgHom]
     exact LinearMap.ext fun m ↦ lTensor_of_lTensor_f M hij (ρ m)
 
 end Ring
@@ -118,7 +121,8 @@ theorem exists_lTensor_comp_coact_eq_of_factor [Module.Finite R M] {i : ι}
   TauCeti.DirectLimit.exists_comp_eq_comp
     (φ := fun i ↦ (ofCoalgHom f i).toLinearMap.lTensor M)
     (fun _ _ _ h ↦ exists_lTensor_eq_of_lTensor_of_eq
-      (f := fun i j h ↦ (f i j h : C i →ₗ[R] C j)) h)
+      (f := fun i j h ↦ (f i j h : C i →ₗ[R] C j))
+      (by simpa only [CoalgHom.toLinearMap_eq_ofClass, toLinearMap_ofCoalgHom] using h))
     (hσ.trans hσ'.symm)
 
 variable {N : Type*} [AddCommMonoid N] [Module R N]
@@ -148,7 +152,8 @@ theorem Hom.exists_map_lTensor_comp_coact_eq [Module.Finite R M]
   obtain ⟨j, hij, hj⟩ := TauCeti.DirectLimit.exists_comp_eq_comp
     (φ := fun i ↦ (ofCoalgHom f i).toLinearMap.lTensor N)
     (fun _ _ _ h ↦ exists_lTensor_eq_of_lTensor_of_eq
-      (f := fun i j h ↦ (f i j h : C i →ₗ[R] C j)) h)
+      (f := fun i j h ↦ (f i j h : C i →ₗ[R] C j))
+      (by simpa only [CoalgHom.toLinearMap_eq_ofClass, toLinearMap_ofCoalgHom] using h))
     (u := TensorProduct.map g.toLinearMap LinearMap.id ∘ₗ σ.coact) (v := τ.coact ∘ₗ g.toLinearMap)
     (by
       rw [← LinearMap.comp_assoc, hcomm', LinearMap.comp_assoc, hσ, g.map_coact,
