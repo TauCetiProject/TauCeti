@@ -49,8 +49,8 @@ normed complex `F`.
 * `SchwartzMap.memLp_one_add_norm_sq_rpow_smul_fourier`: `⟨ξ⟩ ^ s 𝓕 u` lies in every `L^q`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_one_sq`: the `H¹` norm of a Schwartz function in terms
   of its first derivatives, `‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
-* `SchwartzMap.norm_toBesselPotentialSpaceCLM_compSubConstCLM`: translation preserves the `H^s`
-  norm of a Schwartz function.
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM_compSubConstCLM`: translation preserves the
+  `H^{s,p}` norm of a Schwartz function.
 
 ## References
 
@@ -203,18 +203,24 @@ theorem inv_two_pi_sq_mul_integral_norm_lineDerivOp_sq_le {F : Type*} [NormedAdd
   have h0 : 0 ≤ ∫ x, ‖u x‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
   nlinarith [mul_le_mul_of_nonneg_left hi (by positivity : (0 : ℝ) ≤ (2 * π)⁻¹ ^ 2)]
 
-/-- **Translation is an isometry of `H^s`** on Schwartz functions with Hilbert-space values. -/
+/-- **Translation is an isometry of `H^{s,p}`** on Schwartz functions: the Bessel potential `J^s`
+commutes with translations, and translations preserve `Lᵖ` norms. -/
 @[simp]
-theorem norm_toBesselPotentialSpaceCLM_compSubConstCLM {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℂ F] [CompleteSpace F] (s : ℝ) (u : 𝓢(E, F)) (a : E) :
-    ‖toBesselPotentialSpaceCLM s 2 (u.compSubConstCLM ℂ a)‖ =
-      ‖toBesselPotentialSpaceCLM s 2 u‖ := by
-  rw [norm_toBesselPotentialSpaceCLM, norm_toBesselPotentialSpaceCLM]
-  congr 1
-  refine eLpNorm_congr_norm_ae
-    (memLp_one_add_norm_sq_rpow_smul_fourier s _ 2).aestronglyMeasurable
-    (memLp_one_add_norm_sq_rpow_smul_fourier s u 2).aestronglyMeasurable (.of_forall fun ξ ↦ ?_)
-  simp [fourier_compSubConstCLM_apply, norm_smul]
+theorem norm_toBesselPotentialSpaceCLM_compSubConstCLM (s : ℝ) (u : 𝓢(E, F)) (a : E) :
+    ‖toBesselPotentialSpaceCLM s p (u.compSubConstCLM ℂ a)‖ =
+      ‖toBesselPotentialSpaceCLM s p u‖ := by
+  have hg : (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth :=
+    Complex.hasTemperateGrowth_ofReal.comp (Function.hasTemperateGrowth_one_add_norm_sq_rpow E _)
+  set v := fourierMultiplierCLM F (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u
+  have hv : fourierMultiplierCLM F (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ))
+      (u.compSubConstCLM ℂ a) = v.compSubConstCLM ℂ a :=
+    fourierMultiplierCLM_compSubConstCLM hg u a
+  rw [← BesselPotentialSpace.norm_toLp_eq, ← BesselPotentialSpace.norm_toLp_eq,
+    toLp_toBesselPotentialSpaceCLM, toLp_toBesselPotentialSpaceCLM, hv, norm_toLp, norm_toLp]
+  have hfun : (v.compSubConstCLM ℂ a : E → F) = v ∘ fun x ↦ x - a :=
+    funext fun x ↦ compSubConstCLM_apply v a x
+  rw [hfun, eLpNorm_comp_measurePreserving v.continuous.aestronglyMeasurable
+    (measurePreserving_sub_right volume a)]
 
 end SchwartzMap
 
