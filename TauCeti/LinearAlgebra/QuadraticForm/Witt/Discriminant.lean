@@ -225,6 +225,7 @@ theorem oneFoldPfisterClass_eq_zero_iff {a : Kˣ} : oneFoldPfisterClass a = 0 �
 
 /-- **`⟨⟨a⟩⟩` depends exactly on the square class of `a`**: `⟨⟨a⟩⟩ = ⟨⟨b⟩⟩` in the Witt ring if
 and only if `a` and `b` have the same square class. -/
+@[simp]
 theorem oneFoldPfisterClass_eq_oneFoldPfisterClass_iff {a b : Kˣ} :
     oneFoldPfisterClass a = oneFoldPfisterClass b ↔ squareClass a = squareClass b := by
   refine ⟨fun h => ?_, fun h => ?_⟩

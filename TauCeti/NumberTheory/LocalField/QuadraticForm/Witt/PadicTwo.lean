@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.PadicTwo
-public import TauCeti.NumberTheory.LocalField.QuadraticForm.Witt
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Witt.Basic
 import TauCeti.NumberTheory.HilbertSymbol.Pfister
 
 /-!
@@ -51,9 +51,21 @@ dimension modulo two, signed discriminant and Clifford invariant, so `W(ℚ_2)` 
 * `TauCeti.wittRingPadicTwoEquiv_apply`: the equivalence sends `(a, b, e)` to `a u + b v + e c`.
 * `TauCeti.wittRing_padicTwo_coordinates`: `W(ℚ_2) = ℤ/8 · u ⊕ ℤ/2 · v ⊕ ℤ/2 · c`.
 * `TauCeti.natCard_wittRing_padicTwo`: `W(ℚ_2)` has `32` elements.
+* `TauCeti.two_nsmul_oneFoldPfisterClass_two_padicTwo`,
+  `TauCeti.two_nsmul_oneFoldPfisterClass_neg_three_padicTwo`, `TauCeti.eight_nsmul_one_padicTwo`,
+  `TauCeti.four_nsmul_one_ne_zero_padicTwo`: `2v = 2c = 8u = 0` and `4u ≠ 0`.
+* `TauCeti.oneFoldPfisterClass_neg_three_mul_oneFoldPfisterClass_two_padicTwo`,
+  `TauCeti.oneFoldPfisterClass_neg_three_mul_self_padicTwo`: `c v = 4u` and `c² = 0`.
+* `TauCeti.wittRingPadicTwoEquiv_one_zero_zero`, `TauCeti.wittRingPadicTwoEquiv_zero_one_zero`,
+  `TauCeti.wittRingPadicTwoEquiv_zero_zero_one`: the equivalence sends the coordinate vectors to
+  `u`, `v` and `c`.
 * `TauCeti.wittRing_padicTwo_mul_c`: `c (a u + b v + e c) = a c + 4b u`.
+* `TauCeti.oneFoldPfisterClass_neg_three_mul_wittRingPadicTwoEquiv`: multiplication by `c` sends
+  the coordinates `(a, b, e)` to `(4b, 0, a)`.
 * `TauCeti.oneFoldPfisterClass_neg_three_mul_wittRingPadicTwoEquiv_eq_zero_iff`: `c` kills
   `a u + b v + e c` exactly when `a` is even and `b = 0`.
+* `TauCeti.wittRingPadicTwoEquiv_mem_span_oneFoldPfisterClass_neg_three_iff`: `a u + b v + e c`
+  lies in the principal ideal `(c)` exactly when `4 ∣ a` and `b = 0`.
 * `TauCeti.oneFoldPfisterClass_neg_three_padicTwo`: `c = ⟨⟨5⟩⟩ = ⟨1, -5⟩`.
 * `TauCeti.oneFoldPfisterClass_three_padicTwo`: `⟨⟨3⟩⟩ = ⟨1, -3⟩ = 2u + c`.
 
@@ -81,76 +93,58 @@ theorem oneFoldPfisterClass_neg_three_padicTwo :
   convert isSquare_neg_fifteen_padicTwo using 1
   norm_num
 
-/-- The Hilbert symbols over `ℚ_2` among `-1`, `2` and `5` that give the relations of `W(ℚ_2)`,
-read off the table `TauCeti.hilbertSymbol_padicTwoSquareClassRep`. -/
-private theorem hilbertSymbol_values_padicTwo :
-    hilbertSymbol (-1 : ℚ_[2]ˣ) (Units.mk0 2 two_ne_zero) = 1 ∧
-      hilbertSymbol (-1 : ℚ_[2]ˣ) (Units.mk0 5 (by norm_num)) = 1 ∧
-      hilbertSymbol (Units.mk0 (5 : ℚ_[2]) (by norm_num)) (Units.mk0 2 two_ne_zero) = -1 ∧
-      hilbertSymbol (Units.mk0 (5 : ℚ_[2]) (by norm_num)) (Units.mk0 5 (by norm_num)) = 1 := by
-  have e1 : padicTwoSquareClassRep 1 = -1 := Units.ext (by simp)
-  have e2 : padicTwoSquareClassRep 2 = Units.mk0 5 (by norm_num) := Units.ext (by simp)
-  have e4 : padicTwoSquareClassRep 4 = Units.mk0 2 two_ne_zero := Units.ext (by simp)
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [← e1, ← e4, hilbertSymbol_padicTwoSquareClassRep]
-    rfl
-  · rw [← e1, ← e2, hilbertSymbol_padicTwoSquareClassRep]
-    rfl
-  · rw [← e2, ← e4, hilbertSymbol_padicTwoSquareClassRep]
-    rfl
-  · rw [← e2, hilbertSymbol_padicTwoSquareClassRep]
-    rfl
-
-/-- `2v = ⟨⟨-1, 2⟩⟩ = 0`, because `(-1, 2) = 1` over `ℚ_2`. -/
-private theorem two_nsmul_oneFoldPfisterClass_two :
+/-- `2v = ⟨⟨-1, 2⟩⟩ = 0` in `W(ℚ_2)`, because `(-1, 2) = 1` over `ℚ_2`. -/
+theorem two_nsmul_oneFoldPfisterClass_two_padicTwo :
     2 • oneFoldPfisterClass (Units.mk0 (2 : ℚ_[2]) two_ne_zero) = 0 := by
   rw [← oneFoldPfisterClass_neg_one_mul, ← pfisterClass_two,
     pfisterClass_two_eq_zero_iff_hilbertSymbol_eq_one]
-  exact hilbertSymbol_values_padicTwo.1
+  exact hilbertSymbol_neg_one_two_padicTwo
 
-/-- `2c = ⟨⟨-1, 5⟩⟩ = 0`, because `(-1, 5) = 1` over `ℚ_2`. -/
-private theorem two_nsmul_oneFoldPfisterClass_neg_three :
+/-- `2c = ⟨⟨-1, 5⟩⟩ = 0` in `W(ℚ_2)`, because `(-1, 5) = 1` over `ℚ_2`. -/
+theorem two_nsmul_oneFoldPfisterClass_neg_three_padicTwo :
     2 • oneFoldPfisterClass (Units.mk0 (-3 : ℚ_[2]) (by norm_num)) = 0 := by
   rw [oneFoldPfisterClass_neg_three_padicTwo, ← oneFoldPfisterClass_neg_one_mul,
     ← pfisterClass_two, pfisterClass_two_eq_zero_iff_hilbertSymbol_eq_one]
-  exact hilbertSymbol_values_padicTwo.2.1
+  exact hilbertSymbol_neg_one_five_padicTwo
 
 /-- `4u ≠ 0` in `W(ℚ_2)`, because `(-1, -1) = -1` over `ℚ_2`. -/
-private theorem four_nsmul_one_ne_zero : 4 • (1 : WittRing ℚ_[2]) ≠ 0 := by
+theorem four_nsmul_one_ne_zero_padicTwo : 4 • (1 : WittRing ℚ_[2]) ≠ 0 := by
   rw [← pfisterClass_neg_one_neg_one, Ne, pfisterClass_two_eq_zero_iff_hilbertSymbol_eq_one,
     hilbertSymbol_neg_one_neg_one_padicTwo]
   decide
 
 /-- `8u = 0` in `W(ℚ_2)`, because `4u` lies in the square of the fundamental ideal, which is killed
 by two over a local field. -/
-private theorem eight_nsmul_one : 8 • (1 : WittRing ℚ_[2]) = 0 := by
+theorem eight_nsmul_one_padicTwo : 8 • (1 : WittRing ℚ_[2]) = 0 := by
   have h := WittRing.two_nsmul_eq_zero_of_mem_fundamentalIdeal_sq
     (pfisterClass_mem_fundamentalIdeal_pow ![(-1 : ℚ_[2]ˣ), -1])
   rwa [pfisterClass_neg_one_neg_one, smul_smul] at h
 
-/-- `c v = ⟨⟨5, 2⟩⟩ = ⟨⟨-1, -1⟩⟩ = 4u`, because `(5, 2) = (-1, -1) = -1` over `ℚ_2`. -/
-private theorem oneFoldPfisterClass_neg_three_mul_oneFoldPfisterClass_two :
+/-- `c v = ⟨⟨5, 2⟩⟩ = ⟨⟨-1, -1⟩⟩ = 4u` in `W(ℚ_2)`, because `(5, 2) = (-1, -1) = -1` over
+`ℚ_2`. -/
+theorem oneFoldPfisterClass_neg_three_mul_oneFoldPfisterClass_two_padicTwo :
     oneFoldPfisterClass (Units.mk0 (-3 : ℚ_[2]) (by norm_num)) *
       oneFoldPfisterClass (Units.mk0 (2 : ℚ_[2]) two_ne_zero) = 4 • 1 := by
   rw [oneFoldPfisterClass_neg_three_padicTwo, ← pfisterClass_two, ← pfisterClass_neg_one_neg_one,
-    pfisterClass_two_eq_pfisterClass_two_iff, hilbertSymbol_neg_one_neg_one_padicTwo]
-  exact hilbertSymbol_values_padicTwo.2.2.1
+    pfisterClass_two_eq_pfisterClass_two_iff, hilbertSymbol_neg_one_neg_one_padicTwo,
+    hilbertSymbol_comm]
+  exact hilbertSymbol_two_five_padicTwo
 
-/-- `c² = ⟨⟨5, 5⟩⟩ = 0`, because `(5, 5) = 1` over `ℚ_2`. -/
-private theorem oneFoldPfisterClass_neg_three_mul_self :
+/-- `c² = ⟨⟨5, 5⟩⟩ = 0` in `W(ℚ_2)`, because `(5, 5) = 1` over `ℚ_2`. -/
+theorem oneFoldPfisterClass_neg_three_mul_self_padicTwo :
     oneFoldPfisterClass (Units.mk0 (-3 : ℚ_[2]) (by norm_num)) *
       oneFoldPfisterClass (Units.mk0 (-3 : ℚ_[2]) (by norm_num)) = 0 := by
   rw [oneFoldPfisterClass_neg_three_padicTwo, ← pfisterClass_two,
     pfisterClass_two_eq_zero_iff_hilbertSymbol_eq_one]
-  exact hilbertSymbol_values_padicTwo.2.2.2
+  exact hilbertSymbol_five_five_padicTwo
 
 /-- The coordinate map `(a, b, e) ↦ a u + b v + e c` as an additive map. -/
 private noncomputable def coordHom : ZMod 8 × ZMod 2 × ZMod 2 →+ WittRing ℚ_[2] :=
-  (ZMod.lift 8 ⟨zmultiplesHom _ 1, by simpa using eight_nsmul_one⟩).coprod
+  (ZMod.lift 8 ⟨zmultiplesHom _ 1, by simpa using eight_nsmul_one_padicTwo⟩).coprod
     ((ZMod.lift 2 ⟨zmultiplesHom _ (oneFoldPfisterClass (Units.mk0 (2 : ℚ_[2]) two_ne_zero)),
-      by simpa using two_nsmul_oneFoldPfisterClass_two⟩).coprod
+      by simpa using two_nsmul_oneFoldPfisterClass_two_padicTwo⟩).coprod
     (ZMod.lift 2 ⟨zmultiplesHom _ (oneFoldPfisterClass (Units.mk0 (-3 : ℚ_[2]) (by norm_num))),
-      by simpa using two_nsmul_oneFoldPfisterClass_neg_three⟩))
+      by simpa using two_nsmul_oneFoldPfisterClass_neg_three_padicTwo⟩))
 
 private theorem coordHom_apply (a : ZMod 8) (b e : ZMod 2) :
     coordHom (a, b, e) = a.val • (1 : WittRing ℚ_[2]) +
@@ -171,26 +165,22 @@ private theorem coordHom_injective : Function.Injective coordHom := by
   rw [coordHom_apply, oneFoldPfisterClass_neg_three_padicTwo] at h
   -- The dimension modulo two of `a u + b v + e c` is `a` modulo two.
   have hpar := congrArg WittRing.dimMod2 h
-  rw [map_add, map_add, map_nsmul, map_nsmul, map_nsmul, map_one,
-    WittRing.dimMod2_oneFoldPfisterClass, WittRing.dimMod2_oneFoldPfisterClass, smul_zero,
-    smul_zero, add_zero, add_zero, nsmul_eq_mul, mul_one, map_zero] at hpar
+  simp only [map_add, map_nsmul, map_zero, nsmul_one, map_natCast,
+    WittRing.dimMod2_oneFoldPfisterClass, smul_zero, add_zero] at hpar
   obtain ⟨k, hk⟩ := (ZMod.natCast_eq_zero_iff _ _).mp hpar
   rw [hk, mul_comm, mul_nsmul', ← oneFoldPfisterClass_neg_one] at h
   -- On the fundamental ideal the signed discriminant is additive; it gives
   -- `k [-1] + b [2] + e [5] = 0` in the square classes.
   have hd := congrArg WittRing.signedDiscr h
   have hI (a : ℚ_[2]ˣ) := oneFoldPfisterClass_mem_fundamentalIdeal a
-  rw [WittRing.signedDiscr_add_of_mem_fundamentalIdeal
+  have hsmul (n : ℕ) (x : SquareClassGroup ℚ_[2]) : n • x = (n : ZMod 2) • x :=
+    (Nat.cast_smul_eq_nsmul (ZMod 2) n x).symm
+  simp only [WittRing.signedDiscr_add_of_mem_fundamentalIdeal
       (add_mem (nsmul_mem (hI _) _) (nsmul_mem (hI _) _)),
     WittRing.signedDiscr_add_of_mem_fundamentalIdeal (nsmul_mem (hI _) _),
     WittRing.signedDiscr_nsmul_of_mem_fundamentalIdeal _ (hI _),
-    WittRing.signedDiscr_nsmul_of_mem_fundamentalIdeal _ (hI _),
-    WittRing.signedDiscr_nsmul_of_mem_fundamentalIdeal _ (hI _),
-    WittRing.signedDiscr_oneFoldPfisterClass, WittRing.signedDiscr_oneFoldPfisterClass,
-    WittRing.signedDiscr_oneFoldPfisterClass, WittRing.signedDiscr_zero] at hd
-  have hsmul (n : ℕ) (x : SquareClassGroup ℚ_[2]) : n • x = (n : ZMod 2) • x :=
-    (Nat.cast_smul_eq_nsmul (ZMod 2) n x).symm
-  rw [hsmul k, hsmul b.val, hsmul e.val, ZMod.natCast_zmod_val, ZMod.natCast_zmod_val] at hd
+    WittRing.signedDiscr_oneFoldPfisterClass, WittRing.signedDiscr_zero, hsmul,
+    ZMod.natCast_zmod_val] at hd
   have hli := Fintype.linearIndependent_iff.mp padicTwoSquareClassBasis.linearIndependent
     ![(k : ZMod 2), b, e] (by simpa [Fin.sum_univ_three] using hd)
   have hk2 : ((k : ℕ) : ZMod 2) = 0 := hli 0
@@ -204,9 +194,9 @@ private theorem coordHom_injective : Function.Injective coordHom := by
   · simp [(ZMod.val_eq_zero a).mp ha]
   · exfalso
     obtain rfl : k = 2 := by omega
-    apply four_nsmul_one_ne_zero
-    rwa [oneFoldPfisterClass_neg_one, ZMod.val_zero, zero_smul, zero_smul, add_zero, add_zero,
-      smul_smul] at h
+    apply four_nsmul_one_ne_zero_padicTwo
+    rw [oneFoldPfisterClass_neg_one, smul_smul] at h
+    simpa using h
 
 /-- The coordinate map is bijective: it is injective, and `W(ℚ_2)` has at most
 `4 · #(ℚ_2ˣ/(ℚ_2ˣ)²) = 32` elements. -/
@@ -247,11 +237,28 @@ theorem natCard_wittRing_padicTwo : Nat.card (WittRing ℚ_[2]) = 32 := by
   rw [← Nat.card_congr wittRingPadicTwoEquiv.toEquiv]
   simp
 
+/-- The coordinate equivalence sends `(1, 0, 0)` to `u = 1`. The triple is written `(1, 0)`, its
+simp normal form, in which the pair `(0, 0)` is `0`. -/
+@[simp]
+theorem wittRingPadicTwoEquiv_one_zero_zero : wittRingPadicTwoEquiv (1, 0) = 1 :=
+  (wittRingPadicTwoEquiv_apply 1 0 0).trans (by simp [ZMod.val_one_eq_one_mod])
+
+/-- The coordinate equivalence sends `(0, 1, 0)` to `v = ⟨⟨2⟩⟩`. -/
+@[simp]
+theorem wittRingPadicTwoEquiv_zero_one_zero :
+    wittRingPadicTwoEquiv (0, 1, 0) = oneFoldPfisterClass (Units.mk0 (2 : ℚ_[2]) two_ne_zero) := by
+  simp [wittRingPadicTwoEquiv_apply, ZMod.val_one_eq_one_mod]
+
+/-- The coordinate equivalence sends `(0, 0, 1)` to `c = ⟨⟨-3⟩⟩`. -/
+@[simp]
+theorem wittRingPadicTwoEquiv_zero_zero_one :
+    wittRingPadicTwoEquiv (0, 0, 1) =
+      oneFoldPfisterClass (Units.mk0 (-3 : ℚ_[2]) (by norm_num)) := by
+  simp [wittRingPadicTwoEquiv_apply, ZMod.val_one_eq_one_mod]
+
 /-- **Multiplication by `c` on `W(ℚ_2)`.** In the coordinates of
 `TauCeti.wittRing_padicTwo_coordinates`, multiplication by `c = ⟨1, 3⟩` sends `a u + b v + e c` to
-`a c + 4b u`: equivalently `c v = 4u` and `c² = 0`. Hence the principal ideal `(c)` is
-`{0, c, 4u, c + 4u}`, and the annihilator of `c` is the eight-element subgroup generated by `2u`
-and `c`; in particular `v` does not annihilate `c`. -/
+`a c + 4b u`: equivalently `c v = 4u` and `c² = 0`. -/
 theorem wittRing_padicTwo_mul_c (a : ZMod 8) (b e : ZMod 2) :
     oneFoldPfisterClass (Units.mk0 (-3 : ℚ_[2]) (by norm_num)) *
         (a.val • (1 : WittRing ℚ_[2]) +
@@ -260,36 +267,43 @@ theorem wittRing_padicTwo_mul_c (a : ZMod 8) (b e : ZMod 2) :
       a.val • oneFoldPfisterClass (Units.mk0 (-3 : ℚ_[2]) (by norm_num)) +
         (4 * b.val) • (1 : WittRing ℚ_[2]) := by
   rw [mul_add, mul_add, mul_smul_comm, mul_smul_comm, mul_smul_comm, mul_one,
-    oneFoldPfisterClass_neg_three_mul_oneFoldPfisterClass_two,
-    oneFoldPfisterClass_neg_three_mul_self, smul_zero, add_zero, smul_smul, mul_comm b.val]
+    oneFoldPfisterClass_neg_three_mul_oneFoldPfisterClass_two_padicTwo,
+    oneFoldPfisterClass_neg_three_mul_self_padicTwo, smul_zero, add_zero, smul_smul,
+    mul_comm b.val]
+
+/-- **Multiplication by `c` in the coordinates of `W(ℚ_2)`.** Multiplication by `c = ⟨1, 3⟩`
+sends the class with coordinates `(a, b, e)` to the class with coordinates `(4b, 0, a)`. -/
+theorem oneFoldPfisterClass_neg_three_mul_wittRingPadicTwoEquiv (a : ZMod 8) (b e : ZMod 2) :
+    oneFoldPfisterClass (Units.mk0 (-3 : ℚ_[2]) (by norm_num)) * wittRingPadicTwoEquiv (a, b, e) =
+      wittRingPadicTwoEquiv (((4 * b.val : ℕ) : ZMod 8), 0, ((a.val : ℕ) : ZMod 2)) := by
+  rw [wittRingPadicTwoEquiv_apply, wittRing_padicTwo_mul_c, ← wittRingPadicTwoEquiv_one_zero_zero,
+    ← wittRingPadicTwoEquiv_zero_zero_one, ← map_nsmul, ← map_nsmul, ← map_add]
+  congr 1
+  ext <;> simp
 
 /-- **The annihilator of `c` in `W(ℚ_2)`.** Multiplication by `c = ⟨1, 3⟩` kills `a u + b v + e c`
 exactly when `a` is even and `b = 0`; these are the eight classes of the subgroup generated by
-`2u` and `c`. -/
+`2u` and `c`. In particular `v` does not annihilate `c`. -/
 theorem oneFoldPfisterClass_neg_three_mul_wittRingPadicTwoEquiv_eq_zero_iff (a : ZMod 8)
     (b e : ZMod 2) :
     oneFoldPfisterClass (Units.mk0 (-3 : ℚ_[2]) (by norm_num)) * wittRingPadicTwoEquiv (a, b, e) =
       0 ↔ Even a.val ∧ b = 0 := by
-  -- The product has coordinates `(4b, 0, a)`.
-  have h : oneFoldPfisterClass (Units.mk0 (-3 : ℚ_[2]) (by norm_num)) *
-      wittRingPadicTwoEquiv (a, b, e) =
-        wittRingPadicTwoEquiv (((4 * b.val : ℕ) : ZMod 8), 0, ((a.val : ℕ) : ZMod 2)) := by
-    have h8 : (1 : ZMod 8).val = 1 := rfl
-    have h2 : (1 : ZMod 2).val = 1 := rfl
-    have hu : wittRingPadicTwoEquiv (1, 0, 0) = 1 := by
-      rw [wittRingPadicTwoEquiv_apply, h8, ZMod.val_zero, one_smul, zero_smul, zero_smul,
-        add_zero, add_zero]
-    have hc : wittRingPadicTwoEquiv (0, 0, 1) =
-        oneFoldPfisterClass (Units.mk0 (-3 : ℚ_[2]) (by norm_num)) := by
-      rw [wittRingPadicTwoEquiv_apply, h2, ZMod.val_zero, ZMod.val_zero, one_smul, zero_smul,
-        zero_smul, zero_add, zero_add]
-    rw [wittRingPadicTwoEquiv_apply, wittRing_padicTwo_mul_c, ← hu, ← hc, ← map_nsmul,
-      ← map_nsmul, ← map_add]
-    congr 1
-    ext <;> simp
-  rw [h, AddEquivClass.map_eq_zero_iff, Prod.mk_eq_zero, Prod.mk_eq_zero]
-  clear h
+  rw [oneFoldPfisterClass_neg_three_mul_wittRingPadicTwoEquiv, AddEquivClass.map_eq_zero_iff,
+    Prod.mk_eq_zero, Prod.mk_eq_zero]
   revert a b
+  decide
+
+/-- **The principal ideal `(c)` of `W(ℚ_2)`.** The class `a u + b v + e c` lies in the ideal
+generated by `c = ⟨1, 3⟩` exactly when `4 ∣ a` and `b = 0`; that is, `(c) = {0, c, 4u, c + 4u}`. -/
+theorem wittRingPadicTwoEquiv_mem_span_oneFoldPfisterClass_neg_three_iff (a : ZMod 8)
+    (b e : ZMod 2) :
+    wittRingPadicTwoEquiv (a, b, e) ∈
+        Ideal.span {oneFoldPfisterClass (Units.mk0 (-3 : ℚ_[2]) (by norm_num))} ↔
+      4 ∣ a.val ∧ b = 0 := by
+  simp only [Ideal.mem_span_singleton', wittRingPadicTwoEquiv.surjective.exists, Prod.exists,
+    mul_comm _ (oneFoldPfisterClass _), oneFoldPfisterClass_neg_three_mul_wittRingPadicTwoEquiv,
+    wittRingPadicTwoEquiv.injective.eq_iff]
+  revert a b e
   decide
 
 /-- **`⟨1, -3⟩ = 2u + c` over `ℚ_2`**: `⟨⟨3⟩⟩ = ⟨⟨-1⟩⟩ + ⟨⟨-3⟩⟩ - ⟨⟨-1⟩⟩ ⟨⟨-3⟩⟩`, and
@@ -300,6 +314,6 @@ theorem oneFoldPfisterClass_three_padicTwo :
   have h3 : Units.mk0 (3 : ℚ_[2]) (by norm_num) = -1 * Units.mk0 (-3 : ℚ_[2]) (by norm_num) :=
     Units.ext (by simp)
   rw [h3, oneFoldPfisterClass_mul, oneFoldPfisterClass_neg_one_mul,
-    two_nsmul_oneFoldPfisterClass_neg_three, sub_zero, oneFoldPfisterClass_neg_one]
+    two_nsmul_oneFoldPfisterClass_neg_three_padicTwo, sub_zero, oneFoldPfisterClass_neg_one]
 
 end TauCeti
