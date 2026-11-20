@@ -422,10 +422,10 @@ theorem mapOrientation_eq_of_isPreconnected (hι : Fintype.card ι = finrank ℝ
     e.mapOrientation ι (hse hx) (o x) = e.mapOrientation ι (hse hy) (o y) := by
   have := Subtype.preconnectedSpace hs
   -- Read on the subtype `s`, the orientation is locally constant.
-  have hlc : IsLocallyConstant fun z : s ↦ e.mapOrientation ι (hse z.2) (o z) :=
+  have hlc : IsLocallyConstant fun z : s ↦ e.mapOrientation ι (hse z.property) (o z) :=
     (IsLocallyConstant.iff_eventually_eq _).2 fun z ↦
-      ((continuous_subtype_val.tendsto z).eventually
-        (o.eventually_mapOrientation_eq hι e (hse z.2))).mono fun w hw ↦ hw (hse w.2)
+      ((continuous_subtypeVal.tendsto z).eventually
+        (o.eventually_mapOrientation_eq hι e (hse z.property))).mono fun w hw ↦ hw (hse w.property)
   exact hlc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
 
 /-- An orientation of the bundle from fibre orientations that are locally constant near each

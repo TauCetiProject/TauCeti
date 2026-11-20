@@ -120,11 +120,11 @@ theorem tilde_map_app_injective {M N : ModuleCat.{u} R} (f : M ⟶ N)
     simp only [StructureSheaf.Localizations.comapFun_mk, LocalizedModule.mk_eq,
       Submonoid.smul_def] at hab ⊢
     obtain ⟨c, hc⟩ := hab
-    refine ⟨⟨c.1, c.2⟩, hf ?_⟩
+    refine ⟨⟨c.val, c.property⟩, hf ?_⟩
     rw [map_smul, map_smul, map_smul, map_smul]
     exact hc
   intro s t hst
-  exact Subtype.ext (funext fun p ↦ hloc p.1 (congr_arg (fun x ↦ x.1 p) hst))
+  exact Subtype.ext (funext fun p ↦ hloc p.val (congr_arg (fun x ↦ x.val p) hst))
 
 /-- The functor `M ↦ M~` sends monomorphisms of `R`-modules to monomorphisms of
 `𝒪_{Spec R}`-modules. -/
@@ -190,12 +190,12 @@ private lemma pushforwardCompModulesSpecToSheafIso_hom_app_top_apply
     (N : (Spec S).Modules)
     (x : (modulesSpecToSheaf.obj ((Scheme.Modules.pushforward (Spec.map φ)).obj N)).obj.obj
       (.op ⊤)) :
-    ((pushforwardCompModulesSpecToSheafIso φ).hom.app N).1.app (.op ⊤) x = x := rfl
+    ((pushforwardCompModulesSpecToSheafIso φ).hom.app N).hom.app (.op ⊤) x = x := rfl
 
 private lemma pushforwardCompModulesSpecToSheafIso_inv_app_top_apply
     (N : (Spec S).Modules)
     (x : ((modulesSpecToSheaf.obj N).obj.obj (.op ⊤))) :
-    ((pushforwardCompModulesSpecToSheafIso φ).inv.app N).1.app (.op ⊤) x = x := rfl
+    ((pushforwardCompModulesSpecToSheafIso φ).inv.app N).hom.app (.op ⊤) x = x := rfl
 
 /-- `pushforwardCompModuleSpecΓFunctorIso` is the identity on global sections. -/
 @[simp]

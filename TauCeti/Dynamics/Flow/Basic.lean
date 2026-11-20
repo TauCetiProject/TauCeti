@@ -121,7 +121,7 @@ theorem homotopic_of_eq_apply {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpa
     (hF₀ : ∀ y, ι (F₀ y) = ϕ (τ₀ y) (p y)) (hF₁ : ∀ y, ι (F₁ y) = ϕ (τ₁ y) (p y))
     (hZ : ∀ y, ∀ t ∈ Set.Icc (0 : ℝ) 1, ϕ ((1 - t) * τ₀ y + t * τ₁ y) (p y) ∈ Set.range ι) :
     F₀.Homotopic F₁ := by
-  choose G hG using fun q : unitInterval × Y ↦ hZ q.2 q.1 q.1.2
+  choose G hG using fun q : unitInterval × Y ↦ hZ q.2 q.1 q.1.property
   refine ⟨⟨⟨G, ?_⟩, fun y ↦ ?_, fun y ↦ ?_⟩⟩
   · rw [hι.continuous_iff, Function.comp_def]
     simp_rw [hG]

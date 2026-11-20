@@ -198,7 +198,7 @@ theorem hasseJet_surjective [Finite ι] (ha : Pairwise fun i j => IsUnit (a i - 
   refine ⟨g, ?_⟩
   ext i k
   have h := X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero.1
-    (Ideal.mem_span_singleton.1 (hg i)) k k.2
+    (Ideal.mem_span_singleton.1 (hg i)) k k.isLt
   rw [map_sub, eval_sub, sub_eq_zero] at h
   simp [h, map_sum, eval_finsetSum, Fin.val_inj]
 
@@ -214,7 +214,7 @@ theorem all_jets_vanish_iff_dvd_of_pairwise_isUnit_sub
     (fun _ _ hij => (isCoprime_X_sub_C_of_isUnit_sub (ha hij)).pow) fun i =>
       X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero.2 fun k hk => h i ⟨k, hk⟩,
     fun h i k => X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero.1
-      ((dvd_prod_of_mem _ (mem_univ i)).trans h) k k.2⟩
+      ((dvd_prod_of_mem _ (mem_univ i)).trans h) k k.isLt⟩
 
 variable (ha : Pairwise fun i j => IsUnit (a i - a j)) (m : ι → ℕ)
 include ha
@@ -294,7 +294,7 @@ theorem eval_hasseDeriv_hermiteJetEquiv_symm (c : ∀ i, Fin (m i) → R) (i : �
 /-- The Hermite interpolation polynomial of a jet datum has degree below `∑ i, m i`. -/
 theorem degree_hermiteJetEquiv_symm_lt (c : ∀ i, Fin (m i) → R) :
     ((hermiteJetEquiv ha m).symm c : R[X]).degree < ∑ i, m i := by
-  simpa using mem_degreeLT.1 ((hermiteJetEquiv ha m).symm c).2
+  simpa using mem_degreeLT.1 ((hermiteJetEquiv ha m).symm c).property
 
 /-- The characteristic property of Hermite interpolation: the interpolation polynomial of the jet
 datum `c` is the unique polynomial of degree below `∑ i, m i` whose Hasse jet of order `k < m i`
@@ -490,7 +490,7 @@ theorem eval_iterate_derivative_bijective_iff {a : ι → R} {m : ι → ℕ} :
     ext f i k
     simp [S, ← factorial_smul_hasseDeriv]
   have hS (hm : ∀ i, ∀ k < m i, IsUnit (k ! : R)) : Bijective S :=
-    .piMap fun i => .piMap fun k => IsUnit.isUnit_iff_mulLeft_bijective.1 (hm i k k.2)
+    .piMap fun i => .piMap fun k => IsUnit.isUnit_iff_mulLeft_bijective.1 (hm i k k.isLt)
   rw [hcomp]
   refine ⟨fun h => ?_, fun ⟨hm, ha⟩ => (hS hm).comp (hermiteJet_bijective_iff.2 ha)⟩
   have hm : ∀ i, ∀ k < m i, IsUnit (k ! : R) := by

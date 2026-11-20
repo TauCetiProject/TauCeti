@@ -59,7 +59,7 @@ noncomputable def cyclesRestrict (j : U ⟶ X) [IsOpenImmersion j] {n : ℤ} :
     cyclesOfDimension X n →+ cyclesOfDimension U n :=
   AddMonoidHom.mk'
     (fun α ↦ ⟨Function.locallyFinsupp.comap j j.continuous j.isOpenEmbedding.injective
-      (α : AlgebraicCycle X ℤ), comap_mem_cyclesOfDimension k j α.2⟩)
+      (α : AlgebraicCycle X ℤ), comap_mem_cyclesOfDimension k j α.property⟩)
     fun _ _ ↦ Subtype.ext (Function.locallyFinsupp.comap_add _ _ _ _ _)
 
 variable {k}

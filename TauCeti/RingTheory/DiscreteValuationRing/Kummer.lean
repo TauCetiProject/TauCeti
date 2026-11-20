@@ -184,7 +184,7 @@ theorem integralClosure_eq_adjoin_of_pow_eq_of_irreducible (hπ : Irreducible π
   -- So `A[α]` is the integral closure of `A` in its fraction field `L`.
   refine le_antisymm (fun z hz ↦ ?_) (Algebra.adjoin_le (Set.singleton_subset_iff.mpr hint))
   obtain ⟨y, rfl⟩ := (IsIntegralClosure.isIntegral_iff (A := B)).mp hz
-  exact y.2
+  exact y.property
 
 /-- **Power basis of the integral closure in a Kummer extension of a discrete valuation ring.**
 If `L` is generated over the fraction field `K` of a discrete valuation ring `A` by an `n`-th root
@@ -429,7 +429,7 @@ theorem eq_adjoin_pow_finrank_of_pow_eq_of_irreducible (hπ : Irreducible π)
     have : α ^ m = algebraMap M L (β / algebraMap K M c) := by
       rw [map_div₀, ← IsScalarTower.algebraMap_apply K M L, hc, div_div_cancel₀ hβ0]
     rw [this]
-    exact (β / algebraMap K M c).2
+    exact (β / algebraMap K M c).property
   -- `α ^ m` is an `[M : K]`-th root of `π`, so by part (1) both fields have degree `[M : K]`.
   have hmd : m * Module.finrank K M = n := by
     rw [mul_comm, Module.finrank_mul_finrank K M L, hfin]

@@ -57,11 +57,11 @@ variable {R S E F : Type*} [Semiring R] [Semiring S]
 noncomputable def completion (e : E ≃SL[σ] F) : Completion E ≃SL[σ] Completion F := by
   let f := e.toContinuousLinearMap.completion
   let g := e.symm.toContinuousLinearMap.completion
-  refine ContinuousLinearEquiv.equivOfInverse f g ?_ ?_
-  · exact congr_fun (Completion.ext (g.continuous.comp f.continuous) continuous_id
-      (fun x => by simp [f, g]))
-  · exact congr_fun (Completion.ext (f.continuous.comp g.continuous) continuous_id
-      (fun x => by simp [f, g]))
+  refine ContinuousLinearEquiv.ofContinuousLinearMap f g ?_ ?_
+  · exact ContinuousLinearMap.ext (congr_fun (Completion.ext (f.continuous.comp g.continuous)
+      continuous_id (fun x => by simp [f, g])))
+  · exact ContinuousLinearMap.ext (congr_fun (Completion.ext (g.continuous.comp f.continuous)
+      continuous_id (fun x => by simp [f, g])))
 
 /-- On the original space, the completed equivalence agrees with the original equivalence. -/
 @[simp]

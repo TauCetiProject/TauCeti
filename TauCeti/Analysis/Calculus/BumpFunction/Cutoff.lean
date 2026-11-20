@@ -285,9 +285,9 @@ theorem _root_.CompactExhaustion.exists_contDiff_cutoff [NormedSpace ℝ E]
         HasCompactSupport ψ ∧
           tsupport ψ ⊆ (Subtype.val : Omega → E) '' interior (K (n + 1)) := by
   have hK : IsCompact ((Subtype.val : Omega → E) '' K n) :=
-    (K.isCompact n).image continuous_subtype_val
+    (K.isCompact n).image continuous_subtypeVal
   have hU : IsOpen ((Subtype.val : Omega → E) '' interior (K (n + 1))) :=
-    Omega.isOpen.isOpenMap_subtype_val _ isOpen_interior
+    Omega.isOpen.isOpenMap_subtypeVal _ isOpen_interior
   have hKU :
       (Subtype.val : Omega → E) '' K n ⊆ (Subtype.val : Omega → E) '' interior (K (n + 1)) :=
     image_mono (K.subset_interior_succ n)
@@ -391,14 +391,14 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
   let V : ℕ → Set E := fun n => (Subtype.val : Omega → E) '' interior (K n)
   have hK0 : K 0 = ∅ := rfl
   have hL0 : L 0 = ∅ := by simp only [L, hK0, image_empty]
-  have hLcpt : ∀ n, IsCompact (L n) := fun n => (K.isCompact n).image continuous_subtype_val
-  have hVopen : ∀ n, IsOpen (V n) := fun n => hU.isOpenMap_subtype_val _ isOpen_interior
+  have hLcpt : ∀ n, IsCompact (L n) := fun n => (K.isCompact n).image continuous_subtypeVal
+  have hVopen : ∀ n, IsOpen (V n) := fun n => hU.isOpenMap_subtypeVal _ isOpen_interior
   have hVL : ∀ n, V n ⊆ L n := fun n => image_mono interior_subset
   have hLmono : Monotone L := fun m n hmn => image_mono (K.subset hmn)
   have hVmono : Monotone V := fun m n hmn => image_mono (interior_mono (K.subset hmn))
   have hVsub : ∀ n, V n ⊆ U := fun n => by
     rintro _ ⟨y, -, rfl⟩
-    exact y.2
+    exact y.property
   have hcover : ∀ x ∈ U, ∃ n, x ∈ V n := fun x hx => by
     obtain ⟨n, hn⟩ := K.exists_mem ⟨x, hx⟩
     exact ⟨n + 1, ⟨x, hx⟩, K.subset_interior_succ n hn, rfl⟩

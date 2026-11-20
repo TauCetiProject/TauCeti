@@ -124,7 +124,7 @@ by `TauCeti.map_mem_sphericalClasses`. -/
 def sphericalClassesMap (f : C(X, Y)) (n : ℕ) : sphericalClasses X n →+ sphericalClasses Y n :=
   ((((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).map
     (TopCat.ofHom f)).hom.toAddMonoidHom.comp (sphericalClasses X n).subtype).codRestrict _
-    fun s ↦ map_mem_sphericalClasses f s.2
+    fun s ↦ map_mem_sphericalClasses f s.property
 
 @[simp]
 theorem coe_sphericalClassesMap (f : C(X, Y)) {n : ℕ} (s : sphericalClasses X n) :

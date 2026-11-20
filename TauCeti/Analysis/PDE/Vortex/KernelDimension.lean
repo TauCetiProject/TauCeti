@@ -387,7 +387,7 @@ theorem range_covariantTranslationLinearMap :
     simpa using hframe
   obtain ⟨D, hD⟩ := exists_sym_isZeroMultiplicity hx hsol hframe₁
   exact range_covariantTranslationLinearMap_of_card_eq_one hx hsol
-    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₁) hD D.2
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₁) hD D.property
 
 /-- **The kernel of `L_x` in degree one has real dimension two**, the dimension of
 `Sym¹ ℂ = ℂ`. -/
@@ -397,7 +397,7 @@ theorem finrank_gaugeFixedKernel_eq_two : finrank ℝ (gaugeFixedKernel x) = 2 :
     simpa using hframe
   obtain ⟨D, hD⟩ := exists_sym_isZeroMultiplicity hx hsol hframe₁
   exact finrank_gaugeFixedKernel_eq_two_of_card_eq_one hx hsol
-    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₁) hD D.2
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe₁) hD D.property
 
 end Translations
 
@@ -612,8 +612,8 @@ theorem exists_contDiff_gaugeFixedOperator_eq_zero_principalPart_eq (hx : ContDi
       (∀ w, gaugeFixedOperator x y w = 0) ∧
       ∀ i : Multiset.ToType D, principalPart x ν y i.1 i.2 = p i := by
   let y := (principalPartEquiv hx hhol hlim hD hν hνeq).symm p
-  obtain ⟨-, hyL, hker⟩ := mem_gaugeFixedKernel.1 y.2
-  refine ⟨y, contDiff_of_mem_gaugeFixedKernel hx hhol hlim y.2, hyL, hker, fun i ↦ ?_⟩
+  obtain ⟨-, hyL, hker⟩ := mem_gaugeFixedKernel.1 y.property
+  refine ⟨y, contDiff_of_mem_gaugeFixedKernel hx hhol hlim y.property, hyL, hker, fun i ↦ ?_⟩
   rw [← principalPartEquiv_apply hx hhol hlim hD hν hνeq, LinearEquiv.apply_symm_apply]
 
 end TauCeti.Vortex

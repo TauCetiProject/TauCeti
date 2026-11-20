@@ -115,8 +115,8 @@ theorem presentationLimitPreAdicSpaceQuotientComap_base_apply_val
     (x : presentationLimitPreAdicSpace (P.quotient J) (S.quotient J).plus
       (S.quotient J).isRingOfIntegralElements.isPowerBounded_of_mem
       (P.quotient_ringOfDefinition_le_quotient_plus hP J)) :
-    ((presentationLimitPreAdicSpaceQuotientComap S P hP J hsheaf).base x).1 =
-      comap (Ideal.Quotient.mk J) x.1 := by
+    ((presentationLimitPreAdicSpaceQuotientComap S P hP J hsheaf).base x).val =
+      comap (Ideal.Quotient.mk J) x.val := by
   rw [presentationLimitPreAdicSpaceQuotientComap, presentationLimitPreAdicSpaceComap_toHom,
     presentationLimitPresheafedSpaceComap_base]
   exact spaComap_val _ _ _ _ _ x
@@ -127,12 +127,12 @@ theorem coe_presentationLimitPreAdicSpaceQuotientComap_base :
     ⇑(presentationLimitPreAdicSpaceQuotientComap S P hP J hsheaf).base =
       (Pair.quotientHom S J).spaComap :=
   funext fun x ↦ Subtype.ext <|
-    calc ((presentationLimitPreAdicSpaceQuotientComap S P hP J hsheaf).base x).1
-        _ = comap (Ideal.Quotient.mk J) x.1 :=
+    calc ((presentationLimitPreAdicSpaceQuotientComap S P hP J hsheaf).base x).val
+        _ = comap (Ideal.Quotient.mk J) x.val :=
           presentationLimitPreAdicSpaceQuotientComap_base_apply_val S P hP J hsheaf x
-        _ = comap (Pair.quotientHom S J).toRingHom x.1 := by
+        _ = comap (Pair.quotientHom S J).toRingHom x.val := by
           rw [Pair.Hom.toRingHom_quotientHom]
-        _ = ((Pair.quotientHom S J).spaComap x).1 := (Pair.Hom.spaComap_val _ x).symm
+        _ = ((Pair.quotientHom S J).spaComap x).val := (Pair.Hom.spaComap_val _ x).symm
 
 /-- **Wedhorn Proposition 7.38 for pre-adic spaces:** the quotient morphism is a closed embedding
 of the underlying topological spaces. -/

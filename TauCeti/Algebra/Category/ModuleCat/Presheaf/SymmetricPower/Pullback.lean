@@ -102,7 +102,7 @@ theorem coe_pushforwardSymmetricPowerComparison_app_app_apply (n : ℕ)
     dsimp% only [Functor.comp_obj, Functor.op_obj]
     (Subtype.val (((pushforwardSymmetricPowerComparison α n).app M).app' U x) =
       SymmetricAlgebra.mapₛₗ ((_root_.ModuleCat.semilinearMapAddEquiv (α.app U).hom _
-        (M.obj (F.op.obj U))).symm (𝟙 _)) x.1) :=
+        (M.obj (F.op.obj U))).symm (𝟙 _)) x.val) :=
   ModuleCat.coe_restrictScalarsSymmetricPowerComparison_app_apply (α.app U).hom n
     (M.obj (F.op.obj U)) x
 
@@ -199,7 +199,7 @@ theorem coe_pullbackSymmetricPowerComparison_app_app_unit_apply (n : ℕ)
         ((PresheafOfModulesOfCommRing.symmetricPower n).obj M)).app' U x)) =
     SymmetricAlgebra.mapₛₗ ((_root_.ModuleCat.semilinearMapAddEquiv (α.app U).hom _ _).symm
       (((PresheafOfModulesOfCommRing.pullbackPushforwardAdjunction α).unit.app M).app U))
-        x.1) := by
+        x.val) := by
   let η := (PresheafOfModulesOfCommRing.pullbackPushforwardAdjunction α).unit
   let P := (PresheafOfModulesOfCommRing.pullback α).obj M
   -- By the adjunction equation, this is the pushforward comparison applied after the symmetric
@@ -212,8 +212,9 @@ theorem coe_pullbackSymmetricPowerComparison_app_app_unit_apply (n : ℕ)
   have h₂ := ModuleCat.symmetricPower.coe_map_apply ((η.app M).app' U) n x
   refine h₀.trans (h₁.trans ((congrArg (SymmetricAlgebra.mapₛₗ _) h₂).trans ?_))
   refine (congrArg (SymmetricAlgebra.mapₛₗ _)
-    (RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_eq_map _).symm x.1)).trans ?_
-  exact RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_comp_mapₛₗ _ _ _ (fun _ ↦ rfl) (fun _ ↦ rfl)) x.1
+    (RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_eq_map _).symm x.val)).trans ?_
+  exact RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_comp_mapₛₗ _ _ _ (fun _ ↦ rfl)
+      (fun _ ↦ rfl)) x.val
 
 end
 

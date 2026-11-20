@@ -62,9 +62,9 @@ hyperplane, where the zeroth coordinate vanishes. -/
 theorem coe_fst_apply_zero_eq_zero_of_notMem_interior
     (φ : OpenPartialHomeomorph A (EuclideanHalfSpace m × V))
     (hdim : finrank ℝ E = m + finrank ℝ V) {y : A} (hy : y ∈ φ.source)
-    (hyA : (y : E) ∉ interior A) : (φ y).1.1 0 = 0 := by
+    (hyA : (y : E) ∉ interior A) : (φ y).1.val 0 = 0 := by
   by_contra hne
-  have hpos : 0 < (φ y).1.1 0 := lt_of_le_of_ne (φ y).1.2 (Ne.symm hne)
+  have hpos : 0 < (φ y).1.val 0 := lt_of_le_of_ne (φ y).1.property (Ne.symm hne)
   -- Read the target of `φ` in `ℝᵐ × V` through the model `𝓡∂ m` and its continuous inverse.
   set I := modelWithCornersEuclideanHalfSpace m
   let j : EuclideanSpace ℝ (Fin m) × V → EuclideanHalfSpace m × V := Prod.map I.symm id
@@ -75,7 +75,7 @@ theorem coe_fst_apply_zero_eq_zero_of_notMem_interior
       (isOpen_lt continuous_const ((PiLp.continuous_apply 2 _ 0).comp continuous_fst))
   let f : EuclideanSpace ℝ (Fin m) × V → E := fun p => (φ.symm (j p) : E)
   have hf : ContinuousOn f U :=
-    continuous_subtype_val.comp_continuousOn
+    continuous_subtypeVal.comp_continuousOn
       (φ.continuousOn_symm.comp hj.continuousOn fun _ hp => hp.1)
   -- On points of positive zeroth coordinate, `j` is injective, so `f` is injective on `U`.
   have hjI {p : EuclideanSpace ℝ (Fin m) × V} (hp : 0 < p.1 0) : I (j p).1 = p.1 :=
@@ -99,7 +99,7 @@ theorem coe_fst_apply_zero_eq_zero_of_notMem_interior
     simp only [f, hjp₀, φ.left_inv hy]
   refine hyA (interior_maximal ?_ hopen ⟨p₀, hp₀, hfp₀⟩)
   rintro _ ⟨p, -, rfl⟩
-  exact (φ.symm (j p)).2
+  exact (φ.symm (j p)).property
 
 section Manifold
 

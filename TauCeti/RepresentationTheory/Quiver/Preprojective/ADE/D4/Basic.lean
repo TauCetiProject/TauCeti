@@ -109,8 +109,8 @@ private theorem d4Arrow_of_adj {i j : Fin 4} (h : zigzagD4Graph.Adj i j) :
 private theorem d4Arrow_mul_d4Arrow_leaf {l : Fin 4} (h : zigzagD4Graph.Adj 1 l) :
     d4Arrow k 1 l * d4Arrow k l 1 = 0 := by
   have hsub : Subsingleton (zigzagD4Graph.neighborSet l) := ⟨fun w w' => Subtype.ext <| by
-    have hw := (zigzagD4Graph_adj_iff _ _).1 w.2
-    have hw' := (zigzagD4Graph_adj_iff _ _).1 w'.2
+    have hw := (zigzagD4Graph_adj_iff _ _).1 w.property
+    have hw' := (zigzagD4Graph_adj_iff _ _).1 w'.property
     have hl := (zigzagD4Graph_adj_iff _ _).1 h
     omega⟩
   have hrel := signlessPreprojectiveMk_signlessPreprojectiveRelator k (vertex zigzagD4Graph l)
@@ -127,8 +127,8 @@ private theorem sum_d4Arrow_mul_d4Arrow :
     signlessPreprojectiveRelator_vertex, map_sum] at hrel
   rw [← hrel]
   refine Finset.sum_congr rfl fun l _ => ?_
-  rw [d4Arrow_of_adj k l.2, d4Arrow_of_adj k (zigzagD4Graph.adj_symm l.2), ← map_mul]
-  exact congrArg (signlessPreprojectiveMk k _) (ofArrow_symm_mul_ofArrow _ k l.2)
+  rw [d4Arrow_of_adj k l.property, d4Arrow_of_adj k (zigzagD4Graph.adj_symm l.property), ← map_mul]
+  exact congrArg (signlessPreprojectiveMk k _) (ofArrow_symm_mul_ofArrow _ k l.property)
 
 /-- The trivalent vertex of `D₄` has at most three neighbours. -/
 private theorem card_neighborSet_one_le_three :
@@ -150,7 +150,7 @@ private theorem d4Arrow_mul_eq_zero {v₀ v₁ v₂ v₃ v₄ v₅ : Fin 4} (h�
     d4Arrow k v₄ v₅ * (d4Arrow k v₃ v₄ * (d4Arrow k v₂ v₃ * (d4Arrow k v₁ v₂ *
       d4Arrow k v₀ v₁))) = 0 := by
   have hdu (l : zigzagD4Graph.neighborSet 1) : d4Arrow k 1 l * d4Arrow k l 1 = 0 :=
-    d4Arrow_mul_d4Arrow_leaf k l.2
+    d4Arrow_mul_d4Arrow_leaf k l.property
   by_cases h₀ : v₀ = 1
   · -- The path starts at the trivalent vertex, so it visits it at every even step.
     subst h₀

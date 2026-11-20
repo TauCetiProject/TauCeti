@@ -238,7 +238,7 @@ variable {δ η h : ℝ} {K : NNReal}
 private theorem FineMesh.dist_le (hF : FineMesh γ T δ η h K) {u v : ℝ} (hu : u ∈ Icc 0 T)
     (hv : v ∈ Icc 0 T) (huv : |u - v| ≤ h) : dist (γ u) (γ v) ≤ K * h :=
   (hF.lipschitz.dist_le_mul u hu v hv).trans
-    (mul_le_mul_of_nonneg_left (by rwa [Real.dist_eq]) K.2)
+    (mul_le_mul_of_nonneg_left (by rwa [Real.dist_eq]) K.property)
 
 /-- Two edges `i < j` of an inscribed polygon which are consecutive across the end of the period
 meet only at their common vertex: `i` is the successor of `j`, and `x` is the vertex `i`. -/
@@ -391,7 +391,7 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hΓ : ContDiff ℝ 1
     refine (hlipΓ (hτI x) ⟨by linarith [hx.1, hc.1], by linarith [hx.2, hc.2]⟩ (hτI y)
       ⟨by linarith [hy.1, hc.1], by linarith [hy.2, hc.2]⟩).trans ?_
     rw [add_sub_add_right_eq_sub]
-    exact mul_le_mul_of_nonneg_left (max_le (hτ1 x y) le_rfl) B.2
+    exact mul_le_mul_of_nonneg_left (max_le (hτ1 x y) le_rfl) B.property
   · -- The time changes by at most `ρ`, which costs at most `B ρ ≤ η₀ / 2`.
     rw [dist_eq_norm, hα, hα]
     have h₁ := hsep (τ (a + d)) (hτI _) (a + c) ⟨by linarith [ha.1, hc.1], by linarith [ha.2, hc.2]⟩
@@ -400,7 +400,7 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hΓ : ContDiff ℝ 1
     have hac : a + c ∈ Icc 0 (2 * T) := ⟨by linarith [ha.1, hc.1], by linarith [ha.2, hc.2]⟩
     have h₂ := hlipΓ (hτI (a + d)) hac (hτI a) hac
     rw [sub_self, abs_zero, max_eq_left (abs_nonneg _)] at h₂
-    have h₃ : B * |τ (a + d) - τ a| ≤ B * ρ := mul_le_mul_of_nonneg_left (hvar _ _) B.2
+    have h₃ : B * |τ (a + d) - τ a| ≤ B * ρ := mul_le_mul_of_nonneg_left (hvar _ _) B.property
     rw [add_right_comm a d c]
     linarith [norm_sub_le_norm_sub_add_norm_sub (Γ (τ (a + d)) (a + c + d)) (Γ (τ a) (a + c))
       (Γ (τ (a + d)) (a + c)), norm_sub_rev (Γ (τ a) (a + c)) (Γ (τ (a + d)) (a + c))]
@@ -1073,7 +1073,7 @@ private theorem notMem_straightenRegion {n j k : ℕ} (hj : j < n) (hk : k < n) 
     (hx : x ∈ γ '' Icc (j * h) (j * h + h) ∪ segment ℝ (γ (j * h)) (γ (j * h + h))) :
     ¬ (φ (γ (k * h)) < φ x ∧ φ x < φ (γ (k * h + h)) ∧ ‖x - γ (k * h)‖ < 7 * (K * h)) := by
   rintro ⟨h₁, h₂, h₃⟩
-  have hK0 : 0 ≤ (K : ℝ) * h := mul_nonneg K.2 hh.le
+  have hK0 : 0 ≤ (K : ℝ) * h := mul_nonneg K.property hh.le
   have hjT : j * h + h ≤ T := by
     have : (j : ℝ) + 1 ≤ n := by exact_mod_cast hj
     nlinarith
@@ -1228,7 +1228,7 @@ private theorem exists_ambientIsotopy_image_inscribed_of_mesh {n : ℕ} (hn : 0 
       · exact ⟨⟨j, hj⟩, by rwa [add_mul, one_mul]⟩
       · omega
     · rintro ⟨i, hx⟩
-      exact ⟨i, i.2, Or.inl ⟨i.2, by rwa [add_mul, one_mul] at hx⟩⟩
+      exact ⟨i, i.isLt, Or.inl ⟨i.isLt, by rwa [add_mul, one_mul] at hx⟩⟩
   -- Straightening the arc over the step `k` carries `C k` onto `C (k + 1)`.
   have step (k : ℕ) (hk : k < n) : ∃ Ψ : TauCeti.AmbientIsotopy E, Ψ.final '' C k = C (k + 1) :=
     exists_ambientIsotopy_final_image_step hk hT hγ hper hh hnh hhδ hδT hKη hmono hK hsep

@@ -486,7 +486,7 @@ theorem card_center_subgroupOf_eq_one_iff [NoZeroDivisors R] [NeZero (2 : R)]
     rcases mem_center_iff_eq_one_or_eq_neg_one.mp (Subgroup.mem_subgroupOf.mp hx) with hx1 | hx1
     · exact Subtype.ext hx1
     · -- `x.2 : ↑x ∈ Γ`, and `hx1` identifies `↑x` with `-I`, so the membership transports
-      have hm : (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ := hx1 ▸ x.2
+      have hm : (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ := hx1 ▸ x.property
       exact absurd hm hneg
 
 /-- **`Γ` meets the centre only in the identity exactly when it does not contain `-I`.**

@@ -172,12 +172,12 @@ theorem symm_trans_self (f : Iso G H) : f.symm.trans f = refl H := by
 /-- Transport a set of ambient vertices along a graph isomorphism, discarding points outside the
 actual vertex set. -/
 def mapVertexSet (f : Iso G H) (S : Set α) : Set α' :=
-  {y | ∃ hy : y ∈ V(H), (f.vertexEquiv.symm ⟨y, hy⟩ : G.vertexSet).1 ∈ S}
+  {y | ∃ hy : y ∈ V(H), (f.vertexEquiv.symm ⟨y, hy⟩ : G.vertexSet).val ∈ S}
 
 /-- Transport a set of ambient edges along a graph isomorphism, discarding edges outside the
 actual edge set. -/
 def mapEdgeSet (f : Iso G H) (F : Set β) : Set β' :=
-  {e | ∃ he : e ∈ E(H), (f.edgeEquiv.symm ⟨e, he⟩ : G.edgeSet).1 ∈ F}
+  {e | ∃ he : e ∈ E(H), (f.edgeEquiv.symm ⟨e, he⟩ : G.edgeSet).val ∈ F}
 
 /-- A transported vertex set contains only actual vertices of the target graph. -/
 theorem mapVertexSet_subset_vertexSet (f : Iso G H) (S : Set α) :
@@ -200,7 +200,7 @@ theorem mem_mapVertexSet_iff (f : Iso G H) (S : Set α) (y : H.vertexSet) :
   · rintro ⟨hy, h⟩
     simpa only [Subtype.coe_eta] using h
   · intro h
-    exact ⟨y.2, by simpa only [Subtype.coe_eta] using h⟩
+    exact ⟨y.property, by simpa only [Subtype.coe_eta] using h⟩
 
 /-- Membership of an actual target edge in a transported set is membership of its inverse image
 in the original set. -/
@@ -211,7 +211,7 @@ theorem mem_mapEdgeSet_iff (f : Iso G H) (F : Set β) (e : H.edgeSet) :
   · rintro ⟨he, h⟩
     simpa only [Subtype.coe_eta] using h
   · intro h
-    exact ⟨e.2, by simpa only [Subtype.coe_eta] using h⟩
+    exact ⟨e.property, by simpa only [Subtype.coe_eta] using h⟩
 
 /-- Transport preserves the extended cardinality of a set of actual edges. -/
 @[simp]
@@ -219,9 +219,9 @@ theorem encard_mapEdgeSet (f : Iso G H) {F : Set β} (hF : F ⊆ E(G)) :
     (f.mapEdgeSet F).encard = F.encard := by
   apply Set.encard_congr
   exact
-    { toFun := fun e ↦ ⟨(f.edgeEquiv.symm ⟨e, f.mapEdgeSet_subset_edgeSet F e.2⟩ : β),
-        (f.mem_mapEdgeSet_iff F ⟨e, f.mapEdgeSet_subset_edgeSet F e.2⟩).mp e.2⟩
-      invFun := fun e ↦ ⟨(f.edgeEquiv ⟨e, hF e.2⟩ : β'), by simp⟩
+    { toFun := fun e ↦ ⟨(f.edgeEquiv.symm ⟨e, f.mapEdgeSet_subset_edgeSet F e.property⟩ : β),
+        (f.mem_mapEdgeSet_iff F ⟨e, f.mapEdgeSet_subset_edgeSet F e.property⟩).mp e.property⟩
+      invFun := fun e ↦ ⟨(f.edgeEquiv ⟨e, hF e.property⟩ : β'), by simp⟩
       left_inv := fun e ↦ by simp
       right_inv := fun e ↦ by simp }
 
@@ -237,9 +237,9 @@ theorem encard_mapVertexSet (f : Iso G H) {S : Set α} (hS : S ⊆ V(G)) :
     (f.mapVertexSet S).encard = S.encard := by
   apply Set.encard_congr
   exact
-    { toFun := fun y ↦ ⟨(f.vertexEquiv.symm ⟨y, f.mapVertexSet_subset_vertexSet S y.2⟩ : α),
-        (f.mem_mapVertexSet_iff S ⟨y, f.mapVertexSet_subset_vertexSet S y.2⟩).mp y.2⟩
-      invFun := fun x ↦ ⟨(f.vertexEquiv ⟨x, hS x.2⟩ : α'), by simp⟩
+    { toFun := fun y ↦ ⟨(f.vertexEquiv.symm ⟨y, f.mapVertexSet_subset_vertexSet S y.property⟩ : α),
+        (f.mem_mapVertexSet_iff S ⟨y, f.mapVertexSet_subset_vertexSet S y.property⟩).mp y.property⟩
+      invFun := fun x ↦ ⟨(f.vertexEquiv ⟨x, hS x.property⟩ : α'), by simp⟩
       left_inv := fun y ↦ by simp
       right_inv := fun x ↦ by simp }
 
@@ -338,7 +338,7 @@ theorem mapVertexSet_singleton (f : Iso G H) (x : G.vertexSet) :
   · have hleft : y ∉ f.mapVertexSet ({(x : α)} : Set α) := fun h ↦
       hy (f.mapVertexSet_subset_vertexSet _ h)
     have hright : y ∉ ({(f.vertexEquiv x : α')} : Set α') := fun h ↦
-      hy (h ▸ (f.vertexEquiv x).2)
+      hy (h ▸ (f.vertexEquiv x).property)
     exact iff_of_false hleft hright
 
 /-- A graph isomorphism transports a singleton actual edge to the corresponding singleton. -/
@@ -354,7 +354,7 @@ theorem mapEdgeSet_singleton (f : Iso G H) (e : G.edgeSet) :
   · have hleft : e' ∉ f.mapEdgeSet ({(e : β)} : Set β) := fun h ↦
       he' (f.mapEdgeSet_subset_edgeSet _ h)
     have hright : e' ∉ ({(f.edgeEquiv e : β')} : Set β') := fun h ↦
-      he' (h ▸ (f.edgeEquiv e).2)
+      he' (h ▸ (f.edgeEquiv e).property)
     exact iff_of_false hleft hright
 
 /-- Transporting the ambient image of a set of actual vertices gives the ambient image of its image
@@ -371,7 +371,7 @@ theorem mapVertexSet_image_val (f : Iso G H) (S : Set G.vertexSet) :
       hy (f.mapVertexSet_subset_vertexSet _ h)
     have hright : y ∉ Subtype.val '' (f.vertexEquiv '' S) := by
       rintro ⟨y', -, rfl⟩
-      exact hy y'.2
+      exact hy y'.property
     exact iff_of_false hleft hright
 
 /-- Vertex-set transport is monotone. -/

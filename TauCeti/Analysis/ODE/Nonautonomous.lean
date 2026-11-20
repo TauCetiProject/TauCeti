@@ -208,7 +208,7 @@ private noncomputable def clampedField (v : ℝ → E → E) {R : ℝ} (hR : 0 �
 
 private noncomputable def clampedFieldAt {R : ℝ} (x : E) : Icc (-R) R →ᵇ E :=
   BoundedContinuousFunction.mkOfCompact
-    ⟨fun t : Icc (-R) R ↦ v t x, (hvc x).comp continuous_subtype_val⟩
+    ⟨fun t : Icc (-R) R ↦ v t x, (hvc x).comp continuous_subtypeVal⟩
 
 omit [NormedSpace ℝ E] [CompleteSpace E] in
 private theorem norm_clampedField_le {R : ℝ} (hR : 0 ≤ R) (x : E) (s : ℝ) :
@@ -223,7 +223,7 @@ private noncomputable def clampedSolution {R : ℝ} (hR : 0 ≤ R) (x : E) : ℝ
   boundedTimeSolution
     (continuous_prod_of_continuous_lipschitzWith' (Function.uncurry (clampedField v hR)) K
       (fun s ↦ hv (Set.projIcc (-R) R (neg_le_self hR) s))
-      fun y ↦ (hvc y).comp (continuous_subtype_val.comp continuous_projIcc))
+      fun y ↦ (hvc y).comp (continuous_subtypeVal.comp continuous_projIcc))
     (fun s ↦ hv (Set.projIcc (-R) R (neg_le_self hR) s))
     (norm_clampedField_le hvc hR x)
 

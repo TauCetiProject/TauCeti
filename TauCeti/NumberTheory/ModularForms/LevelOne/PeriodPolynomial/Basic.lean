@@ -490,7 +490,7 @@ private lemma eq_top_of_sub_binaryFormRep_mem [CharZero K] (hw₀ : w ≠ 0)
     Submodule.subtype_apply, coe_homogeneousMonomialBasis, monomial_eq,
     Finsupp.prod_fintype _ _ (by simp), Fin.prod_univ_two, C_1, one_mul]
   exact X_pow_mul_X_pow_mem hw₀ hT hS <| by
-    simpa [Finsupp.degree_eq_sum, Fin.sum_univ_two] using s.2
+    simpa [Finsupp.degree_eq_sum, Fin.sum_univ_two] using s.property
 
 /-- **The kernels of `1 + S` and `1 + U + U²` span `V_w`** (Popa–Zagier, §2, proof of
 Proposition 3): over a field of characteristic zero and for even `w ≠ 0`, every binary form of
