@@ -160,26 +160,27 @@ theorem exists_le_conj_smul_eq [SeparatelyContinuousMul G] (K₀ : CompactOpenSu
     ∃ N : CompactOpenSubgroup G, N.toOpenSubgroup ≤ W ∧ N ≤ K₀ ∧
       ∀ k ∈ K₀, ContinuousAut.conj k • N = N := by
   set K := K₀.toSubgroup
-  -- The normal core in `K₀` of the trace of `W` on `K₀`, an open normal subgroup of `K₀`.
+  -- An open normal subgroup of `K₀` inside the trace of `W` on `K₀` (its normal core).
   let W' : OpenSubgroup K := W.comap K.subtype continuous_subtype_val
-  let C : Subgroup K := W'.toSubgroup.normalCore
+  obtain ⟨M, hMW, -⟩ := W'.exists_openNormalSubgroup_le
+  let C : Subgroup K := M.toSubgroup
   have hCK : C.map K.subtype ≤ K := Subgroup.map_subtype_le C
   let N₀ : OpenSubgroup G := ⟨C.map K.subtype, by
     -- Restate the carrier through the set coercion, which `Subgroup.coe_map` computes as an image.
     change IsOpen (C.map K.subtype : Set G)
     rw [Subgroup.coe_map]
-    exact K₀.isOpen.isOpenMap_subtype_val _ W'.isOpen_normalCore⟩
+    exact K₀.isOpen.isOpenMap_subtype_val _ M.isOpen⟩
   let N : CompactOpenSubgroup G := ⟨N₀, K₀.isCompact.of_isClosed_subset N₀.isClosed hCK⟩
   -- The core is normal in `K₀`, so `K₀` normalizes it.
   have hC : ((C.map K.subtype).subgroupOf K).Normal := by
     rw [Subgroup.subgroupOf, Subgroup.comap_map_eq_self_of_injective K.subtype_injective]
-    exact Subgroup.normalCore_normal _
+    exact M.isNormal'
   refine ⟨N, ?_, (N.toSubgroup_le K₀).1 hCK, fun k hk ↦
     ContinuousAut.conj_smul_compactOpenSubgroup_eq_self_of_mem_normalizer
       (Subgroup.le_normalizer_of_normal_subgroupOf hCK hk)⟩
   rw [← OpenSubgroup.toSubgroup_le]
   exact Subgroup.map_le_iff_le_comap.2 <|
-    (Subgroup.normalCore_le _).trans (OpenSubgroup.toSubgroup_comap W _ _).le
+    hMW.trans (OpenSubgroup.toSubgroup_comap W _ _).le
 
 /-- **A descending normal basis below a level.** In a first countable nonarchimedean group, every
 compact open subgroup `K₀` contains a descending sequence of compact open subgroups, each
