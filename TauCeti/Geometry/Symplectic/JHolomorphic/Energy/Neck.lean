@@ -23,7 +23,7 @@ annulus `a ≤ |z - z₀| ≤ b`, conformally the cylinder `[log a, log b] × S�
 `∂ₜu = J(u) ∂ₛu` decays exponentially towards the middle of such a cylinder, that its
 derivative decays there pointwise, and that the middle of the cylinder has small image. It then
 shows that the energy of a neck is controlled by the energy near its two boundary circles, so that
-no energy is lost in the necks of a sequence and the necks shrink to points.
+no energy is lost in the necks of a sequence and the middles of the necks shrink to points.
 
 Let a constant symplectic form `ω` with compatible inner product tame `J` along `u` with constant
 `c > 0`, and let `‖J(u)‖ ≤ M`. Write `E(r₁, r₂)` for the real-direction energy `∫ ‖∂ₛu‖²` over the
@@ -65,8 +65,8 @@ annulus `r₁ ≤ |z - z₀| ≤ r₂`, and `κ = 2c / (1 + M)²`.
   `r₁ ≤ |w - z₀| ≤ r₂`, for `2a ≤ r₁` and `3 r₂ ≤ 2b`, has diameter at most
   `(1 + M) (2π + 1 / γ) √(32 E(a, b) / π) ((2a / r₁) ^ γ + (3 r₂ / (2b)) ^ γ)` with `γ = κ / 2`
   (`TauCeti.SymplecticForm.exists_pos_forall_norm_sub_le_annulus`). So the middle of a neck of small
-  energy is mapped into a small ball, which is how the two ends of a neck are shown to converge to
-  the same node point.
+  energy is mapped into a small ball; this is the step used to show that the two ends of a neck
+  converge to the same node point.
 * **Collar control of a neck.** Boundary control together with the bound on boundary densities
   gives a threshold `δ > 0`, depending only on `J` and `K`, such that if the collars
   `a / 2 ≤ |z - z₀| ≤ 3a / 2` and `b / 2 ≤ |z - z₀| ≤ 3b / 2` of the two boundary circles have
@@ -82,7 +82,8 @@ annulus `r₁ ≤ |z - z₀| ≤ r₂`, and `κ = 2c / (1 + M)²`.
   (`TauCeti.SymplecticForm.eventually_forall_norm_sub_lt_annulus_of_tendsto`). In the bubbling
   analysis of Gromov compactness these are applied along a diagonal sequence whose collars shrink
   to the bubbling point of the limit map and to the node of the rescaled bubble; there they say
-  that no energy remains in the necks between the two, and that the two meet at one point.
+  that no energy remains in the necks between the two, and that the middles of the necks shrink to
+  points.
 
 The energy decay is the isoperimetric argument of McDuff and Salamon for long cylinders of small
 energy, and the statements are those of Ivashkovich and Shevchishin's long-cylinder lemma.
@@ -789,15 +790,15 @@ theorem tendsto_integral_norm_fderiv_one_sq_annulus_of_tendsto
   rw [div_mul_eq_mul_div, le_div_iff₀ hc]
   linarith
 
-/-- **Necks shrink to points.** Under the hypotheses of
+/-- **The middles of necks shrink to points.** Under the hypotheses of
 `TauCeti.SymplecticForm.tendsto_integral_norm_fderiv_one_sq_annulus_of_tendsto`, with moreover
 `0 < a i` and the images of the necks `a i ≤ |z - z₀ i| ≤ b i` in `K`, the images of the middles
 `2 a i ≤ |w - z₀ i| ≤ 2 b i / 3` of the necks have diameters tending to `0`: for every `ε > 0`,
 eventually any two of their points have images at distance less than `ε`.
 
 Applied in the bubbling analysis of Gromov compactness as in
-`TauCeti.SymplecticForm.tendsto_integral_norm_fderiv_one_sq_annulus_of_tendsto`, this says that the
-two ends of the necks converge to the same node point. -/
+`TauCeti.SymplecticForm.tendsto_integral_norm_fderiv_one_sq_annulus_of_tendsto`, this is the step
+used to show that the two ends of the necks converge to the same node point. -/
 theorem eventually_forall_norm_sub_lt_annulus_of_tendsto
     (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) {W K : Set V} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W)
     (hK : IsCompact K) (hKW : K ⊆ W) (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v)
