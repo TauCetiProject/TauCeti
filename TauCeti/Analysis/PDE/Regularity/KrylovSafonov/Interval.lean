@@ -15,7 +15,7 @@ import TauCeti.Analysis.Sobolev.Wkp.InteriorMorrey
 The interior Hölder estimate of Krylov and Safonov
 (`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradient_le`)
 bounds the `α`-Hölder seminorm of a `W^{2,n}` strong solution of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f`, with
-measurable uniformly elliptic coefficients, by `C r^(-α) (sup |u| + r ‖f‖_{Lⁿ} / λ)` on balls of
+uniformly elliptic coefficients, by `C r^(-α) (sup |u| + r ‖f‖_{Lⁿ} / λ)` on balls of
 radius `r`, for some exponent `0 < α ≤ 1` depending on the dimension and the ellipticity ratio.
 This file treats dimension one, where the estimate holds with the optimal exponent `α = 1`, no
 upper bound on the coefficient, and explicit constants.
@@ -98,13 +98,9 @@ theorem abs_deriv_preciseRepresentative_sub_le_of_abs_mul_iteratedGradient_le
     |deriv (preciseRepresentative volume (Wkp.value 2 u)) y -
         deriv (preciseRepresentative volume (Wkp.value 2 u)) x| ≤
       (∫ t in x..y, f t) / lam := by
-  have : IsFiniteMeasure (volume.restrict ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) :=
-    Real.isFiniteMeasure_restrict_Ioo a b
-  have hsub : Ioo x y ⊆ Ioo a b := Ioo_subset_Ioo hx.1.le hy.2.le
-  have hD : IntegrableOn (fun t => Wkp.iteratedGradient 1 u t 1) (Ioo a b) :=
-    ((Lp.memLp (Wkp.iteratedGradient 1 u)).integrable Fact.out).apply_continuousLinearMap 1
   have hDint : IntervalIntegrable (fun t => Wkp.iteratedGradient 1 u t 1) volume x y :=
-    (intervalIntegrable_iff_integrableOn_Ioo_of_le hxy).2 (hD.mono_set hsub)
+    Wkp.intervalIntegrable_iteratedGradient_one_Ioo u (Ioo_subset_Icc_self hx)
+      (Ioo_subset_Icc_self hy)
   rw [Wkp.deriv_preciseRepresentative_sub_deriv_eq_integral u hx hy,
     ← intervalIntegral.integral_div]
   exact (abs_integral_le_integral_abs hxy).trans

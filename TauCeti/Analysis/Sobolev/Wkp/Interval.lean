@@ -81,6 +81,21 @@ namespace Wkp
 
 variable {a b : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
 
+/-- The weak second derivative `u''` of `u ∈ W^{2,p}(a, b)` is integrable on `(a, b)`. -/
+theorem integrableOn_iteratedGradient_one_Ioo (u : Wkp volume ⟨Ioo a b, isOpen_Ioo⟩ p 2) :
+    IntegrableOn (fun t => iteratedGradient 1 u t 1) (Ioo a b) := by
+  have : IsFiniteMeasure (volume.restrict ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) :=
+    Real.isFiniteMeasure_restrict_Ioo a b
+  exact ((Lp.memLp (iteratedGradient 1 u)).integrable Fact.out).apply_continuousLinearMap 1
+
+/-- The weak second derivative `u''` of `u ∈ W^{2,p}(a, b)` is interval integrable between any
+two points of `[a, b]`. -/
+theorem intervalIntegrable_iteratedGradient_one_Ioo (u : Wkp volume ⟨Ioo a b, isOpen_Ioo⟩ p 2)
+    {x y : ℝ} (hx : x ∈ Icc a b) (hy : y ∈ Icc a b) :
+    IntervalIntegrable (fun t => iteratedGradient 1 u t 1) volume x y :=
+  intervalIntegrable_iff.2 (((integrableOn_iteratedGradient_one_Ioo u).congr_set_ae
+    Ioo_ae_eq_Icc.symm).mono_set (uIoc_subset_uIcc.trans (uIcc_subset_Icc hx hy)))
+
 /-- The weak derivative of `u ∈ W^{2,p}(a, b)` with first-order part in `W^{1,p}_0(a, b)` is
 bounded almost everywhere by twice the `L¹` norm of the weak Hessian: it is a constant plus the
 primitive of `u''`, and its integral vanishes. -/
@@ -95,8 +110,7 @@ theorem ae_norm_gradient_lowerOrder_le_of_mem_w1p0Submodule (hab : a < b)
   have : IsFiniteMeasure (volume.restrict ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) :=
     Real.isFiniteMeasure_restrict_Ioo a b
   -- `u'` is a constant `k` plus the primitive of `u''`, and that primitive is bounded by `N`.
-  have hDint : IntegrableOn (fun x => D x 1) (Ioo a b) :=
-    ((Lp.memLp D).integrable Fact.out).apply_continuousLinearMap 1
+  have hDint : IntegrableOn (fun x => D x 1) (Ioo a b) := integrableOn_iteratedGradient_one_Ioo u
   obtain ⟨k, hk⟩ :=
     (hasWeakLineDerivOn_gradient_lowerOrder u).exists_ae_eq_add_intervalIntegral_left hDint
   have hDn : IntervalIntegrable (fun x => ‖D x‖) volume a b :=
@@ -273,10 +287,7 @@ private theorem exists_hasDerivAt_preciseRepresentative_Ioo (hab : a < b)
         fun t => k + ∫ s in a..t, iteratedGradient 1 u s 1) ∧
       ∀ x ∈ Ioo a b, HasDerivAt (preciseRepresentative volume (value 2 u))
         (k + ∫ s in a..x, iteratedGradient 1 u s 1) x := by
-  have : IsFiniteMeasure (volume.restrict ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) :=
-    Real.isFiniteMeasure_restrict_Ioo a b
-  have hDint : IntegrableOn (fun x => iteratedGradient 1 u x 1) (Ioo a b) :=
-    ((Lp.memLp (iteratedGradient 1 u)).integrable Fact.out).apply_continuousLinearMap 1
+  have hDint := integrableOn_iteratedGradient_one_Ioo u
   -- The weak derivative `u'` is a constant `k` plus the primitive `G` of `u''`.
   obtain ⟨k, hk⟩ :=
     (hasWeakLineDerivOn_gradient_lowerOrder u).exists_ae_eq_add_intervalIntegral_left hDint
@@ -337,14 +348,9 @@ theorem deriv_preciseRepresentative_sub_deriv_eq_integral
         deriv (preciseRepresentative volume (value 2 u)) x =
       ∫ t in x..y, iteratedGradient 1 u t 1 := by
   have hab : a < b := hx.1.trans hx.2
-  have : IsFiniteMeasure (volume.restrict ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) :=
-    Real.isFiniteMeasure_restrict_Ioo a b
-  have hDint : IntegrableOn (fun x => iteratedGradient 1 u x 1) (Ioo a b) :=
-    ((Lp.memLp (iteratedGradient 1 u)).integrable Fact.out).apply_continuousLinearMap 1
   have hD (z : ℝ) (hz : z ∈ Ioo a b) :
       IntervalIntegrable (fun t => iteratedGradient 1 u t 1) volume a z :=
-    (intervalIntegrable_iff_integrableOn_Ioo_of_le hz.1.le).2
-      (hDint.mono_set (Ioo_subset_Ioo_right hz.2.le))
+    intervalIntegrable_iteratedGradient_one_Ioo u (left_mem_Icc.2 hab.le) (Ioo_subset_Icc_self hz)
   obtain ⟨k, -, -, h⟩ := exists_hasDerivAt_preciseRepresentative_Ioo hab u
   rw [(h y hy).deriv, (h x hx).deriv, add_sub_add_left_eq_sub,
     integral_interval_sub_left (hD y hy) (hD x hx)]
