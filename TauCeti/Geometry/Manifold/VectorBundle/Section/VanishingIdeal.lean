@@ -36,6 +36,9 @@ sections, which is what makes `I_x Γ(V)`, a submodule of *finite* sums, large e
 * `TauCeti.smoothSectionFiberEquiv`: the real-linear equivalence `Γ(V) / I_x Γ(V) ≃ V_x` sending
   the class of `s` to `s x`, and `TauCeti.smoothSectionFiberEquiv_smul`, its compatibility with
   multiplication by smooth functions through evaluation at `x`.
+* `TauCeti.smoothSectionLinearMap_apply_eq_of_apply_eq`: a map of sections that is linear over the
+  smooth functions is tensorial, its value at `x` only depends on the value of the section at `x`.
+* `TauCeti.smoothSectionFiberMap`: the fibre map `V_x → W_x` at `x` of such a map of sections.
 
 ## Implementation notes
 
@@ -208,5 +211,66 @@ theorem smoothSectionFiberEquiv_smul (x : M) (f : C^∞⟮I, M; ℝ⟯)
   induction q using Submodule.Quotient.induction_on with
   | H s => rw [← Submodule.Quotient.mk_smul, smoothSectionFiberEquiv_mk,
       smoothSectionFiberEquiv_mk, ContMDiffSection.smul_apply]
+
+/-! ### Linear maps over smooth functions are tensorial -/
+
+section Tensorial
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+  {W : M → Type*} [TopologicalSpace (TotalSpace F' W)]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
+  [FiberBundle F' W] [VectorBundle ℝ F' W]
+
+/-- A map of sections that is linear over the smooth functions sends a section vanishing at `x`
+to a section vanishing at `x`. -/
+theorem smoothSectionLinearMap_apply_eq_zero_of_apply_eq_zero
+    (L : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) {x : M} {s : Cₛ^∞⟮I; F, V⟯}
+    (hs : s x = 0) : L s x = 0 := by
+  refine apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top ?_
+  have h := Submodule.mem_map_of_mem (f := L)
+    (mem_smoothVanishingIdeal_smul_top_of_apply_eq_zero hs)
+  rw [Submodule.map_smul''] at h
+  exact Submodule.smul_mono le_rfl le_top h
+
+/-- **Tensoriality.** The value at `x` of the image of a section under a map of sections that is
+linear over the smooth functions only depends on the value of the section at `x`. -/
+theorem smoothSectionLinearMap_apply_eq_of_apply_eq
+    (L : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) {x : M} {s t : Cₛ^∞⟮I; F, V⟯}
+    (h : s x = t x) : L s x = L t x := by
+  have hst := smoothSectionLinearMap_apply_eq_zero_of_apply_eq_zero L (x := x) (s := s - t)
+    (by simp [h])
+  rwa [map_sub, ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero] at hst
+
+omit [FiniteDimensional ℝ F] in
+variable (I F V) in
+private theorem exists_evalLinearMap_comp_eq_id (x : M) :
+    ∃ g : V x →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯, ContMDiffSection.evalLinearMap I F ∞ V x ∘ₗ g = LinearMap.id :=
+  LinearMap.exists_rightInverse_of_surjective _ <|
+    LinearMap.range_eq_top.2 (ContMDiffSection.evalLinearMap_surjective ∞ x)
+
+omit [FiniteDimensional ℝ F] in
+variable (I F V F' W) in
+/-- The fibre map at `x` of a map of sections that is linear over the smooth functions: the
+real-linear map `V_x → W_x` sending `s x` to `L s x`
+(`TauCeti.smoothSectionFiberMap_apply_apply`), well defined by tensoriality when `V` has finite
+rank. -/
+def smoothSectionFiberMap (x : M) :
+    (Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯) →ₗ[ℝ] (V x →ₗ[ℝ] W x) where
+  toFun L := ContMDiffSection.evalLinearMap I F' ∞ W x ∘ₗ L.restrictScalars ℝ ∘ₗ
+    (exists_evalLinearMap_comp_eq_id I F V x).choose
+  map_add' _ _ := by ext; simp
+  map_smul' _ _ := by ext; simp
+
+/-- The fibre map at `x` of a `C^∞(M)`-linear map of sections `L` sends `s x` to `L s x`. -/
+@[simp]
+theorem smoothSectionFiberMap_apply_apply (L : Cₛ^∞⟮I; F, V⟯ →ₗ[C^∞⟮I, M; ℝ⟯] Cₛ^∞⟮I; F', W⟯)
+    {x : M} (s : Cₛ^∞⟮I; F, V⟯) : smoothSectionFiberMap I F V F' W x L (s x) = L s x := by
+  have h := LinearMap.congr_fun (exists_evalLinearMap_comp_eq_id I F V x).choose_spec (s x)
+  rw [LinearMap.comp_apply, ContMDiffSection.evalLinearMap_apply, LinearMap.id_apply] at h
+  simp only [smoothSectionFiberMap, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.comp_apply,
+    LinearMap.restrictScalars_apply, ContMDiffSection.evalLinearMap_apply]
+  exact smoothSectionLinearMap_apply_eq_of_apply_eq L h
+
+end Tensorial
 
 end TauCeti
