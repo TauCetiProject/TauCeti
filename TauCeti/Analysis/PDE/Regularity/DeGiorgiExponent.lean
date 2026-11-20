@@ -112,8 +112,7 @@ theorem mul_add_le_mul_div_of_forall_exists_holderOnWith {n : ℕ} {lam Lam : �
       (Lam • meyersCoefficient μ) lam Lam := by
     have := (uniformlyEllipticOn_meyersCoefficient hμ0 hμ1
       (Ω : Set (EuclideanSpace ℝ (Fin (n + 2))))).const_smul hLam0
-    rwa [hμ, mul_div_cancel_left₀ _ (by positivity : (n + 1 : ℝ) ≠ 0),
-      mul_div_cancel₀ _ hLam0.ne', mul_one] at this
+    rwa [meyersEigenvalue_eq_iff.2 hμ, mul_div_cancel₀ _ hLam0.ne', mul_one] at this
   have hsol : ∀ v : W1p0 volume Ω 2,
       energyFormH1 (Lam • meyersCoefficient μ) 0 0 u (v : W1p volume Ω 2) = 0 := fun v => by
     have := energyFormH1_smul_coefficients (meyersCoefficient μ) 0 0 Lam u (v : W1p volume Ω 2)

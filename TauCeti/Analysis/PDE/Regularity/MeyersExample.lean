@@ -49,6 +49,8 @@ cannot be chosen independently of the ellipticity ratio either; this is drawn ou
 
 ## Main declarations
 
+* `TauCeti.PDE.meyersEigenvalue`: the tangential eigenvalue `μ (μ + n) / (n + 1)` of Meyers'
+  coefficient, characterized by `TauCeti.PDE.meyersEigenvalue_eq_iff`.
 * `TauCeti.PDE.uniformlyEllipticOn_meyersCoefficient`: for `μ ≤ 1`, Meyers' coefficient is
   uniformly elliptic with constants `μ (μ + n) / (n + 1)` and `1`;
   `TauCeti.PDE.uniformlyEllipticOn_meyersCoefficient_of_one_le`: for `μ ≥ 1`, with constants `1`
@@ -117,37 +119,60 @@ namespace PDE
 
 variable {n : ℕ} {μ : ℝ}
 
+/-- The tangential eigenvalue `μ (μ + n) / (n + 1)` of Meyers' coefficient field on `ℝ^{n+2}`
+(`TauCeti.PDE.meyersCoefficient`); in the plane, `n = 0`, it is `μ²`. It is the value for which
+`‖x‖ ^ (μ - 1) x₀` solves `div(a ∇u) = 0`. -/
+def meyersEigenvalue (n : ℕ) (μ : ℝ) : ℝ :=
+  μ * (μ + n) / (n + 1)
+
+/-- Unfolding `TauCeti.PDE.meyersEigenvalue`. -/
+theorem meyersEigenvalue_apply (n : ℕ) (μ : ℝ) : meyersEigenvalue n μ = μ * (μ + n) / (n + 1) :=
+  (rfl)
+
+/-- In the plane, the tangential eigenvalue of Meyers' coefficient is `μ²`. -/
+@[simp]
+theorem meyersEigenvalue_zero (μ : ℝ) : meyersEigenvalue 0 μ = μ ^ 2 := by
+  simp [meyersEigenvalue_apply, sq]
+
+/-- The tangential eigenvalue of Meyers' coefficient is `κ` exactly when `μ (μ + n) = (n + 1) κ`. -/
+theorem meyersEigenvalue_eq_iff {κ : ℝ} :
+    meyersEigenvalue n μ = κ ↔ μ * (μ + n) = (n + 1) * κ := by
+  rw [meyersEigenvalue_apply, div_eq_iff (by positivity), mul_comm κ]
+
 /-- **Meyers' coefficient field** on `ℝ^{n+2}`,
-`a(x) = κ I + (1 - κ) x xᵀ / ‖x‖²` with `κ = μ (μ + n) / (n + 1)`. Its eigenvalue in the radial
-direction `x` is `1` and in the tangential directions is `κ`; in the plane, `n = 0`, it is `μ²`. At
-the origin, where the direction is undefined, it is `κ I`. The tangential eigenvalue `κ` is the one
-for which `‖x‖ ^ (μ - 1) x₀` solves `div(a ∇u) = 0`. -/
+`a(x) = κ I + (1 - κ) x xᵀ / ‖x‖²` with `κ = μ (μ + n) / (n + 1)`
+(`TauCeti.PDE.meyersEigenvalue`). Its eigenvalue in the radial direction `x` is `1` and in the
+tangential directions is `κ`; in the plane, `n = 0`, it is `μ²`. At the origin, where the direction
+is undefined, it is `κ I`. The tangential eigenvalue `κ` is the one for which `‖x‖ ^ (μ - 1) x₀`
+solves `div(a ∇u) = 0`. -/
 def meyersCoefficient (μ : ℝ) (x : EuclideanSpace ℝ (Fin (n + 2))) :
     Matrix (Fin (n + 2)) (Fin (n + 2)) ℝ :=
-  (μ * (μ + n) / (n + 1)) • 1 + ((1 - μ * (μ + n) / (n + 1)) / ‖x‖ ^ 2) • Matrix.vecMulVec x x
+  meyersEigenvalue n μ • 1 + ((1 - meyersEigenvalue n μ) / ‖x‖ ^ 2) • Matrix.vecMulVec x x
 
 /-- Unfolding `TauCeti.PDE.meyersCoefficient`. -/
 theorem meyersCoefficient_apply (x : EuclideanSpace ℝ (Fin (n + 2))) :
-    meyersCoefficient μ x = (μ * (μ + n) / (n + 1)) • 1 +
-      ((1 - μ * (μ + n) / (n + 1)) / ‖x‖ ^ 2) • Matrix.vecMulVec x x :=
+    meyersCoefficient μ x = meyersEigenvalue n μ • 1 +
+      ((1 - meyersEigenvalue n μ) / ‖x‖ ^ 2) • Matrix.vecMulVec x x :=
   (rfl)
 
 /-- The bilinear form of Meyers' coefficient: with `κ = μ (μ + n) / (n + 1)`,
 `ηᵀ a(x) ξ = κ ⟪η, ξ⟫ + (1 - κ) ⟪η, x⟫ ⟪x, ξ⟫ / ‖x‖²`. -/
 theorem dotProduct_meyersCoefficient_mulVec (x η ξ : EuclideanSpace ℝ (Fin (n + 2))) :
-    η ⬝ᵥ (meyersCoefficient μ x *ᵥ ξ) = μ * (μ + n) / (n + 1) * ⟪η, ξ⟫_ℝ +
-      (1 - μ * (μ + n) / (n + 1)) / ‖x‖ ^ 2 * (⟪η, x⟫_ℝ * ⟪x, ξ⟫_ℝ) := by
+    η ⬝ᵥ (meyersCoefficient μ x *ᵥ ξ) = meyersEigenvalue n μ * ⟪η, ξ⟫_ℝ +
+      (1 - meyersEigenvalue n μ) / ‖x‖ ^ 2 * (⟪η, x⟫_ℝ * ⟪x, ξ⟫_ℝ) := by
   simp only [meyersCoefficient, Matrix.add_mulVec, Matrix.smul_mulVec, Matrix.one_mulVec,
-    Matrix.vecMulVec_mulVec, dotProduct_add, dotProduct_smul, PiLp.inner_apply,
-    RCLike.inner_apply, conj_trivial]
-  simp [dotProduct, Finset.mul_sum, mul_comm, mul_left_comm, mul_assoc]
+    Matrix.vecMulVec_mulVec, dotProduct_add, dotProduct_smul, smul_eq_mul,
+    MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op, EuclideanSpace.inner_eq_star_dotProduct,
+    star_trivial]
+  rw [dotProduct_comm ξ.ofLp η.ofLp, dotProduct_comm x.ofLp η.ofLp,
+    dotProduct_comm ξ.ofLp x.ofLp]
 
 /-- With `κ = μ (μ + n) / (n + 1)`, the bilinear form of Meyers' coefficient is bounded by
 `|κ| + |1 - κ|`. -/
 theorem abs_dotProduct_meyersCoefficient_mulVec_le (x η ξ : EuclideanSpace ℝ (Fin (n + 2))) :
     |η ⬝ᵥ (meyersCoefficient μ x *ᵥ ξ)| ≤
-      (|μ * (μ + n) / (n + 1)| + |1 - μ * (μ + n) / (n + 1)|) * ‖η‖ * ‖ξ‖ := by
-  set κ := μ * (μ + n) / (n + 1)
+      (|meyersEigenvalue n μ| + |1 - meyersEigenvalue n μ|) * ‖η‖ * ‖ξ‖ := by
+  set κ := meyersEigenvalue n μ
   have hcx : |(1 - κ) / ‖x‖ ^ 2| * ‖x‖ ^ 2 ≤ |1 - κ| := by
     rcases eq_or_ne ‖x‖ 0 with h | h
     · simp [h]
@@ -165,31 +190,33 @@ theorem abs_dotProduct_meyersCoefficient_mulVec_le (x η ξ : EuclideanSpace ℝ
     _ = (|κ| + |(1 - κ) / ‖x‖ ^ 2| * ‖x‖ ^ 2) * ‖η‖ * ‖ξ‖ := by ring
     _ ≤ (|κ| + |1 - κ|) * ‖η‖ * ‖ξ‖ := by gcongr
 
-/-- The tangential eigenvalue `μ (μ + n) / (n + 1)` of Meyers' coefficient is positive for
-`μ > 0`, at most `1` for `0 ≤ μ ≤ 1` and at least `1` for `μ ≥ 1`. -/
-private theorem meyersEigenvalue_pos (hμ : 0 < μ) : 0 < μ * (μ + n) / (n + 1) := by
+/-- The tangential eigenvalue of Meyers' coefficient is positive for `μ > 0`. -/
+private theorem meyersEigenvalue_pos (hμ : 0 < μ) : 0 < meyersEigenvalue n μ := by
+  rw [meyersEigenvalue_apply]
   positivity
 
+/-- The tangential eigenvalue of Meyers' coefficient is at most `1` for `0 ≤ μ ≤ 1`. -/
 private theorem meyersEigenvalue_le_one (hμ0 : 0 ≤ μ) (hμ1 : μ ≤ 1) :
-    μ * (μ + n) / (n + 1) ≤ 1 := by
-  rw [div_le_one (by positivity)]
+    meyersEigenvalue n μ ≤ 1 := by
+  rw [meyersEigenvalue_apply, div_le_one (by positivity)]
   nlinarith
 
-private theorem one_le_meyersEigenvalue (hμ : 1 ≤ μ) : 1 ≤ μ * (μ + n) / (n + 1) := by
-  rw [one_le_div (by positivity)]
+/-- The tangential eigenvalue of Meyers' coefficient is at least `1` for `μ ≥ 1`. -/
+private theorem one_le_meyersEigenvalue (hμ : 1 ≤ μ) : 1 ≤ meyersEigenvalue n μ := by
+  rw [meyersEigenvalue_apply, one_le_div (by positivity)]
   nlinarith
 
 /-- For `0 < μ ≤ 1`, Meyers' coefficient is uniformly elliptic with constants
 `μ (μ + n) / (n + 1)` and `1`, so its ellipticity ratio is `(n + 1) / (μ (μ + n))`. -/
 theorem uniformlyEllipticOn_meyersCoefficient (hμ0 : 0 < μ) (hμ1 : μ ≤ 1)
     (Ω : Set (EuclideanSpace ℝ (Fin (n + 2)))) :
-    UniformlyEllipticOn Ω (meyersCoefficient μ) (μ * (μ + n) / (n + 1)) 1 := by
-  have hc : 0 ≤ 1 - μ * (μ + n) / (n + 1) := sub_nonneg.2 (meyersEigenvalue_le_one hμ0.le hμ1)
+    UniformlyEllipticOn Ω (meyersCoefficient μ) (meyersEigenvalue n μ) 1 := by
+  have hc : 0 ≤ 1 - meyersEigenvalue n μ := sub_nonneg.2 (meyersEigenvalue_le_one hμ0.le hμ1)
   refine UniformlyEllipticOn.of_bounds (meyersEigenvalue_pos hμ0)
     (meyersEigenvalue_le_one hμ0.le hμ1) (fun x _ ξ => ?_) (fun x _ η ξ => ?_)
   · rw [Matrix.toQuadraticForm'_apply, dotProduct_meyersCoefficient_mulVec,
       real_inner_self_eq_norm_sq, real_inner_comm x ξ]
-    have : 0 ≤ (1 - μ * (μ + n) / (n + 1)) / ‖x‖ ^ 2 * (⟪x, ξ⟫_ℝ * ⟪x, ξ⟫_ℝ) :=
+    have : 0 ≤ (1 - meyersEigenvalue n μ) / ‖x‖ ^ 2 * (⟪x, ξ⟫_ℝ * ⟪x, ξ⟫_ℝ) :=
       mul_nonneg (div_nonneg hc (by positivity)) (mul_self_nonneg _)
     linarith
   · simpa [abs_of_nonneg hc, abs_of_pos (meyersEigenvalue_pos hμ0)] using
@@ -199,8 +226,8 @@ theorem uniformlyEllipticOn_meyersCoefficient (hμ0 : 0 < μ) (hμ1 : μ ≤ 1)
 `κ = μ (μ + n) / (n + 1)`: `ηᵀ a(x) ξ = ⟪η, κ ξ + t x⟫` with `‖κ ξ + t x‖ ≤ κ ‖ξ‖`. -/
 private theorem abs_dotProduct_meyersCoefficient_mulVec_le_eigenvalue (hμ : 1 ≤ μ)
     (x η ξ : EuclideanSpace ℝ (Fin (n + 2))) :
-    |η ⬝ᵥ (meyersCoefficient μ x *ᵥ ξ)| ≤ μ * (μ + n) / (n + 1) * ‖η‖ * ‖ξ‖ := by
-  set κ := μ * (μ + n) / (n + 1)
+    |η ⬝ᵥ (meyersCoefficient μ x *ᵥ ξ)| ≤ meyersEigenvalue n μ * ‖η‖ * ‖ξ‖ := by
+  set κ := meyersEigenvalue n μ
   have hκ1 : 1 ≤ κ := one_le_meyersEigenvalue hμ
   set t : ℝ := (1 - κ) / ‖x‖ ^ 2 * ⟪x, ξ⟫_ℝ with ht
   have heq : η ⬝ᵥ (meyersCoefficient μ x *ᵥ ξ) = ⟪η, κ • ξ + t • x⟫_ℝ := by
@@ -233,13 +260,13 @@ private theorem abs_dotProduct_meyersCoefficient_mulVec_le_eigenvalue (hμ : 1 �
 `μ (μ + n) / (n + 1)`, which is its ellipticity ratio. -/
 theorem uniformlyEllipticOn_meyersCoefficient_of_one_le (hμ : 1 ≤ μ)
     (Ω : Set (EuclideanSpace ℝ (Fin (n + 2)))) :
-    UniformlyEllipticOn Ω (meyersCoefficient μ) 1 (μ * (μ + n) / (n + 1)) := by
-  have hκ1 : 1 ≤ μ * (μ + n) / (n + 1) := one_le_meyersEigenvalue hμ
+    UniformlyEllipticOn Ω (meyersCoefficient μ) 1 (meyersEigenvalue n μ) := by
+  have hκ1 : 1 ≤ meyersEigenvalue n μ := one_le_meyersEigenvalue hμ
   refine UniformlyEllipticOn.of_bounds one_pos hκ1 (fun x _ ξ => ?_)
     (fun x _ η ξ => abs_dotProduct_meyersCoefficient_mulVec_le_eigenvalue hμ x η ξ)
   rw [Matrix.toQuadraticForm'_apply, dotProduct_meyersCoefficient_mulVec,
     real_inner_self_eq_norm_sq, real_inner_comm x ξ]
-  set κ := μ * (μ + n) / (n + 1)
+  set κ := meyersEigenvalue n μ
   -- The radial term loses at most `(κ - 1) ‖ξ‖²`, by the Cauchy–Schwarz inequality.
   have hcs : ⟪x, ξ⟫_ℝ * ⟪x, ξ⟫_ℝ ≤ ‖x‖ ^ 2 * ‖ξ‖ ^ 2 := by
     simpa only [real_inner_self_eq_norm_sq] using real_inner_mul_inner_self_le x ξ
@@ -275,7 +302,7 @@ private theorem norm_single_zero_add_smul_single_one_sq (c : ℝ) :
 private theorem meyersCoefficient_smul_apply_zero_zero (c : ℝ) {t : ℝ} (ht : t ≠ 0) :
     meyersCoefficient μ (t • (EuclideanSpace.single (0 : Fin (n + 2)) (1 : ℝ) +
       c • EuclideanSpace.single 1 1)) 0 0 =
-      μ * (μ + n) / (n + 1) + (1 - μ * (μ + n) / (n + 1)) / (1 + c ^ 2) := by
+      meyersEigenvalue n μ + (1 - meyersEigenvalue n μ) / (1 + c ^ 2) := by
   have hn : ‖t • (EuclideanSpace.single (0 : Fin (n + 2)) (1 : ℝ) +
       c • EuclideanSpace.single 1 1)‖ ^ 2 = t ^ 2 * (1 + c ^ 2) := by
     rw [norm_smul, mul_pow, norm_single_zero_add_smul_single_one_sq, Real.norm_eq_abs, sq_abs]
@@ -292,12 +319,12 @@ open Filter in
 `μ (μ + n) / (n + 1)` is not `1`, it has no limit at the origin within the half-space `0 < x₀`:
 along the ray through `e₀` its entry `a₀₀` is `1`, and along the ray through `e₀ + e₁` it is the
 average of `1` and the tangential eigenvalue. -/
-theorem not_exists_tendsto_meyersCoefficient (hμ : μ * (μ + n) / (n + 1) ≠ 1) :
+theorem not_exists_tendsto_meyersCoefficient (hμ : meyersEigenvalue n μ ≠ 1) :
     ¬ ∃ L, Tendsto (meyersCoefficient μ) (𝓝[{x : EuclideanSpace ℝ (Fin (n + 2)) | 0 < x 0}] 0)
       (𝓝 L) := by
   rintro ⟨L, hL⟩
   have key : ∀ c : ℝ,
-      L 0 0 = μ * (μ + n) / (n + 1) + (1 - μ * (μ + n) / (n + 1)) / (1 + c ^ 2) := by
+      L 0 0 = meyersEigenvalue n μ + (1 - meyersEigenvalue n μ) / (1 + c ^ 2) := by
     intro c
     set v : EuclideanSpace ℝ (Fin (n + 2)) :=
       EuclideanSpace.single 0 1 + c • EuclideanSpace.single 1 1 with hv
@@ -501,8 +528,13 @@ private theorem dotProduct_meyersCoefficient_mulVec_radialCoordGradient
       ‖x‖ ^ (μ - 3) * ‖x‖ ^ 2 * η 0 + ‖x‖ ^ (μ - 3) * (μ - 1) * η 0 * (x i * x i) -
         ‖x‖ ^ (μ - 3) * ‖x‖ ^ 2 * (if 0 = i then η i else 0) -
         ‖x‖ ^ (μ - 3) * (μ - 1) * x 0 * (η i * x i) := fun i => by
-    rw [hG, hG]
-    split_ifs <;> (try subst_vars) <;> first | exact absurd rfl ‹_› | ring
+    rw [hG, hG, ite_eq_left rfl]
+    -- The Kronecker deltas `δ₀ᵢ` in `∂₀Rᵢ` and in the claimed right-hand side agree.
+    by_cases h : 0 = i
+    · rw [ite_eq_left h, ite_eq_left h, h]
+      ring
+    · rw [ite_eq_right h, ite_eq_right h]
+      ring
   have hηx : ∑ i, η i * x i = ⟪η, x⟫_ℝ := by
     simp [PiLp.inner_apply, mul_comm]
   have hsum : ∑ i, (η 0 * radialCoordGradient μ i x i - η i * radialCoordGradient μ i x 0) =
@@ -514,7 +546,8 @@ private theorem dotProduct_meyersCoefficient_mulVec_radialCoordGradient
       ite_true, hR, hηx]
     push_cast
     ring
-  rw [dotProduct_meyersCoefficient_mulVec, hinner, hinner, hsum, real_inner_self_eq_norm_sq]
+  rw [dotProduct_meyersCoefficient_mulVec, hinner, hinner, hsum, real_inner_self_eq_norm_sq,
+    meyersEigenvalue_apply]
   field_simp
   ring
 
@@ -618,7 +651,7 @@ theorem energyFormH1_meyersCoefficient_eq_zero (hμ0 : 0 < μ)
     (b := 0) (c := 0) (beta := 0) (gamma := 0) (by positivity)
     stronglyMeasurable_meyersCoefficient.aestronglyMeasurable aestronglyMeasurable_const
     aestronglyMeasurable_const
-    (fun x _ η ξ => abs_dotProduct_meyersCoefficient_mulVec_le x η ξ)
+    (fun x _ η ξ => abs_dotProduct_meyersCoefficient_mulVec_le (μ := μ) x η ξ)
     (fun _ _ => by simp) (fun _ _ => by simp)
   have hclosed : IsClosed {w : W1p volume Ω 2 | energyFormH1L hcoeff u w = 0} :=
     isClosed_eq (energyFormH1L hcoeff u).continuous continuous_const

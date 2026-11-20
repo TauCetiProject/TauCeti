@@ -115,7 +115,7 @@ theorem exists_uniformlyEllipticOn_energyFormH1_eq_zero_tendsto_div {Λ : ℝ} (
     hu, energyFormH1_meyersCoefficient_eq_zero hs0 u hu, continuous_meyersSolution hs0,
     meyersSolution_zero, fun x hx => meyersSolution_pos (hΩ hx),
     tendsto_meyersSolution_smul_single_zero_div hs⟩
-  simpa [Real.mul_self_sqrt (zero_le_one.trans hΛ.le)] using
+  simpa [Real.sq_sqrt (zero_le_one.trans hΛ.le)] using
     uniformlyEllipticOn_meyersCoefficient_of_one_le hs.le (Ω : Set (EuclideanSpace ℝ (Fin 2)))
 
 end PDE
