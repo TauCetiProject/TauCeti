@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.ImplicitAtlas.Basic
+public import TauCeti.Topology.ImplicitAtlas.DeformationSpace
 public import Mathlib.Geometry.Manifold.ChartedSpace
 import Mathlib.Topology.Homeomorph.Lemmas
 
@@ -27,6 +27,13 @@ for the virtual fundamental class.
   `Z_∅α = {0}` (`TauCeti.ImplicitAtlas.kuranishiZeroSet_powKuranishi_empty`) maps onto `X`, so the
   footprint `V_α = X` covers. For `m ≥ 2` the zero `0` of `s_α` is not transverse, so `X` is not
   cut out transversally by `s_α`; the atlas describes it through the regular thickening `X_α`.
+
+For the atlas `s(x) = xᵐ`, whose regular locus `X_∅^reg` is empty, the deformation space
+`D_(∅,α,α)` is empty (`TauCeti.ImplicitAtlas.deformationSpace_powAtlas_empty`), and
+`D_(α,α,α)` is `{(e, t, x) | t > 0, xᵐ = t e}`
+(`TauCeti.ImplicitAtlas.mem_deformationSpace_powAtlas_iff`): the points with `t = 0` are missing
+because `X_∅^reg = ∅`. Its support `Z_X` is the half-line `x = 0, e = 0, t > 0`, without its
+endpoint (`TauCeti.ImplicitAtlas.mem_deformationSupport_powAtlas_iff`).
 
 The thickenings of `powAtlas` are the subtypes `{x : ℝ // I = ∅ → x = 0}` of `ℝ`
 (`TauCeti.ImplicitAtlas.PowThickening`): the point `{0}` for `I = ∅` and `ℝ` for `I = {α}`.
@@ -261,6 +268,60 @@ theorem footprint_powAtlas_singleton (hm : m ≠ 0) : (powAtlas hm).footprint {(
   eq_univ_of_forall fun y ↦ (powAtlas hm).mem_footprint.2
     ⟨powSection hm (Finset.empty_subset _) y, by simp [regLocus_powAtlas],
       Subtype.ext (coe_footprintMap_powAtlas hm (Finset.empty_subset _) _)⟩
+
+/-! #### Deformation spaces -/
+
+/-- For the atlas `s(x) = xᵐ` on a point, whose `X_∅^reg` is empty, the deformation space
+`D_(∅,α,α)` is empty. -/
+theorem deformationSpace_powAtlas_empty (hm : m ≠ 0) :
+    (powAtlas hm).deformationSpace ∅ (subset_refl (Finset.univ : Finset Unit)) = ∅ :=
+  deformationSpace_eq_empty fun S hS ↦ by
+    rw [Finset.subset_empty.1 hS, regLocus_powAtlas_empty]
+
+/-- For the atlas `s(x) = xᵐ` on a point, the deformation space `D_(α,α,α)` is
+`{(e, t, x) | t > 0, xᵐ = t e}`. The points with `t = 0` are missing because `X_∅^reg = ∅`. -/
+theorem mem_deformationSpace_powAtlas_iff (hm : m ≠ 0)
+    {p : ((α : (Finset.univ : Finset Unit)) → ℝ) × (↥(Finset.univ : Finset Unit) → ℝ) ×
+      PowThickening Finset.univ} :
+    p ∈ (powAtlas hm).deformationSpace Finset.univ (subset_refl (Finset.univ : Finset Unit)) ↔
+      0 < p.2.1 ⟨(), Finset.mem_univ _⟩ ∧
+        (p.2.2 : ℝ) ^ m = p.2.1 ⟨(), Finset.mem_univ _⟩ * p.1 ⟨(), Finset.mem_univ _⟩ := by
+  rw [mem_deformationSpace]
+  constructor
+  · rintro ⟨-, -, hs, h, hx, hreg⟩
+    refine ⟨?_, by simpa using hs ⟨(), Finset.mem_univ _⟩⟩
+    rw [regLocus_powAtlas] at hreg
+    obtain ⟨α, hα⟩ := hreg
+    exact (mem_positiveIndices.1 hα).2
+  · rintro ⟨hpos, hs⟩
+    have hT : positiveIndices p.2.1 = Finset.univ :=
+      Finset.eq_univ_of_forall fun _ ↦ mem_positiveIndices.2 ⟨Finset.mem_univ _, hpos⟩
+    refine ⟨fun ⟨(), _⟩ ↦ hpos.le, fun α hα ↦ (hα (Finset.mem_univ _)).elim,
+      fun ⟨(), _⟩ ↦ by simpa using hs, ?_⟩
+    rw [hT]
+    refine ⟨subset_refl _, mem_kuranishiZeroSet_self _ _, ?_⟩
+    rw [regLocus_powAtlas]
+    exact Finset.univ_nonempty
+
+/-- For the atlas `s(x) = xᵐ` on a point, the support `Z_X ⊆ D_(α,α,α)` is the half-line
+`x = 0`, `e = 0`, `t > 0`, which does not contain its endpoint `t = 0`. -/
+theorem mem_deformationSupport_powAtlas_iff (hm : m ≠ 0)
+    {p : (powAtlas hm).deformationSpace Finset.univ (subset_refl (Finset.univ : Finset Unit))} :
+    p ∈ (powAtlas hm).deformationSupport Finset.univ (subset_refl (Finset.univ : Finset Unit))
+        univ ↔
+      (p.val.2.2 : ℝ) = 0 := by
+  obtain ⟨hpos, hs⟩ := (mem_deformationSpace_powAtlas_iff hm).1 p.property
+  rw [mem_deformationSupport]
+  constructor
+  · rintro ⟨he, -⟩
+    rw [he, Pi.zero_apply, mul_zero] at hs
+    exact (pow_eq_zero_iff hm).1 hs
+  · intro hx
+    rw [hx, zero_pow hm] at hs
+    have he : p.val.1 = 0 := funext fun ⟨(), _⟩ ↦
+      (mul_eq_zero.1 hs.symm).resolve_left hpos.ne'
+    exact ⟨he, mem_kuranishiZeroSet_empty_of_eq_zero p.property he, mem_univ _⟩
+
 
 end Pow
 
