@@ -47,9 +47,9 @@ variable {β 𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup 
 
 /-- The basis vectors of a generalized Schauder basis span a dense subspace. -/
 theorem dense_span [L.NeBot] : Dense (Submodule.span 𝕜 (range b) : Set X) := fun x ↦
-  mem_closure_of_tendsto (b.tendsto_proj x) (Eventually.of_forall fun A ↦ by
-    rw [SetLike.mem_coe, proj_apply]
-    exact Submodule.sum_smul_mem _ _ fun i _ ↦ Submodule.subset_span (mem_range_self i))
+  mem_closure_of_tendsto (b.tendsto_proj x) (Eventually.of_forall fun A ↦
+    Submodule.span_mono (image_subset_range b A)
+      (b.range_proj_eq_span A ▸ (b.proj A).toLinearMap.mem_range_self x))
 
 /-- A finite coordinate projection fixes every linear combination supported in its index set. -/
 theorem proj_sum_of_subset (a : β → 𝕜) {A B : Finset β} (hBA : B ⊆ A) :
