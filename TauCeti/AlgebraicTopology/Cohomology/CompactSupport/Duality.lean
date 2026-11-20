@@ -417,14 +417,12 @@ theorem bijective_dualityMap_comap_iff_of_range_eq {U U' : Type} [TopologicalSpa
     ((Homeomorph.setCongr hjj').trans hj'.isEmbedding.toHomeomorph.symm)
   have he : j' ∘ e = j := funext fun x ↦ by
     rw [Function.comp_apply, ← hj'.isEmbedding.toHomeomorph_apply_coe]
-    simp [e]
-    rfl
+    simp [e, Homeomorph.setCongr]
   let f : C(U, U') := ⟨e, e.continuous⟩
   have key := (o.comap hj').compactSupportCohomologyExtend_dualityMap hn L (j := f)
     e.isOpenEmbedding p q h
   rw [o.comap_comap_of_comp_eq hj' e.isOpenEmbedding hj he] at key
-  have : IsIso (TopCat.ofHom f) := inferInstanceAs
-    (IsIso (TopCat.isoOfHomeo (X := TopCat.of U) (Y := TopCat.of U') e).hom)
+  have : IsIso (TopCat.ofHom f) := (TopCat.isIso_iff_isHomeomorph _).2 e.isHomeomorph
   have := TopCat.isIso_compactSupportCohomologyExtend (R := ModuleCat.of ℤ (ULift.{0} ℤ))
     (k := ℤ) (M := L) (f := TopCat.ofHom f) e.isOpenEmbedding p
   have hext := ConcreteCategory.bijective_of_isIso
@@ -455,78 +453,6 @@ private lemma compactSupportCohomologyExtend_dualityMap_of_le {U V : Opens M} (h
     (j := ι) hι p q h
   rwa [o.comap_comap_of_comp_eq V.isOpenEmbedding' hι U.isOpenEmbedding' rfl] at key
 
-/-- For a cover of `M` by two disjoint open sets `U` and `V`, the sum of the extensions
-`Hᵖ_c(U; L) ⊞ Hᵖ_c(V; L) ⟶ Hᵖ_c(M; L)` is an isomorphism: it is the middle map of the
-Mayer–Vietoris sequence, whose neighbouring terms `Hᵖ_c(U ∩ V; L)` vanish. -/
-private lemma isIso_biprodDesc_compactSupportCohomologyExtend {U V : Opens M} (hUV : U ⊔ V = ⊤)
-    (hd : Disjoint U V) (p : ℕ) :
-    IsIso (biprod.desc
-      (TopCat.compactSupportCohomologyExtend (R := ModuleCat.of ℤ (ULift.{0} ℤ)) (k := ℤ) (M := L)
-        (f := TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M))) U.isOpenEmbedding' p)
-      (TopCat.compactSupportCohomologyExtend (R := ModuleCat.of ℤ (ULift.{0} ℤ)) (k := ℤ) (M := L)
-        (f := TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(V, M))) V.isOpenEmbedding'
-          p)) := by
-  have : IsEmpty ((Opens.toTopCat (TopCat.of M)).obj (U ⊓ V)) :=
-    ⟨fun x ↦ Set.disjoint_left.1 (Opens.coe_disjoint.2 hd) (Opens.mem_inf.1 x.2).1
-      (Opens.mem_inf.1 x.2).2⟩
-  have hG := TopCat.isIso_compactSupportCohomologyMayerVietorisFromBiprod_of_isZero
-    (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L (X := TopCat.of M) U V hUV
-    (fun m ↦ (isZero_singularCohomology_of_isEmpty _ ℤ L _ m).of_iso
-      (TopCat.compactSupportCohomologyIsoOfCompactSpace m)) p
-  -- The map is the Mayer–Vietoris map, written with the open subsets as the spaces `↥U`, `↥V`.
-  have hFG : biprod.desc
-      (TopCat.compactSupportCohomologyExtend (R := ModuleCat.of ℤ (ULift.{0} ℤ)) (k := ℤ) (M := L)
-        (f := TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M))) U.isOpenEmbedding' p)
-      (TopCat.compactSupportCohomologyExtend (R := ModuleCat.of ℤ (ULift.{0} ℤ)) (k := ℤ) (M := L)
-        (f := TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(V, M))) V.isOpenEmbedding'
-          p) =
-      TopCat.compactSupportCohomologyMayerVietorisFromBiprod (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L
-        (X := TopCat.of M) U V p := by
-    refine biprod.hom_ext' _ _ ?_ ?_
-    · rw [biprod.inl_desc]
-      exact (TopCat.inl_compactSupportCohomologyMayerVietorisFromBiprod _ ℤ L
-        (X := TopCat.of M) U V p).symm
-    · rw [biprod.inr_desc]
-      exact (TopCat.inr_compactSupportCohomologyMayerVietorisFromBiprod _ ℤ L
-        (X := TopCat.of M) U V p).symm
-  rw [hFG]
-  exact hG
-
-/-- For a cover of `M` by two disjoint open sets `U` and `V`, the sum of the pushforwards
-`H_q(U; L) ⊞ H_q(V; L) ⟶ H_q(M; L)` is an isomorphism: it is the middle map of the
-Mayer–Vietoris sequence, whose neighbouring terms `H_q(U ∩ V; L)` vanish. -/
-private lemma isIso_biprodDesc_singularHomologyMap {U V : Opens M} (hUV : U ⊔ V = ⊤)
-    (hd : Disjoint U V) (q : ℕ) :
-    IsIso (biprod.desc
-      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
-        (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M))))
-      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
-        (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(V, M))))) := by
-  have : IsEmpty ↥((U : Set M) ∩ V) :=
-    ⟨fun x ↦ Set.disjoint_left.1 (Opens.coe_disjoint.2 hd) x.2.1 x.2.2⟩
-  have hG := TopCat.isIso_mayerVietorisFromBiprod_of_isZero (X := TopCat.of M) L U.isOpen V.isOpen
-    (by rw [← Opens.coe_sup, hUV, Opens.coe_top]) q fun m ↦ by
-      rcases m with _ | m
-      · exact isZero_singularHomologyFunctor_zero_of_isEmpty L _
-      · exact AlgebraicTopology.isZero_singularHomologyFunctor_of_totallyDisconnectedSpace _ _ L _
-          m.succ_ne_zero
-  -- The map is the Mayer–Vietoris map, written with the open subsets as the spaces `↥U`, `↥V`.
-  have hFG : biprod.desc
-      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
-        (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M))))
-      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
-        (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(V, M)))) =
-      SSet.mayerVietorisFromBiprod L
-        (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (U : Set M))))
-        (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (V : Set M)))) q := by
-    refine biprod.hom_ext' _ _ ?_ ?_
-    · rw [biprod.inl_desc]
-      exact (SSet.inl_mayerVietorisFromBiprod L _ _ q).symm
-    · rw [biprod.inr_desc]
-      exact (SSet.inr_mayerVietorisFromBiprod L _ _ q).symm
-  rw [hFG]
-  exact hG
-
 /-- **Poincaré duality for a disjoint union of two open sets.** If `M` is the union of two
 disjoint open sets `U` and `V` whose duality maps, for the pulled-back orientations, are bijective,
 then the duality map `Hᵖ_c(M; L) ⟶ H_q(M; L)` is bijective. -/
@@ -545,8 +471,11 @@ theorem bijective_dualityMap_of_disjoint {U V : Opens M} (hUV : U ⊔ V = ⊤) (
       (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M))))
     (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
       (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(V, M))))
-  have hFc : IsIso Fc := isIso_biprodDesc_compactSupportCohomologyExtend L hUV hd p
-  have hFh : IsIso Fh := isIso_biprodDesc_singularHomologyMap L hUV hd q
+  have hFc : IsIso Fc := TopCat.isIso_biprodDesc_compactSupportCohomologyExtend_of_disjoint
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L (X := TopCat.of M) U V hUV hd p
+  have hFh : IsIso Fh := TopCat.isIso_biprodDesc_singularHomologyFunctor_map_of_disjoint
+    (X := TopCat.of M) L U.isOpen V.isOpen (by rw [← Opens.coe_sup, hUV, Opens.coe_top])
+    (Opens.coe_disjoint.2 hd) q
   have := (ConcreteCategory.isIso_iff_bijective _).2 hU
   have := (ConcreteCategory.isIso_iff_bijective _).2 hV
   have := isIso_of_mono_of_epi (biprod.map ((o.comap U.isOpenEmbedding').dualityMap hn L p q h)
@@ -583,7 +512,8 @@ theorem bijective_dualityMap_of_iSup_eq_top {ι : Type} [Preorder ι] [IsDirecte
   have hc := TauCeti.isColimitMapCoconeSingularHomologySubset (X := TopCat.of M) L q
     (U := fun i ↦ (U i : Set M)) (fun _ _ hij ↦ hU hij) fun K hK ↦
       Compacts.exists_subset_of_iSup_eq_top hU.directed_le hcover ⟨K, hK⟩
-  -- Naturality along the inclusion of `U i` into `M`.
+  -- Naturality along the inclusion of `U i` into `M`; `Opens.inclusion' (U i)` is by definition
+  -- `TopCat.ofHom ⟨Subtype.val, _⟩`, so `Opens.coe_inclusion'` holds by `rfl`.
   have hnat (i : ι) (z) : o.dualityMap hn L p q h
       (TopCat.compactSupportCohomologyExtend (U i).isOpenEmbedding p z) =
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
