@@ -94,6 +94,14 @@ def semiclassicalSobolevNorm (k : ℕ) (h : ℝ) (f : E → F) : ℝ :=
   h ^ (-(finrank ℝ E : ℝ) / 2) *
     ∑ i ∈ Finset.range (k + 1), h ^ i * lpNorm (iteratedFDeriv ℝ i f) 2 volume
 
+/-- The defining formula of the semiclassical norm,
+`‖f‖_{k,h} = h^(-n/2) ∑_{i ≤ k} hⁱ ‖Dⁱ f‖₂`, valid at every scale `h`. -/
+theorem semiclassicalSobolevNorm_def (k : ℕ) (h : ℝ) (f : E → F) :
+    semiclassicalSobolevNorm k h f =
+      h ^ (-(finrank ℝ E : ℝ) / 2) *
+        ∑ i ∈ Finset.range (k + 1), h ^ i * lpNorm (iteratedFDeriv ℝ i f) 2 volume :=
+  (rfl)
+
 /-- At scale one the semiclassical norm is the sum of the `L²` norms of the derivatives through
 order `k`. -/
 @[simp]
@@ -206,27 +214,16 @@ theorem exists_semiclassicalSobolevNorm_mul_le {k : ℕ} (hk : finrank ℝ E < 2
   refine ⟨C, fun h hh f g hf hg hfm hgm ↦ ?_⟩
   obtain ⟨hf', hfm'⟩ := contDiff_comp_smul_and_memLp hf hfm hh.ne'
   obtain ⟨hg', hgm'⟩ := contDiff_comp_smul_and_memLp hg hgm hh.ne'
-  obtain ⟨hm, hle⟩ := hC _ _ hf' hg' hfm' hgm'
   -- The product of the dilations is the dilation of the product.
   have hcomp : (fun x ↦ (f * g) (h • x)) = (fun x ↦ f (h • x)) * fun x ↦ g (h • x) :=
     funext fun _ ↦ by simp only [Pi.mul_apply]
-  have hm' : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i fun x ↦ (f * g) (h • x)) 2 := by
-    rw [hcomp]
-    exact hm
-  have hback : (fun y ↦ (fun x ↦ (f * g) (h • x)) (h⁻¹ • y)) = f * g :=
-    funext fun y ↦ by simp only [smul_inv_smul₀ hh.ne']
   have hEq : semiclassicalSobolevNorm k h (f * g) =
       semiclassicalSobolevNorm k 1 ((fun x ↦ f (h • x)) * fun x ↦ g (h • x)) := by
     rw [← hcomp]
     exact semiclassicalSobolevNorm_eq_comp_smul (hf.mul hg) hh
-  refine ⟨fun i hi ↦ ?_, ?_⟩
-  · -- Undo the dilation.
-    have := (hm' i hi).iteratedFDeriv_comp_smul (u := fun x ↦ (f * g) (h • x)) (((hf.mul hg).comp
-      (contDiff_const_smul h)).of_le (by exact_mod_cast hi)) (inv_ne_zero hh.ne')
-    rwa [hback] at this
-  · rw [hEq, semiclassicalSobolevNorm_eq_comp_smul hf hh,
-      semiclassicalSobolevNorm_eq_comp_smul hg hh]
-    simpa only [semiclassicalSobolevNorm_one] using hle
+  refine ⟨(hC f g hf hg hfm hgm).1, ?_⟩
+  rw [hEq, semiclassicalSobolevNorm_eq_comp_smul hf hh, semiclassicalSobolevNorm_eq_comp_smul hg hh]
+  simpa only [semiclassicalSobolevNorm_one] using (hC _ _ hf' hg' hfm' hgm').2
 
 /-- **A derivative costs one factor of the scale.** For `f` of class `Cᵏ⁺¹` and `h ≥ 0`,
 `h ‖Df‖_{k,h} ≤ ‖f‖_{k+1,h}`: the operator `h D` is bounded, with norm at most one, from order
