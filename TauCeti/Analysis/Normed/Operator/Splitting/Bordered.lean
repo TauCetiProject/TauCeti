@@ -14,7 +14,8 @@ import TauCeti.Topology.Algebra.Module.FiniteDimension
 # Bordered operators and kernel vectors near a corank-one operator
 
 The bordered operator `(w, μ) ↦ (L w + μ ℓ, ℓ w)` of `L : E → E*` and `ℓ ∈ E*` is injective
-when `L` is symmetric with kernel the line spanned by `v` and `ℓ v = 1`. It is the pair of
+when the kernel of `L` lies in the line spanned by `v`, every `L w` vanishes at `v` (as when `L` is
+symmetric and `L v = 0`), and `ℓ v = 1`. It is the pair of
 `(w, μ) ↦ L w + μ ℓ` with the coordinate `(w, μ) ↦ ℓ w`, so if `E` is finite-dimensional over a
 complete field, the kernel section `ContinuousLinearMap.kerSection` of that pair gives, for
 operators `L z` near such an `L z₀`, a vector `W z` tending to `v` as `z → z₀`, which is the kernel
@@ -23,10 +24,10 @@ vector of `L z` normalized by `ℓ` whenever `L z` is degenerate.
 ## Main results
 
 * `ContinuousLinearMap.injective_coprod_toSpanSingleton_prod_comp_fst`: the bordered operator of
-  a symmetric operator with a one-dimensional kernel is injective.
-* `ContinuousLinearMap.exists_tendsto_eventually_apply_eq_zero`: for operators `L z` near a
-  symmetric operator `L z₀` with kernel spanned by `v`, a kernel vector of `L z` normalized by `ℓ`,
-  tending to `v` as `z → z₀`.
+  an operator whose kernel lies in a line that its range annihilates is injective.
+* `ContinuousLinearMap.exists_tendsto_eventually_apply_eq_zero`: for operators `L z` near an
+  operator `L z₀` with kernel spanned by `v`, a vector annihilated by its range, a kernel vector
+  of `L z` normalized by `ℓ`, tending to `v` as `z → z₀`.
 -/
 
 public section
@@ -37,10 +38,11 @@ open Filter Function Module Topology
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
-/-- If the kernel of a symmetric `H₀ : E → E*` is the line spanned by `v` and `ℓ v = 1`, the
-bordered operator `(w, μ) ↦ (H₀ w + μ ℓ, ℓ w)` of `H₀` and `ℓ` is injective. -/
+/-- If the kernel of `H₀ : E → E*` lies in the line spanned by `v`, every `H₀ w` vanishes at `v`
+(as when `H₀` is symmetric and `H₀ v = 0`), and `ℓ v = 1`, the bordered operator
+`(w, μ) ↦ (H₀ w + μ ℓ, ℓ w)` of `H₀` and `ℓ` is injective. -/
 theorem injective_coprod_toSpanSingleton_prod_comp_fst {H₀ : E →L[𝕜] StrongDual 𝕜 E}
-    (hsymm : ∀ u w, H₀ u w = H₀ w u) {v : E} (hv : H₀ v = 0) {ℓ : StrongDual 𝕜 E} (hℓ : ℓ v = 1)
+    {v : E} (hrange : ∀ w, H₀ w v = 0) {ℓ : StrongDual 𝕜 E} (hℓ : ℓ v = 1)
     (hker : ∀ u, H₀ u = 0 → ∃ c : 𝕜, u = c • v) :
     Injective ((H₀.coprod (toSpanSingleton 𝕜 ℓ)).prod (ℓ ∘L fst 𝕜 E 𝕜)) := by
   rw [injective_iff_map_eq_zero]
@@ -48,8 +50,8 @@ theorem injective_coprod_toSpanSingleton_prod_comp_fst {H₀ : E →L[𝕜] Stro
   simp only [prod_apply, coprod_apply, toSpanSingleton_apply, comp_apply, coe_fst',
     Prod.mk_eq_zero] at h
   obtain ⟨h1, h2⟩ := h
-  -- Pairing the first component with `v` kills `H₀ w`, by symmetry, and leaves `μ`.
-  have hμ : μ = 0 := by simpa [hsymm w v, hv, hℓ] using congrArg (· v) h1
+  -- Pairing the first component with `v` kills `H₀ w` and leaves `μ`.
+  have hμ : μ = 0 := by simpa [hrange w, hℓ] using congrArg (· v) h1
   subst hμ
   -- Over a general field `simp` does not apply `zero_smul` to `StrongDual 𝕜 E` by itself, so the
   -- instance `zero_smul 𝕜 ℓ` is supplied here and below.
@@ -58,15 +60,16 @@ theorem injective_coprod_toSpanSingleton_prod_comp_fst {H₀ : E →L[𝕜] Stro
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
 
-/-- **Kernel vectors near a corank-one symmetric operator.** Let `L z : E → E*` depend continuously
-on `z` at `z₀`, with `L z₀` symmetric and its kernel the line spanned by `v`, and let `ℓ v = 1`.
+/-- **Kernel vectors near a corank-one operator.** Let `L z : E → E*` depend continuously on `z`
+at `z₀`, with the kernel of `L z₀` the line spanned by `v`, every `L z₀ w` vanishing at `v` (as
+when `L z₀` is symmetric), and let `ℓ v = 1`.
 Then there is a function `W`, tending to `v` at `z₀`, such that near `z₀`, whenever `L z` has a
 nonzero kernel vector, `W z` is the kernel vector of `L z` normalized by `ℓ`. It is the first
 component of the kernel section, at `1`, of `(w, μ) ↦ L z w + μ ℓ` with coordinate
 `(w, μ) ↦ ℓ w`; the pair is the bordered operator of `L z` and `ℓ`, invertible near `z₀`. -/
 theorem exists_tendsto_eventually_apply_eq_zero {X : Type*} [TopologicalSpace X]
     {L : X → E →L[𝕜] StrongDual 𝕜 E} {z₀ : X} (hL : ContinuousAt L z₀)
-    (hsymm : ∀ u w, L z₀ u w = L z₀ w u) {v : E} (hv : L z₀ v = 0) {ℓ : StrongDual 𝕜 E}
+    {v : E} (hv : L z₀ v = 0) (hrange : ∀ w, L z₀ w v = 0) {ℓ : StrongDual 𝕜 E}
     (hℓ : ℓ v = 1) (hker : ∀ u, L z₀ u = 0 → ∃ c : 𝕜, u = c • v) :
     ∃ W : X → E, Tendsto W (𝓝 z₀) (𝓝 v) ∧
       ∀ᶠ z in 𝓝 z₀, ∀ u, L z u = 0 → u ≠ 0 → L z (W z) = 0 ∧ ℓ (W z) = 1 := by
@@ -77,7 +80,7 @@ theorem exists_tendsto_eventually_apply_eq_zero {X : Type*} [TopologicalSpace X]
   have hdim : finrank 𝕜 (E × 𝕜) = finrank 𝕜 (StrongDual 𝕜 E × 𝕜) := by
     simp [dual_finrank_eq]
   have h₀ : ((A z₀).prod q).IsInvertible := isInvertible_of_injective_of_finrank_eq _
-    hdim (injective_coprod_toSpanSingleton_prod_comp_fst hsymm hv hℓ hker)
+    hdim (injective_coprod_toSpanSingleton_prod_comp_fst hrange hℓ hker)
   have hA : ContinuousAt A z₀ := hL.continuousLinearMapCoprod continuousAt_const
   -- A vector `(w, 0)` with `L z w = 0` and `ℓ w = 1` is the kernel section at `1`.
   have hsec : ∀ z, ((A z).prod q).IsInvertible → ∀ w, L z w = 0 → ℓ w = 1 →

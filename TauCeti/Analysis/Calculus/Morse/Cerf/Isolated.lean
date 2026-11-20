@@ -177,7 +177,8 @@ private theorem eventually_injective_of_birthDeath (hf : ContDiffAt ℝ 3 (uncur
     simpa [H] using fun h ↦ hv0 (h3 v hv h)
   obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_eq_one (R := ℝ) hv0
   obtain ⟨W, hWt, hWev⟩ :=
-    ContinuousLinearMap.exists_tendsto_eventually_apply_eq_zero hH.continuousAt hsymm hv hℓ hker
+    ContinuousLinearMap.exists_tendsto_eventually_apply_eq_zero hH.continuousAt hv
+      (fun w ↦ (hsymm w v).trans (by simp [H, hv])) hℓ hker
   have hne := eventually_ne_of_birthDeath (hG.differentiableAt two_ne_zero)
     (hH.differentiableAt one_ne_zero) (fderiv_fderiv_apply hf2) hsymm hv hker ha hD hℓ
   -- The curve `z ↦ (z, W z)` approaches `((t, x), v)` from outside it.
