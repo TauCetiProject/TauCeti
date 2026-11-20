@@ -63,6 +63,8 @@ active, non-active, parametric and constant sections.
 * `TauCeti.GenEq.Solution.isReduced_substituteVars_segment_of_forall_isOpenBoundary`: in a
   solution, the word of a section whose inner boundaries are all open, for instance of a closed
   section, is reduced as written.
+* `TauCeti.GenEq.Solution.isReduced_substituteVars_segment_of_isOpenBoundary`: under a solution,
+  reduced substituted segments meeting at an open boundary glue without cancellation.
 
 ## References
 
@@ -563,6 +565,47 @@ theorem existsUnique_mem_closedSections_and_baseItems_subset (μ : Fin Ω.numBas
     ∃! s, s ∈ Ω.closedSections ∧ Ω.baseItems μ ⊆ Ω.sectionItems s.1 s.2 :=
   ⟨_, Ω.closedSectionOfBase_eq_iff.1 rfl, fun _ h ↦ (Ω.closedSectionOfBase_eq_iff.2 h).symm⟩
 
+/-! ### Reduced words of overlapping segments -/
+
+/-- If two substituted segments `u[a, b] ^ ±1` and `u[c, d] ^ ±1` (with the same sign `s`) are
+reduced and `u[c, b] ^ ±1` is nonempty, then `u[a, d] ^ ±1` is reduced. -/
+theorem isReduced_substituteVars_segment_of_overlap {u : Fin Ω.numItems → List (A × Bool)}
+    {a b c d : ℕ} {s : Bool}
+    (h₁ : FreeGroup.IsReduced (FreeGroup.substituteVars u (Ω.segment a b s)))
+    (h₂ : FreeGroup.IsReduced (FreeGroup.substituteVars u (Ω.segment c d s)))
+    (hne : FreeGroup.substituteVars u (Ω.segment c b s) ≠ []) :
+    FreeGroup.IsReduced (FreeGroup.substituteVars u (Ω.segment a d s)) := by
+  rw [isReduced_substituteVars_segment_iff] at h₁ h₂ ⊢
+  have hne' : FreeGroup.substituteVars u (Ω.segment c b true) ≠ [] := by
+    cases s
+    · rw [segment_false, FreeGroup.substituteVars_invRev] at hne
+      exact fun h => hne (by rw [h, FreeGroup.invRev_empty])
+    · exact hne
+  rcases le_or_gt c a with hca | hac
+  · exact h₂.infix ((Ω.segment_suffix_segment hca).flatMap _).isInfix
+  rcases le_or_gt d b with hdb | hbd
+  · exact h₁.infix ((Ω.segment_prefix_segment hdb).flatMap _).isInfix
+  have hseg (x y : ℕ) : Ω.segment x y true = Ω.segment x (min y Ω.numItems) true := by
+    have hlen : (List.finRange Ω.numItems).take Ω.numItems = List.finRange Ω.numItems :=
+      List.take_of_length_le (by simp)
+    simp only [segment_true, ← List.take_take, hlen]
+  set b' := min b Ω.numItems
+  set d' := min d Ω.numItems
+  have hcb' : c < b' := by
+    by_contra h
+    apply hne'
+    have hnil : Ω.segment c b true = [] :=
+      List.eq_nil_of_length_eq_zero (by rw [length_segment]; omega)
+    rw [hnil, FreeGroup.substituteVars_nil]
+  have hb'd' : b' ≤ d' := min_le_min_right _ hbd.le
+  rw [hseg a b, ← Ω.segment_append hac.le hcb'.le, FreeGroup.substituteVars_append] at h₁
+  rw [hseg c d, ← Ω.segment_append hcb'.le hb'd', FreeGroup.substituteVars_append] at h₂
+  rw [hseg c b] at hne'
+  rw [hseg a d, ← Ω.segment_append (hac.le.trans hcb'.le) hb'd',
+    ← Ω.segment_append hac.le hcb'.le,
+    FreeGroup.substituteVars_append, FreeGroup.substituteVars_append]
+  exact h₁.append_overlap h₂ hne'
+
 /-! ### Words of sections in a solution -/
 
 namespace Solution
@@ -613,6 +656,27 @@ theorem isReduced_substituteVars_segment_of_forall_isOpenBoundary
         simp only at hseg
         rw [← him, hseg, FreeGroup.substituteVars_singleton_inl]
         exact U.isReduced_word _
+
+/-! ### Reducedness across open boundaries -/
+
+/-- If a boundary `j` is open and the substituted segments `U[i, j] ^ ±1` and `U[j, k] ^ ±1`
+(with the same sign `s`) of a solution `U` are reduced, then `U[i, k] ^ ±1` is reduced: some
+variable base crosses `j`, preventing cancellation across the junction. -/
+theorem isReduced_substituteVars_segment_of_isOpenBoundary {i k : ℕ}
+    {j : Fin (Ω.numItems + 1)} {s : Bool} (hj : Ω.IsOpenBoundary j)
+    (h₁ : FreeGroup.IsReduced (substituteVars U.word (Ω.segment i j s)))
+    (h₂ : FreeGroup.IsReduced (substituteVars U.word (Ω.segment j k s))) :
+    FreeGroup.IsReduced (substituteVars U.word (Ω.segment i k s)) := by
+  rw [Ω.isReduced_substituteVars_segment_iff] at h₁ h₂ ⊢
+  obtain ⟨β, hβ⟩ := Ω.isOpenBoundary_iff.1 hj
+  obtain ⟨hβ₁, hβ₂⟩ := Ω.crosses_iff.1 hβ
+  have hstep := Ω.isReduced_substituteVars_segment_of_overlap h₁
+    (U.isReduced_substituteVars_segment β)
+    (U.substituteVars_word_ne_nil (List.ne_nil_of_length_pos (by
+      rw [length_segment]; have := j.is_le; omega)))
+  exact Ω.isReduced_substituteVars_segment_of_overlap hstep h₂
+    (U.substituteVars_word_ne_nil (List.ne_nil_of_length_pos (by
+      rw [length_segment]; have := (Ω.right β).is_le; omega)))
 
 end Solution
 
