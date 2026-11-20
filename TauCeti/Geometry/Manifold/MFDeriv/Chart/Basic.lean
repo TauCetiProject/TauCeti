@@ -111,6 +111,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   coordinate expression in any chart of the `C¹` maximal atlas vanishes there.
 * `TauCeti.fderivWithin_comp_extChartAt_symm`: read a model-valued manifold
   derivative after an inverse chart, including derivatives within the model range.
+* `ContMDiffOn.exists_forall_norm_mvfderiv_le_mul_norm`: the differential of a `C¹` map into a
+  normed space, on tangent vectors given by their coordinates in any chart, is bounded on a
+  compact set of coordinates.
 * `ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm`: the same for a map between
   manifolds read in arbitrary preferred charts of the source and the target.
 * `TauCeti.tangentCoordChange_tangentCoordChange`: changing tangent coordinates to another chart
@@ -853,6 +856,44 @@ theorem fderivWithin_comp_extChartAt_symm {f : M → F} {x : M} (α : M)
     rw [fderivWithin_zero_of_not_differentiableWithinAt (mt hiff.mpr hf),
       mfderiv_zero_of_not_mdifferentiableAt hf]
     exact (ContinuousLinearMap.zero_comp _).symm
+
+/-- **The differential in chart coordinates is bounded on compact sets.** For a `C¹` map into a
+normed space and a compact set `L` of coordinates in the target of the extended chart at `x`, there
+is a constant `B` with `‖d f_y v‖ ≤ B ‖a‖` for every point `y` of the chart source with coordinate
+in `L` and every tangent vector `v` at `y` with coordinates `a` in the chart at `x`. -/
+theorem _root_.ContMDiffOn.exists_forall_norm_mvfderiv_le_mul_norm {f : M → F} {x : M}
+    (hf : ContMDiffOn I 𝓘(𝕜, F) 1 f (extChartAt I x).source) {L : Set E}
+    (hL : IsCompact L) (hLt : L ⊆ (extChartAt I x).target) :
+    ∃ B, ∀ y ∈ (extChartAt I x).source, extChartAt I x y ∈ L → ∀ v : TangentSpace I y,
+      ‖mvfderiv I f y v‖ ≤
+        B * ‖(trivializationAt E (TangentSpace I) x).continuousLinearMapAt 𝕜 y v‖ := by
+  -- The derivative of the coordinate expression is continuous on the chart target.
+  set g := f ∘ (extChartAt I x).symm
+  have hg : ContDiffOn 𝕜 1 g (extChartAt I x).target :=
+    contMDiffOn_iff_contDiffOn.1
+      (hf.comp (contMDiffOn_extChartAt_symm x) fun _ hz ↦ (extChartAt I x).map_target hz)
+  have hdg : ContinuousOn (fderivWithin 𝕜 g (range I)) (extChartAt I x).target :=
+    (hg.continuousOn_fderivWithin (uniqueDiffOn_extChartAt_target x) le_rfl).congr fun z hz ↦
+      fderivWithin_of_mem_nhdsWithin (extChartAt_target_mem_nhdsWithin_of_mem hz)
+        (I.uniqueDiffOn _ (extChartAt_target_subset_range x hz))
+        ((hg.differentiableOn one_ne_zero) z hz)
+  obtain ⟨B, hB⟩ := hL.exists_bound_of_continuousOn (hdg.mono hLt)
+  refine ⟨B, fun y hy hyL v ↦ ?_⟩
+  have hyc : y ∈ (chartAt H x).source := by rwa [← extChartAt_source I]
+  have hyT : y ∈ (trivializationAt E (TangentSpace I) x).baseSet := by
+    rwa [TangentBundle.trivializationAt_baseSet]
+  -- Read `v` through its coordinates in the chart at `x`, then use the chart-derivative formula.
+  have hv : mvfderiv I f y v = fderivWithin 𝕜 g (range I) (extChartAt I x y)
+      ((trivializationAt E (TangentSpace I) x).continuousLinearMapAt 𝕜 y v) := by
+    conv_lhs => rw [← Bundle.Trivialization.symmL_continuousLinearMapAt (R := 𝕜) _ hyT v,
+      TangentBundle.symmL_trivializationAt_eq_core hyc]
+    rw [fderivWithin_comp_extChartAt_symm x hy, mvfderiv, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.comp_apply]
+    -- `NormedSpace.fromTangentSpace` is the identity on vectors, and `tangentCoordChange` is an
+    -- abbreviation of the core coordinate change.
+    rfl
+  rw [hv]
+  exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr; exact hB _ hyL)
 
 /-- In a preferred chart, a manifold derivative from a normed source gives the ordinary
 coordinate derivative by composing with the tangent chart. -/

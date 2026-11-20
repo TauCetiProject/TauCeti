@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Family.Chart
+import TauCeti.Analysis.Normed.Module.Alternating.Curry
+import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
@@ -36,6 +38,14 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   (`TauCeti.Floer.almostComplexInChartAt_eq_inChart`), which is `Cⁿ` on the chart target; for a
   smooth domain-independent structure it is `SmoothAlmostComplexStructure.inChart`
   (`TauCeti.Floer.almostComplexInChartAt_const`).
+* `TauCeti.SmoothTwoForm.associatedBilinFormInChartAt ω α J` is the bilinear form
+  `ω(·, J(z, x) ·)` read in the chart, at `x = (extChartAt I α).symm y` and on tangent coordinates
+  (`TauCeti.SmoothTwoForm.associatedBilinFormInChartAt_extChartAt`), that is, the coordinate
+  expression of `ω` on a vector and the image of another under the structure read in the chart
+  (`TauCeti.SmoothTwoForm.associatedBilinFormInChartAt_apply_eq_inChartAt`). It is continuous
+  wherever the structures in the chart are
+  (`TauCeti.SmoothTwoForm.continuousOn_associatedBilinFormInChartAt`), so tameness of `J` by `ω`
+  becomes coercivity of a continuous family of forms on the model space.
 * For a map `u` into the chart source, with coordinate expression `v = extChartAt I α ∘ u`, the
   perturbed derivative `du - X_K` in tangent coordinates is `dv` minus the Hamiltonian vector
   fields in the chart (`TauCeti.SmoothTwoForm.continuousLinearMapAt_perturbedMFDeriv_apply`).
@@ -142,9 +152,8 @@ theorem almostComplexInChartAt_apply (z : ℝ × ℝ) (y v : E) :
 theorem almostComplexInChartAt_apply_apply {y : E} (hy : y ∈ (extChartAt I α).target)
     (z : ℝ × ℝ) (v : E) :
     almostComplexInChartAt I α J (z, y) (almostComplexInChartAt I α J (z, y) v) = -v := by
-  have hx : (extChartAt I α).symm y ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
-    simpa only [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using
-      (extChartAt I α).map_target hy
+  have hx : (extChartAt I α).symm y ∈ (trivializationAt E (TangentSpace I) α).baseSet :=
+    TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hy
   rw [almostComplexInChartAt_apply, almostComplexInChartAt_apply,
     Trivialization.symmL_continuousLinearMapAt _ hx, AlmostComplexStructure.apply_apply, map_neg,
     Trivialization.continuousLinearMapAt_symmL _ hx]
@@ -205,6 +214,89 @@ theorem hamiltonianVectorFieldInChartAt_apply (ω : SmoothTwoForm I M) (α : M)
       (trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ ((extChartAt I α).symm y)
         (ω.hamiltonianVectorField (K z) ((extChartAt I α).symm y)) :=
   (rfl)
+
+/-- The bilinear forms `ω(·, J(z, x) ·)` of the structures `J(z, x)`, read in the chart at `α`: at
+`(z, y)`, the form at the point `x = (extChartAt I α).symm y` with both arguments in the tangent
+coordinates of the chart at `α` (`associatedBilinFormInChartAt_apply`). The structures are tamed
+by `ω` at `x` exactly when this form is positive on nonzero vectors. It is continuous wherever the
+structures in the chart are (`continuousOn_associatedBilinFormInChartAt`). Outside the chart target
+the value is junk. -/
+def associatedBilinFormInChartAt (ω : SmoothTwoForm I M) (α : M)
+    (J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)) (p : (ℝ × ℝ) × E) :
+    E →L[ℝ] E →L[ℝ] ℝ :=
+  ((compL ℝ E E ℝ).flip (Floer.almostComplexInChartAt I α J p)).comp
+    (ContinuousAlternatingMap.flatL ℝ E ℝ (RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α p.2))
+
+/-- The form `ω(·, J ·)` in the chart evaluates the coordinate expression of `ω` on the first
+vector and the image of the second under the structure read in the chart. -/
+theorem associatedBilinFormInChartAt_apply_eq_inChartAt (ω : SmoothTwoForm I M)
+    (J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)) (p : (ℝ × ℝ) × E)
+    (a b : E) :
+    ω.associatedBilinFormInChartAt α J p a b =
+      RoughForm.inChartAt (ω : RoughForm I M ℝ 2) α p.2
+        ![a, Floer.almostComplexInChartAt I α J p b] := by
+  simp only [associatedBilinFormInChartAt, comp_apply, flip_apply, compL_apply,
+    ContinuousAlternatingMap.flatL_apply_apply]
+
+/-- At a chart coordinate `y`, the form `ω(·, J ·)` in the chart evaluates `ω` at
+`x = (extChartAt I α).symm y` on the tangent vectors with chart coordinates `a` and `b`, the
+second one rotated by `J(z, x)`. -/
+theorem associatedBilinFormInChartAt_apply (ω : SmoothTwoForm I M)
+    (J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)) (z : ℝ × ℝ) {y : E}
+    (hy : y ∈ (extChartAt I α).target) (a b : E) :
+    ω.associatedBilinFormInChartAt α J (z, y) a b =
+      SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
+        ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)
+        (J z ((extChartAt I α).symm y)
+          ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) b)) := by
+  set T := trivializationAt E (TangentSpace I) α
+  have hx : (extChartAt I α).symm y ∈ T.baseSet :=
+    TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hy
+  rw [associatedBilinFormInChartAt_apply_eq_inChartAt]
+  -- The coordinate expression of `ω` feeds it the vectors with the given tangent coordinates.
+  have hS := TangentBundle.symmL_trivializationAt (I := I) (𝕜 := ℝ) (x₀ := α)
+    (by simpa only [extChartAt_source] using (extChartAt I α).map_target hy)
+  rw [(extChartAt I α).right_inv hy] at hS
+  rw [RoughForm.inChartAt_apply, SmoothBundleForm.eval₂_apply, ← hS]
+  congr 1
+  funext i
+  fin_cases i
+  · simp only [Fin.zero_eta, Matrix.cons_val_zero]
+    rw [extChartAt_coe_symm, Function.comp_apply]
+    -- `T` abbreviates `trivializationAt E (TangentSpace I) α`, which an instance argument of
+    -- `symmL` also mentions, so it cannot be rewritten; `rfl` unfolds the local definition.
+    rfl
+  · exact (congrArg (T.symmL ℝ ((extChartAt I α).symm y))
+      (Floer.almostComplexInChartAt_apply z y b)).trans
+      (Trivialization.symmL_continuousLinearMapAt _ hx _)
+
+/-- At the chart image of a point `x` of the chart source, the form `ω(·, J ·)` in the chart,
+evaluated on the chart coordinates of tangent vectors `v` and `w` at `x`, is `ω_x(v, J(z, x) w)`. -/
+theorem associatedBilinFormInChartAt_extChartAt (ω : SmoothTwoForm I M)
+    (J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)) (z : ℝ × ℝ) {x : M}
+    (hx : x ∈ (extChartAt I α).source) (v w : TangentSpace I x) :
+    ω.associatedBilinFormInChartAt α J (z, extChartAt I α x)
+        ((trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ x v)
+        ((trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ x w) =
+      SmoothBundleForm.eval₂ ω x v (J z x w) := by
+  have hxT : x ∈ (trivializationAt E (TangentSpace I) α).baseSet :=
+    TangentBundle.mem_trivializationAt_baseSet_of_mem_extChartAt_source hx
+  have h := ω.associatedBilinFormInChartAt_apply J z ((extChartAt I α).map_source hx)
+    ((trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ x v)
+    ((trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ x w)
+  rwa [(extChartAt I α).left_inv hx, Trivialization.symmL_continuousLinearMapAt _ hxT,
+    Trivialization.symmL_continuousLinearMapAt _ hxT] at h
+
+/-- The form `ω(·, J ·)` in the chart is continuous on every set of pairs `(z, y)` with `y` in the
+chart target on which the structures in the chart are continuous. -/
+theorem continuousOn_associatedBilinFormInChartAt {ω : SmoothTwoForm I M}
+    {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)} {S : Set ((ℝ × ℝ) × E)}
+    (hS : ∀ p ∈ S, p.2 ∈ (extChartAt I α).target)
+    (hJ : ContinuousOn (Floer.almostComplexInChartAt I α J) S) :
+    ContinuousOn (ω.associatedBilinFormInChartAt α J) S :=
+  ((compL ℝ E E ℝ).flip.continuous.comp_continuousOn hJ).clm_comp
+    ((ContinuousAlternatingMap.flatL ℝ E ℝ).continuous.comp_continuousOn
+      ((ω.isSmoothForm.continuousOn_inChartAt α).comp continuousOn_snd hS))
 
 /-- The Hamiltonian one-form `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}` of a perturbation
 `K = K_s ds + K_t dt`, read in the chart at `α`: at `(z, y)` it sends a tangent vector `(a, b)` of
@@ -282,8 +374,8 @@ theorem fderiv_extChartAt_comp_stdComplexLineImag_sub (ω : SmoothTwoForm I M)
       Floer.almostComplexInChartAt I α J (z, extChartAt I α (u z))
         (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
           ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z))) := by
-  have hb : u z ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
-    rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+  have hb : u z ∈ (trivializationAt E (TangentSpace I) α).baseSet :=
+    TangentBundle.mem_trivializationAt_baseSet_of_mem_extChartAt_source hz
   have hre := ω.continuousLinearMapAt_perturbedMFDeriv_apply (Ks := Ks) (Kt := Kt) hu hz
     stdComplexLineReal
   have him := ω.continuousLinearMapAt_perturbedMFDeriv_apply (Ks := Ks) (Kt := Kt) hu hz
