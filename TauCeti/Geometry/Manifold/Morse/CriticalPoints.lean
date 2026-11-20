@@ -21,6 +21,7 @@ import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Algebra.BigOperators.Finset.Fiber
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sum
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
@@ -54,9 +55,11 @@ values of `f`, into critical bands.
 
 Restricting `f` to an open subset `U` keeps exactly the critical points lying in `U`, so the total
 critical count is additive over a finite partition of `M` into open sets, such as its connected
-components. On a compact boundaryless manifold of positive dimension every component carries at
-least two critical points of a continuous function, so a continuous function with fewer than four
-critical points lives on a preconnected manifold. In dimension zero every point is critical.
+components. In the same way, the critical points of a function on a disjoint union `M ⊕ M'` are
+those of its restrictions to `M` and `M'`, and their numbers add. On a compact boundaryless
+manifold of positive dimension every component carries at least two critical points of a continuous
+function, so a continuous function with fewer than four critical points lives on a preconnected
+manifold. In dimension zero every point is critical.
 
 Critical points are counted, in total and by Morse index, with values in `ℕ∞`: an infinite
 critical set has count `⊤`, never a junk natural number. The counts of a Morse function on a
@@ -75,6 +78,8 @@ polynomial in the Morse inequalities.
 * `TauCeti.isMorseOn_iff_criticalPoints`: Morse functions in terms of the critical set.
 * `TauCeti.criticalPoints_comp_subtypeVal` and `TauCeti.totalCriticalCount_comp_subtypeVal`: the
   critical points of the restriction of `f` to an open submanifold `U` are those of `f` in `U`.
+* `TauCeti.criticalPoints_sumElim` and `TauCeti.totalCriticalCount_sumElim`: on a disjoint union
+  `M ⊕ M'` the critical points and their count are those of the two summands together.
 * `IsLocalExtr.mem_criticalPoints`, `TauCeti.criticalPoints_nonempty` and
   `TauCeti.exists_mem_criticalPoints_of_isCompact_sublevel`: Fermat's theorem on a manifold and the
   existence of critical points on compact manifolds and in compact sublevels.
@@ -300,6 +305,28 @@ points of `f` lying in `U`. -/
 theorem criticalPoints_comp_subtypeVal {U : Opens M} :
     criticalPoints I (f ∘ Subtype.val : U → ℝ) = Subtype.val ⁻¹' criticalPoints I f :=
   Set.ext fun _ ↦ mem_criticalPoints_comp_subtypeVal
+
+/-! ### Disjoint unions -/
+
+section Sum
+
+variable {M' : Type*} [TopologicalSpace M'] [ChartedSpace H M'] {g : M' → ℝ}
+
+/-- The critical points of a function on a disjoint union `M ⊕ M'` are the critical points of its
+restrictions to the two summands. -/
+@[simp]
+theorem criticalPoints_sumElim :
+    criticalPoints I (Sum.elim f g) =
+      Sum.inl '' criticalPoints I f ∪ Sum.inr '' criticalPoints I g := by
+  ext (x | x)
+  · rw [← (isLocalDiffeomorph_sumInl (I := I) (n := 1) (M' := M') x).mem_criticalPoints_comp_iff
+      le_rfl, Sum.elim_comp_inl]
+    simp
+  · rw [← (isLocalDiffeomorph_sumInr (I := I) (n := 1) (M := M) x).mem_criticalPoints_comp_iff
+      le_rfl, Sum.elim_comp_inr]
+    simp
+
+end Sum
 
 /-! ### Critical points read in the preferred chart -/
 
@@ -995,6 +1022,16 @@ theorem totalCriticalCount_comp_subtypeVal {U : Opens M} :
     totalCriticalCount I (f ∘ Subtype.val : U → ℝ) = (criticalPoints I f ∩ U).encard := by
   rw [totalCriticalCount_def, criticalPoints_comp_subtypeVal,
     ← Subtype.val_injective.encard_image, image_preimage_eq_inter_range, Subtype.range_val]
+
+/-- **The critical count of a disjoint union** `M ⊕ M'` is the sum of the critical counts of the
+restrictions of the function to `M` and to `M'`. -/
+@[simp]
+theorem totalCriticalCount_sumElim {M' : Type*} [TopologicalSpace M'] [ChartedSpace H M']
+    {g : M' → ℝ} :
+    totalCriticalCount I (Sum.elim f g) = totalCriticalCount I f + totalCriticalCount I g := by
+  simp only [totalCriticalCount_def, criticalPoints_sumElim]
+  rw [encard_union_eq disjoint_image_inl_image_inr, Sum.inl_injective.encard_image,
+    Sum.inr_injective.encard_image]
 
 /-- **The critical count is additive over components.** If `M` has finitely many connected
 components, the number of critical points of `f` is the sum over the components of the numbers of
