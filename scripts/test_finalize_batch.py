@@ -227,9 +227,10 @@ class WorkflowBoundaryTests(unittest.TestCase):
     def test_separate_unprivileged_priority_runner_and_scoped_tokens(self):
         report = PR["finalize-merge-group-build"]
         publisher = PUB["jobs"]["publish"]
-        for part, shape in [(report, "2x4"), (publisher, "4x8")]:
-            self.assertEqual(part["runs-on"], [f"nscloud-ubuntu-24.04-amd64-{shape}-with-features;job.priority=0",
-                                              "namespace-features:github.run-id=${{ github.run_id }}"])
+        self.assertEqual(report["runs-on"], ["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0",
+                                             "namespace-features:github.run-id=${{ github.run_id }}"])
+        # The maintenance-release publisher uses a fresh GitHub-hosted VM, as on current main.
+        self.assertEqual(publisher["runs-on"], "ubuntu-24.04")
         self.assertEqual(report["needs"], "sandboxed-build")
         self.assertEqual(report["permissions"], {"contents": "read", "actions": "read", "statuses": "write"})
         self.assertEqual(report["timeout-minutes"], 30)

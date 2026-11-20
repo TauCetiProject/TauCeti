@@ -39,12 +39,9 @@ permissions:
 
 jobs:
   publish:
-    # A NEW ephemeral runner for this job, separate from the candidate sandbox.
-    # Direct labels request no privileged container, cache volume, git mirror or tool cache.
-    # Priority zero precedes compiler jobs; run-ID assignment prevents cross-run pickup.
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    # A fresh GitHub-hosted runner, separate from the build and its candidate code.
+    # Match the current main publisher's cloud route for maintenance releases.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     outputs:
       published: ${{ steps.result.outputs.published }}

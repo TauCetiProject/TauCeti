@@ -92,7 +92,6 @@ theorem LinearIsometry.exists_hasFTaylorSeriesUpTo_of_comp (i : E →ₗᵢ[𝕜
   constructor
   · intro x
     apply i.injective
-    rw [ContinuousMultilinearMap.curry0_apply]
     -- Postcomposition by i at the unique zero-arity tuple is evaluation of J 0.
     -- This definitional conversion puts the goal in the form established by hJp.
     change J 0 (p x 0) 0 = i (f x)

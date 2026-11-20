@@ -12,8 +12,8 @@ Mathlib puts its `vX` tag on the commit that bumps its own `lean-toolchain` to X
 it pins. The first `main` commit on toolchain X therefore pins Mathlib at or after Mathlib's
 `vX` tag. The tag message gives the pin.
 
-Exact Mathlib pins were tried and dropped: they need release commits constructed on their
-own branches, built from source, and their caches published.
+Ordinary toolchain tags do not promise Mathlib's matching release pin: that requires a separate
+maintenance branch, source build, and cache publication, as described below.
 
 ## What a tag promises
 
@@ -41,11 +41,40 @@ Historically, such releases were tagged by hand off a `main` commit. `v4.33.0` i
 off `afb1aacb` changing only the two pin files, built from source, with its cache uploaded
 manually. The report marks it `tagged`, notes that it was constructed, and says whether it
 found a cache. These existing tags remain unchanged. Constructing a new side-branch
-release is no longer an exception: future tags must use audited main history.
+release with an ordinary `vX` name is no longer an exception: those tags must use audited main
+history. Explicitly requested maintenance patch releases use distinct names as described below.
 
 Releases older than `v4.33.0-rc1` are out of scope, because the Lake cache has no older
 entries. That bound is `EARLIEST_RELEASE` in the script; raise it if the cache is pruned,
 never lower it.
+
+## Maintenance patch releases
+
+`v4.35.0+patch1` is an explicitly requested maintenance release based on `v4.35.0`. It uses
+Mathlib's `v4.35.0` tag (`56a005855ea17e0b0958f73ec801ae140b0a1679`) instead of the later
+master snapshot in the original Tau Ceti tag. This lets downstream projects share the matching
+Mathlib release with libraries such as Stacks. The Lean toolchain stays at `v4.35.0`.
+
+This is a deliberate exception for this maintenance branch, not a change to the ordinary
+`vX` tagging rule or main's forward-only Mathlib-master updates. The automatic tag tool does not
+construct or publish this patch release. The existing `v4.35.0` tag remains immutable.
+
+To build and publish this maintenance release:
+
+1. Work on `release/v4.35.0-patch1`, starting from the existing `v4.35.0` tag. Pin both the
+   lakefile requirement and manifest to Mathlib's release; repair existing proofs against it.
+2. Dispatch `ci.yml` on that branch. It runs the full library build, ownership/axiom and module
+   audits, environment and source linters, then the existing isolated cache publisher. Cache
+   publication is required to succeed. The job checks only the exact revision for cache reuse:
+   the old Mathlib snapshot's Tau Ceti artifacts have different input hashes.
+3. Wait for that exact commit's CI and cache publication to succeed, and confirm its public
+   revision map. Test a fresh consumer with Mathlib's matching release and the patched Tau Ceti
+   commit, requiring cache restoration to build without recompiling Tau Ceti.
+4. Create the new annotated `v4.35.0+patch1` tag on that verified commit and push it. Include the
+   base tag, exact Mathlib pin, and validation evidence in its message. Never move the old tag.
+
+The publisher still runs on a fresh runner separate from the build; upload credentials are
+never available to Lean elaboration. This release uses stock Lean/Lake.
 
 ## Reporting
 

@@ -1,8 +1,10 @@
 name: CI
 
 on:
-  # PR builds moved to pr-build.yml, which sandboxes untrusted PR code under bwrap in a
-  # trusted (base-defined) workflow. This run is only the post-merge health check on main.
+  # This maintenance branch can be rebuilt and published independently of main.
+  workflow_dispatch:
+  # PR builds remain in pr-build.yml. Pushes check main; manual dispatches also validate
+  # this explicitly maintained release branch before publishing its cache.
   push:
     branches: [main]
 
@@ -19,10 +21,12 @@ permissions:
 # Dependency reconciliation uses conclusive runs as evidence for the current
 # pin, skipping coalesced commits without a completed build.
 concurrency:
-  group: main-ci-cache-publisher
+  group: release-ci-cache-publisher-${{ github.ref }}
   cancel-in-progress: false
 
 env:
+  # Mathlib's release changes every TauCeti input hash; an ancestor cache cannot help.
+  LAKE_CACHE_MAX_REVS: "1"
   # Temporary escape hatch for `lake exe cache get`, kept only for an easy rollback
   # during the transition to the cache tool's new default read endpoint. Set the
   # variable to `1` to send cache reads back to the legacy storage endpoint. Clear it to
@@ -80,7 +84,11 @@ jobs:
         run: python3 scripts/test_check_imports.py
 
   build:
-    runs-on: ubuntu-latest
+    # Same provisioned runner labels as the successful nightly reference build.
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-8x16-with-features
+      - namespace-features:container.privileged=true
+    timeout-minutes: 240
     # Read by publish-lake-cache below, the only job that ever holds the upload secret.
     # Neither output reveals the secret's value or whether it is set, and neither is trusted
     # there: `staged` only decides whether that job runs at all, and `reported-toolchain` is
@@ -513,6 +521,6 @@ jobs:
       revision: ${{ github.sha }}
       artifact-name: lake-cache-staging
       reported-toolchain: ${{ needs.build.outputs.reported-toolchain }}
-      publication-required: false
+      publication-required: true
     secrets:
       LAKE_CACHE_KEY: ${{ secrets.LAKE_CACHE_KEY }}

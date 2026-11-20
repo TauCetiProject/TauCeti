@@ -117,6 +117,7 @@ theorem convergesToOne_iff {s : Set G} :
   refine forall₂_congr fun U _ ↦ ?_
   rw [mem_cofinite, ← Set.finite_image_iff Subtype.val_injective.injOn]
   congr!
+  ext x
   simp
 
 /-- Every finite subset converges to one. -/
