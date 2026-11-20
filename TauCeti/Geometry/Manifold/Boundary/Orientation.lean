@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.Boundary.TransitionNormal
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 
 /-!
 # Outward-pointing vectors at the boundary
@@ -19,7 +20,9 @@ For a manifold modeled on Mathlib's Euclidean half-space, this file records the 
 for an outward tangent vector.  Mathlib puts the boundary coordinate in slot `0`; outward vectors
 therefore have a negative slot-`0` derivative.  The definition uses the preferred chart through
 `mfderiv`; the positive normal derivative of actual chart transitions proves coordinate
-independence in `isOutwardPointing_iff_tangentCoordChange`. This is the interface used by boundary
+independence in `isOutwardPointing_iff_tangentCoordChange`; equivalently, minus the normal
+coordinate of any preferred chart increases along outward vectors
+(`isOutwardPointing_iff_mvfderiv_neg_chartAt_normal_pos`). This is the interface used by boundary
 orientation and Stokes
 constructions. When the inward coordinate of the preferred chart is a nonzero multiple of `g - c`
 for a real function `g`, outwardness is the sign of the derivative of `g`
@@ -76,6 +79,37 @@ theorem isOutwardPointing_iff_tangentCoordChange [IsManifold (𝓡∂ (n + 1)) 1
   change (fun w : EuclideanSpace ℝ (Fin (n + 1)) ↦ w 0) v < 0 ↔ _
   exact (smul_neg_iff_of_pos_left ha).symm.trans (iff_of_eq
     (congrArg (fun r : ℝ ↦ r < 0) (hnormal v).symm))
+
+/-- Minus the normal coordinate of a preferred chart, read as a differential of a function on
+`M`, is minus the normal component of the tangent coordinate change into that chart. -/
+theorem mvfderiv_neg_chartAt_normal_apply [IsManifold (𝓡∂ (n + 1)) 1 M] {α q : M}
+    (hq : q ∈ (chartAt (EuclideanHalfSpace (n + 1)) α).source)
+    (v : TangentSpace (𝓡∂ (n + 1)) q) :
+    mvfderiv (𝓡∂ (n + 1)) (fun y ↦ -(chartAt (EuclideanHalfSpace (n + 1)) α y).1 0) q v =
+      -tangentCoordChange (𝓡∂ (n + 1)) q α q v 0 := by
+  have hfun : (fun y ↦ -(chartAt (EuclideanHalfSpace (n + 1)) α y).1 0) =
+      (-EuclideanSpace.proj (0 : Fin (n + 1)) : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ) ∘
+        extChartAt (𝓡∂ (n + 1)) α := by
+    ext y
+    simp
+  have hext := hasMFDerivAt_extChartAt (I := 𝓡∂ (n + 1)) hq
+  rw [hfun, ContinuousLinearMap.mvfderiv_comp_apply _ hext.mdifferentiableAt,
+    mvfderiv_apply_eq_mfderiv_apply, hext.mfderiv, mfderiv_chartAt_eq_tangentCoordChange hq]
+  -- The tangent fibre of the half-space model is the model space itself, on which `-proj 0` is
+  -- minus evaluation in slot `0`. The tangent-space wrapper makes `neg_apply` fail to typecheck
+  -- and `simp` unfolds `tangentCoordChange` instead, so close the goal definitionally.
+  rfl
+
+/-- At a boundary point, a vector points outward exactly when minus the normal coordinate of a
+preferred chart increases along it. -/
+theorem isOutwardPointing_iff_mvfderiv_neg_chartAt_normal_pos [IsManifold (𝓡∂ (n + 1)) 1 M]
+    {α q : M} (hqb : q ∈ (𝓡∂ (n + 1)).boundary M)
+    (hq : q ∈ (chartAt (EuclideanHalfSpace (n + 1)) α).source)
+    (v : TangentSpace (𝓡∂ (n + 1)) q) :
+    IsOutwardPointing q v ↔
+      0 < mvfderiv (𝓡∂ (n + 1)) (fun y ↦ -(chartAt (EuclideanHalfSpace (n + 1)) α y).1 0) q v := by
+  rw [isOutwardPointing_iff_tangentCoordChange hqb (by rwa [extChartAt_source]),
+    mvfderiv_neg_chartAt_normal_apply hq, neg_pos]
 
 /-- Suppose that, near a boundary point `x`, the inward coordinate (slot `0`) of the preferred
 chart at `x` is `s * (g - c)` for a real function `g` and constants `c` and `s ≠ 0`. Then a
