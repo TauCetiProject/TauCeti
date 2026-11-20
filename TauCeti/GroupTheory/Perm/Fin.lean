@@ -30,6 +30,8 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
   increasing order is the rotation `finRotate n`, that is `i ↦ i + 1` modulo `n`.
 * `Fin.swap_apply_lt_swap_apply`: an adjacent transposition `(a a+1)` of `Fin n` keeps every
   strict pair in order except `a < a + 1` itself.
+* `Fin.cons_comp_perm`: prepending a fixed first entry commutes with permuting the other entries,
+  through the permutation `Equiv.Perm.decomposeFin.symm (0, σ)` of `Fin (n + 1)` fixing `0`.
 * `TauCeti.isCycleOn_finRotate`: the rotation `finRotate n` is a single cycle on all of `Fin n`.
 * `TauCeti.closure_finRotate_swap_eq_top`: the rotation `finRotate n` and the transposition `(0 1)`
   generate the permutations of `Fin n`.
@@ -84,6 +86,16 @@ theorem swap_apply_lt_swap_apply {n : ℕ} {a b i j : Fin n} (hab : (a : ℕ) + 
   simp only [Equiv.swap_apply_def]
   simp only [Fin.lt_def, Fin.ext_iff] at hij hne ⊢
   split_ifs <;> simp_all <;> omega
+
+/-- Prepending a fixed first entry commutes with permuting the other entries: the permutation `σ`
+of the last `n` coordinates extends, by `Equiv.Perm.decomposeFin`, to the permutation of
+`Fin (n + 1)` that fixes `0`. -/
+theorem cons_comp_perm {α : Type*} {n : ℕ} (a : α) (y : Fin n → α) (σ : Equiv.Perm (Fin n)) :
+    (cons a (y ∘ σ) : Fin (n + 1) → α) =
+      (cons a y : Fin (n + 1) → α) ∘ Equiv.Perm.decomposeFin.symm (0, σ) := by
+  funext i
+  cases i using Fin.cases <;>
+    simp [Equiv.Perm.decomposeFin_symm_apply_zero, Equiv.Perm.decomposeFin_symm_apply_succ]
 
 end Fin
 
