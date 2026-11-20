@@ -147,10 +147,17 @@ theorem forall_eq_zero_of_orbitTorusVerticalOperator_eq_zero_of_isNondegenerateU
   have hσanti (v w : E) : σx v w = -σx w v := by
     rw [hσx, hσx]
     exact SmoothBundleForm.eval₂_swap σ x v w
-  have hσK (t : ℝ) (v w : E) : σx (K ((s₀, t), x) v) (K ((s₀, t), x) w) = σx v w :=
-    (hσx _ _).trans ((hKσ t v w).trans (hσx v w).symm)
-  have hσtame (v : E) (hv : v ≠ 0) : 0 < σx v (K ((s₀, 0), x) v) :=
-    (htame v hv).trans_eq (hσx _ _).symm
+  have hKsq (t : ℝ) (w : E) :
+      verticalFamilyAt K s₀ x t (verticalFamilyAt K s₀ x t w) = -w := by
+    rw [verticalFamilyAt_apply, verticalFamilyAt_apply]
+    exact (K ((s₀, t), x)).apply_apply w
+  have hσK (t : ℝ) (v w : E) :
+      σx (verticalFamilyAt K s₀ x t v) (verticalFamilyAt K s₀ x t w) = σx v w := by
+    rw [verticalFamilyAt_apply, verticalFamilyAt_apply]
+    exact (hσx _ _).trans ((hKσ t v w).trans (hσx v w).symm)
+  have hσtame (v : E) (hv : v ≠ 0) : 0 < σx v (verticalFamilyAt K s₀ x 0 v) := by
+    rw [verticalFamilyAt_apply]
+    exact (htame v hv).trans_eq (hσx _ _).symm
   -- The return map preserves `σ` at `x`, since every iterate of `φ` preserves `σ`.
   have hPσ (v w : E) : σx (P v) (P w) = σx v w := by
     have h := (SmoothTwoForm.isIsometry_fixedPointDerivative (φ.contMDiff.iterate d)
@@ -162,14 +169,15 @@ theorem forall_eq_zero_of_orbitTorusVerticalOperator_eq_zero_of_isNondegenerateU
   have hPK (t : ℝ) :
       P ∘L verticalFamilyAt K s₀ x (t + d) = verticalFamilyAt K s₀ x t ∘L P := by
     ext v
-    exact SmoothMappingTorus.apply_apply_add_eq_apply_apply_of_hasMFDerivAt_iterate ht hx hP s₀ t v
+    simpa only [ContinuousLinearMap.comp_apply, verticalFamilyAt_apply] using
+      SmoothMappingTorus.apply_apply_add_eq_apply_apply_of_hasMFDerivAt_iterate ht hx hP s₀ t v
   -- The return map `P ^ (2 n)` of the `2 n`-fold cover, of period `2 d n ≤ 2 N`, fixes no vector.
   have hdet := hφ.det_smul_one_sub_pow_ne_zero (m := 2 * n) (j := 1) hd (by omega) one_pos
     (by nlinarith) hx hP (one_pow 1)
   rw [one_smul] at hdet
   intro ε₁ ε₂ hε₁ hε₂ v hv hv₁ hv₂ hDv
   refine (forall_eq_zero_of_orbitTorusVerticalOperator_eq_zero_iff_of_finrank_eq_two hE hK2
-    (fun t w ↦ (K ((s₀, t), x)).apply_apply w) hσanti hσK hσtame hPσ hPK one_pos
+    hKsq hσanti hσK hσtame hPσ hPK one_pos
     (Nat.cast_pos.2 hd) hk hn a).2 hdet ε₁ ε₂ hε₁ hε₂ v hv (by simpa using hv₁)
     (by simpa using hv₂) hDv
 
