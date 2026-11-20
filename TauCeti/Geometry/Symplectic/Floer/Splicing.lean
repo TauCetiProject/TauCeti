@@ -538,16 +538,10 @@ theorem setIntegral_sobolev_le_mul_setIntegral_floerLinearizationAdjoint_of_spli
       (hη.differentiable two_ne_zero z) (hJu hJ hu z) hJu').trans ?_
     rw [mul_add]
     gcongr
-  have hcont {J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks' Kt' : ℝ × ℝ → V → ℝ} {u' : ℝ × ℝ → V}
-      (hJ' : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J') (z, u' z))
-      (hKs' : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks') (z, u' z))
-      (hKt' : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt') (z, u' z)) (hu' : ContDiff ℝ 1 u')
-      ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄ (hη : ContDiff ℝ 2 η) :
-      Continuous (ω.floerLinearizationAdjoint J' Ks' Kt' u' η) :=
-    continuous_iff_continuousAt.2 fun z ↦ continuousAt_floerLinearizationAdjoint (hJ' z)
-      (hKs' z) (hKt' z) hu'.contDiffAt (hη.contDiffAt.of_le one_le_two)
   exact Floer.setIntegral_sobolev_le_mul_setIntegral_of_splice σ hC hT hσ hε
-    (hcont hJ hKs hKt hu) (hcont hJ₁ hKs₁ hKt₁ hu₁) (hcont hJ₂ hKs₂ hKt₂ hu₂)
+    (fun _ hη ↦ continuous_floerLinearizationAdjoint hJ hKs hKt hu (hη.of_le one_le_two))
+    (fun _ hη ↦ continuous_floerLinearizationAdjoint hJ₁ hKs₁ hKt₁ hu₁ (hη.of_le one_le_two))
+    (fun _ hη ↦ continuous_floerLinearizationAdjoint hJ₂ hKs₂ hKt₂ hu₂ (hη.of_le one_le_two))
     (hleib (hJu hJ hu)) (hleib (hJu hJ₁ hu₁)) (hleib (hJu hJ₂ hu₂))
     (fun _ hη z hz ht ↦ hclose (hJu hJ₁ hu₁ z) (hJε₁ z hz ht) (hAε₁ z hz ht) hη)
     (fun _ hη z hz ht ↦ hclose (hJu hJ₂ hu₂ z) (hJε₂ z hz ht) (hAε₂ z hz ht) hη)

@@ -152,8 +152,7 @@ private theorem norm_prod_sub_le_of_le {f : ℝ × ℝ → V} {z : ℝ × ℝ} {
   have hS : (snd ℝ ℝ ℝ).smulRight X stdComplexLineImag = X := by simp [stdComplexLineImag_snd]
   rw [Prod.snd_sub, ← hS, ← sub_apply]
   refine (le_opNorm _ _).trans ?_
-  rwa [stdComplexLineImag_eq, Prod.norm_mk, norm_zero, norm_one, max_eq_right zero_le_one,
-    mul_one]
+  simpa [stdComplexLineImag_eq] using h₁
 
 omit [FiniteDimensional ℝ V] in
 /-- **The pre-glued map in the middle of the neck.** If `u` is within `θ` of the orbit `x` in `C¹`

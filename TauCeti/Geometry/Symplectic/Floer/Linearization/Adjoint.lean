@@ -294,6 +294,18 @@ theorem continuousAt_floerLinearizationAdjoint
     ((hA.continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const)).add
     (hη.continuousAt.clm_comp (ω.continuousAt_floerLinearizationCoeff hJ hKs hKt hu))
 
+/-- **Global continuity of the formal adjoint.** Let `u` be `C¹` and the covector field `η` be
+`C¹`, and let the coefficients `J` be `C¹` and the Hamiltonians `K_s`, `K_t` be `C²` at every point
+`(z, u z)`. Then the formal adjoint `D^* η` is continuous. This is the adjoint counterpart of
+`continuous_floerLinearization`. -/
+theorem continuous_floerLinearizationAdjoint
+    (hJ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
+    (hη : ContDiff ℝ 1 η) : Continuous (ω.floerLinearizationAdjoint J Ks Kt u η) :=
+  continuous_iff_continuousAt.2 fun z ↦
+    continuousAt_floerLinearizationAdjoint (hJ z) (hKs z) (hKt z) hu.contDiffAt hη.contDiffAt
+
 /-- **Green's formula for compactly supported maps.** Let `ξ` be `C¹` with compact support, and
 let `u` and the covector field `η` be `C¹`, the coefficients `J` be `C¹` and the Hamiltonians
 `K_s`, `K_t` be `C²`, at each point of the support of `ξ` (at `(z, u z)` for the coefficients).
