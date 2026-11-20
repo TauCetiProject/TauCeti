@@ -14,8 +14,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 
 The trivial bundle `Bundle.Trivial B F` has the single global trivialization
 `Bundle.Trivial.trivialization B F`, so a map into its total space is smooth (or differentiable at
-a point) exactly when its base map and its fibre map into `F` are, and
-`Bundle.Trivial.homeomorphProd` upgrades to a `C^n` diffeomorphism
+a point) exactly when its base map and its fibre map into `F` are; in particular its constant
+sections are smooth. `Bundle.Trivial.homeomorphProd` upgrades to a `C^n` diffeomorphism
 `Bundle.Trivial.diffeomorphProd` between `TotalSpace F (Bundle.Trivial B F)` and `B × F`.
 -/
 
@@ -59,6 +59,21 @@ theorem mdifferentiableAt_mk_iff {b : M → B} {f : M → F} {x : M} :
       MDifferentiableAt J I b x ∧ MDifferentiableAt J 𝓘(𝕜, F) f x := by
   rw [mdifferentiableAt_totalSpace]
   simp
+
+/-- A constant section of the trivial bundle is smooth. -/
+theorem contMDiff_mk_const (c : F) :
+    ContMDiff I (I.prod 𝓘(𝕜, F)) n (fun y : B ↦ TotalSpace.mk' F (E := Trivial B F) y c) :=
+  contMDiff_mk_iff.2 ⟨contMDiff_id, contMDiff_const⟩
+
+/-- A constant section of the trivial bundle is differentiable. -/
+theorem mdifferentiableAt_mk_const (c : F) {x : B} :
+    MDifferentiableAt I (I.prod 𝓘(𝕜, F)) (fun y : B ↦ TotalSpace.mk' F (E := Trivial B F) y c) x :=
+  mdifferentiableAt_mk_iff.2 ⟨mdifferentiableAt_id, mdifferentiableAt_const⟩
+
+omit [TopologicalSpace B] in
+/-- On the trivial line bundle, a function times the constant section `1` is the function. -/
+protected theorem smul_one (σ : B → 𝕜) : (σ • (1 : B → 𝕜) : Π y : B, Trivial B 𝕜 y) = σ :=
+  funext fun _ ↦ mul_one _
 
 section Diffeomorph
 
