@@ -178,6 +178,23 @@ private theorem comp_linearIsometryEquiv_of_holderOnWith {E' E A A' : Type*}
       exact hfb j hj (e x) hx,
     fun j hj => e.holderOnWith_iteratedFDeriv_comp a f j (hfH j hj)⟩
 
+/-- Conversely, an `α`-Hölder bound on `e ⁻¹' s` for the `k`-th derivative of `c.symm ∘ F ∘ e`
+transports back to the same bound on `s` for the `k`-th derivative of `F`. -/
+private theorem holderOnWith_iteratedFDeriv_of_comp_linearIsometryEquiv {E' E G' G : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup G'] [NormedSpace ℝ G'] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (e : E' ≃ₗᵢ[ℝ] E) (c : G' ≃ₗᵢ[ℝ] G) {F : E → G} {s : Set E} {k : ℕ} {C α : ℝ≥0}
+    (h : HolderOnWith C α (iteratedFDeriv ℝ k (c.symm ∘ F ∘ e)) (e ⁻¹' s)) :
+    HolderOnWith C α (iteratedFDeriv ℝ k F) s := by
+  have h' := e.symm.holderOnWith_iteratedFDeriv_comp c _ k h
+  have hF : c ∘ (c.symm ∘ F ∘ e) ∘ e.symm = F := by
+    ext x
+    simp
+  have hs : e.symm ⁻¹' (e ⁻¹' s) = s := by
+    ext x
+    simp
+  rwa [hF, hs] at h'
+
 /-- A supported bilinear product has a global Hölder bound for its order-`k` derivative from
 uniform local bounds on all source jets and global bounds on all supported-factor jets. -/
 theorem holderWith_iteratedFDeriv_of_tsupport_subset_right
@@ -222,17 +239,10 @@ theorem holderWith_iteratedFDeriv_of_tsupport_subset_right
       exact hgb j hj (e x))
     hfuH (fun j hj => holderOnWith_univ.mp (by
       simpa using e.holderOnWith_iteratedFDeriv_comp b.symm g j ((hgH j hj).holderOnWith univ)))
-  have h' : HolderWith ((2 : ℝ≥0)^k * ‖L‖₊ * (M * K + N * H)) α
-      (iteratedFDeriv ℝ k (fun x => Lu (fu x) (gu x))) :=
-    h.mono (by gcongr)
-  have hbound := h'.holderOnWith univ
   apply holderOnWith_univ.mp
-  rw [holderOnWith_iff_dist_le] at hbound ⊢
-  intro x _ y _
-  have hxy := hbound (e.symm x) (mem_univ _) (e.symm y) (mem_univ _)
-  rw [hLu, dist_eq_norm, LinearIsometryEquiv.norm_iteratedFDeriv_sub_comp, e.symm.dist_map] at hxy
-  simpa only [LinearIsometryEquiv.apply_symm_apply, LinearIsometryEquiv.dist_map,
-    dist_eq_norm] using hxy
+  refine holderOnWith_iteratedFDeriv_of_comp_linearIsometryEquiv e c ?_
+  rw [preimage_univ, ← hLu]
+  exact (h.mono (by gcongr)).holderOnWith univ
 
 /-- On an open set, the iterated derivatives of the derivative of a bilinear product are the sums
 of those of the two Leibniz terms. -/
@@ -351,17 +361,8 @@ theorem holderOnWith_iteratedFDeriv_comp₂
   obtain ⟨hgu, hgub, hguH⟩ := comp_linearIsometryEquiv_of_holderOnWith e b.symm hg hgb hgH
   have h := holderOnWith_iteratedFDeriv_comp₂_aux k Lu hfu hgu (hs.preimage e.continuous)
     hfub hgub hfuH hguH
-  rw [hLu] at h
-  -- Transport back along the inverse isometries.
-  have h' := e.symm.holderOnWith_iteratedFDeriv_comp c _ k h
-  have hfun : c ∘ (c.symm ∘ (fun x => L (f x) (g x)) ∘ e) ∘ e.symm =
-      fun x => L (f x) (g x) := by
-    ext x
-    simp
-  have hset : e.symm ⁻¹' (e ⁻¹' s) = s := by
-    ext x
-    simp
-  rw [hfun, hset] at h'
-  exact h'.mono_const (by gcongr; exact nnnorm_uliftBilinear_le L)
+  refine holderOnWith_iteratedFDeriv_of_comp_linearIsometryEquiv e c ?_
+  rw [← hLu]
+  exact h.mono_const (by gcongr; exact nnnorm_uliftBilinear_le L)
 
 end ContinuousLinearMap
