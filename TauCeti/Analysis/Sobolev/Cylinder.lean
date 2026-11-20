@@ -75,7 +75,10 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   (`TauCeti.CylinderSobolev.isClosed_range_jetOperator_comp_subtypeL`), by Rellich's theorem and
   `ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate`. The estimate is stated in the
   form proved for the linearized Floer operator in
-  `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`.
+  `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`. The operator depends Lipschitz-continuously
+  on its coefficient field in `L^∞` (`TauCeti.CylinderSobolev.norm_jetOperator_sub_le`), hence
+  continuously along families of coefficient fields continuous in `L^∞`
+  (`TauCeti.CylinderSobolev.continuousOn_jetOperator`).
 * **An estimate from below.** If `D` moreover bounds every test section in `L²` over the whole
   strip, `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²`, the compact error term disappears: the extension satisfies
   `‖x‖ ≤ K ‖D x‖` on `H1`
@@ -449,6 +452,37 @@ theorem jetOperator_jetLp_ae_eq {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM
       fun z ↦ M z (jet (ξ : ℝ × ℝ → V) z) := by
   filter_upwards [coeFn_jetOperator hM (jetLp (testSection V) ξ), coeFn_jetLp ξ] with z h₁ h₂
   rw [h₁, h₂]
+
+/-- The first-order operator depends Lipschitz-continuously on its coefficient field: its operator
+norm on `L²` jets is at most the essential supremum of the difference of the coefficients. -/
+theorem norm_jetOperator_sub_le {M M' : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ stripMeasure) (hM' : MemLp M' ∞ stripMeasure) :
+    ‖jetOperator M - jetOperator M'‖ ≤ (eLpNorm (M - M') ∞ stripMeasure).toReal := by
+  simp only [jetOperator, hM, hM', ↓reduceDIte]
+  rw [← map_sub, ← MemLp.toLp_sub, ← Lp.norm_toLp _ (hM.sub hM')]
+  calc _ ≤ ‖(ContinuousLinearMap.id ℝ (V × V × V →L[ℝ] W)).holderL stripMeasure ∞ 2 2‖ *
+        ‖(hM.sub hM').toLp (M - M')‖ := ContinuousLinearMap.le_opNorm _ _
+    _ ≤ 1 * ‖(hM.sub hM').toLp (M - M')‖ := by
+        gcongr
+        exact (ContinuousLinearMap.norm_holderL_le _).trans ContinuousLinearMap.norm_id_le
+    _ = _ := one_mul _
+
+/-- Coefficient fields depending continuously on a parameter in `L^∞` give first-order operators
+on `L²` jets depending continuously on the parameter in the operator norm. -/
+theorem continuousOn_jetOperator {X : Type*} [TopologicalSpace X] {s : Set X}
+    {M : X → ℝ × ℝ → V × V × V →L[ℝ] W} (hM : ∀ x ∈ s, MemLp (M x) ∞ stripMeasure)
+    (hcont : ∀ x ∈ s, Tendsto (fun y ↦ eLpNorm (M y - M x) ∞ stripMeasure) (𝓝[s] x) (𝓝 0)) :
+    ContinuousOn (fun x ↦ jetOperator (M x)) s := by
+  intro x hx
+  have hlim : Tendsto (fun y ↦ (eLpNorm (M y - M x) ∞ stripMeasure).toReal) (𝓝[s] x) (𝓝 0) := by
+    simpa only [Function.comp_def, ENNReal.toReal_zero] using
+      (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp (hcont x hx)
+  -- `‖D_y - D_x‖ ≤ ‖M y - M x‖_{L^∞}` for `y ∈ s`.
+  have hle : ∀ᶠ y in 𝓝[s] x, ‖jetOperator (M y) - jetOperator (M x)‖ ≤
+      (eLpNorm (M y - M x) ∞ stripMeasure).toReal := by
+    filter_upwards [self_mem_nhdsWithin] with y hy using norm_jetOperator_sub_le (hM y hy) (hM x hx)
+  exact tendsto_iff_norm_sub_tendsto_zero.mpr
+    (squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) hle hlim)
 
 /-- The **semi-Fredholm estimate** with constants `C` and `T` for the first-order operator
 `D ξ = M (ξ, ∂s ξ, ∂t ξ)` on the cylinder: for every `C²` section `ξ` of period one in `t` that
