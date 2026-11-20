@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Bernstein
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Kolmogorov
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Injective and surjective s-number sequences
@@ -76,11 +77,11 @@ structure IsSurjective (s : SNumberFamily 𝕜) : Prop where
 
 /-- The Gelfand numbers are injective. -/
 theorem isInjective_gelfand : IsInjective (gelfand (𝕜 := 𝕜)) :=
-  ⟨fun J T n ↦ by simpa using T.gelfandNumber_linearIsometry_comp J n⟩
+  ⟨fun _ _ _ ↦ by simp⟩
 
 /-- The Bernstein numbers are injective. -/
 theorem isInjective_bernstein : IsInjective (bernstein (𝕜 := 𝕜)) :=
-  ⟨fun J T n ↦ by simpa using T.bernsteinNumber_linearIsometry_comp J n⟩
+  ⟨fun _ _ _ ↦ by simp⟩
 
 /-- The Kolmogorov numbers are surjective. -/
 theorem isSurjective_kolmogorov : IsSurjective (kolmogorov (𝕜 := 𝕜)) :=
@@ -96,29 +97,26 @@ theorem IsStrictSNumberSequence.bernsteinNumber_le {s : SNumberFamily 𝕜}
   rcases eq_or_ne c 0 with rfl | hc0
   · exact zero_le
   have hcpos : 0 < c := pos_iff_ne_zero.mpr hc0
-  -- `T` is injective on `M`, hence an isomorphism `e` of `M` onto `T(M)`.
-  have hTinj : Function.Injective ((T : X →ₗ[𝕜] Y) ∘ₗ M.subtype) := by
-    refine (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_
-    have hTx : T x = 0 := by simpa using hx
-    simpa [hTx, hc0] using hc x x.2
+  -- `T` maps `M` onto `N = T(M)` with `‖x‖ ≤ c⁻¹ ‖T x‖`, so it has an inverse `S` of norm `≤ c⁻¹`.
   let N := LinearMap.range ((T : X →ₗ[𝕜] Y) ∘ₗ M.subtype)
-  let e : M ≃ₗ[𝕜] N := LinearEquiv.ofInjective _ hTinj
-  have hinv (y : N) : ‖e.symm y‖₊ ≤ c⁻¹ * ‖y‖₊ := by
-    obtain ⟨x, rfl⟩ := e.surjective y
-    rw [e.symm_apply_apply, le_inv_mul_iff₀ hcpos]
-    -- Submodules carry the ambient norm, and `e x = T x` by `LinearEquiv.ofInjective`.
-    exact hc x x.2
-  let E : M ≃L[𝕜] N := e.toContinuousLinearEquivOfBounds ‖T‖ c⁻¹
-    (fun x ↦ T.le_opNorm x) fun y ↦ by exact_mod_cast hinv y
-  let T₀ : M →L[𝕜] N := E
-  let S : N →L[𝕜] M := E.symm
-  have hST : S ∘L T₀ = ContinuousLinearMap.id 𝕜 M := E.coe_symm_comp_coe
-  have hS : ‖S‖₊ ≤ c⁻¹ := ContinuousLinearMap.opNNNorm_le_bound _ _ hinv
-  have hT₀ : s T₀ n ≤ s T n := by
-    -- `E` is `e` together with its continuity, so `E x = e x` by `LinearEquiv.ofInjective`.
-    have hfac : N.subtypeₗᵢ.toContinuousLinearMap ∘L T₀ = T ∘L M.subtypeL := by
-      ext x
-      exact LinearEquiv.ofInjective_apply (h := hTinj) (x := x)
+  let T₀ : M →L[𝕜] N := (T ∘L M.subtypeL).codRestrict N fun x ↦ ⟨x, rfl⟩
+  have hT₀ : Function.Surjective T₀ := by
+    rintro ⟨_, x, rfl⟩
+    exact ⟨x, rfl⟩
+  have hC (x : M) : ‖x‖ ≤ (c⁻¹ : ℝ≥0) * ‖T₀ x‖ := by
+    rw [NNReal.coe_inv, inv_mul_eq_div, le_div_iff₀' (NNReal.coe_pos.mpr hcpos)]
+    -- Submodules carry the ambient norm, and `T₀ x = T x` by `codRestrict`.
+    exact_mod_cast hc x x.2
+  let S : N →L[𝕜] M := T₀.inverse
+  have hST : S ∘L T₀ = ContinuousLinearMap.id 𝕜 M :=
+    (ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le hT₀ hC).inverse_comp_self
+  have hS : ‖S‖₊ ≤ c⁻¹ := by
+    rw [← NNReal.coe_le_coe, coe_nnNorm]
+    exact ContinuousLinearMap.opNorm_le_bound _ (by positivity)
+      (ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le hT₀ hC)
+  have hsT₀ : s T₀ n ≤ s T n := by
+    -- Including `T(M)` back into `Y` undoes `codRestrict`, by definition.
+    have hfac : N.subtypeₗᵢ.toContinuousLinearMap ∘L T₀ = T ∘L M.subtypeL := rfl
     rw [← hinj.linearIsometry_comp N.subtypeₗᵢ, hfac]
     exact (hs.comp_le_right T M.subtypeL n).trans <|
       mul_le_of_le_one_right' (by exact_mod_cast Submodule.norm_subtypeL_le M)

@@ -210,13 +210,8 @@ nonzero vector of every subspace of rank `n + 1`. -/
 theorem bernsteinNumber_eq_zero_of_rank_le {T : E →L[𝕜] F} {n : ℕ} (hT : T.rank ≤ n) :
     T.bernsteinNumber n = 0 := by
   refine le_antisymm (bernsteinNumber_le_of_forall_rank_eq fun M hM ↦ ?_) bot_le
-  obtain ⟨x, hxM, hTx, hx0⟩ : ∃ x ∈ M, T x = 0 ∧ x ≠ 0 := by
-    by_contra! h
-    have hle := (Submodule.lift_rank_le_of_disjoint_ker (f := (T : E →ₗ[𝕜] F))
-      (Submodule.disjoint_def.mpr h)).trans (Cardinal.lift_le.mpr hT)
-    rw [hM, Cardinal.lift_natCast, ← Nat.cast_add_one, Cardinal.lift_natCast,
-      Nat.cast_le] at hle
-    omega
+  obtain ⟨x, hxM, hTx, hx0⟩ : ∃ x ∈ M, T x = 0 ∧ x ≠ 0 :=
+    Submodule.exists_mem_ker_ne_zero_of_rank_lt hT (by rw [hM]; exact_mod_cast n.lt_succ_self)
   exact ⟨x, hxM, hx0, by simp [hTx]⟩
 
 /-- **Perturbative triangle bound.** `bₙ(S + T) ≤ bₙ(S) + ‖T‖`. -/
@@ -255,6 +250,7 @@ theorem bernsteinNumber_comp_comp_le (B : F →L[𝕜] G) (T : E →L[𝕜] F) (
 
 /-- **Injectivity.** Postcomposing with a linear isometry leaves every Bernstein number
 unchanged: it preserves the norm of every image vector. -/
+@[simp]
 theorem bernsteinNumber_linearIsometry_comp (T : E →L[𝕜] F) (J : F →ₗᵢ[𝕜] G) (n : ℕ) :
     (J.toContinuousLinearMap ∘L T).bernsteinNumber n = T.bernsteinNumber n := by
   simp [bernsteinNumber_def]
@@ -264,15 +260,9 @@ meets every subspace of codimension at most `n` in a nonzero vector. -/
 theorem bernsteinNumber_le_gelfandNumber (T : E →L[𝕜] F) (n : ℕ) :
     T.bernsteinNumber n ≤ T.gelfandNumber n := by
   refine bernsteinNumber_le_iff.mpr fun M hM d hd ↦ le_gelfandNumber_iff.mpr fun N _ hN ↦ ?_
-  obtain ⟨x, hxM, hxN, hx0⟩ : ∃ x ∈ M, x ∈ N ∧ x ≠ 0 := by
-    by_contra! h
-    have hdisj : Disjoint M (LinearMap.ker N.mkQ) := by
-      rw [Submodule.ker_mkQ]
-      exact Submodule.disjoint_def.mpr h
-    have hle := (Submodule.lift_rank_le_of_disjoint_ker hdisj).trans
-      (Cardinal.lift_le.mpr ((LinearMap.rank_le_range N.mkQ).trans hN))
-    rw [hM, Cardinal.lift_id, Cardinal.lift_id] at hle
-    exact_mod_cast hle.not_gt (by exact_mod_cast n.lt_succ_self)
+  obtain ⟨x, hxM, hxN, hx0⟩ := Submodule.exists_mem_ker_ne_zero_of_rank_lt
+    ((LinearMap.rank_le_range N.mkQ).trans hN) (by rw [hM]; exact_mod_cast n.lt_succ_self)
+  rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] at hxN
   refine le_of_mul_le_mul_right ((hd x hxM).trans ?_) (nnNorm_pos.mpr hx0)
   exact (T ∘L N.subtypeL).le_opNNNorm ⟨x, hxN⟩
 

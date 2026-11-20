@@ -182,6 +182,7 @@ theorem gelfandNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G) (A 
 
 /-- **Injectivity.** Postcomposing with a linear isometry leaves every Gelfand number unchanged:
 it preserves the norm of each restriction `T|_M`. -/
+@[simp]
 theorem gelfandNumber_linearIsometry_comp (T : E →L[𝕜] F) (J : F →ₗᵢ[𝕜] G) (n : ℕ) :
     (J.toContinuousLinearMap ∘L T).gelfandNumber n = T.gelfandNumber n := by
   simp only [gelfandNumber_def, comp_assoc]
