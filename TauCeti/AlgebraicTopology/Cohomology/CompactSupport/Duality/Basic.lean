@@ -98,6 +98,9 @@ property of an open subset that its duality map is bijective.
   `TauCeti.HomologicalOrientation.compactSupportCohomologyExtend_toTopCat_map_dualityMap`: its
   instances for an open subset of `M` and for nested open subsets, with the restricted
   orientations.
+* `TauCeti.HomologicalOrientation.compactSupportCohomologyExtend_inclusion'_dualityMap_apply` and
+  `TauCeti.HomologicalOrientation.compactSupportCohomologyExtend_toTopCat_map_dualityMap_apply`:
+  their elementwise forms.
 * `TauCeti.HomologicalOrientation.bijective_dualityMap_of_cofinal`: the duality map is bijective
   if capping is bijective along cofinally many compact sets.
 * `TauCeti.HomologicalOrientation.bijective_dualityMap_comap_iff_of_range_eq`: bijectivity of the
@@ -125,6 +128,11 @@ Instance search finds the `ℤ`-linear structure of `ModuleCat ℤ` as a preaddi
 which Mathlib's `MonoidalLinear ℤ` instance does not apply. The declaration
 `CategoryTheory.MonoidalPreadditive.monoidalLinearInt` supplies it as a local instance, as for
 `TopCat.integralCup`.
+
+The naturality along inclusions of open sets is stated through `TopologicalSpace.Opens.inclusion'`
+and `TopologicalSpace.Opens.toTopCat`, the form of the colimit descriptions over open covers, whose
+spaces agree with the subtypes only by definition; hence its elementwise forms are stated
+separately rather than by `@[elementwise]`.
 
 ## References
 
@@ -387,6 +395,34 @@ theorem compactSupportCohomologyExtend_toTopCat_map_dualityMap {V W : Opens (Top
     (j := ((Opens.toTopCat (TopCat.of M)).map f).hom)
     (Opens.isOpenEmbedding_toTopCat_map f) p q h
   rwa [comap_comap_toTopCat_map] at this
+
+-- `@[elementwise]` cannot produce this from `compactSupportCohomologyExtend_inclusion'_dualityMap`:
+-- the space `(Opens.toTopCat _).obj W` of the extension and the space of the duality map of `W`
+-- agree only by definition, so the composite cannot be split by rewriting.
+/-- Elementwise form of `compactSupportCohomologyExtend_inclusion'_dualityMap`:
+`D_M (ι_! x) = ι_* (D_W x)` for the inclusion `ι` of an open `W ⊆ M`. -/
+theorem compactSupportCohomologyExtend_inclusion'_dualityMap_apply (W : Opens (TopCat.of M))
+    {p q : ℕ} (h : p + q = n)
+    (x : ((Opens.toTopCat (TopCat.of M)).obj W).compactSupportCohomology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
+    o.dualityMap hn L p q h (TopCat.compactSupportCohomologyExtend W.isOpenEmbedding p x) =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
+        (Opens.inclusion' W) ((o.comap W.isOpenEmbedding).dualityMap hn L p q h x) :=
+  ConcreteCategory.congr_hom (o.compactSupportCohomologyExtend_inclusion'_dualityMap hn L W p q h) x
+
+/-- Elementwise form of `compactSupportCohomologyExtend_toTopCat_map_dualityMap`:
+`D_W (ι_! x) = ι_* (D_V x)` for the inclusion `ι : V ⟶ W` of nested opens of `M`. -/
+theorem compactSupportCohomologyExtend_toTopCat_map_dualityMap_apply {V W : Opens (TopCat.of M)}
+    (f : V ⟶ W) {p q : ℕ} (h : p + q = n)
+    (x : ((Opens.toTopCat (TopCat.of M)).obj V).compactSupportCohomology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
+    (o.comap W.isOpenEmbedding).dualityMap hn L p q h
+        (TopCat.compactSupportCohomologyExtend (Opens.isOpenEmbedding_toTopCat_map f) p x) =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
+        ((Opens.toTopCat (TopCat.of M)).map f)
+        ((o.comap V.isOpenEmbedding).dualityMap hn L p q h x) :=
+  ConcreteCategory.congr_hom
+    (o.compactSupportCohomologyExtend_toTopCat_map_dualityMap hn L f p q h) x
 
 variable {j : C(U, M)} (hj : IsOpenEmbedding j) {p q : ℕ} (h : p + q = n)
 
