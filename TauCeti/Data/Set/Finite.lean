@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.Set.Card
 public import Mathlib.Basic.Finite.Sigma
-public import Mathlib.Basic.ENNReal.Inv
 import Mathlib.Data.Set.Finite.Range
 
 /-!
@@ -24,10 +23,6 @@ A finite family of finite sets has its index-element pairs enumerated by some `F
 enumeration of its values after a surjection (`TauCeti.exists_embedding_fin_comp_eq`).
 A map from a finite type with the same range as an injective map is injective
 (`Function.Injective.of_range_eq`).
-
-A set all of whose finite subsets `T` satisfy `#T * δ ≤ E` in `ℝ≥0∞`, for `δ ≠ 0` and `E ≠ ∞`, is
-finite (`Set.finite_of_forall_finset_card_mul_le`). This is how a set of points each carrying a
-fixed quantum `δ` of a total energy `E` is shown to be finite.
 -/
 
 public section
@@ -56,16 +51,6 @@ theorem Set.exists_enumeration_finite_family {ι A : Type*} [Finite ι] (T : ι 
   exact ⟨m, fun j ↦ (e.symm j).1, fun j ↦ (e.symm j).2, fun j ↦ (e.symm j).2.2,
     fun i a ha ↦ ⟨e ⟨i, a, ha⟩, by simp,
       congrArg (fun x : (i : ι) × T i ↦ (x.2 : A)) (e.symm_apply_apply _)⟩⟩
-
-open scoped ENNReal in
-/-- A set all of whose finite subsets `T` satisfy `#T * δ ≤ E`, for `δ ≠ 0` and `E ≠ ∞`, is
-finite. -/
-theorem Set.finite_of_forall_finset_card_mul_le {α : Type*} {Z : Set α} {δ E : ℝ≥0∞}
-    (hδ : δ ≠ 0) (hE : E ≠ ∞) (h : ∀ T : Finset α, ↑T ⊆ Z → T.card * δ ≤ E) : Z.Finite := by
-  by_contra hinf
-  obtain ⟨k, hk⟩ := ENNReal.exists_nat_mul_gt hδ hE
-  obtain ⟨T, hTZ, hTk⟩ := Set.Infinite.exists_subset_card_eq hinf k
-  exact (h T hTZ).not_gt (hTk ▸ hk)
 
 /-- A map from a finite type with the same range as an injective map is injective. -/
 theorem Function.Injective.of_range_eq {ι β : Type*} [Finite ι] {f g : ι → β}

@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Basic
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
-import TauCeti.Data.Set.Finite
+import TauCeti.Data.ENNReal.NatCastDiv
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.Order.Filter.AtTopBot
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
