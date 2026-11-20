@@ -29,12 +29,15 @@ Because `dysonDrift n` is homogeneous of degree `-1`, the deterministic time cha
 Dyson trajectories, and `X s = √(1 + s) Y (log (1 + s))` (`ouTimeChangeInv`) carries them back.
 The forcing paths transform by `ouTimeChangeForcing` and `ouTimeChangeInvForcing`, the pathwise
 integration-by-parts forms of `w 0 + ∫ e^{-u/2} dw(e^u - 1)` and
-`w 0 + ∫ (1 + r)^{1/2} dw(log (1 + r))`. So the Ornstein–Uhlenbeck system is solved pathwise
-exactly by time-changed Dyson trajectories (`isDysonOUPath_iff_isDysonPath_ouTimeChangeInv`), and
-its existence, noncollision and uniqueness statements reduce to those of the Dyson system.
+`w 0 + ∫ (1 + r)^{1/2} dw(log (1 + r))`; for continuous paths each undoes the other. So the
+Ornstein–Uhlenbeck system is solved pathwise exactly by time-changed Dyson trajectories
+(`isDysonOUPath_iff_isDysonPath_ouTimeChangeInv`, `isDysonPath_iff_isDysonOUPath_ouTimeChange`).
+Existence and noncollision for the system driven by `w` therefore reduce pathwise to those of the
+Dyson system driven by `ouTimeChangeInvForcing w`; identifying that transformed forcing as a
+Brownian motion when `w` is one is not done here. Uniqueness follows outright.
 
-Pathwise `ℓ²` contraction of the Dyson system becomes exponential contraction at rate `e^{-t}`
-(`IsDysonOUPath.sum_sub_sq_le`), which gives pathwise and almost-sure uniqueness.
+Pathwise `ℓ²` contraction of the Dyson system becomes exponential contraction at rate `e^{-(t - s)}`
+(`IsDysonOUPath.sum_sub_sq_le_of_le`), which gives pathwise and almost-sure uniqueness.
 
 ## Main declarations
 
@@ -43,11 +46,14 @@ Pathwise `ℓ²` contraction of the Dyson system becomes exponential contraction
 * `TauCeti.Probability.ouTimeChange`, `TauCeti.Probability.ouTimeChangeInv`: the exponential time
   change and its inverse.
 * `TauCeti.Probability.ouTimeChangeForcing`, `TauCeti.Probability.ouTimeChangeInvForcing`: the
-  transformed forcing paths, with `ouTimeChangeForcing_ouTimeChangeInvForcing`.
+  transformed forcing paths, with `ouTimeChangeForcing_ouTimeChangeInvForcing` and
+  `ouTimeChangeInvForcing_ouTimeChangeForcing`.
 * `TauCeti.Probability.IsDysonPath.isDysonOUPath_ouTimeChange` and
   `TauCeti.Probability.IsDysonOUPath.isDysonPath_ouTimeChangeInv`: the two time changes.
-* `TauCeti.Probability.isDysonOUPath_iff_isDysonPath_ouTimeChangeInv`: the characterization.
-* `TauCeti.Probability.IsDysonOUPath.sum_sub_sq_le` and `TauCeti.Probability.IsDysonOUPath.eq`:
+* `TauCeti.Probability.isDysonOUPath_iff_isDysonPath_ouTimeChangeInv` and
+  `TauCeti.Probability.isDysonPath_iff_isDysonOUPath_ouTimeChange`: the characterizations.
+* `TauCeti.Probability.IsDysonOUPath.sum_sub_sq_le_of_le`,
+  `TauCeti.Probability.IsDysonOUPath.sum_sub_sq_le` and `TauCeti.Probability.IsDysonOUPath.eq`:
   exponential `ℓ²` contraction and pathwise uniqueness.
 
 ## References
@@ -75,6 +81,43 @@ private theorem continuousAt_dysonDrift_comp {n : ℕ} {Z : ℝ≥0 → Fin n �
   (continuous_apply i).continuousAt.comp <| ContinuousAt.comp
     (continuousAt_dysonDrift (hsa _ (Real.toNNReal_pos.2 hr)).injective)
     (hZ.comp continuous_real_toNNReal).continuousAt
+
+/-- A coordinate of a continuous path, read along `Real.toNNReal`, is continuous. -/
+private theorem continuous_apply_toNNReal {n : ℕ} {Z : ℝ≥0 → Fin n → ℝ} (hZ : Continuous Z)
+    (i : Fin n) : Continuous fun s : ℝ ↦ Z s.toNNReal i :=
+  ((continuous_apply i).comp hZ).comp continuous_real_toNNReal
+
+/-- `u ↦ log (1 + u)` is continuous on `[0, ∞)`. -/
+private theorem continuousOn_log_one_add : ContinuousOn (fun u : ℝ ↦ Real.log (1 + u)) (Ici 0) :=
+  (continuousOn_const.add continuousOn_id).log fun u hu ↦
+    (by linarith [mem_Ici.1 hu] : (0 : ℝ) < 1 + u).ne'
+
+/-- `s ↦ log (1 + s)` is continuous on `ℝ≥0`. -/
+private theorem continuous_log_one_add_coe : Continuous fun s : ℝ≥0 ↦ Real.log (1 + s) :=
+  continuousOn_log_one_add.comp_continuous NNReal.continuous_coe fun s ↦ s.coe_nonneg
+
+/-- The weight `g (log (1 + r)) / (2 √(1 + r))` of the inverse forcing is continuous on
+`[0, ∞)`. -/
+private theorem continuousOn_comp_log_one_add_div {g : ℝ → ℝ} (hg : Continuous g) :
+    ContinuousOn (fun r : ℝ ↦ g (Real.log (1 + r)) / (2 * √(1 + r))) (Ici 0) :=
+  (hg.comp_continuousOn continuousOn_log_one_add).div
+    (continuousOn_const.mul
+      (Real.continuous_sqrt.comp (continuous_const.add continuous_id)).continuousOn)
+    fun r hr ↦ (mul_pos two_pos (Real.sqrt_pos.2 (by linarith [mem_Ici.1 hr]))).ne'
+
+private theorem exp_neg_half_mul_exp_half (u : ℝ) :
+    Real.exp (-(u / 2)) * Real.exp (u / 2) = 1 := by
+  rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
+
+private theorem exp_neg_half_mul_exp (u : ℝ) :
+    Real.exp (-(u / 2)) * Real.exp u = (Real.exp (-(u / 2)))⁻¹ := by
+  rw [← Real.exp_neg, ← Real.exp_add]
+  ring_nf
+
+private theorem sqrt_one_add_mul_exp_neg_half_log {r : ℝ} (hr : 0 ≤ r) :
+    √(1 + r) * Real.exp (-(Real.log (1 + r) / 2)) = 1 := by
+  have hs : (0 : ℝ) < 1 + r := by linarith
+  rw [Real.exp_neg, Real.exp_half, Real.exp_log hs, mul_inv_cancel₀ (Real.sqrt_pos.2 hs).ne']
 
 /-- **Scalar core of the time changes.** Let `ξ r = x + ω r + ∫₀ʳ (D + b ξ)` on `[0, ∞)`, and let
 `c`, `τ` be time-change data with `τ 0 = 0`. If the drift transforms by
@@ -200,7 +243,8 @@ private theorem exp_comp_eq_integral {D E ξ ω : ℝ → ℝ} {x t : ℝ} (ht :
       ∫ u in (0 : ℝ)..t, (E u - Real.exp (-(u / 2)) * ξ (Real.exp u - 1) / 2) :=
     intervalIntegral.integral_congr fun u _ ↦ by ring
   beta_reduce at key
-  rw [key, h1, h2, zero_div, neg_zero, Real.exp_zero, one_mul, sub_neg_eq_add]
+  rw [key, h1, h2]
+  simp
 
 /-- `mul_comp_eq_integral` for the logarithmic time change `c u = √(1 + u)`, `τ u = log (1 + u)`,
 which removes the linear drift `-ξ / 2`. -/
@@ -217,9 +261,7 @@ private theorem log_comp_eq_integral {D E ξ ω : ℝ → ℝ} {x t : ℝ} (ht :
     (fun u hu ↦ ((hasDerivAt_id' u).const_add 1).sqrt (by positivity)) (by fun_prop)
     (continuousOn_const.div (by fun_prop) fun u hu ↦
       (mul_pos two_pos (Real.sqrt_pos.2 (by linarith [mem_Ici.1 hu]))).ne')
-    (fun u hu ↦ ((hasDerivAt_id' u).const_add 1).log (by positivity))
-    ((continuousOn_const.add continuousOn_id).log fun u hu ↦
-      (by linarith [mem_Ici.1 hu] : (0 : ℝ) < 1 + u).ne')
+    (fun u hu ↦ ((hasDerivAt_id' u).const_add 1).log (by positivity)) continuousOn_log_one_add
     (by simp) (fun u hu ↦ Real.log_pos (by linarith))
     (fun u hu v _ huv ↦ Real.log_le_log (by linarith [mem_Ici.1 hu]) (by linarith))
     hξc hωc hD hDint
@@ -281,17 +323,6 @@ namespace IsDysonOUPath
 
 variable {n : ℕ} {x y : Fin n → ℝ} {w : ℝ≥0 → Fin n → ℝ} {X Y : ℝ≥0 → Fin n → ℝ}
 
-/-- Coordinatewise interval integrability of `dysonDrift` along an Ornstein–Uhlenbeck Dyson
-trajectory. -/
-theorem intervalIntegrable_dysonDrift (hY : IsDysonOUPath n x w Y) (t : ℝ≥0) (i : Fin n) :
-    IntervalIntegrable (fun s : ℝ ↦ dysonDrift n (Y s.toNNReal) i) volume 0 t := by
-  simp_rw [dysonDrift_apply]
-  exact (hY.intervalIntegrable t i).const_mul (n : ℝ)⁻¹
-
-/-- Value of an Ornstein–Uhlenbeck Dyson trajectory at time `0`. -/
-theorem eval_zero (hY : IsDysonOUPath n x w Y) : Y 0 = x + w 0 :=
-  funext fun i ↦ by simpa using hY.eq_integral 0 i
-
 /-- **Absorbing the confining drift into the forcing.** An Ornstein–Uhlenbeck Dyson trajectory
 driven by `w` is a Dyson trajectory driven by `w t - ∫₀ᵗ Y / 2`, so every `IsDysonPath` lemma
 applies to it. -/
@@ -301,18 +332,27 @@ theorem isDysonPath (hY : IsDysonOUPath n x w Y) :
   strictAnti := hY.strictAnti
   intervalIntegrable := hY.intervalIntegrable
   eq_integral t i := by
-    have hY2 : Continuous fun s : ℝ ↦ Y s.toNNReal i / 2 :=
-      (((continuous_apply i).comp hY.continuous).comp continuous_real_toNNReal).div_const 2
-    rw [hY.eq_integral t i, intervalIntegral.integral_sub (hY.intervalIntegrable_dysonDrift t i)
-      (hY2.intervalIntegrable 0 t)]
+    rw [hY.eq_integral t i, intervalIntegral.integral_sub
+      (by simpa only [dysonDrift_apply] using (hY.intervalIntegrable t i).const_mul (n : ℝ)⁻¹)
+      (((continuous_apply_toNNReal hY.continuous i).div_const 2).intervalIntegrable 0 t)]
     ring
+
+/-- Coordinatewise interval integrability of `dysonDrift` along an Ornstein–Uhlenbeck Dyson
+trajectory. -/
+theorem intervalIntegrable_dysonDrift (hY : IsDysonOUPath n x w Y) (t : ℝ≥0) (i : Fin n) :
+    IntervalIntegrable (fun s : ℝ ↦ dysonDrift n (Y s.toNNReal) i) volume 0 t :=
+  hY.isDysonPath.intervalIntegrable_dysonDrift t i
+
+/-- Value of an Ornstein–Uhlenbeck Dyson trajectory at time `0`. -/
+theorem eval_zero (hY : IsDysonOUPath n x w Y) : Y 0 = x + w 0 :=
+  funext fun i ↦ by simpa using hY.isDysonPath.eval_zero_apply i
 
 /-- Every Ornstein–Uhlenbeck Dyson trajectory forces its driving path `w` to be continuous. -/
 theorem continuous_driving (hY : IsDysonOUPath n x w Y) : Continuous w := by
   have hI : Continuous fun (t : ℝ≥0) (i : Fin n) ↦ ∫ s in (0 : ℝ)..t, Y s.toNNReal i / 2 :=
     continuous_pi fun i ↦ (intervalIntegral.continuous_primitive (fun a b ↦
-      ((((continuous_apply i).comp hY.continuous).comp continuous_real_toNNReal).div_const
-        2).intervalIntegrable a b) 0).comp NNReal.continuous_coe
+      ((continuous_apply_toNNReal hY.continuous i).div_const 2).intervalIntegrable a b) 0).comp
+        NNReal.continuous_coe
   convert hY.isDysonPath.continuous_driving.add hI using 1
   ext t i
   simp
@@ -359,12 +399,9 @@ theorem ouTimeChangeInv_apply (Y : ℝ≥0 → Fin n → ℝ) (s : ℝ≥0) (i :
     ouTimeChangeInv Y s i = √(1 + s) * Y (Real.log (1 + s)).toNNReal i :=
   (rfl)
 
-private theorem exp_sub_one_nonneg {u : ℝ} (hu : 0 ≤ u) : 0 ≤ Real.exp u - 1 := by
-  linarith [Real.add_one_le_exp u]
-
 private theorem coe_toNNReal_exp_sub_one {u : ℝ} (hu : 0 ≤ u) :
     ((Real.exp u - 1).toNNReal : ℝ) = Real.exp u - 1 :=
-  Real.coe_toNNReal _ (exp_sub_one_nonneg hu)
+  Real.coe_toNNReal _ (sub_nonneg.2 (Real.one_le_exp hu))
 
 private theorem coe_toNNReal_log_one_add {r : ℝ} (hr : 0 ≤ r) :
     ((Real.log (1 + r)).toNNReal : ℝ) = Real.log (1 + r) :=
@@ -382,17 +419,16 @@ theorem ouTimeChange_ouTimeChangeInv (Y : ℝ≥0 → Fin n → ℝ) :
     ouTimeChange (ouTimeChangeInv Y) = Y := by
   ext t i
   rw [ouTimeChange_apply, ouTimeChangeInv_exp_sub_one, Pi.smul_apply, smul_eq_mul, ← mul_assoc,
-    ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_mul]
+    exp_neg_half_mul_exp_half, one_mul]
 
 /-- `ouTimeChangeInv` is a left inverse of `ouTimeChange`. -/
 @[simp]
 theorem ouTimeChangeInv_ouTimeChange (X : ℝ≥0 → Fin n → ℝ) :
     ouTimeChangeInv (ouTimeChange X) = X := by
   ext s i
-  have hs : (0 : ℝ) < 1 + s := by positivity
   rw [ouTimeChangeInv_apply, ouTimeChange_apply, coe_toNNReal_log_one_add s.coe_nonneg,
-    Real.exp_log hs, add_sub_cancel_left, Real.toNNReal_coe, ← mul_assoc, Real.exp_neg,
-    Real.exp_half, Real.exp_log hs, mul_inv_cancel₀ (Real.sqrt_pos.2 hs).ne', one_mul]
+    Real.exp_log (by positivity), add_sub_cancel_left, Real.toNNReal_coe, ← mul_assoc,
+    sqrt_one_add_mul_exp_neg_half_log s.coe_nonneg, one_mul]
 
 /-- The exponential time change of a continuous path is continuous. -/
 theorem continuous_ouTimeChange {X : ℝ≥0 → Fin n → ℝ} (hX : Continuous X) :
@@ -403,25 +439,19 @@ theorem continuous_ouTimeChange {X : ℝ≥0 → Fin n → ℝ} (hX : Continuous
 
 /-- The inverse exponential time change of a continuous path is continuous. -/
 theorem continuous_ouTimeChangeInv {Y : ℝ≥0 → Fin n → ℝ} (hY : Continuous Y) :
-    Continuous (ouTimeChangeInv Y) := by
-  have hlog : Continuous fun s : ℝ≥0 ↦ Real.log (1 + s) :=
-    (continuous_const.add NNReal.continuous_coe).log fun s ↦ (by positivity : (0 : ℝ) < 1 + s).ne'
-  exact (Real.continuous_sqrt.comp (continuous_const.add NNReal.continuous_coe)).smul
-    (hY.comp (continuous_real_toNNReal.comp hlog))
+    Continuous (ouTimeChangeInv Y) :=
+  (Real.continuous_sqrt.comp (continuous_const.add NNReal.continuous_coe)).smul
+    (hY.comp (continuous_real_toNNReal.comp continuous_log_one_add_coe))
 
-private theorem continuousOn_log_one_add {w : ℝ≥0 → Fin n → ℝ} (hw : Continuous w) (i : Fin n) :
-    ContinuousOn (fun r : ℝ ↦ w (Real.log (1 + r)).toNNReal i) (Ici 0) :=
-  (((continuous_apply i).comp hw).comp continuous_real_toNNReal).comp_continuousOn
-    ((continuousOn_const.add continuousOn_id).log fun r hr ↦
-      (by linarith [mem_Ici.1 hr] : (0 : ℝ) < 1 + r).ne')
-
-private theorem continuousOn_ouTimeChangeInvForcing_integrand {w : ℝ≥0 → Fin n → ℝ}
-    (hw : Continuous w) (i : Fin n) :
-    ContinuousOn (fun r : ℝ ↦ w (Real.log (1 + r)).toNNReal i / (2 * √(1 + r))) (Ici 0) :=
-  (continuousOn_log_one_add hw i).div
-    (continuousOn_const.mul
-      (Real.continuous_sqrt.comp (continuous_const.add continuous_id)).continuousOn)
-    fun r hr ↦ (mul_pos two_pos (Real.sqrt_pos.2 (by linarith [mem_Ici.1 hr]))).ne'
+/-- The forcing of a continuous path is continuous. -/
+theorem continuous_ouTimeChangeForcing {w : ℝ≥0 → Fin n → ℝ} (hw : Continuous w) :
+    Continuous (ouTimeChangeForcing w) := by
+  refine continuous_pi fun i ↦ ?_
+  have hg : Continuous fun u : ℝ ↦ Real.exp (-(u / 2)) * w (Real.exp u - 1).toNNReal i :=
+    (Real.continuous_exp.comp (continuous_id.div_const 2).neg).mul
+      ((continuous_apply_toNNReal hw i).comp (Real.continuous_exp.sub continuous_const))
+  exact (hg.comp NNReal.continuous_coe).add ((intervalIntegral.continuous_primitive
+    (fun a b ↦ (hg.div_const 2).intervalIntegrable a b) 0).comp NNReal.continuous_coe)
 
 /-- The inverse forcing of a continuous path is continuous. -/
 theorem continuous_ouTimeChangeInvForcing {w : ℝ≥0 → Fin n → ℝ} (hw : Continuous w) :
@@ -429,13 +459,12 @@ theorem continuous_ouTimeChangeInvForcing {w : ℝ≥0 → Fin n → ℝ} (hw : 
   refine continuous_pi fun i ↦ ?_
   have hint : Continuous fun s : ℝ≥0 ↦
       ∫ r in (0 : ℝ)..s, w (Real.log (1 + r)).toNNReal i / (2 * √(1 + r)) :=
-    ((continuous_halfLinePrimitive ((continuousOn_ouTimeChangeInvForcing_integrand hw
-      i).locallyIntegrableOn measurableSet_Ici)).comp NNReal.continuous_coe).congr fun s ↦
-        halfLinePrimitive_eq_integral_of_nonneg s.coe_nonneg
-  have hlog : Continuous fun s : ℝ≥0 ↦ Real.log (1 + s) :=
-    (continuous_const.add NNReal.continuous_coe).log fun s ↦ (by positivity : (0 : ℝ) < 1 + s).ne'
+    ((continuous_halfLinePrimitive ((continuousOn_comp_log_one_add_div
+      (continuous_apply_toNNReal hw i)).locallyIntegrableOn measurableSet_Ici)).comp
+        NNReal.continuous_coe).congr fun s ↦
+          halfLinePrimitive_eq_integral_of_nonneg s.coe_nonneg
   exact ((Real.continuous_sqrt.comp (continuous_const.add NNReal.continuous_coe)).mul
-    ((((continuous_apply i).comp hw).comp continuous_real_toNNReal).comp hlog)).sub hint
+    ((continuous_apply_toNNReal hw i).comp continuous_log_one_add_coe)).sub hint
 
 /-- The forcing transform is linear: scaling `w` scales `ouTimeChangeForcing w`. -/
 theorem ouTimeChangeForcing_const_mul (a : ℝ) (w : ℝ≥0 → Fin n → ℝ) :
@@ -455,26 +484,23 @@ theorem ouTimeChangeInvForcing_const_mul (a : ℝ) (w : ℝ≥0 → Fin n → �
   · ring
   · congr 1; ext u; ring
 
-/-- **The forcing transforms are mutually inverse.** For a continuous Ornstein–Uhlenbeck forcing
-path `w`, transforming its inverse forcing forward recovers `w`. -/
+/-- **The forward forcing transform undoes the inverse one.** For a continuous Ornstein–Uhlenbeck
+forcing path `w`, transforming its inverse forcing forward recovers `w`. -/
 theorem ouTimeChangeForcing_ouTimeChangeInvForcing {w : ℝ≥0 → Fin n → ℝ} (hw : Continuous w) :
     ouTimeChangeForcing (ouTimeChangeInvForcing w) = w := by
   ext t i
-  have hf := (continuous_apply i).comp (continuous_ouTimeChangeInvForcing hw)
-  have hg := continuousOn_ouTimeChangeInvForcing_integrand hw i
-  have hwi : Continuous fun u : ℝ ↦ w u.toNNReal i :=
-    ((continuous_apply i).comp hw).comp continuous_real_toNNReal
-  have hexp (u : ℝ) : Real.exp (-(u / 2)) * Real.exp (u / 2) = 1 := by
-    rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
+  have hf := continuous_apply_toNNReal (continuous_ouTimeChangeInvForcing hw) i
+  have hwi := continuous_apply_toNNReal hw i
+  have hg := continuousOn_comp_log_one_add_div hwi
   -- `ouTimeChangeInvForcing w` solves the drift-free equation with forcing
   -- `√(1 + r) w (log (1 + r))` and drift `-w (log (1 + r)) / (2 √(1 + r))`.
   have key := exp_comp_eq_integral (x := 0) (ξ := fun r ↦ ouTimeChangeInvForcing w r.toNNReal i)
     (ω := fun r ↦ √(1 + r) * w (Real.log (1 + r)).toNNReal i)
     (D := fun r ↦ -(w (Real.log (1 + r)).toNNReal i / (2 * √(1 + r))))
     (E := fun u ↦ -(w u.toNNReal i / 2)) t.coe_nonneg
-    (hf.comp continuous_real_toNNReal).continuousOn
+    hf.continuousOn
     ((by fun_prop : Continuous fun r : ℝ ↦ √(1 + r)).continuousOn.mul
-      (continuousOn_log_one_add hw i))
+      (hwi.comp_continuousOn continuousOn_log_one_add))
     (fun r hr ↦ (hg.continuousAt (Ici_mem_nhds hr)).neg)
     (fun r hr ↦ ((hg.mono (by rw [uIcc_of_le hr]; exact Icc_subset_Ici_self)).intervalIntegrable
       (μ := volume)).neg)
@@ -488,8 +514,7 @@ theorem ouTimeChangeForcing_ouTimeChangeInvForcing {w : ℝ≥0 → Fin n → �
     have hA : Continuous fun u : ℝ ↦ -(w u.toNNReal i / 2) - Real.exp (-(u / 2)) *
         ouTimeChangeInvForcing w (Real.exp u - 1).toNNReal i / 2 :=
       (hwi.div_const 2).neg.sub (((Real.continuous_exp.comp (continuous_id.div_const 2).neg).mul
-        (hf.comp (continuous_real_toNNReal.comp
-          (Real.continuous_exp.sub continuous_const)))).div_const 2)
+        (hf.comp (Real.continuous_exp.sub continuous_const))).div_const 2)
     have hB : Continuous fun u : ℝ ↦
         Real.exp (-(u / 2)) * (Real.exp (u / 2) * w u.toNNReal i) / 2 := by fun_prop
     have hsum : (∫ u in (0 : ℝ)..t,
@@ -501,15 +526,57 @@ theorem ouTimeChangeForcing_ouTimeChangeInvForcing {w : ℝ≥0 → Fin n → �
       rw [← intervalIntegral.integral_add (hB.intervalIntegrable 0 t)
         (hA.intervalIntegrable 0 t), ← intervalIntegral.integral_neg]
       exact intervalIntegral.integral_congr fun u _ ↦ by
-        linear_combination w u.toNNReal i / 2 * hexp u
+        linear_combination w u.toNNReal i / 2 * exp_neg_half_mul_exp_half u
     rw [ouTimeChangeForcing]
-    linear_combination key + hsum + w t i * hexp t
+    linear_combination key + hsum + w t i * exp_neg_half_mul_exp_half t
   · simp only [add_sub_cancel, Real.log_exp, ← Real.exp_half]
     have h1 : Real.exp (-(u / 2)) * Real.exp u = Real.exp (u / 2) := by
-      rw [← Real.exp_add]; ring_nf
+      rw [exp_neg_half_mul_exp, Real.exp_neg, inv_inv]
     rw [show ∀ A : ℝ, Real.exp (-(u / 2)) * A * Real.exp u = A * (Real.exp (-(u / 2)) *
       Real.exp u) from fun A ↦ by ring, h1]
     field_simp
+
+/-- **The inverse forcing transform undoes the forward one.** For a continuous Dyson forcing path
+`w`, transforming its forward forcing back recovers `w`. -/
+theorem ouTimeChangeInvForcing_ouTimeChangeForcing {w : ℝ≥0 → Fin n → ℝ} (hw : Continuous w) :
+    ouTimeChangeInvForcing (ouTimeChangeForcing w) = w := by
+  ext t i
+  have hf := continuous_apply_toNNReal (continuous_ouTimeChangeForcing hw) i
+  have hω : Continuous fun r : ℝ ↦ Real.exp (-(r / 2)) * w (Real.exp r - 1).toNNReal i :=
+    (Real.continuous_exp.comp (continuous_id.div_const 2).neg).mul
+      ((continuous_apply_toNNReal hw i).comp (Real.continuous_exp.sub continuous_const))
+  have hωL := continuousOn_comp_log_one_add_div hω
+  have hfL := continuousOn_comp_log_one_add_div hf
+  have hIcc : uIcc 0 (t : ℝ) ⊆ Ici 0 := by rw [uIcc_of_le t.coe_nonneg]; exact Icc_subset_Ici_self
+  -- `ouTimeChangeForcing w` solves the equation with forcing `e^{-r/2} w (e^r - 1)`, linear drift
+  -- `-ξ / 2` and drift `D r = e^{-r/2} w (e^r - 1) / 2 + ξ r / 2`.
+  have key := log_comp_eq_integral (x := 0) (ξ := fun r ↦ ouTimeChangeForcing w r.toNNReal i)
+    (ω := fun r ↦ Real.exp (-(r / 2)) * w (Real.exp r - 1).toNNReal i)
+    (D := fun r ↦ Real.exp (-(r / 2)) * w (Real.exp r - 1).toNNReal i / 2 +
+      ouTimeChangeForcing w r.toNNReal i / 2)
+    (E := fun u ↦ (Real.exp (-(Real.log (1 + u) / 2)) *
+      w (Real.exp (Real.log (1 + u)) - 1).toNNReal i +
+        ouTimeChangeForcing w (Real.log (1 + u)).toNNReal i) / (2 * √(1 + u)))
+    t.coe_nonneg hf.continuousOn hω.continuousOn
+    (fun r _ ↦ ((hω.div_const 2).add (hf.div_const 2)).continuousAt)
+    (fun r _ ↦ ((hω.div_const 2).add (hf.div_const 2)).intervalIntegrable _ _)
+    (fun r hr ↦ by
+      rw [ouTimeChangeForcing, Real.coe_toNNReal r hr, zero_add]
+      congr 1
+      exact intervalIntegral.integral_congr fun u _ ↦ by ring)
+    (fun u hu ↦ (continuousOn_comp_log_one_add_div (hω.add hf)).continuousAt (Ici_mem_nhds hu))
+    (((continuousOn_comp_log_one_add_div (hω.add hf)).mono hIcc).intervalIntegrable)
+    (fun u hu ↦ by
+      have := Real.sqrt_pos.2 (by linarith : (0 : ℝ) < 1 + u)
+      field_simp)
+  beta_reduce at key
+  have hsplit := intervalIntegral.integral_add ((hωL.mono hIcc).intervalIntegrable (μ := volume))
+    ((hfL.mono hIcc).intervalIntegrable (μ := volume))
+  simp only [← add_div] at hsplit
+  rw [hsplit, ← mul_assoc, sqrt_one_add_mul_exp_neg_half_log t.coe_nonneg,
+    Real.exp_log (by positivity), add_sub_cancel_left, Real.toNNReal_coe] at key
+  rw [ouTimeChangeInvForcing]
+  linear_combination key
 
 end TimeChange
 
@@ -532,15 +599,13 @@ private theorem intervalIntegrable_sum_inv_ouTimeChange {X : ℝ≥0 → Fin n �
     (fun u _ ↦ (Real.exp_pos u).le)
     (fun u _ v _ huv ↦ Real.exp_injective (sub_left_injective huv))
     (fun u hu ↦ by
-      rw [uIcc_of_le (exp_sub_one_nonneg t.coe_nonneg)]
-      exact ⟨exp_sub_one_nonneg hu.1, by dsimp only; gcongr; exact hu.2⟩)
+      rw [uIcc_of_le (sub_nonneg.2 (Real.one_le_exp t.coe_nonneg))]
+      exact ⟨sub_nonneg.2 (Real.one_le_exp hu.1), by dsimp only; gcongr; exact hu.2⟩)
     hS (by fun_prop)).congr_uIoo fun u hu ↦ ?_
   rw [uIoo_of_le t.coe_nonneg] at hu
-  have he : Real.exp (-(u / 2)) * Real.exp u = (Real.exp (-(u / 2)))⁻¹ := by
-    rw [← Real.exp_neg, ← Real.exp_add]; ring_nf
   simp only [ouTimeChange_apply, Real.coe_toNNReal u hu.1.le, ← mul_sub, mul_inv,
     ← Finset.mul_sum]
-  rw [← mul_assoc, he]
+  rw [← mul_assoc, exp_neg_half_mul_exp]
 
 /-- Integrability of the repulsion sums is preserved by the inverse exponential time change. -/
 private theorem intervalIntegrable_sum_inv_ouTimeChangeInv {Y : ℝ≥0 → Fin n → ℝ}
@@ -586,8 +651,8 @@ theorem IsDysonPath.isDysonOUPath_ouTimeChange {w X : ℝ≥0 → Fin n → ℝ}
   have key := exp_comp_eq_integral (x := x i) (D := fun r ↦ dysonDrift n (X r.toNNReal) i)
     (E := fun u ↦ dysonDrift n (ouTimeChange X u.toNNReal) i) (ξ := fun r ↦ X r.toNNReal i)
     (ω := fun r ↦ w r.toNNReal i) t.coe_nonneg
-    (((continuous_apply i).comp hX.continuous).comp continuous_real_toNNReal).continuousOn
-    (((continuous_apply i).comp hX.continuous_driving).comp continuous_real_toNNReal).continuousOn
+    (continuous_apply_toNNReal hX.continuous i).continuousOn
+    (continuous_apply_toNNReal hX.continuous_driving i).continuousOn
     (fun r hr ↦ continuousAt_dysonDrift_comp hX.continuous hX.strictAnti hr i)
     (fun r hr ↦ by
       simpa [Real.coe_toNNReal r hr] using hX.intervalIntegrable_dysonDrift r.toNNReal i)
@@ -600,10 +665,8 @@ theorem IsDysonPath.isDysonOUPath_ouTimeChange {w X : ℝ≥0 → Fin n → ℝ}
     refine intervalIntegral.integral_congr fun s hs ↦ ?_
     rw [uIcc_of_le t.coe_nonneg] at hs
     simp only [hY s hs.1, Pi.smul_apply, smul_eq_mul]
-  · have he : Real.exp (-(u / 2)) * Real.exp u = (Real.exp (-(u / 2)))⁻¹ := by
-      rw [← Real.exp_neg, ← Real.exp_add]; ring_nf
-    simp only [hY u hu.le, dysonDrift_smul, Pi.smul_apply, smul_eq_mul]
-    linear_combination dysonDrift n (X (Real.exp u - 1).toNNReal) i * he
+  · simp only [hY u hu.le, dysonDrift_smul, Pi.smul_apply, smul_eq_mul]
+    linear_combination dysonDrift n (X (Real.exp u - 1).toNNReal) i * exp_neg_half_mul_exp u
 
 /-- **Ornstein–Uhlenbeck Dyson trajectories time-change to Dyson trajectories.** If `Y` is an
 Ornstein–Uhlenbeck Dyson trajectory driven by `w`, then `√(1 + s) Y (log (1 + s))` is a Dyson
@@ -626,8 +689,8 @@ theorem IsDysonOUPath.isDysonPath_ouTimeChangeInv {w Y : ℝ≥0 → Fin n → �
   have key := log_comp_eq_integral (x := x i) (D := fun r ↦ dysonDrift n (Y r.toNNReal) i)
     (E := fun u ↦ dysonDrift n (ouTimeChangeInv Y u.toNNReal) i) (ξ := fun r ↦ Y r.toNNReal i)
     (ω := fun r ↦ w r.toNNReal i) t.coe_nonneg
-    (((continuous_apply i).comp hY.continuous).comp continuous_real_toNNReal).continuousOn
-    (((continuous_apply i).comp hY.continuous_driving).comp continuous_real_toNNReal).continuousOn
+    (continuous_apply_toNNReal hY.continuous i).continuousOn
+    (continuous_apply_toNNReal hY.continuous_driving i).continuousOn
     (fun r hr ↦ continuousAt_dysonDrift_comp hY.continuous hY.strictAnti hr i)
     (fun r hr ↦ by
       simpa [Real.coe_toNNReal r hr] using hY.intervalIntegrable_dysonDrift r.toNNReal i)
@@ -649,26 +712,41 @@ theorem isDysonOUPath_iff_isDysonPath_ouTimeChangeInv {w Y : ℝ≥0 → Fin n �
   refine ⟨IsDysonOUPath.isDysonPath_ouTimeChangeInv, fun h ↦ ?_⟩
   simpa [ouTimeChangeForcing_ouTimeChangeInvForcing hw] using h.isDysonOUPath_ouTimeChange
 
+/-- **Dyson trajectories are exactly time-changed Ornstein–Uhlenbeck Dyson trajectories.** For a
+continuous forcing path `w`, `X` solves the Dyson system driven by `w` if and only if its
+exponential time change solves the Ornstein–Uhlenbeck Dyson system driven by
+`ouTimeChangeForcing w`. -/
+theorem isDysonPath_iff_isDysonOUPath_ouTimeChange {w X : ℝ≥0 → Fin n → ℝ} (hw : Continuous w) :
+    IsDysonPath n x w X ↔ IsDysonOUPath n x (ouTimeChangeForcing w) (ouTimeChange X) := by
+  refine ⟨IsDysonPath.isDysonOUPath_ouTimeChange, fun h ↦ ?_⟩
+  simpa [ouTimeChangeInvForcing_ouTimeChangeForcing hw] using h.isDysonPath_ouTimeChangeInv
+
 namespace IsDysonOUPath
 
 variable {y : Fin n → ℝ} {w X Y : ℝ≥0 → Fin n → ℝ}
 
 /-- **Exponential pathwise `ℓ²` contraction.** Two Ornstein–Uhlenbeck Dyson trajectories driven by
-the same path `w` approach each other at rate `e^{-t}` in squared Euclidean distance. -/
+the same path `w` approach each other at rate `e^{-(t - s)}` in squared Euclidean distance between
+times `s ≤ t`. -/
+theorem sum_sub_sq_le_of_le (hX : IsDysonOUPath n x w X) (hY : IsDysonOUPath n y w Y)
+    {s t : ℝ≥0} (hst : s ≤ t) :
+    ∑ i : Fin n, (X t i - Y t i) ^ 2 ≤
+      Real.exp (-((t : ℝ) - s)) * ∑ i : Fin n, (X s i - Y s i) ^ 2 := by
+  have h := hX.isDysonPath_ouTimeChangeInv.sum_sub_sq_le_of_le hY.isDysonPath_ouTimeChangeInv
+    (Real.toNNReal_le_toNNReal (by gcongr) :
+      (Real.exp s - 1).toNNReal ≤ (Real.exp t - 1).toNNReal)
+  have he (u : ℝ) : Real.exp (u / 2) ^ 2 = Real.exp u := by rw [sq, ← Real.exp_add, add_halves]
+  simp only [ouTimeChangeInv_exp_sub_one, Pi.smul_apply, smul_eq_mul, ← mul_sub, mul_pow,
+    ← Finset.mul_sum, he] at h
+  rw [Real.exp_neg, Real.exp_sub, inv_div, div_mul_eq_mul_div, le_div_iff₀ (Real.exp_pos _)]
+  linarith
+
+/-- **Exponential pathwise `ℓ²` contraction from the start.** Two Ornstein–Uhlenbeck Dyson
+trajectories driven by the same path `w` approach each other at rate `e^{-t}` in squared Euclidean
+distance. -/
 theorem sum_sub_sq_le (hX : IsDysonOUPath n x w X) (hY : IsDysonOUPath n y w Y) (t : ℝ≥0) :
     ∑ i : Fin n, (X t i - Y t i) ^ 2 ≤ Real.exp (-(t : ℝ)) * ∑ i : Fin n, (x i - y i) ^ 2 := by
-  have h := hX.isDysonPath_ouTimeChangeInv.sum_sub_sq_le hY.isDysonPath_ouTimeChangeInv
-    (Real.exp t - 1).toNNReal
-  simp only [ouTimeChangeInv_exp_sub_one, Pi.smul_apply, smul_eq_mul, ← mul_sub, mul_pow,
-    ← Finset.mul_sum] at h
-  have he : Real.exp ((t : ℝ) / 2) ^ 2 = Real.exp t := by
-    rw [sq, ← Real.exp_add, add_halves]
-  rw [he] at h
-  calc ∑ i : Fin n, (X t i - Y t i) ^ 2
-      = Real.exp (-(t : ℝ)) * (Real.exp t * ∑ i : Fin n, (X t i - Y t i) ^ 2) := by
-        rw [← mul_assoc, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_mul]
-    _ ≤ Real.exp (-(t : ℝ)) * ∑ i : Fin n, (x i - y i) ^ 2 :=
-        mul_le_mul_of_nonneg_left h (Real.exp_pos _).le
+  simpa [hX.eval_zero, hY.eval_zero] using hX.sum_sub_sq_le_of_le hY _root_.zero_le
 
 /-- **Pathwise uniqueness.** Two Ornstein–Uhlenbeck Dyson trajectories started at the same
 configuration and driven by the same forcing path are identical. -/
@@ -701,6 +779,40 @@ theorem isDysonOUSolution_def :
     IsDysonOUSolution β n x P B Y ↔
       ∀ᵐ ω ∂P, IsDysonOUPath n x (fun t i ↦ Real.sqrt (2 / (β * n)) * B i t ω) (fun t ↦ Y t ω) :=
   Iff.rfl
+
+/-- Explicit expanded form of `IsDysonOUSolution` in terms of sample-path continuity, strictly
+decreasing coordinates (`StrictAnti`) at positive times, drift integrability, and the coordinatewise
+integral equation with the confining drift. -/
+theorem isDysonOUSolution_iff :
+    IsDysonOUSolution β n x P B Y ↔
+      ∀ᵐ ω ∂P, Continuous (fun t ↦ Y t ω) ∧ (∀ t, 0 < t → StrictAnti (Y t ω)) ∧
+        ∀ (t : ℝ≥0) (i : Fin n),
+          IntervalIntegrable (fun s : ℝ ↦ ∑ j ∈ Finset.univ.erase i,
+            (Y s.toNNReal ω i - Y s.toNNReal ω j)⁻¹) volume 0 t ∧
+          Y t ω i = x i + Real.sqrt (2 / (β * n)) * B i t ω +
+            ∫ s in (0 : ℝ)..t, ((n : ℝ)⁻¹ * ∑ j ∈ Finset.univ.erase i,
+              (Y s.toNNReal ω i - Y s.toNNReal ω j)⁻¹ - Y s.toNNReal ω i / 2) := by
+  refine eventually_congr (.of_forall fun _ ↦ ⟨fun h ↦ ⟨h.continuous, h.strictAnti, fun t i ↦
+    ⟨h.intervalIntegrable t i, ?_⟩⟩, fun ⟨hc, hsa, hi⟩ ↦ ⟨hc, hsa, fun t i ↦ (hi t i).1,
+      fun t i ↦ ?_⟩⟩)
+  · simpa [dysonDrift_apply] using h.eq_integral t i
+  · simpa [dysonDrift_apply] using (hi t i).2
+
+/-- Almost every sample path of an `IsDysonOUSolution` is a deterministic `IsDysonOUPath`. -/
+theorem IsDysonOUSolution.ae_isDysonOUPath (hY : IsDysonOUSolution β n x P B Y) :
+    ∀ᵐ ω ∂P, IsDysonOUPath n x (fun t i ↦ Real.sqrt (2 / (β * n)) * B i t ω) (fun t ↦ Y t ω) :=
+  hY
+
+/-- Congruence of `IsDysonOUSolution` under indistinguishable modifications of the driving process
+`B` and the solution process `X`. -/
+theorem IsDysonOUSolution.congr {B' : Fin n → ℝ≥0 → Ω → ℝ} (hX : IsDysonOUSolution β n x P B X)
+    (hB : ∀ i, ∀ᵐ ω ∂P, ∀ t, B i t ω = B' i t ω) (hXY : ∀ᵐ ω ∂P, ∀ t, X t ω = Y t ω) :
+    IsDysonOUSolution β n x P B' Y := by
+  filter_upwards [hX, ae_all_iff.2 hB, hXY] with ω hω hωB hωX
+  have hB_eq : (fun t i ↦ Real.sqrt (2 / (β * n)) * B i t ω) =
+      fun t i ↦ Real.sqrt (2 / (β * n)) * B' i t ω := by
+    ext t i; rw [hωB i t]
+  rwa [← hB_eq, ← funext hωX]
 
 /-- **Almost-sure pathwise uniqueness for `IsDysonOUSolution`.** -/
 theorem IsDysonOUSolution.ae_eq (hX : IsDysonOUSolution β n x P B X)
