@@ -137,6 +137,8 @@ polynomial in the Morse inequalities.
   `TauCeti.totalCriticalCount_const` and `TauCeti.totalCriticalCount_const_eq_top`: the count on
   the empty manifold, in dimension zero and for a constant function, which is `⊤` on a nonempty
   manifold of positive dimension.
+* `TauCeti.isMorse_const_iff`: on a nonempty manifold a constant function is Morse exactly in
+  dimension zero.
 * `TauCeti.IsMorse.criticalPointsIndexNegEquiv`: the critical points of `-f` of index `j` are those
   of `f` of index `dim M - j`.
 * `TauCeti.criticalCount_zero_ne_zero` and `TauCeti.IsMorse.criticalCount_finrank_ne_zero`: on a
@@ -247,6 +249,22 @@ theorem criticalPoints_const (c : ℝ) : criticalPoints I (fun _ : M ↦ c) = un
 theorem criticalPoints_eq_univ_of_subsingleton [Subsingleton E] : criticalPoints I f = univ :=
   -- The derivative at `x` is a linear form on the tangent space, which is the zero space `E`.
   eq_univ_of_forall fun _ ↦ Subsingleton.elim (α := E →L[ℝ] ℝ) _ _
+
+/-- **A constant function is Morse only in dimension zero.** On a nonempty manifold every point is
+a critical point of a constant function, and its Hessian vanishes, which is invertible only on the
+zero space. So the constant function is Morse exactly when the model space is zero-dimensional,
+although on a locally connected boundaryless manifold it is Morse–Bott
+(`TauCeti.isMorseBottFamily_ofOpens_const`). -/
+theorem isMorse_const_iff [Nonempty M] (c : ℝ) :
+    IsMorse I (fun _ : M ↦ c) ↔ Subsingleton E := by
+  refine ⟨fun h ↦ ?_, fun _ ↦ isMorse_of_subsingleton⟩
+  obtain ⟨x⟩ := ‹Nonempty M›
+  -- In the chart at `x` the function is still constant, so its second derivative is `0`.
+  have hc : (fun _ : M ↦ c) ∘ (extChartAt I x).symm = fun _ ↦ c := rfl
+  have hx := (isMorse_iff.1 h).2 x (by rw [hc, fderiv_const_apply])
+  rw [isManifoldNondegenerateCriticalPoint_iff, hc] at hx
+  -- The second derivative is `0`, which is invertible only between zero spaces.
+  exact (ContinuousLinearMap.isInvertible_zero_iff (R := ℝ).1 (by simpa using hx.isInvertible)).1
 
 /-- A function and its negation have the same critical points. -/
 @[simp]

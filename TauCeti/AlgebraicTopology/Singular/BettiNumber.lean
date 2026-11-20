@@ -10,9 +10,12 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.LinearAlgebra.InvariantBasisNumber
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
+public import TauCeti.Topology.ConnectedComponents
+import Mathlib.Algebra.Category.ModuleCat.AB
 import Mathlib.Algebra.Category.ModuleCat.Products
 import Mathlib.Algebra.DirectSum.Finsupp
 import TauCeti.Algebra.Category.ModuleCat.Products
+import TauCeti.AlgebraicTopology.Singular.Additivity
 import TauCeti.AlgebraicTopology.Singular.Contractible
 
 /-!
@@ -43,6 +46,12 @@ Mathlib (`AlgebraicTopology.singularHomologyFunctorZeroOfTotallyDisconnectedSpac
 numbers do depend on the coefficients: for example, the real projective plane has first Betti
 number `0` over `ℚ` and `1` over `𝔽₂`.
 
+Over a division ring the Betti numbers are additive over a partition of `X` into finitely many
+open sets (`TauCeti.bettiNumber_eq_sum`), in particular over the connected components of a locally
+connected space with finitely many of them (`TauCeti.bettiNumber_eq_sum_connectedComponents`),
+provided the homology of `X` is finite-dimensional in the degree considered. This is the additivity
+of singular homology over disjoint open sets (`TauCeti.isColimitCofanSingularHomologyOpens`).
+
 These are the numbers `bⱼ` of the Morse inequalities: on a compact manifold with a Morse function
 having `cⱼ` critical points of index `j`, `∑ cⱼ tʲ = ∑ bⱼ tʲ + (1 + t) Q(t)` with `Q` having
 natural number coefficients.
@@ -64,6 +73,8 @@ natural number coefficients.
   of `H₀(ℕ)` and the resulting junk value of `b₀(ℕ)`.
 * `TauCeti.bettiNumber_eq_zero_of_not_finite`, `TauCeti.bettiNumber_eq_rank`: over a division ring,
   the junk value `0` for infinite-dimensional homology and the comparison with `Module.rank`.
+* `TauCeti.bettiNumber_eq_sum`, `TauCeti.bettiNumber_eq_sum_connectedComponents`: additivity over
+  finite partitions into open sets and over connected components.
 
 ## References
 
@@ -235,6 +246,51 @@ theorem bettiNumber_eq_rank (k : Type u) [DivisionRing k]
         (TopCat.of X)) := by
   rw [bettiNumber_def]
   exact finrank_eq_rank ..
+
+section Opens
+
+open Function TopologicalSpace
+
+variable {k : Type u} [DivisionRing k] {X : Type u} [TopologicalSpace X] {ι : Type u} [Fintype ι]
+
+/-- **Betti numbers are additive over a finite partition into open sets.** If `X` is the union of
+finitely many pairwise disjoint open sets `s i` and `Hⱼ(X; k)` is finite-dimensional, then
+`bⱼ(X; k) = ∑ᵢ bⱼ(s i; k)`. Without the finiteness hypothesis the left side may be the junk value
+`0` while some summands on the right are not. -/
+theorem bettiNumber_eq_sum (s : ι → Opens X) (hs : Pairwise (Disjoint on s))
+    (hX : ⨆ i, s i = ⊤) (j : ℕ)
+    [Module.Finite k (((singularHomologyFunctor (ModuleCat.{u} k) j).obj (ModuleCat.of k k)).obj
+      (TopCat.of X))] :
+    bettiNumber k X j = ∑ i, bettiNumber k (s i) j := by
+  classical
+  let F := (singularHomologyFunctor (ModuleCat.{u} k) j).obj (ModuleCat.of k k)
+  -- `X` is the union `⨆ i, s i`, whose homology is the coproduct of the homologies of the `s i`.
+  let eX : TopCat.of X ≅ TopCat.of ↥(⨆ i, s i) := TopCat.isoOfHomeo
+    ((Homeomorph.Set.univ X).symm.trans (Homeomorph.setCongr (by rw [hX, Opens.coe_top])))
+  let eS : F.obj (TopCat.of ↥(⨆ i, s i)) ≅ ∐ fun i ↦ F.obj (TopCat.of (s i)) :=
+    (isColimitCofanSingularHomologyOpens s (ModuleCat.{u} k) (ModuleCat.of k k) j
+      hs).coconePointUniqueUpToIso (colimit.isColimit _)
+  let e := (F.mapIso eX ≪≫ eS ≪≫ ModuleCat.coprodIsoDirectSum _).toLinearEquiv
+  -- Each summand of a finite-dimensional direct sum is finite-dimensional.
+  have : Module.Finite k (DirectSum ι fun i ↦ F.obj (TopCat.of (s i))) := Module.Finite.equiv e
+  have (i : ι) : Module.Finite k (F.obj (TopCat.of (s i))) :=
+    Module.Finite.of_surjective (DirectSum.component k ι (fun i ↦ F.obj (TopCat.of (s i))) i)
+      fun x ↦ ⟨DirectSum.lof k ι _ i x,
+        DirectSum.component.lof_self (M := fun i ↦ F.obj (TopCat.of (s i))) k i x⟩
+  simp only [bettiNumber_def]
+  rw [e.finrank_eq, finrank_directSum]
+
+/-- **Betti numbers are additive over connected components.** In a locally connected space `X`
+with finitely many connected components, each of them open, if `Hⱼ(X; k)` is finite-dimensional
+then `bⱼ(X; k)` is the sum of the `bⱼ` of the components. -/
+theorem bettiNumber_eq_sum_connectedComponents [LocallyConnectedSpace X]
+    [Fintype (ConnectedComponents X)] (j : ℕ)
+    [Module.Finite k (((singularHomologyFunctor (ModuleCat.{u} k) j).obj (ModuleCat.of k k)).obj
+      (TopCat.of X))] :
+    bettiNumber k X j = ∑ C : ConnectedComponents X, bettiNumber k C.opens j :=
+  bettiNumber_eq_sum _ ConnectedComponents.pairwise_disjoint_opens ConnectedComponents.iSup_opens j
+
+end Opens
 
 end TauCeti
 
