@@ -325,12 +325,15 @@ theorem cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_expon
   have hdvd : H.relIndex N ∣ H.index :=
     relIndex_sup_of_le_normalizer (le_normalizer_of_normal (H := N)) ▸
       relIndex_dvd_index_of_le le_sup_left
-  have := Monoid.exp_eq_one_iff.1 <| Nat.Coprime.eq_one_of_dvd
-    ((hcop.coprime_dvd_left hdvd).coprime_dvd_right
+  have hsub : Subsingleton (N ⧸ H.subgroupOf N) := Monoid.exp_eq_one_iff.1 <|
+    Nat.Coprime.eq_one_of_dvd ((hcop.coprime_dvd_left hdvd).coprime_dvd_right
       (Group.exponent_quotient_dvd (H.subgroupOf N))).symm Group.exponent_dvd_nat_card
+  have hrel : H.relIndex N = 1 := by
+    rw [Subgroup.relIndex, Subgroup.index_eq_card]
+    exact Nat.card_unique
   exact (map_eq_zero_iff _ (map_subtype_injective_of_coprime_exponent hcop 2)).symm.trans
     (map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff
-      (relIndex_eq_one.1 Nat.card_unique) σ hσ τ hτ)
+      (relIndex_eq_one.1 hrel) σ hσ τ hτ)
 
 /-- **Gaschütz's splitting theorem for abelian normal subgroups of bounded exponent.** If `N` has
 a local complement in `H` and `[G : H]` is prime to the exponent of `N`, then `N` has a
