@@ -83,30 +83,27 @@ private theorem W1p.isCompactOperator_valueL_restrictL_of_isBounded (hp : p ≠ 
     (fun f => Lp.coeFn_LpToLpOfMeasureLeSMul (by simp) hmeasure f)]
   exact hcompact
 
-/-- The precise representatives in the unit ball of `W^{1,∞}(Ω)` are equicontinuous on each
-compact subset of `Ω`. -/
-private theorem W1p.equicontinuousOn_preciseRepresentative_unitBall
-    {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ (Omega : Set E)) :
+/-- The precise representatives in the unit ball of `W^{1,∞}(Ω)` are equicontinuous on `Ω`. -/
+private theorem W1p.equicontinuousOn_preciseRepresentative_unitBall :
     EquicontinuousOn (fun u : closedBall (0 : W1p mu Omega ∞) 1 =>
-      preciseRepresentative mu (W1p.value (u : W1p mu Omega ∞))) K := by
+      preciseRepresentative mu (W1p.value (u : W1p mu Omega ∞))) (Omega : Set E) := by
   obtain ⟨C, hC, hdist⟩ := W1p.exists_dist_preciseRepresentative_le_top (mu := mu)
-  obtain ⟨R, hR, hRK⟩ := hK.exists_cthickening_subset_open Omega.isOpen hKΩ
   refine (equicontinuous_restrict_iff _).1 fun x => ?_
-  refine equicontinuousAt_of_continuity_modulus (fun y : K => C * dist y x)
+  obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.1 Omega.isOpen x x.property
+  refine equicontinuousAt_of_continuity_modulus (fun y : (Omega : Set E) => C * dist y x)
     (by
-      have hc : Continuous (fun y : K => C * dist y x) := by fun_prop
+      have hc : Continuous (fun y : (Omega : Set E) => C * dist y x) := by fun_prop
       simpa using hc.tendsto x)
     _ ?_
-  -- For distances below `R / 2`, the local estimate stays inside the fixed thickening of `K`.
-  filter_upwards [Metric.ball_mem_nhds x (half_pos hR)] with y hy
+  -- For distances below `r / 3`, the local estimate stays inside a fixed ball in `Ω`.
+  filter_upwards [Metric.ball_mem_nhds x (div_pos hr three_pos)] with y hy
   rintro ⟨u, hu⟩
   have hb := mem_closedBall_zero_iff.1 hu
   have hxy : closedBall (y : E) (2 * dist (y : E) x) ⊆ (Omega : Set E) :=
-    ((closedBall_subset_cthickening y.property _).trans
-      (cthickening_mono (by
-        have hd := mem_ball.1 hy
-        rw [Subtype.dist_eq] at hd
-        linarith) K)).trans hRK
+    (closedBall_subset_ball' (by
+      have hd := mem_ball.1 hy
+      rw [Subtype.dist_eq] at hd
+      linarith)).trans hrΩ
   rw [dist_comm]
   refine (hdist u hxy).trans ?_
   have hg : ‖W1p.gradient u‖ ≤ 1 := (W1p.norm_gradient_le u).trans hb
@@ -140,7 +137,7 @@ private theorem W1p.isCompactOperator_valueL_restrictL_top
       (fun x hx => ⟨closedBall 0 1, isCompact_closedBall 0 1, fun u hu =>
         mem_closedBall_zero_iff.2 ((W1p.norm_preciseRepresentative_le u (hVO hx)).trans
           ((W1p.norm_value_le u).trans (mem_closedBall_zero_iff.1 hu)))⟩)
-      (W1p.equicontinuousOn_preciseRepresentative_unitBall hVc hVO)
+      (W1p.equicontinuousOn_preciseRepresentative_unitBall.mono hVO)
   let e := Lp.comapSubtypeEquivₗᵢ (E := ℝ) (p := ∞) ℝ mu V.isOpen.measurableSet
   let S : ((V : Set E) →ᵇ ℝ) → Lp ℝ ∞ (mu.restrict (V : Set E)) := fun g =>
     e.symm (BoundedContinuousFunction.toLpTop ν ℝ g)
