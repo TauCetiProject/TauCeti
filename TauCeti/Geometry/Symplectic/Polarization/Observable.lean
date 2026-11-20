@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Distribution.BasicFunctions
 public import TauCeti.Geometry.Symplectic.Hamiltonian.LieAlgebra
-public import TauCeti.Geometry.Symplectic.Polarization.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive
 
