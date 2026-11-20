@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import TauCeti.Algebra.Category.Ring.AdjoinFinset
 public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Noetherian
 
 /-!
 # Noetherian approximation of affine schemes
@@ -24,6 +25,8 @@ with affine transition maps. This is the affine case of absolute Noetherian appr
 * `AlgebraicGeometry.Scheme.exists_isLimit_finitePresentation_of_isAffine`: every
   affine scheme is a cofiltered limit, with affine transition maps, of affine schemes of finite
   presentation over `ℤ`.
+* `AlgebraicGeometry.Scheme.exists_isLimit_noetherian_of_isAffine`: the affine stages in this
+  approximation are Noetherian.
 -/
 
 public section
@@ -54,5 +57,23 @@ theorem Scheme.exists_isLimit_finitePresentation_of_isAffine (X : Scheme.{u}) [I
   · dsimp
     rw [TauCeti.CommRingCat.adjoinFinsetDiagram_obj]
     infer_instance
+
+/-- Every affine scheme is a cofiltered limit of affine Noetherian schemes, with affine
+transition maps. -/
+theorem Scheme.exists_isLimit_noetherian_of_isAffine (S : Scheme.{u}) [IsAffine S] :
+    ∃ (I : Type u) (_ : SmallCategory I) (_ : IsCofiltered I) (D : I ⥤ Scheme.{u})
+      (π : (Functor.const I).obj S ⟶ D), Nonempty (IsLimit (Cone.mk S π)) ∧
+      (∀ ⦃i j : I⦄ (f : i ⟶ j), IsAffineHom (D.map f)) ∧
+      ∀ i, IsAffine (D.obj i) ∧ IsNoetherian (D.obj i) := by
+  obtain ⟨I, hI, hcof, D, π, hc, htrans, hstage⟩ :=
+    S.exists_isLimit_finitePresentation_of_isAffine
+  let := hI
+  let := hcof
+  refine ⟨I, hI, hcof, D, π, hc, htrans, fun i ↦ ?_⟩
+  have := (hstage i).1
+  have := (hstage i).2
+  have : IsLocallyNoetherian (D.obj i) :=
+    LocallyOfFiniteType.isLocallyNoetherian (terminal.from (D.obj i))
+  exact ⟨inferInstance, ⟨⟩⟩
 
 end AlgebraicGeometry
