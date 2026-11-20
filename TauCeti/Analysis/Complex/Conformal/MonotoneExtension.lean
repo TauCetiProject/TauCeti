@@ -100,7 +100,7 @@ theorem injOn_sphere_iff_isPreconnected_boundary_fiber (hr : 0 < r)
   · intro hboundary
     apply hiff.mp
     intro x y hxy
-    exact Subtype.ext (hboundary x.2 y.2 hxy)
+    exact Subtype.ext (hboundary x.property y.property hxy)
   · exact injOn_sphere_of_isPreconnected_boundary_fiber hr hcont hdiff hinj
 
 /-- **A conformal disc map with a monotone boundary restriction is injective on the closed

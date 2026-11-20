@@ -258,7 +258,7 @@ lemma d_ιTwistedChainComplex_simplex₁_apply {x y : X} (γ : Path x y)
 
 /-- Parallel transport along a path identifies the corresponding fibre classes in zeroth
 homology. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma map_ιTwistedHomology₀ {x y : FundamentalGroupoid X} (p : x ⟶ y) :
     L.map p ≫ ιTwistedHomology₀ L y.as = ιTwistedHomology₀ L x.as := by
   induction p using Path.Homotopic.Quotient.ind with

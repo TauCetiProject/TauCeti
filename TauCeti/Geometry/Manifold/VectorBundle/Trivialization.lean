@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
+public import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # The fibre coordinate and partial diffeomorphism of a bundle trivialization
@@ -29,7 +30,8 @@ into the total space is a continuous linear isomorphism onto the model fibre; he
 and has injective derivative, whose image is the kernel of the derivative of the projection.
 Moreover, every atlas trivialization of a `C^n` vector bundle is a `C^n` partial diffeomorphism
 between its source in `TotalSpace F E` and its target `e.baseSet ×ˢ univ` in `B × F`, and hence a
-`C^n` local diffeomorphism in both directions.
+`C^n` local diffeomorphism in both directions. A trivialization over the whole base which is
+`C^n` with `C^n` partial inverse is a `C^n` diffeomorphism of the total space onto `B × F`.
 Read back through such a trivialization, a `C^n` family of vectors of the model fibre is a `C^n`
 section.
 
@@ -51,8 +53,13 @@ section.
 * `Bundle.Trivialization.toPartialDiffeomorph`, `Bundle.Trivialization.isLocalDiffeomorphAt`,
   `Bundle.Trivialization.isLocalDiffeomorphAt_symm`: an atlas trivialization of a `C^n` vector
   bundle as a `C^n` partial diffeomorphism and local diffeomorphism.
+* `Bundle.Trivialization.toDiffeomorphOfBaseSetEqUniv`: a `C^n` trivialization over the whole
+  base, with `C^n` partial inverse, as a `C^n` diffeomorphism `TotalSpace F E ≃ B × F`.
 * `Bundle.Trivialization.contMDiffOn_section_symm`: a `C^n` family of vectors of the model fibre,
   read through an atlas trivialization, is a `C^n` section over its base set.
+* `Bundle.Trivialization.contDiffOn_coordChangeL_comp_symm`: the bundle transition operator
+  composed with an inverse extended chart is `C^n` on subsets of the chart target whose
+  inverse-chart images lie in both trivialization base sets.
 * `Bundle.Trivialization.isOpen_interior_extChartAt_target_inter_symm_preimage_baseSet`: the
   interior of an extended chart target intersected with the inverse-chart preimage of a
   trivialization's base set is open.
@@ -279,6 +286,51 @@ theorem isLocalDiffeomorphAt_symm {q : B × F} (hq : q ∈ e.target) :
 
 end Bundle.Trivialization
 
+namespace Bundle.Trivialization
+
+variable {𝕜 B F : Type*} {E : B → Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace (TotalSpace F E)]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B]
+  [ChartedSpace HB B] {ET : Type*} [NormedAddCommGroup ET] [NormedSpace 𝕜 ET]
+  {HT : Type*} [TopologicalSpace HT] {IT : ModelWithCorners 𝕜 ET HT}
+  [ChartedSpace HT (TotalSpace F E)] {n : WithTop ℕ∞} (e : Trivialization F (π F E))
+
+/-- A trivialization over the whole base which is `C^n` with `C^n` partial inverse is a `C^n`
+diffeomorphism of the total space onto `B × F`. -/
+def toDiffeomorphOfBaseSetEqUniv (he : e.baseSet = Set.univ)
+    (h : ContMDiff IT (IB.prod 𝓘(𝕜, F)) n e)
+    (h' : ContMDiff (IB.prod 𝓘(𝕜, F)) IT n e.toOpenPartialHomeomorph.symm) :
+    TotalSpace F E ≃ₘ^n⟮IT, IB.prod 𝓘(𝕜, F)⟯ B × F where
+  toEquiv := (e.toHomeomorphOfBaseSetEqUniv he).toEquiv
+  contMDiff_toFun := by
+    rw [Homeomorph.coe_toEquiv, coe_toHomeomorphOfBaseSetEqUniv]
+    exact h
+  contMDiff_invFun := by
+    rw [Homeomorph.coe_symm_toEquiv, coe_toHomeomorphOfBaseSetEqUniv_symm]
+    exact h'
+
+/-- The diffeomorphism of a smooth trivialization over the whole base is the trivialization. -/
+@[simp]
+theorem coe_toDiffeomorphOfBaseSetEqUniv (he : e.baseSet = Set.univ)
+    (h : ContMDiff IT (IB.prod 𝓘(𝕜, F)) n e)
+    (h' : ContMDiff (IB.prod 𝓘(𝕜, F)) IT n e.toOpenPartialHomeomorph.symm) :
+    ⇑(e.toDiffeomorphOfBaseSetEqUniv he h h') = e := by
+  rw [← Diffeomorph.coe_toHomeomorph]
+  exact e.coe_toHomeomorphOfBaseSetEqUniv he
+
+/-- The inverse of the diffeomorphism of a smooth trivialization over the whole base is the
+partial inverse of the trivialization. -/
+@[simp]
+theorem coe_toDiffeomorphOfBaseSetEqUniv_symm (he : e.baseSet = Set.univ)
+    (h : ContMDiff IT (IB.prod 𝓘(𝕜, F)) n e)
+    (h' : ContMDiff (IB.prod 𝓘(𝕜, F)) IT n e.toOpenPartialHomeomorph.symm) :
+    ⇑(e.toDiffeomorphOfBaseSetEqUniv he h h').symm = e.toOpenPartialHomeomorph.symm := by
+  rw [← Diffeomorph.coe_toHomeomorph_symm]
+  exact e.coe_toHomeomorphOfBaseSetEqUniv_symm he
+
+end Bundle.Trivialization
+
 
 namespace Bundle.Trivialization
 
@@ -300,8 +352,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 /-- The actual frame-change operator as a smooth map on any common open frame domain. -/
 def frameTransitionMap : C^n⟮I, U; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
   ⟨fun x ↦ (e.coordChangeL 𝕜 e' x : F →L[𝕜] F), fun x ↦
-    (contMDiffAt_coordChangeL (e := e) (e' := e') (hU x.2) (hU' x.2)).comp x
-      contMDiff_subtype_val.contMDiffAt⟩
+    (contMDiffAt_coordChangeL (e := e) (e' := e') (hU x.property) (hU' x.property)).comp x
+      contMDiff_subtypeVal.contMDiffAt⟩
 
 /-- Evaluation of the smooth frame-change operator is the native bundle coordinate change. -/
 @[simp]
@@ -310,6 +362,17 @@ theorem frameTransitionMap_apply (x : U) :
       (e.coordChangeL 𝕜 e' x : F →L[𝕜] F) := by
   rfl
 
+/-- Composing the bundle transition operator `e.coordChangeL 𝕜 e'` with the inverse of an extended
+chart at `x` gives a `C^n` map on any subset `S` of `(extChartAt I x).target` whose inverse-chart
+images lie in both trivialization base sets (boundary and corner charts included). -/
+theorem contDiffOn_coordChangeL_comp_symm [IsManifold I n M] (x : M) {S : Set E}
+    (hS : S ⊆ (extChartAt I x).target)
+    (hbase : ∀ z ∈ S, (extChartAt I x).symm z ∈ e.baseSet ∩ e'.baseSet) :
+    ContDiffOn 𝕜 n (fun z ↦ (e.coordChangeL 𝕜 e' ((extChartAt I x).symm z) : F →L[𝕜] F)) S :=
+  fun z hz ↦
+    ((contMDiffAt_coordChangeL (e := e) (e' := e') (hbase z hz).1
+      (hbase z hz).2).comp_contMDiffWithinAt z
+        ((contMDiffOn_extChartAt_symm x z (hS hz)).mono hS)).contDiffWithinAt
 
 end Bundle.Trivialization
 

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Normed.Module.Bases.TOrthogonal
 public import TauCeti.Topology.MetricSpace.SphericallyComplete
+import Mathlib.Topology.Algebra.SeparationQuotient.FiniteDimensional
+import TauCeti.Topology.MetricSpace.Ultra.SeparationQuotient
 
 /-!
 # Best approximation and orthogonal bases
@@ -15,13 +17,15 @@ Over a spherically complete nonarchimedean field, a finite orthogonal span admit
 approximations. Nested balls in the scalar coordinates give an approximation attaining the
 infimum, even when the residue field is infinite and bounded balls need not be compact.
 This is the exact, rather than approximate, Gram–Schmidt step. A maximal finite orthogonal
-family therefore gives an orthogonal basis in every finite-dimensional space. Complete fields
-with discrete value group satisfy the spherical completeness hypothesis; no condition on the
-values of the module norm is needed.
+family therefore gives an orthogonal basis in every finite-dimensional space, and coordinatewise
+ball intersection shows that every finite-dimensional ultrametric seminormed space over a
+spherically complete field is itself spherically complete. Complete fields with discrete value
+group satisfy the spherical completeness hypothesis; no condition on the values of the module
+norm is needed.
 
 ## References
 
-* P. Schneider, *Nonarchimedean Functional Analysis*, Springer, 2002, §§3–4.
+* P. Schneider, *Nonarchimedean Functional Analysis*, Springer, 2002, §§3–4, §9.
 * C. Perez-Garcia and W. H. Schikhof, *Locally Convex Spaces over Non-Archimedean Valued
   Fields*, Cambridge University Press, 2010, Chapter 2.
 -/
@@ -49,7 +53,7 @@ theorem IsTOrthogonalFamily.exists_forall_norm_sub_le {e : I → E}
   have hDb : BddBelow D := ⟨0, by rintro _ ⟨y, rfl⟩; exact norm_nonneg _⟩
   obtain ⟨r, hr, hlim, hmem⟩ := exists_seq_tendsto_sInf hD hDb
   choose y hy using fun n ↦ hmem n
-  have hyF (n : ℕ) : (y n : E) ∈ span K (range e) := (y n).2
+  have hyF (n : ℕ) : (y n : E) ∈ span K (range e) := (y n).property
   choose a ha using fun n ↦ (mem_span_range_iff_exists_fun K).1 (hyF n)
   have hr0 (n : ℕ) : 0 ≤ r n := hy n ▸ norm_nonneg _
   -- Orthogonality turns nested error bounds into nested balls in each scalar coordinate.
@@ -162,5 +166,53 @@ theorem exists_basis_isTOrthogonalFamily_one_of_norm_eq_zpow [CompleteSpace K]
       simpa only [dist_eq_norm] using
         hdiscrete (x - y) (by simpa only [dist_eq_norm, ne_eq, norm_eq_zero] using hxy)
   exact exists_basis_isTOrthogonalFamily_one_of_sphericallyComplete
+
+private theorem sphericallyCompleteSpace_of_finiteDimensional_normed {K E : Type*}
+    [NormedField K] [IsUltrametricDist K] [SphericallyCompleteSpace K]
+    [NormedAddCommGroup E] [NormedSpace K E] [IsUltrametricDist E] [FiniteDimensional K E] :
+    SphericallyCompleteSpace E where
+  nonempty_iInter_closedBall {c r} hr hanti := by
+    obtain ⟨b, hb⟩ := exists_basis_isTOrthogonalFamily_one_of_sphericallyComplete (K := K) (E := E)
+    let a (n : ℕ) (i : Fin (Module.finrank K E)) : K := b.repr (c n) i
+    have hcoord (i : Fin (Module.finrank K E)) :
+        (⋂ n, closedBall (a n i) (r n / ‖b i‖)).Nonempty := by
+      have hbi : 0 < ‖b i‖ := norm_pos_iff.2 (b.ne_zero i)
+      refine SphericallyCompleteSpace.nonempty_iInter_closedBall
+        (fun n ↦ div_nonneg (hr n) hbi.le) fun m n hmn y hy ↦ ?_
+      -- Perturbing `c n` along `b i` stays in the `n`-th ball, hence in the `m`-th ball.
+      let z : E := c n + (y - a n i) • b i
+      have hzn : z ∈ closedBall (c n) (r n) := by
+        rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul]
+        exact (le_div_iff₀ hbi).1 (by simpa [dist_eq_norm] using hy)
+      have hzm : ‖z - c m‖ ≤ r m := by
+        simpa [mem_closedBall, dist_eq_norm] using hanti hmn hzn
+      have hrepr : b.repr (z - c m) i = y - a m i := by
+        simp [z, a, map_add, map_sub, map_smul, b.repr_self]
+      have horth := hb.mul_norm_smul_le (Finset.mem_univ i) (b.repr (z - c m))
+      rw [b.sum_repr, NNReal.coe_one, one_mul, hrepr, norm_smul] at horth
+      rw [mem_closedBall, dist_eq_norm, le_div_iff₀ hbi]
+      exact horth.trans hzm
+    choose t ht using hcoord
+    refine ⟨∑ i, t i • b i, Set.mem_iInter.2 fun n ↦ ?_⟩
+    rw [mem_closedBall, dist_eq_norm]
+    have hsub : (∑ i, t i • b i) - c n = ∑ i, (t i - a n i) • b i := by
+      conv_lhs => rw [← b.sum_repr (c n)]
+      simp only [a, sub_smul, Finset.sum_sub_distrib]
+    rw [hsub]
+    refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (hr n) fun i _ ↦ ?_
+    rw [norm_smul]
+    exact (le_div_iff₀ (norm_pos_iff.2 (b.ne_zero i))).1
+      (by simpa [dist_eq_norm] using Set.mem_iInter.1 (ht i) n)
+
+/-- Every finite-dimensional ultrametric seminormed space over a spherically complete field is
+spherically complete. -/
+theorem sphericallyCompleteSpace_of_finiteDimensional {K E : Type*} [NormedField K]
+    [IsUltrametricDist K] [SphericallyCompleteSpace K] [SeminormedAddCommGroup E]
+    [NormedSpace K E] [IsUltrametricDist E] [FiniteDimensional K E] :
+    SphericallyCompleteSpace E :=
+  have : SphericallyCompleteSpace (SeparationQuotient E) :=
+    sphericallyCompleteSpace_of_finiteDimensional_normed (K := K) (E := SeparationQuotient E)
+  (Isometry.of_dist_eq (f := SeparationQuotient.mk)
+    SeparationQuotient.dist_mk).sphericallyCompleteSpace SeparationQuotient.surjective_mk
 
 end TauCeti

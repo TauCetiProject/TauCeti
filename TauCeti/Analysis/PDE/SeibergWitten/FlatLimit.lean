@@ -27,8 +27,8 @@ equations are the Dirac equation and the curvature equation
 `∑ₖ c(eₖ) ∇_{eₖ} χ = 0`,  `F + ⋆F = ω / 8 - q(χ) / 2`,
 
 where `q` is the quadratic two-form `TauCeti.SeibergWitten.quadraticTwoForm`, indexed by real
-forms as in `TauCeti.SeibergWitten.LargeParameterCurvature`; the second equation is the
-large-parameter curvature equation `F + ⋆F = (r / 4) ω - q(√r χ)` at `r = 1 / 2`.
+forms as in `TauCeti.Analysis.PDE.SeibergWitten.LargeParameter.Curvature`; the second equation
+is the large-parameter curvature equation `F + ⋆F = (r / 4) ω - q(√r χ)` at `r = 1 / 2`.
 
 When the spinor lies on the canonical line, `χ = α u₀`, this file identifies these equations with
 the plane vortex equations:
@@ -196,6 +196,7 @@ theorem covariantDeriv_normalConnection (hx : DifferentiableAt ℝ x (normalCoor
     (normalCoord e).hasFDerivAt).fderiv
   rw [covariantDeriv_apply, Vortex.covariantDerivative_apply, hd, normalConnection_apply]
   simp
+  ring
 
 variable [FiniteDimensional ℝ V]
 

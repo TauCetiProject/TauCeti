@@ -139,7 +139,7 @@ theorem mem_range_ιFinite_iff (hxt : Transcendental k x)
       have hP : P = (equivPlace hxt p).map e.symm := by
         rw [equivPlace_apply, Place.map_symm_map]
       rw [hP, Place.mem_integers_map_iff, AlgEquiv.symm_symm, AlgEquiv.apply_symm_apply]
-      exact mem_holomorphyRing_iff.mp f.2 _ hxP
+      exact mem_holomorphyRing_iff.mp f.property _ hxP
     let φ : holomorphyRing {Q : Place k F | x ∈ Q.integers} →+* P.integers :=
       (e.symm.toRingHom.comp (holomorphyRing _).val.toRingHom).codRestrict P.integers hmem
     have hl : Spec.map (CommRingCat.ofHom
