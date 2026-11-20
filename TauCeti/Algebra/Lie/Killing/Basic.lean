@@ -18,21 +18,22 @@ two as an equivalence, saying that `LieAlgebra.IsKilling` is exactly nondegenera
 form. That is the form in which the property is recognised when it is produced by a computation
 with the form itself, as under base change.
 
-Nondegeneracy of the Killing form also forces `L` to be finite over the base ring: on a module with
-no finite basis every trace vanishes, so the Killing form would be zero, and a zero form is
-nondegenerate only on the zero module (`TauCeti.finite_of_isKilling`). Results about Killing Lie
-algebras, such as Whitehead's lemmas, therefore need no separate finiteness hypothesis.
+Nondegeneracy of the Killing form also forces `L` to be finite and free over the base ring. More
+generally, a representation on which the trace form of a nontrivial Lie algebra is nondegenerate has
+a finite basis: on a module with no finite basis every trace vanishes, so the trace form would be
+zero, and a zero form is nondegenerate only on the zero module. Results about Killing Lie algebras,
+such as Whitehead's lemmas, therefore need no separate finiteness hypothesis. The same vanishing
+argument shows that an abelian Killing Lie algebra is trivial, over any commutative ring.
 
 ## Main declarations
 
-* `TauCeti.isKilling_iff_ker_killingForm_eq_bot`: a Lie algebra is Killing exactly when its
-  Killing form has trivial kernel.
-* `TauCeti.isKilling_of_killingForm_nondegenerate`: a Lie algebra whose Killing form is
-  nondegenerate is Killing.
 * `TauCeti.isKilling_iff_killingForm_nondegenerate`: `LieAlgebra.IsKilling` is exactly
   nondegeneracy of the Killing form.
-* `TauCeti.finite_of_isKilling`: a Lie algebra with nondegenerate Killing form is finite over the
-  base ring.
+* `TauCeti.subsingleton_of_isKilling_of_isLieAbelian`: an abelian Killing Lie algebra is trivial.
+* `TauCeti.exists_basis_of_traceForm_nondegenerate`: a representation on which the trace form of a
+  nontrivial Lie algebra is nondegenerate has a finite basis.
+* `TauCeti.free_of_isKilling`, `TauCeti.finite_of_isKilling`: a Lie algebra with nondegenerate
+  Killing form is free and finite over the base ring.
 * `TauCeti.exists_killingForm_lie_ne_zero`: on a nontrivial Killing Lie algebra the Killing form
   does not vanish on all brackets.
 
@@ -50,48 +51,61 @@ open LieAlgebra LieModule
 
 variable (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L]
 
-/-- A Lie algebra is Killing exactly when its Killing form has trivial kernel. -/
-theorem isKilling_iff_ker_killingForm_eq_bot :
-    IsKilling R L ↔ LinearMap.ker (killingForm R L) = ⊥ :=
-  ⟨fun _ ↦ IsKilling.ker_killingForm_eq_bot R L, fun h ↦
-    ⟨(LieSubmodule.toSubmodule_eq_bot _).mp <| (LieIdeal.coe_killingCompl_top R L).trans h⟩⟩
+/-- A Lie algebra is Killing exactly when its Killing form is nondegenerate.
 
-/-- A Lie algebra whose Killing form is nondegenerate is Killing.
-
-This is the converse of `LieAlgebra.IsKilling.killingForm_nondegenerate`, and the two together say
-that `LieAlgebra.IsKilling` is exactly nondegeneracy of the Killing form. -/
-theorem isKilling_of_killingForm_nondegenerate (h : (killingForm R L).Nondegenerate) :
-    IsKilling R L :=
-  (isKilling_iff_ker_killingForm_eq_bot R L).mpr h.ker_eq_bot
-
-/-- A Lie algebra is Killing exactly when its Killing form is nondegenerate. -/
+The forward direction is `LieAlgebra.IsKilling.killingForm_nondegenerate`. For the condition that
+the Killing form has trivial kernel, combine this with
+`LinearMap.IsRefl.nondegenerate_iff_separatingLeft` and
+`LinearMap.separatingLeft_iff_ker_eq_bot`. -/
 theorem isKilling_iff_killingForm_nondegenerate :
     IsKilling R L ↔ (killingForm R L).Nondegenerate :=
-  ⟨fun _ ↦ IsKilling.killingForm_nondegenerate R L, isKilling_of_killingForm_nondegenerate R L⟩
+  ⟨fun _ ↦ IsKilling.killingForm_nondegenerate R L, fun h ↦
+    ⟨(LieSubmodule.toSubmodule_eq_bot _).mp <|
+      (LieIdeal.coe_killingCompl_top R L).trans h.ker_eq_bot⟩⟩
+
+/-- An abelian Killing Lie algebra is trivial: its Killing form vanishes, and a zero form is
+nondegenerate only on the zero module. -/
+theorem subsingleton_of_isKilling_of_isLieAbelian [IsKilling R L] [IsLieAbelian L] :
+    Subsingleton L := by
+  by_contra h
+  rw [not_subsingleton_iff_nontrivial] at h
+  exact (IsKilling.killingForm_nondegenerate R L).ne_zero (traceForm_eq_zero_of_isTrivial R L L)
 
 variable {R L}
 
+/-- A representation of a nontrivial Lie algebra whose trace form is nondegenerate has a finite
+basis: without one every trace vanishes, so the trace form would be zero. -/
+theorem exists_basis_of_traceForm_nondegenerate (M : Type*) [AddCommGroup M] [Module R M]
+    [LieRingModule L M] [LieModule R L M] [Nontrivial L] (h : (traceForm R L M).Nondegenerate) :
+    ∃ s : Finset M, Nonempty (Module.Basis s R M) := by
+  by_contra hb
+  exact h.ne_zero <| LinearMap.ext₂ fun x y ↦ by
+    simp [traceForm_apply_apply, LinearMap.trace_eq_zero_of_not_exists_basis hb]
+
+/-- A Killing Lie algebra has a finite basis over the base ring. -/
+private theorem exists_basis_of_isKilling [IsKilling R L] :
+    ∃ s : Finset L, Nonempty (Module.Basis s R L) := by
+  cases subsingleton_or_nontrivial L
+  · exact ⟨∅, ⟨.empty _⟩⟩
+  · exact exists_basis_of_traceForm_nondegenerate L (IsKilling.killingForm_nondegenerate R L)
+
+/-- A Lie algebra with nondegenerate Killing form is free over the base ring. -/
+theorem free_of_isKilling [IsKilling R L] : Module.Free R L :=
+  have ⟨_, ⟨b⟩⟩ := exists_basis_of_isKilling (R := R) (L := L)
+  .of_basis b
+
 /-- A Lie algebra with nondegenerate Killing form is finite over the base ring. -/
-theorem finite_of_isKilling [IsKilling R L] : Module.Finite R L := by
-  by_contra hnf
-  -- Without a finite basis every trace vanishes, so the Killing form is zero, and a zero form is
-  -- nondegenerate only on the zero module.
-  have h0 (x y : L) : killingForm R L x y = 0 := by
-    simp [LieModule.traceForm_apply_apply, LinearMap.trace_eq_zero_of_not_finite hnf]
-  have : Subsingleton L := subsingleton_of_forall_eq 0 fun x ↦
-    (IsKilling.killingForm_nondegenerate R L).1 x (h0 x)
-  exact hnf inferInstance
+theorem finite_of_isKilling [IsKilling R L] : Module.Finite R L :=
+  have ⟨_, ⟨b⟩⟩ := exists_basis_of_isKilling (R := R) (L := L)
+  .of_basis b
 
 /-- On a nontrivial Lie algebra with nondegenerate Killing form, the Killing form does not vanish
 on all brackets. -/
 theorem exists_killingForm_lie_ne_zero [Nontrivial L] [IsKilling R L] :
     ∃ x y z : L, killingForm R L ⁅x, y⁆ z ≠ 0 := by
   by_contra! h
-  -- The nondegenerate Killing form detects every bracket, so `L` is abelian; then the Killing form
-  -- vanishes, and a zero form is nondegenerate only on the zero module.
-  have hnd := IsKilling.killingForm_nondegenerate R L
-  have : IsLieAbelian L := ⟨fun x y ↦ hnd.1 _ (h x y)⟩
-  obtain ⟨x, hx⟩ := exists_ne (0 : L)
-  exact hx <| hnd.1 x fun y ↦ by simp [traceForm_eq_zero_of_isTrivial]
+  -- The nondegenerate Killing form detects every bracket, so `L` is abelian, hence trivial.
+  have : IsLieAbelian L := ⟨fun x y ↦ (IsKilling.killingForm_nondegenerate R L).1 _ (h x y)⟩
+  exact not_subsingleton L (subsingleton_of_isKilling_of_isLieAbelian R L)
 
 end TauCeti
