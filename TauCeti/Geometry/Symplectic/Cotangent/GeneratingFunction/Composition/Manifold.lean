@@ -185,9 +185,9 @@ private theorem generatingSource_eq_of_extChartAt (x₁ : M₁) {f : M₁ × M�
       cotangentGeneratingSource g' (extChartAt I₁ x₁ q, d')) :
     generatingSource I₁ f (q, c) = generatingSource I₁ g (q, d) := by
   have hmv : mvfderiv I₁ (fun q' ↦ f (q', c)) q = mvfderiv I₁ (fun q' ↦ g (q', d)) q := by
-    refine mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq hq hf hg
+    refine (mvfderiv_eq_iff_fderiv_comp_extChartAt_symm_eq hq hf hg
       (hf'.comp (extChartAt I₁ x₁ q) (differentiableAt_id.prodMk (differentiableAt_const _)))
-      (hg'.comp (extChartAt I₁ x₁ q) (differentiableAt_id.prodMk (differentiableAt_const _))) ?_
+      (hg'.comp (extChartAt I₁ x₁ q) (differentiableAt_id.prodMk (differentiableAt_const _)))).2 ?_
     rw [fderiv_slice_left hf', fderiv_slice_left hg']
     ext w
     simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply,
@@ -214,9 +214,9 @@ private theorem generatingTarget_eq_of_extChartAt (x₃ : M₃) {f : M₁ × M�
       cotangentGeneratingTarget g' (d', extChartAt I₃ x₃ Q)) :
     generatingTarget I₃ f (c, Q) = generatingTarget I₃ g (d, Q) := by
   have hmv : mvfderiv I₃ (fun Q' ↦ f (c, Q')) Q = mvfderiv I₃ (fun Q' ↦ g (d, Q')) Q := by
-    refine mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq hQ hf hg
+    refine (mvfderiv_eq_iff_fderiv_comp_extChartAt_symm_eq hQ hf hg
       (hf'.comp (extChartAt I₃ x₃ Q) ((differentiableAt_const _).prodMk differentiableAt_id))
-      (hg'.comp (extChartAt I₃ x₃ Q) ((differentiableAt_const _).prodMk differentiableAt_id)) ?_
+      (hg'.comp (extChartAt I₃ x₃ Q) ((differentiableAt_const _).prodMk differentiableAt_id))).2 ?_
     rw [fderiv_slice_right hf', fderiv_slice_right hg']
     ext w
     simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply,
@@ -242,41 +242,17 @@ private theorem cotangentGeneratingSource_eq_of_extChartAt (x₁ : M₁) {f : M�
     (h : generatingSource I₁ f (q, c) = generatingSource I₁ g (q, d)) :
     cotangentGeneratingSource f' (extChartAt I₁ x₁ q, c') =
       cotangentGeneratingSource g' (extChartAt I₁ x₁ q, d') := by
-  set e := extChartAt I₁ x₁
   -- Both source points lie over `q`, so their covectors, the differentials of the slices, agree.
   have hmv : mvfderiv I₁ (fun q' ↦ f (q', c)) q = mvfderiv I₁ (fun q' ↦ g (q', d)) q := by
-    have hf₀ : generatingSource I₁ f (q, c) =
-        TotalSpace.mk' (E₁ →L[ℝ] ℝ) q (mvfderiv I₁ (fun q' ↦ f (q', c)) q) :=
-      TotalSpace.ext (proj_generatingSource (q, c)) (heq_of_eq (generatingSource_snd (q, c)))
-    have hg₀ : generatingSource I₁ g (q, d) =
-        TotalSpace.mk' (E₁ →L[ℝ] ℝ) q (mvfderiv I₁ (fun q' ↦ g (q', d)) q) :=
-      TotalSpace.ext (proj_generatingSource (q, d)) (heq_of_eq (generatingSource_snd (q, d)))
-    rwa [hf₀, hg₀, TotalSpace.mk_inj] at h
-  have hfd : DifferentiableAt ℝ ((fun q' ↦ f (q', c)) ∘ e.symm) (e q) :=
-    (hf'.comp (e q) (differentiableAt_id.prodMk (differentiableAt_const _))).congr_of_eventuallyEq
-      hf
-  have hgd : DifferentiableAt ℝ ((fun q' ↦ g (q', d)) ∘ e.symm) (e q) :=
-    (hg'.comp (e q) (differentiableAt_id.prodMk (differentiableAt_const _))).congr_of_eventuallyEq
-      hg
-  -- Read in the chart, each differential is the coordinate one after the derivative of the chart.
-  have key (v : TangentSpace I₁ q) :
-      fderiv ℝ f' (e q, c') (mfderiv I₁ 𝓘(ℝ, E₁) e q v, 0) =
-        fderiv ℝ g' (e q, d') (mfderiv I₁ 𝓘(ℝ, E₁) e q v, 0) := by
-    have h₀ := DFunLike.congr_fun hmv v
-    rw [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply,
-      mfderiv_eq_fderiv_comp_mfderiv_extChartAt hq hfd,
-      mfderiv_eq_fderiv_comp_mfderiv_extChartAt hq hgd, hf.fderiv_eq, hg.fderiv_eq,
-      fderiv_slice_left hf', fderiv_slice_left hg'] at h₀
-    exact h₀
-  -- The derivative of the chart is invertible, so every vector of `E₁` is of this form.
-  obtain ⟨L, hL⟩ := isInvertible_mfderiv_extChartAt hq
-  refine Prod.ext (by simp) ?_
-  ext v
-  rw [cotangentGeneratingSource_snd_apply, cotangentGeneratingSource_snd_apply]
-  obtain ⟨w, hw⟩ := L.surjective v
-  have hv : v = mfderiv I₁ 𝓘(ℝ, E₁) e q w := by rw [← hw, ← hL, ContinuousLinearEquiv.coe_coe]
-  subst hv
-  exact key w
+    have h₂ : (generatingSource I₁ f (q, c)).2 = (generatingSource I₁ g (q, d)).2 := congr(($h).2)
+    rwa [generatingSource_snd, generatingSource_snd] at h₂
+  have hfd := (mvfderiv_eq_iff_fderiv_comp_extChartAt_symm_eq hq hf hg
+    (hf'.comp (extChartAt I₁ x₁ q) (differentiableAt_id.prodMk (differentiableAt_const _)))
+    (hg'.comp (extChartAt I₁ x₁ q) (differentiableAt_id.prodMk (differentiableAt_const _)))).1 hmv
+  rw [fderiv_slice_left hf', fderiv_slice_left hg'] at hfd
+  refine Prod.ext (by simp) (ContinuousLinearMap.ext fun w ↦ ?_)
+  simpa only [cotangentGeneratingSource_snd_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.inl_apply] using congr($hfd w)
 
 omit [I₁.Boundaryless] [I₂.Boundaryless] [I₃.Boundaryless] [IsManifold I₁ 1 M₁]
   [IsManifold I₂ 1 M₂] [IsManifold I₃ 1 M₃] in
