@@ -845,10 +845,10 @@ theorem typeABoxAct_apply {K : ℕ} (hK : ∀ k, K ≤ k → Mm.act k = 0) (n : 
   exact Finset.sum_congr rfl fun k _ =>
     (Mm.matrix Y).matrixAct_single_apply (Fin (n + 1)) k _ 0 ψ (Fin.last n)
 
-/-- **For a differential module, `M ⊠ P` is the box tensor product of
-`TauCeti.TypeDAStructure.boxModule`.** A differential module, viewed as an `A∞` module, has no
-operations beyond `m₂`, so only the cuts of `a₁, …, aₙ` into at most one block contribute:
-`m₁ ψ = dM ψ + ψ ⬝ δ₀` and `m_{n+1}(ψ, a) = ψ ⬝ δₙ(a)`. -/
+/-- **For a differential module, `M ⊠ P` is `TauCeti.TypeDAStructure.boxModule`.**
+A differential module, viewed as an `A∞` module, has no operations beyond `m₂`, so only the cuts
+of `a₁, …, aₙ` into at most one block contribute: `m₁ ψ = dM ψ + ψ ⬝ δ₀` and
+`m_{n+1}(ψ, a) = ψ ⬝ δₙ(a)`. -/
 theorem typeABoxModule_toUngradedAInfinityRightModule [CharP R 2] [Module Bᵐᵒᵖ M]
     [SMulCommClass R Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] {dM : M →ₗ[R] M}
     (hM : IsUngradedDGRightModule dB dM) :
