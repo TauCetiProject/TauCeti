@@ -70,7 +70,7 @@ from the base, when `E` is two-dimensional with basis `b`:
   `c π^*β + dη` tames the almost complex structure, this is the product-chart form of the pairing
   `T(Ω) = c m area(C)` of a closed current of transverse flux `m` with a taming form; the global
   identity over a compact surface with trivial normal line is
-  `TauCeti.integralTopForm_wedge_smul_mpullback_fst_add_mextDeriv`.
+  `TauCeti.integralTopForm_wedge_smul_mpullback_fst_add_mextDerivₗ`.
 
 Top-degree coefficients on `E × ℂ` are taken on the product frame `(b₀, 0), (b₁, 0), (0, 1),
 (0, i)`, `(b.prod Complex.basisOneI).reindex finSumFinEquiv`, and integrated against its Haar
@@ -399,7 +399,7 @@ The exact term integrates to zero because `T` is closed. In a tube around a pseu
 `C` with `β` its area form and `c π^*β + dη` a taming form, this is the product-chart form of the
 identity `T(Ω) = c m area(C)` for a closed current of transverse flux `m`; the global identity over
 a compact surface with trivial normal line is
-`TauCeti.integralTopForm_wedge_smul_mpullback_fst_add_mextDeriv`. -/
+`TauCeti.integralTopForm_wedge_smul_mpullback_fst_add_mextDerivₗ`. -/
 theorem integral_wedge_smul_compContinuousLinearMap_fst_add_extDeriv [MeasurableSpace E]
     [BorelSpace E] (b : Module.Basis (Fin 2) ℝ E) (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
     (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) (hdT : ∀ x, extDeriv T x = 0)
