@@ -70,6 +70,13 @@ lemma wedgeSumι_toContinuousMap (i : ι) :
     (wedgeSumι X i).toContinuousMap = WedgeSum.incl (fun i ↦ (X i).basepoint) i :=
   (rfl)
 
+/-- The inclusion of a summand sends a point `y` of `Xᵢ` to its image in the wedge sum. -/
+@[simp]
+lemma wedgeSumι_apply (i : ι) (y : (X i).carrier) :
+    DFunLike.coe (F := Hom (X i) (wedgeSum X)) (wedgeSumι X i) y =
+      WedgeSum.incl (fun i ↦ (X i).basepoint) i y :=
+  (rfl)
+
 variable {X} {Y : BasedTopologicalSpace.{u}}
 
 /-- The based map `⋁ᵢ Xᵢ ⟶ Y` which is `f i` on the summand `Xᵢ`. -/
@@ -82,6 +89,25 @@ lemma wedgeSumDesc_toContinuousMap (f : ∀ i, X i ⟶ Y) :
     (wedgeSumDesc f).toContinuousMap =
       WedgeSum.lift (fun i ↦ (f i).toContinuousMap) Y.basepoint fun i ↦ (f i).map_basepoint :=
   (rfl)
+
+/-- The based map out of the wedge sum is `f i` on the image of the summand `Xᵢ`.
+
+The domain of the coercion is stated as the carrier `(wedgeSum X).carrier`, the form produced by
+`Hom.coe_toContinuousMap`, rather than the underlying `WedgeSum`, so that `simp` can match it. -/
+@[simp]
+lemma wedgeSumDesc_apply_incl (f : ∀ i, X i ⟶ Y) (i : ι) (y : (X i).carrier) :
+    DFunLike.coe (F := Hom (wedgeSum X) Y) (α := (wedgeSum X).carrier) (wedgeSumDesc f)
+        (WedgeSum.incl (fun i ↦ (X i).basepoint) i y) =
+      DFunLike.coe (F := Hom (X i) Y) (f i) y := by
+  rw [← Hom.coe_toContinuousMap, wedgeSumDesc_toContinuousMap, WedgeSum.lift_incl,
+    Hom.coe_toContinuousMap]
+
+/-- The based map out of the wedge sum sends the wedge point to the base point. -/
+@[simp]
+lemma wedgeSumDesc_apply_base (f : ∀ i, X i ⟶ Y) :
+    DFunLike.coe (F := Hom (wedgeSum X) Y) (α := (wedgeSum X).carrier) (wedgeSumDesc f)
+      (WedgeSum.base fun i ↦ (X i).basepoint) = Y.basepoint := by
+  rw [← Hom.coe_toContinuousMap, wedgeSumDesc_toContinuousMap, WedgeSum.lift_base]
 
 /-- The based map out of the wedge sum restricts to `f i` on the summand `Xᵢ`. -/
 @[reassoc]
