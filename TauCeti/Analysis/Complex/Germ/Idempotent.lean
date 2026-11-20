@@ -32,6 +32,8 @@ indicator.
 * `TauCeti.holomorphicGerms.eq_of_isIdempotentElem`: idempotent germs with the same values on `s`
   are equal; `TauCeti.holomorphicGerms.isIdempotentElem_ofFun_iff` characterizes idempotence of a
   represented germ.
+* `TauCeti.holomorphicGerms.indicator_eq_ofFun`: any idempotent representative taking the value
+  `1` on `s` exactly at `K` represents the indicator germ of `K`.
 * `TauCeti.holomorphicGerms.isIdempotentElem_iff_exists_indicator_eq`: the idempotent germs are
   exactly the indicator germs, and `TauCeti.holomorphicGerms.indicator_injective`.
 * `TauCeti.holomorphicGerms.indicator_inf`, `TauCeti.holomorphicGerms.indicator_compl`,
@@ -117,8 +119,7 @@ theorem eval_indicator_eq_zero_iff {K : Clopens s} {x : ℂ} {hx : x ∈ s} :
 /-- A represented germ is idempotent exactly when its representative is idempotent near `s`. -/
 theorem isIdempotentElem_ofFun_iff {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s) :
     IsIdempotentElem (ofFun f hf) ↔ ∀ᶠ z in 𝓝ˢ s, IsIdempotentElem (f z) := by
-  rw [IsIdempotentElem, ← ofFun_mul, ofFun_eq_iff]
-  rfl
+  simp only [IsIdempotentElem, ← ofFun_mul, ofFun_eq_iff, EventuallyEq, Pi.mul_apply]
 
 theorem isIdempotentElem_indicator (K : Clopens s) : IsIdempotentElem (indicator K) := by
   obtain ⟨-, hidem, -⟩ := (exists_indicator_rep K).choose_spec
@@ -158,6 +159,15 @@ theorem eq_indicator_of_isIdempotentElem {g : holomorphicGerms s} (hg : IsIdempo
     exact hxK
   · rw [eval_indicator_of_notMem hxK]
     exact (hg.map (eval x hx)).eq_zero_or_one.resolve_right fun h ↦ hxK ((hgK x hx).mp h)
+
+/-- The indicator germ of `K` is represented by any function `χ` holomorphic near `s` that is
+idempotent near `s` and takes the value `1` on `s` exactly at the points of `K`. -/
+theorem indicator_eq_ofFun {χ : ℂ → ℂ} (hχ : AnalyticOnNhd ℂ χ s)
+    (hidem : ∀ᶠ z in 𝓝ˢ s, IsIdempotentElem (χ z)) {K : Clopens s}
+    (hK : ∀ (x : ℂ) (hx : x ∈ s), χ x = 1 ↔ (⟨x, hx⟩ : s) ∈ K) :
+    indicator K = ofFun χ hχ :=
+  (eq_indicator_of_isIdempotentElem ((isIdempotentElem_ofFun_iff hχ).mpr hidem)
+    fun x hx ↦ by rw [eval_ofFun]; exact hK x hx).symm
 
 /-- The idempotents of `holomorphicGerms s` are exactly the indicator germs of the clopen parts
 of `s`. -/
