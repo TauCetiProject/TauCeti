@@ -17,7 +17,7 @@ import TauCeti.Algebra.Coalgebra.Convolution
 # Weil restriction of affine group schemes
 
 Let `B` be a commutative `A`-algebra that is finitely generated and projective as an `A`-module,
-and `H` a commutative Hopf `B`-algebra of finite presentation, the coordinate ring of an affine
+and `H` a commutative Hopf `B`-algebra, the coordinate ring of an affine
 group scheme `G` over `Spec B`. The Weil restriction `W = WeilRestriction A B H` represents the
 functor `T ↦ (H →ₐ[B] B ⊗[A] T)` on `A`-algebras, that is, `T ↦ G(B ⊗[A] T)`. Each of these
 point sets is a group under convolution, and post-composition is a group homomorphism, so `W` is
@@ -86,7 +86,7 @@ variable {A B H : Type*} [CommRing A] [CommRing B] [CommRing H] [Algebra A B]
 
 section Bialgebra
 
-variable [Bialgebra B H] [Algebra.FinitePresentation B H]
+variable [Bialgebra B H]
 
 section Structure
 
@@ -262,8 +262,6 @@ section Map
 
 variable {H₁ H₂ H₃ : Type*} [CommRing H₁] [CommRing H₂] [CommRing H₃]
   [Bialgebra B H₁] [Bialgebra B H₂] [Bialgebra B H₃]
-  [Algebra.FinitePresentation B H₁] [Algebra.FinitePresentation B H₂]
-  [Algebra.FinitePresentation B H₃]
 
 variable (A B) in
 /-- **Functoriality of the Weil restriction of affine group schemes.** A bialgebra map
@@ -329,7 +327,7 @@ end Bialgebra
 
 section Diagonal
 
-variable [Bialgebra A H] [Algebra.FinitePresentation A H]
+variable [Bialgebra A H]
 
 /-- The point of the Weil restriction of `B ⊗[A] H` over `T` attached to `x : H →ₐ[A] T` is the
 base change `B ⊗[A] x`. -/
@@ -400,7 +398,7 @@ end Diagonal
 
 section HopfAlgebra
 
-variable [HopfAlgebra B H] [Algebra.FinitePresentation B H]
+variable [HopfAlgebra B H]
 
 section Structure
 
@@ -446,7 +444,7 @@ theorem lift_id_antipode_comp_comul :
     mul_inv_cancel]
 
 /-- **The Weil restriction of an affine group scheme is an affine group scheme.** The Weil
-restriction of a commutative Hopf algebra of finite presentation along a finite projective algebra
+restriction of a commutative Hopf algebra along a finite projective algebra
 is a Hopf algebra; see `WeilRestriction.pointsMulEquiv` for its group of points. -/
 noncomputable instance instHopfAlgebra : HopfAlgebra A (WeilRestriction A B H) :=
   .ofAlgHom (antipode A B H) lift_antipode_comp_comul lift_id_antipode_comp_comul

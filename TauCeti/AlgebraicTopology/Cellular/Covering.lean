@@ -92,7 +92,8 @@ def cellularChainRepresentation (n : ℕ) :
   letI := cwComplexPreimage C hG.isCoveringMap
   haveI := hG.isCoveringMap.t2Space
   cellularActionRepresentation (p ⁻¹' C) (preimageSMul C hG)
-    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R n
+    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG)
+    (ModuleCat.of R R) n
 
 /-- An element `g` acts on the cellular chains of the lift by the chain map of translation by
 `g`. -/
@@ -131,7 +132,8 @@ def cellularDifferentialRep (n : ℕ) :
   letI := cwComplexPreimage C hG.isCoveringMap
   haveI := hG.isCoveringMap.t2Space
   cellularActionDifferential (p ⁻¹' C) (preimageSMul C hG)
-    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R n
+    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG)
+    (ModuleCat.of R R) n
 
 /-- The underlying linear map of `TauCeti.cellularDifferentialRep` is the cellular
 differential. -/
@@ -153,7 +155,8 @@ def cellularChainComplexRep : ChainComplex (Rep.{w} R G) ℕ :=
   letI := cwComplexPreimage C hG.isCoveringMap
   haveI := hG.isCoveringMap.t2Space
   cellularActionComplex (p ⁻¹' C) (preimageSMul C hG)
-    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R
+    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG)
+    (ModuleCat.of R R)
 
 /-- The objects of `TauCeti.cellularChainComplexRep` are the representations
 `TauCeti.cellularChainRepresentation`. -/
@@ -189,7 +192,8 @@ def cellularChainComplexRepForget₂Iso :
   letI := cwComplexPreimage C hG.isCoveringMap
   haveI := hG.isCoveringMap.t2Space
   (cellularActionComplexForget₂Iso (p ⁻¹' C) (preimageSMul C hG)
-    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R).symm
+    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG)
+    (ModuleCat.of R R)).symm
 
 /-- The components of `TauCeti.cellularChainComplexRepForget₂Iso` are the transports along the
 equalities of objects that hold by definition. -/

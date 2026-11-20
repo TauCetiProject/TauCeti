@@ -146,14 +146,14 @@ private lemma exists_extension {m : ℕ} (c : SingularCube X m)
   · dsimp only [ContinuousMap.coe_mk]
     split_ifs with hs
     · exact hG₀B s y
-    · rw [K.eq_fst _ y.2, ContinuousMap.curry_apply, hBa]
+    · rw [K.eq_fst _ y.property, ContinuousMap.curry_apply, hBa]
       exact (hB s (Subtype.coe_le_coe.1 (not_le.1 hs).le) y).symm
   · simp only [ContinuousMap.coe_mk, hb1, ite_false]
-    rw [hψ₁ (by exact_mod_cast b.2.2), K.apply_one]
+    rw [hψ₁ (by exact_mod_cast b.property.2), K.apply_one]
     exact hc' ⟨y, rfl⟩
   · have hs' : ¬ (s : ℝ) ≤ a := not_le.2 (hab.trans_le hs)
     simp only [ContinuousMap.coe_mk, hs', hb1, ite_false]
-    rw [hψ₁ hs, hψ₁ (by exact_mod_cast b.2.2)]
+    rw [hψ₁ hs, hψ₁ (by exact_mod_cast b.property.2)]
 
 /-! ### Deforming all cubes of one dimension -/
 
@@ -173,7 +173,7 @@ variable {m : ℕ}
 private lemma bdry_one_mem (L : Level A n m) (c : SingularCube X (m + 1))
     (hm : ((m + 1 : ℕ) : ℕ∞) < n) (y : Cube.boundary (Fin (m + 1))) :
     L.boundaryHomotopy c (1, y) ∈ A := by
-  obtain ⟨j, hj⟩ := y.2
+  obtain ⟨j, hj⟩ := y.property
   rw [L.boundaryHomotopy_apply c 1 y j hj]
   exact L.apply_one_mem ((Nat.cast_le.2 m.le_succ).trans_lt hm) _ _
 
@@ -181,7 +181,7 @@ private lemma bdry_of_le (L : Level A n m) (c : SingularCube X (m + 1))
     (hm : ((m + 1 : ℕ) : ℕ∞) < n) (s : I) (hs : threshold (m + 1) ≤ s)
     (y : Cube.boundary (Fin (m + 1))) :
     L.boundaryHomotopy c (s, y) = L.boundaryHomotopy c (1, y) := by
-  obtain ⟨j, hj⟩ := y.2
+  obtain ⟨j, hj⟩ := y.property
   rw [L.boundaryHomotopy_apply c s y j hj, L.boundaryHomotopy_apply c 1 y j hj]
   exact L.apply_of_le ((Nat.cast_le.2 m.le_succ).trans_lt hm) _ s hs _
 
@@ -280,7 +280,7 @@ private lemma exists_extension_zero (c : SingularCube X 0) :
     ∃ G : C(I × (Fin 0 → I), X), (∀ y, G (0, y) = c y) ∧ ((0 : ℕ∞) < n → ∀ y, G (1, y) ∈ A) ∧
       ((0 : ℕ∞) < n → ∀ s : I, threshold (0 + 1) ≤ s → ∀ y, G (s, y) = G (1, y)) := by
   -- The boundary of the `0`-cube is empty, so any homotopy of it will do.
-  have hb (y : Cube.boundary (Fin 0)) : False := by simpa using y.2
+  have hb (y : Cube.boundary (Fin 0)) : False := by simpa using y.property
   obtain ⟨G, hG₀, -, hG⟩ := exists_extension hA c
     ⟨fun q ↦ (hb q.2).elim, continuous_of_const fun q ↦ (hb q.2).elim⟩ (fun y ↦ (hb y).elim)
     (fun _ y ↦ (hb y).elim) fun _ _ _ y ↦ (hb y).elim

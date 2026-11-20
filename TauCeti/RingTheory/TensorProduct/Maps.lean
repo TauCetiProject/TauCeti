@@ -120,7 +120,7 @@ theorem Subalgebra.baseChange_bot {R S : Type*} [CommSemiring R] [Semiring S] [A
   rintro _ ⟨x, rfl⟩
   induction x using TensorProduct.inductionOn with
   | tmul t s =>
-    obtain ⟨r, hr⟩ := Algebra.mem_bot.1 s.2
+    obtain ⟨r, hr⟩ := Algebra.mem_bot.1 s.property
     have : t ⊗ₜ[R] (s : S) = algebraMap T (T ⊗[R] S) (r • t) := by
       rw [← hr, Algebra.algebraMap_eq_smul_one, ← smul_tmul,
         Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self_apply]

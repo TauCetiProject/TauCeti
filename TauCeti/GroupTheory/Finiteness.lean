@@ -231,7 +231,7 @@ theorem CommGroup.exists_finiteIndex_isMulTorsionFree (G : Type*) [CommGroup G] 
   refine ⟨(powMonoidHom n).range, Subgroup.finiteIndex_range_powMonoidHom_of_fg G Nat.card_pos.ne',
     .of_not_isOfFinOrder ?_⟩
   intro x hx hfin
-  obtain ⟨g, hg⟩ := x.2
+  obtain ⟨g, hg⟩ := x.property
   -- `x = g ^ n` has finite order, so `g` is torsion and its `n`-th power is trivial
   have hgn : IsOfFinOrder (g ^ n) := by
     simpa [← hg] using Submonoid.isOfFinOrder_coe.2 hfin

@@ -170,7 +170,7 @@ theorem lsCategoryCount_sublevel_le_encard (hf : ContMDiff I 𝓘(ℝ) ∞ f) {t
       by_contra hne
       obtain ⟨x, hx, hxt⟩ := exists_mem_criticalPoints_of_isCompact_sublevel (I := I)
         hf.continuous.continuousOn (hcpt isClosed_Iic (Iic_subset_Iic.mpr htb.le))
-        (nonempty_iff_ne_empty.mpr hne)
+        (Set.ne_empty_iff_nonempty.mp hne)
       exact hC.subset ⟨hx, hxt⟩
     simp [hempty]
   -- Otherwise let `c = f p ≤ t` be the largest critical value in `{f ≤ t}`, and cross the level
@@ -244,7 +244,7 @@ theorem lsCategoryCount_univ_le_encard_criticalPoints_inter {C : Set M}
   let U : Opens M := ⟨C, hCo⟩
   have : CompactSpace U := isCompact_iff_compactSpace.mp hCc
   have h := lsCategoryCount_univ_le_totalCriticalCount (I := I) (M := U)
-    (hf.comp_contMDiff contMDiff_subtype_val Subtype.prop)
+    (hf.comp_contMDiff contMDiff_subtypeVal Subtype.prop)
   rw [totalCriticalCount_comp_subtypeVal] at h
   -- The open submanifold `U` has carrier `C` by construction, so `↥U` is the subtype `↥C`.
   exact h
