@@ -192,8 +192,8 @@ private theorem monotoneOn_toReal_edist {y : ℝ → X} {s : Set ℝ} (hs : s �
   refine ENNReal.toReal_mono (edist_ne_top_of_mem_moreauYosidaResolvent (hy t ht))
     (edist_le_edist_of_mem_moreauYosidaResolvent
     ?_ (hy r hr) (hy t ht)
-    (apply_ne_bot_of_moreauYosida_ne_bot (hfin r hr).2
-      (edist_ne_top_of_mem_moreauYosidaResolvent (hy r hr))) (hfin r hr).1)
+    (apply_ne_bot_of_moreauYosida_ne_bot (edist_ne_top_of_mem_moreauYosidaResolvent (hy r hr))
+      (hfin r hr).2) (hfin r hr).1)
   exact Real.toNNReal_lt_toNNReal_iff'.2 ⟨hrt, hs ht⟩
 
 /-- The Moreau–Yosida approximation is finite at every time of `[a, b]` if it is not `⊤` at `a`
@@ -329,10 +329,7 @@ theorem tendsto_moreauYosida_nhdsGT_zero (hφ : LowerSemicontinuousAt φ x) {σ 
     exact le_top
   -- Otherwise `φ z` and `φ_σ(x)` are real, and `φ_σ(x) ≤ φ z + d(x, z)² / (2σ)`.
   have h := moreauYosida_le φ σ hz
-  have hzbot : φ z ≠ ⊥ := by
-    rintro hbot
-    rw [hbot, EReal.bot_add, le_bot_iff] at h
-    exact hσ' h
+  have hzbot : φ z ≠ ⊥ := apply_ne_bot_of_moreauYosida_ne_bot hz hσ'
   obtain ⟨b, hb⟩ : ∃ b : ℝ, φ z = b := ⟨_, (EReal.coe_toReal htop hzbot).symm⟩
   have hpen (ρ : ℝ≥0) (hρ : 0 < ρ) : edist x z ^ 2 / (2 * ρ) ≠ ∞ :=
     ENNReal.div_ne_top (by finiteness) (by simp [hρ.ne'])

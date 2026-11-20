@@ -39,6 +39,9 @@ take energies with values in `(-∞, ∞]`; here `φ` may take the value `⊥`, 
 
 ## Main results
 
+* `TauCeti.moreauYosida_eq_top_of_forall_eq_top` and
+  `TauCeti.self_mem_moreauYosidaResolvent_of_eq_top`: when `φ = ⊤` at finite distance from `x`,
+  `φ_τ(x) = ⊤` and `x ∈ J_τ x`.
 * `TauCeti.apply_add_le_of_mem_moreauYosidaResolvent`: the one-step energy estimate
   `φ y + d(x, y)² / (2τ) ≤ φ x` for `y ∈ J_τ x`.
 * `TauCeti.edist_ne_top_of_mem_moreauYosidaResolvent`: a resolvent step has finite length.
@@ -96,6 +99,11 @@ theorem moreauYosida_le (φ : X → EReal) (τ : ℝ≥0) {x y : X} (h : edist x
     moreauYosida φ τ x ≤ φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) :=
   iInf₂_le (f := fun y (_ : edist x y ≠ ⊤) ↦ φ y + ((edist x y ^ 2 / (2 * τ) : ℝ≥0∞) : EReal)) y h
 
+/-- If the Moreau–Yosida approximation at `x` is not `⊥`, then neither is the energy at any point
+at finite distance from `x`: a coercive energy never takes the value `⊥` there. -/
+theorem apply_ne_bot_of_moreauYosida_ne_bot (h : edist x y ≠ ⊤) (h₀ : moreauYosida φ τ x ≠ ⊥) :
+    φ y ≠ ⊥ := fun hy ↦ h₀ (le_bot_iff.1 (by simpa [hy] using moreauYosida_le φ τ h))
+
 /-- A lower bound for the Moreau–Yosida approximation is a lower bound for the penalized energy
 at every point at finite distance from `x`. -/
 theorem le_moreauYosida_iff {c : EReal} :
@@ -141,6 +149,19 @@ theorem mem_moreauYosidaResolvent_iff_eq_moreauYosida :
   ⟨fun h ↦ ⟨h.1, le_antisymm (le_iInf₂ h.2) (moreauYosida_le φ τ h.1)⟩,
     fun h ↦ ⟨h.1, fun _ hz ↦ h.2.le.trans (moreauYosida_le φ τ hz)⟩⟩
 
+/-- The Moreau–Yosida approximation at `x` is `⊤` whenever `φ` is `⊤` at every point at finite
+distance from `x`. -/
+theorem moreauYosida_eq_top_of_forall_eq_top (h : ∀ y, edist x y ≠ ⊤ → φ y = ⊤) :
+    moreauYosida φ τ x = ⊤ :=
+  top_unique <| le_moreauYosida_iff.2 fun y hy ↦ by
+    rw [h y hy, EReal.top_add_of_ne_bot (EReal.coe_ennreal_ne_bot _)]
+
+/-- When `φ_τ(x) = ⊤`, `x` itself lies in the resolvent `J_τ x`. -/
+theorem self_mem_moreauYosidaResolvent_of_eq_top (h : moreauYosida φ τ x = ⊤) :
+    x ∈ moreauYosidaResolvent φ τ x :=
+  mem_moreauYosidaResolvent_iff.2 ⟨by simp, fun _ hz ↦
+    le_top.trans (by rw [← h]; exact moreauYosida_le φ τ hz)⟩
+
 /-- **One-step energy estimate.** A resolvent step `y ∈ J_τ x` lowers the energy by at least the
 penalty `d(x, y)² / (2τ)`. -/
 theorem apply_add_le_of_mem_moreauYosidaResolvent (hy : y ∈ moreauYosidaResolvent φ τ x) :
@@ -176,11 +197,6 @@ theorem apply_ne_bot_of_mem_moreauYosidaResolvent (hy : y ∈ moreauYosidaResolv
   have := hy.2 z hz
   rw [h, EReal.bot_add, le_bot_iff, EReal.add_eq_bot_iff] at this
   exact this.elim hφy (EReal.coe_ennreal_ne_bot _)
-
-/-- If `φ_τ(x) ≠ ⊥`, then `φ z ≠ ⊥` at every point `z` at finite distance from `x`. -/
-theorem apply_ne_bot_of_moreauYosida_ne_bot (hx : moreauYosida φ τ x ≠ ⊥) {z : X}
-    (hz : edist x z ≠ ⊤) : φ z ≠ ⊥ := fun h ↦
-  hx <| le_bot_iff.1 <| by simpa [h] using moreauYosida_le φ τ hz
 
 /-- **Minimality of a resolvent step, in real numbers.** For a resolvent step `y ∈ J_τ x` with
 `τ > 0`, a point `z` at finite distance from `x`, and real energies `φ y = a` and `φ z = b`, the

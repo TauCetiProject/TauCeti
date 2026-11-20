@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
-public import TauCeti.Analysis.GradientFlow.MoreauYosida.Basic
+public import TauCeti.Analysis.GradientFlow.MoreauYosida.Existence
+import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.Topology.Instances.EReal.Lemmas
+import TauCeti.Data.EReal.Operations
 
 /-!
-# The discrete variational inequality for resolvents of convex energies
+# The discrete variational inequality and resolvent existence for convex energies
 
-Let `φ : X → EReal` be an energy on a metric space, `m : ℝ` and `τ > 0` a time step. The
+Let `φ : X → EReal` be an energy on a pseudometric space, `m : ℝ` and `τ > 0` a time step. The
 convexity hypothesis under which Ambrosio–Gigli–Savaré prove that minimizing movements converge to
 the `EVI_m` gradient flow (their Assumption 4.0.1) is that the penalized energies of the resolvent
 are uniformly convex along some curve: for every base point `w` and any two points `v₀`, `v₁` of
@@ -19,16 +22,14 @@ the effective domain `{x | φ x ≠ ⊤}` there is a curve `γ` from `v₀` to `
 
 `z ↦ φ z + d(w, z)² / (2τ)` is `(m + 1 / τ)`-convex
 
-(`TauCeti.PenalizedConvex m τ φ`). This holds whenever `φ` is `m`-convex and the squared distance
-from `w` is `2`-convex along common connecting curves
-(`TauCeti.penalizedConvex_of_convexAlong_and_convexAlong_dist_sq`, Assumption 3.24 of
-Ambrosio–Gigli), in particular when `φ` is `m`-geodesically convex on a CAT(0) space
+(`TauCeti.PenalizedConvex m τ φ`). This holds when `φ` is `m`-geodesically convex on a CAT(0)
+space, where the squared distance from `w` is `2`-convex along every geodesic
 (`TauCeti.GeodesicallyConvex.penalizedConvex`), and, on the quadratic Wasserstein space, when `φ`
 is `m`-convex along generalized geodesics based at every law and `1 + m τ ≥ 0`
 (`TauCeti.penalizedConvex_of_generalizedGeodesicallyConvex`). Ordinary geodesic convexity is not
 enough in general, because the squared distance from a point need not be convex along geodesics.
 Ambrosio–Gigli–Savaré take the base point `w` in the effective domain; it is arbitrary here, as in
-all these examples.
+both examples.
 
 Under this hypothesis a resolvent step `y ∈ J_τ x` satisfies the *discrete variational inequality*
 (`TauCeti.PenalizedConvex.apply_add_le_of_mem_moreauYosidaResolvent`): for every `v` with
@@ -40,16 +41,9 @@ The penalized energy at `x` is smallest at `y`, so it grows at least quadratical
 from `y` to `v` (`TauCeti.ConvexAlong.apply_add_le_of_forall_le`). Read as
 `(d(y, v)² - d(x, v)²) / (2τ) + (m / 2) d(y, v)² ≤ φ v - φ y - d(x, y)² / (2τ)`, this is the
 implicit Euler discretization of the evolution variational inequality
-`(1/2) d/dt d(u t, v)² + (m / 2) d(u t, v)² ≤ φ v - φ (u t)` (`TauCeti.IsEVISolution`). In
-particular, when `1 + m τ > 0` and `φ` never takes the value `⊥` and is finite somewhere, the
+`(1/2) d/dt d(u t, v)² + (m / 2) d(u t, v)² ≤ φ v - φ (u t)` (`TauCeti.IsEVISolution`). On a
+metric space, when `1 + m τ > 0` and `φ` never takes the value `⊥` and is finite somewhere, the
 resolvent has at most one point (`TauCeti.PenalizedConvex.subsingleton_moreauYosidaResolvent`).
-When the space is complete and `φ` is lower semicontinuous and coercive (`φ_τ(x) > -∞`), the same
-strict convexity along midpoints makes every minimizing sequence Cauchy, so `J_τ x` is nonempty
-without any sublevel compactness (`TauCeti.PenalizedConvex.moreauYosidaResolvent_nonempty`,
-Lemma 4.1.1 of Ambrosio–Gigli–Savaré). Moreover, if `φ` is lower semicontinuous, never takes the
-value `⊥`, and is `m`-convex along connecting curves `γ` with `d(γ 0, γ t) ≤ t d(γ 0, γ 1)`, then
-`φ_τ(x) > -∞` for every `x` and every `τ` with `1 + m τ > 0`
-(`TauCeti.moreauYosida_ne_bot_of_convexAlong`, Lemma 2.4.8 of Ambrosio–Gigli–Savaré).
 
 Along a minimizing movement sequence `U` with `U (n + 1) ∈ J_τ (U n)`, the discrete variational
 inequality reads `r d(U (n + 1), v)² - d(U n, v)² ≤ 2τ (φ v - φ (U (n + 1)))` with
@@ -70,6 +64,17 @@ regularization estimate
 energy, this is geometric convergence of the scheme to `v`. These are the a priori estimates on
 which the convergence of minimizing movements to the `EVI_m` flow rests.
 
+In a complete pseudometric space, `(m + 1 / τ)`-convexity of the penalized energy with `1 + m τ > 0`
+also yields existence of resolvent steps and minimizing movement sequences without any compactness
+hypothesis on sublevels (`TauCeti.moreauYosidaResolvent_nonempty_of_convexAlong`,
+`TauCeti.PenalizedConvex.moreauYosidaResolvent_nonempty`,
+`TauCeti.PenalizedConvex.exists_forall_mem_moreauYosidaResolvent`). Moreover, an `m`-geodesically
+convex energy that is lower semicontinuous and finite at a single point `x₀` is automatically
+coercive at every point for `1 + m τ > 0` (`TauCeti.GeodesicallyConvex.moreauYosida_ne_bot`,
+`TauCeti.GeodesicallyConvex.exists_moreauYosida_ne_bot`), via the abstract coercivity criteria
+`TauCeti.iInf_ne_bot_of_lowerSemicontinuousAt` and
+`TauCeti.moreauYosida_ne_bot_of_lowerSemicontinuousAt`.
+
 ## Main definitions
 
 * `TauCeti.PenalizedConvex m τ φ`: the penalized energies `φ + d(w, ·)² / (2τ)` are
@@ -83,31 +88,43 @@ which the convergence of minimizing movements to the `EVI_m` flow rests.
   `TauCeti.PenalizedConvex.subsingleton_moreauYosidaResolvent`: uniqueness of the resolvent step
   when `1 + m τ > 0`, for a resolvent step of finite energy, respectively for an energy that
   never takes the value `⊥` and is finite somewhere.
-* `TauCeti.moreauYosida_ne_bot_of_convexAlong`,
-  `TauCeti.moreauYosida_ne_bot_of_convexAlong_and_convexAlong_dist_sq`, and
-  `TauCeti.GeodesicallyConvex.moreauYosida_ne_bot`: coercivity `φ_τ(x) > -∞` when `1 + m τ > 0`
-  and `φ` is lower semicontinuous, never `⊥`, and `m`-convex along curves with linear initial
-  speed bound.
-* `TauCeti.PenalizedConvex.moreauYosidaResolvent_nonempty`,
-  `TauCeti.PenalizedConvex.exists_forall_mem_moreauYosidaResolvent`, and
-  `TauCeti.PenalizedConvex.existsUnique_mem_moreauYosidaResolvent` (with specializations under
-  Assumption 3.24 and for `GeodesicallyConvex` on CAT(0) spaces): existence (and uniqueness) of
-  resolvent steps on a complete space without sublevel compactness when `1 + m τ > 0`.
 * `TauCeti.PenalizedConvex.pow_mul_dist_sq_sub_le`: the discrete integrated evolution variational
   inequality along a minimizing movement sequence, when `1 + m τ ≥ 0`.
 * `TauCeti.PenalizedConvex.apply_le`: the discrete energy regularization estimate, when
   `1 + m τ ≥ 0`.
 * `TauCeti.PenalizedConvex.pow_mul_dist_sq_le`: the weighted distance estimate of a minimizing
   movement sequence towards points of smaller energy, when `1 + m τ ≥ 0`.
+* `TauCeti.moreauYosidaResolvent_nonempty_of_convexAlong`,
+  `TauCeti.PenalizedConvex.moreauYosidaResolvent_nonempty`,
+  `TauCeti.PenalizedConvex.existsUnique_mem_moreauYosidaResolvent`, and
+  `TauCeti.PenalizedConvex.exists_forall_mem_moreauYosidaResolvent`: existence and uniqueness of
+  resolvent steps and minimizing movement sequences in complete spaces without compactness of
+  sublevels.
+* `TauCeti.iInf_ne_bot_of_lowerSemicontinuousAt` and
+  `TauCeti.moreauYosida_ne_bot_of_lowerSemicontinuousAt`: coercivity (`⨅ z, Ψ z ≠ ⊥` and
+  `φ_τ(x) ≠ ⊥` for `1 + m τ > 0`) from pointwise lower semicontinuity at a point of finite energy
+  and `κ`-convex interpolation with `κ > 0`.
 * `TauCeti.penalizedConvex_of_convexAlong_and_convexAlong_dist_sq` and
-  `TauCeti.GeodesicallyConvex.penalizedConvex`: penalized convexity for every time step under
-  Assumption 3.24, and in particular on CAT(0) spaces.
+  `TauCeti.GeodesicallyConvex.penalizedConvex`: penalized convexity under Ambrosio–Gigli
+  Assumption 3.24, and in particular for `m`-geodesically convex energies on CAT(0) spaces.
+* `TauCeti.GeodesicallyConvex.moreauYosida_ne_bot`,
+  `TauCeti.GeodesicallyConvex.exists_moreauYosida_ne_bot`,
+  `TauCeti.GeodesicallyConvex.moreauYosidaResolvent_nonempty`,
+  `TauCeti.GeodesicallyConvex.existsUnique_mem_moreauYosidaResolvent`, and
+  `TauCeti.GeodesicallyConvex.exists_forall_mem_moreauYosidaResolvent`: coercivity of geodesically
+  convex energies, and existence and uniqueness of resolvent steps and minimizing movement
+  sequences on complete CAT(0) spaces.
+* `TauCeti.moreauYosida_ne_bot_of_convexAlong_and_convexAlong_dist_sq`,
+  `TauCeti.moreauYosidaResolvent_nonempty_of_convexAlong_and_convexAlong_dist_sq`,
+  `TauCeti.existsUnique_mem_moreauYosidaResolvent_of_convexAlong_and_convexAlong_dist_sq`, and
+  `TauCeti.exists_forall_mem_moreauYosidaResolvent_of_convexAlong_and_convexAlong_dist_sq`:
+  coercivity, existence, and uniqueness under Ambrosio–Gigli Assumption 3.24.
 
 ## References
 
 * L. Ambrosio, N. Gigli, G. Savaré, *Gradient Flows in Metric Spaces and in the Space of
-  Probability Measures*, 2nd ed., Birkhäuser 2008, Lemma 2.4.8, Assumption 4.0.1, Lemma 4.1.1,
-  Theorem 4.1.2 and Section 4.1.
+  Probability Measures*, 2nd ed., Birkhäuser 2008, Lemma 2.4.8, Assumption 4.0.1, Theorem 4.1.2,
+  and Section 4.1.
 * L. Ambrosio, N. Gigli, *A user's guide to optimal transport*, Lecture Notes in Math. 2062,
   Springer 2013, Assumption 3.24.
 -/
@@ -200,311 +217,6 @@ theorem PenalizedConvex.apply_add_le_of_mem_moreauYosidaResolvent (h : Penalized
     ring
   rwa [hc]
 
-/-- If `φ` is bounded below by `ez - 1` on `Metric.ball z r` and `m`-convex along curves `γ` with
-`d(z, γ t) ≤ t d(z, v)`, then `φ v` grows at least linearly-plus-quadratically in `d(z, v)` outside
-`Metric.ball z (r / 2)`. -/
-private theorem le_toReal_of_convexAlong_of_le_dist (hbot : ∀ y, φ y ≠ ⊥)
-    (hconv : ∀ ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
-      (∀ t ∈ Icc (0 : ℝ) 1, dist v₀ (γ t) ≤ t * dist v₀ v₁) ∧ ConvexAlong m φ γ)
-    {z : X} {ez r : ℝ} (hez : φ z = ez) (hr : 0 < r)
-    (hr_ball : ∀ w, dist w z < r → ((ez - 1 : ℝ) : EReal) ≤ φ w)
-    {v : X} (hvt : φ v ≠ ⊤) (hge : r / 2 ≤ dist z v) :
-    ez - 2 / r * dist z v + min m 0 / 2 * dist z v ^ 2 ≤ (φ v).toReal := by
-  set ev := (φ v).toReal
-  have hev : φ v = ev := (EReal.coe_toReal hvt (hbot v)).symm
-  have hD : 0 < dist z v := (half_pos hr).trans_le hge
-  obtain ⟨γ, h0, h1, hdγ, hφγ⟩ := hconv (hez ▸ EReal.coe_ne_top ez) hvt
-  set t : ℝ := r / (2 * dist z v)
-  have ht : t ∈ Icc (0 : ℝ) 1 := ⟨by positivity, (div_le_one (by positivity)).2 (by linarith)⟩
-  have hc := convexAlong_def.1 hφγ t ht
-  rw [h0, h1, hez, hev, ← EReal.coe_mul, ← EReal.coe_mul, ← EReal.coe_add, ← EReal.coe_sub] at hc
-  have hγr : dist (γ t) z < r := by
-    rw [dist_comm]
-    refine (hdγ t ht).trans_lt ?_
-    have heq : t * dist z v = r / 2 := by have := hD.ne'; dsimp [t]; field_simp
-    linarith [half_lt_self hr]
-  have hlow := EReal.coe_le_coe_iff.1 ((hr_ball (γ t) hγr).trans hc)
-  set μ := min m 0
-  have hμ0 : μ ≤ 0 := min_le_right m 0
-  have hμm : μ / 2 * t * dist z v ^ 2 ≤ m / 2 * t * (1 - t) * dist z v ^ 2 := by
-    have h1' : 0 ≤ (m - μ) / 2 := div_nonneg (sub_nonneg.2 (min_le_left m 0)) zero_le_two
-    have h2' : 0 ≤ t * (1 - t) * dist z v ^ 2 :=
-      mul_nonneg (mul_nonneg ht.1 (sub_nonneg.2 ht.2)) (sq_nonneg _)
-    have hdiff : m / 2 * t * (1 - t) * dist z v ^ 2 - μ / 2 * t * dist z v ^ 2 =
-        (m - μ) / 2 * (t * (1 - t) * dist z v ^ 2) + (-μ / 2) * (t ^ 2 * dist z v ^ 2) := by
-      ring
-    linarith [hdiff, mul_nonneg h1' h2', mul_nonneg (by linarith : 0 ≤ -μ / 2)
-      (by positivity : 0 ≤ t ^ 2 * dist z v ^ 2)]
-  have ht_mul := mul_le_mul_of_nonneg_left (by linarith [hlow, hμm] :
-    t * ez - 1 ≤ t * (ev - μ / 2 * dist z v ^ 2)) (by positivity : 0 ≤ 2 * dist z v / r)
-  have ht_inv : 2 * dist z v / r * t = 1 := by have := hD.ne'; dsimp [t]; field_simp
-  have hL : 2 * dist z v / r * (t * ez - 1) = ez - 2 / r * dist z v := by
-    calc 2 * dist z v / r * (t * ez - 1)
-        = (2 * dist z v / r * t) * ez - 2 / r * dist z v := by ring
-      _ = ez - 2 / r * dist z v := by rw [ht_inv, one_mul]
-  have hR : 2 * dist z v / r * (t * (ev - μ / 2 * dist z v ^ 2)) =
-      ev - μ / 2 * dist z v ^ 2 := by
-    calc 2 * dist z v / r * (t * (ev - μ / 2 * dist z v ^ 2))
-        = (2 * dist z v / r * t) * (ev - μ / 2 * dist z v ^ 2) := by ring
-      _ = ev - μ / 2 * dist z v ^ 2 := by rw [ht_inv, one_mul]
-  linarith [ht_mul, hL, hR]
-
-/-- Uniform real lower bound on `v ↦ φ v + d(x, v)² / (2τ)` from a local lower bound on `φ` near
-one finite-energy point `z` and `m`-convexity along curves with `d(z, γ t) ≤ t d(z, v)`. -/
-private theorem exists_le_apply_add_dist_sq_div_of_convexAlong (hbot : ∀ y, φ y ≠ ⊥)
-    (hconv : ∀ ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
-      (∀ t ∈ Icc (0 : ℝ) 1, dist v₀ (γ t) ≤ t * dist v₀ v₁) ∧ ConvexAlong m φ γ)
-    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) {z : X} {ez r : ℝ} (hez : φ z = ez) (hr : 0 < r)
-    (hr_ball : ∀ w, dist w z < r → ((ez - 1 : ℝ) : EReal) ≤ φ w) (x : X) :
-    ∃ B : ℝ, ∀ v, ((B : ℝ) : EReal) ≤ φ v + ((dist x v ^ 2 / (2 * τ) : ℝ) : EReal) := by
-  set μ := min m 0
-  have hμ0 : μ ≤ 0 := min_le_right m 0
-  have h1μ : 0 < 1 + μ * τ := by
-    dsimp [μ]
-    rcases min_cases m 0 with ⟨h1, _⟩ | ⟨h1, _⟩ <;> [rwa [h1]; (rw [h1]; positivity)]
-  set A : ℝ := (1 + μ * τ) / (2 * τ)
-  have hA : 0 < A := div_pos h1μ (by positivity)
-  set a : ℝ := dist z x; set L : ℝ := μ * a - 2 / r
-  set C : ℝ := ez - 2 / r * a + μ / 2 * a ^ 2
-  refine ⟨min (ez - 1) (C - L ^ 2 / (4 * A)), fun v ↦ ?_⟩
-  rcases eq_or_ne (φ v) ⊤ with hvt | hvt
-  · simp [hvt]
-  set ev := (φ v).toReal
-  have hev : φ v = ev := (EReal.coe_toReal hvt (hbot v)).symm
-  rw [hev, ← EReal.coe_add, EReal.coe_le_coe_iff]
-  rcases lt_or_ge (dist z v) (r / 2) with hlt | hge
-  · have hzv : ez - 1 ≤ ev := EReal.coe_le_coe_iff.1
-      (hev ▸ hr_ball v (by rw [dist_comm]; linarith))
-    have hnn : 0 ≤ dist x v ^ 2 / (2 * τ) := by positivity
-    exact (min_le_left _ _).trans (by linarith)
-  have hev_bd : ez - 2 / r * dist z v + μ / 2 * dist z v ^ 2 ≤ ev :=
-    le_toReal_of_convexAlong_of_le_dist hbot hconv hez hr hr_ball hvt hge
-  have htri : dist z v ≤ a + dist x v := dist_triangle z x v
-  have hmin_sq : C - L ^ 2 / (4 * A) ≤ A * dist x v ^ 2 + L * dist x v + C := by
-    have hsq := mul_nonneg hA.le (sq_nonneg (dist x v + L / (2 * A)))
-    have hexp : A * (dist x v + L / (2 * A)) ^ 2 =
-        A * dist x v ^ 2 + L * dist x v + L ^ 2 / (4 * A) := by
-      have := hA.ne'; field_simp; ring
-    linarith [hsq, hexp]
-  have hquad : ez - 2 / r * (a + dist x v) + μ / 2 * (a + dist x v) ^ 2 +
-      dist x v ^ 2 / (2 * τ) = A * dist x v ^ 2 + L * dist x v + C := by
-    dsimp [A, L, C]; have := (NNReal.coe_pos.2 hτ).ne'; field_simp; ring
-  exact (min_le_right _ _).trans (by
-    linarith [hev_bd, hmin_sq, hquad, mul_le_mul_of_nonneg_left htri (by positivity : 0 ≤ 2 / r),
-      mul_le_mul_of_nonpos_left (pow_le_pow_left₀ dist_nonneg htri 2) (by linarith : μ / 2 ≤ 0)])
-
-/-- **Coercivity from convexity along curves** (Ambrosio–Gigli–Savaré, Lemma 2.4.8). If `φ` is
-lower semicontinuous, never takes the value `⊥`, and any two points `v₀`, `v₁` of `{z | φ z ≠ ⊤}`
-are joined by a curve `γ` with `d(v₀, γ t) ≤ t d(v₀, v₁)` along which `φ` is `m`-convex, then
-`φ_τ(x) > -∞` for every `x` and every `τ` with `1 + m τ > 0`. -/
-theorem moreauYosida_ne_bot_of_convexAlong (hφ : LowerSemicontinuous φ) (hbot : ∀ y, φ y ≠ ⊥)
-    (hconv : ∀ ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
-      (∀ t ∈ Icc (0 : ℝ) 1, dist v₀ (γ t) ≤ t * dist v₀ v₁) ∧ ConvexAlong m φ γ)
-    (hmτ : 0 < 1 + m * τ) (x : X) : moreauYosida φ τ x ≠ ⊥ := by
-  rcases (zero_le : 0 ≤ τ).eq_or_lt with hτ0 | hτ
-  · obtain rfl := hτ0.symm
-    set b : ℝ := if φ x = ⊤ then 0 else (φ x).toReal - 1
-    have hb_lt : (b : EReal) < φ x := by
-      dsimp [b]; split_ifs with hxt
-      · simp [hxt]
-      · conv_rhs => rw [← EReal.coe_toReal hxt (hbot x)]
-        rw [EReal.coe_lt_coe_iff]; linarith
-    obtain ⟨r, hr, hr_ball⟩ := Metric.mem_nhds_iff.1 ((hφ.isOpen_preimage b).mem_nhds hb_lt)
-    refine ne_bot_of_le_ne_bot (EReal.coe_ne_bot b) (le_moreauYosida_iff.2 fun y _ ↦ ?_)
-    by_cases hxy : edist x y = 0
-    · have hd0 : dist y x = 0 := by rw [dist_comm, dist_edist, hxy, ENNReal.toReal_zero]
-      simpa [hxy] using (hr_ball (by simpa [Metric.mem_ball, hd0] using hr)).le
-    · rw [ENNReal.coe_zero, mul_zero, ENNReal.div_zero (pow_ne_zero 2 hxy), EReal.coe_ennreal_top,
-        EReal.add_top_of_ne_bot (hbot y)]
-      exact le_top
-  rcases Set.eq_empty_or_nonempty {z : X | φ z ≠ ⊤} with hemp | ⟨z, hz⟩
-  · have hall (y : X) : φ y = ⊤ := by by_contra hne; exact Set.notMem_empty y (hemp ▸ hne)
-    exact ne_bot_of_le_ne_bot top_ne_bot (le_moreauYosida_iff.2 fun v _ ↦ by simp [hall v])
-  set ez := (φ z).toReal
-  have hez : φ z = ez := (EReal.coe_toReal hz (hbot z)).symm
-  have hez_lt : ((ez - 1 : ℝ) : EReal) < φ z := by rw [hez, EReal.coe_lt_coe_iff]; linarith
-  obtain ⟨r, hr, hr_ball⟩ := Metric.mem_nhds_iff.1
-    ((hφ.isOpen_preimage ((ez - 1 : ℝ) : EReal)).mem_nhds hez_lt)
-  obtain ⟨B, hB⟩ := exists_le_apply_add_dist_sq_div_of_convexAlong hbot hconv hτ hmτ hez hr
-    (fun w hw ↦ (hr_ball hw).le) x
-  exact ne_bot_of_le_ne_bot (EReal.coe_ne_bot B) (le_moreauYosida_iff.2 fun v _ ↦ by
-    simpa only [coe_edist_sq_div_eq_coe_dist_sq_div hτ] using hB v)
-
-/-- **Coercivity from curve convexity of the energy and of the squared distance.** If `φ` is lower
-semicontinuous, never takes the value `⊥`, and any two points `v₀`, `v₁` of `{z | φ z ≠ ⊤}` are
-joined by a curve `γ` along which `φ` is `m`-convex and `z ↦ d(z, v₀)²` is `2`-convex, then
-`φ_τ(x) > -∞` for every `x` and every `τ` with `1 + m τ > 0`. -/
-theorem moreauYosida_ne_bot_of_convexAlong_and_convexAlong_dist_sq (hφ : LowerSemicontinuous φ)
-    (hbot : ∀ y, φ y ≠ ⊥)
-    (hconv : ∀ ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
-      ConvexAlong m φ γ ∧ ConvexAlong 2 (fun z ↦ ((dist z v₀ ^ 2 : ℝ) : EReal)) γ)
-    (hmτ : 0 < 1 + m * τ) (x : X) : moreauYosida φ τ x ≠ ⊥ :=
-  moreauYosida_ne_bot_of_convexAlong hφ hbot
-    (fun _ _ h₀ h₁ ↦
-      let ⟨γ, hγ0, hγ1, hφγ, hdγ⟩ := hconv h₀ h₁
-      ⟨γ, hγ0, hγ1, fun _ ht ↦ hγ0 ▸ hγ1 ▸ (hγ0.symm ▸ hdγ).dist_le_mul ht, hφγ⟩)
-    hmτ x
-
-/-- **Coercivity of geodesically convex energies** (Ambrosio–Gigli–Savaré, Lemma 2.4.8). If `φ` is
-lower semicontinuous, never takes the value `⊥`, and is `m`-geodesically convex, then `φ_τ(x) > -∞`
-for every `x` and every `τ` with `1 + m τ > 0`. -/
-theorem GeodesicallyConvex.moreauYosida_ne_bot (h : GeodesicallyConvex m φ)
-    (hφ : LowerSemicontinuous φ) (hbot : ∀ y, φ y ≠ ⊥) (hmτ : 0 < 1 + m * τ) (x : X) :
-    moreauYosida φ τ x ≠ ⊥ :=
-  moreauYosida_ne_bot_of_convexAlong hφ hbot
-    (fun _ _ h₀ h₁ ↦
-      let ⟨γ, hγ, hc⟩ := geodesicallyConvex_def.1 h h₀ h₁
-      ⟨γ, hγ.source, hγ.target, fun _ ht ↦ (hγ.dist_source_apply ht).le, hc⟩)
-    hmτ x
-
-/-- A minimizing sequence for the resolvent functional at `x` with geometric excess `(1 / 2) ^ n`
-above `μ₀ = φ_τ(x)` is Cauchy whenever `φ` is penalized convex with `τ > 0` and `1 + m τ > 0`. -/
-private theorem cauchySeq_of_penalizedConvex (h : PenalizedConvex m τ φ) (hτ : 0 < τ)
-    (hmτ : 0 < 1 + m * τ) {μ₀ : ℝ} (hμ₀ : moreauYosida φ τ x = μ₀) {y : ℕ → X}
-    (hy_top : ∀ n, φ (y n) ≠ ⊤) {p : ℕ → ℝ}
-    (hp_eq : ∀ n, φ (y n) + ((dist x (y n) ^ 2 / (2 * τ) : ℝ) : EReal) = p n)
-    (hp_lt : ∀ n, p n < μ₀ + (1 / 2 : ℝ) ^ n) :
-    CauchySeq y := by
-  set κ : ℝ := m + (τ : ℝ)⁻¹
-  have hκ : 0 < κ := by
-    have : κ = (1 + m * τ) / τ := by dsimp [κ]; field_simp; ring
-    rw [this]; positivity
-  rw [Metric.cauchySeq_iff]
-  intro ε hε
-  have hpow0 : Tendsto (fun n : ℕ ↦ (1 / 2 : ℝ) ^ n) atTop (𝓝 0) :=
-    tendsto_pow_atTop_nhds_zero_of_lt_one (by positivity) (by norm_num)
-  obtain ⟨N, hN⟩ := eventually_atTop.1
-    (hpow0.eventually (gt_mem_nhds (by positivity : 0 < κ / 8 * ε ^ 2)))
-  refine ⟨N, fun i hi j hj ↦ ?_⟩
-  obtain ⟨γ, h0, h1, hγ⟩ := penalizedConvex_def.1 h (w := x) (hy_top i) (hy_top j)
-  have hγ_ge : ((μ₀ : ℝ) : EReal) ≤
-      φ (γ (1 / 2)) + ((dist x (γ (1 / 2)) ^ 2 / (2 * τ) : ℝ) : EReal) := by
-    simpa only [hμ₀, coe_edist_sq_div_eq_coe_dist_sq_div hτ] using
-      moreauYosida_le φ τ (edist_ne_top x (γ (1 / 2)))
-  have hmid := hγ_ge.trans (convexAlong_def.1 hγ (1 / 2) ⟨by norm_num, by norm_num⟩)
-  rw [h0, h1, hp_eq i, hp_eq j, ← EReal.coe_mul, ← EReal.coe_mul, ← EReal.coe_add,
-    ← EReal.coe_sub, EReal.coe_le_coe_iff] at hmid
-  have hmid' : κ / 8 * dist (y i) (y j) ^ 2 ≤ (p i - μ₀) / 2 + (p j - μ₀) / 2 := by
-    dsimp [κ]; linarith
-  have hlt_κ : κ / 8 * dist (y i) (y j) ^ 2 < κ / 8 * ε ^ 2 := by
-    linarith [hmid', hN i hi, hN j hj, hp_lt i, hp_lt j]
-  have hsq : dist (y i) (y j) ^ 2 < ε ^ 2 :=
-    lt_of_mul_lt_mul_left hlt_κ (by positivity : 0 ≤ κ / 8)
-  exact (pow_lt_pow_iff_left₀ dist_nonneg hε.le two_ne_zero).1 hsq
-
-/-- **Existence of resolvent steps under penalized convexity** (Ambrosio–Gigli–Savaré, Lemma 4.1.1).
-On a complete pseudometric space, if `φ` is lower semicontinuous, coercive at `x` (`φ_τ(x) > -∞`),
-and penalized convex with `τ > 0` and `1 + m τ > 0`, then `J_τ x` is nonempty without any
-compactness hypothesis on energy sublevels. -/
-theorem PenalizedConvex.moreauYosidaResolvent_nonempty [CompleteSpace X]
-    (h : PenalizedConvex m τ φ) (hφ : LowerSemicontinuous φ) (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ)
-    (hbot : moreauYosida φ τ x ≠ ⊥) :
-    (moreauYosidaResolvent φ τ x).Nonempty := by
-  rcases eq_or_ne (moreauYosida φ τ x) ⊤ with htop | htop
-  · exact ⟨x, mem_moreauYosidaResolvent_iff_eq_moreauYosida.2
-      ⟨edist_ne_top x x, le_antisymm (htop.symm ▸ le_top)
-        (moreauYosida_le φ τ (edist_ne_top x x))⟩⟩
-  set μ₀ := (moreauYosida φ τ x).toReal
-  have hμ₀ : moreauYosida φ τ x = μ₀ := (EReal.coe_toReal htop hbot).symm
-  have hex (n : ℕ) : ∃ y, φ y + ((dist x y ^ 2 / (2 * τ) : ℝ) : EReal) <
-      ((μ₀ + (1 / 2 : ℝ) ^ n : ℝ) : EReal) := by
-    have hlt : ⨅ y, φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) <
-        ((μ₀ + (1 / 2 : ℝ) ^ n : ℝ) : EReal) := by
-      rw [← moreauYosida_eq_iInf, hμ₀, EReal.coe_lt_coe_iff]
-      exact lt_add_of_pos_right μ₀ (by positivity)
-    obtain ⟨y, hy⟩ := iInf_lt_iff.1 hlt
-    exact ⟨y, by simpa only [coe_edist_sq_div_eq_coe_dist_sq_div hτ] using hy⟩
-  choose y hy_lt using hex
-  have hy_ge (n : ℕ) : ((μ₀ : ℝ) : EReal) ≤ φ (y n) + ((dist x (y n) ^ 2 / (2 * τ) : ℝ) : EReal) :=
-    by simpa only [hμ₀, coe_edist_sq_div_eq_coe_dist_sq_div hτ] using
-      moreauYosida_le φ τ (edist_ne_top x (y n))
-  have hy_top (n : ℕ) : φ (y n) ≠ ⊤ := fun ht ↦ not_lt_of_ge (by simp [ht]) (hy_lt n)
-  have hy_bot (n : ℕ) : φ (y n) ≠ ⊥ := fun hb ↦
-    EReal.coe_ne_bot μ₀ (le_bot_iff.1 (by simpa [hb] using hy_ge n))
-  set p : ℕ → ℝ := fun n ↦ (φ (y n)).toReal + dist x (y n) ^ 2 / (2 * τ)
-  have hp_eq (n : ℕ) : φ (y n) + ((dist x (y n) ^ 2 / (2 * τ) : ℝ) : EReal) = p n := by
-    rw [← EReal.coe_toReal (hy_top n) (hy_bot n), ← EReal.coe_add]
-  have hp_bounds (n : ℕ) : μ₀ ≤ p n ∧ p n < μ₀ + (1 / 2 : ℝ) ^ n :=
-    ⟨EReal.coe_le_coe_iff.1 (hp_eq n ▸ hy_ge n), EReal.coe_lt_coe_iff.1 (hp_eq n ▸ hy_lt n)⟩
-  obtain ⟨y_lim, hy_lim⟩ := cauchySeq_tendsto_of_complete
-    (cauchySeq_of_penalizedConvex h hτ hmτ hμ₀ hy_top hp_eq fun n ↦ (hp_bounds n).2)
-  refine ⟨y_lim, mem_moreauYosidaResolvent_iff_eq_moreauYosida.2 ⟨edist_ne_top x y_lim,
-    le_antisymm ?_ (moreauYosida_le φ τ (edist_ne_top x y_lim))⟩⟩
-  have hpow0 : Tendsto (fun n : ℕ ↦ (1 / 2 : ℝ) ^ n) atTop (𝓝 0) :=
-    tendsto_pow_atTop_nhds_zero_of_lt_one (by positivity) (by norm_num)
-  have hp_lim : Tendsto p atTop (𝓝 μ₀) :=
-    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (by simpa using hpow0.const_add μ₀) (fun n ↦ (hp_bounds n).1) (fun n ↦ (hp_bounds n).2.le)
-  have htoReal_lim : Tendsto (fun n ↦ (φ (y n)).toReal) atTop
-      (𝓝 (μ₀ - dist x y_lim ^ 2 / (2 * τ))) :=
-    (hp_lim.sub (((tendsto_const_nhds.dist hy_lim).pow 2).div_const _)).congr fun n ↦ by
-      dsimp [p]; ring
-  have hφ_lim : Tendsto (fun n ↦ φ (y n)) atTop
-      (𝓝 (((μ₀ - dist x y_lim ^ 2 / (2 * τ) : ℝ) : EReal))) :=
-    (EReal.tendsto_coe.2 htoReal_lim).congr fun n ↦ EReal.coe_toReal (hy_top n) (hy_bot n)
-  have hle_φ : φ y_lim ≤ ((μ₀ - dist x y_lim ^ 2 / (2 * τ) : ℝ) : EReal) :=
-    ((hφ.le_liminf y_lim).trans hy_lim.liminf_le_liminf_comp).trans_eq hφ_lim.liminf_eq
-  rw [coe_edist_sq_div_eq_coe_dist_sq_div hτ, hμ₀]
-  exact (add_le_add hle_φ le_rfl).trans_eq (by rw [← EReal.coe_add, sub_add_cancel])
-
-/-- On a complete pseudometric space, under lower semicontinuity, coercivity at every point, and
-`PenalizedConvex m τ φ` with `τ > 0` and `1 + m τ > 0`, from every initial point `x₀` starts an
-infinite minimizing movement sequence `U` with `U 0 = x₀`. -/
-theorem PenalizedConvex.exists_forall_mem_moreauYosidaResolvent [CompleteSpace X]
-    (h : PenalizedConvex m τ φ) (hφ : LowerSemicontinuous φ) (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ)
-    (hbot : ∀ z, moreauYosida φ τ z ≠ ⊥) (x₀ : X) :
-    ∃ U : ℕ → X, U 0 = x₀ ∧ ∀ n, U (n + 1) ∈ moreauYosidaResolvent φ τ (U n) := by
-  choose step hstep_mem using fun z ↦ h.moreauYosidaResolvent_nonempty hφ hτ hmτ (hbot z)
-  exact ⟨fun n ↦ step^[n] x₀, rfl, fun n ↦ by
-    simpa only [Function.iterate_succ_apply'] using hstep_mem _⟩
-
-/-- **Existence of resolvent steps under curve convexity of the energy and squared distance**
-(Ambrosio–Gigli, Assumption 3.24). On a complete pseudometric space, if `φ` is lower semicontinuous,
-never takes the value `⊥`, and satisfies Assumption 3.24 with parameter `m`, then `J_τ x` is
-nonempty for every `x` and every `τ > 0` with `1 + m τ > 0`. -/
-theorem moreauYosidaResolvent_nonempty_of_convexAlong_and_convexAlong_dist_sq [CompleteSpace X]
-    (hφ : LowerSemicontinuous φ) (hbot : ∀ y, φ y ≠ ⊥)
-    (hconv : ∀ (w : X) ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
-      ConvexAlong m φ γ ∧ ConvexAlong 2 (fun z ↦ ((dist z w ^ 2 : ℝ) : EReal)) γ)
-    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (x : X) :
-    (moreauYosidaResolvent φ τ x).Nonempty :=
-  (penalizedConvex_of_convexAlong_and_convexAlong_dist_sq hconv).moreauYosidaResolvent_nonempty
-    hφ hτ hmτ (moreauYosida_ne_bot_of_convexAlong_and_convexAlong_dist_sq hφ hbot
-      (fun v₀ _ h₀ h₁ ↦ hconv v₀ h₀ h₁) hmτ x)
-
-/-- Under lower semicontinuity, `∀ y, φ y ≠ ⊥`, and Assumption 3.24 with `τ > 0` and `1 + m τ > 0`
-on a complete pseudometric space, from every initial point `x₀` starts an infinite minimizing
-movement sequence `U` with `U 0 = x₀`. -/
-theorem exists_forall_mem_moreauYosidaResolvent_of_convexAlong_and_convexAlong_dist_sq
-    [CompleteSpace X] (hφ : LowerSemicontinuous φ) (hbot : ∀ y, φ y ≠ ⊥)
-    (hconv : ∀ (w : X) ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
-      ConvexAlong m φ γ ∧ ConvexAlong 2 (fun z ↦ ((dist z w ^ 2 : ℝ) : EReal)) γ)
-    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (x₀ : X) :
-    ∃ U : ℕ → X, U 0 = x₀ ∧ ∀ n, U (n + 1) ∈ moreauYosidaResolvent φ τ (U n) :=
-  (penalizedConvex_of_convexAlong_and_convexAlong_dist_sq
-    hconv).exists_forall_mem_moreauYosidaResolvent hφ hτ hmτ
-    (moreauYosida_ne_bot_of_convexAlong_and_convexAlong_dist_sq hφ hbot
-      (fun v₀ _ h₀ h₁ ↦ hconv v₀ h₀ h₁) hmτ) x₀
-
-/-- **Existence of resolvent steps on a complete CAT(0) space.** If `φ` is lower semicontinuous,
-never takes the value `⊥`, and is `m`-geodesically convex on a complete CAT(0) space, then `J_τ x`
-is nonempty for every `x` and every `τ > 0` with `1 + m τ > 0`. -/
-theorem GeodesicallyConvex.moreauYosidaResolvent_nonempty [IsCATZeroSpace X] [CompleteSpace X]
-    (h : GeodesicallyConvex m φ) (hφ : LowerSemicontinuous φ) (hbot : ∀ y, φ y ≠ ⊥)
-    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (x : X) :
-    (moreauYosidaResolvent φ τ x).Nonempty :=
-  h.penalizedConvex.moreauYosidaResolvent_nonempty hφ hτ hmτ (h.moreauYosida_ne_bot hφ hbot hmτ x)
-
-/-- On a complete CAT(0) space, if `φ` is lower semicontinuous, never takes the value `⊥`, and is
-`m`-geodesically convex, then for every `τ > 0` with `1 + m τ > 0` and every `x₀` there exists an
-infinite minimizing movement sequence `U` with `U 0 = x₀`. -/
-theorem GeodesicallyConvex.exists_forall_mem_moreauYosidaResolvent [IsCATZeroSpace X]
-    [CompleteSpace X] (h : GeodesicallyConvex m φ) (hφ : LowerSemicontinuous φ)
-    (hbot : ∀ y, φ y ≠ ⊥) (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (x₀ : X) :
-    ∃ U : ℕ → X, U 0 = x₀ ∧ ∀ n, U (n + 1) ∈ moreauYosidaResolvent φ τ (U n) :=
-  h.penalizedConvex.exists_forall_mem_moreauYosidaResolvent hφ hτ hmτ
-    (h.moreauYosida_ne_bot hφ hbot hmτ) x₀
-
 end PseudoMetricSpace
 
 section MetricSpace
@@ -550,43 +262,6 @@ theorem PenalizedConvex.subsingleton_moreauYosidaResolvent (h : PenalizedConvex 
     (EReal.add_lt_top hz (EReal.coe_ne_top _))
   simp [htop] at this
 
-/-- **Existence and uniqueness of the resolvent step** (Ambrosio–Gigli–Savaré, Lemma 4.1.1). On a
-complete metric space, if `φ` is lower semicontinuous, finite somewhere, coercive at `x`, and
-penalized convex with `τ > 0` and `1 + m τ > 0`, then `J_τ x` consists of a unique point. -/
-theorem PenalizedConvex.existsUnique_mem_moreauYosidaResolvent [CompleteSpace X]
-    (h : PenalizedConvex m τ φ) (hφ : LowerSemicontinuous φ) (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ)
-    (hbot : moreauYosida φ τ x ≠ ⊥) (hdom : ∃ z, φ z ≠ ⊤) :
-    ∃! y, y ∈ moreauYosidaResolvent φ τ x := by
-  obtain ⟨y, hy⟩ := h.moreauYosidaResolvent_nonempty hφ hτ hmτ hbot
-  exact ⟨y, hy, fun y' hy' ↦ h.subsingleton_moreauYosidaResolvent hτ hmτ
-    (fun z ↦ apply_ne_bot_of_moreauYosida_ne_bot hbot (edist_ne_top x z)) hdom x hy' hy⟩
-
-/-- **Existence and uniqueness of the resolvent step under Assumption 3.24.** On a complete metric
-space, if `φ` is lower semicontinuous, never takes the value `⊥`, is finite somewhere, and satisfies
-Assumption 3.24 with parameter `m`, then `J_τ x` consists of a unique point for every `x` and every
-`τ > 0` with `1 + m τ > 0`. -/
-theorem existsUnique_mem_moreauYosidaResolvent_of_convexAlong_and_convexAlong_dist_sq
-    [CompleteSpace X] (hφ : LowerSemicontinuous φ) (hbot : ∀ y, φ y ≠ ⊥)
-    (hconv : ∀ (w : X) ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
-      ConvexAlong m φ γ ∧ ConvexAlong 2 (fun z ↦ ((dist z w ^ 2 : ℝ) : EReal)) γ)
-    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (hdom : ∃ z, φ z ≠ ⊤) (x : X) :
-    ∃! y, y ∈ moreauYosidaResolvent φ τ x :=
-  (penalizedConvex_of_convexAlong_and_convexAlong_dist_sq
-    hconv).existsUnique_mem_moreauYosidaResolvent hφ hτ hmτ
-    (moreauYosida_ne_bot_of_convexAlong_and_convexAlong_dist_sq hφ hbot
-      (fun v₀ _ h₀ h₁ ↦ hconv v₀ h₀ h₁) hmτ x) hdom
-
-/-- **Existence and uniqueness of the resolvent step on a complete CAT(0) space.** If `φ` is lower
-semicontinuous, never takes the value `⊥`, is finite somewhere, and is `m`-geodesically convex on a
-complete CAT(0) metric space, then `J_τ x` consists of a unique point for every `x` and every
-`τ > 0` with `1 + m τ > 0`. -/
-theorem GeodesicallyConvex.existsUnique_mem_moreauYosidaResolvent [IsCATZeroSpace X]
-    [CompleteSpace X] (h : GeodesicallyConvex m φ) (hφ : LowerSemicontinuous φ)
-    (hbot : ∀ y, φ y ≠ ⊥) (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (hdom : ∃ z, φ z ≠ ⊤) (x : X) :
-    ∃! y, y ∈ moreauYosidaResolvent φ τ x :=
-  h.penalizedConvex.existsUnique_mem_moreauYosidaResolvent hφ hτ hmτ
-    (h.moreauYosida_ne_bot hφ hbot hmτ x) hdom
-
 end MetricSpace
 
 section MinimizingMovement
@@ -619,7 +294,7 @@ private theorem PenalizedConvex.mul_dist_sq_sub_le (h : PenalizedConvex m τ φ)
   rw [← EReal.coe_add, ← EReal.coe_add, EReal.coe_le_coe_iff] at hvi
   rw [← EReal.coe_sub, EReal.coe_le_coe_iff] at hc
   rw [EReal.coe_le_coe_iff] at hmono
-  have hτ' : (0 : ℝ) < τ := hτ
+  have hτ' : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
   have h2τ := mul_le_mul_of_nonneg_left hvi (by positivity : (0 : ℝ) ≤ 2 * τ)
   field_simp at h2τ
   nlinarith [sq_nonneg (dist (U n) (U (n + 1)))]
@@ -706,5 +381,399 @@ theorem PenalizedConvex.pow_mul_dist_sq_le (h : PenalizedConvex m τ φ) (hτ : 
   linarith
 
 end MinimizingMovement
+
+section Existence
+
+variable {X : Type*} [PseudoMetricSpace X] {m : ℝ} {τ τ₀ : ℝ≥0} {φ : X → EReal} {x x₀ : X}
+
+/-- Midpoint quantitative stability for two points with penalized energy near the infimum `M`: if
+`z ↦ φ z + d(x, z)² / (2τ)` is bounded below by `M` and `(m + 1 / τ)`-convex along a curve from
+`v₀` to `v₁`, then `(1 + m τ) / (8τ) d(v₀, v₁)² ≤ (Ψ v₀ - M) / 2 + (Ψ v₁ - M) / 2`. -/
+private lemma mul_dist_sq_le_of_convexAlong (hτ : 0 < τ) {M ε₀ ε₁ : ℝ} {v₀ v₁ : X}
+    {γ : ℝ → X} (hγ0 : γ 0 = v₀) (hγ1 : γ 1 = v₁)
+    (hγ : ConvexAlong (m + (τ : ℝ)⁻¹)
+      (fun z ↦ φ z + ((dist x z ^ 2 / (2 * τ) : ℝ) : EReal)) γ)
+    (hlow : (M : EReal) ≤ φ (γ (1 / 2)) + ((dist x (γ (1 / 2)) ^ 2 / (2 * τ) : ℝ) : EReal))
+    (htop₀ : φ v₀ ≠ ⊤) (hbot₀ : φ v₀ ≠ ⊥) (htop₁ : φ v₁ ≠ ⊤) (hbot₁ : φ v₁ ≠ ⊥)
+    (hv₀ : φ v₀ + (edist x v₀ ^ 2 / (2 * τ) : ℝ≥0∞) < ((M + ε₀ : ℝ) : EReal))
+    (hv₁ : φ v₁ + (edist x v₁ ^ 2 / (2 * τ) : ℝ≥0∞) < ((M + ε₁ : ℝ) : EReal)) :
+    (1 + m * τ) / (8 * τ) * dist v₀ v₁ ^ 2 ≤ ε₀ / 2 + ε₁ / 2 := by
+  have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
+  have hcomb := hlow.trans (convexAlong_def.1 hγ (1 / 2) ⟨by norm_num, by norm_num⟩)
+  rw [hγ0, hγ1] at hcomb
+  set a₀ : ℝ := (φ v₀).toReal
+  set a₁ : ℝ := (φ v₁).toReal
+  have ha₀ : φ v₀ = a₀ := (EReal.coe_toReal htop₀ hbot₀).symm
+  have ha₁ : φ v₁ = a₁ := (EReal.coe_toReal htop₁ hbot₁).symm
+  have hv₀' : a₀ + dist x v₀ ^ 2 / (2 * τ) < M + ε₀ := by
+    rwa [coe_edist_sq_div_eq_coe_dist_sq_div hτ, ha₀, ← EReal.coe_add, EReal.coe_lt_coe_iff] at hv₀
+  have hv₁' : a₁ + dist x v₁ ^ 2 / (2 * τ) < M + ε₁ := by
+    rwa [coe_edist_sq_div_eq_coe_dist_sq_div hτ, ha₁, ← EReal.coe_add, EReal.coe_lt_coe_iff] at hv₁
+  rw [ha₀, ha₁] at hcomb
+  norm_cast at hcomb
+  push_cast at hcomb
+  have hcoef : (1 + m * (τ : ℝ)) / (8 * τ) = (m + (τ : ℝ)⁻¹) / 2 * (1 / 2) * (1 - 1 / 2) := by
+    field_simp
+    ring
+  rw [hcoef]
+  linarith
+
+/-- **Existence of a resolvent step from convexity of the penalized energy** (Ambrosio–Gigli–Savaré,
+Theorem 4.1.2). In a complete pseudometric space, if `φ` is lower semicontinuous, `τ > 0` satisfies
+`1 + m τ > 0`, `φ_τ(x) ≠ ⊥`, and any two points of finite energy are joined by a curve along which
+`z ↦ φ z + d(x, z)² / (2τ)` is `(m + 1 / τ)`-convex, then the resolvent `J_τ x` is nonempty. No
+compactness of sublevels is needed. -/
+theorem moreauYosidaResolvent_nonempty_of_convexAlong [CompleteSpace X]
+    (hφ : LowerSemicontinuous φ) (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ)
+    (h : ∀ ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
+      ConvexAlong (m + (τ : ℝ)⁻¹) (fun z ↦ φ z + ((dist x z ^ 2 / (2 * τ) : ℝ) : EReal)) γ)
+    (hbot : moreauYosida φ τ x ≠ ⊥) :
+    (moreauYosidaResolvent φ τ x).Nonempty := by
+  -- Every minimizing sequence for `z ↦ φ z + d(x, z)² / (2τ)` is Cauchy by strong convexity along
+  -- the connecting curves.
+  rcases eq_or_ne (moreauYosida φ τ x) ⊤ with htop | htop
+  · exact ⟨x, self_mem_moreauYosidaResolvent_of_eq_top htop⟩
+  set M : ℝ := (moreauYosida φ τ x).toReal
+  have hM : moreauYosida φ τ x = M := (EReal.coe_toReal htop hbot).symm
+  -- Choose a minimizing sequence `v` with penalized energies below `M + 1 / (n + 1)`.
+  have hseq : ∀ n : ℕ, ∃ v : X,
+      φ v + (edist x v ^ 2 / (2 * τ) : ℝ≥0∞) < ((M + 1 / (n + 1) : ℝ) : EReal) := fun n ↦ by
+    have hlt : moreauYosida φ τ x < ((M + 1 / (n + 1) : ℝ) : EReal) := by
+      rw [hM, EReal.coe_lt_coe_iff]
+      linarith [Nat.one_div_pos_of_nat (α := ℝ) (n := n)]
+    simpa only [moreauYosida_eq_iInf, iInf_lt_iff] using hlt
+  choose v hv using hseq
+  have hφ_ne_top : ∀ n, φ (v n) ≠ ⊤ := fun n hvn ↦ by
+    have := hv n
+    rw [hvn, coe_edist_sq_div_eq_coe_dist_sq_div hτ,
+      EReal.top_add_of_ne_bot (EReal.coe_ne_bot _)] at this
+    exact not_top_lt this
+  have hψ_ge : ∀ y : X, (M : EReal) ≤ φ y + ((dist x y ^ 2 / (2 * τ) : ℝ) : EReal) := fun y ↦ by
+    rw [← coe_edist_sq_div_eq_coe_dist_sq_div hτ, ← hM]
+    exact moreauYosida_le φ τ (edist_ne_top x y)
+  have hφ_ne_bot : ∀ n, φ (v n) ≠ ⊥ := fun n ↦
+    apply_ne_bot_of_moreauYosida_ne_bot (edist_ne_top x (v n)) hbot
+  have hc : 0 < (1 + m * τ) / (8 * τ) := by positivity
+  have hdist_sq : ∀ n k : ℕ, (1 + m * τ) / (8 * τ) * dist (v n) (v k) ^ 2 ≤
+      (1 / ((n : ℝ) + 1)) / 2 + (1 / ((k : ℝ) + 1)) / 2 := fun n k ↦ by
+    obtain ⟨γ, hγ0, hγ1, hγ⟩ := h (hφ_ne_top n) (hφ_ne_top k)
+    exact mul_dist_sq_le_of_convexAlong hτ hγ0 hγ1 hγ (hψ_ge (γ (1 / 2)))
+      (hφ_ne_top n) (hφ_ne_bot n) (hφ_ne_top k) (hφ_ne_bot k) (hv n) (hv k)
+  have hcauchy : CauchySeq v := Metric.cauchySeq_iff.2 fun ε hε ↦ by
+    obtain ⟨N, hN⟩ := exists_nat_one_div_lt (mul_pos (pow_pos hε 2) hc)
+    refine ⟨N, fun n hn k hk ↦ ?_⟩
+    have hn' : 1 / ((n : ℝ) + 1) ≤ 1 / ((N : ℝ) + 1) := by gcongr
+    have hk' : 1 / ((k : ℝ) + 1) ≤ 1 / ((N : ℝ) + 1) := by gcongr
+    have hsq : (1 + m * τ) / (8 * τ) * dist (v n) (v k) ^ 2 <
+        (1 + m * τ) / (8 * τ) * ε ^ 2 := by
+      calc (1 + m * τ) / (8 * τ) * dist (v n) (v k) ^ 2
+          ≤ (1 / ((n : ℝ) + 1)) / 2 + (1 / ((k : ℝ) + 1)) / 2 := hdist_sq n k
+        _ ≤ 1 / ((N : ℝ) + 1) := by linarith
+        _ < ε ^ 2 * ((1 + m * τ) / (8 * τ)) := hN
+        _ = (1 + m * τ) / (8 * τ) * ε ^ 2 := mul_comm _ _
+    have hd_lt : dist (v n) (v k) ^ 2 < ε ^ 2 := lt_of_mul_lt_mul_left hsq hc.le
+    exact (pow_lt_pow_iff_left₀ dist_nonneg hε.le two_ne_zero).1 hd_lt
+  obtain ⟨y, hy⟩ := cauchySeq_tendsto_of_complete hcauchy
+  have hliminf := le_liminf_apply_add_edist_sq_div (φ := φ) (τ := τ) (x := x)
+    ((((continuous_const.edist continuous_id).tendsto y).comp hy).liminf_eq.ge)
+    ((hφ.le_liminf y).trans hy.liminf_le_liminf_comp)
+  have hlim : Tendsto (fun n : ℕ ↦ ((M + 1 / (n + 1) : ℝ) : EReal)) atTop (𝓝 (M : EReal)) :=
+    EReal.tendsto_coe.2 (by simpa using tendsto_one_div_add_atTop_nhds_zero_nat.const_add M)
+  refine ⟨y, mem_moreauYosidaResolvent_iff_eq_moreauYosida.2
+    ⟨edist_ne_top x y, le_antisymm ?_ (moreauYosida_le φ τ (edist_ne_top x y))⟩⟩
+  rw [hM, ← hlim.liminf_eq]
+  exact hliminf.trans (liminf_le_liminf (Eventually.of_forall fun n ↦ (hv n).le))
+
+/-- **Existence of resolvent steps under penalized convexity** (Ambrosio–Gigli–Savaré, Theorem
+4.1.2). In a complete pseudometric space, if `φ` is lower semicontinuous and penalized convex with
+parameter `m` and time step `τ > 0` satisfying `1 + m τ > 0`, and if `φ_τ(x) ≠ ⊥`, then the
+resolvent `J_τ x` is nonempty. No compactness of sublevels is needed. -/
+theorem PenalizedConvex.moreauYosidaResolvent_nonempty [CompleteSpace X]
+    (hφ : LowerSemicontinuous φ) (h : PenalizedConvex m τ φ) (hτ : 0 < τ)
+    (hmτ : 0 < 1 + m * τ) (hbot : moreauYosida φ τ x ≠ ⊥) :
+    (moreauYosidaResolvent φ τ x).Nonempty :=
+  moreauYosidaResolvent_nonempty_of_convexAlong hφ hτ hmτ (@h x) hbot
+
+/-- **Existence and uniqueness of the resolvent step under penalized convexity.** In a complete
+metric space, if `φ` is lower semicontinuous, finite somewhere (`∃ z, φ z ≠ ⊤`), and penalized
+convex with parameter `m` and time step `τ > 0` satisfying `1 + m τ > 0`, and if `φ_τ(x) ≠ ⊥`,
+then `J_τ x` contains a unique point. -/
+theorem PenalizedConvex.existsUnique_mem_moreauYosidaResolvent {X : Type*} [MetricSpace X]
+    [CompleteSpace X] {φ : X → EReal} {x : X} (hφ : LowerSemicontinuous φ)
+    (h : PenalizedConvex m τ φ) (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ)
+    (hmoreau : moreauYosida φ τ x ≠ ⊥) (hdom : ∃ z, φ z ≠ ⊤) :
+    ∃! y, y ∈ moreauYosidaResolvent φ τ x := by
+  have hbot : ∀ z, φ z ≠ ⊥ := fun z ↦
+    apply_ne_bot_of_moreauYosida_ne_bot (edist_ne_top x z) hmoreau
+  obtain ⟨y, hy⟩ := h.moreauYosidaResolvent_nonempty hφ hτ hmτ hmoreau
+  exact ⟨y, hy, fun y' hy' ↦ h.subsingleton_moreauYosidaResolvent hτ hmτ hbot hdom x hy' hy⟩
+
+/-- **Existence of minimizing movement sequences under penalized convexity.** In a complete
+pseudometric space, if `φ` is lower semicontinuous, penalized convex with parameter `m` at time
+step `τ > 0` satisfying `1 + m τ > 0`, and coercive (`φ_{τ₀}(x₀) ≠ ⊥`) at a larger time step
+`τ₀ > τ`, then every point `x` starts a minimizing movement sequence `u` with `u 0 = x` and
+`u (n + 1) ∈ J_τ (u n)` for all `n`. -/
+theorem PenalizedConvex.exists_forall_mem_moreauYosidaResolvent [CompleteSpace X]
+    (hφ : LowerSemicontinuous φ) (h : PenalizedConvex m τ φ) (hτ : 0 < τ)
+    (hmτ : 0 < 1 + m * τ) (hττ₀ : τ < τ₀) (h₀ : moreauYosida φ τ₀ x₀ ≠ ⊥) (x : X) :
+    ∃ u : ℕ → X, u 0 = x ∧ ∀ n, u (n + 1) ∈ moreauYosidaResolvent φ τ (u n) := by
+  have step : ∀ z : X, ∃ y, y ∈ moreauYosidaResolvent φ τ z := fun z ↦
+    h.moreauYosidaResolvent_nonempty hφ hτ hmτ
+      (moreauYosida_ne_bot_of_lt hττ₀ (edist_ne_top z x₀) h₀)
+  choose f hf using step
+  exact ⟨fun n ↦ f^[n] x, rfl, fun n ↦ by simpa only [Function.iterate_succ_apply'] using hf _⟩
+
+/-- **Metric coercivity from local lower semicontinuity and `κ`-convex interpolation**
+(Ambrosio–Gigli–Savaré, Lemma 2.4.8). Let `Ψ : X → EReal` be lower semicontinuous and finite at a
+point `x₀`, and let `κ > 0`. Suppose that every point `z` with `Ψ z ≠ ⊤` can be interpolated
+towards `x₀` at some scale `R : ℝ` so that for every `t ∈ [0, 1]` there is a point `y` at distance
+at most `t R` from `x₀` satisfying
+`Ψ y ≤ (1 - t) Ψ x₀ + t Ψ z - (κ / 2) t (1 - t) R ^ 2`.
+Then `Ψ` is bounded below by a real constant; in particular `⨅ z, Ψ z ≠ ⊥`. -/
+theorem iInf_ne_bot_of_lowerSemicontinuousAt {Ψ : X → EReal} {x₀ : X} {κ : ℝ}
+    (hΨ : LowerSemicontinuousAt Ψ x₀) (htop : Ψ x₀ ≠ ⊤) (hbot : Ψ x₀ ≠ ⊥) (hκ : 0 < κ)
+    (hinterp : ∀ z, Ψ z ≠ ⊤ → ∃ R : ℝ, ∀ t ∈ Icc (0 : ℝ) 1, ∃ y, dist x₀ y ≤ t * R ∧
+      Ψ y ≤ ((1 - t : ℝ) : EReal) * Ψ x₀ + (t : EReal) * Ψ z -
+        ((κ / 2 * t * (1 - t) * R ^ 2 : ℝ) : EReal)) :
+    (⨅ z, Ψ z) ≠ ⊥ := by
+  -- Local boundedness below near `x₀` extends to a global lower bound by choosing `t = 1` when
+  -- `R < δ` and `t = δ / (2R)` when `R ≥ δ`, then completing the square against `(κ / 4) R²`.
+  set a : ℝ := (Ψ x₀).toReal
+  have ha : Ψ x₀ = a := (EReal.coe_toReal htop hbot).symm
+  have hnhds : ∀ᶠ y in 𝓝 x₀, ((a - 1 : ℝ) : EReal) < Ψ y :=
+    hΨ _ (by simp only [gt_iff_lt, ha, EReal.coe_lt_coe_iff]; exact sub_one_lt a)
+  obtain ⟨δ, hδ, hball⟩ := Metric.nhds_basis_ball.eventually_iff.1 hnhds
+  set L : ℝ := min (a - 1) (a - 4 / (κ * δ ^ 2))
+  refine ne_bot_of_le_ne_bot (EReal.coe_ne_bot L) (le_iInf fun z ↦ ?_)
+  rcases eq_or_ne (Ψ z) ⊤ with hztop | hztop
+  · exact hztop ▸ le_top
+  obtain ⟨R, hinterp_z⟩ := hinterp z hztop
+  rcases lt_or_ge R δ with hR | hR
+  · obtain ⟨y, hy_dist, hy_le⟩ := hinterp_z 1 ⟨zero_le_one, le_rfl⟩
+    have hy_ball : y ∈ Metric.ball x₀ δ :=
+      Metric.mem_ball'.2 (hy_dist.trans_lt (by simpa only [one_mul] using hR))
+    have h1 : Ψ y ≤ Ψ z := by simpa [ha] using hy_le
+    exact (EReal.coe_le_coe_iff.2 (min_le_left _ _)).trans ((hball hy_ball).le.trans h1)
+  have hRpos : 0 < R := hδ.trans_le hR
+  set t : ℝ := δ / (2 * R)
+  have htpos : 0 < t := by positivity
+  have ht12 : t ≤ 1 / 2 := (div_le_div_iff₀ (by positivity) two_pos).2 (by linarith)
+  have htIcc : t ∈ Icc (0 : ℝ) 1 := ⟨htpos.le, ht12.trans (by norm_num)⟩
+  obtain ⟨y, hy_dist, hy_le⟩ := hinterp_z t htIcc
+  have hy_ball : y ∈ Metric.ball x₀ δ := by
+    rw [Metric.mem_ball']
+    have htR : t * R = δ / 2 := by dsimp [t]; field_simp
+    linarith
+  have hlow : ((a - 1 : ℝ) : EReal) < Ψ y := hball hy_ball
+  have hzbot : Ψ z ≠ ⊥ := fun hzbot ↦ by
+    rw [hzbot, EReal.coe_mul_bot_of_pos htpos, EReal.add_bot, EReal.bot_sub, le_bot_iff] at hy_le
+    exact not_lt_bot (hy_le ▸ hlow)
+  set b : ℝ := (Ψ z).toReal
+  have hb : Ψ z = b := (EReal.coe_toReal hztop hzbot).symm
+  rw [ha, hb] at hy_le
+  norm_cast at hy_le
+  have hmid : a - 1 ≤ (1 - t) * a + t * b - κ / 2 * t * (1 - t) * R ^ 2 := by
+    exact_mod_cast hlow.le.trans hy_le
+  have hslope : a - 2 * R / δ ≤ b - κ / 2 * (1 - t) * R ^ 2 := by
+    refine le_of_mul_le_mul_left ?_ htpos
+    have : t * (2 * R / δ) = 1 := by dsimp [t]; field_simp
+    linarith
+  have hquad : κ / 4 * R ^ 2 ≤ κ / 2 * (1 - t) * R ^ 2 := by
+    calc κ / 4 * R ^ 2 = 1 / 4 * (κ * R ^ 2) := by ring
+      _ ≤ (1 - t) / 2 * (κ * R ^ 2) :=
+        mul_le_mul_of_nonneg_right (by linarith) (by positivity)
+      _ = κ / 2 * (1 - t) * R ^ 2 := by ring
+  have hsq : -(4 / (κ * δ ^ 2)) ≤ κ / 4 * R ^ 2 - 2 * R / δ := by
+    rw [← sub_nonneg]
+    calc κ / 4 * R ^ 2 - 2 * R / δ - -(4 / (κ * δ ^ 2))
+        = (κ * δ * R - 4) ^ 2 / (4 * κ * δ ^ 2) := by field_simp; ring
+      _ ≥ 0 := div_nonneg (sq_nonneg _) (by positivity)
+  rw [hb]
+  exact EReal.coe_le_coe_iff.2 ((min_le_right _ _).trans (by linarith))
+
+/-- **Coercivity of `φ_τ` from local lower semicontinuity and penalized `(m + 1 / σ)`-convex
+interpolation** (Ambrosio–Gigli–Savaré, Lemma 2.4.8). Let `φ` be lower semicontinuous and finite at
+a point `x₀`, let `x₁` be a base point, and suppose that for every `σ > 0` with `1 + m σ > 0` and
+every `z` with `φ z ≠ ⊤`, the penalized energy `w ↦ φ w + d(x₁, w)² / (2σ)` admits an
+`(m + 1 / σ)`-convex interpolation from `x₀` to `z` at some scale `R : ℝ`. Then `φ_τ(x) ≠ ⊥` for
+every `τ ≥ 0` with `1 + m τ > 0` and every `x : X`. -/
+theorem moreauYosida_ne_bot_of_lowerSemicontinuousAt {x₀ x₁ : X}
+    (hx₀ : LowerSemicontinuousAt φ x₀) (hx₀top : φ x₀ ≠ ⊤) (hx₀bot : φ x₀ ≠ ⊥)
+    (hmτ : 0 < 1 + m * τ)
+    (hinterp : ∀ {σ : ℝ≥0}, 0 < σ → 0 < 1 + m * σ → ∀ z, φ z ≠ ⊤ →
+      ∃ R : ℝ, ∀ t ∈ Icc (0 : ℝ) 1, ∃ y, dist x₀ y ≤ t * R ∧
+        φ y + ((dist x₁ y ^ 2 / (2 * σ) : ℝ) : EReal) ≤
+          ((1 - t : ℝ) : EReal) * (φ x₀ + ((dist x₁ x₀ ^ 2 / (2 * σ) : ℝ) : EReal)) +
+            (t : EReal) * (φ z + ((dist x₁ z ^ 2 / (2 * σ) : ℝ) : EReal)) -
+            (((m + (σ : ℝ)⁻¹) / 2 * t * (1 - t) * R ^ 2 : ℝ) : EReal))
+    (x : X) :
+    moreauYosida φ τ x ≠ ⊥ := by
+  refine moreauYosida_ne_bot_of_forall_one_add_mul_pos hmτ (edist_ne_top x x₁)
+    fun {σ} hσ hmσ ↦ ?_
+  set Ψ : X → EReal := fun z ↦ φ z + ((dist x₁ z ^ 2 / (2 * σ) : ℝ) : EReal)
+  have hΨ_eq : moreauYosida φ σ x₁ = ⨅ z, Ψ z := by
+    rw [moreauYosida_eq_iInf]
+    exact iInf_congr fun z ↦ congr_arg (φ z + ·) (coe_edist_sq_div_eq_coe_dist_sq_div hσ x₁ z)
+  rw [hΨ_eq]
+  have hΨtop : Ψ x₀ ≠ ⊤ := EReal.add_ne_top hx₀top (EReal.coe_ne_top _)
+  have hΨbot : Ψ x₀ ≠ ⊥ := EReal.add_ne_bot_iff.2 ⟨hx₀bot, EReal.coe_ne_bot _⟩
+  have hcont : Continuous (fun z : X ↦ ((dist x₁ z ^ 2 / (2 * σ) : ℝ) : EReal)) :=
+    EReal.continuous_coe_iff.2 (((continuous_const.dist continuous_id).pow 2).div_const _)
+  refine iInf_ne_bot_of_lowerSemicontinuousAt (x₀ := x₀) (κ := m + (σ : ℝ)⁻¹)
+    (hx₀.add' hcont.continuousAt.lowerSemicontinuousAt
+      (EReal.continuousAt_add (.inr (EReal.coe_ne_bot _)) (.inr (EReal.coe_ne_top _))))
+    hΨtop hΨbot ?_ fun z hz ↦ ?_
+  · have : m + (σ : ℝ)⁻¹ = (1 + m * σ) / σ := by field_simp; ring
+    rw [this]
+    positivity
+  · exact hinterp hσ hmσ z
+      ((EReal.add_ne_top_iff_ne_top_left (EReal.coe_ne_bot _) (EReal.coe_ne_top _)).1 hz)
+
+/-- **Coercivity of geodesically convex energies** (Ambrosio–Gigli–Savaré, Lemma 2.4.8). Let `φ` be
+`m`-geodesically convex on a pseudometric space, and lower semicontinuous and finite at some point
+`x₀`. Then for every time step `τ ≥ 0` with `1 + m τ > 0` and every point `x : X`,
+`φ_τ(x) ≠ ⊥`. -/
+theorem GeodesicallyConvex.moreauYosida_ne_bot (h : GeodesicallyConvex m φ)
+    (hx₀ : LowerSemicontinuousAt φ x₀) (hx₀top : φ x₀ ≠ ⊤) (hx₀bot : φ x₀ ≠ ⊥)
+    (hmτ : 0 < 1 + m * τ) (x : X) :
+    moreauYosida φ τ x ≠ ⊥ :=
+  moreauYosida_ne_bot_of_lowerSemicontinuousAt (x₁ := x₀) hx₀ hx₀top hx₀bot hmτ
+    (fun {σ} hσ _ z hztop ↦ by
+      obtain ⟨γ, hγ, hconv⟩ := geodesicallyConvex_def.1 h hx₀top hztop
+      have hd : ConvexAlong (σ : ℝ)⁻¹ (fun y ↦ ((dist x₀ y ^ 2 / (2 * σ) : ℝ) : EReal)) γ := by
+        refine hγ.convexAlong_iff.2 fun t ht ↦ ?_
+        rw [hγ.dist_source_apply ht, dist_self]
+        push_cast
+        exact EReal.coe_le_coe_iff.2 (le_of_eq (by field_simp; ring))
+      have hΨγ := hγ.convexAlong_iff.1 (hconv.add hd)
+      exact ⟨dist x₀ z, fun t ht ↦ ⟨γ t, (hγ.dist_source_apply ht).le, hΨγ t ht⟩⟩)
+    x
+
+/-- **Existence of a coercive time step for geodesically convex energies.** If `φ` is
+`m`-geodesically convex on a pseudometric space, and is lower semicontinuous and finite at some
+point `x₀`, then for every `x : X` there exists `τ₀ > 0` with `φ_{τ₀}(x) ≠ ⊥`. -/
+theorem GeodesicallyConvex.exists_moreauYosida_ne_bot (h : GeodesicallyConvex m φ)
+    (hx₀ : LowerSemicontinuousAt φ x₀) (hx₀top : φ x₀ ≠ ⊤) (hx₀bot : φ x₀ ≠ ⊥) (x : X) :
+    ∃ τ₀ : ℝ≥0, 0 < τ₀ ∧ moreauYosida φ τ₀ x ≠ ⊥ := by
+  rcases le_or_gt 0 m with hm | hm
+  · exact ⟨1, one_pos, h.moreauYosida_ne_bot hx₀ hx₀top hx₀bot (by positivity) x⟩
+  · have hr : 0 < (-2 * m)⁻¹ := inv_pos.2 (by linarith)
+    refine ⟨((-2 * m)⁻¹).toNNReal, Real.toNNReal_pos.2 hr,
+      h.moreauYosida_ne_bot hx₀ hx₀top hx₀bot ?_ x⟩
+    rw [Real.coe_toNNReal _ hr.le]
+    have : m * (-2 * m)⁻¹ = -(1 / 2) := by field_simp [hm.ne]
+    linarith
+
+/-- **Existence of resolvent steps for geodesically convex energies on CAT(0) spaces.** In a
+complete CAT(0) pseudometric space, if `φ` is lower semicontinuous, `m`-geodesically convex, and
+never takes the value `⊥`, then for every time step `τ > 0` with `1 + m τ > 0` and every `x : X`,
+the resolvent `J_τ x` is nonempty. -/
+theorem GeodesicallyConvex.moreauYosidaResolvent_nonempty [CompleteSpace X] [IsCATZeroSpace X]
+    (hφ : LowerSemicontinuous φ) (h : GeodesicallyConvex m φ) (hbot : ∀ z, φ z ≠ ⊥)
+    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (x : X) :
+    (moreauYosidaResolvent φ τ x).Nonempty := by
+  refine h.penalizedConvex.moreauYosidaResolvent_nonempty hφ hτ hmτ ?_
+  by_cases hdom : ∃ x₀, φ x₀ ≠ ⊤
+  · obtain ⟨x₀, hx₀top⟩ := hdom
+    exact h.moreauYosida_ne_bot (hφ.lowerSemicontinuousAt x₀) hx₀top (hbot x₀) hmτ x
+  · rw [moreauYosida_eq_top_of_forall_eq_top fun z _ ↦ not_ne_iff.1 fun hz ↦ hdom ⟨z, hz⟩]
+    exact top_ne_bot
+
+/-- **Existence and uniqueness of the resolvent step for geodesically convex energies on CAT(0)
+metric spaces.** In a complete CAT(0) metric space, if `φ` is lower semicontinuous,
+`m`-geodesically convex, and finite at some point `x₀`, then for every time step `τ > 0` with
+`1 + m τ > 0` and every `x : X`, the resolvent `J_τ x` contains a unique point. -/
+theorem GeodesicallyConvex.existsUnique_mem_moreauYosidaResolvent {X : Type*} [MetricSpace X]
+    [CompleteSpace X] [IsCATZeroSpace X] {φ : X → EReal} {x₀ : X} (hφ : LowerSemicontinuous φ)
+    (h : GeodesicallyConvex m φ) (hx₀top : φ x₀ ≠ ⊤) (hx₀bot : φ x₀ ≠ ⊥)
+    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (x : X) :
+    ∃! y, y ∈ moreauYosidaResolvent φ τ x :=
+  h.penalizedConvex.existsUnique_mem_moreauYosidaResolvent hφ hτ hmτ
+    (h.moreauYosida_ne_bot (hφ.lowerSemicontinuousAt x₀) hx₀top hx₀bot hmτ x) ⟨x₀, hx₀top⟩
+
+/-- **Existence of minimizing movement sequences for geodesically convex energies on CAT(0)
+spaces.** In a complete CAT(0) pseudometric space, if `φ` is lower semicontinuous, `m`-geodesically
+convex, and never takes the value `⊥`, then for every time step `τ > 0` with `1 + m τ > 0` and
+every `x : X`, there is a minimizing movement sequence starting at `x`. -/
+theorem GeodesicallyConvex.exists_forall_mem_moreauYosidaResolvent [CompleteSpace X]
+    [IsCATZeroSpace X] (hφ : LowerSemicontinuous φ) (h : GeodesicallyConvex m φ)
+    (hbot : ∀ z, φ z ≠ ⊥) (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (x : X) :
+    ∃ u : ℕ → X, u 0 = x ∧ ∀ n, u (n + 1) ∈ moreauYosidaResolvent φ τ (u n) := by
+  choose f hf using h.moreauYosidaResolvent_nonempty hφ hbot hτ hmτ
+  exact ⟨fun n ↦ f^[n] x, rfl, fun n ↦ by simpa only [Function.iterate_succ_apply'] using hf _⟩
+
+/-- **Coercivity under curve convexity of the energy and of the squared distance**
+(Ambrosio–Gigli, Assumption 3.24). If `φ` is lower semicontinuous, never takes `⊥`, and any two
+points `v₀`, `v₁` of `{y | φ y ≠ ⊤}` are joined by a curve along which `φ` is `m`-convex and
+`z ↦ d(z, v₀)²` is `2`-convex, then `φ_τ(x) ≠ ⊥` whenever `1 + m τ > 0`. -/
+theorem moreauYosida_ne_bot_of_convexAlong_and_convexAlong_dist_sq (hφ : LowerSemicontinuous φ)
+    (hbot : ∀ y, φ y ≠ ⊥)
+    (hconv : ∀ ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
+      ConvexAlong m φ γ ∧ ConvexAlong 2 (fun z ↦ ((dist z v₀ ^ 2 : ℝ) : EReal)) γ)
+    (hmτ : 0 < 1 + m * τ) (x : X) :
+    moreauYosida φ τ x ≠ ⊥ := by
+  by_cases hdom : ∃ z₀, φ z₀ ≠ ⊤
+  · obtain ⟨z₀, hz₀⟩ := hdom
+    refine moreauYosida_ne_bot_of_lowerSemicontinuousAt (x₁ := z₀) (hφ.lowerSemicontinuousAt z₀) hz₀
+      (hbot z₀) hmτ (fun {σ} hσ _ z hz ↦ ?_) x
+    obtain ⟨γ, h0, h1, hφγ, hdγ⟩ := hconv hz₀ hz
+    have hd_mul : ∀ t ∈ Icc (0 : ℝ) 1, dist z₀ (γ t) ≤ t * dist z₀ z := fun t ht ↦ by
+      have hd0 : ConvexAlong 2 (fun z ↦ ((dist z (γ 0) ^ 2 : ℝ) : EReal)) γ := by
+        simpa only [h0] using hdγ
+      simpa only [h0, h1] using hd0.dist_le_mul ht
+    have hd : ConvexAlong (σ : ℝ)⁻¹ (fun y ↦ ((dist z₀ y ^ 2 / (2 * σ) : ℝ) : EReal)) γ := by
+      have hscaled := hdγ.const_mul (c := 1 / (2 * (σ : ℝ))) (by positivity)
+      have hm : (1 / (2 * (σ : ℝ))) * 2 = (σ : ℝ)⁻¹ := by field_simp
+      have hf : (fun x ↦ (((1 / (2 * (σ : ℝ))) : ℝ) : EReal) * ((dist x z₀ ^ 2 : ℝ) : EReal)) =
+          (fun y ↦ ((dist z₀ y ^ 2 / (2 * σ) : ℝ) : EReal)) := by
+        funext y; rw [← EReal.coe_mul, dist_comm]; congr 1; ring
+      rwa [hm, hf] at hscaled
+    have hΨ := convexAlong_def.1 (hφγ.add hd)
+    refine ⟨dist z₀ z, fun t ht ↦ ⟨γ t, ⟨hd_mul t ht, ?_⟩⟩⟩
+    simpa only [h0, h1, Pi.add_apply] using hΨ t ht
+  · rw [moreauYosida_eq_top_of_forall_eq_top fun z _ ↦ not_ne_iff.1 fun hz ↦ hdom ⟨z, hz⟩]
+    exact top_ne_bot
+
+/-- **Existence of resolvent steps under curve convexity of the energy and of the squared distance**
+(Ambrosio–Gigli, Assumption 3.24). In a complete pseudometric space, if `φ` is lower
+semicontinuous, never takes `⊥`, and satisfies Assumption 3.24 with parameter `m`, then `J_τ x` is
+nonempty whenever `τ > 0` and `1 + m τ > 0`. -/
+theorem moreauYosidaResolvent_nonempty_of_convexAlong_and_convexAlong_dist_sq [CompleteSpace X]
+    (hφ : LowerSemicontinuous φ) (hbot : ∀ y, φ y ≠ ⊥)
+    (hconv : ∀ (w : X) ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
+      ConvexAlong m φ γ ∧ ConvexAlong 2 (fun z ↦ ((dist z w ^ 2 : ℝ) : EReal)) γ)
+    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (x : X) :
+    (moreauYosidaResolvent φ τ x).Nonempty :=
+  (penalizedConvex_of_convexAlong_and_convexAlong_dist_sq hconv).moreauYosidaResolvent_nonempty
+    hφ hτ hmτ (moreauYosida_ne_bot_of_convexAlong_and_convexAlong_dist_sq hφ hbot
+      (fun v₀ _ h₀ h₁ ↦ hconv v₀ h₀ h₁) hmτ x)
+
+/-- **Existence and uniqueness of resolvent steps under curve convexity of the energy and of the
+squared distance** (Ambrosio–Gigli, Assumption 3.24). -/
+theorem existsUnique_mem_moreauYosidaResolvent_of_convexAlong_and_convexAlong_dist_sq
+    {X : Type*} [MetricSpace X] [CompleteSpace X] {φ : X → EReal}
+    (hφ : LowerSemicontinuous φ) (hbot : ∀ y, φ y ≠ ⊥)
+    (hconv : ∀ (w : X) ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
+      ConvexAlong m φ γ ∧ ConvexAlong 2 (fun z ↦ ((dist z w ^ 2 : ℝ) : EReal)) γ)
+    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (hdom : ∃ z, φ z ≠ ⊤) (x : X) :
+    ∃! y, y ∈ moreauYosidaResolvent φ τ x :=
+  (penalizedConvex_of_convexAlong_and_convexAlong_dist_sq hconv)
+    |>.existsUnique_mem_moreauYosidaResolvent hφ hτ hmτ
+      (moreauYosida_ne_bot_of_convexAlong_and_convexAlong_dist_sq hφ hbot
+        (fun v₀ _ h₀ h₁ ↦ hconv v₀ h₀ h₁) hmτ x) hdom
+
+/-- **Existence of minimizing movement sequences under curve convexity of the energy and of the
+squared distance** (Ambrosio–Gigli, Assumption 3.24). -/
+theorem exists_forall_mem_moreauYosidaResolvent_of_convexAlong_and_convexAlong_dist_sq
+    [CompleteSpace X] (hφ : LowerSemicontinuous φ) (hbot : ∀ y, φ y ≠ ⊥)
+    (hconv : ∀ (w : X) ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
+      ConvexAlong m φ γ ∧ ConvexAlong 2 (fun z ↦ ((dist z w ^ 2 : ℝ) : EReal)) γ)
+    (hτ : 0 < τ) (hmτ : 0 < 1 + m * τ) (x₀ : X) :
+    ∃ U : ℕ → X, U 0 = x₀ ∧ ∀ n, U (n + 1) ∈ moreauYosidaResolvent φ τ (U n) := by
+  choose f hf using
+    moreauYosidaResolvent_nonempty_of_convexAlong_and_convexAlong_dist_sq hφ hbot hconv hτ hmτ
+  exact ⟨fun n ↦ f^[n] x₀, rfl, fun n ↦ by simpa only [Function.iterate_succ_apply'] using hf _⟩
+
+end Existence
 
 end TauCeti
