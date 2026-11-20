@@ -523,6 +523,23 @@ end Inverse
 
 section Regularity
 
+/-- Integration by parts in the form `∫ u · conj (∂bar φ) = -∫ ∂u · conj φ`, the complex conjugate
+of `TauCeti.setIntegral_conjWirtingerDeriv_mul_conj_eq_neg_setIntegral_mul_conj_wirtingerDeriv`
+with `u` and `φ` exchanged. -/
+private theorem setIntegral_mul_conj_conjWirtingerDeriv_eq_neg (hu : ContDiff ℝ 1 u)
+    (hφ : ContDiff ℝ 1 φ) (hω : (conj ω₁ * ω₂).im ≠ 0) (hχ₁ : ‖χ₁‖ = 1) (hχ₂ : ‖χ₂‖ = 1)
+    (hu₁ : ∀ z, u (z + ω₁) = χ₁ * u z) (hu₂ : ∀ z, u (z + ω₂) = χ₂ * u z)
+    (hφ₁ : ∀ z, φ (z + ω₁) = χ₁ * φ z) (hφ₂ : ∀ z, φ (z + ω₂) = χ₂ * φ z) :
+    ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
+        u (p.1 * ω₁ + p.2 * ω₂) * conj (conjWirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) =
+      -∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
+        wirtingerDeriv u (p.1 * ω₁ + p.2 * ω₂) 1 * conj (φ (p.1 * ω₁ + p.2 * ω₂)) := by
+  have h := congrArg conj
+    (setIntegral_conjWirtingerDeriv_mul_conj_eq_neg_setIntegral_mul_conj_wirtingerDeriv hφ hu hω
+      hχ₁ hχ₂ hφ₁ hφ₂ hu₁ hu₂)
+  rw [← integral_conj, map_neg, ← integral_conj] at h
+  simpa only [map_mul, conj_conj, mul_comm] using h
+
 /-- **The `∂` and `∂bar` energies of a section agree.** Let `ω₁, ω₂` be linearly independent over
 `ℝ`, and let `u` be a `C²` function twisted by unit complex numbers `χ₁`, `χ₂` along `ω₁`, `ω₂`,
 that is, a section of a unitary flat line over the torus `ℂ / (ℤ ω₁ + ℤ ω₂)`. Then
@@ -539,9 +556,8 @@ theorem setIntegral_norm_wirtingerDeriv_sq_eq_setIntegral_norm_conjWirtingerDeri
     contDiff_iff_contDiffAt.2 fun z ↦ hu.contDiffAt.conjWirtingerDeriv_apply (by norm_num) 1
   -- Integrating by parts, `∫ ∂u conj ∂u = -∫ ∂bar ∂u conj u` and
   -- `∫ ∂bar u conj ∂bar u = -∫ u conj (∂ ∂bar u)`, and `∂ ∂bar u = ∂bar ∂u`.
-  have hA := setIntegral_conjWirtingerDeriv_mul_conj_eq_neg_setIntegral_mul_conj_wirtingerDeriv
-    hd (hu.of_le one_le_two) hω hχ₁ hχ₂ (wirtingerDeriv_add_apply_one_eq_mul h₁)
-    (wirtingerDeriv_add_apply_one_eq_mul h₂) h₁ h₂
+  have hA := setIntegral_mul_conj_conjWirtingerDeriv_eq_neg (hu.of_le one_le_two) hd hω hχ₁ hχ₂
+    h₁ h₂ (wirtingerDeriv_add_apply_one_eq_mul h₁) (wirtingerDeriv_add_apply_one_eq_mul h₂)
   have hB := setIntegral_conjWirtingerDeriv_mul_conj_eq_neg_setIntegral_mul_conj_wirtingerDeriv
     (hu.of_le one_le_two) hdb hω hχ₁ hχ₂ h₁ h₂ (conjWirtingerDeriv_add_apply_one_eq_mul h₁)
     (conjWirtingerDeriv_add_apply_one_eq_mul h₂)
@@ -549,13 +565,11 @@ theorem setIntegral_norm_wirtingerDeriv_sq_eq_setIntegral_norm_conjWirtingerDeri
   have key : ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
       conjWirtingerDeriv u (p.1 * ω₁ + p.2 * ω₂) 1 *
         conj (conjWirtingerDeriv u (p.1 * ω₁ + p.2 * ω₂) 1) =
-      conj (∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
+      ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
         wirtingerDeriv u (p.1 * ω₁ + p.2 * ω₂) 1 *
-          conj (wirtingerDeriv u (p.1 * ω₁ + p.2 * ω₂) 1)) := by
-    rw [hB, ← neg_neg (∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, _ * conj (wirtingerDeriv u _ 1)),
-      ← hA, map_neg, ← integral_conj]
-    simp only [map_mul, conj_conj, mul_comm]
-  simp only [mul_conj', ← ofReal_pow, integral_complex_ofReal, conj_ofReal] at key
+          conj (wirtingerDeriv u (p.1 * ω₁ + p.2 * ω₂) 1) := by
+    rw [hB, hA, neg_neg]
+  simp only [mul_conj', ← ofReal_pow, integral_complex_ofReal] at key
   exact (ofReal_injective key).symm
 
 /-- The conjugate Wirtinger derivative `∂bar` on test sections, with values in `L²` of the
@@ -676,7 +690,7 @@ theorem norm_flatLineBeurling_apply (hω : (conj ω₁ * ω₂).im ≠ 0)
       Submodule.coe_subtypeL, Submodule.coe_subtype]
   · rw [Submodule.toLinearMap_subtypeL, Submodule.range_subtype,
       topologicalClosure_range_conjWirtingerToLp hω hθ]
-    trivial
+    exact Submodule.mem_top
 
 /-- The weak derivative `v • flatLineBeurling f + conj v • f` of the inverse of `∂bar` along a
 direction `v` (`TauCeti.setIntegral_flatLineCRInverse_mul_conj_fderiv`) has norm at most
@@ -692,23 +706,6 @@ theorem norm_smul_flatLineBeurling_add_smul_le (hω : (conj ω₁ * ω₂).im �
         simpa only [norm_smul, norm_conj] using
           norm_add_le (v • flatLineBeurling ω₁ ω₂ θ₁ θ₂ f) (conj v • f)
     _ ≤ 2 * ‖v‖ * ‖f‖ := by nlinarith [norm_nonneg v]
-
-/-- Integration by parts in the form `∫ u · conj (∂bar φ) = -∫ ∂u · conj φ`, the complex conjugate
-of `TauCeti.setIntegral_conjWirtingerDeriv_mul_conj_eq_neg_setIntegral_mul_conj_wirtingerDeriv`
-with `u` and `φ` exchanged. -/
-private theorem setIntegral_mul_conj_conjWirtingerDeriv_eq_neg (hu : ContDiff ℝ 1 u)
-    (hφ : ContDiff ℝ 1 φ) (hω : (conj ω₁ * ω₂).im ≠ 0) (hχ₁ : ‖χ₁‖ = 1) (hχ₂ : ‖χ₂‖ = 1)
-    (hu₁ : ∀ z, u (z + ω₁) = χ₁ * u z) (hu₂ : ∀ z, u (z + ω₂) = χ₂ * u z)
-    (hφ₁ : ∀ z, φ (z + ω₁) = χ₁ * φ z) (hφ₂ : ∀ z, φ (z + ω₂) = χ₂ * φ z) :
-    ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
-        u (p.1 * ω₁ + p.2 * ω₂) * conj (conjWirtingerDeriv φ (p.1 * ω₁ + p.2 * ω₂) 1) =
-      -∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
-        wirtingerDeriv u (p.1 * ω₁ + p.2 * ω₂) 1 * conj (φ (p.1 * ω₁ + p.2 * ω₂)) := by
-  have h := congrArg conj
-    (setIntegral_conjWirtingerDeriv_mul_conj_eq_neg_setIntegral_mul_conj_wirtingerDeriv hφ hu hω
-      hχ₁ hχ₂ hφ₁ hφ₂ hu₁ hu₂)
-  rw [← integral_conj, map_neg, ← integral_conj] at h
-  simpa only [map_mul, conj_conj, mul_comm] using h
 
 /-- Integration by parts for test sections in inner product form:
 `⟪∂bar φ, u⟫ + ⟪φ, ∂u⟫ = 0`. -/
