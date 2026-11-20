@@ -50,6 +50,9 @@ a free module of rank `[G : U]` over the Iwasawa algebra `Λ(U)` of an open subg
 * `TauCeti.completedGroupAlgebra.free_mulOpposite_of_isOpen`,
   `TauCeti.completedGroupAlgebra.finite_mulOpposite_of_isOpen`: `R[[Γ]]` is a free and finite
   right `R[[H]]`-module.
+* `TauCeti.completedGroupAlgebra.finrank_eq_index`,
+  `TauCeti.completedGroupAlgebra.finrank_mulOpposite_eq_index`: the rank of `R[[Γ]]` over `R[[H]]`,
+  on either side, is the index `[Γ : H]`, when `R[[H]]` satisfies the strong rank condition.
 * `TauCeti.completedGroupAlgebra.finite_iff_finite`: an `R[[Γ]]`-module is finitely generated
   exactly when it is finitely generated over `R[[H]]`.
 
@@ -126,8 +129,11 @@ theorem basisRightTransversal_apply (t : T) :
 @[simp]
 theorem basisRightTransversal_repr_apply (x : completedGroupAlgebra R Γ) (t : T) :
     letI := (map R H.subtype H.continuous_subtype).toRingHom.toModule
-    (basisRightTransversal R hH hT).repr x t = restrict R hH (x * of R Γ (t : Γ)⁻¹) :=
-  (rfl)
+    (basisRightTransversal R hH hT).repr x t = restrict R hH (x * of R Γ (t : Γ)⁻¹) := by
+  let _ := (map R H.subtype H.continuous_subtype).toRingHom.toModule
+  have := hT.finite_right.to_subtype
+  rw [basisRightTransversal, Module.Basis.ofEquivFun_repr_apply]
+  rfl
 
 end Left
 
@@ -152,10 +158,21 @@ theorem finite_of_isOpen :
   .of_basis (basisRightTransversal R hH hT)
 
 include hH in
+/-- **The rank of a completed group algebra over an open subgroup is the index**, as a left
+module. The hypothesis `StrongRankCondition` makes the rank well behaved; it holds for instance
+when `R[[H]]` is Noetherian (`IsNoetherianRing.strongRankCondition`). -/
+theorem finrank_eq_index [StrongRankCondition (completedGroupAlgebra R H)] :
+    letI := (map R H.subtype H.continuous_subtype).toRingHom.toModule
+    Module.finrank (completedGroupAlgebra R H) (completedGroupAlgebra R Γ) = H.index :=
+  letI := (map R H.subtype H.continuous_subtype).toRingHom.toModule
+  let hT := (H.exists_isComplement_right 1).choose_spec.1
+  (Module.finrank_eq_nat_card_basis (basisRightTransversal R hH hT)).trans hT.card_right
+
+include hH in
 /-- **Finite generation over an open subgroup.** Let `M` be an `R[[Γ]]`-module on which `R[[H]]`
 acts through the inclusion. Then `M` is finitely generated over `R[[H]]` exactly when it is
 finitely generated over `R[[Γ]]`. -/
-theorem finite_iff_finite (M : Type*) [AddCommGroup M] [Module (completedGroupAlgebra R Γ) M]
+theorem finite_iff_finite (M : Type*) [AddCommMonoid M] [Module (completedGroupAlgebra R Γ) M]
     [Module (completedGroupAlgebra R H) M]
     (hM : ∀ (a : completedGroupAlgebra R H) (m : M),
       a • m = map R H.subtype H.continuous_subtype a • m) :
@@ -244,8 +261,12 @@ theorem basisLeftTransversal_apply (s : S) :
 theorem basisLeftTransversal_repr_apply (x : completedGroupAlgebra R Γ) (s : S) :
     letI := Module.compHom (completedGroupAlgebra R Γ)
       (map R H.subtype H.continuous_subtype).toRingHom.op
-    (basisLeftTransversal R hH hS).repr x s = .op (restrict R hH (of R Γ (s : Γ)⁻¹ * x)) :=
-  (rfl)
+    (basisLeftTransversal R hH hS).repr x s = .op (restrict R hH (of R Γ (s : Γ)⁻¹ * x)) := by
+  let _ := Module.compHom (completedGroupAlgebra R Γ)
+    (map R H.subtype H.continuous_subtype).toRingHom.op
+  have := hS.finite_left.to_subtype
+  rw [basisLeftTransversal, Module.Basis.ofEquivFun_repr_apply]
+  rfl
 
 end Right
 
@@ -272,5 +293,19 @@ theorem finite_mulOpposite_of_isOpen :
   let hS := (H.exists_isComplement_left 1).choose_spec.1
   have := hS.finite_left.to_subtype
   .of_basis (basisLeftTransversal R hH hS)
+
+include hH in
+/-- **The rank of a completed group algebra over an open subgroup is the index**, as a right
+module. The hypothesis `StrongRankCondition` holds for instance when `R[[H]]ᵐᵒᵖ` is Noetherian,
+that is when `R[[H]]` is right Noetherian. -/
+theorem finrank_mulOpposite_eq_index
+    [StrongRankCondition (completedGroupAlgebra R H)ᵐᵒᵖ] :
+    letI := Module.compHom (completedGroupAlgebra R Γ)
+      (map R H.subtype H.continuous_subtype).toRingHom.op
+    Module.finrank (completedGroupAlgebra R H)ᵐᵒᵖ (completedGroupAlgebra R Γ) = H.index :=
+  letI := Module.compHom (completedGroupAlgebra R Γ)
+    (map R H.subtype H.continuous_subtype).toRingHom.op
+  let hS := (H.exists_isComplement_left 1).choose_spec.1
+  (Module.finrank_eq_nat_card_basis (basisLeftTransversal R hH hS)).trans hS.card_left
 
 end TauCeti.completedGroupAlgebra

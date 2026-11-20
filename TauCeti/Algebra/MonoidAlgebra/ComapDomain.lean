@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.Algebra.MonoidAlgebra.Module
-public import Mathlib.Algebra.Group.Subgroup.Ker
 
 /-!
 # Pulling coefficients of a monoid algebra back along an injective map
@@ -17,10 +16,10 @@ the coefficients of an element of `R[N]` at the points of the range of `f` and d
 This file adds its interaction with the module structure and with `MonoidAlgebra.mapDomain`, and,
 for an injective group homomorphism `φ : K →* G`, its interaction with multiplication.
 
-Along `φ`, `comapDomain φ` is the *restriction to the subgroup* `φ.range`: it is a retraction of
+Along `φ`, `comapDomain φ` is the *restriction to the subgroup* `Set.range φ`: it is a retraction of
 `mapDomain φ`, and it is linear for the two-sided action of `R[K]` on `R[G]` through `mapDomain φ`.
-Together with the monomials at a transversal of `φ.range` it decomposes every element of `R[G]`:
-for a family `t` of representatives of the right cosets `φ.range * t i`,
+Together with the monomials at a transversal of `Set.range φ` it decomposes every element of `R[G]`:
+for a family `t` of representatives of the right cosets `Set.range φ * t i`,
 `y = ∑ i, mapDomain φ (comapDomain φ (y * single (t i)⁻¹ 1)) * single (t i) 1`, and symmetrically
 for the left cosets. These identities are what show that `R[G]` is free over `R[K]` on the coset
 representatives with explicit coordinates, and they are the levelwise input for the same
@@ -38,7 +37,7 @@ statement about completed group algebras.
   the source group algebra through `mapDomain φ`.
 * `MonoidAlgebra.sum_mapDomain_comapDomain_mul_single`,
   `MonoidAlgebra.sum_single_mul_mapDomain_comapDomain`: the decomposition of an element of `R[G]`
-  along representatives of the right, respectively left, cosets of `φ.range`.
+  along representatives of the right, respectively left, cosets of `Set.range φ`.
 -/
 
 public section

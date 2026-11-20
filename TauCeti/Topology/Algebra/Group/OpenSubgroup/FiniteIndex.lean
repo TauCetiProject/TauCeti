@@ -38,8 +38,9 @@ Every proper open subgroup of a compact group lies in a maximal open subgroup. T
 by passing to a finite quotient by an open normal subgroup contained in the given subgroup.
 
 The normal core of an open subgroup is open as soon as its normalizer has finite index; so an open
-subgroup of finite index contains an open normal subgroup of finite index, and so does every open
-normal subgroup of an open subgroup of finite index. This needs no compactness.
+subgroup of finite index contains an open normal subgroup of finite index, and every open normal
+subgroup of an open subgroup of finite index contains an open normal subgroup of the ambient group.
+This needs no compactness.
 
 ## Main results
 

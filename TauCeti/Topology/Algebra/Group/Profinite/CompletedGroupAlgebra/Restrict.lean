@@ -17,7 +17,7 @@ import TauCeti.Algebra.MonoidAlgebra.ComapDomain
 Let `H` be an open subgroup of finite index of a topological group `Γ`. The inclusion of `H`
 induces an `R`-algebra homomorphism `map R H.subtype _ : R[[H]] → R[[Γ]]`. This file constructs a
 retraction of it in the opposite direction, the `R`-linear map
-`completedGroupAlgebra.restrict R H hH : R[[Γ]] → R[[H]]`. Thinking of `R[[Γ]]` as `R`-valued
+`completedGroupAlgebra.restrict R hH : R[[Γ]] → R[[H]]`. Thinking of `R[[Γ]]` as `R`-valued
 measures on `Γ`, it restricts a measure to the clopen subset `H`. On a group element `γ` it gives
 `γ` itself if `γ ∈ H` and `0` otherwise, and it is linear for the two-sided action of `R[[H]]` on
 `R[[Γ]]`.
@@ -37,7 +37,7 @@ decompositions are what make `R[[Γ]]` a free `R[[H]]`-module on the coset repre
 
 ## Main definitions
 
-* `TauCeti.completedGroupAlgebra.restrict R H hH`: the restriction `R[[Γ]] →ₗ[R] R[[H]]` to an
+* `TauCeti.completedGroupAlgebra.restrict R hH`: the restriction `R[[Γ]] →ₗ[R] R[[H]]` to an
   open subgroup `H` of finite index.
 
 ## Main results
@@ -267,8 +267,8 @@ theorem restrict_mul_map (x : completedGroupAlgebra R Γ) (a : completedGroupAlg
     rw [proj_comap_restrict R hH hV, map_mul, map_mul, proj_map_subtype,
       comapDomain_mul_mapDomain, proj_comap_restrict R hH hV]
 
-/-- The restriction of the group element `γ` multiplied by the inverse of `δ` is `1` when `γ = δ`
-and `0` when `γ` and `δ` are distinct elements of a right transversal of `H`. -/
+/-- For `s t` in a right transversal of `H`, the restriction of the group element `s * t⁻¹` is `1`
+if `s = t` and `0` otherwise. -/
 theorem restrict_of_mul_inv_of_isComplement {T : Set Γ} (hT : Subgroup.IsComplement (H : Set Γ) T)
     [DecidableEq T] (s t : T) :
     restrict R hH (of R Γ (s : Γ) * of R Γ (t : Γ)⁻¹) = if s = t then 1 else 0 := by
@@ -279,8 +279,8 @@ theorem restrict_of_mul_inv_of_isComplement {T : Set Γ} (hT : Subgroup.IsComple
     obtain ⟨u, -, hu⟩ := Subgroup.isComplement_iff_existsUnique_mul_inv_mem.mp hT s
     exact (hu s (by simp)).trans (hu t h).symm
 
-/-- The restriction of the inverse of the group element `δ` multiplied by `γ` is `1` when `γ = δ`
-and `0` when `γ` and `δ` are distinct elements of a left transversal of `H`. -/
+/-- For `s t` in a left transversal of `H`, the restriction of the group element `s⁻¹ * t` is `1`
+if `s = t` and `0` otherwise. -/
 theorem restrict_of_inv_mul_of_isComplement {S : Set Γ} (hS : Subgroup.IsComplement S (H : Set Γ))
     [DecidableEq S] (s t : S) :
     restrict R hH (of R Γ (s : Γ)⁻¹ * of R Γ (t : Γ)) = if s = t then 1 else 0 := by
