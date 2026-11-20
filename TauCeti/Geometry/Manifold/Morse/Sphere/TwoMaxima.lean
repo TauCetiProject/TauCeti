@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.IndexOne
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Saddle
+import TauCeti.Analysis.Calculus.Deriv.SignChange
 import TauCeti.Geometry.Manifold.Morse.Stable.OneDimensional
 
 /-!
@@ -45,7 +46,7 @@ therefore `ℤ`, `0`, `ℤ` in degrees `2`, `1`, `0`, that of `S²`. Forgetting 
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `mem_unstableSet_iff_zero_lt_sphereHeight_mul_sphereHeight`: a point of the stable manifold of
+* `mem_unstableSet_iff_sphereHeight_mul_sphereHeight_pos`: a point of the stable manifold of
   the saddle lies on a trajectory from the maximum `m` exactly when it is on the side of `m`.
 * `exists_unstableSet_inter_stableSet_eq_orbit_sphereHeight_sq_add_smul_sphereHeight` and
   `ncard_morseTrajectorySlice_sphereHeight_sq_add_smul_sphereHeight`: the trajectories from a
@@ -131,6 +132,27 @@ private theorem mem_criticalPoints_cases (huv : ⟪(u : E), (v : E)⟫ = 0) (ht�
   · exact Or.inr (Or.inr ⟨h1, h2, manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_of_eq
       huv h1 h2 (by nlinarith)⟩)
 
+/-- `hᵤ² + t hᵥ` is a Morse function for `0 < t < 2`. -/
+private theorem isMorse_sphereHeight_sq_add_smul_sphereHeight_of_lt (huv : ⟪(u : E), (v : E)⟫ = 0)
+    (ht₀ : 0 < t) (ht₂ : t < 2) : IsMorse (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) :=
+  isMorse_sphereHeight_sq_add_smul_sphereHeight huv ht₀.ne' (by nlinarith)
+
+/-- The saddle `v` is a critical point of `hᵤ² + t hᵥ`. -/
+private theorem mfderiv_sphereHeight_sq_add_smul_sphereHeight_self
+    (huv : ⟪(u : E), (v : E)⟫ = 0) (ht₀ : t ≠ 0) :
+    mfderiv (𝓡 n) 𝓘(ℝ) (sphereHeight u ^ 2 + t • sphereHeight v) v = 0 :=
+  mem_criticalPoints_iff_mfderiv_eq_zero.1
+    ((mem_criticalPoints_sphereHeight_sq_add_smul_sphereHeight_iff huv ht₀).2 (Or.inl rfl))
+
+/-- For `n ≥ 1`, the saddle `v` has index one less than the dimension of the sphere. -/
+private theorem manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self_add_one
+    (huv : ⟪(u : E), (v : E)⟫ = 0) (ht₀ : 0 < t) (ht₂ : t < 2) (hn : 1 ≤ n) :
+    manifoldMorseIndex (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) v + 1 =
+      finrank ℝ (EuclideanSpace ℝ (Fin n)) := by
+  rw [manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self huv ht₀ ht₂,
+    finrank_euclideanSpace_fin]
+  omega
+
 /-- A critical point of `hᵤ² + t hᵥ` with `hᵥ = t / 2` is one of the two maxima. -/
 private theorem sq_sphereHeight_of_mem_criticalPoints (huv : ⟪(u : E), (v : E)⟫ = 0)
     (ht₀ : 0 < t) (ht₂ : t < 2) {x : sphere (0 : E) 1}
@@ -177,34 +199,6 @@ private theorem differentiableAt_sphereHeight_symm_smul
     (((contMDiff_sphereHeight (n := n) (m := 1) u).contMDiffAt.comp 0 hc).mdifferentiableAt
       one_ne_zero)
 
-/-- A real function differentiable at `0`, vanishing there, with `r² ≤ 2 g(r)²` near `0`, takes
-both signs arbitrarily close to `0`: its derivative at `0` is nonzero, so `0` is not a local
-extremum. -/
-private theorem frequently_lt_zero_and_frequently_pos_of_sq_le {g : ℝ → ℝ}
-    (hg : DifferentiableAt ℝ g 0) (h0 : g 0 = 0) (hsq : ∀ᶠ r in 𝓝 0, r ^ 2 ≤ 2 * g r ^ 2) :
-    (∃ᶠ r in 𝓝 0, g r < 0) ∧ ∃ᶠ r in 𝓝 0, 0 < g r := by
-  have hd : deriv g 0 ≠ 0 := by
-    intro hd
-    have ho := hasDerivAt_iff_isLittleO_nhds_zero.1 (hd ▸ hg.hasDerivAt)
-    simp only [zero_add, h0, sub_zero, smul_zero] at ho
-    -- `|g r| ≤ |r| / 2` near `0` contradicts `r² ≤ 2 g(r)²` at every `r ≠ 0`.
-    have hzero : ∀ᶠ r in 𝓝[≠] (0 : ℝ), r = 0 ∧ r ≠ 0 := by
-      refine ((((ho.def (c := 1 / 2) (by norm_num)).and hsq).filter_mono nhdsWithin_le_nhds).and
-        self_mem_nhdsWithin).mono fun r ⟨⟨h₁, h₂⟩, hr⟩ ↦ ⟨?_, hr⟩
-      rw [Real.norm_eq_abs, Real.norm_eq_abs] at h₁
-      have h₃ : g r ^ 2 ≤ (1 / 2 * |r|) ^ 2 := by
-        rw [← sq_abs (g r)]
-        exact pow_le_pow_left₀ (abs_nonneg _) h₁ 2
-      nlinarith [sq_abs r, sq_nonneg r]
-    obtain ⟨r, hr, hr'⟩ := hzero.exists
-    exact hr' hr
-  refine ⟨fun h ↦ hd (IsLocalMin.deriv_eq_zero (h.mono fun r hr ↦ ?_)),
-    fun h ↦ hd (IsLocalMax.deriv_eq_zero (h.mono fun r hr ↦ ?_))⟩
-  · rw [h0]
-    exact not_lt.1 hr
-  · rw [h0]
-    exact not_lt.1 hr
-
 namespace IsAdaptedPseudoGradient
 
 variable [FiniteDimensional ℝ E] {X : (x : sphere (0 : E) 1) → TangentSpace (𝓡 n) x}
@@ -214,7 +208,7 @@ variable [FiniteDimensional ℝ E] {X : (x : sphere (0 : E) 1) → TangentSpace 
 maxima, and `hᵤ y` has the sign of `hᵤ m`. Along the trajectory `f > t` before `y`, whereas
 `f ≤ t` on the great sphere `hᵤ = 0`, so the trajectory never crosses it. -/
 private theorem isMax_and_pos_of_mem_unstableSet_inter_stableSet
-    (huv : ⟪(u : E), (v : E)⟫ = 0) (ht₀ : 0 < t) (ht₂ : t < 2)
+    (huv : ⟪(u : E), (v : E)⟫ = 0) (ht₀ : 0 < t)
     (hX : IsAdaptedPseudoGradient (sphereHeight u ^ 2 + t • sphereHeight v) X)
     {m y : sphere (0 : E) 1}
     (hm : m ∈ criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v))
@@ -235,7 +229,11 @@ private theorem isMax_and_pos_of_mem_unstableSet_inter_stableSet
       linarith
     · exact hm
   refine ⟨hmax, ?_⟩
-  have hm0 : 0 < sphereHeight u m * sphereHeight u m := by nlinarith [hmax.2]
+  -- `hᵤ m ≠ 0`: otherwise `t < f m = t² / 2` and `t² = 4`.
+  have hm0 : 0 < sphereHeight u m * sphereHeight u m := by
+    have hfm := hval.1.trans hval.2
+    simp only [Pi.add_apply, Pi.pow_apply, Pi.smul_apply, smul_eq_mul, hmax.1] at hfm
+    nlinarith [hmax.2, sq_nonneg (sphereHeight u m), sq_nonneg (t - 2)]
   by_contra hneg
   push Not at hneg
   -- `k s = hᵤ (φ_s y) hᵤ m` is at most `0` at `s = 0` and tends to `hᵤ m² > 0` as `s → -∞`.
@@ -266,16 +264,12 @@ private theorem exists_mem_stableSet_sphereHeight_neg_and_pos
     (hX : IsAdaptedPseudoGradient (sphereHeight u ^ 2 + t • sphereHeight v) X) :
     (∃ y ∈ hX.flow.stableSet v, sphereHeight u y < 0) ∧
       ∃ y ∈ hX.flow.stableSet v, 0 < sphereHeight u y := by
-  have hv : mfderiv (𝓡 n) 𝓘(ℝ) (sphereHeight u ^ 2 + t • sphereHeight v) v = 0 :=
-    mem_criticalPoints_iff_mfderiv_eq_zero.1
-      ((mem_criticalPoints_sphereHeight_sq_add_smul_sphereHeight_iff huv ht₀.ne').2 (Or.inl rfl))
-  obtain ⟨φ, hφ⟩ := hX.exists_morseChart v hv
+  obtain ⟨φ, hφ⟩ :=
+    hX.exists_morseChart v (mfderiv_sphereHeight_sq_add_smul_sphereHeight_self huv ht₀.ne')
   obtain ⟨ε, hε, hεs⟩ := hX.exists_forall_mem_stableSet_iff φ hφ
   obtain ⟨R, hR, hRT⟩ := φ.exists_pos_forall_norm_lt_mem_target
-  obtain ⟨j, hj, hneg⟩ := φ.exists_weight_eq_one_of_add_one_eq_finrank (by
-    rw [manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self huv ht₀ ht₂,
-      finrank_euclideanSpace_fin]
-    omega)
+  obtain ⟨j, hj, hneg⟩ := φ.exists_weight_eq_one_of_add_one_eq_finrank
+    (manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self_add_one huv ht₀ ht₂ hn)
   -- The coordinate line `γ r` of positive weight through `v`.
   set a : EuclideanSpace ℝ (Fin n) := φ.coord.symm (Pi.single j 1)
   set γ : ℝ → sphere (0 : E) 1 := fun r ↦ φ.toChart.symm (r • a)
@@ -310,34 +304,50 @@ private theorem exists_mem_stableSet_sphereHeight_neg_and_pos
     rw [← φ.apply_self, φ.toChart.left_inv φ.mem_source, sphereHeight_apply, real_inner_comm, huv]
   have hdiff := differentiableAt_sphereHeight_symm_smul (u := u) φ.mem_maximalAtlas
     (by simpa using hT 0 (by rwa [abs_zero])) a
-  obtain ⟨hl, hp⟩ := frequently_lt_zero_and_frequently_pos_of_sq_le hdiff h0 hsq
+  -- So `hᵤ` grows at least linearly along the line, and takes both signs near `v`.
+  have hO : (fun r ↦ r - 0) =O[𝓝 0] fun r ↦ sphereHeight u (γ r) - sphereHeight u (γ 0) :=
+    Asymptotics.IsBigO.of_bound 2 (hsq.mono fun r hr ↦ by
+      rw [h0, sub_zero, sub_zero, Real.norm_eq_abs, Real.norm_eq_abs, ← abs_two, ← abs_mul]
+      exact sq_le_sq.1 (by nlinarith [sq_nonneg (sphereHeight u (γ r))]))
+  obtain ⟨hl, hp⟩ := frequently_lt_and_frequently_gt_of_isBigO_sub hdiff hO
   obtain ⟨r, hr, hrs⟩ := (hl.and_eventually hmem).exists
   obtain ⟨r', hr', hrs'⟩ := (hp.and_eventually hmem).exists
-  exact ⟨⟨γ r, hrs, hr⟩, ⟨γ r', hrs', hr'⟩⟩
+  exact ⟨⟨γ r, hrs, hr.trans_eq h0⟩, ⟨γ r', hrs', h0.symm.trans_lt hr'⟩⟩
 
 /-- **The trajectories from a maximum into the saddle are those on its side.** Let `m` be one of
 the two maxima of `hᵤ² + t hᵥ`, the points with `hᵥ = t / 2` and `hᵤ² = 1 - t² / 4`. A point `y`
-of the stable manifold of the saddle `v`, other than `v`, lies on a trajectory from `m` exactly
-when `hᵤ y` has the sign of `hᵤ m`. -/
-theorem mem_unstableSet_iff_zero_lt_sphereHeight_mul_sphereHeight
+of the stable manifold of the saddle `v` lies on a trajectory from `m` exactly when `hᵤ y` has the
+sign of `hᵤ m`. The saddle itself satisfies neither condition. -/
+theorem mem_unstableSet_iff_sphereHeight_mul_sphereHeight_pos
     (huv : ⟪(u : E), (v : E)⟫ = 0) (ht₀ : 0 < t) (ht₂ : t < 2)
     (hX : IsAdaptedPseudoGradient (sphereHeight u ^ 2 + t • sphereHeight v) X)
     {m y : sphere (0 : E) 1} (h1 : sphereHeight v m = t / 2)
-    (h2 : sphereHeight u m ^ 2 = 1 - t ^ 2 / 4) (hy : y ∈ hX.flow.stableSet v) (hyv : y ≠ v) :
+    (h2 : sphereHeight u m ^ 2 = 1 - t ^ 2 / 4) (hy : y ∈ hX.flow.stableSet v) :
     y ∈ hX.flow.unstableSet m ↔ 0 < sphereHeight u y * sphereHeight u m := by
+  -- The saddle is on neither side: `hᵤ v = 0`, and the rest point `v` lies only in `W^u(v)`.
+  rcases eq_or_ne y v with rfl | hyv
+  · have hu : sphereHeight u y = 0 := by rw [sphereHeight_apply, real_inner_comm, huv]
+    rw [hu, zero_mul, lt_self_iff_false, iff_false]
+    intro hym
+    have hlim := Flow.mem_unstableSet.1 hym
+    simp only [hX.flow_apply_of_mfderiv_eq_zero
+      (mfderiv_sphereHeight_sq_add_smul_sphereHeight_self huv ht₀.ne')] at hlim
+    obtain rfl := tendsto_nhds_unique tendsto_const_nhds hlim
+    rw [sphereHeight_self] at h1
+    linarith
   have hcrit (x : sphere (0 : E) 1) (h1 : sphereHeight v x = t / 2)
       (h2 : sphereHeight u x ^ 2 = 1 - t ^ 2 / 4) :
       x ∈ criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) :=
     (mem_criticalPoints_sphereHeight_sq_add_smul_sphereHeight_iff huv ht₀.ne').2
       (Or.inr (Or.inr ⟨h1, h2⟩))
-  refine ⟨fun hym ↦ (isMax_and_pos_of_mem_unstableSet_inter_stableSet huv ht₀ ht₂ hX
+  refine ⟨fun hym ↦ (isMax_and_pos_of_mem_unstableSet_inter_stableSet huv ht₀ hX
     (hcrit m h1 h2) ⟨hym, hy⟩ hyv).2, fun hpos ↦ ?_⟩
   -- The trajectory through `y` leaves a maximum `m'` on the side of `y`, which is `m`.
-  have hf := isMorse_sphereHeight_sq_add_smul_sphereHeight (n := n) huv ht₀.ne' (by nlinarith)
+  have hf := isMorse_sphereHeight_sq_add_smul_sphereHeight_of_lt (n := n) huv ht₀ ht₂
   obtain ⟨m', hm', hym'⟩ := mem_iUnion₂.1 ((hX.iUnion_unstableSet hf).symm ▸ mem_univ y :
     y ∈ ⋃ x ∈ {x | mfderiv (𝓡 n) 𝓘(ℝ) (sphereHeight u ^ 2 + t • sphereHeight v) x = 0},
       hX.flow.unstableSet x)
-  obtain ⟨⟨h1', h2'⟩, hpos'⟩ := isMax_and_pos_of_mem_unstableSet_inter_stableSet huv ht₀ ht₂ hX
+  obtain ⟨⟨h1', h2'⟩, hpos'⟩ := isMax_and_pos_of_mem_unstableSet_inter_stableSet huv ht₀ hX
     (mem_criticalPoints_iff_mfderiv_eq_zero.2 hm') ⟨hym', hy⟩ hyv
   have hsame : sphereHeight u m' = sphereHeight u m := by
     rcases sq_eq_sq_iff_eq_or_eq_neg.1 (h2'.trans h2.symm) with h | h
@@ -356,35 +366,28 @@ theorem exists_unstableSet_inter_stableSet_eq_orbit_sphereHeight_sq_add_smul_sph
     {m : sphere (0 : E) 1} (h1 : sphereHeight v m = t / 2)
     (h2 : sphereHeight u m ^ 2 = 1 - t ^ 2 / 4) :
     ∃ z, hX.flow.unstableSet m ∩ hX.flow.stableSet v = hX.flow.orbit z := by
-  have hne {z : sphere (0 : E) 1} (hz : sphereHeight u z * sphereHeight u m ≠ 0) : z ≠ v := by
-    rintro rfl
-    rw [sphereHeight_apply, real_inner_comm, huv, zero_mul] at hz
-    exact hz rfl
-  have hiff {y : sphere (0 : E) 1} (hy : y ∈ hX.flow.stableSet v)
-      (hyv : sphereHeight u y * sphereHeight u m ≠ 0) :=
-    mem_unstableSet_iff_zero_lt_sphereHeight_mul_sphereHeight huv ht₀ ht₂ hX h1 h2 hy (hne hyv)
   -- Points of `W^s(v)` on both sides of `hᵤ = 0`: the one on the side of `m` comes from `m`, the
   -- other does not.
   obtain ⟨⟨a, ha, ha'⟩, ⟨b, hb, hb'⟩⟩ :=
     exists_mem_stableSet_sphereHeight_neg_and_pos huv ht₀ ht₂ hn hX
-  have hind : manifoldMorseIndex (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) v + 1 =
-      finrank ℝ (EuclideanSpace ℝ (Fin n)) := by
-    rw [manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self huv ht₀ ht₂,
-      finrank_euclideanSpace_fin]
-    omega
-  have hv : mfderiv (𝓡 n) 𝓘(ℝ) (sphereHeight u ^ 2 + t • sphereHeight v) v = 0 :=
-    mem_criticalPoints_iff_mfderiv_eq_zero.1
-      ((mem_criticalPoints_sphereHeight_sq_add_smul_sphereHeight_iff huv ht₀.ne').2 (Or.inl rfl))
-  rcases lt_or_gt_of_ne (show sphereHeight u m ≠ 0 by intro h; rw [h] at h2; nlinarith) with
-    hm | hm
-  · have hpos := mul_pos_of_neg_of_neg ha' hm
-    have hneg := mul_neg_of_pos_of_neg hb' hm
-    exact ⟨a, hX.unstableSet_inter_stableSet_eq_orbit hv hind ⟨(hiff ha hpos.ne').2 hpos, ha⟩
-      (hne hpos.ne') hb (hne hneg.ne) fun h ↦ ((hiff hb hneg.ne).1 h).not_gt hneg⟩
-  · have hpos := mul_pos hb' hm
-    have hneg := mul_neg_of_neg_of_pos ha' hm
-    exact ⟨b, hX.unstableSet_inter_stableSet_eq_orbit hv hind ⟨(hiff hb hpos.ne').2 hpos, hb⟩
-      (hne hpos.ne') ha (hne hneg.ne) fun h ↦ ((hiff ha hneg.ne).1 h).not_gt hneg⟩
+  obtain ⟨y, hy, hpos, z, hz, hneg⟩ : ∃ y ∈ hX.flow.stableSet v,
+      0 < sphereHeight u y * sphereHeight u m ∧
+        ∃ z ∈ hX.flow.stableSet v, sphereHeight u z * sphereHeight u m < 0 := by
+    rcases lt_or_gt_of_ne (show sphereHeight u m ≠ 0 by intro h; rw [h] at h2; nlinarith) with
+      hm | hm
+    · exact ⟨a, ha, mul_pos_of_neg_of_neg ha' hm, b, hb, mul_neg_of_pos_of_neg hb' hm⟩
+    · exact ⟨b, hb, mul_pos hb' hm, a, ha, mul_neg_of_neg_of_pos ha' hm⟩
+  have hiff {w : sphere (0 : E) 1} (hw : w ∈ hX.flow.stableSet v) :=
+    mem_unstableSet_iff_sphereHeight_mul_sphereHeight_pos huv ht₀ ht₂ hX h1 h2 hw
+  -- The saddle `v` is not `z`, since `hᵤ v = 0`.
+  have hzv : z ≠ v := by
+    rintro rfl
+    rw [sphereHeight_apply, real_inner_comm, huv, zero_mul] at hneg
+    exact hneg.false
+  exact ⟨y, hX.unstableSet_inter_stableSet_eq_orbit
+    (mfderiv_sphereHeight_sq_add_smul_sphereHeight_self huv ht₀.ne')
+    (manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self_add_one huv ht₀ ht₂ hn)
+    ⟨(hiff hy).2 hpos, hy⟩ hz hzv fun h ↦ ((hiff hz).1 h).not_gt hneg⟩
 
 /-- **One trajectory from each maximum to the saddle.** For `n ≥ 1`, `0 < t < 2`, a maximum `m`
 of `hᵤ² + t hᵥ` and any adapted pseudo-gradient, exactly one trajectory runs from `m` to the saddle
@@ -398,28 +401,10 @@ theorem ncard_morseTrajectorySlice_sphereHeight_sq_add_smul_sphereHeight
   obtain ⟨z, hz⟩ :=
     exists_unstableSet_inter_stableSet_eq_orbit_sphereHeight_sq_add_smul_sphereHeight huv ht₀ ht₂
       hn hX h1 h2
-  have hzm : z ∈ hX.flow.unstableSet m ∩ hX.flow.stableSet v := hz ▸ Flow.mem_orbit_self _ z
-  have hmv : m ≠ v := by
-    rintro rfl
-    rw [sphereHeight_self] at h1
-    linarith
-  have hm : (sphereHeight u ^ 2 + t • sphereHeight v) m = 1 + t ^ 2 / 4 := by
-    simp only [Pi.add_apply, Pi.pow_apply, Pi.smul_apply, smul_eq_mul, h1, h2]
-    ring
-  have hv := apply_self (t := t) huv
-  obtain ⟨s, hs, huniq⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hmv hzm
-    (c := ((sphereHeight u ^ 2 + t • sphereHeight v) m +
-      (sphereHeight u ^ 2 + t • sphereHeight v) v) / 2)
-    (by rw [hm, hv]; nlinarith) (by rw [hm, hv]; nlinarith)
-  refine ncard_eq_one.2 ⟨hX.flow s z, Set.ext fun y ↦ ?_⟩
-  rw [mem_morseTrajectorySlice, mem_singleton_iff]
-  constructor
-  · rintro ⟨hyu, hys, hyc⟩
-    obtain ⟨s', rfl⟩ := (Flow.mem_orbit_iff _).1 (hz ▸ ⟨hyu, hys⟩ : y ∈ hX.flow.orbit z)
-    rw [huniq s' hyc]
-  · rintro rfl
-    exact ⟨(Flow.apply_mem_unstableSet_iff _ s).2 hzm.1, (Flow.apply_mem_stableSet_iff _ s).2 hzm.2,
-      hs⟩
+  refine hX.ncard_morseTrajectorySlice_eq_one_of_unstableSet_inter_stableSet_eq_orbit ?_ hz
+  rintro rfl
+  rw [sphereHeight_self] at h1
+  linarith
 
 /-! ### The Morse complex -/
 
@@ -429,8 +414,8 @@ theorem isMorseSmale_sphereHeight_sq_add_smul_sphereHeight (huv : ⟪(u : E), (v
     (ht₀ : 0 < t) (ht₂ : t < 2)
     (hX : IsAdaptedPseudoGradient (sphereHeight u ^ 2 + t • sphereHeight v) X) :
     hX.IsMorseSmale := by
-  refine IsMorseSmale.of_subsingleton (isMorse_sphereHeight_sq_add_smul_sphereHeight huv ht₀.ne'
-    (by nlinarith)) ((subsingleton_singleton (a := v)).anti ?_)
+  refine IsMorseSmale.of_subsingleton (isMorse_sphereHeight_sq_add_smul_sphereHeight_of_lt huv ht₀
+    ht₂) ((subsingleton_singleton (a := v)).anti ?_)
   rintro x ⟨hx, hx0, hxn⟩
   rcases mem_criticalPoints_cases huv ht₀ ht₂ (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) with
     ⟨rfl, -⟩ | ⟨-, h⟩ | ⟨-, -, h⟩
@@ -467,7 +452,7 @@ theorem signedMorseBoundaryCoeff_sphereHeight_sq_add_smul_sphereHeight_eq_one_or
     finsum_mem_singleton]
   exact trajectorySign_eq_one_or_eq_neg_one (𝔬.coord_mfderiv_chart p) (𝔬.coord_mfderiv_chart q)
     (isMorseSmale_sphereHeight_sq_add_smul_sphereHeight huv ht₀ ht₂ hX)
-    (isMorse_sphereHeight_sq_add_smul_sphereHeight huv ht₀.ne' (by nlinarith)) ⟨hmem.1, hmem.2.1⟩
+    (isMorse_sphereHeight_sq_add_smul_sphereHeight_of_lt huv ht₀ ht₂) ⟨hmem.1, hmem.2.1⟩
 
 /-- **The other boundary coefficients vanish.** For `n ≥ 2`, any adapted pseudo-gradient and any
 orientations, the coefficient of `q` in the integral boundary of `p` is zero unless `p` is a
@@ -497,7 +482,7 @@ theorem signedMorseBoundaryCoeff_sphereHeight_sq_add_smul_sphereHeight_eq_zero (
         · omega
     have := congr($((isMorseSmale_sphereHeight_sq_add_smul_sphereHeight huv ht₀ ht₂ hX
       ).signedMorseBoundary_single_eq_zero_of_unique_index_zero
-        (isMorse_sphereHeight_sq_add_smul_sphereHeight huv ht₀.ne' (by nlinarith)) 𝔬 (p := p)
+        (isMorse_sphereHeight_sq_add_smul_sphereHeight_of_lt huv ht₀ ht₂) 𝔬 (p := p)
         (by omega) hmin
         (1 : ℤ)) q)
     simpa using this
@@ -589,10 +574,9 @@ theorem exists_signedMorseBoundary_reverse_sphereHeight_sq_add_smul_sphereHeight
   refine ⟨S, fun c ↦ ?_⟩
   -- The saddle is not a maximum, so its orientation is kept.
   have hsm : s ∉ S := by
+    have hsv : sphereHeight v s = 1 := by rw [hs, sphereHeight_self]
     rw [hS]
-    rintro ⟨rfl | rfl, -⟩ <;>
-    · rw [hs, sphereHeight_self] at *
-      linarith
+    rintro ⟨rfl | rfl, -⟩ <;> linarith
   -- After the reversal both coefficients into the saddle are `1`.
   have hone {m : criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v)}
       (hmS : m = m₁ ∨ m = m₂) (hmv : sphereHeight v m = t / 2) :
@@ -605,7 +589,7 @@ theorem exists_signedMorseBoundary_reverse_sphereHeight_sq_add_smul_sphereHeight
 
 /-- **The mod-two Morse complex of the sphere with two maxima.** For `n ≥ 2` and every adapted
 pseudo-gradient, the mod-two Morse boundary sends a chain `c` to `(c(m₁) + c(m₂)) s`: one
-trajectory runs from each maximum to the saddle `s`, and two from the saddle to the minimum. -/
+trajectory runs from each maximum to the saddle `s`, and the saddle and the minimum are cycles. -/
 theorem IsMorseSmale.morseBoundary_sphereHeight_sq_add_smul_sphereHeight (h : hX.IsMorseSmale)
     (hn : 2 ≤ n) (hm₁ : sphereHeight v m₁ = t / 2) (hm₂ : sphereHeight v m₂ = t / 2)
     (hm : m₁ ≠ m₂) (hs : (s : sphere (0 : E) 1) = v)

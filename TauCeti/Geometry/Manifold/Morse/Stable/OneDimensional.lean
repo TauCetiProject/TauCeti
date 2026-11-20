@@ -133,14 +133,15 @@ theorem exists_unstableSet_eq_insert_union_orbit (hf : IsMorse 𝓘(ℝ, E) f)
   exact ⟨y₁, y₂, h₁, h₂, hdisj, hW⟩
 
 /-- **A single trajectory into a critical point of index `n - 1`.** Let `x` be a critical point of
-index `n - 1`, so that `W^s(x) - {x}` consists of two trajectories. If a point `y ≠ x` of `W^s(x)`
-lies in the unstable manifold of `p` and another point `z ≠ x` of `W^s(x)` does not, then the
+index `n - 1`, so that `W^s(x) - {x}` consists of two trajectories. If a point `y` of `W^s(x)`
+lies in the unstable manifold of `p` and a point `z ≠ x` of `W^s(x)` does not, then the
 trajectories from `p` to `x` form the single orbit of `y`: membership in `W^u(p)` is constant along
-each of the two trajectories, and `z` lies on the other one. -/
+each of the two trajectories, and `z` lies on the other one. When `y = x`, the point `p` is `x`
+and both sides are `{x}`. -/
 theorem unstableSet_inter_stableSet_eq_orbit (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f x + 1 = finrank ℝ E) {p y z : M}
-    (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet x) (hyx : y ≠ x)
-    (hz : z ∈ hX.flow.stableSet x) (hzx : z ≠ x) (hzp : z ∉ hX.flow.unstableSet p) :
+    (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet x) (hz : z ∈ hX.flow.stableSet x)
+    (hzx : z ≠ x) (hzp : z ∉ hX.flow.unstableSet p) :
     hX.flow.unstableSet p ∩ hX.flow.stableSet x = hX.flow.orbit y := by
   obtain ⟨y₁, y₂, -, -, -, hW⟩ := hX.exists_stableSet_eq_insert_union_orbit hx hind
   have horbit {a b : M} (ha : a ∈ hX.flow.orbit b) :
@@ -158,12 +159,20 @@ theorem unstableSet_inter_stableSet_eq_orbit (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ
     · exact hzp ((horbit h).2 h₂)
   refine Subset.antisymm (fun w hw ↦ ?_) fun w ⟨s, hs⟩ ↦
     hs ▸ Flow.isInvariant_unstableSet_inter_stableSet _ p x s hy
-  -- The rest point `x` is not in `W^u(p)`: otherwise `x = p`, and `y ∈ W^u(x) ∩ W^s(x)` is `x`.
+  -- The rest point `x` lies in `W^u(p)` only if `x = p`.
+  have hxp (h : x ∈ hX.flow.unstableSet p) : x = p := by
+    have hlim := Flow.mem_unstableSet.1 h
+    simp only [hX.flow_apply_of_mfderiv_eq_zero hx] at hlim
+    exact tendsto_nhds_unique tendsto_const_nhds hlim
+  -- If `y = x`, then `p = x` and `w ∈ W^u(x) ∩ W^s(x)` is `x`.
+  rcases eq_or_ne y x with rfl | hyx
+  · obtain rfl := hxp hy.1
+    rw [hX.eq_of_mem_unstableSet_inter_stableSet hw]
+    exact Flow.mem_orbit_self _ _
+  -- Otherwise `x ∉ W^u(p)`, since `y ∈ W^u(x) ∩ W^s(x)` would be `x`.
   have hwx : w ≠ x := by
     rintro rfl
-    have hlim := Flow.mem_unstableSet.1 hw.1
-    simp only [hX.flow_apply_of_mfderiv_eq_zero hx] at hlim
-    obtain rfl := tendsto_nhds_unique tendsto_const_nhds hlim
+    obtain rfl := hxp hw.1
     exact hyx (hX.eq_of_mem_unstableSet_inter_stableSet hy)
   obtain ⟨b, hwb, hyb⟩ : ∃ b, w ∈ hX.flow.orbit b ∧ y ∈ hX.flow.orbit b := by
     rcases hside hw.2 hwx with hw' | hw' <;> rcases hside hy.2 hyx with hy' | hy'
