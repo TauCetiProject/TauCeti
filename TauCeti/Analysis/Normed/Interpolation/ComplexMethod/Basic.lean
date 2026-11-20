@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.VerticalStrip.Basic
 public import TauCeti.Analysis.Complex.VerticalStrip.Gaussian
 public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
+import TauCeti.Analysis.Normed.Module.Quotient
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
@@ -585,6 +586,10 @@ theorem lift_unique (A : C.stripTraces →L[ℂ] E) (hA : ∀ g, C.stripEval θ 
   simpa using hT g
 
 end Lift
+
+@[simp] theorem norm_lift {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
+    (A : C.stripTraces →L[ℂ] E) (hA : ∀ g, C.stripEval θ g = 0 → A g = 0) :
+    ‖lift A hA‖ = ‖A‖ := (C.stripEval θ).ker.norm_liftQL A hA
 
 /-- The inclusion of `[X₀, X₁]_θ` into the sum space, `F ↦ F θ`. -/
 def toSum : C.ComplexMethodSpace θ →L[ℂ] C.SumSpace :=
