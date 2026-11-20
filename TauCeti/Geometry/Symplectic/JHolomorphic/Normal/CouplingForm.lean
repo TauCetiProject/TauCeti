@@ -300,13 +300,13 @@ theorem extDeriv_normalCouplingForm_eq_zero (hω : DifferentiableAt ℝ ω z)
 /-- **The coupling form tames the normal linearization on disk bundles.** Let `B` be a compact
 set of base points, along which `z ↦ J(z, 0)` and `z ↦ dJ(z, 0)` are continuous, `J(z, 0)` acts
 by multiplication by `i` on the normal fibre, and `ω` tames the structure of the zero section,
-`ω(v, j(z) v) ≥ m |v|²` with `m > 0`. If `A` is `C¹`, then for every large `K` the coupling form
-of `K ω` and `A`, that is `K π^* ω + dλ`, tames the normal linearization `J_N` with constant
-`min m 1 / 2` at every point of the disk bundle of radius `R` over `B`. -/
+`ω(v, j(z) v) ≥ m |v|²` with `m > 0`. If `A` is `C¹` at the points of `B`, then for every large
+`K` the coupling form of `K ω` and `A`, that is `K π^* ω + dλ`, tames the normal linearization
+`J_N` with constant `min m 1 / 2` at every point of the disk bundle of radius `R` over `B`. -/
 theorem exists_forall_div_two_mul_norm_sq_le_normalCouplingForm
     {J : E × ℂ → E × ℂ →L[ℝ] E × ℂ} {B : Set E} {m R : ℝ} (hB : IsCompact B)
     (hJ : ContinuousOn (fun z ↦ J (z, 0)) B) (hdJ : ContinuousOn (fun z ↦ fderiv ℝ J (z, 0)) B)
-    (hA : ContDiff ℝ 1 A) (hm : 0 < m)
+    (hA : ∀ z ∈ B, ContDiffAt ℝ 1 A z) (hm : 0 < m)
     (hω : ∀ z ∈ B, ∀ v, m * ‖v‖ ^ 2 ≤ ω z ![v, (J (z, 0) (v, 0)).1])
     (hJN : ∀ z ∈ B, ∀ n, (J (z, 0) (0, n)).2 = I * n) :
     ∃ K₀ : ℝ, ∀ K : ℝ, K₀ ≤ K → ∀ z ∈ B, ∀ w : ℂ, ‖w‖ ≤ R → ∀ u : E × ℂ,
@@ -314,12 +314,13 @@ theorem exists_forall_div_two_mul_norm_sq_le_normalCouplingForm
         normalCouplingForm (K • ω) A (z, w) ![u, normalLinearization J (z, w) u] := by
   set σ : E × ℂ → E × ℂ →L[ℝ] E × ℂ →L[ℝ] ℝ :=
     fun p ↦ flatL ℝ (E × ℂ) ℝ (extDeriv (normalCouplingPrimitive A) p) with hσ
-  have hσc : Continuous σ :=
-    (flatL ℝ (E × ℂ) ℝ).continuous.comp
-      ((contDiff_extDeriv (contDiff_normalCouplingPrimitive hA) (r := 0) (by simp)).continuous)
+  have hσc : ContinuousOn σ (B ×ˢ Metric.closedBall 0 R) := fun p hp ↦
+    ((flatL ℝ (E × ℂ) ℝ).continuous.continuousAt.comp
+      ((contDiffAt_extDeriv (contDiffAt_normalCouplingPrimitive (hA p.1 hp.1) p.2) (r := 0)
+        (by simp)).continuousAt)).continuousWithinAt
   -- The codomain is named to select its norm topology.
   obtain ⟨S, hS⟩ := (hB.prod (isCompact_closedBall (0 : ℂ) R)).exists_bound_of_continuousOn
-    (E := E × ℂ →L[ℝ] E × ℂ →L[ℝ] ℝ) hσc.continuousOn
+    (E := E × ℂ →L[ℝ] E × ℂ →L[ℝ] ℝ) hσc
   have hm' : 0 < min m 1 := lt_min hm one_pos
   obtain ⟨K₀, hK₀⟩ := exists_forall_div_two_mul_norm_sq_le_normalLinearization
     (ω := fun z ↦ flatL ℝ E ℝ (ω z)) (σ := σ) (R := R) (S := S) hB hJ hdJ hm'
@@ -328,7 +329,8 @@ theorem exists_forall_div_two_mul_norm_sq_le_normalCouplingForm
       exact (mul_le_mul_of_nonneg_right (min_le_left m 1) (by positivity)).trans (hω z hz v))
     (fun z hz W _ n ↦ by
       rw [hσ, flatL_apply_apply, hJN z hz,
-        extDeriv_normalCouplingPrimitive_apply_inr_inr (hA.differentiable one_ne_zero z),
+        extDeriv_normalCouplingPrimitive_apply_inr_inr
+          ((hA z hz).differentiableAt one_ne_zero),
         ← normSq_eq_norm_sq, normSq_apply]
       simp only [mul_im, mul_re, conj_re, conj_im, I_re, I_im]
       nlinarith [min_le_right m 1, mul_self_nonneg n.re, mul_self_nonneg n.im])

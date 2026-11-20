@@ -16,6 +16,7 @@ import TauCeti.Dynamics.Flow.RestPoint
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.RepresentationTheory.Continuous.InvariantNeighborhood
 import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Darboux's theorem
@@ -164,12 +165,9 @@ theorem exists_equivariant_diffeomorph_compContinuousLinearMap_fderiv_eq_of_extD
     have hρs : Function.Surjective (ρ g) := fun w ↦
       ⟨ρ g⁻¹ w, by rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self]⟩
     refine moserField_map_eq hXeq ht hρs hy hgy (fun v w ↦ ?_) fun w ↦ ?_
-    · have hvw : ρ g ∘ ![v, w] = ![ρ g v, ρ g w] := by
-        funext i
-        fin_cases i <;> rfl
-      have h₀ := congrArg (· ![v, w]) (hω₀ρ g y (hUW hy))
+    · have h₀ := congrArg (· ![v, w]) (hω₀ρ g y (hUW hy))
       have h₁ := congrArg (· ![v, w]) (hω₁ρ g y (hUW hy))
-      simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, hvw] at h₀ h₁
+      simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, Matrix.comp_vec2] at h₀ h₁
       simp [ContinuousAlternatingMap.flatL_apply_apply, h₀, h₁]
     · have h := congrArg (· ![w]) (hαρ g y (hUW hy))
       simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply] at h

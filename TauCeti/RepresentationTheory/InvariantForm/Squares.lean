@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Dual
 public import TauCeti.RepresentationTheory.ExteriorPower
 public import TauCeti.RepresentationTheory.InvariantForm
 public import TauCeti.RepresentationTheory.SymmetricPower
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Invariant forms and the invariants of the two squares
@@ -120,9 +121,8 @@ theorem ofExteriorSquareDual_mem_alternatingInvariantForms (ρ : Representation 
     TauCeti.BilinForm.ofExteriorSquareDual ψ ∈ alternatingInvariantForms ρ := by
   refine mem_alternatingInvariantForms.mpr
     ⟨isInvariantForm_iff.mpr fun g x y => ?_, TauCeti.BilinForm.isAlt_ofExteriorSquareDual ψ⟩
-  have hvec : (ρ g ∘ ![x, y]) = ![ρ g x, ρ g y] := (FinVec.map_eq _ _).symm
   simp only [TauCeti.BilinForm.ofExteriorSquareDual_apply]
-  rw [← hvec, ← ρ.exteriorPower_apply_ιMulti 2 g ![x, y],
+  rw [← Matrix.comp_vec2 (ρ g) x y, ← ρ.exteriorPower_apply_ιMulti 2 g ![x, y],
     apply_of_mem_invariants_dual hψ g]
 
 /-- Over any commutative ring, `TauCeti.BilinForm.ofExteriorSquareDual` maps the invariant
@@ -138,9 +138,8 @@ theorem map_ofExteriorSquareDual_eq_alternatingInvariantForms (ρ : Representati
   have hext : ψ ∘ₗ (ρ.exteriorPower 2 g) = ψ := by
     apply TauCeti.BilinForm.ofExteriorSquareDual_injective
     ext x y
-    have hvec : (ρ g ∘ ![x, y]) = ![ρ g x, ρ g y] := (FinVec.map_eq _ _).symm
     simp only [TauCeti.BilinForm.ofExteriorSquareDual_apply, LinearMap.comp_apply,
-      ρ.exteriorPower_apply_ιMulti 2 g ![x, y], hvec]
+      ρ.exteriorPower_apply_ιMulti 2 g ![x, y], Matrix.comp_vec2]
     simp only [← TauCeti.BilinForm.ofExteriorSquareDual_apply]
     exact hB.apply g x y
   exact LinearMap.congr_fun hext u

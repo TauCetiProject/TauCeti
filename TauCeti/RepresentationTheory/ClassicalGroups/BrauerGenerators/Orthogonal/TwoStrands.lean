@@ -10,6 +10,7 @@ import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
 import TauCeti.LinearAlgebra.Matrix.KroneckerPower.OrthogonalCommutant
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.PlaneRotation
 import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Faithful
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Brauer duality for the orthogonal group on two strands
@@ -108,9 +109,7 @@ private theorem apply_perm_pattern
     (hM : ∀ A : Matrix ι ι R, Aᵀ * A = 1 → Commute M (A.kroneckerPower (Fin 2)))
     (σ : Equiv.Perm ι) (x₀ x₁ y₀ y₁ : ι) :
     M ![σ x₀, σ x₁] ![σ y₀, σ y₁] = M ![x₀, x₁] ![y₀, y₁] := by
-  have hc : ∀ a b : ι, ![σ a, σ b] = σ ∘ ![a, b] := fun a b => by
-    ext i; fin_cases i <;> rfl
-  rw [hc, hc]
+  rw [← Matrix.comp_vec2 σ x₀, ← Matrix.comp_vec2 σ y₀]
   exact apply_comp_comp_of_commute_kroneckerPower hM σ _ _
 
 /-- **Parity.** A matrix commuting with the orthogonal group on two strands has a vanishing entry

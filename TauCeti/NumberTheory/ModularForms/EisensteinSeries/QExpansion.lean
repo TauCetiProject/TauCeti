@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.ArithmeticFunction.TwistedDivisorSum
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Character
 public import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # The `q`-expansion of Eisenstein series with character
@@ -729,17 +730,16 @@ theorem qExpansion_coeff_of_coe_eq_weightedEisensteinSeries {𝒢 : Subgroup (GL
         ∑ x ∈ n.divisorsAntidiagonal,
           𝓕 (fun d ↦ W ![(x.1 : ZMod N), d] + (-1) ^ k * W ![-(x.1 : ZMod N), -d])
             (-(x.2 : ZMod N)) * (x.2 : ℂ) ^ (k - 1) := by
-  have hcomp (x y : ℤ) : ((↑) : ℤ → ZMod N) ∘ ![x, y] = ![(x : ZMod N), (y : ZMod N)] := by
-    ext i; fin_cases i <;> rfl
   have hFs (z : ℍ) : Summable fun p : ℤ × ℤ ↦
       W ![(p.1 : ZMod N), (p.2 : ZMod N)] * eisSummand k ![p.1, p.2] z :=
     ((finTwoArrowEquiv ℤ).symm.summable_iff.mpr
       (summable_norm_weightedEisensteinSummand W (by exact_mod_cast hk : (3 : ℤ) ≤ k) z).of_norm
-      ).congr fun p ↦ by simp only [Function.comp_apply, finTwoArrowEquiv_symm_apply, hcomp]
+      ).congr fun p ↦ by simp only [Function.comp_apply, finTwoArrowEquiv_symm_apply,
+        Matrix.comp_vec2]
   refine qExpansion_coeff_of_apply_eq_tsum_weightedRow W hN (by omega)
     (fun z ↦ (hFs z).prod) (fun z c ↦ (hFs z).prod_factor c) (fun z ↦ ?_) n
   rw [hf, weightedEisensteinSeries_def, ← (finTwoArrowEquiv ℤ).symm.tsum_eq]
-  simpa only [finTwoArrowEquiv_symm_apply, hcomp] using (hFs z).tsum_prod
+  simpa only [finTwoArrowEquiv_symm_apply, Matrix.comp_vec2] using (hFs z).tsum_prod
 
 end Weighted
 

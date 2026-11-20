@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Linear independence and postcomposition for linear isometries
@@ -49,9 +50,7 @@ protected theorem linearIndependent_iff {v : ι → E} :
 @[simp]
 theorem linearIndependent_pair_iff {u v : E} :
     LinearIndependent R ![l u, l v] ↔ LinearIndependent R ![u, v] := by
-  have hcomp : (![l u, l v] : Fin 2 → F) = l ∘ ![u, v] :=
-    funext <| Fin.forall_fin_two.mpr ⟨rfl, rfl⟩
-  rw [hcomp, l.linearIndependent_iff]
+  rw [← Matrix.comp_vec2 l u v, l.linearIndependent_iff]
 
 end LinearIndependent
 

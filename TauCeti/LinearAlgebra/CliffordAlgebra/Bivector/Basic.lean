@@ -12,6 +12,7 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Filtration
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Clifford bivectors and exterior squares
@@ -393,12 +394,10 @@ theorem map_bivectorExterior (f : Q →qᵢ Q₂) (x : ⋀[R]^2 M) :
     bivectorExterior Q) (g := bivectorExterior Q₂ ∘ₗ exteriorPower.map 2 f.toLinearMap) ?_) x
   ext v
   have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
-  have hfv : f.toLinearMap ∘ ![v 0, v 1] = ![f (v 0), f (v 1)] := by
-    funext i
-    fin_cases i <;> rfl
   rw [hv]
   simp only [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-    exteriorPower.map_apply_ιMulti, hfv, bivectorExterior_apply_ιMulti, map_bivector]
+    exteriorPower.map_apply_ιMulti, Matrix.comp_vec2, QuadraticMap.Isometry.coe_toLinearMap,
+    bivectorExterior_apply_ιMulti, map_bivector]
 
 end Map
 

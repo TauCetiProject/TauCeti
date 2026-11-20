@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.QExpansion
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Character
 import TauCeti.NumberTheory.LSeries.ZMod
 import TauCeti.Analysis.Fourier.ZMod
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Fourier expansions of weighted weight-two Eisenstein series
@@ -133,18 +134,16 @@ theorem qExpansion_weightedG2MF_coeff_of_sum_eq_zero
         ∑ x ∈ n.divisorsAntidiagonal,
           𝓕 (fun d ↦ W ![(x.1 : ZMod N), d] + W ![-(x.1 : ZMod N), -d])
             (-(x.2 : ZMod N)) * (x.2 : ℂ) := by
-  have hcomp (c d : ℤ) : ((↑) : ℤ → ZMod N) ∘ ![c, d] = ![(c : ZMod N), (d : ZMod N)] := by
-    ext i; fin_cases i <;> rfl
   have hrows (z : ℍ) : Summable fun c : ℤ ↦ ∑' d : ℤ,
       W ![(c : ZMod N), (d : ZMod N)] * eisSummand 2 ![c, d] z := by
     refine (summable_weightedG2Row W z).congr fun c ↦ ?_
-    simp only [weightedG2Row_def, hcomp]
+    simp only [weightedG2Row_def, Matrix.comp_vec2]
   have hterms (z : ℍ) (c : ℤ) : Summable fun d : ℤ ↦
       W ![(c : ZMod N), (d : ZMod N)] * eisSummand 2 ![c, d] z := by
-    simpa only [hcomp] using summable_weightedG2Row_terms W z c
+    simpa only [Matrix.comp_vec2] using summable_weightedG2Row_terms W z c
   have hf (z : ℍ) : weightedG2MF W z = ∑' c : ℤ, ∑' d : ℤ,
       W ![(c : ZMod N), (d : ZMod N)] * eisSummand 2 ![c, d] z := by
-    simpa only [weightedG2Row_def, hcomp, coe_weightedG2MF] using
+    simpa only [weightedG2Row_def, Matrix.comp_vec2, coe_weightedG2MF] using
       (hasSum_weightedG2Row hW z).tsum_eq.symm
   simpa using qExpansion_coeff_of_apply_eq_tsum_weightedRow W
     (by simp [strictPeriods_Gamma]) le_rfl hrows hterms hf n

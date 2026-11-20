@@ -10,6 +10,7 @@ import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Data.Sum.Basic
 import TauCeti.LinearAlgebra.SymplecticGroup
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Brauer duality for the symplectic group on two strands
@@ -354,9 +355,7 @@ private theorem apply_eq_zero_of_apply_eq_zero [IsDomain K]
     (hM : ∀ A ∈ symplecticGroup (Fin n) K, Commute M (A.kroneckerPower (Fin 2)))
     {π : Equiv.Perm (Fin n ⊕ Fin n)} {d : Fin n ⊕ Fin n → K} (h : IsSympMonomial π d)
     {p q r s : Fin n ⊕ Fin n} (h0 : M ![π p, π q] ![π r, π s] = 0) : M ![p, q] ![r, s] = 0 := by
-  have hc (a b : Fin n ⊕ Fin n) : π ∘ ![a, b] = ![π a, π b] := by
-    ext i; fin_cases i <;> rfl
-  rw [← apply_comp_eq_zero_iff hM h, hc, hc]
+  rw [← apply_comp_eq_zero_iff hM h, Matrix.comp_vec2, Matrix.comp_vec2]
   exact h0
 
 /-- **Commuting with the torus.** A nonzero entry of a matrix commuting with the symplectic group

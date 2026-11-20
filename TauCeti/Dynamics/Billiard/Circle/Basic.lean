@@ -15,6 +15,7 @@ public import TauCeti.Geometry.Euclidean.Circle
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 import Mathlib.Topology.Instances.AddCircle.DenseSubgroup
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Billiard dynamics on a circle
@@ -292,11 +293,7 @@ theorem circleBilliardTable_pullback_symplecticForm (o : Orientation ℝ E (Fin 
   have hβ := (o.hasFDerivAt_circleBilliardTable_nextCollision c e he hR hx).fderiv
   ext u
   have hu : u = ![u 0, u 1] := by funext i; fin_cases i <;> rfl
-  have hcomp : fderiv ℝ (o.circleBilliardTable c e R he hR).nextCollision x ∘ ![u 0, u 1] =
-      ![fderiv ℝ (o.circleBilliardTable c e R he hR).nextCollision x (u 0),
-        fderiv ℝ (o.circleBilliardTable c e R he hR).nextCollision x (u 1)] := by
-    funext i; fin_cases i <;> rfl
-  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply, hu, hcomp,
+  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply, hu, Matrix.comp_vec2,
     ContinuousAlternatingMap.wedge_apply_one_one, ContinuousAlternatingMap.wedge_apply_one_one, hβ]
   simp only [Prod.realPlaneDx_apply, Prod.realPlaneDy_apply, Matrix.cons_val_zero,
     ContinuousLinearMap.prod_apply, FunLike.coe_sub, Pi.sub_apply,
