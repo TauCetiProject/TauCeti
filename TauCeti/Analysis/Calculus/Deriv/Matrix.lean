@@ -14,10 +14,11 @@ import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.Matrix.Normed
 
 /-!
-# Differentiation of a matrix trace and determinant
+# Differentiation of a matrix transpose, trace and determinant
 
-The trace commutes with differentiation of a finite matrix curve over a nontrivially normed
-field. Matrices carry the operator norm, and no completeness assumption is needed.
+The transpose and the trace commute with differentiation of a finite matrix curve over a
+nontrivially normed field (`HasDerivAt.matrix_transpose`, `HasDerivAt.matrix_trace`). Matrices
+carry the operator norm, and no completeness assumption is needed.
 
 Along a curve whose entries are differentiable, the determinant satisfies Jacobi's formula
 `(det A)' = trace (adjugate A * A')` (`Matrix.hasDerivWithinAt_det_of_entries_adjugate`), which
@@ -42,6 +43,17 @@ theorem HasDerivAt.matrix_trace {𝕜 ι : Type*} [NontriviallyNormedField 𝕜]
   have h := tr.hasFDerivAt.comp_hasDerivAt t hf
   exact (h.congr_deriv (htr f')).congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun s ↦ (htr (f s)).symm)
+
+open scoped Matrix in
+/-- The derivative of the transpose of a matrix curve is the transpose of its derivative. -/
+theorem HasDerivAt.matrix_transpose {𝕜 m n : Type*} [NontriviallyNormedField 𝕜] [Finite m]
+    [Finite n] {f : 𝕜 → Matrix m n 𝕜} {f' : Matrix m n 𝕜} {t : 𝕜} (hf : HasDerivAt f f' t) :
+    HasDerivAt (fun s ↦ (f s)ᵀ) f'ᵀ t := by
+  have := Fintype.ofFinite m
+  have := Fintype.ofFinite n
+  let T : Matrix m n 𝕜 →L[𝕜] Matrix n m 𝕜 :=
+    ⟨(Matrix.transposeLinearEquiv m n 𝕜 𝕜).toLinearMap, continuous_id.matrix_transpose⟩
+  exact T.hasFDerivAt.comp_hasDerivAt t hf
 
 namespace Matrix
 
