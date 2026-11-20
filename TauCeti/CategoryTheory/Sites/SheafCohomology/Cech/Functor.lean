@@ -145,10 +145,8 @@ theorem cechComplexCompIso_hom_f_π (n : ℕ) (a : Fin (n + 1) → ι) :
     (cechComplexCompIso G U Q hG).hom.f n ≫ Pi.π _ a =
       Pi.π _ a ≫ Q.map (Pi.lift fun j ↦ G.map (Pi.π (fun j ↦ U (a j)) j)).op := by
   have hr := cechComplexCompIso_hom_f_comp_cechXIso_hom_π G U Q hG n a
-  simp only [cechXIso_hom_π, cechXIso_hom_π_assoc] at hr
-  -- The native rightOp Čech object and the explicit finite product have the same
-  -- underlying object; convert only this dependent codomain, without unfolding the iso.
-  convert hr using 1; rfl
+  rw [cechXIso_hom_π_assoc] at hr
+  exact (cechXIso_comp_π_eq_iff U (G.op ⋙ Q) n a _ _).mp hr
 
 /-- The isomorphism of Čech complexes `cechComplexCompIso` is natural in the presheaf `Q`. -/
 @[reassoc]
@@ -213,6 +211,16 @@ section ThinHomotopy
 
 variable [Quiver.IsThin D]
 
+omit [Preadditive A] in
+/-- In the thin category `D`, the restrictions to the same object from two factors of a Čech term
+indexed by equal tuples agree. -/
+private lemma π_comp_map_eq_of_eq {κ : Type w} {W : κ → D} {m : ℕ} {b b' : Fin (m + 1) → κ}
+    (h : b = b') {X : D} (f : X ⟶ ∏ᶜ fun j ↦ W (b j)) (f' : X ⟶ ∏ᶜ fun j ↦ W (b' j)) :
+    Pi.π (fun c : Fin (m + 1) → κ ↦ Q.obj (op (∏ᶜ fun j ↦ W (c j)))) b ≫ Q.map f.op =
+      Pi.π (fun c : Fin (m + 1) → κ ↦ Q.obj (op (∏ᶜ fun j ↦ W (c j)))) b' ≫ Q.map f'.op := by
+  subst h
+  rw [Subsingleton.elim f f']
+
 omit [HasProducts A] in
 /-- An identity between composites with negated alternating sums, as in the prism formula
 (`cechComplexMapHomotopy_hom_π`), follows from the identities between the summands. -/
@@ -259,7 +267,7 @@ theorem cechComplexMapHomotopy_hom_comp_cechComplexCompIso_hom {κ : Type w} {V 
     (cechComplexCompIso_hom_f_π G V Q hV (j + 1) _ =≫ _)).symm
   refine Eq.trans ?_ (Category.assoc _ _ _).symm
   refine Eq.trans ?_ (_ ≫= (Q.map_comp _ _))
-  exact cechProjection_comp_map_eq_of_tuple_eq Q (funext fun l ↦ by split_ifs <;> rfl) _ _
+  exact π_comp_map_eq_of_eq Q (funext fun l ↦ by split_ifs <;> rfl) _ _
 
 end ThinHomotopy
 

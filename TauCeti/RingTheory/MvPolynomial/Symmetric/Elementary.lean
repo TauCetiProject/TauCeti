@@ -37,6 +37,8 @@ product in elementary symmetric polynomials.
   over the `n`-element subsets of the variables.
 * `TauCeti.mk_esymm_eq_prod_one_add_X`: the generating function of the `eₙ`.
 * `TauCeti.mk_multiset_esymm_eq_prod_one_add_X`: the same for the `eₙ` of a family of elements.
+* `TauCeti.prod_one_add_mul_eq_sum_esymm`: its evaluation at a family `μ`,
+  `∏ᵢ (1 + t μᵢ) = ∑ₖ eₖ(μ) tᵏ`.
 * `TauCeti.mk_neg_one_pow_mul_esymm_eq_prod_one_sub_X`: its signed version
   `∑ₙ (-1)ⁿ eₙ tⁿ = ∏ᵢ (1 - xᵢ t)`.
 * `TauCeti.esymm_fin_four`: the four elementary symmetric polynomials in four variables.
@@ -214,6 +216,23 @@ theorem mk_multiset_esymm_eq_prod_one_add_X (w : σ → R) :
   ext n
   rw [PowerSeries.coeff_map, PowerSeries.coeff_mk, PowerSeries.coeff_mk, RingHom.coe_coe,
     MvPolynomial.aeval_esymm_eq_multiset_esymm]
+
+/-- **The evaluated generating function of the elementary symmetric polynomials**: for a finite
+family `μ` of elements of a commutative semiring and any `t`,
+`∏ᵢ (1 + t μᵢ) = ∑_{k ≤ |σ|} eₖ(μ) tᵏ`. -/
+theorem prod_one_add_mul_eq_sum_esymm (μ : σ → R) (t : R) :
+    ∏ i, (1 + t * μ i) =
+      ∑ k ∈ Finset.range (Fintype.card σ + 1),
+        MvPolynomial.eval μ (MvPolynomial.esymm σ R k) * t ^ k := by
+  classical
+  rw [Finset.prod_one_add, ← Finset.sum_fiberwise_of_maps_to (g := Finset.card)
+    (t := Finset.range (Fintype.card σ + 1)) fun s _ ↦ by
+      simpa [Nat.lt_succ_iff] using Finset.card_le_univ s]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [← Finset.powersetCard_eq_filter]
+  simp only [MvPolynomial.esymm, map_sum, map_prod, MvPolynomial.eval_X, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun s hs ↦ ?_
+  rw [Finset.prod_mul_distrib, Finset.prod_const, (Finset.mem_powersetCard.mp hs).2, mul_comm]
 
 end GeneratingFunction
 

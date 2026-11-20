@@ -138,15 +138,15 @@ lemma cechXIso_hom_π (n : ℕ) (a : Fin (n + 1) → ι) :
     (cechXIso U P n).hom ≫ Pi.π _ a = (Pi.π _ a : ((cechComplexFunctor U).obj P).X n ⟶ _) :=
   Category.id_comp _
 
-omit [Preadditive A] in
-/-- Equal tuples give the same restriction of a product reading in a thin category. -/
-theorem cechProjection_comp_map_eq_of_tuple_eq [Quiver.IsThin C]
-    {κ : Type w} {W : κ → C} {n : ℕ} {a b : Fin (n + 1) → κ} (h : a = b)
-    {X : C} (f : X ⟶ ∏ᶜ fun j ↦ W (a j)) (g : X ⟶ ∏ᶜ fun j ↦ W (b j)) :
-    Pi.π (fun c : Fin (n + 1) → κ ↦ P.obj (op (∏ᶜ fun j ↦ W (c j)))) a ≫ P.map f.op =
-      Pi.π (fun c : Fin (n + 1) → κ ↦ P.obj (op (∏ᶜ fun j ↦ W (c j)))) b ≫ P.map g.op := by
-  subst b
-  rw [Subsingleton.elim f g]
+/-- A coordinate equation gives the native tuple reading, with its dependent target. -/
+lemma cechXIso_comp_π_eq_iff (n : ℕ) (a : Fin (n + 1) → ι) {Z : A}
+    (f : Z ⟶ ((cechComplexFunctor U).obj P).X n)
+    (g : Z ⟶ P.obj (op ((unop
+      ((FormalCoproduct.mk _ U).cech.rightOp.obj ⦋n⦌)).obj a))) :
+    (f ≫ (cechXIso U P n).hom ≫ Pi.π _ a = g) ↔
+      f ≫ (Pi.π _ a : ((cechComplexFunctor U).obj P).X n ⟶ _) = g := by
+  simp only [cechXIso_hom_π]
+  rfl
 
 /-! ### The Čech complex in degrees `0` and `1`
 

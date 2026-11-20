@@ -129,9 +129,8 @@ theorem cechComplexFunctorMapIso_hom_app_f_π (P : Cᵒᵖ ⥤ A) (n : ℕ) (a :
     ((cechComplexFunctorMapIso U F).hom.app P).f n ≫ Pi.π _ a =
       F.map (Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) a) := by
   have hr := cechComplexFunctorMapXIso_hom_π U F P n a
-  simp only [cechXIso_hom_π] at hr
-  -- The public coordinate law only changes the native dependent product codomain.
-  convert hr using 1; rfl
+  conv_rhs at hr => rw [cechXIso_hom_π]
+  exact (cechXIso_comp_π_eq_iff U (P ⋙ F) n a _ _).mp hr
 
 /-- **`cechComplexFunctorMapIso` commutes with refinement maps.** For a morphism `φ` from the
 family `U` to a family `V`, applying `F` to the map `Č(V, P) ⟶ Č(U, P)` induced by `φ` and then
