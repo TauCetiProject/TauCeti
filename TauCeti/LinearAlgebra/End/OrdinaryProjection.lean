@@ -127,6 +127,7 @@ theorem ordinaryProjection_apply_of_mem_periodicPts {x : M} (hx : x ∈ periodic
   rw [ordinaryProjection, pow_apply_eq_iterate]
   exact isPeriodicPt_factorial_of_card_le le_rfl hx
 
+/-- On a finite module, the ordinary projector is idempotent: `e_U * e_U = e_U`. -/
 theorem isIdempotentElem_ordinaryProjection : IsIdempotentElem U.ordinaryProjection :=
   LinearMap.ext fun x ↦ ordinaryProjection_apply_of_mem_periodicPts <|
     mem_range_ordinaryProjection_iff.mp (mem_range_self _ x)
@@ -158,14 +159,22 @@ theorem ker_ordinaryProjection : ker U.ordinaryProjection = ker (U ^ Nat.card M)
   have hper : (U ^ Nat.card M) x ∈ periodicPts U := by
     rw [pow_apply_eq_iterate]
     exact iterate_mem_periodicPts_of_card_le le_rfl x
-  rw [mem_ker, ← ordinaryProjection_apply_of_mem_periodicPts hper, ← mul_apply_eq_comp,
-    ← ((commute_ordinaryProjection U).pow_left _).eq, mul_apply_eq_comp, mem_ker.mp hx,
-    map_zero]
+  calc (U ^ Nat.card M) x = U.ordinaryProjection ((U ^ Nat.card M) x) :=
+        (ordinaryProjection_apply_of_mem_periodicPts hper).symm
+    _ = (U ^ Nat.card M) (U.ordinaryProjection x) :=
+        LinearMap.congr_fun ((commute_ordinaryProjection U).pow_left _).eq.symm x
+    _ = 0 := by rw [mem_ker.mp hx, map_zero]
 
 theorem mem_ker_ordinaryProjection_iff {x : M} :
     x ∈ ker U.ordinaryProjection ↔ ∃ k, (U ^ k) x = 0 :=
   ⟨fun hx ↦ ⟨Nat.card M, mem_ker.mp ((ker_ordinaryProjection (U := U)).le hx)⟩,
     fun ⟨_, hk⟩ ↦ ordinaryProjection_apply_eq_zero_of_pow_apply_eq_zero hk⟩
+
+/-- A submodule all of whose vectors are killed by some power of `U` is contained in the
+non-ordinary part. -/
+theorem le_ker_ordinaryProjection {B : Submodule R M} (hB : ∀ x ∈ B, ∃ k, (U ^ k) x = 0) :
+    B ≤ ker U.ordinaryProjection :=
+  fun x hx ↦ mem_ker_ordinaryProjection_iff.mpr (hB x hx)
 
 /-- The non-ordinary part is the union of the kernels of the powers of `U`. -/
 theorem ker_ordinaryProjection_eq_iSup :
@@ -273,9 +282,9 @@ every vector of `B` killed by a power of `U`, then `A` is the ordinary part. -/
 theorem range_ordinaryProjection_eq_of_isCompl {A B : Submodule R M} (hAB : IsCompl A B)
     (hA : A ≤ A.map U) (hB : ∀ x ∈ B, ∃ k, (U ^ k) x = 0) :
     range U.ordinaryProjection = A := by
-  have hBe : B ≤ ker U.ordinaryProjection := fun x hx ↦ mem_ker_ordinaryProjection_iff.mpr (hB x hx)
   exact ((le_iff_eq_of_codisjoint_of_disjoint hAB.codisjoint
-    (isIdempotentElem_ordinaryProjection.isCompl.disjoint.symm.mono_left hBe)).mp
+    (isIdempotentElem_ordinaryProjection.isCompl.disjoint.symm.mono_left
+      (le_ker_ordinaryProjection hB))).mp
     (le_range_ordinaryProjection hA)).symm
 
 /-- Uniqueness of the ordinary decomposition, non-ordinary part: if `M = A ⊕ B` with `A ≤ U(A)`
@@ -283,10 +292,9 @@ and every vector of `B` killed by a power of `U`, then `B` is the non-ordinary p
 theorem ker_ordinaryProjection_eq_of_isCompl {A B : Submodule R M} (hAB : IsCompl A B)
     (hA : A ≤ A.map U) (hB : ∀ x ∈ B, ∃ k, (U ^ k) x = 0) :
     ker U.ordinaryProjection = B := by
-  have hBe : B ≤ ker U.ordinaryProjection := fun x hx ↦ mem_ker_ordinaryProjection_iff.mpr (hB x hx)
   exact ((le_iff_eq_of_codisjoint_of_disjoint hAB.symm.codisjoint
     (isIdempotentElem_ordinaryProjection.isCompl.disjoint.mono_left
-      (le_range_ordinaryProjection hA))).mp hBe).symm
+      (le_range_ordinaryProjection hA))).mp (le_ker_ordinaryProjection hB)).symm
 
 variable [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P]
   {U' : Module.End R N} {U'' : Module.End R P}
@@ -302,12 +310,11 @@ theorem map_ker_ordinaryProjection_of_exact [Finite N] {f : N →ₗ[R] M} {g : 
     exact mem_ker.mpr (hfg.apply_apply_eq_zero _)
   · rintro x ⟨hxg, hxe⟩
     obtain ⟨y, rfl⟩ := (hfg x).mp (mem_ker.mp hxg)
-    refine ⟨y - U'.ordinaryProjection y, ?_, ?_⟩
-    · rw [SetLike.mem_coe, mem_ker, map_sub, ← mul_apply_eq_comp,
-        isIdempotentElem_ordinaryProjection.eq, sub_self]
-    · rw [map_sub, ← LinearMap.comp_apply f,
-        ← ordinaryProjection_comp_eq_comp_ordinaryProjection hf, LinearMap.comp_apply,
-        mem_ker.mp hxe, sub_zero]
+    refine ⟨(1 - U'.ordinaryProjection) y,
+      isIdempotentElem_ordinaryProjection.ker_eq_range_one_sub.ge (mem_range_self _ y), ?_⟩
+    rw [LinearMap.sub_apply, one_apply_eq_self, map_sub, ← LinearMap.comp_apply f,
+      ← ordinaryProjection_comp_eq_comp_ordinaryProjection hf, LinearMap.comp_apply,
+      mem_ker.mp hxe, sub_zero]
 
 /-- A surjection intertwining `U` and `U''` maps the non-ordinary part of `M` onto that of `P`. -/
 theorem map_ker_ordinaryProjection_of_surjective [Finite P] {g : M →ₗ[R] P} (hg : Surjective g)
@@ -315,11 +322,11 @@ theorem map_ker_ordinaryProjection_of_surjective [Finite P] {g : M →ₗ[R] P} 
     (ker U.ordinaryProjection).map g = ker U''.ordinaryProjection := by
   refine le_antisymm (map_ker_ordinaryProjection_le h) fun z hz ↦ ?_
   obtain ⟨y, rfl⟩ := hg z
-  refine ⟨y - U.ordinaryProjection y, ?_, ?_⟩
-  · rw [SetLike.mem_coe, mem_ker, map_sub, ← mul_apply_eq_comp,
-      isIdempotentElem_ordinaryProjection.eq, sub_self]
-  · rw [map_sub, ← LinearMap.comp_apply g, ← ordinaryProjection_comp_eq_comp_ordinaryProjection h,
-      LinearMap.comp_apply, mem_ker.mp hz, sub_zero]
+  refine ⟨(1 - U.ordinaryProjection) y,
+    isIdempotentElem_ordinaryProjection.ker_eq_range_one_sub.ge (mem_range_self _ y), ?_⟩
+  rw [LinearMap.sub_apply, one_apply_eq_self, map_sub, ← LinearMap.comp_apply g,
+    ← ordinaryProjection_comp_eq_comp_ordinaryProjection h, LinearMap.comp_apply, mem_ker.mp hz,
+    sub_zero]
 
 /-- The ordinary part of the quotient of `M` by a `U`-stable submodule `Q` is the image of the
 ordinary part of `M`. -/
