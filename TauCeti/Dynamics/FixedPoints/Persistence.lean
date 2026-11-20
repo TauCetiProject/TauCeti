@@ -70,7 +70,8 @@ on that chart keeps them nondegenerate, with the same number and the same signs.
 * R. C. Robinson, *Generic properties of conservative systems*, Amer. J. Math. 92 (1970),
   562–603, for the genericity of nondegenerate periodic points of conservative maps.
 * V. Guillemin, A. Pollack, *Differential Topology*, Prentice-Hall, 1974, Chapter 3, §4
-  (the local Lefschetz number, the sign of `det (df_x - I)`).
+  (local Lefschetz numbers). That reference uses the sign of `det (df_x - I)`; this file uses the
+  sign of `det (1 - Df)`, which differs from it by `(-1) ^ dim E`.
 -/
 
 public section
@@ -198,9 +199,7 @@ theorem exists_isNondegenerateFixedPt_perturbation (h : IsNondegenerateFixedPt �
         SignType.sign (LinearMap.det (LinearMap.id - (fderiv ℝ g y : E →ₗ[ℝ] E))) =
           SignType.sign (LinearMap.det (LinearMap.id - (fderiv ℝ f x : E →ₗ[ℝ] E))) ∧
         dist y x ≤ K * ‖g x - f x‖ ∧ ∀ z ∈ closedBall x r, IsFixedPt g z → z = y := by
-  have hfd := (mdifferentiableAt_iff_differentiableAt.1 h.mdifferentiableAt).hasFDerivAt
-  have hinv :=
-    (HasFDerivAt.isNondegenerateFixedPt_iff_isInvertible_id_sub hfd h.isFixedPt).1 h
+  have hinv := h.isInvertible_id_sub_fderiv
   have hdet : LinearMap.det (LinearMap.id - (fderiv ℝ f x : E →ₗ[ℝ] E)) ≠ 0 := by
     have := (isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨x, h.isFixedPt⟩ h.mdifferentiableAt).1 h
     rwa [det_id_sub_fixedPointDerivative_modelSpace] at this
@@ -261,7 +260,9 @@ theorem exists_pos_forall_isInvertible_id_sub_fderiv [CompleteSpace E] (hK : IsC
   set S : Set (E →L[ℝ] E) := {T | ¬T.IsInvertible}
   have hS : IsClosed S := ContinuousLinearMap.isOpen_setOfPred_isInvertible.isClosed_compl
   rcases S.eq_empty_or_nonempty with hSe | hSne
-  · exact ⟨1, one_pos, fun g _ _ x _ _ ↦ not_not.1 fun h ↦ hSe.subset (show _ ∈ S from h)⟩
+  · refine ⟨1, one_pos, fun g _ _ x _ _ ↦ ?_⟩
+    by_contra h
+    exact hSe.subset (mem_ofPred.2 h)
   -- `φ x` is positive on `K`: at a fixed point of `f` the operator `1 - Df` lies outside `S`.
   set φ : E → ℝ := fun x ↦ ‖x - f x‖ + infDist (ContinuousLinearMap.id ℝ E - fderiv ℝ f x) S
   have hφ : ContinuousOn φ K := (continuousOn_id.sub hf₀).norm.add
@@ -283,7 +284,7 @@ theorem exists_pos_forall_isInvertible_id_sub_fderiv [CompleteSpace E] (hK : IsC
   have h₁ : ‖x - f x‖ ≤ m / 3 := by simpa [hgx.eq] using hg₀ x hx
   have h₂ : infDist (ContinuousLinearMap.id ℝ E - fderiv ℝ f x) S ≤
       ‖fderiv ℝ g x - fderiv ℝ f x‖ := by
-    refine (infDist_le_dist_of_mem (show _ ∈ S from h)).trans_eq ?_
+    refine (infDist_le_dist_of_mem (mem_ofPred.2 h : _ ∈ S)).trans_eq ?_
     rw [dist_eq_norm, show ContinuousLinearMap.id ℝ E - fderiv ℝ f x -
       (ContinuousLinearMap.id ℝ E - fderiv ℝ g x) = fderiv ℝ g x - fderiv ℝ f x by abel]
   linarith [hmK x hx, hg₁ x hx]
@@ -302,9 +303,7 @@ theorem exists_pos_forall_isNondegenerateFixedPt [FiniteDimensional ℝ E] (hK :
       (∀ x ∈ K, ‖fderiv ℝ g x - fderiv ℝ f x‖ ≤ δ) →
       ∀ x ∈ K, IsFixedPt g x → IsNondegenerateFixedPt 𝓘(ℝ, E) g x := by
   obtain ⟨δ, hδ, h⟩ := hK.exists_pos_forall_isInvertible_id_sub_fderiv hf₀ hf₁ fun x hx hfx ↦
-    (HasFDerivAt.isNondegenerateFixedPt_iff_isInvertible_id_sub
-      (mdifferentiableAt_iff_differentiableAt.1 (hf x hx hfx).mdifferentiableAt).hasFDerivAt
-      hfx).1 (hf x hx hfx)
+    (hf x hx hfx).isInvertible_id_sub_fderiv
   exact ⟨δ, hδ, fun g hg hg₀ hg₁ x hx hgx ↦
     (HasFDerivAt.isNondegenerateFixedPt_iff_isInvertible_id_sub (hg x hx).hasFDerivAt hgx).2
       (h g hg₀ hg₁ x hx hgx)⟩
