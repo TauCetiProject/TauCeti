@@ -140,7 +140,7 @@ theorem exists_isPrimitiveRoot_of_natCard_torsionBy [DecidableEq F] (hN : (N : F
   -- so every `F`-automorphism of `K` fixes `E[N](K)`
   refine exists_isPrimitiveRoot_of_forall_torsionGaloisAction_eq_one (K := K) W hNK fun σ ↦
     Multiplicative.toAdd.injective <| AddEquiv.ext fun T ↦ Subtype.ext ?_
-  obtain ⟨P, hP⟩ := hbij.2 ⟨T.1, T.2⟩
+  obtain ⟨P, hP⟩ := hbij.2 ⟨T.val, T.property⟩
   have hP' := congrArg Subtype.val hP
   rw [coe_torsionMapAlong_apply, Affine.Point.mapAlong_eq_map] at hP'
   rw [torsionGaloisAction_apply_coe, pointGaloisAction_apply, toAdd_one, AddAut.zero_apply, ← hP']

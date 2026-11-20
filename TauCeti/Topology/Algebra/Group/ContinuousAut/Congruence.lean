@@ -80,23 +80,23 @@ topologically characteristic open normal subgroups of `G`, is continuous into th
 `MulAut (G ⧸ N)`. -/
 instance congruenceTopology : TopologicalSpace (ContinuousAut G) :=
   ⨅ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-    TopologicalSpace.induced (mapQuotient N.2) ⊥
+    TopologicalSpace.induced (mapQuotient N.property) ⊥
 
 /-- The congruence topology is the infimum of the topologies induced by the characteristic
 quotient coordinates from the discrete topology `⊥`. -/
 theorem congruenceTopology_eq_iInf :
     congruenceTopology = ⨅ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-      TopologicalSpace.induced (mapQuotient N.2) ⊥ :=
+      TopologicalSpace.induced (mapQuotient N.property) ⊥ :=
   (rfl)
 
 /-- The congruence topology makes `ContinuousAut G` a topological group, as an infimum of
 topologies induced along homomorphisms into discrete groups. -/
 instance : IsTopologicalGroup (ContinuousAut G) :=
   isTopologicalGroup_iInf fun N ↦
-    letI : TopologicalSpace (MulAut (G ⧸ (N.1 : Subgroup G))) := ⊥
-    haveI := discreteTopology_bot (MulAut (G ⧸ (N.1 : Subgroup G)))
-    haveI : IsTopologicalGroup (MulAut (G ⧸ (N.1 : Subgroup G))) := {}
-    isTopologicalGroup_induced (mapQuotient N.2)
+    letI : TopologicalSpace (MulAut (G ⧸ (N.val : Subgroup G))) := ⊥
+    haveI := discreteTopology_bot (MulAut (G ⧸ (N.val : Subgroup G)))
+    haveI : IsTopologicalGroup (MulAut (G ⧸ (N.val : Subgroup G))) := {}
+    isTopologicalGroup_induced (mapQuotient N.property)
 
 /-- Each characteristic quotient coordinate is continuous for the congruence topology and the
 discrete topology `⊥` on `MulAut (G ⧸ N)`. -/
@@ -110,7 +110,7 @@ theorem continuous_iff_forall_continuous_mapQuotient {X : Type*} [TopologicalSpa
     {f : X → ContinuousAut G} :
     Continuous f ↔
       ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-        Continuous[inferInstance, ⊥] (mapQuotient N.2 ∘ f) := by
+        Continuous[inferInstance, ⊥] (mapQuotient N.property ∘ f) := by
   rw [congruenceTopology_eq_iInf, continuous_iInf_rng]
   simp_rw [continuous_induced_rng]
 
@@ -135,16 +135,16 @@ theorem hasBasis_nhds (φ : ContinuousAut G) :
     (𝓝 φ).HasBasis (fun N : OpenNormalSubgroup G ↦ IsTopCharacteristic G N)
       fun N ↦ {ψ : ContinuousAut G | ∀ x : G, (ψ x : G ⧸ (N : Subgroup G)) = φ x} := by
   let S : {N : OpenNormalSubgroup G // IsTopCharacteristic G N} → Set (ContinuousAut G) :=
-    fun N ↦ {ψ | mapQuotient N.2 ψ = mapQuotient N.2 φ}
+    fun N ↦ {ψ | mapQuotient N.property ψ = mapQuotient N.property φ}
   have hS : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-      S N = {ψ : ContinuousAut G | ∀ x : G, (ψ x : G ⧸ (N.1 : Subgroup G)) = φ x} := fun N ↦ by
+      S N = {ψ : ContinuousAut G | ∀ x : G, (ψ x : G ⧸ (N.val : Subgroup G)) = φ x} := fun N ↦ by
     ext ψ
-    exact mapQuotient_eq_iff N.2
+    exact mapQuotient_eq_iff N.property
   have key : 𝓝 φ = ⨅ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}, 𝓟 (S N) := by
     rw [congruenceTopology_eq_iInf, nhds_iInf]
     refine iInf_congr fun N ↦ ?_
-    let _ : TopologicalSpace (MulAut (G ⧸ (N.1 : Subgroup G))) := ⊥
-    have := discreteTopology_bot (MulAut (G ⧸ (N.1 : Subgroup G)))
+    let _ : TopologicalSpace (MulAut (G ⧸ (N.val : Subgroup G))) := ⊥
+    have := discreteTopology_bot (MulAut (G ⧸ (N.val : Subgroup G)))
     rw [nhds_induced, nhds_discrete, comap_pure]
     rfl
   have hmono : ∀ {M₁ M₂ : OpenNormalSubgroup G} (hM₁ : IsTopCharacteristic G M₁)
@@ -178,13 +178,13 @@ theorem continuous_conj [SeparatelyContinuousMul G] :
   rw [congruenceTopology_eq_iInf, continuous_iInf_rng]
   intro N
   rw [continuous_induced_rng]
-  let _ : TopologicalSpace (MulAut (G ⧸ (N.1 : Subgroup G))) := ⊥
-  have := discreteTopology_bot (MulAut (G ⧸ (N.1 : Subgroup G)))
-  have := QuotientGroup.discreteTopology N.1.isOpen
-  have : (mapQuotient N.2 ∘ conj : G → MulAut (G ⧸ (N.1 : Subgroup G))) =
-      (fun q : G ⧸ (N.1 : Subgroup G) ↦ MulAut.conj q) ∘ QuotientGroup.mk := by
+  let _ : TopologicalSpace (MulAut (G ⧸ (N.val : Subgroup G))) := ⊥
+  have := discreteTopology_bot (MulAut (G ⧸ (N.val : Subgroup G)))
+  have := QuotientGroup.discreteTopology N.val.isOpen
+  have : (mapQuotient N.property ∘ conj : G → MulAut (G ⧸ (N.val : Subgroup G))) =
+      (fun q : G ⧸ (N.val : Subgroup G) ↦ MulAut.conj q) ∘ QuotientGroup.mk := by
     ext g : 1
-    exact mapQuotient_conj N.2 g
+    exact mapQuotient_conj N.property g
   rw [this]
   exact continuous_of_discreteTopology.comp QuotientGroup.continuous_mk
 
@@ -247,11 +247,11 @@ coordinate map is a topological embedding of `ContinuousAut G` into the product 
 automorphism groups of the characteristic open quotients. -/
 theorem isEmbedding_pi_mapQuotient (hG : IsTopologicallyFinitelyGenerated G) :
     letI : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-      TopologicalSpace (MulAut (G ⧸ (N.1 : Subgroup G))) := fun _ ↦ ⊥
+      TopologicalSpace (MulAut (G ⧸ (N.val : Subgroup G))) := fun _ ↦ ⊥
     IsEmbedding fun (φ : ContinuousAut G)
-      (N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}) ↦ mapQuotient N.2 φ := by
+      (N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N}) ↦ mapQuotient N.property φ := by
   let _ : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-    TopologicalSpace (MulAut (G ⧸ (N.1 : Subgroup G))) := fun _ ↦ ⊥
+    TopologicalSpace (MulAut (G ⧸ (N.val : Subgroup G))) := fun _ ↦ ⊥
   exact ⟨inducing_iInf_to_pi _,
     fun φ ψ h ↦ eq_of_forall_mapQuotient_eq hG fun N hN ↦ congrFun h ⟨N, hN⟩⟩
 
@@ -268,14 +268,14 @@ theorem isEmbedding_pi_mapQuotient_of_forall_exists_le (hG : IsTopologicallyFini
   refine ⟨⟨?_⟩, fun φ ψ h ↦ eq_of_forall_mapQuotient_eq hG fun M hM ↦ ?_⟩
   · rw [induced_to_pi, congruenceTopology_eq_iInf]
     refine le_antisymm (le_iInf fun i ↦ iInf_le_of_le ⟨N i, hN i⟩ le_rfl) (le_iInf fun M ↦ ?_)
-    obtain ⟨i, hi⟩ := hcof M.1 M.2
+    obtain ⟨i, hi⟩ := hcof M.val M.property
     refine iInf_le_of_le i ?_
     -- The coordinate at `M` is constant on the fibres of the coordinate at `N i`, so it factors
     -- through the coordinate at `N i`.
-    have hfac : (mapQuotient M.2 : ContinuousAut G → MulAut (G ⧸ (M.1 : Subgroup G))) =
-        Function.extend (mapQuotient (hN i)) (mapQuotient M.2) 1 ∘ mapQuotient (hN i) :=
+    have hfac : (mapQuotient M.property : ContinuousAut G → MulAut (G ⧸ (M.val : Subgroup G))) =
+        Function.extend (mapQuotient (hN i)) (mapQuotient M.property) 1 ∘ mapQuotient (hN i) :=
       funext fun φ ↦ (Function.FactorsThrough.extend_apply (f := mapQuotient (hN i))
-        (fun _ _ h ↦ mapQuotient_eq_mapQuotient_of_le (hN i) M.2 hi h) 1 φ).symm
+        (fun _ _ h ↦ mapQuotient_eq_mapQuotient_of_le (hN i) M.property hi h) 1 φ).symm
     rw [hfac, ← induced_compose]
     exact induced_mono bot_le
   · obtain ⟨i, hi⟩ := hcof M hM
@@ -285,9 +285,9 @@ theorem isEmbedding_pi_mapQuotient_of_forall_exists_le (hG : IsTopologicallyFini
 Hausdorff. -/
 theorem t2Space (hG : IsTopologicallyFinitelyGenerated G) : T2Space (ContinuousAut G) := by
   let _ : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-    TopologicalSpace (MulAut (G ⧸ (N.1 : Subgroup G))) := fun _ ↦ ⊥
+    TopologicalSpace (MulAut (G ⧸ (N.val : Subgroup G))) := fun _ ↦ ⊥
   have : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-    DiscreteTopology (MulAut (G ⧸ (N.1 : Subgroup G))) := fun _ ↦ discreteTopology_bot _
+    DiscreteTopology (MulAut (G ⧸ (N.val : Subgroup G))) := fun _ ↦ discreteTopology_bot _
   exact (isEmbedding_pi_mapQuotient hG).t2Space
 
 /-- For a topologically finitely generated profinite group, the congruence topology is totally
@@ -295,9 +295,9 @@ disconnected. -/
 theorem totallyDisconnectedSpace (hG : IsTopologicallyFinitelyGenerated G) :
     TotallyDisconnectedSpace (ContinuousAut G) := by
   let _ : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-    TopologicalSpace (MulAut (G ⧸ (N.1 : Subgroup G))) := fun _ ↦ ⊥
+    TopologicalSpace (MulAut (G ⧸ (N.val : Subgroup G))) := fun _ ↦ ⊥
   have : ∀ N : {N : OpenNormalSubgroup G // IsTopCharacteristic G N},
-    DiscreteTopology (MulAut (G ⧸ (N.1 : Subgroup G))) := fun _ ↦ discreteTopology_bot _
+    DiscreteTopology (MulAut (G ⧸ (N.val : Subgroup G))) := fun _ ↦ discreteTopology_bot _
   exact (isEmbedding_pi_mapQuotient hG).isTotallyDisconnected_range.mp
     (isTotallyDisconnected_of_totallyDisconnectedSpace _)
 

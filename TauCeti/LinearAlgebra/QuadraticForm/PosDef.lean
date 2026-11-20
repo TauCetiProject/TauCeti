@@ -19,9 +19,10 @@ import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
 Multiplication by a positive scalar preserves and reflects positive-definiteness when the scalar
 action preserves and reflects strict inequalities on values. In particular, symmetrizing a
 bilinear form preserves positive-definiteness of its quadratic map, since the diagonal values
-are doubled. A diagonal form is positive definite exactly when its weights are positive. The
-quadratic form of a symmetric bilinear form is positive definite exactly when the bilinear form is
-positive semidefinite and nondegenerate.
+are doubled. A diagonal form is positive definite exactly when its weights are positive, and a
+form is positive definite on the line spanned by any vector of positive value. The quadratic form
+of a symmetric bilinear form is positive definite exactly when the bilinear form is positive
+semidefinite and nondegenerate.
 
 A positive definite quadratic form on a finitely generated `ℤ`-module takes each of its values
 only finitely often: the sets `{x | q x ≤ n}` and `{x | q x = n}` are finite. This is the
@@ -44,6 +45,10 @@ the one that turns an orbit lying in a level set into a periodic orbit.
   the form is positive semidefinite and nondegenerate.
 * `QuadraticMap.posDef_weightedSumSquares_iff`: a diagonal form over a linearly ordered ring is
   positive definite exactly when all of its weights are positive.
+* `QuadraticMap.posDef_restrict_span_singleton`: a quadratic form is positive definite on the
+  line spanned by a vector of positive value.
+* `TauCeti.exists_posDef_quadraticForm`: every finitely generated free module over a strictly
+  linearly ordered commutative ring admits a positive-definite quadratic form.
 * `QuadraticMap.PosDef.finite_setOf_apply_le`: a positive definite quadratic form on a
   finitely generated `ℤ`-module has only finitely many vectors of value at most `n`.
 * `QuadraticMap.PosDef.finite_setOf_apply_eq`: consequently only finitely many vectors of
@@ -110,6 +115,19 @@ theorem posDef_weightedSumSquares_iff {R : Type*} [CommRing R] [LinearOrder R]
   exact Finset.sum_pos' (fun j _ ↦ mul_nonneg (h j).le (mul_self_nonneg _))
     ⟨i, Finset.mem_univ i, mul_pos (h i) (mul_self_pos.mpr hi)⟩
 
+/-- A quadratic form over a linearly ordered ring is positive definite on the line spanned by a
+vector of positive value. -/
+theorem posDef_restrict_span_singleton {R M : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [AddCommGroup M] [Module R M] {Q : QuadraticForm R M} {y : M}
+    (hy : 0 < Q y) : (Q.restrict (R ∙ y)).PosDef := by
+  rintro ⟨w, hw⟩ hw0
+  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hw
+  have hc : c ≠ 0 := by
+    rintro rfl
+    exact hw0 (by simp)
+  rw [restrict_apply, QuadraticMap.map_smul, smul_eq_mul]
+  exact mul_pos (mul_self_pos.mpr hc) hy
+
 end QuadraticMap
 
 namespace LinearMap.BilinForm
@@ -159,6 +177,17 @@ theorem posDef_toQuadraticMap_iff_isPosSemidef_and_nondegenerate {R M : Type*} [
 end LinearMap.BilinForm
 
 namespace TauCeti
+
+/-- Every finitely generated free module over a strictly linearly ordered commutative ring admits a
+positive-definite quadratic form. -/
+theorem exists_posDef_quadraticForm (R W : Type*) [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] [AddCommGroup W] [Module R W] [Module.Free R W] [Module.Finite R W] :
+    ∃ Q₀ : QuadraticForm R W, Q₀.PosDef := by
+  classical
+  let b := Module.Free.chooseBasis R W
+  exact ⟨_, ((QuadraticMap.posDef_weightedSumSquares_iff
+    (fun _ : Module.Free.ChooseBasisIndex R W ↦ (1 : R))).mpr fun _ ↦ zero_lt_one).comp
+    b.equivFun.toLinearMap b.equivFun.injective⟩
 
 /-- Over `ℤ` a bound on the square is a bound on the absolute value: a nonzero integer is at most
 its own square in absolute value. -/

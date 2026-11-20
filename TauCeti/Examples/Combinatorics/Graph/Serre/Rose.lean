@@ -37,8 +37,8 @@ theorem finite_restrict_rose_iff :
   refine ⟨fun h => ?_, fun hs =>
     ((hs.prod Set.finite_univ).subset fun e he => ⟨he, trivial⟩).to_subtype⟩
   have : Finite s := Finite.of_injective
-    (fun a : s => (⟨(a.1, true), a.2⟩ : ((rose α).restrict {e | e.1 ∈ s} fun _ h => h).E))
-    fun a b hab => Subtype.ext (congrArg (fun e => e.1.1) hab)
+    (fun a : s => (⟨(a.val, true), a.property⟩ : ((rose α).restrict {e | e.1 ∈ s} fun _ h => h).E))
+    fun a b hab => Subtype.ext (congrArg (fun e => e.val.1) hab)
   exact Set.toFinite s
 
 /-- The inclusion of the subrose on `s` sends the petal loop of `a ∈ s` to the petal generator

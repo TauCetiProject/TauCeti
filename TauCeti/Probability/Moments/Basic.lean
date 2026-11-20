@@ -231,7 +231,7 @@ theorem mgf_sum_of_aemeasurable (h_indep : iIndepFun X μ) {s : Finset ι}
     (h_meas : ∀ i ∈ s, AEMeasurable (X i) μ) :
     mgf (fun ω => ∑ i ∈ s, X i ω) μ t = ∏ i ∈ s, mgf (X i) μ t := by
   have h := (h_indep.precomp Subtype.val_injective).mgf_sum₀ (t := t)
-    (fun i : s => h_meas i i.2) Finset.univ
+    (fun i : s => h_meas i i.property) Finset.univ
   rw [Finset.prod_coe_sort s (fun i => mgf (X i) μ t)] at h
   rw [← h]
   congr 1

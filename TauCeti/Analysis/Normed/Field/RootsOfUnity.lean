@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Ring.Ultra
 public import Mathlib.Analysis.Normed.Ring.Finite
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Eval
+public import Mathlib.Topology.Algebra.Valued.NormedValued
 
 /-!
 # Distances from roots of unity to one
@@ -32,6 +33,10 @@ The factorization and the enumeration of primitive roots are Mathlib's
 `IsPrimitiveRoot.card_primitiveRoots`; the values at one are Mathlib's
 `Polynomial.eval_one_cyclotomic_prime_pow` and `Polynomial.eval_one_cyclotomic_not_prime_pow`.
 
+A square root `i` of `-1` is a fourth root of unity, so it has norm one in any normed ring whose
+norm is multiplicative (`TauCeti.norm_eq_one_of_sq_eq_neg_one`), and in a nonarchimedean normed
+field it lies in the valuation ring (`TauCeti.mem_integer_of_sq_eq_neg_one`).
+
 ## Main results
 
 * `IsPrimitiveRoot.norm_sub_one_pow_totient`: `‖ζ - 1‖ ^ φ(n)` is the norm of the value of the
@@ -43,6 +48,8 @@ The factorization and the enumeration of primitive roots are Mathlib's
   `‖p‖ ≤ ‖ζ - 1‖ ^ (p - 1)` for every primitive root of order `n ≠ 1`.
 * `IsOfFinOrder.eq_one_of_norm_sub_one_pow_lt`: a root of unity with
   `‖ζ - 1‖ ^ (p - 1) < ‖p‖` is one.
+* `TauCeti.norm_eq_one_of_sq_eq_neg_one`, `TauCeti.mem_integer_of_sq_eq_neg_one`: a square root
+  of `-1` has norm one and lies in the valuation ring.
 
 ## References
 
@@ -160,3 +167,19 @@ theorem IsOfFinOrder.eq_one_of_norm_sub_one_pow_lt {K : Type*} [NormedField K]
   by_contra hne
   exact ((IsPrimitiveRoot.orderOf ζ).norm_natCast_le_norm_sub_one_pow hp hpK
     (by rwa [Ne, orderOf_eq_one_iff])).not_gt h
+
+namespace TauCeti
+
+/-- A square root `i` of `-1` in a normed ring with multiplicative norm has norm one. -/
+theorem norm_eq_one_of_sq_eq_neg_one {R : Type*} [NormedRing R] [NormMulClass R] [NormOneClass R]
+    {i : R} (hi : i ^ 2 = -1) : ‖i‖ = 1 :=
+  (pow_eq_one_iff_of_nonneg (norm_nonneg i) two_ne_zero).mp (by rw [← norm_pow, hi, norm_neg,
+    norm_one])
+
+/-- A square root `i` of `-1` in a nonarchimedean normed field lies in its valuation ring. -/
+theorem mem_integer_of_sq_eq_neg_one {K : Type*} [NormedField K] [IsUltrametricDist K] {i : K}
+    (hi : i ^ 2 = -1) : i ∈ (NormedField.valuation (K := K)).integer := by
+  rw [Valuation.mem_integer_iff, NormedField.valuation_apply, ← NNReal.coe_le_one, coe_nnNorm,
+    norm_eq_one_of_sq_eq_neg_one hi]
+
+end TauCeti
