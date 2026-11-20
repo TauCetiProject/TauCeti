@@ -89,7 +89,7 @@ open _root_.ModularGroup in
 theorem ofMulAction_S_sq :
     Representation.ofMulAction k SL(2, ℤ) (TraceFormulaMatrixModule n) S ^ 2 = 1 := by
   -- `S² = -1` in `SL(2, ℤ)`, which acts trivially on `ℳₙ`
-  rw [← map_pow, sq, show S * S = -1 from Subtype.ext S_mul_S_eq, ofMulAction_neg, map_one]
+  rw [← map_pow, sq, S_mul_S_eq, ofMulAction_neg, map_one]
 
 open _root_.ModularGroup in
 /-- Left multiplication by `U = T S` on `k[ℳₙ]` satisfies `U³ = 1`. The left-hand side is the

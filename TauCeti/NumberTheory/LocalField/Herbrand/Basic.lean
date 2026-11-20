@@ -124,7 +124,7 @@ variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
 /-- The Herbrand function of the action of `Gal(L/K)` on `𝒪[L]`, as a self-map of `[-1, ∞)`. -/
 private def herbrandFun (u : RamificationIndexDomain) : RamificationIndexDomain :=
   ⟨TauCeti.IsLocalRing.herbrandFun (L ≃ₐ[K] L) 𝒪[L] u,
-    (TauCeti.IsLocalRing.neg_one_le_herbrandFun_iff _ _).2 u.2⟩
+    (TauCeti.IsLocalRing.neg_one_le_herbrandFun_iff _ _).2 u.property⟩
 
 private theorem herbrandFun_strictMono : StrictMono (herbrandFun K L) :=
   fun _ _ h ↦ Subtype.mk_lt_mk.2 (TauCeti.IsLocalRing.herbrandFun_strictMono _ _ h)
@@ -133,7 +133,7 @@ private theorem herbrandFun_surjective : Function.Surjective (herbrandFun K L) :
   obtain ⟨u, hu⟩ := TauCeti.IsLocalRing.herbrandFun_surjective (L ≃ₐ[K] L) 𝒪[L] y
   have hu₁ : u ∈ RamificationIndexDomain := by
     rw [mem_Ici, ← TauCeti.IsLocalRing.neg_one_le_herbrandFun_iff (L ≃ₐ[K] L) 𝒪[L], hu]
-    exact y.2
+    exact y.property
   exact ⟨⟨u, hu₁⟩, Subtype.ext hu⟩
 
 /-! ### The Herbrand function and its inverse -/
@@ -235,7 +235,7 @@ theorem herbrand_slope_anti_adjacent {u v w : RamificationIndexDomain} (huv : u 
 theorem herbrand_of_coe_le_zero {u : RamificationIndexDomain} (hu : (u : ℝ) ≤ 0) :
     herbrand K L u = u :=
   Subtype.ext ((coe_herbrand_eq_herbrandFun K L u).trans
-    (TauCeti.IsLocalRing.herbrandFun_of_neg_one_le_of_nonpos _ _ u.2 hu))
+    (TauCeti.IsLocalRing.herbrandFun_of_neg_one_le_of_nonpos _ _ u.property hu))
 
 /-- On an interval `[a, b]` over which the lower ramification filtration is constant, that is
 `G_t = G_b` for every `a < t ≤ b`, the Herbrand function is affine of slope `#G_b / #G_0`:

@@ -92,13 +92,13 @@ theorem mlieDerivForm_fundamentalVectorField_eq_zero {F : Type*} [NormedAddCommG
     (hα : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
       (ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') g) α = α)
     (ξ : GroupLieAlgebra I G) :
-    mlieDerivForm (fundamentalVectorField I' ξ) α.1 = 0 := by
+    mlieDerivForm (fundamentalVectorField I' ξ) α.val = 0 := by
   funext x
   have hZ := contMDiff_two_fundamentalVectorField (I' := I') (M := M) ξ
   have hc := isCompleteVectorField_fundamentalVectorField (I' := I') (M := M) ξ
   -- Along the flow `ψ_t = exp(t ξ) • ·` the pulled-back form is constant, equal to `α`.
-  have hconst : (fun s ↦ mpullback I' I' (globalFlow _ (hZ.of_le one_le_two) hc s) α.1 x) =
-      fun _ ↦ α.1 x := by
+  have hconst : (fun s ↦ mpullback I' I' (globalFlow _ (hZ.of_le one_le_two) hc s) α.val x) =
+      fun _ ↦ α.val x := by
     funext s
     have hψ : globalFlow _ (hZ.of_le one_le_two) hc s = fun y : M ↦ mulInvariantExp (s • ξ) • y :=
       funext (globalFlow_fundamentalVectorField ξ _ hc s)

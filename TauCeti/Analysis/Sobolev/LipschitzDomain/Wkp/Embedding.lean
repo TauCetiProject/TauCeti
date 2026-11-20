@@ -77,7 +77,7 @@ theorem Wkp.exists_sobolevEmbeddingL_succ_of_isLipschitzDomainWith (hpstar : pst
           Wkp.iteratedGradient k (Wkp.lowerOrder (k + 1) u) := by
   let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
   obtain ⟨S, hS⟩ := W1p.exists_sobolevEmbeddingL_of_isLipschitzDomainWith hpstar hexp hΩ hb
-  exact Wkp.exists_sobolevEmbeddingL_succ_of_ae_eq S hS k
+  exact Wkp.exists_sobolevEmbeddingL_succ_of_ae_eq le_rfl S hS k
 
 /-- **Higher-order Sobolev embedding on bounded Lipschitz domains.** If `Ω ⊆ ℝ × E` is a bounded
 Lipschitz domain of dimension `n`, `1 ≤ p` and `1/p⋆ + 1/n = 1/p` with `p⋆ < ∞`, then for every
@@ -94,7 +94,7 @@ theorem Wkp.exists_sobolevEmbeddingL_of_isLipschitzDomainWith (hpstar : pstar �
         Wkp.value (k + 1) u := by
   let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
   obtain ⟨S, hS⟩ := W1p.exists_sobolevEmbeddingL_of_isLipschitzDomainWith hpstar hexp hΩ hb
-  exact Wkp.exists_sobolevEmbeddingL_of_ae_eq S hS k
+  exact Wkp.exists_sobolevEmbeddingL_of_ae_eq le_rfl S hS k
 
 /-- Iteration of the first-order embedding with steps `t ≤ 1/n` down to `W^{1,q}(Ω)`, where
 `1/q + k t = 1/p`. Each step `W^{1,p}(Ω) → L^r(Ω)` with `1/r + t = 1/p` is the subcritical
@@ -126,7 +126,7 @@ private theorem exists_lipschitzWkpW1pEmbedding
       rcases hle.lt_or_eq with hlt | heq
       · obtain ⟨S₁, hS₁⟩ := W1p.exists_lpEmbeddingL_of_eLpNorm_value_le subset_rfl
           (W1p.exists_eLpNorm_value_le_of_subcritical_gain_of_isLipschitzDomainWith hr hlt hΩ hb)
-        exact Wkp.exists_sobolevEmbeddingL_of_ae_eq S₁ hS₁ (k + 1)
+        exact Wkp.exists_sobolevEmbeddingL_of_ae_eq le_rfl S₁ hS₁ (k + 1)
       · exact Wkp.exists_sobolevEmbeddingL_of_isLipschitzDomainWith hr heq.symm hΩ hb (k + 1)
     obtain ⟨T, hT⟩ := exists_lipschitzWkpW1pEmbedding hΩ hb ht k (p := r) (q := q) hq
       hrinv.symm

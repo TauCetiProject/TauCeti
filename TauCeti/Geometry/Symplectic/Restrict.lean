@@ -91,8 +91,8 @@ lemma isSymplectomorphism_prodEquivOfIsCompl (ω : SymplecticForm V) {L : Submod
       (Submodule.prodEquivOfIsCompl L (ω.orthogonal L) hcompl) := by
   rw [isSymplectomorphism_iff]
   intro p q
-  have h₁ : ω (p.1 : V) (q.2 : V) = 0 := mem_orthogonal_iff.1 q.2.2 _ p.1.2
-  have h₂ : ω (p.2 : V) (q.1 : V) = 0 := mem_orthogonal_iff'.1 p.2.2 _ q.1.2
+  have h₁ : ω (p.1 : V) (q.2 : V) = 0 := mem_orthogonal_iff.1 q.2.property _ p.1.property
+  have h₂ : ω (p.2 : V) (q.1 : V) = 0 := mem_orthogonal_iff'.1 p.2.property _ q.1.property
   simp only [Submodule.coe_prodEquivOfIsCompl', prod_apply, restrict_apply, map_add,
     LinearMap.add_apply, h₁, h₂]
   ring
