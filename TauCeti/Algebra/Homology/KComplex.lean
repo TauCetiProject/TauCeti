@@ -9,9 +9,9 @@ public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplex
 public import Mathlib.LinearAlgebra.Finsupp.LSum
+public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import TauCeti.Algebra.BigOperators.Fin
 public import TauCeti.Algebra.Group.Conj
-public import TauCeti.Algebra.Homology.AlternatingFaceSum
 import Mathlib.Tactic.Group
 
 /-!
@@ -27,7 +27,7 @@ let `r : c → A` satisfy the **Hurwitz relations** `r g * r h = r (g h g⁻¹) 
 
 where `g^h = h⁻¹ g h` and the empty product is `1`. Deleting the `i`-th entry is a face map, and the
 Hurwitz relations are exactly what makes these faces satisfy the semisimplicial identities, so the
-alternating sum squares to zero (`TauCeti.alternatingFaceSum_comp_alternatingFaceSum`).
+alternating sum squares to zero (`TauCeti.sum_neg_one_pow_smul_sum_neg_one_pow_smul_eq_zero`).
 
 The motivating case is the ring `R = ⨁ₙ H₀(Hurₙ; k)` of components of Hurwitz spaces, with `r g`
 the class of the one-term tuple `(g)`: there the homology of `K(M)` in degrees `0` and `1` controls
@@ -39,6 +39,7 @@ the internal grading.
 
 * `TauCeti.KComplex.suffixConj`: the conjugate `gᵢ^(gᵢ₊₁ ⋯ gₙ₋₁)` of an entry of a tuple by the
   product of the later entries.
+* `TauCeti.KComplex.IsHurwitzFamily`: the Hurwitz relations for a family `r : c → A`.
 * `TauCeti.KComplex.face`: the `i`-th face map `K(M)_(q+1) → K(M)_q`.
 * `TauCeti.KComplex.face_comp_face`: the semisimplicial identities, from the Hurwitz relations.
 * `TauCeti.KComplex.d`: the differential, the alternating sum of the faces, with its value on a
@@ -71,12 +72,9 @@ variable {G : Type*} [Group G] {c : ConjClasses G} {n : ℕ}
 the conjugacy class `c` by the product `s = gᵢ₊₁ ⋯ gₙ₋₁` of the later entries, written with the
 partial products `Pⱼ = g₀ ⋯ gⱼ₋₁` as `s = Pᵢ₊₁⁻¹ Pₙ`. It is again a member of `c`. -/
 def suffixConj (w : Fin n → c.carrier) (i : Fin n) : c.carrier :=
-  ⟨((Fin.partialProd (fun j ↦ (w j : G)) i.succ)⁻¹ *
-      Fin.partialProd (fun j ↦ (w j : G)) (Fin.last n))⁻¹ * w i *
-    ((Fin.partialProd (fun j ↦ (w j : G)) i.succ)⁻¹ *
-      Fin.partialProd (fun j ↦ (w j : G)) (Fin.last n)),
-    by simpa using c.conj_mem_carrier (w i).2 ((Fin.partialProd (fun j ↦ (w j : G)) i.succ)⁻¹ *
-      Fin.partialProd (fun j ↦ (w j : G)) (Fin.last n))⁻¹⟩
+  let s := (Fin.partialProd (fun j ↦ (w j : G)) i.succ)⁻¹ *
+    Fin.partialProd (fun j ↦ (w j : G)) (Fin.last n)
+  ⟨s⁻¹ * w i * s, c.conj_inv_mem_carrier (w i).2 s⟩
 
 /-- The value of `suffixConj w i` in `G`. -/
 theorem coe_suffixConj (w : Fin n → c.carrier) (i : Fin n) :
@@ -149,6 +147,17 @@ noncomputable def face (r : c.carrier → A) {q : ℕ} (i : Fin (q + 1)) :
 
 variable {k M}
 
+/-- The family `r : c → A` satisfies the **Hurwitz relations** `r g * r h = r (g h g⁻¹) * r g` for
+all `g` and `h` in the conjugacy class `c`. -/
+def IsHurwitzFamily (r : c.carrier → A) : Prop :=
+  ∀ g h : c.carrier, r g * r h = r ⟨g * h * (g : G)⁻¹, c.conj_mem_carrier h.2 g⟩ * r g
+
+/-- Unfolds `IsHurwitzFamily` to the Hurwitz relations. -/
+theorem isHurwitzFamily_iff {r : c.carrier → A} :
+    IsHurwitzFamily r ↔
+      ∀ g h : c.carrier, r g * r h = r ⟨g * h * (g : G)⁻¹, c.conj_mem_carrier h.2 g⟩ * r g :=
+  Iff.rfl
+
 /-- The face map on a basis tuple. -/
 @[simp]
 theorem face_single (r : c.carrier → A) {q : ℕ} (i : Fin (q + 1)) (w : Fin (q + 1) → c.carrier)
@@ -159,15 +168,14 @@ theorem face_single (r : c.carrier → A) {q : ℕ} (i : Fin (q + 1)) (w : Fin (
 
 /-- The **semisimplicial identities** of the faces of the K-complex: when `r` satisfies the
 Hurwitz relations, `∂ᵢ ∘ ∂ⱼ₊₁ = ∂ⱼ ∘ ∂ᵢ` for `i ≤ j`. -/
-theorem face_comp_face {r : c.carrier → A}
-    (hr : ∀ g h : c.carrier, r g * r h = r ⟨g * h * (g : G)⁻¹, c.conj_mem_carrier h.2 g⟩ * r g)
-    {q : ℕ} {i j : Fin (q + 1)} (hij : i ≤ j) :
+theorem face_comp_face {r : c.carrier → A} (hr : IsHurwitzFamily r) {q : ℕ} {i j : Fin (q + 1)}
+    (hij : i ≤ j) :
     face k M r i ∘ₗ face k M r j.succ = face k M r j ∘ₗ face k M r i.castSucc := by
   refine Finsupp.lhom_ext fun w m ↦ ?_
   simp only [LinearMap.comp_apply, face_single, smul_smul]
   have hconj : suffixConj (i.castSucc.removeNth w) j = suffixConj w j.succ :=
     suffixConj_removeNth_castSucc w hij
-  have hrel := hr (suffixConj w j.succ) (suffixConj w i.castSucc)
+  have hrel := isHurwitzFamily_iff.1 hr (suffixConj w j.succ) (suffixConj w i.castSucc)
   rw [show (⟨_, _⟩ : c.carrier) = suffixConj (j.succ.removeNth w) i from
     Subtype.ext (suffixConj_removeNth_succ w hij).symm] at hrel
   rw [hconj, hrel, Fin.removeNth_removeNth_eq_swap, Fin.succAbove_succ_of_le _ _ hij,
@@ -199,13 +207,15 @@ theorem d_zero_single (r : c.carrier → A) (w : Fin 1 → c.carrier) (m : M) :
 theorem d_one_single (r : c.carrier → A) (g h : c.carrier) (m : M) :
     d k M r 1 (Finsupp.single ![g, h] m) =
       Finsupp.single ![h]
-          (r ⟨(h : G)⁻¹ * g * h, by simpa using c.conj_mem_carrier g.2 (h : G)⁻¹⟩ • m) -
+          (r ⟨(h : G)⁻¹ * g * h, c.conj_inv_mem_carrier g.2 h⟩ • m) -
         Finsupp.single ![g] (r h • m) := by
-  have h0 : suffixConj ![g, h] 0 =
-      ⟨(h : G)⁻¹ * g * h, by simpa using c.conj_mem_carrier g.2 (h : G)⁻¹⟩ :=
+  have h0 : suffixConj ![g, h] 0 = ⟨(h : G)⁻¹ * g * h, c.conj_inv_mem_carrier g.2 h⟩ :=
     Subtype.ext <| by
-      simp only [coe_suffixConj, Fin.partialProd, List.ofFn_succ, List.ofFn_zero]
-      simp
+      have hs : (Fin.partialProd (fun j ↦ (![g, h] j : G)) (0 : Fin 2).succ)⁻¹ *
+          Fin.partialProd (fun j ↦ (![g, h] j : G)) (Fin.last 2) = h :=
+        Fin.partialProd_right_inv (fun j ↦ (![g, h] j : G)) 1
+      rw [coe_suffixConj, hs]
+      rfl
   have h1 : suffixConj ![g, h] 1 = h := suffixConj_last (n := 1) ![g, h]
   have hw0 : Fin.removeNth 0 ![g, h] = ![h] := by ext i; fin_cases i; rfl
   have hw1 : Fin.removeNth 1 ![g, h] = ![g] := by ext i; fin_cases i; rfl
@@ -213,14 +223,15 @@ theorem d_one_single (r : c.carrier → A) (g h : c.carrier) (m : M) :
   simp [sub_eq_add_neg]
 
 /-- The differential squares to zero when `r` satisfies the Hurwitz relations. -/
-theorem d_comp_d {r : c.carrier → A}
-    (hr : ∀ g h : c.carrier, r g * r h = r ⟨g * h * (g : G)⁻¹, c.conj_mem_carrier h.2 g⟩ * r g)
-    (q : ℕ) : d k M r q ∘ₗ d k M r (q + 1) = 0 := by
-  have h := congrArg ModuleCat.Hom.hom <| alternatingFaceSum_comp_alternatingFaceSum
-    (fun i ↦ ModuleCat.ofHom (face k M r (q := q + 1) i))
-    (fun i ↦ ModuleCat.ofHom (face k M r (q := q) i)) fun _ _ hij ↦ by
-      rw [← ModuleCat.ofHom_comp, ← ModuleCat.ofHom_comp, face_comp_face hr hij]
-  simpa [alternatingFaceSum_def, d, ModuleCat.hom_sum] using h
+theorem d_comp_d {r : c.carrier → A} (hr : IsHurwitzFamily r) (q : ℕ) :
+    d k M r q ∘ₗ d k M r (q + 1) = 0 := by
+  refine LinearMap.ext fun x ↦ ?_
+  simp only [LinearMap.comp_apply, d]
+  rw [LinearMap.sum_apply _ _ x, map_sum]
+  simp only [LinearMap.smul_apply, map_zsmul, LinearMap.sum_apply, LinearMap.zero_apply]
+  exact sum_neg_one_pow_smul_sum_neg_one_pow_smul_eq_zero
+    (fun i j ↦ face k M r j (face k M r i x))
+    fun _ _ hij ↦ LinearMap.congr_fun (face_comp_face hr hij) x
 
 /-- If every `r g` acts by zero on `M`, for instance on `k` through an augmentation `A → k` killing
 every `r g`, then the differential vanishes. -/
@@ -243,8 +254,7 @@ open KComplex
 universe v
 
 variable (k : Type*) {G : Type*} [Group G] {c : ConjClasses G} {A : Type*} [CommRing k]
-  [Semiring A] [Algebra k A] (r : c.carrier → A)
-  (hr : ∀ g h : c.carrier, r g * r h = r ⟨g * h * (g : G)⁻¹, c.conj_mem_carrier h.2 g⟩ * r g)
+  [Semiring A] [Algebra k A] (r : c.carrier → A) (hr : IsHurwitzFamily r)
   (M : Type v) [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
 
 /-- The **K-complex** `K(M)` of a module `M` over an algebra `A` with a family `r : c → A`
@@ -305,15 +315,13 @@ theorem kComplexMap_id : kComplexMap (k := k) (r := r) (hr := hr) (LinearMap.id 
   rw [kComplexMap_f, LinearMap.restrictScalars_id, Finsupp.mapRange.linearMap_id]
   exact ModuleCat.ofHom_id
 
+@[reassoc, simp]
 theorem kComplexMap_comp (f : M →ₗ[A] N) (g : N →ₗ[A] P) :
     kComplexMap (k := k) (r := r) (hr := hr) (g ∘ₗ f) =
       kComplexMap (k := k) (r := r) (hr := hr) f ≫ kComplexMap g := by
   ext q : 1
-  have h : Finsupp.mapRange.linearMap ((g ∘ₗ f).restrictScalars k) =
-      Finsupp.mapRange.linearMap (g.restrictScalars k) ∘ₗ
-        (Finsupp.mapRange.linearMap (f.restrictScalars k) :
-          ((Fin q → c.carrier) →₀ M) →ₗ[k] (Fin q → c.carrier) →₀ N) :=
-    Finsupp.lhom_ext fun w m ↦ by simp
-  exact (congrArg ModuleCat.ofHom h).trans (ModuleCat.ofHom_comp _ _)
+  rw [HomologicalComplex.comp_f, kComplexMap_f, kComplexMap_f, kComplexMap_f,
+    LinearMap.restrictScalars_comp, Finsupp.mapRange.linearMap_comp]
+  exact ModuleCat.ofHom_comp _ _
 
 end TauCeti
