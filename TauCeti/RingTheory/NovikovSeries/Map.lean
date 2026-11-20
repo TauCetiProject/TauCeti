@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Data.Finsupp.Basic
+public import Mathlib.LinearAlgebra.Basis.Defs
 public import TauCeti.GroupTheory.Coset.Fiber
 public import TauCeti.RingTheory.NovikovSeries.Count.Basic
 
@@ -39,10 +40,20 @@ vanishing below `C`. Restricting a pushforward along an injective `φ` gives bac
 `ρ` applied to its coefficients. Restriction keeps a monomial `r e^(φ h)` as `r e^h` when `φ` is
 injective, and kills a monomial whose exponent is not in the range of `φ`.
 
+For a linear equivalence `e : V ≃ₗ[R] W` of coefficient modules, the pushforward along `e` and
+the identity of exponents is an `R`-linear equivalence `TauCeti.NovikovSeries.mapLinearEquiv e`.
+Novikov series with coefficients in a finite product are families of Novikov series
+(`TauCeti.NovikovSeries.piLinearEquiv`), so a finite basis of `V` identifies Novikov series with
+coefficients in `V` with families of scalar Novikov series (`TauCeti.NovikovSeries.basisCoords`).
+
 ## Main definitions
 
 * `TauCeti.NovikovSeries.map`: the pushforward of Novikov series along a coefficient map and a
   period-rescaling exponent homomorphism.
+* `TauCeti.NovikovSeries.mapLinearEquiv`, `TauCeti.NovikovSeries.piLinearEquiv`,
+  `TauCeti.NovikovSeries.basisCoords`: coefficientwise linear equivalences, and the coordinates of
+  a Novikov series with coefficients in a module with a finite basis as a family of scalar
+  Novikov series.
 * `TauCeti.NovikovSeries.comap`: the restriction of Novikov series along a period-rescaling
   exponent homomorphism with finite kernel.
 
@@ -493,6 +504,90 @@ theorem comap_comap (φ' : H' →+ H'') (hφ' : ∃ c > 0, ∀ h, N'' (φ' h) = 
 end Composition
 
 end Comap
+
+section LinearEquiv
+
+variable [AddZeroClass H] {N : H →+ ℝ} [Semiring R] {V W : Type*} [AddCommMonoid V]
+  [Module R V] [AddCommMonoid W] [Module R W]
+
+/-- A linear equivalence of coefficients, applied coefficientwise to Novikov series: the
+pushforward `TauCeti.NovikovSeries.map` along `e` and the identity of exponents, which is linear
+for the ground-ring actions. -/
+def mapLinearEquiv (e : V ≃ₗ[R] W) : NovikovSeries V H N ≃ₗ[R] NovikovSeries W H N where
+  toFun := map e.toAddEquiv.toAddMonoidHom (AddMonoidHom.id H) exists_period_rescale_id
+  invFun := map e.symm.toAddEquiv.toAddMonoidHom (AddMonoidHom.id H) exists_period_rescale_id
+  left_inv v := by ext h; simp
+  right_inv w := by ext h; simp
+  map_add' := map_add _
+  map_smul' c v := by ext h; simp
+
+/-- The coefficients of `mapLinearEquiv e v` are the images under `e` of those of `v`. -/
+@[simp]
+theorem coeff_mapLinearEquiv (e : V ≃ₗ[R] W) (v : NovikovSeries V H N) (h : H) :
+    (mapLinearEquiv e v).coeff h = e (v.coeff h) := by
+  simp [mapLinearEquiv]
+
+/-- The coefficients of `(mapLinearEquiv e).symm w` are the images under `e.symm` of those of
+`w`. -/
+@[simp]
+theorem coeff_mapLinearEquiv_symm (e : V ≃ₗ[R] W) (w : NovikovSeries W H N) (h : H) :
+    ((mapLinearEquiv e).symm w).coeff h = e.symm (w.coeff h) := by
+  simp [mapLinearEquiv]
+
+variable {ι : Type*} [Finite ι] {M : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+
+variable (R) in
+/-- Novikov series with coefficients in a finite product are families of Novikov series. -/
+def piLinearEquiv : NovikovSeries (∀ i, M i) H N ≃ₗ[R] (∀ i, NovikovSeries (M i) H N) where
+  toFun v i :=
+    { coeff h := v.coeff h i
+      finite_lt C := (v.finite_lt C).subset fun h hh =>
+        ⟨fun hv => hh.1 (by rw [hv, Pi.zero_apply]), hh.2⟩ }
+  invFun v :=
+    { coeff h i := (v i).coeff h
+      finite_lt C := (Set.finite_iUnion fun i => (v i).finite_lt C).subset fun h hh => by
+        obtain ⟨i, hi⟩ := Function.ne_iff.1 hh.1
+        exact Set.mem_iUnion.2 ⟨i, hi, hh.2⟩ }
+  left_inv v := by ext h i; rfl
+  right_inv v := by ext i h; rfl
+  map_add' v w := by ext i h; rfl
+  map_smul' c v := by ext i h; rfl
+
+/-- The `i`-th series of `piLinearEquiv R v` has the `i`-th components of the coefficients of
+`v`. -/
+@[simp]
+theorem coeff_piLinearEquiv_apply (v : NovikovSeries (∀ i, M i) H N) (i : ι) (h : H) :
+    (piLinearEquiv R v i).coeff h = v.coeff h i :=
+  (rfl)
+
+/-- The coefficients of `(piLinearEquiv R).symm v` collect the coefficients of the series
+`v i`. -/
+@[simp]
+theorem coeff_piLinearEquiv_symm_apply (v : ∀ i, NovikovSeries (M i) H N) (h : H) (i : ι) :
+    ((piLinearEquiv R).symm v).coeff h i = (v i).coeff h :=
+  (rfl)
+
+/-- The coordinates of a Novikov series with coefficients in a module with a finite basis: one
+Novikov series with scalar coefficients for each basis vector. -/
+def basisCoords (b : Module.Basis ι R V) :
+    NovikovSeries V H N ≃ₗ[R] (ι → NovikovSeries R H N) :=
+  (mapLinearEquiv b.equivFun).trans (piLinearEquiv R)
+
+/-- The `i`-th coordinate series has the `i`-th basis coordinates of the coefficients. -/
+@[simp]
+theorem coeff_basisCoords (b : Module.Basis ι R V) (v : NovikovSeries V H N) (i : ι) (h : H) :
+    (basisCoords b v i).coeff h = b.repr (v.coeff h) i := by
+  simp [basisCoords]
+
+/-- A family of scalar series is the coordinates of the series with coefficients
+`∑ i, (v i)_h • b i`. -/
+@[simp]
+theorem coeff_basisCoords_symm [Fintype ι] (b : Module.Basis ι R V)
+    (v : ι → NovikovSeries R H N) (h : H) :
+    ((basisCoords b).symm v).coeff h = ∑ i, (v i).coeff h • b i := by
+  simp [basisCoords, Module.Basis.equivFun_symm_apply]
+
+end LinearEquiv
 
 end NovikovSeries
 

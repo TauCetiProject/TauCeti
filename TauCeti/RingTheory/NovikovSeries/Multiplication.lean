@@ -23,11 +23,18 @@ Novikov series form a ring, the Novikov completion of the group ring `R[H]` alon
 filtration: it is the coefficient ring of the Novikov complex of a closed one-form and of capped
 Hamiltonian Floer complexes.
 
+The product is the special case, along the multiplication `AddMonoidHom.mul`, of the convolution
+`TauCeti.NovikovSeries.convolve β` of Novikov series with coefficients in additive monoids `V`
+and `W` along a biadditive map `β : V →+ W →+ U`, with coefficients
+`∑ β (v.coeff u) (w.coeff u')` over the same finite sets of pairs.
+
 All ring laws are proved by finite-support arguments. The basic tool is
-`NovikovSeries.coeff_mul_eq_sum`: a coefficient of a product may be computed as a sum over any
-finite set of pairs adding up to the exponent which contains every pair of support exponents.
-Associativity rests on the uniform cutoff lemma `NovikovSeries.finite_setOf_period_add_add_lt`
-for triples of support exponents, from `TauCeti.RingTheory.NovikovSeries.Basic`.
+`NovikovSeries.coeff_convolve_eq_sum`, specialized to `NovikovSeries.coeff_mul_eq_sum`: a
+coefficient of a convolution may be computed as a sum over any finite set of pairs adding up to
+the exponent which contains every pair of support exponents. Distributivity is the additivity of
+the convolution in each series. Associativity rests on the uniform cutoff lemma
+`NovikovSeries.finite_setOf_period_add_add_lt` for triples of support exponents, from
+`TauCeti.RingTheory.NovikovSeries.Basic`.
 
 The arrangement of the instances follows Mathlib's `HahnSeries` in
 `Mathlib/RingTheory/HahnSeries/Multiplication.lean`; the support arguments are different, since
@@ -35,6 +42,7 @@ The arrangement of the instances follows Mathlib's `HahnSeries` in
 
 ## Main definitions
 
+* `TauCeti.NovikovSeries.convolve`: the convolution of Novikov series along a biadditive map.
 * `TauCeti.NovikovSeries.instMul`: the convolution product.
 * `TauCeti.NovikovSeries.instSemiring`, `TauCeti.NovikovSeries.instCommRing`, ...: the
   (commutative) (semi)ring structures, with unit the monomial `single 0 1`.
@@ -47,12 +55,15 @@ The arrangement of the instances follows Mathlib's `HahnSeries` in
 
 ## Main results
 
-* `TauCeti.NovikovSeries.coeff_mul_eq_sum`: computing a coefficient of a product over any finite
-  set of pairs containing the pairs of support exponents.
+* `TauCeti.NovikovSeries.convolve_add_left`, `TauCeti.NovikovSeries.convolve_add_right`: the
+  convolution is biadditive.
+* `TauCeti.NovikovSeries.coeff_convolve_eq_sum`, `TauCeti.NovikovSeries.coeff_mul_eq_sum`:
+  computing a coefficient of a convolution or a product over any finite set of pairs containing
+  the pairs of support exponents.
 * `TauCeti.NovikovSeries.support_mul_subset`: the support of a product lies in the sum of the
   supports.
-* `TauCeti.NovikovSeries.single_mul_single` and `TauCeti.NovikovSeries.single_pow`: monomials
-  multiply by adding exponents.
+* `TauCeti.NovikovSeries.convolve_single_single`, `TauCeti.NovikovSeries.single_mul_single` and
+  `TauCeti.NovikovSeries.single_pow`: monomials convolve and multiply by adding exponents.
 * `TauCeti.NovikovSeries.unitsSingle`, `TauCeti.NovikovSeries.isUnit_single`: over an additive
   group, a monomial `u e^g` with unit coefficient is a unit, with inverse `u⁻¹ e^(-g)`.
 * `TauCeti.NovikovSeries.ofAddMonoidAlgebra_injective`: the group ring embeds into Novikov series,
@@ -84,20 +95,148 @@ namespace NovikovSeries
 
 variable {R S H : Type*}
 
+section Convolution
+
+variable [AddZeroClass H] {N : H →+ ℝ} {V W U : Type*} [AddCommMonoid V] [AddCommMonoid W]
+  [AddCommMonoid U] (β : V →+ W →+ U)
+
+/-- **The convolution of Novikov series along a biadditive map.** For `β : V →+ W →+ U`, the
+coefficient of `convolve β v w` at `h` is the finite sum of `β (v.coeff u) (w.coeff u')` over the
+pairs `(u, u')` of support exponents with `u + u' = h`. Along the multiplication of a semiring this
+is the product of Novikov series (`TauCeti.NovikovSeries.instMul`), and its `R`-bilinear version is
+`TauCeti.NovikovSeries.convolution`. -/
+@[expose]
+def convolve (v : NovikovSeries V H N) (w : NovikovSeries W H N) : NovikovSeries U H N where
+  coeff h := ∑ p ∈ (finite_setOf_add_eq v w h).toFinset, β (v.coeff p.1) (w.coeff p.2)
+  finite_lt C := ((finite_setOf_period_add_lt v w C).image fun p => p.1 + p.2).subset <| by
+    rintro h ⟨hh, hC⟩
+    obtain ⟨p, hp, -⟩ := exists_ne_zero_of_sum_ne_zero hh
+    rw [Set.Finite.mem_toFinset] at hp
+    exact ⟨p, ⟨by rw [hp.1]; exact hC, hp.2⟩, hp.1⟩
+
+/-- The coefficient of `convolve β v w` at `h`, as a sum over the finite set of pairs of support
+exponents adding up to `h`. -/
+theorem coeff_convolve (v : NovikovSeries V H N) (w : NovikovSeries W H N) (h : H) :
+    (convolve β v w).coeff h =
+      ∑ p ∈ (finite_setOf_add_eq v w h).toFinset, β (v.coeff p.1) (w.coeff p.2) :=
+  rfl
+
+/-- A coefficient of a convolution is the sum of `β (v.coeff p.1) (w.coeff p.2)` over any finite
+set of pairs `p` with `p.1 + p.2 = h` containing every such pair of support exponents. -/
+theorem coeff_convolve_eq_sum {v : NovikovSeries V H N} {w : NovikovSeries W H N} {h : H}
+    {s : Finset (H × H)} (hs : ∀ p ∈ s, p.1 + p.2 = h)
+    (hvw : ∀ u u', u + u' = h → v.coeff u ≠ 0 → w.coeff u' ≠ 0 → (u, u') ∈ s) :
+    (convolve β v w).coeff h = ∑ p ∈ s, β (v.coeff p.1) (w.coeff p.2) := by
+  rw [coeff_convolve]
+  refine sum_subset (fun p hp => ?_) fun p hps hp => ?_
+  · rw [Set.Finite.mem_toFinset] at hp
+    exact hvw p.1 p.2 hp.1 hp.2.1 hp.2.2
+  · rw [Set.Finite.mem_toFinset] at hp
+    by_cases hv : v.coeff p.1 = 0
+    · rw [hv, map_zero, AddMonoidHom.zero_apply]
+    by_cases hw : w.coeff p.2 = 0
+    · rw [hw, map_zero]
+    exact absurd ⟨hs p hps, hv, hw⟩ hp
+
+/-- A nonzero coefficient of a convolution comes from a pair of support exponents. -/
+theorem exists_add_eq_of_coeff_convolve_ne_zero {v : NovikovSeries V H N}
+    {w : NovikovSeries W H N} {h : H} (hvw : (convolve β v w).coeff h ≠ 0) :
+    ∃ u u', u + u' = h ∧ v.coeff u ≠ 0 ∧ w.coeff u' ≠ 0 := by
+  obtain ⟨p, hp, -⟩ := exists_ne_zero_of_sum_ne_zero hvw
+  rw [Set.Finite.mem_toFinset] at hp
+  exact ⟨p.1, p.2, hp⟩
+
+/-- The coefficient of `convolve β v w` at `h` as a sum over the union of the pairs of support
+exponents of `(v₁, w₁)` and of `(v₂, w₂)` adding up to `h`, provided these cover the pairs of
+support exponents of `(v, w)`. -/
+theorem coeff_convolve_eq_sum_union [DecidableEq H] {v : NovikovSeries V H N}
+    {w : NovikovSeries W H N} (v₁ : NovikovSeries V H N) (w₁ : NovikovSeries W H N)
+    (v₂ : NovikovSeries V H N) (w₂ : NovikovSeries W H N) {h : H}
+    (hvw : ∀ u u', v.coeff u ≠ 0 → w.coeff u' ≠ 0 →
+      v₁.coeff u ≠ 0 ∧ w₁.coeff u' ≠ 0 ∨ v₂.coeff u ≠ 0 ∧ w₂.coeff u' ≠ 0) :
+    (convolve β v w).coeff h = ∑ p ∈ (finite_setOf_add_eq v₁ w₁ h).toFinset ∪
+      (finite_setOf_add_eq v₂ w₂ h).toFinset, β (v.coeff p.1) (w.coeff p.2) := by
+  refine coeff_convolve_eq_sum β (fun p hp => ?_) fun u u' huu' hu hu' => ?_
+  · rcases mem_union.1 hp with hp | hp <;> exact ((Set.Finite.mem_toFinset _).1 hp).1
+  · rcases hvw u u' hu hu' with h₁ | h₂
+    · exact mem_union_left _ ((Set.Finite.mem_toFinset _).2 ⟨huu', h₁⟩)
+    · exact mem_union_right _ ((Set.Finite.mem_toFinset _).2 ⟨huu', h₂⟩)
+
+/-- Convolution is additive in the first series. -/
+theorem convolve_add_left (v v' : NovikovSeries V H N) (w : NovikovSeries W H N) :
+    convolve β (v + v') w = convolve β v w + convolve β v' w := by
+  classical
+  ext h
+  rw [coeff_add, coeff_convolve_eq_sum_union β v w v' w fun u u' hu hu' => ?_,
+    coeff_convolve_eq_sum_union β v w v' w fun u u' hu hu' => Or.inl ⟨hu, hu'⟩,
+    coeff_convolve_eq_sum_union β v w v' w fun u u' hu hu' => Or.inr ⟨hu, hu'⟩,
+    ← sum_add_distrib]
+  · simp only [coeff_add, map_add, AddMonoidHom.add_apply]
+  · rw [coeff_add] at hu
+    by_cases hv : v.coeff u = 0
+    · exact Or.inr ⟨by rwa [hv, zero_add] at hu, hu'⟩
+    · exact Or.inl ⟨hv, hu'⟩
+
+/-- Convolution is additive in the second series. -/
+theorem convolve_add_right (v : NovikovSeries V H N) (w w' : NovikovSeries W H N) :
+    convolve β v (w + w') = convolve β v w + convolve β v w' := by
+  classical
+  ext h
+  rw [coeff_add, coeff_convolve_eq_sum_union β v w v w' fun u u' hu hu' => ?_,
+    coeff_convolve_eq_sum_union β v w v w' fun u u' hu hu' => Or.inl ⟨hu, hu'⟩,
+    coeff_convolve_eq_sum_union β v w v w' fun u u' hu hu' => Or.inr ⟨hu, hu'⟩,
+    ← sum_add_distrib]
+  · simp only [coeff_add, map_add]
+  · rw [coeff_add] at hu'
+    by_cases hw : w.coeff u' = 0
+    · exact Or.inr ⟨hu, by rwa [hw, zero_add] at hu'⟩
+    · exact Or.inl ⟨hu, hw⟩
+
+/-- Convolving with the zero series on the left gives zero. -/
+@[simp]
+theorem zero_convolve (w : NovikovSeries W H N) : convolve β (0 : NovikovSeries V H N) w = 0 := by
+  ext h
+  simp [coeff_convolve]
+
+/-- Convolving with the zero series on the right gives zero. -/
+@[simp]
+theorem convolve_zero (v : NovikovSeries V H N) : convolve β v (0 : NovikovSeries W H N) = 0 := by
+  ext h
+  simp [coeff_convolve]
+
+/-- Convolving monomials adds their exponents. -/
+@[simp]
+theorem convolve_single_single (g g' : H) (x : V) (y : W) :
+    convolve β (single g x : NovikovSeries V H N) (single g' y) = single (g + g') (β x y) := by
+  classical
+  ext h
+  by_cases hh : g + g' = h
+  · rw [coeff_convolve_eq_sum β (s := {(g, g')}) (by simpa using hh) fun u u' _ hu hu' => ?_,
+      sum_singleton, coeff_single_same, coeff_single_same, ← hh, coeff_single_same]
+    rw [Finset.mem_singleton, Prod.mk.injEq]
+    exact ⟨by_contra fun hug => hu (coeff_single_of_ne hug x),
+      by_contra fun hug => hu' (coeff_single_of_ne hug y)⟩
+  · rw [coeff_convolve_eq_sum β (s := ∅) (by simp) fun u u' huu' hu hu' => ?_, sum_empty,
+      coeff_single_of_ne (Ne.symm hh)]
+    have hu : u = g := by_contra fun hug => hu (coeff_single_of_ne hug x)
+    have hu' : u' = g' := by_contra fun hug => hu' (coeff_single_of_ne hug y)
+    exact absurd (hu ▸ hu' ▸ huu') hh
+
+end Convolution
+
 section Mul
 
 variable [AddZeroClass H] {N : H →+ ℝ} [NonUnitalNonAssocSemiring R]
 
 /-- The convolution product of Novikov series: the coefficient of `a * b` at `h` is the finite
-sum of `a.coeff u * b.coeff v` over the pairs `(u, v)` of support exponents with `u + v = h`. -/
+sum of `a.coeff u * b.coeff v` over the pairs `(u, v)` of support exponents with `u + v = h`. It is
+the convolution `TauCeti.NovikovSeries.convolve` along the multiplication `AddMonoidHom.mul`. -/
 instance instMul : Mul (NovikovSeries R H N) where
-  mul a b :=
-    { coeff h := ∑ p ∈ (finite_setOf_add_eq a b h).toFinset, a.coeff p.1 * b.coeff p.2
-      finite_lt C := ((finite_setOf_period_add_lt a b C).image fun p => p.1 + p.2).subset <| by
-        rintro h ⟨hh, hC⟩
-        obtain ⟨p, hp, -⟩ := exists_ne_zero_of_sum_ne_zero hh
-        rw [Set.Finite.mem_toFinset] at hp
-        exact ⟨p, ⟨by rw [hp.1]; exact hC, hp.2⟩, hp.1⟩ }
+  mul := convolve AddMonoidHom.mul
+
+/-- The product of Novikov series is their convolution along the multiplication of `R`. -/
+theorem mul_eq_convolve (a b : NovikovSeries R H N) : a * b = convolve AddMonoidHom.mul a b :=
+  rfl
 
 /-- The coefficient of `a * b` at `h`, as a sum over the finite set of pairs of support exponents
 adding up to `h`. -/
@@ -110,24 +249,13 @@ pairs `p` with `p.1 + p.2 = h` containing every such pair of support exponents. 
 theorem coeff_mul_eq_sum {a b : NovikovSeries R H N} {h : H} {s : Finset (H × H)}
     (hs : ∀ p ∈ s, p.1 + p.2 = h)
     (hab : ∀ u v, u + v = h → a.coeff u ≠ 0 → b.coeff v ≠ 0 → (u, v) ∈ s) :
-    (a * b).coeff h = ∑ p ∈ s, a.coeff p.1 * b.coeff p.2 := by
-  rw [coeff_mul]
-  refine sum_subset (fun p hp => ?_) fun p hps hp => ?_
-  · rw [Set.Finite.mem_toFinset] at hp
-    exact hab p.1 p.2 hp.1 hp.2.1 hp.2.2
-  · rw [Set.Finite.mem_toFinset] at hp
-    by_cases ha : a.coeff p.1 = 0
-    · rw [ha, zero_mul]
-    by_cases hb : b.coeff p.2 = 0
-    · rw [hb, mul_zero]
-    exact absurd ⟨hs p hps, ha, hb⟩ hp
+    (a * b).coeff h = ∑ p ∈ s, a.coeff p.1 * b.coeff p.2 :=
+  coeff_convolve_eq_sum AddMonoidHom.mul hs hab
 
 /-- A nonzero coefficient of a product comes from a pair of support exponents. -/
 theorem exists_add_eq_of_coeff_mul_ne_zero {a b : NovikovSeries R H N} {h : H}
-    (hab : (a * b).coeff h ≠ 0) : ∃ u v, u + v = h ∧ a.coeff u ≠ 0 ∧ b.coeff v ≠ 0 := by
-  obtain ⟨p, hp, -⟩ := exists_ne_zero_of_sum_ne_zero hab
-  rw [Set.Finite.mem_toFinset] at hp
-  exact ⟨p.1, p.2, hp⟩
+    (hab : (a * b).coeff h ≠ 0) : ∃ u v, u + v = h ∧ a.coeff u ≠ 0 ∧ b.coeff v ≠ 0 :=
+  exists_add_eq_of_coeff_convolve_ne_zero AddMonoidHom.mul hab
 
 /-- The support of a product lies in the sum of the supports. -/
 theorem support_mul_subset (a b : NovikovSeries R H N) :
@@ -163,39 +291,11 @@ private theorem coeff_mul_eq_sum_fibre {ι : Type*} [DecidableEq H] {a b : Novik
   · obtain ⟨t, ht, rfl⟩ := mem_image.1 hp
     exact hf t ht
 
-/-- The coefficient of `a * b` at `h` as a sum over the union of the pairs of support exponents of
-two products `a₁ * b₁` and `a₂ * b₂` adding up to `h`, provided these cover the pairs of support
-exponents of `a * b`. -/
-private theorem coeff_mul_eq_sum_union [DecidableEq H] {a b : NovikovSeries R H N}
-    (a₁ b₁ a₂ b₂ : NovikovSeries R H N) {h : H}
-    (hab : ∀ u v, a.coeff u ≠ 0 → b.coeff v ≠ 0 →
-      a₁.coeff u ≠ 0 ∧ b₁.coeff v ≠ 0 ∨ a₂.coeff u ≠ 0 ∧ b₂.coeff v ≠ 0) :
-    (a * b).coeff h = ∑ p ∈ (finite_setOf_add_eq a₁ b₁ h).toFinset ∪
-      (finite_setOf_add_eq a₂ b₂ h).toFinset, a.coeff p.1 * b.coeff p.2 := by
-  refine coeff_mul_eq_sum (fun p hp => ?_) fun u v huv hu hv => ?_
-  · rcases mem_union.1 hp with hp | hp <;> exact ((Set.Finite.mem_toFinset _).1 hp).1
-  · rcases hab u v hu hv with h₁ | h₂
-    · exact mem_union_left _ ((Set.Finite.mem_toFinset _).2 ⟨huv, h₁⟩)
-    · exact mem_union_right _ ((Set.Finite.mem_toFinset _).2 ⟨huv, h₂⟩)
-
 /-- Monomials multiply by adding exponents. -/
 @[simp]
 theorem single_mul_single (g g' : H) (r r' : R) :
-    (single g r * single g' r' : NovikovSeries R H N) = single (g + g') (r * r') := by
-  classical
-  ext h
-  rw [coeff_mul_eq_sum (s := ({(g, g')} : Finset (H × H)).filter fun p => p.1 + p.2 = h)
-    (fun p hp => (mem_filter.1 hp).2) fun u v huv hu hv => ?_]
-  · by_cases hh : h = g + g'
-    · subst hh
-      rw [filter_true_of_mem fun p hp => by rw [mem_singleton.1 hp], sum_singleton,
-        coeff_single_same, coeff_single_same, coeff_single_same]
-    · rw [coeff_single_of_ne hh]
-      simp [filter_singleton, Ne.symm hh]
-  · have hu : u = g := by_contra fun hug => hu (coeff_single_of_ne hug r)
-    have hv : v = g' := by_contra fun hvg => hv (coeff_single_of_ne hvg r')
-    subst hu hv
-    exact mem_filter.2 ⟨mem_singleton_self _, huv⟩
+    (single g r * single g' r' : NovikovSeries R H N) = single (g + g') (r * r') :=
+  convolve_single_single AddMonoidHom.mul g g' r r'
 
 /-- Multiplying by a constant series `single 0 r` multiplies each coefficient on the left. -/
 theorem coeff_single_zero_mul (r : R) (a : NovikovSeries R H N) (h : H) :
@@ -244,34 +344,10 @@ theorem coeff_mul_single_add [IsRightCancelAdd H] (a : NovikovSeries R H N) (g :
 
 /-- Convolution distributes over addition. -/
 instance instNonUnitalNonAssocSemiring : NonUnitalNonAssocSemiring (NovikovSeries R H N) where
-  left_distrib a b c := by
-    classical
-    ext h
-    rw [coeff_add, coeff_mul_eq_sum_union a b a c fun u v hu hv => ?_,
-      coeff_mul_eq_sum_union a b a c fun u v hu hv => Or.inl ⟨hu, hv⟩,
-      coeff_mul_eq_sum_union a b a c fun u v hu hv => Or.inr ⟨hu, hv⟩, ← sum_add_distrib]
-    · simp only [coeff_add, mul_add]
-    · rw [coeff_add] at hv
-      by_cases hb : b.coeff v = 0
-      · exact Or.inr ⟨hu, by rwa [hb, zero_add] at hv⟩
-      · exact Or.inl ⟨hu, hb⟩
-  right_distrib a b c := by
-    classical
-    ext h
-    rw [coeff_add, coeff_mul_eq_sum_union a c b c fun u v hu hv => ?_,
-      coeff_mul_eq_sum_union a c b c fun u v hu hv => Or.inl ⟨hu, hv⟩,
-      coeff_mul_eq_sum_union a c b c fun u v hu hv => Or.inr ⟨hu, hv⟩, ← sum_add_distrib]
-    · simp only [coeff_add, add_mul]
-    · rw [coeff_add] at hu
-      by_cases ha : a.coeff u = 0
-      · exact Or.inr ⟨by rwa [ha, zero_add] at hu, hv⟩
-      · exact Or.inl ⟨ha, hv⟩
-  zero_mul a := by
-    ext h
-    simp [coeff_mul]
-  mul_zero a := by
-    ext h
-    simp [coeff_mul]
+  left_distrib := convolve_add_right AddMonoidHom.mul
+  right_distrib := convolve_add_left AddMonoidHom.mul
+  zero_mul := zero_convolve AddMonoidHom.mul
+  mul_zero := convolve_zero AddMonoidHom.mul
 
 end Mul
 
