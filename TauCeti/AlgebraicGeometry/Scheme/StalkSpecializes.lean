@@ -79,6 +79,16 @@ universe u
 
 variable {X : Scheme.{u}} {x y : X}
 
+/-- The residue-field point of a generization factors through the spectrum of the stalk at
+its specialization via the specialization map on stalks. -/
+@[reassoc]
+theorem SpecMap_stalkSpecializes_residue_fromSpecStalk (h : x ⤳ y) :
+    Spec.map (X.presheaf.stalkSpecializes h ≫ X.residue x) ≫ X.fromSpecStalk y =
+      X.fromSpecResidueField x := by
+  rw [Spec.map_comp, Category.assoc,
+    _root_.AlgebraicGeometry.Scheme.SpecMap_stalkSpecializes_fromSpecStalk]
+  rfl
+
 /-- For a specialization `x ⤳ y`, the stalk `𝒪_{X,x}` is the localization of `𝒪_{X,y}` at the
 prime lying under the maximal ideal of `𝒪_{X,x}`, via the specialization map. -/
 theorem isLocalization_stalkSpecializes (h : x ⤳ y) :
