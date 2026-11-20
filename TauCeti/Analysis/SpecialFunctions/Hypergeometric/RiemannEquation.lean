@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import TauCeti.Analysis.Calculus.Deriv.Second
+import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -50,17 +51,12 @@ The proof is adapted from the lean-DLMF project (<https://github.com/bjbraams/le
 where it is stated for the Gauss series itself.
 -/
 
-@[expose] public section
+public section
 
 open Complex Filter
 open scoped Topology
 
 namespace TauCeti
-
-/-- A quotient `(z - δ) / (z - γ)` in the slit plane has nonzero numerator and denominator. -/
-private theorem sub_ne_zero_and_of_div_mem_slitPlane {δ γ z : ℂ}
-    (h : (z - δ) / (z - γ) ∈ slitPlane) : z - δ ≠ 0 ∧ z - γ ≠ 0 :=
-  div_ne_zero_iff.mp (slitPlane_ne_zero h)
 
 /-! ### The prefactor and the Möbius variable of DLMF 15.11.7 -/
 
@@ -69,7 +65,7 @@ analytic where both quotients lie in the slit plane. -/
 private theorem analyticAt_riemannPrefactor {α β γ a₁ b₁ z : ℂ}
     (hA : (z - α) / (z - γ) ∈ slitPlane) (hB : (z - β) / (z - γ) ∈ slitPlane) :
     AnalyticAt ℂ (fun w => ((w - α) / (w - γ)) ^ a₁ * ((w - β) / (w - γ)) ^ b₁) z := by
-  have hzγ : z - γ ≠ 0 := (sub_ne_zero_and_of_div_mem_slitPlane hA).2
+  have hzγ : z - γ ≠ 0 := (ne_zero_and_ne_zero_of_div_mem_slitPlane hA).2
   exact ((analyticAt_id.sub analyticAt_const).div (analyticAt_id.sub analyticAt_const) hzγ
     |>.cpow analyticAt_const hA).mul
     (((analyticAt_id.sub analyticAt_const).div (analyticAt_id.sub analyticAt_const) hzγ).cpow
@@ -93,8 +89,8 @@ private theorem deriv_deriv_riemannPrefactor {α β γ a₁ b₁ z : ℂ}
         ((a₁ * ((z - α)⁻¹ - (z - γ)⁻¹) + b₁ * ((z - β)⁻¹ - (z - γ)⁻¹)) ^ 2 +
           (a₁ * (-((z - α) ^ 2)⁻¹ + ((z - γ) ^ 2)⁻¹) +
             b₁ * (-((z - β) ^ 2)⁻¹ + ((z - γ) ^ 2)⁻¹))) := by
-  obtain ⟨hzα, hzγ⟩ := sub_ne_zero_and_of_div_mem_slitPlane hA
-  have hzβ : z - β ≠ 0 := (sub_ne_zero_and_of_div_mem_slitPlane hB).1
+  obtain ⟨hzα, hzγ⟩ := ne_zero_and_ne_zero_of_div_mem_slitPlane hA
+  have hzβ : z - β ≠ 0 := (ne_zero_and_ne_zero_of_div_mem_slitPlane hB).1
   -- Both quotients stay in the open slit plane near `z`, so `P′ = P L` near `z`.
   have hc : ∀ δ : ℂ, ContinuousAt (fun w : ℂ => (w - δ) / (w - γ)) z := fun δ =>
     (continuousAt_id.sub continuousAt_const).div (continuousAt_id.sub continuousAt_const) hzγ
@@ -132,11 +128,11 @@ private theorem derivs_riemannMobius {α β γ z : ℂ} (hz : z ≠ γ) :
 `a = a₁ + b₁ + c₁`, `b = a₁ + b₁ + c₂`, `c = 1 + a₁ − a₂` on an open set `V`, then
 `w(z) = ((z − α)/(z − γ))^{a₁} ((z − β)/(z − γ))^{b₁} u((z − α)(β − γ)/((z − γ)(β − α)))` solves
 Riemann's equation (DLMF 15.11.1) with singular points `α, β, γ` and exponents `{a₁, a₂}`,
-`{b₁, b₂}`, `{c₁, c₂}` under Fuchs's relation (DLMF 15.11.2), on every open set `U` where the two
-quotients lie in the slit plane and the Möbius variable lies in `V`. -/
+`{b₁, b₂}`, `{c₁, c₂}` under Fuchs's relation (DLMF 15.11.2), on every set `U` where the two
+quotients lie in the slit plane and the Möbius variable lies in `V`. The singular points need only
+`α ≠ β`; the slit-plane condition already forces `z ≠ α, β, γ` on `U`. -/
 theorem riemannEquation_of_hypergeometricEquation {α β γ a₁ a₂ b₁ b₂ c₁ c₂ : ℂ} (hαβ : α ≠ β)
-    (_hβγ : β ≠ γ) (_hαγ : α ≠ γ) (hsum : a₁ + a₂ + b₁ + b₂ + c₁ + c₂ = 1) {U V : Set ℂ}
-    (_hU : IsOpen U) (hV : IsOpen V)
+    (hsum : a₁ + a₂ + b₁ + b₂ + c₁ + c₂ = 1) {U V : Set ℂ} (hV : IsOpen V)
     (hUs : ∀ z ∈ U, (z - α) / (z - γ) ∈ slitPlane ∧ (z - β) / (z - γ) ∈ slitPlane)
     (hUV : ∀ z ∈ U, (z - α) * (β - γ) / ((z - γ) * (β - α)) ∈ V) {u : ℂ → ℂ}
     (hu : DifferentiableOn ℂ u V)
@@ -156,8 +152,8 @@ theorem riemannEquation_of_hypergeometricEquation {α β γ a₁ a₂ b₁ b₂ 
   have hw : w = fun z => P z * u (T z) := rfl
   have hne : ∀ z ∈ U, z - α ≠ 0 ∧ z - β ≠ 0 ∧ z - γ ≠ 0 := by
     intro z hz
-    obtain ⟨hzα, hzγ⟩ := sub_ne_zero_and_of_div_mem_slitPlane (hUs z hz).1
-    exact ⟨hzα, (sub_ne_zero_and_of_div_mem_slitPlane (hUs z hz).2).1, hzγ⟩
+    obtain ⟨hzα, hzγ⟩ := ne_zero_and_ne_zero_of_div_mem_slitPlane (hUs z hz).1
+    exact ⟨hzα, (ne_zero_and_ne_zero_of_div_mem_slitPlane (hUs z hz).2).1, hzγ⟩
   -- Analyticity of the three ingredients, for the product and chain rules.
   have hPa : ∀ z ∈ U, AnalyticAt ℂ P z := fun z hz =>
     analyticAt_riemannPrefactor (hUs z hz).1 (hUs z hz).2

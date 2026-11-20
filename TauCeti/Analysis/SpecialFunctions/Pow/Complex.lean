@@ -346,7 +346,7 @@ theorem hasDerivAt_sub_div_sub_cpow {α γ a z : ℂ} (h : (z - α) / (z - γ) �
     HasDerivAt (fun w ↦ ((w - α) / (w - γ)) ^ a)
       (((z - α) / (z - γ)) ^ a * (a * ((z - α)⁻¹ - (z - γ)⁻¹))) z := by
   have hq : (z - α) / (z - γ) ≠ 0 := slitPlane_ne_zero h
-  obtain ⟨hzα, hzγ⟩ := div_ne_zero_iff.mp hq
+  obtain ⟨hzα, hzγ⟩ := ne_zero_and_ne_zero_of_div_mem_slitPlane h
   refine ((((hasDerivAt_id z).sub_const α).div ((hasDerivAt_id z).sub_const γ) hzγ).cpow_const
     h).congr_deriv ?_
   simp only [id, Pi.div_apply]
