@@ -54,9 +54,11 @@ one. -/
 def jordanTotient (k : ℕ) : ArithmeticFunction ℤ :=
   μ * (pow k : ArithmeticFunction ℤ)
 
+theorem jordanTotient_def (k : ℕ) : jordanTotient k = μ * (pow k : ArithmeticFunction ℤ) := (rfl)
+
 theorem jordanTotient_apply (k n : ℕ) :
     jordanTotient k n = ∑ d ∈ n.divisors, μ d * ((n / d : ℕ) : ℤ) ^ k := by
-  rw [jordanTotient, ArithmeticFunction.mul_apply,
+  rw [jordanTotient_def, ArithmeticFunction.mul_apply,
     Nat.sum_divisorsAntidiagonal (fun a b ↦ μ a * (pow k : ArithmeticFunction ℤ) b)]
   refine Finset.sum_congr rfl fun d hd ↦ ?_
   have hnd : n / d ≠ 0 :=
@@ -71,7 +73,7 @@ theorem isMultiplicative_jordanTotient (k : ℕ) : (jordanTotient k).IsMultiplic
 @[simp]
 theorem jordanTotient_mul_coe_zeta (k : ℕ) :
     jordanTotient k * ζ = (pow k : ArithmeticFunction ℤ) := by
-  rw [jordanTotient, mul_comm (μ : ArithmeticFunction ℤ), mul_assoc, moebius_mul_coe_zeta,
+  rw [jordanTotient_def, mul_comm (μ : ArithmeticFunction ℤ), mul_assoc, moebius_mul_coe_zeta,
     mul_one]
 
 /-- The sum of `J_k` over the divisors of a nonzero `n` is `n ^ k`. -/
