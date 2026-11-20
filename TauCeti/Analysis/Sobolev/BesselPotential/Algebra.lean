@@ -343,8 +343,8 @@ open TemperedDistribution
 variable {s : ℝ}
 
 omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- `0 ≤ s` when `dim E < 2 s`. -/
-private theorem nonneg_of_finrank_lt (hs : finrank ℝ E < 2 * s) : 0 ≤ s := by
+/-- `0 ≤ s` when `dim E < 2 s`: the orders above the Sobolev threshold are nonnegative. -/
+theorem nonneg_of_finrank_lt (hs : finrank ℝ E < 2 * s) : 0 ≤ s := by
   have := (finrank ℝ E).cast_nonneg (α := ℝ)
   linarith
 
