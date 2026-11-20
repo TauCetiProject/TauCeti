@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import TauCeti.Algebra.Module.Torsion.Basic
 public import TauCeti.Algebra.Homology.Ext.Presentation
 public import TauCeti.LinearAlgebra.Determinant.Basic
 public import TauCeti.LinearAlgebra.FreeModule.CardQuotient
@@ -101,6 +102,7 @@ def extOneQuotientRangeEquiv {f : P →ₗ[R] Q} (hf : Function.Injective f) :
 /-- The inverse of `LinearMap.extOneQuotientRangeEquiv` sends the class of a linear form
 `g : P →ₗ[R] R` to the extension class of the presentation `0 → P → Q → Q ⧸ range f → 0`
 pushed forward along `g`. -/
+@[simp]
 theorem extOneQuotientRangeEquiv_symm_mk {f : P →ₗ[R] Q} (hf : Function.Injective f)
     (g : Dual R P) :
     (extOneQuotientRangeEquiv hf).symm (Submodule.Quotient.mk g) =
@@ -109,6 +111,17 @@ theorem extOneQuotientRangeEquiv_symm_mk {f : P →ₗ[R] Q} (hf : Function.Inje
   simp only [extOneQuotientRangeEquiv, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm]
   exact TauCeti.homCokernelEquivExt_mk R (shortExact_quotientRangeShortComplex hf) _
     (ModuleCat.ofHom (X := P) (Y := R) g)
+
+/-- `LinearMap.extOneQuotientRangeEquiv` sends the extension class of the presentation
+`0 → P → Q → Q ⧸ range f → 0` pushed forward along a linear form `g : P →ₗ[R] R` to the class
+of `g`. -/
+@[simp]
+theorem extOneQuotientRangeEquiv_extClass_comp {f : P →ₗ[R] Q} (hf : Function.Injective f)
+    (g : Dual R P) :
+    extOneQuotientRangeEquiv hf ((shortExact_quotientRangeShortComplex hf).extClass.comp
+        (Ext.mk₀ (ModuleCat.ofHom (X := P) (Y := R) g)) (add_zero 1)) =
+      Submodule.Quotient.mk g := by
+  rw [← extOneQuotientRangeEquiv_symm_mk hf, LinearEquiv.apply_symm_apply]
 
 end LinearMap
 
@@ -124,8 +137,7 @@ theorem card_ext_one_quotient_range_eq_card_quotient_span_det [IsPrincipalIdealR
     (hf : f.det ≠ 0) :
     Nat.card (Ext.{w} (ModuleCat.of R (P ⧸ range f)) (ModuleCat.of R R) 1) =
       Nat.card (R ⧸ Ideal.span {f.det}) := by
-  rw [Nat.card_congr (extOneQuotientRangeEquiv
-    (ker_eq_bot.mp (not_ne_iff.mp (mt det_eq_zero_iff_ker_ne_bot.mpr hf)))).toEquiv,
+  rw [Nat.card_congr (extOneQuotientRangeEquiv (injective_of_det_ne_zero hf)).toEquiv,
     card_quotient_range_eq_card_quotient_span_det (by rwa [det_dualMap]), det_dualMap]
 
 /-- For an endomorphism `f` of a finite free module over a principal ideal domain with
@@ -141,16 +153,14 @@ theorem card_ext_one_quotient_range_eq_card_quotient_range [IsPrincipalIdealRing
 `Ext¹(P ⧸ range f, R)` is a torsion module: it is killed by `det f`. -/
 theorem isTorsion_ext_one_quotient_range (hf : f.det ≠ 0) :
     Module.IsTorsion R (Ext.{w} (ModuleCat.of R (P ⧸ range f)) (ModuleCat.of R R) 1) := by
-  intro x
-  refine ⟨⟨f.det, mem_nonZeroDivisors_of_ne_zero hf⟩, ?_⟩
-  rw [Submonoid.smul_def]
-  apply (extOneQuotientRangeEquiv
-    (ker_eq_bot.mp (not_ne_iff.mp (mt det_eq_zero_iff_ker_ne_bot.mpr hf)))).injective
-  obtain ⟨g, hg⟩ := Submodule.Quotient.mk_surjective _
-    (extOneQuotientRangeEquiv
-      (ker_eq_bot.mp (not_ne_iff.mp (mt det_eq_zero_iff_ker_ne_bot.mpr hf))) x)
-  rw [map_smul, ← hg, map_zero, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
-  simpa only [det_dualMap] using det_smul_mem_range f.dualMap g
+  have htors : Module.IsTorsion R (Dual R P ⧸ range f.dualMap) := by
+    intro x
+    obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
+    refine ⟨⟨f.det, mem_nonZeroDivisors_of_ne_zero hf⟩, ?_⟩
+    rw [Submonoid.smul_def, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
+    simpa only [det_dualMap] using det_smul_mem_range f.dualMap g
+  exact htors.of_injective (f := (extOneQuotientRangeEquiv (injective_of_det_ne_zero hf) :
+    _ →ₗ[R] _)) (extOneQuotientRangeEquiv _).injective
 
 end LinearMap
 
