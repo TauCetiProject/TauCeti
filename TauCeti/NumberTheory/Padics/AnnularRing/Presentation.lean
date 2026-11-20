@@ -245,9 +245,8 @@ def ofMvPowerSeries : MvPowerSeries (Fin 2) ℤ_[p] →ₐ[ℤ_[p]] AnnularRing 
   map_zero' := by simpa using toFun_smul 0 0
   map_add' := toFun_add
   commutes' c := by
-    rw [algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply, ← monomial_zero_eq_C_apply,
-      toFun_monomial, Algebra.algebraMap_eq_smul_one]
-    simp
+    simpa [algebraMap_apply, monomial_zero_eq_C_apply, Algebra.smul_def] using
+      toFun_monomial (p := p) 0 c
 
 private theorem ofMvPowerSeries_apply (F : MvPowerSeries (Fin 2) ℤ_[p]) :
     ofMvPowerSeries F = toFun F :=
@@ -273,6 +272,10 @@ theorem hasSum_coeff_ofMvPowerSeries (F : MvPowerSeries (Fin 2) ℤ_[p]) (m : �
 @[simp] theorem ofMvPowerSeries_X_one :
     ofMvPowerSeries (X 1 : MvPowerSeries (Fin 2) ℤ_[p]) = U := by
   simp [X_def]
+
+@[simp] theorem ofMvPowerSeries_C (c : ℤ_[p]) :
+    ofMvPowerSeries (C c : MvPowerSeries (Fin 2) ℤ_[p]) = algebraMap ℤ_[p] (AnnularRing p) c :=
+  ofMvPowerSeries.commutes c
 
 /-! ### Diagonal sums -/
 
@@ -421,7 +424,8 @@ def quotientEquiv :
     (Ideal.quotientKerAlgEquivOfSurjective ofMvPowerSeries_surjective)
 
 @[simp] theorem quotientEquiv_mk (F : MvPowerSeries (Fin 2) ℤ_[p]) :
-    quotientEquiv (Ideal.Quotient.mk _ F) = ofMvPowerSeries F :=
-  (rfl)
+    quotientEquiv (Ideal.Quotient.mk _ F) = ofMvPowerSeries F := by
+  rw [quotientEquiv, AlgEquiv.trans_apply, Ideal.quotientEquivAlgOfEq_symm,
+    Ideal.quotientEquivAlgOfEq_mk, Ideal.quotientKerAlgEquivOfSurjective_mk]
 
 end TauCeti.AnnularRing
