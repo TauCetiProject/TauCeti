@@ -10,6 +10,7 @@ public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Analysis.Matrix.DotProduct
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
 public import TauCeti.Topology.Algebra.UnitaryGroup
+import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
@@ -91,15 +92,10 @@ variable {p q : Type*} [Fintype p] [Fintype q] [DecidableEq p] [DecidableEq q]
 
 /-- The block-diagonal embedding of `U(p) × U(q)` in `U(p, q)` is continuous. -/
 theorem continuous_fromBlocksHom {R : Type*} [CommRing R] [StarRing R] [TopologicalSpace R]
-    [ContinuousStar R] : Continuous (fromBlocksHom p q R) := by
-  have hval : Continuous fun x : unitaryGroup p R × unitaryGroup q R =>
-      ((fromBlocksHom p q R x : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R) := by
-    simp only [val_fromBlocksHom]
-    exact (continuous_subtype_val.comp continuous_fst).matrix_fromBlocks continuous_const
-      continuous_const (continuous_subtype_val.comp continuous_snd)
-  refine continuous_induced_rng.mpr (Units.continuous_iff.mpr ⟨hval, ?_⟩)
-  exact (hval.comp continuous_inv).congr fun x => by
-    rw [Function.comp_apply, map_inv, Subgroup.coe_inv, Function.comp_apply]
+    [ContinuousStar R] : Continuous (fromBlocksHom p q R) :=
+  continuous_induced_rng.mpr <|
+    (Unitary.continuous_toUnits.comp UnitaryGroup.continuous_sum).congr fun _ =>
+      Units.ext <| by simp
 
 /-- **The block-diagonal subgroup `U(p) × U(q)` of `U(p, q)` is compact** over `ℝ` or `ℂ`. -/
 theorem isCompact_range_fromBlocksHom {𝕜 : Type*} [RCLike 𝕜] :

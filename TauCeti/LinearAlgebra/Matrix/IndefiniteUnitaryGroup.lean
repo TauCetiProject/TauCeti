@@ -162,10 +162,11 @@ equations agree, since `star g = (g.map star)ᵀ`. -/
 theorem specialIsometryGroup_starRingEnd_eq_comap_unitaryGroupOf :
     A.specialIsometryGroup (starRingEnd R) =
       (unitaryGroupOf A).comap SpecialLinearGroup.toGL :=
-  Subgroup.ext fun _ => by
+  Subgroup.ext fun g => by
+    have h : ((g : Matrix n n R).map (starRingEnd R))ᵀ = star (g : Matrix n n R) := by
+      ext; simp [starRingEnd_apply]
     rw [mem_specialIsometryGroup_iff, Subgroup.mem_comap, mem_unitaryGroupOf_iff,
-      SpecialLinearGroup.coe_GL_coe_matrix, star_eq_conjTranspose, conjTranspose, transpose_map,
-      (funext starRingEnd_apply : ⇑(starRingEnd R) = star)]
+      SpecialLinearGroup.coe_GL_coe_matrix, h]
 
 /-- **The inverse of an element of `unitaryGroupOf A`**, for invertible `A`, is
 `A⁻¹ * star g * A`. -/
@@ -227,11 +228,10 @@ unitary group over a field of characteristic zero its image is the centre
 (`TauCeti.Matrix.indefiniteUnitaryGroup.center_eq_range_scalarHom`). -/
 def scalarHom : unitary R →* unitaryGroupOf A :=
   ((GeneralLinearGroup.scalar n).comp Unitary.toUnits).codRestrict _ fun u => by
-    rw [mem_unitaryGroupOf_iff, MonoidHom.comp_apply, GeneralLinearGroup.coe_scalar,
-      Unitary.val_toUnits_apply, scalar_apply, star_eq_conjTranspose, diagonal_conjTranspose]
+    rw [mem_unitaryGroupOf_iff]
     ext i j
-    rw [mul_diagonal, diagonal_mul, Pi.star_apply, mul_right_comm, Unitary.star_mul_self_of_mem u.2,
-      one_mul]
+    simp [star_eq_conjTranspose, mul_diagonal, diagonal_mul, mul_right_comm,
+      Unitary.star_mul_self_of_mem u.2]
 
 @[simp]
 theorem val_scalarHom (u : unitary R) :

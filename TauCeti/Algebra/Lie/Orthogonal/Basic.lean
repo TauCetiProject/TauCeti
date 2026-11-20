@@ -133,8 +133,7 @@ open Matrix in
 /-- The Gram matrix of the indefinite form is the block matrix `fromBlocks 1 0 0 (-1)`. -/
 theorem indefiniteDiagonal_eq_fromBlocks :
     indefiniteDiagonal p q R = fromBlocks 1 0 0 (-1) := by
-  rw [indefiniteDiagonal, ← fromBlocks_diagonal, ← diagonal_one, ← diagonal_neg]
-  rfl
+  ext (i | i) (j | j) <;> simp [indefiniteDiagonal, Matrix.one_apply, diagonal_apply, neg_ite]
 
 omit [Fintype p] [Fintype q] in
 open Matrix in
