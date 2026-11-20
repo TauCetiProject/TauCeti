@@ -10,9 +10,9 @@ public import TauCeti.Analysis.Calculus.Morse.BirthDeath
 -- Private: used only inside proofs.
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Fredholm.LevelSet.FiniteDimensional
 import TauCeti.Analysis.Normed.Module.Annihilator
 import TauCeti.Analysis.Normed.Module.FiniteDimension
@@ -122,14 +122,34 @@ private theorem fderiv_sub_eq_of_contDiffAt {s : ℝ} {y : E}
 /-- Subtracting the members `P p` of a family of functions that is jointly `C^n` in the parameter
 `p` and the point keeps a family jointly `C^n`, now also in `p`. -/
 theorem contDiffAt_sub_of_contDiffAt_uncurry {Λ : Type*} [NormedAddCommGroup Λ]
-    [NormedSpace ℝ Λ] {n : WithTop ℕ∞} {P : Λ → E → ℝ} (hf : ContDiffAt ℝ n (uncurry f) (t, x))
-    (hP : ContDiff ℝ n fun q : Λ × E ↦ P q.1 q.2) (p : Λ) :
+    [NormedSpace ℝ Λ] {n : WithTop ℕ∞} {P : Λ → E → ℝ} {p : Λ}
+    (hf : ContDiffAt ℝ n (uncurry f) (t, x))
+    (hP : ContDiffAt ℝ n (fun q : Λ × E ↦ P q.1 q.2) (p, x)) :
     ContDiffAt ℝ n (fun q : (ℝ × Λ) × E ↦ f q.1.1 q.2 - P q.1.2 q.2) ((t, p), x) := by
   have h1 : ContDiffAt ℝ n (fun q : (ℝ × Λ) × E ↦ f q.1.1 q.2) ((t, p), x) :=
     hf.comp ((t, p), x) (contDiffAt_fst.fst.prodMk contDiffAt_snd)
   have h2 : ContDiffAt ℝ n (fun q : (ℝ × Λ) × E ↦ P q.1.2 q.2) ((t, p), x) :=
-    hP.contDiffAt.comp ((t, p), x) (contDiffAt_fst.snd.prodMk contDiffAt_snd)
+    hP.comp ((t, p), x) (contDiffAt_fst.snd.prodMk contDiffAt_snd)
   exact h1.sub h2
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- Moving the parameter of a linear family of perturbations `P` from `p` to `p + s • q` subtracts
+`s • P q` from the perturbed function `g - P p`. -/
+theorem sub_apply_add_smul {Λ : Type*} [AddCommGroup Λ] [Module ℝ Λ] (g : E → ℝ)
+    (P : Λ →ₗ[ℝ] E → ℝ) (p q : Λ) (s : ℝ) :
+    (fun y ↦ g y - P (p + s • q) y) = (fun y ↦ g y - P p y) - s • P q := by
+  ext y
+  simp only [map_add, map_smul, Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul]
+  ring
+
+/-- Moving the parameter of a linear family of perturbations `P` from `p` to `p + s • q` subtracts
+`s • d(P q)_x` from the differential at `x` of the perturbed function `g - P p`. -/
+theorem fderiv_sub_apply_add_smul {Λ : Type*} [AddCommGroup Λ] [Module ℝ Λ] {g : E → ℝ}
+    {P : Λ →ₗ[ℝ] E → ℝ} {p q : Λ} {x : E} (hg : DifferentiableAt ℝ (fun y ↦ g y - P p y) x)
+    (hq : DifferentiableAt ℝ (P q) x) (s : ℝ) :
+    fderiv ℝ (fun y ↦ g y - P (p + s • q) y) x =
+      fderiv ℝ (fun y ↦ g y - P p y) x - s • fderiv ℝ (P q) x := by
+  rw [sub_apply_add_smul g P p q s, fderiv_sub hg (hq.const_smul s), fderiv_const_smul hq]
 
 /-- **The derivative of the parametrized differential** `(t, x) ↦ d(f t)_x` at `(t, x)` sends
 `(τ, ξ)` to `τ • ∂ₜ (d(f t)_x) + Hess(f t)_x ξ`. -/
@@ -210,32 +230,27 @@ theorem ae_forall_surjective_fderiv_fderiv_sub_of_forall_exists_fderiv_eq {Λ : 
   -- `G` is `C²` at the points over `W`.
   have hGc : ∀ w ∈ U, ContDiffAt ℝ 2 G w := by
     rintro ⟨⟨t, x⟩, p⟩ hw
-    exact ((contDiffAt_sub_of_contDiffAt_uncurry (hf (t, x) hw) hP p).fderiv_slice (m := 2)
-      le_rfl).comp ((t, x), p)
+    exact ((contDiffAt_sub_of_contDiffAt_uncurry (hf (t, x) hw) hP.contDiffAt).fderiv_slice
+      (m := 2) le_rfl).comp ((t, x), p)
         ((contDiffAt_fst.fst.prodMk contDiffAt_snd).prodMk contDiffAt_fst.snd)
   -- Its derivative in the direction of the coefficients is onto.
   have htotal : ∀ w ∈ U, G w = 0 → Surjective (fderiv ℝ G w) := by
     rintro ⟨⟨t, x⟩, p⟩ hw - a
     obtain ⟨q, hq⟩ := hjet (t, x) hw (-a)
     have hu : DifferentiableAt ℝ (fun y ↦ f t y - P p y) x :=
-      ((contDiffAt_sub_of_contDiffAt_uncurry (hf (t, x) hw) hP p).comp x
+      ((contDiffAt_sub_of_contDiffAt_uncurry (hf (t, x) hw) hP.contDiffAt).comp x
         (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt (by norm_num)
     have hw' : DifferentiableAt ℝ (P q) x :=
       (hP.comp (contDiff_const.prodMk contDiff_id)).differentiable (by norm_num) x
     refine ⟨((0, 0), q),
-      ((hGc _ hw).differentiableAt (by norm_num)).fderiv_apply_eq_of_hasDerivAt ?_⟩
+      (((hGc _ hw).differentiableAt (by norm_num)).hasFDerivAt.hasLineDerivAt _).unique ?_⟩
     -- Along the line in the direction of `q`, the map `G` moves by `s • a`.
     have hline : (fun s : ℝ ↦ G (((t, x), p) + s • ((0, 0), q))) =
         fun s ↦ G ((t, x), p) + s • a := by
       ext1 s
-      have hsub : (fun y ↦ f t y - P (p + s • q) y) = (fun y ↦ f t y - P p y) - s • P q := by
-        ext y
-        simp only [map_add, map_smul, Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul]
-        ring
       simp only [G, Prod.mk_add_mk, Prod.smul_mk, smul_zero, add_zero]
-      rw [hsub, fderiv_sub hu (hw'.const_smul s), fderiv_const_smul hw', hq, smul_neg,
-        sub_neg_eq_add]
-    rw [hline]
+      rw [fderiv_sub_apply_add_smul hu hw', hq, smul_neg, sub_neg_eq_add]
+    rw [HasLineDerivAt, hline]
     simpa using ((hasDerivAt_id (0 : ℝ)).smul_const a).const_add (G ((t, x), p))
   have hreg := ae_isRegularParameterOn ν (U := U) (c := 0) (n := 2) (fun w hw _ ↦ hGc w hw)
     htotal (by

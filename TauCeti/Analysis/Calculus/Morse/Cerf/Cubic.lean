@@ -15,11 +15,11 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Pow
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Calculus.Morse.Cerf
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Fredholm.LevelSet.FiniteDimensional
@@ -246,7 +246,8 @@ private noncomputable def jetMap (f : ℝ → E → ℝ) (P : Λ →ₗ[ℝ] E �
 private theorem contDiffAt_jetMap {t : ℝ} {x v : E} (hf : ContDiffAt ℝ 4 (uncurry f) (t, x))
     (hP : ContDiff ℝ 4 fun q : Λ × E ↦ P q.1 q.2) (p : Λ) :
     ContDiffAt ℝ 1 (jetMap f P) ((t, x, v), p) := by
-  have h1 := (contDiffAt_sub_of_contDiffAt_uncurry hf hP p).fderiv_slice (m := 3) (by norm_num)
+  have h1 := (contDiffAt_sub_of_contDiffAt_uncurry hf (hP.contDiffAt (x := (p, x)))).fderiv_slice
+    (m := 3) (by norm_num)
   have h2 := h1.fderiv_slice (m := 2) (by norm_num)
   have h3 := h2.fderiv_slice (m := 1) (by norm_num)
   have hσ : ContDiffAt ℝ 1 (fun w : (ℝ × E × E) × Λ ↦ ((w.1.1, w.2), w.1.2.1)) ((t, x, v), p) := by
@@ -263,7 +264,7 @@ private theorem fderiv_jetMap_apply_scale {w : (ℝ × E × E) × Λ}
     fderiv ℝ (jetMap f P) w ((0, 0, w.1.2.2), 0) =
       (0, (jetMap f P w).2.1, 3 * (jetMap f P w).2.2) := by
   obtain ⟨⟨t, x, v⟩, p⟩ := w
-  refine hd.fderiv_apply_eq_of_hasDerivAt ?_
+  refine (hd.hasFDerivAt.hasLineDerivAt _).unique ?_
   have hline : (fun s : ℝ ↦ jetMap f P (((t, x, v), p) + s • ((0, 0, v), 0))) =
       fun s ↦ ((jetMap f P ((t, x, v), p)).1, (1 + s) • (jetMap f P ((t, x, v), p)).2.1,
         (1 + s) ^ 3 * (jetMap f P ((t, x, v), p)).2.2) := by
@@ -273,7 +274,7 @@ private theorem fderiv_jetMap_apply_scale {w : (ℝ × E × E) × Λ}
     refine Prod.ext rfl (Prod.ext rfl ?_)
     simp
     ring
-  rw [hline]
+  rw [HasLineDerivAt, hline]
   have hs : HasDerivAt (fun s : ℝ ↦ 1 + s) 1 0 := (hasDerivAt_id 0).const_add 1
   refine ((hasDerivAt_const (0 : ℝ) (jetMap f P ((t, x, v), p)).1).prodMk
     ((hs.smul_const (jetMap f P ((t, x, v), p)).2.1).prodMk
@@ -289,29 +290,28 @@ private theorem fderiv_jetMap_apply_coeff {t : ℝ} {x v : E} {p : Λ}
       -(fderiv ℝ (P q) x, fderiv ℝ (fderiv ℝ (P q)) x v,
         fderiv ℝ (fderiv ℝ (fderiv ℝ (P q))) x v v v) := by
   have hu : ContDiffAt ℝ 3 (fun y ↦ f t y - P p y) x :=
-    ((contDiffAt_sub_of_contDiffAt_uncurry hf hP p).comp x
+    ((contDiffAt_sub_of_contDiffAt_uncurry hf (hP.contDiffAt (x := (p, x)))).comp x
       (contDiffAt_const.prodMk contDiffAt_id)).of_le (by norm_num)
   have hw : ContDiff ℝ 3 (P q) :=
     (hP.comp (contDiff_const.prodMk contDiff_id)).of_le (by norm_num)
-  refine ((contDiffAt_jetMap hf hP p).differentiableAt one_ne_zero).fderiv_apply_eq_of_hasDerivAt ?_
+  refine (((contDiffAt_jetMap hf hP p).differentiableAt one_ne_zero).hasFDerivAt.hasLineDerivAt
+    _).unique ?_
   have hline : (fun s : ℝ ↦ jetMap f P (((t, x, v), p) + s • ((0, 0, 0), q))) =
       fun s ↦ jetMap f P ((t, x, v), p) - s • (fderiv ℝ (P q) x, fderiv ℝ (fderiv ℝ (P q)) x v,
         fderiv ℝ (fderiv ℝ (fderiv ℝ (P q))) x v v v) := by
     ext1 s
-    have hsub : (fun y ↦ f t y - P (p + s • q) y) = (fun y ↦ f t y - P p y) - s • P q := by
-      ext y
-      simp only [map_add, map_smul, Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul]
-      ring
     have hsw : ContDiffAt ℝ 3 (s • P q) x := (hw.const_smul s).contDiffAt
-    simp only [jetMap, Prod.mk_add_mk, Prod.smul_mk, smul_zero, add_zero, Prod.mk_sub_mk, hsub]
+    simp only [jetMap, Prod.mk_add_mk, Prod.smul_mk, smul_zero, add_zero, Prod.mk_sub_mk]
     refine Prod.ext ?_ (Prod.ext ?_ ?_)
-    · rw [fderiv_sub (hu.differentiableAt (by norm_num)) (hsw.differentiableAt (by norm_num)),
-        fderiv_const_smul (hw.differentiable (by norm_num) x)]
-    · rw [fderiv_fderiv_sub (hu.of_le (by norm_num)) (hsw.of_le (by norm_num)),
+    · exact fderiv_sub_apply_add_smul (hu.differentiableAt (by norm_num))
+        (hw.differentiable (by norm_num) x) s
+    · rw [sub_apply_add_smul (f t) P p q s,
+        fderiv_fderiv_sub (hu.of_le (by norm_num)) (hsw.of_le (by norm_num)),
         fderiv_fderiv_const_smul, sub_apply, smul_apply]
-    · rw [fderiv_fderiv_fderiv_sub hu hsw, fderiv_fderiv_fderiv_const_smul]
+    · rw [sub_apply_add_smul (f t) P p q s, fderiv_fderiv_fderiv_sub hu hsw,
+        fderiv_fderiv_fderiv_const_smul]
       simp
-  rw [hline]
+  rw [HasLineDerivAt, hline]
   simpa using ((hasDerivAt_id (0 : ℝ)).smul_const (fderiv ℝ (P q) x, fderiv ℝ (fderiv ℝ (P q)) x v,
     fderiv ℝ (fderiv ℝ (fderiv ℝ (P q))) x v v v)).const_sub (jetMap f P ((t, x, v), p))
 

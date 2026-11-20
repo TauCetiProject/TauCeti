@@ -504,6 +504,7 @@ theorem fderiv_fderiv_fderiv_const_smul (c : 𝕜) (g : E → F) (x : E) :
     fderiv_const_smul_field (𝕜 := 𝕜) (f := fderiv 𝕜 (fderiv 𝕜 g)), Pi.smul_apply]
 
 /-- The second derivative of a continuous linear map vanishes. -/
+@[simp]
 theorem _root_.ContinuousLinearMap.fderiv_fderiv (L : E →L[𝕜] F) : fderiv 𝕜 (fderiv 𝕜 L) = 0 := by
   rw [show fderiv 𝕜 L = fun _ ↦ L from funext fun _ ↦ L.fderiv, fderiv_fun_const]
 
@@ -551,6 +552,7 @@ theorem fderiv_fderiv_mul_apply {𝔸' : Type*} [NormedCommRing 𝔸'] [NormedAl
 
 /-- The second derivative of the product `y ↦ ℓ y * β y` of two linear functionals is
 `(v, w) ↦ ℓ v * β w + β v * ℓ w` at every point. -/
+@[simp]
 theorem _root_.ContinuousLinearMap.fderiv_fderiv_mul_apply (ℓ β : E →L[𝕜] 𝕜) (x v w : E) :
     fderiv 𝕜 (fderiv 𝕜 fun y ↦ ℓ y * β y) x v w = ℓ v * β w + β v * ℓ w := by
   rw [fderiv_fderiv_fun_mul_apply ℓ.contDiff.contDiffAt β.contDiff.contDiffAt, ℓ.fderiv_fderiv,
@@ -558,6 +560,7 @@ theorem _root_.ContinuousLinearMap.fderiv_fderiv_mul_apply (ℓ β : E →L[𝕜
   simp
 
 /-- The third derivative of the product `y ↦ ℓ y * β y` of two linear functionals vanishes. -/
+@[simp]
 theorem _root_.ContinuousLinearMap.fderiv_fderiv_fderiv_mul (ℓ β : E →L[𝕜] 𝕜) :
     fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 fun y ↦ ℓ y * β y)) = 0 := by
   -- The second derivative does not depend on the point.
@@ -569,6 +572,7 @@ theorem _root_.ContinuousLinearMap.fderiv_fderiv_fderiv_mul (ℓ β : E →L[�
 
 /-- The third derivative of the cube `y ↦ ℓ y ^ 3` of a linear functional is
 `(a, b, c) ↦ 6 * ℓ a * ℓ b * ℓ c` at every point. -/
+@[simp]
 theorem _root_.ContinuousLinearMap.fderiv_fderiv_fderiv_pow_three_apply (ℓ : E →L[𝕜] 𝕜)
     (x a b c : E) :
     fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 fun y ↦ ℓ y ^ 3)) x a b c = 6 * ℓ a * ℓ b * ℓ c := by
