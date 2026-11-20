@@ -289,9 +289,10 @@ noncomputable def brownianBridgeKernel (T : ℝ≥0) : Kernel ℝ (Set.Iic T →
 theorem brownianBridgeKernel_apply (x : ℝ) :
     brownianBridgeKernel T x =
       (brownianBridgeMeasure T).map fun g (t : Set.Iic T) ↦ g t + (t / T : ℝ) * x := by
-  rw [brownianBridgeKernel, Kernel.map_apply _ (by fun_prop), Kernel.prod_apply,
-    Kernel.deterministic_apply, Kernel.const_apply, Measure.dirac_prod,
-    Measure.map_map (by fun_prop) (by fun_prop), Function.comp_def, id]
+  rw [brownianBridgeKernel, Kernel.map_apply _ (by fun_prop)]
+  simp only [Kernel.prod_apply, Kernel.deterministic_apply, id_eq, Kernel.const_apply,
+    Measure.dirac_prod]
+  rw [Measure.map_map (by fun_prop) (by fun_prop), Function.comp_def]
 
 instance (T : ℝ≥0) : IsMarkovKernel (brownianBridgeKernel T) :=
   Kernel.IsMarkovKernel.map _ (by fun_prop)
