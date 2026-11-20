@@ -209,8 +209,7 @@ theorem isTotallyUnimodular_of_col_eq_indicator_ordConnected [LinearOrder m] {A 
     det_mem_range_signType_cast_of_col_eq_indicator_ordConnected _ fun j ↦ by
       obtain ⟨s, hs, hAs⟩ := hA (g j)
       refine ⟨(f ∘ σ) ⁻¹' s, hs.preimage_mono (Tuple.monotone_sort f), fun i ↦ ?_⟩
-      rw [submatrix_apply, hAs, ← Set.indicator_comp_right (g := (1 : m → R))]
-      rfl
+      rw [submatrix_apply, hAs, ← Set.indicator_comp_right (g := (1 : m → R)), Pi.one_comp]
   have hperm : A.submatrix f g = (A.submatrix (f ∘ σ) g).submatrix σ.symm id := by
     simp [submatrix_submatrix, Function.comp_assoc]
   obtain ⟨s, hs⟩ := hsorted
