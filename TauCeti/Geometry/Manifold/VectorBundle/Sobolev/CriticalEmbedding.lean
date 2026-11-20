@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.AEEq
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
 import TauCeti.Analysis.Sobolev.Wkp.ContDiffRepresentative
+import TauCeti.Analysis.Sobolev.Wkp.CriticalEmbedding
 
 /-!
 # The critical Sobolev embedding for Sobolev sections of a vector bundle
@@ -22,17 +24,28 @@ every element `w` of `W^{k,1}(V)` has a unique continuous representative, a cont
 chart expressions of this representative are moreover `Cʲ` on the chart images
 (`TauCeti.SobolevSection.exists_continuous_contDiffOn_coord_ae_eq_one`).
 
+Both statements are instances of general ones for any finite exponent `p`: if for every order
+`m ≥ k` every element of the whole-space space `W^{m,p}(E)` has a continuous representative
+vanishing at infinity, then every element of `W^{k+j,p}(V)` has a continuous representative with
+`Cʲ` chart expressions
+(`TauCeti.SobolevSection.exists_continuous_contDiffOn_coord_ae_eq_of_forall_zeroAtInfty`), and it is
+unique (`TauCeti.SobolevSection.existsUnique_continuous_ae_eq_coord_of_forall_zeroAtInfty`). The
+critical case uses the whole-space embedding `TauCeti.Wkp.toZeroAtInftyOne` (`p = 1`, `m ≥ n`).
+
 The proof is local in each chart. The chart-`i` data of `w` are scalar Sobolev functions in
-`W^{n+j,1}(A.image i)`, which have representatives that are `Cʲ` on the open chart image by the
-interior critical embedding (`TauCeti.Wkp.exists_contDiffOn_ae_eq_one`). Since chart transitions
-preserve null sets, these representatives satisfy the cocycle relation of the chart expressions of
-a section almost everywhere, hence everywhere, and they glue to a continuous section
-(`TauCeti.FiniteBundleAtlas.exists_continuous_coord_eqOn_of_ae_eq`). Uniqueness holds because two
-continuous sections whose chart expressions agree almost everywhere are equal
+`W^{k+j,p}(A.image i)`, which have representatives that are `Cʲ` on the open chart image by the
+interior localization principle (`TauCeti.Wkp.exists_contDiffOn_ae_eq_of_forall_zeroAtInfty`).
+Since chart transitions preserve null sets, these representatives satisfy the cocycle relation of
+the chart expressions of a section almost everywhere, hence everywhere, and they glue to a
+continuous section (`TauCeti.FiniteBundleAtlas.exists_continuous_coord_eqOn_of_ae_eq`). Uniqueness
+holds because two continuous sections whose chart expressions agree almost everywhere are equal
 (`TauCeti.FiniteBundleAtlas.eq_of_continuous_of_coord_ae_eq`).
 
 ## Main results
 
+* `TauCeti.SobolevSection.exists_continuous_contDiffOn_coord_ae_eq_of_forall_zeroAtInfty`,
+  `TauCeti.SobolevSection.existsUnique_continuous_ae_eq_coord_of_forall_zeroAtInfty`: the general
+  statements for a finite exponent `p` under a whole-space embedding hypothesis.
 * `TauCeti.SobolevSection.exists_continuous_contDiffOn_coord_ae_eq_one`: for `k ≥ n`, an element of
   `W^{k+j,1}(V)` is represented by a continuous section whose chart expressions are `Cʲ`.
 * `TauCeti.SobolevSection.existsUnique_continuous_ae_eq_coord_one`: for `k ≥ n`, an element of
@@ -49,7 +62,7 @@ continuous sections whose chart expressions agree almost everywhere are equal
 public section
 
 open Bundle MeasureTheory Module Set
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff ENNReal ZeroAtInfty
 
 namespace TauCeti
 
@@ -62,27 +75,32 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 namespace SobolevSection
 
-/-- **The critical Sobolev embedding for Sobolev sections, with derivatives.** Let `M` have
-dimension `n ≤ k`. Every element `w` of `W^{k+j,1}(V)` is represented by a continuous section `s`
-of `V` whose chart expression `A.coord i s` is `Cʲ` on the chart image `A.image i` and agrees almost
-everywhere there with the chart-`i` data of `w`, for every chart `i`. -/
-theorem exists_continuous_contDiffOn_coord_ae_eq_one (hk : finrank ℝ E ≤ k) (j : ℕ)
-    (w : SobolevSection A volume 1 (k + j)) :
+/-- **Sobolev sections with `Cʲ` representatives from a whole-space embedding.** Let `p < ∞`. If
+for every order `m ≥ k` every element of the whole-space space `W^{m,p}(E)` agrees almost everywhere
+with a continuous function vanishing at infinity, then every element `w` of `W^{k+j,p}(V)` is
+represented by a continuous section `s` of `V` whose chart expression `A.coord i s` is `Cʲ` on the
+chart image `A.image i` and agrees almost everywhere there with the chart-`i` data of `w`, for every
+chart `i`. -/
+theorem exists_continuous_contDiffOn_coord_ae_eq_of_forall_zeroAtInfty {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : p ≠ ⊤)
+    (h : ∀ m, k ≤ m → ∀ w : Wkp (volume : Measure E) ⊤ p m, ∃ g : C₀(E, ℝ),
+      Wkp.value m w =ᵐ[volume] g)
+    (j : ℕ) (w : SobolevSection A volume p (k + j)) :
     ∃ s : ∀ x, V x, Continuous (fun x ↦ TotalSpace.mk' F x (s x)) ∧
       ∀ i, ContDiffOn ℝ j (A.coord i s) (A.image i) ∧
-        A.sectionChartData.chartValueL volume 1 (k + j) i w
+        A.sectionChartData.chartValueL volume p (k + j) i w
           =ᵐ[volume.restrict (A.image i)] A.coord i s := by
-  obtain ⟨s, hs⟩ := A.sectionChartData.exists_section volume 1 (k + j) w
+  obtain ⟨s, hs⟩ := A.sectionChartData.exists_section volume p (k + j) w
   -- The chart-`i` components of `w` have representatives that are `Cʲ` on `A.image i`.
   choose G hG hGae using fun (i : Fin A.n) (l : Fin (finrank ℝ F)) ↦
-    Wkp.exists_contDiffOn_ae_eq_one (Omega := A.image i) hk j
-      ((w : A.sectionChartData.SobolevData volume 1 (k + j)) i l)
+    Wkp.exists_contDiffOn_ae_eq_of_forall_zeroAtInfty (Omega := A.image i) hp h j
+      ((w : A.sectionChartData.SobolevData volume p (k + j)) i l)
   let g (i : Fin A.n) (y : E) : F := ∑ l, G i l y • finBasis ℝ F l
   have hg (i : Fin A.n) : ContDiffOn ℝ j (g i) (A.image i) :=
     ContDiffOn.sum fun l _ ↦ (hG i l).smul contDiffOn_const
-  have hwg (i : Fin A.n) : A.sectionChartData.chartValueL volume 1 (k + j) i w
+  have hwg (i : Fin A.n) : A.sectionChartData.chartValueL volume p (k + j) i w
       =ᵐ[volume.restrict (A.image i)] g i := by
-    filter_upwards [A.sectionChartData.chartValueL_apply_ae volume 1 (k + j) i w,
+    filter_upwards [A.sectionChartData.chartValueL_apply_ae volume p (k + j) i w,
       ae_all_iff.2 (hGae i)] with y hy hl
     rw [hy]
     exact Finset.sum_congr rfl fun l _ ↦ congrArg (· • finBasis ℝ F l) (hl l)
@@ -95,6 +113,38 @@ theorem exists_continuous_contDiffOn_coord_ae_eq_one (hk : finrank ℝ E ≤ k) 
   filter_upwards [ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy
   exact (hte i hy).symm
 
+/-- **Unique continuous representatives of Sobolev sections from a whole-space embedding.** Let
+`p < ∞`. If for every order `m ≥ k` every element of the whole-space space `W^{m,p}(E)` agrees
+almost everywhere with a continuous function vanishing at infinity, then every element `w` of
+`W^{k,p}(V)` has exactly one continuous representative: there is a unique continuous section `s` of
+`V` whose chart expression `A.coord i s` agrees, for every chart `i`, almost everywhere on
+`A.image i` with the chart-`i` data of `w`. -/
+theorem existsUnique_continuous_ae_eq_coord_of_forall_zeroAtInfty {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : p ≠ ⊤)
+    (h : ∀ m, k ≤ m → ∀ w : Wkp (volume : Measure E) ⊤ p m, ∃ g : C₀(E, ℝ),
+      Wkp.value m w =ᵐ[volume] g)
+    (w : SobolevSection A volume p k) :
+    ∃! s : ∀ x, V x, Continuous (fun x ↦ TotalSpace.mk' F x (s x)) ∧
+      ∀ i, A.sectionChartData.chartValueL volume p k i w
+        =ᵐ[volume.restrict (A.image i)] A.coord i s := by
+  obtain ⟨s, hs, hsw⟩ := exists_continuous_contDiffOn_coord_ae_eq_of_forall_zeroAtInfty hp h 0 w
+  exact ⟨s, ⟨hs, fun i ↦ (hsw i).2⟩, fun t ht ↦ A.eq_of_continuous_of_coord_ae_eq
+    (μ := volume) ht.1 hs fun i ↦ (ht.2 i).symm.trans (hsw i).2⟩
+
+/-- **The critical Sobolev embedding for Sobolev sections, with derivatives.** Let `M` have
+dimension `n ≤ k`. Every element `w` of `W^{k+j,1}(V)` is represented by a continuous section `s`
+of `V` whose chart expression `A.coord i s` is `Cʲ` on the chart image `A.image i` and agrees almost
+everywhere there with the chart-`i` data of `w`, for every chart `i`. -/
+theorem exists_continuous_contDiffOn_coord_ae_eq_one (hk : finrank ℝ E ≤ k) (j : ℕ)
+    (w : SobolevSection A volume 1 (k + j)) :
+    ∃ s : ∀ x, V x, Continuous (fun x ↦ TotalSpace.mk' F x (s x)) ∧
+      ∀ i, ContDiffOn ℝ j (A.coord i s) (A.image i) ∧
+        A.sectionChartData.chartValueL volume 1 (k + j) i w
+          =ᵐ[volume.restrict (A.image i)] A.coord i s :=
+  exists_continuous_contDiffOn_coord_ae_eq_of_forall_zeroAtInfty ENNReal.one_ne_top
+    (fun _ hm w ↦ ⟨Wkp.toZeroAtInftyOne (hk.trans hm) w,
+      Wkp.value_ae_eq_toZeroAtInftyOne (hk.trans hm) w⟩) j w
+
 /-- **The critical Sobolev embedding for Sobolev sections.** Let `M` have dimension `n ≤ k`. Every
 element `w` of `W^{k,1}(V)` has exactly one continuous representative: there is a unique continuous
 section `s` of `V` whose chart expression `A.coord i s` agrees, for every chart `i`, almost
@@ -103,10 +153,10 @@ theorem existsUnique_continuous_ae_eq_coord_one (hk : finrank ℝ E ≤ k)
     (w : SobolevSection A volume 1 k) :
     ∃! s : ∀ x, V x, Continuous (fun x ↦ TotalSpace.mk' F x (s x)) ∧
       ∀ i, A.sectionChartData.chartValueL volume 1 k i w
-        =ᵐ[volume.restrict (A.image i)] A.coord i s := by
-  obtain ⟨s, hs, hsw⟩ := exists_continuous_contDiffOn_coord_ae_eq_one hk 0 w
-  exact ⟨s, ⟨hs, fun i ↦ (hsw i).2⟩, fun t ht ↦ A.eq_of_continuous_of_coord_ae_eq
-    (μ := volume) ht.1 hs fun i ↦ (ht.2 i).symm.trans (hsw i).2⟩
+        =ᵐ[volume.restrict (A.image i)] A.coord i s :=
+  existsUnique_continuous_ae_eq_coord_of_forall_zeroAtInfty ENNReal.one_ne_top
+    (fun _ hm w ↦ ⟨Wkp.toZeroAtInftyOne (hk.trans hm) w,
+      Wkp.value_ae_eq_toZeroAtInftyOne (hk.trans hm) w⟩) w
 
 end SobolevSection
 
