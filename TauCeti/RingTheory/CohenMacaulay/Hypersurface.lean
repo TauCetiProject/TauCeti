@@ -7,14 +7,11 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
-public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import TauCeti.RingTheory.CohenMacaulay.Basic
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.KrullDimension.Regular
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.RingTheory.Depth.AuslanderBuchsbaum
-import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
-import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 
 /-!
 # Maximal Cohen–Macaulay modules over a hypersurface
@@ -35,12 +32,9 @@ By the Auslander–Buchsbaum formula over `S`, together with `depth_S M = depth_
   (`ModuleCat.hasProjectiveDimensionLE_restrictScalars_quotient_of_ringKrullDim_quotient_le_depth`).
 
 Over a regular local ring every module has finite projective dimension, so the two conditions
-agree
-(`ModuleCat.hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_quotient_le_depth`).
-This is the module-theoretic input to Eisenbud's description of the maximal Cohen–Macaulay
-modules over a hypersurface as the cokernels of matrix factorizations. The comparison
-`depth_S M = depth_R M` is `ModuleCat.depth_restrictScalars_of_surjective` from
-`TauCeti.RingTheory.Depth.Basic`.
+agree (`TauCeti.hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_le_depth` in
+`TauCeti.RingTheory.RegularLocalRing.AuslanderBuchsbaum`). The comparison `depth_S M = depth_R M`
+is `ModuleCat.depth_restrictScalars_of_surjective` from `TauCeti.RingTheory.Depth.Basic`.
 
 ## Main results
 
@@ -48,9 +42,6 @@ modules over a hypersurface as the cokernels of matrix factorizations. The compa
   and
   `ModuleCat.hasProjectiveDimensionLE_restrictScalars_quotient_of_ringKrullDim_quotient_le_depth`:
   the two implications above, over a Cohen–Macaulay local ring `S`.
-* `ModuleCat.hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_quotient_le_depth`:
-  over a regular local ring `S`, a finitely generated `S/(w)`-module is maximal Cohen–Macaulay
-  exactly when it has projective dimension at most one over `S`.
 
 ## References
 
@@ -150,21 +141,5 @@ theorem hasProjectiveDimensionLE_restrictScalars_quotient_of_ringKrullDim_quotie
   gcongr
 
 end CohenMacaulay
-
-/-- **Maximal Cohen–Macaulay modules over a hypersurface in a regular local ring.** Let `S` be a
-regular local ring and `w` a non-zero-divisor with `S/(w)` local. A finitely generated
-`S/(w)`-module has depth at least `dim S/(w)` exactly when its projective dimension over `S` is
-at most one. -/
-theorem hasProjectiveDimensionLE_restrictScalars_quotient_iff_ringKrullDim_quotient_le_depth
-    [IsRegularLocalRing S] (hw : w ∈ nonZeroDivisors S) (M : ModuleCat.{u} (S ⧸ Ideal.span {w}))
-    [Module.Finite (S ⧸ Ideal.span {w}) M] :
-    HasProjectiveDimensionLE ((restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M) 1 ↔
-      ringKrullDim (S ⧸ Ideal.span {w}) ≤ IsLocalRing.depth M := by
-  refine ⟨ringKrullDim_quotient_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient
-    TauCeti.IsRegularLocalRing.isCohenMacaulay hw M,
-    hasProjectiveDimensionLE_restrictScalars_quotient_of_ringKrullDim_quotient_le_depth
-      TauCeti.IsRegularLocalRing.isCohenMacaulay hw M ?_⟩
-  exact (projectiveDimension_ne_top_iff _).2
-    ⟨_, TauCeti.IsRegularLocalRing.hasProjectiveDimensionLE_spanFinrank_maximalIdeal _⟩
 
 end ModuleCat

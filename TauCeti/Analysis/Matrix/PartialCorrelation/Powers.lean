@@ -14,6 +14,11 @@ On the closed partial-correlation cube, natural powers and joint monomials of lo
 entries of the partial-correlation Cholesky factor split into coordinate and residual powers of
 the individual partial correlations. This file records the deterministic factorization used by
 moment calculations.
+
+## References
+
+* D. Lewandowski, D. Kurowicka, H. Joe, *Generating random correlation matrices based on vines
+  and extended onion method*, J. Multivariate Anal. 100 (2009), 1989–2001.
 -/
 
 public section
