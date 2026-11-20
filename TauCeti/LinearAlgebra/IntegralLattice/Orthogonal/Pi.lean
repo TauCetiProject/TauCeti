@@ -94,7 +94,7 @@ form `∑ i, L_i(x i, y i)`. -/
 def pi : IntegralLattice (∀ i, V i) where
   carrier := Submodule.pi Set.univ fun i ↦ (L i).carrier
   form := piForm L
-  isLattice := inferInstance
+  isFullLattice := inferInstance
   isSymm := ⟨fun x y ↦ by
     simp only [piForm_apply]
     exact Finset.sum_congr rfl fun i _ ↦ (L i).isSymm.eq (x i) (y i)⟩
