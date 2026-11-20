@@ -52,7 +52,9 @@ applied to the excision map.
 For subsets `A ⊆ X` and `B ⊆ Y`, write `A × Y` and `X × B` for their preimages under the
 projections of `X × Y`. The inclusion of pairs `(X × B, A × B) ⟶ (A × Y ∪ X × B, A × Y)` into the
 inner pair of the triple `TopPair.prodUnionTripleFst` (`TopPair.prodExcisionFst`) is an excision
-when `A` and `B` are open (`TopPair.isIso_singularHomologyMap_prodExcisionFst`). The excision map
+when the interiors of `A × Y` and `X × B` cover their union
+(`TopPair.isIso_singularHomologyMap_prodExcisionFst`), in particular when `A` and `B` are open
+(`TopPair.isIso_singularHomologyMap_prodExcisionFst_of_isOpen`). The excision map
 `(A × Y, A × B) ⟶ (A × Y ∪ X × B, X × B)` of a product of pairs (`TopPair.prodExcisionMap`) is an
 excision when the interiors of `A × Y` and `X × B` cover their union
 (`TopPair.isIso_singularHomologyMap_prodExcisionMap`), in particular when `A` and `B` are open
@@ -472,8 +474,8 @@ abbrev prodUnionTripleSnd : TauCeti.TopTriple.{w} :=
     (B := CartesianMonoidalCategory.snd X Y ⁻¹' B) Set.subset_union_right
 
 /-- The inclusion of pairs `(X × B, A × B) ⟶ (A × Y ∪ X × B, A × Y)` into the inner pair of
-`TopPair.prodUnionTripleFst`, an excision when `A` and `B` are open
-(`TopPair.isIso_singularHomologyMap_prodExcisionFst`). -/
+`TopPair.prodUnionTripleFst`, an excision when the interiors of `A × Y` and `X × B` cover their
+union (`TopPair.isIso_singularHomologyMap_prodExcisionFst`). -/
 def prodExcisionFst :
     ofSubset (CartesianMonoidalCategory.fst X (ofSubset B).snd ⁻¹' A) ⟶
       TauCeti.TopTriple.innerPair.obj (prodUnionTripleFst A B) :=
@@ -519,16 +521,22 @@ private instance : IsIso (prodExcisionFstSwap A B) := by
     inferInstanceAs (IsIso (TopCat.isoOfHomeo _).hom)
   exact isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ⟨⟨(y.2.1, y.1), y.2.2⟩, rfl⟩
 
+/-- The homeomorphism `B × X ∪ Y × A ≃ₜ A × Y ∪ X × B` exchanging the factors. -/
+private def prodSubspaceSwap :
+    (ofSubset B).prodSubspace (ofSubset A) ≃ₜ
+      ↥(CartesianMonoidalCategory.fst X Y ⁻¹' A ∪ CartesianMonoidalCategory.snd X Y ⁻¹' B) :=
+  (Homeomorph.prodComm Y X).subtype fun p ↦ by
+    -- Both sides say that the first coordinate lies in `B` or the second lies in `A`.
+    rw [prodSubspace, range_ofSubset_map, range_ofSubset_map]
+    exact Or.comm
+
 /-- The isomorphism of pairs `(B × X ∪ Y × A, Y × A) ≅ (A × Y ∪ X × B, A × Y)` exchanging the
 factors, from the target of `TopPair.prodExcisionMap` for the pairs `(Y, B)` and `(X, A)` to the
 inner pair of `TopPair.prodUnionTripleFst`. -/
 private def prodExcisionPairSwap :
     (ofSubset B).prodExcisionPair (ofSubset A) ⟶
       TauCeti.TopTriple.innerPair.obj (prodUnionTripleFst A B) :=
-  ofHom (TopCat.isoOfHomeo ((Homeomorph.prodComm Y X).subtype fun p ↦ by
-      -- Both sides say that the first coordinate lies in `B` or the second lies in `A`.
-      rw [prodSubspace, range_ofSubset_map, range_ofSubset_map]
-      exact Or.comm)).hom
+  ofHom (TopCat.isoOfHomeo (prodSubspaceSwap A B)).hom
     (TopCat.ofHom ⟨fun p ↦ ⟨(p.2.1, p.1), p.2.2⟩, by fun_prop⟩) (by
       ext x
       refine Subtype.ext ?_
@@ -595,19 +603,43 @@ theorem isIso_singularHomologyMap_prodExcisionMap_of_isOpen (hA : IsOpen (Set.ra
   exact Set.eq_univ_of_forall fun x ↦ x.2
 
 variable {A B} in
-/-- **Excision onto `X × B`**: for open `A` and `B`, the inclusion of pairs
-`(X × B, A × B) ⟶ (A × Y ∪ X × B, A × Y)` induces isomorphisms on relative singular homology.
-Up to exchanging the factors, it is the excision map `TopPair.prodExcisionMap` of `(Y, B)` and
-`(X, A)`. -/
-theorem isIso_singularHomologyMap_prodExcisionFst (hA : IsOpen A) (hB : IsOpen B) (n : ℕ) :
+/-- **Excision onto `X × B`**: if the interiors of `A × Y` and `X × B` in `A × Y ∪ X × B` cover it,
+then the inclusion of pairs `(X × B, A × B) ⟶ (A × Y ∪ X × B, A × Y)` induces isomorphisms on
+relative singular homology. Up to exchanging the factors, it is the excision map
+`TopPair.prodExcisionMap` of `(Y, B)` and `(X, A)`. -/
+theorem isIso_singularHomologyMap_prodExcisionFst
+    (h : interior ((↑) ⁻¹' (CartesianMonoidalCategory.fst X Y ⁻¹' A) :
+        Set ↥(CartesianMonoidalCategory.fst X Y ⁻¹' A ∪ CartesianMonoidalCategory.snd X Y ⁻¹' B)) ∪
+      interior ((↑) ⁻¹' (CartesianMonoidalCategory.snd X Y ⁻¹' B) :
+        Set ↥(CartesianMonoidalCategory.fst X Y ⁻¹' A ∪ CartesianMonoidalCategory.snd X Y ⁻¹' B)) =
+        Set.univ) (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (prodExcisionFst A B) R n) := by
-  have := isIso_singularHomologyMap_prodExcisionMap_of_isOpen R (ofSubset B) (ofSubset A)
-    (range_ofSubset_map ▸ hB) (range_ofSubset_map ▸ hA) n
+  have := isIso_singularHomologyMap_prodExcisionMap R (ofSubset B) (ofSubset A) (by
+    -- Exchanging the factors carries the cover of `A × Y ∪ X × B` to that of `B × X ∪ Y × A`.
+    refine Set.eq_univ_of_forall fun p ↦ ?_
+    rcases h ▸ Set.mem_univ (prodSubspaceSwap A B p) with hp | hp <;>
+      rw [← Set.mem_preimage, Homeomorph.preimage_interior] at hp
+    -- A point of `B × X ∪ Y × A` whose swap lies over `B` (respectively `A`) has its first
+    -- (respectively second) coordinate in the range of the inclusion of `B` (respectively `A`).
+    · refine Or.inr (interior_mono ?_ hp)
+      exact fun q hq ↦ ⟨⟨_, hq⟩, rfl⟩
+    · refine Or.inl (interior_mono ?_ hp)
+      exact fun q hq ↦ ⟨⟨_, hq⟩, rfl⟩) n
   have := (singularHomologyMapIso R (asIso (prodExcisionFstSwap A B)) n).isIso_hom
   have := (singularHomologyMapIso R (asIso (prodExcisionPairSwap A B)) n).isIso_hom
   rw [← prodExcisionFstSwap_comp_prodExcisionMap_comp_prodExcisionPairSwap,
     singularHomologyMap_comp, singularHomologyMap_comp]
   infer_instance
+
+variable {A B} in
+/-- **Excision onto `X × B` for open sets**: for open `A` and `B`, the inclusion of pairs
+`(X × B, A × B) ⟶ (A × Y ∪ X × B, A × Y)` induces isomorphisms on relative singular homology. -/
+theorem isIso_singularHomologyMap_prodExcisionFst_of_isOpen (hA : IsOpen A) (hB : IsOpen B)
+    (n : ℕ) : IsIso (TopPair.singularHomologyMap (prodExcisionFst A B) R n) := by
+  refine isIso_singularHomologyMap_prodExcisionFst R ?_ n
+  rw [(TopCat.isOpen_subtypeVal_preimage_preimage_fst_union hA).interior_eq,
+    (TopCat.isOpen_subtypeVal_preimage_preimage_snd_union hB).interior_eq]
+  exact Set.eq_univ_of_forall fun x ↦ x.2
 
 end Prod
 

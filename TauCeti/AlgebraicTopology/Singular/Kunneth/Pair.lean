@@ -26,15 +26,17 @@ relative shuffle map `TopCat.shuffleRel` of `(X, A)` and `Y`: tensoring on the l
 the singular chains of `B` splits in each degree, and the relative shuffle map followed by the
 quotient modulo the chains of `A × Y ∪ X × B` vanishes on `C(X, A; R) ⊗ C(B; S)`.
 
-It is natural in maps of pairs (`TopCat.shufflePair_naturality`). When `A` and `B` are open it is a
-quasi-isomorphism (`TopCat.quasiIso_shufflePair`): this is the **relative Eilenberg–Zilber
-theorem for a product of open pairs**. The tensored sequence maps to the singular chain sequence of
-the triple `(X × Y, A × Y ∪ X × B, A × Y)`, by the relative shuffle maps of `(X, A)` with `B` and
-with `Y` on the first two terms and by `shufflePair` on the third. The relative shuffle maps are
-quasi-isomorphisms (`TopCat.quasiIso_shuffleRel`), and the first is followed by the inclusion of
-pairs `(X × B, A × B) ⟶ (A × Y ∪ X × B, A × Y)`, an excision since `A × Y` and `X × B` are open sets
-covering the union (`TopPair.isIso_singularHomologyMap_prodExcisionFst`). The five lemma concludes.
-Openness is used only through this excision.
+It is natural in maps of pairs (`TopCat.shufflePair_naturality`). When the interiors of `A × Y`
+and `X × B` cover their union, in particular when `A` and `B` are open, it is a quasi-isomorphism
+(`TopCat.quasiIso_shufflePair`, `TopCat.quasiIso_shufflePair_of_isOpen`): this is the **relative
+Eilenberg–Zilber theorem for a product of pairs**. The tensored sequence maps to the singular
+chain sequence of the triple `(X × Y, A × Y ∪ X × B, A × Y)`, by the relative shuffle maps of
+`(X, A)` with `B` and with `Y` on the first two terms and by `shufflePair` on the third. The
+relative shuffle maps are quasi-isomorphisms (`TopCat.quasiIso_shuffleRel`), and the first is
+followed by the inclusion of pairs `(X × B, A × B) ⟶ (A × Y ∪ X × B, A × Y)`, an excision since
+the interiors of `A × Y` and `X × B` cover the union
+(`TopPair.isIso_singularHomologyMap_prodExcisionFst`). The five lemma concludes
+(`TopCat.quasiIso_shufflePair_of_isIso`). The cover is used only through this excision.
 
 The map lives on simplicial singular chains, the chain model of the shuffle and
 Alexander–Whitney maps (`TopCat.shuffle`, `TopCat.alexanderWhitney`). The relative homology of
@@ -52,8 +54,10 @@ chain-level constructions are not compared here.
 * `TopCat.singularChainComplexπ_tensorHom_singularChainComplexπ_shufflePair`: the shuffle map of a
   product of pairs is induced by the absolute shuffle map.
 * `TopCat.shufflePair_naturality`: naturality in maps of both pairs.
-* `TopCat.quasiIso_shufflePair`: the relative Eilenberg–Zilber theorem for a product of open
-  pairs.
+* `TopCat.quasiIso_shufflePair_of_isIso`: the relative Eilenberg–Zilber theorem for a product of
+  pairs whose excision map `TopPair.prodExcisionFst` is a homology isomorphism.
+* `TopCat.quasiIso_shufflePair`: the same when the interiors of `A × Y` and `X × B` cover their
+  union, and `TopCat.quasiIso_shufflePair_of_isOpen` when `A` and `B` are open.
 
 ## References
 
@@ -251,7 +255,7 @@ private theorem shuffleRel_cokernel_condition :
 `C(X, A; R) ⊗ C(Y, B; S) ⟶ C(X × Y, A × Y ∪ X × B; R ⊗ S)`, induced by the shuffle map
 `C(X; R) ⊗ C(Y; S) ⟶ C(X × Y; R ⊗ S)` on the quotients. It is characterized by
 `TopCat.singularChainComplexπ_tensorHom_singularChainComplexπ_shufflePair`, and is a
-quasi-isomorphism when `A` and `B` are open (`TopCat.quasiIso_shufflePair`). -/
+quasi-isomorphism when `A` and `B` are open (`TopCat.quasiIso_shufflePair_of_isOpen`). -/
 def shufflePair :
     (TopPair.ofSubset A).singularChainComplex R ⊗ (TopPair.ofSubset B).singularChainComplex S ⟶
       (TopPair.ofSubset (fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)).singularChainComplex (R ⊗ S) :=
@@ -371,14 +375,15 @@ private def shufflePairShortComplexMap :
 
 variable {A B}
 
-/-- **The relative Eilenberg–Zilber theorem for a product of open pairs**: for open `A ⊆ X` and
-`B ⊆ Y`, the shuffle map `C(X, A; R) ⊗ C(Y, B; S) ⟶ C(X × Y, A × Y ∪ X × B; R ⊗ S)` is a
-quasi-isomorphism. -/
-theorem quasiIso_shufflePair (hA : IsOpen A) (hB : IsOpen B) :
+/-- **The relative Eilenberg–Zilber theorem for an excisive product of pairs**: if the inclusion of
+pairs `(X × B, A × B) ⟶ (A × Y ∪ X × B, A × Y)` (`TopPair.prodExcisionFst`) induces isomorphisms on
+relative singular homology, then the shuffle map
+`C(X, A; R) ⊗ C(Y, B; S) ⟶ C(X × Y, A × Y ∪ X × B; R ⊗ S)` is a quasi-isomorphism. -/
+theorem quasiIso_shufflePair_of_isIso
+    (h : ∀ n, IsIso (TopPair.singularHomologyMap (TopPair.prodExcisionFst A B) (R ⊗ S) n)) :
     QuasiIso (shufflePair X Y A B R S) := by
   have : QuasiIso (TopPair.singularChainComplexMap (TopPair.prodExcisionFst A B) (R ⊗ S)) :=
-    (quasiIso_iff _).2 fun n ↦ (quasiIsoAt_iff_isIso_homologyMap _ n).2
-      (TopPair.isIso_singularHomologyMap_prodExcisionFst (R ⊗ S) hA hB n)
+    (quasiIso_iff _).2 fun n ↦ (quasiIsoAt_iff_isIso_homologyMap _ n).2 (h n)
   have : QuasiIso (shufflePairτ₁ X Y A B R S) := by
     rw [shufflePairτ₁]
     infer_instance
@@ -386,6 +391,24 @@ theorem quasiIso_shufflePair (hA : IsOpen A) (hB : IsOpen B) :
   exact HomologySequence.quasiIso_τ₃ (shufflePairShortComplexMap X Y A B R S)
     (shortExact_tensorLeftShortComplex_singularChainComplexShortComplex X Y A B R S)
     ((TopPair.prodUnionTripleFst A B).shortExact_singularChainComplexShortComplex (R ⊗ S)) ‹_› ‹_›
+
+/-- **The relative Eilenberg–Zilber theorem for a product of pairs with covering interiors**: if
+the interiors of `A × Y` and `X × B` in `A × Y ∪ X × B` cover it, then the shuffle map
+`C(X, A; R) ⊗ C(Y, B; S) ⟶ C(X × Y, A × Y ∪ X × B; R ⊗ S)` is a quasi-isomorphism. -/
+theorem quasiIso_shufflePair
+    (h : interior ((↑) ⁻¹' (fst X Y ⁻¹' A) : Set ↥(fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)) ∪
+      interior ((↑) ⁻¹' (snd X Y ⁻¹' B) : Set ↥(fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)) = Set.univ) :
+    QuasiIso (shufflePair X Y A B R S) :=
+  quasiIso_shufflePair_of_isIso X Y R S
+    (TopPair.isIso_singularHomologyMap_prodExcisionFst (R ⊗ S) h)
+
+/-- **The relative Eilenberg–Zilber theorem for a product of open pairs**: for open `A ⊆ X` and
+`B ⊆ Y`, the shuffle map `C(X, A; R) ⊗ C(Y, B; S) ⟶ C(X × Y, A × Y ∪ X × B; R ⊗ S)` is a
+quasi-isomorphism. -/
+theorem quasiIso_shufflePair_of_isOpen (hA : IsOpen A) (hB : IsOpen B) :
+    QuasiIso (shufflePair X Y A B R S) :=
+  quasiIso_shufflePair_of_isIso X Y R S
+    (TopPair.isIso_singularHomologyMap_prodExcisionFst_of_isOpen (R ⊗ S) hA hB)
 
 end QuasiIso
 
