@@ -93,8 +93,7 @@ theorem mem_moebiusBaseSet {i : Bool} {z : Circle} :
 /-- Two different charts of the Möbius line bundle overlap off the real axis. -/
 theorem im_ne_zero_of_mem_moebiusBaseSet {i j : Bool} (hij : i ≠ j) {z : Circle}
     (hi : z ∈ moebiusBaseSet i) (hj : z ∈ moebiusBaseSet j) : (z : ℂ).im ≠ 0 := fun h ↦ by
-  rcases Circle.coe_eq_one_or_eq_neg_one_of_im_eq_zero h with h | h <;>
-    cases i <;> cases j <;> simp_all
+  rcases (Circle.im_coe_eq_zero_iff z).1 h with rfl | rfl <;> cases i <;> cases j <;> simp_all
 
 /-- The Möbius line bundle over the circle, glued from the trivial lines over the circle minus `1`
 (chart `false`) and minus `-1` (chart `true`) by the transition `TauCeti.moebiusSign`: the

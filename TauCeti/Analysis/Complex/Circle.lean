@@ -43,8 +43,7 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   `Circle.coordinate_mem_unitary`.
 * `Circle.re_sq_add_im_sq` and `Circle.coe_add_inv_coe`: `Re z ^ 2 + Im z ^ 2 = 1` and
   `z + z⁻¹ = 2 Re z` on the circle, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
-  identity for a point of `sphere (0 : ℂ) 1`; `Circle.coe_eq_one_or_eq_neg_one_of_im_eq_zero`: the
-  points of the circle on the real axis are `±1`.
+  identity for a point of `sphere (0 : ℂ) 1`.
 * `Complex.zpow_mul_conj_zpow_of_mem_sphere`: `z ^ k * conj (z ^ m) = z ^ (k - m)` for a point
   of `sphere (0 : ℂ) 1`, and `Complex.zpow_mul_conj_sub_eq_neg_of_mem_sphere`: there
   `z ^ k * conj a - a = -(z ^ k * conj (z ^ k * conj a - a))`.
@@ -94,14 +93,6 @@ theorem coe_homeomorphSphere_symm_apply (z : sphere (0 : ℂ) 1) :
 /-- The real and imaginary parts of a point of the circle satisfy `Re z ^ 2 + Im z ^ 2 = 1`. -/
 theorem re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 := by
   simpa [Complex.normSq_apply, sq] using normSq_coe z
-
-/-- The only points of the circle on the real axis are `1` and `-1`. -/
-theorem coe_eq_one_or_eq_neg_one_of_im_eq_zero {z : Circle} (hz : (z : ℂ).im = 0) :
-    (z : ℂ) = 1 ∨ (z : ℂ) = -1 := by
-  have h : (z : ℂ).re ^ 2 = 1 := by simpa [hz] using re_sq_add_im_sq z
-  rcases sq_eq_one_iff.1 h with h | h
-  · exact .inl (Complex.ext h hz)
-  · exact .inr (Complex.ext (by simpa using h) (by simpa using hz))
 
 /-- The real and imaginary parts of a point of the unit sphere of `ℂ` satisfy
 `Re z ^ 2 + Im z ^ 2 = 1`. -/
