@@ -50,9 +50,9 @@ the stack-level hypothesis is that the classifying map of
 algebroid (`WeierstrassCurve.flat_specialize_universalChange_smul_baseChange`). Under this
 hypothesis the formal group of `C • W` is Landweber regular on `R[u, u⁻¹, r, s, t]`. It is
 isomorphic to the base change of `Ê`, and Landweber regularity descends along the faithfully flat
-extension `R → R[u, u⁻¹, r, s, t]` (`FormalGroup.isLandweberRegular_map_iff_of_faithfullyFlat`).
-Hence `Ê` is Landweber regular on `R`
-(`WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_universalChange`).
+extension `R → R[u, u⁻¹, r, s, t]`
+(`FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat`). Hence `Ê` is Landweber
+regular on `R` (`WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_universalChange`).
 
 ## Main results
 
@@ -103,12 +103,8 @@ theorem isLandweberRegular_formalGroup_iff (M : Type*) [AddCommGroup M] [Module 
   obtain hi | rfl : i < 2 ∨ i = 2 := by omega
   · exact h i hi
   -- `v₂` is a unit modulo `I₂`, so it acts invertibly on `M ⧸ I₂ M`
-  set I := (formalGroup W).heightIdeal p 2
-  obtain ⟨y, hy⟩ := Ideal.Quotient.mk_surjective
-    (W.isUnit_mk_coeff_nsmulSeries_formalGroup hp).unit⁻¹.val
-  have hmem : y * PowerSeries.coeff (p ^ 2) ((formalGroup W).nsmulSeries p) - 1 ∈ I := by
-    rw [← Ideal.Quotient.eq, map_mul, hy, map_one, IsUnit.val_inv_mul]
-  exact ((Ideal.isSMulRegular_quotient_smul_top_congr I hmem).mpr (IsSMulRegular.one _)).of_mul
+  exact Ideal.isSMulRegular_quotient_smul_top_of_isUnit_mk _
+    (W.isUnit_mk_coeff_nsmulSeries_formalGroup hp)
 
 /-- **Landweber exactness for a flat classifying map.** If the classifying map
 `ℤ[a₁, a₂, a₃, a₄, a₆] →+* R` of an elliptic Weierstrass curve `W` is flat, then the formal group of
@@ -134,7 +130,7 @@ theorem isLandweberRegular_formalGroup_of_flat_universalChange
   have hreg := isLandweberRegular_formalGroup_of_flat _ h
   rw [VariableChange.formalGroup_smul, FormalGroup.isLandweberRegular_smul_iff, baseChange,
     map_formalGroup] at hreg
-  exact (FormalGroup.isLandweberRegular_map_iff_of_faithfullyFlat _ _).mp hreg
+  exact (FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat _ _).mp hreg
 
 namespace Universal
 
