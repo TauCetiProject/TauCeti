@@ -62,6 +62,8 @@ to a complete separated uniform space extends uniquely to the Novikov series. Th
   basis of open subgroups, and coefficientwise scalar multiplication is continuous.
 * `TauCeti.NovikovSeries.coeff_tsum_eq_zero`: a sum of series vanishing at an exponent vanishes
   there.
+* `TauCeti.NovikovSeries.coeff_eq_finsum_of_hasSum`: a coefficient of a convergent sum is the
+  finite sum of the coefficients of its terms.
 * `TauCeti.NovikovSeries.isClosed_setOf_support_subset`: series supported in any fixed set form a
   closed set.
 * `TauCeti.NovikovSeries.summable_sigma_fin_iff` and `TauCeti.NovikovSeries.tsum_sigma_fin`:
@@ -328,6 +330,22 @@ theorem coeff_tsum_eq_zero {ι : Type*} {f : ι → NovikovSeries R H N} {h : H}
     simp
   exact hker.subset (tsum_mem (hker ▸ (isLocallyConstant_coeff h).isClosed_fiber 0)
     fun i => hker.superset (hf i))
+
+/-- **Coefficients of a convergent sum.** If a family of Novikov series has sum `a`, then the
+coefficient of `a` at the exponent `h` is the finsum of the coefficients of the terms at `h`. -/
+theorem coeff_eq_finsum_of_hasSum {ι : Type*} {f : ι → NovikovSeries R H N}
+    {a : NovikovSeries R H N} (hf : HasSum f a) (h : H) : a.coeff h = ∑ᶠ i, (f i).coeff h := by
+  classical
+  -- Only the finitely many terms outside `U_(N h + 1)` can have a nonzero coefficient at `h`.
+  have hfin : (Function.support fun i => (f i).coeff h).Finite := by
+    refine (hf.summable.tendsto_cofinite_zero.eventually
+      (periodFiltration_mem_nhds_zero (N h + 1))).subset fun i hi hU => hi ?_
+    exact mem_periodFiltration.1 hU h (lt_add_one _)
+  -- The coefficient at `h` is locally constant, so it is that of the partial sums eventually.
+  obtain ⟨s, hs⟩ := Filter.eventually_atTop.1 (hf.eventually
+    ((IsLocallyConstant.iff_eventually_eq _).1 (isLocallyConstant_coeff h) a))
+  rw [finsum_eq_sum_of_support_subset _ (s := s ∪ hfin.toFinset)
+    (by simp), ← coeff_sum, hs _ Finset.subset_union_left]
 
 /-- The Novikov series are complete for the period topology: the limit of a Cauchy filter has, at
 each exponent, the coefficient on which the filter eventually agrees. -/
