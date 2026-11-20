@@ -181,7 +181,7 @@ def extendedAffineWeylGroupToQuotient :
     P.extendedAffineWeylGroup →*
       Multiplicative (P.coweightLattice ⧸ (P.corootSpan ℤ).comap P.coweightLattice.subtype) where
   toFun f :=
-    .ofAdd (Submodule.Quotient.mk ⟨f.1 0, (P.mem_extendedAffineWeylGroup_iff.1 f.2).2⟩)
+    .ofAdd (Submodule.Quotient.mk ⟨f.val 0, (P.mem_extendedAffineWeylGroup_iff.1 f.property).2⟩)
   map_one' := by
     rw [← ofAdd_zero, ← Submodule.Quotient.mk_zero]
     simp
@@ -190,18 +190,20 @@ def extendedAffineWeylGroupToQuotient :
       Submodule.Quotient.eq]
     -- `(f g) 0 = f.linear (g 0) + f 0`, and `f.linear (g 0) - g 0` lies in the coroot lattice.
     have h := P.sub_mem_corootSpan_of_mem_closure_range_coreflection
-      (P.mem_extendedAffineWeylGroup_iff.1 f.2).1 (P.mem_extendedAffineWeylGroup_iff.1 g.2).2
+      (P.mem_extendedAffineWeylGroup_iff.1 f.property).1 (P.mem_extendedAffineWeylGroup_iff.1
+          g.property).2
     rw [Submodule.mem_comap]
     simp only [Subgroup.coe_mul, AffineEquiv.coe_mul, comp_apply, Submodule.subtype_apply,
       Submodule.coe_sub, Submodule.coe_add]
-    rw [AffineEquiv.apply_eq_linear_add f.1 (g.1 0)]
+    rw [AffineEquiv.apply_eq_linear_add f.val (g.val 0)]
     convert h using 1
     abel
 
 @[simp]
 lemma extendedAffineWeylGroupToQuotient_apply (f : P.extendedAffineWeylGroup) :
     P.extendedAffineWeylGroupToQuotient f =
-      .ofAdd (Submodule.Quotient.mk ⟨f.1 0, (P.mem_extendedAffineWeylGroup_iff.1 f.2).2⟩) :=
+      .ofAdd (Submodule.Quotient.mk ⟨f.val 0, (P.mem_extendedAffineWeylGroup_iff.1 f.property).2⟩)
+          :=
   (rfl)
 
 /-- The homomorphism `W_ext → P∨ / (P∨ ∩ Q∨)` is onto: the class of `λ ∈ P∨` is the image of the
@@ -224,7 +226,7 @@ theorem ker_extendedAffineWeylGroupToQuotient :
   rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, P.mem_affineWeylGroup_iff,
     extendedAffineWeylGroupToQuotient_apply, ← ofAdd_zero, Multiplicative.ofAdd.injective.eq_iff,
     Submodule.Quotient.mk_eq_zero, Submodule.mem_comap, Submodule.subtype_apply]
-  exact (and_iff_right (P.mem_extendedAffineWeylGroup_iff.1 f.2).1).symm
+  exact (and_iff_right (P.mem_extendedAffineWeylGroup_iff.1 f.property).1).symm
 
 /-- **`W_aff ∩ W_ext` is normal in the extended affine Weyl group**, as the kernel of
 `W_ext → P∨ / (P∨ ∩ Q∨)`. For a crystallographic pairing `W_aff ≤ W_ext`, so this says the affine

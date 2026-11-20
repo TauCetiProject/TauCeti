@@ -73,7 +73,7 @@ env:
 
 jobs:
   # The existing picker applies class-specific preferences and shared build caps.
-  # Existing PR assessment handles self-tested labels; no runner is needed to recognise them.
+  # Persistent self-tested declarations skip PR CI; admission validates author and scope directly.
   # Merge groups and manual PR requests without an immutable head use cloud pools.
   pick-runner:
     if: >-
@@ -96,6 +96,7 @@ jobs:
       contents: read  # immutable fleet selector checkout
     secrets:
       FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
+      FLEET_INVENTORY_APP_PRIVATE_KEY: ${{ secrets.FLEET_INVENTORY_APP_PRIVATE_KEY }}
       TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
 
   # Name kept distinct from `build` on purpose — see the header note. The required merge check is the
@@ -113,8 +114,12 @@ jobs:
     # next matching runner, including replacements on another enrolled host.
     # Picker outputs remain attempt-scoped. Staging retains exact guest labels
     # and waits for tauchonki2 when selection fails or is stale.
-    # Explicit maintenance builds use GitHub-hosted capacity and its bulk cap.
-    # Sandbox and merge checks are the same for every runner pool.
+    # Maintenance builds (bot Mathlib bumps and lint repairs, including their
+    # dispatched rebuilds) must not wait behind the ordinary PR backlog. They
+    # take a priority Namespace sandbox outside both the hosted and Namespace
+    # PR slots; there are only ever a few of them. Unless NAMESPACE_ENABLED is
+    # unset or true, or when NAMESPACE_BUILD_CAP is 0, they use the hosted bulk
+    # slots instead. Sandbox and merge checks are the same for every runner pool.
     #
     # Staging is restricted to tauchonki2. Prefer the picker's exact idle
     # staging guest; if occupied or selection failed, queue for the next staging
@@ -127,10 +132,10 @@ jobs:
     # runtime cap and stable slot-group prefix. Waiting consumes no runner; failed
     # or invalid picker slots share conservative slot zero.
     concurrency:
-      group: ${{ !(github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && !(inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && (contains(needs.pick-runner.outputs.runner, 'nscloud-') || contains(needs.pick-runner.outputs.runner, 'namespace-profile-') || contains(needs.pick-runner.outputs.runner, 'namespace-features:')) && format('tauceti-namespace-build-{0}', contains(fromJSON('["0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63"]'), needs.pick-runner.outputs.namespace-slot) && contains(fromJSON('["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64"]'), needs.pick-runner.outputs.namespace_cap) && fromJSON(needs.pick-runner.outputs.namespace-slot) < fromJSON(needs.pick-runner.outputs.namespace_cap) && needs.pick-runner.outputs.namespace-slot || '0') || contains(fromJSON('["ubuntu-latest","ubuntu-24.04","ubuntu-22.04"]'), (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON((needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && contains(fromJSON('["tauchonki2"]'), needs.pick-runner.outputs.pool) && needs.pick-runner.outputs.runner) || '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]') || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && 'ubuntu-24.04' || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"'))) && format('tauceti-hosted-bulk-{0}', needs.pick-runner.outputs.hosted-slot || '0') || format('unlimited-sandboxed-build-{0}', github.run_id) }}
+      group: ${{ !(github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && !(inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && (contains(needs.pick-runner.outputs.runner, 'nscloud-') || contains(needs.pick-runner.outputs.runner, 'namespace-profile-') || contains(needs.pick-runner.outputs.runner, 'namespace-features:')) && format('tauceti-namespace-build-{0}', contains(fromJSON('["0","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63"]'), needs.pick-runner.outputs.namespace-slot) && contains(fromJSON('["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64"]'), needs.pick-runner.outputs.namespace_cap) && fromJSON(needs.pick-runner.outputs.namespace-slot) < fromJSON(needs.pick-runner.outputs.namespace_cap) && needs.pick-runner.outputs.namespace-slot || '0') || contains(fromJSON('["ubuntu-latest","ubuntu-24.04","ubuntu-22.04"]'), (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON((needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && contains(fromJSON('["tauchonki2"]'), needs.pick-runner.outputs.pool) && needs.pick-runner.outputs.runner) || '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]') || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && ((vars.NAMESPACE_ENABLED == '' || vars.NAMESPACE_ENABLED == 'true') && vars.NAMESPACE_BUILD_CAP != '0' && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || 'ubuntu-24.04') || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"'))) && format('tauceti-hosted-bulk-{0}', needs.pick-runner.outputs.hosted-slot || '0') || format('unlimited-sandboxed-build-{0}', github.run_id) }}
       queue: max
       cancel-in-progress: false
-    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON((needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && contains(fromJSON('["tauchonki2"]'), needs.pick-runner.outputs.pool) && needs.pick-runner.outputs.runner) || '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]') || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && 'ubuntu-24.04' || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"')) }}
+    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON((needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && contains(fromJSON('["tauchonki2"]'), needs.pick-runner.outputs.pool) && needs.pick-runner.outputs.runner) || '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]') || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && ((vars.NAMESPACE_ENABLED == '' || vars.NAMESPACE_ENABLED == 'true') && vars.NAMESPACE_BUILD_CAP != '0' && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || 'ubuntu-24.04') || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"')) }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
       build-state: ${{ steps.report.outputs.build-state }}
@@ -184,14 +189,13 @@ jobs:
             /tauceti.toml
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2e715e060777c57cb634987090139964547b6fc8
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 2e715e060777c57cb634987090139964547b6fc8
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@4d2579da7cdb5679ab523d281f61c73ffb502f75
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@main
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -395,7 +399,14 @@ jobs:
           if [ -z "$files" ] && [ "$repair_pr" = 0 ]; then
             echo "INFRA=1" >> "$GITHUB_ENV"; echo "::warning::no files / unable to list — cannot determine scope, routing to human"
           elif [ -n "$files" ]; then
-            if echo "$files" | grep -vqE '^TauCeti/|^TauCeti\.lean$|^lake-manifest\.json$|^lean-toolchain$|^docbuild/docs/references\.bib$'; then
+            # The allowed set is TauCetiTools' shared `ci_git.out_of_scope`, the same one
+            # `lake lint` applies locally. If it cannot answer, fail closed to a human.
+            if ! outside=$(printf '%s\n' "$files" | python3 gate/scripts/ci_git.py scope); then
+              outside=""
+              echo "INFRA=1" >> "$GITHUB_ENV"
+              echo "::warning::cannot classify the changed paths — routing to human"
+            fi
+            if [ -n "$outside" ]; then
               if echo "$files" | grep -qE '^lakefile\.(toml|lean)$'; then
                 echo "HUMAN_LAKEFILE=1" >> "$GITHUB_ENV"
               fi
@@ -471,61 +482,76 @@ jobs:
           # API or shell failure above cannot be misreported as a green scope decision.
           echo "SCOPE_OK=1" >> "$GITHUB_ENV"
 
-      - name: Diff size guard — additions, deletions, and changed files each ≤ 2000 (trusted GitHub PR totals; Lake-pin bumps exempt from the line caps)
+      - name: Diff size guard — additions ≤ 3000, deletions and changed files each ≤ 2000 (rename-aware local Git measure shared with staging; Lake-pin bumps exempt from the line caps)
         # Per-PR cap, enforced when each PR is built on pull_request_target (its entry condition to the
         # queue). A merge_group batch is the sum of already-capped PRs, so we don't re-cap the combined
         # size here. The combined batch scope uses a complete local Git diff.
-        # A PR that moves the Lake pins (BUMP=1, set by the scope guard above) is exempt from the
-        # two line caps: its diff is whatever the upstream Mathlib/Lean changes force, so splitting
-        # it is not possible without an intermediate bump. Such a PR still has to pass the trusted
-        # bump validator before anything builds, and the file cap still applies.
+        # The measure is `ci_git.py pr-guards` on the exact merge base and head. `lake lint`, queue
+        # admission of self-tested PRs and the staging candidate's retained-member policy call the
+        # same TauCetiTools function, so none of them can disagree. It detects renames like GitHub's PR totals: a moved file counts only its edits.
+        # A PR that moves the Lake pins is exempt from the two line caps: its diff is whatever the
+        # upstream Mathlib/Lean changes force, so splitting it is not possible without an
+        # intermediate bump. Such a PR still has to pass the trusted bump validator before anything
+        # builds, and the file cap still applies.
+        # A repository admin's `large-refactor` label lifts all three caps for a mechanical change
+        # that cannot sensibly be split (`ci_git.large_refactor_approved`: the latest labelling was
+        # by an admin, after the head commit). Labelling does not start a build: rerun this one.
         if: ${{ env.IS_BATCH != 'true' }}
         env:
-          GH_TOKEN: ${{ steps.ci-api.outputs.read-token }}
+          SIZE_BASE: ${{ steps.pr.outputs.mergebase }}
+          SIZE_HEAD: ${{ steps.pr.outputs.sha }}
+          SIZE_PR: ${{ steps.pr.outputs.num }}
           GH_READ_TOKEN: ${{ steps.ci-api.outputs.read-token }}
           TAUCETI_GITHUB_READ_ROLE: ${{ steps.ci-api.outputs.read-role }}
-          TAUCETI_GITHUB_WRITE_ROLE: ${{ steps.ci-api.outputs.status-role }}
         run: |
-          # Per-PR review-size policy remains independent of the complete local scope diff.
-          read -r adds dels files < <(python3 gate/scripts/github_api.py "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}" \
-            --jq '"\(.additions) \(.deletions) \(.changed_files)"')
-          echo "diff size: +$adds / -$dels across $files files (cap: 2000 each)"
-          # Fail closed on non-numeric data: [ -gt ] errors on garbage but an `if` would
-          # swallow that as false, silently passing the guard.
-          if ! [[ "$adds" =~ ^[0-9]+$ && "$dels" =~ ^[0-9]+$ && "$files" =~ ^[0-9]+$ ]]; then
+          size=""
+          exemption=()
+          if [[ "$SIZE_PR" =~ ^[1-9][0-9]*$ ]]; then
+            exemption=(--large-refactor-pr "${{ github.repository }}#$SIZE_PR")
+          fi
+          if [ "${MERGEBASE_EXACT:-0}" = "1" ]; then
+            size=$(python3 gate/scripts/ci_git.py pr-guards --no-scope --checkout pr --base "$SIZE_BASE" --head "$SIZE_HEAD" "${exemption[@]}") || size=""
+          fi
+          printf '%s\n' "$size" > "$RUNNER_TEMP/review-size.json"
+          read -r adds dels files pins too_large < <(printf '%s' "$size" | jq -r \
+            '"\(.additions) \(.deletions) \(.files) \(.pins_changed) \(.too_large)"' 2>/dev/null) || true
+          echo "diff size: +$adds / -$dels across $files files (cap: 3000 added, 2000 removed, 2000 files)"
+          # Fail closed on missing or non-numeric data: [ -gt ] errors on garbage but an `if`
+          # would swallow that as false, silently passing the guard.
+          if ! [[ "$adds" =~ ^[0-9]+$ && "$dels" =~ ^[0-9]+$ && "$files" =~ ^[0-9]+$ \
+                  && "$pins" =~ ^(true|false)$ && "$too_large" =~ ^(true|false)$ ]]; then
             echo "DIFF_UNKNOWN=1" >> "$GITHUB_ENV"
-            echo "::error::could not read the PR's diff totals from the GitHub API (+$adds / -$dels / $files files); failing closed"
+            echo "::error::could not measure the PR's diff from local Git objects (+$adds / -$dels / $files files); failing closed"
             exit 1
           fi
-          if [ "${BUMP:-0}" = "1" ] && [ "$files" -le 2000 ]; then
-            echo "::notice::PR moves the Lake pins, so the added/removed line caps do not apply"
-          elif [ "$adds" -gt 2000 ] || [ "$dels" -gt 2000 ] || [ "$files" -gt 2000 ]; then
+          if [ "$too_large" = "true" ]; then
             echo "TOO_LARGE=1" >> "$GITHUB_ENV"
-            echo "::error::This PR is too large to review: +$adds / -$dels lines across $files files (cap: 2000 added lines, 2000 removed lines, 2000 files). We cap diff size to keep review manageable — reviewers, AI and human alike, do far better work on small, focused PRs. Please split this into smaller PRs, one topic each. We are open to raising the cap once there is evidence that review is working well at the current size."
+            echo "::error::This PR is $(printf '%s' "$size" | jq -r '.violations[0]') We cap diff size to keep review manageable — reviewers, AI and human alike, do far better work on small, focused PRs. We are open to raising the cap once there is evidence that review is working well at the current size. Run lake lint to check locally."
             exit 1
+          elif [ "$(printf '%s' "$size" | jq -r .large_refactor)" = "true" ]; then
+            echo "::notice::A repository admin labelled this PR large-refactor, so the size caps do not apply"
+          elif [ "$pins" = "true" ]; then
+            echo "::notice::PR moves the Lake pins, so the added/removed line caps do not apply"
           fi
 
-      - name: New-file length guard — newly added .lean files must be ≤ 1000 lines
-        # A brand-new file may be at most 1000 lines; an existing file may grow up to the
+      - name: New-file length guard — newly added .lean files must be ≤ 1250 lines
+        # A brand-new file may be at most 1250 lines; an existing file may grow up to the
         # in-build linter ceiling of 1500 (set in lakefile.toml). The split keeps new material
         # small and reviewable while not blocking incremental growth of established files.
         # PR-only, like the diff-size guard: new files enter the library through a PR, and a
-        # merge_group batch is the sum of already-guarded PRs. For an *added* file the GitHub
-        # diff lists every line as an addition, so `.additions` is its line count.
+        # merge_group batch is the sum of already-guarded PRs. Reuses the diff-size guard's
+        # measure, in which a renamed or moved file is not new.
         if: ${{ env.IS_BATCH != 'true' }}
-        env:
-          GH_TOKEN: ${{ steps.ci-api.outputs.read-token }}
-          GH_READ_TOKEN: ${{ steps.ci-api.outputs.read-token }}
-          TAUCETI_GITHUB_READ_ROLE: ${{ steps.ci-api.outputs.read-role }}
-          TAUCETI_GITHUB_WRITE_ROLE: ${{ steps.ci-api.outputs.status-role }}
         run: |
-          long=$(python3 gate/scripts/github_api.py --paginate "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}/files" \
-            --jq '.[] | select(.status == "added" and (.filename | endswith(".lean")) and .additions > 1000)
-                      | "\(.filename) (\(.additions) lines)"')
-          if [ -n "$long" ]; then
+          measured="$RUNNER_TEMP/review-size.json"
+          if ! jq -e '.new_files_too_long | type == "array"' "$measured" >/dev/null 2>&1; then
+            echo "DIFF_UNKNOWN=1" >> "$GITHUB_ENV"
+            echo "::error::could not read the PR's measured new files; failing closed"
+            exit 1
+          fi
+          if [ "$(jq '.new_files_too_long | length' "$measured")" != 0 ]; then
             echo "NEWFILE_TOO_LONG=1" >> "$GITHUB_ENV"
-            echo "::error::New .lean files must be at most 1000 lines; these exceed it. Split them, or grow an existing file (allowed up to 1500):"
-            echo "$long"
+            jq -r '.violations[] | select(contains("new Lean files")) | "::error::" + .' "$measured"
           fi
 
       # Capture B once: both forward-bump policy and ordinary PR integration use this
@@ -1172,7 +1198,10 @@ jobs:
           export PATH="$HOME/.elan/bin:$PATH"
           # The sandboxed build/audit/lint body comes from the separately mounted, workflow-pinned
           # gate checkout; candidate scripts are never invoked. Bulk extraction is a temporary
-          # workaround until the pinned toolchain includes leanprover/lean4#15868.
+          # workaround for Lake starting one `leantar` process per cached module. The upstream change
+          # expected to make it unnecessary is https://github.com/leanprover/lean4/pull/16418 (libuv
+          # process spawning, in v4.37.0-rc1); https://github.com/leanprover/lean4/pull/15868 (native
+          # bulk unpacking) is still open. Remove it once measurement on the pinned toolchain agrees.
           # Keeping the bwrap bash payload a fixed, comment-free one-liner is deliberate: a comment's apostrophe once closed this single-quoted string
           # early and reddened every PR build (#694). All prose now lives in the script.
           export TAUCETI_PROJECT_ROOT="$PWD/pr"
@@ -1318,7 +1347,7 @@ jobs:
       - name: Refresh CI reporting credentials after the build
         id: report-ci-api
         if: always()
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@4d2579da7cdb5679ab523d281f61c73ffb502f75
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@main
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1498,11 +1527,11 @@ jobs:
           elif [ "${{ env.INFRA }}" = "1" ] && [ "${{ env.INTEGRATION_BAD }}" != "1" ]; then
             sc_state=failure; sc_desc="trusted scope/config checks did not complete — see the run; human review may be required"
           elif [ "${{ env.TOO_LARGE }}" = "1" ]; then
-            sc_state=failure; sc_desc="diff exceeds 2000 added/removed lines or 2000 files — split into smaller PRs to keep review manageable"
+            sc_state=failure; sc_desc="diff exceeds 3000 added lines, 2000 removed lines or 2000 files — split into smaller PRs to keep review manageable"
           elif [ "${{ env.DIFF_UNKNOWN }}" = "1" ]; then
-            sc_state=failure; sc_desc="could not read PR diff totals from the GitHub API — re-run pr-build"
+            sc_state=failure; sc_desc="could not measure the PR diff from local Git objects — re-run pr-build"
           elif [ "${{ env.NEWFILE_TOO_LONG }}" = "1" ]; then
-            sc_state=failure; sc_desc="a newly added .lean file exceeds 1000 lines — split it (existing files may grow to 1500)"
+            sc_state=failure; sc_desc="a newly added .lean file exceeds 1250 lines — split it (existing files may grow to 1500)"
           elif [ "${{ env.OUT_OF_SCOPE }}" = "1" ]; then
             # Only the path restriction is waivable. Every other scope/config/size
             # guard above must pass first. Approval comes from bors's HTTPS state,
@@ -1682,14 +1711,13 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2e715e060777c57cb634987090139964547b6fc8
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 2e715e060777c57cb634987090139964547b6fc8
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@4d2579da7cdb5679ab523d281f61c73ffb502f75
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@main
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
