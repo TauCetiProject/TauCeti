@@ -32,7 +32,17 @@ universe u
 /-- The affine scheme of tangent vectors at the identity of the monoid represented by `H`. -/
 abbrev lieAlgebraScheme (k : Type u) [CommRing k] (H : Type u) [CommRing H] [Bialgebra k H] :
     Scheme :=
-  Spec (.of (SymmetricAlgebra k (Module.Dual k (Module.Dual k (Bialgebra.CotangentSpace k H)))))
+  Spec (.of (SymmetricAlgebra k (Bialgebra.CotangentSpace k H)))
+
+/-- For a reflexive cotangent space, evaluation into the double dual identifies the tangent
+scheme with the spectrum of polynomial functions on its dual. In particular, this applies to
+finite-dimensional cotangent spaces over a field. -/
+abbrev lieAlgebraSchemeIso (k : Type u) [CommRing k] (H : Type u) [CommRing H]
+    [Bialgebra k H] [Module.IsReflexive k (Bialgebra.CotangentSpace k H)] :
+    lieAlgebraScheme k H ≅ Spec (.of (SymmetricAlgebra k
+      (Module.Dual k (Module.Dual k (Bialgebra.CotangentSpace k H))))) :=
+  Scheme.Spec.mapIso (SymmetricAlgebra.mapEquiv k
+    (Module.evalEquiv k (Bialgebra.CotangentSpace k H))).symm.toRingEquiv.toCommRingCatIso.op
 
 variable (k : Type u) [Field k] (H : Type u) [CommRing H] [HopfAlgebra k H]
   [Module.Finite k (Bialgebra.CotangentSpace k H)]
@@ -48,11 +58,13 @@ abbrev nilpotentCone : Scheme := Spec (.of (P ⧸ nilpotentConeIdeal k H))
 
 /-- The adjoint quotient morphism is induced by inclusion of invariant functions. -/
 def adjointQuotientMap : lieAlgebraScheme k H ⟶ adjointQuotient k H :=
-  Spec.map (CommRingCat.ofHom (adjointInvariantPolynomials k H).val.toRingHom)
+  (lieAlgebraSchemeIso k H).hom ≫
+    Spec.map (CommRingCat.ofHom (adjointInvariantPolynomials k H).val.toRingHom)
 
 /-- Pullback along the adjoint quotient is the inclusion of invariant functions. -/
 theorem adjointQuotientMap_eq : adjointQuotientMap k H =
-    Spec.map (CommRingCat.ofHom (adjointInvariantPolynomials k H).val.toRingHom) := by
+    (lieAlgebraSchemeIso k H).hom ≫
+      Spec.map (CommRingCat.ofHom (adjointInvariantPolynomials k H).val.toRingHom) := by
   rfl
 
 /-- The origin of the adjoint quotient is evaluation of invariants at the zero vector. -/
@@ -68,11 +80,13 @@ theorem adjointQuotientOrigin_eq : adjointQuotientOrigin k H =
 
 /-- The closed inclusion of the nilpotent cone into the Lie algebra scheme. -/
 def nilpotentConeι : nilpotentCone k H ⟶ lieAlgebraScheme k H :=
-  Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (nilpotentConeIdeal k H)))
+  Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (nilpotentConeIdeal k H))) ≫
+    (lieAlgebraSchemeIso k H).inv
 
 /-- The nilpotent-cone inclusion is induced by the quotient homomorphism. -/
 theorem nilpotentConeι_eq : nilpotentConeι k H =
-    Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (nilpotentConeIdeal k H))) := by
+    Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (nilpotentConeIdeal k H))) ≫
+      (lieAlgebraSchemeIso k H).inv := by
   rfl
 
 /-- The structural morphism of the nilpotent cone over its ground field. -/
@@ -86,8 +100,10 @@ theorem nilpotentConeToSpec_eq : nilpotentConeToSpec k H =
 
 /-- The nilpotent-cone inclusion preserves the structural morphisms to the ground field. -/
 theorem nilpotentConeι_comp_toSpec :
-    nilpotentConeι k H ≫ Spec.algebraMap k P = nilpotentConeToSpec k H := by
-  rw [nilpotentConeι_eq, nilpotentConeToSpec_eq, ← Spec.map_comp]
+    nilpotentConeι k H ≫ (lieAlgebraSchemeIso k H).hom ≫ Spec.algebraMap k P =
+      nilpotentConeToSpec k H := by
+  rw [nilpotentConeι_eq, Category.assoc, Iso.inv_hom_id_assoc,
+    nilpotentConeToSpec_eq, ← Spec.map_comp]
   exact congrArg (fun f ↦ Spec.map (CommRingCat.ofHom f))
     (Ideal.Quotient.mk_comp_algebraMap k (nilpotentConeIdeal k H))
 
@@ -153,11 +169,22 @@ theorem isPushout_nilpotentConeCoordinates :
 /-- The nilpotent cone is the scheme-theoretic zero fibre of the adjoint quotient. -/
 theorem isPullback_nilpotentCone :
     IsPullback (nilpotentConeι k H) (nilpotentConeToSpec k H)
-      (adjointQuotientMap k H) (adjointQuotientOrigin k H) :=
-  isPullback_SpecMap_of_isPushout _ _ _ _ (isPushout_nilpotentConeCoordinates k H)
+      (adjointQuotientMap k H) (adjointQuotientOrigin k H) := by
+  apply (isPullback_SpecMap_of_isPushout _ _ _ _
+    (isPushout_nilpotentConeCoordinates k H)).of_iso
+    (Iso.refl _) (lieAlgebraSchemeIso k H).symm (Iso.refl _) (Iso.refl _)
+  · simp [nilpotentConeι_eq]
+  · simp [nilpotentConeToSpec_eq]
+  · simp only [Iso.refl_hom, Category.comp_id, Iso.symm_hom,
+      adjointQuotientMap_eq, Iso.inv_hom_id_assoc]
+  · simp [adjointQuotientOrigin_eq]
 
 /-- The scheme-theoretic nilpotent cone is closed in the Lie algebra scheme. -/
-instance isClosedImmersion_nilpotentConeι : IsClosedImmersion (nilpotentConeι k H) :=
-  IsClosedImmersion.spec_of_surjective _ Ideal.Quotient.mk_surjective
+instance isClosedImmersion_nilpotentConeι : IsClosedImmersion (nilpotentConeι k H) := by
+  let : IsClosedImmersion (Spec.map
+      (CommRingCat.ofHom (Ideal.Quotient.mk (nilpotentConeIdeal k H)))) :=
+    IsClosedImmersion.spec_of_surjective _ Ideal.Quotient.mk_surjective
+  rw [nilpotentConeι_eq]
+  infer_instance
 
 end TauCeti

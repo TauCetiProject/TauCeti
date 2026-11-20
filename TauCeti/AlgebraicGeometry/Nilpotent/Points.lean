@@ -60,18 +60,19 @@ noncomputable def nilpotentConePointEquiv :
         dsimp only
         rw [Ideal.Quotient.liftₐ_comp, Equiv.symm_apply_apply] }
 
-/-- The inclusion of an algebra-valued point into the Lie algebra evaluates the polynomial
-functions by the symmetric algebra lift of its linear coordinates. -/
+/-- The cone inclusion evaluates polynomial functions by the symmetric algebra lift of the
+point's linear coordinates, then transports the point to the tangent scheme. -/
 @[reassoc]
 theorem nilpotentConePointEquiv_comp_ι
     (f : {f : Spec (.of A) ⟶ nilpotentCone k H // f.IsOver (Spec (.of k))}) :
     f.val ≫ nilpotentConeι k H = Spec.map (CommRingCat.ofHom
-      (SymmetricAlgebra.lift (nilpotentConePointEquiv k H f).val).toRingHom) := by
+      (SymmetricAlgebra.lift (nilpotentConePointEquiv k H f).val).toRingHom) ≫
+        (lieAlgebraSchemeIso k H).inv := by
   rw [nilpotentConePointEquiv, Equiv.trans_apply]
   simp only [Equiv.coe_fn_mk, Equiv.apply_symm_apply]
   rw [AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom, CommRingCat.ofHom_comp, Spec.map_comp,
     TauCeti.AlgebraicGeometry.spec_map_specOverHomEquivAlgHom, nilpotentConeι_eq,
-    ← Ideal.Quotient.mkₐ_toRingHom k I]
+    ← Ideal.Quotient.mkₐ_toRingHom k I, Category.assoc]
   rw [AlgHom.toRingHom_eq_coe]
 
 /-- The cone point attached to a vector is the spectrum of evaluation factored through

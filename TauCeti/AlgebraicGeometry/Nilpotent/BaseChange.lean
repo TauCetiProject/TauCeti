@@ -62,15 +62,18 @@ theorem nilpotentConeBaseChangeIso_inv_fst :
   intro a
   exact (e).commutes a
 
-/-- The other projection, followed by the cone inclusion, evaluates a polynomial in the
-extended coordinate ring modulo the extended ideal. -/
+/-- In the polynomial presentation of the Lie algebra, the other projection followed by the
+cone inclusion evaluates polynomials modulo the extended ideal. -/
 @[reassoc]
 theorem nilpotentConeBaseChangeIso_inv_snd_comp_ι :
     (nilpotentConeBaseChangeIso k H A).inv ≫ pullback.snd ιA (nilpotentConeToSpec k H) ≫
-        nilpotentConeι k H =
+        nilpotentConeι k H ≫ (lieAlgebraSchemeIso k H).hom =
       Spec.map (CommRingCat.ofHom ((Ideal.Quotient.mk J).comp
         (Algebra.TensorProduct.includeRight : P →ₐ[k] A ⊗[k] P).toRingHom)) := by
-  rw [nilpotentConeBaseChangeIso, Iso.trans_inv, Iso.trans_inv, nilpotentConeι_eq]
+  have hι : nilpotentConeι k H ≫ (lieAlgebraSchemeIso k H).hom =
+      Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I)) := by
+    rw [nilpotentConeι_eq, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  rw [hι, nilpotentConeBaseChangeIso, Iso.trans_inv, Iso.trans_inv]
   simp only [Category.assoc, pullback.congrHom_inv, pullback.lift_snd_assoc, Category.id_comp,
     pullbackSpecIso_inv_snd_assoc, Functor.mapIso_inv, Iso.op_inv, Iso.symm_inv, Scheme.Spec_map,
     ← Spec.map_comp, ← CommRingCat.ofHom_comp]
@@ -84,8 +87,9 @@ theorem nilpotentConeBaseChangeIso_inv_snd_comp_ι :
 theorem nilpotentConeBaseChangeIso_inv_comp_baseChange_ι :
     (nilpotentConeBaseChangeIso k H A).inv ≫
         pullback.map ιA (nilpotentConeToSpec k H) ιA (Spec.algebraMap k P)
-          (𝟙 _) (nilpotentConeι k H) (𝟙 _)
-          (by simp) (by simp [nilpotentConeι_comp_toSpec]) ≫
+          (𝟙 _) (nilpotentConeι k H ≫ (lieAlgebraSchemeIso k H).hom) (𝟙 _)
+          (by simp) (by simpa only [Category.assoc, Category.comp_id] using
+            (nilpotentConeι_comp_toSpec k H).symm) ≫
         (pullbackSpecIso k A P).hom =
       Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk J)) := by
   rw [← cancel_mono (pullbackSpecIso k A P).inv]
