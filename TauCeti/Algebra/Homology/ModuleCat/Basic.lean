@@ -22,9 +22,11 @@ For a homological complex `K` of modules over a ring, the inclusion of the degre
 These are the elementwise forms of the facts that `K.iCycles n` is a monomorphism and
 `K.homologyπ n` is an epimorphism.  Additive maps out of the homology are therefore determined by
 their values on classes of cycles (`HomologicalComplex.moduleCat_addMonoidHom_ext_homologyπ`,
-`HomologicalComplex.moduleCat_linearMap_ext_homologyπ`).
-Chain maps commute with the differentials and the square of
-the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
+`HomologicalComplex.moduleCat_linearMap_ext_homologyπ`).  Dually, the inclusion of the homology
+into the opcycles is injective and the projection of `K.X n` onto the opcycles is surjective
+(`HomologicalComplex.moduleCat_homologyι_injective`,
+`HomologicalComplex.moduleCat_pOpcycles_surjective`).  Chain maps commute with the differentials
+and the square of the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
 `HomologicalComplex.d_comp_d_apply`), cycles have zero boundary, on elements
 (`HomologicalComplex.iCycles_d_apply`), and an element killed by the differential to degree
 `c.next i` is killed by every differential out of degree `i`
@@ -309,6 +311,16 @@ on the classes of cycles. -/
 lemma moduleCat_linearMap_ext_homologyπ {G : Type*} [AddCommMonoid G] [Module R G]
     {f g : K.homology n →ₗ[R] G} (h : ∀ z, f (K.homologyπ n z) = g (K.homologyπ n z)) : f = g :=
   LinearMap.toAddMonoidHom_injective (moduleCat_addMonoidHom_ext_homologyπ h)
+
+/-- The inclusion of the degree-`n` homology of a homological complex of modules into its
+degree-`n` opcycles is injective. -/
+lemma moduleCat_homologyι_injective : Function.Injective (K.homologyι n) :=
+  (ModuleCat.mono_iff_injective _).1 inferInstance
+
+/-- The projection of the degree-`n` term of a homological complex of modules onto its degree-`n`
+opcycles is surjective. -/
+lemma moduleCat_pOpcycles_surjective : Function.Surjective (K.pOpcycles n) :=
+  (ModuleCat.epi_iff_surjective _).1 inferInstance
 
 /-- The differential out of degree `n` of a complex of modules kills every cycle of degree `n`, on
 elements. -/
