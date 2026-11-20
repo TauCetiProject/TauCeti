@@ -45,7 +45,11 @@ a symplectic vector space, to manifolds, and shows that it is intrinsic.
 * It depends only on the germ of `F`, and on a boundaryless manifold, at a critical point of `F`
   it is nondegeneracy of rank zero
   (`IsNondegenerate.isNondegeneratePoint_iff_isNondegenerateRankZeroPoint`, in the namespace
-  `TauCeti.SmoothTwoForm`).
+  `TauCeti.SmoothTwoForm`). Since `dφ_y` is invertible, `y` is critical for `F ∘ φ` exactly when
+  `φ y` is critical for `F`, so the invariance of nondegenerate rank-zero points under symplectic
+  changes of coordinates follows
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.isNondegenerateRankZeroPoint_comp_right_iff` and
+  `TauCeti.SymplecticForm.isNondegenerateRankZeroPoint_comp_right_iff`).
 
 ## Main definitions
 
@@ -246,6 +250,63 @@ theorem _root_.TauCeti.SymplecticForm.isNondegeneratePoint_comp_right_iff
     contMDiffAt_iff_contDiffAt]
   -- The two sides differ only in the instances on `E'` and on `TangentSpace 𝓘(ℝ, E') y`.
   exact Iff.rfl
+
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [I.Boundaryless] [FiniteDimensional ℝ E']
+  [I'.Boundaryless] in
+/-- When `dφ_y` is invertible, `F ∘ φ` is critical at `y` exactly when `F` is critical at `φ y`. -/
+private theorem mvfderiv_comp_right_eq_zero_iff (hφ : ContMDiffAt I' I 2 φ y)
+    (hinv : (mfderiv I' I φ y).IsInvertible) (hF : ContMDiffAt I 𝓘(ℝ, G) 2 F (φ y)) :
+    mvfderiv I' (F ∘ φ) y = 0 ↔ mvfderiv I F (φ y) = 0 := by
+  obtain ⟨e, he⟩ := hinv
+  rw [mvfderiv_comp y (hF.mdifferentiableAt two_ne_zero) (hφ.mdifferentiableAt two_ne_zero), ← he]
+  refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_,
+    fun h ↦ by rw [h, ContinuousLinearMap.zero_comp]⟩
+  simpa using congr($h (e.symm v))
+
+/-- **Invariance of rank-zero nondegeneracy under symplectic changes of coordinates.** Let `M` be
+boundaryless, let `τ` be a nondegenerate two-form on a boundaryless manifold `N` and let
+`φ : N → M` be `C²` at `y`, with invertible differential there, pulling `σ` back to `τ` at `y`.
+For `F` which is `C²` at `φ y`, the point `y` is a nondegenerate rank-zero point of `F ∘ φ` for `τ`
+exactly when `φ y` is one of `F` for `σ`. -/
+theorem isNondegenerateRankZeroPoint_comp_right_iff [IsManifold I' ∞ N] {τ : SmoothTwoForm I' N}
+    (hτ : τ.IsNondegenerate) (hφ : ContMDiffAt I' I 2 φ y)
+    (hinv : (mfderiv I' I φ y).IsInvertible)
+    (hστ : ∀ u w, SmoothBundleForm.eval₂ σ (φ y) (mfderiv I' I φ y u) (mfderiv I' I φ y w) =
+      SmoothBundleForm.eval₂ τ y u w)
+    (hF : ContMDiffAt I 𝓘(ℝ, G) 2 F (φ y)) :
+    hτ.IsNondegenerateRankZeroPoint (F ∘ φ) y ↔ hσ.IsNondegenerateRankZeroPoint F (φ y) := by
+  have h0 := mvfderiv_comp_right_eq_zero_iff hφ hinv hF
+  by_cases h : mvfderiv I F (φ y) = 0
+  · rw [← isNondegeneratePoint_iff_isNondegenerateRankZeroPoint (h0.2 h),
+      ← isNondegeneratePoint_iff_isNondegenerateRankZeroPoint h]
+    exact isNondegeneratePoint_comp_right_iff hτ hφ hinv hστ hF
+  · exact iff_of_false (fun h' ↦ h (h0.1 h'.mvfderiv_eq_zero)) fun h' ↦ h h'.mvfderiv_eq_zero
+
+/-- **Nondegenerate rank-zero points in symplectic coordinates.** Let `φ : E' → M` be a map from a
+symplectic vector space `(E', ω₀)` into the boundaryless manifold `M`, such as the inverse of a
+Darboux chart, which is `C²` at `y`, has invertible differential there and pulls `σ` back to `ω₀`
+at `y`. For `F` which is `C²` at `φ y`, the point `y` is a nondegenerate rank-zero point of the
+coordinate expression `F ∘ φ`, in the linear sense, exactly when `φ y` is a nondegenerate rank-zero
+point of `F`. -/
+theorem _root_.TauCeti.SymplecticForm.isNondegenerateRankZeroPoint_comp_right_iff
+    (ω₀ : SymplecticForm E') {φ : E' → M} {y : E'} (hφ : ContMDiffAt 𝓘(ℝ, E') I 2 φ y)
+    (hinv : (mfderiv 𝓘(ℝ, E') I φ y).IsInvertible)
+    (hσω : ∀ u w, SmoothBundleForm.eval₂ σ (φ y) (mfderiv 𝓘(ℝ, E') I φ y u)
+      (mfderiv 𝓘(ℝ, E') I φ y w) = ω₀ u w)
+    (hF : ContMDiffAt I 𝓘(ℝ, G) 2 F (φ y)) :
+    ω₀.IsNondegenerateRankZeroPoint (F ∘ φ) y ↔ hσ.IsNondegenerateRankZeroPoint F (φ y) := by
+  -- On the model space, the manifold derivative is the usual one.
+  have h0 : fderiv ℝ (F ∘ φ) y = 0 ↔ mvfderiv I F (φ y) = 0 := by
+    rw [← mvfderiv_comp_right_eq_zero_iff hφ hinv hF]
+    exact ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦
+        (mvfderiv_eq_fderiv_apply _ y v).trans congr($h v),
+      fun h ↦ ContinuousLinearMap.ext fun v ↦
+        (mvfderiv_eq_fderiv_apply _ y v).symm.trans congr($h v)⟩
+  by_cases h : mvfderiv I F (φ y) = 0
+  · rw [← SymplecticForm.isNondegeneratePoint_iff_isNondegenerateRankZeroPoint (h0.2 h),
+      ← isNondegeneratePoint_iff_isNondegenerateRankZeroPoint h]
+    exact SymplecticForm.isNondegeneratePoint_comp_right_iff ω₀ hφ hinv hσω hF
+  · exact iff_of_false (fun h' ↦ h (h0.1 h'.fderiv_eq_zero)) fun h' ↦ h h'.mvfderiv_eq_zero
 
 end Comp
 
