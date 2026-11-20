@@ -177,6 +177,20 @@ private theorem coe_stripTracesToUpper (g : C.stripTraces) :
       (offDiag (univ : Set ℝ) →ᵇ X₀) × (offDiag (univ : Set ℝ) →ᵇ X₁)) = primitiveTrace g :=
   (rfl)
 
+/-- The `X₀`-component of `stripTracesToUpper g` is the difference quotient of the vertical
+primitive `t ↦ ∫ r in 0..t, I • g₀ r`. -/
+theorem stripTracesToUpper_apply_fst (g : C.stripTraces) (p : offDiag (univ : Set ℝ)) :
+    (C.stripTracesToUpper g).1.1 p =
+      (p.1.1 - p.1.2)⁻¹ • ((∫ r in 0..p.1.1, I • g.1.1 r) - ∫ r in 0..p.1.2, I • g.1.1 r) := by
+  rw [coe_stripTracesToUpper, primitiveTrace, LipschitzWith.offDiagSlope_apply]
+
+/-- The `X₁`-component of `stripTracesToUpper g` is the difference quotient of the vertical
+primitive `t ↦ ∫ r in 0..t, I • g₁ r`. -/
+theorem stripTracesToUpper_apply_snd (g : C.stripTraces) (p : offDiag (univ : Set ℝ)) :
+    (C.stripTracesToUpper g).1.2 p =
+      (p.1.1 - p.1.2)⁻¹ • ((∫ r in 0..p.1.1, I • g.1.2 r) - ∫ r in 0..p.1.2, I • g.1.2 r) := by
+  rw [coe_stripTracesToUpper, primitiveTrace, LipschitzWith.offDiagSlope_apply]
+
 /-- **The primitive of an admissible function.** For an admissible function `F` with boundary
 traces `g`, the wedge primitive `z ↦ ∫₀^z F` is an upper strip function, with boundary difference
 quotients `stripTracesToUpper g`. -/
