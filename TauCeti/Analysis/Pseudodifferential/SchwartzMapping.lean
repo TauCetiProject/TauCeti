@@ -438,8 +438,7 @@ theorem quantizeUniformCLM_ofSpatial_apply [CompleteSpace V] [CompleteSpace W]
     {f : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f) (ha : (ofSpatial f hf).IsUniform)
     (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     quantizeUniformCLM (ofSpatial f hf) ha u x = f x (u x) := by
-  rw [quantizeUniformCLM_apply, funext (coefficient_ofSpatial f hf)]
-  exact quantizeSchwartzValue_comp_fst f u x
+  rw [quantizeUniformCLM_apply, quantizeSchwartzValue_ofSpatial]
 
 /-! ### The Fourier profile of the right quantization -/
 

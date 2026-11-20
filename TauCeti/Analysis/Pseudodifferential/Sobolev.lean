@@ -117,8 +117,6 @@ families of operators.
   which `u` is considered (`TauCeti.Symbol.toDistr_quantizeSobolev_congr`).
 * `TauCeti.Symbol.quantizeSobolev_ofSpatial_smul`: the symbol `ψ(x)` quantizes to the
   multiplication by `ψ`.
-* `TauCeti.Symbol.norm_quantizeSobolev_ofSpatial_le`: on `H^0 = L²`, the symbol `f(x)` of a
-  compactly supported smooth `f` quantizes to an operator of norm at most `sup ‖f‖`.
 * `TauCeti.Symbol.continuous_quantizeSobolev`: continuity in operator norm along continuous
   families of symbols vanishing outside a fixed compact set.
 * `TauCeti.Symbol.toDistr_quantizeSobolev_congr`: the operators for different Sobolev orders `s`
@@ -1085,19 +1083,13 @@ theorem toDistr_quantizeSobolev_ofSpatial_smul_id (φ : 𝓢(CoordinateSpace n, 
     refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun u ↦
       BesselPotentialSpace.ext ?_
     ext ψ
-    have hc : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
-        ((φ.smooth ⊤).smul contDiff_const)).coefficient =
-          fun p ↦ φ p.1 • ContinuousLinearMap.id ℂ V :=
-      funext (coefficient_ofSpatial _ _)
-    simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, hc,
+    simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
+      quantizeSchwartzValue_ofSpatial, _root_.smul_apply, ContinuousLinearMap.id_apply,
       ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
       BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
       smulLeftCLM_apply_apply, SchwartzMap.coe_apply,
       SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth, smul_eq_mul, mul_smul]
-    refine integral_congr_ae (.of_forall fun x ↦ ?_)
-    dsimp only
-    rw [quantizeSchwartzValue_comp_fst (fun x ↦ φ x • ContinuousLinearMap.id ℂ V),
-      _root_.smul_apply, ContinuousLinearMap.id_apply, smul_comm]
+    exact integral_congr_ae (.of_forall fun x ↦ smul_comm _ _ _)
   rw [key, ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion]
 
 /-- **Smoothing operators gain every number of derivatives.** A smoothing symbol `a` with
@@ -1154,32 +1146,6 @@ theorem quantizeSobolev_ofSpatial_smul {ψ : 𝓢(CoordinateSpace n, ℂ)} (hψ 
     BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
     smulLeftCLM_toTemperedDistributionCLM_eq, SchwartzMap.toTemperedDistributionCLM_apply_apply,
     SchwartzMap.smulLeftCLM_apply_apply ψ.hasTemperateGrowth]
-
-/-- **Multiplication operators on `L²`.** For a compactly supported smooth
-`f : ℝⁿ → (V →L[ℂ] W)` with `‖f x‖ ≤ C` everywhere, the quantization of the symbol `f(x)` of
-order `0`, as an operator `H^0 → H^0`, has norm at most `C`. -/
-theorem norm_quantizeSobolev_ofSpatial_le {f : CoordinateSpace n → V →L[ℂ] W}
-    (hf : ContDiff ℝ ∞ f) (h : (ofSpatial f hf).HasCompactSpatialSupport) {C : ℝ}
-    (hC : ∀ x, ‖f x‖ ≤ C) :
-    ‖(ofSpatial f hf).quantizeSobolev h 0‖ ≤ C := by
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
-  -- The target order is `0 - 0`, which is only propositionally `0`.
-  have hnorm {t : ℝ} (ht : t = 0) (w : 𝓢(CoordinateSpace n, W)) :
-      ‖SchwartzMap.toBesselPotentialSpaceCLM t 2 w‖ = (eLpNorm w 2 volume).toReal := by
-    subst ht
-    exact SchwartzMap.norm_toBesselPotentialSpaceCLM_zero w
-  -- It suffices to bound the operator on the dense subspace of Schwartz functions.
-  refine ContinuousLinearMap.opNorm_le_bound _ hC0 fun g ↦
-    (SchwartzMap.denseRange_toBesselPotentialSpaceCLM (p := 2) 0 ENNReal.ofNat_ne_top).induction_on
-      g (isClosed_le (by fun_prop) (by fun_prop)) fun u ↦ ?_
-  rw [h.quantizeSobolev_toBesselPotentialSpaceCLM, hnorm (sub_self 0),
-    SchwartzMap.norm_toBesselPotentialSpaceCLM_zero, ← ENNReal.toReal_ofReal hC0,
-    ← ENNReal.toReal_mul]
-  refine ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-    (u.memLp 2).eLpNorm_ne_top) (eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-      (SchwartzMap.continuous _).aestronglyMeasurable (.of_forall fun x ↦ ?_) 2)
-  rw [HasCompactSupport.toSchwartzMap_toFun, quantizeSchwartzValue_ofSpatial]
-  exact (f x).le_of_opNorm_le (hC x) (u x)
 
 /-- **Smoothing operators gain every order of regularity.** For a smoothing symbol `a` with compact
 spatial support, the quantization `Op(a) u` of any `u ∈ H^s` lies in `H^t` for every real `t`. -/
