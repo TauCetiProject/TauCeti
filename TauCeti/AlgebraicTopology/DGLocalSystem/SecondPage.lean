@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.DGLocalSystem.RankOne
 public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence.Classical
 
 /-!
-# The entries of the classical complex with local coefficients
+# The classical complex with local coefficients
 
 Let `m` be a twisting cocycle with values in the chain algebra `C_*(Ω_b B; R)` of the Moore loops
 and `𝓕` a DG local system on `(B, b)`, a right DG module over that algebra. The second page of the
@@ -22,9 +22,17 @@ computes, under these identifications, the entries and the components of the dif
 classical complex: componentwise, the entry between generators `x` and `y` is `(-1)^k` times the
 degree-zero truncation of `m x y` in the group ring `R[π₁(B, b)]`, acting on `H^k(𝓕)` through the
 representation of the fundamental group on the homology of `𝓕`
-(`TauCeti.IsDGRightModule.cohomologyRepresentation`). It does not construct an isomorphism of the
-classical complex with the complex of the generators with coefficients in the local system
-`H^k(𝓕)`, nor of the second page with the `E²` term of BDHO.
+(`TauCeti.IsDGRightModule.cohomologyRepresentation`).
+
+The classical complex is isomorphic to the complex
+`TauCeti.TwistingCocycle.indexClassicalCohomologyComplex` of families of classes in `H^k(𝓕)`
+indexed by the generators (`TauCeti.TwistingCocycle.indexClassicalComplexIso`). For a loop cocycle
+its differential is the classical differential with local coefficients: the class of `m x y` acts
+on `H^k(𝓕)` as `∑ u_g ρ_k(g⁻¹)`, for the truncation `∑ u_g g` of `m x y` in `R[π₁(B, b)]` and
+the representation `ρ_k` of the fundamental group on `H^k(𝓕)`
+(`TauCeti.TwistingCocycle.indexClassicalAction_apply_eq_linearCombination`). So the second page of
+the index spectral sequence is the homology of the generators with coefficients in the local
+systems `H^k(𝓕)` (`TauCeti.TwistingCocycle.indexSpectralSequenceSecondPageXIsoCohomology`).
 
 An entry `m x y` of index difference one is a chain of degree zero of `C_*(Ω_b B; R)`, and its
 class in the cohomology of the chain algebra is the class of its truncation
@@ -49,6 +57,11 @@ that is as `(-1)^k ∑ u_g ρ(g⁻¹)`
   `∑ u_g g` of the entries of the cocycle.
 * `TauCeti.TwistingCocycle.shiftedModuleComplexHomologyEquiv_indexClassicalD_π_eq_smul_sum`: the
   components of the classical differential are `(-1)^k ∑ₓ ∑_g u^{xy}_g ρ(g⁻¹) c x`.
+* `TauCeti.TwistingCocycle.indexClassicalAction_apply_eq_linearCombination`: the class of an entry
+  acts on `H^k(𝓕)` as `∑ u_g ρ_k(g⁻¹)`.
+* `TauCeti.TwistingCocycle.indexClassicalCohomologyD_apply_eq_sum_linearCombination`: the
+  differential of the classical complex with coefficients in `H^k(𝓕)` is
+  `(-1)^k ∑ₓ ∑_g u^{xy}_g ρ_k(g⁻¹) c x`.
 
 ## References
 
@@ -131,6 +144,41 @@ theorem shiftedModuleComplexHomologyEquiv_indexClassicalD_π_eq_smul_sum (q : �
   rw [shiftedModuleComplexHomologyEquiv_indexClassicalD_π]
   simp only [indexClassicalClass_eq_groupAlgebraToLoopChainCohomology,
     hM.cohomologyAction_groupAlgebraToLoopChainCohomology]
+
+/-- **The action of an entry of a loop cocycle on `H^k(𝓕)` is through the fundamental group**: the
+class of an entry `m x y` of index difference one acts on `H^k(𝓕)` as `∑ u_g ρ_k(g⁻¹)`, where
+`∑ u_g g` is the truncation of `m x y` in the group ring `R[π₁(B, b)]` and `ρ_k` is the
+representation `TauCeti.IsDGRightModule.cohomologyGradingRepresentation` of the fundamental group
+on `H^k(𝓕)`. -/
+theorem indexClassicalAction_apply_eq_linearCombination {x y : P} (hxy : ind x = ind y + 1)
+    (c : hM.cohomologyGrading k) :
+    m.indexClassicalAction (loopChain_isDGAlgebra B b R) hM k hxy c =
+      Finsupp.linearCombination R (fun g ↦ hM.cohomologyGradingRepresentation k g⁻¹ c)
+        (loopChainToGroupAlgebra B b R (m.m x y)).coeff := by
+  apply Subtype.ext
+  -- Push the coercion `H^k(𝓕) → H(𝓕)`, the linear map `Submodule.subtype`, into the sum.
+  have hcoe := Finsupp.apply_linearCombination R (hM.cohomologyGrading k).subtype
+    (fun g ↦ hM.cohomologyGradingRepresentation k g⁻¹ c)
+    (loopChainToGroupAlgebra B b R (m.m x y)).coeff
+  simp only [Submodule.subtype_apply, Function.comp_def,
+    IsDGRightModule.coe_cohomologyGradingRepresentation_apply] at hcoe
+  rw [coe_indexClassicalAction_apply, indexClassicalClass_eq_groupAlgebraToLoopChainCohomology]
+  -- Rewriting with the action lemma times out in `isDefEq` while locating its left-hand side in the
+  -- goal, so the last step is closed by `exact`, which unifies the two sides directly.
+  exact (hM.cohomologyAction_groupAlgebraToLoopChainCohomology _ _).trans hcoe.symm
+
+/-- **The classical complex with local coefficients**: for a loop cocycle, the differential of the
+classical complex with coefficients in `H^k(𝓕)` sends a family `c` indexed by the generators of
+index `q + 1` to the family whose component at a generator `y` of index `q` is
+`(-1)^k ∑ₓ ∑_g u^{xy}_g ρ_k(g⁻¹) (c x)`, where `∑_g u^{xy}_g g` is the truncation of `m x y` in
+the group ring `R[π₁(B, b)]` and `ρ_k` is the representation of the fundamental group on
+`H^k(𝓕)`. -/
+theorem indexClassicalCohomologyD_apply_eq_sum_linearCombination (q : ℤ)
+    (c : {x : P // ind x = q + 1} → hM.cohomologyGrading k) (y : {y : P // ind y = q}) :
+    m.indexClassicalCohomologyD hM k q c y = (k.negOnePow : ℤ) • ∑ x : {x : P // ind x = q + 1},
+      Finsupp.linearCombination R (fun g ↦ hM.cohomologyGradingRepresentation k g⁻¹ (c x))
+        (loopChainToGroupAlgebra B b R (m.m x.1 y.1)).coeff := by
+  simp only [indexClassicalCohomologyD_apply, indexClassicalAction_apply_eq_linearCombination]
 
 end TwistingCocycle
 
