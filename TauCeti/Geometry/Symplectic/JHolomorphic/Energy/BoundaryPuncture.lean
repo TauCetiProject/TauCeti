@@ -11,6 +11,7 @@ import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Analysis.Calculus.FDeriv.CircleMap
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.RCLike.OperatorNorm
 

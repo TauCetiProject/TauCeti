@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.Area.Basic
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.MeasureTheory.Integral.Circle.LIntegral
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 

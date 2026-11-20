@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.TangentCone.Real
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
@@ -33,8 +32,6 @@ which lets chart transitions of a manifold with corners compare the corners of t
   unique differentiability.
 * `TauCeti.setOfPred_le_im_mem_nhds`: a closed half-plane is a neighbourhood of each point of the
   open half-plane.
-* `ContDiffOn.continuousOn_fderivWithin_of_inter`: the derivative within a set of unique
-  differentiability `s` of a `C¹` map on `s ∩ O`, for `O` open, is continuous on `s ∩ O`.
 * `TauCeti.mem_tangentConeAt_setOf_im_eq`: a real direction is tangent to a horizontal line in `ℂ`.
 * `IsPreconnected.uniqueDiffOn`: a preconnected set of reals containing two distinct points is a
   set of unique differentiability.
@@ -70,16 +67,6 @@ theorem tangentConeAt_eq (L : Submodule 𝕜 E) (hL : IsClosed (L : Set E)) {x :
       (Eventually.of_forall fun c ↦ L.add_mem hx (L.smul_mem c hv))
 
 end Submodule
-
-/-- If `u` is `C¹` on the part `s ∩ O` of a set of unique differentiability `s` in an open set `O`,
-its derivative within `s` is continuous on `s ∩ O`. -/
-theorem ContDiffOn.continuousOn_fderivWithin_of_inter [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {u : E → F} {s O : Set E} {n : WithTop ℕ∞} (hu : ContDiffOn 𝕜 n u (s ∩ O))
-    (hs : UniqueDiffOn 𝕜 s) (hO : IsOpen O) (hn : 1 ≤ n) :
-    ContinuousOn (fderivWithin 𝕜 u s) (s ∩ O) :=
-  (hu.continuousOn_fderivWithin (hs.inter hO) hn).congr
-    fun _ hz ↦ (fderivWithin_inter (hO.mem_nhds hz.2)).symm
 
 variable [NontriviallyNormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
   [TopologicalSpace E] [ContinuousAdd E] [ContinuousSMul 𝕜 E]

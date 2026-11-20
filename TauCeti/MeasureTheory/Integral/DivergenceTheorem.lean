@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Geometry.Symplectic.Liouville.Linear
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.TangentCone.Basic
 
 /-!

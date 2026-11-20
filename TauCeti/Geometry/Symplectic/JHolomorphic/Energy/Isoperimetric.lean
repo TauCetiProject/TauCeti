@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Isoperimetric
 import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Topology.MetricSpace.Annulus
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Geometry.Symplectic.Duality
 
