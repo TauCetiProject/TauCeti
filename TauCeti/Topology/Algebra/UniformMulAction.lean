@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Topology.Algebra.GroupCompletion
 public import Mathlib.Topology.Algebra.Module.Basic
+public import Mathlib.Topology.Algebra.UniformRing
 
 /-!
-# The scalar action on the completion of a topological module
+# Scalar actions on completions
 
 Let `R` be a topological ring and `M` a topological `R`-module whose uniformity is that of its
 additive group, with each `m ↦ a • m` uniformly continuous. Mathlib extends the action to the
@@ -23,10 +24,22 @@ neighbourhoods of `0` in `M` are neighbourhoods of `0` in `M̂`, and `a • ·` 
 into the closure of the image, which gives continuity at `(0, 0)`. Continuity of `a ↦ a • x` at
 `0` for a fixed `x ∈ M̂` follows by approximating `x` by an element of `M`.
 
+The file also records two algebraic properties that a uniformly continuous action keeps on the
+completion. An action by ring automorphisms of a topological ring extends to an action by ring
+automorphisms of its completion, since both sides of `c • (x * y) = (c • x) * (c • y)` are
+continuous and agree on the dense image of the ring. A faithful action on a separated space stays
+faithful on its completion, which contains the space. For instance a Galois group acting
+isometrically on a valued field acts faithfully by ring automorphisms on its completion.
+
 ## Main results
 
 * `UniformSpace.Completion.continuousSMul`: the completion of a topological module is a
   topological module.
+* `UniformSpace.Completion.instMulSemiringAction`: the completion of a topological ring with a
+  uniformly continuous action by ring automorphisms carries the extended action by ring
+  automorphisms.
+* `UniformSpace.Completion.instFaithfulSMul`: the extension of a faithful action on a separated
+  space to its completion is faithful.
 -/
 
 public section
@@ -83,5 +96,31 @@ instance continuousSMul [IsTopologicalRing R] : ContinuousSMul R (Completion M) 
     rw [Set.mem_preimage, h]
     exact hU'U _ ham _ (hNO (Set.mk_mem_prod haN hm))
   · simpa using (continuous_const_smul a).tendsto (0 : Completion M)
+
+section Ring
+
+variable {G α : Type*} [Monoid G] [Ring α] [UniformSpace α] [IsUniformAddGroup α]
+  [IsTopologicalRing α] [MulSemiringAction G α] [UniformContinuousConstSMul G α]
+
+/-- A uniformly continuous action by ring automorphisms extends to an action by ring
+automorphisms of the completion. -/
+noncomputable instance instMulSemiringAction : MulSemiringAction G (Completion α) where
+  __ := (inferInstance : DistribMulAction G (Completion α))
+  smul_one c := by rw [← coe_one, ← coe_smul, smul_one]
+  smul_mul c x y := induction_on₂ x y
+    (isClosed_eq ((continuous_const_smul c).comp continuous_mul)
+      (((continuous_const_smul c).comp continuous_fst).mul
+        ((continuous_const_smul c).comp continuous_snd)))
+    fun a b ↦ by rw [← coe_mul, ← coe_smul, ← coe_smul, ← coe_smul, smul_mul', coe_mul]
+
+end Ring
+
+/-- The extension of a faithful action on a separated uniform space to its completion is
+faithful. -/
+@[to_additive /-- The extension of a faithful additive action on a separated uniform space to its
+completion is faithful. -/]
+instance instFaithfulSMul {G X : Type*} [UniformSpace X] [T0Space X] [SMul G X]
+    [UniformContinuousConstSMul G X] [FaithfulSMul G X] : FaithfulSMul G (Completion X) :=
+  ⟨fun h ↦ eq_of_smul_eq_smul fun x ↦ coe_injective X <| by rw [coe_smul, coe_smul, h]⟩
 
 end UniformSpace.Completion
