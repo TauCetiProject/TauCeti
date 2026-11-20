@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
+public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
 public import TauCeti.CategoryTheory.GradedObject.Monoidal
@@ -27,6 +28,10 @@ where `ε(p)` is the sign of the vertical differential of the tensor product of 
 `(-1)^p` for chain complexes indexed by `ℕ`).  The sign arises because the differential of `K ⊗ L`
 acts on `x ⊗ y` by `d x ⊗ y + ε(p) • x ⊗ d y`.
 
+Tensoring `S` on the right with `K` instead gives `S ⊗ K`
+(`HomologicalComplex.tensorRightShortComplex`), and when it is short exact its connecting morphism
+is computed with no sign: `δ (y × x) = δ y × x` for `y ∈ Hₚ(L₃)` and `x ∈ H_q(K)`.
+
 This is the compatibility of the cross product with the boundary maps of a pair, and it is the
 input which identifies the connecting morphisms in the proof of the Künneth formula.
 
@@ -42,6 +47,8 @@ input which identifies the connecting morphisms in the proof of the Künneth for
   `S ⊗ K` is short exact when `S` splits in each degree.
 * `HomologicalComplex.homologyCross_comp_δ`: the connecting morphism of `K ⊗ S` on a cross
   product.
+* `HomologicalComplex.homologyCross_comp_δ_tensorRight`: the connecting morphism of `S ⊗ K` on a
+  cross product.
 
 ## References
 
@@ -256,31 +263,8 @@ and `K ⊗ S` is again short exact, then the connecting morphism of `K ⊗ S` se
 theorem homologyCross_comp_δ :
     homologyCross K S.X₃ p q n h ≫ hKS.δ n n' (h ▸ h' ▸ c.add_rel p hq) =
       (c.ε p : ℤ) • ((K.homology p ◁ hS.δ q q' hq) ≫ homologyCross K S.X₁ p q' n' h') := by
-  have hq₁ := (shortExact_iff_degreewise_shortExact S).1 hS q
-  have hq₂ := (shortExact_iff_degreewise_shortExact S).1 hS q'
-  have : Epi (S.g.f q) := hq₁.epi_g
-  have := hq₂.mono_f
-  have : Mono (S.f.f (c.next q')) := ((shortExact_iff_degreewise_shortExact S).1 hS _).mono_f
-  -- the data computing the connecting morphism of `S` on all cycles of `S.X₃` at once: the
-  -- pullback of `S.X₂.X q ⟶ S.X₃.X q` along the cycles of `S.X₃` lifts them to `S.X₂`
-  let a₃ := pullback.snd (S.g.f q) (S.X₃.iCycles q)
-  let a₂ := pullback.fst (S.g.f q) (S.X₃.iCycles q)
-  have h₂ : a₂ ≫ S.g.f q = a₃ ≫ S.X₃.iCycles q := pullback.condition
-  let a₁ := hq₂.exact.lift (a₂ ≫ S.X₂.d q q') (by
-    simp only [Category.assoc]
-    dsimp
-    rw [← S.g.comm, reassoc_of% h₂, iCycles_d, comp_zero])
-  have h₁ : a₁ ≫ S.f.f q' = a₂ ≫ S.X₂.d q q' := hq₂.exact.lift_f _ _
-  have ha₁ : a₁ ≫ S.X₁.d q' (c.next q') = 0 := by
-    rw [← cancel_mono (S.f.f (c.next q')), Category.assoc, ← S.f.comm, reassoc_of% h₁]
-    simp
-  have hδS : a₃ ≫ S.X₃.homologyπ q ≫ hS.δ q q' hq =
-      S.X₁.liftCycles a₁ (c.next q') rfl ha₁ ≫ S.X₁.homologyπ q' := by
-    -- `δ_eq` computes `δ` on the cycles lifting `a₃ ≫ iCycles`, which are `a₃` itself
-    have e₃ : S.X₃.liftCycles (a₃ ≫ S.X₃.iCycles q) q' (c.next_eq' hq) (by simp) = a₃ := by
-      simp [← cancel_mono (S.X₃.iCycles q)]
-    have := hS.δ_eq q q' hq (a₃ ≫ S.X₃.iCycles q) (by simp) a₂ h₂ a₁ h₁ _ rfl
-    rwa [e₃] at this
+  -- the data computing the connecting morphism of `S` on all cycles of `S.X₃` at once
+  obtain ⟨_, a₃, a₂, a₁, h₂, h₁, ha₁, _, hδS⟩ := hS.exists_cycles_lift_δ hq
   -- both sides agree on `x ⊗ a₃`, and these generate `Hₚ(K) ⊗ H_q(S.X₃)`
   have : Epi (K.cycles p ◁ a₃) := (tensorLeft (K.cycles p)).map_epi a₃
   refine homology_tensor_homology_hom_ext K S.X₃ p q ?_
@@ -302,5 +286,97 @@ theorem homologyCross_comp_δ :
   simp [reassoc_of% hr, homologyπ_tensorHom_homologyCross]
 
 end Connecting
+
+section ConnectingRight
+
+variable (K : HomologicalComplex C c) {S : ShortComplex (HomologicalComplex C c)}
+  [HasTensor S.X₁ K] [HasTensor S.X₂ K] [HasTensor S.X₃ K]
+  (hS : S.ShortExact) (hSK : (tensorRightShortComplex K S).ShortExact)
+  {p p' q : I} (hp : c.Rel p p') {n n' : I} (h : p + q = n) (h' : p' + q = n')
+
+include hp in
+/-- The connecting morphism of `S ⊗ K` computed on generalized elements: if `a₂` lifts the cycle
+`a₃` of `S.X₃` to `S.X₂`, and `a₁` lifts the differential of `a₂` to `S.X₁`, then the connecting
+morphism sends the class of `a₃ ⊗ x` to the class of `a₁ ⊗ x`, for a cycle `x` of `K` of degree
+`q`. -/
+private lemma cyclesCross_homologyπ_δ_tensorRight {P : C} (a₃ : P ⟶ S.X₃.cycles p)
+    (a₂ : P ⟶ S.X₂.X p) (a₁ : P ⟶ S.X₁.X p') (h₂ : a₂ ≫ S.g.f p = a₃ ≫ S.X₃.iCycles p)
+    (h₁ : a₁ ≫ S.f.f p' = a₂ ≫ S.X₂.d p p') (ha₁ : a₁ ≫ S.X₁.d p' (c.next p') = 0) :
+    ((a₃ ▷ K.cycles q) ≫ cyclesCross S.X₃ K p q n h) ≫ (tensorObj S.X₃ K).homologyπ n ≫
+        hSK.δ n n' (h ▸ h' ▸ c.rel_add hp q) =
+      ((S.X₁.liftCycles a₁ (c.next p') rfl ha₁ ▷ K.cycles q) ≫
+        cyclesCross S.X₁ K p' q n' h') ≫ (tensorObj S.X₁ K).homologyπ n' := by
+  have hn : c.Rel n n' := h ▸ h' ▸ c.rel_add hp q
+  have hx₂ : ((a₂ ⊗ₘ K.iCycles q) ≫ ιTensorObj S.X₂ K p q n h) ≫ (tensorHom S.g (𝟙 K)).f n =
+      ((a₃ ▷ K.cycles q) ≫ cyclesCross S.X₃ K p q n h) ≫ (tensorObj S.X₃ K).iCycles n := by
+    simp [tensorHom_comp_whiskerRight_assoc, whiskerRight_comp_tensorHom_assoc, h₂]
+  -- the differential of `a₂ ⊗ x` is `d a₂ ⊗ x`, since `x` is a cycle
+  have hx₁ : ((a₁ ⊗ₘ K.iCycles q) ≫ ιTensorObj S.X₁ K p' q n' h') ≫ (tensorHom S.f (𝟙 K)).f n' =
+        ((a₂ ⊗ₘ K.iCycles q) ≫ ιTensorObj S.X₂ K p q n h) ≫ (tensorObj S.X₂ K).d n n' := by
+    have hd₂ :
+        (S.X₂.X p ◁ K.iCycles q) ≫ mapBifunctor.d₂ S.X₂ K (curriedTensor C) c p q n' = 0 := by
+      by_cases hq : c.Rel q (c.next q)
+      · simp [mapBifunctor.d₂_eq' _ _ _ _ _ hq, ← whiskerLeft_comp_assoc]
+      · simp [mapBifunctor.d₂_eq_zero _ _ _ _ _ _ _ hq]
+    simp only [Category.assoc]
+    rw [mapBifunctor.d_eq, Preadditive.comp_add, mapBifunctor.ι_D₁,
+      mapBifunctor.ι_D₂, mapBifunctor.d₁_eq _ _ _ _ hp _ _ h']
+    simp only [tensorHom_def, Category.assoc, Preadditive.comp_add, hd₂, comp_zero, add_zero]
+    simp only [ι_mapBifunctorMap, curriedTensor_obj_obj, curriedTensor_map_app, id_f,
+      curriedTensor_obj_map, whiskerLeft_id, Category.id_comp, ComplexShape.ε₁_def, one_smul]
+    simp only [whisker_exchange_assoc, ← comp_whiskerRight_assoc, h₁]
+  have hδ := hSK.δ_eq n n' hn
+    (((a₃ ▷ K.cycles q) ≫ cyclesCross S.X₃ K p q n h) ≫ (tensorObj S.X₃ K).iCycles n)
+    (by simp only [Category.assoc, iCycles_d, comp_zero])
+    ((a₂ ⊗ₘ K.iCycles q) ≫ ιTensorObj S.X₂ K p q n h) hx₂
+    ((a₁ ⊗ₘ K.iCycles q) ≫ ιTensorObj S.X₁ K p' q n' h') hx₁ _ rfl
+  have e₃ : ∀ hx, (tensorObj S.X₃ K).liftCycles
+      (((a₃ ▷ K.cycles q) ≫ cyclesCross S.X₃ K p q n h) ≫ (tensorObj S.X₃ K).iCycles n) n'
+        (c.next_eq' hn) hx = (a₃ ▷ K.cycles q) ≫ cyclesCross S.X₃ K p q n h := fun _ ↦ by
+    simp [← cancel_mono ((tensorObj S.X₃ K).iCycles n)]
+  have e₁ : ∀ hx, (tensorObj S.X₁ K).liftCycles
+      ((a₁ ⊗ₘ K.iCycles q) ≫ ιTensorObj S.X₁ K p' q n' h') (c.next n') rfl hx =
+        (S.X₁.liftCycles a₁ (c.next p') rfl ha₁ ▷ K.cycles q) ≫
+          cyclesCross S.X₁ K p' q n' h' := fun _ ↦ by
+    simp [← cancel_mono ((tensorObj S.X₁ K).iCycles n'), whiskerRight_comp_tensorHom_assoc]
+  rwa [e₃, e₁] at hδ
+
+variable [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (S.X₃.homology p))]
+  [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (S.X₁.homology p'))]
+  [PreservesColimitsOfShape WalkingParallelPair (tensorRight (K.cycles q))]
+  [PreservesColimitsOfShape WalkingParallelPair (tensorRight (K.X (c.prev q)))]
+
+/-- **The connecting morphism on a cross product, tensoring on the right.**  If `S` is a short
+exact sequence of complexes and `S ⊗ K` is again short exact, then the connecting morphism of
+`S ⊗ K` sends `y × x` to `δ y × x` for `y ∈ Hₚ(S.X₃)` and `x ∈ H_q(K)`.  Unlike tensoring on the
+left (`HomologicalComplex.homologyCross_comp_δ`), there is no sign: the differential of `L ⊗ K`
+acts on `y ⊗ x` by `d y ⊗ x + ε(p) • y ⊗ d x`, and `x` is a cycle. -/
+theorem homologyCross_comp_δ_tensorRight :
+    homologyCross S.X₃ K p q n h ≫ hSK.δ n n' (h ▸ h' ▸ c.rel_add hp q) =
+      (hS.δ p p' hp ▷ K.homology q) ≫ homologyCross S.X₁ K p' q n' h' := by
+  -- the data computing the connecting morphism of `S` on all cycles of `S.X₃` at once, as in
+  -- `HomologicalComplex.homologyCross_comp_δ`
+  obtain ⟨_, a₃, a₂, a₁, h₂, h₁, ha₁, _, hδS⟩ := hS.exists_cycles_lift_δ hp
+  -- both sides agree on `a₃ ⊗ x`, and these generate `Hₚ(S.X₃) ⊗ H_q(K)`
+  -- `tensorRight (K.cycles q)` preserves cokernels, hence epimorphisms
+  have := NormalMonoCategory.preservesEpimorphisms_of_preservesCokernels (tensorRight (K.cycles q))
+  have : Epi (a₃ ▷ K.cycles q) := (tensorRight (K.cycles q)).map_epi a₃
+  refine homology_tensor_homology_hom_ext S.X₃ K p q ?_
+  have hl : (a₃ ▷ K.cycles q) ≫ (S.X₃.homologyπ p ⊗ₘ K.homologyπ q) ≫
+      homologyCross S.X₃ K p q n h ≫ hSK.δ n n' (h ▸ h' ▸ c.rel_add hp q) =
+        ((S.X₁.liftCycles a₁ (c.next p') rfl ha₁ ▷ K.cycles q) ≫
+          cyclesCross S.X₁ K p' q n' h') ≫ (tensorObj S.X₁ K).homologyπ n' := by
+    rw [homologyπ_tensorHom_homologyCross_assoc, ← Category.assoc]
+    exact cyclesCross_homologyπ_δ_tensorRight K hSK hp h h' a₃ a₂ a₁ h₂ h₁ ha₁
+  have hr : (a₃ ▷ K.cycles q) ≫ (S.X₃.homologyπ p ⊗ₘ K.homologyπ q) ≫
+      (hS.δ p p' hp ▷ K.homology q) =
+        (S.X₁.liftCycles a₁ (c.next p') rfl ha₁ ▷ K.cycles q) ≫
+          (S.X₁.homologyπ p' ⊗ₘ K.homologyπ q) := by
+    rw [whiskerRight_comp_tensorHom_assoc, tensorHom_comp_whiskerRight, Category.assoc, hδS,
+      whiskerRight_comp_tensorHom]
+  rw [← cancel_epi (a₃ ▷ K.cycles q), hl]
+  simp [reassoc_of% hr, homologyπ_tensorHom_homologyCross]
+
+end ConnectingRight
 
 end HomologicalComplex
