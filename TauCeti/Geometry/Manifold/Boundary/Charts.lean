@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Boundary.Invariance
 public import TauCeti.Geometry.Manifold.Boundary.Model
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 import TauCeti.Geometry.Manifold.Boundary.HalfSpaceChart
+import TauCeti.Topology.Homeomorph.Prod
 
 /-!
 # The boundary of a manifold with boundary is a manifold
@@ -113,12 +114,6 @@ theorem ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (hx : x ∈ e.sourc
     frontier_range_modelWithCornersEuclideanHalfSpace, modelWithCornersEuclideanHalfSpace_toFun]
   exact eq_comm
 
-/-- Reading a point with a trivial second factor and forgetting it again is the identity. -/
-private theorem fst_prodUnique_symm_apply {X : Type*} [TopologicalSpace X] (x : X) :
-    ((Homeomorph.prodUnique X Unit).symm x).1 = x := by
-  rw [← Homeomorph.coe_prodUnique X Unit]
-  exact (Homeomorph.prodUnique X Unit).apply_symm_apply x
-
 variable (e) in
 /-- In any ambient chart, read with a trivial second factor, the boundary is the hyperplane where
 the zeroth coordinate vanishes. -/
@@ -154,13 +149,13 @@ private theorem boundaryChart_source :
 private theorem boundaryChart_target :
     (boundaryChart p e).target = EuclideanHalfSpace.boundaryParam n ⁻¹' e.target := by
   ext z
-  simp [boundaryChart, fst_prodUnique_symm_apply]
+  simp [boundaryChart]
 
 /-- A boundary chart reads a point through the ambient chart and deletes the zeroth coordinate. -/
 @[simp]
 private theorem boundaryChart_apply (q : ↥((𝓡∂ (n + 1)).boundary M)) :
     boundaryChart p e q = EuclideanHalfSpace.boundaryProj n (e q.1) := by
-  simp [boundaryChart, fst_prodUnique_symm_apply]
+  simp [boundaryChart]
 
 /-- On its target, the inverse of a boundary chart is the inverse of the ambient chart applied to
 the parametrized point. -/
@@ -171,8 +166,8 @@ private theorem boundaryChart_symm_apply {z : EuclideanSpace ℝ (Fin n)}
       e.symm (EuclideanHalfSpace.boundaryParam n z) := by
   simp only [boundaryChart, OpenPartialHomeomorph.transHomeomorph_symm_apply, comp_apply]
   rw [OpenPartialHomeomorph.coe_hyperplaneChart_symm_apply _ _
-    (by simpa [fst_prodUnique_symm_apply] using hz)]
-  simp [fst_prodUnique_symm_apply]
+    (by simpa using hz)]
+  simp
 
 section BoundaryChartedSpace
 
