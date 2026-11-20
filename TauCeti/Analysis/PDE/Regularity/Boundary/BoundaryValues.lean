@@ -38,6 +38,10 @@ used. Every bounded Lipschitz domain has such an exterior density.
 * `exists_holderWith_preciseRepresentative_indicator_of_measureReal_ball_diff_divergence`:
   for zero boundary values, the precise representative of the extension of `u` by zero is
   `α`-Hölder on all of `ℝⁿ` with constant `C R^(-α) (|Ω|^(1/n - 1/q) + R^(1 - n/q)) ‖F‖_{L^q} / λ`.
+* `TauCeti.PDE.exists_forall_energyFormH1_eq_setIntegral_inner_of_lipschitzOnWith`,
+  `TauCeti.PDE.exists_forall_energyFormH1_sub_eq_neg_setIntegral_inner`: subtracting boundary
+  values `g` whose value is `K₁`-Lipschitz on `Ω`, the difference `u - g` solves the equation with
+  the datum `F + a ∇g`, of `L^q` norm at most `‖F‖_{L^q} + Λ K₁ |Ω|^(1/q)`.
 * `TauCeti.PDE.exists_ae_eq_and_holderOnWith_of_measureReal_ball_diff_divergence`: for boundary
   values `G` with `|G| ≤ K₀` and Lipschitz constant `K₁` on `Ω`, the solution agrees almost
   everywhere on `Ω` with a function that is `α`-Hölder on `Ω` with constant
@@ -193,7 +197,7 @@ theorem exists_holderWith_preciseRepresentative_indicator_of_measureReal_ball_di
 field `D`, namely `a ∇g`, with `|D| ≤ Λ K₁` on `Ω` and `a(g, v) = ∫_Ω D · ∇v` for every
 `v ∈ H¹₀(Ω)`. On a set of finite measure `D` lies in every `Lᵖ(Ω)`, with
 `‖D‖_{Lᵖ(Ω)} ≤ Λ K₁ |Ω|^(1/p)`. -/
-private theorem exists_forall_energyFormH1_eq_setIntegral_inner_of_lipschitzOnWith
+theorem exists_forall_energyFormH1_eq_setIntegral_inner_of_lipschitzOnWith
     {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
@@ -223,8 +227,7 @@ private theorem exists_forall_energyFormH1_eq_setIntegral_inner_of_lipschitzOnWi
   refine ⟨D, MemLp.of_bound hDm _ hDbd, MemLp.of_bound hDm _ hDbd, ?_, fun v => ?_⟩
   · refine (ENNReal.toReal_mono ?_ (eLpNorm_le_of_ae_bound hDm hDbd)).trans_eq ?_
     · exact ENNReal.mul_ne_top (by simp [ENNReal.rpow_eq_top_iff, hfin]) ENNReal.ofReal_ne_top
-    · rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity), ← ENNReal.toReal_rpow,
-        Measure.restrict_apply_univ, ← measureReal_def, ENNReal.coe_toReal, mul_comm]
+    · simp [ENNReal.toReal_rpow, measureReal_def, hLam, mul_comm]
   · rw [energyFormH1_zero_zero_eq_setIntegral]
     refine integral_congr_ae (ae_of_all _ fun x => ?_)
     simp only [matrixBilinearForm_apply, D]
@@ -234,7 +237,7 @@ private theorem exists_forall_energyFormH1_eq_setIntegral_inner_of_lipschitzOnWi
 `F ∈ L^q(Ω; ℝⁿ)`, `q ≥ 2`, and the value of `g ∈ H¹(Ω)` is `K₁`-Lipschitz on `Ω`, then `u - g`
 solves `-∂ᵢ(aⁱʲ ∂ⱼ(u - g)) = ∂ᵢF'ⁱ` with `F' = F + a ∇g ∈ L^q(Ω; ℝⁿ)` and
 `‖F'‖_{L^q(Ω)} ≤ ‖F‖_{L^q(Ω)} + Λ K₁ |Ω|^(1/q)`. -/
-private theorem exists_forall_energyFormH1_sub_eq_neg_setIntegral_inner
+theorem exists_forall_energyFormH1_sub_eq_neg_setIntegral_inner
     {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
@@ -429,23 +432,12 @@ theorem exists_ae_eq_and_holderOnWith_divergence [Nonempty ι]
           α v Omega := by
   have hK : IsCompact (frontier (Omega : Set (EuclideanSpace ℝ ι))) :=
     hb.isCompact_closure.of_isClosed_subset isClosed_frontier frontier_subset_closure
-  obtain ⟨c, hc, hdens⟩ :=
-    hΩ.exists_pos_mul_measure_ball_le_measure_ball_sdiff_closure (μ := mu) hK one_pos
   -- The exterior density at the radii `s ≤ 1`, in the form of the general estimate.
-  have hext : ∀ z ∉ (Omega : Set (EuclideanSpace ℝ ι)), ∀ s, 0 < s → s ≤ 1 →
-      (c : ℝ) * mu.real (ball z s) ≤
-        mu.real (ball z s \ (Omega : Set (EuclideanSpace ℝ ι))) := by
-    intro z hz s hs hs1
-    have hfin : mu (ball z s \ (Omega : Set (EuclideanSpace ℝ ι))) ≠ ∞ :=
-      ((measure_mono sdiff_subset).trans_lt measure_ball_lt_top).ne
-    calc (c : ℝ) * mu.real (ball z s) = ((c : ℝ≥0∞) * mu (ball z s)).toReal := by
-          rw [ENNReal.toReal_mul, measureReal_def, ENNReal.coe_toReal]
-      _ ≤ (mu (ball z s \ (Omega : Set (EuclideanSpace ℝ ι)))).toReal :=
-          ENNReal.toReal_mono hfin ((hdens z hz s hs hs1).trans
-            (measure_mono (sdiff_subset_sdiff_right subset_closure)))
+  obtain ⟨c, hc, hext⟩ :=
+    hΩ.exists_pos_mul_measureReal_ball_le_measureReal_ball_diff (μ := mu) hK one_pos
   obtain ⟨α, C, hα, hα1, hC, hmain⟩ :=
     exists_ae_eq_and_holderOnWith_of_measureReal_ball_diff_divergence (mu := mu) (lam := lam)
-      (Lam := Lam) hq hqn (θ := c) (by exact_mod_cast hc)
+      (Lam := Lam) hq hqn hc
   set P := mu.real (Omega : Set (EuclideanSpace ℝ ι)) ^ ((Fintype.card ι : ℝ)⁻¹ - (q : ℝ)⁻¹) + 1
   set S := mu.real (Omega : Set (EuclideanSpace ℝ ι)) ^ (q : ℝ)⁻¹
   refine ⟨α, C * (P * (1 + |Lam| * S / |lam|) + 1), hα, hα1, by positivity, ?_⟩
