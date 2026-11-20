@@ -389,8 +389,7 @@ theorem integral_norm_jetField_snd_sq_eq_norm_gradient_sq (u : W1p mu Omega 2) :
     ∫ x in Omega, ‖(jetField u x).2‖ ^ 2 ∂mu = ‖W1p.gradient u‖ ^ 2 := by
   simpa only [jetField_apply] using W1p.integral_norm_gradient_sq_eq_norm_gradient_sq u
 
-/-- The integral of the squared value component of a Sobolev jet is the squared `L²` value
-norm. -/
+/-- The integral of the squared value component of a Sobolev jet is the squared `L²` value norm. -/
 theorem integral_jetField_fst_sq_eq_norm_value_sq (u : W1p mu Omega 2) :
     ∫ x in Omega, (jetField u x).1 ^ 2 ∂mu = ‖W1p.value u‖ ^ 2 := by
   simpa only [jetField_apply] using W1p.integral_value_sq_eq_norm_value_sq u
@@ -421,10 +420,9 @@ theorem integral_norm_jetField_sq_le (u : W1p mu Omega 2) :
           integral_norm_jetField_snd_sq_eq_norm_gradient_sq]
     _ = ‖u‖ ^ 2 := (W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq u).symm
 
-/-- **Cauchy--Schwarz for jet fields.** The integral of the product of the jet norms of two
-Sobolev functions is at most the product of their `W^{1,2}` norms. This is the estimate that
-turns the pointwise operator-norm bound on the energy integrand into boundedness of the energy
-form. -/
+/-- **Cauchy--Schwarz for jet fields.** The integral of the product of the jet norms of two Sobolev
+functions is at most the product of their `W^{1,2}` norms. This is the estimate that turns the
+pointwise operator-norm bound on the energy integrand into boundedness of the energy form. -/
 theorem integral_norm_jetField_mul_le (u v : W1p mu Omega 2) :
     ∫ x in Omega, ‖jetField u x‖ * ‖jetField v x‖ ∂mu ≤ ‖u‖ * ‖v‖ := by
   have hholder : ∫ x in Omega, ‖jetField u x‖ * ‖jetField v x‖ ∂mu
@@ -447,10 +445,9 @@ theorem integral_norm_jetField_mul_le (u v : W1p mu Omega 2) :
 
 `a(u, v) = ∫_Ω aⁱʲ ∂ⱼu ∂ᵢv + bⁱ ∂ᵢu v + c u v`,
 
-obtained by integrating the pointwise jet form `TauCeti.PDE.energyIntegrand` against the jet
-fields of two Sobolev functions. The coefficients stay separate, explicit data: no
-boundedness, ellipticity or measurability is assumed here, and each estimate below names the
-hypotheses it needs. -/
+obtained by integrating the pointwise jet form `TauCeti.PDE.energyIntegrand` against the jet fields
+of two Sobolev functions. The coefficients stay separate, explicit data: no boundedness, ellipticity
+or measurability is assumed here, and each estimate below names the hypotheses it needs. -/
 def energyFormH1 (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
     (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (c : EuclideanSpace ℝ ι → ℝ)
     (u v : W1p mu Omega 2) : ℝ :=
@@ -479,10 +476,9 @@ theorem energyFormH1_smul_coefficients (a : EuclideanSpace ℝ ι → Matrix ι 
     energyFormH1 (r • a) (r • b) (r • c) u v = r * energyFormH1 a b c u v :=
   energyFormIntegral_smul _ _ _ _ _ _ r
 
-/-- **Measurability of the energy form in a parameter.** If the coefficients of a
-divergence-form operator depend on a parameter `t` and are jointly a.e. strongly measurable in
-`(t, x)`, then for fixed `u, v ∈ H¹(Ω)` the energy form `t ↦ a_t(u, v)` is a.e. strongly
-measurable in `t`. -/
+/-- **Measurability of the energy form in a parameter.** If the coefficients of a divergence-form
+operator depend on a parameter `t` and are jointly a.e. strongly measurable in `(t, x)`, then for
+fixed `u, v ∈ H¹(Ω)` the energy form `t ↦ a_t(u, v)` is a.e. strongly measurable in `t`. -/
 theorem aestronglyMeasurable_energyFormH1 {α : Type*} [MeasurableSpace α] {ν : Measure α}
     {a : α → EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : α → EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     {c : α → EuclideanSpace ℝ ι → ℝ}
@@ -701,6 +697,24 @@ theorem integrable_energyIntegrand_jetField
   filter_upwards [jetLpL_apply_ae u, jetLpL_apply_ae v] with x hu hv
   rw [hu, hv]
 
+/-- Adding an essentially bounded function `c'` to the mass coefficient adds the weighted `L²`
+pairing `∫_Ω c' u v` to the Sobolev energy form. No boundary or coercivity assumption is needed. -/
+theorem energyFormH1_mass_add
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    {c' : EuclideanSpace ℝ ι → ℝ} (hc' : MemLp c' ⊤ (mu.restrict Omega)) (u v : W1p mu Omega 2) :
+    energyFormH1 a b (fun x ↦ c x + c' x) u v =
+      energyFormH1 a b c u v + ∫ x in Omega, c' x * W1p.value u x * W1p.value v x ∂mu := by
+  have hcu : MemLp (fun x ↦ c' x * W1p.value u x) 2 (mu.restrict Omega) :=
+    hc'.fun_mul (Lp.memLp _)
+  have hmass : Integrable (fun x ↦ c' x * W1p.value u x * W1p.value v x) (mu.restrict Omega) :=
+    hcu.integrable_mul (Lp.memLp (W1p.value v))
+  rw [energyFormH1_def, energyFormH1_def, ← integral_add
+    (integrable_energyIntegrand_jetField hcoeff u v) hmass]
+  apply integral_congr_ae
+  filter_upwards with x
+  simp only [energyIntegrand_apply, massForm_apply, jetField_apply]
+  ring
+
 open scoped InnerProductSpace in
 /-- For a bounded measurable vector field `e`, the density `u ⟪e, ∇w⟫` of the lower-order
 divergence-form term `∫ u ⟪e, ∇w⟫` is integrable for `u, w ∈ H¹(Ω)`. -/
@@ -727,16 +741,10 @@ theorem energyFormH1_mass_sub_const
     (kappa : ℝ) (u v : W1p mu Omega 2) :
     energyFormH1 a b (fun x ↦ c x - kappa) u v =
       energyFormH1 a b c u v - kappa * ⟪W1p.value u, W1p.value v⟫_ℝ := by
-  have hmass : Integrable (fun x ↦ W1p.value u x * W1p.value v x) (mu.restrict Omega) := by
-    simpa only [RCLike.inner_apply, conj_trivial, mul_comm] using
-      L2.integrable_inner (𝕜 := ℝ) (W1p.value u) (W1p.value v)
-  rw [energyFormH1_def, energyFormH1_def, W1p.inner_value_eq_setIntegral,
-    ← integral_const_mul, ← integral_sub (integrable_energyIntegrand_jetField hcoeff u v)
-      (hmass.const_mul kappa)]
-  apply integral_congr_ae
-  filter_upwards with x
-  simp only [energyIntegrand_apply, massForm_apply, jetField_apply]
-  ring
+  simp only [sub_eq_add_neg]
+  rw [energyFormH1_mass_add hcoeff (memLp_top_const (-kappa)) u v,
+    W1p.inner_value_eq_setIntegral, ← integral_const_mul]
+  simp only [neg_mul, integral_neg, mul_assoc]
 
 /-- The energy form on `H¹(Ω)` as a continuous bilinear form, obtained by restricting the
 existing variable-coefficient `L²` energy form along the continuous Sobolev jet inclusion. -/
@@ -798,11 +806,10 @@ theorem energyFormH1_sub_right
   rw [← energyFormH1L_apply hcoeff, map_sub]
   simp only [energyFormH1L_apply]
 
-/-- **Subtractivity of the Sobolev energy form in its coefficients.** For two essentially
-bounded coefficient fields, the energy form of the difference of the coefficient triples is the
-difference of the energy forms; this is the `H¹` form of `energyFormIntegral_sub`. It turns an
-`L^∞` bound on the difference of two sets of coefficients into a bound on the difference of their
-energy forms. -/
+/-- **Subtractivity of the Sobolev energy form in its coefficients.** For two essentially bounded
+coefficient fields, the energy form of the difference of the coefficient triples is the difference
+of the energy forms; this is the `H¹` form of `energyFormIntegral_sub`. It turns an `L^∞` bound on
+the difference of two sets of coefficients into a bound on the difference of their energy forms. -/
 theorem energyFormH1_sub {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {b' : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c' : EuclideanSpace ℝ ι → ℝ}
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
@@ -1174,9 +1181,8 @@ theorem integrable_matrixBilinearForm_gradient
     (gamma := 0) aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
     (fun _ _ => by simp) u w
 
-/-- **Boundedness of the energy form on `H¹(Ω)`.** For a uniformly elliptic principal
-coefficient with upper constant `Λ`, a drift bounded by `β` and a mass coefficient bounded by
-`γ`,
+/-- **Boundedness of the energy form on `H¹(Ω)`.** For a uniformly elliptic principal coefficient
+with upper constant `Λ`, a drift bounded by `β` and a mass coefficient bounded by `γ`,
 
 `|a(u, v)| ≤ (Λ + β + γ) ‖u‖_{H¹} ‖v‖_{H¹}`.
 
@@ -1343,13 +1349,11 @@ theorem min_mul_norm_sq_le_energyFormH1_self_of_mass_lower_bound {delta : ℝ}
 
 `(λ² - β²P²)/(2λ(P² + 1)) · ‖u‖²_{H¹} ≤ a(u, u)`.
 
-The estimate holds for every `P` for which the Poincaré bound is available; it *is* coercivity
-once its constant is positive, for which `TauCeti.PDE.energyFormH1_poincare_constant_pos` supplies
-the
-sufficient smallness condition `βP < λ` relating the drift to the ellipticity and the domain.
-The Poincaré hypothesis is carried on the single vector `u`, so a caller may supply it from
-membership in `W^{1,2}_0(Ω)`, as the slab and ball corollaries below do, or from any other
-source. -/
+The estimate holds for every `P` for which the Poincaré bound is available; it *is* coercivity once
+its constant is positive, for which `TauCeti.PDE.energyFormH1_poincare_constant_pos` supplies the
+sufficient smallness condition `βP < λ` relating the drift to the ellipticity and the domain. The
+Poincaré hypothesis is carried on the single vector `u`, so a caller may supply it from membership
+in `W^{1,2}_0(Ω)`, as the slab and ball corollaries below do, or from any other source. -/
 theorem mul_norm_sq_le_energyFormH1_self_of_poincare
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
@@ -1437,9 +1441,8 @@ variable {n : ℕ} {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
 
 namespace UniformlyEllipticOn
 
-/-- **An energy-form lower bound on `H¹₀(Ω)` for a domain trapped in a slab.** If
-`Ω ⊆ ℝ^{n+1}` lies between the hyperplanes `xᵢ = s` and `xᵢ = t`, then every
-`u ∈ W^{1,2}_0(Ω)` satisfies
+/-- **An energy-form lower bound on `H¹₀(Ω)` for a domain trapped in a slab.** If `Ω ⊆ ℝ^{n+1}` lies
+between the hyperplanes `xᵢ = s` and `xᵢ = t`, then every `u ∈ W^{1,2}_0(Ω)` satisfies
 
 `(λ² - β²(t - s)²)/(2λ((t - s)² + 1)) · ‖u‖²_{H¹} ≤ a(u, u)`,
 
