@@ -72,8 +72,10 @@ variable {f : X ⟶ Y} {g : Y ⟶ Z}
 /-- The range of the first map of an exact pair is closed, being the kernel of the second. -/
 theorem isClosed_range_of_exact (hfg : Function.Exact f.hom g.hom) :
     IsClosed (Set.range f.hom) := by
-  rw [show Set.range f.hom = g.hom ⁻¹' {0} from Set.ext fun y => (hfg y).symm]
-  exact isClosed_singleton.preimage g.hom.continuous
+  have h : LinearMap.ker (g.hom : Y →ₗ[𝕜] Z) = LinearMap.range (f.hom : X →ₗ[𝕜] Y) :=
+    Function.Exact.linearMap_ker_eq hfg
+  rw [← ContinuousLinearMap.coe_coe f.hom, ← LinearMap.coe_range, ← h]
+  exact g.hom.isClosed_ker
 
 /-- **An injective morphism whose range is the kernel of `g` is a kernel of `g`.** The lift of a
 morphism killed by `g` is continuous by the open mapping theorem. -/
@@ -98,18 +100,17 @@ noncomputable def isColimitCokernelCoforkOfExact (w : f ≫ g = 0)
   haveI := epi_of_surjective g hg
   have hq : IsQuotientMap g.hom := g.hom.isQuotientMap hg
   CokernelCofork.IsColimit.ofπ' g w fun {T} k hk =>
-    -- `k` is constant on the fibres of `g`, since it kills the range of `f`.
-    have hkg : ∀ y y', g.hom y = g.hom y' → k.hom y = k.hom y' := fun y y' hyy' => by
-      obtain ⟨x, hx⟩ := (hfg (y - y')).mp (by simp [hyy'])
-      rw [← sub_eq_zero, ← map_sub, ← hx]
-      exact congr(($hk).hom x)
-    let s := Function.surjInv hg
-    have hs : ∀ z, g.hom (s z) = z := Function.surjInv_eq hg
-    let l : Z →ₗ[𝕜] T :=
-      { toFun z := k.hom (s z)
-        map_add' z z' := by rw [← map_add]; exact hkg _ _ (by simp [hs])
-        map_smul' c z := by rw [← map_smul]; exact hkg _ _ (by simp [hs]) }
-    have hl : ∀ y, l (g.hom y) = k.hom y := fun y => hkg _ _ (hs _)
+    -- `Z` is the quotient of `Y` by the range of `f`, and `k` kills that range.
+    let e := Function.Exact.linearEquivOfSurjective (f := (f.hom : X →ₗ[𝕜] Y))
+      (g := (g.hom : Y →ₗ[𝕜] Z)) hfg hg
+    have hkf : (k.hom : Y →ₗ[𝕜] T).comp (f.hom : X →ₗ[𝕜] Y) = 0 :=
+      LinearMap.ext fun x => by simpa using congr(($hk).hom x)
+    let l : Z →ₗ[𝕜] T := ((LinearMap.range (f.hom : X →ₗ[𝕜] Y)).liftQ k.hom
+      (LinearMap.range_le_ker_iff.mpr hkf)).comp e.symm.toLinearMap
+    have hl : ∀ y, l (g.hom y) = k.hom y := fun y => by
+      have h : e.symm (g.hom y) = Submodule.Quotient.mk y :=
+        Function.Exact.linearEquivOfSurjective_symm_apply hfg hg y
+      simp [l, h]
     have hlc : Continuous l := hq.continuous_iff.mpr (k.hom.continuous.congr fun y => (hl y).symm)
     ⟨⟨⟨l, hlc⟩, fun t z => by
       obtain ⟨y, rfl⟩ := hg z
@@ -159,12 +160,11 @@ private theorem conflationClass_isInflation_iff (i : X ⟶ Y) :
   rw [ConflationClass.isInflation_iff]
   refine ⟨fun ⟨_, _, _, hS⟩ => ⟨hS.1, isClosed_range_of_exact hS.2.2⟩, fun ⟨hi, hc⟩ => ?_⟩
   let W := LinearMap.range (i.hom : X →ₗ[𝕜] Y)
-  have hW : ∀ (g : G), ∀ y ∈ W, Y.ρ g y ∈ W := by
-    rintro g _ ⟨x, rfl⟩
-    exact ⟨X.ρ g x, i.hom_comm_apply g x⟩
+  have hW : ∀ (g : G), ∀ y ∈ W, Y.ρ g y ∈ W := range_invariant i
   refine ⟨quotient Y W hW hc, quotientπ Y W hW hc, hom_ext (ContinuousLinearMap.ext fun x => ?_),
     hi, quotientπ_surjective Y W hW hc, fun y => ?_⟩
-  · exact (quotientπ_hom_apply_eq_zero_iff Y W hW hc _).mpr ⟨x, rfl⟩
+  · rw [hom_comp, ContinuousLinearMap.comp_apply, hom_zero, _root_.zero_apply]
+    exact (quotientπ_hom_apply_eq_zero_iff Y W hW hc _).mpr ⟨x, rfl⟩
   · exact quotientπ_hom_apply_eq_zero_iff Y W hW hc y
 
 private theorem conflationClass_isDeflation_iff (p : X ⟶ Y) :
@@ -172,10 +172,10 @@ private theorem conflationClass_isDeflation_iff (p : X ⟶ Y) :
   rw [ConflationClass.isDeflation_iff]
   refine ⟨fun ⟨_, _, _, hS⟩ => hS.2.1, fun hp => ?_⟩
   let W := LinearMap.ker (p.hom : X →ₗ[𝕜] Y)
-  have hW : ∀ (g : G), ∀ x ∈ W, X.ρ g x ∈ W := fun g x hx => by
-    simp_all [W]
+  have hW : ∀ (g : G), ∀ x ∈ W, X.ρ g x ∈ W := ker_invariant p
   refine ⟨subrepresentation X W hW p.hom.isClosed_ker, subrepresentationι X W hW p.hom.isClosed_ker,
-    hom_ext (ContinuousLinearMap.ext fun x => x.2), Subtype.val_injective, hp, fun x => ?_⟩
+    hom_ext (ContinuousLinearMap.ext fun x => by simp [W]),
+    subrepresentationι_injective X W hW p.hom.isClosed_ker, hp, fun x => ?_⟩
   simp [W]
 
 /-! ### Pullbacks -/
@@ -210,7 +210,21 @@ private noncomputable abbrev pullbackObj : BanachRep.{w} 𝕜 G :=
 private noncomputable def pullbackCone : PullbackCone f g :=
   PullbackCone.mk (W := pullbackObj f g) (subrepresentationι _ _ _ _ ≫ prodFst X Y)
     (subrepresentationι _ _ _ _ ≫ prodSnd X Y)
-    (hom_ext (ContinuousLinearMap.ext fun x => (mem_pullbackSubmodule f g x).mp x.2))
+    (hom_ext (ContinuousLinearMap.ext fun x => by simpa using (mem_pullbackSubmodule f g x).mp x.2))
+
+private theorem pullbackCone_fst_hom_apply (x : pullbackObj f g) :
+    (pullbackCone f g).fst.hom x = (x : prod X Y).1 := by
+  -- `PullbackCone.mk` makes the first leg `subrepresentationι _ _ _ _ ≫ prodFst X Y`, but the cone
+  -- point is `pullbackObj f g` only by unfolding `pullbackCone`, so `rw [PullbackCone.mk_fst]`
+  -- cannot be used here.
+  change (subrepresentationι _ _ _ _ ≫ prodFst X Y).hom x = _
+  rw [hom_comp, ContinuousLinearMap.comp_apply, subrepresentationι_hom_apply, prodFst_hom_apply]
+
+private theorem pullbackCone_snd_hom_apply (x : pullbackObj f g) :
+    (pullbackCone f g).snd.hom x = (x : prod X Y).2 := by
+  -- As for `pullbackCone_fst_hom_apply`, the second leg is `subrepresentationι ≫ prodSnd`.
+  change (subrepresentationι _ _ _ _ ≫ prodSnd X Y).hom x = _
+  rw [hom_comp, ContinuousLinearMap.comp_apply, subrepresentationι_hom_apply, prodSnd_hom_apply]
 
 /-- The pullback cone of `f` and `g` is a limit. -/
 private noncomputable def pullbackConeIsLimit : IsLimit (pullbackCone f g) :=
@@ -218,9 +232,16 @@ private noncomputable def pullbackConeIsLimit : IsLimit (pullbackCone f g) :=
     (fun s => subrepresentationLift (prod X Y) _ (pullbackSubmodule_invariant f g)
       (isClosed_pullbackSubmodule f g) ⟨s.fst.hom.prod s.snd.hom, fun _ _ => by simp⟩ fun t =>
       (mem_pullbackSubmodule f g _).mpr congr(($(s.condition)).hom t))
-    (fun _ => rfl) (fun _ => rfl)
+    (fun _ => by ext; simp [pullbackCone]) (fun _ => by ext; simp [pullbackCone])
     (fun _ m h₁ h₂ => hom_ext (ContinuousLinearMap.ext fun t => Subtype.ext (Prod.ext
-      congr(($h₁).hom t) congr(($h₂).hom t))))
+      ((pullbackCone_fst_hom_apply f g (m.hom t)).symm.trans <| by
+        rw [← ContinuousLinearMap.comp_apply, ← hom_comp, h₁]
+        refine Eq.trans ?_ (congrArg Prod.fst (subrepresentationLift_hom_apply _ _ _ _ _ _ t)).symm
+        exact (congrArg Prod.fst (ContinuousLinearMap.prod_apply _ _ t)).symm)
+      ((pullbackCone_snd_hom_apply f g (m.hom t)).symm.trans <| by
+        rw [← ContinuousLinearMap.comp_apply, ← hom_comp, h₂]
+        refine Eq.trans ?_ (congrArg Prod.snd (subrepresentationLift_hom_apply _ _ _ _ _ _ t)).symm
+        exact (congrArg Prod.snd (ContinuousLinearMap.prod_apply _ _ t)).symm))))
 
 /-- **Banach representations have pullbacks**: the pullback of `f` and `g` is the closed invariant
 subspace `{(x, y) | f x = g y}` of `X × Y`. -/
@@ -240,7 +261,9 @@ private theorem surjective_of_isPullback {P : BanachRep.{w} 𝕜 G} {fst : P ⟶
   obtain ⟨y, hy⟩ := hg (f.hom x)
   obtain ⟨q, hq⟩ := (bijective_of_isIso e.hom).2
     ⟨(x, y), (mem_pullbackSubmodule f g (x, y)).mpr hy.symm⟩
-  exact ⟨q, by rw [hfst, hom_comp, ContinuousLinearMap.comp_apply, hq]; rfl⟩
+  refine ⟨q, ?_⟩
+  rw [hfst, hom_comp, ContinuousLinearMap.comp_apply, hq]
+  exact pullbackCone_fst_hom_apply f g _
 
 end Pullback
 
@@ -290,8 +313,11 @@ private noncomputable abbrev pushoutπ : prod B A' ⟶ pushoutObj i f hi hc :=
 private noncomputable def pushoutCocone : PushoutCocone f i :=
   PushoutCocone.mk (W := pushoutObj i f hi hc) (prodInl B A' ≫ pushoutπ i f hi hc)
     (prodInr B A' ≫ pushoutπ i f hi hc)
-    (hom_ext (ContinuousLinearMap.ext fun a => (quotientπ_hom_apply_eq_iff _ _ _ _ _ _).mpr
-      ((mem_pushoutSubmodule i f _).mpr ⟨a, (sub_zero _).symm, (zero_sub _).symm⟩)))
+    (hom_ext (ContinuousLinearMap.ext fun a => by
+      simp only [hom_comp, ContinuousLinearMap.comp_apply]
+      rw [prodInl_hom_apply, prodInr_hom_apply]
+      exact (quotientπ_hom_apply_eq_iff _ _ _ _ _ _).mpr
+        ((mem_pushoutSubmodule i f _).mpr ⟨a, by simp, by simp⟩)))
 
 /-- A pair of maps out of `B` and `A'` agreeing on `A` gives a map out of `B × A'` killing
 `{(f a, -i a)}`. -/
@@ -301,8 +327,9 @@ private theorem pushout_desc_aux (s : PushoutCocone f i) :
   obtain ⟨a, ha₁, ha₂⟩ := (mem_pushoutSubmodule i f x).mp hx
   have h : s.inl.hom (f.hom a) = s.inr.hom (i.hom a) := by
     simpa using congr(($(s.condition)).hom a)
-  -- The map out of `B × A'` sends `x` to `s.inl x.1 + s.inr x.2`.
-  exact (by rw [← ha₁, ← ha₂, map_neg, h, add_neg_cancel] : s.inl.hom x.1 + s.inr.hom x.2 = 0)
+  rw [hom_add, _root_.add_apply, hom_comp, hom_comp, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.comp_apply, prodFst_hom_apply, prodSnd_hom_apply, ← ha₁, ← ha₂, map_neg, h,
+    add_neg_cancel]
 
 /-- The pushout cocone of `f` along the inflation `i` is a colimit. -/
 private noncomputable def pushoutCoconeIsColimit : IsColimit (pushoutCocone i f hi hc) :=
@@ -312,14 +339,20 @@ private noncomputable def pushoutCoconeIsColimit : IsColimit (pushoutCocone i f 
     (fun s => by simp [pushoutCocone])
     (fun s => by simp [pushoutCocone])
     (fun s m h₁ h₂ => (cancel_epi (pushoutπ i f hi hc)).mp <| by
+      -- The legs of `pushoutCocone` are `prodInl ≫ pushoutπ` and `prodInr ≫ pushoutπ`; its cone
+      -- point is `pushoutObj` only by unfolding `PushoutCocone.mk`, which is why `h₁` and `h₂` are
+      -- restated rather than rewritten with `PushoutCocone.mk_inl` and `PushoutCocone.mk_inr`.
+      have h₁' : prodInl B A' ≫ pushoutπ i f hi hc ≫ m = s.inl :=
+        (Category.assoc _ _ _).symm.trans h₁
+      have h₂' : prodInr B A' ≫ pushoutπ i f hi hc ≫ m = s.inr :=
+        (Category.assoc _ _ _).symm.trans h₂
       -- Both maps are determined by their restrictions to `B` and `A'`, through `B × A'`.
       calc pushoutπ i f hi hc ≫ m
           = (prodFst B A' ≫ prodInl B A' + prodSnd B A' ≫ prodInr B A') ≫
               pushoutπ i f hi hc ≫ m := by
             rw [prodFst_prodInl_add_prodSnd_prodInr, Category.id_comp]
         _ = prodFst B A' ≫ s.inl + prodSnd B A' ≫ s.inr := by
-            simp only [Preadditive.add_comp, Category.assoc, ← h₁, ← h₂]
-            rfl
+            simp only [Preadditive.add_comp, Category.assoc, h₁', h₂']
         _ = _ := (quotientπ_comp_quotientDesc _ _ _ _ _ _).symm)
 
 /-- In the pushout, the map out of `B` is injective with closed range: its range is the kernel of
@@ -328,35 +361,44 @@ private theorem pushoutCocone_inl_injective_isClosed_range :
     Function.Injective (pushoutCocone i f hi hc).inl.hom ∧
       IsClosed (Set.range (pushoutCocone i f hi hc).inl.hom) := by
   let R := LinearMap.range (i.hom : A →ₗ[𝕜] A')
-  have hR : ∀ (t : G), ∀ a ∈ R, A'.ρ t a ∈ R := by
-    rintro t _ ⟨a, rfl⟩
-    exact ⟨A.ρ t a, i.hom_comm_apply t a⟩
+  have hR : ∀ (t : G), ∀ a ∈ R, A'.ρ t a ∈ R := range_invariant i
   -- The map `ψ : pushoutObj ⟶ A' / i(A)` induced by `(b, a') ↦ [a']`.
   let ψ : pushoutObj i f hi hc ⟶ quotient A' R hR hc :=
     quotientDesc _ _ _ _ (prodSnd B A' ≫ quotientπ A' R hR hc) fun x hx => by
       obtain ⟨a, -, ha₂⟩ := (mem_pushoutSubmodule i f x).mp hx
+      rw [hom_comp, ContinuousLinearMap.comp_apply, prodSnd_hom_apply]
       exact (quotientπ_hom_apply_eq_zero_iff _ _ _ _ _).mpr ⟨-a, by rw [map_neg]; exact ha₂⟩
   have hN := quotientπ_hom_apply_eq_iff (prod B A') (pushoutSubmodule i f)
     (pushoutSubmodule_invariant i f) (isClosed_pushoutSubmodule i f hi hc)
+  have hinl : ∀ b, (pushoutCocone i f hi hc).inl.hom b = (pushoutπ i f hi hc).hom (b, 0) :=
+    fun b => by
+      -- The first leg of `pushoutCocone` is `prodInl ≫ pushoutπ`, by `PushoutCocone.mk`.
+      change (prodInl B A' ≫ pushoutπ i f hi hc).hom b = _
+      rw [hom_comp, ContinuousLinearMap.comp_apply, prodInl_hom_apply]
   refine ⟨fun b b' hbb' => ?_, ?_⟩
-  · obtain ⟨a, ha₁, ha₂⟩ := (mem_pushoutSubmodule i f _).mp ((hN (b, 0) (b', 0)).mp hbb')
+  · rw [hinl, hinl] at hbb'
+    obtain ⟨a, ha₁, ha₂⟩ := (mem_pushoutSubmodule i f _).mp ((hN (b, 0) (b', 0)).mp hbb')
     have ha : a = 0 := hi (by simpa using ha₂)
     simpa [ha, sub_eq_zero] using ha₁.symm
   · have hrange : Set.range (pushoutCocone i f hi hc).inl.hom = ψ.hom ⁻¹' {0} := by
       ext q
       obtain ⟨⟨b, a'⟩, rfl⟩ := quotientπ_surjective (prod B A') (pushoutSubmodule i f) _
         (isClosed_pushoutSubmodule i f hi hc) q
-      have hψ : ψ.hom ((pushoutπ i f hi hc).hom (b, a')) = (quotientπ A' R hR hc).hom a' := rfl
-      have key : ψ.hom ((pushoutπ i f hi hc).hom (b, a')) = 0 ↔ a' ∈ R :=
-        (iff_of_eq (congrArg (· = 0) hψ)).trans (quotientπ_hom_apply_eq_zero_iff A' R hR hc a')
+      have hψ : ψ.hom ((pushoutπ i f hi hc).hom (b, a')) = (quotientπ A' R hR hc).hom a' := by
+        dsimp only [ψ]
+        rw [quotientDesc_hom_quotientπ_hom, hom_comp, ContinuousLinearMap.comp_apply,
+          prodSnd_hom_apply]
+      have key : ψ.hom ((pushoutπ i f hi hc).hom (b, a')) = 0 ↔ a' ∈ R := by
+        rw [hψ]
+        exact quotientπ_hom_apply_eq_zero_iff A' R hR hc a'
       refine ⟨fun ⟨b', hb'⟩ => key.mpr ?_, fun hq => ?_⟩
-      · obtain ⟨a, -, ha₂⟩ := (mem_pushoutSubmodule i f _).mp ((hN (b', 0) (b, a')).mp hb')
+      · rw [hinl] at hb'
+        obtain ⟨a, -, ha₂⟩ := (mem_pushoutSubmodule i f _).mp ((hN (b', 0) (b, a')).mp hb')
         exact ⟨a, by simpa using ha₂⟩
-      · obtain ⟨a, ha⟩ := key.mp hq
-        refine ⟨b + f.hom a, (hN _ _).mpr
-          ((mem_pushoutSubmodule i f _).mpr ⟨a, (add_sub_cancel_left b (f.hom a)).symm, ?_⟩)⟩
-        -- The second coordinate of `(b + f a, 0) - (b, a')` is `0 - a'`.
-        exact (by rw [zero_sub, ← ha]; rfl : -i.hom a = (0 : A') - a')
+      · obtain ⟨a, rfl⟩ := key.mp hq
+        refine ⟨b + f.hom a, ?_⟩
+        rw [hinl]
+        exact (hN _ _).mpr ((mem_pushoutSubmodule i f _).mpr ⟨a, by simp, by simp⟩)
     rw [hrange]
     exact isClosed_singleton.preimage ψ.hom.continuous
 

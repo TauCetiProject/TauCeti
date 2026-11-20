@@ -58,7 +58,7 @@ so joint continuity is part of every object, as for Galois representations.
   `C_st`-conjecture* (2025), §2.1.
 -/
 
-@[expose] public section
+public section
 
 universe w u v
 
@@ -207,16 +207,38 @@ theorem bijective_of_isIso (f : X ⟶ Y) [IsIso f] : Function.Bijective f.hom :=
 theorem isIso_iff_bijective (f : X ⟶ Y) : IsIso f ↔ Function.Bijective f.hom :=
   ⟨fun _ => bijective_of_isIso f, isIso_of_bijective f⟩
 
+/-! ### Invariant subspaces attached to a morphism -/
+
+/-- The range of a morphism of Banach representations is invariant: it is the subrepresentation
+`Representation.IntertwiningMap.range` of the underlying intertwining map. -/
+theorem range_invariant (f : X ⟶ Y) :
+    ∀ (g : G), ∀ y ∈ LinearMap.range (f.hom : X →ₗ[𝕜] Y), Y.ρ g y ∈ LinearMap.range
+      (f.hom : X →ₗ[𝕜] Y) :=
+  ((f.hom : X →ₗ[𝕜] Y).intertwiningMap_of_isIntertwiningMap (ρ := X.ρ.toRepresentation)
+    (σ := Y.ρ.toRepresentation) f.hom_comm_apply).range.apply_mem_toSubmodule
+
+/-- The kernel of a morphism of Banach representations is invariant: it is the subrepresentation
+`Representation.IntertwiningMap.ker` of the underlying intertwining map. -/
+theorem ker_invariant (f : X ⟶ Y) :
+    ∀ (g : G), ∀ x ∈ LinearMap.ker (f.hom : X →ₗ[𝕜] Y), X.ρ g x ∈ LinearMap.ker
+      (f.hom : X →ₗ[𝕜] Y) :=
+  ((f.hom : X →ₗ[𝕜] Y).intertwiningMap_of_isIntertwiningMap (ρ := X.ρ.toRepresentation)
+    (σ := Y.ρ.toRepresentation) f.hom_comm_apply).ker.apply_mem_toSubmodule
+
 /-! ### The forgetful functor to topological modules -/
 
 /-- The forgetful functor from Banach representations to topological `𝕜`-modules. -/
+@[expose]
 def toTopModuleCat : BanachRep.{w} 𝕜 G ⥤ TopModuleCat.{w} 𝕜 where
   obj X := TopModuleCat.of 𝕜 X
   map f := TopModuleCat.ofHom f.hom
 
 @[simp]
-theorem forget₂TopModuleCat_map_hom (f : X ⟶ Y) :
-    (toTopModuleCat.map f).hom = f.hom :=
+theorem toTopModuleCat_obj (X : BanachRep.{w} 𝕜 G) : toTopModuleCat.obj X = TopModuleCat.of 𝕜 X :=
+  (rfl)
+
+@[simp]
+theorem toTopModuleCat_map_hom (f : X ⟶ Y) : (toTopModuleCat.map f).hom = f.hom :=
   (rfl)
 
 instance : (toTopModuleCat (𝕜 := 𝕜) (G := G)).Faithful where
@@ -270,18 +292,30 @@ noncomputable def prodInr (X Y : BanachRep.{w} 𝕜 G) : Y ⟶ prod X Y :=
   ⟨ContinuousLinearMap.inr 𝕜 X Y, fun _ _ => by simp⟩
 
 @[simp]
+theorem prodFst_hom : (prodFst X Y).hom = ContinuousLinearMap.fst 𝕜 X Y :=
+  (rfl)
+
+@[simp]
+theorem prodSnd_hom : (prodSnd X Y).hom = ContinuousLinearMap.snd 𝕜 X Y :=
+  (rfl)
+
+@[simp]
+theorem prodInl_hom : (prodInl X Y).hom = ContinuousLinearMap.inl 𝕜 X Y :=
+  (rfl)
+
+@[simp]
+theorem prodInr_hom : (prodInr X Y).hom = ContinuousLinearMap.inr 𝕜 X Y :=
+  (rfl)
+
 theorem prodFst_hom_apply (x : prod X Y) : (prodFst X Y).hom x = x.1 :=
   (rfl)
 
-@[simp]
 theorem prodSnd_hom_apply (x : prod X Y) : (prodSnd X Y).hom x = x.2 :=
   (rfl)
 
-@[simp]
 theorem prodInl_hom_apply (x : X) : (prodInl X Y).hom x = (x, 0) :=
   (rfl)
 
-@[simp]
 theorem prodInr_hom_apply (y : Y) : (prodInr X Y).hom y = (0, y) :=
   (rfl)
 
@@ -307,7 +341,7 @@ theorem prodFst_prodInl_add_prodSnd_prodInr :
   hom_ext (ContinuousLinearMap.ext fun ⟨a, b⟩ => Prod.ext (add_zero a) (zero_add b))
 
 /-- The product `X × Y` with its projections and inclusions, as a binary bicone. -/
-@[simps]
+@[expose, simps]
 noncomputable def prodBicone (X Y : BanachRep.{w} 𝕜 G) : BinaryBicone X Y where
   pt := prod X Y
   fst := prodFst X Y
@@ -347,6 +381,10 @@ noncomputable def subrepresentationι : subrepresentation X W hW hWc ⟶ X :=
 theorem subrepresentationι_hom : (subrepresentationι X W hW hWc).hom = W.subtypeL :=
   (rfl)
 
+theorem subrepresentationι_hom_apply (x : subrepresentation X W hW hWc) :
+    (subrepresentationι X W hW hWc).hom x = (x : X) :=
+  (rfl)
+
 theorem subrepresentationι_injective : Function.Injective (subrepresentationι X W hW hWc).hom :=
   Subtype.val_injective
 
@@ -362,6 +400,10 @@ noncomputable def subrepresentationLift {T : BanachRep.{w} 𝕜 G} (k : T ⟶ X)
       (subrepresentation_ρ_apply X W hW hWc g (k.hom.codRestrict W hk t)).symm)⟩
 
 @[simp]
+theorem subrepresentationLift_hom {T : BanachRep.{w} 𝕜 G} (k : T ⟶ X) (hk : ∀ t, k.hom t ∈ W) :
+    (subrepresentationLift X W hW hWc k hk).hom = k.hom.codRestrict W hk :=
+  (rfl)
+
 theorem subrepresentationLift_hom_apply {T : BanachRep.{w} 𝕜 G} (k : T ⟶ X)
     (hk : ∀ t, k.hom t ∈ W) (t : T) :
     ((subrepresentationLift X W hW hWc k hk).hom t : X) = k.hom t :=
@@ -389,7 +431,12 @@ noncomputable def quotientπ : X ⟶ quotient X W hW hWc :=
   ⟨W.mkQL, fun g x => (quotient_ρ_apply_mk X W hW hWc g x).symm⟩
 
 /-- The projection onto the quotient is `Submodule.mkQL`. -/
+@[simp]
 theorem quotientπ_hom : (quotientπ X W hW hWc).hom = W.mkQL :=
+  (rfl)
+
+theorem quotientπ_hom_apply (x : X) :
+    (quotientπ X W hW hWc).hom x = (Submodule.Quotient.mk x : X ⧸ W) :=
   (rfl)
 
 theorem quotientπ_surjective : Function.Surjective (quotientπ X W hW hWc).hom :=
@@ -415,6 +462,10 @@ noncomputable def quotientDesc {T : BanachRep.{w} 𝕜 G} (k : X ⟶ T)
     exact k.hom_comm_apply g x⟩
 
 @[simp]
+theorem quotientDesc_hom {T : BanachRep.{w} 𝕜 G} (k : X ⟶ T) (hk : ∀ x ∈ W, k.hom x = 0) :
+    (quotientDesc X W hW hWc k hk).hom = W.liftQL k.hom hk :=
+  (rfl)
+
 theorem quotientDesc_hom_quotientπ_hom {T : BanachRep.{w} 𝕜 G} (k : X ⟶ T)
     (hk : ∀ x ∈ W, k.hom x = 0) (x : X) :
     (quotientDesc X W hW hWc k hk).hom ((quotientπ X W hW hWc).hom x) = k.hom x :=
