@@ -9,6 +9,8 @@ public import Mathlib.Geometry.Manifold.ContMDiff.Defs
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 public import TauCeti.Analysis.Fredholm.LevelSet.Smooth
 
+import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+
 /-!
 # A regular level set of a Fredholm map is a manifold
 
@@ -46,6 +48,8 @@ sense.
   ambient Banach space is `C^m`.
 * `TauCeti.hasMFDerivAt_coe_levelSet`: for this atlas, the differential of the inclusion at `z` is
   the inclusion of `ker (D z)`, read in the model space.
+* `TauCeti.contMDiffAt_levelSet_iff`, `TauCeti.contMDiff_levelSet_iff`: a map into the level set is
+  `C^m` exactly when it is continuous and its composite with the inclusion is `C^m`.
 
 ## References
 
@@ -229,6 +233,59 @@ theorem hasMFDerivAt_coe_levelSet
   convert hcoord using 1
   ext v
   rfl
+
+/-- **Maps into a regular level set.** For the atlas of `TauCeti.levelSetChartedSpace`, a map `g`
+into the level set `{x | f x = c}` is `C^m` at `y` exactly when it is continuous at `y` and its
+composite with the inclusion into the ambient Banach space is `C^m` at `y`. -/
+theorem contMDiffAt_levelSet_iff
+    (hf : ∀ x ∈ {x | f x = c}, HasStrictFDerivAt f (D x) x)
+    (hFred : ∀ x ∈ {x | f x = c}, ContinuousLinearMap.IsFredholm (D x))
+    (hsurj : ∀ x ∈ {x | f x = c}, Function.Surjective (D x))
+    (hindex : ∀ x ∈ {x | f x = c}, ContinuousLinearMap.index (D x) = n)
+    (hsmooth : ∀ x ∈ {x | f x = c}, ContDiffAt 𝕜 m f x)
+    {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace 𝕜 EN] [TopologicalSpace HN]
+    {IN : ModelWithCorners 𝕜 EN HN} [TopologicalSpace N] [ChartedSpace HN N]
+    {g : N → ↥{x | f x = c}} {y : N} :
+    letI := levelSetChartedSpace hf hFred hsurj hindex
+    ContMDiffAt IN 𝓘(𝕜, Fin n → 𝕜) m g y ↔
+      ContinuousAt g y ∧ ContMDiffAt IN 𝓘(𝕜, E) m (fun x ↦ (g x : E)) y := by
+  let _i := levelSetChartedSpace hf hFred hsurj hindex
+  refine ⟨fun h ↦ ⟨h.continuousAt,
+    (contMDiff_coe_levelSet hf hFred hsurj hindex hsmooth (g y)).comp y h⟩, fun ⟨hc, h⟩ ↦ ?_⟩
+  rw [contMDiffAt_iff_target]
+  refine ⟨hc, ?_⟩
+  set z := g y
+  set K := (D z.1).kerModelEquiv (hFred z.1 z.2).finite_ker
+    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.1) (hsurj z.1 z.2)).2
+      (hindex z.1 z.2))
+  set P := Classical.choose (hFred z.1 z.2).closedComplemented_ker
+  -- In the chart at `z`, the map reads as the continuous affine map `x ↦ K (P (x - z))` applied
+  -- to the composite of `g` with the inclusion.
+  have e : extChartAt 𝓘(𝕜, Fin n → 𝕜) z ∘ g =
+      (K.toContinuousLinearMap.comp P) ∘ (fun x ↦ x - z.1) ∘ fun x ↦ (g x : E) := by
+    funext x
+    simp [mfld_simps, levelSetChartAt_apply, levelSetChart_apply, K, P]
+  rw [e]
+  exact (K.toContinuousLinearMap.comp P).contMDiff.contMDiffAt.comp y
+    ((contDiff_id.sub contDiff_const).contMDiff.contMDiffAt.comp y h)
+
+/-- **Maps into a regular level set.** For the atlas of `TauCeti.levelSetChartedSpace`, a map `g`
+into the level set `{x | f x = c}` is `C^m` exactly when it is continuous and its composite with
+the inclusion into the ambient Banach space is `C^m`. -/
+theorem contMDiff_levelSet_iff
+    (hf : ∀ x ∈ {x | f x = c}, HasStrictFDerivAt f (D x) x)
+    (hFred : ∀ x ∈ {x | f x = c}, ContinuousLinearMap.IsFredholm (D x))
+    (hsurj : ∀ x ∈ {x | f x = c}, Function.Surjective (D x))
+    (hindex : ∀ x ∈ {x | f x = c}, ContinuousLinearMap.index (D x) = n)
+    (hsmooth : ∀ x ∈ {x | f x = c}, ContDiffAt 𝕜 m f x)
+    {EN HN N : Type*} [NormedAddCommGroup EN] [NormedSpace 𝕜 EN] [TopologicalSpace HN]
+    {IN : ModelWithCorners 𝕜 EN HN} [TopologicalSpace N] [ChartedSpace HN N]
+    {g : N → ↥{x | f x = c}} :
+    letI := levelSetChartedSpace hf hFred hsurj hindex
+    ContMDiff IN 𝓘(𝕜, Fin n → 𝕜) m g ↔
+      Continuous g ∧ ContMDiff IN 𝓘(𝕜, E) m (fun x ↦ (g x : E)) := by
+  simp only [ContMDiff, contMDiffAt_levelSet_iff hf hFred hsurj hindex hsmooth,
+    continuous_iff_continuousAt, forall_and]
 
 end TauCeti
 

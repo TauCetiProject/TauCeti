@@ -90,6 +90,8 @@ reduction needs.
   derivative of the moment map of the kernel torus has index `d + n`.
 * `TauCeti.Toric.IsDelzant.isManifold_delzantLevel`: `Z` is a smooth manifold of dimension `d + n`.
 * `TauCeti.Toric.IsDelzant.contMDiff_coe_delzantLevel`: the inclusion of `Z` into `ℂ^ι` is smooth.
+* `TauCeti.Toric.IsDelzant.contMDiff_delzantLevel_iff`: a map into `Z` is smooth exactly when it
+  is continuous and its composite with the inclusion is smooth.
 
 ## References
 
@@ -602,6 +604,21 @@ theorem contMDiff_coe_delzantLevel {m : WithTop ℕ∞} :
       𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) m
       ((↑) : delzantLevel i u c → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :=
   contMDiff_coe_levelSet _ _ _ _ fun _ _ ↦
+    ((contDiff_delzantMomentMap c).clm_comp contDiff_const).contDiffAt
+
+include hi in
+/-- **Maps into the level.** For the atlas `TauCeti.Toric.IsDelzant.delzantLevelChartedSpace`, a
+map `g` into the level `Z` is smooth exactly when it is continuous and its composite with the
+inclusion of `Z` into `ℂ^ι` is smooth. -/
+theorem contMDiff_delzantLevel_iff {m : WithTop ℕ∞} {EN HN N : Type*} [NormedAddCommGroup EN]
+    [NormedSpace ℝ EN] [TopologicalSpace HN] {IN : ModelWithCorners ℝ EN HN} [TopologicalSpace N]
+    [ChartedSpace HN N] {g : N → delzantLevel i u c} :
+    letI := hΔ.delzantLevelChartedSpace hi
+    ContMDiff IN 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ) m g ↔
+      Continuous g ∧
+        ContMDiff IN 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) m
+          fun x ↦ (g x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :=
+  contMDiff_levelSet_iff _ _ _ _ fun _ _ ↦
     ((contDiff_delzantMomentMap c).clm_comp contDiff_const).contDiffAt
 
 end IsDelzant
