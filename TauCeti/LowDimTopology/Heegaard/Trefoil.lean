@@ -50,7 +50,12 @@ multiples of the whole surface. Hence:
 * no nonnegative domain joining two generators avoids both basepoints, so the hat knot Floer
   differential vanishes and `HFK̂` has one generator in each of the Alexander gradings `1`, `0`,
   `-1`, with this normalization. The bigon `B_z` joins the generators of Alexander gradings `1`
-  and `0` with `n_z - n_w = 1`, and is not counted.
+  and `0` with `n_z - n_w = 1`, and is not counted;
+* the Alexander gradings `1`, `-1`, `0` form an Alexander function for `w`, the hypothesis of the
+  Alexander filtration of the hat complex of the diagram `(Σ, α, β, w)`, whose count of domains
+  avoiding `w` does include `B_z`, from `x₀` to `x₂`. That count is
+  combinatorial: the region `R` has eight corners, so this diagram is not nice, and the count
+  of domains is not claimed to be the count of holomorphic disks.
 
 The relative gradings are determined only up to an overall shift. The Maslov gradings `0`, `-2`,
 `-1` and the Alexander gradings `1`, `-1`, `0` of `x₀`, `x₁`, `x₂` are integer lifts of them,
@@ -97,6 +102,11 @@ with the absolute grading of `HF̂(S³)`, is not formalized here.
   `T - 1 + T⁻¹`.
 * `TauCeti.HeegaardRegionSystem.eq_trefoilAlexanderGrading_of_isKnotGrading`: the symmetric
   Alexander grading is unique.
+* `TauCeti.HeegaardRegionSystem.isAlexanderFunction_trefoil`: the Alexander gradings `1`, `-1`,
+  `0` satisfy the hypothesis of the Alexander filtration
+  of the hat complex of the diagram pointed at `w`.
+* `TauCeti.HeegaardRegionSystem.hatCoefficient_trefoil_zero_two`: in that complex the bigon
+  `B_z` gives a coefficient one from `x₀` to `x₂`, lowering the Alexander grading by one.
 
 ## References
 
@@ -509,6 +519,52 @@ theorem eq_trefoilAlexanderGrading_of_isKnotGrading {M A : (trefoil ![1, 2]).Gen
     abel
 
 end KnotEulerCharacteristic
+
+/-! ### The Alexander filtration -/
+
+/-- Moving the basepoints of `trefoil b` gives `trefoil b'`. -/
+@[simp]
+theorem withBasepoints_trefoil {B' : Type*} (b' : B' → Fin 3) :
+    (trefoil b).withBasepoints b' = trefoil b' :=
+  (rfl)
+
+/-- **The Alexander filtration of the trefoil diagram.** The Alexander gradings `1`, `-1`, `0` of
+`x₀`, `x₁`, `x₂`, relative to `x₂`, form an Alexander function for `w`: every domain avoiding `w`
+lowers them by its multiplicity at `z`. So they filter the hat complex of the diagram pointed at
+`w` (`IsAlexanderFunction.hatDifferential_withBasepoints_mem_supported_setOf_le`). -/
+theorem isAlexanderFunction_trefoil :
+    (trefoil ![1, 2]).IsAlexanderFunction (fun _ : Unit => 0) trefoilAlexanderGrading := by
+  have hx : ∀ x, ∃ E, (trefoil ![1, 2]).IsDomainBetween x (trefoilGenerator _ 2) E := by
+    intro x
+    rw [← trefoilGenerator_snd_zero x]
+    generalize (x.2 0 : Fin 3) = a
+    fin_cases a
+    exacts [⟨_, isDomainBetween_trefoil_single_two⟩, ⟨_, isDomainBetween_trefoil_single_one⟩,
+      ⟨_, isDomainBetween_zero _⟩]
+  convert isAlexanderFunction_relativeAlexanderGrading (fun b => by fin_cases b <;> simp)
+    (periodicAlexanderValues_trefoil 0 1) hx using 1
+  funext x
+  rw [← trefoilGenerator_snd_zero x]
+  generalize (x.2 0 : Fin 3) = a
+  fin_cases a <;> simp [relativeAlexanderGrading_self]
+
+/-- The bigon `B_z`, which avoids `w`, is counted by the hat differential of the diagram pointed
+at `w` alone, from `x₀` to `x₂`. It lowers the Alexander grading by one, so the hat differential
+of the doubly pointed diagram, which vanishes
+(`TauCeti.HeegaardRegionSystem.hatDifferential_trefoil`), does not count it. -/
+theorem single_two_mem_hatDomains_trefoil :
+    Pi.single 2 1 ∈ (trefoil fun _ : Unit => 1).hatDomains 1 (trefoilGenerator _ 0)
+      (trefoilGenerator _ 2) :=
+  mem_hatDomains_iff.mpr ⟨isDomainBetween_trefoil_single_two, fun _ => by simp,
+    Pi.single_nonneg.mpr zero_le_one, maslovIndex_trefoil_single_two⟩
+
+/-- In the diagram pointed at `w` alone, the hat differential has coefficient one from `x₀` to
+`x₂`, coming from the bigon `B_z`. -/
+theorem hatCoefficient_trefoil_zero_two :
+    (trefoil fun _ : Unit => 1).hatCoefficient 1 (trefoilGenerator _ 0) (trefoilGenerator _ 2) =
+      1 :=
+  (hatCoefficient_eq_one_iff_of_periodicDomains_eq_bot periodicDomains_trefoil).mpr
+    ⟨_, single_two_mem_hatDomains_trefoil⟩
 
 end HeegaardRegionSystem
 
