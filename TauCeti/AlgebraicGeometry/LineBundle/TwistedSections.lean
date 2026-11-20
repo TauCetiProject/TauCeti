@@ -290,7 +290,7 @@ theorem eventually_exists_generatingSections_tensor_tensorPow [CompactSpace X]
   -- `g ⊗ (s i)ⁿ` on `V i`.
   have hext := Filter.eventually_all.mpr fun p : Σ i : T, G i ↦
     eventually_exists_map_eq_tmulRight_tensorPowSection F (U := ⊤)
-      (by simpa using isCompact_univ) (by simpa using isQuasiSeparated_univ) (s p.1) p.2.1
+      (by simpa using isCompact_univ) (by simpa using isQuasiSeparated_univ) (s p.1) p.2.val
   filter_upwards [hext] with n hn
   choose t' ht' using hn
   -- On `V i`, tensoring with `(s i)ⁿ` is a linear bijection, which carries the generators `G i`

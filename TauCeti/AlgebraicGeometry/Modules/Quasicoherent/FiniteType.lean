@@ -250,7 +250,7 @@ theorem exists_epi_free_of_finite [IsAffine X] (N : X.Modules) [N.IsQuasicoheren
     refine ⟨(factorThruImage φ).app ⊤ (F.sectionsEquivTop (SheafOfModules.freeSection ⟨s, hs⟩)),
       ?_⟩
     rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, image.fac]
-    exact app_freeHomEquiv_symm_freeSection N (fun s : (S : Set Γ(N, ⊤)) ↦ s.1) ⟨s, hs⟩
+    exact app_freeHomEquiv_symm_freeSection N (fun s : (S : Set Γ(N, ⊤)) ↦ s.val) ⟨s, hs⟩
   refine ⟨(S : Set Γ(N, ⊤)), inferInstance, φ, ?_⟩
   have := epi_comp (factorThruImage φ) (image.ι φ)
   rwa [image.fac] at this

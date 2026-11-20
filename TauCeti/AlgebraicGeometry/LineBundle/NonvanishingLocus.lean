@@ -321,18 +321,18 @@ theorem quasiSeparatedSpace_of_forall_isAffineOpen_nonvanishingLocus
       IsAffineOpen (M.nonvanishingLocus s)) :
     QuasiSeparatedSpace X := by
   let S := {s : Γ(M, ⊤) // IsAffineOpen (M.nonvanishingLocus s)}
-  refine Scheme.quasiSeparatedSpace_of_isOpenCover (fun s : S ↦ M.nonvanishingLocus s.1)
-    (top_unique fun x _ ↦ ?_) (fun s ↦ s.2) fun s t ↦ ?_
+  refine Scheme.quasiSeparatedSpace_of_isOpenCover (fun s : S ↦ M.nonvanishingLocus s.val)
+    (top_unique fun x _ ↦ ?_) (fun s ↦ s.property) fun s t ↦ ?_
   · obtain ⟨s, hxs, hs⟩ := h x
     exact Opens.mem_iSup.mpr ⟨⟨s, hs⟩, hxs⟩
   -- On `X_s`, write `t = g • s`; then `X_s ∩ X_t` is the basic open of `g` in `X_s`.
-  let j : M.nonvanishingLocus s.1 ⟶ ⊤ := homOfLE le_top
-  have hss : M.nonvanishingLocus s.1 ≤ M.nonvanishingLocus (M.presheaf.map j.op s.1) := by
+  let j : M.nonvanishingLocus s.val ⟶ ⊤ := homOfLE le_top
+  have hss : M.nonvanishingLocus s.val ≤ M.nonvanishingLocus (M.presheaf.map j.op s.val) := by
     rw [nonvanishingLocus_map]
     exact le_inf le_rfl le_rfl
-  obtain ⟨g, hg⟩ := surjective_smul_of_le_nonvanishingLocus hss (M.presheaf.map j.op t.1)
-  rw [← Opens.coe_inf, ← basicOpen_eq_inf_nonvanishingLocus j t.1 hss hg]
-  exact (s.2.basicOpen g).isCompact
+  obtain ⟨g, hg⟩ := surjective_smul_of_le_nonvanishingLocus hss (M.presheaf.map j.op t.val)
+  rw [← Opens.coe_inf, ← basicOpen_eq_inf_nonvanishingLocus j t.val hss hg]
+  exact (s.property.basicOpen g).isCompact
 
 /-- On the structure sheaf `𝒪_X`, regarded as an invertible sheaf, the nonvanishing locus of a
 regular function `r` is its basic open set `X_r`. -/
