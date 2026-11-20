@@ -79,6 +79,8 @@ def bellmanEval (γ : ℝ≥0) (π : S → PMF A) (v : BoundedFn S) : BoundedFn 
   ⟨fun s ↦ ∑ a, (π s a).toReal * (M.reward s a + γ * M.expect v s a),
     memℓp_infty ⟨M.rewardBound + γ * ‖v‖, by
       rintro _ ⟨s, rfl⟩
+      dsimp only
+      rw [Real.norm_eq_abs]
       exact (π s).abs_sum_toReal_mul_le fun a ↦ M.abs_reward_add_expect_le γ v s a⟩⟩
 
 /-- The value of the evaluation operator at a state. -/
@@ -89,8 +91,9 @@ theorem bellmanEval_apply (γ : ℝ≥0) (π : S → PMF A) (v : BoundedFn S) (s
 /-- The one-step bound for the evaluation operator: `‖T^π v‖ ≤ rewardBound + γ ‖v‖`. -/
 theorem norm_bellmanEval_le [Nonempty S] (γ : ℝ≥0) (π : S → PMF A) (v : BoundedFn S) :
     ‖M.bellmanEval γ π v‖ ≤ M.rewardBound + γ * ‖v‖ :=
-  lp.norm_le_of_forall_le' _ fun s ↦
-    (π s).abs_sum_toReal_mul_le fun a ↦ M.abs_reward_add_expect_le γ v s a
+  lp.norm_le_of_forall_le' _ fun s ↦ by
+    rw [bellmanEval_apply, Real.norm_eq_abs]
+    exact (π s).abs_sum_toReal_mul_le fun a ↦ M.abs_reward_add_expect_le γ v s a
 
 section Countable
 
@@ -145,6 +148,8 @@ def bellman (γ : ℝ≥0) (v : BoundedFn S) : BoundedFn S :=
   ⟨fun s ↦ Finset.univ.sup' Finset.univ_nonempty fun a ↦ M.reward s a + γ * M.expect v s a,
     memℓp_infty ⟨M.rewardBound + γ * ‖v‖, by
       rintro _ ⟨s, rfl⟩
+      dsimp only
+      rw [Real.norm_eq_abs]
       exact M.abs_sup'_reward_add_expect_le γ v s⟩⟩
 
 /-- The value of the optimality operator at a state. -/
@@ -161,7 +166,9 @@ theorem reward_add_expect_le_bellman (γ : ℝ≥0) (v : BoundedFn S) (s : S) (a
 /-- The one-step bound for the optimality operator: `‖T v‖ ≤ rewardBound + γ ‖v‖`. -/
 theorem norm_bellman_le [Nonempty S] (γ : ℝ≥0) (v : BoundedFn S) :
     ‖M.bellman γ v‖ ≤ M.rewardBound + γ * ‖v‖ :=
-  lp.norm_le_of_forall_le' _ fun s ↦ M.abs_sup'_reward_add_expect_le γ v s
+  lp.norm_le_of_forall_le' _ fun s ↦ by
+    rw [bellman_apply, Real.norm_eq_abs]
+    exact M.abs_sup'_reward_add_expect_le γ v s
 
 /-- The evaluation operator of any policy is at most the optimality operator. -/
 theorem bellmanEval_le_bellman (γ : ℝ≥0) (π : S → PMF A) (v : BoundedFn S) (s : S) :
