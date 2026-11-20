@@ -11,6 +11,7 @@ public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import Mathlib.Topology.Metrizable.Uniformity
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Normed.Module.Exhaustion
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # The local Hölder spaces `C^{k,α}_loc(Ω)`
@@ -30,6 +31,12 @@ elements need not be bounded (`1/x` on `(0, 1)`), and its Hölder condition is l
 `Ω = (-1, 0) ∪ (0, 1)` the sign function is in `C^{k,α}_loc(Ω)` for every `k` but has unbounded
 Hölder quotients across the gap. No single seminorm controls the others, and the space is not
 normable in general.
+
+The space is meant for locally compact `E`, such as `ℝⁿ`, and every result beyond the algebraic
+and topological structure assumes this. Without local compactness the definition degenerates:
+in an infinite-dimensional normed space a nonempty open set never has compact closure (Riesz's
+lemma), so the only open `U ⋐ Ω` is `∅`, and `C^{k,α}_loc(Ω)` consists of all functions on `Ω`,
+with the indiscrete topology.
 
 Membership has an intrinsic description
 (`TauCeti.CkHolderSpaceLoc.exists_forall_eq_iff_contDiffOn`): when `E` is locally compact, a
@@ -80,7 +87,10 @@ variable (k : ℕ) (α : ℝ≥0) {E : Type u} [NormedAddCommGroup E] [NormedSpa
 /-- The local Hölder space `C^{k,α}_loc(Ω, F)`: functions on the open set `Ω` whose restriction
 to every open set `U` with compact closure contained in `Ω` lies in `C^{k,α}(U, F)`, that is, is
 `C^k` on `U` with derivatives through order `k` bounded on `U` and `k`-th derivative `α`-Hölder
-on `U`. -/
+on `U`.
+
+This is the intended space only for locally compact `E`. Otherwise `∅` is the only open set with
+compact closure, so every function on `Ω` belongs to it. -/
 structure CkHolderSpaceLoc where
   /-- The underlying function on `Ω`. Use the coercion instead. -/
   protected toFun : Ω → F
@@ -356,21 +366,13 @@ theorem ofContDiffOn_apply (g : E → F) (hg : ContDiffOn ℝ k g Ω)
 
 variable [LocallyCompactSpace E]
 
-omit [NormedSpace ℝ E] in
-/-- In a locally compact space, a compact subset of the open set `Ω` lies in an open set whose
-closure is compact and contained in `Ω`. -/
-private theorem exists_opens_between {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
-    ∃ U : Opens E, K ⊆ U ∧ IsCompact (closure (U : Set E)) ∧ closure (U : Set E) ⊆ Ω := by
-  obtain ⟨V, hV, hKV, hVΩ, hVc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
-  exact ⟨⟨V, hV⟩, hKV, hVc, hVΩ⟩
-
 /-- A function on the whole space that agrees with an element of `C^{k,α}_loc(Ω)` on `Ω` is `C^k`
 on `Ω`. -/
 theorem contDiffOn (f : CkHolderSpaceLoc k α Ω F) {g : E → F} (hg : ∀ x : Ω, g x = f x) :
     ContDiffOn ℝ k g Ω := by
   refine contDiffOn_of_locally_contDiffOn fun x hx ↦ ?_
-  obtain ⟨U, hxU, hU, hUΩ⟩ := exists_opens_between (isCompact_singleton (x := x))
-    (singleton_subset_iff.2 hx)
+  obtain ⟨U, hxU, hUΩ, hU⟩ := Opens.exists_between_and_isCompact_closure
+    (isCompact_singleton (x := x)) (singleton_subset_iff.2 hx)
   refine ⟨U, U.isOpen, hxU rfl, ((restrictL U hU hUΩ f).contDiffOn fun y ↦ ?_).mono
     inter_subset_right⟩
   rw [restrictL_apply_apply]
@@ -381,7 +383,7 @@ theorem contDiffOn (f : CkHolderSpaceLoc k α Ω F) {g : E → F} (hg : ∀ x : 
 theorem exists_holderOnWith_iteratedFDeriv (f : CkHolderSpaceLoc k α Ω F) {g : E → F}
     (hg : ∀ x : Ω, g x = f x) {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     ∃ C, HolderOnWith C α (iteratedFDeriv ℝ k g) K := by
-  obtain ⟨U, hKU, hU, hUΩ⟩ := exists_opens_between hK hKΩ
+  obtain ⟨U, hKU, hUΩ, hU⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
   exact ⟨_, ((restrictL U hU hUΩ f).holderOnWith_iteratedFDeriv fun y ↦ by
     rw [restrictL_apply_apply]
     exact hg ⟨y, hUΩ (subset_closure y.2)⟩).mono hKU⟩
@@ -405,8 +407,8 @@ variable [LocallyCompactSpace E]
 /-- Evaluation at a point of `Ω` is continuous on `C^{k,α}_loc(Ω)`. -/
 instance instContinuousEvalConst : ContinuousEvalConst (CkHolderSpaceLoc k α Ω F) Ω F where
   continuous_eval_const x := by
-    obtain ⟨U, hxU, hU, hUΩ⟩ := exists_opens_between (isCompact_singleton (x := (x : E)))
-      (singleton_subset_iff.2 x.2)
+    obtain ⟨U, hxU, hUΩ, hU⟩ := Opens.exists_between_and_isCompact_closure
+      (isCompact_singleton (x := (x : E))) (singleton_subset_iff.2 x.2)
     refine ((continuous_eval_const ⟨(x : E), hxU rfl⟩).comp
       (CkHolderSpaceOn.toBoundedContinuousFunctionCLM.continuous.comp
         (restrictL U hU hUΩ).continuous)).congr fun f ↦ ?_
@@ -426,8 +428,8 @@ private theorem exists_restrictL_eq
         CkHolderSpaceOn.restrictL hVU (g U hU hUΩ) = g V hV hVΩ) :
     ∃ f : CkHolderSpaceLoc k α Ω F, ∀ (U : Opens E) (hU : IsCompact (closure (U : Set E)))
       (hUΩ : closure (U : Set E) ⊆ Ω), restrictL U hU hUΩ f = g U hU hUΩ := by
-  choose W hxW hW hWΩ using fun x : Ω ↦
-    exists_opens_between (isCompact_singleton (x := (x : E))) (singleton_subset_iff.2 x.2)
+  choose W hxW hWΩ hW using fun x : Ω ↦ Opens.exists_between_and_isCompact_closure
+    (isCompact_singleton (x := (x : E))) (singleton_subset_iff.2 x.2)
   -- On `U ⊓ W x`, both `g U` and `g (W x)` restrict to the element attached to the intersection.
   have hval : ∀ (U : Opens E) (hU : IsCompact (closure (U : Set E)))
       (hUΩ : closure (U : Set E) ⊆ Ω) (y : U),
