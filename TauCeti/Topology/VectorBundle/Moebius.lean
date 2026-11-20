@@ -195,37 +195,10 @@ private theorem det_coordChangeL_moebiusCore {z : Circle} (h₁ : z ∈ moebiusB
   rw [VectorBundleCore.localTriv_coordChange_eq _ _ _ ⟨h₁, h₀⟩]
   simp
 
-/-- On the upper half-circle, where the transition function is `1`, an orientation of a fibre of
-the Möbius line bundle reads the same in the two charts. -/
-private theorem mapOrientation_moebiusCore_of_pos {z : Circle} (hz : 0 < (z : ℂ).im)
-    (h₁ : z ∈ moebiusBaseSet true) (h₀ : z ∈ moebiusBaseSet false)
-    (o : Orientation ℝ (moebiusCore.Fiber z) (Fin 1)) :
-    (moebiusCore.localTriv false).mapOrientation (Fin 1) h₀ o =
-      (moebiusCore.localTriv true).mapOrientation (Fin 1) h₁ o := by
-  rw [Bundle.Trivialization.mapOrientation_eq_map_coordChangeL (moebiusCore.localTriv true)
-    (moebiusCore.localTriv false) h₁ h₀]
-  refine (Orientation.map_eq_iff_det_pos _ _ (by simp)).2 ?_
-  rw [det_coordChangeL_moebiusCore h₁ h₀, moebiusSign_of_pos hz]
-  exact one_pos
-
-/-- On the lower half-circle, where the transition function is `-1`, an orientation of a fibre of
-the Möbius line bundle reads oppositely in the two charts. -/
-private theorem mapOrientation_moebiusCore_of_neg {z : Circle} (hz : (z : ℂ).im < 0)
-    (h₁ : z ∈ moebiusBaseSet true) (h₀ : z ∈ moebiusBaseSet false)
-    (o : Orientation ℝ (moebiusCore.Fiber z) (Fin 1)) :
-    (moebiusCore.localTriv false).mapOrientation (Fin 1) h₀ o =
-      -(moebiusCore.localTriv true).mapOrientation (Fin 1) h₁ o := by
-  rw [Bundle.Trivialization.mapOrientation_eq_map_coordChangeL (moebiusCore.localTriv true)
-    (moebiusCore.localTriv false) h₁ h₀]
-  refine (Orientation.map_eq_neg_iff_det_neg _ _ (by simp)).2 ?_
-  rw [det_coordChangeL_moebiusCore h₁ h₀, moebiusSign_of_neg hz]
-  norm_num
-
 /-- **The Möbius line bundle is not orientable.** -/
 theorem isEmpty_vectorBundleOrientation_moebiusCore :
     IsEmpty (VectorBundleOrientation ℝ moebiusCore.Fiber (Fin 1)) := by
   have hι : Fintype.card (Fin 1) = finrank ℝ ℝ := by simp
-  refine ⟨fun o ↦ ?_⟩
   -- The points `i` and `-i` lie in both charts, on the upper and the lower half-circle.
   let p : Circle := Circle.exp (π / 2)
   let q : Circle := Circle.exp (-(π / 2))
@@ -236,14 +209,14 @@ theorem isEmpty_vectorBundleOrientation_moebiusCore :
     cases i <;> simp_all
   have : MemTrivializationAtlas (moebiusCore.localTriv false) := ⟨⟨false, rfl⟩⟩
   have : MemTrivializationAtlas (moebiusCore.localTriv true) := ⟨⟨true, rfl⟩⟩
-  -- In each chart the orientation reads as a single orientation of `ℝ`.
-  have hc₀ := o.mapOrientation_eq_of_isPreconnected hι (moebiusCore.localTriv false)
-    (isPreconnected_moebiusBaseSet false) le_rfl (hmem hp.ne' false) (hmem hq.ne false)
-  have hc₁ := o.mapOrientation_eq_of_isPreconnected hι (moebiusCore.localTriv true)
-    (isPreconnected_moebiusBaseSet true) le_rfl (hmem hp.ne' true) (hmem hq.ne true)
-  -- The two readings agree at `p` and are opposite at `q`.
-  rw [mapOrientation_moebiusCore_of_pos hp (hmem hp.ne' true) (hmem hp.ne' false),
-    mapOrientation_moebiusCore_of_neg hq (hmem hq.ne true) (hmem hq.ne false), hc₁] at hc₀
-  exact Module.Ray.ne_neg_self _ hc₀
+  -- The coordinate change from the chart `true` to the chart `false` is `1` at `p` and `-1` at `q`.
+  refine VectorBundleOrientation.isEmpty_of_det_coordChangeL_pos_of_neg hι
+    (moebiusCore.localTriv true) (moebiusCore.localTriv false) (isPreconnected_moebiusBaseSet true)
+    (isPreconnected_moebiusBaseSet false) le_rfl le_rfl (hmem hp.ne' true) (hmem hp.ne' false)
+    (hmem hq.ne true) (hmem hq.ne false) ?_ ?_
+  · rw [det_coordChangeL_moebiusCore (hmem hp.ne' true) (hmem hp.ne' false), moebiusSign_of_pos hp]
+    exact one_pos
+  · rw [det_coordChangeL_moebiusCore (hmem hq.ne true) (hmem hq.ne false), moebiusSign_of_neg hq]
+    norm_num
 
 end TauCeti
