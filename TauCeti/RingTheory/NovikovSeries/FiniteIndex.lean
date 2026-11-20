@@ -82,7 +82,7 @@ private theorem comap_subtype_single_mul_algebraMap_of_notMem {g : H} (hg : g âˆ
     comap K.subtype hÏ† hker (single g r * algebraMap _ (NovikovSeries R H N) b) = 0 := by
   ext k
   rw [coeff_comap, coeff_single_mul, coeff_algebraMap_addSubgroup_of_notMem, mul_zero, coeff_zero]
-  exact fun hk => hg (by simpa using K.sub_mem k.2 hk)
+  exact fun hk => hg (by simpa using K.sub_mem k.property hk)
 
 /-- Restricting to `K` the translate `e^(-g) a` reads off the coefficients of `a` on `g + K`. -/
 private theorem coeff_comap_subtype_single_neg_mul (g : H) (a : NovikovSeries R H N) (k : K) :

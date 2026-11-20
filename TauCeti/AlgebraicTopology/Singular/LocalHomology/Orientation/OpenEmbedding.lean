@@ -244,6 +244,13 @@ lemma comap_comap (o : HomologicalOrientation P E d) {j' : N → P} (hj' : IsOpe
     Equiv.trans_apply, localOrientationEquiv_comap_apply, localOrientationEquiv_comap_apply]
   rfl
 
+/-- Pulling back along `j'` and then along `j` is pulling back along any open embedding `k` equal to
+`j' ∘ j`, for instance the inclusion of an open subset of an open subset. -/
+lemma comap_comap_of_comp_eq (o : HomologicalOrientation P E d) {j' : N → P} {k : M → P}
+    (hj' : IsOpenEmbedding j') (hj : IsOpenEmbedding j) (hk : IsOpenEmbedding k)
+    (hjk : j' ∘ j = k) : (o.comap hj').comap hj = o.comap hk := by
+  rw [comap_comap, o.comap_congr _ hk hjk]
+
 /-- Pulling an orientation back along a homeomorphism and then along its inverse gives it back. -/
 @[simp]
 lemma comap_symm_comap (o : HomologicalOrientation N E d) (e : M ≃ₜ N) :

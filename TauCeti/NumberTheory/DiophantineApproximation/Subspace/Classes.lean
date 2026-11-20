@@ -77,7 +77,8 @@ places and `S₀` multiply to `H`: their product, weighted as in `approxProd`, i
 private theorem prod_apply_eq_approxProd_mul (S₀ : Finset (FinitePlace K))
     (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) {x : ι → K} (hx : x ≠ 0) {H : ℝ}
     (hH : H = (∏ v : InfinitePlace K, (⨆ j, v (x j)) ^ v.mult) * ∏ v ∈ S₀, ⨆ j, v (x j)) :
-    (∏ v : InfinitePlace K, (∏ i, v.1 (L v.1 i x)) ^ v.mult) * ∏ v ∈ S₀, ∏ i, v.1 (L v.1 i x) =
+    (∏ v : InfinitePlace K, (∏ i, v.val (L v.val i x)) ^ v.mult) * ∏ v ∈ S₀, ∏ i, v.val
+        (L v.val i x) =
       approxProd univ S₀ id L x * H ^ Fintype.card ι := by
   obtain ⟨j₀, hj₀⟩ := Function.ne_iff.mp hx
   -- at every absolute value, the local factor times the `card ι`-th power of the local sup norm
@@ -93,8 +94,8 @@ private theorem prod_apply_eq_approxProd_mul (S₀ : Finset (FinitePlace K))
   congr 1
   · refine prod_congr rfl fun v _ ↦ ?_
     rw [pow_right_comm, ← mul_pow]
-    exact congrArg (· ^ v.mult) (hloc v.1 (L v.1)).symm
-  · exact prod_congr rfl fun v _ ↦ (hloc v.1 (L v.1)).symm
+    exact congrArg (· ^ v.mult) (hloc v.val (L v.val)).symm
+  · exact prod_congr rfl fun v _ ↦ (hloc v.val (L v.val)).symm
 
 /-- **The exact exponents of a solution.** Let `y` be a point whose local sup norms over the
 infinite places and `S₀` multiply to `H > 1`, and at which no form vanishes. The exponents
@@ -104,7 +105,8 @@ private theorem approxWeight_logb_le (S₀ : Finset (FinitePlace K))
     (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) {y : ι → K} (hy : y ≠ 0) {H ε : ℝ}
     (hH1 : 1 < H)
     (hH : H = (∏ v : InfinitePlace K, (⨆ j, v (y j)) ^ v.mult) * ∏ v ∈ S₀, ⨆ j, v (y j))
-    (hLinf : ∀ (v : InfinitePlace K) (i : ι), L v.1 i y ≠ 0) (hLfin : ∀ v ∈ S₀, ∀ i, L v.1 i y ≠ 0)
+    (hLinf : ∀ (v : InfinitePlace K) (i : ι), L v.val i y ≠ 0) (hLfin : ∀ v ∈ S₀, ∀ i,
+        L v.val i y ≠ 0)
     (happrox : approxProd univ S₀ id L y ≤ H ^ (-(Fintype.card ι : ℝ) - ε)) :
     approxWeight S₀ (fun v i ↦ logb H (v (L v i y))) ≤ -ε := by
   have hHpos : 0 < H := zero_lt_one.trans hH1
@@ -136,8 +138,8 @@ theorem exists_finset_forall_exists_smul_mem_approxDomain (S₀ : Finset (Finite
     ∃ (T : Finset (AbsoluteValue K ℝ → ι → ℝ)) (Q₀ : ℝ),
       (∀ c ∈ T, approxWeight S₀ c ≤ -(ε / 2)) ∧
       ∀ x : ι → K, (FinitePlace.maximalIdeal '' (S₀ : Set (FinitePlace K))).IsPrimitive x →
-        Q₀ ≤ mulHeight x → (∀ (v : InfinitePlace K) (i : ι), L v.1 i x ≠ 0) →
-        (∀ v ∈ S₀, ∀ i, L v.1 i x ≠ 0) →
+        Q₀ ≤ mulHeight x → (∀ (v : InfinitePlace K) (i : ι), L v.val i x ≠ 0) →
+        (∀ v ∈ S₀, ∀ i, L v.val i x ≠ 0) →
         approxProd univ S₀ id L x ≤ mulHeight x ^ (-(Fintype.card ι : ℝ) - ε) →
         ∃ u : (FinitePlace.maximalIdeal '' (S₀ : Set (FinitePlace K))).unit K, ∃ c ∈ T,
           ((u : Kˣ) : K) • x ∈ approxDomain S₀ L c (mulHeight x) := by
@@ -149,12 +151,12 @@ theorem exists_finset_forall_exists_smul_mem_approxDomain (S₀ : Finset (Finite
   set S := S₀.map FinitePlace.equivHeightOneSpectrum.toEmbedding
   -- the absolute values carrying forms
   set P : Set (AbsoluteValue K ℝ) :=
-    Set.range (fun v : InfinitePlace K ↦ v.1) ∪ (fun v : FinitePlace K ↦ v.1) '' S₀
+    Set.range (fun v : InfinitePlace K ↦ v.val) ∪ (fun v : FinitePlace K ↦ v.val) '' S₀
   have : Finite P := ((Set.finite_range _).union (S₀.finite_toSet.image _)).to_subtype
-  have hinf (v : InfinitePlace K) : v.1 ∈ P := Or.inl ⟨v, rfl⟩
-  have hfin {v : FinitePlace K} (hv : v ∈ S₀) : v.1 ∈ P := Or.inr ⟨v, hv, rfl⟩
+  have hinf (v : InfinitePlace K) : v.val ∈ P := Or.inl ⟨v, rfl⟩
+  have hfin {v : FinitePlace K} (hv : v ∈ S₀) : v.val ∈ P := Or.inr ⟨v, hv, rfl⟩
   -- the normalizing unit makes every value of a form of logarithmic height `≤ log H + C`
-  obtain ⟨C, hC⟩ := exists_forall_logHeight₁_apply_smul_le S (κ := P × ι) fun k ↦ L k.1.1 k.2
+  obtain ⟨C, hC⟩ := exists_forall_logHeight₁_apply_smul_le S (κ := P × ι) fun k ↦ L k.1.val k.2
   -- the mesh `1 / N` of the grid
   set W := approxWeight S₀ (fun (_ : AbsoluteValue K ℝ) (_ : ι) ↦ (1 : ℝ)) with hW
   have hW0 : 0 ≤ W := approxWeight_nonneg (fun _ _ ↦ zero_le_one) fun _ _ _ ↦ zero_le_one
@@ -200,15 +202,15 @@ theorem exists_finset_forall_exists_smul_mem_approxDomain (S₀ : Finset (Finite
       exact mulHeight_eq_prod_of_isPrimitive_image_maximalIdeal S₀ (by rwa [hS])
     · rwa [approxProd_smul (fun _ _ ↦ ⟨by ext; simp⟩) (fun _ _ ↦ ⟨by ext; simp⟩) hu0 x]
   -- rounding up to the grid raises the weight by at most `ε / 2`
-  obtain ⟨c₀, hc₀T, hc₀⟩ := hT₀ (fun k ↦ a k.1.1 k.2) fun k ↦ ha2 k.1.1 k.1.2 k.2
+  obtain ⟨c₀, hc₀T, hc₀⟩ := hT₀ (fun k ↦ a k.1.val k.2) fun k ↦ ha2 k.1.val k.1.property k.2
   have hg : ∀ v ∈ P, ∀ i, a v i ≤ ext c₀ v i ∧ ext c₀ v i ≤ a v i + 1 / N := fun v hv i ↦ by
     simp only [ext, hv, dite_true]
     exact ⟨(hc₀ (⟨v, hv⟩, i)).1, (hc₀ (⟨v, hv⟩, i)).2.le⟩
   have hwc : approxWeight S₀ (ext c₀) ≤ -(ε / 2) := by
     have h := approxWeight_mono (S₀ := S₀) (c₁ := ext c₀)
       (c₂ := a + (1 / (N : ℝ)) • fun _ _ ↦ 1)
-      (fun v i ↦ by simpa using (hg v.1 (hinf v) i).2)
-      fun v hv i ↦ by simpa using (hg v.1 (hfin hv) i).2
+      (fun v i ↦ by simpa using (hg v.val (hinf v) i).2)
+      fun v hv i ↦ by simpa using (hg v.val (hfin hv) i).2
     rw [approxWeight_add, approxWeight_smul, ← hW] at h
     rw [div_lt_iff₀ hε] at hN
     have hWN : 1 / (N : ℝ) * W ≤ ε / 2 := by

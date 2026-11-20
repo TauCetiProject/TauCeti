@@ -26,11 +26,14 @@ The multilinear counterpart, and the degree calculus for substitution, are in
 ## Main definitions
 
 * `LinearMap.IsHomogeneous`: a linear map shifts homogeneous degree by a fixed amount.
+* `LinearMap.IsHomogeneous.restrict`: restriction of a degree-zero homogeneous map to each piece.
 * `LinearMap.homogeneousSubmodule`: the submodule of linear maps of a fixed degree.
 
 ## Main results
 
 * `LinearMap.IsHomogeneous.comp`: degrees add under composition of linear maps.
+* `LinearMap.IsHomogeneous.restrict_zero`, `LinearMap.IsHomogeneous.restrict_id`, and
+  `LinearMap.IsHomogeneous.restrict_comp`: functoriality of `IsHomogeneous.restrict`.
 
 ## References
 
@@ -99,6 +102,44 @@ theorem IsHomogeneous.comp {P : Type uP} {σP : Type*} [AddCommMonoid P] [Module
     IsHomogeneous (g.comp f) 𝒜 𝒞 (q + r) := by
   intro p x hx
   simpa only [_root_.LinearMap.comp_apply, add_assoc] using hg (hf hx)
+
+/-- A degree-zero homogeneous linear map restricts to a linear map on each graded piece. -/
+def IsHomogeneous.restrict {g : M →ₗ[R] N} {ℳ : ι → Submodule R M} {𝒩 : ι → Submodule R N}
+    (hg : IsHomogeneous g ℳ 𝒩 0) (k : ι) : ℳ k →ₗ[R] 𝒩 k :=
+  g.restrict fun _ hx ↦ by simpa only [add_zero] using hg.map_mem hx
+
+/-- Coercing `IsHomogeneous.restrict` back to the ambient module applies the original map. -/
+@[simp]
+theorem IsHomogeneous.coe_restrict_apply {g : M →ₗ[R] N} {ℳ : ι → Submodule R M}
+    {𝒩 : ι → Submodule R N} (hg : IsHomogeneous g ℳ 𝒩 0) (k : ι) (x : ℳ k) :
+    (hg.restrict k x : N) = g x :=
+  _root_.LinearMap.coe_restrict_apply _ x
+
+/-- Restricting the zero linear map to any graded piece gives zero. -/
+@[simp]
+theorem IsHomogeneous.restrict_zero {ℳ : ι → Submodule R M} {𝒩 : ι → Submodule R N}
+    (hg : IsHomogeneous (0 : M →ₗ[R] N) ℳ 𝒩 0) (k : ι) :
+    hg.restrict k = 0 := by
+  ext x
+  simp
+
+/-- Restricting the identity linear map to any graded piece gives the identity. -/
+@[simp]
+theorem IsHomogeneous.restrict_id {ℳ : ι → Submodule R M}
+    (hg : IsHomogeneous (_root_.LinearMap.id : M →ₗ[R] M) ℳ ℳ 0) (k : ι) :
+    hg.restrict k = _root_.LinearMap.id := by
+  ext x
+  simp
+
+/-- Restricting a composite of degree-zero homogeneous linear maps to a graded piece is the
+composite of their piece restrictions. -/
+theorem IsHomogeneous.restrict_comp {P : Type uP} [AddCommMonoid P] [Module R P]
+    {f : M →ₗ[R] N} {g : N →ₗ[R] P} {ℳ : ι → Submodule R M} {𝒩 : ι → Submodule R N}
+    {𝒞 : ι → Submodule R P} (hg : IsHomogeneous g 𝒩 𝒞 0) (hf : IsHomogeneous f ℳ 𝒩 0) (k : ι)
+    (hcomp : IsHomogeneous (g.comp f) ℳ 𝒞 0 := by simpa only [add_zero] using hg.comp hf) :
+    hcomp.restrict k = (hg.restrict k).comp (hf.restrict k) := by
+  ext x
+  simp
 
 end Semiring
 
