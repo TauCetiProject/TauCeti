@@ -40,7 +40,8 @@ space side.
   `compCLMOfContinuousLinearEquiv_apply_apply`, its value on Schwartz functions
   `compCLMOfContinuousLinearEquiv_toTemperedDistributionCLM`, and functoriality
   `compCLMOfContinuousLinearEquiv_trans`, `compCLMOfContinuousLinearEquiv_refl` and
-  `compCLMOfContinuousLinearEquiv_symm_apply`.
+  `compCLMOfContinuousLinearEquiv_symm_apply_apply`,
+  `compCLMOfContinuousLinearEquiv_apply_symm_apply`.
 * `TemperedDistribution.compCLMOfContinuousLinearEquiv_linearIsometryEquiv_apply_apply`: for a
   linear isometry, `(A^* T) f = T (f ∘ A⁻¹)`.
 * `TemperedDistribution.fourier_compCLMOfContinuousLinearEquiv` and
@@ -82,9 +83,11 @@ Schwartz function `u` it gives that of `u ∘ e`
 (`TemperedDistribution.compCLMOfContinuousLinearEquiv_toTemperedDistributionCLM`). -/
 def compCLMOfContinuousLinearEquiv (e : E ≃L[ℝ] E) : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F) :=
   compCLM F e.toEquiv
-    (show (e.toEquiv : E → E).HasTemperateGrowth from e.toContinuousLinearMap.hasTemperateGrowth)
-    (show (e.toEquiv.symm : E → E).HasTemperateGrowth from
-      e.symm.toContinuousLinearMap.hasTemperateGrowth)
+    (by rw [LinearEquiv.coe_toEquiv, ContinuousLinearEquiv.coe_toLinearEquiv]
+        exact e.hasTemperateGrowth)
+    (by rw [← LinearEquiv.toEquiv_symm, ← ContinuousLinearEquiv.toLinearEquiv_symm,
+          LinearEquiv.coe_toEquiv, ContinuousLinearEquiv.coe_toLinearEquiv]
+        exact e.symm.hasTemperateGrowth)
 
 /-- The pullback `e^* T` pairs a Schwartz function `f` with `T` through
 `|det e|⁻¹ T (f ∘ e⁻¹)`. -/
@@ -96,8 +99,10 @@ theorem compCLMOfContinuousLinearEquiv_apply_apply (e : E ≃L[ℝ] E) (T : 𝓢
   rw [compCLMOfContinuousLinearEquiv, compCLM_apply_apply, ← map_smul]
   congr 1
   ext y
-  have hd : fderiv ℝ (e.toEquiv.symm : E → E) y = (e.symm : E →L[ℝ] E) :=
-    e.symm.fderiv
+  have hd : fderiv ℝ (e.toEquiv.symm : E → E) y = (e.symm : E →L[ℝ] E) := by
+    rw [← LinearEquiv.toEquiv_symm, ← ContinuousLinearEquiv.toLinearEquiv_symm,
+      LinearEquiv.coe_toEquiv, ContinuousLinearEquiv.coe_toLinearEquiv]
+    exact e.symm.fderiv
   have hdet : LinearMap.det ((e.symm : E →L[ℝ] E) : E →ₗ[ℝ] E) =
       (LinearMap.det (e : E →ₗ[ℝ] E))⁻¹ :=
     LinearEquiv.det_coe_symm (e : E ≃ₗ[ℝ] E)
@@ -124,10 +129,19 @@ theorem compCLMOfContinuousLinearEquiv_refl (T : 𝓢'(E, F)) :
 
 /-- Pulling back along `e` and then along `e⁻¹` gives back the original distribution. -/
 @[simp]
-theorem compCLMOfContinuousLinearEquiv_symm_apply (e : E ≃L[ℝ] E) (T : 𝓢'(E, F)) :
+theorem compCLMOfContinuousLinearEquiv_symm_apply_apply (e : E ≃L[ℝ] E) (T : 𝓢'(E, F)) :
     compCLMOfContinuousLinearEquiv F e.symm (compCLMOfContinuousLinearEquiv F e T) = T := by
-  rw [compCLMOfContinuousLinearEquiv, compCLMOfContinuousLinearEquiv]
-  exact compCLM_symm_compCLM (φ := (e : E ≃ₗ[ℝ] E).toEquiv) _ _ _ T
+  simp only [compCLMOfContinuousLinearEquiv, ContinuousLinearEquiv.toLinearEquiv_symm,
+    LinearEquiv.toEquiv_symm]
+  exact compCLM_symm_compCLM _ _ _ T
+
+/-- Pulling back along `e⁻¹` and then along `e` gives back the original distribution. -/
+@[simp]
+theorem compCLMOfContinuousLinearEquiv_apply_symm_apply (e : E ≃L[ℝ] E) (T : 𝓢'(E, F)) :
+    compCLMOfContinuousLinearEquiv F e (compCLMOfContinuousLinearEquiv F e.symm T) = T := by
+  simp only [compCLMOfContinuousLinearEquiv, ContinuousLinearEquiv.toLinearEquiv_symm,
+    LinearEquiv.toEquiv_symm]
+  exact compCLM_compCLM_symm _ _ _ T
 
 end Pullback
 
@@ -212,7 +226,10 @@ theorem fourierMultiplierCLM_compCLMOfContinuousLinearEquiv (A : E ≃ₗᵢ[ℝ
     (hg : g.HasTemperateGrowth) (hgA : ∀ ξ, g (A ξ) = g ξ) (T : 𝓢'(E, F)) :
     fourierMultiplierCLM F g (compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv T) =
       compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (fourierMultiplierCLM F g T) := by
-  have hcomp : g ∘ A.toContinuousLinearEquiv.toEquiv = g := funext hgA
+  have hcomp : g ∘ A.toContinuousLinearEquiv.toEquiv = g := by
+    rw [LinearEquiv.coe_toEquiv, ContinuousLinearEquiv.coe_toLinearEquiv,
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+    exact funext hgA
   have hsmul (S : 𝓢'(E, F)) : smulLeftCLM F g (compCLMOfContinuousLinearEquiv F
       A.toContinuousLinearEquiv S) =
         compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv (smulLeftCLM F g S) := by

@@ -80,9 +80,10 @@ equivalence of the Bessel-potential space `H^{s,p}(E, F)`, for every real `s` an
 def compLinearIsometryEquiv (A : E ≃ₗᵢ[ℝ] E) : H^{s, p}(E, F) ≃ₗᵢ[ℂ] H^{s, p}(E, F) where
   toFun := compLinearIsometry A
   invFun := compLinearIsometry A.symm
-  left_inv u := ext (compCLMOfContinuousLinearEquiv_symm_apply A.toContinuousLinearEquiv u.toDistr)
+  left_inv u := ext
+    (compCLMOfContinuousLinearEquiv_symm_apply_apply A.toContinuousLinearEquiv u.toDistr)
   right_inv u := ext
-    (compCLMOfContinuousLinearEquiv_symm_apply A.symm.toContinuousLinearEquiv u.toDistr)
+    (compCLMOfContinuousLinearEquiv_symm_apply_apply A.symm.toContinuousLinearEquiv u.toDistr)
   map_add' u v := ext (map_add (compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv) _ _)
   map_smul' c u := ext (map_smul (compCLMOfContinuousLinearEquiv F A.toContinuousLinearEquiv) _ _)
   norm_map' u := by
