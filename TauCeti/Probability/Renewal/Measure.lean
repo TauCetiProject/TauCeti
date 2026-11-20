@@ -47,7 +47,8 @@ measure and the renewal function are the objects of the renewal limit theorems a
 * `MeasureTheory.Measure.isLocallyFiniteMeasure_of_renewalMeasure` — `F` is locally finite when
   `U` is.
 * `MeasureTheory.Measure.renewalMeasure_eq_dirac_add_conv` — the renewal equation
-  `U = δ₀ + F ∗ U`.
+  `U = δ₀ + F ∗ U`, and `MeasureTheory.Measure.renewalMeasure_sub_dirac`, identifying
+  `U - δ₀` with `F ∗ U`.
 * `MeasureTheory.Measure.renewalFunction_eq_tsum` — `m t = ∑_{n ≥ 1} F^{∗n} [0, t]`.
 * `MeasureTheory.Measure.renewalMeasure_Iic` — `U [0, t] = 1 + m t`.
 * `TauCeti.Probability.lintegral_renewalCount` — `𝔼[N t] = m t` for i.i.d. increments, and

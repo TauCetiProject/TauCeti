@@ -14,6 +14,7 @@ public import Mathlib.Probability.IdentDistribIndep
 public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.MeasureTheory.MeasurableSpace.Pi
 public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
+public import TauCeti.Analysis.Matrix.Frobenius
 
 /-!
 # Wigner matrices
@@ -49,7 +50,9 @@ and resolvent methods:
   (`integrable_prod_wignerMatrix_apply`);
 * the normalisation check `E trₙ Hₙ² = (σ² + (n - 1) s)/n` when the diagonal entries have second
   moment `σ²` and the off-diagonal ones second absolute moment `s`
-  (`integral_re_trace_wignerMatrix_mul_self`).
+  (`integral_re_trace_wignerMatrix_mul_self`), and its consequence that two Wigner arrays sharing
+  a diagonal whose upper differences have second absolute moment `s` differ at size `n + 1` by
+  expected squared Frobenius norm `n s` (`integral_norm_wignerMatrix_sub_sq`).
 
 Centring, the second-moment normalisation and independence of the entries are not properties of
 the constructor: each theorem that uses one states it as a hypothesis.
@@ -219,6 +222,15 @@ end
 section Deterministic
 
 variable (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ) {n : ℕ} (ω : Ω)
+
+/-- Subtracting two Wigner matrices subtracts their coordinate arrays, including at size zero. -/
+@[simp]
+theorem wignerMatrix_sub (ξ' : StrictUpper → Ω → ℂ) (η' : ℕ → Ω → ℝ) (n : ℕ) :
+    wignerMatrix ξ η n ω - wignerMatrix ξ' η' n ω =
+      wignerMatrix (fun ij ω ↦ ξ ij ω - ξ' ij ω) (fun i ω ↦ η i ω - η' i ω) n ω := by
+  ext i j
+  simp only [wignerMatrix, of_apply, Matrix.sub_apply]
+  split_ifs <;> simp_all [mul_sub, -Fin.val_fin_lt]
 
 /-- Above the diagonal the Wigner matrix has entry `ξ (i, j)/√n`. -/
 @[simp]
@@ -581,6 +593,19 @@ theorem memLp_wignerMatrix_apply {p : ℝ≥0∞} {n : ℕ}
   · simp only [wignerMatrix_apply_of_gt _ _ _ h]
     exact (hξ _ i.isLt).star.const_mul _
 
+open scoped Matrix.Norms.Frobenius in
+/-- If the corner entries of size `n` are square-integrable, the squared Frobenius norm of the
+`n × n` Wigner matrix is integrable. -/
+theorem integrable_norm_wignerMatrix_sq {n : ℕ}
+    (hξ : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) 2 P)
+    (hη : ∀ i < n, MemLp (η i) 2 P) :
+    Integrable (fun ω ↦ ‖wignerMatrix ξ η n ω‖ ^ 2) P := by
+  simp_rw [Matrix.frobenius_norm_sq_eq_sum_normSq, Complex.normSq_eq_norm_sq]
+  exact integrable_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦
+    (memLp_two_iff_integrable_sq_norm
+      (memLp_wignerMatrix_apply hξ hη i j).aestronglyMeasurable).mp
+        (memLp_wignerMatrix_apply hξ hη i j)
+
 /-- A product of `k` entries of an `n × n` Wigner matrix, indexed by a finite type `ι` of
 cardinality `k`, is integrable when the corner entries of size `n` lie in `Lᵏ`. -/
 theorem integrable_prod_wignerMatrix_apply [IsFiniteMeasure P] {ι : Type*} [Fintype ι] {n : ℕ}
@@ -651,6 +676,38 @@ theorem integral_re_trace_wignerMatrix_mul_self {σ2 s : ℝ}
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   · field_simp
+
+open scoped Matrix.Norms.Frobenius in
+/-- Keeping the same diagonal, a common second absolute moment `s` of the upper-coordinate
+differences gives expected squared Frobenius error `n * s` at size `n + 1`. -/
+theorem integral_norm_wignerMatrix_sub_sq {ξ' : StrictUpper → Ω → ℂ}
+    (hξ : ∀ ij, MemLp (fun ω ↦ ξ ij ω - ξ' ij ω) 2 P)
+    {s : ℝ} (hs : ∀ ij, ∫ ω, ‖ξ ij ω - ξ' ij ω‖ ^ 2 ∂P = s) (n : ℕ) :
+    ∫ ω, ‖wignerMatrix ξ η (n + 1) ω - wignerMatrix ξ' η (n + 1) ω‖ ^ 2 ∂P = n * s := by
+  let d (ij : StrictUpper) (ω : Ω) := ξ ij ω - ξ' ij ω
+  have heq (ω : Ω) : wignerMatrix ξ η (n + 1) ω - wignerMatrix ξ' η (n + 1) ω =
+      wignerMatrix d (fun _ _ ↦ 0) (n + 1) ω := by
+    simp only [wignerMatrix_sub, sub_self, d]
+  have hn (ω : Ω) :
+      (((n + 1 : ℂ)⁻¹ *
+        (wignerMatrix d (fun _ _ ↦ 0) (n + 1) ω *
+          wignerMatrix d (fun _ _ ↦ 0) (n + 1) ω).trace).re) =
+        (n + 1 : ℝ)⁻¹ * ‖wignerMatrix d (fun _ _ ↦ 0) (n + 1) ω‖ ^ 2 := by
+    rw [(wignerMatrix_isHermitian d (fun _ _ ↦ 0) ω _).trace_mul_self_eq_sum_norm_sq,
+      Matrix.frobenius_norm_sq_eq_sum_normSq]
+    simp only [Complex.normSq_eq_norm_sq,
+      ← Complex.ofReal_natCast, ← Complex.ofReal_one, ← Complex.ofReal_add,
+      ← Complex.ofReal_inv, ← Complex.ofReal_mul, Complex.ofReal_re]
+  have h := integral_re_trace_wignerMatrix_mul_self (ξ := d) (η := fun _ _ ↦ 0) (σ2 := 0)
+    (fun ij ↦ (memLp_two_iff_integrable_sq_norm (hξ ij).aestronglyMeasurable).mp (hξ ij))
+    hs (fun _ ↦ by simp) (fun _ ↦ by simp) (n + 1)
+  simp only [Nat.cast_add, Nat.cast_one] at h
+  simp only [hn, integral_const_mul] at h
+  simp_rw [heq]
+  have hN : (n + 1 : ℝ) ≠ 0 := by positivity
+  simp only [add_sub_cancel_right, zero_add] at h
+  field_simp at h
+  exact h
 
 end SecondMoment
 
