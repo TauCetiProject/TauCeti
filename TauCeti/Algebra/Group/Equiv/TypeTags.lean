@@ -49,6 +49,4 @@ theorem MonoidHom.ext_ofAdd_single [Finite ι] {N : Type*} [Monoid N]
     (MulEquiv.funMultiplicative ι M).symm.surjective).mp <|
     MonoidHom.pi_ext fun i r ↦ ?_
   obtain ⟨r, rfl⟩ := ofAdd.surjective r
-  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    ← MulEquiv.funMultiplicative_ofAdd_single, MulEquiv.symm_apply_apply]
-  exact h i r
+  simpa [← MulEquiv.funMultiplicative_ofAdd_single] using h i r
