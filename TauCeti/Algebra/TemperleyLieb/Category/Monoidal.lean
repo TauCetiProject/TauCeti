@@ -181,25 +181,6 @@ private theorem tensorHom_smul (r : R) (f : X ⟶ Y) (g : X' ⟶ Y') :
     f ⊗ₘ (r • g) = r • (f ⊗ₘ g) :=
   hom_ext <| by simp [coeff_tensorHom]
 
-private theorem nested_zero_eq_id (n : ℕ) :
-    (⟨PlanarMatching.nested n, 0⟩ : TLDiagram n n) = TLDiagram.id n :=
-  TLDiagram.ext (by simp) (by simp)
-
-/-- Induction on morphisms of `TLCat R δ` along the diagram basis. -/
-@[elab_as_elim]
-private theorem hom_induction {motive : (X ⟶ Y) → Prop} (zero : motive 0)
-    (add : ∀ f g, motive f → motive g → motive (f + g))
-    (smul : ∀ (r : R) f, motive f → motive (r • f)) (basis : ∀ x, motive (diagBasis X Y x))
-    (f : X ⟶ Y) : motive f := by
-  have hf : f ∈ Submodule.span R (Set.range (diagBasis X Y)) := by
-    rw [(diagBasis X Y).span_eq]
-    exact Submodule.mem_top
-  induction hf using Submodule.span_induction with
-  | mem _ h => obtain ⟨x, rfl⟩ := h; exact basis x
-  | zero => exact zero
-  | add _ _ _ _ h₁ h₂ => exact add _ _ h₁ h₂
-  | smul r _ _ h => exact smul r _ h
-
 /-- Every basis morphism is the image of a circle-free diagram under linearization. -/
 private theorem diagBasis_eq_linearize_map (x : PlanarMatching (X.as + Y.as)) :
     diagBasis X Y x =
@@ -208,6 +189,7 @@ private theorem diagBasis_eq_linearize_map (x : PlanarMatching (X.as + Y.as)) :
 
 /-- **Linearization preserves tensor products of morphisms**: juxtaposition adds the circle counts
 of two diagrams, and `δ ^ (c + c') = δ ^ c * δ ^ c'`. -/
+@[simp]
 theorem linearize_map_tensorHom {X Y X' Y' : TLDiagCat} (f : X ⟶ Y) (g : X' ⟶ Y') :
     (linearize R δ).map (f ⊗ₘ g) = (linearize R δ).map f ⊗ₘ (linearize R δ).map g := by
   have h : (δ ^ f.diagram.circles •
@@ -232,10 +214,18 @@ stated between the objects `(linearize R δ).obj (TLDiagCat.of X.as)`, which are
 of `linearize R δ` on objects, and the structure isomorphisms of `TLCat R δ` are the transports
 `eqToHom` of `associator_hom`, `leftUnitor_hom` and `rightUnitor_hom`. -/
 
+section Axioms
+
+/- The bilinearity lemmas reduce the zero, sum and scalar cases of each basis induction below to
+the inductive hypotheses. -/
+attribute [local simp] zero_tensorHom tensorHom_zero add_tensorHom tensorHom_add smul_tensorHom
+  tensorHom_smul
+
 private theorem id_tensorHom_id' (X Y : TLCat R δ) : 𝟙 X ⊗ₘ 𝟙 Y = 𝟙 (X ⊗ Y) := by
   rw [id_eq_diagBasis, id_eq_diagBasis, diagBasis_tensorHom_diagBasis, id_eq_diagBasis,
-    nested_zero_eq_id, nested_zero_eq_id, TLDiagram.id_tensor_id, TLDiagram.matching_id]
-  rfl
+    TLDiagram.mk_nested_zero, TLDiagram.mk_nested_zero, TLDiagram.id_tensor_id,
+    TLDiagram.matching_id]
+  dsimp only [tensorObj_as]
 
 private theorem tensorHom_comp_tensorHom' {X₁ Y₁ Z₁ X₂ Y₂ Z₂ : TLCat R δ} (f₁ : X₁ ⟶ Y₁)
     (f₂ : X₂ ⟶ Y₂) (g₁ : Y₁ ⟶ Z₁) (g₂ : Y₂ ⟶ Z₂) :
@@ -255,14 +245,10 @@ private theorem tensorHom_comp_tensorHom' {X₁ Y₁ Z₁ X₂ Y₂ Z₂ : TLCat
             (TLDiagCat.Hom.mk ⟨y₂, 0⟩ : TLDiagCat.of _ ⟶ TLDiagCat.of _))
           simp only [Functor.map_comp, linearize_map_tensorHom, ← diagBasis_eq_linearize_map] at h
           exact h
-        | _ => simp_all only [tensorHom_zero, tensorHom_add, tensorHom_smul, Limits.comp_zero,
-            Preadditive.comp_add, Linear.comp_smul]
-      | _ => simp_all only [zero_tensorHom, add_tensorHom, smul_tensorHom, Limits.comp_zero,
-          Preadditive.comp_add, Linear.comp_smul]
-    | _ => simp_all only [tensorHom_zero, tensorHom_add, tensorHom_smul, Limits.zero_comp,
-        Preadditive.add_comp, Linear.smul_comp]
-  | _ => simp_all only [zero_tensorHom, add_tensorHom, smul_tensorHom, Limits.zero_comp,
-      Preadditive.add_comp, Linear.smul_comp]
+        | _ => simp_all
+      | _ => simp_all
+    | _ => simp_all
+  | _ => simp_all
 
 private theorem associator_naturality' {X₁ X₂ X₃ Y₁ Y₂ Y₃ : TLCat R δ} (f₁ : X₁ ⟶ Y₁)
     (f₂ : X₂ ⟶ Y₂) (f₃ : X₃ ⟶ Y₃) :
@@ -281,15 +267,9 @@ private theorem associator_naturality' {X₁ X₂ X₃ Y₁ Y₂ Y₃ : TLCat R 
           TLDiagCat.associator_hom, eqToHom_map] at h
         rw [associator_hom, associator_hom]
         exact h
-      | _ => simp_all only [tensorHom_zero, tensorHom_add, tensorHom_smul, Limits.zero_comp,
-          Limits.comp_zero, Preadditive.add_comp, Preadditive.comp_add, Linear.smul_comp,
-          Linear.comp_smul]
-    | _ => simp_all only [zero_tensorHom, add_tensorHom, smul_tensorHom, tensorHom_zero,
-        tensorHom_add, tensorHom_smul, Limits.zero_comp, Limits.comp_zero, Preadditive.add_comp,
-        Preadditive.comp_add, Linear.smul_comp, Linear.comp_smul]
-  | _ => simp_all only [zero_tensorHom, add_tensorHom, smul_tensorHom, Limits.zero_comp,
-      Limits.comp_zero, Preadditive.add_comp, Preadditive.comp_add, Linear.smul_comp,
-      Linear.comp_smul]
+      | _ => simp_all
+    | _ => simp_all
+  | _ => simp_all
 
 private theorem leftUnitor_naturality' {X Y : TLCat R δ} (f : X ⟶ Y) :
     (𝟙 (𝟙_ (TLCat R δ)) ⊗ₘ f) ≫ (λ_ Y).hom = (λ_ X).hom ≫ f := by
@@ -301,9 +281,7 @@ private theorem leftUnitor_naturality' {X Y : TLCat R δ} (f : X ⟶ Y) :
       ← diagBasis_eq_linearize_map, TLDiagCat.leftUnitor_hom, eqToHom_map] at h
     rw [leftUnitor_hom, leftUnitor_hom]
     exact h
-  | _ => simp_all only [tensorHom_zero, tensorHom_add, tensorHom_smul, Limits.zero_comp,
-      Limits.comp_zero, Preadditive.add_comp, Preadditive.comp_add, Linear.smul_comp,
-      Linear.comp_smul]
+  | _ => simp_all
 
 private theorem rightUnitor_naturality' {X Y : TLCat R δ} (f : X ⟶ Y) :
     (f ⊗ₘ 𝟙 (𝟙_ (TLCat R δ))) ≫ (ρ_ Y).hom = (ρ_ X).hom ≫ f := by
@@ -315,9 +293,7 @@ private theorem rightUnitor_naturality' {X Y : TLCat R δ} (f : X ⟶ Y) :
       ← diagBasis_eq_linearize_map, TLDiagCat.rightUnitor_hom, eqToHom_map] at h
     rw [rightUnitor_hom, rightUnitor_hom]
     exact h
-  | _ => simp_all only [zero_tensorHom, add_tensorHom, smul_tensorHom, Limits.zero_comp,
-      Limits.comp_zero, Preadditive.add_comp, Preadditive.comp_add, Linear.smul_comp,
-      Linear.comp_smul]
+  | _ => simp_all
 
 private theorem pentagon' (W X Y Z : TLCat R δ) :
     ((α_ W X Y).hom ⊗ₘ 𝟙 Z) ≫ (α_ W (X ⊗ Y) Z).hom ≫ (𝟙 W ⊗ₘ (α_ X Y Z).hom) =
@@ -338,6 +314,8 @@ private theorem triangle' (X Y : TLCat R δ) :
   simp only [associator_hom, leftUnitor_hom, rightUnitor_hom]
   exact h
 
+end Axioms
+
 /-- **The linear Temperley–Lieb category is monoidal** under juxtaposition of diagrams. The
 monoidal structure is strict: the tensor product of objects adds the numbers of points, and the
 associators and unitors are transports along equalities of objects. -/
@@ -355,7 +333,7 @@ matching of `y` with `X.as` straight strands on its left. -/
 theorem whiskerLeft_diagBasis (X : TLCat R δ) (y : PlanarMatching (Y.as + Z.as)) :
     X ◁ diagBasis Y Z y =
       diagBasis (X ⊗ Y) (X ⊗ Z) ((TLDiagram.id X.as).tensor ⟨y, 0⟩).matching := by
-  rw [← id_tensorHom, id_eq_diagBasis, diagBasis_tensorHom_diagBasis, nested_zero_eq_id]
+  rw [← id_tensorHom, id_eq_diagBasis, diagBasis_tensorHom_diagBasis, TLDiagram.mk_nested_zero]
 
 /-- The right whiskering `diagBasis X Y x ▷ Z` of a basis morphism is the basis morphism of the
 matching of `x` with `Z.as` straight strands on its right. -/
@@ -363,7 +341,7 @@ matching of `x` with `Z.as` straight strands on its right. -/
 theorem diagBasis_whiskerRight (x : PlanarMatching (X.as + Y.as)) (Z : TLCat R δ) :
     diagBasis X Y x ▷ Z =
       diagBasis (X ⊗ Z) (Y ⊗ Z) (TLDiagram.tensor ⟨x, 0⟩ (TLDiagram.id Z.as)).matching := by
-  rw [← tensorHom_id, id_eq_diagBasis, diagBasis_tensorHom_diagBasis, nested_zero_eq_id]
+  rw [← tensorHom_id, id_eq_diagBasis, diagBasis_tensorHom_diagBasis, TLDiagram.mk_nested_zero]
 
 /-- The tensor product on `TLCat R δ` is additive in each variable. -/
 instance instMonoidalPreadditive : MonoidalPreadditive (TLCat R δ) where
@@ -435,15 +413,37 @@ theorem linearize_map_associator_hom (X Y Z : TLDiagCat) :
       (α_ ((linearize R δ).obj X) ((linearize R δ).obj Y) ((linearize R δ).obj Z)).hom := by
   rw [TLDiagCat.associator_hom, eqToHom_map, associator_hom]
 
+/-- Linearization sends the inverse associator of `TLDiagCat` to that of `TLCat R δ`. -/
+@[simp]
+theorem linearize_map_associator_inv (X Y Z : TLDiagCat) :
+    (linearize R δ).map (α_ X Y Z).inv =
+      (α_ ((linearize R δ).obj X) ((linearize R δ).obj Y) ((linearize R δ).obj Z)).inv := by
+  rw [TLDiagCat.associator_inv, eqToHom_map, associator_inv]
+
+/-! The unitor comparisons are not `@[simp]`: Mathlib's simp lemmas
+`Functor.LaxMonoidal.left_unitality` and `Functor.LaxMonoidal.right_unitality` rewrite the unitor
+of `(linearize R δ).obj X` back into an expression containing `(linearize R δ).map` of a unitor,
+so simp would loop. -/
+
 /-- Linearization sends the left unitor of `TLDiagCat` to the left unitor of `TLCat R δ`. -/
 theorem linearize_map_leftUnitor_hom (X : TLDiagCat) :
     (linearize R δ).map (λ_ X).hom = (λ_ ((linearize R δ).obj X)).hom := by
   rw [TLDiagCat.leftUnitor_hom, eqToHom_map, leftUnitor_hom]
 
+/-- Linearization sends the inverse left unitor of `TLDiagCat` to that of `TLCat R δ`. -/
+theorem linearize_map_leftUnitor_inv (X : TLDiagCat) :
+    (linearize R δ).map (λ_ X).inv = (λ_ ((linearize R δ).obj X)).inv := by
+  rw [TLDiagCat.leftUnitor_inv, eqToHom_map, leftUnitor_inv]
+
 /-- Linearization sends the right unitor of `TLDiagCat` to the right unitor of `TLCat R δ`. -/
 theorem linearize_map_rightUnitor_hom (X : TLDiagCat) :
     (linearize R δ).map (ρ_ X).hom = (ρ_ ((linearize R δ).obj X)).hom := by
   rw [TLDiagCat.rightUnitor_hom, eqToHom_map, rightUnitor_hom]
+
+/-- Linearization sends the inverse right unitor of `TLDiagCat` to that of `TLCat R δ`. -/
+theorem linearize_map_rightUnitor_inv (X : TLDiagCat) :
+    (linearize R δ).map (ρ_ X).inv = (ρ_ ((linearize R δ).obj X)).inv := by
+  rw [TLDiagCat.rightUnitor_inv, eqToHom_map, rightUnitor_inv]
 
 /-! ### The monoidal universal property -/
 
@@ -512,14 +512,18 @@ instance : NatTrans.IsMonoidal (linearizeLiftDiagIso F hF).hom where
   unit := by
     simp only [Functor.comp_obj, Functor.LaxMonoidal.comp_ε, liftDiag_ε, linearize_ε,
       CategoryTheory.Functor.map_id, linearizeLiftDiagIso_hom_app]
-    exact (Category.comp_id _).trans (Category.comp_id _)
-  tensor _ _ := by
+    -- The object `(liftDiag F hF).obj (𝟙_ (TLCat R δ))` is `F.obj (𝟙_ TLDiagCat)` by definition,
+    -- but only up to unfolding, which blocks `simp`; restate the goal over `F.obj`.
+    change (Functor.LaxMonoidal.ε F ≫ 𝟙 _) ≫ 𝟙 (F.obj (𝟙_ TLDiagCat)) = _
+    simp
+  tensor X Y := by
     simp only [Functor.comp_obj, Functor.LaxMonoidal.comp_μ, liftDiag_μ, linearize_μ,
       CategoryTheory.Functor.map_id, linearizeLiftDiagIso_hom_app]
-    -- Up to identities, both sides are `μ F X Y`, where the objects
-    -- `TLDiagCat.of ((linearize R δ).obj X).as` on the left are `X` by definition.
-    exact (Category.comp_id _).trans ((Category.comp_id _).trans
-      ((Category.id_comp _).symm.trans (congrArg (· ≫ _) (id_tensorHom_id _ _).symm)))
+    -- As for `unit`, the objects coming from `(liftDiag F hF).obj ((linearize R δ).obj X)` are
+    -- `F.obj X` by definition; restate the goal over `F.obj`.
+    change (Functor.LaxMonoidal.μ F X Y ≫ 𝟙 (F.obj (X ⊗ Y))) ≫ 𝟙 (F.obj (X ⊗ Y)) =
+      (𝟙 (F.obj X) ⊗ₘ 𝟙 (F.obj Y)) ≫ Functor.LaxMonoidal.μ F X Y
+    simp
 
 end LiftDiag
 
