@@ -90,6 +90,10 @@ polynomial of weight `m` that lies in the square of `idealOfVars σ R` has weigh
   `c ^ w i` multiplies the value of a polynomial of weight `m` by `c ^ m`.
 * `MvPolynomial.coeff_aeval_C_X_mul_X_pow`: the coefficient of `T ^ n` in the substitution
   `X i ↦ X i * T ^ w i` is the weighted homogeneous component of weight `n`.
+* `MvPolynomial.IsWeightedHomogeneous.aeval_C_X_mul_X_pow`: that substitution multiplies a
+  polynomial of weight `n` by `T ^ n`.
+* `MvPolynomial.IsWeightedHomogeneous.comp_weight`: an additive map of the weights preserves
+  weighted homogeneity.
 * `MvPolynomial.IsWeightedHomogeneous.eval₂_eq_zero`: a polynomial of nonzero weight vanishes at
   a point whose coordinates of nonzero weight vanish.
 * `MvPolynomial.IsWeightedHomogeneous.eq_zero_of_eval₂_ne_zero`: the block form, a nonzero value
@@ -164,6 +168,15 @@ theorem IsWeightedHomogeneous.aeval {M : Type*} [AddCommMonoid M] {w : σ → M}
   have := WeightedHomogeneousSubmodule.gradedMonoid (R := R) (w := v)
   hφ.aeval_mem (𝒜 := weightedHomogeneousSubmodule R v) hg
 
+/-- Weighted homogeneity is preserved by an additive map of the weights: if `φ` is weighted
+homogeneous of weight `m` for the weights `w`, it is weighted homogeneous of weight `r m` for the
+weights `r ∘ w`. For instance `r = Nat.castAddMonoidHom ℤ` turns natural weights into integer
+weights. -/
+theorem IsWeightedHomogeneous.comp_weight {M N : Type*} [AddCommMonoid M] [AddCommMonoid N]
+    {w : σ → M} {φ : MvPolynomial σ R} {m : M} (hφ : φ.IsWeightedHomogeneous w m) (r : M →+ N) :
+    φ.IsWeightedHomogeneous (r ∘ w) (r m) := fun d hd ↦ by
+  simp only [← hφ hd, Finsupp.weight_apply, map_finsuppSum, map_nsmul, Function.comp_apply]
+
 /-- Substituting, for each variable `i`, a polynomial that is weighted homogeneous of weight
 `w i` for the weights `v` commutes with taking weighted homogeneous components: the component of
 weight `m` of the substitution is the substitution of the component of weight `m`. -/
@@ -200,6 +213,19 @@ theorem coeff_aeval_C_X_mul_X_pow (w : σ → ℕ) (φ : MvPolynomial σ R) (n :
     rw [h, Polynomial.coeff_C_mul_X_pow, weightedHomogeneousComponent_of_mem
       (isWeightedHomogeneous_monomial w d r rfl)]
   | add p q hp hq => simp [hp, hq]
+
+/-- Substituting `X i * T ^ w i` for each variable `X i` turns a polynomial that is weighted
+homogeneous of weight `n` into its own constant multiple `φ * T ^ n`. -/
+theorem IsWeightedHomogeneous.aeval_C_X_mul_X_pow {w : σ → ℕ} {φ : MvPolynomial σ R} {n : ℕ}
+    (hφ : φ.IsWeightedHomogeneous w n) :
+    MvPolynomial.aeval (fun i ↦ Polynomial.C (X i) * Polynomial.X ^ w i) φ =
+      Polynomial.C φ * Polynomial.X ^ n := by
+  ext k : 2
+  rw [coeff_aeval_C_X_mul_X_pow, Polynomial.coeff_C_mul_X_pow]
+  split_ifs with hk
+  · subst hk
+    exact hφ.weightedHomogeneousComponent_same
+  · exact hφ.weightedHomogeneousComponent_ne k hk
 
 /-- Substituting `t ^ w i • X i` for each variable `X i` multiplies the coefficient of every
 monomial by `t` to the power of its weight. -/
@@ -580,9 +606,7 @@ theorem map_mem_iff {M A S ι : Type*} [AddCommMonoid M] [CommRing A]
   refine ⟨fun h i ↦ h (isWeightedHomogeneous_X _ _ _), ?_⟩
   intro h n p hp
   have := AddSubgroupClass.zsmulMemClass (S := S) (M := A)
-  have hpr : p.IsWeightedHomogeneous (r ∘ w) (r n) := fun d hd ↦ by
-    simp only [← hp hd, Finsupp.weight_apply, map_finsuppSum, map_nsmul, Function.comp_apply]
-  have hp' := hpr.aeval_mem (𝒜 := 𝒜) h
+  have hp' := (hp.comp_weight r).aeval_mem (𝒜 := 𝒜) h
   have he : f.toIntAlgHom p = aeval (f.toIntAlgHom ∘ X) p :=
     DFunLike.congr_fun (aeval_unique f.toIntAlgHom) p
   simp only [Function.comp_def, RingHom.toIntAlgHom_apply] at he
