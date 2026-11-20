@@ -100,11 +100,12 @@ omit [NumberField K] in
 only if `a = x² - d y²` is solvable in `ℝ` along the real embedding of `w`. -/
 theorem represents_atRealPlace_weightedSumSquares_one_neg_iff
     (w : {w : InfinitePlace K // w.IsReal}) (d a : K) :
-    Represents (atRealPlace (weightedSumSquares K ![1, -d]) w) (embedding_of_isReal w.2 a) ↔
-      ∃ x y : ℝ, embedding_of_isReal w.2 a = x ^ 2 - embedding_of_isReal w.2 d * y ^ 2 := by
+    Represents (atRealPlace (weightedSumSquares K ![1, -d]) w) (embedding_of_isReal w.property a) ↔
+      ∃ x y : ℝ, embedding_of_isReal w.property a = x ^ 2 - embedding_of_isReal w.property d * y ^ 2
+          := by
   rw [(atRealPlaceWeightedSumSquares w ![1, -d]).represents_iff]
-  have hcoeff : (fun i : Fin 2 => embedding_of_isReal w.2 (![1, -d] i)) =
-      ![1, -embedding_of_isReal w.2 d] := by
+  have hcoeff : (fun i : Fin 2 => embedding_of_isReal w.property (![1, -d] i)) =
+      ![1, -embedding_of_isReal w.property d] := by
     funext i
     fin_cases i <;> simp
   rw [hcoeff, TauCeti.represents_binary_one_neg_iff]
@@ -125,7 +126,7 @@ real Hilbert symbol `(d_w, a_w)_w` is `1`. -/
 theorem represents_atRealPlace_weightedSumSquares_one_neg_iff_hilbertSymbol_eq_one
     (w : {w : InfinitePlace K // w.IsReal}) (d a : Kˣ) :
     Represents (atRealPlace (weightedSumSquares K ![1, -(d : K)]) w)
-        (embedding_of_isReal w.2 (a : K)) ↔
+        (embedding_of_isReal w.property (a : K)) ↔
       TauCeti.hilbertSymbol (TauCeti.unitAtRealPlace w d) (TauCeti.unitAtRealPlace w a) = 1 := by
   rw [represents_atRealPlace_weightedSumSquares_one_neg_iff, TauCeti.hilbertSymbol_eq_one_iff]
   simp [TauCeti.unitAtRealPlace_apply]

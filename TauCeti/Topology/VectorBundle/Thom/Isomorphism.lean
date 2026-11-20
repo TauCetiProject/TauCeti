@@ -241,19 +241,19 @@ theorem bijective_pullbackCupRestrict_thomPair [FiniteDimensional ℝ F] {W : Se
   refine bijective_pullbackCup_prodThomPair M u_prod (fun b ↦ ?_) h
   have hu_prod : TopPair.singularCohomologyMap (prodThomPairFiberMap F b) (finrank ℝ F) u_prod =
       TopPair.singularCohomologyMap
-        (e.continuousLinearEquivAt ℝ b.1 (hW b.2)).complZeroPairIso.inv (finrank ℝ F)
-        (TopPair.singularCohomologyMap (fiberThomPairMap F E b.1) (finrank ℝ F) u) := by
+        (e.continuousLinearEquivAt ℝ b.val (hW b.property)).complZeroPairIso.inv (finrank ℝ F)
+        (TopPair.singularCohomologyMap (fiberThomPairMap F E b.val) (finrank ℝ F) u) := by
     dsimp only [u_prod, u_W, φ]
     rw [← TopPair.singularCohomologyMap_comp_apply,
       e.prodThomPairFiberMap_comp_thomPairOverIso_inv ℝ hW b,
       TopPair.singularCohomologyMap_comp_apply,
-      ← TopPair.singularCohomologyMap_comp_apply (fiberThomPairOverMap F E b.2),
+      ← TopPair.singularCohomologyMap_comp_apply (fiberThomPairOverMap F E b.property),
       fiberThomPairOverMap_comp_restrictPreimagePairMap]
   rw [hu_prod]
   exact ((((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
     (finrank ℝ F)).mapIso
-      (e.continuousLinearEquivAt ℝ b.1 (hW b.2)).complZeroPairIso.symm.op).toLinearEquiv
-    ).span_singleton_apply_eq_top_iff).2 (hu b.1 b.2)
+      (e.continuousLinearEquivAt ℝ b.val (hW b.property)).complZeroPairIso.symm.op).toLinearEquiv
+    ).span_singleton_apply_eq_top_iff).2 (hu b.val b.property)
 
 end Bundle.Trivialization
 

@@ -561,15 +561,16 @@ private theorem exists_linearMap_eq_toLp (T : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 ν)
       zero_mem' := MemLp.zero
       smul_mem' := fun c _ hs ↦ hs.const_smul c }
   let T₀ : S →ₗ[ℂ] (β →ₘ[ν] ℂ) :=
-    { toFun := fun s ↦ (T (s.2.toLp s) : β →ₘ[ν] ℂ)
+    { toFun := fun s ↦ (T (s.property.toLp s) : β →ₘ[ν] ℂ)
       map_add' := fun a b ↦ by
-        have h : T ((a + b).2.toLp (↑(a + b) : SimpleFunc α ℂ)) =
-            T (a.2.toLp a) + T (b.2.toLp b) := by
+        have h : T ((a + b).property.toLp (↑(a + b) : SimpleFunc α ℂ)) =
+            T (a.property.toLp a) + T (b.property.toLp b) := by
           rw [← map_add, ← MemLp.toLp_add]
           exact congrArg T (MemLp.toLp_congr _ _ (by simp))
         exact congrArg (fun u : Lp ℂ 2 ν ↦ (u : β →ₘ[ν] ℂ)) h
       map_smul' := fun c a ↦ by
-        have h : T ((c • a).2.toLp (↑(c • a) : SimpleFunc α ℂ)) = c • T (a.2.toLp a) := by
+        have h : T ((c • a).property.toLp (↑(c • a) : SimpleFunc α ℂ)) = c • T (a.property.toLp a)
+            := by
           rw [← map_smul, ← MemLp.toLp_const_smul]
           exact congrArg T (MemLp.toLp_congr _ _ (by simp))
         exact congrArg (fun u : Lp ℂ 2 ν ↦ (u : β →ₘ[ν] ℂ)) h }

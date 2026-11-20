@@ -113,7 +113,7 @@ theorem mem_halfClosedImage {i : Fin A.n} {z : ℂ} :
 theorem coe_mem_halfClosedImage {i : Fin A.n} {y : ClosedUpperHalfPlane} :
     (y : ℂ) ∈ A.halfClosedImage i ↔ y ∈ A.image i := by
   rw [mem_halfClosedImage, closedUpperHalfPlaneModel_symm_coe]
-  exact and_iff_left y.2
+  exact and_iff_left y.property
 
 /-- The open subset of `ℂ` whose trace on the closed upper half-plane is the image of chart `i`. -/
 def halfOpen (i : Fin A.n) : Opens ℂ :=
@@ -135,7 +135,7 @@ theorem halfClosedImage_eq_image_val (i : Fin A.n) :
   ext z
   refine ⟨fun ⟨hz, hz0⟩ ↦ ⟨_, hz, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz0⟩, ?_⟩
   rintro ⟨w, hw, rfl⟩
-  exact ⟨by simpa using hw, w.2⟩
+  exact ⟨by simpa using hw, w.property⟩
 
 theorem halfImage_subset_halfClosedImage (i : Fin A.n) :
     (A.halfImage i : Set ℂ) ⊆ A.halfClosedImage i :=
@@ -224,7 +224,7 @@ theorem halfTransition_coe_chart {i i' : Fin A.n} {x : M} (hx : x ∈ A.dom i') 
 real axis. -/
 theorem continuousOn_halfTransition (i i' : Fin A.n) :
     ContinuousOn (A.halfTransition i i') (closedUpperHalfPlaneModel.symm ⁻¹' A.overlap i i') :=
-  continuous_subtype_val.comp_continuousOn ((A.continuousOn_transition i i').comp
+  continuous_subtypeVal.comp_continuousOn ((A.continuousOn_transition i i').comp
     closedUpperHalfPlaneModel.continuous_symm.continuousOn fun _ hz ↦ hz)
 
 /-- A section read in chart `i`, as a function on `ℂ`. -/
@@ -454,7 +454,7 @@ theorem continuousOn_coordChange_halfTransition {i i' : Fin A.n} {g : ℂ → F}
         ((A.chart i').symm (closedUpperHalfPlaneModel.symm z)) (g (A.halfTransition i i' z)))
       (closedUpperHalfPlaneModel.symm ⁻¹' A.overlap i i') :=
   (A.continuousOn_coordChange_transition (g := fun y ↦ g y)
-    (hg.comp continuous_subtype_val.continuousOn fun _ hy ↦ A.coe_mem_halfClosedImage.2 hy)).comp
+    (hg.comp continuous_subtypeVal.continuousOn fun _ hy ↦ A.coe_mem_halfClosedImage.2 hy)).comp
       closedUpperHalfPlaneModel.continuous_symm.continuousOn fun _ hz ↦ hz
 
 /-- **Gluing chart expressions up to the boundary.** Functions `g i`, continuous on the chart
@@ -480,12 +480,12 @@ theorem exists_continuous_halfCoord_eqOn {g : Fin A.n → ℂ → F}
       (fun z hz ↦ ⟨(A.mem_halfOverlap.1 hz).1, (A.mem_halfOverlap.1 hz).2.le⟩)
       (A.subset_closure_halfOverlap i i')
   obtain ⟨t, ht, hteq⟩ := A.exists_continuous_coord_eqOn (g := fun i y ↦ g i y)
-    (fun i ↦ (hg i).comp continuous_subtype_val.continuousOn fun _ hy ↦
+    (fun i ↦ (hg i).comp continuous_subtypeVal.continuousOn fun _ hy ↦
       A.coe_mem_halfClosedImage.2 hy) fun i i' y hy ↦ by
       -- A point of the overlap in the closed upper half-plane, read in `ℂ`.
       have hy' : (y : ℂ) ∈
           closedUpperHalfPlaneModel.symm ⁻¹' A.overlap i i' ∩ {z : ℂ | 0 ≤ z.im} :=
-        ⟨by rw [mem_preimage, closedUpperHalfPlaneModel_symm_coe]; exact hy, y.2⟩
+        ⟨by rw [mem_preimage, closedUpperHalfPlaneModel_symm_coe]; exact hy, y.property⟩
       simpa only [closedUpperHalfPlaneModel_symm_coe, halfTransition_def] using hcompat' i i' hy'
   refine ⟨t, ht, fun i z hz ↦ ?_⟩
   obtain ⟨hzi, hz0⟩ := A.mem_halfClosedImage.1 hz

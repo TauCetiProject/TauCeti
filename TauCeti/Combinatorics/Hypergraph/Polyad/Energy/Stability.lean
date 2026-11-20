@@ -66,7 +66,8 @@ private theorem sum_sq_relativeDensity_le_add (M : Finset {x : Fin 3 → V // Fu
     (hf : ∀ x ∉ M, Polyad3.ofTriple S x = f (Polyad3.ofTriple T x)) (c : κ) :
     ∑ x, (H.relativeDensity c (Polyad3.ofTriple S x) : ℝ) ^ 2 ≤
       ∑ x, (H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) ^ 2 +
-        ∑ x ∈ M, ((if H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c then 1 else 0) -
+        ∑ x ∈ M, ((if H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c then 1 else 0)
+            -
           (H.relativeDensity c (f (Polyad3.ofTriple T x)) : ℝ)) ^ 2 := by
   set a : {x : Fin 3 → V // Function.Injective x} → ℝ :=
     fun x ↦ H.relativeDensity c (Polyad3.ofTriple S x)
@@ -75,12 +76,12 @@ private theorem sum_sq_relativeDensity_le_add (M : Finset {x : Fin 3 → V // Fu
   set φ : {x : Fin 3 → V // Function.Injective x} → ℝ :=
     fun x ↦ H.relativeDensity c (f (Polyad3.ofTriple T x))
   set I : {x : Fin 3 → V // Function.Injective x} → ℝ :=
-    fun x ↦ if H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c then 1 else 0
+    fun x ↦ if H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c then 1 else 0
   -- Weighting by the indicator of `c` is weighting by the density, for functions constant on
   -- polyads.
   have hI (ψ : {x : Fin 3 → V // Function.Injective x} → ℝ) :
       ∑ x, I x * ψ x =
-        ∑ x with H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c, ψ x := by
+        ∑ x with H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c, ψ x := by
     simp only [I, ite_mul, one_mul, zero_mul, sum_ite, sum_const_zero, add_zero]
   have ha : ∑ x, a x * a x = ∑ x, I x * a x := by
     rw [hI, H.sum_relativeDensity_ofTriple_mul c _ fun x y hxy ↦ by simp only [a, hxy]]
@@ -109,9 +110,9 @@ private theorem sum_sq_relativeDensity_le_add (M : Finset {x : Fin 3 → V // Fu
 any polyad, summed over the colors, is at most `2`. -/
 private theorem sum_sq_indicator_sub_relativeDensity_le_two
     (x : {x : Fin 3 → V // Function.Injective x}) (P : Polyad3 S) :
-    ∑ c, ((if H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c then 1 else 0) -
+    ∑ c, ((if H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c then 1 else 0) -
       (H.relativeDensity c P : ℝ)) ^ 2 ≤ 2 := by
-  set c₀ := H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)
+  set c₀ := H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩)
   calc _ ≤ ∑ c, ((if c₀ = c then 1 else 0) + (H.relativeDensity c P : ℝ) ^ 2) := by
         refine sum_le_sum fun c _ ↦ ?_
         have h₀ : (0 : ℝ) ≤ H.relativeDensity c P := mod_cast H.relativeDensity_nonneg c P
@@ -134,7 +135,8 @@ theorem polyadEnergy_le_add_of_forall_notMem (M : Finset {x : Fin 3 → V // Fun
   rw [sum_comm, sum_comm (s := univ) (t := univ)
     (f := fun x c ↦ (H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) ^ 2)]
   calc _ ≤ ∑ c, (∑ x, (H.relativeDensity c (Polyad3.ofTriple T x) : ℝ) ^ 2 +
-        ∑ x ∈ M, ((if H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c then 1 else 0) -
+        ∑ x ∈ M, ((if H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c then 1 else 0)
+            -
           (H.relativeDensity c (f (Polyad3.ofTriple T x)) : ℝ)) ^ 2) :=
         sum_le_sum fun c _ ↦ H.sum_sq_relativeDensity_le_add M f hf c
     _ ≤ _ := by

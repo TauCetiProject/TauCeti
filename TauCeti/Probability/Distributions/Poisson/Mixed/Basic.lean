@@ -297,7 +297,7 @@ theorem integrableExpSet_natCast_mixedPoissonMeasure (ρ : Measure ℝ≥0) :
     integrableExpSet (fun k : ℕ ↦ (k : ℝ)) (mixedPoissonMeasure ρ) =
       {t | exp t - 1 ∈ integrableExpSet (fun x : ℝ≥0 ↦ (x : ℝ)) ρ} := by
   ext t
-  simp only [integrableExpSet, mem_ofPred_eq, mul_comm t, Real.exp_nat_mul]
+  simp only [integrableExpSet, mem_ofPred_eq, mul_comm t, Real.exp_natCast_mul]
   exact integrable_mixedPoissonMeasure_iff (fun k ↦ pow_nonneg (exp_pos t).le k) (by fun_prop)
     (fun x ↦ hasSum_pow_poissonMeasure x (exp t))
 

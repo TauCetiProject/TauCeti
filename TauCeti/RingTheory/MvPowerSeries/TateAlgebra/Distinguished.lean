@@ -287,7 +287,7 @@ private theorem exists_triangularDegree_dominant (f : ExtraTate) (hf : f ≠ 0)
           triangularDegree (fun i ↦ b ^ ((k i : ℕ) + 1)) d →
         ‖coeff d (f : MvPowerSeries (Option σ) R)‖ ≤ ε := by
   classical
-  obtain ⟨d₀, hd₀⟩ := f.2.exists_achievesGaussNorm
+  obtain ⟨d₀, hd₀⟩ := f.property.exists_achievesGaussNorm
   obtain ⟨ε, hε0, hεM, hε⟩ := exists_norm_coeff_mul_prod_gap f hf
   simp only [AchievesGaussNorm, ← norm_eq_gaussNorm, one_pow, Finsupp.prod_fun_one,
     mul_one] at hd₀ hε
@@ -376,7 +376,7 @@ theorem exists_restrictedTriangularEquiv_forall_isDistinguished [Finite σ] {ι 
   -- The exponents of maximal coefficient norm of each member form a finite set `S j`.
   have hSfin (j : ι) : {d | ‖f j‖ ≤ ‖coeff d (f j : MvPowerSeries (Option σ) R)‖}.Finite := by
     have hM : 0 < ‖f j‖ := norm_pos_iff.mpr (hf j)
-    have := (isRestricted_one_iff.mp (f j).2).eventually (gt_mem_nhds (half_pos hM))
+    have := (isRestricted_one_iff.mp (f j).property).eventually (gt_mem_nhds (half_pos hM))
     exact (by simpa [eventually_cofinite, not_lt] using this :
       {d | ‖f j‖ / 2 ≤ ‖coeff d (f j : MvPowerSeries (Option σ) R)‖}.Finite).subset
         fun d hd ↦ (half_le_self hM.le).trans hd

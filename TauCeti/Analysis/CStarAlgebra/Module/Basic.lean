@@ -327,7 +327,7 @@ end Essential
 
 section Paschke
 
-open scoped Ring
+open scoped ComplexOrder Ring
 
 omit [StarOrderedRing A] in
 /-- The diagonal inner product of `u.fst • z + u.snd • z` embeds into `Unitization ℂ A` as
@@ -371,7 +371,7 @@ private lemma inr_inner_map_map_le_norm_sq_smul_of_le {E F : Type*} [SeminormedA
     simpa only [hTy, hv_sa.star_eq] using inr_inner_unitization_smul v (T x)
   -- The majorant `q ≤ b` forces `⟪y, y⟫_A = √(b⁻¹) q √(b⁻¹) ≤ 1`, hence `‖y‖² ≤ 1`.
   have hvqv_nonneg : 0 ≤ CFC.conjSqrt b⁻¹ʳ q :=
-    hv_sa.conjugate_nonneg (Unitization.inr_nonneg _ inner_self_nonneg)
+    hv_sa.conjugate_nonneg (Unitization.inr_nonneg ℂ _ inner_self_nonneg)
   have hvqv_le : CFC.conjSqrt b⁻¹ʳ q ≤ 1 :=
     (CFC.conjSqrt_le_conjSqrt hxb).trans_eq (CFC.conjSqrt_ringInverse_self b hb)
   have hy_norm_sq : ‖y‖ ^ 2 ≤ 1 := by
@@ -379,7 +379,7 @@ private lemma inr_inner_map_map_le_norm_sq_smul_of_le {E F : Type*} [SeminormedA
     exact (CStarAlgebra.norm_le_one_iff_of_nonneg _ hvqv_nonneg).mpr hvqv_le
   -- Boundedness of `T` on the normalized vector `y` bounds `√(b⁻¹) p √(b⁻¹)` by `‖T‖²`.
   have hvpv_nonneg : 0 ≤ CFC.conjSqrt b⁻¹ʳ p :=
-    hv_sa.conjugate_nonneg (Unitization.inr_nonneg _ inner_self_nonneg)
+    hv_sa.conjugate_nonneg (Unitization.inr_nonneg ℂ _ inner_self_nonneg)
   have hvpv_norm : ‖CFC.conjSqrt b⁻¹ʳ p‖ ≤ ‖T‖ ^ 2 := by
     rw [← hTy_inner, Unitization.norm_inr (𝕜 := ℂ), ← CStarModule.norm_sq_eq A]
     calc ‖T y‖ ^ 2 ≤ (‖T‖ * ‖y‖) ^ 2 := by gcongr; exact T.le_opNorm y
@@ -399,9 +399,9 @@ theorem inner_map_map_le_norm_sq_smul {E F : Type*} [SeminormedAddCommGroup E] [
     [CStarModule A F] (T : E →L[ℂ] F) (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) (x : E) :
     inner A (T x) (T x) ≤ ‖T‖ ^ 2 • inner A x x := by
   -- Pass to `Unitization ℂ A`, regularize `⟪x, x⟫_A` by `+ ε`, and let `ε → 0⁺`.
-  rw [← Unitization.inr_le_inr_iff, Unitization.inr_smul]
+  rw [← Unitization.inr_le_inr_iff ℂ, Unitization.inr_smul]
   set q : Unitization ℂ A := (inner A x x : Unitization ℂ A)
-  have hq : 0 ≤ q := Unitization.inr_nonneg _ inner_self_nonneg
+  have hq : 0 ≤ q := Unitization.inr_nonneg ℂ _ inner_self_nonneg
   have hle (ε : ℝ) (hε : 0 < ε) :
       (inner A (T x) (T x) : Unitization ℂ A) ≤
         ‖T‖ ^ 2 • (q + algebraMap ℝ (Unitization ℂ A) ε) := by

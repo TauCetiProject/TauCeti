@@ -190,8 +190,8 @@ lemma exists_singularCohomologyComplRestrict_eq_of_add_eq_zero (hS : IsClosed S)
   have hDB : Tᶜ ⊆ (Set.univ : Set X) := Set.subset_univ _
   have hex := (ShortComplex.moduleCat_exact_iff _).1
     (singularCohomologyPairMayerVietoris_exact₂ R k M hCA hDB isOpen_univ isOpen_univ
-      (hS.isOpen_compl.preimage continuous_subtype_val)
-      (hT.isOpen_compl.preimage continuous_subtype_val) n)
+      (hS.isOpen_compl.preimage continuous_subtypeVal)
+      (hT.isOpen_compl.preimage continuous_subtypeVal) n)
   let HC := (TopPair.ofInclusion hCA).singularCohomology R k M n
   let HD := (TopPair.ofInclusion hDB).singularCohomology R k M n
   obtain ⟨q, hq⟩ := hex ((biprod.inl : HC ⟶ HC ⊞ HD)
@@ -238,8 +238,8 @@ def singularCohomologyComplMayerVietorisδ (hS : IsClosed S) (hT : IsClosed T)
       (TopPair.ofSubset (S ∩ T)ᶜ).singularCohomology R k M m :=
   TopPair.singularCohomologyMap (interComplPairIso S T).hom n ≫
     singularCohomologyPairMayerVietorisδ R k M (Set.subset_univ Sᶜ) (Set.subset_univ Tᶜ)
-      isOpen_univ isOpen_univ (hS.isOpen_compl.preimage continuous_subtype_val)
-      (hT.isOpen_compl.preimage continuous_subtype_val) n m h ≫
+      isOpen_univ isOpen_univ (hS.isOpen_compl.preimage continuous_subtypeVal)
+      (hT.isOpen_compl.preimage continuous_subtypeVal) n m h ≫
     TopPair.singularCohomologyMap (unionComplPairIso S T).inv m
 
 variable (R k M) in
@@ -252,8 +252,8 @@ lemma singularCohomologyComplMayerVietorisδ_def (hS : IsClosed S) (hT : IsClose
     singularCohomologyComplMayerVietorisδ R k M hS hT n m h =
       TopPair.singularCohomologyMap (interComplPairIso S T).hom n ≫
         singularCohomologyPairMayerVietorisδ R k M (Set.subset_univ Sᶜ) (Set.subset_univ Tᶜ)
-          isOpen_univ isOpen_univ (hS.isOpen_compl.preimage continuous_subtype_val)
-          (hT.isOpen_compl.preimage continuous_subtype_val) n m h ≫
+          isOpen_univ isOpen_univ (hS.isOpen_compl.preimage continuous_subtypeVal)
+          (hT.isOpen_compl.preimage continuous_subtypeVal) n m h ≫
         TopPair.singularCohomologyMap (unionComplPairIso S T).inv m :=
   (rfl)
 
@@ -265,8 +265,8 @@ lemma singularCohomologyComplRestrict_singularCohomologyComplMayerVietorisδ_lef
     singularCohomologyComplRestrict R k M Set.subset_union_left n ≫
       singularCohomologyComplMayerVietorisδ R k M hS hT n m h = 0 := by
   have hδ := singularCohomologyPairMayerVietorisFromBiprod_δ R k M (Set.subset_univ Sᶜ)
-    (Set.subset_univ Tᶜ) isOpen_univ isOpen_univ (hS.isOpen_compl.preimage continuous_subtype_val)
-    (hT.isOpen_compl.preimage continuous_subtype_val) n m h
+    (Set.subset_univ Tᶜ) isOpen_univ isOpen_univ (hS.isOpen_compl.preimage continuous_subtypeVal)
+    (hT.isOpen_compl.preimage continuous_subtypeVal) n m h
   rw [singularCohomologyComplMayerVietorisδ_def R k M hS hT n m h,
     ← singularCohomologyMap_univComplPairIso_hom_inter_left_assoc (R := R) (k := k) (M := M),
     ← inl_singularCohomologyPairMayerVietorisFromBiprod_assoc R k M _ (Set.subset_univ Tᶜ),
@@ -283,11 +283,11 @@ lemma singularCohomologyComplRestrict_singularCohomologyComplMayerVietorisδ_rig
   have hD := inr_singularCohomologyPairMayerVietorisFromBiprod_assoc R k M (Set.subset_univ Sᶜ)
     (Set.subset_univ Tᶜ) n (singularCohomologyPairMayerVietorisδ R k M (Set.subset_univ Sᶜ)
       (Set.subset_univ Tᶜ) isOpen_univ isOpen_univ
-      (hS.isOpen_compl.preimage continuous_subtype_val)
-      (hT.isOpen_compl.preimage continuous_subtype_val) n m h)
+      (hS.isOpen_compl.preimage continuous_subtypeVal)
+      (hT.isOpen_compl.preimage continuous_subtypeVal) n m h)
   rw [singularCohomologyPairMayerVietorisFromBiprod_δ R k M (Set.subset_univ Sᶜ)
-      (Set.subset_univ Tᶜ) isOpen_univ isOpen_univ (hS.isOpen_compl.preimage continuous_subtype_val)
-      (hT.isOpen_compl.preimage continuous_subtype_val) n m h,
+      (Set.subset_univ Tᶜ) isOpen_univ isOpen_univ (hS.isOpen_compl.preimage continuous_subtypeVal)
+      (hT.isOpen_compl.preimage continuous_subtypeVal) n m h,
     comp_zero, Preadditive.neg_comp, zero_eq_neg] at hD
   rw [singularCohomologyComplMayerVietorisδ_def R k M hS hT n m h,
     ← singularCohomologyMap_univComplPairIso_hom_inter_right_assoc (R := R) (k := k) (M := M),
@@ -302,8 +302,8 @@ lemma singularCohomologyComplMayerVietorisδ_singularCohomologyComplRestrict_lef
     singularCohomologyComplMayerVietorisδ R k M hS hT n m h ≫
       singularCohomologyComplRestrict R k M Set.inter_subset_left m = 0 := by
   have hδ := singularCohomologyPairMayerVietorisδ_toBiprod R k M (Set.subset_univ Sᶜ)
-    (Set.subset_univ Tᶜ) isOpen_univ isOpen_univ (hS.isOpen_compl.preimage continuous_subtype_val)
-    (hT.isOpen_compl.preimage continuous_subtype_val) n m h
+    (Set.subset_univ Tᶜ) isOpen_univ isOpen_univ (hS.isOpen_compl.preimage continuous_subtypeVal)
+    (hT.isOpen_compl.preimage continuous_subtypeVal) n m h
   rw [singularCohomologyComplMayerVietorisδ_def R k M hS hT n m h, Category.assoc, Category.assoc,
     singularCohomologyMap_unionComplPairIso_inv_union_left (R := R) (k := k) (M := M),
     ← singularCohomologyPairMayerVietorisToBiprod_fst_assoc R k M _ (Set.subset_univ Tᶜ),
@@ -318,8 +318,8 @@ lemma singularCohomologyComplMayerVietorisδ_singularCohomologyComplRestrict_rig
     singularCohomologyComplMayerVietorisδ R k M hS hT n m h ≫
       singularCohomologyComplRestrict R k M Set.inter_subset_right m = 0 := by
   have hδ := singularCohomologyPairMayerVietorisδ_toBiprod R k M (Set.subset_univ Sᶜ)
-    (Set.subset_univ Tᶜ) isOpen_univ isOpen_univ (hS.isOpen_compl.preimage continuous_subtype_val)
-    (hT.isOpen_compl.preimage continuous_subtype_val) n m h
+    (Set.subset_univ Tᶜ) isOpen_univ isOpen_univ (hS.isOpen_compl.preimage continuous_subtypeVal)
+    (hT.isOpen_compl.preimage continuous_subtypeVal) n m h
   rw [singularCohomologyComplMayerVietorisδ_def R k M hS hT n m h, Category.assoc, Category.assoc,
     singularCohomologyMap_unionComplPairIso_inv_union_right (R := R) (k := k) (M := M),
     ← singularCohomologyPairMayerVietorisToBiprod_snd_assoc R k M (Set.subset_univ Sᶜ),
@@ -341,8 +341,8 @@ lemma exists_sub_eq_of_singularCohomologyComplMayerVietorisδ_eq_zero
   have hDB : Tᶜ ⊆ (Set.univ : Set X) := Set.subset_univ _
   have hex := (ShortComplex.moduleCat_exact_iff _).1
     (singularCohomologyPairMayerVietoris_exact₃ R k M hCA hDB isOpen_univ isOpen_univ
-      (hS.isOpen_compl.preimage continuous_subtype_val)
-      (hT.isOpen_compl.preimage continuous_subtype_val) n m h)
+      (hS.isOpen_compl.preimage continuous_subtypeVal)
+      (hT.isOpen_compl.preimage continuous_subtypeVal) n m h)
   have hinjU : Function.Injective (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
       (unionComplPairIso S T).inv m) :=
     ((TopPair.singularCohomologyFunctor R k M m).mapIso
@@ -383,8 +383,8 @@ lemma exists_singularCohomologyComplMayerVietorisδ_eq (hS : IsClosed S) (hT : I
   have hDB : Tᶜ ⊆ (Set.univ : Set X) := Set.subset_univ _
   have hex := (ShortComplex.moduleCat_exact_iff _).1
     (singularCohomologyPairMayerVietoris_exact₁ R k M hCA hDB isOpen_univ isOpen_univ
-      (hS.isOpen_compl.preimage continuous_subtype_val)
-      (hT.isOpen_compl.preimage continuous_subtype_val) n m h)
+      (hS.isOpen_compl.preimage continuous_subtypeVal)
+      (hT.isOpen_compl.preimage continuous_subtypeVal) n m h)
   obtain ⟨x, hx⟩ := hex (TopPair.singularCohomologyMap (unionComplPairIso S T).hom m z) (by
     dsimp only
     rw [← ModuleCat.biprod_inl_fst_add_inr_snd_apply
@@ -438,11 +438,11 @@ lemma singularCohomologyComplMayerVietorisδ_naturality (hS : IsClosed S) (hT : 
   have hfU : Set.MapsTo f Set.univ Set.univ := Set.mapsTo_univ _ _
   have hnat := singularCohomologyPairMayerVietorisδ_naturality R k M
     (Set.subset_univ Sᶜ) (Set.subset_univ Tᶜ) isOpen_univ isOpen_univ
-    (hS.isOpen_compl.preimage continuous_subtype_val)
-    (hT.isOpen_compl.preimage continuous_subtype_val)
+    (hS.isOpen_compl.preimage continuous_subtypeVal)
+    (hT.isOpen_compl.preimage continuous_subtypeVal)
     (Set.subset_univ S'ᶜ) (Set.subset_univ T'ᶜ) isOpen_univ isOpen_univ
-    (hS'.isOpen_compl.preimage continuous_subtype_val)
-    (hT'.isOpen_compl.preimage continuous_subtype_val) f hfU hfU hfS hfT n m h
+    (hS'.isOpen_compl.preimage continuous_subtypeVal)
+    (hT'.isOpen_compl.preimage continuous_subtypeVal) f hfU hfU hfS hfT n m h
   -- the two squares of pairs relating the maps of pairs induced by `f`
   have hI : TopPair.ofInclusionMap
         (Set.inter_subset_inter (Set.subset_univ Sᶜ) (Set.subset_univ Tᶜ))

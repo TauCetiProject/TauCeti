@@ -101,7 +101,8 @@ theorem measurableSet_setOf_bfEquiv [Countable V] [∀ n, Countable (L.Relations
     -- Limit below `ω₁`: a conjunction over the countably many smaller levels.
     have : Countable (Set.Iio α) := (Cardinal.countable_Iio_of_lt_omega_one hα).to_subtype
     simp only [BFEquiv.limit hlim]
-    have h := Measurable.forall (ι := Set.Iio α) fun β => ih β.1 β.2 (β.2.trans hα) a b
+    have h := Measurable.forall (ι := Set.Iio α) fun β => ih β.val β.property
+        (β.property.trans hα) a b
     simpa only [Subtype.forall, Set.mem_Iio] using h
 
 variable (L V) in

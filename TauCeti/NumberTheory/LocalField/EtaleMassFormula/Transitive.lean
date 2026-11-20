@@ -369,68 +369,68 @@ degree-`f * e` subextensions. -/
 private theorem tsum_splittingSymbol_singleton_eq_tsum_finrank {f e : ℕ}
     (hf : 0 < f) (he : 0 < e) :
     ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}},
-        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent =
+        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.val.discriminantExponent =
       ((f * e - 1)! : ℝ≥0∞) *
         ∑' L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e},
-          (if L.1.inertiaDegree = f then
-            1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent else 0) := by
+          (if L.val.inertiaDegree = f then
+            1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.discriminantExponent else 0) := by
   let i₀ : Fin (f * e) := ⟨0, Nat.mul_pos hf he⟩
   let g : IntermediateField K (SeparableClosure K) → ℝ≥0∞ := fun L ↦
     if L.inertiaDegree = f then 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.discriminantExponent else 0
   let S : Set {ρ : GaloisSet K (f * e) // ρ.IsTransitive} :=
-    {ρ | let := ρ.1.mulAction
+    {ρ | let := ρ.val.mulAction
       (IntermediateField.fixedField (stabilizer Gal(SeparableClosure K/K) i₀)).inertiaDegree = f}
   let E₁ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}} ≃ S :=
     (Equiv.subtypeEquivRight fun ρ ↦ ρ.splittingSymbol_eq_singleton_iff i₀).trans
       (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm
   have hind :
       (fun ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive} ↦
-        let := ρ.1.mulAction
+        let := ρ.val.mulAction
         g (IntermediateField.fixedField (stabilizer Gal(SeparableClosure K/K) i₀))) =
-      S.indicator (fun ρ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent) := by
+      S.indicator (fun ρ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.val.discriminantExponent) := by
     ext ρ
-    let := ρ.1.mulAction
+    let := ρ.val.mulAction
     dsimp [g, S, Set.indicator]
     split_ifs with h
     · exact (congrArg (fun d ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ d)
-        (ρ.1.discriminantExponent_of_isTransitive ρ.2 i₀)).symm
+        (ρ.val.discriminantExponent_of_isTransitive ρ.property i₀)).symm
     · rfl
-  have hE₁ : ∀ ρ, (E₁ ρ).1.1 = ρ.1 := fun ρ ↦ by
+  have hE₁ : ∀ ρ, (E₁ ρ).val.val = ρ.val := fun ρ ↦ by
     dsimp only [E₁]
     rw [Equiv.trans_apply, Equiv.subtypeSubtypeEquivSubtypeInter_symm_apply_coe_coe,
       Equiv.subtypeEquivRight_apply_coe]
   rw [tsum_congr fun ρ ↦ by rw [← hE₁ ρ],
-    E₁.tsum_eq fun ρ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.1.discriminantExponent,
+    E₁.tsum_eq fun ρ ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.val.val.discriminantExponent,
     tsum_subtype S fun ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive} ↦
-      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent,
+      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.val.discriminantExponent,
     ← hind, GaloisSet.tsum_isTransitive i₀ g]
 
 /-- Summing the inertia-degree-`f` discriminant weight over degree-`f * e` subextensions evaluates
 via `tsum_inertiaDegree_eq`. -/
 private theorem tsum_finrank_inertiaDegree_indicator {f e : ℕ} (hf : 0 < f) :
     ∑' L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e},
-        (if L.1.inertiaDegree = f then
-          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent else 0) =
+        (if L.val.inertiaDegree = f then
+          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.discriminantExponent else 0) =
       (e : ℝ≥0∞) / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (f * (e - 1)) := by
   let S₂ : Set {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} :=
-    {L | L.1.inertiaDegree = f}
+    {L | L.val.inertiaDegree = f}
   let E₂ : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e ∧
       L.inertiaDegree = f} ≃ S₂ :=
     (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm
   have hind :
       (fun L : {L : IntermediateField K (SeparableClosure K) // Module.finrank K L = f * e} ↦
-        if L.1.inertiaDegree = f then
-          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent else 0) =
-      S₂.indicator (fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent) := by
+        if L.val.inertiaDegree = f then
+          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.discriminantExponent else 0) =
+      S₂.indicator (fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.discriminantExponent) := by
     ext L
     dsimp [S₂, Set.indicator]
     split_ifs <;> rfl
-  have hE₂ : ∀ L, (E₂ L).1.1 = L.1 := fun L ↦
+  have hE₂ : ∀ L, (E₂ L).val.val = L.val := fun L ↦
     Equiv.subtypeSubtypeEquivSubtypeInter_symm_apply_coe_coe _ _ L
   rw [hind, ← tsum_subtype S₂ fun L : {L : IntermediateField K (SeparableClosure K) //
       Module.finrank K L = f * e} ↦
-    1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.discriminantExponent,
-    ← E₂.tsum_eq fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.1.discriminantExponent]
+    1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.discriminantExponent,
+    ← E₂.tsum_eq fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.val.discriminantExponent]
   simp_rw [hE₂]
   exact tsum_inertiaDegree_eq (K := K) hf.ne' e
 
@@ -454,7 +454,7 @@ Galois sets of size `f * e` with splitting symbol `{(f, e)}` have mass
 theorem etaleMass_isTransitive_splittingSymbol (f e : ℕ) (hf : 0 < f) (he : 0 < e) :
     ((f * e)! : ℝ≥0∞)⁻¹ *
         ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}},
-          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.1.discriminantExponent =
+          1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ ρ.val.discriminantExponent =
       1 / ((f : ℝ≥0∞) * (Nat.card 𝓀[K] : ℝ≥0∞) ^ (f * (e - 1))) := by
   -- Double-count via label `0`: each degree-`f * e` subextension of residue degree `f` arises from
   -- `(f * e - 1)!` transitive Galois sets (`tsum_splittingSymbol_singleton_eq_tsum_finrank`), and
