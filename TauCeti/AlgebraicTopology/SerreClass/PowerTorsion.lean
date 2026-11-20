@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Category.Grp.Zero
 public import Mathlib.Algebra.Homology.ShortComplex.Ab
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.CategoryTheory.Abelian.SerreClass.Basic
+public import Mathlib.Order.Filter.AtTopBot.Basic
+public import Mathlib.Order.Filter.Finite
 public import TauCeti.Algebra.Category.ModuleCat.Annihilated
 
 /-!
@@ -25,10 +27,14 @@ Such classes are used in Hurewicz theorems modulo a Serre class.
 
 ## Main results
 
+* `AddCommGrpCat.exists_forall_isTorsionBy_of_isKilledBySomePower`: finitely many groups, each
+  annihilated by some power of `d`, are annihilated by one common power of `d`.
 * `AddCommGrpCat.prop_inverseImage_isKilledBySomePower_iff`: a `ℤ`-module lies in the class, read
   through the forgetful functor, exactly when some power of `d` annihilates every element.
 * `AddCommGrpCat.isKilledBy_pow_le_inverseImage_isKilledBySomePower`: a `ℤ`-module killed by
-  `d ^ n` lies in the class, read through the forgetful functor.
+  `d ^ n` lies in the class, read through the forgetful functor. Unlike the class, the modules
+  killed by a fixed `d ^ n` are closed under arbitrary direct sums
+  (`CategoryTheory.ObjectProperty.isKilledBy`).
 
 ## References
 
@@ -76,6 +82,19 @@ instance (d : ℕ) : (isKilledBySomePower d).IsSerreClass where
     obtain ⟨x₁, hx₁⟩ :=
       (ShortComplex.ab_exact_iff S).1 hS.exact ((d : ℤ) ^ n • x₂) (by simp [hn])
     rw [pow_add, mul_smul, ← hx₁, ← map_zsmul, hm, map_zero]
+
+/-- **A common power of `d`.** Finitely many abelian groups, each annihilated by some power of `d`,
+are annihilated by one common power of `d`. -/
+theorem exists_forall_isTorsionBy_of_isKilledBySomePower {d : ℕ} {ι : Type*} {s : Set ι}
+    (hs : s.Finite) {M : ι → AddCommGrpCat.{u}} (h : ∀ i ∈ s, isKilledBySomePower d (M i)) :
+    ∃ n : ℕ, ∀ i ∈ s, Module.IsTorsionBy ℤ (M i) ((d : ℤ) ^ n) := by
+  -- A power of `d` annihilating `M i` is followed by all higher powers.
+  have h' (i : ι) (hi : i ∈ s) :
+      ∀ᶠ n in Filter.atTop, Module.IsTorsionBy ℤ (M i) ((d : ℤ) ^ n) := by
+    obtain ⟨m, hm⟩ := h i hi
+    refine Filter.eventually_atTop.2 ⟨m, fun n hn x ↦ ?_⟩
+    rw [← Nat.sub_add_cancel hn, pow_add, mul_smul, hm, smul_zero]
+  exact (hs.eventually_all.2 h').exists
 
 /-- A `ℤ`-module lies in the inverse image of `isKilledBySomePower d` along the forgetful functor to
 abelian groups exactly when some power of `d` annihilates every element. -/
