@@ -152,7 +152,7 @@ lemma tensorProductCongrLeft_refl (L K : InvertibleSheaf X) :
   have h := congrArg (fun e ↦ e.hom.val)
     (TauCeti.SheafOfModules.tensorProductCongrLeft_refl X.sheaf L.obj K.obj)
   simp only [Iso.refl_hom, _root_.SheafOfModules.id_val] at h
-  rw [tensorProductCongrLeft_hom_val]
+  rw [tensorProductCongrLeft_hom_hom]
   exact h
 
 /-- Transport through the first tensor factor respects composition. -/
@@ -169,8 +169,8 @@ lemma tensorProductCongrLeft_trans {L L' L'' K : InvertibleSheaf X} (e : L ≅ L
   simp only [Iso.trans_hom, ObjectProperty.FullSubcategory.comp_hom]
   -- Composition in `X.Modules` is composition of sheaves of modules.
   erw [_root_.SheafOfModules.comp_val]
-  rw [tensorProductCongrLeft_hom_val, tensorProductCongrLeft_hom_val,
-    tensorProductCongrLeft_hom_val]
+  rw [tensorProductCongrLeft_hom_hom, tensorProductCongrLeft_hom_hom,
+    tensorProductCongrLeft_hom_hom]
   exact h
 
 /-- Transport through the second tensor factor sends the identity to the identity. -/
@@ -181,7 +181,7 @@ lemma tensorProductCongrRight_refl (L K : InvertibleSheaf X) :
   have h := congrArg (fun e ↦ e.hom.val)
     (TauCeti.SheafOfModules.tensorProductCongrRight_refl X.sheaf L.obj K.obj)
   simp only [Iso.refl_hom, _root_.SheafOfModules.id_val] at h
-  rw [tensorProductCongrRight_hom_val]
+  rw [tensorProductCongrRight_hom_hom]
   exact h
 
 /-- Transport through the second tensor factor respects composition. -/
@@ -198,8 +198,8 @@ lemma tensorProductCongrRight_trans {L K K' K'' : InvertibleSheaf X} (e : K ≅ 
   simp only [Iso.trans_hom, ObjectProperty.FullSubcategory.comp_hom]
   -- Composition in `X.Modules` is composition of sheaves of modules.
   erw [_root_.SheafOfModules.comp_val]
-  rw [tensorProductCongrRight_hom_val, tensorProductCongrRight_hom_val,
-    tensorProductCongrRight_hom_val]
+  rw [tensorProductCongrRight_hom_hom, tensorProductCongrRight_hom_hom,
+    tensorProductCongrRight_hom_hom]
   exact h
 
 /-- Transports through the two tensor factors commute. -/
@@ -215,8 +215,8 @@ lemma tensorProductCongrLeft_trans_tensorProductCongrRight {L L' K K' : Invertib
   simp only [Iso.trans_hom, ObjectProperty.FullSubcategory.comp_hom]
   -- Composition in `X.Modules` is composition of sheaves of modules.
   erw [_root_.SheafOfModules.comp_val, _root_.SheafOfModules.comp_val]
-  rw [tensorProductCongrLeft_hom_val, tensorProductCongrRight_hom_val,
-    tensorProductCongrLeft_hom_val, tensorProductCongrRight_hom_val]
+  rw [tensorProductCongrLeft_hom_hom, tensorProductCongrRight_hom_hom,
+    tensorProductCongrLeft_hom_hom, tensorProductCongrRight_hom_hom]
   exact h
 
 /-- The sheaf isomorphism underlying symmetry of the tensor product of line bundles. -/
