@@ -484,7 +484,7 @@ theorem natCast_mul_le_of_two_mul_le_add {d : ℕ → ℝ} {k : ℕ}
   have hconv : IsConvexSeq (fun n ↦ if n ∈ Set.Iic k then (d n : WithTop ℝ) else ⊤) := by
     refine isConvexSeq_iff_two_mul_le.2 ⟨by simpa [← Set.Iic_def] using Set.ordConnected_Iic,
       fun n _ hn₂ ↦ ?_⟩
-    have hn₂' : n + 2 ≤ k := by by_contra h'; simp_all
+    have hn₂' : n + 2 ≤ k := by by_contra h'; simp [Set.mem_Iic, h'] at hn₂
     simpa [show n ≤ k by omega, show n + 1 ≤ k by omega, hn₂'] using
       h (n + 1) (by omega) (by omega)
   simpa [hj] using hconv.chord_inequality (i := 0) (j := j) (k := k) (by simp) (by simp)

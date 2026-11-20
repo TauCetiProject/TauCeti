@@ -211,6 +211,35 @@ private theorem integral_norm_fderiv_apply_rpow_le {U : E → F} (hU : ContDiff 
   convert this using 1
   ring
 
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [InnerProductSpace ℝ F] [FiniteDimensional ℝ E]
+  [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- Hölder's inequality for the product of the norms of two functions. -/
+private theorem eLpNorm_norm_mul_norm_le {U w' : E → F} (hU : AEStronglyMeasurable U μ)
+    (hw' : AEStronglyMeasurable w' μ) {a b r : ℝ≥0∞} [ENNReal.HolderTriple a b r] :
+    eLpNorm (fun x ↦ ‖U x‖ * ‖w' x‖) r μ ≤ eLpNorm U a μ * eLpNorm w' b μ := by
+  rw [← eLpNorm_norm U hU, ← eLpNorm_norm w' hw']
+  exact eLpNorm_smul_le_mul_eLpNorm hU.norm hw'.norm
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [InnerProductSpace ℝ F] [FiniteDimensional ℝ E]
+  [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- The `L^(q / (q - 2))` norm of `‖w‖ ^ (q - 2)` is at most the `(q - 2)`-th power of the `L^q`
+norm of `w`; for `q = 2` the left side is the `L^∞` norm of the constant `1`. -/
+private theorem eLpNorm_norm_rpow_sub_two_le {w : E → F} (hw : AEStronglyMeasurable w μ) {q : ℝ}
+    (hq : 2 ≤ q) :
+    eLpNorm (fun x ↦ ‖w x‖ ^ (q - 2)) (ENNReal.ofReal ((q - 2) / q))⁻¹ μ ≤
+      eLpNorm w (ENNReal.ofReal q) μ ^ (q - 2) := by
+  rcases hq.eq_or_lt with rfl | hq2
+  · simp only [sub_self, Real.rpow_zero, ENNReal.rpow_zero]
+    exact (eLpNorm_le_of_ae_bound (C := 1) aestronglyMeasurable_const
+      (Eventually.of_forall fun _ ↦ by simp)).trans (by simp)
+  · have hq0 : 0 < q := by linarith
+    have hcq : (ENNReal.ofReal ((q - 2) / q))⁻¹ * ENNReal.ofReal (q - 2) = ENNReal.ofReal q := by
+      rw [← ENNReal.ofReal_inv_of_pos (div_pos (by linarith) hq0), inv_div,
+        ← ENNReal.ofReal_mul (div_nonneg hq0.le (by linarith))]
+      congr 1
+      field_simp
+    rw [eLpNorm_norm_rpow w hw (by linarith), hcq]
+
 omit [InnerProductSpace ℝ F] in
 /-- Hölder's inequality for the three factors of the integration-by-parts bound. -/
 private theorem ofReal_integral_norm_mul_rpow_mul_norm_le {U w w' : E → F} (hU : Continuous U)
@@ -219,8 +248,7 @@ private theorem ofReal_integral_norm_mul_rpow_mul_norm_le {U w w' : E → F} (hU
     ENNReal.ofReal (∫ x, ‖U x‖ * ‖w x‖ ^ (q - 2) * ‖w' x‖ ∂μ) ≤
       eLpNorm U a μ * eLpNorm w' b μ * eLpNorm w (ENNReal.ofReal q) μ ^ (q - 2) := by
   have hq0 : 0 < q := by linarith
-  set c : ℝ≥0∞ := (ENNReal.ofReal ((q - 2) / q))⁻¹ with hc_def
-  have : ENNReal.HolderTriple (ENNReal.ofReal (q / 2)) c 1 := by
+  have : ENNReal.HolderTriple (ENNReal.ofReal (q / 2)) (ENNReal.ofReal ((q - 2) / q))⁻¹ 1 := by
     constructor
     rw [inv_inv, ← ENNReal.ofReal_inv_of_pos (by positivity), ← ENNReal.ofReal_add
       (by positivity) (div_nonneg (by linarith) hq0.le), inv_one, inv_div]
@@ -237,34 +265,14 @@ private theorem ofReal_integral_norm_mul_rpow_mul_norm_le {U w w' : E → F} (hU
         refine lintegral_congr fun x ↦ ?_
         rw [Real.eNorm_of_nonneg (by positivity)]
         ring_nf
-    _ ≤ 1 * eLpNorm (fun x ↦ ‖U x‖ * ‖w' x‖) (ENNReal.ofReal (q / 2)) μ *
-          eLpNorm (fun x ↦ ‖w x‖ ^ (q - 2)) c μ :=
-        eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm (fun s t : ℝ ↦ s * t) 1 continuous_mul
-          (hU.norm.mul hw'.norm).aestronglyMeasurable hwr.aestronglyMeasurable
-          (Eventually.of_forall fun x ↦ by simp [norm_mul])
-    _ ≤ (1 * eLpNorm U a μ * eLpNorm w' b μ) * eLpNorm w (ENNReal.ofReal q) μ ^ (q - 2) := by
-        rw [one_mul]
+    _ ≤ eLpNorm (fun x ↦ ‖U x‖ * ‖w' x‖) (ENNReal.ofReal (q / 2)) μ *
+          eLpNorm (fun x ↦ ‖w x‖ ^ (q - 2)) (ENNReal.ofReal ((q - 2) / q))⁻¹ μ :=
+        eLpNorm_smul_le_mul_eLpNorm (hU.norm.mul hw'.norm).aestronglyMeasurable
+          hwr.aestronglyMeasurable
+    _ ≤ eLpNorm U a μ * eLpNorm w' b μ * eLpNorm w (ENNReal.ofReal q) μ ^ (q - 2) := by
         gcongr
-        · calc eLpNorm (fun x ↦ ‖U x‖ * ‖w' x‖) (ENNReal.ofReal (q / 2)) μ
-              ≤ 1 * eLpNorm (fun x ↦ ‖U x‖) a μ * eLpNorm (fun x ↦ ‖w' x‖) b μ :=
-                eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm (fun s t : ℝ ↦ s * t) 1 continuous_mul
-                  hU.norm.aestronglyMeasurable hw'.norm.aestronglyMeasurable
-                  (Eventually.of_forall fun x ↦ by simp [norm_mul])
-            _ = 1 * eLpNorm U a μ * eLpNorm w' b μ := by
-                rw [eLpNorm_norm U hU.aestronglyMeasurable,
-                  eLpNorm_norm w' hw'.aestronglyMeasurable]
-        · rcases (show 2 ≤ q from hq).eq_or_lt with rfl | hq2
-          · simp only [sub_self, Real.rpow_zero, ENNReal.rpow_zero]
-            refine (eLpNorm_le_of_ae_bound (C := 1) aestronglyMeasurable_const
-              (Eventually.of_forall fun _ ↦ by simp)).trans ?_
-            simp [c]
-          · have hcq : c * ENNReal.ofReal (q - 2) = ENNReal.ofReal q := by
-              rw [hc_def, ← ENNReal.ofReal_inv_of_pos (div_pos (by linarith) hq0), inv_div,
-                ← ENNReal.ofReal_mul (div_nonneg hq0.le (by linarith))]
-              congr 1
-              field_simp
-            rw [eLpNorm_norm_rpow w hw.aestronglyMeasurable (by linarith), hcq]
-    _ = _ := by rw [one_mul]
+        · exact eLpNorm_norm_mul_norm_le hU.aestronglyMeasurable hw'.aestronglyMeasurable
+        · exact eLpNorm_norm_rpow_sub_two_le hw.aestronglyMeasurable hq
 
 /-- **The one-step interpolation inequality.** For a `C²` function `U` with compact support, a
 direction `v` and `2 ≤ q < ∞`, the derivative `∂ᵥU` in `L^q` is controlled by `U` in `L^a` and
@@ -347,6 +355,15 @@ private noncomputable def basisSum (μ : Measure E) (b : ι → E) (u : E → F)
     (r : ℝ≥0∞) : ℝ≥0∞ :=
   ∑ σ : Fin n → ι, eLpNorm (fun x ↦ iteratedFDeriv ℝ n u x (fun l ↦ b (σ l))) r μ
 
+omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- Each partial derivative along a tuple of directions from `b` is at most `basisSum`. -/
+private theorem eLpNorm_iteratedFDeriv_apply_le_basisSum (b : ι → E) (u : E → F) {n : ℕ}
+    (σ : Fin n → ι) (r : ℝ≥0∞) :
+    eLpNorm (fun x ↦ iteratedFDeriv ℝ n u x (fun l ↦ b (σ l))) r μ ≤ basisSum μ b u n r :=
+  Finset.single_le_sum (f := fun τ : Fin n → ι ↦
+    eLpNorm (fun x ↦ iteratedFDeriv ℝ n u x (fun l ↦ b (τ l))) r μ)
+    (fun _ _ ↦ by positivity) (Finset.mem_univ σ)
+
 omit [FiniteDimensional ℝ E] in
 private theorem basisSum_ne_top {u : E → F} {k : ℕ} (hu : ContDiff ℝ k u)
     (hc : HasCompactSupport u) (b : ι → E) {n : ℕ} (hn : n ≤ k) (r : ℝ≥0∞) :
@@ -422,15 +439,9 @@ private theorem toReal_basisSum_sq_le {u : E → F} {k : ℕ} (hu : ContDiff ℝ
     have h := eLpNorm_iteratedFDeriv_cons_sq_le (μ := μ) hu hc b hj (σ 0) (Fin.tail σ) hq
       (a := a) (c := c)
     rw [Fin.cons_self_tail] at h
-    have h1 : eLpNorm (fun x ↦ iteratedFDeriv ℝ j u x (fun l ↦ b (Fin.tail σ l))) a μ ≤ A :=
-      Finset.single_le_sum (f := fun τ : Fin j → ι ↦
-        eLpNorm (fun x ↦ iteratedFDeriv ℝ j u x (fun l ↦ b (τ l))) a μ)
-        (fun _ _ ↦ by positivity) (Finset.mem_univ _)
-    have h2 : eLpNorm (fun x ↦ iteratedFDeriv ℝ (j + 2) u x
-        (fun l ↦ b ((Fin.cons (σ 0) σ : Fin (j + 2) → ι) l))) c μ ≤ C :=
-      Finset.single_le_sum (f := fun τ : Fin (j + 2) → ι ↦
-        eLpNorm (fun x ↦ iteratedFDeriv ℝ (j + 2) u x (fun l ↦ b (τ l))) c μ)
-        (fun _ _ ↦ by positivity) (Finset.mem_univ _)
+    have h1 := eLpNorm_iteratedFDeriv_apply_le_basisSum (μ := μ) b u (Fin.tail σ) a
+    have h2 := eLpNorm_iteratedFDeriv_apply_le_basisSum (μ := μ) b u
+      (Fin.cons (σ 0) σ : Fin (j + 2) → ι) c
     have h3 : _ ≤ ENNReal.ofReal (q - 1) * A * C := h.trans (by gcongr)
     have hA : A ≠ ⊤ := basisSum_ne_top hu hc b (by omega) a
     have hC : C ≠ ⊤ := basisSum_ne_top hu hc b (by omega) c
