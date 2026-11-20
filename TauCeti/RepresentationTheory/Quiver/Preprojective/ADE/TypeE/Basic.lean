@@ -109,8 +109,10 @@ attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 /-! ### The arms of the `Eₙ` diagram -/
 
 /-- Adjacency of the nodes `i` and `j` of the Bourbaki-labelled `Eₙ` diagram, read on natural
-numbers: the edges are `0 — 2`, `1 — 3` and `i — i + 1` for `i ≥ 2`. -/
-private def EAdj (i j : ℕ) : Prop :=
+numbers: the edges are `0 — 2`, `1 — 3` and `i — i + 1` for `i ≥ 2`. It is reducible because it
+is the right-hand side of `diagramGraph_E_adj`, which this file and its importers apply where
+`EAdj` is expected. -/
+private abbrev EAdj (i j : ℕ) : Prop :=
   i = 0 ∧ j = 2 ∨ j = 0 ∧ i = 2 ∨ i = 1 ∧ j = 3 ∨ j = 1 ∧ i = 3 ∨ 2 ≤ i ∧ i + 1 = j ∨
     2 ≤ j ∧ j + 1 = i
 
