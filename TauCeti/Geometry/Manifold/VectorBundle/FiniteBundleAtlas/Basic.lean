@@ -50,6 +50,7 @@ closed upper half-plane are read in `ℂ` in
 * `TauCeti.FiniteBundleAtlas.transition`: the chart transition between two charts.
 * `TauCeti.FiniteBundleAtlas.coord`: a section read in a chart.
 * `TauCeti.FiniteBundleAtlas.ofBaseSet`: the charts of an atlas of `V` as an atlas of `V'`.
+* `TauCeti.FiniteBundleAtlas.append`: the union of two finite bundle atlases of `V`.
 
 ## Main results
 
@@ -382,6 +383,77 @@ theorem transition_ofBaseSet (i i' : Fin A.n) :
   rfl
 
 end OfBaseSet
+
+/-- The union of two finite bundle atlases of the same bundle: the charts of `A` followed by those
+of `B`. Charts of the two atlases are thereby charts of a single atlas, so that chart data can be
+compared between them. It is reducible, so that the charts `Fin.castAdd B.n i` of `A` and
+`Fin.natAdd A.n j` of `B` are charts of the union for every transparency. -/
+@[expose, reducible, simps n center dom]
+def append (B : FiniteBundleAtlas E M F V) : FiniteBundleAtlas E M F V where
+  n := A.n + B.n
+  center := Fin.append A.center B.center
+  dom := Fin.append A.dom B.dom
+  isOpen_dom i := by
+    induction i using Fin.addCases <;> simp [A.isOpen_dom, B.isOpen_dom]
+  isCompact_closure_dom i := by
+    induction i using Fin.addCases <;> simp [A.isCompact_closure_dom, B.isCompact_closure_dom]
+  closure_dom_subset_source i := by
+    induction i using Fin.addCases <;>
+      simp [A.closure_dom_subset_source, B.closure_dom_subset_source]
+  closure_dom_subset_baseSet i := by
+    induction i using Fin.addCases <;>
+      simp [A.closure_dom_subset_baseSet, B.closure_dom_subset_baseSet]
+  iUnion_dom := eq_univ_of_forall fun x ↦ by
+    obtain ⟨i, hi⟩ := A.exists_mem_dom x
+    exact mem_iUnion.2 ⟨Fin.castAdd B.n i, by simpa using hi⟩
+
+section Append
+
+variable (B : FiniteBundleAtlas E M F V)
+
+@[simp]
+theorem chart_append_castAdd (i : Fin A.n) :
+    (A.append B).chart (Fin.castAdd B.n i) = A.chart i := by
+  simp [chart]
+
+@[simp]
+theorem chart_append_natAdd (j : Fin B.n) :
+    (A.append B).chart (Fin.natAdd A.n j) = B.chart j := by
+  simp [chart]
+
+@[simp]
+theorem triv_append_castAdd (i : Fin A.n) :
+    (A.append B).triv (Fin.castAdd B.n i) = A.triv i := by
+  simp [triv]
+
+@[simp]
+theorem triv_append_natAdd (j : Fin B.n) :
+    (A.append B).triv (Fin.natAdd A.n j) = B.triv j := by
+  simp [triv]
+
+@[simp]
+theorem image_append_castAdd (i : Fin A.n) :
+    (A.append B).image (Fin.castAdd B.n i) = A.image i :=
+  SetLike.ext fun _ ↦ by simp [mem_image]
+
+@[simp]
+theorem image_append_natAdd (j : Fin B.n) :
+    (A.append B).image (Fin.natAdd A.n j) = B.image j :=
+  SetLike.ext fun _ ↦ by simp [mem_image]
+
+@[simp]
+theorem coord_append_castAdd (i : Fin A.n) :
+    (A.append B).coord (Fin.castAdd B.n i) = A.coord i := by
+  funext s y
+  rw [coord_def, coord_def, chart_append_castAdd, triv_append_castAdd]
+
+@[simp]
+theorem coord_append_natAdd (j : Fin B.n) :
+    (A.append B).coord (Fin.natAdd A.n j) = B.coord j := by
+  funext s y
+  rw [coord_def, coord_def, chart_append_natAdd, triv_append_natAdd]
+
+end Append
 
 end FiniteBundleAtlas
 

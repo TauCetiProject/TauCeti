@@ -1025,6 +1025,13 @@ instance SobolevSection.instCompleteSpace [IsManifold 𝓘(ℝ, E) 1 M] :
     CompleteSpace (SobolevSection A μ p k) :=
   SectionChartData.completeSpace_sobolevSections (A.aeTransition_sectionChartData μ)
 
+/-- Every element of `W^{k,p}(V)` has as chart data the coordinates `A.coord i s` of a section. -/
+theorem SobolevSection.exists_ae_eq_coord (w : SobolevSection A μ p k) :
+    ∃ s : ∀ x, V x,
+      ∀ i, A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s :=
+  let ⟨s, hs⟩ := A.sectionChartData.exists_section μ p k w
+  ⟨s, fun i ↦ (hs i).trans (A.sectionChartData_coord_ae_eq μ i s)⟩
+
 variable {A μ p k} in
 /-- **Uniqueness.** Two elements of `W^{k,p}(V)` whose chart data are the coordinates `A.coord i s`
 of the same section are equal. -/
