@@ -24,6 +24,9 @@ A continuous alternating map of one vector is read as a continuous linear functi
 first slot and reading the result as a linear map gives its **flat map** `f ↦ (v ↦ f(v, ·))`, a
 continuous linear map `ContinuousAlternatingMap.flatL`, an alternating bilinear map
 (`ContinuousAlternatingMap.isAlt_toLinearMap₁₂_flatL`).
+
+The interior product `f ↦ f.curryLeft x` with a fixed vector `x`, as a continuous linear map
+depending linearly on `x`, is `ContinuousAlternatingMap.curryLeftFlipL`, of norm at most `‖x‖`.
 -/
 
 public section
@@ -120,5 +123,31 @@ theorem isAlt_toLinearMap₁₂_flatL (f : E [⋀^Fin 2]→L[𝕜] F) :
   simp [f.map_eq_zero_of_eq ![v, v] (i := 0) (j := 1) rfl Fin.zero_ne_one]
 
 end flatL
+
+section curryLeftFlipL
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ}
+
+/-- The interior product `f ↦ f.curryLeft x` of continuous alternating maps of `n + 1` vectors with
+a fixed vector `x`, as a continuous linear map depending linearly on `x`: the flip of
+`ContinuousAlternatingMap.curryLeftLI`. -/
+noncomputable def curryLeftFlipL :
+    E →L[𝕜] (E [⋀^Fin (n + 1)]→L[𝕜] F) →L[𝕜] E [⋀^Fin n]→L[𝕜] F :=
+  (curryLeftLI (𝕜 := 𝕜) (E := E) (F := F) (n := n)).toContinuousLinearMap.flip
+
+@[simp]
+theorem curryLeftFlipL_apply_apply (x : E) (f : E [⋀^Fin (n + 1)]→L[𝕜] F) :
+    curryLeftFlipL x f = f.curryLeft x :=
+  (rfl)
+
+/-- The interior product with `x` has norm at most `‖x‖`. -/
+theorem norm_curryLeftFlipL_apply_le (x : E) :
+    ‖(curryLeftFlipL x : (E [⋀^Fin (n + 1)]→L[𝕜] F) →L[𝕜] E [⋀^Fin n]→L[𝕜] F)‖ ≤ ‖x‖ :=
+  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun f ↦ by
+    rw [curryLeftFlipL_apply_apply, mul_comm]
+    exact (f.curryLeft.le_opNorm x).trans_eq (by rw [norm_curryLeft])
+
+end curryLeftFlipL
 
 end ContinuousAlternatingMap
