@@ -89,13 +89,9 @@ theorem fragmentSpectrum_mono (hCD : C ⊆ D) : fragmentSpectrum A n C ⊆ fragm
 theorem fragmentSpectrum_eq_image_of_le (hAB : A ≤ B) (n : ℕ)
     (C : Set (RelationalConfiguration L V)) :
     fragmentSpectrum A n C = (A.slice n ∩ ·) '' fragmentSpectrum B n C := by
-  ext p
-  simp only [mem_fragmentSpectrum, Set.mem_image]
-  constructor
-  · rintro ⟨c, hc, a, rfl⟩
-    exact ⟨_, ⟨c, hc, a, rfl⟩, (@fragmentType_eq_inter_of_le L V c.toStructure A B n hAB a).symm⟩
-  · rintro ⟨_, ⟨c, hc, a, rfl⟩, rfl⟩
-    exact ⟨c, hc, a, @fragmentType_eq_inter_of_le L V c.toStructure A B n hAB a⟩
+  rw [fragmentSpectrum, fragmentSpectrum, Set.image_iUnion₂]
+  exact Set.iUnion₂_congr fun c _ =>
+    @realizedFragmentTypes_eq_image_of_le L A B hAB V c.toStructure n
 
 /-! ### Spectrum equivalence -/
 

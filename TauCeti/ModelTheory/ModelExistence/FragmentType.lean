@@ -16,7 +16,8 @@ that tuple. Equivalently, the tuple determines a truth assignment on the slice. 
 carry the same information, including for fragments that are not closed under negation.
 
 The realized fragment types of a structure at an arity are the fragment types of its tuples;
-isomorphic structures realize the same ones.
+they are the realized complete types cut down to the slice, restriction to a smaller fragment cuts
+them down further, and isomorphic structures realize the same ones.
 
 Restriction to a smaller fragment intersects the type with its slice, or precomposes the truth
 assignment with the slice inclusion. Fragment-elementary embeddings preserve both descriptions;
@@ -159,6 +160,21 @@ theorem mem_realizedFragmentTypes {p : Set (L.BoundedFormulaω Empty n)} :
 theorem fragmentType_mem_realizedFragmentTypes (a : Fin n → M) :
     fragmentType A M a ∈ realizedFragmentTypes A M n :=
   ⟨a, rfl⟩
+
+/-- The realized fragment types are the realized complete types intersected with the arity
+slice. -/
+theorem realizedFragmentTypes_eq_image (A : Fragment L) (M : Type w) [L.Structure M] (n : ℕ) :
+    realizedFragmentTypes A M n = (A.slice n ∩ ·) '' realizedTypes M n := by
+  ext p
+  simp only [mem_realizedFragmentTypes, Set.mem_image, mem_realizedTypes, exists_exists_eq_and,
+    fragmentType_eq_inter]
+
+/-- Restricting to a smaller fragment intersects every realized fragment type with its arity
+slice. -/
+theorem realizedFragmentTypes_eq_image_of_le (hAB : A ≤ B) (M : Type w) [L.Structure M] (n : ℕ) :
+    realizedFragmentTypes A M n = (A.slice n ∩ ·) '' realizedFragmentTypes B M n := by
+  rw [realizedFragmentTypes, realizedFragmentTypes, ← Set.range_comp]
+  exact congrArg Set.range (funext (fragmentType_eq_inter_of_le hAB))
 
 /-- A countable structure realizes countably many fragment types at each arity. -/
 theorem countable_realizedFragmentTypes [Countable M] (A : Fragment L) (n : ℕ) :
