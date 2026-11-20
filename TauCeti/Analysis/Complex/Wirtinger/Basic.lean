@@ -83,6 +83,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   holomorphic map `φ`, and `TauCeti.conjWirtingerDeriv_comp_eq_comp_fderiv`, the chain rule
   `\bar∂(φ ∘ g) = \bar∂φ(g x) ∘ Dg(x)` before a holomorphic map `g`; in one variable
   `TauCeti.conjWirtingerDeriv_comp_eq_conj_smul` writes it as `\bar∂(φ ∘ g) = \bar{g'} \bar∂φ`.
+* `ContinuousLinearMap.conjWirtingerDeriv_comp_left`: the chain rule `\bar∂(L ∘ g) = L ∘ \bar∂g`
+  after a continuous complex-linear map `L`.
 * `TauCeti.conjWirtingerDeriv_fun_mul`, `TauCeti.conjWirtingerDeriv_fun_pow`: the Leibniz and
   power rules for complex-valued functions.
 * `TauCeti.conjWirtingerDeriv_finsetProd`, `TauCeti.norm_conjWirtingerDeriv_finsetProd_le`: the
@@ -279,6 +281,13 @@ theorem conjWirtingerDeriv_fun_sub {g₁ g₂ : V → W} {x : V} (h₁ : Differe
     conjWirtingerDeriv (fun y ↦ g₁ y - g₂ y) x =
       conjWirtingerDeriv g₁ x - conjWirtingerDeriv g₂ x :=
   conjWirtingerDeriv_sub h₁ h₂
+
+/-- Adding a constant does not change the conjugate Wirtinger derivative. -/
+@[simp]
+theorem conjWirtingerDeriv_add_const (g : V → W) (c : W) (x : V) :
+    conjWirtingerDeriv (fun y ↦ g y + c) x = conjWirtingerDeriv g x := by
+  rw [conjWirtingerDeriv_eq_complexAntilinearPart, fderiv_add_const,
+    conjWirtingerDeriv_eq_complexAntilinearPart]
 
 /-- The conjugate Wirtinger derivative commutes with multiplication by a complex constant. -/
 theorem conjWirtingerDeriv_const_smul {g : V → W} {x : V} (c : ℂ) :
@@ -523,6 +532,13 @@ theorem conjWirtingerDeriv_comp_eq_conj_smul {φ : ℂ → W} {g : ℂ → ℂ} 
   ext v
   rw [conjWirtingerDeriv_comp_eq_comp_fderiv hφ hg.differentiableAt, hg.hasFDerivAt.fderiv]
   simpa [mul_comm] using map_smulₛₗ (conjWirtingerDeriv φ (g x)) a v
+
+/-- **The chain rule for the conjugate Wirtinger derivative** after a continuous complex-linear
+map: `\bar∂(L ∘ g) = L ∘ \bar∂g`. -/
+theorem _root_.ContinuousLinearMap.conjWirtingerDeriv_comp_left {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℂ X] (L : W →L[ℂ] X) {g : V → W} {x : V} (hg : DifferentiableAt ℝ g x) :
+    conjWirtingerDeriv (fun y ↦ L (g y)) x = L.comp (conjWirtingerDeriv g x) := by
+  rw [← Function.comp_def, TauCeti.conjWirtingerDeriv_comp L.differentiableAt hg, L.fderiv]
 
 section Mul
 
