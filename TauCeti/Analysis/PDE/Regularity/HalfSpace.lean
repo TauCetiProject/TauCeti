@@ -12,6 +12,7 @@ import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.W1p.Symmetry
 import TauCeti.Analysis.Sobolev.W1p.TangentialDerivative
+import TauCeti.Analysis.Sobolev.WeakDeriv.NormalTangential
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -447,6 +448,33 @@ private theorem memLp_add_sum_sum_fderiv_mul_inner_gradient
     (hmul _ (hc2 i j) (hd2 i j) ((Lp.memLp _).inner_const _)).add
       (hmul _ (hc1 i j) (hd1 i j) ((Lp.memLp _).inner_const _)))
 
+omit [DecidableEq ι] in
+/-- **The differentiated equation has forcing in `L²(Ω)`.** Let `a` have entries smooth on `Ω`,
+`x ↦ a(x)` Lipschitz on `Ω` as a bilinear form and the first derivatives of its entries Lipschitz
+on `Ω`, and let `u ∈ H¹₀(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f`. Suppose that the first
+derivatives `∂ⱼu = D j` lie in `H¹(Ω)`, and that along a direction `e` the derivative `∂_e u = d`
+lies in `H¹(Ω)` and `f ∈ L²(Ω)` has a weak derivative `g ∈ L²(Ω)`. Then `d` solves
+`-∂ᵢ(aⁱʲ ∂ⱼd) = F` against test functions, for some `F ∈ L²(Ω)`. No boundary condition on `d` is
+needed. -/
+private theorem exists_forall_energyFormH1_ofTestFunctionₗ_eq_of_hasWeakLineDerivOn
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) Omega) {K' : ℝ≥0}
+    (hK' : ∀ i j, LipschitzOnWith K' (fun x => fderiv ℝ (fun y => a y i j) x) Omega)
+    {f g : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet a 0 0 f u) {D : ι → W1p mu Omega 2}
+    (hD : ∀ j, HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value (D j))
+      (EuclideanSpace.basisFun ι ℝ j))
+    {e : EuclideanSpace ℝ ι} {d : W1p mu Omega 2}
+    (hd : HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value d) e)
+    (hf : HasWeakLineDerivOn mu Omega f g e) :
+    ∃ F : Lp ℝ 2 (mu.restrict Omega), ∀ φ : 𝓓(Omega, ℝ),
+      energyFormH1 a 0 0 d (W1p.ofTestFunctionₗ mu Omega 2 φ) = ∫ x in Omega, F x * φ x ∂mu := by
+  have hF := memLp_add_sum_sum_fderiv_mul_inner_gradient hK hsmooth hK' g (u : W1p mu Omega 2) D e
+  refine ⟨hF.toLp _, fun φ => ?_⟩
+  rw [energyFormH1_ofTestFunctionₗ_eq_setIntegral_of_hasWeakLineDerivOn hsmooth
+    hu.energyFormH1_ofTestFunctionₗ hd hD hf φ]
+  exact integral_congr_ae (hF.coeFn_toLp.mono fun x hx => congrArg (· * φ x) hx.symm)
+
 /-- **The tangential derivative solves the differentiated Dirichlet problem.** Let `ν ≠ 0` and let
 `Ω` be convex and mapped into itself by every translation orthogonal to `ν`, as a half-space
 `{x | c < ⟪x, ν⟫}` or a slab is. Let `a` be uniformly elliptic and bounded on `Ω`, with entries
@@ -483,14 +511,10 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichle
   -- The tangential derivative has zero boundary values.
   have hmem : d ∈ w1p0Submodule mu Omega 2 :=
     W1p.mem_w1p0Submodule_of_hasWeakLineDerivOn (by simp) hΩc (hΩ τ hτ) b u.2 hD hd
-  -- The forcing term of the differentiated equation lies in `L²(Ω)`.
-  set Fn : EuclideanSpace ℝ ι → ℝ := fun x => g x + ∑ i, ∑ j,
-    (fderiv ℝ (fun y => fderiv ℝ (fun z => a z i j) y τ) x (b i) *
-        ⟪W1p.gradient (u : W1p mu Omega 2) x, b j⟫_ℝ +
-      fderiv ℝ (fun y => a y i j) x τ * ⟪W1p.gradient (D j) x, b i⟫_ℝ)
-  have hFn : MemLp Fn 2 (mu.restrict Omega) :=
-    memLp_add_sum_sum_fderiv_mul_inner_gradient hK hsmooth hK' g (u : W1p mu Omega 2) D τ
-  refine ⟨⟨d, hmem⟩, hFn.toLp Fn, hd, ?_⟩
+  -- `d` solves the differentiated equation, with forcing in `L²(Ω)`.
+  obtain ⟨F, hF⟩ :=
+    exists_forall_energyFormH1_ofTestFunctionₗ_eq_of_hasWeakLineDerivOn hK hsmooth hK' hu hD hd hf
+  refine ⟨⟨d, hmem⟩, F, hd, ?_⟩
   -- Bounded coefficients make the energy form continuous, so testing against test functions
   -- suffices.
   have hcoeff := memLp_energyIntegrand_of_bounds (mu := mu) (Omega := Omega) (b := 0) (c := 0)
@@ -499,10 +523,7 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichle
       continuousOn_pi.2 fun j => (hsmooth i j).continuousOn) hΩm)
     aestronglyMeasurable_const aestronglyMeasurable_const
     (fun x hx => ha.upper_bound hx) (fun _ _ => by simp) (fun _ _ => by simp)
-  refine (isWeakSolutionDirichlet_iff_forall_testFunction hcoeff _ _).2 fun φ => ?_
-  rw [energyFormH1_ofTestFunctionₗ_eq_setIntegral_of_hasWeakLineDerivOn hsmooth
-    hu.energyFormH1_ofTestFunctionₗ hd hD hf φ]
-  exact integral_congr_ae (hFn.coeFn_toLp.mono fun x hx => congrArg (· * φ x) hx.symm)
+  exact (isWeakSolutionDirichlet_iff_forall_testFunction hcoeff _ _).2 hF
 
 /-- **The tangential derivative solves the differentiated Dirichlet problem on a half-space.** Let
 `Ω = {x | c < ⟪x, ν⟫}` with `ν ≠ 0`, let `a` be uniformly elliptic and bounded on `Ω`, with entries
@@ -605,23 +626,15 @@ private theorem exists_hasWeakLineDerivOn_inner_iteratedGradient_one_normal (hν
   -- `d = ∂_ν u ∈ H¹(Ω)`, whose gradient components are the entries `⟪D²U ·, ν⟫`.
   obtain ⟨d, hd, hdg⟩ := Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq U ν
   rw [hU] at hd
-  have hder : ∀ v, ∃ D : W1p mu Omega 2,
-      HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value D) v := fun v => by
-    obtain ⟨D, hD, -⟩ := Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq U v
-    exact ⟨D, hU ▸ hD⟩
-  choose D hD using fun j => hder (b j)
+  have hder : ∀ j, ∃ D : W1p mu Omega 2,
+      HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value D) (b j) :=
+    fun j => by
+      obtain ⟨D, hD, -⟩ := Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq U (b j)
+      exact ⟨D, hU ▸ hD⟩
+  choose D hD using hder
   -- `d` solves the equation differentiated along `ν`, with forcing in `L²(Ω)`.
-  set Fn : EuclideanSpace ℝ ι → ℝ := fun x => g x + ∑ i, ∑ j,
-    (fderiv ℝ (fun y => fderiv ℝ (fun z => a z i j) y ν) x (b i) *
-        ⟪W1p.gradient (u : W1p mu Omega 2) x, b j⟫_ℝ +
-      fderiv ℝ (fun y => a y i j) x ν * ⟪W1p.gradient (D j) x, b i⟫_ℝ)
-  have hFn : MemLp Fn 2 (mu.restrict Omega) :=
-    memLp_add_sum_sum_fderiv_mul_inner_gradient hK hsmooth hK' g (u : W1p mu Omega 2) D ν
-  have heq : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 d (W1p.ofTestFunctionₗ mu Omega 2 φ) =
-      ∫ x in Omega, hFn.toLp Fn x * φ x ∂mu := fun φ => by
-    rw [energyFormH1_ofTestFunctionₗ_eq_setIntegral_of_hasWeakLineDerivOn hsmooth
-      hu.energyFormH1_ofTestFunctionₗ hd hD hf φ]
-    exact integral_congr_ae (hFn.coeFn_toLp.mono fun x hx => congrArg (· * φ x) hx.symm)
+  obtain ⟨F, heq⟩ :=
+    exists_forall_energyFormH1_ofTestFunctionₗ_eq_of_hasWeakLineDerivOn hK hsmooth hK' hu hD hd hf
   -- The tangential derivatives of the gradient of `d` are third derivatives with a tangential
   -- direction, moved into place by the symmetry of the weak Hessian.
   have hdtan : ∀ y τ, ⟪τ, ν⟫_ℝ = 0 → ∃ G : Lp ℝ 2 (mu.restrict Omega),

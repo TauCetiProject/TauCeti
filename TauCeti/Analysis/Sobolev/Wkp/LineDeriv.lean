@@ -8,9 +8,9 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.PiL2
-import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.Sobolev.W1p.Symmetry
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
+import TauCeti.Analysis.Sobolev.WeakDeriv.NormalTangential
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -60,8 +60,6 @@ No boundedness or boundary regularity of `Ω` is assumed.
   everywhere.
 * `TauCeti.Wkp.hasWeakLineDerivOn_inner_iteratedGradient_one_comm`: weak derivatives of the
   entries of the weak Hessian commute with its slots.
-* `TauCeti.exists_hasWeakLineDerivOn_of_normal_of_tangential`: an `Lᵖ` weak derivative in one
-  direction `ν` and in every direction orthogonal to `ν` gives one in every direction.
 * `TauCeti.Wkp.exists_hasWeakLineDerivOn_inner_iteratedGradient_one_of_normal_of_tangential`: the
   third weak derivatives of an element of `W^{2,p}(Ω)` lie in `Lᵖ(Ω)` once those with a direction
   orthogonal to `ν` and the purely normal one `∂_ν ∂_ν ∂_ν u` do.
@@ -542,28 +540,6 @@ theorem Wkp.hasWeakLineDerivOn_inner_iteratedGradient_one_comm (u : Wkp mu Omega
   -- `∂_v u ∈ W^{1,p}(Ω)`, whose gradient components are the entries `⟪D²u ·, v⟫`
   obtain ⟨d, -, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq u v
   exact (W1p.hasWeakLineDerivOn_inner_gradient_comm (hG.congr_ae (hd w).symm)).congr_ae (hd z)
-
-/-! ### Weak derivatives from a normal and the tangential directions -/
-
-omit [FiniteDimensional ℝ E] [mu.IsAddHaarMeasure] [Fact (1 ≤ p)] in
-/-- **Weak derivatives from a normal and the tangential directions.** If `u` has a weak
-derivative in `Lᵖ(Ω)` in the direction `ν` and in every direction orthogonal to `ν`, then it has
-one in every direction `z`: split `z` into `(⟪z, ν⟫ / ‖ν‖²) ν` and the remainder, which is
-orthogonal to `ν`. -/
-theorem exists_hasWeakLineDerivOn_of_normal_of_tangential {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {u : E → F} {ν : E}
-    (hnor : ∃ G : Lp F p (mu.restrict Omega), HasWeakLineDerivOn mu Omega u G ν)
-    (htan : ∀ τ, ⟪τ, ν⟫_ℝ = 0 →
-      ∃ G : Lp F p (mu.restrict Omega), HasWeakLineDerivOn mu Omega u G τ)
-    (z : E) : ∃ G : Lp F p (mu.restrict Omega), HasWeakLineDerivOn mu Omega u G z := by
-  obtain ⟨G₁, h₁⟩ := hnor
-  obtain ⟨G₂, h₂⟩ := htan _ (real_inner_sub_div_norm_sq_smul_self_eq_zero z ν)
-  have h := (h₁.smul_direction (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2)).add_direction h₂
-  rw [add_sub_cancel] at h
-  refine ⟨(⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • G₁ + G₂, h.congr_ae_deriv ?_⟩
-  filter_upwards [Lp.coeFn_add ((⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • G₁) G₂,
-    Lp.coeFn_smul (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) G₁] with x hx hx'
-  rw [hx, Pi.add_apply, Pi.add_apply, hx']
 
 /-- **Third derivatives from the tangential ones and the purely normal one.** Let
 `u ∈ W^{2,p}(Ω)` with weak Hessian `D²u`. Suppose that `⟪D²u ν, ν⟫` has an `Lᵖ(Ω)` weak
