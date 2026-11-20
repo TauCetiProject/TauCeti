@@ -143,28 +143,17 @@ theorem mfderiv_piSnoc_apply (p : (∀ i : Fin m, M i.castSucc) × M (Fin.last m
     intro i
     induction i using Fin.lastCases with
     | last =>
-      have hlast : (fun q : (∀ j : Fin m, M j.castSucc) × M (Fin.last m) ↦
-          piSnoc I M n q (Fin.last m)) = Prod.snd :=
-        funext fun q ↦ by simp only [piSnoc_apply, Fin.snoc_last]
-      refine ⟨hlast.symm ▸ mdifferentiableAt_snd, ?_⟩
-      rw [Fin.snoc_last]
-      exact (DFunLike.congr_fun
-        (mfderiv_congr (I := J) (I' := I (Fin.last m)) hlast) (u, w)).trans
-        (by rw [mfderiv_snd]; rfl)
+      have h := hasMFDerivAt_snd (I := ModelWithCorners.pi fun i : Fin m ↦ I i.castSucc)
+        (I' := I (Fin.last m)) p
+      rw [show (fun q ↦ piSnoc I M n q (Fin.last m)) = Prod.snd from
+        funext fun q ↦ by simp, Fin.snoc_last]
+      exact ⟨h.mdifferentiableAt, DFunLike.congr_fun h.mfderiv (u, w)⟩
     | cast k =>
-      have hcast : (fun q : (∀ j : Fin m, M j.castSucc) × M (Fin.last m) ↦
-          piSnoc I M n q k.castSucc) = (fun f ↦ f k) ∘ Prod.fst :=
-        funext fun q ↦ by simp only [piSnoc_apply, Fin.snoc_castSucc, Function.comp_apply]
-      have hd_apply : MDifferentiableAt (ModelWithCorners.pi fun j : Fin m ↦ I j.castSucc)
-          (I k.castSucc) (fun f ↦ f k) p.1 :=
-        (TauCeti.hasMFDerivAt_apply k p.1).mdifferentiableAt
-      refine ⟨hcast.symm ▸ hd_apply.comp p mdifferentiableAt_fst, ?_⟩
-      rw [Fin.snoc_castSucc]
-      exact (DFunLike.congr_fun
-        (mfderiv_congr (I := J) (I' := I k.castSucc) hcast) (u, w)).trans
-        (by
-          rw [mfderiv_comp p hd_apply mdifferentiableAt_fst, TauCeti.mfderiv_apply, mfderiv_fst]
-          rfl)
+      have h := (TauCeti.hasMFDerivAt_apply (I := fun i : Fin m ↦ I i.castSucc) k p.1).comp p
+        (hasMFDerivAt_fst (I' := I (Fin.last m)) p)
+      rw [show (fun q ↦ piSnoc I M n q k.castSucc) = (fun f ↦ f k) ∘ Prod.fst from
+        funext fun q ↦ by simp, Fin.snoc_castSucc]
+      exact ⟨h.mdifferentiableAt, DFunLike.congr_fun h.mfderiv (u, w)⟩
   rw [TauCeti.mfderiv_pi fun i ↦ (hcomp i).1]
   funext i
   exact (hcomp i).2
@@ -235,35 +224,17 @@ theorem mfderiv_piAddCases_apply
     intro i
     induction i using Fin.addCases with
     | left i =>
-      have hleft : (fun q : (∀ i : Fin m, M (Fin.castAdd k i)) ×
-          (∀ j : Fin k, M (Fin.natAdd m j)) ↦ piAddCases I M n q (Fin.castAdd k i)) =
-          (fun f ↦ f i) ∘ Prod.fst :=
-        funext fun q ↦ by simp only [piAddCases_apply, Fin.addCases_left, Function.comp_apply]
-      have hd_apply : MDifferentiableAt (ModelWithCorners.pi fun i : Fin m ↦ I (Fin.castAdd k i))
-          (I (Fin.castAdd k i)) (fun f ↦ f i) p.1 :=
-        (TauCeti.hasMFDerivAt_apply i p.1).mdifferentiableAt
-      refine ⟨hleft.symm ▸ hd_apply.comp p mdifferentiableAt_fst, ?_⟩
-      rw [Fin.addCases_left]
-      exact (DFunLike.congr_fun
-        (mfderiv_congr (I := J) (I' := I (Fin.castAdd k i)) hleft) (u, w)).trans
-        (by
-          rw [mfderiv_comp p hd_apply mdifferentiableAt_fst, TauCeti.mfderiv_apply, mfderiv_fst]
-          rfl)
+      have h := (TauCeti.hasMFDerivAt_apply (I := fun i : Fin m ↦ I (Fin.castAdd k i)) i p.1).comp
+        p (hasMFDerivAt_fst (I' := ModelWithCorners.pi fun j : Fin k ↦ I (Fin.natAdd m j)) p)
+      rw [show (fun q ↦ piAddCases I M n q (Fin.castAdd k i)) = (fun f ↦ f i) ∘ Prod.fst from
+        funext fun q ↦ by simp, Fin.addCases_left]
+      exact ⟨h.mdifferentiableAt, DFunLike.congr_fun h.mfderiv (u, w)⟩
     | right j =>
-      have hright : (fun q : (∀ i : Fin m, M (Fin.castAdd k i)) ×
-          (∀ j : Fin k, M (Fin.natAdd m j)) ↦ piAddCases I M n q (Fin.natAdd m j)) =
-          (fun f ↦ f j) ∘ Prod.snd :=
-        funext fun q ↦ by simp only [piAddCases_apply, Fin.addCases_right, Function.comp_apply]
-      have hd_apply : MDifferentiableAt (ModelWithCorners.pi fun j : Fin k ↦ I (Fin.natAdd m j))
-          (I (Fin.natAdd m j)) (fun f ↦ f j) p.2 :=
-        (TauCeti.hasMFDerivAt_apply j p.2).mdifferentiableAt
-      refine ⟨hright.symm ▸ hd_apply.comp p mdifferentiableAt_snd, ?_⟩
-      rw [Fin.addCases_right]
-      exact (DFunLike.congr_fun
-        (mfderiv_congr (I := J) (I' := I (Fin.natAdd m j)) hright) (u, w)).trans
-        (by
-          rw [mfderiv_comp p hd_apply mdifferentiableAt_snd, TauCeti.mfderiv_apply, mfderiv_snd]
-          rfl)
+      have h := (TauCeti.hasMFDerivAt_apply (I := fun j : Fin k ↦ I (Fin.natAdd m j)) j p.2).comp
+        p (hasMFDerivAt_snd (I := ModelWithCorners.pi fun i : Fin m ↦ I (Fin.castAdd k i)) p)
+      rw [show (fun q ↦ piAddCases I M n q (Fin.natAdd m j)) = (fun f ↦ f j) ∘ Prod.snd from
+        funext fun q ↦ by simp, Fin.addCases_right]
+      exact ⟨h.mdifferentiableAt, DFunLike.congr_fun h.mfderiv (u, w)⟩
   rw [TauCeti.mfderiv_pi fun i ↦ (hcomp i).1]
   funext i
   exact (hcomp i).2

@@ -26,9 +26,10 @@ This orientation is the product orientation of the oriented circles, taken in th
 Splitting the factors into the first `m` and the last `k`, the concatenation diffeomorphism
 `T^m × T^k → T^(m + k)`, `(x, y) ↦ Fin.addCases x y` (`Diffeomorph.piAddCases`), preserves
 orientation from the product of the two torus orientations to the torus orientation
-(`TauCeti.isOrientationPreservingAt_piAddCases_torusOrientation`): torus orientations are
-associative. Appending one circle, `(x, t) ↦ Fin.snoc x t` from `T^m × AddCircle (p m)`
-(`Diffeomorph.piSnoc`), preserves orientation from the product of the torus orientation with the
+(`TauCeti.isOrientationPreservingAt_piAddCases_torusOrientation`). Informally, applying this
+twice relates the two ways of grouping three tori; no declaration states that comparison.
+Appending one circle, `(x, t) ↦ Fin.snoc x t` from `T^m × AddCircle (p m)` (`Diffeomorph.piSnoc`),
+preserves orientation from the product of the torus orientation with the
 positive orientation of the circle (`AddCircle.orientation`)
 (`TauCeti.isOrientationPreservingAt_piSnoc_torusOrientation`), and the one-factor torus is its
 circle (`TauCeti.isOrientationPreservingAt_piUnique_torusOrientation`). So, by induction on `n`,
@@ -59,9 +60,10 @@ pulls the volume form back to a positive multiple of itself, so it preserves the
   periods preserves orientation.
 * `TauCeti.isOrientationPreservingAt_piAddCases_torusOrientation`: concatenating two tori
   preserves orientation from the product orientation.
-* `TauCeti.isOrientationPreservingAt_piSnoc_torusOrientation`,
-  `TauCeti.isOrientationPreservingAt_piUnique_torusOrientation`: the torus orientation is the
-  iterated product of the positive orientations of the circles.
+* `TauCeti.isOrientationPreservingAt_piSnoc_torusOrientation`: appending a circle preserves
+  orientation from the product of the torus orientation with `AddCircle.orientation`.
+* `TauCeti.isOrientationPreservingAt_piUnique_torusOrientation`: the one-factor torus is its
+  circle.
 * `TauCeti.orientationAt_torusOrientation_fin_zero`: the empty torus carries the positive
   orientation of a point.
 
@@ -158,7 +160,7 @@ theorem orientationAt_torusOrientation_fin_zero (p : Fin 0 → ℝ) [∀ i, Fact
 
 variable {m k : ℕ}
 
-/-- **Torus orientations are associative.** Concatenating the factors,
+/-- **Concatenating tori preserves orientation.** Concatenating the factors,
 `(x, y) ↦ Fin.addCases x y` from `T^m × T^k` to `T^(m + k)`, preserves orientation from the
 product of the orientations of the two tori to the orientation of the concatenated torus. -/
 theorem isOrientationPreservingAt_piAddCases_torusOrientation (p : Fin (m + k) → ℝ)
