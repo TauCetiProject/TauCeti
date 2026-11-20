@@ -12,6 +12,8 @@ public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Geometry.Manifold.GroupAction.Quotient
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Topology.Algebra.Group.Quotient.RightRel
+import TauCeti.Geometry.Lie.IntegralCurve
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.Submersion.Basic
@@ -235,26 +237,18 @@ theorem mfderiv_quotientMk_mulInvariantVectorField [T2Space G] (hK : IsClosed (K
     mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g
       (mulInvariantVectorField ξ g) = 0 := by
   let _ := quotientChartedSpaceOfIsClosed I hK
-  -- The curve `t ↦ g exp (t ξ)` has velocity `ξ^L(g)` at `0` and stays in the coset `g K`.
-  have hL : HasMFDerivAt I I (g * ·) (mulInvariantExp (I := I) ((0 : ℝ) • ξ))
-      (mfderiv I I (g * ·) 1) := by
-    rw [zero_smul, mulInvariantExp_zero]
-    exact ((contMDiff_mul_left (I := I) (n := ∞)).mdifferentiableAt (by simp)).hasMFDerivAt
-  have hc := hL.comp (0 : ℝ) (hasMFDerivAt_mulInvariantExp_smul_zero (I := I) (G := G) ξ)
-  have hconst : (QuotientGroup.mk : G → G ⧸ K) ∘
-      ((g * ·) ∘ fun t : ℝ ↦ mulInvariantExp (I := I) (t • ξ)) = fun _ ↦ (g : G ⧸ K) :=
-    funext fun t ↦ QuotientGroup.mk_mul_of_mem g (hξ t)
-  have hπ : MDifferentiableAt I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g :=
-    (contMDiff_quotientMk hK).mdifferentiableAt (by simp)
-  have hy : ((g * ·) ∘ fun t : ℝ ↦ mulInvariantExp (I := I) (t • ξ)) 0 = g := by simp
-  have h := mfderiv_comp_apply_of_eq (0 : ℝ) hπ hc.mdifferentiableAt hy (1 : ℝ)
-  rw [hconst, mfderiv_const, hc.mfderiv] at h
-  -- The composite applied to the unit tangent vector `1` of `ℝ` is `dπ_g (d(L_g)_1 (1 • ξ))`, and
-  -- `d(L_g)_1 (1 • ξ)` is `(1 • ξ)^L(g)` by definition of the invariant vector field.
-  have h' : mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g
-      (mulInvariantVectorField ((1 : ℝ) • ξ) g) = 0 :=
-    h.symm
-  rwa [one_smul] at h'
+  -- The curve `t ↦ g exp (t ξ)` is the integral curve of `ξ^L` through `g`, and it stays in the
+  -- coset `g K`, so the projection is constant along it.
+  have hconst (t : ℝ) :
+      (QuotientGroup.mk (mulInvariantIntegralCurve ξ g t) : G ⧸ K) = QuotientGroup.mk g := by
+    rw [mulInvariantIntegralCurve_eq_const_mul]
+    beta_reduce
+    rw [← mulInvariantExp_smul]
+    exact QuotientGroup.mk_mul_of_mem g (hξ t)
+  have h := ((isMIntegralCurve_mulInvariantIntegralCurve ξ g).isMIntegralCurveAt 0)
+    |>.mfderiv_apply_eq_zero_of_eventuallyEq_const (J := 𝓘(ℝ, QuotientModelSpace I K))
+      ((contMDiff_quotientMk hK).mdifferentiableAt (by simp)) (Filter.Eventually.of_forall hconst)
+  rwa [mulInvariantIntegralCurve_zero] at h
 
 /-- **The vertical directions of a homogeneous space as a left-invariant distribution.** Let `S` be
 a subspace of `𝔤` whose one-parameter subgroups lie in `K` and whose dimension is that of the Lie

@@ -30,7 +30,9 @@ vector fields, which are allowed to vanish away from the region being deformed.
 If instead `df(v) = 0` along an integral curve defined on a preconnected set of times, then
 `f` is constant along it. This is the conservation statement behind first integrals of a vector
 field. The same holds for a map `g` into another manifold with `dg(v) = 0` along an integral curve
-on an open preconnected set of times: the curve then stays in one fibre of `g`.
+on an open preconnected set of times: the curve then stays in one fibre of `g`. Conversely, if
+`g` is constant along an integral curve near a time, then `dg(v) = 0` at the point of the curve
+at that time.
 
 If `df(v) > 0` is only known at the points of `γ` on a level `f⁻¹(c)`, then `γ` crosses that level
 only upwards: once `f (γ a) ≥ c`, it stays in `{f > c}` at every later time, and once
@@ -50,6 +52,8 @@ vanishes at one point of the curve, by uniqueness of integral curves.
   `df(v) = 0` along it.
 * `IsMIntegralCurveOn.apply_eq_of_mfderiv_apply_eq_zero`: a manifold-valued map `g` is constant
   along `γ` when `dg(v) = 0` along it.
+* `IsMIntegralCurveAt.mfderiv_apply_eq_zero_of_eventuallyEq_const`: `dg(v) = 0` along `γ` where
+  `g` is constant along `γ`.
 * `IsMIntegralCurveOn.lt_apply_of_le_apply`, `IsMIntegralCurveOn.apply_lt_of_apply_le`: `γ` crosses
   a level of `f` only upwards when `df(v) > 0` along that level.
 * `IsMIntegralCurve.apply_eq_of_forall_eq_zero`: an integral curve along which the vector field
@@ -197,3 +201,24 @@ theorem apply_lt_of_apply_le (hγ : IsMIntegralCurveOn γ v s) (hs : IsOpen s) (
     ⟨ht.2, le_rfl⟩).not_ge hb
 
 end IsMIntegralCurveOn
+
+namespace IsMIntegralCurveAt
+
+/-- **A map constant along an integral curve annihilates the field.** If `g : M → N` is
+differentiable at `γ t₀` and constant along a local integral curve `γ` of `v` near `t₀`, then
+`dg(v) = 0` at `γ t₀`: the velocity of a curve staying in one fibre of `g` is vertical. -/
+theorem mfderiv_apply_eq_zero_of_eventuallyEq_const {F H' N : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [TopologicalSpace N]
+    [ChartedSpace H' N] {g : M → N} {t₀ : ℝ} {y : N} (hγ : IsMIntegralCurveAt γ v t₀)
+    (hg : MDifferentiableAt I J g (γ t₀)) (hgγ : g ∘ γ =ᶠ[𝓝 t₀] fun _ ↦ y) :
+    mfderiv I J g (γ t₀) (v (γ t₀)) = 0 := by
+  have hd := (hg.hasMFDerivAt.comp t₀ hγ.hasMFDerivAt).mfderiv
+  rw [hgγ.mfderiv_eq, mfderiv_const, ContinuousLinearMap.comp_zero] at hd
+  -- The composite sends `1` to `dg (1 • v)`; the tangent space of `ℝ` at `t₀` is `ℝ` itself, so
+  -- this unfolding is definitional.
+  calc mfderiv I J g (γ t₀) (v (γ t₀))
+      = mfderiv I J g (γ t₀) ((1 : ℝ) • v (γ t₀)) := by rw [one_smul]
+    _ = (mfderiv I J g (γ t₀)).comp ((1 : ℝ →L[ℝ] ℝ).smulRight (v (γ t₀))) (1 : ℝ) := rfl
+    _ = 0 := DFunLike.congr_fun hd.symm (1 : ℝ)
+
+end IsMIntegralCurveAt

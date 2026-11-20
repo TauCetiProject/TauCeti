@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Stabilizer
 public import TauCeti.Geometry.Lie.Subgroup.Quotient
+public import TauCeti.RepresentationTheory.Stabilizer
 
 import TauCeti.Geometry.Manifold.Submersion.Basic
 
@@ -25,16 +26,14 @@ covectors.
 
 The vertical directions of the projection `π : G → G ⧸ G_ν` at `g` are the left translate
 `d(L_g)(𝔤_ν)` of the infinitesimal stabilizer `𝔤_ν = {ξ | ⁅ξ, ν⁆ = 0}`, the Lie algebra of `G_ν`.
-The map `[g] ↦ Ad*_g ν` (`Module.Dual.coadjointOrbitMap`) is well defined on cosets of `G_ν`,
-injective, `G`-equivariant for the coadjoint action, smooth in each component, and its image is the
-orbit of `ν` in `𝔤*`.
+The orbit map `[g] ↦ Ad*_g ν` of the coadjoint representation
+(`Representation.orbitMap`, applied to `coadjointRepresentation ℝ I G` and `ν`) is well defined on
+cosets of `G_ν`, injective, `G`-equivariant for the coadjoint action, and its image is the orbit of
+`ν` in `𝔤*` (`TauCeti.RepresentationTheory.Stabilizer`); it is smooth in each component
+(`Module.Dual.contMDiff_orbitMap_coadjointRepresentation_apply`).
 
 The Kirillov–Kostant–Souriau form on `G ⧸ G_ν` and the moment-map property of the orbit map are in
 `TauCeti.Geometry.Symplectic.Coadjoint.Orbit`.
-
-## Main definitions
-
-* `Module.Dual.coadjointOrbitMap ν`: the orbit map `[g] ↦ Ad*_g ν` into `𝔤*`.
 
 ## Main results
 
@@ -44,9 +43,8 @@ The Kirillov–Kostant–Souriau form on `G ⧸ G_ν` and the moment-map propert
   `dim 𝔤 - dim 𝔤_ν`.
 * `Module.Dual.ker_mfderiv_quotientMk_stabilizer_coadjointRepresentation`: the vertical
   directions of `G → G ⧸ G_ν` at `g` are `d(L_g)(𝔤_ν)`.
-* `Module.Dual.injective_coadjointOrbitMap`, `Module.Dual.coadjointOrbitMap_smul`,
-  `Module.Dual.range_coadjointOrbitMap`: the orbit map is an injective equivariant map onto the
-  orbit of `ν`.
+* `Module.Dual.contMDiff_orbitMap_coadjointRepresentation_apply`: each component of the orbit map
+  `[g] ↦ Ad*_g ν` is smooth.
 
 ## References
 
@@ -140,50 +138,14 @@ theorem ker_mfderiv_quotientMk_stabilizer_coadjointRepresentation (g : G) :
 
 variable (ν)
 
-/-- **The orbit map** `[g] ↦ Ad*_g ν` from the coadjoint orbit `G ⧸ G_ν` to `𝔤*`. It is well
-defined because `G_ν` fixes `ν`. -/
-def coadjointOrbitMap :
-    G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν → Module.Dual ℝ (GroupLieAlgebra I G) :=
-  Quotient.lift (fun g : G ↦ coadjointRepresentation ℝ I G g ν) fun a b hab ↦ by
-    rw [← mul_inv_cancel_left a b, map_mul, mul_apply_eq_comp,
-      Representation.mem_stabilizer.1 (QuotientGroup.leftRel_apply.1 hab)]
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] in
-@[simp]
-theorem coadjointOrbitMap_mk (g : G) :
-    ν.coadjointOrbitMap g = coadjointRepresentation ℝ I G g ν :=
-  (rfl)
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] in
-/-- The orbit map is equivariant for the coadjoint action. -/
-theorem coadjointOrbitMap_smul (g : G) (x : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) :
-    ν.coadjointOrbitMap (g • x) = coadjointRepresentation ℝ I G g (ν.coadjointOrbitMap x) := by
-  induction x using QuotientGroup.induction_on with
-  | H h => rw [MulAction.Quotient.smul_coe, coadjointOrbitMap_mk, coadjointOrbitMap_mk, smul_eq_mul,
-      map_mul, mul_apply_eq_comp]
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] in
-/-- **The orbit map is injective**: `Ad*_a ν = Ad*_b ν` exactly when `a⁻¹ b` stabilizes `ν`. -/
-theorem injective_coadjointOrbitMap : Function.Injective ν.coadjointOrbitMap := by
-  intro x y hxy
-  induction x using QuotientGroup.induction_on with | H a =>
-  induction y using QuotientGroup.induction_on with | H b =>
-  rw [coadjointOrbitMap_mk, coadjointOrbitMap_mk] at hxy
-  refine QuotientGroup.eq.2 (Representation.mem_stabilizer.2 ?_)
-  rw [map_mul, mul_apply_eq_comp, ← hxy, ← mul_apply_eq_comp, ← map_mul, inv_mul_cancel,
-    map_one, one_apply_eq_self]
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] in
-/-- The image of the orbit map is the coadjoint orbit `{Ad*_g ν | g ∈ G}` of `ν` in `𝔤*`. -/
-theorem range_coadjointOrbitMap :
-    Set.range ν.coadjointOrbitMap = Set.range fun g : G ↦ coadjointRepresentation ℝ I G g ν :=
-  (QuotientGroup.mk_surjective.range_comp ν.coadjointOrbitMap).symm
-
-/-- Each component `[g] ↦ (Ad*_g ν) ξ` of the orbit map is smooth. -/
-theorem contMDiff_coadjointOrbitMap_apply (ξ : GroupLieAlgebra I G) :
+/-- Each component `[g] ↦ (Ad*_g ν) ξ` of the orbit map of the coadjoint representation is
+smooth. -/
+theorem contMDiff_orbitMap_coadjointRepresentation_apply (ξ : GroupLieAlgebra I G) :
     ContMDiff 𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
-      𝓘(ℝ) ∞ fun x ↦ ν.coadjointOrbitMap x ξ :=
+      𝓘(ℝ) ∞ fun x ↦ (coadjointRepresentation ℝ I G).orbitMap ν x ξ :=
   (ν.isSubmersion_quotientMk_stabilizer_coadjointRepresentation.contMDiff_comp_iff
-    QuotientGroup.mk_surjective le_rfl).1 (contMDiff_coadjointRepresentation_apply ν ξ)
+    QuotientGroup.mk_surjective le_rfl).1 (by
+      simpa only [comp_def, Representation.orbitMap_mk] using
+        contMDiff_coadjointRepresentation_apply ν ξ)
 
 end Module.Dual
