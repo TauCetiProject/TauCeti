@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
+public import TauCeti.Analysis.InnerProductSpace.Comass
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.AlternatingForm
-public import TauCeti.Analysis.Normed.Module.Alternating.Dual
 
 /-!
 # Vector-valued forms: Hodge star, pairing and self-duality
@@ -26,11 +26,12 @@ on `V`: the curvature of a connection is a `𝔤`-valued two-form.
   (`Orientation.vectorFormHodgeStar_continuousAlternatingMapLinearEquiv`), and it commutes with
   every linear map `V → W` (`Orientation.vectorFormHodgeStar_comp`), so it is the Hodge star
   applied to each coefficient.
-* The **pairing** `TauCeti.vectorFormInner B k` is `⟨F, G⟩ = ∑ᵢ B (F cᵢ) (G cᵢ)` for any
-  orthonormal basis `(cᵢ)` of `⋀ᵏ E` (`TauCeti.vectorFormInner_eq_sum`). In an orthonormal frame
-  of `E` it is `∑_{i₁ < ⋯ < iₖ} B (F_I, G_I)` (`TauCeti.vectorFormInner_eq_sum_powersetCard`), so
-  for two-forms `|F|² = ∑_{j < k} ⟨F_jk, F_jk⟩`. For real-valued forms it is the inner product of
-  forms `TauCeti.alternatingFormInner`.
+* The **pairing** `LinearMap.BilinForm.vectorFormInner B k` is `⟨F, G⟩ = ∑ᵢ B (F cᵢ) (G cᵢ)` for
+  any orthonormal basis `(cᵢ)` of `⋀ᵏ E` (`LinearMap.BilinForm.vectorFormInner_eq_sum`). In an
+  orthonormal frame of `E` it is `∑_{i₁ < ⋯ < iₖ} B (F_I, G_I)`
+  (`LinearMap.BilinForm.vectorFormInner_eq_sum_powersetCard`), so for two-forms
+  `|F|² = ∑_{j < k} ⟨F_jk, F_jk⟩`. For real-valued forms it is the inner product of forms
+  `TauCeti.alternatingFormInner`.
 
 In an even middle degree `k + k = dim E`, for instance two-forms in dimension four, the star is an
 involution, self-adjoint for every pairing. A form splits as `F = F⁺ + F⁻` into its self-dual part
@@ -48,7 +49,8 @@ preserves the pairing when it preserves `B`; reversing the orientation exchanges
 ## Main definitions
 
 * `Orientation.vectorFormHodgeStar`: the Hodge star of `V`-valued forms.
-* `TauCeti.vectorFormInner`: the pairing of `V`-valued forms induced by a bilinear form on `V`.
+* `LinearMap.BilinForm.vectorFormInner`: the pairing of `V`-valued forms induced by a bilinear form
+  on `V`.
 * `Orientation.vectorFormSelfDualPart`, `Orientation.vectorFormAntiSelfDualPart`: the maps
   `F ↦ (F ± ⋆F) / 2`.
 
@@ -57,6 +59,8 @@ preserves the pairing when it preserves `B`; reversing the orientation exchanges
 * `Orientation.vectorFormInner_vectorFormHodgeStar`: the Hodge star preserves the pairing.
 * `Orientation.vectorFormInner_vectorFormHodgeStar_left`: in an even middle degree it is
   self-adjoint.
+* `Orientation.vectorFormAntiSelfDualPart_eq_zero_iff`,
+  `Orientation.vectorFormSelfDualPart_eq_zero_iff`: `F⁻ = 0 ↔ ⋆F = F` and `F⁺ = 0 ↔ ⋆F = -F`.
 * `Orientation.vectorFormInner_eq_add`: `⟨F, G⟩ = ⟨F⁺, G⁺⟩ + ⟨F⁻, G⁻⟩`.
 * `Orientation.vectorFormInner_vectorFormHodgeStar_right_eq_sub`: `⟨F, ⋆G⟩ = ⟨F⁺, G⁺⟩ - ⟨F⁻, G⁻⟩`.
 * `Orientation.abs_vectorFormInner_vectorFormHodgeStar_le`: the Bogomol'nyi inequality
@@ -69,8 +73,13 @@ preserves the pairing when it preserves `B`; reversing the orientation exchanges
 
 * M. F. Atiyah, N. J. Hitchin and I. M. Singer, *Self-duality in four-dimensional Riemannian
   geometry*, Proc. Roy. Soc. London Ser. A 362 (1978), 425–461.
+* S.-J. Oh and D. Tataru, *The hyperbolic Yang–Mills equation for connections in an arbitrary
+  topological class*, Comm. Math. Phys. 365 (2019), arXiv:1709.08604, Lemma 1.31 (the
+  computation `⋆⟨F ∧ F⟩ = |F⁺|² - |F⁻|²`).
 * S.-J. Oh and D. Tataru, *The Yang–Mills heat flow and the caloric gauge*, Astérisque 436
   (2022), arXiv:1709.08599, Lemma 6.9 (the self-dual splitting and the Bogomol'nyi inequality).
+* E. B. Bogomol'nyi, *The stability of classical solutions*, Sov. J. Nucl. Phys. 24 (1976)
+  (the Bogomol'nyi inequality).
 -/
 
 public section
@@ -83,23 +92,17 @@ open scoped RealInnerProductSpace
 variable {E V W : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
 
-namespace TauCeti
+namespace LinearMap.BilinForm
 
-/-- The linear map on `⋀ᵏ E` induced by the form of a `k`-vector `a` is the inner product with
-`a`. -/
-theorem continuousAlternatingMapLinearEquiv_alternatingFormEquiv {k : ℕ} (a : ⋀[ℝ]^k E) :
-    continuousAlternatingMapLinearEquiv ℝ E k ℝ (alternatingFormEquiv E k a) =
-      innerₗ (⋀[ℝ]^k E) a := by
-  ext v
-  simp
+open TauCeti
 
 /-! ### The pairing of vector-valued forms -/
 
 /-- The pairing `⟨F, G⟩ = ∑ᵢ B (F cᵢ) (G cᵢ)` of `V`-valued `k`-forms `F, G : ⋀ᵏ E →ₗ[ℝ] V`
 induced by a bilinear form `B` on `V`, where `(cᵢ)` is any orthonormal basis of `⋀ᵏ E`
-(`TauCeti.vectorFormInner_eq_sum`): the metric trace of the bilinear form `B (F ·) (G ·)` on
-`⋀ᵏ E`. In an orthonormal frame of `E` it is the sum of `B` over the coefficients with increasing
-indices (`TauCeti.vectorFormInner_eq_sum_powersetCard`). -/
+(`LinearMap.BilinForm.vectorFormInner_eq_sum`): the metric trace of the bilinear form
+`B (F ·) (G ·)` on `⋀ᵏ E`. In an orthonormal frame of `E` it is the sum of `B` over the coefficients
+with increasing indices (`LinearMap.BilinForm.vectorFormInner_eq_sum_powersetCard`). -/
 def vectorFormInner (B : LinearMap.BilinForm ℝ V) (k : ℕ) :
     LinearMap.BilinForm ℝ (⋀[ℝ]^k E →ₗ[ℝ] V) :=
   LinearMap.mk₂ ℝ (fun F G ↦ bilinFormTrace (B.compl₁₂ F G))
@@ -203,11 +206,11 @@ theorem posDef_vectorFormInner (hB : B.toQuadraticMap.PosDef) :
   fun F hF ↦ lt_of_le_of_ne ((isNonneg_vectorFormInner ⟨hB.nonneg⟩).nonneg F)
     (Ne.symm ((vectorFormInner_self_eq_zero hB).not.mpr hF))
 
-end TauCeti
+end LinearMap.BilinForm
 
 namespace Orientation
 
-open TauCeti
+open TauCeti LinearMap.BilinForm
 
 variable {n : ℕ} [_i : Fact (finrank ℝ E = n)] (o : Orientation ℝ E (Fin n))
 
@@ -353,17 +356,43 @@ theorem vectorFormAntiSelfDualPart_apply (F : ⋀[ℝ]^k E →ₗ[ℝ] V) :
 @[simp]
 theorem vectorFormSelfDualPart_add_vectorFormAntiSelfDualPart (F : ⋀[ℝ]^k E →ₗ[ℝ] V) :
     o.vectorFormSelfDualPart hkk F + o.vectorFormAntiSelfDualPart hkk F = F := by
-  rw [vectorFormSelfDualPart_apply, vectorFormAntiSelfDualPart_apply, ← smul_add,
-    add_add_sub_cancel, ← two_smul ℝ F, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
+  rw [vectorFormSelfDualPart_apply, vectorFormAntiSelfDualPart_apply]
+  module
 
 /-- The difference of the two parts is the Hodge star, `F⁺ - F⁻ = ⋆F`. -/
 @[simp]
 theorem vectorFormSelfDualPart_sub_vectorFormAntiSelfDualPart (F : ⋀[ℝ]^k E →ₗ[ℝ] V) :
     o.vectorFormSelfDualPart hkk F - o.vectorFormAntiSelfDualPart hkk F =
       o.vectorFormHodgeStar hkk F := by
-  rw [vectorFormSelfDualPart_apply, vectorFormAntiSelfDualPart_apply, ← smul_sub,
-    add_sub_sub_cancel, ← two_smul ℝ (o.vectorFormHodgeStar hkk F), smul_smul,
-    inv_mul_cancel₀ two_ne_zero, one_smul]
+  rw [vectorFormSelfDualPart_apply, vectorFormAntiSelfDualPart_apply]
+  module
+
+/-- The anti-self-dual part vanishes exactly when the form is self-dual: `F⁻ = 0 ↔ ⋆F = F`. -/
+theorem vectorFormAntiSelfDualPart_eq_zero_iff {F : ⋀[ℝ]^k E →ₗ[ℝ] V} :
+    o.vectorFormAntiSelfDualPart hkk F = 0 ↔ o.vectorFormHodgeStar hkk F = F := by
+  rw [vectorFormAntiSelfDualPart_apply, smul_eq_zero_iff_right (inv_ne_zero two_ne_zero),
+    sub_eq_zero, eq_comm]
+
+/-- The self-dual part vanishes exactly when the form is anti-self-dual: `F⁺ = 0 ↔ ⋆F = -F`. -/
+theorem vectorFormSelfDualPart_eq_zero_iff {F : ⋀[ℝ]^k E →ₗ[ℝ] V} :
+    o.vectorFormSelfDualPart hkk F = 0 ↔ o.vectorFormHodgeStar hkk F = -F := by
+  rw [vectorFormSelfDualPart_apply, smul_eq_zero_iff_right (inv_ne_zero two_ne_zero),
+    add_eq_zero_iff_eq_neg']
+
+/-- A form equals its self-dual part exactly when it is self-dual: `F⁺ = F ↔ ⋆F = F`. -/
+theorem vectorFormSelfDualPart_eq_self_iff {F : ⋀[ℝ]^k E →ₗ[ℝ] V} :
+    o.vectorFormSelfDualPart hkk F = F ↔ o.vectorFormHodgeStar hkk F = F := by
+  rw [← vectorFormAntiSelfDualPart_eq_zero_iff]
+  nth_rw 2 [← o.vectorFormSelfDualPart_add_vectorFormAntiSelfDualPart hkk F]
+  exact left_eq_add
+
+/-- A form equals its anti-self-dual part exactly when it is anti-self-dual:
+`F⁻ = F ↔ ⋆F = -F`. -/
+theorem vectorFormAntiSelfDualPart_eq_self_iff {F : ⋀[ℝ]^k E →ₗ[ℝ] V} :
+    o.vectorFormAntiSelfDualPart hkk F = F ↔ o.vectorFormHodgeStar hkk F = -F := by
+  rw [← vectorFormSelfDualPart_eq_zero_iff]
+  nth_rw 2 [← o.vectorFormSelfDualPart_add_vectorFormAntiSelfDualPart hkk F]
+  exact right_eq_add
 
 include hk
 
@@ -382,6 +411,36 @@ theorem vectorFormHodgeStar_vectorFormAntiSelfDualPart (F : ⋀[ℝ]^k E →ₗ[
       -o.vectorFormAntiSelfDualPart hkk F := by
   rw [vectorFormAntiSelfDualPart_apply, map_smul, map_sub,
     o.vectorFormHodgeStar_vectorFormHodgeStar_of_even hk, ← smul_neg, neg_sub]
+
+/-- The self-dual part of a self-dual part is itself, `(F⁺)⁺ = F⁺`. -/
+@[simp]
+theorem vectorFormSelfDualPart_vectorFormSelfDualPart (F : ⋀[ℝ]^k E →ₗ[ℝ] V) :
+    o.vectorFormSelfDualPart hkk (o.vectorFormSelfDualPart hkk F) =
+      o.vectorFormSelfDualPart hkk F :=
+  (o.vectorFormSelfDualPart_eq_self_iff hkk).mpr
+    (o.vectorFormHodgeStar_vectorFormSelfDualPart hk hkk F)
+
+/-- The anti-self-dual part of a self-dual part vanishes, `(F⁺)⁻ = 0`. -/
+@[simp]
+theorem vectorFormAntiSelfDualPart_vectorFormSelfDualPart (F : ⋀[ℝ]^k E →ₗ[ℝ] V) :
+    o.vectorFormAntiSelfDualPart hkk (o.vectorFormSelfDualPart hkk F) = 0 :=
+  (o.vectorFormAntiSelfDualPart_eq_zero_iff hkk).mpr
+    (o.vectorFormHodgeStar_vectorFormSelfDualPart hk hkk F)
+
+/-- The anti-self-dual part of an anti-self-dual part is itself, `(F⁻)⁻ = F⁻`. -/
+@[simp]
+theorem vectorFormAntiSelfDualPart_vectorFormAntiSelfDualPart (F : ⋀[ℝ]^k E →ₗ[ℝ] V) :
+    o.vectorFormAntiSelfDualPart hkk (o.vectorFormAntiSelfDualPart hkk F) =
+      o.vectorFormAntiSelfDualPart hkk F :=
+  (o.vectorFormAntiSelfDualPart_eq_self_iff hkk).mpr
+    (o.vectorFormHodgeStar_vectorFormAntiSelfDualPart hk hkk F)
+
+/-- The self-dual part of an anti-self-dual part vanishes, `(F⁻)⁺ = 0`. -/
+@[simp]
+theorem vectorFormSelfDualPart_vectorFormAntiSelfDualPart (F : ⋀[ℝ]^k E →ₗ[ℝ] V) :
+    o.vectorFormSelfDualPart hkk (o.vectorFormAntiSelfDualPart hkk F) = 0 :=
+  (o.vectorFormSelfDualPart_eq_zero_iff hkk).mpr
+    (o.vectorFormHodgeStar_vectorFormAntiSelfDualPart hk hkk F)
 
 /-- A self-dual form and an anti-self-dual form are orthogonal for every pairing. -/
 theorem vectorFormInner_eq_zero_of_vectorFormHodgeStar_eq (B : LinearMap.BilinForm ℝ V)
