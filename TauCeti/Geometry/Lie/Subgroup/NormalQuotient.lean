@@ -48,14 +48,11 @@ Delzant's construction, are further examples.
 
 ## References
 
-* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer, 2013, Theorem 21.17 (the
-  homogeneous space construction theorem) and Theorem 21.26 (quotients of Lie groups by closed
-  normal subgroups are Lie groups).
-* J. Hilgert and K.-H. Neeb, *Structure and Geometry of Lie Groups*, Springer, 2012,
-  Section 11.1 (quotients of Lie groups).
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer, 2013, Chapter 21 (the
+  homogeneous space construction theorem, and quotients of Lie groups by closed normal subgroups).
 * J. Marsden, G. Misiołek, J.-P. Ortega, M. Perlmutter, T. Ratiu, *Hamiltonian Reduction by
-  Stages*, Lecture Notes in Mathematics 1913, Springer, 2007, Section 5.2 (the residual action
-  of `G ⧸ N` on the space reduced by a normal subgroup).
+  Stages*, Lecture Notes in Mathematics 1913, Springer, 2007 (the residual action of `G ⧸ N` on the
+  space reduced by a normal subgroup).
 -/
 
 public section
