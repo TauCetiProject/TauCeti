@@ -385,6 +385,7 @@ theorem bilinFormTrace_eq_sum_chartInvGramMatrix (α : M) {x : M}
   have hb : ⇑b = fun i ↦ chartLocalFrame (I := I) α i x :=
     funext fun i ↦ (chartLocalFrame_apply_of_mem_chart_source (I := I) α hx i).symm
   rw [TauCeti.bilinFormTrace_eq_sum_inv_gram _ b, hb, ← chartGramMatrix, ← chartInvGramMatrix_def]
+  simp only [smul_eq_mul]
 
 /-- On the chart domain, the dual frame pairs with the chart-local frame to the identity
 matrix. -/
