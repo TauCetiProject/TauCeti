@@ -32,17 +32,17 @@ The construction combines Mathlib's McShane extension and normalized smooth bump
 
 public section
 
-open ContinuousLinearMap MeasureTheory Metric Set
-open scoped Convolution ContDiff NNReal
+open ContinuousLinearMap Filter MeasureTheory Metric Set
+open scoped Convolution ContDiff NNReal Topology
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-  {K : ℝ≥0} {f : E → F}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] {K : ℝ≥0}
 
 /-- A Lipschitz function has smooth uniform approximations with exactly the same Lipschitz
 bound. The domain may have dimension zero, and the function need not be bounded. -/
-theorem LipschitzWith.exists_contDiff_lipschitzWith_dist_lt (hf : LipschitzWith K f)
-    {ε : ℝ} (hε : 0 < ε) :
+theorem LipschitzWith.exists_contDiff_lipschitzWith_dist_lt
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    {f : E → F} (hf : LipschitzWith K f) {ε : ℝ} (hε : 0 < ε) :
     ∃ g : E → F, ContDiff ℝ ∞ g ∧ LipschitzWith K g ∧ ∀ x, dist (g x) (f x) < ε := by
   borelize E
   obtain ⟨δ, hδ, hbound⟩ := exists_pos_mul_lt hε (K : ℝ)
@@ -85,3 +85,38 @@ theorem LipschitzOnWith.exists_contDiff_lipschitzWith_mem_Icc_dist_lt {f : E →
     refine (ρ.dist_normed_convolution_le hu.continuous.aestronglyMeasurable
       fun y hy => (hu.dist_le_mul y x).trans ?_).trans_lt hbound
     exact mul_le_mul_of_nonneg_left (mem_ball.1 hy).le K.coe_nonneg
+
+/-- Any real-valued `K`-Lipschitz function on a finite-dimensional real normed space is the
+pointwise limit of a sequence of smooth bounded `K`-Lipschitz functions uniformly dominated by
+`|f x| + 1`. -/
+theorem LipschitzWith.exists_contDiff_lipschitzWith_abs_le_tendsto {f : E → ℝ}
+    (hf : LipschitzWith K f) :
+    ∃ g : ℕ → E → ℝ, (∀ n, ContDiff ℝ ∞ (g n)) ∧ (∀ n, LipschitzWith K (g n)) ∧
+      (∀ n, ∃ M, ∀ x, |g n x| ≤ M) ∧ (∀ n x, |g n x| ≤ |f x| + 1) ∧
+      ∀ x, Tendsto (fun n ↦ g n x) atTop (𝓝 (f x)) := by
+  classical
+  let R : ℕ → ℝ := fun n ↦ (n : ℝ) + 1
+  let ftr : ℕ → E → ℝ := fun n x ↦ max (-R n) (min (R n) (f x))
+  have hR (n : ℕ) : 0 < R n := by positivity
+  have hftr_abs (n : ℕ) (x : E) : |ftr n x| ≤ |f x| := by
+    refine abs_le.2 ⟨?_, ?_⟩
+    · exact le_max_of_le_right (le_min (by linarith [hR n, abs_nonneg (f x)]) (neg_abs_le (f x)))
+    · exact max_le (by linarith [hR n, abs_nonneg (f x)]) (min_le_of_right_le (le_abs_self (f x)))
+  have hex (n : ℕ) := (((hf.const_min (R n)).const_max (-R n)).lipschitzOnWith
+    (s := univ)).exists_contDiff_lipschitzWith_mem_Icc_dist_lt (a := -R n) (b := R n)
+      (by linarith [hR n])
+      (fun x _ ↦ ⟨le_max_left _ _, max_le (by linarith [hR n]) (min_le_left _ _)⟩)
+      (by positivity : 0 < 1 / ((n : ℝ) + 1))
+  choose g hgs hgK hg_mem hgf using hex
+  refine ⟨g, hgs, hgK, fun n ↦ ⟨R n, fun x ↦ abs_le.2 (hg_mem n x)⟩, fun n x ↦ ?_, fun x ↦ ?_⟩
+  · have h1 : 1 / ((n : ℝ) + 1) ≤ 1 :=
+      (div_le_one (by positivity)).2 (by linarith [Nat.cast_nonneg (α := ℝ) n])
+    have hdist : |g n x - ftr n x| ≤ 1 := (Real.dist_eq _ _ ▸ (hgf n x (mem_univ x)).le).trans h1
+    linarith [abs_sub_abs_le_abs_sub (g n x) (ftr n x), hftr_abs n x]
+  · refine tendsto_iff_dist_tendsto_zero.2 <| squeeze_zero' (.of_forall fun _ ↦ dist_nonneg) ?_
+      (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
+    filter_upwards [eventually_ge_atTop (Nat.ceil |f x|)] with n hn
+    obtain ⟨hlo, hhi⟩ := abs_le.1 (show |f x| ≤ R n by
+      have : (Nat.ceil |f x| : ℝ) ≤ n := Nat.cast_le.2 hn
+      linarith [Nat.le_ceil |f x|])
+    simpa [ftr, min_eq_right hhi, max_eq_right hlo] using (hgf n x (mem_univ x)).le
