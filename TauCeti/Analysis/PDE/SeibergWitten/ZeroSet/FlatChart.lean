@@ -32,20 +32,22 @@ is read through the identification of two-forms with `⋀² E`
 Taubes's monotonicity inequality in a flat chart
 (`TauCeti.SeibergWitten.measure_closedBall_le_mul_deriv_add`) takes two pointwise inequalities as
 hypotheses: the bound `δ ≤ F(e₀, e₁) + F(e₂, e₃) + K` of the defect density by the Kähler
-component of `F`, and the bound `F(v, J v) ≤ (δ + K) ‖v‖²` of the Hermitian part of `F`. Both
-follow from the curvature equation together with Taubes's coarse bounds
+component of `F`, and the bound `F(v, J v) ≤ ((1 + κ) δ + K) ‖v‖²` of the Hermitian part of `F`.
+Both follow from the curvature equation together with Taubes's coarse bounds
 
-`|φ|² + |β|² ≤ 1 + K / r`,  `|β|² ≤ (K / r) w₊ + K / r²`,  `w₊ = max (1 - |φ|²) 0`,
+`|φ|² + |β|² ≤ 1 + K / r`,  `|β|² ≤ (K / r) w₊ + K / r²`,
+`|F⁻| ≤ (r / (4 √2)) (1 + C / √r) w₊ + C`,
 
-a bound `|η| ≤ H` on the forcing, and a lower bound `F(v, J v) ≥ -C ‖v‖²` on the Hermitian part
-(`TauCeti.SeibergWitten.div_mul_abs_one_sub_sub_le_inner_add`,
+where `w₊ = max (1 - |φ|²) 0` and `F⁻ = (F - ⋆F) / 2`, and a bound `|η| ≤ H` on the forcing, with
+`κ = C / √r` (`TauCeti.SeibergWitten.div_mul_abs_one_sub_sub_le_inner_add`,
 `TauCeti.SeibergWitten.hermitianForm_apply_self_le_of_add_hodgeStar_eq`). So the defect energy of
 a solution satisfies the monotonicity inequality
 
-`E_r(B_σ) ≤ (σ / 2) E_r'(σ) + K' (|S| / 2 + |B₁|) σ⁴`,  `K' = K + √2 H / 2 + C`
+`E_r(B_σ) ≤ (σ / 2) (1 + C r^(-1/2)) E_r'(σ) + K' (|S| / 2 + |B₁|) σ⁴`,
+`K' = (1 + C) K + √2 H / 2 + C`
 
-(`TauCeti.SeibergWitten.measure_closedBall_le_mul_deriv_add_of_add_hodgeStar_eq`), with `K'`
-independent of `r` and of the solution.
+(`TauCeti.SeibergWitten.measure_closedBall_le_mul_deriv_add_of_add_hodgeStar_eq`), with `C` and
+`K'` independent of `r` and of the solution.
 
 At a zero of `α`, Taubes's gradient bound `|∇_a α|² ≤ K r w₊ + K` gives the smallest-scale lower
 bound `E_r(B_{c₀ / √r}) ≥ c₁ / r`
@@ -60,7 +62,9 @@ are then covered by `N(σ) ≤ 4 E_r(A_{σ/2}) / (c σ²)` balls of radius `σ` 
 `r ≥ (2 c₀ / σ)²` (`TauCeti.SeibergWitten.exists_forall_coveringNumber_le_of_add_hodgeStar_eq`).
 The constants `c₀`, `c` and `ρ₀` depend only on `K`, `C`, `H`, the radius `R` of the balls on which
 the equations hold, and the volume of the unit ball; they depend neither on `r` nor on the
-solution.
+solution. The factor `1 + C r^(-1/2)` is absorbed into the constants, since it is integrated only
+over the range `σ ≥ c₀ r^(-1/2)`
+(`TauCeti.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le`).
 
 The curvature geometry of the manifold, which turns the factor `1` in front of `E_r'(σ)` into
 `1 + C σ` in Darboux coordinates, is not treated here.
@@ -133,13 +137,12 @@ include h₀ h₂₃ hQ he
 a closed `C¹` two-form field on the ball `ball c R`, and let `φ`, `β` be continuous fields of
 positive half-spinors in the canonical line of `J` and in its complement. Suppose that on the ball
 the curvature equation `F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` holds, with `r ≥ 1`, Taubes's
-coarse bounds `‖φ‖² + ‖β‖² ≤ 1 + K / r` and `‖β‖² ≤ (K / r) w₊ + K / r²`, a forcing bound
-`‖η‖ ≤ H`, and a lower bound `F(v, J v) ≥ -C ‖v‖²` on the Hermitian part, where `K, C ≥ 0`. Then
-the
-defect energy `ν = δ dμ`, `δ = (r / 4) |1 - ‖φ‖² - ‖β‖²|`, satisfies at every radius
-`0 < σ < R`
+coarse bounds `‖φ‖² + ‖β‖² ≤ 1 + K / r`, `‖β‖² ≤ (K / r) w₊ + K / r²` and
+`‖F⁻‖ ≤ (r / (4 √2)) (1 + C / √r) w₊ + C`, where `w₊ = max (1 - ‖φ‖²) 0` and `F⁻ = (F - ⋆F) / 2`,
+and a forcing bound `‖η‖ ≤ H`, where `K, C ≥ 0`. Then the defect energy `ν = δ dμ`,
+`δ = (r / 4) |1 - ‖φ‖² - ‖β‖²|`, satisfies at every radius `0 < σ < R`
 
-`ν(B_σ) ≤ (σ / 2) d/dσ ν(B_σ) + (K + √2 H / 2 + C) (|S| / 2 + |B₁|) σ⁴`
+`ν(B_σ) ≤ (σ / 2) (1 + C / √r) d/dσ ν(B_σ) + ((1 + C) K + √2 H / 2 + C) (|S| / 2 + |B₁|) σ⁴`
 
 for the closed balls `B_σ = closedBall c σ`. -/
 theorem measure_closedBall_le_mul_deriv_add_of_add_hodgeStar_eq
@@ -155,12 +158,15 @@ theorem measure_closedBall_le_mul_deriv_add_of_add_hodgeStar_eq
     (hFeq : ∀ x ∈ ball c R, (alternatingFormEquiv E 2).symm (F x) +
         o.hodgeStar hkl ((alternatingFormEquiv E 2).symm (F x)) = (r / 4) • J.kahlerForm -
           (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ x + β x)) : ⋀[ℝ]^2 E) - η x)
-    (hC : ∀ x ∈ ball c R, ∀ v, -C * ‖v‖ ^ 2 ≤ F x ![v, J v]) (hσ : σ ∈ Ioo 0 R) :
+    (hFm : ∀ x ∈ ball c R, ‖(2⁻¹ : ℝ) • ((alternatingFormEquiv E 2).symm (F x) -
+        o.hodgeStar hkl ((alternatingFormEquiv E 2).symm (F x)))‖ ≤
+        r / (4 * √2) * (1 + C / √r) * max (1 - ‖φ x‖ ^ 2) 0 + C) (hσ : σ ∈ Ioo 0 R) :
     ((μ.withDensity fun x ↦ ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|))
         (closedBall c σ)).toReal ≤
-      σ / 2 * deriv (fun s ↦ ((μ.withDensity fun x ↦
+      σ / 2 * (1 + C / √r) * deriv (fun s ↦ ((μ.withDensity fun x ↦
           ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|)) (closedBall c s)).toReal) σ +
-        (K + √2 * H / 2 + C) * (μ.toSphere.real univ / 2 + μ.real (ball (0 : E) 1)) * σ ^ 4 := by
+        ((1 + C) * K + √2 * H / 2 + C) * (μ.toSphere.real univ / 2 + μ.real (ball (0 : E) 1)) *
+          σ ^ 4 := by
   have hr0 : 0 < r := by linarith
   have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
   -- The two-vector of `F x` pairs with `u ∧ w` to `F x (u, w)`.
@@ -169,7 +175,7 @@ theorem measure_closedBall_le_mul_deriv_add_of_add_hodgeStar_eq
     inner_alternatingFormEquiv_symm_ιMulti _ _
   -- The bound of the defect density by the Kähler component.
   have hω : ∀ x ∈ ball c R, r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2| ≤
-      F x ![e 0, e 1] + F x ![e 2, e 3] + (K + √2 * H / 2 + C) := by
+      F x ![e 0, e 1] + F x ![e 2, e 3] + ((1 + C) * K + √2 * H / 2 + C) := by
     intro x hx
     have h := div_mul_abs_one_sub_sub_le_inner_add hQ hkl
       (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he)
@@ -178,24 +184,22 @@ theorem measure_closedBall_le_mul_deriv_add_of_add_hodgeStar_eq
     rw [real_inner_comm, AlmostComplexStructure.kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂₃,
       inner_add_right, hpair, hpair] at h
     have : √2 * ‖η x‖ / 2 ≤ √2 * H / 2 := by gcongr; exact hη x hx
-    linarith
+    nlinarith [mul_nonneg hC₀ hK]
   -- The bound of the Hermitian part by the defect density.
   have hB : ∀ x ∈ ball c R, ∀ v, F x ![v, J v] ≤
-      ((1 + 0) * (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|) + (K + √2 * H / 2 + C)) * ‖v‖ ^ 2 := by
+      ((1 + C / √r) * (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|) + ((1 + C) * K + √2 * H / 2 + C)) *
+        ‖v‖ ^ 2 := by
     intro x hx v
-    have hC' : ∀ v, -C * ‖v‖ ^ 2 ≤ J.hermitianForm ((alternatingFormEquiv E 2).symm (F x)) v v :=
-      fun v ↦ by rw [AlmostComplexStructure.hermitianForm_apply_self, hpair]; exact hC x hx v
     have h := hermitianForm_apply_self_le_of_add_hodgeStar_eq h₀ h₂₃ hQ hkl he (hφ x hx) (hβ x hx)
-      hr (hβK x hx) (hFeq x hx) hC' v
+      hr (hβK x hx) (hFeq x hx) hC₀ (hFm x hx) v
     rw [AlmostComplexStructure.hermitianForm_apply_self, hpair] at h
     refine h.trans (mul_le_mul_of_nonneg_right ?_ (sq_nonneg _))
     have : √2 * ‖η x‖ / 2 ≤ √2 * H / 2 := by gcongr; exact hη x hx
     linarith
   have hδ : ContinuousOn (fun x ↦ r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|) (ball c R) :=
     continuousOn_const.mul ((continuousOn_const.sub (hφc.norm.pow 2)).sub (hβc.norm.pow 2)).abs
-  have h := measure_closedBall_le_mul_deriv_add (μ := μ) h₀ h₂₃ hF hdF hδ
+  exact measure_closedBall_le_mul_deriv_add (μ := μ) h₀ h₂₃ hF hdF hδ
     (fun x _ ↦ by positivity) hω hB hσ
-  simpa using h
 
 /-- **Quadratic lower bound for the defect energy at zeros of `α`.** Fix constants
 `K, C, H ≥ 0` and a radius `R > 0`. There are constants `c₀, c, ρ₀ > 0` with the following
@@ -204,11 +208,11 @@ field, let `φ`, `β` be continuous fields of positive half-spinors in the canon
 in its complement, and let `α` be a differentiable function with `|α| = |φ|` (the coefficient of
 `φ = α u₀`), whose covariant derivative for the connection form `b` is `∇_a α`. Suppose that on
 the ball the curvature equation `F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` holds, with Taubes's
-coarse bounds `|φ|² + |β|² ≤ 1 + K / r`, `|β|² ≤ (K / r) w₊ + K / r²` and
-`|∇_a α|² ≤ K r w₊ + K`, where `w₊ = max (1 - |φ|²) 0`, the forcing bound `‖η‖ ≤ H`, and the
-lower bound `F(v, J v) ≥ -C ‖v‖²` on the Hermitian part. If `α x₀ = 0`, then the defect energy
-`ν = δ dμ`, `δ = (r / 4) |1 - |φ|² - |β|²|`, satisfies `ν(B_σ) ≥ c σ²` for every
-`c₀ / √r ≤ σ ≤ ρ₀`. -/
+coarse bounds `|φ|² + |β|² ≤ 1 + K / r`, `|β|² ≤ (K / r) w₊ + K / r²`,
+`|∇_a α|² ≤ K r w₊ + K` and `‖F⁻‖ ≤ (r / (4 √2)) (1 + C / √r) w₊ + C`, where
+`w₊ = max (1 - |φ|²) 0` and `F⁻ = (F - ⋆F) / 2`, and the forcing bound `‖η‖ ≤ H`. If `α x₀ = 0`,
+then the defect energy `ν = δ dμ`, `δ = (r / 4) |1 - |φ|² - |β|²|`, satisfies `ν(B_σ) ≥ c σ²` for
+every `c₀ / √r ≤ σ ≤ ρ₀`. -/
 theorem exists_forall_ofReal_mul_sq_le_measure_closedBall_of_add_hodgeStar_eq {K C H R : ℝ}
     (hK : 0 ≤ K) (hC : 0 ≤ C) (hH : 0 ≤ H) (hR : 0 < R) :
     ∃ c₀ > 0, ∃ c > 0, ∃ ρ₀ > 0, ∀ r, 1 ≤ r → 8 * K ≤ r →
@@ -226,7 +230,10 @@ theorem exists_forall_ofReal_mul_sq_le_measure_closedBall_of_add_hodgeStar_eq {K
       (∀ x ∈ ball x₀ R, (alternatingFormEquiv E 2).symm (F x) +
         o.hodgeStar hkl ((alternatingFormEquiv E 2).symm (F x)) = (r / 4) • J.kahlerForm -
           (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ x + β x)) : ⋀[ℝ]^2 E) - η x) →
-      (∀ x ∈ ball x₀ R, ∀ v, -C * ‖v‖ ^ 2 ≤ F x ![v, J v]) → α x₀ = 0 →
+      (∀ x ∈ ball x₀ R, ‖(2⁻¹ : ℝ) • ((alternatingFormEquiv E 2).symm (F x) -
+          o.hodgeStar hkl ((alternatingFormEquiv E 2).symm (F x)))‖ ≤
+          r / (4 * √2) * (1 + C / √r) * max (1 - ‖φ x‖ ^ 2) 0 + C) →
+      α x₀ = 0 →
       ∀ σ, c₀ / √r ≤ σ → σ ≤ ρ₀ →
         ENNReal.ofReal (c * σ ^ 2) ≤ (μ.withDensity fun x ↦
           ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|)) (closedBall x₀ σ) := by
@@ -245,11 +252,12 @@ theorem exists_forall_ofReal_mul_sq_le_measure_closedBall_of_add_hodgeStar_eq {K
       _ ≤ 1 := h1
   obtain ⟨c, hc, ρ₀, hρ₀, hdens⟩ :=
     TauCeti.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le (X := E) (C := 0)
-      (C₁ := 0) (K := (K + √2 * H / 2 + C) * (μ.toSphere.real univ / 2 + μ.real (ball (0 : E) 1)))
-      le_rfl le_rfl (by positivity) hc₀
+      (C₁ := C)
+      (K := ((1 + C) * K + √2 * H / 2 + C) * (μ.toSphere.real univ / 2 + μ.real (ball (0 : E) 1)))
+      le_rfl hC (by positivity) hc₀
       (by positivity : 0 < c₀ ^ 4 * μ.real (ball (0 : E) 1) / 8) (half_pos hR)
   refine ⟨c₀, hc₀, c, hc, ρ₀, hρ₀, fun r hr hrK F φ β α b η x₀ hF hdF hφc hβc hα hφα hφ hβ
-    hφβ hβK hgrad hη hFeq hCF hα₀ σ hσ hσρ₀ ↦ ?_⟩
+    hφβ hβK hgrad hη hFeq hFm hα₀ σ hσ hσρ₀ ↦ ?_⟩
   have hδ : ContinuousOn (fun x ↦ r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|) (ball x₀ R) :=
     continuousOn_const.mul ((continuousOn_const.sub (hφc.norm.pow 2)).sub (hβc.norm.pow 2)).abs
   have hfin : ∀ s < R, (μ.withDensity fun x ↦
@@ -263,9 +271,8 @@ theorem exists_forall_ofReal_mul_sq_le_measure_closedBall_of_add_hodgeStar_eq {K
   · -- Taubes's monotonicity inequality holds at every radius below `R`.
     have hs0 : 0 < s := (by positivity : 0 ≤ c₀ / √r).trans_lt hs.1
     have h := measure_closedBall_le_mul_deriv_add_of_add_hodgeStar_eq (μ := μ) h₀ h₂₃ hQ hkl he
-      hr hK hC hF hdF hφc hβc hφ hβ hφβ hβK hη hFeq hCF ⟨hs0, hs.2.trans (half_lt_self hR)⟩
-    have hone : s / 2 * (1 + 0 * s) * (1 + 0 / √r) = s / 2 := by simp
-    rw [hone]
+      hr hK hC hF hdF hφc hβc hφ hβ hφβ hβK hη hFeq hFm ⟨hs0, hs.2.trans (half_lt_self hR)⟩
+    rw [zero_mul, add_zero, mul_one]
     calc _ ≤ _ := h
       _ = _ := by ring
   · -- The defect energy at the smallest scale.
@@ -303,7 +310,10 @@ theorem exists_forall_coveringNumber_le_of_add_hodgeStar_eq {K C H R : ℝ} (hK 
       (∀ x ∈ U, (alternatingFormEquiv E 2).symm (F x) +
         o.hodgeStar hkl ((alternatingFormEquiv E 2).symm (F x)) = (r / 4) • J.kahlerForm -
           (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ x + β x)) : ⋀[ℝ]^2 E) - η x) →
-      (∀ x ∈ U, ∀ v, -C * ‖v‖ ^ 2 ≤ F x ![v, J v]) → (∀ x ∈ Z, α x = 0 ∧ ball x R ⊆ U) →
+      (∀ x ∈ U, ‖(2⁻¹ : ℝ) • ((alternatingFormEquiv E 2).symm (F x) -
+          o.hodgeStar hkl ((alternatingFormEquiv E 2).symm (F x)))‖ ≤
+          r / (4 * √2) * (1 + C / √r) * max (1 - ‖φ x‖ ^ 2) 0 + C) →
+      (∀ x ∈ Z, α x = 0 ∧ ball x R ⊆ U) →
       ∀ σ : ℝ≥0, σ ≠ 0 → (σ : ℝ) ≤ 2 * ρ₀ → (2 * c₀ / σ) ^ 2 ≤ r →
         (coveringNumber σ Z : ℝ≥0∞) ≤ ENNReal.ofReal (4 / (c * σ ^ 2)) *
           (μ.withDensity fun x ↦ ENNReal.ofReal (r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|))
@@ -312,7 +322,7 @@ theorem exists_forall_coveringNumber_le_of_add_hodgeStar_eq {K C H R : ℝ} (hK 
     exists_forall_ofReal_mul_sq_le_measure_closedBall_of_add_hodgeStar_eq (μ := μ) (ρ := ρ) h₀ h₂₃
       hQ hkl he hK hC hH hR
   refine ⟨c₀, hc₀, c, hc, ρ₀, hρ₀, fun r hr hrK F φ β α b η U Z hF hdF hφc hβc hα hφα hφ hβ hφβ
-    hβK hgrad hη hFeq hCF hZ σ hσ hσρ₀ hrσ ↦ ?_⟩
+    hβK hgrad hη hFeq hFm hZ σ hσ hσρ₀ hrσ ↦ ?_⟩
   refine TauCeti.coveringNumber_le_of_mul_sq_le_measure_closedBall_of_sq_le hc
     (fun x hx ↦ ?_) hσ hσρ₀ hrσ
   obtain ⟨hα₀, hU⟩ := hZ x hx
@@ -320,6 +330,6 @@ theorem exists_forall_coveringNumber_le_of_add_hodgeStar_eq {K C H R : ℝ} (hK 
     (hφc.mono hU) (hβc.mono hU) (fun y hy ↦ hα y (hU hy)) (fun y hy ↦ hφα y (hU hy))
     (fun y hy ↦ hφ y (hU hy)) (fun y hy ↦ hβ y (hU hy)) (fun y hy ↦ hφβ y (hU hy))
     (fun y hy ↦ hβK y (hU hy)) (fun y hy ↦ hgrad y (hU hy)) (fun y hy ↦ hη y (hU hy))
-    (fun y hy ↦ hFeq y (hU hy)) (fun y hy ↦ hCF y (hU hy)) hα₀
+    (fun y hy ↦ hFeq y (hU hy)) (fun y hy ↦ hFm y (hU hy)) hα₀
 
 end TauCeti.SeibergWitten
