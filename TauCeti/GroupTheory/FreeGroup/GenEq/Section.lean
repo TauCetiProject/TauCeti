@@ -60,6 +60,8 @@ active, non-active, parametric and constant sections.
 * `TauCeti.GenEq.closedSectionOfBase_eq_iff`: every variable base lies in exactly one closed
   section.
 * `TauCeti.GenEq.degree_eq_zero_iff`: an item is free exactly when its degree is zero.
+* `TauCeti.GenEq.Solution.isReduced_substituteVars_segment_of_isOpenBoundary`: under a solution,
+  reduced substituted segments meeting at an open boundary glue without cancellation.
 
 ## References
 
@@ -531,6 +533,35 @@ theorem closedSectionOfBase_eq_iff {μ : Fin Ω.numBases}
 theorem existsUnique_mem_closedSections_and_baseItems_subset (μ : Fin Ω.numBases) :
     ∃! s, s ∈ Ω.closedSections ∧ Ω.baseItems μ ⊆ Ω.sectionItems s.1 s.2 :=
   ⟨_, Ω.closedSectionOfBase_eq_iff.1 rfl, fun _ h ↦ (Ω.closedSectionOfBase_eq_iff.2 h).symm⟩
+
+/-! ### Reducedness across open boundaries -/
+
+namespace Solution
+
+open FreeGroup (substituteVars)
+
+variable {Ω} (U : Ω.Solution)
+
+/-- If a boundary `j` is open and the substituted segments `U[i, j] ^ ±1` and `U[j, k] ^ ±1`
+(with the same sign `s`) of a solution `U` are reduced, then `U[i, k] ^ ±1` is reduced: some
+variable base crosses `j`, preventing cancellation across the junction. -/
+theorem isReduced_substituteVars_segment_of_isOpenBoundary {i k : ℕ}
+    {j : Fin (Ω.numItems + 1)} {s : Bool} (hj : Ω.IsOpenBoundary j)
+    (h₁ : FreeGroup.IsReduced (substituteVars U.word (Ω.segment i j s)))
+    (h₂ : FreeGroup.IsReduced (substituteVars U.word (Ω.segment j k s))) :
+    FreeGroup.IsReduced (substituteVars U.word (Ω.segment i k s)) := by
+  rw [Ω.isReduced_substituteVars_segment_iff] at h₁ h₂ ⊢
+  obtain ⟨β, hβ⟩ := Ω.isOpenBoundary_iff.1 hj
+  obtain ⟨hβ₁, hβ₂⟩ := Ω.crosses_iff.1 hβ
+  have hstep := Ω.isReduced_substituteVars_segment_of_overlap h₁
+    (U.isReduced_substituteVars_segment β)
+    (U.substituteVars_word_ne_nil (List.ne_nil_of_length_pos (by
+      rw [length_segment]; have := j.is_le; omega)))
+  exact Ω.isReduced_substituteVars_segment_of_overlap hstep h₂
+    (U.substituteVars_word_ne_nil (List.ne_nil_of_length_pos (by
+      rw [length_segment]; have := (Ω.right β).is_le; omega)))
+
+end Solution
 
 end GenEq
 
