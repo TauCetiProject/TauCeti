@@ -61,8 +61,9 @@ objects as images and of the differentials as connecting maps on representatives
   morphisms in `ComposableArrows ι 3`, on representatives and through the embeddings;
   `CategoryTheory.Abelian.SpectralObject.mapFourδ₄Toδ₃'_fromE` is the case of the canonical maps
   `E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₃) ⟶ E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₄)` for an index preorder.
-* `CategoryTheory.Abelian.SpectralObject.toE_EMap`: the representatives are natural in the
-  spectral object.
+* `CategoryTheory.Abelian.SpectralObject.toE_EMap`,
+  `CategoryTheory.Abelian.SpectralObject.EMap_fromE`: the representatives and the embeddings are
+  natural in the spectral object.
 * `CategoryTheory.Abelian.SpectralObject.toE_d`, `CategoryTheory.Abelian.SpectralObject.d_fromE`:
   the differentials on representatives.
 * `CategoryTheory.Abelian.SpectralObject.toE_spectralSequence_page_d`,
@@ -227,6 +228,20 @@ lemma toE_EMap {Y : SpectralObject C ι} (φ : X ⟶ Y) (hn₁ : n₀ + 1 = n₁
     X.toE f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂ ≫ EMap φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ =
       (φ.hom n₁).app (mk₁ f₁₂) ≫ Y.toE f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂ := by
   simp only [toE, Category.assoc, πE_EMap, toCycles_cyclesMapOfHom_assoc]
+
+/-- **Naturality of the embedding in the spectral object.** The map
+`E^{n₁}(f₁, f₂, f₃) ⟶ E^{n₁}(f₁, f₂, f₃)` of a morphism of spectral objects `φ : X ⟶ Y`, followed
+by `Y.fromE`, is `X.fromE` followed by the component of `φ` at `f₂ ≫ f₃`. -/
+@[reassoc]
+lemma EMap_fromE {Y : SpectralObject C ι} (φ : X ⟶ Y) (hn₁ : n₀ + 1 = n₁ := by lia)
+    (hn₂ : n₁ + 1 = n₂ := by lia) :
+    EMap φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ ≫ Y.fromE f₁ f₂ f₃ f₂₃ h₂₃ n₀ n₁ n₂ hn₁ hn₂ =
+      X.fromE f₁ f₂ f₃ f₂₃ h₂₃ n₀ n₁ n₂ hn₁ hn₂ ≫ (φ.hom n₁).app (mk₁ f₂₃) := by
+  rw [← cancel_epi (X.toE f₁ f₂ f₃ (f₁ ≫ f₂) rfl n₀ n₁ n₂ hn₁ hn₂),
+    X.toE_EMap_assoc f₁ f₂ f₃ _ rfl n₀ n₁ n₂ φ hn₁ hn₂,
+    Y.toE_fromE f₁ f₂ f₃ _ rfl f₂₃ h₂₃ n₀ n₁ n₂ hn₁ hn₂,
+    X.toE_fromE_assoc f₁ f₂ f₃ _ rfl f₂₃ h₂₃ n₀ n₁ n₂ hn₁ hn₂]
+  exact ((φ.hom n₁).naturality _).symm
 
 end Naturality
 

@@ -32,7 +32,8 @@ that morphism is the map in cohomology of the induced morphisms of graded pieces
 On a later page `r`, whose object at `(p, q)` is represented by elements of the cohomology of the
 quotient `F_{q+1}/F_{q-r+2}` (in `TauCeti.Algebra.Homology.SpectralSequence.Filtered.Page`), the
 morphism sends the element represented by `x` to the element represented by the image of `x` under
-the induced morphism of quotients (`CochainComplex.toSpectralSequencePageX_naturality`).
+the induced morphism of quotients (`CochainComplex.toSpectralSequencePageX_naturality`), and
+dually through the embeddings (`CochainComplex.fromSpectralSequencePageX_naturality`).
 
 A natural transformation whose components are quasi-isomorphisms induces an isomorphism of
 spectral objects (`CochainComplex.isIso_spectralObjectMap`): on each `H^n(f)` it is the map in
@@ -53,8 +54,10 @@ cohomology of a morphism of mapping cones, which is a quasi-isomorphism by the f
 * `CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`:
   on the first page, the morphism of spectral sequences is the map in cohomology of the morphism
   of graded pieces.
-* `CochainComplex.toSpectralSequencePageX_naturality`: on every page `r ≥ 2`, the morphism of
-  spectral sequences is the map in cohomology of the morphism of quotients on representatives.
+* `CochainComplex.toSpectralSequencePageX_naturality`,
+  `CochainComplex.fromSpectralSequencePageX_naturality`: on every page `r ≥ 2`, the morphism of
+  spectral sequences is the map in cohomology of the morphism of quotients, on representatives and
+  through the embeddings.
 * `CochainComplex.filtrationFunctorMap_id`, `CochainComplex.filtrationFunctorMap_comp`:
   functoriality of `filtrationFunctorMap`.
 * `CochainComplex.quasiIso_filtrationFunctorMap_app`: a quasi-isomorphism of filtered complexes
@@ -256,6 +259,33 @@ lemma toSpectralSequencePageX_naturality (α : F ⟶ G) (r : ℤ) (hr : 2 ≤ r)
     (eIntHomOfLE (show i₀ ≤ i₂ by lia)) n
   rw [← Iso.eq_comp_inv, Category.assoc, ← Iso.inv_comp_eq] at key
   rw [reassoc_of% key]
+
+/-- **The morphism of spectral sequences through the embeddings.** Let `α : F ⟶ G` be a morphism
+of functors `EInt ⥤ CochainComplex C ℤ` whose transition maps are monomorphisms. On page `r ≥ 2`,
+the morphism of spectral sequences induced by `α` at `(p, q)`, followed by the embedding of the
+object into `H^n(G_{i₃}/G_{i₁})`, is the embedding into `H^n(F_{i₃}/F_{i₁})` followed by the map
+in cohomology of the induced morphism of quotients, where `i₁ = q`, `i₃ = q + r - 1` and
+`n = p + q`. -/
+@[reassoc]
+lemma fromSpectralSequencePageX_naturality (α : F ⟶ G) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
+    (i₁ i₃ : ℤ) (h₁ : i₁ = pq.2) (h₃ : i₃ = pq.2 + r - 1) (n : ℤ) (hn : n = pq.1 + pq.2) :
+    ((spectralSequenceMap coreE₂Cohomological (spectralObjectMap α)).hom r hr).f pq ≫
+        fromSpectralSequencePageX G r hr pq i₁ i₃ h₁ h₃ n hn =
+      fromSpectralSequencePageX F r hr pq i₁ i₃ h₁ h₃ n hn ≫
+        HomologicalComplex.homologyMap (cokernel.map (F.map (eIntHomOfLE (show i₁ ≤ i₃ by lia)))
+          (G.map (eIntHomOfLE (show i₁ ≤ i₃ by lia))) (α.app i₁) (α.app i₃)
+          (α.naturality _)) n := by
+  simp only [spectralSequenceMap_hom, spectralSequencePageMap_f]
+  rw [fromSpectralSequencePageX_eq F r hr pq i₁ i₃ h₁ h₃ n hn (pq.2 - r + 2) (pq.2 + 1) rfl rfl
+      (n - 1) (n + 1) rfl rfl,
+    fromSpectralSequencePageX_eq G r hr pq i₁ i₃ h₁ h₃ n hn (pq.2 - r + 2) (pq.2 + 1) rfl rfl
+      (n - 1) (n + 1) rfl rfl,
+    ← spectralSequencePageXIso_hom_comp_EMap_assoc coreE₂Cohomological (spectralObjectMap α) r hr
+      pq (pq.2 - r + 2 : ℤ) i₁ (pq.2 + 1 : ℤ) i₃ rfl (by rw [h₁]; rfl) rfl (by rw [h₃]; rfl)
+      (n - 1) n (n + 1) hn,
+    EMap_fromE_assoc (n₀ := n - 1) (n₁ := n) (n₂ := n + 1) (hn₁ := by lia) (hn₂ := by lia),
+    spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom]
+  simp only [Category.assoc]
 
 end Page
 

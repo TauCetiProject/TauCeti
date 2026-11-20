@@ -253,6 +253,20 @@ private lemma filtrationFunctorHomotopyOfAddLE_hom_comp (h : Homotopy f g) {s : 
   exact (exists_comp_filtrationFunctorArrow_eq_of_add_le hF hG h hh hsab p q).choose_spec
 
 variable (hF hG) in
+/-- The square through which a morphism of filtered complexes `u` induces the map of quotients
+`F_{i₂}/F_{i₀} ⟶ G_{i₃}/G_{i₁}`, for `i₀ ≤ i₁`, `i₀ ≤ i₂`, `i₁ ≤ i₃` and `i₂ ≤ i₃`. -/
+private lemma filtrationFunctorMap_quotient_w (u : K ⟶ L)
+    (hu : ∀ n, (G n).Factors ((F n).arrow ≫ u)) {i₀ i₁ i₂ i₃ : ℤ} (h₀₁ : i₀ ≤ i₁) (h₀₂ : i₀ ≤ i₂)
+    (h₁₃ : i₁ ≤ i₃) (h₂₃ : i₂ ≤ i₃) :
+    (filtrationFunctor F hF).map (eIntHomOfLE h₀₂) ≫
+        (filtrationFunctorMap hF hG u hu).app i₂ ≫ (filtrationFunctor G hG).map (eIntHomOfLE h₂₃) =
+      ((filtrationFunctorMap hF hG u hu).app i₀ ≫ (filtrationFunctor G hG).map (eIntHomOfLE h₀₁)) ≫
+        (filtrationFunctor G hG).map (eIntHomOfLE h₁₃) := by
+  rw [NatTrans.naturality_assoc, Category.assoc, ← Functor.map_comp, ← Functor.map_comp,
+    -- the hom-types of the preorder `EInt` are subsingletons
+    Subsingleton.elim (eIntHomOfLE h₀₂ ≫ eIntHomOfLE h₂₃) (eIntHomOfLE h₀₁ ≫ eIntHomOfLE h₁₃)]
+
+variable (hF hG) in
 /-- A homotopy raising the filtrations by at most `s` makes `f` and `g` induce the same map in
 cohomology `H^n(F_{i₂}/F_{i₀}) ⟶ H^n(G_{i₃}/G_{i₁})` as soon as `i₀ + s ≤ i₁` and `i₂ + s ≤ i₃`:
 it descends to a homotopy between the induced maps of quotients. -/
@@ -263,14 +277,12 @@ private lemma homologyMap_cokernelMap_eq_of_homotopy (h : Homotopy f g) {s : ℤ
         ((filtrationFunctor G hG).map (eIntHomOfLE h₁₃))
         ((filtrationFunctorMap hF hG f hf).app i₀ ≫ (filtrationFunctor G hG).map (eIntHomOfLE h₀₁))
         ((filtrationFunctorMap hF hG f hf).app i₂ ≫ (filtrationFunctor G hG).map (eIntHomOfLE h₂₃))
-        (by rw [NatTrans.naturality_assoc, Category.assoc, ← Functor.map_comp,
-          ← Functor.map_comp]; rfl)) n =
+        (filtrationFunctorMap_quotient_w hF hG f hf h₀₁ h₀₂ h₁₃ h₂₃)) n =
       HomologicalComplex.homologyMap (cokernel.map ((filtrationFunctor F hF).map (eIntHomOfLE h₀₂))
         ((filtrationFunctor G hG).map (eIntHomOfLE h₁₃))
         ((filtrationFunctorMap hF hG g hg).app i₀ ≫ (filtrationFunctor G hG).map (eIntHomOfLE h₀₁))
         ((filtrationFunctorMap hF hG g hg).app i₂ ≫ (filtrationFunctor G hG).map (eIntHomOfLE h₂₃))
-        (by rw [NatTrans.naturality_assoc, Category.assoc, ← Functor.map_comp,
-          ← Functor.map_comp]; rfl)) n := by
+        (filtrationFunctorMap_quotient_w hF hG g hg h₀₁ h₀₂ h₁₃ h₂₃)) n := by
   refine (Homotopy.descCokernel
     (filtrationFunctorHomotopyOfAddLE hF hG (hf := hf) (hg := hg) h hh h₂₃ hs₂₃)
     ((filtrationFunctor F hF).map (eIntHomOfLE h₀₂)) (cokernel.π _) (cokernel.π _)
