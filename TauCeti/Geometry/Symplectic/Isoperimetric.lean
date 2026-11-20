@@ -84,11 +84,8 @@ private theorem abs_integral_apply_le_of_norm_le (hg : ∀ v w, ω v (J w) = ⟪
     (h : ‖∫ x in a..b, ω.toBilinForm.toContinuousBilinearMap (f x) (f' x)‖ ≤
       ‖ω.toBilinForm.toContinuousBilinearMap‖ * C) :
     |∫ x in a..b, ω (f x) (f' x)| ≤ C := by
-  have hB : ‖ω.toBilinForm.toContinuousBilinearMap‖ ≤ 1 :=
-    ContinuousLinearMap.opNorm_le_bound₂ _ zero_le_one fun v w ↦ by
-      simpa [Real.norm_eq_abs] using abs_apply_le_norm_mul_norm hg v w
   simp only [LinearMap.toContinuousBilinearMap_apply, Real.norm_eq_abs] at h
-  exact h.trans (mul_le_of_le_one_left hC hB)
+  exact h.trans (mul_le_of_le_one_left hC (norm_toContinuousBilinearMap_le_one hg))
 
 /-- **The isoperimetric inequality.** If the inner product of `V` is the metric `ω(·, J ·)`, then
 for a loop `γ` on `[a, b]` with square-integrable derivative, twice the symplectic area

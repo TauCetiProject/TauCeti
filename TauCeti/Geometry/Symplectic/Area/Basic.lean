@@ -137,16 +137,6 @@ theorem integrableOn_fderiv_apply_of_contDiffAt [FiniteDimensional ℝ V] (ω : 
   exact (ω.continuousOn_apply_comp (hcont.clm_apply continuousOn_const)
     (hcont.clm_apply continuousOn_const)).integrableOn_compact hK
 
-/-- The continuous bilinear map of `ω` minus its transpose is `2 ω`; this is the integrand of the
-Green formulas for the pullback area. -/
-private theorem toContinuousBilinearMap_sub_swap [FiniteDimensional ℝ V] (ω : SymplecticForm V)
-    (x y : V) :
-    ω.toBilinForm.toContinuousBilinearMap x y - ω.toBilinForm.toContinuousBilinearMap y x =
-      2 * ω x y := by
-  rw [LinearMap.toContinuousBilinearMap_apply, LinearMap.toContinuousBilinearMap_apply,
-    ← ω.isAlt.neg_eq x y]
-  ring
-
 /-- **Stokes' formula for symplectic area on a rectangle.** If `u` is `C²` at every point of the
 rectangle `Icc a b ⊆ ℝ × ℝ`, its symplectic area over the rectangle is the integral of the
 primitive `λₓ(v) = ½ ω(x, v)` along the positively oriented boundary: the right side minus the

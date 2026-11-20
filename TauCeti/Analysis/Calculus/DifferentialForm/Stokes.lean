@@ -399,18 +399,6 @@ theorem integral_extDeriv_closedBall
   rw [hz, intervalIntegral.integral_zero, sub_zero] at h
   exact h
 
-/-- A polar point of the open rectangle `(a, b) × (0, π)`, with `0 ≤ a`, maps into the interior
-of the closed upper half-annulus of radii `a` and `b` about `z₀`. -/
-private theorem add_polarCoord_symm_interior_upperHalfAnnulus (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a)
-    {p : ℝ × ℝ} (hp : p ∈ Ioo a b ×ˢ Ioo 0 π) :
-    z₀.im < (z₀ + Complex.polarCoord.symm p).im ∧ a < ‖z₀ + Complex.polarCoord.symm p - z₀‖ ∧
-      ‖z₀ + Complex.polarCoord.symm p - z₀‖ < b := by
-  obtain ⟨⟨hr₁, hr₂⟩, hθ₁, hθ₂⟩ := hp
-  have hr : 0 < p.1 := ha.trans_lt hr₁
-  rw [add_polarCoord_symm_im, add_sub_cancel_left, Complex.norm_polarCoord_symm, abs_of_pos hr,
-    lt_add_iff_pos_right]
-  exact ⟨mul_pos hr (Real.sin_pos_of_pos_of_lt_pi hθ₁ hθ₂), hr₁, hr₂⟩
-
 /-- **Stokes' formula on a closed upper half-annulus.** Let `S` be the closed upper half
 `{z | z₀.im ≤ z.im}` of the annulus of radii `0 ≤ a ≤ b` about `z₀`. If a one-form `ω` is continuous
 on `S` and differentiable at its interior points, where its exterior derivative on `(1, I)` agrees
