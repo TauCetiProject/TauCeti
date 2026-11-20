@@ -73,6 +73,7 @@ once.
   meet at an inserted vertex.
 * `Fin.removeNth_succ_cons`: deleting an entry of `Fin.cons x a` other than the first deletes
   the corresponding entry of `a`.
+* `Fin.comp_removeNth`: applying a function to each entry commutes with deleting an entry.
 * `Fin.insertNth_one_ne_zero`: inserting the entry `1` gives a nonzero tuple.
 * `Fin.injective_apply_zero_one_two`: a tuple of length three is determined by its entries.
 * `Fin.injective_comp_succAbove_of_eq` and `Fin.range_comp_succAbove_of_eq`: if `b p = b q`,
@@ -418,6 +419,11 @@ theorem removeNth_succ_cons {n : ℕ} (j : Fin (n + 1)) (x : α) (a : Fin (n + 1
     removeNth j.succ (cons x a : Fin (n + 2) → α) = cons x (removeNth j a) := by
   funext k
   cases k using Fin.cases <;> simp [removeNth_apply]
+
+/-- Applying a function to each entry commutes with deleting an entry. -/
+theorem comp_removeNth {β : Sort*} {n : ℕ} (g : α → β) (p : Fin (n + 1)) (q : Fin (n + 1) → α) :
+    g ∘ removeNth p q = removeNth p (g ∘ q) :=
+  rfl
 
 /-- The image of the first `n + 1` entries of a prepended tuple consists of its first entry
 and the image of the first `n` entries of its tail. -/
