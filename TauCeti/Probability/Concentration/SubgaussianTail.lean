@@ -9,15 +9,19 @@ public import Mathlib.Probability.Moments.SubGaussian
 import TauCeti.MeasureTheory.Measure.Tail
 
 /-!
-# Two-sided sub-Gaussian tail around a shifted center
+# Two-sided sub-Gaussian tails
+
+A random variable `X` that is sub-Gaussian with variance proxy `σ` satisfies the two-sided tail
+bound `P(ε ≤ |X|) ≤ 2 exp (-ε² / (2σ))`, the sum of the one-sided bounds for `X` and `-X`.
 
 If `g - c` is sub-Gaussian with variance proxy `σ` and the center `c` is within `ε / 2` of a
 target `t`, then `g` deviates from `t` by at least `ε` with probability at most
 `2 exp (-(ε / 2)² / (2σ))`. This is how a concentration bound centered at the mean transfers to a
 nearby target value.
 
-## Main result
+## Main results
 
+* `ProbabilityTheory.HasSubgaussianMGF.measureReal_le_abs_le`
 * `TauCeti.Probability.measureReal_abs_sub_ge_le_of_hasSubgaussianMGF`
 
 ## References
@@ -34,6 +38,21 @@ open MeasureTheory
 
 open scoped NNReal
 
+namespace ProbabilityTheory.HasSubgaussianMGF
+
+/-- **Two-sided sub-Gaussian tail.** A random variable which is sub-Gaussian with variance proxy
+`σ` deviates from `0` by at least `ε ≥ 0` with probability at most `2 exp (-ε² / (2σ))`. -/
+theorem measureReal_le_abs_le {α : Type*} [MeasurableSpace α] {P : Measure α} {X : α → ℝ}
+    {σ : ℝ≥0} (h : HasSubgaussianMGF X σ P) {ε : ℝ} (hε : 0 ≤ ε) :
+    P.real {x | ε ≤ |X x|} ≤ 2 * Real.exp (-ε ^ 2 / (2 * (σ : ℝ))) :=
+  calc P.real {x | ε ≤ |X x|} ≤ P.real {x | ε ≤ X x} + P.real {x | ε ≤ -X x} :=
+        TauCeti.measureReal_le_abs_le_add
+    _ ≤ Real.exp (-ε ^ 2 / (2 * (σ : ℝ))) + Real.exp (-ε ^ 2 / (2 * (σ : ℝ))) :=
+        add_le_add (h.measure_ge_le hε) (h.neg.measure_ge_le hε)
+    _ = 2 * Real.exp (-ε ^ 2 / (2 * (σ : ℝ))) := by ring
+
+end ProbabilityTheory.HasSubgaussianMGF
+
 namespace TauCeti.Probability
 
 /-- Two-sided sub-Gaussian tail around a shifted center: if `g - c` is sub-Gaussian with variance
@@ -47,18 +66,10 @@ theorem measureReal_abs_sub_ge_le_of_hasSubgaussianMGF {α : Type*} [MeasurableS
   have : IsFiniteMeasure P := by
     exact (integrable_const_iff_isFiniteMeasure (c := (1 : ℝ)) one_ne_zero).1
       (by simpa using h.integrable_exp_mul 0)
-  have htail₁ := h.measure_ge_le (ε := ε / 2) (by positivity)
-  have htail₂ := h.neg.measure_ge_le (ε := ε / 2) (by positivity)
   have hincl : {x | ε ≤ |g x - t|} ⊆ {x | ε / 2 ≤ |g x - c|} := fun x hx => by
     rw [Set.mem_ofPred_eq] at hx ⊢
     have htri : |g x - t| ≤ |g x - c| + |c - t| := abs_sub_le _ _ _
     linarith
-  calc
-    P.real {x | ε ≤ |g x - t|} ≤ P.real {x | ε / 2 ≤ |g x - c|} := measureReal_mono hincl
-    _ ≤ P.real {x | ε / 2 ≤ g x - c} + P.real {x | ε / 2 ≤ -(g x - c)} :=
-      TauCeti.measureReal_le_abs_le_add (f := fun x => g x - c)
-    _ ≤ Real.exp (-(ε / 2) ^ 2 / (2 * (σ : ℝ))) + Real.exp (-(ε / 2) ^ 2 / (2 * (σ : ℝ))) :=
-      add_le_add htail₁ htail₂
-    _ = 2 * Real.exp (-(ε / 2) ^ 2 / (2 * (σ : ℝ))) := by ring
+  exact (measureReal_mono hincl).trans (h.measureReal_le_abs_le (by positivity))
 
 end TauCeti.Probability

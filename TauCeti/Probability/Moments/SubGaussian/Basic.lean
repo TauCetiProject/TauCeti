@@ -15,7 +15,9 @@ import TauCeti.Analysis.Calculus.DerivativeTest
 
 Under a zero or probability measure, the quadratic MGF bound forces a sub-Gaussian random
 variable to have mean zero and bounds its second moment by the variance proxy. The bound is
-monotone in the proxy.
+monotone in the proxy, and a fixed proxy survives uniform approximation
+(`ProbabilityTheory.HasSubgaussianMGF.of_forall_exists_abs_sub_le`); for instance, a Lipschitz
+function inherits the concentration of its smooth approximations.
 -/
 
 public section
@@ -88,5 +90,48 @@ theorem integral_sq_le {Ω : Type*} [MeasurableSpace Ω]
     ((he 0).continuousAt.sub (differentiableAt_mgf (hm 0)).continuousAt) hmin
   rw [hsecond.deriv] at hnonneg
   linarith
+
+/-- Sub-Gaussianity with a fixed variance proxy is stable under uniform approximation: if for
+every `ε > 0` some `c`-sub-Gaussian variable is within `ε` of `X` almost everywhere, then `X` is
+`c`-sub-Gaussian. -/
+theorem of_forall_exists_abs_sub_le {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {X : Ω → ℝ} {c : ℝ≥0}
+    (h : ∀ ε > 0, ∃ Y : Ω → ℝ, HasSubgaussianMGF Y c μ ∧ ∀ᵐ ω ∂μ, |X ω - Y ω| ≤ ε) :
+    HasSubgaussianMGF X c μ := by
+  choose Y hY hXY using h
+  -- `X` is the almost-everywhere limit of the approximants at `ε = 1 / (n + 1)`.
+  have hXm : AEStronglyMeasurable X μ := by
+    refine aestronglyMeasurable_of_tendsto_ae (u := Filter.atTop)
+      (fun n : ℕ ↦ (hY (1 / (n + 1)) (by positivity)).aestronglyMeasurable) ?_
+    filter_upwards [ae_all_iff.2 fun n : ℕ ↦ hXY (1 / (n + 1)) (by positivity)] with ω hω
+    refine tendsto_iff_dist_tendsto_zero.2 (squeeze_zero (fun _ ↦ dist_nonneg) (fun n ↦ ?_)
+      tendsto_one_div_add_atTop_nhds_zero_nat)
+    rw [Real.dist_eq, abs_sub_comm]
+    exact hω n
+  -- Within `ε` of `Y`, the exponential moments of `X` exceed those of `Y` by at most `e^{|t| ε}`.
+  have hle (t ε : ℝ) (hε : 0 < ε) :
+      ∀ᵐ ω ∂μ, ‖exp (t * X ω)‖ ≤ exp (|t| * ε) * exp (t * Y ε hε ω) := by
+    filter_upwards [hXY ε hε] with ω hω
+    rw [Real.norm_of_nonneg (exp_pos _).le, ← exp_add]
+    gcongr
+    have h : t * (X ω - Y ε hε ω) ≤ |t| * ε := (le_abs_self _).trans
+      (by rw [abs_mul]; exact mul_le_mul_of_nonneg_left hω (abs_nonneg t))
+    linarith
+  have hint (t : ℝ) : Integrable (fun ω ↦ exp (t * X ω)) μ :=
+    (((hY 1 one_pos).integrable_exp_mul t).const_mul _).mono'
+      (continuous_exp.comp_aestronglyMeasurable (hXm.const_mul t)) (hle t 1 one_pos)
+  refine ⟨hint, fun t ↦ ?_⟩
+  have hbound (ε : ℝ) (hε : 0 < ε) :
+      mgf X μ t ≤ exp (|t| * ε) * exp (c * t ^ 2 / 2) := by
+    calc mgf X μ t ≤ ∫ ω, exp (|t| * ε) * exp (t * Y ε hε ω) ∂μ :=
+          integral_mono_ae (hint t) (((hY ε hε).integrable_exp_mul t).const_mul _)
+            ((hle t ε hε).mono fun ω hω ↦ (Real.le_norm_self _).trans hω)
+      _ = exp (|t| * ε) * mgf (Y ε hε) μ t := integral_const_mul _ _
+      _ ≤ exp (|t| * ε) * exp (c * t ^ 2 / 2) := by gcongr; exact (hY ε hε).mgf_le t
+  have hlim : Filter.Tendsto (fun ε ↦ exp (|t| * ε) * exp (c * t ^ 2 / 2)) (𝓝[>] 0)
+      (𝓝 (exp (c * t ^ 2 / 2))) := by
+    have hc : Continuous fun ε ↦ exp (|t| * ε) * exp (c * t ^ 2 / 2) := by fun_prop
+    simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
+  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall hbound)
 
 end ProbabilityTheory.HasSubgaussianMGF
