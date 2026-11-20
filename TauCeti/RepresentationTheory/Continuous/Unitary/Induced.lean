@@ -161,8 +161,8 @@ theorem hasAlmostInvariantVectors_induced (h : π.HasAlmostInvariantVectors) :
             refine pow_lt_pow_left₀ (hξ _ ?_) (norm_nonneg _) two_ne_zero
             exact Finset.mem_image.mpr ⟨(g, g⁻¹ • y), by simp [hg], rfl⟩
         _ = ε ^ 2 := by
-            rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← mul_assoc, mul_comm _ (c ^ 2),
-              hc, one_mul]
+            simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+            linear_combination ε ^ 2 * hc
     exact (sq_lt_sq₀ (norm_nonneg _) hε.le).mp h2
 
 section Unitary

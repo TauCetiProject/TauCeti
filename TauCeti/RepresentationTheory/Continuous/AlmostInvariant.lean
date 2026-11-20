@@ -182,9 +182,8 @@ theorem exists_invariant_norm_sub_lt_of_finiteIndex (ρ : ContRepresentation �
   · -- The difference is the average of the displacements `ρ q.out v - v`.
     have havg : (Fintype.card (G ⧸ S) : 𝕜)⁻¹ • Representation.relNorm ρ.toRepresentation S v - v =
         (Fintype.card (G ⧸ S) : 𝕜)⁻¹ • ∑ q : G ⧸ S, (ρ q.out v - v) := by
-      rw [Representation.relNorm_apply, Finset.sum_sub_distrib, smul_sub, Finset.sum_const,
-        Finset.card_univ, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul, inv_mul_cancel₀ hc', one_smul]
-      simp only [toRepresentation_apply]
+      rw [Representation.relNorm_apply]
+      simp [Finset.sum_sub_distrib, smul_sub, ← Nat.cast_smul_eq_nsmul 𝕜, hc']
     rw [havg, norm_smul, norm_inv, RCLike.norm_natCast, inv_mul_lt_iff₀ hc]
     calc ‖∑ q : G ⧸ S, (ρ q.out v - v)‖ ≤ ∑ q : G ⧸ S, ‖ρ q.out v - v‖ := norm_sum_le _ _
       _ < ∑ _q : G ⧸ S, ε := Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty fun q _ ↦ hε q
