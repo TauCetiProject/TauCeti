@@ -47,6 +47,9 @@ out of tensor products of simplicial chains, such as the shuffle map.
 * `SSet.tensorChainComplexXDesc` and `SSet.tensorChainComplexX_hom_ext`: morphisms out of the
   tensor product `Cₚ(K; R) ⊗ C_q(L; S)` of two chain groups are given, and determined, by their
   values on the summands `R ⊗ S` of pairs of simplices.
+
+* `SSet.chainComplexPairing_coefficient_naturality`: compatible changes of both arguments and the
+  output of a coefficient pairing give the corresponding square on simplicial chains.
 -/
 
 public section
@@ -219,5 +222,27 @@ lemma whiskerRight_comp_chainComplexPairing (X : SSet.{w}) {M' : C}
   ext x
   simp [ιChainComplex_chainComplexFunctorObjCompMapIso_inv_app_f_assoc X (tensorLeft M),
     whisker_exchange_assoc]
+
+section Coefficients
+
+variable {S' M' P' : C}
+  [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M')]
+
+/-- If `(v ▷ S') ≫ μ' = (M ◁ b) ≫ μ ≫ e`, the action chain maps commute with
+the induced maps of cochain values, chain coefficients and output coefficients. -/
+theorem chainComplexPairing_coefficient_naturality (X : SSet.{w})
+    (μ : M ⊗ S ⟶ P) (μ' : M' ⊗ S' ⟶ P') (b : S' ⟶ S) (v : M ⟶ M') (e : P ⟶ P')
+    (hμ : (v ▷ S') ≫ μ' = (M ◁ b) ≫ μ ≫ e) :
+    (NatTrans.mapHomologicalComplex ((tensoringLeft C).map v) _).app (X.chainComplex S') ≫
+        X.chainComplexPairing μ' =
+      ((tensorLeft M).mapHomologicalComplex _).map
+          (((chainComplexFunctor C).map b).app X) ≫ X.chainComplexPairing μ ≫
+        ((chainComplexFunctor C).map e).app X := by
+  rw [whiskerRight_comp_chainComplexPairing,
+    chainComplexPairing_comp_chainComplexFunctor_map_app,
+    whiskerLeft_chainComplexFunctor_map_app_comp_chainComplexPairing]
+  exact congrArg (X.chainComplexPairing) hμ
+
+end Coefficients
 
 end SSet
