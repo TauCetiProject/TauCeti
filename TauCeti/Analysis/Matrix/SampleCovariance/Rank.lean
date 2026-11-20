@@ -29,6 +29,21 @@ namespace Matrix
 
 variable {𝕜 p n : Type*} [RCLike 𝕜] [Finite p] [Fintype n]
 
+open scoped ComplexOrder in
+/-- The sample covariance matrix has the same rank as the sample data matrix. -/
+@[simp]
+theorem rank_sampleCovariance (X : Matrix p n 𝕜) :
+    (sampleCovariance X).rank = X.rank := by
+  cases isEmpty_or_nonempty n
+  · have hX : X.rank = 0 := Nat.eq_zero_of_le_zero (by simpa using X.rank_le_card_width)
+    simp [sampleCovariance_def, hX]
+  have hcard : (Fintype.card n : ℝ) ≠ 0 := by exact_mod_cast Fintype.card_ne_zero
+  have hscale : ((1 / (Fintype.card n : ℝ) : ℝ) : 𝕜) ≠ 0 :=
+    RCLike.ofReal_ne_zero.mpr (one_div_ne_zero hcard)
+  rw [sampleCovariance_def, RCLike.real_smul_eq_coe_smul (K := 𝕜),
+    rank_smul_of_mem_nonZeroDivisors _ (mem_nonZeroDivisors_of_ne_zero hscale),
+    rank_self_mul_conjTranspose]
+
 /-- The sample covariance rank inequality, normalized by the number of samples even when
 that number is zero. -/
 theorem rank_sampleCovariance_sub_le (X Y : Matrix p n 𝕜) :

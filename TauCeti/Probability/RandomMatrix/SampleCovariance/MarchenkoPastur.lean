@@ -1,0 +1,342 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Matrix.Resolvent.SelfConsistency
+public import TauCeti.Probability.Distributions.MarchenkoPastur.Stability
+public import TauCeti.Probability.RandomMatrix.QuadraticForm
+public import TauCeti.Probability.RandomMatrix.SampleCovariance.ZeroMass
+import TauCeti.Analysis.Matrix.MeasurableSpace
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.Probability.ProductMeasure
+
+/-!
+# The Marchenko–Pastur law for sub-Gaussian entries
+
+Sample covariance matrices with independent, unit second moment entries and a uniform
+directional sub-Gaussian bound have almost surely convergent empirical spectral measures
+when the row-to-column ratio tends to a positive constant. The entry laws may vary with
+dimension and position. For varying sample spaces, bounded continuous spectral statistics
+converge in mean absolute error and in probability. The proof uses uniform leave-one-column-out
+concentration, the rank-one resolvent estimate and stability of the Marchenko–Pastur equation.
+
+## References
+
+* Z. D. Bai, *Methodologies in spectral analysis of large dimensional random matrices, a review*,
+  Statistica Sinica 9 (1999), §2.2.
+-/
+
+public section
+
+noncomputable section
+
+open Filter Matrix MeasureTheory ProbabilityTheory
+open scoped BoundedContinuousFunction NNReal Topology
+
+namespace TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+  {p : ℕ → ℕ} [∀ m, NeZero (p m)]
+  {X : (m : ℕ) → Ω → Matrix (Fin (p m)) (Fin (m + 1)) ℂ} {K y : ℝ≥0}
+
+private theorem tendsto_covariance_quadratic_of_tendsto_columnErrors
+    (M : (m : ℕ) → Matrix (Fin (p m)) (Fin (m + 1)) ℂ)
+    (hy : Tendsto (fun m : ℕ ↦ (p m : ℝ≥0) / (m + 1)) atTop (𝓝 y)) (hy₀ : y ≠ 0)
+    {z : ℂ} (hz : z.im ≠ 0)
+    (herror : Tendsto (fun m ↦ ‖fun k ↦ ((m + 1 : ℕ) : ℂ)⁻¹ *
+      (star (fun i ↦ M m i k) ⬝ᵥ (sampleCovariance ((M m).updateCol k 0) - z • 1)⁻¹ *ᵥ
+        (fun i ↦ M m i k) - (sampleCovariance ((M m).updateCol k 0) - z • 1)⁻¹.trace)‖)
+      atTop (𝓝 0)) :
+    let y' := fun m : ℕ ↦ (p m : ℝ≥0) / (m + 1)
+    let w := fun m ↦ resolventTransform
+      ((sampleCovariance (M m)).spectralMeasure (isHermitian_sampleCovariance _) : Measure ℝ) z
+    Tendsto (fun m ↦ (y' m : ℂ) * z * (w m * w m) + (z + y' m - 1) * w m + 1)
+      atTop (𝓝 0) := by
+  have hratio : Tendsto (fun m : ℕ ↦ (m + 1 : ℝ) / p m) atTop (𝓝 (y : ℝ)⁻¹) := by
+    simpa only [Function.comp_def, NNReal.coe_div, NNReal.coe_add, NNReal.coe_natCast,
+      NNReal.coe_one, inv_div] using
+      ((NNReal.continuous_coe.tendsto y).comp hy).inv₀ (by exact_mod_cast hy₀)
+  have hinv : Tendsto (fun m : ℕ ↦ ((m + 1 : ℝ) * |z.im|)⁻¹) atTop (𝓝 0) := by
+    simpa only [mul_inv, one_div, zero_mul] using
+      (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).mul_const (|z.im|⁻¹)
+  have hlim := (hratio.mul_const (‖z‖ / |z.im|)).mul (herror.add hinv)
+  simp only [add_zero, mul_zero] at hlim
+  refine squeeze_zero_norm (fun m ↦ ?_) hlim
+  simpa only [Fintype.card_fin, Complex.ofReal_div, Complex.ofReal_natCast,
+      NNReal.coe_div, NNReal.coe_add, NNReal.coe_natCast, NNReal.coe_one,
+      Nat.cast_add, Nat.cast_one, Complex.ofReal_add, Complex.ofReal_one, Matrix.col_apply'] using
+      norm_sampleCovariance_resolvent_quadratic_le (M m) hz
+
+/-- **Marchenko–Pastur law for uniformly sub-Gaussian entries.** With independent entries
+within each matrix, unit second absolute moments and a common directional sub-Gaussian
+proxy, the empirical covariance spectral measures converge almost surely if the aspect
+ratio tends to a positive number. Matrices at different sizes may have arbitrary coupling. -/
+theorem ae_tendsto_spectralMeasure_sampleCovariance_of_hasSubgaussianMGF
+    (hind : ∀ m, iIndepFun (fun ij : Fin (p m) × Fin (m + 1) ↦
+      fun ω ↦ X m ω ij.1 ij.2) P)
+    (hX : ∀ m i j (u : ℂ), HasSubgaussianMGF (fun ω ↦ (star u * X m ω i j).re)
+      (‖u‖₊ ^ 2 * K) P)
+    (hunit : ∀ m i j, ∫ ω, ‖X m ω i j‖ ^ 2 ∂P = 1)
+    (hy : Tendsto (fun m : ℕ ↦ (p m : ℝ≥0) / (m + 1)) atTop (𝓝 y)) (hy₀ : y ≠ 0) :
+    ∀ᵐ ω ∂P, Tendsto (fun m ↦ (sampleCovariance (X m ω)).spectralMeasure
+      (isHermitian_sampleCovariance _)) atTop (𝓝 (marchenkoPastur y).toProbabilityMeasure) := by
+  have hdim : ∃ C : ℝ, 0 < C ∧ ∀ᶠ m in atTop, (p m : ℝ) ≤ C * (m + 1) := by
+    refine ⟨(y : ℝ) + 1, by positivity, ?_⟩
+    have h := (NNReal.continuous_coe.tendsto y).comp hy
+    filter_upwards [h.eventually_lt_const (lt_add_one (y : ℝ))] with m hm
+    apply (div_le_iff₀ (by positivity : 0 < (m + 1 : ℝ))).mp
+    simpa only [Function.comp_def, NNReal.coe_div, NNReal.coe_add, NNReal.coe_natCast,
+      NNReal.coe_one] using hm.le
+  apply (ae_tendsto_marchenkoPastur_iff_ae_quadratic_tendsto_zero hy).2
+  intro z hz
+  filter_upwards [ae_tendsto_norm_star_dotProduct_sampleCovariance_resolvent_mulVec_sub_trace
+    hind hX hunit hdim hz.ne'] with ω hω
+  exact tendsto_covariance_quadratic_of_tendsto_columnErrors (fun m ↦ X m ω) hy hy₀ hz.ne' hω
+
+/-- Under the sub-Gaussian Marchenko–Pastur hypotheses, the proportion of sample covariance
+eigenvalues equal to zero converges almost surely to the limiting atom at zero. -/
+theorem ae_tendsto_spectralMeasure_sampleCovariance_singleton_zero
+    (hind : ∀ m, iIndepFun (fun ij : Fin (p m) × Fin (m + 1) ↦
+      fun ω ↦ X m ω ij.1 ij.2) P)
+    (hX : ∀ m i j (u : ℂ), HasSubgaussianMGF (fun ω ↦ (star u * X m ω i j).re)
+      (‖u‖₊ ^ 2 * K) P)
+    (hunit : ∀ m i j, ∫ ω, ‖X m ω i j‖ ^ 2 ∂P = 1)
+    (hy : Tendsto (fun m : ℕ ↦ (p m : ℝ≥0) / (m + 1)) atTop (𝓝 y)) (hy₀ : y ≠ 0) :
+    ∀ᵐ ω ∂P, Tendsto (fun m ↦ ((sampleCovariance (X m ω)).spectralMeasure
+      (isHermitian_sampleCovariance _) : Measure ℝ) {0})
+      atTop (𝓝 (marchenkoPastur y {0})) := by
+  filter_upwards [ae_tendsto_spectralMeasure_sampleCovariance_of_hasSubgaussianMGF
+    hind hX hunit hy hy₀] with ω hω
+  exact tendsto_spectralMeasure_sampleCovariance_singleton_zero (fun m ↦ X m ω)
+    (by simpa only [Nat.cast_add, Nat.cast_one] using hy) hω
+
+/-- **Marchenko–Pastur law for bounded complex entries.** Independent centered entries with
+unit second absolute moments and a common almost-sure bound suffice. -/
+theorem ae_tendsto_spectralMeasure_sampleCovariance_of_bounded
+    (hind : ∀ m, iIndepFun (fun ij : Fin (p m) × Fin (m + 1) ↦
+      fun ω ↦ X m ω ij.1 ij.2) P)
+    (hm : ∀ m, AEMeasurable (X m) P) {b : ℝ≥0}
+    (hb : ∀ m i j, ∀ᵐ ω ∂P, ‖X m ω i j‖ ≤ b)
+    (hmean : ∀ m i j, ∫ ω, X m ω i j ∂P = 0)
+    (hunit : ∀ m i j, ∫ ω, ‖X m ω i j‖ ^ 2 ∂P = 1)
+    (hy : Tendsto (fun m : ℕ ↦ (p m : ℝ≥0) / (m + 1)) atTop (𝓝 y)) (hy₀ : y ≠ 0) :
+    ∀ᵐ ω ∂P, Tendsto (fun m ↦ (sampleCovariance (X m ω)).spectralMeasure
+      (isHermitian_sampleCovariance _)) atTop (𝓝 (marchenkoPastur y).toProbabilityMeasure) := by
+  have : IsProbabilityMeasure P := (hind 0).isProbabilityMeasure
+  exact ae_tendsto_spectralMeasure_sampleCovariance_of_hasSubgaussianMGF hind
+    (fun m i j ↦ hasSubgaussianMGF_re_star_mul_of_norm_le ((hm m).eval i |>.eval j)
+      (hb m i j) (hmean m i j)) hunit hy hy₀
+
+/-- The bounded-entry Marchenko–Pastur law for real data. The real sample covariance
+spectral measure is preserved on entrywise embedding into the complex matrices. -/
+theorem ae_tendsto_spectralMeasure_sampleCovariance_of_bounded_real
+    {Xr : (m : ℕ) → Ω → Matrix (Fin (p m)) (Fin (m + 1)) ℝ}
+    (hind : ∀ m, iIndepFun (fun ij : Fin (p m) × Fin (m + 1) ↦
+      fun ω ↦ Xr m ω ij.1 ij.2) P)
+    (hm : ∀ m, AEMeasurable (Xr m) P) {b : ℝ≥0}
+    (hb : ∀ m i j, ∀ᵐ ω ∂P, ‖Xr m ω i j‖ ≤ b)
+    (hmean : ∀ m i j, ∫ ω, Xr m ω i j ∂P = 0)
+    (hunit : ∀ m i j, ∫ ω, ‖Xr m ω i j‖ ^ 2 ∂P = 1)
+    (hy : Tendsto (fun m : ℕ ↦ (p m : ℝ≥0) / (m + 1)) atTop (𝓝 y)) (hy₀ : y ≠ 0) :
+    ∀ᵐ ω ∂P, Tendsto (fun m ↦ (sampleCovariance (Xr m ω)).spectralMeasure
+      (isHermitian_sampleCovariance _)) atTop (𝓝 (marchenkoPastur y).toProbabilityMeasure) := by
+  let Y m (ω : Ω) := (Xr m ω).map Complex.ofReal
+  have hindY m := (hind m).comp (fun _ ↦ Complex.ofReal) (fun _ ↦ Complex.measurable_ofReal)
+  have hmY m : AEMeasurable (Y m) P := .of_eval fun i ↦ .of_eval fun j ↦
+    Complex.measurable_ofReal.comp_aemeasurable ((hm m).eval i |>.eval j)
+  have hbY m i j : ∀ᵐ ω ∂P, ‖Y m ω i j‖ ≤ b := by
+    simpa only [Y, Matrix.map_apply, Complex.norm_real] using hb m i j
+  have hmeanY m i j : ∫ ω, Y m ω i j ∂P = 0 := by
+    simp only [Y, Matrix.map_apply, integral_complex_ofReal, hmean, Complex.ofReal_zero]
+  have hunitY m i j : ∫ ω, ‖Y m ω i j‖ ^ 2 ∂P = 1 := by
+    simpa only [Y, Matrix.map_apply, Complex.norm_real] using hunit m i j
+  have hL (m : ℕ) (ω : Ω) :
+      (sampleCovariance (Y m ω)).spectralMeasure (isHermitian_sampleCovariance _) =
+        (sampleCovariance (Xr m ω)).spectralMeasure (isHermitian_sampleCovariance _) := by
+    have he := sampleCovariance_map (Xr m ω) (RCLike.ofRealStarAlgHom ℂ)
+    have hA : ((sampleCovariance (Xr m ω)).map Complex.ofReal).IsHermitian :=
+      (isHermitian_sampleCovariance (Xr m ω)).map _
+        (fun x ↦ map_star (RCLike.ofRealStarAlgHom ℂ) x)
+    have hEq := spectralMeasure_eq_of_charpoly_eq
+      (isHermitian_sampleCovariance (Y m ω)) hA (congrArg Matrix.charpoly he)
+    exact hEq.trans (spectralMeasure_map_ofReal _ hA)
+  simpa only [hL] using
+    ae_tendsto_spectralMeasure_sampleCovariance_of_bounded hindY hmY hbY hmeanY hunitY hy hy₀
+
+section VaryingSpaces
+
+variable {Ωs : ℕ → Type*} [∀ m, MeasurableSpace (Ωs m)] {Ps : ∀ m, Measure (Ωs m)}
+  {Xs : (m : ℕ) → Ωs m → Matrix (Fin (p m)) (Fin (m + 1)) ℂ}
+
+omit [∀ m, NeZero (p m)] in
+private theorem aestronglyMeasurable_integral_spectralMeasure_sampleCovariance
+    {p' n' Ω' : Type*} [Fintype p'] [Fintype n'] [DecidableEq p'] [Nonempty p']
+    [MeasurableSpace Ω'] {P' : Measure Ω'} {A : Ω' → Matrix p' n' ℂ}
+    (hA : AEMeasurable A P') (f : ℝ →ᵇ ℝ) :
+    AEStronglyMeasurable
+      (fun ω ↦ ∫ x, f x ∂((sampleCovariance (A ω)).spectralMeasure
+        (isHermitian_sampleCovariance _) : Measure ℝ)) P' := by
+  have hcov : Measurable (sampleCovariance : Matrix p' n' ℂ → Matrix p' p' ℂ) := by
+    rw [funext sampleCovariance_def]
+    exact (TauCeti.measurable_matrix_mul_conjTranspose (R := ℂ) (m := p') (n := n')
+      continuous_star.measurable).const_smul (1 / (Fintype.card n' : ℝ))
+  have hc : AEMeasurable (fun ω ↦ sampleCovariance (A ω)) P' := hcov.comp_aemeasurable hA
+  have hH : AEMeasurable (Set.codRestrict (fun ω ↦ sampleCovariance (A ω))
+      {M | M.IsHermitian} (fun ω ↦ isHermitian_sampleCovariance (A ω))) P' :=
+    hc.subtype_mk
+  have htest := (continuous_integral_spectralMeasure (n := p') (𝕜 := ℂ) f.continuous).measurable
+  simpa only [Function.comp_def, Set.codRestrict] using
+    (htest.comp_aemeasurable hH).aestronglyMeasurable
+
+omit [∀ m, NeZero (p m)] in
+private theorem integrable_sampleCovariance_test
+    {p' n' Ω' : Type*} [Fintype p'] [Fintype n'] [DecidableEq p'] [Nonempty p']
+    [MeasurableSpace Ω'] {P' : Measure Ω'} [IsFiniteMeasure P'] {A : Ω' → Matrix p' n' ℂ}
+    (hA : AEMeasurable A P') (f : ℝ →ᵇ ℝ) :
+    Integrable (fun ω ↦ ∫ x, f x ∂((sampleCovariance (A ω)).spectralMeasure
+      (isHermitian_sampleCovariance _) : Measure ℝ)) P' := by
+  refine Integrable.of_bound (aestronglyMeasurable_integral_spectralMeasure_sampleCovariance hA f)
+    ‖f‖ (.of_forall fun ω ↦ ?_)
+  let L := (sampleCovariance (A ω)).spectralMeasure (isHermitian_sampleCovariance _)
+  simpa using norm_integral_le_of_norm_le_const (μ := (L : Measure ℝ))
+    (.of_forall f.norm_coe_le_norm)
+
+private theorem ae_tendsto_spectralMeasure_sampleCovariance_infinitePi
+    (hind : ∀ m, iIndepFun (fun ij : Fin (p m) × Fin (m + 1) ↦
+      fun ω ↦ Xs m ω ij.1 ij.2) (Ps m))
+    (hX : ∀ m i j (u : ℂ), HasSubgaussianMGF (fun ω ↦ (star u * Xs m ω i j).re)
+      (‖u‖₊ ^ 2 * K) (Ps m))
+    (hunit : ∀ m i j, ∫ ω, ‖Xs m ω i j‖ ^ 2 ∂Ps m = 1)
+    (hy : Tendsto (fun m : ℕ ↦ (p m : ℝ≥0) / (m + 1)) atTop (𝓝 y)) (hy₀ : y ≠ 0) :
+    haveI : ∀ m, IsProbabilityMeasure (Ps m) := fun m ↦ (hind m).isProbabilityMeasure
+    ∀ᵐ ω ∂Measure.infinitePi Ps, Tendsto (fun m ↦ (sampleCovariance (Xs m (ω m))).spectralMeasure
+      (isHermitian_sampleCovariance _)) atTop (𝓝 (marchenkoPastur y).toProbabilityMeasure) := by
+  have : ∀ m, IsProbabilityMeasure (Ps m) := fun m ↦ (hind m).isProbabilityMeasure
+  let Q := Measure.infinitePi Ps
+  let Y (m : ℕ) (ω : ∀ m, Ωs m) := Xs m (ω m)
+  have he m := measurePreserving_eval_infinitePi Ps m
+  have hcoord (m : ℕ) (ij : Fin (p m) × Fin (m + 1)) :
+      AEMeasurable (fun ω ↦ Xs m ω ij.1 ij.2) (Ps m) :=
+    (integrable_of_hasSubgaussianMGF_re_star_mul (hX m ij.1 ij.2)).aemeasurable
+  refine ae_tendsto_spectralMeasure_sampleCovariance_of_hasSubgaussianMGF
+    (P := Q) (X := Y) (K := K) ?_ ?_ ?_ hy hy₀
+  · intro m
+    -- Pull back the joint product law and all its marginals along the same projection.
+    have hL := fun ij ↦ hasLaw_map (hcoord m ij)
+    exact (iIndepFun_iff_hasLaw_pi_pi (fun ij ↦ (hL ij).fun_comp (he m).hasLaw)).2
+      (((hind m).hasLaw_pi hL).fun_comp (he m).hasLaw)
+  · intro m i j u
+    have hL := hasLaw_map (hX m i j u).aemeasurable
+    exact (hX m i j u).congr_identDistrib (hL.identDistrib (hL.fun_comp (he m).hasLaw))
+  · intro m i j
+    exact ((he m).hasLaw.integral_comp
+      ((hcoord m (i, j)).norm.pow_const 2).aestronglyMeasurable).trans (hunit m i j)
+
+/-- On possibly different probability spaces, every bounded continuous spectral statistic
+converges in mean absolute error to its Marchenko–Pastur integral. Each matrix has independent
+entries of unit second moment with a common directional sub-Gaussian proxy. -/
+theorem tendsto_integral_norm_integral_spectralMeasure_sampleCovariance_sub
+    (hind : ∀ m, iIndepFun (fun ij : Fin (p m) × Fin (m + 1) ↦
+      fun ω ↦ Xs m ω ij.1 ij.2) (Ps m))
+    (hX : ∀ m i j (u : ℂ), HasSubgaussianMGF (fun ω ↦ (star u * Xs m ω i j).re)
+      (‖u‖₊ ^ 2 * K) (Ps m))
+    (hunit : ∀ m i j, ∫ ω, ‖Xs m ω i j‖ ^ 2 ∂Ps m = 1)
+    (hy : Tendsto (fun m : ℕ ↦ (p m : ℝ≥0) / (m + 1)) atTop (𝓝 y)) (hy₀ : y ≠ 0)
+    (f : ℝ →ᵇ ℝ) :
+    Tendsto (fun m ↦ ∫ ω, ‖(∫ x, f x ∂((sampleCovariance (Xs m ω)).spectralMeasure
+      (isHermitian_sampleCovariance _) : Measure ℝ)) - ∫ x, f x ∂marchenkoPastur y‖ ∂Ps m)
+      atTop (𝓝 0) := by
+  have : ∀ m, IsProbabilityMeasure (Ps m) := fun m ↦ (hind m).isProbabilityMeasure
+  let Q := Measure.infinitePi Ps
+  let c := ∫ x, f x ∂marchenkoPastur y
+  let F m (ω : Ωs m) := ∫ x, f x ∂((sampleCovariance (Xs m ω)).spectralMeasure
+    (isHermitian_sampleCovariance _) : Measure ℝ)
+  have hm m : AEStronglyMeasurable (F m) (Ps m) :=
+    aestronglyMeasurable_integral_spectralMeasure_sampleCovariance
+      (.of_eval fun i ↦ .of_eval fun j ↦
+        (integrable_of_hasSubgaussianMGF_re_star_mul (hX m i j)).aemeasurable) f
+  have hbound (μ : Measure ℝ) [IsProbabilityMeasure μ] : ‖∫ x, f x ∂μ‖ ≤ ‖f‖ := by
+    simpa using norm_integral_le_of_norm_le_const (μ := μ) (.of_forall f.norm_coe_le_norm)
+  have hme m := ((hm m).sub (aestronglyMeasurable_const (b := c))).norm
+  have hF m : (∫ ω : ∀ m, Ωs m, ‖F m (ω m) - c‖ ∂Q) = ∫ ω, ‖F m ω - c‖ ∂Ps m :=
+    (measurePreserving_eval_infinitePi Ps m).hasLaw.integral_comp (hme m)
+  suffices h : Tendsto (fun m ↦ ∫ ω, ‖F m ω - c‖ ∂Ps m) atTop (𝓝 0) from h
+  simp_rw [← hF]
+  rw [← integral_zero (α := ∀ m, Ωs m) (μ := Q) (G := ℝ)]
+  refine tendsto_integral_of_dominated_convergence (fun _ ↦ ‖f‖ + ‖f‖)
+    (fun m ↦ (hme m).comp_quasiMeasurePreserving
+      (measurePreserving_eval_infinitePi Ps m).quasiMeasurePreserving)
+    (integrable_const _) (fun m ↦ .of_forall fun ω ↦ ?_) ?_
+  · rw [Real.norm_of_nonneg (norm_nonneg _)]
+    exact (norm_sub_le _ _).trans (add_le_add
+      (hbound _) (hbound _))
+  · filter_upwards [ae_tendsto_spectralMeasure_sampleCovariance_infinitePi hind hX hunit hy hy₀]
+      with ω hω
+    have hf := ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hω f
+    simpa only [F, c, Measure.coe_toProbabilityMeasure, sub_self, norm_zero] using
+      (hf.sub_const c).norm
+
+section TestIntegrals
+
+variable
+  (hind : ∀ m, iIndepFun (fun ij : Fin (p m) × Fin (m + 1) ↦
+    fun ω ↦ Xs m ω ij.1 ij.2) (Ps m))
+  (hX : ∀ m i j (u : ℂ), HasSubgaussianMGF (fun ω ↦ (star u * Xs m ω i j).re)
+    (‖u‖₊ ^ 2 * K) (Ps m))
+  (hunit : ∀ m i j, ∫ ω, ‖Xs m ω i j‖ ^ 2 ∂Ps m = 1)
+  (hy : Tendsto (fun m : ℕ ↦ (p m : ℝ≥0) / (m + 1)) atTop (𝓝 y)) (hy₀ : y ≠ 0)
+  (f : ℝ →ᵇ ℝ)
+
+include hind hX hunit hy hy₀ in
+/-- The expected spectral integrals converge to those of the Marchenko–Pastur law
+for uniformly sub-Gaussian independent entries of unit second absolute moment.
+The underlying probability spaces may vary with matrix size. -/
+theorem tendsto_integral_integral_spectralMeasure_sampleCovariance :
+    Tendsto (fun m ↦ ∫ ω, (∫ x, f x ∂((sampleCovariance (Xs m ω)).spectralMeasure
+      (isHermitian_sampleCovariance _) : Measure ℝ)) ∂Ps m)
+      atTop (𝓝 (∫ x, f x ∂marchenkoPastur y)) := by
+  apply tendsto_iff_norm_sub_tendsto_zero.2
+  refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun m ↦ ?_)
+    (tendsto_integral_norm_integral_spectralMeasure_sampleCovariance_sub hind hX hunit hy hy₀ f)
+  have : IsProbabilityMeasure (Ps m) := (hind m).isProbabilityMeasure
+  let F (ω : Ωs m) := ∫ x, f x ∂((sampleCovariance (Xs m ω)).spectralMeasure
+    (isHermitian_sampleCovariance _) : Measure ℝ)
+  let c := ∫ x, f x ∂marchenkoPastur y
+  have hIF : Integrable F (Ps m) := integrable_sampleCovariance_test
+    (.of_eval fun i ↦ .of_eval fun j ↦
+      (integrable_of_hasSubgaussianMGF_re_star_mul (hX m i j)).aemeasurable) f
+  have hsub : (∫ ω, F ω - c ∂Ps m) = (∫ ω, F ω ∂Ps m) - c := by
+    rw [integral_sub hIF (integrable_const _)]
+    simp
+  simpa only [hsub, F, c] using
+    norm_integral_le_integral_norm (μ := Ps m) (fun ω ↦ F ω - c)
+
+include hind hX hunit hy hy₀ in
+/-- The sample covariance spectral statistics converge in probability to those of the
+Marchenko–Pastur law for uniformly sub-Gaussian independent entries of unit second absolute
+moment. The underlying probability spaces may vary with matrix size. -/
+theorem tendsto_measureReal_norm_integral_spectralMeasure_sampleCovariance_sub_ge
+    {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun m ↦ (Ps m).real {ω | ε ≤ ‖(∫ x, f x
+      ∂((sampleCovariance (Xs m ω)).spectralMeasure (isHermitian_sampleCovariance _) : Measure ℝ)) -
+      ∫ x, f x ∂marchenkoPastur y‖}) atTop (𝓝 0) := by
+  have hlim := Tendsto.div_const
+    (tendsto_integral_norm_integral_spectralMeasure_sampleCovariance_sub hind hX hunit hy hy₀ f) ε
+  simp only [zero_div] at hlim
+  refine squeeze_zero (fun _ ↦ ENNReal.toReal_nonneg) (fun m ↦ ?_) hlim
+  have : IsProbabilityMeasure (Ps m) := (hind m).isProbabilityMeasure
+  have hA : AEMeasurable (Xs m) (Ps m) := .of_eval fun i ↦ .of_eval fun j ↦
+    (integrable_of_hasSubgaussianMGF_re_star_mul (hX m i j)).aemeasurable
+  apply (le_div_iff₀ hε).2
+  rw [mul_comm]
+  exact mul_meas_ge_le_integral_of_nonneg (.of_forall fun _ ↦ norm_nonneg _)
+    (((integrable_sampleCovariance_test hA f).sub (integrable_const _)).norm) ε
+
+end TestIntegrals
+
+end VaryingSpaces
+
+end TauCeti.Probability
