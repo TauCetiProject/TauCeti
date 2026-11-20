@@ -34,6 +34,8 @@ identification of restricted series in two families of variables with iterated r
   `MvPowerSeries (σ ⊕ τ) A ≃ₐ[R] MvPowerSeries σ (MvPowerSeries τ A)`.
 * `MvPowerSeries.coeff_coeff_sumAlgEquiv` and
   `MvPowerSeries.coeff_sumAlgEquiv_symm`: its coefficients.
+* `MvPowerSeries.sumAlgEquiv_C`: its action on constants, with inverse
+  `MvPowerSeries.sumAlgEquiv_symm_C`.
 * `MvPowerSeries.sumAlgEquiv_X_inl` and `MvPowerSeries.sumAlgEquiv_X_inr`: its action on the
   variables, with inverses `MvPowerSeries.sumAlgEquiv_symm_X` and
   `MvPowerSeries.sumAlgEquiv_symm_C_X`.
@@ -151,6 +153,13 @@ theorem coeff_sumAlgEquiv_symm (g : MvPowerSeries σ (MvPowerSeries τ A)) (a : 
     (b : τ →₀ ℕ) : coeff (a.sumElim b) ((sumAlgEquiv R A σ τ).symm g) = coeff b (coeff a g) := by
   rw [← coeff_coeff_sumAlgEquiv (R := R), AlgEquiv.apply_symm_apply]
 
+/-- `sumAlgEquiv` sends a constant to the corresponding constant with constant coefficient. -/
+@[simp]
+theorem sumAlgEquiv_C (c : A) : sumAlgEquiv R A σ τ (C c) = C (C c) := by
+  classical
+  ext a b
+  simp [coeff_C, apply_ite (coeff b), Finsupp.ext_iff, Sum.forall, ite_and]
+
 /-- `sumAlgEquiv` sends a variable of the first family to the corresponding variable. -/
 @[simp]
 theorem sumAlgEquiv_X_inl (i : σ) : sumAlgEquiv R A σ τ (X (.inl i)) = X i := by
@@ -167,6 +176,12 @@ theorem sumAlgEquiv_X_inr (j : τ) : sumAlgEquiv R A σ τ (X (.inr j)) = C (X j
   ext a b
   rw [coeff_coeff_sumAlgEquiv, coeff_X, coeff_C, ← Finsupp.sumElim_zero_single]
   split_ifs <;> simp_all [coeff_X, Finsupp.ext_iff, Sum.forall, Finsupp.single_apply]
+
+/-- The inverse of `sumAlgEquiv` sends a constant with constant coefficient to the corresponding
+constant. -/
+@[simp]
+theorem sumAlgEquiv_symm_C (c : A) : (sumAlgEquiv R A σ τ).symm (C (C c)) = C c := by
+  rw [AlgEquiv.symm_apply_eq, sumAlgEquiv_C]
 
 /-- The inverse of `sumAlgEquiv` sends a variable to the corresponding variable of the first
 family. -/
