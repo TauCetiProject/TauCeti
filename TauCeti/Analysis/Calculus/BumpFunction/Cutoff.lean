@@ -28,9 +28,12 @@ import TauCeti.MeasureTheory.Integral.Bochner.Set
 This module provides smooth, compactly supported cutoffs for compact subsets of a
 finite-dimensional real normed space. The cutoff is equal to one on a neighborhood of the compact
 set and has topological support in a prescribed open set, which is the localization step used for
-compact exhaustions in domain arguments. Taking differences of consecutive cutoffs along a compact
-exhaustion gives a nonnegative decomposition of unity of an open set by compactly supported smooth
-functions, with partial sums at most one, together with cutoffs equal to one on their supports which
+compact exhaustions in domain arguments. For a convex compact set, such a cutoff gives a smooth
+map into the open set which is the identity near the compact set
+(`Convex.exists_contDiff_mem_eventuallyEq_id`). Taking differences of consecutive cutoffs along a
+compact exhaustion gives a nonnegative decomposition of unity of an open set by compactly
+supported smooth functions, with partial sums at most one, together with cutoffs equal to one on
+their supports which
 are locally finite in the open set (`IsOpen.exists_contDiff_decomposition_cutoff`); this is the
 gluing device for global approximation on a domain. Multiplying by a cutoff turns a function which
 is `C^k` on an open set containing its support into a `C^k` function on the whole space
@@ -131,6 +134,32 @@ theorem _root_.IsCompact.exists_contDiff_cutoff_eventuallyEq_one [NormedSpace �
         (∀ x ∈ K, ∀ᶠ y in 𝓝 x, ψ y = 1) ∧ HasCompactSupport ψ ∧ tsupport ψ ⊆ U := by
   obtain ⟨ψ, hψ, hr, h1, hc, hs⟩ := hK.exists_contDiff_cutoff hU hKU
   exact ⟨ψ, hψ, hr, fun x hx => mem_interior_iff_mem_nhds.1 (h1 hx), hc, hs⟩
+
+/-- **A smooth map into an open set which is the identity near a convex compact set.** A nonempty
+convex compact set `K` contained in an open set `U` of a finite-dimensional real normed space
+admits a smooth map `κ` with values in `U` which agrees with the identity near every point of `K`.
+It is `x ↦ ψ x • x + (1 - ψ x) • c` for a point `c` of `K` and a smooth cutoff `ψ` equal to one near
+`K` and supported in a convex thickening of `K` inside `U`. Composing with `κ` turns a family
+indexed by `U` into a family indexed by the whole space, without changing it near `K`. -/
+theorem _root_.Convex.exists_contDiff_mem_eventuallyEq_id [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {K U : Set E} (hKc : Convex ℝ K) (hK : IsCompact K) (hKne : K.Nonempty) (hU : IsOpen U)
+    (hKU : K ⊆ U) :
+    ∃ κ : E → E, ContDiff ℝ ∞ κ ∧ (∀ x, κ x ∈ U) ∧ ∀ x ∈ K, κ =ᶠ[𝓝 x] id := by
+  obtain ⟨δ, hδ, hδU⟩ := hK.exists_thickening_subset_open hU hKU
+  have hKV : K ⊆ Metric.thickening δ K := Metric.self_subset_thickening hδ K
+  obtain ⟨ψ, hψ, hψr, hψ1, -, hψs⟩ :=
+    hK.exists_contDiff_cutoff_eventuallyEq_one Metric.isOpen_thickening hKV
+  obtain ⟨c, hc⟩ := hKne
+  refine ⟨fun x ↦ ψ x • x + (1 - ψ x) • c, (hψ.smul contDiff_id).add
+    ((contDiff_const.sub hψ).smul contDiff_const), fun x ↦ ?_, fun x hx ↦ ?_⟩
+  · obtain ⟨h0, h1⟩ : 0 ≤ ψ x ∧ ψ x ≤ 1 := hψr (mem_range_self x)
+    by_cases hx : ψ x = 0
+    · simpa [hx] using hKU hc
+    -- Where `ψ x ≠ 0`, `κ x` lies on the segment from `x` to `c` in the convex thickening.
+    · exact hδU (hKc.thickening δ (hψs (subset_tsupport _ hx)) (hKV hc) h0 (by linarith)
+        (by ring))
+  · filter_upwards [hψ1 x hx] with y hy
+    simp [hy]
 
 /-- A compact set contained in an open set admits a smooth cutoff whose value and gradient are
 bounded by a common nonnegative constant. -/
