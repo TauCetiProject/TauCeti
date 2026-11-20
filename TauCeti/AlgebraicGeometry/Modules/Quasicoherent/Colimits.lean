@@ -104,9 +104,9 @@ theorem isQuasicoherent_of_isColimit {X : Scheme.{u}} {K : J ⥤ X.Modules}
     c.pt.IsQuasicoherent := by
   -- Restriction to an open subscheme is a left adjoint, so it preserves the colimit.
   refine c.pt.isQuasicoherent_iff_forall_affineOpens.2 fun U ↦ ?_
-  exact isQuasicoherent_of_isColimit_affine (K := K ⋙ restrictFunctor U.1.ι)
+  exact isQuasicoherent_of_isColimit_affine (K := K ⋙ restrictFunctor U.val.ι)
     (fun j ↦ have := hK j; isQuasicoherent_restrictFunctor _ _)
-    (isColimitOfPreserves (restrictFunctor U.1.ι) hc)
+    (isColimitOfPreserves (restrictFunctor U.val.ι) hc)
 
 variable (J) in
 /-- Quasicoherence is closed under small colimits in the category of all sheaves of modules, so
@@ -219,3 +219,28 @@ theorem toModule_sectionsFunctor_map_bijective {ι : Type w} [DecidableEq ι]
 end
 
 end TauCeti.AlgebraicGeometry
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+open TauCeti.AlgebraicGeometry
+
+universe w w' u
+
+variable {J : Type w} [Category.{w'} J] [EssentiallySmall.{u} J] {X : Scheme.{u}} {U : X.Opens}
+
+/-- Sections over an affine open preserve the colimit of any small diagram of quasicoherent
+sheaves. -/
+theorem preservesColimit_sectionsFunctor_of_isAffineOpen
+    {K : J ⥤ X.Modules} (hK : ∀ j, (K.obj j).IsQuasicoherent) (hU : IsAffineOpen U) :
+    PreservesColimit K (sectionsFunctor U) :=
+  ⟨fun hc ↦ ⟨isColimitMapCoconeSectionsFunctor hK hc hU⟩⟩
+
+/-- Sections over an affine open preserve the colimit of any parallel pair of morphisms between
+quasicoherent sheaves (in particular coequalizers and cokernels). -/
+theorem preservesColimit_parallelPair_sectionsFunctor_of_isAffineOpen
+    {M N : X.Modules} (f g : M ⟶ N) [M.IsQuasicoherent] [N.IsQuasicoherent]
+    (hU : IsAffineOpen U) : PreservesColimit (parallelPair f g) (sectionsFunctor U) :=
+  preservesColimit_sectionsFunctor_of_isAffineOpen
+    (by rintro (_ | _) <;> dsimp <;> infer_instance) hU
+
+end AlgebraicGeometry.Scheme.Modules

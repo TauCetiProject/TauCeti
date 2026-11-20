@@ -116,7 +116,9 @@ theorem kostantRootSubgroup_def :
         eqToHom (GeneralLinear.groupScheme_def ℤ n).symm := by
   let : Comodule ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ) M :=
     kostantRootSubgroupComodule e h ρ M hM i hnil
-  rw [kostantRootSubgroup, Comodule.coordinateGroupSchemeHom_def]
+  rw [kostantRootSubgroup]
+  dsimp only
+  rw [Comodule.coordinateGroupSchemeHom_def]
   rfl
 
 /-- Replacing a generator family by one with the same selected root vector leaves the
@@ -249,7 +251,7 @@ theorem map_genericMatrix_eq_kostantRootSubgroupMatrix :
     ext
     simp
   have hmatrix := congrArg
-    (fun g : Matrix.GeneralLinearGroup (Fin n) (AdditiveGroup.coordinateHopfAlgebra ℤ) => g.1)
+    (fun g : Matrix.GeneralLinearGroup (Fin n) (AdditiveGroup.coordinateHopfAlgebra ℤ) => g.val)
     hpoint'
   -- This bridge compares the bundled algebra structure with the canonical integer algebra.
   -- Both maps are identified explicitly by their value on the symmetric-algebra generator.

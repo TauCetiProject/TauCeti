@@ -232,7 +232,7 @@ theorem IsSemialgebraic.isNowhereDense_iff {n : ℕ} {s : Set (Fin n → ℝ)} (
   rw [← h𝒞.sUnion_sep_subset hsub] at h ⊢
   have := (h𝒞.finite.subset (sep_subset 𝒞 (· ⊆ s))).to_subtype
   rw [sUnion_eq_iUnion]
-  exact IsNowhereDense.iUnion fun E ↦ (h𝒞.isLocallyClosed E.2.1).isNowhereDense_iff.2 <|
-    subset_empty_iff.1 (h ▸ interior_mono (subset_sUnion_of_mem E.2))
+  exact IsNowhereDense.iUnion fun E ↦ (h𝒞.isLocallyClosed E.property.1).isNowhereDense_iff.2 <|
+    subset_empty_iff.1 (h ▸ interior_mono (subset_sUnion_of_mem E.property))
 
 end TauCeti

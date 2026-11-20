@@ -28,7 +28,8 @@ differ by a smooth framed gauge exactly when their divisors agree
 (`TauCeti.Vortex.exists_framedGaugeGroup_smul_eq_iff`). This file proves Taubes's existence
 theorem: every effective divisor of degree `m`, repeated points included, is the divisor of a
 smooth framed vortex. Together with uniqueness this identifies the framed gauge orbits of smooth
-framed degree-`m` vortices with `Sym ℂ m`.
+framed degree-`m` vortices with `Sym ℂ m`; that identification, at every positive coupling, is
+`TauCeti.Vortex.framedVortexModuliEquiv`.
 
 Existence follows Taubes's variational argument, whose steps are already available.
 
@@ -64,12 +65,10 @@ All in the namespace `TauCeti.Vortex`:
   vortex equation has a smooth square-integrable solution tending to zero at infinity.
 * `exists_contDiff_equation_eq_zero_isZeroMultiplicity`: every `D ∈ Sym ℂ m` is the zero divisor
   of a smooth vortex with the degree-`m` end framing.
-* `framedVortexSubMulAction`: the smooth framed degree-`m` vortices, preserved by smooth framed
-  gauges.
+* `framedVortexSubMulAction`: the smooth framed degree-`m` vortices of a coupling `c`, preserved
+  by smooth framed gauges.
 * `framedVortexDivisor`: the zero divisor of a smooth framed degree-`m` vortex, a point of
   `Sym ℂ m`, characterized by `framedVortexDivisor_eq_iff`.
-* `framedVortexModuliEquiv`: the framed gauge orbits of smooth framed degree-`m` vortices are in
-  bijection with `Sym ℂ m` through the divisor.
 
 ## References
 
@@ -198,7 +197,7 @@ theorem exists_contDiff_equation_eq_zero_isZeroMultiplicity {m : ℕ} (D : Sym �
   have hPf : P.eval = f := funext fun w ↦ by simp [hP, hf, eval_multiset_prod, Multiset.map_map]
   have hdeg : P.natDegree = m := by
     rw [hP, natDegree_multiset_prod_X_sub_C_eq_card]
-    exact D.2
+    exact D.property
   have hfc : ContDiff ℝ ∞ f := hPf ▸ (P.differentiable.contDiff).restrict_scalars ℝ
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · -- The vacuum: amplitude zero and section `1`.
@@ -225,58 +224,64 @@ theorem exists_contDiff_equation_eq_zero_isZeroMultiplicity {m : ℕ} (D : Sym �
     exact ⟨_, contDiff_amplitudeField (n := ⊤) (hu.of_le (by simp)) hfc, hsol, hfr,
       isZeroMultiplicity_sectionValue_amplitudeField_prod_sub hu.continuous _⟩
 
-/-! ### The moduli of framed vortices -/
+/-! ### Framed vortices and their zero divisors -/
 
-/-- **Smooth framed vortices of degree `m`.** The smooth solutions `x` of the vortex equations on
-`ℂ` whose section has the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`. Smooth framed gauges
-preserve them. -/
-def framedVortexSubMulAction (m : ℕ) :
+/-- **Smooth framed vortices of degree `m` and coupling `c`.** The smooth solutions `x` of
+`∂bar_a α = 0`, `*iF_a = c (1 - |α|²) / 8` (`TauCeti.Vortex.coupledEquation c`) on `ℂ` whose
+section has the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`. Coupling one is the normalized
+vortex equation `TauCeti.Vortex.equation`. Smooth framed gauges preserve them. -/
+def framedVortexSubMulAction (c : ℝ) (m : ℕ) :
     SubMulAction framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) where
-  carrier := {x | ContDiff ℝ ∞ x ∧ (∀ z, equation x z = 0) ∧
+  carrier := {x | ContDiff ℝ ∞ x ∧ (∀ z, coupledEquation c x z = 0) ∧
     Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)}
   smul_mem' u x := by
     rintro ⟨hx, hsol, hfr⟩
-    obtain ⟨hu, hu1⟩ := (mem_framedGaugeGroup _).1 u.2
+    obtain ⟨hu, hu1⟩ := (mem_framedGaugeGroup _).1 u.property
     simp only [Set.mem_ofPred_eq, framedGaugeGroup_smul]
     refine ⟨contDiff_gaugeTransform (by simpa using hu) hx, fun z ↦ ?_,
       tendsto_sectionValue_gaugeTransform hu1 hfr⟩
-    rw [equation_gaugeTransform_eq_zero_iff (hu.contDiffAt.of_le (by simp)) fun i ↦
+    rw [coupledEquation_gaugeTransform_eq_zero_iff c (hu.contDiffAt.of_le (by simp)) fun i ↦
       (((contDiff_piLp 2).1 hx i).differentiable (by simp)).differentiableAt]
     exact hsol z
 
-/-- The members of `framedVortexSubMulAction m` are the smooth framed degree-`m` vortices. -/
+/-- The members of `framedVortexSubMulAction c m` are the smooth framed degree-`m` vortices of
+coupling `c`. -/
 @[simp]
-theorem mem_framedVortexSubMulAction {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)} :
-    x ∈ framedVortexSubMulAction m ↔ ContDiff ℝ ∞ x ∧ (∀ z, equation x z = 0) ∧
+theorem mem_framedVortexSubMulAction {c : ℝ} {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)} :
+    x ∈ framedVortexSubMulAction c m ↔ ContDiff ℝ ∞ x ∧ (∀ z, coupledEquation c x z = 0) ∧
       Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) :=
   Iff.rfl
 
-variable {m : ℕ}
+variable {c : ℝ} {m : ℕ}
 
-/-- The zeros of a smooth framed degree-`m` vortex form an effective divisor of degree `m`. -/
+/-- The zeros of a smooth framed degree-`m` vortex of any coupling form an effective divisor of
+degree `m`; only the holomorphicity rows are used. -/
 private theorem exists_sym_isZeroMultiplicity_of_mem_framedVortexSubMulAction
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedVortexSubMulAction m) :
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedVortexSubMulAction c m) :
     ∃ D : Sym ℂ m, IsZeroMultiplicity (sectionValue x) fun z ↦ (D : Multiset ℂ).count z := by
   obtain ⟨hx, hsol, hfr⟩ := hx
   have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
   have hd (i : Fin 4) : Differentiable ℝ fun w ↦ x w i := (hxi i).differentiable (by simp)
-  exact exists_sym_isZeroMultiplicity_sectionValue (k := ⊤) le_top (hxi 0) (hxi 1) (hd 2) (hd 3)
-    (fun w ↦ by simp [hsol w]) hfr
+  refine exists_sym_isZeroMultiplicity_sectionValue (k := ⊤) le_top (hxi 0) (hxi 1) (hd 2) (hd 3)
+    (fun w ↦ ⟨?_, ?_⟩) hfr
+  · simpa using congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 1) (hsol w)
+  · simpa using congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 2) (hsol w)
 
-/-- **The zero divisor of a smooth framed degree-`m` vortex**, the point of `Sym ℂ m` listing the
-zeros of its section with multiplicity. It is characterized by `framedVortexDivisor_eq_iff`. -/
-def framedVortexDivisor (x : framedVortexSubMulAction m) : Sym ℂ m :=
-  (exists_sym_isZeroMultiplicity_of_mem_framedVortexSubMulAction x.2).choose
+/-- **The zero divisor of a smooth framed degree-`m` vortex** of coupling `c`, the point of
+`Sym ℂ m` listing the zeros of its section with multiplicity. It is characterized by
+`framedVortexDivisor_eq_iff`. -/
+def framedVortexDivisor (x : framedVortexSubMulAction c m) : Sym ℂ m :=
+  (exists_sym_isZeroMultiplicity_of_mem_framedVortexSubMulAction x.property).choose
 
 /-- The section of a smooth framed vortex vanishes at the points of its divisor, to the order of
 their multiplicities. -/
-theorem isZeroMultiplicity_sectionValue_framedVortexDivisor (x : framedVortexSubMulAction m) :
+theorem isZeroMultiplicity_sectionValue_framedVortexDivisor (x : framedVortexSubMulAction c m) :
     IsZeroMultiplicity (sectionValue x) fun z ↦ (framedVortexDivisor x : Multiset ℂ).count z :=
-  (exists_sym_isZeroMultiplicity_of_mem_framedVortexSubMulAction x.2).choose_spec
+  (exists_sym_isZeroMultiplicity_of_mem_framedVortexSubMulAction x.property).choose_spec
 
 /-- **Characterization of the divisor.** The divisor of a smooth framed vortex is the unique
 `D ∈ Sym ℂ m` whose counts are the zero multiplicities of its section. -/
-theorem framedVortexDivisor_eq_iff {x : framedVortexSubMulAction m} {D : Sym ℂ m} :
+theorem framedVortexDivisor_eq_iff {x : framedVortexSubMulAction c m} {D : Sym ℂ m} :
     framedVortexDivisor x = D ↔
       IsZeroMultiplicity (sectionValue x) fun z ↦ (D : Multiset ℂ).count z := by
   refine ⟨fun h ↦ h ▸ isZeroMultiplicity_sectionValue_framedVortexDivisor x, fun h ↦ ?_⟩
@@ -285,53 +290,10 @@ theorem framedVortexDivisor_eq_iff {x : framedVortexSubMulAction m} {D : Sym ℂ
 
 /-- Smooth framed gauges do not change the divisor. -/
 @[simp]
-theorem framedVortexDivisor_smul (u : framedGaugeGroup) (x : framedVortexSubMulAction m) :
+theorem framedVortexDivisor_smul (u : framedGaugeGroup) (x : framedVortexSubMulAction c m) :
     framedVortexDivisor (u • x) = framedVortexDivisor x := by
   rw [framedVortexDivisor_eq_iff, SubMulAction.val_smul]
   exact isZeroMultiplicity_sectionValue_framedGaugeGroup_smul
     (isZeroMultiplicity_sectionValue_framedVortexDivisor x) u
-
-/-- **Taubes's uniqueness theorem.** Two smooth framed degree-`m` vortices have the same divisor
-exactly when they differ by a smooth framed gauge. -/
-theorem framedVortexDivisor_eq_framedVortexDivisor_iff {x y : framedVortexSubMulAction m} :
-    framedVortexDivisor x = framedVortexDivisor y ↔ ∃ u : framedGaugeGroup, u • y = x := by
-  obtain ⟨hx, hxsol, hxfr⟩ := x.2
-  obtain ⟨hy, hysol, hyfr⟩ := y.2
-  -- The inverse winding phase has modulus one away from the origin.
-  have hphase : Tendsto (fun z : ℂ ↦ ‖((z / (‖z‖ : ℂ)) ^ m)⁻¹‖) (cocompact ℂ) (𝓝 1) := by
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [(isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact] with z hz
-    simp [Set.mem_compl_singleton_iff.1 hz]
-  rw [← Sym.coe_inj, ← exists_framedGaugeGroup_smul_eq_iff hx hy hxsol hysol hphase hxfr hyfr
-    (isZeroMultiplicity_sectionValue_framedVortexDivisor x)
-    (isZeroMultiplicity_sectionValue_framedVortexDivisor y)]
-  simp only [Subtype.ext_iff, SubMulAction.val_smul]
-
-/-- **Taubes's existence theorem.** Every effective divisor of degree `m` is the divisor of a
-smooth framed degree-`m` vortex. -/
-theorem framedVortexDivisor_surjective (m : ℕ) :
-    Function.Surjective (framedVortexDivisor (m := m)) := fun D ↦ by
-  obtain ⟨x, hx, hsol, hfr, hD⟩ := exists_contDiff_equation_eq_zero_isZeroMultiplicity D
-  exact ⟨⟨x, hx, hsol, hfr⟩, framedVortexDivisor_eq_iff.2 hD⟩
-
-/-- **The moduli space of framed plane vortices is `Sym ℂ m`** (Taubes). The divisor identifies
-the orbits of the smooth framed gauge group on the smooth framed degree-`m` vortices with the
-effective divisors of degree `m`. -/
-def framedVortexModuliEquiv (m : ℕ) :
-    MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m) ≃ Sym ℂ m :=
-  Equiv.ofBijective
-    (Quotient.lift framedVortexDivisor fun x y h ↦ by
-      obtain ⟨u, rfl⟩ := MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 h)
-      exact framedVortexDivisor_smul u y)
-    ⟨fun a b ↦ Quotient.inductionOn₂ a b fun x y h ↦ Quotient.sound <|
-        MulAction.orbitRel_apply.2 <| MulAction.mem_orbit_iff.2 <|
-          framedVortexDivisor_eq_framedVortexDivisor_iff.1 h,
-      fun D ↦ (framedVortexDivisor_surjective m D).elim fun x hx ↦ ⟨Quotient.mk'' x, hx⟩⟩
-
-/-- The class of a smooth framed vortex goes to its divisor. -/
-@[simp]
-theorem framedVortexModuliEquiv_mk (x : framedVortexSubMulAction m) :
-    framedVortexModuliEquiv m (Quotient.mk'' x) = framedVortexDivisor x :=
-  (rfl)
 
 end TauCeti.Vortex

@@ -78,8 +78,8 @@ lemma abelJacobiMapOfDegreeToPicZeroFppf_app_apply (d : ℕ) {T : (Over S)ᵒᵖ
       (relativePicardDegreeZeroToFppfSheaf f).app T
         (relativePicardDegreeZeroAddPresheafAddEquiv f T
           (Additive.ofMul (relativePicardDegreeZeroFunctor.mk f
-            ((abelJacobiMapOfDegreeToPicZero f hx₀ d).app T D).1
-            ((abelJacobiMapOfDegreeToPicZero f hx₀ d).app T D).2))) :=
+            ((abelJacobiMapOfDegreeToPicZero f hx₀ d).app T D).val
+            ((abelJacobiMapOfDegreeToPicZero f hx₀ d).app T D).property))) :=
   by
     rw [abelJacobiMapOfDegreeToPicZeroFppf]
     simp only [NatTrans.comp_app, ConcreteCategory.comp_apply]
@@ -116,8 +116,8 @@ lemma abelJacobiMapToPicZeroFppf_app_apply {T : (Over S)ᵒᵖ}
       (relativePicardDegreeZeroToFppfSheaf f).app T
         (relativePicardDegreeZeroAddPresheafAddEquiv f T
           (Additive.ofMul (relativePicardDegreeZeroFunctor.mk f
-            ((abelJacobiMapToPicZero f hx₀).app T x).1
-            ((abelJacobiMapToPicZero f hx₀).app T x).2))) := by
+            ((abelJacobiMapToPicZero f hx₀).app T x).val
+            ((abelJacobiMapToPicZero f hx₀).app T x).property))) := by
   rw [abelJacobiMapToPicZeroFppf_eq]
   simp only [NatTrans.comp_app, ConcreteCategory.comp_apply]
   rw [relativePicardDegreeZeroSubfunctorIsoFunctor_hom_app,
@@ -141,10 +141,10 @@ theorem abelJacobiMapToPicZeroFppf_app_basePoint (T : (Over S)ᵒᵖ) :
   have h : relativePicardDegreeZeroFunctor.mk f
       ((abelJacobiMapOfDegreeToPicZero f hx₀ 1).app T
         ((Functor.whiskerRight (graphDivisorDegreeOne f) uliftFunctor.{u + 1}).app T
-          (ULift.up (basePoint hx₀ T.unop)))).1
+          (ULift.up (basePoint hx₀ T.unop)))).val
       ((abelJacobiMapOfDegreeToPicZero f hx₀ 1).app T
         ((Functor.whiskerRight (graphDivisorDegreeOne f) uliftFunctor.{u + 1}).app T
-          (ULift.up (basePoint hx₀ T.unop)))).2 = 1 := by
+          (ULift.up (basePoint hx₀ T.unop)))).property = 1 := by
     apply relativePicardDegreeZeroFunctorι_app_injective f T
     rw [relativePicardDegreeZeroFunctorι_app_mk, map_one]
     have hcomp := ConcreteCategory.congr_hom (C := Type (u + 1))
@@ -154,9 +154,9 @@ theorem abelJacobiMapToPicZeroFppf_app_basePoint (T : (Over S)ᵒᵖ) :
     calc
       ((abelJacobiMapOfDegreeToPicZero f hx₀ 1).app T
           ((Functor.whiskerRight (graphDivisorDegreeOne f) uliftFunctor.{u + 1}).app T
-            (ULift.up (basePoint hx₀ T.unop)))).1 =
+            (ULift.up (basePoint hx₀ T.unop)))).val =
           ((abelJacobiMapToPicZero f hx₀).app T
-            (ULift.up (basePoint hx₀ T.unop))).1 := (congrArg Subtype.val hcomp).symm
+            (ULift.up (basePoint hx₀ T.unop))).val := (congrArg Subtype.val hcomp).symm
       _ = 1 := abelJacobiMapToPicZero_app_basePoint_val f hx₀ T
   rw [h, ofMul_one, map_zero, map_zero]
   rfl

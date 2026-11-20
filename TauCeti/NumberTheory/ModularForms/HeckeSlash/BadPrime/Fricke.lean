@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.ModularForms.HeckeSlash.BadPrime.Basic
 import Mathlib.Algebra.Field.ZMod
 import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.NumberTheory.ModularForms.Fricke.CharacterSpace
-import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.Ring
 
 /-!
 # `U_p 𝒲_N U_p` when the nebentypus is not defined modulo `N / p`
@@ -105,7 +104,7 @@ private lemma slash_mul_lowerShear [Fact p.Prime] (hpN : p ∣ N) {G : ℍ → �
         (b + t * ((v : ZMod p) * c)⁻¹).val) := by
   set M := N / p
   have hMp : (M : ℤ) * p = N := by exact_mod_cast Nat.div_mul_cancel hpN
-  obtain ⟨z, hz⟩ : (N : ℤ) ∣ (g : SL(2, ℤ)) 1 0 := mem_Gamma0_iff_dvd.mp g.2
+  obtain ⟨z, hz⟩ : (N : ℤ) ∣ (g : SL(2, ℤ)) 1 0 := mem_Gamma0_iff_dvd.mp g.property
   -- the two congruences modulo `p` behind the lower rows
   obtain ⟨y₁, hy₁⟩ := (ZMod.intCast_eq_intCast_iff_dvd_sub ((g : SL(2, ℤ)) 1 1 * c.val)
     (((v : ZMod p) * c).val) p).mp (by push_cast; simp [hv])

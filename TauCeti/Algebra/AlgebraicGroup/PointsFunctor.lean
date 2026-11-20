@@ -69,7 +69,8 @@ theorem extendPoint_apply (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
   rw [extendPoint, AlgHom.mapValue_apply]
 
 /-- Evaluation of an extended point is obtained by applying the value algebra's structure map. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches its left-hand side (the carrier `points A` is reduced first);
+-- use it by name.
 theorem extendPoint_ofConv_apply (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
     (A : CommAlgCat.{w} R) (g : points (H := H) (CommAlgCat.of R R)) (h : H) :
     (extendPoint H A g).ofConv h = algebraMap R A (g.ofConv h) := by
@@ -77,14 +78,12 @@ theorem extendPoint_ofConv_apply (H : Type v) [Semiring H] [_root_.HopfAlgebra R
     Algebra.ofId_apply]
 
 /-- Extending a ground-ring-valued point back to the ground ring leaves it unchanged. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches its left-hand side (the carrier `points A` is reduced first);
+-- use it by name.
 theorem extendPoint_self (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
     (g : points (H := H) (CommAlgCat.of R R)) :
     extendPoint H (CommAlgCat.of R R) g = g := by
-  apply WithConv.ofConv_injective
-  ext h
-  simpa only [Algebra.algebraMap_self, RingHom.id_apply] using
-    extendPoint_ofConv_apply H (CommAlgCat.of R R) g h
+  simp only [extendPoint, Algebra.ofId_self, AlgHom.mapValue_id, MonoidHom.id_apply]
 
 /-- Post-composition of an extended point is extension to the target algebra. -/
 theorem mapValue_extendPoint (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
@@ -103,7 +102,8 @@ It sends an `A`-point `f : H →ₐ[R] A` to the `B`-point `φ ∘ f`. The gener
   GrpCat.ofHom (AlgHom.mapValue (H := H) φ.hom)
 
 /-- On points, `mapPoints` is post-composition with the algebra homomorphism `φ`. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches its left-hand side (the carrier `points A` is reduced first);
+-- use it by name.
 lemma mapPoints_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (f : points (H := H) A) :
     mapPoints (H := H) φ f = toConv (φ.hom.comp f.ofConv) :=
@@ -116,12 +116,14 @@ lemma mapPoints_id (A : CommAlgCat.{w} R) :
   simp only [mapPoints, CommAlgCat.hom_id, AlgHom.mapValue_id, GrpCat.ofHom_id]
 
 /-- `mapPoints` preserves composition of morphisms of value algebras. -/
+@[simp]
 lemma mapPoints_comp {A B C : CommAlgCat.{w} R} (φ : A ⟶ B) (ψ : B ⟶ C) :
     mapPoints (H := H) (φ ≫ ψ) = mapPoints (H := H) φ ≫ mapPoints (H := H) ψ := by
   simp only [mapPoints, CommAlgCat.hom_comp, AlgHom.mapValue_comp, GrpCat.ofHom_comp]
 
 /-- The categorical point map sends an extended point to its extension in the target algebra. -/
-@[simp]
+-- Not `@[simp]`: `simp` never matches its left-hand side (the carrier `points A` is reduced first);
+-- use it by name.
 theorem mapPoints_extendPoint {A B : CommAlgCat.{w} R} (f : A ⟶ B)
     (g : points (H := H) (CommAlgCat.of R R)) :
     mapPoints (H := H) f (extendPoint H A g) = extendPoint H B g :=
@@ -185,10 +187,8 @@ algebra: every value-algebra morphism `φ : A ⟶ B` maps `S A` into `S B`, and 
     CommAlgCat.{w} R ⥤ GrpCat.{max v w} where
   obj A := GrpCat.of (S A)
   map {A B} φ := GrpCat.ofHom
-    (((AlgHom.mapValue (H := H) φ.hom).domRestrict (S A)).codRestrict (S B) fun g ↦ hS φ g.2)
-  map_id A := GrpCat.ext fun g ↦ Subtype.ext <| by
-    simp only [CommAlgCat.hom_id, AlgHom.mapValue_id]
-    rfl
+    (((AlgHom.mapValue (H := H) φ.hom).domRestrict (S A)).codRestrict (S B) fun g ↦ hS φ g.property)
+  map_id A := GrpCat.ext fun g ↦ Subtype.ext <| by simp
   map_comp φ ψ := GrpCat.ext fun g ↦ Subtype.ext <| by
     simp only [CommAlgCat.hom_comp, AlgHom.mapValue_comp]
     rfl
@@ -212,7 +212,7 @@ lemma subgroupFunctor_map
     {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     (subgroupFunctor (H := H) S hS).map φ = GrpCat.ofHom
       (((AlgHom.mapValue (H := H) φ.hom).domRestrict (S A)).codRestrict (S B)
-        fun g ↦ hS φ g.2) :=
+        fun g ↦ hS φ g.property) :=
   rfl
 
 /-- The inclusion of a stable family of point subgroups into the functor of points is natural. -/

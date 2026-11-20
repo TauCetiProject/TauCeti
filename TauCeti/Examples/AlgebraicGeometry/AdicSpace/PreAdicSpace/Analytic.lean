@@ -30,7 +30,7 @@ variable {A : Type} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 example [IsTateRing A] :
     (presentationLimitPreAdicSpace P Aplus hAplus hP).analyticPoints = Set.univ := by
   rw [analyticPoints_presentationLimitPreAdicSpace, spaAnalytic_eq_spa_of_isTateRing]
-  exact Set.eq_univ_of_forall fun x ↦ x.2
+  exact Set.eq_univ_of_forall fun x ↦ x.property
 
 /-- *analyticLocus_test_discrete*: over a discrete ring every ideal is open, so no point of
 `Spa(A, A⁺)` is analytic, although the adic spectrum itself need not be empty. -/
@@ -46,7 +46,7 @@ example [IsTateRing A] :
     IsIso (PreAdicSpace.analyticLocus.ι (presentationLimitPreAdicSpace P Aplus hAplus hP)) := by
   rw [PreAdicSpace.isIso_analyticLocus_ι_iff, analyticPoints_presentationLimitPreAdicSpace,
     spaAnalytic_eq_spa_of_isTateRing]
-  exact Set.eq_univ_of_forall fun x ↦ x.2
+  exact Set.eq_univ_of_forall fun x ↦ x.property
 
 /-- *analyticLocus_test_discrete*: for a discrete ring the analytic locus of `Spa(A, A⁺)` has no
 points. -/

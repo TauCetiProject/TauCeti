@@ -72,7 +72,7 @@ noncomputable def connectedComponentsIdempotent :
     ((isIdempotentElemEquivClopens (R := R)).symm
       (⟨ConnectedComponents.mk ⁻¹' ({C} : Set (ConnectedComponents (PrimeSpectrum R))),
         (isClopen_discrete {C}).preimage ConnectedComponents.continuous_coe⟩ :
-        TopologicalSpace.Clopens (PrimeSpectrum R))).1
+        TopologicalSpace.Clopens (PrimeSpectrum R))).val
 
 /-- Every component-indexed idempotent is idempotent. -/
 theorem isIdempotentElem_connectedComponentsIdempotent
@@ -82,7 +82,7 @@ theorem isIdempotentElem_connectedComponentsIdempotent
     ((isIdempotentElemEquivClopens (R := R)).symm
       (⟨ConnectedComponents.mk ⁻¹' ({C} : Set (ConnectedComponents (PrimeSpectrum R))),
         (isClopen_discrete {C}).preimage ConnectedComponents.continuous_coe⟩ :
-        TopologicalSpace.Clopens (PrimeSpectrum R))).2
+        TopologicalSpace.Clopens (PrimeSpectrum R))).property
 
 /-- The basic open of a component-indexed idempotent is the fibre of the quotient map over that
 component. -/
