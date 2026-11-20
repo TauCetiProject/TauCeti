@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Group.Continuity
 public import Mathlib.Analysis.Normed.Ring.Basic
 public import TauCeti.Topology.ApproximateUnit
 public import TauCeti.Topology.MetricSpace.SimultaneousApproximation
+import Mathlib.Analysis.Normed.Ring.Lemmas
 
 /-!
 # Bounded approximate identities in normed rings
@@ -194,6 +195,17 @@ theorem exists_isApproximateUnit_of_left_of_right
   obtain ⟨l₂, _, hD, h₂⟩ := h₂
   exact ⟨_, isApproximateUnit_map_add_sub_mul h₁ hC h₂ hD,
     eventually_map.2 (eventually_norm_add_sub_mul_le hC hD)⟩
+
+/-- If `u` is eventually norm bounded along `l`, `u i * a → a`, and `a * v i → a`, then the
+two-sided products `u i * a * v i` tend to `a`. -/
+theorem tendsto_mul_mul_of_isBoundedUnder {ι : Type*} {l : Filter ι} {u v : ι → A} {a : A}
+    (hu : l.IsBoundedUnder (· ≤ ·) (norm ∘ u))
+    (hleft : Tendsto (fun i => u i * a) l (𝓝 a))
+    (hright : Tendsto (fun i => a * v i) l (𝓝 a)) :
+    Tendsto (fun i => u i * a * v i) l (𝓝 a) := by
+  have hzero : Tendsto (fun i => u i * (a * v i - a)) l (𝓝 0) :=
+    Filter.isBoundedUnder_le_mul_tendsto_zero hu (by simpa using hright.sub_const a)
+  simpa only [mul_sub, ← mul_assoc, sub_add_cancel, zero_add] using hzero.add hleft
 
 end TauCeti
 
