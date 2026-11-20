@@ -242,6 +242,7 @@ jobs:
       # and may wait for a depleted GitHub budget. That cold path can be expensive; push deploys
       # skip this scan rather than depending on its runtime.
       - name: Restore the previous pull-request snapshot
+        id: pr-snapshot
         if: env.REFRESH_SITE_DATA == 'true'
         uses: actions/cache/restore@v4
         with:
@@ -249,12 +250,21 @@ jobs:
           # A run-specific key lets a refresh save its snapshot; the prefix restores the newest
           # previous snapshot. This restore and the corresponding save do not run on pushes.
           # Snapshots saved on 2026-11-10 lost the bors receipts and scoreboards beyond GitHub's
-          # comment pagination limit, which cannot be refetched. The v3 prefix skips them. Never
-          # list an exact key here as a fallback: GitHub prefers an exact match on any restore
-          # key over a prefix match, so such a key would win over every newer v3 snapshot.
+          # comment pagination limit, which cannot be refetched. The v3 prefix skips them.
           key: pr-snapshot-v3-${{ github.run_id }}
           restore-keys: |
             pr-snapshot-v3-
+
+      # The last snapshot before that loss, only when no v3 snapshot was restored. It used to be
+      # a second restore key of the step above, but GitHub then restored it on every run instead
+      # of the newest v3 snapshot (the v3 entries were never read), so each run refetched every
+      # pull request that changed since 9 Nov.
+      - name: Fall back to the last snapshot before the receipt loss
+        if: env.REFRESH_SITE_DATA == 'true' && steps.pr-snapshot.outputs.cache-matched-key == ''
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/pr-snapshot.json
+          key: pr-snapshot-42716799007
 
       # PR history and current queue state come from GitHub rather than git. The generator
       # paginates both the PR connection and each label timeline, and bounds contributor

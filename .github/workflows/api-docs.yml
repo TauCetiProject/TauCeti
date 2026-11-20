@@ -248,8 +248,25 @@ jobs:
           # fires it stops the shell but leaves Lake's doc-gen4 processes running, so they keep
           # writing the database while the save below archives it, and tar refuses the archive
           # ("file changed as we read it"): the progress is lost and the next run starts over.
-          # `timeout` signals its whole process group, which holds every process Lake started.
-          timeout --kill-after=2m 255m lake build TauCetiDocs:docs
+          # So the build runs in a session of its own, whose process group holds every process
+          # Lake starts; its id is recorded for the backstop step below.
+          group_file="$RUNNER_TEMP/docgen-process-group"
+          rm -f "$group_file"
+          setsid --wait bash -c 'echo "$$" > "$1"; exec lake build TauCetiDocs:docs' _ "$group_file" &
+          build=$!
+          until [ -s "$group_file" ] || ! kill -0 "$build" 2>/dev/null; do sleep 1; done
+          deadline=$((SECONDS + 255 * 60))
+          while kill -0 "$build" 2>/dev/null && [ "$SECONDS" -lt "$deadline" ]; do sleep 5; done
+          if kill -0 "$build" 2>/dev/null; then
+            echo "::warning title=Docs build stopped::not finished after 255 minutes; stopping it so its progress can be saved"
+            group=$(cat "$group_file")
+            kill -TERM -- "-$group" 2>/dev/null || true
+            for _ in $(seq 60); do pgrep -g "$group" >/dev/null || break; sleep 1; done
+            kill -KILL -- "-$group" 2>/dev/null || true
+            wait "$build" || true
+            exit 124
+          fi
+          wait "$build"
 
       # Stamp the tree with the commit it was generated from, BEFORE it is cached, so the
       # provenance travels with the tree wherever it is later restored. This is what makes the
@@ -293,23 +310,28 @@ jobs:
         run: echo "::warning title=No documentation facts::this tree is saved without facts.json.gz; the next hourly run exports again"
 
       # Backstop for the stop inside the build step: if that step was cancelled or hit its own
-      # limit, doc-gen4 may still be running. Stop it and wait until it has exited, so that the
-      # build state saved below is not being written while it is archived.
+      # limit, processes of the build's group may still be running. Stop them and confirm they
+      # have exited; the build state is saved only once nothing can still be writing it.
       - name: Stop any doc-gen4 build still running
+        id: quiescent
         if: ${{ always() && steps.docgen.outcome != 'skipped' && steps.docgen.outcome != '' }}
         run: |
-          pattern="$PWD/.lake/packages/doc-gen4/.lake/build/bin/doc-gen4|lake build TauCetiDocs:docs"
-          pkill -TERM -f "$pattern" || true
-          for _ in $(seq 60); do
-            pgrep -f "$pattern" >/dev/null || exit 0
-            sleep 1
-          done
-          echo "::warning::doc-gen4 was still running a minute after SIGTERM; killing it"
-          pkill -KILL -f "$pattern" || true
-          sleep 5
-          if pgrep -f "$pattern" >/dev/null; then
-            echo "::warning::doc-gen4 is still running; the build state save may fail"
+          group_file="$RUNNER_TEMP/docgen-process-group"
+          if [ -s "$group_file" ]; then
+            group=$(cat "$group_file")
+            if pgrep -g "$group" >/dev/null; then
+              echo "::warning::the docs build was still running; stopping it"
+              kill -TERM -- "-$group" 2>/dev/null || true
+              for _ in $(seq 60); do pgrep -g "$group" >/dev/null || break; sleep 1; done
+              kill -KILL -- "-$group" 2>/dev/null || true
+              for _ in $(seq 60); do pgrep -g "$group" >/dev/null || break; sleep 1; done
+            fi
+            if pgrep -g "$group" >/dev/null; then
+              echo "::warning::the docs build is still running; not saving its state"
+              exit 0
+            fi
           fi
+          echo "stopped=true" >> "$GITHUB_OUTPUT"
 
       # pages.yml publishes the most recently SAVED tree, which is not necessarily the newest one:
       # re-running an old run of this workflow would save its older tree last, and the next Pages
@@ -352,7 +374,7 @@ jobs:
       # again, and every page is rendered afresh in each run. A partial tree is never published:
       # "Save the generated API docs" above still requires every step before it to succeed.
       - name: Save the doc-gen4 build state
-        if: ${{ always() && steps.superseded.outcome == 'success' && steps.superseded.outputs.superseded != 'true' }}
+        if: ${{ always() && steps.superseded.outcome == 'success' && steps.superseded.outputs.superseded != 'true' && steps.quiescent.outputs.stopped == 'true' }}
         uses: actions/cache/save@v4
         with:
           path: docbuild/.lake/build
