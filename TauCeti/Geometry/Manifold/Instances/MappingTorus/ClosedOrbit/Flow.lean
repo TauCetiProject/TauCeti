@@ -18,21 +18,21 @@ this flow, in the sense of the general theory of closed orbits of real flows
 multiplicity and support), with the periodic points of `φ`, and records which of the numerical
 invariants attached to them coincide.
 
-No point of `Y_φ` is a rest point of the suspension flow, and the periods of the point `[t, x]`
-are the integer multiples of the least period of `x` under `φ`, so (for `M` locally compact and
-Hausdorff, where the general theory applies) the minimal period of `[t, x]` under the flow is the
-least period of `x`
-(`TauCeti.SmoothMappingTorus.minimalPeriod_flow_mk`). For a point `x` of positive period `d`, the
-trajectory through `[0, x]` with return time `d` is a closed orbit
-`TauCeti.SmoothMappingTorus.flowClosedOrbit φ h hd` of the flow. Its period is `d`, its minimal
-period is the least period `m` of `x`, its support is the image of the parametrization
-`TauCeti.SmoothMappingTorus.closedOrbit φ h` of `ℝ / dℤ`, and its multiplicity, the covering
-degree over the underlying simple loop, is `d / m`. It is primitive exactly when `d = m`. The
-`k`-fold iterate of the closed orbit of period `d` is the closed orbit of period `k d` through the
-same point. Conversely every closed orbit of the suspension flow arises in this way, with a
-positive integer period (`TauCeti.SmoothMappingTorus.exists_flowClosedOrbit_eq`), and two of these
-closed orbits agree exactly when they have the same period and their points lie on one orbit of
-`φ` (`TauCeti.SmoothMappingTorus.flowClosedOrbit_eq_flowClosedOrbit_iff`).
+No point of `Y_φ` is a rest point of the suspension flow, and the periods of the point `[t, x]` are
+the integer multiples of the least period of `x` under `φ`, so the minimal period of `[t, x]` under
+the flow is the least period of `x` (`TauCeti.SmoothMappingTorus.minimalPeriod_flow_mk`). For a
+point `x` of positive period `d`, the trajectory through `[0, x]` with return time `d` is a closed
+orbit `TauCeti.SmoothMappingTorus.flowClosedOrbit φ h hd` of the flow. Its period is `d`, its
+minimal period is the least period `m` of `x`, its support is the image of the parametrization
+`TauCeti.SmoothMappingTorus.closedOrbit φ h` of `ℝ / dℤ`, and its multiplicity, the covering degree
+over the underlying simple loop, is `d / m` (for `M` locally compact and Hausdorff, where the
+general theory of multiplicities applies). It is primitive exactly when `d = m`, and its underlying
+primitive closed orbit is the closed orbit through `x` of period `m`. The `k`-fold iterate of the
+closed orbit of period `d` is the closed orbit of period `k d` through the same point. Conversely
+every closed orbit of the suspension flow arises in this way, with a positive integer period
+(`TauCeti.SmoothMappingTorus.exists_flowClosedOrbit_eq`), and two of these closed orbits agree
+exactly when they have the same period and their points lie on one orbit of `φ`
+(`TauCeti.SmoothMappingTorus.flowClosedOrbit_eq_flowClosedOrbit_iff`).
 
 So in the suspension coordinates the real period of a closed orbit is a positive integer (the flow
 covers the unit-speed rotation of the base circle `ℝ / ℤ`), its minimal period is the least period
@@ -68,7 +68,8 @@ sums `∑_N (1 / N) ∑_{φ^[N] x = x} ε(x) e^[γ_x]` of the iterates of its re
   `TauCeti.SmoothMappingTorus.minimalPeriod_flowClosedOrbit`,
   `TauCeti.SmoothMappingTorus.support_flowClosedOrbit`,
   `TauCeti.SmoothMappingTorus.multiplicity_mul_minimalPeriod_flowClosedOrbit`,
-  `TauCeti.SmoothMappingTorus.isPrimitive_flowClosedOrbit_iff`: the invariants of the closed orbit
+  `TauCeti.SmoothMappingTorus.isPrimitive_flowClosedOrbit_iff`,
+  `TauCeti.SmoothMappingTorus.primitive_flowClosedOrbit`: the invariants of the closed orbit
   through a periodic point.
 * `TauCeti.SmoothMappingTorus.exists_flowClosedOrbit_eq`: every closed orbit of the suspension
   flow is the closed orbit through a periodic point of `φ`.
@@ -276,29 +277,29 @@ theorem image_val_flowClosedOrbitOfFixedPt_preimage (hN : 0 < N) (x : {x // IsPe
   rw [← hj]
   exact x.2.apply_iterate j
 
-/-! ### Minimal periods and multiplicities -/
-
-section Multiplicity
-
-variable [T2Space M] [LocallyCompactSpace M]
+/-! ### Minimal periods -/
 
 /-- The minimal period of `[t, x]` under the suspension flow is the least period of `x` under `φ`.
 Both are zero exactly when `x` is not a periodic point of `φ`. -/
 @[simp]
 theorem minimalPeriod_flow_mk (t : ℝ) (x : M) :
     (flow φ).minimalPeriod (mk φ t x) = minimalPeriod φ x := by
-  have hT := (flow φ).periods_eq_zmultiples_minimalPeriod (exists_flow_ne (mk φ t x))
-  rw [periods_flow_mk] at hT
+  have hT := (flow φ).apply_minimalPeriod (mk φ t x)
+  rw [← Flow.mem_periods, periods_flow_mk] at hT
   rcases (minimalPeriod φ x).eq_zero_or_pos with hm | hm
-  · rw [hm, Nat.cast_zero, AddSubgroup.zmultiples_zero_eq_bot, eq_comm,
-      AddSubgroup.zmultiples_eq_bot] at hT
+  · rw [hm, Nat.cast_zero, AddSubgroup.zmultiples_zero_eq_bot, AddSubgroup.mem_bot] at hT
     rw [hT, hm, Nat.cast_zero]
-  · -- Both are nonnegative generators of the same cyclic subgroup of `ℝ`.
+  · -- The least positive integer multiple of `m > 0` is `m` itself.
     have hm' : (0 : ℝ) < minimalPeriod φ x := by exact_mod_cast hm
-    rcases (AddSubgroup.zmultiples_eq_zmultiples_iff
-      (not_isOfFinAddOrder_of_isAddTorsionFree hm'.ne')).1 hT with h | h
-    · exact h.symm
-    · linarith [(flow φ).minimalPeriod_nonneg (mk φ t x)]
+    refine (flow φ).minimalPeriod_eq_of_isLeast ⟨?_, ?_⟩
+    · rw [mem_ofPred_eq, periods_flow_mk]
+      exact ⟨AddSubgroup.mem_zmultiples _, hm'⟩
+    rintro _ ⟨hs, hs₀⟩
+    rw [periods_flow_mk] at hs
+    obtain ⟨k, rfl⟩ := AddSubgroup.mem_zmultiples_iff.1 hs
+    rw [zsmul_eq_mul] at hs₀ ⊢
+    have hk : (1 : ℝ) ≤ k := by exact_mod_cast (pos_of_mul_pos_left hs₀ hm'.le : (0 : ℝ) < k)
+    nlinarith
 
 /-- The minimal period of the closed orbit through `x` is the least period of `x` under `φ`. -/
 @[simp]
@@ -314,6 +315,23 @@ theorem isPrimitive_flowClosedOrbit_iff (h : IsPeriodicPt φ d x) (hd : 0 < d) :
     (flowClosedOrbit φ h hd).IsPrimitive ↔ minimalPeriod φ x = d := by
   rw [Flow.ClosedOrbit.isPrimitive_iff, period_flowClosedOrbit, minimalPeriod_flowClosedOrbit,
     eq_comm, Nat.cast_inj]
+
+/-! ### Multiplicities and primitive closed orbits -/
+
+section Multiplicity
+
+variable [T2Space M] [LocallyCompactSpace M]
+
+/-- The primitive closed orbit underlying the closed orbit through `x` is the closed orbit through
+`x` whose period is the least period of `x`. -/
+@[simp]
+theorem primitive_flowClosedOrbit (h : IsPeriodicPt φ d x) (hd : 0 < d) :
+    (flowClosedOrbit φ h hd).primitive =
+      flowClosedOrbit φ (isPeriodicPt_minimalPeriod φ x) (h.minimalPeriod_pos hd) := by
+  ext
+  · rw [Flow.ClosedOrbit.support_primitive, support_flowClosedOrbit, support_flowClosedOrbit,
+      range_closedOrbit, range_closedOrbit]
+  · rw [Flow.ClosedOrbit.period_primitive, minimalPeriod_flowClosedOrbit, period_flowClosedOrbit]
 
 /-- The period `d` of the closed orbit through `x` is its multiplicity times the least period of
 `x`. -/
