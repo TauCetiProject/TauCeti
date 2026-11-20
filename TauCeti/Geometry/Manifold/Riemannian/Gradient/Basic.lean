@@ -45,6 +45,8 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
   point for a `C^n` metric is `C^n` at that point.
 * `TauCeti.Manifold.contMDiff_mgradient`: the gradient of a `C^{n+1}` function for a `C^n`
   metric is a `C^n` vector field.
+* `TauCeti.Manifold.contMDiff_mgradient_infty`: the gradient of a `C^∞` function for a `C^∞`
+  metric is a `C^∞` vector field.
 * `TauCeti.Manifold.continuous_inner_mgradient`: the inner product of the gradients of two `C¹`
   functions is continuous, and so are the length `TauCeti.Manifold.continuous_norm_mgradient` and
   squared length `TauCeti.Manifold.continuous_norm_sq_mgradient` of the gradient.
@@ -321,6 +323,16 @@ theorem mdifferentiableAt_mgradient [IsManifold I 2 M]
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   exact (contMDiffAt_mgradient (I := I) (n := 1)
     (by simpa only [one_add_one_eq_two] using hf)).mdifferentiableAt (by simp)
+
+/-- **The gradient of a smooth function is smooth.** For a smooth Riemannian metric, the gradient
+of a `C^∞` function is a `C^∞` vector field. -/
+theorem contMDiff_mgradient_infty [IsManifold I ∞ M]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) :
+    ContMDiff I I.tangent ∞ (fun x ↦ (⟨x, mgradient I f x⟩ : TangentBundle I M)) :=
+  -- `∞ + 1 = ∞` holds by `rfl`, but instance search does not see it.
+  have : IsManifold I (∞ + 1) M := ‹IsManifold I ∞ M›
+  contMDiff_mgradient (n := ∞) hf
 
 /-- A `C²` function has a differentiable Riemannian gradient section. -/
 theorem mdifferentiable_mgradient {f : M → ℝ} [IsManifold I 2 M]

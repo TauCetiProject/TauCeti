@@ -155,6 +155,13 @@ theorem mgradient_comp_deriv {g : ℝ → ℝ} (hg : DifferentiableAt ℝ g (f x
     mgradient I (g ∘ f) x = deriv g (f x) • mgradient I f x :=
   mgradient_comp_hasDerivAt hg.hasDerivAt hf
 
+/-- The gradient of `e^{t f}`: `grad (e^{t f}) = (t e^{t f}) • grad f`. -/
+theorem mgradient_exp_const_mul (t : ℝ) (hf : MDifferentiableAt I 𝓘(ℝ) f x) :
+    mgradient I (fun y ↦ Real.exp (t * f y)) x = (t * Real.exp (t * f x)) • mgradient I f x := by
+  rw [mul_comm t]
+  exact mgradient_comp_hasDerivAt (g := fun s ↦ Real.exp (t * s))
+    (by simpa using ((hasDerivAt_id (f x)).const_mul t).exp) hf
+
 /-- The gradient of the logarithm of a function: `grad (log f) = f⁻¹ • grad f`. At a zero of `f`
 both sides vanish, since `Real.log 0 = 0` and `0⁻¹ = 0`. -/
 theorem mgradient_log (hf : MDifferentiableAt I 𝓘(ℝ) f x) :
