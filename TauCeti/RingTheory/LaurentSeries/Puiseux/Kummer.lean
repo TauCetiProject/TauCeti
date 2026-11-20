@@ -115,11 +115,8 @@ variable {K}
 by the character of `ζ`. -/
 theorem coe_kummer_apply (ζ : PrimeToPTateModule 1 K) (x : puiseuxField K) :
     (kummer K ζ x : HahnSeries ℚ K) = twistEquiv (ratChar K ζ) x := by
-  rw [kummer, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    AlgEquiv.algHomUnitsEquiv_apply_apply, MonoidHom.coe_toHomUnits, MonoidHom.coe_mk,
-    OneHom.coe_mk]
-  simp only [AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe, AlgHom.toRingHom_toMonoidHom,
-    OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe, MonoidHom.coe_ofClass, coe_kummerAlgHom_apply]
+  rw [kummer, AlgEquiv.algHomUnitsEquiv_comp_toHomUnits_apply, MonoidHom.coe_mk, OneHom.coe_mk,
+    coe_kummerAlgHom_apply]
 
 /-- The automorphism attached to `ζ` multiplies the coefficient of `t ^ q` by the value of the
 character of `ζ` at `q`, that is, by `ζ_{q.den} ^ q.num`. -/
