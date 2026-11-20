@@ -40,9 +40,10 @@ parallelograms traps every entry `h p` between explicit linear combinations `ent
 2. **Matrix presentations** (`TauCeti.Hive.eqMatrix`, `TauCeti.Hive.rhombusMatrix`,
    `TauCeti.Hive.mem_fixedBoundary_iff_mulVec`): `eqMatrix R n` and `rhombusMatrix R n` are defined
    over any ring `R` by base change from `ℤ` (`TauCeti.Hive.map_intCast_eqMatrix`,
-   `TauCeti.Hive.map_intCast_rhombusMatrix`), and over any partially ordered ring `R` with
-   order-compatible addition (`[IsOrderedAddMonoid R]`, in particular `ℤ`, `ℚ`, `ℝ`), fixed-boundary
-   hives are characterized as the solutions of `eqMatrix R n *ᵥ f = eqRHS B` and
+   `TauCeti.Hive.map_intCast_rhombusMatrix`) and are preserved by ring homomorphisms
+   (`TauCeti.Hive.map_eqMatrix`, `TauCeti.Hive.map_rhombusMatrix`), and over any partially ordered
+   ring `R` with order-compatible addition (`[IsOrderedAddMonoid R]`, in particular `ℤ`, `ℚ`, `ℝ`),
+   fixed-boundary hives are characterized as the solutions of `eqMatrix R n *ᵥ f = eqRHS B` and
    `rhombusMatrix R n *ᵥ f ≤ 0`.
 3. **Compact real polytopes and proper boundary projection** (`TauCeti.Hive.properCone`,
    `TauCeti.Hive.isConvexPolyhedron_realFibre`, `TauCeti.Hive.isCompact_realFibre`,
@@ -245,6 +246,12 @@ def eqRHS {R : Type*} [Zero R] {n : ℕ} (B : Fin 3 → Fin n → R) : EqConstra
   | Sum.inl () => 0
   | Sum.inr (s, i) => B s i
 
+@[simp] theorem eqRHS_inl {R : Type*} [Zero R] {n : ℕ} (B : Fin 3 → Fin n → R) :
+    eqRHS B (Sum.inl ()) = 0 := (rfl)
+
+@[simp] theorem eqRHS_inr {R : Type*} [Zero R] {n : ℕ} (B : Fin 3 → Fin n → R) (s : Fin 3)
+    (i : Fin n) : eqRHS B (Sum.inr (s, i)) = B s i := (rfl)
+
 /-- Inequality constraint matrix over `R` encoding `f b + f d - (f a + f c) ≤ 0` on `Rhombus n`. -/
 def rhombusMatrix (R : Type*) [Ring R] (n : ℕ) : Matrix (Rhombus n) (Vertex n) R :=
   fun r => Pi.single r.1.2.1 1 + Pi.single r.1.2.2.2 1 -
@@ -275,6 +282,22 @@ def rhombusMatrix (R : Type*) [Ring R] (n : ℕ) : Matrix (Rhombus n) (Vertex n)
 @[simp] theorem map_intCast_rhombusMatrix (R : Type*) [Ring R] (n : ℕ) :
     (rhombusMatrix ℤ n).map (Int.cast : ℤ → R) = rhombusMatrix R n := by
   ext r q; simp [rhombusMatrix, Pi.single_apply]
+
+/-- Ring homomorphisms carry `eqMatrix` over one ring to `eqMatrix` over the other. -/
+@[simp] theorem map_eqMatrix {n : ℕ} {R S F : Type*} [Ring R] [Ring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) : (eqMatrix R n).map f = eqMatrix S n := by
+  rw [← map_intCast_eqMatrix R n, Matrix.map_map, ← map_intCast_eqMatrix S n]
+  congr 1
+  ext k
+  simp
+
+/-- Ring homomorphisms carry `rhombusMatrix` over one ring to `rhombusMatrix` over the other. -/
+@[simp] theorem map_rhombusMatrix {n : ℕ} {R S F : Type*} [Ring R] [Ring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) : (rhombusMatrix R n).map f = rhombusMatrix S n := by
+  rw [← map_intCast_rhombusMatrix R n, Matrix.map_map, ← map_intCast_rhombusMatrix S n]
+  congr 1
+  ext k
+  simp
 
 /-- Matrix characterization of fixed-boundary normalized hives over any partially ordered ring with
 order-compatible addition. -/
