@@ -21,7 +21,8 @@ for the virtual fundamental class.
 * **The manifold atlas** (`TauCeti.ImplicitAtlas.ofChartedSpace`). A Hausdorff space charted on
   `ℝⁿ` is an implicit atlas of virtual dimension `n` with an empty index set: the only thickening
   is `X_∅ = X`, it is regular everywhere, and its charts give the product model. In particular
-  the regular locus of an atlas is part of its data and may be all of `X`.
+  the regular locus of an atlas is part of its data and may be all of `X`. Everything except the
+  charts is `TauCeti.ImplicitAtlas.Core.ofIsEmpty`, shared with the atlas with boundary below.
 * **The manifold atlas with boundary** (`TauCeti.ImplicitAtlasWithBoundary.ofChartedSpace`). A
   Hausdorff space charted on the half-space `EuclideanHalfSpace (n + 1)`, such as the interval
   `[0, 1]`, is an implicit atlas with boundary of virtual dimension `n + 1` with an empty index set,
@@ -62,10 +63,11 @@ variable {A : Type*} [IsEmpty A] [DecidableEq A] (Γ : A → Type*) [∀ α, Gro
   (ρ : ∀ α, Representation ℝ (Γ α) (E α)) (n : ℕ) (X : Type*) [TopologicalSpace X] [T2Space X]
   [ChartedSpace (EuclideanSpace ℝ (Fin n)) X]
 
-/-- **The manifold atlas.** A Hausdorff space charted on `ℝⁿ` is an implicit atlas of virtual
-dimension `n` with an empty index set, whose only thickening `X_∅ = X` is regular everywhere. -/
-noncomputable def ofChartedSpace :
-    ImplicitAtlas Γ E ρ (fun _ ↦ X) (fun _ ↦ 1) X n where
+/-- With an empty index set, a Hausdorff space `X` carries all the data and axioms of an implicit
+atlas except the local product model: its only thickening is `X_∅ = X`, regular everywhere, and its
+footprint maps are inclusions. The manifold atlases `TauCeti.ImplicitAtlas.ofChartedSpace` and
+`TauCeti.ImplicitAtlasWithBoundary.ofChartedSpace` extend it by their charts. -/
+def Core.ofIsEmpty : ImplicitAtlas.Core Γ E ρ (fun _ ↦ X) (fun _ ↦ 1) X where
   baseHomeomorph := Homeomorph.refl X
   kuranishi _ α _ := (IsEmpty.false α.1).elim
   continuous_kuranishi _ α := (IsEmpty.false α.1).elim
@@ -95,13 +97,24 @@ noncomputable def ofChartedSpace :
     ⟨fun h ↦ ⟨1, rfl, h⟩, fun ⟨_, _, h⟩ ↦ h⟩
   mem_regLocus_of_footprintMap_mem _ _ _ _ _ := mem_univ _
   eq_one_of_act_eq _ _ _ _ _ _ _ _ := funext fun α ↦ (IsEmpty.false α.1).elim
+  exists_footprintMap_eq y :=
+    ⟨∅, ⟨y, by simp⟩, mem_univ _, rfl⟩
+
+/-- The regular locus of `TauCeti.ImplicitAtlas.Core.ofIsEmpty` is the whole space. -/
+@[simp]
+theorem Core.regLocus_ofIsEmpty (I : Finset A) : (Core.ofIsEmpty Γ E ρ X).regLocus I = univ :=
+  (rfl)
+
+/-- **The manifold atlas.** A Hausdorff space charted on `ℝⁿ` is an implicit atlas of virtual
+dimension `n` with an empty index set, whose only thickening `X_∅ = X` is regular everywhere. -/
+noncomputable def ofChartedSpace :
+    ImplicitAtlas Γ E ρ (fun _ ↦ X) (fun _ ↦ 1) X n where
+  toCore := Core.ofIsEmpty Γ E ρ X
   exists_openPartialHomeomorph I J _ x _ := by
     have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.1⟩
     refine ⟨n, by simp [Finset.eq_empty_of_isEmpty I],
       (chartAt (EuclideanSpace ℝ (Fin n)) x.1).transHomeomorph (Homeomorph.prodUnique _ _).symm,
       by simp, fun _ _ ↦ funext fun α ↦ (IsEmpty.false α.1).elim⟩
-  exists_footprintMap_eq y :=
-    ⟨∅, ⟨y, by simp⟩, mem_univ _, rfl⟩
 
 /-- The regular locus of the manifold atlas is the whole space. -/
 @[simp]
@@ -139,40 +152,12 @@ regular everywhere, and every chart is a half-space chart. -/
 noncomputable def ofChartedSpace :
     ImplicitAtlasWithBoundary Γ E ρ (fun _ ↦ M) (fun _ ↦ 1) M ((𝓡∂ (n + 1)).boundary M)
       (n + 1 : ℕ) where
-  baseHomeomorph := Homeomorph.refl M
-  kuranishi _ α _ := (IsEmpty.false α.1).elim
-  continuous_kuranishi _ α := (IsEmpty.false α.1).elim
-  kuranishi_act _ α := (IsEmpty.false α.1).elim
-  regLocus _ := univ
-  isOpen_regLocus _ := isOpen_univ
-  act_mem_regLocus _ _ _ _ := mem_univ _
+  toCore := ImplicitAtlas.Core.ofIsEmpty Γ E ρ M
   boundary _ := (𝓡∂ (n + 1)).boundary M
   isClosed_boundary _ := (𝓡∂ (n + 1)).isClosed_boundary_of_finiteDimensional
   act_mem_boundary _ _ _ h := h
   boundary_empty := (rfl)
-  footprintMap _ _ _ x := x.1
-  continuous_footprintMap _ _ _ := continuous_subtype_val
-  footprintMap_act _ _ _ _ _ _ := rfl
-  footprintMap_self _ _ := rfl
-  footprintMap_footprintMap _ _ _ _ _ _ _ _ := rfl
-  kuranishi_footprintMap _ _ _ _ α := (IsEmpty.false α.1).elim
   footprintMap_mem_boundary_iff _ _ _ _ := Iff.rfl
-  isOpen_range_footprintMap _ _ _ := by
-    rw [Subtype.range_coe, kuranishiZeroSet_eq_univ _ fun α ↦ (IsEmpty.false α).elim]
-    exact isOpen_univ
-  range_footprintMap_inter _ _ _ _ _ := by
-    ext
-    simp
-  footprintMap_mem_range_iff _ _ _ _ _ _ := by simp
-  isQuotientMap_footprintMap I J _ :=
-    IsQuotientMap.of_inverse
-      (f := fun y ↦ ⟨y.1, by simp⟩)
-      (continuous_subtype_val.subtype_mk _) continuous_subtype_val.rangeFactorization
-      fun _ ↦ rfl
-  footprintMap_eq_footprintMap_iff _ _ _ x y :=
-    ⟨fun h ↦ ⟨1, rfl, h⟩, fun ⟨_, _, h⟩ ↦ h⟩
-  mem_regLocus_of_footprintMap_mem _ _ _ _ _ := mem_univ _
-  eq_one_of_act_eq _ _ _ _ _ _ _ _ := funext fun α ↦ (IsEmpty.false α.1).elim
   exists_openPartialHomeomorph I J _ x _ := by
     have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.1⟩
     refine Or.inr ⟨n, by simp [Finset.eq_empty_of_isEmpty I],
@@ -180,8 +165,6 @@ noncomputable def ofChartedSpace :
       by simp, fun y hy ↦ ?_, fun _ _ ↦ funext fun α ↦ (IsEmpty.false α.1).elim⟩
     rw [OpenPartialHomeomorph.transHomeomorph_source] at hy
     exact ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hy
-  exists_footprintMap_eq y :=
-    ⟨∅, ⟨y, by simp⟩, mem_univ _, rfl⟩
 
 /-- The boundaries of the thickenings of the manifold atlas with boundary are the manifold
 boundary. -/
