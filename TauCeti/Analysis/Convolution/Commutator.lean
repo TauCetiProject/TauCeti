@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.SMul
 import Mathlib.MeasureTheory.Group.Prod
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Convolution.Young
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Commutators of convolution operators with Lipschitz functions
@@ -153,22 +154,14 @@ theorem eLpNorm_integral_sub_apply_smul_le (ha : LipschitzWith K a)
 
 end Operator
 
-omit [MeasurableSpace G] [NormedSpace ℝ F] in
-/-- A `K`-Lipschitz scalar function `f` gives the `K`-Lipschitz operator field `y ↦ f y • 1`. -/
-private theorem lipschitzWith_smul_id (hf : LipschitzWith K f) :
-    LipschitzWith K fun y ↦ f y • ContinuousLinearMap.id 𝕜 F :=
-  LipschitzWith.of_dist_le_mul fun x y ↦ by
-    rw [dist_eq_norm, ← sub_smul]
-    exact (norm_smul_le _ _).trans <| (mul_le_of_le_one_right (norm_nonneg _) (norm_id_le)).trans
-      (by simpa [dist_eq_norm] using hf.dist_le_mul x y)
-
 /-- **Pointwise bound for the commutator with a Lipschitz function.** If `f` is `K`-Lipschitz,
 then `‖∫ (f (x - t) - f x) • κ t • g (x - t) dt‖` is at most `K` times the convolution of `‖g‖`
 with the first moment `‖t‖ ‖κ t‖` of the kernel, at `x`. -/
 theorem eNorm_integral_sub_smul_smul_le (hf : LipschitzWith K f) (x : G) :
     ‖∫ t, (f (x - t) - f x) • κ t • g (x - t) ∂μ‖ₑ ≤
       K * ((fun t ↦ ‖t‖ₑ * ‖κ t‖ₑ) ⋆ₗ[μ] fun y ↦ ‖g y‖ₑ) x := by
-  have h := eNorm_integral_sub_apply_smul_le (μ := μ) (κ := κ) (g := g) (lipschitzWith_smul_id hf) x
+  have h := eNorm_integral_sub_apply_smul_le (μ := μ) (κ := κ) (g := g)
+    ((hf.smul_const (ContinuousLinearMap.id 𝕜 F)).weaken (mul_le_of_le_one_right' norm_id_le)) x
   simp only [smul_apply, id_apply, ← sub_smul] at h
   exact h
 
@@ -184,7 +177,9 @@ theorem eLpNorm_integral_sub_smul_smul_le (hf : LipschitzWith K f)
     (hκ : AEStronglyMeasurable κ μ) (hg : AEStronglyMeasurable g μ) {p : ℝ≥0∞} (hp : 1 ≤ p) :
     eLpNorm (fun x ↦ ∫ t, (f (x - t) - f x) • κ t • g (x - t) ∂μ) p μ ≤
       K * (∫⁻ t, ‖t‖ₑ * ‖κ t‖ₑ ∂μ) * eLpNorm g p μ := by
-  have h := eLpNorm_integral_sub_apply_smul_le (lipschitzWith_smul_id hf) hκ hg hp
+  have h := eLpNorm_integral_sub_apply_smul_le
+    ((hf.smul_const (ContinuousLinearMap.id 𝕜 F)).weaken (mul_le_of_le_one_right' norm_id_le))
+    hκ hg hp
   simp only [smul_apply, id_apply, ← sub_smul] at h
   exact h
 
