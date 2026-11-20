@@ -27,6 +27,7 @@ and so separate points.
 
 * `Module.Dual.ker_id_sub_smulRight`: if `f x = 1`, the kernel of `id - f(·) • x` is the line
   through `x`.
+* `Module.Dual.eval_eq_applyₗ`: evaluation into the double dual is `LinearMap.applyₗ`.
 * `Module.Dual.linearIndependent_proj` and `Module.Dual.span_range_proj_eq_top`: the coordinate
   projections on `ι → R` are linearly independent in the dual space, and span it when `ι` is
   finite.
@@ -95,6 +96,11 @@ end Semiring
 section CommSemiring
 
 variable (R ι : Type*) [CommSemiring R]
+
+/-- Evaluation into the double dual is evaluation into the double `R`-valued `Hom`. -/
+theorem eval_eq_applyₗ (M : Type*) [AddCommMonoid M] [Module R M] :
+    Dual.eval R M = LinearMap.applyₗ :=
+  LinearMap.ext fun _ ↦ LinearMap.ext fun _ ↦ by simp
 
 /-- The coordinate projections on `ι → R` are linearly independent in the dual space. -/
 theorem linearIndependent_proj :
