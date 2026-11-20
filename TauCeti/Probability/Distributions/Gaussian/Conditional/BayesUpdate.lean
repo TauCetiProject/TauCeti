@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 import Mathlib.Probability.Distributions.Gaussian.CharFun
+import TauCeti.Probability.Distributions.Gaussian.Multivariate
 import TauCeti.Probability.Kernel.Randomization
 
 /-!
@@ -32,8 +33,6 @@ the two joint laws are compared directly through their characteristic functions.
 
 ## Main results
 
-* `TauCeti.Probability.charFun_multivariateGaussian_smul_one` — the characteristic function of
-  `N(a, u)`.
 * `TauCeti.Probability.gaussianKernel_apply` — `gaussianKernel c v x = N(c • x, v)`.
 * `TauCeti.Probability.compProd_gaussianKernel_eq_swap` — the Bayes update, as an equality of
   joint laws.
@@ -57,16 +56,6 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- The characteristic function of the isotropic Gaussian law `N(a, u)`. -/
-theorem charFun_multivariateGaussian_smul_one (a : EuclideanSpace ℝ ι) {u : ℝ} (hu : 0 ≤ u)
-    (x : EuclideanSpace ℝ ι) :
-    charFun (multivariateGaussian a (u • 1)) x = cexp (⟪x, a⟫ * I - u * ‖x‖ ^ 2 / 2) := by
-  rw [charFun_multivariateGaussian (Matrix.PosSemidef.one.smul hu)]
-  have hx : x.ofLp ⬝ᵥ x.ofLp = ‖x‖ ^ 2 := by
-    rw [← real_inner_self_eq_norm_sq, EuclideanSpace.inner_eq_star_dotProduct]
-    simp
-  simp [Matrix.smul_mulVec, hx]
-
 /-- The Gaussian observation kernel `x ↦ N(c • x, v)`: it rescales its input by `c` and adds
 independent noise with law `N(0, v)`. -/
 def gaussianKernel (c v : ℝ) : Kernel (EuclideanSpace ℝ ι) (EuclideanSpace ℝ ι) :=
@@ -75,9 +64,7 @@ def gaussianKernel (c v : ℝ) : Kernel (EuclideanSpace ℝ ι) (EuclideanSpace 
 /-- The Gaussian observation kernel is the law of `c • x` plus independent noise `N(0, v)`. -/
 theorem gaussianKernel_apply_eq_map (c v : ℝ) (x : EuclideanSpace ℝ ι) :
     gaussianKernel c v x = (multivariateGaussian 0 (v • 1)).map (fun e ↦ c • x + e) := by
-  rw [gaussianKernel, Kernel.map_apply _ (by fun_prop), Kernel.prod_apply, Kernel.id_apply,
-    Kernel.const_apply, Measure.dirac_prod, Measure.map_map (by fun_prop) (by fun_prop)]
-  simp only [Function.comp_def]
+  rw [gaussianKernel, Kernel.map_id_prod_const_apply _ _ (by fun_prop)]
 
 /-- The Gaussian observation kernel at `x` is the isotropic Gaussian law `N(c • x, v)`. -/
 @[simp]
@@ -170,8 +157,6 @@ theorem compProd_gaussianKernel_eq_swap (m : EuclideanSpace ℝ ι) {u v c w : �
     Measure.map_map (by fun_prop) (by fun_prop)]
   · exact map_prod_multivariateGaussian_eq m hu hv hw hw₀
   · -- The posterior kernel at `y` is its noise law translated by the posterior mean.
-    rw [Kernel.map_apply _ (by fun_prop), Kernel.prod_apply, Kernel.id_apply,
-      Kernel.const_apply, Measure.dirac_prod, Measure.map_map (by fun_prop) (by fun_prop)]
-    simp only [Function.comp_def]
+    rw [Kernel.map_id_prod_const_apply _ _ (by fun_prop)]
 
 end TauCeti.Probability

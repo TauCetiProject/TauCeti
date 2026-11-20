@@ -39,6 +39,8 @@ linear maps and characterizes independence of complementary coordinate blocks.
   the point mass at its mean.
 * `TauCeti.Probability.multivariateGaussian_eq_dirac_iff` shows that this is the only
   positive-semidefinite Gaussian law equal to that point mass.
+* `TauCeti.Probability.charFun_multivariateGaussian_smul_one` gives the characteristic function
+  of the isotropic law `multivariateGaussian a (u • 1)`.
 * `TauCeti.Probability.measurable_multivariateGaussian_inv_smul` shows that the family
   `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`.
 * `TauCeti.Probability.measurable_multivariateGaussian_prodMk_left_apply` shows that the Gaussian
@@ -139,6 +141,17 @@ theorem multivariateGaussian_eq_dirac_iff [Fintype ι] [DecidableEq ι] (m : Euc
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ multivariateGaussian_zero_right m⟩
   rw [← covMatrix_multivariateGaussian m hS, h, ← multivariateGaussian_zero_right m,
     covMatrix_multivariateGaussian m Matrix.PosSemidef.zero]
+
+/-- The characteristic function of the isotropic Gaussian law `multivariateGaussian a (u • 1)`. -/
+theorem charFun_multivariateGaussian_smul_one [Fintype ι] [DecidableEq ι]
+    (a : EuclideanSpace ℝ ι) {u : ℝ} (hu : 0 ≤ u) (x : EuclideanSpace ℝ ι) :
+    charFun (multivariateGaussian a (u • 1)) x =
+      Complex.exp (⟪x, a⟫ * Complex.I - u * ‖x‖ ^ 2 / 2) := by
+  rw [charFun_multivariateGaussian (Matrix.PosSemidef.one.smul hu)]
+  have hx : x.ofLp ⬝ᵥ x.ofLp = ‖x‖ ^ 2 := by
+    rw [← real_inner_self_eq_norm_sq, EuclideanSpace.inner_eq_star_dotProduct]
+    simp
+  simp [Matrix.smul_mulVec, hx]
 
 /-- The Gaussian family `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`. -/
 theorem measurable_multivariateGaussian_inv_smul [Fintype ι] [DecidableEq ι]
