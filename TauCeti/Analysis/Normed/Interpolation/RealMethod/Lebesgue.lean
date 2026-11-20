@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Interpolation.Lorentz
-import TauCeti.Analysis.SpecificLimits.DyadicSum
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
@@ -41,12 +40,14 @@ vanishes beyond `s`, while that of `‖f₁‖` is at most `min(f*, f*(s))`
 (`MeasureTheory.Measure.decreasingRearrangement_indicator_setOf_lt_eq_zero`,
 `MeasureTheory.Measure.decreasingRearrangement_indicator_compl_setOf_lt_le`). Since `f*` is
 antitone it is bounded on the dyadic intervals `(2^{-(n+1)} s, 2^{-n} s]` and `[2ⁿ s, 2ⁿ⁺¹ s)` by
-its values at their left endpoints (`AntitoneOn.le_tsum_indicator_Ioc`,
-`AntitoneOn.le_tsum_indicator_Ico`), and Minkowski's inequality for series
-(`MeasureTheory.eLpNorm_tsum_indicator_const_le`) turns these step functions into the bounds
-`‖f₀‖_{p₀} ≤ ∑ₙ f*(2^{-(n+1)} s) (2^{-(n+1)} s)^{a₀}` and
-`‖f₁‖_{p₁} ≤ f*(s) s^{a₁} + ∑ₙ f*(2ⁿ s) (2ⁿ s)^{a₁}`. With `t = s^δ` and `F(u) = u^a f*(u)` this
-gives
+its values at their left endpoints, and Minkowski's inequality for series turns these step
+functions into the bounds `‖f₀‖_{p₀} ≤ ∑ₙ f*(2^{-(n+1)} s) (2^{-(n+1)} s)^{a₀}` and
+`‖f₁‖_{p₁} ≤ f*(s) s^{a₁} + ∑ₙ f*(2ⁿ s) (2ⁿ s)^{a₁}`
+(`MeasureTheory.Measure.eLpNorm_indicator_setOf_lt_le`,
+`MeasureTheory.Measure.eLpNorm_indicator_compl_setOf_lt_le`). The `K`-functional is at most
+`‖f₀‖_{p₀} + t ‖f₁‖_{p₁}`
+(`TauCeti.CompatibleCouple.ofReal_kFunctional_lebesgue_le_eLpNorm_add_mul`). With `t = s^δ` and
+`F(u) = u^a f*(u)` this gives
 
 `t^{-θ} K(t, v) ≤ ∑ₙ 2^{-nθδ} F(2^{-n} s) + ∑ₙ 2^{-n(1-θ)δ} F(2ⁿ s)`.
 
@@ -74,132 +75,6 @@ namespace TauCeti.CompatibleCouple
 
 variable {𝕜 E α : Type*} {mα : MeasurableSpace α} {μ : Measure α} [NormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] {p₀ p₁ : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)]
-
-/-- Any almost everywhere splitting `f₀ + f₁ = f` of a function `f` representing an element `v` of
-`L^{p₀} + L^{p₁}` bounds the `K`-functional at `t > 0` by `‖f₀‖_{p₀} + t ‖f₁‖_{p₁}`. -/
-theorem ofReal_kFunctional_lebesgue_le_eLpNorm_add_mul {v : (lebesgue 𝕜 E μ p₀ p₁).SumSpace}
-    {f f₀ f₁ : α → E}
-    (hv : ⇑(L1AddLinfty.toAEEqFun 𝕜 ((lebesgue 𝕜 E μ p₀ p₁).sumSpaceEmbed v)) =ᵐ[μ] f)
-    (hsum : f₀ + f₁ =ᵐ[μ] f) {t : ℝ} (ht : 0 < t) :
-    ENNReal.ofReal ((lebesgue 𝕜 E μ p₀ p₁).kFunctional t v) ≤
-      eLpNorm f₀ p₀ μ + ENNReal.ofReal t * eLpNorm f₁ p₁ μ := by
-  by_cases hfin : eLpNorm f₀ p₀ μ + ENNReal.ofReal t * eLpNorm f₁ p₁ μ = ∞
-  · rw [hfin]
-    exact le_top
-  obtain ⟨h₀, h₁⟩ := memLp_of_eLpNorm_add_mul_ne_top ht hfin
-  have hdec : (lebesgue 𝕜 E μ p₀ p₁).fstToSum (h₀.toLp f₀) +
-      (lebesgue 𝕜 E μ p₀ p₁).sndToSum (h₁.toLp f₁) = v := by
-    refine (lebesgue 𝕜 E μ p₀ p₁).sumSpaceEmbed_injective (L1AddLinfty.toAEEqFun_injective ?_)
-    rw [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁,
-      map_add, L1AddLinfty.toAEEqFun_ofLp, L1AddLinfty.toAEEqFun_ofLp]
-    refine AEEqFun.ext ?_
-    filter_upwards [AEEqFun.coeFn_add (h₀.toLp f₀ : α →ₘ[μ] E) (h₁.toLp f₁), h₀.coeFn_toLp,
-      h₁.coeFn_toLp, hsum, hv] with x hx hx₀ hx₁ hxs hxv
-    rw [hx, Pi.add_apply, hxv, ← hxs, Pi.add_apply, ← hx₀, ← hx₁]
-  calc ENNReal.ofReal ((lebesgue 𝕜 E μ p₀ p₁).kFunctional t v)
-      ≤ ENNReal.ofReal (‖h₀.toLp f₀‖ + t * ‖h₁.toLp f₁‖) :=
-        ENNReal.ofReal_le_ofReal (kFunctional_le ht.le hdec)
-    _ = eLpNorm f₀ p₀ μ + ENNReal.ofReal t * eLpNorm f₁ p₁ μ := by
-        rw [ofReal_norm_add_mul_norm _ _ ht.le, eLpNorm_congr_ae h₀.coeFn_toLp,
-          eLpNorm_congr_ae h₁.coeFn_toLp]
-
-/-! ### Dyadic bounds for the two parts of the cut -/
-
-section Dyadic
-
-/-- A set `I ⊆ ℝ` of Lebesgue measure `ℓ` has measure at most `ℓ` for Lebesgue measure restricted
-to `(0, ∞)`, so its measure raised to `1 / r` is at most `ℓ ^ (1 / r)`. -/
-private theorem restrict_Ioi_rpow_le {I : Set ℝ} {ℓ : ℝ} (hℓ : 0 ≤ ℓ) (hI : volume I = .ofReal ℓ)
-    (r : ℝ≥0∞) :
-    volume.restrict (Ioi 0) I ^ (1 / r.toReal) ≤ ENNReal.ofReal (ℓ ^ (r⁻¹).toReal) := by
-  rw [← ENNReal.ofReal_rpow_of_nonneg hℓ ENNReal.toReal_nonneg, ENNReal.toReal_inv, ← one_div,
-    ← hI]
-  gcongr
-  exact Measure.restrict_le_self
-
-variable {g : α → E} {r : ℝ≥0∞} {s : ℝ}
-
-/-- The part of `g` above the level `g*(s)` has `Lʳ` seminorm at most
-`∑ₙ g*(2⁻¹ ^ (n + 1) s) (2⁻¹ ^ (n + 1) s) ^ (1 / r)`, where `g*` is the decreasing rearrangement of
-`‖g‖`. -/
-private theorem eLpNorm_indicator_lt_le (hg : StronglyMeasurable g) (hr : 1 ≤ r) (hs : 0 < s) :
-    eLpNorm ({x | μ.decreasingRearrangement (‖g ·‖ₑ) s < ‖g x‖ₑ}.indicator g) r μ ≤
-      ∑' n : ℕ, μ.decreasingRearrangement (‖g ·‖ₑ) (2⁻¹ ^ (n + 1) * s) *
-        ENNReal.ofReal ((2⁻¹ ^ (n + 1) * s) ^ (r⁻¹).toReal) := by
-  set R := μ.decreasingRearrangement (‖g ·‖ₑ)
-  set A := {x | R s < ‖g x‖ₑ}
-  have hA : MeasurableSet A := measurableSet_lt measurable_const hg.eNorm
-  have hφ : Measurable fun x ↦ ‖A.indicator g x‖ₑ := (hg.indicator hA).eNorm
-  set M : ℝ → ℝ≥0∞ := fun u ↦ ∑' n : ℕ,
-    (Ioc (2⁻¹ ^ (n + 1) * s) (2⁻¹ ^ n * s)).indicator (fun _ ↦ R (2⁻¹ ^ (n + 1) * s)) u
-  -- The rearrangement of `‖g 1_A‖` is at most `g*` and vanishes beyond `s`.
-  have hle : ∀ u, 0 < u → μ.decreasingRearrangement (fun x ↦ ‖A.indicator g x‖ₑ) u ≤ M u := by
-    intro u hu
-    simp only [eNorm_indicator_eq_indicator_eNorm]
-    rcases le_or_gt u s with hus | hsu
-    · exact (μ.decreasingRearrangement_indicator_le A _ u).trans
-        (((μ.antitone_decreasingRearrangement _).antitoneOn _).le_tsum_indicator_Ioc one_lt_two hu
-          hus)
-    · exact (μ.decreasingRearrangement_indicator_setOf_lt_eq_zero _ hsu.le).trans_le zero_le
-  rw [← eLpNorm_eNorm _ (hg.indicator hA).aestronglyMeasurable,
-    ← μ.eLpNorm_decreasingRearrangement hφ.aemeasurable]
-  refine (eLpNorm_mono_eNorm_ae (g := M)
-    (μ.measurable_decreasingRearrangement _).aestronglyMeasurable
-    ((ae_restrict_mem measurableSet_Ioi).mono fun u hu ↦ ?_)).trans
-    ((eLpNorm_tsum_indicator_const_le (fun _ ↦ measurableSet_Ioc.nullMeasurableSet) _ hr).trans
-      (tsum_le_tsum fun n ↦ ?_))
-  · simpa only [eNorm_eq_self] using hle u hu
-  · gcongr
-    refine restrict_Ioi_rpow_le (by positivity) ?_ r
-    rw [Real.volume_Ioc, pow_succ]
-    ring_nf
-
-/-- The part of `g` at or below the level `g*(s)` has `Lʳ` seminorm at most
-`g*(s) s ^ (1 / r) + ∑ₙ g*(2 ^ n s) (2 ^ n s) ^ (1 / r)`, where `g*` is the decreasing rearrangement
-of `‖g‖`. -/
-private theorem eLpNorm_indicator_compl_le (hg : StronglyMeasurable g) (hr : 1 ≤ r)
-    (hs : 0 < s) :
-    eLpNorm ({x | μ.decreasingRearrangement (‖g ·‖ₑ) s < ‖g x‖ₑ}ᶜ.indicator g) r μ ≤
-      μ.decreasingRearrangement (‖g ·‖ₑ) s * ENNReal.ofReal (s ^ (r⁻¹).toReal) +
-        ∑' n : ℕ, μ.decreasingRearrangement (‖g ·‖ₑ) (2 ^ n * s) *
-          ENNReal.ofReal ((2 ^ n * s) ^ (r⁻¹).toReal) := by
-  set R := μ.decreasingRearrangement (‖g ·‖ₑ)
-  set A := {x | R s < ‖g x‖ₑ}
-  have hA : MeasurableSet Aᶜ := (measurableSet_lt measurable_const hg.eNorm).compl
-  have hφ : Measurable fun x ↦ ‖Aᶜ.indicator g x‖ₑ := (hg.indicator hA).eNorm
-  set M₀ : ℝ → ℝ≥0∞ := (Ioc 0 s).indicator fun _ ↦ R s
-  set M₁ : ℝ → ℝ≥0∞ := fun u ↦ ∑' n : ℕ,
-    (Ico (2 ^ n * s) (2 ^ (n + 1) * s)).indicator (fun _ ↦ R (2 ^ n * s)) u
-  -- The rearrangement of `‖g 1_{Aᶜ}‖` is at most `min (g*, g*(s))`.
-  have hle : ∀ u, 0 < u →
-      μ.decreasingRearrangement (fun x ↦ ‖Aᶜ.indicator g x‖ₑ) u ≤ (M₀ + M₁) u := by
-    intro u hu
-    simp only [eNorm_indicator_eq_indicator_eNorm]
-    have h := μ.decreasingRearrangement_indicator_compl_setOf_lt_le (‖g ·‖ₑ) s u
-    rcases le_or_gt u s with hus | hsu
-    · exact le_add_right ((h.trans (min_le_right _ _)).trans_eq
-        (indicator_of_mem (show u ∈ Ioc 0 s from ⟨hu, hus⟩) fun _ ↦ R s).symm)
-    · exact le_add_left ((h.trans (min_le_left _ _)).trans
-        (((μ.antitone_decreasingRearrangement _).antitoneOn _).le_tsum_indicator_Ico one_lt_two hs
-          hsu.le))
-  rw [← eLpNorm_eNorm _ (hg.indicator hA).aestronglyMeasurable,
-    ← μ.eLpNorm_decreasingRearrangement hφ.aemeasurable]
-  refine (eLpNorm_mono_eNorm_ae (g := M₀ + M₁)
-    (μ.measurable_decreasingRearrangement _).aestronglyMeasurable
-    ((ae_restrict_mem measurableSet_Ioi).mono fun u hu ↦ ?_)).trans
-    ((eLpNorm_add_le hr).trans (add_le_add ?_ ((eLpNorm_tsum_indicator_const_le
-      (fun _ ↦ measurableSet_Ico.nullMeasurableSet) _ hr).trans (tsum_le_tsum fun n ↦ ?_))))
-  · simpa only [eNorm_eq_self] using hle u hu
-  · refine (eLpNorm_indicator_const_le _ r measurableSet_Ioc.nullMeasurableSet).trans ?_
-    rw [eNorm_eq_self]
-    gcongr
-    exact restrict_Ioi_rpow_le hs.le (by rw [Real.volume_Ioc, sub_zero]) r
-  · gcongr
-    refine restrict_Ioi_rpow_le (by positivity) ?_ r
-    rw [Real.volume_Ico, pow_succ]
-    ring_nf
-
-end Dyadic
 
 /-! ### The `K`-method norm -/
 
@@ -277,8 +152,8 @@ private theorem eNorm_rpow_neg_mul_kFunctional_le {a δ : ℝ}
   set F : ℝ → ℝ≥0∞ := fun u ↦ ENNReal.ofReal (u ^ a) * R u
   have hK := ofReal_kFunctional_lebesgue_le_eLpNorm_add_mul hv
     (ae_of_all _ fun x ↦ congrFun (indicator_self_add_compl A g) x) (Real.rpow_pos_of_pos hs δ)
-  have h₀ := eLpNorm_indicator_lt_le (μ := μ) (r := p₀) hg Fact.out hs
-  have h₁ := eLpNorm_indicator_compl_le (μ := μ) (r := p₁) hg Fact.out hs
+  have h₀ := μ.eLpNorm_indicator_setOf_lt_le (r := p₀) hg.aestronglyMeasurable Fact.out hs
+  have h₁ := μ.eLpNorm_indicator_compl_setOf_lt_le (r := p₁) hg.aestronglyMeasurable Fact.out hs
   rw [ha₀] at h₀
   rw [ha₁, sub_eq_add_neg] at h₁
   have e₀ : (s ^ δ) ^ (-θ) = s ^ (-(θ * δ)) := by
@@ -349,10 +224,10 @@ theorem kMethodENorm_lebesgue_le_eLorentzNorm (hθ : θ ∈ Ioo 0 1) (hp₀₁ :
   calc eLpNorm (fun t ↦ t ^ (-θ) * (lebesgue 𝕜 E μ p₀ p₁).kFunctional t v) q multHaar
       ≤ eLpNorm (fun s ↦ (s ^ δ) ^ (-θ) * (lebesgue 𝕜 E μ p₀ p₁).kFunctional (s ^ δ) v)
           q multHaar := by
-        rw [eLpNorm_comp_rpow_multHaar hK hδ q]
+        rw [eLpNorm_comp_rpow_multHaar hK hδ.ne' q]
         refine le_mul_of_one_le_left zero_le ((ENNReal.one_rpow _).symm.le.trans
           (ENNReal.rpow_le_rpow ?_ ENNReal.toReal_nonneg))
-        rw [← ENNReal.ofReal_one]
+        rw [← ENNReal.ofReal_one, abs_of_pos (inv_pos.2 hδ)]
         exact ENNReal.ofReal_le_ofReal ((one_le_inv₀ hδ).2 hδ₁)
     _ ≤ eLpNorm (fun s ↦ ∑' n : ℕ, ENNReal.ofReal (2⁻¹ ^ (θ * δ)) ^ n * F (2⁻¹ ^ n * s) +
           ∑' n : ℕ, ENNReal.ofReal (2⁻¹ ^ ((1 - θ) * δ)) ^ n * F (2 ^ n * s)) q multHaar := by
@@ -361,7 +236,7 @@ theorem kMethodENorm_lebesgue_le_eLorentzNorm (hθ : θ ∈ Ioo 0 1) (hp₀₁ :
             (eNorm_eq_self _).symm)
         have hK' : AEStronglyMeasurable
             (fun t ↦ t ^ (-θ) * (lebesgue 𝕜 E μ p₀ p₁).kFunctional t v) (multHaar.map (· ^ δ)) := by
-          rw [map_multHaar_rpow hδ]
+          rw [map_multHaar_rpow hδ.ne']
           exact hK.smul_measure _
         exact hK'.comp_aemeasurable (measurable_id'.pow_const δ).aemeasurable
     _ ≤ (1 - ENNReal.ofReal (2⁻¹ ^ (θ * δ)))⁻¹ * eLpNorm F q multHaar +
