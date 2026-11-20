@@ -184,11 +184,13 @@ theorem mulL2StarAlgHom_apply (F : X →ᵇ (H →L[𝕜] H)) :
 `L²(X, H)`, so `Unitary.linearIsometryEquiv` makes it a linear isometry equivalence. -/
 theorem mulLp_mem_unitary {F : X →ᵇ (H →L[𝕜] H)} (hF : ∀ x, F x ∈ unitary (H →L[𝕜] H)) :
     F.mulLp μ 2 ENNReal.ofNat_ne_top ∈ unitary (Lp H 2 μ →L[𝕜] Lp H 2 μ) := by
-  rw [← mulL2StarAlgHom_apply, Unitary.mem_iff, ← map_star, ← map_mul, ← map_mul, ← map_one
-    (mulL2StarAlgHom μ)]
-  refine ⟨congr_arg _ (ext fun x ↦ ?_), congr_arg _ (ext fun x ↦ ?_)⟩
-  · simpa using Unitary.star_mul_self_of_mem (hF x)
-  · simpa using Unitary.mul_star_self_of_mem (hF x)
+  -- Instance search does not find `StarMul` for the `Mul` of `X →ᵇ (H →L[𝕜] H)`, though it is
+  -- the one of `instStarRing` up to instance reducibility.
+  let : StarMul (X →ᵇ (H →L[𝕜] H)) := @StarRing.toStarMul _ _ instStarRing
+  rw [← mulL2StarAlgHom_apply]
+  exact Unitary.map_mem _ <| Unitary.mem_iff.2
+    ⟨ext fun x ↦ by simpa using Unitary.star_mul_self_of_mem (hF x),
+      ext fun x ↦ by simpa using Unitary.mul_star_self_of_mem (hF x)⟩
 
 end Hilbert
 
