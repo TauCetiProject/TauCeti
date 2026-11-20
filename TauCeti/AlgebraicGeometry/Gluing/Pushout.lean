@@ -178,6 +178,44 @@ lemma isPullback_pushout_map_inr_of_isPullback (square : IsPullback c f' f a) :
   IsOpenImmersion.isPullback _ _ _ _ (pushout.inr_desc _ _ _)
     (preimage_opensRange_pushout_inr_of_isPullback f g f' g' a b c hf hg square)
 
+omit hf hg in
+/-- Cartesian chart and overlap squares give a cartesian square for the glued morphism. -/
+lemma Hom.isPullback_pushout_map_desc_of_isPullback
+    {S T : Scheme.{u}} (p : X ⟶ T) (q : Y ⟶ T) (h : f ≫ p = g ≫ q)
+    (s : pushout f' g' ⟶ S) (r : S ⟶ T)
+    (hU : IsPullback c f' f a) (hV : IsPullback c g' g b)
+    (hX : IsPullback a (pushout.inl f' g' ≫ s) p r)
+    (hY : IsPullback b (pushout.inr f' g' ≫ s) q r) :
+    IsPullback (pushout.map f' g' f g a b c hU.w.symm hV.w.symm) s
+      (pushout.desc p q h) r := by
+  let m := pushout.map f' g' f g a b c hU.w.symm hV.w.symm
+  have hx := isPullback_pushout_map_inl_of_isPullback f g f' g' a b c hU.w hV.w hV
+  have hy := isPullback_pushout_map_inr_of_isPullback f g f' g' a b c hU.w hV.w hU
+  apply Scheme.isPullback_of_openCover _ _ _ _ (Scheme.pushoutOpenCover f g)
+  rintro (_ | _)
+  · -- The first member of the native pushout cover is its left chart.
+    change IsPullback (pullback.snd m (pushout.inl f g))
+      (pullback.fst m (pushout.inl f g) ≫ s)
+      (pushout.inl f g ≫ pushout.desc p q h) r
+    rw [pushout.inl_desc]
+    refine hX.of_iso hx.flip.isoPullback (Iso.refl _) (Iso.refl _) (Iso.refl _)
+      ?_ ?_ (by simp) (by simp)
+    · simpa only [Iso.refl_hom, Category.comp_id] using
+        (IsPullback.isoPullback_hom_snd hx.flip).symm
+    · simpa only [Iso.refl_hom, Category.comp_id, Category.assoc] using
+        congrArg (· ≫ s) (IsPullback.isoPullback_hom_fst hx.flip).symm
+  · -- The second member of the native pushout cover is its right chart.
+    change IsPullback (pullback.snd m (pushout.inr f g))
+      (pullback.fst m (pushout.inr f g) ≫ s)
+      (pushout.inr f g ≫ pushout.desc p q h) r
+    rw [pushout.inr_desc]
+    refine hY.of_iso hy.flip.isoPullback (Iso.refl _) (Iso.refl _) (Iso.refl _)
+      ?_ ?_ (by simp) (by simp)
+    · simpa only [Iso.refl_hom, Category.comp_id] using
+        (IsPullback.isoPullback_hom_snd hy.flip).symm
+    · simpa only [Iso.refl_hom, Category.comp_id, Category.assoc] using
+        congrArg (· ≫ s) (IsPullback.isoPullback_hom_fst hy.flip).symm
+
 end PointsAndMap
 
 section QuasiSeparated
