@@ -67,9 +67,9 @@ theorem isSemialgebraic_setOf_realize {φ : (Language.ring.sum Language.order).B
     IsSemialgebraic {x : α ⊕ Fin n → R | φ.Realize (x ∘ Sum.inl) (x ∘ Sum.inr)} := by
   induction hφ with
   | falsum =>
-    convert isSemialgebraic_empty (σ := α ⊕ Fin n) (R := R)
-    simp only [Set.mem_eq_mem, Set.notMem_empty, iff_false]
-    exact fun h ↦ realize_bot.1 h
+    convert isSemialgebraic_empty (σ := α ⊕ Fin n) (R := R) using 1
+    ext x
+    exact iff_false_intro (fun h ↦ realize_bot.1 h)
   | of_isAtomic h =>
     cases h with
     | equal t₁ t₂ =>

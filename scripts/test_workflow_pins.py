@@ -110,7 +110,10 @@ class WorkflowPins(unittest.TestCase):
                     self.assertLessEqual(set(triggers), TRUSTED_TRIGGERS,
                                          "a trigger checks out PR-controlled code")
                     if "push" in triggers:
-                        self.assertEqual((triggers["push"] or {}).get("branches"), ["main"])
+                        # Only this explicitly maintained release branch joins main's trusted CI.
+                        branches = (["main", "release/v4.35.0-patch1"]
+                                    if path.name == "ci.yml" else ["main"])
+                        self.assertEqual((triggers["push"] or {}).get("branches"), branches)
                     # The local action must come from the last checkout at the workspace root
                     # before it, of this repository's own ref: no repository or ref override.
                     root = [s for s in steps[: uses[0]]

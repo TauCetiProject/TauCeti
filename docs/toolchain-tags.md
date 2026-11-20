@@ -17,11 +17,11 @@ maintenance branch, source build, and cache publication, as described below.
 
 ## What a tag promises
 
-The commit is on that Lean toolchain, its post-merge CI passed, and its oleans are in the
+The commit is on that Lean toolchain, its CI passed, and its oleans are in the
 Lake artifact cache, so a checkout builds without recompiling the library. The tool checks
 the recorded CI result and the published cache; neither needs a rebuild.
 
-New tags also require their commit to lie on main's first-parent history at or behind
+New ordinary `vX` tags also require their commit to lie on main's first-parent history at or behind
 the protected [security audit cursor](security-audit.md). The tool reads fresh remote
 refs and repeats the coverage check immediately before publishing. This is a bounded
 source inspection, with the scope and bootstrap limits described in that policy.
@@ -63,7 +63,8 @@ To build and publish this maintenance release:
 
 1. Work on `release/v4.35.0-patch1`, starting from the existing `v4.35.0` tag. Pin both the
    lakefile requirement and manifest to Mathlib's release; repair existing proofs against it.
-2. Dispatch `ci.yml` on that branch. It runs the full library build, ownership/axiom and module
+2. Push the branch (or dispatch `ci.yml` on it to retry). CI runs the full library build,
+   ownership/axiom and module
    audits, environment and source linters, then the existing isolated cache publisher. Cache
    publication is required to succeed. The job checks only the exact revision for cache reuse:
    the old Mathlib snapshot's Tau Ceti artifacts have different input hashes.

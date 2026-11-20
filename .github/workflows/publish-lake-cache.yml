@@ -53,9 +53,9 @@ jobs:
           set -euo pipefail
           printf 'Publisher runner=%s workflow=%s run=%s attempt=%s\n' \
             "$RUNNER_NAME" "$WORKFLOW_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT"
-          # No shared Namespace volume or pre-existing candidate build is permitted.
+          # No shared cache volume or pre-existing candidate build is permitted.
           if mountpoint -q /cache || [ -e .lake ]; then
-            echo '::error::publisher has shared cache or candidate build state; check Namespace routing'
+            echo '::error::publisher has shared cache or candidate build state; expected a fresh hosted runner'
             exit 1
           fi
       # Candidate configuration/code is never loaded on this runner. Cross-check

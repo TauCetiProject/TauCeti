@@ -3,10 +3,10 @@ name: CI
 on:
   # This maintenance branch can be rebuilt and published independently of main.
   workflow_dispatch:
-  # PR builds remain in pr-build.yml. Pushes check main; manual dispatches also validate
-  # this explicitly maintained release branch before publishing its cache.
+  # PR builds remain in pr-build.yml. This explicitly maintained release branch uses
+  # the same build and isolated publisher as main.
   push:
-    branches: [main]
+    branches: [main, release/v4.35.0-patch1]
 
 permissions:
   contents: read
@@ -355,7 +355,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          EVENT: push
+          # The Mathlib backport can affect lint anywhere, including unchanged modules.
+          # An explicit maintenance event selects lint-scope's whole-library fallback.
+          EVENT: maintenance
           BASE: ${{ github.event.before }}
           HEAD: ${{ github.sha }}
           SCOPE_REPO: .

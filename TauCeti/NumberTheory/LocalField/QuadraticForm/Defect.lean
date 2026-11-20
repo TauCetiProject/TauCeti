@@ -419,7 +419,7 @@ theorem exists_valuation_sub_sq_le_of_lt_natCastValuation (h2 : (2 : K) ≠ 0)
     have h := (Set.ext_iff.mp
       (hπ.maximalIdeal_eq_setOfPred_le_v_coe (valuation K))
       ((⟨c, hcO⟩ : 𝒪[K]) - s ^ 2)).mp hsmem
-    convert h using 1
+    exact h
   -- The corrected approximation.
   refine ⟨ξ + (π : K) ^ k * (s : K), ?_⟩
   have hcmul : ((π : K) ^ k) ^ 2 * c = u - ξ ^ 2 := by
