@@ -98,26 +98,24 @@ universe `w'`. The language may have any number of symbols. -/
 theorem Model.exists_countable_model (hT : T.Countable) {M : Type w} [L.Structure M] [Nonempty M]
     (h : T.Model M) :
     ∃ (N : Type w') (_ : L.Structure N), Countable N ∧ Nonempty N ∧ T.Model N := by
-  classical
   -- `T` is the image of a theory `T₀` of the sublanguage of its function symbols
-  let F : Set (Σ n, L.Functions n) := ⋃ φ ∈ T, φ.functionsIn
+  let F : Set (Σ n, L.Functions n) := BoundedFormulaInf.functionsInSet T
   let R : Set (Σ n, L.Relations n) := Set.univ
-  have hF : ∀ φ ∈ T, φ.functionsIn ⊆ F := fun _ hφ => Set.subset_biUnion_of_mem hφ
-  have : Countable F := (hT.biUnion fun φ _ => φ.functionsIn_countable).to_subtype
   have : Countable T := hT.to_subtype
   let ι := symbSublangIncl F R
   let T₀ : (symbSublang F R).Theoryω :=
-    Set.range fun φ : T => φ.1.restrictSymbols (hF φ.1 φ.2) (Set.subset_univ _)
-  have hT₀ : ι.onTheoryω T₀ = T := by
-    ext φ
-    simp [T₀, ι, LHom.onTheoryω_def, ← Set.range_comp]
+    BoundedFormulaInf.restrictSymbolsSet T subset_rfl (Set.subset_univ _)
+  have hT₀ : ι.onTheoryω T₀ = T :=
+    (ι.onTheoryω_def T₀).trans
+      (BoundedFormulaInf.image_onBoundedFormulaInf_restrictSymbolsSet T subset_rfl
+        (Set.subset_univ _))
   let : (symbSublang F R).Structure M := ι.reduct M
   obtain ⟨N, _, hNc, hN, hNT₀⟩ := Model.exists_countable_model_of_countable_functions.{u, v, w, w'}
-    (Set.countable_range _) ((ι.onTheoryω_model T₀).1 (hT₀ ▸ h))
+    (BoundedFormulaInf.countable_restrictSymbolsSet hT subset_rfl (Set.subset_univ _))
+    ((ι.onTheoryω_model T₀).1 (hT₀ ▸ h))
   -- expand the countable model back to `L`, interpreting the missing symbols arbitrarily
-  have : Inhabited N := Classical.inhabited_of_nonempty hN
-  let : L.Structure N := ι.defaultExpansion N
-  have : ι.IsExpansionOn N := (symbSublangIncl_injective F R).isExpansionOn_default N
+  have : Nonempty N := hN
+  let : L.Structure N := expandSymbStructure F R N
   exact ⟨N, inferInstance, hNc, hN, hT₀ ▸ (ι.onTheoryω_model T₀).2 hNT₀⟩
 
 /-- **Countable models of satisfiable countable theories.** A satisfiable countable theory has a

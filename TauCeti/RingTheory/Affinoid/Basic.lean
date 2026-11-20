@@ -47,6 +47,11 @@ theorem isAffinoidAlgebra_tate {σ : Type*} [Finite σ] :
     IsRestricted.renameAlgEquiv (Fintype.equivFin σ).symm fun _ ↦ 1
   exact (isAffinoidAlgebra_iff K _).mpr ⟨_, e.toAlgHom, e.surjective⟩
 
+/-- A Tate algebra in finitely many variables is affinoid, registered as a `Fact` instance. -/
+instance instFactIsAffinoidAlgebraTate {σ : Type*} [Finite σ] :
+    Fact (IsAffinoidAlgebra K (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))) :=
+  ⟨isAffinoidAlgebra_tate⟩
+
 /-- The coefficient field is affinoid, using the Tate presentation in zero variables. -/
 theorem isAffinoidAlgebra_self : IsAffinoidAlgebra K K := by
   let f : IsRestricted.subring (R := K) (fun _ : Fin 0 ↦ 1) →ₐ[K] K :=

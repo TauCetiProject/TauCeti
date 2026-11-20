@@ -193,7 +193,7 @@ theorem PosSemidef.rank_le_iff_eigenvalues₀_eq_zero (hA : A.PosSemidef)
   refine ⟨fun h i hi ↦ hA.eigenvalues₀_eq_zero_of_rank_le h i hi, fun h ↦ ?_⟩
   rw [hA.isHermitian.rank_eq_card_non_zero_eigenvalues₀]
   let f : {i : Fin (Fintype.card ι) // hA.isHermitian.eigenvalues₀ i ≠ 0} → Fin d :=
-    fun i ↦ ⟨i.1.val, lt_of_not_ge fun hi ↦ i.2 (h i.1 hi)⟩
+    fun i ↦ ⟨i.val.val, lt_of_not_ge fun hi ↦ i.property (h i.val hi)⟩
   have hf : Function.Injective f := by
     intro i j hij
     exact Subtype.ext (Fin.ext (congrArg (fun x : Fin d ↦ x.val) hij))

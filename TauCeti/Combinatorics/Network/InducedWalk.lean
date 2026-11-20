@@ -125,18 +125,18 @@ theorem reachableAvoiding_inducedHom_iff :
     rw [ArrowWalk.vertices_coeInduced, List.mem_map] at hx
     obtain ⟨y, hy, rfl⟩ := hx
     rintro (hSc | ⟨z, hz, hzy⟩)
-    · exact hSc y.2
+    · exact hSc y.property
     · have hzy' : z = y := Subtype.ext hzy
       exact hp y hy (hzy' ▸ hz)
   · rintro ⟨p, hp⟩
-    have hs : (s : V) ∈ S := s.2
-    have ht : (t : V) ∈ S := t.2
+    have hs : (s : V) ∈ S := s.property
+    have ht : (t : V) ∈ S := t.property
     have hmem : ∀ x ∈ p.vertices, x ∈ S := fun x hx ↦ by
       by_contra hxc
       exact hp x hx (.inl (by simpa using hxc))
     obtain ⟨p', hp'⟩ := p.exists_induced_coe_eq hs ht hmem
     refine ⟨p', fun x hx hX ↦ ?_⟩
-    exact hp x.1 (by rw [← hp', ArrowWalk.vertices_coeInduced]; exact List.mem_map.2 ⟨x, hx, rfl⟩)
+    exact hp x.val (by rw [← hp', ArrowWalk.vertices_coeInduced]; exact List.mem_map.2 ⟨x, hx, rfl⟩)
       (.inr ⟨x, hX, rfl⟩)
 
 end Set

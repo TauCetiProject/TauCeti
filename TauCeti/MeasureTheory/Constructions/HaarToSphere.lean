@@ -7,8 +7,11 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.MeasureTheory.Group.Integral
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
 # Integration in polar coordinates
@@ -53,7 +56,8 @@ Public formalization references:
   of calculus.
 * `ContinuousOn.integral_toSphere_smul`: the sphere integrals `r ↦ ∫ u ∈ S, f (r • u)` depend
   continuously on the radius `r ∈ [0, R]` when `f` is continuous on the closed ball of radius
-  `R`.
+  `R`; `ContinuousOn.integral_toSphere_smul_uncurry` allows the integrand to depend on the
+  direction `u` as well.
 * `TauCeti.setIntegral_ball_zero_eq_integral_Ioo`,
   `TauCeti.integral_Ioo_pow_mul_toSphere_real_univ`: integration over a ball about the origin in
   polar coordinates, and the corresponding formula for the measure of the ball.
@@ -61,6 +65,9 @@ Public formalization references:
   integrable on a ball about `c` if and only if its radial integrand is integrable.
 * `LinearIsometryEquiv.map_toSphere`: a linear isometric equivalence carries the surface
   measure of `μ` to the surface measure of the image of `μ`.
+* `TauCeti.integral_toSphere_coe_eq_zero`: the surface measure has barycenter zero.
+* `ContinuousOn.hasDerivAt_setIntegral_ball`: the derivative in the radius of the integral of a
+  continuous function over a ball is its integral over the sphere of that radius.
 -/
 
 public section
@@ -95,7 +102,7 @@ against the weight `r ^ k`. -/
 theorem integral_volumeIoiPow (k : ℕ) (h : ℝ → F) :
     ∫ r : Ioi (0 : ℝ), h r ∂(Measure.volumeIoiPow k) = ∫ r in Ioi (0 : ℝ), r ^ k • h r := by
   simp only [Measure.volumeIoiPow, ENNReal.ofReal]
-  rw [integral_withDensity_eq_integral_smul (measurable_subtype_coe.pow_const _).real_toNNReal,
+  rw [integral_withDensity_eq_integral_smul (measurable_subtypeVal.pow_const _).real_toNNReal,
     integral_subtype_comap measurableSet_Ioi fun r ↦ Real.toNNReal (r ^ k) • h r]
   refine setIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
   rw [NNReal.smul_def, Real.coe_toNNReal _ (pow_nonneg (le_of_lt hr) _)]
@@ -106,7 +113,7 @@ theorem lintegral_volumeIoiPow (k : ℕ) (h : ℝ → ℝ≥0∞) :
     ∫⁻ r : Ioi (0 : ℝ), h r ∂(Measure.volumeIoiPow k) =
       ∫⁻ r in Ioi (0 : ℝ), ENNReal.ofReal (r ^ k) * h r := by
   rw [Measure.volumeIoiPow, lintegral_withDensity_eq_lintegral_mul_non_measurable _
-      (measurable_subtype_coe.pow_const k).ennreal_ofReal
+      (measurable_subtypeVal.pow_const k).ennreal_ofReal
       (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top),
     ← lintegral_subtype_comap measurableSet_Ioi (fun r ↦ ENNReal.ofReal (r ^ k) * h r)]
   simp only [Pi.mul_apply]
@@ -206,25 +213,39 @@ theorem integral_eq_integral_Ioi_integral_toSphere (f : E → F) (hf : Integrabl
     fun r ↦ ∫ u : sphere (0 : E) 1, f (r • (u : E)) ∂μ.toSphere
 
 omit [Nontrivial E] in
-/-- The integral of `f` over the sphere of radius `r` about the origin, parametrized by the unit
-sphere, depends continuously on `r ∈ [0, R]` when `f` is continuous on the closed ball of radius
-`R`. -/
-theorem _root_.ContinuousOn.integral_toSphere_smul {f : E → F} {R : ℝ}
-    (hf : ContinuousOn f (closedBall (0 : E) R)) :
-    ContinuousOn (fun r : ℝ ↦ ∫ u : sphere (0 : E) 1, f (r • (u : E)) ∂μ.toSphere) (Icc 0 R) := by
-  obtain ⟨C, hC⟩ := (isCompact_closedBall (0 : E) R).exists_bound_of_continuousOn hf
+/-- The integral over the sphere of radius `r` about the origin, parametrized by the unit sphere,
+of a function `g (r • u) u` of the point and of the direction depends continuously on
+`r ∈ [0, R]` when `g` is jointly continuous on `closedBall 0 R ×ˢ sphere 0 1`. -/
+theorem _root_.ContinuousOn.integral_toSphere_smul_uncurry {g : E → E → F} {R : ℝ}
+    (hg : ContinuousOn (Function.uncurry g) (closedBall (0 : E) R ×ˢ sphere (0 : E) 1)) :
+    ContinuousOn (fun r : ℝ ↦ ∫ u : sphere (0 : E) 1, g (r • (u : E)) u ∂μ.toSphere)
+      (Icc 0 R) := by
+  obtain ⟨C, hC⟩ := ((isCompact_closedBall (0 : E) R).prod
+    (isCompact_sphere (0 : E) 1)).exists_bound_of_continuousOn hg
   have hmem : ∀ r ∈ Icc (0 : ℝ) R, ∀ u : sphere (0 : E) 1,
-      r • (u : E) ∈ closedBall (0 : E) R := by
+      (r • (u : E), (u : E)) ∈ closedBall (0 : E) R ×ˢ sphere (0 : E) 1 := by
     intro r hr u
+    refine ⟨?_, u.property⟩
     rw [mem_closedBall_zero_iff, norm_smul, norm_eq_of_mem_sphere u, mul_one,
       Real.norm_of_nonneg hr.1]
     exact hr.2
   refine continuousOn_of_dominated (bound := fun _ ↦ C) (fun r hr ↦ ?_) (fun r hr ↦ ?_)
     (integrable_const C) (ae_of_all _ fun u ↦ ?_)
-  · exact (hf.comp_continuous (continuous_const.smul continuous_subtype_val)
-      (hmem r hr)).aestronglyMeasurable
+  · exact (hg.comp_continuous ((continuous_const.smul continuous_subtypeVal).prodMk
+      continuous_subtypeVal) (hmem r hr)).aestronglyMeasurable
   · exact ae_of_all _ fun u ↦ hC _ (hmem r hr u)
-  · exact hf.comp (continuous_id.smul continuous_const).continuousOn fun r hr ↦ hmem r hr u
+  · exact hg.comp ((continuous_id.smul continuous_const).prodMk continuous_const).continuousOn
+      fun r hr ↦ hmem r hr u
+
+omit [Nontrivial E] in
+/-- The integral of `f` over the sphere of radius `r` about the origin, parametrized by the unit
+sphere, depends continuously on `r ∈ [0, R]` when `f` is continuous on the closed ball of radius
+`R`. -/
+theorem _root_.ContinuousOn.integral_toSphere_smul {f : E → F} {R : ℝ}
+    (hf : ContinuousOn f (closedBall (0 : E) R)) :
+    ContinuousOn (fun r : ℝ ↦ ∫ u : sphere (0 : E) 1, f (r • (u : E)) ∂μ.toSphere) (Icc 0 R) :=
+  ContinuousOn.integral_toSphere_smul_uncurry (g := fun x _ ↦ f x)
+    (hf.comp continuousOn_fst fun _ hp ↦ hp.1)
 
 /-- **Integration over a ball in polar coordinates.** For `f` integrable on the ball
 `ball 0 R`, the integral of `f` over `ball 0 R` is the integral over the radii `s ∈ (0, R)` of
@@ -442,7 +463,7 @@ theorem _root_.MeasureTheory.Measure.addHaar_eq_zero_of_isRadialGraph
   apply Eventually.of_forall
   intro ω
   have hslice : {t : ℝ | 0 < t ∧ t • (ω : E) ∈ A}.Subsingleton :=
-    fun s hs t ht ↦ hray ω ω.2 s t hs.1 ht.1 hs.2 ht.2
+    fun s hs t ht ↦ hray ω ω.property s t hs.1 ht.1 hs.2 ht.2
   exact hslice.countable.measure_zero volume
 
 /-- An arbitrary Haar almost-everywhere predicate transports to the polar product measure; no
@@ -469,5 +490,71 @@ theorem _root_.MeasureTheory.Measure.ae_toSphere_ae_Ioi_of_ae (μ : Measure E) [
   filter_upwards [hp] with θ hθ
   exact (ae_volumeIoiPow_iff _ (fun t ↦ P (t • (θ : E)))).mp hθ
 
+/-! ### The barycenter of the sphere and the radial derivative of ball integrals -/
+
+section Radial
+
+variable {μ : Measure E} [μ.IsAddHaarMeasure]
+
+/-- **The derivative of a ball integral in the radius.** If `f` is continuous on the closed ball
+`closedBall c R` and `0 < σ < R`, the integral of `f` over `ball c s` has derivative
+`σ ^ (n - 1) ∫ f (c + σ θ) dμ.toSphere` in `s` at `σ`: the integral of `f` over the sphere of
+radius `σ` about `c`. -/
+theorem _root_.ContinuousOn.hasDerivAt_setIntegral_ball {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [CompleteSpace F] {f : E → F} {c : E} {R σ : ℝ}
+    (hf : ContinuousOn f (closedBall c R)) (hσ : σ ∈ Ioo 0 R) :
+    HasDerivAt (fun s ↦ ∫ x in ball c s, f x ∂μ)
+      (σ ^ (finrank ℝ E - 1) • ∫ θ : sphere (0 : E) 1, f (c + σ • (θ : E)) ∂μ.toSphere) σ := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In the trivial space the sphere is empty, and every ball of positive radius is `univ`.
+    simp only [integral_of_isEmpty, smul_zero]
+    refine (hasDerivAt_const σ (∫ x, f x ∂μ)).congr_of_eventuallyEq ?_
+    filter_upwards [lt_mem_nhds hσ.1] with s hs
+    rw [show ball c s = univ from eq_univ_of_forall fun x ↦ by simp [Subsingleton.elim x c, hs],
+      Measure.restrict_univ]
+  -- Translate to the origin and integrate in polar coordinates.
+  set g : ℝ → F := fun t ↦
+    t ^ (finrank ℝ E - 1) • ∫ θ : sphere (0 : E) 1, f (c + t • (θ : E)) ∂μ.toSphere
+  have hf₀ : ContinuousOn (fun y ↦ f (y + c)) (closedBall (0 : E) R) :=
+    hf.comp (continuous_id.add continuous_const).continuousOn fun y hy ↦ by
+      simpa [mem_closedBall, dist_eq_norm] using hy
+  have hg : ContinuousOn g (Icc 0 R) := by
+    refine ((continuous_pow _).continuousOn).smul ?_
+    simpa [add_comm] using hf₀.integral_toSphere_smul (μ := μ)
+  -- The ball integrals are the primitive of `g` on `[0, R]`.
+  have heq : ∀ s ∈ Icc 0 R, ∫ x in ball c s, f x ∂μ = ∫ t in (0 : ℝ)..s, g t := fun s hs ↦ by
+    rw [setIntegral_ball_eq_setIntegral_ball_zero_add,
+      setIntegral_ball_zero_eq_integral_Ioo (((hf₀.mono (closedBall_subset_closedBall hs.2))
+        |>.integrableOn_compact (isCompact_closedBall _ _)).mono_set ball_subset_closedBall),
+      intervalIntegral.integral_of_le hs.1, integral_Ioc_eq_integral_Ioo]
+    simp [g, add_comm]
+  refine (hg.integral_hasDerivAt_of_mem_Ioo hσ).congr_of_eventuallyEq ?_
+  filter_upwards [isOpen_Ioo.mem_nhds hσ] with s hs
+  exact heq s (Ioo_subset_Icc_self hs)
+
+/-- **The surface measure of the unit sphere has barycenter zero**: `∫ θ dμ.toSphere = 0`, since
+`μ.toSphere` is invariant under `θ ↦ -θ`. -/
+theorem integral_toSphere_coe_eq_zero :
+    ∫ θ : sphere (0 : E) 1, (θ : E) ∂μ.toSphere = 0 := by
+  set ι : E ≃ₗᵢ[ℝ] E := LinearIsometryEquiv.neg ℝ
+  set g : sphere (0 : E) 1 → sphere (0 : E) 1 := Subtype.map ι fun x hx ↦ by simpa using hx
+  have hmap : μ.toSphere.map g = μ.toSphere := by
+    rw [LinearIsometryEquiv.map_toSphere ι μ]
+    -- `ι` is negation, so `μ.map ι = μ` is the reflection invariance of the Haar measure.
+    rw [show (ι : E → E) = Neg.neg from LinearIsometryEquiv.coe_neg, Measure.map_neg_eq_self]
+  have hg : Measurable g := ι.continuous.measurable.subtype_map _
+  have h := integral_map (μ := μ.toSphere) hg.aemeasurable
+    (f := fun θ : sphere (0 : E) 1 ↦ (θ : E)) continuous_subtypeVal.aestronglyMeasurable
+  rw [hmap] at h
+  have hg' : ∀ θ : sphere (0 : E) 1, (g θ : E) = -(θ : E) := fun θ ↦ by
+    simp only [g]
+    rw [Subtype.map_coe]
+    simp [ι]
+  -- `h : ∫ θ = -∫ θ`.
+  simp_rw [hg', integral_neg] at h
+  rw [eq_neg_iff_add_eq_zero, ← two_smul ℝ] at h
+  exact (smul_eq_zero.mp h).resolve_left two_ne_zero
+
+end Radial
 
 end TauCeti

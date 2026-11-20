@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.HeatKernel.HeatEquation
-import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
@@ -213,7 +213,7 @@ theorem exists_stronglyMeasurable_eq_iteratedFDeriv_heatKernel_convolution
   rw [iteratedFDeriv_heatKernel_convolution (g := f s) hτ
     (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable hB m x]
   refine integral_congr_ae (ae_of_all _ fun z => ?_)
-  simp only [Ψ, iteratedFDeriv_heatKernel_eq_rpow_smul hτ]
+  simp only [Ψ, iteratedFDeriv_heatKernel_eq_rpow_smul hτ.le]
 
 /-- For jointly measurable essentially bounded `f`, the spatial derivatives
 `D^m (K_{t-s} ⋆ f(s, ·))(x)` are measurable in `s`. -/

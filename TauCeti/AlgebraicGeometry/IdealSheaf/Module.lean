@@ -36,7 +36,9 @@ kernel is the ideal `I(U)` (Mathlib's `Scheme.IdealSheafData.ker_subschemeι_app
 * `Scheme.IdealSheafData.sheafLift`: a morphism into `𝒪_X` whose sections lie in `I` factors
   through `I`;
 * `Scheme.IdealSheafData.isIso_sheafι_top`: the unit ideal sheaf, which cuts out the empty closed
-  subscheme, is the whole structure sheaf.
+  subscheme, is the whole structure sheaf;
+* `Scheme.IdealSheafData.isZero_sheaf_bot`: the zero ideal sheaf, which cuts out all of `X`, is the
+  zero module.
 
 ## References
 
@@ -139,7 +141,7 @@ lemma sheafι_app_map {U V : X.Opens} (i : V ⟶ U) (t : Γ(I.sheaf, U)) :
 /-- The inclusion `I ⟶ 𝒪_X` sends a section of the ideal sheaf over `U` into `sections I U`. -/
 lemma sheafι_app_mem (U : X.Opens) (t : Γ(I.sheaf, U)) :
     Scheme.Modules.Hom.app I.sheafι U t ∈ I.sections U :=
-  t.2
+  t.property
 
 /-- The inclusion of the ideal sheaf into `𝒪_X` is injective on sections. -/
 lemma sheafι_app_injective (U : X.Opens) : Function.Injective (Scheme.Modules.Hom.app I.sheafι U) :=
@@ -186,6 +188,24 @@ instance isIso_sheafι_top : IsIso (⊤ : X.IdealSheafData).sheafι := by
   refine ⟨sheafι_app_injective _ U, fun s ↦ ⟨sectionMk _ s ?_, rfl⟩⟩
   rw [sections_top]
   exact Submodule.mem_top
+
+/-- Only the zero function is a section of the zero ideal sheaf, which cuts out all of `X`. -/
+@[simp]
+lemma sections_bot (U : X.Opens) : (⊥ : X.IdealSheafData).sections U = ⊥ := by
+  have := (isIso_subschemeι_iff_eq_bot (⊥ : X.IdealSheafData)).mpr rfl
+  -- The closed immersion `V(⊥) ⟶ X` is an isomorphism, so it is injective on sections.
+  refine eq_bot_iff.mpr fun s hs ↦ (map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso
+    ((⊥ : X.IdealSheafData).subschemeι.app U)).1).mp ((mem_sections_iff _).mp hs)
+
+/-- The zero ideal sheaf is the zero module. -/
+theorem isZero_sheaf_bot : Limits.IsZero (⊥ : X.IdealSheafData).sheaf := by
+  refine (Limits.IsZero.iff_id_eq_zero _).mpr
+    (Scheme.Modules.hom_ext _ _ fun U ↦ ConcreteCategory.hom_ext _ _ fun t ↦ ?_)
+  simp only [Scheme.Modules.Hom.id_app, Scheme.Modules.Hom.zero_app, ConcreteCategory.id_apply,
+    AddCommGrpCat.hom_zero, AddMonoidHom.zero_apply]
+  have ht : Scheme.Modules.Hom.app (⊥ : X.IdealSheafData).sheafι U t ∈ (⊥ : Ideal Γ(X, U)) :=
+    sections_bot U ▸ sheafι_app_mem _ U t
+  exact sheafι_app_injective _ U (((Ideal.mem_bot (R := Γ(X, U))).mp ht).trans (map_zero _).symm)
 
 end
 

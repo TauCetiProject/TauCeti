@@ -50,6 +50,10 @@ element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, t
 `Subgroup.finite_image_mk_of_inv_mul_mem` passes finiteness of the image of a set in `G ⧸ K` to
 `G ⧸ L` when congruence modulo `K` on the set implies congruence modulo `L`.
 `Subgroup.card_fiber_quotientMapOfLE` counts every fibre of `G / H → G / K` as `[K : H]`.
+`Subgroup.index_eq_of_equiv`, `Subgroup.ne_zero_of_equiv`, and `Subgroup.finiteIndex_of_equiv`
+read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection, and
+`Subgroup.quotientEquivFin` constructs a coset bijection `G ⧸ H ≃ Fin n` from `H.index = n` when
+`n ≠ 0`.
 -/
 
 public section
@@ -196,7 +200,7 @@ theorem sum_out_smul_eq_relIndex_nsmul {G : Type*} [Group G] {H K : Subgroup G} 
       ((p.out * (k.out : G) : G) : G ⧸ K).out • m = p.out • m := by
     intro p k
     obtain ⟨z, hz⟩ := QuotientGroup.mk_out_eq_mul K (p.out * (k.out : G))
-    rw [hz, mul_smul, mul_smul, hm _ (hKH z.2), hm _ k.out.2]
+    rw [hz, mul_smul, mul_smul, hm _ (hKH z.property), hm _ k.out.property]
   simp only [key, Finset.sum_const, Finset.card_univ, Finset.sum_nsmul, relIndex, index_eq_card,
     Nat.card_eq_fintype_card]
 
@@ -239,6 +243,36 @@ theorem finite_image_mk_of_inv_mul_mem {K L : Subgroup G} {s : Set G}
   exact QuotientGroup.eq.mpr (hcong _ hy x hx (QuotientGroup.eq.mp hyx))
 
 end FiniteImage
+
+/-- An equivalence `G ⧸ H ≃ Fin n` witnesses that `H` has index `n`. -/
+@[to_additive /-- An equivalence `G ⧸ H ≃ Fin n` witnesses that `H` has index `n`. -/]
+theorem index_eq_of_equiv {G : Type*} [Group G] (H : Subgroup G) {n : ℕ}
+    (e : G ⧸ H ≃ Fin n) : H.index = n := by
+  rw [index_eq_card, Nat.card_congr e, Nat.card_fin]
+
+/-- Because `G ⧸ H` contains the identity coset, any equivalence `G ⧸ H ≃ Fin n` forces `n ≠ 0`. -/
+@[to_additive /-- Because `G ⧸ H` contains the zero coset, any equivalence `G ⧸ H ≃ Fin n` forces
+`n ≠ 0`. -/]
+theorem ne_zero_of_equiv {G : Type*} [Group G] (H : Subgroup G) {n : ℕ}
+    (e : G ⧸ H ≃ Fin n) : n ≠ 0 :=
+  (e ((1 : G) : G ⧸ H)).pos.ne'
+
+/-- A subgroup whose coset space is equivalent to a finite type has finite index. -/
+@[to_additive /-- An additive subgroup whose coset space is equivalent to a finite type has finite
+index. -/]
+theorem finiteIndex_of_equiv {G β : Type*} [Group G] [Finite β] (H : Subgroup G)
+    (e : G ⧸ H ≃ β) : H.FiniteIndex :=
+  have : Finite (G ⧸ H) := Finite.of_equiv β e.symm
+  H.finiteIndex_of_finite_quotient
+
+/-- An enumeration of the left cosets of a subgroup `H` of finite index `n ≠ 0`. -/
+@[to_additive /-- An enumeration of the left cosets of an additive subgroup `H` of finite index
+`n ≠ 0`. -/]
+noncomputable def quotientEquivFin {G : Type*} [Group G] (H : Subgroup G) {n : ℕ} [NeZero n]
+    (hH : H.index = n) : G ⧸ H ≃ Fin n :=
+  have hcard : Nat.card (G ⧸ H) = n := H.index_eq_card.symm.trans hH
+  have : Finite (G ⧸ H) := Nat.finite_of_card_ne_zero (hcard ▸ NeZero.ne n)
+  Finite.equivFinOfCardEq hcard
 
 end Subgroup
 
@@ -304,7 +338,7 @@ theorem iUnion_out_smul_eq (hH : ∀ h ∈ H, h • V = V) :
   obtain ⟨h, hh⟩ := mk_out_eq_mul H g
   -- `g = out * h⁻¹`, and `h⁻¹` maps `V` onto itself.
   have hg : g • V = ((g : G ⧸ H).out : G) • V := by
-    rw [hh, mul_smul, hH _ h.2]
+    rw [hh, mul_smul, hH _ h.property]
   exact hg ▸ Set.subset_iUnion (fun q : G ⧸ H => (q.out : G) • V) _
 
 /-- Translates of `V` by distinct chosen coset representatives are disjoint, when every `g ∉ H`

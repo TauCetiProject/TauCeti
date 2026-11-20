@@ -28,7 +28,7 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (1 +
   [IsManifold (𝓡∂ (1 + 1)) 1 M]
 
 local instance : IsManifold (𝓡 1) 1 ((𝓡∂ (1 + 1)).boundary M) :=
-  isManifold_boundary M one_ne_zero
+  isManifold_boundary M
 
 /-- A planar boundary parametrization is positive for the induced orientation when its
 clockwise quarter-turn normal points outward and the actual ambient tangent identification
