@@ -93,8 +93,8 @@ def bundleHomComplexificationDiffeomorph :
   toFun p := ⟨p.proj, bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) p.proj p.2⟩
   invFun p := ⟨p.proj, (bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L)
     p.proj).symm p.2⟩
-  left_inv p := by simp
-  right_inv p := by simp
+  left_inv p := by simp only [ContinuousLinearEquiv.symm_apply_apply]
+  right_inv p := by simp only [ContinuousLinearEquiv.apply_symm_apply]
   contMDiff_toFun := contMDiff_bundleHomComplexificationEquiv
   contMDiff_invFun := contMDiff_bundleHomComplexificationEquiv_symm
 

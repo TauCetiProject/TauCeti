@@ -12,7 +12,6 @@ public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Tactic.Module
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 
-import Mathlib.Tactic.Module
 
 /-!
 # The complexification of a real seminormed space

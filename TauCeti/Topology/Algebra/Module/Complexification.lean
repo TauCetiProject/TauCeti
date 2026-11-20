@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Normed.Module.Complexification
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
 import TauCeti.LinearAlgebra.Complex.RealForm
-import Mathlib.Tactic.Module
 
 /-!
 # The complexification topology on `ℂ ⊗[ℝ] W`

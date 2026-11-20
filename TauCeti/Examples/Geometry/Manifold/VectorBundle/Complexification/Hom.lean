@@ -33,7 +33,9 @@ theorem imaginary_inverse (x : ℝ) :
       Complex.I ⊗ₜ[ℝ] (ContinuousLinearMap.id ℝ ℝ) := by
   apply (bundleHomComplexificationEquiv (F := ℝ) (G := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ)
     x).injective
-  rw [ContinuousLinearEquiv.apply_symm_apply, bundleHomComplexificationEquiv_tmul]
+  rw [ContinuousLinearEquiv.apply_symm_apply]
+  ext v
+  apply complexification_ext <;> simp
 
 /-- This test does not reduce to the zero map. -/
 theorem imaginary_native_line_ne_zero (x : ℝ) :
@@ -81,7 +83,9 @@ theorem real_inverse (x : ℝ) :
       1 ⊗ₜ[ℝ] (ContinuousLinearMap.id ℝ ℝ) := by
   apply (bundleHomComplexificationEquiv (F := ℝ) (G := ℝ) (V := Trivial ℝ ℝ) (L := Trivial ℝ ℝ)
     x).injective
-  rw [ContinuousLinearEquiv.apply_symm_apply, bundleHomComplexificationEquiv_tmul, one_smul]
+  rw [ContinuousLinearEquiv.apply_symm_apply]
+  ext v
+  apply complexification_ext <;> simp
 
 /-- Native construction for arbitrary, possibly incomplete coefficient models. -/
 theorem arbitrary_model_smooth (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F] (n : ℕ∞ω) :
@@ -248,7 +252,9 @@ theorem arbitrary_target_inverse (x : ℝ) (T S : F →L[ℝ] G) :
         1 ⊗ₜ[ℝ] T + Complex.I ⊗ₜ[ℝ] S := by
   apply (bundleHomComplexificationEquiv (F := F) (G := G)
     (V := Trivial ℝ F) (L := Trivial ℝ G) x).injective
-  simp [bundleHomComplexificationEquiv_tmul]
+  rw [ContinuousLinearEquiv.apply_symm_apply]
+  ext v
+  apply complexification_ext <;> simp
 
 /-- No norm or completeness on original fibres is required beyond the native bundle models. -/
 theorem arbitrary_native_target
@@ -283,7 +289,7 @@ theorem product_target_nonzero (x : ℝ) :
     bundleHomComplexificationEquiv (F := ℝ) (G := ℝ × ℝ)
       (V := Trivial ℝ ℝ) (L := Trivial ℝ (ℝ × ℝ)) x
       (Complex.I ⊗ₜ[ℝ] ContinuousLinearMap.inl ℝ ℝ ℝ) (1 ⊗ₜ[ℝ] (1 : ℝ)) ≠ 0 := by
-  rw [bundleHomComplexificationEquiv_tmul_apply_tmul]
+  simp only [bundleHomComplexificationEquiv_coe, homComplexificationLinearEquiv_tmul_apply_tmul]
   intro h
   have := congrArg (fun u ↦ (imaginaryPart (ℝ × ℝ) u).1) h
   simp at this
@@ -300,7 +306,7 @@ theorem infinite_target_nonzero (x : ℝ) :
       (V := Trivial ℝ ℝ) (L := Trivial ℝ C(Icc (0 : ℝ) 1, ℝ)) x
       (Complex.I ⊗ₜ[ℝ] (ContinuousLinearMap.id ℝ ℝ).smulRight
         (ContinuousMap.const (Icc (0 : ℝ) 1) (1 : ℝ))) (1 ⊗ₜ[ℝ] (1 : ℝ)) ≠ 0 := by
-  rw [bundleHomComplexificationEquiv_tmul_apply_tmul]
+  simp only [bundleHomComplexificationEquiv_coe, homComplexificationLinearEquiv_tmul_apply_tmul]
   intro h
   have := congrArg (fun u ↦ imaginaryPart C(Icc (0 : ℝ) 1, ℝ) u
     (⟨0, by norm_num⟩ : Icc (0 : ℝ) 1)) h

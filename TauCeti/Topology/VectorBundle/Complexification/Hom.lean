@@ -113,78 +113,11 @@ def bundleHomComplexificationEquiv (x : B) : (ℂ ⊗[ℝ] (V x →L[ℝ] L x)) 
       continuous_toFun := A.continuous.congr hA
       continuous_invFun := A.symm.continuous.congr hS }
 
-/-- Characteristic pure-tensor evaluation on original native fibres. -/
-@[simp] theorem bundleHomComplexificationEquiv_tmul_apply_tmul (x : B) (z w : ℂ)
-    (T : V x →L[ℝ] L x) (v : V x) :
-    bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) x (z ⊗ₜ[ℝ] T) (w ⊗ₜ[ℝ] v) =
-      (z*w) ⊗ₜ[ℝ] T v := by
-  exact homComplexificationLinearEquiv_tmul_apply_tmul z w T v
-
-/-- Real or imaginary pure coefficients give the native complex extension. -/
-theorem bundleHomComplexificationEquiv_tmul (x : B) (z : ℂ) (T : V x →L[ℝ] L x) :
-    bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) x (z ⊗ₜ[ℝ] T) =
-      z • T.baseChangeComplex := by
-  ext v
-  induction v with
-  | tmul w v => simp [bundleHomComplexificationEquiv_tmul_apply_tmul,
-      TensorProduct.smul_tmul']
-  | add u v hu hv => simp [hu, hv]
-
-/-- Actual inverse on the native original coefficient fibre. -/
-theorem bundleHomComplexificationEquiv_symm_apply (x : B)
-    (A : (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)) :
-    (bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) x).symm A =
-      1 ⊗ₜ[ℝ] (realPartCLM (L x)).comp
-        ((A.restrictScalars ℝ).comp (oneTmulCLM (V x))) +
-      Complex.I ⊗ₜ[ℝ] (imaginaryPartCLM (L x)).comp
-        ((A.restrictScalars ℝ).comp (oneTmulCLM (V x))) := by
-  exact homComplexificationLinearEquiv_symm_apply A
-
-/-- The coefficient comparison is the extension of its real part plus i times the extension
-of its imaginary part. -/
-theorem bundleHomComplexificationEquiv_apply (x : B)
-    (u : ℂ ⊗[ℝ] (V x →L[ℝ] L x)) :
-    bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) x u =
-      (realPart _ u).baseChangeComplex + Complex.I • (imaginaryPart _ u).baseChangeComplex := by
-  exact homComplexificationLinearEquiv_apply u
-
-/-- Real restriction of the native inverse. -/
-theorem bundleHomComplexificationEquiv_symm_realPart (x : B)
-    (A : (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)) :
-    realPart _ ((bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) x).symm A) =
-      (realPartCLM (L x)).comp ((A.restrictScalars ℝ).comp (oneTmulCLM (V x))) := by
-  simp [bundleHomComplexificationEquiv_symm_apply]
-
-/-- Imaginary restriction of the native inverse. -/
-theorem bundleHomComplexificationEquiv_symm_imaginaryPart (x : B)
-    (A : (ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x)) :
-    imaginaryPart _ ((bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) x).symm
-      A) =
-      (imaginaryPartCLM (L x)).comp ((A.restrictScalars ℝ).comp (oneTmulCLM (V x))) := by
-  simp [bundleHomComplexificationEquiv_symm_apply]
-
-/-- Native coefficient conjugation agrees with conjugating both tensor arguments. -/
-theorem bundleHomComplexificationEquiv_conj (x : B) (u : ℂ ⊗[ℝ] (V x →L[ℝ] L x))
-    (v : ℂ ⊗[ℝ] V x) :
-    bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) x (tmulConj _ u)
-      (tmulConj _ v) =
-      tmulConj _ (bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) x u v) := by
-  exact homComplexificationLinearEquiv_conj u v
-
-/-- Naturality under actual real-linear changes of original native fibres. -/
-theorem bundleHomComplexificationEquiv_naturality (x y : B) (U : V x ≃L[ℝ] V y) (S : L x ≃L[ℝ] L y)
-    (u : ℂ ⊗[ℝ] (V x →L[ℝ] L x)) (v : ℂ ⊗[ℝ] V x) :
-    bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) y ((U.arrowCongr
-      S).baseChangeComplex u)
-      (U.baseChangeComplex v) =
-      S.baseChangeComplex (bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) x
-        u v) := by
-  induction u with
-  | tmul z T =>
-    induction v with
-    | tmul w v => simp
-    | add v w hv hw => simp only [map_add, hv, hw]
-  | add u w hu hw => simp only [map_add, add_apply, hu, hw]
+/-- The native continuous comparison has the intrinsic algebraic comparison as its function. -/
+@[simp] theorem bundleHomComplexificationEquiv_coe (x : B) :
+    (bundleHomComplexificationEquiv (F := F) (G := G) (V := V) (L := L) x :
+      (ℂ ⊗[ℝ] (V x →L[ℝ] L x)) → ((ℂ ⊗[ℝ] V x) →L[ℂ] (ℂ ⊗[ℝ] L x))) =
+      homComplexificationLinearEquiv := by rfl
 
 /-- The intrinsic native comparison commutes with every pair of real fibre frames. -/
 theorem bundleHomComplexificationEquiv_in_frames (x : B)
