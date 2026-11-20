@@ -54,6 +54,8 @@ cohomological degree `p = -q`.
 
 * `TauCeti.RankOneLocalSystem B b R`: rank-one local systems on `(B, b)`.
 * `TauCeti.RankOneLocalSystem.twist L`: the DG algebra automorphism `Φ^L` of `C_*(Ω_b B)`.
+* The commutative group structure on rank-one local systems, by tensor product of characters, and
+  `TauCeti.RankOneLocalSystem.comap`, the pullback along a based map, a group homomorphism.
 * `TauCeti.RankOneLocalSystem.tensor L`: the functor `𝓕 ↦ 𝓕 ⊗ L` on DG local systems.
 * `TauCeti.RankOneLocalSystem.twistCocycle L m`: the twisted cocycle `m^L`.
 * `TauCeti.RankOneLocalSystem.monodromy L`: the monodromy character `π₁(B, b) →* Rˣ`.
@@ -68,6 +70,7 @@ cohomological degree `p = -q`.
 ## Main results
 
 * `TauCeti.RankOneLocalSystem.twist_comp_twist_inv`: `Φ^L` is invertible.
+* `TauCeti.RankOneLocalSystem.twist_mul`: `Φ^{L ⊗ L'} = Φ^L ∘ Φ^{L'}`.
 * `TauCeti.RankOneLocalSystem.twistedCochainComplexIso`: the twisted complex of `𝓕 ⊗ L` is the
   twisted complex of `𝓕` with the cocycle `m^L`.
 
@@ -151,6 +154,44 @@ instance : One (RankOneLocalSystem B b R) where
 theorem one_ρ : (1 : RankOneLocalSystem B b R).ρ = 1 :=
   rfl
 
+/-- Rank-one local systems with the same action are equal. -/
+@[ext]
+theorem ext {L L' : RankOneLocalSystem B b R} (h : L.ρ = L'.ρ) : L = L' := by
+  cases L
+  cases L'
+  congr
+
+/-- The **tensor product** of two rank-one local systems: a loop acts by the product of the units
+by which it acts on the factors. -/
+instance : Mul (RankOneLocalSystem B b R) where
+  mul L L' :=
+    { ρ := L.ρ * L'.ρ
+      eq_of_joined := fun _ _ h ↦ by
+        rw [MonoidHom.mul_apply, MonoidHom.mul_apply, L.eq_of_joined h, L'.eq_of_joined h] }
+
+@[simp]
+theorem mul_ρ (L L' : RankOneLocalSystem B b R) : (L * L').ρ = L.ρ * L'.ρ :=
+  rfl
+
+/-- Rank-one local systems form a commutative group under tensor product, with the trivial
+system as unit and the inverse characters as inverses. -/
+instance : CommGroup (RankOneLocalSystem B b R) where
+  mul_assoc L L' L'' := RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ by
+    simp only [mul_ρ, MonoidHom.mul_apply]
+    exact _root_.mul_assoc _ _ _
+  one_mul L := RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ by
+    simp only [mul_ρ, one_ρ, MonoidHom.mul_apply, MonoidHom.one_apply]
+    exact _root_.one_mul _
+  mul_one L := RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ by
+    simp only [mul_ρ, one_ρ, MonoidHom.mul_apply, MonoidHom.one_apply]
+    exact _root_.mul_one _
+  inv_mul_cancel L := RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ by
+    simp only [mul_ρ, inv_ρ, one_ρ, MonoidHom.mul_apply, MonoidHom.inv_apply, MonoidHom.one_apply]
+    exact _root_.inv_mul_cancel _
+  mul_comm L L' := RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ by
+    simp only [mul_ρ, MonoidHom.mul_apply]
+    exact _root_.mul_comm _ _
+
 /-- The twist of the trivial local system is the identity. -/
 @[simp]
 theorem twist_one :
@@ -178,6 +219,36 @@ theorem twist_inv_comp_twist :
     simp
   rw [twist, twist, cubicalChainTwist_mul, ← cubicalChainTwist_one (G := MooreLoopSpace B b)]
   congr
+
+/-- The twist of a tensor product of rank-one local systems is the composite of their twists. -/
+theorem twist_mul (L L' : RankOneLocalSystem B b R) :
+    (L * L').twist = L.twist.comp L'.twist := by
+  have h : (L * L').character = L.character * L'.character := by
+    ext γ
+    simp
+  rw [twist, twist, twist, cubicalChainTwist_mul]
+  congr
+
+/-- The **pullback** of rank-one local systems along a based map `f : (B', b') → (B, b)`: a loop
+at `b'` acts by the unit by which its image under `f` acts. It is a homomorphism for the tensor
+product. -/
+def comap {B' : Type*} [TopologicalSpace B'] {b' : B'} (f : C(B', B)) (hf : f b' = b) :
+    RankOneLocalSystem B b R →* RankOneLocalSystem B' b' R where
+  toFun L :=
+    { ρ := L.ρ.comp (MooreLoopSpace.map f hf).toMonoidHom
+      eq_of_joined := fun _ _ h ↦ L.eq_of_joined (h.map (MooreLoopSpace.map f hf).continuous) }
+  map_one' := RankOneLocalSystem.ext <| by
+    ext γ
+    simp only [one_ρ, MonoidHom.comp_apply, MonoidHom.one_apply]
+  map_mul' L L' := RankOneLocalSystem.ext <| by
+    ext γ
+    simp only [mul_ρ, MonoidHom.comp_apply, MonoidHom.mul_apply]
+
+@[simp]
+theorem comap_ρ_apply {B' : Type*} [TopologicalSpace B'] {b' : B'} (f : C(B', B))
+    (hf : f b' = b) (L : RankOneLocalSystem B b R) (γ : MooreLoopSpace B' b') :
+    (comap f hf L).ρ γ = L.ρ (MooreLoopSpace.map f hf γ) :=
+  (rfl)
 
 /-- The **tensor product `𝓕 ⊗ L`** of a DG local system with a rank-one local system: the
 pullback of `𝓕` along `Φ^L`. -/

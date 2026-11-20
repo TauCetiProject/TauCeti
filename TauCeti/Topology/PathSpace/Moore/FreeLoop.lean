@@ -243,6 +243,24 @@ namespace MooreFreeLoopSpace
 
 variable {X : Type*} [TopologicalSpace X]
 
+/-- A free Moore loop, as a based Moore loop at its own base point. -/
+def toLoop (γ : MooreFreeLoopSpace X) : MooreLoopSpace X γ.basepoint :=
+  ⟨γ.toMoorePath, γ.source_toMoorePath, γ.target_eq_source⟩
+
+@[simp]
+theorem toMoorePath_toLoop (γ : MooreFreeLoopSpace X) : γ.toLoop.toMoorePath = γ.toMoorePath :=
+  (rfl)
+
+@[simp]
+theorem toFreeLoop_toLoop (γ : MooreFreeLoopSpace X) : γ.toLoop.toFreeLoop = γ :=
+  (rfl)
+
+end MooreFreeLoopSpace
+
+namespace MooreFreeLoopSpace
+
+variable {X : Type*} [TopologicalSpace X]
+
 /-! ### Contractible loops -/
 
 variable (X) in
