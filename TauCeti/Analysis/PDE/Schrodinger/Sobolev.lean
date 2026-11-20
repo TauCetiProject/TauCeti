@@ -189,7 +189,7 @@ theorem norm_schrodingerDuhamel_le (f : H^{s}(E, F)) (G : ℝ → H^{s}(E, F)) (
 variable {p q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 
 /-- **The Strichartz estimate in `H^s`**, at a non-endpoint admissible pair:
-`2 < q < ∞`, `2 / q + n / r = n / 2` and `r ≠ 0`, with `p` the Hölder conjugate of `q`. There
+`2 < q < ∞` and `2 / q + n / r = n / 2`, with `p` the Hölder conjugate of `q`. There
 is `C` such that for every order `s` and every `f ∈ H^s(E)`,
 
 `‖J^s S(t) f‖_{L^q_t L^r_x} ≤ C ‖f‖_{H^s}`.
@@ -197,12 +197,11 @@ is `C` such that for every order `s` and every `f ∈ H^s(E)`,
 The constant does not depend on `s`. -/
 theorem exists_eLpNorm_eLpNorm_toLp_schrodingerPropagator_le (hq : 2 < q)
     (hpq : p.HolderConjugate q)
-    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2)
-    (hr0 : r ≠ 0) :
+    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
     ∃ C : ℝ≥0, ∀ (s : ℝ) (f : H^{s}(E)),
       eLpNorm (fun t ↦ eLpNorm (schrodingerPropagator ℂ s t f).toLp r volume) q volume ≤
         C * ‖f‖ₑ := by
-  obtain ⟨C, hC⟩ := TauCeti.exists_eLpNorm_eLpNorm_schrodingerPropagator_le hq hpq hqr hr0
+  obtain ⟨C, hC⟩ := TauCeti.exists_eLpNorm_eLpNorm_schrodingerPropagator_le hq hpq hqr
   refine ⟨C, fun s f ↦ ?_⟩
   simpa only [toLp_schrodingerPropagator, enorm_toLp_eq] using hC f.toLp
 
@@ -224,7 +223,7 @@ theorem exists_eLpNorm_eLpNorm_toLp_schrodingerDuhamel_le (hq : 2 < q)
         C * (‖f‖ₑ + eLpNorm (fun τ ↦ eLpNorm (G τ).toLp r' volume) p
           (volume.restrict (Ioc 0 T))) := by
   obtain ⟨C, hC⟩ :=
-    TauCeti.exists_eLpNorm_eLpNorm_schrodingerDuhamel_le (r' := r') hq hpq hqr
+    TauCeti.exists_eLpNorm_eLpNorm_schrodingerDuhamel_le (r₁' := r') hq hpq hqr hq hpq hqr
   refine ⟨C, fun s f G T hG ↦ ?_⟩
   have hG' : IntegrableOn (fun τ ↦ (G τ).toLp) (Ioc 0 T) := integrable_toLp_iff.2 hG
   simpa only [toLp_schrodingerDuhamel, enorm_toLp_eq] using hC f.toLp (fun τ ↦ (G τ).toLp) T hG'
