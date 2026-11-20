@@ -39,8 +39,11 @@ variable [Semiring R] [Semiring S]
 
 /-- The `q`-integer `[n]_q = ∑ i ∈ range n, q ^ i`, a finite geometric sum (Bhatt and Scholze,
 *Prisms and prismatic cohomology*, Notation 16.1). -/
-@[expose] def qInteger (q : R) (n : ℕ) : R :=
+def qInteger (q : R) (n : ℕ) : R :=
   ∑ i ∈ range n, q ^ i
+
+theorem qInteger_eq_sum (q : R) (n : ℕ) : qInteger q n = ∑ i ∈ range n, q ^ i :=
+  (rfl)
 
 @[simp]
 theorem qInteger_zero (q : R) : qInteger q 0 = 0 :=
@@ -55,6 +58,7 @@ theorem qInteger_one_left (n : ℕ) : qInteger (1 : R) n = n :=
   one_geom_sum n
 
 /-- The `q`-integers are natural under ring homomorphisms. -/
+@[simp]
 theorem map_qInteger {F : Type*} [FunLike F R S] [RingHomClass F R S] (f : F) (q : R) (n : ℕ) :
     f (qInteger q n) = qInteger (f q) n := by
   simp [qInteger]

@@ -172,7 +172,7 @@ polynomial `G = ∑ k < p, addCorrection p [k]_X (X ^ k)` satisfies `G ≡ 1` mo
 `[p]_X`. -/
 private theorem qInteger_X_dvd_addCorrection_sum_sub_one :
     qInteger (X : ℤ[X]) p ∣ ∑ k ∈ range p, addCorrection p (qInteger X k) (X ^ k) - 1 := by
-  simp only [qInteger]
+  simp only [qInteger_eq_sum]
   set Φ : ℤ[X] := ∑ i ∈ range p, X ^ i
   set G : ℤ[X] := ∑ k ∈ range p, addCorrection p (∑ i ∈ range k, (X : ℤ[X]) ^ i) (X ^ k)
   have hp : (p : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
@@ -209,7 +209,7 @@ theorem delta_pAnalog_sub_one_mem (hq : delta p q = 0) :
     delta p (qInteger q p) - 1 ∈ Ideal.span {qInteger q p} := by
   rw [Ideal.mem_span_singleton, delta_qInteger_of_delta_eq_zero hq]
   have := map_dvd (aeval q) (qInteger_X_dvd_addCorrection_sum_sub_one (p := p))
-  simpa [map_addCorrection, map_qInteger] using this
+  simpa [map_addCorrection] using this
 
 /-- For an ideal `I` of `D`, the ideal of `x ∈ I` with `φ x ∈ [p]_q D` and `γ x ∈ I`, where `[p]_q`
 is assumed to be a nonzerodivisor. The conditions `φ (I) ⊆ [p]_q D` and `γ (I) ⊆ I` say that
