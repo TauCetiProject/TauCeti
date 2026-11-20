@@ -14,19 +14,19 @@ Three consequences of the maximum modulus principle for a function `f` that is d
 `ball z₀ R` and continuous on its closure, under a bound on `sphere z₀ R` relative to the value
 at the centre:
 
+* if a nonzero value occurs in the closed disc under the relative sphere bound, then the
+  central value is nonzero, for any real radius and any complex normed-space target;
 * if `‖f w‖ ≤ M ‖f z₀‖` on the sphere and `f z₀ ≠ 0`, then `1 ≤ M`;
-* if `‖f w‖ ≤ M ‖f z₀‖` on the sphere and `f` is nonzero somewhere on `closedBall z₀ R`, then
-  `f z₀ ≠ 0`;
 * if `‖P w * G w‖ ≤ M ‖P z₀ * G z₀‖` on the sphere, where `P` is nonzero there and at least as
   large as at the centre, then `‖G w‖ ≤ M ‖G z₀‖` on the closed disc.
 
-The last removes a factor `P` that is no smaller on the boundary than at the centre, such as a
-product of linear factors over zeros near `z₀`.
+The cofactor bound removes a factor `P` that is no smaller on the boundary than at the centre,
+such as a product of linear factors over zeros near `z₀`.
 
 ## Main results
 
-* `DiffContOnCl.one_le_of_forall_mem_sphere_norm_le_mul`
 * `DiffContOnCl.ne_zero_of_forall_mem_sphere_norm_le_mul`
+* `DiffContOnCl.one_le_of_forall_mem_sphere_norm_le_mul`
 * `Complex.norm_le_of_forall_mem_sphere_norm_mul_le`
 -/
 
@@ -79,15 +79,18 @@ theorem Complex.norm_le_of_forall_mem_sphere_norm_mul_le {P G : ℂ → ℂ} (hR
     rw [this, mul_zero]
     exact hmax h0 hw
 
-/-- If `f` is differentiable on `ball z₀ R` and continuous on its closure, with
-`‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`, and `f` is nonzero somewhere on `closedBall z₀ R`, then
-`f z₀ ≠ 0`. -/
-theorem DiffContOnCl.ne_zero_of_forall_mem_sphere_norm_le_mul {f : ℂ → ℂ}
-    (hf : DiffContOnCl ℂ f (ball z₀ R)) (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖)
-    {z : ℂ} (hz : z ∈ closedBall z₀ R) (hfz : f z ≠ 0) : f z₀ ≠ 0 := by
-  rcases lt_or_ge 0 R with hR | hR
-  · intro h0
-    refine (norm_pos_iff.2 hfz).not_ge ?_
-    simpa [h0] using Complex.norm_le_of_forall_mem_sphere_norm_mul_le (P := fun _ ↦ 1) hR hf
-      (fun _ _ ↦ one_ne_zero) (fun _ _ ↦ le_rfl) (by simpa using hM) hz
-  · rwa [← dist_le_zero.1 ((mem_closedBall.1 hz).trans hR)]
+/-- Under a relative sphere bound, a nonzero value on the closed disc forces the central
+value to be nonzero. The radius and bound are arbitrary real numbers; no completeness of
+the complex normed target is required. -/
+theorem DiffContOnCl.ne_zero_of_forall_mem_sphere_norm_le_mul {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℂ F] {f : ℂ → F} (hf : DiffContOnCl ℂ f (ball z₀ R))
+    (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖) {z : ℂ}
+    (hz : z ∈ closedBall z₀ R) (hfz : f z ≠ 0) : f z₀ ≠ 0 := by
+  by_cases hR : 0 < R
+  · intro hzero
+    have hbound := Complex.norm_le_of_forall_mem_frontier_norm_le isBounded_ball hf
+      (by rwa [frontier_ball z₀ hR.ne']) (by rwa [closure_ball z₀ hR.ne'])
+    rw [hzero, norm_zero, mul_zero] at hbound
+    exact hfz (norm_eq_zero.mp (le_antisymm hbound (norm_nonneg _)))
+  · have hzz : z = z₀ := dist_le_zero.mp ((mem_closedBall.mp hz).trans (le_of_not_gt hR))
+    simpa only [hzz] using hfz

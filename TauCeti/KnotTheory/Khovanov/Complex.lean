@@ -148,7 +148,7 @@ theorem resolutionCube_obj_normalized (S : Finset (Fin n)) :
 def khovanovComplexι {i : ℤ}
     (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
     (D.toPDCode.resolutionCube hD R
-      (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj S.1 ⟶
+      (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj S.val ⟶
         (D.khovanovComplex hD R j).X i :=
   (D.toPDCode.resolutionCube hD R
     (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplexι S ≫
@@ -168,7 +168,7 @@ def khovanovComplexπ {i : ℤ}
     (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
     (D.khovanovComplex hD R j).X i ⟶
       (D.toPDCode.resolutionCube hD R
-        (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj S.1 :=
+        (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj S.val :=
   eqToHom (D.khovanovComplex_X hD R j i) ≫
     (D.toPDCode.resolutionCube hD R
       (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplexπ S
@@ -234,25 +234,25 @@ def khovanovComplexXIso (i : ℤ) :
     (D.khovanovComplex hD R j).X i ≅
       ⨁ fun S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount} ↦
         ModuleCat.of R ((Khovanov.circleQuantumGrading R
-          (D.toPDCode.ResolvedCircle (PDCode.cubeState S.1))).piece
-            (j - D.stateQuantumShift (PDCode.cubeState S.1))) :=
+          (D.toPDCode.ResolvedCircle (PDCode.cubeState S.val))).piece
+            (j - D.stateQuantumShift (PDCode.cubeState S.val))) :=
   eqToIso ((D.khovanovComplex_X hD R j i).trans
     ((D.toPDCode.resolutionCube hD R
       (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplex_X _)) ≪≫
     biproduct.mapIso (fun S : {S : Finset (Fin n) //
       (#S : ℤ) = i + D.negativeCrossingCount} ↦
-        eqToIso (D.resolutionCube_obj_normalized hD R j S.1))
+        eqToIso (D.resolutionCube_obj_normalized hD R j S.val))
 
 /-- On a state summand, the term comparison is the quantum-piece identification. -/
 @[reassoc (attr := simp)]
 theorem khovanovComplexι_comp_khovanovComplexXIso_hom {i : ℤ}
     (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
     D.khovanovComplexι hD R j S ≫ (D.khovanovComplexXIso hD R j i).hom =
-      eqToHom (D.resolutionCube_obj_normalized hD R j S.1) ≫
+      eqToHom (D.resolutionCube_obj_normalized hD R j S.val) ≫
         biproduct.ι (fun T : {T : Finset (Fin n) // (#T : ℤ) = i + D.negativeCrossingCount} ↦
           ModuleCat.of R ((Khovanov.circleQuantumGrading R
-            (D.toPDCode.ResolvedCircle (PDCode.cubeState T.1))).piece
-              (j - D.stateQuantumShift (PDCode.cubeState T.1)))) S := by
+            (D.toPDCode.ResolvedCircle (PDCode.cubeState T.val))).piece
+              (j - D.stateQuantumShift (PDCode.cubeState T.val)))) S := by
   dsimp only [khovanovComplexXIso, Iso.trans]
   simp [khovanovComplexι, Category.assoc]
 
@@ -262,10 +262,10 @@ theorem ι_comp_khovanovComplexXIso_inv {i : ℤ}
     (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
     biproduct.ι (fun T : {T : Finset (Fin n) // (#T : ℤ) = i + D.negativeCrossingCount} ↦
       ModuleCat.of R ((Khovanov.circleQuantumGrading R
-        (D.toPDCode.ResolvedCircle (PDCode.cubeState T.1))).piece
-          (j - D.stateQuantumShift (PDCode.cubeState T.1)))) S ≫
+        (D.toPDCode.ResolvedCircle (PDCode.cubeState T.val))).piece
+          (j - D.stateQuantumShift (PDCode.cubeState T.val)))) S ≫
             (D.khovanovComplexXIso hD R j i).inv =
-      eqToHom (D.resolutionCube_obj_normalized hD R j S.1).symm ≫
+      eqToHom (D.resolutionCube_obj_normalized hD R j S.val).symm ≫
         D.khovanovComplexι hD R j S := by
   rw [← cancel_mono (D.khovanovComplexXIso hD R j i).hom]
   simp
@@ -277,10 +277,10 @@ theorem khovanovComplexXIso_hom_comp_π {i : ℤ}
     (D.khovanovComplexXIso hD R j i).hom ≫
       biproduct.π (fun T : {T : Finset (Fin n) // (#T : ℤ) = i + D.negativeCrossingCount} ↦
         ModuleCat.of R ((Khovanov.circleQuantumGrading R
-          (D.toPDCode.ResolvedCircle (PDCode.cubeState T.1))).piece
-            (j - D.stateQuantumShift (PDCode.cubeState T.1)))) S =
+          (D.toPDCode.ResolvedCircle (PDCode.cubeState T.val))).piece
+            (j - D.stateQuantumShift (PDCode.cubeState T.val)))) S =
       D.khovanovComplexπ hD R j S ≫
-        eqToHom (D.resolutionCube_obj_normalized hD R j S.1) := by
+        eqToHom (D.resolutionCube_obj_normalized hD R j S.val) := by
   dsimp only [khovanovComplexXIso, Iso.trans]
   rw [eqToIso.hom, ← eqToHom_trans (D.khovanovComplex_X hD R j i)
     ((D.toPDCode.resolutionCube hD R
@@ -294,7 +294,7 @@ theorem khovanovComplexXIso_biproductIsoPi_apply (i : ℤ)
     (x : (D.khovanovComplex hD R j).X i)
     (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
     ((ModuleCat.biproductIsoPi _).hom ((D.khovanovComplexXIso hD R j i).hom x)) S =
-      (eqToHom (D.resolutionCube_obj_normalized hD R j S.1)).hom
+      (eqToHom (D.resolutionCube_obj_normalized hD R j S.val)).hom
         ((D.khovanovComplexπ hD R j S).hom x) := by
   have h := congrArg (fun f ↦ (D.khovanovComplexXIso hD R j i).hom ≫
     (ModuleCat.biproductIsoPi _).hom ≫ f)
@@ -310,9 +310,9 @@ theorem khovanovComplexXIso_inv_comp_π {i : ℤ}
     (D.khovanovComplexXIso hD R j i).inv ≫ D.khovanovComplexπ hD R j S =
       biproduct.π (fun T : {T : Finset (Fin n) // (#T : ℤ) = i + D.negativeCrossingCount} ↦
         ModuleCat.of R ((Khovanov.circleQuantumGrading R
-          (D.toPDCode.ResolvedCircle (PDCode.cubeState T.1))).piece
-            (j - D.stateQuantumShift (PDCode.cubeState T.1)))) S ≫
-        eqToHom (D.resolutionCube_obj_normalized hD R j S.1).symm := by
+          (D.toPDCode.ResolvedCircle (PDCode.cubeState T.val))).piece
+            (j - D.stateQuantumShift (PDCode.cubeState T.val)))) S ≫
+        eqToHom (D.resolutionCube_obj_normalized hD R j S.val).symm := by
   rw [← cancel_epi (D.khovanovComplexXIso hD R j i).hom]
   simp
 
@@ -323,12 +323,12 @@ cube signs. Each cube edge is identified with its actual saddle by
 theorem ι_khovanovComplex_d {i : ℤ}
     (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
     D.khovanovComplexι hD R j S ≫ (D.khovanovComplex hD R j).d i (i + 1) =
-      ∑ a : (S.1ᶜ : Finset (Fin n)), ((-1 : ℤ) ^ #{b ∈ S.1 | b < a.1}) •
+      ∑ a : (S.valᶜ : Finset (Fin n)), ((-1 : ℤ) ^ #{b ∈ S.val | b < a.val}) •
         (D.toPDCode.resolutionCube hD R
           (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).map
-            (homOfLE (S.1.subset_insert a.1)) ≫
-          D.khovanovComplexι hD R j ⟨insert a.1 S.1, by
-            rw [card_insert_of_notMem (mem_compl.1 a.2), Nat.cast_succ, S.2]
+            (homOfLE (S.val.subset_insert a.val)) ≫
+          D.khovanovComplexι hD R j ⟨insert a.val S.val, by
+            rw [card_insert_of_notMem (mem_compl.1 a.property), Nat.cast_succ, S.property]
             omega⟩ := by
   have h := (D.toPDCode.resolutionCube hD R
     (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).ι_cubeComplex_d S

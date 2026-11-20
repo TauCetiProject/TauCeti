@@ -176,10 +176,10 @@ private theorem mul_volume_biUnion_closedBall_le (c : ℝ) (g : (ι → ℝ) →
         closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2))) ≤
       ENNReal.ofReal c ^ Fintype.card ι * ∫⁻ x, g x := by
   calc _ ≤ t * ∑' q : calderonZygmundCubes g t, volume
-        (closedBall (fun i => ((q.1.2 i : ℝ) + 2⁻¹) * 2 ^ q.1.1) (c * (2 ^ q.1.1 / 2))) :=
+        (closedBall (fun i => ((q.val.2 i : ℝ) + 2⁻¹) * 2 ^ q.val.1) (c * (2 ^ q.val.1 / 2))) :=
         mul_le_mul_right (measure_biUnion_le _ (to_countable _) _) _
     _ ≤ t * ∑' q : calderonZygmundCubes g t,
-          ENNReal.ofReal c ^ Fintype.card ι * volume (dyadicCube q.1.1 q.1.2) :=
+          ENNReal.ofReal c ^ Fintype.card ι * volume (dyadicCube q.val.1 q.val.2) :=
         mul_le_mul_right (tsum_le_tsum fun q => volume_closedBall_dyadicCube_le c _ _) _
     _ = ENNReal.ofReal c ^ Fintype.card ι *
           (t * volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2)) := by
@@ -311,15 +311,15 @@ private theorem setLIntegral_compl_enorm_calderonZygmundBad_le
   set 𝒬 := calderonZygmundCubes (‖f ·‖ₑ) t
   set Ω := ⋃ q ∈ 𝒬, closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2))
   set b : 𝒬 → Lp E 2 (volume : Measure (ι → ℝ)) := fun q =>
-    (memLp_calderonZygmundBad (Lp.memLp f) q.1).toLp _
+    (memLp_calderonZygmundBad (Lp.memLp f) q.val).toLp _
   have hsum := Lp.ae_enorm_le_tsum_enorm_of_hasSum <| T.hasSum <|
     hasSum_toLp_calderonZygmundBad ENNReal.ofNat_ne_top (Lp.memLp f)
       (memLp_two_calderonZygmundGood hf ht ht')
   -- Each bad part vanishes off the ball around its cube and has integral zero.
-  have hb (q : 𝒬) : ∫⁻ x in (closedBall (fun i => ((q.1.2 i : ℝ) + 2⁻¹) * 2 ^ q.1.1)
-      (c * (2 ^ q.1.1 / 2)))ᶜ, ‖T (b q) x‖ₑ ≤
-        B * (2 * ∫⁻ x in dyadicCube q.1.1 q.1.2, ‖f x‖ₑ) := by
-    have hcoe := (memLp_calderonZygmundBad (Lp.memLp f) q.1).coeFn_toLp
+  have hb (q : 𝒬) : ∫⁻ x in (closedBall (fun i => ((q.val.2 i : ℝ) + 2⁻¹) * 2 ^ q.val.1)
+      (c * (2 ^ q.val.1 / 2)))ᶜ, ‖T (b q) x‖ₑ ≤
+        B * (2 * ∫⁻ x in dyadicCube q.val.1 q.val.2, ‖f x‖ₑ) := by
+    have hcoe := (memLp_calderonZygmundBad (Lp.memLp f) q.val).coeFn_toLp
     refine (hT (b q) _ _ ?_ ?_).trans (mul_le_mul_right ?_ _)
     · filter_upwards [hcoe] with x hx hxb
       rw [hx]
@@ -331,10 +331,11 @@ private theorem setLIntegral_compl_enorm_calderonZygmundBad_le
       ≤ ∫⁻ x in Ωᶜ, ∑' q : 𝒬, ‖T (b q) x‖ₑ := lintegral_mono_ae (ae_restrict_of_ae hsum)
     _ = ∑' q : 𝒬, ∫⁻ x in Ωᶜ, ‖T (b q) x‖ₑ :=
         lintegral_tsum fun q => (Lp.aestronglyMeasurable _).eNorm.restrict
-    _ ≤ ∑' q : 𝒬, B * (2 * ∫⁻ x in dyadicCube q.1.1 q.1.2, ‖f x‖ₑ) :=
+    _ ≤ ∑' q : 𝒬, B * (2 * ∫⁻ x in dyadicCube q.val.1 q.val.2, ‖f x‖ₑ) :=
         tsum_le_tsum fun q => (lintegral_mono_set
           (compl_subset_compl.2 (subset_biUnion_of_mem (u := fun q : ℤ × (ι → ℤ) =>
-            closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2))) q.2))).trans
+            closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c *
+                (2 ^ q.1 / 2))) q.property))).trans
           (hb q)
     _ = 2 * B * ∫⁻ x in ⋃ q ∈ 𝒬, dyadicCube q.1 q.2, ‖f x‖ₑ := by
         rw [lintegral_biUnion (to_countable _) (fun q _ => measurableSet_dyadicCube q.1 q.2)

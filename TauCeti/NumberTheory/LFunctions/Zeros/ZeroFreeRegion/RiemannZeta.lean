@@ -13,7 +13,7 @@ import TauCeti.Analysis.Complex.LocalLogDeriv
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv
 import TauCeti.NumberTheory.LSeries.DirichletEulerLog
-import TauCeti.NumberTheory.LSeries.RiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDerivNearOne
 
 /-!
@@ -79,7 +79,7 @@ private theorem norm_riemannZeta_on_closedBall {t : ℝ} (ht : 1 ≤ |t|) {w : �
     norm_num at h
     linarith
   have hζ₀ : ‖riemannZeta₀ w‖ ≤ 1 + (|t| + 3) / (5 / 8) :=
-    (TauCeti.norm_riemannZeta₀_le (by linarith)).trans (by gcongr)
+    (TauCeti.norm_riemannZeta₀_le_one_add_norm_div_re (by linarith)).trans (by gcongr)
   refine ⟨hw_re, hw_im, ?_⟩
   rw [riemannZeta_eq_inv_sub_add hw1]
   calc ‖(w - 1)⁻¹ + riemannZeta₀ w‖ ≤ ‖(w - 1)⁻¹‖ + ‖riemannZeta₀ w‖ := norm_add_le _ _

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Meromorphic.Order
 
 /-!
@@ -30,6 +31,11 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
   `DirichletCharacter.meromorphicOrderAt_LFunction_pos_iff`: `LFunctionTrivChar N` has a simple
   pole (meromorphic order `-1`) at `s = 1`, so positive meromorphic order characterizes the zeros
   of `χ.LFunction` away from that pole.
+
+## References
+
+* D. Loeffler, M. Stoll, `Mathlib.NumberTheory.LSeries.DirichletContinuation`.
+* H. Davenport, *Multiplicative Number Theory*, Ch. 4.
 -/
 
 public section
@@ -64,30 +70,33 @@ theorem differentiableAt_LFunction_iff (s : ℂ) :
   rw [not_ne_iff.mp hs1, not_ne_iff.mp hχ1] at hd
   exact not_differentiableAt_LFunctionTrivChar_one hd
 
-/-- The continued Dirichlet `L`-function is analytic except at the simple pole `s = 1` of the
+/-- The continued Dirichlet L-function is analytic everywhere except possibly at `s = 1` for the
 principal character. -/
 @[fun_prop]
-theorem analyticAt_LFunction {s : ℂ} (hs : s ≠ 1 ∨ χ ≠ 1) :
-    AnalyticAt ℂ χ.LFunction s := by
-  rcases hs with hs | hχ
-  · refine Complex.analyticAt_iff_eventually_differentiableAt.mpr ?_
-    filter_upwards [eventually_ne_nhds hs] with z hz
-    exact χ.differentiableAt_LFunction z (.inl hz)
-  · exact (differentiable_LFunction hχ).analyticAt s
+theorem analyticAt_LFunction {s : ℂ} (h1 : s ≠ 1 ∨ χ ≠ 1) : AnalyticAt ℂ χ.LFunction s := by
+  rw [Complex.analyticAt_iff_eventually_differentiableAt]
+  have he1 : ∀ᶠ z in 𝓝 s, z ≠ 1 ∨ χ ≠ 1 := by
+    rcases h1 with h1 | h1
+    · filter_upwards [eventually_ne_nhds h1] with z hz using Or.inl hz
+    · exact Filter.Eventually.of_forall fun _ ↦ Or.inr h1
+  filter_upwards [he1] with z hz1
+  exact χ.differentiableAt_LFunction z hz1
 
-/-- Every Dirichlet character has a meromorphic continued `L`-function on the whole plane. -/
+/-- Every Dirichlet character has a meromorphic continued L-function on the whole complex plane. -/
 @[fun_prop]
 theorem meromorphic_LFunction : Meromorphic χ.LFunction := by
   intro z
-  by_cases hz : z ≠ 1 ∨ χ ≠ 1
-  · exact (χ.analyticAt_LFunction hz).meromorphicAt
-  · obtain ⟨hz1, hχ1⟩ := not_or.mp hz
-    rw [not_ne_iff.mp hz1, not_ne_iff.mp hχ1]
-    refine (((differentiable_LFunctionTrivChar₁ N).analyticAt 1).meromorphicAt.div
-      (by fun_prop : MeromorphicAt (fun s : ℂ ↦ s - 1) 1)).congr ?_
-    filter_upwards [self_mem_nhdsWithin] with s (hs : s ≠ 1)
-    rw [Pi.div_apply, LFunctionTrivChar₁, Function.update_of_ne hs,
-      mul_div_cancel_left₀ _ (sub_ne_zero.2 hs), LFunctionTrivChar]
+  rcases eq_or_ne z 1 with rfl | hz
+  · by_cases hχ : χ = 1
+    · subst hχ
+      refine MeromorphicAt.iff_eventuallyEq_zpow_smul_analyticAt.mpr
+        ⟨-1, LFunctionTrivChar₁ N, (differentiable_LFunctionTrivChar₁ N).analyticAt 1, ?_⟩
+      filter_upwards [self_mem_nhdsWithin] with s (hs : s ≠ 1)
+      rw [LFunctionTrivChar₁, Function.update_of_ne hs, LFunctionTrivChar, smul_eq_mul,
+        zpow_neg_one]
+      field_simp [sub_ne_zero.mpr hs]
+    · exact (χ.analyticAt_LFunction (.inr hχ)).meromorphicAt
+  · exact (χ.analyticAt_LFunction (.inl hz)).meromorphicAt
 
 omit χ in
 /-- The principal Dirichlet `L`-function modulo `N` has a simple pole (meromorphic order `-1`) at

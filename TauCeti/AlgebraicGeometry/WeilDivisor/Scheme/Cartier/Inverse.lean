@@ -208,7 +208,7 @@ theorem finite_support_orderAt (D : CartierDivisor X) :
   have hDg : D |_ U = rationalUnitClass X U g := by
     rw [rationalUnitClass_apply]
     simpa only [g, AddEquiv.symm_apply_apply] using hf.symm
-  refine ((SchemeWeilDivisor.finite_setOfPred_not_mem U).union
+  refine ((CodimensionOnePoint.finite_setOfPred_notMem U).union
     (SchemeWeilDivisor.finite_support_orderAt g)).subset ?_
   intro y hy
   by_cases hyU : (y : X) ∈ U
@@ -304,27 +304,27 @@ recovers the original Weil divisor. -/
 theorem toWeilDivisor_cartierDivisor (hX : ∀ x : X, coheight x ≤ 1)
     (D : locallyPrincipalSubgroup X) :
     (IsLocallyPrincipal.cartierDivisor hX
-      (mem_locallyPrincipalSubgroup.mp D.2)).toWeilDivisor = D := by
+      (mem_locallyPrincipalSubgroup.mp D.property)).toWeilDivisor = D := by
   apply WeilDivisor.ext
   intro x
   obtain ⟨U, hxU, g, hg⟩ := isLocallyPrincipal_iff.mp
-    (mem_locallyPrincipalSubgroup.mp D.2) x
+    (mem_locallyPrincipalSubgroup.mp D.property) x
   let _ : Nonempty U := ⟨⟨x, hxU⟩⟩
   have hcartier : (IsLocallyPrincipal.cartierDivisor hX
-      (mem_locallyPrincipalSubgroup.mp D.2)) |_ U =
+      (mem_locallyPrincipalSubgroup.mp D.property)) |_ U =
       Scheme.rationalUnitClass X U g := by
     exact IsLocallyPrincipal.cartierDivisor_restrict hX
-      (mem_locallyPrincipalSubgroup.mp D.2) U g hg
+      (mem_locallyPrincipalSubgroup.mp D.property) U g hg
   calc
     WeilDivisor.coeff (IsLocallyPrincipal.cartierDivisor hX
-        (mem_locallyPrincipalSubgroup.mp D.2)).toWeilDivisor x =
+        (mem_locallyPrincipalSubgroup.mp D.property)).toWeilDivisor x =
         (IsLocallyPrincipal.cartierDivisor hX
-          (mem_locallyPrincipalSubgroup.mp D.2)).orderAt x :=
+          (mem_locallyPrincipalSubgroup.mp D.property)).orderAt x :=
       Scheme.CartierDivisor.coeff_toWeilDivisor _ _
     _ = SchemeWeilDivisor.orderAt x g :=
       Scheme.CartierDivisor.orderAt_eq_of_restrict_eq_rationalUnitClass
         (IsLocallyPrincipal.cartierDivisor hX
-          (mem_locallyPrincipalSubgroup.mp D.2)) x U hxU g hcartier
+          (mem_locallyPrincipalSubgroup.mp D.property)) x U hxU g hcartier
     _ = WeilDivisor.coeff D x := (hg x hxU).symm
 
 /-- Gluing the local equations of the Weil divisor associated with a Cartier divisor recovers the

@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 import Mathlib.NumberTheory.LSeries.Deriv
 import TauCeti.Analysis.Complex.BranchLogRoot
-import TauCeti.NumberTheory.LSeries.RiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
 # The logarithm of a Dirichlet `L`-function near the line `re s = 1`
