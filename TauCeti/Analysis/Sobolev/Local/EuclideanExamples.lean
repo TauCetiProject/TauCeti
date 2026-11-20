@@ -176,7 +176,8 @@ theorem memLpLoc_norm_inv_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     [FiniteDimensional ℝ E] [Nontrivial E] [MeasureSpace E] [BorelSpace E]
     [(volume : Measure E).IsAddHaarMeasure] {p : ENNReal} {U : Set E} (hU : U ∈ 𝓝 (0 : E)) :
     MemLpLoc p U (fun x : E => ‖x‖⁻¹) ↔ p < Module.finrank ℝ E := by
-  refine ⟨fun h => ?_, fun h => memLpLoc_iff.2 fun K _ hK => hK.memLp_norm_inv_restrict h⟩
+  refine ⟨fun h => ?_, fun h => memLpLoc_iff.2 fun K _ hK =>
+    hK.isBounded.memLp_norm_inv_restrict h⟩
   by_contra! hpd
   obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 hU
   exact not_memLp_norm_inv_closedBall hε hpd (memLpLoc_iff.1 h _ hεU (isCompact_closedBall 0 ε))
@@ -190,17 +191,20 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 private theorem memWkpLoc_one_norm_rpow_neg_one_mul_inner (hd : 1 < Module.finrank ℝ E)
     (hp : p < Module.finrank ℝ E) (v : E) :
     MemWkpLoc p U 1 (fun x : E => ‖x‖ ^ (-1 : ℝ) * ⟪x, v⟫) := by
+  have hs : -(Module.finrank ℝ E : ℝ) < (-1 : ℝ) := by
+    have : (1 : ℝ) < Module.finrank ℝ E := by exact_mod_cast hd
+    linarith
   refine memWkpLoc_one_iff.2 ⟨memLpLoc_iff.2 fun K _ hK => ?_, _,
-    hasWeakFDerivOn_norm_rpow_neg_one_mul_inner hd v _, memLpLoc_iff.2 fun K _ hK => ?_⟩
+    hasWeakFDerivOn_norm_rpow_mul_inner hs v _, memLpLoc_iff.2 fun K _ hK => ?_⟩
   · have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
     exact MemLp.of_bound (by fun_prop : Measurable _).aestronglyMeasurable ‖v‖
-      (Eventually.of_forall fun x => abs_norm_rpow_neg_one_mul_inner_le v x)
+      (Eventually.of_forall fun x => by simpa using abs_norm_rpow_mul_inner_le (-1) v x)
   · have hker : MemLp (fun x : E => ‖x‖⁻¹) p (volume.restrict K) :=
-      hK.memLp_norm_inv_restrict hp
-    refine (hker.const_mul (2 * ‖v‖)).of_le (by fun_prop : Measurable _).aestronglyMeasurable
-      (Eventually.of_forall fun x => ?_)
+      hK.isBounded.memLp_norm_inv_restrict hp
+    refine (hker.const_mul ((1 + |(-1 : ℝ)|) * ‖v‖)).of_le
+      (by fun_prop : Measurable _).aestronglyMeasurable (Eventually.of_forall fun x => ?_)
     rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_neg_one]
-    exact norm_norm_rpow_neg_one_smul_innerSL_sub_le v x
+    exact norm_norm_rpow_smul_innerSL_add_le (-1) v x
 
 /-- In dimension `d ≥ 2`, the unit radial map `x ↦ ‖x‖⁻¹ • x` lies in `MemWkpLoc p U 1` on
 every set whenever `p < d`. -/
@@ -465,7 +469,7 @@ theorem not_hasWeakFDerivOn_indicator_pos {Ω : Opens E} {ℓ : E →L[ℝ] ℝ}
         change ℓ (x - ℓ x • v) = 0
         simp [hℓv]⟩)
       left_inv := fun q => by
-        have hq2 : ℓ (eK q.2 : E) = 0 := (eK q.2).2
+        have hq2 : ℓ (eK q.2 : E) = 0 := (eK q.2).property
         ext
         · simp [hℓv, hq2]
         · apply congrArg (fun z : EuclideanSpace ℝ (Fin (Module.finrank ℝ K)) => z _)
@@ -475,7 +479,7 @@ theorem not_hasWeakFDerivOn_indicator_pos {Ω : Opens E} {ℓ : E →L[ℝ] ℝ}
   let e : (ℝ × EuclideanSpace ℝ (Fin (Module.finrank ℝ K))) ≃L[ℝ] E :=
     eLin.toContinuousLinearEquiv
   have hℓe : ∀ q, ℓ (e q) = q.1 := fun q => by
-    have hq2 : ℓ (eK q.2 : E) = 0 := (eK q.2).2
+    have hq2 : ℓ (eK q.2 : E) = 0 := (eK q.2).property
     simp [e, eLin, hℓv, hq2]
   let Ω' : Opens (ℝ × EuclideanSpace ℝ (Fin (Module.finrank ℝ K))) :=
     ⟨e ⁻¹' Ω, Ω.isOpen.preimage e.continuous⟩
@@ -616,17 +620,17 @@ theorem not_memLpLoc_lpSingle {p : ENNReal} {U : Set ℝ} (hU : (interior U).Non
       change (u x) x - (u y) x = 1
       simp [u, Pi.single_eq_same, Pi.single_eq_of_ne hxy]
     rwa [hval, norm_one] at hle
-  have hex : ∀ x : s, ∃ d : D, dist (u x.1) d.1 < 1 / 2 := fun x => by
-    obtain ⟨d, hdD, hdist'⟩ := Metric.mem_closure_iff.1 (hDt x.2.2) (1 / 2) (by norm_num)
+  have hex : ∀ x : s, ∃ d : D, dist (u x.val) d.val < 1 / 2 := fun x => by
+    obtain ⟨d, hdD, hdist'⟩ := Metric.mem_closure_iff.1 (hDt x.property.2) (1 / 2) (by norm_num)
     exact ⟨⟨d, hdD⟩, hdist'⟩
   choose φ hφ using hex
   have hinj : Function.Injective φ := fun x y hxy => by
     by_contra hne
-    have h1 := hdist x.1 y.1 (Subtype.coe_ne_coe.2 hne)
-    have h2 : dist (u x.1) (u y.1) < 1 := by
-      calc dist (u x.1) (u y.1) ≤ dist (u x.1) (φ x).1 + dist (φ x).1 (u y.1) :=
+    have h1 := hdist x.val y.val (Subtype.coe_ne_coe.2 hne)
+    have h2 : dist (u x.val) (u y.val) < 1 := by
+      calc dist (u x.val) (u y.val) ≤ dist (u x.val) (φ x).val + dist (φ x).val (u y.val) :=
             dist_triangle _ _ _
-        _ = dist (u x.1) (φ x).1 + dist (u y.1) (φ y).1 := by rw [hxy, dist_comm (φ y).1]
+        _ = dist (u x.val) (φ x).val + dist (u y.val) (φ y).val := by rw [hxy, dist_comm (φ y).val]
         _ < 1 / 2 + 1 / 2 := add_lt_add (hφ x) (hφ y)
         _ = 1 := by norm_num
     linarith
