@@ -122,7 +122,7 @@ private theorem subset_darts_segment (T : SerreGraph.segment.SpanningTree)
   obtain ⟨e, he⟩ : ∃ e, e ∈ SerreGraph.Path.darts _ (T.path false true) := by
     generalize T.path false true = q
     cases q with
-    | cons q e => exact ⟨e.1, (SerreGraph.Path.darts_cons _ q e).symm ▸
+    | cons q e => exact ⟨e.val, (SerreGraph.Path.darts_cons _ q e).symm ▸
         List.mem_append_right _ (List.mem_singleton_self _)⟩
   intro b _
   rcases Bool.eq_or_eq_not b e with rfl | rfl
@@ -408,9 +408,9 @@ theorem AlternatingPath.IsReduced.length_eq_zero_of_surjective_segmentMaps
   obtain ⟨c', r, e', y, rfl⟩ := AlternatingPath.length_ne_zero_iff_eq_cons.1 hq
   refine ((AlternatingPath.isReduced_cons_iff _ _ _).1 hp).2
     ((AlternatingPath.cancels_cons_iff ..).2 ⟨?_, ?_⟩)
-  · have h := e'.2.2
+  · have h := e'.property.2
     revert h
-    generalize e'.1 = d
+    generalize e'.val = d
     cases d <;> cases e <;> intro h <;> first | rfl | exact Bool.noConfusion h
   · have key : ∀ b : SerreGraph.segment.E, Function.Surjective
         (segmentMaps f g hf hg (!SerreGraph.segment.tgt b)) →
@@ -478,7 +478,7 @@ private theorem length_foldl_loopArrow (p : (loop f g hf hg).AlternatingPath v v
   simp [loopPath, length_foldl_loopArrow]
 
 private theorem equivHNNExtension_edge_loopArrow (u : ℤˣ) :
-    π₁Tree.equivHNNExtension f g hf hg (π₁Tree.edge ∅ (loopArrow (v := v) u).1) =
+    π₁Tree.equivHNNExtension f g hf hg (π₁Tree.edge ∅ (loopArrow (v := v) u).val) =
       HNNExtension.t ^ (u : ℤ) := by
   rcases Int.units_eq_one_or u with rfl | rfl
   · exact (π₁Tree.equivHNNExtension_edge_false f g hf hg).trans (zpow_one _).symm
@@ -488,7 +488,7 @@ private theorem toπ₁Tree_foldl_loopArrow (p : (loop f g hf hg).AlternatingPat
     (l : List (ℤˣ × G)) :
     (l.foldl (fun p x => p.cons (loopArrow x.1) (loopVertexEquiv x.2)) p).toPath.toπ₁Tree ∅ =
       p.toPath.toπ₁Tree ∅ * (l.map fun x =>
-        π₁Tree.edge ∅ (loopArrow (v := v) x.1).1 * π₁Tree.of ∅ v (loopVertexEquiv x.2)).prod := by
+        π₁Tree.edge ∅ (loopArrow (v := v) x.1).val * π₁Tree.of ∅ v (loopVertexEquiv x.2)).prod := by
   induction l generalizing p with
   | nil => simp
   | cons x l ih =>
@@ -525,7 +525,8 @@ private theorem loopVertexEquiv_mem_range_αArrow_loopArrow_iff (u : ℤˣ) (y :
   rcases Int.units_eq_one_or u with rfl | rfl <;> exact Iff.rfl
 
 private theorem loopArrow_val_eq_rev_iff (u u' : ℤˣ) :
-    (loopArrow (v := v) u).1 = (SerreGraph.rose Unit).rev (loopArrow (v := v) u').1 ↔ u ≠ u' := by
+    (loopArrow (v := v) u).val = (SerreGraph.rose Unit).rev (loopArrow (v := v) u').val ↔
+      u ≠ u' := by
   rcases Int.units_eq_one_or u with rfl | rfl <;> rcases Int.units_eq_one_or u' with rfl | rfl
   · exact iff_of_false (fun h => Bool.noConfusion (congrArg Prod.snd h)) (not_not.2 rfl)
   · exact iff_of_true rfl (by decide)
@@ -606,9 +607,9 @@ example (w : HNNExtension.NormalWord.ReducedWord G f.range g.range)
 `((), false)`), read off the path `1, t⁻¹, y, t, 1`, lies in the vertex group only when
 `y ∈ range g`; this is the computation behind the Baumslag–Solitar example below. -/
 private theorem mem_range_of_mem_range_loop {y : G}
-    (h : π₁Tree.edge ∅ (loopArrow (v := v) (-1)).1 *
+    (h : π₁Tree.edge ∅ (loopArrow (v := v) (-1)).val *
       π₁Tree.of (𝔸 := loop f g hf hg) ∅ v (loopVertexEquiv y) *
-      π₁Tree.edge ∅ (loopArrow (v := v) 1).1 ∈ (π₁Tree.of (𝔸 := loop f g hf hg) ∅ v).range) :
+      π₁Tree.edge ∅ (loopArrow (v := v) 1).val ∈ (π₁Tree.of (𝔸 := loop f g hf hg) ∅ v).range) :
     y ∈ g.range := by
   by_contra hy
   have hP : (loopPath f g hf hg 1 [(-1, y), (1, 1)] :
@@ -658,9 +659,9 @@ example : (PresentedGroup.of true * PresentedGroup.of false * (PresentedGroup.of
     π₁Tree.baumslagSolitarEquiv_symm_of_true] at h1
   obtain ⟨c, hc⟩ := mem_range_of_mem_range_loop (hf := hf) (hg := hg) (v := v) (y := ofAdd 1)
     ⟨loopVertexEquiv (ofAdd k : Multiplicative ℤ), by
-      have e2 := π₁Tree.edge_rev (𝔸 := loop _ _ hf hg) (T := ∅) (loopArrow (v := v) (-1)).1
+      have e2 := π₁Tree.edge_rev (𝔸 := loop _ _ hf hg) (T := ∅) (loopArrow (v := v) (-1)).val
       -- The reverse of the dart `((), true)` is `((), false)`, by definition of the rose.
-      rw [show (SerreGraph.rose Unit).rev (loopArrow (v := v) (-1)).1 = (loopArrow (v := v) 1).1
+      rw [show (SerreGraph.rose Unit).rev (loopArrow (v := v) (-1)).val = (loopArrow (v := v) 1).val
         from rfl] at e2
       rw [e2, show (ofAdd k : Multiplicative ℤ) = ofAdd 1 ^ k by
         rw [← ofAdd_zsmul, smul_eq_mul, mul_one], map_zpow, map_zpow]
