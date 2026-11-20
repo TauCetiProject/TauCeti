@@ -197,11 +197,9 @@ theorem IsMorse.nonempty_singularHomology_sublevelPair_iso_sigma (hf : IsMorse I
       ∐ fun _ : {p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) // manifoldMorseIndex I f p = n} ↦ R) := by
   have hδ : 0 < min (c - a) (b - c) := lt_min (by linarith) (by linarith)
   obtain ⟨ε, hε, hεδ, hiso⟩ := hf.exists_singularHomology_sublevelPair_iso_sigma (c := c) hδ
-    (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
-      (preimage_mono (Icc_subset_Icc (by linarith [min_le_left (c - a) (b - c)])
-        (by linarith [min_le_right (c - a) (b - c)]))))
-  exact ⟨((Icc_subset_and_isCompact_and_nonempty_singularHomology_sublevelPair_iso hf.contMDiff hac
-    hcb hcompact hcrit hε hεδ).2.2 R n).some ≪≫ (hiso R n).some⟩
+    (Icc_subset_and_isCompact_preimage_Icc hf.contMDiff.continuous hcompact le_rfl).2
+  exact ⟨singularHomologySublevelPairIsoSymmetricBand hf.contMDiff hac hcb hcompact hcrit hε hεδ R
+    n ≪≫ (hiso R n).some⟩
 
 /-- **The Morse numbers of a band with one critical value.** Let `f` be a Morse function and
 `a < c < b`, such that the band `f⁻¹[a, b]` is compact and `c` is the only critical value of `f` in
@@ -216,11 +214,9 @@ theorem IsMorse.finrank_singularHomology_sublevelPair_eq (hf : IsMorse I f) {a b
         finrank k V := by
   have hδ : 0 < min (c - a) (b - c) := lt_min (by linarith) (by linarith)
   obtain ⟨ε, hε, hεδ, hrank⟩ := hf.exists_finrank_singularHomology_sublevelPair_eq (c := c) hδ
-    (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
-      (preimage_mono (Icc_subset_Icc (by linarith [min_le_left (c - a) (b - c)])
-        (by linarith [min_le_right (c - a) (b - c)]))))
-  have e := ((Icc_subset_and_isCompact_and_nonempty_singularHomology_sublevelPair_iso hf.contMDiff
-    hac hcb hcompact hcrit hε hεδ).2.2 V n).some
+    (Icc_subset_and_isCompact_preimage_Icc hf.contMDiff.continuous hcompact le_rfl).2
+  have e := singularHomologySublevelPairIsoSymmetricBand hf.contMDiff hac hcb hcompact hcrit hε hεδ
+    V n
   rw [e.toLinearEquiv.finrank_eq]
   exact (hrank k V n).2
 

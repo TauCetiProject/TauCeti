@@ -265,12 +265,14 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_iUnion_negati
   have hlev : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c := fun x hx hfx ↦ by
     obtain ⟨j, s, rfl⟩ := mem_iUnion.1 (hcrit ⟨hx, hfx⟩)
     exact hc j s
-  obtain ⟨hε', hcompact', hband⟩ :=
-    Icc_subset_and_isCompact_and_nonempty_singularHomology_sublevelPair_iso hfs hac hcb hcompact
-      hlev hε0 (hεm.trans_le (min_le_right _ _)).le
+  obtain ⟨hε', hcompact'⟩ :=
+    Icc_subset_and_isCompact_preimage_Icc hfs.continuous hcompact
+      (hεm.trans_le (min_le_right _ _)).le
   obtain ⟨hD, _, hiso⟩ := hmain ε hε0 (hεm.trans_le (min_le_left _ _)) hcompact'
     fun x hx ↦ hcrit ⟨hx.1, hε' hx.2⟩
-  exact ⟨hD, fun {A} _ _ _ R n ↦ ⟨(hband R n).some ≪≫ (@asIso _ _ _ _ _ (hiso R n)).symm⟩⟩
+  exact ⟨hD, fun {A} _ _ _ R n ↦ ⟨singularHomologySublevelPairIsoSymmetricBand hfs hac hcb
+    hcompact hlev hε0 (hεm.trans_le (min_le_right _ _)).le R n ≪≫
+      (@asIso _ _ _ _ _ (hiso R n)).symm⟩⟩
 
 /-- **The relative homology across a critical level of a Morse–Bott function is carried by the
 negative disc bundles of its critical submanifolds on that level.** Let the family

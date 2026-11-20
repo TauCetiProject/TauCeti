@@ -337,15 +337,16 @@ theorem nonempty_singularHomology_sublevelPair_iso_thomPair [T2Space M]
   have hlev : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c := fun x hx hfx ↦ by
     obtain ⟨s, rfl⟩ := hcrit ⟨hx, hfx⟩
     exact hc s
-  obtain ⟨hε', hcompact', hband⟩ :=
-    Icc_subset_and_isCompact_and_nonempty_singularHomology_sublevelPair_iso hfs hac hcb hcompact
-      hlev hε (hεm.trans_le (min_le_right _ _)).le
+  obtain ⟨hε', hcompact'⟩ :=
+    Icc_subset_and_isCompact_preimage_Icc hfs.continuous hcompact
+      (hεm.trans_le (min_le_right _ _)).le
   obtain ⟨φ, -, hφ⟩ := hmain ε hε (hεm.trans_le (min_le_left _ _)) hcompact'
     fun x hx ↦ hcrit ⟨hx.1, hε' hx.2⟩
   have hρ := IsCriticalSubmanifold.isFiberGauge_negativeNormalGauge hn h.toIsCriticalSubmanifold
     g.toRiemannianMetric (F' := Fin r → ℝ) (by simp) (fun s ↦ (hfs (i s)).of_le (by simp)) hdim hε
   have := isIso_singularHomologyMap_gaugeDiscSpherePairMap hρ R n
-  exact ⟨(hband R n).some ≪≫ (@asIso _ _ _ _ _ (hφ R n)).symm ≪≫
+  exact ⟨singularHomologySublevelPairIsoSymmetricBand hfs hac hcb hcompact hlev hε
+    (hεm.trans_le (min_le_right _ _)).le R n ≪≫ (@asIso _ _ _ _ _ (hφ R n)).symm ≪≫
     asIso (TopPair.singularHomologyMap (gaugeDiscSpherePairMap hρ) R n)⟩
 
 end IsNondegenerateCriticalSubmanifold
