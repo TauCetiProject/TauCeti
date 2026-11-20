@@ -21,9 +21,10 @@ of derivatives under coefficient maps.
 The derivative of a cubic `a (X - e₁)(X - e₂)(X - e₃)` at the root `e₁` is
 `a (e₁ - e₂)(e₁ - e₃)`.
 The roots of all nonzero iterated derivatives of a polynomial form a finite set.
-In characteristic zero, a root of multiplicity `m` of `p` is a root of multiplicity at least
-`m - 1` of `p.derivative`; together with the roots of `p.derivative` that are not roots of `p`,
-this bounds `p.roots` as a multiset in terms of `p.derivative.roots` and the distinct roots of `p`.
+If `p.derivative ≠ 0` (always the case for nonconstant `p` in characteristic zero), a root of
+multiplicity `m` of `p` is a root of multiplicity at least `m - 1` of `p.derivative`; together
+with the roots of `p.derivative` that are not roots of `p`, this bounds `p.roots` as a multiset in
+terms of `p.derivative.roots` and the distinct roots of `p`.
 
 The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function,
 and every scalar multiple of it is locally nilpotent.
@@ -70,25 +71,39 @@ theorem finite_setOfPred_isRoot_iterate_derivative (p : R[X]) :
   exact (hk.biUnion fun k hk ↦ finite_setOfPred_isRoot hk).subset
     fun z ⟨k, hk, hz⟩ ↦ mem_biUnion hk hz
 
-/-- In characteristic zero, each root of `p` of multiplicity `m` is a root of `p.derivative` of
-multiplicity at least `m - 1`; the distinct roots of `p.derivative` that are not roots of `p`
-come on top. Counted with multiplicity, `p.roots` together with those extra roots is therefore
-bounded by `p.derivative.roots` together with one copy of each distinct root of `p`. -/
-theorem roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset
-    [CharZero R] [DecidableEq R] (p : R[X]) :
+/-- If `p.derivative ≠ 0`, each root of `p` of multiplicity `m` is a root of `p.derivative` of
+multiplicity at least `m - 1`, in any characteristic; the distinct roots of `p.derivative` that
+are not roots of `p` come on top. Counted with multiplicity, `p.roots` together with those extra
+roots is therefore bounded by `p.derivative.roots` together with one copy of each distinct root
+of `p`. The hypothesis is needed: over `ZMod 2`, `X ^ 2` has roots `{0, 0}` and derivative `0`. -/
+theorem roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset_of_ne_zero
+    [DecidableEq R] {p : R[X]} (hp : p.derivative ≠ 0) :
     p.roots + (p.derivative.roots.toFinset \ p.roots.toFinset).val ≤
       p.derivative.roots + p.roots.toFinset.val := by
   refine Multiset.le_iff_count.2 fun x ↦ ?_
   simp only [Multiset.count_add, Multiset.count_eq_of_nodup (Finset.nodup _), Finset.mem_val,
     Finset.mem_sdiff, Multiset.mem_toFinset]
   by_cases hx : x ∈ p.roots
-  · have := rootMultiplicity_sub_one_le_derivative_rootMultiplicity p x
+  · have := rootMultiplicity_sub_one_le_derivative_rootMultiplicity_of_ne_zero p x hp
     simp only [hx, count_roots, ite_true, not_true_eq_false, and_false, ite_false]
     omega
   · simp only [hx, Multiset.count_eq_zero.2 hx, ite_false, not_false_eq_true, and_true,
       zero_add, add_zero]
     split_ifs with hx'
     exacts [Multiset.count_pos.2 hx', Nat.zero_le _]
+
+/-- In characteristic zero, the bound of
+`roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset_of_ne_zero` holds
+for every `p`: if `p.derivative = 0`, then `p` is constant and both sides are `0`. -/
+theorem roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset
+    [CharZero R] [DecidableEq R] (p : R[X]) :
+    p.roots + (p.derivative.roots.toFinset \ p.roots.toFinset).val ≤
+      p.derivative.roots + p.roots.toFinset.val := by
+  rcases eq_or_ne p.derivative 0 with hp | hp
+  · rw [eq_C_of_derivative_eq_zero hp]
+    simp
+  · exact
+      roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset_of_ne_zero hp
 
 end Polynomial
 
