@@ -12,6 +12,8 @@ public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
 public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 public import Mathlib.CategoryTheory.ObjectProperty.Small
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
+public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 
 /-!
 # Object properties: transport along equivalences, and closure properties
@@ -25,10 +27,8 @@ standard functors between full subcategories.
 
 * `CategoryTheory.ObjectProperty.inverseImage_functor_inverseImage_inverse`: pulling an
   isomorphism-invariant property backward along both functors of an equivalence recovers it.
-* `CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_isTerminal` and
-  `CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_containsZero`: a property holding
-  for a terminal (for instance, a zero) object and closed under binary products is closed under
-  isomorphisms.
+* `CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_containsZero`: a property holding
+  for a zero object and closed under binary products is closed under isomorphisms.
 * `CategoryTheory.ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod`: for a replete
   property in a category with binary biproducts, closure under binary products only has to be
   checked on biproducts.
@@ -37,8 +37,6 @@ standard functors between full subcategories.
   conclusion.
 * `CategoryTheory.ObjectProperty.homMk_eta` and `CategoryTheory.ObjectProperty.homMk_comp`:
   `homMk` of the underlying morphism is the morphism itself, and `homMk` preserves composites.
-* `CategoryTheory.ObjectProperty.lift_comp_ι`: a lift through a full subcategory, followed by the
-  inclusion, is the original functor.
 * `CategoryTheory.ObjectProperty.lift_map_hom_of_eq`: a functor defined as a lift through a full
   subcategory acts on morphisms as the lifted functor, up to the identifications of objects.
 * `CategoryTheory.ObjectProperty.essSurj_lift_iff`: a lift through a full subcategory is
@@ -77,21 +75,6 @@ theorem inverseImage_functor_inverseImage_inverse
     (P.inverseImage e.inverse).inverseImage e.functor = P := by
   ext X
   exact (P.prop_iff_of_iso (e.unitIso.app X)).symm
-
-/-- **A property holding for a terminal object and closed under binary products is closed under
-isomorphisms.** An isomorphism `e : X ≅ Y` exhibits `Y` as a product of the terminal object with
-`X`, the second projection being `e.inv`.
-
-Mathlib's `CategoryTheory.ObjectProperty.IsClosedUnderBinaryProducts.closedUnderIsomorphisms` is
-the same argument, but it assumes `HasTerminal C` and closure under the empty limit, which a
-property known to hold for *one* terminal object does not supply before repleteness is known. -/
-theorem isClosedUnderIsomorphisms_of_isTerminal {C : Type u₁} [Category.{v₁} C]
-    (P : ObjectProperty C) [P.IsClosedUnderBinaryProducts] {T : C} (hT : IsTerminal T)
-    (hTP : P T) : P.IsClosedUnderIsomorphisms where
-  of_iso {_ Y} e hX := by
-    obtain ⟨hB⟩ := (BinaryFan.isLimit_iff_isIso_snd hT (BinaryFan.mk (hT.from Y) e.inv)).2
-      (by dsimp; infer_instance)
-    exact P.prop_of_isLimit_binaryFan hB hTP hX
 
 /-- **A property holding for a zero object and closed under binary products is closed under
 isomorphisms.** This is `CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_isTerminal`
@@ -150,12 +133,6 @@ theorem homMk_comp {C : Type u₁} [Category.{v₁} C] {P : ObjectProperty C}
     {X Y Z : P.FullSubcategory} (f : X.obj ⟶ Y.obj) (g : Y.obj ⟶ Z.obj) :
     homMk (f ≫ g) = homMk f ≫ homMk g :=
   rfl
-
-/-- The lift of a functor through a full subcategory, followed by the inclusion, is the original
-functor. Mathlib records this as the isomorphism `CategoryTheory.ObjectProperty.liftCompιIso`. -/
-theorem lift_comp_ι {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
-    (P : ObjectProperty D) (F : C ⥤ D) (hF : ∀ A, P (F.obj A)) : P.lift F hF ⋙ P.ι = F :=
-  Functor.ext (P.ι_obj_lift_obj F hF) fun _ _ _ ↦ by simp
 
 /-- A functor `G` given by the lift of `F` through a full subcategory acts on morphisms as `F`,
 up to the identifications of the underlying objects. Stated for any `G` equal to the lift, so that

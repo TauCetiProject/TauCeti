@@ -9,11 +9,14 @@ public import Mathlib.CategoryTheory.Limits.Preserves.Finite
 public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 
 /-!
-# Inverse images of properties closed under finite products
+# Properties closed under finite products
 
 If a property `P` of objects of `D` is closed under finite products and a functor `F : C ⥤ D`
 preserves finite products, then the inverse image `P.inverseImage F` is closed under finite
 products.
+
+A property closed under binary products that holds for some terminal object is closed under
+isomorphisms (`CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_isTerminal`).
 -/
 
 public section
@@ -28,5 +31,20 @@ instance isClosedUnderFiniteProducts_inverseImage {C D : Type*} [Category* C] [C
     (P : ObjectProperty D) [P.IsClosedUnderFiniteProducts] (F : C ⥤ D)
     [PreservesFiniteProducts F] : (P.inverseImage F).IsClosedUnderFiniteProducts :=
   ⟨fun _ _ ↦ inferInstance⟩
+
+/-- **A property holding for a terminal object and closed under binary products is closed under
+isomorphisms.** An isomorphism `e : X ≅ Y` exhibits `Y` as a product of the terminal object with
+`X`, the second projection being `e.inv`.
+
+Mathlib's `CategoryTheory.ObjectProperty.IsClosedUnderBinaryProducts.closedUnderIsomorphisms` is
+the same argument, but it assumes `HasTerminal C` and closure under the empty limit, which a
+property known to hold for *one* terminal object does not supply before repleteness is known. -/
+theorem isClosedUnderIsomorphisms_of_isTerminal {C : Type*} [Category* C]
+    (P : ObjectProperty C) [P.IsClosedUnderBinaryProducts] {T : C} (hT : IsTerminal T)
+    (hTP : P T) : P.IsClosedUnderIsomorphisms where
+  of_iso {_ Y} e hX := by
+    obtain ⟨hB⟩ := (BinaryFan.isLimit_iff_isIso_snd hT (BinaryFan.mk (hT.from Y) e.inv)).2
+      (by rw [BinaryFan.mk_snd]; infer_instance)
+    exact P.prop_of_isLimit_binaryFan hB hTP hX
 
 end CategoryTheory.ObjectProperty
