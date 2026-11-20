@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Module.Opens
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.ToSheaf
 public import TauCeti.Topology.Sheaves.Cohomology.Pullback
-public import TauCeti.CategoryTheory.Sites.SheafCohomology.Pullback
 import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 
 /-!
@@ -174,6 +173,28 @@ lemma cohomologyOnPullback_apply (M : X.Modules) (n : ℕ) (U : X.Opens)
             (Opens.grothendieckTopology X) (Opens.grothendieckTopology Y))
           ((Opens.map g.base).freeYonedaSheafToSheafPullback _ _) ((toSheaf X).obj M) n (𝟙 _) x) :=
   (rfl)
+
+/-- Pullback over the top open agrees with pullback of whole-scheme cohomology under
+the terminal-open comparison. -/
+lemma cohomologyOnTopIso_hom_cohomologyOnPullback (M : X.Modules) (n : ℕ)
+    (x : cohomologyOn M n ⊤) :
+    (cohomologyOnTopIso ((Scheme.Modules.pullback g).obj M) n).hom
+        (g.cohomologyOnPullback M n ⊤ x) =
+      g.cohomologyPullback M n ((cohomologyOnTopIso M n).hom x) := by
+  let F := (toSheaf X).obj M
+  let pb := (Opens.map g.base).sheafPullback AddCommGrpCat.{u}
+    (Opens.grothendieckTopology X) (Opens.grothendieckTopology Y)
+  let c := (Opens.map g.base).freeYonedaSheafToSheafPullback
+    (Opens.grothendieckTopology X) (Opens.grothendieckTopology Y)
+  let y : CategoryTheory.Sheaf.H'.{u} (pb.obj F) n ⊤ :=
+    CategoryTheory.Sheaf.H'.pullback pb c F n (U := ⊤) (V := ⊤) (𝟙 _) x
+  have h := ConcreteCategory.congr_hom
+    ((CategoryTheory.Sheaf.cohomologyPresheafEvaluationIsoFunctorH
+      (Opens.grothendieckTopology Y) n isTerminalTop).hom.naturality
+        ((toSheafPullbackComparison g).app M)) y
+  rw [cohomologyOnPullback_apply, cohomologyPullback_apply]
+  exact h.trans (congrArg (CategoryTheory.Sheaf.H.map ((toSheafPullbackComparison g).app M) n)
+    (g.base.cohomologyPresheafObjIsoH_hom_pullback F n x))
 
 /-- Pullback on the cohomology of opens is natural in the coefficient module. -/
 @[reassoc]

@@ -95,7 +95,7 @@ sending `(q, p)` with `p ∈ conormalSpace J I i q` to `(i q, p)`. The model-fib
 `Bundle.TotalSpace` plays no role. -/
 def conormalInclusion (i : Q → M) (z : TotalSpace P fun q ↦ conormalSpace J I i q) :
     CotangentBundle I M :=
-  ⟨i z.proj, z.2⟩
+  ⟨i z.proj, z.snd⟩
 
 @[simp]
 theorem conormalInclusion_proj (i : Q → M) (z : TotalSpace P fun q ↦ conormalSpace J I i q) :
@@ -103,10 +103,10 @@ theorem conormalInclusion_proj (i : Q → M) (z : TotalSpace P fun q ↦ conorma
 
 @[simp]
 theorem conormalInclusion_snd (i : Q → M) (z : TotalSpace P fun q ↦ conormalSpace J I i q) :
-    (conormalInclusion P J I i z).2 = (z.2 : TangentSpace I (i z.proj) →L[𝕜] 𝕜) := (rfl)
+    (conormalInclusion P J I i z).snd = (z.snd : TangentSpace I (i z.proj) →L[𝕜] 𝕜) := (rfl)
 
 theorem conormalInclusion_apply (i : Q → M) (z : TotalSpace P fun q ↦ conormalSpace J I i q) :
-    conormalInclusion P J I i z = ⟨i z.proj, z.2⟩ := (rfl)
+    conormalInclusion P J I i z = ⟨i z.proj, z.snd⟩ := (rfl)
 
 @[simp]
 theorem conormalInclusion_mk' (i : Q → M) (q : Q) (p : conormalSpace J I i q) :
@@ -124,8 +124,8 @@ theorem conormalInclusion_zeroSection (i : Q → M) (q : Q) :
 base point in `Q`. -/
 theorem conormalInclusion_snd_comp_mfderiv (i : Q → M)
     (z : TotalSpace P fun q ↦ conormalSpace J I i q) :
-    (conormalInclusion P J I i z).2 ∘L mfderiv J I i z.proj = 0 :=
-  mem_conormalSpace_iff.mp z.2.2
+    (conormalInclusion P J I i z).snd ∘L mfderiv J I i z.proj = 0 :=
+  mem_conormalSpace_iff.mp z.snd.property
 
 /-- The image of `conormalInclusion` in `T*M` is the conormal set `conormal J I i`. -/
 @[simp]
@@ -164,7 +164,7 @@ instance instTopologicalSpaceTotalSpaceConormalSpace (i : Q → M) :
 
 private theorem isEmbedding_toPullback (P : Type*) (i : Q → M) :
     IsEmbedding (fun z : TotalSpace P (fun q ↦ conormalSpace J I i q) ↦
-      (⟨z.proj, (z.2 : TangentSpace I (i z.proj) →L[𝕜] 𝕜)⟩ :
+      (⟨z.proj, (z.snd : TangentSpace I (i z.proj) →L[𝕜] 𝕜)⟩ :
         TotalSpace (E →L[𝕜] 𝕜) (i *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜))) :=
   isEmbedding_totalSpace_subbundle (E →L[𝕜] 𝕜) P
     (E := i *ᵖ fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) (conormalSpace J I i)
@@ -314,7 +314,7 @@ theorem trivialization_baseSet (hX : IsConormalFrameOn J I n (ic : Q → M) X U)
 @[simp]
 theorem trivialization_apply (hX : IsConormalFrameOn J I n (ic : Q → M) X U) (hU : IsOpen U)
     {p : TotalSpace (ι → 𝕜) fun q ↦ conormalSpace J I (ic : Q → M) q} (hp : p.proj ∈ U) :
-    hX.trivialization ic hU p = (p.proj, (hX.basis hp).equivFun p.2) :=
+    hX.trivialization ic hU p = (p.proj, (hX.basis hp).equivFun p.snd) :=
   hX.isSubbundleFrameOn.trivialization_apply hU hp
 
 /-- Over `U`, the partial-homeomorphism inverse of the conormal frame trivialization sends
@@ -619,7 +619,7 @@ theorem contMDiff_conormalInclusion {i : Q → M} (hi : ContMDiff J I m i) (hmn 
       (Pullback.lift (F := E →L[𝕜] 𝕜) (E := T') ic) :=
     ((Bundle.Pullback.contMDiff_iff ic ic.contMDiff (E := T')).mp contMDiff_id).2
   refine hlift.comp (f := fun z : TotalSpace (Fin k → 𝕜) (fun q ↦ conormalSpace J I i q) ↦
-    (⟨z.proj, (z.2 : TangentSpace I (i z.proj) →L[𝕜] 𝕜)⟩ : TotalSpace (E →L[𝕜] 𝕜) (i *ᵖ T')))
+    (⟨z.proj, (z.snd : TangentSpace I (i z.proj) →L[𝕜] 𝕜)⟩ : TotalSpace (E →L[𝕜] 𝕜) (i *ᵖ T')))
     fun z ↦ ?_
   have he := FiberBundle.trivialization_mem_atlas (Fin k → 𝕜) (fun q ↦ conormalSpace J I i q) z.proj
   have ⟨U, hU, X, hX, htriv⟩ :=
@@ -638,7 +638,7 @@ theorem contMDiff_conormalInclusion {i : Q → M} (hi : ContMDiff J I m i) (hmn 
     ⟨(htriv ▸ he : hX.trivialization ic hU ∈ _)⟩
   have : ∀ q, IsScalarTower 𝕜 𝕜 ((i *ᵖ T') q) := fun _ ↦ ⟨mul_smul⟩
   exact hX.isSubbundleFrameOn.contMDiffAt_totalSpace_subbundle hU (hX.contMDiffOn_pullback ic hU)
-    (p := ⟨z.proj, z.2⟩) hzU
+    (p := ⟨z.proj, z.snd⟩) hzU
 
 omit [IsRCLikeNormedField 𝕜] [FiniteDimensional 𝕜 E] in
 /-- **Dimension of the conormal bundle model.** When `finrank 𝕜 F + k = finrank 𝕜 E`, the model

@@ -15,7 +15,12 @@ This lets constructions on densely spanning families apply to arbitrary closed s
 Conversely, a densely spanning family stays densely spanning when pushed forward along a
 continuous linear map with dense range, such as the projection onto a quotient module, so that a
 quotient of a module spanned densely by a countable family is again spanned densely by one.
+Restricting a point-continuous family of maps to a dense-range index map likewise preserves the
+closed span of all their ranges (`DenseRange.topologicalClosure_span_iUnion_range_comp_eq`).
 No norm, separation, or completeness assumptions are needed.
+
+Likewise, a continuous semilinear map sending a generating set into a closed submodule sends the
+closure of its span there (`Continuous.apply_mem_of_mem_topologicalClosure_span`).
 -/
 
 public section
@@ -44,6 +49,18 @@ theorem dense_span_in_topologicalClosure {R ι M : Type*} [Semiring R]
 
 end TauCeti
 
+/-- If a continuous semilinear map `f` sends a generating set `s` into a closed submodule `p` of
+`N`, then it sends `(Submodule.span R s).topologicalClosure` into `p`. -/
+theorem Continuous.apply_mem_of_mem_topologicalClosure_span {R S M N F : Type*} [Semiring R]
+    [Semiring S] {σ : R →+* S} [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [ContinuousAdd M] [ContinuousConstSMul R M] [AddCommMonoid N] [Module S N]
+    [TopologicalSpace N] [FunLike F M N] [SemilinearMapClass F σ M N] {f : F} (hfc : Continuous f)
+    {s : Set M} {p : Submodule S N} (hp : IsClosed (p : Set N)) (hs : ∀ x ∈ s, f x ∈ p) {x : M}
+    (hx : x ∈ (Submodule.span R s).topologicalClosure) :
+    f x ∈ p :=
+  Submodule.topologicalClosure_minimal _ (t := p.comap (LinearMap.ofClass f))
+    (Submodule.span_le.mpr hs) (hp.preimage hfc) hx
+
 /-- The image of a densely spanning family under a continuous linear map with dense range has
 dense span. For instance, the image of a densely spanning family in a quotient module `M ⧸ p`
 (take `f = p.mkQ`) has dense span. -/
@@ -54,3 +71,20 @@ theorem DenseRange.dense_span_range_comp {R M N ι : Type*} [Semiring R]
     Dense (Submodule.span R (Set.range (f ∘ v)) : Set N) := by
   rw [Set.range_comp, ← Submodule.map_span, Submodule.map_coe]
   exact hf.dense_image hfc hv
+
+/-- Restricting a point-continuous family of maps `L : α → X → Y` into a topological `R`-module `Y`
+to a dense range `Set.range g` generates the same closed `R`-span in `Y`. -/
+theorem DenseRange.topologicalClosure_span_iUnion_range_comp_eq {R α ι X Y : Type*} [Semiring R]
+    [TopologicalSpace α] [AddCommMonoid Y] [TopologicalSpace Y] [Module R Y] [ContinuousAdd Y]
+    [ContinuousConstSMul R Y] {g : ι → α} (hg : DenseRange g) {L : α → X → Y}
+    (hL : ∀ x, Continuous fun a => L a x) :
+    (Submodule.span R (⋃ i, Set.range (L (g i)))).topologicalClosure =
+      (Submodule.span R (⋃ a, Set.range (L a))).topologicalClosure := by
+  set S := Submodule.span R (⋃ i, Set.range (L (g i)))
+  refine le_antisymm (Submodule.topologicalClosure_mono <| Submodule.span_mono <|
+    Set.iUnion_subset fun i => Set.subset_iUnion (fun a => Set.range (L a)) (g i))
+    (Submodule.topologicalClosure_minimal _ (Submodule.span_le.2 ?_) S.isClosed_topologicalClosure)
+  rintro _ ⟨_, ⟨a, rfl⟩, x, rfl⟩
+  refine (S.isClosed_topologicalClosure.preimage (hL x)).closure_subset_iff.2 ?_ (hg a)
+  rintro _ ⟨i, rfl⟩
+  exact Submodule.le_topologicalClosure S (Submodule.subset_span (Set.mem_iUnion.2 ⟨i, x, rfl⟩))

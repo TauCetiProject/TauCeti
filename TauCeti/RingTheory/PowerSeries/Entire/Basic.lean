@@ -319,7 +319,8 @@ theorem IsEntire.isUnit_iff {F : IsEntire.subring K} :
   · obtain ⟨G, hG⟩ := hF.exists_right_inv
     have hFG : (F : PowerSeries K) * G = 1 := congrArg Subtype.val hG
     refine ⟨constantCoeff (F : PowerSeries K), fun h0 ↦ ?_,
-      IsEntire.eq_C_of_mul_eq_one (IsEntire.mem_subring.mp F.2) (IsEntire.mem_subring.mp G.2) hFG⟩
+      IsEntire.eq_C_of_mul_eq_one (IsEntire.mem_subring.mp F.property)
+          (IsEntire.mem_subring.mp G.property) hFG⟩
     simpa [h0] using congrArg constantCoeff hFG
   · refine IsUnit.of_mul_eq_one
       (⟨C c⁻¹, IsEntire.mem_subring.mpr (isEntire_C c⁻¹)⟩ : IsEntire.subring K) (Subtype.ext ?_)

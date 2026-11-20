@@ -8,6 +8,8 @@ module
 public import Mathlib.GroupTheory.Index
 
 import TauCeti.GroupTheory.Index.Quotient
+import TauCeti.GroupTheory.Coset.Fiber
+import Mathlib.Data.Rat.Cast.Order
 
 /-!
 # Kernels and cokernels of a composite
@@ -37,6 +39,8 @@ Cassels' proof that the Birch–Swinnerton-Dyer quotient is an isogeny invariant
 * `MonoidHom.index_range_comp_mul_card_ker_mul_card_ker` and its additive form
   `AddMonoidHom.index_range_comp_mul_card_ker_mul_card_ker`: the cross-multiplied index identity
   for a composite.
+* `MonoidHom.index_range_div_card_ker_comp` and its additive form: multiplicativity of the
+  rational ratio when the kernels are finite.
 
 ## References
 
@@ -74,5 +78,26 @@ theorem index_range_comp_mul_card_ker_mul_card_ker (f : A →* B) (g : B →* C)
   rw [comap_ker] at hker
   rw [hrange, mul_assoc g.range.index, hker]
   ac_rfl
+
+/-- The rational index/kernel ratio `[B : f(A)] / #ker(f)` is multiplicative under composition
+when the kernels are finite. No finiteness of the indices is needed: an infinite index is read
+as zero. -/
+@[to_additive AddMonoidHom.index_range_div_card_ker_comp
+  /-- The rational index/kernel ratio `[B : f(A)] / #ker(f)` is multiplicative under composition
+  when the kernels are finite. No finiteness of the indices is needed: an infinite index is read
+  as zero. -/]
+theorem index_range_div_card_ker_comp (f : A →* B) (g : B →* C)
+    [Finite f.ker] [Finite g.ker] :
+    ((g.comp f).range.index : ℚ) / Nat.card (g.comp f).ker =
+      ((g.range.index : ℚ) / Nat.card g.ker) *
+        ((f.range.index : ℚ) / Nat.card f.ker) := by
+  have := (g.finite_ker_comp f (Set.toFinite _) (Set.toFinite _)).to_subtype
+  have hf : (Nat.card f.ker : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  have hg : (Nat.card g.ker : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  have hgf : (Nat.card (g.comp f).ker : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  rw [div_mul_div_comm]
+  apply (div_eq_div_iff hgf (mul_ne_zero hg hf)).mpr
+  simpa only [Nat.cast_mul, mul_comm, mul_left_comm, mul_assoc] using
+    congrArg (Nat.cast : ℕ → ℚ) (f.index_range_comp_mul_card_ker_mul_card_ker g)
 
 end MonoidHom

@@ -103,7 +103,7 @@ theorem tendsto_setIntegral_compl_ball_heatKernel {r : ℝ} (hr : 0 < r) :
       rw [← integral_indicator measurableSet_ball]
       congr 1 with z
       by_cases hz : z ∈ ball (0 : E) r <;>
-        simp [hz, heatKernel_eq_mul_heatKernel_one_smul ht z]
+        simp [hz, heatKernel_eq_mul_heatKernel_one_smul ht.le z]
   have hout := (tendsto_const_nhds (x := (1 : ℝ))).sub hin
   rw [sub_self] at hout
   refine hout.congr' <| eventually_mem_nhdsWithin.mono fun t (ht : 0 < t) => ?_

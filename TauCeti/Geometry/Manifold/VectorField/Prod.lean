@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
+public import TauCeti.Geometry.Manifold.IsManifold.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
@@ -39,6 +41,10 @@ is what makes the bracket of product fields split.
 * `TauCeti.Manifold.mdifferentiableAt_prodVectorField`,
   `TauCeti.Manifold.contMDiffAt_prodVectorField` and `TauCeti.Manifold.contMDiff_prodVectorField`:
   regularity of product fields.
+* `TauCeti.Manifold.contMDiff_prodVectorField_chartedSpaceProd`: the same for the model
+  `𝓘(𝕜, E × E')` in the product charts with values in `E × E'` (`TauCeti.chartedSpaceProd`).
+* `IsMIntegralCurve.prodMk`: a pair of integral curves of the factors is an integral curve of the
+  product field.
 * `TauCeti.Manifold.mlieBracket_prodVectorField`: the Lie bracket of product fields is the product
   of the Lie brackets.
 * `TauCeti.Manifold.mlieBracket_prodVectorField_horizontal_vertical`: horizontal and vertical
@@ -231,5 +237,60 @@ theorem mlieBracket_prodVectorField_horizontal_vertical
   exact Prod.mk_zero_zero
 
 end LieBracket
+
+end TauCeti.Manifold
+
+/-! ### Integral curves of product vector fields -/
+
+section IntegralCurve
+
+variable {E E' H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E']
+  [NormedSpace ℝ E'] [TopologicalSpace H] [TopologicalSpace H'] {I : ModelWithCorners ℝ E H}
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N]
+  [ChartedSpace H' N]
+
+/-- **A pair of integral curves is an integral curve of the product field.** If `γ` is an integral
+curve of `X` and `δ` one of `Y`, then `t ↦ (γ t, δ t)` is an integral curve of
+`TauCeti.Manifold.prodVectorField X Y`. -/
+theorem IsMIntegralCurve.prodMk {X : Π x : M, TangentSpace I x} {Y : Π y : N, TangentSpace J y}
+    {γ : ℝ → M} {δ : ℝ → N} (hγ : IsMIntegralCurve γ X) (hδ : IsMIntegralCurve δ Y) :
+    IsMIntegralCurve (fun t ↦ (γ t, δ t)) (TauCeti.Manifold.prodVectorField X Y) := fun t ↦
+  -- The derivative of the pair sends `c` to `(c • X (γ t), c • Y (δ t))`, which is
+  -- `c • prodVectorField X Y (γ t, δ t)` by the definitions of `prodVectorField` and of the scalar
+  -- action on a product.
+  ((hγ t).prodMk (hδ t)).congr_mfderiv (ContinuousLinearMap.ext fun _ ↦ rfl)
+
+end IntegralCurve
+
+/-! ### Product vector fields for the model `𝓘(𝕜, E × E')` -/
+
+namespace TauCeti.Manifold
+
+variable {𝕜 E E' M N : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace M]
+  [ChartedSpace E M] [TopologicalSpace N] [ChartedSpace E' N] [IsManifold 𝓘(𝕜, E) 1 M]
+  [IsManifold 𝓘(𝕜, E') 1 N]
+
+attribute [local instance low] chartedSpaceProd
+
+attribute [local instance] isManifold_chartedSpaceProd
+
+/-- A product of `C^n` vector fields is `C^n` for the model `𝓘(𝕜, E × E')`, in the product charts
+with values in `E × E'` (`TauCeti.chartedSpaceProd`). -/
+theorem contMDiff_prodVectorField_chartedSpaceProd {n : ℕ∞ω}
+    {X : Π x : M, TangentSpace 𝓘(𝕜, E) x} {Y : Π y : N, TangentSpace 𝓘(𝕜, E') y}
+    (hX : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, E).tangent n (T% X))
+    (hY : ContMDiff 𝓘(𝕜, E') 𝓘(𝕜, E').tangent n (T% Y)) :
+    ContMDiff 𝓘(𝕜, E × E') 𝓘(𝕜, E × E').tangent n
+      (fun p ↦ (⟨p, prodVectorField X Y p⟩ : TangentBundle 𝓘(𝕜, E × E') (M × N))) := by
+  -- `𝓘(𝕜, E × E')` equals the product model `𝓘(𝕜, E).prod 𝓘(𝕜, E')` but is not definitionally
+  -- equal to it, and the tangent bundles of the two models carry their own manifold instances.
+  -- So the equality is used through a model `I₀`, which is then substituted.
+  suffices ∀ I₀ : ModelWithCorners 𝕜 (E × E') (E × E'), I₀ = 𝓘(𝕜, E).prod 𝓘(𝕜, E') →
+      ∀ [IsManifold I₀ 1 (M × N)], ContMDiff I₀ I₀.tangent n
+        (fun p ↦ (⟨p, prodVectorField X Y p⟩ : TangentBundle I₀ (M × N))) from
+    this _ modelWithCornersSelf_prod
+  rintro I₀ rfl _
+  exact contMDiff_prodVectorField hX hY
 
 end TauCeti.Manifold

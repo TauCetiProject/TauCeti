@@ -48,7 +48,7 @@ theorem map_convolution (φ : Hom α β) (μ : Measure G) [IsFiniteMeasureOnComp
     φ (α.convolution μ f g s) = ∫ r, φ (f r) * β r (φ (g (r⁻¹ * s))) ∂μ := by
   rw [convolution_apply]
   simpa only [AddMonoidHom.coe_ofClass, map_mul, map_action] using
-    (AddMonoidHom.integral_comp_comm (φ : A →+ B) (map_continuous φ)
+    (integral_comp_comm_of_addMonoidHomClass φ
       (α.integrable_integrand f g μ s)).symm
 
 end Convolution

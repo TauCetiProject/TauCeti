@@ -149,11 +149,11 @@ canonically isometric to the localization at the restriction of `w` to `K`. -/
 def atRealPlaceBaseChange (Q : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace L // w.IsReal}) :
     (atRealPlace (Q.baseChange L) w).IsometryEquiv
-      (atRealPlace Q ⟨w.1.comap (algebraMap K L), w.2.comap _⟩) :=
-  letI : Algebra K ℝ := (embedding_of_isReal (w.2.comap (algebraMap K L))).toAlgebra
-  letI : Algebra L ℝ := (embedding_of_isReal w.2).toAlgebra
+      (atRealPlace Q ⟨w.val.comap (algebraMap K L), w.property.comap _⟩) :=
+  letI : Algebra K ℝ := (embedding_of_isReal (w.property.comap (algebraMap K L))).toAlgebra
+  letI : Algebra L ℝ := (embedding_of_isReal w.property).toAlgebra
   haveI : IsScalarTower K L ℝ :=
-    .of_algebraMap_eq' (embedding_of_isReal_comap (algebraMap K L) w.2)
+    .of_algebraMap_eq' (embedding_of_isReal_comap (algebraMap K L) w.property)
   letI : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   let e := (baseChangeBaseChange (A := L) (B := ℝ) Q).symm
@@ -173,10 +173,10 @@ cancellation `ℝ ⊗[L] (L ⊗[K] V) ≃ ℝ ⊗[K] V`. -/
 @[simp]
 theorem atRealPlaceBaseChange_toLinearEquiv (Q : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace L // w.IsReal}) :
-    letI : Algebra K ℝ := (embedding_of_isReal (w.2.comap (algebraMap K L))).toAlgebra
-    letI : Algebra L ℝ := (embedding_of_isReal w.2).toAlgebra
+    letI : Algebra K ℝ := (embedding_of_isReal (w.property.comap (algebraMap K L))).toAlgebra
+    letI : Algebra L ℝ := (embedding_of_isReal w.property).toAlgebra
     haveI : IsScalarTower K L ℝ :=
-      .of_algebraMap_eq' (embedding_of_isReal_comap (algebraMap K L) w.2)
+      .of_algebraMap_eq' (embedding_of_isReal_comap (algebraMap K L) w.property)
     (atRealPlaceBaseChange Q w).toLinearEquiv =
       TensorProduct.AlgebraTensorModule.cancelBaseChange K L ℝ ℝ V := by
   simp only [atRealPlaceBaseChange, QuadraticMap.IsometryEquiv.symm,
@@ -188,13 +188,13 @@ the real factor through the embedding of the real place. -/
 @[simp]
 theorem atRealPlaceBaseChange_tmul (Q : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace L // w.IsReal}) (b : ℝ) (a : L) (x : V) :
-    letI : Algebra K ℝ := (embedding_of_isReal (w.2.comap (algebraMap K L))).toAlgebra
-    letI : Algebra L ℝ := (embedding_of_isReal w.2).toAlgebra
-    atRealPlaceBaseChange Q w (b ⊗ₜ (a ⊗ₜ x)) = (embedding_of_isReal w.2 a * b) ⊗ₜ x := by
-  let : Algebra K ℝ := (embedding_of_isReal (w.2.comap (algebraMap K L))).toAlgebra
-  let : Algebra L ℝ := (embedding_of_isReal w.2).toAlgebra
+    letI : Algebra K ℝ := (embedding_of_isReal (w.property.comap (algebraMap K L))).toAlgebra
+    letI : Algebra L ℝ := (embedding_of_isReal w.property).toAlgebra
+    atRealPlaceBaseChange Q w (b ⊗ₜ (a ⊗ₜ x)) = (embedding_of_isReal w.property a * b) ⊗ₜ x := by
+  let : Algebra K ℝ := (embedding_of_isReal (w.property.comap (algebraMap K L))).toAlgebra
+  let : Algebra L ℝ := (embedding_of_isReal w.property).toAlgebra
   have : IsScalarTower K L ℝ :=
-    .of_algebraMap_eq' (embedding_of_isReal_comap (algebraMap K L) w.2)
+    .of_algebraMap_eq' (embedding_of_isReal_comap (algebraMap K L) w.property)
   have h := TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul K L ℝ b x a
   rw [Algebra.smul_def, RingHom.algebraMap_toAlgebra,
     ← atRealPlaceBaseChange_toLinearEquiv] at h
@@ -206,8 +206,8 @@ intermediate scalar. -/
 @[simp]
 theorem atRealPlaceBaseChange_symm_tmul (Q : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace L // w.IsReal}) (b : ℝ) (x : V) :
-    letI : Algebra K ℝ := (embedding_of_isReal (w.2.comap (algebraMap K L))).toAlgebra
-    letI : Algebra L ℝ := (embedding_of_isReal w.2).toAlgebra
+    letI : Algebra K ℝ := (embedding_of_isReal (w.property.comap (algebraMap K L))).toAlgebra
+    letI : Algebra L ℝ := (embedding_of_isReal w.property).toAlgebra
     (atRealPlaceBaseChange Q w).symm (b ⊗ₜ x) = b ⊗ₜ (1 ⊗ₜ x) := by
   apply (atRealPlaceBaseChange Q w).symm_apply_eq.mpr
   rw [atRealPlaceBaseChange_tmul, map_one, one_mul]

@@ -111,7 +111,7 @@ theorem ConditionallyIIDWith.ae_measure_setOf_mem_eq_zero_of_excursionProcess
   rw [hzero] at hrect
   have hmeasν : Measurable fun ω => (ν ω : Measure (List α)) S :=
     (Measure.measurable_coe hSmeas).comp
-      (measurable_subtype_coe.comp hmix.measurable_mixingRepresentative)
+      (measurable_subtypeVal.comp hmix.measurable_mixingRepresentative)
   have hint : ∫⁻ ω, (ν ω : Measure (List α)) S ∂μ = 0 := by
     have hsplit : ∫⁻ ω, (ν ω : Measure (List α)) S ∂μ
         = ∫⁻ ω, ∏ _i : Fin 1, (ν ω : Measure (List α)) S ∂μ :=
@@ -144,7 +144,7 @@ theorem MarkovExchangeable.exists_pathLaw_eq_map_deFinettiBarycenter [IsProbabil
   refine ⟨μ.map ν, inferInstance, ?_, ?_⟩
   · refine (ae_map_iff hν_meas.aemeasurable ?_).2
       hν.ae_measure_setOf_mem_eq_zero_of_excursionProcess
-    exact ((Measure.measurable_coe hSmeas).comp measurable_subtype_coe)
+    exact ((Measure.measurable_coe hSmeas).comp measurable_subtypeVal)
       (measurableSet_singleton (0 : ENNReal))
   · rw [hrec.pathLaw_eq_map_pathOfExcursions h.aemeasurable (measurableSet_singleton a₀) h0,
       pathLaw_eq_bind_infinitePi_of_mixedIIDWith hmix, Measure.deFinettiBarycenter_def]
