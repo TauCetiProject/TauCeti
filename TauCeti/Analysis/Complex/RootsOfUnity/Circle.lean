@@ -23,6 +23,8 @@ spaces.
   of `ZMod.toCircle`.
 * `ZMod.toCircle_pow_mul_eq_self_iff`: for `n` coprime to `b`, multiplication by `toCircle k ^ b`
   fixes a nonzero complex number only for `k = 0`, so `ℤ/n` acts freely on `ℂ \ {0}` this way.
+* `ZMod.natCard_toCircle_pow_eq_one`: for arbitrary `b`, exactly `gcd(n, b)` elements `k` have
+  `toCircle k ^ b = 1`, so the kernel of this action of `ℤ/n` has order `gcd(n, b)`.
 -/
 
 public section
@@ -49,5 +51,17 @@ theorem toCircle_pow_mul_eq_self_iff {b : ℕ} (hnb : n.Coprime b) {w : ℂ} (hw
   rw [mul_eq_right₀ hw, Circle.coe_eq_one, ← AddChar.map_nsmul_eq_pow,
     ← (toCircle (N := n)).map_zero_eq_one, injective_toCircle.eq_iff, nsmul_eq_mul,
     ((isUnit_iff_coprime b n).2 hnb.symm).mul_right_eq_zero]
+
+/-- **The kernel of the rotations by `b`-th powers of `n`-th roots of unity has order
+`gcd(n, b)`.** Exactly `gcd(n, b)` elements `k ∈ ℤ/n` have `toCircle k ^ b = 1`, that is, act
+trivially on `ℂ` by multiplication by `toCircle k ^ b`. So this action of `ℤ/n` is effective
+exactly when `n` and `b` are coprime. -/
+theorem natCard_toCircle_pow_eq_one (b : ℕ) :
+    Nat.card {k : ZMod n // toCircle k ^ b = 1} = n.gcd b := by
+  -- Since `toCircle` is injective, these are the `k` with `b • k = 0`.
+  refine (Nat.card_congr (Equiv.subtypeEquivRight fun k ↦ ?_)).trans
+    ((IsAddCyclic.card_nsmulAddMonoidHom_ker (ZMod n) b).trans (by rw [Nat.card_zmod]))
+  rw [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, ← AddChar.map_nsmul_eq_pow,
+    ← (toCircle (N := n)).map_zero_eq_one, injective_toCircle.eq_iff]
 
 end ZMod
