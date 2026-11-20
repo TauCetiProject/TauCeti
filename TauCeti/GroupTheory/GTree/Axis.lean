@@ -56,6 +56,9 @@ nonzero power of a hyperbolic element has the same axis.
 * `TauCeti.GTree.translationLength_zpow`, `TauCeti.GTree.isHyperbolic_zpow_iff`,
   `TauCeti.GTree.IsHyperbolic.axis_zpow`: `ℓ(gⁿ) = |n| ℓ(g)`, `gⁿ` is hyperbolic exactly when `g`
   is and `n ≠ 0`, and `gⁿ` then has the axis of `g`.
+* `TauCeti.GTree.isElliptic_of_isOfFinOrder`, `TauCeti.GTree.isEllipticSubgroup_of_finite`: an
+  element of finite order fixes a vertex, and so does a finite subgroup (finite groups have
+  Serre's property (FA)).
 * `TauCeti.GTree.line_axis`: on the line, every vertex lies on the axis of every translation.
 
 ## References
@@ -537,6 +540,18 @@ theorem IsHyperbolic.zpow {g : G} (hg : T.IsHyperbolic g) {n : ℤ} (hn : n ≠ 
 theorem IsHyperbolic.pow {g : G} (hg : T.IsHyperbolic g) {n : ℕ} (hn : n ≠ 0) :
     T.IsHyperbolic (g ^ n) :=
   isHyperbolic_pow_iff.mpr ⟨hg, hn⟩
+
+/-- An element of finite order is elliptic: it fixes a vertex. -/
+theorem isElliptic_of_isOfFinOrder {g : G} (hg : IsOfFinOrder g) : T.IsElliptic g := by
+  obtain ⟨n, hn, hgn⟩ := hg.exists_pow_eq_one
+  exact (isElliptic_pow_iff.mp (hgn ▸ T.isElliptic_one)).resolve_right hn.ne'
+
+/-- **Finite groups have property (FA).** A finite subgroup of a group acting on a tree without
+inversions fixes a vertex. -/
+theorem isEllipticSubgroup_of_finite (H : Subgroup G) [Finite H] : T.IsEllipticSubgroup H :=
+  (isEllipticSubgroup_iff_forall_isElliptic inferInstance).mpr fun g hg ↦
+    isElliptic_of_isOfFinOrder <|
+      H.subtype_injective.isOfFinOrder_iff.mpr (isOfFinOrder_of_finite (⟨g, hg⟩ : H))
 
 variable (T) in
 /-- The characteristic set of `g` is contained in that of every integer power of `g`. -/
