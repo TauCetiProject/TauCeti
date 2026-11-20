@@ -96,7 +96,11 @@ derivatives gives the chain rule for the weak Hessian.
   weak gradient.
 * `TauCeti.Wkp.inner_iteratedGradient_compL_ae`: the chain rule
   `D²(u ∘ Φ) = DΦ† ∘ D²u(Φ ·) ∘ DΦ + ⟪∇u(Φ ·), D²Φ⟫` for the weak Hessian along a change of
-  variables `Φ` of order two.
+  variables `Φ` of order two, and the resulting pointwise bound
+  `TauCeti.Wkp.norm_iteratedGradient_compL_le`.
+* `TauCeti.Wkp.IsChangeOfVariables.memLp_comp` and
+  `TauCeti.Wkp.IsChangeOfVariables.lpNorm_comp_le`: precomposition with a change of variables is
+  bounded on `Lᵖ`, between measurable subsets of its domain and of its target.
 
 ## References
 
@@ -430,6 +434,12 @@ theorem norm_fderiv_le (h : IsChangeOfVariables (k + 1) U V Φ L c) :
     ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ L := fun x hx => by
   simpa only [norm_iteratedFDeriv_one] using h.norm_iteratedFDeriv_le 1 le_rfl (by omega) x hx
 
+/-- The second derivative of a change of variables of order at least two is bounded by `L`. -/
+theorem norm_fderiv_fderiv_le (h : IsChangeOfVariables (k + 2) U V Φ L c) :
+    ∀ x ∈ (U : Set E), ‖fderiv ℝ (fderiv ℝ Φ) x‖ ≤ L := fun x hx => by
+  rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+  exact h.norm_iteratedFDeriv_le 2 one_le_two (by omega) x hx
+
 /-- For mutually inverse changes of variables `Φ` and `Ψ`, `DΨ(Φ x)` is a left inverse of
 `DΦ(x)`. -/
 theorem fderiv_comp_fderiv_eq_id {U' : Opens E} {Ψ : E → E} {k' : ℕ} {L' c' : ℝ}
@@ -576,6 +586,40 @@ theorem ae_comp [mu.IsAddHaarMeasure] (h : IsChangeOfVariables k U V Φ L c) {P 
     (hP : ∀ᵐ y ∂mu.restrict V, P y) : ∀ᵐ x ∂mu.restrict U, P (Φ x) :=
   ae_comp_of_map_absolutelyContinuous h.aemeasurable
     (Measure.absolutelyContinuous_of_le_smul (h.map_restrict_le mu)) hP
+
+/-- The pushforward bound `TauCeti.Wkp.IsChangeOfVariables.map_restrict_le` on a measurable
+subset `S ⊆ U` that `Φ` maps into `T`: `Φ` pushes `μ` restricted to `S` forward to at most `c⁻¹`
+times `μ` restricted to `T`. -/
+theorem map_restrict_le_of_subset [mu.IsAddHaarMeasure] (h : IsChangeOfVariables k U V Φ L c)
+    {S T : Set E} (hS : MeasurableSet S) (hSU : S ⊆ U) (hST : MapsTo Φ S T) :
+    (mu.restrict S).map Φ ≤ (ENNReal.ofReal c)⁻¹ • mu.restrict T :=
+  (map_restrict_le_smul_restrict_image_of_differentiableOn mu U.isOpen h.differentiableOn
+    (h.injOn.mono hSU) hSU hS h.pos fun x hx => h.le_abs_det x (hSU hx)).trans
+    (by gcongr; exact hST.image_subset)
+
+/-- Precomposition with a change of variables preserves `Lᵖ`: if `g ∈ Lᵖ(T)` and `Φ` maps a
+measurable `S ⊆ U` into `T`, then `g ∘ Φ ∈ Lᵖ(S)`. -/
+theorem memLp_comp [mu.IsAddHaarMeasure] {p : ℝ≥0∞} (h : IsChangeOfVariables k U V Φ L c)
+    {S T : Set E} (hS : MeasurableSet S) (hSU : S ⊆ U) (hST : MapsTo Φ S T) {G : Type*}
+    [NormedAddCommGroup G] {g : E → G} (hg : MemLp g p (mu.restrict T)) :
+    MemLp (fun x => g (Φ x)) p (mu.restrict S) :=
+  (hg.of_measure_le_smul (by simp [h.pos]) (h.map_restrict_le_of_subset hS hSU hST)).comp_of_map
+    (h.aemeasurable.mono_measure (Measure.restrict_mono hSU le_rfl))
+
+/-- Precomposition with a change of variables is bounded on `Lᵖ`: if `Φ` maps a measurable
+`S ⊆ U` into `T`, then `‖g ∘ Φ‖_{Lᵖ(S)} ≤ c^(-1/p) ‖g‖_{Lᵖ(T)}`. -/
+theorem lpNorm_comp_le [mu.IsAddHaarMeasure] {p : ℝ≥0∞} (h : IsChangeOfVariables k U V Φ L c)
+    {S T : Set E} (hS : MeasurableSet S) (hSU : S ⊆ U) (hST : MapsTo Φ S T) {G : Type*}
+    [NormedAddCommGroup G] {g : E → G} (hg : MemLp g p (mu.restrict T)) :
+    lpNorm (fun x => g (Φ x)) p (mu.restrict S) ≤
+      c⁻¹ ^ (1 / p).toReal * lpNorm g p (mu.restrict T) := by
+  rw [← toReal_eLpNorm, ← toReal_eLpNorm]
+  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
+    (by simp [h.pos])) hg.eLpNorm_ne_top) (eLpNorm_comp_le_of_map_le_smul
+      (h.aemeasurable.mono_measure (Measure.restrict_mono hSU le_rfl))
+      (h.map_restrict_le_of_subset hS hSU hST) p)).trans_eq ?_
+  rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_inv,
+    ENNReal.toReal_ofReal h.pos.le]
 
 end IsChangeOfVariables
 
@@ -1042,6 +1086,40 @@ theorem inner_iteratedGradient_compL_ae (h : IsChangeOfVariables 2 U V Φ L c) (
     ContinuousLinearMap.coe_injective (b.toBasis.ext fun i =>
       InnerProductSpace.ext_inner_right_basis b.toBasis fun j => by simpa [hN] using hx i j)
   rw [hxN, hN]
+
+/-- **The Hessian under a change of variables.** Let `Φ` be a change of variables of order two
+from `U` into `V` with constant `L`, and `1 ≤ p < ∞`. For `u ∈ W^{2,p}(V)`, the weak Hessian of
+`u ∘ Φ` satisfies `‖D²(u ∘ Φ)(x)‖ ≤ L² ‖D²u(Φ x)‖ + L ‖∇u(Φ x)‖` for almost every `x ∈ U`. -/
+theorem norm_iteratedGradient_compL_le (h : IsChangeOfVariables 2 U V Φ L c) (hp : p ≠ ⊤)
+    (u : Wkp mu V p 2) :
+    ∀ᵐ x ∂mu.restrict U, ‖iteratedGradient 1 (compL h hp u) x‖ ≤
+      L ^ 2 * ‖iteratedGradient 1 u (Φ x)‖ + L * ‖iteratedGradient 0 (lowerOrder 1 u) (Φ x)‖ := by
+  filter_upwards [inner_iteratedGradient_compL_ae h hp u, ae_restrict_mem U.isOpen.measurableSet]
+    with x hx hxU
+  have hD := h.norm_fderiv_le x hxU
+  have hL : 0 ≤ L := (norm_nonneg _).trans hD
+  refine ContinuousLinearMap.opNorm_le_of_re_inner_le (by positivity) fun f g hf hg => ?_
+  rw [RCLike.re_to_real, hx f g]
+  set H := iteratedGradient 1 u (Φ x)
+  set G := iteratedGradient 0 (lowerOrder 1 u) (Φ x)
+  have hDv (w : E) (hw : ‖w‖ = 1) : ‖fderiv ℝ Φ x w‖ ≤ L :=
+    ((fderiv ℝ Φ x).le_opNorm w).trans (by rw [hw, mul_one]; exact hD)
+  have h1 : ⟪H (fderiv ℝ Φ x f), fderiv ℝ Φ x g⟫_ℝ ≤ L ^ 2 * ‖H‖ :=
+    calc _ ≤ ‖H (fderiv ℝ Φ x f)‖ * ‖fderiv ℝ Φ x g‖ := real_inner_le_norm _ _
+      _ ≤ (‖H‖ * L) * L := by
+        gcongr
+        · exact (H.le_opNorm _).trans (mul_le_mul_of_nonneg_left (hDv f hf) (norm_nonneg _))
+        · exact hDv g hg
+      _ = L ^ 2 * ‖H‖ := by ring
+  have h2 : ⟪G, fderiv ℝ (fderiv ℝ Φ) x f g⟫_ℝ ≤ L * ‖G‖ :=
+    calc _ ≤ ‖G‖ * ‖fderiv ℝ (fderiv ℝ Φ) x f g‖ := real_inner_le_norm _ _
+      _ ≤ ‖G‖ * L := by
+        gcongr
+        refine ((fderiv ℝ (fderiv ℝ Φ) x).le_opNorm₂ f g).trans ?_
+        rw [hf, hg, mul_one, mul_one]
+        exact h.norm_fderiv_fderiv_le (k := 0) x hxU
+      _ = L * ‖G‖ := mul_comm _ _
+  linarith
 
 /-- **Functoriality.** Precomposing with `Φ` and then with `Ψ` is precomposing with `Φ ∘ Ψ`. -/
 theorem compL_comp (hΦ : IsChangeOfVariables k V W Φ L c)
