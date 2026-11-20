@@ -32,20 +32,36 @@ equations. None of these hypotheses is used by the first-order calculus of this 
 
 * `D` is additive on differentiable sections and commutes with constants
   (`diracOperator_add`, `diracOperator_const_smul`).
+* **Locality.** `D σ x` depends only on `∇σ` at `x` (`diracOperator_congr`), hence, for sections
+  differentiable at the point, only on the germ of `σ` at `x`
+  (`diracOperator_congr_of_eventuallyEq`).
 * **Leibniz rule.** For a differentiable function `f`,
   `D (f σ) = f D σ + c(grad f) σ` (`diracOperator_smul`). So the commutator of `D` with
-  multiplication by `f` is the operator of order zero `c(grad f)`: the principal symbol of `D`
-  at a covector `ξ` is Clifford multiplication by its metric dual `ξ♯`, in the geometric
-  convention.
+  multiplication by `f` is the operator of order zero `c(grad f)` (`diracOperator_smul_sub`):
+  the principal symbol of `D` at a covector `ξ` is Clifford multiplication by its metric dual
+  `ξ♯`, in the geometric convention. Every double commutator `[[D, f], g]` vanishes, so `D` has
+  order one (`diracOperator_smul_smul_sub`).
+* **Ellipticity.** Under the Clifford relation `c(v) c(v) = -⟪v, v⟫`, the symbol `c(grad f)` is
+  injective where `df ≠ 0`: if `[D, f] σ` vanishes at such a point, so does `σ`
+  (`eq_zero_of_diracOperator_smul_sub_eq_zero`).
+* **Gradings.** If an endomorphism `γ` anticommutes with Clifford multiplication and `∇σ` lies in
+  its `a`-eigenspace at a point, then `D σ` lies in its `-a`-eigenspace there
+  (`apply_diracOperator_eq_neg_smul`).
 * **Naturality.** If `∇' τ = g ∘ ∇ σ` at `x` for an endomorphism `g` commuting with Clifford
   multiplication, then `D' τ = g (D σ)` (`diracOperator_eq_apply_of_eq_comp`); this is the gauge
-  covariance of `D`.
+  covariance of `D`. More generally, a fibrewise linear map `L : V → W` that intertwines the
+  Clifford multiplications and the connections intertwines the Dirac operators,
+  `D_W (L σ) = L (D_V σ)` (`diracOperator_linearMap_apply`). If `L` anticommutes with the Clifford
+  multiplications instead, then `D_W (L σ) = -L (D_V σ)`
+  (`diracOperator_linearMap_apply_eq_neg`); for a parallel grading `γ` anticommuting with `c`,
+  such as the chirality of an even-dimensional Clifford module, this gives `D γ = -γ D`.
 * **Change of connection.** Adding to `∇` a one-form `A` with values in the endomorphisms of `V`
   adds the term of order zero `∑ᵢ c(eᵢ) A(eᵢ)` to `D` (`diracOperator_addOneForm`). When
   `A(w) = θ(w) L` for a real one-form `θ` and an endomorphism `L`, this term is `c(θ♯) L`
   (`diracOperator_addOneForm_of_forall_apply_eq`). For the spin connection of `A + a`, with `a`
   an imaginary one-form on the determinant line, `∇_{A + a} = ∇_A + a / 2`, so this is the law
-  `D_{A + a} = D_A + c(a) / 2`.
+  `D_{A + a} = D_A + c(a) / 2`. More generally, if `A_x(σ_x) = ⟪u, ·⟫ v`, the change is `c(u) v`
+  (`diracOperator_addOneForm_of_apply_eq_inner_smul`).
 
 ## References
 
@@ -53,13 +69,15 @@ equations. None of these hypotheses is used by the first-order calculus of this 
   Chapter II, §5 (Dirac operators of Clifford bundles).
 * L. I. Nicolaescu, *Lectures on the Geometry of Manifolds*, 3rd ed., World Scientific,
   Definition 12.1.64 and Proposition 12.1.65.
+* N. Berline, E. Getzler, M. Vergne, *Heat Kernels and Dirac Operators*, Springer, 1992,
+  Section 3.3.
 * J. W. Morgan, *The Seiberg–Witten equations and applications to the topology of smooth
   four-manifolds*, Princeton University Press, 1996, §3.1.
 -/
 
 public section
 
-open Bundle
+open Bundle Filter Topology
 open scoped ContDiff Manifold RealInnerProductSpace
 
 noncomputable section
@@ -115,6 +133,19 @@ theorem diracOperator_zero [VectorBundle ℝ F V] (x : M) :
     cov.diracOperator c (0 : Π y : M, V y) x = 0 :=
   cov.diracOperator_eq_zero_of_eq_zero c x (by simp)
 
+/-- The Dirac operator at `x` depends on `σ` only through its covariant derivative `∇σ` at `x`. -/
+theorem diracOperator_congr {x : M} (h : cov σ x = cov τ x) :
+    cov.diracOperator c σ x = cov.diracOperator c τ x := by
+  simp only [diracOperator_eq_sum cov c _ x (stdOrthonormalBasis ℝ (TangentSpace I x)), h]
+
+/-- **Locality.** For sections differentiable at `x`, the Dirac operator at `x` depends only on
+their germ at `x`. -/
+theorem diracOperator_congr_of_eventuallyEq {x : M} (hσ : MDiffAt (T% σ) x)
+    (hτ : MDiffAt (T% τ) x) (h : ∀ᶠ y in 𝓝 x, σ y = τ y) :
+    cov.diracOperator c σ x = cov.diracOperator c τ x :=
+  cov.diracOperator_congr c <|
+    cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq hσ hτ univ_mem h
+
 /-- The Dirac operator is additive on sections differentiable at the point. -/
 theorem diracOperator_add {x : M} (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) :
     cov.diracOperator c (σ + τ) x = cov.diracOperator c σ x + cov.diracOperator c τ x := by
@@ -156,12 +187,16 @@ theorem diracOperator_eq_apply_of_eq_comp (cov' : _root_.CovariantDerivative I F
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   exact (DFunLike.congr_fun (hg (b i)) (cov σ x (b i))).symm
 
-variable [IsManifold I 1 M]
+/-! ### The Leibniz rule and the principal symbol -/
+
+section Leibniz
+
+variable [IsManifold I 1 M] {f g : M → ℝ}
 
 /-- **The Leibniz rule for the Dirac operator.** For a function `f` and a section `σ`, both
 differentiable at `x`, `D (f σ) = f D σ + c(grad f) σ`. Thus the commutator of `D` with
 multiplication by `f` is Clifford multiplication by the gradient of `f`. -/
-theorem diracOperator_smul {f : M → ℝ} {x : M} (hf : MDiffAt f x) (hσ : MDiffAt (T% σ) x) :
+theorem diracOperator_smul {x : M} (hf : MDiffAt f x) (hσ : MDiffAt (T% σ) x) :
     cov.diracOperator c (f • σ) x =
       f x • cov.diracOperator c σ x + c x (TauCeti.Manifold.mgradient I f x) (σ x) := by
   set b := stdOrthonormalBasis ℝ (TangentSpace I x)
@@ -171,7 +206,40 @@ theorem diracOperator_smul {f : M → ℝ} {x : M} (hf : MDiffAt f x) (hσ : MDi
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, map_add, map_smul,
     map_sum, FunLike.coe_sum, Finset.sum_apply, Finset.sum_add_distrib, Finset.smul_sum]
 
-omit [IsManifold I 1 M] in
+/-- **The principal symbol of the Dirac operator.** The commutator of `D` with multiplication by a
+function `f` is Clifford multiplication by its gradient: `D (f σ) - f D σ = c(grad f) σ`. -/
+theorem diracOperator_smul_sub {x : M} (hf : MDiffAt f x) (hσ : MDiffAt (T% σ) x) :
+    cov.diracOperator c (f • σ) x - f x • cov.diracOperator c σ x =
+      c x (TauCeti.Manifold.mgradient I f x) (σ x) := by
+  rw [diracOperator_smul cov c hf hσ, add_sub_cancel_left]
+
+/-- **The Dirac operator has order one.** Every double commutator of `D` with multiplications by
+functions vanishes: `D (f g σ) - f D (g σ) - g D (f σ) + f g D σ = 0`. -/
+theorem diracOperator_smul_smul_sub [VectorBundle ℝ F V] {x : M} (hf : MDiffAt f x)
+    (hg : MDiffAt g x) (hσ : MDiffAt (T% σ) x) :
+    cov.diracOperator c (f • g • σ) x - f x • cov.diracOperator c (g • σ) x -
+        g x • cov.diracOperator c (f • σ) x + (f x * g x) • cov.diracOperator c σ x = 0 := by
+  rw [diracOperator_smul cov c hf (hg.smul_section hσ), diracOperator_smul cov c hg hσ,
+    diracOperator_smul cov c hf hσ, Pi.smul_apply', map_smul]
+  module
+
+/-- **Ellipticity of the Dirac operator.** If the Clifford multiplication satisfies the Clifford
+relation `c(v) c(v) = -⟪v, v⟫` at `x` and `df ≠ 0` at `x`, then the commutator `[D, f] σ` vanishes
+at `x` only if `σ` does: the principal symbol `c(grad f)` is injective. -/
+theorem eq_zero_of_diracOperator_smul_sub_eq_zero {x : M}
+    (hc : ∀ (v : TangentSpace I x) (s : V x), c x v (c x v s) = -⟪v, v⟫ • s)
+    (hf : MDiffAt f x) (hσ : MDiffAt (T% σ) x) (hdf : TauCeti.Manifold.mgradient I f x ≠ 0)
+    (h : cov.diracOperator c (f • σ) x - f x • cov.diracOperator c σ x = 0) :
+    σ x = 0 := by
+  rw [diracOperator_smul_sub cov c hf hσ] at h
+  have h2 := hc (TauCeti.Manifold.mgradient I f x) (σ x)
+  rw [h, map_zero, eq_comm, neg_smul, neg_eq_zero] at h2
+  exact (smul_eq_zero.1 h2).resolve_left (inner_self_ne_zero.2 hdf)
+
+end Leibniz
+
+/-! ### Change of connection -/
+
 /-- **Change of connection.** Adding to `∇` a one-form `A` with values in the endomorphisms of
 `V` adds `∑ᵢ c(eᵢ) A(eᵢ) σ` to the Dirac operator, for every orthonormal basis `eᵢ` of the
 tangent space at `x`. -/
@@ -189,7 +257,7 @@ theorem diracOperator_addOneForm (A : Π y : M, V y →L[ℝ] TangentSpace I y �
 For the spin connection of a unitary connection on the determinant line, changing the connection
 by an imaginary one-form `a = i θ` changes the spin connection by `a / 2`, that is `L = i / 2`,
 and this is the law `D_{A + a} = D_A + c(a) / 2`. -/
-theorem diracOperator_addOneForm_of_forall_apply_eq
+theorem diracOperator_addOneForm_of_forall_apply_eq [IsManifold I 1 M]
     (A : Π y : M, V y →L[ℝ] TangentSpace I y →L[ℝ] V y) (σ : Π y : M, V y) {x : M}
     (θ : TangentSpace I x →L[ℝ] ℝ) (L : V x →L[ℝ] V x) (hA : ∀ s w, A x s w = θ w • L s) :
     (cov.addOneForm A).diracOperator c σ x =
@@ -197,5 +265,80 @@ theorem diracOperator_addOneForm_of_forall_apply_eq
   set b := stdOrthonormalBasis ℝ (TangentSpace I x)
   rw [cov.diracOperator_addOneForm c A σ x b, Riemannian.Tensor.rieszDual_eq_sum θ b]
   simp only [hA, map_smul, map_sum, FunLike.coe_sum, Finset.sum_apply, smul_apply]
+
+/-- **Change of connection by an inner-product one-form.** If the one-form `A` acts on `σ` at `x`
+by `A_x(σ_x)(w) = ⟪u, w⟫ v`, then adding it to `∇` adds `c(u) v` to the Dirac operator at `x`.
+For `v = σ_x` this is the change `D_{∇ + u♭} = D_∇ + c(u)` under the addition of a real one-form;
+for the spinors of a `Spinᶜ` structure and an imaginary one-form `i a` added to the determinant
+connection, `v = (i / 2) σ_x`. -/
+theorem diracOperator_addOneForm_of_apply_eq_inner_smul
+    (A : Π y : M, V y →L[ℝ] TangentSpace I y →L[ℝ] V y) {x : M} {u : TangentSpace I x}
+    {v : V x} (hA : ∀ w, A x (σ x) w = ⟪u, w⟫ • v) :
+    (cov.addOneForm A).diracOperator c σ x = cov.diracOperator c σ x + c x u v := by
+  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [cov.diracOperator_addOneForm c A σ x b]
+  congr 1
+  conv_rhs => rw [← b.sum_repr' u]
+  simp only [hA, map_smul, map_sum, FunLike.coe_sum, Finset.sum_apply, smul_apply,
+    real_inner_comm u]
+
+/-! ### Gradings -/
+
+/-- **The Dirac operator exchanges the eigenspaces of a grading.** Let `γ` be an endomorphism of
+the fibre at `x` anticommuting with Clifford multiplication, `γ c(v) = -c(v) γ`. If every
+covariant derivative `∇_w σ` at `x` is an eigenvector of `γ` with eigenvalue `a`, then `D σ` at `x`
+is an eigenvector with eigenvalue `-a`. For a parallel grading `γ` and a section `σ` of its
+`±1`-eigenbundle, `∇σ` lies in the same eigenbundle, so `D σ` lies in the other one: this is the
+block form of the Dirac operator of a graded Clifford module. -/
+theorem apply_diracOperator_eq_neg_smul {x : M} (γ : Module.End ℝ (V x)) (a : ℝ)
+    (hc : ∀ (v : TangentSpace I x) (s : V x), γ (c x v s) = -c x v (γ s))
+    (hσ : ∀ w, γ (cov σ x w) = a • cov σ x w) :
+    γ (cov.diracOperator c σ x) = -(a • cov.diracOperator c σ x) := by
+  rw [diracOperator_eq_sum cov c σ x (stdOrthonormalBasis ℝ (TangentSpace I x)), map_sum,
+    Finset.smul_sum, ← Finset.sum_neg_distrib]
+  simp only [hc, hσ, map_smul]
+
+/-! ### Naturality between bundles -/
+
+section Naturality
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+  {W : M → Type*} [TopologicalSpace (TotalSpace F' W)]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)]
+  [∀ x, TopologicalSpace (W x)] [∀ x, IsTopologicalAddGroup (W x)]
+  [∀ x, ContinuousSMul ℝ (W x)]
+  [FiberBundle F' W]
+  (covW : _root_.CovariantDerivative I F' W)
+  (cW : Π x : M, TangentSpace I x →L[ℝ] W x →L[ℝ] W x)
+  (L : Π x : M, V x →ₗ[ℝ] W x)
+
+/-- **Naturality of the Dirac operator.** Let `L` be a fibrewise linear map from `V` to `W` which
+intertwines the Clifford multiplications at `x`, `L c_V(v) = c_W(v) L`, and the connections along
+`σ` at `x`, `∇^W (L σ) = L ∇^V σ`. Then `D_W (L σ) = L (D_V σ)` at `x`. For `L` a gauge
+transformation commuting with the Clifford multiplication, and `∇^W` the transformed connection,
+this is the gauge covariance of the Dirac operator. -/
+theorem diracOperator_linearMap_apply {x : M}
+    (hc : ∀ (v : TangentSpace I x) (s : V x), L x (c x v s) = cW x v (L x s))
+    (hL : ∀ w, covW (fun y ↦ L y (σ y)) x w = L x (cov σ x w)) :
+    covW.diracOperator cW (fun y ↦ L y (σ y)) x = L x (cov.diracOperator c σ x) := by
+  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [diracOperator_eq_sum covW cW _ x b, diracOperator_eq_sum cov c _ x b, map_sum]
+  simp only [hL, hc]
+
+/-- **Anti-naturality of the Dirac operator.** If the fibrewise linear map `L` anticommutes with
+the Clifford multiplications at `x`, `L c_V(v) = -c_W(v) L`, and intertwines the connections along
+`σ` at `x`, then `D_W (L σ) = -L (D_V σ)` at `x`. For a parallel grading `γ` of `V` anticommuting
+with Clifford multiplication, such as the chirality of an even-dimensional Clifford module, this
+says `D γ = -γ D`. -/
+theorem diracOperator_linearMap_apply_eq_neg {x : M}
+    (hc : ∀ (v : TangentSpace I x) (s : V x), L x (c x v s) = -cW x v (L x s))
+    (hL : ∀ w, covW (fun y ↦ L y (σ y)) x w = L x (cov σ x w)) :
+    covW.diracOperator cW (fun y ↦ L y (σ y)) x = -L x (cov.diracOperator c σ x) := by
+  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [diracOperator_eq_sum covW cW _ x b, diracOperator_eq_sum cov c _ x b, map_sum,
+    ← Finset.sum_neg_distrib]
+  simp only [hL, hc, neg_neg]
+
+end Naturality
 
 end CovariantDerivative
