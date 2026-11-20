@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Dual
 
 /-!
 # Compatibility conditions for Fredholm operators
@@ -13,7 +14,8 @@ public import TauCeti.Analysis.Fredholm.Adjoint
 For a continuous linear map `T : E → F` between Hilbert spaces with closed range, the equation
 `T x = y` is solvable exactly when `y` is orthogonal to the kernel of the adjoint `T†`. If
 `z₁, …, z_m` is a basis of `ker T†`, the solvability conditions are the `m` equations
-`⟪zᵢ, y⟫ = 0`: these compatibility functionals are continuous and linearly independent, and their
+`⟪zᵢ, y⟫ = 0`: these compatibility functionals are continuous and linearly independent (by
+`LinearIndependent.innerSL` applied to the basis), and their
 number `m` is the dimension of `ker T†`, which is isomorphic to the cokernel of `T`. That no
 family of fewer than `dim coker T` linear functionals, continuous or not, has the range of `T` as
 its common kernel is the general codimension count of the module
@@ -31,9 +33,6 @@ over a basis of `ker T†`.
 * `ContinuousLinearMap.mem_range_iff_forall_inner_basis_eq_zero` and
   `ContinuousLinearMap.iInf_ker_innerSL_basis_eq_range`: it suffices to test `z` against a basis
   of `ker T†`.
-* `LinearIndependent.innerSL`: the functionals `⟪vᵢ, ·⟫` of a linearly independent family are
-  linearly independent; in particular so are the compatibility functionals of a basis of
-  `ker T†`.
 * `ContinuousLinearMap.IsFredholm.bijective_or_exists_basis_of_index_eq_zero`: the Fredholm
   alternative for operators of index zero, with `dim ker T` compatibility conditions.
 
@@ -48,18 +47,6 @@ public section
 
 open Module
 open scoped InnerProduct InnerProductSpace
-
-/-- The inner-product functionals `⟪vᵢ, ·⟫` of a linearly independent family `vᵢ` are linearly
-independent, since `v ↦ ⟪v, ·⟫` is injective and conjugate-linear. Applied to a basis `zᵢ` of
-the kernel of the adjoint of a closed-range operator `T`, it shows that the compatibility
-functionals `⟪zᵢ, ·⟫` are linearly independent. -/
-theorem LinearIndependent.innerSL {𝕜 F ι : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
-    [InnerProductSpace 𝕜 F] {v : ι → F} (hv : LinearIndependent 𝕜 v) :
-    LinearIndependent 𝕜 fun i ↦ _root_.innerSL 𝕜 (v i) :=
-  -- `_root_` is needed because `innerSL` alone would refer to this theorem.
-  hv.map_of_surjective_injectiveₛ (starRingEnd 𝕜)
-    (_root_.innerSL 𝕜 : F →L⋆[𝕜] StrongDual 𝕜 F).toLinearMap.toAddMonoidHom
-    (starRingEnd 𝕜).surjective (fun _ _ ↦ innerSL_inj.mp) fun _ _ ↦ by simp
 
 namespace ContinuousLinearMap
 
