@@ -33,7 +33,7 @@ which a quotient of the filtration is compared with free generators attached ove
 semi-free model of `C_*(P_b B; R)` over the chains on the loop space, one skeleton at a time.
 
 The end point map of the based path space is a Hurewicz fibration
-(`TauCeti.MoorePath.isHurewiczFibration_target`, for the Moore paths starting in `{b}`), so the
+(`TauCeti.MoorePathFrom.isHurewiczFibration_endpoint`), so the
 projection of relative cubical chain complexes `N(P, ∂P) ⟶ N(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹))` is a
 quasi-isomorphism (`TauCeti.TopCat.quasiIso_cubicalChainComplexMap_cellPullbackPairMap`). The
 chains of `p⁻¹(Xⁿ)` and `p⁻¹(Xⁿ⁻¹)` are the chains of `P_b B` supported in them, and
@@ -176,16 +176,9 @@ theorem exists_add_differential_sub_mem_pathFromChainSkeleton {n : ℕ}
           (MoorePathPullback.proj (sigmaCellMap C n) b ⁻¹' {q | ‖(q.2 : Fin n → ℝ)‖ = 1}) ∧
         cubicalChainModuleLinearMap R MoorePathPullback.toMoorePathFrom u +
             cubicalChainModuleDifferential _ H R v - y ∈ pathFromChainSkeleton b C H R (n - 1) := by
-  -- The based path space is the space of Moore paths starting in `{b}`.
-  have h : IsHurewiczFibration.{0} fun γ : MoorePathFrom B b ↦ γ.val.target :=
-    MoorePath.isHurewiczFibration_target ({b} : Set B)
-  have hp : IsHurewiczFibration.{0} (MoorePathFrom.endpoint B b) := by
-    convert h using 1
-    funext γ
-    exact (MoorePathFrom.endpoint_apply γ).trans
-      (congrArg MoorePath.target (MoorePathFrom.toMoorePath_mk γ.val γ.property))
   have := TopCat.quasiIso_cubicalChainComplexMap_cellPullbackPairMap (C := C)
-    (IsHurewiczFibration.mem_serreFibrations (p := pathFromEndpoint B b) hp) R n
+    (IsHurewiczFibration.mem_serreFibrations (p := pathFromEndpoint B b)
+      (MoorePathFrom.isHurewiczFibration_endpoint.{0} b)) R n
   simp only [mem_pathFromChainSkeleton] at hy hxy ⊢
   exact exists_add_differential_sub_mem_cubicalChainModuleSupportedIn_of_quasiIso H
     (TopCat.cellPullbackPairMap (pathFromEndpoint B b) C n)
