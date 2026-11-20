@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.CalderonVaillancourt
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
+public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import TauCeti.Analysis.Pseudodifferential.Composition.Uniform
 import TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier
-import TauCeti.Analysis.Pseudodifferential.Sobolev
 
 /-!
 # Sobolev mapping of uniform symbols
@@ -54,6 +54,8 @@ and the outer factors are the isometries `H^s → L²` and `L² → H^{s - m}`.
   normed fibres.
 * `TauCeti.Symbol.norm_toBesselPotentialSpaceCLM_zero_quantizeUniformCLM_ofSpatial_le`: for the
   symbol of multiplication by `f`, the `Lᵖ` bound has the explicit constant `sup_x ‖f(x)‖`.
+* `TauCeti.Symbol.norm_quantizeSobolev_ofSpatial_le`: on `H^0 = L²`, the symbol `f(x)` of a
+  compactly supported smooth `f` quantizes to an operator of norm at most `sup ‖f‖`.
 
 ## References
 
@@ -199,6 +201,39 @@ theorem norm_toBesselPotentialSpaceCLM_zero_quantizeUniformCLM_ofSpatial_le
     (mul_le_mul_of_nonneg_right (le_ciSup hbdd x) (norm_nonneg _))
 
 end Multiplication
+
+section MultiplicationL2
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+
+/-- **Multiplication operators on `L²`.** For a compactly supported smooth
+`f : ℝⁿ → (V →L[ℂ] W)` with `‖f x‖ ≤ C` everywhere, the quantization of the symbol `f(x)` of
+order `0`, as an operator `H^0 → H^0`, has norm at most `C`. -/
+theorem norm_quantizeSobolev_ofSpatial_le {f : CoordinateSpace n → V →L[ℂ] W}
+    (hf : ContDiff ℝ ∞ f) (h : (ofSpatial f hf).HasCompactSpatialSupport) {C : ℝ}
+    (hC : ∀ x, ‖f x‖ ≤ C) :
+    ‖(ofSpatial f hf).quantizeSobolev h 0‖ ≤ C := by
+  -- The target order is `0 - 0`, which is only propositionally `0`.
+  have hnorm {t : ℝ} (ht : t = 0) (w : 𝓢(CoordinateSpace n, W)) :
+      ‖SchwartzMap.toBesselPotentialSpaceCLM t 2 w‖ =
+        ‖SchwartzMap.toBesselPotentialSpaceCLM 0 2 w‖ := by
+    subst ht
+    rfl
+  -- It suffices to bound the operator on the dense subspace of Schwartz functions.
+  refine ContinuousLinearMap.opNorm_le_bound _ ((norm_nonneg _).trans (hC 0)) fun g ↦
+    (SchwartzMap.denseRange_toBesselPotentialSpaceCLM (p := 2) 0 ENNReal.ofNat_ne_top).induction_on
+      g (isClosed_le (by fun_prop) (by fun_prop)) fun u ↦ ?_
+  have hu : (h.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+      ((ofSpatial f hf).contDiff_quantizeSchwartzValue u) =
+        quantizeUniformCLM _ h.isUniform u := by
+    ext x
+    rw [HasCompactSupport.toSchwartzMap_toFun, quantizeUniformCLM_apply]
+  rw [h.quantizeSobolev_toBesselPotentialSpaceCLM, hnorm (sub_self 0), hu]
+  exact (norm_toBesselPotentialSpaceCLM_zero_quantizeUniformCLM_ofSpatial_le hf h.isUniform 2
+    u).trans (mul_le_mul_of_nonneg_right (ciSup_le hC) (norm_nonneg _))
+
+end MultiplicationL2
 
 /-! ### Sobolev mapping -/
 
