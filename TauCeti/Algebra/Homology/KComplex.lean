@@ -199,7 +199,7 @@ theorem d_single (r : c.carrier → A) {q : ℕ} (w : Fin (q + 1) → c.carrier)
 `M`-valued functions on the single empty tuple. -/
 theorem d_zero_single (r : c.carrier → A) (w : Fin 1 → c.carrier) (m : M) :
     d k M r 0 (Finsupp.single w m) = Finsupp.single Fin.elim0 (r (w 0) • m) := by
-  have h0 : suffixConj w 0 = w 0 := suffixConj_last (n := 0) w
+  have h0 : suffixConj w 0 = w 0 := by simpa using suffixConj_last (n := 0) w
   rw [d_single, Fin.sum_univ_one, h0, Subsingleton.elim (Fin.removeNth 0 w) Fin.elim0]
   simp
 
@@ -211,14 +211,16 @@ theorem d_one_single (r : c.carrier → A) (g h : c.carrier) (m : M) :
         Finsupp.single ![g] (r h • m) := by
   have h0 : suffixConj ![g, h] 0 = ⟨(h : G)⁻¹ * g * h, c.conj_inv_mem_carrier g.2 h⟩ :=
     Subtype.ext <| by
-      have hs : (Fin.partialProd (fun j ↦ (![g, h] j : G)) (0 : Fin 2).succ)⁻¹ *
-          Fin.partialProd (fun j ↦ (![g, h] j : G)) (Fin.last 2) = h :=
-        Fin.partialProd_right_inv (fun j ↦ (![g, h] j : G)) 1
-      rw [coe_suffixConj, hs]
-      rfl
-  have h1 : suffixConj ![g, h] 1 = h := suffixConj_last (n := 1) ![g, h]
-  have hw0 : Fin.removeNth 0 ![g, h] = ![h] := by ext i; fin_cases i; rfl
-  have hw1 : Fin.removeNth 1 ![g, h] = ![g] := by ext i; fin_cases i; rfl
+      -- `Pᵢ₊₁⁻¹ Pₙ` for `i = 0` is `P₁⁻¹ P₂ = h`; `simp` normalizes the `Fin` indices to numerals.
+      have hs : (Fin.partialProd (fun j ↦ (![g, h] j : G)) (Fin.castSucc 1))⁻¹ *
+          Fin.partialProd (fun j ↦ (![g, h] j : G)) (Fin.succ 1) = h := by
+        rw [Fin.partialProd_right_inv, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+      simp only [Fin.castSucc_one, Fin.succ_one_eq_two] at hs
+      simp [coe_suffixConj, hs]
+  have h1 : suffixConj ![g, h] 1 = h := by
+    simpa using suffixConj_last (n := 1) ![g, h]
+  have hw0 : Fin.removeNth 0 ![g, h] = ![h] := by ext i; fin_cases i; simp [Fin.removeNth_apply]
+  have hw1 : Fin.removeNth 1 ![g, h] = ![g] := by ext i; fin_cases i; simp [Fin.removeNth_apply]
   rw [d_single, Fin.sum_univ_two, h0, h1, hw0, hw1]
   simp [sub_eq_add_neg]
 
