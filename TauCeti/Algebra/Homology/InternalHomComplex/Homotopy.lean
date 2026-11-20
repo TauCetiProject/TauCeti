@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.Additive
 public import Mathlib.Algebra.Homology.HomotopyCategory
+public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Tensor
 public import TauCeti.Algebra.Homology.InternalHomComplex.Basic
 
 /-!
@@ -119,17 +120,6 @@ private def precompHomotopyHom {f f' : K₁ ⟶ K₂} (h : Homotopy f f') (L : C
     (p.negOnePow • (Cochain.ofHomotopy ((tensorRight _).mapHomotopy h)).comp
       (internalHomComplexHomEquiv K₂ L _ p (𝟙 _)) (by omega))
 
-omit [MonoidalClosed C] [HasCountableProducts C] in
-private lemma ofHom_whiskerLeft_comp_ofHomotopy {f f' : K₁ ⟶ K₂} (h : Homotopy f f') {T' T : C}
-    (g : T' ⟶ T) :
-    (Cochain.ofHom ((NatTrans.mapHomologicalComplex ((curriedTensor C).flip.map g) _).app K₁)).comp
-        (Cochain.ofHomotopy ((tensorRight T).mapHomotopy h)) (zero_add _) =
-      (Cochain.ofHomotopy ((tensorRight T').mapHomotopy h)).comp
-        (Cochain.ofHom ((NatTrans.mapHomologicalComplex ((curriedTensor C).flip.map g) _).app K₂))
-        (add_zero _) := by
-  ext p q hpq
-  simp [Cochain.ofHomotopy, whisker_exchange]
-
 private lemma internalHomComplexHomEquiv_comp_precompHomotopyHom {f f' : K₁ ⟶ K₂}
     (h : Homotopy f f') (L : CochainComplex C ℤ) {T : C} {p q : ℤ} (hpq : p + -1 = q)
     (φ : T ⟶ (internalHomComplex K₂ L).X p) :
@@ -138,7 +128,7 @@ private lemma internalHomComplexHomEquiv_comp_precompHomotopyHom {f f' : K₁ �
         (internalHomComplexHomEquiv K₂ L T p φ) (by omega) := by
   rw [internalHomComplexHomEquiv_comp, precompHomotopyHom, AddEquiv.apply_symm_apply,
     Cochain.comp_units_smul, ← Cochain.comp_assoc _ _ _ (zero_add (-1)) (by omega) (by omega),
-    ofHom_whiskerLeft_comp_ofHomotopy,
+    Homotopy.ofHom_whiskerLeft_comp_ofHomotopy,
     Cochain.comp_assoc _ _ _ (add_zero (-1)) (zero_add p) (by omega),
     ← internalHomComplexHomEquiv_comp, Category.comp_id]
 
