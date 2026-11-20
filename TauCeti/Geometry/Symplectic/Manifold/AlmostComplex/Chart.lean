@@ -46,6 +46,8 @@ part of the equivalence; native tangent-frame transitions give coordinate conjug
   `mfderiv_comp_toEndomorphism` and `chartPushforward_eq_pullbackEnd_inChart`: it squares to `-1`,
   the chart derivative intertwines it with `J`, and it is a pullback of `J` read in the extended
   chart.
+* `ContMDiffAlmostComplexStructure.chartPushforward_symm_trans_comp_fderiv`: the derivative of a
+  transition `ψ₂ ∘ ψ₁⁻¹` between two such charts intertwines the structures read in them.
 * `ContMDiffAlmostComplexStructure.fderiv_chart_comp_add_eq_zero_iff`: for a map from the plane,
   the coordinate Cauchy–Riemann equation `∂ₛ(ψ ∘ g) + ψ_* J ∂ₜ(ψ ∘ g) = 0` at a point says that
   the derivative of `g` there intertwines multiplication by `i` with `J`.
@@ -211,6 +213,30 @@ theorem mfderiv_comp_toEndomorphism (ψ : OpenPartialHomeomorph M G) {y : M} (hy
     rintro z rfl
     rw [hleft]
   exact (key _ (ψ.left_inv hy)).symm
+
+/-- **Changing the chart.** For two charts `ψ₁` and `ψ₂` of `M` with values in a normed space
+and a point `w` of the source of the transition `Θ = ψ₂ ∘ ψ₁⁻¹`, the derivative of `Θ` at `w`
+intertwines the structure read in `ψ₁` at `w` with the structure read in `ψ₂` at `Θ w`, provided
+`ψ₁` is differentiable at `ψ₁⁻¹ w`, `ψ₂⁻¹` at `Θ w` and `Θ` at `w`. -/
+theorem chartPushforward_symm_trans_comp_fderiv {ψ₁ ψ₂ : OpenPartialHomeomorph M G} {w : G}
+    (hw : w ∈ (ψ₁.symm.trans ψ₂).source) (hψ₁ : MDifferentiableAt I 𝓘(ℝ, G) ψ₁ (ψ₁.symm w))
+    (hψ₂s : MDifferentiableAt 𝓘(ℝ, G) I ψ₂.symm (ψ₁.symm.trans ψ₂ w))
+    (hΘ : DifferentiableAt ℝ (ψ₁.symm.trans ψ₂) w) :
+    (J.chartPushforward ψ₂ (ψ₁.symm.trans ψ₂ w)).comp (fderiv ℝ (ψ₁.symm.trans ψ₂) w) =
+      (fderiv ℝ (ψ₁.symm.trans ψ₂) w).comp (J.chartPushforward ψ₁ w) := by
+  have hw' : w ∈ ψ₁.target ∧ ψ₁.symm w ∈ ψ₂.source := by simpa using hw
+  have hy : ψ₂.symm (ψ₁.symm.trans ψ₂ w) = ψ₁.symm w := by simp [ψ₂.left_inv hw'.2]
+  have hsymm : ∀ v : G, mfderiv 𝓘(ℝ, G) I ψ₁.symm w v =
+      mfderiv 𝓘(ℝ, G) I ψ₂.symm (ψ₁.symm.trans ψ₂ w) (fderiv ℝ (ψ₁.symm.trans ψ₂) w v) :=
+    DFunLike.congr_fun (ψ₁.mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans hw hψ₂s hΘ)
+  ext v
+  simp only [ContinuousLinearMap.comp_apply]
+  rw [chartPushforward_apply, chartPushforward_apply, ← hsymm, hy]
+  have h := DFunLike.congr_fun (ψ₁.mvfderiv_eq_fderiv_symm_trans_comp hw hψ₁ hΘ)
+    (J (ψ₁.symm w) (mfderiv 𝓘(ℝ, G) I ψ₁.symm w v))
+  rw [mvfderiv_apply_eq_mfderiv_apply, ContinuousLinearMap.comp_apply,
+    mvfderiv_apply_eq_mfderiv_apply] at h
+  exact h
 
 /-- **The Cauchy–Riemann equation at a point, read in a chart.** For a map `g` from the plane
 into `M`, differentiable at `z`, and a chart `ψ` of `M` with values in a normed space, which is
