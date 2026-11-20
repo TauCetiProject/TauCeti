@@ -39,6 +39,12 @@ theorem isGenericQuantumParameter_iff {q : K} :
     IsGenericQuantumParameter q ↔ q ≠ 0 ∧ ∀ n : ℕ, 0 < n → q ^ n ≠ 1 :=
   Iff.rfl
 
+/-- Since `ε = ±1`, the inverse of a signed power `ε q ^ k` is `ε q ^ (-k)`. -/
+theorem units_mul_zpow_inv (q : K) (ε : ℤˣ) (k : ℤ) :
+    (((ε : ℤ) : K) * q ^ k)⁻¹ = ((ε : ℤ) : K) * q ^ (-k) := by
+  rw [mul_inv, zpow_neg]
+  rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
+
 namespace IsGenericQuantumParameter
 
 /-- A generic quantum parameter is nonzero. -/
