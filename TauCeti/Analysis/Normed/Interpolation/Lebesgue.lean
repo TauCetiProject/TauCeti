@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
 public import TauCeti.MeasureTheory.Function.Lp.L1AddLinfty
+import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 
 /-!
 # The Lebesgue couple `(L^{p₀}, L^{p₁})`
@@ -21,7 +22,9 @@ almost everywhere (`TauCeti.CompatibleCouple.lebesgue_fstToSum_add_sndToSum_eq_i
 exponents `1` and `∞` the couple has the same decompositions as `TauCeti.CompatibleCouple.l1Linfty`,
 so the embedding of its sum space into `L¹ + L^∞` is a surjective isometry
 (`TauCeti.CompatibleCouple.lebesgue_one_top_sumSpaceEmbed_surjective`,
-`TauCeti.CompatibleCouple.norm_lebesgue_one_top_sumSpaceEmbed`).
+`TauCeti.CompatibleCouple.norm_lebesgue_one_top_sumSpaceEmbed`). For finite exponents the couple is
+regular (`TauCeti.CompatibleCouple.lebesgue_isRegular`): the simple functions with support of
+finite measure lie in the intersection and are dense in both endpoints.
 
 For `p₀ ≤ p ≤ p₁` the space `Lᵖ` is an intermediate space of the couple: there are continuous
 injections
@@ -115,6 +118,38 @@ theorem norm_lebesgue_one_top_sumSpaceEmbed (v : (lebesgue 𝕜 E μ 1 ∞).SumS
   · rw [← (lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed_injective
       ((lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum g h).trans hgh)]
     exact norm_fstToSum_add_sndToSum_le _ g h
+
+section Regular
+
+/-- A function of `L^{p₀}` that also lies in `L^{p₁}` comes from the intersection. -/
+theorem mem_range_lebesgue_interFst {f : Lp E p₀ μ} (hf : MemLp f p₁ μ) :
+    f ∈ Set.range (lebesgue 𝕜 E μ p₀ p₁).interFst :=
+  ⟨⟨(f, hf.toLp f), mem_lebesgue_inter_iff.2 hf.coeFn_toLp.symm⟩, interFst_apply _ _⟩
+
+/-- A function of `L^{p₁}` that also lies in `L^{p₀}` comes from the intersection. -/
+theorem mem_range_lebesgue_interSnd {f : Lp E p₁ μ} (hf : MemLp f p₀ μ) :
+    f ∈ Set.range (lebesgue 𝕜 E μ p₀ p₁).interSnd :=
+  ⟨⟨(hf.toLp f, f), mem_lebesgue_inter_iff.2 hf.coeFn_toLp⟩, interSnd_apply _ _⟩
+
+/-- A simple function in `Lᵖ` for a finite exponent `p` has support of finite measure, so it lies
+in every `L^q`. -/
+private theorem memLp_coe_simpleFunc {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    (g : Lp.simpleFunc E p μ) (q : ℝ≥0∞) : MemLp (g : Lp E p μ) q μ :=
+  (SimpleFunc.memLp_of_finite_measure_preimage q
+    (SimpleFunc.measure_preimage_lt_top_of_memLp (zero_lt_one.trans_le Fact.out).ne' hp _
+      (Lp.simpleFunc.memLp g))).ae_eq (Lp.simpleFunc.toSimpleFunc_eq_toFun g)
+
+/-- For finite exponents the Lebesgue couple `(L^{p₀}, L^{p₁})` is regular: the simple functions
+with support of finite measure lie in `L^{p₀} ∩ L^{p₁}` and are dense in `L^{p₀}` and in
+`L^{p₁}`. Finiteness is needed: for Lebesgue measure on `ℝ` and `p₁ = ∞`, every element of the
+intersection is at `L^∞` distance at least `1 / 2` from the constant function `1`. -/
+theorem lebesgue_isRegular (hp₀ : p₀ ≠ ∞) (hp₁ : p₁ ≠ ∞) : (lebesgue 𝕜 E μ p₀ p₁).IsRegular :=
+  ⟨(Lp.simpleFunc.denseRange hp₀).mono <| Set.range_subset_iff.2 fun g =>
+      mem_range_lebesgue_interFst (memLp_coe_simpleFunc hp₀ g p₁),
+    (Lp.simpleFunc.denseRange hp₁).mono <| Set.range_subset_iff.2 fun g =>
+      mem_range_lebesgue_interSnd (memLp_coe_simpleFunc hp₁ g p₀)⟩
+
+end Regular
 
 section Intermediate
 

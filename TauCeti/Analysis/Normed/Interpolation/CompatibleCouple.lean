@@ -43,6 +43,8 @@ We realise both spaces without choosing a norm on `V`:
 * `TauCeti.CompatibleCouple.refl`: the couple `(X, X)`, for which both norms are the norm of `X`.
 * `TauCeti.CompatibleCouple.swap`, `TauCeti.CompatibleCouple.sumSwap`: reversal of the endpoints
   and the canonical isometric identification of their sum spaces.
+* `TauCeti.CompatibleCouple.IsRegular`: the intersection is dense in both endpoints, as for the
+  couple `(X, X)` (`TauCeti.CompatibleCouple.isRegular_refl`).
 
 ## References
 
@@ -256,6 +258,18 @@ lower bounds. -/
 theorem le_norm_sumSpace_iff {u : C.SumSpace} {r : ℝ} :
     r ≤ ‖u‖ ↔ ∀ x₀ x₁, C.fstToSum x₀ + C.sndToSum x₁ = u → r ≤ ‖x₀‖ + ‖x₁‖ := by
   simp only [← not_lt, norm_sumSpace_lt_iff, not_exists, not_and]
+
+/-- For `M ≥ 0`, a bound `a ≤ M ‖u‖` by the sum norm holds exactly when `a ≤ M (‖x₀‖ + ‖x₁‖)` for
+every decomposition `u = x₀ + x₁`. -/
+theorem le_mul_norm_sumSpace_iff {u : C.SumSpace} {a M : ℝ} (hM : 0 ≤ M) :
+    a ≤ M * ‖u‖ ↔ ∀ x₀ x₁, C.fstToSum x₀ + C.sndToSum x₁ = u → a ≤ M * (‖x₀‖ + ‖x₁‖) := by
+  refine ⟨fun h x₀ x₁ hx => h.trans (mul_le_mul_of_nonneg_left
+    (hx ▸ C.norm_fstToSum_add_sndToSum_le x₀ x₁) hM), fun h => ?_⟩
+  rcases hM.eq_or_lt with rfl | hM
+  · obtain ⟨x₀, x₁, hx⟩ := C.exists_fstToSum_add_sndToSum_eq u
+    simpa using h x₀ x₁ hx
+  · rw [← div_le_iff₀' hM]
+    exact C.le_norm_sumSpace_iff.2 fun x₀ x₁ hx => (div_le_iff₀' hM).2 (h x₀ x₁ hx)
 
 /-- The injective map from the sum space to the ambient space, `x₀ + x₁ ↦ x₀ + x₁`. -/
 def sumSpaceEmbed : C.SumSpace →L[𝕜] V :=
@@ -575,6 +589,41 @@ theorem norm_refl_sumSpaceEmbed (u : (refl 𝕜 X).SumSpace) :
   · simpa using (refl 𝕜 X).norm_fstToSum_le ((refl 𝕜 X).sumSpaceEmbed u)
 
 end Refl
+
+/-! ### Regular couples -/
+
+section Regular
+
+/-- A compatible couple is *regular* when its intersection is dense in each endpoint (Cwikel,
+Definition 1.3; Bergh–Löfström, §2.7). The duals of the endpoints of a regular couple then embed
+injectively in the dual of the intersection, and form the dual couple
+(`TauCeti.CompatibleCouple.dual`). -/
+structure IsRegular : Prop where
+  denseRange_interFst : DenseRange C.interFst
+  denseRange_interSnd : DenseRange C.interSnd
+
+variable {C}
+
+/-- Exchanging the endpoints of a regular couple gives a regular couple. -/
+theorem IsRegular.swap (hC : C.IsRegular) : C.swap.IsRegular := by
+  have hmem (x : C.inter) : ((x : X₀ × X₁).2, (x : X₀ × X₁).1) ∈ C.swap.inter :=
+    (C.embed₀_interFst x).symm
+  refine ⟨hC.denseRange_interSnd.mono ?_, hC.denseRange_interFst.mono ?_⟩ <;>
+    rintro _ ⟨x, rfl⟩
+  exacts [⟨⟨_, hmem x⟩, rfl⟩, ⟨⟨_, hmem x⟩, rfl⟩]
+
+@[simp]
+theorem isRegular_swap : C.swap.IsRegular ↔ C.IsRegular :=
+  ⟨fun h => C.swap_swap ▸ h.swap, IsRegular.swap⟩
+
+/-- The couple `(X, X)` is regular. -/
+theorem isRegular_refl (𝕜 X : Type*) [NormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X] :
+    (refl 𝕜 X).IsRegular := by
+  have hmem (x : X) : (x, x) ∈ (refl 𝕜 X).inter := rfl
+  exact ⟨Function.Surjective.denseRange fun x => ⟨⟨_, hmem x⟩, rfl⟩,
+    Function.Surjective.denseRange fun x => ⟨⟨_, hmem x⟩, rfl⟩⟩
+
+end Regular
 
 end CompatibleCouple
 
