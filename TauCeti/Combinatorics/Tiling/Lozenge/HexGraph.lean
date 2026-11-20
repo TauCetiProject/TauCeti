@@ -93,6 +93,8 @@ theorem hexGraph_adj_whiteFace_blackFace (e : TriEdge) : hexGraph.Adj e.whiteFac
 and its black face. -/
 def dualEdge (e : TriEdge) : Sym2 TriFace := s(e.whiteFace, e.blackFace)
 
+theorem dualEdge_def (e : TriEdge) : e.dualEdge = s(e.whiteFace, e.blackFace) := (rfl)
+
 /-- The faces joined by the edge of `hexGraph` crossing `e` are exactly the faces containing
 `e`. -/
 @[simp] theorem mem_dualEdge {e : TriEdge} {f : TriFace} : f ∈ e.dualEdge ↔ e ∈ f.edges := by
@@ -155,7 +157,7 @@ noncomputable def TriEdge.equivHexGraphEdgeSet : TriEdge ≃ hexGraph.edgeSet :=
 
 /-- The inverse of `TriEdge.equivHexGraphEdgeSet` sends an edge of `hexGraph` to the edge of the
 lattice shared by its two faces. -/
-theorem TriEdge.mem_edges_equivHexGraphEdgeSet_symm (s : hexGraph.edgeSet) {f : TriFace}
+theorem TriEdge.equivHexGraphEdgeSet_symm_mem_edges (s : hexGraph.edgeSet) {f : TriFace}
     (hf : f ∈ (s : Sym2 TriFace)) : TriEdge.equivHexGraphEdgeSet.symm s ∈ f.edges := by
   obtain ⟨e, rfl⟩ := TriEdge.equivHexGraphEdgeSet.surjective s
   rw [Equiv.symm_apply_apply]

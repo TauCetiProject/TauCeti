@@ -124,6 +124,8 @@ def blackFace (e : TriEdge) : TriFace := ⟨if e.k = 0 then e.v - (0, 1) else e.
 /-- The two faces containing an edge, its white face and its black face. -/
 def faces (e : TriEdge) : Finset TriFace := {e.whiteFace, e.blackFace}
 
+theorem faces_def (e : TriEdge) : e.faces = {e.whiteFace, e.blackFace} := (rfl)
+
 @[simp] theorem whiteFace_mk (v : ℤ × ℤ) (k : Fin 3) :
     (⟨v, k⟩ : TriEdge).whiteFace = ⟨if k = 1 then v - (1, 0) else v, true⟩ := (rfl)
 
@@ -293,6 +295,10 @@ end TriEdge
 def vertexFaces (v : ℤ × ℤ) : Finset TriFace :=
   {⟨v, true⟩, ⟨v - (1, 0), true⟩, ⟨v - (1, 1), true⟩,
     ⟨v, false⟩, ⟨v - (0, 1), false⟩, ⟨v - (1, 1), false⟩}
+
+theorem vertexFaces_def (v : ℤ × ℤ) :
+    vertexFaces v = {⟨v, true⟩, ⟨v - (1, 0), true⟩, ⟨v - (1, 1), true⟩,
+      ⟨v, false⟩, ⟨v - (0, 1), false⟩, ⟨v - (1, 1), false⟩} := (rfl)
 
 /-- The faces in `vertexFaces v` are exactly those having `v` as a vertex. -/
 @[simp] theorem mem_vertexFaces {v : ℤ × ℤ} {f : TriFace} :
