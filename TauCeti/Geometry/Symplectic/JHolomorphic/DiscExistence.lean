@@ -143,6 +143,11 @@ private theorem discCutoff_eq_one {z : ℂ} (hz : ‖z‖ ≤ 2⁻¹) : discCuto
 private theorem discCutoff_eq_zero {z : ℂ} (hz : 1 ≤ ‖z‖) : discCutoff z = 0 := by
   rw [discCutoff, projIcc_of_le_left _ (by linarith)]
 
+/-- The cutoff is invariant under rotations `z ↦ c z`, `|c| = 1`. -/
+private theorem discCutoff_mul_left {c : ℂ} (hc : ‖c‖ = 1) (z : ℂ) :
+    discCutoff (c * z) = discCutoff z := by
+  simp [discCutoff, hc]
+
 private theorem norm_discCutoff_le (z : ℂ) : ‖discCutoff z‖ ≤ 1 := by
   have h := (projIcc (0 : ℝ) 1 zero_le_one (2 - 2 * ‖z‖)).2
   rw [discCutoff, Real.norm_of_nonneg h.1]
@@ -715,6 +720,14 @@ section Contraction
 
 variable {ℓ K ξ}
 
+/-- On the unit disc, the fixed-point map of a small source is `χ · K(u) ℓ(Du)`. -/
+private theorem fixedPointMap_apply_of_small (hξ : ‖ξ‖ ≤ 1) (hK : SmallCoeff F K) {f : Source F}
+    (hf : 2 * ‖derivOp F‖ * ‖f‖ ≤ 1) {z : ℂ} (hz : z ∈ closedBall (0 : ℂ) 1) :
+    (fixedPointMap ℓ K ξ f).1 z =
+      discCutoff z • K (discMap ξ ⇑f.1 z) (ℓ (fderiv ℝ (discMap ξ ⇑f.1) z)) := by
+  rw [fixedPointMap_apply ℓ K ξ f hz, gField, ContinuousLinearMap.compHolder₂_apply,
+    ContinuousLinearMap.id_apply, kField_eq hξ hK.1 hK.2.1 hK.2.2.1 hf, wField_apply, kFun]
+
 /-- The fixed-point map sends the ball of radius `radius F` into itself, since
 `‖χ‖ · 16 η ≤ radius F`. -/
 private theorem mapsTo_fixedPointMap (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1) (hK : SmallCoeff F K) :
@@ -825,7 +838,6 @@ private theorem discSource_props (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1)
   obtain ⟨hmem, hfix⟩ := discSource_spec hℓ hξ hK
   set f := discSource ℓ K ξ
   have hf := small_of_mem_closedBall hmem
-  obtain ⟨hK0, hd, h1, -⟩ := hK
   have hTC := (contDiff_cauchyTransform_of_mem_supportedHolderSubmodule hα₀ hα₁ zero_le_one
     f.2).contDiffOn (s := ball 0 2)
   refine ⟨?_, discMap_zero ξ _, ?_, fun z hz ↦ norm_discMap_le hξ hf hz, fun z hz ↦ ?_⟩
@@ -841,19 +853,15 @@ private theorem discSource_props (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1)
     -- At the fixed point, `\bar∂ T f = f = χ · K(u) ℓ(Du)`, and `χ(z) = 1`.
     rw [conjWirtingerDeriv_cauchyTransform_of_mem_supportedHolderSubmodule hα₀ hα₁ zero_le_one f.2]
     conv_lhs => rw [← hfix]
-    rw [fixedPointMap_apply ℓ K ξ f hz1, discCutoff_eq_one hzn, one_smul,
-      gField, ContinuousLinearMap.compHolder₂_apply,
-      ContinuousLinearMap.id_apply, kField_eq hξ hK0 hd h1 hf, wField_apply, kFun]
+    rw [fixedPointMap_apply_of_small hξ hK hf hz1, discCutoff_eq_one hzn, one_smul]
 
 /-- The fixed source vanishes at the centre, since `K(u(0)) = K(0) = 0`. -/
 private theorem discSource_apply_zero (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1) (hK : SmallCoeff F K) :
     (discSource ℓ K ξ).1 0 = 0 := by
   obtain ⟨hmem, hfix⟩ := discSource_spec hℓ hξ hK
-  obtain ⟨hK0, hd, h1, -⟩ := hK
-  rw [← hfix, fixedPointMap_apply ℓ K ξ _ (mem_closedBall_self zero_le_one), gField,
-    ContinuousLinearMap.compHolder₂_apply, ContinuousLinearMap.id_apply,
-    kField_eq hξ hK0 hd h1 (small_of_mem_closedBall hmem), kFun]
-  simp [discMap_zero, hK0]
+  rw [← hfix, fixedPointMap_apply_of_small hξ hK (small_of_mem_closedBall hmem)
+    (mem_closedBall_self zero_le_one)]
+  simp [discMap_zero, hK.1]
 
 end Source
 
@@ -1030,7 +1038,6 @@ private theorem discSource_smul (hξ : ‖ξ‖ ≤ 1) (hQ : SmallCoeff F Q)
     exact (norm_rotSource_le hc f).trans hmem
   have hf := small_of_mem_closedBall hmem
   have hg := small_of_mem_closedBall hgmem
-  have ⟨hQ0, hd, h1, _⟩ := hQ
   have hrot : ∀ w, discMap (c • ξ) ⇑g.1 w = discMap ξ ⇑f.1 (c * w) :=
     discMap_rotSource hc ξ (discSource_apply_zero norm_wirtingerAtOne_le hξ hQ)
   refine discSource_eq norm_wirtingerAtOne_le hcξ hQ hgmem
@@ -1038,11 +1045,8 @@ private theorem discSource_smul (hξ : ‖ξ‖ ≤ 1) (hQ : SmallCoeff F Q)
   by_cases hz : z ∈ closedBall (0 : ℂ) 1
   · have hcz : c * z ∈ closedBall (0 : ℂ) 1 := by
       simpa [mem_closedBall, norm_mul, hc] using hz
-    rw [fixedPointMap_apply _ _ _ _ hz, rotSource_apply, ← hfix, fixedPointMap_apply _ _ _ _ hcz,
-      gField, gField, ContinuousLinearMap.compHolder₂_apply, ContinuousLinearMap.compHolder₂_apply,
-      ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply,
-      kField_eq hcξ hQ0 hd h1 hg, kField_eq hξ hQ0 hd h1 hf, kFun, kFun, wField_apply, wField_apply]
-    simp only
+    rw [fixedPointMap_apply_of_small hcξ hQ hg hz, rotSource_apply, ← hfix,
+      fixedPointMap_apply_of_small hξ hQ hf hcz]
     have hconj := (Q (discMap ξ (⇑f.1) (c * z)) : F →ₗ[ℝ] F).map_smul_eq_conj_smul_of_map_I_smul
       (hQI _ (mem_closedBall_four (norm_discMap_le hξ hf hcz)))
     simp only [ContinuousLinearMap.coe_coe] at hconj
@@ -1051,7 +1055,7 @@ private theorem discSource_smul (hξ : ‖ξ‖ ≤ 1) (hQ : SmallCoeff F Q)
       wirtingerAtOne_apply, wirtingerAtOne_apply, ← wirtingerDeriv_eq_complexLinearPart,
       ← wirtingerDeriv_eq_complexLinearPart,
       wirtingerDeriv_comp_mul_left (differentiableAt_discMap ξ f _),
-      show discCutoff z = discCutoff (c * z) by simp [discCutoff, hc], hconj,
+      ← discCutoff_mul_left hc z, hconj,
       ← Complex.inv_eq_conj hc, smul_comm]
   · rw [mem_supportedHolderSubmodule_iff.mp (fixedPointMap _ _ _ g).2 z hz,
       mem_supportedHolderSubmodule_iff.mp g.2 z hz]
