@@ -22,6 +22,8 @@ composition.
 
 * `TauCeti.instCommSemiringRegularFormClass`: the commutative semiring structure.
 * `TauCeti.RegularFormClass.rankHom`: rank as a semiring homomorphism to `ℕ`.
+* `TauCeti.RegularFormClass.mk_const_one`: the diagonal form `⟨1, …, 1⟩` of rank `n` is the
+  image `n⟨1⟩` of `n` in the semiring.
 
 ## References
 
@@ -115,5 +117,24 @@ def RegularFormClass.rankHom : RegularFormClass K →+* ℕ where
 @[simp]
 theorem RegularFormClass.rankHom_apply (x : RegularFormClass K) :
     RegularFormClass.rankHom x = x.rank := (rfl)
+
+/-- The sum of `n` squares `n⟨1⟩` has rank `n`. -/
+@[simp]
+theorem RegularFormClass.rank_natCast (n : ℕ) : (n : RegularFormClass K).rank = n := by
+  rw [← RegularFormClass.rankHom_apply, map_natCast, Nat.cast_id]
+
+/-- The sum of `n` squares `n⟨1⟩` has rank `n`, for a numeral `n ≥ 2`. -/
+@[simp]
+theorem RegularFormClass.rank_ofNat (n : ℕ) [n.AtLeastTwo] :
+    (ofNat(n) : RegularFormClass K).rank = ofNat(n) :=
+  RegularFormClass.rank_natCast n
+
+/-! ### Sums of squares -/
+
+/-- The diagonal form `⟨1, …, 1⟩` of rank `n` is the sum of `n` squares `n⟨1⟩`. -/
+@[simp]
+theorem RegularFormClass.mk_const_one (n : ℕ) :
+    Quotient.mk (regularFormSetoid K) ⟨n, fun _ => 1⟩ = (n : RegularFormClass K) := by
+  rw [RegularFormClass.mk_const, RegularFormClass.mk_rankOne_one, nsmul_one]
 
 end TauCeti
