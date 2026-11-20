@@ -57,9 +57,9 @@ the same for every target. Its integral is computed once, on `ℂ` with its stan
 form, by the energy identity along the constant map `0`, whose energy and area vanish.
 
 This file adapts the normalization bookkeeping of the pair of pants,
-`TauCeti/Geometry/Symplectic/Floer/PairOfPants/Normalization.lean`, with the same structure and
-proof method, to the `ι`-indexed datum `TauCeti.Floer.puncturedSpherePerturbation`; the pair of
-pants is its case of two input ends
+`TauCeti/Geometry/Symplectic/Floer/PairOfPants/Normalization/Basic.lean`, with the same structure
+and proof method, to the `ι`-indexed datum `TauCeti.Floer.puncturedSpherePerturbation`; the pair
+of pants is its case of two input ends
 (`TauCeti.Floer.puncturedSpherePerturbation_eq_pairOfPantsPerturbation`).
 
 ## References
@@ -114,21 +114,6 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
   {ι : Type*} [Fintype ι] {c a : ι → ℂ} {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
   {k : ι → ℝ → ℝ} {kout : ℝ → ℝ}
-
-omit [IsManifold I ⊤ M] in
-/-- Off the centers, the components of the datum of `C¹` Hamiltonians on a manifold are
-differentiable in the domain point. -/
-private theorem differentiableAt_puncturedSpherePerturbation_domain
-    (hH : ∀ i, Periodic (H i) 1)
-    (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H i))) (hHout : Periodic Hout 1)
-    (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
-    {z : ℝ × ℝ} (hz : ∀ i, Complex.equivRealProdCLM.symm z ≠ c i) (x : M) (v : ℂ) :
-    DifferentiableAt ℝ
-      (fun z' ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z') x v)
-      z := by
-  have h := (contMDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha hz x v).comp z
-    (f := fun z' : ℝ × ℝ ↦ (z', x)) (contMDiffAt_id.prodMk contMDiffAt_const)
-  exact h.contDiffAt.differentiableAt one_ne_zero
 
 /-- **Normalizing the Hamiltonians does not change the Floer equation.** The perturbed derivative
 `du - X_K` of any map into `M` is the same for the Hamiltonians `H i`, `Hout` and for

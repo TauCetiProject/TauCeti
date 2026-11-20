@@ -46,9 +46,11 @@ Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and
   family over any smooth path of configurations; for a fixed configuration and a normed target,
   `TauCeti.Floer.contDiffAt_puncturedSpherePerturbation_prod` is the form in real coordinates, and
   `TauCeti.Floer.contMDiffAt_uncurry_puncturedSpherePerturbation` that of its components for a
-  manifold target; along a `C^n` family of configurations over a normed space of parameters and
-  for a normed target, `TauCeti.Floer.contDiffAt_puncturedSpherePerturbation_comp` is the form
-  jointly in the parameter;
+  manifold target, with `TauCeti.Floer.differentiableAt_puncturedSpherePerturbation_domain` its
+  consequence for the domain point alone; along a `C^n` family of configurations over a normed
+  space of parameters and for a normed target,
+  `TauCeti.Floer.contDiffAt_puncturedSpherePerturbation_comp` is the form jointly in the
+  parameter;
 * for a symplectic vector space target, its integrated curvature along any map is at most
   `∑ i, sup |H i| + sup |Hout|`, whatever the configuration
   (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le`),
@@ -419,6 +421,21 @@ theorem contMDiffAt_uncurry_puncturedSpherePerturbation {n : ℕ∞} (hH : ∀ i
         contMDiffAt_fst).prodMk contMDiffAt_snd)
   exact ((contMDiffAt_puncturedSpherePerturbation hH hHs hHout hHouts ha hz x).comp (z, x)
     hφ).clm_apply contMDiffAt_const
+
+/-- Off the centers of the input ends, the components of the datum of period-one `C¹`
+Hamiltonians on a manifold are differentiable in the domain point, in real coordinates, for
+nonzero scales. -/
+theorem differentiableAt_puncturedSpherePerturbation_domain (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry Hout)) {c a : ι → ℂ}
+    (ha : ∀ i, a i ≠ 0) {z : ℝ × ℝ} (hz : ∀ i, Complex.equivRealProdCLM.symm z ≠ c i) (x : M)
+    (v : ℂ) :
+    DifferentiableAt ℝ
+      (fun z' ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z') x v)
+      z := by
+  have h := (contMDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha hz x v).comp z
+    (f := fun z' : ℝ × ℝ ↦ (z', x)) (contMDiffAt_id.prodMk contMDiffAt_const)
+  exact h.contDiffAt.differentiableAt one_ne_zero
 
 end Smooth
 
