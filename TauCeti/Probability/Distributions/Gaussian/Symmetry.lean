@@ -22,6 +22,11 @@ equivalences intertwine scaled standard Gaussian measures on finite-dimensional 
 spaces (`TauCeti.Probability.map_linearIsometryEquiv_map_smul_stdGaussian`), and centered real
 Gaussian laws and their independent products are invariant under multiplication by deterministic
 scalars of unit modulus.
+In particular, integrals against the standard Gaussian measure are invariant under linear isometry
+self-equivalences (`TauCeti.Probability.integral_comp_linearIsometryEquiv_stdGaussian`), such as the
+coordinate sign changes `TauCeti.Probability.signFlip` of `EuclideanSpace ℝ ι`, so a standard
+Gaussian integral may be replaced by the integral of the average of the integrand over all sign
+changes (`TauCeti.Probability.integral_eq_integral_expect_signFlip`).
 -/
 
 public section
@@ -105,6 +110,61 @@ theorem map_linearIsometryEquiv_map_smul_stdGaussian {E F : Type*}
   rw [Measure.map_map f.continuous.measurable (by fun_prop),
     show f ∘ (fun x : E ↦ c • x) = (fun y : F ↦ c • y) ∘ f from funext (map_smul f c),
     ← Measure.map_map (by fun_prop) f.continuous.measurable, stdGaussian_map f]
+
+section LinearIsometryEquiv
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- A linear isometry self-equivalence of a finite-dimensional real inner product space preserves
+the standard Gaussian measure. -/
+theorem measurePreserving_linearIsometryEquiv_stdGaussian (f : E ≃ₗᵢ[ℝ] E) :
+    MeasurePreserving f (stdGaussian E) (stdGaussian E) :=
+  ⟨f.continuous.measurable, stdGaussian_map f⟩
+
+/-- Integrals against the standard Gaussian measure are invariant under linear isometry
+self-equivalences. -/
+theorem integral_comp_linearIsometryEquiv_stdGaussian {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (f : E ≃ₗᵢ[ℝ] E) (φ : E → G) :
+    ∫ x, φ (f x) ∂stdGaussian E = ∫ x, φ x ∂stdGaussian E :=
+  (measurePreserving_linearIsometryEquiv_stdGaussian f).integral_comp
+    f.toHomeomorph.measurableEmbedding φ
+
+end LinearIsometryEquiv
+
+section SignFlip
+
+open scoped BigOperators
+
+variable {ι : Type*} [Fintype ι]
+
+/-- Changing the signs of the coordinates of `EuclideanSpace ℝ ι` according to `ε : ι → ℤˣ`, as a
+linear isometry equivalence. -/
+def signFlip (ε : ι → ℤˣ) : EuclideanSpace ℝ ι ≃ₗᵢ[ℝ] EuclideanSpace ℝ ι :=
+  LinearIsometryEquiv.piLpCongrRight 2 fun i ↦
+    if ε i = 1 then LinearIsometryEquiv.refl ℝ ℝ else LinearIsometryEquiv.neg ℝ
+
+/-- The `i`-th coordinate of `signFlip ε g` is `ε i • g i`. -/
+@[simp]
+theorem signFlip_apply (ε : ι → ℤˣ) (g : EuclideanSpace ℝ ι) (i : ι) :
+    signFlip ε g i = ε i • g i := by
+  rcases Int.units_eq_one_or (ε i) with h | h <;> simp [signFlip, h]
+
+/-- A standard Gaussian integral equals the standard Gaussian integral of the average of the
+integrand over all coordinate sign changes. -/
+theorem integral_eq_integral_expect_signFlip [DecidableEq ι] {φ : EuclideanSpace ℝ ι → ℝ}
+    (hφ : Integrable φ (stdGaussian (EuclideanSpace ℝ ι))) :
+    ∫ g, φ g ∂stdGaussian (EuclideanSpace ℝ ι) =
+      ∫ g, 𝔼 ε : ι → ℤˣ, φ (signFlip ε g) ∂stdGaussian (EuclideanSpace ℝ ι) := by
+  have hint (ε : ι → ℤˣ) :
+      Integrable (fun g ↦ φ (signFlip ε g)) (stdGaussian (EuclideanSpace ℝ ι)) :=
+    ((measurePreserving_linearIsometryEquiv_stdGaussian (signFlip ε)).integrable_comp_emb
+      (signFlip ε).toHomeomorph.measurableEmbedding).2 hφ
+  simp_rw [Finset.expect_eq_sum_div_card]
+  rw [integral_div, integral_finsetSum _ fun ε _ ↦ hint ε]
+  simp [integral_comp_linearIsometryEquiv_stdGaussian]
+
+end SignFlip
 
 end TauCeti.Probability
 

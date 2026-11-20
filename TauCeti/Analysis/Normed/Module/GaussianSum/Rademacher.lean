@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Module.GaussianSum.Cotype
 import TauCeti.Analysis.Normed.Module.RademacherSum.Contraction
 import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Pietsch
 import TauCeti.Probability.Distributions.Gaussian.L2
+import TauCeti.Probability.Distributions.Gaussian.Symmetry
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 
 /-!
@@ -51,7 +52,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory ProbabilityTheory TauCeti.Probability
 open scoped ENNReal NNReal BigOperators InnerProductSpace
 
 namespace TauCeti
@@ -60,39 +61,9 @@ variable {ι Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
 
 local notation "γ" => stdGaussian (EuclideanSpace ℝ ι)
 
-section Signs
-
-variable [Fintype ι]
-
-/-- Changing the signs of the coordinates of `EuclideanSpace ℝ ι`. -/
-private def signFlip (ε : ι → ℤˣ) : EuclideanSpace ℝ ι ≃ₗᵢ[ℝ] EuclideanSpace ℝ ι :=
-  LinearIsometryEquiv.piLpCongrRight 2 fun i ↦
-    if ε i = 1 then LinearIsometryEquiv.refl ℝ ℝ else LinearIsometryEquiv.neg ℝ
-
-private theorem signFlip_apply (ε : ι → ℤˣ) (g : EuclideanSpace ℝ ι) (i : ι) :
-    signFlip ε g i = ε i • g i := by
-  rcases Int.units_eq_one_or (ε i) with h | h <;> simp [signFlip, h]
-
-/-- The standard Gaussian measure is invariant under coordinate sign changes. -/
-private theorem integral_comp_signFlip (ε : ι → ℤˣ) (φ : EuclideanSpace ℝ ι → ℝ) :
-    ∫ g, φ (signFlip ε g) ∂γ = ∫ g, φ g ∂γ :=
-  MeasurePreserving.integral_comp ⟨(signFlip ε).continuous.measurable, stdGaussian_map _⟩
-    (signFlip ε).toHomeomorph.measurableEmbedding φ
-
-/-- A Gaussian integral is the Gaussian integral of the average over all coordinate sign
-changes of the integrand. -/
-private theorem integral_eq_integral_expect_signFlip [DecidableEq ι] {φ : EuclideanSpace ℝ ι → ℝ}
-    (hφ : Integrable φ γ) :
-    ∫ g, φ g ∂γ = ∫ g, 𝔼 ε : ι → ℤˣ, φ (signFlip ε g) ∂γ := by
-  have hint (ε : ι → ℤˣ) : Integrable (fun g ↦ φ (signFlip ε g)) γ :=
-    (MeasurePreserving.integrable_comp_emb
-      ⟨(signFlip ε).continuous.measurable, stdGaussian_map _⟩
-      (signFlip ε).toHomeomorph.measurableEmbedding).2 hφ
-  simp_rw [Finset.expect_eq_sum_div_card]
-  rw [integral_div, integral_finsetSum _ fun ε _ ↦ hint ε]
-  simp [integral_comp_signFlip]
-
-end Signs
+/-- Multiplying a real number by a sign preserves its absolute value. -/
+private theorem abs_units_zsmul (u : ℤˣ) (a : ℝ) : |u • a| = |a| := by
+  simpa only [Real.norm_eq_abs] using norm_units_zsmul u a
 
 /-- The coordinates of `g` of absolute value at most `t`, the others being replaced by `0`. -/
 private def lowPart (t : ℝ) (g : EuclideanSpace ℝ ι) (i : ι) : ℝ :=
@@ -117,17 +88,13 @@ private theorem lowPart_add_highPart (t : ℝ) (g : EuclideanSpace ℝ ι) (i : 
 
 private theorem lowPart_signFlip [Fintype ι] (t : ℝ) (ε : ι → ℤˣ) (g : EuclideanSpace ℝ ι) (i : ι) :
     lowPart t (signFlip ε g) i = ε i • lowPart t g i := by
-  have : |ε i • g i| = |g i| := by
-    simpa only [Real.norm_eq_abs] using norm_units_zsmul (ε i) (g i)
-  simp only [lowPart, signFlip_apply, this]
+  simp only [lowPart, signFlip_apply, abs_units_zsmul]
   split_ifs <;> simp
 
 private theorem highPart_signFlip [Fintype ι] (t : ℝ) (ε : ι → ℤˣ) (g : EuclideanSpace ℝ ι)
     (i : ι) :
     highPart t (signFlip ε g) i = ε i • highPart t g i := by
-  have : |ε i • g i| = |g i| := by
-    simpa only [Real.norm_eq_abs] using norm_units_zsmul (ε i) (g i)
-  simp only [highPart, PiLp.toLp_apply, signFlip_apply, this]
+  simp only [highPart, PiLp.toLp_apply, signFlip_apply, abs_units_zsmul]
   split_ifs <;> simp
 
 private theorem abs_lowPart_le (t : ℝ) (ht : 0 ≤ t) (g : EuclideanSpace ℝ ι) (i : ι) :
