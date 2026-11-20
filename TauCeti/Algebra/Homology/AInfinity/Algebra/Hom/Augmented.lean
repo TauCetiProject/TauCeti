@@ -66,18 +66,10 @@ noncomputable def inclusion (ε : 𝒜.Augmentation) : AInfinityStrictHom ε.red
 @[simp] theorem inclusion_apply (ε : 𝒜.Augmentation) (x : ε.augmentationIdeal) :
     ε.inclusion x = x := (rfl)
 
-@[simp] theorem reducedPart_comp_subtype (ε : 𝒜.Augmentation) :
-    ε.reducedPart ∘ₗ ε.augmentationIdeal.subtype = LinearMap.id :=
-  LinearMap.ext fun _ ↦ by simp
-
 @[simp] theorem map_reducedPart_comp_inclusion_barMap (ε : 𝒜.Augmentation) :
     ReducedTensorWords.map (R := R) ε.reducedPart ∘ₗ ε.inclusion.barMap = LinearMap.id := by
   rw [AInfinityStrictHom.barMap_def, ← ReducedTensorWords.map_comp, ε.inclusion_toLinearMap,
     ε.reducedPart_comp_subtype, ReducedTensorWords.map_id]
-
-@[simp] theorem comp_subtype (ε : 𝒜.Augmentation) :
-    ε.toLinearMap ∘ₗ ε.augmentationIdeal.subtype = 0 :=
-  LinearMap.ext fun x ↦ by simp [(ε.mem_augmentationIdeal).mp x.property]
 
 /-- Every bar word over `A` differs from its `ker ε` projection by a `ε.unit`-degenerate word. -/
 theorem sub_inclusion_barMap_map_reducedPart_mem_degenerateWords (ε : 𝒜.Augmentation)
@@ -292,7 +284,7 @@ theorem taylor_comp_inclusion_mem (hf : f.IsAugmented ε ε')
   have hzero : ε'.toLinearMap ∘ₗ f.taylor ∘ₗ ε.inclusion.barMap = 0 := by
     rw [← LinearMap.comp_assoc, hf.augmentation_comp_taylor, LinearMap.comp_assoc,
       AInfinityStrictHom.barMap_def, letter_comp_map, ← LinearMap.comp_assoc,
-      ε.inclusion_toLinearMap, ε.comp_subtype, LinearMap.zero_comp]
+      ε.inclusion_toLinearMap, ε.toLinearMap_comp_subtype, LinearMap.zero_comp]
   simpa [AInfinityAlgebra.Augmentation.mem_augmentationIdeal, AInfinityHom.taylor_comp] using
     LinearMap.congr_fun hzero w
 
@@ -378,7 +370,7 @@ private theorem extendStrictlyUnitalTaylor_comp_inclusion_barMap (ε : 𝒜.Augm
     ε.extendStrictlyUnitalTaylor eB g ∘ₗ ε.inclusion.barMap = g.taylor := by
   rw [extendStrictlyUnitalTaylor, LinearMap.add_comp, LinearMap.comp_assoc, LinearMap.comp_assoc,
     AInfinityStrictHom.barMap_def, letter_comp_map, ε.inclusion_toLinearMap,
-    ← LinearMap.comp_assoc (letter R _), ε.comp_subtype, LinearMap.zero_comp,
+    ← LinearMap.comp_assoc (letter R _), ε.toLinearMap_comp_subtype, LinearMap.zero_comp,
     LinearMap.comp_zero, zero_add, LinearMap.comp_assoc, ← map_comp, ε.reducedPart_comp_subtype,
     map_id, LinearMap.comp_id]
 
