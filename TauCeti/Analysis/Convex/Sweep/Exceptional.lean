@@ -44,7 +44,8 @@ noncomputable def ofSweeps (pairs : Finset (Set V × V))
   obtain hbase | hbase := z.1.eq_empty_or_nonempty
   · simp [hbase]
   · have h := hdim z hz hbase
-    have := FiniteDimensional.of_finrank_pos (show 0 < Module.finrank 𝕜 V by omega)
+    have hpos : 0 < Module.finrank 𝕜 V := by omega
+    have := FiniteDimensional.of_finrank_pos hpos
     exact Set.affineSpan_sweep_ne_top z.1 z.2 (hdim z hz)
 
 open Classical in
