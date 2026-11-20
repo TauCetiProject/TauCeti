@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.GradedModuleCat.Ext.EulerAdmissible
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.PowerSeries
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.ProjectiveCoordinates
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Shift
@@ -34,7 +35,9 @@ covers, `dᵢ = dim_k End_A(Sᵢ)`. Hence:
 * over a nonnegatively graded algebra, a minimal resolution is linear exactly when the Betti
   series are supported on the diagonal `d = n`, provided every `dᵢ ≠ 0` and the `Sᵢ` represent
   every finite simple graded module concentrated in degree zero;
-* the Betti series of `M{1}` is `q` times the Betti series of `M`.
+* the Betti series of `M{1}` is `q` times the Betti series of `M`;
+* when `M` vanishes below degree `c`, the Betti series vanishes below the shifted diagonal
+  `j = c + n`, so its value at `t = -1` is defined coefficientwise in `q`.
 
 The resolution may be infinite: each coefficient of the series is a coordinate of the class of a
 single term, so no finite projective dimension is needed.
@@ -56,6 +59,10 @@ In the namespace `TauCeti.GradedProjectiveResolution`:
   the bigraded Ext Poincaré series against `Sᵢ`.
 * `IsMinimal.bettiPoincarePowerSeries_eq`: the Betti series does not depend on the minimal
   resolution.
+* `IsMinimal.coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_lt` and
+  `IsMinimal.hasEulerPowerSeries_bettiPoincarePowerSeries`: the Betti series of a minimal resolution
+  vanishes below a shifted diagonal, so it has a well-defined value at `t = -1` coefficientwise in
+  `q`.
 * `IsMinimal.isLinear_iff_diagonal_bettiPoincarePowerSeries`: a minimal resolution is linear
   exactly when its Betti series have diagonal support.
 * `IsMinimal.bettiPoincarePowerSeries_shiftObj_one`: the Betti series of `M{1}` is `q` times that
@@ -252,6 +259,31 @@ theorem IsMinimal.coeff_coeff_bettiPoincarePowerSeries_eq_zero_iff (hr : r.IsMin
       (hr.extLinearEquiv (((S i).obj.shiftObj j).positive_smul_top_eq_bot_of_concentrated _ hN) n)
   rw [← Module.finrank_zero_iff (R := k), ← Int.natCast_eq_zero, ← hcoeff, mul_eq_zero,
     or_iff_right hc]
+
+include he he₀ hne hbP hconc in
+/-- **The Betti Poincaré series of a minimal resolution vanishes below a shifted diagonal.** If `M`
+vanishes in internal degrees below `c`, then at every `Pᵢ` with `dᵢ = gdim(eᵢ • Sᵢ) ≠ 0` the
+coefficient of `qʲ tⁿ` vanishes whenever `j < c + n`. -/
+theorem IsMinimal.coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_lt (hr : r.IsMinimal) {c : ℤ}
+    (hM : ∀ p < c, M.grading.piece p = ⊥) (i : I)
+    (hself : (S i).obj.smulGradedDimension (e i) ≠ 0) {n : ℕ} {j : ℤ} (hjn : j < c + n) :
+    (PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i)).coeff j = 0 := by
+  have (m : ℕ) : Module.Finite k (r.X m) := Module.Finite.trans A (r.X m)
+  rw [hr.coeff_coeff_bettiPoincarePowerSeries_eq_zero_iff S he he₀ hI hne bP hbP hconc i hself]
+  exact GradedModuleCat.subsingleton_gradedExt_iff_subsingleton_ext_shiftObj.1
+    (hr.subsingleton_gradedExt_of_lt hM (hconc i) hjn)
+
+include he he₀ hne hbP hconc in
+/-- The Betti Poincaré series of a minimal resolution of a module vanishing in negative internal
+degrees, at every `Pᵢ` with `dᵢ = gdim(eᵢ • Sᵢ) ≠ 0`, has an Alexander-graded Euler power series:
+its value at `t = -1` is defined coefficientwise in `q`. -/
+theorem IsMinimal.hasEulerPowerSeries_bettiPoincarePowerSeries (hr : r.IsMinimal)
+    (hM : ∀ p < 0, M.grading.piece p = ⊥) (i : I)
+    (hself : (S i).obj.smulGradedDimension (e i) ≠ 0) :
+    Bigraded.HasEulerPowerSeries (r.bettiPoincarePowerSeries bP i) :=
+  Bigraded.HasEulerPowerSeries.of_lowerTriangular fun _ _ han ↦
+    hr.coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_lt S he he₀ hI hne bP hbP hconc hM i hself
+      (by omega)
 
 include he he₀ hne hbP hconc in
 /-- **A minimal resolution is linear exactly when its Betti Poincaré series are supported on the
