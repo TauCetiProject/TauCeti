@@ -28,6 +28,7 @@ maximal ideal. Length preservation and biduality are the cogenerator criteria of
   essential extension of `κ`. Injectivity of `E` is not used.
 * `TauCeti.injective_applyₗ_of_injective`: as soon as `E` is injective and contains a copy of
   `κ`, the evaluation map `M → D(D(M))` is injective for every `M`, so `E` is a cogenerator.
+  Equivalently, `E` separates points (`TauCeti.exists_apply_ne_zero_of_injective`).
 * `TauCeti.IsInjectiveEnvelope.length_linearMap`: `length D(M) = length M` for every module `M`,
   of finite length or not.
 * `TauCeti.IsInjectiveEnvelope.bijective_applyₗ` and `TauCeti.IsInjectiveEnvelope.evalEquiv`:
@@ -102,6 +103,14 @@ theorem injective_applyₗ_of_injective [Module.Injective R E] (hι : Function.I
   injective_applyₗ_of_forall_isMaximal fun _ h𝔪 =>
     ⟨ι ∘ₗ (quotientEquivResidueField h𝔪).toLinearMap, 0, fun h => one_ne_zero <| hι <| by
       simpa using LinearMap.congr_fun h ((quotientEquivResidueField h𝔪).symm 1)⟩
+
+/-- If `E` is injective and contains a copy of the residue field, then `E` separates points: every
+nonzero element of a module is detected by a linear map to `E`. -/
+theorem exists_apply_ne_zero_of_injective [Module.Injective R E] (hι : Function.Injective ι)
+    {M : Type w} [AddCommGroup M] [Module R M] {m : M} (hm : m ≠ 0) :
+    ∃ f : M →ₗ[R] E, f m ≠ 0 := by
+  by_contra! h
+  exact hm (injective_applyₗ_of_injective hι (LinearMap.ext fun f ↦ by simp [h f]))
 
 /-- If `E` is injective and contains a copy of the residue field, then the elements of `E`
 killed by an ideal `J` have annihilator exactly `J`. -/
