@@ -561,6 +561,13 @@ theorem edges_rot (f : TriFace) : (rot f).edges = f.edges.map (TriEdge.rot).toEm
   ext ⟨⟨p, q⟩, j⟩
   cases c <;> fin_cases j <;> simp [rot_apply, TriEdge.rot_apply, TriEdge.ext_iff] <;> omega
 
+/-- `ρ` maps the edge of direction `k` of a face to the edge of direction `k + 1` of its image. -/
+@[simp] theorem edge_rot (f : TriFace) (k : Fin 3) :
+    (rot f).edge (k + 1) = TriEdge.rot (f.edge k) :=
+  mem_edges_iff_edge_eq.1 <| by
+    rw [edges_rot, Finset.mem_map_equiv, Equiv.symm_apply_apply]
+    exact f.edge_mem_edges k
+
 end TriFace
 
 namespace TriEdge
@@ -579,5 +586,14 @@ namespace TriEdge
   simp [faces]
 
 end TriEdge
+
+/-- `ρ` maps the six faces at a vertex onto the six faces at its image. -/
+theorem vertexFaces_rot (v : ℤ × ℤ) :
+    vertexFaces (latticeRot v) = (vertexFaces v).map TriFace.rot.toEmbedding := by
+  ext f
+  obtain ⟨g, rfl⟩ := TriFace.rot.surjective f
+  rw [Finset.mem_map_equiv, Equiv.symm_apply_apply, mem_vertexFaces, mem_vertexFaces,
+    TriFace.vertices_rot, Finset.mem_map_equiv]
+  simp
 
 end TauCeti
