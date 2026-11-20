@@ -97,7 +97,9 @@ inserted half are transported along `ψ` by the change of variables formula
 the null circle `s_q = L/2`
 (`TauCeti.ThricePuncturedSphere.Puncture.aedisjoint_truncation_inter_image`). On the same pieces
 the curvature is integrable over `Σ_R`
-(`TauCeti.SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedTruncation`). The energy identity
+(`TauCeti.SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedTruncation`), and it vanishes on
+the rest of the four-punctured sphere for `R ≥ 2` (`SmoothTwoForm`'s
+`hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation`). The energy identity
 over the whole four-punctured sphere, the limit `R → ∞`, is in
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Asymptotic`.
 
@@ -375,6 +377,64 @@ theorem integrableOn_hamiltonianCurvature_plumbedTruncation (ω : SmoothTwoForm 
     (hR₀ q) (by simp) hu).union
     (integrableOn_hamiltonianCurvature_plumbedPerturbation_inserted ω hq hHa hHb hHas hHbs hab hL
       (hR₀ inf) (by simp) hu)
+
+/-- **The curvature vanishes off the truncated plumbed sphere, for a manifold target.** At a point
+of the four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`, in real coordinates, outside the truncation
+`Σ_R = q.plumbedTruncation L R` at an outer height `R ≥ 2`, the curvature of the plumbed
+perturbation of period-one `C¹` Hamiltonians on a manifold vanishes, for every neck length
+`L > 4`. -/
+theorem hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation
+    (ω : SmoothTwoForm I M) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {R : ℝ} (hR : 2 ≤ R) {z : ℝ × ℝ}
+    (hz : (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1)
+    (hzR : Complex.equivRealProdCLM.symm z ∉ q.plumbedTruncation L R) (x : M) :
+    ω.hamiltonianCurvature
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z x = 0 := by
+  have hzc : Complex.equivRealProdCLM.symm z ≠ q.endCenter := ne_endCenter hz.1 q
+  by_cases hle : (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2
+  · -- Inside the circle `s_q = L/2` the curvature is that of the receiving pair of pants, and the
+    -- point lies beyond height `R ≥ 2` on some end of it.
+    obtain ⟨r, hr⟩ : ∃ r : Puncture,
+        R < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re := by
+      by_contra! h
+      exact hzR (mem_plumbedTruncation_iff.2 (Or.inl ⟨mem_truncation.2 ⟨hz.1.1, hz.1.2, h⟩, hle⟩))
+    rw [hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_lt ω hq hab hzc (by linarith)]
+    exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hHb hHbs hz.1
+      (by linarith) x
+  · -- Beyond it the point is the image under the plumbing map of a point `w` of the inserted pair
+    -- of pants outside the circle `s_∞ = -L/2`, lying beyond height `R ≥ 2` on some end of it.
+    set w := (Complex.equivRealProdCLM.symm z - q.endCenter) / q.plumbingFactor L with hw
+    have hw₀ : w ≠ 0 ∧ w ≠ 1 := q.sub_endCenter_div_plumbingFactor_ne_zero_and_ne_one L hz
+    have hwL : -(L / 2) ≤ (inf.endCoord w).re := by
+      rw [hw, re_endCoord_inf_sub_endCenter_div q L hzc]
+      linarith
+    have hψ : q.plumbingMap L w = Complex.equivRealProdCLM.symm z :=
+      plumbingMap_sub_endCenter_div q L _
+    obtain ⟨r, hr⟩ : ∃ r : Puncture, R < r.endSign * (r.endCoord w).re := by
+      by_contra! h
+      exact hzR (mem_plumbedTruncation_iff.2
+        (Or.inr ⟨w, mem_truncation.2 ⟨hw₀.1, hw₀.2, h⟩, hwL, hψ⟩))
+    have hwz : realChart (q.plumbingMap L) (Complex.equivRealProdCLM w) = z := by
+      rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, hψ,
+        ContinuousLinearEquiv.apply_symm_apply]
+    have hdet :
+        (fderiv ℝ (realChart (q.plumbingMap L)) (Complex.equivRealProdCLM w)).det ≠ 0 := by
+      rw [TauCeti.Complex.det_fderiv_realChart (q.hasDerivAt_plumbingMap L _)]
+      exact (Complex.normSq_pos.2 (q.plumbingFactor_ne_zero L)).ne'
+    have h := hamiltonianCurvature_pairOfPantsPerturbation_inserted ω hq hHa hHb hHas hHbs hab hL
+      (w := Complex.equivRealProdCLM w)
+      (by rw [mem_thricePuncturedSphereReal_iff, ContinuousLinearEquiv.symm_apply_apply]; exact hw₀)
+      (by rw [ContinuousLinearEquiv.symm_apply_apply, endSign_inf]; linarith) x
+    rw [ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hHa hHas
+      (by rw [ContinuousLinearEquiv.symm_apply_apply]; exact hw₀) (q := r)
+      (by rw [ContinuousLinearEquiv.symm_apply_apply]; linarith), hwz] at h
+    exact ((mul_eq_zero.1 h.symm).resolve_left hdet)
 
 end TauCeti.SmoothTwoForm
 
