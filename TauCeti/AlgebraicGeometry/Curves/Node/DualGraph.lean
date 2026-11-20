@@ -21,7 +21,7 @@ at worst nodes (`TauCeti.AlgebraicGeometry.PrestableFamily`). Blowing up its sin
 gives a finite surjective morphism `ν : X^ν ⟶ X` from a regular scheme which is an isomorphism over
 the smooth locus. Exactly one point of `X^ν` lies over each smooth point of `X`, and exactly two lie
 over each node, one on each branch
-(`AlgebraicGeometry.Scheme.natCard_preimage_blowupToBase_singularLocus_of_mem_support`). The
+(`AlgebraicGeometry.Scheme.natCard_preimage_blowupToBase_singularLocus_eq_two_of_mem_support`). The
 irreducible components of the regular scheme `X^ν` are disjoint and open, so each point `b` of
 `X^ν` lies on exactly one of them, `TauCeti.irreducibleComponentOf b`. Since `ν` is finite with
 regular source, and an isomorphism over the dense smooth locus, `X^ν` is the normalization of `X`
@@ -171,7 +171,7 @@ variable [IsSepClosed K]
 private theorem natCard_preimage_blowupToBase_eq_two
     (x : ↥(((X ↘ Spec (.of K)).smoothLocus : Set X)ᶜ)) :
     Nat.card ((X.singularLocus K).blowupToBase ⁻¹' {x.1}) = 2 :=
-  X.natCard_preimage_blowupToBase_singularLocus_of_mem_support (atWorstNodal K X)
+  X.natCard_preimage_blowupToBase_singularLocus_eq_two_of_mem_support (atWorstNodal K X)
     ((X.mem_support_singularLocus_iff_notMem_smoothLocus x.1).mpr x.2)
 
 /-- The two points of the blowup of a prestable curve along its singular subscheme lying over a

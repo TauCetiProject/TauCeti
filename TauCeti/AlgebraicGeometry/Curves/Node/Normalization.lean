@@ -28,10 +28,10 @@ curve and its normalization exact sequence.
 
 Over a separably closed field the blowup separates the branches point by point: exactly one
 point lies over each smooth point
-(`AlgebraicGeometry.Scheme.natCard_preimage_blowupToBase_singularLocus_of_mem_smoothLocus`), and
-exactly two lie over each node, one on each branch. Over a
-node, these are the points of the branch scheme, which is finite étale of rank two over the
-singular subscheme. These counts are the incidence data of the dual graph of the curve.
+(`AlgebraicGeometry.Scheme.natCard_preimage_blowupToBase_singularLocus_eq_one_of_mem_smoothLocus`),
+and exactly two lie over each node, one on each branch. Over a node, these are the points of the
+branch scheme, which is finite étale of rank two over the singular subscheme. These counts are the
+incidence data of the dual graph of the curve.
 
 ## Main results
 
@@ -39,8 +39,8 @@ singular subscheme. These counts are the incidence data of the dual graph of the
   `AlgebraicGeometry.Scheme.surjective_blowupToBase_singularLocus` and
   `AlgebraicGeometry.Scheme.isRegular_blowup_singularLocus`: blowing up the singular subscheme is
   a finite surjective morphism from a regular scheme.
-* `AlgebraicGeometry.Scheme.natCard_preimage_blowupToBase_singularLocus_of_mem_support`: over a
-  separably closed field, two points of the blowup lie over each node.
+* `AlgebraicGeometry.Scheme.natCard_preimage_blowupToBase_singularLocus_eq_two_of_mem_support`:
+  over a separably closed field, two points of the blowup lie over each node.
 
 ## References
 
@@ -177,7 +177,7 @@ theorem isRegular_blowup_singularLocus
 /-- **Two points of the blowup lie over each node.** Over a separably closed field, the
 points of the blowup of a nodal curve along its singular subscheme lying over a node are the two
 points of the branch scheme over it, one on each branch. -/
-theorem natCard_preimage_blowupToBase_singularLocus_of_mem_support [IsSepClosed K]
+theorem natCard_preimage_blowupToBase_singularLocus_eq_two_of_mem_support [IsSepClosed K]
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K))) {x : X}
     (hx : (letI := hnodal.syntomic; x ∈ (X.singularLocus K).support)) :
     letI := hnodal.syntomic

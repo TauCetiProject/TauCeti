@@ -21,8 +21,8 @@ same smooth image are equal, and exactly one point of the blowup lies over each 
 * `AlgebraicGeometry.Scheme.isIso_blowupToBase_singularLocus_restrict_smoothLocus`: the blowup is
   an isomorphism over the smooth locus.
 * `AlgebraicGeometry.Scheme.eq_of_blowupToBase_singularLocus_eq_of_mem_smoothLocus` and
-  `AlgebraicGeometry.Scheme.natCard_preimage_blowupToBase_singularLocus_of_mem_smoothLocus`: one
-  point of the blowup lies over each smooth point.
+  `AlgebraicGeometry.Scheme.natCard_preimage_blowupToBase_singularLocus_eq_one_of_mem_smoothLocus`:
+  one point of the blowup lies over each smooth point.
 
 ## References
 
@@ -66,7 +66,7 @@ theorem eq_of_blowupToBase_singularLocus_eq_of_mem_smoothLocus
 
 /-- **One point of the blowup lies over each smooth point.** Blowing up the singular subscheme of
 a syntomic relative curve changes nothing over its smooth locus. -/
-theorem natCard_preimage_blowupToBase_singularLocus_of_mem_smoothLocus
+theorem natCard_preimage_blowupToBase_singularLocus_eq_one_of_mem_smoothLocus
     {R : Type u} [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
     [SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R))] {x : X}
     (hx : x ∈ (X ↘ Spec (.of R)).smoothLocus) :
