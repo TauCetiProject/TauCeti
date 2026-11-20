@@ -193,25 +193,29 @@ private def rootEntries (s : ι → ℝ) :
     unitaryLieAlgebra ι →ₗ[ℝ] ({p : ι × ι // s p.2 < s p.1} → ℂ) :=
   LinearMap.pi fun p => entryLinearMap ℝ ℂ p.1.1 p.1.2 ∘ₗ (unitaryLieAlgebra ι).incl.toLinearMap
 
+@[simp]
+private theorem rootEntries_apply (s : ι → ℝ) (X : unitaryLieAlgebra ι)
+    (p : {p : ι × ι // s p.2 < s p.1}) : rootEntries s X p = (X : Matrix ι ι ℂ) p.1.1 p.1.2 := by
+  simp [rootEntries]
+
 private theorem ker_rootEntries (s : ι → ℝ) :
     LinearMap.ker (rootEntries s) =
       (lieAnnihilator ℝ (unitaryLieAlgebra ι) (unitaryTorusDualInclusion ι s)).toSubmodule := by
   ext X
   rw [LinearMap.mem_ker, LieSubalgebra.mem_toSubmodule,
     mem_lieAnnihilator_unitaryTorusDualInclusion_iff, funext_iff]
+  simp only [rootEntries_apply, Pi.zero_apply]
   refine ⟨fun h j k hjk => ?_, fun h p => h _ _ p.2.ne'⟩
   rcases hjk.lt_or_gt with hjk | hjk
   · -- For `s j < s k`, the entry `X_(j k)` is `-conj X_(k j)`, and `X_(k j)` is a coordinate.
-    rw [coe_unitaryLieAlgebra_apply_swap X k j,
-      show (X : Matrix ι ι ℂ) k j = 0 from h ⟨(k, j), hjk⟩, map_zero, neg_zero]
+    rw [coe_unitaryLieAlgebra_apply_swap X k j, h ⟨(k, j), hjk⟩, map_zero, neg_zero]
   · exact h ⟨(j, k), hjk⟩
 
 private theorem rootEntries_unitaryRootVector (s : ι → ℝ) (p : {p : ι × ι // s p.2 < s p.1})
     (z : ℂ) : rootEntries s (unitaryRootVector p.1.1 p.1.2 z) = Pi.single p z := by
   funext q
-  rw [Pi.single_apply]
-  -- `rootEntries s X q` is the entry `X_(q.1.1, q.1.2)` by definition.
-  refine (unitaryRootVector_apply_of_lt s p.2 q.2 z).trans (if_congr ?_ rfl rfl)
+  rw [Pi.single_apply, rootEntries_apply, unitaryRootVector_apply_of_lt s p.2 q.2 z]
+  refine if_congr ?_ rfl rfl
   rw [Subtype.ext_iff, Prod.ext_iff, eq_comm (a := q.1.1), eq_comm (a := q.1.2)]
 
 private theorem rootEntries_surjective (s : ι → ℝ) : Function.Surjective (rootEntries s) :=
@@ -235,8 +239,7 @@ def unitaryRootCoordinates (s : ι → ℝ) :
 theorem unitaryRootCoordinates_mk (X : unitaryLieAlgebra ι) (p : {p : ι × ι // s p.2 < s p.1}) :
     unitaryRootCoordinates s (Submodule.Quotient.mk X) p = (X : Matrix ι ι ℂ) p.1.1 p.1.2 := by
   rw [unitaryRootCoordinates, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
-    LinearMap.quotKerEquivOfSurjective_apply_mk]
-  simp [rootEntries]
+    LinearMap.quotKerEquivOfSurjective_apply_mk, rootEntries_apply]
 
 /-- The root vectors of the pairs with `s_k < s_j` are the coordinate vectors of
 `TauCeti.unitaryRootCoordinates s`. -/
