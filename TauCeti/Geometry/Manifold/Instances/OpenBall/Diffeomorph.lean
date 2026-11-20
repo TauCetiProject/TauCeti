@@ -78,11 +78,11 @@ def unitBallDiffeomorph : unitBallOpens F ≃ₘ^∞⟮𝓘(ℝ, F), 𝓘(ℝ, F
     rw [← SetLike.mem_coe, coe_unitBallOpens, ← univUnitBall_target]
     exact univUnitBall.map_source (mem_univ v)⟩
   left_inv v := Subtype.ext (univUnitBall.right_inv (by
-    rw [univUnitBall_target, ← coe_unitBallOpens]; exact v.2))
+    rw [univUnitBall_target, ← coe_unitBallOpens]; exact v.property))
   right_inv v := univUnitBall.left_inv (mem_univ v)
   contMDiff_toFun :=
-    contDiffOn_univUnitBall_symm.contMDiffOn.comp_contMDiff contMDiff_subtype_val fun v ↦ by
-      rw [← coe_unitBallOpens]; exact v.2
+    contDiffOn_univUnitBall_symm.contMDiffOn.comp_contMDiff contMDiff_subtypeVal fun v ↦ by
+      rw [← coe_unitBallOpens]; exact v.property
   contMDiff_invFun :=
     (ContMDiff.subtypeVal_comp_iff (unitBallOpens F) _).1 contDiff_univUnitBall.contMDiff
 

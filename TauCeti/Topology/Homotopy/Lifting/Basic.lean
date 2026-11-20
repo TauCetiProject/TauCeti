@@ -121,12 +121,12 @@ theorem HasHomotopyLiftingProperty.comp {C : Type*} [TopologicalSpace C] {q : B 
 any continuous map `g : B' → B`. -/
 theorem HasHomotopyLiftingProperty.pullback {B' : Type*} [TopologicalSpace B']
     (hp : HasHomotopyLiftingProperty p A) (g : C(B', B)) :
-    HasHomotopyLiftingProperty (fun x : {x : B' × E // g x.1 = p x.2} ↦ x.1.1) A := by
+    HasHomotopyLiftingProperty (fun x : {x : B' × E // g x.1 = p x.2} ↦ x.val.1) A := by
   intro f H hH
-  let f' : C(A, E) := ⟨fun a ↦ (f a).1.2, by fun_prop⟩
+  let f' : C(A, E) := ⟨fun a ↦ (f a).val.2, by fun_prop⟩
   obtain ⟨G, hG, hG₀⟩ := hp f' (g.comp H) fun a ↦ by
     simp only [ContinuousMap.comp_apply, hH a, f', ContinuousMap.coe_mk]
-    exact (f a).2
+    exact (f a).property
   refine ⟨⟨fun x ↦ ⟨(H x, G x), (congrFun hG x).symm⟩, by fun_prop⟩, funext fun x ↦ rfl, fun a ↦ ?_⟩
   exact Subtype.ext (Prod.ext (hH a) (hG₀ a))
 
@@ -135,13 +135,13 @@ theorem HasHomotopyLiftingProperty.pullback {B' : Type*} [TopologicalSpace B']
 theorem HasHomotopyLiftingProperty.restrictPreimage (hp : HasHomotopyLiftingProperty p A)
     (t : Set B) : HasHomotopyLiftingProperty (t.restrictPreimage p) A := by
   intro f H hH
-  obtain ⟨G, hG, hG₀⟩ := hp ((⟨Subtype.val, continuous_subtype_val⟩ : C(p ⁻¹' t, E)).comp f)
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(t, B)).comp H) fun a ↦ congrArg Subtype.val (hH a)
+  obtain ⟨G, hG, hG₀⟩ := hp ((⟨Subtype.val, continuous_subtypeVal⟩ : C(p ⁻¹' t, E)).comp f)
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(t, B)).comp H) fun a ↦ congrArg Subtype.val (hH a)
   have hGt (x : I × A) : p (G x) ∈ t := by
     have hx := congrFun hG x
     simp only [Function.comp_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk] at hx
     rw [hx]
-    exact (H x).2
+    exact (H x).property
   exact ⟨⟨fun x ↦ ⟨G x, hGt x⟩, by fun_prop⟩, funext fun x ↦ Subtype.ext (congrFun hG x),
     fun a ↦ Subtype.ext (hG₀ a)⟩
 
@@ -153,14 +153,14 @@ theorem HasHomotopyLiftingProperty.comp_subtypeVal (hp : HasHomotopyLiftingPrope
     HasHomotopyLiftingProperty (p ∘ Subtype.val : S → B) A := by
   intro f H hH
   obtain ⟨G, hG, hG₀⟩ :=
-    hp ((⟨Subtype.val, continuous_subtype_val⟩ : C(S, E)).comp f) H hH
+    hp ((⟨Subtype.val, continuous_subtypeVal⟩ : C(S, E)).comp f) H hH
   have hGS (x : I × A) : G x ∈ S := by
     have : PathConnectedSpace I :=
       (Set.projIcc_surjective (zero_le_one : (0 : ℝ) ≤ 1)).pathConnectedSpace continuous_projIcc
     have h : Joined ((0 : I), x.2) x := (PathConnectedSpace.joined _ _).prod (Joined.refl x.2)
     have h' := h.map G.continuous
     rw [hG₀] at h'
-    exact hS (f x.2).2 h'
+    exact hS (f x.2).property h'
   exact ⟨⟨fun x ↦ ⟨G x, hGS x⟩, by fun_prop⟩, hG, fun a ↦ Subtype.ext (hG₀ a)⟩
 
 /-- If the restriction `U.restrictPreimage p : p ⁻¹' U → U` over `U : Set B` has the homotopy

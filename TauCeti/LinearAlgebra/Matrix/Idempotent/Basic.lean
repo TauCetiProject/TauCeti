@@ -92,7 +92,7 @@ theorem IsIdempotentElem.eq_sum_smul_row {e : Matrix ι ι A} (he : IsIdempotent
   ext1
   rw [Submodule.coe_sum]
   simp only [Submodule.coe_smul, ← vecMul_eq_sum]
-  exact (he.mem_range_vecMulLinear_iff.1 v.2).symm
+  exact (he.mem_range_vecMulLinear_iff.1 v.property).symm
 
 omit [Fintype ι] in
 /-- A linear map from the range of an idempotent matrix `f` to row vectors is right multiplication
@@ -125,7 +125,7 @@ private theorem rowImage_mul_rowImage_symm {e : Matrix ι ι A} {f : Matrix κ �
   ext i j
   rw [mul_apply_eq_vecMul]
   have h := hf.linearMap_apply_eq_vecMul ((range e.vecMulLinear).subtype ∘ₗ ψ.symm.toLinearMap)
-    (ψ ⟨e i, e.row_mem_range_vecMulLinear i⟩).2
+    (ψ ⟨e i, e.row_mem_range_vecMulLinear i⟩).property
   simp only [LinearMap.comp_apply, Submodule.subtype_apply, LinearEquiv.coe_coe, Subtype.coe_eta,
     LinearEquiv.symm_apply_apply] at h
   exact congrFun h.symm j
@@ -150,14 +150,14 @@ theorem nonempty_linearEquiv_range_vecMulLinear_iff {e : Matrix ι ι A} {f : Ma
       rw [he.mem_range_vecMulLinear_iff, vecMul_vecMul, ← hxy, ← Matrix.mul_assoc, hyx,
         ← vecMul_vecMul, (hf.mem_range_vecMulLinear_iff).1 hw]
     exact ⟨{
-      toFun v := ⟨v ᵥ* x, hx v v.2⟩
-      invFun w := ⟨w ᵥ* y, hy w w.2⟩
+      toFun v := ⟨v ᵥ* x, hx v v.property⟩
+      invFun w := ⟨w ᵥ* y, hy w w.property⟩
       map_add' v v' := Subtype.ext (add_vecMul _ _ _)
       map_smul' a v := Subtype.ext (smul_vecMul _ _ _)
       left_inv v := Subtype.ext <| by
-        simp [vecMul_vecMul, hxy, (he.mem_range_vecMulLinear_iff).1 v.2]
+        simp [vecMul_vecMul, hxy, (he.mem_range_vecMulLinear_iff).1 v.property]
       right_inv w := Subtype.ext <| by
-        simp [vecMul_vecMul, hyx, (hf.mem_range_vecMulLinear_iff).1 w.2] }⟩
+        simp [vecMul_vecMul, hyx, (hf.mem_range_vecMulLinear_iff).1 w.property] }⟩
 
 end Matrix
 

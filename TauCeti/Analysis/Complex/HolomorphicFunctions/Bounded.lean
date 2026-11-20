@@ -129,7 +129,7 @@ variable {U U' U'' : Opens V}
 `H^∞(U, E)`. -/
 def of (U : Opens V) (g : V → E) (hg : DifferentiableOn ℂ g U) (C : ℝ)
     (hC : ∀ z ∈ U, ‖g z‖ ≤ C) : boundedHolomorphicFunctions E U :=
-  ⟨.ofNormedAddCommGroup (fun z : U => g z) hg.continuousOn.domRestrict C fun z => hC z z.2,
+  ⟨.ofNormedAddCommGroup (fun z : U => g z) hg.continuousOn.domRestrict C fun z => hC z z.property,
     g, hg, fun _ => rfl⟩
 
 @[simp]
@@ -200,13 +200,13 @@ theorem dist_apply_le_of_ball_subset (f : boundedHolomorphicFunctions E U) {x z 
 /-- Restriction of bounded holomorphic maps to a smaller open set. -/
 noncomputable def restrict (h : U' ≤ U) :
     boundedHolomorphicFunctions E U →L[ℂ] boundedHolomorphicFunctions E U' :=
-  ((compContinuousCLM E ℂ ⟨fun z => ⟨z, h z.2⟩, continuous_subtype_val.subtype_mk _⟩).comp
+  ((compContinuousCLM E ℂ ⟨fun z => ⟨z, h z.property⟩, continuous_subtypeVal.subtype_mk _⟩).comp
     (boundedHolomorphicFunctions E U).subtypeL).codRestrict _ fun f => by
-    exact ⟨extend f, (differentiableOn_extend f).mono h, fun z => extend_apply f ⟨z, h z.2⟩⟩
+    exact ⟨extend f, (differentiableOn_extend f).mono h, fun z => extend_apply f ⟨z, h z.property⟩⟩
 
 @[simp]
 theorem restrict_apply (h : U' ≤ U) (f : boundedHolomorphicFunctions E U) (z : U') :
-    (restrict h f : U' →ᵇ E) z = (f : U →ᵇ E) ⟨z, h z.2⟩ := (rfl)
+    (restrict h f : U' →ᵇ E) z = (f : U →ᵇ E) ⟨z, h z.property⟩ := (rfl)
 
 /-- Restriction agrees with restricting the same ambient representative. -/
 @[simp]
@@ -244,8 +244,8 @@ theorem isCompactOperator_restrict [ProperSpace E] {K : Set V} (hK : IsCompact K
   -- The unit ball of `H^∞(U, E)` is equicontinuous by the Cauchy estimate
   -- `dist_apply_le_of_ball_subset`, so the Arzelà–Ascoli theorem applies on the compact set `K`.
   have : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  let ρ : C(K, U) := ⟨fun z => ⟨z, hKU z.2⟩, continuous_subtype_val.subtype_mk _⟩
-  let σ : C(U', K) := ⟨fun z => ⟨z, hU'K z.2⟩, continuous_subtype_val.subtype_mk _⟩
+  let ρ : C(K, U) := ⟨fun z => ⟨z, hKU z.property⟩, continuous_subtypeVal.subtype_mk _⟩
+  let σ : C(U', K) := ⟨fun z => ⟨z, hU'K z.property⟩, continuous_subtypeVal.subtype_mk _⟩
   -- The unit ball of `H^∞(U, E)`, restricted to `K`.
   let A : Set (K →ᵇ E) :=
     (fun f : boundedHolomorphicFunctions E U => (f : U →ᵇ E).compContinuous ρ) '' closedBall 0 1
@@ -257,7 +257,7 @@ theorem isCompactOperator_restrict [ProperSpace E] {K : Set V} (hK : IsCompact K
     · -- Equicontinuity at `x`: on a ball of radius `R` around `x` inside `U`, the Cauchy
       -- estimate gives the common modulus `2 / R * dist z x`.
       intro x
-      obtain ⟨R, hR, hRU⟩ := Metric.isOpen_iff.mp U.isOpen x (hKU x.2)
+      obtain ⟨R, hR, hRU⟩ := Metric.isOpen_iff.mp U.isOpen x (hKU x.property)
       refine equicontinuousAt_of_continuity_modulus (fun z : K => 2 / R * dist z x) ?_ _ ?_
       · have hc : Continuous fun z : K => 2 / R * dist z x := by fun_prop
         simpa using hc.tendsto x
@@ -300,12 +300,12 @@ theorem restrict_injective [FiniteDimensional ℂ V] [CompleteSpace E] (h : U' �
     rw [extend_apply f ⟨z, h hz⟩, ← restrict_apply h f ⟨z, hz⟩, hf]
     simp
   refine Subtype.ext (BoundedContinuousFunction.ext fun x => ?_)
-  obtain ⟨y, hyx, hyU'⟩ := hU' x x.2
+  obtain ⟨y, hyx, hyU'⟩ := hU' x x.property
   have hev : extend f =ᶠ[𝓝 y] 0 :=
     eventually_of_mem (U'.isOpen.mem_nhds hyU') fun z hz => hzero z hz
   rw [← extend_apply f x]
   exact (hg'.mono (connectedComponentIn_subset _ _)).eqOn_zero_of_preconnected_of_eventuallyEq_zero
-    isPreconnected_connectedComponentIn hyx hev (mem_connectedComponentIn x.2)
+    isPreconnected_connectedComponentIn hyx hev (mem_connectedComponentIn x.property)
 
 end BoundedHolomorphicFunctions
 

@@ -105,7 +105,7 @@ theorem Adapted.isStoppingTime_hittingAfter_of_isClosed (hX : Adapted ℱ X)
     have hK : K.Nonempty := nonempty_Icc.mpr hat
     let : Nonempty K := hK.to_subtype
     have hcont (ω : Ω) : Continuous (fun u : K ↦ infEDist (X u ω) s) :=
-      continuous_infEDist.comp ((hc ω).comp continuous_subtype_val)
+      continuous_infEDist.comp ((hc ω).comp continuous_subtypeVal)
     have hm : @Measurable Ω ℝ≥0∞ (ℱ t) _
         (fun ω ↦ ⨅ u : K, infEDist (X u ω) s) := by
       have hm' : @Measurable Ω ℝ≥0∞ (ℱ t) _

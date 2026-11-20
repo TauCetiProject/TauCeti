@@ -93,7 +93,7 @@ theorem card_filter_le_le_card_filter_le [IsDomain R] {ι : Type*} [Fintype ι] 
   have key (i : {i // d i ≤ n}) :
       ∃ q : MvPolynomial {j // e j ≤ n} R, aeval (fun j : {j // e j ≤ n} ↦ g j) q = f i := by
     have := Algebra.adjoin_mono
-      (Set.image_mono (Set.ofPred_subset_ofPred.2 fun j hj ↦ hj.trans i.2))
+      (Set.image_mono (Set.ofPred_subset_ofPred.2 fun j hj ↦ hj.trans i.property))
       (mem_adjoin_image_of_mem_adjoin_range 𝒜 hg (hfg i) (hf i))
     rwa [Set.image_eq_range, Algebra.adjoin_range_eq_range_aeval] at this
   choose q hq using key

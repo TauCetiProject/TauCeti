@@ -111,24 +111,12 @@ theorem exists_hilbertBasis_nat_isDirichletEigenvalue_monotone [Nonempty ι]
           (dirichletSolutionOperator hcoeff hcoercive f) := by
   obtain ⟨s, B, kappa, u, hB, hpos, heig, hvalue, heq, hsum⟩ :=
     exists_hilbertBasis_forall_isDirichletEigenvalue hcoeff hcoercive hOmega hsymm
-  -- The solution operator acts on the basis vector `B g` by `κ_g⁻¹`.
-  have hS (g : s) :
-      dirichletSolutionOperator hcoeff hcoercive (B g) = (kappa g)⁻¹ • B g := by
-    classical
-    refine (hsum (B g)).unique ?_
-    convert hasSum_single (f := fun g' ↦ (kappa g')⁻¹ • B.repr (B g) g' • B g') g
-      (fun g' hg' ↦ by simp [B.repr_self, hg']) using 1
-    simp [B.repr_self]
-  -- Only finitely many eigenvalues lie below any bound, by compactness of the solution operator.
-  have hfin (R : ℝ) : {g : s | kappa g ≤ R}.Finite := by
-    rcases le_or_gt R 0 with hR | hR
-    · exact (finite_empty).subset fun g hg ↦ absurd ((hpos g).trans_le hg) hR.not_gt
-    refine (B.orthonormal.finite_setOf_le_norm_apply
-      (isCompactOperator_dirichletSolutionOperator hcoeff hcoercive hOmega)
-      (inv_pos.2 hR)).subset fun g (hg : kappa g ≤ R) ↦ ?_
-    rw [mem_ofPred_eq, hS, norm_smul, B.orthonormal.1 g, mul_one, Real.norm_eq_abs,
-      abs_of_pos (inv_pos.2 (hpos g))]
-    exact inv_anti₀ (hpos g) hg
+  have hfin (R : ℝ) : {g : s | kappa g ≤ R}.Finite :=
+    hcoercive.finite_setOf_le_of_orthonormal
+      (W1p0.isCompactOperator_valueL (by simp) hOmega) B.orthonormal hpos (u := u)
+      (fun g ↦ by rw [hB]; simpa only [W1p0.valueL_apply] using hvalue g)
+      (fun g v ↦ by
+        simpa only [energyFormH1L0_apply, W1p0.valueL_apply] using heq g v) R
   -- The basis is infinite, since `L²(Ω)` is infinite-dimensional.
   have : Infinite s := by
     rw [← not_finite_iff_infinite]
