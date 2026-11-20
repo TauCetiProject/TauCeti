@@ -39,7 +39,7 @@ variable (𝕜 F E) in
 /-- Fibrewise scalar multiplication on the total space of a topological vector bundle is jointly
 continuous. -/
 theorem continuous_smul :
-    Continuous fun p : 𝕜 × TotalSpace F E ↦ TotalSpace.mk' F p.2.proj (p.1 • p.2.2) := by
+    Continuous fun p : 𝕜 × TotalSpace F E ↦ TotalSpace.mk' F p.2.proj (p.1 • p.2.snd) := by
   refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
   rw [FiberBundle.continuousAt_totalSpace]
   refine ⟨((FiberBundle.continuous_proj F E).comp continuous_snd).continuousAt, ?_⟩
@@ -60,10 +60,10 @@ vector bundle, continuous at `x₀`, with `ψ x = c x • φ x` in the fibre ove
 If `φ x₀` is a nonzero vector, then the scalar function `c` is continuous at `x₀`. -/
 theorem continuousAt_of_eventually_eq_smul {c : X → 𝕜}
     {φ ψ : X → TotalSpace F E} {x₀ : X} (hφ : ContinuousAt φ x₀) (hψ : ContinuousAt ψ x₀)
-    (hψφ : ∀ᶠ x in 𝓝 x₀, ψ x = TotalSpace.mk' F (φ x).proj (c x • (φ x).2))
-    (h0 : (φ x₀).2 ≠ 0) : ContinuousAt c x₀ := by
+    (hψφ : ∀ᶠ x in 𝓝 x₀, ψ x = TotalSpace.mk' F (φ x).proj (c x • (φ x).snd))
+    (h0 : (φ x₀).snd ≠ 0) : ContinuousAt c x₀ := by
   set e := trivializationAt F E (φ x₀).proj
-  have hψx₀ : ψ x₀ = TotalSpace.mk' F (φ x₀).proj (c x₀ • (φ x₀).2) := hψφ.self_of_nhds
+  have hψx₀ : ψ x₀ = TotalSpace.mk' F (φ x₀).proj (c x₀ • (φ x₀).snd) := hψφ.self_of_nhds
   -- In the trivialization the two maps become `F`-valued maps `u` and `w`, continuous at `x₀`.
   obtain ⟨hp, hu⟩ : ContinuousAt (fun x ↦ (φ x).proj) x₀ ∧ ContinuousAt (fun x ↦ (e (φ x)).2) x₀ :=
     (FiberBundle.continuousAt_totalSpace F φ).1 hφ
@@ -71,7 +71,7 @@ theorem continuousAt_of_eventually_eq_smul {c : X → 𝕜}
     simpa only [hψx₀] using ((FiberBundle.continuousAt_totalSpace F ψ).1 hψ).2
   have hb₀ : (φ x₀).proj ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' _
   have hu₀ : (e (φ x₀)).2 ≠ 0 := by
-    rw [e.apply_eq_prod_continuousLinearEquivAt 𝕜 _ hb₀ (φ x₀).2]
+    rw [e.apply_eq_prod_continuousLinearEquivAt 𝕜 _ hb₀ (φ x₀).snd]
     exact (map_ne_zero_iff _ (e.continuousLinearEquivAt 𝕜 _ hb₀).injective).2 h0
   -- Over the base set the trivialization is linear on the fibre, so `w = c • u` near `x₀`.
   have hwu : ∀ᶠ x in 𝓝 x₀, (e (ψ x)).2 = c x • (e (φ x)).2 := by
@@ -93,7 +93,7 @@ end TauCeti.VectorBundle
 /-- A continuous map into the total space of a vector bundle, rescaled fibrewise by a continuous
 scalar function, is continuous. -/
 theorem Continuous.smul_totalSpace {c : X → 𝕜} {φ : X → TotalSpace F E} (hc : Continuous c)
-    (hφ : Continuous φ) : Continuous fun x ↦ TotalSpace.mk' F (φ x).proj (c x • (φ x).2) :=
+    (hφ : Continuous φ) : Continuous fun x ↦ TotalSpace.mk' F (φ x).proj (c x • (φ x).snd) :=
   (TauCeti.VectorBundle.continuous_smul 𝕜 F E).comp (hc.prodMk hφ)
 
 /-- **A bounded fibrewise rescaling is continuous.** Let `φ` be a continuous map into the total
@@ -102,10 +102,10 @@ where `φ` takes a nonzero value. Then `φ` rescaled fibrewise by `c` is continu
 `c` is needed at the zeros of `φ`: there the rescaled vector tends to zero because `c` is bounded.
 This covers radial retractions, whose scalar factor jumps where the vector vanishes. -/
 theorem Continuous.smul_totalSpace_of_norm_le {c : X → 𝕜} {φ : X → TotalSpace F E} {C : ℝ}
-    (hφ : Continuous φ) (hcC : ∀ x, ‖c x‖ ≤ C) (hc : ∀ x, (φ x).2 ≠ 0 → ContinuousAt c x) :
-    Continuous fun x ↦ TotalSpace.mk' F (φ x).proj (c x • (φ x).2) := by
+    (hφ : Continuous φ) (hcC : ∀ x, ‖c x‖ ≤ C) (hc : ∀ x, (φ x).snd ≠ 0 → ContinuousAt c x) :
+    Continuous fun x ↦ TotalSpace.mk' F (φ x).proj (c x • (φ x).snd) := by
   refine continuous_iff_continuousAt.2 fun x₀ ↦ ?_
-  by_cases h0 : (φ x₀).2 = 0
+  by_cases h0 : (φ x₀).snd = 0
   swap
   · exact (TauCeti.VectorBundle.continuous_smul 𝕜 F E).continuousAt.comp
       (f := fun x ↦ (c x, φ x)) ((hc x₀ h0).prodMk hφ.continuousAt)
@@ -121,16 +121,16 @@ theorem Continuous.smul_totalSpace_of_norm_le {c : X → 𝕜} {φ : X → Total
     have h : ContinuousAt (fun x ↦ (e (φ x)).2) x₀ :=
       continuous_snd.continuousAt.comp ((e.continuousOn.continuousAt hsrc).comp hφ.continuousAt)
     have hv : (e (φ x₀)).2 = 0 := by
-      rw [e.apply_eq_prod_continuousLinearEquivAt 𝕜 _ hb₀ (φ x₀).2, h0, map_zero]
+      rw [e.apply_eq_prod_continuousLinearEquivAt 𝕜 _ hb₀ (φ x₀).snd, h0, map_zero]
     rw [ContinuousAt, hv] at h
     exact h
   have hlim : Tendsto (fun x ↦ c x • (e (φ x)).2) (𝓝 x₀) (𝓝 0) :=
     IsBoundedUnder.smul_tendsto_zero ⟨C, eventually_map.2 (Eventually.of_forall hcC)⟩ hu
-  have hval : (e (TotalSpace.mk' F (φ x₀).proj (c x₀ • (φ x₀).2))).2 = 0 := by
+  have hval : (e (TotalSpace.mk' F (φ x₀).proj (c x₀ • (φ x₀).snd))).2 = 0 := by
     rw [TotalSpace.mk', e.apply_eq_prod_continuousLinearEquivAt 𝕜 _ hb₀, h0, smul_zero, map_zero]
   rw [ContinuousAt, hval]
   refine hlim.congr' ?_
   filter_upwards [hφ.continuousAt.preimage_mem_nhds hsrc] with x hx
   have hxb : (φ x).proj ∈ e.baseSet := e.mem_source.1 hx
-  rw [TotalSpace.mk', e.apply_eq_prod_continuousLinearEquivAt 𝕜 _ hxb (c x • (φ x).2), map_smul,
-    e.apply_eq_prod_continuousLinearEquivAt 𝕜 _ hxb (φ x).2]
+  rw [TotalSpace.mk', e.apply_eq_prod_continuousLinearEquivAt 𝕜 _ hxb (c x • (φ x).snd), map_smul,
+    e.apply_eq_prod_continuousLinearEquivAt 𝕜 _ hxb (φ x).snd]

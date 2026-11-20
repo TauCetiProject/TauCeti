@@ -141,7 +141,7 @@ theorem mapDomain_morseBoundaryAt {n : ℕ}
       (h.morseBoundaryAt_apply hf c ⟨r, hr⟩)
   · -- Outside index `n` both sides vanish: the left side by support, the right side because every
     -- boundary coefficient from index `n + 1` to `r` is zero.
-    rw [Finsupp.mapDomain_of_notMem_range _ _ fun ⟨q, hq⟩ ↦ hr (hq ▸ q.2), Finsupp.sum]
+    rw [Finsupp.mapDomain_of_notMem_range _ _ fun ⟨q, hq⟩ ↦ hr (hq ▸ q.property), Finsupp.sum]
     refine (Finset.sum_eq_zero fun p _ ↦ ?_).symm
     rw [h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf (by grind), mul_zero]
 
@@ -225,7 +225,7 @@ theorem isZero_morseComplex_X_of_finrank_lt {n : ℕ} (hn : finrank ℝ E < n) :
     IsZero ((h.morseComplex hf).X n) := by
   rw [morseComplex_X, ModuleCat.isZero_iff_subsingleton]
   have : IsEmpty {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} :=
-    ⟨fun p ↦ (manifoldMorseIndex_le_finrank.trans_lt hn).ne p.2⟩
+    ⟨fun p ↦ (manifoldMorseIndex_le_finrank.trans_lt hn).ne p.property⟩
   infer_instance
 
 /-- The mod-two Morse homology is finite-dimensional. -/

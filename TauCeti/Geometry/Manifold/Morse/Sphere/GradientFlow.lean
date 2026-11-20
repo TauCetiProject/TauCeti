@@ -197,7 +197,7 @@ private theorem one_add_sphereHeight_maximalIntegralCurve_neg_mgradient_eq (hx :
     1 + sphereHeight v (maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t) =
       (1 + sphereHeight v x) / (1 - sphereHeight v x) * Real.exp (-t) ^ 2 *
         (1 - sphereHeight v (maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t)) := by
-  rw [← Real.exp_nat_mul, show ((2 : ℕ) : ℝ) * -t = -(2 * t) by push_cast; ring,
+  rw [← Real.exp_natCast_mul, show ((2 : ℕ) : ℝ) * -t = -(2 * t) by push_cast; ring,
     ← one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient (n := n) hx ht,
     div_mul_cancel₀ _
       (sub_pos.2 (sphereHeight_maximalIntegralCurve_neg_mgradient_lt_one hx ht)).ne']

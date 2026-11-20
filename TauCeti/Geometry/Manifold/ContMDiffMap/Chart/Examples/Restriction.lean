@@ -51,47 +51,22 @@ private noncomputable def point (j : ℕ) : U₀ :=
 `(0, 1)`. -/
 private theorem locallyFinite_singleton_point : LocallyFinite fun j ↦ ({point j} : Set U₀) := by
   intro p
-  have hp : (0 : ℝ) < p.1 := p.2.1
-  refine ⟨{q | p.1 / 2 < q.1}, (isOpen_lt continuous_const continuous_subtype_val).mem_nhds
-    (half_lt_self hp), (finite_lt_nat ⌈2 / p.1⌉₊).subset ?_⟩
+  have hp : (0 : ℝ) < p.val := p.property.1
+  refine ⟨{q | p.val / 2 < q.val}, (isOpen_lt continuous_const continuous_subtypeVal).mem_nhds
+    (half_lt_self hp), (finite_lt_nat ⌈2 / p.val⌉₊).subset ?_⟩
   rintro j ⟨_, rfl, hj⟩
   -- `p / 2 < 1 / (j + 2)` forces `j + 2 < 2 / p`.
-  replace hj : (p.1 : ℝ) / 2 < 1 / (j + 2) := hj
-  have hlt : (j : ℝ) < 2 / p.1 := by
+  replace hj : (p.val : ℝ) / 2 < 1 / (j + 2) := hj
+  have hlt : (j : ℝ) < 2 / p.val := by
     rw [lt_div_iff₀ hp]
     rw [lt_div_iff₀ (by positivity)] at hj
     nlinarith
   exact Nat.cast_lt.mp (hlt.trans_le (Nat.le_ceil _))
 
-/-- The coordinate of the point `1 / (j + 2)` in its own chart, as a compact coordinate set. -/
-private noncomputable def pointCompacts (j : ℕ) : Compacts (extChartAt 𝓘(ℝ) (point j)).target :=
-  ⟨{⟨_, mem_extChartAt_target (point j)⟩}, isCompact_singleton⟩
-
 /-- The strong neighbourhood of `0` on `(0, 1)` asking for `|g (1 / (j + 2))| < 1 / (j + 2)` for
 every `j`. -/
-private noncomputable def control (n : ℕ∞) : StrongCkControl 𝓘(ℝ) U₀ n where
-  ι := ℕ
-  center := point
-  compact := pointCompacts
-  order := 0
-  order_le := by simp
-  tolerance j := 1 / (j + 2)
-  tolerance_pos _ := by positivity
-  locallyFinite := locallyFinite_singleton_point.subset fun j ↦ by
-    rintro _ ⟨_, ⟨_, rfl, rfl⟩, rfl⟩
-    exact extChartAt_to_inv (point j)
-
-/-- A function in the neighbourhood `control` satisfies `|g (1 / (j + 2))| < 1 / (j + 2)`. -/
-private theorem norm_lt_of_mem_ball_control {n : ℕ∞} {g : C^n⟮𝓘(ℝ), U₀; 𝓘(ℝ), ℝ⟯}
-    (hg : g ∈ (control n).ball 0) (j : ℕ) : ‖g (point j)‖ < 1 / (j + 2) := by
-  have hb : chartCkSeminorm (point j) (pointCompacts j) 0 (by simp) g < 1 / (j + 2) := by
-    -- The control's data unfold to the point `1 / (j + 2)`, order `0` and that tolerance.
-    have h := StrongCkControl.mem_ball.mp hg j
-    rw [sub_zero] at h
-    exact h
-  have h := (chartCkSeminorm_lt_iff _ _ _ _ _ (by positivity)).mp hb 0 le_rfl _ rfl
-  rwa [chartIteratedFDeriv_self_target_apply, norm_iteratedFDerivWithin_zero,
-    Function.comp_apply, extChartAt_to_inv] at h
+private noncomputable def control (n : ℕ∞) : StrongCkControl 𝓘(ℝ) U₀ n :=
+  .ofPoints point locallyFinite_singleton_point (fun j ↦ 1 / (j + 2)) fun _ ↦ by positivity
 
 /-- **Restriction from `ℝ` to `(0, 1)` is not continuous for the strong Whitney topologies.** -/
 theorem not_continuous_restrict_Ioo_manifoldStrongWhitney {n : ℕ∞} :
@@ -117,7 +92,8 @@ theorem not_continuous_restrict_Ioo_manifoldStrongWhitney {n : ℕ∞} :
   have hψ : ψ (1 / (j + 2)) = 1 := ψ.one_of_mem_closedBall <| by
     rw [Metric.mem_closedBall, dist_zero_right, Real.norm_of_nonneg (by positivity)]
     exact (one_div_add_two_mem_Ioo j).2.le
-  have h := norm_lt_of_mem_ball_control hδ j
+  have h : ‖(δ • u).restrict U₀ (point j)‖ < 1 / (j + 2) := by
+    simpa using StrongCkControl.mem_ball_ofPoints.mp hδ j
   rw [restrict_apply, coe_smul, Pi.smul_apply, smul_eq_mul] at h
   rw [point, coeFn_mk, hψ, mul_one, Real.norm_of_nonneg hδpos.le] at h
   linarith

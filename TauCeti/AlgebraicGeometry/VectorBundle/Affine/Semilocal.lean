@@ -67,17 +67,18 @@ theorem nonempty_iso_free_of_finite_maximalSpectrum {R : CommRingCat.{u}}
   obtain ⟨_, _⟩ := finite_projective_moduleSpecΓ E
   obtain ⟨b⟩ := Module.nonempty_basis_of_flat_of_finrank_eq R (moduleSpecΓFunctor.obj E.obj) n
     fun P ↦ by
-      let _ := Ideal.Quotient.field P.1
+      let _ := Ideal.Quotient.field P.asIdeal
       -- The rank of `R ⧸ P ⊗ Γ E` over the field `R ⧸ P` is its rank at the zero ideal, which
       -- is the rank of `Γ E` at the preimage `P` of the zero ideal.
-      have h := Module.rankAtStalk_baseChange (R := R) (S := R ⧸ P.1)
+      have h := Module.rankAtStalk_baseChange (R := R) (S := R ⧸ P.asIdeal)
         (M := moduleSpecΓFunctor.obj E.obj) ⟨⊥, Ideal.isPrime_bot⟩
-      have hP : PrimeSpectrum.comap (algebraMap R (R ⧸ P.1)) ⟨⊥, Ideal.isPrime_bot⟩ =
-          ⟨P.1, P.2.isPrime⟩ :=
+      have hP : PrimeSpectrum.comap (algebraMap R (R ⧸ P.asIdeal)) ⟨⊥, Ideal.isPrime_bot⟩ =
+          ⟨P.asIdeal, P.isMaximal.isPrime⟩ :=
         PrimeSpectrum.ext (by
           simp [Ideal.Quotient.algebraMap_eq, ← RingHom.ker_eq_comap_bot, Ideal.mk_ker])
       rw [Module.rankAtStalk_eq_finrank_of_free, hP] at h
-      exact h.trans ((rank_apply_eq_rankAtStalk E ⟨P.1, P.2.isPrime⟩).symm.trans (hn _))
+      exact h.trans ((rank_apply_eq_rankAtStalk E ⟨P.asIdeal, P.isMaximal.isPrime⟩).symm.trans
+          (hn _))
   exact ⟨isoFreeOfBasis E (b.reindex Equiv.ulift.symm)⟩
 
 namespace FixedRank

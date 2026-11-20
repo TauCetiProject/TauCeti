@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
-public import TauCeti.Algebra.Homology.Curved.Module.Right.Free
+public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Free
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Projective
 
 /-!
@@ -19,12 +19,12 @@ resolutions in the closed abelian category of curved differential graded right m
    curved right module `N` has finite projective dimension `≤ d`, then there is a closed morphism
    `f : Q ⟶ N` from a graded-projective curved module `Q` whose mapping cone is absolutely
    acyclic. The proof proceeds by induction on `d`, covering `N` by a graded-projective curved
-   module via `exists_gradedProjective_surjective`, resolving the kernel `K`, and taking the
+   module via `exists_epi_contractible_gradedProjective`, resolving the kernel `K`, and taking the
    mapping cone of `Q' ⟶ K ⟶ P`.
 2. **Left resolutions.** A `LeftResolution` of a curved module `M` is a sequence of short exact
    sequences `0 ⟶ K_{n+1} ⟶ P_n ⟶ K_n ⟶ 0` in the closed abelian category starting from
-   `K_0 ≅ M`. Iterating `exists_gradedProjective_surjective` and kernels produces a canonical
-   graded-projective left resolution `LeftResolution.ofGradedProjective M`.
+   `K_0 ≅ M`. Iterating `exists_epi_contractible_gradedProjective` and kernels produces a
+   canonical graded-projective left resolution `LeftResolution.ofGradedProjective M`.
 
 ## Main definitions
 
@@ -126,11 +126,12 @@ theorem exists_gradedProjective_absolutelyAcyclic_cone
     refine ⟨N, 𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N), hN, ?_⟩
     exact (absolutelyAcyclic R h).prop_of_isZero (isZero_homotopy_cone_isIso _)
   | succ d ih =>
-    obtain ⟨P, p, hP, hp⟩ := exists_gradedProjective_surjective N
+    obtain ⟨P, p, hp, hP, _⟩ := exists_epi_contractible_gradedProjective N
     let K := kernelObj p
     let ι := kernelι p
     let S := ShortComplex.mk ι p (kernelι_comp p)
-    have hS : S.ShortExact := shortExact_kernel_of_surjective p hp
+    have : Epi p := hp
+    have hS : S.ShortExact := shortExact_kernelι p
     have hSF := hS.map_of_exact (forgetDifferential (h := h))
     have hK : HasProjectiveDimensionLE (toGradedModuleCat K) d :=
       (hSF.hasProjectiveDimensionLT_X₃_iff d hP).1 hd
@@ -192,36 +193,39 @@ private noncomputable def gradedProjectiveCover (K : CurvedDGRightModuleCat.{u, 
     Σ' (P : CurvedDGRightModuleCat.{u, u, u} h)
       (p : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) P ⟶
         ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) K),
-      Projective (toGradedModuleCat P) ∧ Function.Surjective (closedHom p) :=
-  let hcov := exists_gradedProjective_surjective K
+      Epi p ∧ Projective (toGradedModuleCat P) :=
+  let hcov := exists_epi_contractible_gradedProjective K
   let P := Classical.choose hcov
   let hcov' := Classical.choose_spec hcov
   let p := Classical.choose hcov'
-  ⟨P, p, Classical.choose_spec hcov'⟩
+  let hp := Classical.choose_spec hcov'
+  ⟨P, p, hp.1, hp.2.1⟩
 
 private noncomputable def canonicalSyzygy (M : CurvedDGRightModuleCat.{u, u, u} h) :
     ℕ → CurvedDGRightModuleCat.{u, u, u} h
   | 0 => M
-  | n + 1 => kernelObj (gradedProjectiveCover (canonicalSyzygy M n)).2.1
+  | n + 1 => kernelObj (gradedProjectiveCover (canonicalSyzygy M n)).snd.fst
 
 /-- Every curved right module admits a left resolution whose terms are graded-projective curved
 right modules. -/
 noncomputable def ofGradedProjective (M : CurvedDGRightModuleCat.{u, u, u} h) :
     LeftResolution M where
   syzygy := canonicalSyzygy M
-  term n := (gradedProjectiveCover (canonicalSyzygy M n)).1
+  term n := (gradedProjectiveCover (canonicalSyzygy M n)).fst
   syzygyZeroIso := Iso.refl _
-  ι n := kernelι (gradedProjectiveCover (canonicalSyzygy M n)).2.1
-  π n := (gradedProjectiveCover (canonicalSyzygy M n)).2.1
+  ι n := kernelι (gradedProjectiveCover (canonicalSyzygy M n)).snd.fst
+  π n := (gradedProjectiveCover (canonicalSyzygy M n)).snd.fst
   ι_comp_π _ := kernelι_comp _
-  shortExact n := shortExact_kernel_of_surjective _
-    (gradedProjectiveCover (canonicalSyzygy M n)).2.2.2
+  shortExact n :=
+    have : Epi (gradedProjectiveCover (canonicalSyzygy M n)).snd.fst :=
+      (gradedProjectiveCover (canonicalSyzygy M n)).snd.snd.1
+    shortExact_kernelι _
 
 /-- Every term of the canonical resolution `LeftResolution.ofGradedProjective M` is
 graded-projective. -/
 instance projective_ofGradedProjective_term (M : CurvedDGRightModuleCat.{u, u, u} h) (n : ℕ) :
     Projective (toGradedModuleCat ((ofGradedProjective M).term n)) :=
-  (gradedProjectiveCover (canonicalSyzygy M n)).2.2.1
+  (gradedProjectiveCover (canonicalSyzygy M n)).snd.snd.2
 
 end Canonical
 
@@ -257,15 +261,15 @@ theorem diff_comp_π (n : ℕ) : r.diff n ≫ r.π n = 0 := by
 
 /-- In a left resolution, `closedHom (r.ι n)` is injective. -/
 theorem injective_ι (n : ℕ) : Function.Injective (closedHom (r.ι n)) :=
-  ((shortExact_iff _).1 (r.shortExact n)).1
+  (shortExact_iff.1 (r.shortExact n)).1
 
 /-- In a left resolution, `closedHom (r.π n)` is surjective. -/
 theorem surjective_π (n : ℕ) : Function.Surjective (closedHom (r.π n)) :=
-  ((shortExact_iff _).1 (r.shortExact n)).2.1
+  (shortExact_iff.1 (r.shortExact n)).2.1
 
 /-- In a left resolution, `closedHom (r.ι n)` and `closedHom (r.π n)` are exact. -/
 theorem exact_ι_π (n : ℕ) : Function.Exact (closedHom (r.ι n)) (closedHom (r.π n)) :=
-  ((shortExact_iff _).1 (r.shortExact n)).2.2
+  (shortExact_iff.1 (r.shortExact n)).2.2
 
 end LeftResolution
 

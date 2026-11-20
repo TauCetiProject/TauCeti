@@ -80,7 +80,7 @@ private instance final_basicOpenNhds : (basicOpenNhds p).Final := by
   refine Functor.final_of_exists_of_isFiltered _ (fun U ↦ ?_)
     fun _ _ ↦ ⟨_, 𝟙 _, Subsingleton.elim _ _⟩
   obtain ⟨_, ⟨f, rfl⟩, hpf, hfU⟩ :=
-    (Opens.isBasis_iff_nbhd.mp isBasis_basicOpen) (unop U).2
+    (Opens.isBasis_iff_nbhd.mp isBasis_basicOpen) (unop U).property
   exact ⟨⟨f, mem_basicOpen.mp hpf⟩, ⟨(homOfLE hfU).op⟩⟩
 
 variable (hI : IsAdic I) (hIfg : I.FG)
