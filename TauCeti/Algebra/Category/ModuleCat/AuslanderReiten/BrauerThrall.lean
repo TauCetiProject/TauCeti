@@ -13,8 +13,9 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Algebra.Category.ModuleCat.AB
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Sequence
+import TauCeti.CategoryTheory.Abelian.HaradaSai
 import TauCeti.CategoryTheory.Generator.Biproduct
-import TauCeti.Algebra.Category.ModuleCat.HaradaSai
+import TauCeti.Algebra.Category.ModuleCat.Length
 import TauCeti.Algebra.Category.FGModuleCat.RepresentationFinite
 import TauCeti.Algebra.Category.ModuleCat.Injective.LeftAlmostSplit
 import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
@@ -112,8 +113,8 @@ theorem isRepresentationFinite_of_length_le_of_isLeftAlmostSplit [IsArtinianRing
   have : Module.Finite A G := Module.Finite.equiv (Shrink.linearEquiv.{max v w} A A).symm
   obtain ⟨m, P, ⟨e⟩, hP⟩ := hsum G
   obtain ⟨S, hS, -, hSmem⟩ := exists_finite_forall_iso_of_hom_ne_zero T hlocal hsrc' (2 ^ b - 1)
-    (fun X f hX hf ↦ ofSequence_map_eq_zero_of_length_le f (fun n ↦ (hX n).2)
-      (fun n ↦ hlen _ (hX n).1 (hX n).2) hf le_rfl)
+    (fun X f hX hf ↦ ofSequence_map_eq_zero_of_length_le (ModuleCat.isLengthFunction_length A) f
+      (fun n ↦ (hX n).2) (fun n ↦ hlen _ (hX n).1 (hX n).2) hf le_rfl)
     (Set.finite_range P) (by rintro _ ⟨j, rfl⟩; exact hP j)
   refine isRepresentationFinite_of_forall_exists_iso hS fun M hf hi ↦ ?_
   -- A nonzero module receives a nonzero morphism from the ring, hence from a summand.
