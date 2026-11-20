@@ -104,6 +104,13 @@ private theorem e24_neg_three : e24 (-3) = cexp (-(π * I / 4)) := by
   push_cast
   ring
 
+private theorem e24_six : e24 6 = I := by
+  rw [e24, show 2 * π * I * ((6 : ℤ) : ℂ) / 24 = π / 2 * I by push_cast; ring, exp_pi_div_two_mul_I]
+
+private theorem e24_neg_six : e24 (-6) = -I := by
+  rw [e24_congr (show (-6 : ℤ) ≡ 12 * (1 : ℕ) + 6 [ZMOD 24] by decide), e24_add, e24_twelve_mul,
+    e24_six, pow_one, neg_one_mul]
+
 /-! ### Congruences modulo `24` -/
 
 /-- The exponent of the Kronecker form for odd `c`. -/
@@ -200,6 +207,11 @@ private theorem kroneckerOdd_translate {a b c d : ℤ} (n : ℤ) (hdet : a * d -
   rw [hsym, e24_congr (oddExp_translate_modEq n hdet hodd), e24_add]
   ring
 
+/-- The first supplement at `2 v + 1`: `(-1 / (2 v + 1)) = (-1) ^ v`. -/
+private theorem χ₄_two_mul_add_one (v : ℕ) : ZMod.χ₄ ((2 * v + 1 : ℕ) : ZMod 4) = (-1) ^ v := by
+  rw [ZMod.χ₄_eq_neg_one_pow (Nat.odd_iff.mp (odd_two_mul_add_one v)),
+    show (2 * v + 1) / 2 = v by omega]
+
 /-- Quadratic reciprocity and its first supplement in `e24` form: for `c = 2 u + 1` and
 `d = 2 v + 1`, `(-c / d) = e((12 v + 12 u v) / 24) · (d / c)`. -/
 private theorem jacobiSym_neg_eq_e24_mul (u v : ℕ) :
@@ -207,9 +219,9 @@ private theorem jacobiSym_neg_eq_e24_mul (u v : ℕ) :
       e24 (12 * v) * e24 (12 * (u * v)) * jacobiSym ((2 * v + 1 : ℕ) : ℤ) (2 * u + 1) := by
   have hc : Odd (2 * u + 1) := odd_two_mul_add_one u
   have hd : Odd (2 * v + 1) := odd_two_mul_add_one v
-  rw [jacobiSym.neg _ hd, jacobiSym.quadratic_reciprocity hc hd,
-    ZMod.χ₄_eq_neg_one_pow (Nat.odd_iff.mp hd), show (2 * u + 1) / 2 = u by omega,
-    show (2 * v + 1) / 2 = v by omega, ← Nat.cast_mul, e24_twelve_mul, e24_twelve_mul]
+  rw [jacobiSym.neg _ hd, jacobiSym.quadratic_reciprocity hc hd, χ₄_two_mul_add_one,
+    show (2 * u + 1) / 2 = u by omega, show (2 * v + 1) / 2 = v by omega, ← Nat.cast_mul,
+    e24_twelve_mul, e24_twelve_mul]
   push_cast
   ring
 
@@ -258,11 +270,10 @@ private theorem kroneckerEven_inversion {a b c d : ℤ} (hdet : a * d - b * c = 
       kroneckerSym c d * e24 (evenExp a b c d) := by
   lift d to ℕ using hd.le
   have hdo' : Odd d := (Int.odd_natCast d).mp hdo
-  rw [kroneckerSym_eq_jacobiSym _ hdo', kroneckerSym_eq_jacobiSym _ hdo', jacobiSym.neg _ hdo',
-    ZMod.χ₄_eq_neg_one_pow (Nat.odd_iff.mp hdo')]
+  rw [kroneckerSym_eq_jacobiSym _ hdo', kroneckerSym_eq_jacobiSym _ hdo', jacobiSym.neg _ hdo']
   obtain ⟨m, rfl⟩ := hce
   obtain ⟨v, rfl⟩ := hdo'
-  rw [show (2 * v + 1) / 2 = v by omega, ← two_mul]
+  rw [χ₄_two_mul_add_one, ← two_mul]
   rw [← two_mul] at hdet
   push_cast at hdet ⊢
   have key := e24_congr (evenExp_inversion_modEq hdet)
@@ -296,8 +307,7 @@ private theorem χ₄_natAbs_mul_e24 {d : ℤ} (hdo : Odd d) :
   all_goals
     obtain ⟨w, rfl⟩ := (Int.odd_natCast n).mp (by simpa using hdo)
     simp only [Int.natAbs_neg, Int.natAbs_natCast]
-    rw [ZMod.χ₄_eq_neg_one_pow (Nat.odd_iff.mp (odd_two_mul_add_one w)),
-      show (2 * w + 1) / 2 = w by omega]
+    rw [χ₄_two_mul_add_one]
     push_cast
     rw [← e24_twelve_mul, ← e24_add]
   · rw [ite_eq_right (by omega), e24_congr (Int.modEq_iff_dvd.mpr ⟨0, by ring⟩ : _ ≡ 0 [ZMOD 24])]
@@ -310,16 +320,13 @@ private theorem χ₄_natAbs_mul_e24 {d : ℤ} (hdo : Odd d) :
 private theorem kroneckerEven_neg {a b c d : ℤ} (hc : c < 0) (hdo : Odd d) :
     I * ((kroneckerSym (-c) (-d) : ℂ) * e24 (evenExp (-a) (-b) (-c) (-d))) =
       kroneckerSym c d * e24 (evenExp a b c d) := by
-  have hI : e24 6 = I := by
-    rw [e24, show 2 * π * I * ((6 : ℤ) : ℂ) / 24 = π / 2 * I by push_cast; ring,
-      exp_pi_div_two_mul_I]
   have hexp :
       e24 6 * e24 (evenExp (-a) (-b) (-c) (-d)) = e24 (6 - 6 * d) * e24 (evenExp a b c d) := by
     simp only [← e24_add, evenExp]
     congr 1
     ring
   -- Both symbols are `J(± c | |d|)`; the sign of `(c / d)` records whether `d < 0`.
-  rw [← hI, kroneckerSym_of_odd _ hdo.neg, kroneckerSym_of_odd _ hdo, Int.natAbs_neg,
+  rw [← e24_six, kroneckerSym_of_odd _ hdo.neg, kroneckerSym_of_odd _ hdo, Int.natAbs_neg,
     jacobiSym.neg _ (Int.natAbs_odd.mpr hdo), ite_eq_right (by omega)]
   simp only [hc, true_and]
   push_cast
@@ -346,9 +353,7 @@ private theorem etaMultiplier_eq_e24_three_mul (γ : SL(2, ℤ)) (hd : 0 < γ 1 
 
 private theorem etaMultiplier_eq_e24_neg_three_mul (γ : SL(2, ℤ)) (hc : 0 < γ 1 0)
     (hd : γ 1 1 < 0) : etaMultiplier γ = e24 (-3) * etaMultiplier (-(γ * S)) := by
-  have h6 : e24 (-3) * e24 (-3) = -I := by
-    rw [← e24_add, e24, show 2 * π * I * ((-3 + -3 : ℤ) : ℂ) / 24 = -(π / 2 * I) by
-      push_cast; ring, Complex.exp_neg, exp_pi_div_two_mul_I, inv_I]
+  have h6 : e24 (-3) * e24 (-3) = -I := by rw [← e24_add, ← e24_neg_six]; rfl
   rw [etaMultiplier_neg_of_c_neg (γ * S) (by rwa [mul_S_apply_apply_zero]),
     etaMultiplier_mul_S_of_c_pos_of_d_neg γ hc hd, ← e24_neg_three]
   linear_combination (-(I * etaMultiplier γ)) * h6 + etaMultiplier γ * I_sq
@@ -473,9 +478,9 @@ private theorem etaMultiplier_eq_kroneckerEven (γ : SL(2, ℤ)) (heven : Even (
       push_cast
       ring
     · rw [etaMultiplier_of_c_eq_zero_of_d_neg γ hzero (by omega), hzero, hd,
-        kroneckerSym_neg_one_right, ite_eq_right (lt_irrefl 0), Int.cast_one, one_mul, e24,
-        show -I = cexp (-(π / 2 * I)) by rw [Complex.exp_neg, exp_pi_div_two_mul_I, inv_I],
-        ← Complex.exp_add]
+        kroneckerSym_neg_one_right, ite_eq_right (lt_irrefl 0), Int.cast_one, one_mul,
+        ← e24_neg_six]
+      simp only [e24, ← Complex.exp_add]
       congr 1
       simp only [evenExp]
       push_cast
