@@ -956,6 +956,19 @@ theorem natCard_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount (j : �
     (manifoldMorseIndex I f · = j)), criticalCount_def, ← ncard_def]
   exact Nat.card_coe_set_eq {x | x ∈ criticalPoints I f ∧ manifoldMorseIndex I f x = j}
 
+/-- On a manifold modelled on a zero-dimensional space every point is critical of index `0`, so
+the number of critical points of index `0` is the number of points, possibly `⊤`. -/
+@[simp]
+theorem criticalCount_zero_of_subsingleton [Subsingleton E] :
+    criticalCount I f 0 = ENat.card M := by
+  simp [criticalCount_def, encard_univ]
+
+/-- On a manifold modelled on a zero-dimensional space every Morse index is `0`, so there are no
+critical points of positive index. -/
+theorem criticalCount_eq_zero_of_subsingleton [Subsingleton E] {j : ℕ} (hj : j ≠ 0) :
+    criticalCount I f j = 0 := by
+  simp [criticalCount_def, hj.symm]
+
 /-- A function and its negation have the same number of critical points. -/
 @[simp]
 theorem totalCriticalCount_neg : totalCriticalCount I (-f) = totalCriticalCount I f := by
