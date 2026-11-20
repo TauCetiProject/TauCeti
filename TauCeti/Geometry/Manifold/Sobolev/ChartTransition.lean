@@ -137,7 +137,7 @@ section WeakDerivTarget
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
-  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ G H} [I.Boundaryless]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H N] [IsManifold I 1 N]
 
@@ -149,6 +149,7 @@ theorem HasWeakFDerivOn.extCoordChange_comp {b y : N} {v : E → N} {D : E → E
     (hD : HasWeakFDerivOn μ Ω (extChartAt I b ∘ v) D) (hv : ContinuousOn (extChartAt I b ∘ v) Ω)
     (hvΩ : ∀ z ∈ Ω, v z ∈ (chartAt H b).source ∩ (chartAt H y).source) :
     HasWeakFDerivOn μ Ω (extChartAt I y ∘ v) fun z ↦ tangentCoordChange I b y (v z) ∘L D z := by
+  have := hD.completeSpace
   have hb : ∀ z ∈ Ω, v z ∈ (extChartAt I b).source := fun z hz ↦ by
     simpa using (hvΩ z hz).1
   have hO : IsOpen ((extChartAt I b).symm ≫ extChartAt I y).source := by

@@ -147,7 +147,7 @@ private theorem coe_interior_chartAt_target_inter_preimage (hs : IsOpen s) (hu :
       (chartAt ℂ x₀).target ∩ (chartAt ℂ x₀).symm ⁻¹' (s ∩ u ⁻¹' t) :=
   ((chartAt ℂ x₀).isOpen_inter_preimage_symm_inter_preimage hu hs ht).interior_eq
 
-variable [IsManifold 𝓘(ℝ, ℂ) 1 X] [IsManifold I 1 M] [I.Boundaryless] [CompleteSpace F]
+variable [IsManifold 𝓘(ℝ, ℂ) 1 X] [IsManifold I 1 M] [I.Boundaryless]
 
 /-- **Change of the pair of charts.** Let `D` be a weak derivative of the coordinate expression of
 `u` in the chart of `X` at `a` and the extended chart of `M` at `b`. Then, on the part of the
@@ -165,6 +165,7 @@ private theorem hasWeakFDerivOn_extChartAt_comp_comp_chartAt_symm (hs : IsOpen s
         tangentCoordChange I b y₀ (u ((chartAt ℂ x₀).symm z)) ∘L
           D (chartAt ℂ a ((chartAt ℂ x₀).symm z)) ∘L
             fderiv ℝ (chartAt ℂ a ∘ (chartAt ℂ x₀).symm) z := by
+  have := hD.completeSpace
   set V := (chartAt ℂ x₀).target ∩ (chartAt ℂ x₀).symm ⁻¹'
     ((s ∩ (chartAt ℂ a).source) ∩ u ⁻¹' ((chartAt H y₀).source ∩ (chartAt H b).source))
   have hV : (Opens.interior V : Set ℂ) = V :=
@@ -224,7 +225,7 @@ of countably many such charts containing it. If the coordinate expression of `u`
 `x₀` and `y₀` has some weak derivative, then the field obtained from the `D (sel x)` by the changes
 of chart is a weak derivative of it. -/
 private theorem hasWeakFDerivOn_glue [IsManifold 𝓘(ℝ, ℂ) 1 X] [IsManifold I 1 M]
-    [I.Boundaryless] [CompleteSpace F] (hs : IsOpen s) (hc : ContinuousOn u s)
+    [I.Boundaryless] (hs : IsOpen s) (hc : ContinuousOn u s)
     {D : X → ℂ → ℂ →L[ℝ] F} (hD : ∀ a, HasWeakFDerivOn volume
       (Opens.interior ((chartAt ℂ a).target ∩
         (chartAt ℂ a).symm ⁻¹' (s ∩ u ⁻¹' (chartAt H (u a)).source)))
@@ -246,6 +247,7 @@ private theorem hasWeakFDerivOn_glue [IsManifold 𝓘(ℝ, ℂ) 1 X] [IsManifold
                   (sel ((chartAt ℂ x₀).symm z)) ((chartAt ℂ x₀).symm z)) ∘L
             (fderiv ℝ (chartAt ℂ ((chartAt ℂ x₀).symm z) ∘ (chartAt ℂ x₀).symm) z :
               ℂ →L[ℝ] ℂ) := by
+  have := hD'.completeSpace
   set φ₀ := chartAt ℂ x₀
   set W := φ₀.target ∩ φ₀.symm ⁻¹' (s ∩ u ⁻¹' (chartAt H y₀).source)
   -- On the part `V a` of `W` covered by the charts at `a ∈ T` and `u a`, the weak derivative `D'`
@@ -290,10 +292,6 @@ theorem MemWkpLocMapOn.exists_hasWeakMFDerivOn [SecondCountableTopology X]
     (memWkpLoc_succ_iff.1 (hu.memWkpLoc_chart (IsManifold.chart_mem_maximalAtlas a)
       (IsManifold.chart_mem_maximalAtlas b))).2.imp fun _ hD ↦ hD.1
   choose D hD using hex
-  rcases isEmpty_or_nonempty X with hX | ⟨⟨x⟩⟩
-  · exact ⟨fun x ↦ isEmptyElim x, fun x₀ ↦ isEmptyElim x₀⟩
-  -- Weak derivatives take values in complete spaces.
-  have : CompleteSpace F := (hD x (u x)).completeSpace
   -- Glue those in the charts at `a` and `u a`, for countably many `a`, along changes of chart.
   obtain ⟨T, hT, sel, hsel⟩ := exists_countable_chartAt_selection (H := H) hs hu.continuousOn
   exact ⟨fun x ↦ (tangentCoordChange I (u (sel x)) (u x) (u x) ∘L
