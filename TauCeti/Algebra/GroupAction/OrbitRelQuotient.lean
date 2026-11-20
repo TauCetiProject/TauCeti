@@ -79,6 +79,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   exactly when they lie in the same `G`-orbit (`SubMulAction.orbitRel_iff`). If the stabilizer in
   `G` of a point of `S` lies in `H`, its stabilizer in `H` is trivial exactly when its stabilizer in
   `G` is (`SubMulAction.stabilizer_eq_bot_iff`).
+* `TauCeti.MulAction.stabilizer_smul_le_iff_of_normal`: whether a point stabilizer lies in a
+  normal subgroup depends only on the orbit of the point.
 * `TauCeti.MulAction.stabilizer_sigma_mk`: the stabilizer of a sigma point is its fibre
   stabilizer.
 * `TauCeti.MulAction.orbitRelQuotientSigmaEquiv`: the orbit space of a componentwise sigma
@@ -715,6 +717,18 @@ theorem MulAction.stabilizer_eq_of_injective {Y : Type*} [MulAction G Y]
     _root_.MulAction.stabilizer G (f x) = _root_.MulAction.stabilizer G x := by
   ext g
   simp only [_root_.MulAction.mem_stabilizer_iff, ← he, hf.eq_iff]
+
+/-- **Containment of stabilizers in a normal subgroup is an orbit property.** The stabilizers
+along an orbit are conjugate, so one of them lies in a normal subgroup `N` exactly when the other
+does. -/
+@[to_additive /-- **Containment of stabilizers in a normal subgroup is an orbit property.** The
+stabilizers along an orbit are conjugate, so one of them lies in a normal subgroup `N` exactly when
+the other does. -/]
+theorem MulAction.stabilizer_smul_le_iff_of_normal {N : Subgroup G} [N.Normal] {g : G} {x : X} :
+    _root_.MulAction.stabilizer G (g • x) ≤ N ↔ _root_.MulAction.stabilizer G x ≤ N := by
+  conv_lhs => rw [_root_.MulAction.stabilizer_smul_eq_stabilizer_map_conj,
+    ← Subgroup.Normal.map_conj_eq N g]
+  exact Subgroup.map_le_map_iff_of_injective (MulAut.conj g).injective
 
 section Sum
 

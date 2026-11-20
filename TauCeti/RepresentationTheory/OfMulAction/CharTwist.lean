@@ -38,12 +38,15 @@ permutation representation are free, with basis the twisted orbit sums of the or
 is trivial on stabilizers (`TauCeti.charTrivialOrbits`). The set `X` need not be finite, which is
 the case of singular chains. Each orbit contributes a copy of `k` if `χ` is trivial on its
 stabilizers and nothing otherwise. Over a field, the dimension of the invariants is the number of
-those orbits (`TauCeti.finrank_invariants_charTwist_ofMulAction`).
+those orbits (`TauCeti.finrank_invariants_charTwist_ofMulAction`); over any nontrivial ring
+satisfying the non-zero-divisor hypothesis, the rank of the invariants is the cardinality of that
+set of orbits, finite or not (`TauCeti.rank_invariants_charTwist_ofMulAction`).
 
 For the trivial character every orbit counts, and the basis vector of an orbit is the indicator of
 the orbit, as in `TauCeti.invariantOrbitSumBasis`. For the sign character of `ℤ/2` acting on two
 points by exchanging them, the invariants are spanned by the difference of the two basis vectors;
-for `ℤ/2` acting trivially on one point with the sign character, they are zero.
+for `ℤ/2` acting trivially on one point with the sign character, they are zero when `2` is a
+non-zero-divisor in `k`.
 
 ## Main definitions
 
@@ -58,12 +61,16 @@ for `ℤ/2` acting trivially on one point with the sign character, they are zero
 
 * `TauCeti.mem_invariants_charTwist_ofMulAction_iff`: the coefficient description of invariants.
 * `TauCeti.coeff_eq_zero_of_mem_invariants_charTwist`: invariants vanish at points whose
-  stabilizer meets `χ` nontrivially.
-* `TauCeti.stabilizer_smul_le_ker_iff`: whether `χ` is trivial on stabilizers depends only on the
-  orbit.
+  stabilizer contains an `h` with `χ h - 1` a non-zero-divisor.
+* `TauCeti.mem_charTrivialOrbits_iff`: an orbit is in `charTrivialOrbits` exactly when `χ` is
+  trivial on the stabilizer of its chosen representative; this depends only on the orbit
+  (`TauCeti.MulAction.stabilizer_smul_le_iff_of_normal`).
 * `TauCeti.twistedOrbitSum_mem_invariants`: twisted orbit sums are invariant.
 * `TauCeti.twistedInvariantOrbitSumBasis_repr_apply`: the coordinate of an invariant at an orbit
   is its coefficient at the chosen representative.
+* `TauCeti.rank_invariants_charTwist_ofMulAction`: under the same non-zero-divisor hypothesis,
+  over a nontrivial ring, the rank of the invariants is the cardinality of the set of orbits on
+  which `χ` is trivial on stabilizers.
 * `TauCeti.finrank_invariants_charTwist_ofMulAction`: over a field, the dimension of the
   invariants is the number of orbits on which `χ` is trivial on stabilizers.
 
@@ -81,7 +88,9 @@ open MonoidAlgebra MulAction Module Representation
 
 namespace TauCeti
 
-variable {k Γ X : Type*} [CommRing k] [Group Γ] [MulAction Γ X] (χ : Γ →* kˣ)
+universe u v w
+
+variable {k : Type u} {Γ : Type v} {X : Type w} [CommRing k] [Group Γ] [MulAction Γ X] (χ : Γ →* kˣ)
 
 /-! ### The coefficient description of invariants -/
 
@@ -121,18 +130,12 @@ theorem isLeftRegular_sub_one_of_ne_one [NoZeroDivisors k] {g : Γ} (hg : χ g �
 
 /-! ### Orbits on which the character is trivial on stabilizers -/
 
-variable {χ} in
-/-- Whether `χ` is trivial on the stabilizer of a point depends only on its orbit: the
-stabilizers along an orbit are conjugate, and `χ` takes values in a commutative group. -/
-theorem stabilizer_smul_le_ker_iff {g : Γ} {x : X} :
-    stabilizer Γ (g • x) ≤ χ.ker ↔ stabilizer Γ x ≤ χ.ker := by
-  conv_lhs => rw [stabilizer_smul_eq_stabilizer_map_conj, ← Subgroup.Normal.map_conj_eq χ.ker g]
-  exact Subgroup.map_le_map_iff_of_injective (MulAut.conj g).injective
-
 variable (X) in
 /-- The orbits of `X` on which `χ` is trivial on stabilizers: those on which the twisted orbit
-sums are defined. Each of them contributes one basis vector to the invariants of the twisted
-permutation representation. -/
+sums are nonzero. Whether `χ` is trivial on stabilizers depends only on the orbit, since stabilizers
+along an orbit are conjugate and the kernel of `χ` is normal. Under the regularity hypothesis of
+`TauCeti.twistedInvariantOrbitSumBasis`, each of these orbits contributes one basis vector to the
+invariants of the twisted permutation representation. -/
 def charTrivialOrbits : Set (orbitRel.Quotient Γ X) :=
   {ω | ∀ x : X, (Quotient.mk'' x : orbitRel.Quotient Γ X) = ω → stabilizer Γ x ≤ χ.ker}
 
@@ -145,7 +148,14 @@ theorem mk_mem_charTrivialOrbits_iff {x : X} :
       stabilizer Γ x ≤ χ.ker := by
   refine ⟨fun h ↦ h x rfl, fun h y hy ↦ ?_⟩
   obtain ⟨g, rfl⟩ := mem_orbit_iff.1 (orbitRel_apply.1 (Quotient.exact' hy))
-  exact stabilizer_smul_le_ker_iff.2 h
+  exact MulAction.stabilizer_smul_le_iff_of_normal.2 h
+
+variable {χ} in
+/-- An orbit lies in `charTrivialOrbits` exactly when `χ` is trivial on the stabilizer of its
+chosen representative. -/
+theorem mem_charTrivialOrbits_iff {ω : orbitRel.Quotient Γ X} :
+    ω ∈ charTrivialOrbits X χ ↔ stabilizer Γ ω.out ≤ χ.ker := by
+  rw [← mk_mem_charTrivialOrbits_iff, Quotient.mk''_eq_mk, Quotient.out_eq]
 
 /-! ### Twisted orbit sums -/
 
@@ -165,11 +175,20 @@ noncomputable def twistedOrbitSum (x : X) : k[X] :=
 
 variable {χ}
 
+open scoped Classical in
+/-- The coefficients of the twisted orbit sum, as given by its definition: at a point `y` of the
+orbit of `x`, when `χ` is trivial on the stabilizer of `x`, it is `χ g` for a chosen `g` with
+`g • x = y`, and it is `0` otherwise. -/
+theorem coeff_twistedOrbitSum (x y : X) :
+    (twistedOrbitSum χ x).coeff y =
+      if h : stabilizer Γ x ≤ χ.ker ∧ ∃ g : Γ, g • x = y then (χ h.2.choose : k) else 0 := by
+  simp only [twistedOrbitSum, coeff_ofCoeff, Finsupp.ofSupportFinite_coe]
+
 /-- The coefficient of the twisted orbit sum at `g • x` is `χ g`. -/
 theorem coeff_twistedOrbitSum_smul {x : X} (hx : stabilizer Γ x ≤ χ.ker) (g : Γ) :
     (twistedOrbitSum χ x).coeff (g • x) = χ g := by
   have h : stabilizer Γ x ≤ χ.ker ∧ ∃ c : Γ, c • x = g • x := ⟨hx, g, rfl⟩
-  simp only [twistedOrbitSum, coeff_ofCoeff, Finsupp.ofSupportFinite_coe, dite_eq_left h]
+  rw [coeff_twistedOrbitSum, dite_eq_left h]
   have hmem : g⁻¹ * h.2.choose ∈ stabilizer Γ x := by
     rw [mem_stabilizer_iff, mul_smul, h.2.choose_spec, inv_smul_smul]
   have := MonoidHom.mem_ker.1 (hx hmem)
@@ -180,7 +199,7 @@ theorem coeff_twistedOrbitSum_smul {x : X} (hx : stabilizer Γ x ≤ χ.ker) (g 
 theorem coeff_twistedOrbitSum_of_notMem {x y : X} (hy : y ∉ orbit Γ x) :
     (twistedOrbitSum χ x).coeff y = 0 := by
   have h : ¬(stabilizer Γ x ≤ χ.ker ∧ ∃ g : Γ, g • x = y) := fun h ↦ hy h.2
-  simp only [twistedOrbitSum, coeff_ofCoeff, Finsupp.ofSupportFinite_coe, dite_eq_right h]
+  rw [coeff_twistedOrbitSum, dite_eq_right h]
 
 /-- The twisted orbit sum at a point whose stabilizer is not contained in the kernel of `χ` is
 `0`. -/
@@ -188,8 +207,7 @@ theorem twistedOrbitSum_of_not_le {x : X} (hx : ¬stabilizer Γ x ≤ χ.ker) :
     twistedOrbitSum χ x = 0 := by
   ext y
   have h : ¬(stabilizer Γ x ≤ χ.ker ∧ ∃ g : Γ, g • x = y) := fun h ↦ hx h.1
-  simp only [twistedOrbitSum, coeff_ofCoeff, Finsupp.ofSupportFinite_coe, dite_eq_right h,
-    coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
+  rw [coeff_twistedOrbitSum, dite_eq_right h, coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
 
 @[simp]
 theorem coeff_twistedOrbitSum_self {x : X} (hx : stabilizer Γ x ≤ χ.ker) :
@@ -216,7 +234,7 @@ omit [Finite Γ] in
 /-- The representative of an orbit in `charTrivialOrbits` has stabilizer in the kernel of `χ`. -/
 theorem stabilizer_out_le_ker {ω : orbitRel.Quotient Γ X} (hω : ω ∈ charTrivialOrbits X χ) :
     stabilizer Γ ω.out ≤ χ.ker :=
-  mk_mem_charTrivialOrbits_iff.1 <| by rwa [Quotient.mk''_eq_mk, Quotient.out_eq]
+  mem_charTrivialOrbits_iff.1 hω
 
 /-- The twisted orbit sum at the representative of an orbit vanishes off that orbit. -/
 theorem coeff_twistedOrbitSum_out_of_ne {ω : orbitRel.Quotient Γ X} {y : X}
@@ -238,6 +256,16 @@ theorem coe_charTwistOrbitVector (ω : charTrivialOrbits X χ) :
     (charTwistOrbitVector (k := k) χ ω : k[X]) = twistedOrbitSum χ ω.1.out :=
   (rfl)
 
+/-- The coefficient of a combination of the vectors `charTwistOrbitVector χ ω` at a point `y` is
+the corresponding combination of the coefficients of the twisted orbit sums at `y`. -/
+theorem coeff_linearCombination_charTwistOrbitVector (c : charTrivialOrbits X χ →₀ k) (y : X) :
+    ((Finsupp.linearCombination k (charTwistOrbitVector χ) c : _) : k[X]).coeff y =
+      ∑ ω ∈ c.support, c ω * (twistedOrbitSum χ ω.1.out).coeff y := by
+  classical
+  rw [Finsupp.linearCombination_apply, Finsupp.sum, Submodule.coe_sum, coeff_sum,
+    Finset.sum_apply']
+  simp only [SetLike.val_smul, coeff_smul_apply, coe_charTwistOrbitVector, smul_eq_mul]
+
 /-- The coefficient of a combination of the vectors `charTwistOrbitVector χ ω` at a translate
 `g • ω.out` of a representative is `χ g` times the coordinate at `ω`. -/
 theorem coeff_linearCombination_charTwistOrbitVector_smul_out (c : charTrivialOrbits X χ →₀ k)
@@ -248,11 +276,9 @@ theorem coeff_linearCombination_charTwistOrbitVector_smul_out (c : charTrivialOr
   have hmk : (Quotient.mk'' (g • ω.1.out) : orbitRel.Quotient Γ X) = ω.1 := by
     rw [← orbitRel.Quotient.mem_orbit, orbitRel.Quotient.orbit_eq_orbit_out _ Quotient.out_eq']
     exact mem_orbit _ g
-  rw [Finsupp.linearCombination_apply, Finsupp.sum, Submodule.coe_sum, coeff_sum,
-    Finset.sum_apply', Finset.sum_eq_single ω]
+  rw [coeff_linearCombination_charTwistOrbitVector, Finset.sum_eq_single ω]
   · simp [coeff_twistedOrbitSum_smul (stabilizer_out_le_ker ω.2)]
   · intro ω' _ hω'
-    simp only [SetLike.val_smul, coeff_smul_apply, coe_charTwistOrbitVector, smul_eq_mul]
     rw [coeff_twistedOrbitSum_out_of_ne fun h ↦ hω' (Subtype.ext (hmk ▸ h).symm), mul_zero]
   · intro hω
     simp [Finsupp.notMem_support_iff.1 hω]
@@ -262,11 +288,8 @@ not in `charTrivialOrbits`. -/
 theorem coeff_linearCombination_charTwistOrbitVector_of_notMem (c : charTrivialOrbits X χ →₀ k)
     {y : X} (hy : (Quotient.mk'' y : orbitRel.Quotient Γ X) ∉ charTrivialOrbits X χ) :
     ((Finsupp.linearCombination k (charTwistOrbitVector χ) c : _) : k[X]).coeff y = 0 := by
-  classical
-  rw [Finsupp.linearCombination_apply, Finsupp.sum, Submodule.coe_sum, coeff_sum,
-    Finset.sum_apply']
+  rw [coeff_linearCombination_charTwistOrbitVector]
   refine Finset.sum_eq_zero fun ω _ ↦ ?_
-  simp only [SetLike.val_smul, coeff_smul_apply, coe_charTwistOrbitVector, smul_eq_mul]
   rw [coeff_twistedOrbitSum_out_of_ne fun h ↦ hy (h ▸ ω.2), mul_zero]
 
 /-- The vectors `charTwistOrbitVector χ ω` are linearly independent. -/
@@ -336,6 +359,17 @@ theorem twistedInvariantOrbitSumBasis_repr_apply
     ((twistedInvariantOrbitSumBasis hχ).repr v) ω 1
   rw [one_smul] at this
   rw [this, map_one, Units.val_one, mul_one]
+
+/-- **The rank of the invariants.** For a finite group `Γ` and a character `χ` such that `χ g - 1`
+is a non-zero-divisor whenever `χ g ≠ 1`, the invariants of `k[X]` twisted by `χ` have rank the
+cardinality of the set of orbits on which `χ` is trivial on stabilizers. This includes the case of
+infinitely many such orbits. -/
+theorem rank_invariants_charTwist_ofMulAction [Nontrivial k]
+    (hχ : ∀ g : Γ, χ g ≠ 1 → IsLeftRegular ((χ g : k) - 1)) :
+    Module.rank k (charTwist χ (ofMulAction k Γ X)).invariants =
+      Cardinal.lift (Cardinal.mk (charTrivialOrbits X χ)) := by
+  rw [← Cardinal.lift_id'.{w, u} (Module.rank k _), ← (twistedInvariantOrbitSumBasis hχ).mk_eq_rank]
+  exact congrFun Cardinal.lift_umax.{w, u} _
 
 /-- **The dimension of the invariants.** Over a field, the invariants of `k[X]` twisted by `χ`
 have dimension the number of orbits on which `χ` is trivial on stabilizers. -/
