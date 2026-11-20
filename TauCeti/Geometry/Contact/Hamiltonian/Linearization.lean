@@ -88,22 +88,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] {α : SmoothForm I M ℝ 1} {f : M → ℝ} {p : M}
 
-/-- Two vectors of the contact hyperplane `ξ_p` with the same `dα_p`-pairing against `ξ_p` are
-equal, since `dα_p` is nondegenerate on `ξ_p`. -/
-private theorem eq_of_mem_kerDistribution_of_forall_mextDeriv_eq (hα : α.IsContactForm)
-    {a b : TangentSpace I p} (ha : α.1 p ![a] = 0) (hb : α.1 p ![b] = 0)
-    (hab : ∀ u ∈ α.kerDistribution p, mextDeriv α.1 p ![a, u] = mextDeriv α.1 p ![b, u]) :
-    a = b := by
-  -- The contact flat maps of `a` and `b` agree on the component of `v` in `ξ_p` and on the Reeb
-  -- vector, which `dα_p` kills.
-  refine (hα.isInvertible_contactFlat p).injective (ContinuousLinearMap.ext fun v ↦ ?_)
-  have h := hab _ (hα.sub_smul_reebVectorField_mem_kerDistribution v)
-  have hRa := hα.mextDeriv_reebVectorField_right p a
-  have hRb := hα.mextDeriv_reebVectorField_right p b
-  simp only [mextDeriv_eq_bilinFormAt] at h hRa hRb
-  simp only [map_sub, map_smul, hRa, hRb, smul_zero, sub_zero] at h
-  simpa only [contactFlat_apply, ha, hb, zero_mul, add_zero, mextDeriv_eq_bilinFormAt] using h
-
 /-! ### The linearization at a second-order zero -/
 
 variable [I.Boundaryless]
