@@ -7,47 +7,51 @@ module
 
 public import Mathlib.Probability.Process.Indistinguishable
 public import Mathlib.Probability.Process.Stopping
+public import Mathlib.Topology.Bases
 
 /-!
-# Indistinguishability for continuous and stopped processes
+# Indistinguishability of continuous and stopped stochastic processes
 
-Two processes with almost surely continuous paths into a Hausdorff space that agree almost surely
-at every time in a countable dense set are indistinguishable. In particular, on a separable time
-domain, fixed-time almost-sure equality implies indistinguishability.
+Two stochastic processes on a separable topological index space taking values in a Hausdorff space
+that are modifications of each other and have almost surely continuous sample paths are
+indistinguishable. Neither finiteness of the measure nor measurability of the processes is needed.
 
 Indistinguishability transfers almost-sure path continuity and is preserved by stopping at any
 random time, without measurability or stopping-time hypotheses.
+
+## Main results
+
+* `TauCeti.indist_of_ae_continuous`: almost surely continuous modifications on a separable index
+  space into a `T₂` space are indistinguishable.
+* `ProbabilityTheory.Indistinguishable.ae_continuous` and
+  `ProbabilityTheory.Indistinguishable.stoppedProcess`: path-continuity transfer and stopping
+  invariance under indistinguishability.
 -/
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory ProbabilityTheory TopologicalSpace
 
-namespace ProbabilityTheory
+namespace TauCeti
+
+/-- Two modifications on a separable index space with almost surely continuous paths into a `T₂`
+space are indistinguishable. Neither finiteness of `P` nor measurability of the processes is
+needed. -/
+theorem indist_of_ae_continuous {ι Ω E : Type*} [TopologicalSpace ι] [SeparableSpace ι]
+    [TopologicalSpace E] [T2Space E] {_ : MeasurableSpace Ω} {P : Measure Ω}
+    {X Y : ι → Ω → E} (hX : ∀ᵐ ω ∂P, Continuous (X · ω))
+    (hY : ∀ᵐ ω ∂P, Continuous (Y · ω)) (hXY : ∀ t, X t =ᵐ[P] Y t) :
+    X ≡ᵐ[P] Y := by
+  obtain ⟨D, hDc, hDd⟩ := exists_countable_dense ι
+  have hD : ∀ᵐ ω ∂P, ∀ t ∈ D, X t ω = Y t ω := (ae_ball_iff hDc).2 fun t _ ↦ hXY t
+  filter_upwards [hX, hY, hD] with ω hXω hYω hDω
+  exact fun t ↦ congr_fun (Continuous.ext_on hDd hXω hYω hDω) t
+
+end TauCeti
+
+namespace ProbabilityTheory.Indistinguishable
 
 variable {ι Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X Y : ι → Ω → E}
-
-/-- Two processes with almost surely continuous paths into a Hausdorff space that agree almost
-surely on a countable dense set of times are indistinguishable. -/
-theorem indist_of_ae_eq_of_dense_of_ae_continuous [TopologicalSpace ι] [TopologicalSpace E]
-    [T2Space E] {D : Set ι} (hDc : D.Countable) (hDd : Dense D)
-    (hX : ∀ᵐ ω ∂P, Continuous (X · ω)) (hY : ∀ᵐ ω ∂P, Continuous (Y · ω))
-    (heq : ∀ t ∈ D, X t =ᵐ[P] Y t) :
-    X ≡ᵐ[P] Y := by
-  filter_upwards [hX, hY, (ae_ball_iff hDc).2 heq] with ω hXω hYω hDω t
-  exact congrFun (hXω.ext_on hDd hYω hDω) t
-
-/-- Two processes with almost surely continuous paths on a separable time domain into a Hausdorff
-space that agree almost surely at every fixed time are indistinguishable. -/
-theorem indist_of_ae_eq_of_ae_continuous [TopologicalSpace ι] [TopologicalSpace.SeparableSpace ι]
-    [TopologicalSpace E] [T2Space E]
-    (hX : ∀ᵐ ω ∂P, Continuous (X · ω)) (hY : ∀ᵐ ω ∂P, Continuous (Y · ω))
-    (heq : ∀ t, X t =ᵐ[P] Y t) :
-    X ≡ᵐ[P] Y := by
-  obtain ⟨D, hDc, hDd⟩ := TopologicalSpace.exists_countable_dense ι
-  exact indist_of_ae_eq_of_dense_of_ae_continuous hDc hDd hX hY fun t _ ↦ heq t
-
-namespace Indistinguishable
 
 /-- Indistinguishability transfers almost-sure path continuity. -/
 theorem ae_continuous [TopologicalSpace ι] [TopologicalSpace E]
@@ -64,6 +68,4 @@ protected theorem stoppedProcess [LinearOrder ι] [Nonempty ι]
   filter_upwards [h] with ω hω t
   exact hω _
 
-end Indistinguishable
-
-end ProbabilityTheory
+end ProbabilityTheory.Indistinguishable

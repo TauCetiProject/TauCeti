@@ -247,11 +247,11 @@ theorem primesOver_twenty_three :
   ext P
   constructor
   · intro hP
-    have hf : (e ⟨P, hP⟩).1 ∈
+    have hf : (e ⟨P, hP⟩).val ∈
         ({X - C (16 : ZMod 23), X - C (15 : ZMod 23)} :
           Finset ((ZMod 23)[X])) := by
       rw [← monicFactorsMod_twenty_three hmin]
-      exact (e ⟨P, hP⟩).2
+      exact (e ⟨P, hP⟩).property
     simp only [Finset.mem_insert, Finset.mem_singleton] at hf
     rcases hf with hf | hf
     · have heq : e ⟨P, hP⟩ = ⟨X - C 16, factor_sixteen_mem hmin⟩ :=

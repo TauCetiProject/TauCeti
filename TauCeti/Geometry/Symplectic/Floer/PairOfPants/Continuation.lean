@@ -51,10 +51,12 @@ its topological part plus that constant.
 
 ## Main results
 
-* `TauCeti.Floer.contMDiffAt_pairOfPantsContinuationPerturbation`: the perturbation is smooth on
-  `S × M` for smooth Hamiltonians on a manifold `M`;
-  `TauCeti.Floer.contDiffAt_pairOfPantsContinuationPerturbation_prod` is the `Cⁿ` statement for a
-  vector space target.
+* `TauCeti.Floer.contMDiffAt_pairOfPantsContinuationPerturbation`: the perturbation is smooth
+  jointly in the neck positions and on `S × M`, for smooth Hamiltonians on a manifold `M`;
+  `TauCeti.Floer.contMDiffAt_pairOfPantsContinuationPerturbation_prod` is its restriction to
+  fixed neck positions, and
+  `TauCeti.Floer.contDiffAt_pairOfPantsContinuationPerturbation_prod` is the `Cⁿ` statement on
+  `S × V` for fixed neck positions and a vector space target.
 * `TauCeti.Floer.pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_forall_le`:
   where every `σ ≤ L_q`, on the pants side of the necks, it is the pair-of-pants perturbation
   of `G`;
@@ -239,26 +241,51 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {I : ModelWithCorners ℝ E F} [TopologicalSpace M] [ChartedSpace F M]
 
 /-- **The perturbation is smooth.** For inner and outer Hamiltonians of period one which are `C^n`
-on `ℝ × M`, the perturbation is `C^n` on `S × M`, where `S = ℂ ∖ {0, 1}` is the thrice-punctured
-sphere, for all neck positions. -/
+on `ℝ × M`, the perturbation is `C^n` jointly in the neck positions `L`, the point `w` of the
+thrice-punctured sphere `S = ℂ ∖ {0, 1}` and the target point `x`. -/
 theorem contMDiffAt_pairOfPantsContinuationPerturbation {n : ℕ∞}
     (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
     (hGs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (G q)))
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q)))
     (L : Puncture → ℝ) (w : ThricePuncturedSphere) (x : M) :
-    ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
-      (fun p : ℂ × M => pairOfPantsContinuationPerturbation G H L p.1 p.2) ((w : ℂ), x) := by
+    ContMDiffAt (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : (Puncture → ℝ) × ℂ × M => pairOfPantsContinuationPerturbation G H p.1 p.2.1 p.2.2)
+      (L, (w : ℂ), x) := by
   simp only [pairOfPantsContinuationPerturbation, continuationHomotopy_def]
   refine contMDiffAt_finsetSum fun q _ => ?_
-  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.2 q
-  have hf : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
-      (fun p : ℂ × M => q.endAngularForm p.1) ((w : ℂ), x) :=
+  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.property q
+  have hf : ContMDiffAt (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
+      (fun p : (Puncture → ℝ) × ℂ × M => p.2.1) (L, (w : ℂ), x) :=
+    contMDiffAt_fst.comp (L, (w : ℂ), x) contMDiffAt_snd
+  -- The neck weight `β(σ_q - L q)` is smooth in the domain point and the neck position.
+  have hL : ContMDiffAt (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ) n
+      (fun p : (Puncture → ℝ) × ℂ × M => p.1 q) (L, (w : ℂ), x) :=
+    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Puncture => ℝ) q).contDiff.contMDiff
+      |>.contMDiffAt.comp (L, (w : ℂ), x) contMDiffAt_fst
+  have hσ := contMDiffAt_smoothTransition_endCoord_comp q hf hL hw
+  have hA : ContMDiffAt (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : (Puncture → ℝ) × ℂ × M => q.endAngularForm p.2.1) (L, (w : ℂ), x) :=
     ContMDiffAt.comp (I' := 𝓘(ℝ, ℂ)) (g := q.endAngularForm) _
-      (q.contDiffAt_endAngularForm hw).contMDiffAt contMDiffAt_fst
-  have hGq := q.contMDiffAt_comp_im_endCoord (hG q) (hGs q) hw x
-  have hHq := q.contMDiffAt_comp_im_endCoord (hH q) (hHs q) hw x
-  exact ((contMDiffAt_smoothTransition_endCoord q 1 hw x).smul (hGq.add
-    ((contMDiffAt_smoothTransition_endCoord q (L q) hw x).smul (hHq.sub hGq)))).smul hf
+      (q.contDiffAt_endAngularForm hw).contMDiffAt hf
+  -- Periodicity makes the Hamiltonians smooth in the angular coordinate.
+  have hGq := (q.contMDiffAt_comp_im_endCoord (hG q) (hGs q) hw x).comp (L, (w : ℂ), x)
+    (contMDiffAt_snd (I := 𝓘(ℝ, Puncture → ℝ)))
+  have hHq := (q.contMDiffAt_comp_im_endCoord (hH q) (hHs q) hw x).comp (L, (w : ℂ), x)
+    (contMDiffAt_snd (I := 𝓘(ℝ, Puncture → ℝ)))
+  exact ((contMDiffAt_smoothTransition_endCoord_comp q hf contMDiffAt_const hw).smul (hGq.add
+    (hσ.smul (hHq.sub hGq)))).smul hA
+
+/-- For fixed neck positions `L`, the perturbation is `Cⁿ` jointly in the point `w` of `S` and
+the target point `x`. -/
+theorem contMDiffAt_pairOfPantsContinuationPerturbation_prod {n : ℕ∞}
+    (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
+    (hGs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (G q)))
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q)))
+    (L : Puncture → ℝ) (w : ThricePuncturedSphere) (x : M) :
+    ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : ℂ × M => pairOfPantsContinuationPerturbation G H L p.1 p.2) ((w : ℂ), x) :=
+  (contMDiffAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L w x).comp ((w : ℂ), x)
+    (f := fun p : ℂ × M => (L, p)) (contMDiffAt_const.prodMk contMDiffAt_id)
 
 /-- The perturbation is `Cⁿ` jointly in the domain point of `S` and the target point, for
 `Cⁿ` inner and outer Hamiltonians. -/
@@ -269,7 +296,7 @@ theorem contDiffAt_pairOfPantsContinuationPerturbation_prod {V : Type*} [NormedA
     (x : V) :
     ContDiffAt ℝ n (fun p : ℂ × V => pairOfPantsContinuationPerturbation G H L p.1 p.2) (w, x) :=
   (contMDiffAt_prod_modelWithCornersSelf_iff.1
-    (contMDiffAt_pairOfPantsContinuationPerturbation hG hH
+    (contMDiffAt_pairOfPantsContinuationPerturbation_prod hG hH
       (fun q => contMDiff_prod_modelWithCornersSelf_iff.2 (hGs q).contMDiff)
       (fun q => contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) L ⟨w, hw⟩
       x)).contDiffAt
@@ -425,7 +452,7 @@ private theorem setLIntegral_image_endChart_le (ω : SmoothTwoForm I M)
   -- The perturbation is differentiable jointly, hence separately, in the domain and target
   -- points, at points of `S`.
   have hJ {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : M) :=
-    (contMDiffAt_pairOfPantsContinuationPerturbation (n := 1) hG hH hGs hHs L ⟨w, hw⟩
+    (contMDiffAt_pairOfPantsContinuationPerturbation_prod (n := 1) hG hH hGs hHs L ⟨w, hw⟩
       x).mdifferentiableAt one_ne_zero
   refine (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral
     (fun w hw x v ↦ ((hJ hw x).comp (f := fun w' : ℂ ↦ (w', x)) w
@@ -532,7 +559,7 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsContinuationPerturbation
         z (u z)) thricePuncturedSphereReal := by
   refine ω.integrableOn_hamiltonianCurvature_of_forall_integrableOn_endStrip
     (fun _ hw y ↦ pairOfPantsContinuationPerturbation_eq_zero_of_forall_le hw y)
-    (fun w x ↦ (contMDiffAt_pairOfPantsContinuationPerturbation (n := 1) hG hH hGs hHs L w
+    (fun w x ↦ (contMDiffAt_pairOfPantsContinuationPerturbation_prod (n := 1) hG hH hGs hHs L w
       x).mdifferentiableAt one_ne_zero) fun q ↦ ?_
   -- In the coordinates of the end the pulled-back curvature along `u` is the function `F`.
   set F : ℝ × ℝ → ℝ := fun w ↦ q.endSign *
@@ -570,12 +597,12 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsContinuationPerturbation
       by_contra! h
       exact hwC ⟨⟨h.1, h.2⟩, ht⟩
     rcases hσ with hσ | hσ
-    · simp [hF, smoothTransition.deriv_of_neg (by linarith : q.endSign * w.1 - 1 < 0),
+    · simp [hF, smoothTransition.deriv_of_nonpos (by linarith : q.endSign * w.1 - 1 ≤ 0),
         smoothTransition.zero_of_nonpos (by linarith : q.endSign * w.1 - 1 ≤ 0)]
     · have h₂ : 2 < q.endSign * w.1 := (le_max_left _ _).trans_lt hσ
       have hL : L q + 1 < q.endSign * w.1 := (le_max_right _ _).trans_lt hσ
-      simp [hF, smoothTransition.deriv_of_one_lt (by linarith : 1 < q.endSign * w.1 - 1),
-        smoothTransition.deriv_of_one_lt (by linarith : 1 < q.endSign * w.1 - L q)]
+      simp [hF, smoothTransition.deriv_of_one_le (by linarith : 1 ≤ q.endSign * w.1 - 1),
+        smoothTransition.deriv_of_one_le (by linarith : 1 ≤ q.endSign * w.1 - L q)]
   refine ((hFc.integrableOn_compact hC).of_forall_sdiff_eq_zero (measurableSet_endStrip q)
     hF0).congr_fun (fun w hw ↦ ?_) (measurableSet_endStrip q)
   rw [hamiltonianCurvature_perturbationPullback_endChart ω hG hH hGs hHs

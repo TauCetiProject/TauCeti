@@ -7,24 +7,28 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.L2
 public import TauCeti.Probability.BrownianMotion.Integral.Stopping
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.Probability.Finance.SimpleStrategy.Energy
+import TauCeti.Probability.Finance.SimpleStrategy.Refinement
+import TauCeti.Probability.Process.Indistinguishable
 import TauCeti.Probability.Process.Stopping
 import TauCeti.Probability.Process.StoppingApproximation
-import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 /-!
 # Stopping compatibility of L² Brownian Itô integrals
 
-Stopping the Itô integral process of a `BrownianIntegrable` integrand `H` at any stopping time `τ`
-on a raw filtration produces an Itô integral of the cutoff integrand `1_{[0, τ]} · H`
+Against an almost surely continuous filtered pre-Brownian motion `W`, stopping the Itô integral
+process of a `BrownianIntegrable` integrand `H` at any stopping time `τ` on a raw filtration
+produces an Itô integral of the cutoff integrand `1_{[0, τ]} · H`
 (`isItoIntegral_stoppedProcess_of_brownianIntegrable`), and at every deterministic horizon `T` the
 stopped integral agrees almost surely with `hW.l2Integral T` evaluated on `1_{[0, τ]} · H`
 (`stoppedProcess_ae_eq_l2Integral`).
 
-The proof first realizes stopping of any `ElementaryIntegrand` at an upward dyadic stopping time
-`dyadicCeilTime k ∘ τ` as an exact `ElementaryIntegrand` on a refined dyadic grid, passes to the
-`L²` limit via uniform elementary approximation
-(`exists_seq_elementaryIntegrand_tendstoUniformlyOn`), and then sends the dyadic mesh `2⁻ᵏ → 0`
-via path continuity of the integral and dominated convergence in `L²`.
+The proof first realizes stopping of any bounded simple holding at an upward dyadic stopping time
+`dyadicCeilTime k ∘ τ` as an exact bounded simple holding on a refined dyadic grid, passes to
+the `L²` limit via uniform approximation (`exists_seq_simpleHolding_tendstoUniformlyOn`), and
+then sends the dyadic mesh `2⁻ᵏ → 0` via path continuity of the integral and dominated convergence
+in `L²`.
 
 ## References
 
@@ -50,11 +54,12 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 private def clippedDyadicGrid (s b : ℝ≥0) (k j : ℕ) : ℝ≥0 := min b (max s ((j : ℝ≥0) / 2 ^ k))
 
 private theorem clippedDyadicGrid_mono (s b : ℝ≥0) (k : ℕ) : Monotone (clippedDyadicGrid s b k) :=
-  fun _ _ h ↦ min_le_min_left b (max_le_max_left s (div_le_div_of_nonneg_right (Nat.cast_le.mpr h)
-    (by positivity)))
+  fun _ _ hij ↦ min_le_min_left b (max_le_max_left s
+    (div_le_div_of_nonneg_right (Nat.cast_le.mpr hij) (by positivity)))
 
 private theorem clippedDyadicGrid_zero {s b : ℝ≥0} (hsb : s ≤ b) (k : ℕ) :
-    clippedDyadicGrid s b k 0 = s := by simp [clippedDyadicGrid, min_eq_right hsb]
+    clippedDyadicGrid s b k 0 = s := by
+  simp [clippedDyadicGrid, hsb]
 
 private theorem le_clippedDyadicGrid {s b : ℝ≥0} (hsb : s ≤ b) (k j : ℕ) :
     s ≤ clippedDyadicGrid s b k j := le_min hsb (le_max_left _ _)
@@ -133,16 +138,19 @@ private theorem sum_clippedDyadicGrid_telescope {s t T : ℝ≥0} (hst : s ≤ t
 
 /-- Helper: on a single interval `(s, t]` with bounded `ℱ s`-measurable height `ξ`, stopping the
 elementary integral at the dyadic stopping time `dyadicCeilTime k ∘ τ` at horizon `T` is realized
-exactly by an `ElementaryIntegrand` whose process equals `1_{[0, σ]} · 1_{(s, t]} ξ` on `[0, T]`. -/
+exactly by a bounded simple holding equal to `1_{[0, σ]} · 1_{(s, t]} ξ` on `[0, T]`. -/
 private theorem exists_stopped_dyadic_single
     {s t : ℝ≥0} (hst : s ≤ t) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ)
-    (hC : ∃ C : ℝ, ∀ ω, |ξ ω| ≤ C) {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ)
+    {C : ℝ} (hC : ∀ ω, ‖ξ ω‖ ≤ C) {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ)
     (k : ℕ) (T : ℝ≥0) :
     let σ : Ω → WithTop ℝ≥0 := fun ω ↦ dyadicCeilTime k (τ ω)
-    ∃ E : ElementaryIntegrand ℱ,
-      (∀ u ≤ T, ∀ ω, E.toProcess u ω =
+    ∃ (N : ℕ) (p : ℕ → ℝ≥0) (ζ : ℕ → Ω → ℝ) (C' : ℝ),
+      MonotoneOn p (Set.Iic N) ∧
+      (∀ j < N, StronglyMeasurable[ℱ (p j)] (ζ j)) ∧
+      (∀ j < N, ∀ ω, ‖ζ j ω‖ ≤ C') ∧
+      (∀ u ≤ T, ∀ ω, Finance.simpleHolding p N ζ u ω =
         if (u : WithTop ℝ≥0) ≤ σ ω then (Ioc s t).indicator (fun _ ↦ ξ ω) u else 0) ∧
-      ∀ (X : ℝ≥0 → Ω → ℝ) (ω : Ω), E.integral X T ω =
+      ∀ (X : ℝ≥0 → Ω → ℝ) (ω : Ω), Finance.simpleGains p N ζ X T ω =
         stoppedProcess (fun u ω ↦ ξ ω * (X (min t u) ω - X (min s u) ω)) σ T ω := by
   intro σ
   by_cases hsT : s ≤ T
@@ -158,14 +166,10 @@ private theorem exists_stopped_dyadic_single
         (by convert ((hτ.dyadicCeilTime k).measurableSet_le (p j)).compl using 1
             ext ω; simp only [σ, Set.mem_ofPred_eq, Set.mem_compl_iff, not_le])
         stronglyMeasurable_zero
-    obtain ⟨C, hC⟩ := hC
-    let E : ElementaryIntegrand ℱ :=
-      { n := N, τ := p, mono := hp_mono.monotoneOn _, a := ζ, stronglyMeasurable := hζ_meas
-        bounded := fun _ _ ↦ ⟨max C 0, fun ω ↦ by
-          dsimp only [ζ]; split_ifs <;> first | exact (hC ω).trans (le_max_left _ _) | simp⟩ }
-    refine ⟨E, fun u huT ω ↦ ?_, fun X ω ↦ ?_⟩
+    refine ⟨N, p, ζ, max C 0, hp_mono.monotoneOn _, hζ_meas, fun _ _ ω ↦ by
+        dsimp only [ζ]; split_ifs <;> first | exact (hC ω).trans (le_max_left _ _) | simp,
+      fun u huT ω ↦ ?_, fun X ω ↦ ?_⟩
     · -- Step 2: check that the stopped step process equals `1_{[0, σ]} · 1_{(s, t]} ξ` on `[0, T]`.
-      rw [E.toProcess_eq_simpleHolding]; dsimp only [E]
       by_cases hu : u ∈ Ioc s b
       · obtain ⟨j₀, hj₀, hju⟩ :=
           exists_lt_mem_Ioc_of_mem_Ioc (τ := p) (n := N) (by simpa only [hp0, hp_end] using hu)
@@ -179,57 +183,94 @@ private theorem exists_stopped_dyadic_single
             (by simpa only [hp0, hp_end] using hu),
           indicator_of_notMem (fun h : u ∈ Ioc s t ↦ hu ⟨h.1, le_min h.2 huT⟩), ite_self]
     · -- Step 3: telescope the elementary integral via `sum_clippedDyadicGrid_telescope`.
-      rw [E.integral_def]; exact sum_clippedDyadicGrid_telescope hst hsT k (τ ω) (ξ ω) (X · ω)
+      rw [Finance.simpleGains_def]
+      exact sum_clippedDyadicGrid_telescope hst hsT k (τ ω) (ξ ω) (X · ω)
   · -- When `T < s`, both sides vanish identically on `[0, T]`.
     have hTs : T < s := lt_of_not_ge hsT
-    refine ⟨0, fun u huT ω ↦ by simp only [ElementaryIntegrand.toProcess_zero,
+    refine ⟨0, fun _ ↦ 0, fun _ _ ↦ 0, 0,
+      fun _ _ _ _ _ ↦ le_rfl,
+      fun _ hj ↦ (Nat.not_lt_zero _ hj).elim, fun _ hj ↦ (Nat.not_lt_zero _ hj).elim,
+      fun u huT ω ↦ by simp only [Finance.simpleHolding_def, Finset.range_zero, sum_empty,
         indicator_of_notMem (fun h : u ∈ Ioc s t ↦ not_lt_of_ge (huT.trans hTs.le) h.1), ite_self],
       fun X ω ↦ ?_⟩
     have hls : (min (T : WithTop ℝ≥0) (σ ω)).untopA ≤ s :=
       (WithTop.untopA_le (min_le_left _ _)).trans hTs.le
-    rw [ElementaryIntegrand.integral_zero, stoppedProcess, min_eq_right (hls.trans hst),
-      min_eq_right hls, sub_self, mul_zero]
+    rw [Finance.simpleGains_def, Finset.range_zero, sum_empty, stoppedProcess,
+      min_eq_right (hls.trans hst), min_eq_right hls, sub_self, mul_zero]
 
-/-- Stopping any `ElementaryIntegrand` at the dyadic stopping time `dyadicCeilTime k ∘ τ` at
-horizon `T` is realized exactly by another `ElementaryIntegrand`. -/
+/-- Stopping any bounded simple holding at the dyadic stopping time `dyadicCeilTime k ∘ τ` at
+horizon `T` is realized exactly by another bounded simple holding. -/
 private theorem exists_stopped_dyadic
-    (K : ElementaryIntegrand ℱ) {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ)
-    (k : ℕ) (T : ℝ≥0) :
-    let σ : Ω → WithTop ℝ≥0 := fun ω ↦ dyadicCeilTime k (τ ω)
-    ∃ E : ElementaryIntegrand ℱ,
-      (∀ u ≤ T, ∀ ω, E.toProcess u ω =
-        if (u : WithTop ℝ≥0) ≤ σ ω then K.toProcess u ω else 0) ∧
-      ∀ (X : ℝ≥0 → Ω → ℝ) (ω : Ω), E.integral X T ω = stoppedProcess (K.integral X) σ T ω := by
+    {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ} {C : ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < n, ∀ ω, ‖a j ω‖ ≤ C)
+    {σ₀ : Ω → WithTop ℝ≥0} (hσ₀ : IsStoppingTime ℱ σ₀) (k : ℕ) (T : ℝ≥0) :
+    let σ : Ω → WithTop ℝ≥0 := fun ω ↦ dyadicCeilTime k (σ₀ ω)
+    ∃ (N : ℕ) (p : ℕ → ℝ≥0) (ζ : ℕ → Ω → ℝ) (C' : ℝ),
+      MonotoneOn p (Set.Iic N) ∧
+      (∀ j < N, StronglyMeasurable[ℱ (p j)] (ζ j)) ∧
+      (∀ j < N, ∀ ω, ‖ζ j ω‖ ≤ C') ∧
+      (∀ u ≤ T, ∀ ω, Finance.simpleHolding p N ζ u ω =
+        if (u : WithTop ℝ≥0) ≤ σ ω then Finance.simpleHolding τ n a u ω else 0) ∧
+      ∀ (X : ℝ≥0 → Ω → ℝ) (ω : Ω), Finance.simpleGains p N ζ X T ω =
+        stoppedProcess (Finance.simpleGains τ n a X) σ T ω := by
   intro σ
-  suffices ∀ m ≤ K.n, ∃ M : ElementaryIntegrand ℱ,
-      (∀ u ≤ T, ∀ ω, M.toProcess u ω = ∑ i ∈ range m,
+  suffices ∀ m ≤ n, ∃ (N : ℕ) (p : ℕ → ℝ≥0) (ζ : ℕ → Ω → ℝ) (C' : ℝ),
+      MonotoneOn p (Set.Iic N) ∧
+      (∀ j < N, StronglyMeasurable[ℱ (p j)] (ζ j)) ∧
+      (∀ j < N, ∀ ω, ‖ζ j ω‖ ≤ C') ∧
+      (∀ u ≤ T, ∀ ω, Finance.simpleHolding p N ζ u ω = ∑ i ∈ range m,
         if (u : WithTop ℝ≥0) ≤ σ ω then
-          (Ioc (K.τ i) (K.τ (i + 1))).indicator (fun _ ↦ K.a i ω) u else 0) ∧
-      ∀ (X : ℝ≥0 → Ω → ℝ) (ω : Ω), M.integral X T ω = ∑ i ∈ range m,
-        stoppedProcess (fun u ω ↦ K.a i ω * (X (min (K.τ (i + 1)) u) ω -
-          X (min (K.τ i) u) ω)) σ T ω by
-    obtain ⟨M, hMP, hMI⟩ := this K.n le_rfl
-    exact ⟨M, fun u huT ω ↦ by rw [hMP u huT ω, K.toProcess_def]; split_ifs <;> simp,
+          (Ioc (τ i) (τ (i + 1))).indicator (fun _ ↦ a i ω) u else 0) ∧
+      ∀ (X : ℝ≥0 → Ω → ℝ) (ω : Ω), Finance.simpleGains p N ζ X T ω = ∑ i ∈ range m,
+        stoppedProcess (fun u ω ↦ a i ω * (X (min (τ (i + 1)) u) ω -
+          X (min (τ i) u) ω)) σ T ω by
+    obtain ⟨N, p, ζ, C', hp, hζ, hC', hMP, hMI⟩ := this n le_rfl
+    exact ⟨N, p, ζ, C', hp, hζ, hC',
+      fun u huT ω ↦ by rw [hMP u huT ω, Finance.simpleHolding_def]; split_ifs <;> simp,
       fun X ω ↦ by
-        rw [hMI X ω, stoppedProcess, K.integral_def]
+        rw [hMI X ω, stoppedProcess, Finance.simpleGains_def]
         exact Finset.sum_congr rfl fun i _ ↦ by simp only [stoppedProcess]⟩
   intro m hm
   induction m with
-  | zero => exact ⟨0, fun _ _ _ ↦ by simp, fun _ _ ↦ by simp⟩
+  | zero =>
+    exact ⟨0, fun _ ↦ 0, fun _ _ ↦ 0, 0,
+      fun _ _ _ _ _ ↦ le_rfl,
+      fun _ hj ↦ (Nat.not_lt_zero _ hj).elim, fun _ hj ↦ (Nat.not_lt_zero _ hj).elim,
+      fun _ _ _ ↦ by simp [Finance.simpleHolding_def],
+      fun _ _ ↦ by simp [Finance.simpleGains_def]⟩
   | succ m ih =>
-    have hm' : m < K.n := hm
-    obtain ⟨M, hMP, hMI⟩ := ih (Nat.le_of_succ_le hm)
-    obtain ⟨E, hEP, hEI⟩ := exists_stopped_dyadic_single
-      (K.mono hm'.le hm' (Nat.le_succ m)) (K.stronglyMeasurable m hm') (K.bounded m hm') hτ k T
-    exact ⟨M + E,
-      fun u huT ω ↦ by
-        rw [ElementaryIntegrand.toProcess_add, hMP u huT ω, hEP u huT ω, Finset.sum_range_succ],
-      fun X ω ↦ by
-        rw [ElementaryIntegrand.integral_add, hMI X ω, hEI X ω, Finset.sum_range_succ]⟩
+    have hm' : m < n := hm
+    obtain ⟨N₁, p₁, ζ₁, C₁, hp₁, hζ₁, hC₁, hMP, hMI⟩ := ih (Nat.le_of_succ_le hm)
+    obtain ⟨N₂, p₂, ζ₂, C₂, hp₂, hζ₂, hC₂, hEP, hEI⟩ := exists_stopped_dyadic_single
+      (hτ hm'.le hm' (Nat.le_succ m)) (ha m hm') (hb m hm') hσ₀ k T
+    obtain ⟨N, p, ζ, -, hp, hζ, hbound, hhold, hgain⟩ :=
+      Finance.exists_simpleHolding_simpleGains_eq_sum ℱ
+        ((range N₁).disjSum (range N₂)) (Sum.elim p₁ p₂)
+        (Sum.elim (fun j ↦ p₁ (j + 1)) fun j ↦ p₂ (j + 1)) (Sum.elim ζ₁ ζ₂) (by
+          rintro (j | j) hj <;>
+            simp only [inl_mem_disjSum, inr_mem_disjSum, Finset.mem_range] at hj
+          · exact hζ₁ j hj
+          · exact hζ₂ j hj)
+    refine ⟨N, p, ζ, ∑ _ ∈ range N₁, C₁ + ∑ _ ∈ range N₂, C₂, hp.monotoneOn, hζ,
+      fun j hj ω ↦ (hbound j hj ω).trans (by
+        rw [sum_disjSum]
+        refine add_le_add (sum_le_sum fun i hi ↦ ?_) (sum_le_sum fun i hi ↦ ?_)
+        · exact hC₁ i (Finset.mem_range.mp hi) ω
+        · exact hC₂ i (Finset.mem_range.mp hi) ω),
+      fun u huT ω ↦ ?_, fun X ω ↦ ?_⟩
+    · rw [hhold, sum_disjSum]
+      simp only [Sum.elim_inl, Sum.elim_inr, ← Finance.simpleHolding_def]
+      rw [hMP u huT ω, hEP u huT ω, Finset.sum_range_succ]
+    · rw [hgain, sum_disjSum, Finset.sum_range_succ, ← hMI X ω, ← hEI X ω,
+        Finance.simpleGains_def, Finance.simpleGains_def]
+      congr 1 <;> refine sum_congr rfl fun j hj ↦ ?_
+      · simp [hp₁ (Finset.mem_range.mp hj).le (Finset.mem_range.mp hj) (Nat.le_succ j)]
+      · simp [hp₂ (Finset.mem_range.mp hj).le (Finset.mem_range.mp hj) (Nat.le_succ j)]
 
-/-- For a `BrownianIntegrable` integrand, stopping its Itô integral at any stopping time `τ`
-agrees almost surely at every horizon `T` with the L² Brownian integral of the cutoff integrand
-`1_{[0, τ]} · H`. -/
+/-- For a `BrownianIntegrable` integrand against an almost surely continuous filtered pre-Brownian
+motion `W`, stopping its Itô integral at any stopping time `τ` agrees almost surely at every
+horizon `T` with the L² Brownian integral of the cutoff integrand `1_{[0, τ]} · H`. -/
 theorem stoppedProcess_ae_eq_l2Integral
     (hW : IsFilteredPreBrownianReal ℱ W P) (hcont : ∀ᵐ ω ∂P, Continuous (W · ω))
     {H I : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I)
@@ -238,7 +279,8 @@ theorem stoppedProcess_ae_eq_l2Integral
       hW.l2Integral T (((hH.ite_le hτ).memLp_predictableMeasure T).toLp
         (Function.uncurry fun t ω ↦ if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)) := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨K, hKlim, hunif⟩ := hW.exists_seq_elementaryIntegrand_tendstoUniformlyOn hcont hH hI
+  obtain ⟨n, s, a, C, hs, ha, hb, hKlim, hunif⟩ :=
+    hW.exists_seq_simpleHolding_tendstoUniformlyOn hcont hH hI
   -- Step 1: prove the identity for every dyadic approximation `σ k := dyadicCeilTime k ∘ τ`.
   have hdyad (k : ℕ) :
       stoppedProcess I (fun ω ↦ dyadicCeilTime k (τ ω)) T =ᵐ[P]
@@ -247,26 +289,31 @@ theorem stoppedProcess_ae_eq_l2Integral
             if (t : WithTop ℝ≥0) ≤ dyadicCeilTime k (τ ω) then H t ω else 0)) := by
     let σ : Ω → WithTop ℝ≥0 := fun ω ↦ dyadicCeilTime k (τ ω)
     have hσ : IsStoppingTime ℱ σ := hτ.dyadicCeilTime k
-    choose K' hK'P hK'I using fun n ↦ exists_stopped_dyadic (K n) hτ k T
-    have hlim_ae : TendstoInMeasure P (fun n ↦ (K' n).integral W T) atTop
-        (stoppedProcess I σ T) := tendstoInMeasure_of_tendsto_ae (fun n ↦
-      (((K' n).stronglyAdapted_integral hW.adapted.stronglyAdapted T).mono
+    choose N' p' ζ' C' hp' hζ' hC' hK'P hK'I using fun m ↦
+      exists_stopped_dyadic (hs m) (ha m) (hb m) hτ k T
+    have hlim_ae : TendstoInMeasure P (fun m ↦ Finance.simpleGains (p' m) (N' m) (ζ' m) W T)
+        atTop (stoppedProcess I σ T) := tendstoInMeasure_of_tendsto_ae (fun m ↦
+      ((Finance.stronglyAdapted_simpleGains (hp' m) (hζ' m) hW.adapted.stronglyAdapted T).mono
         (ℱ.le T)).aestronglyMeasurable) <| hunif.mono fun ω hω ↦ by
       simpa only [hK'I, stoppedProcess] using
         (hω T).tendsto_at (Set.mem_Iic.mpr (WithTop.untopA_le (min_le_left _ _)))
     let Hσ : ℝ≥0 → Ω → ℝ := fun t ω ↦ if (t : WithTop ℝ≥0) ≤ σ ω then H t ω else 0
-    have hlim_L2 : Tendsto (fun n ↦ eLpNorm (fun ω ↦ (K' n).integral W T ω -
+    have hlim_L2 : Tendsto (fun m ↦ eLpNorm (fun ω ↦
+        Finance.simpleGains (p' m) (N' m) (ζ' m) W T ω -
         hW.l2Integral T (((hH.ite_le hσ).memLp_predictableMeasure T).toLp (Function.uncurry Hσ)) ω)
         2 P) atTop (𝓝 0) :=
       tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hKlim T) (fun _ ↦ zero_le)
-        fun n ↦ by
-          rw [hW.eLpNorm_elementaryIntegrand_sub_l2Integral (K' n) (hH.ite_le hσ) T]
-          refine eLpNorm_mono_ae ((((K' n).isStronglyPredictable_toProcess.sub
+        fun m ↦ by
+          have ha₂ (j : ℕ) (hj : j < N' m) : MemLp (ζ' m j) 2 P :=
+            MemLp.of_bound ((hζ' m j hj).mono (ℱ.le _)).aestronglyMeasurable (C' m)
+              (.of_forall (hC' m j hj))
+          rw [hW.eLpNorm_simpleGains_sub_l2Integral (hp' m) (hζ' m) ha₂ (hH.ite_le hσ) T]
+          refine eLpNorm_mono_ae ((((Finance.isStronglyPredictable_simpleHolding (hζ' m)).sub
             (hH.ite_le hσ).isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
             ?_
           filter_upwards [(Measure.quasiMeasurePreserving_fst (μ := timeMeasure T) (ν := P)).ae
             ((ae_mem_Ioc_timeMeasure T).mono fun _ h ↦ h.2)] with ⟨u, ω⟩ hu
-          dsimp only [Hσ]; rw [hK'P n u hu ω]; split_ifs <;> simp
+          dsimp only [Hσ]; rw [hK'P m u hu ω]; split_ifs <;> simp
     exact tendstoInMeasure_ae_unique hlim_ae
       (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num) hlim_L2)
   -- Step 2: let `k → ∞` using path continuity of `I` on the left and dominated convergence
@@ -301,9 +348,10 @@ theorem stoppedProcess_ae_eq_l2Integral
         ((hH.ite_le (hτ.dyadicCeilTime k)).memLp_predictableMeasure T)
         ((hH.ite_le hτ).memLp_predictableMeasure T)).symm)).congr_left fun k ↦ (hdyad k).symm
 
-/-- **Stopping compatibility for L² Brownian Itô integrals.** Stopping an Itô integral of a
-`BrownianIntegrable` integrand at any stopping time `τ` produces an Itô integral of the cutoff
-integrand `1_{[0, τ]} · H`. No usual filtration conditions are required. -/
+/-- **Stopping compatibility for L² Brownian Itô integrals.** Against an almost surely continuous
+filtered pre-Brownian motion `W`, stopping an Itô integral of a `BrownianIntegrable` integrand at
+any stopping time `τ` produces an Itô integral of the cutoff integrand `1_{[0, τ]} · H`. No usual
+filtration conditions are required. -/
 theorem isItoIntegral_stoppedProcess_of_brownianIntegrable
     (hW : IsFilteredPreBrownianReal ℱ W P) (hcont : ∀ᵐ ω ∂P, Continuous (W · ω))
     {H I : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I)
@@ -311,7 +359,7 @@ theorem isItoIntegral_stoppedProcess_of_brownianIntegrable
     IsItoIntegral ℱ P W (fun t ω ↦ if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
       (stoppedProcess I τ) := by
   obtain ⟨J, hJito, -, -, -⟩ := hW.exists_isItoIntegral_of_brownianIntegrable hcont (hH.ite_le hτ)
-  exact hJito.congr_indist (indist_of_ae_eq_of_ae_continuous
+  exact hJito.congr (TauCeti.indist_of_ae_continuous
     (hI.ae_continuous.mono fun _ hω ↦ hω.stoppedProcess) hJito.ae_continuous fun T ↦
       (hW.stoppedProcess_ae_eq_l2Integral hcont hH hI hτ T).trans
         (hW.ae_eq_l2Integral_of_isItoIntegral (hH.ite_le hτ) hJito T).symm).symm

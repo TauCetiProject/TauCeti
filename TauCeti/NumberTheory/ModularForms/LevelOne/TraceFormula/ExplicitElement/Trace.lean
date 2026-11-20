@@ -58,11 +58,11 @@ theorem trace_periodAction_popaZagierElement_eq_finsum (hn : n ≠ 0) (w : ℕ) 
     LinearMap.trace K (homogeneousSubmodule (Fin 2) K w)
         (periodAction hw (popaZagierElement K n)) =
       (12 : K)⁻¹ * ∑ᶠ A : TraceFormulaMatrix n,
-        (PopaZagier.weight A.1 : K) *
-          (Polynomial.dickson 2 (n : K) w).eval (A.1.trace : K) := by
+        (PopaZagier.weight A.val : K) *
+          (Polynomial.dickson 2 (n : K) w).eval (A.val.trace : K) := by
   classical
   let s := (FixedDetMatrices.finite_setOf_abs_le (m := Fin 2) n (2 * n)).toFinset
-  have hs (A : TraceFormulaMatrix n) (hA : (PopaZagier.weight A.1 : K) ≠ 0) : A ∈ s := by
+  have hs (A : TraceFormulaMatrix n) (hA : (PopaZagier.weight A.val : K) ≠ 0) : A ∈ s := by
     simpa [s] using abs_le_of_intCast_ne_zero (fun _ ↦ id) A hA
   rw [popaZagierElement_eq_inv_smul_ofWeight,
     ofWeight_eq_sum hn _ _ _ s hs, map_smul, map_smul, smul_eq_mul,
@@ -80,33 +80,34 @@ theorem trace_periodAction_popaZagierElement_eq_sum_trace_fibres (hn : n ≠ 0)
     LinearMap.trace K (homogeneousSubmodule (Fin 2) K w)
         (periodAction hw (popaZagierElement K n)) =
       (12 : K)⁻¹ * ∑ t ∈ Finset.Icc (-4 * n) (4 * n),
-        (↑(∑ᶠ A : traceDetFiber (Fin 2) t n, PopaZagier.weight A.1) : K) *
+        (↑(∑ᶠ A : traceDetFiber (Fin 2) t n, PopaZagier.weight A.val) : K) *
           (Polynomial.dickson 2 (n : K) w).eval (t : K) := by
   classical
   let s := (FixedDetMatrices.finite_setOf_abs_le (m := Fin 2) n (2 * n)).toFinset
-  have hs (A : TraceFormulaMatrix n) (hA : PopaZagier.weight A.1 ≠ 0) : A ∈ s := by
-    simpa [s, A.2] using PopaZagier.abs_le_of_weight_ne_zero hA
+  have hs (A : TraceFormulaMatrix n) (hA : PopaZagier.weight A.val ≠ 0) : A ∈ s := by
+    simpa [s, A.property] using PopaZagier.abs_le_of_weight_ne_zero hA
   have htrace (A : TraceFormulaMatrix n) (hA : A ∈ s) :
-      A.1.trace ∈ Finset.Icc (-4 * n) (4 * n) := by
-    have hbound : ∀ i j, |A.1 i j| ≤ 2 * n := by simpa [s] using hA
+      A.val.trace ∈ Finset.Icc (-4 * n) (4 * n) := by
+    have hbound : ∀ i j, |A.val i j| ≤ 2 * n := by simpa [s] using hA
     have h0 := hbound 0 0
     have h1 := hbound 1 1
     simp only [abs_le] at h0 h1
-    have ht : -4 * n ≤ A.1 0 0 + A.1 1 1 ∧ A.1 0 0 + A.1 1 1 ≤ 4 * n := by omega
+    have ht : -4 * n ≤ A.val 0 0 + A.val 1 1 ∧ A.val 0 0 + A.val 1 1 ≤ 4 * n := by omega
     simpa only [Matrix.trace, Fin.sum_univ_two, Matrix.diag_apply, Finset.mem_Icc] using ht
   have hfibre (t : ℤ) :
-      (∑ᶠ A : traceDetFiber (Fin 2) t n, PopaZagier.weight A.1) =
-      ∑ A ∈ s with A.1.trace = t, PopaZagier.weight A.1 := by
+      (∑ᶠ A : traceDetFiber (Fin 2) t n, PopaZagier.weight A.val) =
+      ∑ A ∈ s with A.val.trace = t, PopaZagier.weight A.val := by
     -- Reorder the two subtype conditions using their membership characterizations.
-    let e : {A : TraceFormulaMatrix n // A.1.trace = t} ≃ traceDetFiber (Fin 2) t n :=
-      { toFun A := ⟨A.1.1, mem_traceDetFiber.mpr ⟨A.2, A.1.2⟩⟩
-        invFun A := ⟨⟨A.1, (mem_traceDetFiber.mp A.2).2⟩, (mem_traceDetFiber.mp A.2).1⟩ }
+    let e : {A : TraceFormulaMatrix n // A.val.trace = t} ≃ traceDetFiber (Fin 2) t n :=
+      { toFun A := ⟨A.val.val, mem_traceDetFiber.mpr ⟨A.property, A.val.property⟩⟩
+        invFun A := ⟨⟨A.val, (mem_traceDetFiber.mp A.property).2⟩,
+            (mem_traceDetFiber.mp A.property).1⟩ }
     calc
-      _ = ∑ᶠ A : {A : TraceFormulaMatrix n // A.1.trace = t},
-          PopaZagier.weight A.1.1 := (finsum_comp_equiv e).symm
-      _ = ∑ᶠ A ∈ {A : TraceFormulaMatrix n | A.1.trace = t}, PopaZagier.weight A.1 :=
+      _ = ∑ᶠ A : {A : TraceFormulaMatrix n // A.val.trace = t},
+          PopaZagier.weight A.val.val := (finsum_comp_equiv e).symm
+      _ = ∑ᶠ A ∈ {A : TraceFormulaMatrix n | A.val.trace = t}, PopaZagier.weight A.val :=
         finsum_subtype_eq_finsum_cond (f := fun A : TraceFormulaMatrix n ↦
-          PopaZagier.weight A.1) (fun A ↦ A.1.trace = t)
+          PopaZagier.weight A.val) (fun A ↦ A.val.trace = t)
       _ = _ := finsum_mem_eq_sum_of_subset _
         (fun A hA ↦ Finset.mem_filter.mpr ⟨hs A hA.2, hA.1⟩)
         (fun A hA ↦ (Finset.mem_filter.mp hA).2)
@@ -131,7 +132,7 @@ theorem trace_periodActionRestrict_popaZagierElement_eq_sum_trace_fibres [CharZe
     LinearMap.trace K (periodPolynomials K w)
         ((exchangeRelations_popaZagierElement K n).periodActionRestrict hw) =
       (12 : K)⁻¹ * ∑ t ∈ Finset.Icc (-4 * n) (4 * n),
-        (↑(∑ᶠ A : traceDetFiber (Fin 2) t n, PopaZagier.weight A.1) : K) *
+        (↑(∑ᶠ A : traceDetFiber (Fin 2) t n, PopaZagier.weight A.val) : K) *
           (Polynomial.dickson 2 (n : K) w).eval (t : K) := by
   rw [(exchangeRelations_popaZagierElement K n).trace_periodActionRestrict_eq_trace hw hw₀,
     trace_periodAction_popaZagierElement_eq_sum_trace_fibres hn w hw]

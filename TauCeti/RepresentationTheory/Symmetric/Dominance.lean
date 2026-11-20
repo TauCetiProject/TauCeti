@@ -75,7 +75,7 @@ theorem dominates_of_youngBlock_colIndex_injective {lam : YoungDiagram} (t : You
       simp [Equiv.Perm.inv_def]
   rw [hcard]
   refine YoungDiagram.card_filter_le_sum_take_rowLens lam (fun x => (youngBlock μ (g⁻¹ x) : ℕ))
-    (fun x => ((t.symm x : ↥lam.cells) : ℕ × ℕ)) (fun x => (t.symm x).2)
+    (fun x => ((t.symm x : ↥lam.cells) : ℕ × ℕ)) (fun x => (t.symm x).property)
     (fun x y hxy => t.symm.injective (Subtype.ext hxy)) (fun x y hr hc => ?_) k
   exact h x y (Fin.ext hr) (by simpa only [colIndex_def] using hc)
 

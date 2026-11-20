@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Covariance
 public import TauCeti.Probability.Process.Predictable.Measure
+public import Mathlib.Probability.Martingale.Basic
 import TauCeti.Probability.Process.ElementaryDensity
 import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.InnerProductSpace.LinearCombination
 import TauCeti.MeasureTheory.Function.Lp.Indicator
-import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
+import TauCeti.Probability.BrownianMotion.Martingale
+import TauCeti.Probability.Martingale.ContinuousLimit
 
 /-!
 # The finite-horizon predictable L² Brownian integral
@@ -22,13 +24,21 @@ On a predictable rectangle `(s,t] × A` its value is `1_A (W_t − W_s)`, with c
 the declared horizon. The map is uniquely determined by these elementary values.
 Linearity and the isometry are supplied by the bundled map, not separate operations on
 chosen representatives. The result is a terminal-time map on L² classes, not a
-time-indexed integral process.
+time-indexed integral process by itself. With Brownian paths almost-surely continuous on
+`Iic T`, `exists_continuous_martingale_l2Integral` realizes every terminal integral as the
+final value of a predictable, square-integrable martingale. Path continuity, starting at
+zero, and freezing after the horizon all hold simultaneously outside one common null set,
+and `I T =ᵐ[P] hW.l2Integral T f`. This uses the original raw filtration; no usual conditions
+or everywhere-continuous raw version are assumed.
 
-For general `L²` `ℱ s`-measurable heights on `(s, t]`, `coeFn_l2Integral_indicator_Ioc_mul` extends
-the elementary formula, and `eLpNorm_l2Integral` / `eLpNorm_l2Integral_sub` record `eLpNorm` forms.
+`eLpNorm_l2Integral` and `eLpNorm_l2Integral_sub` express the `L²` seminorm and `L²` distance of
+finite-horizon predictable L² Brownian integrals directly in terms of `eLpNorm` on
+`(timeMeasure t).prod P`.
 
 The construction uses the overlapping-increment Gram identity and the density of predictable
-rectangles, followed by Mathlib's `LinearMap.extendOfIsometry`.
+rectangles, followed by Mathlib's `LinearMap.extendOfIsometry`. The continuous realization
+uses `MeasureTheory.exists_continuous_martingale_of_cauchySeq_Lp` on finite linear
+combinations of rectangle integrals; conditional L² projection controls intermediate dates.
 
 ## References
 
@@ -40,7 +50,8 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Set
+open MeasureTheory ProbabilityTheory Set Filter
+open scoped Topology
 open scoped NNReal ENNReal InnerProductSpace
 
 namespace TauCeti.Probability.IsFilteredPreBrownianReal
@@ -260,143 +271,197 @@ theorem integral_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P) (T : ℝ≥
   simpa only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
     innerSL_apply_apply, one, L2.inner_indicatorConstLp_one, setIntegral_univ, zero_apply] using h
 
-/-- For `s ≤ t`, `W (max s (min t T)) - W s = W (min t T) - W (min s T)`. -/
-private theorem sub_max_min_eq_sub_min {s t : ℝ≥0} (hst : s ≤ t) (T : ℝ≥0) (ω : Ω) :
-    W (max s (min t T)) ω - W s ω = W (min t T) ω - W (min s T) ω := by
-  by_cases hsT : s ≤ T
-  · rw [min_eq_left hsT, max_eq_right (le_min hst hsT)]
-  · have hTs := le_of_not_ge hsT
-    rw [min_eq_right hTs, min_eq_right (hTs.trans hst), max_eq_left hTs, sub_self, sub_self]
+/-! ## Continuous martingale realization -/
 
-/-- The `L²` seminorm of a left-open interval indicator weighted by a predictable height is bounded
-by `(timeMeasure T univ) ^ (1 / 2)` times the `L²(P)` seminorm of the height. -/
-private theorem eLpNorm_indicator_Ioc_mul_le [IsFiniteMeasure P] (T s t : ℝ≥0) {g : Ω → ℝ}
-    (hg : StronglyMeasurable[ℱ s] g) :
-    eLpNorm (fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ g p.2) p.1) 2
-      ((timeMeasure T).prod P) ≤ (timeMeasure T Set.univ) ^ (2 : ℝ)⁻¹ * eLpNorm g 2 P :=
-  calc eLpNorm (fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ g p.2) p.1) 2
-        ((timeMeasure T).prod P)
-      ≤ eLpNorm (g ∘ Prod.snd) 2 ((timeMeasure T).prod P) :=
-        eLpNorm_mono ((ℱ.stronglyMeasurable_predictable_indicator_Ioc_mul s t hg).mono
-          ℱ.predictable_le_prod).aestronglyMeasurable
-          fun p ↦ by by_cases h : p.1 ∈ Ioc s t <;> simp [h]
-    _ = eLpNorm g 2 ((timeMeasure T Set.univ) • P) := by
-        rw [← Measure.map_snd_prod,
-          eLpNorm_map_measure (hg.mono (ℱ.le s)).aestronglyMeasurable measurable_snd.aemeasurable]
-    _ ≤ (timeMeasure T Set.univ) ^ (2 : ℝ)⁻¹ * eLpNorm g 2 P := by
-        simpa only [smul_eq_mul, one_div, ENNReal.toReal_inv, ENNReal.toReal_ofNat] using
-          eLpNorm_smul_measure_le (timeMeasure T Set.univ) g 2 P
+private def Rectangle.process (T : ℝ≥0) (R : Rectangle ℱ) (W : ℝ≥0 → Ω → ℝ)
+    (u : ℝ≥0) (ω : Ω) : ℝ :=
+  R.height ω * (W (min (max R.s (min R.t T)) u) ω - W (min R.s u) ω)
 
-/-- For `s ≤ t'` and `g ∈ L²(P)` `ℱ s`-measurable, `‖g * (W t' - W s)‖₂ = √(t' - s) * ‖g‖₂`. -/
-private theorem norm_toLp_mul_sub_eq (hW : IsFilteredPreBrownianReal ℱ W P)
-    {s t' : ℝ≥0} (hst' : s ≤ t') {g : Ω → ℝ} (hg : StronglyMeasurable[ℱ s] g) (hg₂ : MemLp g 2 P) :
-    ‖(hW.memLp_mul_sub hst' hg hg₂).toLp (fun ω ↦ g ω * (W t' ω - W s ω))‖ =
-      √((t' : ℝ) - s) * ‖hg₂.toLp g‖ := by
-  have hsq {u : Ω → ℝ} (hu : MemLp u 2 P) : ‖hu.toLp u‖ ^ 2 = ∫ ω, u ω ^ 2 ∂P := by
-    rw [← real_inner_self_eq_norm_sq, L2.inner_def]
-    exact integral_congr_ae (hu.coeFn_toLp.mono fun ω hω ↦ by simp [hω, sq])
-  rw [← Real.sqrt_sq (norm_nonneg _), ← Real.sqrt_sq (norm_nonneg (hg₂.toLp g)),
-    ← Real.sqrt_mul (sub_nonneg.mpr (NNReal.coe_le_coe.mpr hst'))]
-  exact congrArg Real.sqrt <| by rw [hsq, hW.integral_sq_mul_sub hst' hg, ← hsq hg₂, mul_comm]
+private theorem Rectangle.process_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
+    (T : ℝ≥0) (R : Rectangle ℱ) (u : ℝ≥0) : MemLp (R.process T W u) 2 P := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  classical
+  unfold Rectangle.process
+  simpa only [Finset.sum_singleton] using
+    hW.memLp_sum_mul_sub_min {R} (s := Rectangle.s)
+      (t := fun Q ↦ max Q.s (min Q.t T)) (X := Rectangle.height)
+      (fun Q _ ↦ le_max_left _ _) (fun Q _ ↦ Q.height_measurable)
+      (fun Q _ ↦ Q.height_memLp) u
 
-/-- The predictable L² Brownian integral of a single left-open interval weighted by an arbitrary
-square-integrable `ℱ s`-measurable height equals the height times the clipped Brownian increment. -/
-theorem coeFn_l2Integral_indicator_Ioc_mul (hW : IsFilteredPreBrownianReal ℱ W P)
-    (T : ℝ≥0) {s t : ℝ≥0} (hst : s ≤ t) {ξ : Ω → ℝ}
-    (hξ : StronglyMeasurable[ℱ s] ξ) (hξ₂ : MemLp ξ 2 P)
-    (hmem : MemLp (fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ ξ p.2) p.1) 2
-      (ℱ.predictableMeasure P T)) :
-    hW.l2Integral T (hmem.toLp _) =ᵐ[P] fun ω ↦ ξ ω * (W (min t T) ω - W (min s T) ω) := by
-  have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  let t' : ℝ≥0 := max s (min t T)
-  have hst' : s ≤ t' := le_max_left _ _
-  -- Step 1: reduce to `lpMeas ℝ ℝ (ℱ s) 2 P` using an `ℱ s`-measurable representative `mk f`
-  -- and compare the `L²` integral `Φ` against the clipped Brownian increment `Ψ`.
-  let mk (f : lpMeas ℝ ℝ (ℱ s) 2 P) : Ω → ℝ := (mem_lpMeas_iff_aestronglyMeasurable.mp f.2).mk f
-  have hmk_meas (f) : StronglyMeasurable[ℱ s] (mk f) :=
-    (mem_lpMeas_iff_aestronglyMeasurable.mp f.2).stronglyMeasurable_mk
-  have hmk_ae (f : lpMeas ℝ ℝ (ℱ s) 2 P) : ((f : Lp ℝ 2 P) : Ω → ℝ) =ᵐ[P] mk f :=
-    (mem_lpMeas_iff_aestronglyMeasurable.mp f.2).ae_eq_mk
-  have hmk_memLp (f) : MemLp (mk f) 2 P := (Lp.memLp (f : Lp ℝ 2 P)).ae_eq (hmk_ae f)
-  have hmk_add (f g) : mk (f + g) =ᵐ[P] fun ω ↦ mk f ω + mk g ω :=
-    (hmk_ae (f + g)).symm.trans ((Lp.coeFn_add (f : Lp ℝ 2 P) g).trans ((hmk_ae f).add (hmk_ae g)))
-  have htoP (f) := ℱ.memLp_predictableMeasure_indicator_Ioc_mul T s t (hmk_meas f) (hmk_memLp f)
-  have hΨm (f) := hW.memLp_mul_sub hst' (hmk_meas f) (hmk_memLp f)
-  let Φ (f : lpMeas ℝ ℝ (ℱ s) 2 P) : Lp ℝ 2 P := hW.l2Integral T ((htoP f).toLp _)
-  let Ψ (f : lpMeas ℝ ℝ (ℱ s) 2 P) : Lp ℝ 2 P := (hΨm f).toLp _
-  -- Step 2: additivity and operator bounds (hence continuity) of `Φ` and `Ψ`.
-  have hΦ_add (f g) : Φ (f + g) = Φ f + Φ g := by
-    dsimp only [Φ]; rw [← map_add]; congr 1; apply Lp.ext
-    filter_upwards [(htoP (f + g)).coeFn_toLp, Lp.coeFn_add ((htoP f).toLp _) ((htoP g).toLp _),
-      (htoP f).coeFn_toLp, (htoP g).coeFn_toLp,
-      ℱ.ae_eq_predictableMeasure_indicator_Ioc_mul T s t (hmk_meas (f + g))
-        ((hmk_meas f).add (hmk_meas g)) (hmk_add f g)] with p h1 h2 h3 h4 h5
-    rw [h1, h2, Pi.add_apply, h3, h4, h5]; by_cases hp : p.1 ∈ Ioc s t <;> simp [hp]
-  have hΨ_add (f g) : Ψ (f + g) = Ψ f + Ψ g := by
+private theorem Rectangle.process_martingale (hW : IsFilteredPreBrownianReal ℱ W P)
+    (T : ℝ≥0) (R : Rectangle ℱ) : Martingale (R.process T W) ℱ P := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  have hM := (hW.martingale.const_min (max R.s (min R.t T))).sub
+    (hW.martingale.const_min R.s)
+  exact hM.mul_left_of_eq_zero (r := R.s)
+    (fun u hu ↦ by
+      ext ω
+      simp [min_eq_right hu, min_eq_right (hu.trans (le_max_left _ _))])
+    R.height_measurable (fun u ↦ (R.process_memLp hW T u).integrable (by norm_num))
+
+private theorem Rectangle.process_terminal (hW : IsFilteredPreBrownianReal ℱ W P)
+    (T : ℝ≥0) (R : Rectangle ℱ) : R.process T W T =ᵐ[P] increment hW T R := by
+  apply EventuallyEq.trans _ (increment_ae hW T R).symm
+  apply Eventually.of_forall
+  intro ω
+  by_cases hs : R.s ≤ T
+  · simp only [Rectangle.process, min_eq_left hs,
+      min_eq_left (max_le hs (min_le_right _ _))]
+  · have hTs := le_of_not_ge hs
+    simp [Rectangle.process, hTs]
+
+private theorem Rectangle.process_frozen (T : ℝ≥0) (R : Rectangle ℱ)
+    (u : ℝ≥0) (ω : Ω) : R.process T W (min T u) ω = R.process T W u ω := by
+  by_cases hs : R.s ≤ T
+  · have he : max R.s (min R.t T) ≤ T := max_le hs (min_le_right _ _)
+    simp only [Rectangle.process, ← min_assoc, min_eq_left he, min_eq_left hs]
+  · simp only [Rectangle.process, max_eq_left ((min_le_right _ _).trans (le_of_not_ge hs)),
+      sub_self, mul_zero]
+
+private theorem Rectangle.process_continuous (T : ℝ≥0) (R : Rectangle ℱ) {ω : Ω}
+    (hω : ContinuousOn (fun t ↦ W t ω) (Iic T)) :
+    Continuous (fun u ↦ R.process T W u ω) := by
+  unfold Rectangle.process
+  by_cases hs : R.s ≤ T
+  · have he : max R.s (min R.t T) ≤ T := max_le hs (min_le_right _ _)
+    exact continuous_const.mul
+      ((hω.comp_continuous (continuous_const.min continuous_id)
+        (fun u ↦ (min_le_left _ u).trans he)).sub
+        (hω.comp_continuous (continuous_const.min continuous_id)
+          (fun u ↦ (min_le_left _ u).trans hs)))
+  · simp only [max_eq_left ((min_le_right R.t T).trans (le_of_not_ge hs)),
+      sub_self, mul_zero]
+    exact continuous_const
+
+private theorem linearCombination_process_properties (hW : IsFilteredPreBrownianReal ℱ W P)
+    (T : ℝ≥0) (hc : ∀ᵐ ω ∂P, ContinuousOn (fun t ↦ W t ω) (Iic T))
+    (c : Rectangle ℱ →₀ ℝ) :
+    let M := Finsupp.linearCombination ℝ (fun R : Rectangle ℱ ↦ R.process T W) c
+    Martingale M ℱ P ∧ (∀ u, MemLp (M u) 2 P) ∧
+      (∀ᵐ ω ∂P, Continuous (fun u ↦ M u ω)) ∧ M 0 = 0 ∧
+      ∀ u, M (min T u) = M u := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  classical
+  dsimp only
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · dsimp only [Finsupp.linearCombination_apply, Finsupp.sum]
+    exact Finset.sum_induction _ (fun X ↦ Martingale X ℱ P)
+      (fun X Y hX hY ↦ hX.add hY) (martingale_zero ℝ ℱ P)
+      (fun R _ ↦ (R.process_martingale hW T).smul (c R))
+  · intro u
+    refine (memLp_congr_ae ?_).mp (hW.memLp_sum_mul_sub_min c.support (s := Rectangle.s)
+      (t := fun R ↦ max R.s (min R.t T)) (X := fun R ω ↦ c R * R.height ω)
+      (fun R _ ↦ le_max_left _ _)
+      (fun R _ ↦ R.height_measurable.const_mul (c R))
+      (fun R _ ↦ R.height_memLp.const_mul (c R)) u)
+    exact Eventually.of_forall fun ω ↦ by
+      simp [Finsupp.linearCombination_apply, Finsupp.sum, Rectangle.process, mul_assoc]
+  · filter_upwards [hc] with ω hω
+    simp only [Finsupp.linearCombination_apply, Finsupp.sum,
+      Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
+    exact continuous_finsetSum _ fun R _ ↦ continuous_const.mul (R.process_continuous T hω)
+  · ext ω
+    simp [Finsupp.linearCombination_apply, Finsupp.sum, Rectangle.process]
+  · intro u
+    ext ω
+    simp only [Finsupp.linearCombination_apply, Finsupp.sum,
+      Pi.smul_apply, Finset.sum_apply, Rectangle.process_frozen]
+
+private theorem linearCombination_process_terminal [IsFiniteMeasure P]
+    (hW : IsFilteredPreBrownianReal ℱ W P) (T : ℝ≥0) (c : Rectangle ℱ →₀ ℝ)
+    (hmem : MemLp (Finsupp.linearCombination ℝ (fun R : Rectangle ℱ ↦ R.process T W) c T) 2 P) :
+    hmem.toLp (Finsupp.linearCombination ℝ (fun R : Rectangle ℱ ↦ R.process T W) c T) =
+      hW.l2Integral T (Finsupp.linearCombination ℝ (step (ℱ := ℱ) (P := P) T) c) := by
+  classical
+  apply Lp.ext
+  refine hmem.coeFn_toLp.trans ?_
+  have hlin := (hW.l2Integral T).toLinearMap.map_finsupp_linearCombination
+    (g := step (ℱ := ℱ) (P := P) T) c
+  simp only [LinearIsometry.coe_toLinearMap] at hlin
+  rw [hlin]
+  have hi : ∀ R ∈ c.support, R.process T W T =ᵐ[P]
+      hW.l2Integral T (step (P := P) T R) := fun R _ ↦ by
+    rw [l2Integral_step]
+    exact R.process_terminal hW T
+  filter_upwards [(eventually_all_finset c.support).mpr hi,
+    Lp.coeFn_linearCombination c (fun R ↦ hW.l2Integral T (step T R))] with ω hω hs
+  simp only [Finsupp.linearCombination_apply, Finsupp.sum, Pi.smul_apply,
+    smul_eq_mul, Finset.sum_apply, Function.comp_apply] at hs ⊢
+  rw [hs]
+  exact Finset.sum_congr rfl fun R hR ↦ congrArg ((c R) * ·) (hω R hR)
+
+private theorem exists_approximating_martingales (hW : IsFilteredPreBrownianReal ℱ W P)
+    (T : ℝ≥0) (hc : ∀ᵐ ω ∂P, ContinuousOn (fun t ↦ W t ω) (Iic T))
+    (f : Lp ℝ 2 (ℱ.predictableMeasure P T)) :
+    ∃ (M : ℕ → ℝ≥0 → Ω → ℝ) (hmem : ∀ n u, MemLp (M n u) 2 P),
+      (∀ n, Martingale (M n) ℱ P) ∧
+      (∀ n, ∀ᵐ ω ∂P, Continuous (fun u ↦ M n u ω)) ∧
+      (∀ n, M n 0 = 0) ∧ (∀ n u, M n (min T u) = M n u) ∧
+      Tendsto (fun n ↦ (hmem n T).toLp (M n T)) atTop (𝓝 (hW.l2Integral T f)) := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  let L := Finsupp.linearCombination ℝ (step (ℱ := ℱ) (P := P) T)
+  obtain ⟨a, ha, halim⟩ := mem_closure_iff_seq_limit.mp
+    (dense_step (ℱ := ℱ) (P := P) T f)
+  choose c hca using ha
+  have hclim : Tendsto (fun n ↦ L (c n)) atTop (𝓝 f) := by
+    simpa only [L, hca] using halim
+  let M (n : ℕ) := Finsupp.linearCombination ℝ (fun R : Rectangle ℱ ↦ R.process T W) (c n)
+  have hprops (n : ℕ) := linearCombination_process_properties hW T hc (c n)
+  have hmem (n : ℕ) (u : ℝ≥0) : MemLp (M n u) 2 P := (hprops n).2.1 u
+  have hterm (n : ℕ) : (hmem n T).toLp (M n T) = hW.l2Integral T (L (c n)) :=
+    linearCombination_process_terminal hW T (c n) (hmem n T)
+  refine ⟨M, hmem, fun n ↦ (hprops n).1, fun n ↦ (hprops n).2.2.1,
+    fun n ↦ (hprops n).2.2.2.1, fun n ↦ (hprops n).2.2.2.2, ?_⟩
+  simpa only [Function.comp_def, hterm] using
+    (hW.l2Integral T).continuous.continuousAt.tendsto.comp hclim
+
+/-- If the Brownian paths are almost-surely continuous on `Iic T`, every predictable L²
+Brownian integral at horizon `T` is the terminal value of a predictable square-integrable
+martingale. Path continuity, `I 0 ω = 0`, and `∀ t, I (min T t) ω = I t ω` all hold on one
+common sample-full event, while `I T =ᵐ[P] hW.l2Integral T f`. No completeness or right
+continuity of the filtration is required. This is a continuous realization of the terminal
+map, not a cross-horizon identification of separate L² representatives. -/
+theorem exists_continuous_martingale_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
+    (T : ℝ≥0) (hc : ∀ᵐ ω ∂P, ContinuousOn (fun t ↦ W t ω) (Iic T))
+    (f : Lp ℝ 2 (ℱ.predictableMeasure P T)) :
+    ∃ I : ℝ≥0 → Ω → ℝ, Martingale I ℱ P ∧ IsStronglyPredictable ℱ I ∧
+      (∀ t, MemLp (I t) 2 P) ∧
+      (∀ᵐ ω ∂P, Continuous (fun t ↦ I t ω) ∧ I 0 ω = 0 ∧
+        ∀ t, I (min T t) ω = I t ω) ∧ I T =ᵐ[P] hW.l2Integral T f := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  obtain ⟨M, hmem, hM, hcont, hzero, hfrozen, htermLim⟩ :=
+    exists_approximating_martingales hW T hc f
+  -- Conditional expectation contracts terminal L² errors at every observation time.
+  have hcond (n : ℕ) (u : ℝ≥0) : (hmem n u).toLp (M n u) =
+      (condExpL2 ℝ ℝ (ℱ.le u) ((hmem n T).toLp (M n T)) : Lp ℝ 2 P) := by
     apply Lp.ext
-    filter_upwards [(hΨm (f + g)).coeFn_toLp, Lp.coeFn_add ((hΨm f).toLp _) ((hΨm g).toLp _),
-      (hΨm f).coeFn_toLp, (hΨm g).coeFn_toLp, hmk_add f g] with ω h1 h2 h3 h4 h5
-    rw [h1, h2, Pi.add_apply, h3, h4, h5, add_mul]
-  have hΦ_bound (f) : ‖Φ f‖ ≤ ((timeMeasure T Set.univ) ^ (2 : ℝ)⁻¹).toReal * ‖f‖ := by
-    rw [LinearIsometry.norm_map, Lp.norm_toLp, ℱ.predictableMeasure_def,
-      eLpNorm_trim ℱ.predictable_le_prod
-        (ℱ.stronglyMeasurable_predictable_indicator_Ioc_mul s t (hmk_meas f)),
-      show ‖f‖ = (eLpNorm (mk f) 2 P).toReal by
-        rw [← Submodule.norm_coe f, Lp.norm_def, eLpNorm_congr_ae (hmk_ae f)], ← ENNReal.toReal_mul]
-    exact ENNReal.toReal_mono (ENNReal.mul_ne_top (by finiteness) (hmk_memLp f).eLpNorm_ne_top)
-      (eLpNorm_indicator_Ioc_mul_le T s t (hmk_meas f))
-  have hΨ_bound (f) : ‖Ψ f‖ ≤ √((t' : ℝ) - s) * ‖f‖ := le_of_eq <| by
-    rw [hW.norm_toLp_mul_sub_eq hst' (hmk_meas f) (hmk_memLp f), ← Submodule.norm_coe f]
-    exact congrArg (√((t' : ℝ) - s) * norm ·)
-      (Lp.ext ((hmk_memLp f).coeFn_toLp.trans (hmk_ae f).symm))
-  -- Step 3: verify `Φ = Ψ` on `ℱ s`-measurable indicators, then extend by additivity and closure.
-  have hΦΨ : ∀ g : Lp ℝ 2 P, AEStronglyMeasurable[ℱ s] g P →
-      ∀ hg : g ∈ lpMeas ℝ ℝ (ℱ s) 2 P, Φ ⟨g, hg⟩ = Ψ ⟨g, hg⟩ :=
-    Lp.induction_stronglyMeasurable (ℱ.le s) (by norm_num)
-      (fun g ↦ ∀ hg : g ∈ lpMeas ℝ ℝ (ℱ s) 2 P, Φ ⟨g, hg⟩ = Ψ ⟨g, hg⟩)
-      (fun c A hA hμA hg ↦ by
-        let fc : lpMeas ℝ ℝ (ℱ s) 2 P := ⟨_, hg⟩
-        have hfc_ae : mk fc =ᵐ[P] A.indicator (fun _ ↦ c) := (hmk_ae fc).symm.trans <| by
-          rw [show (fc : Lp ℝ 2 P) = indicatorConstLp 2 (ℱ.le s A hA) hμA.ne c from
-            Lp.simpleFunc.coe_indicatorConst _ _ _]; exact indicatorConstLp_coeFn
-        have hEq : (htoP fc).toLp _ = indicatorConstLp 2
-            (measurableSet_predictable_Ioc_prod s t hA) (measure_ne_top _ _) c := by
-          apply Lp.ext
-          filter_upwards [(htoP fc).coeFn_toLp, indicatorConstLp_coeFn (p := 2) (c := c)
-              (hs := measurableSet_predictable_Ioc_prod s t hA) (hμs := measure_ne_top _ _),
-            ℱ.ae_eq_predictableMeasure_indicator_Ioc_mul T s t (hmk_meas fc)
-              (stronglyMeasurable_const.indicator hA) hfc_ae] with p h1 h2 h3
-          rw [h1, h2, h3]
-          by_cases h1' : p.1 ∈ Ioc s t <;> by_cases h2' : p.2 ∈ A <;> simp [h1', h2']
-        apply Lp.ext
-        filter_upwards [Lp.ext_iff.mp (congrArg (hW.l2Integral T) hEq),
-          hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod T s t hA c, (hΨm fc).coeFn_toLp, hfc_ae]
-          with ω h1 h2 h3 h4
-        dsimp only [Φ, Ψ]; rw [h1, h2, h3, h4])
-      (fun f g hf hg hfm hgm _ h1 h2 hfg ↦ by
-        have hmem_lp {u : Ω → ℝ} (hu : MemLp u 2 P) (hum : StronglyMeasurable[ℱ s] u) :
-            hu.toLp u ∈ lpMeas ℝ ℝ (ℱ s) 2 P := mem_lpMeas_iff_aestronglyMeasurable.mpr <|
-          hum.aestronglyMeasurable.congr hu.coeFn_toLp.symm
-        rw [show (⟨hf.toLp f + hg.toLp g, hfg⟩ : lpMeas ℝ ℝ (ℱ s) 2 P) =
-            ⟨_, hmem_lp hf hfm⟩ + ⟨_, hmem_lp hg hgm⟩ from Subtype.ext rfl,
-          hΦ_add, hΨ_add, h1 _, h2 _])
-      (by
-        convert isClosed_eq
-          (AddMonoidHomClass.continuous_of_bound (AddMonoidHom.mk' Φ hΦ_add) _ hΦ_bound)
-          (AddMonoidHomClass.continuous_of_bound (AddMonoidHom.mk' Ψ hΨ_add) _ hΨ_bound) using 1
-        ext f; exact ⟨fun h ↦ h f.2, fun h _ ↦ h⟩)
-  -- Step 4: apply `Φ = Ψ` to the class of `ξ` and rewrite the clipped Brownian increment.
-  have hfξ_mem : hξ₂.toLp ξ ∈ lpMeas ℝ ℝ (ℱ s) 2 P :=
-    mem_lpMeas_iff_aestronglyMeasurable.mpr (hξ.aestronglyMeasurable.congr hξ₂.coeFn_toLp.symm)
-  let fξ : lpMeas ℝ ℝ (ℱ s) 2 P := ⟨hξ₂.toLp ξ, hfξ_mem⟩
-  have hfξ_ae : mk fξ =ᵐ[P] ξ := (hmk_ae fξ).symm.trans hξ₂.coeFn_toLp
-  have hL : hmem.toLp _ = (htoP fξ).toLp _ := Lp.ext (hmem.coeFn_toLp.trans
-    ((ℱ.ae_eq_predictableMeasure_indicator_Ioc_mul T s t (hmk_meas fξ) hξ hfξ_ae).symm.trans
-      (htoP fξ).coeFn_toLp.symm))
-  filter_upwards [Lp.ext_iff.mp ((congrArg (hW.l2Integral T) hL).trans
-      (hΦΨ _ (mem_lpMeas_iff_aestronglyMeasurable.mp hfξ_mem) hfξ_mem)),
-    (hΨm fξ).coeFn_toLp, hfξ_ae] with ω h1 h2 h3
-  dsimp only [Ψ] at h1; rw [h1, h2, h3, sub_max_min_eq_sub_min hst T ω]
+    refine (hmem n u).coeFn_toLp.trans ?_
+    apply EventuallyEq.trans _
+      (MemLp.condExpL2_ae_eq_condExp (𝕜 := ℝ) (ℱ.le u) (hmem n T)).symm
+    have hm := (hM n).condExp_ae_eq (le_max_right T u)
+    have he : M n (max T u) = M n T := by
+      rw [← hfrozen, min_eq_left (le_max_left _ _)]
+    rw [he] at hm
+    exact hm.symm
+  have hcau (u : ℝ≥0) : CauchySeq (fun n ↦ (hmem n u).toLp (M n u)) := by
+    have h := continuous_subtypeVal.comp (condExpL2 ℝ ℝ (μ := P) (ℱ.le u)).continuous
+    have hlim := (h.tendsto (hW.l2Integral T f)).comp htermLim
+    simpa only [Function.comp_def, ← hcond] using hlim.cauchySeq
+  -- Complete the continuous martingales on the raw filtration, retaining a common path event.
+  obtain ⟨I, hI, hp, hlim, -, φ, -, hpath⟩ :=
+    exists_continuous_martingale_of_cauchySeq_Lp hM hcont hmem hcau
+  refine ⟨I, hI, hp, fun u ↦ (hlim u).1, ?_, ?_⟩
+  · filter_upwards [hpath] with ω hω
+    refine ⟨hω.1, ?_, fun u ↦ ?_⟩
+    · have hz := (hω.2 0).tendsto_at le_rfl
+      simp only [hzero, Pi.zero_apply] at hz
+      exact tendsto_nhds_unique hz tendsto_const_nhds
+    · exact tendsto_nhds_unique ((hω.2 (min T u)).tendsto_at le_rfl)
+        (by simpa only [hfrozen] using (hω.2 u).tendsto_at le_rfl)
+  · exact tendstoInMeasure_ae_unique
+      (tendstoInMeasure_of_tendsto_eLpNorm (by norm_num : (2 : ℝ≥0∞) ≠ 0) (hlim T).2)
+      ((tendstoInMeasure_of_tendsto_Lp htermLim).congr
+        (fun n ↦ (hmem n T).coeFn_toLp) EventuallyEq.rfl)
 
 /-- The `L²(P)` seminorm of a finite-horizon predictable L² Brownian integral equals the
 time-product `L²` seminorm of its integrand on `(0, t]`. -/

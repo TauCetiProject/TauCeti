@@ -7,19 +7,22 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Stopping
 public import Mathlib.Probability.Process.LocalProperty
+import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
-import TauCeti.Probability.Process.Patching
-import TauCeti.Probability.Martingale.Local.Congruence
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
+import TauCeti.Probability.Finance.SimpleStrategy.Energy
+import TauCeti.Probability.Martingale.Local.Congruence
 import TauCeti.Probability.Process.Indistinguishable
+import TauCeti.Probability.Process.Patching
 
 /-!
 # Local Brownian Itô integral process
 
 This file constructs the continuous, strongly progressive Brownian Itô integral process for every
-`LocallyBrownianIntegrable` integrand on a raw filtration, proves that every strongly progressive
-Itô integral of a locally Brownian-integrable integrand is a continuous local martingale, and
-extends stopping compatibility to the full local domain.
+`LocallyBrownianIntegrable` integrand against an almost surely continuous filtered pre-Brownian
+motion on a raw filtration, proves that every strongly progressive Itô integral of a locally
+Brownian-integrable integrand is a continuous local martingale, and extends stopping compatibility
+to the full local domain.
 
 Closed-level raw energy localizers `τ n := nnvolume.energyLocalizer H (n + 1)` reduce a locally
 Brownian-integrable integrand `H` to `BrownianIntegrable` cutoffs `Hloc n` without augmenting the
@@ -32,14 +35,16 @@ strongly progressive, almost surely continuous process `I` satisfying `IsItoInte
 
 ## Main results
 
-* `TauCeti.Probability.IsFilteredPreBrownianReal.exists_isItoIntegral`: every locally
-  Brownian-integrable integrand admits a strongly progressive Itô integral that is a local
-  martingale.
-* `TauCeti.Probability.IsFilteredPreBrownianReal.itoIntegral_localMartingale`: every strongly
-  progressive Itô integral of a locally Brownian-integrable integrand is a local martingale.
-* `TauCeti.Probability.IsFilteredPreBrownianReal.isItoIntegral_stoppedProcess`: stopping an Itô
-  integral of a locally Brownian-integrable integrand at any stopping time `σ` produces an Itô
-  integral of `1_{[0, σ]} · H`.
+* `TauCeti.Probability.IsFilteredPreBrownianReal.exists_isItoIntegral`: against an almost surely
+  continuous filtered pre-Brownian motion, every locally Brownian-integrable integrand admits a
+  strongly progressive Itô integral that is a local martingale.
+* `TauCeti.Probability.IsFilteredPreBrownianReal.itoIntegral_localMartingale`: against an almost
+  surely continuous filtered pre-Brownian motion, every strongly progressive Itô integral of a
+  locally Brownian-integrable integrand is a local martingale.
+* `TauCeti.Probability.IsFilteredPreBrownianReal.isItoIntegral_stoppedProcess`: against an almost
+  surely continuous filtered pre-Brownian motion, stopping an Itô integral of a locally
+  Brownian-integrable integrand at any stopping time `σ` produces an Itô integral of
+  `1_{[0, σ]} · H`.
 
 ## References
 
@@ -110,28 +115,27 @@ private theorem isItoIntegral_of_localized_stages
   have hloc := isLocalizingSequence_energyLevelLocalizer hH
   have hHloc (n : ℕ) := brownianIntegrable_energyLevelCutoff (P := P) hH.isStronglyPredictable n
   refine ⟨hH.isStronglyPredictable, hIcont, fun t ↦ ?_⟩
-  -- Step 1: approximate each localized stage `energyLevelCutoff H n` in `L²` by an elementary
-  -- integrand `K n` within `(n + 1)⁻¹`, and transfer convergence to the integrals via isometry.
-  have hexK (n : ℕ) : ∃ K : ElementaryIntegrand ℱ,
-      eLpNorm (fun p : ℝ≥0 × Ω ↦ K.toProcess p.1 p.2 - energyLevelCutoff H n p.1 p.2) 2
-        ((timeMeasure t).prod P) < (((n + 1 : ℕ) : ℝ≥0∞)⁻¹) := by
-    obtain ⟨m, s, a, C, -, hs, ha, hb, herr⟩ :=
-      ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P t (hHloc n).isStronglyPredictable
-        ((hHloc n).memLp_timeMeasure t) (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top _))
-    exact ⟨⟨m, s, hs.monotoneOn, a, ha,
-        fun j hj ↦ ⟨C, fun ω ↦ by simpa only [Real.norm_eq_abs] using hb j hj ω⟩⟩,
-      by simpa only [ElementaryIntegrand.toProcess_eq_simpleHolding] using herr⟩
-  choose K hK_lt using hexK
+  -- Step 1: approximate each localized stage `energyLevelCutoff H n` in `L²` by a bounded simple
+  -- holding within `(n + 1)⁻¹`, and transfer convergence to the integrals via isometry.
+  choose m s a C _ hs ha hb hK_lt using fun n : ℕ ↦
+    ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P t (hHloc n).isStronglyPredictable
+      ((hHloc n).memLp_timeMeasure t) (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top _))
   have hK_L2 : Tendsto (fun n ↦ eLpNorm
-      (fun p : ℝ≥0 × Ω ↦ (K n).toProcess p.1 p.2 - energyLevelCutoff H n p.1 p.2) 2
-        ((timeMeasure t).prod P)) atTop (𝓝 0) :=
+      (fun p : ℝ≥0 × Ω ↦ Finance.simpleHolding (s n) (m n) (a n) p.1 p.2 -
+        energyLevelCutoff H n p.1 p.2) 2 ((timeMeasure t).prod P)) atTop (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
       (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1))
       (fun _ ↦ zero_le) fun n ↦ (hK_lt n).le
-  have hK_I_L2 : Tendsto (fun n ↦ eLpNorm ((K n).integral W t - U n t) 2 P) atTop (𝓝 0) :=
-    hK_L2.congr fun n ↦ (hW.eLpNorm_sub_of_isItoIntegral
-      ((K n).brownianIntegrable_toProcess (P := P)) (hHloc n)
-      ((K n).isItoIntegral hcont) (hUito n) t).symm
+  have hK_brown (n : ℕ) : BrownianIntegrable ℱ P (Finance.simpleHolding (s n) (m n) (a n)) :=
+    brownianIntegrable_iff_memLp_predictableMeasure.mpr
+      ⟨Finance.isStronglyPredictable_simpleHolding (ha n),
+        fun T ↦ Finance.memLp_simpleHolding_predictableMeasure (ha n) (fun j hj ↦
+          MemLp.of_bound (((ha n j hj).mono (ℱ.le _)).aestronglyMeasurable) (C n)
+            (.of_forall (hb n j hj))) T⟩
+  have hK_I_L2 : Tendsto
+      (fun n ↦ eLpNorm (Finance.simpleGains (s n) (m n) (a n) W t - U n t) 2 P) atTop (𝓝 0) :=
+    hK_L2.congr fun n ↦ (hW.eLpNorm_sub_of_isItoIntegral (hK_brown n) (hHloc n)
+      (isItoIntegral_simpleGains hcont (hs n).monotoneOn (ha n)) (hUito n) t).symm
   -- Step 2: the bad events `B n = {τ n ≤ t}` decrease to a null set as `n → ∞`.
   let B (n : ℕ) : Set Ω := {ω | energyLevelLocalizer H n ω ≤ (t : WithTop ℝ≥0)}
   have hB_inter : P (⋂ n, B n) = 0 :=
@@ -145,31 +149,36 @@ private theorem isItoIntegral_of_localized_stages
       (fun _ _ hnm ω hω ↦ (energyLevelLocalizer_mono H hnm ω).trans hω) ⟨0, measure_ne_top P _⟩
   -- Step 3: off `B n` and a fixed null set, `I t = U n t` and the pathwise energies agree.
   have hgood : ∀ᵐ ω ∂P, ∀ n, ω ∉ B n → I t ω = U n t ω ∧
-        (∫⁻ s, ‖(K n).toProcess s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t) =
-          ∫⁻ s, ‖(K n).toProcess s ω - energyLevelCutoff H n s ω‖ₑ ^ 2 ∂timeMeasure t := by
+        (∫⁻ s', ‖Finance.simpleHolding (s n) (m n) (a n) s' ω - H s' ω‖ₑ ^ 2 ∂timeMeasure t) =
+          ∫⁻ s', ‖Finance.simpleHolding (s n) (m n) (a n) s' ω -
+            energyLevelCutoff H n s' ω‖ₑ ^ 2 ∂timeMeasure t := by
     filter_upwards [hH.ae_accumulatedEnergy_lt_top, ae_all_iff.mpr hIstop] with ω hfin hst n hB
     have ht_lt : (t : WithTop ℝ≥0) < energyLevelLocalizer H n ω := lt_of_not_ge hB
     refine ⟨by simpa only [stoppedProcess_eq_of_le ht_lt.le] using hst n t,
-      lintegral_congr_ae ((ae_mem_Ioc_timeMeasure t).mono fun s hs ↦ ?_)⟩
-    simp only [energyLevelCutoff, (WithTop.coe_le_coe.mpr hs.2).trans ht_lt.le, ite_true,
-      nnvolume.finiteEnergyCutoff_eqOn (hfin t) hs.2]
+      lintegral_congr_ae ((ae_mem_Ioc_timeMeasure t).mono fun s' hs' ↦ ?_)⟩
+    simp only [energyLevelCutoff, (WithTop.coe_le_coe.mpr hs'.2).trans ht_lt.le, ite_true,
+      nnvolume.finiteEnergyCutoff_eqOn (hfin t) hs'.2]
   -- Step 4: transfer energy and integral convergence in probability via the vanishing bad sets.
-  refine ⟨K, fun ε hε ↦ tendsto_measure_of_ae_subset_union hB_lim
+  refine ⟨m, s, a, fun n ↦ (hs n).monotoneOn, ha,
+    fun ε hε ↦ tendsto_measure_of_ae_subset_union hB_lim
       (TauCeti.tendsto_measure_lintegral_eNorm_pow_of_tendsto_eLpNorm
-        (F := fun n (p : ℝ≥0 × Ω) ↦ (K n).toProcess p.1 p.2 - energyLevelCutoff H n p.1 p.2)
+        (F := fun n (p : ℝ≥0 × Ω) ↦
+          Finance.simpleHolding (s n) (m n) (a n) p.1 p.2 - energyLevelCutoff H n p.1 p.2)
         (n := 2) (by norm_num) hK_L2 hε)
       fun n ↦ hgood.mono fun ω hω hA ↦ (Classical.em (ω ∈ B n)).imp id fun hB ↦ by
         simpa only [Set.mem_ofPred_eq, ← (hω n hB).2] using hA,
     fun ε hε ↦ tendsto_measure_of_ae_subset_union hB_lim
-      ((tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (f := fun n ↦ (K n).integral W t - U n t)
+      ((tendstoInMeasure_of_tendsto_eLpNorm (p := 2)
+        (f := fun n ↦ Finance.simpleGains (s n) (m n) (a n) W t - U n t)
         (g := 0) (by norm_num) (by simpa only [sub_zero] using hK_I_L2)) ε hε)
       fun n ↦ hgood.mono fun ω hω hA ↦ (Classical.em (ω ∈ B n)).imp id fun hB ↦ by
         simpa only [Set.mem_ofPred_eq, Pi.sub_apply, Pi.zero_apply, eDist_eq_eNorm_sub,
           sub_zero, (hω n hB).1] using hA⟩
 
 /-- Helper: construct a strongly progressive, almost surely continuous local-martingale Itô
-integral of a `LocallyBrownianIntegrable` integrand `H` together with the identification of its
-stages stopped at the closed-level raw energy localizers. -/
+integral of a `LocallyBrownianIntegrable` integrand `H` against an almost surely continuous `W`,
+together with the identification of its stages stopped at the closed-level raw energy
+localizers. -/
 private theorem exists_isItoIntegral_aux
     (hW : IsFilteredPreBrownianReal ℱ W P) (hcont : ∀ᵐ ω ∂P, Continuous (W · ω))
     {H : ℝ≥0 → Ω → ℝ} (hH : LocallyBrownianIntegrable ℱ P H) :
@@ -194,7 +203,7 @@ private theorem exists_isItoIntegral_aux
       by_cases ht : (t : WithTop ℝ≥0) ≤ energyLevelLocalizer H n ω
       · simp only [ht, ht.trans (energyLevelLocalizer_mono H hnm ω), ite_true]
       · simp only [ht, ite_false]
-    exact hW.isItoIntegral_unique (hEq ▸ hstop) (hUito n)
+    exact isItoIntegral_unique hW (hEq ▸ hstop) (hUito n)
   -- Step 3: patch the stages into a single strongly progressive continuous process `I`.
   obtain ⟨I, hIprog, hIcont, hIstop⟩ :=
     exists_isStronglyProgressive_patch_stoppedProcess hloc.tendsto_top
@@ -206,12 +215,12 @@ private theorem exists_isItoIntegral_aux
             Set.indicator_of_mem (nnvolume.energyLocalizer_pos H (by positivity) ω) _]
       exact (hIstop n).mono fun ω hω ↦ (hω t).symm
   exact ⟨I, hW.isItoIntegral_of_localized_stages hcont hH hIcont hUito hIstop,
-    hIprog, hIloc, fun n ↦ (hUito n).congr_indist (hIstop n).symm⟩
+    hIprog, hIloc, fun n ↦ (hUito n).congr (hIstop n).symm⟩
 
-/-- **Existence of the continuous local Brownian Itô integral process.** Every
-`LocallyBrownianIntegrable` integrand on a raw filtration admits a strongly progressive Itô
-integral process which is a local martingale. Neither completeness nor right continuity of the
-filtration is required. -/
+/-- **Existence of the continuous local Brownian Itô integral process.** Against an almost surely
+continuous filtered pre-Brownian motion `W`, every `LocallyBrownianIntegrable` integrand on a raw
+filtration admits a strongly progressive Itô integral process which is a local martingale. Neither
+completeness nor right continuity of the filtration is required. -/
 theorem exists_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (W · ω)) {H : ℝ≥0 → Ω → ℝ} (hH : LocallyBrownianIntegrable ℱ P H) :
     ∃ I : ℝ≥0 → Ω → ℝ, IsItoIntegral ℱ P W H I ∧ IsStronglyProgressive ℱ I ∧
@@ -219,16 +228,18 @@ theorem exists_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
   let ⟨I, hIito, hIprog, hIloc, _⟩ := hW.exists_isItoIntegral_aux hcont hH
   ⟨I, hIito, hIprog, hIloc⟩
 
-/-- **Local martingale property of Brownian Itô integrals.** Every strongly progressive Itô
-integral of a `LocallyBrownianIntegrable` integrand is a local martingale on the raw filtration. -/
+/-- **Local martingale property of Brownian Itô integrals.** Against an almost surely continuous
+filtered pre-Brownian motion `W`, every strongly progressive Itô integral of a
+`LocallyBrownianIntegrable` integrand is a local martingale on the raw filtration. -/
 theorem itoIntegral_localMartingale (hW : IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (W · ω)) {H I : ℝ≥0 → Ω → ℝ}
     (hH : LocallyBrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I)
     (hProg : IsStronglyProgressive ℱ I) : Locally (fun Y ↦ Martingale Y ℱ P) ℱ I P :=
   let ⟨_, hJito, _, hJloc⟩ := hW.exists_isItoIntegral hcont hH
-  hProg.locally_martingale_of_indist hJloc (hW.isItoIntegral_unique hJito hI)
+  hProg.locally_martingale_of_indist hJloc (isItoIntegral_unique hW hJito hI)
 
-/-- **Stopping compatibility for local Brownian Itô integrals.** Stopping any Itô integral of a
+/-- **Stopping compatibility for local Brownian Itô integrals.** Against an almost surely
+continuous filtered pre-Brownian motion `W`, stopping any Itô integral of a
 `LocallyBrownianIntegrable` integrand at any stopping time `σ` on the raw filtration produces an
 Itô integral of the cutoff integrand `1_{[0, σ]} · H`. -/
 theorem isItoIntegral_stoppedProcess (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -240,12 +251,15 @@ theorem isItoIntegral_stoppedProcess (hW : IsFilteredPreBrownianReal ℱ W P)
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   let Hσ : ℝ≥0 → Ω → ℝ := fun t ω ↦ if (t : WithTop ℝ≥0) ≤ σ ω then H t ω else 0
   have hHσ : LocallyBrownianIntegrable ℱ P Hσ := hH.ite_le hσ
+  -- Step 1: obtain localized `L²` Itô integrals for `I` and for an auxiliary integral `J` of `Hσ`.
   obtain ⟨I₀, hI₀ito, -, -, hI₀stop⟩ := hW.exists_isItoIntegral_aux hcont hH
   have hIstop (n : ℕ) :
       IsItoIntegral ℱ P W (energyLevelCutoff H n) (stoppedProcess I (energyLevelLocalizer H n)) :=
-    (hI₀stop n).congr_indist
-      ((hW.isItoIntegral_unique hI₀ito hI).stoppedProcess (energyLevelLocalizer H n))
+    (hI₀stop n).congr
+      ((isItoIntegral_unique hW hI₀ito hI).stoppedProcess (energyLevelLocalizer H n))
   obtain ⟨J, hJito, -, -, hJstop⟩ := hW.exists_isItoIntegral_aux hcont hHσ
+  -- Step 2: compare `stoppedProcess I σ` and `J` along the joint localizers
+  -- `η n = min (τ_H n) (τ_{Hσ} n)`.
   let η (n : ℕ) (ω : Ω) : WithTop ℝ≥0 :=
     min (energyLevelLocalizer H n ω) (energyLevelLocalizer Hσ n ω)
   have hη_top : ∀ᵐ ω ∂P, Tendsto (η · ω) atTop (𝓝 ⊤) := by
@@ -284,7 +298,8 @@ theorem isItoIntegral_stoppedProcess (hW : IsFilteredPreBrownianReal ℱ W P)
     simp only [nnvolume.finiteEnergyCutoff_eqOn hfinH ht,
       nnvolume.finiteEnergyCutoff_eqOn hfinHσ ht, Hσ, le_min_iff]
     split_ifs <;> first | rfl | tauto
-  exact hJito.congr_indist (indist_of_ae_eq_before_lifetimes hη_top fun n ↦
+  -- Step 3: conclude by patching `stoppedProcess I σ ≡ᵐ[P] J` from `η n → ∞`.
+  exact hJito.congr (indist_of_ae_eq_before_lifetimes hη_top fun n ↦
     (hcompat n).mono fun ω hω t ht ↦ by simpa only [stoppedProcess_eq_of_le ht] using hω t).symm
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
