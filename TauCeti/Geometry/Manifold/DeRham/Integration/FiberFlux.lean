@@ -334,10 +334,11 @@ theorem integralTopForm_wedge_mpullback_fst [SigmaCompactSpace M] [PreconnectedS
     refine exactCompactlySupportedForms_le_exactForms I 2
       ((mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero o
         (sub_mem hβ (Submodule.smul_mem _ c hθc))).mpr ?_)
-    rw [Submodule.coe_sub, Submodule.coe_smul, integralTopForm_sub_smul o
-      (β.isSmoothForm.of_le (by simp)) (θ.1.isSmoothForm.of_le (by simp))
-      ((mem_compactlySupportedForms I).mp hβ) ((mem_compactlySupportedForms I).mp hθc), hθ,
-      mul_one, sub_self]
+    rw [Submodule.coe_sub, integralTopForm_sub o
+      (β.isSmoothForm.of_le (by simp)) ((c • θ.1).isSmoothForm.of_le (by simp))
+      ((mem_compactlySupportedForms I).mp hβ)
+      ((mem_compactlySupportedForms I).mp (Submodule.smul_mem _ c hθc)), Submodule.coe_smul,
+      integralTopForm_smul, hθ, mul_one, sub_self]
   -- Its pullback is exact, so it pairs to zero with `T`.
   have h0 := integralTopForm_wedge_eq_zero_of_mem_exactForms o hT
     (closedForms.mpullback_mem_exactForms (I := I.prod 𝓘(ℝ, ℂ)) (I' := I)
@@ -351,9 +352,11 @@ theorem integralTopForm_wedge_mpullback_fst [SigmaCompactSpace M] [PreconnectedS
     rw [SmoothForm.coe_wedge, integralTopForm_wedge_mpullback_fst_of_tsupport_subset_chart o
       ((mem_compactlySupportedForms _).mp hTc) ((mem_compactlySupportedForms I).mp hθc) hθx
       (fun x _ ↦ hm x), hθ, mul_one]
-  rw [Submodule.coe_sub, Submodule.coe_smul, integralTopForm_sub_smul oP
-    (X.isSmoothForm.of_le (by simp)) (Y.isSmoothForm.of_le (by simp))
-    (isCompact_tsupport_wedge hTc _) (isCompact_tsupport_wedge hTc _), hY] at h0
+  rw [Submodule.coe_sub, integralTopForm_sub oP
+    (X.isSmoothForm.of_le (by simp)) ((c • Y).isSmoothForm.of_le (by simp))
+    (isCompact_tsupport_wedge hTc _) ((mem_compactlySupportedForms _).mp
+      (Submodule.smul_mem _ c ((mem_compactlySupportedForms _).mpr
+        (isCompact_tsupport_wedge hTc _)))), Submodule.coe_smul, integralTopForm_smul, hY] at h0
   linarith
 
 /-- **The taming pairing of a closed current of transverse flux `m`.** Let `M` be a σ-compact
