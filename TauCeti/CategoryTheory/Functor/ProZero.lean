@@ -80,19 +80,19 @@ lemma forall_exists_iff_forall_exists_le {ι : Type u₃} [Preorder ι] (P : Mor
     exact ⟨Opposite.op j, (homOfLE h).op, hj⟩
 
 /-- **Cofinal reindexing.** Let `P` be a property of morphisms of `J` that is stable under
-precomposition and postcomposition with arbitrary morphisms. For an initial functor `G : I ⥤ J` out
+precomposition and postcomposition with arbitrary morphisms (`P.RespectsLeft ⊤` and
+`P.RespectsRight ⊤`). For an initial functor `G : I ⥤ J` out
 of a cofiltered category, every object of `J` is the target of a morphism satisfying `P` exactly
 when every object of `I` is the target of a morphism whose image under `G` satisfies `P`. -/
 theorem forall_exists_map_iff_of_initial {J : Type u₁} [Category.{v₁} J] (P : MorphismProperty J)
-    {I : Type u₃} [Category.{v₃} I] [IsCofilteredOrEmpty I] (G : I ⥤ J) [G.Initial]
-    (hpre : ∀ {i j k : J} (f : i ⟶ j) (g : j ⟶ k), P g → P (f ≫ g))
-    (hpost : ∀ {i j k : J} (f : i ⟶ j) (g : j ⟶ k), P f → P (f ≫ g)) :
+    [P.RespectsLeft ⊤] [P.RespectsRight ⊤]
+    {I : Type u₃} [Category.{v₃} I] [IsCofilteredOrEmpty I] (G : I ⥤ J) [G.Initial] :
     (∀ i, ∃ (c : I) (f : c ⟶ i), P (G.map f)) ↔ ∀ j, ∃ (i : J) (f : i ⟶ j), P f := by
   have hG := ((Functor.initial_iff_of_isCofiltered G).1 inferInstance).1
   refine ⟨fun hP j ↦ ?_, fun hP i ↦ ?_⟩
   · obtain ⟨c, ⟨u⟩⟩ := hG j
     obtain ⟨i, g, hg⟩ := hP c
-    exact ⟨G.obj i, G.map g ≫ u, hpost _ _ hg⟩
+    exact ⟨G.obj i, G.map g ≫ u, RespectsRight.postcomp (Q := ⊤) _ trivial _ hg⟩
   · -- Find `f : j ⟶ G i` satisfying `P`, reach `j` from some `G c`, and compare the resulting
     -- map `G c ⟶ G i` with a map in the image of `G` over a common lower bound of `c` and `i`.
     obtain ⟨j, f, hf⟩ := hP (G.obj i)
@@ -101,7 +101,7 @@ theorem forall_exists_map_iff_of_initial {J : Type u₁} [Category.{v₁} J] (P 
       (G.map (IsCofiltered.minToLeft c i) ≫ u ≫ f) (G.map (IsCofiltered.minToRight c i))
     refine ⟨c', t ≫ IsCofiltered.minToRight c i, ?_⟩
     rw [G.map_comp, ← ht, ← Category.assoc, ← Category.assoc]
-    exact hpre _ _ hf
+    exact RespectsLeft.precomp (Q := ⊤) _ trivial _ hf
 
 end MorphismProperty
 
@@ -154,8 +154,11 @@ lemma IsProZero.isZero_of_isLimit {F : J ⥤ C} (hF : F.IsProZero) {c : Cone F} 
 diagram `F : J ⥤ C` is pro-zero exactly when `G ⋙ F` is. -/
 theorem isProZero_comp_iff {I : Type u₃} [Category.{v₃} I] [IsCofilteredOrEmpty I]
     (G : I ⥤ J) [G.Initial] (F : J ⥤ C) : (G ⋙ F).IsProZero ↔ F.IsProZero :=
+  have : MorphismProperty.RespectsLeft (fun _ _ f ↦ F.map f = 0 : MorphismProperty J) ⊤ :=
+    ⟨fun _ _ _ h ↦ by rw [F.map_comp, h, comp_zero]⟩
+  have : MorphismProperty.RespectsRight (fun _ _ f ↦ F.map f = 0 : MorphismProperty J) ⊤ :=
+    ⟨fun _ _ _ h ↦ by rw [F.map_comp, h, zero_comp]⟩
   MorphismProperty.forall_exists_map_iff_of_initial (fun _ _ f ↦ F.map f = 0) G
-    (fun _ _ h ↦ by rw [F.map_comp, h, comp_zero]) (fun _ _ h ↦ by rw [F.map_comp, h, zero_comp])
 
 /-- **Cofinal monotone reindexing of inverse systems.** If `φ : ι → κ` is monotone and cofinal and
 `ι` is directed, then an inverse system `F` indexed by `κ` is pro-zero exactly when its
@@ -227,9 +230,11 @@ diagram `F : J ⥤ C` is pro-`r`-torsion exactly when `G ⋙ F` is. -/
 theorem isProTorsionBy_comp_iff {I : Type u₃} [Category.{v₃} I] [IsCofilteredOrEmpty I]
     (G : I ⥤ J) [G.Initial] (F : J ⥤ C) (r : R) :
     (G ⋙ F).IsProTorsionBy r ↔ F.IsProTorsionBy r :=
+  have : MorphismProperty.RespectsLeft (fun _ _ f ↦ r • F.map f = 0 : MorphismProperty J) ⊤ :=
+    ⟨fun _ _ _ h ↦ by rw [F.map_comp, ← Linear.comp_smul, h, comp_zero]⟩
+  have : MorphismProperty.RespectsRight (fun _ _ f ↦ r • F.map f = 0 : MorphismProperty J) ⊤ :=
+    ⟨fun _ _ _ h ↦ by rw [F.map_comp, ← Linear.smul_comp, h, zero_comp]⟩
   MorphismProperty.forall_exists_map_iff_of_initial (fun _ _ f ↦ r • F.map f = 0) G
-    (fun _ _ h ↦ by rw [F.map_comp, ← Linear.comp_smul, h, comp_zero])
-    (fun _ _ h ↦ by rw [F.map_comp, ← Linear.smul_comp, h, zero_comp])
 
 /-- **Cofinal monotone reindexing of inverse systems.** If `φ : ι → κ` is monotone and cofinal and
 `ι` is directed, then an inverse system `F` indexed by `κ` is pro-`r`-torsion exactly when its
