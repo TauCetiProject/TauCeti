@@ -9,7 +9,9 @@ public import TauCeti.Geometry.Contact.Contactomorphism
 public import TauCeti.Geometry.Contact.Hamiltonian
 public import TauCeti.Geometry.Contact.Moser
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.Family
+import TauCeti.Geometry.Contact.Family
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
+import TauCeti.Geometry.Manifold.Flow.TransportEquation
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
@@ -58,8 +60,8 @@ solution `Y` only satisfies `L_Y α + β = β(R_α) α`, the strict equation pre
 exactly. For a family of contact forms `α_t`, Gray's equation with `β = ∂_t α_t` integrates to a
 flow that pulls `α_t` back to a positive multiple of `α_s`, whereas the strict equation with
 `β = -∂_t α_t` integrates to a flow that pulls `α_t` back to `α_s` itself (see below). The price is
-the Reeb-direction equation, an ordinary differential equation along the Reeb flow, which this
-file takes as a hypothesis.
+the Reeb-direction equation, an ordinary differential equation along the Reeb flow, which the
+Moser theorems below take as a hypothesis and which is solved near a transverse slice at the end.
 
 For a smooth family of contact forms `α_t`, represented by a one-form on `ℝ × M`, and a smooth
 time-dependent function `h_t`, the **strict Moser vector field**
@@ -93,6 +95,16 @@ to the points whose trajectories stay in `U` is a partial diffeomorphism fixing 
 open neighbourhoods of `K`, which pulls `α_t` back to `α_s` exactly. Neither `K` nor `M` need be
 compact, and the Reeb-direction equation need only hold near `K`.
 
+The Reeb-direction equation is solved by integrating along the Reeb flows out of a hypersurface
+transverse to them, with zero values on the hypersurface
+(`TauCeti.SmoothForm.exists_contMDiff_strictMoserVectorField_eq_zero`). Let `ι : S → M` be a
+smooth map from a manifold of one dimension less, injective with injective differential on a
+compact set `K ⊆ S`, and transverse to the Reeb fields of `α_t` along `K` for the times `t` of a
+compact set `T`. On a σ-compact manifold there is then a smooth time-dependent function `h_t` which
+solves the Reeb-direction equation near `T × ι(K)` and vanishes on the slice near `T × K`; at a
+point of `ι(K)` where `∂_t α_t` vanishes, the strict Moser vector field vanishes. This is the
+transport equation `TauCeti.exists_contMDiff_mvfderiv_eq_param` for the family of Reeb fields.
+
 ## Main declarations
 
 * `TauCeti.SmoothForm.strictContactMoserVectorField`: the strict contact-Moser vector field.
@@ -110,6 +122,8 @@ compact, and the Reeb-direction equation need only hold near `K`.
   partial flow pulls `α_t` back to `α_s` at every point along whose trajectory `h` solves the
   Reeb-direction equation.
 * `TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq`: the relative strict Moser theorem.
+* `TauCeti.SmoothForm.exists_contMDiff_strictMoserVectorField_eq_zero`: a solution of the
+  Reeb-direction equation on a transverse slice, with zero values on the slice.
 * `TauCeti.SmoothForm.strictMoserDiffeomorph`: on a compact manifold, its flow as a diffeomorphism.
 * `TauCeti.SmoothForm.isStrictContactomorphism_strictMoserDiffeomorph`: the flow pulls `α_t` back
   to `α_s`.
@@ -839,6 +853,61 @@ theorem exists_partialDiffeomorph_mpullback_eq {K : Set M}
       ((hU.preimage (Continuous.prodMk_right u)).mem_nhds (hx.2 u hu).2) fun y hy ↦ hR (u, y) hy
 
 end Relative
+
+/-! ### The Reeb-direction equation on a transverse slice -/
+
+section TransverseSlice
+
+variable [SigmaCompactSpace M] {E' H' S : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
+  [BoundarylessManifold J S] [IsManifold J ∞ S]
+
+/-- **Solving the Reeb-direction equation on a transverse slice.** Let `α_t` be a smooth family of
+contact forms on a σ-compact boundaryless manifold `M`, let `ι : S → M` be smooth from a
+boundaryless manifold of one dimension less, and let `K ⊆ S` and `T ⊆ ℝ` be compact, with `ι`
+injective and with injective differential on `K`, and with the Reeb vector field of `α_t`
+transverse to `ι` along `K` for every `t ∈ T`. Then there is a smooth time-dependent function `h`
+which solves the Reeb-direction equation `R_(α_t) h_t = -(∂_t α_t)(R_(α_t))` near `T × ι(K)` and
+vanishes on the slice near `T × K`. At a point `ι s` with `s ∈ K` where `∂_t α_t` vanishes for a
+time `t ∈ T`, the strict Moser vector field of `(α, h)` vanishes at time `t`. -/
+theorem exists_contMDiff_strictMoserVectorField_eq_zero {ι : S → M} (hι : ContMDiff J I ∞ ι)
+    (hdim : Module.finrank ℝ E = Module.finrank ℝ E' + 1) {T : Set ℝ} (hT : IsCompact T)
+    {K : Set S} (hK : IsCompact K) (hinj : Set.InjOn ι K)
+    (himm : ∀ s ∈ K, Function.Injective (mfderiv J I ι s))
+    (htr : ∀ t ∈ T, ∀ s ∈ K,
+      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField (ι s) ∉
+        (mfderiv J I ι s).range) :
+    ∃ h : ℝ × M → ℝ, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ h ∧
+      (∀ᶠ p in 𝓝ˢ (T ×ˢ (ι '' K)), mvfderiv I (fun y ↦ h (p.1, y)) p.2
+          ((mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField
+            p.2) =
+        -(mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 p.2
+          ![(mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField
+            p.2]) ∧
+      (∀ᶠ p in 𝓝ˢ (T ×ˢ K), h (p.1, ι p.2) = 0) ∧
+      ∀ t ∈ T, ∀ s ∈ K,
+        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 (ι s) = 0 →
+          α.strictMoserVectorField h t (ι s) = 0 := by
+  obtain ⟨h, hh, hR, h0, hd⟩ := exists_contMDiff_mvfderiv_eq_param (L := 𝓘(ℝ, ℝ))
+    (v := fun t ↦ (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField)
+    (contMDiff_reebVectorField_mpullback_prodMk α hc)
+    (contMDiff_apply_reebVectorField_mpullback_prodMk α α.timeDeriv hc).neg hι hdim hT hK hinj
+    himm htr
+  refine ⟨h, hh, hR, h0, fun t ht s hs hβ ↦ ?_⟩
+  have hRts := hR.self_of_nhdsSet (t, ι s)
+    (show (t, ι s) ∈ T ×ˢ (ι '' K) from ⟨ht, Set.mem_image_of_mem ι hs⟩)
+  -- With `∂_t α_t = 0` at `ι s`, the right side vanishes, so `h_t` has zero differential there.
+  have hg0 : -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 (ι s)
+      ![(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField
+        (ι s)] = 0 := by
+    rw [hβ]
+    simp
+  refine (strictMoserVectorField_eq_zero_iff (hc t) hRts).2
+    ⟨h0.self_of_nhdsSet (t, s) (show (t, s) ∈ T ×ˢ K from ⟨ht, hs⟩), fun w ↦ ?_⟩
+  rw [hd t ht s hs hg0, hβ]
+  simp
+
+end TransverseSlice
 
 /-! ### The strict Moser isotopy on compact manifolds -/
 
