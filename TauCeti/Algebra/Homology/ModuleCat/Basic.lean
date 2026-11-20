@@ -68,9 +68,15 @@ short exact sequence (`HomologicalComplex.exact_subtype_rangeRestrict`).
 A chain map restricts to a map between the images of the differentials
 (`HomologicalComplex.Hom.boundaryMap`), functorially in the chain map
 (`HomologicalComplex.Hom.boundaryMap_comp`), zero on the image of a zero differential
-(`HomologicalComplex.Hom.boundaryMap_eq_zero`), and injective where the chain map is; for a
-degreewise short exact sequence of complexes whose third term is exact, these maps form a sequence
-exact in the middle (`HomologicalComplex.Hom.exact_boundaryMap`).  A family of chain endomorphisms
+(`HomologicalComplex.Hom.boundaryMap_eq_zero`), injective where the chain map is, and surjective
+where the chain map is surjective in the source degree
+(`HomologicalComplex.Hom.boundaryMap_surjective`); for a degreewise short exact sequence of
+complexes whose third term is exact, these maps form a sequence exact in the middle
+(`HomologicalComplex.Hom.exact_boundaryMap`). More generally, without exactness of the third term,
+a chain map restricts from the preimage of the target boundaries
+(`HomologicalComplex.Hom.comapBoundaryMap`), and at a degree where `K ⟶ L ⟶ M` is exact,
+`HomologicalComplex.Hom.comapBoundaryMap` and `HomologicalComplex.Hom.boundaryMap` form an exact
+pair (`HomologicalComplex.Hom.exact_comapBoundaryMap_boundaryMap`).  A family of chain endomorphisms
 that is locally nilpotent on the degree-`n` term is locally nilpotent on the degree-`n` homology
 (`HomologicalComplex.iSup_wordKer_homologyMap_eq_top`), since the homology is a quotient of the
 cycles, a submodule of the term.
@@ -191,6 +197,16 @@ theorem Hom.boundaryMap_injective (φ : K ⟶ L) (i : ι) {j : ι}
     (hφ : Function.Injective (φ.f j).hom) : Function.Injective (φ.boundaryMap i j) :=
   fun _ _ hxy ↦ Subtype.ext (hφ (congrArg Subtype.val hxy))
 
+/-- A chain map that is surjective in degree `i` is surjective on the images of the differentials
+`L.X i ⟶ L.X j` and `M.X i ⟶ M.X j`. -/
+theorem Hom.boundaryMap_surjective (ψ : L ⟶ M) {i : ι} (j : ι)
+    (hψ : Function.Surjective (ψ.f i).hom) : Function.Surjective (ψ.boundaryMap i j) := by
+  rintro ⟨_, y, rfl⟩
+  obtain ⟨x, rfl⟩ := hψ y
+  refine ⟨⟨(L.d i j).hom x, x, rfl⟩, Subtype.ext ?_⟩
+  rw [ψ.coe_boundaryMap]
+  simpa using (ψ.comm_apply i j x).symm
+
 /-- Let `K ⟶ L ⟶ M` be chain maps of complexes of modules, let `h = c.prev i` and
 `j = c.next i`. If the sequence `K ⟶ L ⟶ M` is exact in degree `i`, `L ⟶ M` is
 surjective in degree `h` and `M` is exact in degree `i`, then the induced maps on the images of
@@ -220,6 +236,46 @@ theorem Hom.exact_boundaryMap {φ : K ⟶ L} {ψ : L ⟶ M} {h i j : ι} (hh : c
     refine Subtype.ext ?_
     simp only [coe_boundaryMap, ← Hom.comm_apply, hi.apply_apply_eq_zero, map_zero]
     rfl
+
+/-- A chain map sends boundaries into the preimage of the target boundaries. -/
+theorem Hom.range_d_le_comap_range_d (φ : K ⟶ L) (i j : ι) :
+    LinearMap.range (K.d i j).hom ≤ (LinearMap.range (L.d i j).hom).comap (φ.f j).hom := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨(φ.f i).hom x, φ.comm_apply i j x⟩
+
+/-- A chain map `φ : K ⟶ L` restricts to a linear map from the preimage in `K.X j` of the
+boundaries `LinearMap.range (L.d i j).hom` into `LinearMap.range (L.d i j).hom`. -/
+def Hom.comapBoundaryMap (φ : K ⟶ L) (i j : ι) :
+    (LinearMap.range (L.d i j).hom).comap (φ.f j).hom →ₗ[R] LinearMap.range (L.d i j).hom :=
+  (φ.f j).hom.restrict fun _ h ↦ h
+
+/-- `Hom.comapBoundaryMap` acts as the chain map on underlying elements. -/
+@[simp]
+theorem Hom.coe_comapBoundaryMap (φ : K ⟶ L) (i j : ι)
+    (x : (LinearMap.range (L.d i j).hom).comap (φ.f j).hom) :
+    (φ.comapBoundaryMap i j x : L.X j) = (φ.f j).hom x :=
+  (rfl)
+
+/-- If `φ` is injective in degree `j`, then `φ.comapBoundaryMap i j` is injective. -/
+theorem Hom.comapBoundaryMap_injective (φ : K ⟶ L) (i : ι) {j : ι}
+    (hφ : Function.Injective (φ.f j).hom) : Function.Injective (φ.comapBoundaryMap i j) :=
+  fun _ _ hxy ↦ Subtype.ext (hφ (congrArg Subtype.val hxy))
+
+/-- If `K ⟶ L ⟶ M` is exact in degree `j`, then `φ.comapBoundaryMap i j` and `ψ.boundaryMap i j`
+form an exact pair at `LinearMap.range (L.d i j).hom`. -/
+theorem Hom.exact_comapBoundaryMap_boundaryMap {φ : K ⟶ L} {ψ : L ⟶ M} (i : ι) {j : ι}
+    (hj : Function.Exact (φ.f j).hom (ψ.f j).hom) :
+    Function.Exact (φ.comapBoundaryMap i j) (ψ.boundaryMap i j) := by
+  intro b
+  constructor
+  · intro hb
+    have hb' : (ψ.f j).hom b.1 = 0 := by simpa [ψ.coe_boundaryMap] using congrArg Subtype.val hb
+    obtain ⟨a, ha⟩ := (hj b.1).1 hb'
+    exact ⟨⟨a, by simpa only [Submodule.mem_comap, ha] using b.2⟩, Subtype.ext ha⟩
+  · rintro ⟨a, rfl⟩
+    refine Subtype.ext ?_
+    rw [ψ.coe_boundaryMap, φ.coe_comapBoundaryMap]
+    exact hj.apply_apply_eq_zero a.1
 
 end BoundaryMap
 

@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
 public import Mathlib.Geometry.Manifold.ChartedSpace
 import Mathlib.Analysis.Convex.Contractible
 import TauCeti.Geometry.Manifold.CoordinateBall
+import TauCeti.Geometry.Manifold.ModelTransport.Finrank
 import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
@@ -116,8 +117,7 @@ theorem eulerChar_compl_of_finite {E : Type v} [NormedAddCommGroup E] [NormedSpa
   -- Recharts `X` on a Euclidean space of the same dimension in the universe of `X`.
   let E' := EuclideanSpace ℝ (ULift.{w} (Fin (finrank ℝ E)))
   have hE' : finrank ℝ E' = finrank ℝ E := by simp [E']
-  let _ : ChartedSpace E' E := (ContinuousLinearEquiv.ofFinrankEq hE').toHomeomorph.chartedSpace
-  let _ : ChartedSpace E' X := .comp E' E X
+  let _ : ChartedSpace E' X := ChartedSpace.ofFinrankEq X hE'.symm
   rw [eulerChar_compl_of_finite_aux (E := E') hS, hE']
 
 end TauCeti

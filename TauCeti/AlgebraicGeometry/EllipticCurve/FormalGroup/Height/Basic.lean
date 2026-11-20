@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.InvariantDifferential
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Supersingular
 public import TauCeti.RingTheory.FormalGroup.Height.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
@@ -26,10 +25,7 @@ When `p = 0` in `R` it is an equality.
 Over a field of characteristic `p`, `Ê` has height one exactly when the coefficient of `Tᵖ` in
 `[p]_Ê` is nonzero, hence exactly when the coefficient of `Tᵖ⁻¹` in `P` is nonzero. The first
 coefficients of `P` are `1`, `a₁` and `a₁² + a₂`. In characteristic `2` the criterion is therefore
-`a₁ ≠ 0`, and in characteristic `3` it is `a₁² + a₂ ≠ 0`, that is `b₂ ≠ 0`. For an elliptic curve
-these are the conditions `j ≠ 0`, which characterize ordinary curves in these characteristics.
-So in characteristic `2` and `3` the formal group of an elliptic curve has height one exactly when
-the curve is ordinary, and height at least two exactly when it is supersingular.
+`a₁ ≠ 0`, and in characteristic `3` it is `a₁² + a₂ ≠ 0`, that is `b₂ ≠ 0`.
 
 ## Main results
 
@@ -43,12 +39,6 @@ the curve is ordinary, and height at least two exactly when it is supersingular.
 * `WeierstrassCurve.height_formalGroup_eq_one_iff_a₁_ne_zero_of_char_two` and
   `WeierstrassCurve.height_formalGroup_eq_one_iff_b₂_ne_zero_of_char_three`: the explicit
   criteria in characteristic `2` and `3`.
-* `WeierstrassCurve.isOrdinary_iff_height_formalGroup_eq_one_of_char_two`,
-  `WeierstrassCurve.isOrdinary_iff_height_formalGroup_eq_one_of_char_three`,
-  `WeierstrassCurve.isSupersingular_iff_one_lt_height_formalGroup_of_char_two` and
-  `WeierstrassCurve.isSupersingular_iff_one_lt_height_formalGroup_of_char_three`: in
-  characteristic `2` and `3`, an elliptic curve is ordinary exactly when its formal group has
-  height one, and supersingular exactly when the height exceeds one.
 
 ## References
 
@@ -119,36 +109,6 @@ theorem height_formalGroup_eq_one_iff_b₂_ne_zero_of_char_three [CharP K 3] :
     rw [b₂]
     linear_combination W.a₂ * CharP.cast_eq_zero K 3
   rw [height_formalGroup_eq_one_iff, coeff_two_invariantDifferential_formalGroup, h]
-
-variable [W.IsElliptic]
-
-/-- **In characteristic `2` an elliptic curve is ordinary exactly when its formal group has height
-one.** -/
-theorem isOrdinary_iff_height_formalGroup_eq_one_of_char_two [CharP K 2] :
-    W.IsOrdinary 2 ↔ (formalGroup W).height 2 = 1 := by
-  rw [isOrdinary_iff_j_ne_zero_of_char_two, height_formalGroup_eq_one_iff_a₁_ne_zero_of_char_two,
-    Ne, j_eq_zero_iff_of_char_two]
-
-/-- **In characteristic `3` an elliptic curve is ordinary exactly when its formal group has height
-one.** -/
-theorem isOrdinary_iff_height_formalGroup_eq_one_of_char_three [CharP K 3] :
-    W.IsOrdinary 3 ↔ (formalGroup W).height 3 = 1 := by
-  rw [isOrdinary_iff_j_ne_zero_of_char_three,
-    height_formalGroup_eq_one_iff_b₂_ne_zero_of_char_three, Ne, j_eq_zero_iff_of_char_three]
-
-/-- **In characteristic `2` an elliptic curve is supersingular exactly when its formal group has
-height greater than one.** -/
-theorem isSupersingular_iff_one_lt_height_formalGroup_of_char_two [CharP K 2] :
-    W.IsSupersingular 2 ↔ 1 < (formalGroup W).height 2 := by
-  rw [← not_isOrdinary, isOrdinary_iff_height_formalGroup_eq_one_of_char_two,
-    (formalGroup W).one_le_height.lt_iff_ne', Ne]
-
-/-- **In characteristic `3` an elliptic curve is supersingular exactly when its formal group has
-height greater than one.** -/
-theorem isSupersingular_iff_one_lt_height_formalGroup_of_char_three [CharP K 3] :
-    W.IsSupersingular 3 ↔ 1 < (formalGroup W).height 3 := by
-  rw [← not_isOrdinary, isOrdinary_iff_height_formalGroup_eq_one_of_char_three,
-    (formalGroup W).one_le_height.lt_iff_ne', Ne]
 
 end Field
 

@@ -29,6 +29,9 @@ that degree vanish (`HomologicalComplex.finrank_homology_eq_finrank_X_of_d_eq_ze
 the dimension of a finite-dimensional term is the sum of the dimensions of the boundaries, of the
 homology and of the image of the outgoing differential
 (`HomologicalComplex.finrank_X_eq_finrank_range_add_finrank_homology_add`).
+For a based homological complex over a nontrivial ring whose chain bases have finitely supported
+ranks, the homology bases also have finitely supported ranks
+(`HomologicalComplex.finite_homology_of_finite`).
 Bases of two terms of a complex joined by a bijective differential have the same size
 (`HomologicalComplex.card_eq_card_of_bijective_d`).
 
@@ -93,6 +96,22 @@ theorem finrank_X_eq_finrank_range_add_finrank_homology_add {k : Type*} [Divisio
   have h₂ := (C.exact_inclusion_moduleCatKerHomologyClass hl hi).finrank_eq_add
     (Submodule.inclusion_injective _) (C.moduleCatKerHomologyClass_surjective hl)
   omega
+
+/-- For a bounded based homological complex of modules over a nontrivial ring, only finitely many
+homology bases are nonempty: homology vanishes in every degree where the complex vanishes. -/
+theorem finite_homology_of_finite {R : Type*} [Ring R] [Nontrivial R] {ι : Type*}
+    {s : ComplexShape ι} {C : HomologicalComplex (ModuleCat R) s} {n m : ι → ℕ}
+    (c : ∀ i, Basis (Fin (n i)) R (C.X i))
+    (h : ∀ i, Basis (Fin (m i)) R (C.homology i)) (hn : {i | n i ≠ 0}.Finite) :
+    {i | m i ≠ 0}.Finite :=
+  hn.subset fun i hi ↦ by
+    by_contra hn₀
+    simp only [Set.mem_ofPred_eq, not_not] at hn₀
+    have : IsEmpty (Fin (n i)) := by rw [hn₀]; infer_instance
+    have := (c i).repr.toEquiv.subsingleton
+    have hC : C.ExactAt i := .of_isZero (ModuleCat.isZero_of_subsingleton _)
+    have := ModuleCat.subsingleton_of_isZero hC.isZero_homology
+    exact hi (Nat.eq_zero_of_not_pos fun hm ↦ (h i).ne_zero ⟨0, hm⟩ (Subsingleton.elim _ _))
 
 variable {F : Type*} [Field F] {ι : Type*} {s : ComplexShape ι}
 

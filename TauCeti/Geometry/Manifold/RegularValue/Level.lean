@@ -178,10 +178,12 @@ private theorem isFredholm_linearization (z : ↥{y : BoundarylessModel I M | se
   ContinuousLinearMap.isFredholm_of_finiteDimensional _
 
 omit [FiniteDimensional 𝕜 F] in
-private theorem index_linearization (hreg : IsRegularValue I 𝓘(𝕜, F) f c)
+/-- The kernel of the section-zero linearization at a zero, of dimension `dim E - dim F`,
+identified with the model `Fin n → 𝕜`. -/
+private noncomputable abbrev kerEquiv (hreg : IsRegularValue I 𝓘(𝕜, F) f c)
     (hn : finrank 𝕜 E - finrank 𝕜 F = n) (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
-    (linearization z).index = n :=
-  ((linearization z).finrank_ker_eq_iff_index_eq (surjective_linearization hreg z)).1
+    (linearization z).ker ≃L[𝕜] (Fin n → 𝕜) :=
+  (linearization z).kerModelEquiv (isFredholm_linearization z).finite_ker
     ((Nat.eq_sub_of_add_eq ((hreg.isRegularPoint (zeroHomeomorph I f c z).2)
       |>.finrank_ker_fderiv_comp_extChartAt_symm_add_finrank)).trans hn)
 
@@ -225,8 +227,8 @@ extended chart at `x` (`TauCeti.regularLevelChartAt_apply`). -/
 noncomputable def regularLevelChartAt (x : {x : M // f x = c}) :
     OpenPartialHomeomorph {x : M // f x = c} (Fin n → 𝕜) :=
   (zeroHomeomorph I f c).symm.transOpenPartialHomeomorph
-    (sectionZeroChartAt (hasStrictFDerivAt_coord hf) isFredholm_linearization
-      (surjective_linearization hreg) (index_linearization hreg hn)
+    (sectionZeroChartAt (hasStrictFDerivAt_coord hf) (surjective_linearization hreg)
+      (fun z ↦ (isFredholm_linearization z).closedComplemented_ker) (kerEquiv hreg hn)
       ((zeroHomeomorph I f c).symm x))
 
 /-- The preferred chart at the point of the level corresponding to a zero `z` of `f - c` is the
@@ -235,8 +237,9 @@ private theorem regularLevelChartAt_zeroHomeomorph
     (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
     regularLevelChartAt hf hreg hn (zeroHomeomorph I f c z) =
       (zeroHomeomorph I f c).symm.transOpenPartialHomeomorph
-        (sectionZeroChartAt (hasStrictFDerivAt_coord hf) isFredholm_linearization
-          (surjective_linearization hreg) (index_linearization hreg hn) z) := by
+        (sectionZeroChartAt (hasStrictFDerivAt_coord hf) (surjective_linearization hreg)
+          (fun z ↦ (isFredholm_linearization z).closedComplemented_ker) (kerEquiv hreg hn)
+          z) := by
   rw [regularLevelChartAt, Homeomorph.symm_apply_apply]
 
 /-- Every point of the level lies in the source of its preferred chart. -/
@@ -425,8 +428,9 @@ private theorem contDiffAt_coord {m : ℕ∞ω} [IsManifold I m M]
 /-- The section-zero atlas of `f - c` on the zero set in the self-modelled copy. -/
 private noncomputable abbrev zeroChartedSpace :
     ChartedSpace (Fin n → 𝕜) ↥{y : BoundarylessModel I M | sec I f c y = 0} :=
-  sectionZeroChartedSpace (hasStrictFDerivAt_coord hf) isFredholm_linearization
-    (surjective_linearization hreg) (index_linearization hreg hn) (fun _ ↦ continuousAt_const)
+  sectionZeroChartedSpace (hasStrictFDerivAt_coord hf) (surjective_linearization hreg)
+    (fun z ↦ (isFredholm_linearization z).closedComplemented_ker) (kerEquiv hreg hn)
+    (fun _ ↦ continuousAt_const)
     (fun _ ↦ mem_baseSet_trivializationAt F (Bundle.Trivial 𝕜 F) _)
 
 /-- The atlas of the level is the section-zero atlas of `f - c`, pulled back along the
@@ -458,7 +462,8 @@ theorem isManifold_regularLevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤ m)
   have hf : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) 1 f x := fun x hx ↦ (hfm x hx).of_le hm
   let := zeroChartedSpace hf hreg hn
   have := isManifold_sectionZero (𝕜 := 𝕜) (hasStrictFDerivAt_coord hf)
-    isFredholm_linearization (surjective_linearization hreg) (index_linearization hreg hn)
+    (surjective_linearization hreg) (fun z ↦ (isFredholm_linearization z).closedComplemented_ker)
+    (kerEquiv hreg hn)
     (fun _ ↦ continuousAt_const) (fun _ ↦ mem_baseSet_trivializationAt F (Bundle.Trivial 𝕜 F) _)
     (contDiffAt_coord hf hreg hfm)
   rw [regularLevelChartedSpace_eq_pullbackChartedSpace]
@@ -477,11 +482,13 @@ theorem isImmersionOfComplement_coe_regularLevel {m : ℕ∞ω} [IsManifold I m 
   have hf : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) 1 f x := fun x hx ↦ (hfm x hx).of_le hm
   let := zeroChartedSpace hf hreg hn
   have hZ := isImmersionOfComplement_coe_sectionZero (𝕜 := 𝕜) (hasStrictFDerivAt_coord hf)
-    isFredholm_linearization (surjective_linearization hreg) (index_linearization hreg hn)
+    (surjective_linearization hreg) (fun z ↦ (isFredholm_linearization z).closedComplemented_ker)
+    (kerEquiv hreg hn)
     (fun _ ↦ continuousAt_const) (fun _ ↦ mem_baseSet_trivializationAt F (Bundle.Trivial 𝕜 F) _)
     (contDiffAt_coord hf hreg hfm)
   have := isManifold_sectionZero (𝕜 := 𝕜) (hasStrictFDerivAt_coord hf)
-    isFredholm_linearization (surjective_linearization hreg) (index_linearization hreg hn)
+    (surjective_linearization hreg) (fun z ↦ (isFredholm_linearization z).closedComplemented_ker)
+    (kerEquiv hreg hn)
     (fun _ ↦ continuousAt_const) (fun _ ↦ mem_baseSet_trivializationAt F (Bundle.Trivial 𝕜 F) _)
     (contDiffAt_coord hf hreg hfm)
   rw [regularLevelChartedSpace_eq_pullbackChartedSpace]

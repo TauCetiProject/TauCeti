@@ -39,6 +39,8 @@ computes the singular homology of `RPᴺ`. The undetermined units do not affect 
 * `TauCeti.RealProjectiveSpace.singularHomologyIntLinearEquivOfOdd` and
   `TauCeti.RealProjectiveSpace.isZero_singularHomology_int_of_even`: integrally, `Hₖ(RPᴺ; ℤ)` is
   `ℤ/2` for odd `k < N` and vanishes for even `k > 0`.
+* `TauCeti.RealProjectiveSpace.two_nsmul_singularHomology_one_eq_zero`: for `N ≠ 1`, every class
+  of `H₁(RPᴺ; ℤ)` is killed by `2`.
 * `TauCeti.RealProjectiveSpace.finrank_singularHomology_of_two_eq_zero`: over a division ring in
   which `2 = 0`, `Hₖ(RPᴺ; R)` is one-dimensional for `k ≤ N` and zero above.
 * `TauCeti.RealProjectiveSpace.finrank_singularHomology_of_two_ne_zero`: over a division ring in
@@ -266,6 +268,21 @@ theorem isZero_singularHomology_int_of_even (hk : Even k) (hk0 : k ≠ 0) :
     IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj
       (ModuleCat.of ℤ ℤ)).obj (TopCat.of (RealProjectiveSpace N))) :=
   isZero_singularHomology_of_even ℤ (isRegular_iff_ne_zero.2 two_ne_zero).right hk hk0
+
+/-- For `N ≠ 1`, every class of `H₁(RPᴺ; ℤ)` is killed by `2`: the group is `ℤ/2` for `N ≥ 2`
+and `0` for `N = 0`. -/
+theorem two_nsmul_singularHomology_one_eq_zero (hN : N ≠ 1)
+    (x : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
+      (ModuleCat.of ℤ ℤ)).obj (TopCat.of (RealProjectiveSpace N))) :
+    2 • x = 0 := by
+  rcases Nat.lt_or_gt_of_ne hN with hN | hN
+  · exact ModuleCat.subsingleton_of_isZero (isZero_singularHomology_of_lt ℤ hN) |>.elim _ _
+  let e := singularHomologyIntLinearEquivOfOdd (N := N) odd_one hN
+  apply e.injective
+  rw [map_nsmul, map_zero]
+  generalize e x = y
+  revert y
+  decide
 
 /-- **Homology of real projective space in characteristic two.** If `2 = 0` in the division ring
 `R`, then `Hₖ(RPᴺ; R)` is one-dimensional for `k ≤ N` and zero for `k > N`. -/
