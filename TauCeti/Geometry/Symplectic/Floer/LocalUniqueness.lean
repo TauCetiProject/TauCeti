@@ -321,7 +321,7 @@ theorem eq_zero_of_forall_norm_le_of_integrableOn {P : (ℝ × ℝ → E) → �
     (fun s hs ↦ f.one_of_mem_closedBall (by simpa [Real.dist_eq] using hs))
     (fun s hs ↦ f.zero_of_le_dist (by simpa [Real.dist_eq] using hs)) (fun s ↦ hM s) hR₀ hR
   -- Letting `R → ∞`, the `L²` norm of `ξ` on every rectangle `[-R₀, R₀] × [0, 1]` vanishes.
-  refine eq_zero_of_forall_setIntegral_norm_sq_eq_zero hξ.continuous hper fun R₀ hR₀ ↦
+  refine eq_zero_of_forall_setIntegral_rect_norm_sq_eq_zero hξ.continuous hper fun R₀ hR₀ ↦
     le_antisymm (ge_of_tendsto ?_ (eventually_atTop.2 ⟨R₀, fun R hR ↦ hbound R₀ R hR₀ hR⟩))
       (setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc) fun _ _ ↦ sq_nonneg _)
   simpa using ((tendsto_const_nhds.div_atTop tendsto_id).pow 2).const_mul

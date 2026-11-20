@@ -11,7 +11,6 @@ public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
-import Mathlib.MeasureTheory.Measure.OpenPos
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -32,8 +31,6 @@ those estimates, together with the derivatives of a section cut off by a functio
   `ξ₁` and `ξ₂`.
 * `Floer.setIntegral_norm_sq_le_sobolev`: the density bounds `‖ξ‖²`, so its integral over a
   rectangle bounds the `L²` norm.
-* `Floer.eq_zero_of_forall_setIntegral_norm_sq_eq_zero`: a continuous section of period one in `t`
-  whose `L²` norm vanishes on every rectangle `[-R, R] × [0, 1]` is zero.
 -/
 
 public section
@@ -101,39 +98,5 @@ theorem setIntegral_norm_sq_le_sobolev {ξ : ℝ × ℝ → E} (hξ : ContDiff �
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineReal‖
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineImag‖
       linarith
-
-omit [NormedSpace ℝ E] in
-/-- A continuous map `ξ : ℝ × ℝ → E` of period one in `t` whose `L²` norm vanishes on every
-rectangle `[-R, R] × [0, 1]` is zero. -/
-theorem eq_zero_of_forall_setIntegral_norm_sq_eq_zero {ξ : ℝ × ℝ → E} (hξ : Continuous ξ)
-    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t))
-    (h : ∀ R, 0 < R → ∫ z in Icc (-R) R ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2 = 0) : ξ = 0 := by
-  -- On each open box `(-R, R) × (0, 1)` the continuous function `‖ξ‖²` vanishes almost
-  -- everywhere, hence everywhere; by continuity `ξ` vanishes on its closure.
-  have hzero (R : ℝ) (hR : 0 < R) : ∀ z ∈ Icc (-R) R ×ˢ Icc (0 : ℝ) 1, ξ z = 0 := by
-    have hae := (setIntegral_eq_zero_iff_of_nonneg_ae
-      (Filter.Eventually.of_forall fun z ↦ sq_nonneg ‖ξ z‖)
-      (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))).1 (h R hR)
-    have hsub : Ioo (-R) R ×ˢ Ioo (0 : ℝ) 1 ⊆ Icc (-R) R ×ˢ Icc (0 : ℝ) 1 :=
-      prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self
-    have heq := Measure.eqOn_open_of_ae_eq (ae_restrict_of_ae_restrict_of_subset hsub hae)
-      (isOpen_Ioo.prod isOpen_Ioo) (by fun_prop) continuousOn_const
-    have hU : Ioo (-R) R ×ˢ Ioo (0 : ℝ) 1 ⊆ {z : ℝ × ℝ | ξ z = 0} := fun z hz ↦ by
-      simpa using heq hz
-    have hcl := closure_minimal hU (isClosed_eq hξ continuous_const)
-    rw [closure_prod_eq, closure_Ioo (by linarith), closure_Ioo zero_ne_one] at hcl
-    exact fun z hz ↦ hcl hz
-  -- Periodicity in `t` moves every point into such a rectangle.
-  funext z
-  obtain ⟨s, t⟩ := z
-  have hst := (show Function.Periodic (fun t ↦ ξ (s, t)) 1 from fun t ↦ hper s t).sub_int_mul_eq
-    (x := t) ⌊t⌋
-  rw [mul_one] at hst
-  rw [Pi.zero_apply, ← hst]
-  refine hzero (|s| + 1) (by positivity) _ ⟨⟨?_, ?_⟩, ?_, ?_⟩
-  · linarith [neg_abs_le s]
-  · linarith [le_abs_self s]
-  · exact sub_nonneg.2 (Int.floor_le t)
-  · linarith [Int.lt_floor_add_one t]
 
 end TauCeti.Floer
