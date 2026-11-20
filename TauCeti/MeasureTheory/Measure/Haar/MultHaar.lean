@@ -458,6 +458,23 @@ theorem integrable_multHaar_cpow_smul_iff {f : ℝ → E} {s : ℂ} :
   rw [integrable_multHaar_iff, MellinConvergent]
   exact integrableOn_congr_fun (fun t ht ↦ inv_smul_cpow_smul ht s (f t)) measurableSet_Ioi
 
+/-- No pure complex power `t ↦ (t : ℂ) ^ z` is integrable against `dt / t`, because
+`t ^ (Re z - 1)` is not integrable on `(0, ∞)` for any `z : ℂ`. -/
+theorem not_integrable_multHaar_cpow (z : ℂ) :
+    ¬ Integrable (fun t : ℝ ↦ (t : ℂ) ^ z) multHaar := by
+  intro h
+  refine not_integrableOn_Ioi_rpow (z - 1).re ?_
+  have hm : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (z - 1) • (1 : ℂ)) (Ioi 0) :=
+    integrable_multHaar_cpow_smul_iff.mp (by simpa only [smul_eq_mul, mul_one] using h)
+  refine IntegrableOn.congr_fun hm.norm (fun t ht ↦ ?_) measurableSet_Ioi
+  rw [smul_eq_mul, mul_one, Complex.norm_cpow_eq_rpow_re_of_pos ht]
+
+/-- Because no pure complex power `t ↦ (t : ℂ) ^ z` is integrable against `dt / t`, its Bochner
+integral vanishes for every `z : ℂ`. -/
+theorem integral_multHaar_cpow_eq_zero (z : ℂ) :
+    ∫ t : ℝ, (t : ℂ) ^ z ∂multHaar = 0 :=
+  integral_undef (not_integrable_multHaar_cpow z)
+
 end Mellin
 
 end TauCeti

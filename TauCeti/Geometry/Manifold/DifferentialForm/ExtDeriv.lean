@@ -89,17 +89,6 @@ theorem inChartAt_apply (φ : RoughForm I M F k) (x₀ : M) (z : E) (v : Fin k �
         (fun i ↦ mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm (range I) z (v i)) :=
   bundleMpullbackWithin_apply _ _ φ z v
 
-/-- The chart expression of a form at a point is its value there composed with the derivative of
-the inverse chart. -/
-theorem inChartAt_eq_compContinuousLinearMapCLM (φ : RoughForm I M F k) (x₀ : M) (z : E) :
-    φ.inChartAt x₀ z =
-      ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin k) (F := F)
-        (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x₀).symm (range I) z : E →L[ℝ] E)
-        (φ ((extChartAt I x₀).symm z)) := by
-  ext v
-  rw [inChartAt_apply, ContinuousAlternatingMap.compContinuousLinearMapCLM_apply]
-  exact (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ v).symm
-
 @[simp]
 theorem inChartAt_zero (x₀ : M) : (0 : RoughForm I M F k).inChartAt x₀ = 0 :=
   bundleMpullbackWithin_zero _ _
@@ -172,10 +161,10 @@ theorem mextDeriv_def (φ : RoughForm I M F k) (x : M) :
     mextDeriv φ x = extDerivWithin (E := E) (φ.inChartAt x) (range I) (extChartAt I x x) := by
   rw [← mextDerivWithin_univ, mextDerivWithin_def, preimage_univ, univ_inter]
 
-/-- On a boundaryless manifold, the exterior derivative of a form at `x` is the flat exterior
-derivative of its chart expression at `x`, taken at the chart point of `x`. -/
+/-- For a boundaryless model, the exterior derivative of a rough form at `x` is the flat exterior
+derivative of its coordinate expression in the chart at `x`. -/
 theorem mextDeriv_eq_extDeriv_inChartAt [I.Boundaryless] (φ : RoughForm I M F k) (x : M) :
-    mextDeriv φ x = extDeriv (φ.inChartAt x) (extChartAt I x x) := by
+    mextDeriv φ x = extDeriv (E := E) (φ.inChartAt x) (extChartAt I x x) := by
   rw [mextDeriv_def, I.range_eq_univ, extDerivWithin_univ]
 
 /-! ### Locality -/
