@@ -52,6 +52,8 @@ group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂`
 * `TauCeti.FactorSet.trivial`: the factor set that is constantly `1`.
 * `TauCeti.FactorSet.map`: the pushforward of a factor set along a `G`-equivariant homomorphism of
   coefficient modules.
+* `TauCeti.FactorSet.mapExtension`: the homomorphism of twisted products that this pushforward
+  induces.
 * `TauCeti.FactorSet.ofBimultiplicative`: the factor set of a map `G →* G →* M`, for a trivial
   action.
 
@@ -332,17 +334,10 @@ theorem rightHom_comp_mapExtension {N : Type*} [CommGroup N] [MulDistribMulActio
 
 theorem inl_injective : Function.Injective (inl α) := fun _ _ h => congrArg Extension.left h
 
-theorem range_inl_eq_ker_rightHom : (inl α).range = (rightHom α).ker := by
-  ext x
-  constructor
-  · rintro ⟨a, rfl⟩
-    simp [MonoidHom.mem_ker]
-  · intro hx
-    have hx' : x.right = 1 := MonoidHom.mem_ker.1 hx
-    refine ⟨x.left, ?_⟩
-    ext
-    · rfl
-    · exact hx'.symm
+-- The proof is adapted from Mathlib's `SemidirectProduct.range_inl_eq_ker_rightHom`.
+theorem range_inl_eq_ker_rightHom : (inl α).range = (rightHom α).ker :=
+  le_antisymm ((MonoidHom.range_le_ker_iff (inl α) (rightHom α)).2 (by ext a; simp))
+    fun x hx => ⟨x.left, by ext <;> simp_all [MonoidHom.mem_ker]⟩
 
 theorem rightHom_surjective : Function.Surjective (rightHom α) := fun g => ⟨⟨1, g⟩, rfl⟩
 
@@ -403,9 +398,7 @@ representation of the extension. -/
 theorem inl_range_le_center (h : ∀ (g : G) (a : M), g • a = a) :
     (inl α).range ≤ Subgroup.center α.Extension := by
   rintro _ ⟨a, rfl⟩
-  rw [Subgroup.mem_center_iff]
-  intro x
-  rw [mul_inl, h]
+  exact Subgroup.mem_center_iff.2 fun x => by rw [mul_inl, h]
 
 /-- A character twist of a central twisted product keeps the `G`-component. -/
 theorem characterTwist_groupExtension_right
@@ -475,10 +468,7 @@ def rescaleEquiv : α.groupExtension.Equiv β.groupExtension where
     · rfl
   inl_comm := by
     funext a
-    ext
-    · simp only [Function.comp_apply, MulEquiv.coe_mk, Equiv.coe_fn_mk, groupExtension_inl,
-        inl_left, inl_right, rescale_one α β x hx, mul_one]
-    · rfl
+    ext <;> simp [rescale_one α β x hx]
   rightHom_comm := rfl
 
 @[simp]
