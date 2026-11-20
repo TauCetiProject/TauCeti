@@ -274,11 +274,14 @@ section RealCover
 variable {p IB} (hp : ∀ j, ContMDiff IB 𝓘(ℝ) ∞ (p j))
 
 omit [IsManifold IB ∞ B] in
-/-- The normalized time `t i / p i b` of a real point `(b, t)` is smooth. -/
-private theorem contMDiff_normalizedTime (i : ι) (hp : ContMDiff IB 𝓘(ℝ) ∞ (p i)) :
-    ContMDiff (IB.prod 𝓘(ℝ, ι → ℝ)) 𝓘(ℝ, ℝ) ∞ fun z : B × (ι → ℝ) ↦ z.2 i / (p i z.1 : ℝ) :=
-  ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).contMDiff.comp contMDiff_snd).div₀
-    ((contMDiff_subtype_val.comp hp).comp contMDiff_fst) fun z ↦ (p i z.1).property.ne'
+include hp in
+/-- The normalized time `t i / p i b` of a real point `(b, t)` is smooth: it is the `i`-th time
+coordinate of the real normalization. -/
+private theorem contMDiff_normalizedTime (i : ι) :
+    ContMDiff (IB.prod 𝓘(ℝ, ι → ℝ)) 𝓘(ℝ, ℝ) ∞ fun z : B × (ι → ℝ) ↦ z.2 i / (p i z.1 : ℝ) := by
+  have h := ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).contMDiff.comp
+    contMDiff_snd).comp (realNormalization p IB hp).contMDiff
+  simpa only [Function.comp_def, realNormalization_apply, ContinuousLinearMap.proj_apply] using h
 
 include hp in
 /-- On the real cover `Q(b, t) = (b, ([t j]_(p j b))ⱼ)`, the angle form `β_i` is the differential
@@ -298,7 +301,7 @@ theorem mpullback_representative_angleForm (i : ι) :
       (fun z ↦ (normalization p IB ∞ z).2 i) (representative p z) :=
     (((contMDiff_apply (i := i)).comp contMDiff_snd).comp (normalization p IB ∞).contMDiff
       _).mdifferentiableAt (by simp)
-  have hh := (contMDiff_normalizedTime i (hp i) z).mdifferentiableAt (by simp)
+  have hh := (contMDiff_normalizedTime hp i z).mdifferentiableAt (by simp)
   have hc := ((AddCircle.contMDiff_coe 1 ∞) (z.2 i / (p i z.1 : ℝ))).mdifferentiableAt (by simp)
   rw [mpullback_apply, angleForm_apply, ← mfderiv_comp_apply z hg hQ, hcomp,
     mfderiv_comp_apply z hc hh, AddCircle.mfderiv_coe, mextDeriv_ofFunction,
@@ -329,7 +332,7 @@ theorem mpullback_representative_timeForm (i : ι) :
   rw [mpullback_apply] at hv
   rw [mpullback_apply, timeForm_apply, hv, base_representative, Pi.sub_apply, ← ht,
     mextDeriv_ofFunction_mul ((hper z).mdifferentiableAt (by simp))
-      ((contMDiff_normalizedTime i (hp i) z).mdifferentiableAt (by simp))]
+      ((contMDiff_normalizedTime hp i z).mdifferentiableAt (by simp))]
   simp
 
 omit [IsManifold IB ∞ B] in

@@ -764,7 +764,7 @@ end Manifold
 /-! ### The real representative map -/
 
 /-- The real representative map `(b, t) ↦ (b, ([t i]_(p i b))ᵢ)` of the family. -/
-def representative (z : B × (ι → ℝ)) : TorusFamily p :=
+@[expose] def representative (z : B × (ι → ℝ)) : TorusFamily p :=
   ⟨z.1, fun i ↦ (z.2 i : AddCircle (p i z.1 : ℝ))⟩
 
 /-- The representative of `(b, t)` is the point `([t i]_(p i b))ᵢ` of the torus over `b`. -/
@@ -775,6 +775,19 @@ theorem representative_apply (z : B × (ι → ℝ)) :
 /-- The real representative map covers the projection to the base. -/
 @[simp]
 theorem base_representative (z : B × (ι → ℝ)) : (representative p z).base = z.1 := (rfl)
+
+/-- The point of the representative of `(b, t)` is `([t i]_(p i b))ᵢ`. -/
+@[simp]
+theorem point_representative (z : B × (ι → ℝ)) :
+    (representative p z).point = fun i ↦ (z.2 i : AddCircle (p i z.1 : ℝ)) := (rfl)
+
+/-- The `i`-th coordinate of the representative of `(b, t)` is the class `[t i]_(p i b)` over
+`b` in the family of circles of `p i`. -/
+@[simp]
+theorem coord_representative (i : ι) (z : B × (ι → ℝ)) :
+    coord p i (representative p z) =
+      CircleFamily.Pullback.mk z.1 (z.2 i : AddCircle (p i z.1 : ℝ)) :=
+  (rfl)
 
 /-- Every point of the family has a real representative. -/
 theorem representative_surjective : Function.Surjective (representative p) := by
@@ -822,6 +835,16 @@ private theorem normalizationEquiv_representative (z : B × (ι → ℝ)) :
   rw [AddCircle.diffeomorphAddCircle_apply_mk]
   simp [div_eq_mul_inv]
 
+/-- In normalized coordinates, the real representative map is the covering map of the unit torus
+after dividing each time coordinate by its period. -/
+private theorem representative_eq_comp :
+    representative p = (normalizationEquiv p).symm ∘
+      Prod.map id (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle (1 : ℝ))) ∘
+        fun z : B × (ι → ℝ) ↦ (z.1, fun i ↦ z.2 i / (p i z.1 : ℝ)) := by
+  funext z
+  simp only [Function.comp_apply, Prod.map_apply, id_eq, Equiv.eq_symm_apply,
+    normalizationEquiv_representative]
+
 section RealCoverTopology
 
 variable [TopologicalSpace B]
@@ -855,14 +878,9 @@ map. In normalized coordinates it is the covering map `(ι → ℝ) → (ι → 
 torus after dividing each time coordinate by its period. -/
 theorem isCoveringMap_representative [Finite ι] (hp : ∀ i, Continuous (p i)) :
     IsCoveringMap (representative p) := by
-  have h : representative p = (normalizationHomeomorph p).symm ∘
-      Prod.map id (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle (1 : ℝ))) ∘
-        realNormalizationHomeomorph p hp := by
-    funext z
-    rw [Function.comp_apply, Function.comp_apply, eq_comm, Homeomorph.symm_apply_eq,
-      coe_normalizationHomeomorph, normalizationEquiv_representative]
-    rfl
-  rw [h]
+  rw [representative_eq_comp]
+  -- The homeomorphisms have `(normalizationEquiv p).symm` and the division by the periods as their
+  -- underlying functions by definition.
   exact ((IsCoveringMap.id.prodMap (AddCircle.isCoveringMap_coe_pi 1)).comp_homeomorph
     (realNormalizationHomeomorph p hp)).homeomorph_comp (normalizationHomeomorph p).symm
 
@@ -906,23 +924,14 @@ theorem realNormalization_apply (hp : ∀ i, ContMDiff IB 𝓘(ℝ) n (p i)) (z 
 theorem realNormalization_symm_apply (hp : ∀ i, ContMDiff IB 𝓘(ℝ) n (p i)) (z : B × (ι → ℝ)) :
     (realNormalization p IB hp).symm z = (z.1, fun i ↦ z.2 i * (p i z.1 : ℝ)) := (rfl)
 
-/-- In normalized coordinates, the representative map is the covering map of the unit torus in
-the time coordinates. -/
-private theorem representative_eq (hp : ∀ i, ContMDiff IB 𝓘(ℝ) n (p i)) :
-    representative p = (normalization p IB n).symm ∘
-      Prod.map id (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle (1 : ℝ))) ∘
-        realNormalization p IB hp := by
-  funext z
-  rw [Function.comp_apply, Function.comp_apply,
-    ← (normalization p IB n).symm_apply_apply (representative p z), normalization_representative]
-  rfl
-
 /-- For `C^n` periods, the real representative map is a `C^n` local diffeomorphism. -/
 theorem isLocalDiffeomorph_representative (hp : ∀ i, ContMDiff IB 𝓘(ℝ) n (p i)) :
     IsLocalDiffeomorph (IB.prod 𝓘(ℝ, ι → ℝ)) (IB.prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))) n
       (representative p) := by
-  rw [representative_eq p IB hp]
+  rw [representative_eq_comp]
   intro z
+  -- The diffeomorphisms have `(normalizationEquiv p).symm` and the division by the periods as their
+  -- underlying functions by definition.
   have h := (Diffeomorph.refl IB B n).isLocalDiffeomorph.prodMap
     (AddCircle.isLocalDiffeomorph_coe_pi (ι := ι) 1 n)
   exact ((realNormalization p IB hp).isLocalDiffeomorph z).comp _ _
