@@ -603,15 +603,20 @@ theorem affineIsometryEquiv_comp_comp {F : Type*} [NormedAddCommGroup F] [InnerP
     -- The derivative `De₂ ∘ DΦ(e₁ x) ∘ De₁` is the conjugate by the linear part of `e₁` of
     -- `w ∘ DΦ(e₁ x)`, where `w` is the linear isometry `De₁ ∘ De₂` of `E`.
     set w := e₂.linearIsometryEquiv.trans e₁.linearIsometryEquiv
+    -- The linear part of the continuous affine map underlying an affine isometry equivalence is
+    -- its linear isometry equivalence by construction; Mathlib states no lemma for this.
+    have hA : ∀ y, A.contLinear y = e₁.linearIsometryEquiv y := fun _ ↦ rfl
+    have hB : ∀ y, B.contLinear y = e₂.linearIsometryEquiv y := fun _ ↦ rfl
     have hconj : (B.contLinear.comp ((fderiv ℝ Φ (e₁ x)).comp A.contLinear) : F →ₗ[ℝ] F) =
         (e₁.linearIsometryEquiv.symm.toLinearEquiv : E →ₗ[ℝ] F) ∘ₗ
           ((w.toLinearEquiv : E →ₗ[ℝ] E) ∘ₗ (fderiv ℝ Φ (e₁ x) : E →ₗ[ℝ] E)) ∘ₗ
             (e₁.linearIsometryEquiv.symm.toLinearEquiv.symm : F →ₗ[ℝ] E) := by
-      -- The linear part of the continuous affine map underlying an affine isometry equivalence
-      -- is its linear isometry equivalence by construction; Mathlib states no lemma for this.
       ext y
-      simp [w, A, B]
-      rfl
+      simp only [ContinuousLinearMap.toLinearMap_comp, LinearMap.coe_comp,
+        ContinuousLinearMap.coe_coe, Function.comp_apply, LinearIsometryEquiv.toLinearEquiv_symm,
+        LinearIsometryEquiv.toLinearEquiv_trans, LinearEquiv.symm_symm, LinearEquiv.coe_coe,
+        LinearIsometryEquiv.coe_symm_toLinearEquiv, LinearIsometryEquiv.coe_toLinearEquiv,
+        LinearEquiv.trans_apply, LinearIsometryEquiv.symm_apply_apply, hA, hB, w]
     have hw : |LinearMap.det (w.toLinearEquiv : E →ₗ[ℝ] E)| = 1 := by
       by_cases hE : FiniteDimensional ℝ E
       · rw [← LinearMap.normDet_eq_abs_det]

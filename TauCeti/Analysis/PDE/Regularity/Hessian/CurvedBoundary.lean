@@ -523,13 +523,17 @@ theorem exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_contDiff_grap
       (k := 2) one_le_two hh₀ hr₀ hφ0 hφ (by simpa only [SetLike.mem_coe] using hgraph)
   set G := graphFlattening φ hφ.continuous
   let U'₁ : Opens (WithLp 2 (ℝ × E)) := ⟨e.symm ⁻¹' U', U'.isOpen.preimage e.symm.continuous⟩
+  -- Membership in `U'₁` is membership in the preimage `e⁻¹ ⁻¹' U'` by construction.
+  have hmem : ∀ x, x ∈ U'₁ ↔ e.symm x ∈ U' := fun _ => Iff.rfl
+  have hrefl (V : Set (WithLp 2 (ℝ × E))) : MapsTo (AffineIsometryEquiv.refl ℝ _) V V := by
+    simpa only [AffineIsometryEquiv.coe_refl] using mapsTo_id V
   have hΦ₁ : IsChangeOfVariables 2 U'₁ U (e.symm ∘ G.symm) L 1 := by
     simpa [Function.comp_def] using hΦ.affineIsometryEquiv_comp_comp e.symm
-      (AffineIsometryEquiv.refl ℝ _) (U' := U'₁) (fun x hx => hx) fun y hy => hy
+      (AffineIsometryEquiv.refl ℝ _) (U' := U'₁) (fun x hx => (hmem x).1 hx) (hrefl U)
   have hΨ₁ : IsChangeOfVariables 2 U U'₁ (G ∘ e) L 1 := by
     simpa [Function.comp_def] using hΨ.affineIsometryEquiv_comp_comp
-      (AffineIsometryEquiv.refl ℝ _) e (U' := U) (fun x hx => hx)
-      fun y hy => show e.symm (e y) ∈ U' by rwa [e.symm_apply_apply]
+      (AffineIsometryEquiv.refl ℝ _) e (U' := U) (hrefl U)
+      fun y hy => (hmem _).2 (by rwa [e.symm_apply_apply])
   have himage₁ : (e.symm ∘ G.symm) ''
       ((normalHalfSpace (E := E) 0 : Set (WithLp 2 (ℝ × E))) ∩ U'₁) =
       (Omega : Set (WithLp 2 (ℝ × E))) ∩ U := by
@@ -537,9 +541,9 @@ theorem exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_contDiff_grap
     ext y
     constructor
     · rintro ⟨x, ⟨hxH, hxU⟩, rfl⟩
-      exact ⟨e.symm x, ⟨by simpa using hxH, hxU⟩, by simp⟩
+      exact ⟨e.symm x, ⟨by simpa using hxH, (hmem x).1 hxU⟩, by simp⟩
     · rintro ⟨x, ⟨hxH, hxU⟩, rfl⟩
-      exact ⟨e x, ⟨by simpa using hxH, show e.symm (e x) ∈ U' by rwa [e.symm_apply_apply]⟩,
+      exact ⟨e x, ⟨by simpa using hxH, (hmem _).2 (by rwa [e.symm_apply_apply])⟩,
         by simp⟩
   -- Restrict the chart to `U ∩ W` and take a closed ball about `e⁻¹ 0` inside it.
   obtain ⟨U'₂, hΦ₂, hΨ₂, hΨΦ₂, hΦΨ₂, himage₂⟩ :=
