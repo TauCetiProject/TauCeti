@@ -303,6 +303,10 @@ theorem Scheme.ΓSpecIso_appIso_hom_appLE {X : Scheme.{u}} {R A : CommRingCat.{u
   revert e
   rw [h]
   intro e
+  -- `Spec.map φ ⁻¹ᵁ ⊤ = ⊤` holds by `rfl` (`Scheme.Hom.preimage_top`), and `appTop` is an
+  -- abbreviation for `app ⊤`, so this `appLE` is `appTop` by `Scheme.Hom.appLE_eq_app`. A plain
+  -- `rw [Scheme.Hom.appLE_eq_app]` cannot match its `⊤` against the preimage, so the `show`
+  -- states the instance.
   rw [show Scheme.Hom.appLE _ ⊤ ⊤ e = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
     Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
 

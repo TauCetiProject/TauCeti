@@ -24,6 +24,11 @@ integral closure of `R[u, u⁻¹] = R[u⁻¹, u]`, along which they are glued. N
 The localization statements accept any algebra structure between the two subrings that is
 compatible with their inclusions into `B`, as Mathlib's `IsLocalization.integralClosure` does.
 
+## Main definitions
+
+* `Units.integralClosureAdjoinGen`: the unit `u` as an element of the integral closure of `R[u]`
+  in `B`, the element the integral closures below are localized away from.
+
 ## Main results
 
 * `Units.isLocalization_away_adjoin_insert_inv`: `R[u, u⁻¹]` is the localization of `R[u]`
@@ -128,6 +133,16 @@ section IntegralClosure
 
 variable {R : Type*} [CommRing R] [Algebra R B]
 
+variable (R) in
+/-- The unit `u`, as an element of the integral closure of `R[u]` in `B`. Applied to `u⁻¹` it is
+`u⁻¹` in the integral closure of `R[u⁻¹]`. -/
+def integralClosureAdjoinGen : integralClosure (adjoin R {(u : B)}) B :=
+  ⟨u, isIntegral_algebraMap (x := (⟨u, self_mem_adjoin_singleton R _⟩ : adjoin R {(u : B)}))⟩
+
+@[simp]
+theorem coe_integralClosureAdjoinGen : (u.integralClosureAdjoinGen R : B) = u :=
+  (rfl)
+
 /-- **An element integral over `R[u, u⁻¹]` becomes integral over `R[u]` after multiplying by a
 power of `u`.** -/
 theorem exists_isIntegral_adjoin_pow_mul {x : B}
@@ -164,10 +179,7 @@ theorem isLocalization_away_integralClosure_adjoin_insert_inv
       (integralClosure (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) B)]
     [IsScalarTower (integralClosure (adjoin R {(u : B)}) B)
       (integralClosure (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) B) B] :
-    IsLocalization.Away
-      (⟨u, isIntegral_algebraMap
-        (x := (⟨u, self_mem_adjoin_singleton R _⟩ : adjoin R {(u : B)}))⟩ :
-        integralClosure (adjoin R {(u : B)}) B)
+    IsLocalization.Away (u.integralClosureAdjoinGen R)
       (integralClosure (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) B) := by
   let := (Subalgebra.inclusion (adjoin_singleton_le_adjoin_insert_inv (R := R) u)).toAlgebra
   have : IsScalarTower (adjoin R {(u : B)}) (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) B :=
@@ -206,21 +218,14 @@ theorem isLocalization_away_inv_integralClosure_adjoin_insert_inv
       (integralClosure (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) B)]
     [IsScalarTower (integralClosure (adjoin R {((u⁻¹ : Bˣ) : B)}) B)
       (integralClosure (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) B) B] :
-    IsLocalization.Away
-      (⟨((u⁻¹ : Bˣ) : B), isIntegral_algebraMap
-        (x := (⟨_, self_mem_adjoin_singleton R _⟩ : adjoin R {((u⁻¹ : Bˣ) : B)}))⟩ :
-        integralClosure (adjoin R {((u⁻¹ : Bˣ) : B)}) B)
+    IsLocalization.Away (u⁻¹.integralClosureAdjoinGen R)
       (integralClosure (adjoin R {(u : B), ((u⁻¹ : Bˣ) : B)}) B) := by
   -- Transport the statement for `u⁻¹` along `R[u⁻¹, (u⁻¹)⁻¹] = R[u, u⁻¹]`.
   have key : ∀ S : Subalgebra R B, adjoin R {((u⁻¹ : Bˣ) : B), (((u⁻¹)⁻¹ : Bˣ) : B)} = S →
       ∀ [Algebra (integralClosure (adjoin R {((u⁻¹ : Bˣ) : B)}) B) (integralClosure S B)]
         [IsScalarTower (integralClosure (adjoin R {((u⁻¹ : Bˣ) : B)}) B)
           (integralClosure S B) B],
-      IsLocalization.Away
-        (⟨((u⁻¹ : Bˣ) : B), isIntegral_algebraMap
-          (x := (⟨_, self_mem_adjoin_singleton R _⟩ : adjoin R {((u⁻¹ : Bˣ) : B)}))⟩ :
-          integralClosure (adjoin R {((u⁻¹ : Bˣ) : B)}) B)
-        (integralClosure S B) := by
+      IsLocalization.Away (u⁻¹.integralClosureAdjoinGen R) (integralClosure S B) := by
     rintro S rfl _ _
     exact isLocalization_away_integralClosure_adjoin_insert_inv u⁻¹
   exact key _ (adjoin_inv_insert_inv u)

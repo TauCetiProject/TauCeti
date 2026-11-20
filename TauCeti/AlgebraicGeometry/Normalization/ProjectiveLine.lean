@@ -140,9 +140,7 @@ theorem isOpenImmersion_specMap_finiteChartRestriction :
   let := (finiteChartRestriction R u).toRingHom.toAlgebra
   have : IsScalarTower (finiteChart R u) (overlapChart R u) B := .of_algebraMap_eq fun _ ↦ rfl
   have := u.isLocalization_away_integralClosure_adjoin_insert_inv (R := R)
-  exact IsOpenImmersion.of_isLocalization (S := overlapChart R u)
-    (⟨u, isIntegral_algebraMap (x := (⟨u, self_mem_adjoin_singleton R _⟩ : adjoin R {(u : B)}))⟩ :
-      finiteChart R u)
+  exact IsOpenImmersion.of_isLocalization (S := overlapChart R u) (u.integralClosureAdjoinGen R)
 
 /-- `Spec A₀∞ → Spec A∞` is an open immersion: `A₀∞` is the localization of `A∞` away from
 `u⁻¹`. -/
@@ -152,9 +150,7 @@ theorem isOpenImmersion_specMap_infinityChartRestriction :
   have : IsScalarTower (infinityChart R u) (overlapChart R u) B := .of_algebraMap_eq fun _ ↦ rfl
   have := u.isLocalization_away_inv_integralClosure_adjoin_insert_inv (R := R)
   exact IsOpenImmersion.of_isLocalization (S := overlapChart R u)
-    (⟨((u⁻¹ : Bˣ) : B), isIntegral_algebraMap
-      (x := (⟨_, self_mem_adjoin_singleton R _⟩ : adjoin R {((u⁻¹ : Bˣ) : B)}))⟩ :
-      infinityChart R u)
+    (u⁻¹.integralClosureAdjoinGen R)
 
 end projectiveLineNormalization
 
@@ -422,16 +418,7 @@ of `A₀ ⊆ B`
 -/
 noncomputable def functionFieldEquiv :
     (projectiveLineNormalization R u).functionField ≃ₐ[R] B :=
-  haveI := functionField_isFractionRing_of_isAffineOpen _ _ (isAffineOpen_image_ιFinite_top R u)
-  AlgEquiv.ofRingEquiv (f := IsFractionRing.ringEquivOfRingEquiv (finiteChartSectionsEquiv R u))
-    fun c ↦ by
-      rw [Scheme.algebraMap_functionField_eq_baseRingToFunctionField,
-        Scheme.baseRingToFunctionField_eq_comp_appLE R _ (ιFinite R u ''ᵁ ⊤),
-        RingHom.comp_apply]
-      -- `germToFunctionField` is by definition the algebra map of `Γ(X, U)` to `k(X)`.
-      refine (IsFractionRing.ringEquivOfRingEquiv_algebraMap _ _).trans ?_
-      rw [CommRingCat.comp_apply, finiteChartSectionsEquiv_appLE, Iso.inv_hom_id_apply]
-      exact (IsScalarTower.algebraMap_apply R _ B c).symm
+  (ιFinite R u).functionFieldAlgEquivOfIsOpenImmersion (ιFinite_over R u) B
 
 /-- `TauCeti.AlgebraicGeometry.projectiveLineNormalization.functionFieldEquiv` sends the germ of a
 function on the finite chart to the corresponding element of `A₀ ⊆ B`. -/
@@ -439,10 +426,8 @@ function on the finite chart to the corresponding element of `A₀ ⊆ B`. -/
 theorem functionFieldEquiv_germToFunctionField
     (a : Γ(projectiveLineNormalization R u, ιFinite R u ''ᵁ ⊤)) :
     functionFieldEquiv R u ((projectiveLineNormalization R u).germToFunctionField _ a) =
-      finiteChartSectionsEquiv R u a := by
-  have := functionField_isFractionRing_of_isAffineOpen _ _ (isAffineOpen_image_ιFinite_top R u)
-  -- `germToFunctionField` is by definition the algebra map of `Γ(X, U)` to `k(X)`.
-  exact IsFractionRing.ringEquivOfRingEquiv_algebraMap _ a
+      finiteChartSectionsEquiv R u a :=
+  Scheme.Hom.functionFieldAlgEquivOfIsOpenImmersion_germToFunctionField _ (ιFinite_over R u) B a
 
 /-- `TauCeti.AlgebraicGeometry.projectiveLineNormalization.functionFieldEquiv` sends the germ of a
 function on the intersection of the two charts to the corresponding element of `A₀∞ ⊆ B`. -/
@@ -456,9 +441,8 @@ theorem functionFieldEquiv_germToFunctionField_overlap
   have := u.isLocalization_away_integralClosure_adjoin_insert_inv (R := R)
   -- Both sides are ring maps out of `A₀∞`, the localization of `A₀` away from `u`, and they agree
   -- on `A₀` by `functionFieldEquiv_germToFunctionField`.
-  have key := IsLocalization.ringHom_ext (Submonoid.powers
-      (⟨u, isIntegral_algebraMap (x := (⟨u, self_mem_adjoin_singleton R _⟩ :
-        adjoin R {(u : B)}))⟩ : finiteChart R u)) (S := overlapChart R u)
+  have key := IsLocalization.ringHom_ext (Submonoid.powers (u.integralClosureAdjoinGen R))
+    (S := overlapChart R u)
     (j := (functionFieldEquiv R u).toRingHom.comp
       (((projectiveLineNormalization R u).germToFunctionField _).hom.comp
         (overlapChartSectionsEquiv R u).symm.toRingHom))
