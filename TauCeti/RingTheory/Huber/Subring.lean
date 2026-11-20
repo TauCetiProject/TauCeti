@@ -5,15 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.Basic
+public import TauCeti.RingTheory.Huber.Pair
+
+import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
-# Subrings containing a pseudouniformiser
+# Subrings of Huber rings
 
 A subring of a Tate ring is Tate as soon as it contains a pseudouniformiser and its inverse.
 The topology is always the subspace topology. No closedness assumption is needed: intersecting
 a ring of definition with the subring supplies an open bounded subring. Closedness is needed
 only when one also wants completeness.
+
+A subring containing a pseudouniformiser of the ambient Huber ring also has the same bounded
+subsets and the same power-bounded elements as the ambient ring, so its power-bounded subring is
+the trace of the ambient one. For an arbitrary subring, boundedness only descends, and this is
+enough for a ring of integral elements to restrict to a ring of integral elements. These are the
+inputs for rings of invariants of finite group actions on Huber pairs.
+
+## Main results
+
+* `Subring.isTateRing_of_isPseudoUniformizer`: a subring containing a pseudouniformiser and its
+  inverse is a Tate ring.
+* `Subring.isBounded_image_subtype_iff`, `Subring.isPowerBounded_coe_iff`: boundedness and
+  power-boundedness in a subring containing a pseudouniformiser agree with those in `R`.
+* `Subring.powerBoundedSubring_eq_comap`: for such a subring, `S° = R° ∩ S`.
+* `TauCeti.Huber.IsRingOfIntegralElements.comap_subtype`: `A⁺ ∩ S` is a ring of integral
+  elements of every subring `S`.
 -/
 
 public section
@@ -21,6 +39,8 @@ public section
 open Filter Topology Pointwise TauCeti.Huber
 
 namespace Subring
+
+section Tate
 
 variable {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [IsTateRing R]
 
@@ -37,4 +57,71 @@ theorem isTateRing_of_isPseudoUniformizer (S : Subring R) (u : Rˣ)
     (isPseudoUniformizer_iff.mpr ⟨v.isUnit,
       isTopologicallyNilpotent_mk hmem hu.isTopologicallyNilpotent⟩)
 
+end Tate
+
+section Huber
+
+variable {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [IsHuberRing R]
+
+/-- **Boundedness in a subring containing a pseudouniformiser.** For a subring `S` of a Huber ring
+containing a pseudouniformiser of the ambient ring, a subset of `S` is bounded for the subspace
+topology exactly when it is bounded in `R`. Only the forward implication holds for arbitrary
+subrings (`Subring.isBounded_preimage_subtype`). -/
+theorem isBounded_image_subtype_iff (S : Subring R) {ϖ : R} (hϖ : IsPseudoUniformizer ϖ)
+    (hmem : ϖ ∈ S) {T : Set S} : IsBounded (Subtype.val '' T) ↔ IsBounded T := by
+  refine ⟨fun h ↦ (S.isBounded_preimage_subtype h).subset (Set.subset_preimage_image _ _),
+    fun h ↦ ?_⟩
+  obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := R)
+  -- Some `ϖ ^ n` multiplies `T` into the ring of definition `A₀`, so `T ⊆ ϖ⁻ⁿ A₀`.
+  obtain ⟨V, hV, hVT⟩ := isBounded_iff.mp h _
+    ((P.isOpen_ringOfDefinition.preimage continuous_subtype_val).mem_nhds
+      P.ringOfDefinition.zero_mem)
+  obtain ⟨n, hn⟩ :=
+    ((isTopologicallyNilpotent_mk hmem hϖ.isTopologicallyNilpotent).eventually_mem hV).exists
+  obtain ⟨u, hu⟩ := hϖ.isUnit.pow n
+  refine ((isBounded_singleton (↑u⁻¹ : R)).mul P.isBounded_ringOfDefinition).subset ?_
+  rintro _ ⟨t, ht, rfl⟩
+  refine ⟨↑u⁻¹, rfl, ϖ ^ n * t, hVT (Set.mul_mem_mul hn ht), ?_⟩
+  simp [← hu, ← mul_assoc]
+
+/-- An element of a subring containing a pseudouniformiser of the ambient Huber ring is
+power-bounded in the subring exactly when it is power-bounded in the ambient ring. -/
+theorem isPowerBounded_coe_iff (S : Subring R) {ϖ : R} (hϖ : IsPseudoUniformizer ϖ)
+    (hmem : ϖ ∈ S) {x : S} : IsPowerBounded (x : R) ↔ IsPowerBounded x := by
+  rw [isPowerBounded_iff, isPowerBounded_iff, ← S.isBounded_image_subtype_iff hϖ hmem,
+    ← Set.range_comp]
+  simp [Function.comp_def]
+
+/-- For a subring containing a pseudouniformiser of the ambient Huber ring, the power-bounded
+subring `S°` is `R° ∩ S`. -/
+theorem powerBoundedSubring_eq_comap (S : Subring R) [NonarchimedeanAddGroup S] {ϖ : R}
+    (hϖ : IsPseudoUniformizer ϖ) (hmem : ϖ ∈ S) :
+    powerBoundedSubring S = (powerBoundedSubring R).comap S.subtype := by
+  ext x
+  simp [S.isPowerBounded_coe_iff hϖ hmem]
+
+end Huber
+
 end Subring
+
+namespace TauCeti.Huber
+
+/-- **A ring of integral elements restricts to every subring.** If `A⁺` is a ring of integral
+elements of `A`, then `A⁺ ∩ S` is a ring of integral elements of any subring `S` with the subspace
+topology: it is open by continuity of the inclusion, integrally closed in `S` because `A⁺` is
+integrally closed in `A`, and power-bounded in `S` because power-boundedness descends to a
+subspace. -/
+theorem IsRingOfIntegralElements.comap_subtype {A : Type*} [CommRing A] [TopologicalSpace A]
+    [NonarchimedeanRing A] {Aplus : Subring A} (h : IsRingOfIntegralElements Aplus)
+    (S : Subring A) [NonarchimedeanRing S] : IsRingOfIntegralElements (Aplus.comap S.subtype) where
+  isOpen := h.isOpen.preimage continuous_subtype_val
+  isIntegrallyClosedIn := by
+    have := h.isIntegrallyClosedIn
+    infer_instance
+  le_powerBoundedSubring x hx := by
+    refine mem_powerBoundedSubring.mpr <| isPowerBounded_iff.mpr <|
+      (S.isBounded_preimage_subtype (isPowerBounded_iff.mp (h.isPowerBounded_of_mem hx))).subset ?_
+    rintro _ ⟨n, rfl⟩
+    exact ⟨n, rfl⟩
+
+end TauCeti.Huber
