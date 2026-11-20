@@ -47,11 +47,13 @@ theorem opNorm_le_prod_mul_sum_norm_apply_basis (T : ContinuousMultilinearMap �
   refine T.opNorm_le_bound (mul_nonneg (Finset.prod_nonneg fun _ _ ↦ norm_nonneg _)
     (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)) fun m ↦ ?_
   -- Expand each argument in the basis and use multilinearity.
-  rw [show T m = _ from T.toMultilinearMap.apply_eq_sum_prod_repr_smul b m, Finset.mul_sum,
+  rw [← coe_coe, T.toMultilinearMap.apply_eq_sum_prod_repr_smul b m, coe_coe, Finset.mul_sum,
     Finset.sum_mul]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun r _ ↦ ?_)
-  rw [norm_smul, norm_prod, coe_coe, mul_right_comm, ← Finset.prod_mul_distrib]
+  rw [norm_smul, norm_prod, mul_right_comm, ← Finset.prod_mul_distrib]
   gcongr with j
+  -- The coordinates `(b j).repr (m j)` are the values of the coordinate isomorphism.
+  rw [← Module.Basis.equivFunL_apply]
   exact (norm_le_pi_norm ((b j).equivFunL (m j)) (r j)).trans
     (((b j).equivFunL : E j →L[𝕜] ι j → 𝕜).le_opNorm (m j))
 

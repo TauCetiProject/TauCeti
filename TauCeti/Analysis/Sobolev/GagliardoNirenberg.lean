@@ -19,6 +19,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.Convex.Sequence.LogConvex
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.MeanInequalities
@@ -62,8 +63,8 @@ Such a sequence is logarithmically convex up to a constant, so
 `a_0 = ‖u‖_∞`. The full derivative is compared with its partial derivatives by
 `ContinuousMultilinearMap.opNorm_le_prod_mul_sum_norm_apply_basis`.
 
-The product estimate follows from the Leibniz rule
-`ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear`, Hölder's inequality with the exponents
+The product estimate follows from the Leibniz rule in `L^p`
+`ContinuousLinearMap.eLpNorm_iteratedFDeriv_le_of_bilinear`, with the exponents
 `k p / i` and `k p / (k - i)`, the Gagliardo–Nirenberg inequality for both factors, and the
 weighted arithmetic-geometric mean inequality.
 
@@ -131,6 +132,19 @@ private theorem aestronglyMeasurable_normRpowSmulDeriv_apply {w w' : E → F} (h
     (hw.inner hw').aestronglyMeasurable).smul hw.aestronglyMeasurable
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The directional derivative `∂ᵥw` of a `C¹` map is continuous. -/
+private theorem continuous_fderiv_apply_const {w : E → F} (hw : ContDiff ℝ 1 w) (v : E) :
+    Continuous fun x ↦ fderiv ℝ w x v :=
+  (hw.continuous_fderiv one_ne_zero).clm_apply continuous_const
+
+omit [NormedSpace ℝ E] [InnerProductSpace ℝ F] [FiniteDimensional ℝ E] [MeasurableSpace E]
+  [BorelSpace E] in
+/-- The weight `x ↦ ‖w x‖ ^ r` of a continuous map `w` and an exponent `r ≥ 0` is continuous. -/
+private theorem continuous_norm_rpow {w : E → F} (hw : Continuous w) {r : ℝ} (hr : 0 ≤ r) :
+    Continuous fun x ↦ ‖w x‖ ^ r :=
+  hw.norm.rpow_const fun _ ↦ Or.inr hr
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The directional derivative `∂ᵥU` of a `C²` map is `C¹`. -/
 private theorem contDiff_one_fderiv_apply {U : E → F} (hU : ContDiff ℝ 2 U) (v : E) :
     ContDiff ℝ 1 fun x ↦ fderiv ℝ U x v :=
@@ -146,12 +160,10 @@ private theorem integral_norm_fderiv_apply_rpow_eq {U : E → F} (hU : ContDiff 
   set w : E → F := fun x ↦ fderiv ℝ U x v
   set g : E → F := fun x ↦ ‖w x‖ ^ (q - 2) • w x
   have hw : ContDiff ℝ 1 w := contDiff_one_fderiv_apply hU v
-  have hw' : Continuous fun x ↦ fderiv ℝ w x v :=
-    (hw.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  have hgc : Continuous g :=
-    ((continuous_norm.rpow_const fun _ ↦ Or.inr hr).smul continuous_id).comp hw.continuous
+  have hw' : Continuous fun x ↦ fderiv ℝ w x v := continuous_fderiv_apply_const hw v
+  have hwr : Continuous fun x ↦ ‖w x‖ ^ (q - 2) := continuous_norm_rpow hw.continuous hr
+  have hgc : Continuous g := hwr.smul hw.continuous
   have hdom : Continuous fun x ↦ ‖U x‖ * ((1 + (q - 2)) * ‖w x‖ ^ (q - 2) * ‖fderiv ℝ w x v‖) := by
-    have : Continuous fun x ↦ ‖w x‖ ^ (q - 2) := hw.continuous.norm.rpow_const fun _ ↦ Or.inr hr
     fun_prop
   have hint : Integrable (fun x ↦ ⟪U x, normRpowSmulDeriv (q - 2) (w x) (fderiv ℝ w x v)⟫) μ :=
     (hdom.integrable_of_hasCompactSupport hc.norm.mul_right).mono'
@@ -185,9 +197,8 @@ private theorem integral_norm_fderiv_apply_rpow_le {U : E → F} (hU : ContDiff 
   set w : E → F := fun x ↦ fderiv ℝ U x v
   have hw : ContDiff ℝ 1 w := contDiff_one_fderiv_apply hU v
   have hdom : Continuous fun x ↦ ‖U x‖ * ‖w x‖ ^ (q - 2) * ‖fderiv ℝ w x v‖ := by
-    have : Continuous fun x ↦ ‖w x‖ ^ (q - 2) := hw.continuous.norm.rpow_const fun _ ↦ Or.inr hr
-    have : Continuous fun x ↦ fderiv ℝ w x v :=
-      (hw.continuous_fderiv one_ne_zero).clm_apply continuous_const
+    have := continuous_norm_rpow hw.continuous hr
+    have := continuous_fderiv_apply_const hw v
     fun_prop
   rw [integral_norm_fderiv_apply_rpow_eq hU hc v hq, ← integral_const_mul]
   refine (neg_le_abs _).trans ((abs_integral_le_integral_abs).trans
@@ -214,8 +225,7 @@ private theorem ofReal_integral_norm_mul_rpow_mul_norm_le {U w w' : E → F} (hU
     rw [inv_inv, ← ENNReal.ofReal_inv_of_pos (by positivity), ← ENNReal.ofReal_add
       (by positivity) (div_nonneg (by linarith) hq0.le), inv_one, inv_div]
     rw [show 2 / q + (q - 2) / q = 1 by field_simp; ring, ENNReal.ofReal_one]
-  have hwr : Continuous fun x ↦ ‖w x‖ ^ (q - 2) :=
-    hw.norm.rpow_const fun _ ↦ Or.inr (by linarith)
+  have hwr : Continuous fun x ↦ ‖w x‖ ^ (q - 2) := continuous_norm_rpow hw (by linarith)
   have hint : Integrable (fun x ↦ ‖U x‖ * ‖w x‖ ^ (q - 2) * ‖w' x‖) μ :=
     ((hU.norm.mul hwr).mul hw'.norm).integrable_of_hasCompactSupport
       (hc.norm.mul_right.mul_right)
@@ -270,7 +280,7 @@ theorem _root_.ContDiff.eLpNorm_fderiv_apply_sq_le {U : E → F} (hU : ContDiff 
   set w : E → F := fun x ↦ fderiv ℝ U x v
   set w' : E → F := fun x ↦ fderiv ℝ (fun y ↦ fderiv ℝ U y v) x v
   have hw : ContDiff ℝ 1 w := contDiff_one_fderiv_apply hU v
-  have hw' : Continuous w' := (hw.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  have hw' : Continuous w' := continuous_fderiv_apply_const hw v
   have hwc : HasCompactSupport w := hc.fderiv_apply (𝕜 := ℝ) v
   have hmem : MemLp w (ENNReal.ofReal q) μ := hw.continuous.memLp_of_hasCompactSupport hwc
   set X := eLpNorm w (ENNReal.ofReal q) μ with hX_def
@@ -309,8 +319,7 @@ private theorem eLpNorm_iteratedFDeriv_cons_sq_le {u : E → F} {k : ℕ} (hu : 
   have hU : ContDiff ℝ 2 U :=
     (ContinuousMultilinearMap.apply ℝ (fun _ : Fin j ↦ E) F (fun l ↦ b (τ l))).contDiff.comp
       (hu.iteratedFDeriv_right (by exact_mod_cast (show 2 + j ≤ k by omega)))
-  have hUc : HasCompactSupport U :=
-    (hc.iteratedFDeriv (𝕜 := ℝ) j).mono fun x hx h0 ↦ hx (by simp [U, h0])
+  have hUc : HasCompactSupport U := hc.iteratedFDeriv_apply _
   have h1 : ∀ y, fderiv ℝ U y (b i) =
       iteratedFDeriv ℝ (j + 1) u y (fun l ↦ b ((Fin.cons i τ : Fin (j + 1) → ι) l)) := fun y ↦ by
     rw [fderiv_iteratedFDeriv_apply
@@ -338,31 +347,12 @@ private noncomputable def basisSum (μ : Measure E) (b : ι → E) (u : E → F)
     (r : ℝ≥0∞) : ℝ≥0∞ :=
   ∑ σ : Fin n → ι, eLpNorm (fun x ↦ iteratedFDeriv ℝ n u x (fun l ↦ b (σ l))) r μ
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem continuous_iteratedFDeriv_apply {u : E → F} {k : ℕ} (hu : ContDiff ℝ k u) {n : ℕ}
-    (hn : n ≤ k) (m : Fin n → E) : Continuous fun x ↦ iteratedFDeriv ℝ n u x m :=
-  (ContinuousMultilinearMap.apply ℝ (fun _ : Fin n ↦ E) F m).continuous.comp
-    (hu.continuous_iteratedFDeriv (by exact_mod_cast hn))
-
-omit [FiniteDimensional ℝ E] in
-private theorem eLpNorm_iteratedFDeriv_apply_ne_top {u : E → F} {k : ℕ} (hu : ContDiff ℝ k u)
-    (hc : HasCompactSupport u) {n : ℕ} (hn : n ≤ k) (m : Fin n → E) (r : ℝ≥0∞) :
-    eLpNorm (fun x ↦ iteratedFDeriv ℝ n u x m) r μ ≠ ∞ :=
-  ((continuous_iteratedFDeriv_apply hu hn m).memLp_of_hasCompactSupport
-    ((hc.iteratedFDeriv (𝕜 := ℝ) n).mono fun x hx h0 ↦ hx (by simp [h0]))).eLpNorm_ne_top
-
-omit [FiniteDimensional ℝ E] in
-private theorem eLpNorm_iteratedFDeriv_ne_top {u : E → F} {k : ℕ} (hu : ContDiff ℝ k u)
-    (hc : HasCompactSupport u) {n : ℕ} (hn : n ≤ k) (r : ℝ≥0∞) :
-    eLpNorm (iteratedFDeriv ℝ n u) r μ ≠ ∞ :=
-  ((hu.continuous_iteratedFDeriv (by exact_mod_cast hn)).memLp_of_hasCompactSupport
-    (hc.iteratedFDeriv n)).eLpNorm_ne_top
-
 omit [FiniteDimensional ℝ E] in
 private theorem basisSum_ne_top {u : E → F} {k : ℕ} (hu : ContDiff ℝ k u)
     (hc : HasCompactSupport u) (b : ι → E) {n : ℕ} (hn : n ≤ k) (r : ℝ≥0∞) :
     basisSum μ b u n r ≠ ∞ :=
-  ENNReal.sum_ne_top.2 fun _ _ ↦ eLpNorm_iteratedFDeriv_apply_ne_top hu hc hn _ r
+  ENNReal.sum_ne_top.2 fun _ _ ↦
+    (hu.memLp_iteratedFDeriv_apply_of_hasCompactSupport (by exact_mod_cast hn) hc _).eLpNorm_ne_top
 
 omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
 private theorem basisSum_zero (b : ι → E) (u : E → F) : basisSum μ b u 0 ∞ = eLpNorm u ∞ μ := by
@@ -375,7 +365,7 @@ private theorem basisSum_le (b : ι → E) {u : E → F} {k : ℕ} (hu : ContDif
   have hterm : ∀ σ : Fin k → ι, eLpNorm (fun x ↦ iteratedFDeriv ℝ k u x (fun l ↦ b (σ l))) r μ ≤
       ENNReal.ofReal ((∑ i, ‖b i‖) ^ k) * eLpNorm (iteratedFDeriv ℝ k u) r μ := fun σ ↦ by
     refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-      (continuous_iteratedFDeriv_apply hu le_rfl _).aestronglyMeasurable
+      (hu.continuous_iteratedFDeriv_apply le_rfl _).aestronglyMeasurable
       (Eventually.of_forall fun x ↦ ?_) r
     refine ((iteratedFDeriv ℝ k u x).le_opNorm _).trans ?_
     rw [mul_comm]
@@ -397,7 +387,7 @@ private theorem eLpNorm_iteratedFDeriv_le_basisSum (b : Module.Basis ι ℝ E) {
       ENNReal.ofReal (‖b.equivFunL.toContinuousLinearMap‖ ^ n) * basisSum μ b u n r := by
   set g : E → ℝ := fun x ↦ ∑ σ : Fin n → ι, ‖iteratedFDeriv ℝ n u x (fun l ↦ b (σ l))‖
   have hcont : ∀ σ : Fin n → ι, Continuous fun x ↦ iteratedFDeriv ℝ n u x (fun l ↦ b (σ l)) :=
-    fun σ ↦ continuous_iteratedFDeriv_apply hu hn _
+    fun σ ↦ hu.continuous_iteratedFDeriv_apply (by exact_mod_cast hn) _
   calc eLpNorm (iteratedFDeriv ℝ n u) r μ
       ≤ ENNReal.ofReal (‖b.equivFunL.toContinuousLinearMap‖ ^ n) * eLpNorm g r μ := by
         refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul
@@ -449,7 +439,8 @@ private theorem toReal_basisSum_sq_le {u : E → F} {k : ℕ} (hu : ContDiff ℝ
     rwa [ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_mul,
       ENNReal.toReal_ofReal (by linarith)] at this
   have hsum : (basisSum μ b u (j + 1) (ENNReal.ofReal q)).toReal = ∑ σ, t σ :=
-    ENNReal.toReal_sum fun σ _ ↦ eLpNorm_iteratedFDeriv_apply_ne_top hu hc hj.le _ _
+    ENNReal.toReal_sum fun σ _ ↦ (hu.memLp_iteratedFDeriv_apply_of_hasCompactSupport
+      (by exact_mod_cast hj.le) hc _).eLpNorm_ne_top
   have hcard : (Fintype.card (Fin (j + 1) → ι) : ℝ) = (Fintype.card ι : ℝ) ^ (j + 1) := by
     simp
   rw [hsum]
@@ -598,7 +589,7 @@ private theorem exists_toReal_eLpNorm_iteratedFDeriv_le {p : ℝ} (hp : 2 ≤ p)
   set a : ℕ → ℝ := fun n ↦ (basisSum μ b u n (gnExponent k p n)).toReal
   have hlog := toReal_basisSum_pow_le (μ := μ) hu hc b hp hjk
   have hXk : eLpNorm (iteratedFDeriv ℝ k u) (gnExponent k p k) μ ≠ ∞ :=
-    eLpNorm_iteratedFDeriv_ne_top hu hc le_rfl _
+    (hu.memLp_iteratedFDeriv_of_hasCompactSupport le_rfl hc).eLpNorm_ne_top
   have ha0 : a 0 = (eLpNorm u ∞ μ).toReal := by simp [a, gnExponent_zero, basisSum_zero]
   have hak : a k ≤
       N ^ k * β' ^ k * (eLpNorm (iteratedFDeriv ℝ k u) (gnExponent k p k) μ).toReal := by
@@ -647,51 +638,14 @@ theorem exists_eLpNorm_iteratedFDeriv_le {p q : ℝ≥0∞} (hp : 2 ≤ p) (hp' 
   conv_rhs => rw [← hgk]
   refine le_ofReal_mul_rpow_mul_rpow ?_ ?_ ?_ (by
     rw [sub_nonneg, div_le_one hkpos]; exact_mod_cast hjk) (by positivity) (hGN u hu hc)
-  · exact eLpNorm_iteratedFDeriv_ne_top hu hc hjk _
+  · exact (hu.memLp_iteratedFDeriv_of_hasCompactSupport (by exact_mod_cast hjk) hc).eLpNorm_ne_top
   · exact (hu.continuous.memLp_of_hasCompactSupport hc).eLpNorm_ne_top
-  · exact eLpNorm_iteratedFDeriv_ne_top hu hc le_rfl _
+  · exact (hu.memLp_iteratedFDeriv_of_hasCompactSupport le_rfl hc).eLpNorm_ne_top
 
 section Bilinear
 
 variable {G H : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] [NormedAddCommGroup H]
   [NormedSpace ℝ H]
-
-omit [μ.IsAddHaarMeasure] in
-/-- The Leibniz expansion of `D^k (B (u, v))`, estimated term by term with Hölder's inequality. -/
-private theorem eLpNorm_iteratedFDeriv_bilinear_le_sum {p : ℝ≥0∞} (hp : 1 ≤ p) {k : ℕ}
-    {q r : ℕ → ℝ≥0∞} (hqr : ∀ i ≤ k, ENNReal.HolderTriple (q i) (r i) p)
-    (B : F →L[ℝ] G →L[ℝ] H) {u : E → F} {v : E → G} (hu : ContDiff ℝ k u) (hv : ContDiff ℝ k v) :
-    eLpNorm (iteratedFDeriv ℝ k (fun x ↦ B (u x) (v x))) p μ ≤
-      ∑ i ∈ Finset.range (k + 1), ‖B‖ₑ * (k.choose i : ℝ≥0∞) *
-        eLpNorm (iteratedFDeriv ℝ i u) (q i) μ * eLpNorm (iteratedFDeriv ℝ (k - i) v) (r i) μ := by
-  set f : ℕ → E → ℝ := fun i x ↦
-    ‖B‖ * (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i u x‖ * ‖iteratedFDeriv ℝ (k - i) v x‖
-  have hcont : ∀ i ≤ k, Continuous (iteratedFDeriv ℝ i u) ∧
-      Continuous (iteratedFDeriv ℝ (k - i) v) := fun i hi ↦
-    ⟨hu.continuous_iteratedFDeriv (by exact_mod_cast hi),
-      hv.continuous_iteratedFDeriv (by exact_mod_cast Nat.sub_le k i)⟩
-  calc eLpNorm (iteratedFDeriv ℝ k (fun x ↦ B (u x) (v x))) p μ
-      ≤ eLpNorm (∑ i ∈ Finset.range (k + 1), f i) p μ := by
-        refine eLpNorm_mono_real ?_ fun x ↦ ?_
-        · exact ((B.isBoundedBilinearMap.contDiff.comp (hu.prodMk hv)).continuous_iteratedFDeriv
-            le_rfl).aestronglyMeasurable
-        · refine (B.norm_iteratedFDeriv_le_of_bilinear hu hv x le_rfl).trans_eq ?_
-          simp [f, Finset.mul_sum, mul_assoc]
-    _ ≤ ∑ i ∈ Finset.range (k + 1), eLpNorm (f i) p μ := eLpNorm_sum_le hp
-    _ ≤ _ := by
-        refine Finset.sum_le_sum fun i hi ↦ ?_
-        have hik : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
-        have := hqr i hik
-        have h := eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm (μ := μ) (p := q i) (q := r i) (r := p)
-          (f := iteratedFDeriv ℝ i u) (g := iteratedFDeriv ℝ (k - i) v)
-          (fun S T ↦ ‖B‖ * (k.choose i : ℝ) * ‖S‖ * ‖T‖) (‖B‖₊ * (k.choose i : ℝ≥0))
-          (by fun_prop) (hcont i hik).1.aestronglyMeasurable
-          (hcont i hik).2.aestronglyMeasurable
-          (Eventually.of_forall fun x ↦ by
-            rw [Real.norm_of_nonneg (by positivity)]; exact le_of_eq (by push_cast; ring))
-        refine h.trans_eq ?_
-        push_cast
-        rw [eNorm_eq_nnNorm]
 
 omit [μ.IsAddHaarMeasure] in
 /-- The case `k = 0` of the Moser product estimate: `‖B (u, v)‖_p ≤ ‖B‖ ‖u‖_∞ ‖v‖_p`. -/
@@ -701,8 +655,8 @@ private theorem eLpNorm_iteratedFDeriv_zero_bilinear_le {p : ℝ≥0∞} (hp1 : 
     eLpNorm (iteratedFDeriv ℝ 0 (fun x ↦ B (u x) (v x))) p μ ≤
       (1 : ℝ≥0) * ‖B‖ₑ * (eLpNorm u ∞ μ * eLpNorm (iteratedFDeriv ℝ 0 v) p μ +
         eLpNorm (iteratedFDeriv ℝ 0 u) p μ * eLpNorm v ∞ μ) := by
-  have h := eLpNorm_iteratedFDeriv_bilinear_le_sum (μ := μ) hp1 (k := 0) (q := fun _ ↦ ∞)
-    (r := fun _ ↦ p) (fun _ _ ↦ inferInstance) B hu hv
+  have h := B.eLpNorm_iteratedFDeriv_le_of_bilinear (μ := μ) hu hv (k := 0) le_rfl hp1
+    (q := fun _ ↦ ∞) (r := fun _ ↦ p) (fun _ _ ↦ inferInstance)
   have h0 : eLpNorm (iteratedFDeriv ℝ 0 u) ∞ μ = eLpNorm u ∞ μ :=
     eLpNorm_congr_norm_ae (hu.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable
       hu.continuous.aestronglyMeasurable
@@ -780,8 +734,8 @@ theorem exists_eLpNorm_iteratedFDeriv_bilinear_le {p : ℝ≥0∞} (hp : 2 ≤ p
   choose! CG hCG using hGNv
   refine ⟨∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ≥0) * CF i * CG i,
     fun B u v hu hc hv hc' ↦ ?_⟩
-  refine (eLpNorm_iteratedFDeriv_bilinear_le_sum (μ := μ) hp1 (q := q) (r := fun i ↦ q (k - i))
-    (fun i hi ↦ holderTriple_inv_div hk hi) B hu hv).trans ?_
+  refine (B.eLpNorm_iteratedFDeriv_le_of_bilinear (μ := μ) hu hv le_rfl hp1 (q := q)
+    (r := fun i ↦ q (k - i)) (fun i hi ↦ holderTriple_inv_div hk hi)).trans ?_
   rw [ENNReal.ofNNReal_finsetSum, Finset.sum_mul, Finset.sum_mul]
   refine Finset.sum_le_sum fun i hi ↦ ?_
   have hik : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
