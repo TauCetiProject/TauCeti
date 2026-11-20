@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.InformationTheory.Hamming
+public import TauCeti.InformationTheory.Hamming
 public import Mathlib.Topology.MetricSpace.CoveringNumbers
 import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
@@ -15,7 +16,8 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
 # Hamming balls in the binary cube and the Varshamov–Gilbert bound
 
 For a binary word `c : ι → Bool` and any `x` in a commutative semiring,
-`∑ y, x ^ hammingDist y c = (1 + x) ^ n`, where `n` is the number of coordinates. Taking
+`∑ y, x ^ hammingDist y c = (1 + x) ^ n`, where `n` is the number of coordinates
+(`TauCeti.sum_pow_hammingDist_eq`, in `TauCeti.InformationTheory.Hamming`). Taking
 `x = exp (-2 t)` with `t ≥ 0` and bounding `cosh t ≤ exp (t² / 2)` gives the Chernoff bound for the
 Hamming ball of radius `r ≤ m / 2` in `Fin m → Bool`,
 
@@ -26,28 +28,28 @@ Hamming ball of radius `r ≤ m / 2` in `Fin m → Bool`,
 which is Hoeffding's bound for a sum of `m` independent fair Bernoulli variables.
 
 The Varshamov–Gilbert bound (A. B. Tsybakov, *Introduction to Nonparametric Estimation*,
-Springer, 2009, Lemma 2.9, p. 104) follows by the greedy argument: a largest code containing the
-constant word `false` whose distinct words are at distance more than `⌊m / 8⌋` covers the cube by
-balls of radius `⌊m / 8⌋`, so for `m ≥ 8` it has more than `2^{m/8}` words. It is stated as a family
+Springer, 2009, Lemma 2.9, p. 104) follows by the greedy argument
+(`TauCeti.exists_finset_pairwise_lt_hammingDist_forall_exists`, in
+`TauCeti.InformationTheory.Hamming`): a largest code containing the constant word `false` whose
+distinct words are at distance more than `⌊m / 8⌋` covers the cube by balls of radius `⌊m / 8⌋`,
+so for `m ≥ 8` it has more than `2^{m/8}` words. It is stated as a family
 `ω : Fin (M + 1) → Fin m → Bool` with `ω 0` the constant word `false`, and as a lower bound for the
 packing number `Metric.packingNumber (m / 8)` of the cube `Hamming fun _ : Fin m ↦ Bool`.
 
 ## Main results
 
-* `TauCeti.sum_pow_hammingDist_eq`: the exponential moment of the Hamming distance to a fixed
-  binary word.
 * `TauCeti.card_hammingDist_le_two_pow_mul_exp`: the Chernoff bound for a Hamming ball with a free
   parameter `t ≥ 0`; `TauCeti.card_hammingDist_le`: the optimized form.
-* `TauCeti.exists_finset_pairwise_lt_hammingDist_forall_exists`: a code through a given word,
-  with distinct words at distance more than `D`, that meets every ball of radius `D`.
 * `TauCeti.exists_finset_varshamovGilbert`: a code containing `false` with more than `2^{m/8}`
   words at pairwise distance more than `⌊m / 8⌋`.
 * `TauCeti.exists_varshamovGilbert`, `TauCeti.le_packingNumber_hamming`: the indexed and the
   packing-number forms.
 
-The exponential-moment identity and the greedy code are adapted from the lean-CKSD project
+The two lemmas used from `TauCeti.InformationTheory.Hamming` and the greedy-code argument of
+`exists_finset_varshamovGilbert` are adapted from the lean-CKSD project
 (<https://github.com/bjbraams/lean-CKSD>), file `CKSD/Nonparametric/LowerBounds/Testing.lean`
-(`CKSD.sum_pow_hammingDist_eq`, `CKSD.exists_hamming_packing`).
+(`CKSD.sum_pow_hammingDist_eq`, `CKSD.exists_hamming_packing`); the ball bounds and the indexed and
+packing-number forms are new proofs.
 -/
 
 public section
@@ -56,20 +58,6 @@ open Finset Real
 open scoped NNReal
 
 namespace TauCeti
-
-/-- The exponential moment of the Hamming distance to a fixed binary word:
-`∑ y, x ^ hammingDist y c = (1 + x) ^ n` over the words `y : ι → Bool`, with `n = card ι`. -/
-theorem sum_pow_hammingDist_eq {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommSemiring R]
-    (c : ι → Bool) (x : R) : ∑ y : ι → Bool, x ^ hammingDist y c = (1 + x) ^ Fintype.card ι := by
-  have h (y : ι → Bool) : x ^ hammingDist y c = ∏ i, if y i ≠ c i then x else 1 := by
-    rw [prod_ite, prod_const, prod_const_one, mul_one, hammingDist]
-  have hb (i : ι) : ∑ b : Bool, (if b ≠ c i then x else 1) = 1 + x := by
-    cases c i <;> simp [add_comm]
-  calc ∑ y : ι → Bool, x ^ hammingDist y c
-      = ∏ i, ∑ b : Bool, (if b ≠ c i then x else 1) := by
-        simp only [h]
-        exact (Fintype.prod_sum fun i (b : Bool) ↦ if b ≠ c i then x else 1).symm
-    _ = (1 + x) ^ Fintype.card ι := by simp only [hb, prod_const, card_univ]
 
 /-- The Chernoff bound for a Hamming ball in `Fin m → Bool`: for every `t ≥ 0`, the number of
 words within distance `r` of `c` is at most `2^m exp (m t² / 2 - t (m - 2 r))`. -/
@@ -86,9 +74,9 @@ theorem card_hammingDist_le_two_pow_mul_exp {m : ℕ} (c : Fin m → Bool) (r : 
   have hcosh : 1 + exp (-2 * t) ≤ 2 * exp (t ^ 2 / 2 - t) := by
     have h := cosh_le_exp_half_sq t
     rw [cosh_eq] at h
+    have hneg : -t + -t = -2 * t := by ring
     have h1 : 1 + exp (-2 * t) = exp (-t) * (exp t + exp (-t)) := by
-      rw [mul_add, ← exp_add, ← exp_add, neg_add_cancel, exp_zero,
-        show -t + -t = -2 * t by ring]
+      simp [mul_add, ← exp_add, hneg]
     have h2 : exp (t ^ 2 / 2 - t) = exp (-t) * exp (t ^ 2 / 2) := by
       rw [← exp_add]
       congr 1
@@ -121,31 +109,6 @@ theorem card_hammingDist_le {m : ℕ} (c : Fin m → Bool) {r : ℝ} (hr : r ≤
   congr 2
   field_simp
   ring
-
-/-- A greedy code: for every radius `D` and word `a`, some finite code containing `a` has distinct
-words at distance more than `D` and meets the closed ball of radius `D` about every word. -/
-theorem exists_finset_pairwise_lt_hammingDist_forall_exists {ι : Type*} {β : ι → Type*}
-    [Fintype ι] [∀ i, Finite (β i)] [∀ i, DecidableEq (β i)] (D : ℕ) (a : ∀ i, β i) :
-    ∃ C : Finset (∀ i, β i), a ∈ C ∧
-      (C : Set (∀ i, β i)).Pairwise (fun x y ↦ D < hammingDist x y) ∧
-      ∀ y, ∃ x ∈ C, hammingDist y x ≤ D := by
-  classical
-  have (i : ι) : Fintype (β i) := Fintype.ofFinite _
-  let valid : Finset (∀ i, β i) → Prop := fun C ↦
-    a ∈ C ∧ (C : Set (∀ i, β i)).Pairwise fun x y ↦ D < hammingDist x y
-  obtain ⟨C, hC, hmax⟩ := exists_max_image (univ.filter valid) card
-    ⟨{a}, mem_filter.mpr ⟨mem_univ _, mem_singleton_self a, by simp⟩⟩
-  obtain ⟨ha, hsep⟩ := (mem_filter.mp hC).2
-  refine ⟨C, ha, hsep, fun y ↦ ?_⟩
-  by_contra! hy
-  have hyC : y ∉ C := fun h ↦ by simpa using hy y h
-  have hval : valid (insert y C) := by
-    refine ⟨mem_insert_of_mem ha, ?_⟩
-    rw [coe_insert, Set.pairwise_insert]
-    exact ⟨hsep, fun x hx _ ↦ ⟨hy x hx, hammingDist_comm y x ▸ hy x hx⟩⟩
-  have := hmax _ (mem_filter.mpr ⟨mem_univ _, hval⟩)
-  rw [card_insert_of_notMem hyC] at this
-  omega
 
 /-- For `m ≥ 8`, `2^{m/8} + 1 ≤ exp (9 m / 32)`: with `s = m / 8 ≥ 1` and `u = 2^s ≥ 2`,
 `exp (9 s / 4) ≥ 8^s = u³ ≥ u + 1`, since `log 2 < 3 / 4`. -/
