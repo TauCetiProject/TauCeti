@@ -20,6 +20,17 @@ For native PD-codes, `PDCode.disjointUnionCircleTensorEquiv` combines this ident
 the actual disjoint-union correspondence of resolved circles. Crossing-free labels follow that
 correspondence, including their prescribed numbering in the disjoint union.
 
+Adjoining a single circle `()` gives the insertion `insertCircle R b : x ↦ x ⊗ v_b` of that
+circle with the label `b` (`v_false = 1`, `v_true = X`) and the deletion `deleteCircle R b`,
+which reads off the coefficient of the label `b` on it. They satisfy the biproduct relations of
+`CircleTensor R (σ ⊕ Unit) ≅ CircleTensor R σ ⊗ (R·1 ⊕ R·X)`, and shift the quantum degree by
+`±1`. Inserting the label `1` is the birth `fiberwiseMul Sum.inl` and deleting the label `X` is
+the death `fiberwiseSplit Sum.inl` (`TauCeti.Khovanov.insertCircle_false`,
+`TauCeti.Khovanov.deleteCircle_true`). The `X` action commutes with both maps on the other
+circles and relabels the adjoined circle from `1` to `X`, and deleting the label `b` is adjoint
+to inserting the label `!b` for the Frobenius pairings
+(`TauCeti.Khovanov.circleDuality_deleteCircle`).
+
 The maps use the ordinary unsigned tensor product, as in M. Khovanov,
 *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000), §2.
 -/
@@ -73,6 +84,42 @@ theorem circleBasis_repr_tmulEquiv (x : CircleTensor R σ) (y : CircleTensor R �
     simp [TensorProduct.add_tmul, hx, hz, add_mul]
 
 end Finite
+
+section X
+
+variable [DecidableEq σ] [DecidableEq τ]
+
+/-- `X` on a circle of the first summand acts on the first tensor factor. -/
+theorem circleX_inl_tmulEquiv (i : σ) (x : CircleTensor R σ) (y : CircleTensor R τ) :
+    circleX R (.inl i) (tmulEquiv R R[ε] (x ⊗ₜ y)) = tmulEquiv R R[ε] (circleX R i x ⊗ₜ y) := by
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r a =>
+    induction y using PiTensorProduct.induction_on with
+    | smul_tprod s b =>
+      simp only [← TensorProduct.smul_tmul', TensorProduct.tmul_smul, map_smul, circleX_apply,
+        singleAlgHom_apply, tmulEquiv_apply, tprod_mul_tprod]
+      congr 3
+      funext k
+      rcases k with k | k <;> simp [Pi.mulSingle_apply]
+    | add y z hy hz => simp only [TensorProduct.tmul_add, map_add, hy, hz]
+  | add x z hx hz => simp only [TensorProduct.add_tmul, map_add, hx, hz]
+
+/-- `X` on a circle of the second summand acts on the second tensor factor. -/
+theorem circleX_inr_tmulEquiv (i : τ) (x : CircleTensor R σ) (y : CircleTensor R τ) :
+    circleX R (.inr i) (tmulEquiv R R[ε] (x ⊗ₜ y)) = tmulEquiv R R[ε] (x ⊗ₜ circleX R i y) := by
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r a =>
+    induction y using PiTensorProduct.induction_on with
+    | smul_tprod s b =>
+      simp only [← TensorProduct.smul_tmul', TensorProduct.tmul_smul, map_smul, circleX_apply,
+        singleAlgHom_apply, tmulEquiv_apply, tprod_mul_tprod]
+      congr 3
+      funext k
+      rcases k with k | k <;> simp [Pi.mulSingle_apply]
+    | add y z hy hz => simp only [TensorProduct.tmul_add, map_add, hy, hz]
+  | add x z hx hz => simp only [TensorProduct.add_tmul, map_add, hx, hz]
+
+end X
 
 variable [Fintype σ] [Fintype τ] [Fintype σ'] [Fintype τ']
 
@@ -152,6 +199,252 @@ theorem isHomogeneous_tmulEquiv_symm :
   (isHomogeneous_tmulEquiv R σ τ).linearEquiv_symm
 
 end Grading
+
+/-! ### Adjoining one circle -/
+
+section AdjoinCircle
+
+section Semiring
+
+variable (R : Type*) [CommSemiring R] {σ : Type*}
+
+/-- Adjoining one circle labelled `1` (for `b = false`) or `X` (for `b = true`) to a circle
+tensor: `x ↦ x ⊗ v_b` through the disjoint-union tensor equivalence. For `b = false` this is
+the unit, the birth of a circle. -/
+noncomputable def insertCircle (b : Bool) : CircleTensor R σ →ₗ[R] CircleTensor R (σ ⊕ Unit) :=
+  (tmulEquiv R R[ε]).toLinearMap ∘ₗ (TensorProduct.mk R _ _).flip (circleBasis R Unit fun _ ↦ b)
+
+/-- Inserting a circle labelled `b` tensors with the basis vector `b` on the new circle. -/
+theorem insertCircle_apply (b : Bool) (x : CircleTensor R σ) :
+    insertCircle R b x = tmulEquiv R R[ε] (x ⊗ₜ circleBasis R Unit fun _ ↦ b) :=
+  (rfl)
+
+/-- Inserting a circle labelled `b` extends an enhanced state by the label `b`. -/
+@[simp↓]
+theorem insertCircle_circleBasis [Finite σ] (b : Bool) (l : σ → Bool) :
+    insertCircle R b (circleBasis R σ l) = circleBasis R (σ ⊕ Unit) (Sum.elim l fun _ ↦ b) := by
+  rw [insertCircle_apply, tmulEquiv_circleBasis]
+
+/-- The coefficient of the label `b` on the adjoined circle `()`: `x ⊗ y ↦ y_b • x`. For
+`b = true` this is the counit, the death of a circle. -/
+noncomputable def deleteCircle (b : Bool) : CircleTensor R (σ ⊕ Unit) →ₗ[R] CircleTensor R σ :=
+  (TensorProduct.rid R _).toLinearMap ∘ₗ
+    TensorProduct.map LinearMap.id ((circleBasis R Unit).coord fun _ ↦ b) ∘ₗ
+      (tmulEquiv R R[ε]).symm.toLinearMap
+
+/-- Deleting the adjoined circle reads off the coefficient of the label `b` there. -/
+@[simp]
+theorem deleteCircle_tmulEquiv (b : Bool) (x : CircleTensor R σ) (y : CircleTensor R Unit) :
+    deleteCircle R b (tmulEquiv R R[ε] (x ⊗ₜ y)) =
+      (circleBasis R Unit).repr y (fun _ ↦ b) • x := by
+  simp [deleteCircle]
+
+/-- Deleting the adjoined circle keeps the enhanced states labelling it by `b`, restricted to
+the other circles, and kills the others. -/
+@[simp↓]
+theorem deleteCircle_circleBasis [Finite σ] (b : Bool) (l : σ ⊕ Unit → Bool) :
+    deleteCircle R b (circleBasis R (σ ⊕ Unit) l) =
+      if l (.inr ()) = b then circleBasis R σ (l ∘ Sum.inl) else 0 := by
+  have hb : (l ∘ Sum.inr = fun _ ↦ b) ↔ l (.inr ()) = b :=
+    ⟨fun h ↦ congrFun h (), fun h ↦ funext fun _ ↦ h⟩
+  conv_lhs => rw [← Sum.elim_comp_inl_inr l, ← tmulEquiv_circleBasis, deleteCircle_tmulEquiv,
+    Module.Basis.repr_self, Finsupp.single_apply]
+  simp only [hb, ite_smul, one_smul, zero_smul]
+
+/-- Deleting a circle inserted with the label `b'` returns the tensor for the label `b'` and
+gives zero for the other label. -/
+@[simp]
+theorem deleteCircle_insertCircle (b b' : Bool) (x : CircleTensor R σ) :
+    deleteCircle R b (insertCircle R b' x) = if b' = b then x else 0 := by
+  rw [insertCircle_apply, deleteCircle_tmulEquiv, Module.Basis.repr_self, Finsupp.single_apply]
+  by_cases h : b' = b
+  · simp [h]
+  · have h' : (fun _ : Unit ↦ b') ≠ fun _ ↦ b := fun e ↦ h (congrFun e ())
+    simp [h, h']
+
+/-- A circle tensor on the single circle `()` is the combination of its two labellings. -/
+private theorem circleBasis_repr_unit_smul_add (y : CircleTensor R Unit) :
+    (circleBasis R Unit).repr y (fun _ ↦ false) • circleBasis R Unit (fun _ ↦ false) +
+      (circleBasis R Unit).repr y (fun _ ↦ true) • circleBasis R Unit (fun _ ↦ true) = y := by
+  conv_rhs => rw [← (circleBasis R Unit).sum_repr y]
+  rw [← (Equiv.funUnique Unit Bool).symm.sum_comp, Fintype.sum_bool, add_comm]
+  rfl
+
+/-- A tensor on `σ ⊕ Unit` is the sum of its two parts with the adjoined circle labelled `1`
+and `X`. -/
+theorem insertCircle_deleteCircle_add_insertCircle_deleteCircle
+    (z : CircleTensor R (σ ⊕ Unit)) :
+    insertCircle R false (deleteCircle R false z) + insertCircle R true (deleteCircle R true z) =
+      z := by
+  obtain ⟨w, rfl⟩ := (tmulEquiv R R[ε]).surjective z
+  induction w using TensorProduct.inductionOn with
+  | tmul x y =>
+    rw [deleteCircle_tmulEquiv, deleteCircle_tmulEquiv, map_smul, map_smul, insertCircle_apply,
+      insertCircle_apply, ← map_smul, ← map_smul, ← map_add, ← TensorProduct.tmul_smul,
+      ← TensorProduct.tmul_smul, ← TensorProduct.tmul_add, circleBasis_repr_unit_smul_add]
+  | add w w' hw hw' =>
+    rw [map_add, map_add, map_add, map_add, map_add, add_add_add_comm, hw, hw']
+
+/-- The coordinates of a tensor with an inserted circle labelled `b`: the coordinates of the
+tensor on the labellings carrying `b` on the new circle, and zero on the others. -/
+@[simp]
+theorem circleBasis_repr_insertCircle [Finite σ] (b : Bool) (x : CircleTensor R σ)
+    (l : σ ⊕ Unit → Bool) :
+    (circleBasis R (σ ⊕ Unit)).repr (insertCircle R b x) l =
+      if l (.inr ()) = b then (circleBasis R σ).repr x (l ∘ Sum.inl) else 0 := by
+  have hb : ((fun _ ↦ b) = l ∘ Sum.inr) ↔ l (.inr ()) = b :=
+    ⟨fun h ↦ (congrFun h ()).symm, fun h ↦ funext fun _ ↦ h.symm⟩
+  rw [insertCircle_apply, circleBasis_repr_tmulEquiv, Module.Basis.repr_self, Finsupp.single_apply]
+  simp only [hb, mul_ite, mul_one, mul_zero]
+
+/-- The coordinates of the coefficient of the label `b` on the adjoined circle are the
+coordinates of the tensor on the labellings extended by `b`. -/
+@[simp]
+theorem circleBasis_repr_deleteCircle [Finite σ] (b : Bool) (z : CircleTensor R (σ ⊕ Unit))
+    (l : σ → Bool) :
+    (circleBasis R σ).repr (deleteCircle R b z) l =
+      (circleBasis R (σ ⊕ Unit)).repr z (Sum.elim l fun _ ↦ b) := by
+  obtain ⟨w, rfl⟩ := (tmulEquiv R R[ε]).surjective z
+  induction w using TensorProduct.inductionOn with
+  | tmul x y =>
+    rw [deleteCircle_tmulEquiv, circleBasis_repr_tmulEquiv, map_smul, Finsupp.smul_apply,
+      smul_eq_mul, Sum.elim_comp_inl, Sum.elim_comp_inr, mul_comm]
+  | add w w' hw hw' => simp only [map_add, Finsupp.add_apply, hw, hw']
+
+section X
+
+variable [DecidableEq σ]
+
+/-- `X` on a circle of `σ` commutes with inserting a circle. -/
+theorem circleX_inl_insertCircle (b : Bool) (i : σ) (x : CircleTensor R σ) :
+    circleX R (.inl i) (insertCircle R b x) = insertCircle R b (circleX R i x) := by
+  rw [insertCircle_apply, insertCircle_apply, circleX_inl_tmulEquiv]
+
+/-- `X` on the inserted circle relabels it from `1` to `X`, and kills the label `X`. In
+particular `insertCircle R true` is `X` on the new circle after `insertCircle R false`. -/
+theorem circleX_inr_insertCircle (b : Bool) (x : CircleTensor R σ) :
+    circleX R (.inr ()) (insertCircle R b x) = if b then 0 else insertCircle R true x := by
+  rw [insertCircle_apply, circleX_inr_tmulEquiv, circleX_circleBasis]
+  cases b
+  · rw [insertCircle_apply]
+    congr 3
+  · simp
+
+/-- `X` on a circle of `σ` commutes with reading off a label on the adjoined circle. -/
+theorem deleteCircle_circleX_inl (b : Bool) (i : σ) (z : CircleTensor R (σ ⊕ Unit)) :
+    deleteCircle R b (circleX R (.inl i) z) = circleX R i (deleteCircle R b z) := by
+  obtain ⟨w, rfl⟩ := (tmulEquiv R R[ε]).surjective z
+  induction w using TensorProduct.inductionOn with
+  | tmul x y =>
+    rw [circleX_inl_tmulEquiv, deleteCircle_tmulEquiv, deleteCircle_tmulEquiv, map_smul]
+  | add w w' hw hw' => simp only [map_add, hw, hw']
+
+/-- After `X` on the adjoined circle, the coefficient of `X` there is the former coefficient of
+`1`, and the coefficient of `1` vanishes. In particular the coefficient of `1` is the
+coefficient of `X` after `X` on the adjoined circle. -/
+theorem deleteCircle_circleX_inr (b : Bool) (z : CircleTensor R (σ ⊕ Unit)) :
+    deleteCircle R b (circleX R (.inr ()) z) = if b then deleteCircle R false z else 0 := by
+  obtain ⟨w, rfl⟩ := (tmulEquiv R R[ε]).surjective z
+  induction w using TensorProduct.inductionOn with
+  | tmul x y =>
+    rw [circleX_inr_tmulEquiv, deleteCircle_tmulEquiv, deleteCircle_tmulEquiv]
+    have hu : Function.update (fun _ : Unit ↦ false) () true = fun _ ↦ true := by
+      funext
+      simp
+    conv_lhs => rw [← circleBasis_repr_unit_smul_add R y]
+    simp only [map_add, map_smul, circleX_circleBasis, Bool.false_eq_true, ite_false, ite_true,
+      smul_zero, add_zero, hu, Module.Basis.repr_self, Finsupp.smul_apply, Finsupp.single_apply]
+    cases b <;> simp [funext_iff]
+  | add w w' hw hw' => cases b <;> simp_all
+
+end X
+
+/-- **Frobenius adjointness.** For the Frobenius pairings, reading off the label `b` on the
+adjoined circle is adjoint to inserting that circle with the complementary label `!b`. -/
+theorem circleDuality_deleteCircle [Fintype σ] (b : Bool) (z : CircleTensor R (σ ⊕ Unit))
+    (x : CircleTensor R σ) :
+    circleDuality R σ (deleteCircle R b z) x =
+      circleDuality R (σ ⊕ Unit) z (insertCircle R (!b) x) := by
+  obtain ⟨w, rfl⟩ := (tmulEquiv R R[ε]).surjective z
+  induction w using TensorProduct.inductionOn with
+  | tmul u v =>
+    rw [deleteCircle_tmulEquiv, insertCircle_apply, circleDuality_tmulEquiv,
+      circleDuality_apply_circleBasis, map_smul, LinearMap.smul_apply, smul_eq_mul, mul_comm]
+    simp only [Bool.not_not]
+  | add w w' hw hw' => simp only [map_add, LinearMap.add_apply, hw, hw']
+
+/-- Inserting a circle labelled `1` is the birth of a circle: multiplication along the inclusion
+`σ → σ ⊕ Unit`, whose fibre over the adjoined circle is empty. -/
+theorem insertCircle_false [Fintype σ] [DecidableEq σ] :
+    insertCircle R false =
+      (fiberwiseMul (R := R) (A := fun _ ↦ R[ε]) (Sum.inl : σ → σ ⊕ Unit)).toLinearMap := by
+  refine (circleBasis R σ).ext fun l ↦ ?_
+  rw [insertCircle_circleBasis, AlgHom.toLinearMap_apply, fiberwiseMul_circleBasis_eq_tprod,
+    circleBasis_apply]
+  congr 1
+  funext C
+  rcases C with i | u
+  · cases h : l i <;> simp [h, Finset.filter_eq', Finset.filter_and]
+  · simp
+
+/-- Reading off the coefficient of `X` on the adjoined circle is the death of that circle: the
+split map along the inclusion `σ → σ ⊕ Unit`, adjoint to its birth. -/
+theorem deleteCircle_true [Fintype σ] [DecidableEq σ] :
+    deleteCircle R true = fiberwiseSplit (R := R) (Sum.inl : σ → σ ⊕ Unit) := by
+  refine LinearMap.ext fun z ↦ (circleDuality R σ).injective (LinearMap.ext fun y ↦ ?_)
+  rw [circleDuality_fiberwiseSplit, circleDuality_deleteCircle, Bool.not_true, insertCircle_false,
+    AlgHom.toLinearMap_apply]
+
+end Semiring
+
+section Grading
+
+variable (R : Type*) [CommRing R] {σ : Type*} [Fintype σ]
+
+/-- Inserting a circle labelled `1` raises the quantum degree by one, and inserting it labelled
+`X` lowers it by one. -/
+theorem isHomogeneous_insertCircle (b : Bool) :
+    TauCeti.LinearMap.IsHomogeneous (insertCircle R (σ := σ) b)
+      (circleQuantumGrading R σ).piece (circleQuantumGrading R (σ ⊕ Unit)).piece
+      (bif b then -1 else 1) := by
+  rw [TauCeti.LinearMap.isHomogeneous_def]
+  intro p x hx
+  have hb : circleBasis R Unit (fun _ ↦ b) ∈
+      (circleQuantumGrading R Unit).piece (bif b then -1 else 1) := by
+    convert circleBasis_mem_circleQuantumGrading_piece (R := R) fun _ : Unit ↦ b using 2
+    simp [labelingQuantumDegree_def]
+  rw [insertCircle_apply]
+  simpa only [add_zero, LinearEquiv.coe_coe] using (isHomogeneous_tmulEquiv R σ Unit).map_mem
+    (InternalGrading.tmul_mem_tensorProduct _ _ hx hb)
+
+/-- Deleting a circle labelled `1` lowers the quantum degree by one, and deleting it labelled
+`X` raises it by one. -/
+theorem isHomogeneous_deleteCircle (b : Bool) :
+    TauCeti.LinearMap.IsHomogeneous (deleteCircle R (σ := σ) b)
+      (circleQuantumGrading R (σ ⊕ Unit)).piece (circleQuantumGrading R σ).piece
+      (-bif b then -1 else 1) := by
+  classical
+  rw [TauCeti.LinearMap.isHomogeneous_def]
+  intro p x hx
+  rw [mem_circleQuantumGrading_piece_iff] at hx
+  rw [← (circleBasis R (σ ⊕ Unit)).sum_repr x, map_sum]
+  refine Submodule.sum_mem _ fun l _ ↦ ?_
+  by_cases hl : (circleBasis R (σ ⊕ Unit)).repr x l = 0
+  · simp [hl]
+  rw [map_smul, deleteCircle_circleBasis]
+  split_ifs with h
+  · refine Submodule.smul_mem _ _ ?_
+    have hdeg : labelingQuantumDegree (σ ⊕ Unit) l =
+        labelingQuantumDegree σ (l ∘ Sum.inl) + bif b then -1 else 1 := by
+      simp [labelingQuantumDegree_def, Fintype.sum_sum_type, h]
+    convert circleBasis_mem_circleQuantumGrading_piece (R := R) (l ∘ Sum.inl) using 2
+    rw [← hx l hl, hdeg]
+    ring
+  · simp
+
+end Grading
+
+end AdjoinCircle
 
 end TauCeti.Khovanov
 
