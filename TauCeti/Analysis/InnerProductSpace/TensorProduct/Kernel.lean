@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Completion
 import TauCeti.Analysis.Fredholm.Adjoint
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Kernels of amplified operators on completed tensor products
@@ -17,11 +18,12 @@ Let `f : E →L[𝕜] E'` and `g : F →L[𝕜] F'` be bounded operators between
 `ContinuousLinearMap.lTensorCompletion`). This file computes their kernels in terms of the
 kernels of `f` and `g`.
 
-For the algebraic tensor product over a field, `ker (f ⊗ 1)` is the image of `ker f ⊗ F`
-(`LinearMap.ker_rTensor_inf_ker_lTensor`). On the completion the image of `ker f ⊗ F` is no longer
-closed, and the kernel is its closure, the range of `Π ⊗ 1` for the orthogonal projection `Π` onto
-`ker f`. Equivalently, `f ⊗ 1` and `Πᗮ ⊗ 1` have the same kernel, where `Πᗮ` is the orthogonal
-projection onto `(ker f)ᗮ` (`ContinuousLinearMap.rTensorCompletion_apply_eq_zero_iff`). The proof
+For the algebraic tensor product over a field, `ker (f ⊗ 1)` is the image of `ker f ⊗ F`, since
+tensoring with `F` is exact. On the completion this description is replaced by projections: `f ⊗ 1`
+and `Πᗮ ⊗ 1` have the same kernel, where `Πᗮ` is the orthogonal projection onto `(ker f)ᗮ`
+(`ContinuousLinearMap.rTensorCompletion_apply_eq_zero_iff`), so the kernel of `f ⊗ 1` is the set of
+fixed points of `Π ⊗ 1` for the orthogonal projection `Π` onto `ker f`
+(`ContinuousLinearMap.rTensorCompletion_apply_eq_zero_iff_eq`). The proof
 uses that `(ker f)ᗮ` is the closure of the range of `f†`, and that `f† ⊗ 1` is the adjoint of
 `f ⊗ 1`: a vector killed by `f ⊗ 1` is orthogonal to every `f† x ⊗ y`, hence to every `z ⊗ y` with
 `z ∈ (ker f)ᗮ`.
@@ -136,20 +138,9 @@ private theorem inner_coe_tmul_eq_zero_of_rTensorCompletion_apply_eq_zero (f : E
   rw [LinearMap.mem_ker, coe_coe, hφ] at hzφ
   rw [← inner_conj_symm, hzφ, map_zero]
 
-omit [CompleteSpace E] in
-/-- The amplifications of the orthogonal projections onto a closed subspace and onto its
-orthogonal complement add up to the identity. -/
-private theorem rTensorCompletion_starProjection_add_orthogonal (K : Submodule 𝕜 E)
-    [K.HasOrthogonalProjection] (w : Completion (E ⊗[𝕜] F)) :
-    K.starProjection.rTensorCompletion F w + Kᗮ.starProjection.rTensorCompletion F w = w := by
-  have h : K.starProjection + Kᗮ.starProjection = ContinuousLinearMap.id 𝕜 _ := ext fun x ↦ by
-    rw [add_apply, id_apply]
-    exact K.starProjection_add_starProjection_orthogonal x
-  rw [← add_apply, ← rTensorCompletion_add, h, rTensorCompletion_id, id_apply]
-
 /-- **The kernel of an amplification.** `f ⊗ 1` kills `w` exactly when `Πᗮ ⊗ 1` does, where `Πᗮ`
-is the orthogonal projection onto the orthogonal complement of `ker f`. Equivalently,
-`ker (f ⊗ 1)` is the closure of the image of `ker f ⊗ F`
+is the orthogonal projection onto the orthogonal complement of `ker f`. Equivalently, `w` is fixed
+by `Π ⊗ 1` for the orthogonal projection `Π` onto `ker f`
 (`ContinuousLinearMap.rTensorCompletion_apply_eq_zero_iff_eq`). -/
 theorem rTensorCompletion_apply_eq_zero_iff (f : E →L[𝕜] E') (w : Completion (E ⊗[𝕜] F)) :
     f.rTensorCompletion F w = 0 ↔ f.kerᗮ.starProjection.rTensorCompletion F w = 0 := by
@@ -162,11 +153,7 @@ theorem rTensorCompletion_apply_eq_zero_iff (f : E →L[𝕜] E') (w : Completio
       (f.kerᗮ.starProjection_apply_mem x) y
   · intro hw
     -- `f` vanishes on `ker f`, so `f ⊗ 1 = (f ∘ Πᗮ) ⊗ 1 = (f ⊗ 1) ∘ (Πᗮ ⊗ 1)`.
-    have hf : f ∘L f.kerᗮ.starProjection = f := ext fun x ↦ by
-      conv_rhs => rw [← f.ker.starProjection_add_starProjection_orthogonal x]
-      rw [comp_apply, map_add, show f (f.ker.starProjection x) = 0 from
-        f.ker.starProjection_apply_mem x, zero_add]
-    rw [← hf, rTensorCompletion_comp, comp_apply, hw, map_zero]
+    rw [← f.comp_starProjection_orthogonal_ker, rTensorCompletion_comp, comp_apply, hw, map_zero]
 
 /-- The kernel of `f ⊗ 1` is the kernel of `Πᗮ ⊗ 1` for the orthogonal projection `Πᗮ` onto the
 orthogonal complement of `ker f`. -/
@@ -175,10 +162,12 @@ theorem ker_rTensorCompletion (f : E →L[𝕜] E') :
   Submodule.ext fun w ↦ rTensorCompletion_apply_eq_zero_iff f w
 
 /-- `f ⊗ 1` kills `w` exactly when `w` is fixed by `Π ⊗ 1`, for the orthogonal projection `Π`
-onto `ker f`: the kernel of `f ⊗ 1` is the closure of the image of `ker f ⊗ F`. -/
+onto `ker f`: the kernel of `f ⊗ 1` is the set of fixed points, that is the range, of `Π ⊗ 1`. -/
 theorem rTensorCompletion_apply_eq_zero_iff_eq (f : E →L[𝕜] E') (w : Completion (E ⊗[𝕜] F)) :
     f.rTensorCompletion F w = 0 ↔ f.ker.starProjection.rTensorCompletion F w = w := by
-  have hsum := rTensorCompletion_starProjection_add_orthogonal f.ker w
+  have hsum := DFunLike.congr_fun
+    (rTensorCompletion_starProjection_add_rTensorCompletion_starProjection_orthogonal
+      (F := F) f.ker) w
   rw [rTensorCompletion_apply_eq_zero_iff]
   exact ⟨fun h ↦ by simpa [h] using hsum, fun h ↦ by simpa [h] using hsum⟩
 
@@ -207,17 +196,6 @@ private theorem inner_coe_tmul_eq_zero_of_lTensorCompletion_apply_eq_zero (g : F
   rw [LinearMap.mem_ker, coe_coe, hφ] at hzφ
   rw [← inner_conj_symm, hzφ, map_zero]
 
-omit [CompleteSpace F] in
-/-- The amplifications of the orthogonal projections onto a closed subspace and onto its
-orthogonal complement add up to the identity. -/
-private theorem lTensorCompletion_starProjection_add_orthogonal (K : Submodule 𝕜 F)
-    [K.HasOrthogonalProjection] (w : Completion (E ⊗[𝕜] F)) :
-    K.starProjection.lTensorCompletion E w + Kᗮ.starProjection.lTensorCompletion E w = w := by
-  have h : K.starProjection + Kᗮ.starProjection = ContinuousLinearMap.id 𝕜 _ := ext fun x ↦ by
-    rw [add_apply, id_apply]
-    exact K.starProjection_add_starProjection_orthogonal x
-  rw [← add_apply, ← lTensorCompletion_add, h, lTensorCompletion_id, id_apply]
-
 /-- **The kernel of an amplification.** `1 ⊗ g` kills `w` exactly when `1 ⊗ Πᗮ` does, where `Πᗮ`
 is the orthogonal projection onto the orthogonal complement of `ker g`. -/
 theorem lTensorCompletion_apply_eq_zero_iff (g : F →L[𝕜] F') (w : Completion (E ⊗[𝕜] F)) :
@@ -231,11 +209,7 @@ theorem lTensorCompletion_apply_eq_zero_iff (g : F →L[𝕜] F') (w : Completio
       (g.kerᗮ.starProjection_apply_mem y)
   · intro hw
     -- `g` vanishes on `ker g`, so `1 ⊗ g = 1 ⊗ (g ∘ Πᗮ) = (1 ⊗ g) ∘ (1 ⊗ Πᗮ)`.
-    have hg : g ∘L g.kerᗮ.starProjection = g := ext fun y ↦ by
-      conv_rhs => rw [← g.ker.starProjection_add_starProjection_orthogonal y]
-      rw [comp_apply, map_add, show g (g.ker.starProjection y) = 0 from
-        g.ker.starProjection_apply_mem y, zero_add]
-    rw [← hg, lTensorCompletion_comp, comp_apply, hw, map_zero]
+    rw [← g.comp_starProjection_orthogonal_ker, lTensorCompletion_comp, comp_apply, hw, map_zero]
 
 /-- The kernel of `1 ⊗ g` is the kernel of `1 ⊗ Πᗮ` for the orthogonal projection `Πᗮ` onto the
 orthogonal complement of `ker g`. -/
@@ -244,10 +218,12 @@ theorem ker_lTensorCompletion (g : F →L[𝕜] F') :
   Submodule.ext fun w ↦ lTensorCompletion_apply_eq_zero_iff g w
 
 /-- `1 ⊗ g` kills `w` exactly when `w` is fixed by `1 ⊗ Π`, for the orthogonal projection `Π`
-onto `ker g`: the kernel of `1 ⊗ g` is the closure of the image of `E ⊗ ker g`. -/
+onto `ker g`: the kernel of `1 ⊗ g` is the set of fixed points, that is the range, of `1 ⊗ Π`. -/
 theorem lTensorCompletion_apply_eq_zero_iff_eq (g : F →L[𝕜] F') (w : Completion (E ⊗[𝕜] F)) :
     g.lTensorCompletion E w = 0 ↔ g.ker.starProjection.lTensorCompletion E w = w := by
-  have hsum := lTensorCompletion_starProjection_add_orthogonal (E := E) g.ker w
+  have hsum := DFunLike.congr_fun
+    (lTensorCompletion_starProjection_add_lTensorCompletion_starProjection_orthogonal
+      (E := E) g.ker) w
   rw [lTensorCompletion_apply_eq_zero_iff]
   exact ⟨fun h ↦ by simpa [h] using hsum, fun h ↦ by simpa [h] using hsum⟩
 
@@ -259,7 +235,8 @@ variable [CompleteSpace E] [CompleteSpace E'] [CompleteSpace F] [CompleteSpace F
 
 omit [CompleteSpace E'] [CompleteSpace F'] in
 /-- `Π_f ⊗ Π_g` maps into the kernel of `f ⊗ 1`. -/
-theorem rTensorCompletion_mapLCompletion_starProjection_apply (f : E →L[𝕜] E') (g : F →L[𝕜] F')
+theorem rTensorCompletion_mapLCompletion_starProjection_apply_eq_zero (f : E →L[𝕜] E')
+    (g : F →L[𝕜] F')
     (w : Completion (E ⊗[𝕜] F)) :
     f.rTensorCompletion F (mapLCompletion f.ker.starProjection g.ker.starProjection w) = 0 := by
   have hf : f ∘L f.ker.starProjection = 0 := ext fun x ↦ f.ker.starProjection_apply_mem x
@@ -268,7 +245,8 @@ theorem rTensorCompletion_mapLCompletion_starProjection_apply (f : E →L[𝕜] 
 
 omit [CompleteSpace E'] [CompleteSpace F'] in
 /-- `Π_f ⊗ Π_g` maps into the kernel of `1 ⊗ g`. -/
-theorem lTensorCompletion_mapLCompletion_starProjection_apply (f : E →L[𝕜] E') (g : F →L[𝕜] F')
+theorem lTensorCompletion_mapLCompletion_starProjection_apply_eq_zero (f : E →L[𝕜] E')
+    (g : F →L[𝕜] F')
     (w : Completion (E ⊗[𝕜] F)) :
     g.lTensorCompletion E (mapLCompletion f.ker.starProjection g.ker.starProjection w) = 0 := by
   have hg : g ∘L g.ker.starProjection = 0 := ext fun y ↦ g.ker.starProjection_apply_mem y
@@ -336,7 +314,7 @@ theorem finrank_ker_rTensorCompletion_inf_ker_lTensorCompletion (f : E →L[𝕜
     Completion.toComplₗᵢ.comp (mapInclIsometry f.ker g.ker)
   rw [ker_rTensorCompletion_inf_ker_lTensorCompletion,
     LinearMap.finrank_range_of_inj (f := X.toLinearMap)
-      (by rw [LinearIsometry.coe_toLinearMap]; exact X.isometry.injective),
+      X.isometry.injective,
     Module.finrank_tensorProduct]
 
 end CommonKernel
@@ -369,7 +347,7 @@ theorem exists_norm_lTensorCompletion_starProjection_apply_le [CompleteSpace F] 
 
 /-- **Distance to the common kernel.** If `f` and `g` have closed range, then the distance from
 `w` to its image under `Π_f ⊗ Π_g`, a vector of the common kernel of `f ⊗ 1` and `1 ⊗ g`
-(`ContinuousLinearMap.rTensorCompletion_mapLCompletion_starProjection_apply`), is at most
+(`ContinuousLinearMap.rTensorCompletion_mapLCompletion_starProjection_apply_eq_zero`), is at most
 `C (‖(f ⊗ 1) w‖ + ‖(1 ⊗ g) w‖)`. -/
 theorem exists_norm_sub_mapLCompletion_starProjection_apply_le [CompleteSpace E]
     [CompleteSpace E'] [CompleteSpace F] [CompleteSpace F'] (f : E →L[𝕜] E') (g : F →L[𝕜] F')
@@ -385,8 +363,13 @@ theorem exists_norm_sub_mapLCompletion_starProjection_apply_le [CompleteSpace E]
   have hsplit : w - mapLCompletion f.ker.starProjection g.ker.starProjection w =
       f.kerᗮ.starProjection.rTensorCompletion F w +
         P (g.kerᗮ.starProjection.lTensorCompletion E w) := by
-    have hf' := rTensorCompletion_starProjection_add_orthogonal f.ker w
-    have hg' := lTensorCompletion_starProjection_add_orthogonal (E := E) g.ker w
+    have hf' := DFunLike.congr_fun
+      (rTensorCompletion_starProjection_add_rTensorCompletion_starProjection_orthogonal
+        (F := F) f.ker) w
+    have hg' := DFunLike.congr_fun
+      (lTensorCompletion_starProjection_add_lTensorCompletion_starProjection_orthogonal
+        (E := E) g.ker) w
+    rw [add_apply, id_apply] at hf' hg'
     rw [← rTensorCompletion_comp_lTensorCompletion, comp_apply, eq_sub_of_add_eq hg', map_sub,
       ← sub_eq_of_eq_add' hf'.symm]
     abel

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.ClosedRange
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Adjoints of Fredholm operators
@@ -132,8 +133,7 @@ theorem _root_.ContinuousLinearMap.isClosed_range_of_forall_exists_mem_ker_norm_
   refine ⟨fun ⟨x, hx⟩ ↦ ⟨Kᗮ.orthogonalProjectionOnto x, ?_⟩, fun ⟨x, hx⟩ ↦ ⟨x, hx⟩⟩
   rw [← hx, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
     ← Submodule.starProjection_apply, ContinuousLinearMap.coe_coe]
-  conv_rhs => rw [← K.starProjection_add_starProjection_orthogonal x]
-  rw [map_add, show T (K.starProjection x) = 0 from K.starProjection_apply_mem x, zero_add]
+  exact congr($(T.comp_starProjection_orthogonal_ker) x)
 
 end Restriction
 
@@ -239,9 +239,7 @@ theorem _root_.ContinuousLinearMap.exists_comp_eq_starProjection_orthogonal_ker 
   refine ⟨Kᗮ.subtypeL ∘L (T.orthogonalKerEquivRange hT).symm.toContinuousLinearMap ∘L
     range.orthogonalProjectionOnto, ContinuousLinearMap.ext fun x ↦ ?_⟩
   -- `T x = T (Πᗮ x)`, since `T` vanishes on `ker T`.
-  have hTx : T (Kᗮ.starProjection x) = T x := by
-    conv_rhs => rw [← K.starProjection_add_starProjection_orthogonal x]
-    rw [map_add, show T (K.starProjection x) = 0 from K.starProjection_apply_mem x, zero_add]
+  have hTx : T (Kᗮ.starProjection x) = T x := congr($(T.comp_starProjection_orthogonal_ker) x)
   have hx : (T.orthogonalKerEquivRange hT).symm ⟨T x, x, rfl⟩ = Kᗮ.orthogonalProjectionOnto x := by
     rw [ContinuousLinearEquiv.symm_apply_eq]
     ext

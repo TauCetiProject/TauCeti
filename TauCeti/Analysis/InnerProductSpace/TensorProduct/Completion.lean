@@ -470,6 +470,15 @@ theorem rTensorCompletion_sub (f₁ f₂ : E →L[𝕜] E') :
 theorem rTensorCompletion_zero : (0 : E →L[𝕜] E').rTensorCompletion F = 0 :=
   completion_ext fun _ _ ↦ by simp
 
+/-- The amplifications of the orthogonal projections onto a subspace and onto its orthogonal
+complement add up to the identity: `Π ⊗ 1 + Πᗮ ⊗ 1 = 1`. -/
+theorem rTensorCompletion_starProjection_add_rTensorCompletion_starProjection_orthogonal
+    (K : Submodule 𝕜 E) [K.HasOrthogonalProjection] :
+    K.starProjection.rTensorCompletion F + Kᗮ.starProjection.rTensorCompletion F =
+      ContinuousLinearMap.id 𝕜 (Completion (E ⊗[𝕜] F)) := by
+  rw [← rTensorCompletion_add, ← K.id_eq_sum_starProjection_self_orthogonalComplement,
+    rTensorCompletion_id]
+
 /-- Every amplification to the zero space is zero. -/
 theorem rTensorCompletion_of_subsingleton [Subsingleton F] (f : E →L[𝕜] E') :
     f.rTensorCompletion F = 0 :=
@@ -574,6 +583,15 @@ theorem lTensorCompletion_sub (g₁ g₂ : F →L[𝕜] F') :
 @[simp]
 theorem lTensorCompletion_zero : (0 : F →L[𝕜] F').lTensorCompletion E = 0 :=
   completion_ext fun _ _ ↦ by simp
+
+/-- The amplifications of the orthogonal projections onto a subspace and onto its orthogonal
+complement add up to the identity: `1 ⊗ Π + 1 ⊗ Πᗮ = 1`. -/
+theorem lTensorCompletion_starProjection_add_lTensorCompletion_starProjection_orthogonal
+    (K : Submodule 𝕜 F) [K.HasOrthogonalProjection] :
+    K.starProjection.lTensorCompletion E + Kᗮ.starProjection.lTensorCompletion E =
+      ContinuousLinearMap.id 𝕜 (Completion (E ⊗[𝕜] F)) := by
+  rw [← lTensorCompletion_add, ← K.id_eq_sum_starProjection_self_orthogonalComplement,
+    lTensorCompletion_id]
 
 /-- Every amplification from the zero space is zero. -/
 theorem lTensorCompletion_of_subsingleton [Subsingleton E] (g : F →L[𝕜] F') :

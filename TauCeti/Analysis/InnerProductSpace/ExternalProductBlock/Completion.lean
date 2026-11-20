@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Fredholm.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Kernel
+import TauCeti.Analysis.InnerProductSpace.ExternalProductBlock.Basic
 import TauCeti.Analysis.Normed.Lp.ProdLp
 
 /-!
@@ -59,8 +60,8 @@ of `w` lies within `C ‖D w‖` of the corresponding common kernel
 
 * `ContinuousLinearMap.externalProductBlockCompletion`: the block operator `D`.
 * `ContinuousLinearMap.norm_externalProductBlockCompletion_apply_sq`: the norm identity above.
-* `ContinuousLinearMap.norm_add_norm_add_norm_add_norm_le_externalProductBlockCompletion`: the
-  four amplified norms add up to at most `2 ‖D w‖`.
+* `norm_add_norm_add_norm_add_norm_le_two_mul_norm_externalProductBlockCompletion_apply`, in the
+  `ContinuousLinearMap` namespace: the four amplified norms add up to at most `2 ‖D w‖`.
 * `ContinuousLinearMap.externalProductBlockCompletion_apply_eq_zero_iff`: the kernel of `D`.
 * `ContinuousLinearMap.adjoint_externalProductBlockCompletion`: `D† = D(A†, -B)`.
 * `ContinuousLinearMap.kerExternalProductBlockCompletionEquiv`,
@@ -89,50 +90,6 @@ open UniformSpace TensorProduct
 open scoped InnerProductSpace
 
 namespace ContinuousLinearMap
-
-section KerEquiv
-
-variable {𝕜 X Y Z M₁ M₂ : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [InnerProductSpace 𝕜 X]
-  [NormedAddCommGroup Y] [InnerProductSpace 𝕜 Y] [NormedAddCommGroup Z] [InnerProductSpace 𝕜 Z]
-  [AddCommGroup M₁] [Module 𝕜 M₁] [AddCommGroup M₂] [Module 𝕜 M₂]
-
-/-- The kernel of an operator on an `L²` sum, when it consists of the pairs whose components lie in
-the ranges of two injective linear maps, is linearly equivalent to the product of their
-sources. -/
-private def kerEquivProdOfInjective (T : WithLp 2 (X × Y) →L[𝕜] Z) {ι₁ : M₁ →ₗ[𝕜] X}
-    {ι₂ : M₂ →ₗ[𝕜] Y} (h₁ : Function.Injective ι₁) (h₂ : Function.Injective ι₂)
-    (hT : ∀ w, T w = 0 ↔ w.fst ∈ LinearMap.range ι₁ ∧ w.snd ∈ LinearMap.range ι₂) :
-    T.ker ≃ₗ[𝕜] M₁ × M₂ :=
-  (LinearEquiv.ofInjective ((WithLp.linearEquiv 2 𝕜 _).symm.toLinearMap ∘ₗ ι₁.prodMap ι₂)
-      ((WithLp.linearEquiv 2 𝕜 _).symm.injective.comp <| Prod.map_injective.mpr ⟨h₁, h₂⟩) ≪≫ₗ
-    LinearEquiv.ofEq _ _ (by
-      ext w
-      rw [LinearMap.mem_ker, coe_coe, hT]
-      constructor
-      · rintro ⟨⟨x, y⟩, rfl⟩
-        exact ⟨⟨x, rfl⟩, ⟨y, rfl⟩⟩
-      · rintro ⟨⟨x, hx⟩, ⟨y, hy⟩⟩
-        exact ⟨(x, y),
-          WithLp.ofLp_injective 2 <| Prod.ext (by simpa using hx) (by simpa using hy)⟩)).symm
-
-private theorem coe_kerEquivProdOfInjective_symm_apply (T : WithLp 2 (X × Y) →L[𝕜] Z)
-    {ι₁ : M₁ →ₗ[𝕜] X} {ι₂ : M₂ →ₗ[𝕜] Y} (h₁ : Function.Injective ι₁)
-    (h₂ : Function.Injective ι₂)
-    (hT : ∀ w, T w = 0 ↔ w.fst ∈ LinearMap.range ι₁ ∧ w.snd ∈ LinearMap.range ι₂)
-    (p : M₁ × M₂) :
-    ((kerEquivProdOfInjective T h₁ h₂ hT).symm p : WithLp 2 (X × Y)) =
-      WithLp.toLp 2 (ι₁ p.1, ι₂ p.2) := by
-  simp [kerEquivProdOfInjective]
-
-end KerEquiv
-
-/-- The isometric inclusion of `K ⊗ L` into the completed tensor product is injective. -/
-private theorem injective_completionInclusion {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
-    [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] (K : Submodule 𝕜 E)
-    (L : Submodule 𝕜 F) :
-    Function.Injective (Completion.toComplₗᵢ.comp (mapInclIsometry K L)).toLinearMap := by
-  rw [LinearIsometry.coe_toLinearMap]
-  exact (Completion.toComplₗᵢ.comp (mapInclIsometry K L)).isometry.injective
 
 variable {𝕜 V₀ V₁ W₀ W₁ : Type*} [RCLike 𝕜]
   [NormedAddCommGroup V₀] [InnerProductSpace 𝕜 V₀] [CompleteSpace V₀]
@@ -281,7 +238,9 @@ theorem adjoint_externalProductBlockCompletion_apply_eq_zero_iff_mem_range
 def kerExternalProductBlockCompletionEquiv :
     (externalProductBlockCompletion A B).ker ≃ₗ[𝕜]
       (A.ker ⊗[𝕜] B.ker) × (A.adjoint.ker ⊗[𝕜] B.adjoint.ker) :=
-  kerEquivProdOfInjective _ (injective_completionInclusion _ _) (injective_completionInclusion _ _)
+  kerEquivProdOfInjective _
+    (Completion.toComplₗᵢ.comp (mapInclIsometry A.ker B.ker)).isometry.injective
+    (Completion.toComplₗᵢ.comp (mapInclIsometry A.adjoint.ker B.adjoint.ker)).isometry.injective
     (externalProductBlockCompletion_apply_eq_zero_iff_mem_range A B)
 
 /-- `kerExternalProductBlockCompletionEquiv` sends a pair of tensors of kernel vectors to the pair
@@ -295,7 +254,7 @@ theorem coe_kerExternalProductBlockCompletionEquiv_symm_apply
         (((mapIncl A.ker B.ker p.1 : V₀ ⊗[𝕜] W₀) : Completion (V₀ ⊗[𝕜] W₀)),
           ((mapIncl A.adjoint.ker B.adjoint.ker p.2 : V₁ ⊗[𝕜] W₁) :
             Completion (V₁ ⊗[𝕜] W₁))) := by
-  simp [kerExternalProductBlockCompletionEquiv, coe_kerEquivProdOfInjective_symm_apply]
+  simp [kerExternalProductBlockCompletionEquiv]
 
 /-- The kernel of the adjoint of the external product block, identified with
 `(ker A† ⊗ ker B) × (ker A ⊗ ker B†)` through the inclusions of the kernels
@@ -305,7 +264,9 @@ closed range, for instance when `A` and `B` are Fredholm, this is the cokernel o
 def kerAdjointExternalProductBlockCompletionEquiv :
     (externalProductBlockCompletion A B).adjoint.ker ≃ₗ[𝕜]
       (A.adjoint.ker ⊗[𝕜] B.ker) × (A.ker ⊗[𝕜] B.adjoint.ker) :=
-  kerEquivProdOfInjective _ (injective_completionInclusion _ _) (injective_completionInclusion _ _)
+  kerEquivProdOfInjective _
+    (Completion.toComplₗᵢ.comp (mapInclIsometry A.adjoint.ker B.ker)).isometry.injective
+    (Completion.toComplₗᵢ.comp (mapInclIsometry A.ker B.adjoint.ker)).isometry.injective
     (adjoint_externalProductBlockCompletion_apply_eq_zero_iff_mem_range A B)
 
 /-- `kerAdjointExternalProductBlockCompletionEquiv` sends a pair of tensors of kernel vectors to
@@ -319,7 +280,7 @@ theorem coe_kerAdjointExternalProductBlockCompletionEquiv_symm_apply
       WithLp.toLp 2
         (((mapIncl A.adjoint.ker B.ker p.1 : V₁ ⊗[𝕜] W₀) : Completion (V₁ ⊗[𝕜] W₀)),
           ((mapIncl A.ker B.adjoint.ker p.2 : V₀ ⊗[𝕜] W₁) : Completion (V₀ ⊗[𝕜] W₁))) := by
-  simp [kerAdjointExternalProductBlockCompletionEquiv, coe_kerEquivProdOfInjective_symm_apply]
+  simp [kerAdjointExternalProductBlockCompletionEquiv]
 
 /-- The dimension of the kernel of the external product block is
 `dim ker A · dim ker B + dim ker A† · dim ker B†`. -/
@@ -342,8 +303,9 @@ theorem finrank_ker_adjoint_externalProductBlockCompletion :
 end Kernel
 
 /-- The four amplified norms of the components of `w` add up to at most `2 ‖D w‖`. -/
-theorem norm_add_norm_add_norm_add_norm_le_externalProductBlockCompletion (A : V₀ →L[𝕜] V₁)
-    (B : W₀ →L[𝕜] W₁) (w : WithLp 2 (Completion (V₀ ⊗[𝕜] W₀) × Completion (V₁ ⊗[𝕜] W₁))) :
+theorem norm_add_norm_add_norm_add_norm_le_two_mul_norm_externalProductBlockCompletion_apply
+    (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
+    (w : WithLp 2 (Completion (V₀ ⊗[𝕜] W₀) × Completion (V₁ ⊗[𝕜] W₁))) :
     ‖A.rTensorCompletion W₀ w.fst‖ + ‖B.lTensorCompletion V₀ w.fst‖ +
         ‖A.adjoint.rTensorCompletion W₁ w.snd‖ + ‖B.adjoint.lTensorCompletion V₁ w.snd‖ ≤
       2 * ‖externalProductBlockCompletion A B w‖ := by
@@ -373,11 +335,12 @@ theorem isClosed_range_externalProductBlockCompletion {A : V₀ →L[𝕜] V₁}
       (mapLCompletion A.ker.starProjection B.ker.starProjection w.fst,
         mapLCompletion A.adjoint.ker.starProjection B.adjoint.ker.starProjection w.snd), ?_, ?_⟩
   · rw [LinearMap.mem_ker, coe_coe, externalProductBlockCompletion_apply_eq_zero_iff]
-    exact ⟨⟨rTensorCompletion_mapLCompletion_starProjection_apply A B _,
-      lTensorCompletion_mapLCompletion_starProjection_apply A B _⟩,
-      rTensorCompletion_mapLCompletion_starProjection_apply A.adjoint B.adjoint _,
-      lTensorCompletion_mapLCompletion_starProjection_apply A.adjoint B.adjoint _⟩
-  · have hsum := norm_add_norm_add_norm_add_norm_le_externalProductBlockCompletion A B w
+    exact ⟨⟨rTensorCompletion_mapLCompletion_starProjection_apply_eq_zero A B _,
+      lTensorCompletion_mapLCompletion_starProjection_apply_eq_zero A B _⟩,
+      rTensorCompletion_mapLCompletion_starProjection_apply_eq_zero A.adjoint B.adjoint _,
+      lTensorCompletion_mapLCompletion_starProjection_apply_eq_zero A.adjoint B.adjoint _⟩
+  · have hsum :=
+      norm_add_norm_add_norm_add_norm_le_two_mul_norm_externalProductBlockCompletion_apply A B w
     refine (WithLp.prod_norm_le_norm_fst_add_norm_snd _).trans ?_
     simp only [WithLp.sub_fst, WithLp.sub_snd, WithLp.toLp_fst, WithLp.toLp_snd]
     refine (add_le_add (h₁ w.fst) (h₂ w.snd)).trans ?_
