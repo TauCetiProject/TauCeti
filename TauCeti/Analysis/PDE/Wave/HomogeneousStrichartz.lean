@@ -87,7 +87,7 @@ theorem exists_enorm_integral_inner_halfWavePropagator_le_tsum (hq : 2 < q)
               ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ) *
             eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
   obtain ⟨C, hC⟩ := φ.exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le
-    (r' := r') hq hpq hqr
+    (r' := r') hq hpq hqr.le
   obtain ⟨K, hK⟩ := φ.exists_enorm_inner_le_mul_tsum (F := ℂ)
     ((Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹)
   refine ⟨K * C, fun m hm f G hG hWG ↦ ?_⟩
