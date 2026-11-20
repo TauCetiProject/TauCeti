@@ -11,6 +11,7 @@ import Mathlib.Data.ZMod.Basic
 import TauCeti.Algebra.Ring.Int.Parity
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
+import TauCeti.NumberTheory.LegendreSymbol.ZModChar
 
 /-!
 # The Kronecker-symbol form of the eta multiplier
@@ -207,11 +208,6 @@ private theorem kroneckerOdd_translate {a b c d : ℤ} (n : ℤ) (hdet : a * d -
   rw [hsym, e24_congr (oddExp_translate_modEq n hdet hodd), e24_add]
   ring
 
-/-- The first supplement at `2 v + 1`: `(-1 / (2 v + 1)) = (-1) ^ v`. -/
-private theorem χ₄_two_mul_add_one (v : ℕ) : ZMod.χ₄ ((2 * v + 1 : ℕ) : ZMod 4) = (-1) ^ v := by
-  rw [ZMod.χ₄_eq_neg_one_pow (Nat.odd_iff.mp (odd_two_mul_add_one v)),
-    show (2 * v + 1) / 2 = v by omega]
-
 /-- Quadratic reciprocity and its first supplement in `e24` form: for `c = 2 u + 1` and
 `d = 2 v + 1`, `(-c / d) = e((12 v + 12 u v) / 24) · (d / c)`. -/
 private theorem jacobiSym_neg_eq_e24_mul (u v : ℕ) :
@@ -219,7 +215,7 @@ private theorem jacobiSym_neg_eq_e24_mul (u v : ℕ) :
       e24 (12 * v) * e24 (12 * (u * v)) * jacobiSym ((2 * v + 1 : ℕ) : ℤ) (2 * u + 1) := by
   have hc : Odd (2 * u + 1) := odd_two_mul_add_one u
   have hd : Odd (2 * v + 1) := odd_two_mul_add_one v
-  rw [jacobiSym.neg _ hd, jacobiSym.quadratic_reciprocity hc hd, χ₄_two_mul_add_one,
+  rw [jacobiSym.neg _ hd, jacobiSym.quadratic_reciprocity hc hd, ZMod.χ₄_two_mul_add_one,
     show (2 * u + 1) / 2 = u by omega, show (2 * v + 1) / 2 = v by omega, ← Nat.cast_mul,
     e24_twelve_mul, e24_twelve_mul]
   push_cast
@@ -273,7 +269,7 @@ private theorem kroneckerEven_inversion {a b c d : ℤ} (hdet : a * d - b * c = 
   rw [kroneckerSym_eq_jacobiSym _ hdo', kroneckerSym_eq_jacobiSym _ hdo', jacobiSym.neg _ hdo']
   obtain ⟨m, rfl⟩ := hce
   obtain ⟨v, rfl⟩ := hdo'
-  rw [χ₄_two_mul_add_one, ← two_mul]
+  rw [ZMod.χ₄_two_mul_add_one, ← two_mul]
   rw [← two_mul] at hdet
   push_cast at hdet ⊢
   have key := e24_congr (evenExp_inversion_modEq hdet)
@@ -307,7 +303,7 @@ private theorem χ₄_natAbs_mul_e24 {d : ℤ} (hdo : Odd d) :
   all_goals
     obtain ⟨w, rfl⟩ := (Int.odd_natCast n).mp (by simpa using hdo)
     simp only [Int.natAbs_neg, Int.natAbs_natCast]
-    rw [χ₄_two_mul_add_one]
+    rw [ZMod.χ₄_two_mul_add_one]
     push_cast
     rw [← e24_twelve_mul, ← e24_add]
   · rw [ite_eq_right (by omega), e24_congr (Int.modEq_iff_dvd.mpr ⟨0, by ring⟩ : _ ≡ 0 [ZMOD 24])]
@@ -334,17 +330,6 @@ private theorem kroneckerEven_neg {a b c d : ℤ} (hc : c < 0) (hdo : Odd d) :
   linear_combination ((ZMod.χ₄ (d.natAbs : ZMod 4) : ℂ) * jacobiSym c d.natAbs) * hexp
 
 /-! ### The steps on the multiplier side -/
-
-private theorem neg_mul_S_apply_apply_zero (γ : SL(2, ℤ)) (i : Fin 2) :
-    (-(γ * S)) i 0 = -γ i 1 := by
-  rw [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, mul_S_apply_apply_zero]
-
-private theorem neg_mul_S_apply_apply_one (γ : SL(2, ℤ)) (i : Fin 2) :
-    (-(γ * S)) i 1 = γ i 0 := by
-  rw [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, mul_S_apply_apply_one, neg_neg]
-
-private theorem lt_or_gt_of_odd {d : ℤ} (hd : Odd d) : d < 0 ∨ 0 < d :=
-  lt_or_gt_of_ne (by rintro rfl; simp at hd)
 
 private theorem etaMultiplier_eq_e24_three_mul (γ : SL(2, ℤ)) (hd : 0 < γ 1 1) :
     etaMultiplier γ = e24 3 * etaMultiplier (γ * S) := by
@@ -386,7 +371,7 @@ private theorem etaMultiplier_eq_kroneckerOdd_of_inversion (γ : SL(2, ℤ)) (hc
       kroneckerSym (g 1 1) (g 1 0) * e24 (oddExp (g 0 0) (g 0 1) (g 1 0) (g 1 1))) :
     etaMultiplier γ =
       kroneckerSym (γ 1 1) (γ 1 0) * e24 (oddExp (γ 0 0) (γ 0 1) (γ 1 0) (γ 1 1)) := by
-  rcases lt_or_gt_of_odd hdo with hd | hd
+  rcases Int.lt_or_gt_of_odd hdo with hd | hd
   · -- `d < 0`: pass to `-(γ S) = (-b a; -d c)`.
     have key := h (-(γ * S)) (by rw [neg_mul_S_apply_apply_zero, abs_of_neg hd])
       (by rwa [neg_mul_S_apply_apply_zero, odd_neg])
@@ -441,7 +426,7 @@ private theorem etaMultiplier_eq_kroneckerEven_of_pos (γ : SL(2, ℤ)) (hc : 0 
       kroneckerSym (γ 1 0) (γ 1 1) * e24 (evenExp (γ 0 0) (γ 0 1) (γ 1 0) (γ 1 1)) := by
   have hdet := γ.fin_two_mul_sub_mul_eq_one
   have hdo := γ.odd_apply_one_of_even_apply_zero heven
-  rcases lt_or_gt_of_odd hdo with hneg | hpos
+  rcases Int.lt_or_gt_of_odd hdo with hneg | hpos
   · rw [etaMultiplier_eq_e24_neg_three_mul γ hc hneg,
       etaMultiplier_eq_kroneckerOdd (-(γ * S)) (by rw [neg_mul_S_apply_apply_zero]; omega)
         (by rwa [neg_mul_S_apply_apply_zero, odd_neg])]
