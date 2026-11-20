@@ -18,18 +18,18 @@ import TauCeti.Geometry.Manifold.Morse.Submersion
 
 Let `φ` be a diffeomorphism of a manifold `M` and `h : M → ℝ` a function invariant under `φ`,
 `h ∘ φ = h`. Then `[t, x] ↦ h x` is a well-defined function on the smooth mapping torus
-`Y_φ = (ℝ × M) / ((t, x) ∼ (t + 1, φ⁻¹ x))` (`TauCeti.SmoothMappingTorus.lift`). This file shows
-that the closed orbits of the suspension flow through the nondegenerate periodic critical points of
-`h` are Morse–Bott critical submanifolds of the induced function, and that they exhibit it as a
-Morse–Bott function when `h` is a Morse function whose critical points are fixed by `φ`.
+`Y_φ = (ℝ × M) / ((t, x) ∼ (t + 1, φ⁻¹ x))` (`TauCeti.SmoothMappingTorus.liftOfInvariant`). This
+file shows that the closed orbits of the suspension flow through the nondegenerate periodic critical
+points of `h` are Morse–Bott critical submanifolds of the induced function, and that they exhibit it
+as a Morse–Bott function when `h` is a Morse function whose critical points are fixed by `φ`.
 
 On the cover `ℝ × M` the induced function is `h ∘ Prod.snd`, and the quotient map
 `(t, x) ↦ [t, x]` is a local diffeomorphism. So `[t, x]` is a critical point exactly when `x` is a
-critical point of `h` (`TauCeti.SmoothMappingTorus.mk_mem_criticalPoints_lift_iff`), with the same
-Morse index (`TauCeti.SmoothMappingTorus.manifoldMorseIndex_lift_mk`): the time direction
-contributes nothing to the Hessian. The critical set is therefore the union of the suspension
-orbits through the critical points of `h`, which are invariant under `φ`. If `x` is a critical
-point of least period `d` for `φ`, its suspension orbit is the closed orbit
+critical point of `h` (`TauCeti.SmoothMappingTorus.mk_mem_criticalPoints_liftOfInvariant_iff`),
+with the same Morse index (`TauCeti.SmoothMappingTorus.manifoldMorseIndex_liftOfInvariant_mk`): the
+time direction contributes nothing to the Hessian. The critical set is therefore the union of the
+suspension orbits through the critical points of `h`, which are invariant under `φ`. If `x` is a
+critical point of least period `d` for `φ`, its suspension orbit is the closed orbit
 `TauCeti.SmoothMappingTorus.closedOrbit`, a smoothly embedded circle `ℝ / dℤ → Y_φ`
 (`TauCeti.SmoothMappingTorus.closedOrbitEmbedding`). When `x` is nondegenerate, the kernel of the
 critical Hessian at a point of this circle is spanned by the suspension vector field `∂_t`, which
@@ -39,7 +39,7 @@ negative normal space has the rank of the Morse index of `h` at `x`.
 
 When every critical point of the Morse function `h` is fixed by `φ`, these circles, one for each
 critical point, exhibit the induced function as a Morse–Bott function
-(`TauCeti.SmoothMappingTorus.isMorseBottFamily_lift`).
+(`TauCeti.SmoothMappingTorus.isMorseBottFamily_liftOfInvariant`).
 
 An instance is the function induced by `z + ε cos θ` on the oriented mapping torus of `S² × S¹` by a
 pair of reflections (`TauCeti.Geometry.Manifold.Morse.Bott.Examples.SphereCircle`), whose four
@@ -47,14 +47,15 @@ critical circles have Morse indices `3`, `2`, `1` and `0`.
 
 ## Main results
 
-* `TauCeti.SmoothMappingTorus.mk_mem_criticalPoints_lift_iff`: the critical points of the induced
-  function lie over the critical points of `h`.
-* `TauCeti.SmoothMappingTorus.manifoldMorseIndex_lift_mk`: its Morse index at `[t, x]` is that
-  of `h` at `x`.
+* `TauCeti.SmoothMappingTorus.mk_mem_criticalPoints_liftOfInvariant_iff`: the critical points of the
+  induced function lie over the critical points of `h`.
+* `TauCeti.SmoothMappingTorus.manifoldMorseIndex_liftOfInvariant_mk`: its Morse index at `[t, x]` is
+  that of `h` at `x`.
 * `TauCeti.SmoothMappingTorus.isNondegenerateCriticalSubmanifold_closedOrbitEmbedding`: the closed
   orbit through a nondegenerate periodic critical point is a Morse–Bott critical submanifold.
-* `TauCeti.SmoothMappingTorus.isMorseBottFamily_lift`: if `h` is Morse and `φ` fixes its critical
-  points, the closed orbits through them exhibit the induced function as a Morse–Bott function.
+* `TauCeti.SmoothMappingTorus.isMorseBottFamily_liftOfInvariant`: if `h` is Morse and `φ` fixes its
+  critical points, the closed orbits through them exhibit the induced function as a Morse–Bott
+  function.
 
 ## References
 
@@ -86,23 +87,24 @@ variable {n : ℕ∞ω} (φ : M ≃ₘ^n⟮I, I⟯ M) {h : M → ℝ} (hh : ∀ 
 /-- **The critical points of the induced function** lie over the critical points of `h`: for
 `1 ≤ n`, the point `[t, x]` is a critical point of `[t, x] ↦ h x` exactly when `x` is a critical
 point of `h`. -/
-theorem mk_mem_criticalPoints_lift_iff (hn : 1 ≤ n) (t : ℝ) (x : M) :
-    mk φ t x ∈ criticalPoints (𝓘(ℝ).prod I) (lift φ h hh) ↔ x ∈ criticalPoints I h := by
+theorem mk_mem_criticalPoints_liftOfInvariant_iff (hn : 1 ≤ n) (t : ℝ) (x : M) :
+    mk φ t x ∈ criticalPoints (𝓘(ℝ).prod I) (liftOfInvariant φ h hh) ↔ x ∈ criticalPoints I h := by
   rw [← uncurry_apply_pair (mk φ) t x,
     ← (isLocalDiffeomorph_uncurry_mk φ (t, x)).mem_criticalPoints_comp_iff hn,
-    lift_comp_uncurry_mk, mem_criticalPoints_comp_snd_iff]
+    liftOfInvariant_comp_uncurry_mk, mem_criticalPoints_comp_snd_iff]
 
 /-- **The Morse index of the induced function** at `[t, x]` is the Morse index of `h` at a critical
 point `x` at which `h` is `C²`, for `2 ≤ n`: the time direction contributes nothing to the
 Hessian. -/
-theorem manifoldMorseIndex_lift_mk [I.Boundaryless] (hn : 2 ≤ n) {t : ℝ} {x : M}
+theorem manifoldMorseIndex_liftOfInvariant_mk [I.Boundaryless] (hn : 2 ≤ n) {t : ℝ} {x : M}
     (hs : ContMDiffAt I 𝓘(ℝ) 2 h x) (hx : x ∈ criticalPoints I h) :
-    manifoldMorseIndex (𝓘(ℝ).prod I) (lift φ h hh) (mk φ t x) = manifoldMorseIndex I h x := by
+    manifoldMorseIndex (𝓘(ℝ).prod I) (liftOfInvariant φ h hh) (mk φ t x) =
+      manifoldMorseIndex I h x := by
   rw [← uncurry_apply_pair (mk φ) t x,
     ← (isLocalDiffeomorph_uncurry_mk φ (t, x)).manifoldMorseIndex_comp hn
-      (contMDiffAt_lift_mk φ hn hh hs)
-      ((mk_mem_criticalPoints_lift_iff φ hh (one_le_two.trans hn) t x).2 hx),
-    lift_comp_uncurry_mk, manifoldMorseIndex_comp_snd]
+      (contMDiffAt_liftOfInvariant_mk φ hn hh hs)
+      ((mk_mem_criticalPoints_liftOfInvariant_iff φ hh (one_le_two.trans hn) t x).2 hx),
+    liftOfInvariant_comp_uncurry_mk, manifoldMorseIndex_comp_snd]
 
 end Critical
 
@@ -122,11 +124,12 @@ Then the closed orbit `t ↦ [t, x]` is a Morse–Bott critical submanifold of t
 vector field `∂_t`. -/
 theorem isNondegenerateCriticalSubmanifold_closedOrbitEmbedding (hx : IsPeriodicPt φ d x)
     (hd : minimalPeriod φ x = d) (hcrit : IsManifoldNondegenerateCriticalPoint I h x) :
-    (closedOrbitEmbedding hx (by simp) hd).IsNondegenerateCriticalSubmanifold (lift φ h hh) := by
-  have hl (t : ℝ) : ContMDiffAt (𝓘(ℝ).prod I) 𝓘(ℝ) 2 (lift φ h hh) (mk φ t x) :=
-    contMDiffAt_lift_mk φ (by simp) hh hcrit.contMDiffAt
-  have hcrit' (t : ℝ) : mk φ t x ∈ criticalPoints (𝓘(ℝ).prod I) (lift φ h hh) :=
-    (mk_mem_criticalPoints_lift_iff φ hh (by simp) t x).2 hcrit.mem_criticalPoints
+    (closedOrbitEmbedding hx (by simp) hd).IsNondegenerateCriticalSubmanifold
+      (liftOfInvariant φ h hh) := by
+  have hl (t : ℝ) : ContMDiffAt (𝓘(ℝ).prod I) 𝓘(ℝ) 2 (liftOfInvariant φ h hh) (mk φ t x) :=
+    contMDiffAt_liftOfInvariant_mk φ (by simp) hh hcrit.contMDiffAt
+  have hcrit' (t : ℝ) : mk φ t x ∈ criticalPoints (𝓘(ℝ).prod I) (liftOfInvariant φ h hh) :=
+    (mk_mem_criticalPoints_liftOfInvariant_iff φ hh (by simp) t x).2 hcrit.mem_criticalPoints
   refine ⟨⟨fun s ↦ ?_, fun s ↦ ?_⟩, fun s v hv ↦ ?_⟩
   · induction s using QuotientAddGroup.induction_on with | H t => ?_
     rw [coe_closedOrbitEmbedding, closedOrbit_coe]
@@ -144,7 +147,7 @@ theorem isNondegenerateCriticalSubmanifold_closedOrbitEmbedding (hx : IsPeriodic
   -- Lift `v` to a tangent vector `u` of `ℝ × M` at `(t, x)`.
   obtain ⟨u, rfl⟩ := isRegularPoint_iff.1 hreg v
   have hu : u ∈ (criticalHessian (𝓘(ℝ).prod I) (h ∘ Prod.snd) (t, x)).ker := by
-    rw [← lift_comp_uncurry_mk φ hh, hreg.ker_criticalHessian_comp (hl t)
+    rw [← liftOfInvariant_comp_uncurry_mk φ hh, hreg.ker_criticalHessian_comp (hl t)
       (hq.contMDiffAt.of_le (by simp)) (hcrit' t)]
     exact hv
   -- The projection to `M` is onto, and the Hessian of `h` at `x` is injective, so `u` has no
@@ -178,20 +181,20 @@ theorem isNondegenerateCriticalSubmanifold_closedOrbitEmbedding (hx : IsPeriodic
 function all of whose critical points are fixed by `φ`. Then the closed orbits through the critical
 points of `h`, embedded circles `ℝ / ℤ → Y_φ`, exhibit the induced function `[t, x] ↦ h x` on the
 mapping torus as a Morse–Bott function. -/
-theorem isMorseBottFamily_lift (hm : IsMorse I h)
+theorem isMorseBottFamily_liftOfInvariant (hm : IsMorse I h)
     (hfix : ∀ x ∈ criticalPoints I h, IsFixedPt φ x) :
     IsMorseBottFamily (fun x : criticalPoints I h ↦ closedOrbitEmbedding
       ((hfix x x.2).isPeriodicPt 1) (by simp) (minimalPeriod_eq_one_iff_isFixedPt.2 (hfix x x.2)))
-      (lift φ h hh) := by
-  refine .of_pairwise_disjoint (by simp) (contMDiff_lift φ le_rfl hh hm.contMDiff) (fun x ↦
-    isNondegenerateCriticalSubmanifold_closedOrbitEmbedding φ hh _ _
+      (liftOfInvariant φ h hh) := by
+  refine .of_pairwise_disjoint (by simp) (contMDiff_liftOfInvariant φ le_rfl hh hm.contMDiff)
+    (fun x ↦ isNondegenerateCriticalSubmanifold_closedOrbitEmbedding φ hh _ _
       (hm.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints x.2))
     (fun x y hxy ↦ ?_) fun z hz ↦ ?_
   · simp only [onFun, coe_closedOrbitEmbedding]
     refine (disjoint_range_closedOrbit_iff _ _).2 fun ⟨j, hj⟩ ↦ hxy (Subtype.ext ?_)
     rw [← hj, ((hfix x x.2).iterate j).eq]
   · obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
-    have hx := (mk_mem_criticalPoints_lift_iff φ hh (by simp) t x).1 hz
+    have hx := (mk_mem_criticalPoints_liftOfInvariant_iff φ hh (by simp) t x).1 hz
     exact mem_iUnion.2 ⟨⟨x, hx⟩, t, by simp⟩
 
 end ClosedOrbit

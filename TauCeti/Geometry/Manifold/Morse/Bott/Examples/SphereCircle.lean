@@ -106,9 +106,7 @@ theorem sphereCircleHeight_sphereCircleReflection (huv : ⟪v, (u : E)⟫_ℝ = 
   rw [sphereCircleHeight_apply, sphereCircleHeight_apply, coe_sphereCircleReflection_apply_fst,
     coe_sphereCircleReflection_apply_snd, Complex.conj_re]
   congr 1
-  have hu : (ℝ ∙ v)ᗮ.reflection (u : E) = u := Submodule.reflection_mem_subspace_eq_self
-    (Submodule.mem_orthogonal_singleton_iff_inner_right.2 huv)
-  conv_lhs => rw [← hu]
+  conv_lhs => rw [← reflection_orthogonal_singleton_eq_self_of_inner_eq_zero huv]
   rw [LinearIsometryEquiv.inner_map_map]
 
 /-- A space of dimension `2 + 1` is finite-dimensional, so its unit sphere is compact. -/
@@ -151,8 +149,7 @@ theorem isFixedPt_sphereCircleReflection_of_mem_criticalPoints (huv : ⟪v, (u :
     (hx : x ∈ criticalPoints ((𝓡 2).prod (𝓡 1)) (sphereCircleHeight u ε)) :
     IsFixedPt (sphereCircleReflection v) x := by
   obtain ⟨hp, hw⟩ := (mem_criticalPoints_sphereCircleHeight_iff u hε x).1 hx
-  have hu : (ℝ ∙ v)ᗮ.reflection (u : E) = u := Submodule.reflection_mem_subspace_eq_self
-    (Submodule.mem_orthogonal_singleton_iff_inner_right.2 huv)
+  have hu := reflection_orthogonal_singleton_eq_self_of_inner_eq_zero huv
   refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)
   · rw [coe_sphereCircleReflection_apply_fst]
     rcases hp with hp | hp <;> rw [hp]
@@ -182,7 +179,7 @@ private theorem manifoldMorseIndex_sphereCircleHeight (u : sphere (0 : E) 1) {ε
 the second and `u` the third coordinate vector it is `[t, p, θ] ↦ z(p) + ε cos θ`. -/
 def sphereCircleTorusHeight (huv : ⟪v, (u : E)⟫_ℝ = 0) (ε : ℝ) :
     SmoothMappingTorus (sphereCircleReflection v) → ℝ :=
-  SmoothMappingTorus.lift _ (sphereCircleHeight u ε)
+  SmoothMappingTorus.liftOfInvariant _ (sphereCircleHeight u ε)
     (sphereCircleHeight_sphereCircleReflection huv ε)
 
 /-- The function `TauCeti.sphereCircleTorusHeight` takes the value `⟪p, u⟫ + ε Re w` at
@@ -191,7 +188,7 @@ def sphereCircleTorusHeight (huv : ⟪v, (u : E)⟫_ℝ = 0) (ε : ℝ) :
 theorem sphereCircleTorusHeight_mk (huv : ⟪v, (u : E)⟫_ℝ = 0) (ε t : ℝ)
     (x : sphere (0 : E) 1 × sphere (0 : ℂ) 1) :
     sphereCircleTorusHeight huv ε (SmoothMappingTorus.mk _ t x) = sphereCircleHeight u ε x :=
-  SmoothMappingTorus.lift_mk _ _ t x
+  SmoothMappingTorus.liftOfInvariant_mk _ _ t x
 
 /-- **The function on the mapping torus is Morse–Bott** for `ε ≠ 0`: the closed orbits
 `t ↦ [t, ±u, ±1]` of the suspension flow through the four critical points of
@@ -204,7 +201,7 @@ theorem isMorseBottFamily_sphereCircleTorusHeight (huv : ⟪v, (u : E)⟫_ℝ = 
         (by simp) (minimalPeriod_eq_one_iff_isFixedPt.2
           (isFixedPt_sphereCircleReflection_of_mem_criticalPoints huv hε x.2)))
       (sphereCircleTorusHeight huv ε) :=
-  SmoothMappingTorus.isMorseBottFamily_lift _ _ (isMorse_sphereCircleHeight u hε)
+  SmoothMappingTorus.isMorseBottFamily_liftOfInvariant _ _ (isMorse_sphereCircleHeight u hε)
     fun _ hx ↦ isFixedPt_sphereCircleReflection_of_mem_criticalPoints huv hε hx
 
 /-- **The critical points of the function on the mapping torus** are the points `[t, ±u, ±1]` of
@@ -214,7 +211,8 @@ theorem mk_mem_criticalPoints_sphereCircleTorusHeight_iff (huv : ⟪v, (u : E)�
     SmoothMappingTorus.mk _ t x ∈
         criticalPoints (𝓘(ℝ).prod ((𝓡 2).prod (𝓡 1))) (sphereCircleTorusHeight huv ε) ↔
       (x.1 = u ∨ x.1 = -u) ∧ (x.2 = 1 ∨ x.2 = -1) := by
-  rw [sphereCircleTorusHeight, SmoothMappingTorus.mk_mem_criticalPoints_lift_iff _ _ (by simp),
+  rw [sphereCircleTorusHeight,
+    SmoothMappingTorus.mk_mem_criticalPoints_liftOfInvariant_iff _ _ (by simp),
     mem_criticalPoints_sphereCircleHeight_iff u hε]
 
 /-- The Morse index of the function on the mapping torus at `[t, p, w]` is the sum of the indices
@@ -230,7 +228,8 @@ private theorem manifoldMorseIndex_sphereCircleTorusHeight (huv : ⟪v, (u : E)�
   have hw' : w ∈ criticalPoints (𝓡 1) (sphereHeight (1 : sphere (0 : ℂ) 1)) := by
     rw [mem_criticalPoints, mvfderiv_sphereHeight_eq_zero_iff]
     exact hw
-  rw [sphereCircleTorusHeight, SmoothMappingTorus.manifoldMorseIndex_lift_mk _ _ (by simp)
+  rw [sphereCircleTorusHeight,
+    SmoothMappingTorus.manifoldMorseIndex_liftOfInvariant_mk _ _ (by simp)
     ((isMorse_sphereCircleHeight u hε.ne').contMDiff.of_le (by simp) _) hcrit,
     manifoldMorseIndex_sphereCircleHeight u hε hw']
 
