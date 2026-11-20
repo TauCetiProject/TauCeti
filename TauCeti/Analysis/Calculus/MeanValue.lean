@@ -61,6 +61,13 @@ For a function on the real line with derivative of norm at most `D r ^ (β - 1)`
 where `0 ≤ β ≤ 1`, the increments satisfy `‖u b - u a‖ ≤ 2 D |b - a| a ^ (β - 1)` for `a > 0` and
 `a / 2 ≤ b` (`TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt`).
 
+## Integrating a little-o derivative bound
+
+If `f` is differentiable near `a` and `Df(x) = o(‖x - a‖ ^ r)` as `x → a`, where `r ≥ 0`, then
+`f(x) - f(a) = o(‖x - a‖ ^ (r + 1))`, by the mean value inequality on balls about `a`
+(`TauCeti.sub_isLittleO_norm_rpow_add_one_of_fderiv`). This is the little-o counterpart of
+Mathlib's `sub_isBigO_norm_rpow_add_one_of_fderiv`.
+
 ## Space-time functions vanishing outside a time interval
 
 A function of time and space with derivative bounded by `C` that vanishes outside the time
@@ -470,6 +477,33 @@ theorem norm_le_mul_sub_of_forall_notMem_Ioo_eq_zero {E : Type*} [NormedAddCommG
     exact this.trans (mul_le_mul_of_nonneg_left hn hC0)
   · rw [hzero q hq, norm_zero]
     exact mul_nonneg hC0 (sub_nonneg.2 hab)
+
+open Topology in
+/-- Let `f : E → F` be differentiable in a neighbourhood of `a`. If `Df(x) = o(‖x - a‖ ^ r)` as
+`x → a`, where `r ≥ 0`, then `f(x) - f(a) = o(‖x - a‖ ^ (r + 1))`. This is the little-o counterpart
+of Mathlib's `sub_isBigO_norm_rpow_add_one_of_fderiv`. -/
+theorem sub_isLittleO_norm_rpow_add_one_of_fderiv {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} {a : E} {r : ℝ}
+    (hr : 0 ≤ r) (hdf : ∀ᶠ x in 𝓝 a, DifferentiableAt ℝ f x)
+    (hderiv : fderiv ℝ f =o[𝓝 a] (‖· - a‖ ^ r)) :
+    (f · - f a) =o[𝓝 a] (‖· - a‖ ^ (r + 1)) := by
+  -- the mean value inequality on balls about `a`, as for `sub_isBigO_norm_rpow_add_one_of_fderiv`
+  refine Asymptotics.IsLittleO.of_bound fun C hC ↦ ?_
+  obtain ⟨ε, hε₀, hε⟩ := Metric.eventually_nhds_iff_ball.mp (hdf.and (hderiv.bound hC))
+  rw [Metric.eventually_nhds_iff_ball]
+  refine ⟨ε, hε₀, fun y hy ↦ ?_⟩
+  have hsub : Metric.closedBall a ‖y - a‖ ⊆ Metric.ball a ε :=
+    Metric.closedBall_subset_ball (mem_ball_iff_norm.mp hy)
+  have h := (convex_closedBall a ‖y - a‖).norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ)
+    (C := C * ‖y - a‖ ^ r) (fun z hz ↦ (hε z (hsub hz)).1) (fun z hz ↦ ?_)
+    (Metric.mem_closedBall_self (norm_nonneg _)) (mem_closedBall_iff_norm.mpr le_rfl)
+  · rw [Real.norm_of_nonneg (by positivity), Real.rpow_add_one' (by positivity) (by positivity),
+      ← mul_assoc]
+    exact h
+  · refine (hε z (hsub hz)).2.trans ?_
+    rw [Real.norm_of_nonneg (by positivity)]
+    gcongr
+    exact mem_closedBall_iff_norm.mp hz
 
 end TauCeti
 
