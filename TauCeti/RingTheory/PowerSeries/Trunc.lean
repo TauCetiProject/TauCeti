@@ -152,6 +152,13 @@ theorem coeff_coe_mul_eq_sum (p : Polynomial R) (g : R⟦X⟧) {N : ℕ} (hN : p
     map_sum]
   simp [mul_assoc, coeff_C_mul]
 
+/-- The constant coefficient of an integer power of a unit `u` of `R⟦X⟧` is the same power of
+the constant coefficient of `u`, as a unit of `R`. -/
+theorem constantCoeff_val_zpow (u : R⟦X⟧ˣ) (k : ℤ) :
+    constantCoeff (↑(u ^ k) : R⟦X⟧) =
+      (↑(Units.map ((constantCoeff : R⟦X⟧ →+* R) : R⟦X⟧ →* R) u ^ k) : R) := by
+  rw [← map_zpow, Units.coe_map, MonoidHom.coe_ofClass]
+
 end Semiring
 
 section Ring
@@ -213,13 +220,6 @@ theorem eq_of_forall_X_pow_dvd_sub {a b : R⟦X⟧} (h : ∀ n : ℕ, X ^ (n + 1
   ext n
   rw [← sub_eq_zero, ← map_sub]
   exact X_pow_dvd_iff.1 (h n) n (Nat.lt_succ_self n)
-
-/-- The constant coefficient of an integer power of a unit `u` of `R⟦X⟧` is the same power of
-the constant coefficient of `u`, as a unit of `R`. -/
-theorem constantCoeff_val_zpow (u : R⟦X⟧ˣ) (k : ℤ) :
-    constantCoeff (↑(u ^ k) : R⟦X⟧) =
-      (↑(Units.map ((constantCoeff : R⟦X⟧ →+* R) : R⟦X⟧ →* R) u ^ k) : R) := by
-  rw [← map_zpow, Units.coe_map, MonoidHom.coe_ofClass]
 
 end Ring
 

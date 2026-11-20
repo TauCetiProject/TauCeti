@@ -82,6 +82,11 @@ section CommRing
 
 variable {R : Type*} [CommRing R]
 
+/-- The inverse of the unit `(1 - X)⁻¹ ^ d`, as a power series, is `(1 - X) ^ d`. -/
+@[simp]
+theorem val_inv_invOneSubPow (d : ℕ) : (↑(invOneSubPow R d)⁻¹ : R⟦X⟧) = (1 - X) ^ d := by
+  rw [← Units.inv_eq_val_inv, invOneSubPow_inv_eq_one_sub_pow]
+
 /-- The integer powers of `(1 - X)⁻¹` have constant coefficient `1`. -/
 @[simp]
 theorem constantCoeff_invOneSubPow_zpow (k : ℤ) :
@@ -100,9 +105,8 @@ theorem coeff_one_invOneSubPow_zpow (k : ℤ) :
     rw [zpow_add_one, Units.val_mul, coeff_one_mul, ih, constantCoeff_invOneSubPow_zpow]
     simp [invOneSubPow_val_succ_eq_mk_add_choose]
   | pred k ih =>
-    have h1 : (↑(invOneSubPow R 1)⁻¹ : R⟦X⟧) = 1 - X := by
-      rw [← Units.inv_eq_val_inv, invOneSubPow_inv_eq_one_sub_pow, pow_one]
-    rw [zpow_sub_one, Units.val_mul, coeff_one_mul, ih, h1, constantCoeff_invOneSubPow_zpow]
+    rw [zpow_sub_one, Units.val_mul, coeff_one_mul, ih, val_inv_invOneSubPow, pow_one,
+      constantCoeff_invOneSubPow_zpow]
     simp [sub_eq_add_neg]
 
 /-- Under `X ↦ -X`, the integer power `(1 - X) ^ (-k)` becomes the binomial series
@@ -119,16 +123,13 @@ theorem rescale_neg_one_invOneSubPow_zpow (k : ℤ) :
     have h1 : rescale (-1 : R) (↑(invOneSubPow R 1)⁻¹ : R⟦X⟧) = binomialSeries R (1 : ℤ) := by
       have h2 := binomialSeries_nat (R := ℤ) (A := R) 1
       rw [Nat.cast_one, pow_one] at h2
-      rw [← Units.inv_eq_val_inv, invOneSubPow_inv_eq_one_sub_pow, pow_one, map_sub, map_one,
-        rescale_X, h2, map_neg, map_one, neg_one_mul, sub_neg_eq_add]
+      simp [rescale_X, h2, sub_eq_add_neg]
     rw [zpow_sub_one, Units.val_mul, map_mul, ih, h1, neg_sub, sub_eq_neg_add, binomialSeries_add]
 
 /-- The integral Euler factor `(1 - X ^ r) ^ (-e)` at `e = -1` is `1 - X ^ r`. -/
-@[simp]
 theorem expand_val_inv_invOneSubPow (r : ℕ) (hr : r ≠ 0) :
     expand r hr (↑(invOneSubPow R 1)⁻¹ : R⟦X⟧) = 1 - X ^ r := by
-  rw [← Units.inv_eq_val_inv, invOneSubPow_inv_eq_one_sub_pow, pow_one, map_sub, map_one,
-    expand_X]
+  rw [val_inv_invOneSubPow, pow_one, map_sub, map_one, expand_X]
 
 /-- The integral Euler factor `(1 - X ^ r) ^ (-e)` at a nonpositive exponent `e = -k` is the
 polynomial `(1 - X ^ r) ^ k`. -/
@@ -180,6 +181,12 @@ private theorem val_invOneSubXPow (r : ℕ+) :
   congr 2
   funext n
   simp
+
+/-- Modulo `X ^ (k + 2)`, the factor of index `k + 1` with exponent `j` is `1 + j X ^ (k + 1)`. -/
+private theorem X_pow_dvd_val_invOneSubXPow_zpow_sub (k : ℕ) (j : ℤ) :
+    X ^ (k + 1 + 1) ∣ (↑(invOneSubXPow k.succPNat ^ j) : ℤ⟦X⟧) - 1 - C j * X ^ (k + 1) := by
+  have := X_pow_dvd_expand_invOneSubPow_zpow_sub (R := ℤ) _ k.succPNat.ne_zero j
+  rwa [expand_invOneSubPow_zpow, Nat.succPNat_coe, Nat.succ_eq_add_one, Int.cast_id] at this
 
 /-- `X` times the logarithmic derivative of `(1 - X ^ r)⁻¹` is `r X ^ r (1 - X ^ r)⁻¹`. -/
 private theorem toAdd_xLogDeriv_invOneSubXPow (r : ℕ+) :
@@ -330,10 +337,8 @@ private theorem X_pow_dvd_eulerRemainder_sub_one {f : ℤ⟦X⟧} (hf : constant
       · simp [a, coeff_one]
     have hw : X ^ (n + 1 + 1) ∣
         (↑(invOneSubXPow n.succPNat ^ (-a)) : ℤ⟦X⟧) - (1 - C a * X ^ (n + 1)) := by
-      have := X_pow_dvd_expand_invOneSubPow_zpow_sub (R := ℤ) _ n.succPNat.ne_zero (-a)
-      rw [expand_invOneSubPow_zpow, Nat.succPNat_coe, Nat.succ_eq_add_one, Int.cast_id,
-        map_neg] at this
-      convert this using 1
+      convert X_pow_dvd_val_invOneSubXPow_zpow_sub n (-a) using 1
+      rw [map_neg]
       ring
     have hsq : X ^ (n + 1 + 1) ∣ (1 + C a * X ^ (n + 1)) * (1 - C a * X ^ (n + 1)) - 1 := by
       rw [show (1 + C a * X ^ (n + 1)) * (1 - C a * X ^ (n + 1)) - 1 =
@@ -398,16 +403,12 @@ theorem eq_of_hasProd_expand_invOneSubPow_zpow_of_X_pow_dvd_sub {e e' : ℕ → 
     (h' (k + 1))) (h (k + 1))
   rw [val_eulerUnit_succ, val_eulerUnit_succ, hU] at hdiv
   set Q : ℤ⟦X⟧ := ↑(eulerUnit e' k)
-  -- Modulo `X ^ (k + 2)`, the factor of index `k + 1` with exponent `j` is `1 + j X ^ (k + 1)`.
-  have hW (j : ℤ) : X ^ (k + 1 + 1) ∣
-      (↑(invOneSubXPow k.succPNat ^ j) : ℤ⟦X⟧) - 1 - C j * X ^ (k + 1) := by
-    have := X_pow_dvd_expand_invOneSubPow_zpow_sub (R := ℤ) _ k.succPNat.ne_zero j
-    rwa [expand_invOneSubPow_zpow, Nat.succPNat_coe, Nat.succ_eq_add_one, Int.cast_id] at this
   have hQ : X ∣ Q - 1 := by
     rw [X_dvd_iff, map_sub, constantCoeff_val_eulerUnit, map_one, sub_self]
   -- So `Q (1 + e X ^ (k + 1)) = Q (1 + e' X ^ (k + 1))` mod `X ^ (k + 2)`, and `Q = 1` mod `X`.
   have hdvd : X ^ (k + 1 + 1) ∣ C (e (k + 1)) * X ^ (k + 1) - C (e' (k + 1)) * X ^ (k + 1) := by
-    have hQW := (dvd_sub (hW (e (k + 1))) (hW (e' (k + 1)))).mul_left Q
+    have hQW := (dvd_sub (X_pow_dvd_val_invOneSubXPow_zpow_sub k (e (k + 1)))
+      (X_pow_dvd_val_invOneSubXPow_zpow_sub k (e' (k + 1)))).mul_left Q
     have hQ1 : X ^ (k + 1 + 1) ∣
         (Q - 1) * (C (e (k + 1)) * X ^ (k + 1) - C (e' (k + 1)) * X ^ (k + 1)) := by
       rw [pow_succ']
