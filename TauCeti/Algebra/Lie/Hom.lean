@@ -10,9 +10,10 @@ public import Mathlib.Algebra.Lie.Basic
 /-!
 # Intertwining Lie algebra homomorphisms
 
-Basic constructors, simp, and intertwining lemmas for `LieHom` and `LieEquiv`: construction of
-`LieEquiv` from mutually inverse `LieHom`s (`LieEquiv.ofLieHoms`), composition of intertwining
-homomorphisms, and intertwining of inverse equivalences.
+Basic constructors, simp, and intertwining lemmas for `LieHom`, `LieEquiv`, and `LinearEquiv`:
+construction of `LieEquiv` from mutually inverse `LieHom`s (`LieEquiv.ofLieHoms`), composition of
+intertwining homomorphisms, and intertwining of inverse equivalences on Lie algebras and bracket
+actions (`LieEquiv.symm_intertwines`, `LinearEquiv.symm_lie_eq_of_lie_eq`).
 -/
 
 public section
@@ -71,3 +72,18 @@ theorem trans_intertwines (e₁ : L ≃ₗ⁅R⁆ M) (e₂ : M ≃ₗ⁅R⁆ N)
   LieHom.comp_intertwines e₁.toLieHom e₂.toLieHom h₁ h₂
 
 end LieEquiv
+
+namespace LinearEquiv
+
+/-- If a linear equivalence `e` intertwines two bracket actions along a Lie equivalence `φ`, then
+`e.symm` intertwines them along `φ.symm`. -/
+theorem symm_lie_eq_of_lie_eq {L' M₀ M₀' : Type*}
+    [LieRing L'] [LieAlgebra R L']
+    [AddCommMonoid M₀] [Module R M₀] [Bracket L M₀]
+    [AddCommMonoid M₀'] [Module R M₀'] [Bracket L' M₀']
+    (e : M₀ ≃ₗ[R] M₀') (φ : L' ≃ₗ⁅R⁆ L)
+    (he : ∀ (x : L') (m : M₀), e ⁅φ x, m⁆ = ⁅x, e m⁆) (y : L) (m' : M₀') :
+    e.symm ⁅φ.symm y, m'⁆ = ⁅y, e.symm m'⁆ :=
+  e.injective <| by simpa using (he (φ.symm y) (e.symm m')).symm
+
+end LinearEquiv

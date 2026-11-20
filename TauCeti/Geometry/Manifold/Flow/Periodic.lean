@@ -82,9 +82,9 @@ isolated, fixed points is finite.
   preserves the domain and the flow.
 * `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: for `T ≠ 0`, the trajectory of a fixed point
   of the return map is defined for all time.
-* `TauCeti.eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt`: a periodic
-  solution through an isolated fixed point of the return map is isolated among the periodic
-  solutions.
+* `TauCeti.eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt`,
+  `TauCeti.IsNondegenerateFixedPt.eventually_forall_mem_periodicSolutions_eq`: periodic solutions
+  through isolated (in particular nondegenerate) fixed points of the return map are isolated.
 * `TauCeti.timeDependentFlowOf_add_period` and `TauCeti.timeDependentFlowOf_add_period_eq_iff`:
   for a complete suspension, the flow over one more period is the return map followed by the flow,
   so points at times `t + T` and `t` match exactly across the inverse return map.
@@ -365,6 +365,18 @@ theorem eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt {
     exact hp (hδp ▸ hne) (hδp ▸ (hflow hδ (s + T)).trans (hδ.2 s))
   funext t
   rw [← hflow hδ t, ← hflow hγ t, hδγ]
+
+omit [CompleteSpace E] in
+/-- **Periodic solutions through nondegenerate fixed points are isolated.** If `γ` is a
+`T`-periodic solution of `X` and `γ s` is a nondegenerate fixed point of the return map
+`timeDependentFlowOf X s (s + T)`, then for `y` close enough to `γ s` the only `T`-periodic
+solution passing through `y` at time `s` is `γ` itself. -/
+theorem IsNondegenerateFixedPt.eventually_forall_mem_periodicSolutions_eq [FiniteDimensional ℝ E]
+    {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T)
+    (hnd : IsNondegenerateFixedPt I (timeDependentFlowOf X s (s + T)) (γ s)) :
+    ∀ᶠ y in 𝓝 (γ s), ∀ γ' ∈ periodicSolutions X T, γ' s = y → γ' = γ :=
+  eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt hX hγ
+    hnd.eventually_not_isFixedPt
 
 section Complete
 

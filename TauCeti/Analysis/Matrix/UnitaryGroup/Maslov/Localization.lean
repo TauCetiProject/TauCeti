@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Matrix.HermitianSignature.Basic
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.Matrix.OfReal
+import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
 
 /-!
 # The localization axiom for the Maslov index of paths
@@ -50,6 +51,9 @@ The general case reduces to it in three steps.
 
 * `Matrix.UnitaryGroup.souriau_eq_cayley_of_coe_eq_mul`: the frames `(1 + i A) M` of the graph
   of `A` have Souriau map `cayley A`.
+* `Matrix.UnitaryGroup.exists_path_realImage_eq_and_souriau_eq_cayley`: a continuous path of real
+  symmetric matrices has a continuous path of unitary frames of their graphs whose Souriau maps
+  are the Cayley transforms, as the localization axiom requires.
 * `Matrix.UnitaryGroup.maslovIndex_eq_signature_sub_of_souriau_eq_cayley`: the localization
   axiom.
 
@@ -63,12 +67,29 @@ The general case reduces to it in three steps.
 
 public section
 
-open Complex
+open Complex Matrix.GeneralLinearGroup
 open scoped unitInterval
 
 namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The frame `1 + i A` of the graph of a real symmetric matrix `A` is Lagrangian: the imaginary
+part of its Gram matrix vanishes. -/
+theorem IsHermitian.map_im_conjTranspose_mul_self_one_add_I_smul {A : Matrix n n ℝ}
+    (hA : A.IsHermitian) :
+    ((1 + Complex.I • A.map ((↑) : ℝ → ℂ))ᴴ * (1 + Complex.I • A.map ((↑) : ℝ → ℂ))).map
+      Complex.im = 0 := by
+  have hAc := hA.map_ofReal
+  have h : (1 + Complex.I • A.map ((↑) : ℝ → ℂ))ᴴ * (1 + Complex.I • A.map ((↑) : ℝ → ℂ)) =
+      1 + A.map (↑) * A.map (↑) := by
+    rw [conjTranspose_add, conjTranspose_one, conjTranspose_smul, hAc.eq, star_def, conj_I,
+      neg_smul, ← sub_eq_add_neg, Matrix.sub_mul, Matrix.mul_add, Matrix.mul_add, Matrix.one_mul,
+      Matrix.one_mul, Matrix.mul_one, smul_mul_smul, I_mul_I, neg_one_smul]
+    abel
+  rw [h]
+  ext i j
+  simp [Matrix.mul_apply, Matrix.one_apply, apply_ite]
 
 namespace UnitaryGroup
 
@@ -111,6 +132,38 @@ theorem souriau_eq_cayley_of_coe_eq_mul {U : unitaryGroup n ℂ} {A M : Matrix n
     _ = X * (X⁻¹ * Y⁻¹) * X := by rw [hNN, Matrix.mul_inv_rev]
     _ = Y⁻¹ * X := by rw [mul_nonsing_inv_cancel_left _ _ hX]
     _ = cayley (A.map (↑)) := (cayley_eq_inv_mul _).symm
+
+open scoped Matrix.Norms.L2Operator in
+/-- **Frames of a path of graphs.** A continuous path `t ↦ A t` of real symmetric matrices has a
+continuous path of unitary frames of the graphs `{x + i A t x}`, whose Souriau maps are the Cayley
+transforms of `A t`. The frames are the real orthonormalizations of `1 + i A t`. This supplies the
+path of frames in `Matrix.UnitaryGroup.maslovIndex_eq_signature_sub_of_souriau_eq_cayley`. -/
+theorem exists_path_realImage_eq_and_souriau_eq_cayley
+    {A : I → Matrix n n ℝ} (hAc : Continuous A) (hA : ∀ t, (A t).IsHermitian) :
+    ∃ (U V : unitaryGroup n ℂ) (δ : Path U V), ∀ t,
+      (δ t : Matrix n n ℂ).realImage = (1 + Complex.I • (A t).map ((↑) : ℝ → ℂ)).realImage ∧
+      (souriau (δ t) : Matrix n n ℂ) = cayley ((A t).map ((↑) : ℝ → ℂ)) := by
+  have hdet (t : I) : IsUnit (1 + Complex.I • (A t).map ((↑) : ℝ → ℂ)) :=
+    (isUnit_iff_isUnit_det _).2 (hA t).map_ofReal.isUnit_det_one_add_I_smul
+  let F : I → GL n ℂ := fun t ↦ (hdet t).unit
+  have hF (t : I) : (F t : Matrix n n ℂ) = 1 + Complex.I • (A t).map ((↑) : ℝ → ℂ) :=
+    IsUnit.unit_spec _
+  have hG : Continuous fun t ↦ (1 + Complex.I • (A t).map ((↑) : ℝ → ℂ)) :=
+    continuous_const.add ((hAc.matrix_map continuous_ofReal).const_smul Complex.I)
+  have hFc : Continuous F :=
+    Units.isOpenEmbedding_val.continuous_iff.2 (hG.congr fun t ↦ (hF t).symm)
+  let δ' : I → unitaryGroup n ℂ := fun t ↦
+    ⟨realOrthonormalize (F t), realOrthonormalize_mem_unitaryGroup (by
+      rw [hF]
+      exact (hA t).map_im_conjTranspose_mul_self_one_add_I_smul)⟩
+  have hδc : Continuous δ' :=
+    (Units.continuous_val.comp (continuous_realOrthonormalize hFc)).subtype_mk _
+  have hδ (t : I) : (δ' t : Matrix n n ℂ) = realOrthonormalize (F t) := (rfl)
+  refine ⟨δ' 0, δ' 1, ⟨⟨δ', hδc⟩, rfl, rfl⟩, fun t ↦ ⟨?_, ?_⟩⟩
+  · simp only [Path.coe_mk_mk, hδ, realImage_realOrthonormalize, hF]
+  · have h := coe_realOrthonormalize (F t)
+    rw [hF] at h
+    exact souriau_eq_cayley_of_coe_eq_mul (hA t) ((hδ t).trans h)
 
 /-- The determinant of the Cayley transform of a real symmetric matrix, as a point of the
 circle. -/
@@ -170,10 +223,6 @@ private noncomputable def eigenFrame (B : SymmMatrix n) : unitaryGroup n ℂ :=
   ⟨(B.2.eigenvectorUnitary : Matrix n n ℝ).map (↑),
     map_ofReal_mem_unitaryGroup B.2.eigenvectorUnitary.2⟩
 
-private theorem eigenFrame_mul_transpose (B : SymmMatrix n) :
-    (eigenFrame B : Matrix n n ℂ) * (eigenFrame B : Matrix n n ℂ)ᵀ = 1 :=
-  map_ofReal_mul_transpose_map_ofReal_eq_one B.2.eigenvectorUnitary.2
-
 /-- The diagonal frames `diag (e^{i arctan (t λⱼ)})` of the graphs of `t D`, for `D` the
 diagonal matrix of eigenvalues of `B`. -/
 private noncomputable def diagonalFrame (B : SymmMatrix n) :
@@ -221,7 +270,8 @@ Souriau maps are the Cayley transforms of `t B`. -/
 private theorem souriau_segmentFrame (B : SymmMatrix n) (t : I) :
     (souriau (segmentFrame B t) : Matrix n n ℂ) =
       cayley ((segment B t).1.map ((↑) : ℝ → ℂ)) := by
-  have hO := eigenFrame_mul_transpose B
+  have hO : (eigenFrame B : Matrix n n ℂ) * (eigenFrame B : Matrix n n ℂ)ᵀ = 1 :=
+    map_ofReal_mul_transpose_map_ofReal_eq_one B.2.eigenvectorUnitary.2
   have hD : (souriau (diagonalFrame B t) : Matrix n n ℂ) =
       diagonal fun j => exp (↑(2 * Real.arctan (t * B.2.eigenvalues j)) * Complex.I) := by
     rw [coe_souriau_of_coe_eq_diagonal (d := fun j =>
@@ -240,7 +290,8 @@ private theorem maslovIndex_segmentFrame (B : SymmMatrix n) :
     maslovIndex (segmentFrame B) = (signature B.1 : ℝ) / 2 := by
   have hsig : signature B.1 = B.2.signature :=
     (IsHermitian.signature_map_ofReal (𝕜 := ℝ) (M := B.1) B.2).symm
-  rw [hsig, segmentFrame, maslovIndex_map_mul_left _ (eigenFrame_mul_transpose B),
+  rw [hsig, segmentFrame, maslovIndex_map_mul_left _
+    (map_ofReal_mul_transpose_map_ofReal_eq_one B.2.eigenvectorUnitary.2),
     maslovIndex_eq_sum_sign_of_diagonal_arctan (diagonalFrame B)
       (a := fun j t => t * B.2.eigenvalues j)
       (fun j => continuous_subtype_val.mul continuous_const)

@@ -11,10 +11,18 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 
 /-!
-# Circles in punctured discs, arclength circles, and powers of circle maps
+# Circles in annuli and punctured discs, arclength circles, and powers of circle maps
 
 ## Main results
 
+* `TauCeti.norm_circleMap_sub_center`: the circle of radius `R ≥ 0` about `c` has distance `R`
+  from `c`.
+* `TauCeti.circleMap_norm_arg`, `TauCeti.circleMap_norm_sub_arg_sub`: polar coordinates about
+  `c`, so every point `w` is `circleMap c ‖w - c‖ (arg (w - c))`.
+* `TauCeti.hasDerivAt_circleMap_radius`: along the ray at angle `θ`, the radius derivative of
+  `circleMap c R θ` is `e^{iθ}`.
+* `TauCeti.circleMap_mem_setOf_le_norm_sub_le`: a circle of radius `r ∈ [a, b]`, `0 ≤ a`, about
+  `z₀` lies in the closed annulus `a ≤ |z - z₀| ≤ b`.
 * `TauCeti.circleMap_mem_ball_diff_singleton`: the circle of radius `r < R` about `z₀` lies in the
   punctured disc of radius `R`.
 * `TauCeti.hasDerivAt_circleMap_div`: the circle of radius `R` parametrized by arclength,
@@ -27,6 +35,39 @@ public section
 namespace TauCeti
 
 open Complex Metric Set
+
+/-- The circle of radius `R ≥ 0` about `c` has distance `R` from `c`. -/
+theorem norm_circleMap_sub_center (c : ℂ) {R : ℝ} (hR : 0 ≤ R) (θ : ℝ) :
+    ‖circleMap c R θ - c‖ = R := by
+  rw [circleMap_sub_center, norm_circleMap_zero, abs_of_nonneg hR]
+
+/-- Polar coordinates about `c`: the point at radius `‖w‖` and angle `arg w` about `c` is
+`c + w`. -/
+theorem circleMap_norm_arg (c w : ℂ) : circleMap c ‖w‖ (arg w) = c + w := by
+  rw [circleMap, norm_mul_exp_arg_mul_I]
+
+/-- Polar coordinates about `c`: every point `w` lies on the circle of radius `‖w - c‖` about `c`,
+at the angle `arg (w - c)`. -/
+theorem circleMap_norm_sub_arg_sub (c w : ℂ) : circleMap c ‖w - c‖ (arg (w - c)) = w := by
+  rw [circleMap_norm_arg, add_sub_cancel]
+
+/-- Along the ray at angle `θ` about `c`, the derivative of `R ↦ circleMap c R θ` is
+`e^{iθ}`. -/
+theorem hasDerivAt_circleMap_radius (c : ℂ) (R θ : ℝ) :
+    HasDerivAt (fun R : ℝ ↦ circleMap c R θ) (exp (θ * I)) R := by
+  have hfun : (fun R : ℝ ↦ circleMap c R θ) = fun R : ℝ ↦ c + (R : ℂ) * exp (θ * I) := by
+    funext R
+    rw [circleMap]
+  rw [hfun]
+  simpa only [ofReal_one, one_mul] using
+    ((hasDerivAt_id' R).ofReal_comp.mul_const (exp (θ * I))).const_add c
+
+/-- A circle of radius `r ∈ [a, b]` about `z₀`, with `0 ≤ a`, lies in the closed annulus
+`a ≤ |z - z₀| ≤ b`. -/
+theorem circleMap_mem_setOf_le_norm_sub_le {z₀ : ℂ} {a b r : ℝ} (ha : 0 ≤ a) (hr : r ∈ Icc a b)
+    (θ : ℝ) : circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
+  rw [mem_ofPred_eq, norm_circleMap_sub_center z₀ (ha.trans hr.1)]
+  exact hr
 
 /-- The circle of radius `0 < r < R` about `z₀` lies in the punctured disc of radius `R`. -/
 theorem circleMap_mem_ball_diff_singleton {z₀ : ℂ} {r R : ℝ} (hr : 0 < r) (hrR : r < R)

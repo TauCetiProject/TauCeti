@@ -194,6 +194,15 @@ theorem _root_.IsCompact.prod_inter_setOf_eq {Y Z : Type*} [TopologicalSpace Y]
   ext z
   exact ⟨fun hz ↦ ⟨⟨z, hz.1⟩, hz.2, rfl⟩, by rintro ⟨z, hz, rfl⟩; exact ⟨z.2, hz⟩⟩
 
+/-- The points of a compact set `C` that a map continuous on `C` sends into a closed set `K` form
+a compact set. -/
+theorem _root_.IsCompact.inter_preimage {Y : Type*} [TopologicalSpace Y] {C : Set X}
+    {K : Set Y} {Φ : X → Y} (hC : IsCompact C) (hΦ : ContinuousOn Φ C) (hK : IsClosed K) :
+    IsCompact (C ∩ Φ ⁻¹' K) := by
+  have : CompactSpace C := isCompact_iff_compactSpace.1 hC
+  rw [← Subtype.image_preimage_coe]
+  exact (hK.preimage hΦ.domRestrict).isCompact.image continuous_subtype_val
+
 /-- A compact set contains no infinite subset all of whose subsets are closed: such a subset would
 be closed, hence compact, and discrete. -/
 theorem _root_.IsCompact.finite_of_forall_isClosed {K S : Set X}
@@ -202,6 +211,42 @@ theorem _root_.IsCompact.finite_of_forall_isClosed {K S : Set X}
     isDiscrete_iff_forall_mem_exists_isClosed.2 fun T hT ↦
       ⟨T, hS T hT, Set.inter_eq_left.2 hT⟩
   exact (hK.of_isClosed_subset (hS S subset_rfl) hSK).finite hd
+
+/-- In a compact Hausdorff space `X`, the punctured space `{x : X // x ≠ x₀}` is compact if and
+only if `x₀` is an isolated point (`{x₀}` is open). -/
+theorem compactSpace_complSingleton_iff_isOpen_singleton [CompactSpace X] [T2Space X] {x₀ : X} :
+    CompactSpace {x : X // x ≠ x₀} ↔ IsOpen ({x₀} : Set X) := by
+  refine ⟨fun _ ↦ ?_, fun hx ↦ isCompact_iff_compactSpace.mp hx.isClosed_compl.isCompact⟩
+  rw [← isClosed_compl_iff]
+  have hrange : range (Subtype.val : {x : X // x ≠ x₀} → X) = {x₀}ᶜ := by ext; simp
+  rw [← hrange]
+  exact (isCompact_range continuous_subtype_val).isClosed
+
+/-- In a compact space `X`, the inclusion of `{x : X // x ≠ x₀}` into `X` tends to `x₀` along the
+cocompact filter. -/
+theorem tendsto_subtypeVal_cocompact_nhds [CompactSpace X] (x₀ : X) :
+    Tendsto (Subtype.val : {x : X // x ≠ x₀} → X) (cocompact {x : X // x ≠ x₀}) (𝓝 x₀) := by
+  rw [hasBasis_cocompact.tendsto_left_iff]
+  intro N hN
+  obtain ⟨U, hU₁, hU₂, hU₃⟩ := mem_nhds_iff.mp hN
+  refine ⟨Subtype.val ⁻¹' Uᶜ, ?_, by simpa using (mapsTo_preimage Subtype.val U).mono_right hU₁⟩
+  have hsub : Uᶜ ⊆ range (Subtype.val : {x : X // x ≠ x₀} → X) := fun x hx ↦
+    ⟨⟨x, fun h ↦ hx (h ▸ hU₃)⟩, rfl⟩
+  rw [Topology.IsEmbedding.subtypeVal.isCompact_iff, image_preimage_eq_iff.mpr hsub]
+  exact hU₂.isClosed_compl.isCompact
+
+/-- In a T₀ space, a compact closed subset `S` is contained in an open subset `U` as soon as every
+closed point in `S` belongs to `U`. -/
+theorem _root_.IsCompact.subset_of_isClosed_of_forall_isClosed_singleton [T0Space X]
+    {S U : Set X} (hSc : IsCompact S) (hS : IsClosed S) (hU : IsOpen U)
+    (h : ∀ z ∈ S, IsClosed ({z} : Set X) → z ∈ U) : S ⊆ U := by
+  intro z hzS
+  by_contra hzU
+  have : CompactSpace S := isCompact_iff_compactSpace.1 hSc
+  obtain ⟨⟨w, hwS⟩, hwU, hwcl⟩ :=
+    (hU.preimage continuous_subtype_val).isClosed_compl.exists_closed_singleton ⟨⟨z, hzS⟩, hzU⟩
+  exact hwU (h w hwS (by simpa [image_singleton] using
+    hS.isClosedEmbedding_subtypeVal.isClosedMap _ hwcl))
 
 section TubeLemma
 
