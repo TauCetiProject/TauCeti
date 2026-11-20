@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
+public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.Bifunctor.Homotopy
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
 public import TauCeti.CategoryTheory.GradedObject.Monoidal
@@ -196,46 +197,6 @@ lemma shortExact_tensorRightShortComplex (hS : S.ShortExact) [∀ p, IsSplitMono
 
 end TensorRight
 
-section ConnectingLift
-
-variable {S : ShortComplex (HomologicalComplex C c)}
-
-omit [MonoidalCategory C] [MonoidalPreadditive C] [AddMonoid I] [c.TensorSigns] [DecidableEq I] in
-/-- The data computing the connecting morphism of a short exact sequence `S` of complexes on all
-cycles of `S.X₃` at once: the pullback of `S.X₂.X q ⟶ S.X₃.X q` along the cycles of `S.X₃` gives
-an epimorphism `a₃` onto the cycles, a lift `a₂` of it to `S.X₂`, and a lift `a₁` of the
-differential of `a₂` to `S.X₁`, whose class is the connecting morphism applied to `a₃`. -/
-private lemma exists_cycles_lift_δ (hS : S.ShortExact) {q q' : I} (hq : c.Rel q q') :
-    ∃ (P : C) (a₃ : P ⟶ S.X₃.cycles q) (a₂ : P ⟶ S.X₂.X q) (a₁ : P ⟶ S.X₁.X q')
-      (_ : a₂ ≫ S.g.f q = a₃ ≫ S.X₃.iCycles q) (_ : a₁ ≫ S.f.f q' = a₂ ≫ S.X₂.d q q')
-      (ha₁ : a₁ ≫ S.X₁.d q' (c.next q') = 0), Epi a₃ ∧
-        a₃ ≫ S.X₃.homologyπ q ≫ hS.δ q q' hq =
-          S.X₁.liftCycles a₁ (c.next q') rfl ha₁ ≫ S.X₁.homologyπ q' := by
-  have hq₁ := (shortExact_iff_degreewise_shortExact S).1 hS q
-  have hq₂ := (shortExact_iff_degreewise_shortExact S).1 hS q'
-  have : Epi (S.g.f q) := hq₁.epi_g
-  have := hq₂.mono_f
-  have : Mono (S.f.f (c.next q')) := ((shortExact_iff_degreewise_shortExact S).1 hS _).mono_f
-  let a₃ := pullback.snd (S.g.f q) (S.X₃.iCycles q)
-  let a₂ := pullback.fst (S.g.f q) (S.X₃.iCycles q)
-  have h₂ : a₂ ≫ S.g.f q = a₃ ≫ S.X₃.iCycles q := pullback.condition
-  let a₁ := hq₂.exact.lift (a₂ ≫ S.X₂.d q q') (by
-    simp only [Category.assoc]
-    dsimp
-    rw [← S.g.comm, reassoc_of% h₂, iCycles_d, comp_zero])
-  have h₁ : a₁ ≫ S.f.f q' = a₂ ≫ S.X₂.d q q' := hq₂.exact.lift_f _ _
-  have ha₁ : a₁ ≫ S.X₁.d q' (c.next q') = 0 := by
-    rw [← cancel_mono (S.f.f (c.next q')), Category.assoc, ← S.f.comm, reassoc_of% h₁]
-    simp
-  refine ⟨_, a₃, a₂, a₁, h₂, h₁, ha₁, inferInstance, ?_⟩
-  -- `δ_eq` computes `δ` on the cycles lifting `a₃ ≫ iCycles`, which are `a₃` itself
-  have e₃ : S.X₃.liftCycles (a₃ ≫ S.X₃.iCycles q) q' (c.next_eq' hq) (by simp) = a₃ := by
-    simp [← cancel_mono (S.X₃.iCycles q)]
-  have := hS.δ_eq q q' hq (a₃ ≫ S.X₃.iCycles q) (by simp) a₂ h₂ a₁ h₁ _ rfl
-  rwa [e₃] at this
-
-end ConnectingLift
-
 section Connecting
 
 variable (K : HomologicalComplex C c) {S : ShortComplex (HomologicalComplex C c)}
@@ -303,7 +264,7 @@ theorem homologyCross_comp_δ :
     homologyCross K S.X₃ p q n h ≫ hKS.δ n n' (h ▸ h' ▸ c.add_rel p hq) =
       (c.ε p : ℤ) • ((K.homology p ◁ hS.δ q q' hq) ≫ homologyCross K S.X₁ p q' n' h') := by
   -- the data computing the connecting morphism of `S` on all cycles of `S.X₃` at once
-  obtain ⟨_, a₃, a₂, a₁, h₂, h₁, ha₁, _, hδS⟩ := exists_cycles_lift_δ hS hq
+  obtain ⟨_, a₃, a₂, a₁, h₂, h₁, ha₁, _, hδS⟩ := hS.exists_cycles_lift_δ hq
   -- both sides agree on `x ⊗ a₃`, and these generate `Hₚ(K) ⊗ H_q(S.X₃)`
   have : Epi (K.cycles p ◁ a₃) := (tensorLeft (K.cycles p)).map_epi a₃
   refine homology_tensor_homology_hom_ext K S.X₃ p q ?_
@@ -396,7 +357,7 @@ theorem homologyCross_comp_δ_tensorRight :
       (hS.δ p p' hp ▷ K.homology q) ≫ homologyCross S.X₁ K p' q n' h' := by
   -- the data computing the connecting morphism of `S` on all cycles of `S.X₃` at once, as in
   -- `HomologicalComplex.homologyCross_comp_δ`
-  obtain ⟨_, a₃, a₂, a₁, h₂, h₁, ha₁, _, hδS⟩ := exists_cycles_lift_δ hS hp
+  obtain ⟨_, a₃, a₂, a₁, h₂, h₁, ha₁, _, hδS⟩ := hS.exists_cycles_lift_δ hp
   -- both sides agree on `a₃ ⊗ x`, and these generate `Hₚ(S.X₃) ⊗ H_q(K)`
   have : Epi (a₃ ▷ K.cycles q) := (tensorRight (K.cycles q)).map_epi a₃
   refine homology_tensor_homology_hom_ext S.X₃ K p q ?_
