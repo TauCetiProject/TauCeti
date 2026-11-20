@@ -35,6 +35,12 @@ the polar pairing is therefore `B(x, y)` modulo `ℤ`.
   quadratic modules.
 * `TauCeti.FiniteQuadraticModule.Isometry.ofSubsingleton`: the unique isometry between two trivial
   finite quadratic modules.
+* `TauCeti.FiniteQuadraticModule.restrictTopIsometry`,
+  `TauCeti.FiniteQuadraticModule.restrictCongr`,
+  `TauCeti.FiniteQuadraticModule.restrictProdIsometry` and
+  `TauCeti.FiniteQuadraticModule.Isometry.restrict`: the restriction to the whole group,
+  restrictions to equal subgroups, the restriction of an orthogonal product to a product subgroup,
+  and the restriction of an isometry to subgroups it carries onto each other.
 * `TauCeti.FiniteQuadraticModule.Hom.toIsometryOfNondegenerate`: a morphism from a
   nondegenerate source of the same finite cardinality, packaged as an isometry.
 * `TauCeti.FiniteQuadraticModule.two_nsmul_eq_zero_of_quadratic_add_self_eq_zero`: a
@@ -455,6 +461,49 @@ theorem restrictHom_toFiniteBilinearModule (H : AddSubgroup A) :
     _ = A.toFiniteBilinearModule.restrictHom H x :=
       (FiniteBilinearModule.restrictHom_apply _ H x).symm
 
+/-- The restriction of a finite quadratic module to the whole group is isometric to the module,
+through Mathlib's `AddSubgroup.topEquiv`. -/
+def restrictTopIsometry : Isometry (A.restrict ⊤) A where
+  toLinearEquiv := AddSubgroup.topEquiv.toIntLinearEquiv
+  map_app' _ := rfl
+
+@[simp]
+theorem restrictTopIsometry_apply (x : A.restrict ⊤) :
+    A.restrictTopIsometry x = A.restrictHom ⊤ x := (rfl)
+
+/-- Restrictions of a finite quadratic module to equal subgroups are isometric, through Mathlib's
+`AddEquiv.addSubgroupCongr`. -/
+def restrictCongr {H K : AddSubgroup A} (h : H = K) : Isometry (A.restrict H) (A.restrict K) where
+  toLinearEquiv := (AddEquiv.addSubgroupCongr h).toIntLinearEquiv
+  map_app' _ := rfl
+
+@[simp]
+theorem restrictHom_restrictCongr_apply {H K : AddSubgroup A} (h : H = K) (x : A.restrict H) :
+    A.restrictHom K (A.restrictCongr h x) = A.restrictHom H x := (rfl)
+
+variable {A} in
+/-- **Restriction of an isometry.** An isometry `f : A ≃ B` carrying the subgroup `H` onto the
+subgroup `K`, in the sense that `f x ∈ K ↔ x ∈ H`, restricts to an isometry of the restrictions to
+`H` and `K`. -/
+def Isometry.restrict {B : FiniteQuadraticModule.{v}} (f : Isometry A B) {H : AddSubgroup A}
+    {K : AddSubgroup B} (h : ∀ x, f x ∈ K ↔ x ∈ H) : Isometry (A.restrict H) (B.restrict K) where
+  toLinearEquiv :=
+    -- `f` maps `H` onto `K`: every `y ∈ K` is the image of `f.symm y ∈ H`.
+    have hHK : H.map f.toLinearEquiv.toAddEquiv = K := AddSubgroup.ext fun y ↦ by
+      rw [AddSubgroup.mem_map]
+      exact ⟨fun ⟨x, hx, hxy⟩ ↦ hxy ▸ (h x).2 hx,
+        fun hy ↦ ⟨f.symm y, (h _).1 (by rwa [f.apply_symm_apply]), f.apply_symm_apply y⟩⟩
+    ((f.toLinearEquiv.toAddEquiv.addSubgroupMap H).trans
+      (AddEquiv.addSubgroupCongr hHK)).toIntLinearEquiv
+  map_app' x := f.map_app x.1
+
+variable {A} in
+/-- The restriction of an isometry acts as the isometry on the underlying elements. -/
+@[simp]
+theorem Isometry.restrictHom_restrict_apply {B : FiniteQuadraticModule.{v}} (f : Isometry A B)
+    {H : AddSubgroup A} {K : AddSubgroup B} (h : ∀ x, f x ∈ K ↔ x ∈ H) (x : A.restrict H) :
+    B.restrictHom K (f.restrict h x) = f (A.restrictHom H x) := (rfl)
+
 /-- Negate the quadratic map of a finite quadratic module. -/
 @[expose] def neg : FiniteQuadraticModule where
   toFiniteBilinearModule := A.toFiniteBilinearModule.neg
@@ -518,6 +567,28 @@ theorem prod_toFiniteBilinearModule (B : FiniteQuadraticModule) :
 theorem isNondegenerate_prod (B : FiniteQuadraticModule) :
     (A.prod B).IsNondegenerate ↔ A.IsNondegenerate ∧ B.IsNondegenerate :=
   A.toFiniteBilinearModule.isNondegenerate_prod B.toFiniteBilinearModule
+
+/-- **Restriction of an orthogonal product to a product subgroup.** The restriction of `A ⊕ B` to
+`H × K` is the orthogonal product of the restrictions to `H` and to `K`, through Mathlib's
+`AddSubgroup.prodEquiv`. -/
+def restrictProdIsometry {B : FiniteQuadraticModule} (H : AddSubgroup A) (K : AddSubgroup B) :
+    Isometry ((A.prod B).restrict (H.prod K)) ((A.restrict H).prod (B.restrict K)) where
+  toLinearEquiv := (AddSubgroup.prodEquiv H K).toIntLinearEquiv
+  map_app' _ := rfl
+
+/-- The first component of `restrictProdIsometry` is the first coordinate. -/
+@[simp]
+theorem restrictHom_restrictProdIsometry_apply_fst {B : FiniteQuadraticModule} (H : AddSubgroup A)
+    (K : AddSubgroup B) (x : (A.prod B).restrict (H.prod K)) :
+    A.restrictHom H (A.restrictProdIsometry H K x).1 = ((A.prod B).restrictHom (H.prod K) x).1 :=
+  (rfl)
+
+/-- The second component of `restrictProdIsometry` is the second coordinate. -/
+@[simp]
+theorem restrictHom_restrictProdIsometry_apply_snd {B : FiniteQuadraticModule} (H : AddSubgroup A)
+    (K : AddSubgroup B) (x : (A.prod B).restrict (H.prod K)) :
+    B.restrictHom K (A.restrictProdIsometry H K x).2 = ((A.prod B).restrictHom (H.prod K) x).2 :=
+  (rfl)
 
 /-! ## Quadratic forms with values in `½ℤ/ℤ` -/
 
