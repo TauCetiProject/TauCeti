@@ -511,4 +511,11 @@ theorem exists_partialDiffeomorph_eqOn (hf : IsLocalDiffeomorphAt I J n f x) {s 
     rw [PartialDiffeomorph.coe_restrOpen]
     exact hfΦ hy.1
 
+/-- Being a local diffeomorphism at a point depends only on the germ of the map there. -/
+theorem congr_of_eventuallyEq {g : M → N} (hf : IsLocalDiffeomorphAt I J n f x)
+    (h : g =ᶠ[nhds x] f) : IsLocalDiffeomorphAt I J n g x := by
+  obtain ⟨s, hfg, hs, hxs⟩ := eventually_nhds_iff.mp h
+  obtain ⟨Φ, hxΦ, hΦs, hfΦ⟩ := hf.exists_partialDiffeomorph_eqOn hs hxs
+  exact ⟨Φ, hxΦ, fun y hy ↦ (hfg y (hΦs hy)).trans (hfΦ hy)⟩
+
 end IsLocalDiffeomorphAt
