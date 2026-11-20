@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 import Mathlib.Analysis.Fourier.LpSpace
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 
@@ -36,7 +37,9 @@ normed complex `F`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_zero`: on `H^{0,p}` the inclusion is isometric for
   the `Lᵖ` norm.
 * `BesselPotentialSpace.continuousLinearMap_ext`: continuous linear maps out of `H^{s,p}`,
-  `p < ∞`, are determined by their values on Schwartz functions.
+  `p < ∞`, are determined by their values on Schwartz functions, and
+  `BesselPotentialSpace.continuousLinearMap_ext_real` for complex-linear maps out of
+  `H^{s,p}(E, ℂ)` on real Schwartz functions.
 * `BesselPotentialSpace.toTemperedDistribution_fourier_toLp`,
   `BesselPotentialSpace.fourier_toLp_eq_of_smulLeftCLM_fourier_eq`: for Hilbert-space values, the
   `L²` Fourier transform of the `L²` part of `u ∈ H^s` is the weighted Fourier transform
@@ -230,6 +233,19 @@ theorem continuousLinearMap_ext {G : Type*} [AddCommMonoid G] [Module ℂ G] [To
   ContinuousLinearMap.ext fun f ↦ congrFun
     ((SchwartzMap.denseRange_toBesselPotentialSpaceCLM s hp).equalizer T.continuous T'.continuous
       (funext h)) f
+
+/-- Continuous complex-linear maps out of `H^{s,p}(E, ℂ)`, `p < ∞`, into a Hausdorff space are
+determined by their values on real Schwartz functions, embedded by `Complex.ofRealCLM`. -/
+theorem continuousLinearMap_ext_real {G : Type*} [AddCommMonoid G] [Module ℂ G]
+    [TopologicalSpace G] [T2Space G] {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    {T T' : H^{s, p}(E, ℂ) →L[ℂ] G}
+    (h : ∀ u : 𝓢(E, ℝ),
+      T (SchwartzMap.toBesselPotentialSpaceCLM s p (u.postcompCLM Complex.ofRealCLM)) =
+        T' (SchwartzMap.toBesselPotentialSpaceCLM s p (u.postcompCLM Complex.ofRealCLM))) :
+    T = T' := by
+  refine continuousLinearMap_ext hp fun φ ↦ ?_
+  rw [← SchwartzMap.postcompCLM_re_add_I_smul_im φ]
+  simp only [map_add, map_smul, h]
 
 /-- In `H^{0,p} = Lᵖ` the element with `Lᵖ` part `f` is the tempered distribution of `f`. -/
 theorem toDistr_toLpₗᵢ_zero_symm_apply {p : ℝ≥0∞} [Fact (1 ≤ p)]
