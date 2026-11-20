@@ -33,6 +33,8 @@ namespace TauCeti.Examples.CechHomeomorph
 
 attribute [local instance] Classical.propDecidable
 
+attribute [local instance] ModuleCat.hasLimitsOfSize TauCeti.hasSheafify_moduleCat
+
 /-- Complex coefficients in a universe independent of the original sphere. -/
 abbrev coefficient : ModuleCat.{v + 1} ℂ :=
   ModuleCat.of ℂ (ULift.{v + 1} ℂ)
@@ -102,10 +104,8 @@ theorem liftedSection_read :
   exact oneSection_read
 
 /-- Native transport of the actual class, with the actual sheaf comparison. -/
-def liftedClass := by
-  letI : HasLimitsOfSize.{u + 1,u + 1} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    ModuleCat.hasLimitsOfSize.{u + 1,u + 1,max (u + 1) (v + 1),0}
-  exact (cechCohomology (TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
+def liftedClass :=
+  (cechCohomology (TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
     (ModuleCat.{max (u + 1) (v + 1)} ℂ) 0).map
       ((liftHomeomorph.{u}.sheafCongrSheafToPresheafIso
         (ModuleCat.{max (u + 1) (v + 1)} ℂ)).inv.app pointSheaf.{max u v})
@@ -115,16 +115,12 @@ def liftedClass := by
       liftHomeomorph.{u} 0).hom.app pointSheaf.{max u v}.obj oneClass.{max u v})
 
 /-- The actual degree-zero class of the section on the lifted sphere. -/
-def liftedSectionClass := by
-  letI : HasLimitsOfSize.{u + 1,u + 1} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    ModuleCat.hasLimitsOfSize.{u + 1,u + 1,max (u + 1) (v + 1),0}
-  exact (Topology.cechCohomologyZeroIso
+def liftedSectionClass :=
+  (Topology.cechCohomologyZeroIso
     (A := ModuleCat.{max (u + 1) (v + 1)} ℂ) liftedSheaf.{u,v}).hom liftedSection.{u,v}
 
 /-- Transport sends the native class to the class of the actual transported section. -/
 theorem liftedClass_eq : liftedClass.{u,v} = liftedSectionClass.{u,v} := by
-  let : HasLimitsOfSize.{u + 1,u + 1} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    ModuleCat.hasLimitsOfSize.{u + 1,u + 1,max (u + 1) (v + 1),0}
   exact congrArg (fun f ↦ f.hom oneSection.{max u v})
     (Topology.cechCohomologyZeroIso_hom_comp_cechCohomologyHomeomorphIso
       (X := TopCat.of (OnePoint ℂ)) (Y := TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
@@ -132,8 +128,6 @@ theorem liftedClass_eq : liftedClass.{u,v} = liftedSectionClass.{u,v} := by
 
 /-- The actual transported cohomology class remains nonzero. -/
 theorem liftedClass_ne_zero : liftedClass.{u,v} ≠ 0 := by
-  let : HasLimitsOfSize.{u + 1,u + 1} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    ModuleCat.hasLimitsOfSize.{u + 1,u + 1,max (u + 1) (v + 1),0}
   rw [liftedClass_eq]
   intro h
   have hs := (Topology.cechCohomologyZeroIso
@@ -143,36 +137,17 @@ theorem liftedClass_ne_zero : liftedClass.{u,v} ≠ 0 := by
   exact oneSection_ne_zero.{max u v} ht
 
 /-- The original section as an element of native global sections. -/
-def globalOne := by
-  letI : HasSheafify (Opens.grothendieckTopology (TopCat.of (OnePoint ℂ)))
-      (ModuleCat.{v + 1} ℂ) :=
-    TauCeti.hasSheafify_moduleCat.{0,0,v + 1} ℂ _
-  exact (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).inv.app pointSheaf.{v} oneSection.{v}
+def globalOne :=
+  (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).inv.app pointSheaf.{v} oneSection.{v}
 
 /-- The class obtained by transporting native global sections and then applying Γ⁰. -/
-def gammaTransportClass := by
-  letI : HasLimitsOfSize.{u + 1,u + 1} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    ModuleCat.hasLimitsOfSize.{u + 1,u + 1,max (u + 1) (v + 1),0}
-  letI : HasSheafify (Opens.grothendieckTopology (TopCat.of (OnePoint ℂ)))
-      (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    TauCeti.hasSheafify_moduleCat.{0,0,max (u + 1) (v + 1)} ℂ _
-  letI : HasSheafify (Opens.grothendieckTopology
-      (TopCat.of (ULift.{u + 1} (OnePoint ℂ)))) (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    TauCeti.hasSheafify_moduleCat.{0,u + 1,v + 1} ℂ _
-  exact (sectionsIsoCechZero liftedSheaf.{u,v}).hom
+def gammaTransportClass :=
+  (sectionsIsoCechZero liftedSheaf.{u,v}).hom
     ((liftHomeomorph.{u}.globalSectionsIso (ModuleCat.{max (u + 1) (v + 1)} ℂ)).hom.app
       pointSheaf.{max u v} globalOne.{max u v})
 
 /-- Transport through native global sections gives the same actual nonzero Čech class. -/
 theorem gammaTransportClass_eq : gammaTransportClass.{u,v} = liftedClass.{u,v} := by
-  let : HasLimitsOfSize.{u + 1,u + 1} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    ModuleCat.hasLimitsOfSize.{u + 1,u + 1,max (u + 1) (v + 1),0}
-  let : HasSheafify (Opens.grothendieckTopology (TopCat.of (OnePoint ℂ)))
-      (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    TauCeti.hasSheafify_moduleCat.{0,0,max (u + 1) (v + 1)} ℂ _
-  let : HasSheafify (Opens.grothendieckTopology
-      (TopCat.of (ULift.{u + 1} (OnePoint ℂ)))) (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    TauCeti.hasSheafify_moduleCat.{0,u + 1,v + 1} ℂ _
   have h := sectionsIsoCechZero_hom_comp_cechCohomologyHomeomorphIso
     (X := TopCat.of (OnePoint ℂ)) (Y := TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
     (A := ModuleCat.{max (u + 1) (v + 1)} ℂ) liftHomeomorph.{u} pointSheaf.{max u v}
@@ -208,34 +183,24 @@ theorem tupleCochain_one :
   simp [tupleCochain]
 
 /-- Apply the actual complex reindexing map to the cochain on the repeated cover. -/
-def reindexedCochain := by
-  letI : HasLimitsOfSize.{u + 1,u + 1} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    ModuleCat.hasLimitsOfSize.{u + 1,u + 1,max (u + 1) (v + 1),0}
-  exact ((TauCeti.CategoryTheory.cechComplexReindexIso indexEquiv.{u}
+def reindexedCochain :=
+  ((TauCeti.CategoryTheory.cechComplexReindexIso indexEquiv.{u}
     (fun _ : ULift.{u + 1} (Fin 2) ↦ (⊤ : Opens (OnePoint ℂ)))).hom.app
       tuplePresheaf.{max u v}).f 0 tupleCochain.{max u v}
 
 /-- The actual cross-universe map sends the one tuple to its prescribed transformed index. -/
-theorem reindexedCochain_one : by
-    letI : HasLimitsOfSize.{u + 1,u + 1} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-      ModuleCat.hasLimitsOfSize.{u + 1,u + 1,max (u + 1) (v + 1),0}
-    exact (Pi.π (fun _ : Fin 1 → ULift.{u + 1} (Fin 2) ↦ coefficient.{max u v})
+theorem reindexedCochain_one :
+    (Pi.π (fun _ : Fin 1 → ULift.{u + 1} (Fin 2) ↦ coefficient.{max u v})
       (indexEquiv.{u} ∘ (fun _ : Fin 1 ↦ 1))) reindexedCochain.{u,v} = ULift.up 1 := by
-  let : HasLimitsOfSize.{u + 1,u + 1} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    ModuleCat.hasLimitsOfSize.{u + 1,u + 1,max (u + 1) (v + 1),0}
   have h := TauCeti.CategoryTheory.cechComplexReindexIso_hom_app_f_π indexEquiv.{u}
     (fun _ : ULift.{u + 1} (Fin 2) ↦ (⊤ : Opens (OnePoint ℂ)))
     tuplePresheaf.{max u v} 0 (fun _ ↦ 1)
   exact (congrArg (fun f ↦ f.hom tupleCochain.{max u v}) h).trans tupleCochain_one
 
 /-- The zero tuple also retains its value under the actual cross-universe index exchange. -/
-theorem reindexedCochain_zero : by
-    letI : HasLimitsOfSize.{u + 1,u + 1} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-      ModuleCat.hasLimitsOfSize.{u + 1,u + 1,max (u + 1) (v + 1),0}
-    exact (Pi.π (fun _ : Fin 1 → ULift.{u + 1} (Fin 2) ↦ coefficient.{max u v})
+theorem reindexedCochain_zero :
+    (Pi.π (fun _ : Fin 1 → ULift.{u + 1} (Fin 2) ↦ coefficient.{max u v})
       (indexEquiv.{u} ∘ (fun _ : Fin 1 ↦ 0))) reindexedCochain.{u,v} = 0 := by
-  let : HasLimitsOfSize.{u + 1,u + 1} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    ModuleCat.hasLimitsOfSize.{u + 1,u + 1,max (u + 1) (v + 1),0}
   have h := TauCeti.CategoryTheory.cechComplexReindexIso_hom_app_f_π indexEquiv.{u}
     (fun _ : ULift.{u + 1} (Fin 2) ↦ (⊤ : Opens (OnePoint ℂ)))
     tuplePresheaf.{max u v} 0 (fun _ ↦ 0)
@@ -307,22 +272,22 @@ theorem twiceSheafMap_oneSection_read :
       exact congrArg ULift.up (one_add_one_eq_two : (1 : ℂ) + 1 = 2)
 
 /-- The actual same-category coefficient-object map commutes with native base transport. -/
-theorem twiceSheafMap_transport : by
-    letI : HasLimitsOfSize.{u + 1,u + 1} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-      ModuleCat.hasLimitsOfSize.{u + 1,u + 1,max (u + 1) (v + 1),0}
-    let E := cechCohomologyHomeomorphIso
-      (X := TopCat.of (OnePoint ℂ)) (Y := TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
-      (A := ModuleCat.{max (u + 1) (v + 1)} ℂ) liftHomeomorph.{u} 0
-    exact (cechCohomology (TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
+theorem twiceSheafMap_transport :
+    (cechCohomology (TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
       (ModuleCat.{max (u + 1) (v + 1)} ℂ) 0).map
         (Functor.whiskerLeft liftHomeomorph.{u}.opensCongr.symm.equivalence.functor.op
           twiceSheafMap.{max u v}.hom)
-        (E.hom.app pointSheaf.{max u v}.obj oneClass.{max u v}) =
-      E.hom.app pointSheaf.{max u v}.obj
-        ((cechCohomology (TopCat.of (OnePoint ℂ)) (ModuleCat.{max (u + 1) (v + 1)} ℂ) 0).map
-          twiceSheafMap.{max u v}.hom oneClass.{max u v}) := by
-  let : HasLimitsOfSize.{u + 1,u + 1} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    ModuleCat.hasLimitsOfSize.{u + 1,u + 1,max (u + 1) (v + 1),0}
+        ((cechCohomologyHomeomorphIso
+          (X := TopCat.of (OnePoint ℂ)) (Y := TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
+          (A := ModuleCat.{max (u + 1) (v + 1)} ℂ) liftHomeomorph.{u} 0).hom.app
+            pointSheaf.{max u v}.obj oneClass.{max u v}) =
+      (cechCohomologyHomeomorphIso
+        (X := TopCat.of (OnePoint ℂ)) (Y := TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
+        (A := ModuleCat.{max (u + 1) (v + 1)} ℂ) liftHomeomorph.{u} 0).hom.app
+          pointSheaf.{max u v}.obj
+          ((cechCohomology (TopCat.of (OnePoint ℂ))
+            (ModuleCat.{max (u + 1) (v + 1)} ℂ) 0).map
+              twiceSheafMap.{max u v}.hom oneClass.{max u v}) := by
   exact (congrArg (fun f ↦ f.hom oneClass.{max u v})
     ((cechCohomologyHomeomorphIso
       (X := TopCat.of (OnePoint ℂ)) (Y := TopCat.of (ULift.{u + 1} (OnePoint ℂ)))
@@ -343,34 +308,20 @@ theorem emptyPresheaf_not_isZero : ¬ IsZero emptyPresheaf.{u,v} := by
   exact one_ne_zero (congrArg ULift.down he)
 
 /-- Native all-degree Čech cohomology vanishes despite the nonzero empty-open value. -/
-theorem emptyPresheaf_cech_isZero (n : ℕ) : by
-    letI : HasLimitsOfSize.{u,u} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-      ModuleCat.hasLimitsOfSize.{u,u,max (u + 1) (v + 1),0}
-    exact IsZero ((cechCohomology (TopCat.of PEmpty.{u + 1})
+theorem emptyPresheaf_cech_isZero (n : ℕ) :
+    IsZero ((cechCohomology (TopCat.of PEmpty.{u + 1})
       (ModuleCat.{max (u + 1) (v + 1)} ℂ) n).obj emptyPresheaf.{u,v}) := by
-  let : HasLimitsOfSize.{u,u} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    ModuleCat.hasLimitsOfSize.{u,u,max (u + 1) (v + 1),0}
   exact isZero_cechCohomology_obj_of_isEmpty _ _ _ _
 
 /-- The actual reindexing map on an empty family, in arbitrary index universes. -/
-def emptyIndexMap (n : ℕ) := by
-  letI : HasLimitsOfSize.{u,u} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    ModuleCat.hasLimitsOfSize.{u,u,max (u + 1) (v + 1),0}
-  letI : HasLimitsOfSize.{max u (v + 1),max u (v + 1)}
-      (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    ModuleCat.hasLimitsOfSize.{max u (v + 1),max u (v + 1),max (u + 1) (v + 1),0}
-  exact ((TauCeti.CategoryTheory.cechComplexReindexIso
+def emptyIndexMap (n : ℕ) :=
+  ((TauCeti.CategoryTheory.cechComplexReindexIso
     (A := ModuleCat.{max (u + 1) (v + 1)} ℂ)
     (Equiv.ulift.symm : PEmpty.{u + 1} ≃ ULift.{v + 1} PEmpty.{u + 1})
     (fun _ ↦ (⊤ : Opens PEmpty.{u + 1}))).hom.app emptyPresheaf.{u,v}).f n
 
 /-- Every native component of the empty-family comparison is the zero map. -/
 theorem emptyIndexMap_eq_zero (n : ℕ) : emptyIndexMap.{u,v} n = 0 := by
-  let : HasLimitsOfSize.{u,u} (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    ModuleCat.hasLimitsOfSize.{u,u,max (u + 1) (v + 1),0}
-  let : HasLimitsOfSize.{max u (v + 1),max u (v + 1)}
-      (ModuleCat.{max (u + 1) (v + 1)} ℂ) :=
-    ModuleCat.hasLimitsOfSize.{max u (v + 1),max u (v + 1),max (u + 1) (v + 1),0}
   apply Pi.hom_ext
   intro a
   exact PEmpty.elim (a 0).down

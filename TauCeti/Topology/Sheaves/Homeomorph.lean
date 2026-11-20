@@ -107,9 +107,27 @@ theorem globalSectionsIso_hom_app (F : Sheaf (Opens.grothendieckTopology X) A) :
         ((h.sheafCongrSheafToPresheafIso A).inv.app F).app (op ⊤) ≫
         (Sheaf.ΓNatIsoSheafSections (Opens.grothendieckTopology Y) A isTerminalTop).inv.app
           ((h.sheafCongr A).functor.obj F) := by
-  simp [globalSectionsIso, sectionsHomeomorphIso]
-  -- mapIso, opposite and symmetric isomorphisms have these native hom fields.
-  rfl
+  have hs : (sectionsHomeomorphIso h A).hom.app F =
+      F.obj.map (eqToHom h.opensCongr.symm.map_top).op :=
+    (NatIso.ofComponents_hom_app _ _ F).trans
+      (F.obj.mapIso_hom ((eqToIso h.opensCongr.symm.map_top).op))
+  have hg : (h.globalSectionsIso A).hom.app F =
+      (Sheaf.ΓNatIsoSheafSections (Opens.grothendieckTopology X) A isTerminalTop).hom.app F ≫
+        (sectionsHomeomorphIso h A).hom.app F ≫
+        ((h.sheafCongrSheafToPresheafIso A).inv.app F).app (op ⊤) ≫ 𝟙 _ ≫
+        (Sheaf.ΓNatIsoSheafSections (Opens.grothendieckTopology Y) A isTerminalTop).inv.app
+          ((h.sheafCongr A).functor.obj F) :=
+    -- The five defining iso fields; the middle identity is the functor associator.
+    rfl
+  exact hg.trans
+    (((Sheaf.ΓNatIsoSheafSections (Opens.grothendieckTopology X) A isTerminalTop).hom.app F ≫=
+      (hs =≫ (((h.sheafCongrSheafToPresheafIso A).inv.app F).app (op ⊤) ≫ 𝟙 _ ≫
+        (Sheaf.ΓNatIsoSheafSections (Opens.grothendieckTopology Y) A isTerminalTop).inv.app
+          ((h.sheafCongr A).functor.obj F)))).trans
+      ((Sheaf.ΓNatIsoSheafSections (Opens.grothendieckTopology X) A isTerminalTop).hom.app F ≫=
+        (F.obj.map (eqToHom h.opensCongr.symm.map_top).op ≫=
+          (((h.sheafCongrSheafToPresheafIso A).inv.app F).app (op ⊤) ≫=
+            Category.id_comp _))))
 
 /-- The homeomorphism comparison preserves the section over the whole space, with the native
 map of the top open and the underlying-presheaf comparison. -/

@@ -204,8 +204,7 @@ theorem HasColimit.colimMap_comp_isoOfEquivalence_hom
         colimit.ι E₂ (e.functor.obj j) := by rw [← Category.assoc, hc, Category.assoc]
     _ = i₁.inv.app j ≫ colimit.ι E₁ (e.functor.obj j) ≫ colimMap b := by
       rw [← ι_colimMap]
-    _ = _ := (Category.assoc _ _ _).symm.trans
-      (((HasColimit.ι_isoOfEquivalence_hom e i₁ j).symm =≫ _).trans
-        (Category.assoc _ _ _))
+    _ = _ := by
+      rw [← HasColimit.ι_isoOfEquivalence_hom_assoc]
 
 end CategoryTheory.Limits

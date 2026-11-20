@@ -140,10 +140,12 @@ theorem cechAugmentation_comp_cechComplexReindexIso [HasZeroObject A] {T : C} (h
       cechAugmentation U hT P := by
   refine HomologicalComplex.from_single_hom_ext (Pi.hom_ext _ _ fun b ↦ ?_)
   obtain ⟨a, rfl⟩ := (Equiv.piCongrRight fun _ : Fin 1 ↦ e).surjective b
-  exact (Category.assoc _ _ _).trans
-    ((_ ≫= cechComplexReindexIso_hom_app_f_π e U P 0 a).trans
-      ((cechAugmentation_f_zero_comp_π (U ∘ e) hT P a).trans
-        (cechAugmentation_f_zero_comp_π U hT P (e ∘ a)).symm))
+  simp only [HomologicalComplex.comp_f]
+  -- The native rightOp Čech term stores the tuple-index type behind its object alias.
+  erw [Category.assoc, cechComplexReindexIso_hom_app_f_π,
+    cechAugmentation_f_zero_comp_π, cechAugmentation_f_zero_comp_π]
+  -- The residual indices are the toFun field of piCongrRight, namely Pi.map of e.
+  rfl
 
 omit [HasProducts.{w₂} A] in
 /-- Reindexing by the identity equivalence is the identity of the native complex functor. -/

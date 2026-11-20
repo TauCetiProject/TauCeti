@@ -186,20 +186,9 @@ private lemma cechAugmentation_comp_homeomorph_map [HasZeroObject A]
         cechAugmentation (U.mapHomeomorph h).opens isTerminalTop Q := by
   have hn := cechAugmentation_naturality (U.mapHomeomorph h).opens isTerminalTop
     (h.opensCongr.symm.equivalence.functor.op ⋙ P) φ
-  calc
-    _ = ((CochainComplex.single₀ A).map
-          (P.map (eqToHom h.opensCongr.symm.map_top).op) ≫
-        cechAugmentation (U.mapHomeomorph h).opens isTerminalTop
-          (h.opensCongr.symm.equivalence.functor.op ⋙ P)) ≫
-          (cechComplexFunctor (U.mapHomeomorph h).opens).map φ :=
-      (Category.assoc _ _ _).symm.trans
-        ((cechAugmentation_comp_cechComplexHomeomorphIso h U P =≫ _))
-    _ = (CochainComplex.single₀ A).map (P.map (eqToHom h.opensCongr.symm.map_top).op) ≫
-        (CochainComplex.single₀ A).map (φ.app (op ⊤)) ≫
-          cechAugmentation (U.mapHomeomorph h).opens isTerminalTop Q :=
-      (Category.assoc _ _ _).trans (_ ≫= hn)
-    _ = _ := (Category.assoc _ _ _).symm.trans
-      (((CochainComplex.single₀ A).map_comp _ _).symm =≫ _)
+  -- The top-open object of the inverse-opens composite is the codomain of the map.
+  erw [← Category.assoc, cechAugmentation_comp_cechComplexHomeomorphIso,
+    Category.assoc, hn, ← Category.assoc, ← Functor.map_comp]
 
 @[reassoc]
 private lemma cechAugmentationClass_comp_homeomorph_map
@@ -229,8 +218,7 @@ private lemma cechAugmentationClass_comp_homeomorph_map
           (P.map (eqToHom h.opensCongr.symm.map_top).op ≫ φ.app (op ⊤))) 0 ≫
         HomologicalComplex.homologyMap
           (cechAugmentation (U.mapHomeomorph h).opens isTerminalTop Q) 0 := _ ≫= ha
-    _ = _ := (Category.assoc _ _ _).symm.trans
-      ((hs =≫ _).trans (Category.assoc _ _ _))
+    _ = _ := by rw [← Category.assoc, hs, Category.assoc]
 
 /-- Native transport of Čech complexes commutes with every actual refinement function. -/
 @[reassoc]
@@ -397,12 +385,24 @@ theorem cechCohomologyZeroIso_hom_comp_cechCohomologyHomeomorphIso :
   have hp := (Category.assoc _ _ _).symm.trans
     ((hi =≫ (cechCohomology Y A 0).map φ).trans
       ((Category.assoc _ _ _).trans (_ ≫= hn)))
+  let c := (HomologicalComplex.singleObjHomologySelfIso (ComplexShape.up ℕ) 0
+    (F.obj.obj (op ⊤))).inv
+  let a := HomologicalComplex.homologyMap (cechAugmentation U.opens isTerminalTop F.obj) 0
   calc
-    _ = _ := hs =≫ _
-    _ = _ := (Category.assoc _ _ _).trans
-      ((_ ≫= Category.assoc _ _ _).trans (_ ≫= (_ ≫= hp)))
-    _ = _ := hc
-    _ = _ := _ ≫= ht.symm
+    _ = (c ≫ a ≫ (cechCohomologyι PointOpenCover.toFormalCoproduct
+          (fun _ _ hf ↦ hf) 0 U).app F.obj) ≫
+        (cechCohomologyHomeomorphIso (A := A) h 0).hom.app F.obj ≫
+          (cechCohomology Y A 0).map φ := hs =≫ _
+    _ = c ≫ a ≫ (HomologicalComplex.homologyMap
+          ((cechComplexHomeomorphIso (A := A) h U).hom.app F.obj) 0 ≫
+        HomologicalComplex.homologyMap
+          ((cechComplexFunctor (U.mapHomeomorph h).opens).map φ) 0 ≫
+        (cechCohomologyι PointOpenCover.toFormalCoproduct (fun _ _ hf ↦ hf) 0
+          (U.mapHomeomorph h)).app F'.obj) :=
+      (Category.assoc _ _ _).trans
+        ((_ ≫= Category.assoc _ _ _).trans (_ ≫= (_ ≫= hp)))
+    _ = (F.obj.map (eqToHom h.opensCongr.symm.map_top).op ≫ φ.app (op ⊤)) ≫
+        (cechCohomologyZeroIso F').hom := hc.trans (_ ≫= ht.symm)
 
 variable [HasWeakSheafify (Opens.grothendieckTopology X) A]
   [HasWeakSheafify (Opens.grothendieckTopology Y) A]

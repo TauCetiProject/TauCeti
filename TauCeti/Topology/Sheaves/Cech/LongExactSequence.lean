@@ -233,10 +233,18 @@ theorem cechCohomologyδ_comp_cechCohomologyHomeomorphIso
   rw [← Category.assoc, cechCohomology_map_cokernelToX₃_comp_δ]
   have hm := (cechCohomology Y (ModuleCat.{u} R) n).map_comp
     (W.map (cokernelToX₃ S)) (α.inv.app S.X₃)
+  let H := (cechCohomologyHomeomorphIso (A := ModuleCat.{u} R) h n).hom.app T.X₃
+  let M := cechCohomology Y (ModuleCat.{u} R) n
+  let δW := TauCeti.CategoryTheory.cechCohomologyδ PointOpenCover.toFormalCoproduct
+    (fun _ _ hf ↦ hf) (fun V : PointOpenCover Y ↦
+      (hT.map_of_exact W).map_of_exact (cechComplexFunctor V.opens)) n
   calc
-    _ = _ := (Category.assoc _ _ _).symm.trans (hd =≫ _)
-    _ = _ := (Category.assoc _ _ _).trans (_ ≫= ht)
-    _ = _ := _ ≫= (hm =≫ _)
+    _ = H ≫ δW ≫ (cechCohomology Y (ModuleCat.{u} R) (n + 1)).map (α.inv.app S.X₁) :=
+      (Category.assoc _ _ _).symm.trans (hd =≫ _)
+    _ = H ≫ M.map φ.τ₃ ≫ hS'.cechCohomologyδ n :=
+      (Category.assoc _ _ _).trans (_ ≫= ht)
+    _ = H ≫ (M.map (W.map (cokernelToX₃ S)) ≫ M.map (α.inv.app S.X₃)) ≫
+        hS'.cechCohomologyδ n := _ ≫= (hm =≫ _)
     _ = _ := (_ ≫= Category.assoc _ _ _).trans
       ((Category.assoc _ _ _).symm.trans ((hc.symm =≫ _).trans (Category.assoc _ _ _)))
 
