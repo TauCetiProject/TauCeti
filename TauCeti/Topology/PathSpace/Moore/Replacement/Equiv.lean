@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
 public import TauCeti.Topology.PathSpace.Moore.Replacement.Basic
+public import TauCeti.Topology.PathSpace.Moore.From
 
 /-!
 # The Moore-path replacement of a Hurewicz fibration
@@ -24,7 +25,8 @@ homotopy lifting property with respect to `E'` itself, so the universe of test s
 The endpoint evaluation `P_{A→X} X → X` of the Moore paths starting in a subset `A` is the
 Moore-path replacement of the inclusion `A → X`, up to a homeomorphism over `X`
 (`TauCeti.MooreReplacement.homeomorphPathsFrom`), so it is a Hurewicz fibration
-(`TauCeti.MoorePath.isHurewiczFibration_target`).
+(`TauCeti.MoorePath.isHurewiczFibration_target`); for `A = {b}` this is the end point of the based
+path space `P_b X` (`TauCeti.MoorePathFrom.isHurewiczFibration_endpoint`).
 
 ## Main definitions
 
@@ -37,6 +39,7 @@ Moore-path replacement of the inclusion `A → X`, up to a homeomorphism over `X
 
 * `TauCeti.MooreReplacement.fiberHomotopyEquivFiber`: `F ≃ₕ F'` for a Hurewicz fibration.
 * `TauCeti.MoorePath.isHurewiczFibration_target`: the endpoint evaluation is a Hurewicz fibration.
+* `TauCeti.MoorePathFrom.isHurewiczFibration_endpoint`: so is the end point of `P_b X`.
 
 ## References
 
@@ -221,5 +224,15 @@ theorem MoorePath.isHurewiczFibration_target {X : Type u} [TopologicalSpace X] (
   funext γ
   rw [Function.comp_apply, MooreReplacement.endpoint_apply,
     MooreReplacement.path_homeomorphPathsFrom_symm]
+
+/-- The **end point** `P_b X → X` of the Moore paths starting at `b` is a Hurewicz fibration. -/
+theorem MoorePathFrom.isHurewiczFibration_endpoint {X : Type u} [TopologicalSpace X] (b : X) :
+    IsHurewiczFibration.{w} (MoorePathFrom.endpoint X b) := by
+  have h : IsHurewiczFibration.{w} fun γ : MoorePathFrom X b ↦ γ.val.target :=
+    MoorePath.isHurewiczFibration_target ({b} : Set X)
+  convert h using 1
+  funext γ
+  exact (MoorePathFrom.endpoint_apply γ).trans
+    (congrArg MoorePath.target (MoorePathFrom.toMoorePath_mk γ.val γ.property))
 
 end TauCeti

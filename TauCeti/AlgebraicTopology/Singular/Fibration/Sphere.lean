@@ -77,7 +77,7 @@ variable (h : Fintype.card ι = n + 1)
 /-- The CW structure of the unit sphere `Sⁿ`, transported from the ambient Euclidean space to the
 sphere itself by the classical round trip `TauCeti.toRelativeCWComplex`. -/
 @[instance_reducible]
-private def sphereRelCWComplex :
+def sphereRelCWComplex :
     letI := sphereCWComplex h
     RelCWComplex (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1))
       (range (ContinuousMap.inclusion (base_subset_complex
@@ -88,7 +88,7 @@ private def sphereRelCWComplex :
 section Skeleton
 
 /-- For `1 ≤ k ≤ n`, `skeletonLT k` of the CW structure on the sphere is the pole. -/
-private lemma skeletonLT_sphereRelCWComplex {k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n) :
+lemma skeletonLT_sphereRelCWComplex {k : ℕ} (hk : 1 ≤ k) (hkn : k ≤ n) :
     letI := sphereRelCWComplex h
     (skeletonLT (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) k :
       Set (sphere (0 : EuclideanSpace ℝ ι) 1)) = {spherePolePoint h} := by
@@ -110,7 +110,7 @@ private def sphereRelCWComplexCellEquiv (m : ℕ) :
 
 /-- The CW structure on the sphere has no cells above dimension `n`, so `skeletonLT (n + 1)` is the
 whole sphere. -/
-private lemma skeletonLT_succ_sphereRelCWComplex :
+lemma skeletonLT_succ_sphereRelCWComplex :
     letI := sphereRelCWComplex h
     (skeletonLT (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) ((n + 1 : ℕ) : ℕ∞) :
       Set (sphere (0 : EuclideanSpace ℝ ι) 1)) = univ :=
@@ -122,7 +122,7 @@ private lemma skeletonLT_succ_sphereRelCWComplex :
 
 /-- The CW structure on `Sⁿ`, `n ≥ 1`, has exactly one `n`-cell. -/
 @[instance_reducible]
-private def uniqueCellSphereRelCWComplex (hn : 1 ≤ n) :
+def uniqueCellSphereRelCWComplex (hn : 1 ≤ n) :
     letI := sphereRelCWComplex h
     Unique (cell (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) n) :=
   letI := sphereCWComplex h
