@@ -32,6 +32,8 @@ to the source is a strong epimorphism. This uses Mathlib's `StrongEpi.llp` and `
 
 * `CategoryTheory.Over.isIso_left`: the underlying morphism of an isomorphism over a base is
   an isomorphism.
+* `CategoryTheory.Over.mapObjMkIso`: an object `T` over `Y` whose structure morphism factors as
+  `c ≫ f` is the image under `Over.map f` of the object `c` over `X`.
 * `CategoryTheory.Over.isPullback_pullback_map_left`: base change of a morphism over `S` is a
   pullback of it.
 * `CategoryTheory.Over.exists_comp_pullback_map_eq_iff`: factorization through a monomorphism
@@ -54,6 +56,26 @@ namespace Over
 instance isIso_left {T : Type u} [Category.{v} T] {X : T} {f g : Over X} (φ : f ⟶ g)
     [IsIso φ] : IsIso φ.left :=
   (Over.forget X).map_isIso φ
+
+/-- An object `T` over `Y` together with a factorization `c ≫ f = T.hom` of its structure morphism
+through `f : X ⟶ Y` is isomorphic to the image of the object `c` over `X` under `Over.map f`. The
+underlying isomorphism is the identity of `T.left`. -/
+def mapObjMkIso {C : Type u} [Category.{v} C] {X Y : C} {f : X ⟶ Y} {T : Over Y}
+    (c : T.left ⟶ X) (hc : c ≫ f = T.hom) : (Over.map f).obj (Over.mk c) ≅ T :=
+  Over.isoMk (Iso.refl _) (by simp [hc])
+
+/-- The underlying morphism of `Over.mapObjMkIso c hc` is the identity of `T.left`. -/
+@[simp]
+theorem mapObjMkIso_hom_left {C : Type u} [Category.{v} C] {X Y : C} {f : X ⟶ Y} {T : Over Y}
+    (c : T.left ⟶ X) (hc : c ≫ f = T.hom) : (mapObjMkIso c hc).hom.left = 𝟙 T.left := by
+  simp [mapObjMkIso]
+
+/-- The underlying morphism of the inverse of `Over.mapObjMkIso c hc` is the identity of
+`T.left`. -/
+@[simp]
+theorem mapObjMkIso_inv_left {C : Type u} [Category.{v} C] {X Y : C} {f : X ⟶ Y} {T : Over Y}
+    (c : T.left ⟶ X) (hc : c ≫ f = T.hom) : (mapObjMkIso c hc).inv.left = 𝟙 T.left := by
+  simp [mapObjMkIso]
 
 /-- Base change along `f : T ⟶ S` of a morphism `g : A ⟶ B` over `S` is the pullback of `g.left`
 along the projection `B ×_S T ⟶ B`: the square formed by `A ×_S T ⟶ B ×_S T`, the two first
