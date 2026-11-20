@@ -248,7 +248,8 @@ private theorem support_source
 private theorem contDiff_cauchyCk (hα : 0 < α) (hα1 : α < 1)
     (f : supportedCkHolderSubmodule (E := ℂ) (F := F) k α (closedBall c r)) :
     ContDiff ℝ (k + 1 : ℕ) (cauchyCk f) :=
-  contDiff_cauchyTransform_of_mem_supportedCkHolderSubmodule hα hα1 (isCompact_closedBall c r) f.2
+  contDiff_cauchyTransform_of_mem_supportedCkHolderSubmodule hα hα1
+    (isCompact_closedBall c r) f.property
 
 /-- The constant of the higher Hölder gain, for fixed target, order, exponent and discs. -/
 private def gainConst (k : ℕ) (hα : 0 < α) (hα1 : α < 1) (c : ℂ) (hr : 0 ≤ r) (hR : 0 ≤ R) :
@@ -325,9 +326,9 @@ private def cauchyFieldLinearMap (hα : 0 < α) (hα1 : α < 1) (j : ℕ) (hj : 
     have hfg : cauchyCk (f + g) = cauchyCk f + cauchyCk g := by
       simp only [cauchyCk, Submodule.coe_add, CkHolderSpace.coe_add]
       exact cauchyTransform_add (f : CkHolderSpace k α ℂ F).contDiff.continuous
-        (hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r) f.2)
+        (hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r) f.property)
         (g : CkHolderSpace k α ℂ F).contDiff.continuous
-        (hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r) g.2)
+        (hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r) g.property)
     simp only [cauchyField_apply, FunLike.coe_add, Pi.add_apply, hfg]
     exact iteratedFDeriv_add_apply ((contDiff_cauchyCk hα hα1 f).contDiffAt.of_le hj')
       ((contDiff_cauchyCk hα hα1 g).contDiffAt.of_le hj')

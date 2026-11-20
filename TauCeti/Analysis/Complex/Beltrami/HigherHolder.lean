@@ -128,7 +128,7 @@ private def cutoffBeurling
     (H := ‖beurlingCkCLM k hα hα1 hr (r3_nonneg hr) h‖₊)
     (N := bumpBound c hr (k + 1))
     ((hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r)
-        h.2).contDiff_wirtingerDeriv_cauchyTransform_of_holderWith hα hα1
+        h.property).contDiff_wirtingerDeriv_cauchyTransform_of_holderWith hα hα1
       (h : CkHolderSpace k α ℂ ℂ).contDiff
       (h : CkHolderSpace k α ℂ ℂ).memHolder_iteratedFDeriv.holderWith).contDiffOn
     (bump c hr).contDiff isOpen_ball (convex_ball c (r + 3)) (tsupport_bump_subset hr) hα1.le
@@ -310,7 +310,7 @@ private theorem cauchyTransform_regularity (hα : 0 < α) (hα1 : α < 1) (hr : 
   intro T D
   have hhs := support_subset_of_mem_supportedCkHolderSubmodule h.property
   refine ⟨contDiff_cauchyTransform_of_mem_supportedCkHolderSubmodule hα hα1
-      (isCompact_closedBall c r) h.2, fun z ↦ ?_, fun i hi z hz ↦ ?_, ?_⟩
+      (isCompact_closedBall c r) h.property, fun z ↦ ?_, fun i hi z hz ↦ ?_, ?_⟩
   · -- `\bar∂ T h = h`, by the one-derivative Hölder gain on a disc containing `z`.
     obtain ⟨C₀, hC₀⟩ := exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
       (F := ℂ) hα hα1 c hr (dist_nonneg (x := z) (y := c))

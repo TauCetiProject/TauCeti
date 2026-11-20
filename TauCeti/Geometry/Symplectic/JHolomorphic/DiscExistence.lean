@@ -56,10 +56,10 @@ Lipschitz bounds on `K` and its derivative make `h ↦ K(u)` Lipschitz in the H�
 smallness properties after rescaling `x ↦ J(λ x)` with small `λ`, which gives the local theorem for
 every `ξ`.
 
-The contraction adapts the small-coefficient Beltrami fixed-point construction
-`TauCeti.exists_ckHolder_conjWirtingerDeriv_eq_mul_wirtingerDeriv`
-(`TauCeti/Analysis/Complex/Beltrami/HigherHolder.lean`) to a nonlinear coefficient. Its Cauchy
-transform regularity is provided by the zero-order source lemmas
+The supported Hölder source space and bounded Cauchy derivative also occur in the zero-order
+Beltrami theorem `TauCeti.exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv`. Its scalar
+`C^{k,α}` variant is `TauCeti.exists_ckHolder_conjWirtingerDeriv_eq_mul_wirtingerDeriv`.
+The Cauchy transform regularity here is provided by the zero-order source lemmas
 `TauCeti.contDiff_cauchyTransform_of_mem_supportedHolderSubmodule` and
 `TauCeti.conjWirtingerDeriv_cauchyTransform_of_mem_supportedHolderSubmodule`. The Lipschitz bound
 for `h ↦ K(u)` is the second-difference estimate
