@@ -22,7 +22,8 @@ null vectors. The companion module `TauCeti.Combinatorics.SimpleGraph.AdditiveFu
 zero propagation and positivity for nonzero nonnegative vectors with nonnegative Cartan image
 on a preconnected graph; see `SimpleGraph.Preconnected.pos_of_graphCartanMatrix_mulVec_nonneg`.
 In particular, nonzero nonnegative null vectors are strictly positive, allowing the
-positive-additive-function theory to be applied.
+positive-additive-function theory to be applied. When `2I - A` is positive definite, as on a
+Dynkin diagram, every nonzero nonnegative vector has a precarious vertex.
 
 All constructions commute with actual graph isomorphisms. Integer vectors give the coefficient
 game. The Cartan criteria require only a partial order compatible with addition; the
@@ -138,6 +139,29 @@ theorem isStuck_and_forall_not_isPrecarious_iff_graphCartanMatrix_mulVec_eq_zero
     fun h ↦ ⟨h.ge, Pi.le_def.mp h.le⟩⟩
 
 end Cartan
+
+/-- A natural-valued position, read in `ℤ^V`, is stuck without precarious vertices exactly when
+it is an additive function: `∑_{j ∼ i} a j = 2 * a i` at every vertex. -/
+theorem isStuck_and_forall_not_isPrecarious_natCast_iff_sum_eq_two_mul (a : V → ℕ) :
+    (G.IsStuck (fun i ↦ (a i : ℤ)) ∧ ∀ i, ¬ G.IsPrecarious (fun i ↦ (a i : ℤ)) i) ↔
+      ∀ i, ∑ j ∈ G.neighborFinset i, a j = 2 * a i := by
+  rw [isStuck_and_forall_not_isPrecarious_iff_graphCartanMatrix_mulVec_eq_zero, funext_iff]
+  refine forall_congr' fun i ↦ ?_
+  rw [graphCartanMatrix_mulVec_apply, Pi.zero_apply, sub_eq_zero, eq_comm]
+  exact_mod_cast Iff.rfl
+
+/-- **Positive definite graphs have no stuck positions without precarious vertices.** If `2I - A`
+is positive definite, then every nonzero nonnegative vector has a precarious vertex, since
+`aᵀ (2I - A) a > 0` forces some coordinate of `(2I - A) a` to be positive. -/
+theorem exists_isPrecarious_of_posDef {R : Type*} [Ring R] [LinearOrder R] [IsOrderedRing R]
+    [StarRing R] [TrivialStar R]
+    (hC : (G.graphCartanMatrix R).PosDef) {a : V → R} (ha0 : 0 ≤ a) (ha : a ≠ 0) :
+    ∃ i, G.IsPrecarious a i := by
+  simp only [isPrecarious_iff_graphCartanMatrix_mulVec_pos]
+  by_contra! h
+  have hpos := hC.dotProduct_mulVec_pos ha
+  rw [star_trivial] at hpos
+  exact hpos.not_ge (sum_nonpos fun i _ ↦ mul_nonpos_of_nonneg_of_nonpos (ha0 i) (h i))
 
 section Relabel
 
