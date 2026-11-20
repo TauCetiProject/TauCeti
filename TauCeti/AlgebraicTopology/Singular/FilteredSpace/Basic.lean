@@ -346,8 +346,9 @@ lemma spectralObjectMap_chainFiltrationMap_hom_app_chainFiltrationAbutmentIso_ho
         (chainFiltrationAbutmentIso G hX' n).hom =
       (chainFiltrationAbutmentIso F hX n).hom ≫
         HomologicalComplex.homologyMap (F.map g ≫ α.app Y') n := by
+  open CochainComplex in
   rw [chainFiltrationMap_def, chainFiltrationAbutmentIso_hom, chainFiltrationAbutmentIso_hom,
-    CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_filtrationAbutmentIso_hom_assoc,
+    spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom_assoc,
     Category.assoc]
   -- The degree `-n` is `ComplexShape.embeddingDownNat.f n` only up to unfolding, so the
   -- naturality of `extendHomologyIso` is applied as a term.

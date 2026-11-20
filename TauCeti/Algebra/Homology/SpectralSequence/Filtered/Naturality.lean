@@ -30,7 +30,7 @@ their spectral sequences. On the first page, whose objects are the cohomology of
 that morphism is the map in cohomology of the induced morphisms of graded pieces
 (`CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`). On the abutment, through
 `CochainComplex.filtrationAbutmentIso`, it is the map in cohomology of `f`
-(`CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_filtrationAbutmentIso_hom`).
+(`CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom`).
 
 A natural transformation whose components are quasi-isomorphisms induces an isomorphism of
 spectral objects (`CochainComplex.isIso_spectralObjectMap`): on each `H^n(f)` it is the map in
@@ -51,8 +51,8 @@ cohomology of a morphism of mapping cones, which is a quasi-isomorphism by the f
 * `CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`:
   on the first page, the morphism of spectral sequences is the map in cohomology of the morphism
   of graded pieces.
-* `CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_filtrationAbutmentIso_hom`: on
-  the abutment, the morphism of spectral objects is the map in cohomology of `f`.
+* `CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom`:
+  on the abutment, the morphism of spectral objects is the map in cohomology of `f`.
 * `CochainComplex.filtrationFunctorMap_id`, `CochainComplex.filtrationFunctorMap_comp`:
   functoriality of `filtrationFunctorMap`.
 * `CochainComplex.quasiIso_filtrationFunctorMap_app`: a quasi-isomorphism of filtered complexes
@@ -139,7 +139,7 @@ lemma filtrationFunctorMap_app_comp (f : K ⟶ L) (hf : ∀ n, (G n).Factors ((F
 of spectral objects induced by a morphism of filtered complexes `f` is, on the abutment, the map
 induced by `f` in cohomology. -/
 @[reassoc (attr := simp)]
-lemma spectralObjectMap_filtrationFunctorMap_hom_app_filtrationAbutmentIso_hom (f : K ⟶ L)
+lemma spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom (f : K ⟶ L)
     (hf : ∀ n, (G n).Factors ((F n).arrow ≫ f)) (n : ℤ) :
     ((spectralObjectMap (filtrationFunctorMap hF hG f hf)).hom n).app
         (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫ (filtrationAbutmentIso G hG n).hom =
