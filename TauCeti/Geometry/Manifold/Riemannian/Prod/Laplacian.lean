@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Prod
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
 
 /-!
 # The Laplace–Beltrami operator of a product metric
@@ -38,8 +39,9 @@ The Hessian is computed on product vector fields: the Levi-Civita connection of 
 metric differentiates a field `(Y, 0)` along `(X, 0)` as the Levi-Civita connection of `M`
 (`TauCeti.Manifold.leviCivitaConnection_prodVectorField`), and the derivative of a function on
 `M × N` along a vector `(v, 0)` is the derivative of its slice
-(`MDifferentiableAt.mvfderiv_prod_eq_add_apply`). The Laplacian is the trace of the Hessian in the
-orthonormal basis of the product tangent space obtained from orthonormal bases of the factors.
+(`MDifferentiableAt.mvfderiv_prod_eq_apply_of_snd_eq_zero`). The Laplacian is the trace of the
+Hessian in the orthonormal basis of the product tangent space obtained from orthonormal bases of
+the factors.
 
 ## Main results
 
@@ -76,36 +78,6 @@ variable
   {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   {u : M × N → ℝ} {p : M × N}
-
-/-- Along a tangent vector of the first factor, the derivative of a function on `M × N` is the
-derivative of its slice through the point. -/
-private theorem mvfderiv_prod_of_snd_eq_zero {g : M × N → ℝ} {q : M × N} (hg : MDiffAt g q)
-    {v : TangentSpace (I.prod J) q} (hv : v.2 = (0 : TangentSpace J q.2)) :
-    mvfderiv (I.prod J) g q v = mvfderiv I (fun x ↦ g (x, q.2)) q.1 v.1 := by
-  rw [hg.mvfderiv_prod_eq_add_apply, hv, map_zero, add_zero]
-
-/-- Along a tangent vector of the second factor, the derivative of a function on `M × N` is the
-derivative of its slice through the point. -/
-private theorem mvfderiv_prod_of_fst_eq_zero {g : M × N → ℝ} {q : M × N} (hg : MDiffAt g q)
-    {v : TangentSpace (I.prod J) q} (hv : v.1 = (0 : TangentSpace I q.1)) :
-    mvfderiv (I.prod J) g q v = mvfderiv J (fun y ↦ g (q.1, y)) q.2 v.2 := by
-  rw [hg.mvfderiv_prod_eq_add_apply, hv, map_zero, zero_add]
-
-/-- A function on `M × N` which is `C²` at `p` is differentiable along the slice `M × {p.2}`
-near `p`. -/
-private theorem eventually_mdifferentiableAt_prodMk_left [IsManifold I 2 M] [IsManifold J 2 N]
-    (hu : ContMDiffAt (I.prod J) 𝓘(ℝ) 2 u p) : ∀ᶠ x in nhds p.1, MDiffAt u (x, p.2) :=
-  ((continuous_id.prodMk continuous_const).tendsto p.1).eventually
-    (((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hu).mono
-      fun _ hq ↦ hq.mdifferentiableAt two_ne_zero)
-
-/-- A function on `M × N` which is `C²` at `p` is differentiable along the slice `{p.1} × N`
-near `p`. -/
-private theorem eventually_mdifferentiableAt_prodMk_right [IsManifold I 2 M] [IsManifold J 2 N]
-    (hu : ContMDiffAt (I.prod J) 𝓘(ℝ) 2 u p) : ∀ᶠ y in nhds p.2, MDiffAt u (p.1, y) :=
-  ((continuous_const.prodMk continuous_id).tendsto p.2).eventually
-    (((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hu).mono
-      fun _ hq ↦ hq.mdifferentiableAt two_ne_zero)
 
 variable
   [FiniteDimensional ℝ E] [IsManifold I 2 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
@@ -145,12 +117,14 @@ theorem hessian_prod_mk_zero (hu : ContMDiffAt (I.prod J) 𝓘(ℝ) 2 u p)
     hessian_apply_eq_mvfderiv_sub p.1 hslice X Y hY]
   congr 1
   · -- The derivative of `q ↦ du_q (Y q.1, 0)` along `(X p.1, 0)` only sees the slice through `p`.
-    rw [mvfderiv_prod_of_snd_eq_zero (mdifferentiableAt_mvfderiv_apply hu le_rfl hYZ) (hZ₀ X p),
+    rw [(mdifferentiableAt_mvfderiv_apply hu le_rfl hYZ).mvfderiv_prod_eq_apply_of_snd_eq_zero
+        (hZ₀ X p),
       prodVectorField_fst]
     refine congrArg (fun φ : TangentSpace I p.1 →L[ℝ] ℝ ↦ φ (X p.1))
       (Filter.EventuallyEq.mvfderiv_eq ?_)
-    filter_upwards [eventually_mdifferentiableAt_prodMk_left hu] with x hx
-    rw [mvfderiv_prod_of_snd_eq_zero hx (hZ₀ Y _), prodVectorField_fst]
+    filter_upwards [((Continuous.prodMk_left p.2).tendsto p.1).eventually
+      (hu.eventually_mdifferentiableAt two_ne_zero)] with x hx
+    rw [hx.mvfderiv_prod_eq_apply_of_snd_eq_zero (hZ₀ Y _), prodVectorField_fst]
   · rw [leviCivitaConnection_prodVectorField hY hZ, hud.mvfderiv_prod_eq_add_apply,
       prodVectorField_snd, prodVectorField_fst]
     -- The second factor contributes `∇_0 0 = 0`.
@@ -188,12 +162,14 @@ theorem hessian_prod_zero_mk (hu : ContMDiffAt (I.prod J) 𝓘(ℝ) 2 u p)
     hessian_apply_eq_mvfderiv_sub p.2 hslice X Y hY]
   congr 1
   · -- The derivative of `q ↦ du_q (0, Y q.2)` along `(0, X p.2)` only sees the slice through `p`.
-    rw [mvfderiv_prod_of_fst_eq_zero (mdifferentiableAt_mvfderiv_apply hu le_rfl hZY) (hZ₀ X p),
+    rw [(mdifferentiableAt_mvfderiv_apply hu le_rfl hZY).mvfderiv_prod_eq_apply_of_fst_eq_zero
+        (hZ₀ X p),
       prodVectorField_snd]
     refine congrArg (fun φ : TangentSpace J p.2 →L[ℝ] ℝ ↦ φ (X p.2))
       (Filter.EventuallyEq.mvfderiv_eq ?_)
-    filter_upwards [eventually_mdifferentiableAt_prodMk_right hu] with y hy
-    rw [mvfderiv_prod_of_fst_eq_zero hy (hZ₀ Y _), prodVectorField_snd]
+    filter_upwards [((Continuous.prodMk_right p.1).tendsto p.2).eventually
+      (hu.eventually_mdifferentiableAt two_ne_zero)] with y hy
+    rw [hy.mvfderiv_prod_eq_apply_of_fst_eq_zero (hZ₀ Y _), prodVectorField_snd]
   · rw [leviCivitaConnection_prodVectorField hZ hY, hud.mvfderiv_prod_eq_add_apply,
       prodVectorField_snd, prodVectorField_fst]
     -- The first factor contributes `∇_0 0 = 0`.
