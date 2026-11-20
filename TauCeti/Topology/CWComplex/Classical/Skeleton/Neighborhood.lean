@@ -36,6 +36,9 @@ be excised.
 * `TauCeti.skeletonNeighborhood C n`: `Xⁿ` minus the inner halves of the open `n`-cells.
 * `TauCeti.skeletonNeighborhoodHomotopy C n`: the homotopy of `Xⁿ` from the identity to
   `TauCeti.skeletonNeighborhoodEndpoint C n`.
+* `TauCeti.skeletonNeighborhoodHomotopyRel C n`: the same deformation read on
+  `TauCeti.skeletonNeighborhood C n`, a homotopy relative to `Xⁿ⁻¹` from the identity to a map
+  into `Xⁿ⁻¹`.
 
 ## Main results
 
@@ -297,5 +300,47 @@ lemma skeletonNeighborhoodEndpoint_mem {n : ℕ} (x : (skeletonLT C ((n + 1 : �
     cellDeformation_radialPushMap_map 1 j hy.le]
   exact cellFrontier_subset_skeletonLT n j
     ⟨_, mem_sphere_zero_iff_norm.2 (norm_radialPush_one (by norm_num) hy2), rfl⟩
+
+variable (C) in
+/-- **The skeletal neighbourhood deforms onto the `(n-1)`-skeleton relative to it.** The
+deformation `TauCeti.skeletonNeighborhoodHomotopy` of `Xⁿ`, read on the points of
+`N = TauCeti.skeletonNeighborhood C n`, is a homotopy relative to `Xⁿ⁻¹ = skeletonLT C n` from the
+identity of `N` to a map with values in `Xⁿ⁻¹`. -/
+def skeletonNeighborhoodHomotopyRel (n : ℕ) :
+    (ContinuousMap.id (skeletonNeighborhood C n)).HomotopyRel
+      ⟨fun x ↦ ⟨skeletonNeighborhoodEndpoint C n ⟨x, skeletonNeighborhood_subset_skeletonLT_succ C n
+          x.property⟩, skeletonLT_subset_skeletonNeighborhood n (skeletonNeighborhoodEndpoint_mem _
+              x.property)⟩,
+        by fun_prop⟩
+      (Subtype.val ⁻¹' (skeletonLT C n : Set X)) where
+  toFun z := ⟨skeletonNeighborhoodHomotopy C n
+      (z.1, ⟨z.2, skeletonNeighborhood_subset_skeletonLT_succ C n z.2.property⟩),
+    skeletonNeighborhoodHomotopy_mem _ _ z.2.property⟩
+  continuous_toFun := by fun_prop
+  map_zero_left x := Subtype.ext <| by
+    -- Read the deformation of `Xⁿ` on the points of `N`, as points of `X`.
+    change (skeletonNeighborhoodHomotopy C n (0, _) : X) = x
+    rw [ContinuousMap.Homotopy.apply_zero]
+    rfl
+  map_one_left x := Subtype.ext <| by
+    -- As above, read the deformation on the points of `N`.
+    change (skeletonNeighborhoodHomotopy C n (1, _) : X) = skeletonNeighborhoodEndpoint C n _
+    rw [ContinuousMap.Homotopy.apply_one]
+  prop' t x hx := Subtype.ext <| by
+    -- As above, read the deformation on the points of `N`.
+    change (skeletonNeighborhoodHomotopy C n (t, _) : X) = x
+    rw [skeletonNeighborhoodHomotopy_apply_of_mem t
+      ⟨x.val, skeletonNeighborhood_subset_skeletonLT_succ C n x.property⟩ (by exact hx)]
+
+/-- `TauCeti.skeletonNeighborhoodHomotopyRel C n` is the deformation
+`TauCeti.skeletonNeighborhoodHomotopy C n` of `Xⁿ`, read on the points of
+`TauCeti.skeletonNeighborhood C n`. -/
+@[simp]
+lemma coe_skeletonNeighborhoodHomotopyRel_apply {n : ℕ} (t : I)
+    (x : skeletonNeighborhood C n) :
+    (skeletonNeighborhoodHomotopyRel C n (t, x) : X) =
+      skeletonNeighborhoodHomotopy C n
+        (t, ⟨x, skeletonNeighborhood_subset_skeletonLT_succ C n x.property⟩) :=
+  (rfl)
 
 end TauCeti
