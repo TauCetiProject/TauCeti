@@ -33,6 +33,8 @@ finite-measure assumption.
 Stopped-value convergence is asserted only at finite times: the native value at infinity
 is a fallback, not a terminal path limit.
 
+No rounded value lies strictly between consecutive grid points (`le_dyadicCeilTime_of_div_lt`).
+
 ## References
 
 * I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
@@ -127,6 +129,20 @@ theorem dyadicCeilTime_dyadic (n k : ℕ) :
   rw [dyadicCeilTime_coe]
   congr 1
   rw [div_mul_cancel₀ _ (by positivity), Nat.ceil_natCast]
+
+/-- No upward dyadic rounding at mesh `2⁻ᵏ` lies strictly between consecutive grid points
+`j / 2 ^ k` and `(j + 1) / 2 ^ k`. -/
+theorem le_dyadicCeilTime_of_div_lt (k j : ℕ) {u : WithTop ℝ≥0}
+    (h : (↑((j : ℝ≥0) / 2 ^ k) : WithTop ℝ≥0) < dyadicCeilTime k u) :
+    (↑(((j + 1 : ℕ) : ℝ≥0) / 2 ^ k) : WithTop ℝ≥0) ≤ dyadicCeilTime k u := by
+  cases u with
+  | top => rw [dyadicCeilTime_top]; exact le_top
+  | coe v =>
+    simp only [dyadicCeilTime_coe, WithTop.coe_lt_coe, WithTop.coe_le_coe] at h ⊢
+    have hpow : (0 : ℝ≥0) < (2 : ℝ≥0) ^ k := by positivity
+    rw [div_lt_div_iff_of_pos_right hpow, Nat.cast_lt] at h
+    rw [div_le_div_iff_of_pos_right hpow, Nat.cast_le]
+    exact h
 
 /-- Refining the dyadic grid decreases the rounded time. -/
 theorem antitone_dyadicCeilTime (u : WithTop ℝ≥0) : Antitone (fun n => dyadicCeilTime n u) := by

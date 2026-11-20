@@ -6,19 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Process.Indistinguishable
+public import Mathlib.Probability.Process.Stopping
 public import Mathlib.Topology.Bases
 
 /-!
-# Indistinguishability of continuous stochastic processes
+# Indistinguishability of continuous and stopped stochastic processes
 
 Two stochastic processes on a separable topological index space taking values in a Hausdorff space
 that are modifications of each other and have almost surely continuous sample paths are
 indistinguishable. Neither finiteness of the measure nor measurability of the processes is needed.
 
+Indistinguishability transfers almost-sure path continuity and is preserved by stopping at any
+random time, without measurability or stopping-time hypotheses.
+
 ## Main results
 
 * `TauCeti.indist_of_ae_continuous`: almost surely continuous modifications on a separable index
   space into a `T₂` space are indistinguishable.
+* `ProbabilityTheory.Indistinguishable.ae_continuous` and
+  `ProbabilityTheory.Indistinguishable.stoppedProcess`: path-continuity transfer and stopping
+  invariance under indistinguishability.
 -/
 
 public section
@@ -41,3 +48,24 @@ theorem indist_of_ae_continuous {ι Ω E : Type*} [TopologicalSpace ι] [Separab
   exact fun t ↦ congr_fun (Continuous.ext_on hDd hXω hYω hDω) t
 
 end TauCeti
+
+namespace ProbabilityTheory.Indistinguishable
+
+variable {ι Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X Y : ι → Ω → E}
+
+/-- Indistinguishability transfers almost-sure path continuity. -/
+theorem ae_continuous [TopologicalSpace ι] [TopologicalSpace E]
+    (h : X ≡ᵐ[P] Y) (hX : ∀ᵐ ω ∂P, Continuous (X · ω)) :
+    ∀ᵐ ω ∂P, Continuous (Y · ω) := by
+  filter_upwards [h, hX] with ω hω hXω
+  exact hXω.congr hω
+
+/-- Stopping at any random time preserves indistinguishability. No measurability or
+stopping-time assumption is needed. -/
+protected theorem stoppedProcess [LinearOrder ι] [Nonempty ι]
+    (h : X ≡ᵐ[P] Y) (τ : Ω → WithTop ι) :
+    MeasureTheory.stoppedProcess X τ ≡ᵐ[P] MeasureTheory.stoppedProcess Y τ := by
+  filter_upwards [h] with ω hω t
+  exact hω _
+
+end ProbabilityTheory.Indistinguishable
