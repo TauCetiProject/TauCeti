@@ -131,7 +131,8 @@ theorem globalInvariants_weightedSumSquares_one_self_self (hmin : minpoly ℤ θ
     _root_.QuadraticForm.globalInvariants (weightedSumSquares K ![1, (θ : K), (θ : K)]) h =
       { rank := 3, discr := 0,
         finiteHasse := fun v => if v.asIdeal = Ideal.span {(2 : 𝓞 K)} then -1 else 1,
-        realPositiveIndex := fun w => if 0 < embedding_of_isReal w.2 (θ : K) then 3 else 1 } := by
+        realPositiveIndex := fun w => if 0 < embedding_of_isReal w.property (θ : K) then 3 else 1 }
+            := by
   set u := thetaUnit hmin
   have he : (weightedSumSquares K ![1, (θ : K), (θ : K)]).Equivalent
       (weightedSumSquares K fun i => ((![1, u, u] : Fin 3 → Kˣ) i : K)) := by
@@ -163,11 +164,12 @@ theorem globalInvariants_weightedSumSquares_one_self_self (hmin : minpoly ℤ θ
       _root_.QuadraticForm.realPositiveIndex_weightedSumSquares]
     dsimp only
     split_ifs with hθ
-    · have hset : {i | 0 < embedding_of_isReal w.2 (![1, (θ : K), (θ : K)] i)} = Set.univ := by
+    · have hset : {i | 0 < embedding_of_isReal w.property (![1, (θ : K), (θ : K)] i)} = Set.univ
+        := by
         ext i
         fin_cases i <;> simp [hθ]
       rw [hset, Set.ncard_univ, Nat.card_eq_fintype_card, Fintype.card_fin]
-    · have hset : {i | 0 < embedding_of_isReal w.2 (![1, (θ : K), (θ : K)] i)} = {0} := by
+    · have hset : {i | 0 < embedding_of_isReal w.property (![1, (θ : K), (θ : K)] i)} = {0} := by
         ext i
         fin_cases i <;> simp [hθ]
       rw [hset, Set.ncard_singleton]

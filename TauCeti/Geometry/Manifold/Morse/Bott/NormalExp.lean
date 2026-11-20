@@ -64,15 +64,14 @@ open scoped ContDiff InnerProductSpace Manifold
 namespace TauCeti.SmoothEmbedding
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+
+variable [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [RiemannianBundle (fun y : M ↦ TangentSpace I y)]
   [IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y)]
   {E' H' S P : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
-  {f : M → ℝ} {n : ℕ∞ω} {i : SmoothEmbedding J I n S M} (hn : n ≠ 0)
-
-omit [I.Boundaryless] [T2Space M] in
+  {f : M → ℝ} {n : ℕ∞ω} {i : SmoothEmbedding J I n S M} (hn : n ≠ 0) in
 /-- The normal slice through the normal exponential, read on the intrinsic normal space, is the
 normal slice on the orthogonal normal space precomposed with the orthogonal-representative
 equivalence. -/
@@ -84,6 +83,13 @@ private theorem comp_normalExp_mk_eq_comp (s : S) :
   ext v
   rw [comp_apply, ← normalSpaceOrthogonalComplementEquiv_symm_apply,
     ContinuousLinearEquiv.symm_apply_apply]
+
+variable [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  [RiemannianBundle (fun y : M ↦ TangentSpace I y)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y)]
+  {E' H' S P : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
+  {f : M → ℝ} {n : ℕ∞ω} {i : SmoothEmbedding J I n S M} (hn : n ≠ 0)
 
 namespace IsCriticalSubmanifold
 

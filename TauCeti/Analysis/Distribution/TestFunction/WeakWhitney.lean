@@ -7,19 +7,23 @@ module
 
 public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
 public import TauCeti.Geometry.Manifold.ContMDiffMap.WeakWhitney.Basic
-import Mathlib.Topology.UniformSpace.CompactConvergence
 
 /-!
 # Test functions as `C^n` maps with the weak Whitney topology
 
-A function in `𝓓^{n}_{K}(E, F)`, smooth of class `C^n` with support in a fixed compact set `K`,
-is in particular a bundled `C^n` map `E → F`
-(`ContDiffMapSupportedIn.toContMDiffMap`). Because every derivative vanishes outside the compact
-set `K`, uniform convergence of each derivative of order at most `n` on all of `E` is equivalent to
-its uniform convergence on `K`, and hence to compact-open convergence on `E`. Therefore
-`ContDiffMapSupportedIn.toContMDiffMap` is not only continuous
-(`ContDiffMapSupportedIn.continuous_toContMDiffMap`), but a topological embedding
-(`ContDiffMapSupportedIn.isEmbedding_toContMDiffMap`).
+A function in `𝓓^{n}_{K}(E, F)`, smooth of class `C^n` with support in a fixed compact set `K`, is
+in particular a bundled `C^n` map `E → F`
+(`ContDiffMapSupportedIn.toContMDiffMap`). The topology of `𝓓^{n}_{K}(E, F)` is uniform
+convergence of every derivative of order at most `n` on all of `E`, which is stronger than
+convergence of these derivatives uniformly on compact sets, the weak Whitney topology on `C^n`
+maps. So this inclusion is continuous (`ContDiffMapSupportedIn.continuous_toContMDiffMap`).
+Conversely, since every function in `𝓓^{n}_{K}(E, F)` vanishes with all its derivatives outside the
+compact set `K`, uniform convergence of the derivatives on `K` already is uniform convergence on
+`E`. Hence the inclusion induces the topology of `𝓓^{n}_{K}(E, F)`
+(`ContDiffMapSupportedIn.isInducing_toContMDiffMap`,
+`ContDiffMapSupportedIn.isEmbedding_toContMDiffMap`): a family of test functions supported in `K`
+is continuous exactly when it is continuous as a family of `C^n` maps
+(`ContDiffMapSupportedIn.continuous_iff_continuous_toContMDiffMap`).
 
 The weak Whitney topology on maps between manifolds is built from charts, and is functorial
 under composition with fixed smooth maps. Through this embedding, test functions on a chart
@@ -64,6 +68,27 @@ theorem continuous_toContMDiffMap :
     ((structureMapCLM ℝ n m).continuous.prodMap continuous_id)).congr fun z ↦ ?_
   simp [structureMapCLM_apply, hm']
 
+/-- On a fixed compact support the weak Whitney topology is the topology of test functions: a
+family of test functions supported in `K` is continuous exactly when it is continuous as a family
+of `C^n` maps. Outside `K` all derivatives vanish, so uniform convergence of the derivatives on
+the compact set `K` is uniform convergence on all of `E`. -/
+theorem continuous_iff_continuous_toContMDiffMap {X : Type*} [TopologicalSpace X]
+    {φ : X → 𝓓^{n}_{K}(E, F)} :
+    Continuous φ ↔ Continuous (fun x ↦ toContMDiffMap (φ x)) := by
+  refine ⟨continuous_toContMDiffMap.comp, fun h ↦ ?_⟩
+  refine (continuous_iff_comp_order_le φ).2 fun i hi ↦ continuous_iff_continuousAt.2 fun x₀ ↦ ?_
+  have hi' : ((i : ℕ∞) : WithTop ℕ∞) ≤ n := by exact_mod_cast hi
+  have hK := ContinuousMap.tendsto_iff_forall_isCompact_tendstoUniformlyOn.1
+    ((ContMDiffMap.continuous_weakWhitney_iff.1 h i hi').tendsto x₀) K K.isCompact
+  rw [ContinuousAt, BoundedContinuousFunction.tendsto_iff_tendstoUniformly]
+  intro u hu
+  filter_upwards [hK u hu] with x hx y
+  by_cases hy : y ∈ K
+  · simpa [structureMapCLM_apply, hi] using hx y hy
+  · simp only [Function.comp_apply, structureMapCLM_apply, hi, ite_true]
+    rw [(φ x₀).iteratedFDeriv_zero_on_compl hy, (φ x).iteratedFDeriv_zero_on_compl hy]
+    exact refl_mem_uniformity hu
+
 /-- The topology on `𝓓^{n}_{K}(E, F)` is induced by its inclusion into `C^n` maps with the weak
 Whitney topology: because all derivatives vanish off the compact set `K`, uniform convergence on
 `K` already controls the global sup norm of every derivative through order `n`. -/
@@ -71,27 +96,8 @@ theorem isInducing_toContMDiffMap :
     Topology.IsInducing
       (toContMDiffMap : 𝓓^{n}_{K}(E, F) → C^n⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) := by
   refine ⟨le_antisymm continuous_toContMDiffMap.le_induced ?_⟩
-  rw [← continuous_id_iff_le]
-  let _ : TopologicalSpace 𝓓^{n}_{K}(E, F) :=
-    TopologicalSpace.induced toContMDiffMap inferInstance
-  refine (continuous_iff_comp_order_le (id : 𝓓^{n}_{K}(E, F) → 𝓓^{n}_{K}(E, F))).2
-    fun m hm ↦ ?_
-  have hm' : (m : WithTop ℕ∞) ≤ n := by exact_mod_cast hm
-  have hcont : Continuous fun f : 𝓓^{n}_{K}(E, F) ↦
-      ContMDiffMap.iteratedFDerivContinuousMap (toContMDiffMap f) m hm' :=
-    (ContMDiffMap.continuous_iteratedFDerivContinuousMap m hm').comp continuous_induced_dom
-  refine continuous_iff_continuousAt.2 fun f₀ ↦ Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-  have hu := ContinuousMap.tendsto_iff_forall_isCompact_tendstoUniformlyOn.1
-    (hcont.continuousAt (x := f₀)).tendsto K K.isCompact
-  filter_upwards [Metric.tendstoUniformlyOn_iff.1 hu (ε / 2) (half_pos hε)] with f hf
-  have hle : dist (structureMapCLM ℝ n m f) (structureMapCLM ℝ n m f₀) ≤ ε / 2 := by
-    refine (BoundedContinuousFunction.dist_le (half_pos hε).le).2 fun x ↦ ?_
-    by_cases hx : x ∈ K
-    · simpa only [structureMapCLM_apply, hm, ↓reduceIte, dist_comm,
-        ContMDiffMap.iteratedFDerivContinuousMap_apply, coe_toContMDiffMap] using (hf x hx).le
-    · simp [structureMapCLM_apply, hm, f.iteratedFDeriv_zero_on_compl hx,
-        f₀.iteratedFDeriv_zero_on_compl hx, (half_pos hε).le]
-  exact hle.trans_lt (half_lt_self hε)
+  let _ : TopologicalSpace 𝓓^{n}_{K}(E, F) := TopologicalSpace.induced toContMDiffMap inferInstance
+  exact continuous_id_iff_le.1 <| continuous_iff_continuous_toContMDiffMap.2 continuous_induced_dom
 
 /-- `ContDiffMapSupportedIn.toContMDiffMap` is a topological embedding of `𝓓^{n}_{K}(E, F)` into
 the weak Whitney topology on `C^n` maps. -/

@@ -51,7 +51,7 @@ abbrev Fiber (v : Q) : Type v' := {u : Q' // φ.obj u = v}
 
 /-- Each vertex fiber of an embedding contains at most one point. -/
 instance (v : Q) : Subsingleton (φ.Fiber v) :=
-  ⟨fun a b ↦ Subtype.ext (φ.obj_injective (a.2.trans b.2.symm))⟩
+  ⟨fun a b ↦ Subtype.ext (φ.obj_injective (a.property.trans b.property.symm))⟩
 
 end QuiverEmbedding
 

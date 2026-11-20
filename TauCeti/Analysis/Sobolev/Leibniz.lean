@@ -432,7 +432,7 @@ theorem eLpNorm_smul_add_fderiv_smulRight_le (hp : 1 ≤ p) {ψ : E → ℝ}
     eLpNorm (fun z => ψ z • D z + (fderiv ℝ ψ z).smulRight (u z)) p μ ≤
       A * eLpNorm D p μ + B * eLpNorm u p μ := by
   have hm : AEStronglyMeasurable (fun z => ψ z • D z + (fderiv ℝ ψ z).smulRight (u z)) μ :=
-    (hψ.smul hD).add ((ContinuousLinearMap.smulRightL ℝ E F).aestronglyMeasurable_comp₂
+    (hψ.smul hD).add ((ContinuousLinearMap.smulRightL ℝ ℝ ℝ E F).aestronglyMeasurable_comp₂
       (measurable_fderiv ℝ ψ).aestronglyMeasurable hu)
   calc eLpNorm (fun z => ψ z • D z + (fderiv ℝ ψ z).smulRight (u z)) p μ
       ≤ eLpNorm ((A : ℝ) • fun z => ‖D z‖) p μ + eLpNorm ((B : ℝ) • fun z => ‖u z‖) p μ := by

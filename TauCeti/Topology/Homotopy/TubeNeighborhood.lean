@@ -88,7 +88,7 @@ variable {n : ℕ} {part : unitInterval.Partition n} {T : Path.Tube X n}
     Path.IsInTube f part T ↔
       (∀ i : Fin n, MapsTo f (Icc (part.t i.castSucc) (part.t i.succ)) (T.U i)) ∧
         ∀ j, f (part.t j) ∈ T.V j :=
-  ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+  ⟨fun h ↦ ⟨h.mapsTo, h.mem_V⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 /-- A path in a tube has each of its segment subpaths inside the corresponding segment set. -/
 public theorem Path.IsInTube.range_subpath_subset {x y : X} {γ : Path x y}

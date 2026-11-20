@@ -66,7 +66,7 @@ theorem exists_linearIsometryEquiv_inner_eq_norm_mul_eval {E : Type*} [NormedAdd
       ∀ x, ⟪v, x⟫ = ‖v‖ * f x i := by
   -- In infinite dimension `finrank = 0`, so there is no coordinate `i`.
   have hE : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by
-    have := i.2
+    have := i.isLt
     omega)
   let g := (stdOrthonormalBasis ℝ E).repr
   let w : EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) := ‖v‖ • EuclideanSpace.single i 1

@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.PartitionOfUnity
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.Monoid
 import Mathlib.Geometry.Manifold.Algebra.Structures
+import TauCeti.Geometry.Manifold.BumpFunction
 
 /-!
 # Smooth cutoff functions and finite partitions of unity on compact sets
@@ -27,7 +28,7 @@ and subordinate to any given neighbourhoods of its points
 (`IsCompact.exists_smoothBumpCovering_isSubordinate`), the input of Mathlib's Whitney embedding
 `SmoothBumpCovering.embeddingPiTangent`, as well as a finite `C^n` partition of unity subordinate
 to any open cover of `K` (`IsCompact.exists_finset_contMDiff_sum_eq_one`), requiring neither
-σ-compactness nor `C^∞` regularity of the manifold (`SmoothBumpFunction.contMDiff_of_le`).
+σ-compactness nor `C^∞` regularity of the manifold (`SmoothBumpFunction.contMDiff_of_isManifold`).
 
 The cutoff construction, smoothing a finite sum of bump functions by `Real.smoothTransition`,
 follows the bump cover in the proof of `TauCeti.exists_vectorField_mvfderiv_eq_neg_one`.
@@ -56,7 +57,8 @@ theorem IsCompact.exists_contMDiff_one_nhds_tsupport_subset {K W : Set M} (hK : 
   -- Bump functions at the points of `K` supported in `W`; finitely many of the open sets where
   -- one of them is `1` cover `K`.
   choose ρ hρ using fun x : K ↦
-    (SmoothBumpFunction.nhds_basis_tsupport (I := I) (x : M)).mem_iff.1 (hW.mem_nhds (hKW x.2))
+    (SmoothBumpFunction.nhds_basis_tsupport (I := I) (x : M)).mem_iff.1 (hW.mem_nhds
+        (hKW x.property))
   obtain ⟨t, ht⟩ := hK.elim_nhds_subcover' (fun x hx ↦ interior {y | ρ ⟨x, hx⟩ y = 1})
     fun x hx ↦ interior_mem_nhds.2 (ρ ⟨x, hx⟩).eventuallyEq_one
   -- Smoothing the sum of these bumps by a smooth step function gives a cutoff which is `1` where
@@ -94,23 +96,13 @@ theorem IsCompact.exists_smoothBumpCovering_isSubordinate {K : Set M} (hK : IsCo
   -- Bump functions at the points of `K` supported in `U`; finitely many of the open sets where
   -- one of them is `1` cover `K`.
   choose ρ hρ using fun x : K ↦
-    (SmoothBumpFunction.nhds_basis_tsupport (I := I) (x : M)).mem_iff.1 (hU x x.2)
+    (SmoothBumpFunction.nhds_basis_tsupport (I := I) (x : M)).mem_iff.1 (hU x x.property)
   obtain ⟨t, ht⟩ := hK.elim_nhds_subcover' (fun x hx ↦ interior {y | ρ ⟨x, hx⟩ y = 1})
     fun x hx ↦ interior_mem_nhds.2 (ρ ⟨x, hx⟩).eventuallyEq_one
-  refine ⟨t, inferInstance, ⟨fun i ↦ i.1, fun i ↦ ρ i.1, fun i ↦ i.1.2,
-    locallyFinite_of_finite _, fun x hx ↦ ?_⟩, fun i ↦ (hρ i.1).2⟩
+  refine ⟨t, inferInstance, ⟨fun i ↦ i.val, fun i ↦ ρ i.val, fun i ↦ i.val.property,
+    locallyFinite_of_finite _, fun x hx ↦ ?_⟩, fun i ↦ (hρ i.val).2⟩
   obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.1 (ht hx)
   exact ⟨⟨i, hi⟩, mem_interior_iff_mem_nhds.1 hxi⟩
-
-omit [IsManifold I ∞ M] in
-/-- A smooth bump function is `C^n` on any `C^n` manifold for `n ≤ ∞`. -/
-theorem SmoothBumpFunction.contMDiff_of_le {n : ℕ∞ω} [IsManifold I n M] (hn : n ≤ ∞)
-    {c : M} (f : SmoothBumpFunction I c) : ContMDiff I 𝓘(ℝ) n f := by
-  refine contMDiff_of_tsupport fun x hx ↦ ?_
-  have hx' : x ∈ (chartAt H c).source := f.tsupport_subset_chartAt_source hx
-  refine ContMDiffAt.congr_of_eventuallyEq ?_ <| f.eqOn_source.eventuallyEq_of_mem <|
-    (chartAt H c).open_source.mem_nhds hx'
-  exact (f.contDiffAt.of_le hn).contMDiffAt.comp _ (contMDiffAt_extChartAt' hx')
 
 omit [IsManifold I ∞ M] in
 variable (I) in
@@ -132,6 +124,7 @@ theorem IsCompact.exists_finset_contMDiff_sum_eq_one
       (∀ x, ∑ j ∈ s, ρ j x ≤ 1) ∧
       (∀ x ∈ K, ∑ j ∈ s, ρ j x = 1) := by
   classical
+  have : ENat.LEInfty n := ⟨hn⟩
   -- Choose a cover member for each point of `K`, then a finite subordinate bump covering.
   let W : M → Set M := fun x ↦ if hx : x ∈ K then U (hcover x hx).choose else univ
   have hW : ∀ x ∈ K, W x ∈ 𝓝 x := fun x hx ↦ by
@@ -142,8 +135,8 @@ theorem IsCompact.exists_finset_contMDiff_sum_eq_one
   -- Standard finite partition of unity built from the ordered bump functions.
   let g : Fin (Fintype.card ι) → C^n⟮I, M; ℝ⟯ := fun k ↦
     ⟨fun x ↦ f (e k) x * ∏ l ∈ Finset.univ with l < k, (1 - f (e l) x),
-      ((f (e k)).contMDiff_of_le hn).mul <|
-        ContMDiff.prod fun l _ ↦ contMDiff_const.sub ((f (e l)).contMDiff_of_le hn)⟩
+      (f (e k)).contMDiff_of_isManifold.mul <|
+        ContMDiff.prod fun l _ ↦ contMDiff_const.sub (f (e l)).contMDiff_of_isManifold⟩
   have hg_nonneg (k : Fin (Fintype.card ι)) (x : M) : 0 ≤ g k x :=
     mul_nonneg (f (e k)).nonneg <| Finset.prod_nonneg fun l _ ↦ sub_nonneg.2 (f (e l)).le_one
   have hg_tsupp (k : Fin (Fintype.card ι)) : tsupport (g k) ⊆ tsupport (f (e k)) :=

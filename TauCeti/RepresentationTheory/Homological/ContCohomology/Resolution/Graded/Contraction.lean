@@ -97,8 +97,8 @@ its restriction to a term of `TopRep.gradedCochainComplex`. -/
 private theorem continuous_conj_restrict {Y : TopRep.{max v w} k G} {φ : M.V →ₗ[k] Y.V}
     (hφ : Continuous fun p : M.V × G ↦ Y.ρ p.2 (φ (M.ρ p.2⁻¹ p.1))) (n : ℕ) :
     Continuous fun p : ((M.gradedCochainComplex ℳ hρ d hd hdd).X n).V × G ↦
-      Y.ρ p.2 (φ (M.ρ p.2⁻¹ p.1.1)) :=
-  hφ.comp (continuous_subtype_val.prodMap continuous_id)
+      Y.ρ p.2 (φ (M.ρ p.2⁻¹ p.1.val)) :=
+  hφ.comp (continuous_subtypeVal.prodMap continuous_id)
 
 /-- **The contraction of a graded representation**: a contraction of the total module `M` onto
 `X` restricts to a contraction of the complex `TopRep.gradedCochainComplex` onto `X`. The data
@@ -120,14 +120,14 @@ noncomputable def ofGraded (X : TopRep.{max v w} k G) (ι : X ⟶ M) (hι : ∀ 
   proj_ι x := by simp [ContIntertwiningMap.toContinuousLinearMap_apply, hπι]
   ι_proj_add_hom_d v := by
     apply gradedCochainComplexι_injective M ℳ hρ d hd hdd 0
-    have hv := hdh v.1
-    rw [hh₀ v.1 v.2, map_zero, zero_add] at hv
+    have hv := hdh v.val
+    rw [hh₀ v.val v.property, map_zero, zero_add] at hv
     rw [map_add]
     simp [ContIntertwiningMap.toContinuousLinearMap_apply, hv]
   d_hom_add_hom_d n v := by
     apply gradedCochainComplexι_injective M ℳ hρ d hd hdd (n + 1)
     rw [map_add]
-    simp [hdh, hπ n v.1 v.2]
+    simp [hdh, hπ n v.val v.property]
   continuous_proj :=
     (continuous_conj_restrict (hρ := hρ) (hd := hd) (hdd := hdd) hπc 0).congr fun p ↦ by
       simp [ContIntertwiningMap.toContinuousLinearMap_apply]
@@ -155,14 +155,14 @@ theorem ofGraded_ι :
 @[simp]
 theorem ofGraded_proj_apply (v : ((M.gradedCochainComplex ℳ hρ d hd hdd).X 0).V) :
     (ofGraded (hρ := hρ) (hd := hd) (hdd := hdd) X ι hι π h hh hπι hπ hh₀ hdh hπc hhc).proj v =
-      π v.1 :=
+      π v.val :=
   congrArg π (gradedCochainComplexι_apply M ℳ hρ d hd hdd 0 v)
 
 /-- The contracting homotopy of `ofGraded` is `h` on each term. -/
 @[simp]
 theorem ofGraded_hom_apply (n : ℕ) (v : ((M.gradedCochainComplex ℳ hρ d hd hdd).X (n + 1)).V) :
     ((ofGraded (hρ := hρ) (hd := hd) (hdd := hdd) X ι hι π h hh hπι hπ hh₀ hdh hπc hhc).hom n
-      v).1 = h v.1 :=
+      v).val = h v.val :=
   gradedCochainComplexRestrict_apply M ℳ hρ d hd hdd h hh _ v
 
 end ofGraded
@@ -210,7 +210,7 @@ theorem gradedCohomologyClass_map [LocallyCompactSpace G] {M' : TopRep.{max v w}
     {hd' : TauCeti.LinearMap.IsHomogeneous d'.hom.toLinearMap ℳ' ℳ' 1} {hdd' : d' ≫ d' = 0}
     (c' : ResolutionContraction X (M'.gradedCochainComplex ℳ' hρ' d' hd' hdd')) (F : M ⟶ M')
     (hF : TauCeti.LinearMap.IsHomogeneous F.hom.toLinearMap ℳ ℳ' 0) (hFd : d ≫ F = F ≫ d')
-    (hι : ∀ x, F.hom (c.ι.hom x).1 = (c'.ι.hom x).1)
+    (hι : ∀ x, F.hom (c.ι.hom x).val = (c'.ι.hom x).val)
     {n : ℕ} {z : M.V} (hz : z ∈ ℳ n) (hinv : ∀ g, M.ρ g z = z) (hdz : d.hom z = 0) :
     c'.gradedCohomologyClass (F.hom z)
         (by have h := hF.map_mem hz; rw [add_zero] at h; exact h)
@@ -278,7 +278,7 @@ theorem gradedCohomologyClass_eq_degreeZeroClass (z : M.V) (hz : z ∈ ℳ (0 : 
       (c.proj (M.gradedCochainComplexInvariant ℳ hρ d hd hdd 0 z hz hinv))
       (c.ρ_proj_of_d_eq_zero (gradedCochainComplex_d_invariant M ℳ hρ d hd hdd hz hinv hdz)
         ((ContRepresentation.mem_invariants _).1
-          (M.gradedCochainComplexInvariant ℳ hρ d hd hdd 0 z hz hinv).2)) :=
+          (M.gradedCochainComplexInvariant ℳ hρ d hd hdd 0 z hz hinv).property)) :=
   c.cohomologyClass_eq_degreeZeroClass _ _
 
 /-- **Independence of the contraction.** Over a locally compact group, two contractions of the
@@ -348,7 +348,7 @@ private theorem exists_lof_eq {n : ℕ} (v : ((gradedResolutionCochainComplex X)
       (gradedResolutionι X n).hom v =
         DirectSum.lof k ℕ (fun n ↦ (resolutionX X (n + 1)).V) n F := by
   classical
-  obtain ⟨F, hF⟩ := (SetLike.ext_iff.1 (X.gradedResolutionPiece_natCast n) v.1).1 v.2
+  obtain ⟨F, hF⟩ := (SetLike.ext_iff.1 (X.gradedResolutionPiece_natCast n) v.val).1 v.property
   exact ⟨F, (gradedCochainComplexι_apply _ _ _ _ _ _ n v).trans hF.symm⟩
 
 /-- The degree-`n` component of the total resolution, from the degree-`n` term of
@@ -436,7 +436,7 @@ noncomputable def gradedResolutionContraction :
 resolution. -/
 @[simp]
 theorem gradedResolutionContraction_ι_apply (x : X.V) :
-    ((gradedResolutionContraction hX).ι.hom x).1 = X.gradedResolutionAugmentation x :=
+    ((gradedResolutionContraction hX).ι.hom x).val = X.gradedResolutionAugmentation x :=
   have := hX.discreteTopology
   (gradedCochainComplexLift_apply _ _ _ _ _ _ 0 _ _ x).trans
     (gradedResolutionTopRepAugmentation_apply X x)
@@ -444,14 +444,14 @@ theorem gradedResolutionContraction_ι_apply (x : X.V) :
 /-- The retraction of `gradedResolutionContraction` is `gradedResolutionProjection`. -/
 @[simp]
 theorem gradedResolutionContraction_proj_apply (v : ((gradedResolutionCochainComplex X).X 0).V) :
-    (gradedResolutionContraction hX).proj v = X.gradedResolutionProjection v.1 :=
+    (gradedResolutionContraction hX).proj v = X.gradedResolutionProjection v.val :=
   congrArg X.gradedResolutionProjection (gradedCochainComplexι_apply _ _ _ _ _ _ 0 v)
 
 /-- The contracting homotopy of `gradedResolutionContraction` is `gradedResolutionHomotopy`. -/
 @[simp]
 theorem gradedResolutionContraction_hom_apply (n : ℕ)
     (v : ((gradedResolutionCochainComplex X).X (n + 1)).V) :
-    ((gradedResolutionContraction hX).hom n v).1 = X.gradedResolutionHomotopy v.1 :=
+    ((gradedResolutionContraction hX).hom n v).val = X.gradedResolutionHomotopy v.val :=
   gradedCochainComplexRestrict_apply _ _ _ _ _ _ _ X.isHomogeneous_gradedResolutionHomotopy _ v
 
 /-- The chain map `gradedResolutionToResolution X` lies over the identity of `X`. -/
@@ -476,7 +476,7 @@ theorem gradedCohomologyClass_gradedResolutionContraction {n : ℕ}
         (DirectSum.lof k ℕ (fun n ↦ (resolutionX X (n + 1)).V) n z)
         (X.lof_mem_gradedResolutionPiece n z)
         (fun g ↦ by
-          rw [gradedResolutionTopRep_ρ_lof, (ContRepresentation.mem_invariants _).1 z.2 g])
+          rw [gradedResolutionTopRep_ρ_lof, (ContRepresentation.mem_invariants _).1 z.property g])
         (by
           simp only [resolution', CochainComplex.of_d, resolution'd_eq] at hz
           rw [gradedResolutionTopRepDifferential_apply, gradedResolutionDifferential_lof, hz]

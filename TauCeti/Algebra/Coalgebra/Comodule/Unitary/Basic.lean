@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.ChangeBasis
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.ChangeBasis
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
+import Mathlib.RingTheory.HopfAlgebra.Convolution
+import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Transport
 
 /-!
 # Finite-dimensional unitary comodules
@@ -21,10 +23,14 @@ on the coefficient algebra is required.
 including bases with different finite index types. Consequently
 `OrthonormalBasis.isUnitary_comodule_iff` tests unitarity in any orthonormal basis,
 independently of the arbitrary standard basis used in the definition. For Hopf algebras,
-unitarity is equivalent to the antipode acting on coefficients by transposed star.
+unitarity is equivalent to the antipode acting on coefficients by transposed star, and any matrix
+`G` satisfying `(u.map star)ᴴ * G * u.map star = G` for a unitary coefficient matrix `u` has `Gᵀ`
+intertwining `u` with its double antipode `(u.map S).map S`.
 
-These algebraic unitary objects are the finite coefficient objects used in unitarization
-and reconstruction of compact quantum groups.
+These algebraic unitary objects—and the set `TauCeti.unitaryCoefficientSet` of matrix entries of
+unitary `Fin n × Fin n` coefficient matrices over `ℂ`
+(`Module.Basis.coefficientMatrix_mem_unitaryCoefficientSet`)—are the finite coefficient objects
+used in unitarization and reconstruction of compact quantum groups.
 
 ## References
 
@@ -116,15 +122,54 @@ end TauCeti.Comodule
 
 end Coalgebra
 
+namespace TauCeti
+
+/-- The set of matrix entries of all finite-dimensional unitary matrix corepresentations on
+`Fin n → ℂ` of a complex star coalgebra `A`. -/
+noncomputable def unitaryCoefficientSet.{u} (A : Type u) [Semiring A] [Algebra ℂ A] [Coalgebra ℂ A]
+    [StarRing A] : Set A :=
+  {a : A | ∃ (n : ℕ) (ρ : Comodule ℂ A (Fin n → ℂ)), letI := ρ
+    let U := coefficientMatrix (C := A) (Pi.basisFun ℂ (Fin n))
+    U ∈ unitary (Matrix (Fin n) (Fin n) A) ∧ ∃ i j, a = U i j}
+
+/-- Membership in `unitaryCoefficientSet A` unfolds to being an entry of a unitary `Fin n × Fin n`
+coefficient matrix. -/
+theorem mem_unitaryCoefficientSet_iff.{u} {A : Type u} [Semiring A] [Algebra ℂ A] [Coalgebra ℂ A]
+    [StarRing A] {a : A} : a ∈ unitaryCoefficientSet A ↔ ∃ (n : ℕ) (ρ : Comodule ℂ A (Fin n → ℂ)),
+      letI := ρ
+      let U := coefficientMatrix (C := A) (Pi.basisFun ℂ (Fin n))
+      U ∈ unitary (Matrix (Fin n) (Fin n) A) ∧ ∃ i j, a = U i j := Iff.rfl
+
+end TauCeti
+
+/-- Every entry of a unitary coefficient matrix in a finite basis belongs to
+`unitaryCoefficientSet A`. -/
+theorem Module.Basis.coefficientMatrix_mem_unitaryCoefficientSet {A M ι : Type*} [Semiring A]
+    [Algebra ℂ A] [Coalgebra ℂ A] [StarRing A] [AddCommMonoid M] [Module ℂ M] [Comodule ℂ A M]
+    [Fintype ι] [DecidableEq ι] (b : Basis ι ℂ M)
+    (hb : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A)) (i j : ι) :
+    coefficientMatrix (C := A) b i j ∈ unitaryCoefficientSet A := by
+  let e := Fintype.equivFin ι
+  let b' := b.reindex e
+  have hmat : coefficientMatrix (C := A) b' =
+      Matrix.reindexStarAlgEquiv ℂ A e (coefficientMatrix (C := A) b) := Matrix.ext fun p q ↦ by
+    have hcoord : b'.coord p = b.coord (e.symm p) :=
+      LinearMap.ext fun m ↦ by simp [b', Basis.coord_apply]
+    simp [b', coefficientMatrix_apply, hcoord]
+  have hb' : coefficientMatrix (C := A) b' ∈
+      unitary (Matrix (Fin (Fintype.card ι)) (Fin (Fintype.card ι)) A) := by
+    rw [hmat]
+    exact Unitary.map_mem (Matrix.reindexStarAlgEquiv ℂ A e) hb
+  exact ⟨Fintype.card ι, Transport b'.equivFun,
+    by rwa [b'.coefficientMatrix_basisFun_transport_equivFun], e i, e j,
+    by simp [b'.coefficientMatrix_basisFun_transport_equivFun, hmat]⟩
+
 namespace GroupLike
 
-section GroupLike
-
 variable {𝕜 A M : Type*} [RCLike 𝕜] [Semiring A] [StarRing A]
-  [Algebra 𝕜 A] [StarModule 𝕜 A] [Coalgebra 𝕜 A]
+  [Algebra 𝕜 A] [Coalgebra 𝕜 A]
   [NormedAddCommGroup M] [InnerProductSpace 𝕜 M] [FiniteDimensional 𝕜 M]
 
-omit [StarModule 𝕜 A] in
 /-- A unitary group-like element gives a unitary scalar coaction on every finite-dimensional
 inner product space. In particular this includes the rank-one unitary corepresentations. -/
 theorem isUnitary_comodule (g : GroupLike 𝕜 A) (hg : (g : A) ∈ unitary A) :
@@ -140,8 +185,6 @@ theorem isUnitary_comodule (g : GroupLike 𝕜 A) (hg : (g : A) ∈ unitary A) :
       Matrix.diagonal_apply]
   rw [hmat, Matrix.diagonal_mem_unitary, Pi.mem_unitary_iff]
   exact fun _ => hg
-
-end GroupLike
 
 end GroupLike
 
@@ -185,5 +228,35 @@ theorem IsUnitary.antipode_coefficientMatrix (h : IsUnitary 𝕜 A M)
   exact congrFun (congrFun (b.isUnitary_comodule_iff_map_antipode_eq_conjTranspose.mp h) i) j
 
 end TauCeti.Comodule
+
+namespace Module.Basis
+
+/-- If the coefficient matrix `u` of `b` is unitary and `(u.map star)ᴴ * G * u.map star = G`, then
+`Gᵀ` intertwines `u` with its double antipode `(u.map S).map S`. -/
+theorem map_antipode_map_antipode_mul_transpose_of_conjTranspose_map_star_mul_mul_eq
+    {R A M ι : Type*} [CommSemiring R] [Semiring A] [StarRing A] [HopfAlgebra R A]
+    [AddCommMonoid M] [Module R M] [Comodule R A M] [Fintype ι] [DecidableEq ι]
+    (b : Basis ι R M) (hu : coefficientMatrix (C := A) b ∈ unitary (Matrix ι ι A))
+    {G : Matrix ι ι R} (hG : ((coefficientMatrix (C := A) b).map star)ᴴ * G.map (algebraMap R A) *
+      (coefficientMatrix (C := A) b).map star = G.map (algebraMap R A)) :
+    (((coefficientMatrix (C := A) b).map (HopfAlgebra.antipode R)).map (HopfAlgebra.antipode R)) *
+        Gᵀ.map (algebraMap R A) =
+      Gᵀ.map (algebraMap R A) * coefficientMatrix (C := A) b := by
+  set u := coefficientMatrix (C := A) b
+  set S : A →ₗ[R] A := HopfAlgebra.antipode R
+  obtain ⟨hu1, hu2⟩ := Matrix.mem_unitary_iff_conjTranspose.mp hu
+  have huS : u.map S = uᴴ := left_inv_eq_right_inv (map_antipode_mul_coefficientMatrix b) hu2
+  have hmulS (X Y : Matrix ι ι A) : ((X * Y).map S)ᵀ = (Y.map S)ᵀ * (X.map S)ᵀ :=
+    Matrix.ext fun _ _ ↦ by simp [Matrix.mul_apply, S, _root_.HopfAlgebra.antipode_mul_antidistrib]
+  have hij (i j) : S (u i j) = star (u j i) := by simpa using congrFun (congrFun huS i) j
+  have hf1 : ((u.map star).map S)ᵀ = (u.map S).map S := Matrix.ext fun _ _ ↦ by simp [← hij]
+  have hf2 : ((G.map (algebraMap R A)).map S)ᵀ = Gᵀ.map (algebraMap R A) :=
+    Matrix.ext fun _ _ ↦ by simp [S, Algebra.algebraMap_eq_smul_one]
+  have hf3 : (((u.map star)ᴴ).map S)ᵀ = uᴴ := Matrix.ext fun _ _ ↦ by simp [hij]
+  have h1 := congrArg (fun X : Matrix ι ι A ↦ (X.map S)ᵀ) hG
+  rw [hmulS, hmulS, hf1, hf2, hf3, ← Matrix.mul_assoc] at h1
+  simpa only [Matrix.mul_assoc _ uᴴ, hu1, Matrix.mul_one] using congrArg (· * u) h1
+
+end Module.Basis
 
 end Hopf

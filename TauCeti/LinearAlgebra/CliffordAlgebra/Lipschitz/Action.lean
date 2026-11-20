@@ -261,7 +261,7 @@ private theorem vectorMap_eq_reflection (v : M) [Invertible (Q v)] {x : (Cliffor
 private def vectorEndHom : lipschitzGroup Q →* Module.End R M where
   toFun x := vectorMap Q (x : (CliffordAlgebra Q)ˣ)
   map_one' := vectorMap_one Q
-  map_mul' x y := (vectorMap_mul Q x.2 y.2).trans (Module.End.mul_eq_comp _ _).symm
+  map_mul' x y := (vectorMap_mul Q x.property y.property).trans (Module.End.mul_eq_comp _ _).symm
 
 private def vectorActionHom : lipschitzGroup Q →* M ≃ₗ[R] M :=
   (LinearMap.GeneralLinearGroup.generalLinearEquiv R M).toMonoidHom.comp
@@ -305,7 +305,7 @@ theorem ι_lipschitzVectorAction_apply (x : lipschitzGroup Q) (m : M) :
     ι Q (lipschitzVectorAction Q x m) =
       involute (Q := Q) ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * ι Q m *
         (((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
-  rw [lipschitzVectorAction_apply, ι_vectorMap_apply Q x.2, twistedConj_apply]
+  rw [lipschitzVectorAction_apply, ι_vectorMap_apply Q x.property, twistedConj_apply]
 
 /-- **A vector acts by the reflection in its orthogonal hyperplane.** These are the generators of
 the Lipschitz group, so this identification is what Cartan--Dieudonné turns into surjectivity of
@@ -326,7 +326,7 @@ theorem lipschitzVectorAction_map_app (x : lipschitzGroup Q) (m : M) :
     Q (lipschitzVectorAction Q x m) = Q m := by
   rw [lipschitzVectorAction_apply]
   exact vectorMap_map_app_of_involute_act_ι_mem_range_ι Q
-    (lipschitzGroup.involute_act_ι_mem_range_ι x.2) m
+    (lipschitzGroup.involute_act_ι_mem_range_ι x.property) m
 
 variable (Q)
 
