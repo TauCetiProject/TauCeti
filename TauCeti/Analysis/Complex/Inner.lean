@@ -7,28 +7,31 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
-public import TauCeti.Analysis.RCLike.Basic
+import Mathlib.Analysis.Complex.Conformal
 
 /-!
 # Real inner products with a unit complex number
 
-Multiplication by a unit complex number `ζ` is a rotation of the plane, so the real inner product
-of `ζ` with `ζ * w` is the real inner product of `1` with `w`, namely the real part of `w`. This
-lets the level sets `⟪ζ, z⟫_ℝ = t` be read in the rotated coordinate `w = conj ζ * z`.
-Conversely, a real-linear map of the plane commuting with multiplication by `i` and preserving the
-real inner product is a rotation by a unit complex number.
+Multiplication by a scalar `ζ` of an `RCLike` field scales the real inner product by `‖ζ‖ ^ 2`.
+In particular multiplication by a unit complex number `ζ` is a rotation of the plane, so the real
+inner product of `ζ` with `ζ * w` is the real inner product of `1` with `w`, namely the real part
+of `w`. This lets the level sets `⟪ζ, z⟫_ℝ = t` be read in the rotated coordinate
+`w = conj ζ * z`. Conversely, a real-linear map of the plane commuting with multiplication by `i`
+at `1` and preserving the real inner product is a rotation by a unit complex number.
 
 ## Main declarations
 
-* `Complex.inner_mul_left_of_norm_eq_one` -- `⟪ζ, ζ * w⟫_ℝ = w.re` for a unit `ζ`.
+* `TauCeti.RCLike.real_inner_mul_mul` -- `⟪ζ * a, ζ * b⟫_ℝ = ‖ζ‖ ^ 2 * ⟪a, b⟫_ℝ` in an `RCLike`
+  field.
 * `Complex.inner_mul_mul_of_norm_eq_one` -- `⟪ζ * a, ζ * b⟫_ℝ = ⟪a, b⟫_ℝ` for a unit `ζ`.
+* `Complex.inner_mul_left_of_norm_eq_one` -- `⟪ζ, ζ * w⟫_ℝ = w.re` for a unit `ζ`.
 * `Complex.real_inner_I_right` -- `⟪z, i⟫_ℝ = z.im`: the height of `z` in the direction of `i`.
 * `Complex.inner_one_smul_I_sub_inner_I_smul_one` -- the infinitesimal rotation
   `z ↦ ⟪z, 1⟫_ℝ i - ⟪z, i⟫_ℝ` of the plane is multiplication by `i`.
 * `Complex.I_mul_I_mul` -- `i (i z) = -z`.
 * `Complex.real_inner_I_mul_left` -- multiplication by `i` is skew-adjoint:
   `⟪i x, y⟫_ℝ = -⟪x, i y⟫_ℝ`.
-* `Complex.exists_apply_eq_mul_exp` -- a real-linear map commuting with multiplication by `i` and
+* `Complex.exists_apply_eq_mul_exp` -- a real-linear map `C` with `C i = i * C 1` and
   preserving `⟪i ·, ·⟫_ℝ` on `(1, i)` is multiplication by `exp (i θ)`.
 * `LinearIsometry.norm_map_I` -- a linear isometry from the plane maps `i` to a unit vector.
 * `Real.inner_ofReal_I_mul_ofReal` -- `⟪x, i y⟫_ℝ = 0` for real `x`, `y`: the real line is
@@ -37,19 +40,30 @@ real inner product is a rotation by a unit complex number.
 
 public section
 
+namespace TauCeti
+
+/-- Multiplication by a scalar `ζ` of an `RCLike` field scales the real inner product by
+`‖ζ‖ ^ 2`. -/
+theorem RCLike.real_inner_mul_mul {K : Type*} [RCLike K] (ζ a b : K) :
+    inner ℝ (ζ * a) (ζ * b) = ‖ζ‖ ^ 2 * inner ℝ a b := by
+  rw [real_inner_eq_re_inner K, real_inner_eq_re_inner K, RCLike.inner_apply, RCLike.inner_apply,
+    map_mul (starRingEnd K), mul_mul_mul_comm, RCLike.mul_conj, ← RCLike.ofReal_pow,
+    RCLike.re_ofReal_mul]
+
+end TauCeti
+
 namespace Complex
 
 variable {ζ : ℂ}
 
-/-- The real inner product of a unit complex number `ζ` with `ζ * w` is the real part of `w`. -/
-theorem inner_mul_left_of_norm_eq_one (hζ : ‖ζ‖ = 1) (w : ℂ) : inner ℝ ζ (ζ * w) = w.re := by
-  rw [Complex.inner, mul_comm ζ w, mul_assoc, RCLike.mul_conj_eq_one_iff.2 hζ, mul_one]
-
 /-- Multiplication by a unit complex number `ζ` preserves the real inner product. -/
 theorem inner_mul_mul_of_norm_eq_one (hζ : ‖ζ‖ = 1) (a b : ℂ) :
     inner ℝ (ζ * a) (ζ * b) = inner ℝ a b := by
-  rw [Complex.inner, Complex.inner, map_mul, mul_mul_mul_comm, mul_comm ζ,
-    mul_comm (starRingEnd ℂ ζ), RCLike.mul_conj_eq_one_iff.2 hζ, one_mul]
+  rw [TauCeti.RCLike.real_inner_mul_mul, hζ, one_pow, one_mul]
+
+/-- The real inner product of a unit complex number `ζ` with `ζ * w` is the real part of `w`. -/
+theorem inner_mul_left_of_norm_eq_one (hζ : ‖ζ‖ = 1) (w : ℂ) : inner ℝ ζ (ζ * w) = w.re := by
+  simpa [Complex.inner] using inner_mul_mul_of_norm_eq_one hζ 1 w
 
 /-- The real inner product of `z` with `i` is the imaginary part of `z`. -/
 theorem real_inner_I_right (z : ℂ) : inner ℝ z I = z.im := by
@@ -70,25 +84,19 @@ theorem real_inner_I_mul_left (x y : ℂ) : inner ℝ (I * x) y = -inner ℝ x (
   simp only [Complex.inner, mul_re, mul_im, conj_re, conj_im, I_re, I_im]
   ring
 
-/-- A real-linear map of `ℂ` commuting with multiplication by `i` and preserving `⟪i ·, ·⟫_ℝ` on
-the pair `(1, i)` is multiplication by a unit complex number `exp (i θ)`. -/
-theorem exists_apply_eq_mul_exp {C : ℂ →ₗ[ℝ] ℂ} (hCI : ∀ z, C (I * z) = I * C z)
+/-- A real-linear map `C` of `ℂ` with `C i = i * C 1`, preserving `⟪i ·, ·⟫_ℝ` on the pair
+`(1, i)`, is multiplication by a unit complex number `exp (i θ)`. -/
+theorem exists_apply_eq_mul_exp {C : ℂ →ₗ[ℝ] ℂ} (hCI : C I = I * C 1)
     (hCω : inner ℝ (I * C 1) (C I) = inner ℝ I I) :
     ∃ θ : ℝ, ∀ z, C z = z * exp (θ * I) := by
-  have hC (z : ℂ) : C z = z * C 1 :=
-    calc C z = C (z.re • (1 : ℂ) + z.im • (I * 1)) := by
-          congr 1
-          apply Complex.ext <;> simp
-      _ = z.re • C 1 + z.im • (I * C 1) := by rw [map_add, map_smul, map_smul, hCI]
-      _ = z * C 1 := by apply Complex.ext <;> simp [sub_eq_add_neg]
+  have hC (z : ℂ) : C z = z * C 1 := by
+    simpa using real_linearMap_map_smul_complex (ℓ := C) (by simpa using hCI) z 1
   have hnorm : ‖C 1‖ = 1 := by
-    rw [hC I, real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq, norm_mul, norm_I,
-      one_mul] at hCω
-    exact (pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero).1 hCω
-  refine ⟨arg (C 1), fun z => ?_⟩
-  rw [hC z]
-  congr 1
-  simpa [hnorm] using (norm_mul_exp_arg_mul_I (C 1)).symm
+    have h : ‖C 1‖ ^ 2 = (1 : ℝ) ^ 2 := by
+      simpa [hCI, real_inner_self_eq_norm_sq, norm_mul] using hCω
+    exact (pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero).1 h
+  obtain ⟨θ, hθ⟩ := (norm_eq_one_iff (C 1)).1 hnorm
+  exact ⟨θ, fun z => by rw [hC z, hθ]⟩
 
 end Complex
 

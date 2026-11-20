@@ -633,7 +633,7 @@ theorem exists_unitary_frame_of_finrank_eq_two [FiniteDimensional ℝ V]
     have h := hσ₁ d 1 Complex.I
     rw [← hPσ, ← hΦ₀C, ← hΦ₀C, hσ₀] at h
     simpa using h
-  obtain ⟨θ, hθ⟩ := Complex.exists_apply_eq_mul_exp (C := (C : ℂ →ₗ[ℝ] ℂ)) (by simpa using hCI)
+  obtain ⟨θ, hθ⟩ := Complex.exists_apply_eq_mul_exp (C := (C : ℂ →ₗ[ℝ] ℂ)) (by simpa using hCI 1)
     (by simpa using hCω)
   have hC (w : ℂ) : Φ₀.inverse (P (Φ₁ d w)) = w * Complex.exp (θ * Complex.I) := by
     simpa [C] using hθ w
