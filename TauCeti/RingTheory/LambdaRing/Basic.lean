@@ -266,6 +266,7 @@ theorem IsLine.totalSeries_eq {l : R} (h : Λ.IsLine l) : Λ.totalSeries l = 1 +
   Λ.isLine_iff_totalSeries.1 h
 
 /-- `0` is a line element. -/
+@[simp]
 theorem isLine_zero : Λ.IsLine 0 := fun _ hn => Λ.lambda_apply_zero_of_ne_zero (by omega)
 
 /-! ### Uniqueness of induced structures -/
@@ -344,6 +345,9 @@ instance : RingHomClass (PreLambdaHom Λ Λ') R S where
   map_one f := f.map_one'
 
 @[simp]
+theorem toRingHom_eq_coe (f : PreLambdaHom Λ Λ') : f.toRingHom = (f : R →+* S) :=
+  (rfl)
+
 theorem coe_toRingHom (f : PreLambdaHom Λ Λ') : ⇑f.toRingHom = f :=
   (rfl)
 
@@ -361,7 +365,7 @@ theorem map_lambda (f : PreLambdaHom Λ Λ') (n : ℕ) (x : R) :
   f.map_lambda' n x
 
 theorem map_totalSeries (f : PreLambdaHom Λ Λ') (x : R) :
-    PowerSeries.map f.toRingHom (Λ.totalSeries x) = Λ'.totalSeries (f x) := by
+    PowerSeries.map (f : R →+* S) (Λ.totalSeries x) = Λ'.totalSeries (f x) := by
   ext n
   simp
 
@@ -517,7 +521,7 @@ def quotientLift (I : Ideal R) (hI : Λ.IsLambdaIdeal I) (f : PreLambdaHom Λ Λ
   __ := Ideal.Quotient.lift I f.toRingHom hf
   map_lambda' n z := by
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective z
-    exact f.map_lambda n x
+    simp
 
 @[simp]
 theorem quotientLift_mk (I : Ideal R) (hI : Λ.IsLambdaIdeal I) (f : PreLambdaHom Λ Λ')
@@ -530,6 +534,24 @@ theorem quotientLift_comp_quotientMk (I : Ideal R) (hI : Λ.IsLambdaIdeal I)
     (f : PreLambdaHom Λ Λ') (hf : ∀ x ∈ I, f x = 0) :
     (Λ.quotientLift I hI f hf).comp (Λ.quotientMk I hI) = f :=
   (rfl)
+
+variable {Λ} in
+/-- Morphisms out of a quotient structure are determined by their composites with the quotient
+map. -/
+@[ext 1100]
+theorem quotient_hom_ext {I : Ideal R} {hI : Λ.IsLambdaIdeal I}
+    {f g : PreLambdaHom (Λ.quotient I hI) Λ'}
+    (h : f.comp (Λ.quotientMk I hI) = g.comp (Λ.quotientMk I hI)) : f = g := by
+  ext z
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective z
+  exact congrArg (· x) h
+
+/-- `quotientLift` is the unique morphism out of the quotient structure whose composite with the
+quotient map is the given morphism. -/
+theorem quotientLift_unique (I : Ideal R) (hI : Λ.IsLambdaIdeal I) (f : PreLambdaHom Λ Λ')
+    (hf : ∀ x ∈ I, f x = 0) (g : PreLambdaHom (Λ.quotient I hI) Λ')
+    (hg : g.comp (Λ.quotientMk I hI) = f) : g = Λ.quotientLift I hI f hf :=
+  quotient_hom_ext (by rw [hg, quotientLift_comp_quotientMk])
 
 /-- The quotient structure is the only pre-λ structure on `R ⧸ I` for which the quotient map
 commutes with every `λⁿ`. -/
@@ -569,14 +591,14 @@ theorem isLambdaSubring_top : Λ.IsLambdaSubring ⊤ :=
 variable {Λ} in
 /-- The range of a morphism is a λ-subring. -/
 theorem _root_.TauCeti.PreLambdaHom.isLambdaSubring_range (f : PreLambdaHom Λ Λ') :
-    Λ'.IsLambdaSubring f.toRingHom.range := by
+    Λ'.IsLambdaSubring (f : R →+* S).range := by
   rintro n _ ⟨x, rfl⟩
   exact ⟨Λ.lambda n x, f.map_lambda n x⟩
 
 variable {Λ} in
 /-- The preimage of a λ-subring under a morphism is a λ-subring. -/
 theorem IsLambdaSubring.comap {B : Subring S} (hB : Λ'.IsLambdaSubring B)
-    (f : PreLambdaHom Λ Λ') : Λ.IsLambdaSubring (B.comap f.toRingHom) := by
+    (f : PreLambdaHom Λ Λ') : Λ.IsLambdaSubring (B.comap (f : R →+* S)) := by
   intro n x hx
   simpa using hB n _ hx
 

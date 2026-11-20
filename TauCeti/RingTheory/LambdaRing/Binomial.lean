@@ -67,6 +67,7 @@ theorem binomial_lambda_natCast (n k : ℕ) : (binomial R).lambda n (k : R) = k.
   simp [Ring.choose_natCast]
 
 /-- `1` is a line element of the binomial structure: `λ_t 1 = 1 + t`. -/
+@[simp]
 theorem isLine_binomial_one : (binomial R).IsLine 1 := (isLine_iff _).2 fun n hn => by
   rw [← Nat.cast_one, binomial_lambda_natCast, Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero]
 
