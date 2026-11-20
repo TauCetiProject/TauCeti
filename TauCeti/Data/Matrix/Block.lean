@@ -24,6 +24,11 @@ block matrix `!![1 - e, a; b, 1 - f]` is an involution conjugating `e ⊕ 0` to 
 equivalent idempotents, such as those presenting isomorphic projective modules, become conjugate
 after stabilization.
 
+The four blocks of a product `B * C` of rectangular block matrices are computed directly in terms
+of the blocks of `B` and `C` via `Matrix.toBlocks₁₁_mul`, `Matrix.toBlocks₁₂_mul`,
+`Matrix.toBlocks₂₁_mul`, and `Matrix.toBlocks₂₂_mul`, over any type with
+`[AddCommMonoid α] [Mul α]`.
+
 For an upper two-block matrix, the diagonal blocks of its powers are the powers of the diagonal
 blocks. Its off-diagonal block is the finite convolution of the powers of the two diagonal
 blocks with the original off-diagonal block. This holds over semirings, including zeroth powers
@@ -31,6 +36,8 @@ and empty blocks.
 
 ## Main results
 
+* `Matrix.toBlocks₁₁_mul`, `Matrix.toBlocks₁₂_mul`, `Matrix.toBlocks₂₁_mul`,
+  `Matrix.toBlocks₂₂_mul`: the four blocks of a product of block matrices.
 * `Matrix.fromBlocks_zero₂₁_pow`: the power formula for an upper two-block matrix.
 * `Matrix.fromBlocks_mul_sub_mul`: the four blocks of a difference of products.
 * `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁`: the direct sum of idempotent matrices is
@@ -46,6 +53,40 @@ and empty blocks.
 -/
 
 namespace Matrix
+
+section ToBlocksMul
+
+variable {n o l m p q α : Type*} [Fintype l] [Fintype m] [AddCommMonoid α] [Mul α]
+
+/-- The upper-left block of a product of block matrices. -/
+public theorem toBlocks₁₁_mul (B : Matrix (n ⊕ o) (l ⊕ m) α) (C : Matrix (l ⊕ m) (p ⊕ q) α) :
+    (B * C).toBlocks₁₁ = B.toBlocks₁₁ * C.toBlocks₁₁ + B.toBlocks₁₂ * C.toBlocks₂₁ := by
+  ext i j
+  simp only [toBlocks₁₁, toBlocks₁₂, toBlocks₂₁, of_apply, Matrix.mul_apply, Matrix.add_apply,
+    Fintype.sum_sum_type]
+
+/-- The upper-right block of a product of block matrices. -/
+public theorem toBlocks₁₂_mul (B : Matrix (n ⊕ o) (l ⊕ m) α) (C : Matrix (l ⊕ m) (p ⊕ q) α) :
+    (B * C).toBlocks₁₂ = B.toBlocks₁₁ * C.toBlocks₁₂ + B.toBlocks₁₂ * C.toBlocks₂₂ := by
+  ext i j
+  simp only [toBlocks₁₁, toBlocks₁₂, toBlocks₂₂, of_apply, Matrix.mul_apply, Matrix.add_apply,
+    Fintype.sum_sum_type]
+
+/-- The lower-left block of a product of block matrices. -/
+public theorem toBlocks₂₁_mul (B : Matrix (n ⊕ o) (l ⊕ m) α) (C : Matrix (l ⊕ m) (p ⊕ q) α) :
+    (B * C).toBlocks₂₁ = B.toBlocks₂₁ * C.toBlocks₁₁ + B.toBlocks₂₂ * C.toBlocks₂₁ := by
+  ext i j
+  simp only [toBlocks₂₁, toBlocks₁₁, toBlocks₂₂, of_apply, Matrix.mul_apply, Matrix.add_apply,
+    Fintype.sum_sum_type]
+
+/-- The lower-right block of a product of block matrices. -/
+public theorem toBlocks₂₂_mul (B : Matrix (n ⊕ o) (l ⊕ m) α) (C : Matrix (l ⊕ m) (p ⊕ q) α) :
+    (B * C).toBlocks₂₂ = B.toBlocks₂₁ * C.toBlocks₁₂ + B.toBlocks₂₂ * C.toBlocks₂₂ := by
+  ext i j
+  simp only [toBlocks₂₁, toBlocks₁₂, toBlocks₂₂, of_apply, Matrix.mul_apply, Matrix.add_apply,
+    Fintype.sum_sum_type]
+
+end ToBlocksMul
 
 /-- The power of an upper two-block matrix, with its off-diagonal block given by the finite
 convolution of the two diagonal-block powers. -/

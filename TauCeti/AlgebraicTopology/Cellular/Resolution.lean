@@ -158,8 +158,7 @@ lemma cellularChainComplexRepAugmentation_f_zero :
   have := hG.isCoveringMap.t2Space
   unfold cellularChainComplexRepAugmentation cellularAugmentationRep
   rw [HomologicalComplex.comp_f, HomologicalComplex.eqToHom_f,
-    cellularActionComplexAugmentation_f_zero, eqToHom_trans_assoc]
-  exact (Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) (eqToHom_trans _ _))
+    cellularActionComplexAugmentation_f_zero, eqToHom_trans_assoc, ← Category.assoc, eqToHom_trans]
 
 /-- **The augmented lifted cellular chain complex of a contractible cover is exact.** -/
 theorem quasiIso_cellularChainComplexRepAugmentation [ContractibleSpace (p ⁻¹' C)] :

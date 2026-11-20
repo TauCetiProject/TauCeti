@@ -84,7 +84,7 @@ def cellActionSMul (C : Set E) [CWComplex C] [SMul G E] [ContinuousConstSMul G E
     (g : G) (hcell : ∀ (n : ℕ) (i : cell C n),
       ∃ j : cell C n, g • openCell n i = openCell n j) :
     TopCat.of C ⟶ TopCat.of C :=
-  TopCat.ofHom ⟨fun x ↦ ⟨g • x.1, smul_mem_complex g hcell x.2⟩, by fun_prop⟩
+  TopCat.ofHom ⟨fun x ↦ ⟨g • x.val, smul_mem_complex g hcell x.property⟩, by fun_prop⟩
 
 /-- On points of `C`, `TauCeti.cellActionSMul` acts by translation in the ambient space. -/
 @[simp]
@@ -111,7 +111,7 @@ theorem cellActionSMul_one (C : Set E) [CWComplex C] [Monoid G] [MulAction G E]
   apply ConcreteCategory.hom_ext
   intro x
   apply Subtype.ext
-  exact (coe_cellActionSMul_apply C 1 hcell x).trans (one_smul G x.1)
+  exact (coe_cellActionSMul_apply C 1 hcell x).trans (one_smul G x.val)
 
 /-- Translation by a product is successive translation on the CW complex. -/
 theorem cellActionSMul_mul (C : Set E) [CWComplex C] [Monoid G] [MulAction G E]
@@ -123,7 +123,7 @@ theorem cellActionSMul_mul (C : Set E) [CWComplex C] [Monoid G] [MulAction G E]
   apply ConcreteCategory.hom_ext
   intro x
   apply Subtype.ext
-  exact (coe_cellActionSMul_apply C (g * h) hgh x).trans ((mul_smul g h x.1).trans
+  exact (coe_cellActionSMul_apply C (g * h) hgh x).trans ((mul_smul g h x.val).trans
     ((coe_cellActionSMul_apply C g hg (cellActionSMul C h hh x)).trans
       (congrArg (g • ·) (coe_cellActionSMul_apply C h hh x))).symm)
 

@@ -434,7 +434,7 @@ theorem _root_.IsQuotientCoveringMap.isCellular_restrictPreimage :
   -- `Set.restrictPreimage_coe`.
   have hval : ((TopCat.ofHom ⟨(univ : Set B).restrictPreimage p,
       hp.continuous.restrictPreimage⟩ : TopCat.of (univ : Set E) ⟶ TopCat.of (univ : Set B))
-      ⟨x, hxE⟩).1 = p x := rfl
+      ⟨x, hxE⟩).val = p x := rfl
   rw [hval, ← hp.image_skeletonLT hcell hfree n]
   exact mem_image_of_mem p hx
 

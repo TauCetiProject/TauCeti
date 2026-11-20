@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.SquareClasses
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Uniformizer
 public import TauCeti.NumberTheory.LocalField.Squares
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
@@ -21,7 +22,8 @@ they are congruent modulo `(2)`, or equivalently modulo the `v_K(2)`-th power of
 maximal ideal. This separates the parameters in the finite residue quotient used to
 count the unit norm classes, including in residue characteristic two.
 `ncard_range_uniformizerNormSquareClass` computes their number as `q ^ v_K(2)`, and
-`mem_range_uniformizerNormSquareClass_iff` identifies the counted range with unit norms.
+`mem_range_uniformizerNormSquareClass_iff` and `coe_unitQuadraticNormSquareClasses_irreducible`
+identify the counted range with `TauCeti.unitQuadraticNormSquareClasses (π : K)`.
 
 The proof uses the sharp local square theorem and the obstruction to a square differing
 from one to odd order below `2 v_K(2)`.
@@ -46,7 +48,7 @@ theorem valuation_one_sub_uniformizer_mul_sq {π : 𝒪[K]} (hπ : Irreducible �
     (t : 𝒪[K]) : valuation K (1 - (π : K) * (t : K) ^ 2) = 1 := by
   apply (valuation K).map_one_sub_of_lt
   rw [map_mul, map_pow]
-  exact (mul_le_mul' le_rfl (pow_le_one₀ zero_le t.2)).trans_lt
+  exact (mul_le_mul' le_rfl (pow_le_one₀ zero_le t.property)).trans_lt
     (by simpa using Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ)
 
 omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
@@ -152,7 +154,7 @@ theorem isSquare_div_one_sub_uniformizer_mul_sq_iff (h2 : (2 : K) ≠ 0)
     simpa only [Nat.cast_ofNat] using valuation_natCast_eq_pow hπ 2 h2
   have htwo : valuation K (2 * (s : K)) ≤ valuation K (2 : K) := by
     simpa only [map_mul, mul_one] using
-      mul_le_mul_right ((Valuation.mem_integer_iff _ _).mp s.2) (valuation K (2 : K))
+      mul_le_mul_right ((Valuation.mem_integer_iff _ _).mp s.property) (valuation K (2 : K))
   exact ⟨valuation_sub_le_two_of_isSquare_div h2 hπ s t hv2 htwo,
     isSquare_div_of_valuation_sub_le_two h2 hπ s t hv2 htwo⟩
 
@@ -254,5 +256,15 @@ theorem ncard_range_uniformizerNormSquareClass (h2 : (2 : K) ≠ 0)
     exact ⟨q t, (hf t (r (q t))).mpr (hqr (q t))⟩
   rw [← hrange, Set.ncard_range_of_injective hinj]
   exact IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow _
+
+/-- For an irreducible `π` of `𝒪[K]`, the underlying set of `unitQuadraticNormSquareClasses (π : K)`
+is the range of `uniformizerNormSquareClass K hπ`. -/
+theorem coe_unitQuadraticNormSquareClasses_irreducible {π : 𝒪[K]} (hπ : Irreducible π) :
+    (unitQuadraticNormSquareClasses (π : K) : Set (MultiplicativeSquareClassGroup K)) =
+      Set.range (uniformizerNormSquareClass K hπ) := by
+  ext c
+  rw [SetLike.mem_coe, mem_unitQuadraticNormSquareClasses_iff,
+    mem_range_uniformizerNormSquareClass_iff]
+  exact ⟨fun ⟨b, hb, hv, hc⟩ ↦ ⟨b, hv, hb, hc⟩, fun ⟨b, hv, hb, hc⟩ ↦ ⟨b, hb, hv, hc⟩⟩
 
 end TauCeti

@@ -96,7 +96,8 @@ def cellularChainRepresentation (n : ℕ) :
   letI := cwComplexPreimage C hG.isCoveringMap
   haveI := hG.isCoveringMap.t2Space
   cellularActionRepresentation (p ⁻¹' C) (preimageSMul C hG)
-    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R n
+    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG)
+    (ModuleCat.of R R) n
 
 /-- `TauCeti.cellularChainRepresentation` is `TauCeti.cellularActionRepresentation` for the
 deck-transformation action on `p ⁻¹' C`. -/
@@ -145,7 +146,8 @@ def cellularDifferentialRep (n : ℕ) :
   letI := cwComplexPreimage C hG.isCoveringMap
   haveI := hG.isCoveringMap.t2Space
   cellularActionDifferential (p ⁻¹' C) (preimageSMul C hG)
-    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R n
+    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG)
+    (ModuleCat.of R R) n
 
 /-- `TauCeti.cellularDifferentialRep` is `TauCeti.cellularActionDifferential` for the
 deck-transformation action on `p ⁻¹' C`, transported across
@@ -183,7 +185,8 @@ def cellularChainComplexRep : ChainComplex (Rep.{w} R G) ℕ :=
   letI := cwComplexPreimage C hG.isCoveringMap
   haveI := hG.isCoveringMap.t2Space
   cellularActionComplex (p ⁻¹' C) (preimageSMul C hG)
-    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R
+    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG)
+    (ModuleCat.of R R)
 
 /-- `TauCeti.cellularChainComplexRep` is `TauCeti.cellularActionComplex` for the
 deck-transformation action on `p ⁻¹' C`. -/
@@ -229,7 +232,8 @@ def cellularChainComplexRepForget₂Iso :
   letI := cwComplexPreimage C hG.isCoveringMap
   haveI := hG.isCoveringMap.t2Space
   (cellularActionComplexForget₂Iso (p ⁻¹' C) (preimageSMul C hG)
-    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG) R).symm
+    (isCellular_preimageSMul C hG) (preimageSMul_one C hG) (preimageSMul_mul C hG)
+    (ModuleCat.of R R)).symm
 
 /-- The components of `TauCeti.cellularChainComplexRepForget₂Iso` are the transports along the
 equalities of objects that hold by definition. -/

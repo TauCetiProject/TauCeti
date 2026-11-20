@@ -53,27 +53,27 @@ def vectorBundleRadialPartialDiffeomorph :
     PartialDiffeomorph (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, F))
       (TotalSpace F V) (TotalSpace F V) n := by
   have hsq : ContMDiff (I.prod 𝓘(ℝ, F)) 𝓘(ℝ) n
-      (fun p : TotalSpace F V => ‖p.2‖ ^ 2) := by
+      (fun p : TotalSpace F V => ‖p.snd‖ ^ 2) := by
     simpa only [real_inner_self_eq_norm_sq] using
       (contMDiff_id (I := I.prod 𝓘(ℝ, F)) (n := n)).inner_bundle contMDiff_id
   have hforward : ContMDiff (I.prod 𝓘(ℝ, F)) 𝓘(ℝ) n
-      (fun p : TotalSpace F V => Real.sqrt (1 + ‖p.2‖ ^ 2)) := by
+      (fun p : TotalSpace F V => Real.sqrt (1 + ‖p.snd‖ ^ 2)) := by
     intro p
-    exact (Real.contDiffAt_sqrt (by positivity : 1 + ‖p.2‖ ^ 2 ≠ 0)).comp_contMDiffAt
-      (f := fun q : TotalSpace F V => 1 + ‖q.2‖ ^ 2)
+    exact (Real.contDiffAt_sqrt (by positivity : 1 + ‖p.snd‖ ^ 2 ≠ 0)).comp_contMDiffAt
+      (f := fun q : TotalSpace F V => 1 + ‖q.snd‖ ^ 2)
       ((contMDiff_const (c := (1 : ℝ))).add hsq).contMDiffAt
   have hinverse : ContMDiffOn (I.prod 𝓘(ℝ, F)) 𝓘(ℝ) n
-      (fun p : TotalSpace F V => Real.sqrt (1 - ‖p.2‖ ^ 2)) {p | ‖p.2‖ < 1} := by
+      (fun p : TotalSpace F V => Real.sqrt (1 - ‖p.snd‖ ^ 2)) {p | ‖p.snd‖ < 1} := by
     intro p hp
-    have hpos : 0 < 1 - ‖p.2‖ ^ 2 := by nlinarith [norm_nonneg p.2, show ‖p.2‖ < 1 from hp]
+    have hpos : 0 < 1 - ‖p.snd‖ ^ 2 := by nlinarith [norm_nonneg p.snd, show ‖p.snd‖ < 1 from hp]
     exact (Real.contDiffAt_sqrt hpos.ne').comp_contMDiffWithinAt
-      (f := fun q : TotalSpace F V => 1 - ‖q.2‖ ^ 2)
+      (f := fun q : TotalSpace F V => 1 - ‖q.snd‖ ^ 2)
       ((contMDiff_const (c := (1 : ℝ))).sub hsq).contMDiffAt.contMDiffWithinAt
   refine
     { toFun := TotalSpace.radialMap
       invFun := TotalSpace.radialInverse
       source := univ
-      target := {p | ‖p.2‖ < 1}
+      target := {p | ‖p.snd‖ < 1}
       map_source' := fun p _ => p.norm_radialMap_lt_one
       map_target' := fun _ _ => mem_univ _
       left_inv' := fun p _ => TotalSpace.radialInverse_map p
@@ -82,13 +82,13 @@ def vectorBundleRadialPartialDiffeomorph :
       open_target := ?_
       contMDiffOn_toFun := ?_
       contMDiffOn_invFun := ?_ }
-  · have hnorm : Continuous (fun p : TotalSpace F V => ‖p.2‖) :=
-      hsq.continuous.sqrt.congr (fun p => Real.sqrt_sq (norm_nonneg p.2))
+  · have hnorm : Continuous (fun p : TotalSpace F V => ‖p.snd‖) :=
+      hsq.continuous.sqrt.congr (fun p => Real.sqrt_sq (norm_nonneg p.snd))
     exact isOpen_lt hnorm continuous_const
   · exact ((hforward.inv₀ (fun p => Real.sqrt_ne_zero'.mpr (by positivity))).smul_totalSpace
       contMDiff_id).contMDiffOn.congr (fun p _ => TotalSpace.radialMap_apply p)
   · exact ((hinverse.inv₀ (fun p hp => Real.sqrt_ne_zero'.mpr
-      (by nlinarith [norm_nonneg p.2, show ‖p.2‖ < 1 from hp]))).smul_totalSpace
+      (by nlinarith [norm_nonneg p.snd, show ‖p.snd‖ < 1 from hp]))).smul_totalSpace
       contMDiff_id.contMDiffOn).congr
       (fun p _ => TotalSpace.radialInverse_apply p)
 
@@ -100,7 +100,7 @@ def vectorBundleRadialPartialDiffeomorph :
 /-- The target of radial compression is exactly the open unit ball bundle. -/
 @[simp] theorem vectorBundleRadialPartialDiffeomorph_target :
     (vectorBundleRadialPartialDiffeomorph (I := I) (F := F) (V := V) (n := n)).target =
-      {p | ‖p.2‖ < 1} := (rfl)
+      {p | ‖p.snd‖ < 1} := (rfl)
 
 /-- The partial diffeomorphism acts by fibrewise radial compression. -/
 @[simp] theorem vectorBundleRadialPartialDiffeomorph_apply (p : TotalSpace F V) :
@@ -145,7 +145,7 @@ private theorem vectorBundleRadialPartialDiffeomorphOfRadius_toPartialEquiv :
 /-- The target consists exactly of vectors shorter than the prescribed positive radius. -/
 @[simp] theorem vectorBundleRadialPartialDiffeomorphOfRadius_target :
     (vectorBundleRadialPartialDiffeomorphOfRadius (F := F) (V := V) hr hrpos).target =
-      {p | ‖p.2‖ < r p.proj} := by
+      {p | ‖p.snd‖ < r p.proj} := by
   rw [vectorBundleRadialPartialDiffeomorphOfRadius_toPartialEquiv,
     PartialEquiv.trans_target'']
   simpa [fun b => Real.norm_of_nonneg (hrpos b).le] using

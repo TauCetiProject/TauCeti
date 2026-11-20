@@ -59,7 +59,7 @@ lemma ι_cellularChainGroupIso_inv_comp_cellularChainGroupMap {n : ℕ}
     [HasExactColimitsOfShape (Discrete (cell C n)) A]
     [HasExactColimitsOfShape (Discrete (cell C' n)) A] {i : cell C n} {i' : cell C' n}
     (hi : ∀ x ∈ closedBall (0 : Fin n → ℝ) 1, ∀ hx : map n i x ∈ C,
-      (f ⟨map n i x, hx⟩).1 = map n i' x) :
+      (f ⟨map n i x, hx⟩).val = map n i' x) :
     Sigma.ι (fun _ : cell C n ↦ R) i ≫ (cellularChainGroupIso C R n).inv ≫
         cellularChainGroupMap C C' hf R n =
       Sigma.ι (fun _ : cell C' n ↦ R) i' ≫ (cellularChainGroupIso C' R n).inv := by
@@ -72,17 +72,17 @@ lemma ι_cellularChainGroupIso_inv_comp_cellularChainGroupMap {n : ℕ}
   -- Both sides send a point of the Euclidean disk to the characteristic map of the respective
   -- cell, evaluated at the radial rescaling of that point.
   simp only [MorphismProperty.Comma.comp_right, skeletonPairMap_fst]
-  have hs (q : skeletonObj C (n + 1)) : ((skeletonMap C C' hf (n + 1)) q).1 =
-      (f ⟨q.1, (skeletonLT C _).subset_complex q.2⟩).1 :=
+  have hs (q : skeletonObj C (n + 1)) : ((skeletonMap C C' hf (n + 1)) q).val =
+      (f ⟨q.val, (skeletonLT C _).subset_complex q.property⟩).val :=
     congrArg Subtype.val (skeletonMap_apply C C' hf (n + 1) q)
   have hy : (EuclideanSpace.equiv (Fin n) ℝ).unitBallHomeomorph
       ((p : ULift.{w} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
         EuclideanSpace ℝ (Fin n)) ∈ closedBall 0 1 := by
     rw [mem_closedBall_zero_iff, ContinuousLinearEquiv.norm_unitBallHomeomorph_le_one_iff,
       ← mem_closedBall_zero_iff]
-    exact (p : ULift.{w} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2
+    exact (p : ULift.{w} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down.property
   have hC : map n i _ ∈ C := closedCell_subset_complex n i ⟨_, hy, rfl⟩
-  have key : ∀ (a b : X) (ha : a ∈ C) (hb : b ∈ C), a = b → (f ⟨a, ha⟩).1 = (f ⟨b, hb⟩).1 := by
+  have key : ∀ (a b : X) (ha : a ∈ C) (hb : b ∈ C), a = b → (f ⟨a, ha⟩).val = (f ⟨b, hb⟩).val := by
     rintro a _ _ _ rfl
     rfl
   exact (hs _).trans ((key _ _ _ hC (coe_characteristicCellPairMap_fst_apply C i p)).trans
@@ -92,7 +92,7 @@ lemma ι_cellularChainGroupIso_inv_comp_cellularChainGroupMap {n : ℕ}
 vector of `i` to the cellular basis vector of `i'`**, with coefficients in a ring. -/
 lemma cellularChainGroupMap_cellularChainBasis (R : Type w) [Ring R] {n : ℕ} {i : cell C n}
     {i' : cell C' n} (hi : ∀ x ∈ closedBall (0 : Fin n → ℝ) 1, ∀ hx : map n i x ∈ C,
-      (f ⟨map n i x, hx⟩).1 = map n i' x) :
+      (f ⟨map n i x, hx⟩).val = map n i' x) :
     cellularChainGroupMap C C' hf (ModuleCat.of R R) n (cellularChainBasis C R n i) =
       cellularChainBasis C' R n i' := by
   rw [cellularChainBasis_apply, cellularChainBasis_apply, ← ConcreteCategory.comp_apply,
@@ -103,7 +103,7 @@ lemma cellularChainGroupMap_cellularChainBasis (R : Type w) [Ring R] {n : ℕ} {
 of the target, then the `k`-coordinate of the image of the cellular basis vector of `i` vanishes. -/
 lemma cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_forall_ne (R : Type w) [Ring R]
     {n : ℕ} {i : cell C n} {k : cell C' n} {y : Y} (hy : y ∈ openCell n k)
-    (hk : ∀ x ∈ openCell n i, ∀ hx : x ∈ C, (f ⟨x, hx⟩).1 ≠ y) :
+    (hk : ∀ x ∈ openCell n i, ∀ hx : x ∈ C, (f ⟨x, hx⟩).val ≠ y) :
     (cellularChainBasis C' R n).repr
       (cellularChainGroupMap C C' hf (ModuleCat.of R R) n (cellularChainBasis C R n i)) k = 0 := by
   have hy_skel : y ∈ (skeletonLT C' ((n + 1 : ℕ) : ℕ∞) : Set Y) := by
@@ -121,14 +121,15 @@ lemma cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_forall_ne (R : Ty
     intro z hz
     have hmem_closed : (cellDiskHom i z : X) ∈ closedCell n i := by
       rw [coe_cellDiskHom_apply]
-      exact ⟨_, (diskHomeomorphClosedBall n z).2, rfl⟩
+      exact ⟨_, (diskHomeomorphClosedBall n z).property, rfl⟩
     have hmem_C : (cellDiskHom i z : X) ∈ C :=
       closedCell_subset_complex n i hmem_closed
-    have hs : (x' : Y) = (f ⟨(cellDiskHom i z : X), hmem_C⟩).1 := by
+    have hs : (x' : Y) = (f ⟨(cellDiskHom i z : X), hmem_C⟩).val := by
       rw [← hz]
       simp only [TopPair.Hom.fst_comp, characteristicCellPairMap_fst, skeletonPairMap_fst]
       exact congrArg Subtype.val (skeletonMap_apply C C' hf (n + 1) (cellDiskHom i z))
-    rcases (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n z).2).lt_or_eq with hlt | heq
+    rcases (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n z).property).lt_or_eq with
+        hlt | heq
     · have hmem_open : (cellDiskHom i z : X) ∈ openCell n i := by
         rw [coe_cellDiskHom_apply]
         exact ⟨_, mem_ball_zero_iff.2 hlt, rfl⟩
@@ -170,7 +171,7 @@ lemma cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_forall_ne (R : Ty
 then the `k`-coordinate of the image of the cellular basis vector of `i` vanishes. -/
 lemma cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_notMem_openCell (R : Type w) [Ring R]
     {n : ℕ} {i : cell C n} {k : cell C' n}
-    (hk : ∀ x ∈ openCell n i, ∀ hx : x ∈ C, (f ⟨x, hx⟩).1 ∉ openCell n k) :
+    (hk : ∀ x ∈ openCell n i, ∀ hx : x ∈ C, (f ⟨x, hx⟩).val ∉ openCell n k) :
     (cellularChainBasis C' R n).repr
       (cellularChainGroupMap C C' hf (ModuleCat.of R R) n (cellularChainBasis C R n i)) k = 0 :=
   cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_forall_ne C C' hf R
@@ -182,7 +183,7 @@ vector of `i` vanishes. -/
 lemma cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_ne (R : Type w) [Ring R] {n : ℕ}
     {i : cell C n} {i' k : cell C' n}
     (hi : ∀ x ∈ openCell n i, ∀ hx : x ∈ C,
-      (f ⟨x, hx⟩).1 ∈ (skeletonLT C' (n : ℕ∞) : Set Y) ∪ openCell n i') (hk : k ≠ i') :
+      (f ⟨x, hx⟩).val ∈ (skeletonLT C' (n : ℕ∞) : Set Y) ∪ openCell n i') (hk : k ≠ i') :
     (cellularChainBasis C' R n).repr
       (cellularChainGroupMap C C' hf (ModuleCat.of R R) n (cellularChainBasis C R n i)) k = 0 :=
   cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_notMem_openCell C C' hf R
@@ -197,7 +198,7 @@ the cellular basis vector of `i` to a scalar multiple of the cellular basis vect
 theorem cellularChainGroupMap_cellularChainBasis_eq_smul (R : Type w) [Ring R] {n : ℕ}
     {i : cell C n} {i' : cell C' n}
     (hi : ∀ x ∈ openCell n i, ∀ hx : x ∈ C,
-      (f ⟨x, hx⟩).1 ∈ (skeletonLT C' (n : ℕ∞) : Set Y) ∪ openCell n i') :
+      (f ⟨x, hx⟩).val ∈ (skeletonLT C' (n : ℕ∞) : Set Y) ∪ openCell n i') :
     cellularChainGroupMap C C' hf (ModuleCat.of R R) n (cellularChainBasis C R n i) =
       ((cellularChainBasis C' R n).repr
         (cellularChainGroupMap C C' hf (ModuleCat.of R R) n (cellularChainBasis C R n i)) i') •
