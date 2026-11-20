@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.SymplecticGroup
-public import TauCeti.Analysis.Calculus.Deriv.Matrix
+public import TauCeti.Analysis.Calculus.Deriv.SymplecticGroup
 public import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Naturality
 public import TauCeti.Analysis.Matrix.SymplecticGroup.Maslov
 
@@ -43,11 +43,12 @@ path of symplectic matrices and `Ψ' = J S Ψ`, then `Ψ′ = g⁻¹ Ψ P` satis
 
 `Ψ′' = J S′ Ψ′`, `S′ = gᵀ S g + gᵀ J g'`
 
-for every constant matrix `P` (`Matrix.hasDerivAt_inv_mul_mul_of_mem_symplecticGroup`), and `S′` is
-symmetric when `S` is (`Matrix.IsSymm.transpose_mul_mul_add_transpose_mul_J_mul`). Both rest on
-the linearized symplectic condition `g'ᵀ J g + gᵀ J g' = 0`
-(`HasDerivAt.transpose_mul_J_mul_add_transpose_mul_J_mul_eq_zero`), obtained by differentiating
-`gᵀ J g = J`. For paths in the symplectic subgroup of the general linear group, the extension of
+for every constant matrix `P` (`Matrix.hasDerivAt_inv_mul_mul_of_mem_symplecticGroup`, in
+`TauCeti.Analysis.Calculus.Deriv.SymplecticGroup`), and `S′` is symmetric when `S` is
+(`Matrix.IsSymm.transpose_mul_mul_add_transpose_mul_J_mul`, in
+`TauCeti.LinearAlgebra.SymplecticGroup`). Both rest on the linearized symplectic condition
+`g'ᵀ J g + gᵀ J g' = 0`, obtained by differentiating `gᵀ J g = J`. For paths in the symplectic
+subgroup of the general linear group, the extension of
 `TauCeti.GLSymplectic.frameChange` to `ℝ` satisfies the transformed equation
 (`TauCeti.GLSymplectic.hasDerivAt_frameChange_extend`). So changing the frame of an asymptotic
 operator along a loop `g` replaces `S` by `S′` and changes its Conley–Zehnder index by `2 μ(g)`.
@@ -64,13 +65,8 @@ of the graphs.
 ## Main results
 
 * `TauCeti.GLSymplectic.conleyZehnderIndex_frameChange`: `CZ(g⁻¹ Ψ g(0)) = CZ(Ψ) + 2 μ(g)`.
-* `HasDerivAt.transpose_mul_J_mul_add_transpose_mul_J_mul_eq_zero`: a path of symplectic matrices
-  satisfies `g'ᵀ J g + gᵀ J g' = 0`.
-* `Matrix.hasDerivAt_inv_mul_mul_of_mem_symplecticGroup`: the frame change transforms `Ψ' = J S Ψ`
+* `TauCeti.GLSymplectic.hasDerivAt_frameChange_extend`: the frame change transforms `Ψ' = J S Ψ`
   into `Ψ′' = J (gᵀ S g + gᵀ J g') Ψ′`.
-* `Matrix.IsSymm.transpose_mul_mul_add_transpose_mul_J_mul`: the transformed matrix is symmetric.
-* `TauCeti.GLSymplectic.hasDerivAt_frameChange_extend`: the same transformation for
-  `TauCeti.GLSymplectic.frameChange`.
 
 ## References
 
@@ -107,9 +103,10 @@ theorem frameChange_apply {A B C : GLSymplectic n ℝ} (g : Path A A) (Ψ : Path
   (rfl)
 
 /-- The extension of the frame-changed path to `ℝ` is the frame change of the extensions. -/
+@[simp]
 theorem frameChange_extend {A B C : GLSymplectic n ℝ} (g : Path A A) (Ψ : Path B C) (s : ℝ) :
-    (frameChange g Ψ).extend s = (g.extend s)⁻¹ * Ψ.extend s * A :=
-  (rfl)
+    (frameChange g Ψ).extend s = (g.extend s)⁻¹ * Ψ.extend s * A := by
+  simp only [Path.extend, ContinuousMap.coe_mk, Set.IccExtend_apply, frameChange_apply]
 
 /-- **Change of frame for the Conley–Zehnder index.** Reading a path `Ψ` of symplectic matrices in
 a frame changed by a loop `g` of symplectic matrices, that is, passing to the coordinate path
@@ -134,77 +131,6 @@ theorem conleyZehnderIndex_frameChange {A B C : GLSymplectic n ℝ} (g : Path A 
   ring
 
 end TauCeti.GLSymplectic
-
-section HamiltonianEquation
-
-variable {𝕜 R n : Type*} [NontriviallyNormedField 𝕜] [CommRing R] [Fintype n] [DecidableEq n]
-
-/-- **The linearized symplectic condition.** The derivative `g'` of a path `g` of symplectic
-matrices satisfies `g'ᵀ J g + gᵀ J g' = 0`, the derivative of `gᵀ J g = J`. -/
-theorem HasDerivAt.transpose_mul_J_mul_add_transpose_mul_J_mul_eq_zero
-    {g : 𝕜 → Matrix (n ⊕ n) (n ⊕ n) 𝕜} {g' : Matrix (n ⊕ n) (n ⊕ n) 𝕜} {t : 𝕜}
-    (hg' : HasDerivAt g g' t) (hg : ∀ᶠ s in 𝓝 t, g s ∈ symplecticGroup n 𝕜) :
-    g'ᵀ * J n 𝕜 * g t + (g t)ᵀ * J n 𝕜 * g' = 0 := by
-  have h₁ : HasDerivAt (fun s ↦ (g s)ᵀ * J n 𝕜 * g s)
-      (g'ᵀ * J n 𝕜 * g t + (g t)ᵀ * J n 𝕜 * g') t :=
-    (hg'.matrix_transpose.mul_const (J n 𝕜)).mul hg'
-  have h₂ : HasDerivAt (fun s ↦ (g s)ᵀ * J n 𝕜 * g s) 0 t :=
-    (hasDerivAt_const t (J n 𝕜)).congr_of_eventuallyEq
-      (hg.mono fun s hs ↦ SymplecticGroup.mem_iff'.mp hs)
-  exact h₁.unique h₂
-
-namespace Matrix
-
-/-- **The transformed Hamiltonian is symmetric.** If `S` is symmetric and `g'ᵀ J g + gᵀ J g' = 0`,
-as for the derivative `g'` of a path `g` of symplectic matrices, then `gᵀ S g + gᵀ J g'` is
-symmetric. -/
-theorem IsSymm.transpose_mul_mul_add_transpose_mul_J_mul {S G G' : Matrix (n ⊕ n) (n ⊕ n) R}
-    (hS : S.IsSymm) (h : G'ᵀ * J n R * G + Gᵀ * J n R * G' = 0) :
-    (Gᵀ * S * G + Gᵀ * J n R * G').IsSymm := by
-  have h' : G'ᵀ * (-J n R * G) = Gᵀ * J n R * G' := by
-    rw [Matrix.neg_mul, Matrix.mul_neg, ← Matrix.mul_assoc, eq_neg_of_add_eq_zero_left h, neg_neg]
-  rw [IsSymm, transpose_add, transpose_mul, transpose_mul, transpose_mul, transpose_mul,
-    transpose_transpose, hS.eq, J_transpose, h', Matrix.mul_assoc, Matrix.mul_assoc]
-
-/-- **Change of frame in the equation of a Hamiltonian path.** Let `g` be a path of symplectic
-matrices with derivative `g'` at `t`, and let `Ψ` satisfy `Ψ' = J S Ψ` at `t`. Then for every
-constant matrix `P` the path `g⁻¹ Ψ P` satisfies `(g⁻¹ Ψ P)' = J S′ (g⁻¹ Ψ P)` at `t`, with
-`S′ = gᵀ S g + gᵀ J g'`. For `P = g(0)` this is the frame-changed path. -/
-theorem hasDerivAt_inv_mul_mul_of_mem_symplecticGroup {g Ψ : 𝕜 → Matrix (n ⊕ n) (n ⊕ n) 𝕜}
-    {g' S : Matrix (n ⊕ n) (n ⊕ n) 𝕜} {t : 𝕜} (hg : ∀ᶠ s in 𝓝 t, g s ∈ symplecticGroup n 𝕜)
-    (hg' : HasDerivAt g g' t) (hΨ : HasDerivAt Ψ (J n 𝕜 * S * Ψ t) t)
-    (P : Matrix (n ⊕ n) (n ⊕ n) 𝕜) :
-    HasDerivAt (fun s ↦ (g s)⁻¹ * Ψ s * P)
-      (J n 𝕜 * ((g t)ᵀ * S * g t + (g t)ᵀ * J n 𝕜 * g') * ((g t)⁻¹ * Ψ t * P)) t := by
-  have hT := hg'.transpose_mul_J_mul_add_transpose_mul_J_mul_eq_zero hg
-  have hgt : g t ∈ symplecticGroup n 𝕜 := hg.self_of_nhds
-  have hinv : g t * (g t)⁻¹ = 1 := mul_nonsing_inv _ (SymplecticGroup.symplectic_det hgt)
-  -- Near `t` the inverse of `g` is `-J gᵀ J`, which is differentiated by the product rule.
-  have h₁ : HasDerivAt (fun s ↦ -J n 𝕜 * (g s)ᵀ * J n 𝕜 * Ψ s * P)
-      ((-J n 𝕜 * g'ᵀ * J n 𝕜 * Ψ t + -J n 𝕜 * (g t)ᵀ * J n 𝕜 * (J n 𝕜 * S * Ψ t)) * P) t :=
-    (((hg'.matrix_transpose.const_mul (-J n 𝕜)).mul_const (J n 𝕜)).mul hΨ).mul_const P
-  refine (h₁.congr_deriv ?_).congr_of_eventuallyEq
-    (hg.mono fun s hs ↦ by dsimp only; rw [SymplecticGroup.inv_eq_symplectic_inv _ hs])
-  rw [SymplecticGroup.inv_eq_symplectic_inv _ hgt] at hinv ⊢
-  set G := g t
-  set K := -J n 𝕜 * Gᵀ * J n 𝕜
-  have hT' : Gᵀ * J n 𝕜 * g' = -(g'ᵀ * J n 𝕜 * G) := eq_neg_of_add_eq_zero_right hT
-  have e₁ : J n 𝕜 * (Gᵀ * S * G + Gᵀ * J n 𝕜 * g') * (K * Ψ t * P) =
-      J n 𝕜 * Gᵀ * S * (G * K) * Ψ t * P + J n 𝕜 * (Gᵀ * J n 𝕜 * g') * K * Ψ t * P := by
-    noncomm_ring
-  have e₂ : (-J n 𝕜 * g'ᵀ * J n 𝕜 * Ψ t + K * (J n 𝕜 * S * Ψ t)) * P =
-      -(J n 𝕜 * g'ᵀ * J n 𝕜 * Ψ t * P) - J n 𝕜 * Gᵀ * (J n 𝕜 * J n 𝕜) * S * Ψ t * P := by
-    simp only [K]
-    noncomm_ring
-  have e₃ : J n 𝕜 * -(g'ᵀ * J n 𝕜 * G) * K * Ψ t * P =
-      -(J n 𝕜 * g'ᵀ * J n 𝕜 * (G * K) * Ψ t * P) := by
-    noncomm_ring
-  rw [e₁, e₂, hinv, hT', e₃, hinv, J_squared]
-  noncomm_ring
-
-end Matrix
-
-end HamiltonianEquation
 
 namespace TauCeti.GLSymplectic
 
