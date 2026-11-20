@@ -273,7 +273,7 @@ private theorem pow_succ_higherBarDifferential_comp_rTensor_tmul_of_tprod (k : M
     have hle : j + 1 + (n - (j + 1)) ≤ n := by omega
     rw [subword_eq_of_tprod R a hle]
     exact Module.End.pow_map_zero_of_le (k := n - (j + 1) + 1) (by omega)
-      (ih (n - (j + 1)) (by omega) _ fun i ↦ a ⟨j + 1 + i.1, by omega⟩)
+      (ih (n - (j + 1)) (by omega) _ fun i ↦ a ⟨j + 1 + i.val, by omega⟩)
 
 /-- **Local nilpotence.**  Followed by any map `k ⊗ 1` acting on the module input only, the higher
 part is locally nilpotent, since it strictly lowers the length of the algebra word. -/

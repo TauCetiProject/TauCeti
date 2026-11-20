@@ -155,7 +155,9 @@ namespace TauCeti
 
 open Polynomial Function
 
-variable {R : Type*} [CommRing R]
+section Semiring
+
+variable {R : Type*} [Semiring R]
 
 /-- The Taylor coordinates of order below `n` at `r`: `f ↦ (D^[k] f (r))_{k < n}`. -/
 noncomputable def taylorJet (r : R) (n : ℕ) : R[X] →ₗ[R] Fin n → R :=
@@ -166,12 +168,18 @@ theorem taylorJet_apply (r : R) (n : ℕ) (f : R[X]) (k : Fin n) :
     taylorJet r n f k = (hasseDeriv k f).eval r := by
   simp [taylorJet]
 
+end Semiring
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
+
 /-- The Taylor coordinates of order below `n` at `r` vanish iff `(X - C r) ^ n ∣ f`. -/
 theorem taylorJet_eq_zero_iff {r : R} {n : ℕ} {f : R[X]} :
     taylorJet r n f = 0 ↔ (X - C r) ^ n ∣ f := by
   rw [X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero, funext_iff]
   simp only [taylorJet_apply, Pi.zero_apply]
-  exact ⟨fun h k hk => h ⟨k, hk⟩, fun h k => h k k.2⟩
+  exact ⟨fun h k hk => h ⟨k, hk⟩, fun h k => h k k.isLt⟩
 
 /-- Every family of Taylor coordinates is attained, by `∑ k, c k • (X - C r) ^ k`. -/
 theorem taylorJet_surjective (r : R) (n : ℕ) : Surjective (taylorJet r n) := by
@@ -198,5 +206,7 @@ theorem taylorJetQuotientEquiv_mk (r : R) (n : ℕ) (f : R[X]) :
   rw [taylorJetQuotientEquiv, ← Ideal.Quotient.mk_eq_mk, LinearEquiv.trans_apply,
     LinearEquiv.trans_apply, Submodule.Quotient.restrictScalarsEquiv_symm_mk,
     Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk]
+
+end CommRing
 
 end TauCeti

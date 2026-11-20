@@ -33,12 +33,13 @@ transfers the explicit shortest glue generator `(ω₁, s, ϖ₁)` to the table 
 * Naturality of gluing under equal families of components gives the coordinate-preserving isometry
   `TauCeti.RootfulNiemeierType.a11d7e6LatticeIsometry` from `a11d7e6.lattice` onto
   `TauCeti.a11d7e6Lattice`.
-* `a11d7e6LatticeIsometry` intertwines `a11d7e6.glueDigitsVector` and `a11d7e6.glueWordVector`
-  with their `TauCeti.a11d7e6` counterparts (`a11d7e6LatticeIsometry_glueDigitsVector`,
-  `a11d7e6LatticeIsometry_glueWordVector`), giving the order-`12` divisibility and `12`-coset
-  decomposition `TauCeti.RootfulNiemeierType.mem_a11d7e6_lattice_carrier_iff_exists_sub_mem` of
-  the carrier in terms of the computable digit-word representative
-  `a11d7e6.glueDigitsVector [1, 1, 1]`.
+* `a11d7e6LatticeIsometry` intertwines `TauCeti.glueWordVector a11d7e6.componentType` and
+  `DynkinType.glueWordRepresentativeVector` with their `TauCeti.a11d7e6` counterparts
+  (`a11d7e6LatticeIsometry_glueWordVector`, `a11d7e6LatticeIsometry_glueWordRepresentativeVector`),
+  giving the order-`12` divisibility and `12`-coset decomposition
+  `TauCeti.RootfulNiemeierType.mem_a11d7e6_lattice_carrier_iff_exists_sub_mem` of the carrier in
+  terms of the computable digit-word representative
+  `TauCeti.glueWordVector a11d7e6.componentType [1, 1, 1]`.
 
 ## Main declarations
 
@@ -54,11 +55,13 @@ transfers the explicit shortest glue generator `(ω₁, s, ϖ₁)` to the table 
 * `TauCeti.RootfulNiemeierType.a11d7e6LatticeIsometry`: coordinate-preserving isometry onto
   `TauCeti.a11d7e6Lattice`, with `a11d7e6LatticeIsometry_apply`,
   `a11d7e6LatticeIsometry_symm_apply`, `a11d7e6LatticeIsometry_mem_a11d7e6RootLattice_iff`,
-  `a11d7e6LatticeIsometry_glueDigitsVector`, and `a11d7e6LatticeIsometry_glueWordVector`.
-* `TauCeti.RootfulNiemeierType.nsmul_glueDigitsVector_one_one_one_a11d7e6_mem_rootLattice_iff`,
-  `TauCeti.RootfulNiemeierType.zsmul_glueDigitsVector_one_one_one_a11d7e6_mem_rootLattice_iff`,
+  `a11d7e6LatticeIsometry_glueWordVector`, and
+  `a11d7e6LatticeIsometry_glueWordRepresentativeVector`.
+* `TauCeti.RootfulNiemeierType.nsmul_glueWordVector_one_one_one_a11d7e6_mem_rootLattice_iff`,
+  `TauCeti.RootfulNiemeierType.zsmul_glueWordVector_one_one_one_a11d7e6_mem_rootLattice_iff`,
   `TauCeti.RootfulNiemeierType.mem_a11d7e6_lattice_carrier_iff_exists_sub_mem`: order-`12`
-  divisibility and `12`-coset decomposition via `a11d7e6.glueDigitsVector [1, 1, 1]`.
+  divisibility and `12`-coset decomposition via
+  `TauCeti.glueWordVector a11d7e6.componentType [1, 1, 1]`.
 
 ## References
 
@@ -208,67 +211,75 @@ theorem a11d7e6LatticeIsometry_mem_a11d7e6RootLattice_iff
 
 /-! ### Explicit glue generator and coset decomposition of `a11d7e6.lattice` -/
 
-/-- `a11d7e6LatticeIsometry` maps the digit-word representative `a11d7e6.glueDigitsVector l` to
-`TauCeti.glueDigitsVector TauCeti.a11d7e6 l`. -/
+/-- `a11d7e6LatticeIsometry` maps the digit-word representative
+`TauCeti.glueWordVector a11d7e6.componentType l` to `TauCeti.glueWordVector TauCeti.a11d7e6 l`. -/
 @[simp]
-theorem a11d7e6LatticeIsometry_glueDigitsVector (l : List ℕ) :
-    a11d7e6LatticeIsometry (a11d7e6.glueDigitsVector l) =
-      TauCeti.glueDigitsVector TauCeti.a11d7e6 l := by
+theorem a11d7e6LatticeIsometry_glueWordVector (l : List ℕ) :
+    a11d7e6LatticeIsometry (TauCeti.glueWordVector a11d7e6.componentType l) =
+      TauCeti.glueWordVector TauCeti.a11d7e6 l := by
   rw [a11d7e6LatticeIsometry, Isometry.trans_apply, Isometry.trans_apply, Isometry.ofEq_apply,
     Isometry.ofEq_apply]
-  exact gluedLatticeIsometryOfEq_glueDigitsVector a11d7e6.componentType
+  exact gluedLatticeIsometryOfEq_glueWordVector a11d7e6.componentType
     a11d7e6.isSimplyLaced_componentType a11d7e6.valid_componentType _ valid_a11d7e6 _
     (rfl : 3 = a11d7e6.components.length) (fun i ↦ componentType_a11d7e6 i)
     piGlueAlphabetCongr_mem_a11d7e6GlueSubgroup_iff l
 
-/-- `a11d7e6LatticeIsometry` intertwines `a11d7e6.glueWordVector` and `DynkinType.glueWordVector`
-along `a11d7e6GlueModuleIsometry`. -/
+/-- `a11d7e6LatticeIsometry` intertwines `glueWordRepresentativeVector` on `a11d7e6.componentType`
+and `TauCeti.a11d7e6` along `a11d7e6GlueModuleIsometry`. -/
 @[simp]
-theorem a11d7e6LatticeIsometry_glueWordVector (w : a11d7e6.glueModule) :
-    a11d7e6LatticeIsometry (a11d7e6.glueWordVector w) =
-      DynkinType.glueWordVector TauCeti.a11d7e6 isSimplyLaced_a11d7e6
+theorem a11d7e6LatticeIsometry_glueWordRepresentativeVector (w : a11d7e6.glueModule) :
+    a11d7e6LatticeIsometry
+        (DynkinType.glueWordRepresentativeVector a11d7e6.componentType
+          a11d7e6.isSimplyLaced_componentType w) =
+      DynkinType.glueWordRepresentativeVector TauCeti.a11d7e6 isSimplyLaced_a11d7e6
         (a11d7e6GlueModuleIsometry w) := by
   rw [a11d7e6LatticeIsometry, Isometry.trans_apply, Isometry.trans_apply, Isometry.ofEq_apply,
     Isometry.ofEq_apply, ← piGlueAlphabetCongr_eq_a11d7e6GlueModuleIsometry]
-  exact gluedLatticeIsometryOfEq_glueWordVector a11d7e6.componentType
+  exact gluedLatticeIsometryOfEq_glueWordRepresentativeVector a11d7e6.componentType
     a11d7e6.isSimplyLaced_componentType a11d7e6.valid_componentType _ _ valid_a11d7e6 _
     (finCongr (rfl : 3 = a11d7e6.components.length)) (fun i ↦ componentType_a11d7e6 i)
     piGlueAlphabetCongr_mem_a11d7e6GlueSubgroup_iff w
 
-private theorem a11d7e6LatticeIsometry_glueDigitsVector_one :
-    a11d7e6LatticeIsometry (a11d7e6.glueDigitsVector [1, 1, 1]) =
-      DynkinType.glueWordVector TauCeti.a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord := by
-  rw [a11d7e6LatticeIsometry_glueDigitsVector, ← encodeGlueWord_a11d7e6GlueWord,
-    TauCeti.glueDigitsVector_encodeGlueWord]
+private theorem a11d7e6LatticeIsometry_glueWordVector_one :
+    a11d7e6LatticeIsometry (TauCeti.glueWordVector a11d7e6.componentType [1, 1, 1]) =
+      DynkinType.glueWordRepresentativeVector TauCeti.a11d7e6 isSimplyLaced_a11d7e6
+        a11d7e6GlueWord := by
+  rw [a11d7e6LatticeIsometry_glueWordVector, ← encodeGlueWord_a11d7e6GlueWord,
+    TauCeti.glueWordVector_encodeGlueWord]
 
-/-- A multiple `k • a11d7e6.glueDigitsVector [1, 1, 1]` lies in `a11d7e6.rootLattice` exactly when
-`12` divides `k`. -/
-theorem nsmul_glueDigitsVector_one_one_one_a11d7e6_mem_rootLattice_iff (k : ℕ) :
-    k • a11d7e6.glueDigitsVector [1, 1, 1] ∈ a11d7e6.rootLattice.carrier ↔ 12 ∣ k := by
+/-- A multiple `k • TauCeti.glueWordVector a11d7e6.componentType [1, 1, 1]` lies in
+`a11d7e6.rootLattice` exactly when `12` divides `k`. -/
+theorem nsmul_glueWordVector_one_one_one_a11d7e6_mem_rootLattice_iff (k : ℕ) :
+    k • TauCeti.glueWordVector a11d7e6.componentType [1, 1, 1] ∈ a11d7e6.rootLattice.carrier ↔
+      12 ∣ k := by
   rw [← a11d7e6LatticeIsometry_mem_a11d7e6RootLattice_iff, map_nsmul,
-    a11d7e6LatticeIsometry_glueDigitsVector_one,
-    nsmul_glueWordVector_a11d7e6GlueWord_mem_a11d7e6RootLattice_iff]
+    a11d7e6LatticeIsometry_glueWordVector_one,
+    nsmul_glueWordRepresentativeVector_a11d7e6GlueWord_mem_a11d7e6RootLattice_iff]
 
-/-- An integer multiple `k • a11d7e6.glueDigitsVector [1, 1, 1]` lies in `a11d7e6.rootLattice`
-exactly when `12` divides `k`. -/
-theorem zsmul_glueDigitsVector_one_one_one_a11d7e6_mem_rootLattice_iff (k : ℤ) :
-    k • a11d7e6.glueDigitsVector [1, 1, 1] ∈ a11d7e6.rootLattice.carrier ↔ (12 : ℤ) ∣ k := by
+/-- An integer multiple `k • TauCeti.glueWordVector a11d7e6.componentType [1, 1, 1]` lies in
+`a11d7e6.rootLattice` exactly when `12` divides `k`. -/
+theorem zsmul_glueWordVector_one_one_one_a11d7e6_mem_rootLattice_iff (k : ℤ) :
+    k • TauCeti.glueWordVector a11d7e6.componentType [1, 1, 1] ∈ a11d7e6.rootLattice.carrier ↔
+      (12 : ℤ) ∣ k := by
   rw [← a11d7e6LatticeIsometry_mem_a11d7e6RootLattice_iff, map_zsmul,
-    a11d7e6LatticeIsometry_glueDigitsVector_one,
-    zsmul_glueWordVector_a11d7e6GlueWord_mem_a11d7e6RootLattice_iff]
+    a11d7e6LatticeIsometry_glueWordVector_one,
+    zsmul_glueWordRepresentativeVector_a11d7e6GlueWord_mem_a11d7e6RootLattice_iff]
 
 /-- **Coset decomposition of `a11d7e6.lattice`**: a vector lies in the table lattice of
 `A₁₁ D₇ E₆` exactly when it differs from one of the twelve multiples
-`k • a11d7e6.glueDigitsVector [1, 1, 1]` (`k < 12`) by a vector of `a11d7e6.rootLattice`. -/
+`k • TauCeti.glueWordVector a11d7e6.componentType [1, 1, 1]` (`k < 12`) by a vector of
+`a11d7e6.rootLattice`. -/
 theorem mem_a11d7e6_lattice_carrier_iff_exists_sub_mem
     (x : ∀ i, Fin (a11d7e6.componentType i).rank → ℚ) :
     x ∈ a11d7e6.lattice.carrier ↔
-      ∃ k < 12, x - k • a11d7e6.glueDigitsVector [1, 1, 1] ∈ a11d7e6.rootLattice.carrier := by
+      ∃ k < 12,
+        x - k • TauCeti.glueWordVector a11d7e6.componentType [1, 1, 1] ∈
+          a11d7e6.rootLattice.carrier := by
   rw [← a11d7e6LatticeIsometry.apply_mem_carrier_iff,
     mem_a11d7e6Lattice_carrier_iff_exists_sub_mem]
   refine exists_congr fun k ↦ and_congr_right fun _ ↦ ?_
   rw [← a11d7e6LatticeIsometry_mem_a11d7e6RootLattice_iff, map_sub, map_nsmul,
-    a11d7e6LatticeIsometry_glueDigitsVector_one]
+    a11d7e6LatticeIsometry_glueWordVector_one]
 
 end RootfulNiemeierType
 

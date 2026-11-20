@@ -59,8 +59,9 @@ are excluded here (`TauCeti.DynkinType.isSimplyLaced_cartanMatrix_iff`).
   Dynkin types.
 * `TauCeti.DynkinType.rootLattice_A`, `rootLattice_E6`, `rootLattice_E7`, `rootLattice_E8`:
   identification with the family-specific simple-root lattices.
-* `TauCeti.DynkinType.rootLatticeIsometryCheckerboard`: the isometry of the type `Dₙ` root lattice
-  with the checkerboard lattice.
+* `TauCeti.DynkinType.rootLatticeIsometryCheckerboard` and
+  `TauCeti.DynkinType.rootLatticeIsometryCheckerboard_symm_apply`: the isometry of the type `Dₙ`
+  root lattice with the checkerboard lattice and its explicit inverse coordinate formula.
 
 ## References
 
@@ -181,7 +182,7 @@ theorem span_vectorsOfNorm_two_rootLattice :
       (t.rootLattice ht).carrier := by
   refine le_antisymm (Submodule.span_le.mpr ?_) ?_
   · rintro _ ⟨x, -, rfl⟩
-    exact x.2
+    exact x.property
   · refine (t.rootLattice_carrier ht).le.trans (Submodule.span_le.mpr ?_)
     rintro _ ⟨i, rfl⟩
     exact Submodule.subset_span ⟨t.simpleRootBasis ht i,
@@ -291,39 +292,35 @@ theorem rootLatticeIsometryCheckerboard_single (n : ℕ) (hn : 4 ≤ n)
   (congrArg _ ((D n).coe_simpleRootBasis ht i).symm).trans <|
     (Isometry.ofGramMatrixEq_apply_basis _ _ _ i).trans (coe_checkerboardSimpleRootBasis_apply hn i)
 
-/-- A vector `x` in simple-root coordinates maps to `y` under `rootLatticeIsometryCheckerboard`
-whenever each coordinate `x k` agrees with the `k`-th Bourbaki simple-root coordinate of `y`. -/
-theorem rootLatticeIsometryCheckerboard_eq_of_repr (n : ℕ) (hn : 4 ≤ n)
-    (ht : (D n).IsSimplyLaced) {x y : Fin n → ℚ}
-    (h : ∀ k : Fin n, x k = (typeDSimpleRootBasis ℚ n hn).repr y k) :
-    rootLatticeIsometryCheckerboard n hn ht x = y := by
-  let f : (Fin n → ℚ) →ₗ[ℚ] (Fin n → ℚ) :=
-    (rootLatticeIsometryCheckerboard n hn ht : (Fin (D n).rank → ℚ) ≃ₗ[ℚ] (Fin n → ℚ)).toLinearMap
-  calc
-    f x = ∑ k : Fin n, x k • f (Pi.single k 1) := by
-      conv_lhs => rw [pi_eq_sum_univ' x]
-      rw [map_sum]
-      exact Finset.sum_congr rfl fun k _ ↦ map_smul f _ _
-    _ = ∑ k : Fin n, (typeDSimpleRootBasis ℚ n hn).repr y k • typeDSimpleRootBasis ℚ n hn k := by
-      refine Finset.sum_congr rfl fun k _ ↦ ?_
-      have hf : f (Pi.single k 1) = typeDSimpleRootBasis ℚ n hn k := by
-        refine (rootLatticeIsometryCheckerboard_single n hn ht k).trans ?_
-        rw [typeDSimpleRootBasis_apply]
-        exact funext (checkerboardSimpleRoot_apply hn k)
-      rw [h k, hf]
-    _ = y := (typeDSimpleRootBasis ℚ n hn).sum_repr y
-
-/-- The inverse of `rootLatticeIsometryCheckerboard` evaluates the `k`-th Bourbaki simple-root
-coordinate of a rational vector in `ℚⁿ`. -/
+/-- **Inverse simple-root coordinates on `Dₙ`.**  For `4 ≤ n`, the inverse of
+`rootLatticeIsometryCheckerboard` reads prefix sums `y₀ + ⋯ + yₖ` on the chain nodes `k + 2 < n`,
+`(∑ yⱼ) / 2 - y_{n-1}` at node `n - 2`, and `(∑ yⱼ) / 2` at node `n - 1`. -/
 theorem rootLatticeIsometryCheckerboard_symm_apply (n : ℕ) (hn : 4 ≤ n)
     (ht : (D n).IsSimplyLaced) (y : Fin n → ℚ) (k : Fin n) :
     (rootLatticeIsometryCheckerboard n hn ht).symm y k =
-      (typeDSimpleRootBasis ℚ n hn).repr y k := by
-  have heq : (rootLatticeIsometryCheckerboard n hn ht).symm y =
-      fun i : Fin n ↦ (typeDSimpleRootBasis ℚ n hn).repr y i :=
-    EquivLike.injective (rootLatticeIsometryCheckerboard n hn ht)
-      ((Isometry.apply_symm_apply _ y).trans
-        (rootLatticeIsometryCheckerboard_eq_of_repr n hn ht fun _ ↦ rfl).symm)
-  exact congrFun heq k
+      if (k : ℕ) + 2 < n then ∑ j ∈ Finset.Iic k, y j
+      else if (k : ℕ) + 1 < n then (∑ j, y j) / 2 - y ⟨n - 1, by omega⟩
+      else (∑ j, y j) / 2 := by
+  let : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
+  set e := rootLatticeIsometryCheckerboard n hn ht
+  have hexp (x : Fin n → ℚ) :
+      e x = ∑ i : Fin n, x i • typeDSimpleRootBasis ℚ n hn i := by
+    have hx : x = ∑ i : Fin n, x i • Pi.single i 1 := by
+      ext j
+      simp [Finset.sum_apply, Pi.single_apply]
+    refine (congrArg e hx).trans ((map_sum e (fun i : Fin n ↦ x i • Pi.single i (1 : ℚ))
+      Finset.univ).trans ?_)
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    have hcb : checkerboardSimpleRoot n hn i = typeDSimpleRootBasis ℚ n hn i := by
+      ext j
+      rw [checkerboardSimpleRoot_apply, typeDSimpleRootBasis_apply]
+    exact (map_smul e (x i) (Pi.single i (1 : ℚ))).trans
+      (congrArg (x i • ·) ((rootLatticeIsometryCheckerboard_single n hn ht i).trans hcb))
+  have hrepr : e ((typeDSimpleRootBasis ℚ n hn).repr y) = y :=
+    (hexp _).trans ((typeDSimpleRootBasis ℚ n hn).sum_repr y)
+  have hsymm : e.symm y = (typeDSimpleRootBasis ℚ n hn).repr y :=
+    (congrArg e.symm hrepr.symm).trans (e.symm_apply_apply _)
+  rw [congrFun hsymm k, typeDSimpleRootBasis_repr_apply ℚ hn y k, invOf_eq_inv]
+  split_ifs <;> ring
 
 end TauCeti.DynkinType

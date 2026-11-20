@@ -78,14 +78,14 @@ namespace SmoothTwoForm
 `σ(u, w) = ⟪F, u ∧ w⟫`. -/
 private theorem eval₂_eq_inner (σ : SmoothTwoForm I M) (x : M) (u w : TangentSpace I x) :
     σ.eval₂ x u w =
-      ⟪(alternatingFormEquiv (TangentSpace I x) 2).symm (σ.1 x), ιMulti ℝ 2 ![u, w]⟫ := by
+      ⟪(alternatingFormEquiv (TangentSpace I x) 2).symm (σ.val x), ιMulti ℝ 2 ![u, w]⟫ := by
   rw [inner_alternatingFormEquiv_symm_ιMulti, SmoothBundleForm.eval₂_apply]
 
 /-- The operator of `σ` at a point: the contraction by the two-vector representing `σ`. -/
 private def innerOperatorAt (σ : SmoothTwoForm I M) (x : M) :
     TangentSpace I x →L[ℝ] TangentSpace I x :=
   LinearMap.toContinuousLinearMap
-    (twoVectorContraction ((alternatingFormEquiv (TangentSpace I x) 2).symm (σ.1 x)))
+    (twoVectorContraction ((alternatingFormEquiv (TangentSpace I x) 2).symm (σ.val x)))
 
 private theorem inner_innerOperatorAt_apply (σ : SmoothTwoForm I M) (x : M)
     (u w : TangentSpace I x) : ⟪innerOperatorAt σ x u, w⟫ = σ.eval₂ x u w := by
@@ -144,7 +144,7 @@ theorem inner_innerOperator_apply (σ : SmoothTwoForm I M) (x : M) (u w : Tangen
 representing `σ`, through `σ(u, w) = ⟪F, u ∧ w⟫`. -/
 theorem innerOperator_apply (σ : SmoothTwoForm I M) (x : M) (u : TangentSpace I x) :
     σ.innerOperator x u =
-      twoVectorContraction ((alternatingFormEquiv (TangentSpace I x) 2).symm (σ.1 x)) u :=
+      twoVectorContraction ((alternatingFormEquiv (TangentSpace I x) 2).symm (σ.val x)) u :=
   (rfl)
 
 end SmoothTwoForm
@@ -221,9 +221,9 @@ variable [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 `σ`. -/
 private theorem alternatingFormEquiv_symm_hodgeStar_apply (x : M) :
     letI := o.fact_finrank_tangentSpace x
-    (alternatingFormEquiv (TangentSpace I x) 2).symm ((SmoothForm.hodgeStar o rfl σ).1 x) =
+    (alternatingFormEquiv (TangentSpace I x) 2).symm ((SmoothForm.hodgeStar o rfl σ).val x) =
       (o.orientationAt x).hodgeStar (o.fact_finrank_tangentSpace x).out.symm
-        ((alternatingFormEquiv (TangentSpace I x) 2).symm (σ.1 x)) := by
+        ((alternatingFormEquiv (TangentSpace I x) 2).symm (σ.val x)) := by
   let := o.fact_finrank_tangentSpace x
   rw [LinearEquiv.symm_apply_eq, ← Orientation.formHodgeStar_alternatingFormEquiv,
     LinearEquiv.apply_symm_apply, ← RoughForm.hodgeStar_apply, ← SmoothForm.coe_hodgeStar]
@@ -236,22 +236,22 @@ anti-self-dual, `⋆σ = ±σ`, and has pointwise norm `|σ| = √2`. Such a `J`
 (`TauCeti.SmoothTwoForm.compatible_of_inner_eq`). -/
 theorem exists_smoothAlmostComplexStructure_inner_eq_iff :
     (∃ J : SmoothAlmostComplexStructure I M, ∀ x u v, ⟪u, v⟫ = σ.eval₂ x u (J x v)) ↔
-      ∀ x, ((SmoothForm.hodgeStar o rfl σ).1 x = σ.1 x ∨
-          (SmoothForm.hodgeStar o rfl σ).1 x = -σ.1 x) ∧
-        alternatingFormInner (TangentSpace I x) 2 (σ.1 x) (σ.1 x) = 2 := by
+      ∀ x, ((SmoothForm.hodgeStar o rfl σ).val x = σ.val x ∨
+          (SmoothForm.hodgeStar o rfl σ).val x = -σ.val x) ∧
+        alternatingFormInner (TangentSpace I x) 2 (σ.val x) (σ.val x) = 2 := by
   -- At each point, both conditions are those of the pointwise theorem for the two-vector `F`
   -- representing `σ`, read through `TauCeti.alternatingFormEquiv`.
   have hpt (x : M) : letI := o.fact_finrank_tangentSpace x
-      (((SmoothForm.hodgeStar o rfl σ).1 x = σ.1 x ∨
-          (SmoothForm.hodgeStar o rfl σ).1 x = -σ.1 x) ∧
-        alternatingFormInner (TangentSpace I x) 2 (σ.1 x) (σ.1 x) = 2) ↔
+      (((SmoothForm.hodgeStar o rfl σ).val x = σ.val x ∨
+          (SmoothForm.hodgeStar o rfl σ).val x = -σ.val x) ∧
+        alternatingFormInner (TangentSpace I x) 2 (σ.val x) (σ.val x) = 2) ↔
       ((o.orientationAt x).hodgeStar (o.fact_finrank_tangentSpace x).out.symm
-            ((alternatingFormEquiv (TangentSpace I x) 2).symm (σ.1 x)) =
-          (alternatingFormEquiv (TangentSpace I x) 2).symm (σ.1 x) ∨
+            ((alternatingFormEquiv (TangentSpace I x) 2).symm (σ.val x)) =
+          (alternatingFormEquiv (TangentSpace I x) 2).symm (σ.val x) ∨
         (o.orientationAt x).hodgeStar (o.fact_finrank_tangentSpace x).out.symm
-            ((alternatingFormEquiv (TangentSpace I x) 2).symm (σ.1 x)) =
-          -(alternatingFormEquiv (TangentSpace I x) 2).symm (σ.1 x)) ∧
-        ‖(alternatingFormEquiv (TangentSpace I x) 2).symm (σ.1 x)‖ ^ 2 = 2 := by
+            ((alternatingFormEquiv (TangentSpace I x) 2).symm (σ.val x)) =
+          -(alternatingFormEquiv (TangentSpace I x) 2).symm (σ.val x)) ∧
+        ‖(alternatingFormEquiv (TangentSpace I x) 2).symm (σ.val x)‖ ^ 2 = 2 := by
     rw [← alternatingFormEquiv_symm_hodgeStar_apply, ← map_neg,
       (alternatingFormEquiv (TangentSpace I x) 2).symm.injective.eq_iff,
       (alternatingFormEquiv (TangentSpace I x) 2).symm.injective.eq_iff,
@@ -283,10 +283,10 @@ structure `J` with `g(u, v) = σ(u, J v)` if and only if `⋆σ = σ` and `σ` h
 `|σ| = √2`. -/
 theorem exists_smoothAlmostComplexStructure_inner_eq_iff_of_pos
     (ho : ∀ x, 0 < alternatingFormInner (TangentSpace I x) 2
-      ((SmoothForm.hodgeStar o rfl σ).1 x) (σ.1 x)) :
+      ((SmoothForm.hodgeStar o rfl σ).val x) (σ.val x)) :
     (∃ J : SmoothAlmostComplexStructure I M, ∀ x u v, ⟪u, v⟫ = σ.eval₂ x u (J x v)) ↔
       SmoothForm.hodgeStar o rfl σ = σ ∧
-        ∀ x, alternatingFormInner (TangentSpace I x) 2 (σ.1 x) (σ.1 x) = 2 := by
+        ∀ x, alternatingFormInner (TangentSpace I x) 2 (σ.val x) (σ.val x) = 2 := by
   rw [exists_smoothAlmostComplexStructure_inner_eq_iff o, SmoothBundleForm.ext_iff]
   refine ⟨fun h ↦ ⟨fun x ↦ ?_, fun x ↦ (h x).2⟩, fun ⟨h, h₂⟩ x ↦ ⟨Or.inl ?_, h₂ x⟩⟩
   · -- `⋆σ = -σ` at `x` would make `⟨⋆σ, σ⟩ = -|σ|²` nonpositive.
@@ -294,7 +294,7 @@ theorem exists_smoothAlmostComplexStructure_inner_eq_iff_of_pos
     rw [(h x).1.resolve_right fun hneg ↦ ?_]
     have hx := ho x
     rw [hneg, LinearMap.map_neg₂] at hx
-    have := alternatingFormInner_self_nonneg (V := TangentSpace I x) (σ.1 x)
+    have := alternatingFormInner_self_nonneg (V := TangentSpace I x) (σ.val x)
     linarith
   · ext v
     exact h x v

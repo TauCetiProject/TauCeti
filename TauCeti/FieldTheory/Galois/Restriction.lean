@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.Basic
+import TauCeti.GroupTheory.Index.Basic
 
 /-!
 # Restricting automorphisms along an embedding of a normal extension
@@ -49,8 +50,13 @@ of restriction of scalars.
 * `AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one` and
   `AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom`: the restriction kernel is
   the image of restriction of scalars.
+* `AlgEquiv.index_range_restrictScalarsHom`: in a finite Galois tower `K ⊆ L ⊆ M`, the image of
+  `Gal(M/L)` in `Gal(M/K)` has index `[L : K]`.
 * `AlgEquiv.restrictNormal_mul_restrictScalars`: multiplying by an automorphism of the top field
   over the intermediate one does not change the restriction.
+* `AlgEquiv.restrictNormalHom_of_compatible`: a compatible pair of maps between normal
+  intermediate fields of `Ω/K` carries restriction to the larger field to restriction to the
+  smaller field.
 * `AlgEquiv.restrictNormalHom_adjoin_simple_eq_one_iff`: restriction to a normal simple
   subextension `F⟮α⟯` is trivial precisely when the automorphism fixes `α`.
 -/
@@ -214,6 +220,31 @@ end RestrictAlong
 
 end TauCeti
 
+/-! ### Restriction along compatible normal subextensions -/
+
+section CompatibleRestriction
+
+open IntermediateField
+
+variable {K Ω : Type*} [Field K] [Field Ω] [Algebra K Ω]
+  {E M : IntermediateField K Ω} [Normal K E] [Normal K M]
+  (pi : (M ≃ₐ[K] M) → (E ≃ₐ[K] E)) (iota : E → M)
+  (hpiiota : ∀ g x, iota (pi g x) = g (iota x))
+  (hiota : ∀ x, M.val (iota x) = E.val x)
+include hpiiota hiota
+
+/-- Along a compatible pair of maps `(pi, iota)` between normal intermediate fields of `Ω/K`, with
+`iota` compatible with their inclusions into `Ω`, `pi` carries restriction to `M` to restriction to
+`E`. Only the underlying functions are used: a monoid hom `pi` and an algebra hom `iota` apply
+through their coercions. -/
+theorem AlgEquiv.restrictNormalHom_of_compatible (g : Ω ≃ₐ[K] Ω) :
+    pi (AlgEquiv.restrictNormalHom M g) = AlgEquiv.restrictNormalHom E g :=
+  AlgEquiv.ext fun x ↦ E.val.injective <| (hiota _).symm.trans <|
+    (congrArg M.val (hpiiota _ x)).trans <| (AlgEquiv.restrictNormal_commutes g M (iota x)).trans <|
+      (congrArg g (hiota x)).trans (AlgEquiv.restrictNormal_commutes g E x).symm
+
+end CompatibleRestriction
+
 /-! ### Restriction to an intermediate field in a tower -/
 
 section Tower
@@ -274,6 +305,20 @@ theorem AlgEquiv.restrictNormal_mul_restrictScalars (σ : M ≃ₐ[K] M) (τ : M
     AlgEquiv.restrictNormalHom_apply_eq_restrictNormal,
     (AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one K L M
       (τ.restrictScalars K)).1 ⟨τ, rfl⟩, mul_one]
+
+omit [Normal K L] in
+/-- In a finite Galois tower `K ⊆ L ⊆ M`, the image of `Gal(M/L)` in `Gal(M/K)` under restriction
+of scalars has index `[L : K]`. -/
+@[simp]
+theorem AlgEquiv.index_range_restrictScalarsHom [FiniteDimensional K M] [IsGalois K M] :
+    (AlgEquiv.restrictScalarsHom K : Gal(M/L) →* Gal(M/K)).range.index =
+      Module.finrank K L := by
+  have : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
+  have : FiniteDimensional L M := Module.Finite.right K L M
+  exact TauCeti.index_eq_of_natCard_eq_mul (Module.finrank_pos (R := L) (M := M))
+    (by rw [← Nat.card_congr (MonoidHom.ofInjective (AlgEquiv.restrictScalarsHom_injective K
+          (S := L) (A := M))).toEquiv, IsGalois.card_aut_eq_finrank])
+    (by rw [IsGalois.card_aut_eq_finrank K M, ← Module.finrank_mul_finrank K L M, mul_comm])
 
 end Tower
 

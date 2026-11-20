@@ -29,8 +29,8 @@ gives a positive definite even unimodular lattice of rank `24` whose vectors of 
 are those of `R` (`image_vectorsOfNorm_a11d7e6Lattice_eq`) and whose roots span `R`
 (`span_vectorsOfNorm_two_a11d7e6Lattice`).  The root sublattice is computed from the glue minima,
 not from evenness, unimodularity, or a root count.  Evaluating the canonical computable
-representative `TauCeti.DynkinType.glueWordVector` on `[111]` assembles the component weights `ω₁`,
-`s`, and `ϖ₁` into a norm-`4` glue generator and yields the `12`-coset decomposition
+representative `TauCeti.DynkinType.glueWordRepresentativeVector` on `[111]` assembles the component
+weights `ω₁`, `s`, and `ϖ₁` into a norm-`4` glue generator and yields the `12`-coset decomposition
 `mem_a11d7e6Lattice_carrier_iff_exists_sub_mem` of the carrier.
 
 ## Main declarations
@@ -45,12 +45,12 @@ representative `TauCeti.DynkinType.glueWordVector` on `[111]` assembles the comp
   `mem_a11d7e6Lattice_carrier_iff`, `isEven_a11d7e6Lattice`, `isUnimodular_a11d7e6Lattice`,
   `isPosDef_a11d7e6Lattice`, `finrank_a11d7e6Lattice`, `image_vectorsOfNorm_a11d7e6Lattice_eq`,
   and the root-sublattice equality `span_vectorsOfNorm_two_a11d7e6Lattice`.
-* `TauCeti.glueWordVector_a11d7e6GlueWord_zero`,
-  `TauCeti.rootLatticeIsometryCheckerboard_glueWordVector_a11d7e6GlueWord_one`,
-  `TauCeti.glueWordVector_a11d7e6GlueWord_two`,
-  `TauCeti.nsmul_glueWordVector_a11d7e6GlueWord_mem_a11d7e6RootLattice_iff`,
+* `TauCeti.glueWordRepresentativeVector_a11d7e6GlueWord_zero`,
+  `TauCeti.rootLatticeIsometryCheckerboard_glueWordRepresentativeVector_a11d7e6GlueWord_one`,
+  `TauCeti.glueWordRepresentativeVector_a11d7e6GlueWord_two`,
+  `TauCeti.nsmul_glueWordRepresentativeVector_a11d7e6GlueWord_mem_a11d7e6RootLattice_iff`,
   `TauCeti.mem_a11d7e6Lattice_carrier_iff_exists_sub_mem`: component weights, order-`12`
-  divisibility, and `12`-coset decomposition via `glueWordVector` on `[111]`.
+  divisibility, and `12`-coset decomposition via `glueWordRepresentativeVector` on `[111]`.
 
 ## References
 
@@ -380,52 +380,61 @@ theorem span_vectorsOfNorm_two_a11d7e6Lattice :
 
 /-! ### Explicit glue generator and coset decomposition -/
 
-/-- The `A₁₁` component of `glueWordVector` on `[111]` is the first fundamental weight `ω₁`. -/
-theorem glueWordVector_a11d7e6GlueWord_zero :
-    glueWordVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord 0 = typeAFundamentalWeight 11 := by
-  rw [← glueDigitsVector_encodeGlueWord, encodeGlueWord_a11d7e6GlueWord]
-  exact typeACosetRepresentative_one 11
+/-- The `A₁₁` component of `glueWordRepresentativeVector` on `[111]` is the first fundamental weight
+`ω₁`. -/
+theorem glueWordRepresentativeVector_a11d7e6GlueWord_zero :
+    glueWordRepresentativeVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord 0 =
+      typeAFundamentalWeight 11 := by
+  rw [← glueWordVector_encodeGlueWord, encodeGlueWord_a11d7e6GlueWord, glueWordVector_apply]
+  change (A 11).glueLabelVector 1 = typeAFundamentalWeight 11
+  rw [glueLabelVector_A, typeACosetRepresentative_one]
 
-/-- In checkerboard coordinates, the `D₇` component of `glueWordVector` on `[111]` is the spinor
-vector `checkerboardSpinor 7`. -/
-theorem rootLatticeIsometryCheckerboard_glueWordVector_a11d7e6GlueWord_one :
+/-- In checkerboard coordinates, the `D₇` component of `glueWordRepresentativeVector` on `[111]` is
+the spinor vector `checkerboardSpinor 7`. -/
+theorem rootLatticeIsometryCheckerboard_glueWordRepresentativeVector_a11d7e6GlueWord_one :
     rootLatticeIsometryCheckerboard 7 (by decide) (isSimplyLaced_a11d7e6 1)
-        (glueWordVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord 1) =
+        (glueWordRepresentativeVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord 1) =
       checkerboardSpinor 7 := by
-  rw [← glueDigitsVector_encodeGlueWord, encodeGlueWord_a11d7e6GlueWord]
-  exact rootLatticeIsometryCheckerboard_glueLabelVector_one 7 (by decide) (isSimplyLaced_a11d7e6 1)
+  rw [← glueWordVector_encodeGlueWord, encodeGlueWord_a11d7e6GlueWord, glueWordVector_apply]
+  change rootLatticeIsometryCheckerboard 7 (by decide) (isSimplyLaced_a11d7e6 1)
+      ((D 7).glueLabelVector 1) = checkerboardSpinor 7
+  rw [glueLabelVector_D, ite_eq_left rfl]
+  exact rootLatticeIsometryCheckerboard_typeDSpinorWeight (by decide) (isSimplyLaced_a11d7e6 1)
 
-/-- The `E₆` component of `glueWordVector` on `[111]` is the minuscule weight `ϖ₁`. -/
-theorem glueWordVector_a11d7e6GlueWord_two :
-    glueWordVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord 2 = typeE₆MinusculeWeight := by
-  rw [← glueDigitsVector_encodeGlueWord, encodeGlueWord_a11d7e6GlueWord]
-  exact glueLabelVector_E6_one
+/-- The `E₆` component of `glueWordRepresentativeVector` on `[111]` is the minuscule weight
+`ϖ₁`. -/
+theorem glueWordRepresentativeVector_a11d7e6GlueWord_two :
+    glueWordRepresentativeVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord 2 =
+      typeE₆MinusculeWeight := by
+  rw [← glueWordVector_encodeGlueWord, encodeGlueWord_a11d7e6GlueWord, glueWordVector_apply]
+  change E6.glueLabelVector 1 = typeE₆MinusculeWeight
+  rw [glueLabelVector_E6, ite_eq_left rfl]
 
-/-- A multiple `k • glueWordVector ... a11d7e6GlueWord` lies in `A₁₁ ⊥ D₇ ⊥ E₆` exactly when `12`
-divides `k`. -/
-theorem nsmul_glueWordVector_a11d7e6GlueWord_mem_a11d7e6RootLattice_iff (k : ℕ) :
-    k • glueWordVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord ∈
+/-- A multiple `k • glueWordRepresentativeVector ... a11d7e6GlueWord` lies in `A₁₁ ⊥ D₇ ⊥ E₆`
+exactly when `12` divides `k`. -/
+theorem nsmul_glueWordRepresentativeVector_a11d7e6GlueWord_mem_a11d7e6RootLattice_iff (k : ℕ) :
+    k • glueWordRepresentativeVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord ∈
       a11d7e6RootLattice.carrier ↔ 12 ∣ k :=
-  (nsmul_glueWordVector_mem_pi_rootLattice_carrier_iff _ _ valid_a11d7e6 k a11d7e6GlueWord).trans
-    (nsmul_a11d7e6GlueWord_eq_zero_iff k)
+  (nsmul_glueWordRepresentativeVector_mem_carrier_iff _ _ valid_a11d7e6 k
+    a11d7e6GlueWord).trans (nsmul_a11d7e6GlueWord_eq_zero_iff k)
 
-/-- An integer multiple `k • glueWordVector ... a11d7e6GlueWord` lies in `A₁₁ ⊥ D₇ ⊥ E₆` exactly
-when `12` divides `k`. -/
-theorem zsmul_glueWordVector_a11d7e6GlueWord_mem_a11d7e6RootLattice_iff (k : ℤ) :
-    k • glueWordVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord ∈
+/-- An integer multiple `k • glueWordRepresentativeVector ... a11d7e6GlueWord` lies in
+`A₁₁ ⊥ D₇ ⊥ E₆` exactly when `12` divides `k`. -/
+theorem zsmul_glueWordRepresentativeVector_a11d7e6GlueWord_mem_a11d7e6RootLattice_iff (k : ℤ) :
+    k • glueWordRepresentativeVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord ∈
       a11d7e6RootLattice.carrier ↔ (12 : ℤ) ∣ k := by
-  rw [zsmul_glueWordVector_mem_pi_rootLattice_carrier_iff _ _ valid_a11d7e6,
+  rw [zsmul_glueWordRepresentativeVector_mem_carrier_iff _ _ valid_a11d7e6,
     ← addOrderOf_dvd_iff_zsmul_eq_zero, addOrderOf_a11d7e6GlueWord]
   norm_num
 
 /-- **Coset decomposition of `A₁₁ D₇ E₆`**: a vector lies in the glued lattice exactly when it
-differs from one of the twelve multiples `k • glueWordVector ... a11d7e6GlueWord` (`k < 12`) by a
-vector of the root lattice `A₁₁ ⊥ D₇ ⊥ E₆`. -/
+differs from one of the twelve multiples `k • glueWordRepresentativeVector ... a11d7e6GlueWord`
+(`k < 12`) by a vector of the root lattice `A₁₁ ⊥ D₇ ⊥ E₆`. -/
 theorem mem_a11d7e6Lattice_carrier_iff_exists_sub_mem
     (x : ∀ i, Fin (a11d7e6 i).rank → ℚ) :
     x ∈ a11d7e6Lattice.carrier ↔
       ∃ k < 12,
-        x - k • glueWordVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord ∈
+        x - k • glueWordRepresentativeVector a11d7e6 isSimplyLaced_a11d7e6 a11d7e6GlueWord ∈
           a11d7e6RootLattice.carrier := by
   rw [a11d7e6Lattice_def]
   exact mem_gluedLattice_carrier_iff_exists_nsmul _ _ valid_a11d7e6 _ _

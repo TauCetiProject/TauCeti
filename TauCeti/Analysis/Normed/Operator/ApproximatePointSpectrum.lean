@@ -159,6 +159,6 @@ theorem frontier_spectrum_subset_approximatePointSpectrum [CompleteSpace E]
   have hzunit := isUnit_of_forall_mul_norm_le_of_norm_sub_lt
     (fun x ↦ by simpa only [sub_apply, algebraMap_apply, norm_sub_rev] using hbound x)
     huw hdist
-  exact (spectrum.mem_iff.mp ((spectrum.isClosed T).frontier_subset hz)) hzunit
+  exact (spectrum.mem_iff.mp ((spectrum.isClosed 𝕜 T).frontier_subset hz)) hzunit
 
 end ContinuousLinearMap

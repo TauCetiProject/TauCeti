@@ -60,7 +60,7 @@ theorem mass_le_iff_exists_extension {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F
       norm_apply_le_of_mass_le T hT φ
     let f' := (LinearMap.ofClass T).compLeftInverse j
     obtain ⟨L, hL, hnorm⟩ := exists_extension_norm_eq (LinearMap.range j) f'
-    refine ⟨L, hnorm.trans_le (LinearMap.opNorm_compLeftInverse_le C.2 hbound), fun φ => ?_⟩
+    refine ⟨L, hnorm.trans_le (LinearMap.opNorm_compLeftInverse_le C.property hbound), fun φ => ?_⟩
     calc L (φ : E →ᵇ F) = L (j φ) :=
            congrArg L (TestFunction.toBoundedContinuousFunctionCLM_apply ℝ φ).symm
          _ = f' ⟨j φ, LinearMap.mem_range_self j φ⟩ :=
