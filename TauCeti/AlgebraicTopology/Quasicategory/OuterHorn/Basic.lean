@@ -41,6 +41,8 @@ inverse of `e` and shows that it is also a left inverse. Reversing simplices via
 
 * `SSet.Quasicategory.hornFilling_zero`, `SSet.Quasicategory.hornFilling_last`: **Joyal's theorem**
   on special outer horns `Λ[n + 2, 0]` and `Λ[n + 2, Fin.last (n + 2)]`.
+* `SSet.Quasicategory.exists_fill_of_ne_last`: a horn `Λ[d + 1, i]` with `i` not the last vertex
+  can be filled when it is inner, or when `i = 0` and its initial edge is an equivalence.
 * `SSet.Edge.isEquivalence_iff_hornFilling_zero`, `SSet.Edge.isEquivalence_iff_hornFilling_last`:
   an edge of a quasicategory is an equivalence if and only if every outer horn `Λ[n + 2, 0]`
   (respectively `Λ[n + 2, Fin.last (n + 2)]`) with that initial (respectively final) edge can be
@@ -135,6 +137,22 @@ theorem hornFilling_zero [Quasicategory C] {n : ℕ} (σ₀ : (Λ[n + 2, 0] : SS
     (h : (Edge.mk' (σ₀.app _ (horn.edge (n + 2) 0 0 1 (Fin.zero_le _) (by simp)))).IsEquivalence) :
     ∃ σ : Δ[n + 2] ⟶ C, σ₀ = Λ[n + 2, 0].ι ≫ σ :=
   hornFilling_zero_aux (n + 2) (by omega) σ₀ _ h
+
+/-- In a quasicategory, a horn `Λ[d + 1, i]` with `i` not the last vertex can be filled when it is
+inner, or when `i = 0` and its initial edge is an equivalence. This combines inner horn filling
+with `SSet.Quasicategory.hornFilling_zero`; the horn `Λ[1, 0]`, which has no initial edge, is a
+single vertex. -/
+lemma exists_fill_of_ne_last [Quasicategory C] {d : ℕ} {i : Fin (d + 2)}
+    (hi : i ≠ Fin.last _) (σ₀ : (Λ[d + 1, i] : SSet) ⟶ C)
+    (h0 : i = 0 → ∀ H, (Edge.mk' (σ₀.app _
+      (horn.edge (d + 1) i 0 1 (Fin.zero_le _) H))).IsEquivalence) :
+    ∃ σ : Δ[d + 1] ⟶ C, σ₀ = Λ[d + 1, i].ι ≫ σ := by
+  by_cases hi0 : i = 0
+  · subst hi0
+    obtain _ | d := d
+    · exact horn.exists_extension_one 0 σ₀
+    · exact hornFilling_zero σ₀ (h0 rfl _)
+  · exact hornFilling (Fin.pos_iff_ne_zero.2 hi0) (Fin.lt_last_iff_ne_last.2 hi) σ₀
 
 /-- **Joyal's dual theorem on special outer horns** (HTT Proposition 1.2.4.3): in a quasicategory,
 a horn `Λ[n + 2, Fin.last (n + 2)]` whose final edge, from `n + 1` to `n + 2`, is an equivalence
