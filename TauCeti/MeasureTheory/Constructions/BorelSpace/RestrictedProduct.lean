@@ -52,6 +52,8 @@ Over a countable index type `ι` (or a countable constrained set `S`):
   (for countable `S` with measurable constrained `A i`) and of `structureMap` (under
   `[BorelSpace (Π i, A i)]` and measurable `A i`).
 * `RestrictedProduct.measurableSet_box`: countable intersections make every Borel box measurable.
+* `RestrictedProduct.measurableSet_box_of_eventually_eq`: over an arbitrary index type, a Borel box
+  agreeing cofinitely with cofinitely open reference sets is measurable.
 * `RestrictedProduct.measurableSpace_eq_generateFrom_cofiniteOpenBoxes`,
   `RestrictedProduct.measurableSpace_eq_generateFrom_cofiniteMeasurableBoxes`,
   `RestrictedProduct.measurableSpace_eq_generateFrom_measurableBoxes`: generation of the Borel
@@ -173,6 +175,41 @@ theorem measurableSet_box [Countable ι] [∀ i, TopologicalSpace (R i)]
     MeasurableSet (box C : Set (Πʳ i, [R i, A i]_[𝓕])) := by
   rw [box_eq_iInter]
   exact MeasurableSet.iInter fun i ↦ (hC i).preimage (measurable_eval i)
+
+/-- Over an arbitrary (possibly uncountable) index type, a coordinate box `box C` with measurable
+factors `C i` in Borel spaces `R i` is measurable in `Πʳ i, [R i, A i]` whenever cofinitely many
+`A i` are open and `C i = A i` cofinitely: it is an open box cut down by finitely many coordinate
+conditions. -/
+theorem measurableSet_box_of_eventually_eq [∀ i, TopologicalSpace (R i)]
+    [∀ i, MeasurableSpace (R i)] [∀ i, BorelSpace (R i)] {C : ∀ i, Set (R i)}
+    (hA : ∀ᶠ i in cofinite, IsOpen (A i)) (hC : ∀ i, MeasurableSet (C i))
+    (hCA : ∀ᶠ i in cofinite, C i = A i) :
+    MeasurableSet (box C : Set (Πʳ i, [R i, A i])) := by
+  classical
+  have hF := mem_cofinite.mp (hA.and hCA)
+  let F : Finset ι := hF.toFinset
+  have hnotF (i : ι) (hi : i ∉ F) : IsOpen (A i) ∧ C i = A i :=
+    Classical.byContradiction fun h ↦ hi (hF.mem_toFinset.mpr h)
+  let D : ∀ i, Set (R i) := fun i ↦ if i ∈ F then univ else C i
+  have hD : IsOpen (box D : Set (Πʳ i, [R i, A i])) := by
+    refine isOpen_box_of_eventually_eq (fun i ↦ ?_) ?_
+    · by_cases hi : i ∈ F
+      · simp [D, hi]
+      · simpa [D, hi, (hnotF i hi).2] using (hnotF i hi).1
+    · filter_upwards [F.finite_toSet.compl_mem_cofinite] with i hi
+      have hi' : i ∉ F := hi
+      simp [D, hi', (hnotF i hi').2]
+  have heq : (box C : Set (Πʳ i, [R i, A i])) = box D ∩ ⋂ i ∈ F, (fun x ↦ x i) ⁻¹' C i := by
+    ext x
+    simp only [mem_box, mem_inter_iff, mem_iInter, mem_preimage]
+    refine ⟨fun hx ↦ ⟨fun i ↦ ?_, fun i _ ↦ hx i⟩, fun ⟨hxD, hxF⟩ i ↦ ?_⟩
+    · by_cases hi : i ∈ F <;> simp [D, hi, hx i]
+    · by_cases hi : i ∈ F
+      · exact hxF i hi
+      · simpa [D, hi] using hxD i
+  rw [heq]
+  exact hD.measurableSet.inter
+    (Finset.measurableSet_biInter F fun i _ ↦ (hC i).preimage (measurable_eval i))
 
 /-- With Borel factors, the range of `inclusion R A hS` for a principal filter `𝓟 S` (`𝓕 ≤ 𝓟 S`)
 is measurable whenever `S` is countable and `A i` is measurable for every `i ∈ S`. -/

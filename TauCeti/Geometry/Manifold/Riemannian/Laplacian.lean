@@ -141,6 +141,17 @@ theorem contMDiff_divergence {n m k : ℕ∞ω}
   refine (ht.congr (fun y hy ↦ (hEq y hy).symm)).contMDiffAt
     (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt E (TangentSpace I) x))
 
+/-- The divergence of a smooth vector field on a smooth Riemannian manifold with smooth metric is
+smooth. -/
+theorem _root_.ContMDiffSection.contMDiff_divergence {I : ModelWithCorners ℝ E H} {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) :
+    ContMDiff I 𝓘(ℝ) ∞ (divergence I fun x ↦ X x) :=
+  TauCeti.Manifold.contMDiff_divergence (n := ∞) (m := ∞) (k := ∞) (by simp) (by simp)
+    (by simpa using X.contMDiff)
+
 /-- The scalar Hessian of `f`, pairing the covariant derivative of its gradient with a second
 tangent vector. -/
 noncomputable def hessian (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]

@@ -513,7 +513,7 @@ theorem continuous_kernelOperator_apply (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ 
 
 /-- A distribution on `Ω ×ˢ O` is determined by its operator, since tensor products of test
 functions span a dense subspace (`TestFunction.ext_prodSMulCLM`). -/
-theorem kernelOperator_injective [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] [T2Space F]
+theorem kernelOperator_injective [T2Space F]
     (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) :
     Function.Injective (kernelOperator (F := F) hV.symm.subset) := fun K K' h ↦
   ext_prodSMulCLM hV fun ψ φ ↦ by

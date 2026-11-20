@@ -59,8 +59,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   `b ≥ 0`.
 * `Complex.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{z cos θ}`, for complex `z`.
-* `Complex.hasSum_integral_exp_mul_cos_mul_cexp_natCast`: for natural `n`, the same integral as
-  the series `∑ₗ 2π (z / 2) ^ (2 l + n) / (l! (l + n)!)`.
+* `Complex.hasSum_pow_div_factorial_integral_exp_mul_cos_mul_cexp`: for integer `n`, the same
+  integral as the series `∑ₗ 2π (z / 2) ^ (2 l + |n|) / (l! (l + |n|)!)`.
 * `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
   from `0` of an integrand `θ ↦ G (sin² θ)` is odd and quasi-periodic in its upper limit.
 -/
@@ -169,9 +169,19 @@ open scoped Interval in
 over `[0, t' - h]` of norm at most `2 / (2 - α) A h^(α/2)`. This is the time integration, away from
 the singular endpoint, behind temporal Hölder estimates with time step `h`. -/
 theorem norm_integral_le_of_ae_norm_le_mul_sub_rpow {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {g : ℝ → G} {A h t' α : ℝ} (hA : 0 ≤ A) (hh : 0 < h) (hht : h < t')
+    [NormedSpace ℝ G] {g : ℝ → G} {A h t' α : ℝ} (hh : 0 < h) (hht : h < t')
     (hα : α < 2) (hg : ∀ᵐ s, s ∈ Ioc 0 (t' - h) → ‖g s‖ ≤ A * h * (t' - s) ^ ((α - 4) / 2)) :
     ‖∫ s in 0..t' - h, g s‖ ≤ 2 / (2 - α) * A * h ^ (α / 2) := by
+  have hA : 0 ≤ A := by
+    by_contra hA
+    have hnull : volume (Ioc 0 (t' - h)) = 0 := by
+      rw [measure_eq_zero_iff_ae_notMem]
+      filter_upwards [hg] with s hs hmem
+      have hpos : 0 < (t' - s) ^ ((α - 4) / 2) := rpow_pos_of_pos (by linarith [hmem.2]) _
+      have := mul_neg_of_neg_of_pos (mul_neg_of_neg_of_pos (lt_of_not_ge hA) hh) hpos
+      linarith [norm_nonneg (g s), hs hmem]
+    simp [Real.volume_Ioc] at hnull
+    linarith
   have hcont : ContinuousOn (fun s => (t' - s) ^ ((α - 4) / 2)) [[0, t' - h]] :=
     fun s hs => by
       rw [uIcc_of_le (by linarith)] at hs
@@ -526,13 +536,24 @@ theorem hasSum_integral_exp_mul_cos_mul_cexp (z : ℂ) (n : ℤ) :
     convert h using 2 with k
     ring
 
-/-- The series of `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` for a natural `n` and complex `z`:
-it is `∑ₗ 2π (z / 2) ^ (2 l + n) / (l! (l + n)!)`, which for real `z` is the series of `2π I_n(z)`.
-Of the termwise integrals in `hasSum_integral_exp_mul_cos_mul_cexp`, evaluated by
-`TauCeti.integral_cos_pow_mul_cexp`, only those of the exponents `k = 2 l + n` survive. -/
-theorem hasSum_integral_exp_mul_cos_mul_cexp_natCast (z : ℂ) (n : ℕ) :
-    HasSum (fun l : ℕ => 2 * Real.pi * ((z / 2) ^ (2 * l + n) / (l ! * (l + n)!)))
+/-- The series of `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` for an integer `n` and complex `z`:
+it is `∑ₗ 2π (z / 2) ^ (2 l + |n|) / (l! (l + |n|)!)`, which for real `z` is the series of
+`2π I_{|n|}(z)`. Of the termwise integrals in `hasSum_integral_exp_mul_cos_mul_cexp`, evaluated by
+`TauCeti.integral_cos_pow_mul_cexp`, only those of the exponents `k = 2 l + |n|` survive. -/
+theorem hasSum_pow_div_factorial_integral_exp_mul_cos_mul_cexp (z : ℂ) (n : ℤ) :
+    HasSum (fun l : ℕ => 2 * Real.pi * ((z / 2) ^ (2 * l + n.natAbs) / (l ! * (l + n.natAbs)!)))
       (∫ θ in -Real.pi..Real.pi, exp (z * Real.cos θ) * exp (n * θ * I)) := by
+  wlog hn : 0 ≤ n generalizing n
+  · convert this (-n) (by omega) using 1
+    · simp only [Int.natAbs_neg]
+    · have hcomp := intervalIntegral.integral_comp_neg (a := -Real.pi) (b := Real.pi)
+        (fun θ : ℝ => exp (z * Real.cos θ) * exp (((-n : ℤ) : ℂ) * θ * I))
+      rw [neg_neg] at hcomp
+      rw [← hcomp]
+      refine intervalIntegral.integral_congr fun θ _ => ?_
+      simp only [Real.cos_neg, ofReal_neg, Int.cast_neg, neg_mul, mul_neg, neg_neg]
+  lift n to ℕ using hn
+  rw [Int.natAbs_natCast]
   have h := hasSum_integral_exp_mul_cos_mul_cexp z n
   simp only [TauCeti.integral_cos_pow_mul_cexp] at h
   rw [Int.cast_natCast] at h
