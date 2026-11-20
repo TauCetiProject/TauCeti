@@ -334,14 +334,15 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_of_lt (hp : 2 < p) (hp_to
     exists_eqOn_ball_and_forall_setAverage_matrixBilinearForm_sub_le (div_pos hδ hD).le
       (hs.trans (hst.trans_le htR)) hloc hell hη
   obtain ⟨ζ, hζ, hζr, hζ1, hζts, hζg, hζh⟩ := hcut x₀ hs.le (show s < (s + t) / 2 by linarith)
+  have hζc : HasCompactSupport ζ :=
+    (isCompact_closedBall x₀ _).of_isClosed_subset (isClosed_tsupport ζ) hζts
   set U : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball x₀ t, isOpen_ball⟩
   have hUR : (U : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball x₀ R := ball_subset_ball htR
   have hres : volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1)))) ≤
       volume.restrict (ball x₀ R) := Measure.restrict_mono hUR le_rfl
   have key := hloc' ha'm ha'Λ (fun c r hr => (ha'osc c r hr).imp fun A hA =>
       ⟨hA.1, hA.2.trans_eq (by field_simp)⟩) (Omega := Omega) (U := U)
-    (fun x hx => hR (hUR hx)) measure_ball_lt_top.ne hζ
-    ((isCompact_closedBall x₀ _).of_isClosed_subset (isClosed_tsupport ζ) hζts)
+    (fun x hx => hR (hUR hx)) measure_ball_lt_top.ne hζ hζc
     (hζts.trans (closedBall_subset_ball (by linarith))) hζg hζh u (hf.mono_measure hres) (by
       filter_upwards [ae_restrict_mem (measurableSet_ball (x := x₀) (ε := t)),
         ae_restrict_of_ae_restrict_of_subset hUR heq] with x hx h
@@ -356,8 +357,7 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_of_lt (hp : 2 < p) (hp_to
       rw [hζ1 (ball_subset_closedBall hx), Pi.one_apply, one_smul]
     rw [lpNorm_congr_ae hae]
     refine lpNorm_mono_measure ?_ (Measure.restrict_mono (ball_subset_ball hst.le) le_rfl)
-    exact (hζ.continuous.memLp_top_of_hasCompactSupport
-      ((isCompact_closedBall x₀ _).of_isClosed_subset (isClosed_tsupport ζ) hζts) _).smul
+    exact (hζ.continuous.memLp_top_of_hasCompactSupport hζc _).smul
       ((Lp.memLp _).mono_measure (Measure.restrict_mono (hUR.trans hR) le_rfl))
   have hΛ : 0 ≤ Lam := hell.upper_nonneg
   have hm : (s + t) / 2 - s = (t - s) / 2 := by ring
@@ -458,8 +458,10 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_vmoModulus_le (hp : 2 < p)
     (by positivity : (0 : ℝ) ≤ ((n + 1 : ℕ) : ℝ) ^ 2) (fun _ => lpNorm_nonneg)
     (fun _ => lpNorm_nonneg)
     (fun σ hσ => hmono _ hσ.2.le) (fun σ hσ => hmono _ hσ.2.le) (fun σ hσ => hmono _ hσ.2.le)
-    (fun {s t} hs hst htR => hKΛ ▸ hstep hloc hell hη hR u hf
-      (heq.mono fun x hx => (Matrix.contraction_iteratedGradient_apply _ _).trans hx) hs hst htR)
+    (fun {s t} hs hst htR => by
+      have h := hstep hloc hell hη hR u hf
+        (heq.mono fun x hx => (Matrix.contraction_iteratedGradient_apply _ _).trans hx) hs hst htR
+      rwa [hKΛ] at h)
     (fun {s t} hs hst htR {ε} hε => by
       simpa only [finrank_euclideanSpace_fin] using
         hinterp u hs hst ((ball_subset_ball htR).trans hR) hε)
