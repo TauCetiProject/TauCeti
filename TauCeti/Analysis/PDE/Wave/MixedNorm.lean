@@ -172,11 +172,12 @@ private theorem eLpNorm_fourierInv_invCutoffSchwartz (j : ℤ) :
   rw [h, TauCeti.eLpNorm_fourierInv_comp_inv_smul _ (zpow_pos two_pos j)]
   simp
 
-/-- The kernel `𝓕⁻ θ` is integrable. -/
-private theorem eLpNorm_fourierInv_invCutoffSchwartz_ne_top :
-    eLpNorm (𝓕⁻ ⇑(φ.invCutoffSchwartz 0)) 1 volume ≠ ∞ := by
+/-- The kernel `𝓕⁻ θ` is integrable, so its `L¹` norm is a finite constant. -/
+private theorem coe_toNNReal_eLpNorm_fourierInv_invCutoffSchwartz :
+    ((eLpNorm (𝓕⁻ ⇑(φ.invCutoffSchwartz 0)) 1 volume).toNNReal : ℝ≥0∞) =
+      eLpNorm (𝓕⁻ ⇑(φ.invCutoffSchwartz 0)) 1 volume := by
   rw [← SchwartzMap.fourierInv_coe]
-  exact ((𝓕⁻ (φ.invCutoffSchwartz 0)).memLp 1 volume).eLpNorm_ne_top
+  exact ENNReal.coe_toNNReal ((𝓕⁻ (φ.invCutoffSchwartz 0)).memLp 1 volume).eLpNorm_ne_top
 
 /-- The multiplier `Mⱼ` with symbol `θ(2^{-j} ·)`: on frequencies `‖ξ‖ ≈ 2^j` it is `2^j D⁻¹`. -/
 private def invMultiplier (j : ℤ) :
@@ -308,6 +309,22 @@ private theorem aemeasurable_enorm_inner_halfWavePropagator {τ : ℝ × ℝ →
   ((aestronglyMeasurable_phasePropagator_apply sqrtNegLaplacianSymbol hτ.aestronglyMeasurable
     (T.continuous.comp_aestronglyMeasurable hY.comp_snd)).inner hG.comp_fst).eNorm
 
+/-- Reflecting time, `t ↦ -t`, preserves mixed norms. -/
+private theorem eLpNorm_eLpNorm_comp_neg {H : ℝ → Lp ℂ 2 (volume : Measure E)}
+    (hH : AEStronglyMeasurable H) {q r : ℝ≥0∞} :
+    eLpNorm (fun t ↦ eLpNorm (H (-t)) r volume) q volume =
+      eLpNorm (fun t ↦ eLpNorm (H t) r volume) q volume :=
+  eLpNorm_comp_measurePreserving (g := fun t ↦ eLpNorm (H t) r volume)
+    (hH.aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable
+    (Measure.measurePreserving_neg (volume : Measure ℝ))
+
+/-- The mixed norm of a family vanishing at every time is zero. -/
+private theorem eLpNorm_eLpNorm_eq_zero {H : ℝ → Lp ℂ 2 (volume : Measure E)}
+    (hH : ∀ t, H t = 0) {q r : ℝ≥0∞} :
+    eLpNorm (fun t ↦ eLpNorm (H t) r volume) q volume = 0 := by
+  simp_rw [hH, eLpNorm_congr_ae (Lp.coeFn_zero ℂ 2 (volume : Measure E)), eLpNorm_zero,
+    eLpNorm_fun_zero]
+
 /-- A mixed norm controlled pointwise by `a (‖u(t)‖_r + ‖u(-t)‖_r)` is at most `2 a` times the
 mixed norm of `u`, since reflecting time preserves the latter. -/
 private theorem eLpNorm_eLpNorm_le_mul_two_mul {w u : ℝ → Lp ℂ 2 (volume : Measure E)}
@@ -316,13 +333,9 @@ private theorem eLpNorm_eLpNorm_le_mul_two_mul {w u : ℝ → Lp ℂ 2 (volume :
       a * (eLpNorm (u t) r volume + eLpNorm (u (-t)) r volume)) :
     eLpNorm (fun t ↦ eLpNorm (w t) r volume) q volume ≤
       a * 2 * eLpNorm (fun t ↦ eLpNorm (u t) r volume) q volume := by
-  have hneg := Measure.measurePreserving_neg (volume : Measure ℝ)
   have hU := (hu.aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable
   have hUn : AEStronglyMeasurable (fun t ↦ eLpNorm (u (-t)) r volume) :=
-    hU.comp_measurePreserving hneg
-  have hrefl : eLpNorm (fun t ↦ eLpNorm (u (-t)) r volume) q volume =
-      eLpNorm (fun t ↦ eLpNorm (u t) r volume) q volume :=
-    eLpNorm_comp_measurePreserving (g := fun t ↦ eLpNorm (u t) r volume) hU hneg
+    hU.comp_measurePreserving (Measure.measurePreserving_neg (volume : Measure ℝ))
   calc _ ≤ eLpNorm (fun t ↦ a * (eLpNorm (u t) r volume + eLpNorm (u (-t)) r volume)) q volume :=
         eLpNorm_mono_eNorm (hw.aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable fun t ↦ by
           simpa only [eNorm_eq_self] using h t
@@ -333,7 +346,7 @@ private theorem eLpNorm_eLpNorm_le_mul_two_mul {w u : ℝ → Lp ℂ 2 (volume :
         gcongr
         exact eLpNorm_add_le hq
     _ = _ := by
-        rw [hrefl]
+        rw [eLpNorm_eLpNorm_comp_neg hu]
         ring
 
 /-- Reflecting time turns a bilinear bound for the pairings `⟪W₊(t - s) T F(s), G(t)⟫` into the
@@ -352,18 +365,13 @@ private theorem lintegral_lintegral_enorm_inner_halfWavePropagator_neg_sub_le
       X * eLpNorm (fun s ↦ eLpNorm (F s) r volume) p volume *
         eLpNorm (fun t ↦ eLpNorm (G t) r volume) p volume := by
   have hneg := Measure.measurePreserving_neg (volume : Measure ℝ)
-  have hrefl {H : ℝ → Lp ℂ 2 (volume : Measure E)} (hH : AEStronglyMeasurable H) :
-      eLpNorm (fun s ↦ eLpNorm (H (-s)) r volume) p volume =
-        eLpNorm (fun s ↦ eLpNorm (H s) r volume) p volume :=
-    eLpNorm_comp_measurePreserving (g := fun s ↦ eLpNorm (H s) r volume)
-      (hH.aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable hneg
   calc _ = ∫⁻ t, ∫⁻ s, ‖⟪halfWavePropagator ℂ (-(-t - -s)) (T (F (-s))), G (-t)⟫_ℂ‖ₑ := by
         rw [← lintegral_neg_eq_self]
         exact lintegral_congr fun t ↦ (lintegral_neg_eq_self _).symm
     _ = ∫⁻ t, ∫⁻ s, ‖⟪halfWavePropagator ℂ (t - s) (T (F (-s))), G (-t)⟫_ℂ‖ₑ := by
         simp only [neg_sub_neg, neg_sub]
     _ ≤ _ := h _ _ (hF.comp_measurePreserving hneg) (hG.comp_measurePreserving hneg)
-    _ = _ := by rw [hrefl hF, hrefl hG]
+    _ = _ := by rw [eLpNorm_eLpNorm_comp_neg hF, eLpNorm_eLpNorm_comp_neg hG]
 
 /-- If the pairings `⟪W₊(t - s) T F(s), G(t)⟫` satisfy a bilinear bound with constant `X`, then
 those of `c (W₊(t - s) - W₊(-(t - s))) T F(s)` satisfy it with constant `2 ‖c‖ X`. -/
@@ -411,9 +419,9 @@ private theorem integrable_smul_halfWavePropagator_sub {Z : ℝ → Lp ℂ 2 (vo
     (hZ : Integrable Z) (c : ℂ) (t : ℝ) :
     Integrable fun s ↦ c • (halfWavePropagator ℂ (t - s) (Z s) -
       halfWavePropagator ℂ (-(t - s)) (Z s)) := by
-  have hW (τ : ℝ → ℝ) (hτ : Continuous τ) : Integrable fun s ↦ halfWavePropagator ℂ (τ s) (Z s) :=
-    integrable_phasePropagator_apply _ hτ.aestronglyMeasurable hZ
-  exact ((hW _ (by fun_prop)).sub (hW _ (by fun_prop))).smul c
+  exact ((integrable_phasePropagator_apply _ (continuous_sub_left t).aestronglyMeasurable hZ).sub
+    (integrable_phasePropagator_apply _ (continuous_sub_left t).neg.aestronglyMeasurable
+      hZ)).smul c
 
 /-- The retarded integral `t ↦ ∫_{s < t} c (W₊(t - s) - W₊(-(t - s))) Z(s) ds` is almost
 everywhere strongly measurable when `Z` is integrable. -/
@@ -421,16 +429,16 @@ private theorem aestronglyMeasurable_setIntegral_Iio_smul_halfWavePropagator_sub
     {Z : ℝ → Lp ℂ 2 (volume : Measure E)} (hZ : Integrable Z) (c : ℂ) :
     AEStronglyMeasurable fun t ↦ ∫ s in Set.Iio t, c • (halfWavePropagator ℂ (t - s) (Z s) -
       halfWavePropagator ℂ (-(t - s)) (Z s)) := by
-  have hW (τ : ℝ → ℝ) (hτ : Continuous τ) :
-      Integrable fun s ↦ halfWavePropagator ℂ (τ s) (Z s) :=
-    integrable_phasePropagator_apply _ hτ.aestronglyMeasurable hZ
   have heq : (fun t ↦ ∫ s in Set.Iio t, c • (halfWavePropagator ℂ (t - s) (Z s) -
       halfWavePropagator ℂ (-(t - s)) (Z s))) =
       fun t ↦ c • ((∫ s in Set.Iio t, halfWavePropagator ℂ (t - s) (Z s)) -
         ∫ s in Set.Iio t, phasePropagator ℂ (-sqrtNegLaplacianSymbol) (t - s) (Z s)) := by
     funext t
-    rw [integral_smul, integral_sub (hW (fun s ↦ t - s) (by fun_prop)).integrableOn
-      (hW (fun s ↦ -(t - s)) (by fun_prop)).integrableOn]
+    rw [integral_smul, integral_sub
+      (integrable_phasePropagator_apply sqrtNegLaplacianSymbol (τ := fun s ↦ t - s)
+        (continuous_sub_left t).aestronglyMeasurable hZ).integrableOn
+      (integrable_phasePropagator_apply sqrtNegLaplacianSymbol (τ := fun s ↦ -(t - s))
+        (continuous_sub_left t).neg.aestronglyMeasurable hZ).integrableOn]
     simp_rw [halfWavePropagator_neg]
   rw [heq]
   exact ((aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub _ hZ.aestronglyMeasurable).sub
@@ -465,10 +473,9 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le (hq : 2 < q
   · exact ⟨0, fun _ _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
   rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hE | hE
   · -- In dimension `0` the blocks vanish.
-    exact ⟨0, fun j m hm f ↦ by
-      simp_rw [φ.fourierMultiplierCLM_littlewoodPaley_eq_zero_of_finrank_eq_zero hm hE,
-        zero_apply, map_zero, eLpNorm_congr_ae (Lp.coeFn_zero ℂ 2 (volume : Measure E)),
-        eLpNorm_zero, eLpNorm_fun_zero, zero_le]⟩
+    exact ⟨0, fun j m hm f ↦ (eLpNorm_eLpNorm_eq_zero fun t ↦ by
+      rw [φ.fourierMultiplierCLM_littlewoodPaley_eq_zero_of_finrank_eq_zero hm hE, zero_apply,
+        map_zero]).trans_le zero_le⟩
   obtain ⟨-, -, hr2⟩ := two_le_finrank_of_waveAdmissible hq hr0 hqr hE
   -- Test against `L^{r'}` with `r'` the Hölder conjugate of `r`.
   have hrr := ENNReal.HolderConjugate.inv_one_sub_inv' (one_le_two.trans hr2)
@@ -558,8 +565,7 @@ theorem exists_eLpNorm_eLpNorm_waveSinPropagator_littlewoodPaley_le (hq : 2 < q)
     exact eLpNorm_sub_le' r
   have hMg : ‖φ.invMultiplier j g‖ₑ ≤ K * ‖g‖ₑ := by
     simpa only [Lp.eNorm_def] using φ.eLpNorm_invMultiplier_le j g one_le_two
-  have hK : (K.toNNReal : ℝ≥0∞) = K :=
-    ENNReal.coe_toNNReal (φ.eLpNorm_fourierInv_invCutoffSchwartz_ne_top)
+  have hK : (K.toNNReal : ℝ≥0∞) = K := φ.coe_toNNReal_eLpNorm_fourierInv_invCutoffSchwartz
   have h2j : (0 : ℝ) < 2 ^ j := zpow_pos two_pos j
   calc _ ≤ ‖c‖ₑ * ENNReal.LpAddConst r * 2 * eLpNorm (fun t ↦ eLpNorm (u t) r volume) q volume :=
         eLpNorm_eLpNorm_le_mul_two_mul (continuous_waveSinPropagator_apply _).aestronglyMeasurable
@@ -626,8 +632,7 @@ theorem exists_lintegral_lintegral_enorm_inner_waveSinPropagator_sub_littlewoodP
             simpa only [eNorm_eq_self] using
               φ.eLpNorm_invMultiplier_le j (F s) (ENNReal.HolderConjugate.one_le r' r)
       _ = _ := eLpNorm_const_mul_ennreal_of_pos (by exact_mod_cast hpq.pos)
-  have hK : (K.toNNReal : ℝ≥0∞) = K :=
-    ENNReal.coe_toNNReal (φ.eLpNorm_fourierInv_invCutoffSchwartz_ne_top)
+  have hK : (K.toNNReal : ℝ≥0∞) = K := φ.coe_toNNReal_eLpNorm_fourierInv_invCutoffSchwartz
   have h2j : (0 : ℝ) < 2 ^ j := zpow_pos two_pos j
   calc _ ≤ _ := hsplit
     _ ≤ ‖c‖ₑ * 2 * (C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ (2 * γ)) *
@@ -665,10 +670,9 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
       hq hpq hqr
   refine ⟨C, fun j m hm F hF ↦ ?_⟩
   rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hE | hE
-  · simp_rw [φ.fourierMultiplierCLM_littlewoodPaley_eq_zero_of_finrank_eq_zero hm hE,
-      zero_apply, map_zero, integral_zero,
-      eLpNorm_congr_ae (Lp.coeFn_zero ℂ 2 (volume : Measure E)), eLpNorm_zero, eLpNorm_fun_zero]
-    exact zero_le
+  · refine (eLpNorm_eLpNorm_eq_zero fun t ↦ ?_).trans_le zero_le
+    simp_rw [φ.fourierMultiplierCLM_littlewoodPaley_eq_zero_of_finrank_eq_zero hm hE, zero_apply,
+      map_zero, integral_zero]
   obtain ⟨-, -, hr2⟩ :=
     two_le_finrank_of_waveAdmissible hq (ENNReal.HolderConjugate.ne_zero r r') hqr hE
   set c : ℂ := ((2 : ℝ) ^ j)⁻¹ * (2 * Complex.I)⁻¹
