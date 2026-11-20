@@ -109,9 +109,9 @@ theorem mvfderiv_eq_fderiv_apply (f : F → F') (x : F) (v : TangentSpace 𝓘(�
 /-- A derivative `f'` of a function of one variable at `x` is its vector-valued manifold derivative
 `t ↦ t • f'` on the model line. -/
 theorem _root_.HasDerivAt.mvfderiv {f : 𝕜 → F} {f' : F} {x : 𝕜} (hf : HasDerivAt f f' x) :
-    mvfderiv 𝓘(𝕜) f x = ContinuousLinearMap.toSpanSingleton 𝕜 f' := by
-  rw [_root_.mvfderiv, hf.hasFDerivAt.hasMFDerivAt.mfderiv]
-  rfl
+    mvfderiv 𝓘(𝕜) f x = ContinuousLinearMap.toSpanSingleton 𝕜 f' :=
+  ContinuousLinearMap.ext fun v ↦
+    (mvfderiv_eq_fderiv_apply f x v).trans (DFunLike.congr_fun hf.hasFDerivAt.fderiv v)
 
 /-- For a normed vector-space target, evaluating `mvfderiv` agrees with evaluating
 `mfderiv` under the canonical tangent-space identification. -/

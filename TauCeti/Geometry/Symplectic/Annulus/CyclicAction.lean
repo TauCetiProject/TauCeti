@@ -101,7 +101,9 @@ private theorem generatingCorrespondence_neg_of_isStripGeneratingFunction {S : �
   · rw [CotangentBundle.generatingSource_snd]
     simp only
     rw [(hS.hasDerivAt_left hp).fun_neg.mvfderiv, neg_neg]
-    exact (CotangentBundle.fieldEquiv_snd_apply p u).symm
+    -- Both sides are `u * p.2`: the left one as `u • p.2`.
+    exact ((ContinuousLinearMap.toSpanSingleton_apply ℝ p.2 u).trans
+      (smul_eq_mul (α := ℝ) u p.2)).trans (CotangentBundle.fieldEquiv_snd_apply p u).symm
   · rw [CotangentBundle.generatingTarget_snd]
     simp only
     have h : -ContinuousLinearMap.toSpanSingleton ℝ (-(F p).2) =
@@ -109,8 +111,10 @@ private theorem generatingCorrespondence_neg_of_isStripGeneratingFunction {S : �
       ext
       simp
     rw [(hS.hasDerivAt_right hp).fun_neg.mvfderiv]
+    -- Both sides are `u * (F p).2`: the left one as `u • (F p).2`.
     exact (congrArg (fun L : ℝ →L[ℝ] ℝ ↦ L u) h).trans
-      (CotangentBundle.fieldEquiv_snd_apply (F p) u).symm
+      (((ContinuousLinearMap.toSpanSingleton_apply ℝ (F p).2 u).trans
+        (smul_eq_mul (α := ℝ) u (F p).2)).trans (CotangentBundle.fieldEquiv_snd_apply (F p) u).symm)
 
 /-! ### Periodic chains and critical configurations -/
 
@@ -192,6 +196,20 @@ private theorem periodic_add {F : ZMod N → ℝ × ℝ → ℝ × ℝ} {D : ZMo
     p k + (a, 0) ∈ D k ∧ F k (p k + (a, 0)) = p (k + 1) + (a, 0) :=
   ⟨(hT k _ (hp k).1).1, by rw [(hT k _ (hp k).1).2, (hp k).2]⟩
 
+omit [NeZero N] in
+/-- If an equivalence `e` from periodic chains reads off positions, it sends the `(a, 0)`-translate
+of the chain `e.symm q` to the configuration `q + a`. -/
+private theorem coe_apply_periodic_add_symm {F : ZMod N → ℝ × ℝ → ℝ × ℝ}
+    {D : ZMod N → Set (ℝ × ℝ)} {a : ℝ}
+    (hT : ∀ k, ∀ p ∈ D k, p + (a, 0) ∈ D k ∧ F k (p + (a, 0)) = F k p + (a, 0))
+    {P : (ZMod N → ℝ) → Prop}
+    (e : {p : ZMod N → ℝ × ℝ // ∀ k, p k ∈ D k ∧ F k (p k) = p (k + 1)} ≃ Subtype P)
+    (he : ∀ p k, (e p : ZMod N → ℝ) k = (p.1 k).1) (q : Subtype P) :
+    (e ⟨fun k ↦ (e.symm q).1 k + (a, 0), periodic_add hT (e.symm q).2⟩ : ZMod N → ℝ) =
+      fun k ↦ q.1 k + a := by
+  funext k
+  rw [he, Prod.fst_add, ← he, Equiv.apply_symm_apply]
+
 /-- **Critical configurations under diagonal translations.** If every `S_k` generates `F_k` over
 `D_k`, and every `F_k` commutes on `D_k` with the translation `(x, y) ↦ (x + a, y)`, which preserves
 `D_k`, then translating a critical configuration of the cyclic action by `a` in every coordinate
@@ -207,16 +225,8 @@ theorem mvfderiv_cyclicAction_add_eq_zero_of_isStripGeneratingFunction
         (fun k ↦ q k + a) = 0 := by
   obtain ⟨e, he, -⟩ := exists_equiv_periodic_of_isStripGeneratingFunction hS
   -- Translate the periodic chain of `q` by `(a, 0)`; its positions are `q + a`.
-  have hp := (e.symm ⟨q, hq, hc⟩).2
-  have hpos (k : ZMod N) : ((e.symm ⟨q, hq, hc⟩).1 k).1 = q k := by
-    rw [← he, Equiv.apply_symm_apply]
-  have hq' : (fun k ↦ q k + a) =
-      (e ⟨fun k ↦ (e.symm ⟨q, hq, hc⟩).1 k + (a, 0), periodic_add hT hp⟩ : ZMod N → ℝ) := by
-    funext k
-    rw [he, Prod.fst_add, hpos]
-  have h := (e ⟨fun k ↦ (e.symm ⟨q, hq, hc⟩).1 k + (a, 0), periodic_add hT hp⟩).2
-  rw [← hq'] at h
-  exact h
+  have h := (e ⟨_, periodic_add hT (e.symm ⟨q, hq, hc⟩).2⟩).2
+  rwa [coe_apply_periodic_add_symm hT e he] at h
 
 /-- **Critical configurations and fixed points of the annulus.** Let every `S_k` generate `F_k`
 over `D_k`, and let every `F_k` commute on `D_k` with the integer translations
@@ -245,15 +255,13 @@ theorem exists_intCast_add_eq_iff_of_isStripGeneratingFunction
   have hp'0 : p'.1 0 = (q' 0, -deriv (fun x ↦ S 0 (x, q' 1)) (q' 0)) := by
     have h := he' ⟨q', hq', hc'⟩ 0
     rwa [zero_add] at h
-  -- The positions of the periodic chain of a critical configuration are the configuration.
-  have hpos : ∀ k, (p.1 k).1 = q k := fun k ↦ by rw [← he, Equiv.apply_symm_apply]
-  have hpos' : ∀ k, (p'.1 k).1 = q' k := fun k ↦ by rw [← he, Equiv.apply_symm_apply]
   constructor
   · rintro ⟨m, hm⟩
     -- The chain of the translated configuration is the translated chain.
     have hq'm : (⟨q', hq', hc'⟩ : {q : ZMod N → ℝ // _}) =
         e ⟨fun k ↦ p.1 k + ((m : ℝ), 0), periodic_add (fun k ↦ hT k m) p.2⟩ :=
-      Subtype.ext (funext fun k ↦ (hm k).trans (by rw [he, Prod.fst_add, hpos]))
+      Subtype.ext ((funext hm).trans
+        (coe_apply_periodic_add_symm (fun k ↦ hT k m) e he ⟨q, hq, hc⟩).symm)
     have h0 : p'.1 0 = p.1 0 + ((m : ℝ), 0) := by
       rw [hp'_def, hq'm, Equiv.symm_apply_apply]
     rw [hp0, hp'0, Prod.mk_add_mk, add_zero, Prod.mk.injEq, neg_inj] at h0
@@ -268,10 +276,12 @@ theorem exists_intCast_add_eq_iff_of_isStripGeneratingFunction
       rw [hp0, hp'0, hy, Prod.mk_add_mk, add_zero, hm, add_sub_cancel]
     -- The translated chain of `q` and the chain of `q'` agree at `0`, hence everywhere.
     have hchain := periodic_add (fun k ↦ hT k m) p.2
-    refine ⟨m, fun k ↦ ?_⟩
-    have hk : p.1 k + ((m : ℝ), 0) = p'.1 k :=
-      congrFun (periodicChain_eq_of_apply_zero_eq (z := fun k ↦ p.1 k + ((m : ℝ), 0))
-        (fun k ↦ (hchain k).2) (fun k ↦ (p'.2 k).2) h0.symm) k
-    rw [← hpos' k, ← hpos k, ← hk, Prod.fst_add]
+    have hp' : (⟨fun k ↦ p.1 k + ((m : ℝ), 0), hchain⟩ :
+        {p : ZMod N → ℝ × ℝ // ∀ k, p k ∈ D k ∧ F k (p k) = p (k + 1)}) = p' :=
+      Subtype.ext (periodicChain_eq_of_apply_zero_eq (fun k ↦ (hchain k).2) (fun k ↦ (p'.2 k).2)
+        h0.symm)
+    have h := coe_apply_periodic_add_symm (fun k ↦ hT k m) e he ⟨q, hq, hc⟩
+    rw [hp', hp'_def, Equiv.apply_symm_apply] at h
+    exact ⟨m, congrFun h⟩
 
 end TauCeti
