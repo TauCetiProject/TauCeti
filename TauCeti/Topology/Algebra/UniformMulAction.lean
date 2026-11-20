@@ -31,6 +31,10 @@ continuous and agree on the dense image of the ring. A faithful action on a sepa
 faithful on its completion, which contains the space. For instance a Galois group acting
 isometrically on a valued field acts faithfully by ring automorphisms on its completion.
 
+The action of `c` on the completion is the unique continuous extension of `c • ·`. For an
+algebra automorphism `σ` acting through `AlgEquiv.applyMulSemiringAction`, this extension is
+`UniformSpace.Completion.map σ`.
+
 ## Main results
 
 * `UniformSpace.Completion.continuousSMul`: the completion of a topological module is a
@@ -40,6 +44,11 @@ isometrically on a valued field acts faithfully by ring automorphisms on its com
   automorphisms.
 * `UniformSpace.Completion.instFaithfulSMul`: the extension of a faithful action on a separated
   space to its completion is faithful.
+* `UniformSpace.Completion.eq_smul_of_continuous`: the action of `c` on the completion is the
+  unique continuous extension of `c • ·`.
+* `UniformSpace.Completion.algEquiv_smul_def`, `UniformSpace.Completion.algEquiv_smul_coe`: an
+  algebra automorphism `σ` acts on the completion by its extension `UniformSpace.Completion.map σ`,
+  which is `σ` on the image of the algebra. For instance this is the Galois action on `ℂ_p`.
 -/
 
 public section
@@ -122,5 +131,31 @@ completion is faithful. -/]
 instance instFaithfulSMul {G X : Type*} [UniformSpace X] [T0Space X] [SMul G X]
     [UniformContinuousConstSMul G X] [FaithfulSMul G X] : FaithfulSMul G (Completion X) :=
   ⟨fun h ↦ eq_of_smul_eq_smul fun x ↦ coe_injective X <| by rw [coe_smul, coe_smul, h]⟩
+
+/-- **Uniqueness of the extended action.** A continuous map on the completion that agrees with
+`c • ·` on the image of `X` is the action of `c`. -/
+@[to_additive /-- **Uniqueness of the extended additive action.** A continuous map on the
+completion that agrees with `c +ᵥ ·` on the image of `X` is the action of `c`. -/]
+theorem eq_smul_of_continuous {M X : Type*} [UniformSpace X] [SMul M X]
+    [UniformContinuousConstSMul M X] (c : M) {f : Completion X → Completion X}
+    (hf : Continuous f) (h : ∀ x : X, f x = ((c • x : X) : Completion X)) : f = (c • ·) :=
+  ext hf (continuous_const_smul c) fun x ↦ by rw [h, coe_smul]
+
+section AlgEquiv
+
+variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [UniformSpace A]
+
+/-- An algebra automorphism `σ` acts on the completion by its extension
+`UniformSpace.Completion.map σ`. -/
+theorem algEquiv_smul_def (σ : A ≃ₐ[R] A) (x : Completion A) : σ • x = Completion.map σ x := by
+  simp only [smul_def, AlgEquiv.smul_def]
+
+/-- On the image of `A`, the action of an algebra automorphism `σ` on the completion is `σ`. -/
+@[simp]
+theorem algEquiv_smul_coe [UniformContinuousConstSMul (A ≃ₐ[R] A) A] (σ : A ≃ₐ[R] A) (x : A) :
+    σ • (x : Completion A) = ((σ x : A) : Completion A) := by
+  rw [← coe_smul, AlgEquiv.smul_def]
+
+end AlgEquiv
 
 end UniformSpace.Completion

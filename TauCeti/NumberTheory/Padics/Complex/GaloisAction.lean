@@ -18,7 +18,8 @@ topology. Every element of `G_K` fixes `ℚ_p`, so it preserves the spectral nor
 `PadicAlgCl p` (`AlgEquiv.norm_apply`): `G_K` acts on `PadicAlgCl p` by isometries
 (`PadicAlgCl.instIsIsometricSMul`, in `TauCeti.NumberTheory.Padics.AlgebraicClosure`). This file
 records the consequences for the completion `ℂ_p = PadicComplex p`, on which `σ ∈ G_K` acts by
-the extension `UniformSpace.Completion.map σ` of `σ` by continuity (`PadicComplex.smul_def`).
+the extension `UniformSpace.Completion.map σ` of `σ` by continuity
+(`UniformSpace.Completion.algEquiv_smul_def`).
 
 All of the following structure is then inferred from instances.
 
@@ -34,50 +35,22 @@ All of the following structure is then inferred from instances.
   each map `x ↦ σ • x` alone does not give this; it uses the isometries together with the
   openness of the stabilizer of each algebraic element.
 
-The theorems below characterize the action: on `PadicAlgCl p` it is `σ` itself
-(`PadicComplex.smul_coe`), and `x ↦ σ • x` is the unique continuous extension of `σ` to `ℂ_p`
-(`PadicComplex.eq_smul_of_continuous`).
+The general completion lemmas characterize the action: on `PadicAlgCl p` it is `σ` itself
+(`UniformSpace.Completion.algEquiv_smul_coe`), and `x ↦ σ • x` is the unique continuous extension
+of `σ` to `ℂ_p` (`UniformSpace.Completion.eq_smul_of_continuous`). This file states nothing
+further; importing it makes the whole structure above available on `ℂ_p`.
 
 ## Main results
 
-* `PadicComplex.smul_def`: `σ` acts on `ℂ_p` by `UniformSpace.Completion.map σ`.
-* `PadicComplex.smul_coe`: the action on `ℂ_p` extends the action on `PadicAlgCl p`.
-* `PadicComplex.eq_smul_of_continuous`: the action of `σ` on `ℂ_p` is the unique continuous
-  extension of `σ`.
+* `UniformSpace.Completion.algEquiv_smul_def`: `σ` acts on `ℂ_p` by
+  `UniformSpace.Completion.map σ`.
+* `UniformSpace.Completion.algEquiv_smul_coe`: the action on `ℂ_p` extends the action on
+  `PadicAlgCl p`.
+* `UniformSpace.Completion.eq_smul_of_continuous`: the action of `σ` on `ℂ_p` is the unique
+  continuous extension of `σ`.
 
 ## References
 
 * O. Brinon and B. Conrad, *CMI summer school notes on p-adic Hodge theory* (2009), §2.1.
 * J.-M. Fontaine and Y. Ouyang, *Theory of p-adic Galois representations*, §4.1.2.
 -/
-
-public section
-
-open UniformSpace
-
-variable {p : ℕ} [Fact p.Prime] {K : Type*} [Field K] [Algebra ℚ_[p] K]
-  [Algebra K (PadicAlgCl p)] [IsScalarTower ℚ_[p] K (PadicAlgCl p)]
-
-namespace PadicComplex
-
-omit [Algebra ℚ_[p] K] [IsScalarTower ℚ_[p] K (PadicAlgCl p)] in
-/-- The action of `σ` on `ℂ_p` is the extension `UniformSpace.Completion.map σ` of `σ` to the
-completion. -/
-theorem smul_def (σ : PadicAlgCl p ≃ₐ[K] PadicAlgCl p) (x : ℂ_[p]) :
-    σ • x = Completion.map σ x := by
-  simp only [Completion.smul_def, AlgEquiv.smul_def]
-
-/-- On the image of `PadicAlgCl p`, the action of `σ` on `ℂ_p` is `σ`. -/
-@[simp]
-theorem smul_coe (σ : PadicAlgCl p ≃ₐ[K] PadicAlgCl p) (x : PadicAlgCl p) :
-    σ • (x : ℂ_[p]) = ((σ x : PadicAlgCl p) : ℂ_[p]) := by
-  rw [← Completion.coe_smul, AlgEquiv.smul_def]
-
-/-- **Uniqueness of the extended action.** A continuous map `ℂ_p → ℂ_p` that agrees with `σ` on
-`PadicAlgCl p` is the action of `σ`. -/
-theorem eq_smul_of_continuous (σ : PadicAlgCl p ≃ₐ[K] PadicAlgCl p) {f : ℂ_[p] → ℂ_[p]}
-    (hf : Continuous f) (h : ∀ x : PadicAlgCl p, f x = ((σ x : PadicAlgCl p) : ℂ_[p])) :
-    f = (σ • ·) :=
-  Completion.ext hf (continuous_const_smul σ) fun a ↦ by rw [h, smul_coe]
-
-end PadicComplex
