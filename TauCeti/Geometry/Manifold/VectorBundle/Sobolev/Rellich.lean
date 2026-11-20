@@ -18,8 +18,8 @@ product space `E`, let `V → M` be a smooth real vector bundle with finite-dime
 `F`, and let `A` be a finite bundle atlas, so that `M` is compact. For `1 ≤ p ≤ ∞` and every order
 `k`, the inclusion `W^{k+1,p}(V) → W^{k,p}(V)` of `TauCeti.SectionChartData.lowerOrderL` is a
 compact operator (`TauCeti.SobolevSection.isCompactOperator_lowerOrderL`). The endpoint `p = ∞`
-is included: smooth sections are not dense in `W^{k+1,∞}(V)`, but neither ingredient below uses
-density.
+is included: smooth sections are not dense in `W^{k+1,∞}(V)`, but neither ingredient below needs
+that density.
 
 The local input is Rellich compactness on relatively compact subdomains,
 `TauCeti.Wkp.isCompactOperator_restrictL_lowerOrderL`, which holds for every `1 ≤ p ≤ ∞`. It does
