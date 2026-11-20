@@ -7,11 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.ImplicitContDiff
 public import Mathlib.Analysis.Matrix.Spectrum
-import Mathlib.Analysis.Calculus.Deriv.Prod
-import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
+import TauCeti.Analysis.Calculus.Deriv.Matrix
 import TauCeti.Analysis.Calculus.FDeriv.Matrix
 import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
-import TauCeti.Analysis.Matrix.Normed
 import TauCeti.Analysis.Matrix.Spectrum
 
 /-!
@@ -104,7 +102,6 @@ private theorem contDiffAt_reDetScalarSub {M : E → Matrix n n 𝕜} {x₀ : E}
   exact RCLike.reCLM.contDiff.contDiffAt.comp _
     (ContDiffAt.sum fun σ _ ↦ contDiffAt_const.mul (contDiffAt_prod fun a _ ↦ hentry _ _))
 
-open scoped Matrix.Norms.Operator in
 /-- The derivative of `t ↦ Re det (μ + t s - A t)` at `0`, by Jacobi's adjugate formula, for a
 real curve `A` of matrices with entrywise derivative `A'`. -/
 private theorem hasDerivAt_re_det_scalar_sub {A : ℝ → Matrix n n 𝕜} {A' : Matrix n n 𝕜}
@@ -123,16 +120,8 @@ private theorem hasDerivAt_re_det_scalar_sub {A : ℝ → Matrix n n 𝕜} {A' :
         simp
       · simp
     · exact hasDerivAt_const _ _
-  have hB' : HasDerivAt (fun t ↦ of.symm (scalar n ((μ + t * s : ℝ) : 𝕜) - A t))
-      (of.symm (scalar n (s : 𝕜) - A')) 0 :=
-    hasDerivAt_pi.2 fun a ↦ hasDerivAt_pi.2 fun b ↦ hB a b
-  have h := ((differentiable_det (𝕜 := 𝕜) _).hasFDerivAt.restrictScalars ℝ).comp_hasDerivAt 0
-    ((ofContinuousLinearEquiv ℝ).hasFDerivAt.comp_hasDerivAt 0 hB')
-  simp only [Function.comp_def, ContinuousLinearEquiv.coe_coe, coe_ofContinuousLinearEquiv,
-    Equiv.apply_symm_apply] at h
-  have h' := RCLike.reCLM.hasFDerivAt.comp_hasDerivAt 0 (h.congr_deriv
-    (fderiv_det_apply_adjugate _ _))
-  simpa [Function.comp_def] using h'
+  simpa [Function.comp_def] using
+    RCLike.reCLM.hasFDerivAt.comp_hasDerivAt 0 (hasDerivAt_det_of_entries_adjugate hB)
 
 /-- At an eigenvalue `d k₀` of a Hermitian matrix `M x₀` with eigenvalue list `d`, the derivative
 of `(x, μ) ↦ Re det (μ - M x)` in the direction `(v, s)` is
