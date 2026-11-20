@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Basic
+import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!
 # Wedge products of bundle-valued rough differential forms
@@ -374,10 +375,8 @@ theorem wedgeWith_flip (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
       (-1 : ℝ) ^ (k * l) •
         ψ.wedgeWith μ.flip φ x (v ∘ Fin.cast (Nat.add_comm l k)) := by
   have hμ : Continuous (Function.uncurry fun a b ↦ μ a b) := μ.continuous₂
-  have hpair : ContinuousLinearMap.pairingFlip μ hμ = μ.flip := by
-    ext a b
-    rw [ContinuousLinearMap.pairingFlip_apply, ContinuousLinearMap.flip_apply]
-  simpa only [wedgeWith, bundleWedgeWith, hpair, Function.uncurry_apply_pair] using
+  simpa only [wedgeWith, bundleWedgeWith, ContinuousLinearMap.pairingFlip_eq_flip,
+    Function.uncurry_apply_pair] using
     bundleWedgeWith_flip (μ := fun _ ↦ μ) (hμ := fun _ ↦ hμ) φ ψ x v
 
 /-- A symmetric fibrewise pairing gives the graded-commutativity identity for rough forms. -/
