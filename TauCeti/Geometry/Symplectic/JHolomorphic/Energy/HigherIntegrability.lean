@@ -21,9 +21,10 @@ satisfying `p * (1 - β) < 2`. One radius works for all these exponents.
 
 The continuously extended curve enjoys the same higher integrability: changing its value at
 the puncture changes its classical differential only at that point. This is an integrability
-statement about the classical differential off the puncture, with no assertion yet that it is
-the weak differential of the extension. Identifying the weak differential and elliptic
-bootstrapping are separate steps towards smooth removal of singularities.
+statement about the classical differential off the puncture. That this differential is also the
+weak differential of the extension, which therefore solves the Cauchy--Riemann equation weakly
+across the puncture, is proved in `TauCeti.Geometry.Symplectic.JHolomorphic.WeakDerivative`.
+Elliptic bootstrapping remains a separate step towards smooth removal of singularities.
 
 The proof combines `SymplecticForm.exists_pos_norm_fderiv_le_rpow` with integrability of
 norm powers in real dimension two. No regularity at the missing point is assumed.
