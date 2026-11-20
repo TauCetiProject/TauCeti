@@ -15,12 +15,13 @@ public import TauCeti.KnotTheory.Grid.TorusLink.Tau
 For a grid link with one component, `GridLink.IsKnot.tau` is the integer `τ` of any presenting
 knot grid diagram. Independence of the representative follows from invariance under all grid
 moves. The computation rule `GridLink.IsKnot.tau_toGridLink` lets callers evaluate it on a
-chosen diagram without using the representative selected in the definition.
+chosen diagram without using the representative selected in the definition, and diagonal reflection
+preserves `τ` (`GridLink.IsKnot.tau_transpose`).
 
 Over a field of characteristic two the unknot has `τ = 0`. The standard grid of the
 `(p + 1, q + 1)` torus knot, for coprime `p + 1` and `q + 1`, represents a grid knot with
-`2τ = -pq`. The negative sign follows the definition of `τ` as minus the maximal non-torsion
-Alexander degree, as in `TorusLink/Tau.lean`.
+`2τ = -pq` and `τ = -(pq / 2)`. The negative sign follows the definition of `τ` as minus the
+maximal non-torsion Alexander degree, as in `TorusLink/Tau.lean`.
 
 This is an invariant of grid knots, defined as grid links with one component. No identification
 with embedded knots or claim of concordance invariance is used here.
@@ -59,6 +60,17 @@ theorem tau_toGridLink {n : ℕ} {G : GridDiagram n} (hG : G.toGridLink.IsKnot) 
     hG.tau K = ((isKnot_toGridLink G).mp hG).tau K :=
   tau_eq_of_toGridLink_eq hG K ((isKnot_toGridLink G).mp hG) rfl
 
+omit hL in
+/-- Diagonal reflection of a grid knot preserves `τ`. -/
+@[simp]
+theorem tau_transpose (hLt : L.transpose.IsKnot) :
+    hLt.tau K = (isKnot_transpose.mp hLt).tau K := by
+  induction L using GridLink.ind with
+  | h G =>
+    have hG : G.IsKnot := (isKnot_toGridLink G).mp (isKnot_transpose.mp hLt)
+    rw [hLt.tau_eq_of_toGridLink_eq K (G.isKnot_transpose.mpr hG) (transpose_toGridLink G).symm,
+      tau_toGridLink, GridDiagram.IsKnot.tau_transpose]
+
 end TauCeti.GridLink.IsKnot
 
 namespace TauCeti.GridLink
@@ -74,10 +86,17 @@ theorem tau_unknot : isKnot_unknot.tau K = 0 := by
 
 /-- The knot presented by the standard `(p + 1, q + 1)` torus grid has `2τ = -pq`.
 The negative sign follows the definition of `τ` as minus the maximal non-torsion degree. -/
-theorem two_mul_tau_toGridLink_torusLink {p q : ℕ} (h : (p + 1).Coprime (q + 1)) :
-    2 * ((isKnot_toGridLink _).mpr ((GridDiagram.isKnot_torusLink_iff p q).mpr h)).tau K =
-      -(p * q : ℤ) := by
+theorem two_mul_tau_toGridLink_torusLink {p q : ℕ}
+    (hL : (GridDiagram.torusLink p q).toGridLink.IsKnot) :
+    2 * hL.tau K = -(p * q : ℤ) := by
   rw [IsKnot.tau_toGridLink]
-  exact GridDiagram.two_mul_tau_torusLink h K
+  exact GridDiagram.two_mul_tau_torusLink ((isKnot_toGridLink _).mp hL) K
+
+/-- The knot presented by the standard `(p + 1, q + 1)` torus grid has `τ = -(pq / 2)`.
+The negative sign follows the definition of `τ` as minus the maximal non-torsion degree. -/
+theorem tau_toGridLink_torusLink {p q : ℕ}
+    (hL : (GridDiagram.torusLink p q).toGridLink.IsKnot) :
+    hL.tau K = -((p * q / 2 : ℕ) : ℤ) := by
+  rw [IsKnot.tau_toGridLink, GridDiagram.tau_torusLink]
 
 end TauCeti.GridLink

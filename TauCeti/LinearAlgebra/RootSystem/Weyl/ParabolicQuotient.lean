@@ -145,14 +145,14 @@ def _root_.RootPairing.minimalCosetRepNsmulEquiv (lam : M) (n : ℕ) (hn : n ≠
 @[simp]
 theorem _root_.RootPairing.coe_minimalCosetRepNsmulEquiv (lam : M) (n : ℕ) (hn : n ≠ 0)
     (w : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
-    (P.minimalCosetRepNsmulEquiv b lam n hn w).1 = w.1 := by
+    (P.minimalCosetRepNsmulEquiv b lam n hn w).val = w.val := by
   simp only [minimalCosetRepNsmulEquiv, Equiv.subtypeEquivRight_apply]
 
 /-- Inverse scaling preserves the Weyl-group element of a minimal representative. -/
 @[simp]
 theorem _root_.RootPairing.coe_minimalCosetRepNsmulEquiv_symm (lam : M) (n : ℕ) (hn : n ≠ 0)
     (w : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b (n • lam)) w}) :
-    ((P.minimalCosetRepNsmulEquiv b lam n hn).symm w).1 = w.1 := by
+    ((P.minimalCosetRepNsmulEquiv b lam n hn).symm w).val = w.val := by
   rfl
 
 end IntegerScaling
@@ -162,7 +162,7 @@ the walls through a weight. -/
 lemma _root_.RootPairing.wallIndices_add_of_forall_coroot'_eq_zero {x χ : M}
     (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) : P.wallIndices b (x + χ) = P.wallIndices b x := by
   ext i
-  rw [mem_wallIndices, mem_wallIndices, map_add, hχ i i.2, add_zero]
+  rw [mem_wallIndices, mem_wallIndices, map_add, hχ i i.property, add_zero]
 
 variable (P b) [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic]
   [P.IsReduced] [P.flip.IsReduced] {lam : M}
@@ -247,7 +247,8 @@ theorem coroot'_smul_nonneg_of_not_isLeftDescent (hlam : lam ∈ dominantChamber
     0 ≤ P.coroot' i (w • lam) := by
   refine not_lt.mp fun hneg ↦ hi ?_
   rw [CoxeterSystem.IsLeftDescent, weylCoxeterSystem_simple]
-  exact (bruhatStep_ofIdx_mul_of_coroot'_neg hlam (b.isPos_of_mem_support i.2) hneg).length_lt
+  exact (bruhatStep_ofIdx_mul_of_coroot'_neg hlam (b.isPos_of_mem_support i.property)
+      hneg).length_lt
 
 omit [P.flip.IsReduced] in
 /-- **A left descent pairs nonpositively.** If `sᵢ` is a left descent of `w`, then
@@ -363,7 +364,7 @@ theorem reflection_smul_eq_of_minimalCosetRepCovBy_of_coroot'_neg
     (hx : P.coroot' i (x • lam) < 0) (hy : 0 ≤ P.coroot' i (y • lam)) :
     P.reflection i (x • lam) = y • lam := by
   set cs := weylCoxeterSystem P b
-  have hi : b.IsPos i := b.isPos_of_mem_support i.2
+  have hi : b.IsPos i := b.isPos_of_mem_support i.property
   have hsmul (w : P.weylGroup) :
       (RootPairing.weylGroup.ofIdx P i * w) • lam = P.reflection i (w • lam) := by
     rw [mul_smul, RootPairing.weylGroup.ofIdx_smul, Equiv.reflection_smul]

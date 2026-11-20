@@ -86,21 +86,21 @@ variable {K : Type*} [Field K] [NumberField K]
 restricted to `𝔪.infinitePart`; the real places outside the modulus are unconstrained and are
 forgotten. -/
 noncomputable def modulusSignHom (𝔪 : Modulus K) : Kˣ →* (𝔪.infinitePart → ℤˣ) where
-  toFun x w := signHom x w.1
+  toFun x w := signHom x w.val
   map_one' := funext fun w ↦ by rw [map_one, Pi.one_apply, Pi.one_apply]
   map_mul' x y := funext fun w ↦ by rw [map_mul, Pi.mul_apply, Pi.mul_apply]
 
 @[simp] theorem modulusSignHom_apply (𝔪 : Modulus K) (x : Kˣ) (w : 𝔪.infinitePart) :
-    modulusSignHom 𝔪 x w = signHom x w.1 := (rfl)
+    modulusSignHom 𝔪 x w = signHom x w.val := (rfl)
 
 /-- **The prescribed signs are trivial exactly at an element positive on the infinite part.** -/
 @[simp] theorem modulusSignHom_eq_one_iff {𝔪 : Modulus K} (x : Kˣ) :
     modulusSignHom 𝔪 x = 1 ↔
-      ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) := by
+      ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.property (x : K) := by
   rw [funext_iff]
   refine ⟨fun h w hw ↦ ?_, fun h w ↦ ?_⟩
-  · exact (signHom_apply_eq_one_iff x ⟨w, w.2⟩).mp (h ⟨w, hw⟩)
-  · exact (signHom_apply_eq_one_iff x w.1).mpr (h w.1 w.2)
+  · exact (signHom_apply_eq_one_iff x ⟨w, w.property⟩).mp (h ⟨w, hw⟩)
+  · exact (signHom_apply_eq_one_iff x w.val).mpr (h w.val w.property)
 
 /-! ### The reduction-and-signs homomorphism -/
 
@@ -181,7 +181,7 @@ theorem residueSignHom_surjective (𝔪 : Modulus K) : Function.Surjective (resi
   · rw [residueSignHom_snd]
     funext w
     rw [modulusSignHom_apply, hxs]
-    exact dite_eq_left w.2
+    exact dite_eq_left w.property
 
 /-- **Every pattern of signs at the real places of a modulus is realized by a field unit prime to
 its finite part.**  This is the archimedean half of `residueSignHom_surjective`, the finite half

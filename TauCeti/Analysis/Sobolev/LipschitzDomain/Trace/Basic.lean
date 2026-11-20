@@ -247,14 +247,14 @@ theorem _root_.Set.IsLipschitzDomainWith.exists_lipschitzChart_cutoffs
   obtain ⟨t, e, φ, a, b, ψ₀, ψ, hchart, ⟨hψ₀, -, hψ₀c, hψ₀Ω⟩, hψ, hsum⟩ :=
     hΩ.exists_contDiff_partitionOfUnity hb
   choose M hM hψM hgM using fun i : t =>
-    ((hψ i i.2).1.of_le (by simp)).exists_abs_le_and_norm_gradient_le (hψ i i.2).2.2.1
+    ((hψ i i.property).1.of_le (by simp)).exists_abs_le_and_norm_gradient_le (hψ i i.property).2.2.1
   refine ⟨t, fun i => e i, fun i => φ i, fun i => a i, fun i => b i, ψ₀, fun i => ψ i, M,
-    fun i => (hchart i i.2).2.2.1, ⟨hψ₀, hψ₀c, hψ₀Ω⟩,
-    fun i => ⟨(hψ i i.2).1, hM i, hψM i, hgM i, ?_⟩,
+    fun i => (hchart i i.property).2.2.1, ⟨hψ₀, hψ₀c, hψ₀Ω⟩,
+    fun i => ⟨(hψ i i.property).1, hM i, hψM i, hgM i, ?_⟩,
     fun x hx => by rw [← hsum x hx, Finset.sum_coe_sort t (fun i => ψ i x)]⟩
   -- The shortened cylinder of the partition lies inside the full chart cylinder.
-  exact (hψ i i.2).2.2.2.trans (preimage_mono (normalCylinder_mono (by
-    nlinarith [(hchart i i.2).2.2.2, L.coe_nonneg,
-      ((Set.isLipschitzChartWith_iff ..).1 (hchart i i.2).2.2.1).2.1]) le_rfl))
+  exact (hψ i i.property).2.2.2.trans (preimage_mono (normalCylinder_mono (by
+    nlinarith [(hchart i i.property).2.2.2, L.coe_nonneg,
+      ((Set.isLipschitzChartWith_iff ..).1 (hchart i i.property).2.2.1).2.1]) le_rfl))
 
 end TauCeti

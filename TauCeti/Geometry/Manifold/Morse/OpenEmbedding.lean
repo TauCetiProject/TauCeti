@@ -118,7 +118,7 @@ theorem IsMorse.exists_relCWComplex_sublevel_deformation_of_isOpenEmbedding
   refine ⟨ε, hε, hεδ, C, inferInstance, hfin, hC, hcell, r', hr', ?_⟩
   -- Points of `{F ≤ c + ε}` lie in the target exactly when they lie in its second factor.
   convert H' using 3
-  exact funext fun x ↦ propext (and_iff_right x.2).symm
+  exact funext fun x ↦ propext (and_iff_right x.property).symm
 
 /-- **Milnor's cell attachment across a critical level, as a relative CW complex in the ambient
 space.** When `M` and `X` lie in a common universe, `{F ≤ c + ε}` strong deformation retracts onto
@@ -157,7 +157,7 @@ theorem IsMorse.exists_relCWComplex_sublevel_of_isOpenEmbedding {X : Type u} [To
   refine ⟨ε, hε, hεδ, C', instCW, instFin, hC',
     fun m ↦ ⟨(hj.relCWComplexCellEquiv hD' rfl hcompl rfl m).trans (hcell m).some⟩,
     r', fun x ↦ ?_, ⟨hcomp.symm ▸ G⟩⟩
-  have hx := congrArg Subtype.val (hr ⟨x.1, hC' x.2, x.2⟩)
+  have hx := congrArg Subtype.val (hr ⟨x.val, hC' x.property, x.property⟩)
   exact Subtype.ext hx
 
 end TauCeti

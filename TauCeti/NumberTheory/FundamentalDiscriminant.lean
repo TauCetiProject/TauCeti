@@ -22,8 +22,6 @@ prime-discriminant theory.
   congruences mod `4` and squarefreeness of natural numbers, so the kernel can check it.
 * `Int.isFundamentalDiscr_one`, `Int.IsFundamentalDiscr.natAbs_eq_one_iff`: `1` is the unique
   fundamental discriminant of absolute value `1`.
-* `Int.IsFundamentalDiscr.squarefree_ite`: the squarefree kernel of `D`, namely `D` when
-  `D ≡ 1 (mod 4)` and `D / 4` otherwise, is squarefree.
 * `Int.IsFundamentalDiscr.not_sixteen_dvd`: a fundamental discriminant is not divisible by `16`.
 * `Int.IsFundamentalDiscr.mul`: coprime fundamental discriminants have fundamental product.
 * `Int.IsFundamentalDiscr.not_isSquare_rat`: a fundamental discriminant other than `1` is not a
@@ -41,25 +39,18 @@ instance decidablePredIsFundamentalDiscr : DecidablePred IsFundamentalDiscr := f
       (D % 4 = 0 ∧ Squarefree (D / 4).natAbs ∧ (D / 4 % 4 = 2 ∨ D / 4 % 4 = 3))) <| by
     rw [isFundamentalDiscr_iff_squarefree, squarefree_natAbs, squarefree_natAbs]
 
-/-- `1` is a fundamental discriminant. -/
+/-- `1` is a fundamental discriminant, corresponding to the trivial quadratic extension. -/
 @[simp]
 theorem isFundamentalDiscr_one : IsFundamentalDiscr 1 :=
-  isFundamentalDiscr_iff_squarefree.mpr (Or.inl ⟨by norm_num, isUnit_one.squarefree⟩)
+  isFundamentalDiscr_iff_squarefree.mpr (Or.inl ⟨rfl, squarefree_one⟩)
 
-/-- The only fundamental discriminant of absolute value `1` is `1`, since `-1 ≡ 3 (mod 4)`. -/
-@[simp]
+/-- Among fundamental discriminants, `1` is the only one of absolute value `1`, since `-1 ≡ 3`
+modulo `4`. -/
 theorem IsFundamentalDiscr.natAbs_eq_one_iff {D : ℤ} (hD : IsFundamentalDiscr D) :
     D.natAbs = 1 ↔ D = 1 := by
+  refine ⟨fun h ↦ (Int.natAbs_eq_iff.mp h).resolve_right fun hneg ↦ ?_, fun h ↦ by simp [h]⟩
   have := hD.emod_four_eq_zero_or_one
   omega
-
-/-- The squarefree kernel of a fundamental discriminant `D`, namely `D` when `D ≡ 1 (mod 4)` and
-`D / 4` otherwise, is squarefree. -/
-theorem IsFundamentalDiscr.squarefree_ite {D : ℤ} (hD : IsFundamentalDiscr D) :
-    Squarefree (if D % 4 = 1 then D else D / 4) := by
-  rcases isFundamentalDiscr_iff_squarefree.mp hD with ⟨h1, hsf⟩ | ⟨h0, hsf, -⟩
-  · rwa [ite_eq_left h1]
-  · rwa [ite_eq_right (by omega)]
 
 /-- The absolute value of a fundamental discriminant is a nonzero Dirichlet-character level. -/
 theorem IsFundamentalDiscr.neZero_natAbs {D : ℤ} (hD : IsFundamentalDiscr D) :

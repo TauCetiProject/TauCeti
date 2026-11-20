@@ -160,7 +160,7 @@ theorem exists_apply_eq_one_forall_mul_mem_range {ι : Type*} [Finite ι] (v : F
   let D : 𝔭.asIdeal.primeCompl := ∏ j : ι, d j
   refine ⟨D, ?_, fun j ↦ ?_⟩
   · rw [← v.norm_embedding_eq, norm_eq_one_iff_notMem]
-    exact D.2
+    exact D.property
   · let q : 𝓞 K := ∏ j' ∈ Finset.univ.erase j, (d j' : 𝓞 K)
     have hD_split : ((D : 𝓞 K) : K) = (q : K) * ((d j : 𝓞 K) : K) := by
       have hD_coe : (D : 𝓞 K) = ∏ j' : ι, (d j' : 𝓞 K) :=
@@ -176,7 +176,7 @@ theorem exists_apply_eq_one_forall_mul_mem_range {ι : Type*} [Finite ι] (v : F
 
 /-- Two finite places of a number field are equal if and only if their absolute values are
 equivalent. This is the finite counterpart of Mathlib's `InfinitePlace.eq_iff_isEquiv`. -/
-theorem eq_iff_isEquiv {w v : FinitePlace K} : w = v ↔ w.1.IsEquiv v.1 := by
+theorem eq_iff_isEquiv {w v : FinitePlace K} : w = v ↔ w.val.IsEquiv v.val := by
   refine ⟨fun h ↦ h ▸ .rfl, fun h ↦ ?_⟩
   rw [← maximalIdeal_inj]
   refine HeightOneSpectrum.ext (Ideal.ext fun y ↦ ?_)
@@ -221,7 +221,7 @@ theorem apply_le_one (v : FinitePlace K) (x : 𝓞 K) : v (x : K) ≤ 1 :=
 /-- Given `p w ∈ 𝔭_w` for each `w ∈ T`, some power of `∏ w ∈ T.attach, p w` has absolute value at
 most `ε v` at every `v ∈ T`. -/
 private theorem exists_pow_prod_forall_apply_le {T : Finset (FinitePlace K)}
-    (p : {w // w ∈ T} → 𝓞 K) (hp : ∀ w, p w ∈ w.1.maximalIdeal.asIdeal)
+    (p : {w // w ∈ T} → 𝓞 K) (hp : ∀ w, p w ∈ w.val.maximalIdeal.asIdeal)
     {ε : FinitePlace K → ℝ} (hε : ∀ v ∈ T, 0 < ε v) :
     ∃ m : ℕ, ∀ v ∈ T, v (((∏ w ∈ T.attach, p w) ^ m : 𝓞 K) : K) ≤ ε v := by
   set t : 𝓞 K := ∏ w ∈ T.attach, p w
@@ -242,7 +242,7 @@ finite places. -/
 theorem exists_ne_zero_forall_apply_le (T : Finset (FinitePlace K)) {ε : FinitePlace K → ℝ}
     (hε : ∀ v ∈ T, 0 < ε v) : ∃ d : 𝓞 K, d ≠ 0 ∧ ∀ v ∈ T, v (d : K) ≤ ε v := by
   choose p hp hp0 using fun w : {w : FinitePlace K // w ∈ T} ↦
-    Submodule.exists_mem_ne_zero_of_ne_bot w.1.maximalIdeal.ne_bot
+    Submodule.exists_mem_ne_zero_of_ne_bot w.val.maximalIdeal.ne_bot
   obtain ⟨m, hm⟩ := exists_pow_prod_forall_apply_le p hp hε
   exact ⟨(∏ w ∈ T.attach, p w) ^ m,
     pow_ne_zero m (Finset.prod_ne_zero_iff.2 fun w _ ↦ hp0 w), hm⟩
@@ -263,12 +263,12 @@ theorem exists_apply_eq_one_forall_apply_le (u : FinitePlace K) {T : Finset (Fin
   -- For each `w ∈ T`, its prime is maximal and distinct from that of `u`, so it contains an
   -- element outside the prime of `u`.
   have hp (w : {w // w ∈ T}) :
-      ∃ x : 𝓞 K, x ∈ w.1.maximalIdeal.asIdeal ∧ x ∉ u.maximalIdeal.asIdeal := by
-    have hne : w.1.maximalIdeal ≠ u.maximalIdeal :=
-      (maximalIdeal_inj w.1 u).not.mpr (ne_of_mem_of_not_mem w.2 hu)
+      ∃ x : 𝓞 K, x ∈ w.val.maximalIdeal.asIdeal ∧ x ∉ u.maximalIdeal.asIdeal := by
+    have hne : w.val.maximalIdeal ≠ u.maximalIdeal :=
+      (maximalIdeal_inj w.val u).not.mpr (ne_of_mem_of_not_mem w.property hu)
     by_contra! H
     exact hne <| HeightOneSpectrum.ext_iff.mpr <|
-      Ideal.IsMaximal.eq_of_le w.1.maximalIdeal.isMaximal Ideal.IsPrime.ne_top' H
+      Ideal.IsMaximal.eq_of_le w.val.maximalIdeal.isMaximal Ideal.IsPrime.ne_top' H
   choose p hp_mem hp_notMem using hp
   obtain ⟨m, hm⟩ := exists_pow_prod_forall_apply_le p hp_mem hε
   have hut : u (((∏ w ∈ T.attach, p w) ^ m : 𝓞 K) : K) = 1 := by
