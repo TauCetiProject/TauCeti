@@ -44,7 +44,9 @@ pushed-forward tangent vector as the old covector pairs with the original one
 (`TauCeti.CotangentBundle.extChartAt_extChartAt_symm_snd_apply_fderivWithin`).
 This is the transformation law of covector components, dual to that of tangent vectors.
 A map into the single fibre over a fixed point `q` moves only the fibre coordinate in these
-charts, so its derivative is that of its covector part (`TauCeti.CotangentBundle.hasMFDerivAt_mk`).
+charts, so its derivative is that of its covector part (`TauCeti.CotangentBundle.hasMFDerivAt_mk`),
+and it is stationary exactly when its covector part is
+(`TauCeti.CotangentBundle.mfderiv_mk_apply_eq_zero_iff`).
 
 Covectors pull back along the differential of a map `f : M → N`: a covector `p` at `f x` gives the
 covector `p ∘ df_x` at `x`. For a family of covectors over a parameter manifold this is smooth:
@@ -266,6 +268,23 @@ theorem hasMFDerivAt_mk (q : M) {c : X → E →L[𝕜] 𝕜} {y : X}
     rw [hw]
     exact ((hasFDerivWithinAt_const _ _ _).prodMk hc.2).congr_fderiv
       (ContinuousLinearMap.ext fun _ ↦ rfl)
+
+variable {EX HX X : Type*} [NormedAddCommGroup EX] [NormedSpace 𝕜 EX] [TopologicalSpace HX]
+  {IX : ModelWithCorners 𝕜 EX HX} [TopologicalSpace X] [ChartedSpace HX X] in
+/-- If `c : X → E →L[𝕜] 𝕜` has derivative `c'` at `y`, then the map `y ↦ (q, c y)` into the fibre
+of the cotangent bundle over a fixed point `q` is stationary in a direction `v` exactly when `c`
+is: `c' v = 0`. -/
+theorem mfderiv_mk_apply_eq_zero_iff (q : M) {c : X → E →L[𝕜] 𝕜} {y : X}
+    {c' : TangentSpace IX y →L[𝕜] E →L[𝕜] 𝕜} (hc : HasMFDerivAt IX 𝓘(𝕜, E →L[𝕜] 𝕜) c y c')
+    (v : TangentSpace IX y) :
+    mfderiv IX (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜))
+        (fun y ↦ TotalSpace.mk' (E →L[𝕜] 𝕜) (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) q (c y))
+        y v = 0 ↔
+      c' v = 0 := by
+  rw [(hasMFDerivAt_mk q hc).mfderiv]
+  -- The tangent space of the model `E × (E →L[𝕜] 𝕜)` is this space itself, in which
+  -- `inr (c' v) = (0, c' v)`.
+  exact Prod.mk_eq_zero.trans (and_iff_right rfl)
 
 section Pullback
 
