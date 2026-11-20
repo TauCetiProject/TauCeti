@@ -106,7 +106,7 @@ private theorem restrictScalars_homotopy :
     LinearMap.id_apply] at h
   rw [LinearMap.sub_apply, DistribSMul.toLinearMap_apply, DistribSMul.toLinearMap_apply,
     ← sub_smul, CharTwo.sub_eq_add, ← h]
-  rfl
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.restrictScalars_apply]
 
 include hH in
 /-- **Changing the blocked column.** Given a map `H` on `GC⁻` with `∂⁻ H + H ∂⁻ = V_i + V_j` in
