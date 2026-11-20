@@ -285,7 +285,7 @@ theorem exists_isChangeOfVariables_normalHalfSpace_of_contDiff
       (fun x _ => H.symm.toOpenPartialHomeomorph.det_fderiv_ne_zero (mem_univ x)
         (hΨd.differentiable hk0 x) (hΦd.differentiable hk0 _))
       (((isCompact_closedBall 0 ρ).image H.continuous).closure_of_subset hUK) (subset_univ _)
-      fun x hx => hx
+      fun x hx => by simpa only [U, U', SetLike.mem_coe, Opens.mem_mk, mem_preimage] using hx
   refine ⟨U', U, L₁, c₁, L₂, c₂, mem_ball_self hρ, hΦ, hΨ, ?_⟩
   -- `H` maps the part of `U'` in the half-space onto `Ω ∩ U`.
   rw [coe_normalHalfSpace]

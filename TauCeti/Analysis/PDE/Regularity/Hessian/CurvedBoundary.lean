@@ -99,6 +99,38 @@ private theorem exists_closedBall_subset_of_continuousWithinAt {U' W : Opens G} 
     (Filter.inter_mem (hΦc.continuousAt.preimage_mem_nhds (W.isOpen.mem_nhds hy₀W))
       (hΦc.continuousAt.preimage_mem_nhds hAbd)))
 
+omit [FiniteDimensional ℝ G] in
+open Wkp in
+/-- **Restricting the charts to a ball.** Let `Φ` and `Ψ` be changes of variables of order two
+between `U'` and `U` with `Ψ ∘ Φ = id`, such that `Φ` maps `H ∩ U'` onto `Ω ∩ U`, and let
+`B(y₀, s) ⊆ U'`. Then `Φ` maps `B(y₀, s)` into `O = U ∩ Ψ⁻¹ B(y₀, s)`, and `Φ` and `Ψ` restrict to
+changes of variables between `H ∩ B(y₀, s)` and `Ω ∩ O`. -/
+private theorem isChangeOfVariables_inf_ball {H Omega : Opens G}
+    (hΦ : IsChangeOfVariables 2 U' U Φ L₁ c₁) (hΨ : IsChangeOfVariables 2 U U' Ψ L₂ c₂)
+    (hΨΦ : ∀ x, Ψ (Φ x) = x) (hΨc : Continuous Ψ)
+    (himage : Φ '' ((H : Set G) ∩ U') = (Omega : Set G) ∩ U) {y₀ : G} {s : ℝ}
+    (hs : ball y₀ s ⊆ U') :
+    MapsTo Φ (⟨ball y₀ s, isOpen_ball⟩ : Opens G)
+        (⟨U ∩ Ψ ⁻¹' ball y₀ s, hΨc.continuousOn.isOpen_inter_preimage U.isOpen isOpen_ball⟩ :
+          Opens G) ∧
+      IsChangeOfVariables 2 (H ⊓ ⟨ball y₀ s, isOpen_ball⟩)
+        (Omega ⊓ ⟨U ∩ Ψ ⁻¹' ball y₀ s, hΨc.continuousOn.isOpen_inter_preimage U.isOpen isOpen_ball⟩)
+        Φ L₁ c₁ ∧
+      IsChangeOfVariables 2
+        (Omega ⊓ ⟨U ∩ Ψ ⁻¹' ball y₀ s, hΨc.continuousOn.isOpen_inter_preimage U.isOpen isOpen_ball⟩)
+        (H ⊓ ⟨ball y₀ s, isOpen_ball⟩) Ψ L₂ c₂ := by
+  have hBO : MapsTo Φ (ball y₀ s) (U ∩ Ψ ⁻¹' ball y₀ s) := fun x hx =>
+    ⟨hΦ.mapsTo (hs hx), by rw [mem_preimage, hΨΦ]; exact hx⟩
+  refine ⟨fun x hx => Opens.mem_mk.2 (hBO (Opens.mem_mk.1 hx)),
+    hΦ.mono_set (fun x hx => hs (Opens.mem_mk.1 (Opens.mem_inf.1 hx).2)) fun x hx => ?_,
+    hΨ.mono_set (fun y hy => (Opens.mem_mk.1 (Opens.mem_inf.1 hy).2).1) fun y hy => ?_⟩
+  · simp only [SetLike.mem_coe, Opens.mem_inf, Opens.mem_mk] at hx ⊢
+    have hmem : Φ x ∈ (Omega : Set G) ∩ U := himage ▸ mem_image_of_mem _ ⟨hx.1, hs hx.2⟩
+    exact ⟨hmem.1, hBO hx.2⟩
+  · simp only [SetLike.mem_coe, Opens.mem_inf, Opens.mem_mk] at hy ⊢
+    obtain ⟨x, ⟨hxH, -⟩, rfl⟩ := himage.symm.subset ⟨hy.1, hy.2.1⟩
+    exact ⟨by rw [hΨΦ]; exact hxH, hy.2.2⟩
+
 variable [MeasurableSpace G] [BorelSpace G] {mu : Measure G} [mu.IsAddHaarMeasure]
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -404,35 +436,25 @@ private theorem exists_lpNorm_iteratedGradient_le_of_isChangeOfVariables (hp : 1
   let Ω' : Opens (WithLp 2 (ℝ × E)) := normalHalfSpace 0 ⊓ B
   let O : Opens (WithLp 2 (ℝ × E)) := ⟨U ∩ Ψ ⁻¹' ball y₀ r,
     hΨc.continuousOn.isOpen_inter_preimage U.isOpen isOpen_ball⟩
-  have hBU' : (B : Set (WithLp 2 (ℝ × E))) ⊆ U' :=
-    ball_subset_closedBall.trans (hrB.trans inter_subset_left)
+  obtain ⟨hBO, hΦ', hΨ'⟩ := isChangeOfVariables_inf_ball hΦ hΨ hΨΦ hΨc himage
+    (ball_subset_closedBall.trans (hrB.trans inter_subset_left))
   have hOW : (O : Set (WithLp 2 (ℝ × E))) ⊆ W := fun y hy => by
-    simpa [hΦΨ] using (hrB (ball_subset_closedBall hy.2)).2.1
-  have hBO : MapsTo Φ B O := fun x hx =>
-    ⟨hΦ.mapsTo (hBU' hx), by rw [mem_preimage, hΨΦ]; exact hx⟩
-  have hΦmaps : MapsTo Φ Ω' (Omega ⊓ O : Opens (WithLp 2 (ℝ × E))) := fun x hx => by
-    have hmem : Φ x ∈ (Omega : Set (WithLp 2 (ℝ × E))) ∩ U :=
-      himage ▸ mem_image_of_mem _ ⟨hx.1, hBU' hx.2⟩
-    exact ⟨hmem.1, hBO hx.2⟩
-  have hΨmaps : MapsTo Ψ (Omega ⊓ O : Opens (WithLp 2 (ℝ × E))) Ω' := fun y hy => by
-    obtain ⟨x, ⟨hxH, -⟩, rfl⟩ := himage.symm.subset (mem_inter hy.1 hy.2.1)
-    exact ⟨by rw [hΨΦ]; exact hxH, hy.2.2⟩
-  have hΦ' := hΦ.mono_set (fun x hx => hBU' hx.2 : Ω' ≤ U') hΦmaps
-  have hΨ' := hΨ.mono_set (fun y hy => hy.2.1 : Omega ⊓ O ≤ U) hΨmaps
+    simpa [hΦΨ] using (hrB (ball_subset_closedBall (Opens.mem_mk.1 hy).2)).2.1
   -- The coefficients composed with `Φ` are measurable and bounded on `Ω'`.
   have hDs : ((Omega ⊓ O : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E))) ⊆ Omega :=
-    fun y hy => hy.1
+    SetLike.coe_subset_coe.2 inf_le_left
   have hac : (volume.restrict (Ω' : Set (WithLp 2 (ℝ × E)))).map Φ ≪
       volume.restrict (Omega : Set (WithLp 2 (ℝ × E))) :=
     (Measure.absolutelyContinuous_of_le_smul (hΦ'.map_restrict_le volume)).trans
       (Measure.absolutelyContinuous_of_le (Measure.restrict_mono hDs le_rfl))
   have hAΛ : ∀ x ∈ (Ω' : Set (WithLp 2 (ℝ × E))), ‖A (Φ x)‖ ≤ ‖A (Φ y₀)‖ + 1 := fun x hx =>
-    ((hrB (ball_subset_closedBall hx.2)).2.2 (hΦmaps hx).1).le
+    ((hrB (ball_subset_closedBall (Opens.mem_mk.1 (Opens.mem_inf.1 hx).2))).2.2
+      (hDs (hΦ'.mapsTo hx))).le
   -- The estimate on the flat side, on `Ω' ∩ K` with `K = closedBall y₀ (r / 2)`.
   obtain ⟨C₁, hC₁⟩ := exists_lpNorm_iteratedGradient_le_of_pullback hp hp_top hΦ hΨ hΨΦ hΦΨ hΦc
     (Ω' := Ω') (B := B) (by rw [Opens.coe_inf, inter_assoc, inter_self])
-    (fun x hx => ⟨(hΦmaps hx).1, hΦ.mapsTo (hBU' hx.2)⟩) (isCompact_closedBall y₀ (r / 2))
-    (closedBall_subset_ball (half_lt_self hr))
+    (fun x hx => ⟨hDs (hΦ'.mapsTo hx), (Opens.mem_mk.1 (Opens.mem_inf.1 (hΦ'.mapsTo hx)).2).1⟩)
+    (isCompact_closedBall y₀ (r / 2)) (closedBall_subset_ball (half_lt_self hr))
     ((closedBall_subset_closedBall (half_le_self hr.le)).trans (hrB.trans inter_subset_left))
     (fun x hx => (hrB (closedBall_subset_closedBall (half_le_self hr.le) hx)).2.1)
     ((hA.mono_ac hac).comp_aemeasurable hΦ'.aemeasurable) hcont hell hAΛ
@@ -440,18 +462,21 @@ private theorem exists_lpNorm_iteratedGradient_le_of_isChangeOfVariables (hp : 1
     (hΦ'.ae_comp (ae_restrict_of_ae_restrict_of_subset hDs hbβ))
     ((hc.mono_ac hac).comp_aemeasurable hΦ'.aemeasurable)
     (hΦ'.ae_comp (ae_restrict_of_ae_restrict_of_subset hDs hcγ))
-  -- Push forward to `Ω ∩ V` with `V = U ∩ Ψ⁻¹(B(y₀, r / 2))`.
+  -- Push forward to `Ω ∩ V` with `V = U ∩ Ψ⁻¹(B(y₀, r / 2))`, which `Ψ` maps to `H ∩ B(y₀, r / 2)`.
+  have hhalf : ball y₀ (r / 2) ⊆ ball y₀ r := ball_subset_ball (half_le_self hr.le)
+  obtain ⟨-, -, hΨ''⟩ := isChangeOfVariables_inf_ball (H := normalHalfSpace 0) hΦ hΨ hΨΦ hΨc
+    himage (hhalf.trans (ball_subset_closedBall.trans (hrB.trans inter_subset_left)))
+  have hΩ'' : normalHalfSpace 0 ⊓ ⟨ball y₀ (r / 2), isOpen_ball⟩ ≤ Ω' :=
+    inf_le_inf_left _ fun x hx => Opens.mem_mk.2 (hhalf (Opens.mem_mk.1 hx))
   let V : Opens (WithLp 2 (ℝ × E)) := ⟨U ∩ Ψ ⁻¹' ball y₀ (r / 2),
     hΨc.continuousOn.isOpen_inter_preimage U.isOpen isOpen_ball⟩
-  let Ω'' : Opens (WithLp 2 (ℝ × E)) := Ω' ⊓ ⟨ball y₀ (r / 2), isOpen_ball⟩
-  have hVO : Omega ⊓ V ≤ Omega ⊓ O := fun y hy =>
-    ⟨hy.1, hy.2.1, ball_subset_ball (half_le_self hr.le) hy.2.2⟩
-  have hΨ'' : IsChangeOfVariables 2 (Omega ⊓ V) Ω'' Ψ L₂ c₂ :=
-    hΨ.mono_set (fun y hy => hy.2.1) fun y hy => ⟨hΨmaps (hVO hy), hy.2.2⟩
-  refine ⟨V, ⟨hΦ.mapsTo hy₀, by rw [mem_preimage, hΨΦ]; exact mem_ball_self (half_pos hr)⟩, _,
-    fun u f hu0 heq => lpNorm_iteratedGradient_le_of_pullback hp_top hΦ' hΨ' hΨ'' hΨΦ hΦΨ hΦc hΨc
-      hOW hBO hVO (inf_le_left : Ω'' ≤ Ω') (fun x hx => ⟨hx.1, ball_subset_closedBall hx.2⟩) hC₁
-      u f hu0 heq⟩
+  refine ⟨V, Opens.mem_mk.2 ⟨hΦ.mapsTo hy₀, by
+    rw [mem_preimage, hΨΦ]; exact mem_ball_self (half_pos hr)⟩, _, fun u f hu0 heq =>
+    lpNorm_iteratedGradient_le_of_pullback hp_top hΦ' hΨ' hΨ'' hΨΦ hΦΨ hΦc hΨc hOW hBO
+      (inf_le_inf_left _ fun y hy => Opens.mem_mk.2
+        ⟨(Opens.mem_mk.1 hy).1, hhalf (Opens.mem_mk.1 hy).2⟩) hΩ''
+      (fun x hx => ⟨hΩ'' hx, ball_subset_closedBall (Opens.mem_mk.1 (Opens.mem_inf.1 hx).2)⟩)
+      hC₁ u f hu0 heq⟩
 
 open Wkp in
 /-- **The Calderón–Zygmund estimate near a `C²` boundary portion for continuous coefficients.**
