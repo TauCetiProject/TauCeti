@@ -9,6 +9,7 @@ public import Mathlib.Logic.Equiv.Fin.Basic
 public import TauCeti.Combinatorics.Graph.Serre.Parallel
 public import TauCeti.GroupTheory.FreeGroup.Nielsen
 public import TauCeti.GroupTheory.GraphOfGroups.ChangeOfTree
+import TauCeti.GroupTheory.FreeGroup.Primitive
 
 /-!
 # Graphs of groups over graphs of parallel edges and the theta graph
@@ -63,11 +64,6 @@ section changeOfTree
 
 variable {α : Type*} (𝔸 : GraphOfGroups (parallelGraph α))
 
-private theorem edge_false_eq_inv (T : Set (parallelGraph α).E) (a : α) :
-    π₁Tree.edge (𝔸 := 𝔸) T (a, false) = (π₁Tree.edge T (a, true))⁻¹ :=
-  -- The reverse of the dart `(a, true)` is `(a, false)` by the definition of `parallelGraph`.
-  π₁Tree.edge_rev (𝔸 := 𝔸) (T := T) ((a, true) : (parallelGraph α).E)
-
 /-- **Change of maximal tree on a graph of parallel edges.** Based at the vertex `true`, changing
 the maximal tree from the edge `a` to the edge `a'` sends the generator of the dart `(b, true)` to
 the product of the generators of `(b, true)` and `(a, false)`. -/
@@ -90,7 +86,11 @@ theorem π₁TreeEquiv_parallelTree_edge_false (a a' b : α) :
         (π₁Tree.edge (parallelTree a).darts (b, false)) =
       π₁Tree.edge (parallelTree a').darts (a, true) *
         π₁Tree.edge (parallelTree a').darts (b, false) := by
-  simp [edge_false_eq_inv, π₁TreeEquiv_parallelTree_edge_true, -π₁TreeEquiv_edge]
+  -- As for `(b, true)`, `rw` rewrites the end `!false` inside the dependent tree path.
+  rw [π₁TreeEquiv_edge]
+  simp only [parallelGraph_src, parallelGraph_tgt]
+  rw [Bool.not_false]
+  simp [Quiver.Hom.toPath, reverse_val (parallelGraph α)]
 
 /-- Based at the vertex `true`, changing the maximal tree fixes the vertex group `A_true`. -/
 theorem π₁TreeEquiv_parallelTree_of_true (a a' : α) (g : 𝔸.vertexGroup true) :
@@ -106,7 +106,8 @@ theorem π₁TreeEquiv_parallelTree_of_false (a a' : α) (g : 𝔸.vertexGroup f
         (π₁Tree.of (parallelTree a).darts false g) =
       π₁Tree.edge (parallelTree a').darts (a, true) * π₁Tree.of (parallelTree a').darts false g *
         π₁Tree.edge (parallelTree a').darts (a, false) := by
-  simp [Quiver.Hom.toPath, reverse_val (parallelGraph α), edge_false_eq_inv]
+  -- Read backwards, `edge_rev` at `(a, true)` turns `(edge (a, true))⁻¹` into `edge (a, false)`.
+  simp [Quiver.Hom.toPath, reverse_val (parallelGraph α), (π₁Tree.edge_rev (𝔸 := 𝔸) (a, true)).symm]
 
 end changeOfTree
 
@@ -171,8 +172,6 @@ theorem thetaBasis_repr_symm_trans_π₁TreeEquiv_trans_repr :
     ((thetaBasis 𝔸 0).repr.symm.trans
         (π₁TreeEquiv 𝔸 true (parallelTree 0) (parallelTree 1))).trans (thetaBasis 𝔸 1).repr =
       TauCeti.FreeGroup.nielsenMul 1 0 (by decide) 1 := by
-  have hb (i : Fin 2) : (thetaBasis 𝔸 0).repr.symm (FreeGroup.of i) = thetaBasis 𝔸 0 i :=
-    (thetaBasis 𝔸 0).repr.symm_apply_eq.2 (FreeGroupBasis.repr_apply_coe _ _).symm
   -- Evaluate the change of tree on the basis by the formula for parallel edges: the general
   -- `π₁TreeEquiv_edge` leaves tree paths that `simp` cannot evaluate.
   have e₀ : π₁TreeEquiv 𝔸 true (parallelTree 0) (parallelTree 1) (thetaBasis 𝔸 0 0) =
@@ -182,11 +181,11 @@ theorem thetaBasis_repr_symm_trans_π₁TreeEquiv_trans_repr :
       thetaBasis 𝔸 1 1 * thetaBasis 𝔸 1 0 := by
     simp [π₁TreeEquiv_parallelTree_edge_true, -π₁TreeEquiv_edge]
   refine MulEquiv.toMonoidHom_injective (FreeGroup.ext_hom _ _ (Fin.forall_fin_two.2 ⟨?_, ?_⟩))
-  · simp only [MulEquiv.coe_toMonoidHom, MulEquiv.trans_apply, hb, e₀,
-      FreeGroupBasis.repr_apply_coe]
+  · simp only [MulEquiv.coe_toMonoidHom, MulEquiv.trans_apply, FreeGroupBasis.repr_symm_apply_of,
+      e₀, FreeGroupBasis.repr_apply_coe]
     exact (TauCeti.FreeGroup.nielsenMul_of_ne _ _ _ _ _ (by decide)).symm
-  · simp only [MulEquiv.coe_toMonoidHom, MulEquiv.trans_apply, hb, e₁, map_mul,
-      FreeGroupBasis.repr_apply_coe, TauCeti.FreeGroup.nielsenMul_of_left, zpow_one]
+  · simp only [MulEquiv.coe_toMonoidHom, MulEquiv.trans_apply, FreeGroupBasis.repr_symm_apply_of,
+      e₁, map_mul, FreeGroupBasis.repr_apply_coe, TauCeti.FreeGroup.nielsenMul_of_left, zpow_one]
 
 end theta
 
