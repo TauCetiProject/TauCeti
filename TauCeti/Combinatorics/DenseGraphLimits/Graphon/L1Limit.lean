@@ -67,7 +67,7 @@ theorem exists_graphon_tendsto_eLpNorm_of_tendsto_eLpNorm_bound
           1 (μ.prod μ)) atTop (𝓝 0) := by
   let f : ℕ → Ω × Ω → ℝ := fun n z ↦ W n z.1 z.2
   obtain ⟨fLim, hfLimMeas, -, hLp⟩ := exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound le_rfl
-    (fun n ↦ (W n).measurable.aestronglyMeasurable) hB (f := f) hCauchy
+    (.of_forall fun n ↦ (W n).measurable.aestronglyMeasurable) hB (f := f) hCauchy
   -- A subsequence converges almost everywhere; along it, symmetry and the range `[0, 1]` pass to
   -- the limit.
   obtain ⟨φ, -, hfLim⟩ :=
