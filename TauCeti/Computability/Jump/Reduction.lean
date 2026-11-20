@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Jump.Basic
-public import TauCeti.Computability.SingleOracle.Substitution.Diagonal
+public import TauCeti.Computability.Jump.Compiler.Basic
 
 /-!
 # Compiling reductions between finite iterates of the jump

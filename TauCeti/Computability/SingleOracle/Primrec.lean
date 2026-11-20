@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Computability.SingleOracle.Evaln
 public import TauCeti.Computability.Primrec.FiniteSet
-import all TauCeti.Computability.SingleOracle.Evaln
 
 /-!
 # Bounded evaluation of oracle programs is primitive recursive
@@ -363,11 +362,8 @@ theorem primrec_boundedAnswers
       ((Primrec.nat_le.comp (Halt.primrec_use.comp (snd.comp fst))
         (snd.comp (fst.comp fst))).primrecRel)
       (Halt.primrec_output.comp snd)
-  refine (option_bind ((primrec_evaln hσ).comp fst) hguard).of_eq fun p => ?_
-  apply Option.ext
-  intro y
-  simp only [Option.bind_eq_some_iff, Option.guard_eq_some_iff, boundedAnswers_eq_some_iff,
-    decide_eq_true_eq, and_comm]
+  exact (option_bind ((primrec_evaln hσ).comp fst) hguard).of_eq fun _ => by
+    rw [boundedAnswers_def]
 
 /-- The stage use is primitive recursive, uniformly in a parameter `a` on which the answers `σ a`
 depend primitive recursively, and in the fuel, the program and the argument. -/

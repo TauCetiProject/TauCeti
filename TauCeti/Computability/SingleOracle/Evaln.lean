@@ -592,6 +592,12 @@ coordinates. A missing run or a run using a larger prefix supplies no answer. -/
 def boundedAnswers (d : Code) (σ : ℕ → Option ℕ) (k u : ℕ) (x : ℕ) : Option ℕ :=
   (evaln σ k d x).bind fun h => Option.guard (fun _ => h.use ≤ u) h.output
 
+/-- Bounded answers filter the result of bounded evaluation by its use before returning its
+output. -/
+theorem boundedAnswers_def (d : Code) (σ : ℕ → Option ℕ) (k u x : ℕ) :
+    d.boundedAnswers σ k u x =
+      (evaln σ k d x).bind (fun h => Option.guard (fun _ => h.use ≤ u) h.output) := (rfl)
+
 variable {d : Code} {j u x y : ℕ}
 
 /-- A bounded answer is supplied precisely by a successful run within the use bound. -/

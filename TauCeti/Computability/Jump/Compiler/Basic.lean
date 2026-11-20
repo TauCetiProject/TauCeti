@@ -5,18 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.SingleOracle.Substitution.Basic
-public import TauCeti.Computability.SingleOracle.Evaln
+public import TauCeti.Computability.Jump.Index
 import TauCeti.Data.PFun.Basic
 
 /-!
 # A compiler for querying translated diagonal indices
 
-`Code.jumpProgram` queries its oracle at the index produced by `Code.jumpIndex`, with
-recorded use one more than that index. The compiler chooses its translator code
-noncomputably, so Lean cannot execute the definition. The resulting map and its iteration
-are primitive recursive. For characteristic-function oracles the compiler supplies programs
-for reductions between finite jumps.
+`Code.jumpProgram` queries its oracle at the index produced by `Code.jumpIndex`. The compiler
+chooses its translator code noncomputably. The resulting map and its iteration are primitive
+recursive. For characteristic-function oracles the compiler supplies programs for reductions
+between finite jumps.
 -/
 
 public section
@@ -51,27 +49,6 @@ theorem primrec_jumpProgram : Primrec jumpProgram :=
 theorem eval_jumpProgram (O : ℕ →. ℕ) (d : Code) (e : ℕ) :
     eval O d.jumpProgram e = O (d.jumpIndex e) := by
   simp only [jumpProgram, eval_comp, eval_jumpIndexTranslator, eval_oracle, PFun.some_bind]
-
-/-- A successful bounded run of the jump program has use one more than the translated index. -/
-theorem evaln_jumpProgram_use {σ : ℕ → Option ℕ} {k e : ℕ} {d : Code} {r : Halt}
-    (h : evaln σ k d.jumpProgram e = some r) : r.use = d.jumpIndex e + 1 := by
-  cases k with
-  | zero => simp at h
-  | succ k =>
-    rw [jumpProgram] at h
-    obtain ⟨-, t, q, ht, hq, rfl⟩ := evaln_succ_comp_eq_some.1 h
-    obtain ⟨-, _, -, rfl⟩ := evaln_succ_oracle_eq_some.1 hq
-    -- A successful run of the translator on the empty oracle witnesses that it makes no queries.
-    let O : ℕ →. ℕ := fun _ => Part.none
-    have hmem : d.jumpIndex e ∈
-        eval O (exists_jumpIndexCode.choose.curry (encode d)) e := by
-      rw [eval_jumpIndexTranslator, Part.mem_some_iff]
-    obtain ⟨j, s, hs, he⟩ := exists_evaln_eq_some_of_mem_eval (σ := fun _ => none)
-      (by simp [O]) hmem
-    have huse : s.use = 0 :=
-      Nat.eq_zero_of_le_zero (evaln_use_le_of_forall_eq_none (fun _ _ => rfl) hs)
-    have hts := evaln_unique ht (evaln_eq_some_of_use_eq_zero σ hs huse)
-    simp [hts, huse, he]
 
 /-- Iterating the compiler is primitive recursive jointly in the program and the number of
 iterations. -/

@@ -113,36 +113,14 @@ theorem primrec₂_subst : Primrec₂ subst := by
   have h := nat_strong_rec (fun d n => (ofNat Code n).subst d) hstep.to₂ ?_
   · exact (h.comp snd (Primrec.encode.comp fst)).to₂.of_eq fun c d => by simp
   · intro d n
-    have hs : Function.Surjective (encode : Code → ℕ) := fun i => ⟨ofNat Code i, encode_ofNat i⟩
-    obtain ⟨c, rfl⟩ := hs n
+    have hencode : Function.Surjective (encode : Code → ℕ) := (Denumerable.eqv Code).surjective
+    obtain ⟨c, rfl⟩ := hencode n
     cases c with
     | zero | succ | left | right | oracle => simp [step]
     | pair cf cg => simp [step, (encode_lt_pair cf cg).1, (encode_lt_pair cf cg).2]
     | comp cf cg => simp [step, (encode_lt_comp cf cg).1, (encode_lt_comp cf cg).2]
     | prec cf cg => simp [step, (encode_lt_prec cf cg).1, (encode_lt_prec cf cg).2]
     | rfind' cf => simp [step, encode_lt_rfind']
-
-/-- Translate a diagonal halting question using a program `d` that supplies the source oracle.
-The target program has the queries in program `e` replaced by `d` and fixes its input to `e`. -/
-def jumpIndex (d : Code) (e : ℕ) : ℕ :=
-  ((ofNat Code e).subst d).haltingIndex e
-
-/-- Decoding a translated index recovers the substituted program with its input fixed. -/
-@[simp]
-theorem ofNat_jumpIndex (d : Code) (e : ℕ) :
-    ofNat Code (d.jumpIndex e) = ((ofNat Code e).subst d).fixInput e := by
-  rw [jumpIndex, ofNat_haltingIndex]
-
-/-- Translation of diagonal indices is primitive recursive in the query program and index. -/
-theorem primrec₂_jumpIndex : Primrec₂ jumpIndex :=
-  primrec₂_haltingIndex.comp (primrec₂_subst.comp ((Primrec.ofNat Code).comp Primrec.snd)
-    Primrec.fst) Primrec.snd
-
-/-- For a fixed query program the jump-index translation is one-to-one. -/
-theorem jumpIndex_injective (d : Code) : Function.Injective d.jumpIndex :=
-  fun _ _ h => by
-    simp only [jumpIndex, haltingIndex_inj] at h
-    exact h.2
 
 end TauCeti.Oracle.Single.Code
 

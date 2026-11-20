@@ -65,7 +65,7 @@ theorem exists_evaln_subst_of_evaln_boundedAnswers
       obtain ⟨f', hf', ef, huf⟩ := hf h₂
       exact ⟨_, evaln_succ_comp_eq_some.2 ⟨by omega, _, _, hg', eg ▸ hf', rfl⟩, ef, max_le hug huf⟩
     case prec cf cg hf hg =>
-      obtain ⟨a, m, rfl⟩ : ∃ a m, x = Nat.pair a m := ⟨_, _, (Nat.pair_unpair x).symm⟩
+      obtain ⟨⟨a, m⟩, rfl⟩ := Nat.pairEquiv.surjective x
       cases m with
       | zero =>
         obtain ⟨hx, h⟩ := evaln_succ_prec_zero_eq_some.1 h
@@ -101,7 +101,7 @@ private def shiftQuery : Code :=
 private theorem evaln_search_boundedAnswers :
     evaln (shiftQuery.boundedAnswers searchAnswers 3 3) 3 (rfind' oracle) (Nat.pair 0 0) =
       some ⟨1, 2⟩ := by
-  simp [evaln, boundedAnswers, shiftQuery, searchAnswers, Nat.unpaired, Nat.unpair, Nat.pair]
+  simp [evaln, boundedAnswers_def, shiftQuery, searchAnswers, Nat.unpaired, Nat.unpair, Nat.pair]
 
 private theorem evaln_search_subst_fuel_three :
     evaln searchAnswers 3 ((rfind' oracle).subst shiftQuery) (Nat.pair 0 0) = none := by
@@ -147,7 +147,7 @@ theorem exists_evaln_boundedAnswers_of_evaln_subst (h : evaln σ k (c.subst d) x
       obtain ⟨f', hf', ef⟩ := hf hf₀ ((le_max_right _ _).trans hu)
       exact ⟨_, evaln_succ_comp_eq_some.2 ⟨hx, _, _, hg', eg ▸ hf', rfl⟩, ef⟩
     case prec cf cg hf hg =>
-      obtain ⟨a, m, rfl⟩ : ∃ a m, x = Nat.pair a m := ⟨_, _, (Nat.pair_unpair x).symm⟩
+      obtain ⟨⟨a, m⟩, rfl⟩ := Nat.pairEquiv.surjective x
       cases m with
       | zero =>
         obtain ⟨hx, h⟩ := evaln_succ_prec_zero_eq_some.1 h
