@@ -19,8 +19,8 @@ the base set of a linear trivialization, then the cohomology Thom map `a ↦ π^
 (`TauCeti.bijective_homologyThomMap_iff`), so it is bijective as well:
 `Hₚ₊ᵣ(E, E₀; K) ≅ Hₚ(B; K)`
 (`TauCeti.IsThomClass.bijective_homologyThomMap_of_biUnion_eq_univ`). Only the finite cover is
-used here; for a vector bundle over an arbitrary base see
-`TauCeti.bijective_homologyThomMap_of_field`.
+used here; for an arbitrary base and an arbitrary commutative ring of coefficients see
+`TauCeti.bijective_homologyThomMap`.
 
 Composed with the comparison of the disc-sphere pair with the Thom pair, this is the input for
 identifying the relative homology of a disc-bundle attachment, such as the attachment of the
