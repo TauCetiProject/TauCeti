@@ -43,6 +43,13 @@ def evalStage (σ : ℕ → Option ℕ) (s : ℕ) (c : Code) (n : ℕ) : Option 
     (evaln σ s c n).bind fun d => if d.output < s then some d else none
   else none
 
+/-- Stage evaluation filters the bounded run by the stage bounds. -/
+theorem evalStage_def (σ : ℕ → Option ℕ) (s : ℕ) (c : Code) (n : ℕ) :
+    evalStage σ s c n =
+      if encode c < s then
+        (evaln σ s c n).bind fun d => if d.output < s then some d else none
+      else none := (rfl)
+
 variable {σ τ : ℕ → Option ℕ} {s t k n : ℕ} {c : Code} {d : Halt}
 
 /-- Normalization keeps exactly the raw runs whose program index and output fit the stage. -/
@@ -163,17 +170,23 @@ open Primrec
 
 variable {α : Type*} [Primcodable α]
 
+/-- Filtering a bounded run by the stage bounds is primitive recursive. -/
+theorem primrec_normalizeStage :
+    Primrec fun p : (ℕ × Code) × Option Halt =>
+      if encode p.1.2 < p.1.1 then
+        p.2.bind fun d => if d.output < p.1.1 then some d else none
+      else none :=
+  Primrec.ite (nat_lt.comp (Primrec.encode.comp (snd.comp fst)) (fst.comp fst))
+    (option_bind snd <| Primrec₂.mk <|
+      Primrec.ite (nat_lt.comp (Halt.primrec_output.comp snd) (fst.comp (fst.comp fst)))
+        (option_some.comp snd) (const none)) (const none)
+
 /-- Stage evaluation is primitive recursive uniformly in any primitive-recursive family of finite
 oracle answers. The normalization tests require no unbounded search. -/
 theorem primrec_evalStage {σ : α → ℕ → Option ℕ} (hσ : Primrec₂ σ) :
     Primrec fun p : α × ℕ × Code × ℕ => evalStage (σ p.1) p.2.1 p.2.2.1 p.2.2.2 := by
-  have hs : Primrec fun p : α × ℕ × Code × ℕ => p.2.1 := fst.comp snd
-  have hc : Primrec fun p : α × ℕ × Code × ℕ => encode p.2.2.1 :=
-    encode_iff.2 (fst.comp (snd.comp snd))
-  exact Primrec.ite (nat_lt.comp hc hs)
-    (option_bind (primrec_evaln hσ) <| Primrec₂.mk <|
-      Primrec.ite (nat_lt.comp (Halt.primrec_output.comp snd) (hs.comp fst))
-        (option_some.comp snd) (const none)) (const none)
+  simpa only [evalStage] using primrec_normalizeStage.comp
+    (((fst.comp snd).pair (fst.comp (snd.comp snd))).pair (primrec_evaln hσ))
 
 /-- Normalized evaluation on finite strings is primitive recursive. Missing answers are not
 replaced by zero. -/

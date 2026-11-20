@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Computability.SingleOracle.Staged.Basic
+import TauCeti.Computability.Staged.Partial.Race
 
 /-!
 # Examples of staged oracle computations
@@ -96,6 +97,7 @@ example (O : ℕ → ℕ) (c d : Code) :
     RecursiveIn {(O : ℕ →. ℕ)}
       (((c.stagedEval fun z => some (O z)).race (d.stagedEval fun z => some (O z))).eval) := by
   apply StagedPartial.recursiveIn_eval
-  simpa only [ComputableIn₂, StagedPartial.stage_race] using
-    Staged.computableIn₂_race (c.computableIn₂_stage_stagedEval O)
-      (d.computableIn₂_stage_stagedEval O)
+  have hO : ComputableIn {(O : ℕ →. ℕ)} O := RecursiveIn.oracle _ (Set.mem_singleton _)
+  have hσ := Primrec.option_some.computableIn.comp hO
+  exact (c.stagedEval fun z => some (O z)).computableIn₂_stage_race
+    (c.computableIn₂_stage_stagedEval hσ) (d.computableIn₂_stage_stagedEval hσ)

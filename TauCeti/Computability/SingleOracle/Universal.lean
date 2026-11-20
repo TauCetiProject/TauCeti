@@ -26,6 +26,8 @@ the oracle and runs the primitive-recursive finite-string evaluator. The search 
 `TauCeti.Oracle.Single.Code.searchStages`. A successful run is correct by
 the use principle, and every computation relative to `O` is found at some fuel
 (`TauCeti.Oracle.Single.Code.mem_eval_iff_exists_evaln_range_map`).
+Mathlib's `Nat.Partrec.Code.eval_eq_rfindOpt` gives the analogous bounded search for ordinary
+programs.
 
 The construction needs a total oracle: the universal program queries the oracle at every address
 below the fuel before running anything, so relative to a partial oracle it would diverge at an

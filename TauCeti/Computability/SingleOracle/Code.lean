@@ -326,6 +326,11 @@ theorem eval_pair (cf cg : Code) (n : ℕ) :
     eval O (pair cf cg) n = Nat.pair <$> eval O cf n <*> eval O cg n :=
   (rfl)
 
+/-- Pairing zero with the reconstructed input supplies an initial argument for recursion. -/
+theorem eval_pair_zero_left_right (n : ℕ) :
+    eval O (pair zero (pair left right)) n = Part.some (Nat.pair 0 n) := by
+  simp [Seq.seq]
+
 /-- The outputs of `pair cf cg` are the pairings of outputs of `cf` and `cg`. -/
 theorem mem_eval_pair {cf cg : Code} {n y : ℕ} :
     y ∈ eval O (pair cf cg) n ↔ ∃ y₁ ∈ eval O cf n, ∃ y₂ ∈ eval O cg n, Nat.pair y₁ y₂ = y := by

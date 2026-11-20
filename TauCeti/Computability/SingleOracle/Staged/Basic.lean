@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.SingleOracle.Stage
+public import TauCeti.Computability.SingleOracle.Relative
 public import TauCeti.Computability.SingleOracle.Staged.Search
 public import TauCeti.Computability.Staged.Partial
 
@@ -49,31 +49,15 @@ theorem eval_map_stagedEval (c : Code) {σ : ℕ → Option ℕ} {O : ℕ →. �
   simp only [StagedPartial.mem_eval_iff, StagedPartial.stage_map, stage_stagedEval,
     Option.map_eq_some_iff, mem_eval_iff_exists_evalStage hσ]
 
-/-- Normalized stage evaluation is uniformly computable in a family of total oracle answers
-computable in `G`. To simulate stage `s` it suffices to read the first `s` answers. -/
-theorem computableIn_evalStage {α : Type*} [Primcodable α] {G : Set (ℕ →. ℕ)}
-    {O : α → ℕ → ℕ} (hO : ComputableIn₂ G O) :
-    ComputableIn G fun p : α × ℕ × Code × ℕ =>
-      evalStage (fun z => some (O p.1 z)) p.2.1 p.2.2.1 p.2.2.2 := by
-  have hp : ComputableIn G fun p : α × ℕ × Code × ℕ => (List.range p.2.1).map (O p.1) :=
-    hO.list_range_map.comp (ComputableIn.fst.pair (ComputableIn.fst.comp ComputableIn.snd))
-  refine RecursiveIn.of_eq (primrec_evalStage_list.computableIn.comp (hp.pair ComputableIn.snd))
-    fun p => ?_
-  simp only [Part.some_inj]
-  ext d
-  simp only [evalStage_eq_some_iff, evaln_range_map]
-
-/-- For a fixed code and total oracle, the presentation's stage table is computable in that
-oracle, including the recorded uses. -/
-theorem computableIn₂_stage_stagedEval (c : Code) (O : ℕ → ℕ) :
-    ComputableIn₂ {(O : ℕ →. ℕ)} (c.stagedEval fun z => some (O z)).stage := by
-  have hO : ComputableIn {(O : ℕ →. ℕ)} O := RecursiveIn.oracle _ (Set.mem_singleton _)
-  have hf : ComputableIn₂ {(O : ℕ →. ℕ)} (fun (_ : Unit) z => O z) :=
-    hO.comp ComputableIn.snd
+/-- A fixed code gives an effective stage table when its optional oracle answers are effective
+in the same oracle family. -/
+theorem computableIn₂_stage_stagedEval (c : Code) {G : Set (ℕ →. ℕ)}
+    {σ : ℕ → Option ℕ} (hσ : ComputableIn G σ) : ComputableIn₂ G (c.stagedEval σ).stage := by
+  have hf : ComputableIn₂ G (fun (_ : Unit) z => σ z) := hσ.comp ComputableIn.snd
   simpa only [ComputableIn₂, stage_stagedEval] using (computableIn_evalStage hf).comp
     ((ComputableIn.const ()).pair
       (ComputableIn.snd.pair ((ComputableIn.const c).pair ComputableIn.fst)) :
-        ComputableIn {(O : ℕ →. ℕ)} fun p : ℕ × ℕ => ((), p.2, c, p.1))
+        ComputableIn G fun p : ℕ × ℕ => ((), p.2, c, p.1))
 
 /-- Compiling a program for the stages of a persistent presentation computes its partial
 function relative to the same oracle. -/
@@ -82,29 +66,62 @@ theorem eval_searchStages_eq_of_stagedPartial {c : Code} {P : StagedPartial ℕ 
     (hP : ∀ x s, eval O c (Nat.pair x s) = Part.some (Encodable.encode (P.stage x s))) :
     eval O c.searchStages = P.eval := by
   funext x
-  ext y
-  rw [eval_searchStages (hP x), P.mem_eval_iff]
-  exact Nat.rfindOpt_mono fun hst hs => P.persistent hst hs
+  rw [eval_searchStages (hP x), P.eval_def]
 
 end TauCeti.Oracle.Single.Code
 
 namespace TauCeti
 
-/-- A partial function on the naturals is recursive in a total oracle exactly when it has
+open Encodable Oracle.Single.Code
+
+/-- A partial function between primcodable types is recursive in a total oracle exactly when it has
 a persistent stage table uniformly computable in that oracle. Its presentation can be taken
-to be the output projection of a normalized bounded simulation. -/
-theorem recursiveIn_iff_exists_stagedPartial (O : ℕ → ℕ) (f : ℕ →. ℕ) :
-    RecursiveIn {(O : ℕ →. ℕ)} f ↔ ∃ P : StagedPartial ℕ ℕ,
+to decode the outputs of normalized bounded simulations on encoded inputs. -/
+theorem recursiveIn_iff_exists_stagedPartial {α β : Type*} [Primcodable α] [Primcodable β]
+    (O : ℕ → ℕ) (f : α →. β) :
+    RecursiveIn {(O : ℕ →. ℕ)} f ↔ ∃ P : StagedPartial α β,
       ComputableIn₂ {(O : ℕ →. ℕ)} P.stage ∧ P.eval = f := by
   constructor
   · intro hf
-    obtain ⟨c, hc⟩ := Oracle.Single.Code.exists_code.1 (RecursiveIn.iff_nat.1 hf)
-    refine ⟨(c.stagedEval (fun z => some (O z))).map Oracle.Single.Code.Halt.output, ?_, ?_⟩
-    · simpa only [ComputableIn₂, StagedPartial.stage_map] using
-        (Primrec.option_map₁ Oracle.Single.Code.Halt.primrec_output).computableIn.comp
-          (c.computableIn₂_stage_stagedEval O)
+    unfold RecursiveIn at hf
+    obtain ⟨c, hc⟩ := Oracle.Single.Code.exists_code.1 hf
+    let σ : ℕ → Option ℕ := fun z => some (O z)
+    let P : StagedPartial α β :=
+      { stage := fun x s => (evalStage σ s c (encode x)).bind fun d => decode d.output
+        persistent := by
+          intro x s t y hst hy
+          obtain ⟨d, hd, hv⟩ := Option.bind_eq_some_iff.1 hy
+          exact Option.bind_eq_some_iff.2 ⟨d, evalStage_mono hst hd, hv⟩ }
+    refine ⟨P, ?_, ?_⟩
+    · have hO : ComputableIn {(O : ℕ →. ℕ)} O := RecursiveIn.oracle _ (Set.mem_singleton _)
+      have hσ : ComputableIn {(O : ℕ →. ℕ)} σ := Primrec.option_some.computableIn.comp hO
+      have hargs : ComputableIn {(O : ℕ →. ℕ)} fun p : α × ℕ => (encode p.1, p.2) :=
+        (Primrec.encode.computableIn.comp ComputableIn.fst).pair ComputableIn.snd
+      simpa only [ComputableIn₂, P, stage_stagedEval] using
+        (Primrec.option_bind₁ (Primrec.decode.comp Halt.primrec_output)).computableIn.comp
+          ((c.computableIn₂_stage_stagedEval hσ).comp hargs)
     · funext x
-      rw [c.eval_map_stagedEval (O := (O : ℕ →. ℕ)) (by simp [eq_comm]), hc]
+      have hcode : eval (O : ℕ →. ℕ) c (encode x) = (f x).map encode := by
+        rw [hc]
+        simp [encodek]
+      have hstage (n : ℕ) : n ∈ eval (O : ℕ →. ℕ) c (encode x) ↔
+          ∃ s d, evalStage σ s c (encode x) = some d ∧ d.output = n :=
+        mem_eval_iff_exists_evalStage (by simp [σ, eq_comm])
+      ext y
+      simp only [P.mem_eval_iff, P, Option.bind_eq_some_iff]
+      constructor
+      · rintro ⟨s, d, hd, hy⟩
+        have hmem := (hstage d.output).2 ⟨s, d, hd, rfl⟩
+        rw [hcode, Part.mem_map_iff] at hmem
+        obtain ⟨b, hb, hbd⟩ := hmem
+        have hby : b = y := by simpa [← hbd, encodek] using hy
+        exact hby ▸ hb
+      · intro hy
+        have hmem : encode y ∈ eval (O : ℕ →. ℕ) c (encode x) := by
+          rw [hcode]
+          exact (Part.mem_map_iff _).2 ⟨y, hy, rfl⟩
+        obtain ⟨s, d, hd, hdy⟩ := (hstage _).1 hmem
+        exact ⟨s, d, hd, by simp [hdy, encodek]⟩
   · rintro ⟨P, hP, rfl⟩
     exact P.recursiveIn_eval hP
 

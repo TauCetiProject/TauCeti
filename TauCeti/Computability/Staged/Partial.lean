@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.Staged.Race
+public import TauCeti.Computability.RecursiveIn
 
 /-!
 # Staged partial functions
@@ -16,9 +16,14 @@ specified by those observations. If the stage observations are uniformly computa
 the resulting partial function is recursive in the same oracle.
 
 A cofinal increasing clock preserves the partial function, although it can change discovery
-times. A race uses the original discovery times to retain the first of two successes, retaining
-the side as well as the value. This works for arbitrary computable stage tables, including
-tables obtained by bounded simulation relative to a fixed oracle.
+times. Normalized bounded simulation yields such tables for fixed total oracles in
+`TauCeti.Computability.SingleOracle.Staged.Basic`.
+
+## References
+
+* Cameron Freer's [supplied-data staging interface](https://github.com/cameronfreer/computable-model-theory/blob/a1fe761/ComputableModelTheory/Computability/StagedPartial.lean)
+  bundles an effective approximation with a given partial function. Here the table and
+  persistence determine the partial function, and effectivity is a separate hypothesis.
 -/
 
 public section
@@ -43,10 +48,14 @@ variable {α β γ : Type*} (P : StagedPartial α β)
 noncomputable def eval (x : α) : Part β :=
   Nat.rfindOpt (P.stage x)
 
+/-- Evaluating a table searches for its first present observation. -/
+theorem eval_def (x : α) : P.eval x = Nat.rfindOpt (P.stage x) := (rfl)
+
 /-- The values of the partial function are exactly its successful observations. -/
 theorem mem_eval_iff {x : α} {y : β} :
-    y ∈ P.eval x ↔ ∃ s, P.stage x s = some y :=
-  Nat.rfindOpt_mono fun hst hs => P.persistent hst hs
+    y ∈ P.eval x ↔ ∃ s, P.stage x s = some y := by
+  simpa only [eval_def, Option.mem_def] using
+    (Nat.rfindOpt_mono fun hst hs => P.persistent hst hs)
 
 /-- The partial function is undefined on an input exactly when every observation is absent. -/
 theorem not_dom_eval_iff (x : α) : ¬(P.eval x).Dom ↔ ∀ s, P.stage x s = none := by
@@ -102,38 +111,6 @@ theorem eval_reindex {t : ℕ → ℕ} (ht : Monotone t) (hcof : ∀ s, ∃ k, s
     let ⟨k, hk⟩ := hcof s
     ⟨k, P.persistent hk h⟩⟩
 
-/-- Race two presentations on the same input. The first discovery wins and simultaneous
-first discoveries are resolved in favor of the left table. -/
-def race (Q : StagedPartial α γ) : StagedPartial α (β ⊕ γ) where
-  stage x := Staged.race (P.stage x) (Q.stage x)
-  persistent hst h := Staged.race_mono hst h
-
-/-- The stage table of a race records the first tagged observation. -/
-theorem stage_race (Q : StagedPartial α γ) (x : α) (s : ℕ) :
-    (P.race Q).stage x s = Staged.race (P.stage x) (Q.stage x) s := (rfl)
-
-/-- A left winner is a value of the left partial function. -/
-theorem mem_eval_of_inl_mem_race {Q : StagedPartial α γ} {x : α} {y : β}
-    (h : Sum.inl y ∈ (P.race Q).eval x) : y ∈ P.eval x := by
-  simp only [mem_eval_iff, stage_race, Staged.race_eq_some_inl_iff] at h
-  obtain ⟨_, s, -, -, hs⟩ := h
-  exact P.mem_eval_iff.2 ⟨s, hs⟩
-
-/-- A right winner is a value of the right partial function. -/
-theorem mem_eval_of_inr_mem_race {Q : StagedPartial α γ} {x : α} {z : γ}
-    (h : Sum.inr z ∈ (P.race Q).eval x) : z ∈ Q.eval x := by
-  simp only [mem_eval_iff, stage_race, Staged.race_eq_some_inr_iff] at h
-  obtain ⟨_, s, -, -, -, hs⟩ := h
-  exact Q.mem_eval_iff.2 ⟨s, hs⟩
-
-/-- A race converges on an input exactly when at least one of its two sides converges. -/
-@[simp]
-theorem dom_eval_race (Q : StagedPartial α γ) (x : α) :
-    ((P.race Q).eval x).Dom ↔ (P.eval x).Dom ∨ (Q.eval x).Dom := by
-  simp only [Part.dom_iff_mem, mem_eval_iff, stage_race, exists_comm (α := β ⊕ γ),
-    exists_comm (α := β), exists_comm (α := γ)]
-  exact Staged.exists_race_eq_some_iff
-
 section ComputableIn
 
 variable [Primcodable α] [Primcodable β] {G : Set (ℕ →. ℕ)}
@@ -141,6 +118,25 @@ variable [Primcodable α] [Primcodable β] {G : Set (ℕ →. ℕ)}
 /-- Effective observations give a partial function recursive in the same oracle family. -/
 theorem recursiveIn_eval (hP : ComputableIn₂ G P.stage) : RecursiveIn G P.eval :=
   RecursiveIn.rfindOpt hP
+
+/-- Mapping by an oracle-computable function preserves the relative effectivity of a table. -/
+theorem computableIn₂_stage_map [Primcodable γ] (hP : ComputableIn₂ G P.stage)
+    {f : β → γ} (hf : ComputableIn G f) : ComputableIn₂ G (P.map f).stage := by
+  rcases isEmpty_or_nonempty β with hβ | hβ
+  · refine RecursiveIn.of_eq (ComputableIn.const (none : Option γ)) fun p => ?_
+    simp only [Part.some_inj, stage_map]
+    cases P.stage p.1 p.2 with
+    | none => rfl
+    | some a => exact (hβ.false a).elim
+  · obtain ⟨b⟩ := hβ
+    have hget : ComputableIn G fun p : α × ℕ => (P.stage p.1 p.2).getD b :=
+      (Primrec.option_getD.comp Primrec.id (Primrec.const b)).computableIn.comp hP
+    have htag : Primrec fun p : Bool × γ => cond p.1 (some p.2) none :=
+      Primrec.cond Primrec.fst (Primrec.option_some.comp Primrec.snd) (Primrec.const none)
+    refine RecursiveIn.of_eq (htag.computableIn.comp
+      ((Primrec.option_isSome.computableIn.comp hP).pair (hf.comp hget))) fun p => ?_
+    simp only [Part.some_inj, stage_map]
+    cases P.stage p.1 p.2 <;> rfl
 
 /-- Reindexing by an oracle-computable monotone clock preserves relative effectivity. -/
 theorem computableIn₂_stage_reindex (hP : ComputableIn₂ G P.stage)

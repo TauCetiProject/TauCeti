@@ -42,10 +42,7 @@ private def stageSearchTest : Code :=
 
 private theorem eval_stageSearchTest (n : ℕ) :
     eval O stageSearchTest n = Part.some (if n = 0 then 1 else 0) := by
-  have hp : eval O (pair zero (pair left right)) n = Part.some (Nat.pair 0 n) := by
-    simp [Seq.seq]
-  rw [stageSearchTest, eval_comp, hp, PFun.some_bind]
-  clear hp
+  rw [stageSearchTest, eval_comp, eval_pair_zero_left_right, PFun.some_bind]
   induction n with
   | zero => simp
   | succ n ih => simp [eval_prec_succ, ih]
@@ -56,16 +53,14 @@ private def stageSearchOutput : Code :=
 
 private theorem eval_stageSearchOutput (n : ℕ) :
     eval O stageSearchOutput n = Part.some n.pred := by
-  have hp : eval O (pair zero (pair left right)) n = Part.some (Nat.pair 0 n) := by
-    simp [Seq.seq]
-  rw [stageSearchOutput, eval_comp, hp, PFun.some_bind]
-  clear hp
+  rw [stageSearchOutput, eval_comp, eval_pair_zero_left_right, PFun.some_bind]
   induction n with
   | zero => simp
   | succ n ih => simp [eval_prec_succ, ih]
 
-/-- Compile a program on paired inputs `Nat.pair x s` returning encoded optional observations
-into a program on `x` that returns the first observed value. -/
+/-- Compile a program on paired inputs `Nat.pair x s` returning encoded optional observations.
+The compiled program on `x` returns the first present value when every earlier stage explicitly
+returns encoded `none`. -/
 def searchStages (c : Code) : Code :=
   comp (comp stageSearchOutput c)
     (pair (pair left right) (comp (rfind' (comp stageSearchTest c)) (pair (pair left right) zero)))
@@ -140,17 +135,21 @@ table of optional observations relative to the given oracle. -/
 theorem eval_searchStages {c : Code} {A : ℕ → Option ℕ} {x : ℕ}
     (hA : ∀ s, eval O c (Nat.pair x s) = Part.some (encode (A s))) :
     eval O c.searchStages x = Nat.rfindOpt A := by
+  have htest (s : ℕ) :
+      (Part.some (encode (A s))).map (fun n => decide (n ≠ 0)) = Part.some (A s).isSome := by
+    cases A s <;> simp
+  rw [eval_searchStages_bind, Nat.rfindOpt]
+  simp only [hA, htest]
   ext y
-  rw [mem_eval_searchStages, Nat.rfindOpt, Part.mem_bind_iff]
-  simp only [hA, Part.mem_some_iff, encode_inj, Part.mem_coe, Option.mem_def]
-  constructor
-  · rintro ⟨s, hs, hbefore⟩
-    exact ⟨s, Nat.mem_rfind.2 ⟨by simp [← hs], fun ht => by simp [← hbefore _ ht]⟩, hs.symm⟩
-  · rintro ⟨s, hs, hy⟩
-    refine ⟨s, hy.symm, fun t ht => ?_⟩
-    have hfalse := Part.mem_some_iff.1 (Nat.rfind_min hs ht)
-    cases he : A t with
-    | none => rfl
-    | some v => simp [he] at hfalse
+  simp only [Part.mem_bind_iff]
+  refine exists_congr fun s => ?_
+  cases hs : A s with
+  | none =>
+    have hn : s ∉ Nat.rfind fun t => Part.some (A t).isSome := by
+      intro h
+      have hfound := Nat.rfind_spec h
+      simp [hs] at hfound
+    simp [hn]
+  | some v => simp
 
 end TauCeti.Oracle.Single.Code
