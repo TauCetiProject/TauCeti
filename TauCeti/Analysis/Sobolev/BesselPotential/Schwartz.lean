@@ -40,6 +40,8 @@ normed complex `F`.
   `BesselPotentialSpace.toDistr_toLpₗᵢ_zero_symm_apply`: the identification `H^{0,p} = Lᵖ`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_zero`: on `H^{0,p}` the inclusion is isometric for
   the `Lᵖ` norm.
+* `SchwartzMap.eLpNorm_le_of_toBesselPotentialSpaceCLM_eq`: the `Lᵖ` bound of an operator on
+  `H^{0,p}` that sends one Schwartz function to another.
 * `BesselPotentialSpace.continuousLinearMap_ext`: continuous linear maps out of `H^{s,p}`,
   `p < ∞`, are determined by their values on Schwartz functions, and
   `BesselPotentialSpace.continuousLinearMap_ext_real` for complex-linear maps out of
@@ -145,6 +147,22 @@ theorem toLp_toBesselPotentialSpaceCLM_zero (u : 𝓢(E, F)) :
 theorem norm_toBesselPotentialSpaceCLM_zero (u : 𝓢(E, F)) :
     ‖toBesselPotentialSpaceCLM 0 p u‖ = (eLpNorm u p volume).toReal := by
   rw [← BesselPotentialSpace.norm_toLp_eq, toLp_toBesselPotentialSpaceCLM_zero, norm_toLp]
+
+/-- If a bounded operator `A` on `H^{0,p} = Lᵖ` sends the Schwartz function `u` to the Schwartz
+function `w`, then `‖w‖_{Lᵖ} ≤ ‖A‖ ‖u‖_{Lᵖ}`. -/
+theorem eLpNorm_le_of_toBesselPotentialSpaceCLM_eq {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℂ G] [CompleteSpace G] {A : H^{0, p}(E, F) →L[ℂ] H^{0, p}(E, G)} {u : 𝓢(E, F)}
+    {w : 𝓢(E, G)} (h : A (toBesselPotentialSpaceCLM 0 p u) = toBesselPotentialSpaceCLM 0 p w) :
+    eLpNorm w p volume ≤ ENNReal.ofReal ‖A‖ * eLpNorm u p volume := by
+  have hle := A.le_opNorm (toBesselPotentialSpaceCLM 0 p u)
+  rw [h, norm_toBesselPotentialSpaceCLM_zero, norm_toBesselPotentialSpaceCLM_zero] at hle
+  calc eLpNorm w p volume = ENNReal.ofReal (eLpNorm w p volume).toReal :=
+        (ENNReal.ofReal_toReal (w.memLp p).eLpNorm_ne_top).symm
+    _ ≤ ENNReal.ofReal (‖A‖ * (eLpNorm u p volume).toReal) := ENNReal.ofReal_le_ofReal hle
+    _ ≤ ENNReal.ofReal ‖A‖ * eLpNorm u p volume := by
+        rw [ENNReal.ofReal_mul (norm_nonneg A)]
+        gcongr
+        exact ENNReal.ofReal_toReal_le
 
 /-- **Schwartz functions are dense in `H^{s,p}`** for `p < ∞`. -/
 theorem denseRange_toBesselPotentialSpaceCLM (s : ℝ) (hp : p ≠ ∞) :

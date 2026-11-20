@@ -826,14 +826,11 @@ theorem toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id (φ : 𝓢(Coordi
     (s : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) (u : H^{s, p}(CoordinateSpace n, V)) :
     ((ofSpatial _ _).quantizeBesselPotentialSpace h s p u).toDistr =
       TemperedDistribution.smulLeftCLM V (φ : CoordinateSpace n → ℂ) u.toDistr := by
-  have hc : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
-      ((φ.smooth ⊤).smul contDiff_const)).coefficient =
-        fun p ↦ φ p.1 • ContinuousLinearMap.id ℂ V :=
-    coefficient_ofSpatial_eq _ _
   have hq : quantizeUniformCLM _ h.isUniform = SchwartzMap.smulLeftCLM V (φ : _ → ℂ) := by
     ext v x
-    rw [quantizeUniformCLM_apply, hc, SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth]
-    simpa using quantizeSchwartzValue_comp_fst (fun y ↦ φ y • ContinuousLinearMap.id ℂ V) v x
+    rw [quantizeUniformCLM_apply, quantizeSchwartzValue_ofSpatial,
+      SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth, _root_.smul_apply,
+      ContinuousLinearMap.id_apply]
   have key : BesselPotentialSpace.toDistrCLM _ _ _ _ ∘L
         (ofSpatial _ _).quantizeBesselPotentialSpace h s p =
       TemperedDistribution.smulLeftCLM V (φ : CoordinateSpace n → ℂ) ∘L

@@ -64,11 +64,12 @@ vanishes depends on the compact set of positions
 (`TauCeti.Symbol.isSmoothing_of_forall_isCompact_coefficient_eq_zero`), while in positive
 dimension a nonzero constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
 
-The estimates are only required locally uniformly in `x`. The predicate
-`TauCeti.Symbol.IsUniform` asks for constants independent of `x`, and
-`TauCeti.Symbol.HasCompactSpatialSupport` asks that the symbol vanish for `x` outside a fixed
-compact set. Symbols with compact spatial support are uniform
-(`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`). The symbol of multiplication by `f` is
+The estimates are only required locally uniformly in `x`. The predicate `TauCeti.Symbol.IsUniform`
+asks for constants independent of `x`, and `TauCeti.Symbol.HasCompactSpatialSupport` asks that the
+symbol vanish for `x` outside a fixed compact set. Symbols with compact spatial support are uniform
+(`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`), but not conversely: in positive dimension a
+nonzero constant symbol is uniform without compact spatial support
+(`TauCeti.Symbol.not_hasCompactSpatialSupport_const`). The symbol of multiplication by `f` is
 uniform exactly when all derivatives of `f` are bounded (`TauCeti.Symbol.isUniform_ofSpatial_iff`),
 so the local estimates alone do not give uniform ones: a coordinate function `x_j` is a symbol of
 order `0` that is not uniform (`TauCeti.Symbol.not_isUniform_ofSpatial_smul`).
@@ -575,8 +576,7 @@ theorem mixedDeriv_spatialDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (
 /-- Two frequency derivatives of a symbol commute. -/
 theorem frequencyDeriv_comm (j l : Fin n) (a : Symbol n V W m) :
     frequencyDeriv j (frequencyDeriv l a) = frequencyDeriv l (frequencyDeriv j a) := by
-  ext1
-  funext ⟨x, ξ⟩
+  ext ⟨x, ξ⟩ : 2
   simp only [coefficient_frequencyDeriv]
   rw [← coordinateDeriv_append, ← coordinateDeriv_append]
   exact coordinateDeriv_pair_comm
@@ -585,8 +585,7 @@ theorem frequencyDeriv_comm (j l : Fin n) (a : Symbol n V W m) :
 /-- Two spatial derivatives of a symbol commute. -/
 theorem spatialDeriv_comm (j l : Fin n) (a : Symbol n V W m) :
     spatialDeriv j (spatialDeriv l a) = spatialDeriv l (spatialDeriv j a) := by
-  ext1
-  funext ⟨x, ξ⟩
+  ext ⟨x, ξ⟩ : 2
   simp only [coefficient_spatialDeriv]
   rw [← coordinateDeriv_append, ← coordinateDeriv_append]
   exact coordinateDeriv_pair_comm ((a.contDiff_coefficient_slice ξ).of_le (by simp)) j l x
@@ -594,8 +593,7 @@ theorem spatialDeriv_comm (j l : Fin n) (a : Symbol n V W m) :
 /-- A spatial and a frequency derivative of a symbol commute. -/
 theorem spatialDeriv_frequencyDeriv_comm (j l : Fin n) (a : Symbol n V W m) :
     spatialDeriv j (frequencyDeriv l a) = frequencyDeriv l (spatialDeriv j a) := by
-  ext1
-  funext ⟨x, ξ⟩
+  ext ⟨x, ξ⟩ : 2
   exact (coordinateDeriv_coordinateDeriv_comm a.contDiff_coefficient [j] [l] x ξ).symm
 
 /-- The position derivative of a symbol in the `j`-th coordinate direction is the coefficient of
@@ -698,16 +696,14 @@ theorem exists_norm_coefficient_add_sub_le (a : Symbol n V W m)
 @[simp]
 theorem frequencyDeriv_inclusion (j : Fin n) (h : m ≤ m') (a : Symbol n V W m) :
     frequencyDeriv j (inclusion h a) = inclusion (by linarith) (frequencyDeriv j a) := by
-  ext1
-  funext ⟨x, ξ⟩
+  ext ⟨x, ξ⟩ : 2
   simp
 
 /-- Spatial derivatives commute with the order inclusions. -/
 @[simp]
 theorem spatialDeriv_inclusion (j : Fin n) (h : m ≤ m') (a : Symbol n V W m) :
     spatialDeriv j (inclusion h a) = inclusion h (spatialDeriv j a) := by
-  ext1
-  funext ⟨x, ξ⟩
+  ext ⟨x, ξ⟩ : 2
   simp
 
 theorem IsUniform.frequencyDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin n) :
@@ -898,6 +894,13 @@ theorem isUniform_const (T : V →L[ℂ] W) : (const T : Symbol n V W 0).IsUnifo
   rcases eq_or_ne α [] with rfl | hα
   · simp
   · simp [coordinateDeriv_const T hα]
+
+/-- In positive dimension a nonzero constant symbol does not have compact spatial support. -/
+theorem not_hasCompactSpatialSupport_const (hn : 0 < n) {T : V →L[ℂ] W} (hT : T ≠ 0) :
+    ¬(const T : Symbol n V W 0).HasCompactSpatialSupport := by
+  have : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
+  simpa [const, hasCompactSpatialSupport_ofSpatial_iff, HasCompactSupport, tsupport,
+    Function.support_const hT] using noncompact_univ (CoordinateSpace n)
 
 variable (V) in
 /-- The symbol `ψ(x) id_V` of multiplication by a smooth real function `ψ`. -/
@@ -1096,28 +1099,24 @@ theorem coefficient_comp (b : Symbol n W U m') (a : Symbol n V W m)
 
 theorem comp_add (b : Symbol n W U m') (a₁ a₂ : Symbol n V W m) :
     b.comp (a₁ + a₂) = b.comp a₁ + b.comp a₂ := by
-  ext1
-  funext p
+  ext p : 2
   simp [ContinuousLinearMap.comp_add]
 
 theorem add_comp (b₁ b₂ : Symbol n W U m') (a : Symbol n V W m) :
     (b₁ + b₂).comp a = b₁.comp a + b₂.comp a := by
-  ext1
-  funext p
+  ext p : 2
   simp [ContinuousLinearMap.add_comp]
 
 @[simp]
 theorem comp_smul (c : ℂ) (b : Symbol n W U m') (a : Symbol n V W m) :
     b.comp (c • a) = c • b.comp a := by
-  ext1
-  funext p
+  ext p : 2
   simp
 
 @[simp]
 theorem smul_comp (c : ℂ) (b : Symbol n W U m') (a : Symbol n V W m) :
     (c • b).comp a = c • b.comp a := by
-  ext1
-  funext p
+  ext p : 2
   simp [ContinuousLinearMap.smul_comp]
 
 @[simp]
