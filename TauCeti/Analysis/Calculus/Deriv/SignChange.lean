@@ -47,14 +47,15 @@ theorem HasDerivAt.ne_zero_of_isBigO_sub_rev {𝕜 F : Type*} [NontriviallyNorme
 
 namespace TauCeti
 
-variable {g : ℝ → ℝ} {a : ℝ}
-
 /-- **A function growing at least linearly has a nonzero derivative.** If `g` is differentiable
 at `a` and `x - a = O(g x - g a)` as `x → a`, then `deriv g a ≠ 0`
 (`HasDerivAt.ne_zero_of_isBigO_sub_rev`). -/
-theorem deriv_ne_zero_of_isBigO_sub_rev (hg : DifferentiableAt ℝ g a)
+theorem deriv_ne_zero_of_isBigO_sub_rev {𝕜 F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {g : 𝕜 → F} {a : 𝕜} (hg : DifferentiableAt 𝕜 g a)
     (h : (fun x ↦ x - a) =O[𝓝 a] fun x ↦ g x - g a) : deriv g a ≠ 0 :=
   hg.hasDerivAt.ne_zero_of_isBigO_sub_rev h
+
+variable {g : ℝ → ℝ} {a : ℝ}
 
 /-- **A function growing at least linearly changes sign.** If `g` is differentiable at `a` and
 `x - a = O(g x - g a)` as `x → a`, then `g` takes values below and above `g a` arbitrarily close

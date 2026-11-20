@@ -286,7 +286,7 @@ private theorem exists_mem_stableSet_sphereHeight_neg_and_pos
   have hcoord (r : ℝ) : φ.coord (r • a) = r • Pi.single j 1 := by
     rw [map_smul, LinearEquiv.apply_symm_apply]
   have hnorm (r : ℝ) : ‖φ.coord (r • a)‖ = |r| := by
-    rw [hcoord, norm_smul, Pi.norm_single, norm_one, mul_one, Real.norm_eq_abs]
+    simp [hcoord, norm_smul, Pi.norm_single]
   have hT (r : ℝ) (hr : |r| < R) : r • a ∈ φ.toChart.target := by
     simpa [hcoord] using hRT _ ((hnorm r).trans_lt hr)
   have hγ (r : ℝ) (hr : |r| < R) : γ r ∈ φ.toChart.source ∧
@@ -305,9 +305,7 @@ private theorem exists_mem_stableSet_sphereHeight_neg_and_pos
     obtain ⟨hsrc, hc⟩ := hγ r (hr.trans_le (min_le_left _ _))
     have hq := φ.eq_quadratic _ hsrc
     rw [hc, apply_self huv] at hq
-    simp only [Pi.smul_apply, Pi.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero,
-      ite_pow, zero_pow two_ne_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, hj,
-      one_mul, Pi.add_apply, Pi.pow_apply] at hq
+    simp [Pi.single_apply, hj, -sphereHeight_apply] at hq
     nlinarith [sphereHeight_le_one v (γ r)]
   have h0 : sphereHeight u (γ 0) = 0 := by
     simp only [γ, zero_smul]
@@ -317,8 +315,8 @@ private theorem exists_mem_stableSet_sphereHeight_neg_and_pos
   -- So `hᵤ` grows at least linearly along the line, and takes both signs near `v`.
   have hO : (fun r ↦ r - 0) =O[𝓝 0] fun r ↦ sphereHeight u (γ r) - sphereHeight u (γ 0) :=
     Asymptotics.IsBigO.of_bound 2 (hsq.mono fun r hr ↦ by
-      rw [h0, sub_zero, sub_zero, Real.norm_eq_abs, Real.norm_eq_abs, ← abs_two, ← abs_mul]
-      exact sq_le_sq.1 (by nlinarith [sq_nonneg (sphereHeight u (γ r))]))
+      simp only [h0, sub_zero, Real.norm_eq_abs]
+      exact abs_le_of_sq_le_sq (by nlinarith [sq_abs (sphereHeight u (γ r))]) (by positivity))
   obtain ⟨hl, hp⟩ := frequently_lt_and_frequently_gt_of_isBigO_sub_rev hdiff hO
   obtain ⟨r, hr, hrs⟩ := (hl.and_eventually hmem).exists
   obtain ⟨r', hr', hrs'⟩ := (hp.and_eventually hmem).exists
@@ -571,13 +569,13 @@ cycle. -/
 theorem exists_signedMorseBoundary_reverse_sphereHeight_sq_add_smul_sphereHeight_eq (hn : 2 ≤ n)
     (hm₁ : sphereHeight v m₁ = t / 2) (hm₂ : sphereHeight v m₂ = t / 2) (hm : m₁ ≠ m₂)
     (hs : (s : sphere (0 : E) 1) = v) :
-    ∃ S : Set (criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v)),
+    ∃ S : Set (criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v)), S ⊆ {m₁, m₂} ∧
       ∀ c : criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) →₀ R,
         hX.signedMorseBoundary (𝔬.reverse S) hf R c = Finsupp.single s (c m₁ + c m₂) := by
   obtain ⟨S, hS⟩ : ∃ S : Set (criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v)),
       ∀ p, p ∈ S ↔ (p = m₁ ∨ p = m₂) ∧ hX.signedMorseBoundaryCoeff 𝔬 p s = -1 :=
     ⟨{p | (p = m₁ ∨ p = m₂) ∧ hX.signedMorseBoundaryCoeff 𝔬 p s = -1}, fun _ ↦ Iff.rfl⟩
-  refine ⟨S, fun c ↦ ?_⟩
+  refine ⟨S, fun p hp ↦ by simpa using ((hS p).1 hp).1, fun c ↦ ?_⟩
   -- The saddle is not a maximum, so its orientation is kept.
   have hsm : s ∉ S := by
     have hsv : sphereHeight v s = 1 := by rw [hs, sphereHeight_self]
