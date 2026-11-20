@@ -497,18 +497,6 @@ private theorem tiedDefect_eq_of_forall (v : Fin Ω.numItems → H)
     rw [hp, (eq_evalWord_tiedSegment_iff h hΩ ι v hk).1 (hI k hk)]
     exact ih (Fin.le_def.2 (by simp [k])) (Fin.le_def.2 (by simp [k]; lia)) (by simp [k])
 
-include h hΩ in
-/-- If the defect of the tie is constant on the boundaries of `μ`, every item of `μ` takes the
-value of its matched segment. -/
-private theorem eq_evalWord_tiedSegment_of_forall (v : Fin Ω.numItems → H)
-    (hC : ∀ p : Fin (Ω.numItems + 1), Ω.left μ ≤ p → p ≤ Ω.right μ →
-      tiedDefect Ω μ ι v p = tiedDefect Ω μ ι v (Ω.left μ)) {k : Fin Ω.numItems}
-    (hk : k ∈ Ω.baseItems μ) : v k = evalWord ι v (Ω.tiedSegment μ k) := by
-  have h₁ := left_le_castSucc_of_mem_baseItems hk
-  have h₂ := succ_le_right_of_mem_baseItems hk
-  exact (eq_evalWord_tiedSegment_iff h hΩ ι v hk).2 <|
-    (hC _ (h₁.trans k.castSucc_lt_succ.le) h₂).trans (hC _ h₁ (k.castSucc_lt_succ.le.trans h₂)).symm
-
 /-- The basic equation of `μ` holds exactly when the defect of the tie is the same at the two
 end-points of `μ`. -/
 private theorem basicEquation_iff (v : Fin Ω.numItems → H) :
@@ -539,27 +527,6 @@ private theorem boundaryEquation_iff (v : Fin Ω.numItems → H) {p q : Fin (Ω.
       evalWord_segment ι v (Fin.le_def.1 hq₂.le)]
     simp [tiedDefect, hq, hs, inv_mul_eq_inv_mul_iff_mul_inv_eq_mul_inv]
 
-include hΩ in
-/-- The boundary equation of a connection `(q, Δ(μ), p)` holds when the defect of the tie is the
-same at `p` and at the two end-points of `μ`. -/
-private theorem boundaryEquation_dual_eq (v : Fin Ω.numItems → H) {p q : Fin (Ω.numItems + 1)}
-    (hc : (p, μ, q) ∈ Ω.connections) (hp : tiedDefect Ω μ ι v p = tiedDefect Ω μ ι v (Ω.left μ))
-    (hr : tiedDefect Ω μ ι v (Ω.right μ) = tiedDefect Ω μ ι v (Ω.left μ)) :
-    evalWord ι v (Ω.boundaryEquation (q, Ω.dual μ, p)).1 =
-      evalWord ι v (Ω.boundaryEquation (q, Ω.dual μ, p)).2 := by
-  obtain ⟨hp₁, hp₂, hq₁, -⟩ := Ω.bounds_of_mem_connections _ hc
-  have hq := hΩ.tiedBoundary_eq (isTiedTo_of_mem_connections hc)
-  rw [eq_comm, boundaryEquation_fst, evalWord_segment ι v (Fin.le_def.1 hq₁.le)]
-  by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
-  · rw [boundaryEquation_snd_of_sign_eq (c := (q, Ω.dual μ, p)) Ω
-      (by rw [Ω.dual_involutive μ]; exact hs.symm), Ω.dual_involutive μ,
-      evalWord_segment ι v (Fin.le_def.1 hp₁.le)]
-    simpa [tiedDefect, hq, hs, inv_mul_eq_inv_mul_iff_mul_inv_eq_mul_inv] using hp
-  · rw [boundaryEquation_snd_of_sign_ne (c := (q, Ω.dual μ, p)) Ω
-      (by rw [Ω.dual_involutive μ]; exact Ne.symm hs), Ω.dual_involutive μ,
-      evalWord_segment ι v (Fin.le_def.1 hp₂.le)]
-    simpa [tiedDefect, hq, hs, inv_mul_eq_inv_mul_iff_mul_inv_eq_mul_inv] using hp.trans hr.symm
-
 /-- If the defect of the tie is constant on the boundaries of `μ`, the basic equations of `μ` and
 `Δ(μ)` hold. -/
 private theorem basicEquation_eq_of_tiedDefect (v : Fin Ω.numItems → H)
@@ -589,22 +556,33 @@ private theorem boundaryEquation_eq_of_tiedDefect (v : Fin Ω.numItems → H)
   · obtain rfl := Finset.mem_singleton.1 hν
     have hc' : (q, μ, p) ∈ Ω.connections := by
       simpa [Ω.dual_involutive μ] using Ω.dual_mem_connections _ hc
-    obtain ⟨hp₁, hp₂, -, -⟩ := Ω.bounds_of_mem_connections _ hc'
-    exact boundaryEquation_dual_eq hΩ ι v hc' (hC q hp₁.le hp₂.le)
-      (hC _ (Ω.left_lt_right μ).le le_rfl)
+    have h' := isTiedTo_of_mem_connections hc'
+    exact (Ω.lift_mk_boundaryEquation_dual_iff _ h'.left_le h'.le_right h'.left_dual_le
+      h'.le_right_dual ((basicEquation_iff ι v).2 (hC _ (Ω.left_lt_right μ).le le_rfl))).2
+      ((boundaryEquation_iff hΩ ι v hc').2 (hC q h'.left_le h'.le_right))
 
 include h hΩ in
-/-- At a point of `Ω*` the defect of the tie is constant on the boundaries of `μ`. -/
-private theorem tiedDefect_eq_of_mem_V {v : Fin Ω.numItems → H} (hv : v ∈ V ι Ω.toSystem)
-    {p : Fin (Ω.numItems + 1)} (h₁ : Ω.left μ ≤ p) (h₂ : p ≤ Ω.right μ) :
-    tiedDefect Ω μ ι v p = tiedDefect Ω μ ι v (Ω.left μ) := by
+/-- At a point of `Ω*` every item of `μ` takes the value of its matched segment. -/
+private theorem eq_evalWord_tiedSegment_of_mem_V {v : Fin Ω.numItems → H}
+    (hv : v ∈ V ι Ω.toSystem) {k : Fin Ω.numItems} (hk : k ∈ Ω.baseItems μ) :
+    v k = evalWord ι v (Ω.tiedSegment μ k) := by
   rw [mem_V_toSystem_iff] at hv
-  rcases h₁.eq_or_lt with rfl | h₁
-  · rfl
-  rcases h₂.eq_or_lt with rfl | h₂
-  · exact (basicEquation_iff ι v).1 (hv _ (Ω.basicEquation_mem_equations μ))
-  obtain ⟨q, hq⟩ := h.tied p (Ω.crosses_iff.2 ⟨h₁, h₂⟩)
-  exact (boundaryEquation_iff hΩ ι v hq).1 (hv _ (Ω.boundaryEquation_mem_equations hq))
+  have hb := hv _ (Ω.basicEquation_mem_equations μ)
+  have hc (p q) (hpq : (p, μ, q) ∈ Ω.connections) := hv _ (Ω.boundaryEquation_mem_equations hpq)
+  have h₁ := isTiedTo_castSucc h hk
+  have h₂ := isTiedTo_succ h hk
+  have hvk : v k = evalWord ι v (Ω.segment k.castSucc k.succ true) := by
+    rw [Fin.val_castSucc, Fin.val_succ, Ω.segment_succ, evalWord, FreeGroup.lift_mk_singleton]
+    rfl
+  rw [hvk, tiedSegment]
+  by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
+  · have hlt := Fin.lt_def.1 (hΩ.lt_of_isTiedTo_of_sign_eq hs h₁ h₂ k.castSucc_lt_succ)
+    rw [min_eq_left hlt.le, max_eq_right hlt.le, decide_eq_true hs]
+    exact hΩ.lift_mk_segment_eq_of_isTiedTo_of_sign_eq hs h₁ h₂ hb (hc _ _) (hc _ _)
+  · have hlt := Fin.lt_def.1 (hΩ.lt_of_isTiedTo_of_sign_ne hs h₁ h₂ k.castSucc_lt_succ)
+    rw [min_eq_right hlt.le, max_eq_left hlt.le, decide_eq_false hs, evalWord, evalWord,
+      Ω.lift_mk_segment_false]
+    exact hΩ.lift_mk_segment_eq_inv_of_isTiedTo_of_sign_ne hs h₁ h₂ hb (hc _ _) (hc _ _)
 
 include h in
 /-- If the items of `μ` take the values of their matched segments, the coefficient equation of a
@@ -717,8 +695,8 @@ theorem bijOn_wordMap_removeLonely {H : Type*} [Group H] (ι : FreeGroup A →* 
   · rw [← wordMap_removeLonelyWord_orderEmbOfFin h ι v₁ j, he,
       wordMap_removeLonelyWord_orderEmbOfFin]
   -- A point of `Ω*` is the image of its restriction to the items outside `μ`.
-  have hI : ∀ k ∈ Ω.baseItems μ, v k = evalWord ι v (Ω.tiedSegment μ k) := fun k hk =>
-    eq_evalWord_tiedSegment_of_forall h hΩ ι v (fun _ => tiedDefect_eq_of_mem_V h hΩ ι hv) hk
+  have hI : ∀ k ∈ Ω.baseItems μ, v k = evalWord ι v (Ω.tiedSegment μ k) := fun _ =>
+    eq_evalWord_tiedSegment_of_mem_V h hΩ ι hv
   rw [mem_V_toSystem_iff] at hv
   refine ⟨v ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl, (comp_mem_V_iff h hΩ ι v).2 fun e he => ?_,
     funext fun k => ?_⟩

@@ -361,8 +361,7 @@ the inverse of the other. -/
 theorem mk_basicEquation_dual (μ : Fin Ω.numBases) :
     FreeGroup.mk (Ω.basicEquation (Ω.dual μ)).1 * (FreeGroup.mk (Ω.basicEquation (Ω.dual μ)).2)⁻¹ =
       (FreeGroup.mk (Ω.basicEquation μ).1 * (FreeGroup.mk (Ω.basicEquation μ).2)⁻¹)⁻¹ := by
-  rw [basicEquation_fst, basicEquation_snd, basicEquation_fst, basicEquation_snd,
-    Ω.dual_involutive, mul_inv_rev, inv_inv]
+  rw [basicEquation_dual, Prod.fst_swap, Prod.snd_swap, mul_inv_rev, inv_inv]
 
 /-- The left side of the coefficient equation of a constant base on item `k` is `hₖ`. -/
 @[simp]
