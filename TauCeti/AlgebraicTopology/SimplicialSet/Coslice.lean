@@ -184,6 +184,11 @@ lemma objEquiv_apply {n : SimplexCategory} (σ : (coslice p).obj (op n)) :
     objEquiv σ = homEquiv (yonedaEquiv.symm σ) :=
   (rfl)
 
+/-- All simplices of a coslice of the point `Δ[0]` agree: they are maps to `Δ[0]`. -/
+instance subsingleton_obj_stdSimplex_zero {L : SSet.{u}} (q : L ⟶ Δ[0])
+    (n : SimplexCategoryᵒᵖ) : Subsingleton ((coslice q).obj n) :=
+  ⟨fun _ _ ↦ objEquiv.injective (Subtype.ext (stdSimplex.isTerminalObj₀.hom_ext _ _))⟩
+
 /-- The simplex of the coslice that a map `F : X ⟶ C_{p/}` assigns to a simplex `x` of `X` is the
 restriction along `K ⋆ x` of the map `K ⋆ X ⟶ C` corresponding to `F`. -/
 lemma objEquiv_app_coe {n : SimplexCategory} (F : X ⟶ coslice p) (x : X.obj (op n)) :
