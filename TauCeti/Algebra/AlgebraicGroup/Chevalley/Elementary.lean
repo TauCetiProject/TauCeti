@@ -68,6 +68,20 @@ theorem elementarySubgroup_le_iff (H : Subgroup (D.points A)) :
   simp only [elementarySubgroup_def, Subgroup.closure_le, Set.iUnion_subset_iff,
     Set.range_subset_iff, SetLike.mem_coe]
 
+/-- A root-preserving elementary comparison takes values in the target elementary subgroup. -/
+theorem range_le_elementarySubgroup (E : ChevalleyDatum t ht) {A : Type v} [CommRing A]
+    (f : D.elementarySubgroup A →* E.points A)
+    (hf : ∀ γ u, f ⟨D.rootSubgroupPoints γ A u,
+      D.rootSubgroupPoints_mem_elementarySubgroup A γ u⟩ = E.rootSubgroupPoints γ A u) :
+    f.range ≤ E.elementarySubgroup A := by
+  rw [f.range_eq_map, Subgroup.map_le_iff_le_comap,
+    ← Subgroup.map_subtype_le_map_subtype, Subgroup.map_top, Subgroup.range_subtype,
+    D.elementarySubgroup_le_iff]
+  intro γ u
+  refine ⟨⟨_, D.rootSubgroupPoints_mem_elementarySubgroup A γ u⟩, ?_, rfl⟩
+  exact Subgroup.mem_comap.mpr ((hf γ u) ▸
+    E.rootSubgroupPoints_mem_elementarySubgroup A γ u)
+
 /-- The positive and negative simple root subgroups already generate the elementary subgroup,
 without a field hypothesis. -/
 theorem elementarySubgroup_eq_closure_simpleRootPair :

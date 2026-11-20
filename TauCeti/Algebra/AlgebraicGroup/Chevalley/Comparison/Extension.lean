@@ -52,16 +52,6 @@ variable {t : DynkinType} {ht : t.Valid} (D E : ChevalleyDatum t ht)
 
 include hf
 
-/-- A root-preserving elementary comparison takes values in the target elementary subgroup. -/
-theorem range_le_elementarySubgroup : f.range ≤ E.elementarySubgroup A := by
-  rw [f.range_eq_map, Subgroup.map_le_iff_le_comap,
-    ← Subgroup.map_subtype_le_map_subtype, Subgroup.map_top, Subgroup.range_subtype,
-    D.elementarySubgroup_le_iff]
-  intro γ u
-  refine ⟨⟨_, D.rootSubgroupPoints_mem_elementarySubgroup A γ u⟩, ?_, rfl⟩
-  exact Subgroup.mem_comap.mpr ((hf γ u) ▸
-    E.rootSubgroupPoints_mem_elementarySubgroup A γ u)
-
 private theorem comp_normalizerMonoidHom_torusPoints (s : Fin t.rank → Aˣ) :
     f.comp (((D.elementarySubgroup A).normalizerMonoidHom.comp
       (Subgroup.inclusion (D.range_torusPoints_le_normalizer_elementarySubgroup A)))
