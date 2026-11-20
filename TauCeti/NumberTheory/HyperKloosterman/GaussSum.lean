@@ -28,8 +28,8 @@ and for a nontrivial `ψ`, the trivial character contributes `τ(1) ^ k = (-1) ^
 
 This exact identity is the finite-field step of the first moment of the even prime twists of
 Luo, Rudnick and Sarnak: combined with Deligne's estimate for hyper-Kloosterman sums it bounds the
-absolute value of this sum by `(q - 1) k q ^ ((k - 1) / 2) + 1`. Over `ℂ` the factor `χ⁻¹ (r)`
-is the complex conjugate of `χ (r)` (`MulChar.star_apply'`).
+absolute value of this sum by `(q - 1) k q ^ ((k - 1) / 2) + 1` for `k ≥ 1`. Over `ℂ` the
+factor `χ⁻¹ (r)` is the complex conjugate of `χ (r)` (`MulChar.star_apply'`).
 
 ## Main statements
 

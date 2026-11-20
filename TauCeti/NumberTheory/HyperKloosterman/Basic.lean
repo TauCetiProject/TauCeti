@@ -20,10 +20,11 @@ hyper-Kloosterman sum of rank `k` is
 
 the sum running over the `k`-tuples of units of `R` with product `r`. For `k = 2` and
 `R = ZMod p` this is the classical Kloosterman sum `∑_{x ≠ 0} ψ (x + r / x)`. The definition is
-total in the rank: at `k = 0` the only tuple is empty, with product `1`. Over a finite field and
-for a nontrivial `ψ`, Deligne's estimate bounds `‖Kl_k(ψ, r)‖` by `k * q ^ ((k - 1) / 2)`; these
-sums are the finite-field input of the moment method of Luo, Rudnick and Sarnak for the
-Selberg eigenvalue conjecture, where they arise from powers of Gauss sums.
+total in the rank: at `k = 0` the only tuple is empty, with product `1`. Over a finite field,
+for a nontrivial `ψ` and `k ≥ 1`, Deligne's estimate bounds `‖Kl_k(ψ, r)‖` by
+`k * q ^ ((k - 1) / 2)`; these sums are the finite-field input of the moment method of Luo,
+Rudnick and Sarnak for the Selberg eigenvalue conjecture, where they arise from powers of Gauss
+sums.
 
 ## Main definitions
 
