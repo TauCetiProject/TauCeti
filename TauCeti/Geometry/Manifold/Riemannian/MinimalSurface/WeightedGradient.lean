@@ -88,16 +88,16 @@ theorem weighted_gradient_combination_le_zero_left [NormedSpace ℝ V] (c s a b 
 omit [InnerProductSpace ℝ V] in
 /-- When the right weight vanishes, a nonnegative scalar term preserves the combination bound. -/
 theorem weighted_gradient_combination_le_zero_right (c q a b : ℝ) (v : V)
-    (hc : 0 < c) (hq : 0 < q)
+    (hc : 0 ≤ c) (hq : q ≠ 0)
     (hB : q * a = ‖v‖ ^ 2 + 2 * q ^ 3) (hb : 0 ≤ b) :
     ‖v‖ ^ 2 / q + 2 * q ^ 2 ≤ a + c * b := by
   have hnorm : ‖v‖ ^ 2 = q * a - 2 * q ^ 3 := by linarith only [hB]
   have heq : ‖v‖ ^ 2 / q + 2 * q ^ 2 = a := by
     rw [hnorm]
-    field_simp [hq.ne']
+    field_simp [hq]
     ring
   rw [heq]
-  exact le_add_of_nonneg_right (mul_nonneg hc.le hb)
+  exact le_add_of_nonneg_right (mul_nonneg hc hb)
 
 /-- Nonnegative weights give the same bound when the vanishing cases are controlled separately. -/
 theorem weighted_gradient_combination_le_of_nonneg (c q s a b : ℝ) (u v w : V)
@@ -124,7 +124,7 @@ theorem weighted_gradient_combination_le_of_nonneg (c q s a b : ℝ) (u v w : V)
         simp only [hs0, hw, inner_zero_right, zero_mul, mul_zero, sub_zero,
           pow_two, add_zero] at hB
         linear_combination hB
-      have hle := weighted_gradient_combination_le_zero_right c q a b v hc hqpos hB0 hb
+      have hle := weighted_gradient_combination_le_zero_right c q a b v hc.le hqpos.ne' hB0 hb
       simpa only [hs0, hw, smul_zero, add_zero, zero_mul, mul_zero, pow_two] using hle
     · exact weighted_gradient_combination_le c q s a b u v w hu hB hS hc hqpos
         (lt_of_le_of_ne hs (Ne.symm hs0))
