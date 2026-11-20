@@ -32,6 +32,8 @@ constructions on Laurent series are natural.
 * `HahnSeries.map_embDomain`: coefficientwise maps commute with exponent embeddings.
 * `HahnSeries.map_ofPowerSeries`: coefficientwise maps commute with the inclusion of power
   series, `PowerSeries.map` on the source side.
+* `HahnSeries.map_aeval`: coefficientwise algebra maps commute with evaluating multivariate
+  polynomials at Hahn series.
 * `HahnSeries.mem_map_rangeS`: the range of a coefficientwise map consists of the series
   with all coefficients in the range of the coefficient map.
 * `HahnSeries.support_map_of_injective`, `HahnSeries.orderTop_map_of_injective`,
@@ -164,6 +166,25 @@ theorem mem_map_rangeS {f : R →+* S} {x : S⟦Γ⟧} :
     by_cases hx : x.coeff g = 0 <;> simp [hx, hc]
 
 end Semiring
+
+section Algebra
+
+variable [PartialOrder Γ] [AddCommMonoid Γ] [IsOrderedCancelAddMonoid Γ]
+
+/-- Applying a coefficientwise `k`-algebra map `φ` to the value of a multivariate polynomial at
+Hahn series gives the value of the polynomial at the mapped series: the coefficientwise form of
+`MvPolynomial.comp_aeval`. -/
+theorem map_aeval {k σ : Type*} [CommSemiring k] [CommSemiring R] [Algebra k R] [CommSemiring S]
+    [Algebra k S] (φ : R →ₐ[k] S) (s : σ → R⟦Γ⟧) (f : MvPolynomial σ k) :
+    (MvPolynomial.aeval s f).map φ = MvPolynomial.aeval (fun i ↦ (s i).map φ) f := by
+  let Φ : R⟦Γ⟧ →ₐ[k] S⟦Γ⟧ :=
+    { mapRingHom (φ : R →+* S) with
+      commutes' := fun c ↦ by
+        rw [algebraMap_apply, algebraMap_apply, ← φ.commutes c]
+        exact map_C _ (φ : R →+* S) }
+  exact DFunLike.congr_fun (MvPolynomial.comp_aeval (R := k) s Φ) f
+
+end Algebra
 
 section PowerSeries
 
