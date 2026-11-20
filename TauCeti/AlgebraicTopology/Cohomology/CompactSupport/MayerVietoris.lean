@@ -63,6 +63,8 @@ first two maps do not affect the kernels and images at `Hⁿ_c(X)` and `Hᵐ_c(U
 * `TopCat.compactSupportCohomologyMayerVietoris_exact₃` and
   `TopCat.compactSupportCohomologyMayerVietoris_exact₁`: exactness at `Hⁿ_c(X)` and at
   `Hᵐ_c(U ∩ V)`.
+* `TopCat.isIso_compactSupportCohomologyMayerVietorisFromBiprod_of_isZero`: the middle map is an
+  isomorphism when `Hᵐ_c(U ∩ V)` vanishes in every degree.
 
 ## References
 
@@ -640,6 +642,19 @@ lemma compactSupportCohomologyMayerVietoris_exact₁ (hUV : U ⊔ V = ⊤) (n m 
   rw [compactSupportCohomologyMayerVietorisδ_compactSupportCohomologyι_apply U V hUV h _ hK hL
     hKU' hLV' subset_rfl, hid, mayerVietorisδAux_apply, ha,
     singularCohomologyComplRestrict_compactSupportCohomologyRestrict_apply]
+
+variable (R k M) in
+/-- If the cohomology with compact supports of `U ∩ V` vanishes in every degree, for instance when
+`U` and `V` are disjoint, the middle map `Hⁿ_c(U) ⊞ Hⁿ_c(V) ⟶ Hⁿ_c(X)` of the Mayer–Vietoris
+sequence of an open cover `X = U ∪ V` is an isomorphism. -/
+lemma isIso_compactSupportCohomologyMayerVietorisFromBiprod_of_isZero (hUV : U ⊔ V = ⊤)
+    (h : ∀ m, IsZero (((Opens.toTopCat X).obj (U ⊓ V)).compactSupportCohomology R k M m))
+    (n : ℕ) : IsIso (compactSupportCohomologyMayerVietorisFromBiprod R k M U V n) := by
+  have := (compactSupportCohomologyMayerVietoris_exact₂ R k M U V hUV n).mono_g
+    ((h n).eq_of_src _ _)
+  have := (compactSupportCohomologyMayerVietoris_exact₃ R k M U V hUV n (n + 1)).epi_f
+    ((h (n + 1)).eq_of_tgt _ _)
+  exact isIso_of_mono_of_epi _
 
 end Connecting
 

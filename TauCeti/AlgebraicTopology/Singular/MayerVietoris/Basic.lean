@@ -48,6 +48,8 @@ of `X`.
 * `TopCat.epi_mayerVietorisFromBiprod_zero`: surjectivity at the degree-zero endpoint.
 * `TopCat.isIso_mayerVietorisToBiprod_of_isZero`: when `Hₙ₊₁(X)` and `Hₙ(X)` vanish,
   `Hₙ(U ∩ V) ≅ Hₙ(U) ⊞ Hₙ(V)`.
+* `TopCat.isIso_mayerVietorisFromBiprod_of_isZero`: when the homology of `U ∩ V` vanishes,
+  `Hₙ(U) ⊞ Hₙ(V) ≅ Hₙ(X)`.
 * `TopCat.mayerVietorisδ_naturality`: naturality of the connecting morphism.
 
 ## References
@@ -318,6 +320,21 @@ lemma epi_mayerVietorisFromBiprod_zero :
     exact epi_comp _ _
   rw [mayerVietorisFromBiprod_comp_homologyMap_ι] at hepi
   exact hepi
+
+include hU hV hUV in
+/-- If the homology of `U ∩ V` vanishes in every degree, for instance when `U` and `V` are
+disjoint, the second map `Hₙ(U) ⊞ Hₙ(V) ⟶ Hₙ(X)` of the Mayer–Vietoris sequence of an open cover
+is an isomorphism. -/
+lemma isIso_mayerVietorisFromBiprod_of_isZero (n : ℕ)
+    (h : ∀ m, IsZero ((toSSet.obj (of ↥(U ∩ V))).homology R m)) :
+    IsIso (SSet.mayerVietorisFromBiprod R (toSSet.map (ofHom (ContinuousMap.subtypeVal U)))
+      (toSSet.map (ofHom (ContinuousMap.subtypeVal V))) n) := by
+  have := (mayerVietoris_exact₂ R hU hV hUV n).mono_g ((h n).eq_of_src _ _)
+  rcases n with _ | m
+  · have := epi_mayerVietorisFromBiprod_zero R hUV
+    exact isIso_of_mono_of_epi _
+  · have := (mayerVietoris_exact₃ R hU hV hUV (m + 1) m).epi_f ((h m).eq_of_tgt _ _)
+    exact isIso_of_mono_of_epi _
 
 variable {Y : TopCat.{w}} {U' V' : Set Y} (hU' : IsOpen U') (hV' : IsOpen V')
   (hUV' : U' ∪ V' = Set.univ) (f : X ⟶ Y) (hfU : Set.MapsTo f U U') (hfV : Set.MapsTo f V V')
