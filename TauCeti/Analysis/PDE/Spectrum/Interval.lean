@@ -35,8 +35,12 @@ sine mode, and it vanishes by completeness of the sine system
 ## Main declarations
 
 * `TauCeti.PDE.intervalDomain`: the interval `(a, b)` as an open subset of the Euclidean line.
+* `TauCeti.PDE.setIntegral_intervalDomain`: integrals over the interval domain are interval
+  integrals.
 * `TauCeti.PDE.exists_value_ae_eq_sin_and_energyFormH1_eq`: the sine modes are weak Dirichlet
   eigenfunctions.
+* `TauCeti.PDE.eq_zero_of_forall_setIntegral_mul_sin_eq_zero`: the sine modes are complete in
+  `L²(a, b)`.
 * `TauCeti.PDE.isDirichletEigenvalue_laplacian_intervalDomain_iff`: the Dirichlet spectrum of
   `-Δ` on `(a, b)` is `{(k π / (b - a))² | k ≥ 1}`.
 * `TauCeti.PDE.isLeast_isDirichletEigenvalue_laplacian_intervalDomain` and
@@ -143,6 +147,15 @@ private theorem sineMode_right (hab : a < b) (k : ℕ) : sineMode a b k b = 0 :=
   rw [sineMode, mul_div_assoc, div_self (sub_pos.2 hab).ne', mul_one]
   exact Real.sin_nat_mul_pi k
 
+/-- An integral over the interval domain `(a, b)` of a function of the coordinate is the interval
+integral over `[a, b]`. -/
+theorem setIntegral_intervalDomain (hab : a ≤ b) (g : ℝ → ℝ) :
+    ∫ x in (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))), g (x 0) = ∫ t in a..b, g t := by
+  rw [intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo,
+    ← preimage_lineEquiv_intervalDomain, ← measurePreserving_lineEquiv.setIntegral_preimage_emb
+      lineEquiv.toHomeomorph.measurableEmbedding]
+  simp only [lineEquiv_apply_zero]
+
 /-- The interval domain `(a, b)` is bounded. -/
 theorem isBounded_intervalDomain :
     IsBounded (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) := by
@@ -224,7 +237,7 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) {k : ℕ} (
 
 /-- The sine modes are complete in `L²(a, b)`: an element of `L²(a, b)` orthogonal to every
 `x ↦ sin (k π (x - a) / (b - a))`, `k ≥ 1`, is zero. -/
-private theorem eq_zero_of_forall_setIntegral_mul_sin_eq_zero (hab : a < b)
+theorem eq_zero_of_forall_setIntegral_mul_sin_eq_zero (hab : a < b)
     (f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))))
     (h : ∀ k : ℕ, 0 < k → ∫ x in intervalDomain a b,
       f x * Real.sin (k * π * (x 0 - a) / (b - a)) = 0) :
