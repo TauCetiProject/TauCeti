@@ -5,23 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Probability.Process.HittingTime
-import Mathlib.Dynamics.PeriodicPts.Lemmas
 
 /-!
-# Composition and deterministic-orbit identities for hitting times
+# Basic properties and composition identities for hitting times
 
-Postcomposing a process `u` with a map `f` pulls back the target set in `MeasureTheory.hittingAfter`
-along `f`, and precomposing the sample space pulls back `MeasureTheory.hittingAfter` along the
-sample-space map. In particular, applying an injective map (such as `Subtype.val`) to the state
-space preserves the hitting time of a singleton. No measurability, topology, or linear order is
-required. For a deterministic orbit `n ↦ f^[n] x`, the first positive return time to `x` equals
-`Function.minimalPeriod f x` on `Function.periodicPts f` and `⊤` off it.
+General order-theoretic and set-theoretic properties of Mathlib's `MeasureTheory.hittingAfter` for
+arbitrary processes, without measurability, filtration, or topological assumptions.
+
+Postcomposing a process `u` with a state-space map `f` pulls back the target set in
+`MeasureTheory.hittingAfter` along `f` (`MeasureTheory.hittingAfter_comp`), and whenever `f` maps
+`s` into `t`, the postcomposed process hits `t` no later than the original process hits `s`
+(`Set.MapsTo.hittingAfter_comp_le`). Precomposing the sample space pulls back `hittingAfter` along
+the sample-space map (`MeasureTheory.hittingAfter_comp_right`), and applying an injective map
+(such as `Subtype.val`) to the state space preserves the hitting time of a singleton.
 
 ## Main statements
 
 * `MeasureTheory.hittingAfter_comp`: postcomposing the process pulls back the target set.
+* `Set.MapsTo.hittingAfter_comp_le`: monotonicity under `Set.MapsTo`.
 * `MeasureTheory.hittingAfter_comp_right`: precomposing the sample space precomposes
   `hittingAfter`.
 * `Function.Injective.hittingAfter_singleton` and
@@ -30,8 +32,6 @@ required. For a deterministic orbit `n ↦ f^[n] x`, the first positive return t
 * `MeasureTheory.hittingAfter_eval_comp` and
   `MeasureTheory.hittingAfter_eval_subtype_coe_singleton`: specialization to the coordinate process
   on trajectories.
-* `MeasureTheory.hittingAfter_iterate_singleton`: first positive return time along a deterministic
-  orbit.
 -/
 
 public section
@@ -42,12 +42,11 @@ section Composition
 
 variable {ι Ω Ω' α β : Type*} [Preorder ι] [InfSet ι]
 
-/-- Postcomposing the values of a process with `f` pulls back the target set in `hittingAfter`. -/
+/-- Hitting a set `t` after time `n` along a post-composed process `i ↦ f (u i ·)` is the same
+as hitting the preimage `f ⁻¹' t` after time `n` along `u`. -/
 theorem hittingAfter_comp (u : ι → Ω → α) (f : α → β) (t : Set β) (n : ι) :
-    hittingAfter (fun i ω => f (u i ω)) t n = hittingAfter u (f ⁻¹' t) n := by
-  classical
-  ext ω
-  simp only [hittingAfter_def, Set.mem_preimage]
+    hittingAfter (fun i ω => f (u i ω)) t n = hittingAfter u (f ⁻¹' t) n :=
+  rfl
 
 /-- Precomposing the sample space with `g` precomposes `hittingAfter` with `g`. -/
 theorem hittingAfter_comp_right (u : ι → Ω → α) (g : Ω' → Ω) (s : Set α) (n : ι) :
@@ -88,28 +87,13 @@ theorem hittingAfter_eval_subtype_coe_singleton {s : Set α} (x : s) (n : ι) (�
 
 end Composition
 
-section Iterate
-
-open scoped Classical in
-/-- The first positive return time of a deterministic orbit `n ↦ f^[n] x` to its starting point
-`x` is `Function.minimalPeriod f x` when `x` is periodic under `f`, and `⊤` otherwise. -/
-theorem hittingAfter_iterate_singleton {α : Type*} (f : α → α) (x : α) :
-    hittingAfter (fun (n : ℕ) (w : ℕ → α) => w n) {x} 1 (fun n => f^[n] x) =
-      if x ∈ Function.periodicPts f then WithTop.some (Function.minimalPeriod f x) else ⊤ := by
-  have hex : (∃ j : ℕ, 1 ≤ j ∧ f^[j] x ∈ ({x} : Set α)) ↔ x ∈ Function.periodicPts f := by
-    rw [Function.mem_periodicPts]
-    exact ⟨fun ⟨j, hj, hx⟩ => ⟨j, hj, hx⟩, fun ⟨j, hj, hx⟩ => ⟨j, hj, hx⟩⟩
-  have hset : {i : ℕ | 1 ≤ i ∧ f^[i] x ∈ ({x} : Set α)} =
-      {n : ℕ | 0 < n ∧ Function.IsPeriodicPt f n x} := by
-    ext i
-    simp [Nat.pos_iff_ne_zero, Nat.one_le_iff_ne_zero, Function.IsPeriodicPt, Function.IsFixedPt]
-  rw [hittingAfter_def]
-  dsimp only
-  by_cases hx : x ∈ Function.periodicPts f
-  · rw [ite_eq_left (hex.mpr hx), ite_eq_left hx, hset,
-      ← Function.minimalPeriod_eq_sInf_n_pos_IsPeriodicPt]
-  · rw [ite_eq_right (mt hex.mp hx), ite_eq_right hx]
-
-end Iterate
-
 end MeasureTheory
+
+/-- If `f` maps `s` into `t`, then the post-composed process `i ↦ f (u i ·)` hits `t` after time
+`n` no later than `u` hits `s` after time `n`. -/
+theorem Set.MapsTo.hittingAfter_comp_le {ι Ω α β : Type*} [ConditionallyCompleteLinearOrder ι]
+    {f : α → β} {s : Set α} {t : Set β} (hf : Set.MapsTo f s t) (u : ι → Ω → α) (n : ι) :
+    MeasureTheory.hittingAfter (fun i ω => f (u i ω)) t n ≤
+      MeasureTheory.hittingAfter u s n := by
+  rw [MeasureTheory.hittingAfter_comp]
+  exact MeasureTheory.hittingAfter_anti u n hf.subset_preimage

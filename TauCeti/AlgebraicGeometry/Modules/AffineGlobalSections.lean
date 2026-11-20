@@ -10,9 +10,11 @@ public import Mathlib.AlgebraicGeometry.Group.Affine
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
-public import Mathlib.Algebra.Category.ModuleCat.EpiMono
+public import Mathlib.Algebra.Category.ModuleCat.Kernels
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
+import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
 
 /-!
 # Global sections of quasicoherent modules on an affine scheme
@@ -20,25 +22,31 @@ import TauCeti.AlgebraicGeometry.AffineScheme
 Mathlib's `AlgebraicGeometry.tildeEquiv` identifies quasicoherent modules on `Spec R` with
 `R`-modules. Consequently an epimorphism between quasicoherent modules is surjective on global
 sections, even when the epimorphism is taken in the category of all sheaves of modules.
-The same surjectivity holds over every affine open of an arbitrary scheme.
+The same surjectivity holds over every affine open of an arbitrary scheme, and sections over an
+affine open `U` identify the ambient cokernel of a morphism `g : M ⟶ N` of quasicoherent modules
+with the module quotient `Γ(N, U) ⧸ range(g(U))`
+(`AlgebraicGeometry.Scheme.Modules.sectionsCokernelEquiv`).
 
 Consequently, global sections preserve short exact sequences whose middle and right terms are
-quasicoherent. This is the affine exactness step used in Serre's affine acyclicity theorem; see
-Hartshorne, *Algebraic Geometry*, Chapter III, Theorem 3.5.
+quasicoherent, as well as exact short complexes whose first two terms are quasicoherent. This is
+the affine exactness step used in Serre's affine acyclicity theorem; see Hartshorne, *Algebraic
+Geometry*, Chapter III, Theorem 3.5.
 
 Global sections also detect isomorphisms: on an affine scheme, a morphism of quasicoherent
-modules that is bijective on global sections is an isomorphism, and so is a quasicoherent
-submodule containing every global section. Global sections are those on the affine chart
-`Spec Γ(X, ⊤) ⟶ X`, an isomorphism, and on a spectrum they are the inverse of the tilde
-equivalence (Stacks, Lemma 26.7.5, Tag 01I7).
+modules that is bijective on global sections is an isomorphism, a quasicoherent submodule
+containing every global section is the whole module, and a quasicoherent module with vanishing
+global sections is zero. Global sections are those on the affine chart `Spec Γ(X, ⊤) ⟶ X`, an
+isomorphism, and on a spectrum they are the inverse of the tilde equivalence (Stacks, Lemma
+26.7.5, Tag 01I7).
 
-The file also records the base-ring action on affine global sections and extensionality of
+The file also identifies the global sections of a free module on `Spec R` with a direct sum of
+copies of `R`, and records the base-ring action on affine global sections and extensionality of
 sections by restriction to basic opens.
 -/
 
 public section
 
-open AlgebraicGeometry CategoryTheory Opposite TopologicalSpace
+open AlgebraicGeometry CategoryTheory Limits Opposite TopologicalSpace
 
 namespace TauCeti
 
@@ -92,6 +100,39 @@ theorem shortExact_map_moduleSpecΓFunctor_of_isQuasicoherent
     (ModuleCat.epi_iff_surjective _).mpr
       (moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent S.g)
   exact { exact := h.1, mono_f := h.2, epi_g := hΓ }
+
+/-- Taking global sections on `Spec R` preserves an exact short complex in `(Spec R).Modules` as
+soon as its first two terms are quasicoherent; no condition on `S.X₃` is required. -/
+theorem exact_map_moduleSpecΓFunctor_of_isQuasicoherent
+    {S : ShortComplex (Spec R).Modules} (hS : S.Exact)
+    [S.X₁.IsQuasicoherent] [S.X₂.IsQuasicoherent] :
+    (S.map (moduleSpecΓFunctor (R := R))).Exact := by
+  let F := moduleSpecΓFunctor (R := R)
+  have : F.Additive := F.additive_of_preserves_binary_products
+  have : (Abelian.image S.f).IsQuasicoherent :=
+    inferInstanceAs (Limits.kernel (Limits.cokernel.π S.f)).IsQuasicoherent
+  have : Epi (F.map (Abelian.factorThruImage S.f)) :=
+    (ModuleCat.epi_iff_surjective _).mpr
+      (moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent
+        (Abelian.factorThruImage S.f))
+  let T := ShortComplex.mk (Abelian.image.ι S.f) S.g (Abelian.image_ι_comp_eq_zero S.zero)
+  let φ : S.map F ⟶ T.map F :=
+    { τ₁ := F.map (Abelian.factorThruImage S.f)
+      τ₂ := 𝟙 _
+      τ₃ := 𝟙 _
+      comm₁₂ := by
+        dsimp [T]
+        rw [← F.map_comp, Abelian.image.fac, Category.comp_id] }
+  exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).2
+    (((S.exact_iff_exact_image_ι).1 hS).map_of_mono_of_preservesKernel F
+      inferInstance inferInstance)
+
+/-- Global sections of the free `𝒪_{Spec R}`-module on `ι` are isomorphic to `ι →₀ R`. -/
+noncomputable def moduleSpecΓFunctorFreeIso (ι : Type u) :
+    (moduleSpecΓFunctor (R := R)).obj (SheafOfModules.free (R := (Spec R).ringCatSheaf) ι) ≅
+      ModuleCat.of R (ι →₀ R) :=
+  ((moduleSpecΓFunctor (R := R)).mapIso (tildeFinsupp ι)).symm ≪≫
+    ((tilde.toTildeΓNatIso (R := R)).app (ModuleCat.of R (ι →₀ R))).symm
 
 variable {X : Scheme.{u}} {P Q : X.Modules}
 
@@ -184,7 +225,7 @@ lemma Scheme.Modules.section_ext_basicOpen {M : (Spec A).Modules} {U : (Spec A).
         M.presheaf.map (homOfLE (X := (Spec A).Opens) hf).op t) : s = t := by
   refine TopCat.Presheaf.IsSheaf.section_ext M.isSheaf fun x hx ↦ ?_
   obtain ⟨_, ⟨_, ⟨f, rfl⟩, rfl⟩, hxf, hfU : PrimeSpectrum.basicOpen f ≤ U⟩ :=
-    PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hx U.2
+    PrimeSpectrum.isBasis_basic_opens.exists_subset_of_mem_open hx U.is_open'
   exact ⟨_, hfU, hxf, h f hfU⟩
 
 /-- On an affine scheme, a morphism of quasicoherent modules that is bijective on global
@@ -232,3 +273,49 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isIso_of_mono_of_surjective_sect
 end AlgebraicGeometry
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+universe u
+
+noncomputable section
+
+open TauCeti.AlgebraicGeometry
+
+variable {X : Scheme.{u}}
+
+/-- On an affine scheme, a quasicoherent module whose global sections vanish is a zero object. -/
+theorem isZero_of_subsingleton_sections_top (M : X.Modules) [IsAffine X] [M.IsQuasicoherent]
+    [hM : Subsingleton Γ(M, ⊤)] : IsZero M := by
+  have : IsIso (0 : M ⟶ M) := isIso_of_bijective_sectionsFunctor_map_top 0
+    ⟨fun x y _ ↦ hM.elim x y, fun y ↦ ⟨0, hM.elim _ y⟩⟩
+  exact (IsZero.iff_id_eq_zero M).mpr (by rw [← IsIso.hom_inv_id (0 : M ⟶ M), zero_comp])
+
+/-- Over an affine open `U` of `X`, the sections of the ambient cokernel of a morphism `g : M ⟶ N`
+of quasicoherent sheaves identify `Γ(X, U)`-linearly with the quotient of `Γ(N, U)` by the image of
+`g` over `U`. -/
+def sectionsCokernelEquiv {M N : X.Modules} (g : M ⟶ N) [M.IsQuasicoherent] [N.IsQuasicoherent]
+    {U : X.Opens} (hU : IsAffineOpen U) :
+    Γ(cokernel g, U) ≃ₗ[Γ(X, U)] Γ(N, U) ⧸ LinearMap.range ((sectionsFunctor U).map g).hom :=
+  have := preservesColimit_parallelPair_sectionsFunctor_of_isAffineOpen g 0 hU
+  (PreservesCokernel.iso (sectionsFunctor U) g ≪≫
+    ModuleCat.cokernelIsoRangeQuotient ((sectionsFunctor U).map g)).toLinearEquiv
+
+-- Normalize `(sectionsFunctor U).map g` in the implicit codomain of `DFunLike.coe` before
+-- registering the `simp` rule, since `sectionsFunctor_map` reduces it during `simp` lookup.
+/-- Under `sectionsCokernelEquiv`, the projection `N ⟶ cokernel g` acts on sections over `U` as the
+quotient map. -/
+@[simp]
+theorem sectionsCokernelEquiv_π_app {M N : X.Modules} (g : M ⟶ N) [M.IsQuasicoherent]
+    [N.IsQuasicoherent] {U : X.Opens} (hU : IsAffineOpen U) (s : Γ(N, U)) :
+    dsimp% only [sectionsFunctor_obj, sectionsFunctor_map]
+      (sectionsCokernelEquiv g hU ((cokernel.π g).app U s)) = Submodule.Quotient.mk s := by
+  have := preservesColimit_parallelPair_sectionsFunctor_of_isAffineOpen g 0 hU
+  exact ConcreteCategory.congr_hom
+    ((PreservesCokernel.π_iso_hom_assoc (sectionsFunctor U) g
+      (ModuleCat.cokernelIsoRangeQuotient ((sectionsFunctor U).map g)).hom).trans
+      (ModuleCat.cokernel_π_cokernelIsoRangeQuotient_hom ((sectionsFunctor U).map g))) s
+
+end
+
+end AlgebraicGeometry.Scheme.Modules

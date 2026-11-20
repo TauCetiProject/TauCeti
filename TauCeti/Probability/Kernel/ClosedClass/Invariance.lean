@@ -39,7 +39,7 @@ initial measure on that set. -/
 theorem map_pow_comp_subtype (κ : Kernel S S) (hs : MeasurableSet s)
     (hclosed : κ.IsClosedSet s) (n : ℕ) (ν : Measure s) :
     (((κ.subtype hs) ^ n) ∘ₘ ν).map Subtype.val = (κ ^ n) ∘ₘ (ν.map Subtype.val) := by
-  rw [Measure.map_comp _ _ measurable_subtype_coe, map_subtype_pow κ hs hclosed n,
+  rw [Measure.map_comp _ _ measurable_subtypeVal, map_subtype_pow κ hs hclosed n,
     ← comp_deterministic_eq_comap, ← Measure.comp_assoc,
     Measure.deterministic_comp_eq_map]
 
@@ -57,7 +57,7 @@ theorem invariant_subtype_iff (κ : Kernel S S) (hs : MeasurableSet s)
     (κ.subtype hs).Invariant ν ↔ κ.Invariant (ν.map Subtype.val) := by
   unfold Invariant
   rw [← map_comp_subtype κ hs hclosed ν]
-  exact (MeasurableEmbedding.subtype_coe hs).map_injective.eq_iff.symm
+  exact (MeasurableEmbedding.subtypeVal hs).map_injective.eq_iff.symm
 
 /-- An ambient measure concentrated on a closed set is invariant if and only if its
 pullback to that set is invariant for the restricted kernel. -/
@@ -80,7 +80,7 @@ noncomputable def invariantProbabilitySubtypeEquiv (κ : Kernel S S) (hs : Measu
     letI := hprob
     ⟨μ.comap Subtype.val, μ.isProbabilityMeasure_comap_subtype_coe hs hμ,
       (invariant_comap_subtype_iff κ hs hclosed μ hμ).2 hinv⟩
-  left_inv := fun ⟨ν, _, _⟩ => Subtype.ext ((MeasurableEmbedding.subtype_coe hs).comap_map ν)
+  left_inv := fun ⟨ν, _, _⟩ => Subtype.ext ((MeasurableEmbedding.subtypeVal hs).comap_map ν)
   right_inv := fun ⟨μ, _, _, hμ⟩ => Subtype.ext (μ.map_comap_subtype_coe_eq_self hs hμ)
 
 /-- A closed-state restriction has an invariant probability exactly when the ambient kernel
@@ -90,10 +90,10 @@ theorem exists_invariant_probability_subtype_iff (κ : Kernel S S) (hs : Measura
     (hclosed : κ.IsClosedSet s) :
     (∃ ν : Measure s, IsProbabilityMeasure ν ∧ (κ.subtype hs).Invariant ν) ↔
       ∃ ν : Measure S, IsProbabilityMeasure ν ∧ κ.Invariant ν ∧ ν sᶜ = 0 :=
-  ⟨fun ⟨ν, h⟩ => ⟨(invariantProbabilitySubtypeEquiv κ hs hclosed ⟨ν, h⟩).1,
-      (invariantProbabilitySubtypeEquiv κ hs hclosed ⟨ν, h⟩).2⟩,
-    fun ⟨μ, h⟩ => ⟨((invariantProbabilitySubtypeEquiv κ hs hclosed).symm ⟨μ, h⟩).1,
-      ((invariantProbabilitySubtypeEquiv κ hs hclosed).symm ⟨μ, h⟩).2⟩⟩
+  ⟨fun ⟨ν, h⟩ => ⟨(invariantProbabilitySubtypeEquiv κ hs hclosed ⟨ν, h⟩).val,
+      (invariantProbabilitySubtypeEquiv κ hs hclosed ⟨ν, h⟩).property⟩,
+    fun ⟨μ, h⟩ => ⟨((invariantProbabilitySubtypeEquiv κ hs hclosed).symm ⟨μ, h⟩).val,
+      ((invariantProbabilitySubtypeEquiv κ hs hclosed).symm ⟨μ, h⟩).property⟩⟩
 
 /-- A closed-state restriction has a unique invariant probability measure if and only if the
 ambient kernel has a unique invariant probability measure concentrated on those states. -/
@@ -104,12 +104,12 @@ theorem existsUnique_invariant_probability_subtype_iff (κ : Kernel S S) (hs : M
   let e := invariantProbabilitySubtypeEquiv κ hs hclosed
   constructor
   · rintro ⟨ν, hν, huniq⟩
-    refine ⟨(e ⟨ν, hν⟩).1, (e ⟨ν, hν⟩).2, fun μ hμ => ?_⟩
-    have h : e.symm ⟨μ, hμ⟩ = ⟨ν, hν⟩ := Subtype.ext (huniq _ (e.symm ⟨μ, hμ⟩).2)
+    refine ⟨(e ⟨ν, hν⟩).val, (e ⟨ν, hν⟩).property, fun μ hμ => ?_⟩
+    have h : e.symm ⟨μ, hμ⟩ = ⟨ν, hν⟩ := Subtype.ext (huniq _ (e.symm ⟨μ, hμ⟩).property)
     exact congrArg Subtype.val (e.symm_apply_eq.mp h)
   · rintro ⟨μ, hμ, huniq⟩
-    refine ⟨(e.symm ⟨μ, hμ⟩).1, (e.symm ⟨μ, hμ⟩).2, fun ν hν => ?_⟩
-    have h : e ⟨ν, hν⟩ = ⟨μ, hμ⟩ := Subtype.ext (huniq _ (e ⟨ν, hν⟩).2)
+    refine ⟨(e.symm ⟨μ, hμ⟩).val, (e.symm ⟨μ, hμ⟩).property, fun ν hν => ?_⟩
+    have h : e ⟨ν, hν⟩ = ⟨μ, hμ⟩ := Subtype.ext (huniq _ (e ⟨ν, hν⟩).property)
     exact congrArg Subtype.val (e.eq_symm_apply.mpr h)
 
 end ProbabilityTheory.Kernel

@@ -236,12 +236,12 @@ theorem not_isNullRecurrent_deterministic {f : S → S} (hf : Measurable f) (x :
   let w₀ : ℕ → S := fun n => f^[n] x
   have hex : ∃ k : ℕ, 1 ≤ k ∧ (Measure.dirac (w₀ k) : Measure S) = Measure.dirac x := by
     by_contra! hne
-    have hA : ∀ k : {k : ℕ // 1 ≤ k}, ∃ A : Set S, MeasurableSet A ∧ x ∈ A ∧ w₀ k.1 ∉ A :=
+    have hA : ∀ k : {k : ℕ // 1 ≤ k}, ∃ A : Set S, MeasurableSet A ∧ x ∈ A ∧ w₀ k.val ∉ A :=
       fun ⟨k, hk⟩ => dirac_ne_dirac_iff_exists_measurableSet.mp (hne k hk).symm
     choose A hAm hxA hwA using hA
-    let E : Set (ℕ → S) := ⋃ k : {k : ℕ // 1 ≤ k}, (fun w : ℕ → S => w k.1) ⁻¹' A k
+    let E : Set (ℕ → S) := ⋃ k : {k : ℕ // 1 ≤ k}, (fun w : ℕ → S => w k.val) ⁻¹' A k
     have hEm : MeasurableSet E :=
-      MeasurableSet.iUnion fun k => (hAm k).preimage (measurable_pi_apply k.1)
+      MeasurableSet.iUnion fun k => (hAm k).preimage (measurable_pi_apply k.val)
     have hsub : {w : ℕ → S | hittingAfter (fun n w => w n) {x} 1 w ≠ ⊤} ⊆ E := fun w hw => by
       simp only [mem_ofPred_eq, ne_eq, hittingAfter_eq_top_iff, mem_singleton_iff, not_forall,
         not_not] at hw

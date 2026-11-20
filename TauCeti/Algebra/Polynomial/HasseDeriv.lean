@@ -19,10 +19,11 @@ import Mathlib.Data.ZMod.Basic
 # Univariate Hasse jets: ordinary jets and nonvanishing on finite sets
 
 The `k`-th ordinary derivative is `k!` times the `k`-th Hasse derivative
-(Mathlib `Polynomial.factorial_smul_hasseDeriv`), so whenever `k!` is a unit an ordinary jet
-vanishes exactly when the corresponding Hasse jet does. In a ring of prime characteristic `p` this
-holds for `k < p` (Mathlib `IsUnit.natCast_factorial_iff_of_charP`) and fails at `k = p`, where
-`D^p` kills every polynomial while `D^[p] X^p = 1`.
+(Mathlib `Polynomial.factorial_smul_hasseDeriv`), so evaluating `D^k f` multiplies `D^[k] f (a)`
+by `k!` (`Polynomial.eval_iterate_derivative_eq_factorial_mul`) and whenever `k!` is a unit an
+ordinary jet vanishes exactly when the corresponding Hasse jet does. In a ring of prime
+characteristic `p` this holds for `k < p` (Mathlib `IsUnit.natCast_factorial_iff_of_charP`) and
+fails at `k = p`, where `D^p` kills every polynomial while `D^[p] X^p = 1`.
 
 Over an integral domain, the root multiplicity of a nonzero polynomial `P` at `a` is the order of
 its first nonvanishing Hasse derivative at `a`
@@ -39,6 +40,8 @@ of Evertse's integer-grid nonvanishing lemma: for every `B > 0` and every nonzer
 
 ## Main results
 
+* `Polynomial.eval_iterate_derivative_eq_factorial_mul`: `(derivative^[k] f).eval a` is `k!` times
+  `(hasseDeriv k f).eval a`.
 * `Polynomial.iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero`,
   `Polynomial.eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero`: if `k!` is a unit, the
   ordinary derivative (or jet at a point) of order `k` vanishes if and only if the Hasse one does;
@@ -70,6 +73,11 @@ open Nat
 
 variable {R : Type*} [Semiring R] {k : ℕ}
 
+/-- Evaluating `derivative^[k] f` at `a` gives `k!` times `(hasseDeriv k f).eval a`. -/
+theorem eval_iterate_derivative_eq_factorial_mul (k : ℕ) (f : R[X]) (a : R) :
+    (derivative^[k] f).eval a = (k ! : R) * (hasseDeriv k f).eval a := by
+  rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, eval_smul, nsmul_eq_mul]
+
 /-- If `k!` is a unit, the `k`-th ordinary derivative of `f` vanishes exactly when the `k`-th
 Hasse derivative does. -/
 theorem iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero (hk : IsUnit (k ! : R)) (f : R[X]) :
@@ -81,8 +89,7 @@ theorem iterate_derivative_eq_zero_iff_hasseDeriv_eq_zero (hk : IsUnit (k ! : R)
 `D^[k] f (a)` does. -/
 theorem eval_iterate_derivative_eq_zero_iff_eval_hasseDeriv_eq_zero (hk : IsUnit (k ! : R))
     (f : R[X]) (a : R) : (derivative^[k] f).eval a = 0 ↔ (hasseDeriv k f).eval a = 0 := by
-  rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, eval_smul, nsmul_eq_mul,
-    hk.mul_right_eq_zero]
+  rw [eval_iterate_derivative_eq_factorial_mul, hk.mul_right_eq_zero]
 
 /-- In characteristic `p`, for `k < p` the ordinary jet `D^k f (a)` vanishes exactly when the Hasse
 jet `D^[k] f (a)` does. -/
@@ -177,7 +184,6 @@ example : (X ^ 2 - X : (ZMod 2)[X]) ≠ 0 ∧
     simp only [hasseDeriv_zero, LinearMap.id_apply, eval_sub, eval_pow, eval_X]
     generalize (z : ZMod 2) = x
     fin_cases x <;> decide
-
 
 /-- `p = 3`, `k = 2`, `f = X²`, `a = 0`: `D² f = 2` and `D^[2] f = 1`, both nonzero. -/
 example : (derivative^[2] (X ^ 2 : (ZMod 3)[X])).eval 0 = 2 ∧

@@ -264,7 +264,7 @@ private theorem tendsto_pow_period_mul_comp_real_singleton_of_isNullRecurrent
     exact hη.not_isPositiveRecurrent
   let μ_s : Measure s := μ.comap Subtype.val
   have : IsFiniteMeasure μ_s := ⟨by
-    rw [(MeasurableEmbedding.subtype_coe hs).comap_apply]
+    rw [(MeasurableEmbedding.subtypeVal hs).comap_apply]
     exact measure_lt_top _ _⟩
   have heq (q : ℕ) : ((κ ^ (d * q)) ∘ₘ μ).real {y} =
       (((η.subtype hs) ^ q) ∘ₘ μ_s).real {y_s} := by
@@ -272,8 +272,8 @@ private theorem tendsto_pow_period_mul_comp_real_singleton_of_isNullRecurrent
     conv_lhs => rw [← Measure.restrict_add_restrict_compl hs (μ := μ)]
     rw [Measure.comp_add, measureReal_def, add_apply,
       pow_period_mul_comp_restrict_compl_singleton_eq_zero y μ q, add_zero,
-      ← map_comap_subtype_coe hs μ, ← map_pow_comp_subtype η hs hclosed q μ_s,
-      (MeasurableEmbedding.subtype_coe hs).map_apply]
+      ← map_comap_subtypeVal hs μ, ← map_pow_comp_subtype η hs hclosed q μ_s,
+      (MeasurableEmbedding.subtypeVal hs).map_apply]
     have hpre : (Subtype.val : s → α) ⁻¹' {y_s.val} = {y_s} := by
       rw [← Set.image_singleton, Subtype.coe_injective.preimage_image]
     rw [← measureReal_def]
