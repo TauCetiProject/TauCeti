@@ -41,6 +41,9 @@ along such maps.
   and composites.
 * `TauCeti.RiemannianIsometry.isLocalRiemannianIsometry`: a Riemannian isometry is a local
   Riemannian isometry.
+* `Bundle.ContMDiffRiemannianMetric.isLocalRiemannianIsometry_smul`: with a metric `g` installed,
+  an element of a group acting smoothly on `M` whose differential preserves `g` acts by a local
+  Riemannian isometry.
 
 ## References
 
@@ -222,3 +225,24 @@ theorem RiemannianIsometry.isLocalRiemannianIsometry (Φ : RiemannianIsometry I 
   inner_mfderiv := Φ.inner_mfderiv
 
 end TauCeti
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {n : ℕ∞ω}
+  {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
+
+/-- With `g` installed on `M`, an element `a` of a group acting smoothly on `M`, whose
+differential preserves `g`, acts by a local Riemannian isometry. -/
+theorem isLocalRiemannianIsometry_smul
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (a : G)
+    (ha : ∀ (x : M) (v w : TangentSpace I x),
+      g.inner (a • x) (mfderiv I I (a • ·) x v) (mfderiv I I (a • ·) x w) = g.inner x v w) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    TauCeti.IsLocalRiemannianIsometry I I (a • · : M → M) := by
+  let : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  rw [← TauCeti.RiemannianIsometry.coe_constSMul (ha := ha)]
+  exact (TauCeti.RiemannianIsometry.constSMul a ha).isLocalRiemannianIsometry
+
+end Bundle.ContMDiffRiemannianMetric

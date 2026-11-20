@@ -12,6 +12,7 @@ public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
 import TauCeti.Topology.FiberBundle.Pullback
 import TauCeti.Topology.VectorBundle.OrthonormalFrame.Pullback
 import TauCeti.Topology.VectorBundle.Pullback
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Vector bundles over contractible bases are trivial
@@ -216,8 +217,8 @@ theorem exists_homeomorph_prod_of_contractibleSpace :
   let L : ∀ b, E b ≃ₗᵢ[ℝ] F := fun b ↦
     { toLinearEquiv := e.linearEquivAt ℝ b (he ▸ mem_univ b)
       norm_map' := hiso b }
-  refine ⟨e.toHomeomorphOfSourceEqUnivTargetEqUniv (by simp [e.source_eq, he])
-    (by simp [e.target_eq, he]), L, fun b v ↦ ?_⟩
+  refine ⟨e.toHomeomorphOfBaseSetEqUniv he, L, fun b v ↦ ?_⟩
+  rw [Trivialization.coe_toHomeomorphOfBaseSetEqUniv]
   exact e.apply_eq_prod_continuousLinearEquivAt ℝ b (he ▸ mem_univ b) v
 
 end Riemannian

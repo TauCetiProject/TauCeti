@@ -36,6 +36,8 @@ centre gives the `Γ.withCenter` readings.
   centre already lies inside `Γ`.
 * `Subgroup.relIndex_sup_of_le_normalizer`: if `H` normalises `N`, the relative index of `H` in
   `H ⊔ N` is that in `N`.
+* `Subgroup.le_of_coprime_index`: if `H` normalises `N` and `[G : H]` is coprime to `Nat.card N`,
+  then `N ≤ H`.
 * `Subgroup.finiteIndex_of_index_coprime`: an index prime to some `p ≠ 1` is finite.
 * `Subgroup.relIndex_sup_eq_two`, `Subgroup.index_eq_two_mul_index_sup`: `Γ` has relative index
   `2` in `Γ ⊔ N`, and the index of `Γ` is twice the index of `Γ ⊔ N`, for an `N` normalised by `Γ`
@@ -379,6 +381,18 @@ theorem relIndex_sup_of_le_normalizer {H N : Subgroup G} (hH : H ≤ normalizer 
       Quotient.sound' ?_⟩
     rw [QuotientGroup.leftRel_apply, mem_subgroupOf]
     simpa [mul_assoc] using hh
+
+/-- If `H` normalizes `N` and `[G : H]` is coprime to `Nat.card N`, then `N ≤ H`. Neither
+`H.index` nor `N` need be finite (`H.index = 0` forces `Nat.card N = 1`, while `Nat.card N = 0`
+forces `H.index = 1`). -/
+@[to_additive
+  /-- If an additive subgroup `H` normalizes `N` and `[G : H]` is coprime to `Nat.card N`, then
+  `N ≤ H`. Neither `H.index` nor `N` need be finite. -/]
+theorem le_of_coprime_index {H N : Subgroup G} (hH : H ≤ normalizer N)
+    (hcop : Nat.Coprime H.index (Nat.card N)) : N ≤ H :=
+  le_sup_right.trans <| relIndex_eq_one.mp <| Nat.eq_one_of_dvd_coprimes hcop
+    (relIndex_dvd_index_of_le le_sup_left)
+    ((relIndex_sup_of_le_normalizer hH).symm ▸ relIndex_dvd_card H N)
 
 /-- **A two-element subgroup normalised by `Γ` and not already inside it has relative index
 `2`.** If every element of `N` is `1` or `a`, and `a ∉ Γ`, then `Γ ⊔ N` splits into the two
