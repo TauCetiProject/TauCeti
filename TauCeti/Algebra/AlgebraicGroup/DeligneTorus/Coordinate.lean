@@ -25,8 +25,8 @@ coordinates `z₁ = X^{(1,0)}` and `z₂ = X^{(0,1)}` of `𝔾ₘ × 𝔾ₘ` co
 the splitting, and the basis element `X^{(p,q)}` corresponds to the character
 `TauCeti.DeligneTorus.characterGroup` of `(p, q)`, which is `(z₁, z₂) ↦ z₁ ^ p * z₂ ^ q`.
 
-Thus the characters of `S` are exactly the pairs `(p, q) ∈ ℤ²`. A representation of `S` on a real
-vector space `V` is a comodule over `S`. After base change to `ℂ` it becomes a comodule over
+Thus the characters of `S_ℂ ≅ 𝔾ₘ × 𝔾ₘ` are the pairs `(p, q) ∈ ℤ²`. A representation of `S` on a
+real vector space `V` is a comodule over `S`. After base change to `ℂ` it becomes a comodule over
 `ℂ[ℤ²]`, that is, a `ℤ²`-grading of `ℂ ⊗[ℝ] V`. This grading is the Hodge decomposition of the
 representation.
 
@@ -55,6 +55,8 @@ of the fact that complex conjugation of `S(ℂ)` exchanges the two factors
   `splittingPoint` on `S`.
 * `TauCeti.DeligneTorus.splittingBialgEquiv_symm_single`: its inverse sends `X^{(p,q)}` to the
   character `(p, q)` of the universal point of `S`.
+* `TauCeti.DeligneTorus.liftEquiv_splittingBialgEquiv_symm_single`: read through the inverse, a
+  point of `S` sends `X^{(p,q)}` to its character `(p, q)`.
 * `TauCeti.DeligneTorus.conjSwap_comp_splittingPoint`: `conjSwap` fixes `splittingPoint`.
 
 ## References
@@ -98,12 +100,7 @@ theorem characterGroup_splittingPoint (pq : Multiplicative (ℤ × ℤ)) :
       Multiplicative.ofAdd ((0 : ℤ), (1 : ℤ)) ^ q = Multiplicative.ofAdd (p, q) := by
     rw [← ofAdd_zsmul, ← ofAdd_zsmul, ← ofAdd_add]
     simp
-  rw [characterGroup_apply, complexSplitting_splittingPoint]
-  dsimp only
-  rw [← map_zpow (MonoidAlgebra.of ℂ (Multiplicative (ℤ × ℤ))).toHomUnits,
-    ← map_zpow (MonoidAlgebra.of ℂ (Multiplicative (ℤ × ℤ))).toHomUnits,
-    ← map_mul (MonoidAlgebra.of ℂ (Multiplicative (ℤ × ℤ))).toHomUnits, hpq,
-    MonoidHom.coe_toHomUnits, MonoidAlgebra.of_apply]
+  simp [characterGroup_apply, ← map_zpow, ← map_mul, hpq]
 
 /-- For a complex algebra map `χ : ℂ[ℤ²] → R`, the point `χ ∘ splittingPoint` of `S` has
 splitting `(χ z₁, χ z₂)`. -/
@@ -170,20 +167,26 @@ private theorem splittingInvAlgHom_comp_splittingAlgHom :
   rw [AlgHom.mapValue_apply, ofConv_toConv, universalPoint, ofConv_toConv] at key'
   exact AlgHom.ext fun s ↦ by simpa [splittingAlgHom] using DFunLike.congr_fun key' s
 
+/-- The convolution of the two images of `splittingPoint` under the coordinate inclusions
+`ℂ[ℤ²] → ℂ[ℤ²] ⊗ ℂ[ℤ²]`. -/
+private noncomputable def splittingPointConv :
+    WithConv (S →ₐ[ℝ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) ⊗[ℂ]
+      MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :=
+  AlgHom.mapValue ((Algebra.TensorProduct.includeLeft (S := ℂ)
+      (A := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
+      (B := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))).restrictScalars ℝ) splittingPoint *
+    AlgHom.mapValue ((Algebra.TensorProduct.includeRight (R := ℂ)
+      (A := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
+      (B := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))).restrictScalars ℝ) splittingPoint
+
 /-- Applied to the comultiplication of `1 ⊗ s`, the square of `splittingAlgHom` is the convolution
 of the two images of `splittingPoint` under the coordinate inclusions `ℂ[ℤ²] → ℂ[ℤ²] ⊗ ℂ[ℤ²]`. -/
 private theorem map_splittingAlgHom_comul_one_tmul (s : S) :
     Algebra.TensorProduct.map splittingAlgHom splittingAlgHom
         (Bialgebra.comulAlgHom ℂ (ℂ ⊗[ℝ] S) (1 ⊗ₜ s)) =
-      (AlgHom.mapValue ((Algebra.TensorProduct.includeLeft (S := ℂ)
-          (A := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
-          (B := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))).restrictScalars ℝ) splittingPoint *
-        AlgHom.mapValue ((Algebra.TensorProduct.includeRight (R := ℂ)
-          (A := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
-          (B := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))).restrictScalars ℝ)
-          splittingPoint).ofConv s := by
-  rw [TensorProduct.comulAlgHom_baseChange, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
-    AlgHom.convMul_apply, Bialgebra.comulAlgHom_apply]
+      splittingPointConv.ofConv s := by
+  rw [splittingPointConv, TensorProduct.comulAlgHom_baseChange, Algebra.TensorProduct.map_tmul,
+    AlgHom.id_apply, AlgHom.convMul_apply, Bialgebra.comulAlgHom_apply]
   induction (Coalgebra.comul s : S ⊗[ℝ] S) using TensorProduct.inductionOn with
   | add y z hy hz => simp only [TensorProduct.tmul_add, map_add, hy, hz]
   | tmul a b => simp [splittingAlgHom, Algebra.TensorProduct.tmul_mul_tmul]
@@ -193,15 +196,10 @@ private theorem splittingAlgHom_comul :
         (Bialgebra.comulAlgHom ℂ (ℂ ⊗[ℝ] S)) =
       (Bialgebra.comulAlgHom ℂ _).comp splittingAlgHom := by
   refine (AlgHom.liftEquiv ℝ ℂ S _).symm.injective ?_
-  have key : AlgHom.mapValue ((Algebra.TensorProduct.includeLeft (S := ℂ)
-          (A := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
-          (B := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))).restrictScalars ℝ) splittingPoint *
-      AlgHom.mapValue ((Algebra.TensorProduct.includeRight (R := ℂ)
-          (A := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
-          (B := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))).restrictScalars ℝ) splittingPoint =
+  have key : splittingPointConv =
       AlgHom.mapValue ((Bialgebra.comulAlgHom ℂ _).restrictScalars ℝ) splittingPoint := by
     apply (complexSplitting _).injective
-    rw [map_mul, complexSplitting_mapValue_splittingPoint,
+    rw [splittingPointConv, map_mul, complexSplitting_mapValue_splittingPoint,
       complexSplitting_mapValue_splittingPoint, complexSplitting_mapValue_splittingPoint]
     ext <;> simp [Algebra.TensorProduct.tmul_mul_tmul]
   refine AlgHom.ext fun s ↦ ?_
@@ -278,6 +276,23 @@ theorem splittingBialgEquiv_symm_single (pq : Multiplicative (ℤ × ℤ)) :
   congr 1
   rw [splittingBialgEquiv_apply, ← AlgHom.comp_apply, splittingAlgHom_comp_splittingInvAlgHom,
     AlgHom.id_apply]
+
+/-- **A point of `S` sends `X^{(p,q)}` to its character `(p, q)`**: for a point `g` of `S` with
+values in a complex algebra `R`, the `ℂ`-algebra map `ℂ[ℤ²] → R` obtained from `g` through the
+inverse of `splittingBialgEquiv` sends `X^{(p,q)}` to `characterGroup R (p, q) g`. -/
+theorem liftEquiv_splittingBialgEquiv_symm_single {R : Type*} [CommRing R] [Algebra ℝ R]
+    [Algebra ℂ R] [IsScalarTower ℝ ℂ R] (g : WithConv (S →ₐ[ℝ] R))
+    (pq : Multiplicative (ℤ × ℤ)) :
+    AlgHom.liftEquiv ℝ ℂ S R g.ofConv (splittingBialgEquiv.symm (MonoidAlgebra.single pq 1)) =
+      characterGroup R pq g := by
+  have hg : AlgHom.mapValue ((AlgHom.liftEquiv ℝ ℂ S R g.ofConv).restrictScalars ℝ)
+      (toConv (Algebra.TensorProduct.includeRight (R := ℝ) (A := ℂ) (B := S))) = g := by
+    rw [AlgHom.mapValue_apply, ← toConv_ofConv g]
+    exact congrArg toConv (AlgHom.ext fun s ↦ by simp)
+  have h := characterGroup_mapValue (AlgHom.liftEquiv ℝ ℂ S R g.ofConv) pq
+    (toConv (Algebra.TensorProduct.includeRight (R := ℝ) (A := ℂ) (B := S)))
+  rw [hg] at h
+  rw [splittingBialgEquiv_symm_single, h, Units.coe_map, MonoidHom.coe_ofClass]
 
 /-! ### Complex conjugation -/
 
