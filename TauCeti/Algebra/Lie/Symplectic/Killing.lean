@@ -15,7 +15,9 @@ import TauCeti.Algebra.Lie.GeneralLinear.Killing
 import TauCeti.Algebra.Lie.OfAssociative
 import TauCeti.LinearAlgebra.Matrix.Trace.LinearMap
 import TauCeti.Algebra.Lie.BaseChange.Radical
+import TauCeti.Algebra.Lie.SkewAdjoint
 import TauCeti.Algebra.Lie.SkewAdjoint.BaseChange
+import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
 # The Killing form of the symplectic Lie algebra
@@ -58,6 +60,8 @@ Lie algebra.
 * `TauCeti.isIrreducible_sp_standard`: the standard module of `sp l K` is irreducible.
 * `TauCeti.hasTrivialRadical_sp`: `sp l K` has trivial radical over every field of characteristic
   zero; in particular its Killing form is nondegenerate.
+* `LinearMap.BilinForm.IsAlt.hasTrivialRadical_skewAdjointLieSubalgebra`: the same for the Lie
+  algebra of skew-adjoint endomorphisms of any nondegenerate alternating form.
 * `LieAlgebra.Symplectic.killingForm_apply`: `κ(X, Y) = (2 n + 2) trace (X * Y)` on `sp l K`.
 * `LieAlgebra.Symplectic.killingForm_cartanInvolution_apply`:
   `κ(X, θ Y) = -((2 n + 2) trace (X * Yᵀ))`.
@@ -173,6 +177,19 @@ instance hasTrivialRadical_sp : HasTrivialRadical K (Symplectic.sp l K) := by
   have : HasTrivialRadical A (A ⊗[K] Symplectic.sp l K) := hasTrivialRadical_of_equiv e.symm
   exact (hasTrivialRadical_baseChange_iff K (Symplectic.sp l K) A).mp this
 
+variable {K} in
+/-- **The skew-adjoint endomorphisms of a nondegenerate alternating form have trivial radical**
+over every field of characteristic zero: a basis in which the form has matrix `J` identifies their
+Lie algebra with `sp (Fin m) K`. By Cartan's criterion its Killing form is then nondegenerate. -/
+theorem _root_.LinearMap.BilinForm.IsAlt.hasTrivialRadical_skewAdjointLieSubalgebra {V : Type*}
+    [AddCommGroup V] [Module K V] [FiniteDimensional K V] {B : LinearMap.BilinForm K V}
+    (hB : B.IsAlt) (hnd : B.Nondegenerate) : HasTrivialRadical K (skewAdjointLieSubalgebra B) := by
+  obtain ⟨m, b, hb⟩ := hB.exists_basis_toMatrix_eq_J hnd
+  -- `Symplectic.sp (Fin m) K` is by definition the skew-adjoint matrix Lie algebra of `J`.
+  have : HasTrivialRadical K (skewAdjointMatricesLieSubalgebra (J (Fin m) K)) :=
+    hasTrivialRadical_sp K
+  exact hasTrivialRadical_of_equiv (skewAdjointLieEquivOfBasis b B hb)
+
 end CharZero
 
 end TauCeti
@@ -267,7 +284,7 @@ private theorem two_mul_killingForm_apply (X Y : sp l K) :
     ext1 W
     have hW : jConj (L W) = L W := by
       rw [jConj_apply, ← mem_sp_iff_J_mul_transpose_mul_J_eq]
-      exact (sp l K).lie_mem X.2 ((sp l K).lie_mem Y.2 W.2)
+      exact (sp l K).lie_mem X.property ((sp l K).lie_mem Y.property W.property)
     apply Subtype.ext
     simp only [LinearMap.comp_apply, coe_symmetrize_apply, LinearMap.smul_apply,
       LieHom.coe_toLinearMap, LieSubalgebra.coe_incl, hW]
@@ -281,7 +298,8 @@ private theorem two_mul_killingForm_apply (X Y : sp l K) :
       LinearMap.add_comp, map_add, LinearMap.id_comp]
   rw [h1, map_smul, smul_eq_mul, ← killingForm_apply_apply] at htrace
   rw [htrace, hL, ← killingForm_apply_apply, Matrix.killingForm_apply,
-    trace_eq_zero_of_mem_sp X.2, Fintype.card_sum, trace_jConj_comp_ad_comp_ad X.2 Y.2]
+    trace_eq_zero_of_mem_sp X.property, Fintype.card_sum, trace_jConj_comp_ad_comp_ad X.property
+        Y.property]
   push_cast
   ring
 

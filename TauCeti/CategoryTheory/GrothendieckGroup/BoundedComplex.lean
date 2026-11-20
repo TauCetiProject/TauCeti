@@ -98,8 +98,8 @@ theorem sum_negOnePow_obj_X_eq_of_isZero {s t : Finset ℤ} (hs : ∀ n, n ∉ s
       ∑ n ∈ t, ((n.negOnePow : ℤ)) • v.obj (K.X n) := by
   simpa only [TauCeti.finiteEulerSum_def] using
     TauCeti.finiteEulerSum_eq_of_eq_zero (fun n ↦ v.obj (K.X n))
-      (fun n hn ↦ v.obj_eq_zero_of_isZero (hs n hn))
-      (fun n hn ↦ v.obj_eq_zero_of_isZero (ht n hn))
+      (fun n _ hn ↦ v.obj_eq_zero_of_isZero (hs n hn))
+      (fun n _ hn ↦ v.obj_eq_zero_of_isZero (ht n hn))
 
 end Range
 

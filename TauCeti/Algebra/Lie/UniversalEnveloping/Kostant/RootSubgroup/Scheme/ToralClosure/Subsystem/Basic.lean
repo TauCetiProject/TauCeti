@@ -86,7 +86,7 @@ torus and the Kostant root subgroups indexed by `S`. It is the common-kernel
 Hopf ideal of the toral generator family restricted to `S`. -/
 noncomputable def kostantTorusSubsystemDefiningIdeal (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) :
     HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ n) :=
   CommHopfAlgCat.commonKernelHopfIdeal
     (ToralClosure.Internal.kostantToralGeneratorMap e h ρ M hM b wt Subtype.val hnilS)
@@ -95,12 +95,12 @@ noncomputable def kostantTorusSubsystemDefiningIdeal (S : Set I)
 coordinate maps and the weight-torus coordinate map. -/
 theorem kostantTorusSubsystemDefiningIdeal_def (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) :
     kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S hnilS =
       CommHopfAlgCat.commonKernelHopfIdeal
         ((fun j : Sum S Unit =>
           match j with
-          | .inl i => kostantRootSubgroupCoordinateMap e h ρ M hM i.1 (hnilS i) b
+          | .inl i => kostantRootSubgroupCoordinateMap e h ρ M hM i.val (hnilS i) b
           | .inr _ => GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt) :
           (j : Sum S Unit) → GeneralLinear.coordinateHopfAlgebra ℤ n ⟶
             match j with
@@ -116,7 +116,7 @@ maps and the weight-torus map kill it. This is the coordinate universal property
 carrier. -/
 theorem le_kostantTorusSubsystemDefiningIdeal_iff (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     (J : HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ n)) :
     J ≤ kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S hnilS ↔
       (∀ (i : I) (hi : i ∈ S), J.toIdeal ≤ RingHom.ker
@@ -134,7 +134,7 @@ theorem le_kostantTorusSubsystemDefiningIdeal_iff (S : Set I)
     · simpa only [ToralClosure.Internal.kostantToralGeneratorMap_inr] using
         hJ (Sum.inr (α := S) ())
   · rintro ⟨hroot, htorus⟩ (i | u)
-    · simpa only [ToralClosure.Internal.kostantToralGeneratorMap_inl] using hroot i.1 i.2
+    · simpa only [ToralClosure.Internal.kostantToralGeneratorMap_inl] using hroot i.val i.property
     · rcases u with ⟨⟩
       simpa only [ToralClosure.Internal.kostantToralGeneratorMap_inr] using htorus
 
@@ -142,9 +142,9 @@ theorem le_kostantTorusSubsystemDefiningIdeal_iff (S : Set I)
 the associated closed subgroup scheme grows with the selected root set. -/
 theorem kostantTorusSubsystemDefiningIdeal_anti {S T : Set I}
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     (hnilT : ∀ i : T, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) (hST : S ⊆ T) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) (hST : S ⊆ T) :
     kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt T hnilT ≤
       kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S hnilS := by
   rw [le_kostantTorusSubsystemDefiningIdeal_iff]
@@ -158,7 +158,7 @@ theorem kostantToralDefiningIdeal_le_kostantTorusSubsystemDefiningIdeal
     (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (S : Set I) :
     kostantToralDefiningIdeal e h ρ M hM hnil b wt ≤
-      kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S (fun i => hnil i.1) := by
+      kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S (fun i => hnil i.val) := by
   rw [le_kostantTorusSubsystemDefiningIdeal_iff]
   exact ⟨fun i _ =>
     kostantToralDefiningIdeal_toIdeal_le_root_ker e h ρ M hM hnil b wt i,
@@ -168,16 +168,16 @@ theorem kostantToralDefiningIdeal_le_kostantTorusSubsystemDefiningIdeal
 @[simp]
 theorem kostantTorusSubsystemDefiningIdeal_univ :
     kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt Set.univ
-        (fun i => hnil i.1) =
+        (fun i => hnil i.val) =
       kostantToralDefiningIdeal e h ρ M hM hnil b wt := by
   apply le_antisymm
   · rw [le_kostantToralDefiningIdeal_iff]
     exact ⟨fun i =>
       (le_kostantTorusSubsystemDefiningIdeal_iff e h ρ M hM b wt Set.univ
-        (fun i => hnil i.1) _).mp
+        (fun i => hnil i.val) _).mp
         le_rfl |>.1 i (Set.mem_univ i),
       (le_kostantTorusSubsystemDefiningIdeal_iff e h ρ M hM b wt Set.univ
-        (fun i => hnil i.1) _).mp
+        (fun i => hnil i.val) _).mp
         le_rfl |>.2⟩
   · exact kostantToralDefiningIdeal_le_kostantTorusSubsystemDefiningIdeal
       e h ρ M hM b wt hnil Set.univ
@@ -185,7 +185,7 @@ theorem kostantTorusSubsystemDefiningIdeal_univ :
 /-- Every selected represented root-subgroup coordinate map kills the subsystem defining ideal. -/
 theorem kostantTorusSubsystemDefiningIdeal_toIdeal_le_root_ker (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     {i : I} (hi : i ∈ S) :
     (kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S hnilS).toIdeal ≤
       RingHom.ker
@@ -196,7 +196,7 @@ theorem kostantTorusSubsystemDefiningIdeal_toIdeal_le_root_ker (S : Set I)
 /-- The represented weight-torus coordinate map kills every subsystem defining ideal. -/
 theorem kostantTorusSubsystemDefiningIdeal_toIdeal_le_torus_ker (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) :
     (kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S hnilS).toIdeal ≤
       RingHom.ker
         (GeneralLinear.weightTorusCoordinateMap wt).hom.toAlgHom.toRingHom :=
@@ -205,7 +205,7 @@ theorem kostantTorusSubsystemDefiningIdeal_toIdeal_le_torus_ker (S : Set I)
 /-- The affine group scheme generated by the selected root subgroups and the weight torus. -/
 noncomputable abbrev kostantTorusSubsystemGroupScheme (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) :
     Grp (Over (Spec (CommRingCat.of ℤ))) :=
   CommHopfAlgCat.quotientSpec (GeneralLinear.coordinateHopfAlgebra ℤ n)
     (kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S hnilS)
@@ -213,7 +213,7 @@ noncomputable abbrev kostantTorusSubsystemGroupScheme (S : Set I)
 /-- The inclusion of a torus-subsystem carrier into `GLₙ`. -/
 noncomputable def kostantTorusSubsystemGroupSchemeι (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) :
     kostantTorusSubsystemGroupScheme e h ρ M hM b wt S hnilS ⟶
       GeneralLinear.groupScheme ℤ n :=
   CommHopfAlgCat.quotientSpecι (GeneralLinear.coordinateHopfAlgebra ℤ n)
@@ -224,7 +224,7 @@ noncomputable def kostantTorusSubsystemGroupSchemeι (S : Set I)
 presentation of `GLₙ`. -/
 theorem kostantTorusSubsystemGroupSchemeι_def (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) :
     kostantTorusSubsystemGroupSchemeι e h ρ M hM b wt S hnilS =
       CommHopfAlgCat.quotientSpecι (GeneralLinear.coordinateHopfAlgebra ℤ n)
           (kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S hnilS) ≫
@@ -234,7 +234,7 @@ theorem kostantTorusSubsystemGroupSchemeι_def (S : Set I)
 /-- The torus-subsystem inclusion into `GLₙ` is a closed immersion. -/
 instance isClosedImmersion_kostantTorusSubsystemGroupSchemeι (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) :
     IsClosedImmersion
       (kostantTorusSubsystemGroupSchemeι e h ρ M hM b wt S hnilS).hom.hom.left := by
   unfold kostantTorusSubsystemGroupSchemeι
@@ -250,9 +250,9 @@ instance isClosedImmersion_kostantTorusSubsystemGroupSchemeι (S : Set I)
 the carrier generated by `T`. -/
 noncomputable def kostantTorusSubsystemMapOfSubset {S T : Set I}
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     (hnilT : ∀ i : T, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) (hST : S ⊆ T) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) (hST : S ⊆ T) :
     kostantTorusSubsystemGroupScheme e h ρ M hM b wt S hnilS ⟶
       kostantTorusSubsystemGroupScheme e h ρ M hM b wt T hnilT :=
   CommHopfAlgCat.quotientSpecMapOfLe (GeneralLinear.coordinateHopfAlgebra ℤ n)
@@ -262,7 +262,7 @@ noncomputable def kostantTorusSubsystemMapOfSubset {S T : Set I}
 @[simp]
 theorem kostantTorusSubsystemMapOfSubset_refl (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) (hSS : S ⊆ S) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) (hSS : S ⊆ S) :
     kostantTorusSubsystemMapOfSubset e h ρ M hM b wt hnilS hnilS hSS =
       𝟙 (kostantTorusSubsystemGroupScheme e h ρ M hM b wt S hnilS) := by
   rw [kostantTorusSubsystemMapOfSubset]
@@ -271,9 +271,9 @@ theorem kostantTorusSubsystemMapOfSubset_refl (S : Set I)
 /-- The map induced by inclusion of selected root sets is a closed immersion. -/
 instance isClosedImmersion_kostantTorusSubsystemMapOfSubset {S T : Set I}
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     (hnilT : ∀ i : T, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) (hST : S ⊆ T) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) (hST : S ⊆ T) :
     IsClosedImmersion
       (kostantTorusSubsystemMapOfSubset e h ρ M hM b wt hnilS hnilT hST).hom.hom.left := by
   unfold kostantTorusSubsystemMapOfSubset
@@ -284,9 +284,9 @@ inclusion of the `S`-carrier. -/
 @[simp]
 theorem kostantTorusSubsystemMapOfSubset_comp_ι {S T : Set I}
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     (hnilT : ∀ i : T, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) (hST : S ⊆ T) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) (hST : S ⊆ T) :
     kostantTorusSubsystemMapOfSubset e h ρ M hM b wt hnilS hnilT hST ≫
         kostantTorusSubsystemGroupSchemeι e h ρ M hM b wt T hnilT =
       kostantTorusSubsystemGroupSchemeι e h ρ M hM b wt S hnilS := by
@@ -298,11 +298,11 @@ theorem kostantTorusSubsystemMapOfSubset_comp_ι {S T : Set I}
 @[simp]
 theorem kostantTorusSubsystemMapOfSubset_comp {S T U : Set I}
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     (hnilT : ∀ i : T, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     (hnilU : ∀ i : U, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     (hST : S ⊆ T) (hTU : T ⊆ U) :
     kostantTorusSubsystemMapOfSubset e h ρ M hM b wt hnilS hnilT hST ≫
         kostantTorusSubsystemMapOfSubset e h ρ M hM b wt hnilT hnilU hTU =
@@ -316,7 +316,7 @@ theorem kostantTorusSubsystemMapOfSubset_comp {S T U : Set I}
 noncomputable def kostantTorusSubsystemToToral
     (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (S : Set I) :
-    kostantTorusSubsystemGroupScheme e h ρ M hM b wt S (fun i => hnil i.1) ⟶
+    kostantTorusSubsystemGroupScheme e h ρ M hM b wt S (fun i => hnil i.val) ⟶
       kostantToralGroupScheme e h ρ M hM hnil b wt :=
   CommHopfAlgCat.quotientSpecMapOfLe (GeneralLinear.coordinateHopfAlgebra ℤ n)
     (kostantToralDefiningIdeal_le_kostantTorusSubsystemDefiningIdeal
@@ -339,7 +339,7 @@ theorem kostantTorusSubsystemToToral_comp_ι
     (S : Set I) :
     kostantTorusSubsystemToToral e h ρ M hM b wt hnil S ≫
         kostantToralGroupSchemeι e h ρ M hM hnil b wt =
-      kostantTorusSubsystemGroupSchemeι e h ρ M hM b wt S (fun i => hnil i.1) := by
+      kostantTorusSubsystemGroupSchemeι e h ρ M hM b wt S (fun i => hnil i.val) := by
   unfold kostantTorusSubsystemGroupSchemeι
   rw [kostantTorusSubsystemToToral, kostantToralGroupSchemeι_def,
     ← Category.assoc, CommHopfAlgCat.quotientSpecMapOfLe_comp_quotientSpecι]
@@ -351,7 +351,7 @@ theorem kostantTorusSubsystemMapOfSubset_comp_kostantTorusSubsystemToToral
     (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     {S T : Set I} (hST : S ⊆ T) :
     kostantTorusSubsystemMapOfSubset e h ρ M hM b wt
-        (fun i : S => hnil i.1) (fun i : T => hnil i.1) hST ≫
+        (fun i : S => hnil i.val) (fun i : T => hnil i.val) hST ≫
         kostantTorusSubsystemToToral e h ρ M hM b wt hnil T =
       kostantTorusSubsystemToToral e h ρ M hM b wt hnil S := by
   rw [kostantTorusSubsystemMapOfSubset, kostantTorusSubsystemToToral,
@@ -369,7 +369,7 @@ noncomputable def kostantTorusSubsystemClosedSubgroup
 theorem coe_kostantTorusSubsystemClosedSubgroup
     (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (S : Set I) :
-    (kostantTorusSubsystemClosedSubgroup e h ρ M hM b wt hnil S).1 =
+    (kostantTorusSubsystemClosedSubgroup e h ρ M hM b wt hnil S).val =
       Subobject.mk (kostantTorusSubsystemToToral e h ρ M hM b wt hnil S) :=
   ClosedSubgroupScheme.coe_mk _
 
@@ -380,7 +380,7 @@ private noncomputable def kostantToralSubsystemGeneratorMap
           (kostantToralDefiningIdeal e h ρ M hM hnil b wt) ⟶
         ToralClosure.Internal.kostantToralGeneratorCodomain (kappa := κ) j :=
   match j with
-  | .inl i => kostantRootSubgroupToralCoordinateMap e h ρ M hM hnil b wt i.1
+  | .inl i => kostantRootSubgroupToralCoordinateMap e h ρ M hM hnil b wt i.val
   | .inr _ => kostantWeightTorusToralCoordinateMap e h ρ M hM hnil b wt
 
 private noncomputable def kostantTorusSubsystemRelativeDefiningIdeal
@@ -404,10 +404,10 @@ private theorem kostantTorusSubsystemRelativeDefiningIdeal_eq_commonKernel
         (kostantToralSubsystemGeneratorMap e h ρ M hM b wt hnil S) := by
   let A := GeneralLinear.coordinateHopfAlgebra ℤ n
   let I₀ := kostantToralDefiningIdeal e h ρ M hM hnil b wt
-  let Iₛ := kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S (fun i => hnil i.1)
+  let Iₛ := kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S (fun i => hnil i.val)
   let q₀ := CommHopfAlgCat.mkQuotient A I₀
   let f := ToralClosure.Internal.kostantToralGeneratorMap
-    e h ρ M hM b wt Subtype.val (fun i : S => hnil i.1)
+    e h ρ M hM b wt Subtype.val (fun i : S => hnil i.val)
   let p := kostantToralSubsystemGeneratorMap e h ρ M hM b wt hnil S
   have hI : I₀ ≤ Iₛ :=
     kostantToralDefiningIdeal_le_kostantTorusSubsystemDefiningIdeal
@@ -417,7 +417,7 @@ private theorem kostantTorusSubsystemRelativeDefiningIdeal_eq_commonKernel
     · simpa only [q₀, p, f, kostantToralSubsystemGeneratorMap,
         ToralClosure.Internal.kostantToralGeneratorMap_inl] using
         mkQuotient_comp_kostantRootSubgroupToralCoordinateMap
-          e h ρ M hM hnil b wt i.1
+          e h ρ M hM hnil b wt i.val
     · rcases u with ⟨⟩
       simpa only [q₀, p, f, kostantToralSubsystemGeneratorMap,
         ToralClosure.Internal.kostantToralGeneratorMap_inr] using
@@ -444,7 +444,7 @@ private theorem kostantTorusSubsystemClosedSubgroup_eq_quotientClosedSubgroup
         (kostantTorusSubsystemRelativeDefiningIdeal e h ρ M hM b wt hnil S) := by
   let A := GeneralLinear.coordinateHopfAlgebra ℤ n
   let I₀ := kostantToralDefiningIdeal e h ρ M hM hnil b wt
-  let Iₛ := kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S (fun i => hnil i.1)
+  let Iₛ := kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S (fun i => hnil i.val)
   let hI : I₀ ≤ Iₛ :=
     kostantToralDefiningIdeal_le_kostantTorusSubsystemDefiningIdeal
       e h ρ M hM b wt hnil S
@@ -463,7 +463,7 @@ theorem kostantTorusSubsystemClosedSubgroup_mono
     coe_kostantTorusSubsystemClosedSubgroup]
   exact Subobject.mk_le_mk_of_comm
     (kostantTorusSubsystemMapOfSubset e h ρ M hM b wt
-      (fun i : S => hnil i.1) (fun i : T => hnil i.1) hST)
+      (fun i : S => hnil i.val) (fun i : T => hnil i.val) hST)
     (kostantTorusSubsystemMapOfSubset_comp_kostantTorusSubsystemToToral
       e h ρ M hM b wt hnil hST)
 
@@ -471,7 +471,7 @@ theorem kostantTorusSubsystemClosedSubgroup_mono
 carrier. -/
 noncomputable def kostantRootSubgroupTorusSubsystemCoordinateMap (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     {i : I} (hi : i ∈ S) :
     CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
         (kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S hnilS) ⟶
@@ -484,7 +484,7 @@ noncomputable def kostantRootSubgroupTorusSubsystemCoordinateMap (S : Set I)
 @[simp]
 theorem mkQuotient_comp_kostantRootSubgroupTorusSubsystemCoordinateMap (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     {i : I} (hi : i ∈ S) :
     CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
           (kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S hnilS) ≫
@@ -502,7 +502,7 @@ theorem mkQuotient_comp_kostantRootSubgroupTorusSubsystemCoordinateMap (S : Set 
 the subsystem carrier. -/
 theorem kostantRootSubgroupTorusSubsystemCoordinateMap_surjective_of_surjective (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) {i : I} (hi : i ∈ S)
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) {i : I} (hi : i ∈ S)
     (hroot : Function.Surjective
       (kostantRootSubgroupCoordinateMap e h ρ M hM i (hnilS ⟨i, hi⟩) b).hom) :
     Function.Surjective
@@ -514,7 +514,7 @@ theorem kostantRootSubgroupTorusSubsystemCoordinateMap_surjective_of_surjective 
 /-- The coordinate map through which the weight torus factors into a subsystem carrier. -/
 noncomputable def kostantWeightTorusTorusSubsystemCoordinateMap (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) :
     CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
         (kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S hnilS) ⟶
       (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj :=
@@ -526,7 +526,7 @@ noncomputable def kostantWeightTorusTorusSubsystemCoordinateMap (S : Set I)
 @[simp]
 theorem mkQuotient_comp_kostantWeightTorusTorusSubsystemCoordinateMap (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) :
     CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
           (kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S hnilS) ≫
         kostantWeightTorusTorusSubsystemCoordinateMap e h ρ M hM b wt S hnilS =
@@ -545,7 +545,7 @@ the weight-torus coordinate. -/
 theorem kostantTorusSubsystemCoordinate_hom_ext {Y : _root_.CommHopfAlgCat.{0} ℤ}
     (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     (u v : Y ⟶ CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
       (kostantTorusSubsystemDefiningIdeal e h ρ M hM b wt S hnilS))
     (hroot : ∀ (i : I) (hi : i ∈ S),
@@ -558,7 +558,7 @@ theorem kostantTorusSubsystemCoordinate_hom_ext {Y : _root_.CommHopfAlgCat.{0} �
     (ToralClosure.Internal.kostantToralGeneratorMap e h ρ M hM b wt Subtype.val hnilS)
   rintro (i | u)
   · simpa only [kostantTorusSubsystemDefiningIdeal,
-      kostantRootSubgroupTorusSubsystemCoordinateMap] using hroot i.1 i.2
+      kostantRootSubgroupTorusSubsystemCoordinateMap] using hroot i.val i.property
   · rcases u with ⟨⟩
     simpa only [kostantTorusSubsystemDefiningIdeal,
       kostantWeightTorusTorusSubsystemCoordinateMap] using htorus
@@ -566,7 +566,7 @@ theorem kostantTorusSubsystemCoordinate_hom_ext {Y : _root_.CommHopfAlgCat.{0} �
 /-- A selected represented Kostant root subgroup, factored through the subsystem carrier. -/
 noncomputable def kostantRootSubgroupToTorusSubsystem (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) {i : I} (hi : i ∈ S) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) {i : I} (hi : i ∈ S) :
     AdditiveGroup.groupScheme ℤ ⟶
       kostantTorusSubsystemGroupScheme e h ρ M hM b wt S hnilS :=
   eqToHom (AdditiveGroup.groupScheme_def ℤ) ≫
@@ -577,7 +577,7 @@ noncomputable def kostantRootSubgroupToTorusSubsystem (S : Set I)
 factored coordinate morphism, after the canonical presentation of the additive group. -/
 theorem kostantRootSubgroupToTorusSubsystem_def (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) {i : I} (hi : i ∈ S) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) {i : I} (hi : i ∈ S) :
     kostantRootSubgroupToTorusSubsystem e h ρ M hM b wt S hnilS hi =
       eqToHom (AdditiveGroup.groupScheme_def ℤ) ≫
         (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).map
@@ -589,7 +589,7 @@ theorem kostantRootSubgroupToTorusSubsystem_def (S : Set I)
 its factored coordinate map is surjective. -/
 theorem isClosedImmersion_kostantRootSubgroupToTorusSubsystem_of_surjective (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) {i : I} (hi : i ∈ S)
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) {i : I} (hi : i ∈ S)
     (hroot : Function.Surjective
       (kostantRootSubgroupTorusSubsystemCoordinateMap
         e h ρ M hM b wt S hnilS hi).hom) :
@@ -605,7 +605,7 @@ theorem isClosedImmersion_kostantRootSubgroupToTorusSubsystem_of_surjective (S :
 @[simp]
 theorem kostantRootSubgroupToTorusSubsystem_comp_ι (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) {i : I} (hi : i ∈ S) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) {i : I} (hi : i ∈ S) :
     kostantRootSubgroupToTorusSubsystem e h ρ M hM b wt S hnilS hi ≫
         kostantTorusSubsystemGroupSchemeι e h ρ M hM b wt S hnilS =
       kostantRootSubgroup e h ρ M hM i (hnilS ⟨i, hi⟩) b := by
@@ -620,9 +620,9 @@ selected root set. -/
 @[simp]
 theorem kostantRootSubgroupToTorusSubsystem_comp_mapOfSubset {S T : Set I}
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     (hnilT : ∀ i : T, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) (hST : S ⊆ T)
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) (hST : S ⊆ T)
     {i : I} (hi : i ∈ S) :
     kostantRootSubgroupToTorusSubsystem e h ρ M hM b wt S hnilS hi ≫
         kostantTorusSubsystemMapOfSubset e h ρ M hM b wt hnilS hnilT hST =
@@ -638,7 +638,7 @@ agrees with the direct toral factorization. -/
 theorem kostantRootSubgroupToTorusSubsystem_comp_kostantTorusSubsystemToToral
     (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (S : Set I) {i : I} (hi : i ∈ S) :
-    kostantRootSubgroupToTorusSubsystem e h ρ M hM b wt S (fun j => hnil j.1) hi ≫
+    kostantRootSubgroupToTorusSubsystem e h ρ M hM b wt S (fun j => hnil j.val) hi ≫
         kostantTorusSubsystemToToral e h ρ M hM b wt hnil S =
       kostantRootSubgroupToToral e h ρ M hM hnil b wt i := by
   apply (cancel_mono (kostantToralGroupSchemeι e h ρ M hM hnil b wt)).1
@@ -648,7 +648,7 @@ theorem kostantRootSubgroupToTorusSubsystem_comp_kostantTorusSubsystemToToral
 /-- The represented weight torus, factored through a torus-subsystem carrier. -/
 noncomputable def kostantWeightTorusToTorusSubsystem (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) :
     SplitTorus.groupScheme ℤ κ ⟶
       kostantTorusSubsystemGroupScheme e h ρ M hM b wt S hnilS :=
   eqToHom (DiagonalizableGroup.groupScheme_def ℤ (SplitTorus.characterGroup κ)) ≫
@@ -659,7 +659,7 @@ noncomputable def kostantWeightTorusToTorusSubsystem (S : Set I)
 coordinate morphism, after the canonical presentation of the split torus. -/
 theorem kostantWeightTorusToTorusSubsystem_def (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) :
     kostantWeightTorusToTorusSubsystem e h ρ M hM b wt S hnilS =
       eqToHom (DiagonalizableGroup.groupScheme_def ℤ (SplitTorus.characterGroup κ)) ≫
         (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).map
@@ -670,7 +670,7 @@ theorem kostantWeightTorusToTorusSubsystem_def (S : Set I)
 through a subsystem carrier. -/
 theorem kostantWeightTorusTorusSubsystemCoordinateMap_surjective_of_surjective (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     (htorus : Function.Surjective (GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt).hom) :
     Function.Surjective
       (kostantWeightTorusTorusSubsystemCoordinateMap e h ρ M hM b wt S hnilS).hom := by
@@ -681,7 +681,7 @@ theorem kostantWeightTorusTorusSubsystemCoordinateMap_surjective_of_surjective (
 factored coordinate map is surjective. -/
 theorem isClosedImmersion_kostantWeightTorusToTorusSubsystem_of_surjective (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     (htorus : Function.Surjective
       (kostantWeightTorusTorusSubsystemCoordinateMap e h ρ M hM b wt S hnilS).hom) :
     IsClosedImmersion
@@ -695,7 +695,7 @@ theorem isClosedImmersion_kostantWeightTorusToTorusSubsystem_of_surjective (S : 
 carrier. -/
 theorem isClosedImmersion_kostantWeightTorusToTorusSubsystem (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     (hwt : Submodule.span ℤ (Set.range wt) = ⊤) :
     IsClosedImmersion
       (kostantWeightTorusToTorusSubsystem e h ρ M hM b wt S hnilS).hom.hom.left :=
@@ -710,7 +710,7 @@ recovers the represented weight-torus morphism. -/
 @[simp]
 theorem kostantWeightTorusToTorusSubsystem_comp_ι (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) :
     kostantWeightTorusToTorusSubsystem e h ρ M hM b wt S hnilS ≫
         kostantTorusSubsystemGroupSchemeι e h ρ M hM b wt S hnilS =
       GeneralLinear.weightTorus (R := ℤ) wt := by
@@ -725,9 +725,9 @@ root set. -/
 @[simp]
 theorem kostantWeightTorusToTorusSubsystem_comp_mapOfSubset {S T : Set I}
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     (hnilT : ∀ i : T, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1)))) (hST : S ⊆ T) :
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val)))) (hST : S ⊆ T) :
     kostantWeightTorusToTorusSubsystem e h ρ M hM b wt S hnilS ≫
         kostantTorusSubsystemMapOfSubset e h ρ M hM b wt hnilS hnilT hST =
       kostantWeightTorusToTorusSubsystem e h ρ M hM b wt T hnilT := by
@@ -742,7 +742,7 @@ with the direct toral factorization. -/
 theorem kostantWeightTorusToTorusSubsystem_comp_kostantTorusSubsystemToToral
     (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (S : Set I) :
-    kostantWeightTorusToTorusSubsystem e h ρ M hM b wt S (fun i => hnil i.1) ≫
+    kostantWeightTorusToTorusSubsystem e h ρ M hM b wt S (fun i => hnil i.val) ≫
         kostantTorusSubsystemToToral e h ρ M hM b wt hnil S =
       kostantWeightTorusToToral e h ρ M hM hnil b wt := by
   apply (cancel_mono (kostantToralGroupSchemeι e h ρ M hM hnil b wt)).1
@@ -759,11 +759,11 @@ theorem kostantTorusSubsystemClosedSubgroup_le_iff
     (P : ClosedSubgroupScheme (kostantToralGroupScheme e h ρ M hM hnil b wt)) :
     kostantTorusSubsystemClosedSubgroup e h ρ M hM b wt hnil S ≤ P ↔
       (∀ (i : I) (_hi : i ∈ S), ∃! f : AdditiveGroup.groupScheme ℤ ⟶
-        (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))),
-          f ≫ P.1.arrow = kostantRootSubgroupToToral e h ρ M hM hnil b wt i) ∧
+        (P.val : Grp (Over (Spec (CommRingCat.of ℤ)))),
+          f ≫ P.val.arrow = kostantRootSubgroupToToral e h ρ M hM hnil b wt i) ∧
       ∃! f : SplitTorus.groupScheme ℤ κ ⟶
-        (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))),
-          f ≫ P.1.arrow = kostantWeightTorusToToral e h ρ M hM hnil b wt := by
+        (P.val : Grp (Over (Spec (CommRingCat.of ℤ)))),
+          f ≫ P.val.arrow = kostantWeightTorusToToral e h ρ M hM hnil b wt := by
   rw [kostantTorusSubsystemClosedSubgroup_eq_quotientClosedSubgroup,
     kostantTorusSubsystemRelativeDefiningIdeal_eq_commonKernel]
   let p := kostantToralSubsystemGeneratorMap e h ρ M hM b wt hnil S
@@ -773,21 +773,24 @@ theorem kostantTorusSubsystemClosedSubgroup_le_iff
     have hP := hminimal.mp hle
     constructor
     · intro i hi
-      apply (CategoryTheory.Subobject.factors_iff_existsUnique P.1 _).mp
-      rw [kostantRootSubgroupToToral_def, CategoryTheory.Subobject.factors_eqToHom_comp_iff]
+      apply (CategoryTheory.Subobject.factors_iff_existsUnique P.val _).mp
+      rw [kostantRootSubgroupToToral_def, CategoryTheory.Subobject.factors_comp_iff_of_isSplitEpi]
       exact hP (.inl ⟨i, hi⟩)
-    · apply (CategoryTheory.Subobject.factors_iff_existsUnique P.1 _).mp
-      rw [kostantWeightTorusToToral_def, CategoryTheory.Subobject.factors_eqToHom_comp_iff]
+    · apply (CategoryTheory.Subobject.factors_iff_existsUnique P.val _).mp
+      rw [kostantWeightTorusToToral_def, CategoryTheory.Subobject.factors_comp_iff_of_isSplitEpi]
       exact hP (.inr ())
   · rintro ⟨hroot, htorus⟩
     apply hminimal.mpr
     rintro (i | u)
-    · have hi := (CategoryTheory.Subobject.factors_iff_existsUnique P.1 _).mpr (hroot i.1 i.2)
-      rw [kostantRootSubgroupToToral_def, CategoryTheory.Subobject.factors_eqToHom_comp_iff] at hi
+    · have hi := (CategoryTheory.Subobject.factors_iff_existsUnique P.val _).mpr
+        (hroot i.val i.property)
+      rw [kostantRootSubgroupToToral_def,
+        CategoryTheory.Subobject.factors_comp_iff_of_isSplitEpi] at hi
       exact hi
     · rcases u with ⟨⟩
-      have ht := (CategoryTheory.Subobject.factors_iff_existsUnique P.1 _).mpr htorus
-      rw [kostantWeightTorusToToral_def, CategoryTheory.Subobject.factors_eqToHom_comp_iff] at ht
+      have ht := (CategoryTheory.Subobject.factors_iff_existsUnique P.val _).mpr htorus
+      rw [kostantWeightTorusToToral_def,
+        CategoryTheory.Subobject.factors_comp_iff_of_isSplitEpi] at ht
       exact ht
 
 /-- **Rigidity of a torus-subsystem group scheme.** Two homomorphisms out of the subsystem
@@ -796,7 +799,7 @@ carrier are equal when they agree on every selected root subgroup and on the wei
 theorem kostantTorusSubsystemGroupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} ℤ}
     (S : Set I)
     (hnilS : ∀ i : S, IsNilpotent
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.1))))
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i.val))))
     (φ ψ : kostantTorusSubsystemGroupScheme e h ρ M hM b wt S hnilS ⟶
       (hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op Y))
     (hroot : ∀ (i : I) (hi : i ∈ S),

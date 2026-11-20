@@ -6,11 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Topology
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Sets.Compacts
 public import TauCeti.Analysis.Convex.Join
+import Mathlib.Analysis.Normed.Affine.AddTorsorBases
 
 /-!
-# Interiors of convex sets
+# Topological properties of convex sets and segment unions
+
+In a Hausdorff finite-dimensional real topological vector space, the interior of the closure of a
+convex set equals its interior (`Convex.interior_closure`, Rockafellar, *Convex Analysis*,
+Theorem 6.3); unlike Mathlib's `Convex.interior_closure_eq_interior_of_nonempty_interior`, no
+nonempty-interior assumption is needed, because an affine subspace in finite dimension is closed and
+so a convex set with empty interior lies in a closed proper affine subspace.
 
 A convex set symmetric about the origin has `0` in its interior as soon as its interior is
 nonempty. This lets volume arguments obtain the neighbourhood of the origin needed to use the
@@ -19,16 +27,45 @@ gauge of a symmetric convex set.
 The interior of a sum of two convex sets with nonempty interiors is the sum of their
 interiors. In particular, this describes the interior of the sum of two interval supports.
 
-A closed segment `segment 𝕜 x y` is compact, being the continuous image of `Icc 0 1`.
-More generally, the convex join of two compact sets is compact (`IsCompact.convexJoin`). So every
-compact set `K` lies in a compact set star-convex about any given point `y`, the union of the
-segments from `y` to `y` and to the points of `K` (`TopologicalSpace.Compacts.starHull`).
+A closed segment `segment 𝕜 x y` is compact, being the continuous image of `Icc 0 1`
+(`TauCeti.isCompact_segment`). More generally, for segments from a fixed apex `x₀`, the union
+`⋃ x ∈ K, segment 𝕜 x₀ x` over a compact set `K` is compact (`IsCompact.biUnion_segment`), and if a
+closed set `C` misses `⋃ x ∈ s, segment 𝕜 x₀ x` for an arbitrary set `s`, then `C` also misses
+`[x₀, y]` for all `y` in a neighbourhood of `s` (`IsClosed.eventually_disjoint_segment`). In a
+topological additive group, the convex join of any two compact sets is compact
+(`IsCompact.convexJoin`), so every compact set `K` lies in a compact set star-convex about any
+given point `y`, the union of the segments from `y` to `y` and to the points of `K`
+(`TopologicalSpace.Compacts.starHull`).
 -/
 
 public section
 
-open Set
-open scoped Pointwise
+open Filter Set
+open scoped Pointwise Topology
+
+private lemma interior_closure_eq_interior_normed {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] {t : Set F} (ht : Convex ℝ t) :
+    interior (closure t) = interior t := by
+  by_cases hne : (interior t).Nonempty
+  · exact ht.interior_closure_eq_interior_of_nonempty_interior hne
+  · refine subset_antisymm (fun x hx ↦ False.elim (hne ?_)) (interior_mono subset_closure)
+    rw [ht.interior_nonempty_iff_affineSpan_eq_top, ← top_le_iff,
+      ← ht.closure.interior_nonempty_iff_affineSpan_eq_top.1 ⟨x, hx⟩, affineSpan_le]
+    exact closure_minimal (subset_affineSpan ℝ t) (affineSpan ℝ t).isClosed_of_finiteDimensional
+
+/-- In a Hausdorff finite-dimensional real topological vector space, the interior of the closure of
+a convex set equals its interior (Rockafellar, *Convex Analysis*, Theorem 6.3). Both hypotheses on
+the ambient space are necessary: in the indiscrete topology on `ℝ` the singleton `{0}` is convex
+with empty interior and closure `univ`, and in an infinite-dimensional Banach space a dense proper
+subspace is convex with empty interior and closure `univ`. -/
+theorem Convex.interior_closure {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [T2Space E] [FiniteDimensional ℝ E]
+    {s : Set E} (hs : Convex ℝ s) : interior (closure s) = interior s := by
+  let e : E ≃L[ℝ] (Fin (Module.finrank ℝ E) → ℝ) :=
+    (Module.finBasis ℝ E).equivFun.toContinuousLinearEquiv
+  apply e.toHomeomorph.injective.image_injective
+  rw [e.toHomeomorph.image_interior, e.toHomeomorph.image_closure, e.toHomeomorph.image_interior]
+  exact interior_closure_eq_interior_normed (hs.linear_image e.toLinearMap)
 
 /-- The interior of a sum of convex sets with nonempty interiors is the sum of their
 interiors. -/
@@ -82,6 +119,55 @@ theorem isCompact_segment (𝕜 : Type*) {E : Type*} [Ring 𝕜] [PartialOrder �
   exact isCompact_Icc.image (by fun_prop)
 
 end TauCeti
+
+section Segments
+
+variable {𝕜 E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [AddRightMono 𝕜] [TopologicalSpace 𝕜]
+  [CompactIccSpace 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [ContinuousAdd E]
+  [ContinuousSMul 𝕜 E]
+
+/-- The union of segments `[x₀, x]` from a fixed point `x₀` to the points of a compact set is
+compact. -/
+theorem IsCompact.biUnion_segment {K : Set E} (hK : IsCompact K) (x₀ : E) :
+    IsCompact (⋃ x ∈ K, segment 𝕜 x₀ x) := by
+  have heq : (⋃ x ∈ K, segment 𝕜 x₀ x) =
+      (fun p : E × 𝕜 ↦ x₀ + p.2 • (p.1 + -x₀)) '' (K ×ˢ Icc (0 : 𝕜) 1) := by
+    ext z
+    simp only [mem_iUnion, exists_prop, segment_eq_image', sub_eq_add_neg, mem_image, Prod.exists,
+      mem_prod]
+    exact ⟨fun ⟨x, hx, t, ht, hxt⟩ ↦ ⟨x, t, ⟨hx, ht⟩, hxt⟩,
+      fun ⟨x, t, ⟨hx, ht⟩, hxt⟩ ↦ ⟨x, hx, t, ht, hxt⟩⟩
+  rw [heq]
+  exact (hK.prod isCompact_Icc).image (by fun_prop)
+
+/-- If a closed set `C` is disjoint from every segment `[x₀, x]` for `x ∈ s`, then `C` is disjoint
+from `[x₀, y]` for all `y` in a neighbourhood of `s`, with no compactness assumption on `s` or
+`C`. -/
+theorem IsClosed.eventually_disjoint_segment {x₀ : E} {C s : Set E} (hC : IsClosed C)
+    (h : Disjoint C (⋃ x ∈ s, segment 𝕜 x₀ x)) :
+    ∀ᶠ y in 𝓝ˢ s, Disjoint C (segment 𝕜 x₀ y) := by
+  have hO : IsOpen ((fun p : E × 𝕜 ↦ x₀ + p.2 • (p.1 + -x₀)) ⁻¹' Cᶜ) :=
+    hC.isOpen_compl.preimage (by fun_prop)
+  rw [eventually_iff_exists_mem]
+  refine ⟨{y : E | Disjoint C (segment 𝕜 x₀ y)}, ?_, fun _ hy ↦ hy⟩
+  rw [mem_nhdsSet_iff_forall]
+  intro x hxs
+  have hsub : ({x} : Set E) ×ˢ Icc (0 : 𝕜) 1 ⊆
+      (fun p : E × 𝕜 ↦ x₀ + p.2 • (p.1 + -x₀)) ⁻¹' Cᶜ := by
+    rintro ⟨y, t⟩ ⟨rfl : y = x, ht⟩ hmem
+    refine h.le_bot ⟨hmem, mem_iUnion₂.2 ⟨y, hxs, ?_⟩⟩
+    rw [segment_eq_image']
+    exact ⟨t, ht, by simp [sub_eq_add_neg]⟩
+  obtain ⟨u, v, huo, -, hxu, hv, huv⟩ :=
+    generalized_tube_lemma isCompact_singleton isCompact_Icc hO hsub
+  refine Filter.mem_of_superset (huo.mem_nhds (hxu (mem_singleton x))) fun y hy ↦
+    disjoint_left.2 fun z hzC hzseg ↦ ?_
+  rcases segment_eq_image' 𝕜 x₀ y ▸ hzseg with ⟨t, ht, rfl⟩
+  have hz : (y, t) ∈ (fun p : E × 𝕜 ↦ x₀ + p.2 • (p.1 + -x₀)) ⁻¹' Cᶜ :=
+    huv (mk_mem_prod hy (hv ht))
+  exact hz (by simpa [sub_eq_add_neg] using hzC)
+
+end Segments
 
 /-- The convex join of two compact sets is compact: it is the image of `s ×ˢ t ×ˢ [0, 1]` under
 `((a, b), θ) ↦ a + θ • (b - a)`. -/
@@ -146,7 +232,7 @@ variable {𝕜 y K} in
 `y`. -/
 theorem starHull_subset {s : Set E} (hs : StarConvex 𝕜 y s) (hy : y ∈ s) (hK : (K : Set E) ⊆ s) :
     (K.starHull 𝕜 y : Set E) ⊆ s := by
-  rw [coe_starHull, convexJoin_singleton_left]
-  exact iUnion₂_subset fun z hz ↦ hs.segment_subset (insert_subset hy hK hz)
+  rw [coe_starHull]
+  exact hs.convexJoin_singleton_subset (insert_subset hy hK)
 
 end TopologicalSpace.Compacts

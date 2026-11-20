@@ -5,10 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import Mathlib.Topology.Algebra.Module.Determinant
 public import Mathlib.Topology.Compactness.Compact
-public import Mathlib.Topology.OpenPartialHomeomorph.Defs
+public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 public import Mathlib.Topology.Sets.Opens
+
+import TauCeti.Topology.Algebra.Module.Determinant
 
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Congr
@@ -34,7 +39,27 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
 * `OpenPartialHomeomorph.fderiv_symm_apply_fderiv_apply`,
   `OpenPartialHomeomorph.fderiv_apply_fderiv_symm_apply`: the same identities evaluated at a
   vector.
+* `OpenPartialHomeomorph.fderiv_symm_comp_fderiv_of_mem_source`,
+  `OpenPartialHomeomorph.fderiv_comp_fderiv_symm_of_mem_source` and their evaluated forms
+  `OpenPartialHomeomorph.fderiv_symm_apply_fderiv_apply_of_mem_source`,
+  `OpenPartialHomeomorph.fderiv_apply_fderiv_symm_apply_of_mem_source`: the identities at a point
+  `p` of the source and its image `e p`.
+* `OpenPartialHomeomorph.isInvertible_fderiv`, `OpenPartialHomeomorph.inverse_fderiv`: hence the
+  derivative at such a point is invertible, with inverse the derivative of `e.symm` at `e p`.
+* `OpenPartialHomeomorph.det_fderiv_ne_zero`: for an open partial homeomorphism of a space to
+  itself, the derivative at such a point has nonzero determinant.
+* `OpenPartialHomeomorph.det_fderiv_mul_det_fderiv_symm`: for an open partial homeomorphism of a
+  space to itself, `det De(e⁻¹ p) · det De⁻¹(p) = 1` at a point `p` of the target.
+* `OpenPartialHomeomorph.det_fderiv_ne_zero_of_contDiffOn`,
+  `OpenPartialHomeomorph.det_fderiv_symm_apply_of_contDiffOn`: for an open partial homeomorphism
+  that is `C^n`, `n ≠ 0`, in both directions, a nonzero Jacobian determinant on the source, and
+  reciprocity of the Jacobian determinants of `e` and `e.symm`.
+* `OpenPartialHomeomorph.hasFDerivAt_transHomeomorph_iff`: postcomposing charts with continuous
+  linear equivalences conjugates the Fréchet derivative of a map read in those charts.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
+* `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable at `φ⁻¹ y` with its
+  inverse differentiable at `y`, the Jacobian determinants are reciprocal,
+  `det Dφ⁻¹(y) · det Dφ(φ⁻¹ y) = 1`.
 * `ContinuousLinearEquiv.image_vanishingFDeriv_comp`: precomposition by a continuous linear
   equivalence preserves the image of the vanishing-derivative locus.
 
@@ -98,6 +123,115 @@ theorem fderiv_apply_fderiv_symm_apply (e : OpenPartialHomeomorph E F) {p : F}
   simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] using
     DFunLike.congr_fun (e.fderiv_comp_fderiv_symm hp hd hds) w
 
+/-- Source-point form of `OpenPartialHomeomorph.fderiv_symm_comp_fderiv`: for `p` in the source,
+`De⁻¹_{e p} ∘ De_p = id`. -/
+theorem fderiv_symm_comp_fderiv_of_mem_source (e : OpenPartialHomeomorph E F) {p : E}
+    (hp : p ∈ e.source) (hd : DifferentiableAt 𝕜 e p) (hds : DifferentiableAt 𝕜 e.symm (e p)) :
+    (fderiv 𝕜 e.symm (e p)).comp (fderiv 𝕜 e p) = ContinuousLinearMap.id 𝕜 E := by
+  have h := e.fderiv_symm_comp_fderiv (e.map_source hp) (by rwa [e.left_inv hp]) hds
+  rwa [e.left_inv hp] at h
+
+/-- Source-point form of `OpenPartialHomeomorph.fderiv_comp_fderiv_symm`: for `p` in the source,
+`De_p ∘ De⁻¹_{e p} = id`. -/
+theorem fderiv_comp_fderiv_symm_of_mem_source (e : OpenPartialHomeomorph E F) {p : E}
+    (hp : p ∈ e.source) (hd : DifferentiableAt 𝕜 e p) (hds : DifferentiableAt 𝕜 e.symm (e p)) :
+    (fderiv 𝕜 e p).comp (fderiv 𝕜 e.symm (e p)) = ContinuousLinearMap.id 𝕜 F := by
+  have h := e.fderiv_comp_fderiv_symm (e.map_source hp) (by rwa [e.left_inv hp]) hds
+  rwa [e.left_inv hp] at h
+
+/-- Pointwise form of `OpenPartialHomeomorph.fderiv_symm_comp_fderiv_of_mem_source`: for `p` in
+the source, `De⁻¹_{e p} (De_p v) = v`. -/
+theorem fderiv_symm_apply_fderiv_apply_of_mem_source (e : OpenPartialHomeomorph E F) {p : E}
+    (hp : p ∈ e.source) (hd : DifferentiableAt 𝕜 e p) (hds : DifferentiableAt 𝕜 e.symm (e p))
+    (v : E) : fderiv 𝕜 e.symm (e p) (fderiv 𝕜 e p v) = v := by
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] using
+    DFunLike.congr_fun (e.fderiv_symm_comp_fderiv_of_mem_source hp hd hds) v
+
+/-- Pointwise form of `OpenPartialHomeomorph.fderiv_comp_fderiv_symm_of_mem_source`: for `p` in
+the source, `De_p (De⁻¹_{e p} w) = w`. -/
+theorem fderiv_apply_fderiv_symm_apply_of_mem_source (e : OpenPartialHomeomorph E F) {p : E}
+    (hp : p ∈ e.source) (hd : DifferentiableAt 𝕜 e p) (hds : DifferentiableAt 𝕜 e.symm (e p))
+    (w : F) : fderiv 𝕜 e p (fderiv 𝕜 e.symm (e p) w) = w := by
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] using
+    DFunLike.congr_fun (e.fderiv_comp_fderiv_symm_of_mem_source hp hd hds) w
+
+/-- An open partial homeomorphism which is differentiable at a point of its source, and whose
+inverse is differentiable at the image point, has an invertible derivative there. -/
+theorem isInvertible_fderiv (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ e.source)
+    (he : DifferentiableAt 𝕜 e y) (hes : DifferentiableAt 𝕜 e.symm (e y)) :
+    (fderiv 𝕜 e y).IsInvertible :=
+  .of_inverse (e.fderiv_comp_fderiv_symm_of_mem_source hy he hes)
+    (e.fderiv_symm_comp_fderiv_of_mem_source hy he hes)
+
+/-- Under the same hypotheses, the inverse of the derivative at a point of the source is the
+derivative of the inverse at the image point. -/
+theorem inverse_fderiv (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ e.source)
+    (he : DifferentiableAt 𝕜 e y) (hes : DifferentiableAt 𝕜 e.symm (e y)) :
+    (fderiv 𝕜 e y).inverse = fderiv 𝕜 e.symm (e y) :=
+  ContinuousLinearMap.inverse_eq (e.fderiv_comp_fderiv_symm_of_mem_source hy he hes)
+    (e.fderiv_symm_comp_fderiv_of_mem_source hy he hes)
+
+/-- An open partial homeomorphism of a space to itself which is differentiable at a point of its
+source, and whose inverse is differentiable at the image point, has a derivative with nonzero
+determinant there. -/
+theorem det_fderiv_ne_zero (e : OpenPartialHomeomorph E E) {y : E} (hy : y ∈ e.source)
+    (he : DifferentiableAt 𝕜 e y) (hes : DifferentiableAt 𝕜 e.symm (e y)) :
+    (fderiv 𝕜 e y).det ≠ 0 := by
+  obtain ⟨A, hA⟩ := e.isInvertible_fderiv hy he hes
+  rw [← hA]
+  exact A.toLinearEquiv.isUnit_det'.ne_zero
+
+/-- For an open partial homeomorphism of a space to itself, differentiable at `e⁻¹ p` with inverse
+differentiable at a point `p` of its target, the Jacobian determinants of `e` at `e⁻¹ p` and of
+`e⁻¹` at `p` are reciprocal. -/
+theorem det_fderiv_mul_det_fderiv_symm (e : OpenPartialHomeomorph E E) {p : E}
+    (hp : p ∈ e.target) (hd : DifferentiableAt 𝕜 e (e.symm p))
+    (hds : DifferentiableAt 𝕜 e.symm p) :
+    (fderiv 𝕜 e (e.symm p)).det * (fderiv 𝕜 e.symm p).det = 1 := by
+  rw [← ContinuousLinearMap.det_comp, e.fderiv_comp_fderiv_symm hp hd hds,
+    ContinuousLinearMap.det_id]
+
+/-- An open partial homeomorphism of a space to itself that is `C^n`, `n ≠ 0`, on its source,
+with inverse `C^n` on its target, has a derivative with nonzero determinant at every point of its
+source. -/
+theorem det_fderiv_ne_zero_of_contDiffOn (e : OpenPartialHomeomorph E E) {n : WithTop ℕ∞}
+    (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
+    (hx : x ∈ e.source) : (fderiv 𝕜 e x).det ≠ 0 :=
+  e.det_fderiv_ne_zero hx ((he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hx))
+    ((hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx)))
+
+/-- For an open partial homeomorphism of a space to itself that is `C^n`, `n ≠ 0`, on its source,
+with inverse `C^n` on its target, the Jacobian determinant of the inverse at `e x` is the
+reciprocal of that of `e` at a point `x` of the source. -/
+theorem det_fderiv_symm_apply_of_contDiffOn (e : OpenPartialHomeomorph E E) {n : WithTop ℕ∞}
+    (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
+    (hx : x ∈ e.source) : (fderiv 𝕜 e.symm (e x)).det = (fderiv 𝕜 e x).det⁻¹ := by
+  have h := e.det_fderiv_mul_det_fderiv_symm (e.map_source hx)
+    ((he.differentiableOn hn).differentiableAt
+      (e.open_source.mem_nhds (e.map_target (e.map_source hx))))
+    ((hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx)))
+  rw [e.left_inv hx] at h
+  exact eq_inv_of_mul_eq_one_right h
+
+/-- Postcomposing charts `φ` and `χ` with continuous linear equivalences `L_E` and `L_F` conjugates
+the Fréchet derivative of `χ ∘ f ∘ φ.symm`. -/
+theorem hasFDerivAt_transHomeomorph_iff {M N G₁ G₂ : Type*} [TopologicalSpace M]
+    [TopologicalSpace N] [NormedAddCommGroup G₁] [NormedSpace 𝕜 G₁] [NormedAddCommGroup G₂]
+    [NormedSpace 𝕜 G₂] (φ : OpenPartialHomeomorph M E) (χ : OpenPartialHomeomorph N F)
+    (L_E : E ≃L[𝕜] G₁) (L_F : F ≃L[𝕜] G₂) {f : M → N} {x : M} {f' : E →L[𝕜] F} :
+    HasFDerivAt
+        ((χ.transHomeomorph L_F.toHomeomorph) ∘ f ∘ (φ.transHomeomorph L_E.toHomeomorph).symm)
+        (L_F.toContinuousLinearMap ∘L f' ∘L L_E.symm.toContinuousLinearMap)
+        ((φ.transHomeomorph L_E.toHomeomorph) x) ↔
+      HasFDerivAt (χ ∘ f ∘ φ.symm) f' (φ x) := by
+  have hcomp :
+      (χ.transHomeomorph L_F.toHomeomorph) ∘ f ∘ (φ.transHomeomorph L_E.toHomeomorph).symm =
+        L_F ∘ (χ ∘ f ∘ φ.symm) ∘ L_E.symm := by
+    ext z
+    simp
+  rw [hcomp, L_F.comp_hasFDerivAt_iff, L_E.symm.comp_right_hasFDerivAt_iff]
+  simp
+
 end OpenPartialHomeomorph
 
 namespace TauCeti
@@ -124,6 +258,21 @@ theorem fderiv_comp_fderiv_eq_id_of_invOn (hΦ : DifferentiableOn 𝕜 Φ U) (hm
   exact (hcomp.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id (Φ y))
 
 end TauCeti
+
+namespace Equiv
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] (φ : E ≃ E)
+
+/-- If a bijection `φ` is differentiable at `φ⁻¹ y` and its inverse is differentiable at `y`, the
+Jacobian determinants of `φ⁻¹` at `y` and of `φ` at `φ⁻¹ y` are reciprocal. -/
+theorem det_fderiv_symm_mul_det_fderiv {y : E} (hφ : DifferentiableAt 𝕜 φ (φ.symm y))
+    (hψ : DifferentiableAt 𝕜 φ.symm y) :
+    (fderiv 𝕜 φ.symm y).det * (fderiv 𝕜 φ (φ.symm y)).det = 1 := by
+  rw [mul_comm, ← ContinuousLinearMap.det_comp, ← fderiv_comp y hφ hψ, φ.self_comp_symm,
+    fderiv_id, ContinuousLinearMap.det_id]
+
+end Equiv
 
 /-- Precomposition by a continuous linear equivalence preserves the image of the locus where
 the totalized Fréchet derivative vanishes. No differentiability hypothesis is needed. -/

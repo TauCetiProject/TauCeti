@@ -286,7 +286,7 @@ variable (R : Type u) [CommRing R] (ι : Type*) [Fintype ι]
 /-- The **quantum grading** of the circle tensor: the basis vector of a labelling `l` spans its
 degree `TauCeti.Khovanov.labelingQuantumDegree ι l`. It is the grading of the free module on the
 labellings, transported along `TauCeti.Khovanov.circleBasis`. -/
-noncomputable def circleQuantumGrading : InternalGrading R (CircleTensor R ι) :=
+noncomputable def circleQuantumGrading : InternalGrading R (CircleTensor R ι) ℤ :=
   (InternalGrading.finsupp R (labelingQuantumDegree ι)).map (circleBasis R ι).repr.symm
 
 variable {R ι}
@@ -371,7 +371,7 @@ with element `l₀`. -/
 private def uniqueLabelingOfDegree {p : ℤ} {l₀ : ι → Bool}
     (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :
     Unique {l : ι → Bool // labelingQuantumDegree ι l = p} :=
-  ⟨⟨⟨l₀, (h l₀).2 rfl⟩⟩, fun l ↦ Subtype.ext ((h l).1 l.2)⟩
+  ⟨⟨⟨l₀, (h l₀).2 rfl⟩⟩, fun l ↦ Subtype.ext ((h l).1 l.property)⟩
 
 private theorem coe_default_uniqueLabelingOfDegree {p : ℤ} {l₀ : ι → Bool}
     (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) :

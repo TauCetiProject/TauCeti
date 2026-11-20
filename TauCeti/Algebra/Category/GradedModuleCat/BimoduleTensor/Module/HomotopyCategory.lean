@@ -74,7 +74,7 @@ variable {k : Type uk} {A : Type uA} [CommRing k] [Ring A] [Algebra k A]
 section Action
 
 variable {B : Type uB} [Ring B] [Algebra k B]
-variable (Γ : InternalGrading k A) (Δ : InternalGrading k B)
+variable (Γ : InternalGrading k A ℤ) (Δ : InternalGrading k B ℤ)
   [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece]
 
 /-- The action of complexes of graded `(A, B)`-bimodules on the homotopy category of cochain
@@ -91,7 +91,7 @@ end Action
 
 section LeftUnitor
 
-variable (Γ : InternalGrading k A) [GradedAlgebra Γ.piece]
+variable (Γ : InternalGrading k A ℤ) [GradedAlgebra Γ.piece]
 
 /-- The regular graded bimodule, placed in cohomological degree zero, acts as the identity functor
 on the homotopy category of cochain complexes of graded modules. -/
@@ -108,7 +108,7 @@ end LeftUnitor
 section Associator
 
 variable {B : Type uB} {C : Type uC} [Ring B] [Ring C] [Algebra k B] [Algebra k C]
-variable (Γ : InternalGrading k A) (Δ : InternalGrading k B) (Θ : InternalGrading k C)
+variable (Γ : InternalGrading k A ℤ) (Δ : InternalGrading k B ℤ) (Θ : InternalGrading k C ℤ)
   [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece] [GradedAlgebra Θ.piece]
 
 /-- Acting by the total tensor product of two complexes of graded bimodules is isomorphic, on the
@@ -132,7 +132,7 @@ section Equivalence
 -- `B` lives in the universe of `A`, so that the regular bimodules of `A` and of `B` both live in
 -- the universe of the complexes `K` and `K'`.
 variable {B : Type uA} [Ring B] [Algebra k B]
-variable (Γ : InternalGrading k A) (Δ : InternalGrading k B)
+variable (Γ : InternalGrading k A ℤ) (Δ : InternalGrading k B ℤ)
   [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece]
   (K : CochainComplex (GradedModuleCat.{max w uA} (Γ.tensorProduct Δ.opposite).piece) ℤ)
   (K' : CochainComplex (GradedModuleCat.{max w uA} (Δ.tensorProduct Γ.opposite).piece) ℤ)

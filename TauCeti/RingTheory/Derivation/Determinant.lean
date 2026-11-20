@@ -16,12 +16,16 @@ public import TauCeti.RingTheory.Derivation.Matrix
 
 A derivation `D` differentiates a finite product termwise (`Derivation.leibniz_prod`), and hence
 a determinant by **Jacobi's formula** `D (det M) = tr (adj M * D M)`, where `D M` applies `D` to
-every entry of the square matrix `M` (`Derivation.leibniz_det`).
+every entry of the square matrix `M` (`Derivation.leibniz_det`). When `M` satisfies a linear
+Sylvester differential equation `M.map D = M * P - Q * M`, substituting into Jacobi's formula
+yields the **Abel–Jacobi–Liouville formula** `D (det M) = det M * (tr P - tr Q)`
+(`Derivation.leibniz_det_of_map_eq_mul_sub_mul`, `Derivation.leibniz_det_of_matrixGauge_eq`).
 
-Let `S` be a finite free algebra over a commutative ring `A`, and let `D'` be a derivation of `S`
-extending a derivation `D` of `A`, in the sense that `D' (algebraMap A S a) = algebraMap A S (D a)`.
-Then the norm of a unit `u` of `S` has logarithmic derivative the trace of the logarithmic
-derivative of `u` (`Derivation.leibniz_norm`):
+Let `S` be an algebra over a commutative ring `A`, and let `D'` be a derivation of `S` extending a
+derivation `D` of `A`, in the sense that `D' (algebraMap A S a) = algebraMap A S (D a)`. Then `D`
+commutes with the algebraic trace (`Derivation.map_trace`), and the norm of a unit `u` of `S` has
+logarithmic derivative the trace of the logarithmic derivative of `u` (`Derivation.leibniz_norm`,
+vanishing on both sides when `S` has no finite `A`-basis):
 
 `D (Algebra.norm A u) = Algebra.norm A u * Algebra.trace A S (u⁻¹ * D' u)`.
 
@@ -44,7 +48,8 @@ open Matrix Finset
 
 namespace Derivation
 
-variable {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R A] (D : Derivation R A A)
+variable {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R A]
+  (D : Derivation R A A)
 
 /-- **Jacobi's formula**: a derivation `D` differentiates the determinant of `M` as the trace of
 the adjugate of `M` times the entrywise derivative of `M`. -/
@@ -65,28 +70,43 @@ theorem leibniz_det {n : Type*} [Fintype n] [DecidableEq n] (M : Matrix n n A) :
     smul_sum]
   exact sum_comm
 
-variable {S : Type*} [CommRing S] [Algebra A S] [Algebra R S] (D' : Derivation R S S)
-  (hD : ∀ a, D' (algebraMap A S a) = algebraMap A S (D a))
+variable {R' S : Type*} [CommSemiring R'] [CommRing S] [Algebra A S] [Algebra R' S]
+  (D' : Derivation R' S S) (hD : ∀ a, D' (algebraMap A S a) = algebraMap A S (D a))
 
 include hD
 
-/-- **Logarithmic derivative of the norm**: if `D'` is a derivation of a finite free `A`-algebra
-`S` extending the derivation `D` of `A`, then for every unit `u` of `S`,
+/-- **Derivations commute with the algebraic trace**: if `D'` is a derivation of an `A`-algebra `S`
+extending the derivation `D` of `A`, then `D (Tr s) = Tr (D' s)`. -/
+theorem map_trace (s : S) :
+    D (Algebra.trace A S s) = Algebra.trace A S (D' s) := by
+  classical
+  by_cases H : ∃ t : Finset S, Nonempty (Module.Basis t A S)
+  · let b := H.choose_spec.some
+    rw [Algebra.trace_eq_matrix_trace b, Algebra.trace_eq_matrix_trace b, AddMonoidHom.map_trace,
+      map_leftMulMatrix D D' hD b s, Matrix.trace_add, Matrix.trace_sub, Matrix.trace_mul_comm,
+      sub_self, add_zero]
+  · simp [Algebra.trace_eq_zero_of_not_exists_basis A H]
+
+/-- **Logarithmic derivative of the norm**: if `D'` is a derivation of an `A`-algebra `S` extending
+the derivation `D` of `A`, then for every unit `u` of `S`,
 `D (N u) = N u * Tr (u⁻¹ * D' u)`. -/
-theorem leibniz_norm [Module.Free A S] [Module.Finite A S] (u : Sˣ) :
+theorem leibniz_norm (u : Sˣ) :
     D (Algebra.norm A (u : S)) =
       Algebra.norm A (u : S) * Algebra.trace A S (↑u⁻¹ * D' u) := by
   classical
-  let b := Module.Free.chooseBasis A S
-  set L := Algebra.leftMulMatrix b
-  set Γ : Matrix _ _ A := of fun p q => b.repr (D' (b q)) p
-  have hadj : (L u).adjugate = (L u).det • L ↑u⁻¹ :=
-    adjugate_eq_det_smul_of_mul_eq_one (by rw [← map_mul, Units.mul_inv, map_one])
-  have hcomm : ((L u).adjugate * (L u * Γ - Γ * L u)).trace = 0 := by
-    rw [mul_sub, trace_sub, ← Matrix.mul_assoc, ← Matrix.mul_assoc, adjugate_mul,
-      trace_mul_cycle (L u).adjugate Γ (L u), mul_adjugate, sub_self]
-  rw [Algebra.norm_eq_matrix_det b, Algebra.trace_eq_matrix_trace b, leibniz_det,
-    map_leftMulMatrix D D' hD, Matrix.mul_add, trace_add, hcomm, add_zero, hadj,
-    Matrix.smul_mul, trace_smul, smul_eq_mul, ← map_mul]
+  by_cases H : ∃ t : Finset S, Nonempty (Module.Basis t A S)
+  · let b := H.choose_spec.some
+    set L := Algebra.leftMulMatrix b
+    set Γ : Matrix _ _ A := of fun p q => b.repr (D' (b q)) p
+    have hadj : (L u).adjugate = (L u).det • L ↑u⁻¹ :=
+      adjugate_eq_det_smul_of_mul_eq_one (by rw [← map_mul, Units.mul_inv, map_one])
+    have hcomm : ((L u).adjugate * (L u * Γ - Γ * L u)).trace = 0 := by
+      rw [mul_sub, trace_sub, ← Matrix.mul_assoc, ← Matrix.mul_assoc, adjugate_mul,
+        trace_mul_cycle (L u).adjugate Γ (L u), mul_adjugate, sub_self]
+    rw [Algebra.norm_eq_matrix_det b, Algebra.trace_eq_matrix_trace b, leibniz_det,
+      map_leftMulMatrix D D' hD, Matrix.mul_add, trace_add, hcomm, add_zero, hadj,
+      Matrix.smul_mul, trace_smul, smul_eq_mul, ← map_mul]
+  · simp [Algebra.norm_eq_one_of_not_exists_basis A H,
+      Algebra.trace_eq_zero_of_not_exists_basis A H]
 
 end Derivation

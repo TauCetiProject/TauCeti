@@ -58,7 +58,7 @@ Its character basis is the standard basis of fundamental weights. -/
 
 /-- The tripled datum uses the pinned rational weight-table action. -/
 @[simp] theorem chevalleyDatum_representation :
-    chevalleyDatum.representation = weightTable.pinnedRep (t := .D 4) (by decide)
+    chevalleyDatum.representation = weightTable.pinnedRepresentation (t := .D 4) (by decide)
       (by simpa only [cartanMatrix_D, rank_D, CartanMatrix.D_transpose]
           using weightTable_cartanMatrix) := (rfl)
 
@@ -69,7 +69,10 @@ Its character basis is the standard basis of fundamental weights. -/
       (_root_.UniversalEnvelopingAlgebra.ι ℚ (((DynkinType.D 4).lieBasis (by decide)).h i)) =
       Matrix.toLin' (weightTable.cartanGeneratorMatrixQ i) := by
   rw [chevalleyDatum_representation]
-  exact weightTable.pinnedRep_h (t := .D 4) (by decide) _ i
+  apply LinearMap.ext
+  intro v
+  exact (weightTable.pinnedRepresentation_ι_lieBasis_h_apply (t := .D 4) (by decide) _ i v).trans
+    (Matrix.toLin'_apply _ _).symm
 
 /-- A numbered raising generator acts by the tripled raising matrix. -/
 @[simp↓] theorem chevalleyDatum_representation_e (i : Fin (DynkinType.D 4).rank) :
@@ -77,7 +80,10 @@ Its character basis is the standard basis of fundamental weights. -/
       (_root_.UniversalEnvelopingAlgebra.ι ℚ (((DynkinType.D 4).lieBasis (by decide)).e i)) =
       Matrix.toLin' (weightTable.raisingMatrixQ i) := by
   rw [chevalleyDatum_representation]
-  exact weightTable.pinnedRep_e (t := .D 4) (by decide) _ i
+  apply LinearMap.ext
+  intro v
+  exact (weightTable.pinnedRepresentation_ι_lieBasis_e_apply (t := .D 4) (by decide) _ i v).trans
+    (Matrix.toLin'_apply _ _).symm
 
 /-- A numbered lowering generator acts by the tripled lowering matrix. -/
 @[simp↓] theorem chevalleyDatum_representation_f (i : Fin (DynkinType.D 4).rank) :
@@ -85,7 +91,10 @@ Its character basis is the standard basis of fundamental weights. -/
       (_root_.UniversalEnvelopingAlgebra.ι ℚ (((DynkinType.D 4).lieBasis (by decide)).f i)) =
       Matrix.toLin' (weightTable.loweringMatrixQ i) := by
   rw [chevalleyDatum_representation]
-  exact weightTable.pinnedRep_f (t := .D 4) (by decide) _ i
+  apply LinearMap.ext
+  intro v
+  exact (weightTable.pinnedRepresentation_ι_lieBasis_f_apply (t := .D 4) (by decide) _ i v).trans
+    (Matrix.toLin'_apply _ _).symm
 
 /-- The tripled datum uses the existing coordinate lattice. -/
 @[simp] theorem chevalleyDatum_lattice : chevalleyDatum.lattice = lattice.toAddSubgroup := (rfl)
@@ -128,8 +137,8 @@ Its character basis is the standard basis of fundamental weights. -/
 @[simp] theorem chevalleyDatum_coordinateRoot (γ : Fin (DynkinType.D 4).numRoots) :
     chevalleyDatum.coordinateRoot γ =
       ((DynkinType.D 4).simplyConnectedRootDatum (by decide)).root γ := by
-  exact weightTable.chevalleyDatum_coordinateRoot (t := .D 4) (by decide)
-    weightTable_pinnedCartanMatrix weightTable_span (Equiv.refl _) γ
+  exact congrFun (weightTable.chevalleyDatum_coordinateRoot (t := .D 4) (by decide)
+    weightTable_pinnedCartanMatrix weightTable_span (Equiv.refl _)) γ
 
 end
 
