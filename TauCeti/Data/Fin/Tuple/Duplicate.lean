@@ -51,14 +51,14 @@ shifted down by `1`. -/
 theorem duplicateAt_apply {α : Sort*} (e : α) {L : ℕ} (j : Fin L) (z : Fin L → α)
     (k : Fin (L + 1)) :
     duplicateAt e j z k =
-      if hk : k.1 < j.1 then z ⟨k.1, by omega⟩
-      else if k.1 = j.1 ∨ k.1 = j.1 + 1 then e else z ⟨k.1 - 1, by omega⟩ := by
+      if hk : k.val < j.val then z ⟨k.val, by omega⟩
+      else if k.val = j.val ∨ k.val = j.val + 1 then e else z ⟨k.val - 1, by omega⟩ := by
   rw [duplicateAt]
   cases k using Fin.succAboveCases j.succ with
   | x => simp
   | p r =>
     rw [Fin.insertNth_apply_succAbove]
-    rcases lt_trichotomy r.1 j.1 with hlt | heq | hgt
+    rcases lt_trichotomy r.val j.val with hlt | heq | hgt
     · rw [Function.update_of_ne (fun h ↦ Nat.ne_of_lt hlt (congrArg Fin.val h)),
         Fin.succAbove_of_castSucc_lt _ _ (Fin.lt_def.2 (by simp; omega))]; simp [hlt]
     · obtain rfl := Fin.ext heq
@@ -80,7 +80,7 @@ theorem sum_duplicateAt {M : Type*} [AddCommMonoid M] {L : ℕ} (j : Fin L) {a :
 
 /-- Prefix sums of `duplicateAt a j z` of length at most `j` agree with those of `z`. -/
 theorem sum_duplicateAt_range_le {M : Type*} [AddCommMonoid M] {L : ℕ} (a : M) (j : Fin L)
-    (z : Fin L → M) {p : ℕ} (hp : p ≤ j.1) :
+    (z : Fin L → M) {p : ℕ} (hp : p ≤ j.val) :
     (∑ r ∈ Finset.range p, if h : r < L + 1 then duplicateAt a j z ⟨r, h⟩ else 0) =
       ∑ r ∈ Finset.range p, if h : r < L then z ⟨r, h⟩ else 0 :=
   Finset.sum_congr rfl fun r hr ↦ by
@@ -91,7 +91,7 @@ theorem sum_duplicateAt_range_le {M : Type*} [AddCommMonoid M] {L : ℕ} (a : M)
 /-- Prefix sums of `duplicateAt a j z` of length `q + 1` with `j ≤ q ≤ L` exceed the length-`q`
 prefix sum of `z` by `a` when `z j = a`. -/
 theorem sum_duplicateAt_range_succ_ge {M : Type*} [AddCommMonoid M] {L : ℕ} (j : Fin L) {a : M}
-    {z : Fin L → M} (hzj : z j = a) {q : ℕ} (hq₁ : j.1 ≤ q) (hq₂ : q ≤ L) :
+    {z : Fin L → M} (hzj : z j = a) {q : ℕ} (hq₁ : j.val ≤ q) (hq₂ : q ≤ L) :
     (∑ r ∈ Finset.range (q + 1), if h : r < L + 1 then duplicateAt a j z ⟨r, h⟩ else 0) =
       (∑ r ∈ Finset.range q, if h : r < L then z ⟨r, h⟩ else 0) + a := by
   revert hq₂
@@ -108,7 +108,7 @@ theorem sum_duplicateAt_range_succ_ge {M : Type*} [AddCommMonoid M] {L : ℕ} (j
     · rw [show (⟨q, by omega⟩ : Fin L) = j from Fin.ext heq.symm, hzj,
         dite_eq_right (by rw [Fin.val_mk]; omega), ite_eq_left (.inr (by rw [Fin.val_mk]; omega))]
     · rw [dite_eq_right (by rw [Fin.val_mk]; omega), ite_eq_right (by rw [Fin.val_mk]; omega),
-        show (⟨(⟨q + 1, by omega⟩ : Fin (L + 1)).1 - 1, by omega⟩ : Fin L) = ⟨q, by omega⟩
+        show (⟨(⟨q + 1, by omega⟩ : Fin (L + 1)).val - 1, by omega⟩ : Fin L) = ⟨q, by omega⟩
           from Fin.ext (by simp), add_right_comm]
 
 end TauCeti

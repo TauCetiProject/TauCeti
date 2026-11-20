@@ -137,7 +137,7 @@ theorem criticalPoints_eq_fixedPoints
   ext x
   rw [h.mem_criticalPoints_iff_closedOneParameterSubgroup_le (hσ.nondegenerate_bilinFormAt x),
     MulAction.mem_fixedPoints]
-  exact ⟨fun hle g ↦ hle g.2, fun hfix g hg ↦ hfix ⟨g, hg⟩⟩
+  exact ⟨fun hle g ↦ hle g.property, fun hfix g hg ↦ hfix ⟨g, hg⟩⟩
 
 /-- **A component generating a dense one-parameter subgroup has critical set `M^G`.** If the
 one-parameter subgroup of `ξ` is dense in `G`, the critical set of `μ^ξ` is the fixed-point set of

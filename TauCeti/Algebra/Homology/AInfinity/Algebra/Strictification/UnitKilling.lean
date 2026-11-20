@@ -53,7 +53,7 @@ private noncomputable def unitKillingMultilinear (𝒜 : AInfinityAlgebra R A) (
     MultilinearMap (RingHom.id R) (fun _ : Fin (m + 2) ↦ A) A :=
   -((((𝒜.taylor ∘ₗ of R A ⟨m + 3, by omega⟩).compMultilinearMap
       (PiTensorProduct.tprod R)).curryMid j.succ e).compLinearMap fun r : Fin (m + 2) ↦
-        if r.1 < j.1 then (𝒜.grading.shift 1).koszulTwist 1
+        if r.val < j.val then (𝒜.grading.shift 1).koszulTwist 1
         else if r = j then LinearMap.toSpanSingleton R A e ∘ₗ π else LinearMap.id)
 
 /-- The degree-zero suspended cochain in arity `m + 2` that eliminates `e` at slot `j`. -/
@@ -62,8 +62,8 @@ private noncomputable def unitKillingCochain (𝒜 : AInfinityAlgebra R A) (e : 
   PiTensorProduct.lift (unitKillingMultilinear 𝒜 e π m j) ∘ₗ component R A ⟨m + 2, by omega⟩
 
 private theorem unitKillingCochain_of_of_ne (𝒜 : AInfinityAlgebra R A) (e : A)
-    (π : Module.Dual R A) (m : ℕ) (j : Fin (m + 2)) {k : {k : ℕ // 0 < k}} (hk : k.1 ≠ m + 2)
-    (x : TensorPower R k.1 A) : unitKillingCochain 𝒜 e π m j (of R A k x) = 0 := by
+    (π : Module.Dual R A) (m : ℕ) (j : Fin (m + 2)) {k : {k : ℕ // 0 < k}} (hk : k.val ≠ m + 2)
+    (x : TensorPower R k.val A) : unitKillingCochain 𝒜 e π m j (of R A k x) = 0 := by
   rw [unitKillingCochain, LinearMap.comp_apply,
     component_of_of_ne R A (fun h ↦ hk (congrArg Subtype.val h)), map_zero]
 
@@ -83,13 +83,13 @@ private theorem unitKillingCochain_of_tprod (𝒜 : AInfinityAlgebra R A) (e : A
     (π : Module.Dual R A) (m : ℕ) (j : Fin (m + 2)) (z : Fin (m + 2) → A) :
     unitKillingCochain 𝒜 e π m j (of R A ⟨m + 2, by omega⟩ (PiTensorProduct.tprod R z)) =
       -(π (z j) • 𝒜.taylor (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R
-          (duplicateAt e j fun r ↦ if r.1 < j.1 then (𝒜.grading.shift 1).koszulTwist 1 (z r)
+          (duplicateAt e j fun r ↦ if r.val < j.val then (𝒜.grading.shift 1).koszulTwist 1 (z r)
             else z r)))) := by
   let N := ((𝒜.taylor ∘ₗ of R A ⟨m + 3, by omega⟩).compMultilinearMap
     (PiTensorProduct.tprod R)).curryMid j.succ e
   let v : Fin (m + 2) → A := fun r ↦
-    if r.1 < j.1 then (𝒜.grading.shift 1).koszulTwist 1 (z r) else z r
-  have harg : (fun r : Fin (m + 2) ↦ (if r.1 < j.1 then (𝒜.grading.shift 1).koszulTwist 1
+    if r.val < j.val then (𝒜.grading.shift 1).koszulTwist 1 (z r) else z r
+  have harg : (fun r : Fin (m + 2) ↦ (if r.val < j.val then (𝒜.grading.shift 1).koszulTwist 1
       else if r = j then LinearMap.toSpanSingleton R A e ∘ₗ π else LinearMap.id) (z r)) =
       Function.update v j (π (z j) • e) := funext fun r ↦ by
     rcases eq_or_ne r j with rfl | hr
@@ -103,38 +103,38 @@ private theorem unitKillingCochain_of_tprod (𝒜 : AInfinityAlgebra R A) (e : A
 
 private theorem unitKillingCochain_of_tprod_of_homogeneous (𝒜 : AInfinityAlgebra R A) (e : A)
     (π : Module.Dual R A) (m : ℕ) (j : Fin (m + 2)) {z : Fin (m + 2) → A} {𝒟 : Fin (m + 2) → ℤ}
-    (hz : ∀ r : Fin (m + 2), r.1 < j.1 → z r ∈ (𝒜.grading.shift 1).piece (𝒟 r)) :
+    (hz : ∀ r : Fin (m + 2), r.val < j.val → z r ∈ (𝒜.grading.shift 1).piece (𝒟 r)) :
     unitKillingCochain 𝒜 e π m j (of R A ⟨m + 2, by omega⟩ (PiTensorProduct.tprod R z)) =
-      -(negOnePowCast R (∑ i ∈ Finset.range j.1, if h : i < m + 2 then 𝒟 ⟨i, h⟩ else 0) •
+      -(negOnePowCast R (∑ i ∈ Finset.range j.val, if h : i < m + 2 then 𝒟 ⟨i, h⟩ else 0) •
           π (z j) • 𝒜.taylor (of R A ⟨m + 3, by omega⟩
             (PiTensorProduct.tprod R (duplicateAt e j z)))) := by
   let N := ((𝒜.taylor ∘ₗ of R A ⟨m + 3, by omega⟩).compMultilinearMap
     (PiTensorProduct.tprod R)).curryMid j.succ e
-  let s : Finset (Fin (m + 2)) := Finset.univ.filter fun r ↦ r.1 < j.1
+  let s : Finset (Fin (m + 2)) := Finset.univ.filter fun r ↦ r.val < j.val
   have harg : Function.update (fun r : Fin (m + 2) ↦
-      if r.1 < j.1 then (𝒜.grading.shift 1).koszulTwist 1 (z r) else z r) j e =
+      if r.val < j.val then (𝒜.grading.shift 1).koszulTwist 1 (z r) else z r) j e =
       s.piecewise (fun r ↦ negOnePowCast R (𝒟 r) • Function.update z j e r)
         (Function.update z j e) := funext fun r ↦ by
     rcases lt_trichotomy r j with hlt | rfl | hgt
-    · have hr : r.1 < j.1 := hlt
+    · have hr : r.val < j.val := hlt
       simp only [s, Finset.piecewise, Finset.mem_filter, Finset.mem_univ, true_and, hr, ↓reduceIte,
         Function.update_of_ne hlt.ne]
       rw [(𝒜.grading.shift 1).koszulTwist_one_apply_of_mem (hz r hr), negOnePowCast_eq_intCast]
     · simp [s, Finset.piecewise]
     · simp [s, Finset.piecewise, Function.update_of_ne hgt.ne', lt_asymm hgt]
   have hsum : ∑ r ∈ s, 𝒟 r =
-      ∑ i ∈ Finset.range j.1, if h : i < m + 2 then 𝒟 ⟨i, h⟩ else 0 := by
+      ∑ i ∈ Finset.range j.val, if h : i < m + 2 then 𝒟 ⟨i, h⟩ else 0 := by
     refine Finset.sum_nbij Fin.val (fun r hr ↦ Finset.mem_range.2 (Finset.mem_filter.1 hr).2)
       (fun _ _ _ _ h ↦ Fin.ext h) (fun i hi ↦ ?_) (fun r _ ↦ by simp)
-    refine ⟨⟨i, lt_trans (Finset.mem_range.1 hi) j.2⟩, ?_, rfl⟩
+    refine ⟨⟨i, lt_trans (Finset.mem_range.1 hi) j.isLt⟩, ?_, rfl⟩
     exact Finset.mem_coe.2 (Finset.mem_filter.2 ⟨Finset.mem_univ _, Finset.mem_range.1 hi⟩)
   have hN := N.map_piecewise_smul (fun r ↦ negOnePowCast R (𝒟 r)) (Function.update z j e) s
   rw [← harg] at hN
   simp only [RingHom.id_apply, ← negOnePowCast_sum, hsum] at hN
   have hN' : 𝒜.taylor (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R
       (duplicateAt e j fun r ↦
-        if r.1 < j.1 then (𝒜.grading.shift 1).koszulTwist 1 (z r) else z r))) =
-      negOnePowCast R (∑ i ∈ Finset.range j.1, if h : i < m + 2 then 𝒟 ⟨i, h⟩ else 0) •
+        if r.val < j.val then (𝒜.grading.shift 1).koszulTwist 1 (z r) else z r))) =
+      negOnePowCast R (∑ i ∈ Finset.range j.val, if h : i < m + 2 then 𝒟 ⟨i, h⟩ else 0) •
         𝒜.taylor (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R (duplicateAt e j z))) := by
     simpa only [N, duplicateAt_def, MultilinearMap.curryMid_apply_apply,
       LinearMap.compMultilinearMap_apply, LinearMap.comp_apply] using hN
@@ -173,22 +173,22 @@ private theorem isHomogeneous_unitKillingCochain (𝒜 : AInfinityAlgebra R A) {
 
 private theorem unitKillingCochain_of_tprod_eq_zero_of_lt {𝒜 : AInfinityAlgebra R A} {e : A}
     (he : e ∈ 𝒜.grading.piece 0) (π : Module.Dual R A) (m : ℕ) (j : Fin (m + 2))
-    (hIH : 𝒜.KillsUnitBeforeSlot e (m + 3) j.1) (z : Fin (m + 2) → A) {i : Fin (m + 2)}
-    (hij : i.1 < j.1) (hzi : z i = e) :
+    (hIH : 𝒜.KillsUnitBeforeSlot e (m + 3) j.val) (z : Fin (m + 2) → A) {i : Fin (m + 2)}
+    (hij : i.val < j.val) (hzi : z i = e) :
     unitKillingCochain 𝒜 e π m j (of R A ⟨m + 2, by omega⟩ (PiTensorProduct.tprod R z)) = 0 := by
   have he' := 𝒜.grading.mem_shift_piece_neg_of_mem_zero 1 he
   rw [unitKillingCochain_of_tprod]
   set u : Fin (m + 3) → A := duplicateAt e j fun r ↦
-    if r.1 < j.1 then (𝒜.grading.shift 1).koszulTwist 1 (z r) else z r
-  have hui : u ⟨i.1, by omega⟩ = (-1 : R) • e := by
+    if r.val < j.val then (𝒜.grading.shift 1).koszulTwist 1 (z r) else z r
+  have hui : u ⟨i.val, by omega⟩ = (-1 : R) • e := by
     dsimp only [u]; rw [duplicateAt_apply, dite_eq_left hij]
     exact (ite_eq_left hij).trans (by
-      rw [show (⟨i.1, by omega⟩ : Fin (m + 2)) = i from Fin.ext rfl, hzi,
+      rw [show (⟨i.val, by omega⟩ : Fin (m + 2)) = i from Fin.ext rfl, hzi,
         (𝒜.grading.shift 1).koszulTwist_one_apply_of_mem he']; simp)
-  rw [show u = Function.update u ⟨i.1, by omega⟩ ((-1 : R) • e) by
+  rw [show u = Function.update u ⟨i.val, by omega⟩ ((-1 : R) • e) by
       rw [← hui, Function.update_eq_self],
     (PiTensorProduct.tprod R).map_update_smul, map_smul, map_smul,
-    killsUnitBeforeSlot_iff.1 hIH _ ⟨i.1, by omega⟩ hij (Function.update_self _ _ _),
+    killsUnitBeforeSlot_iff.1 hIH _ ⟨i.val, by omega⟩ hij (Function.update_self _ _ _),
     smul_zero, smul_zero, neg_zero]
 
 /-! ### Hochschild differential of `unitKillingCochain` -/
@@ -278,16 +278,16 @@ private theorem unitKillingCochain_barDifferential_of_tprod (𝒜 : AInfinityAlg
 
 private theorem unitKillingCochain_barDifferential_prefix {𝒜 : AInfinityAlgebra R A}
     (h𝒜 : 𝒜.IsMinimal) {e : A} (he : 𝒜.CohomologicalUnit e) (π : Module.Dual R A) (m : ℕ)
-    (j : Fin (m + 2)) (hIH : 𝒜.KillsUnitBeforeSlot e (m + 3) j.1) {w : Fin (m + 3) → A}
+    (j : Fin (m + 2)) (hIH : 𝒜.KillsUnitBeforeSlot e (m + 3) j.val) {w : Fin (m + 3) → A}
     {𝒟 : Fin (m + 3) → ℤ} (hw : ∀ r, w r ∈ (𝒜.grading.shift 1).piece (𝒟 r)) {i : Fin (m + 3)}
-    (hij : i.1 ≤ j.1) (hwi : w i = e) :
-    (∑ p ∈ Finset.range (i.1 + 1),
+    (hij : i.val ≤ j.val) (hwi : w i = e) :
+    (∑ p ∈ Finset.range (i.val + 1),
       negOnePowCast R (∑ r ∈ Finset.range p, if h : r < m + 3 then 𝒟 ⟨r, h⟩ else 0) •
         unitKillingCochain 𝒜 e π m j (splice R w 0 (m + 3) p 2 (𝒜.taylor (subword R w p 2)))) =
       𝒜.taylor (of R A (2 : ℕ+) (PiTensorProduct.tprod R
         ![w 0, unitKillingCochain 𝒜 e π m j (subword R w 1 (m + 2))])) := by
   have _hjn := j.isLt
-  rcases Nat.eq_zero_or_pos i.1 with hi0 | hipos
+  rcases Nat.eq_zero_or_pos i.val with hi0 | hipos
   · -- At `i = 0`, collapsing `[e, w₁]` leaves the tail subword, matching `m₂(e, φ(tail))`.
     have hw0 : w 0 = e := (congrArg w (Fin.ext hi0.symm)).trans hwi
     rw [hi0, Finset.sum_range_one, Finset.sum_range_zero, negOnePowCast_zero, one_smul,
@@ -299,18 +299,18 @@ private theorem unitKillingCochain_barDifferential_prefix {𝒜 : AInfinityAlgeb
     have htail : unitKillingCochain 𝒜 e π m j (subword R w 1 (m + 2)) = 0 := by
       rw [subword_eq_of_tprod R w (by omega) (by omega)]
       exact unitKillingCochain_of_tprod_eq_zero_of_lt he.degree_zero π m j hIH _
-        (i := ⟨i.1 - 1, by omega⟩) (by dsimp only; omega)
+        (i := ⟨i.val - 1, by omega⟩) (by dsimp only; omega)
         ((congrArg w (Fin.ext (by simp; omega))).trans hwi)
     have hcancel := h𝒜.negOnePowCast_smul_splice_two_add_succ_eq_zero he (n := m + 2)
-      (p := i.1 - 1) (x := w) (𝒟 := 𝒟) (by omega) (hw _)
+      (p := i.val - 1) (x := w) (𝒟 := 𝒟) (by omega) (hw _)
       ((congrArg w (Fin.ext (by dsimp only; omega))).trans hwi)
     rw [htail, (PiTensorProduct.tprod R).map_coord_zero (1 : Fin 2) rfl, map_zero, map_zero,
-      show Finset.range (i.1 + 1) = Finset.range ((i.1 - 1) + 1 + 1) from congrArg _ (by omega),
+      show Finset.range (i.val + 1) = Finset.range ((i.val - 1) + 1 + 1) from congrArg _ (by omega),
       Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_eq_zero fun p hp ↦ by
         rw [Finset.mem_range] at hp
         rw [splice_two_eq_of_tprod R (by omega) w _,
           unitKillingCochain_of_tprod_eq_zero_of_lt he.degree_zero π m j hIH _
-            (i := ⟨i.1 - 1, by omega⟩) (by dsimp only; omega) (by
+            (i := ⟨i.val - 1, by omega⟩) (by dsimp only; omega) (by
               dsimp only; rw [dite_eq_right (by rw [Fin.val_mk]; omega),
                 dite_eq_right (by rw [Fin.val_mk]; omega)]
               exact (congrArg w (Fin.ext (by simp; omega))).trans hwi),
@@ -319,9 +319,9 @@ private theorem unitKillingCochain_barDifferential_prefix {𝒜 : AInfinityAlgeb
 
 private theorem hochschildDifferential_unitKillingCochain_of_lt {𝒜 : AInfinityAlgebra R A}
     (h𝒜 : 𝒜.IsMinimal) {e : A} (he : 𝒜.CohomologicalUnit e) (π : Module.Dual R A) (m : ℕ)
-    (j : Fin (m + 2)) (hIH : 𝒜.KillsUnitBeforeSlot e (m + 3) j.1) {w : Fin (m + 3) → A}
+    (j : Fin (m + 2)) (hIH : 𝒜.KillsUnitBeforeSlot e (m + 3) j.val) {w : Fin (m + 3) → A}
     {𝒟 : Fin (m + 3) → ℤ} (hw : ∀ r, w r ∈ (𝒜.grading.shift 1).piece (𝒟 r)) {i : Fin (m + 3)}
-    (hij : i.1 < j.1) (hwi : w i = e) :
+    (hij : i.val < j.val) (hwi : w i = e) :
     𝒜.hochschildDifferential 0 (unitKillingCochain 𝒜 e π m j)
         (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R w)) = 0 := by
   have _hjn := j.isLt
@@ -332,17 +332,17 @@ private theorem hochschildDifferential_unitKillingCochain_of_lt {𝒜 : AInfinit
   have hinit : unitKillingCochain 𝒜 e π m j (subword R w 0 (m + 2)) = 0 := by
     rw [subword_eq_of_tprod R w (by omega) (by omega)]
     exact unitKillingCochain_of_tprod_eq_zero_of_lt he.degree_zero π m j hIH _
-      (i := ⟨i.1, by omega⟩) hij
+      (i := ⟨i.val, by omega⟩) hij
       (by simp only [zero_add]; exact (congrArg w (Fin.ext rfl)).trans hwi)
   rw [hinit, (PiTensorProduct.tprod R).map_coord_zero (0 : Fin 2) rfl, map_zero, map_zero,
-    zero_add, show Finset.range (m + 2) = Finset.range ((i.1 + 1) + (m + 1 - i.1)) from
+    zero_add, show Finset.range (m + 2) = Finset.range ((i.val + 1) + (m + 1 - i.val)) from
       congrArg _ (by omega), Finset.sum_range_add,
     unitKillingCochain_barDifferential_prefix h𝒜 he π m j hIH hw (le_of_lt hij) hwi,
     Finset.sum_eq_zero fun t ht ↦ by
       rw [Finset.mem_range] at ht
       rw [splice_two_eq_of_tprod R (by omega) w _,
         unitKillingCochain_of_tprod_eq_zero_of_lt he.degree_zero π m j hIH _
-          (i := ⟨i.1, by omega⟩) hij (by
+          (i := ⟨i.val, by omega⟩) hij (by
             dsimp only; rw [dite_eq_left (by rw [Fin.val_mk]; omega)]
             exact (congrArg w (Fin.ext rfl)).trans hwi), smul_zero],
     add_zero, sub_self]
@@ -350,18 +350,18 @@ private theorem hochschildDifferential_unitKillingCochain_of_lt {𝒜 : AInfinit
 private theorem unitKillingCochain_splice_two_after {𝒜 : AInfinityAlgebra R A} {e : A}
     {π : Module.Dual R A} (hπe : π e = 1) (m : ℕ) (j : Fin (m + 2)) {w : Fin (m + 3) → A}
     {𝒟 : Fin (m + 3) → ℤ} (hw : ∀ r, w r ∈ (𝒜.grading.shift 1).piece (𝒟 r))
-    (hwj : w j.castSucc = e) {s : ℕ} (hs : s < m + 1 - j.1) :
+    (hwj : w j.castSucc = e) {s : ℕ} (hs : s < m + 1 - j.val) :
     unitKillingCochain 𝒜 e π m j
-        (splice R w 0 (m + 3) (j.1 + 1 + s) 2 (𝒜.taylor (subword R w (j.1 + 1 + s) 2))) =
-      -(negOnePowCast R (∑ r ∈ Finset.range j.1, if h : r < m + 3 then 𝒟 ⟨r, h⟩ else 0) •
-          𝒜.taylor (splice R (duplicateAt e j.castSucc w) 0 (m + 4) (j.1 + 1 + s + 1) 2
-            (𝒜.taylor (subword R w (j.1 + 1 + s) 2)))) := by
+        (splice R w 0 (m + 3) (j.val + 1 + s) 2 (𝒜.taylor (subword R w (j.val + 1 + s) 2))) =
+      -(negOnePowCast R (∑ r ∈ Finset.range j.val, if h : r < m + 3 then 𝒟 ⟨r, h⟩ else 0) •
+          𝒜.taylor (splice R (duplicateAt e j.castSucc w) 0 (m + 4) (j.val + 1 + s + 1) 2
+            (𝒜.taylor (subword R w (j.val + 1 + s) 2)))) := by
   have _hjn := j.isLt
   rw [splice_two_eq_of_tprod R (by omega) w _,
     unitKillingCochain_of_tprod_of_homogeneous 𝒜 e π m j (𝒟 := fun r ↦ 𝒟 r.castSucc)
       (fun r _ ↦ by rw [dite_eq_left (by omega)]; exact hw _),
-    dite_eq_left (by omega : j.1 < j.1 + 1 + s),
-    show w ⟨j.1, by omega⟩ = e from (congrArg w (Fin.ext rfl)).trans hwj, hπe, one_smul,
+    dite_eq_left (by omega : j.val < j.val + 1 + s),
+    show w ⟨j.val, by omega⟩ = e from (congrArg w (Fin.ext rfl)).trans hwj, hπe, one_smul,
     ← splice_two_duplicateAt_after R e j (by omega) (by omega) w _]
   congr 3
   refine Finset.sum_congr rfl fun r hr ↦ ?_
@@ -370,17 +370,17 @@ private theorem unitKillingCochain_splice_two_after {𝒜 : AInfinityAlgebra R A
 
 private theorem rescaled_stasheff_duplicateAt {𝒜 : AInfinityAlgebra R A} (h𝒜 : 𝒜.IsMinimal)
     {e : A} (he : 𝒜.CohomologicalUnit e) (m : ℕ) (j : Fin (m + 2))
-    (hlow : 𝒜.KillsUnitUpTo e (m + 2)) (hIH : 𝒜.KillsUnitBeforeSlot e (m + 3) j.1)
+    (hlow : 𝒜.KillsUnitUpTo e (m + 2)) (hIH : 𝒜.KillsUnitBeforeSlot e (m + 3) j.val)
     {w : Fin (m + 3) → A} {𝒟 : Fin (m + 3) → ℤ} (hw : ∀ r, w r ∈ (𝒜.grading.shift 1).piece (𝒟 r))
     (hwj : w j.castSucc = e) (h𝒟j : 𝒟 j.castSucc = -1) :
-    (∑ s ∈ Finset.range (m + 1 - j.1),
-      negOnePowCast R (∑ r ∈ Finset.range j.1, if h : r < m + 3 then 𝒟 ⟨r, h⟩ else 0) •
+    (∑ s ∈ Finset.range (m + 1 - j.val),
+      negOnePowCast R (∑ r ∈ Finset.range j.val, if h : r < m + 3 then 𝒟 ⟨r, h⟩ else 0) •
         negOnePowCast R
-            (∑ r ∈ Finset.range (j.1 + 1 + s), if h : r < m + 3 then 𝒟 ⟨r, h⟩ else 0) •
-          𝒜.taylor (splice R (duplicateAt e j.castSucc w) 0 (m + 4) (j.1 + 1 + s + 1) 2
-            (𝒜.taylor (subword R w (j.1 + 1 + s) 2)))) +
+            (∑ r ∈ Finset.range (j.val + 1 + s), if h : r < m + 3 then 𝒟 ⟨r, h⟩ else 0) •
+          𝒜.taylor (splice R (duplicateAt e j.castSucc w) 0 (m + 4) (j.val + 1 + s + 1) 2
+            (𝒜.taylor (subword R w (j.val + 1 + s) 2)))) +
       (𝒜.taylor (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R w)) +
-        -(negOnePowCast R (∑ r ∈ Finset.range j.1, if h : r < m + 3 then 𝒟 ⟨r, h⟩ else 0) •
+        -(negOnePowCast R (∑ r ∈ Finset.range j.val, if h : r < m + 3 then 𝒟 ⟨r, h⟩ else 0) •
           𝒜.taylor (of R A (2 : ℕ+) (PiTensorProduct.tprod R
             ![𝒜.taylor (subword R (duplicateAt e j.castSucc w) 0 (m + 3)),
               duplicateAt e j.castSucc w (Fin.last (m + 3))])))) = 0 := by
@@ -391,21 +391,22 @@ private theorem rescaled_stasheff_duplicateAt {𝒜 : AInfinityAlgebra R A} (h�
   have hsp_succ := splice_two_duplicateAt_succ R (j := j.castSucc) (by simp) hwj
   simp only [Fin.val_castSucc] at hsp_succ
   rw [Fin.val_castSucc,
-    show Finset.range (m + 2 - j.1) = Finset.range ((m + 1 - j.1) + 1) from congrArg _ (by omega),
+    show Finset.range (m + 2 - j.val) = Finset.range ((m + 1 - j.val) + 1) from
+      congrArg _ (by omega),
     Finset.sum_range_succ', add_zero, add_zero, subword_two_eq R w (by omega),
-    show (⟨j.1, by omega⟩ : Fin (m + 3)) = j.castSucc from Fin.ext rfl, hwj,
+    show (⟨j.val, by omega⟩ : Fin (m + 3)) = j.castSucc from Fin.ext rfl, hwj,
     h𝒜.taylor_of_two_cohomologicalUnit_left he, hsp_succ] at hst
-  have hmul := congrArg (fun x : A ↦ -(negOnePowCast R (S j.1) • x)) hst
+  have hmul := congrArg (fun x : A ↦ -(negOnePowCast R (S j.val) • x)) hst
   simp only [smul_zero, neg_zero, smul_add, smul_neg, Finset.smul_sum, neg_add_rev, neg_neg,
     ← Finset.sum_neg_distrib] at hmul
-  have hsq : negOnePowCast R (S j.1) • negOnePowCast R (S j.1) •
+  have hsq : negOnePowCast R (S j.val) • negOnePowCast R (S j.val) •
       𝒜.taylor (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R w)) =
       𝒜.taylor (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R w)) := by
     rw [smul_smul, ← negOnePowCast_add, ← two_mul, negOnePowCast_eq_intCast,
-      Int.negOnePow_even _ ⟨S j.1, two_mul _⟩]; simp
+      Int.negOnePow_even _ ⟨S j.val, two_mul _⟩]; simp
   rw [hsq, Finset.sum_congr rfl fun s _ ↦ by
-    rw [show j.1 + (s + 1) = j.1 + 1 + s by omega,
-      show j.1 + 1 + (s + 1) = j.1 + 1 + s + 1 by omega]] at hmul
+    rw [show j.val + (s + 1) = j.val + 1 + s by omega,
+      show j.val + 1 + (s + 1) = j.val + 1 + s + 1 by omega]] at hmul
   exact Eq.trans (by abel) hmul
 
 private theorem taylor_of_two_neg_smul_duplicateAt (𝒜 : AInfinityAlgebra R A) (e : A) {m : ℕ}
@@ -432,7 +433,7 @@ private theorem taylor_of_two_neg_smul_duplicateAt (𝒜 : AInfinityAlgebra R A)
 private theorem hochschildDifferential_unitKillingCochain_same {𝒜 : AInfinityAlgebra R A}
     (h𝒜 : 𝒜.IsMinimal) {e : A} (he : 𝒜.CohomologicalUnit e) {π : Module.Dual R A}
     (hπe : π e = 1) (m : ℕ) (j : Fin (m + 2)) (hlow : 𝒜.KillsUnitUpTo e (m + 2))
-    (hIH : 𝒜.KillsUnitBeforeSlot e (m + 3) j.1) {w : Fin (m + 3) → A} {𝒟 : Fin (m + 3) → ℤ}
+    (hIH : 𝒜.KillsUnitBeforeSlot e (m + 3) j.val) {w : Fin (m + 3) → A} {𝒟 : Fin (m + 3) → ℤ}
     (hw : ∀ r, w r ∈ (𝒜.grading.shift 1).piece (𝒟 r)) (hwj : w j.castSucc = e)
     (h𝒟j : 𝒟 j.castSucc = -1) :
     𝒜.taylor (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R w)) +
@@ -443,9 +444,10 @@ private theorem hochschildDifferential_unitKillingCochain_same {𝒜 : AInfinity
   let φ := unitKillingCochain 𝒜 e π m j
   -- Initial `(m + 2)`-collapse in `m ∘ gradedCoderiv φ`: duplicates `e` at slot `j` of the prefix.
   have hinit : φ (subword R w 0 (m + 2)) =
-      -(negOnePowCast R (S j.1) • 𝒜.taylor (subword R (duplicateAt e j.castSucc w) 0 (m + 3))) := by
+      -(negOnePowCast R (S j.val) •
+          𝒜.taylor (subword R (duplicateAt e j.castSucc w) 0 (m + 3))) := by
     rw [subword_eq_of_tprod R w (by omega) (by omega),
-      show (fun k : Fin (m + 2) ↦ w ⟨0 + k.1, by omega⟩) = fun r ↦ w r.castSucc from
+      show (fun k : Fin (m + 2) ↦ w ⟨0 + k.val, by omega⟩) = fun r ↦ w r.castSucc from
         funext fun _ ↦ congrArg w (Fin.ext (by simp)),
       unitKillingCochain_of_tprod_of_homogeneous 𝒜 e π m j (𝒟 := fun r ↦ 𝒟 r.castSucc)
         (fun r _ ↦ hw r.castSucc), hwj, hπe, one_smul, ← subword_init_duplicateAt_castSucc R]
@@ -454,40 +456,40 @@ private theorem hochschildDifferential_unitKillingCochain_same {𝒜 : AInfinity
     rw [Finset.mem_range] at hr
     rw [dite_eq_left (by omega), dite_eq_left (by omega), Fin.castSucc_mk]
   -- Binary collapses of `b(w)` up to slot `j` match the tail `(m + 2)`-collapse.
-  have hpre : (∑ p ∈ Finset.range (j.1 + 1),
+  have hpre : (∑ p ∈ Finset.range (j.val + 1),
       negOnePowCast R (S p) • φ (splice R w 0 (m + 3) p 2 (𝒜.taylor (subword R w p 2)))) =
       𝒜.taylor (of R A (2 : ℕ+) (PiTensorProduct.tprod R ![w 0, φ (subword R w 1 (m + 2))])) := by
     simpa only [Fin.val_castSucc] using
       unitKillingCochain_barDifferential_prefix h𝒜 he π m j hIH hw (i := j.castSucc) le_rfl hwj
   -- Binary collapses of `b(w)` after slot `j` commute with duplicating `e` at slot `j`.
-  have hsuf : (∑ s ∈ Finset.range (m + 1 - j.1),
-      negOnePowCast R (S (j.1 + 1 + s)) •
-        φ (splice R w 0 (m + 3) (j.1 + 1 + s) 2 (𝒜.taylor (subword R w (j.1 + 1 + s) 2)))) =
-      -(∑ s ∈ Finset.range (m + 1 - j.1),
-          negOnePowCast R (S j.1) • negOnePowCast R (S (j.1 + 1 + s)) •
-            𝒜.taylor (splice R (duplicateAt e j.castSucc w) 0 (m + 4) (j.1 + 1 + s + 1) 2
-              (𝒜.taylor (subword R w (j.1 + 1 + s) 2)))) := by
+  have hsuf : (∑ s ∈ Finset.range (m + 1 - j.val),
+      negOnePowCast R (S (j.val + 1 + s)) •
+        φ (splice R w 0 (m + 3) (j.val + 1 + s) 2 (𝒜.taylor (subword R w (j.val + 1 + s) 2)))) =
+      -(∑ s ∈ Finset.range (m + 1 - j.val),
+          negOnePowCast R (S j.val) • negOnePowCast R (S (j.val + 1 + s)) •
+            𝒜.taylor (splice R (duplicateAt e j.castSucc w) 0 (m + 4) (j.val + 1 + s + 1) 2
+              (𝒜.taylor (subword R w (j.val + 1 + s) 2)))) := by
     rw [← Finset.sum_neg_distrib]
     refine Finset.sum_congr rfl fun s hs ↦ ?_
     rw [unitKillingCochain_splice_two_after hπe m j hw hwj (Finset.mem_range.1 hs), smul_neg,
       smul_comm]
   -- Assemble `δφ(w) = m(gradedCoderiv φ w) - φ(b w)` and match `rescaled_stasheff_duplicateAt`.
   have hdφ : 𝒜.hochschildDifferential 0 φ (of R A ⟨m + 3, by omega⟩ (PiTensorProduct.tprod R w)) =
-      -(negOnePowCast R (S j.1) •
+      -(negOnePowCast R (S j.val) •
           𝒜.taylor (of R A (2 : ℕ+) (PiTensorProduct.tprod R
             ![𝒜.taylor (subword R (duplicateAt e j.castSucc w) 0 (m + 3)),
               duplicateAt e j.castSucc w (Fin.last (m + 3))]))) +
         𝒜.taylor (of R A (2 : ℕ+) (PiTensorProduct.tprod R ![w 0, φ (subword R w 1 (m + 2))])) -
       (𝒜.taylor (of R A (2 : ℕ+) (PiTensorProduct.tprod R ![w 0, φ (subword R w 1 (m + 2))])) +
-        -(∑ s ∈ Finset.range (m + 1 - j.1),
-            negOnePowCast R (S j.1) • negOnePowCast R (S (j.1 + 1 + s)) •
-              𝒜.taylor (splice R (duplicateAt e j.castSucc w) 0 (m + 4) (j.1 + 1 + s + 1) 2
-                (𝒜.taylor (subword R w (j.1 + 1 + s) 2))))) := by
+        -(∑ s ∈ Finset.range (m + 1 - j.val),
+            negOnePowCast R (S j.val) • negOnePowCast R (S (j.val + 1 + s)) •
+              𝒜.taylor (splice R (duplicateAt e j.castSucc w) 0 (m + 4) (j.val + 1 + s + 1) 2
+                (𝒜.taylor (subword R w (j.val + 1 + s) 2))))) := by
     rw [hochschildDifferential_eq_brace_sub, negOnePowCast_zero, one_smul, LinearMap.sub_apply,
       brace_def, brace_def, LinearMap.comp_apply, LinearMap.comp_apply, ← barDifferential_def,
       taylor_gradedCoderiv_unitKillingCochain 𝒜 e π m j hw,
       unitKillingCochain_barDifferential_of_tprod 𝒜 e π m j hw,
-      show Finset.range (m + 2) = Finset.range ((j.1 + 1) + (m + 1 - j.1)) from
+      show Finset.range (m + 2) = Finset.range ((j.val + 1) + (m + 1 - j.val)) from
         congrArg _ (by omega),
       Finset.sum_range_add, hpre, hsuf, hinit, taylor_of_two_neg_smul_duplicateAt 𝒜 e j w]
   rw [hdφ]
@@ -498,11 +500,11 @@ private theorem hochschildDifferential_unitKillingCochain_same {𝒜 : AInfinity
 private theorem exists_gauge_kill_slot {𝒜 : AInfinityAlgebra R A} (h𝒜 : 𝒜.IsMinimal) {e : A}
     (he : 𝒜.CohomologicalUnit e) {π : Module.Dual R A} (hπ : π ∈ 𝒜.grading.dualPiece 0)
     (hπe : π e = 1) {m : ℕ} (hlow : 𝒜.KillsUnitUpTo e (m + 2)) (j : Fin (m + 2))
-    (hIH : 𝒜.KillsUnitBeforeSlot e (m + 3) j.1) :
+    (hIH : 𝒜.KillsUnitBeforeSlot e (m + 3) j.val) :
     ∃ (𝒜' : AInfinityAlgebra R A) (g : AInfinityHom 𝒜' 𝒜),
       𝒜'.grading = 𝒜.grading ∧ 𝒜'.IsMinimal ∧
       (∀ z ∈ filtration R A (m + 2), 𝒜'.taylor z = 𝒜.taylor z) ∧
-      𝒜'.KillsUnitBeforeSlot e (m + 3) (j.1 + 1) ∧
+      𝒜'.KillsUnitBeforeSlot e (m + 3) (j.val + 1) ∧
       (∀ z ∈ filtration R A (m + 1), g.taylor z = letter R A z) ∧
       g.IsIso ∧ g.linearPart = LinearMap.id := by
   let φ := unitKillingCochain 𝒜 e π m j

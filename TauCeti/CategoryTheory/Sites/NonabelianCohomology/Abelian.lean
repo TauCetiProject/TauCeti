@@ -66,7 +66,7 @@ Two consequences follow.
 public noncomputable section
 
 open CategoryTheory Opposite
-open FreeAbelianGroup (degree)
+open FreeAddCommGroup (degree)
 
 universe w v u
 
@@ -112,12 +112,12 @@ restriction maps of `F`. -/
 private lemma map_toAdd_symm_sections (F : Sheaf J AddCommGrpCat.{w})
     (s : (((abelianSheafToGrpSheaf J).obj F).obj ⋙ forget GrpCat).sections) {U V : Cᵒᵖ}
     (f : U ⟶ V) :
-    F.obj.map f ((abelianSheafToGrpSheafObjEquiv F U).symm (s.1 U)).toAdd =
-      ((abelianSheafToGrpSheafObjEquiv F V).symm (s.1 V)).toAdd := by
+    F.obj.map f ((abelianSheafToGrpSheafObjEquiv F U).symm (s.val U)).toAdd =
+      ((abelianSheafToGrpSheafObjEquiv F V).symm (s.val V)).toAdd := by
   have h := abelianSheafToGrpSheaf_map_abelianSheafToGrpSheafObjEquiv F f
-    ((abelianSheafToGrpSheafObjEquiv F U).symm (s.1 U))
+    ((abelianSheafToGrpSheafObjEquiv F U).symm (s.val U))
   rw [MulEquiv.apply_symm_apply] at h
-  rw [(s.2 f).symm.trans h, MulEquiv.symm_apply_apply, toAdd_ofAdd]
+  rw [(s.property f).symm.trans h, MulEquiv.symm_apply_apply, toAdd_ofAdd]
 
 /-- Morphisms from the constant presheaf `ℤ` to an abelian sheaf `F` are the global sections of
 `F`, through the image of `1`. -/
@@ -131,7 +131,7 @@ def constIntHomMulEquivSections (F : Sheaf J AddCommGrpCat.{w}) :
             (NatTrans.naturality_apply ψ f _).symm)⟩
       invFun s :=
         { app U := (AddCommGrpCat.uliftZMultiplesAddEquiv _).symm
-            ((abelianSheafToGrpSheafObjEquiv F U).symm (s.1 U)).toAdd
+            ((abelianSheafToGrpSheafObjEquiv F U).symm (s.val U)).toAdd
           naturality U V f := by
             refine (AddCommGrpCat.uliftZMultiplesAddEquiv _).injective ?_
             -- Both sides are evaluated at `1`; the section `s` is compatible with restriction.
@@ -158,7 +158,7 @@ at `1`. -/
 lemma constIntHomMulEquivSections_apply_coe (F : Sheaf J AddCommGrpCat.{w})
     (ψ : Multiplicative ((Functor.const Cᵒᵖ).obj (AddCommGrpCat.of (ULift ℤ)) ⟶ F.obj))
     (U : Cᵒᵖ) :
-    (constIntHomMulEquivSections F ψ).1 U =
+    (constIntHomMulEquivSections F ψ).val U =
       abelianSheafToGrpSheafObjEquiv F U (.ofAdd (ψ.toAdd.app U ⟨1⟩)) :=
   (rfl)
 
@@ -169,7 +169,7 @@ lemma constIntHomMulEquivSections_symm_apply_app (F : Sheaf J AddCommGrpCat.{w})
     (s : (((abelianSheafToGrpSheaf J).obj F).obj ⋙ forget GrpCat).sections) (U : Cᵒᵖ) :
     ((constIntHomMulEquivSections F).symm s).toAdd.app U =
       (AddCommGrpCat.uliftZMultiplesAddEquiv _).symm
-        ((abelianSheafToGrpSheafObjEquiv F U).symm (s.1 U)).toAdd :=
+        ((abelianSheafToGrpSheafObjEquiv F U).symm (s.val U)).toAdd :=
   (rfl)
 
 end Sheaf
@@ -205,21 +205,21 @@ private lemma map_diff {U V : Cᵒᵖ} (f : U ⟶ V) (p q : P.sheaf.obj.obj U) :
   rw [← toAdd_ofAdd (diff P p q), ← abelianSheafToGrpSheaf_map_abelianSheafToGrpSheafObjEquiv,
     ← P.map_smul, diff_smul]
 
-private lemma lift_diff {U : Cᵒᵖ} (p₀ p₁ : P.sheaf.obj.obj U) (x : FreeAbelianGroup _) :
-    FreeAbelianGroup.lift (diff P · p₀) x =
-      FreeAbelianGroup.lift (diff P · p₁) x + degree _ x • diff P p₁ p₀ := by
-  rw [← FreeAbelianGroup.lift_const_apply, ← FreeAbelianGroup.lift_add_apply]
+private lemma lift_diff {U : Cᵒᵖ} (p₀ p₁ : P.sheaf.obj.obj U) (x : FreeAddCommGroup _) :
+    FreeAddCommGroup.lift (diff P · p₀) x =
+      FreeAddCommGroup.lift (diff P · p₁) x + degree _ x • diff P p₁ p₀ := by
+  rw [← FreeAddCommGroup.lift_const_apply, ← FreeAddCommGroup.lift_add_apply]
   simp only [Pi.add_def, diff_add_diff]
 
 /-- Restriction of formal sums of degree zero along a morphism. -/
 private def degZeroMap {U V : Cᵒᵖ} (f : U ⟶ V) :
     (degree (P.sheaf.obj.obj U)).ker →+ (degree (P.sheaf.obj.obj V)).ker :=
-  ((FreeAbelianGroup.map (P.sheaf.obj.map f)).comp (degree _).ker.subtype).codRestrict _
-    fun x ↦ (FreeAbelianGroup.degree_map _ x.1).trans x.2
+  ((FreeAddCommGroup.map (P.sheaf.obj.map f)).comp (degree _).ker.subtype).codRestrict _
+    fun x ↦ (FreeAddCommGroup.degree_map _ x.val).trans x.property
 
 private lemma coe_degZeroMap {U V : Cᵒᵖ} (f : U ⟶ V) (x : (degree (P.sheaf.obj.obj U)).ker) :
-    (degZeroMap P f x : FreeAbelianGroup (P.sheaf.obj.obj V)) =
-      FreeAbelianGroup.map (P.sheaf.obj.map f) x.1 :=
+    (degZeroMap P f x : FreeAddCommGroup (P.sheaf.obj.obj V)) =
+      FreeAddCommGroup.map (P.sheaf.obj.map f) x.val :=
   (rfl)
 
 /-- The presheaf of formal sums of degree zero of sections of a torsor, a subpresheaf of the
@@ -229,10 +229,10 @@ private def degZero : Cᵒᵖ ⥤ AddCommGrpCat.{w} where
   map f := AddCommGrpCat.ofHom (degZeroMap P f)
   map_id U := by
     ext x
-    exact congr(AddCommGrpCat.Hom.hom $((P.sheaf.obj ⋙ AddCommGrpCat.free).map_id U) x.1)
+    exact congr(AddCommGrpCat.Hom.hom $((P.sheaf.obj ⋙ AddCommGrpCat.free).map_id U) x.val)
   map_comp f g := by
     ext x
-    exact congr(AddCommGrpCat.Hom.hom $((P.sheaf.obj ⋙ AddCommGrpCat.free).map_comp f g) x.1)
+    exact congr(AddCommGrpCat.Hom.hom $((P.sheaf.obj ⋙ AddCommGrpCat.free).map_comp f g) x.val)
 
 /-- The inclusion of the formal sums of degree zero into all formal sums. -/
 private def degZeroι : degZero P ⟶ P.sheaf.obj ⋙ AddCommGrpCat.free where
@@ -248,25 +248,25 @@ open scoped Classical in
 depend on the base section `p₀`. -/
 private def diffHom (U : Cᵒᵖ) : (degree (P.sheaf.obj.obj U)).ker →+ F.obj.obj U :=
   if h : Nonempty (P.sheaf.obj.obj U) then
-    (FreeAbelianGroup.lift (diff P · h.some)).comp (degree _).ker.subtype
+    (FreeAddCommGroup.lift (diff P · h.some)).comp (degree _).ker.subtype
   else 0
 
 private lemma diffHom_apply {U : Cᵒᵖ} (p₀ : P.sheaf.obj.obj U)
     (x : (degree (P.sheaf.obj.obj U)).ker) :
-    diffHom P U x = FreeAbelianGroup.lift (diff P · p₀) x.1 := by
+    diffHom P U x = FreeAddCommGroup.lift (diff P · p₀) x.val := by
   rw [diffHom, dite_eq_left_of_eq_true (eq_true ⟨p₀⟩), AddMonoidHom.comp_apply,
-    lift_diff P _ p₀, AddSubgroup.coe_subtype, x.2, zero_smul, add_zero]
+    lift_diff P _ p₀, AddSubgroup.coe_subtype, x.property, zero_smul, add_zero]
 
 private lemma diffHom_degZeroMap {U V : Cᵒᵖ} (f : U ⟶ V) (x : (degree (P.sheaf.obj.obj U)).ker) :
     diffHom P V (degZeroMap P f x) = F.obj.map f (diffHom P U x) := by
   by_cases h : Nonempty (P.sheaf.obj.obj U)
   · obtain ⟨p₀⟩ := h
     rw [diffHom_apply P (P.sheaf.obj.map f p₀), diffHom_apply P p₀,
-      ← FreeAbelianGroup.lift_comp_apply, coe_degZeroMap]
-    refine (FreeAbelianGroup.lift_unique _
-      ((FreeAbelianGroup.lift _).comp (FreeAbelianGroup.map (P.sheaf.obj.map f))) fun p ↦ ?_).trans
-      (congrArg (FreeAbelianGroup.lift · x.1) (funext fun p ↦ (map_diff P f p p₀).symm))
-    simp [FreeAbelianGroup.map_of_apply, FreeAbelianGroup.lift_apply_of]
+      ← FreeAddCommGroup.lift_comp_apply, coe_degZeroMap]
+    refine (FreeAddCommGroup.lift_unique _
+      ((FreeAddCommGroup.lift _).comp (FreeAddCommGroup.map (P.sheaf.obj.map f))) fun p ↦ ?_).trans
+      (congrArg (FreeAddCommGroup.lift · x.val) (funext fun p ↦ (map_diff P f p p₀).symm))
+    simp [FreeAddCommGroup.map_of_apply, FreeAddCommGroup.lift_apply_of]
   · have : IsEmpty (P.sheaf.obj.obj U) := not_nonempty_iff.1 h
     obtain rfl : x = 0 := Subtype.ext (Subsingleton.elim _ _)
     simp
@@ -295,18 +295,18 @@ theorem exists_hom_smul_eq_of_injective {I : Sheaf J AddCommGrpCat.{w}} [Injecti
   have hφ : degZeroι P ≫ φ = degZeroDiff P ≫ ι.hom := by
     rw [← adj.homEquiv_naturality_left, Injective.comp_factorThru, Equiv.apply_symm_apply]
   -- The extension is a map `ψ : P → I` with `ψ p - ψ q = ι (p - q)`.
-  let ψ (U : Cᵒᵖ) (p : P.sheaf.obj.obj U) : I.obj.obj U := φ.app U (FreeAbelianGroup.of p)
+  let ψ (U : Cᵒᵖ) (p : P.sheaf.obj.obj U) : I.obj.obj U := φ.app U (FreeAddCommGroup.of p)
   have hψ (U : Cᵒᵖ) (p q : P.sheaf.obj.obj U) : ψ U p - ψ U q = ι.hom.app U (diff P p q) := by
     have := congr(AddCommGrpCat.Hom.hom (NatTrans.app $hφ U)
-      (⟨FreeAbelianGroup.of p - FreeAbelianGroup.of q,
+      (⟨FreeAddCommGroup.of p - FreeAddCommGroup.of q,
         by simp⟩ : (degree (P.sheaf.obj.obj U)).ker))
     -- Both sides of `this` are, by definition, `φ` and `ι ∘ diffHom` applied to `[p] - [q]`.
     refine ((map_sub (φ.app U).hom _ _).symm.trans this).trans
       (congrArg (ι.hom.app U) ((diffHom_apply P q _).trans ?_))
-    simp [FreeAbelianGroup.lift_apply_of, diff_self]
+    simp [FreeAddCommGroup.lift_apply_of, diff_self]
   have hψmap {U V : Cᵒᵖ} (f : U ⟶ V) (p : P.sheaf.obj.obj U) :
       ψ V (P.sheaf.obj.map f p) = I.obj.map f (ψ U p) :=
-    NatTrans.naturality_apply φ f (FreeAbelianGroup.of p)
+    NatTrans.naturality_apply φ f (FreeAddCommGroup.of p)
   -- The restriction maps of the trivial torsor are those of `I`, written multiplicatively.
   refine ⟨ObjectProperty.homMk
     { app U := ↾fun p ↦ abelianSheafToGrpSheafObjEquiv I U (.ofAdd (ψ U p))

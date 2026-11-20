@@ -78,7 +78,7 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
 vanishes on every pure tensor word of length `k ≠ 2` containing `e`. -/
 theorem IsMinimal.strictUnit_of_taylor_of_tprod_eq_zero {𝒜 : AInfinityAlgebra R A}
     (h𝒜 : 𝒜.IsMinimal) {e : A} (he : 𝒜.CohomologicalUnit e)
-    (h : ∀ (k : {k : ℕ // 0 < k}), k.1 ≠ 2 → ∀ x : Fin k.1 → A,
+    (h : ∀ (k : {k : ℕ // 0 < k}), k.val ≠ 2 → ∀ x : Fin k.val → A,
       (∃ r, x r = e) → 𝒜.taylor (of R A k (PiTensorProduct.tprod R x)) = 0) :
     𝒜.StrictUnit e where
   degree_zero := he.degree_zero
@@ -99,7 +99,7 @@ vanishes on pure tensor words of length `k ≠ 2` containing `e`. -/
 theorem IsMinimal.strictUnit_iff_taylor_of_tprod_eq_zero {𝒜 : AInfinityAlgebra R A}
     (h𝒜 : 𝒜.IsMinimal) {e : A} :
     𝒜.StrictUnit e ↔ 𝒜.CohomologicalUnit e ∧
-      ∀ (k : {k : ℕ // 0 < k}), k.1 ≠ 2 → ∀ x : Fin k.1 → A,
+      ∀ (k : {k : ℕ // 0 < k}), k.val ≠ 2 → ∀ x : Fin k.val → A,
         (∃ r, x r = e) → 𝒜.taylor (of R A k (PiTensorProduct.tprod R x)) = 0 :=
   ⟨fun h ↦ ⟨h.cohomologicalUnit, h.taylor_of_tprod_eq_zero⟩,
    fun ⟨he, h⟩ ↦ h𝒜.strictUnit_of_taylor_of_tprod_eq_zero he h⟩
@@ -166,7 +166,7 @@ theorem IsMinimal.exists_strictUnit_isIso_of_mem_dualPiece {𝒜 : AInfinityAlge
   have hstr' : 𝒜'.StrictUnit e := hmin'.strictUnit_of_taylor_of_tprod_eq_zero he' fun k hk2 x hx ↦
     (taylor_limit_apply_of_mem_filtration (fun m ↦ (s m).grading_eq) hstab_alg
       (of_mem_filtration R A (k := k) le_rfl _)).trans
-      (killsUnitUpTo_iff.1 (s k.1).killsUnit k hk2 (by omega) x hx)
+      (killsUnitUpTo_iff.1 (s k.val).killsUnit k hk2 (by omega) x hx)
   have h𝒜'_eq : ∀ m, ∀ z ∈ filtration R A m, (s m).alg.taylor z = 𝒜'.taylor z :=
     fun m z hz ↦ (taylor_limit_apply_of_mem_filtration (fun m ↦ (s m).grading_eq) hstab_alg hz).symm
   let f := AInfinityHom.limit (fun m ↦ (s m).hom)
@@ -199,7 +199,7 @@ theorem IsMinimal.exists_strictUnit_isIso {𝒜 : AInfinityAlgebra K A} (h𝒜 :
     obtain ⟨φ₀, hφ₀⟩ := Module.Projective.exists_dual_eq_one K (x := (⟨e, he₀⟩ : 𝒜.grading.piece _))
       (by simpa [← Subtype.coe_ne_coe] using hne)
     let π := (𝒜.grading.dualPieceEquiv 0).symm φ₀
-    exact h𝒜.exists_strictUnit_isIso_of_mem_dualPiece he π.2
+    exact h𝒜.exists_strictUnit_isIso_of_mem_dualPiece he π.property
       ((𝒜.grading.dualPieceEquiv_symm_apply_coe 0 φ₀ ⟨e, he₀⟩).trans hφ₀)
 
 /-- Every minimal cohomologically unital `A∞` algebra over a field is `A∞` isomorphic, with identity
