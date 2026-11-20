@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Pregluing
 public import TauCeti.Geometry.Symplectic.Floer.Splicing
+import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Topology.Compactness.Normed
 
 /-!
@@ -346,12 +347,9 @@ theorem eventually_setIntegral_sobolev_le_mul_setIntegral_floerLinearizationAdjo
     rw [div_pow, one_pow, mul_one_div, div_le_one (by positivity)]
     nlinarith
   -- Regularity of the data and of the three maps.
-  have hxc : ContDiff ℝ 1 x := by
-    refine contDiff_one_iff_deriv.2 ⟨fun t ↦ (hx t).differentiableAt, ?_⟩
-    rw [show deriv x = fun t ↦ ω.hamiltonianVectorField (H t) (x t) from
-      funext fun t ↦ (hx t).deriv]
-    exact (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous.comp
-      (continuous_id.prodMk (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt))
+  have hxc : ContDiff ℝ 1 x :=
+    contDiff_one_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
+      (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hx
   have hJ' (w : ℝ × ℝ → V) (z : ℝ × ℝ) :
       ContDiffAt ℝ 1 (uncurry fun p : ℝ × ℝ ↦ J p.2) (z, w z) :=
     (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt
