@@ -24,11 +24,14 @@ predicate be applied to inverse-coercive coefficients, with constants depending 
 * `TauCeti.PDE.IsUniformlyEllipticAE.exists_uniformlyEllipticOn_energyFormH1_eq_zero`: a weak
   solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0` is a weak solution for a measurable field satisfying the
   operator bound with constants `1` and any bound `ratio` for `Λ / λ`.
+* `TauCeti.PDE.IsUniformlyEllipticAE.exists_uniformlyEllipticOn_energyFormH1_eq_add_divergence`:
+  the same for `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`, with the data divided by `λ`.
 -/
 
 public section
 
 open MeasureTheory Set TopologicalSpace
+open scoped RealInnerProductSpace
 
 namespace TauCeti.PDE
 
@@ -73,6 +76,31 @@ theorem exists_uniformlyEllipticOn_energyFormH1_eq_zero
   obtain ⟨a', h', ha', heq⟩ := h.exists_uniformlyEllipticOn_energyFormH1_eq ha
   exact ⟨a', h'.mono_constants one_pos le_rfl ((div_le_iff₀ h.pos).2 hratio), ha',
     fun v => by rw [heq, hu v, mul_zero]⟩
+
+/-- **Weak solutions with a right-hand side for a normalized coefficient field.** Let `a` be
+measurable and inverse-coercive on `Ω` with constants `λ, Λ`, `Λ ≤ ratio · λ`. A weak solution
+`u ∈ H¹(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`, that is `a(u, v) = ∫_Ω f v - ∫_Ω ⟪F, ∇v⟫` for every
+`v ∈ H¹₀(Ω)`, is a weak solution of `-∂ᵢ(a'ⁱʲ ∂ⱼu) = λ⁻¹ f + ∂ᵢ(λ⁻¹ Fⁱ)` for a measurable field
+`a'` satisfying the pointwise operator-bound predicate on `Ω` with constants `1` and `ratio`. -/
+theorem exists_uniformlyEllipticOn_energyFormH1_eq_add_divergence
+    (h : IsUniformlyEllipticAE mu (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam) {ratio : ℝ}
+    (hratio : Lam ≤ ratio * lam) (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    {u : W1p mu Omega 2} {f : EuclideanSpace ℝ ι → ℝ}
+    {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu -
+        ∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu) :
+    ∃ a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ,
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a' 1 ratio ∧
+      AEStronglyMeasurable a' (mu.restrict Omega) ∧
+      ∀ v : W1p0 mu Omega 2, energyFormH1 a' 0 0 u (v : W1p mu Omega 2) =
+        ∫ x in Omega, (lam⁻¹ • f) x * W1p.value (v : W1p mu Omega 2) x ∂mu -
+          ∫ x in Omega, ⟪(lam⁻¹ • F) x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu := by
+  obtain ⟨a', h', ha', heq⟩ := h.exists_uniformlyEllipticOn_energyFormH1_eq ha
+  refine ⟨a', h'.mono_constants one_pos le_rfl ((div_le_iff₀ h.pos).2 hratio), ha',
+    fun v => ?_⟩
+  simp only [heq, hu v, Pi.smul_apply, smul_eq_mul, real_inner_smul_left, mul_assoc,
+    integral_const_mul, mul_sub]
 
 end IsUniformlyEllipticAE
 
