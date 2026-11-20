@@ -62,6 +62,7 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
 * `TauCeti.one_add_norm_sq_rpow_le_mul_one_add_norm_pow`: `⟨x⟩ ^ a ≤ ⟨x⟩ ^ b (1 + ‖x‖) ^ N` for
   `a ≤ b + N`.
 * `TauCeti.one_add_norm_sq_rpow_add`: `⟨x⟩ ^ (s + t) = ⟨x⟩ ^ s ⟨x⟩ ^ t`.
+* `TauCeti.one_add_norm_sq_rpow_le_one`: `⟨x⟩ ^ s ≤ 1` for `s ≤ 0`.
 * `TauCeti.one_add_norm_sq_rpow_neg_mul_rpow`: `⟨x⟩ ^ (-s) ⟨x⟩ ^ s = 1`.
 * `TauCeti.one_add_norm_sq_rpow_le_of_mul_norm_le_norm_sub`: if `c ‖x‖ ≤ ‖x - y‖`, then
   `⟨y⟩ ^ s ≤ (c⁻¹ + 1) ^ |s| (1 + ‖x - y‖) ^ |s|`; this separates frequencies outside a cone
@@ -350,6 +351,10 @@ theorem one_add_norm_sq_rpow_add (x : E) (s t : ℝ) :
     (1 + ‖x‖ ^ 2) ^ ((s + t) / 2) = (1 + ‖x‖ ^ 2) ^ (s / 2) * (1 + ‖x‖ ^ 2) ^ (t / 2) := by
   rw [← Real.rpow_add (by positivity)]
   ring_nf
+
+/-- A nonpositive power of the Japanese bracket is at most `1`: `⟨x⟩ ^ s ≤ 1` for `s ≤ 0`. -/
+theorem one_add_norm_sq_rpow_le_one (x : E) {s : ℝ} (hs : s ≤ 0) : (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ 1 :=
+  Real.rpow_le_one_of_one_le_of_nonpos (by simp) (by linarith)
 
 /-- Opposite powers of the Japanese bracket cancel: `⟨x⟩ ^ (-s) ⟨x⟩ ^ s = 1`. -/
 theorem one_add_norm_sq_rpow_neg_mul_rpow (x : E) (s : ℝ) :
