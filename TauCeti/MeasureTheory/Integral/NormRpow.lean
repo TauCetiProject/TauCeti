@@ -62,6 +62,8 @@ at most `|x - Re e| ^ s`.
   centred at `c` exactly when `2 < m p`.
 * `IsCompact.memLp_norm_inv_restrict`, `TauCeti.not_memLp_norm_inv_closedBall`: `‖x‖⁻¹` is
   `Lʳ` on compact sets for `r < dim E`, and not near the origin for `r ≥ dim E`.
+* `Bornology.IsBounded.memLp_norm_rpow_restrict`, `TauCeti.memLp_norm_rpow_restrict_iff`:
+  `‖x‖ ^ s` is `Lᵖ` on a bounded neighbourhood of the origin exactly when `-d < s p`.
 * `Complex.setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top`: for `e ∈ ℂ` and `s > -1`,
   `∫⁻ x in closedBall c R, ‖(x : ℂ) - e‖ₑ ^ s < ∞` over the real line.
 
@@ -441,6 +443,43 @@ theorem not_memLp_norm_inv_closedBall [Nontrivial E] {ε : ℝ} (hε : 0 < ε) {
   exact lt_irrefl _ ((integrableOn_norm_rpow_ball_iff hε).1 h3)
 
 end Inverse
+
+section Power
+
+open scoped ENNReal Topology
+
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+private theorem norm_norm_rpow_rpow (s r : ℝ) :
+    (fun x : E => ‖‖x‖ ^ s‖ ^ r) = fun x => ‖x‖ ^ (s * r) := by
+  funext x
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _), ← Real.rpow_mul (norm_nonneg x)]
+
+/-- For `0 < p < ∞`, the norm power `x ↦ ‖x‖ ^ s` is `Lᵖ` on every bounded set when
+`-dim E < s p`. -/
+theorem _root_.Bornology.IsBounded.memLp_norm_rpow_restrict {U : Set E}
+    (hU : Bornology.IsBounded U) {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) {s : ℝ}
+    (hs : -(Module.finrank ℝ E : ℝ) < s * p.toReal) :
+    MemLp (fun x : E => ‖x‖ ^ s) p (mu.restrict U) := by
+  obtain ⟨R, hR⟩ := hU.subset_ball 0
+  refine MemLp.mono_measure (Measure.restrict_mono hR le_rfl) ?_
+  rw [← integrable_norm_rpow_iff (measurable_norm.pow_const s).aestronglyMeasurable hp0 hp,
+    norm_norm_rpow_rpow]
+  exact integrableOn_norm_rpow_ball hs
+
+/-- **`Lᵖ` membership of a norm power.** On a nontrivial space, for `0 < p < ∞` and a bounded
+neighbourhood `U` of the origin, `x ↦ ‖x‖ ^ s` is `Lᵖ` on `U` exactly when `-dim E < s p`. -/
+theorem memLp_norm_rpow_restrict_iff [Nontrivial E] {U : Set E} (hb : Bornology.IsBounded U)
+    (hU : U ∈ 𝓝 (0 : E)) {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) {s : ℝ} :
+    MemLp (fun x : E => ‖x‖ ^ s) p (mu.restrict U) ↔
+      -(Module.finrank ℝ E : ℝ) < s * p.toReal := by
+  refine ⟨fun h => ?_, hb.memLp_norm_rpow_restrict hp0 hp⟩
+  obtain ⟨r, hr, hrU⟩ := nhds_basis_ball.mem_iff.1 hU
+  have h' := h.mono_measure (Measure.restrict_mono hrU le_rfl)
+  rw [← integrable_norm_rpow_iff (measurable_norm.pow_const s).aestronglyMeasurable hp0 hp,
+    norm_norm_rpow_rpow] at h'
+  exact (integrableOn_norm_rpow_ball_iff hr).1 h'
+
+end Power
 
 end TauCeti
 
