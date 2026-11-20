@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.MetricSpace.Contracting
 import TauCeti.Algebra.Ring.CayleyChart
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Complex.Pompeiu.Basic
 import TauCeti.Analysis.Complex.Pompeiu.Holder.Operator
@@ -32,8 +33,10 @@ centred at a point where it is standard. This file solves the nonlinear Cauchy�
 
 `∂ₛu + J(u) ∂ₜu = 0`
 
-for maps `u` from a disc in `ℂ = {s + i t}` to `F`. The theorems are stated for this equation and
-an arbitrary field `J`. When every `J(x)` is an almost complex structure, `J(x)² = -1`, a solution
+for maps `u` from a disc in `ℂ = {s + i t}` to `F`. The two non-equivariant theorems are stated
+for this equation and an arbitrary field `J`; the equivariant family theorem also needs
+`J(x)² = -1` near `0`, and the Beltrami theorem is stated for the equation `\bar∂u = Q(u) ∂u`
+below. When every `J(x)` is an almost complex structure, `J(x)² = -1`, a solution
 is `J`-holomorphic for the standard structure of `ℂ` in the sense of `TauCeti.IsJHolomorphicAt`
 (`TauCeti.isJHolomorphicAt_iff_fderiv_one_add_apply_fderiv_I_eq_zero`).
 Through the centre `0` there is a solution in every complex direction: for every `ξ ∈ F` there is
@@ -65,13 +68,13 @@ Two forms of the equation are used.
   (`TauCeti.exists_pos_forall_exists_fderiv_one_add_apply_fderiv_I_eq_zero`).
 * The **Beltrami form** `\bar∂u = Q(u) ∂u`, with `∂u = (∂ₛu - i ∂ₜu) / 2`
   (`TauCeti.exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv_and_apply_smul_eq`).
-  For `J(x)² = -1` it is equivalent to `∂ₛu + J(u) ∂ₜu = 0` when `Q = (J + i)⁻¹ (i - J)` is the
-  Beltrami coefficient of `J`, minus its Cayley coordinate `TauCeti.cayleyCoord i J` relative to
-  `i`, which is conjugate linear (`TauCeti.cayleyCoord_mul_eq_neg_mul`). Both forms have the same
-  solutions, and these are preserved by rotations `w ↦ c w` of the domain with `|c| = 1`. What
-  the Beltrami form adds is that, for conjugate-linear `Q`, its right side `Q(u) ∂u` is compatible
-  with the source rotation `h ↦ c⁻¹ h(c ·)`, unlike `K(u) (-∂ₜu / 2)`, so the fixed-point map
-  commutes with it.
+  For `J(x)² = -1` with `i + J(x)` invertible it is equivalent to `∂ₛu + J(u) ∂ₜu = 0` when
+  `Q = (J + i)⁻¹ (i - J)` is the Beltrami coefficient of `J`, minus its Cayley coordinate
+  `TauCeti.cayleyCoord i J` relative to `i`, which is conjugate linear
+  (`TauCeti.cayleyCoord_mul_eq_neg_mul`). Both forms have the same solutions, and these are
+  preserved by rotations `w ↦ c w` of the domain with `|c| = 1`. What the Beltrami form adds is
+  that, for conjugate-linear `Q`, its right side `Q(u) ∂u` is compatible with the source rotation
+  `h ↦ c⁻¹ h(c ·)`, unlike `K(u) (-∂ₜu / 2)`, so the fixed-point map commutes with it.
   The cutoff `χ` and the Cauchy transform (`TauCeti.cauchyTransform_comp_mul_left`) are rotation
   invariant too, so `z ↦ c⁻¹ h(c z)` is the source of the disc with first jet `c ξ`, and by
   uniqueness of the source the discs satisfy `u_{c ξ}(w) = u_ξ(c w)`.
@@ -1013,14 +1016,10 @@ private theorem discMap_rotSource {c : ℂ} (hc : ‖c‖ = 1) (ξ : F) {f : Sou
     rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv,
       fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv]
     simp only [h, smul_zero, add_zero, one_smul]
-  have hd : HasFDerivAt (fun w ↦ cauchyTransform ⇑f.1 (c * w))
-      ((fderiv ℝ (cauchyTransform ⇑f.1) (c * 0)).comp
-        ((ContinuousLinearMap.mul ℂ ℂ c).restrictScalars ℝ)) 0 :=
-    (differentiableAt_cauchyTransform f _).hasFDerivAt.comp 0
-      ((ContinuousLinearMap.mul ℂ ℂ c).restrictScalars ℝ).hasFDerivAt
-  rw [discMap, discMap, hT, hd.fderiv]
-  simp only [mul_zero, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-    ContinuousLinearMap.mul_apply', mul_one, hlin, smul_smul, mul_comm w c]
+  have hd := fderiv_comp_smul_apply (𝕜 := ℝ) (cauchyTransform ⇑f.1) c 0 1
+  simp only [smul_eq_mul] at hd
+  rw [discMap, discMap, hT, hd]
+  simp only [mul_zero, mul_one, hlin, smul_smul, mul_comm w c]
 
 variable {Q : F → F →L[ℝ] F}
 
@@ -1054,7 +1053,7 @@ private theorem discSource_smul (hξ : ‖ξ‖ ≤ 1) (hQ : SmallCoeff F Q)
     rw [hrot, show discMap (c • ξ) ⇑g.1 = fun w ↦ discMap ξ ⇑f.1 (c * w) from funext hrot,
       wirtingerAtOne_apply, wirtingerAtOne_apply, ← wirtingerDeriv_eq_complexLinearPart,
       ← wirtingerDeriv_eq_complexLinearPart,
-      wirtingerDeriv_comp_mul_left (differentiableAt_discMap ξ f _),
+      wirtingerDeriv_comp_mul_left,
       ← discCutoff_mul_left hc z, hconj,
       ← Complex.inv_eq_conj hc, smul_comm]
   · rw [mem_supportedHolderSubmodule_iff.mp (fixedPointMap _ _ _ g).2 z hz,
