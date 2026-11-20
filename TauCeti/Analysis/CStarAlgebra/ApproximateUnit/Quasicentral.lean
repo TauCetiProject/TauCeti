@@ -103,13 +103,13 @@ private theorem commute_nonUnitalMultiplierExtension_one {H : Type*}
   have hmul_left : ∀ x : S,
       T * πS x = πS ⟨a * (x : A),
         I.mem_toNonUnitalStarSubalgebra.mpr (I.mul_mem_left a x
-          (I.mem_toNonUnitalStarSubalgebra.mp x.2))⟩ := fun x => by
+          (I.mem_toNonUnitalStarSubalgebra.mp x.property))⟩ := fun x => by
     simp only [T, πS, NonUnitalStarAlgHom.comp_apply, NonUnitalStarSubalgebraClass.coe_subtype,
       ← map_mul]
   have hmul_right : ∀ x : S,
       πS x * T = πS ⟨(x : A) * a,
         I.mem_toNonUnitalStarSubalgebra.mpr (I.mul_mem_right x a
-          (I.mem_toNonUnitalStarSubalgebra.mp x.2))⟩ := fun x => by
+          (I.mem_toNonUnitalStarSubalgebra.mp x.property))⟩ := fun x => by
     simp only [T, πS, NonUnitalStarAlgHom.comp_apply, NonUnitalStarSubalgebraClass.coe_subtype,
       ← map_mul]
   refine πS.ext_of_orthogonal_essentialSubspace (fun x => ?_) (fun η hη => ?_)
@@ -222,12 +222,12 @@ private theorem exists_ge_norm_le_one_commutator_lt {e₀ : A} (he₀I : e₀ �
   let lU : Filter U := (CStarAlgebra.approximateUnit S).comap ((↑) : U → S)
   have hlU_neBot : lU.NeBot :=
     Filter.comap_coe_neBot_of_le_principal (le_principal_iff.mpr hU_mem)
-  let φ : U → (F → A) := fun e a => ((e.1 : A) * a.1 - a.1 * (e.1 : A))
+  let φ : U → (F → A) := fun e a => ((e.val : A) * a.val - a.val * (e.val : A))
   have hweak : Tendsto (fun e : U => toWeakSpace ℂ (F → A) (φ e)) lU
       (𝓝 (toWeakSpace ℂ (F → A) 0)) :=
     TauCeti.tendsto_toWeakSpace_pi_iff.mpr fun a =>
       (I.tendsto_toWeakSpace_commutator_of_isIncreasingApproximateUnit
-        (CStarAlgebra.increasingApproximateUnit S) a.1).comp tendsto_comap
+        (CStarAlgebra.increasingApproximateUnit S) a.val).comp tendsto_comap
   have h0_mem : (0 : F → A) ∈ closure (convexHull ℝ (Set.range φ)) :=
     TauCeti.mem_closure_convexHull_range_of_tendsto_weak hweak
   obtain ⟨y, hy_ball, hy_hull⟩ :=
@@ -235,21 +235,21 @@ private theorem exists_ge_norm_le_one_commutator_lt {e₀ : A} (he₀I : e₀ �
   rw [convexHull_range_eq_exists_affineCombination] at hy_hull
   obtain ⟨s, w, hw, hsum, rfl⟩ := hy_hull
   rw [Finset.affineCombination_eq_linear_combination _ _ _ hsum] at hy_ball
-  let e : S := ∑ i ∈ s, w i • i.1
+  let e : S := ∑ i ∈ s, w i • i.val
   have he_ge : s₀ ≤ e := by
     have h1 : s₀ = ∑ i ∈ s, w i • s₀ := by rw [← Finset.sum_smul, hsum, one_smul]
     rw [h1]
-    exact Finset.sum_le_sum fun i hi => smul_le_smul_of_nonneg_left i.2.1 (hw i hi)
-  have he_coe : (e : A) = ∑ i ∈ s, w i • (i.1 : A) := by simp [e]
+    exact Finset.sum_le_sum fun i hi => smul_le_smul_of_nonneg_left i.property.1 (hw i hi)
+  have he_coe : (e : A) = ∑ i ∈ s, w i • (i.val : A) := by simp [e]
   have he_norm : ‖(e : A)‖ ≤ 1 := by
-    calc ‖(e : A)‖ = ‖∑ i ∈ s, w i • (i.1 : A)‖ := by rw [he_coe]
-      _ ≤ ∑ i ∈ s, ‖w i • (i.1 : A)‖ := norm_sum_le s _
-      _ = ∑ i ∈ s, w i * ‖(i.1 : A)‖ := Finset.sum_congr rfl fun i hi => by
+    calc ‖(e : A)‖ = ‖∑ i ∈ s, w i • (i.val : A)‖ := by rw [he_coe]
+      _ ≤ ∑ i ∈ s, ‖w i • (i.val : A)‖ := norm_sum_le s _
+      _ = ∑ i ∈ s, w i * ‖(i.val : A)‖ := Finset.sum_congr rfl fun i hi => by
           rw [norm_smul, Real.norm_of_nonneg (hw i hi)]
       _ ≤ ∑ i ∈ s, w i * 1 := Finset.sum_le_sum fun i hi =>
-          mul_le_mul_of_nonneg_left i.2.2 (hw i hi)
+          mul_le_mul_of_nonneg_left i.property.2 (hw i hi)
       _ = 1 := by simp [hsum]
-  refine ⟨(e : A), I.mem_toNonUnitalStarSubalgebra.mp e.2, he_ge, he_norm, fun a ha => ?_⟩
+  refine ⟨(e : A), I.mem_toNonUnitalStarSubalgebra.mp e.property, he_ge, he_norm, fun a ha => ?_⟩
   have hcomm : (e : A) * a - a * (e : A) = (∑ i ∈ s, w i • φ i) ⟨a, ha⟩ := by
     simp only [he_coe, Finset.sum_mul, Finset.mul_sum, ← Finset.sum_sub_distrib,
       Finset.sum_apply, Pi.smul_apply, φ, smul_mul_assoc, mul_smul_comm, smul_sub]
@@ -295,22 +295,24 @@ theorem exists_ge_norm_lt_one_commutator_lt {e₀ : A} (he₀I : e₀ ∈ I) (he
 /-- Filter basis generating the canonical quasicentral approximate unit of a closed two-sided
 ideal `I`. -/
 private lemma isBasis_quasicentralApproximateUnit :
-    IsBasis (fun p : {e₀ : A // e₀ ∈ I ∧ 0 ≤ e₀ ∧ ‖e₀‖ < 1} × Finset A × ℝ => 0 < p.2.2)
-      (fun p => {e : A | e ∈ I ∧ (p.1 : A) ≤ e ∧ ‖e‖ ≤ 1 ∧
-        ∀ a ∈ p.2.1, ‖e * a - a * e‖ < p.2.2}) where
+    IsBasis (fun p : {e₀ : A // e₀ ∈ I ∧ 0 ≤ e₀ ∧ ‖e₀‖ < 1} × Finset A × ℝ => 0 < p.snd.snd)
+      (fun p => {e : A | e ∈ I ∧ (p.fst : A) ≤ e ∧ ‖e‖ ≤ 1 ∧
+        ∀ a ∈ p.snd.fst, ‖e * a - a * e‖ < p.snd.snd}) where
   nonempty := ⟨(⟨0, I.zero_mem, le_rfl, by simp⟩, ∅, 1), zero_lt_one⟩
   inter {p q} hp hq := by
     classical
     let S := I.toNonUnitalStarSubalgebra
-    let x : S := ⟨p.1.1, I.mem_toNonUnitalStarSubalgebra.mpr p.1.2.1⟩
-    let y : S := ⟨q.1.1, I.mem_toNonUnitalStarSubalgebra.mpr q.1.2.1⟩
-    have hx : x ∈ {z : S | 0 ≤ z} ∩ Metric.ball 0 1 := ⟨p.1.2.2.1, by simpa [x] using p.1.2.2.2⟩
-    have hy : y ∈ {z : S | 0 ≤ z} ∩ Metric.ball 0 1 := ⟨q.1.2.2.1, by simpa [y] using q.1.2.2.2⟩
+    let x : S := ⟨p.fst.val, I.mem_toNonUnitalStarSubalgebra.mpr p.fst.property.1⟩
+    let y : S := ⟨q.fst.val, I.mem_toNonUnitalStarSubalgebra.mpr q.fst.property.1⟩
+    have hx : x ∈ {z : S | 0 ≤ z} ∩ Metric.ball 0 1 :=
+      ⟨p.fst.property.2.1, by simpa [x] using p.fst.property.2.2⟩
+    have hy : y ∈ {z : S | 0 ≤ z} ∩ Metric.ball 0 1 :=
+      ⟨q.fst.property.2.1, by simpa [y] using q.fst.property.2.2⟩
     obtain ⟨z, ⟨hz₀, hz₁⟩, hxz, hyz⟩ := CStarAlgebra.directedOn_nonneg_ball x hx y hy
-    have hxz' : (p.1 : A) ≤ (z : A) := hxz
-    have hyz' : (q.1 : A) ≤ (z : A) := hyz
-    refine ⟨(⟨z.1, I.mem_toNonUnitalStarSubalgebra.mp z.2, hz₀, by simpa using hz₁⟩,
-      p.2.1 ∪ q.2.1, min p.2.2 q.2.2), lt_min hp hq, fun e he => ?_⟩
+    have hxz' : (p.fst : A) ≤ (z : A) := hxz
+    have hyz' : (q.fst : A) ≤ (z : A) := hyz
+    refine ⟨(⟨z.val, I.mem_toNonUnitalStarSubalgebra.mp z.property, hz₀, by simpa using hz₁⟩,
+      p.snd.fst ∪ q.snd.fst, min p.snd.snd q.snd.snd), lt_min hp hq, fun e he => ?_⟩
     exact ⟨⟨he.1, hxz'.trans he.2.1, he.2.2.1, fun a ha =>
         (he.2.2.2 a (Finset.mem_union_left _ ha)).trans_le (min_le_left _ _)⟩,
       ⟨he.1, hyz'.trans he.2.1, he.2.2.1, fun a ha =>
@@ -325,15 +327,16 @@ def quasicentralApproximateUnit : Filter A :=
 /-- Basis characterization of `I.quasicentralApproximateUnit`. -/
 theorem hasBasis_quasicentralApproximateUnit :
     I.quasicentralApproximateUnit.HasBasis
-      (fun p : {e₀ : A // e₀ ∈ I ∧ 0 ≤ e₀ ∧ ‖e₀‖ < 1} × Finset A × ℝ => 0 < p.2.2)
-      (fun p => {e : A | e ∈ I ∧ (p.1 : A) ≤ e ∧ ‖e‖ ≤ 1 ∧
-        ∀ a ∈ p.2.1, ‖e * a - a * e‖ < p.2.2}) :=
+      (fun p : {e₀ : A // e₀ ∈ I ∧ 0 ≤ e₀ ∧ ‖e₀‖ < 1} × Finset A × ℝ => 0 < p.snd.snd)
+      (fun p => {e : A | e ∈ I ∧ (p.fst : A) ≤ e ∧ ‖e‖ ≤ 1 ∧
+        ∀ a ∈ p.snd.fst, ‖e * a - a * e‖ < p.snd.snd}) :=
   I.isBasis_quasicentralApproximateUnit.hasBasis
 
 instance neBot_quasicentralApproximateUnit : I.quasicentralApproximateUnit.NeBot :=
   I.hasBasis_quasicentralApproximateUnit.neBot_iff.mpr fun {p} hp => by
     obtain ⟨e, heI, he_ge, he_norm, he_comm⟩ :=
-      I.exists_ge_norm_lt_one_commutator_lt p.1.2.1 p.1.2.2.1 p.1.2.2.2 p.2.1 hp
+      I.exists_ge_norm_lt_one_commutator_lt p.fst.property.1 p.fst.property.2.1
+        p.fst.property.2.2 p.snd.fst hp
     exact ⟨e, heI, he_ge, he_norm.le, he_comm⟩
 
 /-- Elements of `I.quasicentralApproximateUnit` eventually lie in `I` and are positive
@@ -356,7 +359,8 @@ theorem comap_quasicentralApproximateUnit_le :
   rw [Filter.mem_comap]
   refine ⟨{e : A | e ∈ I ∧ (s₀ : A) ≤ e ∧ ‖e‖ ≤ 1 ∧ ∀ a ∈ (∅ : Finset A), ‖e * a - a * e‖ < 1},
     I.hasBasis_quasicentralApproximateUnit.mem_of_mem
-      (i := (⟨s₀.1, I.mem_toNonUnitalStarSubalgebra.mp s₀.2, hs₀.1, hs₀.2⟩, ∅, 1)) zero_lt_one, ?_⟩
+      (i := (⟨s₀.val, I.mem_toNonUnitalStarSubalgebra.mp s₀.property, hs₀.1, hs₀.2⟩, ∅, 1))
+      zero_lt_one, ?_⟩
   intro x hx
   exact ⟨hx.2.1, by simpa [Metric.mem_closedBall] using hx.2.2.1⟩
 
@@ -387,7 +391,7 @@ theorem tendsto_mul_right_quasicentralApproximateUnit {a : A} (ha : a ∈ I) :
   have hS := I.isIncreasingApproximateUnit_comap_quasicentralApproximateUnit.tendsto_mul_right
     ⟨a, I.mem_toNonUnitalStarSubalgebra.mpr ha⟩
   rw [← I.map_comap_quasicentralApproximateUnit, Filter.tendsto_map'_iff]
-  exact (continuous_subtype_val.tendsto _).comp hS
+  exact (continuous_subtypeVal.tendsto _).comp hS
 
 /-- `I.quasicentralApproximateUnit` is a right approximate unit for `I`. -/
 theorem tendsto_mul_left_quasicentralApproximateUnit {a : A} (ha : a ∈ I) :
@@ -395,7 +399,7 @@ theorem tendsto_mul_left_quasicentralApproximateUnit {a : A} (ha : a ∈ I) :
   have hS := I.isIncreasingApproximateUnit_comap_quasicentralApproximateUnit.tendsto_mul_left
     ⟨a, I.mem_toNonUnitalStarSubalgebra.mpr ha⟩
   rw [← I.map_comap_quasicentralApproximateUnit, Filter.tendsto_map'_iff]
-  exact (continuous_subtype_val.tendsto _).comp hS
+  exact (continuous_subtypeVal.tendsto _).comp hS
 
 /-- `I.quasicentralApproximateUnit` is quasicentral in `A`: `e * a - a * e → 0` for every
 `a : A`. -/
@@ -447,7 +451,7 @@ private theorem exists_seq_step (dA : ℕ → A) (dI : ℕ → I.toNonUnitalStar
   obtain ⟨v, ⟨hv₀, hv₁⟩, hv⟩ := (CStarAlgebra.hasBasis_approximateUnit S).eventually_iff.mp hev
   have hxv : x ≤ v := (hv ⟨le_rfl, by simpa [Metric.mem_closedBall] using hv₁.le⟩).1
   obtain ⟨e, heI, hve, he_norm, he_comm⟩ :=
-    I.exists_ge_norm_lt_one_commutator_lt (I.mem_toNonUnitalStarSubalgebra.mp v.2) hv₀
+    I.exists_ge_norm_lt_one_commutator_lt (I.mem_toNonUnitalStarSubalgebra.mp v.property) hv₀
       hv₁ ((Finset.range (n + 1)).image dA) hε
   let y : S := ⟨e, I.mem_toNonUnitalStarSubalgebra.mpr heI⟩
   have hy_in_v : y ∈ {z : S | v ≤ z} ∩ Metric.closedBall 0 1 :=
@@ -480,35 +484,39 @@ theorem exists_seq_quasicentral_approximateUnit [TopologicalSpace.SeparableSpace
   choose f hf_ge hf_nonneg hf_norm hf_approx hf_comm using I.exists_seq_step dA dI
   let seq : ℕ → {x : S // 0 ≤ x ∧ ‖x‖ < 1} :=
     Nat.rec ⟨0, le_rfl, by simp⟩ fun n prev =>
-      ⟨f n prev.1 prev.2.1 prev.2.2, hf_nonneg n prev.1 prev.2.1 prev.2.2,
-        hf_norm n prev.1 prev.2.1 prev.2.2⟩
-  let u : ℕ → A := fun n => (seq n).1.1
+      ⟨f n prev.val prev.property.1 prev.property.2,
+        hf_nonneg n prev.val prev.property.1 prev.property.2,
+        hf_norm n prev.val prev.property.1 prev.property.2⟩
+  let u : ℕ → A := fun n => (seq n).val.val
   have hu_mono : Monotone u :=
-    monotone_nat_of_le_succ fun n => hf_ge n (seq n).1 (seq n).2.1 (seq n).2.2
+    monotone_nat_of_le_succ fun n =>
+      hf_ge n (seq n).val (seq n).property.1 (seq n).property.2
   have hu_prop : ∀ n, u n ∈ I ∧ 0 ≤ u n ∧ ‖u n‖ < 1 := fun n =>
-    ⟨I.mem_toNonUnitalStarSubalgebra.mp (seq n).1.2, (seq n).2.1, (seq n).2.2⟩
+    ⟨I.mem_toNonUnitalStarSubalgebra.mp (seq n).val.property,
+      (seq n).property.1, (seq n).property.2⟩
   -- Extend left and right approximate-unit convergence from `dI` to all of `I`.
-  have hS_lim : ∀ x : S, Tendsto (fun n => (seq n).1 * x) atTop (𝓝 x) := fun x =>
+  have hS_lim : ∀ x : S, Tendsto (fun n => (seq n).val * x) atTop (𝓝 x) := fun x =>
     ContinuousLinearMap.tendsto_apply_of_dense hdI (C := 1)
-      (f := fun n => ContinuousLinearMap.mul ℂ S (seq n).1) (g := ContinuousLinearMap.id ℂ S)
-      (.of_forall fun n => (ContinuousLinearMap.opNorm_mul_apply_le ℂ S (seq n).1).trans
-        (seq n).2.2.le)
+      (f := fun n => ContinuousLinearMap.mul ℂ S (seq n).val) (g := ContinuousLinearMap.id ℂ S)
+      (.of_forall fun n => (ContinuousLinearMap.opNorm_mul_apply_le ℂ S (seq n).val).trans
+        (seq n).property.2.le)
       (by
         rintro _ ⟨k, rfl⟩
         exact tendsto_sub_nhds_zero_iff.mp <| tendsto_zero_of_norm_succ_lt_inv fun m hm =>
-          hf_approx m (seq m).1 (seq m).2.1 (seq m).2.2 k hm)
+          hf_approx m (seq m).val (seq m).property.1 (seq m).property.2 k hm)
       x
   have hu_mul_right : ∀ a ∈ I, Tendsto (fun n => u n * a) atTop (𝓝 a) := fun a ha =>
-    (continuous_subtype_val.tendsto _).comp (hS_lim ⟨a, I.mem_toNonUnitalStarSubalgebra.mpr ha⟩)
-  have hS_lim_left : ∀ x : S, Tendsto (fun n => x * (seq n).1) atTop (𝓝 x) := by
-    have hselfadj : ∀ᶠ e in atTop.map (fun n => (seq n).1), IsSelfAdjoint e :=
-      eventually_map.mpr (Eventually.of_forall fun n => IsSelfAdjoint.of_nonneg (seq n).2.1)
+    (continuous_subtypeVal.tendsto _).comp (hS_lim ⟨a, I.mem_toNonUnitalStarSubalgebra.mpr ha⟩)
+  have hS_lim_left : ∀ x : S, Tendsto (fun n => x * (seq n).val) atTop (𝓝 x) := by
+    have hselfadj : ∀ᶠ e in atTop.map (fun n => (seq n).val), IsSelfAdjoint e :=
+      eventually_map.mpr (Eventually.of_forall fun n =>
+        IsSelfAdjoint.of_nonneg (seq n).property.1)
     intro x
     exact tendsto_map'_iff.mp
       ((CStarAlgebra.tendsto_mul_left_iff_tendsto_mul_right hselfadj).mpr
         (fun y => tendsto_map'_iff.mpr (hS_lim y)) x)
   have hu_mul_left : ∀ a ∈ I, Tendsto (fun n => a * u n) atTop (𝓝 a) := fun a ha =>
-    (continuous_subtype_val.tendsto _).comp
+    (continuous_subtypeVal.tendsto _).comp
       (hS_lim_left ⟨a, I.mem_toNonUnitalStarSubalgebra.mpr ha⟩)
   -- Extend commutator convergence from `dA` to all of `A`.
   have hu_comm : ∀ a : A, Tendsto (fun n => u n * a - a * u n) atTop (𝓝 0) := fun a =>
@@ -527,7 +535,7 @@ theorem exists_seq_quasicentral_approximateUnit [TopologicalSpace.SeparableSpace
       (by
         rintro _ ⟨k, rfl⟩
         exact tendsto_zero_of_norm_succ_lt_inv fun m hm =>
-          hf_comm m (seq m).1 (seq m).2.1 (seq m).2.2 k hm)
+          hf_comm m (seq m).val (seq m).property.1 (seq m).property.2 k hm)
       a
   exact ⟨u, hu_mono, hu_prop, hu_mul_right, hu_mul_left, hu_comm⟩
 

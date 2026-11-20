@@ -14,7 +14,7 @@ import TauCeti.Analysis.CStarAlgebra.State.Space
 import TauCeti.Analysis.CStarAlgebra.State.Spectrum
 import TauCeti.Analysis.Convex.Topology
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
-import TauCeti.Analysis.Normed.Module.HahnBanach
+import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 import TauCeti.Analysis.Normed.Operator.IntrinsicStar
 import TauCeti.Topology.Algebra.Module.WeakSpace
 
@@ -67,7 +67,7 @@ private theorem toWeakDual_mem_convexJoin_stateSpace_of_norm_eq_one
       (by exact hconv) hcomp.isClosed hnot
   obtain ⟨x, hx⟩ := WeakDual.exists_forall_apply_eq_apply L
   let h : D := (realPart x : D)
-  have hh_sa : IsSelfAdjoint h := (realPart x).2
+  have hh_sa : IsSelfAdjoint h := (realPart x).property
   have hre_eq : ∀ (η : D →L[ℂ] ℂ), (∀ a, η (star a) = star (η a)) →
       (η h).re = (η x).re := fun η hη => by
     have h1 : η h = ((η x).re : ℂ) := by
@@ -174,7 +174,7 @@ theorem exists_sub_positiveContinuousLinearMap_of_map_star (φ : A →L[ℂ] ℂ
   let ψ : Unitization ℂ A →L[ℂ] ℂ :=
     (realPart (WithConv.toConv ψ₀) : WithConv (Unitization ℂ A →L[ℂ] ℂ)).ofConv
   have hψ_star : ∀ x, ψ (star x) = star (ψ x) :=
-    (IntrinsicStar.isSelfAdjoint_iff_map_star _).mp (realPart (WithConv.toConv ψ₀)).2
+    (IntrinsicStar.isSelfAdjoint_iff_map_star _).mp (realPart (WithConv.toConv ψ₀)).property
   have hψ_ext : ∀ a : A, ψ (a : A⁺¹) = φ a := fun a => by
     have hval := congrArg (fun f : WithConv (Unitization ℂ A →L[ℂ] ℂ) => f.ofConv (a : A⁺¹))
       (realPart_apply_coe (WithConv.toConv ψ₀))
@@ -217,9 +217,9 @@ theorem exists_four_positiveContinuousLinearMap (φ : A →L[ℂ] ℂ) :
   let φR : A →L[ℂ] ℂ := (realPart (WithConv.toConv φ) : WithConv (A →L[ℂ] ℂ)).ofConv
   let φI : A →L[ℂ] ℂ := (imaginaryPart (WithConv.toConv φ) : WithConv (A →L[ℂ] ℂ)).ofConv
   have hφR_star : ∀ a, φR (star a) = star (φR a) :=
-    (IntrinsicStar.isSelfAdjoint_iff_map_star _).mp (realPart (WithConv.toConv φ)).2
+    (IntrinsicStar.isSelfAdjoint_iff_map_star _).mp (realPart (WithConv.toConv φ)).property
   have hφI_star : ∀ a, φI (star a) = star (φI a) :=
-    (IntrinsicStar.isSelfAdjoint_iff_map_star _).mp (imaginaryPart (WithConv.toConv φ)).2
+    (IntrinsicStar.isSelfAdjoint_iff_map_star _).mp (imaginaryPart (WithConv.toConv φ)).property
   obtain ⟨ω₁, ω₂, hR_eq, hR_norm⟩ := φR.exists_sub_positiveContinuousLinearMap_of_map_star hφR_star
   obtain ⟨ω₃, ω₄, hI_eq, hI_norm⟩ := φI.exists_sub_positiveContinuousLinearMap_of_map_star hφI_star
   refine ⟨ω₁, ω₂, ω₃, ω₄, fun a => ?_,

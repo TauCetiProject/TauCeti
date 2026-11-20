@@ -186,7 +186,7 @@ theorem norm_strictlyPositiveApproximateUnit_lt_one (h : A) (n : ℕ) :
   have hlt : ‖strictlyPositiveApproximateUnit h n‖₊ < 1 := by
     refine nnNorm_cfcₙ_nnreal_lt fun t _ => ?_
     have hc : (0 : ℝ≥0) < ((n + 1 : ℕ) : ℝ≥0)⁻¹ := by positivity
-    have hden : (0 : ℝ≥0) < ((n + 1 : ℕ) : ℝ≥0)⁻¹ + t := add_pos_of_pos_of_nonneg hc t.2
+    have hden : (0 : ℝ≥0) < ((n + 1 : ℕ) : ℝ≥0)⁻¹ + t := add_pos_of_pos_of_nonneg hc t.property
     rw [← div_eq_mul_inv, div_lt_one hden]
     exact lt_add_of_pos_left t hc
   exact_mod_cast hlt
@@ -251,7 +251,7 @@ theorem norm_sub_mul_strictlyPositiveApproximateUnit_le {h : A} (hh : 0 ≤ h) (
         hg_cont.continuousOn (by simp)]
       conv_rhs => rw [← cfcₙ_id' ℝ≥0 h hh]
       refine cfcₙ_congr fun t _ => ?_
-      have hden : c + t ≠ 0 := (add_pos_of_pos_of_nonneg hc_pos t.2).ne'
+      have hden : c + t ≠ 0 := (add_pos_of_pos_of_nonneg hc_pos t.property).ne'
       calc t * (t * (c + t)⁻¹) + t * (c * (c + t)⁻¹)
           = t * ((c + t) * (c + t)⁻¹) := by ring
         _ = t * 1 := by rw [mul_inv_cancel₀ hden]
@@ -260,7 +260,7 @@ theorem norm_sub_mul_strictlyPositiveApproximateUnit_le {h : A} (hh : 0 ≤ h) (
   rw [hdiff]
   have hle : ‖cfcₙ (fun t : ℝ≥0 => t * (c * (c + t)⁻¹)) h‖₊ ≤ c := by
     refine nnNorm_cfcₙ_nnreal_le fun t _ => ?_
-    have hden : (0 : ℝ≥0) < c + t := add_pos_of_pos_of_nonneg hc_pos t.2
+    have hden : (0 : ℝ≥0) < c + t := add_pos_of_pos_of_nonneg hc_pos t.property
     calc t * (c * (c + t)⁻¹) = c * (t / (c + t)) := by rw [div_eq_mul_inv]; ring
       _ ≤ c * 1 := by
           gcongr
@@ -301,7 +301,7 @@ theorem inr_strictlyPositiveApproximateUnit_eq (h : A) (n : ℕ) :
         cfc (fun t : ℝ≥0 => (((n + 1 : ℕ) : ℝ≥0)⁻¹ + t)⁻¹) (h : A⁺¹) * (h : A⁺¹) := by
   by_cases hh : 0 ≤ h
   · let c : ℝ≥0 := ((n + 1 : ℕ) : ℝ≥0)⁻¹
-    have hh' : 0 ≤ (h : A⁺¹) := Unitization.inr_nonneg_iff.mpr hh
+    have hh' : 0 ≤ (h : A⁺¹) := (Unitization.inr_nonneg_iff ℂ).mpr hh
     have hr_cont : ContinuousOn (fun t : ℝ≥0 => (c + t)⁻¹) (spectrum ℝ≥0 (h : A⁺¹)) :=
       Continuous.continuousOn (by fun_prop (disch := intro x; positivity))
     have hL : ((strictlyPositiveApproximateUnit h n : A) : A⁺¹) =
@@ -311,7 +311,7 @@ theorem inr_strictlyPositiveApproximateUnit_eq (h : A) (n : ℕ) :
         cfc_mul (fun t : ℝ≥0 => t) (fun t : ℝ≥0 => (c + t)⁻¹) (h : A⁺¹)
           (continuousOn_id' _) hr_cont, cfc_id' ℝ≥0 (h : A⁺¹) hh']
     exact ⟨hL, hL.trans ((Commute.refl (h : A⁺¹)).cfc_nnreal _).symm.eq⟩
-  · have hh' : ¬ 0 ≤ (h : A⁺¹) := fun h1 => hh (Unitization.inr_nonneg_iff.mp h1)
+  · have hh' : ¬ 0 ≤ (h : A⁺¹) := fun h1 => hh ((Unitization.inr_nonneg_iff ℂ).mp h1)
     simp [strictlyPositiveApproximateUnit_def, cfcₙ_apply_of_not_predicate _ hh,
       cfc_apply_of_not_predicate _ hh']
 

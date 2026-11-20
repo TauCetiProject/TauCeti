@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Center
 public import Mathlib.Algebra.Star.Module
 
 /-!
@@ -12,9 +13,10 @@ public import Mathlib.Algebra.Star.Module
 
 In any magma `A` with an antimultiplicative involution (`StarMul A`), a subset closed under `star`
 (`StarMemClass S A`) that absorbs multiplication by ambient elements on the left also absorbs
-multiplication on the right via `x * a = star (star a * star x)`. Similarly, in a star module over
-`R` with `StarMul A` and `IsScalarTower R A A`, applying `star` shows that scalars commute with
-left multiplication (`x * (c • y) = c • (x * y)`), so `SMulCommClass R A A` is automatic.
+multiplication on the right via `x * a = star (star a * star x)`, and the double commutant of
+such a subset is again closed under `star`. Similarly, in a star module over `R` with `StarMul A`
+and `IsScalarTower R A A`, applying `star` shows that scalars commute with left multiplication
+(`x * (c • y) = c • (x * y)`), so `SMulCommClass R A A` is automatic.
 
 In a star ring whose star is proper (`IsProperStar`: `star x * x = 0` forces `x = 0`), such as a
 C⋆-algebra, an element killed by every two-sided multiplication `star d * X * c` vanishes. This is
@@ -38,6 +40,11 @@ equivalence of complex vector spaces is real-linear.
   `IsSelfAdjoint.image_star_range_mul_left`, `IsSelfAdjoint.image_star_range_mul_right`: `star`
   maps the left-multiplication range `h * A` onto `A * star h` (and vice versa), swapping `h * A`
   and `A * h` when `h` is self-adjoint.
+* `StarMemClass.star_mem_centralizer_centralizer`: the double commutant of a star-closed subset
+  is star-closed.
+* `TauCeti.exists_left_identity_iff` and `TauCeti.exists_right_identity_iff`: in a magma with an
+  antimultiplicative involution, a left (respectively, right) identity exists if and only if a
+  two-sided identity exists.
 * `TauCeti.eq_zero_of_forall_star_mul_mul_eq_zero`: if `star d * X * c = 0` for all `c` and
   `d`, then `X = 0`.
 * `TauCeti.faithfulSMul_mulOpposite_of_isProperStar`: if `c * x = c * y` for all `c`, then
@@ -93,7 +100,37 @@ theorem IsSelfAdjoint.image_star_range_mul_right {A : Type*} [Mul A] [StarMul A]
     star '' Set.range (fun a : A => a * h) = Set.range (fun a : A => h * a) := by
   simpa only [hh.star_eq] using TauCeti.image_star_range_mul_right h
 
+/-- The double commutant `s''` of a subset closed under the involution is closed under the
+involution. -/
+theorem StarMemClass.star_mem_centralizer_centralizer {S A : Type*} [Mul A] [StarMul A]
+    [SetLike S A] [StarMemClass S A] (s : S) {x : A}
+    (hx : x ∈ (s : Set A).centralizer.centralizer) :
+    star x ∈ (s : Set A).centralizer.centralizer :=
+  Set.star_mem_centralizer' (fun _ ha => Set.star_mem_centralizer' (fun _ => star_mem) ha) hx
+
 namespace TauCeti
+
+/-- In a magma with an antimultiplicative involution, a left identity exists if and only if a
+two-sided identity exists. -/
+theorem exists_left_identity_iff {A : Type*} [Mul A] [StarMul A] :
+    (∃ e : A, ∀ b : A, e * b = b) ↔ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b := by
+  refine ⟨?_, fun ⟨e, he⟩ ↦ ⟨e, fun b ↦ (he b).1⟩⟩
+  rintro ⟨e, hleft⟩
+  have hright (b : A) : b * star e = b := by
+    simpa only [star_mul, star_star] using congrArg star (hleft (star b))
+  have heStar : e = star e := (hright e).symm.trans (hleft (star e))
+  exact ⟨e, fun b ↦ ⟨hleft b, heStar ▸ hright b⟩⟩
+
+/-- In a magma with an antimultiplicative involution, a right identity exists if and only if a
+two-sided identity exists. -/
+theorem exists_right_identity_iff {A : Type*} [Mul A] [StarMul A] :
+    (∃ e : A, ∀ b : A, b * e = b) ↔ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b := by
+  refine ⟨fun ⟨e, he⟩ ↦ ?_, fun ⟨e, he⟩ ↦ ⟨e, fun b ↦ (he b).2⟩⟩
+  obtain ⟨e', he'⟩ := (exists_left_identity_iff (A := Aᵐᵒᵖ)).mp
+    ⟨MulOpposite.op e, fun b ↦ MulOpposite.unop_injective (by simpa using he b.unop)⟩
+  exact ⟨e'.unop, fun b ↦
+    ⟨by simpa using congrArg MulOpposite.unop (he' (MulOpposite.op b)).2,
+      by simpa using congrArg MulOpposite.unop (he' (MulOpposite.op b)).1⟩⟩
 
 variable {R : Type*} [NonUnitalSemiring R] [StarRing R] [IsProperStar R]
 

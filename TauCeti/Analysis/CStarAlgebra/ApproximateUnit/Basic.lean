@@ -41,7 +41,7 @@ converge to `a`.
 public section
 
 open Filter Topology
-open scoped CStarAlgebra
+open scoped CStarAlgebra ComplexOrder
 
 namespace Filter.IsIncreasingApproximateUnit
 

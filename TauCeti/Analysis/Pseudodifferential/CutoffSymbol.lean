@@ -50,8 +50,7 @@ namespace TauCeti
 
 namespace HomogeneousSymbol
 
-variable {n : ℕ} {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] {E : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
 
 /-! ### The cut-off term -/

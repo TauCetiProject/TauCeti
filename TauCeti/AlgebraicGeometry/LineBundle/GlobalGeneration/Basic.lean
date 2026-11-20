@@ -21,7 +21,9 @@ criterion turns surjectivity of restriction to a point into generation of the li
 Global generation is equivalent to the existence of Mathlib's
 `SheafOfModules.GeneratingSections`, including the epimorphism from a free sheaf onto the
 line bundle. The trivial line bundle is globally generated
-(`TauCeti.AlgebraicGeometry.InvertibleSheaf.isGloballyGenerated_trivial`).
+(`TauCeti.AlgebraicGeometry.InvertibleSheaf.isGloballyGenerated_trivial`), and so is every line
+bundle on an affine scheme
+(`TauCeti.AlgebraicGeometry.InvertibleSheaf.isGloballyGenerated_of_isAffine`).
 
 ## References
 
@@ -278,5 +280,11 @@ theorem isGloballyGenerated_iff_nonempty_generatingSections {L : InvertibleSheaf
 theorem isGloballyGenerated_trivial (X : Scheme.{u}) : (trivial X).IsGloballyGenerated :=
   isGloballyGenerated_iff_nonempty_generatingSections.mpr
     ⟨(trivial_obj X).symm ▸ SheafOfModules.free.generatingSections PUnit⟩
+
+/-- Every line bundle on an affine scheme is globally generated. -/
+theorem isGloballyGenerated_of_isAffine [IsAffine X] (L : InvertibleSheaf X) :
+    L.IsGloballyGenerated := fun x ↦
+  Scheme.Modules.exists_mem_nonvanishingLocus_of_isAffineOpen L.obj (isAffineOpen_top X)
+    (Opens.mem_top x)
 
 end TauCeti.AlgebraicGeometry.InvertibleSheaf
