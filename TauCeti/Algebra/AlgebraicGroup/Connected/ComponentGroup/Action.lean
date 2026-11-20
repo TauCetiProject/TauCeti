@@ -8,11 +8,12 @@ module
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Functor
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.ComponentGroup
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.IdentityComponent
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 
 /-!
-# Component-group actions and closed-subgroup component maps
+# Component-group actions and closed-subgroup descent
 
 Over an algebraically closed field `k`, the rational points `G(k)` of a finite-type affine group
 `G = Spec H` surject onto its finite component group `π₀(G) = ConnectedComponents (PrimeSpectrum H)`
@@ -26,10 +27,12 @@ with kernel `G°(k)`. Consequently:
   `TauCeti.FiniteTypeCommHopfAlgCat.componentGroupMulAction`) with the same orbits and fixed
   points, stabilizers transported by the rational component map, and kernel recording the
   effective component action.
-* For any closed subgroup `N = V(I)` of `G` cut out by a Hopf ideal `I`, the ambient subgroup
-  `N(k) ≤ G(k)` surjects onto `π₀(N)` (`TauCeti.FiniteTypeCommHopfAlgCat.subgroupComponentMap`)
-  with kernel exactly `N°(k)`, identifying `N(k) / N°(k)` with `π₀(N)` and descending `N(k)`-actions
-  that are trivial on `N°(k)` directly to `π₀(N)`.
+* For any closed subgroup `N = V(I)` of `G` cut out by a Hopf ideal `I`, using
+  `TauCeti.HopfIdeal.rationalComponentMap I : N(k) →* π₀(N)`, `N(k)`-homomorphisms and actions
+  that are trivial on `N°(k)` descend directly to `π₀(N)`
+  (`TauCeti.FiniteTypeCommHopfAlgCat.descSubgroupComponentGroupHom`,
+  `TauCeti.FiniteTypeCommHopfAlgCat.subgroupComponentGroupActionHom`,
+  `TauCeti.FiniteTypeCommHopfAlgCat.subgroupComponentGroupMulAction`).
 
 No smoothness, reducedness, or characteristic hypothesis is required.
 
@@ -40,8 +43,6 @@ No smoothness, reducedness, or characteristic hypothesis is required.
 * `TauCeti.FiniteTypeCommHopfAlgCat.componentGroupActionHom` and
   `TauCeti.FiniteTypeCommHopfAlgCat.componentGroupMulAction`: descend a `G(k)`-action trivial on
   `G°(k)` to `π₀(G)`.
-* `TauCeti.FiniteTypeCommHopfAlgCat.subgroupComponentMap`: surjective homomorphism `N(k) →* π₀(N)`
-  with kernel `N°(k)` for a closed subgroup `N = V(I)`.
 * `TauCeti.FiniteTypeCommHopfAlgCat.descSubgroupComponentGroupHom`,
   `TauCeti.FiniteTypeCommHopfAlgCat.subgroupComponentGroupActionHom`, and
   `TauCeti.FiniteTypeCommHopfAlgCat.subgroupComponentGroupMulAction`: homomorphism and action
@@ -280,9 +281,9 @@ theorem stabilizer_componentGroupMulAction (X : Type*)
   constructor
   · exact fun hg ↦ ⟨g, hg, rfl⟩
   · rintro ⟨g', hg', heq⟩
-    have hdiff : g'⁻¹ * g ∈ CommHopfAlgCat.quotientPointsSubgroup H.obj
-        (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)) (CommAlgCat.of k k) := by
-      rw [← rationalComponentMap_eq_one_iff, map_mul, map_inv, heq, inv_mul_cancel]
+    have hdiff : g'⁻¹ * g ∈ (rationalComponentMap H).ker := by
+      rw [MonoidHom.mem_ker, map_mul, map_inv, heq, inv_mul_cancel]
+    rw [rationalComponentMap_ker] at hdiff
     calc
       g • x = (g' * (g'⁻¹ * g)) • x := by rw [mul_inv_cancel_left]
       _ = g' • ((g'⁻¹ * g) • x) := mul_smul g' (g'⁻¹ * g) x
@@ -353,133 +354,17 @@ end ActionDescent
 
 section ClosedSubgroup
 
-/-- The component group of a closed subgroup `V(I)` carries the component-group structure of its
-quotient coordinate algebra. Because `quotient H I` is an `abbrev` whose carrier reduces to
-`H ⧸ I.toIdeal`, typeclass search does not match `instGroupConnectedComponents` against
-`ConnectedComponents (PrimeSpectrum (quotient H I))`; this instance exposes the same group
-structure directly (definitionally equal to `instGroupConnectedComponents (quotient H I)`). -/
-noncomputable instance instGroupConnectedComponentsQuotient
-    (H : FiniteTypeCommHopfAlgCat.{u, u} k) (I : HopfIdeal k H) :
-    Group (ConnectedComponents (PrimeSpectrum (quotient H I))) :=
-  instGroupConnectedComponents (quotient H I)
-
 variable (H : FiniteTypeCommHopfAlgCat.{u, u} k)
-
-/-- The rational component map for a closed subgroup `N = V(I)`, defined directly on the ambient
-subgroup `N(k) ≤ G(k)`. -/
-noncomputable def subgroupComponentMap (I : HopfIdeal k H) :
-    CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k) →*
-      ConnectedComponents (PrimeSpectrum (quotient H I)) :=
-  (rationalComponentMap (quotient H I)).comp
-    (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I
-      (CommAlgCat.of k k)).groupIsoToMulEquiv.symm.toMonoidHom
-
-/-- On an included quotient point, `subgroupComponentMap` agrees with `rationalComponentMap`. -/
-@[simp]
-theorem subgroupComponentMap_quotientPointsHom (I : HopfIdeal k H)
-    (q : HopfAlgebra.points (R := k) (H := quotient H I) (CommAlgCat.of k k)) :
-    subgroupComponentMap H I
-        ⟨CommHopfAlgCat.quotientPointsHom H.obj I (CommAlgCat.of k k) q,
-          CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup H.obj I _ q⟩ =
-      rationalComponentMap (quotient H I) q := by
-  have heq :
-      (⟨CommHopfAlgCat.quotientPointsHom H.obj I (CommAlgCat.of k k) q,
-        CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup H.obj I _ q⟩ :
-        CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) =
-      (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).groupIsoToMulEquiv q :=
-    (CommHopfAlgCat.quotientPointsSubgroupIso_hom_apply H.obj I (CommAlgCat.of k k) q).symm
-  rw [heq, subgroupComponentMap, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    MulEquiv.symm_apply_apply]
-
-/-- Every connected component of a closed subgroup `N = V(I)` is represented by a rational point
-in `N(k)`. -/
-theorem subgroupComponentMap_surjective (I : HopfIdeal k H) :
-    Function.Surjective (subgroupComponentMap H I) :=
-  (rationalComponentMap_surjective (quotient H I)).comp
-    (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I
-      (CommAlgCat.of k k)).groupIsoToMulEquiv.symm.surjective
-
-/-- A rational point of a closed subgroup `N = V(I)` maps to the identity component of `N`
-exactly when it belongs to the identity component `N°(k)`. -/
-@[simp]
-theorem subgroupComponentMap_eq_one_iff (I : HopfIdeal k H)
-    (g : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) :
-    subgroupComponentMap H I g = 1 ↔
-      (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) ∈
-        CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent (CommAlgCat.of k k) := by
-  obtain ⟨q, rfl⟩ := (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I
-    (CommAlgCat.of k k)).groupIsoToMulEquiv.surjective g
-  have hqeq :
-      (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).groupIsoToMulEquiv q =
-      ⟨CommHopfAlgCat.quotientPointsHom H.obj I (CommAlgCat.of k k) q,
-        CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup H.obj I _ q⟩ :=
-    CommHopfAlgCat.quotientPointsSubgroupIso_hom_apply H.obj I (CommAlgCat.of k k) q
-  rw [hqeq, subgroupComponentMap_quotientPointsHom, rationalComponentMap_eq_one_iff,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_iff,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-  constructor
-  · intro hq x hx
-    rw [CommHopfAlgCat.quotientPointsHom_apply_apply, ← CommHopfAlgCat.mkQuotient_apply]
-    exact hq _ ((HopfIdeal.mem_identityComponent I x).mp hx)
-  · intro hq y hy
-    obtain ⟨x, rfl⟩ := CommHopfAlgCat.mkQuotient_surjective H.obj I y
-    have hx := hq x ((HopfIdeal.mem_identityComponent I x).mpr hy)
-    rwa [CommHopfAlgCat.quotientPointsHom_apply_apply, ← CommHopfAlgCat.mkQuotient_apply] at hx
-
-/-- The kernel of `subgroupComponentMap H I` is the rational-point subgroup of `N°` viewed inside
-`N(k)`. -/
-theorem ker_subgroupComponentMap (I : HopfIdeal k H) :
-    (subgroupComponentMap H I).ker =
-      (CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent
-        (CommAlgCat.of k k)).subgroupOf
-        (CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) := by
-  ext g
-  exact subgroupComponentMap_eq_one_iff H I g
-
-/-- The rational points of `N°` form a normal subgroup of `N(k)`. -/
-instance normal_identityComponent_subgroupOf (I : HopfIdeal k H) :
-    ((CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent
-      (CommAlgCat.of k k)).subgroupOf
-      (CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k))).Normal := by
-  rw [← ker_subgroupComponentMap H I]
-  infer_instance
-
-/-- The rational-point quotient `N(k) / N°(k)` is isomorphic to `π₀(N)`. -/
-noncomputable def subgroupComponentGroupEquivQuotient (I : HopfIdeal k H) :
-    CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k) ⧸
-        (CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent
-          (CommAlgCat.of k k)).subgroupOf
-          (CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) ≃*
-      ConnectedComponents (PrimeSpectrum (quotient H I)) :=
-  QuotientGroup.liftEquiv _ (subgroupComponentMap_surjective H I)
-    (ker_subgroupComponentMap H I).symm
-
-/-- Including `π₀(N)` into `π₀(G)` agrees with the ambient rational component map on `N(k)`. -/
-@[simp]
-theorem mapComponentGroup_mkQuotient_subgroupComponentMap (I : HopfIdeal k H)
-    (g : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) :
-    mapComponentGroup (mkQuotient H I) (subgroupComponentMap H I g) =
-      rationalComponentMap H g.1 := by
-  obtain ⟨q, rfl⟩ := (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I
-    (CommAlgCat.of k k)).groupIsoToMulEquiv.surjective g
-  have hqeq :
-      (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).groupIsoToMulEquiv q =
-      ⟨CommHopfAlgCat.quotientPointsHom H.obj I (CommAlgCat.of k k) q,
-        CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup H.obj I _ q⟩ :=
-    CommHopfAlgCat.quotientPointsSubgroupIso_hom_apply H.obj I (CommAlgCat.of k k) q
-  rw [hqeq, subgroupComponentMap_quotientPointsHom,
-    mapComponentGroup_rationalComponentMap (mkQuotient H I)]
-  rfl
 
 /-- For nested closed subgroups `V(J) ⊆ V(I)` (`I ≤ J`), the induced component-group map
 `π₀(V(J)) → π₀(V(I))` agrees with the inclusion `V(J)(k) ⊆ V(I)(k)`. -/
 @[simp]
-theorem mapComponentGroup_quotientMapOfLe_subgroupComponentMap {I J : HopfIdeal k H}
+theorem mapComponentGroup_quotientMapOfLe_rationalComponentMap {I J : HopfIdeal k H}
     (hIJ : I ≤ J)
     (g : CommHopfAlgCat.quotientPointsSubgroup H.obj J (CommAlgCat.of k k)) :
-    mapComponentGroup (quotientMapOfLe H hIJ) (subgroupComponentMap H J g) =
-      subgroupComponentMap H I
-        ⟨g.1, CommHopfAlgCat.quotientPointsSubgroup_le_of_le H.obj hIJ _ g.2⟩ := by
+    mapComponentGroup (quotientMapOfLe H hIJ) (J.rationalComponentMap g) =
+      I.rationalComponentMap
+        ⟨g.val, CommHopfAlgCat.quotientPointsSubgroup_le_of_le H.obj hIJ _ g.property⟩ := by
   obtain ⟨q, rfl⟩ := (CommHopfAlgCat.quotientPointsSubgroupIso H.obj J
     (CommAlgCat.of k k)).groupIsoToMulEquiv.surjective g
   have hqeq :
@@ -487,7 +372,8 @@ theorem mapComponentGroup_quotientMapOfLe_subgroupComponentMap {I J : HopfIdeal 
       ⟨CommHopfAlgCat.quotientPointsHom H.obj J (CommAlgCat.of k k) q,
         CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup H.obj J _ q⟩ :=
     CommHopfAlgCat.quotientPointsSubgroupIso_hom_apply H.obj J (CommAlgCat.of k k) q
-  rw [hqeq, subgroupComponentMap_quotientPointsHom, mapComponentGroup_rationalComponentMap]
+  rw [hqeq, HopfIdeal.rationalComponentMap_quotientPointsHom,
+    mapComponentGroup_rationalComponentMap]
   let q' : HopfAlgebra.points (R := k) (H := quotient H I) (CommAlgCat.of k k) :=
     (CommHopfAlgCat.Hom.mapPointsFunctor
       (CommHopfAlgCat.quotientMapOfLe H.obj hIJ)).app (CommAlgCat.of k k) q
@@ -506,7 +392,7 @@ theorem mapComponentGroup_quotientMapOfLe_subgroupComponentMap {I J : HopfIdeal 
       ⟨CommHopfAlgCat.quotientPointsHom H.obj I (CommAlgCat.of k k) q',
         CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup H.obj I _ q'⟩ :=
     Subtype.ext hval.symm
-  rw [hq'_eq, hsub, subgroupComponentMap_quotientPointsHom]
+  rw [hq'_eq, hsub, HopfIdeal.rationalComponentMap_quotientPointsHom]
 
 /-- Descend a homomorphism `N(k) →* M` vanishing on `N°(k)` to `π₀(N)`. -/
 noncomputable def descSubgroupComponentGroupHom (I : HopfIdeal k H) {M : Type*} [Monoid M]
@@ -515,7 +401,7 @@ noncomputable def descSubgroupComponentGroupHom (I : HopfIdeal k H) {M : Type*} 
       (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) ∈
         CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent (CommAlgCat.of k k) →
       φ g = 1) :
-    ConnectedComponents (PrimeSpectrum (quotient H I)) →* M :=
+    I.ComponentGroup →* M :=
   descComponentGroupHom (quotient H I)
     (φ.comp (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I
       (CommAlgCat.of k k)).groupIsoToMulEquiv.toMonoidHom)
@@ -528,13 +414,13 @@ noncomputable def descSubgroupComponentGroupHom (I : HopfIdeal k H) {M : Type*} 
           ⟨CommHopfAlgCat.quotientPointsHom H.obj I (CommAlgCat.of k k) q,
             CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup H.obj I _ q⟩ :=
         CommHopfAlgCat.quotientPointsSubgroupIso_hom_apply H.obj I (CommAlgCat.of k k) q
-      rw [← subgroupComponentMap_eq_one_iff, MulEquiv.coe_toMonoidHom, hqeq,
-        subgroupComponentMap_quotientPointsHom, rationalComponentMap_eq_one_iff]
+      rw [← HopfIdeal.rationalComponentMap_eq_one_iff I, MulEquiv.coe_toMonoidHom, hqeq,
+        HopfIdeal.rationalComponentMap_quotientPointsHom, rationalComponentMap_eq_one_iff]
       exact hq)
 
 /-- The descended subgroup homomorphism agrees with `φ` on `N(k)`. -/
 @[simp]
-theorem descSubgroupComponentGroupHom_subgroupComponentMap (I : HopfIdeal k H)
+theorem descSubgroupComponentGroupHom_rationalComponentMap (I : HopfIdeal k H)
     {M : Type*} [Monoid M]
     (φ : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k) →* M)
     (hφ : ∀ g : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k),
@@ -542,7 +428,7 @@ theorem descSubgroupComponentGroupHom_subgroupComponentMap (I : HopfIdeal k H)
         CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent (CommAlgCat.of k k) →
       φ g = 1)
     (g : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) :
-    descSubgroupComponentGroupHom H I φ hφ (subgroupComponentMap H I g) = φ g := by
+    descSubgroupComponentGroupHom H I φ hφ (I.rationalComponentMap g) = φ g := by
   obtain ⟨q, rfl⟩ := (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I
     (CommAlgCat.of k k)).groupIsoToMulEquiv.surjective g
   have hqeq :
@@ -550,7 +436,7 @@ theorem descSubgroupComponentGroupHom_subgroupComponentMap (I : HopfIdeal k H)
       ⟨CommHopfAlgCat.quotientPointsHom H.obj I (CommAlgCat.of k k) q,
         CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup H.obj I _ q⟩ :=
     CommHopfAlgCat.quotientPointsSubgroupIso_hom_apply H.obj I (CommAlgCat.of k k) q
-  rw [hqeq, subgroupComponentMap_quotientPointsHom, descSubgroupComponentGroupHom,
+  rw [hqeq, HopfIdeal.rationalComponentMap_quotientPointsHom, descSubgroupComponentGroupHom,
     descComponentGroupHom_rationalComponentMap, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     hqeq]
 
@@ -561,15 +447,15 @@ theorem descSubgroupComponentGroupHom_unique (I : HopfIdeal k H) {M : Type*} [Mo
       (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) ∈
         CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent (CommAlgCat.of k k) →
       φ g = 1)
-    (ψ : ConnectedComponents (PrimeSpectrum (quotient H I)) →* M)
-    (hψ : ∀ g, ψ (subgroupComponentMap H I g) = φ g) :
+    (ψ : I.ComponentGroup →* M)
+    (hψ : ∀ g, ψ (I.rationalComponentMap g) = φ g) :
     ψ = descSubgroupComponentGroupHom H I φ hφ := by
   ext C
-  obtain ⟨g, rfl⟩ := subgroupComponentMap_surjective H I C
-  rw [hψ, descSubgroupComponentGroupHom_subgroupComponentMap]
+  obtain ⟨g, rfl⟩ := I.rationalComponentMap_surjective C
+  rw [hψ, descSubgroupComponentGroupHom_rationalComponentMap]
 
 /-- The kernel of the descended subgroup homomorphism is the image of `ker φ` under
-`subgroupComponentMap`. -/
+`HopfIdeal.rationalComponentMap`. -/
 theorem ker_descSubgroupComponentGroupHom (I : HopfIdeal k H) {M : Type*} [Monoid M]
     (φ : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k) →* M)
     (hφ : ∀ g : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k),
@@ -577,16 +463,17 @@ theorem ker_descSubgroupComponentGroupHom (I : HopfIdeal k H) {M : Type*} [Monoi
         CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent (CommAlgCat.of k k) →
       φ g = 1) :
     (descSubgroupComponentGroupHom H I φ hφ).ker =
-      φ.ker.map (subgroupComponentMap H I) := by
+      φ.ker.map I.rationalComponentMap := by
   ext C
-  obtain ⟨g, rfl⟩ := subgroupComponentMap_surjective H I C
-  rw [MonoidHom.mem_ker, descSubgroupComponentGroupHom_subgroupComponentMap, Subgroup.mem_map]
+  obtain ⟨g, rfl⟩ := I.rationalComponentMap_surjective C
+  rw [MonoidHom.mem_ker, descSubgroupComponentGroupHom_rationalComponentMap, Subgroup.mem_map]
   constructor
   · exact fun hg ↦ ⟨g, hg, rfl⟩
   · rintro ⟨g', hg', heq⟩
-    have hdiff : (g'⁻¹ * g : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)).1 ∈
+    have hdiff :
+        (g'⁻¹ * g : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)).val ∈
         CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent (CommAlgCat.of k k) := by
-      rw [← subgroupComponentMap_eq_one_iff, map_mul, map_inv, heq, inv_mul_cancel]
+      rw [← HopfIdeal.rationalComponentMap_eq_one_iff I, map_mul, map_inv, heq, inv_mul_cancel]
     calc
       φ g = φ (g' * (g'⁻¹ * g)) := by rw [mul_inv_cancel_left]
       _ = φ g' * φ (g'⁻¹ * g) := map_mul φ g' (g'⁻¹ * g)
@@ -601,22 +488,22 @@ noncomputable def subgroupComponentGroupActionHom (I : HopfIdeal k H) (X : Type*
       (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) ∈
         CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent (CommAlgCat.of k k) →
       ∀ x : X, g • x = x) :
-    ConnectedComponents (PrimeSpectrum (quotient H I)) →* Equiv.Perm X :=
+    I.ComponentGroup →* Equiv.Perm X :=
   descSubgroupComponentGroupHom H I (MulAction.toPermHom _ X) fun g hg ↦ by
     ext x
     exact htriv g hg x
 
 /-- The descended closed-subgroup component action agrees with the `N(k)`-action. -/
 @[simp]
-theorem subgroupComponentGroupActionHom_subgroupComponentMap (I : HopfIdeal k H) (X : Type*)
+theorem subgroupComponentGroupActionHom_rationalComponentMap (I : HopfIdeal k H) (X : Type*)
     [MulAction (CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) X]
     (htriv : ∀ g : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k),
       (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) ∈
         CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent (CommAlgCat.of k k) →
       ∀ x : X, g • x = x)
     (g : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) (x : X) :
-    subgroupComponentGroupActionHom H I X htriv (subgroupComponentMap H I g) x = g • x := by
-  rw [subgroupComponentGroupActionHom, descSubgroupComponentGroupHom_subgroupComponentMap,
+    subgroupComponentGroupActionHom H I X htriv (I.rationalComponentMap g) x = g • x := by
+  rw [subgroupComponentGroupActionHom, descSubgroupComponentGroupHom_rationalComponentMap,
     MulAction.toPermHom_apply, MulAction.toPerm_apply]
 
 /-- The descended `MulAction` of `π₀(N)` on `X` from an `N(k)`-action trivial on `N°(k)`. -/
@@ -626,7 +513,7 @@ noncomputable abbrev subgroupComponentGroupMulAction (I : HopfIdeal k H) (X : Ty
       (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) ∈
         CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent (CommAlgCat.of k k) →
       ∀ x : X, g • x = x) :
-    MulAction (ConnectedComponents (PrimeSpectrum (quotient H I))) X :=
+    MulAction I.ComponentGroup X :=
   MulAction.compHom X (subgroupComponentGroupActionHom H I X htriv)
 
 /-- The orbits of the descended `π₀(N)`-action coincide with the `N(k)`-orbits. -/
@@ -637,17 +524,17 @@ theorem orbit_subgroupComponentGroupMulAction (I : HopfIdeal k H) (X : Type*)
         CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent (CommAlgCat.of k k) →
       ∀ x : X, g • x = x) (x : X) :
     letI := subgroupComponentGroupMulAction H I X htriv
-    MulAction.orbit (ConnectedComponents (PrimeSpectrum (quotient H I))) x =
+    MulAction.orbit I.ComponentGroup x =
       MulAction.orbit (CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) x := by
   let _ := subgroupComponentGroupMulAction H I X htriv
   ext y
   constructor
   · rintro ⟨C, rfl⟩
-    obtain ⟨g, rfl⟩ := subgroupComponentMap_surjective H I C
-    exact ⟨g, (subgroupComponentGroupActionHom_subgroupComponentMap H I X htriv g x).symm⟩
+    obtain ⟨g, rfl⟩ := I.rationalComponentMap_surjective C
+    exact ⟨g, (subgroupComponentGroupActionHom_rationalComponentMap H I X htriv g x).symm⟩
   · rintro ⟨g, rfl⟩
-    exact ⟨subgroupComponentMap H I g,
-      subgroupComponentGroupActionHom_subgroupComponentMap H I X htriv g x⟩
+    exact ⟨I.rationalComponentMap g,
+      subgroupComponentGroupActionHom_rationalComponentMap H I X htriv g x⟩
 
 /-- The stabilizer in `π₀(N)` of a point is the image of its `N(k)`-stabilizer. -/
 theorem stabilizer_subgroupComponentGroupMulAction (I : HopfIdeal k H) (X : Type*)
@@ -657,23 +544,24 @@ theorem stabilizer_subgroupComponentGroupMulAction (I : HopfIdeal k H) (X : Type
         CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent (CommAlgCat.of k k) →
       ∀ x : X, g • x = x) (x : X) :
     letI := subgroupComponentGroupMulAction H I X htriv
-    MulAction.stabilizer (ConnectedComponents (PrimeSpectrum (quotient H I))) x =
+    MulAction.stabilizer I.ComponentGroup x =
       (MulAction.stabilizer
         (CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) x).map
-        (subgroupComponentMap H I) := by
+        I.rationalComponentMap := by
   let _ := subgroupComponentGroupMulAction H I X htriv
   ext C
-  obtain ⟨g, rfl⟩ := subgroupComponentMap_surjective H I C
+  obtain ⟨g, rfl⟩ := I.rationalComponentMap_surjective C
   rw [MulAction.mem_stabilizer_iff, Subgroup.mem_map]
   -- Under `MulAction.compHom`, scalar multiplication is `subgroupComponentGroupActionHom`.
-  change subgroupComponentGroupActionHom H I X htriv (subgroupComponentMap H I g) x = x ↔ _
-  rw [subgroupComponentGroupActionHom_subgroupComponentMap]
+  change subgroupComponentGroupActionHom H I X htriv (I.rationalComponentMap g) x = x ↔ _
+  rw [subgroupComponentGroupActionHom_rationalComponentMap]
   constructor
   · exact fun hg ↦ ⟨g, hg, rfl⟩
   · rintro ⟨g', hg', heq⟩
-    have hdiff : (g'⁻¹ * g : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)).1 ∈
+    have hdiff :
+        (g'⁻¹ * g : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)).val ∈
         CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent (CommAlgCat.of k k) := by
-      rw [← subgroupComponentMap_eq_one_iff, map_mul, map_inv, heq, inv_mul_cancel]
+      rw [← HopfIdeal.rationalComponentMap_eq_one_iff I, map_mul, map_inv, heq, inv_mul_cancel]
     calc
       g • x = (g' * (g'⁻¹ * g)) • x := by rw [mul_inv_cancel_left]
       _ = g' • ((g'⁻¹ * g) • x) := mul_smul g' (g'⁻¹ * g) x
@@ -688,7 +576,7 @@ theorem fixedPoints_subgroupComponentGroupMulAction (I : HopfIdeal k H) (X : Typ
         CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent (CommAlgCat.of k k) →
       ∀ x : X, g • x = x) :
     letI := subgroupComponentGroupMulAction H I X htriv
-    MulAction.fixedPoints (ConnectedComponents (PrimeSpectrum (quotient H I))) X =
+    MulAction.fixedPoints I.ComponentGroup X =
       MulAction.fixedPoints
         (CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) X := by
   let _ := subgroupComponentGroupMulAction H I X htriv
@@ -696,15 +584,15 @@ theorem fixedPoints_subgroupComponentGroupMulAction (I : HopfIdeal k H) (X : Typ
   simp only [MulAction.mem_fixedPoints]
   constructor
   · intro hx g
-    have h := hx (subgroupComponentMap H I g)
+    have h := hx (I.rationalComponentMap g)
     -- Under `MulAction.compHom`, the action of a component is `subgroupComponentGroupActionHom`.
-    change subgroupComponentGroupActionHom H I X htriv (subgroupComponentMap H I g) x = x at h
-    rwa [subgroupComponentGroupActionHom_subgroupComponentMap] at h
+    change subgroupComponentGroupActionHom H I X htriv (I.rationalComponentMap g) x = x at h
+    rwa [subgroupComponentGroupActionHom_rationalComponentMap] at h
   · intro hx C
-    obtain ⟨g, rfl⟩ := subgroupComponentMap_surjective H I C
+    obtain ⟨g, rfl⟩ := I.rationalComponentMap_surjective C
     -- Under `MulAction.compHom`, the action of a component is `subgroupComponentGroupActionHom`.
-    change subgroupComponentGroupActionHom H I X htriv (subgroupComponentMap H I g) x = x
-    rw [subgroupComponentGroupActionHom_subgroupComponentMap]
+    change subgroupComponentGroupActionHom H I X htriv (I.rationalComponentMap g) x = x
+    rw [subgroupComponentGroupActionHom_rationalComponentMap]
     exact hx g
 
 end ClosedSubgroup
