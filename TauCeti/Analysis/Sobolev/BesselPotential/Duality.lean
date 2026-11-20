@@ -60,6 +60,8 @@ values in a complex Hilbert space, the inner product of the `L²` parts of `a �
   `H^{-s}(E, F⋆) ≃ₗᵢ[ℂ] (H^s(E, F))⋆` given by the density pairing, with
   `BesselPotentialSpace.dualEquiv_apply_eq_integral` and its Schwartz-function form
   `BesselPotentialSpace.dualEquiv_toBesselPotentialSpaceCLM`.
+* `TemperedDistribution.memSobolev_neg_of_norm_le`: a scalar tempered distribution `u` with
+  `‖u φ‖ ≤ C ‖φ‖_{H^t}` for all Schwartz functions `φ` lies in `H^{-t}`.
 * `SchwartzMap.inner_toLp_toBesselPotentialSpaceCLM_neg`,
   `SchwartzMap.norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm`: the `L²` pairing
   of `H^{-r}` and `H^r` on Schwartz functions, and `|∫ ⟪a, b⟫| ≤ ‖a‖_{H^{-r}} ‖b‖_{H^r}`.
@@ -294,6 +296,38 @@ theorem dualEquiv_toBesselPotentialSpaceCLM {s : ℝ} (ψ : 𝓢(E, StrongDual �
 end Dual
 
 end BesselPotentialSpace
+
+namespace TemperedDistribution
+
+/-- **Bounded functionals on `H^t` are in `H^{-t}`.** A scalar tempered distribution `u` with
+`‖u φ‖ ≤ C ‖φ‖_{H^t}` for every Schwartz function `φ` lies in `H^{-t}`: it extends to a functional
+on `H^t`, which `BesselPotentialSpace.dualEquiv` writes as the density pairing with an element of
+`H^{-t}`. -/
+theorem memSobolev_neg_of_norm_le {u : 𝓢'(E, ℂ)} {t C : ℝ}
+    (hu : ∀ φ : 𝓢(E, ℂ), ‖u φ‖ ≤ C * ‖SchwartzMap.toBesselPotentialSpaceCLM t 2 φ‖) :
+    u.MemSobolev (-t) 2 := by
+  set A := (SchwartzMap.toBesselPotentialSpaceCLM t 2 : 𝓢(E, ℂ) →L[ℂ] H^{t}(E, ℂ)).toLinearMap
+  -- Schwartz functions are dense in `H^t`, so `A φ ↦ u φ` extends to a functional `ℓ` on `H^t`.
+  set ℓ := (u : 𝓢(E, ℂ) →L[ℂ] ℂ).toLinearMap.extendOfNorm A
+  have hℓA (φ : 𝓢(E, ℂ)) : ℓ (A φ) = u φ :=
+    LinearMap.extendOfNorm_eq
+      (SchwartzMap.denseRange_toBesselPotentialSpaceCLM (p := 2) t ENNReal.ofNat_ne_top) ⟨C, hu⟩ φ
+  -- By duality, `ℓ` is the density pairing with some `w ∈ H^{-t}(E, ℂ⋆)`; evaluating `w` at `1`
+  -- pointwise gives a scalar element `v ∈ H^{-t}(E, ℂ)`.
+  set w := (BesselPotentialSpace.dualEquiv t).symm ℓ
+  obtain ⟨v, hv⟩ :=
+    BesselPotentialSpace.exists_ae_toLp_eq_comp (ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)) (-t) w
+  convert BesselPotentialSpace.memSobolev_toDistr v using 1
+  ext φ
+  have hw : BesselPotentialSpace.dualEquiv t w (A φ) = u φ := by
+    rw [LinearIsometryEquiv.apply_symm_apply, hℓA]
+  rw [← hw, BesselPotentialSpace.dualEquiv_apply_eq_integral,
+    BesselPotentialSpace.toDistr_apply_eq_besselPotentialPairing (q := 2),
+    ContinuousLinearMap.besselPotentialPairing_apply, neg_neg]
+  refine integral_congr_ae (hv.mono fun x hx ↦ ?_)
+  simp [A, hx]
+
+end TemperedDistribution
 
 namespace SchwartzMap
 
