@@ -111,6 +111,13 @@ theorem IsPrimitive.mulShiftAddEquiv_symm_mulShift (hψ : ψ.IsPrimitive) (a : R
     hψ.mulShiftAddEquiv.symm (ψ.mulShift a) = a := by
   rw [← hψ.mulShiftAddEquiv_apply, AddEquiv.symm_apply_apply]
 
+/-- Shifting by the parameter that `IsPrimitive.mulShiftAddEquiv` reads off a character recovers
+that character. -/
+@[simp]
+theorem IsPrimitive.mulShift_mulShiftAddEquiv_symm (hψ : ψ.IsPrimitive) (φ : AddChar R R') :
+    ψ.mulShift (hψ.mulShiftAddEquiv.symm φ) = φ := by
+  rw [← hψ.mulShiftAddEquiv_apply, AddEquiv.apply_symm_apply]
+
 /-- Every primitive additive character of a finite ring is the shift of a given primitive
 character by a unique unit. -/
 theorem IsPrimitive.existsUnique_units_mulShift_eq (hψ : ψ.IsPrimitive) {φ : AddChar R R'}
