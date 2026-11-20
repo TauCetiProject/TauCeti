@@ -47,6 +47,9 @@ generated subcategory lie in `G.leftMapBijective (P.shiftClosure ℤ)`, and then
 
 ## Main results
 
+* `CategoryTheory.Pretriangulated.Triangle.exact_leftComp` and
+  `CategoryTheory.Pretriangulated.Triangle.exact_rightComp`: the long exact sequences of `Hom(-, Y)`
+  and of `Hom(X, -)` at the middle vertex of a distinguished triangle.
 * The instances `ObjectProperty.IsTriangulated` for `G.leftMapBijective Q` and
   `G.rightMapBijective Q` when `Q` is stable under shifts.
 * `CategoryTheory.Functor.map_bijective_of_forall_le` and
@@ -54,6 +57,37 @@ generated subcategory lie in `G.leftMapBijective (P.shiftClosure ℤ)`, and then
 -/
 
 public section
+
+namespace CategoryTheory.Pretriangulated
+
+open Limits Preadditive
+
+variable {C : Type*} [Category* C] [HasZeroObject C] [HasShift C ℤ] [Preadditive C]
+  [∀ n : ℤ, (CategoryTheory.shiftFunctor C n).Additive] [Pretriangulated C]
+
+/-- **The long exact sequence of `Hom(-, Y)`** at the middle vertex of a distinguished triangle
+`T`: precomposition with `T.mor₂` and then with `T.mor₁` is exact. -/
+theorem Triangle.exact_leftComp {T : Triangle C} (hT : T ∈ distTriang C) (Y : C) :
+    Function.Exact (leftComp Y T.mor₂) (leftComp Y T.mor₁) := by
+  intro g
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · obtain ⟨f, hf⟩ := Triangle.yoneda_exact₂ T hT g h
+    exact ⟨f, hf.symm⟩
+  · rintro ⟨f, rfl⟩
+    exact (comp_distTriang_mor_zero₁₂_assoc T hT f).trans zero_comp
+
+/-- **The long exact sequence of `Hom(X, -)`** at the middle vertex of a distinguished triangle
+`T`: postcomposition with `T.mor₁` and then with `T.mor₂` is exact. -/
+theorem Triangle.exact_rightComp {T : Triangle C} (hT : T ∈ distTriang C) (X : C) :
+    Function.Exact (rightComp X T.mor₁) (rightComp X T.mor₂) := by
+  intro g
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · obtain ⟨f, hf⟩ := Triangle.coyoneda_exact₂ T hT g h
+    exact ⟨f, hf.symm⟩
+  · rintro ⟨f, rfl⟩
+    exact (Category.assoc _ _ _).trans (by rw [comp_distTriang_mor_zero₁₂ T hT, comp_zero])
+
+end CategoryTheory.Pretriangulated
 
 namespace CategoryTheory.Functor
 
@@ -129,26 +163,6 @@ variable [HasZeroObject C] [HasShift C ℤ] [Preadditive C] [∀ n : ℤ, (shift
   [Pretriangulated C] [HasZeroObject D] [HasShift D ℤ] [Preadditive D]
   [∀ n : ℤ, (shiftFunctor D n).Additive] [Pretriangulated D]
 
-/-- The long exact sequence of `Hom(-, Y)` at the middle vertex of a distinguished triangle. -/
-private theorem exact_leftComp {T : Triangle C} (hT : T ∈ distTriang C) (Y : C) :
-    Function.Exact (leftComp Y T.mor₂) (leftComp Y T.mor₁) := by
-  intro g
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · obtain ⟨f, hf⟩ := Triangle.yoneda_exact₂ T hT g h
-    exact ⟨f, hf.symm⟩
-  · rintro ⟨f, rfl⟩
-    exact (comp_distTriang_mor_zero₁₂_assoc T hT f).trans zero_comp
-
-/-- The long exact sequence of `Hom(X, -)` at the middle vertex of a distinguished triangle. -/
-private theorem exact_rightComp {T : Triangle C} (hT : T ∈ distTriang C) (X : C) :
-    Function.Exact (rightComp X T.mor₁) (rightComp X T.mor₂) := by
-  intro g
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · obtain ⟨f, hf⟩ := Triangle.coyoneda_exact₂ T hT g h
-    exact ⟨f, hf.symm⟩
-  · rintro ⟨f, rfl⟩
-    exact (assoc _ _ _).trans (by rw [comp_distTriang_mor_zero₁₂ T hT, comp_zero])
-
 variable [G.CommShift ℤ] [G.IsTriangulated] [Q.IsStableUnderShift ℤ]
 
 instance : (G.leftMapBijective Q).ContainsZero where
@@ -170,7 +184,7 @@ instance : (G.leftMapBijective Q).IsTriangulatedClosed₂ :=
     have h₃' := ((G.leftMapBijective Q).prop_shift_iff _ _).1
       ((G.leftMapBijective Q).le_shift (-1 : ℤ) _ h₃)
     have hG (T' : Triangle C) (hT' : T' ∈ distTriang C) :=
-      exact_leftComp (G.map_distinguished T' hT') (G.obj Y)
+      Triangle.exact_leftComp (G.map_distinguished T' hT') (G.obj Y)
     simp only [leftMapBijective_iff, ← coe_mapAddHom] at h₁ h₃ h₁' h₃' ⊢
     exact AddMonoidHom.bijective_of_surjective_of_bijective_of_bijective_of_injective
       (leftComp Y T.mor₃) (leftComp Y T.mor₂) (leftComp Y T.mor₁) (leftComp Y T.invRotate.mor₁)
@@ -179,8 +193,8 @@ instance : (G.leftMapBijective Q).IsTriangulatedClosed₂ :=
       G.mapAddHom G.mapAddHom G.mapAddHom G.mapAddHom G.mapAddHom
       (by ext; exact (G.map_comp _ _).symm) (by ext; exact (G.map_comp _ _).symm)
       (by ext; exact (G.map_comp _ _).symm) (by ext; exact (G.map_comp _ _).symm)
-      (exact_leftComp (rot_of_distTriang T hT) Y) (exact_leftComp hT Y)
-      (exact_leftComp (inv_rot_of_distTriang T hT) Y)
+      (Triangle.exact_leftComp (rot_of_distTriang T hT) Y) (Triangle.exact_leftComp hT Y)
+      (Triangle.exact_leftComp (inv_rot_of_distTriang T hT) Y)
       (hG _ (rot_of_distTriang T hT)) (hG T hT) (hG _ (inv_rot_of_distTriang T hT))
       (h₁' Y hY).2 (h₃ Y hY) (h₁ Y hY) (h₃' Y hY).1
 
@@ -193,7 +207,7 @@ instance : (G.rightMapBijective Q).IsTriangulatedClosed₂ :=
     have h₃' := ((G.rightMapBijective Q).prop_shift_iff _ _).1
       ((G.rightMapBijective Q).le_shift (-1 : ℤ) _ h₃)
     have hG (T' : Triangle C) (hT' : T' ∈ distTriang C) :=
-      exact_rightComp (G.map_distinguished T' hT') (G.obj X)
+      Triangle.exact_rightComp (G.map_distinguished T' hT') (G.obj X)
     simp only [rightMapBijective_iff, ← coe_mapAddHom] at h₁ h₃ h₁' h₃' ⊢
     exact AddMonoidHom.bijective_of_surjective_of_bijective_of_bijective_of_injective
       (rightComp X T.invRotate.mor₁) (rightComp X T.mor₁) (rightComp X T.mor₂)
@@ -203,8 +217,8 @@ instance : (G.rightMapBijective Q).IsTriangulatedClosed₂ :=
       G.mapAddHom G.mapAddHom G.mapAddHom G.mapAddHom G.mapAddHom
       (by ext; exact (G.map_comp _ _).symm) (by ext; exact (G.map_comp _ _).symm)
       (by ext; exact (G.map_comp _ _).symm) (by ext; exact (G.map_comp _ _).symm)
-      (exact_rightComp (inv_rot_of_distTriang T hT) X) (exact_rightComp hT X)
-      (exact_rightComp (rot_of_distTriang T hT) X)
+      (Triangle.exact_rightComp (inv_rot_of_distTriang T hT) X) (Triangle.exact_rightComp hT X)
+      (Triangle.exact_rightComp (rot_of_distTriang T hT) X)
       (hG _ (inv_rot_of_distTriang T hT)) (hG T hT) (hG _ (rot_of_distTriang T hT))
       (h₃' X hX).2 (h₁ X hX) (h₃ X hX) (h₁' X hX).1
 

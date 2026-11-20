@@ -25,8 +25,9 @@ On homotopy categories, a quasi-fully faithful DG functor `F` induces a fully fa
 
 ## Main results
 
-* `CategoryTheory.EnrichedFunctor.mapDGHomotopyCategory_map_bijective_of_quasiIso`: `H⁰(F)` is
-  bijective on morphisms between two objects whose Hom complex `F` maps quasi-isomorphically.
+* `CategoryTheory.EnrichedFunctor.mapDGHomotopyCategory_map_bijective_of_quasiIsoAt`: `H⁰(F)` is
+  bijective on morphisms between two objects whose Hom complex `F` maps quasi-isomorphically in
+  degree zero.
 * `CategoryTheory.EnrichedFunctor.IsQuasiFullyFaithful.full_mapDGHomotopyCategory` and
   `CategoryTheory.EnrichedFunctor.IsQuasiFullyFaithful.faithful_mapDGHomotopyCategory`: a
   quasi-fully faithful DG functor induces a fully faithful functor on homotopy categories.
@@ -176,14 +177,14 @@ theorem isQuasiEquivalence_id :
 /-! ### The induced functor on homotopy categories -/
 
 /-- A DG functor induces a bijection on the Hom of homotopy categories between two objects whose
-Hom complex it maps quasi-isomorphically. -/
-theorem mapDGHomotopyCategory_map_bijective_of_quasiIso
+Hom complex it maps quasi-isomorphically in degree zero. -/
+theorem mapDGHomotopyCategory_map_bijective_of_quasiIsoAt
     (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D)
     (X Y : TauCeti.DGHomotopyCategory R C)
-    (h : QuasiIso (F.map (TauCeti.DGHomotopyCategory.underlying R X)
-      (TauCeti.DGHomotopyCategory.underlying R Y))) :
+    (h : QuasiIsoAt (F.map (TauCeti.DGHomotopyCategory.underlying R X)
+      (TauCeti.DGHomotopyCategory.underlying R Y)) 0) :
     Function.Bijective (F.mapDGHomotopyCategory.map : (X ⟶ Y) → _) := by
-  have := (quasiIsoAt_iff_isIso_homologyMap _ 0).mp (h.quasiIsoAt 0)
+  have := (quasiIsoAt_iff_isIso_homologyMap _ 0).mp h
   -- The action of `H⁰(F)` on morphisms is the map induced on degree-zero cohomology.
   exact ConcreteCategory.bijective_of_isIso (homologyMap (F.map _ _) 0)
 
@@ -192,7 +193,7 @@ theorem IsQuasiFullyFaithful.mapDGHomotopyCategory_map_bijective
     {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
     (hF : EnrichedFunctor.IsQuasiFullyFaithful F) (X Y : TauCeti.DGHomotopyCategory R C) :
     Function.Bijective (F.mapDGHomotopyCategory.map : (X ⟶ Y) → _) :=
-  F.mapDGHomotopyCategory_map_bijective_of_quasiIso X Y (hF.quasiIso _ _)
+  F.mapDGHomotopyCategory_map_bijective_of_quasiIsoAt X Y ((hF.quasiIso _ _).quasiIsoAt 0)
 
 /-- A quasi-fully faithful DG functor induces a full functor on homotopy categories. -/
 theorem IsQuasiFullyFaithful.full_mapDGHomotopyCategory

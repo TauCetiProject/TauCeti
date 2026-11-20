@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomotopyCategory.ShiftSequence
-public import TauCeti.CategoryTheory.DG.QuasiEquivalence
+public import TauCeti.CategoryTheory.DG.AdditiveClosure.QuasiEquivalence
+public import TauCeti.CategoryTheory.DG.ShiftClosure.QuasiEquivalence
 public import TauCeti.CategoryTheory.DG.Twisted.Functor
 public import TauCeti.CategoryTheory.Triangulated.MapBijective
 
@@ -18,7 +18,7 @@ categories of twisted complexes, which sends one-sided twisted complexes to one-
 complexes (`TauCeti/CategoryTheory/DG/Twisted/Functor.lean`).  This file shows:
 
 * if `F` is quasi-fully faithful, then `H⁰(F)` is fully faithful on one-sided twisted complexes
-  (`CategoryTheory.EnrichedFunctor.IsQuasiFullyFaithful.mapDGTwistedComplex_map_bijective`);
+  (`EnrichedFunctor.IsQuasiFullyFaithful.mapDGTwistedComplex_mapDGHomotopyCategory_map_bijective`);
 * if `F` is a quasi-equivalence, then `H⁰(F)` restricts to an **equivalence between the homotopy
   categories `H⁰(pretr C) ≌ H⁰(pretr D)` of the pretriangulated envelopes**, the full
   subcategories of one-sided twisted complexes
@@ -35,7 +35,8 @@ complex `Hom(X[0], Y[n])` of twisted objects with zero twist, which is the shift
 `Hom(X, Y)[n]` of `C`.  The Hom complexes of the shift closure are shifts of those of `C`, so a
 quasi-fully faithful `F` stays quasi-fully faithful on the shift closure
 (`CategoryTheory.EnrichedFunctor.IsQuasiFullyFaithful.mapDGShiftClosure`); one-term sums of the
-additive closure and twisted objects with zero twist do not change Hom complexes.
+additive closure (`CategoryTheory.EnrichedFunctor.quasiIso_mapDGAdditiveClosure_map_iff`) and
+twisted objects with zero twist do not change Hom complexes.
 
 For essential surjectivity, the essential image of the restriction of `H⁰(F)` to `H⁰(pretr C)`
 is a triangulated subcategory, since this restriction is full and triangulated.  For a
@@ -50,14 +51,11 @@ isomorphic in `H⁰(D)` to some `F X`.  So it contains the triangulated subcateg
 
 ## Main results
 
-* `CategoryTheory.EnrichedFunctor.IsQuasiFullyFaithful.mapDGShiftClosure`: a quasi-fully faithful
-  DG functor induces a quasi-fully faithful DG functor between shift closures.
-* `CategoryTheory.EnrichedFunctor.quasiIso_mapDGAdditiveClosure_map_iff`: on one-term sums, the
-  induced DG functor is a quasi-isomorphism on Hom complexes exactly when the original one is.
-* `CategoryTheory.EnrichedFunctor.quasiIso_mapDGTwistedObject_map_iff_of_twist_eq_zero`: the same
-  on twisted objects with zero twist.
-* `CategoryTheory.EnrichedFunctor.IsQuasiFullyFaithful.mapDGTwistedComplex_map_bijective`: a
-  quasi-fully faithful DG functor induces a fully faithful functor on one-sided twisted
+* `CategoryTheory.EnrichedFunctor.quasiIso_mapDGTwistedObject_map_iff_of_twist_eq_zero`: on
+  twisted objects with zero twist, the induced DG functor is a quasi-isomorphism on Hom complexes
+  exactly when the original one is.
+* `EnrichedFunctor.IsQuasiFullyFaithful.mapDGTwistedComplex_mapDGHomotopyCategory_map_bijective`:
+  a quasi-fully faithful DG functor induces a fully faithful functor on one-sided twisted
   complexes.
 * `CategoryTheory.EnrichedFunctor.IsQuasiEquivalence.isEquivalence_mapOneSided`: a
   quasi-equivalence induces an equivalence of the homotopy categories of the pretriangulated
@@ -82,92 +80,11 @@ universe v u u₂
 
 variable {R : Type v} [CommRing R] {C : Type u} {D : Type u₂} [DGCategory R C] [DGCategory R D]
 
-/-! ### Shift closures -/
-
-/-- The Hom complex `Hom(X[r], Y[s])` of the shift closure is the shifted Hom complex
-`Hom(X, Y)[s - r]`, degreewise through `TauCeti.DGShiftClosure.dgHomEquiv`. -/
-private noncomputable def dgShiftClosureHomComplexIso (X Y : DGShiftClosure C) :
-    dgHomComplex R X Y ≅ (dgHomComplex R X.obj Y.obj)⟦Y.shift - X.shift⟧ :=
-  HomologicalComplex.Hom.isoOfComponents (fun n ↦ (DGShiftClosure.dgHomEquiv R X Y n).toModuleIso)
-    (by
-      rintro n _ rfl
-      ext f
-      exact ((LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (CochainComplex.shiftFunctor_obj_d'
-        (dgHomComplex R X.obj Y.obj) (Y.shift - X.shift) n (n + 1))) _).trans
-          (DGShiftClosure.dgHomEquiv_dgDifferential R n f).symm))
-
-private theorem dgShiftClosureHomComplexIso_hom_f_apply (X Y : DGShiftClosure C) (n : ℤ)
-    (f : DGHom R n X Y) :
-    ((dgShiftClosureHomComplexIso X Y).hom.f n).hom f = DGShiftClosure.dgHomEquiv R X Y n f :=
-  (rfl)
-
-/-- **A quasi-fully faithful DG functor is quasi-fully faithful on shift closures**: its action
-on `Hom(X[r], Y[s]) = Hom(X, Y)[s - r]` is a shift of a quasi-isomorphism. -/
-theorem IsQuasiFullyFaithful.mapDGShiftClosure
-    {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D} (hF : F.IsQuasiFullyFaithful) :
-    F.mapDGShiftClosure.IsQuasiFullyFaithful := by
-  refine (isQuasiFullyFaithful_iff_quasiIso _).2 fun X Y ↦ ?_
-  refine (quasiIso_iff_of_arrow_mk_iso _ _ (Arrow.isoMk' _ _ (dgShiftClosureHomComplexIso X Y)
-    (dgShiftClosureHomComplexIso (F.mapDGShiftClosure.obj X) (F.mapDGShiftClosure.obj Y))
-      ?_)).2 ((CochainComplex.quasiIso_shift_iff _ _).2 (hF.quasiIso X.obj Y.obj))
-  ext n f
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, ModuleCat.hom_comp, ModuleCat.hom_comp,
-    LinearMap.comp_apply, LinearMap.comp_apply, CochainComplex.shiftFunctor_map_f',
-    ← dgMap_apply, ← dgMap_apply, dgShiftClosureHomComplexIso_hom_f_apply,
-    dgShiftClosureHomComplexIso_hom_f_apply, dgMap_mapDGShiftClosure]
-  exact (F.dgHomEquiv_mapDGShiftClosureHom f).symm
-
-/-! ### One-term sums -/
-
-/-- **On one-term sums, the DG functor induced on additive closures is a quasi-isomorphism on Hom
-complexes exactly when the original one is**: the additive closure does not change these Hom
-complexes. -/
-theorem quasiIso_mapDGAdditiveClosure_map_iff
-    (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D) (X Y : C) :
-    QuasiIso (F.mapDGAdditiveClosure.map ((DGAdditiveClosure.embedding R).obj X)
-      ((DGAdditiveClosure.embedding R).obj Y)) ↔ QuasiIso (F.map X Y) := by
-  have e : ((DGAdditiveClosure.embedding R).comp _ F.mapDGAdditiveClosure).map X Y =
-      (F.comp _ (DGAdditiveClosure.embedding R)).map X Y := by
-    ext n f
-    refine (dgMap_apply _ f).symm.trans
-      (Eq.trans ?_ (dgMap_apply (F.comp _ (DGAdditiveClosure.embedding R)) f))
-    rw [comp_dgMap, comp_dgMap]
-    refine DGAdditiveClosure.dgHom_ext R fun i j ↦ ?_
-    rw [dgMap_mapDGAdditiveClosure, dgHomEquiv_mapDGAdditiveClosureHom,
-      DGAdditiveClosure.dgMap_embedding, DGAdditiveClosure.dgMap_embedding]
-    -- Both entries are `F f`; the one-term sums are those of `embeddingHomEquiv` up to unfolding
-    -- `DGAdditiveClosure.embedding_obj`.
-    exact (congrArg (F.dgMap n) (DGAdditiveClosure.dgHomEquiv_embeddingHomEquiv R f i j)).trans
-      (DGAdditiveClosure.dgHomEquiv_embeddingHomEquiv R (F.dgMap n f) i j).symm
-  rw [comp_map, comp_map] at e
-  have := quasiIso_of_isIso ((DGAdditiveClosure.embedding R).map X Y)
-  rw [← quasiIso_iff_comp_left ((DGAdditiveClosure.embedding R).map X Y), e]
-  exact quasiIso_iff_comp_right _ _
-    (hφ' := quasiIso_of_isIso ((DGAdditiveClosure.embedding R).map (F.obj X) (F.obj Y)))
-
 /-! ### Twisted objects with zero twist -/
 
 section twisted
 
-variable {E : Type*} [DGCategory R E]
-
-/-- The Hom complex between twisted objects with zero twist is the Hom complex between their
-underlying objects: the twisted differential is the differential of `E`. -/
-private noncomputable def dgHomComplexIsoOfTwistEqZero {X Y : DGTwistedObject R E}
-    (hX : X.twist = 0) (hY : Y.twist = 0) : dgHomComplex R X Y ≅ dgHomComplex R X.obj Y.obj :=
-  HomologicalComplex.Hom.isoOfComponents (fun n ↦ (dgHomEquiv R X Y n).toModuleIso) (by
-    rintro n _ rfl
-    ext f
-    have h := dgHomEquiv_dgDifferential R n f
-    rw [hX, hY, dgComp_zero, zero_dgComp, smul_zero, add_zero, sub_zero] at h
-    exact h.symm)
-
-private theorem dgHomComplexIsoOfTwistEqZero_hom_f_apply {X Y : DGTwistedObject R E}
-    (hX : X.twist = 0) (hY : Y.twist = 0) (n : ℤ) (f : DGHom R n X Y) :
-    ((dgHomComplexIsoOfTwistEqZero hX hY).hom.f n).hom f = dgHomEquiv R X Y n f :=
-  (rfl)
-
-variable {E' : Type*} [DGCategory R E']
+variable {E E' : Type*} [DGCategory R E] [DGCategory R E']
 
 /-- **On twisted objects with zero twist, the DG functor induced on twisted objects is a
 quasi-isomorphism on Hom complexes exactly when the original one is**: these Hom complexes are
@@ -180,9 +97,12 @@ theorem quasiIso_mapDGTwistedObject_map_iff_of_twist_eq_zero
     (congrArg (F.dgMap 1) hX).trans (map_zero _)
   have hFY : (F.mapDGTwistedObject.obj Y).twist = 0 :=
     (congrArg (F.dgMap 1) hY).trans (map_zero _)
-  refine quasiIso_iff_of_arrow_mk_iso _ _ (Arrow.isoMk' _ _ (dgHomComplexIsoOfTwistEqZero hX hY)
-    (dgHomComplexIsoOfTwistEqZero hFX hFY) ?_)
+  refine quasiIso_iff_of_arrow_mk_iso _ _ (Arrow.isoMk' _ _ (dgHomComplexIsoOfTwistEqZero R hX hY)
+    (dgHomComplexIsoOfTwistEqZero R hFX hFY) ?_)
   ext n f
+  -- `simp only` cannot replace this chain: the objects of the right-hand composite are
+  -- `F.mapDGTwistedObject.obj X`, which reducible unification does not identify with the objects
+  -- in `dgHomComplexIsoOfTwistEqZero_hom_f_apply` and `dgMap_apply`.
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, ModuleCat.hom_comp, ModuleCat.hom_comp,
     LinearMap.comp_apply, LinearMap.comp_apply, ← dgMap_apply, ← dgMap_apply,
     dgHomComplexIsoOfTwistEqZero_hom_f_apply, dgHomComplexIsoOfTwistEqZero_hom_f_apply]
@@ -194,19 +114,20 @@ end twisted
 
 /-- On twisted complexes `A` and `B` with one summand and zero twist, `H⁰(F)` is bijective on
 morphisms when `F` is quasi-fully faithful. -/
-private theorem IsQuasiFullyFaithful.mapDGTwistedComplex_map_bijective_ofObj
+private theorem IsQuasiFullyFaithful.mapDGTwistedComplex_mapDGHomotopyCategory_map_bijective_ofObj
     {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D} (hF : F.IsQuasiFullyFaithful)
     (A B : DGShiftClosure C) :
     Function.Bijective (F.mapDGTwistedComplex.mapDGHomotopyCategory.map :
       (of R (ofObj R ((DGAdditiveClosure.embedding R).obj A)) ⟶
         of R (ofObj R ((DGAdditiveClosure.embedding R).obj B))) → _) :=
-  F.mapDGTwistedComplex.mapDGHomotopyCategory_map_bijective_of_quasiIso _ _
-    ((quasiIso_mapDGTwistedObject_map_iff_of_twist_eq_zero _ rfl rfl).2
-      ((quasiIso_mapDGAdditiveClosure_map_iff _ A B).2 (hF.mapDGShiftClosure.quasiIso A B)))
+  F.mapDGTwistedComplex.mapDGHomotopyCategory_map_bijective_of_quasiIsoAt _ _
+    (((quasiIso_mapDGTwistedObject_map_iff_of_twist_eq_zero _ rfl rfl).2
+      ((quasiIso_mapDGAdditiveClosure_map_iff _ A B).2
+        (hF.mapDGShiftClosure.quasiIso A B))).quasiIsoAt 0)
 
 /-- **A quasi-fully faithful DG functor is fully faithful on pretriangulated envelopes**: `H⁰(F)`
 is bijective on morphisms between one-sided twisted complexes. -/
-theorem IsQuasiFullyFaithful.mapDGTwistedComplex_map_bijective
+theorem IsQuasiFullyFaithful.mapDGTwistedComplex_mapDGHomotopyCategory_map_bijective
     {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D} (hF : F.IsQuasiFullyFaithful)
     {X Y : DGHomotopyCategory R (DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C)))}
     (hX : oneSided R C X) (hY : oneSided R C Y) :
@@ -220,10 +141,10 @@ theorem IsQuasiFullyFaithful.mapDGTwistedComplex_map_bijective
   have e : (of R ((DGTwistedObject.embedding R).obj ((DGAdditiveClosure.embedding R).obj
       ((DGShiftClosure.ι R).obj Y))))⟦n⟧ =
         of R (ofObj R ((DGAdditiveClosure.embedding R).obj ⟨Y, 0 + n⟩)) := by
-    rw [DGTwistedObject.embedding_obj, shiftFunctor_obj_of, shiftFunctor_obj_ofObj]
-    rfl
+    rw [DGTwistedObject.embedding_obj, shiftFunctor_obj_of, shiftFunctor_obj_ofObj,
+      DGAdditiveClosure.embedding_obj, DGAdditiveClosure.embedding_obj, DGShiftClosure.ι_obj]
   exact (Functor.map_bijective_iff_of_iso _ (Iso.refl _) (eqToIso e.symm)).2
-    (hF.mapDGTwistedComplex_map_bijective_ofObj _ _)
+    (hF.mapDGTwistedComplex_mapDGHomotopyCategory_map_bijective_ofObj _ _)
 
 /-! ### The functor on pretriangulated envelopes -/
 
@@ -244,7 +165,7 @@ private theorem IsQuasiFullyFaithful.ι_comp_map_bijective
     (X Y : (oneSided R C).FullSubcategory) :
     Function.Bijective
       (((oneSided R C).ι ⋙ F.mapDGTwistedComplex.mapDGHomotopyCategory).map : (X ⟶ Y) → _) :=
-  (hF.mapDGTwistedComplex_map_bijective X.2 Y.2).comp
+  (hF.mapDGTwistedComplex_mapDGHomotopyCategory_map_bijective X.2 Y.2).comp
     ((oneSided R C).fullyFaithfulι.map_bijective X Y)
 
 /-- A quasi-fully faithful DG functor induces a full functor between the homotopy categories of
