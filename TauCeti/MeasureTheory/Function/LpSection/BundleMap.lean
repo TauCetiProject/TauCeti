@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.LpSection.Chart
+public import TauCeti.Topology.VectorBundle.BundleMap
 
 /-!
 # Transport of `Lᵖ` sections along bundle maps
@@ -16,8 +17,9 @@ It transports a section `s` of `E` to the section
 
 `(A^* s)(y) = A y (s (ψ y))`
 
-of `E'`. If `ψ` is measure preserving from `ν` to `μ` and `‖A y‖ ≤ C` for almost every `y`, this
-is a bounded operator `Lᵖ(E, μ) → Lᵖ(E', ν)` of norm at most `C`, for every `1 ≤ p ≤ ∞`
+of `E'`. If `ψ` is measure preserving from `ν` to `μ` and `‖A y‖ ≤ C` for almost every `y`, with
+`C ≥ 0`, this is a bounded operator `Lᵖ(E, μ) → Lᵖ(E', ν)` of norm at most `C`, for every
+`1 ≤ p ≤ ∞`
 (`TauCeti.LpSection.compBundleMap`). When every `A y` is a linear isometry it is a linear isometry
 (`TauCeti.LpSection.compBundleMapₗᵢ`), and when `ψ` and the fibre maps are invertible, with inverse
 data covering a measure-preserving inverse map, it is a linear isometric equivalence
@@ -37,12 +39,11 @@ charts, the coordinates of `A y` applied to the chart section through `v` depend
 `y`. This makes transported sections measurable
 (`TauCeti.AEStronglyMeasurableSection.comp_bundleMap`): the coordinates of `A^* s` are obtained from
 the coordinates of `s ∘ ψ` by applying a family of linear maps that is continuous in the vector and
-measurable in the base point. The map `ψ` itself need not be continuous; it is only required to be
-measure preserving.
+measurable in the base point. The map `ψ` itself need not be continuous; for measurability it is
+only required to be quasi-measure-preserving, and for the operators to be measure preserving.
 
 ## Main definitions
 
-* `TauCeti.IsContinuousBundleMap`: a bundle map covering `ψ` is continuous in charts.
 * `TauCeti.LpSection.compBundleMap`: the bounded operator `Lᵖ(E, μ) → Lᵖ(E', ν)` induced by an
   essentially bounded bundle map covering a measure-preserving map.
 * `TauCeti.LpSection.compBundleMapₗᵢ`: the linear isometry induced by a fibrewise isometric bundle
@@ -52,15 +53,16 @@ measure preserving.
 
 ## Main results
 
-* `TauCeti.isContinuousBundleMap_id`: the identity bundle map is continuous in charts.
-* `TauCeti.isContinuousBundleMap_trivial_iff`: for trivial bundles, continuity in charts is
-  continuity of `y ↦ A y v` for every vector `v`.
 * `TauCeti.AEStronglyMeasurableSection.comp_bundleMap`: transported measurable sections are
   measurable.
 * `TauCeti.LpSection.coeFn_compBundleMap`: the operator is `s ↦ (y ↦ A y (s (ψ y)))`.
 * `TauCeti.LpSection.norm_compBundleMap_le`: its norm is at most an essential bound of `‖A y‖`.
 * `TauCeti.LpSection.compBundleMap_comp`, `TauCeti.LpSection.compBundleMap_id`: transport is
-  compatible with composition of bundle maps and is the identity for the identity bundle map.
+  compatible with composition of bundle maps and is the identity for the identity bundle map;
+  `TauCeti.LpSection.compBundleMapₗᵢ_comp`, `TauCeti.LpSection.compBundleMapₗᵢ_id`,
+  `TauCeti.LpSection.compBundleMapEquiv_trans`, `TauCeti.LpSection.compBundleMapEquiv_refl` and
+  `TauCeti.LpSection.compBundleMapEquiv_symm` are the same laws for the isometries and the
+  isometric equivalences.
 * `TauCeti.LpSection.trivialEquiv_compBundleMapₗᵢ_id`: for trivial bundles and identity fibre
   maps, transport is Mathlib's composition with a measure-preserving map.
 
@@ -91,66 +93,6 @@ variable {𝕜 M N P F F' F'' : Type*} [RCLike 𝕜]
   [∀ z, NormedSpace 𝕜 (E'' z)] [FiberBundle F'' E''] [VectorBundle 𝕜 F'' E'']
   {ψ : N → M}
 
-/-! ### Continuity in charts -/
-
-variable (𝕜 F F') in
-/-- A family of continuous linear maps `A y : E (ψ y) →L[𝕜] E' y`, a bundle map covering
-`ψ : N → M`, is *continuous in charts* when, for every atlas chart `e` of `E`, every atlas chart
-`e'` of `E'` and every vector `v` of the model fibre of `E`, the coordinates in `e'` of `A y`
-applied to the vector of `E (ψ y)` with coordinates `v` in `e` depend continuously on `y` wherever
-both charts are defined. -/
-def IsContinuousBundleMap (ψ : N → M) (A : ∀ y, E (ψ y) →L[𝕜] E' y) : Prop :=
-  ∀ (e : Trivialization F (π F E)) [MemTrivializationAtlas e]
-    (e' : Trivialization F' (π F' E')) [MemTrivializationAtlas e'] (v : F),
-    ContinuousOn (fun y ↦ e'.continuousLinearMapAt 𝕜 y (A y (e.symmL 𝕜 (ψ y) v)))
-      (ψ ⁻¹' e.baseSet ∩ e'.baseSet)
-
-theorem isContinuousBundleMap_iff {A : ∀ y, E (ψ y) →L[𝕜] E' y} :
-    IsContinuousBundleMap 𝕜 F F' ψ A ↔
-      ∀ (e : Trivialization F (π F E)) [MemTrivializationAtlas e]
-        (e' : Trivialization F' (π F' E')) [MemTrivializationAtlas e'] (v : F),
-        ContinuousOn (fun y ↦ e'.continuousLinearMapAt 𝕜 y (A y (e.symmL 𝕜 (ψ y) v)))
-          (ψ ⁻¹' e.baseSet ∩ e'.baseSet) :=
-  Iff.rfl
-
-variable (𝕜 F E) in
-/-- The identity bundle map is continuous in charts: its chart expressions are the coordinate
-changes of the bundle. -/
-theorem isContinuousBundleMap_id :
-    IsContinuousBundleMap 𝕜 F F id (fun x ↦ ContinuousLinearMap.id 𝕜 (E x)) := by
-  intro e _ e' _ v
-  refine ((continuousOn_coordChange 𝕜 e e').clm_apply (continuousOn_const (c := v))).congr
-    fun x hx ↦ ?_
-  simp only [ContinuousLinearMap.id_apply, id, e.symmL_apply hx.1,
-    e'.continuousLinearMapAt_apply_of_mem (R := 𝕜) hx.2, ContinuousLinearEquiv.coe_coe,
-    e.coordChangeL_apply e' hx]
-
-variable (𝕜 F F' ψ) in
-/-- For trivial bundles, a bundle map is continuous in charts exactly when it is strongly
-continuous: `y ↦ A y v` is continuous for every vector `v`. -/
-theorem isContinuousBundleMap_trivial_iff {A : ∀ y, Trivial M F (ψ y) →L[𝕜] Trivial N F' y} :
-    IsContinuousBundleMap 𝕜 F F' ψ A ↔ ∀ v : F, Continuous fun y ↦ A y v := by
-  have : MemTrivializationAtlas (Trivial.trivialization M F) := ⟨mem_singleton _⟩
-  have : MemTrivializationAtlas (Trivial.trivialization N F') := ⟨mem_singleton _⟩
-  refine ⟨fun h v ↦ ?_, fun h e _ e' _ v ↦ ?_⟩
-  · simpa only [Trivial.trivialization_baseSet, preimage_univ, inter_self,
-      continuousOn_univ, Trivial.continuousLinearMapAt_trivialization, Trivial.symmL_trivialization,
-      ContinuousLinearMap.id_apply] using
-      h (Trivial.trivialization M F) (Trivial.trivialization N F') v
-  · obtain rfl := Trivial.eq_trivialization M F e
-    obtain rfl := Trivial.eq_trivialization N F' e'
-    simpa only [Trivial.trivialization_baseSet, preimage_univ, inter_self,
-      continuousOn_univ, Trivial.continuousLinearMapAt_trivialization, Trivial.symmL_trivialization,
-      ContinuousLinearMap.id_apply] using h v
-
-variable (𝕜 F ψ) in
-/-- The identity fibre maps of a trivial bundle, covering any map of the bases, are continuous in
-charts. -/
-theorem isContinuousBundleMap_trivial_id :
-    IsContinuousBundleMap 𝕜 F F ψ (E := Trivial M F) (E' := Trivial N F)
-      fun _ ↦ (LinearIsometry.id : F →ₗᵢ[𝕜] F).toContinuousLinearMap :=
-  (isContinuousBundleMap_trivial_iff 𝕜 F F ψ).2 fun _ ↦ continuous_const
-
 /-! ### Measurability of transported sections -/
 
 section Measurable
@@ -159,10 +101,10 @@ variable [MeasurableSpace M] [MeasurableSpace N] [OpensMeasurableSpace M]
   [SecondCountableTopology M] [OpensMeasurableSpace N] [SecondCountableTopology N]
   {μ : Measure M} {ν : Measure N}
 
-/-- A bundle map continuous in charts, covering a measure-preserving map, transports
+/-- A bundle map continuous in charts, covering a quasi-measure-preserving map, transports
 a.e.-strongly measurable sections to a.e.-strongly measurable sections. -/
 theorem AEStronglyMeasurableSection.comp_bundleMap {A : ∀ y, E (ψ y) →L[𝕜] E' y}
-    (hA : IsContinuousBundleMap 𝕜 F F' ψ A) (hψ : MeasurePreserving ψ ν μ) {s : ∀ x, E x}
+    (hA : IsContinuousBundleMap 𝕜 F F' ψ A) (hψ : QuasiMeasurePreserving ψ ν μ) {s : ∀ x, E x}
     (hs : AEStronglyMeasurableSection 𝕜 F μ s) :
     AEStronglyMeasurableSection 𝕜 F' ν (fun y ↦ A y (s (ψ y))) := by
   cases isEmpty_or_nonempty M
@@ -178,28 +120,40 @@ theorem AEStronglyMeasurableSection.comp_bundleMap {A : ∀ y, E (ψ y) →L[�
   -- transported section in `e'` are the coordinates of `s ∘ ψ` in `e` followed by the chart
   -- expression of the bundle map, which is continuous in the vector and measurable in the point.
   set e := trivializationAt F E (p n)
-  have hS : MeasurableSet (ψ ⁻¹' e.baseSet ∩ e'.baseSet) :=
-    (hψ.measurable e.open_baseSet.measurableSet).inter e'.open_baseSet.measurableSet
+  -- `ψ` is only a.e.-measurable, so replace this part by a measurable subset of full measure.
+  obtain ⟨S, hSsub, hS, hSae⟩ := ((hψ.aemeasurable.nullMeasurableSet_preimage
+    e.open_baseSet.measurableSet).inter
+    e'.open_baseSet.measurableSet.nullMeasurableSet).exists_measurable_subset_ae_eq
+  rw [← Measure.restrict_congr_set hSae]
   -- The coordinates of `s ∘ ψ` in `e`, on the preimage of the base set of `e`.
   have hc : AEStronglyMeasurable (fun y ↦ e.continuousLinearMapAt 𝕜 (ψ y) (s (ψ y)))
-      (ν.restrict (ψ ⁻¹' e.baseSet ∩ e'.baseSet)) :=
+      (ν.restrict S) :=
     ((hs.aestronglyMeasurable_continuousLinearMapAt e).comp_quasiMeasurePreserving
-      (hψ.restrict_preimage e.open_baseSet.measurableSet).quasiMeasurePreserving).mono_measure
-      (Measure.restrict_mono inter_subset_left le_rfl)
+      (hψ.restrict (mapsTo_preimage _ _))).mono_measure
+      (Measure.restrict_mono (hSsub.trans inter_subset_left) le_rfl)
   refine (hc.apply_of_forall_of_continuousAt
     (g := fun y w ↦ e'.continuousLinearMapAt 𝕜 y (A y (e.symmL 𝕜 (ψ y) w)))
-    (fun w ↦ (hA e e' w).aestronglyMeasurable hS)
+    (fun w ↦ ((isContinuousBundleMap_iff.1 hA e e' w).mono hSsub).aestronglyMeasurable hS)
     (ae_of_all _ fun y ↦ ((e'.continuousLinearMapAt 𝕜 y).continuous.comp
       ((A y).continuous.comp (e.symmL 𝕜 (ψ y)).continuous)).continuousAt)).congr ?_
   filter_upwards [ae_restrict_mem hS] with y hy
-  rw [e.symmL_continuousLinearMapAt hy.1]
+  rw [e.symmL_continuousLinearMapAt (hSsub hy).1]
 
 end Measurable
 
 section Bounded
 
 variable [MeasurableSpace N] [MeasurableSpace P] {ν : Measure N} {ρ : Measure P}
-  {A : ∀ y, E (ψ y) →L[𝕜] E' y}
+  {A : ∀ y, E (ψ y) →L[𝕜] E' y} {C : ℝ}
+
+omit [TopologicalSpace M] [TopologicalSpace N] in
+/-- If the fibre maps have norm at most `C` almost everywhere, the transport of a section has norm
+at most `max C 0` times the norm of the section, almost everywhere. -/
+private theorem ae_norm_comp_bundleMap_le (hC : ∀ᵐ y ∂ν, ‖A y‖ ≤ C) (s : ∀ x, E x) :
+    ∀ᵐ y ∂ν, ‖A y (s (ψ y))‖ ≤ max C 0 * ‖s (ψ y)‖ := by
+  filter_upwards [hC] with y hy
+  exact ((A y).le_of_opNorm_le hy _).trans
+    (mul_le_mul_of_nonneg_right (le_max_left C 0) (norm_nonneg _))
 
 omit [TopologicalSpace M] [TopologicalSpace N] [TopologicalSpace P] in
 /-- Composing an essentially bounded bundle map covering `ψ` with an essentially bounded bundle map
@@ -241,12 +195,11 @@ theorem memLp_norm_comp_bundleMap (hA : IsContinuousBundleMap 𝕜 F F' ψ A)
     (hψ : MeasurePreserving ψ ν μ) (hAC : ∀ᵐ y ∂ν, ‖A y‖ ≤ C) {s : ∀ x, E x}
     (hs : AEStronglyMeasurableSection 𝕜 F μ s) (hsp : MemLp (fun x ↦ ‖s x‖) p μ) :
     MemLp (fun y ↦ ‖A y (s (ψ y))‖) p ν := by
-  refine ((hsp.comp_measurePreserving hψ).const_mul C).of_le
-    (hs.comp_bundleMap hA hψ).aestronglyMeasurable_norm ?_
-  filter_upwards [hAC] with y hy
-  rw [norm_norm, Function.comp_apply, Real.norm_eq_abs, abs_mul, abs_norm]
-  exact ((A y).le_of_opNorm_le hy _).trans
-    (mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg _))
+  refine ((hsp.comp_measurePreserving hψ).const_mul (max C 0)).of_le
+    (hs.comp_bundleMap hA hψ.quasiMeasurePreserving).aestronglyMeasurable_norm ?_
+  filter_upwards [ae_norm_comp_bundleMap_le hAC s] with y hy
+  rwa [norm_norm, Function.comp_apply,
+    Real.norm_of_nonneg (mul_nonneg (le_max_right C 0) (norm_nonneg _))]
 
 namespace LpSection
 
@@ -255,7 +208,8 @@ charts with essentially bounded fibre maps, covering a measure-preserving map, a
 private def compBundleMapₗ (hψ : MeasurePreserving ψ ν μ) (A : ∀ y, E (ψ y) →L[𝕜] E' y)
     (hA : IsContinuousBundleMap 𝕜 F F' ψ A) (hAC : ∃ C, ∀ᵐ y ∂ν, ‖A y‖ ≤ C) :
     LpSection 𝕜 F E p μ →ₗ[𝕜] LpSection 𝕜 F' E' p ν where
-  toFun f := mk (fun y ↦ A y (f (ψ y))) (f.aestronglyMeasurableSection.comp_bundleMap hA hψ)
+  toFun f := mk (fun y ↦ A y (f (ψ y)))
+    (f.aestronglyMeasurableSection.comp_bundleMap hA hψ.quasiMeasurePreserving)
     (memLp_norm_comp_bundleMap hA hψ hAC.choose_spec f.aestronglyMeasurableSection f.memLp_norm)
   map_add' f g := by
     rw [mk_add, mk_eq_mk_iff]
@@ -266,23 +220,31 @@ private def compBundleMapₗ (hψ : MeasurePreserving ψ ν μ) (A : ∀ y, E (�
     filter_upwards [hψ.quasiMeasurePreserving.ae (coeFn_smul f c)] with y hy
     rw [hy, map_smul]
 
+private theorem compBundleMapₗ_apply (hψ : MeasurePreserving ψ ν μ)
+    (hA : IsContinuousBundleMap 𝕜 F F' ψ A) (hAC : ∃ C, ∀ᵐ y ∂ν, ‖A y‖ ≤ C)
+    (f : LpSection 𝕜 F E p μ) :
+    compBundleMapₗ hψ A hA hAC f = mk (fun y ↦ A y (f (ψ y)))
+      (f.aestronglyMeasurableSection.comp_bundleMap hA hψ.quasiMeasurePreserving)
+      (memLp_norm_comp_bundleMap hA hψ hAC.choose_spec f.aestronglyMeasurableSection
+        f.memLp_norm) :=
+  rfl
+
 /-- If the fibre maps have norm at most `C` almost everywhere, the transport of `f` has norm at most
 `max C 0` times the norm of `f`. -/
 private theorem norm_compBundleMapₗ_le (hψ : MeasurePreserving ψ ν μ)
     (hA : IsContinuousBundleMap 𝕜 F F' ψ A) (hAC : ∃ C, ∀ᵐ y ∂ν, ‖A y‖ ≤ C)
     (hC : ∀ᵐ y ∂ν, ‖A y‖ ≤ C) (f : LpSection 𝕜 F E p μ) :
     ‖compBundleMapₗ hψ A hA hAC f‖ ≤ max C 0 * ‖f‖ := by
-  rw [compBundleMapₗ, LinearMap.coe_mk, AddHom.coe_mk, norm_mk, norm_def,
+  rw [compBundleMapₗ_apply, norm_mk, norm_def,
     ← ENNReal.toReal_ofReal (le_max_right C 0), ← ENNReal.toReal_mul,
     ← eLpNorm_comp_measurePreserving f.aestronglyMeasurable_norm hψ]
   refine ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
     (f.memLp_norm.comp_measurePreserving hψ).eLpNorm_ne_top) ?_
   refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-    (f.aestronglyMeasurableSection.comp_bundleMap hA hψ).aestronglyMeasurable_norm ?_ p
-  filter_upwards [hC] with y hy
-  rw [norm_norm, Function.comp_apply, norm_norm]
-  exact ((A y).le_of_opNorm_le hy _).trans
-    (mul_le_mul_of_nonneg_right (le_max_left C 0) (norm_nonneg _))
+    (f.aestronglyMeasurableSection.comp_bundleMap hA
+      hψ.quasiMeasurePreserving).aestronglyMeasurable_norm ?_ p
+  filter_upwards [ae_norm_comp_bundleMap_le hC f] with y hy
+  rwa [norm_norm, Function.comp_apply, norm_norm]
 
 variable [Fact (1 ≤ p)]
 
@@ -298,23 +260,30 @@ def compBundleMap (hψ : MeasurePreserving ψ ν μ) (A : ∀ y, E (ψ y) →L[�
   (compBundleMapₗ hψ A hA hAC).mkContinuous (max hAC.choose 0) fun f ↦ by
     exact norm_compBundleMapₗ_le hψ hA hAC hAC.choose_spec f
 
+/-- The value of the transport of `f` is the class of `y ↦ A y (f (ψ y))`. -/
+theorem compBundleMap_apply (hψ : MeasurePreserving ψ ν μ) (hA : IsContinuousBundleMap 𝕜 F F' ψ A)
+    (hAC : ∃ C, ∀ᵐ y ∂ν, ‖A y‖ ≤ C) (f : LpSection 𝕜 F E p μ) :
+    compBundleMap p hψ A hA hAC f = mk (fun y ↦ A y (f (ψ y)))
+      (f.aestronglyMeasurableSection.comp_bundleMap hA hψ.quasiMeasurePreserving)
+      (memLp_norm_comp_bundleMap hA hψ hAC.choose_spec f.aestronglyMeasurableSection
+        f.memLp_norm) :=
+  (rfl)
+
+@[simp]
 theorem compBundleMap_mk (hψ : MeasurePreserving ψ ν μ) (hA : IsContinuousBundleMap 𝕜 F F' ψ A)
     (hAC : ∃ C, ∀ᵐ y ∂ν, ‖A y‖ ≤ C) {s : ∀ x, E x} (hs : AEStronglyMeasurableSection 𝕜 F μ s)
     (hsp : MemLp (fun x ↦ ‖s x‖) p μ) :
     compBundleMap p hψ A hA hAC (mk s hs hsp) =
-      mk (fun y ↦ A y (s (ψ y))) (hs.comp_bundleMap hA hψ)
+      mk (fun y ↦ A y (s (ψ y))) (hs.comp_bundleMap hA hψ.quasiMeasurePreserving)
         (memLp_norm_comp_bundleMap hA hψ hAC.choose_spec hs hsp) := by
-  rw [compBundleMap, LinearMap.mkContinuous_apply, compBundleMapₗ, LinearMap.coe_mk,
-    AddHom.coe_mk, mk_eq_mk_iff]
+  rw [compBundleMap_apply, mk_eq_mk_iff]
   filter_upwards [hψ.quasiMeasurePreserving.ae (coeFn_mk hs hsp)] with y hy
   rw [hy]
 
 theorem coeFn_compBundleMap (hψ : MeasurePreserving ψ ν μ) (hA : IsContinuousBundleMap 𝕜 F F' ψ A)
     (hAC : ∃ C, ∀ᵐ y ∂ν, ‖A y‖ ≤ C) (f : LpSection 𝕜 F E p μ) :
     ∀ᵐ y ∂ν, compBundleMap p hψ A hA hAC f y = A y (f (ψ y)) := by
-  have h := compBundleMap_mk hψ hA hAC f.aestronglyMeasurableSection f.memLp_norm
-  rw [mk_coeFn] at h
-  rw [h]
+  rw [compBundleMap_apply]
   exact coeFn_mk _ _
 
 /-- The norm of the transport of `f` is the `Lᵖ(ν)` norm of the fibre norm of
@@ -323,9 +292,7 @@ theorem norm_compBundleMap_apply (hψ : MeasurePreserving ψ ν μ)
     (hA : IsContinuousBundleMap 𝕜 F F' ψ A) (hAC : ∃ C, ∀ᵐ y ∂ν, ‖A y‖ ≤ C)
     (f : LpSection 𝕜 F E p μ) :
     ‖compBundleMap p hψ A hA hAC f‖ = (eLpNorm (fun y ↦ ‖A y (f (ψ y))‖) p ν).toReal := by
-  have h := compBundleMap_mk hψ hA hAC f.aestronglyMeasurableSection f.memLp_norm
-  rw [mk_coeFn] at h
-  rw [h]
+  rw [compBundleMap_apply]
   exact norm_mk _ _
 
 /-- The transport along a bundle map whose fibre maps have norm at most `C` almost everywhere has
@@ -338,8 +305,10 @@ theorem norm_compBundleMap_le (hψ : MeasurePreserving ψ ν μ)
     rw [max_eq_left hC₀] at h
     exact h
 
-/-- **Functoriality.** Transport along `A₁` covering `ψ₁` followed by transport along `A₂` covering
-`ψ₂` is transport along the composite bundle map `z ↦ A₂ z ∘ A₁ (ψ₂ z)` covering `ψ₁ ∘ ψ₂`. -/
+/-- **Functoriality.** Transport along `A` covering `ψ` followed by transport along `A₂` covering
+`ψ₂` is transport along the composite bundle map `z ↦ A₂ z ∘ A (ψ₂ z)` covering `ψ ∘ ψ₂`. When `ψ₂`
+is continuous and `E'` has finite rank, `TauCeti.IsContinuousBundleMap.comp` supplies the continuity
+in charts of the composite. -/
 theorem compBundleMap_comp {ψ₂ : P → N} (hψ : MeasurePreserving ψ ν μ)
     (hψ₂ : MeasurePreserving ψ₂ ρ ν) (hA : IsContinuousBundleMap 𝕜 F F' ψ A)
     (hAC : ∃ C, ∀ᵐ y ∂ν, ‖A y‖ ≤ C) {A₂ : ∀ z, E' (ψ₂ z) →L[𝕜] E'' z}
@@ -357,6 +326,7 @@ theorem compBundleMap_comp {ψ₂ : P → N} (hψ : MeasurePreserving ψ ν μ)
   rfl
 
 /-- Transport along the identity bundle map is the identity. -/
+@[simp]
 theorem compBundleMap_id :
     compBundleMap p (MeasurePreserving.id μ) (fun x ↦ ContinuousLinearMap.id 𝕜 (E x))
       (isContinuousBundleMap_id 𝕜 F E) ⟨1, ae_of_all _ fun _ ↦ ContinuousLinearMap.norm_id_le⟩ =
@@ -364,8 +334,7 @@ theorem compBundleMap_id :
   refine ContinuousLinearMap.ext fun f ↦ (ext_iff _ _).2 ?_
   filter_upwards [coeFn_compBundleMap (MeasurePreserving.id μ) (isContinuousBundleMap_id 𝕜 F E)
     ⟨1, ae_of_all _ fun _ ↦ ContinuousLinearMap.norm_id_le⟩ f] with x hx
-  rw [hx]
-  rfl
+  simp only [hx, ContinuousLinearMap.id_apply, id_eq]
 
 /-! ### Isometric bundle maps -/
 
@@ -385,6 +354,7 @@ def compBundleMapₗᵢ (hψ : MeasurePreserving ψ ν μ) (A : ∀ y, E (ψ y) 
     simp only [LinearIsometry.coe_toContinuousLinearMap, LinearIsometry.norm_map,
       Function.comp_def]
 
+@[simp]
 theorem coe_compBundleMapₗᵢ (hψ : MeasurePreserving ψ ν μ)
     (hA : IsContinuousBundleMap 𝕜 F F' ψ fun y ↦ (A y).toContinuousLinearMap) :
     ⇑(compBundleMapₗᵢ p hψ A hA) =
@@ -396,6 +366,28 @@ theorem coeFn_compBundleMapₗᵢ (hψ : MeasurePreserving ψ ν μ)
     (f : LpSection 𝕜 F E p μ) :
     ∀ᵐ y ∂ν, compBundleMapₗᵢ p hψ A hA f y = A y (f (ψ y)) :=
   coeFn_compBundleMap hψ hA (exists_ae_norm_toContinuousLinearMap_le A) f
+
+/-- **Functoriality** of transport along isometric bundle maps: transport along `A` covering `ψ`
+followed by transport along `A₂` covering `ψ₂` is transport along `z ↦ A₂ z ∘ A (ψ₂ z)`. -/
+theorem compBundleMapₗᵢ_comp {ψ₂ : P → N} (hψ : MeasurePreserving ψ ν μ)
+    (hψ₂ : MeasurePreserving ψ₂ ρ ν)
+    (hA : IsContinuousBundleMap 𝕜 F F' ψ fun y ↦ (A y).toContinuousLinearMap)
+    {A₂ : ∀ z, E' (ψ₂ z) →ₗᵢ[𝕜] E'' z}
+    (hA₂ : IsContinuousBundleMap 𝕜 F' F'' ψ₂ fun z ↦ (A₂ z).toContinuousLinearMap)
+    (hA₁₂ : IsContinuousBundleMap 𝕜 F F'' (ψ ∘ ψ₂)
+      fun z ↦ ((A₂ z).comp (A (ψ₂ z))).toContinuousLinearMap) :
+    (compBundleMapₗᵢ p hψ₂ A₂ hA₂).comp (compBundleMapₗᵢ p hψ A hA) =
+      compBundleMapₗᵢ p (hψ.comp hψ₂) (fun z ↦ (A₂ z).comp (A (ψ₂ z))) hA₁₂ :=
+  LinearIsometry.ext fun f ↦ DFunLike.congr_fun (compBundleMap_comp hψ hψ₂ hA
+    (exists_ae_norm_toContinuousLinearMap_le A) hA₂ (exists_ae_norm_toContinuousLinearMap_le A₂)
+    hA₁₂) f
+
+/-- Transport along the identity isometric bundle map is the identity. -/
+@[simp]
+theorem compBundleMapₗᵢ_id :
+    compBundleMapₗᵢ p (MeasurePreserving.id μ) (fun x ↦ (LinearIsometry.id : E x →ₗᵢ[𝕜] E x))
+      (isContinuousBundleMap_id 𝕜 F E) = LinearIsometry.id :=
+  LinearIsometry.ext fun f ↦ DFunLike.congr_fun compBundleMap_id f
 
 variable {ψ' : M → N} {B : ∀ x, E' (ψ' x) →ₗᵢ[𝕜] E x}
 
@@ -452,6 +444,44 @@ theorem coeFn_compBundleMapEquiv (f : LpSection 𝕜 F E p μ) :
 theorem coeFn_compBundleMapEquiv_symm (t : LpSection 𝕜 F' E' p ν) :
     ∀ᵐ x ∂μ, (compBundleMapEquiv p hψ hψ' A B hA hB hBA hAB).symm t x = B x (t (ψ' x)) :=
   coeFn_compBundleMapₗᵢ hψ' hB t
+
+/-- The inverse of the isometric equivalence of `(A, B)` is the isometric equivalence of
+`(B, A)`. -/
+theorem compBundleMapEquiv_symm :
+    (compBundleMapEquiv p hψ hψ' A B hA hB hBA hAB).symm =
+      compBundleMapEquiv p hψ' hψ B A hB hA hAB hBA :=
+  LinearIsometryEquiv.ext fun _ ↦ rfl
+
+/-- The isometric equivalence of the identity bundle isomorphism is the identity. -/
+@[simp]
+theorem compBundleMapEquiv_refl :
+    compBundleMapEquiv p (MeasurePreserving.id μ) (MeasurePreserving.id μ)
+      (fun x ↦ (LinearIsometry.id : E x →ₗᵢ[𝕜] E x)) (fun _ ↦ LinearIsometry.id)
+      (isContinuousBundleMap_id 𝕜 F E) (isContinuousBundleMap_id 𝕜 F E) (fun _ _ ↦ rfl)
+      (fun _ _ ↦ rfl) = LinearIsometryEquiv.refl 𝕜 (LpSection 𝕜 F E p μ) :=
+  LinearIsometryEquiv.ext fun f ↦ DFunLike.congr_fun compBundleMapₗᵢ_id f
+
+/-- Composing the isometric equivalences of `(A, B)` and `(A₂, B₂)` gives the isometric
+equivalence of the composite bundle isomorphism `(z ↦ A₂ z ∘ A (ψ₂ z), x ↦ B x ∘ B₂ (ψ' x))`. -/
+theorem compBundleMapEquiv_trans {ψ₂ : P → N} {ψ₂' : N → P} (hψ₂ : MeasurePreserving ψ₂ ρ ν)
+    (hψ₂' : MeasurePreserving ψ₂' ν ρ) {A₂ : ∀ z, E' (ψ₂ z) →ₗᵢ[𝕜] E'' z}
+    {B₂ : ∀ y, E'' (ψ₂' y) →ₗᵢ[𝕜] E' y}
+    (hA₂ : IsContinuousBundleMap 𝕜 F' F'' ψ₂ fun z ↦ (A₂ z).toContinuousLinearMap)
+    (hB₂ : IsContinuousBundleMap 𝕜 F'' F' ψ₂' fun y ↦ (B₂ y).toContinuousLinearMap)
+    (hBA₂ : ∀ (t : ∀ y, E' y) y, B₂ y (A₂ (ψ₂' y) (t (ψ₂ (ψ₂' y)))) = t y)
+    (hAB₂ : ∀ (u : ∀ z, E'' z) z, A₂ z (B₂ (ψ₂ z) (u (ψ₂' (ψ₂ z)))) = u z)
+    (hA₁₂ : IsContinuousBundleMap 𝕜 F F'' (ψ ∘ ψ₂)
+      fun z ↦ ((A₂ z).comp (A (ψ₂ z))).toContinuousLinearMap)
+    (hB₁₂ : IsContinuousBundleMap 𝕜 F'' F (ψ₂' ∘ ψ')
+      fun x ↦ ((B x).comp (B₂ (ψ' x))).toContinuousLinearMap) :
+    (compBundleMapEquiv p hψ hψ' A B hA hB hBA hAB).trans
+        (compBundleMapEquiv p hψ₂ hψ₂' A₂ B₂ hA₂ hB₂ hBA₂ hAB₂) =
+      compBundleMapEquiv p (hψ.comp hψ₂) (hψ₂'.comp hψ') (fun z ↦ (A₂ z).comp (A (ψ₂ z)))
+        (fun x ↦ (B x).comp (B₂ (ψ' x))) hA₁₂ hB₁₂
+        (fun s x ↦ (congrArg (B x) (hBA₂ (fun y ↦ A y (s (ψ y))) (ψ' x))).trans (hBA s x))
+        (fun u z ↦ (congrArg (A₂ z) (hAB (fun y ↦ B₂ y (u (ψ₂' y))) (ψ₂ z))).trans
+          (hAB₂ u z)) :=
+  LinearIsometryEquiv.ext fun f ↦ DFunLike.congr_fun (compBundleMapₗᵢ_comp hψ hψ₂ hA hA₂ hA₁₂) f
 
 /-! ### Trivial bundles -/
 
