@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.Normed.Module.Multilinear.Curry
 
 /-!
 # The Laplacian as a contraction of iterated derivatives
@@ -25,7 +26,9 @@ maps. It computes the derivatives of a Laplacian from those of the function: for
 (`ContDiff.laplacian_iteratedFDeriv`), also `Δ (D^m f) x = traceLastTwoL (D^(m + 2) f x)`
 (`ContDiff.laplacian_iteratedFDeriv_eq_traceLastTwoL`). Iterating, the `r`-fold contraction
 `TauCeti.iteratedTraceLastTwoL r m` sends `D^(m + 2r) f x` to `D^m (Δ^[r] f) x`
-(`ContDiff.iteratedFDeriv_iterate_laplacian`).
+(`ContDiff.iteratedFDeriv_iterate_laplacian`). In particular, for `f` of class `C^(m + 2r + 1)`
+the derivative of `D^m (Δ^[r] f)` is `D^(m + 1) (Δ^[r] f)`, curried on the left
+(`ContDiff.hasFDerivAt_iteratedFDeriv_iterate_laplacian`).
 
 Being continuous and linear, the contraction carries bounds, continuity and Hölder estimates of
 `D^(m + 2r) f` over to `D^m (Δ^[r] f)`. This is how the time derivatives `∂ₜ^r D^m u = D^m Δ^r u`
@@ -120,5 +123,20 @@ theorem _root_.ContDiff.iteratedFDeriv_iterate_laplacian {f : E → F} {r m : �
     -- The two sides differ only in the order `m + 2 * (r + 1)` versus `m + 2 * r + 2`, which
     -- agree definitionally (`Nat.mul_succ`, `Nat.add_assoc`); `rfl` unfolds that arithmetic.
     rfl
+
+/-- For `f` of class `C^(m + 2r + 1)`, the derivative of `D^m (Δ^[r] f)` is `D^(m + 1) (Δ^[r] f)`,
+curried on the left. -/
+theorem _root_.ContDiff.hasFDerivAt_iteratedFDeriv_iterate_laplacian {f : E → F} {r m : ℕ}
+    (hf : ContDiff ℝ (m + 2 * r + 1) f) (x : E) :
+    HasFDerivAt (iteratedFDeriv ℝ m (Δ^[r] f))
+      (iteratedFDeriv ℝ (m + 1) (Δ^[r] f) x).curryLeft x := by
+  have hd : DifferentiableAt ℝ (iteratedFDeriv ℝ m (Δ^[r] f)) x := by
+    rw [funext (ContDiff.iteratedFDeriv_iterate_laplacian
+      (hf.of_le (Nat.cast_le.2 (Nat.le_succ _))))]
+    exact (iteratedTraceLastTwoL E F r m).differentiableAt.comp x
+      (hf.differentiable_iteratedFDeriv (Nat.cast_lt.2 (Nat.lt_succ_self _)) x)
+  have h := hd.hasFDerivAt
+  rwa [fderiv_iteratedFDeriv, Function.comp_apply,
+    continuousMultilinearCurryLeftEquiv_eq_curryLeft] at h
 
 end TauCeti

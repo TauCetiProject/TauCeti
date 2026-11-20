@@ -8,16 +8,20 @@ module
 public import Mathlib.Analysis.Normed.Module.Multilinear.Curry
 
 /-!
-# Reindexing continuous multilinear maps
+# Reindexing and currying continuous multilinear maps
 
 Mathlib's `ContinuousMultilinearMap.domDomCongrₗᵢ` packages the reindexing of the arguments of a
-continuous multilinear map along an equivalence of index types as a linear isometric equivalence.
-This file records its evaluation lemma.
+continuous multilinear map along an equivalence of index types as a linear isometric equivalence,
+and `continuousMultilinearCurryLeftEquiv` packages `ContinuousMultilinearMap.curryLeft` the same
+way. This file records the evaluation lemmas identifying the equivalences with the underlying
+operations.
 
 ## Main declarations
 
 * `ContinuousMultilinearMap.domDomCongrₗᵢ_apply`: `domDomCongrₗᵢ` applied to a map is
   `ContinuousMultilinearMap.domDomCongr`.
+* `continuousMultilinearCurryLeftEquiv_eq_curryLeft`: `continuousMultilinearCurryLeftEquiv`
+  applied to a map is `ContinuousMultilinearMap.curryLeft`.
 -/
 
 public section
@@ -34,3 +38,18 @@ theorem domDomCongrₗᵢ_apply (σ : ι ≃ ι') (g : ContinuousMultilinearMap 
   rfl
 
 end ContinuousMultilinearMap
+
+section CurryLeft
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ} {Ei : Fin (n + 1) → Type*}
+  [∀ i, NormedAddCommGroup (Ei i)] [∀ i, NormedSpace 𝕜 (Ei i)] {G : Type*}
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- Left currying of an `(n + 1)`-multilinear map by the currying equivalence is
+`ContinuousMultilinearMap.curryLeft`. -/
+theorem continuousMultilinearCurryLeftEquiv_eq_curryLeft (f : ContinuousMultilinearMap 𝕜 Ei G) :
+    continuousMultilinearCurryLeftEquiv 𝕜 Ei G f = f.curryLeft := by
+  ext x v
+  rw [continuousMultilinearCurryLeftEquiv_apply, ContinuousMultilinearMap.curryLeft_apply]
+
+end CurryLeft
