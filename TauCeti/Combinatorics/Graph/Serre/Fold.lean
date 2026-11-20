@@ -259,23 +259,11 @@ theorem Connected.deleteEdge_of_ne_of_src_eq_of_tgt_eq (hΓ : Γ.Connected) {e�
     (h : e₁ ≠ e₂) (hsrc : Γ.src e₁ = Γ.src e₂) (htgt : Γ.tgt e₁ = Γ.tgt e₂) :
     (Γ.deleteEdge e₂).Connected := by
   by_cases h₂ : Γ.toGeomEdge e₁ = Γ.toGeomEdge e₂
-  · -- Here `e₁` is the reverse of `e₂`, so `e₂` is a loop, and dropping its darts from a path of
-    -- `Γ` gives a path of the deletion.
-    have hloop : Γ.src e₂ = Γ.tgt e₂ := by
-      obtain rfl | rfl := Γ.toGeomEdge_eq_toGeomEdge_iff.1 h₂.symm <;> simp_all
-    obtain ⟨hV, hpre⟩ := (connected_iff Γ).1 hΓ
-    refine (connected_iff _).2 ⟨hV, (preconnected_iff _).2 fun a b => ?_⟩
-    obtain ⟨p⟩ := (preconnected_iff Γ).1 hpre a b
-    induction p with
-    | nil => exact ⟨.nil⟩
-    | cons _ f ih =>
-      obtain ⟨q⟩ := ih
-      by_cases hf : Γ.toGeomEdge f.val = Γ.toGeomEdge e₂
-      · have hf' : Γ.src f.val = Γ.tgt f.val := by
-          rcases Γ.toGeomEdge_eq_toGeomEdge_iff.1 hf.symm with hf | hf <;> simp [hf, hloop]
-        obtain rfl := f.property.1.symm.trans (hf'.trans f.property.2)
-        exact ⟨q⟩
-      · exact ⟨q.cons ⟨⟨f.val, hf⟩, f.property⟩⟩
+  · -- Here `e₁` is the reverse of `e₂`, so `e₂` is a loop, whose two ends stay joined.
+    obtain rfl | rfl := Γ.toGeomEdge_eq_toGeomEdge_iff.1 h₂.symm
+    · exact absurd rfl h
+    · rw [src_rev] at hsrc
+      exact hΓ.deleteEdge (hsrc ▸ ⟨.nil⟩)
   · exact (deleteEdgeHom h₂ hsrc htgt).connected_of_surjective Function.surjective_id hΓ
 
 /-! ### Folding two darts with distinct terminal vertices -/
