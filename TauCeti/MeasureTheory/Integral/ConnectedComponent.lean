@@ -26,9 +26,10 @@ normalizes `f` to have integral zero over every component of finite measure
 This normalization is unique among locally constant corrections: a locally constant function whose
 integral over a component vanishes is zero there, provided that component has finite measure and
 `μ` charges every nonempty open set
-(`TauCeti.IsLocallyConstant.apply_eq_zero_of_setIntegral_connectedComponent_eq_zero`). So on a
-locally connected space two functions which differ by a locally constant function and have the
-same integral over every component agree.
+(`IsLocallyConstant.apply_eq_zero_of_setIntegral_connectedComponent_eq_zero`). So on a locally
+connected space, for such `μ`, two functions which differ by a locally constant function and are
+integrable on a component of finite measure agree on that component when their integrals over it
+are equal.
 
 These are the measure-theoretic steps in normalizing the primitive of an exact one-form on a
 compact manifold, or a Hamiltonian, to have mean zero on each component.
@@ -62,7 +63,7 @@ theorem setIntegral_connectedComponent_sub_setAverage [OpensMeasurableSpace X] [
 
 /-- A locally constant function whose integral over the connected component of `x` vanishes is
 zero at `x`, when that component has finite measure and `μ` charges every nonempty open set. -/
-theorem IsLocallyConstant.apply_eq_zero_of_setIntegral_connectedComponent_eq_zero
+theorem _root_.IsLocallyConstant.apply_eq_zero_of_setIntegral_connectedComponent_eq_zero
     [LocallyConnectedSpace X] [OpensMeasurableSpace X] [μ.IsOpenPosMeasure] [CompleteSpace E]
     {g : X → E} (hg : IsLocallyConstant g) {x : X} (hx : μ (connectedComponent x) ≠ ∞)
     (h : ∫ y in connectedComponent x, g y ∂μ = 0) : g x = 0 := by

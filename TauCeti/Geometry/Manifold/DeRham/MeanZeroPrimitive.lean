@@ -15,6 +15,7 @@ public import Mathlib.MeasureTheory.Measure.OpenPos
 public import TauCeti.Geometry.Manifold.Topology
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.MeasureTheory.Integral.ConnectedComponent
+import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 /-!
 # Mean-zero primitives of exact one-forms
@@ -29,8 +30,8 @@ primitive, it is
 
 (`TauCeti.meanZeroPrimitive_apply_eq_sub_setAverage`). This file constructs the selector
 `S = TauCeti.meanZeroPrimitive I μ` as a linear map from the exact one-forms to the smooth real
-functions on `M`. Its value `S α` is a primitive of `α` (`TauCeti.mextDeriv_meanZeroPrimitive`)
-with integral zero over every connected component
+functions on `M`. Its value `S α` is a primitive of `α`
+(`TauCeti.mextDeriv_ofFunction_meanZeroPrimitive`) with integral zero over every connected component
 (`TauCeti.setIntegral_connectedComponent_meanZeroPrimitive`), and these two properties
 characterize it (`TauCeti.eq_meanZeroPrimitive_iff`). It is injective, and on a connected manifold
 `S α` is the primitive of `α` with integral zero over `M`.
@@ -50,7 +51,7 @@ vector field, the normalization used to compare Hamiltonian isotopies with paths
 
 ## Main results
 
-* `TauCeti.mextDeriv_meanZeroPrimitive`: `d (S α) = α`.
+* `TauCeti.mextDeriv_ofFunction_meanZeroPrimitive`: `d (S α) = α`.
 * `TauCeti.setIntegral_connectedComponent_meanZeroPrimitive`: `S α` has integral zero over every
   connected component.
 * `TauCeti.eq_meanZeroPrimitive_iff`: these two properties characterize `S α` among differentiable
@@ -126,16 +127,12 @@ private theorem setIntegral_normalize [OpensMeasurableSpace M] [IsFiniteMeasure 
 variable [OpensMeasurableSpace M] [CompactSpace M] [IsFiniteMeasure μ]
 
 omit [IsManifold I 2 M] in
-private theorem integrableOn_of_continuous {f : M → ℝ} (hf : Continuous f) (s : Set M) :
-    IntegrableOn f s μ :=
-  (hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f)).integrableOn
-
-omit [IsManifold I 2 M] in
 private theorem normalize_add {f g : M → ℝ} (hf : Continuous f) (hg : Continuous g) :
     normalize μ (f + g) = normalize μ f + normalize μ g := by
   funext x
   simp only [normalize, Pi.add_apply]
-  rw [setAverage_fun_add (integrableOn_of_continuous hf _) (integrableOn_of_continuous hg _)]
+  rw [setAverage_fun_add hf.integrable_of_compactSpace.integrableOn
+    hg.integrable_of_compactSpace.integrableOn]
   ring
 
 omit [IsManifold I 2 M] [OpensMeasurableSpace M] [CompactSpace M] [IsFiniteMeasure μ] in
@@ -165,10 +162,10 @@ private theorem eq_of_mextDeriv_eq_of_setIntegral_eq {f g : M → ℝ}
     exact sub_eq_zero.mpr h
   have hlc : IsLocallyConstant (f - g) := (hf.sub hg).isLocallyConstant_of_mfderiv_eq_zero hd
   funext x
-  refine sub_eq_zero.mp (IsLocallyConstant.apply_eq_zero_of_setIntegral_connectedComponent_eq_zero
-    hlc (measure_ne_top μ _) ?_)
-  rw [Pi.sub_def, integral_sub (integrableOn_of_continuous hf.continuous _)
-    (integrableOn_of_continuous hg.continuous _), hint x, sub_self]
+  refine sub_eq_zero.mp
+    (hlc.apply_eq_zero_of_setIntegral_connectedComponent_eq_zero (measure_ne_top μ _) ?_)
+  rw [Pi.sub_def, integral_sub hf.continuous.integrable_of_compactSpace.integrableOn
+    hg.continuous.integrable_of_compactSpace.integrableOn, hint x, sub_self]
 
 /-- Two differentiable functions with the same differential have the same normalization. -/
 private theorem normalize_eq_normalize {f g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ, ℝ) f)
@@ -213,8 +210,8 @@ private theorem normalize_primitive_add (α β : exactForms I M 1) :
   refine normalize_eq_normalize ((contMDiff_primitive _).mdifferentiable (by simp))
     ((hα.add hβ).mdifferentiable (by simp)) ?_
   rw [mextDeriv_ofFunction_add (hα.mdifferentiable (by simp)) (hβ.mdifferentiable (by simp)),
-    mextDeriv_primitive, mextDeriv_primitive, mextDeriv_primitive]
-  rfl
+    mextDeriv_primitive, mextDeriv_primitive, mextDeriv_primitive, Submodule.coe_add,
+    Submodule.coe_add]
 
 /-- The normalized chosen primitive of a multiple is the multiple of the normalized chosen
 primitive. -/
@@ -224,13 +221,8 @@ private theorem normalize_primitive_smul (c : ℝ) (α : exactForms I M 1) :
   rw [← normalize_smul]
   refine normalize_eq_normalize ((contMDiff_primitive _).mdifferentiable (by simp))
     (((contDiff_const_smul c).comp_contMDiff hα).mdifferentiable (by simp)) ?_
-  funext x
-  have h := mextDeriv_ofFunction_comp_of_hasDerivAt (hα.mdifferentiable (by simp) x)
-    ((hasDerivAt_id (primitive α x)).const_mul c)
-  simp only [id, mul_one] at h
-  rw [mextDeriv_primitive, show c • primitive α = fun y ↦ c * primitive α y from rfl, h,
-    mextDeriv_primitive]
-  rfl
+  rw [RoughForm.ofFunction_smul, mextDeriv_smul, mextDeriv_primitive, mextDeriv_primitive,
+    Submodule.coe_smul, Submodule.coe_smul]
 
 variable (I μ) in
 /-- The **mean-zero primitive** of an exact one-form `α` on a compact manifold with a finite
@@ -248,7 +240,7 @@ private theorem coe_meanZeroPrimitive (α : exactForms I M 1) :
 
 /-- The mean-zero primitive of `α` is a primitive of `α`: `d (S α) = α`. -/
 @[simp]
-theorem mextDeriv_meanZeroPrimitive (α : exactForms I M 1) :
+theorem mextDeriv_ofFunction_meanZeroPrimitive (α : exactForms I M 1) :
     mextDeriv (RoughForm.ofFunction I (meanZeroPrimitive I μ α)) =
       ((α : SmoothForm I M ℝ 1) : RoughForm I M ℝ 1) := by
   rw [coe_meanZeroPrimitive, mextDeriv_normalize, mextDeriv_primitive]
@@ -256,7 +248,8 @@ theorem mextDeriv_meanZeroPrimitive (α : exactForms I M 1) :
 /-- The mean-zero primitive of `α` is a primitive of `α`, as an identity of smooth forms. -/
 theorem mextDerivₗ_ofFunction_meanZeroPrimitive (α : exactForms I M 1) :
     mextDerivₗ I 0 (SmoothForm.ofFunction (meanZeroPrimitive I μ α)) = α :=
-  Subtype.ext <| by rw [mextDerivₗ_apply, SmoothForm.coe_ofFunction, mextDeriv_meanZeroPrimitive]
+  Subtype.ext <| by
+    rw [mextDerivₗ_apply, SmoothForm.coe_ofFunction, mextDeriv_ofFunction_meanZeroPrimitive]
 
 /-- The mean-zero primitive has integral zero over every connected component. -/
 @[simp]
@@ -274,10 +267,11 @@ theorem eq_meanZeroPrimitive_iff {α : exactForms I M 1} {f : M → ℝ}
       ∀ x, ∫ y in connectedComponent x, f y ∂μ = 0 := by
   refine ⟨?_, fun ⟨hdf, hint⟩ ↦ eq_of_mextDeriv_eq_of_setIntegral_eq hf
     ((meanZeroPrimitive I μ α).contMDiff.mdifferentiable (by simp))
-    (by rw [hdf, mextDeriv_meanZeroPrimitive]) fun x ↦ by
+    (by rw [hdf, mextDeriv_ofFunction_meanZeroPrimitive]) fun x ↦ by
       rw [hint, setIntegral_connectedComponent_meanZeroPrimitive]⟩
   rintro rfl
-  exact ⟨mextDeriv_meanZeroPrimitive α, setIntegral_connectedComponent_meanZeroPrimitive α⟩
+  exact ⟨mextDeriv_ofFunction_meanZeroPrimitive α,
+    setIntegral_connectedComponent_meanZeroPrimitive α⟩
 
 /-- **The mean-zero primitive from any primitive.** If `f` is a differentiable primitive of `α`,
 then at a point of the connected component `M_j` the mean-zero primitive of `α` is
@@ -302,6 +296,7 @@ theorem meanZeroPrimitive_apply_eq_sub_average [PreconnectedSpace M] {α : exact
     PreconnectedSpace.connectedComponent_eq_univ, Measure.restrict_univ]
 
 /-- On a connected manifold, the mean-zero primitive has integral zero. -/
+@[simp]
 theorem integral_meanZeroPrimitive [PreconnectedSpace M] (α : exactForms I M 1) :
     ∫ y, meanZeroPrimitive I μ α y ∂μ = 0 := by
   have h := setIntegral_connectedComponent_meanZeroPrimitive (μ := μ) α
@@ -315,7 +310,8 @@ theorem integral_meanZeroPrimitive [PreconnectedSpace M] (α : exactForms I M 1)
 theorem meanZeroPrimitive_injective : Function.Injective (meanZeroPrimitive I μ) := by
   intro α β h
   refine Subtype.ext <| Subtype.ext ?_
-  rw [← mextDeriv_meanZeroPrimitive (μ := μ) α, ← mextDeriv_meanZeroPrimitive (μ := μ) β, h]
+  rw [← mextDeriv_ofFunction_meanZeroPrimitive (μ := μ) α,
+    ← mextDeriv_ofFunction_meanZeroPrimitive (μ := μ) β, h]
 
 end Primitive
 
@@ -340,7 +336,7 @@ theorem meanZeroPrimitive_eq_comp_of_measurePreserving (Φ : M ≃ₘ⟮I, J⟯ 
   have hS := (meanZeroPrimitive J ν α).contMDiff.mdifferentiable (n := ∞) (by simp)
   have hΦd : MDifferentiable I J Φ := Φ.contMDiff.mdifferentiable (by simp)
   refine ((eq_meanZeroPrimitive_iff (hS.comp hΦd)).mpr ⟨?_, fun x ↦ ?_⟩).symm
-  · rw [hβ, ← mpullback_mextDeriv_ofFunction hΦd hS, mextDeriv_meanZeroPrimitive]
+  · rw [hβ, ← mpullback_mextDeriv_ofFunction hΦd hS, mextDeriv_ofFunction_meanZeroPrimitive]
   · have hC : Φ '' connectedComponent x = connectedComponent (Φ x) := by
       simpa [connectedComponentIn_univ, image_univ_of_surjective Φ.surjective] using
         Φ.toHomeomorph.image_connectedComponentIn (mem_univ x)
