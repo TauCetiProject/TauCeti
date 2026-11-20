@@ -228,7 +228,7 @@ theorem powerBoundedSubring.dvd_iff_norm_le {a b : powerBoundedSubring K} :
   refine ⟨fun ⟨c, hc⟩ ↦ ?_, fun h ↦ ?_⟩
   · rw [hc, Subring.coe_mul, norm_mul]
     exact mul_le_of_le_one_right (norm_nonneg _)
-      (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.2))
+      (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp c.property))
   · rcases eq_or_ne (b : K) 0 with hb | hb
     · have ha : (a : K) = 0 := norm_le_zero_iff.mp (by simpa [hb] using h)
       exact ⟨0, Subtype.ext (by simp [ha])⟩
@@ -243,7 +243,7 @@ theorem powerBoundedSubring.dvd_iff_norm_le {a b : powerBoundedSubring K} :
 theorem powerBoundedSubring.isUnit_iff_norm_eq_one {x : powerBoundedSubring K} :
     IsUnit x ↔ ‖(x : K)‖ = 1 := by
   rw [isUnit_iff_dvd_one, powerBoundedSubring.dvd_iff_norm_le, OneMemClass.coe_one, norm_one]
-  exact (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp x.2)).ge_iff_eq
+  exact (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp x.property)).ge_iff_eq
 
 /-- The power-bounded subring `K°` of an ultrametric normed field coincides as a subring of `K`
 with its valuation ring `𝒪[K]`. -/
@@ -280,7 +280,7 @@ theorem maximalIdeal_powerBoundedSubring :
   rw [mem_maximalIdeal, mem_nonunits_iff, powerBoundedSubring.isUnit_iff_norm_eq_one,
     mem_topologicallyNilpotentIdeal, IsTopologicallyNilpotent,
     tendsto_pow_atTop_nhds_zero_iff_norm_lt_one,
-    (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp x.2)).lt_iff_ne]
+    (isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp x.property)).lt_iff_ne]
 
 /-- For an ultrametric normed field `K`, `K°°` is a maximal ideal of `K°`. -/
 instance isMaximal_topologicallyNilpotentIdeal : (topologicallyNilpotentIdeal K).IsMaximal :=
@@ -327,7 +327,7 @@ noncomputable def integerToPowerBounded : 𝒪[K] →+* powerBoundedSubring A :=
   (algebraMap K A).comp (Subring.subtype 𝒪[K]) |>.codRestrict (powerBoundedSubring A) fun c ↦
     mem_powerBoundedSubring.mpr <| isPowerBounded_algebraMap_of_norm_le_one <|
       isPowerBounded_iff_norm_le_one.mp <| mem_powerBoundedSubring.mp <|
-        (powerBoundedSubring_eq_integer (K := K)).ge c.2
+        (powerBoundedSubring_eq_integer (K := K)).ge c.property
 
 @[simp]
 theorem coe_integerToPowerBounded (c : 𝒪[K]) :

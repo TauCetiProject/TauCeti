@@ -54,7 +54,7 @@ variable {ι M N 𝕜 V : Type*} [AddCommGroup M] [AddCommGroup N]
 /-- Extend the finite list of directions constantly past its last entry, for the chain-height
 summation lemmas. Only indices within the original list occur in the proofs below. -/
 private def natDir (π : LSPath P b lam) (k : ℕ) : P.weylGroup :=
-  (π.dir ⟨min k π.length, by omega⟩).1
+  (π.dir ⟨min k π.length, by omega⟩).val
 
 /-- Extend the finite list of break times constantly past its last entry. -/
 private def natTime (π : LSPath P b lam) (k : ℕ) : ℚ :=
@@ -75,7 +75,7 @@ private theorem natTime_strictMono (π : LSPath P b lam) (k : ℕ) (hk : k < π.
 
 private theorem natDir_chain (π : LSPath P b lam) (k : ℕ) (hk : k + 1 < π.length + 1) :
     ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam),
-      C.head.1 = π.natDir k ∧ C.last.1 = π.natDir (k + 1) ∧
+      C.head.val = π.natDir k ∧ C.last.val = π.natDir (k + 1) ∧
         IsAChain (π.natTime (k + 1)) lam C := by
   obtain ⟨C, hhead, hlast, hC⟩ := π.exists_isAChain ⟨k, by omega⟩
   refine ⟨C, ?_, ?_, ?_⟩
@@ -112,7 +112,7 @@ private theorem apply_sum_take (π : LSPath P b lam) (f : M →+ V)
 theorem minHeight_le_duration_mul_dir_zero (π : LSPath P b lam) (f : M →+ V)
     (F : Module.Dual 𝕜 V) :
     (π.toPLPath 𝕜 f).minHeight F ≤
-      (π.duration 0 : 𝕜) * F (f ((π.dir 0).1 • lam)) := by
+      (π.duration 0 : 𝕜) * F (f ((π.dir 0).val • lam)) := by
   rw [toPLPath_def, PLPath.minHeight_ofSegments]
   simpa only [timed_def, List.ofFn_succ, List.map_cons, Prod.snd,
     List.take_succ_cons, List.take_zero, List.sum_cons, List.sum_nil, add_zero,
@@ -215,15 +215,15 @@ theorem exists_lower_toPLPath_eq (π : LSPath P b lam) (hlam : lam ∈ dominantC
       (∀ j, k₀ ≤ j → j ≤ j₁ → F (((π.timed 𝕜 f).map Prod.snd).take j).sum <
         F (((π.timed 𝕜 f).map Prod.snd).take (j + 1)).sum) ∧
       F (((π.timed 𝕜 f).map Prod.snd).take j₁).sum +
-          θ * F ((π.duration j₁ : 𝕜) • f ((π.dir j₁).1 • lam)) =
+          θ * F ((π.duration j₁ : 𝕜) • f ((π.dir j₁).val • lam)) =
         (π.toPLPath 𝕜 f).minHeight F + 1 ∧
       (∀ j, j₁ < j → (π.toPLPath 𝕜 f).minHeight F + 1 ≤
         F (((π.timed 𝕜 f).map Prod.snd).take j).sum) ∧
       PLPath.lower F x (π.toPLPath 𝕜 f) = some (PLPath.ofSegments 𝕜
         (((π.timed 𝕜 f).map Prod.snd).take k₀ ++
           ((((π.timed 𝕜 f).map Prod.snd).take j₁).drop k₀ ++
-            [(θ * π.duration j₁) • f ((π.dir j₁).1 • lam)]).map (Module.preReflection x F) ++
-          ((1 - θ) * π.duration j₁) • f ((π.dir j₁).1 • lam) ::
+            [(θ * π.duration j₁) • f ((π.dir j₁).val • lam)]).map (Module.preReflection x F) ++
+          ((1 - θ) * π.duration j₁) • f ((π.dir j₁).val • lam) ::
             ((π.timed 𝕜 f).map Prod.snd).drop (j₁ + 1))) := by
   set L := (π.timed 𝕜 f).map Prod.snd with hL
   set s := π.length + 1
@@ -238,7 +238,7 @@ theorem exists_lower_toPLPath_eq (π : LSPath P b lam) (hlam : lam ∈ dominantC
     simpa only [hlen] using List.take_eq_take_min (l := L) (i := k)
   have hHF' : ∀ k, k ≤ s → F (L.take k).sum = (H k : 𝕜) := fun k hk ↦ by
     rw [hHF, min_eq_left hk]
-  have hseg : ∀ j : Fin s, F ((π.duration j : 𝕜) • f ((π.dir j).1 • lam)) =
+  have hseg : ∀ j : Fin s, F ((π.duration j : 𝕜) • f ((π.dir j).val • lam)) =
       ((H (j + 1) - H j : ℚ) : 𝕜) := by
     intro j
     have h₁ := hHF' (j + 1) (by omega)
@@ -278,13 +278,13 @@ theorem exists_lower_toPLPath_eq (π : LSPath P b lam) (hlam : lam ∈ dominantC
       (div_le_one hslope).mpr (by linarith [hafter k₁ le_rfl hk₁s])
     rw [hθ_def]
     exact_mod_cast hq
-  have hθeq : F (L.take j₁).sum + θ * F ((π.duration j₁ : 𝕜) • f ((π.dir j₁).1 • lam)) =
+  have hθeq : F (L.take j₁).sum + θ * F ((π.duration j₁ : 𝕜) • f ((π.dir j₁).val • lam)) =
       (π.toPLPath 𝕜 f).minHeight F + 1 := by
     rw [hseg, hj₁, hHF' _ (by omega), hmin, hθ_def, ← Rat.cast_mul,
       div_mul_cancel₀ _ hslope.ne']
     push_cast
     ring
-  have hseg' : L[k₁ - 1]'(by omega) = (π.duration j₁ : 𝕜) • f ((π.dir j₁).1 • lam) := by
+  have hseg' : L[k₁ - 1]'(by omega) = (π.duration j₁ : 𝕜) • f ((π.dir j₁).val • lam) := by
     simp only [L, timed_def, List.getElem_map, List.getElem_ofFn, j₁]
   refine ⟨k₀, j₁, θ, by simp only [j₁]; omega, hθpos, hθle, ?_, ?_, hθeq, ?_, ?_⟩
   · rw [hHF' _ (by omega), hmin]

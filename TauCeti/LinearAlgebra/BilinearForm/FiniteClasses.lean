@@ -137,7 +137,7 @@ private theorem exists_basis_condensation_mem {n : ℕ} {T : Finset (Matrix (Fin
   -- The condensed form `S(y, z) = μ B(φ y, φ z) - B(φ y, v) B(v, φ z)` on `ℤⁿ`.
   obtain ⟨S, hSsymm, hS⟩ := hB.exists_isSymm_forall_apply_eq v φ
   have hSpos (y) (hy : y ≠ 0) : 0 < S y y := hS y y ▸ sub_pos.mpr
-    (apply_mul_apply_lt_of_mem_ker hpos (by simp [hf]) (bK.equivFun.symm y).2
+    (apply_mul_apply_lt_of_mem_ker hpos (by simp [hf]) (bK.equivFun.symm y).property
       (by simpa [φ, -Basis.equivFun_symm_apply] using hy))
   -- Chiò's identity bounds the determinant of `S`.
   have hdetS : (toMatrix (Pi.basisFun ℤ (Fin n)) S).det ≤ D' := by

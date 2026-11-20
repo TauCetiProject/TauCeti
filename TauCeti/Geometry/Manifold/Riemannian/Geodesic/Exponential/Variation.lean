@@ -131,7 +131,7 @@ theorem contMDiffAt_exponentialVariation {n : ℕ∞} {s t : ℝ}
     contDiff_fst.contMDiff.contMDiffAt.smul_totalSpace
       (hV.comp (s, t) contDiff_snd.contMDiff.contMDiffAt)
   have hexp : ContMDiffAt I.tangent I n
-      (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
+      (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.snd)
       (TotalSpace.mk' E (γ t) (s • V t)) :=
     (contMDiffOn_riemannianExp_tangentBundle.contMDiffAt
       (isOpen_setOfPred_mem_expDomain.mem_nhds hv)).of_le (by exact_mod_cast le_top)
@@ -192,8 +192,8 @@ theorem contMDiffOn_exponentialVariation {n : ℕ∞} {S : Set ℝ}
         (fun _ hz ↦ hz.1 : MapsTo Prod.snd
           {z : ℝ × ℝ | z.2 ∈ S ∧ z.1 • V z.2 ∈ expDomain I M (γ z.2)} S))
   have hexp : ContMDiffOn I.tangent I n
-      (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
-      {z | z.2 ∈ expDomain I M z.proj} :=
+      (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.snd)
+      {z | z.snd ∈ expDomain I M z.proj} :=
     contMDiffOn_riemannianExp_tangentBundle.of_le (by exact_mod_cast le_top)
   exact hexp.comp hinput fun _ hz ↦ hz.2
 
@@ -315,13 +315,13 @@ private theorem eventually_forall_smul_mem_expDomain {a b : ℝ}
     (hV : ContinuousOn (fun t ↦ TotalSpace.mk' E (γ t) (V t)) (Icc a b)) :
     ∀ᶠ s in 𝓝 (0 : ℝ), ∀ t ∈ Icc a b, s • V t ∈ expDomain I M (γ t) := by
   have hscale : Continuous (fun z : ℝ × TangentBundle I M ↦
-      TotalSpace.mk' E z.2.proj (z.1 • z.2.2)) :=
+      TotalSpace.mk' E z.2.proj (z.1 • z.2.snd)) :=
     ((contMDiff_fst (I := 𝓘(ℝ, ℝ)) (J := I.tangent) (n := 0)).smul_totalSpace
       (I := I) contMDiff_snd).continuous
   have hinput : Continuous (fun z : ℝ × Icc a b ↦
       TotalSpace.mk' E (γ z.2) (z.1 • V z.2)) :=
     hscale.comp (continuous_fst.prodMk
-      ((hV.comp_continuous continuous_subtype_val (fun t ↦ t.property)).comp continuous_snd))
+      ((hV.comp_continuous continuous_subtypeVal (fun t ↦ t.property)).comp continuous_snd))
   have hopen : IsOpen {z : ℝ × Icc a b | z.1 • V z.2 ∈ expDomain I M (γ z.2)} :=
     isOpen_setOfPred_mem_expDomain.preimage hinput
   have hzero (t : Icc a b) : (0, t) ∈

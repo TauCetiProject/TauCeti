@@ -127,30 +127,31 @@ integral scheme, the Cartier divisor of `closure {η}` has associated Weil divis
 @[simp]
 theorem toWeilDivisor_ofEffectiveCartier_vanishingIdeal_closure_singleton
     (η : CodimensionOnePoint X) :
-    (ofEffectiveCartier (isEffectiveCartier_vanishingIdeal_closure_singleton η.2)).toWeilDivisor =
+    (ofEffectiveCartier (isEffectiveCartier_vanishingIdeal_closure_singleton
+        η.property)).toWeilDivisor =
       Finsupp.single η 1 := by
-  set hη := isEffectiveCartier_vanishingIdeal_closure_singleton η.2
+  set hη := isEffectiveCartier_vanishingIdeal_closure_singleton η.property
   refine WeilDivisor.ext fun y ↦ ?_
   obtain ⟨U, hyU, a, ha, hIa⟩ := (Scheme.IdealSheafData.isEffectiveCartier_iff _).mp hη y
-  have : Nonempty U.1 := ⟨⟨y, hyU⟩⟩
+  have : Nonempty U.val := ⟨⟨y, hyU⟩⟩
   have hfnz := isSMulRegular_iff_germToFunctionField_ne_zero.mp ha
-  let f : X.functionFieldˣ := Units.mk0 (X.germToFunctionField U.1 a) hfnz
+  let f : X.functionFieldˣ := Units.mk0 (X.germToFunctionField U.val a) hfnz
   rw [coeff_toWeilDivisor_eq_ord _ y hyU f (ofEffectiveCartier_restrict hη U ha hIa rfl).symm]
-  have hgerm_ne : X.presheaf.germ U.1 y hyU a ≠ 0 := fun h0 ↦
+  have hgerm_ne : X.presheaf.germ U.val y hyU a ≠ 0 := fun h0 ↦
     hfnz (by rw [← X.algebraMap_germ_eq_germToFunctionField hyU, h0, map_zero])
   have hmap : ((vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).ideal U).map
-      (X.presheaf.germ U.1 y hyU).hom = Ideal.span {X.presheaf.germ U.1 y hyU a} := by
+      (X.presheaf.germ U.val y hyU).hom = Ideal.span {X.presheaf.germ U.val y hyU a} := by
     rw [hIa, Ideal.map_span, Set.image_singleton]
   rw [Units.val_mk0, ← X.algebraMap_germ_eq_germToFunctionField hyU a]
   by_cases hyeq : η = y
   · subst hyeq
     rw [WeilDivisor.coeff, Finsupp.single_eq_same]
     rw [map_ideal_vanishingIdeal_closure_singleton_of_specializes hyU specializes_rfl] at hmap
-    exact ord_algebraMap_stalk_eq_one η.2 specializes_rfl hmap
+    exact ord_algebraMap_stalk_eq_one η.property specializes_rfl hmap
   · rw [WeilDivisor.coeff, Finsupp.single_eq_of_ne (Ne.symm hyeq)]
     have hnotsp : ¬ (η : X) ⤳ (y : X) := fun hsp ↦ hyeq (CodimensionOnePoint.eq_of_specializes hsp)
     rw [map_ideal_vanishingIdeal_closure_singleton_of_not_specializes hyU hnotsp] at hmap
-    exact (ord_algebraMap_stalk_eq_zero_iff y.2 specializes_rfl hgerm_ne).mpr fun hmem ↦
+    exact (ord_algebraMap_stalk_eq_zero_iff y.property specializes_rfl hgerm_ne).mpr fun hmem ↦
       (Ideal.comap_isPrime _ _).ne_top
         (Ideal.eq_top_of_isUnit_mem _ hmem (Ideal.span_singleton_eq_top.mp hmap.symm))
 
@@ -163,7 +164,8 @@ theorem toWeilDivisorHom_surjective : Function.Surjective (toWeilDivisorHom (X :
     obtain ⟨C₁, hC₁⟩ := h₁; obtain ⟨C₂, hC₂⟩ := h₂
     exact ⟨C₁ + C₂, by rw [map_add, hC₁, hC₂]⟩
   | single η n =>
-    exact ⟨n • ofEffectiveCartier (isEffectiveCartier_vanishingIdeal_closure_singleton η.2), by
+    exact ⟨n • ofEffectiveCartier (isEffectiveCartier_vanishingIdeal_closure_singleton η.property),
+        by
       rw [map_zsmul, toWeilDivisorHom_apply,
         toWeilDivisor_ofEffectiveCartier_vanishingIdeal_closure_singleton, Finsupp.smul_single,
         smul_eq_mul, mul_one]⟩
@@ -195,7 +197,7 @@ lemma toWeilDivisorAddEquiv_symm_toWeilDivisor (D : CartierDivisor X) :
 @[simp]
 lemma toWeilDivisorAddEquiv_symm_single (η : CodimensionOnePoint X) (n : ℤ) :
     (toWeilDivisorAddEquiv X).symm (Finsupp.single η n) =
-      n • ofEffectiveCartier (isEffectiveCartier_vanishingIdeal_closure_singleton η.2) :=
+      n • ofEffectiveCartier (isEffectiveCartier_vanishingIdeal_closure_singleton η.property) :=
   (toWeilDivisorAddEquiv X).injective <| by
     rw [AddEquiv.apply_symm_apply, toWeilDivisorAddEquiv_apply, ← toWeilDivisorHom_apply,
       map_zsmul, toWeilDivisorHom_apply,
@@ -206,7 +208,7 @@ lemma toWeilDivisorAddEquiv_symm_single (η : CodimensionOnePoint X) (n : ℤ) :
 `closure {η}`. -/
 lemma toWeilDivisorAddEquiv_symm_single_one (η : CodimensionOnePoint X) :
     (toWeilDivisorAddEquiv X).symm (Finsupp.single η 1) =
-      ofEffectiveCartier (isEffectiveCartier_vanishingIdeal_closure_singleton η.2) := by
+      ofEffectiveCartier (isEffectiveCartier_vanishingIdeal_closure_singleton η.property) := by
   rw [toWeilDivisorAddEquiv_symm_single, one_zsmul]
 
 /-- Applying `toWeilDivisorAddEquiv.symm` to a principal Weil divisor gives the corresponding
@@ -253,7 +255,7 @@ lemma weilToLineBundleClassHom_principalDivisor (g : Additive X.functionFieldˣ)
 theorem weilToLineBundleClassHom_single (η : CodimensionOnePoint X) (n : ℤ) :
     weilToLineBundleClassHom X (Finsupp.single η n) =
       n • Additive.ofMul (LineBundleClass.mk
-        (isEffectiveCartier_vanishingIdeal_closure_singleton η.2).toInvertibleSheaf)⁻¹ := by
+        (isEffectiveCartier_vanishingIdeal_closure_singleton η.property).toInvertibleSheaf)⁻¹ := by
   rw [weilToLineBundleClassHom_apply, toWeilDivisorAddEquiv_symm_single,
     ← toLineBundleClassHom_apply, map_zsmul, toLineBundleClassHom_apply,
     toLineBundleClass_ofEffectiveCartier]

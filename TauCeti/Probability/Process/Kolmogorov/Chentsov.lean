@@ -87,7 +87,7 @@ to `goodDyadicEvent X N γ` whenever `(γ : ℝ) < (q - 1) / p`. -/
 private lemma ae_mem_goodDyadicEvent {Ω E : Type*} {_ : MeasurableSpace Ω}
     [PseudoEMetricSpace E] {P : Measure Ω} {X : ℚ≥0 → Ω → E} {p q : ℝ} {M : ℝ≥0} {N : ℕ}
     {γ : ℝ≥0} (hγ : (γ : ℝ) < (q - 1) / p)
-    (hX : IsAEKolmogorovProcess (fun r : {r : ℚ≥0 // (r : ℝ≥0) ≤ N} ↦ X r.1) P p q M) :
+    (hX : IsAEKolmogorovProcess (fun r : {r : ℚ≥0 // (r : ℝ≥0) ≤ N} ↦ X r.val) P p q M) :
     ∀ᵐ ω ∂P, ω ∈ goodDyadicEvent X N γ := by
   have hp := hX.p_pos
   have hcard (n : ℕ) :
@@ -99,9 +99,9 @@ private lemma ae_mem_goodDyadicEvent {Ω E : Type*} {_ : MeasurableSpace Ω}
     exact le_rfl
   have hedge (n : ℕ) (i : Fin (N * 2 ^ n)) :
       edist
-        (⟨dyadicNNRat n i, coe_dyadicNNRat_le_natCast_iff.2 i.2.le⟩ :
+        (⟨dyadicNNRat n i, coe_dyadicNNRat_le_natCast_iff.2 i.isLt.le⟩ :
           {r : ℚ≥0 // (r : ℝ≥0) ≤ N})
-        (⟨dyadicNNRat n (i + 1), coe_dyadicNNRat_le_natCast_iff.2 i.2⟩ :
+        (⟨dyadicNNRat n (i + 1), coe_dyadicNNRat_le_natCast_iff.2 i.isLt⟩ :
           {r : ℚ≥0 // (r : ℝ≥0) ≤ N}) ≤ ((2⁻¹ : ℝ≥0) : ℝ≥0∞) ^ n := by
     rw [Subtype.edist_eq, ← NNRat.edist_cast_nnreal, edist_dyadicNNRat_succ]
     simp
@@ -202,7 +202,7 @@ private lemma continuous_dyadicExtension {Ω E : Type*}
     have hg_cont : Continuous g := (hg_h.uniformContinuous hγ₀_pos).continuous
     have hcon : ContinuousOn (dyadicExtension X G · ω) (Iic (N : ℝ≥0)) :=
       continuousOn_iff_continuous_domRestrict.mpr
-        (hg_cont.congr fun s ↦ (dyadicExtension_eq_of_mem hω hg_cont hg_d s.2).symm)
+        (hg_cont.congr fun s ↦ (dyadicExtension_eq_of_mem hω hg_cont hg_d s.property).symm)
     exact hcon.continuousAt (Iic_mem_nhds ht_lt)
   · have hconst : (dyadicExtension X G · ω) = fun _ ↦ X 0 ω :=
       funext fun t ↦ dyadicExtension_eq_of_notMem hω t
@@ -215,7 +215,7 @@ private lemma ae_eq_dyadicExtension_of_nnrat {Ω E : Type*} {_ : MeasurableSpace
     {p q : ℝ} {M : ℕ → ℝ≥0} {γ₀ : ℝ≥0} (hγ₀_pos : 0 < γ₀)
     {G : Set Ω} [DecidablePred (· ∈ G)] (hG_ae : ∀ᵐ ω ∂P, ω ∈ G)
     (hG_sub : ∀ ω ∈ G, ∀ N : ℕ, ω ∈ goodDyadicEvent X N γ₀)
-    (hX_loc : ∀ N : ℕ, IsAEKolmogorovProcess (fun r : {r : ℚ≥0 // (r : ℝ≥0) ≤ N} ↦ X r.1)
+    (hX_loc : ∀ N : ℕ, IsAEKolmogorovProcess (fun r : {r : ℚ≥0 // (r : ℝ≥0) ≤ N} ↦ X r.val)
       P p q (M N)) (r : ℚ≥0) :
     dyadicExtension X G r =ᵐ[P] X r := by
   let N := ⌈((r : ℝ≥0) : ℝ)⌉₊
@@ -301,11 +301,11 @@ theorem exists_continuous_extension_of_nnrat {Ω E : Type*} {_ : MeasurableSpace
   have hmeasX (r : ℚ≥0) : Measurable (X r) :=
     (measurable_fst.mono prod_le_borel_prod le_rfl).comp (hpair r r)
   have hX_loc (N : ℕ) :
-      IsAEKolmogorovProcess (fun r : {r : ℚ≥0 // (r : ℝ≥0) ≤ N} ↦ X r.1) P p q (M N) :=
+      IsAEKolmogorovProcess (fun r : {r : ℚ≥0 // (r : ℝ≥0) ≤ N} ↦ X r.val) P p q (M N) :=
     IsKolmogorovProcess.IsAEKolmogorovProcess
-      { measurablePair := fun r s ↦ hpair r.1 s.1
+      { measurablePair := fun r s ↦ hpair r.val s.val
         kolmogorovCondition := fun r s ↦ by
-          simpa [Subtype.edist_eq] using hkol N r.1 s.1 r.2 s.2
+          simpa [Subtype.edist_eq] using hkol N r.val s.val r.property s.property
         p_pos := hp
         q_pos := zero_lt_one.trans hq }
   -- Intersect `goodDyadicEvent X N (γSeq k)` along a sequence `γSeq k ↑ (q - 1) / p`.
@@ -457,12 +457,12 @@ theorem IsAEKolmogorovProcess.exists_continuous_modification
         ∃ C : ℝ≥0, HolderOnWith C γ (Y · ω) (Iic T)) :=
   TauCeti.exists_continuous_modification_of_local_isAEKolmogorovProcess (M := fun _ ↦ M) hq
     fun _ ↦
-      ⟨fun t ↦ hX.mk X t.1,
-        { measurablePair := fun s t ↦ hX.IsKolmogorovProcess_mk.measurablePair s.1 t.1
-          kolmogorovCondition := fun s t ↦ hX.IsKolmogorovProcess_mk.kolmogorovCondition s.1 t.1
+      ⟨fun t ↦ hX.mk X t.val,
+        { measurablePair := fun s t ↦ hX.IsKolmogorovProcess_mk.measurablePair s.val t.val
+          kolmogorovCondition := fun s t ↦ hX.IsKolmogorovProcess_mk.kolmogorovCondition s.val t.val
           p_pos := hX.p_pos
           q_pos := hX.q_pos },
-        fun t ↦ hX.ae_eq_mk t.1⟩
+        fun t ↦ hX.ae_eq_mk t.val⟩
 
 /-- **One-dimensional Kolmogorov–Chentsov theorem** for `IsKolmogorovProcess` on `ℝ≥0`. -/
 theorem IsKolmogorovProcess.exists_continuous_modification

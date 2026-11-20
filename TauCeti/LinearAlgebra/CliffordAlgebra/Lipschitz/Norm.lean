@@ -134,14 +134,14 @@ private theorem exists_lipschitzNormUnit (Q : QuadraticForm R V)
 
 private noncomputable def lipschitzNormUnit (Q : QuadraticForm R V)
     (x : lipschitzGroup Q) : Rˣ :=
-  Classical.choose (exists_lipschitzNormUnit Q x x.2)
+  Classical.choose (exists_lipschitzNormUnit Q x x.property)
 
 private theorem star_mul_self_eq_lipschitzNormUnit (Q : QuadraticForm R V)
     (x : lipschitzGroup Q) :
     star ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
         ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
       algebraMap R (CliffordAlgebra Q) (lipschitzNormUnit Q x : R) :=
-  (Classical.choose_spec (exists_lipschitzNormUnit Q x x.2)).1
+  (Classical.choose_spec (exists_lipschitzNormUnit Q x x.property)).1
 
 /-- The unit-valued Clifford norm on the Lipschitz group. -/
 noncomputable def lipschitzNorm (Q : QuadraticForm R V) : lipschitzGroup Q →* Rˣ where
@@ -187,7 +187,7 @@ theorem self_mul_star_eq_algebraMap_lipschitzNorm
     ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
         star ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
       algebraMap R (CliffordAlgebra Q) (lipschitzNorm Q x : R) :=
-  (Classical.choose_spec (exists_lipschitzNormUnit Q x x.2)).2
+  (Classical.choose_spec (exists_lipschitzNormUnit Q x x.property)).2
 
 /-- A generating vector has Clifford norm equal to the negative of its quadratic norm. -/
 @[simp]
@@ -213,7 +213,7 @@ theorem mem_pinGroup_iff_lipschitzNorm_eq_one (Q : QuadraticForm R V) (x : lipsc
   rw [pinGroup.units_mem_iff, Unitary.mem_iff, star_mul_self_eq_algebraMap_lipschitzNorm,
     self_mul_star_eq_algebraMap_lipschitzNorm, and_self, ← map_one (algebraMap R _),
     (algebraMap_injective Q).eq_iff, ← Units.val_one, Units.val_inj]
-  exact and_iff_right x.2
+  exact and_iff_right x.property
 
 /-- A Lipschitz element equal to a scalar unit has norm equal to the square of that scalar. -/
 theorem lipschitzNorm_eq_of_coe_eq_algebraMap {Q : QuadraticForm R V}

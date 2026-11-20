@@ -75,9 +75,9 @@ variable (D E : WeilDivisor X)
 
 /-- The presheaf of families of principal parts relative to `D` bounded by `E`. -/
 private def principalPartsPresheaf : TopCat.Presheaf (ModuleCat.{u} ℂ) (TopCat.of X) where
-  obj U := ModuleCat.of ℂ (∀ x : U.unop, boundedBy D E x.1)
+  obj U := ModuleCat.of ℂ (∀ x : U.unop, boundedBy D E x.val)
   map h := ModuleCat.ofHom
-    { toFun s x := s ⟨x.1, h.unop.le x.2⟩
+    { toFun s x := s ⟨x.val, h.unop.le x.property⟩
       map_add' _ _ := rfl
       map_smul' _ _ := rfl }
   map_id _ := rfl
@@ -96,7 +96,7 @@ def principalPartsSheaf : TopCat.Sheaf (ModuleCat.{u} ℂ) (TopCat.of X) where
 
 /-- Read a section of the principal-parts sheaf over `U` as a family of local principal parts. -/
 def principalPartsSheafSectionsEquiv (U : Opens X) :
-    (principalPartsSheaf D E).obj.obj (op U) ≃ₗ[ℂ] ∀ x : U, boundedBy D E x.1 :=
+    (principalPartsSheaf D E).obj.obj (op U) ≃ₗ[ℂ] ∀ x : U, boundedBy D E x.val :=
   LinearEquiv.refl ℂ _
 
 /-- Restriction of sections of the principal-parts sheaf is restriction of families. -/
@@ -104,7 +104,7 @@ def principalPartsSheafSectionsEquiv (U : Opens X) :
 theorem principalPartsSheafSectionsEquiv_map {U V : Opens X} (h : V ⟶ U)
     (s : (principalPartsSheaf D E).obj.obj (op U)) (x : V) :
     principalPartsSheafSectionsEquiv D E V ((principalPartsSheaf D E).obj.map h.op s) x =
-      principalPartsSheafSectionsEquiv D E U s ⟨x.1, h.le x.2⟩ := (rfl)
+      principalPartsSheafSectionsEquiv D E U s ⟨x.val, h.le x.property⟩ := (rfl)
 
 /-- The principal-parts sheaf is flasque: a family on a smaller open set extends by zero. -/
 instance isFlasque_principalPartsSheaf :
@@ -113,14 +113,14 @@ instance isFlasque_principalPartsSheaf :
     classical
     rw [ModuleCat.epi_iff_surjective]
     intro s
-    refine ⟨fun x ↦ if hx : x.1 ∈ V.unop then s ⟨x.1, hx⟩ else 0, ?_⟩
+    refine ⟨fun x ↦ if hx : x.val ∈ V.unop then s ⟨x.val, hx⟩ else 0, ?_⟩
     funext x
-    exact dite_eq_left x.2
+    exact dite_eq_left x.property
 
 /-- The principal parts of a section of `𝒪_E` relative to `D`. -/
 def divisorSections.principalParts (U : Opens X) :
-    divisorSections E U →ₗ[ℂ] ∀ x : U, boundedBy D E x.1 :=
-  LinearMap.pi fun x ↦ (((meromorphicGerms.orderGE (chartAt ℂ x.1 x.1) (-D x.1)).mkQ).comp
+    divisorSections E U →ₗ[ℂ] ∀ x : U, boundedBy D E x.val :=
+  LinearMap.pi fun x ↦ (((meromorphicGerms.orderGE (chartAt ℂ x.val x.val) (-D x.val)).mkQ).comp
     (divisorSections.toChartGerm E U x)).codRestrict _ fun f ↦
       mk_mem_boundedBy (divisorSections.toChartGerm_mem_orderGE f x)
 
@@ -128,7 +128,7 @@ def divisorSections.principalParts (U : Opens X) :
 @[simp]
 theorem divisorSections.coe_principalParts_apply (U : Opens X) (f : divisorSections E U)
     (x : U) :
-    (divisorSections.principalParts D E U f x : LocalPrincipalPart D x.1) =
+    (divisorSections.principalParts D E U f x : LocalPrincipalPart D x.val) =
       Submodule.Quotient.mk (divisorSections.toChartGerm E U x f) := (rfl)
 
 /-- The morphism `𝒪_E ⟶ 𝒫_{D,E}` taking principal parts relative to `D`. -/
@@ -140,17 +140,18 @@ def principalPartsMap : divisorSheaf E ⟶ principalPartsSheaf D E where
     apply LinearMap.ext
     intro f
     have hs : divisorSheafSectionsEquiv E V.unop ((divisorSheaf E).obj.map h f) =
-        ⟨(divisorSheafSectionsEquiv E U.unop f).1 ∘ Opens.inclusion h.unop.le,
-          comp_inclusion_mem_divisorSections h.unop.le (divisorSheafSectionsEquiv E U.unop f).2⟩ :=
+        ⟨(divisorSheafSectionsEquiv E U.unop f).val ∘ Opens.inclusion h.unop.le,
+          comp_inclusion_mem_divisorSections h.unop.le (divisorSheafSectionsEquiv E U.unop
+              f).property⟩ :=
       Subtype.ext (divisorSheafSectionsEquiv_map E h.unop f)
     funext x
     apply Subtype.ext
     -- Both sides are the class of a coordinate germ, which is unchanged by restriction.
     change (divisorSections.principalParts D E V.unop
         (divisorSheafSectionsEquiv E V.unop ((divisorSheaf E).obj.map h f)) x :
-          LocalPrincipalPart D x.1) =
+          LocalPrincipalPart D x.val) =
       (divisorSections.principalParts D E U.unop (divisorSheafSectionsEquiv E U.unop f)
-        ⟨x.1, h.unop.le x.2⟩ : LocalPrincipalPart D x.1)
+        ⟨x.val, h.unop.le x.property⟩ : LocalPrincipalPart D x.val)
     rw [hs, divisorSections.coe_principalParts_apply, divisorSections.coe_principalParts_apply,
       divisorSections.toChartGerm_restrict]
 
@@ -158,7 +159,7 @@ def principalPartsMap : divisorSheaf E ⟶ principalPartsSheaf D E where
 @[simp]
 theorem principalPartsMap_app_apply (U : Opens X) (f : (divisorSheaf E).obj.obj (op U)) (x : U) :
     (principalPartsSheafSectionsEquiv D E U ((principalPartsMap D E).hom.app (op U) f) x :
-        LocalPrincipalPart D x.1) =
+        LocalPrincipalPart D x.val) =
       Submodule.Quotient.mk (divisorSections.toChartGerm E U x
         (divisorSheafSectionsEquiv E U f)) := (rfl)
 
@@ -179,7 +180,7 @@ theorem divisorSheafMapOfLE_comp_principalPartsMap (h : D ≤ E) :
   -- The principal part of a section of `𝒪_D` is the class of a germ of order at least `-D x`.
   change (Submodule.Quotient.mk (divisorSections.toChartGerm E U.unop x
       (divisorSheafSectionsEquiv E U.unop ((divisorSheafMapOfLE h).hom.app U f))) :
-        LocalPrincipalPart D x.1) = 0
+        LocalPrincipalPart D x.val) = 0
   rw [divisorSections.toChartGerm_mapOfLE, Submodule.Quotient.mk_eq_zero]
   exact divisorSections.toChartGerm_mem_orderGE _ x
 
@@ -188,11 +189,11 @@ theorem divisorSheafMapOfLE_comp_principalPartsMap (h : D ≤ E) :
 private theorem neg_le_order_of_principalPartsMap_eq_zero {U : Opens X}
     (f : (divisorSheaf E).obj.obj (op U)) (hf : (principalPartsMap D E).hom.app (op U) f = 0)
     (y : U) :
-    ((-D y.1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt
-      (Subtype.val.extend (divisorSheafSectionsEquiv E U f).1 0) y.1 := by
+    ((-D y.val : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt
+      (Subtype.val.extend (divisorSheafSectionsEquiv E U f).val 0) y.val := by
   have hy : (Submodule.Quotient.mk (divisorSections.toChartGerm E U y
-      (divisorSheafSectionsEquiv E U f)) : LocalPrincipalPart D y.1) = 0 :=
-    congrArg (fun s ↦ (principalPartsSheafSectionsEquiv D E U s y : LocalPrincipalPart D y.1)) hf
+      (divisorSheafSectionsEquiv E U f)) : LocalPrincipalPart D y.val) = 0 :=
+    congrArg (fun s ↦ (principalPartsSheafSectionsEquiv D E U s y : LocalPrincipalPart D y.val)) hf
   rwa [Submodule.Quotient.mk_eq_zero, meromorphicGerms.mem_orderGE,
     divisorSections.order_toChartGerm] at hy
 
@@ -249,7 +250,7 @@ theorem principalPartsMap_isLocallySurjective :
   rw [TopCat.Presheaf.isLocallySurjective_iff]
   intro U t y hyU
   obtain ⟨φ, hφ, hφt⟩ :=
-    mem_boundedBy_iff.1 (principalPartsSheafSectionsEquiv D E U t ⟨y, hyU⟩).2
+    mem_boundedBy_iff.1 (principalPartsSheafSectionsEquiv D E U t ⟨y, hyU⟩).property
   obtain ⟨U₁, hy₁, f, hf⟩ := exists_section_toChartGerm_eq E y φ hφ
   let S : Set X := (((E - D).support.erase y : Finset X) : Set X)
   let V : Opens X := U ⊓ U₁ ⊓ ⟨Sᶜ, (Finset.finite_toSet _).isClosed.isOpen_compl⟩
@@ -257,40 +258,40 @@ theorem principalPartsMap_isLocallySurjective :
   have hV₁ : V ≤ U₁ := fun z hz ↦ hz.1.2
   have hyV : y ∈ V := ⟨⟨hyU, hy₁⟩, by simp [S]⟩
   refine ⟨V, hVU, ⟨(divisorSheafSectionsEquiv E V).symm
-    ⟨f.1 ∘ Opens.inclusion hV₁, comp_inclusion_mem_divisorSections hV₁ f.2⟩, ?_⟩, hyV⟩
+    ⟨f.val ∘ Opens.inclusion hV₁, comp_inclusion_mem_divisorSections hV₁ f.property⟩, ?_⟩, hyV⟩
   funext z
   apply Subtype.ext
   -- Pointwise, the principal part of the restricted representative is that of `t`.
   change (principalPartsSheafSectionsEquiv D E V ((principalPartsMap D E).hom.app (op V)
       ((divisorSheafSectionsEquiv E V).symm
-        ⟨f.1 ∘ Opens.inclusion hV₁, comp_inclusion_mem_divisorSections hV₁ f.2⟩)) z :
-        LocalPrincipalPart D z.1) =
-    (principalPartsSheafSectionsEquiv D E U t ⟨z.1, hVU z.2⟩ : LocalPrincipalPart D z.1)
+        ⟨f.val ∘ Opens.inclusion hV₁, comp_inclusion_mem_divisorSections hV₁ f.property⟩)) z :
+        LocalPrincipalPart D z.val) =
+    (principalPartsSheafSectionsEquiv D E U t ⟨z.val, hVU z.property⟩ : LocalPrincipalPart D z.val)
   rw [principalPartsMap_app_apply, LinearEquiv.apply_symm_apply,
-    divisorSections.toChartGerm_restrict hV₁ z.2]
-  by_cases hzy : z.1 = y
+    divisorSections.toChartGerm_restrict hV₁ z.property]
+  by_cases hzy : z.val = y
   · have key : ∀ (w : X) (_hw : w = y) (h₁ : w ∈ U₁) (h₂ : w ∈ U),
         (Submodule.Quotient.mk (divisorSections.toChartGerm E U₁ ⟨w, h₁⟩ f) :
           LocalPrincipalPart D w) = principalPartsSheafSectionsEquiv D E U t ⟨w, h₂⟩ := by
       rintro w rfl h₁ h₂
       rw [hf]
       exact hφt
-    exact key z.1 hzy _ _
-  · have hED : E z.1 ≤ D z.1 := by
+    exact key z.val hzy _ _
+  · have hED : E z.val ≤ D z.val := by
       by_contra hlt
-      have hmem : z.1 ∈ S := by
+      have hmem : z.val ∈ S := by
         simp only [S, Finset.coe_erase, Set.mem_sdiff, Finset.mem_coe, Finsupp.mem_support_iff,
           Finsupp.coe_sub, Pi.sub_apply, Set.mem_singleton_iff]
         exact ⟨sub_ne_zero.2 (ne_of_not_le hlt), hzy⟩
-      exact z.2.2 hmem
+      exact z.property.2 hmem
     have hb := boundedBy_eq_bot (D := D) hED
     have h₁ := mk_mem_boundedBy (D := D) (divisorSections.toChartGerm_mem_orderGE
-      (⟨f.1 ∘ Opens.inclusion hV₁, comp_inclusion_mem_divisorSections hV₁ f.2⟩ :
+      (⟨f.val ∘ Opens.inclusion hV₁, comp_inclusion_mem_divisorSections hV₁ f.property⟩ :
         divisorSections E V) z)
-    rw [divisorSections.toChartGerm_restrict hV₁ z.2, hb, Submodule.mem_bot] at h₁
-    have h₂ : (principalPartsSheafSectionsEquiv D E U t ⟨z.1, hVU z.2⟩ :
-        LocalPrincipalPart D z.1) ∈ boundedBy D E z.1 :=
-      (principalPartsSheafSectionsEquiv D E U t ⟨z.1, hVU z.2⟩).2
+    rw [divisorSections.toChartGerm_restrict hV₁ z.property, hb, Submodule.mem_bot] at h₁
+    have h₂ : (principalPartsSheafSectionsEquiv D E U t ⟨z.val, hVU z.property⟩ :
+        LocalPrincipalPart D z.val) ∈ boundedBy D E z.val :=
+      (principalPartsSheafSectionsEquiv D E U t ⟨z.val, hVU z.property⟩).property
     rw [h₁, (Submodule.eq_bot_iff _).1 hb _ h₂]
 
 /-- Taking principal parts is an epimorphism of sheaves. -/
@@ -311,9 +312,9 @@ variable (D E) in
 /-- Families of principal parts over the whole space, indexed by the open set `⊤` or by the
 points of `X`. -/
 def principalPartsTopEquiv :
-    (∀ x : (⊤ : Opens X), boundedBy D E x.1) ≃ₗ[ℂ] ∀ x : X, boundedBy D E x where
+    (∀ x : (⊤ : Opens X), boundedBy D E x.val) ≃ₗ[ℂ] ∀ x : X, boundedBy D E x where
   toFun s x := s ⟨x, trivial⟩
-  invFun μ x := μ x.1
+  invFun μ x := μ x.val
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl

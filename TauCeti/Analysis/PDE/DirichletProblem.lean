@@ -306,7 +306,7 @@ theorem forall_energyFormH1_eq_setIntegral_iff_forall_testFunction
         exact congrArg _ (W1p.valueL_apply v))
   have hmem := w1p0Submodule_subset_of_isClosed hclosed (fun φ =>
     ((energyFormH1L_apply hcoeff _ _).trans ((h φ).trans (htest φ).symm)).trans
-      (hforce ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).symm) v.2
+      (hforce ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).symm) v.property
   rw [← energyFormH1L_apply hcoeff, ← hforce v]
   exact hmem
 
@@ -456,7 +456,7 @@ theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq
   have hgw : g + (w : W1p mu Omega 2) - g = w := add_sub_cancel_left g _
   refine ⟨g + w, ⟨?_, (hsol _).2 fun v => ?_⟩, fun u ⟨hu, hu'⟩ => ?_⟩
   · rw [hgw, ← ClosedSubmodule.mem_toSubmodule_iff]
-    exact w.2
+    exact w.property
   · rw [hgw, ← hw v, energyFormH1L0_apply]
   · have hu₀ : u - g ∈ W1p0 mu Omega 2 := (ClosedSubmodule.mem_toSubmodule_iff _ _).2 hu
     have hw' : ∀ v : W1p0 mu Omega 2, energyFormH1L0 hcoeff ⟨u - g, hu₀⟩ v = ℓ' v := fun v =>
@@ -667,7 +667,7 @@ theorem UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_of_measure_ne_to
     ⟨_, ENNReal.mul_ne_top ENNReal.ofReal_ne_top
       (ENNReal.rpow_ne_top_of_nonneg (by rw [hfin, sub_zero]; positivity) hOmega), fun v =>
       W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (mu := mu) (q := 2)
-        ENNReal.ofNat_ne_top hOmega le_rfl (δ := 0) (by simp) (by rw [hfin]; positivity) v.2⟩
+        ENNReal.ofNat_ne_top hOmega le_rfl (δ := 0) (by simp) (by rw [hfin]; positivity) v.property⟩
   have hPR : ∀ v : W1p0 mu Omega 2,
       ‖W1p.value (v : W1p mu Omega 2)‖ ≤ P.toReal * ‖W1p.gradient (v : W1p mu Omega 2)‖ :=
     fun v => by
@@ -791,7 +791,7 @@ theorem existsUnique_isWeakSolutionDirichlet_of_subset_slab
       (sub_nonneg.2 (le_max_left s t)) hsmall')
     (fun w => mul_norm_sq_le_energyFormH1_self_of_subset_slab h ha hb hc
       (fun x hx => (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
-      (fun x hx => Icc_subset_Icc_right (le_max_right s t) (hslab x hx)) w.2) f
+      (fun x hx => Icc_subset_Icc_right (le_max_right s t) (hslab x hx)) w.property) f
 
 /-- **Coercivity on a domain inside a ball.** For `Ω ⊆ B(z, R) ⊆ ℝ^{n+1}` with a uniformly
 elliptic principal part, a drift bounded by `β`, a bounded nonnegative mass coefficient and the
@@ -818,7 +818,7 @@ theorem isCoercive_energyFormH1L0_of_subset_ball
     (energyFormH1_poincare_constant_pos (le_max_right beta 0) (by positivity) hsmall')
     fun w => mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc
       (fun x hx => (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
-      (hball.trans (Metric.ball_subset_ball (le_max_left R 0))) w.2
+      (hball.trans (Metric.ball_subset_ball (le_max_left R 0))) w.property
 
 /-- **Existence and uniqueness for a domain inside a ball.** For `Ω ⊆ B(z, R) ⊆ ℝ^{n+1}` with a
 uniformly elliptic principal part, a drift bounded by `β`, a bounded nonnegative mass

@@ -109,6 +109,6 @@ theorem LocallyFinite.locallyConnectedSpace_iUnion {X ι : Type*} [TopologicalSp
     ext ⟨y, hy⟩
     simp [sigmaToiUnion]
   rw [himage]
-  refine IsClosed.preimage continuous_subtype_val <|
+  refine IsClosed.preimage continuous_subtypeVal <|
     (hf.subset fun i => Subtype.coe_image_subset _ _).isClosed_iUnion fun i => ?_
-  exact (hs i).isClosedMap_subtype_val _ (isClosed_sigma_iff.1 hC i)
+  exact (hs i).isClosedMap_subtypeVal _ (isClosed_sigma_iff.1 hC i)

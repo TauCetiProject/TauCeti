@@ -96,7 +96,8 @@ the unique tangent vector `v` with `α(v) = 1` and `dα(v, w) = 0` for all `w �
 theorem IsContactForm.eq_reebVectorField_iff_kerDistribution (hα : α.IsContactForm) {x : M}
     {v : TangentSpace I x} :
     v = α.reebVectorField x ↔
-      α.1 x ![v] = 1 ∧ ∀ w : TangentSpace I x, α.1 x ![w] = 0 → mextDeriv α.1 x ![v, w] = 0 := by
+      α.val x ![v] = 1 ∧ ∀ w : TangentSpace I x, α.val x ![w] = 0 → mextDeriv α.val x ![v, w] = 0
+          := by
   rw [reebVectorField, characteristicVectorField_def,
     (isContactForm_def.1 hα x).eq_reebVector_iff]
   simp only [degreeOneEquiv_coe_apply, ← mextDeriv_eq_bilinFormAt]
@@ -104,25 +105,25 @@ theorem IsContactForm.eq_reebVectorField_iff_kerDistribution (hα : α.IsContact
 /-- A contact form takes the value `1` on its Reeb vector field. -/
 @[simp]
 theorem IsContactForm.apply_reebVectorField (hα : α.IsContactForm) (x : M) :
-    α.1 x ![α.reebVectorField x] = 1 :=
+    α.val x ![α.reebVectorField x] = 1 :=
   apply_characteristicVectorField (isContactForm_def.1 hα x)
 
 /-- The Reeb vector field lies in the kernel of `dα`: `ι_(R_α) dα = 0`. -/
 @[simp]
 theorem IsContactForm.mextDeriv_reebVectorField_left (hα : α.IsContactForm) (x : M)
-    (w : TangentSpace I x) : mextDeriv α.1 x ![α.reebVectorField x, w] = 0 :=
+    (w : TangentSpace I x) : mextDeriv α.val x ![α.reebVectorField x, w] = 0 :=
   hα.isStableHamiltonian.mextDeriv_characteristicVectorField_left x w
 
 /-- The Reeb vector field lies in the kernel of `dα`: `dα` vanishes when its second argument is
 the Reeb vector field. -/
 @[simp]
 theorem IsContactForm.mextDeriv_reebVectorField_right (hα : α.IsContactForm) (x : M)
-    (w : TangentSpace I x) : mextDeriv α.1 x ![w, α.reebVectorField x] = 0 :=
+    (w : TangentSpace I x) : mextDeriv α.val x ![w, α.reebVectorField x] = 0 :=
   hα.isStableHamiltonian.mextDeriv_characteristicVectorField_right x w
 
 /-- The second Reeb equation as an identity of one-forms: `ι_(R_α) dα = 0`. -/
 theorem IsContactForm.interior_mextDeriv_reebVectorField (hα : α.IsContactForm) :
-    (mextDeriv α.1).interior α.reebVectorField = 0 :=
+    (mextDeriv α.val).interior α.reebVectorField = 0 :=
   hα.isStableHamiltonian.interior_mextDeriv_characteristicVectorField
 
 /-- **Characterization of the Reeb vector field**: `R_α(x)` is the unique tangent vector `v` with
@@ -130,7 +131,7 @@ theorem IsContactForm.interior_mextDeriv_reebVectorField (hα : α.IsContactForm
 theorem IsContactForm.eq_reebVectorField_iff (hα : α.IsContactForm) {x : M}
     {v : TangentSpace I x} :
     v = α.reebVectorField x ↔
-      α.1 x ![v] = 1 ∧ ∀ w : TangentSpace I x, mextDeriv α.1 x ![v, w] = 0 := by
+      α.val x ![v] = 1 ∧ ∀ w : TangentSpace I x, mextDeriv α.val x ![v, w] = 0 := by
   rw [reebVectorField, eq_characteristicVectorField_iff (isContactForm_def.1 hα x),
     mextDerivₗ_apply]
 
@@ -157,12 +158,12 @@ function `f`, `C¹` at `x`. Then `R_β(x) = R_α(x) / f(x) + y` exactly when `y`
 junk values `0⁻¹ = 0` and `df(w) / 0 = 0`. -/
 theorem IsContactForm.reebVectorField_eq_inv_smul_add_iff (hα : α.IsContactForm)
     {β : SmoothForm I M ℝ 1} {f : M → ℝ} {x : M} (hf : ContMDiffAt I 𝓘(ℝ, ℝ) 1 f x)
-    (hβ : ∀ y, β.1 y = f y • α.1 y) (y : TangentSpace I x) :
+    (hβ : ∀ y, β.val y = f y • α.val y) (y : TangentSpace I x) :
     β.reebVectorField x = (f x)⁻¹ • α.reebVectorField x + y ↔
-      α.1 x ![y] = 0 ∧ ∀ w : TangentSpace I x, α.1 x ![w] = 0 →
-        mextDeriv α.1 x ![y, w] = mvfderiv I f x w / f x ^ 2 := by
+      α.val x ![y] = 0 ∧ ∀ w : TangentSpace I x, α.val x ![w] = 0 →
+        mextDeriv α.val x ![y, w] = mvfderiv I f x w / f x ^ 2 := by
   set a := (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
-  have ha : ∀ v, a v = α.1 x ![v] := degreeOneEquiv_coe_apply α x
+  have ha : ∀ v, a v = α.val x ![v] := degreeOneEquiv_coe_apply α x
   have hb : (degreeOneEquiv β x : TangentSpace I x →ₗ[ℝ] ℝ) = f x • a := by
     ext v
     rw [degreeOneEquiv_coe_apply, hβ, LinearMap.smul_apply, ContinuousAlternatingMap.smul_apply,
@@ -172,7 +173,7 @@ theorem IsContactForm.reebVectorField_eq_inv_smul_add_iff (hα : α.IsContactFor
       f x * (mextDerivₗ I 1 α).bilinFormAt x v w -
         (mvfderiv I f x : TangentSpace I x →ₗ[ℝ] ℝ) w * a v := by
     intro v w hw
-    have hβ' : β.1 = fun y ↦ f y • α.1 y := funext hβ
+    have hβ' : β.val = fun y ↦ f y • α.val y := funext hβ
     rw [ha] at hw
     simp only [← mextDeriv_eq_bilinFormAt, hβ', mextDeriv_fun_smul_apply
       (hf.mdifferentiableAt one_ne_zero) (α.mdifferentiableAt x), hw, ha,

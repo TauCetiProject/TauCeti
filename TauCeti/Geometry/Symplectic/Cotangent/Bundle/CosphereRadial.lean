@@ -85,20 +85,20 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- The covector of norm one on the ray of a covector `q` (`NormedSpace.normalize` on fibres). -/
 private def normalize (q : CotangentBundle J N) : CotangentBundle J N :=
-  TotalSpace.mk' (F →L[ℝ] ℝ) q.proj (NormedSpace.normalize q.2)
+  TotalSpace.mk' (F →L[ℝ] ℝ) q.proj (NormedSpace.normalize q.snd)
 
 /-- The normalization of a covector other than zero has norm one. -/
-private theorem norm_snd_normalize {q : CotangentBundle J N} (hq : q.2 ≠ 0) :
-    ‖(normalize q).2‖ = 1 :=
+private theorem norm_snd_normalize {q : CotangentBundle J N} (hq : q.snd ≠ 0) :
+    ‖(normalize q).snd‖ = 1 :=
   NormedSpace.norm_normalize (V := TangentSpace J q.proj →L[ℝ] ℝ) hq
 
 /-- Normalization only depends on the ray of a covector. -/
 private theorem normalize_mk_smul (q : CotangentBundle J N) {c : ℝ} (hc : 0 < c) :
-    normalize (TotalSpace.mk' (F →L[ℝ] ℝ) q.proj (c • q.2)) = normalize q := by
+    normalize (TotalSpace.mk' (F →L[ℝ] ℝ) q.proj (c • q.snd)) = normalize q := by
   simp only [normalize, NormedSpace.normalize_smul_of_pos hc]
 
 /-- A covector of norm one is its own normalization. -/
-private theorem normalize_of_norm_eq_one {q : CotangentBundle J N} (hq : ‖q.2‖ = 1) :
+private theorem normalize_of_norm_eq_one {q : CotangentBundle J N} (hq : ‖q.snd‖ = 1) :
     normalize q = q := by
   rw [normalize, NormedSpace.normalize_eq_self_of_norm_eq_one hq]
 
@@ -120,33 +120,34 @@ variable [IsManifold I 2 M] [IsManifold J 2 N]
 /-- Normalizing before a cotangent lift does not change the normalized lift, since the lift is
 linear on fibres. -/
 private theorem normalize_cotangent_normalize (h : M ≃ₘ⟮I, J⟯ N) {q : CotangentBundle I M}
-    (hq : q.2 ≠ 0) : normalize (h.cotangent (normalize q)) = normalize (h.cotangent q) := by
+    (hq : q.snd ≠ 0) : normalize (h.cotangent (normalize q)) = normalize (h.cotangent q) := by
   rw [normalize.eq_1 q, NormedSpace.normalize, cotangent_mk_smul,
-    normalize_mk_smul (h.cotangent q) (c := ‖q.2‖⁻¹) (inv_pos.2 ((norm_pos_iff (a := q.2)).2 hq))]
+    normalize_mk_smul (h.cotangent q) (c := ‖q.snd‖⁻¹) (inv_pos.2 ((norm_pos_iff (a
+        := q.snd)).2 hq))]
 
 /-- The cotangent lift of a covector of norm one, normalized to norm one. -/
 private def cosphereRadialMap (h : M ≃ₘ⟮I, J⟯ N) (z : cosphereBundle I M) : cosphereBundle J N :=
-  ⟨normalize (h.cotangent z.1), norm_snd_normalize
-    ((h.cotangent_snd_eq_zero_iff).not.2 (snd_ne_zero_of_mem_cosphereBundle z.2))⟩
+  ⟨normalize (h.cotangent z.val), norm_snd_normalize
+    ((h.cotangent_snd_eq_zero_iff).not.2 (snd_ne_zero_of_mem_cosphereBundle z.property))⟩
 
 private theorem coe_cosphereRadialMap (h : M ≃ₘ⟮I, J⟯ N) (z : cosphereBundle I M) :
-    (cosphereRadialMap h z : CotangentBundle J N) = normalize (h.cotangent z.1) :=
+    (cosphereRadialMap h z : CotangentBundle J N) = normalize (h.cotangent z.val) :=
   (rfl)
 
 private theorem cosphereRadialMap_symm_cosphereRadialMap (h : M ≃ₘ⟮I, J⟯ N)
     (z : cosphereBundle I M) : cosphereRadialMap h.symm (cosphereRadialMap h z) = z := by
-  have hz : (h.cotangent z.1).2 ≠ 0 :=
-    (h.cotangent_snd_eq_zero_iff).not.2 (snd_ne_zero_of_mem_cosphereBundle z.2)
+  have hz : (h.cotangent z.val).snd ≠ 0 :=
+    (h.cotangent_snd_eq_zero_iff).not.2 (snd_ne_zero_of_mem_cosphereBundle z.property)
   apply Subtype.ext
   -- Lifting back the normalized covector gives a positive multiple of `z`, by fibre linearity.
   rw [coe_cosphereRadialMap, coe_cosphereRadialMap, normalize_cotangent_normalize _ hz,
-    ← cotangent_symm, symm_apply_apply, normalize_of_norm_eq_one z.2]
+    ← cotangent_symm, symm_apply_apply, normalize_of_norm_eq_one z.property]
 
 /-- The scale `‖T*h(z)‖⁻¹` of the radial identification is positive. -/
 private theorem inv_norm_cotangent_snd_pos (h : M ≃ₘ⟮I, J⟯ N) (z : cosphereBundle I M) :
-    0 < ‖(h.cotangent z.1).2‖⁻¹ :=
-  inv_pos.2 ((norm_pos_iff (a := (h.cotangent z.1).2)).2
-    ((h.cotangent_snd_eq_zero_iff).not.2 (snd_ne_zero_of_mem_cosphereBundle z.2)))
+    0 < ‖(h.cotangent z.val).snd‖⁻¹ :=
+  inv_pos.2 ((norm_pos_iff (a := (h.cotangent z.val).snd)).2
+    ((h.cotangent_snd_eq_zero_iff).not.2 (snd_ne_zero_of_mem_cosphereBundle z.property)))
 
 end Map
 
@@ -160,17 +161,17 @@ private theorem contMDiff_cosphereRadialMap (h : M ≃ₘ⟮I, J⟯ N) :
       𝓘(ℝ, Fin (finrank ℝ (F × (F →L[ℝ] ℝ)) - 1) → ℝ) ∞ (cosphereRadialMap h) := by
   have : IsManifold J (∞ + 1) N := IsManifold.of_le (n := ∞) (by simp)
   have hψ : ContMDiff 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞
-      fun z : cosphereBundle I M ↦ h.cotangent z.1 :=
+      fun z : cosphereBundle I M ↦ h.cotangent z.val :=
     h.cotangent.contMDiff.comp isSmoothEmbedding_coe_cosphereBundle.contMDiff
   have hc : ContMDiff 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) 𝓘(ℝ) ∞
-      fun z : cosphereBundle I M ↦ ‖(h.cotangent z.1).2‖⁻¹ := fun z ↦ by
-    have hz : (h.cotangent z.1).2 ≠ 0 :=
-      (h.cotangent_snd_eq_zero_iff).not.2 (snd_ne_zero_of_mem_cosphereBundle z.2)
+      fun z : cosphereBundle I M ↦ ‖(h.cotangent z.val).snd‖⁻¹ := fun z ↦ by
+    have hz : (h.cotangent z.val).snd ≠ 0 :=
+      (h.cotangent_snd_eq_zero_iff).not.2 (snd_ne_zero_of_mem_cosphereBundle z.property)
     have hn : ContMDiffAt 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) 𝓘(ℝ) ∞
-        (fun z : cosphereBundle I M ↦ ‖(h.cotangent z.1).2‖) z :=
-      ContMDiffAt.comp (g := fun q : CotangentBundle J N ↦ ‖q.2‖) z
+        (fun z : cosphereBundle I M ↦ ‖(h.cotangent z.val).snd‖) z :=
+      ContMDiffAt.comp (g := fun q : CotangentBundle J N ↦ ‖q.snd‖) z
         (contMDiffAt_norm_snd (n := ∞) hz) (hψ z)
-    exact hn.inv₀ ((norm_ne_zero_iff (a := (h.cotangent z.1).2)).2 hz)
+    exact hn.inv₀ ((norm_ne_zero_iff (a := (h.cotangent z.val).snd)).2 hz)
   have hval := hc.smul_totalSpace hψ
   exact (ContMDiff.iff_comp_isImmersion isSmoothEmbedding_coe_cosphereBundle.isImmersion).2
     ⟨hval.continuous.subtype_mk _, hval⟩
@@ -190,20 +191,21 @@ def cosphereRadial (h : M ≃ₘ⟮I, J⟯ N) :
   contMDiff_invFun := contMDiff_cosphereRadialMap h.symm
 
 private theorem coe_cosphereRadial_eq_normalize (h : M ≃ₘ⟮I, J⟯ N) (z : cosphereBundle I M) :
-    (h.cosphereRadial z : CotangentBundle J N) = normalize (h.cotangent z.1) :=
+    (h.cosphereRadial z : CotangentBundle J N) = normalize (h.cotangent z.val) :=
   (rfl)
 
 /-- The radial identification divides the cotangent lift of a unit covector by its norm. -/
 theorem coe_cosphereRadial_apply (h : M ≃ₘ⟮I, J⟯ N) (z : cosphereBundle I M) :
     (h.cosphereRadial z : CotangentBundle J N) =
-      TotalSpace.mk' (F →L[ℝ] ℝ) (h z.1.proj) (‖(h.cotangent z.1).2‖⁻¹ • (h.cotangent z.1).2) :=
-  CotangentBundle.ext (proj_cotangent h z.1) fun _ ↦ rfl
+      TotalSpace.mk' (F →L[ℝ] ℝ) (h z.val.proj) (‖(h.cotangent z.val).snd‖⁻¹ •
+          (h.cotangent z.val).snd) :=
+  CotangentBundle.ext (proj_cotangent h z.val) fun _ ↦ rfl
 
 /-- The radial identification covers the diffeomorphism of the bases. -/
 @[simp]
 theorem proj_cosphereRadial (h : M ≃ₘ⟮I, J⟯ N) (z : cosphereBundle I M) :
-    (h.cosphereRadial z).1.proj = h z.1.proj :=
-  proj_cotangent h z.1
+    (h.cosphereRadial z).val.proj = h z.val.proj :=
+  proj_cotangent h z.val
 
 /-- The inverse of the radial identification along `h` is the radial identification along the
 inverse of `h`. -/
@@ -218,7 +220,7 @@ theorem cosphereRadial_refl :
     (Diffeomorph.refl I M ∞).cosphereRadial =
       Diffeomorph.refl 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) (cosphereBundle I M) ∞ :=
   Diffeomorph.ext fun z ↦ Subtype.ext <| by
-    simpa [coe_cosphereRadial_eq_normalize] using normalize_of_norm_eq_one z.2
+    simpa [coe_cosphereRadial_eq_normalize] using normalize_of_norm_eq_one z.property
 
 /-- Radial identification is functorial: along a composite it is the composite of the radial
 identifications. -/
@@ -233,7 +235,7 @@ theorem cosphereRadial_trans {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ
   Diffeomorph.ext fun z ↦ Subtype.ext <| by
     simp only [Diffeomorph.coe_trans, Function.comp_apply, coe_cosphereRadial_eq_normalize]
     rw [normalize_cotangent_normalize _
-      ((h.cotangent_snd_eq_zero_iff).not.2 (snd_ne_zero_of_mem_cosphereBundle z.2))]
+      ((h.cotangent_snd_eq_zero_iff).not.2 (snd_ne_zero_of_mem_cosphereBundle z.property))]
     simp
 
 section CotangentCoe
@@ -244,7 +246,7 @@ omit [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [FiniteDimensional ℝ 
 /-- The cotangent lift restricted to the unit cosphere bundle, as a smooth map. -/
 private theorem contMDiff_cotangent_coe (h : M ≃ₘ⟮I, J⟯ N) :
     ContMDiff 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞
-      fun y : cosphereBundle I M ↦ h.cotangent y.1 :=
+      fun y : cosphereBundle I M ↦ h.cotangent y.val :=
   h.cotangent.contMDiff.comp isSmoothEmbedding_coe_cosphereBundle.contMDiff
 
 /-- The Liouville form of `T*N` pulled back to `S*M` along the cotangent lift is the Liouville
@@ -266,13 +268,13 @@ private theorem mpullback_coe_comp_cosphereRadial_liouvilleForm_apply (h : M ≃
     (z : cosphereBundle I M) :
     (SmoothForm.mpullback (Subtype.val ∘ h.cosphereRadial)
         ((isSmoothEmbedding_coe_cosphereBundle (I := J) (M := N)).contMDiff.comp
-          h.cosphereRadial.contMDiff) (liouvilleForm J N)).1 z =
-      ‖(h.cotangent z.1).2‖⁻¹ •
+          h.cosphereRadial.contMDiff) (liouvilleForm J N)).val z =
+      ‖(h.cotangent z.val).snd‖⁻¹ •
         (SmoothForm.mpullback (Subtype.val : cosphereBundle I M → CotangentBundle I M)
-          isSmoothEmbedding_coe_cosphereBundle.contMDiff (liouvilleForm I M)).1 z := by
+          isSmoothEmbedding_coe_cosphereBundle.contMDiff (liouvilleForm I M)).val z := by
   rw [← mpullback_cotangent_coe_liouvilleForm h]
   exact mpullback_liouvilleForm_apply_of_eq_smul _ (contMDiff_cotangent_coe h)
-    (fun y ↦ ‖(h.cotangent y.1).2‖⁻¹) (coe_cosphereRadial_eq_normalize h) z
+    (fun y ↦ ‖(h.cotangent y.val).snd‖⁻¹) (coe_cosphereRadial_eq_normalize h) z
 
 /-- **The radial identification rescales the contact form `λ|S*`.** It pulls the restriction of
 the Liouville form of `T*N` to `S*N` back to the restriction of the Liouville form of `T*M` to
@@ -281,10 +283,10 @@ theorem mpullback_cosphereRadial_liouvilleForm_apply (h : M ≃ₘ⟮I, J⟯ N)
     (z : cosphereBundle I M) :
     (SmoothForm.mpullback h.cosphereRadial h.cosphereRadial.contMDiff
         (SmoothForm.mpullback (Subtype.val : cosphereBundle J N → CotangentBundle J N)
-          isSmoothEmbedding_coe_cosphereBundle.contMDiff (liouvilleForm J N))).1 z =
-      ‖(h.cotangent z.1).2‖⁻¹ •
+          isSmoothEmbedding_coe_cosphereBundle.contMDiff (liouvilleForm J N))).val z =
+      ‖(h.cotangent z.val).snd‖⁻¹ •
         (SmoothForm.mpullback (Subtype.val : cosphereBundle I M → CotangentBundle I M)
-          isSmoothEmbedding_coe_cosphereBundle.contMDiff (liouvilleForm I M)).1 z := by
+          isSmoothEmbedding_coe_cosphereBundle.contMDiff (liouvilleForm I M)).val z := by
   rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
   exact mpullback_coe_comp_cosphereRadial_liouvilleForm_apply h z
 
@@ -294,10 +296,10 @@ theorem mpullback_cosphereRadial_neg_liouvilleForm_apply (h : M ≃ₘ⟮I, J⟯
     (z : cosphereBundle I M) :
     (SmoothForm.mpullback h.cosphereRadial h.cosphereRadial.contMDiff
         (SmoothForm.mpullback (Subtype.val : cosphereBundle J N → CotangentBundle J N)
-          isSmoothEmbedding_coe_cosphereBundle.contMDiff (-liouvilleForm J N))).1 z =
-      ‖(h.cotangent z.1).2‖⁻¹ •
+          isSmoothEmbedding_coe_cosphereBundle.contMDiff (-liouvilleForm J N))).val z =
+      ‖(h.cotangent z.val).snd‖⁻¹ •
         (SmoothForm.mpullback (Subtype.val : cosphereBundle I M → CotangentBundle I M)
-          isSmoothEmbedding_coe_cosphereBundle.contMDiff (-liouvilleForm I M)).1 z := by
+          isSmoothEmbedding_coe_cosphereBundle.contMDiff (-liouvilleForm I M)).val z := by
   simp only [map_neg]
   exact (congrArg Neg.neg (mpullback_cosphereRadial_liouvilleForm_apply h z)).trans
     (smul_neg _ _).symm
@@ -324,9 +326,9 @@ theorem pos_mpullback_cosphereRadial_liouvilleForm_iff (h : M ≃ₘ⟮I, J⟯ N
     (v : TangentSpace 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) z) :
     0 < (SmoothForm.mpullback h.cosphereRadial h.cosphereRadial.contMDiff
         (SmoothForm.mpullback (Subtype.val : cosphereBundle J N → CotangentBundle J N)
-          isSmoothEmbedding_coe_cosphereBundle.contMDiff (liouvilleForm J N))).1 z ![v] ↔
+          isSmoothEmbedding_coe_cosphereBundle.contMDiff (liouvilleForm J N))).val z ![v] ↔
       0 < (SmoothForm.mpullback (Subtype.val : cosphereBundle I M → CotangentBundle I M)
-        isSmoothEmbedding_coe_cosphereBundle.contMDiff (liouvilleForm I M)).1 z ![v] := by
+        isSmoothEmbedding_coe_cosphereBundle.contMDiff (liouvilleForm I M)).val z ![v] := by
   rw [mpullback_cosphereRadial_liouvilleForm_apply, ContinuousAlternatingMap.smul_apply,
     smul_eq_mul, mul_pos_iff_of_pos_left (inv_norm_cotangent_snd_pos h z)]
 
@@ -336,9 +338,9 @@ theorem pos_mpullback_cosphereRadial_neg_liouvilleForm_iff (h : M ≃ₘ⟮I, J�
     (v : TangentSpace 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) z) :
     0 < (SmoothForm.mpullback h.cosphereRadial h.cosphereRadial.contMDiff
         (SmoothForm.mpullback (Subtype.val : cosphereBundle J N → CotangentBundle J N)
-          isSmoothEmbedding_coe_cosphereBundle.contMDiff (-liouvilleForm J N))).1 z ![v] ↔
+          isSmoothEmbedding_coe_cosphereBundle.contMDiff (-liouvilleForm J N))).val z ![v] ↔
       0 < (SmoothForm.mpullback (Subtype.val : cosphereBundle I M → CotangentBundle I M)
-        isSmoothEmbedding_coe_cosphereBundle.contMDiff (-liouvilleForm I M)).1 z ![v] := by
+        isSmoothEmbedding_coe_cosphereBundle.contMDiff (-liouvilleForm I M)).val z ![v] := by
   rw [mpullback_cosphereRadial_neg_liouvilleForm_apply, ContinuousAlternatingMap.smul_apply,
     smul_eq_mul, mul_pos_iff_of_pos_left (inv_norm_cotangent_snd_pos h z)]
 
