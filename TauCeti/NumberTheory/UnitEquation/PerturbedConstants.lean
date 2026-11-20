@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 public import TauCeti.NumberTheory.Height.ScalarSum
 
 /-!
@@ -42,12 +43,6 @@ open Real
 
 namespace TauCeti
 
-/-- A natural power of a nonnegative real number is at most the exponential of the exponent
-times the base. -/
-private lemma pow_le_exp_mul {x : ℝ} (hx : 0 ≤ x) (k : ℕ) : x ^ k ≤ exp (k * x) := by
-  rw [exp_nat_mul]
-  exact pow_le_pow_left₀ hx (by linarith [add_one_le_exp x]) k
-
 /-- `(5n)^(3n) = (5/4)^(3n) (4n)^(3n)`. -/
 private lemma five_mul_pow_eq (n : ℕ) :
     (5 * n : ℝ) ^ (3 * n) = (5 / 4 : ℝ) ^ (3 * n) * (4 * n : ℝ) ^ (3 * n) := by
@@ -69,7 +64,9 @@ private lemma sub_one_mul_pow_le_five_mul_pow_sub {k n : ℕ} (hn : 1 ≤ n) (hk
 private lemma four_mul_pow_add_le_five_mul_pow {n : ℕ} (hn : 2 ≤ n) :
     (4 * n : ℝ) ^ (3 * n) + 4096 * (n : ℝ) ^ 6 ≤ (5 * n : ℝ) ^ (3 * n) := by
   have h := sub_one_mul_pow_le_five_mul_pow_sub (k := 2) (by omega) hn
-  rw [show ((5 / 4 : ℝ) ^ (3 * 2) - 1) * (4 * n : ℝ) ^ (3 * 2) = 11529 * (n : ℝ) ^ 6 by ring] at h
+  -- Evaluate the constant: `((5/4)^6 - 1) 4^6 = 5^6 - 4^6 = 11529`.
+  have hc : ((5 / 4 : ℝ) ^ (3 * 2) - 1) * (4 * n : ℝ) ^ (3 * 2) = 11529 * (n : ℝ) ^ 6 := by ring
+  rw [hc] at h
   nlinarith [pow_nonneg (Nat.cast_nonneg n : (0 : ℝ) ≤ n) 6]
 
 /-- For `n ≥ 1`, the perturbation budget `exp(-(5n)^(3n)) (1 + 4 n log n)` is less than
@@ -84,7 +81,9 @@ theorem exp_neg_mul_one_add_mul_log_lt_inv {n : ℕ} (hn : 1 ≤ n) :
     mul_le_mul_of_nonneg_left (log_le_sub_one_of_pos (by linarith)) (by linarith)
   have hAB : 61 * (n : ℝ) ^ 3 ≤ A - B := by
     have h := sub_one_mul_pow_le_five_mul_pow_sub (k := 1) hn hn
-    rwa [show ((5 / 4 : ℝ) ^ (3 * 1) - 1) * (4 * n : ℝ) ^ (3 * 1) = 61 * (n : ℝ) ^ 3 by ring] at h
+    -- Evaluate the constant: `((5/4)^3 - 1) 4^3 = 5^3 - 4^3 = 61`.
+    have hc : ((5 / 4 : ℝ) ^ (3 * 1) - 1) * (4 * n : ℝ) ^ (3 * 1) = 61 * (n : ℝ) ^ 3 := by ring
+    rwa [hc] at h
   have hkey : 2 * (1 + 4 * n * log n) < exp (A - B) := by
     have hpoly : 2 * (1 + 4 * n * log n) < A - B := by
       obtain ⟨t, ht, ht'⟩ : ∃ t : ℝ, 0 ≤ t ∧ (n : ℝ) = 1 + t := ⟨n - 1, by linarith, by ring⟩
@@ -176,7 +175,9 @@ theorem two_pow_mul_pow_add_two_pow_add_exp_mul_pow_lt_exp {n : ℕ} (hn : 2 ≤
       (pow_nonneg hb _) (exp_pos _).le).trans ?_
     rw [← exp_add, exp_le_exp]
     push_cast
-    nlinarith [mul_le_mul_of_nonneg_left (show 8 * N ^ 2 + 2 * N ≤ A by nlinarith) hR]
+    -- The base `8n² + 2n` is at most `A`, so its `r`-fold contribution is at most `r A`.
+    have hbA : 8 * N ^ 2 + 2 * N ≤ A := by nlinarith
+    nlinarith [mul_le_mul_of_nonneg_left hbA hR]
   have h₂ : (2 : ℝ) ^ n ≤ exp M := by
     refine (pow_le_exp_mul zero_le_two n).trans (exp_le_exp.2 ?_)
     nlinarith
@@ -186,7 +187,9 @@ theorem two_pow_mul_pow_add_two_pow_add_exp_mul_pow_lt_exp {n : ℕ} (hn : 2 ≤
     refine (mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right (pow_le_exp_mul hb r)
       (exp_pos _).le) (exp_pos _).le).trans ?_
     rw [← exp_add, ← exp_add, exp_le_exp]
-    nlinarith [mul_le_mul_of_nonneg_left (show 16 * N ^ 3 + B ≤ A by nlinarith) hR]
+    -- Each of the `r` factors `16 n³ q₀` has logarithm at most `16 n³ + B ≤ A`.
+    have hbA : 16 * N ^ 3 + B ≤ A := by nlinarith
+    nlinarith [mul_le_mul_of_nonneg_left hbA hR]
   -- Three terms of size at most `exp M` sum to less than `exp (M + 2)`.
   have h3 : 3 * exp M < exp (A * (R + 1)) := by
     have : exp (A * (R + 1)) = exp 2 * exp M := by rw [← exp_add, hM]; ring_nf
