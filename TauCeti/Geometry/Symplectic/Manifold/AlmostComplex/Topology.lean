@@ -205,7 +205,7 @@ theorem isClosed_setOf_invariant_frameTopology (hcover : ∀ x, ∃ i, x ∈ U i
   have hw : Continuous (fun J : SmoothAlmostComplexStructure I M ↦ J x w) :=
     (continuous_eval_const w).comp hx
   simp only [SmoothBundleForm.eval₂_apply]
-  exact (form.1 x).coe_continuous.comp (continuous_pi fun k ↦ by fin_cases k <;> simpa)
+  exact (form.val x).coe_continuous.comp (continuous_pi fun k ↦ by fin_cases k <;> simpa)
 
 /-- For a covering frame system, the compatible structures form a closed subspace of the space of
 tame smooth almost complex structures with the `C^∞` topology. -/
@@ -214,7 +214,7 @@ theorem isClosed_setOf_invariant_tames_frameTopology (hcover : ∀ x, ∃ i, x �
     let _ := SmoothAlmostComplexStructure.frameTopology e U hU
     IsClosed {J : {J : SmoothAlmostComplexStructure I M // form.Tames J} | form.Invariant J} := by
   let _ := SmoothAlmostComplexStructure.frameTopology e U hU
-  exact (isClosed_setOf_invariant_frameTopology e U hU hcover form).preimage continuous_subtype_val
+  exact (isClosed_setOf_invariant_frameTopology e U hU hcover form).preimage continuous_subtypeVal
 
 end SmoothTwoForm
 

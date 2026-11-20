@@ -84,12 +84,12 @@ theorem lang_proAlgebraic_functor_surjective
         {g : WithConv (D.obj i.unop →ₐ[F] K) |
           g⁻¹ * FiniteField.frobeniusPoints F n g = a i.unop}
       map := fun {i j} f => TypeCat.ofHom fun g =>
-        ⟨BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map f.unop)) g.1, by
+        ⟨BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map f.unop)) g.val, by
           let φ := FiniteTypeCommHopfAlgCat.toBialgHom (D.map f.unop)
-          have hcomm : FiniteField.frobeniusPoints F n (BialgHom.mapDomain φ g.1) =
-              BialgHom.mapDomain φ (FiniteField.frobeniusPoints F n g.1) :=
-            (DFunLike.congr_fun (FiniteField.mapDomain_comp_frobeniusPoints φ n) g.1).symm
-          rw [Set.mem_ofPred_eq, hcomm, ← map_inv, ← map_mul, g.2]
+          have hcomm : FiniteField.frobeniusPoints F n (BialgHom.mapDomain φ g.val) =
+              BialgHom.mapDomain φ (FiniteField.frobeniusPoints F n g.val) :=
+            (DFunLike.congr_fun (FiniteField.mapDomain_comp_frobeniusPoints φ n) g.val).symm
+          rw [Set.mem_ofPred_eq, hcomm, ← map_inv, ← map_mul, g.property]
           exact ha f.unop⟩
       map_id := fun i => by
         refine ConcreteCategory.hom_ext _ _ fun g => Subtype.ext ?_
@@ -111,7 +111,7 @@ theorem lang_proAlgebraic_functor_surjective
       hn (hconn i.unop) (a i.unop)
     exact ⟨⟨g, hg⟩⟩
   obtain ⟨s, hs⟩ := nonempty_sections_of_finite_cofiltered_system S
-  refine ⟨fun i => (s (Opposite.op i)).1, ?_, fun i => (s (Opposite.op i)).2⟩
+  refine ⟨fun i => (s (Opposite.op i)).val, ?_, fun i => (s (Opposite.op i)).property⟩
   intro i j u
   simpa only [S, TypeCat.ofHom_apply, Quiver.Hom.unop_op] using
     congrArg Subtype.val (hs u.op)

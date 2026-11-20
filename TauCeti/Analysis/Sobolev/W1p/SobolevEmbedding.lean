@@ -305,16 +305,16 @@ theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
   refine ⟨(A * ‖T‖ₑ).toNNReal, fun u ↦ ?_⟩
   rw [ENNReal.coe_toNNReal (ENNReal.mul_ne_top hAf (by finiteness))]
   calc
-    _ = eLpNorm (W1p.value (T u).1) s (μ.restrict V) := eLpNorm_congr_ae (hTrep u).symm
-    _ ≤ eLpNorm (W1p.value (T u).1) s (μ.restrict U) :=
+    _ = eLpNorm (W1p.value (T u).val) s (μ.restrict V) := eLpNorm_congr_ae (hTrep u).symm
+    _ ≤ eLpNorm (W1p.value (T u).val) s (μ.restrict U) :=
       eLpNorm_mono_measure _ (Measure.restrict_mono_set μ hVU)
-    _ ≤ A * ‖W1p.gradient (T u).1‖ₑ := by
+    _ ≤ A * ‖W1p.gradient (T u).val‖ₑ := by
       exact W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt
         ENNReal.coe_ne_top hUf (by exact_mod_cast hqs)
-        (by simp) hgap (T u).2
+        (by simp) hgap (T u).property
     _ ≤ A * ‖T u‖ₑ := by
       gcongr
-      exact W1p.enorm_gradient_le (T u).1
+      exact W1p.enorm_gradient_le (T u).val
     _ ≤ A * (‖T‖ₑ * ‖u‖ₑ) := by gcongr; exact T.le_opENorm u
     _ = _ := (mul_assoc _ _ _).symm
 
@@ -390,9 +390,9 @@ theorem W1p.exists_lpInftyEmbeddingL_of_isCompact_closure
   let H := (W1p.morreyEmbedding (mu := μ) hq).comp Z
   have hH (u : W1p μ Ω (q : ℝ≥0∞)) :
       H u =ᵐ[μ.restrict V] W1p.value u := by
-    have hz := coeFn_extendByZeroLpₗᵢ ℝ U.isOpen.measurableSet
+    have hz := coeFn_extendByZeroLpₗᵢ ℝ U.isOpen.nullMeasurableSet
       (show (U : Set E) ⊆ ((⊤ : Opens E) : Set E) from subset_univ _)
-      (W1p.value (T u).1)
+      (W1p.value (T u).val)
     rw [← W1p0.value_extendByZeroL (le_top : U ≤ ⊤)] at hz
     have hmor := ae_restrict_of_ae (s := V) (W1p.value_ae_eq_morreyEmbedding hq (Z u))
     have hmem : ∀ᵐ x ∂μ.restrict V, x ∈ U :=

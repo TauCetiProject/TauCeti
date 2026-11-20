@@ -78,7 +78,7 @@ theorem integralTopForm_mpullback_nonneg (hu : ContMDiff I' I ∞ u)
       b.orientation = o.orientationAt c)
     (hhol : ∀ c, IsPseudoholomorphicAt j J u c) {θ : SmoothTwoForm I X}
     (hθ : ∀ c (v : TangentSpace I (u c)), 0 ≤ SmoothBundleForm.eval₂ θ (u c) v (J (u c) v)) :
-    0 ≤ integralTopForm o (SmoothForm.mpullback u hu θ).1 :=
+    0 ≤ integralTopForm o (SmoothForm.mpullback u hu θ).val :=
   integralTopForm_nonneg o fun c b hb ↦
     j.apply_basis_nonneg_of_forall_nonneg (ho c) (fun e ↦ by
       rw [← SmoothBundleForm.eval₂_apply, SmoothForm.eval₂_mpullback,
@@ -97,12 +97,12 @@ theorem abs_integralTopForm_mpullback_le [CompactSpace C] (hu : ContMDiff I' I �
     (hK : ∀ c (v : TangentSpace I (u c)),
       |SmoothBundleForm.eval₂ θ (u c) v (J (u c) v)| ≤
         K * SmoothBundleForm.eval₂ σ (u c) v (J (u c) v)) :
-    |integralTopForm o (SmoothForm.mpullback u hu θ).1| ≤
-      K * integralTopForm o (SmoothForm.mpullback u hu σ).1 := by
+    |integralTopForm o (SmoothForm.mpullback u hu θ).val| ≤
+      K * integralTopForm o (SmoothForm.mpullback u hu σ).val := by
   -- `K • σ + s • θ` is nonnegative on the complex lines along `u` whenever `|s| ≤ 1`.
   have key (s : ℝ) (hs : |s| ≤ 1) :
-      0 ≤ K * integralTopForm o (SmoothForm.mpullback u hu σ).1 +
-        s * integralTopForm o (SmoothForm.mpullback u hu θ).1 := by
+      0 ≤ K * integralTopForm o (SmoothForm.mpullback u hu σ).val +
+        s * integralTopForm o (SmoothForm.mpullback u hu θ).val := by
     have hpt (c : C) (v : TangentSpace I (u c)) :
         0 ≤ SmoothBundleForm.eval₂ (K • σ + s • θ) (u c) v (J (u c) v) := by
       have hs' : |s * SmoothBundleForm.eval₂ θ (u c) v (J (u c) v)| ≤
@@ -112,9 +112,9 @@ theorem abs_integralTopForm_mpullback_le [CompactSpace C] (hu : ContMDiff I' I �
       rw [SmoothBundleForm.eval₂_add, SmoothForm.eval₂_smul, SmoothForm.eval₂_smul, smul_eq_mul,
         smul_eq_mul]
       linarith [neg_abs_le (s * SmoothBundleForm.eval₂ θ (u c) v (J (u c) v)), hK c v]
-    have hσ : IsSmoothForm I' 0 (SmoothForm.mpullback u hu σ).1 :=
+    have hσ : IsSmoothForm I' 0 (SmoothForm.mpullback u hu σ).val :=
       (SmoothForm.isSmoothForm _).of_le (by simp)
-    have hθ : IsSmoothForm I' 0 (SmoothForm.mpullback u hu θ).1 :=
+    have hθ : IsSmoothForm I' 0 (SmoothForm.mpullback u hu θ).val :=
       (SmoothForm.isSmoothForm _).of_le (by simp)
     simpa only [map_add, map_smul, Submodule.coe_add, Submodule.coe_smul,
       integralTopForm_add_of_compactSpace o (hσ.smul K) (hθ.smul s), integralTopForm_smul]

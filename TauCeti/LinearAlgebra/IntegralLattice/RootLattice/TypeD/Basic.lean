@@ -213,10 +213,11 @@ private theorem checkerboardCarrier_span_eq_top :
   exact Submodule.smul_mem _ _ h2
 
 /-- The checkerboard carrier is a full lattice in `ℚⁿ`. -/
-instance instIsLatticeCheckerboardCarrier : (checkerboardCarrier n).IsLattice ℚ where
+instance instIsFullLatticeCheckerboardCarrier : (checkerboardCarrier n).IsFullLattice ℚ where
   -- a submodule of the finitely generated module `ℤⁿ` over the Noetherian ring `ℤ`
-  fg := (Submodule.fg_span (Set.finite_range _)).of_le
-    (unitLattice_carrier_eq_span_basisFun (Fin n) ▸ checkerboardCarrier_le_unitLattice_carrier n)
+  toIsLattice := Submodule.IsLattice.of_fg ℚ (M := checkerboardCarrier n)
+    ((Submodule.fg_span (Set.finite_range _)).of_le
+      (unitLattice_carrier_eq_span_basisFun (Fin n) ▸ checkerboardCarrier_le_unitLattice_carrier n))
   span_eq_top := checkerboardCarrier_span_eq_top n
 
 /-! ## The lattice -/
@@ -612,7 +613,7 @@ theorem checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_c
       g = checkerboardCospinorClass n := by
   induction g using Submodule.Quotient.induction_on with
   | _ y =>
-    obtain ⟨hdiff, t, ht⟩ := (mem_checkerboardLattice_dualCarrier_iff (y : Fin n → ℚ)).mp y.2
+    obtain ⟨hdiff, t, ht⟩ := (mem_checkerboardLattice_dualCarrier_iff (y : Fin n → ℚ)).mp y.property
     choose d hd using hdiff
     have hone : ∑ i : Fin n, (if i = ⊤ then (1 : ℤ) else 0) = 1 := by simp
     rcases Int.even_or_odd t with ⟨a, ha⟩ | ⟨a, ha⟩
@@ -628,7 +629,7 @@ theorem checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_c
         rw [discriminantGroup_mk_eq_zero_iff, checkerboardLattice_carrier]
         exact mem_checkerboardCarrier_of_even_sum (fun i ↦ d i + a) hyi hS
       · refine Or.inr (Or.inl ?_)
-        refine checkerboard_mk_eq_mk_of_even_sum y.2 checkerboardVector_mem_dualCarrier
+        refine checkerboard_mk_eq_mk_of_even_sum y.property checkerboardVector_mem_dualCarrier
           (fun i ↦ d i + a - if i = ⊤ then 1 else 0) (fun i ↦ ?_) ?_
         · rw [hyi i, checkerboardVector_apply]
           push_cast
@@ -645,12 +646,12 @@ theorem checkerboardDiscriminantGroup_eq_zero_or_vectorClass_or_spinorClass_or_c
         linarith [hd i, hlast]
       rcases Int.even_or_odd (∑ i, (d i + a)) with hS | hS
       · refine Or.inr (Or.inr (Or.inl ?_))
-        refine checkerboard_mk_eq_mk_of_even_sum y.2 checkerboardSpinor_mem_dualCarrier
+        refine checkerboard_mk_eq_mk_of_even_sum y.property checkerboardSpinor_mem_dualCarrier
           (fun i ↦ d i + a) (fun i ↦ ?_) hS
         rw [hyi i, checkerboardSpinor_apply]
         ring
       · refine Or.inr (Or.inr (Or.inr ?_))
-        refine checkerboard_mk_eq_mk_of_even_sum y.2 checkerboardCospinor_mem_dualCarrier
+        refine checkerboard_mk_eq_mk_of_even_sum y.property checkerboardCospinor_mem_dualCarrier
           (fun i ↦ d i + a + if i = ⊤ then 1 else 0) (fun i ↦ ?_) ?_
         · rw [hyi i, checkerboardCospinor_apply]
           push_cast

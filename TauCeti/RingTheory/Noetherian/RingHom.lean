@@ -141,7 +141,7 @@ theorem injective_of_iInf_pow_eq_bot_of_surjective_mapCotangent [IsNoetherianRin
   obtain ⟨c, hc⟩ := hcot (I.toCotangent ⟨y, hy⟩)
   obtain ⟨x, rfl⟩ := I.toCotangent_surjective c
   rw [Ideal.mapCotangent_toCotangent, Ideal.toCotangent_eq] at hc
-  exact ⟨x.1, x.2, by simpa only [AlgHom.coe_toRingHom, neg_sub] using (I ^ 2).neg_mem hc⟩
+  exact ⟨x.val, x.property, by simpa only [AlgHom.coe_toRingHom, neg_sub] using (I ^ 2).neg_mem hc⟩
 
 /-- An algebra endomorphism of a Noetherian integral domain preserving a proper ideal `I` that is
 surjective on `A ⧸ I` and on `I.Cotangent` is injective. -/

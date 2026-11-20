@@ -178,7 +178,7 @@ private theorem exists_mem_intPoints_of_mem_intLattice {V : Submodule ℚ (ι �
     simp [intCastEuclidean_apply, hz]
   refine ⟨z, ?_, hwz⟩
   rw [mem_intPoints, ← toLp_mem_realSpan_iff]
-  simpa [hwz, intCastEuclidean_apply] using w.2
+  simpa [hwz, intCastEuclidean_apply] using w.property
 
 section Basis
 
@@ -210,7 +210,7 @@ theorem span_intCast_basis_intPoints : span ℚ (range fun i j ↦ ((b i : ι �
   cases nonempty_fintype ι
   refine le_antisymm (span_le.2 ?_) fun v hv ↦ ?_
   · rintro _ ⟨i, rfl⟩
-    exact (b i).2
+    exact (b i).property
   -- Clear the denominators of `v`.
   obtain ⟨⟨d, hd⟩, hdv⟩ := IsLocalization.exist_integer_multiples (nonZeroDivisors ℤ)
     Finset.univ v
@@ -244,7 +244,7 @@ private theorem realSpan_eq_span :
     rw [hfun]
     exact span_le_restrictScalars ℚ ℝ _ h
   · rintro _ ⟨i, rfl⟩
-    simpa [intCastEuclidean_apply] using toLp_mem_realSpan (b i).2
+    simpa [intCastEuclidean_apply] using toLp_mem_realSpan (b i).property
 
 /-- A basis of the integral points of `V` stays linearly independent in `ℝ^ι`. -/
 private theorem linearIndependent_intCastEuclidean :
@@ -305,7 +305,8 @@ theorem finrank_realSpan (V : Submodule ℚ (ι → ℚ)) : finrank ℝ V.realSp
 
 /-- The map sending an integral point of `V` to the real point with the same coordinates. -/
 private def intPointsToIntLattice (V : Submodule ℚ (ι → ℚ)) : V.intPoints →ₗ[ℤ] V.intLattice where
-  toFun z := ⟨⟨intCastEuclidean ι z, by simpa [intCastEuclidean_apply] using toLp_mem_realSpan z.2⟩,
+  toFun z := ⟨⟨intCastEuclidean ι z,
+      by simpa [intCastEuclidean_apply] using toLp_mem_realSpan z.property⟩,
     fun i ↦ ⟨(z : ι → ℤ) i, by simp [intCastEuclidean_apply]⟩⟩
   map_add' z z' := by
     ext : 2
@@ -327,7 +328,7 @@ private theorem bijective_intPointsToIntLattice (V : Submodule ℚ (ι → ℚ))
     simp only [coe_intPointsToIntLattice_apply, intCastEuclidean_apply] at h'
     ext i
     simpa using congrArg (· i) h'
-  · obtain ⟨z, hzV, hwz⟩ := exists_mem_intPoints_of_mem_intLattice w.2
+  · obtain ⟨z, hzV, hwz⟩ := exists_mem_intPoints_of_mem_intLattice w.property
     exact ⟨⟨z, hzV⟩, by ext : 2; exact hwz.symm⟩
 
 /-- The identification of the integral points of `V` with the points of the lattice

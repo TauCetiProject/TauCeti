@@ -252,7 +252,7 @@ theorem eval_coe_homogeneousSubmodule_eq_sum [Fintype σ] [DecidableEq σ] {n : 
     (p : homogeneousSubmodule σ R n) (v : σ → R) :
     eval v (p : MvPolynomial σ R) = ∑ l ∈ Finset.univ.finsuppAntidiag n,
       (p : MvPolynomial σ R).coeff l * ∏ i, v i ^ l i := by
-  simpa using ((mem_homogeneousSubmodule n _).mp p.2).aeval_eq_sum_finsuppAntidiag v
+  simpa using ((mem_homogeneousSubmodule n _).mp p.property).aeval_eq_sum_finsuppAntidiag v
 
 end TauCeti
 
@@ -297,8 +297,8 @@ theorem homogeneousComponent_one_eq_sum [Fintype σ] (φ : MvPolynomial σ R) :
     homogeneousComponent 1 φ = ∑ i, φ.coeff (Finsupp.single i 1) • X i := by
   classical
   ext d
-  simp only [coeff_homogeneousComponent, coeff_sum, coeff_smul, coeff_X, smul_eq_mul, mul_ite,
-    mul_one, mul_zero]
+  simp only [coeff_homogeneousComponent, coeff_sum, AddMonoidAlgebra.coeff_smul_apply, coeff_X,
+    smul_eq_mul, mul_ite, mul_one, mul_zero]
   split_ifs with hd
   · obtain ⟨i, rfl⟩ := (Finsupp.sum_eq_one_iff d).1 <| by
       rw [Finsupp.sum, ← Finsupp.degree_apply]

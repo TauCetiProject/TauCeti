@@ -235,7 +235,7 @@ private theorem mapCotangent_twistedLangAtId (φ : H →ₐc[K] H)
   intro f
   rw [map_sub, sub_eq_zero, Ideal.mapCotangent_toCotangent,
     ← Bialgebra.cotangentMap_augmentation K H
-      ⟨twistedLangAtId φ a x.1, Ideal.mem_comap.mp (hfI x.2)⟩,
+      ⟨twistedLangAtId φ a x.val, Ideal.mem_comap.mp (hfI x.property)⟩,
     ← Bialgebra.cotangentMap_augmentation K H x, Bialgebra.cotangentSpaceMap_cotangentMap]
   let d := Derivation.cotangentLinearEquiv (R := K) (A := H) (B := K) f
   rw [← Derivation.algEquivSelf_cotangentLinearEquiv_apply f,
@@ -244,11 +244,11 @@ private theorem mapCotangent_twistedLangAtId (φ : H →ₐc[K] H)
       HopfAlgebra.pointConjugationAlgHom a⁻¹ := by
     rw [BialgEquiv.toBialgHom_eq_coe]
     exact HopfAlgebra.pointConjugationBialgEquiv_toAlgHom a⁻¹
-  have hex : (HopfAlgebra.pointConjugationBialgEquiv a⁻¹).toBialgHom x.1 =
-      HopfAlgebra.pointConjugationAlgHom a⁻¹ x.1 := AlgHom.congr_fun he x.1
+  have hex : (HopfAlgebra.pointConjugationBialgEquiv a⁻¹).toBialgHom x.val =
+      HopfAlgebra.pointConjugationAlgHom a⁻¹ x.val := AlgHom.congr_fun he x.val
   rw [hex]
   exact congrArg (Bialgebra.CounitAlgebra.algEquivSelf K H K)
-    (derivation_comp_twistedLangAtId φ hφ a d x.1)
+    (derivation_comp_twistedLangAtId φ hφ a d x.val)
 
 /-- If `φ : H →ₐc[K] H` is a bialgebra endomorphism with zero differential on a Noetherian
 integral-domain Hopf algebra over a field, then every twisted Lang comorphism
@@ -591,8 +591,8 @@ theorem exists_eq_inv_mul_mapValue_of_mul_eq_mul_mapValue
   refine ⟨b, fun γ => ?_⟩
   obtain ⟨n, rfl⟩ := (_root_.FiniteField.bijective_frobeniusAlgEquivOfAlgebraic_pow F L).2 γ
   apply AlgHom.mapValue_injective ι.toRingHom.injective
-  rw [map_mul, map_inv, hιφ n.1, hb]
-  exact (hiter n.1).symm
+  rw [map_mul, map_inv, hιφ n.val, hb]
+  exact (hiter n.val).symm
 
 end GaloisCohomology
 
@@ -620,7 +620,7 @@ theorem mapDomain_surjective_of_surjective_of_range_eq_ker
   let e₁ := FiniteField.rationalPointsMulEquiv F H₁ K
   let e₂ := FiniteField.rationalPointsMulEquiv F H₂ K
   have hyK : FiniteField.frobeniusPoints F 1 (e₁ y : WithConv (H₁ →ₐ[F] K)) =
-      (e₁ y : WithConv (H₁ →ₐ[F] K)) := (e₁ y).2
+      (e₁ y : WithConv (H₁ →ₐ[F] K)) := (e₁ y).property
   obtain ⟨xK, hxK_fix, hxK_map⟩ :=
     MonoidHom.exists_fixed_lift_of_surjective_commutatorMap
       (BialgHom.mapDomain (A := K) φ) (BialgHom.mapDomain (A := K) ψ) hker

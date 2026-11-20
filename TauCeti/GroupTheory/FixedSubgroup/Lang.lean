@@ -112,9 +112,9 @@ theorem finite_setOf_inv_mul_eq (F : G →* G) [Finite (TauCeti.fixedSubgroup F)
   · obtain ⟨⟨g₀, hg₀⟩⟩ := hne
     refine Finite.of_injective
       (fun g : {g : G | g⁻¹ * F g = a} ↦
-        (⟨g.1 * g₀⁻¹, by
+        (⟨g.val * g₀⁻¹, by
           rw [TauCeti.mem_fixedSubgroup, map_mul, map_inv]
-          have hgF : F g.1 = g.1 * a := eq_mul_of_inv_mul_eq g.2
+          have hgF : F g.val = g.val * a := eq_mul_of_inv_mul_eq g.property
           have hg₀F : F g₀ = g₀ * a := eq_mul_of_inv_mul_eq hg₀
           rw [hgF, hg₀F, mul_inv_rev, mul_assoc, mul_inv_cancel_left]⟩ :
           TauCeti.fixedSubgroup F))
@@ -170,7 +170,7 @@ def fixedSubgroupQuotientEmbedding (F : G →* G) {J : Subgroup G} (hJF : J ≤ 
   toFun := Quotient.lift
     (fun g : TauCeti.fixedSubgroup F =>
       ⟨QuotientGroup.mk (g : G), by
-        rw [Function.mem_fixedPoints_iff, quotientMap_mk, TauCeti.mem_fixedSubgroup.mp g.2]⟩)
+        rw [Function.mem_fixedPoints_iff, quotientMap_mk, TauCeti.mem_fixedSubgroup.mp g.property]⟩)
     (fun a b hab => Subtype.ext <| by
       have hab' : (a : G)⁻¹ * (b : G) ∈ J :=
         Subgroup.mem_subgroupOf.mp (QuotientGroup.leftRel_apply.mp hab)
