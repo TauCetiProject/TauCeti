@@ -170,7 +170,7 @@ theorem map_stereographic'_symm_withDensity_eq_restrict_riemannianVolume
     simp [Φ]
   have htgt : Φ.target = {v}ᶜ := by
     simp [Φ]
-  have hmap := Φ.map_withDensity_riemannianJacobian b.toBasis rfl
+  have hmap := Φ.map_withDensity_riemannianJacobian one_ne_zero b.toBasis
   rwa [hsrc, Measure.restrict_univ, b.addHaar_eq_volume, htgt, hΦ,
     funext (riemannianJacobian_stereographic'_symm v)] at hmap
 
@@ -267,7 +267,7 @@ private theorem restrict_riemannianVolume_sphere_eq_restrict_comap_euclideanHaus
   let ι : sphere (0 : E) 1 → E := (↑)
   let σ : EuclideanSpace ℝ (Fin n) → sphere (0 : E) 1 := (stereographic' n v).symm
   have hι : MeasurableEmbedding ι :=
-    MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet
+    MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet
   -- Push both restricted measures forward along the measurable embedding `ι : Sⁿ → E`.
   apply hι.map_injective
   have harea := restrict_map_withDensity_normDet_fderiv_eq_euclideanHausdorffMeasure
@@ -282,7 +282,7 @@ private theorem restrict_riemannianVolume_sphere_eq_restrict_comap_euclideanHaus
           ENNReal.ofReal (fderiv ℝ (ι ∘ σ) y).toLinearMap.normDet)) =
       Measure.map ι (Measure.map σ (volume.withDensity fun y : EuclideanSpace ℝ (Fin n) ↦
         ENNReal.ofReal ((4 / (‖y‖ ^ 2 + 4)) ^ n))) := by
-    have hu := MeasurableEmbedding.subtype_coe
+    have hu := MeasurableEmbedding.subtypeVal
       (MeasurableSet.univ : MeasurableSet (univ : Set (EuclideanSpace ℝ (Fin n))))
     have hfun : (univ : Set (EuclideanSpace ℝ (Fin n))).domRestrict (ι ∘ σ) =
         (ι ∘ σ) ∘ Subtype.val := rfl
@@ -330,7 +330,7 @@ theorem map_subtypeVal_riemannianVolume_sphere [LindelofSpace (sphere (0 : E) 1)
     (riemannianVolume (𝓡 n) (sphere (0 : E) 1)).map (↑) =
       (μHE[n] : Measure E).restrict (sphere 0 1) := by
   rw [riemannianVolume_sphere_eq_comap_euclideanHausdorffMeasure,
-    (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).map_comap, Subtype.range_coe]
+    (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).map_comap, Subtype.range_coe]
 
 /-- **The Riemannian volume of the unit sphere agrees with `Measure.toSphere volume`.** -/
 theorem riemannianVolume_sphere_eq_toSphere [FiniteDimensional ℝ E] :
@@ -356,7 +356,7 @@ theorem riemannianVolume_sphere_univ
   obtain rfl : ‹MeasurableSpace (sphere (0 : E) 1)› = Subtype.instMeasurableSpace :=
     BorelSpace.measurable_eq.trans BorelSpace.measurable_eq.symm
   rw [riemannianVolume_sphere_eq_comap_euclideanHausdorffMeasure,
-    (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet).comap_apply, image_univ,
+    (MeasurableEmbedding.subtypeVal isClosed_sphere.measurableSet).comap_apply, image_univ,
     Subtype.range_coe, euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume Fact.out]
 
 /-- **Total Riemannian volume of the unit round sphere**: `Vol(Sⁿ) = |Sⁿ|`. -/

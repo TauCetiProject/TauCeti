@@ -186,19 +186,7 @@ theorem isLocalRiemannianIsometry_stereographic'_symm_smul_sub (hn : n ≠ 2) (v
       isInvertible_mfderiv := fun y ↦ ?_
       inner_mfderiv := hinner }
   set L := mfderiv (𝓡 n) (𝓡 n) (Φ ∘ WithMetric.ofWithMetric) y
-  have hinj : Function.Injective L := by
-    intro a c hac
-    have h0 : inner ℝ (a - c) (a - c) = 0 := by
-      rw [← hinner y (a - c) (a - c), map_sub, hac, sub_self, inner_zero_left]
-    exact sub_eq_zero.mp (inner_self_eq_zero.mp h0)
-  have hdim :
-      finrank ℝ (TangentSpace (𝓡 n) y) =
-        finrank ℝ (TangentSpace (𝓡 n) ((Φ ∘ WithMetric.ofWithMetric) y)) :=
-    rfl
-  let eL : TangentSpace (𝓡 n) y ≃ₗᵢ[ℝ] TangentSpace (𝓡 n) ((Φ ∘ WithMetric.ofWithMetric) y) :=
-    (LinearEquiv.ofBijective L.toLinearMap
-      ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).mp hinj⟩
-      ).isometryOfInner (hinner y)
+  let eL := (L.toLinearMap.isometryOfInner (hinner y)).toLinearIsometryEquiv (by rfl)
   exact ⟨eL.toContinuousLinearEquiv, by ext w; rfl⟩
 
 /-- **Stereographic conformal covariance of the conformal Laplacian.** In dimension `n ≠ 2`, let
