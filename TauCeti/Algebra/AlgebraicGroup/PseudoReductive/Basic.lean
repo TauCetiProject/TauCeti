@@ -14,10 +14,10 @@ public import TauCeti.RingTheory.Smooth.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.CoordinateBaseChange
 import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Unipotent
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Exactness
+import TauCeti.Algebra.AlgebraicGroup.Reductive.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Characteristic
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Isomorphism
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
 
 /-!
 # Pseudo-reductive affine groups
@@ -32,7 +32,9 @@ of groups studied by Conrad, Gabber and Prasad.
 This file defines the predicate and establishes its basic theory:
 
 * reductive groups are pseudo-reductive, over every field;
-* over a perfect field, pseudo-reductive and reductive groups coincide;
+* over a perfect field, pseudo-reductive and reductive groups coincide, since `AlgebraicClosure k`
+  is separable over `k` and the `k`-unipotent radical base-changes to the geometric unipotent
+  radical;
 * the affine quotient `G ⧸ R_{u,k}(G)` of a smooth connected group by its `k`-unipotent radical is
   pseudo-reductive, and over a perfect field it is therefore reductive;
 * the additive group is not pseudo-reductive.
@@ -44,8 +46,8 @@ This file defines the predicate and establishes its basic theory:
 * `TauCeti.pseudoReductiveCommHopfAlgProperty.unipotentRadicalDefiningIdeal_eq_augmentation`:
   the defining property, with the companion accessors `smooth` and `geometricallyConnected`.
 * `TauCeti.reductiveCommHopfAlgProperty.pseudoReductive`: reductive groups are pseudo-reductive.
-* `TauCeti.pseudoReductiveCommHopfAlgProperty_iff_reductive`: over a perfect field, the two
-  notions agree.
+* `TauCeti.pseudoReductiveCommHopfAlgProperty_iff_reductive`: over a perfect field the two notions
+  agree.
 * `TauCeti.pseudoReductiveCommHopfAlgProperty_of_kernel_eq_unipotentRadical` and
   `TauCeti.FiniteTypeCommHopfAlgCat.pseudoReductive_coinvariants_unipotentRadical`: the quotient
   by the `k`-unipotent radical is pseudo-reductive.
@@ -57,7 +59,7 @@ This file defines the predicate and establishes its basic theory:
 ## References
 
 * B. Conrad, O. Gabber, G. Prasad, *Pseudo-reductive Groups*, 2nd ed. (2015), §1.1.
-* J. S. Milne, *Algebraic Groups* (2017), §§6.45–6.46 and Chapter 19.
+* J. S. Milne, *Algebraic Groups* (2017), §§6.45–6.46, Proposition 19.11, and Chapter 19.
 -/
 
 public section
@@ -135,8 +137,9 @@ theorem reductiveCommHopfAlgProperty.pseudoReductive {H : FiniteTypeCommHopfAlgC
 reductive. -/
 theorem pseudoReductiveCommHopfAlgProperty_iff_reductive [PerfectField k]
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
-    pseudoReductiveCommHopfAlgProperty k H ↔ reductiveCommHopfAlgProperty k H :=
-  (reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_eq_augmentation k H).symm
+    pseudoReductiveCommHopfAlgProperty k H ↔ reductiveCommHopfAlgProperty k H := by
+  rw [pseudoReductiveCommHopfAlgProperty_iff,
+    reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_eq_augmentation]
 
 open FiniteTypeCommHopfAlgCat in
 /-- A faithfully flat quotient of a smooth geometrically connected affine group whose kernel is the

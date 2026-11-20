@@ -474,7 +474,7 @@ theorem isCompletelyReducible_of_isAtom {S : Subcomodule R C V}
     rw [h, mem_bot] at hz'
     simpa using hz'
   · refine Or.inr (eq_top_iff.mpr fun s _ ↦ ?_)
-    obtain ⟨z, hz, hzs⟩ := mem_map.mp (h.symm ▸ s.2 : (s : V) ∈ Z.map (subtype S))
+    obtain ⟨z, hz, hzs⟩ := mem_map.mp (h.symm ▸ s.property : (s : V) ∈ Z.map (subtype S))
     rwa [← Subtype.ext (by simpa using hzs : (z : V) = s)]
 
 end Semiring

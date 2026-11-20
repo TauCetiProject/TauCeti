@@ -6,49 +6,46 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Separable
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.FiniteType.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.PseudoReductive.Basic
 import Mathlib.RingTheory.Etale.Descent
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.Smooth.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Descent
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Reductive.Basic
 
 /-!
-# Base change and descent of pseudo-reductivity
+# Base change and descent of pseudo-reductive affine groups
 
-Let `H` be the coordinate Hopf algebra of a finite-type affine group `G` over a field `k`.
-Pseudo-reductivity descends along every field extension `K / k`: smoothness descends by faithfully
-flat descent, geometric connectedness descends along arbitrary field extensions, and triviality of
-the unipotent radical descends by faithful-flat reflection of Hopf ideals.
+Let `G` be a finite-type affine group over a field `k` with coordinate Hopf algebra `H`, and let
+`K / k` be a field extension.
 
-In the forward direction, pseudo-reductivity is preserved by every separable algebraic extension
-`K / k` (finite or infinite), because formation of the unipotent radical commutes with separable
-algebraic base change
-(`TauCeti.FiniteTypeCommHopfAlgCat.baseChangeHopfIdeal_unipotentRadicalDefiningIdeal`). Over an
-inseparable extension pseudo-reductivity can fail to persist, and indeed a pseudo-reductive group
-over an arbitrary field `k` is reductive if and only if its geometric unipotent radical descends
-to `k`.
+* **Descent along arbitrary field extensions.** Smoothness, geometric connectedness, and triviality
+  of the unipotent radical are all reflected by arbitrary field extensions `K / k`, so
+  pseudo-reductivity of `G_K` over `K` implies pseudo-reductivity of `G` over `k`.
+* **Invariance along separable algebraic field extensions.** When `K / k` is separable algebraic,
+  the `k`-unipotent radical commutes with scalar extension to `K`
+  (`FiniteTypeCommHopfAlgCat.baseChangeHopfIdeal_unipotentRadicalDefiningIdeal`), so
+  pseudo-reductivity is preserved as well as reflected by `K / k`.
+
+The separability hypothesis in the forward direction cannot be omitted: for a nontrivial finite
+purely inseparable extension `K / k`, the Weil restriction `Res_{K/k} 𝔾ₘ` is pseudo-reductive over
+`k` (`TauCeti.Algebra.WeilRestriction.pseudoReductive_multiplicativeGroup`), whereas its base
+change to `AlgebraicClosure k` fails to be pseudo-reductive
+(`WeilRestriction.not_pseudoReductive_baseChange_multiplicativeGroup_of_isPurelyInseparable`).
 
 ## Main declarations
 
-* `TauCeti.pseudoReductiveCommHopfAlgProperty.of_baseChange`: pseudo-reductivity descends along an
-  arbitrary field extension.
-* `TauCeti.pseudoReductiveCommHopfAlgProperty.baseChange`: pseudo-reductivity is preserved by
-  every separable algebraic extension.
+* `TauCeti.pseudoReductiveCommHopfAlgProperty.of_baseChange`: pseudo-reductivity descends along
+  arbitrary field extensions.
+* `TauCeti.pseudoReductiveCommHopfAlgProperty.baseChange`: pseudo-reductivity is preserved along
+  separable algebraic field extensions.
 * `TauCeti.pseudoReductiveCommHopfAlgProperty.baseChange_iff`: pseudo-reductivity is invariant
-  under separable algebraic extension.
-* `TauCeti.pseudoReductiveCommHopfAlgProperty.
-    reductive_iff_baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_eq`:
-  a pseudo-reductive group is reductive iff its geometric unipotent radical equals the base change
-  of its `k`-unipotent radical.
-* `TauCeti.pseudoReductiveCommHopfAlgProperty.
-    reductive_iff_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal`:
-  a pseudo-reductive group is reductive iff its geometric unipotent radical descends to `k`.
+  under separable algebraic field extensions.
 
 ## References
 
-* B. Conrad, O. Gabber, G. Prasad, *Pseudo-reductive Groups*, 2nd ed. (2015), Proposition 1.1.9.
-* J. S. Milne, *Algebraic Groups* (2017), §§6.47–6.48 and Proposition 19.9.
+* B. Conrad, O. Gabber, G. Prasad, *Pseudo-reductive Groups*, 2nd ed. (2015), Proposition 1.1.9(1).
+* J. S. Milne, *Algebraic Groups* (2017), Proposition 19.9 and §19.b.
 -/
 
 public section
@@ -61,25 +58,33 @@ universe u
 
 namespace pseudoReductiveCommHopfAlgProperty
 
+section ArbitraryExtension
+
 variable {k K : Type u} [Field k] [Field K] [Algebra k K]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 
-open FiniteTypeCommHopfAlgCat in
-/-- Pseudo-reductivity descends along an arbitrary extension of the ground field. -/
+/-- Pseudo-reductivity descends along arbitrary extensions of the ground field. -/
 theorem of_baseChange
     (hH : pseudoReductiveCommHopfAlgProperty K
       (FiniteTypeCommHopfAlgCat.baseChange (K := K) H)) :
     pseudoReductiveCommHopfAlgProperty k H := by
-  let _ : Algebra.Smooth K (K ⊗[k] H.obj) := hH.smooth
+  let _ : Algebra.Smooth K (K ⊗[k] H.obj) :=
+    FiniteTypeCommHopfAlgCat.smooth_baseChange_obj hH.smooth
+  open FiniteTypeCommHopfAlgCat in
   exact (pseudoReductiveCommHopfAlgProperty_iff k H).mpr
     ⟨Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat (R := k) (S := H.obj) K,
       geometricallyConnectedCommHopfAlgProperty.of_baseChange k K H.obj hH.geometricallyConnected,
-      unipotentRadicalDefiningIdeal_eq_augmentation_of_baseChange_eq_augmentation (K := K)
+      unipotentRadicalDefiningIdeal_eq_augmentation_of_baseChange_eq_augmentation
         hH.unipotentRadicalDefiningIdeal_eq_augmentation⟩
 
-/-- Pseudo-reductivity is preserved by every separable algebraic extension of the ground field
-(finite or infinite). -/
-theorem baseChange [Algebra.IsSeparable k K]
+end ArbitraryExtension
+
+section Separable
+
+variable {k K : Type u} [Field k] [Field K] [Algebra k K] [Algebra.IsSeparable k K]
+
+/-- Pseudo-reductivity is preserved by separable algebraic extensions of the ground field. -/
+theorem baseChange {H : FiniteTypeCommHopfAlgCat.{u, u} k}
     (hH : pseudoReductiveCommHopfAlgProperty k H) :
     pseudoReductiveCommHopfAlgProperty K
       (FiniteTypeCommHopfAlgCat.baseChange (K := K) H) := by
@@ -90,41 +95,17 @@ theorem baseChange [Algebra.IsSeparable k K]
       (FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal_baseChange_eq_augmentation_iff
         (K := K) H).mpr hH.unipotentRadicalDefiningIdeal_eq_augmentation⟩
 
-/-- Pseudo-reductivity is invariant under every separable algebraic extension of the ground field
-(finite or infinite). -/
-theorem baseChange_iff [Algebra.IsSeparable k K] (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+-- The defining simp lemma `pseudoReductiveCommHopfAlgProperty_iff` already simplifies the
+-- left-hand side, so adding `baseChange_iff` to the simp set would violate `simpNF`.
+/-- Pseudo-reductivity of a finite-type affine group is invariant under separable algebraic
+extension of the ground field. -/
+theorem baseChange_iff (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     pseudoReductiveCommHopfAlgProperty K
         (FiniteTypeCommHopfAlgCat.baseChange (K := K) H) ↔
       pseudoReductiveCommHopfAlgProperty k H :=
   ⟨of_baseChange, baseChange⟩
 
-/-- **Descent obstruction to reductivity.** A pseudo-reductive group over an arbitrary field `k`
-is reductive if and only if the geometric unipotent radical equals the base change of the
-`k`-unipotent radical. -/
-theorem reductive_iff_baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_eq
-    (hH : pseudoReductiveCommHopfAlgProperty k H) :
-    reductiveCommHopfAlgProperty k H ↔
-      CommHopfAlgCat.baseChangeHopfIdeal (K := AlgebraicClosure k)
-          (FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal H) =
-        FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
-          (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H) := by
-  rw [reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation,
-    hH.unipotentRadicalDefiningIdeal_eq_augmentation,
-    CommHopfAlgCat.baseChangeHopfIdeal_augmentation]
-  exact ⟨fun ⟨_, _, h⟩ ↦ h.symm, fun h ↦ ⟨hH.smooth, hH.geometricallyConnected, h.symm⟩⟩
-
-/-- **A pseudo-reductive group is reductive iff its geometric unipotent radical descends.** Over an
-arbitrary field `k`, a pseudo-reductive group is reductive if and only if the defining Hopf ideal
-of its geometric unipotent radical is the base change of a Hopf ideal over `k`. -/
-theorem reductive_iff_exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal
-    (hH : pseudoReductiveCommHopfAlgProperty k H) :
-    reductiveCommHopfAlgProperty k H ↔
-      ∃ J : HopfIdeal k H,
-        CommHopfAlgCat.baseChangeHopfIdeal (K := AlgebraicClosure k) J =
-          FiniteTypeCommHopfAlgCat.unipotentRadicalDefiningIdeal
-            (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H) := by
-  rw [FiniteTypeCommHopfAlgCat.exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal_iff,
-    hH.reductive_iff_baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_eq]
+end Separable
 
 end pseudoReductiveCommHopfAlgProperty
 

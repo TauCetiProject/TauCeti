@@ -101,8 +101,8 @@ variable {A D C : FiniteRankBundleCore 𝕜 B}
 Its chart operators are the transposes of the chart operators of `f`. -/
 noncomputable def dualMap (f : A ⟶ D) : D.dual ⟶ A.dual where
   operator i j :=
-    ⟨fun x => (f.operator j i ⟨x.1, x.2.2, x.2.1⟩).piTranspose,
-      ((f.operator j i).continuous.comp (continuous_subtype_val.subtype_mk _)).piTranspose⟩
+    ⟨fun x => (f.operator j i ⟨x.val, x.property.2, x.property.1⟩).piTranspose,
+      ((f.operator j i).continuous.comp (continuous_subtypeVal.subtype_mk _)).piTranspose⟩
   compatible i i' j j' x hi hi' hj hj' v := by
     have h : (f.operator j i ⟨x, hj, hi⟩).comp (A.core.coordChange j' j x) =
         (D.core.coordChange i' i x).comp (f.operator j' i' ⟨x, hj', hi'⟩) :=
@@ -114,7 +114,8 @@ noncomputable def dualMap (f : A ⟶ D) : D.dual ⟶ A.dual where
 
 theorem operator_dualMap (f : A ⟶ D) (i j : B)
     (x : ↥(D.dual.core.baseSet i ∩ A.dual.core.baseSet j)) :
-    (dualMap f).operator i j x = (f.operator j i ⟨x.1, x.2.2, x.2.1⟩).piTranspose := (rfl)
+    (dualMap f).operator i j x = (f.operator j i ⟨x.val, x.property.2, x.property.1⟩).piTranspose :=
+        (rfl)
 
 /-- On every fibre, the transposed bundle map is the transpose of the original fibre map. -/
 @[simp] theorem fiberMap_dualMap (f : A ⟶ D) (x : B) :
@@ -364,7 +365,7 @@ theorem continuous_dualFiberEquiv (A : FiniteRankBundleCore 𝕜 B) :
     Continuous fun p : A.dual.core.TotalSpace =>
       TotalSpace.mk' ((Fin A.rank → 𝕜) →L[𝕜] 𝕜)
         (E := fun x => A.core.Fiber x →L[𝕜] Trivial B 𝕜 x) p.proj
-        (dualFiberEquiv A p.proj p.2) := by
+        (dualFiberEquiv A p.proj p.snd) := by
   refine continuous_iff_continuousAt.2 fun p => ?_
   rw [continuousAt_hom_bundle]
   refine ⟨A.dual.core.continuous_proj.continuousAt, ?_⟩
@@ -378,7 +379,7 @@ theorem continuous_dualFiberEquiv (A : FiniteRankBundleCore 𝕜 B) :
     |>.continuousAt.comp hc).congr ?_
   filter_upwards [hU] with q hq
   exact (A.dualFiberEquiv_inCoordinates p.proj q.proj
-    ((A.dual.core.mem_localTriv_source p.proj q).1 hq) q.2).symm
+    ((A.dual.core.mem_localTriv_source p.proj q).1 hq) q.snd).symm
 
 /-- The reconstructed total space of the dual core is the total space of Mathlib's dual bundle
 of `A`, over the identity of the base and by `dualFiberEquiv` on each fibre. -/
@@ -389,12 +390,12 @@ noncomputable def dualTotalSpaceHomeomorph (A : FiniteRankBundleCore 𝕜 B) :
 
 @[simp] theorem dualTotalSpaceHomeomorph_apply (A : FiniteRankBundleCore 𝕜 B)
     (p : A.dual.core.TotalSpace) :
-    dualTotalSpaceHomeomorph A p = ⟨p.proj, dualFiberEquiv A p.proj p.2⟩ :=
+    dualTotalSpaceHomeomorph A p = ⟨p.proj, dualFiberEquiv A p.proj p.snd⟩ :=
   bundleHomeomorph_apply _ _ p
 
 @[simp] theorem dualTotalSpaceHomeomorph_symm_apply (A : FiniteRankBundleCore 𝕜 B)
     (p : TotalSpace ((Fin A.rank → 𝕜) →L[𝕜] 𝕜) (fun x => A.core.Fiber x →L[𝕜] Trivial B 𝕜 x)) :
-    (dualTotalSpaceHomeomorph A).symm p = ⟨p.proj, (dualFiberEquiv A p.proj).symm p.2⟩ :=
+    (dualTotalSpaceHomeomorph A).symm p = ⟨p.proj, (dualFiberEquiv A p.proj).symm p.snd⟩ :=
   bundleHomeomorph_symm_apply _ _ p
 
 /-- Under the identification with functionals, the transposed bundle map is precomposition
