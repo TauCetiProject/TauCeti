@@ -142,8 +142,8 @@ def semifreeResolution :
 
 /-- The augmentation of the semi-free resolution: the generator attached along a relative cycle
 `(c, w)` is sent to `w`. -/
-def semifreeResolutionAugmentation (x : semifreeResolutionGenerator 𝒜 d 𝒩 dN) : N :=
-  x.2.w
+def semifreeResolutionAugmentation : semifreeResolutionGenerator 𝒜 d 𝒩 dN → N :=
+  RowFiniteAugmentedModule.towerAugmentation (resolutionStep 𝒜 d 𝒩 dN)
 
 variable {𝒜 d 𝒩 dN}
 
@@ -157,9 +157,8 @@ theorem wellFounded_mem_support_semifreeResolution :
 
 /-- The augmentation preserves degrees: a generator of index `i` is sent to degree `-i`. -/
 theorem semifreeResolutionAugmentation_mem (x : semifreeResolutionGenerator 𝒜 d 𝒩 dN) :
-    semifreeResolutionAugmentation 𝒜 d 𝒩 dN x ∈ 𝒩 (-semifreeResolutionIndex 𝒜 d 𝒩 dN x) := by
-  rw [semifreeResolutionAugmentation, semifreeResolutionIndex, neg_neg]
-  exact x.2.w_mem
+    semifreeResolutionAugmentation 𝒜 d 𝒩 dN x ∈ 𝒩 (-semifreeResolutionIndex 𝒜 d 𝒩 dN x) :=
+  RowFiniteAugmentedModule.towerAugmentation_mem (resolutionStep 𝒜 d 𝒩 dN) x
 
 /-- **The augmentation is a chain map**, on the generators: the image of the row of a generator
 is the differential of its image. -/
@@ -180,9 +179,9 @@ theorem exists_semifreeResolution_m_eq {n : ℤ} {c : semifreeResolutionGenerato
     ∃ x, semifreeResolutionIndex 𝒜 d 𝒩 dN x = -n ∧ (semifreeResolution 𝒜 d 𝒩 dN).m x = c ∧
       semifreeResolutionAugmentation 𝒜 d 𝒩 dN x = w := by
   classical
+  -- `semifreeResolution` is by definition the union `towerCocycle` of the tower of stages.
   -- `c` involves finitely many generators, so it comes from some stage `k`.
-  obtain ⟨k, hk⟩ : ∃ k, c ∈ supported A A {y : semifreeResolutionGenerator 𝒜 d 𝒩 dN | y.1 < k} :=
-    ⟨_, fun x hx ↦ Nat.lt_of_succ_le (Finset.le_sup (f := fun x ↦ x.1 + 1) hx)⟩
+  obtain ⟨k, hk⟩ := exists_mem_supported_lt (R := A) Sigma.fst c
   obtain ⟨c', rfl⟩ :=
     RowFiniteAugmentedModule.exists_mapDomain_towerOf_eq (resolutionStep 𝒜 d 𝒩 dN) hk
   refine ⟨⟨k, ⟨n, c', w, ?_, hw, ?_, ?_⟩⟩, rfl,
@@ -190,10 +189,8 @@ theorem exists_semifreeResolution_m_eq {n : ℤ} {c : semifreeResolutionGenerato
   · exact (mapDomain_mem_rowFiniteTotalGrading_iff 𝒜 _
       (RowFiniteAugmentedModule.towerOf_injective _ k)
       (RowFiniteAugmentedModule.indQ_towerOf _ k)).mp hc
-  · apply mapDomain_injective (RowFiniteAugmentedModule.towerOf_injective _ k)
-    rw [← RowFiniteAugmentedModule.rowFiniteTwistedDifferential_towerCocycle_mapDomain,
-      mapDomain_zero]
-    exact hdc
+  · exact (RowFiniteAugmentedModule.rowFiniteTwistedDifferential_towerCocycle_mapDomain_eq_zero_iff
+      _ k c').mp hdc
   · rw [← RowFiniteAugmentedModule.linearCombination_towerAugmentation_mapDomain]
     exact hcw
 

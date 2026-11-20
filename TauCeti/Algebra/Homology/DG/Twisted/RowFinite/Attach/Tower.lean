@@ -46,6 +46,12 @@ public section
 
 open Finsupp
 
+/-- A finitely supported function is supported on the points of rank below some bound, for any
+rank function to `ℕ`. -/
+theorem Finsupp.exists_mem_supported_lt {α M R : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (r : α → ℕ) (f : α →₀ M) : ∃ k, f ∈ supported M R {y | r y < k} :=
+  ⟨f.support.sup (r · + 1), fun _ hy ↦ Nat.lt_of_succ_le (Finset.le_sup (f := (r · + 1)) hy)⟩
+
 namespace TauCeti
 
 universe uR uA uM u
@@ -283,6 +289,15 @@ theorem exists_mapDomain_towerOf_eq {k : ℕ} {f : (Σ j, Q j (tower step j)) �
     ∃ f' : (tower step k).P →₀ A, mapDomain (towerOf step k) f' = f := by
   rw [mem_supported', ← range_towerOf step k] at hf
   exact (mem_range_mapDomain_iff _ (towerOf_injective step k) f).2 hf
+
+/-- A vector of a stage is a cycle exactly when its image in the union is. -/
+theorem rowFiniteTwistedDifferential_towerCocycle_mapDomain_eq_zero_iff (k : ℕ)
+    (f : (tower step k).P →₀ A) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (towerCocycle step).m
+        (mapDomain (towerOf step k) f) = 0 ↔
+      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (tower step k).m.m f = 0 := by
+  rw [rowFiniteTwistedDifferential_towerCocycle_mapDomain]
+  exact (mapDomain_injective (towerOf_injective step k)).eq_iff' mapDomain_zero
 
 /-- The row of a generator attached at stage `k` only involves generators attached before. -/
 theorem towerCocycle_m_mem_supported (x : Σ k, Q k (tower step k)) :

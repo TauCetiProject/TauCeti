@@ -102,10 +102,10 @@ theorem exists_rowFiniteTwistedDifferential_eq_of_forall_mem_supported (m : P �
       linearCombination A g f' + dM w' = w := by
   obtain ⟨k₁, hk₁⟩ := hFex w
   -- `f` involves finitely many generators, so it lies below some rank.
-  set k₀ := f.support.sup fun y ↦ r y + 1
-  have hf₀ : f ∈ supported A A {y | r y < max k₀ k₁} := fun y hy ↦
-    lt_max_of_lt_left (Nat.lt_of_succ_le (Finset.le_sup (f := fun y ↦ r y + 1) hy))
-  exact hK (max k₀ k₁) f w hf₀ hf hfw (hF (le_max_right k₀ k₁) hk₁)
+  obtain ⟨k₀, hk₀⟩ := exists_mem_supported_lt (R := A) r f
+  exact hK (max k₀ k₁) f w
+    (supported_mono (Set.ofPred_subset_ofPred.2 fun _ ↦ lt_max_of_lt_left) hk₀) hf hfw
+    (hF (le_max_right k₀ k₁) hk₁)
 
 /-! ### The stages of the construction -/
 
@@ -227,14 +227,10 @@ private theorem exists_towerCocycle_eq (C : FilteredCells (h := h) (ℳ := ℳ) 
         (RowFiniteAugmentedModule.towerCocycle C.step).m f' = f ∧
         linearCombination A (RowFiniteAugmentedModule.towerAugmentation C.step) f' + dM w' = w := by
   obtain ⟨f₀, rfl⟩ := RowFiniteAugmentedModule.exists_mapDomain_towerOf_eq C.step hf
-  have hDf₀ : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d)
-      (RowFiniteAugmentedModule.tower C.step k).m.m f₀ = 0 := by
-    apply mapDomain_injective (RowFiniteAugmentedModule.towerOf_injective C.step k)
-    rw [← RowFiniteAugmentedModule.rowFiniteTwistedDifferential_towerCocycle_mapDomain,
-      mapDomain_zero]
-    exact hDf
+  rw [RowFiniteAugmentedModule.rowFiniteTwistedDifferential_towerCocycle_mapDomain_eq_zero_iff]
+    at hDf
   rw [RowFiniteAugmentedModule.linearCombination_towerAugmentation_mapDomain] at hfw
-  obtain ⟨u', w', hw', hu', huw⟩ := (C.isQuasiIsoOnto_tower k).2 f₀ w hDf₀ hfw hw
+  obtain ⟨u', w', hw', hu', huw⟩ := (C.isQuasiIsoOnto_tower k).2 f₀ w hDf hfw hw
   refine ⟨mapDomain (RowFiniteAugmentedModule.towerOf C.step k) u', w',
     RowFiniteAugmentedModule.mapDomain_towerOf_mem_supported C.step k u', hw', ?_, ?_⟩
   · rw [RowFiniteAugmentedModule.rowFiniteTwistedDifferential_towerCocycle_mapDomain, hu']
