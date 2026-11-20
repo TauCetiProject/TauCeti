@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Complex.Wirtinger.FlatTorus.Basic
 import TauCeti.Analysis.Fourier.Torus.UnitCube
 import TauCeti.Analysis.InnerProductSpace.WeakSolution
+import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -516,8 +517,8 @@ theorem flatLineCRInverse_ae_eq_of_ae_eq_conjWirtingerDeriv (hω : (conj ω₁ *
         conjWirtingerDeriv u (p.1 * ω₁ + p.2 * ω₂) 1 * conj (φ (p.1 * ω₁ + p.2 * ω₂)) :=
     integral_congr_ae (by filter_upwards [hf] with p hp; rw [hp])
   rw [h₁, h₂, setIntegral_conjWirtingerDeriv_mul_conj_eq_neg_setIntegral_mul_conj_wirtingerDeriv hu
-    (hφ.1.of_le one_le_two) hω (norm_exp_two_pi_mul_I θ₁) (norm_exp_two_pi_mul_I θ₂) hu₁ hu₂ hφ.2.1
-    hφ.2.2, neg_neg]
+    (hφ.1.of_le one_le_two) hω (norm_exp_two_pi_mul_ofReal_mul_I θ₁)
+    (norm_exp_two_pi_mul_ofReal_mul_I θ₂) hu₁ hu₂ hφ.2.1 hφ.2.2, neg_neg]
 
 end Inverse
 
@@ -601,7 +602,7 @@ private theorem norm_wirtingerToLp (hω : (conj ω₁ * ω₂).im ≠ 0)
   refine (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 ?_
   rw [wirtingerToLp_apply, conjWirtingerToLp_apply, MemLp.norm_toLp_sq, MemLp.norm_toLp_sq]
   exact setIntegral_norm_wirtingerDeriv_sq_eq_setIntegral_norm_conjWirtingerDeriv_sq u.2.1 hω
-    (norm_exp_two_pi_mul_I θ₁) (norm_exp_two_pi_mul_I θ₂) u.2.2.1 u.2.2.2
+    (norm_exp_two_pi_mul_ofReal_mul_I θ₁) (norm_exp_two_pi_mul_ofReal_mul_I θ₂) u.2.2.1 u.2.2.2
 
 /-- On a flat line with nontrivial holonomy, the `∂bar` of the test sections are dense in
 `L²`: the twisted exponentials are eigenfunctions of `∂bar` with nonzero eigenvalues, and they
@@ -732,8 +733,8 @@ private theorem inner_conjWirtingerToLp_add_inner_wirtingerToLp (hω : (conj ω�
     rw [wirtingerToLp_apply, hp]
   rw [e₁, e₂, add_eq_zero_iff_eq_neg]
   exact setIntegral_mul_conj_conjWirtingerDeriv_eq_neg (u.2.1.of_le one_le_two)
-    (φ.2.1.of_le one_le_two) hω (norm_exp_two_pi_mul_I θ₁) (norm_exp_two_pi_mul_I θ₂) u.2.2.1
-    u.2.2.2 φ.2.2.1 φ.2.2.2
+    (φ.2.1.of_le one_le_two) hω (norm_exp_two_pi_mul_ofReal_mul_I θ₁)
+    (norm_exp_two_pi_mul_ofReal_mul_I θ₂) u.2.2.1 u.2.2.2 φ.2.2.1 φ.2.2.2
 
 /-- The weak equation `∂ (Q f) = flatLineBeurling f` for the inverse `Q` of `∂bar`, in inner
 product form. -/

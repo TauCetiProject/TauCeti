@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Fourier.TwistedWirtinger
+import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Rectangle
 
@@ -97,10 +98,6 @@ open scoped Real Interval
 namespace TauCeti
 
 variable {u : ℂ → ℂ} {ω₁ ω₂ χ₁ χ₂ : ℂ} {θ₁ θ₂ : ℝ}
-
-/-- The holonomy `exp (2πiθ)` of a flat line is a unit complex number. -/
-theorem norm_exp_two_pi_mul_I (θ : ℝ) : ‖exp (2 * π * θ * I)‖ = 1 := by
-  simpa using norm_exp_ofReal_mul_I (2 * π * θ)
 
 section Lines
 
@@ -482,8 +479,8 @@ private theorem mul_setIntegral_norm_sq_le_of_four_mul_sq_mul_norm_sq_eq (hu : C
   have hIc : Continuous fun p ↦ ε * (2 * (conj ω₁ * ω₂).im *
       (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).im) := by
     fun_prop
-  have him := setIntegral_im_mul_conj_eq_zero hu (norm_exp_two_pi_mul_I θ₁)
-    (norm_exp_two_pi_mul_I θ₂) h₁ h₂
+  have him := setIntegral_im_mul_conj_eq_zero hu (norm_exp_two_pi_mul_ofReal_mul_I θ₁)
+    (norm_exp_two_pi_mul_ofReal_mul_I θ₂) h₁ h₂
   refine mul_setIntegral_le_of_four_mul (W := fun p ↦ W (L p))
     (V := ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖u (L p)‖ ^ 2)
     (G := fun p ↦ ‖ω₂‖ ^ 2 * ‖fderiv ℝ u (L p) ω₁‖ ^ 2 + ‖ω₁‖ ^ 2 * ‖fderiv ℝ u (L p) ω₂‖ ^ 2 -
