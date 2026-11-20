@@ -64,6 +64,11 @@ theorem coe_disc (c : ℂ) (R : ℝ≥0) : (disc c R : Set ℂ) = ball c R := by
   rw [disc]
   rfl
 
+/-- Membership in the open output disc is membership in its metric ball. -/
+@[simp]
+theorem mem_disc (c : ℂ) (R : ℝ≥0) (z : ℂ) : z ∈ disc c R ↔ z ∈ ball c R :=
+  Iff.rfl
+
 /-- The first-order vector weak-derivative graph. -/
 abbrev Graph (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] (Ω : Opens ℂ)
     (p : ℝ≥0∞) [Fact (1 ≤ p)] :=
@@ -86,6 +91,13 @@ def zeroExtend (c : ℂ) (r : ℝ≥0) :
 def zeroExtendFn (c : ℂ) (r : ℝ≥0)
     (u : Lp F p ((volume : Measure ℂ).restrict (closedBall c (r : ℝ)))) : ℂ → F :=
   (closedBall c (r : ℝ)).indicator u
+
+omit [Fact (1 ≤ p)] [NormedSpace ℂ F] in
+/-- The zero-extended representative is the indicator of the input disc. -/
+theorem zeroExtendFn_def (c : ℂ) (r : ℝ≥0)
+    (u : Lp F p (volume.restrict (closedBall c (r : ℝ)))) :
+    zeroExtendFn c r u = (closedBall c (r : ℝ)).indicator u := by
+  rfl
 
 /-- Zero extension has the indicator representative. -/
 theorem coe_zeroExtend (c : ℂ) (r : ℝ≥0)
@@ -126,8 +138,8 @@ theorem zeroExtendFn_toLp_ae {f : ℂ → F} (hf : MemLp f p (volume : Measure �
     (hf.restrict (closedBall c (r : ℝ))).coeFn_toLp
   filter_upwards [h] with w hw
   by_cases hin : w ∈ closedBall c (r : ℝ)
-  · simp only [zeroExtendFn, indicator_of_mem hin, hw hin]
-  · rw [zeroExtendFn, indicator_of_notMem hin]
+  · simp only [zeroExtendFn_def, indicator_of_mem hin, hw hin]
+  · rw [zeroExtendFn_def, indicator_of_notMem hin]
     exact (notMem_support.mp (fun h ↦ hin (hs h))).symm
 
 /-- The whole-plane class is recovered from a supported datum. -/
@@ -172,7 +184,7 @@ theorem coe_valueL (c : ℂ) (r R : ℝ≥0)
       ae (volume.restrict (closedBall c (R : ℝ))) by
         rw [coe_disc, volume.restrict_closedBall_eq_restrict_ball])
   refine ht.trans (.of_forall fun w ↦ ?_)
-  rw [cauchyTransform_apply, zeroExtendFn]
+  rw [cauchyTransform_apply, zeroExtendFn_def]
   apply congrArg fun t : F ↦ (Real.pi : ℂ)⁻¹ • t
   rw [← integral_indicator measurableSet_closedBall]
   apply integral_congr_ae
@@ -208,8 +220,8 @@ theorem zeroExtendFn_comp_ae (L : F →L[ℂ] G) (c : ℂ) (r : ℝ≥0)
   have h := (ae_restrict_iff' measurableSet_closedBall).mp (L.coeFn_compLpL u)
   filter_upwards [h] with z hz
   by_cases hin : z ∈ closedBall c (r : ℝ)
-  · simp only [zeroExtendFn, indicator_of_mem hin, hz hin]
-  · simp only [zeroExtendFn, indicator_of_notMem hin, map_zero]
+  · simp only [zeroExtendFn_def, indicator_of_mem hin, hz hin]
+  · simp only [zeroExtendFn_def, indicator_of_notMem hin, map_zero]
 
 omit [CompleteSpace F] [CompleteSpace G] in
 /-- The zero-extension operator commutes with coefficient maps. -/
@@ -588,7 +600,7 @@ theorem hasWeakFDerivOn_cauchy (hp : 1 < p) (hp_top : p ≠ ∞) {f : ℂ → F}
     exact (LpToLpRestrictCLM_coeFn ℂ (_ : Set ℂ) _)
   refine hasWeakFDerivOn_iff_locally.2 fun x _ ↦
     ⟨disc c ((‖x - c‖₊ + 1 : ℝ≥0)), ?_, hlocal _⟩
-  rw [← SetLike.mem_coe, coe_disc, mem_ball, dist_eq_norm]
+  rw [mem_disc, mem_ball, dist_eq_norm]
   push_cast
   linarith
 

@@ -39,7 +39,11 @@ between `Lp ℝ p μ` and `Lp 𝕜 p μ`.
 * `MeasureTheory.Lp.coeFn_add_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_sub_ae_eq_of_ae_eq`,
   `MeasureTheory.Lp.coeFn_neg_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_smul_ae_eq_of_ae_eq`: if
   `⇑u =ᵐ[μ] g` and `⇑v =ᵐ[μ] h`, then `⇑(u + v) =ᵐ[μ] g + h`, and similarly for `-` and `•`.
+* `ContinuousLinearMap.compLp_comp`, `ContinuousLinearMap.compLp_comp_toSpanSingleton`:
+  simplification laws for linear composition and scalar-functional reconstruction.
 * `ContinuousLinearMap.compLpL_comp`: postcomposition preserves semilinear composition.
+* `ContinuousLinearMap.compLpL_toSpanSingleton`: a scalar functional after rank-one
+  reconstruction is scalar multiplication.
 * `ContinuousLinearMap.compLpL_apply`: the bundled composition applied to `f` is `L.compLp f`.
 * `LinearIsometry.toContinuousLinearMap_compLpₗᵢ`: postcomposition of `Lp` classes by a
   semilinear isometry (`LinearIsometry.compLpₗᵢ`) underlies `ContinuousLinearMap.compLpL`.
@@ -133,6 +137,51 @@ theorem compLpL_comp (g : F →SL[τ] G) (f : E →SL[σ] F) (u : Lp E p μ) :
   filter_upwards [g.coeFn_compLpL (f.compLpL p μ u), f.coeFn_compLpL u,
     (g.comp f).coeFn_compLpL u] with x hg hf hgf
   simp only [hg, hf, hgf, ContinuousLinearMap.comp_apply]
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+variable {α 𝕜 E F G : Type*} [MeasurableSpace α] [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {μ : Measure α} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- Composition of continuous linear maps acts functorially on `Lp` classes. -/
+@[simp]
+theorem compLp_comp (g : F →L[𝕜] G) (f : E →L[𝕜] F) (u : Lp E p μ) :
+    g.compLp (f.compLp u) = (g.comp f).compLp u :=
+  compLpL_comp g f u
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+variable {α 𝕜 F : Type*} [MeasurableSpace α] [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {μ : Measure α} {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- A scalar functional after rank-one `Lp` reconstruction is scalar multiplication. -/
+theorem compLpL_toSpanSingleton (ℓ : F →L[𝕜] 𝕜) (v : F) (u : Lp 𝕜 p μ) :
+    ℓ.compLpL p μ ((ContinuousLinearMap.toSpanSingleton 𝕜 v).compLpL p μ u) = ℓ v • u := by
+  apply Lp.ext
+  filter_upwards [ℓ.coeFn_compLpL
+    ((ContinuousLinearMap.toSpanSingleton 𝕜 v).compLpL p μ u),
+    (ContinuousLinearMap.toSpanSingleton 𝕜 v).coeFn_compLpL u,
+    Lp.coeFn_smul (ℓ v) u] with x hℓ hv hs
+  simp only [hℓ, hv, hs, ContinuousLinearMap.toSpanSingleton_apply, map_smul,
+    Pi.smul_apply, smul_eq_mul, mul_comm]
+
+/-- A scalar functional on rank-one reconstructed `Lp` data is scalar multiplication. -/
+@[simp]
+theorem compLp_comp_toSpanSingleton (ℓ : F →L[𝕜] 𝕜) (v : F) (u : Lp 𝕜 p μ) :
+    (ℓ.comp (ContinuousLinearMap.toSpanSingleton 𝕜 v)).compLp u = ℓ v • u := by
+  rw [← compLp_comp]
+  exact compLpL_toSpanSingleton ℓ v u
 
 end ContinuousLinearMap
 

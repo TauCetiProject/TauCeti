@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Beurling.Basic
+public import TauCeti.MeasureTheory.Function.Lp.Basic
 public import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 
 /-!
