@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Diagonal
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 import TauCeti.Analysis.InnerProductSpace.Parseval
+import TauCeti.Topology.Algebra.Module.LinearPMap.Basic
 
 /-!
 # Diagonal operators in a Hilbert basis
@@ -296,10 +297,7 @@ theorem isClosed_diagonalPMap : (b.diagonalPMap c).IsClosed := by
 only if its coordinates `⟪b i, x⟫` vanish at every index `i` with `c i ≠ 0`. -/
 theorem mem_ker_diagonalPMap_iff {x : E} :
     x ∈ (b.diagonalPMap c).ker ↔ ∀ i, c i ≠ 0 → ⟪b i, x⟫_𝕜 = 0 := by
-  have hker : x ∈ (b.diagonalPMap c).ker ↔ (x, (0 : E)) ∈ (b.diagonalPMap c).graph := by
-    rw [mem_ker_iff, mem_graph_iff]
-    exact ⟨fun ⟨y, hxy, hy⟩ ↦ ⟨y, hxy.symm, hy⟩, fun ⟨y, hxy, hy⟩ ↦ ⟨y, hxy.symm, hy⟩⟩
-  rw [hker, mem_graph_diagonalPMap_iff]
+  rw [mem_ker_iff_mem_graph, mem_graph_diagonalPMap_iff]
   refine forall_congr' fun i ↦ ?_
   rw [inner_zero_right, eq_comm, mul_eq_zero]
   exact ⟨fun h hc ↦ h.resolve_left hc, fun h ↦ or_iff_not_imp_left.2 h⟩
@@ -324,11 +322,7 @@ theorem ker_diagonalPMap :
     rw [SetLike.mem_coe, mem_ker_diagonalPMap_iff]
     intro j hj
     exact b.orthonormal.inner_eq_zero fun hji ↦ hj (hji ▸ hi)
-  · have h : ((b.diagonalPMap c).ker : Set E) = ⋂ i, ⋂ (_ : c i ≠ 0), {x | ⟪b i, x⟫_𝕜 = 0} := by
-      ext x
-      simp [mem_ker_diagonalPMap_iff]
-    rw [h]
-    exact isClosed_iInter fun i ↦ isClosed_iInter fun _ ↦ isClosed_eq (by fun_prop) continuous_const
+  · exact (b.isClosed_diagonalPMap c).isClosed_ker
 
 /-- **The dimension of the kernel of a diagonal operator** is the number of indices `i` with
 `c i = 0`. Both sides are `0` when there are infinitely many such indices. -/
