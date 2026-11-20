@@ -203,12 +203,12 @@ lemma stdSimplex.not_isPullbackSquare_coneIso_inv_comp_π :
   have key := Nonempty.intro (e.map (slice.π _))
   have h₁ : (slice.π _).app _ (slice.objEquiv.symm ⟨_, hd⟩) =
       stdSimplex.obj₀Equiv.{u}.symm 1 := by
-    rw [slice.π_app, Equiv.apply_symm_apply, comp_const, yonedaEquiv_const]
-    rfl
+    rw [slice.π_app, Equiv.apply_symm_apply, comp_const, yonedaEquiv_const,
+      stdSimplex.obj₀Equiv_symm_apply]
   have h₀ : (slice.π _).app _ (square.cone (square.coneIso.{u}.inv ≫ join.π _ _)) =
       stdSimplex.obj₀Equiv.{u}.symm 0 := by
-    rw [slice.π_app, square.objEquiv_cone, Iso.hom_inv_id_assoc, join.inl_π, yonedaEquiv_const]
-    rfl
+    rw [slice.π_app, square.objEquiv_cone, Iso.hom_inv_id_assoc, join.inl_π, yonedaEquiv_const,
+      stdSimplex.obj₀Equiv_symm_apply]
   rw [h₁, h₀, stdSimplex.nonempty_edge_iff] at key
   exact absurd key (by decide)
 
@@ -227,12 +227,11 @@ lemma stdSimplex.not_isPushoutSquare_coconeIso_inv_comp_π :
   have h₁ : (coslice.π _).app _ (square.cocone (square.coconeIso.{u}.inv ≫ join.π _ _)) =
       stdSimplex.obj₀Equiv.{u}.symm 1 := by
     rw [coslice.π_app, square.objEquiv_cocone, Iso.hom_inv_id_assoc, join.inr_π,
-      yonedaEquiv_const]
-    rfl
+      yonedaEquiv_const, stdSimplex.obj₀Equiv_symm_apply]
   have h₀ : (coslice.π _).app _ (coslice.objEquiv.symm ⟨_, hd⟩) =
       stdSimplex.obj₀Equiv.{u}.symm 0 := by
-    rw [coslice.π_app, Equiv.apply_symm_apply, comp_const, yonedaEquiv_const]
-    rfl
+    rw [coslice.π_app, Equiv.apply_symm_apply, comp_const, yonedaEquiv_const,
+      stdSimplex.obj₀Equiv_symm_apply]
   rw [h₁, h₀, stdSimplex.nonempty_edge_iff] at key
   exact absurd key (by decide)
 

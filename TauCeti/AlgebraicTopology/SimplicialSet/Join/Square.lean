@@ -251,8 +251,8 @@ private lemma image_le_range_coneMap : image ≤ Subcomplex.range coneMap.{u} :=
       stdSimplex.face {j.succ}ᶜ ≤ Subcomplex.range coneMap.{u} := by
     rw [← stdSimplex.ofSimplex_yonedaEquiv_δ, Subcomplex.ofSimplex_le_iff]
     exact ⟨yonedaEquiv ((join.coneIso 1).inv ≫ join.map (𝟙 _) (horn.ι 2 j hj)), by
-      rw [← yonedaEquiv_comp, Category.assoc, coneIso_inv_comp_map_ι_comp_coneMap]
-      rfl⟩
+      rw [← yonedaEquiv_comp, Category.assoc, coneIso_inv_comp_map_ι_comp_coneMap,
+        CosimplicialObject.δ]⟩
   exact sup_le (h 0 (by decide)) (h 1 (by decide))
 
 /-! ### The cocone `Λ[2, 0] ⋆ Δ[0]` inside `Δ[3]` -/
@@ -358,8 +358,8 @@ private lemma image_le_range_coconeMap : image ≤ Subcomplex.range coconeMap.{u
       stdSimplex.face {j.castSucc}ᶜ ≤ Subcomplex.range coconeMap.{u} := by
     rw [← stdSimplex.ofSimplex_yonedaEquiv_δ, Subcomplex.ofSimplex_le_iff]
     exact ⟨yonedaEquiv ((join.stdSimplexIso 1 0).inv ≫ join.map (horn.ι 0 j hj) (𝟙 _)), by
-      rw [← yonedaEquiv_comp, Category.assoc, map_ι_comp_coconeMap, Iso.inv_hom_id_assoc]
-      rfl⟩
+      rw [← yonedaEquiv_comp, Category.assoc, map_ι_comp_coconeMap, Iso.inv_hom_id_assoc,
+        CosimplicialObject.δ]⟩
   exact sup_le (h 1 (by decide)) (h 2 (by decide))
 
 /-! ### The isomorphisms -/
