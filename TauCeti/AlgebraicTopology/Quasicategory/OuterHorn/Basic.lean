@@ -114,13 +114,13 @@ private lemma hornFilling_zero_aux [Quasicategory C] (N : ℕ) (hN : 2 ≤ N)
     rw [mk'_edge, mk'_edge, slice.comp_π, Equiv.apply_symm_apply, ← hedge, ← yonedaEquiv_comp]
     simp only [b, Category.assoc]
   have := slice.hasLift_of_isEquivalence p ∂Δ[n].ι sq hB
-  let τ := (slice.homEquiv sq.lift).1
+  let τ := (slice.homEquiv sq.lift).val
   have hτ : U.ι ≫ τ = I.hom ≫ σ₀ := hpush.hom_ext
     (by
       rw [Subcomplex.unionJoin.ι₁_ι_assoc, ← slice.homEquiv_comp_coe, sq.fac_left,
         Equiv.apply_symm_apply])
     (by
-      have h := congrArg (fun F ↦ (slice.homEquiv F).1) sq.fac_right
+      have h := congrArg (fun F ↦ (slice.homEquiv F).val) sq.fac_right
       rw [slice.homEquiv_comp_map_coe, Equiv.apply_symm_apply, Category.comp_id] at h
       rw [Subcomplex.unionJoin.ι₂_ι_assoc, h])
   exact ⟨E.inv ≫ τ, by
@@ -309,7 +309,7 @@ private lemma isEquivalence_of_horn₂₀ [Quasicategory C] {a : (Λ[2, 0] : SSe
       rw [← stdSimplex.δ_comp_yonedaEquiv_symm, ← horn.ι_ι 0 j hj, Category.assoc, hab]
     rw [← edge_mem_core_iff, mk'_edge, ← yonedaEquiv.apply_symm_apply (C.δ j s), h,
       yonedaEquiv_comp]
-    exact (a.app _ _).2
+    exact (a.app _ _).property
   obtain ⟨f, rfl⟩ : ∃ f : ⦋1⦌ ⟶ ⦋2⦌, stdSimplex.objEquiv.symm f = y :=
     stdSimplex.objEquiv.symm.surjective y
   rw [yonedaEquiv_symm_app_objEquiv_symm]
@@ -325,14 +325,14 @@ theorem core.hornFilling_zero [Quasicategory C] {n : ℕ}
     ∃ σ : Δ[n + 2] ⟶ C.core, σ₀ = Λ[n + 2, 0].ι ≫ σ := by
   have he : (mk' ((σ₀ ≫ C.core.ι).app _
       (horn.edge (n + 2) 0 0 1 (Fin.zero_le _) (by simp)))).IsEquivalence :=
-    (edge_mem_core_iff (mk' _)).1 (σ₀.app _ _).2
+    (edge_mem_core_iff (mk' _)).1 (σ₀.app _ _).property
   obtain ⟨b, hb⟩ := Quasicategory.hornFilling_zero (σ₀ ≫ C.core.ι) he
   have hrange : Subcomplex.range b ≤ C.core := by
     rw [range_le_core_iff]
     intro y
     by_cases hy : y ∈ Λ[n + 2, 0].obj (op ⦋1⦌)
-    · have : b.app _ y = (σ₀.app _ ⟨y, hy⟩).1 := congr($(hb).app _ ⟨y, hy⟩).symm
-      exact (edge_mem_core_iff (mk' _)).1 (this ▸ (σ₀.app _ ⟨y, hy⟩).2)
+    · have : b.app _ y = (σ₀.app _ ⟨y, hy⟩).val := congr($(hb).app _ ⟨y, hy⟩).symm
+      exact (edge_mem_core_iff (mk' _)).1 (this ▸ (σ₀.app _ ⟨y, hy⟩).property)
     obtain _ | n := n
     · exact isEquivalence_of_horn₂₀ hb y hy
     · exact (hy (horn_obj_eq_univ (0 : Fin (n + 4)) 1 (by lia) ▸ Set.mem_univ y)).elim

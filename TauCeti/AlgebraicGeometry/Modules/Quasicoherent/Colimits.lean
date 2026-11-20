@@ -104,9 +104,9 @@ theorem isQuasicoherent_of_isColimit {X : Scheme.{u}} {K : J ⥤ X.Modules}
     c.pt.IsQuasicoherent := by
   -- Restriction to an open subscheme is a left adjoint, so it preserves the colimit.
   refine c.pt.isQuasicoherent_iff_forall_affineOpens.2 fun U ↦ ?_
-  exact isQuasicoherent_of_isColimit_affine (K := K ⋙ restrictFunctor U.1.ι)
+  exact isQuasicoherent_of_isColimit_affine (K := K ⋙ restrictFunctor U.val.ι)
     (fun j ↦ have := hK j; isQuasicoherent_restrictFunctor _ _)
-    (isColimitOfPreserves (restrictFunctor U.1.ι) hc)
+    (isColimitOfPreserves (restrictFunctor U.val.ι) hc)
 
 variable (J) in
 /-- Quasicoherence is closed under small colimits in the category of all sheaves of modules, so

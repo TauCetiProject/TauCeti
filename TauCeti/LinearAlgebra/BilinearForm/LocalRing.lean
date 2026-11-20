@@ -157,7 +157,7 @@ theorem IsSymm.exists_basis_orthogonal (hB : B.IsSymm) {m k : ℕ}
   have hcl (i : Fin k) : c (Sum.inl i) = v i := by simp [c, s, Basis.span_apply hli i]
   have hcr (j : Fin m) : c (Sum.inr j) = t j := by simp [c]
   have hvT (i : Fin k) (j : Fin m) : B (v i) (t j) = 0 :=
-    (t j).2 (v i) (Submodule.subset_span ⟨i, rfl⟩)
+    (t j).property (v i) (Submodule.subset_span ⟨i, rfl⟩)
   have hTv (j : Fin m) (i : Fin k) : B (t j) (v i) = 0 := by rw [← hB.eq, hvT]
   have hblock : B.toMatrix c =
       Matrix.fromBlocks G 0 0 ((B.restrict T).toMatrix t) := by
@@ -215,7 +215,7 @@ theorem IsSymm.exists_orthogonal_isUnit_det_of_isModular [Module.Free R M] [Modu
   · have hb : IsUnit (C.toMatrix b).det := b.isUnit_det_of_isPerfPair b C hC
     rw [hdetb] at hb
     exact isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hb)
-  · simp [(t j).2 (v i) (Submodule.subset_span ⟨i, rfl⟩)]
+  · simp [(t j).property (v i) (Submodule.subset_span ⟨i, rfl⟩)]
   · rw [Set.range_comp, ← Submodule.map_span, t.span_eq, Submodule.map_top, Submodule.range_subtype]
     exact hc.sup_eq_top
 

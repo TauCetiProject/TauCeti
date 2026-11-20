@@ -136,7 +136,7 @@ theorem exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul (hf : IsM
   intro k _ V _ n hno
   have hcell (i : ℕ) : Finite (cell (univ : Set W) i) := FiniteType.finite_cell i
   have hempty : IsEmpty (cell (univ : Set W) (n + 1)) :=
-    (c (n + 1)).some.isEmpty_congr.2 ⟨fun x ↦ hno x.1 x.2.1 x.2.2⟩
+    (c (n + 1)).some.isEmpty_congr.2 ⟨fun x ↦ hno x.val x.property.1 x.property.2⟩
   have h := sum_range_monomial_natCard_cell_mul_finrank_eq (univ : Set W) V (fun i _ ↦ hcell i)
     hempty
   simp only [Nat.card_congr (c _).some, Nat.card_coe_set_eq] at h
@@ -176,7 +176,8 @@ theorem exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul_of_manifo
   obtain ⟨W, instTop, instT2, B, instCW, hfin, c, hpoly⟩ :=
     hf.exists_relCWComplex_sum_range_monomial_sublevelPair_eq_add_mul hab hcompact ha hb
   exact ⟨W, instTop, instT2, B, instCW, hfin, c,
-    fun m hm ↦ (c m).some.isEmpty_congr.2 ⟨fun x ↦ ((x.2.2 ▸ hidx x.1 x.2.1).trans_lt hm).false⟩,
+    fun m hm ↦ (c m).some.isEmpty_congr.2 ⟨fun x ↦
+        ((x.property.2 ▸ hidx x.val x.property.1).trans_lt hm).false⟩,
     fun {k} _ V _ {n} hn ↦ hpoly V fun x hx ↦ ((hidx x hx).trans_lt (Nat.lt_succ_of_le hn)).ne⟩
 
 end TauCeti.IsMorse

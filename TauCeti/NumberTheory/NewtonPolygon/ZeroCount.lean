@@ -294,7 +294,7 @@ private theorem newtonSlopeMultiplicity_tprod_of_ne_zero {ι : Type*} {α : ι �
     have h1 := constantCoeff_tprod_polynomialHom_one_sub_C_mul_X (fun i ↦ (α i)⁻¹)
     rw [h, map_zero] at h1
     exact zero_ne_one h1
-  have hFent : (F : K⟦X⟧).IsEntire := _root_.PowerSeries.IsEntire.mem_subring.mp F.2
+  have hFent : (F : K⟦X⟧).IsEntire := _root_.PowerSeries.IsEntire.mem_subring.mp F.property
   have hdisc := isDiscPreparation_tprod_polynomialHom_one_sub_C_inv_mul_X hα hα0 hr.le hs
   obtain ⟨l, j, hface⟩ := hFent.exists_isFiniteFace_newtonPolygon v hb hv hF0 σ
   have hfd := _root_.PowerSeries.isDistinguished_of_isFiniteFace v hb hv (hFent.isRestricted _)
@@ -339,8 +339,8 @@ theorem newtonSlopeMultiplicity_tprod_polynomialHom_one_sub_C_inv_mul_X {ι : Ty
     exact hi (by simp [φ, hα0])
   rw [← tprod_subtype_eq_of_mulSupport_subset hsupp,
     newtonSlopeMultiplicity_tprod_of_ne_zero v hb hv
-      (hα.comp Subtype.val_injective.tendsto_cofinite) (fun j : S ↦ j.2) σ]
-  have himg : (Subtype.val : S → ι) '' {j : S | ‖α j.1‖ = b ^ σ} = {i : ι | ‖α i‖ = b ^ σ} := by
+      (hα.comp Subtype.val_injective.tendsto_cofinite) (fun j : S ↦ j.property) σ]
+  have himg : (Subtype.val : S → ι) '' {j : S | ‖α j.val‖ = b ^ σ} = {i : ι | ‖α i‖ = b ^ σ} := by
     ext i
     simp only [Set.mem_image, Set.mem_ofPred_eq, Subtype.exists]
     refine ⟨fun ⟨_, _, h, heq⟩ ↦ heq ▸ h, fun h ↦ ⟨i, ?_, h, rfl⟩⟩

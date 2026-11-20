@@ -158,9 +158,9 @@ private theorem sum_measure_levelSet_mul_le (μ : Measure Ω) (φ : 𝓓^{n}(Ω,
     (hε : 0 < ε) (N : ℕ) {W : Set E} (hφW : tsupport φ ⊆ W) :
     ∑ j : Fin N, μ (levelSet φ ε j) * ENNReal.ofReal ((j + 2) * ε) ≤
       ∫⁻ x, ‖φ x‖ₑ ∂μ + ENNReal.ofReal (2 * ε) * μ ((↑) ⁻¹' W) := by
-  have hφc : Continuous fun x : Ω => φ x := φ.continuous.comp continuous_subtype_val
+  have hφc : Continuous fun x : Ω => φ x := φ.continuous.comp continuous_subtypeVal
   have hmeas (j : Fin N) : MeasurableSet (levelSet φ ε j) :=
-    ((isClosed_tsupport φ).preimage continuous_subtype_val).measurableSet.inter
+    ((isClosed_tsupport φ).preimage continuous_subtypeVal).measurableSet.inter
       ((hφc.norm.div_const ε).measurable.nat_ceil (measurableSet_singleton _))
   have hdisj : Pairwise (Disjoint on fun j : Fin N => levelSet φ ε j) := fun i j hij =>
     disjoint_left.2 fun x hi hj => hij <| Fin.ext <| by simpa using hi.2.symm.trans hj.2
@@ -290,7 +290,7 @@ private theorem enorm_apply_le_lintegral_add_mul (hT : HasLocallyFiniteMass T)
   have hVo (i : Option (Fin N)) : IsOpen (V i) := by
     rcases i with _ | j
     · exact hW.inter (isOpen_lt hφn continuous_const)
-    · exact ((Ω.isOpen.isOpenMap_subtype_val _ (hGo j)).inter hW).inter
+    · exact ((Ω.isOpen.isOpenMap_subtypeVal _ (hGo j)).inter hW).inter
         (isOpen_lt hφn continuous_const)
   have hVb (i : Option (Fin N)) (y : E) (hy : y ∈ V i) : ‖φ y‖ₑ ≤ b i := by
     rw [← ofReal_norm]

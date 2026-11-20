@@ -501,7 +501,7 @@ private theorem exists_integral_norm_sq_le_mul_integral_floerJetCoeff_stationary
     (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd)
   refine ⟨C, fun ξ ↦ ?_⟩
   simp only [floerJetCoeff_jet, floerLinearization_eq_stationaryCylinderOperator ω J H hx]
-  exact hC ξ ξ.2
+  exact hC ξ ξ.property
 
 include hX hH hx hJ hJx in
 /-- **The linearized Floer operator at a nondegenerate orbit is bounded below on `W^{1,2}`.**

@@ -43,7 +43,7 @@ def connectingOrbitSetoid (φ : _root_.Flow ℝ E) (p q : E) :
 @[simp]
 theorem connectingOrbitSetoid_apply
     (x y : ↥(unstableSet φ p ∩ stableSet φ q)) :
-    connectingOrbitSetoid φ p q x y ↔ ∃ t : ℝ, φ t y.1 = x.1 :=
+    connectingOrbitSetoid φ p q x y ↔ ∃ t : ℝ, φ t y.val = x.val :=
   Iff.rfl
 
 end OrbitRelation

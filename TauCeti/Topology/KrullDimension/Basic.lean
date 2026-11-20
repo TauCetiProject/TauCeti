@@ -214,11 +214,11 @@ theorem Topology.IsOpenEmbedding.coheight_subtype_eq {X Y : Type*} [TopologicalS
     coheight (⟨x, hx⟩ : T) = coheight (⟨f x, (hTF x).1 hx⟩ : F) := by
   have hlt {a b : X} : f a < f b ↔ a < b :=
     and_congr hf.isInducing.specializes_iff (not_congr hf.isInducing.specializes_iff)
-  refine coheight_eq_of_strictMono (fun v : T ↦ (⟨f v, (hTF v).1 v.2⟩ : F))
+  refine coheight_eq_of_strictMono (fun v : T ↦ (⟨f v, (hTF v).1 v.property⟩ : F))
     (fun _ _ h ↦ Subtype.coe_lt_coe.mp (hlt.mpr h)) (fun v b h ↦ ?_) _
   obtain ⟨v', hv'⟩ : (b : Y) ∈ Set.range f :=
     h.le.mem_open hf.isOpen_range ⟨v, rfl⟩
-  exact ⟨⟨v', (hTF v').2 (hv' ▸ b.2)⟩, hlt.mp (by rw [hv']; exact h), Subtype.ext hv'⟩
+  exact ⟨⟨v', (hTF v').2 (hv' ▸ b.property)⟩, hlt.mp (by rw [hv']; exact h), Subtype.ext hv'⟩
 
 namespace Topology.IsEmbedding
 

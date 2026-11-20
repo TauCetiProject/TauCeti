@@ -166,7 +166,7 @@ on their union. -/
 theorem isVanishingOn_sUnion {S : Set (Set E)} (hS : ∀ s ∈ S, IsOpen s ∧ IsVanishingOn T s) :
     IsVanishingOn T (⋃₀ S) := by
   rw [sUnion_eq_iUnion]
-  exact isVanishingOn_iUnion T (fun s ↦ (hS s s.2).1) fun s ↦ (hS s s.2).2
+  exact isVanishingOn_iUnion T (fun s ↦ (hS s s.property).1) fun s ↦ (hS s s.property).2
 
 /-- An additive map on test functions vanishes on the complement of its support. -/
 theorem isVanishingOn_compl_dsupport : IsVanishingOn T (dsupport T)ᶜ := by

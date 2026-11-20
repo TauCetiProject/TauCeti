@@ -182,7 +182,7 @@ protected theorem _root_.ContMDiffOn.dSmooth_domRestrict
     [DiffeologicalSpace N] [IsContMDiffCompatible F N] {f : M → N} {s : Set M}
     (hf : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ f s) : DSmooth (s.domRestrict f) :=
   fun _ p hp => isPlot_iff_contMDiff.mpr (hf.comp_contMDiff
-    (isPlot_iff_contMDiff.mp (TauCeti.Diffeology.isPlot_subtype_iff.mp hp)) fun z => (p z).2)
+    (isPlot_iff_contMDiff.mp (TauCeti.Diffeology.isPlot_subtype_iff.mp hp)) fun z => (p z).property)
 
 /-- A Cartesian parametrization into a product of compatible charted spaces is a plot of the
 product diffeology if and only if it is smooth for the product model `𝓘(ℝ, E).prod 𝓘(ℝ, F)`. -/

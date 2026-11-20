@@ -110,7 +110,7 @@ theorem Scheme.Hom.isDominant_of_isOpenMap {X Y : Scheme.{u}} [PreirreducibleSpa
 /-- The preimage of a nonempty open under a dominant morphism is nonempty. -/
 instance Scheme.Hom.nonempty_preimage_of_isDominant {X Y : Scheme.{u}} (f : X ⟶ Y)
     [IsDominant f] (U : Y.Opens) [Nonempty U] : Nonempty (f ⁻¹ᵁ U) := by
-  obtain ⟨x, hx⟩ := f.denseRange.exists_mem_open U.2 ⟨_, (Classical.arbitrary U).2⟩
+  obtain ⟨x, hx⟩ := f.denseRange.exists_mem_open U.is_open' ⟨_, (Classical.arbitrary U).property⟩
   exact ⟨⟨x, hx⟩⟩
 
 variable {X Y Z : Scheme.{u}} [IrreducibleSpace X] [IrreducibleSpace Y]
@@ -218,7 +218,7 @@ field to a nonzero ring. -/
 theorem appLE_injective_of_isDominant [IsIntegral Y] (f : X ⟶ Y) [IsDominant f]
     (U : Y.Opens) (V : X.Opens) [Nonempty V] (e : V ≤ f ⁻¹ᵁ U) :
     Function.Injective (f.appLE U V e) := by
-  have : Nonempty U := ⟨⟨_, e (Classical.arbitrary V).2⟩⟩
+  have : Nonempty U := ⟨⟨_, e (Classical.arbitrary V).property⟩⟩
   have h : f.appLE U V e ≫ X.germToFunctionField V =
       Y.germToFunctionField U ≫ f.functionFieldMap := by
     simp [Scheme.germToFunctionField, Scheme.Hom.appLE]

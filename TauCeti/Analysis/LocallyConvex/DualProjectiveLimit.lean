@@ -149,7 +149,7 @@ theorem coord_apply (j : ℕ) (f : dualProjectiveLimit T) :
 @[simp]
 theorem apply_succ_comp (f : dualProjectiveLimit T) (j : ℕ) :
     ((f : ∀ n, StrongDual 𝕜 (B n)) (j + 1)).comp (T j) = (f : ∀ n, StrongDual 𝕜 (B n)) j :=
-  f.2 j
+  f.property j
 
 @[simp]
 theorem apply_succ_apply (f : dualProjectiveLimit T) {j : ℕ} (x : B j) :
@@ -255,7 +255,7 @@ theorem exists_norm_le_forall_apply_eq {j : ℕ} (hT : (T j).IsWeaklyCompact)
     rwa [← sub_eq_zero, ← map_sub]
   obtain ⟨ψ, hψ⟩ : ∃ ψ : LinearMap.range π →ₗ[𝕜] 𝕜,
       ∀ f, ψ ⟨π f, LinearMap.mem_range_self π f⟩ = φ f := by
-    choose g hg using fun h : LinearMap.range π ↦ LinearMap.mem_range.1 h.2
+    choose g hg using fun h : LinearMap.range π ↦ LinearMap.mem_range.1 h.property
     refine ⟨{ toFun h := φ (g h), map_add' h h' := ?_, map_smul' c h := ?_ }, fun f ↦ ?_⟩
     · rw [← map_add]
       exact hdesc (by rw [map_add, hg, hg, hg, Submodule.coe_add])

@@ -267,21 +267,21 @@ theorem nontrivialDivisorEquiv_symm_apply_val
 
 /-- For `N ≠ 0`, positive integers dividing `N` correspond to `N.divisors`. -/
 def pnatDvdEquivDivisors (N : ℕ) [NeZero N] : {M : ℕ+ // (M : ℕ) ∣ N} ≃ N.divisors where
-  toFun M := ⟨M.1, Nat.mem_divisors.mpr ⟨M.2, NeZero.ne N⟩⟩
-  invFun M := ⟨⟨M.1, Nat.pos_of_mem_divisors M.2⟩, Nat.dvd_of_mem_divisors M.2⟩
+  toFun M := ⟨M.val, Nat.mem_divisors.mpr ⟨M.property, NeZero.ne N⟩⟩
+  invFun M := ⟨⟨M.val, Nat.pos_of_mem_divisors M.property⟩, Nat.dvd_of_mem_divisors M.property⟩
   left_inv _ := Subtype.ext (PNat.eq rfl)
   right_inv _ := Subtype.ext rfl
 
 /-- `pnatDvdEquivDivisors` preserves the underlying natural number. -/
 @[simp]
 theorem coe_pnatDvdEquivDivisors_apply (M : {M : ℕ+ // (M : ℕ) ∣ N}) :
-    ((pnatDvdEquivDivisors N M : N.divisors) : ℕ) = M.1 :=
+    ((pnatDvdEquivDivisors N M : N.divisors) : ℕ) = M.val :=
   (rfl)
 
 /-- `(pnatDvdEquivDivisors N).symm` preserves the underlying natural number. -/
 @[simp]
 theorem coe_pnatDvdEquivDivisors_symm_apply (M : N.divisors) :
-    (((pnatDvdEquivDivisors N).symm M).1 : ℕ) = M :=
+    (((pnatDvdEquivDivisors N).symm M).val : ℕ) = M :=
   (rfl)
 
 /-- For `N ≠ 0`, the subtype of positive divisors of `N` is finite. -/
@@ -292,42 +292,42 @@ instance instFintypePNatDvd (N : ℕ) [NeZero N] : Fintype {M : ℕ+ // (M : ℕ
 divisor `M` of `N` together with a divisor `d` of `N / M`. -/
 def pnatMulDvdEquivSigma (N : ℕ) [NeZero N] :
     {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N} ≃
-      Σ M : {M : ℕ+ // (M : ℕ) ∣ N}, (N / M.1).divisors where
+      Σ M : {M : ℕ+ // (M : ℕ) ∣ N}, (N / M.val).divisors where
   toFun p :=
-    have hMN : (p.1.1 : ℕ) ∣ N := dvd_of_mul_left_dvd p.2
-    ⟨⟨p.1.1, hMN⟩, ⟨p.1.2, Nat.mem_divisors.mpr
-      ⟨(Nat.dvd_div_iff_mul_dvd hMN).mpr (mul_comm (p.1.2 : ℕ) p.1.1 ▸ p.2),
-        Nat.div_ne_zero_iff.mpr ⟨p.1.1.ne_zero, Nat.le_of_dvd (NeZero.pos N) hMN⟩⟩⟩⟩
-  invFun x := ⟨(x.1.1, ⟨x.2.1, Nat.pos_of_mem_divisors x.2.2⟩),
-    mul_comm (x.1.1 : ℕ) x.2.1 ▸
-      (Nat.dvd_div_iff_mul_dvd x.1.2).mp (Nat.dvd_of_mem_divisors x.2.2)⟩
+    have hMN : (p.val.1 : ℕ) ∣ N := dvd_of_mul_left_dvd p.property
+    ⟨⟨p.val.1, hMN⟩, ⟨p.val.2, Nat.mem_divisors.mpr
+      ⟨(Nat.dvd_div_iff_mul_dvd hMN).mpr (mul_comm (p.val.2 : ℕ) p.val.1 ▸ p.property),
+        Nat.div_ne_zero_iff.mpr ⟨p.val.1.ne_zero, Nat.le_of_dvd (NeZero.pos N) hMN⟩⟩⟩⟩
+  invFun x := ⟨(x.1.val, ⟨x.2.val, Nat.pos_of_mem_divisors x.2.property⟩),
+    mul_comm (x.1.val : ℕ) x.2.val ▸
+      (Nat.dvd_div_iff_mul_dvd x.1.property).mp (Nat.dvd_of_mem_divisors x.2.property)⟩
   left_inv _ := Subtype.ext (Prod.ext rfl (PNat.eq rfl))
   right_inv x := by obtain ⟨_, ⟨_, _⟩⟩ := x; rfl
 
 /-- The first component of `pnatMulDvdEquivSigma` preserves the positive divisor `M`. -/
 @[simp]
 theorem fst_val_pnatMulDvdEquivSigma_apply (p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}) :
-    (pnatMulDvdEquivSigma N p).1.1 = p.1.1 :=
+    (pnatMulDvdEquivSigma N p).1.val = p.val.1 :=
   (rfl)
 
 /-- The second component of `pnatMulDvdEquivSigma` preserves the underlying natural number `d`. -/
 @[simp]
 theorem coe_snd_pnatMulDvdEquivSigma_apply (p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}) :
-    ((pnatMulDvdEquivSigma N p).2 : ℕ) = p.1.2 :=
+    ((pnatMulDvdEquivSigma N p).2 : ℕ) = p.val.2 :=
   (rfl)
 
 /-- The first factor of `(pnatMulDvdEquivSigma N).symm` is `x.1.1`. -/
 @[simp]
 theorem fst_val_pnatMulDvdEquivSigma_symm_apply
-    (x : Σ M : {M : ℕ+ // (M : ℕ) ∣ N}, (N / M.1).divisors) :
-    ((pnatMulDvdEquivSigma N).symm x).1.1 = x.1.1 :=
+    (x : Σ M : {M : ℕ+ // (M : ℕ) ∣ N}, (N / M.val).divisors) :
+    ((pnatMulDvdEquivSigma N).symm x).val.1 = x.1.val :=
   (rfl)
 
 /-- The second factor of `(pnatMulDvdEquivSigma N).symm` has underlying natural number `x.2`. -/
 @[simp]
 theorem coe_snd_val_pnatMulDvdEquivSigma_symm_apply
-    (x : Σ M : {M : ℕ+ // (M : ℕ) ∣ N}, (N / M.1).divisors) :
-    (((pnatMulDvdEquivSigma N).symm x).1.2 : ℕ) = x.2 :=
+    (x : Σ M : {M : ℕ+ // (M : ℕ) ∣ N}, (N / M.val).divisors) :
+    (((pnatMulDvdEquivSigma N).symm x).val.2 : ℕ) = x.2 :=
   (rfl)
 
 /-- For `N ≠ 0`, the subtype of positive divisor pairs `(M, d)` with `d * M ∣ N` is finite. -/
@@ -338,8 +338,8 @@ instance instFintypePNatMulDvd (N : ℕ) [NeZero N] :
 /-- Summing a function of `M` over positive integer pairs `(M, d)` with `d * M ∣ N` weights each
 positive divisor `M ∣ N` by `#(N / M).divisors`. -/
 theorem sum_pnatMulDvd_eq_sum_card_divisors_smul {A : Type*} [AddCommMonoid A] (F : ℕ+ → A) :
-    (∑ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, F p.1.1) =
-      ∑ M : {M : ℕ+ // (M : ℕ) ∣ N}, #(N / M.1).divisors • F M.1 := by
+    (∑ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, F p.val.1) =
+      ∑ M : {M : ℕ+ // (M : ℕ) ∣ N}, #(N / M.val).divisors • F M.val := by
   rw [← (pnatMulDvdEquivSigma N).symm.sum_comp, Fintype.sum_sigma]
   refine Finset.sum_congr rfl fun M _ ↦ ?_
   exact (Finset.sum_congr rfl fun d _ ↦
@@ -349,7 +349,7 @@ theorem sum_pnatMulDvd_eq_sum_card_divisors_smul {A : Type*} [AddCommMonoid A] (
 `d * M ∣ N` and `P (M, d)` is finite. -/
 instance instFintypePNatMulDvdAnd (N : ℕ) [NeZero N] (P : ℕ+ × ℕ+ → Prop) [DecidablePred P] :
     Fintype {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N ∧ P p} :=
-  Fintype.ofEquiv {p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N} // P p.1}
+  Fintype.ofEquiv {p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N} // P p.val}
     (Equiv.subtypeSubtypeEquivSubtypeInter (fun p : ℕ+ × ℕ+ ↦ (p.2 : ℕ) * p.1 ∣ N) P)
 
 /-- For `N ≠ 0` and `P : ℕ+ → Prop`, pairs `(M, d)` of positive integers with `d * M ∣ N` and
@@ -357,18 +357,18 @@ instance instFintypePNatMulDvdAnd (N : ℕ) [NeZero N] (P : ℕ+ × ℕ+ → Pro
 `N / M`. -/
 def pnatMulDvdAndEquivSigma (N : ℕ) [NeZero N] (P : ℕ+ → Prop) :
     {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N ∧ P p.1} ≃
-      Σ M : {M : {M : ℕ+ // (M : ℕ) ∣ N} // P M.1}, (N / M.1.1).divisors :=
+      Σ M : {M : {M : ℕ+ // (M : ℕ) ∣ N} // P M.val}, (N / M.val.val).divisors :=
   (Equiv.subtypeSubtypeEquivSubtypeInter
     (fun p : ℕ+ × ℕ+ ↦ (p.2 : ℕ) * p.1 ∣ N) (fun p ↦ P p.1)).symm.trans <|
-    ((pnatMulDvdEquivSigma N).subtypeEquiv (q := fun x ↦ P x.1.1) fun _ ↦ by simp).trans <|
-      Equiv.subtypeSigmaEquiv (fun M : {M : ℕ+ // (M : ℕ) ∣ N} ↦ ↥(N / M.1).divisors)
-        (fun M ↦ P M.1)
+    ((pnatMulDvdEquivSigma N).subtypeEquiv (q := fun x ↦ P x.1.val) fun _ ↦ by simp).trans <|
+      Equiv.subtypeSigmaEquiv (fun M : {M : ℕ+ // (M : ℕ) ∣ N} ↦ ↥(N / M.val).divisors)
+        (fun M ↦ P M.val)
 
 /-- `pnatMulDvdAndEquivSigma` preserves the positive divisor `M`. -/
 @[simp]
 theorem fst_val_pnatMulDvdAndEquivSigma_apply {P : ℕ+ → Prop}
     (p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N ∧ P p.1}) :
-    (pnatMulDvdAndEquivSigma N P p).1.1.1 = p.1.1 :=
+    (pnatMulDvdAndEquivSigma N P p).1.val.val = p.val.1 :=
   (rfl)
 
 /-- The second component of `pnatMulDvdAndEquivSigma` preserves the underlying natural number
@@ -376,49 +376,49 @@ theorem fst_val_pnatMulDvdAndEquivSigma_apply {P : ℕ+ → Prop}
 @[simp]
 theorem coe_snd_pnatMulDvdAndEquivSigma_apply {P : ℕ+ → Prop}
     (p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N ∧ P p.1}) :
-    ((pnatMulDvdAndEquivSigma N P p).2 : ℕ) = p.1.2 :=
+    ((pnatMulDvdAndEquivSigma N P p).2 : ℕ) = p.val.2 :=
   (rfl)
 
 /-- The first factor of `(pnatMulDvdAndEquivSigma N P).symm` is `x.1.1.1`. -/
 @[simp]
 theorem fst_val_pnatMulDvdAndEquivSigma_symm_apply {P : ℕ+ → Prop}
-    (x : Σ M : {M : {M : ℕ+ // (M : ℕ) ∣ N} // P M.1}, (N / M.1.1).divisors) :
-    ((pnatMulDvdAndEquivSigma N P).symm x).1.1 = x.1.1.1 :=
+    (x : Σ M : {M : {M : ℕ+ // (M : ℕ) ∣ N} // P M.val}, (N / M.val.val).divisors) :
+    ((pnatMulDvdAndEquivSigma N P).symm x).val.1 = x.1.val.val :=
   (rfl)
 
 /-- The second factor of `(pnatMulDvdAndEquivSigma N P).symm` has underlying natural number
 `x.2`. -/
 @[simp]
 theorem coe_snd_val_pnatMulDvdAndEquivSigma_symm_apply {P : ℕ+ → Prop}
-    (x : Σ M : {M : {M : ℕ+ // (M : ℕ) ∣ N} // P M.1}, (N / M.1.1).divisors) :
-    (((pnatMulDvdAndEquivSigma N P).symm x).1.2 : ℕ) = x.2 :=
+    (x : Σ M : {M : {M : ℕ+ // (M : ℕ) ∣ N} // P M.val}, (N / M.val.val).divisors) :
+    (((pnatMulDvdAndEquivSigma N P).symm x).val.2 : ℕ) = x.2 :=
   (rfl)
 
 /-- Summing a function of `(M, hM)` over positive integer pairs `(M, d)` with `d * M ∣ N` and
 `P M` gives the `dite` sum over positive divisors `M ∣ N` weighted by `#(N / M).divisors`. -/
 theorem sum_pnatMulDvdAnd_eq_sum_dite_card_divisors_smul {A : Type*} [AddCommMonoid A]
     (P : ℕ+ → Prop) [DecidablePred P] (F : ∀ M : ℕ+, P M → A) :
-    (∑ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N ∧ P p.1}, F p.1.1 p.2.2) =
+    (∑ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N ∧ P p.1}, F p.val.1 p.property.2) =
       ∑ M : {M : ℕ+ // (M : ℕ) ∣ N},
-        if h : P M.1 then #(N / M.1).divisors • F M.1 h else 0 := by
-  let f : {m : ℕ+ // P m} → A := fun m ↦ F m.1 m.2
-  have hinner (M : {M : {M : ℕ+ // (M : ℕ) ∣ N} // P M.1}) :
-      (∑ d : (N / M.1.1).divisors,
-        f ⟨((pnatMulDvdAndEquivSigma N P).symm ⟨M, d⟩).1.1,
-          ((pnatMulDvdAndEquivSigma N P).symm ⟨M, d⟩).2.2⟩) =
-        #(N / M.1.1).divisors • f ⟨M.1.1, M.2⟩ := by
-    have hterm (d : (N / M.1.1).divisors) :
-        f ⟨((pnatMulDvdAndEquivSigma N P).symm ⟨M, d⟩).1.1,
-          ((pnatMulDvdAndEquivSigma N P).symm ⟨M, d⟩).2.2⟩ = f ⟨M.1.1, M.2⟩ :=
+        if h : P M.val then #(N / M.val).divisors • F M.val h else 0 := by
+  let f : {m : ℕ+ // P m} → A := fun m ↦ F m.val m.property
+  have hinner (M : {M : {M : ℕ+ // (M : ℕ) ∣ N} // P M.val}) :
+      (∑ d : (N / M.val.val).divisors,
+        f ⟨((pnatMulDvdAndEquivSigma N P).symm ⟨M, d⟩).val.1,
+          ((pnatMulDvdAndEquivSigma N P).symm ⟨M, d⟩).property.2⟩) =
+        #(N / M.val.val).divisors • f ⟨M.val.val, M.property⟩ := by
+    have hterm (d : (N / M.val.val).divisors) :
+        f ⟨((pnatMulDvdAndEquivSigma N P).symm ⟨M, d⟩).val.1,
+          ((pnatMulDvdAndEquivSigma N P).symm ⟨M, d⟩).property.2⟩ = f ⟨M.val.val, M.property⟩ :=
       congrArg f (Subtype.ext (fst_val_pnatMulDvdAndEquivSigma_symm_apply ⟨M, d⟩))
     rw [Finset.sum_congr rfl fun d _ ↦ hterm d, Finset.sum_const, Finset.card_univ,
       Fintype.card_coe]
   rw [← (pnatMulDvdAndEquivSigma N P).symm.sum_comp, Fintype.sum_sigma,
     Finset.sum_congr rfl fun M _ ↦ hinner M, Finset.sum_dite, Finset.sum_const_zero, add_zero]
-  let e : {x : {M : ℕ+ // (M : ℕ) ∣ N} // x ∈ ({x ∈ Finset.univ | P x.1} : Finset _)} ≃
-      {M : {M : ℕ+ // (M : ℕ) ∣ N} // P M.1} :=
+  let e : {x : {M : ℕ+ // (M : ℕ) ∣ N} // x ∈ ({x ∈ Finset.univ | P x.val} : Finset _)} ≃
+      {M : {M : ℕ+ // (M : ℕ) ∣ N} // P M.val} :=
     Equiv.subtypeEquivRight fun x ↦ Finset.mem_filter_univ x
-  exact (e.sum_comp fun M ↦ #(N / M.1.1).divisors • f ⟨M.1.1, M.2⟩).symm
+  exact (e.sum_comp fun M ↦ #(N / M.val.val).divisors • f ⟨M.val.val, M.property⟩).symm
 
 end TauCeti
 

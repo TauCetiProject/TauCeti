@@ -312,16 +312,16 @@ instance : Inhabited (Hive n R) := ⟨0⟩
 /-- Nonnegative scalars from a partially ordered semiring act on hives. -/
 instance instSMulNonneg {S : Type*} [Semiring S] [PartialOrder S]
     [Module S R] [PosSMulMono S R] : SMul (Nonneg S) (Hive n R) where
-  smul c h := ⟨c.1 • ⇑h, by simp, fun hr => by
+  smul c h := ⟨c.val • ⇑h, by simp, fun hr => by
     simp only [Pi.smul_apply, ← smul_add]
-    exact smul_le_smul_of_nonneg_left (h.le_of_isRhombus hr) c.2⟩
+    exact smul_le_smul_of_nonneg_left (h.le_of_isRhombus hr) c.property⟩
 
 @[simp] theorem coe_smul_nonneg {S : Type*} [Semiring S] [PartialOrder S]
-    [Module S R] [PosSMulMono S R] (c : Nonneg S) (h : Hive n R) : ⇑(c • h) = c.1 • ⇑h := (rfl)
+    [Module S R] [PosSMulMono S R] (c : Nonneg S) (h : Hive n R) : ⇑(c • h) = c.val • ⇑h := (rfl)
 
 @[simp] theorem smul_nonneg_apply {S : Type*} [Semiring S] [PartialOrder S]
     [Module S R] [PosSMulMono S R] (c : Nonneg S) (h : Hive n R) (p : Vertex n) :
-    (c • h) p = c.1 • h p := (rfl)
+    (c • h) p = c.val • h p := (rfl)
 
 /-- Push a hive forward along an order-preserving additive monoid homomorphism. -/
 def map {S : Type*} [AddCommGroup S] [PartialOrder S] (φ : R →+o S) (h : Hive n R) : Hive n S where
@@ -436,7 +436,7 @@ def pointedCone (R : Type*) [Ring R] [PartialOrder R] [IsOrderedRing R] (n : ℕ
       _ = (f a + g a) + (f c + g c) := by abel⟩
   smul_mem' c f hf := ⟨by simp [hf.1], fun {a b c' d} hr => by
     simp only [Pi.smul_apply, ← Nonneg.coe_smul, smul_eq_mul, ← mul_add]
-    exact mul_le_mul_of_nonneg_left (hf.2 hr) c.2⟩
+    exact mul_le_mul_of_nonneg_left (hf.2 hr) c.property⟩
 
 @[simp] theorem mem_pointedCone_iff {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
     {f : Vertex n → R} : f ∈ pointedCone R n ↔ f (Vertex.cornerA n) = 0 ∧ IsRhombusConcave f :=
@@ -606,7 +606,7 @@ theorem boundary_apply (h : Hive n R) (s : Fin 3) (i : Fin n) :
 
 @[simp] theorem boundary_smul_nonneg {S : Type*} [Semiring S] [PartialOrder S]
     [Module S R] [PosSMulMono S R] (c : Nonneg S) (h : Hive n R) :
-    (c • h).boundary = c.1 • h.boundary := by ext s i; simp [boundary_apply, smul_sub]
+    (c • h).boundary = c.val • h.boundary := by ext s i; simp [boundary_apply, smul_sub]
 
 @[simp] theorem boundary_map {S : Type*} [AddCommGroup S] [PartialOrder S]
     (φ : R →+o S) (h : Hive n R) (s : Fin 3) (i : Fin n) :
@@ -744,35 +744,36 @@ def boundaryWeight (h : IntegerHive n) (s : Fin 3) : DominantWeight n :=
     (h.boundaryWeight s : Fin n → ℤ) = h.boundary s := (rfl)
 
 /-- The cyclic boundary `(λ, μ, γ*)` counting the multiplicity of `V_γ` in `V_λ ⊗ V_μ`. -/
-def productBoundary (lam μ γ : DominantWeight n) : Fin 3 → Fin n → ℤ := ![lam.1, μ.1, γ.dual.1]
+def productBoundary (lam μ γ : DominantWeight n) : Fin 3 → Fin n → ℤ := ![lam.val, μ.val,
+    γ.dual.val]
 
 @[simp] theorem productBoundary_zero (lam μ γ : DominantWeight n) :
-    productBoundary lam μ γ 0 = lam.1 := (rfl)
+    productBoundary lam μ γ 0 = lam.val := (rfl)
 @[simp] theorem productBoundary_one (lam μ γ : DominantWeight n) :
-    productBoundary lam μ γ 1 = μ.1 := (rfl)
+    productBoundary lam μ γ 1 = μ.val := (rfl)
 @[simp] theorem productBoundary_two (lam μ γ : DominantWeight n) :
-    productBoundary lam μ γ 2 = γ.dual.1 := (rfl)
+    productBoundary lam μ γ 2 = γ.dual.val := (rfl)
 
 /-- Cyclic trace zero for `productBoundary lam μ γ` is degree conservation `|λ| + |μ| = |γ|`. -/
 theorem sum_productBoundary_eq_zero_iff (lam μ γ : DominantWeight n) :
     (∑ s : Fin 3, ∑ i : Fin n, productBoundary lam μ γ s i) = 0 ↔
-      (∑ i, lam.1 i) + (∑ i, μ.1 i) = ∑ i, γ.1 i := by
+      (∑ i, lam.val i) + (∑ i, μ.val i) = ∑ i, γ.val i := by
   simp only [Fin.sum_univ_three, productBoundary_zero, productBoundary_one, productBoundary_two,
     DominantWeight.sum_dual]; omega
 
 theorem apply_ofChart_zero_left_of_productBoundary {lam μ γ : DominantWeight n}
     {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {j : ℕ} (hj : j ≤ n) :
-    h (Vertex.ofChart n 0 j (Nat.zero_le j) hj) = TauCeti.prefixSum j lam.1 := by
+    h (Vertex.ofChart n 0 j (Nat.zero_le j) hj) = TauCeti.prefixSum j lam.val := by
   rw [h.apply_ofChart_zero_left hj, hb, productBoundary_zero]
 
 theorem apply_ofChart_right_of_productBoundary {lam μ γ : DominantWeight n}
     {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {i : ℕ} (hi : i ≤ n) :
-    h (Vertex.ofChart n i n hi le_rfl) = (∑ r : Fin n, lam.1 r) + TauCeti.prefixSum i μ.1 := by
+    h (Vertex.ofChart n i n hi le_rfl) = (∑ r : Fin n, lam.val r) + TauCeti.prefixSum i μ.val := by
   rw [h.apply_ofChart_right hi, hb, productBoundary_zero, productBoundary_one]
 
 theorem apply_ofChart_self_of_productBoundary {lam μ γ : DominantWeight n}
     {h : IntegerHive n} (hb : h.boundary = productBoundary lam μ γ) {j : ℕ} (hj : j ≤ n) :
-    h (Vertex.ofChart n j j le_rfl hj) = TauCeti.prefixSum j γ.1 := by
+    h (Vertex.ofChart n j j le_rfl hj) = TauCeti.prefixSum j γ.val := by
   rw [h.apply_ofChart_self hj]; exact congrArg (TauCeti.prefixSum j) (funext fun r => by simp [hb])
 
 end Boundary

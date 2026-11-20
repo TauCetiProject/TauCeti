@@ -102,32 +102,32 @@ theorem imCLM_star (f : Lp 𝕜 p μ) : imCLM 𝕜 p μ (star f) = -imCLM 𝕜 p
 
 /-- Every self-adjoint class in `Lp 𝕜 p μ` is the image of its real part under `Lp.ofRealLI`. -/
 theorem ofRealLI_reCLM_of_mem_selfAdjoint (f : selfAdjoint (Lp 𝕜 p μ)) :
-    ofRealLI 𝕜 p μ (reCLM 𝕜 p μ f.1) = f.1 := by
-  have hstar : (star f.1 : Lp 𝕜 p μ) =ᵐ[μ] f.1 := by rw [f.2.star_eq]
+    ofRealLI 𝕜 p μ (reCLM 𝕜 p μ f.val) = f.val := by
+  have hstar : (star f.val : Lp 𝕜 p μ) =ᵐ[μ] f.val := by rw [f.property.star_eq]
   refine Lp.ext ?_
-  filter_upwards [coeFn_ofRealLI (𝕜 := 𝕜) (reCLM 𝕜 p μ f.1), coeFn_reCLM f.1,
-    coeFn_star f.1, hstar] with x h₁ h₂ h₃ h₄
+  filter_upwards [coeFn_ofRealLI (𝕜 := 𝕜) (reCLM 𝕜 p μ f.val), coeFn_reCLM f.val,
+    coeFn_star f.val, hstar] with x h₁ h₂ h₃ h₄
   rw [h₁, h₂]
-  exact RCLike.conj_eq_iff_re.mp ((h₃.symm.trans h₄ : star (f.1 x) = f.1 x))
+  exact RCLike.conj_eq_iff_re.mp ((h₃.symm.trans h₄ : star (f.val x) = f.val x))
 
 variable (𝕜 p μ) in
 /-- Pointwise real part and scalar inclusion identify `selfAdjoint (Lp 𝕜 p μ)` `ℝ`-linearly and
 isometrically with `Lp ℝ p μ`. -/
 def selfAdjointLinearIsometryEquiv : selfAdjoint (Lp 𝕜 p μ) ≃ₗᵢ[ℝ] Lp ℝ p μ where
-  toFun f := reCLM 𝕜 p μ f.1
+  toFun f := reCLM 𝕜 p μ f.val
   invFun f := ⟨ofRealLI 𝕜 p μ f, isSelfAdjoint_ofRealLI f⟩
   left_inv f := Subtype.ext (ofRealLI_reCLM_of_mem_selfAdjoint f)
   right_inv := reCLM_ofRealLI
-  map_add' f g := map_add (reCLM 𝕜 p μ) f.1 g.1
-  map_smul' r f := map_smul (reCLM 𝕜 p μ) r f.1
+  map_add' f g := map_add (reCLM 𝕜 p μ) f.val g.val
+  map_smul' r f := map_smul (reCLM 𝕜 p μ) r f.val
   norm_map' f := by
-    have h := (ofRealLI 𝕜 p μ).norm_map (reCLM 𝕜 p μ f.1)
+    have h := (ofRealLI 𝕜 p μ).norm_map (reCLM 𝕜 p μ f.val)
     rw [ofRealLI_reCLM_of_mem_selfAdjoint f] at h
     exact h.symm
 
 /-- `selfAdjointLinearIsometryEquiv` applies `reCLM` to the underlying `Lᵖ` class. -/
 theorem selfAdjointLinearIsometryEquiv_apply (f : selfAdjoint (Lp 𝕜 p μ)) :
-    selfAdjointLinearIsometryEquiv 𝕜 p μ f = reCLM 𝕜 p μ f.1 :=
+    selfAdjointLinearIsometryEquiv 𝕜 p μ f = reCLM 𝕜 p μ f.val :=
   (rfl)
 
 /-- The inverse of `selfAdjointLinearIsometryEquiv` embeds `Lp ℝ p μ` via `ofRealLI`. -/
