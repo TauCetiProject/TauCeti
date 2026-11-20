@@ -113,7 +113,7 @@ private theorem exists_contDiff_eventually_eq_coefficient (a : LocalSymbol U V W
     {x : CoordinateSpace n} (hx : x ∈ U) :
     ∃ g : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W, ContDiff ℝ ∞ g ∧
       ∀ᶠ y in 𝓝 x, ∀ η, g (y, η) = a.coefficient (y, η) :=
-  let ⟨g, hg, hga⟩ := a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ
+  let ⟨g, hg, hga, _⟩ := a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ
     isCompact_singleton U.isOpen (singleton_subset_iff.2 hx)
   ⟨g, hg, hga x rfl⟩
 
@@ -469,7 +469,7 @@ private theorem exists_bound_extend (a : LocalSymbol U V W m) (hψ : ContDiff �
   set L := K ∩ tsupport ψ
   have hL : IsCompact L := hK.inter_right (isClosed_tsupport ψ)
   have hLU : L ⊆ U := inter_subset_right.trans hψU
-  obtain ⟨b, hb, hab⟩ :=
+  obtain ⟨b, hb, hab, -⟩ :=
     a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ hL U.isOpen hLU
   -- Bounds for the derivatives of `ψ` and the mixed derivatives of `a` on `L`.
   choose B hB using fun i : ℕ => hL.exists_bound_of_continuousOn

@@ -36,7 +36,7 @@ The proof reads the trajectory in the chart and applies the vector-space theorem
 Hamiltonian read in the chart, `y ↦ H(t, φ⁻¹ y)`, is only defined on the target of `φ`; a cutoff
 equal to one near a compact neighbourhood of the orbit globalizes it to a `C²` Hamiltonian on `V`,
 `1`-periodic in time, which agrees with it near that neighbourhood
-(`IsCompact.exists_contDiff_cutoff_eventuallyEq_one`). There the two Hamiltonians have the same
+(`ContDiffOn.exists_contDiff_eventually_eq_prod_univ`). There the two Hamiltonians have the same
 Hamiltonian vector fields, so the orbit and its nondegeneracy are those of the globalized
 Hamiltonian. A trajectory close enough to the orbit stays in that neighbourhood, so its
 coordinate map `φ ∘ u` solves the Floer equation of `(V, ω₀)` for the globalized Hamiltonian and
@@ -75,29 +75,20 @@ private theorem exists_contDiff_periodic_eventuallyEq_comp_symm
     (hK : IsCompact K) (hKφ : K ⊆ φ.target) :
     ∃ H' : ℝ → V → ℝ, ContDiff ℝ 2 (uncurry H') ∧ Periodic H' 1 ∧
       ∀ y ∈ K, ∀ᶠ y' in 𝓝 y, ∀ t, H' t y' = H t (φ.symm y') := by
-  -- The Hamiltonian read in the chart, `(t, y) ↦ H(t, φ⁻¹ y)`, is `C²` on `ℝ × φ.target`.
-  have hHφ : ContDiffOn ℝ 2 (fun p : ℝ × V ↦ H p.1 (φ.symm p.2)) (univ ×ˢ φ.target) := by
-    rintro ⟨t, y⟩ ⟨-, hy⟩
+  -- The Hamiltonian read in the chart, `(y, t) ↦ H(t, φ⁻¹ y)`, is `C²` on `φ.target × ℝ`.
+  have hHφ : ContDiffOn ℝ 2 (fun p : V × ℝ ↦ H p.2 (φ.symm p.1)) (φ.target ×ˢ univ) := by
+    rintro ⟨y, t⟩ ⟨hy, -⟩
     have hsymm : ContMDiffAt 𝓘(ℝ, V) I 2 φ.symm y :=
       (φ.symm.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).contMDiffAt
         (φ.open_target.mem_nhds hy)
-    have hpair : ContMDiffAt 𝓘(ℝ, ℝ × V) (𝓘(ℝ, ℝ).prod I) 2
-        (fun p : ℝ × V ↦ (p.1, φ.symm p.2)) (t, y) :=
-      contDiff_fst.contMDiff.contMDiffAt.prodMk
-        (hsymm.comp (t, y) contDiff_snd.contMDiff.contMDiffAt)
-    exact (contMDiffAt_iff_contDiffAt.1 ((hH (t, φ.symm y)).comp (t, y) hpair)).contDiffWithinAt
-  obtain ⟨ψ, hψ, -, hψone, -, hψφ⟩ :=
-    hK.exists_contDiff_cutoff_eventuallyEq_one φ.open_target hKφ
-  -- The cutoff `ψ(y)`, read on `ℝ × V`, is supported in `ℝ × φ.target`.
-  have hts : tsupport (fun p : ℝ × V ↦ ψ p.2) ⊆ univ ×ˢ φ.target :=
-    (closure_minimal (t := univ ×ˢ tsupport ψ) (fun p hp ↦ ⟨mem_univ _, subset_tsupport ψ hp⟩)
-      (isClosed_univ.prod (isClosed_tsupport ψ))).trans (prod_mono subset_rfl hψφ)
-  refine ⟨fun t y ↦ ψ y • H t (φ.symm y),
-    hHφ.contDiff_smul_of_tsupport_subset
-      (isOpen_univ.prod φ.open_target) ((hψ.of_le (by simp)).comp contDiff_snd).contDiffOn hts,
-    fun t ↦ funext fun y ↦ by simp only [hHper t], fun y hy ↦ ?_⟩
-  filter_upwards [hψone y hy] with y' hy' t
-  rw [hy', one_smul]
+    have hpair : ContMDiffAt 𝓘(ℝ, V × ℝ) (𝓘(ℝ, ℝ).prod I) 2
+        (fun p : V × ℝ ↦ (p.2, φ.symm p.1)) (y, t) :=
+      contDiff_snd.contMDiff.contMDiffAt.prodMk
+        (hsymm.comp (y, t) contDiff_fst.contMDiff.contMDiffAt)
+    exact (contMDiffAt_iff_contDiffAt.1 ((hH (t, φ.symm y)).comp (y, t) hpair)).contDiffWithinAt
+  obtain ⟨g, hg, hgeq, hgper⟩ := hHφ.exists_contDiff_eventually_eq_prod_univ hK φ.open_target hKφ
+  exact ⟨fun t y ↦ g (y, t), hg.comp (contDiff_snd.prodMk contDiff_fst),
+    fun t ↦ funext fun y ↦ hgper 1 (fun y t ↦ congrFun (hHper t) (φ.symm y)) y t, hgeq⟩
 
 /-- **A Floer trajectory read in a symplectic chart.** Let `H'` agree near every point of a set `K`
 with the Hamiltonian `y ↦ H(t, φ⁻¹ y)` read in a symplectic chart `φ`, for all times, and let
