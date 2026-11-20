@@ -53,6 +53,8 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
 
 ## Main results
 
+* `CommGroup.map_mem_primaryComponent` and `CommGroup.mem_primaryComponent_prod_iff`: homomorphisms
+  and binary direct products preserve `p`-primary components (with additive counterparts).
 * `TauCeti.isAddPGroup_iff_primaryComponent_eq_top`: `M` is `p`-primary torsion exactly when its
   `p`-primary component is all of `M`.
 * `TauCeti.primaryComponent_eq_bot_of_injective_nsmul`: injective multiplication by `p`
@@ -72,6 +74,32 @@ additive inverses. -/
 theorem AddCommGroup.primaryComponent_toAddSubmonoid {G : Type*} [AddCommGroup G] (p : ℕ) :
     (AddCommGroup.primaryComponent G p).toAddSubmonoid = AddCommMonoid.primaryComponent G p :=
   (rfl)
+
+/-- A group homomorphism maps `p`-primary elements to `p`-primary elements. -/
+@[to_additive /-- An additive group homomorphism maps `p`-primary elements to `p`-primary
+elements. -/]
+theorem CommGroup.map_mem_primaryComponent {G : Type*} {H : Type*} [CommGroup G] [CommGroup H]
+    {F : Type*} [FunLike F G H] [MonoidHomClass F G H] (f : F) {p : ℕ} {x : G}
+    (hx : x ∈ CommGroup.primaryComponent G p) :
+    f x ∈ CommGroup.primaryComponent H p := by
+  obtain ⟨k, hk⟩ := CommGroup.mem_primaryComponent.mp hx
+  exact CommGroup.mem_primaryComponent.mpr ⟨k, by rw [← map_pow, hk, map_one]⟩
+
+/-- An element of a direct product of commutative groups lies in the `p`-primary component if and
+only if both coordinates lie in the `p`-primary components of the factors. -/
+@[to_additive AddCommGroup.mem_primaryComponent_prod_iff
+  /-- An element of a direct product of additive commutative groups lies in the `p`-primary
+  component if and only if both coordinates lie in the `p`-primary components of the factors. -/]
+theorem CommGroup.mem_primaryComponent_prod_iff {G : Type*} {H : Type*} [CommGroup G] [CommGroup H]
+    (p : ℕ) (x : G × H) :
+    x ∈ CommGroup.primaryComponent (G × H) p ↔
+      x.1 ∈ CommGroup.primaryComponent G p ∧ x.2 ∈ CommGroup.primaryComponent H p := by
+  simp only [CommGroup.mem_primaryComponent]
+  refine ⟨fun ⟨k, hk⟩ ↦ ⟨⟨k, congrArg Prod.fst hk⟩, ⟨k, congrArg Prod.snd hk⟩⟩, ?_⟩
+  rintro ⟨⟨a, ha⟩, ⟨b, hb⟩⟩
+  refine ⟨a + b, Prod.ext ?_ ?_⟩
+  · rw [Prod.pow_fst, pow_add, pow_mul, ha, one_pow, Prod.fst_one]
+  · rw [Prod.pow_snd, pow_add, mul_comm, pow_mul, hb, one_pow, Prod.snd_one]
 
 namespace TauCeti
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Primary.Decomposition
+public import TauCeti.Algebra.Group.Primary.Generators
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
 
 /-!
@@ -33,6 +34,9 @@ orthogonality and finite-sum identities proved in
 * `TauCeti.FiniteBilinearModule.nonempty_isometry_of_forall_primaryComponent` and
   `TauCeti.FiniteQuadraticModule.nonempty_isometry_of_forall_primaryComponent`: two modules are
   isometric when their primary components are isometric at every prime.
+* `TauCeti.FiniteBilinearModule.rank_eq_sup_primaryComponent` and
+  `TauCeti.FiniteQuadraticModule.rank_eq_sup_primaryComponent`: the additive generator rank of a
+  module is the maximum of the ranks of its prime-primary components.
 
 ## References
 
@@ -126,9 +130,11 @@ assemble to an additive equivalence of the products of their primary components:
 `primeFactorsEquiv`, then apply the given equivalence componentwise. -/
 private noncomputable def primaryComponentsAddEquiv {A B : FiniteBilinearModule}
     (hcard : Nat.card A = Nat.card B)
-    (f : ∀ p : ℕ, p.Prime → primaryComponent A p ≃+ primaryComponent B p) :
+    (f : ∀ p : ℕ, p.Prime →
+      _root_.AddCommGroup.primaryComponent A p ≃+ _root_.AddCommGroup.primaryComponent B p) :
     A.primaryComponents ≃+ B.primaryComponents :=
-  (LinearEquiv.piCongrLeft' ℤ (fun p : (Nat.card A).primeFactors ↦ primaryComponent A p.1)
+  (LinearEquiv.piCongrLeft' ℤ
+    (fun p : (Nat.card A).primeFactors ↦ _root_.AddCommGroup.primaryComponent A p.1)
     (primeFactorsEquiv hcard)).toAddEquiv.trans
     (AddEquiv.piCongrRight fun q ↦ f q.1 (Nat.prime_of_mem_primeFactors q.2))
 
@@ -137,7 +143,8 @@ private noncomputable def primaryComponentsAddEquiv {A B : FiniteBilinearModule}
 carrier `primaryComponents` so that it rewrites in the isometry proofs below. -/
 private theorem primaryComponentsAddEquiv_apply {A B : FiniteBilinearModule}
     (hcard : Nat.card A = Nat.card B)
-    (f : ∀ p : ℕ, p.Prime → primaryComponent A p ≃+ primaryComponent B p)
+    (f : ∀ p : ℕ, p.Prime →
+      _root_.AddCommGroup.primaryComponent A p ≃+ _root_.AddCommGroup.primaryComponent B p)
     (x : A.primaryComponents) (q : (Nat.card B).primeFactors) :
     primaryComponentsAddEquiv hcard f x q =
       f q.1 (Nat.prime_of_mem_primeFactors q.2) (x ((primeFactorsEquiv hcard).symm q)) :=
@@ -147,7 +154,7 @@ private theorem primaryComponentsAddEquiv_apply {A B : FiniteBilinearModule}
 at every prime `p`, their `p`-primary components are isometric. -/
 theorem nonempty_isometry_of_forall_primaryComponent {A B : FiniteBilinearModule}
     (h : ∀ p : ℕ, p.Prime →
-      Nonempty (Isometry (A.restrict (primaryComponent A p)) (B.restrict (primaryComponent B p)))) :
+      Nonempty (Isometry (A.primaryComponent p) (B.primaryComponent p))) :
     Nonempty (Isometry A B) := by
   have hcard : Nat.card A = Nat.card B :=
     AddCommGroup.natCard_eq_of_natCard_primaryComponent_eq fun p hp ↦
@@ -160,6 +167,25 @@ theorem nonempty_isometry_of_forall_primaryComponent {A B : FiniteBilinearModule
   exact Fintype.sum_equiv (primeFactorsEquiv hcard).symm _ _ fun q ↦ by
     rw [primaryComponentsAddEquiv_apply, primaryComponentsAddEquiv_apply]
     exact (f q.1 (Nat.prime_of_mem_primeFactors q.2)).map_pairing _ _
+
+/-- The additive generator rank of a finite bilinear module is the supremum of the ranks of its
+prime-primary components. -/
+theorem rank_eq_sup_primaryComponent :
+    AddGroup.rank A =
+      Finset.univ.sup fun p : (Nat.card A).primeFactors ↦ AddGroup.rank (A.primaryComponent p.1) :=
+  TauCeti.AddCommGroup.rank_eq_sup_primaryComponents A
+
+/-- Every prime-primary component of a finite bilinear module has additive generator rank at most
+that of the ambient module. -/
+theorem rank_primaryComponent_le {p : ℕ} (hp : p.Prime) :
+    AddGroup.rank (A.primaryComponent p) ≤ AddGroup.rank A :=
+  TauCeti.AddCommGroup.rank_primaryComponent_le A hp
+
+/-- The additive generator rank of a finite bilinear module is bounded by `n` if and only if every
+prime-primary component has rank at most `n`. -/
+theorem rank_le_iff_forall_prime_primaryComponent (n : ℕ) :
+    AddGroup.rank A ≤ n ↔ ∀ p : ℕ, p.Prime → AddGroup.rank (A.primaryComponent p) ≤ n :=
+  TauCeti.AddCommGroup.rank_le_iff_forall_prime_primaryComponent A n
 
 end FiniteBilinearModule
 
@@ -226,7 +252,7 @@ theorem isNondegenerate_primaryComponents :
 at every prime `p`, their `p`-primary components are isometric. -/
 theorem nonempty_isometry_of_forall_primaryComponent {A B : FiniteQuadraticModule}
     (h : ∀ p : ℕ, p.Prime →
-      Nonempty (Isometry (A.restrict (primaryComponent A p)) (B.restrict (primaryComponent B p)))) :
+      Nonempty (Isometry (A.primaryComponent p) (B.primaryComponent p))) :
     Nonempty (Isometry A B) := by
   have hcard : Nat.card A = Nat.card B :=
     AddCommGroup.natCard_eq_of_natCard_primaryComponent_eq fun p hp ↦
@@ -239,9 +265,28 @@ theorem nonempty_isometry_of_forall_primaryComponent {A B : FiniteQuadraticModul
   rw [primaryComponents_quadratic, primaryComponents_quadratic]
   -- The coercion of `g.toIntLinearEquiv` is `g` (`AddEquiv.coe_toIntLinearEquiv` is `rfl`).
   exact Fintype.sum_equiv (FiniteBilinearModule.primeFactorsEquiv hcard).symm _ _ fun q ↦
-    (congrArg (fun y : primaryComponent B.carrier q.1 ↦ B.quadratic y)
+    (congrArg (fun y : _root_.AddCommGroup.primaryComponent B.carrier q.1 ↦ B.quadratic y)
       (FiniteBilinearModule.primaryComponentsAddEquiv_apply hcard _ x q)).trans
       ((f q.1 (Nat.prime_of_mem_primeFactors q.2)).map_app _)
+
+/-- The additive generator rank (`l(A_q)` in Nikulin's notation) of a finite quadratic module is
+the supremum of the ranks of its prime-primary components. -/
+theorem rank_eq_sup_primaryComponent :
+    AddGroup.rank A =
+      Finset.univ.sup fun p : (Nat.card A).primeFactors ↦ AddGroup.rank (A.primaryComponent p.1) :=
+  TauCeti.AddCommGroup.rank_eq_sup_primaryComponents A
+
+/-- Every prime-primary component of a finite quadratic module has additive generator rank at most
+that of the ambient module. -/
+theorem rank_primaryComponent_le {p : ℕ} (hp : p.Prime) :
+    AddGroup.rank (A.primaryComponent p) ≤ AddGroup.rank A :=
+  TauCeti.AddCommGroup.rank_primaryComponent_le A hp
+
+/-- The additive generator rank of a finite quadratic module is bounded by `n` if and only if
+every prime-primary component has rank at most `n`. -/
+theorem rank_le_iff_forall_prime_primaryComponent (n : ℕ) :
+    AddGroup.rank A ≤ n ↔ ∀ p : ℕ, p.Prime → AddGroup.rank (A.primaryComponent p) ≤ n :=
+  TauCeti.AddCommGroup.rank_le_iff_forall_prime_primaryComponent A n
 
 end FiniteQuadraticModule
 
