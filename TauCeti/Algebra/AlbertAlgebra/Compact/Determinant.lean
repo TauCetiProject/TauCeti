@@ -48,10 +48,11 @@ polarization, the linearized cubic equation, is what proves the Jordan identity 
 `TauCeti/Algebra/AlbertAlgebra/Compact/Jordan.lean`. Taking traces in the cubic equation gives
 Newton's formula `6 det A = T(A)³ - 3 T(A) T(A ∘ A) + 2 T(A ∘ (A ∘ A))`.
 
-Over `ℝ` the norm of an octonion is positive definite, so a diagonal matrix with entries `aᵢ` has
-determinant `a 0 * a 1 * a 2` and the cubic equation is the Cayley–Hamilton theorem for the three
-real eigenvalues. The determinant and the spur are defined over every commutative ring; the cubic
-equation needs `2` to be invertible, because the Jordan product does.
+For a diagonal matrix with entries `aᵢ` all octonion entries vanish, so over every commutative ring
+the determinant reduces to `a 0 * a 1 * a 2`, the spur to `a 0 * a 1 + a 1 * a 2 + a 2 * a 0`, and
+the generic minimal polynomial factors as `(t - a 0) (t - a 1) (t - a 2)`. The determinant and
+the spur are defined over every commutative ring; the cubic equation needs `2` to be invertible,
+because the Jordan product does.
 
 ## Main definitions
 
