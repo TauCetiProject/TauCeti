@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.CanonicalTensor
-public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 
 /-!
 # The Dirac operator of a Clifford multiplication and a connection
@@ -34,7 +34,7 @@ Clifford relation nor the compatibility, except where stated:
   at the point (`CovariantDerivative.diracOperator_add`,
   `CovariantDerivative.diracOperator_const_smul`).
 * **Locality.** `D σ x` depends only on `∇σ` at `x` (`CovariantDerivative.diracOperator_congr`),
-  hence only on the germ of `σ` at `x`
+  hence, for sections differentiable at the point, only on the germ of `σ` at `x`
   (`CovariantDerivative.diracOperator_congr_of_eventuallyEq`).
 * **Leibniz rule.** For a function `f`, `D (f σ) = f D σ + c(grad f) σ`
   (`CovariantDerivative.diracOperator_smul`). So the commutator `[D, f]` is Clifford
@@ -54,12 +54,12 @@ Clifford relation nor the compatibility, except where stated:
   (`CovariantDerivative.apply_diracOperator_eq_neg_smul`).
 * **Naturality.** A fibrewise linear map `L : V → W` that intertwines the Clifford multiplications
   and the connections intertwines the Dirac operators, `D_W (L σ) = L (D_V σ)`
-  (`CovariantDerivative.diracOperator_apply_eq`). Gauge transformations commuting with `c` are
-  the main instance. If `L` anticommutes with the Clifford multiplications instead, then
-  `D_W (L σ) = -L (D_V σ)` (`CovariantDerivative.diracOperator_apply_eq_neg`). This applies to a
-  parallel grading `γ` anticommuting with `c`, such as the chirality of an even-dimensional
-  Clifford module, and gives `D γ = -γ D`: the Dirac operator exchanges the two eigenbundles of
-  `γ`.
+  (`CovariantDerivative.diracOperator_linearMap_apply`). Gauge transformations commuting with `c`
+  are the main instance. If `L` anticommutes with the Clifford multiplications instead, then
+  `D_W (L σ) = -L (D_V σ)` (`CovariantDerivative.diracOperator_linearMap_apply_eq_neg`). This
+  applies to a parallel grading `γ` anticommuting with `c`, such as the chirality of an
+  even-dimensional Clifford module, and gives `D γ = -γ D`: the Dirac operator exchanges the two
+  eigenbundles of `γ`.
 
 ## Main definitions
 
@@ -130,7 +130,8 @@ theorem diracOperator_congr (h : cov σ x = cov τ x) :
     cov.diracOperator c σ x = cov.diracOperator c τ x := by
   simp only [diracOperator_eq_sum cov c _ x (stdOrthonormalBasis ℝ _), h]
 
-/-- **Locality.** The Dirac operator at `x` depends only on the germ of the section at `x`. -/
+/-- **Locality.** For sections differentiable at `x`, the Dirac operator at `x` depends only on
+their germ at `x`. -/
 theorem diracOperator_congr_of_eventuallyEq (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x)
     (h : ∀ᶠ y in 𝓝 x, σ y = τ y) :
     cov.diracOperator c σ x = cov.diracOperator c τ x :=
@@ -166,9 +167,8 @@ theorem diracOperator_neg (hσ : MDiffAt (T% σ) x) :
 theorem diracOperator_sub [VectorBundle ℝ F V] (hσ : MDiffAt (T% σ) x)
     (hτ : MDiffAt (T% τ) x) :
     cov.diracOperator c (σ - τ) x = cov.diracOperator c σ x - cov.diracOperator c τ x := by
-  have hτ' : MDiffAt (T% (-τ)) x := by
-    simpa using (mdifferentiableAt_const (c := (-1 : ℝ))).smul_section hτ
-  rw [sub_eq_add_neg, diracOperator_add cov c hσ hτ', diracOperator_neg cov c hτ, sub_eq_add_neg]
+  rw [sub_eq_add_neg, diracOperator_add cov c hσ (mdifferentiableAt_neg_section hτ),
+    diracOperator_neg cov c hτ, sub_eq_add_neg]
 
 /-! ### The Leibniz rule and the principal symbol -/
 
@@ -239,9 +239,7 @@ theorem diracOperator_addOneForm (A : Π x : M, V x →L[ℝ] TangentSpace I x �
       cov.diracOperator c σ x + ∑ i, c x (b i) (A x (σ x) (b i)) := by
   rw [diracOperator_eq_sum _ c _ x b, diracOperator_eq_sum cov c _ x b, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  -- `cov.addOneForm A` is `σ ↦ cov σ + A σ` by definition.
-  change c x (b i) ((cov σ x + A x (σ x)) (b i)) = _
-  rw [add_apply, map_add]
+  rw [addOneForm_apply, add_apply, map_add]
 
 /-- **Change of connection by a scalar one-form.** If the one-form `A` acts on `σ` at `x` by
 `A_x(σ_x)(w) = ⟪u, w⟫ v`, then adding it to `∇` adds `c(u) v` to the Dirac operator at `x`. For
@@ -293,7 +291,7 @@ intertwines the Clifford multiplications at `x`, `L c_V(v) = c_W(v) L`, and the 
 `σ` at `x`, `∇^W (L σ) = L ∇^V σ`. Then `D_W (L σ) = L (D_V σ)` at `x`. For `L` a gauge
 transformation commuting with the Clifford multiplication, and `∇^W` the transformed connection,
 this is the gauge covariance of the Dirac operator. -/
-theorem diracOperator_apply_eq
+theorem diracOperator_linearMap_apply
     (hc : ∀ (v : TangentSpace I x) (s : V x), L x (c x v s) = cW x v (L x s))
     (hL : ∀ w, covW (fun y ↦ L y (σ y)) x w = L x (cov σ x w)) :
     covW.diracOperator cW (fun y ↦ L y (σ y)) x = L x (cov.diracOperator c σ x) := by
@@ -306,7 +304,7 @@ the Clifford multiplications at `x`, `L c_V(v) = -c_W(v) L`, and intertwines the
 `σ` at `x`, then `D_W (L σ) = -L (D_V σ)` at `x`. For a parallel grading `γ` of `V` anticommuting
 with Clifford multiplication, such as the chirality of an even-dimensional Clifford module, this
 says `D γ = -γ D`. -/
-theorem diracOperator_apply_eq_neg
+theorem diracOperator_linearMap_apply_eq_neg
     (hc : ∀ (v : TangentSpace I x) (s : V x), L x (c x v s) = -cW x v (L x s))
     (hL : ∀ w, covW (fun y ↦ L y (σ y)) x w = L x (cov σ x w)) :
     covW.diracOperator cW (fun y ↦ L y (σ y)) x = -L x (cov.diracOperator c σ x) := by
