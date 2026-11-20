@@ -69,7 +69,8 @@ from the base, when `E` is two-dimensional with basis `b`:
   flux constant and kills the exact term. When `β` is the area form of the curve and
   `c π^*β + dη` tames the almost complex structure, this is the product-chart form of the pairing
   `T(Ω) = c m area(C)` of a closed current of transverse flux `m` with a taming form; the global
-  identity follows by summing over a partition of unity on `C`, which is not done here.
+  identity over a compact surface with trivial normal line is
+  `TauCeti.integralTopForm_wedge_smul_mpullback_fst_add_mextDeriv`.
 
 Top-degree coefficients on `E × ℂ` are taken on the product frame `(b₀, 0), (b₁, 0), (0, 1),
 (0, i)`, `(b.prod Complex.basisOneI).reindex finSumFinEquiv`, and integrated against its Haar
@@ -326,7 +327,7 @@ theorem sliceMoment_const_eq_sliceMoment_const (hK : IsCompact K) (hTc : ContDif
 /-- The value of `T ∧ π^*β` on the product frame `(b₀, 0), (b₁, 0), (0, 1), (0, i)` is the slice
 density of `T` times the value of `β` on `b`: every other way of distributing the four vectors
 gives `β` a fibre vector, on which the pullback vanishes. -/
-private theorem wedge_compContinuousLinearMap_fst_apply (b : Module.Basis (Fin 2) ℝ E)
+theorem wedge_compContinuousLinearMap_fst_apply (b : Module.Basis (Fin 2) ℝ E)
     (θ : (E × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (β : E [⋀^Fin 2]→L[ℝ] ℝ) :
     θ.wedge (β.compContinuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ))
         ((b.prod Complex.basisOneI).reindex finSumFinEquiv) =
@@ -395,8 +396,9 @@ two-form `β` and a compactly supported `C¹` one-form `η` on `E × ℂ`,
 
 The exact term integrates to zero because `T` is closed. In a tube around a pseudoholomorphic curve
 `C` with `β` its area form and `c π^*β + dη` a taming form, this is the product-chart form of the
-identity `T(Ω) = c m area(C)` for a closed current of transverse flux `m`; the global identity
-follows by summing over a partition of unity on `C`, which is not done here. -/
+identity `T(Ω) = c m area(C)` for a closed current of transverse flux `m`; the global identity over
+a compact surface with trivial normal line is
+`TauCeti.integralTopForm_wedge_smul_mpullback_fst_add_mextDeriv`. -/
 theorem integral_wedge_smul_compContinuousLinearMap_fst_add_extDeriv [MeasurableSpace E]
     [BorelSpace E] (b : Module.Basis (Fin 2) ℝ E) (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
     (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) (hdT : ∀ x, extDeriv T x = 0)
