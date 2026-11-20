@@ -64,8 +64,8 @@ variable {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 /-- The pullback along a linear isometry `A`, as a linear map of `H^{s,p}`. -/
 private def compLinearIsometryEquivₗ (A : E ≃ₗᵢ[ℝ] E) : H^{s, p}(E, F) →ₗ[ℂ] H^{s, p}(E, F) where
   toFun u :=
-    { toDistr := compCLM F A.toLinearEquiv.toEquiv A.hasTemperateGrowth_toEquiv
-        A.hasTemperateGrowth_toEquiv_symm u.toDistr
+    { toDistr := compCLM F A.toLinearEquiv.toEquiv A.toLinearEquiv.hasTemperateGrowth_toEquiv
+        A.toLinearEquiv.hasTemperateGrowth_toEquiv_symm u.toDistr
       toLp := Lp.compMeasurePreserving A A.measurePreserving u.toLp
       bessel_toDistr_eq_toLp := by
         rw [besselPotential_compCLM_linearIsometryEquiv, u.bessel_toDistr_eq_toLp,
@@ -85,12 +85,14 @@ def compLinearIsometryEquiv (A : E ≃ₗᵢ[ℝ] E) : H^{s, p}(E, F) ≃ₗᵢ[
   invFun := compLinearIsometryEquivₗ A.symm
   left_inv u := by
     ext1
-    exact compCLM_symm_compCLM A.hasTemperateGrowth_toEquiv A.hasTemperateGrowth_toEquiv_symm
-      A.hasTemperateGrowth_toEquiv u.toDistr
+    exact compCLM_symm_compCLM A.toLinearEquiv.hasTemperateGrowth_toEquiv
+      A.toLinearEquiv.hasTemperateGrowth_toEquiv_symm A.toLinearEquiv.hasTemperateGrowth_toEquiv
+      u.toDistr
   right_inv u := by
     ext1
-    exact compCLM_compCLM_symm A.hasTemperateGrowth_toEquiv A.hasTemperateGrowth_toEquiv_symm
-      A.hasTemperateGrowth_toEquiv u.toDistr
+    exact compCLM_compCLM_symm A.toLinearEquiv.hasTemperateGrowth_toEquiv
+      A.toLinearEquiv.hasTemperateGrowth_toEquiv_symm A.toLinearEquiv.hasTemperateGrowth_toEquiv
+      u.toDistr
   norm_map' u := by
     rw [← norm_toLp_eq, ← norm_toLp_eq u]
     exact Lp.norm_compMeasurePreserving _ _
@@ -98,7 +100,8 @@ def compLinearIsometryEquiv (A : E ≃ₗᵢ[ℝ] E) : H^{s, p}(E, F) ≃ₗᵢ[
 @[simp]
 theorem toDistr_compLinearIsometryEquiv (A : E ≃ₗᵢ[ℝ] E) (u : H^{s, p}(E, F)) :
     (compLinearIsometryEquiv A u).toDistr = compCLM F A.toLinearEquiv.toEquiv
-      A.hasTemperateGrowth_toEquiv A.hasTemperateGrowth_toEquiv_symm u.toDistr :=
+      A.toLinearEquiv.hasTemperateGrowth_toEquiv A.toLinearEquiv.hasTemperateGrowth_toEquiv_symm
+      u.toDistr :=
   (rfl)
 
 @[simp]
@@ -119,10 +122,11 @@ theorem compLinearIsometryEquiv_trans (A B : E ≃ₗᵢ[ℝ] E) (u : H^{s, p}(E
     compLinearIsometryEquiv (A.trans B) u =
       compLinearIsometryEquiv A (compLinearIsometryEquiv B u) := by
   ext1
-  exact DFunLike.congr_fun (compCLM_trans A.hasTemperateGrowth_toEquiv
-    A.hasTemperateGrowth_toEquiv_symm B.hasTemperateGrowth_toEquiv
-    B.hasTemperateGrowth_toEquiv_symm (A.trans B).hasTemperateGrowth_toEquiv
-    (A.trans B).hasTemperateGrowth_toEquiv_symm) u.toDistr
+  exact DFunLike.congr_fun (compCLM_trans A.toLinearEquiv.hasTemperateGrowth_toEquiv
+    A.toLinearEquiv.hasTemperateGrowth_toEquiv_symm B.toLinearEquiv.hasTemperateGrowth_toEquiv
+    B.toLinearEquiv.hasTemperateGrowth_toEquiv_symm
+    (A.trans B).toLinearEquiv.hasTemperateGrowth_toEquiv
+    (A.trans B).toLinearEquiv.hasTemperateGrowth_toEquiv_symm) u.toDistr
 
 /-- Pulling back along the identity is the identity. -/
 @[simp]
@@ -131,8 +135,9 @@ theorem compLinearIsometryEquiv_refl :
       LinearIsometryEquiv.refl ℂ _ := by
   ext1 u
   ext1
-  exact DFunLike.congr_fun (compCLM_refl (LinearIsometryEquiv.refl ℝ E).hasTemperateGrowth_toEquiv
-    (LinearIsometryEquiv.refl ℝ E).hasTemperateGrowth_toEquiv_symm) u.toDistr
+  exact DFunLike.congr_fun (compCLM_refl
+    (LinearIsometryEquiv.refl ℝ E).toLinearEquiv.hasTemperateGrowth_toEquiv
+    (LinearIsometryEquiv.refl ℝ E).toLinearEquiv.hasTemperateGrowth_toEquiv_symm) u.toDistr
 
 /-- The **reflection** `R u = u(-·)` is an involution of `H^{s,p}`. -/
 @[simp]

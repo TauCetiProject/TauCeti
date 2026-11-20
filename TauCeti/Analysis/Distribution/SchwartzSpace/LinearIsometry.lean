@@ -45,19 +45,23 @@ open scoped SchwartzMap
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-namespace LinearIsometryEquiv
+namespace LinearEquiv
 
-/-- A linear isometry, as a bijection, has temperate growth. -/
-theorem hasTemperateGrowth_toEquiv (A : E ≃ₗᵢ[ℝ] E) :
-    (A.toLinearEquiv.toEquiv : E → E).HasTemperateGrowth :=
-  A.toContinuousLinearEquiv.hasTemperateGrowth
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  [NormedAddCommGroup W] [NormedSpace ℝ W]
 
-/-- The inverse of a linear isometry, as a bijection, has temperate growth. -/
-theorem hasTemperateGrowth_toEquiv_symm (A : E ≃ₗᵢ[ℝ] E) :
-    (A.toLinearEquiv.toEquiv.symm : E → E).HasTemperateGrowth :=
-  A.symm.toContinuousLinearEquiv.hasTemperateGrowth
+/-- A linear equivalence out of a finite-dimensional space, as a bijection, has temperate
+growth. -/
+theorem hasTemperateGrowth_toEquiv (e : V ≃ₗ[ℝ] W) : (e.toEquiv : V → W).HasTemperateGrowth :=
+  e.toContinuousLinearEquiv.hasTemperateGrowth
 
-end LinearIsometryEquiv
+/-- The inverse of a linear equivalence out of a finite-dimensional space, as a bijection, has
+temperate growth. -/
+theorem hasTemperateGrowth_toEquiv_symm (e : V ≃ₗ[ℝ] W) :
+    (e.toEquiv.symm : W → V).HasTemperateGrowth :=
+  e.toContinuousLinearEquiv.symm.hasTemperateGrowth
+
+end LinearEquiv
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -69,8 +73,8 @@ omit [MeasurableSpace E] [BorelSpace E] in
 the Jacobian factor `|det A⁻¹|` is `1`. -/
 @[simp]
 theorem pushforwardCLM_linearIsometryEquiv (A : E ≃ₗᵢ[ℝ] E) (f : 𝓢(E, F)) :
-    pushforwardCLM ℂ A.toLinearEquiv.toEquiv A.hasTemperateGrowth_toEquiv
-        A.hasTemperateGrowth_toEquiv_symm f =
+    pushforwardCLM ℂ A.toLinearEquiv.toEquiv A.toLinearEquiv.hasTemperateGrowth_toEquiv
+        A.toLinearEquiv.hasTemperateGrowth_toEquiv_symm f =
       compCLMOfContinuousLinearEquiv ℂ A.symm.toContinuousLinearEquiv f := by
   ext y
   have hdet : |(fderiv ℝ (A.toLinearEquiv.toEquiv.symm : E → E) y).det| = 1 := by
