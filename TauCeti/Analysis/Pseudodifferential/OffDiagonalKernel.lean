@@ -40,6 +40,8 @@ convergent kernel itself.
   `Op(a) u (x) = ∫ K(x, y) u(y) dy` for compactly supported `u` vanishing near `x`.
 * `TauCeti.Symbol.continuousOn_offDiagonalKernel`, `TauCeti.Symbol.contDiffOn_offDiagonalKernel`:
   the kernel is continuous, and indeed smooth, off the diagonal.
+* `TauCeti.Symbol.stronglyMeasurable_uncurry_offDiagonalKernel`: the kernel, with its value `0` on
+  the diagonal, is strongly measurable.
 * `TauCeti.Symbol.contDiffOn_quantizationKernel`: the absolutely convergent kernel of a symbol of
   order `m < -n` is smooth off the diagonal.
 * `TauCeti.Symbol.eqOn_offDiagonalKernel_of_forall`: **uniqueness**, on an open set `U` not
@@ -191,6 +193,17 @@ theorem continuousOn_offDiagonalKernel (a : Symbol n V W m) :
     continuousOn_const.div (by fun_prop) fun p hp ↦
       pow_ne_zero _ (norm_ne_zero_iff.2 (sub_ne_zero.2 hp))
   exact hs.smul hK.continuousOn
+
+/-- **Measurability.** The off-diagonal kernel, with its value `0` on the diagonal, is strongly
+measurable as a function of `(x, y)`, as integral operators with this kernel require. -/
+theorem stronglyMeasurable_uncurry_offDiagonalKernel (a : Symbol n V W m) :
+    MeasureTheory.StronglyMeasurable (Function.uncurry (offDiagonalKernel a)) := by
+  set N := ⌊(m + n) / 2⌋₊ + 1
+  have hK := (frequencyLaplacianPow N a).continuous_quantizationKernel (sub_two_mul_floor_lt m n)
+  have hs : Measurable (fun p : CoordinateSpace n × CoordinateSpace n ↦
+      (-1 : ℝ) ^ N / ‖p.1 - p.2‖ ^ (2 * N)) := by fun_prop
+  -- By definition, the kernel is this measurable scalar times a continuous kernel.
+  exact hs.stronglyMeasurable.smul hK.stronglyMeasurable
 
 /-- **Smoothness off the diagonal.** The off-diagonal kernel is smooth on `{(x, y) | x ≠ y}`: for
 each `k`, choosing `N` with `m - 2N + k < -n` makes the kernel of `Δ_ξ^N a` of class `C^k`
