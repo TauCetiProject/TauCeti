@@ -41,6 +41,8 @@ rapid decay of every order.
   `Distribution.waveFrontSet_iteratedLineDerivOp_subset`: the wave front set of a derivative.
 * `Distribution.waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_subset`: differential
   operators with smooth coefficients do not enlarge the wave front set.
+* `Distribution.waveFrontSet_sum_smul_iteratedLineDerivOp_subset`: the same for constant
+  coefficients.
 
 ## References
 
@@ -157,6 +159,14 @@ theorem waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_subset {ι : Type*
   (waveFrontSet_sum_subset s _).trans <| iUnion₂_subset fun i _ ↦
     (waveFrontSet_smul_subset _ _).trans <| (waveFrontSet_smulLeftCLM_subset _ _).trans <|
       inter_subset_left.trans (waveFrontSet_iteratedLineDerivOp_subset T (m i))
+
+/-- **Constant-coefficient differential operators do not enlarge the wave front set**: for
+`P T = ∑ i ∈ s, c i • ∂^(m i) T`, `WF(P T) ⊆ WF(T)`. -/
+theorem waveFrontSet_sum_smul_iteratedLineDerivOp_subset {ι : Type*} (s : Finset ι)
+    (c : ι → ℂ) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E) (T : 𝓓'(Ω, ℂ)) :
+    (∑ i ∈ s, c i • ∂^{m i} T).waveFrontSet ⊆ T.waveFrontSet :=
+  (waveFrontSet_sum_subset s _).trans <| iUnion₂_subset fun i _ ↦
+    (waveFrontSet_smul_subset _ _).trans (waveFrontSet_iteratedLineDerivOp_subset T (m i))
 
 end FiniteDimensional
 

@@ -41,7 +41,7 @@ variable {Ω : Type*} {τ ρ : ℕ → ℝ≥0} {a b : ℕ → Ω → ℝ} {n m 
 
 /-- A grid likelihood is the exponential of its terminal elementary gain minus half its
 pathwise square energy. -/
-theorem gridExponential_eq_exp_simpleGains_sub_energy
+theorem gridExponential_eq_exp_simpleGains_sub_elementaryEnergy_div_two
     (hτ : MonotoneOn τ (Set.Iic n)) (ω : Ω) :
     gridExponential τ a W n ω =
       exp (simpleGains τ n a W (τ n) ω - elementaryEnergy τ a n ω / 2) := by
@@ -58,8 +58,8 @@ theorem gridExponential_congr_of_ae_eq (hτ : MonotoneOn τ (Set.Iic n))
   have hg := simpleGains_congr_of_ae_eq_nnvolume (X := W) hτ hρ ω hab (max (τ n) (ρ m))
   rw [simpleGains_of_ge hτ (le_max_left _ _),
     simpleGains_of_ge hρ (le_max_right _ _)] at hg
-  rw [gridExponential_eq_exp_simpleGains_sub_energy hτ,
-    gridExponential_eq_exp_simpleGains_sub_energy hρ, hg,
+  rw [gridExponential_eq_exp_simpleGains_sub_elementaryEnergy_div_two hτ,
+    gridExponential_eq_exp_simpleGains_sub_elementaryEnergy_div_two hρ, hg,
     elementaryEnergy_congr_of_ae_eq hτ hρ ω hab]
 
 /-- Equality for time-product measure gives equality of the elementary likelihoods outside

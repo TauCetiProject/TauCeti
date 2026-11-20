@@ -79,7 +79,8 @@ variable
   (hs : Continuous (Quiver.Total.left : Quiver.Total C → C))
   (hu : Continuous fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
   (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-    (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total C))
+    (⟨p.val.1.left, p.val.2.right, p.val.1.hom ≫ eqToHom p.property ≫ p.val.2.hom⟩ : Quiver.Total
+        C))
 
 include hs hu hc in
 /-- Prepending a continuous family of arrows to a continuous family of strings is continuous,
@@ -137,7 +138,7 @@ def precompHomeomorph (n : ℕ) :
   -- Explicit vertices make the matching endpoint equation definitional, without unfolding
   -- the opaque total-arrow accessor in the dependent inverse construction.
   toFun F := ⟨(⟨F.obj' 0, F.obj' 1, F.map' 0 1⟩, F.δ₀), rfl⟩
-  invFun p := p.1.2.precomp (p.1.1.hom ≫ eqToHom p.2)
+  invFun p := p.val.2.precomp (p.val.1.hom ≫ eqToHom p.property)
   left_inv F := by
     -- The first vertex of the tail and vertex 1 have different native accessor expressions.
     dsimp only
@@ -160,8 +161,8 @@ def precompHomeomorph (n : ℕ) :
     simp_rw [totalArrow_def] at ht
     exact (ht.prodMk (continuous_whiskerLeft (Fin.succFunctor (n + 1)))).subtype_mk _
   continuous_invFun := continuous_precomp hs hu hc
-    (continuous_fst.comp continuous_subtype_val)
-    (continuous_snd.comp continuous_subtype_val) (fun p ↦ p.2)
+    (continuous_fst.comp continuous_subtypeVal)
+    (continuous_snd.comp continuous_subtypeVal) (fun p ↦ p.property)
 
 @[simp]
 theorem precompHomeomorph_apply (n : ℕ) (F : ComposableArrows C (n + 1)) :
@@ -173,7 +174,7 @@ theorem precompHomeomorph_apply (n : ℕ) (F : ComposableArrows C (n + 1)) :
 theorem precompHomeomorph_symm_apply (n : ℕ)
     (p : {p : Quiver.Total C × ComposableArrows C n // p.1.right = p.2.left}) :
     (precompHomeomorph hs hu hc n).symm p =
-      p.1.2.precomp (p.1.1.hom ≫ eqToHom p.2) := (rfl)
+      p.val.2.precomp (p.val.1.hom ≫ eqToHom p.property) := (rfl)
 
 include hs hu hc in
 /-- A family of nonempty strings is continuous exactly when its first arrow and its tail are

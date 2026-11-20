@@ -144,8 +144,8 @@ theorem simpleGains_congr_of_ae_eq_nnvolume (hτ : MonotoneOn τ (Set.Iic n))
       (fun u ↦ simpleHolding ρ m b u ω)) (t : ℝ≥0) :
     simpleGains τ n a X t ω = simpleGains ρ m b X t ω := by
   let e : ℝ≥0 ↪o ℝ := OrderEmbedding.subtype _
-  have hτ' : MonotoneOn (fun j ↦ e (τ j)) (Set.Iic n) := fun i hi j hj hij ↦ hτ hi hj hij
-  have hρ' : MonotoneOn (fun j ↦ e (ρ j)) (Set.Iic m) := fun i hi j hj hij ↦ hρ hi hj hij
+  have hτ' : MonotoneOn (fun j ↦ e (τ j)) (Set.Iic n) := e.monotone.comp_monotoneOn hτ
+  have hρ' : MonotoneOn (fun j ↦ e (ρ j)) (Set.Iic m) := e.monotone.comp_monotoneOn hρ
   have hr : (fun u ↦ simpleHolding (fun j ↦ e (τ j)) n a u ω)
       =ᵐ[volume.restrict (Ici 0)] (fun u ↦ simpleHolding (fun j ↦ e (ρ j)) m b u ω) := by
     rw [← TauCeti.map_coe_nnvolume]

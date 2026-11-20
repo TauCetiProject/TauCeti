@@ -202,7 +202,7 @@ theorem normalReflection_eq_self_iff (a : ℝ) (x : WithLp 2 (ℝ × E)) :
 /-- The normal reflection in `{a} × E` exchanges the open half-spaces on either side. -/
 theorem normalReflection_mem_normalHalfSpace_iff (a : ℝ) (x : WithLp 2 (ℝ × E)) :
     normalReflection E a x ∈ normalHalfSpace (E := E) a ↔ x.fst < a := by
-  simp only [mem_normalHalfSpace, normalReflection_apply]
+  simp only [mem_normalHalfSpace, normalReflection_apply, WithLp.toLp_fst]
   constructor <;> intro h <;> linarith
 
 /-- The normal reflection in `{a} × E` is its linear part `TauCeti.normalLinearReflection`
@@ -992,7 +992,7 @@ theorem HasWeakFDerivOn.hasWeakLineDerivOn_sub_comp_normalReflection {a : ℝ}
   -- The odd reflection is twice the extension by zero minus the even reflection.
   have hz := (hw.hasWeakLineDerivOn d).top_of_normalHalfSpace hd hwl (hGl.inner_const d) hw0
     fun x hx => by simp [hG0 x hx]
-  have h := (hz.const_smul 2).sub
+  have h := (hz.const_smul (2 : ℝ)).sub
     ((hw.add_comp_normalReflection hwl hGl hw0 hG0).hasWeakLineDerivOn d)
   convert h using 1
   · funext x
