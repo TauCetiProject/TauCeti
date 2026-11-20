@@ -89,7 +89,7 @@ theorem _root_.AntilipschitzWith.domRestrict_of_approx [PseudoEMetricSpace U] {c
   refine AntilipschitzWith.of_le_mul_dist fun x y ↦ ?_
   have hxy : dist (x : U) y ≤ c * ‖A x - A y‖ := by
     simpa only [dist_eq_norm] using hA.le_mul_dist (x : U) y
-  have h := one_sub_mul_norm_sub_le_norm_sub happ x.2 y.2
+  have h := one_sub_mul_norm_sub_le_norm_sub happ x.property y.property
   simp only [Subtype.dist_eq, domRestrict_apply, dist_eq_norm, NNReal.coe_mul, NNReal.coe_inv,
     Real.coe_toNNReal _ hδ'.le]
   calc dist (x : U) y ≤ c * ‖A x - A y‖ := hxy

@@ -15,10 +15,9 @@ import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 import TauCeti.Combinatorics.Enumerative.CoupledRecoloring
 import TauCeti.Combinatorics.Hypergraph.Polyad.Energy.Gap
-import TauCeti.Combinatorics.Hypergraph.Polyad.Permute
+import TauCeti.Combinatorics.Hypergraph.Polyad.Perm
 import TauCeti.Combinatorics.Hypergraph.Polyad.Rank
 import TauCeti.Data.Nat.Factorial.Basic
-import TauCeti.Order.Partition.Pi
 
 /-!
 # Coupled recoloring over fine polyads
@@ -33,7 +32,7 @@ On each canonical `S₃`-representative of a large, distinct-cell, rank-one top-
 `Q` over `D`, we apply `exists_recoloring_abs_card_filter_sub_mul_card_le` to shift the triple
 coloring toward the coarse density `H.relativeDensity · (Q.coarsen _ π)` while preserving small
 discrepancy on every `Subpolyad3 Q`. Because distinct `S₃`-orbits of distinct-cell polyads have
-pairwise disjoint unordered supports (`Polyad3.disjoint_unorderedSupport_of_forall_ne_permute`),
+pairwise disjoint unordered supports (`Polyad3.disjoint_unorderedSupport_of_forall_ne_perm`),
 these local recolorings glue into a single global coloring `H'`. Summing the local edit bounds over
 the `S₃`-orbits yields `H.Approximates3 H' ε` from the polyad energy gap, and aggregating
 subpolyad discrepancies across fine children yields `H'.TopRegularOverMostPolyads C δ₁ ε 1`
@@ -58,53 +57,6 @@ namespace TauCeti
 
 section Helpers
 
-open Classical in
-/-- Repeated-cell injective triples over an equipartition into `t` cells of size at least `1`
-carry at most `6 * |V|³ / t` triples. -/
-private theorem sum_card_support_not_hasDistinctCells_le {κ₂ V : Type*}
-    [Fintype V] [DecidableEq V] [Fintype κ₂] (S : PairSkeleton3 κ₂ V)
-    (hEq : S.vertexPart.IsEquipartition) (ht : 0 < #S.vertexPart.parts)
-    (hs : 1 ≤ Fintype.card V / #S.vertexPart.parts) :
-    ∑ P : Polyad3 S with ¬P.HasDistinctCells, (#P.support : ℝ) ≤
-      6 * (Fintype.card V : ℝ) ^ 3 / #S.vertexPart.parts := by
-  set t := #S.vertexPart.parts
-  set s := Fintype.card V / t
-  have hm : ∀ A ∈ S.vertexPart.parts, #A ≤ 2 * s := fun A hA ↦ by
-    have hle := hEq.card_part_le_average_add_one hA
-    rw [card_univ] at hle
-    dsimp only [s, t] at *
-    omega
-  have hsum_nat : ∑ P : Polyad3 S with ¬P.HasDistinctCells, #P.support ≤
-      3 * (2 * s) * Fintype.card V ^ 2 := by
-    rw [← card_biUnion fun P _ Q _ hne ↦ Polyad3.pairwise_disjoint_support hne]
-    calc #((univ.filter fun P : Polyad3 S ↦ ¬P.HasDistinctCells).biUnion Polyad3.support)
-        ≤ #{g ∈ Fintype.piFinset (fun _ : Fin 3 ↦ (univ : Finset V)) |
-            ¬Function.Injective fun i ↦ S.vertexPart.part (g i)} := by
-          refine card_le_card_of_injOn (fun x ↦ x.1) (fun x hx ↦ ?_)
-            (fun _ _ _ _ h ↦ Subtype.ext h)
-          obtain ⟨P, hP, hxP⟩ := mem_biUnion.1 hx
-          rw [mem_coe, mem_filter]
-          refine ⟨Fintype.mem_piFinset.2 fun _ ↦ mem_univ _, fun hinj ↦ (mem_filter.1 hP).2 ?_⟩
-          rw [Polyad3.hasDistinctCells_iff_injective_cell]
-          intro i j hij
-          apply hinj
-          dsimp only
-          have hci := ((Polyad3.mem_support_iff_cell_pairColor P x).1 hxP).1
-          rw [S.vertexPart.part_eq_of_mem (P.cell_mem i) (hci i),
-            S.vertexPart.part_eq_of_mem (P.cell_mem j) (hci j), hij]
-      _ ≤ (Fintype.card (Fin 3)).choose 2 * (2 * s) *
-            #(univ : Finset V) ^ (Fintype.card (Fin 3) - 1) :=
-          S.vertexPart.card_filter_not_injective_part_le_of_card_le hm
-      _ = 3 * (2 * s) * Fintype.card V ^ 2 := by simp [card_univ]
-  have hst : (s : ℝ) * t ≤ Fintype.card V := by
-    exact_mod_cast Nat.div_mul_le_self (Fintype.card V) t
-  rw [le_div_iff₀ (Nat.cast_pos.2 ht)]
-  calc (∑ P : Polyad3 S with ¬P.HasDistinctCells, (#P.support : ℝ)) * t
-      ≤ (3 * (2 * (s : ℝ)) * (Fintype.card V : ℝ) ^ 2) * t := by gcongr; exact_mod_cast hsum_nat
-    _ = 6 * ((s : ℝ) * t) * (Fintype.card V : ℝ) ^ 2 := by ring
-    _ ≤ 6 * (Fintype.card V : ℝ) * (Fintype.card V : ℝ) ^ 2 := by gcongr
-    _ = 6 * (Fintype.card V : ℝ) ^ 3 := by ring
-
 /-- Elementary exponential union bound for coupled recoloring over `Subpolyad3 Q`. -/
 private theorem union_bound_subpolyad3 {q₃ s I_card N : ℕ} {η γ : ℝ}
     (hq : 1 ≤ q₃) (hs : 1 ≤ s) (hη : 0 < η) (hγ : 0 < γ)
@@ -119,12 +71,13 @@ private theorem union_bound_subpolyad3 {q₃ s I_card N : ℕ} {η γ : ℝ}
     calc (2 : ℝ) ^ (12 * s ^ 2 + 2)
         ≤ (exp 1) ^ (12 * s ^ 2 + 2) :=
           pow_le_pow_left₀ (by norm_num) (by linarith [add_one_le_exp (1 : ℝ)]) _
-      _ = exp ((12 * s ^ 2 + 2 : ℕ) : ℝ) := by rw [← exp_nat_mul, mul_one]
+      _ = exp ((12 * s ^ 2 + 2 : ℕ) : ℝ) := by rw [← exp_natCast_mul, mul_one]
   have hI1 : 2 * ((I_card : ℝ) + 1) ≤ (2 : ℝ) ^ (12 * s ^ 2 + 2) := by
     have h1 : (1 : ℕ) ≤ 2 ^ (12 * s ^ 2) := Nat.one_le_pow _ _ two_pos
-    exact_mod_cast (show 2 * (I_card + 1) ≤ 2 ^ (12 * s ^ 2 + 2) by
+    have hI1_nat : 2 * (I_card + 1) ≤ 2 ^ (12 * s ^ 2 + 2) := by
       calc 2 * (I_card + 1) ≤ 2 * (2 ^ (12 * s ^ 2) + 2 ^ (12 * s ^ 2)) := by omega
-        _ = 2 ^ (12 * s ^ 2 + 2) := by ring)
+        _ = 2 ^ (12 * s ^ 2 + 2) := by ring
+    exact_mod_cast hI1_nat
   have hqexp : (q₃ : ℝ) < exp (q₃ : ℝ) :=
     lt_of_lt_of_le (by linarith) (add_one_le_exp (q₃ : ℝ))
   have hreq' : ((q₃ : ℝ) + 14) ≤ 2 * η ^ 2 * γ * s := by
@@ -137,7 +90,9 @@ private theorem union_bound_subpolyad3 {q₃ s I_card N : ℕ} {η γ : ℝ}
             mul_le_mul_of_nonneg_right hreq' (sq_nonneg _)
         _ = 2 * η ^ 2 * (γ * (s : ℝ) ^ 3) := by ring
     linarith [mul_le_mul_of_nonneg_left hN (by positivity : (0 : ℝ) ≤ 2 * η ^ 2)]
-  rw [show -2 * (η * N) ^ 2 / N = -(2 * η ^ 2 * N) by field_simp [hNpos.ne']]
+  have hexp_eq : -2 * (η * N) ^ 2 / N = -(2 * η ^ 2 * N) := by
+    field_simp [hNpos.ne']
+  rw [hexp_eq]
   calc 2 * ((I_card : ℝ) + 1) * q₃ * exp (-(2 * η ^ 2 * N))
       ≤ exp ((12 * s ^ 2 + 2 : ℕ) : ℝ) * q₃ * exp (-(2 * η ^ 2 * N)) := by
         gcongr; exact hI1.trans hpow2
@@ -146,40 +101,6 @@ private theorem union_bound_subpolyad3 {q₃ s I_card N : ℕ} {η γ : ℝ}
         rw [← exp_add, ← exp_add, sub_eq_add_neg]
     _ ≤ exp 0 := exp_le_exp.2 (by linarith)
     _ = 1 := exp_zero
-
-/-- Summing a nonnegative `S₃`-invariant function over a set of distinct-cell polyads in pairwise
-distinct `S₃`-orbits is at most one-sixth of the total sum over all polyads. -/
-private theorem six_mul_sum_le_of_permute_invariant {κ₂ V : Type*} [Fintype V] [DecidableEq V]
-    [Fintype κ₂] {S : PairSkeleton3 κ₂ V} (G : Finset (Polyad3 S)) (Φ : Polyad3 S → ℝ)
-    (hΦ0 : ∀ Q, 0 ≤ Φ Q) (hΦperm : ∀ Q σ, Φ (Q.permute σ) = Φ Q)
-    (horbit : ∀ Q₁ ∈ G, ∀ Q₂ ∈ G, ∀ σ : Equiv.Perm (Fin 3),
-      Q₂ = Q₁.permute σ → Q₁ = Q₂ ∧ σ = 1) :
-    6 * ∑ Q ∈ G, Φ Q ≤ ∑ Q : Polyad3 S, Φ Q := by
-  classical
-  have hcardS3 : (Fintype.card (Equiv.Perm (Fin 3)) : ℝ) = 6 := by
-    rw [Fintype.card_perm, Fintype.card_fin]; norm_num
-  have hinj : Set.InjOn (fun p : Polyad3 S × Equiv.Perm (Fin 3) ↦ p.1.permute p.2)
-      ((G ×ˢ (univ : Finset (Equiv.Perm (Fin 3))) : Finset _) : Set _) := by
-    intro p₁ hp₁ p₂ hp₂ heq
-    rw [mem_coe, mem_product] at hp₁ hp₂
-    dsimp only at heq
-    have hrel : p₂.1 = p₁.1.permute (p₁.2 * p₂.2⁻¹) := by
-      rw [← Polyad3.permute_permute, heq, Polyad3.permute_permute, mul_inv_cancel,
-        Polyad3.permute_one]
-    obtain ⟨hQ, hσ⟩ := horbit p₁.1 hp₁.1 p₂.1 hp₂.1 _ hrel
-    exact Prod.ext hQ (mul_inv_eq_one.1 hσ)
-  calc 6 * ∑ Q ∈ G, Φ Q
-      = ∑ Q ∈ G, ∑ σ : Equiv.Perm (Fin 3), Φ (Q.permute σ) := by
-        rw [mul_sum]
-        refine sum_congr rfl fun Q _ ↦ ?_
-        simp_rw [hΦperm]
-        rw [sum_const, card_univ, nsmul_eq_mul, hcardS3]
-    _ = ∑ p ∈ G ×ˢ (univ : Finset (Equiv.Perm (Fin 3))), Φ (p.1.permute p.2) :=
-        (sum_product' _ _ _).symm
-    _ = ∑ Q ∈ (G ×ˢ (univ : Finset (Equiv.Perm (Fin 3)))).image
-          (fun p ↦ p.1.permute p.2), Φ Q := (sum_image hinj).symm
-    _ ≤ ∑ Q : Polyad3 S, Φ Q :=
-        sum_le_sum_of_subset_of_nonneg (subset_univ _) fun Q _ _ ↦ hΦ0 Q
 
 end Helpers
 
@@ -197,10 +118,10 @@ private def IsGoodFinePolyad (H : Colored3Graph κ V) {D : TriadicComplex3 V} (�
   Q.HasDistinctCells ∧ γ * (s : ℝ) ^ 3 ≤ #Q.support ∧ H.IsTopRegularOverPolyad Q η 1
 
 omit [Fintype κ] in
-private theorem isGoodFinePolyad_permute_iff (H : Colored3Graph κ V) {D : TriadicComplex3 V}
+private theorem isGoodFinePolyad_perm_iff (H : Colored3Graph κ V) {D : TriadicComplex3 V}
     (η γ : ℝ) (s : ℕ) (Q : Polyad3 D.skeleton) (σ : Equiv.Perm (Fin 3)) :
-    IsGoodFinePolyad H η γ s (Q.permute σ) ↔ IsGoodFinePolyad H η γ s Q := by
-  simp [IsGoodFinePolyad, Colored3Graph.isTopRegularOverPolyad_permute_iff]
+    IsGoodFinePolyad H η γ s (Q.perm σ) ↔ IsGoodFinePolyad H η γ s Q := by
+  simp [IsGoodFinePolyad, Colored3Graph.isTopRegularOverPolyad_perm_iff]
 
 /-- Local coupled recoloring on the unordered support of a single good fine polyad `Q`. -/
 private theorem exists_local_coupled_recoloring (H : Colored3Graph κ V)
@@ -229,7 +150,7 @@ private theorem exists_local_coupled_recoloring (H : Colored3Graph κ V)
       (Polyad3.support_subset_coarsen hVeq.le π (fun p ↦ (hπ p).symm) Q)
   have hcardΩ : #Q.unorderedSupport = #Q.support := hdist.card_unorderedSupport
   have hIcard : Fintype.card (Subpolyad3 Q) ≤ 2 ^ (12 * s ^ 2) := by
-    refine (card_subpolyad3_le Q).trans (Nat.pow_le_pow_right two_pos ?_)
+    refine (card_subpolyad3_le_mul_card Q).trans (Nat.pow_le_pow_right two_pos ?_)
     have h0 := hcells Q.c₀ Q.hc₀; have h1 := hcells Q.c₁ Q.hc₁; have h2 := hcells Q.c₂ Q.hc₂
     calc #Q.c₀ * #Q.c₁ + #Q.c₀ * #Q.c₂ + #Q.c₁ * #Q.c₂
         ≤ (2 * s) * (2 * s) + (2 * s) * (2 * s) + (2 * s) * (2 * s) := by gcongr
@@ -258,7 +179,7 @@ private theorem exists_local_coupled_recoloring (H : Colored3Graph κ V)
     mod_cast H.sum_relativeDensity hPne
   obtain ⟨x, hxout, hxedit, hxdisc⟩ := exists_recoloring_abs_card_filter_sub_mul_card_le
     Q.unorderedSupport H.color hp0 hp1 (fun S : Subpolyad3 Q ↦ S.unorderedSupport)
-    (fun S ↦ S.unorderedSupport_subset) (mul_pos hη hQpos) (mul_nonneg hη.le hQpos.le) hx₀ hub
+    (fun S ↦ S.unorderedSupport_subset) (mul_pos hη hQpos) hx₀ hub
   refine ⟨x, hxout, hxedit.trans_eq ?_, fun S d ↦ (hxdisc S d).trans_eq (by ring)⟩
   congr 1
   · congr 1
@@ -309,34 +230,34 @@ private theorem exists_piecewise_coloring_on_disjoint (H : Colored3Graph κ V)
     congrArg Nat.cast (congrArg card (filter_congr fun e he ↦ by rw [hH'_eq hQ he]))
 
 omit [Fintype κ] in
-/-- Transfer a local subpolyad discrepancy bound on a permuted representative `Q.permute σ` back to
-`Q` when `H'` agrees with the local coloring `x` on `(Q.permute σ).unorderedSupport`. -/
-private theorem abs_relDensityOn_sub_of_permute_recoloring (H H' : Colored3Graph κ V)
+/-- Transfer a local subpolyad discrepancy bound on a permuted representative `Q.perm σ` back to
+`Q` when `H'` agrees with the local coloring `x` on `(Q.perm σ).unorderedSupport`. -/
+private theorem abs_relDensityOn_sub_of_perm_recoloring (H H' : Colored3Graph κ V)
     {C D : TriadicComplex3 V} (π : Fin D.pairColorCount → Fin C.pairColorCount)
     (hVeq : D.skeleton.vertexPart = C.skeleton.vertexPart)
     (hπ : ∀ p, π (D.skeleton.pairColors.color p) = C.skeleton.pairColors.color p)
     {Q : Polyad3 D.skeleton} (hdist : Q.HasDistinctCells) (hQne : Q.support.Nonempty)
     (σ : Equiv.Perm (Fin 3)) (x : Set.powersetCard V 3 → κ) (S : Subpolyad3 Q) (d : κ) {B : ℝ}
-    (hH'_eq : ∀ {e}, e ∈ (Q.permute σ).unorderedSupport → H'.color e = x e)
-    (hdisc : |(#{e ∈ (S.permute σ).unorderedSupport | x e = d} : ℝ) -
-        H.relativeDensity d ((Q.permute σ).coarsen hVeq.le π) *
-          #(S.permute σ).unorderedSupport| ≤ B) :
+    (hH'_eq : ∀ {e}, e ∈ (Q.perm σ).unorderedSupport → H'.color e = x e)
+    (hdisc : |(#{e ∈ (S.perm σ).unorderedSupport | x e = d} : ℝ) -
+        H.relativeDensity d ((Q.perm σ).coarsen hVeq.le π) *
+          #(S.perm σ).unorderedSupport| ≤ B) :
     |((H'.relDensityOn d S.support : ℝ) -
         H.relativeDensity d (Q.coarsen hVeq.le π)) * #S.support| ≤ B := by
-  have hcount : (#{e ∈ (S.permute σ).unorderedSupport | x e = d} : ℝ) =
+  have hcount : (#{e ∈ (S.perm σ).unorderedSupport | x e = d} : ℝ) =
       (H'.relDensityOn d S.support : ℝ) * #S.support := by
-    have hfilt : {e ∈ (S.permute σ).unorderedSupport | x e = d} =
+    have hfilt : {e ∈ (S.perm σ).unorderedSupport | x e = d} =
         {e ∈ S.unorderedSupport | H'.color e = d} := by
-      rw [Subpolyad3.unorderedSupport_permute]
+      rw [Subpolyad3.unorderedSupport_perm]
       refine filter_congr fun e he ↦ ?_
-      have heQ : e ∈ (Q.permute σ).unorderedSupport := by
-        rw [Polyad3.unorderedSupport_permute]; exact S.unorderedSupport_subset he
+      have heQ : e ∈ (Q.perm σ).unorderedSupport := by
+        rw [Polyad3.unorderedSupport_perm]; exact S.unorderedSupport_subset he
       rw [hH'_eq heQ]
     rw [hfilt, S.card_filter_unorderedSupport hdist H' d]
     exact_mod_cast (H'.relDensityOn_mul_card d S.support).symm
-  rw [hcount, Subpolyad3.unorderedSupport_permute, S.card_unorderedSupport hdist,
-    Polyad3.coarsen_permute_of_support_nonempty Q σ hVeq.le π (fun p ↦ (hπ p).symm) hQne,
-    relativeDensity_permute] at hdisc
+  rw [hcount, Subpolyad3.unorderedSupport_perm, S.card_unorderedSupport hdist,
+    Polyad3.coarsen_perm_of_support_nonempty Q hQne σ hVeq.le π (fun p ↦ (hπ p).symm),
+    relativeDensity_perm] at hdisc
   rwa [sub_mul]
 
 /-- Summing the local coupled-recoloring edit budget over canonical `S₃`-representatives is at most
@@ -347,7 +268,7 @@ private theorem six_mul_sum_local_budget_le (H : Colored3Graph κ V)
     (hπ : ∀ p, π (D.skeleton.pairColors.color p) = C.skeleton.pairColors.color p)
     {η : ℝ} (hη : 0 < η) (G : Finset (Polyad3 D.skeleton))
     (horbit : ∀ Q₁ ∈ G, ∀ Q₂ ∈ G, ∀ σ : Equiv.Perm (Fin 3),
-      Q₂ = Q₁.permute σ → Q₁ = Q₂ ∧ σ = 1) :
+      Q₂ = Q₁.perm σ → Q₁ = Q₂ ∧ σ = 1) :
     6 * ∑ Q ∈ G,
         ((∑ c : κ, #Q.support *
             |(H.relativeDensity c Q : ℝ) - H.relativeDensity c (Q.coarsen hVeq.le π)|) / 2 +
@@ -366,17 +287,17 @@ private theorem six_mul_sum_local_budget_le (H : Colored3Graph κ V)
         (⟨D.pairColorCount, D.skeleton, univ⟩ : TriadicComplex3 V).IsPolyadDecomposition :=
       (TriadicComplex3.isPolyadDecomposition_iff_ofTriple_mem _).2 fun _ ↦ mem_univ _
     exact_mod_cast hdec.sum_card_support
-  have hΦperm (Q : Polyad3 D.skeleton) (σ : Equiv.Perm (Fin 3)) : Φ (Q.permute σ) = Φ Q := by
+  have hΦperm (Q : Polyad3 D.skeleton) (σ : Equiv.Perm (Fin 3)) : Φ (Q.perm σ) = Φ Q := by
     obtain hQ0 | hQne := Q.support.eq_empty_or_nonempty
     · simp [Φ, hQ0]
-    · simp only [Φ, Polyad3.card_support_permute, relativeDensity_permute,
-        Polyad3.coarsen_permute_of_support_nonempty Q σ hVeq.le π (fun p ↦ (hπ p).symm) hQne]
+    · simp only [Φ, Polyad3.card_support_perm, relativeDensity_perm,
+        Polyad3.coarsen_perm_of_support_nonempty Q hQne σ hVeq.le π (fun p ↦ (hπ p).symm)]
   have hΦ0 (Q : Polyad3 D.skeleton) : 0 ≤ Φ Q :=
     add_nonneg (div_nonneg (sum_nonneg fun _ _ ↦ mul_nonneg (Nat.cast_nonneg _)
       (abs_nonneg _)) (by norm_num)) (by positivity)
   calc 6 * ∑ Q ∈ G, Φ Q
       ≤ ∑ Q : Polyad3 D.skeleton, Φ Q :=
-        six_mul_sum_le_of_permute_invariant G Φ hΦ0 hΦperm horbit
+        Polyad3.six_mul_sum_le_of_perm_invariant G Φ hΦ0 hΦperm horbit
     _ = (∑ c : κ, ∑ Q : Polyad3 D.skeleton, #Q.support *
           |(H.relativeDensity c Q : ℝ) - H.relativeDensity c (Q.coarsen hVeq.le π)|) / 2 +
         Fintype.card κ * η * (Fintype.card V).descFactorial 3 := by
@@ -406,16 +327,16 @@ private theorem exists_glued_coupled_recoloring (H : Colored3Graph κ V)
   let eP : D.skeleton.vertexPart.parts ≃ Fin (Fintype.card D.skeleton.vertexPart.parts) :=
     Fintype.equivFin _
   let GoodCanon : Finset (Polyad3 D.skeleton) := univ.filter fun Q ↦
-    IsGoodFinePolyad H η γ s Q ∧ StrictMono fun i : Fin 3 ↦ eP ⟨Q.cell i, Q.cell_mem i⟩
+    IsGoodFinePolyad H η γ s Q ∧ StrictMono fun i : Fin 3 ↦ eP ⟨Q.cell i, Q.cell_mem_parts i⟩
   have hcanon_orbit : ∀ Q₁ ∈ GoodCanon, ∀ Q₂ ∈ GoodCanon, ∀ σ : Equiv.Perm (Fin 3),
-      Q₂ = Q₁.permute σ → Q₁ = Q₂ ∧ σ = 1 := by
+      Q₂ = Q₁.perm σ → Q₁ = Q₂ ∧ σ = 1 := by
     intro Q₁ hQ₁ Q₂ hQ₂ σ h
-    obtain ⟨τ, -, huniq⟩ := (mem_filter.1 hQ₁).2.1.1.existsUnique_permute_strictMono eP eP.injective
+    obtain ⟨τ, -, huniq⟩ := (mem_filter.1 hQ₁).2.1.1.existsUnique_perm_strictMono eP eP.injective
     have hσ1 : σ = 1 := (huniq σ (by simpa [← h] using (mem_filter.1 hQ₂).2.2)).trans
       (huniq 1 (by simpa using (mem_filter.1 hQ₁).2.2)).symm
     exact ⟨by simpa [hσ1] using h.symm, hσ1⟩
   have hdisj : (GoodCanon : Set (Polyad3 D.skeleton)).PairwiseDisjoint Polyad3.unorderedSupport :=
-    fun Q₁ hQ₁ Q₂ hQ₂ hne ↦ Polyad3.disjoint_unorderedSupport_of_forall_ne_permute fun σ h ↦
+    fun Q₁ hQ₁ Q₂ hQ₂ hne ↦ Polyad3.disjoint_unorderedSupport_of_forall_ne_perm fun σ h ↦
       hne (hcanon_orbit Q₁ hQ₁ Q₂ hQ₂ σ h).1
   let xQ (Q : Polyad3 D.skeleton) : Set.powersetCard V 3 → κ :=
     if h : IsGoodFinePolyad H η γ s Q then
@@ -433,15 +354,15 @@ private theorem exists_glued_coupled_recoloring (H : Colored3Graph κ V)
   · intro Q hQ S d
     have hQne : Q.support.Nonempty := card_pos.1 (Nat.cast_pos.1
       (lt_of_lt_of_le (by positivity : (0 : ℝ) < γ * (s : ℝ) ^ 3) hQ.2.1))
-    obtain ⟨σ, hσ, -⟩ := hQ.1.existsUnique_permute_strictMono eP eP.injective
-    have hQ'good : IsGoodFinePolyad H η γ s (Q.permute σ) :=
-      (isGoodFinePolyad_permute_iff H η γ s Q σ).2 hQ
-    have hQ'mem : Q.permute σ ∈ GoodCanon := mem_filter.2 ⟨mem_univ _, hQ'good, hσ⟩
-    have hdisc := (hxQ_spec hQ'good).2.2 (S.permute σ) d
-    exact (abs_relDensityOn_sub_of_permute_recoloring H H' π hVeq hπ hQ.1 hQne σ
-      (xQ (Q.permute σ)) S d (hH'_eq hQ'mem)
+    obtain ⟨σ, hσ, -⟩ := hQ.1.existsUnique_perm_strictMono eP eP.injective
+    have hQ'good : IsGoodFinePolyad H η γ s (Q.perm σ) :=
+      (isGoodFinePolyad_perm_iff H η γ s Q σ).2 hQ
+    have hQ'mem : Q.perm σ ∈ GoodCanon := mem_filter.2 ⟨mem_univ _, hQ'good, hσ⟩
+    have hdisc := (hxQ_spec hQ'good).2.2 (S.perm σ) d
+    exact (abs_relDensityOn_sub_of_perm_recoloring H H' π hVeq hπ hQ.1 hQne σ
+      (xQ (Q.perm σ)) S d (hH'_eq hQ'mem)
       (by simpa only [xQ, dite_eq_left hQ'good] using hdisc)).trans_eq
-      (by rw [Polyad3.card_support_permute])
+      (by rw [Polyad3.card_support_perm])
 
 omit [Fintype κ] in
 open Classical in
@@ -585,7 +506,8 @@ private theorem approximates3_of_glued_edit_bound (H H' : Colored3Graph κ V)
   have hdesc_le : ((Fintype.card V).descFactorial 3 : ℝ) ≤ (Fintype.card V : ℝ) ^ 3 := by
     exact_mod_cast Nat.descFactorial_le_pow (Fintype.card V) 3
   have hVpos : (0 : ℝ) < (Fintype.card V : ℝ) ^ 3 := by
-    have : (0 : ℝ) < Fintype.card V := by exact_mod_cast (show 0 < Fintype.card V by omega)
+    have hV_pos_nat : 0 < Fintype.card V := by omega
+    have : (0 : ℝ) < Fintype.card V := by exact_mod_cast hV_pos_nat
     positivity
   have h6 : 6 * ({e | H.color e ≠ H'.color e}.ncard : ℝ) ≤ ε * (Fintype.card V : ℝ) ^ 3 := by
     have : (0 : ℝ) ≤ (Fintype.card V).descFactorial 3 := Nat.cast_nonneg _
@@ -737,7 +659,7 @@ private theorem topRegularOverMostPolyads_of_glued (H H' : Colored3Graph κ V)
     have hdiv : 6 / (#C.skeleton.vertexPart.parts : ℝ) ≤ ε / 8 := by
       rw [div_le_iff₀ (Nat.cast_pos.2 ht_pos)]; rw [div_le_iff₀ hε] at ht; linarith
     calc _ ≤ 6 * (Fintype.card V : ℝ) ^ 3 / #C.skeleton.vertexPart.parts :=
-          sum_card_support_not_hasDistinctCells_le C.skeleton hCeq ht_pos hs1
+          Polyad3.sum_card_support_not_hasDistinctCells_le C.skeleton hCeq ht_pos hs1
       _ = (6 / #C.skeleton.vertexPart.parts) * (Fintype.card V : ℝ) ^ 3 := by ring
       _ ≤ (ε / 8) * (2 * (Fintype.card V).descFactorial 3) := by gcongr
       _ = (ε / 4) * (Fintype.card V).descFactorial 3 := by ring

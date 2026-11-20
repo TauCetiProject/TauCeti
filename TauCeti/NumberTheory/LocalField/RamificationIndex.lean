@@ -265,7 +265,7 @@ private theorem exists_normalizedValuation_algebraMap_eq_zpow :
         ← ValuativeExtension.mapValueGroupWithZero_valuation,
         ← map_one (ValuativeExtension.mapValueGroupWithZero K L),
         ValuativeExtension.mapValueGroupWithZero_strictMono.le_iff_le]
-      exact π.2
+      exact π.property
     exact (mem_integer_iff_toAdd_normalizedValuation_nonneg _).1 hmem
   · -- `π` is not a unit of `𝒪[K]`, so its image is not a unit of `𝒪[L]`.
     intro h

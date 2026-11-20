@@ -62,7 +62,7 @@ theorem IsTotallyIsotropic.apply_eq_zero (hW : Q.IsTotallyIsotropic W) {v : M} (
 
 /-- A submodule is totally isotropic exactly when the restriction of the form to it is zero. -/
 theorem isTotallyIsotropic_iff_restrict_eq_zero : Q.IsTotallyIsotropic W ↔ Q.restrict W = 0 :=
-  ⟨fun h ↦ QuadraticMap.ext fun v ↦ h v v.2, fun h v hv ↦ by
+  ⟨fun h ↦ QuadraticMap.ext fun v ↦ h v v.property, fun h v hv ↦ by
     simpa using congr($h ⟨v, hv⟩)⟩
 
 /-- A submodule is totally isotropic for `Q.comp f` exactly when its image under `f` is totally
@@ -158,7 +158,7 @@ theorem IsTotallyIsotropic.polarBilin_compl₁₂_flip_injective (hW' : Q.IsTota
     (hQ : Q.Nondegenerate) (hWW' : Codisjoint W W') :
     Function.Injective ((polarBilin Q).compl₁₂ W.subtype W'.subtype).flip := by
   refine (injective_iff_map_eq_zero _).mpr fun y hy => Subtype.ext ?_
-  refine hW'.eq_zero_of_polar_eq_zero hQ hWW' y.2 fun x hx => ?_
+  refine hW'.eq_zero_of_polar_eq_zero hQ hWW' y.property fun x hx => ?_
   simpa using LinearMap.congr_fun hy ⟨x, hx⟩
 
 end Ring

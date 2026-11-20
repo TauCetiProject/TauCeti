@@ -40,6 +40,10 @@ contraction of `M` need not close up.
 
 * `Matrix.GeneralLinearGroup.realOrthonormalize`: the frame `M Re (Mᴴ M) ^ (-1/2)`, with the same
   real span as `M`, columns orthonormal for `Re ⟪·, ·⟫`, and continuous in `M`.
+* `Matrix.GeneralLinearGroup.realOrthonormalize_mem_unitaryGroup`: when `M ℝⁿ` is Lagrangian,
+  the real orthonormalization is a unitary frame of it.
+* `Matrix.GeneralLinearGroup.exists_pos_det_realOrthonormalize_eq_mul_det`: the real
+  orthonormalization multiplies the determinant by a positive real number.
 * `TauCeti.exists_realImage_homotopy_unitaryGroup`: a closed frame deforms through closed frames
   to a path of unitary matrices.
 
@@ -114,6 +118,15 @@ theorem realImage_realOrthonormalize (M : GL n ℂ) :
   rw [coe_realOrthonormalize]
   exact realImage_mul_map_ofReal _ (posDef_gramNormalizer M).isUnit
 
+/-- The real orthonormalization multiplies the determinant by a positive real number, so the
+determinants of `M` and of its real orthonormalization have the same phase. -/
+theorem exists_pos_det_realOrthonormalize_eq_mul_det (M : GL n ℂ) :
+    ∃ r : ℝ, 0 < r ∧ (realOrthonormalize M : Matrix n n ℂ).det = r * (M : Matrix n n ℂ).det := by
+  refine ⟨(gramNormalizer M).det, (posDef_gramNormalizer M).det_pos, ?_⟩
+  rw [coe_realOrthonormalize, det_mul, mul_comm]
+  congr 1
+  exact (RingHom.map_det Complex.ofRealHom (gramNormalizer M)).symm
+
 /-- The columns of the real orthonormalization of `M` are orthonormal for `Re ⟪·, ·⟫`: its real
 Gram matrix is the identity. -/
 @[simp]
@@ -121,6 +134,24 @@ theorem map_re_conjTranspose_mul_self_realOrthonormalize (M : GL n ℂ) :
     ((realOrthonormalize M : Matrix n n ℂ)ᴴ * realOrthonormalize M).map Complex.re = 1 := by
   rw [coe_realOrthonormalize, map_re_conjTranspose_mul_self_mul_map_ofReal,
     gramNormalizer_mul_realGram_mul]
+
+/-- **Orthonormalizing a Lagrangian frame gives a unitary frame.** If the columns of `M` are
+pairwise orthogonal for the symplectic form `Im ⟪·, ·⟫`, that is, `M ℝⁿ` is Lagrangian, then its
+real orthonormalization is unitary: the real change of basis keeps `Im (Mᴴ M) = 0` and makes
+`Re (Mᴴ M) = 1`. -/
+theorem realOrthonormalize_mem_unitaryGroup {M : GL n ℂ}
+    (hM : ((M : Matrix n n ℂ)ᴴ * M).map Complex.im = 0) :
+    (realOrthonormalize M : Matrix n n ℂ) ∈ unitaryGroup n ℂ := by
+  have hre := map_re_conjTranspose_mul_self_realOrthonormalize M
+  have him : (((realOrthonormalize M : Matrix n n ℂ))ᴴ * realOrthonormalize M).map Complex.im =
+      0 := by
+    rw [coe_realOrthonormalize, map_im_conjTranspose_mul_self_mul_map_ofReal, hM, Matrix.mul_zero,
+      Matrix.zero_mul]
+  rw [mem_unitaryGroup_iff', star_eq_conjTranspose]
+  ext i j
+  have h₁ := congrFun (congrFun hre i) j
+  have h₂ := congrFun (congrFun him i) j
+  apply Complex.ext <;> by_cases hij : i = j <;> simp_all [Matrix.one_apply]
 
 /-- The real orthonormalization of a continuous family of frames is continuous. -/
 theorem continuous_realOrthonormalize {X : Type*} [TopologicalSpace X] {M : X → GL n ℂ}
@@ -167,7 +198,7 @@ theorem exists_realImage_homotopy_unitaryGroup {M : I → GL n ℂ} (hM : Contin
   refine ⟨fun p ↦ GeneralLinearGroup.polarDeformation
     (GeneralLinearGroup.realOrthonormalize (M p.2)) p.1, ?_, fun t ↦ ?_, fun s ↦ ?_, fun t ↦ ?_⟩
   · have h := (GeneralLinearGroup.contMDiff_polarDeformation (n := n) (𝕜 := ℂ) (k := 0)).continuous
-    exact h.comp ((continuous_subtype_val.comp continuous_fst).prodMk
+    exact h.comp ((continuous_subtypeVal.comp continuous_fst).prodMk
       ((GeneralLinearGroup.continuous_realOrthonormalize hM).comp continuous_snd))
   · simp
   · simp only

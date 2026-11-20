@@ -49,6 +49,10 @@ structures of both sides over the ring of global functions, and hence over any b
   in `M`;
 * `AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardBaseLinearEquivOfIsAffineHom`: the same
   isomorphism as a linear equivalence over a base ring;
+* `AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardIsoOfCompactSpace` and
+  `AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardBaseLinearEquivOfCompactSpace`: the
+  cover-free versions when `Y` is quasi-compact with affine diagonal, built from a finite affine
+  subcover of `Y`;
 * `AlgebraicGeometry.Scheme.Modules.exists_mono_isQuasicoherent_subsingleton_cohomology`: on a
   quasi-compact scheme with affine diagonal, every quasi-coherent sheaf embeds into a
   quasi-coherent sheaf with no cohomology in positive degrees, the step of a dimension-shifting
@@ -299,6 +303,89 @@ end BaseRing
 
 end AlgebraicGeometry.Scheme.Hom
 
+namespace AlgebraicGeometry.Scheme.Hom
+
+open TauCeti TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme.Modules Scheme.Modules
+
+section CompactSpace
+
+variable {X Y : Scheme.{u}} (f : X ⟶ Y) [IsAffineHom f] [CompactSpace Y]
+  [IsAffineHom (pullback.diagonal (terminal.from Y))]
+
+/-- **Cohomology along an affine morphism onto a quasi-compact scheme with affine diagonal.**
+Let `f : X ⟶ Y` be an affine morphism onto a quasi-compact scheme `Y` with affine diagonal (for
+instance a separated scheme over an affine base). Choosing a finite affine open subcover of `Y`
+yields `Hⁿ(Y, f_* M) ≅ Hⁿ(X, M)` for any quasi-coherent sheaf `M` on `X`, naturally in `M`
+(`cohomologyPushforwardIsoOfCompactSpace_naturality`). -/
+def cohomologyPushforwardIsoOfCompactSpace (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
+    AddCommGrpCat.of (Cohomology ((pushforward f).obj M) n) ≅
+      AddCommGrpCat.of (Cohomology M n) :=
+  let 𝒰 := Y.affineCover.finiteSubcover
+  f.cohomologyPushforwardIsoOfIsAffineHom (fun i ↦ (𝒰.f i).opensRange)
+    (fun i ↦ isAffineOpen_opensRange (𝒰.f i)) 𝒰.iSup_opensRange M n
+
+/-- The compact-space cohomology comparison along an affine morphism is natural in the
+quasi-coherent coefficient sheaf. -/
+@[reassoc]
+theorem cohomologyPushforwardIsoOfCompactSpace_naturality {M N : X.Modules}
+    [M.IsQuasicoherent] [N.IsQuasicoherent] (α : M ⟶ N) (n : ℕ) :
+    (cohomologyFunctor Y n).map ((pushforward f).map α) ≫
+        (f.cohomologyPushforwardIsoOfCompactSpace N n).hom =
+      (f.cohomologyPushforwardIsoOfCompactSpace M n).hom ≫
+        (cohomologyFunctor X n).map α :=
+  let 𝒰 := Y.affineCover.finiteSubcover
+  f.cohomologyPushforwardIsoOfIsAffineHom_naturality (fun i ↦ (𝒰.f i).opensRange)
+    (fun i ↦ isAffineOpen_opensRange (𝒰.f i)) 𝒰.iSup_opensRange α n
+
+/-- The compact-space cohomology comparison along an affine morphism carries the action of a global
+function on `Y` to the action of its pullback along `f`. -/
+lemma cohomologyPushforwardIsoOfCompactSpace_hom_smul (M : X.Modules) [M.IsQuasicoherent] (n : ℕ)
+    (r : Γ(Y, ⊤)) (x : Cohomology ((pushforward f).obj M) n) :
+    (f.cohomologyPushforwardIsoOfCompactSpace M n).hom (r • x) =
+      f.appTop r • (f.cohomologyPushforwardIsoOfCompactSpace M n).hom x :=
+  let 𝒰 := Y.affineCover.finiteSubcover
+  f.cohomologyPushforwardIsoOfIsAffineHom_hom_smul (fun i ↦ (𝒰.f i).opensRange)
+    (fun i ↦ isAffineOpen_opensRange (𝒰.f i)) 𝒰.iSup_opensRange M n r x
+
+section BaseRing
+
+variable (R : Type u) [CommRing R] [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))]
+  [f.IsOver (Spec (.of R))]
+
+/-- **Cohomology along an affine morphism onto a quasi-compact scheme with affine diagonal, over a
+base ring.** For an affine morphism `f : X ⟶ Y` over a commutative ring `R`, where `Y` is
+quasi-compact with affine diagonal, the comparison `Hⁿ(Y, f_* M) ≅ Hⁿ(X, M)` of
+`cohomologyPushforwardIsoOfCompactSpace` is `R`-linear. -/
+def cohomologyPushforwardBaseLinearEquivOfCompactSpace (M : X.Modules) [M.IsQuasicoherent]
+    (n : ℕ) : Cohomology ((pushforward f).obj M) n ≃ₗ[R] Cohomology M n :=
+  let 𝒰 := Y.affineCover.finiteSubcover
+  f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom (fun i ↦ (𝒰.f i).opensRange)
+    (fun i ↦ isAffineOpen_opensRange (𝒰.f i)) 𝒰.iSup_opensRange R M n
+
+/-- The forward map of `cohomologyPushforwardBaseLinearEquivOfCompactSpace` is that of
+`cohomologyPushforwardIsoOfCompactSpace`. -/
+@[simp]
+lemma cohomologyPushforwardBaseLinearEquivOfCompactSpace_apply (M : X.Modules)
+    [M.IsQuasicoherent] (n : ℕ) (x : Cohomology ((pushforward f).obj M) n) :
+    f.cohomologyPushforwardBaseLinearEquivOfCompactSpace R M n x =
+      (f.cohomologyPushforwardIsoOfCompactSpace M n).hom x := by
+  exact f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom_apply _ _ _ R M n x
+
+/-- The inverse map of `cohomologyPushforwardBaseLinearEquivOfCompactSpace` is that of
+`cohomologyPushforwardIsoOfCompactSpace`. -/
+@[simp]
+lemma cohomologyPushforwardBaseLinearEquivOfCompactSpace_symm_apply (M : X.Modules)
+    [M.IsQuasicoherent] (n : ℕ) (x : Cohomology M n) :
+    (f.cohomologyPushforwardBaseLinearEquivOfCompactSpace R M n).symm x =
+      (f.cohomologyPushforwardIsoOfCompactSpace M n).inv x := by
+  exact f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom_symm_apply _ _ _ R M n x
+
+end BaseRing
+
+end CompactSpace
+
+end AlgebraicGeometry.Scheme.Hom
+
 namespace AlgebraicGeometry.Scheme.Modules
 
 open TauCeti TauCeti.AlgebraicGeometry.Scheme.Modules
@@ -318,10 +405,7 @@ lemma exists_mono_isQuasicoherent_subsingleton_cohomology [CompactSpace X]
   have hU (i : 𝒰.I₀) : IsAffineOpen (U i) := isAffineOpen_opensRange (𝒰.f i)
   have hcover : ⨆ i, U i = ⊤ := 𝒰.iSup_opensRange
   -- An affine open of a scheme with affine diagonal is an affine morphism.
-  have hι (i : 𝒰.I₀) : IsAffineHom (U i).ι := ⟨fun V hV ↦
-    (U i).ι.isAffineOpen_iff_of_isOpenImmersion.mp (by
-      rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
-      exact (hU i).inf hV)⟩
+  have hι (i : 𝒰.I₀) : IsAffineHom (U i).ι := (hU i).isAffineHom_ι
   have : HasFiniteBiproducts X.Modules := .of_hasFiniteProducts
   let F : 𝒰.I₀ → X.Modules := fun i ↦
     (pushforward (U i).ι).obj ((restrictFunctor (U i).ι).obj M)
