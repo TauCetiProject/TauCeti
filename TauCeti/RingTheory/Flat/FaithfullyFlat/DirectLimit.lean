@@ -59,17 +59,11 @@ theorem exists_faithfullyFlat_baseChange
   have hJ (j k : ι) (hjk : j ≤ k) : J j ≤ (J k).comap (g j k hjk) := by
     rw [← Ideal.map_le_iff_le_comap, Ideal.map_map]
     exact le_of_eq (congrArg (I.map ·) (f j k hjk).comp_algebraMap)
-  -- The generic colimit retains the homomorphism presentation in its ring instance. Use its
-  -- algebra-map presentation rather than the ring-map presentation of `ringEquiv`. The
-  -- universal-property construction below is adapted from `Ring.DirectLimit.ringEquiv`.
+  -- Compare with the generic colimit of the algebra maps `f`, whose `A`-algebra structure gives
+  -- `algebraMap A (DirectLimit B f)`.
   let e : Ring.DirectLimit B (g · · ·) ≃+* DirectLimit B f :=
-    .ofRingHom
-      (Ring.DirectLimit.lift B (g · · ·) _
-        (fun j ↦ (DirectLimit.Algebra.of B f j).toRingHom)
-        (fun _ _ hij _ ↦ DirectLimit.Algebra.of_f hij _))
-      (DirectLimit.Ring.lift B f _ (Ring.DirectLimit.of B (g · · ·))
-        (fun _ _ hij _ ↦ Ring.DirectLimit.of_f hij _))
-      (by ext; simp) (by ext; simp)
+    TauCeti.Ring.DirectLimit.ringEquivAlgebra fun j k hjk x ↦ by
+      simp only [g, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
   have he (j : ι) :
       ((J j).map (Ring.DirectLimit.of B (g · · ·) j)).map e.toRingHom =
         I.map (algebraMap A (DirectLimit B f)) := by
@@ -80,7 +74,7 @@ theorem exists_faithfullyFlat_baseChange
   have hsup : (⨆ j, (J j).map (Ring.DirectLimit.of B (g · · ·) j)) = ⊤ := by
     apply (Ideal.map_eq_top_of_bijective e.toRingHom e.bijective).mp
     simp only [Ideal.map_iSup, he, iSup_const, htop]
-  obtain ⟨j, hij, hj⟩ := (Ring.DirectLimit.of_mem_iSup_map_of_iff hJ
+  obtain ⟨j, hij, hj⟩ := (TauCeti.Ring.DirectLimit.of_mem_iSup_map_of_iff hJ
     (i := i) (x := 1)).1 (by simp [hsup])
   exact ⟨j, hij, (Ideal.faithfullyFlat_baseChange_iff_map_eq_top I hI).mpr
     (Ideal.eq_top_of_isUnit_mem _ (by simpa using hj) isUnit_one)⟩

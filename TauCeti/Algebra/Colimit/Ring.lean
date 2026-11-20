@@ -20,14 +20,21 @@ stage `i` lies in it, or is a unit modulo it, if and only if the same holds for 
 some stage `j ≥ i`. It also shows that monic polynomials over the colimit come from monic
 polynomials over some stage.
 
+When the transition maps `f i j` are the underlying ring maps of `A`-algebra maps `F i j`,
+`Ring.DirectLimit G f` is isomorphic as a ring to the generic directed colimit `DirectLimit G F`
+of the `A`-algebras, compatibly with the canonical maps from the stages.
+
 ## Main results
 
 * `Ring.DirectLimit.mem_iSup_map_of_iff`: membership in the colimit ideal.
-* `Ring.DirectLimit.of_mem_iSup_map_of_iff`, `Ring.DirectLimit.isUnit_quotientMk_of_iff`: the
-  image of an element of a stage `i` lies in the colimit ideal, or is a unit modulo it, if and
-  only if this holds for the ideal at some stage `j ≥ i`.
+* `TauCeti.Ring.DirectLimit.of_mem_iSup_map_of_iff`,
+  `TauCeti.Ring.DirectLimit.isUnit_quotientMk_of_iff`: the image of an element of a stage `i`
+  lies in the colimit ideal, or is a unit modulo it, if and only if this holds for the ideal at
+  some stage `j ≥ i`.
 * `Ring.DirectLimit.Polynomial.exists_monic_of`: a monic polynomial over the colimit comes from a
   monic polynomial over some stage.
+* `TauCeti.Ring.DirectLimit.ringEquivAlgebra`: the ring isomorphism between `Ring.DirectLimit G f`
+  and the generic colimit `DirectLimit G F` of `A`-algebras with the same transition maps.
 -/
 
 public section
@@ -72,6 +79,24 @@ theorem mem_iSup_map_of_iff [Nonempty ι] [IsDirectedOrder ι]
   exact (iSup_le fun i ↦ Ideal.map_le_iff_le_comap.2 fun x hx ↦ ⟨i, x, hx, rfl⟩ :
     ⨆ i, (I i).map (of G (f · · ·) i) ≤ J) hz
 
+/-- A monic polynomial over a directed colimit of rings is the image of a monic polynomial over
+some stage. -/
+theorem Polynomial.exists_monic_of [Nonempty ι] [IsDirectedOrder ι]
+    {P : (DirectLimit G (f · · ·))[X]} (hP : P.Monic) :
+    ∃ i, ∃ p : (G i)[X], p.Monic ∧ p.map (of G (f · · ·) i) = P := by
+  obtain ⟨i, p, hp⟩ := Ring.DirectLimit.Polynomial.exists_of P
+  obtain ⟨q, hq, -, hqm⟩ := lifts_and_natDegree_eq_and_monic ((mem_lifts P).2 ⟨p, hp⟩) hP
+  exact ⟨i, q, hqm, hq⟩
+
+end Ring.DirectLimit
+
+namespace TauCeti.Ring.DirectLimit
+
+open _root_.Ring.DirectLimit
+
+variable {ι : Type*} [Preorder ι] {G : ι → Type*} [∀ i, CommRing (G i)]
+  {f : ∀ i j, i ≤ j → G i →+* G j} {I : ∀ i, Ideal (G i)}
+
 /-- The image of an element of a stage lies in the colimit of a compatible family of ideals if and
 only if the element is carried into the ideal at some later stage. -/
 theorem of_mem_iSup_map_of_iff [IsDirectedOrder ι] [DirectedSystem G (f · · ·)]
@@ -109,13 +134,34 @@ theorem isUnit_quotientMk_of_iff [IsDirectedOrder ι] [DirectedSystem G (f · ·
   rw [← map_mul, Ideal.Quotient.mk_eq_one_iff_sub_mem]
   simpa [DirectedSystem.map_map' f] using hj
 
-/-- A monic polynomial over a directed colimit of rings is the image of a monic polynomial over
-some stage. -/
-theorem Polynomial.exists_monic_of [Nonempty ι] [IsDirectedOrder ι]
-    {P : (DirectLimit G (f · · ·))[X]} (hP : P.Monic) :
-    ∃ i, ∃ p : (G i)[X], p.Monic ∧ p.map (of G (f · · ·) i) = P := by
-  obtain ⟨i, p, hp⟩ := Ring.DirectLimit.Polynomial.exists_of P
-  obtain ⟨q, hq, -, hqm⟩ := lifts_and_natDegree_eq_and_monic ((mem_lifts P).2 ⟨p, hp⟩) hP
-  exact ⟨i, q, hqm, hq⟩
+section Algebra
 
-end Ring.DirectLimit
+variable {A : Type*} [CommSemiring A] [∀ i, Algebra A (G i)] [Nonempty ι] [IsDirectedOrder ι]
+  {F : ∀ i j, i ≤ j → G i →ₐ[A] G j} [DirectedSystem G (F · · ·)]
+  (hF : ∀ i j hij x, F i j hij x = f i j hij x)
+
+/-- If the transition maps `f i j` of a directed system of commutative rings are the underlying
+maps of `A`-algebra maps `F i j`, then `Ring.DirectLimit G f` is isomorphic, as a ring, to the
+generic directed colimit `DirectLimit G F` of the `A`-algebras. The isomorphism sends the image of
+an element of a stage under `Ring.DirectLimit.of` to its image under `DirectLimit.Algebra.of`
+(`ringEquivAlgebra_of`). -/
+noncomputable def ringEquivAlgebra :
+    _root_.Ring.DirectLimit G (f · · ·) ≃+* _root_.DirectLimit G F :=
+  .ofRingHom
+    (lift G (f · · ·) _ (fun i ↦ (_root_.DirectLimit.Algebra.of G F i : G i →+* _))
+      fun i j hij x ↦ by
+        rw [AlgHom.coe_toRingHom, ← hF]
+        exact _root_.DirectLimit.Algebra.of_f hij x)
+    (_root_.DirectLimit.Ring.lift G F _ (of G (f · · ·)) fun i j hij x ↦ by
+      rw [hF]
+      exact of_f hij x)
+    (by ext; simp) (by ext; simp)
+
+@[simp]
+theorem ringEquivAlgebra_of {i : ι} (x : G i) :
+    ringEquivAlgebra hF (of G (f · · ·) i x) = _root_.DirectLimit.Algebra.of G F i x := by
+  rw [ringEquivAlgebra, RingEquiv.ofRingHom_apply, lift_of, AlgHom.coe_toRingHom]
+
+end Algebra
+
+end TauCeti.Ring.DirectLimit
