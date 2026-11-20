@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Analysis.CStarAlgebra.Multiplier
+public import Mathlib.RingTheory.TwoSidedIdeal.Lattice
 public import TauCeti.Topology.ApproximateUnit
 import TauCeti.Analysis.Normed.Operator.Dense
 
@@ -43,6 +44,9 @@ either side vanishes.
 
 ## Main definitions
 
+* `DoubleCentralizer.ofUnitalAlgEquiv`, `DoubleCentralizer.ofUnitalStarAlgEquiv`: for a unital
+  normed (`⋆`-)algebra `A`, the canonical inclusion `A → 𝓜(𝕜, A)` is an (`⋆`-)algebra isomorphism
+  with inverse `m ↦ m.fst 1`.
 * `DoubleCentralizer.ofCentral`: the double centralizer built from a pair of functions satisfying
   the centrality condition, for a complete algebra with zero annihilators.
 * `DoubleCentralizer.coeStarAlgEquiv`: a unital normed star algebra is star-isomorphic to its
@@ -165,6 +169,59 @@ variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedA
 theorem coe_one : ((1 : A) : 𝓜(𝕜, A)) = 1 :=
   ext_fst_snd (fun _ => by simp) (fun _ => by simp)
 
+@[simp] theorem snd_one_eq_fst_one (m : 𝓜(𝕜, A)) : m.snd 1 = m.fst 1 := by
+  simpa using m.central 1 1
+
+theorem fst_apply_eq_fst_one_mul (m : 𝓜(𝕜, A)) (a : A) : m.fst a = m.fst 1 * a := by
+  simpa using (m.central 1 a).symm
+
+theorem snd_apply_eq_mul_fst_one (m : 𝓜(𝕜, A)) (a : A) : m.snd a = a * m.fst 1 := by
+  simpa using m.central a 1
+
+/-- Every multiplier of a unital normed algebra `A` is the image of `m.fst 1 : A`. -/
+@[simp] theorem coe_fst_one (m : 𝓜(𝕜, A)) : ((m.fst 1 : A) : 𝓜(𝕜, A)) = m :=
+  ext_fst_snd (fun a => (fst_apply_eq_fst_one_mul m a).symm)
+    (fun a => (snd_apply_eq_mul_fst_one m a).symm)
+
+variable (𝕜 A) in
+/-- For a unital normed algebra `A`, the canonical inclusion `A → 𝓜(𝕜, A)` is an algebra
+isomorphism with inverse `m ↦ m.fst 1`. -/
+def ofUnitalAlgEquiv : A ≃ₐ[𝕜] 𝓜(𝕜, A) where
+  toFun a := a
+  invFun m := m.fst 1
+  left_inv a := by simp
+  right_inv := coe_fst_one
+  map_mul' := coe_mul
+  map_add' := coe_add
+  commutes' k := ext_fst_snd (fun _ => by simp [Algebra.algebraMap_eq_smul_one])
+    (fun _ => by simp [Algebra.algebraMap_eq_smul_one])
+
+@[simp] theorem ofUnitalAlgEquiv_apply (a : A) : ofUnitalAlgEquiv 𝕜 A a = a := (rfl)
+
+@[simp] theorem ofUnitalAlgEquiv_symm_apply (m : 𝓜(𝕜, A)) :
+    (ofUnitalAlgEquiv 𝕜 A).symm m = m.fst 1 := (rfl)
+
+theorem coe_surjective : Function.Surjective (DoubleCentralizer.coe 𝕜 : A → 𝓜(𝕜, A)) :=
+  (ofUnitalAlgEquiv 𝕜 A).surjective
+
+theorem coe_bijective : Function.Bijective (DoubleCentralizer.coe 𝕜 : A → 𝓜(𝕜, A)) :=
+  (ofUnitalAlgEquiv 𝕜 A).bijective
+
+variable (𝕜 A) in
+/-- For a unital normed `⋆`-algebra `A`, the canonical inclusion `A → 𝓜(𝕜, A)` is a unital
+`⋆`-algebra isomorphism with inverse `m ↦ m.fst 1`. -/
+def ofUnitalStarAlgEquiv [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A] [NormedStarGroup A] :
+    A ≃⋆ₐ[𝕜] 𝓜(𝕜, A) where
+  __ := ofUnitalAlgEquiv 𝕜 A
+  map_smul' := coe_smul
+  map_star' := coe_star
+
+@[simp] theorem ofUnitalStarAlgEquiv_apply [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A]
+    [NormedStarGroup A] (a : A) : ofUnitalStarAlgEquiv 𝕜 A a = a := (rfl)
+
+@[simp] theorem ofUnitalStarAlgEquiv_symm_apply [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A]
+    [NormedStarGroup A] (m : 𝓜(𝕜, A)) : (ofUnitalStarAlgEquiv 𝕜 A).symm m = m.fst 1 := (rfl)
+
 end Unital
 
 section FaithfulMulOpposite
@@ -197,12 +254,6 @@ end FaithfulMulOpposite
 section UnitalEquiv
 
 variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
-
-/-- In a unital algebra, every multiplier is the image of its left centralizer evaluated at
-`1`. -/
-@[simp]
-theorem coe_fst_one (m : 𝓜(𝕜, A)) : ((m.fst 1 : A) : 𝓜(𝕜, A)) = m := by
-  rw [← mul_coe_eq_coe_fst, coe_one, mul_one]
 
 variable [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A] [NormedStarGroup A]
 
