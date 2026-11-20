@@ -22,6 +22,7 @@ As a consequence, the adjoint of a closable partial linear map has dense domain.
 * `Submodule.adjoint_adjoint`: equality for complete submodules.
 * `LinearPMap.dense_adjoint_domain`: a closable operator has a densely defined
   adjoint.
+* `LinearPMap.adjoint_adjoint`: `T†† = T` for a closed densely defined operator.
 
 ## Provenance
 
@@ -142,5 +143,13 @@ theorem dense_adjoint_domain {T : E →ₗ.[𝕜] F} (hTc : T.IsClosable) :
   rw [Submodule.adjoint_adjoint_eq_topologicalClosure,
     hTc.graph_closure_eq_closure_graph] at hmem
   exact T.closure.graph_fst_eq_zero_snd hmem rfl
+
+/-- **The adjoint of a closed operator is involutive.** For a closed densely defined partial linear
+map `T` between Hilbert spaces, `T†† = T`. -/
+theorem adjoint_adjoint {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) (hd : Dense (T.domain : Set E)) :
+    T.adjoint.adjoint = T := by
+  apply eq_of_eq_graph
+  rw [adjoint_graph_eq_graph_adjoint (dense_adjoint_domain hT.isClosable),
+    adjoint_graph_eq_graph_adjoint hd, Submodule.adjoint_adjoint _ hT.isComplete]
 
 end LinearPMap
