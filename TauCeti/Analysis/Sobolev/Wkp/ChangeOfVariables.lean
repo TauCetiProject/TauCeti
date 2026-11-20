@@ -622,8 +622,9 @@ theorem tendsto_compLBound_coe_atTop (k : ℕ) (L : ℝ) {c : ℝ} (hc : c ≠ 0
     Tendsto (fun q : ℝ≥0 => compLBound q k L c) atTop (𝓝 (compLBound ⊤ k L c)) := by
   unfold compLBound
   rw [ENNReal.div_top, ENNReal.toReal_zero, Real.rpow_zero]
-  refine ((Real.tendsto_rpow_inv_coe_atTop (inv_ne_zero hc)).congr fun q => ?_).mul_const _
-  rw [one_div, ENNReal.toReal_inv, ENNReal.coe_toReal]
+  refine (((Real.tendsto_rpow_inv_atTop (inv_ne_zero hc)).comp
+    (NNReal.tendsto_coe_atTop.2 tendsto_id)).congr fun q => ?_).mul_const _
+  rw [Function.comp_apply, id_eq, one_div, ENNReal.toReal_inv, ENNReal.coe_toReal]
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -1001,8 +1002,10 @@ private theorem aestronglyMeasurable_and_eLpNorm_top_le_of_chain {n : ℕ}
   -- As `q → ∞` the bounds tend to `compLBound ∞ (n + 1) L c * ‖u‖`.
   have hK : Tendsto (fun q : ℝ≥0 => compLBound q (n + 1) L c * max 1 M ^ (q : ℝ)⁻¹ * ‖u‖)
       atTop (𝓝 (compLBound ⊤ (n + 1) L c * ‖u‖)) := by
-    simpa only [mul_one] using ((tendsto_compLBound_coe_atTop (n + 1) L h.pos.ne').mul
-      (Real.tendsto_rpow_inv_coe_atTop (zero_lt_one.trans_le (le_max_left 1 M)).ne')).mul_const ‖u‖
+    simpa only [Function.comp_def, id_eq, mul_one] using
+      ((tendsto_compLBound_coe_atTop (n + 1) L h.pos.ne').mul
+        ((Real.tendsto_rpow_inv_atTop (zero_lt_one.trans_le (le_max_left 1 M)).ne').comp
+          (NNReal.tendsto_coe_atTop.2 tendsto_id))).mul_const ‖u‖
   refine eLpNorm_exponent_top_le_liminf.trans ?_
   rw [← (ENNReal.tendsto_ofReal hK).liminf_eq]
   exact liminf_le_liminf (eventually_atTop.2 ⟨1, fun q hq1 => (hq q hq1).2⟩)

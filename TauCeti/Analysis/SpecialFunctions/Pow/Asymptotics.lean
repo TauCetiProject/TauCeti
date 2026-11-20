@@ -44,7 +44,7 @@ tends to zero. This is how valuation bounds on coefficients give convergence of 
 
 ## Roots of a fixed number
 
-For `B ≠ 0`, the power `B ^ q⁻¹` tends to `1` as the nonnegative real `q` tends to `∞`.
+For `B ≠ 0`, the power `B ^ q⁻¹` tends to `1` as the real number `q` tends to `∞`.
 
 ## Comparing exponents
 
@@ -251,12 +251,10 @@ theorem add_one_mul_log_add_two_le {r t A : ℝ} (hr : 0 ≤ r) (ht : 0 ≤ t)
       mul_le_mul h1 hlog' (log_nonneg (by linarith)) (by positivity)
     _ = _ := by dsimp [M]; ring
 
-open scoped NNReal in
-/-- For `B ≠ 0`, the power `B ^ q⁻¹` tends to `1` as the nonnegative real `q` tends to `∞`. -/
-theorem tendsto_rpow_inv_coe_atTop {B : ℝ} (hB : B ≠ 0) :
-    Tendsto (fun q : ℝ≥0 => B ^ (q : ℝ)⁻¹) atTop (𝓝 1) := by
-  have ht : Tendsto (fun q : ℝ≥0 => (q : ℝ)⁻¹) atTop (𝓝 0) :=
-    tendsto_inv_atTop_zero.comp (NNReal.tendsto_coe_atTop.2 tendsto_id)
-  simpa only [Function.comp_def, rpow_zero] using (continuousAt_const_rpow hB).tendsto.comp ht
+/-- For `B ≠ 0`, the power `B ^ q⁻¹` tends to `1` as the real number `q` tends to `∞`. -/
+theorem tendsto_rpow_inv_atTop {B : ℝ} (hB : B ≠ 0) :
+    Tendsto (fun q : ℝ => B ^ q⁻¹) atTop (𝓝 1) := by
+  simpa only [Function.comp_def, rpow_zero] using
+    (continuousAt_const_rpow hB).tendsto.comp tendsto_inv_atTop_zero
 
 end Real
