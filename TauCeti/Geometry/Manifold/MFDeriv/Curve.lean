@@ -223,6 +223,13 @@ vector. -/
 theorem curveVelocity_apply : curveVelocity I γ t = mfderiv 𝓘(𝕜, 𝕜) I γ t (1 : 𝕜) := by
   rw [← curveVelocityWithin_univ, curveVelocityWithin_apply, mfderivWithin_univ]
 
+/-- The derivative of a curve sends a scalar `c` to `c` times the velocity. -/
+theorem mfderiv_apply_eq_smul_curveVelocity (c : 𝕜) :
+    mfderiv 𝓘(𝕜, 𝕜) I γ t c = c • curveVelocity I γ t := by
+  rw [curveVelocity_apply]
+  -- On the tangent space `𝕜`, the scalar action is multiplication, so `c • 1 = c`.
+  exact (congrArg _ (mul_one c).symm).trans ((mfderiv 𝓘(𝕜, 𝕜) I γ t).map_smul c (1 : 𝕜))
+
 /-- The velocity of the image of a curve under a differentiable map is the differential of the
 map applied to the velocity of the curve. The derivative within the parameter set is uniquely
 determined at `t`. -/
