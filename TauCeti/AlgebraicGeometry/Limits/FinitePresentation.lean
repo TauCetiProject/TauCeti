@@ -1,35 +1,41 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
 public import TauCeti.AlgebraicGeometry.Limits.BaseChange
+public import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
 
 /-!
-# Descent of morphisms of finitely presented schemes along cofiltered limits
+# Descent of morphisms and their properties along cofiltered limits
 
-Let `D : I ⥤ Scheme` be a cofiltered diagram of quasi-compact quasi-separated schemes with affine
-transition maps and limit cone `c`, so that `S = lim Dⱼ`. Mathlib proves that for a scheme `X`
-locally of finite presentation over a base, morphisms from `S` to `X` over the base are the
-filtered colimit of the morphisms from the `Dⱼ` (Stacks, Proposition 32.6.1 (01ZC)). Applied to the
-base changes `Dⱼ ×_{Dᵢ} X` of `CategoryTheory.Functor.pullbackOver`, which have limit
-`S ×_{Dᵢ} X`, this shows that morphisms over the limit between base changes of schemes over a
-member `Dᵢ` descend to some `Dⱼ` (Stacks, Lemma 32.10.1 (01ZM)), and that a morphism of schemes
-of finite presentation over `Dᵢ` is an isomorphism over some `Dⱼ` as soon as it is one over the
-limit (Stacks, Lemma 32.8.11 (081E)): the inverse over the limit descends, and the two composites,
-being the identity over the limit, are the identity at some later stage.
+For a cofiltered diagram of quasi-compact quasi-separated schemes with affine transition
+maps, morphisms of finitely presented stage models descend from the limit to a finite stage.
+
+Isomorphism and monomorphism inheritance require no finiteness assumptions on the members
+of the base diagram. A locally finitely presented morphism from a quasi-compact source to a
+quasi-compact quasi-separated target that is an isomorphism over the limit is eventually an
+isomorphism. A quasi-compact locally finite type morphism from a quasi-compact quasi-separated
+source that is monic over the limit is eventually monic. Base change along the target reduces
+isomorphism inheritance to a diagram of quasi-compact quasi-separated schemes. Monomorphism
+inheritance follows by applying isomorphism inheritance to the diagonal.
 
 ## Main declarations
 
-* `CategoryTheory.Limits.IsLimit.exists_pullbackMap_comp_eq`: a morphism over the limit between
-  base changes of schemes over `Dᵢ`, the target of finite presentation, descends to some `Dⱼ`; by
-  `CategoryTheory.MorphismProperty.pullbackMap_iff_of_pullbackMap_comp_eq`, the base change to the
-  limit of the descended morphism is the original morphism, up to isomorphism.
-* `CategoryTheory.Limits.IsLimit.exists_isIso_pullbackMap`: a morphism of schemes of finite
-  presentation over `Dᵢ` whose base change to the limit is an isomorphism is an isomorphism over
-  some `Dⱼ`.
+* `CategoryTheory.Limits.IsLimit.exists_pullbackMap_comp_eq`: morphism descent for finitely
+  presented stage models over a quasi-compact quasi-separated affine-transition diagram.
+* `CategoryTheory.Limits.IsLimit.exists_isIso_pullbackMap`: isomorphism inheritance for a
+  locally finitely presented morphism between suitable quasi-compact stage models.
+* `CategoryTheory.Limits.IsLimit.exists_mono_pullbackMap`: monomorphism inheritance for a
+  quasi-compact locally finite type morphism from a quasi-compact quasi-separated stage source.
+
+## References
+
+* The Stacks Project, [Tag 01ZM](https://stacks.math.columbia.edu/tag/01ZM).
+* The Stacks Project, [Tag 081E](https://stacks.math.columbia.edu/tag/081E).
+* The Stacks Project, [Tag 01ZP](https://stacks.math.columbia.edu/tag/01ZP).
 -/
 
 public section
@@ -85,7 +91,7 @@ transition maps, and `g : X ⟶ Y` a morphism of schemes over a member `Dᵢ`, w
 finite presentation and quasi-compact over `Dᵢ`, and `Y` locally of finite type, quasi-compact and
 quasi-separated over `Dᵢ`. If the base change of `g` to `S` is an isomorphism, then so is its base
 change to some `Dⱼ`. Stacks, Lemma 32.8.11 (081E). -/
-theorem exists_isIso_pullbackMap [∀ i, CompactSpace (D.obj i)]
+private theorem exists_isIso_pullbackMap_of_structure [∀ i, CompactSpace (D.obj i)]
     [∀ i, QuasiSeparatedSpace (D.obj i)] {i : I} {X Y : Scheme.{u}} {p : X ⟶ D.obj i}
     {q : Y ⟶ D.obj i} [LocallyOfFinitePresentation p] [QuasiCompact p] [LocallyOfFiniteType q]
     [QuasiCompact q] [QuasiSeparated q] (g : X ⟶ Y) (hg : g ≫ q = p)
@@ -152,5 +158,157 @@ theorem exists_isIso_pullbackMap [∀ i, CompactSpace (D.obj i)]
       change _ ≫ φB l ≫ _ = _
       rw [φB_snd, pullback.lift_snd_assoc, Category.assoc, Functor.map_comp_assoc, hk]
       simp [DY]
+
+include hc in
+private theorem exists_isIso_pullback_snd [∀ i, CompactSpace (D.obj i)]
+    [∀ i, QuasiSeparatedSpace (D.obj i)] {i : I} {X : Scheme.{u}} (q : X ⟶ D.obj i)
+    [LocallyOfFinitePresentation q] [QuasiCompact q]
+    [IsIso (pullback.snd q (c.π.app i))] :
+    ∃ (j : I) (a : j ⟶ i), IsIso (pullback.snd q (D.map a)) := by
+  let m (s : Scheme.{u}) (t : s ⟶ D.obj i) :=
+    pullback.map t q t (𝟙 (D.obj i)) (𝟙 s) q (𝟙 (D.obj i)) (by simp) (by simp)
+  have hcomp (s : Scheme.{u}) (t : s ⟶ D.obj i) :
+      m s t ≫ pullback.fst t (𝟙 (D.obj i)) = pullback.fst t q := by
+    simp [m]
+  have : IsIso (pullback.fst (c.π.app i) q) := by
+    have h : (pullbackSymmetry (c.π.app i) q).hom ≫
+        pullback.snd q (c.π.app i) = pullback.fst (c.π.app i) q := by simp
+    rw [← h]
+    infer_instance
+  have : IsIso (m c.pt (c.π.app i)) := by
+    have : IsIso (m c.pt (c.π.app i) ≫
+        pullback.fst (c.π.app i) (𝟙 (D.obj i))) := by
+      rw [hcomp c.pt (c.π.app i)]
+      infer_instance
+    exact IsIso.of_isIso_comp_right _ (pullback.fst (c.π.app i) (𝟙 (D.obj i)))
+  have : IsIso (pullback.map (c.π.app i) q (c.π.app i) (𝟙 (D.obj i))
+      (𝟙 c.pt) q (𝟙 (D.obj i)) (by simp) (by simp)) :=
+    ‹IsIso (m c.pt (c.π.app i))›
+  obtain ⟨j, a, ha⟩ := @exists_isIso_pullbackMap_of_structure
+    I _ _ D _ c hc _ _ i X (D.obj i) q (𝟙 _) _ _ _ _ _ q (by simp)
+    ‹IsIso (pullback.map (c.π.app i) q (c.π.app i) (𝟙 (D.obj i))
+      (𝟙 c.pt) q (𝟙 (D.obj i)) (by simp) (by simp))›
+  have : IsIso (m (D.obj j) (D.map a)) := ha
+  have : IsIso (pullback.fst (D.map a) q) := by
+    rw [← hcomp (D.obj j) (D.map a)]
+    infer_instance
+  have h : (pullbackSymmetry q (D.map a)).hom ≫ pullback.fst (D.map a) q =
+      pullback.snd q (D.map a) := by simp
+  refine ⟨j, a, ?_⟩
+  rw [← h]
+  infer_instance
+
+include hc in
+/-- A locally finitely presented morphism from a quasi-compact scheme to a quasi-compact
+quasi-separated scheme becomes an isomorphism at a finite stage if it is one over the limit.
+The members of the affine-transition base diagram need not be quasi-compact or quasi-separated.
+Stacks, Lemma 32.8.11 (081E). -/
+theorem exists_isIso_pullbackMap
+    {i : I} {X Y : Scheme.{u}} {p : X ⟶ D.obj i} {q : Y ⟶ D.obj i}
+    [CompactSpace X] [CompactSpace Y] [QuasiSeparatedSpace Y]
+    (g : X ⟶ Y) (hg : g ≫ q = p) [LocallyOfFinitePresentation g]
+    [IsIso (pullback.map (c.π.app i) p (c.π.app i) q (𝟙 _) g (𝟙 _)
+      (by simp) (by simp [hg]))] :
+    ∃ (j : I) (a : j ⟶ i),
+      IsIso (pullback.map (D.map a) p (D.map a) q (𝟙 _) g (𝟙 _)
+        (by simp) (by simp [hg])) := by
+  have : QuasiCompact g := inferInstance
+  refine (MorphismProperty.isomorphisms Scheme.{u}).exists_pullbackMap_of_pullbackOver
+    c g hg ?_ ‹_›
+  intro b hb
+  have : ∀ j, CompactSpace ((D.pullbackOver q).obj j) := fun j ↦
+    QuasiCompact.compactSpace_of_compactSpace (pullback.snd (D.map j.hom) q)
+  have : ∀ j, QuasiSeparatedSpace ((D.pullbackOver q).obj j) := fun j ↦
+    quasiSeparatedSpace_of_quasiSeparated (pullback.snd (D.map j.hom) q)
+  have : IsIso (pullback.snd (g ≫ b.inv)
+      ((c.pullbackOver q).π.app (Over.mk (𝟙 i)))) := hb
+  exact (hc.pullbackOver q).exists_isIso_pullback_snd (g ≫ b.inv)
+
+include hc in
+private theorem exists_isIso_overPullback
+    {i : I} {X Y : Over (D.obj i)}
+    [CompactSpace X.left] [CompactSpace Y.left] [QuasiSeparatedSpace Y.left]
+    (g : X ⟶ Y) [LocallyOfFinitePresentation g.left]
+    [IsIso ((Over.pullback (c.π.app i)).map g).left] :
+    ∃ (j : I) (a : j ⟶ i), IsIso ((Over.pullback (D.map a)).map g).left := by
+  let m {T : Scheme.{u}} (t : T ⟶ D.obj i) :=
+    pullback.map t X.hom t Y.hom (𝟙 T) g.left (𝟙 _) (by simp) (by simp)
+  have h {T : Scheme.{u}} (t : T ⟶ D.obj i) :
+      (pullbackSymmetry t X.hom).hom ≫ ((Over.pullback t).map g).left =
+        m t ≫ (pullbackSymmetry t Y.hom).hom := by
+    apply pullback.hom_ext <;> simp [m]
+  have : IsIso (m (c.π.app i)) := by
+    have : IsIso (m (c.π.app i) ≫ (pullbackSymmetry (c.π.app i) Y.hom).hom) := by
+      rw [← h]
+      infer_instance
+    exact IsIso.of_isIso_comp_right _ (pullbackSymmetry (c.π.app i) Y.hom).hom
+  obtain ⟨j, a, ha⟩ := hc.exists_isIso_pullbackMap
+    g.left (Over.w g)
+  have : IsIso (m (D.map a)) := ha
+  have : IsIso ((pullbackSymmetry (D.map a) X.hom).hom ≫
+      ((Over.pullback (D.map a)).map g).left) := by
+    rw [h]
+    infer_instance
+  exact ⟨j, a, IsIso.of_isIso_comp_left (pullbackSymmetry (D.map a) X.hom).hom _⟩
+
+include hc in
+private theorem exists_mono_pullback_snd {i : I}
+    {X : Scheme.{u}} [CompactSpace X] [QuasiSeparatedSpace X] (p : X ⟶ D.obj i)
+    [LocallyOfFiniteType p] [QuasiCompact p]
+    [Mono (pullback.snd p (c.π.app i))] :
+    ∃ (j : I) (a : j ⟶ i), Mono (pullback.snd p (D.map a)) := by
+  let g : Over.mk p ⟶ Over.mk (pullback.snd p p ≫ p) :=
+    Over.homMk (pullback.diagonal p) (by simp)
+  have : LocallyOfFinitePresentation (pullback.diagonal p ≫ pullback.fst p p) := by
+    rw [pullback.diagonal_fst]
+    infer_instance
+  have : LocallyOfFinitePresentation g.left :=
+    locallyOfFinitePresentation_of_comp (pullback.diagonal p) (pullback.fst p p)
+  have : Mono (pullback.fst (c.π.app i) p) := by
+    rw [← pullbackSymmetry_hom_comp_snd (c.π.app i) p]
+    infer_instance
+  have hd : IsIso (pullback.diagonal (pullback.fst (c.π.app i) p)) := inferInstance
+  rw [diagonal_pullback_fst] at hd
+  have : IsIso ((Over.pullback (c.π.app i)).map g).left :=
+    (MorphismProperty.cancel_right_of_respectsIso (MorphismProperty.isomorphisms Scheme.{u})
+      _ _).mp ((MorphismProperty.cancel_left_of_respectsIso
+        (MorphismProperty.isomorphisms Scheme.{u}) _ _).mp hd)
+  have : CompactSpace (Over.mk p : Over (D.obj i)).left := ‹CompactSpace X›
+  have : CompactSpace (Over.mk (pullback.snd p p ≫ p) : Over (D.obj i)).left :=
+    QuasiCompact.compactSpace_of_compactSpace (pullback.snd p p)
+  have : QuasiSeparatedSpace
+      (Over.mk (pullback.snd p p ≫ p) : Over (D.obj i)).left :=
+    quasiSeparatedSpace_of_quasiSeparated (pullback.snd p p)
+  obtain ⟨j, a, ha⟩ := exists_isIso_overPullback hc g
+  have hd : IsIso (pullback.diagonal (pullback.fst (D.map a) p)) := by
+    rw [diagonal_pullback_fst]
+    exact (MorphismProperty.cancel_left_of_respectsIso (MorphismProperty.isomorphisms Scheme.{u})
+      _ _).mpr ((MorphismProperty.cancel_right_of_respectsIso
+        (MorphismProperty.isomorphisms Scheme.{u}) _ _).mpr ha)
+  have : Mono (pullback.fst (D.map a) p) := (pullback.isIso_diagonal_iff _).mp hd
+  refine ⟨j, a, ?_⟩
+  rw [← pullbackSymmetry_hom_comp_fst p (D.map a)]
+  infer_instance
+
+include hc in
+/-- A quasi-compact locally finite type morphism from a quasi-compact quasi-separated scheme
+becomes a monomorphism at a finite stage if it is one over the limit.
+The affine-transition base diagram need not consist of quasi-compact or quasi-separated schemes.
+Stacks, Tag 01ZP. -/
+theorem exists_mono_pullbackMap
+    {i : I} {X Y : Scheme.{u}} {p : X ⟶ D.obj i} {q : Y ⟶ D.obj i}
+    [CompactSpace X] [QuasiSeparatedSpace X]
+    (g : X ⟶ Y) (hg : g ≫ q = p) [QuasiCompact g] [LocallyOfFiniteType g]
+    [Mono (pullback.map (c.π.app i) p (c.π.app i) q (𝟙 _) g (𝟙 _)
+      (by simp) (by simp [hg]))] :
+    ∃ (j : I) (a : j ⟶ i),
+      Mono (pullback.map (D.map a) p (D.map a) q (𝟙 _) g (𝟙 _)
+        (by simp) (by simp [hg])) := by
+  refine (MorphismProperty.monomorphisms Scheme.{u}).exists_pullbackMap_of_pullbackOver
+    c g hg ?_ ‹_›
+  intro b hb
+  have : Mono (pullback.snd (g ≫ b.inv)
+      ((c.pullbackOver q).π.app (Over.mk (𝟙 i)))) := hb
+  exact exists_mono_pullback_snd (hc.pullbackOver q) (g ≫ b.inv)
 
 end CategoryTheory.Limits.IsLimit
