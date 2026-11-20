@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomotopyCategory.HomComplexSingle
 public import Mathlib.CategoryTheory.Linear.Yoneda
+public import TauCeti.Algebra.Homology.CochainComplex.TensorUnit
 public import TauCeti.Algebra.Homology.InternalHomComplex.Basic
 public import TauCeti.Algebra.Homology.LinearHomComplex.Basic
 
@@ -80,25 +80,6 @@ end Coyoneda
 
 section Unit
 
-/-- The isomorphism of complexes `K ⊗ 𝟙 ≅ K` given by the right unitors
-(`MonoidalCategory.rightUnitorNatIso` applied degreewise). -/
-def tensorRightUnitIso (K : CochainComplex C ℤ) :
-    ((tensorRight (𝟙_ C)).mapHomologicalComplex _).obj K ≅ K :=
-  (NatIso.mapHomologicalComplex (rightUnitorNatIso C) _).app K ≪≫
-    (Functor.mapHomologicalComplexIdIso C _).app K
-
-omit [MonoidalClosed C] [HasCountableProducts C] in
-@[simp]
-lemma tensorRightUnitIso_hom_f (K : CochainComplex C ℤ) (p : ℤ) :
-    (tensorRightUnitIso K).hom.f p = (ρ_ (K.X p)).hom := by
-  simp [tensorRightUnitIso]
-
-omit [MonoidalClosed C] [HasCountableProducts C] in
-@[simp]
-lemma tensorRightUnitIso_inv_f (K : CochainComplex C ℤ) (p : ℤ) :
-    (tensorRightUnitIso K).inv.f p = (ρ_ (K.X p)).inv := by
-  simp [tensorRightUnitIso]
-
 variable (K L : CochainComplex C ℤ)
 
 /-- The global sections `Hom(𝟙, 𝓗om^•(K, L))` of the internal Hom complex are the Hom complex of
@@ -107,14 +88,7 @@ def globalSectionsInternalHomComplexIso :
     (((linearCoyoneda ℤ C).obj (op (𝟙_ C))).mapHomologicalComplex _).obj
         (internalHomComplex K L) ≅ linearHomComplex ℤ K L :=
   linearCoyonedaInternalHomComplexIso K L (𝟙_ C) ≪≫
-    { hom := TauCeti.linearHomComplexPrecomp ℤ (tensorRightUnitIso K).inv L
-      inv := TauCeti.linearHomComplexPrecomp ℤ (tensorRightUnitIso K).hom L
-      hom_inv_id := by
-        rw [← TauCeti.linearHomComplexPrecomp_comp, Iso.hom_inv_id,
-          TauCeti.linearHomComplexPrecomp_id]
-      inv_hom_id := by
-        rw [← TauCeti.linearHomComplexPrecomp_comp, Iso.inv_hom_id,
-          TauCeti.linearHomComplexPrecomp_id] }
+    ((TauCeti.linearHomComplexFunctor ℤ).mapIso (tensorRightUnitIso K).symm.op).app L
 
 /-- The cochain attached to a global section `𝟙 ⟶ 𝓗om^n(K, L)`. -/
 lemma globalSectionsInternalHomComplexIso_hom_f_apply (n : ℤ)
@@ -130,33 +104,6 @@ end Unit
 section Single
 
 variable [HasZeroObject C] (L : CochainComplex C ℤ)
-
-/-- The isomorphism of complexes `𝟙[0] ⊗ T ≅ T[0]` given by the left unitor. -/
-private def singleUnitTensorIso (T : C) :
-    ((tensorRight T).mapHomologicalComplex _).obj ((singleFunctor C 0).obj (𝟙_ C)) ≅
-      (singleFunctor C 0).obj T :=
-  (HomologicalComplex.singleMapHomologicalComplex (tensorRight T) _ 0).app (𝟙_ C) ≪≫
-    (singleFunctor C 0).mapIso (λ_ T)
-
-omit [MonoidalClosed C] [HasCountableProducts C] in
-private lemma singleUnitTensorIso_inv_naturality {T' T : C} (g : T' ⟶ T) :
-    (Cochain.ofHom (singleUnitTensorIso T').inv).comp
-        (Cochain.ofHom ((NatTrans.mapHomologicalComplex ((curriedTensor C).flip.map g) _).app _))
-        (zero_add 0) =
-      (Cochain.ofHom ((singleFunctor C 0).map g)).comp
-        (Cochain.ofHom (singleUnitTensorIso T).inv) (zero_add 0) := by
-  rw [← Cochain.ofHom_comp, ← Cochain.ofHom_comp]
-  refine congrArg Cochain.ofHom (HomologicalComplex.hom_ext _ _ fun p ↦ ?_)
-  by_cases hp : p = 0
-  · subst hp
-    simp only [singleUnitTensorIso, Iso.trans_inv, Functor.mapIso_inv, Iso.app_inv,
-      HomologicalComplex.comp_f, HomologicalComplex.singleMapHomologicalComplex_inv_app_self,
-      HomologicalComplex.single_map_f_self, Category.assoc,
-      Iso.inv_hom_id_assoc, Functor.flip_obj_map, curriedTensor_map_app, singleFunctor,
-      NatTrans.mapHomologicalComplex_app_f, Functor.flip_map_app, curriedTensor_obj_map]
-    rw [← whisker_exchange, leftUnitor_inv_naturality_assoc, leftUnitor_inv_naturality_assoc,
-      leftUnitor_inv_naturality_assoc]
-  · exact (HomologicalComplex.isZero_single_obj_X _ _ _ _ hp).eq_of_src _ _
 
 /-- Morphisms `T ⟶ 𝓗om^n(𝟙[0], L)` are morphisms `T ⟶ L^n`. -/
 private def singleUnitHomEquiv (T : C) (n : ℤ) :
@@ -185,6 +132,8 @@ private lemma singleUnitHomEquiv_comp {T' T : C} (g : T' ⟶ T) {n : ℤ}
     rw [← Cochain.fromSingleEquiv_fromSingleMk f (zero_add n), hf]
     rfl
   rw [hφ]
+  -- Unfold the composite AddEquiv to reach the cochain to which the naturality lemmas apply.
+  -- There is no application lemma for this proof-specific equivalence.
   change Cochain.fromSingleEquiv (zero_add n) ((Cochain.ofHom (singleUnitTensorIso T').inv).comp
     (internalHomComplexHomEquiv _ L T' n (g ≫ φ)) (zero_add n)) = _
   rw [internalHomComplexHomEquiv_comp, ← Cochain.comp_assoc_of_first_is_zero_cochain,
@@ -202,6 +151,8 @@ private lemma singleUnitHomEquiv_comp_d {T : C} {n : ℤ}
     rw [← Cochain.fromSingleEquiv_fromSingleMk f (zero_add n), hf]
     rfl
   rw [hφ]
+  -- Unfold the composite AddEquiv to expose the cochain differential; the differential lemmas
+  -- apply to this cochain rather than to the proof-specific equivalence.
   change Cochain.fromSingleEquiv (zero_add m) ((Cochain.ofHom (singleUnitTensorIso T).inv).comp
     (internalHomComplexHomEquiv _ L T m (φ ≫ (internalHomComplex _ L).d n m)) (zero_add m)) = _
   rw [internalHomComplexHomEquiv_comp_d, ← δ_ofHom_comp, ← hf,
@@ -243,12 +194,10 @@ lemma comp_internalHomComplexSingleUnitIso_hom_f {T : C} {n : ℤ}
   -- The components of an isomorphism built by `isoOfComponents` are the given isomorphisms.
   have h : (internalHomComplexSingleUnitIso L).hom.f n = (singleUnitXIso L n).hom := rfl
   rw [h, comp_singleUnitXIso_hom]
-  simp only [singleUnitHomEquiv, singleUnitTensorIso, AddEquiv.trans_apply, AddEquiv.coe_mk,
-    Equiv.coe_fn_mk, Iso.trans_inv, Functor.mapIso_inv, Iso.app_inv, singleFunctor]
-  rw [Cochain.fromSingleEquiv_apply, Cochain.zero_cochain_comp_v, Cochain.ofHom_v]
-  simp only [HomologicalComplex.comp_f, HomologicalComplex.singleMapHomologicalComplex_inv_app_self,
-    HomologicalComplex.single_map_f_self, Category.assoc, Iso.inv_hom_id_assoc,
-    Functor.flip_obj_map, curriedTensor_map_app]
+  simp only [singleUnitHomEquiv, AddEquiv.trans_apply, AddEquiv.coe_mk, Equiv.coe_fn_mk]
+  rw [Cochain.fromSingleEquiv_apply, Cochain.zero_cochain_comp_v, Cochain.ofHom_v,
+    singleUnitTensorIso_inv_f_zero]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc]
 
 end Single
 

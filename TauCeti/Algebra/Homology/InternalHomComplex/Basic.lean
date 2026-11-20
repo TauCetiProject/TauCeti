@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomotopyCategory.HomComplex
 public import Mathlib.CategoryTheory.Limits.Shapes.Countable
 public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
 public import Mathlib.CategoryTheory.Monoidal.Preadditive
+public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
 
 /-!
 # The internal Hom complex of two cochain complexes
@@ -62,14 +62,6 @@ noncomputable section
 open CategoryTheory Limits MonoidalCategory MonoidalClosed CochainComplex.HomComplex
 
 universe v u
-
-/-- The pairs `(p, q)` with `p + n = q` form a countable type: `q` is determined by `p`. -/
-instance CochainComplex.HomComplex.Triplet.instCountable (n : ℤ) : Countable (Triplet n) :=
-  Function.Injective.countable (f := Triplet.p) fun T T' h ↦ by
-    obtain ⟨p, q, rfl⟩ := T
-    obtain ⟨p', q', rfl⟩ := T'
-    obtain rfl : p = p' := h
-    rfl
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [MonoidalCategory C]
   [MonoidalPreadditive C] [MonoidalClosed C] [HasCountableProducts C]
