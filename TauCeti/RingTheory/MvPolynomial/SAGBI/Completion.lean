@@ -84,6 +84,61 @@ def SubductionStep (f : MvPolynomial σ k) (H G : Set (MvPolynomial σ k)) : Pro
     m.IsSubduction ((↑) : G → MvPolynomial σ k) f Q r ∧
       (r = 0 ∧ H = G ∨ r ≠ 0 ∧ H = insert (m.monicNormalize r) G)
 
+/-- The subduction and adjunction certificate of a completion step. -/
+theorem subductionStep_iff {f : MvPolynomial σ k} {H G : Set (MvPolynomial σ k)} :
+    m.SubductionStep f H G ↔
+      ∃ (Q : MvPolynomial G k) (r : MvPolynomial σ k),
+        m.IsSubduction ((↑) : G → MvPolynomial σ k) f Q r ∧
+          (r = 0 ∧ H = G ∨ r ≠ 0 ∧ H = insert (m.monicNormalize r) G) :=
+  Iff.rfl
+
+namespace SubductionStep
+
+variable {f : MvPolynomial σ k} {G H : Set (MvPolynomial σ k)}
+
+/-- A subduction with zero remainder gives a completion step which adjoins nothing. -/
+theorem of_remainder_eq_zero {Q : MvPolynomial G k}
+    (h : m.IsSubduction ((↑) : G → MvPolynomial σ k) f Q 0) : m.SubductionStep f G G :=
+  ⟨Q, 0, h, Or.inl ⟨rfl, rfl⟩⟩
+
+/-- A subduction with nonzero remainder `r` gives a completion step which adjoins the monic
+normalization of `r`. -/
+theorem of_remainder_ne_zero {Q : MvPolynomial G k} {r : MvPolynomial σ k}
+    (h : m.IsSubduction ((↑) : G → MvPolynomial σ k) f Q r) (hr : r ≠ 0) :
+    m.SubductionStep f (insert (m.monicNormalize r) G) G :=
+  ⟨Q, r, h, Or.inr ⟨hr, rfl⟩⟩
+
+end SubductionStep
+
+/-- Every polynomial can be processed by a completion step, provided the current generators are
+nonzero. -/
+theorem exists_subductionStep {G : Set (MvPolynomial σ k)} (hG : ∀ g ∈ G, g ≠ 0)
+    (f : MvPolynomial σ k) : ∃ H, m.SubductionStep f H G := by
+  classical
+  obtain ⟨Q, r, h⟩ := m.exists_isSubduction (b := ((↑) : G → MvPolynomial σ k))
+    (fun g ↦ hG g g.2) f
+  by_cases hr : r = 0
+  · exact ⟨G, .of_remainder_eq_zero (hr ▸ h)⟩
+  · exact ⟨_, .of_remainder_ne_zero h hr⟩
+
+/-- Renaming the generators along an inclusion of generating sets preserves the leading-exponent
+combination of a monomial. -/
+private theorem linearCombination_mapDomain_inclusion {s t : Set (MvPolynomial σ k)}
+    (hst : s ⊆ t) (w : s →₀ ℕ) :
+    Finsupp.linearCombination ℕ (fun g : t ↦ m.degree g.1) (w.mapDomain (Set.inclusion hst)) =
+      Finsupp.linearCombination ℕ (fun g : s ↦ m.degree g.1) w := by
+  -- `rw` closes the goal since `(Set.inclusion hst g).1 = g.1` holds by `Set.coe_inclusion`,
+  -- which is reducible-defeq.
+  rw [Finsupp.linearCombination_mapDomain, Function.comp_def]
+
+/-- Renaming the generators along an inclusion of generating sets preserves the substituted
+value of a polynomial. -/
+private theorem aeval_coe_rename_inclusion {s t : Set (MvPolynomial σ k)} (hst : s ⊆ t)
+    (P : MvPolynomial s k) :
+    aeval ((↑) : t → MvPolynomial σ k) (rename (Set.inclusion hst) P) =
+      aeval ((↑) : s → MvPolynomial σ k) P := by
+  rw [aeval_rename, Set.val_comp_inclusion]
+
 /-- Renaming the generators along an inclusion of generating sets preserves the substituted
 value of a polynomial and the leading exponents of its substituted monomials. -/
 private theorem aeval_rename_inclusion {s t : Set (MvPolynomial σ k)} (hst : s ⊆ t)
@@ -94,22 +149,21 @@ private theorem aeval_rename_inclusion {s t : Set (MvPolynomial σ k)} (hst : s 
       ∀ w ∈ (rename (Set.inclusion hst) P).support,
         p (Finsupp.linearCombination ℕ (fun g : t ↦ m.degree g.1) w) := by
   classical
-  refine ⟨by rw [aeval_rename]; rfl, fun w hw ↦ ?_⟩
+  refine ⟨aeval_coe_rename_inclusion hst P, fun w hw ↦ ?_⟩
   rw [support_rename_of_injective (Set.inclusion_injective hst), Finset.mem_image] at hw
   obtain ⟨w, hw, rfl⟩ := hw
-  rw [Finsupp.linearCombination_mapDomain]
+  rw [linearCombination_mapDomain_inclusion]
   exact hP w hw
 
-/-- Every polynomial can be processed by a completion step, provided the current generators are
-nonzero. -/
-theorem exists_subductionStep {G : Set (MvPolynomial σ k)} (hG : ∀ g ∈ G, g ≠ 0)
-    (f : MvPolynomial σ k) : ∃ H, m.SubductionStep f H G := by
-  classical
-  obtain ⟨Q, r, h⟩ := m.exists_isSubduction (b := ((↑) : G → MvPolynomial σ k))
-    (fun g ↦ hG g g.2) f
-  by_cases hr : r = 0
-  · exact ⟨G, Q, r, h, Or.inl ⟨hr, rfl⟩⟩
-  · exact ⟨_, Q, r, h, Or.inr ⟨hr, rfl⟩⟩
+/-- A binomial `Y^(u j) - Y^(v j)` of a generating family of the toric ideal of the leading
+exponents of `s` is a relation among these leading exponents. -/
+private theorem linearCombination_eq_of_toricIdeal_eq_span {s : Set (MvPolynomial σ k)}
+    {J : Type*} {u v : J → s →₀ ℕ}
+    (hJ : TauCeti.toricIdeal k (fun g : s ↦ m.degree g.1) =
+      Ideal.span (Set.range fun j ↦ monomial (u j) (1 : k) - monomial (v j) 1)) (j : J) :
+    Finsupp.linearCombination ℕ (fun g : s ↦ m.degree g.1) (u j) =
+      Finsupp.linearCombination ℕ (fun g : s ↦ m.degree g.1) (v j) :=
+  (TauCeti.monomial_sub_monomial_mem_toricIdeal_iff (R := k)).1 (hJ ▸ Ideal.subset_span ⟨j, rfl⟩)
 
 namespace SubductionStep
 
@@ -165,8 +219,7 @@ theorem exists_aeval_eq (h : m.SubductionStep f H G) :
     (p := (· ≼[m] m.degree f)) hs.support_le
   refine ⟨rename (Set.inclusion (Set.subset_insert g G)) Q +
     monomial (Finsupp.single ⟨g, Set.mem_insert g G⟩ 1) (m.leadingCoeff r), ?_, ?_⟩
-  · rw [map_add, hQ, aeval_monomial, Finsupp.prod_single_index (by simp), pow_one,
-      algebraMap_eq, C_leadingCoeff_mul_monicNormalize, ← hs.eq_aeval_add]
+  · simp [hQ, aeval_monomial, g, C_leadingCoeff_mul_monicNormalize, hs.eq_aeval_add]
   · intro w hw
     rcases Finset.mem_union.1 (support_add hw) with hw | hw
     · exact hQs w hw
@@ -220,12 +273,6 @@ private theorem toricIdeal_iUnion_eq_span (hG : Monotone G) {J : ℕ → Type*}
   classical
   set ι := fun n ↦ Set.inclusion (Set.subset_iUnion G n)
   have hι (n : ℕ) : Function.Injective (ι n) := Set.inclusion_injective _
-  have hlin (n : ℕ) (w : G n →₀ ℕ) :
-      Finsupp.linearCombination ℕ (fun g : ↥(⋃ n, G n) ↦ m.degree g.1)
-          (w.mapDomain (ι n)) =
-        Finsupp.linearCombination ℕ (fun g : G n ↦ m.degree g.1) w := by
-    rw [Finsupp.linearCombination_mapDomain]
-    rfl
   -- Renaming a stage carries its binomial generators to those of the union.
   have hle (n : ℕ) : TauCeti.toricIdeal k (fun g : G n ↦ m.degree g.1) ≤
       (Ideal.span (Set.range fun j : Σ n, J n ↦
@@ -247,9 +294,8 @@ private theorem toricIdeal_iUnion_eq_span (hG : Monotone G) {J : ℕ → Type*}
     rwa [aeval_rename] at hp
   · rintro _ ⟨j, rfl⟩
     refine TauCeti.monomial_sub_monomial_mem_toricIdeal ?_
-    rw [hlin, hlin]
-    exact (TauCeti.monomial_sub_monomial_mem_toricIdeal_iff (R := k)).1
-      (hJ j.1 ▸ Ideal.subset_span ⟨j.2, rfl⟩)
+    rw [linearCombination_mapDomain_inclusion, linearCombination_mapDomain_inclusion]
+    exact linearCombination_eq_of_toricIdeal_eq_span (hJ j.1) j.2
 
 /-- **Fair SAGBI completion converges.** Consider a run of completion steps
 `G (n + 1)` from `G n` processing `f n ∈ k[G n]`, starting from monic generators. Suppose that,
@@ -276,27 +322,11 @@ theorem isSAGBIBasis_iUnion_of_subductionStep
   rw [Subtype.range_coe, adjoin_iUnion_eq_of_subductionStep hstep hf] at hcrit
   refine hcrit.2 fun ⟨n, j⟩ ↦ ?_
   dsimp only
-  have hlin (w : G n →₀ ℕ) :
-      Finsupp.linearCombination ℕ (fun g : ↥(⋃ n, G n) ↦ m.degree g.1)
-          (w.mapDomain (Set.inclusion (Set.subset_iUnion G n))) =
-        Finsupp.linearCombination ℕ (fun g : G n ↦ m.degree g.1) w := by
-    rw [Finsupp.linearCombination_mapDomain]
-    rfl
-  have heval : aeval ((↑) : ↥(⋃ n, G n) → MvPolynomial σ k)
-      (monomial ((u n j).mapDomain (Set.inclusion (Set.subset_iUnion G n))) (1 : k) -
-        monomial ((v n j).mapDomain (Set.inclusion (Set.subset_iUnion G n))) 1) =
-        aeval ((↑) : G n → MvPolynomial σ k)
-          (monomial (u n j) (1 : k) - monomial (v n j) 1) := by
-    rw [← rename_monomial, ← rename_monomial, ← map_sub, aeval_rename]
-    rfl
-  rw [hlin, heval]
-  have huv :
-      Finsupp.linearCombination ℕ (m.degree ∘ ((↑) : G n → MvPolynomial σ k)) (u n j) =
-        Finsupp.linearCombination ℕ (m.degree ∘ ((↑) : G n → MvPolynomial σ k)) (v n j) :=
-    (TauCeti.monomial_sub_monomial_mem_toricIdeal_iff (R := k)).1
-      (hJ n ▸ Ideal.subset_span ⟨j, rfl⟩)
+  rw [linearCombination_mapDomain_inclusion, ← rename_monomial, ← rename_monomial, ← map_sub,
+    aeval_coe_rename_inclusion]
   rcases m.aeval_monomial_sub_monomial_eq_zero_or_degree_lt
-      (b := ((↑) : G n → MvPolynomial σ k)) (fun g : G n ↦ hmonic n g.1 g.2) _ _ huv
+      (b := ((↑) : G n → MvPolynomial σ k)) (fun g : G n ↦ hmonic n g.1 g.2) _ _
+      (linearCombination_eq_of_toricIdeal_eq_span (hJ n) j)
     with hz | hlt
   · exact ⟨0, by rw [hz, map_zero], by simp⟩
   · -- The relation was processed at stage `N`, giving a bounded expression in `G (N + 1)`.
