@@ -184,6 +184,14 @@ theorem hasFDerivAt_centralForceHamiltonian {m : ℝ} {U : ℝ → ℝ} {U' : �
   · simp [div_eq_mul_inv]
     ring
 
+/-- A central-force Hamiltonian is `C^n` at every point `(q, p)` off the collision set such that
+the potential `U` is `C^n` at `‖q‖`. -/
+theorem contDiffAt_centralForceHamiltonian {m : ℝ} {U : ℝ → ℝ} {n : WithTop ℕ∞} {x : V × V}
+    (hU : ContDiffAt ℝ n U ‖x.1‖) (hq : x.1 ≠ 0) :
+    ContDiffAt ℝ n (centralForceHamiltonian m U) x :=
+  ((contDiff_norm_sq ℝ).comp contDiff_snd).contDiffAt.div_const _ |>.add
+    (hU.comp x ((contDiffAt_norm ℝ hq).comp x contDiffAt_fst))
+
 /-- The Runge–Lenz vector is smooth away from collisions, for arbitrary mass and coupling. -/
 theorem contDiffAt_rungeLenz (m κ : ℝ) {n : WithTop ℕ∞} {x : V × V} (hq : x.1 ≠ 0) :
     ContDiffAt ℝ n (rungeLenz m κ) x := by
