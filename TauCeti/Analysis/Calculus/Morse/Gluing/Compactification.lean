@@ -24,12 +24,26 @@ trajectory, not just a family approaching the broken one. Here it yields a topol
 chart for the local gluing problem. This does not compactify global trajectory spaces or
 assert smoothness of the gluing chart.
 
+For families of discs `g p` and `k p`, indexed by a compact set `S` of parameters, Lipschitz with
+uniform constants and continuous in `p`, the closure of the pairs of all members adds exactly
+their broken pairs. When distinct members share no point of their entrance discs and no point of
+their exit discs, that closure is homeomorphic to `[0, r₀] × S`, with the broken pairs at the
+parameter `0`. When the Morse indices of the broken trajectory are not consecutive, `S`
+parametrizes the trajectories of its two halves, and this chart is the model, inside the split
+box, of a collar of the compactified trajectory space along its stratum of once-broken
+trajectories.
+
 ## Main results
 
 * `TauCeti.closure_splitGluingPairs`: precisely one broken pair is added.
 * `TauCeti.exists_homeomorph_closure_splitGluingPairs`: a closed interval chart with explicit
   inverse coordinate and broken endpoint.
 * `TauCeti.isCompact_closure_splitGluingPairs`: compactness of the paired local gluing space.
+* `TauCeti.closure_iUnion_splitGluingPairs`: for a compact family of pairs of discs, precisely
+  the broken pairs of its members are added.
+* `TauCeti.exists_homeomorph_closure_iUnion_splitGluingPairs`: for a compact family of pairs of
+  discs, a chart by `[0, r₀] × S` with the gluing parameter as first coordinate and the broken
+  pairs at `0`.
 
 ## References
 
@@ -151,6 +165,8 @@ private theorem exists_splitGluingPairs_parametrization [CompleteSpace Eᵤ]
   exact image_pairs_eq_splitGluingPairs le_rfl
     (fun r hr ↦ hwnorm r (Ioc_subset_Icc_self hr)) himage
 
+section Single
+
 variable [CompleteSpace Eᵤ]
   (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * ε)))
   (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g y‖ = ε)
@@ -233,5 +249,182 @@ theorem isCompact_closure_splitGluingPairs :
       exact Prod.ext h1 (he.trans (by rw [h1]))
     exact isCompact_singleton.of_isClosed_subset isClosed_closure
       (closure_minimal hsub isClosed_singleton)
+
+
+end Single
+
+/-! ### Families of discs -/
+
+section Family
+
+variable {P : Type*} [TopologicalSpace P] {S : Set P}
+
+/-- The gluing parametrization of a family of pairs of discs, extended continuously to the gluing
+parameter `0`. Its image over `[0, r₀] × S` consists of the unbroken pairs of all members of the
+family together with their broken pairs, its first coordinate is recovered by the norm of the
+expanding entrance coordinate, and its value at `(r, p)` is a pair of points of the entrance disc
+and the exit disc of the member `p`. -/
+private theorem exists_splitGluingPairs_family_parametrization [CompleteSpace Eᵤ]
+    {g : P → Eᵤ → Eₛ} {k : P → Eₛ → Eᵤ}
+    (hg : ∀ p ∈ S, LipschitzOnWith Kg (g p) (closedBall 0 (r₀ * ε)))
+    (hgε : ∀ p ∈ S, ∀ y ∈ closedBall 0 (r₀ * ε), ‖g p y‖ = ε)
+    (hk : ∀ p ∈ S, LipschitzOnWith Kk (k p) (closedBall 0 (r₀ * ε)))
+    (hkε : ∀ p ∈ S, ∀ x ∈ closedBall 0 (r₀ * ε), ‖k p x‖ = ε)
+    (hgc : ∀ y ∈ closedBall 0 (r₀ * ε), ContinuousOn (fun p ↦ g p y) S)
+    (hkc : ∀ x ∈ closedBall 0 (r₀ * ε), ContinuousOn (fun p ↦ k p x) S)
+    (hε : 0 < ε) (hr₀ : 0 ≤ r₀) (hr₀₁ : r₀ ≤ 1) (hK : Kk * Kg * r₀ ^ 2 < 1) :
+    ∃ F : ℝ × P → WithLp 2 (Eₛ × Eᵤ) × WithLp 2 (Eₛ × Eᵤ),
+      ContinuousOn F (Icc 0 r₀ ×ˢ S) ∧
+      F '' (Icc 0 r₀ ×ˢ S) = (⋃ p ∈ S, splitGluingPairs ε r₀ (g p) (k p)) ∪
+        (fun p ↦ (WithLp.toLp 2 (g p 0, 0), WithLp.toLp 2 (0, k p 0))) '' S ∧
+      (∀ p ∈ S, (fun r ↦ F (r, p)) '' Ioc 0 r₀ = splitGluingPairs ε r₀ (g p) (k p)) ∧
+      (∀ p ∈ S, F (0, p) = (WithLp.toLp 2 (g p 0, 0), WithLp.toLp 2 (0, k p 0))) ∧
+      (∀ q ∈ Icc 0 r₀ ×ˢ S, ‖(F q).1.snd‖ / ε = q.1) ∧
+      ∀ q ∈ Icc 0 r₀ ×ˢ S, (F q).1.fst = g q.2 (F q).1.snd ∧
+        (F q).1.snd ∈ closedBall 0 (r₀ * ε) ∧ (F q).2.snd = k q.2 (F q).2.fst ∧
+        (F q).2.fst ∈ closedBall 0 (r₀ * ε) := by
+  obtain ⟨w, hw, hwp⟩ := exists_continuousOn_and_forall_setOf_mem_splitPassage_source_graph_eq_image
+    hg hgε hk hkε hgc hkc hε hr₀₁ hK
+  -- Pair the entrance parametrization with its exit formula, as for a single pair of discs.
+  let v : ℝ × P → Eᵤ := fun q ↦ q.1 • w q.1 q.2
+  let a : ℝ × P → Eₛ := fun q ↦ g q.2 (v q)
+  let F : ℝ × P → WithLp 2 (Eₛ × Eᵤ) × WithLp 2 (Eₛ × Eᵤ) :=
+    fun q ↦ (WithLp.toLp 2 (a q, v q), WithLp.toLp 2 (q.1 • a q, w q.1 q.2))
+  have hnormv (q : ℝ × P) (hq : q ∈ Icc 0 r₀ ×ˢ S) : ‖v q‖ = q.1 * ε := by
+    simp only [v, norm_smul, Real.norm_of_nonneg hq.1.1, (hwp _ hq.2).2.2.1 _ hq.1]
+  have hvball (q : ℝ × P) (hq : q ∈ Icc 0 r₀ ×ˢ S) : v q ∈ closedBall 0 (r₀ * ε) := by
+    rw [mem_closedBall_zero_iff, hnormv q hq]
+    exact mul_le_mul_of_nonneg_right hq.1.2 hε.le
+  have hxball (q : ℝ × P) (hq : q ∈ Icc 0 r₀ ×ˢ S) : q.1 • a q ∈ closedBall 0 (r₀ * ε) := by
+    rw [mem_closedBall_zero_iff, norm_smul, Real.norm_of_nonneg hq.1.1, hgε _ hq.2 _ (hvball q hq)]
+    exact mul_le_mul_of_nonneg_right hq.1.2 hε.le
+  have hv : ContinuousOn v (Icc 0 r₀ ×ˢ S) := continuousOn_fst.smul hw
+  have ha : ContinuousOn a (Icc 0 r₀ ×ˢ S) :=
+    (continuousOn_prod_of_continuousOn_lipschitzOnWith' (fun q : P × Eᵤ ↦ g q.1 q.2) Kg hg
+      hgc).comp (continuousOn_snd.prodMk hv) fun q hq ↦ ⟨hq.2, hvball q hq⟩
+  have hF : ContinuousOn F (Icc 0 r₀ ×ˢ S) :=
+    ((WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).comp_continuousOn (ha.prodMk hv)).prodMk
+      ((WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).comp_continuousOn
+        ((continuousOn_fst.smul ha).prodMk hw))
+  have himage (p : P) (hp : p ∈ S) :
+      (fun r ↦ F (r, p)) '' Ioc 0 r₀ = splitGluingPairs ε r₀ (g p) (k p) :=
+    image_pairs_eq_splitGluingPairs le_rfl
+      (fun r hr ↦ (hwp p hp).2.2.1 r (Ioc_subset_Icc_self hr)) (hwp p hp).2.2.2.2
+  have hF₀ (p : P) (hp : p ∈ S) :
+      F (0, p) = (WithLp.toLp 2 (g p 0, 0), WithLp.toLp 2 (0, k p 0)) := by
+    simp [F, a, v, (hwp p hp).2.1]
+  refine ⟨F, hF, ?_, himage, hF₀, fun q hq ↦ ?_, fun q hq ↦
+    ⟨rfl, hvball q hq, ((hwp _ hq.2).2.2.2.1 _ hq.1).symm, hxball q hq⟩⟩
+  · -- The parameter `0` gives the broken pairs and the positive parameters the unbroken ones.
+    ext x
+    simp only [mem_image, mem_union, mem_iUnion, exists_prop]
+    constructor
+    · rintro ⟨⟨r, p⟩, ⟨hr, hp⟩, rfl⟩
+      rcases hr.1.eq_or_lt with rfl | hr0
+      · exact Or.inr ⟨p, hp, (hF₀ p hp).symm⟩
+      · exact Or.inl ⟨p, hp, himage p hp ▸ ⟨r, ⟨hr0, hr.2⟩, rfl⟩⟩
+    · rintro (⟨p, hp, hx⟩ | ⟨p, hp, rfl⟩)
+      · rw [← himage p hp] at hx
+        obtain ⟨r, hr, rfl⟩ := hx
+        exact ⟨(r, p), ⟨Ioc_subset_Icc_self hr, hp⟩, rfl⟩
+      · exact ⟨(0, p), ⟨left_mem_Icc.2 hr₀, hp⟩, hF₀ p hp⟩
+  · simp only [F, WithLp.toLp_snd, hnormv q hq]
+    exact mul_div_cancel_right₀ _ hε.ne'
+
+/-- **The closure of the gluing pairs of a family of discs.** For a compact family of pairs of
+discs, Lipschitz with uniform constants and continuous in the parameter, the closure of the
+unbroken entrance and exit pairs of all members of the family adds exactly the broken pairs
+`((g p 0, 0), (0, k p 0))` of the members `p ∈ S`. -/
+theorem closure_iUnion_splitGluingPairs [CompleteSpace Eᵤ] {g : P → Eᵤ → Eₛ} {k : P → Eₛ → Eᵤ}
+    (hg : ∀ p ∈ S, LipschitzOnWith Kg (g p) (closedBall 0 (r₀ * ε)))
+    (hgε : ∀ p ∈ S, ∀ y ∈ closedBall 0 (r₀ * ε), ‖g p y‖ = ε)
+    (hk : ∀ p ∈ S, LipschitzOnWith Kk (k p) (closedBall 0 (r₀ * ε)))
+    (hkε : ∀ p ∈ S, ∀ x ∈ closedBall 0 (r₀ * ε), ‖k p x‖ = ε)
+    (hgc : ∀ y ∈ closedBall 0 (r₀ * ε), ContinuousOn (fun p ↦ g p y) S)
+    (hkc : ∀ x ∈ closedBall 0 (r₀ * ε), ContinuousOn (fun p ↦ k p x) S)
+    (hε : 0 < ε) (hr₀ : 0 < r₀) (hr₀₁ : r₀ ≤ 1) (hK : Kk * Kg * r₀ ^ 2 < 1)
+    (hS : IsCompact S) :
+    closure (⋃ p ∈ S, splitGluingPairs ε r₀ (g p) (k p)) =
+      (⋃ p ∈ S, splitGluingPairs ε r₀ (g p) (k p)) ∪
+        (fun p ↦ (WithLp.toLp 2 (g p 0, 0), WithLp.toLp 2 (0, k p 0))) '' S := by
+  obtain ⟨F, hF, hFD, -⟩ :=
+    exists_splitGluingPairs_family_parametrization hg hgε hk hkε hgc hkc hε hr₀.le hr₀₁ hK
+  refine subset_antisymm ?_ (union_subset subset_closure ?_)
+  · -- The pairs and the broken pairs form the compact image of `[0, r₀] × S`.
+    rw [← hFD]
+    exact closure_minimal (hFD ▸ subset_union_left)
+      ((isCompact_Icc.prod hS).image_of_continuousOn hF).isClosed
+  · -- Each broken pair is a limit of unbroken pairs of its own member of the family.
+    rintro _ ⟨p, hp, rfl⟩
+    refine closure_mono (subset_biUnion_of_mem (u := fun p ↦ splitGluingPairs ε r₀ (g p) (k p))
+      hp) ?_
+    rw [closure_splitGluingPairs (hg p hp) (hgε p hp) (hk p hp) (hkε p hp) hε hr₀ hr₀₁ hK]
+    exact mem_insert _ _
+
+/-- **The local compactified gluing space of a family of discs is `[0, r₀] × S`.** Let the
+families of discs `y ↦ (g p y, y)` and `x ↦ (x, k p x)` be Lipschitz with uniform constants and
+continuous in the parameter `p` of a compact set `S`, and suppose that distinct members of the
+family have no point of their entrance discs and no point of their exit discs in common. Then the
+closure of the unbroken entrance and exit pairs of all members is homeomorphic to
+`[0, r₀] × S`. The first coordinate of the inverse is the gluing parameter, the norm of the
+expanding entrance coordinate divided by the box radius; the parameter `0` gives the broken pairs,
+and a positive parameter `r` paired with `p` gives an unbroken pair of the member `p`.
+
+In the gluing of broken trajectories, where `S` parametrizes the pairs of trajectories of the two
+halves of a broken trajectory, this is the local model of the compactified trajectory space near
+its stratum of once-broken trajectories: a collar `[0, r₀] × S` whose boundary `{0} × S` is that
+stratum. -/
+theorem exists_homeomorph_closure_iUnion_splitGluingPairs [CompleteSpace Eᵤ]
+    {g : P → Eᵤ → Eₛ} {k : P → Eₛ → Eᵤ}
+    (hg : ∀ p ∈ S, LipschitzOnWith Kg (g p) (closedBall 0 (r₀ * ε)))
+    (hgε : ∀ p ∈ S, ∀ y ∈ closedBall 0 (r₀ * ε), ‖g p y‖ = ε)
+    (hk : ∀ p ∈ S, LipschitzOnWith Kk (k p) (closedBall 0 (r₀ * ε)))
+    (hkε : ∀ p ∈ S, ∀ x ∈ closedBall 0 (r₀ * ε), ‖k p x‖ = ε)
+    (hgc : ∀ y ∈ closedBall 0 (r₀ * ε), ContinuousOn (fun p ↦ g p y) S)
+    (hkc : ∀ x ∈ closedBall 0 (r₀ * ε), ContinuousOn (fun p ↦ k p x) S)
+    (hε : 0 < ε) (hr₀ : 0 < r₀) (hr₀₁ : r₀ ≤ 1) (hK : Kk * Kg * r₀ ^ 2 < 1)
+    (hS : IsCompact S)
+    (hinj : ∀ p ∈ S, ∀ p' ∈ S, ∀ y ∈ closedBall (0 : Eᵤ) (r₀ * ε),
+      ∀ x ∈ closedBall (0 : Eₛ) (r₀ * ε), g p y = g p' y → k p x = k p' x → p = p') :
+    ∃ e : (Icc 0 r₀ ×ˢ S : Set (ℝ × P)) ≃ₜ closure (⋃ p ∈ S, splitGluingPairs ε r₀ (g p) (k p)),
+      (∀ x, (e.symm x : ℝ × P).1 = ‖x.val.1.snd‖ / ε) ∧
+      (∀ q : (Icc 0 r₀ ×ˢ S : Set (ℝ × P)), 0 < (q : ℝ × P).1 →
+        (e q).val ∈ splitGluingPairs ε r₀ (g (q : ℝ × P).2) (k (q : ℝ × P).2)) ∧
+      ∀ p (hp : p ∈ S), (e ⟨(0, p), left_mem_Icc.2 hr₀.le, hp⟩).val =
+        (WithLp.toLp 2 (g p 0, 0), WithLp.toLp 2 (0, k p 0)) := by
+  obtain ⟨F, hF, hFD, himage, hF₀, hnorm, hdisc⟩ :=
+    exists_splitGluingPairs_family_parametrization hg hgε hk hkε hgc hkc hε hr₀.le hr₀₁ hK
+  have hclosure : F '' (Icc 0 r₀ ×ˢ S) = closure (⋃ p ∈ S, splitGluingPairs ε r₀ (g p) (k p)) := by
+    rw [hFD, closure_iUnion_splitGluingPairs hg hgε hk hkε hgc hkc hε hr₀ hr₀₁ hK hS]
+  let f : (Icc 0 r₀ ×ˢ S : Set (ℝ × P)) → closure (⋃ p ∈ S, splitGluingPairs ε r₀ (g p) (k p)) :=
+    fun q ↦ ⟨F q, hclosure ▸ mem_image_of_mem F q.property⟩
+  have hf : Continuous f := hF.domRestrict.codRestrict _
+  have hfinj : Injective f := by
+    rintro ⟨q, hq⟩ ⟨q', hq'⟩ hqq'
+    have hFq : F q = F q' := congrArg Subtype.val hqq'
+    have h₁ : q.1 = q'.1 := by rw [← hnorm q hq, ← hnorm q' hq', hFq]
+    -- Equal pairs share the entrance point and the exit point of the two members of the family.
+    obtain ⟨hgq, hy, hkq, hx⟩ := hdisc q hq
+    obtain ⟨hgq', -, hkq', -⟩ := hdisc q' hq'
+    refine Subtype.ext (Prod.ext h₁ (hinj _ hq.2 _ hq'.2 _ hy _ hx ?_ ?_))
+    · rw [← hgq, hFq]
+      exact hgq'
+    · rw [← hkq, hFq]
+      exact hkq'
+  have hfsurj : Surjective f := by
+    rintro ⟨x, hx⟩
+    rw [← hclosure] at hx
+    obtain ⟨q, hq, rfl⟩ := hx
+    exact ⟨⟨q, hq⟩, rfl⟩
+  have : CompactSpace (Icc 0 r₀ ×ˢ S : Set (ℝ × P)) :=
+    isCompact_iff_compactSpace.1 (isCompact_Icc.prod hS)
+  let e := hf.homeoOfEquivCompactToT2 (f := Equiv.ofBijective f ⟨hfinj, hfsurj⟩)
+  have he (q : (Icc 0 r₀ ×ˢ S : Set (ℝ × P))) : (e q).val = F q := rfl
+  refine ⟨e, fun x ↦ ?_, fun q hq ↦ ?_, fun p hp ↦ he _ ▸ hF₀ p hp⟩
+  · rw [← e.apply_symm_apply x, he, hnorm _ (e.symm x).property, e.apply_symm_apply]
+  · rw [he, ← himage _ q.property.2]
+    exact ⟨_, ⟨hq, q.property.1.2⟩, rfl⟩
+
+end Family
 
 end TauCeti
