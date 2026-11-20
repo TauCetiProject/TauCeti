@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.TypeTags.Finite
 public import Mathlib.Data.ZMod.Basic
 import Mathlib.Tactic.Ring
 
@@ -29,6 +30,11 @@ the vanishing of the cup square of a class of `H¹(G, 𝔽₂)` that lifts to a 
   the lifts `a + 2 p`, `b + 2 q`, `c + 2 r` have alternating sum `0` in `ℤ/4`.
 * `ZMod.castHom_eq_zero_of_two_smul_eq_zero`: an element of `ℤ/4` killed by `2` reduces to `0`
   modulo `2`.
+* `ZMod.eq_zero_or_eq_one_or_eq_two_or_eq_three`: every residue modulo four is `0`, `1`, `2` or `3`.
+* `TauCeti.forall_multiplicative_zmod_four`: a statement holds on `C₄ = Multiplicative (ZMod 4)`
+  iff it holds at `ofAdd 0`, `ofAdd 1`, `ofAdd 2` and `ofAdd 3`.
+* `TauCeti.univ_multiplicative_zmod_four`: the elements of `C₄` are `ofAdd 0`, `ofAdd 1`,
+  `ofAdd 2` and `ofAdd 3`.
 -/
 
 public section
@@ -84,4 +90,28 @@ theorem castHom_eq_zero_of_two_smul_eq_zero {m : ZMod 4} (h : (2 : ℤ) • m = 
   revert m h
   decide
 
+/-- Every residue modulo four is `0`, `1`, `2` or `3`. -/
+theorem eq_zero_or_eq_one_or_eq_two_or_eq_three (a : ZMod 4) : a = 0 ∨ a = 1 ∨ a = 2 ∨ a = 3 := by
+  decide +revert
+
 end ZMod
+
+namespace TauCeti
+
+open Multiplicative
+
+/-- A statement holds for every element of `C₄ = Multiplicative (ZMod 4)` if and only if it holds
+at `ofAdd 0`, `ofAdd 1`, `ofAdd 2` and `ofAdd 3`. -/
+theorem forall_multiplicative_zmod_four {P : Multiplicative (ZMod 4) → Prop} :
+    (∀ g, P g) ↔ P (ofAdd 0) ∧ P (ofAdd 1) ∧ P (ofAdd 2) ∧ P (ofAdd 3) := by
+  refine ⟨fun h ↦ ⟨h _, h _, h _, h _⟩, fun ⟨h₀, h₁, h₂, h₃⟩ g ↦ ?_⟩
+  obtain ⟨a, rfl⟩ := ofAdd.surjective g
+  rcases ZMod.eq_zero_or_eq_one_or_eq_two_or_eq_three a with rfl | rfl | rfl | rfl <;> assumption
+
+/-- The elements of `C₄ = Multiplicative (ZMod 4)` are `ofAdd 0`, `ofAdd 1`, `ofAdd 2` and
+`ofAdd 3`. -/
+theorem univ_multiplicative_zmod_four :
+    (Finset.univ : Finset (Multiplicative (ZMod 4))) = {ofAdd 0, ofAdd 1, ofAdd 2, ofAdd 3} := by
+  decide
+
+end TauCeti
