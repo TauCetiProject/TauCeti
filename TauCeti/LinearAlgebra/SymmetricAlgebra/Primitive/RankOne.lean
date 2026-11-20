@@ -50,12 +50,16 @@ open Polynomial Polynomial.Bivariate Bialgebra Coalgebra TensorProduct
 
 namespace SymmetricAlgebra
 
-variable {R : Type*} [CommRing R]
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R] [IsCancelAdd R]
 
 /-- A polynomial `f(x)` in the primitive generator `x = ι R R 1` of the rank-one symmetric algebra
 is primitive exactly when `f(X + Y) = f(X) + f(Y)` in the bivariate polynomial ring. -/
 theorem isPrimitiveElem_aeval_ι_one_iff {f : R[X]} :
     IsPrimitiveElem R (aeval (ι R R 1) f) ↔ aeval (C X + Y : R[X][Y]) f = C f + f.map C := by
+  let : IsCancelAdd (SymmetricAlgebra R R) :=
+    equivPolynomial.injective.isCancelAdd _ equivPolynomial.map_add
   have hcomul : comul (R := R) (aeval (ι R R 1) f) =
       aeval (ι R R 1 ⊗ₜ[R] 1 + 1 ⊗ₜ[R] ι R R 1) f := by
     rw [← comulAlgHom_apply, ← aeval_algHom_apply, comulAlgHom_apply, comul_ι]
@@ -64,6 +68,10 @@ theorem isPrimitiveElem_aeval_ι_one_iff {f : R[X]} :
   simp only [map_add, tensorEquivBivariate_tmul, ← equivPolynomial_symm_apply,
     AlgEquiv.apply_symm_apply, equivPolynomial_ι_one, map_one, Polynomial.map_one, mul_one,
     one_mul, Polynomial.map_X, add_comm (f.map C)]
+
+end CommSemiring
+
+variable {R : Type*} [CommRing R]
 
 /-- Over a ring killed by a prime `p`, the primitive elements of the rank-one symmetric
 algebra `R[x]`, `x = ι R R 1`, are the `p`-polynomials: the `R`-linear combinations of the powers

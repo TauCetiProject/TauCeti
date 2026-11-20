@@ -104,15 +104,9 @@ theorem aeval_add_of_aeval_C_X_add_Y_eq {A : Type*} [CommSemiring A] [Algebra R 
   rwa [hmap, ← aeval_algHom_apply, map_add, aevalAeval_X, aevalAeval_Y, map_add, aevalAeval_C,
     ← aeval_algHom_apply, aevalAeval_Y] at h
 
-end CommSemiring
-
-section CommRing
-
-variable {R : Type*} [CommRing R]
-
 /-- A polynomial satisfies `f(X + Y) = f(X) + f(Y)` exactly when its constant coefficient vanishes
 and `(a + b).choose a * f_{a+b} = 0` for all positive `a` and `b`. -/
-theorem aeval_C_X_add_Y_eq_iff {f : R[X]} :
+theorem aeval_C_X_add_Y_eq_iff [IsCancelAdd R] {f : R[X]} :
     aeval (C X + Y : R[X][Y]) f = C f + f.map C ↔
       f.coeff 0 = 0 ∧ ∀ a b, a ≠ 0 → b ≠ 0 → ((a + b).choose a : R) * f.coeff (a + b) = 0 := by
   simp only [AddMonoidAlgebra.ext_iff, DFunLike.ext_iff, coeff_coeff_aeval_C_X_add_Y, coeff_add,
@@ -129,6 +123,12 @@ theorem aeval_C_X_add_Y_eq_iff {f : R[X]} :
     · simp [ha]
     · rw [← Nat.choose_symm_add]
       simpa [ha, hb] using h a b ha hb
+
+end CommSemiring
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
 
 /-- Over a ring killed by a prime `p`, a polynomial satisfies `f(X + Y) = f(X) + f(Y)` exactly
 when it is a `p`-polynomial: an `R`-linear combination of the powers `X ^ p ^ i`. -/
