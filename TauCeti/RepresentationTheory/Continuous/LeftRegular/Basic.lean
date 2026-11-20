@@ -38,8 +38,10 @@ C⋆-dynamical system. For a compact group with normalized Haar measure and scal
   `λ g` is `Lp.compMeasurePreserving (g⁻¹ * ·)`, represented by `x ↦ f (g⁻¹ * x)`.
 * `MeasureTheory.Measure.isUnitary_leftRegular`: the action on `L²(G, E)` is unitary.
 * `MeasureTheory.Measure.continuous_leftRegular_apply`: the action is strongly continuous.
-* `MeasureTheory.Measure.invariants_count_leftRegular`: for an infinite group, counting-measure
-  `Lᵖ`, `1 ≤ p < ∞`, has no nonzero invariant vector.
+* `MeasureTheory.Measure.invariants_count_leftRegular`,
+  `MeasureTheory.Measure.invariants_restrict_count_leftRegular`: for an infinite group (or the
+  restriction along an injective homomorphism from an infinite group), counting-measure `Lᵖ`,
+  `1 ≤ p < ∞`, has no nonzero invariant vector.
 
 For the counting-measure obstruction, see Bekka–de la Harpe–Valette,
 *Kazhdan's Property (T)*, Appendix G.5.
@@ -115,24 +117,55 @@ theorem continuous_leftRegular_apply [TopologicalSpace G] [IsTopologicalGroup G]
 
 section Invariants
 
-/-- For counting measure on an infinite group, the vector-valued regular representation on
-`Lᵖ`, `1 ≤ p < ∞`, has only the zero invariant vector. -/
-@[simp]
-theorem invariants_count_leftRegular [Infinite G] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (hp' : p ≠ ∞) :
-    ((count : Measure G).leftRegular 𝕜 E p).invariants = ⊥ := by
+/-- Restricting the counting-measure regular representation on `Lᵖ` (`1 ≤ p < ∞`) along an
+injective homomorphism from an infinite group leaves only the zero invariant vector. -/
+theorem invariants_restrict_count_leftRegular {H : Type*} [Group H] [Infinite H] {φ : H →* G}
+    (hφ : Function.Injective φ) {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp' : p ≠ ∞) :
+    (((count : Measure G).leftRegular 𝕜 E p).restrict φ).invariants = ⊥ := by
   have hp : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
   apply le_antisymm _ bot_le
   intro f hf
-  have hconst (x : G) : f x = f 1 := by
-    have hg := ae_count_iff.mp (coeFn_leftRegular (𝕜 := 𝕜) count p x f) x
-    rw [hf x] at hg
-    simpa using hg
-  have hc : MemLp (fun _ : G ↦ f 1) p count :=
-    (memLp_congr_ae (.of_forall hconst)).mp (Lp.memLp f)
-  have hz : f 1 = 0 := by
-    simpa [memLp_const_iff hp hp', count_apply_infinite Set.infinite_univ] using hc
-  exact Lp.ext (.of_forall fun x ↦ by simp [hconst x, hz])
+  have hf_ae : AEStronglyMeasurable f count := Lp.aestronglyMeasurable f
+  let g : G → E := hf_ae.mk f
+  have hg_eq : ∀ y : G, f y = g y := ae_count_iff.mp hf_ae.ae_eq_mk
+  have hzero (x : G) : f x = 0 := by
+    let ι : ℕ ↪ H := Infinite.natEmbedding H
+    -- Use the strongly measurable representative `g` so `S` is measurable without singleton
+    -- measurability on `G`.
+    let S : Set G := (fun y : G => ‖g y - f x‖₊) ⁻¹' {0}
+    have hS_meas : MeasurableSet S :=
+      (hf_ae.stronglyMeasurable_mk.sub stronglyMeasurable_const).nnNorm.measurable
+        (measurableSet_singleton 0)
+    have horb_sub : Set.range (fun n : ℕ => φ (ι n) * x) ⊆ S := by
+      rintro _ ⟨n, rfl⟩
+      have hleft := ae_count_iff.mp (coeFn_leftRegular (𝕜 := 𝕜) count p (φ (ι n)) f) (φ (ι n) * x)
+      have hfix : (count : Measure G).leftRegular 𝕜 E p (φ (ι n)) f = f := hf (ι n)
+      rw [hfix] at hleft
+      have hy : f (φ (ι n) * x) = f x := by simpa using hleft
+      simp [S, ← hg_eq, hy]
+    have hS_inf : S.Infinite :=
+      (Set.infinite_range_of_injective fun m n hmn =>
+        ι.injective (hφ (mul_right_cancel hmn))).mono horb_sub
+    have hconst : ∀ y ∈ S, f y = f x := fun y hy => by
+      have : g y - f x = 0 := by simpa [S] using hy
+      rw [hg_eq y, sub_eq_zero.mp this]
+    have hae : (f : G → E) =ᵐ[count.restrict S] fun _ => f x :=
+      (ae_restrict_iff' hS_meas).mpr (ae_of_all _ hconst)
+    have hc : MemLp (fun _ : G => f x) p (count.restrict S) :=
+      (memLp_congr_ae hae).mp ((Lp.memLp f).restrict S)
+    simpa [memLp_const_iff hp hp', Measure.restrict_apply_univ, count_apply_infinite hS_inf]
+      using hc
+  exact Lp.ext (.of_forall fun x => by simp [hzero x])
+
+/-- For counting measure on an infinite group, the vector-valued regular representation on
+`Lᵖ`, `1 ≤ p < ∞`, has only the zero invariant vector. -/
+@[simp]
+theorem invariants_count_leftRegular [Infinite G] {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp' : p ≠ ∞) :
+    ((count : Measure G).leftRegular 𝕜 E p).invariants = ⊥ := by
+  rw [eq_bot_iff]
+  intro f hf
+  exact eq_bot_iff.mp (invariants_restrict_count_leftRegular (G := G) (𝕜 := 𝕜) (E := E)
+    (φ := MonoidHom.id G) Function.injective_id hp') fun g => by simpa using hf g
 
 end Invariants
 

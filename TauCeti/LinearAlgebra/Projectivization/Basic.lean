@@ -38,7 +38,9 @@ The projectivization of a vector space of dimension at most one, such as
 dimension at most one give the same point (`Projectivization.mk_eq_mk_of_mem_of_rank_le_one`).
 So a nonzero singular `2 × 2` matrix has rank one: it kills exactly the vectors of one line and
 sends every other vector into a single line
-(`Projectivization.exists_mk_eq_and_mk_mulVec_eq_of_det_eq_zero`).
+(`Projectivization.exists_mk_eq_and_mk_mulVec_eq_of_det_eq_zero`), so its
+`Projectivization.linearProjection` is defined away from one point and is constant there
+(`Projectivization.exists_linearProjectionDomain_eq_and_linearProjection_eq_of_det_eq_zero`).
 
 The file also records `Projectivization.submodule_map`: the line of the image of a projective
 point under an injective semilinear map is the image of its line, and
@@ -169,6 +171,23 @@ theorem linearProjection_mk [Nonempty (Projectivization K W)] (G : V →ₗ[K] W
   exact (mk_eq_mk_iff K _ _ _ _).2 ⟨a, by simp [← ha, Units.smul_def]⟩
 
 end LinearProjection
+
+open scoped Matrix in
+/-- For a nonzero `2 × 2` matrix `B` of determinant zero, `Projectivization.linearProjection` is
+defined away from a single point `a` and is constant with value `b` there. -/
+theorem exists_linearProjectionDomain_eq_and_linearProjection_eq_of_det_eq_zero {K : Type*}
+    [Field K] {B : Matrix (Fin 2) (Fin 2) K} (hB : B ≠ 0) (hdet : B.det = 0) :
+    ∃ a b : Projectivization K (Fin 2 → K),
+      linearProjectionDomain B.mulVecLin = {a}ᶜ ∧
+        ∀ y ≠ a, linearProjection B.mulVecLin y = b := by
+  obtain ⟨a, b, ha, hb⟩ := exists_mk_eq_and_mk_mulVec_eq_of_det_eq_zero hB hdet
+  have hdom (y : Projectivization K (Fin 2 → K)) :
+      y ∈ linearProjectionDomain B.mulVecLin ↔ y ≠ a := by
+    rw [mem_linearProjectionDomain_iff, Matrix.mulVecLin_apply, Ne, ha y.rep y.rep_ne_zero, mk_rep]
+  refine ⟨a, b, Set.ext hdom, fun y hy ↦ ?_⟩
+  have hBy : B *ᵥ y.rep ≠ 0 := (mem_linearProjectionDomain_iff B.mulVecLin).1 ((hdom y).2 hy)
+  rw [← mk_rep y, linearProjection_mk _ _ hBy]
+  exact hb _ hBy
 
 variable {K : Type*} [Field K] {ι : Type*}
 

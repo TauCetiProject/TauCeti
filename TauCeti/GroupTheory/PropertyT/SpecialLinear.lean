@@ -21,8 +21,9 @@ import TauCeti.Geometry.Manifold.Instances.OnePoint.InvariantMeasure
 import TauCeti.GroupTheory.Amenable.Abelian
 import TauCeti.GroupTheory.Amenable.Extension
 import TauCeti.GroupTheory.Amenable.FreeGroup
-import TauCeti.GroupTheory.HaagerupProperty.Amenable
+import TauCeti.GroupTheory.Amenable.SLTwo
 import TauCeti.GroupTheory.HaagerupProperty.PropertyT
+import TauCeti.GroupTheory.PropertyT.Foelner
 import TauCeti.GroupTheory.SemidirectProduct
 import TauCeti.RepresentationTheory.Continuous.Unitary.SpectralMeasure
 
@@ -32,10 +33,15 @@ import TauCeti.RepresentationTheory.Continuous.Unitary.SpectralMeasure
 Let `G` be a group acting on `ℤ²` through an injective homomorphism `ι : G →* SL(2, ℤ)` and column
 multiplication `TauCeti.slTwoAction`. We prove **Burger's theorem**: the normal subgroup `ℤ²` inside
 `ℤ² ⋊ G` has relative property (T) whenever `G` is nonamenable (equivalently, lacks Følner sets).
-Together with the Haagerup obstruction for amenable semidirect products, this yields the exact
-characterization for subgroups `G ≤ SL(2, ℤ)`:
+Conversely, when `G` has Følner sets, the semidirect product `ℤ² ⋊ ι.range` (which lives in
+`Type 0` and can be lifted into any universe `u`) is amenable and hence has Følner sets, so the
+restricted counting-measure regular representation
+(`Subgroup.not_relativePropertyT_of_hasFoelnerSets`) rules out relative property (T) in every
+Hilbert-space universe `u`. This yields the exact characterization for any group `G` admitting an
+injective homomorphism `ι : G →* SL(2, ℤ)` and in particular for subgroups `G ≤ SL(2, ℤ)`:
 
-`(ℤ² ⋊ G, ℤ²)` has relative property (T) in universe `u` if and only if `G` is not amenable.
+`(ℤ² ⋊ G, ℤ²)` has relative property (T) in universe `u` if and only if `G` lacks Følner sets
+(equivalently, is not amenable when discrete).
 
 Specializing to `G = SL(2, ℤ)` (which contains a rank-two free subgroup by Sanov's theorem and is
 therefore nonamenable) gives the **Kazhdan–Margulis theorem** that `(ℤ² ⋊ SL(2, ℤ), ℤ²)` has
@@ -70,12 +76,18 @@ Let `P` be the spectral projection-valued measure of `ρ|_{ℤ²}` on the compac
 
 ## Main results
 
-* `TauCeti.relativePropertyT_inl_of_injective_of_not_hasFoelnerSets` and
-  `TauCeti.relativePropertyT_inl_of_injective_of_not_amenable`: Burger's theorem for any group
-  admitting an injective homomorphism into `SL(2, ℤ)`.
-* `TauCeti.relativePropertyT_inl_of_not_amenable` and
-  `TauCeti.relativePropertyT_inl_iff_not_amenable`: Burger's theorem and the exact amenability
-  characterization for subgroups `G ≤ SL(2, ℤ)`.
+* `TauCeti.relativePropertyT_inl_of_injective_of_not_hasFoelnerSets`,
+  `TauCeti.not_relativePropertyT_inl_of_injective_of_hasFoelnerSets`,
+  `TauCeti.relativePropertyT_inl_iff_not_hasFoelnerSets_of_injective`,
+  `TauCeti.relativePropertyT_inl_of_injective_of_not_amenable`, and
+  `TauCeti.relativePropertyT_inl_iff_not_amenable_of_injective`: Burger's theorem (sufficiency,
+  necessity, and exact characterizations) for any group admitting an injective homomorphism into
+  `SL(2, ℤ)` in arbitrary group and Hilbert-space universes.
+* `TauCeti.relativePropertyT_inl_of_not_hasFoelnerSets`,
+  `TauCeti.relativePropertyT_inl_iff_not_hasFoelnerSets`,
+  `TauCeti.relativePropertyT_inl_of_not_amenable`, and
+  `TauCeti.relativePropertyT_inl_iff_not_amenable`: Burger's theorem and the exact Følner-set and
+  amenability characterizations for subgroups `G ≤ SL(2, ℤ)`.
 * `TauCeti.not_amenable_slTwoZ` and `TauCeti.relativePropertyT_inl_slTwo`: nonamenability of
   `SL(2, ℤ)` and the Kazhdan–Margulis theorem for `(ℤ² ⋊ SL(2, ℤ), ℤ²)`.
 * `TauCeti.not_hasHaagerupProperty_semidirectProduct_of_not_amenable` and
@@ -700,6 +712,56 @@ theorem relativePropertyT_inl_of_injective_of_not_hasFoelnerSets.{u, v}
   exact hG (hasFoelnerSets_of_injective_sl2z_of_map_smul_eq hι
     (IsProbabilityMeasure.ne_zero (ν₀ : Measure (OnePoint ℝ))) hν₀_inv)
 
+/-- **Burger's theorem (necessity)**: if `G` embeds injectively into `SL(2, ℤ)` and has Følner
+sets, then the normal subgroup `ℤ²` inside `ℤ² ⋊ G` does not have relative property (T) in any
+Hilbert-space universe `u`. -/
+theorem not_relativePropertyT_inl_of_injective_of_hasFoelnerSets.{u, v}
+    {G : Type v} [Group G] {ι : G →* SL(2, ℤ)} (hι : Function.Injective ι)
+    (hG : HasFoelnerSets G) :
+    ¬ (SemidirectProduct.inl (G := G) (φ := slTwoAction.comp ι)).range.RelativePropertyT.{u} := by
+  let Γ := Multiplicative (Fin 2 → ℤ) ⋊[slTwoAction.comp ι] G
+  let Γ₀ := Multiplicative (Fin 2 → ℤ) ⋊[slTwoAction.comp ι.range.subtype] ι.range
+  let eG : G ≃* ι.range := MonoidHom.ofInjective hι
+  let e₀ : Γ ≃* Γ₀ := SemidirectProduct.congr (MulEquiv.refl _) eG fun g ↦ by
+    ext v
+    rfl
+  -- `Γ₀` (in `Type 0`) is amenable as a semidirect product of `ℤ²` by `ι.range`, hence has Følner
+  -- sets.
+  have hF_range : HasFoelnerSets ι.range := eG.symm.hasFoelnerSets_iff.mpr hG
+  have hF₀ : HasFoelnerSets Γ₀ := by
+    let : TopologicalSpace (Multiplicative (Fin 2 → ℤ)) := ⊥
+    have : DiscreteTopology (Multiplicative (Fin 2 → ℤ)) := ⟨rfl⟩
+    let : TopologicalSpace Γ₀ := ⊥
+    have : DiscreteTopology Γ₀ := ⟨rfl⟩
+    have : Amenable ι.range := .of_hasFoelnerSets hF_range
+    have : Amenable Γ₀ := inferInstance
+    exact amenable_iff_hasFoelnerSets.mp this
+  -- Lift `Γ₀` into `Type u` so the counting-measure regular representation lives in `Type u`.
+  let Γu := ULift.{u} Γ₀
+  let eu : Γu ≃* Γ₀ := MulEquiv.ulift
+  have hFu : HasFoelnerSets Γu := eu.hasFoelnerSets_iff.mpr hF₀
+  let φ : Γ →* Γu := eu.symm.toMonoidHom.comp e₀.toMonoidHom
+  have hφ_inj : Function.Injective φ := eu.symm.injective.comp e₀.injective
+  have : Infinite (Multiplicative (Fin 2 → ℤ)) := infinite_multiplicative_fin_two_int
+  let Λ : Subgroup Γ := (SemidirectProduct.inl (G := G) (φ := slTwoAction.comp ι)).range
+  have : Infinite (Λ.map φ) :=
+    Infinite.of_injective
+      (fun x : Multiplicative (Fin 2 → ℤ) ↦ ⟨φ (SemidirectProduct.inl x),
+        ⟨SemidirectProduct.inl x, ⟨x, rfl⟩, rfl⟩⟩)
+      fun x y hxy ↦ SemidirectProduct.inl_injective (hφ_inj (Subtype.ext_iff.mp hxy))
+  intro hT
+  exact Subgroup.not_relativePropertyT_of_hasFoelnerSets hFu (hT.map φ)
+
+/-- **Burger's theorem (Følner characterization)**: for any group `G` admitting an injective
+homomorphism `ι : G →* SL(2, ℤ)`, the normal subgroup `ℤ²` inside `ℤ² ⋊ G` has relative
+property (T) in universe `u` if and only if `G` does not have Følner sets. -/
+theorem relativePropertyT_inl_iff_not_hasFoelnerSets_of_injective.{u, v}
+    {G : Type v} [Group G] {ι : G →* SL(2, ℤ)} (hι : Function.Injective ι) :
+    (SemidirectProduct.inl (G := G) (φ := slTwoAction.comp ι)).range.RelativePropertyT.{u} ↔
+      ¬ HasFoelnerSets G :=
+  ⟨fun hT hG ↦ not_relativePropertyT_inl_of_injective_of_hasFoelnerSets hι hG hT,
+    relativePropertyT_inl_of_injective_of_not_hasFoelnerSets hι⟩
+
 /-- **Burger's theorem**: if a topological group `G` embeds injectively into `SL(2, ℤ)` and is not
 amenable, then the normal subgroup `ℤ²` inside `ℤ² ⋊ G` has relative property (T) in every
 Hilbert-space universe `u`. -/
@@ -709,6 +771,33 @@ theorem relativePropertyT_inl_of_injective_of_not_amenable.{u, v}
     (SemidirectProduct.inl (G := G) (φ := slTwoAction.comp ι)).range.RelativePropertyT.{u} :=
   relativePropertyT_inl_of_injective_of_not_hasFoelnerSets hι
     (mt Amenable.of_hasFoelnerSets hG)
+
+/-- **Burger's theorem (amenability characterization)**: for any discrete group `G` admitting an
+injective homomorphism `ι : G →* SL(2, ℤ)`, the normal subgroup `ℤ²` inside `ℤ² ⋊ G` has
+relative property (T) in universe `u` if and only if `G` is not amenable. -/
+theorem relativePropertyT_inl_iff_not_amenable_of_injective.{u, v}
+    {G : Type v} [Group G] [TopologicalSpace G] [DiscreteTopology G]
+    {ι : G →* SL(2, ℤ)} (hι : Function.Injective ι) :
+    (SemidirectProduct.inl (G := G) (φ := slTwoAction.comp ι)).range.RelativePropertyT.{u} ↔
+      ¬ Amenable G := by
+  rw [relativePropertyT_inl_iff_not_hasFoelnerSets_of_injective hι, amenable_iff_hasFoelnerSets]
+
+/-- **Burger's theorem** for subgroups `G ≤ SL(2, ℤ)` (Følner form): if `G` does not have Følner
+sets, then the pair `(ℤ² ⋊ G, ℤ²)` has relative property (T) in every Hilbert-space universe `u`. -/
+theorem relativePropertyT_inl_of_not_hasFoelnerSets.{u}
+    (G : Subgroup SL(2, ℤ)) (hG : ¬ HasFoelnerSets G) :
+    (SemidirectProduct.inl (G := G)
+      (φ := slTwoAction.comp G.subtype)).range.RelativePropertyT.{u} :=
+  relativePropertyT_inl_of_injective_of_not_hasFoelnerSets G.subtype_injective hG
+
+/-- **Følner characterization of relative property (T) for `(ℤ² ⋊ G, ℤ²)`**: for any subgroup
+`G ≤ SL(2, ℤ)`, the pair `(ℤ² ⋊ G, ℤ²)` has relative property (T) in universe `u` if and only if
+`G` does not have Følner sets. -/
+theorem relativePropertyT_inl_iff_not_hasFoelnerSets.{u} (G : Subgroup SL(2, ℤ)) :
+    (SemidirectProduct.inl (G := G)
+        (φ := slTwoAction.comp G.subtype)).range.RelativePropertyT.{u} ↔
+      ¬ HasFoelnerSets G :=
+  relativePropertyT_inl_iff_not_hasFoelnerSets_of_injective G.subtype_injective
 
 /-- **Burger's theorem** for subgroups `G ≤ SL(2, ℤ)`: if `G` is not amenable, then the pair
 `(ℤ² ⋊ G, ℤ²)` has relative property (T) in every Hilbert-space universe `u`. -/
@@ -724,18 +813,12 @@ theorem relativePropertyT_inl_of_not_amenable.{u}
 theorem relativePropertyT_inl_iff_not_amenable.{u} (G : Subgroup SL(2, ℤ)) :
     (SemidirectProduct.inl (G := G)
         (φ := slTwoAction.comp G.subtype)).range.RelativePropertyT.{u} ↔
-      ¬ Amenable G := by
-  refine ⟨fun hT hAmen ↦ ?_, relativePropertyT_inl_of_not_amenable G⟩
-  let : TopologicalSpace (Multiplicative (Fin 2 → ℤ) ⋊[slTwoAction.comp G.subtype] G) := ⊥
-  have : DiscreteTopology (Multiplicative (Fin 2 → ℤ) ⋊[slTwoAction.comp G.subtype] G) := ⟨rfl⟩
-  have : Infinite (Multiplicative (Fin 2 → ℤ)) := infinite_multiplicative_fin_two_int
-  have : Infinite (SemidirectProduct.inl (G := G) (φ := slTwoAction.comp G.subtype)).range :=
-    SemidirectProduct.infinite_range_inl
-  exact not_hasHaagerupProperty_of_relativePropertyT.{u, 0} hT hasHaagerupProperty_of_amenable
+      ¬ Amenable G :=
+  relativePropertyT_inl_iff_not_amenable_of_injective G.subtype_injective
 
 /-- The modular group `SL(2, ℤ)` is not amenable. -/
 theorem not_amenable_slTwoZ : ¬ Amenable SL(2, ℤ) :=
-  not_amenable_of_injective_freeGroup _ injective_freeGroup_lift_transvection_two
+  not_amenable_slTwo
 
 /-- **Kazhdan–Margulis theorem**: the pair `(ℤ² ⋊ SL(2, ℤ), ℤ²)` has relative property (T) in
 every Hilbert-space universe `u`. -/

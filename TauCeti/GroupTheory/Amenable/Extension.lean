@@ -50,6 +50,8 @@ a discrete group acting with a finite orbit whose point stabilizer is amenable i
   amenable.
 * `TauCeti.Amenable.of_finite_orbit`: a discrete group acting with a finite orbit and amenable
   point stabilizer is amenable.
+* `Subgroup.amenable_iff_of_finiteIndex`: a discrete group is amenable iff a finite-index subgroup
+  of it is amenable.
 
 ## References
 
@@ -232,3 +234,14 @@ theorem Amenable.of_finite_orbit {α : Type*} [MulAction G α] (x : α)
   exact .of_finiteIndex (MulAction.stabilizer G x)
 
 end TauCeti
+
+namespace Subgroup
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
+
+/-- A discrete group is amenable exactly when a finite-index subgroup of it is amenable. -/
+theorem amenable_iff_of_finiteIndex (H : Subgroup G) [H.FiniteIndex] :
+    TauCeti.Amenable G ↔ TauCeti.Amenable H :=
+  ⟨fun _ => inferInstance, fun _ => TauCeti.Amenable.of_finiteIndex H⟩
+
+end Subgroup
