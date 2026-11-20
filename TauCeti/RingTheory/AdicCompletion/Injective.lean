@@ -92,7 +92,7 @@ private theorem exists_ker_evalₐ_le_ker_of_torsionModule
     rw [← Ideal.map_pow, ← ker_evalₐ_eq_map_pow hfg (n + k)]
     exact hb
   have hmem : (b : A) ∈ (LinearMap.ker g).map 𝔟.subtype := by
-    refine Submodule.smul_le.mpr ?_ (hm ⟨hbm, b.2⟩)
+    refine Submodule.smul_le.mpr ?_ (hm ⟨hbm, b.property⟩)
     intro a ha c hc
     have hac : (⟨a * c, 𝔟.mul_mem_left a hc⟩ : 𝔟) = a • ⟨c, hc⟩ := Subtype.ext rfl
     refine ⟨⟨a * c, 𝔟.mul_mem_left a hc⟩, ?_, rfl⟩
@@ -118,7 +118,7 @@ theorem torsionModule_baer (hBaer : Module.Baer R M) :
   let gbar : LinearMap.range p →ₗ[R] M :=
     (LinearMap.ker p).liftQ (g.restrictScalars R) hker ∘ₗ p.quotKerEquivRange.symm.toLinearMap
   let K : Ideal R := (LinearMap.range p).comap (I ^ m).mkQ
-  let q : K →ₗ[R] LinearMap.range p := ((I ^ m).mkQ ∘ₗ K.subtype).codRestrict _ fun x ↦ x.2
+  let q : K →ₗ[R] LinearMap.range p := ((I ^ m).mkQ ∘ₗ K.subtype).codRestrict _ fun x ↦ x.property
   obtain ⟨ψ, hψ⟩ := hBaer K (gbar ∘ₗ q)
   have hy₀ : ψ 1 ∈ Submodule.torsionBySet R M ↑(I ^ m) := by
     rw [Submodule.mem_torsionBySet_iff]
