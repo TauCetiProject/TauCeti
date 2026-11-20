@@ -751,12 +751,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 /-- **Cutoff functions.** There is `C ≥ 0`, depending only on `E`, such that for every `c` and
 `r > 0` there is a smooth function `ρ : E → ℝ` with values in `[0, 1]`, equal to `1` on the closed
 ball of radius `r` about `c` and to `0` off the closed ball of radius `2 r`, whose derivative has
-norm at most `C * r⁻¹`. -/
+norm at most `C * r⁻¹`, is continuous, and vanishes off the closed ball of radius `2 r`. -/
 theorem exists_cutoff_fderiv_bound :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (c : E) (r : ℝ), 0 < r → ∃ (ρ : E → ℝ) (ρ' : E → E →L[ℝ] ℝ),
       (∀ n : ℕ∞, ContDiff ℝ n ρ) ∧ (∀ x, 0 ≤ ρ x ∧ ρ x ≤ 1) ∧ (∀ x ∈ closedBall c r, ρ x = 1) ∧
       (∀ x, 2 * r < dist x c → ρ x = 0) ∧ (∀ x, HasFDerivAt ρ (ρ' x) x) ∧
-      ∀ x, ‖ρ' x‖ ≤ C * r⁻¹ := by
+      (∀ x, ‖ρ' x‖ ≤ C * r⁻¹) ∧ Continuous ρ' ∧ ∀ x, 2 * r < dist x c → ρ' x = 0 := by
   let β : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
   have hβ : Continuous (fderiv ℝ β) := (β.contDiff (n := 1)).continuous_fderiv one_ne_zero
   obtain ⟨C, hC⟩ := hβ.bounded_above_of_compact_support (β.hasCompactSupport.fderiv (𝕜 := ℝ))
@@ -767,7 +767,9 @@ theorem exists_cutoff_fderiv_bound :
   refine ⟨fun x ↦ β (r⁻¹ • (x - c)), fun x ↦
     (fderiv ℝ β (r⁻¹ • (x - c))).comp (r⁻¹ • ContinuousLinearMap.id ℝ E), fun n ↦
     β.contDiff.comp (contDiff_const.smul (contDiff_id.sub contDiff_const)),
-    fun x ↦ ⟨β.nonneg, β.le_one⟩, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x ↦ ?_, fun x ↦ ?_⟩
+    fun x ↦ ⟨β.nonneg, β.le_one⟩, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x ↦ ?_, fun x ↦ ?_,
+    (hβ.comp (continuous_const.smul (continuous_id.sub continuous_const))).clm_comp
+      continuous_const, fun x hx ↦ ?_⟩
   · refine β.one_of_mem_closedBall ?_
     rw [mem_closedBall, dist_zero_right, hnorm]
     exact (inv_mul_le_one₀ hr).2 (mem_closedBall.1 hx)
@@ -783,6 +785,10 @@ theorem exists_cutoff_fderiv_bound :
     refine (norm_smul_le r⁻¹ (ContinuousLinearMap.id ℝ E)).trans ?_
     rw [Real.norm_of_nonneg (inv_nonneg.2 hr.le)]
     exact mul_le_of_le_one_right (inv_nonneg.2 hr.le) ContinuousLinearMap.norm_id_le
+  · dsimp only
+    rw [fderiv_of_notMem_tsupport, ContinuousLinearMap.zero_comp]
+    rw [β.tsupport_eq, mem_closedBall, dist_zero_right, hnorm, not_le, lt_inv_mul_iff₀' hr]
+    exact hx
 
 end ScaledCutoff
 

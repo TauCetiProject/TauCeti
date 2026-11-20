@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.KernelDimension
+public import TauCeti.Analysis.PDE.Vortex.Kernel.Dimension
 public import TauCeti.Analysis.PDE.Vortex.SobolevScale
 import TauCeti.MeasureTheory.Function.L2Space
 
