@@ -8,13 +8,17 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 
 /-!
-# Relations and zero values of the archimedean gamma factors
+# Relations, regularity, and zero values of the archimedean gamma factors
 
 Mathlib defines Deligne's archimedean factors `Gammaℝ s = π ^ (-s / 2) * Gamma (s / 2)` and
-`Gammaℂ s = 2 * (2 * π) ^ (-s) * Gamma s` using total division for the gamma function.
+`Gammaℂ s = 2 * (2 * π) ^ (-s) * Gamma s` using total division for the gamma function, so
+their total zero values are poles of their meromorphic germs.
 
+* `Complex.analyticAt_Gammaℝ_of_ne_zero`, `Complex.analyticAt_Gammaℂ_of_ne_zero`: both factors
+  are analytic wherever they are nonzero.
 * `Complex.Gammaℂ_eq_zero_iff`: the total zero values of `Gammaℂ` occur at the nonpositive
-  integers, complementing `Complex.Gammaℝ_eq_zero_iff`.
+  integers, complementing `Complex.Gammaℝ_eq_zero_iff`; this identifies the exceptional values
+  in finite products of shifted gamma factors.
 * `Complex.two_mul_Gammaℝ_two_mul`: twice the real factor at `2 * z` is `2 ^ z` times `Gammaℂ z`,
   everywhere on `ℂ` including at the poles where both totalized values vanish.
 -/
@@ -22,6 +26,18 @@ Mathlib defines Deligne's archimedean factors `Gammaℝ s = π ^ (-s / 2) * Gamm
 public section
 
 namespace Complex
+
+/-- The real-place gamma factor is analytic wherever it is nonzero. -/
+theorem analyticAt_Gammaℝ_of_ne_zero {s : ℂ} (hs : Gammaℝ s ≠ 0) :
+    AnalyticAt ℂ Gammaℝ s := by
+  simpa only [Pi.inv_def, inv_inv] using
+    (differentiable_Gammaℝ_inv.analyticAt s).inv (inv_ne_zero hs)
+
+/-- The complex-place gamma factor is analytic wherever it is nonzero. -/
+theorem analyticAt_Gammaℂ_of_ne_zero {s : ℂ} (hs : Gammaℂ s ≠ 0) :
+    AnalyticAt ℂ Gammaℂ s := by
+  simpa only [Pi.inv_def, inv_inv] using
+    (differentiable_Gammaℂ_inv.analyticAt s).inv (inv_ne_zero hs)
 
 /-- The total zero values of the complex archimedean factor occur at the nonpositive integers. -/
 theorem Gammaℂ_eq_zero_iff (z : ℂ) : Gammaℂ z = 0 ↔ ∃ n : ℕ, z = -(n : ℂ) := by
