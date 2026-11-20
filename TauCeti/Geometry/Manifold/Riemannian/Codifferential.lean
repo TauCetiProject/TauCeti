@@ -620,22 +620,29 @@ private theorem gradWedge_gradContr_add (f g : M → ℝ) (j : ℕ) (x : M)
     LinearEquiv.symm_apply_apply, ← map_add, h, map_smul, LinearEquiv.apply_symm_apply]
 
 omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- Exterior multiplication by `df` is exterior multiplication by the gradient of `f`, read through
+the identification of forms with the exterior algebra. -/
+private theorem extDerivWedgeₗ_apply_eq_gradWedge (f : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ k)
+    (x : M) : (extDerivWedgeₗ f k α).1 x = gradWedge f k x (α.1 x) := by
+  have hdf : mvfderiv I f x = innerSL ℝ (Manifold.mgradient I f x) := by
+    ext w
+    rw [innerSL_apply_apply, Manifold.inner_mgradient]
+  ext v
+  rw [extDerivWedgeₗ_def, cast_apply, coe_wedge_apply, mextDerivₗ_apply, coe_ofFunction,
+    mextDeriv_ofFunction, hdf]
+  simp only [gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    alternatingFormEquiv_wedgeLeft_apply, LinearEquiv.apply_symm_apply]
+
+omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- The Leibniz rule `d (f α) = f dα + df ∧ α` for smooth forms, with `df ∧ ·` written as exterior
 multiplication by the gradient. -/
 private theorem mextDerivₗ_funSMulₗ_eq_gradWedge (f : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ k)
     (x : M) :
     (mextDerivₗ I k (funSMulₗ f α)).1 x =
       f x • (mextDerivₗ I k α).1 x + gradWedge f k x (α.1 x) := by
-  have hdf : mvfderiv I f x = innerSL ℝ (Manifold.mgradient I f x) := by
-    ext w
-    rw [innerSL_apply_apply, Manifold.inner_mgradient]
-  ext v
-  rw [mextDerivₗ_funSMulₗ, Submodule.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
-    extDerivWedgeₗ_def, cast_apply, coe_wedge_apply, mextDerivₗ_apply, coe_ofFunction,
-    mextDeriv_ofFunction, hdf, add_comm]
-  simp only [coe_funSMulₗ, gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    alternatingFormEquiv_wedgeLeft_apply, LinearEquiv.apply_symm_apply,
-    ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+  rw [mextDerivₗ_funSMulₗ, Submodule.coe_add, Pi.add_apply, extDerivWedgeₗ_apply_eq_gradWedge]
+  simp only [coe_funSMulₗ]
+  exact add_comm _ _
 
 /-- **The Leibniz rule for the codifferential**: `d*(f β) = f d*β - ι_(grad f) β` for a smooth
 function `f` and a smooth `(k + 1)`-form `β`. The commutator `[d*, f] = -ι_(grad f)` is a
@@ -716,16 +723,6 @@ theorem gradInteriorₗ_funSMulₗ (f g : C^∞⟮I, M; ℝ⟯) (β : SmoothForm
   apply Subtype.ext
   rw [coe_gradInteriorₗ, coe_funSMulₗ, coe_funSMulₗ, coe_gradInteriorₗ]
   exact RoughForm.interior_smul_pointwise _ _ β.1
-
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- Exterior multiplication by `df` is exterior multiplication by the gradient of `f`, read through
-the identification of forms with the exterior algebra. -/
-private theorem extDerivWedgeₗ_apply_eq_gradWedge (f : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ k)
-    (x : M) : (extDerivWedgeₗ f k α).1 x = gradWedge f k x (α.1 x) := by
-  have h := congrArg (fun φ : SmoothForm I M ℝ (k + 1) ↦ φ.1 x) (mextDerivₗ_funSMulₗ f α)
-  simp only [Submodule.coe_add, Pi.add_apply, coe_funSMulₗ] at h
-  rw [mextDerivₗ_funSMulₗ_eq_gradWedge] at h
-  exact (add_left_cancel (h.trans (add_comm _ _))).symm
 
 /-- **The Koszul identity** for exterior multiplication by `df` and contraction with `grad g` on
 forms of positive degree: `df ∧ ι_(grad g) α + ι_(grad g) (df ∧ α) = ⟪grad g, grad f⟫ α`. -/

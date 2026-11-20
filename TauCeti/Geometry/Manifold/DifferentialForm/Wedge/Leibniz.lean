@@ -314,11 +314,9 @@ theorem extDerivWedgeₗ_funSMulₗ (f g : C^∞⟮I, M; ℝ⟯) (φ : SmoothFor
     extDerivWedgeₗ f k (funSMulₗ g φ) = funSMulₗ g (extDerivWedgeₗ f k φ) := by
   apply Subtype.ext
   ext x v
-  simp only [extDerivWedgeₗ_apply, coe_funSMulₗ, ContinuousAlternatingMap.smul_apply,
-    smul_eq_mul, RoughForm.wedge_apply, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun σ _ ↦ ?_
-  rw [Units.smul_def, Units.smul_def, zsmul_eq_mul, zsmul_eq_mul]
-  ring
+  simp only [extDerivWedgeₗ_apply, coe_funSMulₗ, RoughForm.wedge_def,
+    RoughForm.wedgeWith_apply', ContinuousAlternatingMap.pairedWedge_smul_right,
+    ContinuousAlternatingMap.smul_apply]
 
 end SmoothForm
 
