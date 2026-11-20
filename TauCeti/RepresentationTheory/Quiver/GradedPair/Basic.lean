@@ -132,7 +132,7 @@ instance : Zero (GradedPair S d) :=
 
 @[simp]
 theorem operator_zero : (0 : GradedPair S d).operator = 0 :=
-  rfl
+  (rfl)
 
 end GradedPair
 
@@ -173,12 +173,12 @@ theorem ext {e f : GradedPairEquiv P Q} (h : ∀ v, e v = f v) : e = f :=
 
 @[simp]
 theorem coe_toLinearEquiv (e : GradedPairEquiv P Q) : ⇑e.toLinearEquiv = e :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem coe_mk (e : S.Carrier ≃ₗ[ℂ] T.Carrier) (h₁ h₂) :
     ⇑(⟨e, h₁, h₂⟩ : GradedPairEquiv P Q) = e :=
-  rfl
+  (rfl)
 
 /-- A graded equivalence of pairs preserves grade membership in both directions. -/
 @[simp]

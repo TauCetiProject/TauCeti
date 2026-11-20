@@ -100,12 +100,8 @@ degree `a`. -/
 theorem grade_eq_span (a : ℤ) :
     S.grade a = Submodule.span ℂ (Pi.basisFun ℂ (Fin S.n) '' {i | S.degree i = a}) := by
   ext v
-  rw [Module.Basis.mem_span_image, mem_grade_iff]
-  refine ⟨fun h i hi ↦ ?_, fun h i hi ↦ ?_⟩
-  · by_contra hne
-    exact (Finsupp.mem_support_iff.1 hi) (by simpa using h i hne)
-  · by_contra hne
-    exact hi (h (Finsupp.mem_support_iff.2 (by simpa using hne)))
+  rw [Module.Basis.mem_span_image, Finsupp.support_subset_iff, mem_grade_iff]
+  simp
 
 /-- The grades of a coordinate presentation form an internal direct sum. -/
 theorem isInternal_grade : DirectSum.IsInternal S.grade := by
@@ -186,11 +182,8 @@ theorem exists_linearEquiv_of_isInternal {V : Type*} [AddCommGroup V] [Module �
   refine ⟨fun hv x hx ↦ ?_, fun hv ↦ ?_⟩
   · obtain ⟨c, j⟩ := x
     exact h.collectedBasis_repr_of_mem_ne _ (Ne.symm hx) hv
-  · have hspan : v ∈ Submodule.span ℂ (b '' {x | x.1 = a}) := by
-      rw [Module.Basis.mem_span_image]
-      intro x hx
-      by_contra hne
-      exact (Finsupp.mem_support_iff.1 hx) (hv x hne)
+  · have hspan : v ∈ Submodule.span ℂ (b '' {x | x.1 = a}) :=
+      (Module.Basis.mem_span_image _).2 (Finsupp.support_subset_iff.2 hv)
     refine Submodule.span_le.2 ?_ hspan
     rintro _ ⟨x, rfl, rfl⟩
     exact h.collectedBasis_mem _ x
