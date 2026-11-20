@@ -15,6 +15,7 @@ import Mathlib.RingTheory.Polynomial.Vieta
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Resultant
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
+import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # Characteristic roots of matrices
@@ -39,6 +40,9 @@ evaluating the resultant formulas `Matrix.det_aeval_eq_resultant` and
 `Matrix.charpoly_aeval_eq_resultant` over the split characteristic polynomial. In particular
 `det (1 - X A)`, the reverse of `χ_A = ∏ (X - λ)`, factors as `∏ (1 - λ X)`.
 
+Over a field, the characteristic roots of an invertible matrix `A⁻¹` are the inverses of those of
+`A`, counted with algebraic multiplicity.
+
 ## Main results
 
 * `Matrix.eval_ne_zero_of_det_aeval_ne_zero`: if `det (p(A)) ≠ 0`, then `p(λ) ≠ 0` for every
@@ -56,6 +60,8 @@ evaluating the resultant formulas `Matrix.det_aeval_eq_resultant` and
 * `Matrix.trace_aeval_eq_sum_roots_charpoly_of_splits`: `tr (p(A)) = ∑ p(λ)`; for `p = X ^ k` the
   trace of `A ^ k` is the `k`-th power sum of the characteristic roots.
 * `Matrix.charpolyRev_eq_prod_roots_charpoly_of_splits`: `det (1 - X A) = ∏ (1 - λ X)`.
+* `Matrix.charpoly_inv_eq_prod_X_sub_C`: if `χ_A = ∏ (X - αᵢ)` for invertible `A`, then
+  `χ_{A⁻¹} = ∏ (X - αᵢ⁻¹)`.
 * `Matrix.coeff_charpolyRev_eq_esymm_roots_charpoly_of_splits`: Vieta's formula for
   `det (1 - X A)`, whose `r`-th coefficient is `(-1) ^ r` times the `r`-th elementary symmetric
   function of the characteristic roots.
@@ -177,6 +183,32 @@ theorem coeff_charpolyRev_eq_esymm_roots_charpoly_of_splits (hA : A.charpoly.Spl
   · rw [coeff_charpolyRev_eq_zero A hr, Multiset.esymm_of_card_lt (hcard ▸ hr), mul_zero]
 
 end Splits
+
+section Inverse
+
+variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K]
+
+/-- **Characteristic roots of the inverse.** If the characteristic polynomial of an invertible
+matrix `A` is `∏ (X - αᵢ)`, then that of `A⁻¹` is `∏ (X - αᵢ⁻¹)`. -/
+theorem charpoly_inv_eq_prod_X_sub_C {A : Matrix n n K} (hA : IsUnit A) {α : n → K}
+    (h : A.charpoly = ∏ i, (X - C (α i))) : A⁻¹.charpoly = ∏ i, (X - C (α i)⁻¹) := by
+  have hdet : A.det = ∏ i, α i := by
+    have hs : A.charpoly.Splits := h ▸ Splits.prod fun i _ ↦ Splits.X_sub_C (α i)
+    rw [det_eq_prod_roots_charpoly_of_splits hs, h, roots_prod_X_sub_C_map,
+      Finset.prod_eq_multiset_prod]
+  have hx : ∏ i, α i ≠ 0 := hdet ▸ ((isUnit_iff_isUnit_det A).1 hA).ne_zero
+  -- `A⁻¹` has characteristic polynomial `(-1)ⁿ det(A)⁻¹ · det(1 - X A)`, and `det(1 - X A)` is
+  -- the reverse `∏ (1 - αᵢ X) = (∏ -αᵢ) ∏ (X - αᵢ⁻¹)` of `∏ (X - αᵢ)`.
+  have hrev := reverse_C_mul_prod_X_sub_C Finset.univ α 1 fun i _ ↦
+    (Finset.prod_ne_zero_iff.1 hx) i (Finset.mem_univ i)
+  have hc : ((-1) ^ Fintype.card n : K) * (∏ i, α i)⁻¹ * ((-1) ^ Fintype.card n * ∏ i, α i) =
+      1 := by
+    rw [mul_mul_mul_comm, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul, inv_mul_cancel₀ hx]
+  rw [C_1, one_mul, one_mul, Finset.prod_neg, Finset.card_univ] at hrev
+  rw [charpoly_inv A hA, ← reverse_charpoly, h, hrev, hdet, Ring.inverse_eq_inv', ← mul_assoc,
+    ← C_1, ← C_neg, ← C_pow, ← C_mul, ← C_mul, hc, C_1, one_mul]
+
+end Inverse
 
 section IsAlgClosed
 
