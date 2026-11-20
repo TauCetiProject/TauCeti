@@ -78,8 +78,10 @@ private theorem integral_log_sum_le_of_pos {α : Type*} [MeasurableSpace α] (μ
   dsimp [c] at hint
   linarith
 
-/-- The integral log-sum inequality. Zero values and zero total masses are allowed. The second
-function must vanish only where the first does, and the cross-logarithm must be integrable. -/
+/-- The integral log-sum inequality. Zero values and zero total masses are allowed. Its proof
+rescales the second function to match the first function's integral, then applies the scalar
+inequality `Real.sub_le_mul_log_sub_mul_log`. The second function must vanish only where the first
+does, and the cross-logarithm must be integrable. -/
 theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
     {f h : α → ℝ} (hf : 0 ≤ᵐ[μ] f) (hh : 0 ≤ᵐ[μ] h)
     (hzero : ∀ᵐ x ∂μ, h x = 0 → f x = 0)
@@ -109,7 +111,8 @@ theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
       exact hFzero (integral_eq_zero_of_ae hfzero)
     exact integral_log_sum_le_of_pos μ hf hh hzero hfi hhi hflog hcross hFpos hHpos
 
-/-- Functional entropy is nonnegative under a probability measure. -/
+/-- Functional entropy is nonnegative under a probability measure for an a.e. nonnegative
+function, when the function and its `x log x` transform are integrable. -/
 theorem entropy_nonneg {α : Type*} [MeasurableSpace α] (μ : Measure α)
     [IsProbabilityMeasure μ] {g : α → ℝ} (hg : 0 ≤ᵐ[μ] g)
     (hgi : Integrable g μ) (hlog : Integrable (fun x ↦ g x * Real.log (g x)) μ) :
@@ -134,7 +137,8 @@ theorem entropy_prod_eq {α β : Type*} [MeasurableSpace α] [MeasurableSpace β
     integral_sub hlog.integral_prod_left hmarg]
   ring
 
-/-- Averaging out one coordinate cannot increase the functional entropy. -/
+/-- Averaging out one coordinate cannot increase functional entropy for an a.e. nonnegative
+function, when the function, its `x log x` transform, and the marginal `x log x` are integrable. -/
 theorem entropy_integral_prod_le {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     (μ : Measure α) (ν : Measure β) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (g : α × β → ℝ) (hnonneg : 0 ≤ᵐ[μ.prod ν] g)
@@ -229,7 +233,10 @@ private theorem integrable_marginal_cross_log {α β : Type*}
         filter_upwards [hy] with x hx
         simp only [norm_mul, Real.norm_eq_abs, abs_of_nonneg hx]
 
-/-- Entropy is convex under mixtures, when the indicated marginal cross-logarithm is integrable. -/
+/-- For an a.e. nonnegative function of positive total mass, entropy is convex under mixtures if
+the function, its `x log x` transform, both marginal `x log x` terms, and the marginal cross-log
+are integrable. The support condition says that a zero marginal forces the function to vanish
+a.e. in that section. -/
 private theorem entropy_integral_le_integral_entropy_of_pos {α β : Type*}
     [MeasurableSpace α] [MeasurableSpace β] (μ : Measure α) (ν : Measure β)
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (g : α × β → ℝ)
@@ -299,8 +306,8 @@ private theorem entropy_integral_le_integral_entropy_of_pos {α β : Type*}
   rw [hsec]
   exact hint
 
-/-- Entropy is convex under mixtures, including when the total mass is zero. The hypotheses
-ensure integrability of both marginal `x log x` terms. -/
+/-- Entropy is convex under mixtures for an a.e. nonnegative function, including when its total
+mass is zero. The hypotheses ensure integrability of both marginal `x log x` terms. -/
 theorem entropy_integral_le_integral_entropy {α β : Type*}
     [MeasurableSpace α] [MeasurableSpace β] (μ : Measure α) (ν : Measure β)
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (g : α × β → ℝ)
@@ -346,7 +353,8 @@ theorem entropy_integral_le_integral_entropy {α β : Type*}
       (ae_section_eq_zero_of_marginal_eq_zero μ ν hnonneg hg)
       (lt_of_le_of_ne htotal (Ne.symm hz))
 
-/-- Product entropy subadditivity under marginal `x log x` integrability hypotheses. -/
+/-- Product entropy subadditivity for an a.e. nonnegative function under marginal `x log x`
+integrability hypotheses. -/
 theorem entropy_prod_le {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     (μ : Measure α) (ν : Measure β) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (g : α × β → ℝ) (hnonneg : 0 ≤ᵐ[μ.prod ν] g)
