@@ -350,19 +350,9 @@ theorem cechComponent_cechReverse {n : ℕ} (k : Fin (n + 1) → ι)
     cechComponent k ((((cechReverse (ModuleCat.{w} R) U).app
       (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f n).hom c) =
       (-1 : ℤ) ^ (n + 1).choose 2 • cechFace k Fin.rev c := by
-  have h := congrArg (fun f ↦ f.hom c)
-    (cechReverse_app_f_π U (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) n k)
-  -- `h` is stated for a general preadditive category; `erw` reads its composites and integer
-  -- multiples of morphisms as those of `ModuleCat`
-  erw [ModuleCat.hom_comp, ModuleCat.hom_zsmul, LinearMap.smul_apply, ModuleCat.hom_comp] at h
-  rw [cechComponent_apply, cechFace_apply, cechComponent_apply]
-  refine h.trans ?_
-  rw [Functor.comp_map, AlgCat.forget₂_module_map]
-  -- both sides agree by definition: the linear map underlying `ModuleCat.ofHom f.hom.toLinearMap`
-  -- is the algebra map `f.hom` by which `cechFace` restricts, and the factors of the Čech complex
-  -- `(Functor.rightOp _).cech` in degree `n` unfold to `∏ᶜ fun j ↦ U (a j)`, the factors of
-  -- `cechComponent`; the second unfolding is not visible to `rw` at reducible transparency
-  rfl
+  rw [cechComponent_eq_sum_of_comp_π_eq (s := {()}) (z := fun _ ↦ (-1) ^ (n + 1).choose 2)
+    (σ := fun _ ↦ Fin.rev) (by rw [Finset.sum_singleton]; exact cechReverse_app_f_π U _ n k),
+    Finset.sum_singleton]
 
 /-- The restrictions of `τ c` along a map `σ` of vertices are the restrictions of `c` along
 `σ ∘ Fin.rev`, times the sign `(-1) ^ (m (m + 1) / 2)` of the reversal of `m + 1` vertices. -/
