@@ -11,6 +11,8 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 import Mathlib.NumberTheory.Padics.ProperSpace
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 import Mathlib.Topology.Homeomorph.Lemmas
+import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # p-adic coordinates on integer-ring ideals
@@ -19,6 +21,12 @@ For a finite compatible extension `K/ℚ_[p]`, any nonzero ideal of `𝒪[K]` is
 `ℤ_[p]`-module of rank `[K : ℚ_[p]]`. Its basis coordinates are homeomorphisms for the
 subspace topology on the ideal and the product topology on the coordinates. These coordinates
 identify the additive lattices that occur as logarithms of deep units.
+
+Freeness of `𝒪[K]` over `ℤ_[p]` also counts its quotients by integers: for `n ≠ 0`,
+`#(𝒪[K] ⧸ n 𝒪[K]) = p ^ ([K : ℚ_[p]] · v_p(n))`, the inverse of the normalized absolute value
+of `n` in `K` (`TauCeti.natCard_integerRing_quotient_span_natCast`). This is the factor
+`p ^ ([K : ℚ_[p]] · v_p(n))` in Tate's local Euler characteristic formula, written as an index
+in `𝒪[K]`.
 
 The scalar structure is a named definition: it transports the existing action of
 `𝒪[ℚ_[p]]` through `Padic.integerRingEquiv`, without adding global module instances.
@@ -32,6 +40,7 @@ public section
 noncomputable section
 
 open ValuativeRel IsNonarchimedeanLocalField Module
+open scoped Pointwise
 
 namespace TauCeti
 
@@ -131,5 +140,22 @@ theorem nonempty_integerIdealEquivPiPadicInt (I : Ideal 𝒪[K]) (hI : I ≠ ⊥
   let _ := integerIdealPadicIntModule K p I
   let b := Module.finBasisOfFinrankEq 𝒪[ℚ_[p]] 𝒪[K] (finrank_integerRing ℚ_[p] K)
   exact ⟨integerIdealEquivPiPadicInt I (I.selfBasis b hI)⟩
+
+variable (p) in
+/-- **The quotient of `𝒪[K]` by a nonzero integer `n`** has `p ^ ([K : ℚ_[p]] · v_p(n))`
+elements, the inverse of the normalized absolute value of `n` in `K`. -/
+theorem natCard_integerRing_quotient_span_natCast {n : ℕ} (hn : n ≠ 0) :
+    Nat.card (𝒪[K] ⧸ Ideal.span {(n : 𝒪[K])}) =
+      p ^ (Module.finrank ℚ_[p] K * padicValNat p n) := by
+  have hspan : (Ideal.span {(n : 𝒪[K])} : Submodule 𝒪[K] 𝒪[K]) =
+      algebraMap 𝒪[ℚ_[p]] 𝒪[K] n • (⊤ : Submodule 𝒪[K] 𝒪[K]) := by
+    rw [map_natCast, ← Submodule.ideal_span_singleton_smul, smul_eq_mul, Ideal.mul_top]
+  have hQ : Nat.card (𝒪[ℚ_[p]] ⧸ Ideal.span {(n : 𝒪[ℚ_[p]])}) = p ^ padicValNat p n := by
+    rw [Nat.card_congr (Ideal.quotientEquiv _ (Ideal.span {(n : ℤ_[p])}) (Padic.integerRingEquiv p)
+      (by rw [Ideal.map_span, Set.image_singleton, map_natCast])).toEquiv,
+      PadicInt.natCard_quotient_span (Nat.cast_ne_zero.mpr hn), PadicInt.valuation_natCast]
+  rw [Nat.card_congr (Submodule.quotEquivOfEq _ _ hspan).toEquiv,
+    Nat.card_congr (QuotSMulTop.restrictScalarsEquiv (n : 𝒪[ℚ_[p]])).toEquiv,
+    QuotSMulTop.natCard_eq_pow_finrank, hQ, finrank_integerRing, ← pow_mul, mul_comm]
 
 end TauCeti
