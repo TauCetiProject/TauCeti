@@ -111,6 +111,12 @@ theorem jet_add (hξ : Differentiable ℝ ξ) (hη : Differentiable ℝ η) :
   funext z
   simp [jet, fderiv_add (hξ z) (hη z)]
 
+/-- The jet of a difference of differentiable maps is the difference of their jets. -/
+theorem jet_sub (hξ : Differentiable ℝ ξ) (hη : Differentiable ℝ η) :
+    jet (ξ - η) = jet ξ - jet η := by
+  funext z
+  simp [jet, fderiv_sub (hξ z) (hη z)]
+
 /-- The jet commutes with scalar multiplication. -/
 theorem jet_smul (c : ℝ) (ξ : ℝ × ℝ → V) : jet (c • ξ) = c • jet ξ := by
   funext z
