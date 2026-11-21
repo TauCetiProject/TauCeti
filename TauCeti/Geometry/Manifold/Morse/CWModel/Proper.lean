@@ -466,16 +466,6 @@ theorem IsMorse.exists_cwComplex_subcomplex_homotopyEquiv_of_manifoldMorseIndex_
     hWfin, RelCWComplex.finiteDimensional_of_isEmpty_cell_gt (univ : Set X) hempty, hhW, hsymm,
     hcell, hWcell, hempty, hWempty⟩
 
-/-- Finite-dimensional core of `TauCeti.IsMorse.exists_cwComplex_homotopyEquiv`. -/
-private theorem IsMorse.exists_cwComplex_homotopyEquiv_of_finiteDimensional (hf : IsMorse I f)
-    (hp : IsProperMap f) (hbdd : BddBelow (range f)) :
-    ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
-      Nonempty (M ≃ₕ X) ∧ ∀ m, Nonempty (cell (univ : Set X) m ≃
-        ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m}) := by
-  obtain ⟨-, -, -, -, X, _, _, _, H, e, -⟩ :=
-    hf.exists_cwComplex_homotopyEquiv_subcomplex_sublevel hp hbdd
-  exact ⟨X, _, ‹_›, ‹_›, ⟨H.symm⟩, fun m ↦ ⟨e m⟩⟩
-
 omit [FiniteDimensional ℝ E] in
 /-- **Index-bounded CW model of a proper Morse function.** If `f` is a proper, bounded-below Morse
 function on a boundaryless manifold `M` whose critical points all have Morse index at most `d`,
@@ -506,19 +496,9 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv (hf : IsMorse I f) (hp : IsProper
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       Nonempty (M ≃ₕ X) ∧ ∀ m, Nonempty (cell (univ : Set X) m ≃
         ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m}) := by
-  rcases isEmpty_or_nonempty M with _ | hM
-  · refine ⟨PEmpty.{u + 1}, _, inferInstance, inferInstance,
-      ⟨Homeomorph.empty.toHomotopyEquiv⟩, fun m ↦ ?_⟩
-    have : IsEmpty (cell (univ : Set PEmpty.{u + 1}) m) := ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
-    exact ⟨Equiv.equivOfIsEmpty _ _⟩
-  · obtain ⟨x₀⟩ := hM
-    obtain ⟨a, K, -, htop, hreg, hK, -, -⟩ := hf.exists_regular_sublevel_exhaustion hp hbdd
-    obtain ⟨n, hn⟩ := (htop.eventually_ge_atTop (f x₀)).exists
-    have : Nonempty {x | f x ≤ a n} := ⟨⟨x₀, hn⟩⟩
-    have hcomp : IsCompact (f ⁻¹' Iic (a n)) := hK n ▸ K.isCompact n
-    have : FiniteDimensional ℝ E := finiteDimensional_of_isCompact_sublevel (I := I)
-      hf.contMDiff.continuous hcomp (hreg n)
-    exact hf.exists_cwComplex_homotopyEquiv_of_finiteDimensional hp hbdd
+  obtain ⟨_, X, instTop, instT2, instCW, _, h, _, -, -, -, -, -, -, -, -, -, -, hcell, -⟩ :=
+    hf.exists_cwComplex_subcomplex_homotopyEquiv hp hbdd
+  exact ⟨X, instTop, instT2, instCW, ⟨h.symm⟩, hcell⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- **The finite CW model of a proper Morse function with finitely many critical points.** Let `f`

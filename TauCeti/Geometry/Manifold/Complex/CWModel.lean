@@ -675,16 +675,10 @@ theorem exists_cwComplex_homotopyEquiv_affineZeroLocus {σ : Type u} {ι : Type*
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       RelCWComplex.FiniteDimensional (univ : Set X) ∧ Nonempty (affineZeroLocus p ≃ₕ X) ∧
       ∀ m, Fintype.card σ - Fintype.card ι < m → IsEmpty (cell (univ : Set X) m) := by
-  let _ := affineZeroLocusChartedSpace hp
-  have := isManifold_affineZeroLocus hp ∞
-  obtain ⟨X, instTop, instT2, instCW, hfd, h, hempty⟩ :=
-    exists_cwComplex_homotopyEquiv_of_isClosedEmbedding
-      ((contMDiff_toLp_coe_affineZeroLocus hp ∞).mdifferentiable (by simp))
-      (injective_mvfderiv_toLp_coe_affineZeroLocus hp)
-      ((EuclideanSpace.equiv σ ℂ).symm.toHomeomorph.isClosedEmbedding.comp
-        (isClosed_affineZeroLocus p).isClosedEmbedding_subtypeVal)
-  rw [Module.finrank_fin_fun ℂ] at hempty
-  exact ⟨X, instTop, instT2, instCW, hfd, h, hempty⟩
+  obtain ⟨_, _, X, instTop, instT2, instCW, _, h, _, -, -, -, -, -, -, -, hfd, -, -, -, -, hempty,
+      -⟩ :=
+    exists_cwComplex_subcomplex_homotopyEquiv_affineZeroLocus hp
+  exact ⟨X, instTop, instT2, instCW, hfd, ⟨h.symm⟩, hempty⟩
 
 /-- Every smooth affine complete intersection over `ℂ` has CW type. -/
 theorem cwType_affineZeroLocus {σ : Type u} {ι : Type*} [Fintype σ] [Finite ι]
