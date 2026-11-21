@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.GroupTheory.PresentedGroup
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
 import Mathlib.Algebra.Group.Equiv.Opposite
@@ -80,6 +81,9 @@ the finite-rank groups `Stₙ(R)` along the index inclusions `Fin m ↪ Fin n`.
   `Stₙ(R)` over `n : ℕ`.
 * `TauCeti.SteinbergGroup.range_toStableGL`: the image of `toStableGL R` in `GL_∞(R)` is
   `TauCeti.StableGeneralLinearGroup.elementarySubgroup R`.
+* `TauCeti.SteinbergGroup.range_toStableGL_eq_ker_abelianizationOf`,
+  `TauCeti.SteinbergGroup.mulExact_toStableGL_abelianizationOf`: exactness at `GL_∞(R)` of
+  `1 → K₂(R) → St(R) → GL_∞(R) → K₁(R) → 1`.
 
 ## References
 
@@ -640,13 +644,20 @@ theorem ker_toElementarySubgroup :
   simp [MonoidHom.mem_ker, Subtype.ext_iff]
 
 /-- The projection `St_ι(R) →* GL ι R` is natural in ring homomorphisms. -/
+@[simp]
 theorem toGL_map (f : R →+* S) (z : IndexedSteinbergGroup ι R) :
     toGL (map f z) = Units.map (f.mapMatrix (m := ι)).toMonoidHom (toGL z) := by
   have hhom : (toGL (ι := ι) (R := S)).comp (map f) =
       (Units.map (f.mapMatrix (m := ι)).toMonoidHom).comp toGL := by
     ext i j hij a
-    simp [coe_transvectionUnit_eq_one_add_single, Matrix.one_apply, Matrix.single_apply]
+    simp [RingHom.unitsMap_mapMatrix_transvectionUnit]
   exact DFunLike.congr_fun hhom z
+
+/-- The projection `St_ι(R) →* E_ι(R)` is natural in ring homomorphisms. -/
+@[simp]
+theorem toElementarySubgroup_map (f : R →+* S) (z : IndexedSteinbergGroup ι R) :
+    toElementarySubgroup (map f z) = f.elementarySubgroupMap (toElementarySubgroup z) :=
+  Subtype.ext (by simp)
 
 /-- Reindexing the Steinberg group along `e : ι ≃ κ` corresponds under `toGL` to `e.reindexGL R`. -/
 theorem toGL_congrIndex [Fintype κ] [DecidableEq κ] (e : ι ≃ κ)
@@ -923,7 +934,24 @@ theorem range_toStableGL :
     obtain ⟨z, rfl⟩ := hu
     exact ⟨ofFin R n z, toStableGL_ofFin n z⟩
 
+variable (R) in
+/-- Exactness at `GL_∞(R)` of `1 → K₂(R) → St(R) → GL_∞(R) → K₁(R) → 1`: the image of
+`St(R) →* GL_∞(R)` equals the kernel of the abelianization projection `GL_∞(R) →* K₁(R)`. -/
+theorem range_toStableGL_eq_ker_abelianizationOf :
+    (toStableGL R).range =
+      (Group.Abelianization.of : StableGeneralLinearGroup R →* AlgebraicK1 R).ker :=
+  range_toStableGL.trans AlgebraicK1.ker_of.symm
+
+variable (R) in
+/-- Exactness at `GL_∞(R)` of `1 → K₂(R) → St(R) → GL_∞(R) → K₁(R) → 1`: `toStableGL R` and
+`Group.Abelianization.of` form an exact pair. -/
+theorem mulExact_toStableGL_abelianizationOf :
+    Function.MulExact (toStableGL R)
+      (Group.Abelianization.of : StableGeneralLinearGroup R →* AlgebraicK1 R) :=
+  MonoidHom.mulExact_iff.mpr (range_toStableGL_eq_ker_abelianizationOf R).symm
+
 /-- The projection `St(R) →* GL_∞(R)` is natural in ring homomorphisms. -/
+@[simp]
 theorem toStableGL_map (f : R →+* S) (z : SteinbergGroup R) :
     toStableGL S (IndexedSteinbergGroup.map f z) =
       StableGeneralLinearGroup.map f (toStableGL R z) := by
@@ -958,6 +986,13 @@ theorem ker_toElementarySubgroup :
     (toElementarySubgroup R).ker = (toStableGL R).ker := by
   ext z
   simp [MonoidHom.mem_ker, Subtype.ext_iff]
+
+/-- The projection `St(R) →* E_∞(R)` is natural in ring homomorphisms. -/
+@[simp]
+theorem toElementarySubgroup_map (f : R →+* S) (z : SteinbergGroup R) :
+    toElementarySubgroup S (IndexedSteinbergGroup.map f z) =
+      StableGeneralLinearGroup.elementarySubgroupMap f (toElementarySubgroup R z) :=
+  Subtype.ext (by simp)
 
 end ToStableGL
 
