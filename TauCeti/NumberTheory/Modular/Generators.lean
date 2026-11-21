@@ -133,6 +133,12 @@ theorem coe_S_mul_coe_U_inv_mul_coe_S :
     _root_.mul_inv_rev, inv_inv, coe_S_inv, ← mul_assoc (S : PSL(2, ℤ)) T S,
     _root_.Matrix.ProjectiveSpecialLinearGroup.mul_coe_S_mul_coe_S]
 
+/-- In `PSL(2, ℤ)`, `T⁻¹ * S = R⁻¹` (where `R = S * T`). -/
+theorem coe_T_inv_mul_S_eq_coe_R_inv :
+    ((T⁻¹ * S : SL(2, ℤ)) : PSL(2, ℤ)) = (R : PSL(2, ℤ))⁻¹ := by
+  rw [R_def, QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv,
+    _root_.mul_inv_rev, coe_S_inv]
+
 /-- The projective class of `R` has exact order three. -/
 @[simp]
 theorem orderOf_coe_R : orderOf (R : PSL(2, ℤ)) = 3 := by

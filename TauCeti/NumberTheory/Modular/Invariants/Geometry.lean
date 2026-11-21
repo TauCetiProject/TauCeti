@@ -9,19 +9,19 @@ public import Mathlib.Data.Nat.Totient
 public import Mathlib.NumberTheory.ModularForms.Cusps
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Genus
 public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
+public import TauCeti.Analysis.Complex.Fuchsian.Compactification.FiniteCWType
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.RiemannHurwitz
 public import TauCeti.NumberTheory.Modular.Invariants.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Elliptic.Gamma0
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Projective
 public import TauCeti.NumberTheory.ModularForms.Norm.Cusps
 import TauCeti.Analysis.Complex.Fuchsian.Compactification.RamificationDegree
-import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Cofinite
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Signature
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
-import TauCeti.Geometry.Manifold.Complex.FiniteCWType
 import TauCeti.NumberTheory.Modular.ConjugateTranslation
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Cusp.Count
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 
 /-!
 # Geometric comparison of modular-triple invariants
@@ -66,43 +66,6 @@ open scoped MatrixGroups
 namespace TauCeti.ModularGroup
 
 variable {n : ℕ}
-
-/-! ### Effective image in `PSL(2, ℝ)` and finite-CW compactification -/
-
-/-- The effective image in `PSL(2, ℝ)` of `Γ'.liftSL` equals `Γ'.map psl2zToPSL2R`. -/
-theorem map_liftSL_sl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ)) :
-    Γ'.liftSL.map sl2zToPSL2R = Γ'.map psl2zToPSL2R := by
-  have hcomp : psl2zToPSL2R.comp (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))) = sl2zToPSL2R :=
-    MonoidHom.ext psl2zToPSL2R_mk
-  rw [← hcomp, ← Subgroup.map_map, Subgroup.map_liftSL]
-
-/-- The relative index of `Γ'.map psl2zToPSL2R` in `psl2zToPSL2R.range` equals `Γ'.index`. -/
-theorem relIndex_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ)) :
-    (Γ'.map psl2zToPSL2R).relIndex psl2zToPSL2R.range = Γ'.index := by
-  rw [← map_liftSL_sl2zToPSL2R, Subgroup.relIndex_map_sl2zToPSL2R,
-    Subgroup.withCenter_eq_self_iff.mpr (Subgroup.center_le_liftSL Γ'), Subgroup.index_liftSL]
-
-/-- The image in `PSL(2, ℝ)` of a finite-index `Γ' ≤ PSL(2, ℤ)` has finite relative index in
-`psl2zToPSL2R.range`. -/
-theorem isFiniteRelIndex_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ)) [Γ'.FiniteIndex] :
-    (Γ'.map psl2zToPSL2R).IsFiniteRelIndex psl2zToPSL2R.range :=
-  ⟨(relIndex_map_psl2zToPSL2R Γ').symm ▸ Subgroup.FiniteIndex.index_ne_zero⟩
-
-/-- The image in `PSL(2, ℝ)` of a finite-index subgroup of `PSL(2, ℤ)` is cofinite. -/
-theorem isCofinite_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ)) [Γ'.FiniteIndex] :
-    (Γ'.map psl2zToPSL2R).IsCofinite := by
-  rw [← map_liftSL_sl2zToPSL2R]; exact Γ'.liftSL.isCofinite_map_sl2zToPSL2R
-
-/-- The compactified modular curve `X(Γ')` of a finite-index `Γ' ≤ PSL(2, ℤ)` is compact. -/
-theorem compactSpace_compactifiedQuotient_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ))
-    [Γ'.FiniteIndex] : CompactSpace (Γ'.map psl2zToPSL2R).CompactifiedQuotient :=
-  (isCofinite_map_psl2zToPSL2R Γ').compactSpace_compactifiedQuotient
-
-/-- The compactified modular curve `X(Γ')` of a finite-index `Γ' ≤ PSL(2, ℤ)` has finite CW type. -/
-instance finiteCWType_compactifiedQuotient_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ))
-    [Γ'.FiniteIndex] : FiniteCWType (Γ'.map psl2zToPSL2R).CompactifiedQuotient :=
-  have := compactSpace_compactifiedQuotient_map_psl2zToPSL2R Γ'
-  inferInstance
 
 /-! ### Cusp widths -/
 
@@ -247,10 +210,6 @@ theorem natCast_minimalPeriod_permT_eq_cuspDatum_width (Γ' : Subgroup PSL(2, �
 
 /-! ### Cusp orbits -/
 
-private theorem psl2zToPSL2R_smul_boundary (a : SL(2, ℤ)) (c : OnePoint ℝ) :
-    psl2zToPSL2R (a : PSL(2, ℤ)) • c = Matrix.SpecialLinearGroup.mapGL ℝ a • c := by
-  rw [psl2zToPSL2R_mk, sl2zToPSL2R_apply, OnePoint.pslMk_smul]; rfl
-
 private noncomputable def cosetRep {Γ' : Subgroup PSL(2, ℤ)} (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
     (x : Fin n) : PSL(2, ℤ) := Quotient.out (e.symm x)
 
@@ -260,59 +219,81 @@ private theorem coe_cosetRep {Γ' : Subgroup PSL(2, ℤ)} (e : PSL(2, ℤ) ⧸ �
 private theorem apply_cosetRep {Γ' : Subgroup PSL(2, ℤ)} (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) (x : Fin n) :
     e (cosetRep e x : PSL(2, ℤ) ⧸ Γ') = x := by rw [coe_cosetRep, e.apply_symm_apply]
 
+private theorem cuspOrbitOfSL2Z_eq_iff_sameCycle (Γ' : Subgroup PSL(2, ℤ))
+    (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) (γ₁ γ₂ : SL(2, ℤ)) :
+    letI := Γ'.finiteIndex_of_equiv e
+    Γ'.liftSL.cuspOrbitOfSL2Z γ₁⁻¹ = Γ'.liftSL.cuspOrbitOfSL2Z γ₂⁻¹ ↔
+      SameCycle (permT Γ' e) (e ((γ₁ : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ'))
+        (e ((γ₂ : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) := by
+  let : Γ'.FiniteIndex := Γ'.finiteIndex_of_equiv e
+  rw [Γ'.liftSL.cuspOrbitOfSL2Z_eq_iff, inv_inv]
+  constructor
+  · rintro ⟨h, hh, hc0⟩
+    obtain ⟨k, hk⟩ : ∃ k : ℤ, ((γ₁ * h * γ₂⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) =
+        (_root_.ModularGroup.T : PSL(2, ℤ)) ^ k := by
+      rcases eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hc0 with hT | hT
+      · exact ⟨_, by rw [hT, QuotientGroup.mk_zpow]⟩
+      · exact ⟨_, by rw [hT, mk_neg, QuotientGroup.mk_zpow]⟩
+    refine ⟨-k, ?_⟩
+    rw [permT_zpow_apply, e.apply_eq_iff_eq, QuotientGroup.eq]
+    rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv] at hk
+    rw [show ((_root_.ModularGroup.T : PSL(2, ℤ)) ^ (-k) * (γ₁ : PSL(2, ℤ)))⁻¹ *
+        (γ₂ : PSL(2, ℤ)) = (h : PSL(2, ℤ)) by
+      rw [_root_.mul_inv_rev, _root_.zpow_neg, inv_inv, mul_assoc, ← hk]; group]
+    exact Subgroup.mem_liftSL.mp hh
+  · rintro ⟨k, hk⟩
+    rw [permT_zpow_apply, e.apply_eq_iff_eq, QuotientGroup.eq] at hk
+    refine ⟨(_root_.ModularGroup.T ^ k * γ₁)⁻¹ * γ₂, ?_, ?_⟩
+    · rwa [Subgroup.mem_liftSL, QuotientGroup.mk_mul, QuotientGroup.mk_inv,
+        QuotientGroup.mk_mul, QuotientGroup.mk_zpow]
+    · rw [show γ₁ * ((_root_.ModularGroup.T ^ k * γ₁)⁻¹ * γ₂) * γ₂⁻¹ =
+          _root_.ModularGroup.T ^ (-k) by rw [_root_.mul_inv_rev, _root_.zpow_neg]; group,
+        _root_.ModularGroup.coe_T_zpow]; rfl
+
+private def permTCycleFuchsianCuspMap (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+    letI := Γ'.finiteIndex_of_equiv e
+    Quotient (SameCycle.setoid (permT Γ' e)) → (Γ'.liftSL.map sl2zToPSL2R).CuspOrbit :=
+  letI := Γ'.finiteIndex_of_equiv e
+  Quotient.lift (fun x ↦ Γ'.liftSL.cuspOrbitOfSL2Z (Quotient.out (cosetRep e x))⁻¹) fun x y h ↦ by
+    have hrep (z : Fin n) :
+        e (((Quotient.out (cosetRep e z) : SL(2, ℤ)) : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ') = z := by
+      have hout : ((Quotient.out (cosetRep e z) : SL(2, ℤ)) : PSL(2, ℤ)) = cosetRep e z :=
+        Quotient.out_eq _
+      rw [hout, apply_cosetRep]
+    rw [cuspOrbitOfSL2Z_eq_iff_sameCycle, hrep, hrep]
+    exact h
+
+private theorem permTCycleFuchsianCuspMap_bijective (Γ' : Subgroup PSL(2, ℤ))
+    (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+    letI := Γ'.finiteIndex_of_equiv e
+    Function.Bijective (permTCycleFuchsianCuspMap Γ' e) := by
+  let : Γ'.FiniteIndex := Γ'.finiteIndex_of_equiv e
+  have hrep (z : Fin n) :
+      e (((Quotient.out (cosetRep e z) : SL(2, ℤ)) : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ') = z := by
+    have hout : ((Quotient.out (cosetRep e z) : SL(2, ℤ)) : PSL(2, ℤ)) = cosetRep e z :=
+      Quotient.out_eq _
+    rw [hout, apply_cosetRep]
+  refine ⟨fun a b hab ↦ ?_, fun C ↦ ?_⟩
+  · induction a using Quotient.inductionOn with | h x =>
+    induction b using Quotient.inductionOn with | h y =>
+    rw [permTCycleFuchsianCuspMap, Quotient.lift_mk, Quotient.lift_mk,
+      cuspOrbitOfSL2Z_eq_iff_sameCycle, hrep, hrep] at hab
+    exact Quotient.sound hab
+  · obtain ⟨γ, rfl⟩ := Γ'.liftSL.cuspOrbitOfSL2Z_surjective C
+    let x : Fin n := e (((γ⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')
+    refine ⟨⟦x⟧, ?_⟩
+    rw [permTCycleFuchsianCuspMap, Quotient.lift_mk, ← inv_inv γ,
+      cuspOrbitOfSL2Z_eq_iff_sameCycle, hrep]
+
 /-- **Cusp orbits via `permT`-cycles.** The cycles of `permT Γ' e` are in canonical bijection with
 the Fuchsian cusp orbits `(Γ'.map psl2zToPSL2R).CuspOrbit`: the cycle of `e (g Γ')` maps to the
 cusp orbit of `psl2zToPSL2R g⁻¹ • ∞`. -/
 def permTCycleEquivFuchsianCuspOrbit (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     Quotient (SameCycle.setoid (permT Γ' e)) ≃ (Γ'.map psl2zToPSL2R).CuspOrbit :=
-  haveI : Γ'.FiniteIndex := Γ'.finiteIndex_of_equiv e
-  have key (γ₁ γ₂ : SL(2, ℤ)) :
-      Γ'.liftSL.cuspOrbitOfSL2Z γ₁⁻¹ = Γ'.liftSL.cuspOrbitOfSL2Z γ₂⁻¹ ↔
-        SameCycle (permT Γ' e) (e ((γ₁ : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ'))
-          (e ((γ₂ : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) := by
-    rw [Γ'.liftSL.cuspOrbitOfSL2Z_eq_iff, inv_inv]
-    constructor
-    · rintro ⟨h, hh, hc0⟩
-      obtain ⟨k, hk⟩ : ∃ k : ℤ, ((γ₁ * h * γ₂⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) =
-          (_root_.ModularGroup.T : PSL(2, ℤ)) ^ k := by
-        rcases eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hc0 with hT | hT
-        · exact ⟨_, by rw [hT, QuotientGroup.mk_zpow]⟩
-        · exact ⟨_, by rw [hT, mk_neg, QuotientGroup.mk_zpow]⟩
-      refine ⟨-k, ?_⟩
-      rw [permT_zpow_apply, e.apply_eq_iff_eq, QuotientGroup.eq]
-      rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv] at hk
-      rw [show ((_root_.ModularGroup.T : PSL(2, ℤ)) ^ (-k) * (γ₁ : PSL(2, ℤ)))⁻¹ *
-          (γ₂ : PSL(2, ℤ)) = (h : PSL(2, ℤ)) by
-        rw [_root_.mul_inv_rev, _root_.zpow_neg, inv_inv, mul_assoc, ← hk]; group]
-      exact Subgroup.mem_liftSL.mp hh
-    · rintro ⟨k, hk⟩
-      rw [permT_zpow_apply, e.apply_eq_iff_eq, QuotientGroup.eq] at hk
-      refine ⟨(_root_.ModularGroup.T ^ k * γ₁)⁻¹ * γ₂, ?_, ?_⟩
-      · rwa [Subgroup.mem_liftSL, QuotientGroup.mk_mul, QuotientGroup.mk_inv,
-          QuotientGroup.mk_mul, QuotientGroup.mk_zpow]
-      · rw [show γ₁ * ((_root_.ModularGroup.T ^ k * γ₁)⁻¹ * γ₂) * γ₂⁻¹ =
-            _root_.ModularGroup.T ^ (-k) by rw [_root_.mul_inv_rev, _root_.zpow_neg]; group,
-          _root_.ModularGroup.coe_T_zpow]; rfl
-  let toFunAux (x : Fin n) : (Γ'.liftSL.map sl2zToPSL2R).CuspOrbit :=
-    Γ'.liftSL.cuspOrbitOfSL2Z (Quotient.out (cosetRep e x))⁻¹
-  have htoFunAux_eq (x y : Fin n) : toFunAux x = toFunAux y ↔ SameCycle (permT Γ' e) x y := by
-    simpa only [Quotient.out_eq, apply_cosetRep] using
-      key (Quotient.out (cosetRep e x)) (Quotient.out (cosetRep e y))
-  (Equiv.ofBijective (Quotient.lift toFunAux fun _ _ h ↦ (htoFunAux_eq _ _).mpr h)
-    ⟨fun a b hab ↦ by
-      induction a using Quotient.inductionOn with | h x =>
-      induction b using Quotient.inductionOn with | h y =>
-      exact Quotient.sound ((htoFunAux_eq x y).mp hab),
-    fun C ↦ by
-      obtain ⟨γ, rfl⟩ := Γ'.liftSL.cuspOrbitOfSL2Z_surjective C
-      let x : Fin n := e (((γ⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')
-      refine ⟨⟦x⟧, ?_⟩
-      change toFunAux x = _
-      have hrep : ((Quotient.out (cosetRep e x) : SL(2, ℤ)) : PSL(2, ℤ)) = cosetRep e x :=
-        Quotient.out_eq _
-      rw [← inv_inv γ]
-      exact (key (Quotient.out (cosetRep e x)) γ⁻¹).mpr (by rw [hrep, apply_cosetRep])⟩).trans
-    (Equiv.cast (congrArg Subgroup.CuspOrbit (map_liftSL_sl2zToPSL2R Γ')))
+  letI := Γ'.finiteIndex_of_equiv e
+  (Equiv.ofBijective (permTCycleFuchsianCuspMap Γ' e)
+      (permTCycleFuchsianCuspMap_bijective Γ' e)).trans
+    (Equiv.cast (congrArg Subgroup.CuspOrbit Γ'.map_liftSL_sl2zToPSL2R))
 
 /-- Evaluating `permTCycleEquivFuchsianCuspOrbit` on the cycle of `e (g Γ')` gives the Fuchsian
 cusp orbit of `psl2zToPSL2R g⁻¹ • ∞`. -/
@@ -322,14 +303,15 @@ theorem permTCycleEquivFuchsianCuspOrbit_mk (Γ' : Subgroup PSL(2, ℤ))
         ⟦e (g : PSL(2, ℤ) ⧸ Γ')⟧ : (Γ'.map psl2zToPSL2R).CuspOrbit) :
         (Γ'.map psl2zToPSL2R).BoundaryOrbit) =
       Quotient.mk'' (psl2zToPSL2R g⁻¹ • (∞ : OnePoint ℝ)) := by
-  have : Γ'.FiniteIndex := Γ'.finiteIndex_of_equiv e
+  let : Γ'.FiniteIndex := Γ'.finiteIndex_of_equiv e
   obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective g
   have hcast : ∀ {G₁ G₂ : Subgroup PSL(2, ℝ)} (h : G₁ = G₂) (C : G₁.CuspOrbit) (c : OnePoint ℝ),
       (C : G₁.BoundaryOrbit) = Quotient.mk'' c →
         ((Equiv.cast (congrArg Subgroup.CuspOrbit h) C : G₂.CuspOrbit) : G₂.BoundaryOrbit) =
           Quotient.mk'' c := by
     rintro G _ rfl C c hC; exact hC
-  refine hcast (map_liftSL_sl2zToPSL2R Γ') _ _ ?_
+  rw [permTCycleEquivFuchsianCuspOrbit, Equiv.trans_apply]
+  refine hcast Γ'.map_liftSL_sl2zToPSL2R _ _ ?_
   set γ₀ : SL(2, ℤ) := Quotient.out (cosetRep e (e ((γ : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')))
   have hγ₀ : (γ₀ : PSL(2, ℤ)) = cosetRep e (e ((γ : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) :=
     Quotient.out_eq _
@@ -338,8 +320,8 @@ theorem permTCycleEquivFuchsianCuspOrbit_mk (Γ' : Subgroup PSL(2, ℤ))
     exact QuotientGroup.eq.mp (by rw [coe_cosetRep, e.symm_apply_apply])
   have horb : Γ'.liftSL.cuspOrbitOfSL2Z γ₀⁻¹ = Γ'.liftSL.cuspOrbitOfSL2Z γ⁻¹ :=
     (Γ'.liftSL.cuspOrbitOfSL2Z_eq_iff _ _).mpr ⟨γ₀⁻¹ * γ, heq, by simp⟩
-  change (Γ'.liftSL.cuspOrbitOfSL2Z γ₀⁻¹ : (Γ'.liftSL.map sl2zToPSL2R).BoundaryOrbit) = _
-  rw [horb, Subgroup.cuspOrbitOfSL2Z_val, ← QuotientGroup.mk_inv, psl2zToPSL2R_mk]
+  rw [Equiv.ofBijective_apply, permTCycleFuchsianCuspMap, Quotient.lift_mk, horb,
+    Subgroup.cuspOrbitOfSL2Z_val, ← QuotientGroup.mk_inv, psl2zToPSL2R_mk]
 
 /-- The combinatorial cusp count equals the number of Fuchsian cusp orbits of
 `Γ'.map psl2zToPSL2R`. -/
@@ -357,7 +339,7 @@ private theorem isCuspPoint_map_psl2zToPSL2R_iff_isCusp (Γ' : Subgroup PSL(2, �
     rw [← Subgroup.index_comap,
       Subgroup.comap_map_eq_self_of_injective Matrix.SpecialLinearGroup.mapGL_injective]
     exact Subgroup.FiniteIndex.index_ne_zero
-  rw [← map_liftSL_sl2zToPSL2R, Γ'.liftSL.isCuspPoint_map_sl2zToPSL2R_iff_rat,
+  rw [← Γ'.map_liftSL_sl2zToPSL2R, Γ'.liftSL.isCuspPoint_map_sl2zToPSL2R_iff_rat,
     isCusp_iff_of_relIndex_ne_zero hle hrel, isCusp_SL2Z_iff]
 
 /-- **Fuchsian vs. Mathlib cusp orbits.** For a finite-index `Γ' ≤ PSL(2, ℤ)`, the Fuchsian
@@ -372,11 +354,11 @@ def fuchsianCuspOrbitEquivCuspOrbits (Γ' : Subgroup PSL(2, ℤ)) [Γ'.FiniteInd
       obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective g
       exact ⟨Matrix.SpecialLinearGroup.mapGL ℝ γ,
         Subgroup.mem_map_of_mem _ (Subgroup.mem_liftSL.mpr hg),
-        by rwa [← psl2zToPSL2R_smul_boundary]⟩
+        by rwa [← TauCeti.psl2zToPSL2R_smul_boundary]⟩
     · rintro ⟨_, ⟨γ, hγ, rfl⟩, hsmul⟩
       exact ⟨psl2zToPSL2R (γ : PSL(2, ℤ)),
         Subgroup.mem_map_of_mem _ (Subgroup.mem_liftSL.mp hγ),
-        by rwa [psl2zToPSL2R_smul_boundary]⟩
+        by rwa [TauCeti.psl2zToPSL2R_smul_boundary]⟩
   let invFun : CuspOrbits (Γ'.liftSL : Subgroup (GL (Fin 2) ℝ)) →
       (Γ'.map psl2zToPSL2R).CuspOrbit :=
     Quotient.lift
@@ -390,8 +372,8 @@ def fuchsianCuspOrbitEquivCuspOrbits (Γ' : Subgroup PSL(2, ℤ)) [Γ'.FiniteInd
     ⟨fun a b hab ↦ by
       induction a using Quotient.inductionOn with | h c₁ =>
       induction b using Quotient.inductionOn with | h c₂ =>
-      change (Γ'.map psl2zToPSL2R).cuspOrbitMk _ = (Γ'.map psl2zToPSL2R).cuspOrbitMk _ at hab
-      rw [Subgroup.cuspOrbitMk_eq_iff, horb] at hab
+      dsimp only [invFun] at hab
+      rw [Quotient.lift_mk, Quotient.lift_mk, Subgroup.cuspOrbitMk_eq_iff, horb] at hab
       obtain ⟨g, hg⟩ := mem_orbit_iff.mp hab
       exact Quotient.sound (orbitRel_apply.mpr (mem_orbit_iff.mpr ⟨g, Subtype.ext hg⟩)),
     fun C ↦ by
@@ -413,16 +395,6 @@ theorem cuspCount_eq_card_cuspOrbits (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, �
   rw [cuspCount_def, orbitCount_def, Nat.card_congr (permTCycleEquivCuspOrbits Γ' e)]
 
 /-! ### Elliptic orbits -/
-
-private theorem inv_mul_eq_of_mul_mul_inv_eq {G : Type*} [Group G] {g₁ g₂ h s : G}
-    (heq : g₁ * h * g₂⁻¹ = s) : g₁⁻¹ * g₂ = h * (g₂⁻¹ * s⁻¹ * g₂) := by
-  rw [← heq]; group
-
-private theorem coe_T_inv_mul_S_eq_coe_R_inv :
-    ((_root_.ModularGroup.T⁻¹ * _root_.ModularGroup.S : SL(2, ℤ)) : PSL(2, ℤ)) =
-      (R : PSL(2, ℤ))⁻¹ := by
-  rw [R_def, QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv,
-    _root_.mul_inv_rev, _root_.ModularGroup.S_inv_PSL2Z]
 
 private theorem exists_sl_smul_eq_of_orbitEq {Γ' : Subgroup PSL(2, ℤ)} {g₁ g₂ : PSL(2, ℤ)}
     {z : ℍ} (h : Quotient.mk (orbitRel (Γ'.map psl2zToPSL2R) ℍ) (g₁⁻¹ • z) =
@@ -454,7 +426,7 @@ private theorem cardStabilizerOnOrbit_mk_inv_smul_I (Γ' : Subgroup PSL(2, ℤ))
   obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective g
   have hmem : σ⁻¹ * _root_.ModularGroup.S * σ ∈ Γ'.liftSL := by
     rwa [Subgroup.mem_liftSL, QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
-  rw [cardStabilizerOnOrbit_mk, ← map_liftSL_sl2zToPSL2R,
+  rw [cardStabilizerOnOrbit_mk, ← Γ'.map_liftSL_sl2zToPSL2R,
     show ((σ : PSL(2, ℤ))⁻¹ • (I : ℍ)) = σ⁻¹ • I by
       rw [← QuotientGroup.mk_inv, UpperHalfPlane.pslMk_smul],
     Γ'.liftSL.card_stabilizer_map_smul_I σ⁻¹]
@@ -470,7 +442,7 @@ private theorem cardStabilizerOnOrbit_mk_inv_smul_ρ (Γ' : Subgroup PSL(2, ℤ)
       rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv,
         coe_T_inv_mul_S_eq_coe_R_inv]; group
     rwa [Subgroup.mem_liftSL, hconj, inv_mem_iff]
-  rw [cardStabilizerOnOrbit_mk, ← map_liftSL_sl2zToPSL2R,
+  rw [cardStabilizerOnOrbit_mk, ← Γ'.map_liftSL_sl2zToPSL2R,
     show ((σ : PSL(2, ℤ))⁻¹ • (ρ : ℍ)) = σ⁻¹ • ρ by
       rw [← QuotientGroup.mk_inv, UpperHalfPlane.pslMk_smul],
     Γ'.liftSL.card_stabilizer_map_smul_ρ σ⁻¹]
@@ -494,20 +466,25 @@ def fixedPermSEquivOrderTwoEllipticOrbits (Γ' : Subgroup PSL(2, ℤ))
       obtain ⟨h, hh, a, ha, haI⟩ := exists_sl_smul_eq_of_orbitEq (congrArg Subtype.val hq)
       have ha_mem := _root_.ModularGroup.stabilizer_I.mp haI
       simp only [Finset.mem_insert, Finset.mem_singleton] at ha_mem
-      have hg12 : g₁⁻¹ * g₂ ∈ Γ' := by
+      have hpsl : g₁ * h * g₂⁻¹ = 1 ∨
+          g₁ * h * g₂⁻¹ = (_root_.ModularGroup.S : PSL(2, ℤ)) := by
         rcases ha_mem with rfl | rfl | rfl | rfl
-        · rw [inv_mul_eq_of_mul_mul_inv_eq ha.symm]; simpa using hh
-        · rw [inv_mul_eq_of_mul_mul_inv_eq (show g₁ * h * g₂⁻¹ = 1 by rw [← ha, mk_neg]; rfl)]
-          simpa using hh
-        · rw [inv_mul_eq_of_mul_mul_inv_eq ha.symm, _root_.ModularGroup.S_inv_PSL2Z]
-          exact mul_mem hh hS₂
-        · rw [inv_mul_eq_of_mul_mul_inv_eq (by rw [← ha, mk_neg]), _root_.ModularGroup.S_inv_PSL2Z]
+        · exact Or.inl ha.symm
+        · exact Or.inl (by rw [← ha, mk_neg, QuotientGroup.mk_one])
+        · exact Or.inr ha.symm
+        · exact Or.inr (by rw [← ha, mk_neg])
+      have hg12 : g₁⁻¹ * g₂ ∈ Γ' := by
+        rcases hpsl with heq | heq
+        · rw [show g₁⁻¹ * g₂ = h by rw [← mul_one g₁⁻¹, ← heq]; group]; exact hh
+        · rw [show g₁⁻¹ * g₂ = h * (g₂⁻¹ * (_root_.ModularGroup.S : PSL(2, ℤ))⁻¹ * g₂) by
+              rw [← heq]; group,
+            _root_.ModularGroup.S_inv_PSL2Z]
           exact mul_mem hh hS₂
       exact Subtype.ext (show x₁ = x₂ by
         rw [← apply_cosetRep e x₁, ← apply_cosetRep e x₂, QuotientGroup.eq.mpr hg12]),
     fun ⟨q, hq⟩ ↦ by
       induction q using Quotient.inductionOn with | h z =>
-      rw [cardStabilizerOnOrbit_mk, ← map_liftSL_sl2zToPSL2R] at hq
+      rw [cardStabilizerOnOrbit_mk, ← Γ'.map_liftSL_sl2zToPSL2R] at hq
       rcases Γ'.liftSL.exists_smul_eq_of_card_stabilizer_ne_one (z := z) (by omega) with
         ⟨γ, rfl, -⟩ | ⟨_, -, h3⟩
       · have hS_sl : γ * _root_.ModularGroup.S * γ⁻¹ ∈ Γ'.liftSL := by
@@ -552,16 +529,17 @@ def fixedPermREquivOrderThreeEllipticOrbits (Γ' : Subgroup PSL(2, ℤ))
         · exact Or.inr (Or.inr (by rw [← ha, mk_neg, coe_T_inv_mul_S_eq_coe_R_inv]))
       have hg12 : g₁⁻¹ * g₂ ∈ Γ' := by
         rcases hpsl with heq | heq | heq
-        · rw [inv_mul_eq_of_mul_mul_inv_eq heq]; simpa using hh
-        · rw [inv_mul_eq_of_mul_mul_inv_eq heq,
-            show g₂⁻¹ * (R : PSL(2, ℤ))⁻¹ * g₂ = (g₂⁻¹ * (R : PSL(2, ℤ)) * g₂)⁻¹ by group]
+        · rw [show g₁⁻¹ * g₂ = h by rw [← mul_one g₁⁻¹, ← heq]; group]; exact hh
+        · rw [show g₁⁻¹ * g₂ = h * (g₂⁻¹ * (R : PSL(2, ℤ)) * g₂)⁻¹ by rw [← heq]; group]
           exact mul_mem hh (inv_mem hR₂)
-        · rw [inv_mul_eq_of_mul_mul_inv_eq heq, inv_inv]; exact mul_mem hh hR₂
+        · rw [show g₁⁻¹ * g₂ = h * (g₂⁻¹ * ((R : PSL(2, ℤ))⁻¹)⁻¹ * g₂) by rw [← heq]; group,
+            inv_inv]
+          exact mul_mem hh hR₂
       exact Subtype.ext (show x₁ = x₂ by
         rw [← apply_cosetRep e x₁, ← apply_cosetRep e x₂, QuotientGroup.eq.mpr hg12]),
     fun ⟨q, hq⟩ ↦ by
       induction q using Quotient.inductionOn with | h z =>
-      rw [cardStabilizerOnOrbit_mk, ← map_liftSL_sl2zToPSL2R] at hq
+      rw [cardStabilizerOnOrbit_mk, ← Γ'.map_liftSL_sl2zToPSL2R] at hq
       rcases Γ'.liftSL.exists_smul_eq_of_card_stabilizer_ne_one (z := z) (by omega) with
         ⟨_, -, h2⟩ | ⟨γ, rfl, -⟩
       · omega
@@ -611,7 +589,7 @@ theorem finsum_mem_ellipticOrbits_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ))
     induction q using Quotient.inductionOn with | h z =>
     rw [Subgroup.quotientMk_mem_ellipticOrbits_iff, mem_freeLocus, ← Subgroup.card_eq_one,
       Set.mem_union, Set.mem_ofPred_eq, Set.mem_ofPred_eq, cardStabilizerOnOrbit_mk,
-      ← map_liftSL_sl2zToPSL2R]
+      ← Γ'.map_liftSL_sl2zToPSL2R]
     refine ⟨fun hne ↦ ?_, fun h ↦ by rcases h with h2 | h3 <;> omega⟩
     rcases Γ'.liftSL.exists_smul_eq_of_card_stabilizer_ne_one hne with ⟨_, -, h2⟩ | ⟨_, -, h3⟩
     · exact Or.inl h2
@@ -642,18 +620,15 @@ theorem finsum_mem_ellipticOrbits_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ))
 compactified modular curve `X(Γ')` equals the combinatorial Euler characteristic of the modular
 triple `modularTriple Γ' e`. -/
 theorem eulerChar_compactifiedQuotient_eq_eulerChar (Γ' : Subgroup PSL(2, ℤ))
-    (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
-    [FiniteCWType (Γ'.map psl2zToPSL2R).CompactifiedQuotient] :
+    (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+    letI := Γ'.finiteIndex_of_equiv e
     eulerChar (Γ'.map psl2zToPSL2R).CompactifiedQuotient = (modularTriple Γ' e).eulerChar := by
-  have : Γ'.FiniteIndex := Γ'.finiteIndex_of_equiv e
-  have : (Γ'.map psl2zToPSL2R).IsFiniteRelIndex psl2zToPSL2R.range :=
-    isFiniteRelIndex_map_psl2zToPSL2R Γ'
+  let : Γ'.FiniteIndex := Γ'.finiteIndex_of_equiv e
   have : CompactSpace (Γ'.map psl2zToPSL2R).CompactifiedQuotient :=
-    compactSpace_compactifiedQuotient_map_psl2zToPSL2R Γ'
+    Γ'.compactSpace_compactifiedQuotient_map_psl2zToPSL2R
   have hle : Γ'.map psl2zToPSL2R ≤ psl2zToPSL2R.range := Γ'.map_le_range psl2zToPSL2R
   have hidx : ((Γ'.map psl2zToPSL2R).subgroupOf psl2zToPSL2R.range).index = n := by
-    change (Γ'.map psl2zToPSL2R).relIndex psl2zToPSL2R.range = n
-    rw [relIndex_map_psl2zToPSL2R, Γ'.index_eq_of_equiv e]
+    rw [← Subgroup.relIndex, Γ'.relIndex_map_psl2zToPSL2R, Γ'.index_eq_of_equiv e]
   have hRH := congrArg (Int.cast (R := ℝ))
     (TauCeti.Fuchsian.eulerChar_compactifiedQuotient_eq_index_mul_sub_ramificationDegree hle)
   rw [hidx, eulerChar_compactifiedQuotient] at hRH
@@ -673,10 +648,11 @@ theorem eulerChar_compactifiedQuotient_eq_eulerChar (Γ' : Subgroup PSL(2, ℤ))
 `Γ' ≤ PSL(2, ℤ)`, the combinatorial genus `genus Γ' e` agrees with the topological genus
 `TauCeti.RiemannSurface.genus` of the compactified modular curve `X(Γ')`. -/
 theorem genus_eq_riemannSurface_genus (Γ' : Subgroup PSL(2, ℤ))
-    (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
-    [FiniteCWType (Γ'.map psl2zToPSL2R).CompactifiedQuotient] :
-    genus Γ' e = RiemannSurface.genus (Γ'.map psl2zToPSL2R).CompactifiedQuotient :=
-  (RiemannSurface.genus_eq_of_eulerChar_eq
+    (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+    letI := Γ'.finiteIndex_of_equiv e
+    genus Γ' e = RiemannSurface.genus (Γ'.map psl2zToPSL2R).CompactifiedQuotient := by
+  let : Γ'.FiniteIndex := Γ'.finiteIndex_of_equiv e
+  exact (RiemannSurface.genus_eq_of_eulerChar_eq
     ((eulerChar_compactifiedQuotient_eq_eulerChar Γ' e).trans
       (two_sub_two_mul_genus Γ' e).symm)).symm
 
@@ -688,14 +664,14 @@ theorem cuspCount_Gamma0Projective (N : ℕ) [NeZero N]
     (e : PSL(2, ℤ) ⧸ TauCeti.CongruenceSubgroup.Gamma0Projective N ≃ Fin n) :
     cuspCount (TauCeti.CongruenceSubgroup.Gamma0Projective N) e =
       ∑ g ∈ N.divisors, Nat.totient (Nat.gcd g (N / g)) := by
-  rw [cuspCount_eq_card_fuchsianCuspOrbit, ← map_liftSL_sl2zToPSL2R,
+  rw [cuspCount_eq_card_fuchsianCuspOrbit, ← Subgroup.map_liftSL_sl2zToPSL2R,
     TauCeti.CongruenceSubgroup.liftSL_Gamma0Projective, TauCeti.card_cuspOrbit_Gamma0]
 
 /-- For prime `p`, `Γ₀(p)` has `2` cusps. -/
 theorem cuspCount_Gamma0Projective_of_prime {p : ℕ} [Fact p.Prime]
     (e : PSL(2, ℤ) ⧸ TauCeti.CongruenceSubgroup.Gamma0Projective p ≃ Fin n) :
     cuspCount (TauCeti.CongruenceSubgroup.Gamma0Projective p) e = 2 := by
-  rw [cuspCount_eq_card_fuchsianCuspOrbit, ← map_liftSL_sl2zToPSL2R,
+  rw [cuspCount_eq_card_fuchsianCuspOrbit, ← Subgroup.map_liftSL_sl2zToPSL2R,
     TauCeti.CongruenceSubgroup.liftSL_Gamma0Projective, TauCeti.card_cuspOrbit_Gamma0_of_prime]
 
 /-- For prime `p`, the cusp widths of `Γ₀(p)` are `{1, p}` (at the cusps `∞` of width `1` and
@@ -730,7 +706,7 @@ theorem ellipticTwo_Gamma0Projective_eq_prod (N : ℕ)
     (e : PSL(2, ℤ) ⧸ TauCeti.CongruenceSubgroup.Gamma0Projective N ≃ Fin n) :
     (ellipticTwo (TauCeti.CongruenceSubgroup.Gamma0Projective N) e : ℤ) =
       if 4 ∣ N then 0 else ∏ p ∈ N.primeFactors, (1 + ZMod.χ₄ p) := by
-  rw [ellipticTwo_eq_card_orderTwoEllipticOrbits, ← map_liftSL_sl2zToPSL2R,
+  rw [ellipticTwo_eq_card_orderTwoEllipticOrbits, ← Subgroup.map_liftSL_sl2zToPSL2R,
     TauCeti.CongruenceSubgroup.liftSL_Gamma0Projective,
     TauCeti.card_orderTwoElliptic_Gamma0_eq_prod]
 
@@ -741,7 +717,7 @@ theorem ellipticThree_Gamma0Projective_eq_prod (N : ℕ)
     (e : PSL(2, ℤ) ⧸ TauCeti.CongruenceSubgroup.Gamma0Projective N ≃ Fin n) :
     (ellipticThree (TauCeti.CongruenceSubgroup.Gamma0Projective N) e : ℤ) =
       if 9 ∣ N then 0 else ∏ p ∈ N.primeFactors, (1 + legendreSym 3 p) := by
-  rw [ellipticThree_eq_card_orderThreeEllipticOrbits, ← map_liftSL_sl2zToPSL2R,
+  rw [ellipticThree_eq_card_orderThreeEllipticOrbits, ← Subgroup.map_liftSL_sl2zToPSL2R,
     TauCeti.CongruenceSubgroup.liftSL_Gamma0Projective,
     TauCeti.card_orderThreeElliptic_Gamma0_eq_prod]
 

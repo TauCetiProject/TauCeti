@@ -264,38 +264,54 @@ private def doubleCosetOfCoset (Γ' : Subgroup PSL(2, ℤ)) :
       ⟨(g₁⁻¹ * g₂)⁻¹, Γ'.inv_mem (QuotientGroup.leftRel_apply.mp h), 1, Subgroup.one_mem _, by
         group⟩
 
+private theorem doubleCosetOfCoset_mk (Γ' : Subgroup PSL(2, ℤ)) (g : PSL(2, ℤ)) :
+    doubleCosetOfCoset Γ' (g : PSL(2, ℤ) ⧸ Γ') =
+      DoubleCoset.mk Γ' (Subgroup.zpowers (T : PSL(2, ℤ))) g⁻¹ := rfl
+
+private noncomputable def permTDoubleCosetMap (Γ' : Subgroup PSL(2, ℤ))
+    (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+    Quotient (SameCycle.setoid (permT Γ' e)) →
+      DoubleCoset.Quotient (Γ' : Set PSL(2, ℤ)) (Subgroup.zpowers (T : PSL(2, ℤ))) :=
+  Quotient.lift (fun x ↦ doubleCosetOfCoset Γ' (e.symm x)) fun x y h ↦ by
+    obtain ⟨qx, rfl⟩ := e.surjective x; obtain ⟨qy, rfl⟩ := e.surjective y
+    induction qx using QuotientGroup.induction_on with | H g₁ =>
+    induction qy using QuotientGroup.induction_on with | H g₂ =>
+    rw [e.symm_apply_apply, e.symm_apply_apply, doubleCosetOfCoset_mk, doubleCosetOfCoset_mk,
+      ← sameCycle_permT_iff_doubleCoset]
+    exact h
+
+private theorem permTDoubleCosetMap_bijective (Γ' : Subgroup PSL(2, ℤ))
+    (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) : Function.Bijective (permTDoubleCosetMap Γ' e) := by
+  refine ⟨fun q₁ q₂ hq ↦ ?_, fun d ↦ ?_⟩
+  · induction q₁ using Quotient.ind with | _ x =>
+    induction q₂ using Quotient.ind with | _ y =>
+    obtain ⟨qx, rfl⟩ := e.surjective x; obtain ⟨qy, rfl⟩ := e.surjective y
+    induction qx using QuotientGroup.induction_on with | H g₁ =>
+    induction qy using QuotientGroup.induction_on with | H g₂ =>
+    rw [permTDoubleCosetMap, Quotient.lift_mk, Quotient.lift_mk, e.symm_apply_apply,
+      e.symm_apply_apply, doubleCosetOfCoset_mk, doubleCosetOfCoset_mk,
+      ← sameCycle_permT_iff_doubleCoset] at hq
+    exact Quotient.sound hq
+  · induction d using Quotient.ind' with | _ g =>
+    refine ⟨Quotient.mk _ (e ((g⁻¹ : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')), ?_⟩
+    rw [permTDoubleCosetMap, Quotient.lift_mk, e.symm_apply_apply, doubleCosetOfCoset_mk, inv_inv]
+
 /-- **Double-coset bijection for cusps.** The cycles of `permT Γ' e` are in canonical bijection
 with the double cosets `Γ' \ PSL(2, ℤ) / ⟨T⟩`, sending the cycle of `e (g Γ')` to
 `Γ' g⁻¹ ⟨T⟩`. -/
 noncomputable def permTCycleEquivDoubleCoset (Γ' : Subgroup PSL(2, ℤ))
     (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     Quotient (SameCycle.setoid (permT Γ' e)) ≃
-      DoubleCoset.Quotient (Γ' : Set PSL(2, ℤ)) (Subgroup.zpowers (T : PSL(2, ℤ))) := by
-  let f : Fin n → _ := fun x ↦ doubleCosetOfCoset Γ' (e.symm x)
-  have hf (g : PSL(2, ℤ)) : f (e (g : PSL(2, ℤ) ⧸ Γ')) =
-      DoubleCoset.mk Γ' (Subgroup.zpowers (T : PSL(2, ℤ))) g⁻¹ := by
-    dsimp only [f]; rw [e.symm_apply_apply]; rfl
-  have hiff (x y : Fin n) : (permT Γ' e).SameCycle x y ↔ f x = f y := by
-    obtain ⟨qx, rfl⟩ := e.surjective x; obtain ⟨qy, rfl⟩ := e.surjective y
-    induction qx using QuotientGroup.induction_on with | H g₁ =>
-    induction qy using QuotientGroup.induction_on with | H g₂ =>
-    rw [hf, hf, sameCycle_permT_iff_doubleCoset]
-  refine Equiv.ofBijective (Quotient.lift f fun x y h ↦ (hiff x y).mp h) ⟨?_, ?_⟩
-  · intro q₁ q₂ hq
-    induction q₁ using Quotient.ind with | _ x =>
-    induction q₂ using Quotient.ind with | _ y => exact Quotient.sound ((hiff x y).mpr hq)
-  · intro d
-    induction d using Quotient.ind' with | _ g =>
-    exact ⟨Quotient.mk _ (e ((g⁻¹ : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')), by
-      change f _ = _; rw [hf, inv_inv]⟩
+      DoubleCoset.Quotient (Γ' : Set PSL(2, ℤ)) (Subgroup.zpowers (T : PSL(2, ℤ))) :=
+  Equiv.ofBijective (permTDoubleCosetMap Γ' e) (permTDoubleCosetMap_bijective Γ' e)
 
 /-- `permTCycleEquivDoubleCoset` sends the cycle of `e (g Γ')` to `Γ' g⁻¹ ⟨T⟩`. -/
 @[simp] theorem permTCycleEquivDoubleCoset_mk (Γ' : Subgroup PSL(2, ℤ))
     (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) (g : PSL(2, ℤ)) :
     permTCycleEquivDoubleCoset Γ' e (Quotient.mk _ (e (g : PSL(2, ℤ) ⧸ Γ'))) =
       DoubleCoset.mk Γ' (Subgroup.zpowers (T : PSL(2, ℤ))) g⁻¹ := by
-  change doubleCosetOfCoset Γ' (e.symm (e (g : PSL(2, ℤ) ⧸ Γ'))) = _
-  rw [e.symm_apply_apply]; rfl
+  rw [permTCycleEquivDoubleCoset, Equiv.ofBijective_apply, permTDoubleCosetMap, Quotient.lift_mk,
+    e.symm_apply_apply, doubleCosetOfCoset_mk]
 
 /-- The cusp count equals the number of double cosets `Γ' \ PSL(2, ℤ) / ⟨T⟩`. -/
 theorem cuspCount_eq_card_doubleCoset (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
@@ -329,8 +345,8 @@ noncomputable def cuspCycleMapOfLE {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : Γ'' �
     (e'' : PSL(2, ℤ) ⧸ Γ'' ≃ Fin m) (e' : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) (g : PSL(2, ℤ)) :
     cuspCycleMapOfLE h e'' e' (Quotient.mk _ (e'' (g : PSL(2, ℤ) ⧸ Γ''))) =
       Quotient.mk _ (e' (g : PSL(2, ℤ) ⧸ Γ')) := by
-  change Quotient.mk _ (e' (Subgroup.quotientEquivProdOfLE h (e''.symm (e'' _))).1) = _
-  rw [e''.symm_apply_apply]; rfl
+  rw [cuspCycleMapOfLE, Quotient.map_mk, e''.symm_apply_apply,
+    Subgroup.quotientEquivProdOfLE_apply, Quotient.map'_mk'', id_eq]
 
 /-- The width of a `permT`-cycle, well-defined on `Quotient (SameCycle.setoid (permT Γ' e))`. -/
 noncomputable def cuspCycleWidth (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
@@ -407,7 +423,7 @@ theorem sum_cuspCycleWidth_fiber_of_le {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : Γ
     simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hq
     rw [← Finset.card_eq_sum_ones, ← card_filter_cuspCycle_eq Γ'' e'' q]
     congr 1; ext y; simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-    exact ⟨fun hy ↦ ⟨by change cuspCycleMapOfLE h e'' e' ⟦y⟧ = c; rw [hy, hq], hy⟩, And.right⟩
+    exact ⟨fun hy ↦ ⟨by rw [← hq, ← hy, cuspCycleMapOfLE, Quotient.map_mk], hy⟩, And.right⟩
   let eqv : {y : Fin m // Quotient.mk (SameCycle.setoid (permT Γ' e')) (proj y) = c} ≃
       {x : Fin n // Quotient.mk (SameCycle.setoid (permT Γ' e')) x = c} ×
         (Γ' ⧸ Γ''.subgroupOf Γ') :=
@@ -659,9 +675,9 @@ theorem six_mul_eulerChar_modularTriple (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2,
     exact_mod_cast two_mul_orbitCount_permS Γ' e
   have h3 : (3 : ℤ) * orbitCount (modularTriple Γ' e).σ0 = n + 2 * ellipticThree Γ' e := by
     exact_mod_cast three_mul_orbitCount_σ0 Γ' e
+  -- Unfold `permS` to `(modularTriple Γ' e).σ1` so `linarith` sees the same atom.
+  dsimp only [permS] at h2
   rw [eulerChar_def, ← cuspCount_def]
-  change 6 * ((orbitCount (modularTriple Γ' e).σ0 : ℤ) + orbitCount (permS Γ' e) +
-    cuspCount Γ' e - n) = _
   linarith
 
 /-- **The integral genus formula** for a finite-index subgroup `Γ' ≤ PSL(2, ℤ)` of index `n`:

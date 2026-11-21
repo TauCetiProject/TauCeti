@@ -8,11 +8,13 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.LevelOne
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Finite
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.FiniteIndex
+import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Cofinite
 
 /-!
 # Finite-index modular groups as cofinite Fuchsian groups
 
-Every finite-index subgroup of `SL(2, ℤ)` gives a cofinite subgroup of `PSL(2, ℝ)`.
+Every finite-index subgroup of `SL(2, ℤ)` or `PSL(2, ℤ)` gives a cofinite subgroup of
+`PSL(2, ℝ)`, with compact cusp compactification.
 Its parabolic fixed points are exactly the rational boundary points: equivalently, the
 orbit of infinity under the full modular group. The subgroup can split this one modular
 orbit into several cusp orbits: every cusp orbit is that of `γ • ∞` for some `γ ∈ SL(2, ℤ)`,
@@ -43,6 +45,17 @@ theorem isCofinite_map_sl2zToPSL2R :
     H.map_sl2zToPSL2R_le_range_psl2zToPSL2R).mpr
   exact ⟨TauCeti.ModularGroup.isCofinite_psl2zToPSL2RRange,
     Subgroup.isFiniteRelIndex_iff_finiteIndex.mp inferInstance⟩
+
+/-- A finite-index subgroup of `PSL(2, ℤ)` has cofinite effective image in `PSL(2, ℝ)`. -/
+theorem isCofinite_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ)) [Γ'.FiniteIndex] :
+    (Γ'.map psl2zToPSL2R).IsCofinite := by
+  rw [← Γ'.map_liftSL_sl2zToPSL2R]
+  exact Γ'.liftSL.isCofinite_map_sl2zToPSL2R
+
+/-- The compactified modular curve `X(Γ')` of a finite-index `Γ' ≤ PSL(2, ℤ)` is compact. -/
+theorem compactSpace_compactifiedQuotient_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ))
+    [Γ'.FiniteIndex] : CompactSpace (Γ'.map psl2zToPSL2R).CompactifiedQuotient :=
+  (isCofinite_map_psl2zToPSL2R Γ').compactSpace_compactifiedQuotient
 
 /-- The parabolic fixed points of a finite-index integral modular subgroup are the
 rational boundary points, described as the full modular orbit of infinity. -/
