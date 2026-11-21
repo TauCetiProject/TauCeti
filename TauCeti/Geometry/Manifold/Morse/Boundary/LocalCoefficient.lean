@@ -31,7 +31,7 @@ otherwise; the boundary (`TauCeti.IsAdaptedPseudoGradient.twistedMorseBoundary`)
 components. As for the integral boundary, the definitions take no Morse–Smale hypothesis, and are
 the signed counts of trajectories only when `X` is Morse–Smale.
 
-The main results, all under the Morse–Smale condition, are:
+The main results, all but the reversal formula under the Morse–Smale condition, are:
 
 * **constant coefficients** (`IsMorseSmale.twistedMorseBoundary_constant`): for the constant system
   with fibre `N`, transport is the identity and the boundary is the integral boundary acting on
@@ -39,12 +39,13 @@ The main results, all under the Morse–Smale condition, are:
   (`IsMorseSmale.twistedMorseBoundary_constant_eq_signedMorseBoundary`);
 * **naturality** (`IsMorseSmale.twistedMorseBoundary_naturality`): a morphism of local systems
   commutes with the boundaries;
-* **reversal of orientations** (`twistedMorseBoundaryMap_reverse`): reversing the orientations at
-  the critical points of a set `S` changes the sign of the component from `p` to `q` once for each
-  of `p` and `q` that lies in `S`;
-* **the square of the boundary** (`IsMorseSmale.twistedMorseBoundary_twistedMorseBoundary_single`):
-  the component `L(p) → L(r)` of `∂ ∘ ∂` is the sum over the broken index-two trajectories from `p`
-  to `r` (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySet`) of their signs
+* **reversal of orientations** (`twistedMorseBoundaryMap_reverse`, with no Morse–Smale
+  hypothesis): reversing the orientations at the critical points of a set `S` changes the sign of
+  the component from `p` to `q` once for each of `p` and `q` that lies in `S`;
+* **the square of the boundary**
+  (`IsMorseSmale.twistedMorseBoundary_twistedMorseBoundary_single_apply`): the component
+  `L(p) → L(r)` of `∂ ∘ ∂` is the sum over the broken index-two trajectories from `p` to `r`
+  (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySet`) of their signs
   `TauCeti.IsAdaptedPseudoGradient.brokenTrajectorySign` times the transports along their
   concatenated paths (`TauCeti.IsAdaptedPseudoGradient.brokenTrajectoryPathClass`). Hence
   `∂ ∘ ∂ = 0` exactly when these sums vanish
@@ -98,6 +99,13 @@ noncomputable def trajectoryPathClass {p q : M} (y : hX.morseTrajectorySlice p q
     Path.Homotopic.Quotient p q :=
   .mk (Flow.connectingPath (hX.mem_morseTrajectorySlice.1 y.2).1
     (hX.mem_morseTrajectorySlice.1 y.2).2.1)
+
+/-- The path class of a trajectory is the class of the path it traces. -/
+theorem trajectoryPathClass_def {p q : M} (y : hX.morseTrajectorySlice p q) :
+    hX.trajectoryPathClass y =
+      .mk (Flow.connectingPath (hX.mem_morseTrajectorySlice.1 y.2).1
+        (hX.mem_morseTrajectorySlice.1 y.2).2.1) :=
+  (rfl)
 
 /-- The homotopy class of the path from `p` to `r` traced by a broken trajectory `(q, z₁, z₂)`:
 the trajectory through `z₁` from `p` to `q` followed by the trajectory through `z₂` from `q` to
@@ -219,7 +227,7 @@ theorem twistedMorseBoundary_apply
 /-- The twisted boundary of a chain supported at one critical point `p` has `q`-component the
 component from `p` to `q`. -/
 @[simp]
-theorem twistedMorseBoundary_single [DecidableEq (criticalPoints 𝓘(ℝ, E) f)]
+theorem twistedMorseBoundary_single_apply [DecidableEq (criticalPoints 𝓘(ℝ, E) f)]
     (p : criticalPoints 𝓘(ℝ, E) f) (a : L.obj (FundamentalGroupoid.mk (p : M)))
     (q : criticalPoints 𝓘(ℝ, E) f) :
     hX.twistedMorseBoundary 𝔬 L hf (Pi.single p a) q = hX.twistedMorseBoundaryMap 𝔬 L p q a := by
@@ -244,7 +252,7 @@ theorem twistedMorseBoundaryMap_apply {p q : criticalPoints 𝓘(ℝ, E) f}
   have := Fintype.ofFinite (hX.morseTrajectorySlice p q)
   rw [twistedMorseBoundaryMap_of_morseIndex_eq_add_one hpq, finsum_eq_sum_of_fintype,
     finsum_eq_sum_of_fintype, LinearMap.sum_apply]
-  rfl
+  simp only [LinearMap.smul_apply, LinearEquiv.coe_coe]
 
 include h hf in
 /-- **Constant coefficients.** For the constant local system with fibre `N`, the component of the
@@ -259,18 +267,17 @@ theorem twistedMorseBoundaryMap_constant (N : ModuleCat.{w} R) (p q : criticalPo
   by_cases hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1
   · have := (h.finite_morseTrajectorySlice hf hpq).to_subtype
     -- The fibres of the constant system are `N` only up to unfolding `constantFunctor`, so the
-    -- general formula is rewritten with `erw`.
-    erw [h.twistedMorseBoundaryMap_apply hf hpq]
+    -- general formulas are applied to `a : N` in term mode rather than by rewriting.
+    refine (h.twistedMorseBoundaryMap_apply hf hpq
+      (L := (LocalCoefficientSystem.constantFunctor (TopCat.of M)).obj N) a).trans ?_
     rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hpq, signedTrajectoryCount_def,
       ← finsum_set_coe_eq_finsum_mem, finsum_smul' (toFinite _)]
-    refine finsum_congr fun y ↦ congrArg _ ?_
-    -- Transport in the constant system is the identity of `N`.
-    erw [LocalCoefficientSystem.transport_apply, LocalCoefficientSystem.constantFunctor_obj_map]
-    rfl
-  · -- As above, `erw` sees through the fibres of the constant system.
-    erw [twistedMorseBoundaryMap_of_not_morseIndex_eq_add_one hpq]
-    rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hpq, zero_smul]
-    rfl
+    simp only [LocalCoefficientSystem.transport_constantFunctor]
+    exact finsum_congr fun y ↦ congrArg _ (LinearEquiv.refl_apply a)
+  · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hpq, zero_smul]
+    exact (LinearMap.congr_fun (twistedMorseBoundaryMap_of_not_morseIndex_eq_add_one hpq
+      (L := (LocalCoefficientSystem.constantFunctor (TopCat.of M)).obj N)) a).trans
+        (LinearMap.zero_apply a)
 
 include h in
 /-- **Constant coefficients.** For the constant local system with fibre `N`, the twisted boundary
@@ -333,7 +340,7 @@ include h in
 coefficients in a local system `L`, the `r`-component of the boundary of the boundary of `a ∈ L(p)`
 is the sum over the broken index-two trajectories from `p` to `r` of their signs times the
 transports of `a` along their concatenated paths. -/
-theorem twistedMorseBoundary_twistedMorseBoundary_single
+theorem twistedMorseBoundary_twistedMorseBoundary_single_apply
     [DecidableEq (criticalPoints 𝓘(ℝ, E) f)] (p r : criticalPoints 𝓘(ℝ, E) f)
     (a : L.obj (FundamentalGroupoid.mk (p : M))) :
     hX.twistedMorseBoundary 𝔬 L hf (hX.twistedMorseBoundary 𝔬 L hf (Pi.single p a)) r =
@@ -355,7 +362,7 @@ theorem twistedMorseBoundary_twistedMorseBoundary_single
   rw [← finsum_comp_equiv (hX.brokenTrajectoryEquiv p r).symm, finsum_eq_sum_of_fintype,
     Fintype.sum_sigma, twistedMorseBoundary_apply, finsum_eq_sum_of_fintype,
     ← Fintype.sum_subtype_add_sum_subtype P]
-  simp only [twistedMorseBoundary_single]
+  simp only [twistedMorseBoundary_single_apply]
   -- Away from the intermediate index, one of the two components vanishes.
   have hzero : ∑ q : {q // ¬P q},
       hX.twistedMorseBoundaryMap 𝔬 L q r (hX.twistedMorseBoundaryMap 𝔬 L p q a) = 0 := by
@@ -390,7 +397,7 @@ theorem twistedMorseBoundary_comp_twistedMorseBoundary_eq_zero_iff :
             LocalCoefficientSystem.transport L (hX.brokenTrajectoryPathClass x) a = 0 := by
   classical
   have := hf.finite_criticalPoints.to_subtype
-  simp_rw [← h.twistedMorseBoundary_twistedMorseBoundary_single hf]
+  simp_rw [← h.twistedMorseBoundary_twistedMorseBoundary_single_apply hf]
   constructor
   · intro h0 p r a
     simpa using congr_fun (LinearMap.congr_fun h0 (Pi.single p a)) r

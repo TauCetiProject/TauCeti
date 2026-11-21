@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Dynamics.Flow.Stable
 public import TauCeti.Topology.Path.Extend.Ioo
-public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import TauCeti.Analysis.SpecialFunctions.Log.LogSubLogOneSub
 
 /-!
 # Connecting orbits of a real flow
@@ -73,38 +73,6 @@ section ConnectingPath
 
 variable {α : Type*} [TopologicalSpace α] {φ : _root_.Flow ℝ α} {p q y : α}
 
-/-- The reparametrisation `s ↦ log s - log (1 - s)` of the open unit interval by the real line is
-continuous on it. -/
-private theorem continuousOn_log_sub_log_one_sub :
-    ContinuousOn (fun s : ℝ ↦ Real.log s - Real.log (1 - s)) (Ioo 0 1) :=
-  ((continuousOn_id (s := Ioo (0 : ℝ) 1)).log fun _ hs ↦ hs.1.ne').sub
-    (((continuousOn_const (c := (1 : ℝ))).sub continuousOn_id).log fun _ hs ↦
-      (sub_pos.2 hs.2).ne')
-
-/-- The reparametrisation tends to `-∞` at the left end of the unit interval. -/
-private theorem tendsto_log_sub_log_one_sub_nhdsGT_zero :
-    Tendsto (fun s : ℝ ↦ Real.log s - Real.log (1 - s)) (𝓝[>] 0) atBot := by
-  have h₁ : Tendsto (fun s : ℝ ↦ 1 - s) (𝓝 0) (𝓝 1) := by
-    simpa using (continuous_sub_left (1 : ℝ)).tendsto 0
-  have h₂ : Tendsto (fun s : ℝ ↦ -Real.log (1 - s)) (𝓝[>] 0) (𝓝 0) := by
-    simpa using ((h₁.log one_ne_zero).neg).mono_left nhdsWithin_le_nhds
-  simpa only [sub_eq_add_neg] using Real.tendsto_log_nhdsGT_zero.atBot_add h₂
-
-/-- The reparametrisation tends to `+∞` at the right end of the unit interval. -/
-private theorem tendsto_log_sub_log_one_sub_nhdsLT_one :
-    Tendsto (fun s : ℝ ↦ Real.log s - Real.log (1 - s)) (𝓝[<] 1) atTop := by
-  have h₁ : Tendsto Real.log (𝓝[<] 1) (𝓝 0) := by
-    simpa using (Real.continuousAt_log one_ne_zero).tendsto.mono_left nhdsWithin_le_nhds
-  have h₂ : Tendsto (fun s : ℝ ↦ 1 - s) (𝓝[<] 1) (𝓝[>] 0) := by
-    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
-    · have h : Tendsto (fun s : ℝ ↦ 1 - s) (𝓝 1) (𝓝 0) := by
-        simpa using (continuous_sub_left (1 : ℝ)).tendsto 1
-      exact h.mono_left nhdsWithin_le_nhds
-    · filter_upwards [self_mem_nhdsWithin] with s hs using sub_pos.2 hs
-  have h₃ : Tendsto (fun s : ℝ ↦ -Real.log (1 - s)) (𝓝[<] 1) atTop :=
-    tendsto_neg_atBot_atTop.comp (Real.tendsto_log_nhdsGT_zero.comp h₂)
-  simpa only [sub_eq_add_neg] using h₁.add_atTop h₃
-
 /-- **The path traced by a connecting trajectory.** If the trajectory of `y` tends to `p` in
 backward time and to `q` in forward time, then it traces a path from `p` to `q`: at `s ∈ (0, 1)` it
 passes through `φ (log s - log (1 - s)) y` (`Flow.connectingPath_apply_of_mem_Ioo`), and its ends
@@ -112,9 +80,9 @@ are the two limits. -/
 noncomputable def connectingPath (hp : y ∈ unstableSet φ p) (hq : y ∈ stableSet φ q) : Path p q :=
   Path.ofContinuousOnIoo zero_lt_one
     ((φ.continuous continuous_id continuous_const).comp_continuousOn
-      continuousOn_log_sub_log_one_sub)
-    ((mem_unstableSet.1 hp).comp tendsto_log_sub_log_one_sub_nhdsGT_zero)
-    ((mem_stableSet.1 hq).comp tendsto_log_sub_log_one_sub_nhdsLT_one)
+      Real.continuousOn_log_sub_log_one_sub)
+    ((mem_unstableSet.1 hp).comp Real.tendsto_log_sub_log_one_sub_nhdsGT_zero)
+    ((mem_stableSet.1 hq).comp Real.tendsto_log_sub_log_one_sub_nhdsLT_one)
 
 /-- On the interior of the unit interval, the path traced by a connecting trajectory is the
 trajectory at time `log s - log (1 - s)`. -/
