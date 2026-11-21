@@ -789,17 +789,19 @@ theorem exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinea
   refine hQ.trans (mul_add_add_le_of_ofReal_le (by positivity)
     ((norm_nonneg _).trans (hA (0, 0) ⟨mem_univ _, left_mem_Icc.2 zero_le_one⟩)) ?_ ?_
     (eLpNorm_mono hξ.continuous.aestronglyMeasurable (norm_le_norm_jet _))
-    (eLpNorm_fderiv_zero_one_le_eLpNorm_jet ((hξ₁.continuous_fderiv one_ne_zero).clm_apply
-      continuous_const).aestronglyMeasurable _) ?_)
+    ?_ ?_)
   · exact ofReal_mul_max_toReal_le hE₁ hE₂
   · rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal]
     exact congrArg _ (ENNReal.ofReal_toReal hE)
+  · rw [stdComplexLineImag_eq]
+    exact eLpNorm_fderiv_zero_one_le_eLpNorm_jet
+      ((hξ₁.continuous_fderiv one_ne_zero).clm_apply continuous_const).aestronglyMeasurable _
   · -- The difference of the slice velocities is the slice velocity of the difference.
     have h : (fun z ↦ fderiv ℝ ξ₁ z stdComplexLineImag - fderiv ℝ ξ₂ z stdComplexLineImag) =
         fun z ↦ fderiv ℝ (ξ₁ - ξ₂) z stdComplexLineImag := funext fun z ↦ by
       rw [fderiv_sub (hξ₁.differentiable one_ne_zero z) (hξ₂.differentiable one_ne_zero z),
         sub_apply]
-    rw [h]
+    rw [h, stdComplexLineImag_eq]
     exact eLpNorm_fderiv_zero_one_le_eLpNorm_jet
       ((hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const).aestronglyMeasurable _
 
