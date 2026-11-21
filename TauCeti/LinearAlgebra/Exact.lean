@@ -50,6 +50,10 @@ a homology theory,
 `Fin (n + 2)` with a single family of spaces; the long exact sequences of homology theories are
 instead indexed by `ℕ` with three families of spaces, which is the form taken here.
 
+In a map of a complex `M₁ → M₂ → M₃` to an exact pair `N₁ → N₂ → N₃` whose first component is
+surjective, `Function.Exact.exists_apply_eq_zero_and_apply_eq_of_surjective` corrects any `y ∈ M₂`
+whose image dies in `N₃` to an element of the kernel in `M₂` with the same image in `M₃`.
+
 For four consecutive maps, `LinearMap.finrank_sub_finrank_sub_finrank_of_exact` gives the
 alternating dimension difference with endpoint kernel corrections.
 
@@ -166,6 +170,35 @@ theorem linearEquivOfInjective_symm_mk (h : Exact f g) (hf : Function.Injective 
   hf (by simp)
 
 end Semiring
+
+/-- **Correcting a lift into a kernel.** Given a commutative diagram
+
+```text
+M₁ --f--> M₂ --g--> M₃
+|α        |β        |γ
+N₁ --f'-> N₂ --g'-> N₃
+```
+
+whose top row composes to zero, whose bottom row is exact and whose left map `α` is surjective,
+every `y ∈ M₂` with `γ (g y) = 0` can be corrected by adding an element of the range of `f` to some
+`y' ∈ ker β` with `g y' = g y`. This is the lifting step of the snake lemma at `ker γ` when
+`coker α = 0`; the maps `f` and `f'` need not be injective, and only `N₂` needs negation. -/
+theorem exists_apply_eq_zero_and_apply_eq_of_surjective {R M₁ M₂ M₃ N₁ N₂ N₃ : Type*}
+    [Semiring R] [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
+    [AddCommMonoid M₃] [Module R M₃] [AddCommMonoid N₁] [Module R N₁] [AddCommGroup N₂]
+    [Module R N₂] [AddCommMonoid N₃] [Module R N₃] {f : M₁ →ₗ[R] M₂} {g : M₂ →ₗ[R] M₃}
+    {f' : N₁ →ₗ[R] N₂} {g' : N₂ →ₗ[R] N₃} {α : M₁ →ₗ[R] N₁} {β : M₂ →ₗ[R] N₂}
+    {γ : M₃ →ₗ[R] N₃} (hfg' : Exact f' g') (hfg : g ∘ₗ f = 0) (hα : Function.Surjective α)
+    (hαβ : β ∘ₗ f = f' ∘ₗ α) (hβγ : γ ∘ₗ g = g' ∘ₗ β) {y : M₂} (hy : γ (g y) = 0) :
+    ∃ y', β y' = 0 ∧ g y' = g y := by
+  -- `g' (-β y) = 0` (`N₃` need not be a group, so this goes through `g' (-β y) + g' (β y) = 0`),
+  -- so `-β y = f' (α w)` for some `w ∈ M₁`, and then `y + f w` works
+  have h : g' (β y) = 0 := by simpa [hy] using (LinearMap.congr_fun hβγ y).symm
+  obtain ⟨x, hx⟩ := (hfg' (-β y)).1 <| by simpa [h] using (map_add g' (-β y) (β y)).symm
+  obtain ⟨w, rfl⟩ := hα x
+  have hw : β (f w) = -β y := (LinearMap.congr_fun hαβ w).trans hx
+  have hgf : g (f w) = 0 := LinearMap.congr_fun hfg w
+  exact ⟨y + f w, by simp [hw], by simp [hgf]⟩
 
 /-- **Left exactness of `Hom`** over a possibly noncommutative ring. If
 `M₁ --f--> M₂ --g--> M₃ → 0` is exact, then precomposition gives a sequence
