@@ -143,8 +143,8 @@ private def unitCircleMatrix : SL(2, ℝ) :=
   .mk !![1, -1 / 2; 1, 1 / 2] (by norm_num [Matrix.det_fin_two])
 
 private theorem coe_unitCircleMatrix :
-    (unitCircleMatrix : Matrix (Fin 2) (Fin 2) ℝ) = !![1, -1 / 2; 1, 1 / 2] :=
-  (rfl)
+    (unitCircleMatrix : Matrix (Fin 2) (Fin 2) ℝ) = !![1, -1 / 2; 1, 1 / 2] := by
+  rw [unitCircleMatrix, Matrix.SpecialLinearGroup.coe_mk]
 
 /-- Conjugating `unitCircleMatrix` by `J` and dividing by it gives `-S`. -/
 private theorem conjJ_unitCircleMatrix_mul_inv :

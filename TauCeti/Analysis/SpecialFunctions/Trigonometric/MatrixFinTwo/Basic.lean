@@ -160,7 +160,8 @@ def rotation (θ : ℝ) : SL(2, ℝ) :=
 /-- The entries of `rotation θ`. -/
 @[simp]
 theorem coe_rotation (θ : ℝ) :
-    (rotation θ : Matrix (Fin 2) (Fin 2) ℝ) = !![cos θ, sin θ; -sin θ, cos θ] := (rfl)
+    (rotation θ : Matrix (Fin 2) (Fin 2) ℝ) = !![cos θ, sin θ; -sin θ, cos θ] := by
+  rw [rotation, coe_mk]
 
 /-- The rotation by `0` is the identity. -/
 @[simp]
@@ -222,7 +223,8 @@ def conjRotation (θ t : ℝ) : SL(2, ℝ) :=
 @[simp]
 theorem coe_conjRotation (θ t : ℝ) :
     (conjRotation θ t : Matrix (Fin 2) (Fin 2) ℝ) =
-      !![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ] := (rfl)
+      !![cos θ, exp t * sin θ; -(exp (-t) * sin θ), cos θ] := by
+  rw [conjRotation, coe_mk]
 
 -- Not `@[simp]`: `conjRotation θ 0` is the form the triangle-group generators use, and the
 -- `@[simp]` trace lemmas below are stated in it.

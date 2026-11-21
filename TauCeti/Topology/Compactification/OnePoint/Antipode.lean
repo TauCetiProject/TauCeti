@@ -119,8 +119,8 @@ private noncomputable def antipodeGL : GL (Fin 2) 𝕜 :=
 
 omit [DecidableEq 𝕜] in
 private theorem antipodeGL_apply (i j : Fin 2) :
-    (antipodeGL : GL (Fin 2) 𝕜) i j = !![0, -1; 1, 0] i j :=
-  rfl
+    (antipodeGL : GL (Fin 2) 𝕜) i j = !![0, -1; 1, 0] i j := by
+  rw [antipodeGL, Matrix.SpecialLinearGroup.coe_GL_coe_matrix, Matrix.SpecialLinearGroup.coe_mk]
 
 /-- The antipodal map is complex conjugation followed by the Möbius transformation
 `z ↦ -1 / z`. -/
