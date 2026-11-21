@@ -17,8 +17,9 @@ on its target to a compactly supported smooth section. On the chart source the s
 obtained by applying the inverse frame to the test function's value in coordinates; elsewhere
 it is zero. Its closed support is exactly the inverse chart image of the test function's closed
 support. In particular this map is injective and sends support bounds `tsupport φ ⊆ K`
-to support bounds in `c.symm '' K`. When the vector bundle also carries a compatible structure over
-a normed `ℝ`-algebra `𝕜'`, chart extension commutes with `𝕜'`-scalars
+to support bounds in `c.symm '' K` (`ContMDiffSection.ChartTestData` packages these admissible
+chart-trivialization pairs). When the vector bundle also carries a compatible structure over a
+normed `ℝ`-algebra `𝕜'`, chart extension commutes with `𝕜'`-scalars
 (`Bundle.Trivialization.chartTestSectionOfNormedAlgebra`).
 
 In the reverse direction, a chart `c` with `C^n` inverse subordinate to a smooth bundle frame `t`
@@ -256,6 +257,53 @@ theorem coe_chartTestSectionOfNormedAlgebra :
 end ExtensionScalars
 
 end Bundle.Trivialization
+
+namespace ContMDiffSection
+
+section ChartTestData
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+  [TopologicalSpace M] [ChartedSpace H M]
+  (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
+  (V : M → Type*) [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V] (n : ℕ∞)
+
+/-- The data of a chart extension of native test functions: a trivialization of the atlas
+together with a chart that is `C^n` on its source and whose source lies in the base set. -/
+structure ChartTestData where
+  /-- The trivialization giving the bundle frame. -/
+  trivialization : Trivialization F (π F V)
+  /-- The trivialization belongs to the atlas of the fiber bundle. -/
+  [memTrivializationAtlas : MemTrivializationAtlas trivialization]
+  /-- The coordinate chart. -/
+  chart : OpenPartialHomeomorph M E
+  /-- The chart is `C^n` on its source. -/
+  contMDiffOn_chart : ContMDiffOn I 𝓘(ℝ, E) n chart chart.source
+  /-- The chart source lies in the base set of the trivialization. -/
+  source_subset : chart.source ⊆ trivialization.baseSet
+
+variable {I F V n} [T2Space M] [ContMDiffVectorBundle n F V I]
+
+/-- The chart extension of native test functions given by chart data. -/
+def ChartTestData.chartTestSection (p : ChartTestData I F V n) :
+    𝓓^{n}(⟨p.chart.target, p.chart.open_target⟩, F) →ₗ[ℝ] compactlySupported I F n V :=
+  letI := p.memTrivializationAtlas
+  p.trivialization.chartTestSection p.chart p.contMDiffOn_chart p.source_subset
+
+/-- The chart extension indexed by chart data is the chart extension of its trivialization and
+chart. -/
+@[simp]
+theorem ChartTestData.chartTestSection_def (p : ChartTestData I F V n) :
+    letI := p.memTrivializationAtlas
+    p.chartTestSection =
+      p.trivialization.chartTestSection p.chart p.contMDiffOn_chart p.source_subset :=
+  (rfl)
+
+end ChartTestData
+
+end ContMDiffSection
 
 namespace Bundle.Trivialization
 

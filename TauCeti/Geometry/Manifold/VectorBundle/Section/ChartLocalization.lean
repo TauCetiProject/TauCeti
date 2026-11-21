@@ -49,8 +49,6 @@ The converse direction of the universal property is
 * `Bundle.Trivialization.continuous_chartLocalization`: it is continuous.
 * `Bundle.Trivialization.chartTestSection_chartLocalization`: extending the localization through
   the chart recovers `ψ • s`.
-* `ContMDiffSection.ChartTestData`: a trivialization together with a chart smooth on its source
-  inside the base set, indexing the chart extensions `ChartTestData.chartTestSection`.
 * `ContMDiffSection.continuous_compactlySupportedTopology_iff_chartTestSection`: the universal
   property of the test topology with respect to chart extensions.
 * `ContMDiffSection.compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSection`:
@@ -298,49 +296,6 @@ namespace ContMDiffSection
 
 open Bundle.Trivialization
 
-section ChartTestData
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
-  [TopologicalSpace M] [ChartedSpace H M]
-  (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
-  (V : M → Type*) [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle ℝ F V] (n : ℕ∞)
-
-/-- The data of a chart extension of native test functions: a trivialization of the atlas
-together with a chart that is `C^n` on its source and whose source lies in the base set. -/
-structure ChartTestData where
-  /-- The trivialization giving the bundle frame. -/
-  trivialization : Trivialization F (π F V)
-  /-- The trivialization belongs to the atlas of the fiber bundle. -/
-  [memTrivializationAtlas : MemTrivializationAtlas trivialization]
-  /-- The coordinate chart. -/
-  chart : OpenPartialHomeomorph M E
-  /-- The chart is `C^n` on its source. -/
-  contMDiffOn_chart : ContMDiffOn I 𝓘(ℝ, E) n chart chart.source
-  /-- The chart source lies in the base set of the trivialization. -/
-  source_subset : chart.source ⊆ trivialization.baseSet
-
-variable {I F V n} [T2Space M] [ContMDiffVectorBundle n F V I]
-
-/-- The chart extension of native test functions given by chart data. -/
-def ChartTestData.chartTestSection (p : ChartTestData I F V n) :
-    𝓓^{n}(⟨p.chart.target, p.chart.open_target⟩, F) →ₗ[ℝ] compactlySupported I F n V :=
-  letI := p.memTrivializationAtlas
-  p.trivialization.chartTestSection p.chart p.contMDiffOn_chart p.source_subset
-
-/-- The chart extension indexed by chart data is the chart extension of its trivialization and
-chart. -/
-@[simp]
-theorem ChartTestData.chartTestSection_def (p : ChartTestData I F V n) :
-    letI := p.memTrivializationAtlas
-    p.chartTestSection =
-      p.trivialization.chartTestSection p.chart p.contMDiffOn_chart p.source_subset :=
-  (rfl)
-
-end ChartTestData
-
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M]
@@ -423,9 +378,10 @@ theorem compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSectio
   let := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) e U hU
   let := continuousSMul_compactlySupportedTopology (I := I) (n := n) e U hU
   let := locallyConvexSpace_compactlySupportedTopology (I := I) (n := n) e U hU
-  refine le_antisymm ?_ ((TauCeti.FinalLocallyConvexTopology.le_iff _ _).2 fun p ↦
-    letI := p.memTrivializationAtlas
-    continuous_chartTestSection _ _ p.contMDiffOn_chart p.source_subset e U hU)
+  refine le_antisymm ?_ ((TauCeti.FinalLocallyConvexTopology.le_iff _ _).2 fun p ↦ by
+    let := p.memTrivializationAtlas
+    rw [ChartTestData.chartTestSection_def]
+    exact continuous_chartTestSection _ _ p.contMDiffOn_chart p.source_subset e U hU)
   -- Each fixed-compact stage is a finite sum of continuous factorizations through the chart
   -- extensions of test charts at points of `M`.
   let p : M → ChartTestData I F V n := fun x ↦ ⟨trivializationAt F V x, testChart F I V x,

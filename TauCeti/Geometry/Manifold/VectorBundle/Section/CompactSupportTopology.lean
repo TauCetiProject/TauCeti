@@ -41,7 +41,7 @@ matrix, and both operations are continuous in the weak Whitney topology on coeff
 
 Conversely, when `E` is locally compact and `M` is a `C^n` manifold, the chart-reading and
 cutoff-reading maps for a chart `c` with `C^n` inverse subordinate to a smooth bundle frame `t` are
-continuous from any covering smooth frame topology
+continuous from any smooth frame topology whose domains cover `c.source`
 (`Bundle.Trivialization.continuous_chartReadSupportedIn`,
 `Bundle.Trivialization.continuous_chartReadTestFunction`,
 `Bundle.Trivialization.continuous_chartCutoffTestFunction`). When `c` is a two-sided `C^n` chart
@@ -422,13 +422,12 @@ private theorem chartTestSectionInv_apply (hc_univ : c.source = univ)
 variable [LocallyCompactSpace E] [IsManifold I n M]
   {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
-  (hcover : ∀ x : M, ∃ i, x ∈ U i)
 
-include hcover in
 /-- Reading sections supported in a compact subset `K ⊆ c.source` in a chart `c` with `C^n`
-inverse subordinate to `t` is continuous from any covering smooth frame topology into
-`𝓓^{n}_{c '' K}(E, F)`. -/
-theorem continuous_chartReadSupportedIn {K : Compacts M} (hKc : (K : Set M) ⊆ c.source) :
+inverse subordinate to `t` is continuous from any smooth frame topology whose domains cover
+`c.source` into `𝓓^{n}_{c '' K}(E, F)`. -/
+theorem continuous_chartReadSupportedIn (hcover : ∀ x ∈ c.source, ∃ i, x ∈ U i)
+    {K : Compacts M} (hKc : (K : Set M) ⊆ c.source) :
     letI := frameTopology (I := I) (n := n) e U hU
     Continuous (t.chartReadSupportedIn c hc_symm hct hKc) := by
   let := frameTopology (I := I) (n := n) e U hU
@@ -461,7 +460,8 @@ theorem continuous_chartReadSupportedIn {K : Compacts M} (hKc : (K : Set M) ⊆ 
           (hc_symm.comp_contMDiff contMDiff_subtypeVal fun y ↦ y.property)⟩
     have hcoord : Continuous (fun s : supportedIn I F n V K ↦
         t.frameCoordinates (I := I) (n := n) (U := Uc) hct s.val) :=
-      (continuous_frameCoordinates_of_cover e U hU hcover t Uc hct).comp continuous_subtypeVal
+      (continuous_frameCoordinates_of_subset_iUnion e U hU t Uc hct
+        fun x hx ↦ mem_iUnion.2 (hcover x hx)).comp continuous_subtypeVal
     refine (ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp
       (hcoord.prodMk (continuous_const (y := j)))).congr fun s ↦ ?_
     ext y
@@ -469,10 +469,10 @@ theorem continuous_chartReadSupportedIn {K : Compacts M} (hKc : (K : Set M) ⊆ 
     simp [j, t.chartReadSupportedIn_apply_of_mem c hc_symm hct hKc s y.property,
       hct (c.map_target y.property)]
 
-include hcover in
 /-- Reading sections supported in `K ⊆ c.source` as native test functions on `c.target` is
-continuous from any covering smooth frame topology. -/
-theorem continuous_chartReadTestFunction {K : Compacts M} (hKc : (K : Set M) ⊆ c.source) :
+continuous from any smooth frame topology whose domains cover `c.source`. -/
+theorem continuous_chartReadTestFunction (hcover : ∀ x ∈ c.source, ∃ i, x ∈ U i)
+    {K : Compacts M} (hKc : (K : Set M) ⊆ c.source) :
     letI := frameTopology (I := I) (n := n) e U hU
     Continuous (t.chartReadTestFunction c hc_symm hct hKc) := by
   let := frameTopology (I := I) (n := n) e U hU
@@ -490,12 +490,11 @@ theorem continuous_chartReadTestFunction {K : Compacts M} (hKc : (K : Set M) ⊆
   · simp [TestFunction.coe_ofSupportedInCLM,
       t.chartReadSupportedIn_apply_of_notMem c hc_symm hct hKc s hy, hy]
 
-include hcover in
 /-- Localizing sections by a compactly supported `C^n` cutoff `ρ` with `tsupport ρ ⊆ c.source`
-and reading the result in `t` and `c` is continuous from any covering smooth frame topology into
-`𝓓^{n}(⟨c.target, c.open_target⟩, F)`. -/
-theorem continuous_chartCutoffTestFunction (ρ : C^n⟮I, M; ℝ⟯) (hρc : HasCompactSupport ρ)
-    (hρs : _root_.tsupport ρ ⊆ c.source) :
+and reading the result in `t` and `c` is continuous from any smooth frame topology whose domains
+cover `c.source` into `𝓓^{n}(⟨c.target, c.open_target⟩, F)`. -/
+theorem continuous_chartCutoffTestFunction (hcover : ∀ x ∈ c.source, ∃ i, x ∈ U i)
+    (ρ : C^n⟮I, M; ℝ⟯) (hρc : HasCompactSupport ρ) (hρs : _root_.tsupport ρ ⊆ c.source) :
     letI := frameTopology (I := I) (n := n) e U hU
     Continuous (t.chartCutoffTestFunction c hc_symm hct ρ hρc hρs) := by
   let := frameTopology (I := I) (n := n) e U hU
@@ -510,6 +509,10 @@ theorem continuous_chartCutoffTestFunction (ρ : C^n⟮I, M; ℝ⟯) (hρc : Has
       t.chartCutoffTestFunction_apply_of_mem c hc_symm hct ρ hρc hρs s hy]
   · simp [hy]
 
+section ChartTestSectionEquiv
+
+variable (hcover : ∀ x : M, ∃ i, x ∈ U i)
+
 include hcover in
 private theorem continuous_chartTestSectionInv (hc_univ : c.source = univ) :
     letI := compactlySupportedTopology (I := I) (n := n) e U hU
@@ -518,7 +521,7 @@ private theorem continuous_chartTestSectionInv (hc_univ : c.source = univ) :
   let := compactlySupportedTopology (I := I) (n := n) e U hU
   refine (continuous_compactlySupportedTopology_iff e U hU
     (t.chartTestSectionInv c hc_symm hct hc_univ)).2 fun K ↦ ?_
-  refine (t.continuous_chartReadTestFunction c hc_symm hct e U hU hcover
+  refine (t.continuous_chartReadTestFunction c hc_symm hct e U hU (fun x _ ↦ hcover x)
     ((subset_univ _).trans hc_univ.symm.subset)).congr fun s ↦ ?_
   ext y
   by_cases hy : y ∈ c.target
@@ -572,6 +575,8 @@ theorem chartTestSectionEquiv_symm_apply_of_notMem [T2Space M]
     (t.chartTestSectionEquiv c hc_symm hct e U hU hcover hc hc_univ).symm s y = 0 := by
   let := compactlySupportedTopology (I := I) (n := n) e U hU
   exact t.chartReadTestFunction_apply_of_notMem c hc_symm hct _ _ hy
+
+end ChartTestSectionEquiv
 
 end ChartRead
 

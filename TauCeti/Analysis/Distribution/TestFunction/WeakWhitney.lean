@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
 public import Mathlib.Topology.ContinuousMap.Compact
 public import TauCeti.Geometry.Manifold.ContMDiffMap.WeakWhitney.Basic
-import Mathlib.Analysis.Normed.Group.Basic
 
 /-!
 # Test functions as `C^n` maps with the weak Whitney topology
