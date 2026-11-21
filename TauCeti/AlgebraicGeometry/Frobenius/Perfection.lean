@@ -82,11 +82,14 @@ change and composition and holds for universal homeomorphisms. When `f` is étal
   composition with `X^perf ⟶ X` is a bijection `(T ⟶ X^perf) → (T ⟶ X)` for every perfect `T`.
 * `AlgebraicGeometry.Scheme.isIso_fromPerfection`: a perfect scheme is its own perfection.
 * `AlgebraicGeometry.Scheme.Hom.perfection_comp`: the perfection is functorial.
+* `AlgebraicGeometry.Scheme.isPullback_perfection`: the perfection preserves cartesian squares.
 * `AlgebraicGeometry.Scheme.Hom.isUniversalHomeomorphism_perfectionToPullback`: the comparison
-  morphism `X^perf ⟶ X ×_Y Y^perf` is a universal homeomorphism. Consequently the perfection of a
-  quasi-compact, quasi-separated, affine, separated, integral or universally closed morphism, or of
-  a universal homeomorphism, has the same property (Bhatt–Scholze 2017, Lemma 3.4 (i)–(vii), one
-  direction).
+  morphism `X^perf ⟶ X ×_Y Y^perf` is a universal homeomorphism.
+* `AlgebraicGeometry.Scheme.Hom.perfection_mem_of_isUniversalHomeomorphism_le`: the perfection
+  preserves every property of morphisms that is stable under base change and composition and holds
+  for universal homeomorphisms. In particular the perfection of a quasi-compact, quasi-separated,
+  affine, separated, integral or universally closed morphism, or of a universal homeomorphism, has
+  the same property (Bhatt–Scholze 2017, Lemma 3.4 (i)–(vii), one direction).
 * `AlgebraicGeometry.Scheme.Hom.isIso_perfectionToPullback_iff`: the comparison morphism is an
   isomorphism exactly when `X ×_Y Y^perf` is perfect.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_perfection_iff`: the perfection square of `f` is
@@ -536,6 +539,54 @@ theorem perfection_comp :
 instance [IsIso f] : IsIso (f.perfection p hX hY) :=
   ⟨(inv f).perfection p hY hX, by simp [← perfection_comp], by simp [← perfection_comp]⟩
 
+end Hom
+
+/-- The lift to the perfection is natural in the target: lifting `g ≫ f` to the perfection of `Y`
+is the lift of `g` to the perfection of `X` followed by the perfection of `f`. -/
+@[reassoc (attr := simp)]
+theorem homPerfectionEquiv_symm_comp_perfection {T : Scheme.{u}} [IsPerfect T p] (g : T ⟶ X) :
+    (X.homPerfectionEquiv p hX T).symm g ≫ f.perfection p hX hY =
+      (Y.homPerfectionEquiv p hY T).symm (g ≫ f) :=
+  perfection_hom_ext (by simp)
+
+/-- The perfection of the structure morphism `X^perf ⟶ X` is an isomorphism
+`(X^perf)^perf ≅ X^perf`: it is the structure morphism of the perfection of the perfect scheme
+`X^perf`. -/
+instance isIso_perfection_fromPerfection (hX' : (p : Γ(X.perfection p hX, ⊤)) = 0) :
+    IsIso ((X.fromPerfection p hX).perfection p hX' hX) := by
+  rw [← ((X.fromPerfection p hX).eq_perfection_iff p hX' hX
+    ((X.perfection p hX).fromPerfection p hX')).2 rfl]
+  infer_instance
+
+/-- **The perfection preserves pullbacks.** The perfection of a cartesian square of schemes over
+`𝔽_p` is cartesian, since the perfection is a coreflection into perfect schemes and a fibre product
+of perfect schemes is perfect. -/
+theorem isPullback_perfection {W S : Scheme.{u}} {fst : W ⟶ X} {snd : W ⟶ Y} {f₁ : X ⟶ S}
+    {g₁ : Y ⟶ S} (h : IsPullback fst snd f₁ g₁) (hW : (p : Γ(W, ⊤)) = 0)
+    (hS : (p : Γ(S, ⊤)) = 0) :
+    IsPullback (fst.perfection p hW hX) (snd.perfection p hW hY) (f₁.perfection p hX hS)
+      (g₁.perfection p hY hS) := by
+  have w : fst.perfection p hW hX ≫ f₁.perfection p hX hS =
+      snd.perfection p hW hY ≫ g₁.perfection p hY hS :=
+    perfection_hom_ext (by simp [h.w])
+  -- The inverse comparison morphism lifts the map from the fibre product of the perfections, which
+  -- is perfect, to `W`.
+  have w' : (pullback.fst (f₁.perfection p hX hS) (g₁.perfection p hY hS) ≫
+      X.fromPerfection p hX) ≫ f₁ =
+      (pullback.snd (f₁.perfection p hX hS) (g₁.perfection p hY hS) ≫
+        Y.fromPerfection p hY) ≫ g₁ := by
+    rw [Category.assoc, Category.assoc, ← Hom.perfection_fromPerfection f₁ p hX hS,
+      ← Hom.perfection_fromPerfection g₁ p hY hS, pullback.condition_assoc]
+  refine .of_iso_pullback ⟨w⟩
+    { hom := pullback.lift _ _ w
+      inv := (W.homPerfectionEquiv p hW _).symm (h.lift _ _ w')
+      hom_inv_id := perfection_hom_ext (h.hom_ext (by simp [h.lift_fst]) (by simp [h.lift_snd]))
+      inv_hom_id := pullback.hom_ext (perfection_hom_ext (by simp [h.lift_fst]))
+        (perfection_hom_ext (by simp [h.lift_snd])) }
+    (by simp) (by simp)
+
+namespace Hom
+
 /-- The comparison morphism `X^perf ⟶ X ×_Y Y^perf` from the perfection of `X` to the base change
 of `f` along the perfection of `Y`, with components `X^perf ⟶ X` and `f^perf`. -/
 def perfectionToPullback : X.perfection p hX ⟶ pullback f (Y.fromPerfection p hY) :=
@@ -571,7 +622,6 @@ def perfectionIsoPerfectionPullback :
 
 /-- The inverse of the isomorphism `X^perf ≅ (X ×_Y Y^perf)^perf` is the perfection of the
 projection `X ×_Y Y^perf ⟶ X`. -/
-@[simp]
 theorem perfectionIsoPerfectionPullback_inv :
     (f.perfectionIsoPerfectionPullback p hX hY).inv =
       (pullback.fst f (Y.fromPerfection p hY)).perfection p
@@ -588,10 +638,31 @@ theorem perfectionIsoPerfectionPullback_hom_fromPerfection :
       f.perfectionToPullback p hX hY :=
   homPerfectionEquiv_symm_comp _
 
+/-- The inverse of the isomorphism `X^perf ≅ (X ×_Y Y^perf)^perf` followed by the comparison
+morphism `X^perf ⟶ X ×_Y Y^perf` is the structure morphism of the perfection of `X ×_Y Y^perf`. -/
+@[reassoc (attr := simp)]
+theorem perfectionIsoPerfectionPullback_inv_perfectionToPullback :
+    (f.perfectionIsoPerfectionPullback p hX hY).inv ≫ f.perfectionToPullback p hX hY =
+      (pullback f (Y.fromPerfection p hY)).fromPerfection p
+        (natCast_eq_zero_of_hom (pullback.fst _ _) hX) := by
+  rw [Iso.inv_comp_eq, perfectionIsoPerfectionPullback_hom_fromPerfection]
+
+/-- The inverse of the isomorphism `X^perf ≅ (X ×_Y Y^perf)^perf` followed by the structure
+morphism of the perfection of `X` is the structure morphism of the perfection of `X ×_Y Y^perf`
+followed by the projection to `X`. -/
+@[reassoc (attr := simp)]
+theorem perfectionIsoPerfectionPullback_inv_fromPerfection :
+    (f.perfectionIsoPerfectionPullback p hX hY).inv ≫ X.fromPerfection p hX =
+      (pullback f (Y.fromPerfection p hY)).fromPerfection p
+        (natCast_eq_zero_of_hom (pullback.fst _ _) hX) ≫ pullback.fst _ _ := by
+  rw [← f.perfectionToPullback_fst p hX hY,
+    perfectionIsoPerfectionPullback_inv_perfectionToPullback_assoc]
+
 /-- The perfection of the projection `X ×_Y Y^perf ⟶ X` is an isomorphism. -/
 instance isIso_perfection_pullbackFst (hP : (p : Γ(pullback f (Y.fromPerfection p hY), ⊤)) = 0) :
     IsIso ((pullback.fst f (Y.fromPerfection p hY)).perfection p hP hX) :=
-  (f.perfectionIsoPerfectionPullback p hX hY).isIso_inv
+  (isPullback_perfection p hX (natCast_perfection_eq_zero Y p hY)
+    (IsPullback.of_hasPullback f (Y.fromPerfection p hY)) hP hY).isIso_fst_of_isIso
 
 /-- **The perfection of `X` is a universal homeomorphism onto `X ×_Y Y^perf`.** The comparison
 morphism `X^perf ⟶ X ×_Y Y^perf` is the structure morphism of the perfection of `X ×_Y Y^perf`, up
@@ -647,42 +718,46 @@ theorem isPullback_perfection_of_etale [Etale f] :
     IsPullback (X.fromPerfection p hX) (f.perfection p hX hY) f (Y.fromPerfection p hY) :=
   (f.isIso_perfectionToPullback_iff_isPullback p hX hY).1 inferInstance
 
-/-! The perfection of `f` is the universal homeomorphism `X^perf ⟶ X ×_Y Y^perf` followed by the
-base change of `f` along `Y^perf ⟶ Y`. Hence it inherits every property of `f` that is stable under
-base change and composition and holds for universal homeomorphisms; in particular the properties of
-Bhatt–Scholze 2017, Lemma 3.4 (i)–(vii). -/
-
-instance [QuasiCompact f] : QuasiCompact (f.perfection p hX hY) := by
+/-- **The perfection preserves properties of morphisms stable under base change and composition
+that hold for universal homeomorphisms.** The perfection of `f` is the universal homeomorphism
+`X^perf ⟶ X ×_Y Y^perf` followed by the base change of `f` along `Y^perf ⟶ Y`. -/
+theorem perfection_mem_of_isUniversalHomeomorphism_le (P : MorphismProperty Scheme.{u})
+    [P.IsStableUnderBaseChange] [P.IsStableUnderComposition] (hP : @IsUniversalHomeomorphism ≤ P)
+    (hf : P f) : P (f.perfection p hX hY) := by
   rw [← perfectionToPullback_snd]
-  infer_instance
+  exact P.comp_mem _ _ (hP _ _ _ inferInstance) (P.pullback_snd _ _ hf)
 
-instance [QuasiSeparated f] : QuasiSeparated (f.perfection p hX hY) := by
-  rw [← perfectionToPullback_snd]
-  infer_instance
+/-! The following instances are the forward direction of Bhatt–Scholze 2017, Lemma 3.4 (i)–(vii),
+as special cases of `perfection_mem_of_isUniversalHomeomorphism_le`. -/
 
-instance [IsAffineHom f] : IsAffineHom (f.perfection p hX hY) := by
-  have : IsAffineHom (f.perfectionToPullback p hX hY) :=
-    (IsIntegralHom.iff_universallyClosed_and_isAffineHom.1 inferInstance).2
-  have : IsAffineHom (pullback.snd f (Y.fromPerfection p hY)) :=
-    MorphismProperty.IsStableUnderBaseChange.of_isPullback (IsPullback.of_hasPullback _ _) ‹_›
-  rw [← perfectionToPullback_snd]
-  infer_instance
+instance [QuasiCompact f] : QuasiCompact (f.perfection p hX hY) :=
+  f.perfection_mem_of_isUniversalHomeomorphism_le p hX hY @QuasiCompact
+    (fun _ _ _ _ ↦ inferInstance) ‹_›
 
-instance [IsSeparated f] : IsSeparated (f.perfection p hX hY) := by
-  rw [← perfectionToPullback_snd]
-  infer_instance
+instance [QuasiSeparated f] : QuasiSeparated (f.perfection p hX hY) :=
+  f.perfection_mem_of_isUniversalHomeomorphism_le p hX hY @QuasiSeparated
+    (fun _ _ _ _ ↦ inferInstance) ‹_›
 
-instance [IsIntegralHom f] : IsIntegralHom (f.perfection p hX hY) := by
-  rw [← perfectionToPullback_snd]
-  infer_instance
+instance [IsAffineHom f] : IsAffineHom (f.perfection p hX hY) :=
+  have : MorphismProperty.IsStableUnderComposition @IsAffineHom :=
+    ⟨fun _ _ _ _ ↦ inferInstance⟩
+  f.perfection_mem_of_isUniversalHomeomorphism_le p hX hY @IsAffineHom
+    (fun _ _ _ _ ↦ (IsIntegralHom.iff_universallyClosed_and_isAffineHom.1 inferInstance).2) ‹_›
 
-instance [UniversallyClosed f] : UniversallyClosed (f.perfection p hX hY) := by
-  rw [← perfectionToPullback_snd]
-  infer_instance
+instance [IsSeparated f] : IsSeparated (f.perfection p hX hY) :=
+  f.perfection_mem_of_isUniversalHomeomorphism_le p hX hY @IsSeparated
+    (fun _ _ _ _ ↦ inferInstance) ‹_›
 
-instance [IsUniversalHomeomorphism f] : IsUniversalHomeomorphism (f.perfection p hX hY) := by
-  rw [← perfectionToPullback_snd]
-  infer_instance
+instance [IsIntegralHom f] : IsIntegralHom (f.perfection p hX hY) :=
+  f.perfection_mem_of_isUniversalHomeomorphism_le p hX hY @IsIntegralHom
+    (fun _ _ _ _ ↦ inferInstance) ‹_›
+
+instance [UniversallyClosed f] : UniversallyClosed (f.perfection p hX hY) :=
+  f.perfection_mem_of_isUniversalHomeomorphism_le p hX hY @UniversallyClosed
+    (fun _ _ _ _ ↦ inferInstance) ‹_›
+
+instance [IsUniversalHomeomorphism f] : IsUniversalHomeomorphism (f.perfection p hX hY) :=
+  f.perfection_mem_of_isUniversalHomeomorphism_le p hX hY @IsUniversalHomeomorphism le_rfl ‹_›
 
 /-- The perfection of an étale morphism is étale (Bhatt–Scholze 2017, Lemma 3.4 (xi)). -/
 instance [Etale f] : Etale (f.perfection p hX hY) := by
