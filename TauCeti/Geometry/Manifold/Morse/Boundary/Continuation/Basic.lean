@@ -94,6 +94,9 @@ is the identity**
   `TauCeti.isContinuationField_continuationRescaling_smul`: the constant continuation field and
   the rescaled continuation field of a large-constant potential are continuation fields.
 * `TauCeti.disjoint_morseContinuationSlice`: the slices of distinct pairs are disjoint.
+* `TauCeti.exists_snd_eq_intervalBaseOrbit`: for any field whose time component in the open slab
+  is `C t (1 - t²)`, the time component of a trajectory through the slab is a translate of the
+  base trajectory.
 
 In the namespace `TauCeti.IsContinuationField`:
 
@@ -384,6 +387,22 @@ end IsAdaptedPseudoGradient.IsMorseSmale
 
 /-! ### Trajectories of continuation fields -/
 
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- **The time component of a trajectory through the slab is a translate of `q`.** For `C ≠ 0`,
+along an integral curve of a field on `M × ℝ` whose time component in the open slab is
+`C t (1 - t²)`, and which meets the open slab, the time component is `s ↦ q(s + τ)` for the base
+trajectory `q = TauCeti.intervalBaseOrbit C` and a shift `τ`. -/
+theorem exists_snd_eq_intervalBaseOrbit {V : (z : M × ℝ) → TangentSpace (𝓘(ℝ, E).prod 𝓘(ℝ)) z}
+    {γ : ℝ → M × ℝ} {s₀ : ℝ}
+    (hsnd : ∀ z : M × ℝ, z.2 ∈ Ioo 0 1 → (V z : E × ℝ).2 = C * z.2 * (1 - z.2 ^ 2))
+    (hγ : IsMIntegralCurve γ V) (h₀ : (γ s₀).2 ∈ Ioo 0 1) (hC : C ≠ 0) :
+    ∃ τ, ∀ s, (γ s).2 = intervalBaseOrbit C (s + τ) := by
+  have hd := hγ.hasDerivAt_snd
+  obtain ⟨τ, hτ⟩ := exists_eq_intervalBaseOrbit_of_hasDerivAt hC
+    (continuous_iff_continuousAt.2 fun s ↦ (hd s).continuousAt)
+    (fun s hs ↦ (hd s).congr_deriv (hsnd (γ s) hs)) h₀
+  exact ⟨τ, congrFun hτ⟩
+
 namespace IsContinuationField
 
 variable {f₀ f₁ : M → ℝ} {X₀ X₁ : (x : M) → TangentSpace 𝓘(ℝ, E) x}
@@ -400,12 +419,8 @@ omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] 
 along an integral curve of a continuation field which meets the open slab, the time component is
 `s ↦ q(s + τ)` for the base trajectory `q = TauCeti.intervalBaseOrbit C` and a shift `τ`. -/
 theorem exists_snd_eq_intervalBaseOrbit (hC : C ≠ 0) :
-    ∃ τ, ∀ s, (γ s).2 = intervalBaseOrbit C (s + τ) := by
-  have hd := hγ.hasDerivAt_snd
-  obtain ⟨τ, hτ⟩ := exists_eq_intervalBaseOrbit_of_hasDerivAt hC
-    (continuous_iff_continuousAt.2 fun s ↦ (hd s).continuousAt)
-    (fun s hs ↦ (hd s).congr_deriv (hV.snd_eq (γ s) hs)) h₀
-  exact ⟨τ, congrFun hτ⟩
+    ∃ τ, ∀ s, (γ s).2 = intervalBaseOrbit C (s + τ) :=
+  TauCeti.exists_snd_eq_intervalBaseOrbit hV.snd_eq hγ h₀ hC
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
 /-- **A trajectory meeting the open slab stays in it.** -/

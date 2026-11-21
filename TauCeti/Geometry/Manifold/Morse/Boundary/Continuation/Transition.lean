@@ -38,7 +38,7 @@ negative time `a` lies in the unstable manifold `W^u(p)` of `X₀`, and to `q` a
 its value at one very positive time `b` lies in the stable manifold `W^s(q)` of `X₁`. Reading
 trajectories on the middle level `t = 1 / 2`, at the time `σ` with `q σ = 1 / 2`, this identifies
 the slices of the continuation map
-(`TauCeti.IsContinuationField.morseContinuationSlice_eq_preimage`):
+(`TauCeti.IsContinuationField.eventually_morseContinuationSlice_eq_preimage`):
 
 `TauCeti.morseContinuationSlice V p q = φ_{σ, a}⁻¹ (W^u(p)) ∩ φ_{σ, b}⁻¹ (W^s(q))`.
 
@@ -48,8 +48,8 @@ bijection with the intersection `W^u(p) ∩ Φ⁻¹ (W^s(q))` for the single tra
 the very positive one; the same `Φ` serves all pairs of critical points. So the coefficients of the
 mod-two continuation map are intersection counts of the unstable manifolds of `X₀` with the
 preimages under `Φ` of the stable manifolds of `X₁`
-(`TauCeti.IsContinuationField.morseContinuationCoeff_eq_ncard_inter_preimage`). In this form the
-transversality condition for continuations is the transversality of `W^u(p)` and
+(`TauCeti.IsContinuationField.eventually_morseContinuationCoeff_eq_ncard_inter_preimage`). In
+this form the transversality condition for continuations is the transversality of `W^u(p)` and
 `Φ⁻¹ (W^s(q))`, which is the stable manifold of `Φ⁻¹ q` for the pullback of `X₁` by `Φ`.
 
 ## Main declarations
@@ -65,13 +65,18 @@ transversality condition for continuations is the transversality of `W^u(p)` and
   `TauCeti.IsAdaptedPseudoGradient.eqOn_timeDependentFlowOf_flow_of_gt`: a time-dependent flow
   follows the flow of an adapted pseudo-gradient on the times where its field is that
   pseudo-gradient.
+* `TauCeti.IsAdaptedPseudoGradient.tendsto_atBot_iff_timeDependentFlowOf_mem_unstableSet`,
+  `TauCeti.IsAdaptedPseudoGradient.tendsto_atTop_iff_timeDependentFlowOf_mem_stableSet`: a
+  trajectory `s ↦ (φ_{τ, s + τ} x, q (s + τ))` enters the slab along an unstable manifold and
+  leaves it along a stable manifold exactly when its value at one very negative, resp. very
+  positive, time lies in that manifold.
 * `TauCeti.IsContinuationField.eventually_atBot_continuationSpaceField_eq`,
   `TauCeti.IsContinuationField.eventually_atTop_continuationSpaceField_eq`: the space component
   along the base trajectory is `X₀` at very negative times and `X₁` at very positive times.
-* `TauCeti.IsContinuationField.morseContinuationSlice_eq_preimage`: the slices of the
+* `TauCeti.IsContinuationField.eventually_morseContinuationSlice_eq_preimage`: the slices of the
   continuation map are preimages of unstable and stable manifolds under the transition maps.
-* `TauCeti.IsContinuationField.morseContinuationCoeff_eq_ncard_inter_preimage`: the continuation
-  coefficients count the points of `W^u(p) ∩ φ_{a, b}⁻¹ (W^s(q))` modulo two.
+* `TauCeti.IsContinuationField.eventually_morseContinuationCoeff_eq_ncard_inter_preimage`: the
+  continuation coefficients count the points of `W^u(p) ∩ φ_{a, b}⁻¹ (W^s(q))` modulo two.
 
 ## References
 
@@ -148,10 +153,8 @@ theorem isMIntegralCurve_timeDependentFlowOf_continuationSpaceField (τ : ℝ) (
       (fun s ↦ (timeDependentFlowOf (continuationSpaceField C V) τ s x, intervalBaseOrbit C s))
       V := by
   have hY := contMDiff_continuationSpaceField (C := C) hV
-  have hdom := timeDependentFlowDomain_eq_univ
-    (isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY)
   intro s
-  have h₁ := hasMFDerivAt_timeDependentFlowOf hY (s := τ) (t := s) (x := x) (hdom ▸ mem_univ _)
+  have h₁ := hasMFDerivAt_timeDependentFlowOf_of_compactSpace hY (s := τ) (t := s) (x := x)
   have h₂ : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ) (intervalBaseOrbit C) s ((1 : ℝ →L[ℝ] ℝ).smulRight
       (C * intervalBaseOrbit C s * (1 - intervalBaseOrbit C s ^ 2))) :=
     hasMFDerivAt_iff_hasFDerivAt.2 (hasDerivAt_intervalBaseOrbit C s).hasFDerivAt
@@ -175,11 +178,7 @@ theorem exists_eq_timeDependentFlowOf_continuationSpaceField (hC : C ≠ 0) {γ 
     ∃ τ, ∀ s, γ s = (timeDependentFlowOf (continuationSpaceField C V) τ (s + τ) (γ 0).1,
       intervalBaseOrbit C (s + τ)) := by
   have hY := contMDiff_continuationSpaceField (C := C) hV
-  have hd := IsMIntegralCurve.hasDerivAt_snd hγ
-  obtain ⟨τ, hτ⟩ := exists_eq_intervalBaseOrbit_of_hasDerivAt hC
-    (continuous_iff_continuousAt.2 fun s ↦ (hd s).continuousAt)
-    (fun s hs ↦ (hd s).congr_deriv (hsnd (γ s) hs)) h₀
-  have hτ' (s : ℝ) : (γ s).2 = intervalBaseOrbit C (s + τ) := congrFun hτ s
+  obtain ⟨τ, hτ'⟩ := exists_snd_eq_intervalBaseOrbit hsnd hγ h₀ hC
   -- In the absolute time `u = s + τ`, the space component solves `x' = Y u x`.
   set δ : ℝ → M := fun u ↦ (γ (u - τ)).1 with hδ_def
   have hδ (u : ℝ) : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ, E) δ u
@@ -213,24 +212,13 @@ variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace
   {Y : ℝ → (x : M) → TangentSpace 𝓘(ℝ, E) x}
   (hY : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, E)) 𝓘(ℝ, E).tangent 1
     fun p : ℝ × M ↦ (⟨p.2, Y p.1 p.2⟩ : TangentBundle 𝓘(ℝ, E) M))
-  {τ a b : ℝ} {x : M}
+  {τ a b : ℝ} {x p : M}
 
 namespace IsAdaptedPseudoGradient
 
 include hX hY
 
-omit hX in
-/-- On the times where a time-dependent field is the adapted pseudo-gradient `X`, the curves of
-its time-dependent flow are integral curves of `X`. -/
-private theorem isMIntegralCurveOn_timeDependentFlowOf {s : Set ℝ} (hs : ∀ u ∈ s, Y u = X) :
-    IsMIntegralCurveOn (fun u ↦ timeDependentFlowOf Y τ u x) X s := fun u hu ↦ by
-  have hdom := timeDependentFlowDomain_eq_univ
-    (isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY)
-  have h := hasMFDerivAt_timeDependentFlowOf hY (s := τ) (t := u) (x := x) (hdom ▸ mem_univ _)
-  rw [hs u hu] at h
-  exact h.hasMFDerivWithinAt
-
-/-- **Before a time `b` from which on a time-dependent field is `X`, its flow follows the flow of
+/-- **Before a time `b` up to which a time-dependent field is `X`, its flow follows the flow of
 `X`.** If the `C¹` time-dependent field `Y` is the adapted pseudo-gradient `X` at all times
 before `b`, then for `a < b` the curve `u ↦ φ_{τ, u} x` of its time-dependent flow is, up to time
 `a`, the orbit of `φ_{τ, a} x` under the flow of `X`, shifted by `a`. -/
@@ -238,10 +226,12 @@ theorem eqOn_timeDependentFlowOf_flow_of_lt (hYX : ∀ u < b, Y u = X) (hab : a 
     EqOn (fun u ↦ timeDependentFlowOf Y τ u x)
       (fun u ↦ hX.flow (u - a) (timeDependentFlowOf Y τ a x)) (Iic a) := fun u (hu : u ≤ a) ↦
   hX.eqOn_flow_of_isMIntegralCurveOn
-    ((isMIntegralCurveOn_timeDependentFlowOf hY (s := Iio b) hYX).mono Ioo_subset_Iio_self)
+    ((isMIntegralCurveOn_timeDependentFlowOf
+      (isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY) hY
+      (T := Iio b) hYX).mono Ioo_subset_Iio_self)
     (a := u - 1) ⟨by linarith, hab⟩ ⟨by linarith, hu.trans_lt hab⟩
 
-/-- **After a time `a` up to which a time-dependent field is `X`, its flow follows the flow of
+/-- **After a time `a` from which on a time-dependent field is `X`, its flow follows the flow of
 `X`.** If the `C¹` time-dependent field `Y` is the adapted pseudo-gradient `X` at all times after
 `a`, then for `a < b` the curve `u ↦ φ_{τ, u} x` of its time-dependent flow is, from time `b` on,
 the orbit of `φ_{τ, b} x` under the flow of `X`, shifted by `b`. -/
@@ -249,8 +239,46 @@ theorem eqOn_timeDependentFlowOf_flow_of_gt (hYX : ∀ u > a, Y u = X) (hab : a 
     EqOn (fun u ↦ timeDependentFlowOf Y τ u x)
       (fun u ↦ hX.flow (u - b) (timeDependentFlowOf Y τ b x)) (Ici b) := fun u (hu : b ≤ u) ↦
   hX.eqOn_flow_of_isMIntegralCurveOn
-    ((isMIntegralCurveOn_timeDependentFlowOf hY (s := Ioi a) hYX).mono Ioo_subset_Ioi_self)
+    ((isMIntegralCurveOn_timeDependentFlowOf
+      (isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY) hY
+      (T := Ioi a) hYX).mono Ioo_subset_Ioi_self)
     (b := u + 1) ⟨hab, by linarith⟩ ⟨hab.trans_le hu, by linarith⟩
+
+/-- **A time-dependent trajectory through the slab enters it along the unstable manifold.** Let
+the `C¹` time-dependent field `Y` be the adapted pseudo-gradient `X` at all times before `b`, let
+`a < b`, and let `C > 0`. Then the curve `s ↦ (φ_{τ, s + τ} x, q (s + τ))` in `M × ℝ`, where `φ`
+is the time-dependent flow of `Y` and `q` the base trajectory, tends to `(p, 0)` at `-∞` exactly
+when `φ_{τ, a} x` lies in the unstable manifold of `p` for `X`. -/
+theorem tendsto_atBot_iff_timeDependentFlowOf_mem_unstableSet (hC : 0 < C)
+    (hYX : ∀ u < b, Y u = X) (hab : a < b) :
+    Tendsto (fun s ↦ (timeDependentFlowOf Y τ (s + τ) x, intervalBaseOrbit C (s + τ))) atBot
+      (𝓝 (p, 0)) ↔ timeDependentFlowOf Y τ a x ∈ hX.flow.unstableSet p := by
+  have hq : Tendsto (fun s ↦ intervalBaseOrbit C (s + τ)) atBot (𝓝 0) :=
+    (tendsto_intervalBaseOrbit_atBot hC).comp (tendsto_atBot_add_const_right _ τ tendsto_id)
+  rw [nhds_prod_eq, tendsto_prod_iff',
+    ← Flow.tendsto_atBot_iff_mem_unstableSet_of_eqOn
+      (hX.eqOn_timeDependentFlowOf_flow_of_lt hY hYX hab),
+    and_iff_left hq]
+  exact ⟨fun h ↦ (h.comp (tendsto_atBot_add_const_right _ (-τ) tendsto_id)).congr
+    fun u ↦ by simp, fun h ↦ h.comp (tendsto_atBot_add_const_right _ τ tendsto_id)⟩
+
+/-- **A time-dependent trajectory through the slab leaves it along the stable manifold.** Let the
+`C¹` time-dependent field `Y` be the adapted pseudo-gradient `X` at all times after `a`, let
+`a < b`, and let `C > 0`. Then the curve `s ↦ (φ_{τ, s + τ} x, q (s + τ))` in `M × ℝ`, where `φ`
+is the time-dependent flow of `Y` and `q` the base trajectory, tends to `(p, 1)` at `+∞` exactly
+when `φ_{τ, b} x` lies in the stable manifold of `p` for `X`. -/
+theorem tendsto_atTop_iff_timeDependentFlowOf_mem_stableSet (hC : 0 < C)
+    (hYX : ∀ u > a, Y u = X) (hab : a < b) :
+    Tendsto (fun s ↦ (timeDependentFlowOf Y τ (s + τ) x, intervalBaseOrbit C (s + τ))) atTop
+      (𝓝 (p, 1)) ↔ timeDependentFlowOf Y τ b x ∈ hX.flow.stableSet p := by
+  have hq : Tendsto (fun s ↦ intervalBaseOrbit C (s + τ)) atTop (𝓝 1) :=
+    (tendsto_intervalBaseOrbit_atTop hC).comp (tendsto_atTop_add_const_right _ τ tendsto_id)
+  rw [nhds_prod_eq, tendsto_prod_iff',
+    ← Flow.tendsto_atTop_iff_mem_stableSet_of_eqOn
+      (hX.eqOn_timeDependentFlowOf_flow_of_gt hY hYX hab),
+    and_iff_left hq]
+  exact ⟨fun h ↦ (h.comp (tendsto_atTop_add_const_right _ (-τ) tendsto_id)).congr
+    fun u ↦ by simp, fun h ↦ h.comp (tendsto_atTop_add_const_right _ τ tendsto_id)⟩
 
 end IsAdaptedPseudoGradient
 
@@ -299,7 +327,8 @@ the time at which `q σ = 1 / 2`. Then for every sufficiently negative time `a` 
 sufficiently positive time `b`, the points on the middle level of the trajectories from `(p, 0)`
 to `(q, 1)` are the points `x` with `φ_{σ, a} x` in the unstable manifold of `p` for `X₀` and
 `φ_{σ, b} x` in the stable manifold of `q` for `X₁`, for all `p` and `q` at once. -/
-theorem morseContinuationSlice_eq_preimage {σ : ℝ} (hσ : intervalBaseOrbit C σ = 1 / 2) :
+theorem eventually_morseContinuationSlice_eq_preimage {σ : ℝ}
+    (hσ : intervalBaseOrbit C σ = 1 / 2) :
     ∀ᶠ a in atBot, ∀ᶠ b in atTop, ∀ p q : M, morseContinuationSlice V p q =
       timeDependentFlowOf (continuationSpaceField C V) σ a ⁻¹' hX₀.flow.unstableSet p ∩
         timeDependentFlowOf (continuationSpaceField C V) σ b ⁻¹' hX₁.flow.stableSet q := by
@@ -317,25 +346,11 @@ theorem morseContinuationSlice_eq_preimage {σ : ℝ} (hσ : intervalBaseOrbit C
     (isMIntegralCurve_timeDependentFlowOf_continuationSpaceField hsnd hVs σ x).comp_add σ
   -- Its limits at the two ends are read off the transition maps to the times `a` and `b`.
   have hbot (x : M) : Tendsto (Γ x) atBot (𝓝 (p, 0)) ↔
-      timeDependentFlowOf (continuationSpaceField C V) σ a x ∈ hX₀.flow.unstableSet p := by
-    have heq := hX₀.eqOn_timeDependentFlowOf_flow_of_lt hY (τ := σ) (x := x)
-      (fun u hu ↦ ha₀ u hu.le) ha
-    have hsnd₀ : Tendsto (fun s ↦ (Γ x s).2) atBot (𝓝 0) :=
-      (tendsto_intervalBaseOrbit_atBot hC).comp (tendsto_atBot_add_const_right _ σ tendsto_id)
-    rw [nhds_prod_eq, tendsto_prod_iff', ← Flow.tendsto_atBot_iff_mem_unstableSet_of_eqOn heq,
-      and_iff_left hsnd₀]
-    exact ⟨fun h ↦ (h.comp (tendsto_atBot_add_const_right _ (-σ) tendsto_id)).congr
-      fun u ↦ by simp [Γ], fun h ↦ h.comp (tendsto_atBot_add_const_right _ σ tendsto_id)⟩
+      timeDependentFlowOf (continuationSpaceField C V) σ a x ∈ hX₀.flow.unstableSet p :=
+    hX₀.tendsto_atBot_iff_timeDependentFlowOf_mem_unstableSet hY hC (fun u hu ↦ ha₀ u hu.le) ha
   have htop (x : M) : Tendsto (Γ x) atTop (𝓝 (q, 1)) ↔
-      timeDependentFlowOf (continuationSpaceField C V) σ b x ∈ hX₁.flow.stableSet q := by
-    have heq := hX₁.eqOn_timeDependentFlowOf_flow_of_gt hY (τ := σ) (x := x)
-      (fun u hu ↦ hb₀ u hu.le) hb
-    have hsnd₁ : Tendsto (fun s ↦ (Γ x s).2) atTop (𝓝 1) :=
-      (tendsto_intervalBaseOrbit_atTop hC).comp (tendsto_atTop_add_const_right _ σ tendsto_id)
-    rw [nhds_prod_eq, tendsto_prod_iff', ← Flow.tendsto_atTop_iff_mem_stableSet_of_eqOn heq,
-      and_iff_left hsnd₁]
-    exact ⟨fun h ↦ (h.comp (tendsto_atTop_add_const_right _ (-σ) tendsto_id)).congr
-      fun u ↦ by simp [Γ], fun h ↦ h.comp (tendsto_atTop_add_const_right _ σ tendsto_id)⟩
+      timeDependentFlowOf (continuationSpaceField C V) σ b x ∈ hX₁.flow.stableSet q :=
+    hX₁.tendsto_atTop_iff_timeDependentFlowOf_mem_stableSet hY hC (fun u hu ↦ hb₀ u hu.le) hb
   ext x
   simp only [mem_morseContinuationSlice, mem_inter_iff, mem_preimage]
   refine ⟨fun ⟨γ, hγ, hγ0, hp, hq⟩ ↦ ?_, fun ⟨hp, hq⟩ ↦
@@ -360,7 +375,7 @@ and `f₁`, and let `φ` be the time-dependent flow of its space component
 of equal index, the coefficient of `q` in the continuation of `p` is the number, modulo two, of
 points of the unstable manifold of `p` for `X₀` which the transition map `φ_{a, b}` of the slab
 carries into the stable manifold of `q` for `X₁`. -/
-theorem morseContinuationCoeff_eq_ncard_inter_preimage :
+theorem eventually_morseContinuationCoeff_eq_ncard_inter_preimage :
     ∀ᶠ a in atBot, ∀ᶠ b in atTop, ∀ (p : criticalPoints 𝓘(ℝ, E) f₀)
       (q : criticalPoints 𝓘(ℝ, E) f₁),
       manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ q →
@@ -370,20 +385,19 @@ theorem morseContinuationCoeff_eq_ncard_inter_preimage :
   have hY := contMDiff_continuationSpaceField (C := C) hVs
   have hcomp := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY
   obtain ⟨σ, hσ⟩ := exists_intervalBaseOrbit_eq hC.ne' (by norm_num : (1 / 2 : ℝ) ∈ Ioo 0 1)
-  filter_upwards [hV.morseContinuationSlice_eq_preimage hX₀ hX₁ hC hVs hσ] with a ha
+  filter_upwards [hV.eventually_morseContinuationSlice_eq_preimage hX₀ hX₁ hC hVs hσ] with a ha
   filter_upwards [ha] with b hb p q hind
   set φ := timeDependentFlowOf (continuationSpaceField C V)
-  -- The slice is the preimage of `W^u(p) ∩ φ_{a, b}⁻¹ (W^s(q))` under the bijection `φ_{σ, a}`,
-  -- whose inverse is `φ_{a, σ}`.
+  -- The slice is the preimage of `W^u(p) ∩ φ_{a, b}⁻¹ (W^s(q))` under the diffeomorphism
+  -- `φ_{σ, a}`.
   have hpre : φ σ a ⁻¹' hX₀.flow.unstableSet p ∩ φ σ b ⁻¹' hX₁.flow.stableSet q =
       φ σ a ⁻¹' (hX₀.flow.unstableSet p ∩ φ a b ⁻¹' hX₁.flow.stableSet q) := by
     ext x
     simp [φ, timeDependentFlowOf_trans hcomp hY]
-  have hinv (s t : ℝ) (x : M) : φ t s (φ s t x) = x := by
-    simp [φ, timeDependentFlowOf_trans hcomp hY, timeDependentFlowOf_self]
-  rw [TauCeti.morseContinuationCoeff_eq_ncard hind, hb, hpre,
-    Set.ncard_preimage_of_injective_subset_range (Function.LeftInverse.injective (hinv σ a))
-      fun y _ ↦ ⟨φ a σ y, hinv a σ y⟩]
+  set Φ := (timeDependentFlowDiffeomorph hcomp le_rfl hY σ a).toEquiv
+  have hΦ : ⇑Φ = φ σ a := funext (timeDependentFlowDiffeomorph_apply hcomp le_rfl hY σ a)
+  rw [TauCeti.morseContinuationCoeff_eq_ncard hind, hb, hpre, ← hΦ,
+    Set.ncard_preimage_of_injective_subset_range Φ.injective fun y _ ↦ Φ.surjective y]
 
 end IsContinuationField
 
