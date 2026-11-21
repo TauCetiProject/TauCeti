@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.GraphOfGroups.BassSerre.OneEdge
 public import TauCeti.GroupTheory.PushoutI.DehnTwist
 public import TauCeti.GroupTheory.HNNExtension.DehnTwist
+import TauCeti.Algebra.Group.Subgroup.EqOn
 
 /-!
 # Dehn twists of one-edge splittings and their elliptic subgroups
@@ -18,13 +19,15 @@ Bass–Serre trees of these graphs of groups through the isomorphisms `π₁.equ
 `π₁.equivHNNExtension`. A subgroup of `A ∗_C B` or of `G ∗_C` is *elliptic in the splitting* when
 it fixes a vertex of this tree.
 
-Each vertex stabilizer of the Bass–Serre tree is a conjugate of a vertex group, so in `A ∗_C B` it
-is a conjugate of `A` or of `B`, and in `G ∗_C` a conjugate of `G`
-(`exists_map_stabilizer_eq_segment`, `exists_map_stabilizer_eq_loop`). A Dehn twist fixes `A` and
-conjugates `B` by its parameter `z`, or fixes `G` and multiplies the stable letter by `z`; on each
-conjugate `w A w⁻¹`, `w B w⁻¹` or `w G w⁻¹` it therefore agrees with an inner automorphism. Hence
-a Dehn twist agrees with an inner automorphism on every elliptic subgroup, and in particular
-carries every elliptic subgroup to a conjugate of itself.
+Each vertex stabilizer of the Bass–Serre tree is a conjugate of a vertex group, so a subgroup of
+`A ∗_C B` is elliptic exactly when it lies in a conjugate of `A` or of `B`, and a subgroup of
+`G ∗_C` exactly when it lies in a conjugate of `G`
+(`bassSerreTree_segment_isEllipticSubgroup_comap_iff`,
+`bassSerreTree_loop_isEllipticSubgroup_comap_iff`). A Dehn twist fixes `A` and conjugates `B` by
+its parameter `z`, or fixes `G` and multiplies the stable letter by `z`; on each conjugate
+`w A w⁻¹`, `w B w⁻¹` or `w G w⁻¹` it therefore agrees with an inner automorphism of the whole
+group. Hence a Dehn twist agrees with an inner automorphism on every elliptic subgroup, and in
+particular carries every elliptic subgroup to a conjugate of itself.
 
 ## Main results
 
@@ -71,11 +74,7 @@ theorem exists_eqOn_dehnTwist_conj_of_isEllipticSubgroup_segment {a : SerreGraph
     ∃ x : Monoid.PushoutI (segmentMaps f g hf hg),
       Set.EqOn (Monoid.PushoutI.dehnTwist (segmentMaps f g hf hg) z) (MulAut.conj x)
         (H : Set (Monoid.PushoutI (segmentMaps f g hf hg))) := by
-  obtain ⟨y, hy⟩ := GTree.isEllipticSubgroup_iff.1 hH
-  obtain ⟨b, w, hbw⟩ := exists_map_stabilizer_eq_segment y
-  have hHw : H ≤ (Monoid.PushoutI.of b).range.map (MulAut.conj w).toMonoidHom := by
-    rwa [← hbw, Subgroup.map_equiv_eq_comap_symm', ← Subgroup.map_le_iff_le_comap,
-      ← Subgroup.comap_equiv_eq_map_symm']
+  obtain ⟨b, w, hHw⟩ := bassSerreTree_segment_isEllipticSubgroup_comap_iff.1 hH
   cases b
   · exact ⟨_, (Monoid.PushoutI.eqOn_dehnTwist_conj_of_false _ z w).mono hHw⟩
   · exact ⟨_, (Monoid.PushoutI.eqOn_dehnTwist_conj_of_true _ z w).mono hHw⟩
@@ -92,7 +91,7 @@ theorem exists_map_dehnTwist_eq_map_conj_of_isEllipticSubgroup_segment {a : Serr
       H.map (Monoid.PushoutI.dehnTwist (segmentMaps f g hf hg) z).toMonoidHom =
         H.map (MulAut.conj x).toMonoidHom := by
   obtain ⟨x, hx⟩ := exists_eqOn_dehnTwist_conj_of_isEllipticSubgroup_segment z hH
-  exact ⟨x, SetLike.coe_injective (by rw [Subgroup.coe_map, Subgroup.coe_map]; exact hx.image_eq)⟩
+  exact ⟨x, Subgroup.map_eq_map_of_eqOn hx⟩
 
 end segment
 
@@ -114,11 +113,7 @@ theorem exists_eqOn_dehnTwist_conj_of_isEllipticSubgroup_loop
     ∃ x : HNNExtension G f.range g.range (loopEquiv f g hf hg),
       Set.EqOn (HNNExtension.dehnTwist (loopEquiv f g hf hg) z) (MulAut.conj x)
         (H : Set (HNNExtension G f.range g.range (loopEquiv f g hf hg))) := by
-  obtain ⟨y, hy⟩ := GTree.isEllipticSubgroup_iff.1 hH
-  obtain ⟨w, hw⟩ := exists_map_stabilizer_eq_loop y
-  have hHw : H ≤ (HNNExtension.of : G →* _).range.map (MulAut.conj w).toMonoidHom := by
-    rwa [← hw, Subgroup.map_equiv_eq_comap_symm', ← Subgroup.map_le_iff_le_comap,
-      ← Subgroup.comap_equiv_eq_map_symm']
+  obtain ⟨w, hHw⟩ := bassSerreTree_loop_isEllipticSubgroup_comap_iff.1 hH
   exact ⟨_, (HNNExtension.eqOn_dehnTwist_conj_of _ z w).mono hHw⟩
 
 /-- **Dehn twists preserve the conjugacy classes of elliptic subgroups.** A Dehn twist of an HNN
@@ -133,7 +128,7 @@ theorem exists_map_dehnTwist_eq_map_conj_of_isEllipticSubgroup_loop
       H.map (HNNExtension.dehnTwist (loopEquiv f g hf hg) z).toMonoidHom =
         H.map (MulAut.conj x).toMonoidHom := by
   obtain ⟨x, hx⟩ := exists_eqOn_dehnTwist_conj_of_isEllipticSubgroup_loop z hH
-  exact ⟨x, SetLike.coe_injective (by rw [Subgroup.coe_map, Subgroup.coe_map]; exact hx.image_eq)⟩
+  exact ⟨x, Subgroup.map_eq_map_of_eqOn hx⟩
 
 end loop
 

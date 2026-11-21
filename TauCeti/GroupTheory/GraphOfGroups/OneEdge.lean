@@ -32,7 +32,8 @@ The same holds for the group `π₁(𝔸, a)` of closed `𝔸`-paths: reading th
 identifies it with `π₁(𝔸, T)` for a maximal tree `T` (`π₁Equiv`), so `π₁(segment, a)` is `A ∗_C B`
 at either vertex `a` and `π₁(loop, ())` is the HNN extension. Along these isomorphisms the vertex
 group at the base vertex maps to its factor, or to the base group, by the identity; for the
-segment so does the vertex group at the other end, conjugated into `π₁(𝔸, a)` along the dart.
+segment so does the vertex group at the other end, conjugated into `π₁(𝔸, a)` along the dart, and
+for the loop the closed path along the dart `((), false)` maps to the stable letter `t`.
 
 These comparisons transport the normal form theorems of `Monoid.PushoutI` and `HNNExtension` to
 one-edge graphs of groups; in particular the vertex groups of a one-edge graph of groups embed in
@@ -272,22 +273,25 @@ variable {f g hf hg}
 
 variable (f g hf hg) in
 /-- The group `π₁(𝔸, a)` of closed `𝔸`-paths of the segment `𝔸`, at either vertex `a`, is the
-amalgamated product `A ∗_C B`. Reading the letters of a closed path in `π₁(𝔸, T)`, for the set `T`
-of all darts of the segment, is an isomorphism because `T` is a spanning tree, and `π₁(𝔸, T)` is
-`A ∗_C B` by `π₁Tree.equivPushoutI`. -/
+amalgamated product `A ∗_C B`: reading the letters of a closed path identifies `π₁(𝔸, a)` with
+`π₁(𝔸, T)` for the spanning tree `T` of all darts of the segment (`π₁Equiv`), and `π₁(𝔸, T)` is
+`A ∗_C B` by `π₁Tree.equivPushoutI`.
+
+On generators: the vertex group at the base vertex `a` maps to its factor `A_a` by the identity
+(`π₁.equivPushoutI_mk_ofVertex`). The vertex group at the other vertex `b`, conjugated into
+`π₁(𝔸, a)` along the dart from `a` to `b`, maps to its factor `A_b` by the identity
+(`π₁.equivPushoutI_vertexHom_ofDart`), because the dart reads `1` in `π₁(𝔸, T)`. -/
 noncomputable def equivPushoutI (a : SerreGraph.segment.V) :
     π₁ (segment f g hf hg) a ≃* Monoid.PushoutI (segmentMaps f g hf hg) :=
-  (MulEquiv.ofBijective (toπ₁Tree (segment f g hf hg) a Set.univ) (by
-    have h := toπ₁Tree_bijective (segment f g hf hg) a SerreGraph.segment_isTree.spanningTree
-    rwa [SerreGraph.IsTree.spanningTree_darts] at h)).trans
-    (π₁Tree.equivPushoutI f g hf hg ⟨false, Set.mem_univ _⟩)
+  (π₁Equiv (segment f g hf hg) a SerreGraph.segment_isTree.spanningTree).trans
+    (π₁Tree.equivPushoutI f g hf hg
+      (by rw [SerreGraph.IsTree.spanningTree_darts]; exact ⟨false, Set.mem_univ _⟩))
 
 /-- The vertex group at the base vertex `a` maps to the factor `A_a` by the identity. -/
 @[simp] theorem equivPushoutI_mk_ofVertex (a : SerreGraph.segment.V)
     (x : (segment f g hf hg).vertexGroup a) :
     equivPushoutI f g hf hg a (mk (Path.ofVertex x)) = Monoid.PushoutI.of a x := by
-  simp only [equivPushoutI, MulEquiv.trans_apply, MulEquiv.ofBijective_apply, toπ₁Tree_mk,
-    Path.toπ₁Tree_ofVertex]
+  simp only [equivPushoutI, MulEquiv.trans_apply, π₁Equiv_mk, Path.toπ₁Tree_ofVertex]
   -- `π₁Tree.equivPushoutI_of` does not fire as a `simp` lemma on this term; apply it directly.
   exact π₁Tree.equivPushoutI_of _ a x
 
@@ -302,11 +306,18 @@ noncomputable def equivPushoutI (a : SerreGraph.segment.V) :
 @[simp] theorem equivPushoutI_vertexHom_ofDart {a b : SerreGraph.segment.V} (d : a ⟶ b)
     (x : (segment f g hf hg).vertexGroup b) :
     equivPushoutI f g hf hg a (vertexHom (Path.ofDart d) x) = Monoid.PushoutI.of b x := by
-  -- The dart reads `1` in `π₁(𝔸, univ)`, which leaves the image of `x` in the factor `A_b`.
-  simp only [equivPushoutI, MulEquiv.trans_apply, MulEquiv.ofBijective_apply, toπ₁Tree_vertexHom,
-    Path.toπ₁Tree_ofDart, π₁Tree.edge_segment_eq_one ⟨false, Set.mem_univ _⟩, one_mul, inv_one,
-    mul_one]
+  -- The dart maps to `1` in `A ∗_C B`, which leaves the image of `x` in the factor `A_b`.
+  simp only [equivPushoutI, MulEquiv.trans_apply, π₁Equiv_apply, toπ₁Tree_vertexHom,
+    Path.toπ₁Tree_ofDart, map_mul, map_inv, π₁Tree.equivPushoutI_edge, one_mul, inv_one, mul_one]
   exact π₁Tree.equivPushoutI_of _ b x
+
+/-- The inverse sends the factor `A_b` at the other vertex `b = !a` to the vertex group at `b`,
+conjugated into `π₁(𝔸, a)` along the dart from `a` to `b`. -/
+@[simp] theorem equivPushoutI_symm_of_not (a : SerreGraph.segment.V)
+    (x : (segment f g hf hg).vertexGroup (!a)) :
+    (equivPushoutI f g hf hg a).symm (Monoid.PushoutI.of (φ := segmentMaps f g hf hg) (!a) x) =
+      vertexHom (Path.ofDart (SerreGraph.segment.dart a)) x :=
+  (MulEquiv.symm_apply_eq _).2 (equivPushoutI_vertexHom_ofDart _ x).symm
 
 end π₁
 
@@ -449,14 +460,21 @@ variable {f g hf hg}
 
 variable (f g hf hg) in
 /-- The group `π₁(𝔸, v)` of closed `𝔸`-paths of the loop `𝔸`, at its only vertex `v`, is the HNN
-extension `HNNExtension G (range f) (range g) (loopEquiv f g hf hg)`. Reading the letters of a
-closed path in `π₁(𝔸, ∅)` is an isomorphism because `∅` is the spanning tree of the rose, and
-`π₁(𝔸, ∅)` is the HNN extension by `π₁Tree.equivHNNExtension`. -/
+extension `HNNExtension G (range f) (range g) (loopEquiv f g hf hg)`: reading the letters of a
+closed path identifies `π₁(𝔸, v)` with `π₁(𝔸, ∅)` for the spanning tree `∅` of the rose
+(`π₁Equiv`), and `π₁(𝔸, ∅)` is the HNN extension by `π₁Tree.equivHNNExtension`.
+
+On generators: the vertex group maps to the base group `G` by the identity
+(`π₁.equivHNNExtension_mk_ofVertex`); the loop traversing the dart `((), false)`, whose boundary
+maps are `α = g` and `ω = f`, maps to the stable letter `t`
+(`π₁.equivHNNExtension_mk_ofDart_false`), and the loop traversing its reverse `((), true)` maps
+to `t⁻¹` (`π₁.equivHNNExtension_mk_ofDart_true`). -/
 noncomputable def equivHNNExtension (v : (SerreGraph.rose Unit).V) :
     π₁ (loop f g hf hg) v ≃* HNNExtension G f.range g.range (loopEquiv f g hf hg) :=
   (MulEquiv.ofBijective (toπ₁Tree (loop f g hf hg) v ∅) (by
-    have h := toπ₁Tree_bijective (loop f g hf hg) v (SerreGraph.roseTree Unit)
-    rwa [SerreGraph.roseTree_darts] at h)).trans
+    -- `π₁Equiv` at the spanning tree of the rose, whose set of darts is `∅` (not by unfolding).
+    have h := (π₁Equiv (loop f g hf hg) v (SerreGraph.roseTree Unit)).bijective
+    rwa [funext (π₁Equiv_apply (loop f g hf hg) v _), SerreGraph.roseTree_darts] at h)).trans
     (π₁Tree.equivHNNExtension f g hf hg)
 
 /-- The vertex group maps to the base group of the HNN extension by the identity. -/
@@ -468,16 +486,29 @@ noncomputable def equivHNNExtension (v : (SerreGraph.rose Unit).V) :
   exact (congrArg _ (Path.toπ₁Tree_ofVertex (𝔸 := loop f g hf hg) ∅ (a := v) x)).trans
     (π₁Tree.equivHNNExtension_of f g hf hg x)
 
+/-- The loop traversing the dart `((), b)` maps to the image of the generator of that dart in
+`π₁(𝔸, ∅)`. -/
+private theorem equivHNNExtension_mk_ofDart (v : (SerreGraph.rose Unit).V) (b : Bool) :
+    equivHNNExtension f g hf hg v (mk (Path.ofDart ((SerreGraph.rose Unit).dart ((), b)))) =
+      π₁Tree.equivHNNExtension f g hf hg (π₁Tree.edge ∅ ((), b)) := by
+  simp only [equivHNNExtension, MulEquiv.trans_apply, MulEquiv.ofBijective_apply, toπ₁Tree_mk]
+  -- As above, the dart of the rose is only definitionally a dart of the loop.
+  exact congrArg _ ((Path.toπ₁Tree_ofDart (𝔸 := loop f g hf hg) ∅ _).trans
+    (congrArg (π₁Tree.edge ∅) ((SerreGraph.rose Unit).dart_val ((), b))))
+
 /-- The loop traversing the dart `((), false)`, whose boundary maps are `α = g` and `ω = f`, maps
 to the stable letter `t`. -/
 @[simp] theorem equivHNNExtension_mk_ofDart_false (v : (SerreGraph.rose Unit).V) :
     equivHNNExtension f g hf hg v (mk (Path.ofDart ((SerreGraph.rose Unit).dart ((), false)))) =
-      HNNExtension.t := by
-  simp only [equivHNNExtension, MulEquiv.trans_apply, MulEquiv.ofBijective_apply, toπ₁Tree_mk]
-  -- As above, the dart of the rose is only definitionally a dart of the loop.
-  exact (congrArg _ ((Path.toπ₁Tree_ofDart (𝔸 := loop f g hf hg) ∅ _).trans
-    (congrArg (π₁Tree.edge ∅) ((SerreGraph.rose Unit).dart_val ((), false))))).trans
-    (π₁Tree.equivHNNExtension_edge_false f g hf hg)
+      HNNExtension.t :=
+  (equivHNNExtension_mk_ofDart v false).trans (π₁Tree.equivHNNExtension_edge_false f g hf hg)
+
+/-- The loop traversing the dart `((), true)`, whose boundary maps are `α = f` and `ω = g`, maps
+to `t⁻¹`. -/
+@[simp] theorem equivHNNExtension_mk_ofDart_true (v : (SerreGraph.rose Unit).V) :
+    equivHNNExtension f g hf hg v (mk (Path.ofDart ((SerreGraph.rose Unit).dart ((), true)))) =
+      HNNExtension.t⁻¹ :=
+  (equivHNNExtension_mk_ofDart v true).trans (π₁Tree.equivHNNExtension_edge_true f g hf hg)
 
 /-- The inverse sends the base group of the HNN extension to the vertex group. -/
 @[simp] theorem equivHNNExtension_symm_of (v : (SerreGraph.rose Unit).V) (x : G) :

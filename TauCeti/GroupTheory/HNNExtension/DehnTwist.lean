@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.HNNExtension
 public import Mathlib.GroupTheory.Subgroup.Centralizer
+import TauCeti.Algebra.Group.Subgroup.EqOn
 
 /-!
 # Dehn twists of HNN extensions
@@ -25,10 +26,10 @@ to `t * of z` exists exactly when `z` centralizes `A`
 exactly when `z = 1` (`HNNExtension.eq_id_iff_of_map_t_eq`).
 
 These are the one-edge twists used in modular groups of splittings. On each conjugate `w G w⁻¹` of
-the base group a twist `τ` is the inner automorphism by `τ(w) w⁻¹`
-(`HNNExtension.eqOn_dehnTwist_conj_of`), so it carries every subgroup of such a conjugate to a
-conjugate of itself. The construction uses Mathlib's `HNNExtension.lift` and its injective base
-inclusion.
+the base group a twist `τ` agrees with conjugation by `τ(w) w⁻¹` in the HNN extension
+(`HNNExtension.eqOn_dehnTwist_conj_of`). So `τ` carries every subgroup of such a conjugate to a
+conjugate of that subgroup, though in general not to itself. The construction uses Mathlib's
+`HNNExtension.lift` and its injective base inclusion.
 
 ## References
 
@@ -161,15 +162,18 @@ theorem dehnTwist_injective : Function.Injective (dehnTwist φ) := by
   rw [Subgroup.map_map]
   congr 1
 
-/-- On every conjugate `w G w⁻¹` of the base group, an HNN twist `τ` is the inner automorphism by
-`τ(w) w⁻¹`. -/
+/-- On every conjugate `w G w⁻¹` of the base group, an HNN twist `τ` agrees with conjugation by
+`τ(w) w⁻¹` in the HNN extension. -/
 theorem eqOn_dehnTwist_conj_of (z : Subgroup.centralizer (A : Set G))
     (w : HNNExtension G A B φ) :
     Set.EqOn (dehnTwist φ z) (MulAut.conj (dehnTwist φ z w * w⁻¹))
       ((of : G →* HNNExtension G A B φ).range.map
         (MulAut.conj w : HNNExtension G A B φ →* HNNExtension G A B φ)) := by
-  rintro _ ⟨_, ⟨g, rfl⟩, rfl⟩
-  simp [MulAut.conj_apply, mul_assoc]
+  -- On the base group itself the twist is the identity, conjugation by `1`.
+  have h : Set.EqOn (dehnTwist φ z) (MulAut.conj 1) (of : G →* HNNExtension G A B φ).range := by
+    rintro _ ⟨g, rfl⟩
+    simp
+  simpa only [mul_one] using h.map_conj w
 
 /-! ### Necessity of the centralizer hypothesis and uniqueness -/
 
