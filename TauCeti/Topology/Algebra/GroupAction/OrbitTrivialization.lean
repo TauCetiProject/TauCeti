@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.FiberBundle.Trivialization
 public import TauCeti.Topology.Algebra.Group.Quotient.LocalSection
+public import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
@@ -49,6 +50,8 @@ to an action on `E`.
   set, with fibre the stabilizer of `x₀`, determined by a continuous local section.
 * `TauCeti.orbitMapTrivialization_apply_mul`: it intertwines right multiplication by the
   stabilizer on `G` with right multiplication on the fibre.
+* `TauCeti.orbitMap_mem_serreFibrations`: an orbit map with continuous local sections around
+  every point is a Serre fibration, with fibre the stabilizer.
 * `TauCeti.equivariantLocalSectionTrivialization`: the trivialization of a continuous equivariant
   map over an open set, with fibre the preimage of `x₀`, determined by a continuous local section
   of the orbit map of `x₀`.
@@ -199,6 +202,28 @@ theorem orbitMapTrivialization_apply_mul {g : G} (hg : g • x₀ ∈ U) (h : st
 
 end TauCeti
 
+namespace TauCeti
+
+universe u
+
+variable {G X : Type u} [Group G] [TopologicalSpace G] [TopologicalSpace X] [MulAction G X]
+  [ContinuousMul G] [ContinuousInv G] [ContinuousSMul G X]
+
+/-- If the orbit map `g ↦ g • x` has a continuous local section around every point, it is a Serre
+fibration, with fibre the stabilizer of `x`; the charts are `TauCeti.orbitMapTrivialization`. -/
+theorem orbitMap_mem_serreFibrations (x : X)
+    (h : ∀ y : X, ∃ U : Set X, IsOpen U ∧ y ∈ U ∧ ∃ s : X → G, ContinuousOn s U ∧
+      ∀ z ∈ U, s z • x = z) :
+    TopCat.serreFibrations
+      (_root_.TopCat.ofHom ⟨fun g : G ↦ g • x, by fun_prop⟩ :
+        _root_.TopCat.of G ⟶ _root_.TopCat.of X) := by
+  refine TopCat.mem_serreFibrations_of_exists_trivialization (F := stabilizer G x) fun y ↦ ?_
+  obtain ⟨U, hU, hy, s, hs, hsec⟩ := h y
+  exact ⟨orbitMapTrivialization x (by fun_prop) U hU s hs hsec, by
+    rwa [orbitMapTrivialization_baseSet]⟩
+
+end TauCeti
+
 /-! ### Equivariant maps over an orbit map with local sections -/
 
 namespace TauCeti
@@ -246,12 +271,12 @@ noncomputable def equivariantLocalSectionTrivialization (p : E → X) (hpc : Con
   target := U ×ˢ univ
   map_source' _ he := ⟨he, mem_univ _⟩
   map_target' q hq := by
-    rw [mem_preimage, map_smul_eq_of_localSection hp hsec hq.1 q.2.2]
+    rw [mem_preimage, map_smul_eq_of_localSection hp hsec hq.1 q.2.property]
     exact hq.1
   left_inv' e he := by
     simp only [coe_equivariantSectionFiber he, smul_inv_smul]
   right_inv' q hq := by
-    have hq' := map_smul_eq_of_localSection hp hsec hq.1 q.2.2
+    have hq' := map_smul_eq_of_localSection hp hsec hq.1 q.2.property
     refine Prod.ext hq' (Subtype.ext ?_)
     rw [coe_equivariantSectionFiber (hq'.symm ▸ hq.1 : p (s q.1 • (q.2 : E)) ∈ U), hq',
       inv_smul_smul]
@@ -264,7 +289,7 @@ noncomputable def equivariantLocalSectionTrivialization (p : E → X) (hpc : Con
       fun e he ↦ coe_equivariantSectionFiber he
   continuousOn_invFun :=
     (hs.comp (continuousOn_fst (s := U ×ˢ univ)) fun _ hq ↦ hq.1).smul
-      (continuous_subtype_val.comp_continuousOn continuousOn_snd)
+      (continuous_subtypeVal.comp_continuousOn continuousOn_snd)
   baseSet := U
   open_baseSet := hU
   source_eq := rfl

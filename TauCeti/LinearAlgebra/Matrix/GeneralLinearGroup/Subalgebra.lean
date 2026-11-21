@@ -59,9 +59,9 @@ theorem mem_range_map_val_iff (S : Subalgebra R A) (g : Matrix.GeneralLinearGrou
   · rintro ⟨h, rfl⟩
     refine ⟨fun i j => ?_, fun i j => ?_⟩
     · rw [Matrix.GeneralLinearGroup.map_apply]
-      exact ((h : Matrix ι ι ↥S) i j).2
+      exact ((h : Matrix ι ι ↥S) i j).property
     · rw [← map_inv, Matrix.GeneralLinearGroup.map_apply]
-      exact (((h⁻¹ : Matrix.GeneralLinearGroup ι ↥S) : Matrix ι ι ↥S) i j).2
+      exact (((h⁻¹ : Matrix.GeneralLinearGroup ι ↥S) : Matrix ι ι ↥S) i j).property
   · rintro ⟨hg, hg'⟩
     let M : Matrix ι ι S := fun i j => ⟨g i j, hg i j⟩
     let N : Matrix ι ι S := fun i j => ⟨g⁻¹ i j, hg' i j⟩

@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.AffineMap
 public import Mathlib.Geometry.Convex.ConvexSpace.Topology
+public import Mathlib.Topology.Algebra.InfiniteSum.Defs
+public import Mathlib.Topology.Metrizable.Basic
 public import TauCeti.Algebra.BigOperators.Finset.PartialSum
+import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
 /-!
 # Maps and homeomorphisms between standard simplices
@@ -26,13 +29,24 @@ barycentric subdivision, available as continuous maps between topological standa
 The prefix sums `TauCeti.prefixSum N x.weights` of the weights depend continuously on a point `x`
 of `StdSimplex R (Fin n)` (`Convexity.StdSimplex.continuous_prefixSum_weights`).
 
+The unconditional series sum of the weights of a point of `StdSimplex R α` equals `1`
+(`Convexity.StdSimplex.tsum_weights`).
+
 A standard simplex over a Hausdorff ring is Hausdorff (`Convexity.StdSimplex.t2Space`), so
-continuous surjections onto it from compact spaces are quotient maps.
+continuous surjections onto it from compact spaces are quotient maps. Over a finite vertex type, a
+standard simplex over a (pseudo)metrizable ring is (pseudo)metrizable
+(`Convexity.StdSimplex.pseudoMetrizableSpace`).
 -/
 
 public section
 
 namespace Convexity.StdSimplex
+
+/-- The weights of a point of a standard simplex have series sum `1`. -/
+@[simp]
+theorem tsum_weights {R α : Type*} [LE R] [AddCommMonoid R] [One R] [TopologicalSpace R]
+    (s : StdSimplex R α) : ∑' a, s.weights a = 1 :=
+  (tsum_eq_sum fun _ ha ↦ Finsupp.notMem_support_iff.mp ha).trans s.total
 
 variable {R : Type*} [PartialOrder R] {M N : Type*}
 
@@ -122,5 +136,11 @@ lemma continuous_prefixSum_weights {n : ℕ} {Z : Type*} [TopologicalSpace Z]
 instance t2Space [T2Space R] : T2Space (StdSimplex R N) :=
   .of_injective_continuous (f := fun t : StdSimplex R N ↦ ⇑t.weights)
     (fun _ _ h ↦ ext (DFunLike.coe_injective h)) (continuous_pi (continuous_weights_apply R))
+
+/-- A standard simplex on a finite type over a pseudometrizable ring is pseudometrizable (and hence
+metrizable via `t2Space` whenever `R` is metrizable). -/
+instance pseudoMetrizableSpace [Finite M] [TopologicalSpace.PseudoMetrizableSpace R] :
+    TopologicalSpace.PseudoMetrizableSpace (StdSimplex R M) :=
+  (isEmbedding_toFun_comp_weights R M).isInducing.pseudoMetrizableSpace
 
 end Convexity.StdSimplex

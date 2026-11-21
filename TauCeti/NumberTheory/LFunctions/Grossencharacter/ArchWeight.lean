@@ -6,62 +6,40 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
-public import TauCeti.NumberTheory.LFunctions.Grossencharacter.HarmonicFactor
+public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Harmonic
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Haar
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.NumberTheory.LFunctions.Theta.GammaIntegral
-import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.Basic
 
 /-!
-# The archimedean weight and weighted gamma integral of a Grossencharacter
+# Regularity, radial scaling, and Deligne gamma integral for `Grossencharacter.archWeight`
 
-For a presented Grossencharacter `χ : Grossencharacter K 𝔪`, the twisted theta series carries the
-harmonic polynomial `χ.harmonicFactor` of degree `P_w = χ.harmonicExponent w` at each infinite
-place `w`. Under the unit action `unitScale u` on the archimedean parameters `y : realSpace K` and
-radial scaling `surfaceScale x t`, the compensating archimedean weight of Neukirch VII (8.2)–(8.3)
-is
+This module complements `TauCeti.NumberTheory.LFunctions.Grossencharacter.Harmonic` with
+additional properties of the archimedean parameter weight
+`χ.archWeight y = ∏_w y_w ^ (P_w / 2)` (`P_w = χ.harmonicExponent w`):
 
-`χ.archWeight y = ∏_w y_w ^ (P_w / 2)`.
-
-Under `unitScale u`, `χ.archWeight` multiplies by `∏_w |u|_w ^ P_w` (`archWeight_unitScale`),
-cancelling the inverse factor picked up when the twisted theta sum is reindexed by `u`. Under
-`surfaceScale x t` (`0 ≤ t`), it scales by `t ^ (Tr(p) / (2 [K : ℚ]))`
-(`archWeight_surfaceScale`), shifting the radial Mellin variable `s / 2` by `Tr(p) / (2 [K : ℚ])`
-(and `s` by `Tr(p) / [K : ℚ]`). Against the
-factor `∏_w y_w ^ (-P_w)` of Hecke's lemma (`mixedFourier_harmonicFactor_mul_archGaussian`),
-`χ.archWeight y` produces `χ.archWeight y⁻¹` (`archWeight_mul_prod_inv_pow`).
-
-Integrating `(χ.archWeight y : ℂ) * archGaussian y x * (archNorm y : ℂ) ^ (s / 2)` against the
-multiplicative Haar measure `archHaar K` for `mixedEmbedding.norm x ≠ 0` and
-`∀ w, 0 < mult w * s.re + P_w` generalizes
-`TauCeti.LFunctions.integral_archGaussian_mul_archNorm_cpow` to the product of shifted archimedean
-gamma factors
-
-`((2 : ℂ) ^ (s - 1)) ^ r₂ · 2 ^ ((∑_{w complex} P_w) / 2) · (∏_{w real} Γ_ℝ(s + P_w)) ·
-  (∏_{w complex} Γ_ℂ(s + P_w / 2)) · (∏_w |x_w| ^ P_w)⁻¹ · |N(x)| ^ (-s)`
-
-(`integral_archWeight_mul_archGaussian_mul_archNorm_cpow`), in which `(∏_w |x_w| ^ P_w)⁻¹` cancels
-`‖χ.harmonicFactor x‖` and the shifted `Γ_ℝ` and `Γ_ℂ` factors match the archimedean gamma factor
-of the unitary completion of `χ`.
-
-## Main definitions
-
-* `TauCeti.LFunctions.Grossencharacter.archWeight`: the parameter weight
-  `∏_w y_w ^ (P_w / 2)` on `realSpace K`.
+* regularity (`continuous_archWeight`, `measurable_archWeight`) and triviality specializations
+  (`archWeight_of_harmonicDegree_eq_zero`, `archWeight_of_toHeckeCharacter_eq_one`, and ray class
+  specializations);
+* absorption of the Hecke-lemma factor `∏_w y_w ^ (-P_w)` into `archWeight y⁻¹`
+  (`archWeight_mul_prod_inv_pow`, Neukirch VII (8.5));
+* radial scaling under `surfaceScale x t` (`archWeight_surfaceScale`, Neukirch VII (8.3)),
+  shifting the radial Mellin variable `s / 2` by `Tr(p) / (2 [K : ℚ])` (and `s` by
+  `Tr(p) / [K : ℚ]`);
+* decomposition of `∏_w Γ_ℝ(mult w · s + P_w)` into Deligne's `Γ_ℝ` and `Γ_ℂ` factors
+  (`prod_Gammaℝ_mult_mul_add_harmonicExponent`) and the resulting closed form of the weighted
+  archimedean gamma integral (`integral_archWeight_mul_archGaussian_mul_archNorm_cpow`).
 
 ## Main results
 
-* `TauCeti.LFunctions.Grossencharacter.archWeight_unitScale`: unit-scaling law under `unitScale`.
 * `TauCeti.LFunctions.Grossencharacter.archWeight_surfaceScale`: radial-scaling law under
   `surfaceScale`.
 * `TauCeti.LFunctions.Grossencharacter.archWeight_mul_prod_inv_pow`: absorption of the Hecke-lemma
   weight `∏_w y_w ^ (-P_w)` into `archWeight y⁻¹`.
 * `TauCeti.LFunctions.Grossencharacter.prod_Gammaℝ_mult_mul_add_harmonicExponent`: decomposition of
   `∏_w Γ_ℝ(mult w · s + P_w)` into Deligne's `Γ_ℝ` and `Γ_ℂ` factors.
-* `TauCeti.LFunctions.Grossencharacter.integrable_archWeight_mul_archGaussian_mul_archNorm_cpow`
-  and `TauCeti.LFunctions.Grossencharacter.integral_archWeight_mul_archGaussian_mul_archNorm_cpow`:
-  integrability and closed-form evaluation of the weighted archimedean gamma integral.
+* `TauCeti.LFunctions.Grossencharacter.integral_archWeight_mul_archGaussian_mul_archNorm_cpow`:
+  Deligne `Γ_ℝ`/`Γ_ℂ` form of the weighted archimedean gamma integral.
 
 ## References
 
@@ -84,39 +62,13 @@ open GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K] {𝔪 : Modulus K}
 
-/-! ### Definition and basic properties of `archWeight` -/
-
-/-- **The archimedean parameter weight `N(y^(p/2))`** of Neukirch VII (8.2)–(8.3):
-`∏_w y_w ^ (P_w / 2)` where `P_w = χ.harmonicExponent w`. -/
-def archWeight (χ : Grossencharacter K 𝔪) (y : realSpace K) : ℝ :=
-  ∏ w : InfinitePlace K, y w ^ ((χ.harmonicExponent w : ℝ) / 2)
-
-/-- Defining product formula for `archWeight`. -/
-theorem archWeight_apply (χ : Grossencharacter K 𝔪) (y : realSpace K) :
-    χ.archWeight y = ∏ w : InfinitePlace K, y w ^ ((χ.harmonicExponent w : ℝ) / 2) :=
-  (rfl)
-
-@[simp]
-theorem archWeight_one (χ : Grossencharacter K 𝔪) : χ.archWeight 1 = 1 := by
-  simp [archWeight_apply]
+/-! ### Additional basic, regularity, and scaling properties of `archWeight` -/
 
 /-- When `harmonicDegree` vanishes, `archWeight` is identically `1`. -/
 theorem archWeight_of_harmonicDegree_eq_zero {χ : Grossencharacter K 𝔪}
     (h : χ.harmonicDegree = 0) (y : realSpace K) : χ.archWeight y = 1 := by
   have hw := χ.harmonicDegree_eq_zero_iff.mp h
-  simp [archWeight_apply, hw]
-
-/-- `archWeight` depends only on the presented Hecke character, not on the modulus. -/
-theorem archWeight_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
-    (h : χ.toHeckeCharacter = ψ.toHeckeCharacter) (y : realSpace K) :
-    χ.archWeight y = ψ.archWeight y := by
-  simp [archWeight_apply, harmonicExponent_congr h]
-
-/-- Inverting a presentation preserves `archWeight`. -/
-@[simp]
-theorem archWeight_inverse (χ : Grossencharacter K 𝔪) (y : realSpace K) :
-    χ.inverse.archWeight y = χ.archWeight y := by
-  simp [archWeight_apply]
+  simp [archWeight_def, hw]
 
 /-- A ray-class presentation with trivial archimedean modulus has constant weight `1`. -/
 theorem archWeight_ofRayClassCharacter_of_infinitePart_eq_empty (h𝔪 : 𝔪.infinitePart = ∅)
@@ -136,32 +88,16 @@ theorem archWeight_of_toHeckeCharacter_eq_one {χ : Grossencharacter K 𝔪}
     (hχ : χ.toHeckeCharacter = 1) (y : realSpace K) : χ.archWeight y = 1 :=
   archWeight_of_harmonicDegree_eq_zero (harmonicDegree_of_toHeckeCharacter_eq_one hχ) y
 
-/-- The trivial ray class character at any modulus has constant weight `1`. -/
-@[simp]
-theorem archWeight_ofRayClassCharacter_one (y : realSpace K) :
-    (ofRayClassCharacter (1 : RayClassCharacter 𝔪)).archWeight y = 1 :=
-  archWeight_of_toHeckeCharacter_eq_one (by simp) y
-
 /-- On nonnegative parameters, `archWeight y` is `∏_w √(y_w) ^ P_w`. -/
 theorem archWeight_eq_prod_sqrt_pow (χ : Grossencharacter K 𝔪) {y : realSpace K}
     (hy : ∀ w, 0 ≤ y w) :
     χ.archWeight y = ∏ w : InfinitePlace K, √(y w) ^ χ.harmonicExponent w := by
-  rw [archWeight_apply]
+  rw [archWeight_def]
   exact Finset.prod_congr rfl fun w _ ↦ (Real.pow_sqrt_eq_rpow (hy w) _).symm
-
-/-- `archWeight` is nonnegative on the nonnegative orthant. -/
-theorem archWeight_nonneg (χ : Grossencharacter K 𝔪) {y : realSpace K} (hy : ∀ w, 0 ≤ y w) :
-    0 ≤ χ.archWeight y :=
-  Finset.prod_nonneg fun w _ ↦ Real.rpow_nonneg (hy w) _
-
-/-- `archWeight` is strictly positive on the positive orthant. -/
-theorem archWeight_pos (χ : Grossencharacter K 𝔪) {y : realSpace K} (hy : ∀ w, 0 < y w) :
-    0 < χ.archWeight y :=
-  Finset.prod_pos fun w _ ↦ Real.rpow_pos_of_pos (hy w) _
 
 @[fun_prop]
 theorem continuous_archWeight (χ : Grossencharacter K 𝔪) : Continuous χ.archWeight := by
-  unfold archWeight
+  rw [funext χ.archWeight_def]
   exact continuous_finsetProd _ fun w _ ↦ (continuous_apply w).rpow_const fun _ ↦
     Or.inr (by positivity)
 
@@ -169,30 +105,13 @@ theorem continuous_archWeight (χ : Grossencharacter K 𝔪) : Continuous χ.arc
 theorem measurable_archWeight (χ : Grossencharacter K 𝔪) : Measurable χ.archWeight :=
   χ.continuous_archWeight.measurable
 
-/-! ### Multiplicative, unit, and radial scaling laws -/
-
-/-- `archWeight` splits across multiplication whenever the left factor is coordinatewise
-nonnegative. -/
-theorem archWeight_mul (χ : Grossencharacter K 𝔪) {x : realSpace K} (hx : ∀ w, 0 ≤ x w)
-    (y : realSpace K) :
-    χ.archWeight (x * y) = χ.archWeight x * χ.archWeight y := by
-  simp only [archWeight_apply, Pi.mul_apply, Real.mul_rpow_of_nonneg_left (hx _),
-    Finset.prod_mul_distrib]
-
-/-- On coordinatewise nonnegative parameters, `archWeight` commutes with coordinatewise
-inversion. -/
-theorem archWeight_inv (χ : Grossencharacter K 𝔪) {y : realSpace K} (hy : ∀ w, 0 ≤ y w) :
-    χ.archWeight y⁻¹ = (χ.archWeight y)⁻¹ := by
-  rw [archWeight_apply, archWeight_apply, ← Finset.prod_inv_distrib]
-  exact Finset.prod_congr rfl fun w _ ↦ Real.inv_rpow (hy w) _
-
 /-- Multiplying `archWeight y` by the Hecke-lemma factor `∏_w y_w ^ (-P_w)` gives
 `archWeight y⁻¹` (Neukirch VII (8.5)). -/
 theorem archWeight_mul_prod_inv_pow (χ : Grossencharacter K 𝔪) {y : realSpace K}
     (hy : ∀ w, 0 ≤ y w) :
     χ.archWeight y * (∏ w : InfinitePlace K, (y w)⁻¹ ^ χ.harmonicExponent w) =
       χ.archWeight y⁻¹ := by
-  rw [archWeight_apply, archWeight_apply, ← Finset.prod_mul_distrib]
+  rw [archWeight_def, archWeight_def, ← Finset.prod_mul_distrib]
   refine Finset.prod_congr rfl fun w _ ↦ ?_
   rcases (hy w).eq_or_lt with hy0 | hypos
   · rw [Pi.inv_apply, ← hy0, inv_zero]
@@ -210,16 +129,6 @@ theorem archWeight_mul_prod_inv_pow (χ : Grossencharacter K 𝔪) {y : realSpac
         Real.one_rpow]
     rw [Pi.inv_apply, h1, sq, ← mul_assoc, h2, one_mul]
 
-/-- **Unit scaling of `archWeight`** (Neukirch VII (8.2)): `unitScale u` multiplies `archWeight`
-by `∏_w |u|_w ^ P_w`. -/
-theorem archWeight_unitScale (χ : Grossencharacter K 𝔪) (u : (𝓞 K)ˣ) (y : realSpace K) :
-    χ.archWeight (unitScale u y) =
-      (∏ w : InfinitePlace K, w (u : K) ^ χ.harmonicExponent w) * χ.archWeight y := by
-  rw [archWeight_apply, archWeight_apply, ← Finset.prod_mul_distrib]
-  refine Finset.prod_congr rfl fun w _ ↦ ?_
-  rw [unitScale_apply, Real.mul_rpow_of_nonneg_left (sq_nonneg _),
-    Real.sq_rpow_div_two (apply_nonneg w _), Real.rpow_natCast]
-
 /-- **Radial scaling of `archWeight`** (Neukirch VII (8.3)): for `0 ≤ t`, scaling by
 `surfaceScale x t` multiplies `archWeight x` by `t ^ (Tr(p) / (2 [K : ℚ]))`. -/
 theorem archWeight_surfaceScale (χ : Grossencharacter K 𝔪) (x : realSpace K) {t : ℝ}
@@ -229,7 +138,7 @@ theorem archWeight_surfaceScale (χ : Grossencharacter K 𝔪) (x : realSpace K)
   have hsplit : χ.archWeight (surfaceScale x t) =
       χ.archWeight x *
         ∏ w : InfinitePlace K, t ^ ((χ.harmonicExponent w : ℝ) / (2 * Module.finrank ℚ K)) := by
-    rw [archWeight_apply, archWeight_apply, ← Finset.prod_mul_distrib]
+    rw [archWeight_def, archWeight_def, ← Finset.prod_mul_distrib]
     refine Finset.prod_congr rfl fun w _ ↦ ?_
     rw [surfaceScale_apply, mul_comm (x w), Real.mul_rpow_of_nonneg_left (Real.rpow_nonneg ht _),
       mul_comm, ← Real.rpow_mul ht]
@@ -240,7 +149,7 @@ theorem archWeight_surfaceScale (χ : Grossencharacter K 𝔪) (x : realSpace K)
   rw [← Real.rpow_sum_of_nonneg ht fun _ _ ↦ by positivity, ← Finset.sum_div, ← Nat.cast_sum,
     ← harmonicDegree_def]
 
-/-! ### The weighted archimedean gamma integral -/
+/-! ### Deligne `Γ_ℝ` / `Γ_ℂ` form of the weighted archimedean gamma integral -/
 
 /-- When `0 < s.re`, the shifted real part `(mult w : ℝ) * s.re + P_w` is positive at every
 infinite place `w`. -/
@@ -250,29 +159,6 @@ theorem mult_mul_re_add_harmonicExponent_pos (χ : Grossencharacter K 𝔪) {s :
   have hm : (0 : ℝ) < mult w := Nat.cast_pos.mpr (Nat.pos_of_ne_zero mult_ne_zero)
   positivity
 
-private theorem archWeight_mul_archGaussian_mul_archNorm_cpow_eq (χ : Grossencharacter K 𝔪)
-    {y : realSpace K} (hy : ∀ w, 0 < y w) (x : mixedSpace K) (s : ℂ) :
-    (χ.archWeight y : ℂ) * archGaussian y x * (archNorm y : ℂ) ^ (s / 2) =
-      (∏ w : InfinitePlace K,
-        (y w : ℂ) ^ (((mult w : ℂ) * s + χ.harmonicExponent w) / 2)) *
-        archGaussian y x := by
-  have hw : (χ.archWeight y : ℂ) =
-      ∏ w : InfinitePlace K, (y w : ℂ) ^ ((χ.harmonicExponent w : ℂ) / 2) := by
-    rw [archWeight_apply, ofReal_prod]
-    refine Finset.prod_congr rfl fun w _ ↦ ?_
-    rw [ofReal_cpow (hy w).le]
-    push_cast
-    rfl
-  have hn : (archNorm y : ℂ) ^ (s / 2) =
-      ∏ w : InfinitePlace K, (y w : ℂ) ^ ((mult w : ℂ) * (s / 2)) := by
-    rw [archNorm_apply, TauCeti.ofReal_prod_pow_cpow _ fun w _ ↦ (hy w).le]
-  rw [mul_right_comm, hw, hn, ← Finset.prod_mul_distrib]
-  congr 1
-  refine Finset.prod_congr rfl fun w _ ↦ ?_
-  rw [← cpow_add _ _ (ofReal_ne_zero.mpr (hy w).ne')]
-  congr 1
-  ring
-
 open scoped Classical in
 /-- Decomposition of `∏_w Γ_ℝ(mult w · s + P_w)` into Deligne's `Γ_ℝ` and `Γ_ℂ` factors across the
 real and complex infinite places of `K`. -/
@@ -280,83 +166,36 @@ theorem prod_Gammaℝ_mult_mul_add_harmonicExponent (χ : Grossencharacter K �
     (∏ w : InfinitePlace K, Gammaℝ ((mult w : ℂ) * s + χ.harmonicExponent w)) =
       ((2 : ℂ) ^ (s - 1)) ^ nrComplexPlaces K *
         (2 : ℂ) ^
-          ((∑ w : {w : InfinitePlace K // w.IsComplex}, (χ.harmonicExponent w.1 : ℂ)) / 2) *
-        ((∏ w : {w : InfinitePlace K // w.IsReal}, Gammaℝ (s + χ.harmonicExponent w.1)) *
+          ((∑ w : {w : InfinitePlace K // w.IsComplex}, (χ.harmonicExponent w.val : ℂ)) / 2) *
+        ((∏ w : {w : InfinitePlace K // w.IsReal}, Gammaℝ (s + χ.harmonicExponent w.val)) *
           ∏ w : {w : InfinitePlace K // w.IsComplex},
-            Gammaℂ (s + (χ.harmonicExponent w.1 : ℂ) / 2)) :=
+            Gammaℂ (s + (χ.harmonicExponent w.val : ℂ) / 2)) :=
   prod_Gammaℝ_mult_mul_add s fun w ↦ (χ.harmonicExponent w : ℂ)
-
-/-- For `x` of nonzero norm and `s` with `0 < mult w * s.re + P_w` at every infinite place `w`,
-the weighted archimedean Gaussian `(χ.archWeight y : ℂ) * archGaussian y x * N(y)^(s/2)` is
-integrable against `archHaar K`. -/
-theorem integrable_archWeight_mul_archGaussian_mul_archNorm_cpow {χ : Grossencharacter K 𝔪}
-    {x : mixedSpace K} (hx : mixedEmbedding.norm x ≠ 0) {s : ℂ}
-    (hs : ∀ w, 0 < (mult w : ℝ) * s.re + χ.harmonicExponent w) :
-    Integrable (fun y ↦ (χ.archWeight y : ℂ) * archGaussian y x * (archNorm y : ℂ) ^ (s / 2))
-      (archHaar K) := by
-  have hz (w : InfinitePlace K) : 0 < ((mult w : ℂ) * s + χ.harmonicExponent w).re := by
-    simpa using hs w
-  refine (integrable_prod_cpow_div_two_mul_archGaussian hx hz).congr ?_
-  filter_upwards [ae_archHaar_pos] with y hy
-  exact (χ.archWeight_mul_archGaussian_mul_archNorm_cpow_eq hy x s).symm
-
-/-- **The weighted archimedean gamma integral** in `Γ_ℝ`-product form: for `x` of nonzero norm and
-`∀ w, 0 < mult w * s.re + P_w`,
-`∫ N(y^(p/2)) exp(-π ∑_w y_w |x_w|²) N(y)^(s/2) dy/y =
-  (∏_w Γ_ℝ(mult w · s + P_w)) · (∏_w |x_w| ^ P_w)⁻¹ · |N(x)| ^ (-s)`. -/
-theorem integral_archWeight_mul_archGaussian_mul_archNorm_cpow_eq_prod_Gammaℝ
-    {χ : Grossencharacter K 𝔪} {x : mixedSpace K} (hx : mixedEmbedding.norm x ≠ 0) {s : ℂ}
-    (hs : ∀ w, 0 < (mult w : ℝ) * s.re + χ.harmonicExponent w) :
-    ∫ y, (χ.archWeight y : ℂ) * archGaussian y x * (archNorm y : ℂ) ^ (s / 2) ∂archHaar K =
-      (∏ w : InfinitePlace K, Gammaℝ ((mult w : ℂ) * s + χ.harmonicExponent w)) *
-        ((∏ w : InfinitePlace K, normAtPlace w x ^ χ.harmonicExponent w : ℝ) : ℂ)⁻¹ *
-        (mixedEmbedding.norm x : ℂ) ^ (-s) := by
-  have ha := normAtPlace_pos_of_norm_ne_zero hx
-  have hz (w : InfinitePlace K) : 0 < ((mult w : ℂ) * s + χ.harmonicExponent w).re := by
-    simpa using hs w
-  have heq :
-      ∫ y, (χ.archWeight y : ℂ) * archGaussian y x * (archNorm y : ℂ) ^ (s / 2) ∂archHaar K =
-        ∫ y, (∏ w : InfinitePlace K,
-            (y w : ℂ) ^ (((mult w : ℂ) * s + χ.harmonicExponent w) / 2)) *
-            archGaussian y x ∂archHaar K := by
-    refine integral_congr_ae ?_
-    filter_upwards [ae_archHaar_pos] with y hy
-    exact χ.archWeight_mul_archGaussian_mul_archNorm_cpow_eq hy x s
-  have hnorm_s : (mixedEmbedding.norm x : ℂ) ^ (-s) =
-      ∏ w : InfinitePlace K, (normAtPlace w x : ℂ) ^ ((mult w : ℂ) * (-s)) := by
-    rw [mixedEmbedding.norm_apply, TauCeti.ofReal_prod_pow_cpow _ fun w _ ↦ (ha w).le]
-  have hnorm_p :
-      ((∏ w : InfinitePlace K, normAtPlace w x ^ χ.harmonicExponent w : ℝ) : ℂ)⁻¹ =
-        ∏ w : InfinitePlace K, (normAtPlace w x : ℂ) ^ (-(χ.harmonicExponent w : ℂ)) := by
-    rw [ofReal_prod, ← Finset.prod_inv_distrib]
-    refine Finset.prod_congr rfl fun w _ ↦ ?_
-    rw [ofReal_pow, cpow_neg, cpow_natCast]
-  rw [heq, integral_prod_cpow_div_two_mul_archGaussian hx hz, mul_assoc]
-  congr 1
-  rw [hnorm_p, hnorm_s, ← Finset.prod_mul_distrib]
-  refine Finset.prod_congr rfl fun w _ ↦ ?_
-  rw [← cpow_add _ _ (ofReal_ne_zero.mpr (ha w).ne')]
-  congr 1
-  ring
 
 open scoped Classical in
 /-- **The weighted archimedean gamma integral** of a Grossencharacter in Deligne `Γ_ℝ` and `Γ_ℂ`
-form (Neukirch VII §8): for `x` of nonzero norm and `∀ w, 0 < mult w * s.re + P_w`,
-integrating `(χ.archWeight y : ℂ) * archGaussian y x * (archNorm y : ℂ) ^ (s / 2)` over
-`archHaar K` yields the shifted gamma product times `(∏_w |x_w| ^ P_w)⁻¹ |N(x)| ^ (-s)`. -/
+form (Neukirch VII §8): for `∀ w, 0 < mult w * s.re + P_w`, integrating
+`(χ.archWeight y : ℂ) * archGaussian y x * (archNorm y : ℂ) ^ (s / 2)` over `archHaar K` yields
+the shifted gamma product times `(∏_w |x_w| ^ P_w)⁻¹ |N(x)| ^ (-s)` (when
+`mixedEmbedding.norm x = 0`, both sides vanish). -/
 theorem integral_archWeight_mul_archGaussian_mul_archNorm_cpow {χ : Grossencharacter K 𝔪}
-    {x : mixedSpace K} (hx : mixedEmbedding.norm x ≠ 0) {s : ℂ}
+    (x : mixedSpace K) {s : ℂ}
     (hs : ∀ w, 0 < (mult w : ℝ) * s.re + χ.harmonicExponent w) :
     ∫ y, (χ.archWeight y : ℂ) * archGaussian y x * (archNorm y : ℂ) ^ (s / 2) ∂archHaar K =
       ((2 : ℂ) ^ (s - 1)) ^ nrComplexPlaces K *
         (2 : ℂ) ^
-          ((∑ w : {w : InfinitePlace K // w.IsComplex}, (χ.harmonicExponent w.1 : ℂ)) / 2) *
-        ((∏ w : {w : InfinitePlace K // w.IsReal}, Gammaℝ (s + χ.harmonicExponent w.1)) *
+          ((∑ w : {w : InfinitePlace K // w.IsComplex}, (χ.harmonicExponent w.val : ℂ)) / 2) *
+        ((∏ w : {w : InfinitePlace K // w.IsReal}, Gammaℝ (s + χ.harmonicExponent w.val)) *
           ∏ w : {w : InfinitePlace K // w.IsComplex},
-            Gammaℂ (s + (χ.harmonicExponent w.1 : ℂ) / 2)) *
+            Gammaℂ (s + (χ.harmonicExponent w.val : ℂ) / 2)) *
         ((∏ w : InfinitePlace K, normAtPlace w x ^ χ.harmonicExponent w : ℝ) : ℂ)⁻¹ *
         (mixedEmbedding.norm x : ℂ) ^ (-s) := by
-  rw [integral_archWeight_mul_archGaussian_mul_archNorm_cpow_eq_prod_Gammaℝ hx hs,
+  have heq :
+      ∫ y, (χ.archWeight y : ℂ) * archGaussian y x * (archNorm y : ℂ) ^ (s / 2) ∂archHaar K =
+        ∫ y, archGaussian y x * (χ.archWeight y : ℂ) * (archNorm y : ℂ) ^ (s / 2) ∂archHaar K := by
+    refine integral_congr_ae (Filter.Eventually.of_forall fun y ↦ ?_)
+    ring
+  rw [heq, χ.integral_archGaussian_mul_archWeight_mul_archNorm_cpow x hs,
     prod_Gammaℝ_mult_mul_add_harmonicExponent]
 
 end TauCeti.LFunctions.Grossencharacter

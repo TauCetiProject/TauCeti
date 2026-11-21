@@ -17,7 +17,7 @@ Hecke's theta kernel has one positive parameter per infinite place, not just a r
 parameter. The Gaussian `archGaussian y x` is `exp (-π ∑ w, y w * |x w|²)`; a complex place
 occurs once in this sum, in accordance with the Euclidean pairing `mixedInner`, and it splits into
 one-place Gaussians across all infinite places (`archGaussian_eq_prod`) or across real and complex
-places (`archGaussian_eq_prod_mul_prod`, `archGaussian_one_eq_prod_mul_prod`).
+places (`archGaussian_eq_prod_mul_prod`).
 
 For positive parameters, the coordinatewise square-root dilation identifies this Gaussian with
 the standard Euclidean Schwartz Gaussian. Its sum over any discrete lattice converges absolutely,
@@ -133,28 +133,19 @@ open scoped Classical in
 theorem archGaussian_eq_prod_mul_prod (y : realSpace K) (x : mixedSpace K) :
     archGaussian y x =
       (∏ w : {w : InfinitePlace K // w.IsReal},
-          cexp (-(Real.pi : ℂ) * (y w.1 : ℂ) * (x.1 w : ℂ) ^ 2)) *
+          cexp (-(Real.pi : ℂ) * (y w.val : ℂ) * (x.1 w : ℂ) ^ 2)) *
         ∏ w : {w : InfinitePlace K // w.IsComplex},
-          cexp (-(Real.pi : ℂ) * (y w.1 : ℂ) * ‖x.2 w‖ ^ 2) := by
+          cexp (-(Real.pi : ℂ) * (y w.val : ℂ) * ‖x.2 w‖ ^ 2) := by
   rw [archGaussian_eq_prod, prod_eq_prod_mul_prod]
   congr 1
   · refine Finset.prod_congr rfl fun w _ ↦ ?_
-    rw [normAtPlace_apply_of_isReal w.2, Real.norm_eq_abs, sq_abs, ofReal_exp]
+    rw [normAtPlace_apply_of_isReal w.property, Real.norm_eq_abs, sq_abs, ofReal_exp]
     push_cast
     ring_nf
   · refine Finset.prod_congr rfl fun w _ ↦ ?_
-    rw [normAtPlace_apply_of_isComplex w.2, ofReal_exp]
+    rw [normAtPlace_apply_of_isComplex w.property, ofReal_exp]
     push_cast
     ring_nf
-
-open scoped Classical in
-/-- Splitting `archGaussian 1 x` into a product of standard Gaussians over real and complex
-places. -/
-theorem archGaussian_one_eq_prod_mul_prod (x : mixedSpace K) :
-    archGaussian 1 x =
-      (∏ w : {w : InfinitePlace K // w.IsReal}, cexp (-(Real.pi : ℂ) * (x.1 w : ℂ) ^ 2)) *
-        ∏ w : {w : InfinitePlace K // w.IsComplex}, cexp (-(Real.pi : ℂ) * ‖x.2 w‖ ^ 2) := by
-  simpa using archGaussian_eq_prod_mul_prod (1 : realSpace K) x
 
 open scoped Classical in
 /-- The archimedean Gaussian is the standard Euclidean Gaussian after square-root dilation. -/

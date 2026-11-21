@@ -45,7 +45,7 @@ order, and a compact subset of the extended chart target. -/
 noncomputable def chartSeminormFamily :
     SeminormFamily 𝕜 C^n⟮I, M; 𝓘(𝕜, F), F⟯
       (Σ x : M, {m : ℕ // m ≤ n} × TopologicalSpace.Compacts (extChartAt I x).target) :=
-  fun i ↦ chartDerivativeSeminorm i.1 i.2.2 i.2.1.1 i.2.1.2
+  fun i ↦ chartDerivativeSeminorm i.1 i.2.2 i.2.1.val i.2.1.property
 
 /-- An entry of the chart seminorm family is the corresponding compact derivative seminorm. -/
 @[simp]
@@ -60,13 +60,13 @@ empty compact sets, and finite regularity. -/
 theorem withSeminorms_manifoldWeakWhitney :
     WithSeminorms (chartSeminormFamily (I := I) (M := M) (F := F) (n := n)) := by
   let J := Σ x : M, {m : ℕ // m ≤ n} × TopologicalSpace.Compacts (extChartAt I x).target
-  let V (i : J) := C(i.2.2, E [×i.2.1.1]→L[𝕜] F)
+  let V (i : J) := C(i.2.2, E [×i.2.1.val]→L[𝕜] F)
   let e : J ≃ (Σ _ : J, Unit) := (Equiv.sigmaUnique _ _).symm
   have hp := (isInducing_compactChartJet (I := I) (M := M) (F := F) (n := n)).withSeminorms
     ((withSeminorms_pi fun i : J ↦ norm_withSeminorms 𝕜 (V i)).congr_equiv e)
   convert hp using 1
   ext i f
-  exact (chartDerivativeSeminorm_apply i.1 i.2.2 i.2.1.1 i.2.1.2 f).trans
+  exact (chartDerivativeSeminorm_apply i.1 i.2.2 i.2.1.val i.2.1.property f).trans
     (congrArg norm (compactChartJet_apply f i).symm)
 
 /-- Addition and negation are continuous for the vector-valued weak Whitney topology. -/
