@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Group.Unbundled.Int
 public import Mathlib.Algebra.Order.Ring.Defs
-public import Mathlib.Algebra.Ring.Int.Units
 import Mathlib.Algebra.Ring.Int.Parity
 public import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Tactic.LinearCombination
@@ -19,8 +19,8 @@ Over `ℤ` the product `t * (t - 1)` of two consecutive integers is nonnegative,
 lies strictly between `t - 1` and `t`. This is a genuinely integral statement: over `ℝ` it already
 fails at `t = 1 / 2`, and over `ℕ` it is vacuous.
 
-The unit-shifted form `0 ≤ s * (s - δ)` for `δ : ℤˣ` follows by rescaling, since the only units of
-`ℤ` are `±1` and multiplying by one of them permutes the pair.
+More generally `0 ≤ s * (s - δ)` for every integer `δ` with `|δ| ≤ 1`: the shifts `δ = 1` and
+`δ = -1` give consecutive products, and `δ = 0` gives a square. The bound on `δ` is sharp.
 
 The same product is always even, so every integer satisfies `c ^ 2 ≡ c` modulo `2`, and the
 halved product `n * (n - 1) / 2` is an exact quotient. It satisfies the addition law
@@ -30,7 +30,7 @@ the binomial coefficient `n.choose 2`.
 ## Main results
 
 * `Int.zero_le_mul_sub_one` : `0 ≤ t * (t - 1)`.
-* `Int.zero_le_mul_sub_units` : `0 ≤ s * (s - δ)` for a unit `δ`.
+* `Int.zero_le_mul_sub_of_abs_le_one` : `0 ≤ s * (s - δ)` whenever `|δ| ≤ 1`.
 * `Int.two_dvd_sq_sub_self` : `2 ∣ c ^ 2 - c`.
 * `Int.two_mul_mul_sub_one_ediv_two` : `n * (n - 1) / 2` is an exact quotient.
 * `Int.add_mul_add_sub_one_ediv_two` : the addition law for `n * (n - 1) / 2`.
@@ -48,14 +48,15 @@ theorem zero_le_mul_sub_one (t : ℤ) : 0 ≤ t * (t - 1) := by
   rw [mul_sub_one, ← sq, sub_nonneg]
   exact le_self_sq t
 
-/-- For a unit `δ` of `ℤ`, the product `s * (s - δ)` is nonnegative: rescaling by `δ = ±1` turns
-it into the product `(δ * s) * (δ * s - 1)` of consecutive integers. Nonnegativity fails for every
-other nonzero `δ`: if `2 ≤ |δ|`, then `s * (s - δ) < 0` at `s = Int.sign δ`. -/
-theorem zero_le_mul_sub_units (δ : ℤˣ) (s : ℤ) : 0 ≤ s * (s - (δ : ℤ)) := by
-  rcases units_eq_one_or δ with rfl | rfl
+/-- For an integer `δ` with `|δ| ≤ 1`, the product `s * (s - δ)` is nonnegative: it is a square
+for `δ = 0` and a product of consecutive integers for `δ = ±1`. The bound is sharp: if
+`2 ≤ |δ|`, then `s * (s - δ) = 1 - |δ| < 0` at `s = Int.sign δ`. -/
+theorem zero_le_mul_sub_of_abs_le_one {δ : ℤ} (hδ : |δ| ≤ 1) (s : ℤ) : 0 ≤ s * (s - δ) := by
+  rcases abs_le_one_iff.mp hδ with rfl | rfl | rfl
+  · rw [sub_zero]
+    exact mul_self_nonneg s
   · exact zero_le_mul_sub_one s
   · -- for `δ = -1`, `s * (s + 1)` is the consecutive product `-s * (-s - 1)`
-    push_cast
     linear_combination zero_le_mul_sub_one (-s)
 
 /-- Every integer satisfies `c ^ 2 ≡ c` modulo `2`, since `c * (c - 1)` is even. -/
@@ -64,6 +65,7 @@ theorem two_dvd_sq_sub_self (c : ℤ) : (2 : ℤ) ∣ c ^ 2 - c := by
   exact (even_mul_pred_self c).two_dvd
 
 /-- The halved product `m (m - 1) / 2` of consecutive integers is an exact quotient. -/
+@[simp]
 theorem two_mul_mul_sub_one_ediv_two (m : ℤ) : 2 * (m * (m - 1) / 2) = m * (m - 1) :=
   two_mul_ediv_two_of_even (even_mul_pred_self m)
 
