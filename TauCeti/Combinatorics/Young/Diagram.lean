@@ -60,10 +60,11 @@ public section
 
 namespace YoungDiagram
 
-/-- A row past the last one of a Young diagram is empty. -/
-theorem rowLen_eq_zero_of_colLen_le {μ : YoungDiagram} {i : ℕ} (hi : μ.colLen 0 ≤ i) :
-    μ.rowLen i = 0 :=
-  Nat.eq_zero_of_not_pos fun h => (mem_iff_lt_colLen.mp (mem_iff_lt_rowLen.mpr h)).not_ge hi
+/-- A row of a Young diagram is empty exactly when it lies past the last row, that is, at or
+below the end of the first column. -/
+theorem rowLen_eq_zero_iff {μ : YoungDiagram} {i : ℕ} : μ.rowLen i = 0 ↔ μ.colLen 0 ≤ i := by
+  -- both sides say that the cell `(i, 0)` is missing from the diagram
+  rw [← Nat.not_lt, ← mem_iff_lt_colLen, mem_iff_lt_rowLen, Nat.not_lt, Nat.le_zero]
 
 /-- The row of a cell is one of the rows of the diagram. -/
 theorem lt_colLen_zero_of_mem {μ : YoungDiagram} {i j : ℕ} (h : (i, j) ∈ μ) :
@@ -92,7 +93,7 @@ theorem getD_rowLens (μ : YoungDiagram) (i : ℕ) : μ.rowLens.getD i 0 = μ.ro
   by_cases hi : i < μ.rowLens.length
   · rw [List.getD_eq_getElem _ _ hi, get_rowLens]
   · rw [List.getD_eq_default _ _ (Nat.le_of_not_lt hi),
-      rowLen_eq_zero_of_colLen_le (le_of_eq_of_le length_rowLens.symm (Nat.le_of_not_lt hi))]
+      rowLen_eq_zero_iff.mpr (le_of_eq_of_le length_rowLens.symm (Nat.le_of_not_lt hi))]
 
 /-- Merge-sorting the row lengths of a Young diagram recovers them: they are already
 decreasing. This is stated for `List.mergeSort` in the shape `simp` produces from
@@ -189,7 +190,7 @@ theorem sum_take_rowLens_eq_card_filter_fst (μ : YoungDiagram) (k : ℕ) :
   rw [← sum_range_rowLen_eq_card_filter_fst, rowLens, ← List.map_take, List.take_range]
   -- the rows past the last one are empty, so summing up to `k` or to `min k (μ.colLen 0)` agrees
   rw [← Finset.sum_subset (Finset.range_subset_range.mpr (min_le_left k _)) fun i hi hi' =>
-    rowLen_eq_zero_of_colLen_le
+    rowLen_eq_zero_iff.mpr
       (by simpa [lt_min_iff, Finset.mem_range.mp hi] using Finset.mem_range.not.mp hi')]
   -- a sum over `List.range` is a sum over `Finset.range`, read through `Multiset.range`
   rw [Finset.sum_eq_multiset_sum, Finset.range_val, ← Multiset.coe_range, Multiset.map_coe,

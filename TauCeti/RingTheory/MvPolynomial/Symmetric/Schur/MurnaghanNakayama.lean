@@ -146,15 +146,11 @@ theorem psum_mul_diagramSchurPoly {N : ℕ} (ν : YoungDiagram) {r : ℕ} (hr : 
     rw [diagramSchurPoly_eq_zero_of_lt_colLen hν', mul_zero]
     refine (sum_eq_zero fun μ hμ => ?_).symm
     have hle := ((mem_filter.mp hμ).2).le
-    have hN : ν.rowLen N ≠ 0 := by
-      intro h0
-      have : (N, 0) ∈ ν := YoungDiagram.mem_iff_lt_colLen.mpr hν'
-      rw [YoungDiagram.mem_iff_lt_rowLen, h0] at this
-      omega
+    have hN : ν.rowLen N ≠ 0 := mt YoungDiagram.rowLen_eq_zero_iff.mp (Nat.not_le.mpr hν')
     have hμN : N < (ofPartition μ).colLen 0 := by
       by_contra h
       exact hN (Nat.eq_zero_of_le_zero ((YoungDiagram.rowLen_le_of_le hle N).trans
-        (YoungDiagram.rowLen_eq_zero_of_colLen_le (Nat.not_lt.mp h)).le))
+        (YoungDiagram.rowLen_eq_zero_iff.mpr (Nat.not_lt.mp h)).le))
     rw [diagramSchurPoly_eq_zero_of_lt_colLen hμN, mul_zero]
 
 open scoped Classical in
