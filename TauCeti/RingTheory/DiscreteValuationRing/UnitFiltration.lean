@@ -28,9 +28,8 @@ the coordinate relative to `π` equals `(residue S a) ^ (n + 1)` times the coord
 
 * `TauCeti.IsDiscreteValuationRing.mem_unitFiltration_iff_le_addVal`: membership in `U_i` is the
   inequality `i ≤ addVal S ((u : S) - 1)`.
-* `TauCeti.IsDiscreteValuationRing.mem_unitFiltration_iff_mul_irreducible_mem` and
-  `TauCeti.IsDiscreteValuationRing.mem_unitFiltration_iff_irreducible_mul_mem`: membership in `U_i`
-  read after multiplying `(u : S) - 1` by a uniformizer.
+* `TauCeti.IsDiscreteValuationRing.mem_unitFiltration_iff_mul_irreducible_mem`: membership in
+  `U_i` read after multiplying `(u : S) - 1` by a uniformizer.
 * `TauCeti.IsDiscreteValuationRing.unitFiltrationGradedSuccEquivResidueField_eq_residue` and
   `TauCeti.IsDiscreteValuationRing.unitFiltrationGradedSuccEquivResidueField_change`: explicit
   representative evaluation and change-of-uniformizer scaling.
@@ -61,12 +60,6 @@ theorem mem_unitFiltration_iff_mul_irreducible_mem {ϖ : S} (hϖ : Irreducible �
   rw [mem_unitFiltration_iff, hϖ.maximalIdeal_eq, Ideal.span_singleton_pow,
     Ideal.span_singleton_pow, Ideal.mem_span_singleton, Ideal.mem_span_singleton, pow_succ,
     mul_dvd_mul_iff_right hϖ.ne_zero]
-
-/-- A unit `u` lies in `unitFiltration S i` if and only if `ϖ * ((u : S) - 1) ∈ 𝔪 ^ (i + 1)` for a
-uniformizer `ϖ`. -/
-theorem mem_unitFiltration_iff_irreducible_mul_mem {ϖ : S} (hϖ : Irreducible ϖ) {i : ℕ} {u : Sˣ} :
-    u ∈ unitFiltration S i ↔ ϖ * ((u : S) - 1) ∈ maximalIdeal S ^ (i + 1) := by
-  rw [mul_comm, mem_unitFiltration_iff_mul_irreducible_mem hϖ]
 
 /-- Fixing a uniformizer `π` identifies the `n`-th positive graded piece `U_{n+1} / U_{n+2}` of
 the unit filtration with the additive residue field, sending the class of `u` with

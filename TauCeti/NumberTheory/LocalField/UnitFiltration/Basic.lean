@@ -337,22 +337,9 @@ theorem coe_unitFiltrationEquivInteger_symm (i : ℕ)
 
 /-- The unit filtration separates points: an element lying in every step is `1`. -/
 theorem iInf_unitFiltration : ⨅ i, unitFiltration K i = ⊥ := by
-  ext x
-  simp only [Subgroup.mem_iInf, Subgroup.mem_bot]
-  refine ⟨fun hx ↦ ?_, fun h i ↦ h ▸ one_mem _⟩
-  have hmem : unitFiltrationToIntegerUnits 0 ⟨x, hx 0⟩ ∈
-      ⨅ i, TauCeti.IsLocalRing.unitFiltration 𝒪[K] i := by
-    rw [Subgroup.mem_iInf]
-    intro i
-    obtain ⟨u, hu, hux⟩ := Subgroup.mem_map.mp (hx i)
-    have hEq : unitFiltrationToIntegerUnits 0 ⟨x, hx 0⟩ = u :=
-      Units.map_injective Subtype.val_injective <| by
-        rw [hux]
-        exact unitsMap_subtype_unitFiltrationToIntegerUnits 0 ⟨x, hx 0⟩
-    exact hEq ▸ hu
-  rw [TauCeti.IsLocalRing.iInf_unitFiltration_eq_bot, Subgroup.mem_bot] at hmem
-  exact (unitsMap_subtype_unitFiltrationToIntegerUnits 0 ⟨x, hx 0⟩).symm.trans
-    (by rw [hmem, map_one])
+  simp only [unitFiltration]
+  rw [← Subgroup.map_iInf _ (Units.map_injective Subtype.val_injective),
+    TauCeti.IsLocalRing.iInf_unitFiltration_eq_bot, Subgroup.map_bot]
 
 /-- A unit of `𝒪[K]` lies in the depth-one step `U(K,1)` of the unit filtration exactly when it
 reduces to `1`: the principal units are the kernel of reduction. -/

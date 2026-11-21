@@ -119,7 +119,8 @@ private theorem uniformizerChangeUnit_smul_mem_unitFiltration {ϖ : B} (hϖ : Ir
     {i : ℕ} {σ : G} (hσϖ : Irreducible (σ • ϖ))
     (hσ : σ ∈ ramificationGroup G B (i : ℤ)) :
     uniformizerChangeUnit ϖ (σ • ϖ) hϖ hσϖ ∈ unitFiltration B i := by
-  rw [mem_unitFiltration_iff_irreducible_mul_mem hϖ, mul_sub, mul_one, mul_uniformizerChangeUnit]
+  rw [mem_unitFiltration_iff_mul_irreducible_mem hϖ, sub_mul, one_mul, mul_comm,
+    mul_uniformizerChangeUnit]
   exact mem_ramificationGroup_natCast_iff.mp hσ ϖ
 
 /-- The unit `u_σ ∈ U_i` carrying a uniformizer `ϖ` to `(σ : G) • ϖ`, for `σ` in the `i`-th
@@ -137,18 +138,6 @@ theorem mul_coe_uniformizerRatio (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
     (σ : ramificationGroup G B (i : ℤ)) :
     ϖ * ((uniformizerRatio i hϖ σ : Bˣ) : B) = (σ : G) • ϖ :=
   mul_uniformizerChangeUnit ϖ ((σ : G) • ϖ) hϖ _
-
-/-- Multiplying `uniformizerRatio i hϖ σ` on the right by `ϖ` gives `(σ : G) • ϖ`. -/
-@[simp]
-theorem coe_uniformizerRatio_mul (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
-    (σ : ramificationGroup G B (i : ℤ)) :
-    ((uniformizerRatio i hϖ σ : Bˣ) : B) * ϖ = (σ : G) • ϖ := by
-  rw [mul_comm, mul_coe_uniformizerRatio]
-
-omit [IsDomain B] [_root_.IsDiscreteValuationRing B] in
-private theorem coe_unitsMap_toRingHom (σ : G) (u : Bˣ) :
-    ((Units.map (MulSemiringAction.toRingHom G B σ).toMonoidHom u : Bˣ) : B) = σ • (u : B) := by
-  simp
 
 /-- The 1-cocycle identity `u_{στ} = u_σ * σ(u_τ)` in `Bˣ` for the uniformizer ratio. -/
 theorem coe_uniformizerRatio_mul_apply (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
@@ -171,7 +160,8 @@ theorem coe_uniformizerRatio_mul_apply (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
     _ = ϖ * (((uniformizerRatio i hϖ σ : Bˣ) *
           Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom
             (uniformizerRatio i hϖ τ : Bˣ) : Bˣ) : B) := by
-          rw [Units.val_mul, coe_unitsMap_toRingHom, mul_assoc]
+          rw [Units.val_mul, Units.coe_map, mul_assoc]
+          rfl
 
 /-- The **quotient homomorphism** `G_i →* U_i / U_{i+1}` sending `σ` to the class of its
 uniformizer ratio `u_σ`. It does not depend on `ϖ`
@@ -223,7 +213,8 @@ private theorem coe_uniformizerRatio_change (i : ℕ) {ϖ ϖ' : B} (hϖ : Irredu
     _ = ϖ * (((uniformizerRatio i hϖ σ : Bˣ) *
           Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom
             (uniformizerChangeUnit ϖ ϖ' hϖ hϖ') : Bˣ) : B) := by
-          rw [Units.val_mul, coe_unitsMap_toRingHom, mul_assoc]
+          rw [Units.val_mul, Units.coe_map, mul_assoc]
+          rfl
 
 /-- The quotient homomorphism `G_i →* U_i / U_{i+1}` does not depend on the choice of
 uniformizer. -/
@@ -254,7 +245,7 @@ theorem mem_ker_ramificationGroupToUnitFiltrationGraded_iff {i : ℕ} {ϖ : B} (
       (σ : G) • ϖ - ϖ ∈ maximalIdeal B ^ (i + 2) := by
   rw [MonoidHom.mem_ker, ramificationGroupToUnitFiltrationGraded_apply, QuotientGroup.eq_one_iff,
     Subgroup.mem_subgroupOf, mem_unitFiltration_iff_mul_irreducible_mem hϖ, sub_mul, one_mul,
-    coe_uniformizerRatio_mul]
+    mul_comm, mul_coe_uniformizerRatio]
 
 /-- The next ramification group `G_{i+1}` lies in the kernel of the `i`-th quotient
 homomorphism. -/
@@ -316,7 +307,8 @@ theorem coe_tameCharacter_of_mul_eq {ϖ : B} (hϖ : Irreducible ϖ) (σ : ramifi
     {y : B} (hy : y * ϖ = (σ : G) • ϖ) :
     (tameCharacter hϖ σ : ResidueField B) = residue B y := by
   have hy' : ((uniformizerRatio 0 hϖ σ : Bˣ) : B) = y :=
-    mul_right_cancel₀ hϖ.ne_zero ((coe_uniformizerRatio_mul 0 hϖ σ).trans hy.symm)
+    mul_right_cancel₀ hϖ.ne_zero
+      (((mul_comm _ _).trans (mul_coe_uniformizerRatio 0 hϖ σ)).trans hy.symm)
   rw [coe_tameCharacter_apply, hy']
 
 /-- The tame character does not depend on the choice of uniformizer. -/
@@ -379,7 +371,7 @@ theorem ramificationGroupGradedToResidueField_of_smul_sub_eq (n : ℕ) (π : B) 
   rw [ramificationGroupGradedToResidueField_ofMul_mk]
   refine unitFiltrationGradedSuccEquivResidueField_eq_residue n π hπ _ y ?_
   apply mul_right_cancel₀ hπ.ne_zero
-  rw [sub_mul, one_mul, coe_uniformizerRatio_mul, hmove, mul_assoc, ← pow_succ]
+  rw [sub_mul, one_mul, mul_comm _ π, mul_coe_uniformizerRatio, hmove, mul_assoc, ← pow_succ]
 
 /-- If `π' = π * a`, the positive-depth ramification coordinate relative to `π` equals
 `(residue B a) ^ (n + 1)` times the coordinate relative to `π'` (equivalently, replacing `π` by
@@ -452,11 +444,9 @@ private theorem smul_sub_mem_maximalIdeal_pow_succ_of_uniformizer
   have hu : IsUnit ((derivative P).eval x + c * d) := by
     rw [← notMem_maximalIdeal, ← residue_eq_zero_iff, map_add, map_mul, hd0, mul_zero, add_zero]
     exact hder
-  have hfac : P.eval (σ • x) - P.eval x = d * (hu.unit : B) := by
+  have hfac : P.eval (σ • x) - P.eval x = (hu.unit : B) * d := by
     rw [IsUnit.unit_spec, hc]; ring
-  rw [hfac] at hdiff
-  simpa only [Units.mul_inv_cancel_right] using
-    Ideal.mul_mem_right ((hu.unit⁻¹ : Bˣ) : B) _ hdiff
+  exact (Ideal.unit_mul_mem_iff_mem _ hu.unit.isUnit).mp (hfac ▸ hdiff)
 
 include A in
 /-- **Membership in the lower ramification filtration is decided at a uniformizer** when the
@@ -512,9 +502,8 @@ theorem ker_tameCharacter [Algebra.IsSeparable (ResidueField A) (ResidueField B)
     (hϖ : Irreducible ϖ) :
     (tameCharacter (G := G) hϖ).ker =
       (ramificationGroup G B 1).subgroupOf (ramificationGroup G B 0) := by
-  ext σ
-  rw [MonoidHom.mem_ker, tameCharacter_eq_one_iff, Subgroup.mem_subgroupOf,
-    ← Nat.cast_one, mem_ramificationGroup_natCast_iff_smul_sub_mem A hϖ σ.property]
+  rw [tameCharacter, MulEquiv.toMonoidHom_eq_coe, MonoidHom.ker_mulEquiv_comp]
+  exact_mod_cast ker_ramificationGroupToUnitFiltrationGraded A 0 hϖ
 
 include A in
 /-- **The graded tame character `G_0 / G_1 →* (ResidueField B)ˣ` is injective** when the residue
@@ -553,7 +542,7 @@ theorem mem_ramificationGroup_one_of_pow_sub_one_mem_maximalIdeal
     exact h
   have h2 : σ • ϖ - ϖ ∈ maximalIdeal B ^ 2 := by
     rw [mem_unitFiltration_iff_mul_irreducible_mem hϖ, sub_mul, one_mul,
-      coe_uniformizerRatio_mul 0 hϖ ⟨σ, hσ⟩] at hu1
+      mul_comm _ ϖ, mul_coe_uniformizerRatio 0 hϖ ⟨σ, hσ⟩] at hu1
     exact hu1
   exact (mem_ramificationGroup_natCast_iff_smul_sub_mem A hϖ hσ (n := 1)).mpr h2
 

@@ -9,7 +9,10 @@ public import Mathlib.Algebra.Ring.Action.Invariant
 public import TauCeti.NumberTheory.LocalField.Teichmuller
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.RamificationGroup
+import Mathlib.Algebra.Ring.Pi
+import Mathlib.Algebra.Ring.Subring.Units
 import Mathlib.FieldTheory.Perfect
+import Mathlib.RingTheory.LocalRing.Pullback
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 import TauCeti.RingTheory.Valuation.ValuativeRel.Action
 
@@ -91,37 +94,14 @@ private theorem exists_separableBaseRing.{u, v} (G : Type v) [Group G] (L : Type
       (_ : IsLocalHom (algebraMap A 𝒪[L])) (_ : SMulCommClass G A 𝒪[L]),
       Algebra.IsSeparable (ResidueField A) 𝓀[L] := by
   let A : Subring 𝒪[L] :=
-    { carrier := MulAction.fixedPoints G 𝒪[L]
-      mul_mem' := fun {a b} ha hb σ ↦ by rw [smul_mul', ha σ, hb σ]
-      one_mem' := fun σ ↦ smul_one σ
-      add_mem' := fun {a b} ha hb σ ↦ by rw [smul_add, ha σ, hb σ]
-      zero_mem' := fun σ ↦ smul_zero σ
-      neg_mem' := fun {a} ha σ ↦ by rw [smul_neg, ha σ] }
-  have hunit : ∀ x : A, IsUnit (x : 𝒪[L]) → IsUnit x := by
-    rintro x ⟨u, hu⟩
-    have hinv : ((u⁻¹ : 𝒪[L]ˣ) : 𝒪[L]) ∈ A := by
-      intro σ
-      have hmul : (u : 𝒪[L]) * (σ • ((u⁻¹ : 𝒪[L]ˣ) : 𝒪[L])) = 1 := by
-        calc
-          (u : 𝒪[L]) * (σ • ((u⁻¹ : 𝒪[L]ˣ) : 𝒪[L]))
-              = (σ • (u : 𝒪[L])) * (σ • ((u⁻¹ : 𝒪[L]ˣ) : 𝒪[L])) := by rw [hu, x.property σ]
-          _ = σ • ((u : 𝒪[L]) * ((u⁻¹ : 𝒪[L]ˣ) : 𝒪[L])) := (smul_mul' ..).symm
-          _ = 1 := by rw [Units.mul_inv, smul_one]
-      calc
-        σ • ((u⁻¹ : 𝒪[L]ˣ) : 𝒪[L])
-            = ((u⁻¹ : 𝒪[L]ˣ) : 𝒪[L]) * ((u : 𝒪[L]) * (σ • ((u⁻¹ : 𝒪[L]ˣ) : 𝒪[L]))) := by
-              rw [← mul_assoc, Units.inv_mul, one_mul]
-        _ = ((u⁻¹ : 𝒪[L]ˣ) : 𝒪[L]) := by rw [hmul, mul_one]
-    exact isUnit_iff_exists_inv.mpr ⟨⟨((u⁻¹ : 𝒪[L]ˣ) : 𝒪[L]), hinv⟩,
-      Subtype.ext (by simp [← hu])⟩
-  have : IsLocalHom (algebraMap A 𝒪[L]) := ⟨fun x hx ↦ hunit x hx⟩
-  have : IsLocalRing A :=
-    IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun x ↦
-      (IsLocalRing.isUnit_or_isUnit_one_sub_self (x : 𝒪[L])).imp (hunit x) (hunit (1 - x))
+    (RingHom.pi (MulSemiringAction.toRingHom G 𝒪[L])).eqLocus (RingHom.pi fun _ ↦ RingHom.id 𝒪[L])
+  have : IsLocalHom (algebraMap A 𝒪[L]) := inferInstanceAs (IsLocalHom A.subtype)
+  have : IsLocalRing A := RingHom.isLocalRing_eqLocus _ _
   have : SMulCommClass G A 𝒪[L] :=
     ⟨fun σ a b ↦ by
       change σ • ((a : 𝒪[L]) * b) = (a : 𝒪[L]) * (σ • b)
-      rw [smul_mul', a.property σ]⟩
+      have ha : σ • (a : 𝒪[L]) = (a : 𝒪[L]) := congr_fun a.property σ
+      rw [smul_mul', ha]⟩
   have : Finite (ResidueField A) :=
     Finite.of_injective _ (algebraMap (ResidueField A) 𝓀[L]).injective
   have : PerfectField (ResidueField A) := PerfectField.ofFinite
@@ -324,9 +304,8 @@ theorem mem_ker_ramificationGroupToUnitFiltrationGraded_iff (hϖ : Irreducible �
     {σ : ramificationGroup G 𝒪[L] (i : ℤ)} :
     σ ∈ (ramificationGroupToUnitFiltrationGraded i hϖ).ker ↔
       valuation L ((σ : G) • (ϖ : L) - (ϖ : L)) ≤ valuation L (ϖ : L) ^ (i + 2) := by
-  rw [MonoidHom.mem_ker, ramificationGroupToUnitFiltrationGraded, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, map_eq_one_iff _ (unitFiltrationGradedEquivInteger i).symm.injective,
-    ← MonoidHom.mem_ker,
+  rw [ramificationGroupToUnitFiltrationGraded, MulEquiv.toMonoidHom_eq_coe,
+    MonoidHom.ker_mulEquiv_comp,
     TauCeti.IsDiscreteValuationRing.mem_ker_ramificationGroupToUnitFiltrationGraded_iff hϖ,
     sub_mem_maximalIdeal_pow_iff hϖ]
 
@@ -335,10 +314,9 @@ homomorphism. -/
 theorem ramificationGroup_succ_subgroupOf_le_ker (hϖ : Irreducible ϖ) :
     (ramificationGroup G 𝒪[L] ((i : ℤ) + 1)).subgroupOf (ramificationGroup G 𝒪[L] (i : ℤ)) ≤
       (ramificationGroupToUnitFiltrationGraded i hϖ).ker := by
-  intro σ hσ
-  rw [MonoidHom.mem_ker, ramificationGroupToUnitFiltrationGraded, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom,
-    TauCeti.IsDiscreteValuationRing.ramificationGroup_succ_subgroupOf_le_ker i hϖ hσ, map_one]
+  rw [ramificationGroupToUnitFiltrationGraded, MulEquiv.toMonoidHom_eq_coe,
+    MonoidHom.ker_mulEquiv_comp]
+  exact TauCeti.IsDiscreteValuationRing.ramificationGroup_succ_subgroupOf_le_ker i hϖ
 
 /-- **The kernel of the quotient homomorphism is exactly `G_{i+1}`**, which is what makes the
 induced `θ_i` on `G_i / G_{i+1}` an embedding. -/
@@ -346,11 +324,9 @@ theorem ker_ramificationGroupToUnitFiltrationGraded (hϖ : Irreducible ϖ) :
     (ramificationGroupToUnitFiltrationGraded i hϖ).ker =
       (ramificationGroup G 𝒪[L] ((i : ℤ) + 1)).subgroupOf (ramificationGroup G 𝒪[L] (i : ℤ)) := by
   obtain ⟨A, _, _, _, _, _, _⟩ := exists_separableBaseRing G L
-  ext σ
-  rw [MonoidHom.mem_ker, ramificationGroupToUnitFiltrationGraded, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, map_eq_one_iff _ (unitFiltrationGradedEquivInteger i).symm.injective,
-    ← MonoidHom.mem_ker,
-    TauCeti.IsDiscreteValuationRing.ker_ramificationGroupToUnitFiltrationGraded A i hϖ]
+  rw [ramificationGroupToUnitFiltrationGraded, MulEquiv.toMonoidHom_eq_coe,
+    MonoidHom.ker_mulEquiv_comp]
+  exact TauCeti.IsDiscreteValuationRing.ker_ramificationGroupToUnitFiltrationGraded A i hϖ
 
 variable (i) in
 /-- The **quotient map** `θ_i : G_i / G_{i+1} →* U(L,i) / U(L,i+1)`, induced by

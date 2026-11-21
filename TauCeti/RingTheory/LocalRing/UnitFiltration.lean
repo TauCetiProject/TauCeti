@@ -47,7 +47,7 @@ uniformizer `ϖ` and multiplicative modulo `U_{i+1}`.
 
 * `TauCeti.IsLocalRing.unitFiltration_zero`, `TauCeti.IsLocalRing.unitFiltration_one`, and
   `TauCeti.IsLocalRing.unitFiltration_antitone`: shallow steps and monotonicity.
-* `TauCeti.IsLocalRing.iInf_unitFiltration_eq_bot`: over a Noetherian local domain, the unit
+* `TauCeti.IsLocalRing.iInf_unitFiltration_eq_bot`: over a Noetherian local ring, the unit
   filtration separates points (`⨅ i, U_i = ⊥`).
 * `TauCeti.IsLocalRing.unitFiltrationGraded_succ_pow_eq_one_of_charP`,
   `TauCeti.IsLocalRing.isPGroup_unitFiltrationGraded_succ`, and
@@ -114,12 +114,12 @@ theorem unitFiltration_antitone : Antitone (unitFiltration S) :=
 abbrev UnitFiltrationGraded (i : ℕ) :=
   unitFiltration S i ⧸ (unitFiltration S (i + 1)).subgroupOf (unitFiltration S i)
 
-/-- Over a Noetherian local domain, the unit filtration intersects in the trivial subgroup. -/
-theorem iInf_unitFiltration_eq_bot [IsNoetherianRing S] [IsDomain S] :
+/-- Over a Noetherian local ring, the unit filtration intersects in the trivial subgroup. -/
+theorem iInf_unitFiltration_eq_bot [IsNoetherianRing S] :
     ⨅ i : ℕ, unitFiltration S i = ⊥ := by
   ext u
   rw [Subgroup.mem_iInf, Subgroup.mem_bot, Units.ext_iff, Units.val_one, ← sub_eq_zero,
-    ← Ideal.mem_bot, ← Ideal.iInf_pow_eq_bot_of_isDomain _ (maximalIdeal.isMaximal S).ne_top,
+    ← Ideal.mem_bot, ← Ideal.iInf_pow_eq_bot_of_isLocalRing _ (maximalIdeal.isMaximal S).ne_top,
     Ideal.mem_iInf]
   simp only [mem_unitFiltration_iff]
 
@@ -227,12 +227,8 @@ theorem eq_one_of_pow_eq_one_unitFiltrationGraded_succ_of_charZero [CharZero (Re
   have hu : IsUnit (k : S) := by
     rw [← notMem_maximalIdeal, ← residue_eq_zero_iff, map_natCast]
     exact Nat.cast_ne_zero.mpr hk
-  obtain ⟨u, hu⟩ := hu
-  have h0 : (e x).toAdd = 0 := by
-    have hmul := congrArg (((u⁻¹ : Sˣ) : S) • ·) hkm
-    rw [smul_smul, ← hu, Units.inv_mul, one_smul, smul_zero] at hmul
-    exact hmul
-  exact e.injective (Multiplicative.toAdd.injective (by rw [h0, map_one, toAdd_one]))
+  exact e.injective (Multiplicative.toAdd.injective
+    (by rw [hu.smul_eq_zero.mp hkm, map_one, toAdd_one]))
 
 end Graded
 
