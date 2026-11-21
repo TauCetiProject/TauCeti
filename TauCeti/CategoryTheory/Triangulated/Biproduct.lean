@@ -11,13 +11,14 @@ public import Mathlib.CategoryTheory.Triangulated.Pretriangulated
 /-!
 # Direct summands and sums of triangles in a pretriangulated category
 
-Two facts about binary biproducts in a pretriangulated category `C`.
+Facts about binary biproducts in a pretriangulated category `C`.
 
 * A retract is a direct summand: if `X` is a retract of `Y`, then `Y ≅ X ⊞ Z` for some `Z`.
   The pretriangulated category need not be idempotent complete; the complement `Z` is the cone of
   the split monomorphism `X ⟶ Y`, whose distinguished triangle has zero connecting morphism.
   Consequently, for an isomorphism-closed property `P`, an object `X` satisfies
-  `P.retractClosure` exactly when `X ⊞ Y` satisfies `P` for some `Y`.
+  `P.retractClosure` exactly when `X ⊞ Y` satisfies `P` for some `Y`. If `P` is dense, that is
+  `P.retractClosure = ⊤`, every object has such a complement `Y`.
 * Distinguished triangles are closed under binary direct sums, up to isomorphism of vertices: for
   distinguished `T₁` and `T₂` there is a distinguished triangle whose vertices are the biproducts
   of the corresponding vertices of `T₁` and `T₂`. It is the product triangle of the pair.
@@ -30,6 +31,9 @@ where every object is a summand of an object of the subcategory.
 * `CategoryTheory.Retract.exists_iso_biprod`: a retract of `Y` is a biproduct summand of `Y`.
 * `CategoryTheory.ObjectProperty.prop_retractClosure_iff_exists_biprod`: the retract closure of
   an isomorphism-closed property consists of the summands of its objects.
+* `CategoryTheory.ObjectProperty.exists_prop_biprod_of_retractClosure_eq_top`: for a dense
+  isomorphism-closed property, every object has a complement whose biproduct with it lies in the
+  property.
 * `CategoryTheory.Pretriangulated.exists_distTriang_iso_biprod`: there is a distinguished triangle
   whose vertices are isomorphic to the vertexwise biproducts of two distinguished triangles.
 -/
@@ -61,6 +65,12 @@ theorem ObjectProperty.prop_retractClosure_iff_exists_biprod (P : ObjectProperty
     { i := biprod.inl, r := biprod.fst }⟩
   obtain ⟨Z, ⟨e⟩⟩ := r.exists_iso_biprod
   exact ⟨Z, P.prop_of_iso e hY⟩
+
+/-- In a pretriangulated category, every object has a complement for a dense isomorphism-closed
+property `P`: a summand whose biproduct with the object satisfies `P`. -/
+theorem ObjectProperty.exists_prop_biprod_of_retractClosure_eq_top (P : ObjectProperty C)
+    [P.IsClosedUnderIsomorphisms] (hP : P.retractClosure = ⊤) (X : C) : ∃ Y : C, P (X ⊞ Y) :=
+  (P.prop_retractClosure_iff_exists_biprod X).1 (by rw [hP]; trivial)
 
 namespace Pretriangulated
 

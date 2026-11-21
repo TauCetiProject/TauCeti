@@ -57,7 +57,7 @@ theorem of_eq_of_iff_of_retractClosure_eq_top (hA : A.retractClosure = ⊤) {X Y
     (of X : SplitK0 C) = of Y ↔ ∃ B : C, A B ∧ Nonempty (X ⊞ B ≅ Y ⊞ B) := by
   refine ⟨fun h => ?_, fun ⟨B, _, h⟩ => of_eq_of_iff.2 ⟨B, h⟩⟩
   obtain ⟨W, ⟨e⟩⟩ := of_eq_of_iff.1 h
-  obtain ⟨W', hW'⟩ := (A.prop_retractClosure_iff_exists_biprod W).1 (by rw [hA]; trivial)
+  obtain ⟨W', hW'⟩ := A.exists_prop_biprod_of_retractClosure_eq_top hA W
   exact ⟨W ⊞ W', hW', ⟨(biprod.associator _ _ _).symm ≪≫ biprod.mapIso e (Iso.refl _) ≪≫
     biprod.associator _ _ _⟩⟩
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split.Dense
 public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated
+public import TauCeti.CategoryTheory.ObjectProperty
 public import TauCeti.CategoryTheory.Triangulated.Biproduct
 public import Mathlib.CategoryTheory.ObjectProperty.Retract
 
@@ -62,6 +63,9 @@ which gives injectivity, and a class `[X]` coming from `K₀(A)` gives a stable 
 * `TauCeti.TriangulatedK0.classSubcategory_range_map_ι` and
   `TauCeti.TriangulatedK0.range_map_ι_classSubcategory`: the two assignments `A ↦ im K₀(A)` and
   `H ↦ classSubcategory H` are mutually inverse.
+* `TauCeti.TriangulatedK0.existsUnique_classSubcategory`: every subgroup of triangulated `K₀`
+  determines a unique dense triangulated subcategory, closed under isomorphisms, whose objects are
+  those with class in the subgroup.
 
 ## References
 
@@ -85,12 +89,6 @@ namespace TriangulatedK0
 section Dense
 
 variable (A : ObjectProperty C) [A.IsClosedUnderIsomorphisms]
-
-/-- In a dense subcategory, every object has a complement: a summand making it an object of the
-subcategory. -/
-private lemma exists_prop_biprod (hA : A.retractClosure = ⊤) (X : C) :
-    ∃ X' : C, A (X ⊞ X') :=
-  (A.prop_retractClosure_iff_exists_biprod X).1 (by rw [hA]; trivial)
 
 variable [A.IsTriangulated] [EssentiallySmall.{w} C] [EssentiallySmall.{w'} A.FullSubcategory]
 
@@ -154,12 +152,12 @@ private lemma toStable₁_of_distTriang_of_prop₃ (hA : A.retractClosure = ⊤)
     (hT : T ∈ distTriang C) (h₃ : A T.obj₃) :
     toStable₁ A (SplitK0.of T.obj₂) =
       toStable₁ A (SplitK0.of T.obj₁) + toStable₁ A (SplitK0.of T.obj₃) := by
-  obtain ⟨Y', hY'⟩ := exists_prop_biprod A hA T.obj₂
+  obtain ⟨Y', hY'⟩ := A.exists_prop_biprod_of_retractClosure_eq_top hA T.obj₂
   obtain ⟨S, hS, ⟨e₁⟩, ⟨e₂⟩, ⟨e₃⟩⟩ :=
     exists_distTriang_iso_biprod T _ hT (contractible_distinguished Y')
   have hS₂ : A S.obj₂ := A.prop_of_iso e₂.symm hY'
-  have hS₃ : A S.obj₃ := A.prop_of_iso (e₃ ≪≫ biprod.isoProd _ _).symm
-    (A.prop_prod _ _ h₃ A.prop_zero)
+  have hS₃ : A S.obj₃ := A.prop_of_iso e₃.symm
+    (A.prop_biprod_of_isClosedUnderBinaryProducts h₃ A.prop_zero)
   have hS₁ : A S.obj₁ := A.ext_of_isTriangulatedClosed₁ _ hS hS₂ hS₃
   have h := congrArg (toStable₂ A) (of_fullSubcategory_distTriang A hS hS₁ hS₂ hS₃)
   rw [map_add, ← toStable₁_of_prop, ← toStable₁_of_prop, ← toStable₁_of_prop,
@@ -175,7 +173,7 @@ private lemma toStable₁_of_distTriang (hA : A.retractClosure = ⊤) {T : Trian
     (hT : T ∈ distTriang C) :
     toStable₁ A (SplitK0.of T.obj₂) =
       toStable₁ A (SplitK0.of T.obj₁) + toStable₁ A (SplitK0.of T.obj₃) := by
-  obtain ⟨Z', hZ'⟩ := exists_prop_biprod A hA T.obj₃
+  obtain ⟨Z', hZ'⟩ := A.exists_prop_biprod_of_retractClosure_eq_top hA T.obj₃
   obtain ⟨S, hS, ⟨e₁⟩, ⟨e₂⟩, ⟨e₃⟩⟩ :=
     exists_distTriang_iso_biprod T _ hT (contractible_distinguished₁ Z')
   have h := toStable₁_of_distTriang_of_prop₃ A hA hS (A.prop_of_iso e₃.symm hZ')
@@ -231,8 +229,8 @@ theorem of_mem_range_map_ι_iff (hA : A.retractClosure = ⊤) (X : C) :
     SplitK0.of_eq_of_iff_of_retractClosure_eq_top A hA] at hs₁
   obtain ⟨B, hB, ⟨e⟩⟩ := hs₁
   have e' : P.obj ⊞ B ≅ X ⊞ (Q.obj ⊞ B) := e ≪≫ biprod.associator _ _ _
-  have hP : A (P.obj ⊞ B) := A.prop_of_iso (biprod.isoProd _ _).symm (A.prop_prod _ _ P.property hB)
-  have hQ : A (Q.obj ⊞ B) := A.prop_of_iso (biprod.isoProd _ _).symm (A.prop_prod _ _ Q.property hB)
+  have hP : A (P.obj ⊞ B) := A.prop_biprod_of_isClosedUnderBinaryProducts P.property hB
+  have hQ : A (Q.obj ⊞ B) := A.prop_biprod_of_isClosedUnderBinaryProducts Q.property hB
   -- The split triangle `X ⟶ X ⊞ B₁ ⟶ B₁ ⟶ X⟦1⟧` has its last two vertices in `A`.
   exact A.ext_of_isTriangulatedClosed₁ _ (binaryBiproductTriangle_distinguished _ _)
     (A.prop_of_iso e' hP) hQ
@@ -268,11 +266,13 @@ instance : (classSubcategory H).IsTriangulated where
 
 /-- **The subcategory attached to a subgroup is dense**: every object `X` is a retract of
 `X ⊞ X⟦1⟧`, whose class `[X] - [X]` vanishes. -/
+@[simp]
 theorem retractClosure_classSubcategory_eq_top : (classSubcategory H).retractClosure = ⊤ :=
   eq_top_iff.2 fun X _ => ((classSubcategory H).prop_retractClosure_iff_exists_biprod X).2
     ⟨X⟦(1 : ℤ)⟧, by simp [zero_mem]⟩
 
 /-- The image of `K₀` of the subcategory attached to a subgroup `H` is `H` itself. -/
+@[simp]
 theorem range_map_ι_classSubcategory
     [EssentiallySmall.{w'} (classSubcategory H).FullSubcategory] :
     (map (classSubcategory H).ι).range = H := by
@@ -293,6 +293,15 @@ theorem classSubcategory_range_map_ι (A : ObjectProperty C) [A.IsTriangulated]
     [A.IsClosedUnderIsomorphisms] [EssentiallySmall.{w'} A.FullSubcategory]
     (hA : A.retractClosure = ⊤) : classSubcategory (map A.ι).range = A :=
   funext fun X => propext (of_mem_range_map_ι_iff A hA X)
+
+/-- **Thomason's classification**: every subgroup `H` of triangulated `K₀` determines a unique
+dense triangulated subcategory, closed under isomorphisms, whose objects are those with class in
+`H`; it is `classSubcategory H`. -/
+theorem existsUnique_classSubcategory :
+    ∃! A : ObjectProperty C, A.IsTriangulated ∧ A.IsClosedUnderIsomorphisms ∧
+      A.retractClosure = ⊤ ∧ ∀ X : C, A X ↔ of X ∈ H :=
+  ⟨classSubcategory H, ⟨inferInstance, inferInstance, retractClosure_classSubcategory_eq_top H,
+    prop_classSubcategory_iff H⟩, fun _ ⟨_, _, _, h⟩ => funext fun X => propext (h X)⟩
 
 end Classification
 
