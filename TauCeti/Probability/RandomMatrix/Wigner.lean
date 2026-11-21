@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 public import Mathlib.Probability.IdentDistribIndep
 public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.MeasureTheory.MeasurableSpace.Pi
+public import TauCeti.LinearAlgebra.Matrix.Defs
 public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 public import TauCeti.Analysis.Matrix.Frobenius
 
@@ -90,9 +91,6 @@ noncomputable def wignerMatrix (ξ : StrictUpper → Ω → ℂ) (η : ℕ → �
     else (η i.val ω : ℂ)
 
 noncomputable section
-
-/-- Strictly upper-triangular positions in a fixed finite matrix. -/
-abbrev StrictUpperFin (n : ℕ) := {ij : Fin n × Fin n // ij.1.val < ij.2.val}
 
 /-- Convert a finite upper-triangular position to the index type used by `wignerMatrix`. -/
 def wignerUpperIndex {n : ℕ} (u : StrictUpperFin n) : StrictUpper :=
