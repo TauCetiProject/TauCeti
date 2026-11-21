@@ -166,6 +166,7 @@ theorem surjective_adjoinBaseChange_tensorProduct {α : Ω} (hα : IsAlgebraic L
     (by simp [RingHom.algebraMap_toAlgebra])
 
 /-- `L(α)` is generated as a field over `K(α)` by the image of `L`. -/
+@[simp]
 theorem adjoin_range_algebraMap_adjoinBaseChange_eq_top (α : Ω) :
     letI := (adjoinBaseChange K L α).toAlgebra
     adjoin K⟮α⟯ (Set.range (algebraMap L L⟮α⟯)) = ⊤ := by
