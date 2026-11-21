@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.UniversalCover.Classification.SubgroupQuotient
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Existence
+public import Mathlib.GroupTheory.Index
+import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
+import TauCeti.Topology.Homotopy.Monodromy.Basic
 
 /-!
 # The subgroup recovered from a universal-cover quotient
@@ -36,6 +39,9 @@ quotient-cover monodromy comparison due to Junyan Xu. No Mathlib code is vendore
   a quotient loop to the inverse of its corresponding element of `H`.
 * `TauCeti.UniversalCover.range_mapOfEq_subgroupQuotientProj`: the descended endpoint map
   recovers exactly `H`.
+* `TauCeti.UniversalCover.range_mapOfEq_subgroupCover` and
+  `TauCeti.UniversalCover.natCard_fiber_subgroupCover`: subgroup recovery and fibre cardinality for
+  the bundled cover.
 -/
 
 public section
@@ -221,5 +227,26 @@ theorem range_mapOfEq_subgroupQuotientProj
       (MulOpposite.op h), ?_⟩
     rw [mapOfEq_subgroupQuotientProj_apply, MulEquiv.apply_symm_apply]
     exact inv_inv g
+
+/-- The bundled subgroup cover recovers its defining subgroup at its distinguished fibre point. -/
+theorem range_mapOfEq_subgroupCover (H : Subgroup (FundamentalGroup X x₀)) :
+    (FundamentalGroup.mapOfEq
+      ⟨(subgroupCover x₀ H).proj, (subgroupCover x₀ H).isCoveringMap_proj.continuous⟩
+      (subgroupCoverBasepointFiber x₀ H).2).range = H := by
+  refine Eq.trans ?_ (range_mapOfEq_subgroupQuotientProj x₀ H)
+  refine (IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
+    (subgroupCover x₀ H).isCoveringMap_proj (isCoveringMap_subgroupQuotientProj x₀ H)
+    (subgroupCoverBasepointFiber x₀ H).2 (subgroupQuotientProj_basepoint x₀ H)).mp
+    ⟨subgroupCoverTotalSpaceHomeomorph x₀ H, ?_,
+      funext (subgroupQuotientProj_subgroupCoverTotalSpaceHomeomorph x₀ H)⟩
+  rw [← subgroupCoverFiberEquivSubgroupQuotient_apply_coe,
+    subgroupCoverFiberEquivSubgroupQuotient_apply_basepoint, SubgroupQuotient.basepointFiber_coe]
+
+/-- The natural cardinality of the distinguished fibre of a subgroup cover is the subgroup index.
+Both sides are zero for infinite index. -/
+theorem natCard_fiber_subgroupCover (H : Subgroup (FundamentalGroup X x₀)) :
+    Nat.card (⇑(subgroupCover x₀ H).proj ⁻¹' {x₀}) = H.index := by
+  rw [(subgroupCover x₀ H).isCoveringMap_proj.card_fiber_eq_index
+    (subgroupCoverBasepointFiber x₀ H), range_mapOfEq_subgroupCover]
 
 end TauCeti.UniversalCover

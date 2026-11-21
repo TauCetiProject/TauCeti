@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.IsomorphismClasses
 public import Mathlib.CategoryTheory.Limits.Shapes.IsTerminal
 public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
 public import Mathlib.Topology.Category.TopCat.Basic
@@ -367,6 +368,20 @@ theorem isoMk_inv_hom_left {p q : CoveringSpace.FullSubcategory X P}
 
 -- `mk` asks for `P (Over.mk p.proj)`. `p.prop_obj : P p.obj` is accepted there because
 -- `Over.mk p.obj.hom` is `p.obj` by structure eta, at default transparency.
+
+/-- Two objects are isomorphic exactly when their total spaces are homeomorphic over the base. -/
+theorem isIsomorphic_iff_exists_homeomorph {p q : CoveringSpace.FullSubcategory X P} :
+    IsIsomorphic p q ↔ ∃ f : (p : TopCat) ≃ₜ (q : TopCat), ⇑q.proj ∘ ⇑f = ⇑p.proj := by
+  constructor
+  · rintro ⟨e⟩
+    refine ⟨TopCat.homeoOfIso ((totalSpace X P).mapIso e), funext fun a => ?_⟩
+    rw [Function.comp_apply, TopCat.homeoOfIso_apply, Functor.mapIso_hom, totalSpace_map,
+      ← TopCat.comp_app, w]
+  · rintro ⟨f, hf⟩
+    refine ⟨isoMk (TopCat.isoOfHomeo f) (by
+      ext a : 1
+      rw [TopCat.comp_app, TopCat.isoOfHomeo_hom, TopCat.ofHom_apply, ContinuousMap.coe_ofClass]
+      exact congrFun hf a)⟩
 
 /-- Reconstructing an object from its projection gives an isomorphic object. -/
 def mkProjIso (p : CoveringSpace.FullSubcategory X P) :

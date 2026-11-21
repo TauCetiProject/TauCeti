@@ -26,7 +26,8 @@ that multiplicity.
 
 ## Main results
 
-* `TauCeti.mem_orbit_conjAct_iff`: orbit membership is subgroup conjugation.
+* `TauCeti.mem_orbit_conjAct_iff` and `TauCeti.orbitRel_conjAct_iff`: membership in the
+  conjugation orbit and the associated orbit relation.
 * `Subgroup.index_normalizer_eq_ncard_orbit`: the number of conjugates is the index of the
   normalizer.
 * `Subgroup.ncard_orbit_mul_relIndex_normalizer`: multiplying the number of conjugates by
@@ -52,6 +53,15 @@ theorem mem_orbit_conjAct_iff {G : Type*} [Group G] {H H' : Subgroup G} :
     exact ⟨g, rfl⟩
   · rintro ⟨g, rfl⟩
     exact ⟨ConjAct.toConjAct g, rfl⟩
+
+/-- Two subgroups are related by the conjugation action exactly when the second is a conjugate
+of the first. -/
+theorem orbitRel_conjAct_iff {G : Type*} [Group G] {H K : Subgroup G} :
+    MulAction.orbitRel (ConjAct G) (Subgroup G) H K ↔
+      ∃ g : G, K = H.map (MulAut.conj g).toMonoidHom := by
+  rw [MulAction.orbitRel_apply, MulAction.mem_orbit_symm, mem_orbit_conjAct_iff]
+  simp only [MulEquiv.toMonoidHom_eq_coe]
+  exact exists_congr fun _ => eq_comm
 
 end TauCeti
 
