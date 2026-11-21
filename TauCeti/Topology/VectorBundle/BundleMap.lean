@@ -116,16 +116,19 @@ theorem isContinuousBundleMap_trivial_iff {A : ∀ y, Trivial M F (ψ y) →L[�
     IsContinuousBundleMap 𝕜 F F' ψ A ↔ ∀ v : F, Continuous fun y ↦ A y v := by
   have : MemTrivializationAtlas (Trivial.trivialization M F) := ⟨mem_singleton _⟩
   have : MemTrivializationAtlas (Trivial.trivialization N F') := ⟨mem_singleton _⟩
-  refine ⟨fun h v ↦ ?_, fun h e _ e' _ v ↦ ?_⟩
-  · simpa only [Trivial.trivialization_baseSet, preimage_univ, inter_self,
-      continuousOn_univ, Trivial.continuousLinearMapAt_trivialization, Trivial.symmL_trivialization,
-      ContinuousLinearMap.id_apply] using
-      h (Trivial.trivialization M F) (Trivial.trivialization N F') v
-  · obtain rfl := Trivial.eq_trivialization M F e
-    obtain rfl := Trivial.eq_trivialization N F' e'
-    simpa only [Trivial.trivialization_baseSet, preimage_univ, inter_self,
-      continuousOn_univ, Trivial.continuousLinearMapAt_trivialization, Trivial.symmL_trivialization,
-      ContinuousLinearMap.id_apply] using h v
+  -- In the trivial charts, the chart expression of `A` is `y ↦ A y v` on all of `N`.
+  have key (v : F) :
+      ContinuousOn (fun y ↦ (Trivial.trivialization N F').continuousLinearMapAt 𝕜 y
+          (A y ((Trivial.trivialization M F).symmL 𝕜 (ψ y) v)))
+        (ψ ⁻¹' (Trivial.trivialization M F).baseSet ∩ (Trivial.trivialization N F').baseSet) ↔
+        Continuous fun y ↦ A y v := by
+    simp only [Trivial.trivialization_baseSet, preimage_univ, inter_self, continuousOn_univ,
+      Trivial.continuousLinearMapAt_trivialization, Trivial.symmL_trivialization,
+      ContinuousLinearMap.id_apply]
+  refine ⟨fun h v ↦ (key v).1 (h _ _ v), fun h e _ e' _ v ↦ ?_⟩
+  obtain rfl := Trivial.eq_trivialization M F e
+  obtain rfl := Trivial.eq_trivialization N F' e'
+  exact (key v).2 (h v)
 
 variable (𝕜 F ψ) in
 /-- The identity fibre maps of a trivial bundle, covering any map of the bases, are continuous in

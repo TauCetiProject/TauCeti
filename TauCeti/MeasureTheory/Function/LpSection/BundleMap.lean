@@ -235,16 +235,24 @@ private theorem norm_compBundleMapₗ_le (hψ : MeasurePreserving ψ ν μ)
     (hA : IsContinuousBundleMap 𝕜 F F' ψ A) (hAC : ∃ C, ∀ᵐ y ∂ν, ‖A y‖ ≤ C)
     (hC : ∀ᵐ y ∂ν, ‖A y‖ ≤ C) (f : LpSection 𝕜 F E p μ) :
     ‖compBundleMapₗ hψ A hA hAC f‖ ≤ max C 0 * ‖f‖ := by
-  rw [compBundleMapₗ_apply, norm_mk, norm_def,
-    ← ENNReal.toReal_ofReal (le_max_right C 0), ← ENNReal.toReal_mul,
-    ← eLpNorm_comp_measurePreserving f.aestronglyMeasurable_norm hψ]
-  refine ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-    (f.memLp_norm.comp_measurePreserving hψ).eLpNorm_ne_top) ?_
-  refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-    (f.aestronglyMeasurableSection.comp_bundleMap hA
-      hψ.quasiMeasurePreserving).aestronglyMeasurable_norm ?_ p
-  filter_upwards [ae_norm_comp_bundleMap_le hC f] with y hy
-  rwa [norm_norm, Function.comp_apply, norm_norm]
+  -- Bound the `eLpNorm` pointwise, then pull it back along the measure-preserving `ψ`.
+  have hle : eLpNorm (fun y ↦ ‖A y (f (ψ y))‖) p ν ≤
+      ENNReal.ofReal (max C 0) * eLpNorm (fun x ↦ ‖f x‖) p μ := calc
+    _ ≤ ENNReal.ofReal (max C 0) * eLpNorm ((fun x ↦ ‖f x‖) ∘ ψ) p ν := by
+      refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul
+        (f.aestronglyMeasurableSection.comp_bundleMap hA
+          hψ.quasiMeasurePreserving).aestronglyMeasurable_norm ?_ p
+      filter_upwards [ae_norm_comp_bundleMap_le hC f] with y hy
+      rwa [norm_norm, Function.comp_apply, norm_norm]
+    _ = ENNReal.ofReal (max C 0) * eLpNorm (fun x ↦ ‖f x‖) p μ := by
+      rw [eLpNorm_comp_measurePreserving f.aestronglyMeasurable_norm hψ]
+  calc ‖compBundleMapₗ hψ A hA hAC f‖ = (eLpNorm (fun y ↦ ‖A y (f (ψ y))‖) p ν).toReal := by
+        rw [compBundleMapₗ_apply, norm_mk]
+    _ ≤ (ENNReal.ofReal (max C 0) * eLpNorm (fun x ↦ ‖f x‖) p μ).toReal :=
+        ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top f.memLp_norm.eLpNorm_ne_top)
+          hle
+    _ = max C 0 * ‖f‖ := by
+        rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (le_max_right C 0), norm_def]
 
 variable [Fact (1 ≤ p)]
 
@@ -280,6 +288,7 @@ theorem compBundleMap_mk (hψ : MeasurePreserving ψ ν μ) (hA : IsContinuousBu
   filter_upwards [hψ.quasiMeasurePreserving.ae (coeFn_mk hs hsp)] with y hy
   rw [hy]
 
+/-- The transport of `f` agrees `ν`-almost everywhere with `y ↦ A y (f (ψ y))`. -/
 theorem coeFn_compBundleMap (hψ : MeasurePreserving ψ ν μ) (hA : IsContinuousBundleMap 𝕜 F F' ψ A)
     (hAC : ∃ C, ∀ᵐ y ∂ν, ‖A y‖ ≤ C) (f : LpSection 𝕜 F E p μ) :
     ∀ᵐ y ∂ν, compBundleMap p hψ A hA hAC f y = A y (f (ψ y)) := by
