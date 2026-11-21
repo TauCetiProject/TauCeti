@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Monoidal.Cap.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Relative
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Action
 public import TauCeti.AlgebraicTopology.Singular.Twisted.AlexanderWhitney
 
 /-!
@@ -36,8 +37,9 @@ cap product of twisted cohomology and twisted homology,
 `Hᵖ(X; L, M) ⟶ (Hₙ(X; L ⊗ K) ⟶ H_q(X; M ⊗ K))`,  `p + q = n`,
 
 (`TauCeti.LocalCoefficientSystem.twistedCap`), which is `R`-linear in the cohomology class,
-natural in both coefficient systems (`TauCeti.LocalCoefficientSystem.twistedCap_naturality`) and
-satisfies the projection formula `f_*(x ⌢ f^*α) = f_*x ⌢ α` for continuous maps
+natural in both coefficient systems
+(`TauCeti.LocalCoefficientSystem.twistedCap_coefficient_naturality`) and satisfies the projection
+formula `f_*(x ⌢ f^*α) = f_*x ⌢ α` for continuous maps
 (`TauCeti.LocalCoefficientSystem.twistedCap_space_naturality`). Any pairing of local systems
 `M ⊗ K ⟶ K'` or `T ⟶ L ⊗ K` is then applied by a change of coefficients on homology. For instance,
 if `o` is a local system with `o ⊗ o` isomorphic to the constant system `R`, such as the
@@ -58,20 +60,15 @@ Thom class `u` is a relative class with coefficients in the orientation system o
 
 ## Main definitions and results
 
-* `TauCeti.LocalCoefficientSystem.twistedChainComplexAction`: the action
-  `M ⊗ C(X; K) ⟶ C(X; M ⊗ K)`, computed on simplices by
-  `TauCeti.LocalCoefficientSystem.whiskerLeft_ιTwistedChainComplex_twistedChainComplexAction_f`,
-  natural in `K` and in the space.
 * `TauCeti.LocalCoefficientSystem.ιTwistedChainComplex_capChain`: the cap product of a simplex and
   a twisted cochain.
 * `TauCeti.LocalCoefficientSystem.twistedCap`: the cap product on twisted (co)homology, with
   `TauCeti.LocalCoefficientSystem.twistedCap_homologyπ` computing it on classes of cycles and
-  cocycles, `TauCeti.LocalCoefficientSystem.twistedCap_naturality` its naturality in the
+  cocycles, `TauCeti.LocalCoefficientSystem.twistedCap_coefficient_naturality` its naturality in the
   coefficient systems and `TauCeti.LocalCoefficientSystem.twistedCap_space_naturality` the
   projection formula.
-* `TopPair.twistedAlexanderWhitneyDiagonal` and `TopPair.twistedCap`: the relative diagonal and
-  the relative cap product, with `TopPair.twistedCap_homologyπ`,
-  `TopPair.twistedCap_twistedCohomologyπ` and `TopPair.twistedCap_naturality`.
+* `TopPair.twistedCap`: the relative cap product, with `TopPair.twistedCap_homologyπ`,
+  `TopPair.twistedCap_twistedCohomologyπ` and `TopPair.twistedCap_coefficient_naturality`.
 
 ## References
 
@@ -91,189 +88,6 @@ universe v w
 namespace TauCeti.LocalCoefficientSystem
 
 variable {R : Type (max v w)} [CommRing R] {X : TopCat.{v}}
-
-section Action
-
-variable (M : ModuleCat.{max v w} R) (K : LocalCoefficientSystem.{max v w, v, max v w} R X)
-
-/-- Tensoring with `M` preserves the coproduct decomposition of twisted chains. -/
-private def isColimitTensorLeftTwistedChains (n : SimplexCategoryᵒᵖ) :
-    IsColimit ((tensorLeft M).mapCocone (Cofan.mk ((twistedChains K).obj n) (ιTwistedChains K))) :=
-  isColimitOfPreserves (tensorLeft M) (isColimitCofanTwistedChains K n)
-
-private lemma tensorLeft_twistedChains_hom_ext {n : SimplexCategoryᵒᵖ} {A : ModuleCat.{max v w} R}
-    {f g : M ⊗ (twistedChains K).obj n ⟶ A}
-    (h : ∀ σ, (M ◁ ιTwistedChains K σ) ≫ f = (M ◁ ιTwistedChains K σ) ≫ g) : f = g :=
-  (isColimitTensorLeftTwistedChains M K n).hom_ext fun ⟨σ⟩ ↦ h σ
-
-/-- The degree-`n` component of the action: `m ⊗ (σ, b) ↦ (σ, m ⊗ b)`. -/
-private def twistedChainsActionApp (n : SimplexCategoryᵒᵖ) :
-    M ⊗ (twistedChains K).obj n ⟶ (twistedChains ((constantFunctor X).obj M ⊗ K)).obj n :=
-  (isColimitTensorLeftTwistedChains M K n).desc
-    { pt := _
-      ι := Discrete.natTrans fun σ ↦ ιTwistedChains ((constantFunctor X).obj M ⊗ K) σ.as }
-
-@[reassoc]
-private lemma whiskerLeft_ιTwistedChains_twistedChainsActionApp (n : SimplexCategoryᵒᵖ)
-    (σ : (TopCat.toSSet.obj X).obj n) :
-    (M ◁ ιTwistedChains K σ) ≫ twistedChainsActionApp M K n =
-      ιTwistedChains ((constantFunctor X).obj M ⊗ K) σ :=
-  (isColimitTensorLeftTwistedChains M K n).fac _ ⟨σ⟩
-
-/-- The action of `M` on the simplicial module of chains twisted by `K`, with values in the chains
-twisted by `M ⊗ K`. -/
-private def twistedChainsAction :
-    ((SimplicialObject.whiskering _ _).obj (tensorLeft M)).obj (twistedChains K) ⟶
-      twistedChains ((constantFunctor X).obj M ⊗ K) where
-  app := twistedChainsActionApp M K
-  naturality {m n} α := by
-    apply tensorLeft_twistedChains_hom_ext
-    intro σ
-    change (M ◁ ιTwistedChains K σ) ≫ (M ◁ (twistedChains K).map α) ≫
-      twistedChainsActionApp M K n = _
-    rw [← whiskerLeft_comp_assoc, ιTwistedChains_map, whiskerLeft_comp_assoc,
-      whiskerLeft_ιTwistedChains_twistedChainsActionApp]
-    -- the transport of `M ⊗ K` is the identity of `M` tensored with the transport of `K`
-    have h : ((constantFunctor X).obj M ⊗ K).map (vertexTransport α σ) =
-        M ◁ K.map (vertexTransport α σ) := by
-      simp [Monoidal.tensorObj_map]
-    exact (congrArg (· ≫ _) h.symm).trans
-      ((ιTwistedChains_map _ α σ).symm.trans
-        (whiskerLeft_ιTwistedChains_twistedChainsActionApp_assoc M K m σ _).symm)
-
-/-- The inverse alternating-face comparison preserves each simplex inclusion. -/
-@[reassoc]
-private lemma ιTwistedChains_isoAlternatingFaceMapComplex_inv_f
-    (L : LocalCoefficientSystem.{max v w, v, max v w} R X) (q : ℕ)
-    (σ : (TopCat.toSSet.obj X) _⦋q⦌) :
-    ιTwistedChains L σ ≫ (twistedChainComplexIsoAlternatingFaceMapComplex L).inv.f q =
-      ιTwistedChainComplex L q σ := by
-  rw [← ιTwistedChainComplex_isoAlternatingFaceMapComplex_hom_f, Category.assoc, ← comp_f,
-    Iso.hom_inv_id, id_f, Category.comp_id]
-
-/-- **The action of the coefficient module `M` on twisted chains**: the chain map
-`M ⊗ C(X; K) ⟶ C(X; M ⊗ K)` sending `m ⊗ (σ, b)` to `(σ, m ⊗ b)`, where `M ⊗ K` is the tensor
-product of the constant system `M` with `K`. It is the action along which twisted cochains with
-values in `M` cap twisted chains. -/
-def twistedChainComplexAction :
-    ((tensorLeft M).mapHomologicalComplex _).obj K.twistedChainComplex ⟶
-      ((constantFunctor X).obj M ⊗ K).twistedChainComplex :=
-  ((tensorLeft M).mapHomologicalComplex _).map
-      (twistedChainComplexIsoAlternatingFaceMapComplex K).hom ≫
-    (alternatingFaceMapComplexCompMapHomologicalComplexIso (tensorLeft M)).hom.app
-      (twistedChains K) ≫
-      (alternatingFaceMapComplex _).map (twistedChainsAction M K) ≫
-        (twistedChainComplexIsoAlternatingFaceMapComplex _).inv
-
-/-- On the summand of a simplex, the action of `M` sends `m ⊗ b` to the coefficient `m ⊗ b` of the
-same simplex. -/
-@[reassoc (attr := simp)]
-lemma whiskerLeft_ιTwistedChainComplex_twistedChainComplexAction_f (q : ℕ)
-    (σ : (TopCat.toSSet.obj X) _⦋q⦌) :
-    (M ◁ ιTwistedChainComplex K q σ) ≫ (twistedChainComplexAction M K).f q =
-      ιTwistedChainComplex ((constantFunctor X).obj M ⊗ K) q σ := by
-  have hf : (twistedChainComplexAction M K).f q =
-      (M ◁ (twistedChainComplexIsoAlternatingFaceMapComplex K).hom.f q) ≫
-        twistedChainsActionApp M K _ ≫
-          (twistedChainComplexIsoAlternatingFaceMapComplex _).inv.f q := by
-    simp [twistedChainComplexAction, twistedChainsAction]
-  rw [hf, ← whiskerLeft_comp_assoc, ιTwistedChainComplex_isoAlternatingFaceMapComplex_hom_f]
-  exact (whiskerLeft_ιTwistedChains_twistedChainsActionApp_assoc M K _ σ _).trans
-    (ιTwistedChains_isoAlternatingFaceMapComplex_inv_f _ q σ)
-
-variable {M K} in
-/-- Two chain maps out of `M ⊗ C(X; K)` agree in a degree as soon as they agree on every
-simplex summand. -/
-lemma tensorLeft_twistedChainComplex_hom_ext {q : ℕ} {A : ModuleCat.{max v w} R}
-    {f g : M ⊗ K.twistedChainComplex.X q ⟶ A}
-    (h : ∀ σ, (M ◁ ιTwistedChainComplex K q σ) ≫ f = (M ◁ ιTwistedChainComplex K q σ) ≫ g) :
-    f = g :=
-  (isColimitOfPreserves (tensorLeft M) (isColimitTwistedChainComplexXCofan K q)).hom_ext
-    fun ⟨σ⟩ ↦ h σ
-
-variable {M K} {K' : LocalCoefficientSystem.{max v w, v, max v w} R X}
-
-/-- The action of `M` commutes with changes of the local coefficient system `K`. -/
-@[reassoc]
-lemma twistedChainComplexAction_naturality (θ : K ⟶ K') :
-    twistedChainComplexAction M K ≫
-        twistedChainComplexCoefficientMap ((constantFunctor X).obj M ◁ θ) =
-      ((tensorLeft M).mapHomologicalComplex _).map (twistedChainComplexCoefficientMap θ) ≫
-        twistedChainComplexAction M K' := by
-  ext q : 1
-  apply tensorLeft_twistedChainComplex_hom_ext
-  intro σ
-  have h₁ : (M ◁ ιTwistedChainComplex K q σ) ≫ (twistedChainComplexAction M K ≫
-      twistedChainComplexCoefficientMap ((constantFunctor X).obj M ◁ θ)).f q =
-        (M ◁ θ.app (initialVertex σ)) ≫
-          ιTwistedChainComplex ((constantFunctor X).obj M ⊗ K') q σ := by
-    rw [comp_f]
-    exact (whiskerLeft_ιTwistedChainComplex_twistedChainComplexAction_f_assoc M K q σ _).trans
-      (ιTwistedChainComplex_twistedChainComplexCoefficientMap_f _ q σ)
-  have h₂ : (M ◁ ιTwistedChainComplex K q σ) ≫
-      (((tensorLeft M).mapHomologicalComplex _).map (twistedChainComplexCoefficientMap θ) ≫
-        twistedChainComplexAction M K').f q =
-        (M ◁ θ.app (initialVertex σ)) ≫
-          ιTwistedChainComplex ((constantFunctor X).obj M ⊗ K') q σ := by
-    rw [comp_f, Functor.mapHomologicalComplex_map_f]
-    change (M ◁ ιTwistedChainComplex K q σ) ≫
-      (M ◁ (twistedChainComplexCoefficientMap θ).f q) ≫ _ = _
-    rw [← whiskerLeft_comp_assoc, ιTwistedChainComplex_twistedChainComplexCoefficientMap_f,
-      whiskerLeft_comp_assoc, whiskerLeft_ιTwistedChainComplex_twistedChainComplexAction_f]
-  exact h₁.trans h₂.symm
-
-section Space
-
-variable {Y : TopCat.{v}} (f : X ⟶ Y) (M : ModuleCat.{max v w} R)
-  (K : LocalCoefficientSystem.{max v w, v, max v w} R Y)
-
-/-- The identification of the tensor product of the constant system `M` on `X` with the pullback
-of `K` along `f : X ⟶ Y` with the pullback of `M ⊗ K`; it is the identity on every fibre. -/
-abbrev pullbackConstantTensorIso :
-    (constantFunctor X).obj M ⊗ (pullback f.hom).obj K ≅
-      (pullback f.hom).obj ((constantFunctor Y).obj M ⊗ K) :=
-  whiskerRightIso (pullbackConstantIso f.hom M).symm _ ≪≫
-    (pullbackTensorIso f.hom ((constantFunctor Y).obj M) K).symm
-
-/-- The action of `M` commutes with continuous maps: acting on the chains of `X` twisted by the
-pullback of `K` and pushing forward along `f` is pushing forward and acting on the chains of `Y`
-twisted by `K`. -/
-@[reassoc]
-lemma twistedChainComplexAction_space_naturality :
-    twistedChainComplexAction M ((pullback f.hom).obj K) ≫
-        twistedChainComplexCoefficientMap (pullbackConstantTensorIso f M K).hom ≫
-          twistedChainComplexMap f ((constantFunctor Y).obj M ⊗ K) =
-      ((tensorLeft M).mapHomologicalComplex _).map (twistedChainComplexMap f K) ≫
-        twistedChainComplexAction M K := by
-  ext q : 1
-  apply tensorLeft_twistedChainComplex_hom_ext
-  intro σ
-  have hξ : (pullbackConstantTensorIso f M K).hom.app (initialVertex σ) = 𝟙 _ := by
-    simp [pullbackConstantTensorIso]
-  have h₁ : (M ◁ ιTwistedChainComplex ((pullback f.hom).obj K) q σ) ≫
-      (twistedChainComplexAction M ((pullback f.hom).obj K) ≫
-        twistedChainComplexCoefficientMap (pullbackConstantTensorIso f M K).hom ≫
-          twistedChainComplexMap f ((constantFunctor Y).obj M ⊗ K)).f q =
-        ιTwistedChainComplex ((constantFunctor Y).obj M ⊗ K) q ((TopCat.toSSet.map f).app _ σ) := by
-    rw [comp_f, comp_f]
-    refine (whiskerLeft_ιTwistedChainComplex_twistedChainComplexAction_f_assoc _ _ q σ _).trans ?_
-    refine (ιTwistedChainComplex_twistedChainComplexCoefficientMap_f_assoc _ q σ _).trans ?_
-    exact (congrArg (· ≫ _) hξ).trans ((Category.id_comp _).trans
-      (ιTwistedChainComplex_twistedChainComplexMap_f f _ q σ))
-  have h₂ : (M ◁ ιTwistedChainComplex ((pullback f.hom).obj K) q σ) ≫
-      (((tensorLeft M).mapHomologicalComplex _).map (twistedChainComplexMap f K) ≫
-        twistedChainComplexAction M K).f q =
-        ιTwistedChainComplex ((constantFunctor Y).obj M ⊗ K) q ((TopCat.toSSet.map f).app _ σ) := by
-    rw [comp_f, Functor.mapHomologicalComplex_map_f]
-    change (M ◁ ιTwistedChainComplex ((pullback f.hom).obj K) q σ) ≫
-      (M ◁ (twistedChainComplexMap f K).f q) ≫ _ = _
-    rw [← whiskerLeft_comp_assoc, ιTwistedChainComplex_twistedChainComplexMap_f]
-    exact whiskerLeft_ιTwistedChainComplex_twistedChainComplexAction_f M K q _
-  exact h₁.trans h₂.symm
-
-end Space
-
-end Action
 
 section Cap
 
@@ -360,7 +174,7 @@ variable {L K M} {L' K' : LocalCoefficientSystem.{max v w, v, max v w} R X}
 /-- **Naturality of the cap product in the coefficient systems**: for morphisms `η : L ⟶ L'` and
 `θ : K ⟶ K'`, capping with the pulled-back class `η^* α` and changing coefficients along `θ` is
 changing coefficients along `η ⊗ θ` and capping with `α`. -/
-lemma twistedCap_naturality (η : L ⟶ L') (θ : K ⟶ K') (p q n : ℕ) (h : p + q = n)
+lemma twistedCap_coefficient_naturality (η : L ⟶ L') (θ : K ⟶ K') (p q n : ℕ) (h : p + q = n)
     (α : L'.twistedCohomology R M p) :
     twistedCap L K M p q n h (twistedCohomologyCoefficientMap R M η p α) ≫
         twistedHomologyCoefficientMap ((constantFunctor X).obj M ◁ θ) q =
@@ -381,7 +195,7 @@ pushforwards are taken after the canonical identifications `f^*L ⊗ f^*K ≅ f^
 lemma twistedCap_space_naturality (p q n : ℕ) (h : p + q = n) (α : L.twistedCohomology R M p) :
     twistedCap ((pullback f.hom).obj L) ((pullback f.hom).obj K) M p q n h
         (twistedCohomologyMap R M f L p α) ≫
-        twistedHomologyCoefficientMap (pullbackConstantTensorIso f M K).hom q ≫
+        twistedHomologyCoefficientMap (pullbackConstantTensorIso f.hom M K).hom q ≫
           twistedHomologyMap f ((constantFunctor Y).obj M ⊗ K) q =
       twistedHomologyCoefficientMap (pullbackTensorIso f.hom L K).inv n ≫
         twistedHomologyMap f (L ⊗ K) n ≫ twistedCap L K M p q n h α := by
@@ -399,7 +213,7 @@ lemma twistedCap_space_naturality (p q n : ℕ) (h : p + q = n) (α : L.twistedC
     (twistedChainComplexCoefficientMap (pullbackTensorIso f.hom L K).inv ≫
       twistedChainComplexMap f (L ⊗ K))
     (twistedChainComplexMap f L) (twistedChainComplexMap f K)
-    (twistedChainComplexCoefficientMap (pullbackConstantTensorIso f M K).hom ≫
+    (twistedChainComplexCoefficientMap (pullbackConstantTensorIso f.hom M K).hom ≫
       twistedChainComplexMap f ((constantFunctor Y).obj M ⊗ K)) hD
     (twistedChainComplexAction_space_naturality f M K) p q n h α
   rw [HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_comp,
@@ -418,35 +232,6 @@ open TauCeti TauCeti.LocalCoefficientSystem
 
 variable {R : Type (max v w)} [CommRing R] (P : TopPair.{v})
   (L K : LocalCoefficientSystem.{max v w, v, max v w} R P.fst) (M : ModuleCat.{max v w} R)
-
-/-- The twisted Alexander–Whitney diagonal, followed by the quotient onto relative chains in its
-first factor, vanishes on the chains of the subspace: the front face of a simplex of the subspace
-lies in the subspace. -/
-private lemma twistedChainComplexMap_twistedAlexanderWhitneyDiagonal_twistedChainComplexπ :
-    LocalCoefficientSystem.twistedChainComplexMap P.map (L ⊗ K) ≫
-      L.twistedAlexanderWhitneyDiagonal K ≫
-        (P.twistedChainComplexπ L ⊗ₘ 𝟙 K.twistedChainComplex) = 0 := by
-  rw [twistedAlexanderWhitneyDiagonal_space_naturality_assoc, tensorHom_comp_tensorHom,
-    P.twistedChainComplexMap_comp_twistedChainComplexπ L]
-  exact (congrArg (fun t ↦ _ ≫ _ ≫ t) (HomologicalComplex.zero_tensorHom _)).trans
-    (by simp only [comp_zero])
-
-/-- **The relative twisted Alexander–Whitney diagonal** `C(X, A; L ⊗ K) ⟶ C(X, A; L) ⊗ C(X; K)` of
-a pair `(X, A)`: the twisted diagonal, read in relative chains in its first factor, which descends
-to the relative chains twisted by `L ⊗ K`. -/
-def twistedAlexanderWhitneyDiagonal :
-    P.twistedChainComplex (L ⊗ K) ⟶ P.twistedChainComplex L ⊗ K.twistedChainComplex :=
-  P.twistedChainComplexDesc (L ⊗ K)
-    (L.twistedAlexanderWhitneyDiagonal K ≫ (P.twistedChainComplexπ L ⊗ₘ 𝟙 K.twistedChainComplex))
-    (twistedChainComplexMap_twistedAlexanderWhitneyDiagonal_twistedChainComplexπ P L K)
-
-/-- The relative diagonal is the absolute diagonal read in relative chains. -/
-@[reassoc (attr := simp)]
-lemma twistedChainComplexπ_twistedAlexanderWhitneyDiagonal :
-    P.twistedChainComplexπ (L ⊗ K) ≫ P.twistedAlexanderWhitneyDiagonal L K =
-      L.twistedAlexanderWhitneyDiagonal K ≫
-        (P.twistedChainComplexπ L ⊗ₘ 𝟙 K.twistedChainComplex) :=
-  P.twistedChainComplexπ_comp_twistedChainComplexDesc _ _ _
 
 /-- **The relative cap product with local coefficients**,
 `Hᵖ(X, A; L, M) ⟶ (Hₙ(X, A; L ⊗ K) ⟶ H_q(X; M ⊗ K))` for `p + q = n`: a relative cochain vanishes
@@ -484,26 +269,10 @@ lemma twistedCap_twistedCohomologyπ (p q n : ℕ) (h : p + q = n)
 
 variable {P L K M} {L' K' : LocalCoefficientSystem.{max v w, v, max v w} R P.fst}
 
-/-- The relative diagonal commutes with changes of both local coefficient systems. -/
-@[reassoc]
-lemma twistedAlexanderWhitneyDiagonal_naturality (η : L ⟶ L') (θ : K ⟶ K') :
-    P.twistedChainComplexCoefficientMap (η ⊗ₘ θ) ≫ P.twistedAlexanderWhitneyDiagonal L' K' =
-      P.twistedAlexanderWhitneyDiagonal L K ≫
-        (P.twistedChainComplexCoefficientMap η ⊗ₘ
-          LocalCoefficientSystem.twistedChainComplexCoefficientMap θ) := by
-  ext : 1
-  rw [twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
-    twistedChainComplexπ_twistedAlexanderWhitneyDiagonal,
-    twistedChainComplexπ_twistedAlexanderWhitneyDiagonal_assoc,
-    LocalCoefficientSystem.twistedAlexanderWhitneyDiagonal_naturality_assoc,
-    tensorHom_comp_tensorHom, tensorHom_comp_tensorHom,
-    twistedChainComplexπ_comp_twistedChainComplexCoefficientMap, Category.id_comp,
-    Category.comp_id]
-
 /-- **Naturality of the relative cap product in the coefficient systems**: for morphisms
 `η : L ⟶ L'` and `θ : K ⟶ K'`, capping with the pulled-back relative class `η^* α` and changing
 coefficients along `θ` is changing relative coefficients along `η ⊗ θ` and capping with `α`. -/
-lemma twistedCap_naturality (η : L ⟶ L') (θ : K ⟶ K') (p q n : ℕ) (h : p + q = n)
+lemma twistedCap_coefficient_naturality (η : L ⟶ L') (θ : K ⟶ K') (p q n : ℕ) (h : p + q = n)
     (α : P.twistedCohomology L' R M p) :
     P.twistedCap L K M p q n h (P.twistedCohomologyCoefficientMap R M η p α) ≫
         LocalCoefficientSystem.twistedHomologyCoefficientMap ((constantFunctor P.fst).obj M ◁ θ) q =

@@ -432,6 +432,14 @@ lemma ιTwistedChainComplex_isoAlternatingFaceMapComplex_hom_f (k : ℕ)
       ιTwistedChains L σ :=
   Category.comp_id _
 
+/-- The inverse alternating-face comparison preserves each simplex inclusion. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChains_isoAlternatingFaceMapComplex_inv_f (k : ℕ)
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChains L σ ≫ (twistedChainComplexIsoAlternatingFaceMapComplex L).inv.f k =
+      ιTwistedChainComplex L k σ :=
+  Category.comp_id _
+
 /-- The cofan exhibiting the degree-`k` term of the twisted chain complex as a family indexed by the
 singular `k`-simplices. -/
 abbrev twistedChainComplexXCofan (k : ℕ) :
