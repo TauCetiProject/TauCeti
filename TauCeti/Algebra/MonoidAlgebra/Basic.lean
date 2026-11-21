@@ -41,6 +41,8 @@ none of the further theory built on it.
 * `MonoidAlgebra.single_mem_nonZeroDivisors` and `MonoidAlgebra.mrange_of_le_nonZeroDivisors`:
   for a cancellative monoid `M`, monomials with non-zero-divisor coefficients (in particular
   coefficient-one monomials) are non-zero-divisors in `R[M]`.
+* `MonoidAlgebra.isRegular_single_one`: for an arbitrary monoid `M`, a regular element of `R`
+  placed at the identity is regular in `R[M]`.
 * `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
   `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
   conjugates the indices of the coefficients.
@@ -235,6 +237,19 @@ theorem single_mem_nonZeroDivisors {R M : Type*} [Semiring R] [Monoid M] [IsCanc
     exact hrL (f.coeff t) (by simpa using congr(($hf).coeff (m * t)))
   · ext t
     exact hrR (f.coeff t) (by simpa using congr(($hf).coeff (t * m)))
+
+/-- A regular element `r` of `R`, placed at the identity of `M`, is regular in `R[M]`: both
+products with `single 1 r` multiply every coefficient by `r`. No cancellativity of `M` is
+needed. -/
+@[to_additive (dont_translate := R)
+/-- A regular element `r` of `R`, placed at the zero of `M`, is regular in `R[M]`: both
+products with `single 0 r` multiply every coefficient by `r`. -/]
+theorem isRegular_single_one {R M : Type*} [Semiring R] [MulOneClass M] {r : R}
+    (hr : IsRegular r) : IsRegular (single 1 r : MonoidAlgebra R M) :=
+  ⟨fun x y h => coeff_injective <| Finsupp.ext fun m =>
+      hr.left (by simpa [coeff_single_one_mul] using congr(($h).coeff m)),
+    fun x y h => coeff_injective <| Finsupp.ext fun m =>
+      hr.right (by simpa [coeff_mul_single_one] using congr(($h).coeff m))⟩
 
 /-- For a cancellative monoid `M`, every coefficient-one monomial in `MonoidHom.mrange (of R M)`
 is a non-zero-divisor of `R[M]`. -/
