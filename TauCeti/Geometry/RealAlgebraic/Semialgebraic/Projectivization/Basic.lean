@@ -133,7 +133,7 @@ theorem IsMultiprojectiveSemialgebraic.biUnion {α : Type*} {t : Set α} (ht : t
     (hS : ∀ a ∈ t, IsMultiprojectiveSemialgebraic (S a)) :
     IsMultiprojectiveSemialgebraic (⋃ a ∈ t, S a) := by
   have := ht.to_subtype; rw [biUnion_eq_iUnion]
-  exact IsMultiprojectiveSemialgebraic.iUnion fun x ↦ hS x.1 x.2
+  exact IsMultiprojectiveSemialgebraic.iUnion fun x ↦ hS x.val x.property
 
 /-- For finite `ι`, every standard product affine open `piAffineOpen I` is multiprojective
 semialgebraic (without requiring finiteness of the factor coordinate types `κ i`). -/
@@ -761,18 +761,19 @@ theorem isMultiprojectiveSemialgebraic_of_forall_exists_semialgebraicAt
     fun p hp ↦ (hWo p hp).mem_nhds (hpW p hp)
   rw [isMultiprojectiveSemialgebraic_iff_isSemialgebraic_image_piProjectorCoords]
   convert IsSemialgebraic.biUnion t.finite_toSet fun p _ ↦
-    (isSemialgebraicMap_piProjectorCoords_piAffineChart_symm (I p.1 p.2)).isSemialgebraic_image
-      (hball p.1 p.2) using 1
+    (isSemialgebraicMap_piProjectorCoords_piAffineChart_symm
+        (I p.val p.property)).isSemialgebraic_image
+      (hball p.val p.property) using 1
   ext a
   simp only [mem_image, mem_iUnion, exists_prop, Function.comp_apply]
   constructor
   · rintro ⟨q, hqS, rfl⟩
     obtain ⟨p, hpt, hqW⟩ := mem_iUnion₂.1 (ht (subset_closure hqS))
-    refine ⟨p, hpt, piAffineChart (I p.1 p.2) q, ⟨⟨q, ⟨hqS, hqW.1⟩, rfl⟩, hqW.2⟩, ?_⟩
-    rw [(piAffineChart (I p.1 p.2)).left_inv (by simpa using hqW.1)]
+    refine ⟨p, hpt, piAffineChart (I p.val p.property) q, ⟨⟨q, ⟨hqS, hqW.1⟩, rfl⟩, hqW.2⟩, ?_⟩
+    rw [(piAffineChart (I p.val p.property)).left_inv (by simpa using hqW.1)]
   · rintro ⟨p, _, _, ⟨⟨q, ⟨hqS, hqI⟩, rfl⟩, _⟩, rfl⟩
     refine ⟨q, hqS, ?_⟩
-    rw [(piAffineChart (I p.1 p.2)).left_inv (by simpa using hqI)]
+    rw [(piAffineChart (I p.val p.property)).left_inv (by simpa using hqI)]
 
 /-- Over `ℝ`, a subset of a finite multiprojective space is multiprojective semialgebraic if and
 only if every ambient point admits a standard product affine chart in which the set is locally

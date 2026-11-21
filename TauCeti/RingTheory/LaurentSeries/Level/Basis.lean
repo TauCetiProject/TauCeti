@@ -532,8 +532,8 @@ theorem level_sup_level (K : Type*) [Field K] (n m : ℕ+) :
   simp only [Units.val_mul, Units.val_zpow_eq_zpow_val, Units.val_pow_eq_pow_val,
     Units.val_mk0] at hu
   rw [← hu, coe_levelPowerBasis_gen_pow K hLm, coe_levelPowerBasis_gen_pow K hLn]
-  exact mul_mem (zpow_mem (le_sup_right (a := level K n) (levelPowerBasis K m).gen.2) _)
-    (zpow_mem (le_sup_left (a := level K n) (levelPowerBasis K n).gen.2) _)
+  exact mul_mem (zpow_mem (le_sup_right (a := level K n) (levelPowerBasis K m).gen.property) _)
+    (zpow_mem (le_sup_left (a := level K n) (levelPowerBasis K n).gen.property) _)
 
 /-- The levels exhaust the Puiseux field. -/
 @[simp]

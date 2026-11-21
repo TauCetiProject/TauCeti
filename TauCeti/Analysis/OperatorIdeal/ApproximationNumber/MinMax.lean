@@ -115,8 +115,9 @@ theorem le_singularValue_of_lt_rank (T : E →L[𝕜] F) {n : ℕ} {V : Submodul
   lift c to ℝ≥0 using h.le
   refine NNReal.coe_le_coe.mpr (le_singularValue_iff.mpr fun R hR ↦ ?_)
   -- Since `rank R ≤ n < rank V`, the map `R` kills a nonzero vector of `V`.
-  obtain ⟨x, hxV, hRx, hx0⟩ : ∃ x ∈ V, R x = 0 ∧ x ≠ 0 :=
-    Submodule.exists_mem_ker_ne_zero_of_rank_lt hR hV
+  obtain ⟨x, hxV, hRx, hx0⟩ := Submodule.exists_mem_ker_ne_zero_of_rank_lt
+    (f := (R : E →ₗ[𝕜] F)) hV hR
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hRx
   have hx : 0 < ‖x‖ := norm_pos_iff.mpr hx0
   refine NNReal.coe_le_coe.mp (le_of_mul_le_mul_right ?_ hx)
   calc (c : ℝ) * ‖x‖ ≤ ‖T x‖ := hc x hxV
@@ -226,9 +227,9 @@ infimum, over subspaces `V` of rank at most `n`, of the operator norm of `T` res
 to `Vᗮ`. -/
 theorem singularValue_eq_iInf_nnnorm_comp_orthogonal [CompleteSpace E] (T : E →L[𝕜] F) (n : ℕ) :
     T.singularValue n =
-      ⨅ V : {V : Submodule 𝕜 E // Module.rank 𝕜 V ≤ n}, ‖T ∘L V.1ᗮ.subtypeL‖₊ := by
+      ⨅ V : {V : Submodule 𝕜 E // Module.rank 𝕜 V ≤ n}, ‖T ∘L V.valᗮ.subtypeL‖₊ := by
   have : Nonempty {V : Submodule 𝕜 E // Module.rank 𝕜 V ≤ n} := ⟨⟨⊥, by simp⟩⟩
-  refine le_antisymm (le_ciInf fun V ↦ T.singularValue_le_nnnorm_comp_orthogonal V.2) ?_
+  refine le_antisymm (le_ciInf fun V ↦ T.singularValue_le_nnnorm_comp_orthogonal V.property) ?_
   refine le_singularValue_iff.mpr fun R hR ↦ ?_
   -- `V = (ker R)ᗮ` meets `ker R` trivially, so `rank V ≤ rank R ≤ n`.
   set V := (LinearMap.ker (R : E →ₗ[𝕜] F))ᗮ
@@ -241,7 +242,7 @@ theorem singularValue_eq_iInf_nnnorm_comp_orthogonal [CompleteSpace E] (T : E �
   refine opNNNorm_le_bound _ _ fun x ↦ ?_
   have hx : (x : E) ∈ closure (LinearMap.ker (R : E →ₗ[𝕜] F) : Set E) := by
     rw [← Submodule.topologicalClosure_coe, ← Submodule.orthogonal_orthogonal_eq_closure]
-    exact x.2
+    exact x.property
   have hRx : ‖R x‖₊ = 0 := by
     rw [← NNReal.coe_eq_zero, coe_nnNorm, ← mem_closure_zero_iff_norm]
     exact map_mem_closure R.continuous hx fun y hy ↦ hy
@@ -256,7 +257,7 @@ over the vectors `x ∈ Vᗮ` with `‖x‖ ≤ 1`. -/
 theorem singularValue_eq_iInf_sSup_image_orthogonal_inter_unitClosedBall [CompleteSpace E]
     (T : E →L[𝕜] F) (n : ℕ) :
     T.singularValue n = ⨅ V : {V : Submodule 𝕜 E // Module.rank 𝕜 V ≤ n},
-      sSup ((fun x ↦ ‖T x‖₊) '' ((V.1ᗮ : Set E) ∩ closedBall 0 1)) := by
+      sSup ((fun x ↦ ‖T x‖₊) '' ((V.valᗮ : Set E) ∩ closedBall 0 1)) := by
   simp_rw [sSup_image_inter_unitClosedBall_eq_nnNorm_comp_subtypeL]
   exact T.singularValue_eq_iInf_nnnorm_comp_orthogonal n
 
@@ -442,8 +443,8 @@ theorem hasMinMaxLowerBound_iff_forall_isLUB :
     exact_mod_cast T.le_singularValue_of_linearIndependent hv hs
   · -- A bound `b < aₙ(T)` is beaten by the coercivity constant the property supplies.
     by_contra! hlt
-    obtain ⟨s, hbs, v, hv, hs⟩ := h T n b.2 (by exact_mod_cast hlt)
-    have hs0 : 0 ≤ s := b.2.trans hbs.le
+    obtain ⟨s, hbs, v, hv, hs⟩ := h T n b.property (by exact_mod_cast hlt)
+    have hs0 : 0 ≤ s := b.property.trans hbs.le
     exact hbs.not_ge (by exact_mod_cast hb (show (⟨s, hs0⟩ : ℝ≥0) ∈ _ from ⟨v, hv, hs⟩))
   · -- `r` lies below the least upper bound, so some member of the set exceeds it.
     lift r to ℝ≥0 using hr0
@@ -481,7 +482,7 @@ theorem HasMinMaxLowerBound.of_completeSpace [CompleteSpace E] : HasMinMaxLowerB
   · exact ⟨c, hrc, v, hv, hvc⟩
   · have hle : (T.singularValue n : ℝ) ≤ c :=
       (NNReal.coe_le_coe.mpr (T.singularValue_le_nnnorm_comp_orthogonal hU)).trans
-        (ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ hUc x x.2)
+        (ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ hUc x x.property)
     linarith
 
 end CompleteSpace
@@ -532,7 +533,7 @@ theorem HasMinMaxLowerBound.exists_singularValue_le_compression (h : HasMinMaxLo
     have hx' : (x : E) ∈ Submodule.span 𝕜 (Set.range (v n)) := by
       have := Submodule.mem_map_of_mem (f := V.subtype) hx
       rwa [Submodule.map_span, ← Set.range_comp] at this
-    have hW : T x ∈ W := Submodule.mem_map_of_mem x.2
+    have hW : T x ∈ W := Submodule.mem_map_of_mem x.property
     rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
       W.norm_orthogonalProjectionOnto_apply hW]
     exact hvs x hx'
@@ -560,7 +561,7 @@ theorem HasMinMaxLowerBound.exists_singularValue_le_compression_endomorphism
         (C.comp (U.orthogonalProjectionOnto.comp V.subtypeL)) := by
     ext x
     have hx : U.starProjection (x : E) = x :=
-      Submodule.starProjection_eq_self_iff.2 (Submodule.mem_sup_left x.2)
+      Submodule.starProjection_eq_self_iff.2 (Submodule.mem_sup_left x.property)
     simp only [C, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
       Submodule.coe_orthogonalProjectionOnto_apply, hx]
     exact (congrArg (· (T x))

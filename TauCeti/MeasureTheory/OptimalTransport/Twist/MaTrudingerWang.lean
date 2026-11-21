@@ -104,14 +104,12 @@ open scoped Topology RealInnerProductSpace
 
 namespace TauCeti
 
-variable {E Y : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
 /-! ### The tensor and the conditions -/
 
 section Tensor
 
-variable [Nonempty Y] {c : E × Y → ℝ} {U U' : Set E} {V : Set Y} {x : E} {y : Y} {ξ : E}
-  {η : StrongDual ℝ E}
+variable {E Y : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Nonempty Y]
+  {c : E × Y → ℝ} {U U' : Set E} {V : Set Y} {x : E} {y : Y} {ξ : E} {η : StrongDual ℝ E}
 
 /-- The **Ma–Trudinger–Wang tensor** of a cost `c` at `(x, y)`, with respect to the target set
 `V` of its `c`-exponential, on a source direction `ξ` and a momentum direction `η`. Writing

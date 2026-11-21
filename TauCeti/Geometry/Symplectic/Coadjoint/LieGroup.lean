@@ -92,7 +92,7 @@ omit [LieGroup I ∞ G] in
 -- The covector at the identity is `ν` read as a continuous functional on the model space, which
 -- is definitional because `GroupLieAlgebra I G` is an abbreviation for the tangent space at `1`.
 private theorem covectorAtOne_snd_apply (v : TangentSpace I (1 : G)) :
-    (covectorAtOne ν).2 v = ν v :=
+    (covectorAtOne ν).snd v = ν v :=
   rfl
 
 /-! ### The left-invariant covector field -/
@@ -111,7 +111,7 @@ theorem proj_leftInvariantCovector (g : G) : (ν.leftInvariantCovector g).proj =
 
 /-- The value at `g` of the left-invariant covector field of `ν` is `ν ∘ d(L_{g⁻¹})_g`. -/
 theorem leftInvariantCovector_snd_apply (g : G) (v : TangentSpace I g) :
-    (ν.leftInvariantCovector g).2 v = ν (mfderiv I I (g⁻¹ * ·) g v) := by
+    (ν.leftInvariantCovector g).snd v = ν (mfderiv I I (g⁻¹ * ·) g v) := by
   have h := CotangentBundle.smul_snd_apply g (covectorAtOne ν) v
   simp only [smul_eq_mul] at h
   rw [leftInvariantCovector, h, proj_covectorAtOne, mul_one]
@@ -154,7 +154,7 @@ def leftInvariantForm : SmoothForm I G ℝ 1 :=
 /-- The left-invariant one-form of `ν` evaluates a tangent vector `v` at `g` to
 `ν (d(L_{g⁻¹})_g v)`. -/
 theorem leftInvariantForm_apply (g : G) (v : Fin 1 → TangentSpace I g) :
-    ν.leftInvariantForm.1 g v = ν (mfderiv I I (g⁻¹ * ·) g (v 0)) := by
+    ν.leftInvariantForm.val g v = ν (mfderiv I I (g⁻¹ * ·) g (v 0)) := by
   rw [leftInvariantForm, SmoothForm.coe_mpullback,
     CotangentBundle.mpullback_liouvilleForm_apply_of_proj_comp_eq (g := id)
       (fun y ↦ ν.proj_leftInvariantCovector y)
@@ -165,7 +165,7 @@ theorem leftInvariantForm_apply (g : G) (v : Fin 1 → TangentSpace I g) :
 field of `ξ`. -/
 @[simp]
 theorem leftInvariantForm_apply_mulInvariantVectorField (ξ : GroupLieAlgebra I G) (g : G) :
-    ν.leftInvariantForm.1 g ![mulInvariantVectorField ξ g] = ν ξ := by
+    ν.leftInvariantForm.val g ![mulInvariantVectorField ξ g] = ν ξ := by
   rw [leftInvariantForm_apply, Matrix.cons_val_zero, mfderiv_inv_mul_mulInvariantVectorField]
 
 /-- The left-invariant one-form is invariant under left translations. -/
@@ -224,7 +224,7 @@ theorem eval₂_leftInvariantKirillovForm_mulInvariantVectorField (ξ η : Group
     ν.leftInvariantKirillovForm.eval₂ g (mulInvariantVectorField ξ g)
       (mulInvariantVectorField η g) = ν ⁅ξ, η⁆ := by
   have hconst (ζ : GroupLieAlgebra I G) :
-      (fun y ↦ ν.leftInvariantForm.1 y ![mulInvariantVectorField ζ y]) = fun _ ↦ ν ζ :=
+      (fun y ↦ ν.leftInvariantForm.val y ![mulInvariantVectorField ζ y]) = fun _ ↦ ν ζ :=
     funext fun y ↦ ν.leftInvariantForm_apply_mulInvariantVectorField ζ y
   -- The invariant formula: `dα(X, Y) = X(α Y) - Y(α X) - α [X, Y]`, and `α` is constant on
   -- left-invariant vector fields, whose bracket is the left-invariant field of `⁅ξ, η⁆`.
