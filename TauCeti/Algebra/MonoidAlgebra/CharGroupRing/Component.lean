@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Complement
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.MonoidAlgebra.CharGroupRing.Norm
+public import TauCeti.GroupTheory.Complement.Prod
 public import TauCeti.RepresentationTheory.GroupAlgebra.CharIdempotent
 
 /-!
@@ -35,15 +35,13 @@ character idempotents, norm quotients, and complementary subgroup rings:
   subgroups of `G` (`P.IsComplement' H`, e.g. `G = G_p × G'`), sending `p * h ↦ χ(h) p` defines a
   surjective `O`-algebra homomorphism `componentProj : O[G] →ₐ[O] O[P]` over any commutative
   semiring `O`. Over any commutative ring in which `#H` is a unit, its kernel is `(1 - e_χ)`
-  (`Set.charGroupRing.ker_componentProj`). Over a domain with enough roots of unity for finite `G`,
-  `R_{Ψ_χ} ≃ₐ[O] O[P]` holds *without* assuming that `#H` is a unit in `O`
-  (`Set.charGroupRing.componentEquiv`), because characters of `P` pair bijectively with members of
-  `Ψ_χ` via `Subgroup.IsComplement'.extendChar`.
+  (`Set.charGroupRing.ker_componentProj`). Over a domain with enough roots of unity of order
+  `exponent P` for finite `P`, `R_{Ψ_χ} ≃ₐ[O] O[P]` holds *without* assuming that `#H` is a unit
+  in `O` (`Set.charGroupRing.componentEquiv`), because characters of `P` pair bijectively with
+  members of `Ψ_χ` via `Subgroup.IsComplement'.extendChar`.
 
 ## Main definitions
 
-* `Subgroup.IsComplement'.extendChar`: extension of `(φ : P →* Oˣ)` and `(χ : H →* Oˣ)` across
-  complementary subgroups `P.IsComplement' H` to a character `G →* Oˣ`.
 * `Set.charGroupRing.piComponentAlgEquiv`: for finite `G` and a domain `O` with enough roots of
   unity, the decomposition `O[G] ≃ₐ[O] ∏_χ R_{Ψ_χ}` when `#H` is a unit in `O`.
 * `Set.charGroupRing.componentQuotientSpanNormAlgEquiv`: for finite `G` and a domain `O` with
@@ -52,8 +50,8 @@ character idempotents, norm quotients, and complementary subgroup rings:
   (Dasgupta–Kakde, Corollary 2.3).
 * `Set.charGroupRing.componentProj`: the `χ`-twisted projection `O[G] →ₐ[O] O[P]` sending
   `p * h ↦ χ(h) p`.
-* `Set.charGroupRing.componentEquiv`: for finite `G` and a domain `O` with enough roots of unity,
-  the `O`-algebra isomorphism `R_{Ψ_χ} ≃ₐ[O] O[P]`.
+* `Set.charGroupRing.componentEquiv`: for finite `P` and a domain `O` with enough roots of unity of
+  order `exponent P`, the `O`-algebra isomorphism `R_{Ψ_χ} ≃ₐ[O] O[P]`.
 
 ## References
 
@@ -120,75 +118,6 @@ theorem charEval_mapDomainAlgHom_charIdempotent [IsDomain O] (H : Subgroup G) [F
 end CommRing
 
 end MonoidHom
-
-namespace Subgroup.IsComplement'
-
-section ExtendChar
-
-variable {O G : Type*} [CommSemiring O] [CommGroup G] {P H : Subgroup G}
-
-/-- The multiplicative isomorphism `P × H ≃* G` induced by complementary subgroups
-`P.IsComplement' H` in a commutative group `G`. -/
-private noncomputable def prodMulEquiv (hPH : P.IsComplement' H) : P × H ≃* G :=
-  MulEquiv.ofBijective (P.subtype.coprod H.subtype) <| by
-    convert (Subgroup.isComplement_iff_bijective P H).mp hPH using 1
-    ext ⟨p, h⟩
-    simp [MonoidHom.coprod_apply]
-
-private theorem prodMulEquiv_apply (hPH : P.IsComplement' H) (p : P) (h : H) :
-    hPH.prodMulEquiv (p, h) = (p : G) * (h : G) := by
-  simp [prodMulEquiv]
-
-private theorem prodMulEquiv_symm_mul (hPH : P.IsComplement' H) (p : P) (h : H) :
-    hPH.prodMulEquiv.symm ((p : G) * (h : G)) = (p, h) :=
-  (MulEquiv.symm_apply_eq hPH.prodMulEquiv).mpr (hPH.prodMulEquiv_apply p h).symm
-
-/-- Given complementary subgroups `P` and `H` of a commutative group `G`, combine characters
-`φ : P →* Oˣ` and `χ : H →* Oˣ` into the unique character `G →* Oˣ` sending `p * h ↦ φ(p) χ(h)`. -/
-noncomputable def extendChar (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) : G →* Oˣ :=
-  (φ.coprod χ).comp hPH.prodMulEquiv.symm.toMonoidHom
-
-/-- `extendChar hPH φ χ` sends `(p : G) * (h : G)` to `φ p * χ h`. -/
-theorem extendChar_mul (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) (p : P) (h : H) :
-    hPH.extendChar φ χ ((p : G) * (h : G)) = φ p * χ h := by
-  simp [extendChar, prodMulEquiv_symm_mul]
-
-/-- Evaluating `extendChar hPH φ χ` at `(p : G)` for `p : P` gives `φ p`. -/
-@[simp]
-theorem extendChar_coe_left (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) (p : P) :
-    hPH.extendChar φ χ (p : G) = φ p := by
-  simpa using hPH.extendChar_mul φ χ p 1
-
-/-- Evaluating `extendChar hPH φ χ` at `(h : G)` for `h : H` gives `χ h`. -/
-@[simp]
-theorem extendChar_coe_right (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) (h : H) :
-    hPH.extendChar φ χ (h : G) = χ h := by
-  simpa using hPH.extendChar_mul φ χ 1 h
-
-/-- Restricting `extendChar hPH φ χ` to `P` recovers `φ`. -/
-@[simp]
-theorem extendChar_comp_left (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) :
-    (hPH.extendChar φ χ).comp P.subtype = φ :=
-  MonoidHom.ext fun p ↦ by simp
-
-/-- Restricting `extendChar hPH φ χ` to `H` recovers `χ`. -/
-@[simp]
-theorem extendChar_comp_right (hPH : P.IsComplement' H) (φ : P →* Oˣ) (χ : H →* Oˣ) :
-    (hPH.extendChar φ χ).comp H.subtype = χ :=
-  MonoidHom.ext fun h ↦ by simp
-
-/-- Every character of `G` is `extendChar` of its restrictions to `P` and `H`. -/
-@[simp]
-theorem extendChar_comp_self (hPH : P.IsComplement' H) (ψ : G →* Oˣ) :
-    hPH.extendChar (ψ.comp P.subtype) (ψ.comp H.subtype) = ψ :=
-  MonoidHom.ext fun g ↦ by
-    obtain ⟨⟨p, h⟩, rfl⟩ := hPH.prodMulEquiv.surjective g
-    rw [prodMulEquiv_apply]
-    simp
-
-end ExtendChar
-
-end Subgroup.IsComplement'
 
 namespace Set.charGroupRing
 
@@ -651,16 +580,14 @@ theorem ker_componentProj [Fintype H] (hPH : P.IsComplement' H)
 
 section Domain
 
-variable [IsDomain O] [Finite G] [HasEnoughRootsOfUnity O (Monoid.exponent G)]
+variable [IsDomain O] [Finite P] [HasEnoughRootsOfUnity O (Monoid.exponent P)]
 
-/-- For complementary subgroups `P.IsComplement' H` of a finite commutative group `G` and a domain
-`O` with enough roots of unity, `α_{Ψ_χ}` and `componentProj hPH χ` have the same kernel, even
-when `#H` is not a unit in `O`. -/
+/-- For complementary subgroups `P.IsComplement' H` with `P` finite and a domain `O` with enough
+roots of unity of order `exponent P`, `α_{Ψ_χ}` and `componentProj hPH χ` have the same kernel,
+even when `H` is infinite or `#H` is not a unit in `O`. -/
 theorem ker_proj_eq_ker_componentProj (hPH : P.IsComplement' H) (χ : H →* Oˣ) :
     RingHom.ker (proj {ψ : G →* Oˣ | ψ.comp H.subtype = χ}) =
       RingHom.ker (componentProj hPH χ) := by
-  have : HasEnoughRootsOfUnity O (Monoid.exponent P) :=
-    .of_dvd O (Monoid.exponent_dvd_of_monoidHom P.subtype P.subtype_injective)
   ext x
   rw [RingHom.mem_ker, RingHom.mem_ker, proj_eq_zero_iff]
   constructor
@@ -672,8 +599,9 @@ theorem ker_proj_eq_ker_componentProj (hPH : P.IsComplement' H) (χ : H →* Oˣ
     rw [← hPH.extendChar_comp_self ψ, hψ, ← charEval_componentProj, hx, map_zero]
 
 /-- **The `χ`-component character group ring is isomorphic to `O[P]`** (Dasgupta–Kakde, §2.2): for
-complementary subgroups `P.IsComplement' H` of a finite commutative group `G` and a domain `O` with
-enough roots of unity, `R_{Ψ_χ} ≃ₐ[O] O[P]`. No invertibility hypothesis on `#H` is required. -/
+complementary subgroups `P.IsComplement' H` with `P` finite and a domain `O` with enough roots of
+unity of order `exponent P`, `R_{Ψ_χ} ≃ₐ[O] O[P]`. No finiteness or invertibility hypothesis on
+`H` is required. -/
 noncomputable def componentEquiv (hPH : P.IsComplement' H) (χ : H →* Oˣ) :
     {ψ : G →* Oˣ | ψ.comp H.subtype = χ}.charGroupRing ≃ₐ[O] MonoidAlgebra O P :=
   (Ideal.quotientKerAlgEquivOfSurjective (proj_surjective _)).symm.trans <|
@@ -710,22 +638,33 @@ theorem charEval_componentEquiv (hPH : P.IsComplement' H) (χ : H →* Oˣ) (φ 
   obtain ⟨x, rfl⟩ := proj_surjective _ y
   rw [componentEquiv_proj, charEval_componentProj, coe_proj_apply]
 
+section Examples
+
+omit [Finite P] [HasEnoughRootsOfUnity O (Monoid.exponent P)] in
 -- When `H = ⊥` and `P = ⊤`, every character restricts to `1` on `⊥`, and `componentEquiv`
 -- identifies `R_univ` with `O[⊤] ≃ₐ[O] O[G]`.
-example :
+example [Finite G] [HasEnoughRootsOfUnity O (Monoid.exponent G)] :
     Nonempty
       ({ψ : G →* Oˣ | ψ.comp (⊥ : Subgroup G).subtype = 1}.charGroupRing ≃ₐ[O]
-        MonoidAlgebra O G) :=
-  ⟨(componentEquiv Subgroup.isComplement'_top_bot 1).trans
+        MonoidAlgebra O G) := by
+  have : HasEnoughRootsOfUnity O (Monoid.exponent (⊤ : Subgroup G)) :=
+    .of_dvd O (Monoid.exponent_dvd_of_monoidHom _ (⊤ : Subgroup G).subtype_injective)
+  exact ⟨(componentEquiv Subgroup.isComplement'_top_bot 1).trans
     (MonoidAlgebra.domCongr O O Subgroup.topEquiv)⟩
 
+omit [Finite P] [HasEnoughRootsOfUnity O (Monoid.exponent P)] in
 -- When `P = ⊥` and `H = ⊤` with `#G` a unit in `O`, `piComponentAlgEquiv` splits `O[G]` as the
 -- product over all characters `χ : ⊤ →* Oˣ` of 1-character components, each isomorphic to `O[⊥]`.
-example (hG : IsUnit (Nat.card (⊤ : Subgroup G) : O)) :
+example [Finite G] [HasEnoughRootsOfUnity O (Monoid.exponent G)]
+    (hG : IsUnit (Nat.card (⊤ : Subgroup G) : O)) :
     Nonempty
-      (MonoidAlgebra O G ≃ₐ[O] ∀ _ : (⊤ : Subgroup G) →* Oˣ, MonoidAlgebra O (⊥ : Subgroup G)) :=
-  ⟨(piComponentAlgEquiv (⊤ : Subgroup G) hG).trans
+      (MonoidAlgebra O G ≃ₐ[O] ∀ _ : (⊤ : Subgroup G) →* Oˣ, MonoidAlgebra O (⊥ : Subgroup G)) := by
+  have : HasEnoughRootsOfUnity O (Monoid.exponent (⊥ : Subgroup G)) :=
+    .of_dvd O (Monoid.exponent_dvd_of_monoidHom _ (⊥ : Subgroup G).subtype_injective)
+  exact ⟨(piComponentAlgEquiv (⊤ : Subgroup G) hG).trans
     (AlgEquiv.piCongrRight fun χ ↦ componentEquiv Subgroup.isComplement'_bot_top χ)⟩
+
+end Examples
 
 -- For the cyclic group `ℤˣ` of order `2` and any domain `R` with enough roots of unity in which
 -- `2` is a unit, the sign character `χ : ℤˣ →* Rˣ` sending `-1 ↦ -1` has `ker α_{Ψ_χ} = (1 - e_χ)`.

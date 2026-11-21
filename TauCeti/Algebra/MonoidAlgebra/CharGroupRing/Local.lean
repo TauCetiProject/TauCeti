@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Lemmas
-public import Mathlib.GroupTheory.PGroup
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.Algebra.MonoidAlgebra.CharGroupRing.Component
+public import TauCeti.GroupTheory.PGroup.Quotient
 public import TauCeti.RingTheory.AdicCompletion.Finite
 import Mathlib.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.LocalRing.Monogenic
@@ -66,9 +66,8 @@ structure:
 * `Set.charGroupRing.maximalIdeal_eq_comap`, `Set.charGroupRing.residueFieldEquiv`, and
   `Set.charGroupRing.exists_maximalIdeal_pow_le_map`: maximal ideal, residue field, and maximal
   ideal power containment `𝔪_{R_Ψ}^N ⊆ 𝔪 R_Ψ`.
-* `IsPGroup.exists_pow_pow_eq_of_comp_eq`, `Set.charGroupRing.isLocalRing_of_subset_component`,
-  and `Set.charGroupRing.isLocalRing_component`: specialization to subsets of a `χ`-component when
-  `G ⧸ H` is a `p`-group.
+* `Set.charGroupRing.isLocalRing_of_subset_component` and `Set.charGroupRing.isLocalRing_component`:
+  specialization to subsets of a `χ`-component when `G ⧸ H` is a `p`-group.
 
 ## References
 
@@ -104,22 +103,6 @@ theorem residue_charEval_eq_of_pow_eq {ψ₁ ψ₂ : G →* Oˣ}
 end ExpChar
 
 end TauCeti
-
-namespace IsPGroup
-
-/-- When `G ⧸ H` is a `p`-group, any two characters of `G` with the same restriction to `H` have
-equal `p^k`-th powers at every element `g ∈ G` for some `k : ℕ`. -/
-theorem exists_pow_pow_eq_of_comp_eq {O G : Type*} [CommSemiring O] [CommGroup G]
-    {H : Subgroup G} {p : ℕ} (hGH : IsPGroup p (G ⧸ H))
-    {ψ₁ ψ₂ : G →* Oˣ} (hH : ψ₁.comp H.subtype = ψ₂.comp H.subtype) (g : G) :
-    ∃ k : ℕ, ψ₁ g ^ p ^ k = ψ₂ g ^ p ^ k := by
-  obtain ⟨k, hk⟩ := hGH.exists_pow_pow_eq_one (QuotientGroup.mk g)
-  rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff] at hk
-  refine ⟨k, ?_⟩
-  simpa only [map_pow, MonoidHom.comp_apply, Subgroup.coe_subtype] using
-    DFunLike.congr_fun hH ⟨g ^ p ^ k, hk⟩
-
-end IsPGroup
 
 namespace Set.charGroupRing
 
@@ -217,6 +200,15 @@ theorem mem_maximalIdeal_iff_forall [IsLocalRing Ψ.charGroupRing] {y : Ψ.charG
   exact ⟨fun hy ψ ↦ (mem_maximalIdeal_iff ψ.2).mp hy,
     fun hy ↦ (mem_maximalIdeal_iff hψ₀).mpr (hy ⟨ψ₀, hψ₀⟩)⟩
 
+/-- When `R_Ψ` is local and `ψ ∈ Ψ`, every `y ∈ R_Ψ` has the same residue modulo
+`maximalIdeal R_Ψ` as its `ψ`-coordinate `evalAlgHom hψ y` embedded from `O`. -/
+theorem residue_algebraMap_evalAlgHom [IsLocalRing Ψ.charGroupRing] {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ)
+    (y : Ψ.charGroupRing) :
+    IsLocalRing.residue Ψ.charGroupRing (algebraMap O Ψ.charGroupRing (evalAlgHom hψ y)) =
+      IsLocalRing.residue Ψ.charGroupRing y := by
+  rw [eq_comm, ← sub_eq_zero, ← map_sub, IsLocalRing.residue_eq_zero_iff, mem_maximalIdeal_iff hψ]
+  simp
+
 /-- When `R_Ψ` is local, the canonical map `ResidueField O →+* ResidueField R_Ψ` is bijective:
 `R_Ψ` has no residue field extension over `O`. -/
 theorem algebraMap_residueField_bijective [IsLocalRing Ψ.charGroupRing] :
@@ -225,10 +217,8 @@ theorem algebraMap_residueField_bijective [IsLocalRing Ψ.charGroupRing] :
   obtain ⟨ψ, hψ⟩ := nonempty_of_nontrivial (Ψ := Ψ)
   refine ⟨RingHom.injective _, fun z ↦ ?_⟩
   obtain ⟨y, rfl⟩ := IsLocalRing.residue_surjective z
-  refine ⟨IsLocalRing.residue O (evalAlgHom hψ y), ?_⟩
-  rw [IsLocalRing.ResidueField.algebraMap_residue, eq_comm, ← sub_eq_zero, ← map_sub,
-    IsLocalRing.residue_eq_zero_iff, mem_maximalIdeal_iff hψ]
-  simp
+  exact ⟨IsLocalRing.residue O (evalAlgHom hψ y),
+    (IsLocalRing.ResidueField.algebraMap_residue _).trans (residue_algebraMap_evalAlgHom hψ y)⟩
 
 variable (Ψ) in
 /-- **Residue field isomorphism**: when `R_Ψ` is local, `ResidueField O` is canonically isomorphic
@@ -260,9 +250,8 @@ theorem residueFieldEquiv_symm_apply [IsLocalRing Ψ.charGroupRing] {ψ : G →*
   rw [IsLocalRing.ResidueField.map_residue]
   apply (residueFieldEquiv Ψ).injective
   rw [RingEquiv.apply_symm_apply, residueFieldEquiv_apply,
-    IsLocalRing.ResidueField.algebraMap_residue, eq_comm, ← sub_eq_zero, ← map_sub,
-    IsLocalRing.residue_eq_zero_iff, mem_maximalIdeal_iff hψ]
-  simp
+    IsLocalRing.ResidueField.algebraMap_residue, AlgHom.coe_toRingHom,
+    residue_algebraMap_evalAlgHom hψ y]
 
 /-- For any `ψ ∈ Ψ`, the inverse of `residueFieldEquiv` sends the residue of `y ∈ R_Ψ` to the
 residue of `y(ψ) ∈ O`. -/
