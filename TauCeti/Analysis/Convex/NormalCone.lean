@@ -17,10 +17,10 @@ recovers the usual normal cone in the continuous dual of a real normed space.
 
 `convexIndicator C` is zero on `C` and positive infinity elsewhere (unlike
 `Set.indicator`, which is zero outside the set). At a point of `C`, its subdifferential
-is exactly the normal cone. Adding this indicator converts a constrained minimum of
-a real-valued energy into the zero-subgradient condition. The inclusion from the sum
-of the energy subdifferential and the normal cone holds without a qualification
-condition; no reverse sum rule is asserted here.
+is exactly the normal cone. Adding this indicator turns constrained minima of linearly
+tilted real-valued energies into subgradient conditions, with zero subgradient for the
+untilted energy. The inclusion from the sum of the energy subdifferential and the normal
+cone holds without a qualification condition; no reverse sum rule is asserted here.
 
 The normal cone is bundled as a `PointedCone`, using Mathlib's `PointedCone.dual`
 of the translated constraint with the negated pairing. Thus the usual closure under
@@ -86,7 +86,7 @@ theorem convexIndicator_apply (C : Set E) (x : E) :
   simp
 
 /-- The empty constraint has everywhere infinite indicator. -/
-@[simp] theorem convexIndicator_empty : convexIndicator (∅ : Set E) = fun _ ↦ ⊤ := by
+@[simp] theorem convexIndicator_empty : convexIndicator (∅ : Set E) = ⊤ := by
   funext x
   simp
 
@@ -108,7 +108,7 @@ def normalCone (C : Set E) (x : E) : PointedCone ℝ F :=
   simp [normalCone, PointedCone.mem_dual]
 
 /-- Restricting a constraint enlarges its normal cone. -/
-theorem normalCone_antitone (hCD : C ⊆ D) : normalCone B D x ≤ normalCone B C x :=
+@[gcongr] theorem normalCone_anti (hCD : C ⊆ D) : normalCone B D x ≤ normalCone B C x :=
   PointedCone.dual_anti (image_mono hCD)
 
 /-- Every element is normal to an empty constraint. -/
@@ -122,25 +122,32 @@ theorem normalCone_antitone (hCD : C ⊆ D) : normalCone B D x ≤ normalCone B 
   simp
 
 /-- In the unconstrained case, normals are exactly the elements annihilating the pairing. -/
-theorem normalCone_univ : (normalCone B univ x : Set F) = {y | ∀ v, B v y = 0} := by
+@[simp] theorem normalCone_univ :
+    normalCone B univ x = PointedCone.ofSubmodule (LinearMap.ker B.flip) := by
   ext y
-  simp only [SetLike.mem_coe, mem_normalCone_iff, mem_ofPred_eq]
+  simp only [mem_normalCone_iff, PointedCone.mem_ofSubmodule_iff, LinearMap.mem_ker,
+    LinearMap.ext_iff, LinearMap.flip_apply, LinearMap.zero_apply]
   constructor
   · intro hy v
     have hpos := hy (v + x) (mem_univ _)
     have hneg := hy (-v + x) (mem_univ _)
     simp only [add_sub_cancel_right, map_neg, LinearMap.neg_apply] at hpos hneg
-    exact le_antisymm hpos (by linarith)
+    exact hpos.antisymm (neg_nonpos.mp hneg)
   · intro hy v _
     exact le_of_eq (hy (v - x))
 
+/-- If the pairing separates points of `F`, the unconstrained normal cone is trivial. -/
+theorem normalCone_univ_eq_bot (hB : Function.Injective B.flip) : normalCone B univ x = ⊥ := by
+  rw [normalCone_univ, LinearMap.ker_eq_bot_of_injective hB]
+  rfl
+
 /-- Translating both the constraint and its base point leaves the normals unchanged. -/
-theorem normalCone_vadd (a : E) : normalCone B (a +ᵥ C) (a + x) = normalCone B C x := by
+@[simp] theorem normalCone_vadd (a : E) : normalCone B (a +ᵥ C) (a + x) = normalCone B C x := by
   ext y
   simp only [mem_normalCone_iff, ← image_vadd, forall_mem_image, vadd_eq_add,
     add_sub_add_left_eq_sub]
 
-/-- Normals are closed whenever evaluation against each displacement is continuous. -/
+/-- The normal cone is closed if `B v` is continuous for every `v : E`. -/
 theorem isClosed_normalCone [TopologicalSpace F] (hB : ∀ v, Continuous (B v)) :
     IsClosed (normalCone B C x : Set F) := by
   let _ := Module.addCommMonoidToAddCommGroup ℝ (M := F)
@@ -167,36 +174,49 @@ theorem subdifferential_convexIndicator :
     subdifferential B (convexIndicator C) x = if x ∈ C then (normalCone B C x : Set F) else ∅ := by
   by_cases hx : x ∈ C <;> simp [hx]
 
+/-- Outside the constraint, the constrained energy has empty subdifferential. -/
+@[simp] theorem subdifferential_add_convexIndicator_of_notMem (f : E → EReal) (hx : x ∉ C) :
+    subdifferential B (f + convexIndicator C) x = ∅ := by
+  rcases eq_or_ne (f x) ⊥ with hf | hf
+  · exact subdifferential_eq_empty_of_eq_bot B (by simp [hf])
+  · exact subdifferential_eq_empty_of_eq_top B (by simp [hx, EReal.add_top_of_ne_bot hf])
+
+/-- For a real-valued energy at an admissible point, the subgradient inequality for the
+energy plus its indicator need only be checked on the constraint. -/
+theorem mem_subdifferential_add_convexIndicator_iff (f : E → ℝ) (hx : x ∈ C) :
+    y ∈ subdifferential B ((fun v ↦ (f v : EReal)) + convexIndicator C) x ↔
+      ∀ v ∈ C, f x + B (v - x) y ≤ f v := by
+  classical
+  have heq : (fun v ↦ (f v : EReal)) + convexIndicator C =
+      fun v ↦ if v ∈ C then (f v : EReal) else ⊤ := by
+    funext v
+    by_cases hv : v ∈ C <;> simp [hv]
+  rw [heq, mem_subdifferential_ite_iff B hx]
+
+/-- A subgradient of a constrained real-valued energy is a linear tilt for which the point
+minimizes the tilted energy on the constraint. -/
+theorem mem_subdifferential_add_convexIndicator_iff_isMinOn_sub (f : E → ℝ) (hx : x ∈ C) :
+    y ∈ subdifferential B ((fun v ↦ (f v : EReal)) + convexIndicator C) x ↔
+      IsMinOn (fun v ↦ f v - B v y) C x := by
+  rw [mem_subdifferential_add_convexIndicator_iff B f hx, isMinOn_iff]
+  simp only [map_sub, LinearMap.sub_apply]
+  constructor <;> intro h v hv <;> have := h v hv <;> linarith
+
 /-- A constrained minimum is exactly a zero subgradient of the energy plus its indicator.
 No convexity, continuity, or constraint qualification is required. -/
 theorem zero_mem_subdifferential_add_convexIndicator_iff (f : E → ℝ) (hx : x ∈ C) :
-    (0 : F) ∈ subdifferential B (fun v ↦ (f v : EReal) + convexIndicator C v) x ↔
+    (0 : F) ∈ subdifferential B ((fun v ↦ (f v : EReal)) + convexIndicator C) x ↔
       IsMinOn f C x := by
-  classical
-  have heq : (fun v ↦ (f v : EReal) + convexIndicator C v) =
-      fun v ↦ if v ∈ C then (f v : EReal) else ⊤ := by
-    funext v
-    by_cases hv : v ∈ C <;> simp [convexIndicator, hv]
-  rw [heq, mem_subdifferential_ite_iff B hx, isMinOn_iff]
-  simp
+  simpa only [map_zero, sub_zero] using
+    (mem_subdifferential_add_convexIndicator_iff_isMinOn_sub B (y := 0) f hx)
 
 /-- The unconditional inclusion in the indicator sum rule: a subgradient plus a normal
 is a subgradient of the constrained energy. The reverse inclusion needs qualification. -/
-theorem subdifferential_add_normalCone_subset (f : E → ℝ) (hx : x ∈ C) :
-    subdifferential B (fun v ↦ (f v : EReal)) x + (normalCone B C x : Set F) ⊆
-      subdifferential B (fun v ↦ (f v : EReal) + convexIndicator C v) x := by
-  rintro _ ⟨y, hy, z, hz, rfl⟩
-  rw [mem_subdifferential_iff]
-  simp only [convexIndicator_of_mem hx, add_zero, EReal.coe_ne_bot, EReal.coe_ne_top,
-    ne_eq, not_false_eq_true, true_and]
-  intro v
-  by_cases hv : v ∈ C
-  · have hf := (mem_subdifferential_coe_iff B f).1 hy v
-    have hn := (mem_normalCone_iff B).1 hz v hv
-    simp only [convexIndicator_of_mem hv, add_zero, map_add, ← EReal.coe_add,
-      EReal.coe_le_coe_iff]
-    linarith
-  · simp [convexIndicator_of_notMem hv]
+theorem subdifferential_add_normalCone_subset (f : E → EReal) (hx : x ∈ C) :
+    subdifferential B f x + (normalCone B C x : Set F) ⊆
+      subdifferential B (f + convexIndicator C) x := by
+  rw [← subdifferential_convexIndicator_of_mem B hx]
+  exact subdifferential_add_subset B f (convexIndicator C)
 
 end NormalCone
 

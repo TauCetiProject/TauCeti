@@ -45,6 +45,8 @@ convex.
   `TauCeti.toReal_add_le_toReal_of_mem_subdifferential`;
 * `TauCeti.mem_subdifferential_ite_iff` — for a real function extended by `⊤` off `Ω`, a
   subgradient at a point of `Ω` is a `y` satisfying the subgradient inequality on `Ω`;
+* `TauCeti.subdifferential_add_subset` — the sum of two subdifferentials is contained in the
+  subdifferential of the pointwise sum, without qualification;
 * `TauCeti.mem_subdifferential_add_affine_iff` and `TauCeti.subgradientImage_add_affine` —
   adding the affine function `z ↦ B z q + c` translates subdifferentials and subgradient images
   by `q`, and `TauCeti.convex_epigraph_add_affine_iff` — it preserves convexity of the real
@@ -127,6 +129,20 @@ theorem subdifferential_eq_empty_of_eq_bot (h : f x = ⊥) : subdifferential B f
 /-- The subdifferential is empty where the function takes the value `⊤`. -/
 theorem subdifferential_eq_empty_of_eq_top (h : f x = ⊤) : subdifferential B f x = ∅ :=
   Set.eq_empty_of_forall_notMem fun _ hy => ne_top_of_mem_subdifferential B hy h
+
+open scoped Pointwise in
+/-- A sum of subgradients is a subgradient of the pointwise sum, without any qualification
+condition on the two functions. -/
+theorem subdifferential_add_subset (f g : E → EReal) :
+    subdifferential B f x + subdifferential B g x ⊆ subdifferential B (f + g) x := by
+  rintro _ ⟨u, hu, v, hv, rfl⟩
+  refine (mem_subdifferential_iff B).2
+    ⟨EReal.add_ne_bot_iff.2
+      ⟨ne_bot_of_mem_subdifferential B hu, ne_bot_of_mem_subdifferential B hv⟩,
+      EReal.add_ne_top (ne_top_of_mem_subdifferential B hu) (ne_top_of_mem_subdifferential B hv),
+      fun z ↦ ?_⟩
+  simpa only [Pi.add_apply, map_add, EReal.coe_add, add_add_add_comm] using
+    add_le_add (add_le_of_mem_subdifferential B hu z) (add_le_of_mem_subdifferential B hv z)
 
 /-- For a real-valued function, a subgradient is a `y` satisfying the subgradient inequality. -/
 -- Not `@[simp]`: `mem_subdifferential_iff` already rewrites the left-hand side, so this lemma
