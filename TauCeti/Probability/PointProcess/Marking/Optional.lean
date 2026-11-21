@@ -203,9 +203,7 @@ theorem join_optionalTupleMarking {ι : Type*} [Countable ι] (x : ι → Option
       (Measure.sum fun i => (x i).elim 0 Measure.dirac) ⊗ₘ κ := by
   have hsf : ∀ i : ι, SFinite ((x i).elim (0 : Measure X) Measure.dirac) := fun i => by
     cases x i <;> simp only [Option.elim_none, Option.elim_some] <;> infer_instance
-  have hjoin : (κ.optionalTupleMarking ι x).join = (κ.optionalTupleMarking ι x).bind id := by
-    rw [Measure.bind, Measure.map_id]
-  rw [hjoin, κ.bind_optionalTupleMarking x, Measure.compProd_sum_left]
+  rw [Measure.join_eq_bind, κ.bind_optionalTupleMarking x, Measure.compProd_sum_left]
   congr 1
   funext i
   cases x i with

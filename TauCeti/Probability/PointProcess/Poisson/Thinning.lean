@@ -133,6 +133,17 @@ end CoupledTemporal
 
 section BernoulliBoundary
 
+/-- Zero-intensity boundary case for an arbitrary marked temporal Poisson random measure: whenever
+the selected cylinder `univ ×ˢ B` has zero intensity, the `B`-projection vanishes almost surely and
+its cumulative count path is identically zero simultaneously at all times. -/
+theorem ae_map_fst_restrict_univ_prod_and_nat_count_eq_zero
+    {E : Type*} [MeasurableSpace E] {Γ : Measure (ℝ≥0 × E)} {M : Ω → Measure (ℝ≥0 × E)}
+    (hM : IsPoissonRandomMeasure P M Γ) {B : Set E} (hzero : Γ (univ ×ˢ B) = 0) :
+    (∀ᵐ ω ∂P, ((M ω).restrict (univ ×ˢ B)).map Prod.fst = 0) ∧
+    (∀ᵐ ω ∂P, ∀ t : ℝ≥0, ⌊(M ω (Ioc 0 t ×ˢ B)).toNNReal⌋₊ = 0) :=
+  ⟨hM.ae_map_fst_restrict_univ_prod_eq_zero hzero,
+    hM.ae_nat_count_prod_eq_zero (measure_mono_null (prod_mono (subset_univ _) Subset.rfl) hzero)⟩
+
 /-- Zero-rate constant-Bernoulli boundary case for any scaled intensity `r • Λ` (in particular
 homogeneous `r • nnvolume`): whenever the effective rate of colour `b` vanishes (covering `r = 0`,
 `b = true` with `p = 0`, and `b = false` with `p = 1`), the `b`-projection vanishes almost surely
@@ -145,11 +156,9 @@ theorem ae_map_fst_restrict_singleton_and_nat_count_eq_zero_of_const_bernoulliMe
     (hzero : r * (if b then unitInterval.toNNReal p else 1 - unitInterval.toNNReal p) = 0) :
     (∀ᵐ ω ∂P, ((M ω).restrict (univ ×ˢ {b})).map Prod.fst = 0) ∧
     (∀ᵐ ω ∂P, ∀ t : ℝ≥0, ⌊(M ω (Ioc 0 t ×ˢ {b})).toNNReal⌋₊ = 0) := by
-  have hzero' : (r : ℝ≥0∞) * bernoulliMeasure true false p {b} = 0 := by
-    rw [bernoulliMeasure_apply_singleton_bool, ← ENNReal.coe_mul, hzero, ENNReal.coe_zero]
-  refine ⟨hM.ae_map_fst_restrict_univ_prod_eq_zero ?_,
-    hM.ae_nat_count_prod_eq_zero_of_smul_prod_of_mul_eq_zero hzero'⟩
-  rw [Measure.prod_prod, smul_apply, smul_eq_mul, mul_right_comm, hzero', zero_mul]
+  apply hM.ae_map_fst_restrict_univ_prod_and_nat_count_eq_zero
+  rw [Measure.prod_prod, smul_apply, smul_eq_mul, bernoulliMeasure_apply_singleton_bool,
+    mul_right_comm, ← ENNReal.coe_mul, hzero, ENNReal.coe_zero, zero_mul]
 
 end BernoulliBoundary
 
@@ -196,8 +205,7 @@ theorem exists_independent_temporal_thinning [IsLocallyFiniteMeasure Λ]
         ⌊(q.2 (Ioc 0 t ×ˢ {true})).toNNReal⌋₊ +
           ⌊(q.2 (Ioc 0 t ×ˢ {false})).toNNReal⌋₊ := by
     simpa only [Bool.compl_singleton, Bool.not_true] using
-      hM.ae_nat_count_eq_add_compl_of_ae_map_fst hproj (measurableSet_singleton true)
-        (Λ.compProd_Ioc_prod_lt_top κ univ 0)
+      hM.ae_nat_count_eq_add_compl_of_compProd hproj (measurableSet_singleton true)
   exact ⟨P', hmp, hind, hM.indepFun_nat_count_prod_singleton_bool, htrue, hfalse, hadd, hcount⟩
 
 /-- **Independent constant `p`-thinning of an uncoloured temporal Poisson random measure.**

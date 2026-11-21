@@ -40,7 +40,8 @@ theorem marking_eq_optionalTupleMarking_occurrenceTime {E : Type*} [MeasurableSp
     (hμ : μ.IsIntegerValued) :
     κ.marking μ = κ.optionalTupleMarking ℕ (fun n =>
       if μ.occurrenceTime n = ∞ then none else some (μ.occurrenceTime n).toNNReal) := by
-  apply κ.marking_eq_optionalTupleMarking hμ
+  apply κ.marking_eq_optionalTupleMarking
+    (fun n => (isCompact_compactCovering ℝ≥0 n).measure_ne_top)
   conv_lhs => rw [hμ.eq_occurrenceTimeMeasure, TauCeti.Probability.occurrenceTimeMeasure_def]
   congr 1
   funext n

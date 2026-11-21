@@ -120,20 +120,20 @@ theorem measurableSet_isIntegerValued_and_forall_ne_top
   classical
   obtain ⟨C, hcount, hpi, huniv, hgen⟩ :=
     MeasurableSpace.exists_countable_isPiSystem_generateFrom (α := X)
+  have hCm : ∀ A ∈ C, MeasurableSet A :=
+    fun _ hA => hgen ▸ MeasurableSpace.measurableSet_generateFrom hA
   have heq : {μ : Measure X | μ.IsIntegerValued ∧ ∀ n, μ (s n) ≠ ∞} =
       ⋂ n : ℕ, ⋂ A ∈ C, ⋃ k : ℕ, {μ : Measure X | μ (A ∩ s n) = k} := by
     ext μ
     simp only [mem_ofPred_eq, mem_iInter, mem_iUnion]
     constructor
     · rintro ⟨hint, hfin⟩ n A hA
-      exact hint.exists_eq_natCast
-        ((MeasurableSpace.measurableSet_of_eq_generateFrom hgen hA).inter (hs n))
+      exact hint.exists_eq_natCast ((hCm A hA).inter (hs n))
         ((measure_mono inter_subset_right).trans_lt (lt_top_iff_ne_top.mpr (hfin n)))
     · intro h
       refine ⟨isIntegerValued_of_restrict hcover fun n => ?_, fun n => ?_⟩
       · refine isIntegerValued_of_isPiSystem hgen hpi (fun A hA => ?_) ?_
-        · simpa only [Measure.restrict_apply
-            (MeasurableSpace.measurableSet_of_eq_generateFrom hgen hA)] using h n A hA
+        · simpa only [Measure.restrict_apply (hCm A hA)] using h n A hA
         · simpa only [Measure.restrict_apply MeasurableSet.univ, univ_inter] using h n univ huniv
       · obtain ⟨k, hk⟩ := h n univ huniv
         rw [univ_inter] at hk
@@ -141,10 +141,7 @@ theorem measurableSet_isIntegerValued_and_forall_ne_top
   rw [heq]
   refine MeasurableSet.iInter fun n => MeasurableSet.biInter hcount fun A hA =>
     MeasurableSet.iUnion fun k => ?_
-  exact measurableSet_eq_fun
-    (Measure.measurable_coe
-      ((MeasurableSpace.measurableSet_of_eq_generateFrom hgen hA).inter (hs n)))
-    measurable_const
+  exact measurableSet_eq_fun (Measure.measurable_coe ((hCm A hA).inter (hs n))) measurable_const
 
 /-- On a standard Borel space, every countable measurable cover admits a total measurable
 occurrence enumeration of `Measure X` that reconstructs every integer-valued measure finite on
@@ -177,17 +174,11 @@ theorem exists_occurrence_enumeration_of_cover
   refine ⟨e, he, fun μ hμ hfin => ?_, fun μ hnot n => ?_⟩
   · have hmem : μ ∈ S := ⟨hμ, hfin⟩
     simpa only [clean, ite_eq_left hmem] using hrec μ
-  · have hnot' : μ ∉ S := hnot
-    have hzero : (0 : Measure X) = Measure.sum fun k => (e μ k).elim 0 Measure.dirac := by
-      simpa only [clean, ite_eq_right hnot'] using hrec μ
-    by_contra hne
-    obtain ⟨a, ha⟩ := Option.ne_none_iff_exists'.mp hne
-    have h1 : (1 : ℝ≥0∞) ≤ (0 : Measure X) univ := by
-      rw [hzero, Measure.sum_apply _ MeasurableSet.univ]
-      calc
-        (1 : ℝ≥0∞) = ((e μ n).elim 0 Measure.dirac) univ := by simp [ha]
-        _ ≤ ∑' k, ((e μ k).elim 0 Measure.dirac) univ :=
-          le_tsum (fun k => ((e μ k).elim 0 Measure.dirac) univ) n
-    simp at h1
+  · have hzero : (0 : Measure X) = Measure.sum fun k => (e μ k).elim 0 Measure.dirac := by
+      simpa only [clean, ite_eq_right (show μ ∉ S from hnot)] using hrec μ
+    have hsum := Measure.sum_eq_zero.mp hzero.symm n
+    cases h : e μ n with
+    | none => rfl
+    | some a => simp [h, Measure.dirac_ne_zero] at hsum
 
 end MeasureTheory.Measure

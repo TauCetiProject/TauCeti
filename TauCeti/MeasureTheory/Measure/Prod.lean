@@ -176,11 +176,8 @@ theorem map_fst_restrict_univ_prod_add_compl {α β : Type*} [MeasurableSpace α
     ((μ.restrict (Set.univ ×ˢ A)).map Prod.fst) +
         ((μ.restrict (Set.univ ×ˢ Aᶜ)).map Prod.fst) =
       μ.map Prod.fst := by
-  have hpart : (Set.univ ×ˢ A) ∪ (Set.univ ×ˢ Aᶜ) = (Set.univ : Set (α × β)) := by
-    rw [← Set.prod_union, Set.union_compl_self, Set.univ_prod_univ]
-  rw [← Measure.map_add _ _ measurable_fst,
-    ← Measure.restrict_union (Set.Disjoint.set_prod_right disjoint_compl_right Set.univ Set.univ)
-      (MeasurableSet.univ.prod hA.compl), hpart, Measure.restrict_univ]
+  rw [Set.univ_prod, Set.univ_prod, Set.preimage_compl,
+    ← Measure.map_add _ _ measurable_fst, Measure.restrict_add_restrict_compl (measurable_snd hA)]
 
 /-- Weighting a joint measure by a function of its first coordinate weights its first marginal
 by the same function. The weight only needs to be almost everywhere measurable for the first

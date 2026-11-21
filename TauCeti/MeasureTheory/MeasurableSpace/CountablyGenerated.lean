@@ -111,12 +111,6 @@ theorem MeasurableSpace.exists_countable_isPiSystem_generateFrom [MeasurableSpac
   · simp only [C, generateFrom_piiUnionInter_singleton_left, mem_univ, true_and]
     exact (generateFrom_natGeneratingSequence α).symm
 
-/-- Every member of a generating family for a measurable space is measurable. -/
-theorem MeasurableSpace.measurableSet_of_eq_generateFrom [m : MeasurableSpace α]
-    {C : Set (Set α)} (hgen : m = generateFrom C) {A : Set α} (hA : A ∈ C) :
-    MeasurableSet A :=
-  hgen ▸ measurableSet_generateFrom hA
-
 /-- **A generated σ-algebra is exhausted by its countable subfamilies.** A set measurable for
 `generateFrom C` is measurable for `generateFrom D` for some countable `D ⊆ C`. -/
 theorem MeasurableSet.exists_countable_subset_generateFrom {C : Set (Set α)} {s : Set α}
