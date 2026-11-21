@@ -12,6 +12,7 @@ import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
@@ -361,11 +362,19 @@ theorem hasDerivAt_sub_div_sub_cpow {α γ a z : ℂ} (h : (z - α) / (z - γ) �
       (((z - α) / (z - γ)) ^ a * (a * ((z - α)⁻¹ - (z - γ)⁻¹))) z := by
   have hq : (z - α) / (z - γ) ≠ 0 := slitPlane_ne_zero h
   obtain ⟨hzα, hzγ⟩ := ne_zero_and_ne_zero_of_div_mem_slitPlane h
-  refine ((((hasDerivAt_id z).sub_const α).div ((hasDerivAt_id z).sub_const γ) hzγ).cpow_const
-    h).congr_deriv ?_
-  simp only [id, Pi.div_apply]
+  -- The quotient is the fractional-linear map with `k = m = 1`, `l = -α`, `n = -γ`.
+  have hfun : (fun w : ℂ ↦ (1 * w + -α) / (1 * w + -γ)) = fun w ↦ (w - α) / (w - γ) := by
+    funext w
+    ring
+  have hd := hasDerivAt_mul_add_div_mul_add (k := 1) (l := -α) (m := 1) (n := -γ) (z := z)
+    (by rwa [one_mul, ← sub_eq_add_neg])
+  rw [hfun] at hd
+  have hd' : HasDerivAt (fun w ↦ (w - α) / (w - γ)) ((α - γ) / (z - γ) ^ 2) z :=
+    hd.congr_deriv (by ring)
+  refine (hd'.cpow_const h).congr_deriv ?_
   rw [cpow_sub _ _ hq, cpow_one]
   field_simp
+  ring
 
 /-- For `x ∈ slitPlane ∪ {0}` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is
 `O(t ^ r)` for `t > 0`. -/

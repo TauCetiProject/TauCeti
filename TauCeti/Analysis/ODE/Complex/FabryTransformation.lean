@@ -184,21 +184,21 @@ theorem deriv_deriv_fabryTransform (c : ℂ) {w : ℂ → ℂ} {t : ℂ}
   have hsq : AnalyticAt ℂ (fun s : ℂ => s ^ 2) t := analyticAt_id.pow 2
   have hexp : AnalyticAt ℂ (fun s : ℂ => Complex.exp (c * s ^ 2 / 2)) t :=
     ((analyticAt_const.mul hsq).div_const).cexp
-  -- The first derivatives of `p` and `φ`, as functions.
+  -- `p` has logarithmic derivative `s ↦ c * s`, which gives `p′` and `p′′`.
+  have hp1 : ∀ s : ℂ, HasDerivAt (fun s : ℂ => Complex.exp (c * s ^ 2 / 2))
+      (Complex.exp (c * s ^ 2 / 2) * (c * s)) s := fun s =>
+    (((hasDerivAt_pow 2 s).const_mul c).div_const 2).cexp.congr_deriv (by ring)
   have hp' : deriv (fun s : ℂ => Complex.exp (c * s ^ 2 / 2)) =
       fun s => Complex.exp (c * s ^ 2 / 2) * (c * s) :=
-    funext fun s => (((hasDerivAt_pow 2 s).const_mul c).div_const 2).cexp.deriv.trans (by ring)
+    funext fun s => (hp1 s).deriv
+  have hp'' := hasDerivAt_deriv_of_eventually_hasDerivAt_mul (ℓ := fun s => c * s)
+    (Filter.Eventually.of_forall hp1) ((hasDerivAt_id' t).const_mul c)
+  -- The first and second derivatives of `φ`.
   have hφ' : deriv (fun s : ℂ => s ^ 2) = fun s => 2 * s :=
     funext fun s => (hasDerivAt_pow 2 s).deriv.trans (by ring)
-  have hp'' : HasDerivAt (fun s : ℂ => Complex.exp (c * s ^ 2 / 2) * (c * s))
-      (Complex.exp (c * t ^ 2 / 2) * (c * t) * (c * t) + Complex.exp (c * t ^ 2 / 2) * c) t := by
-    refine ((((hasDerivAt_pow 2 t).const_mul c).div_const 2).cexp.mul
-      ((hasDerivAt_id t).const_mul c)).congr_deriv ?_
-    simp only [id]
-    ring
   have hφ'' : deriv (fun s : ℂ => 2 * s) t = 2 :=
     ((hasDerivAt_id' t).const_mul 2).deriv.trans (mul_one 2)
-  rw [hW, hexp.deriv_deriv_mul_comp hsq hw, hp', hφ', hp''.deriv, hφ'']
+  rw [hW, (hexp.hasDerivAt_deriv_mul_comp hsq hw).deriv, hp''.deriv, hp', hφ', hφ'']
   ring
 
 /-- The operator identity behind Fabry's transformation: for `t ≠ 0` and `w` holomorphic near

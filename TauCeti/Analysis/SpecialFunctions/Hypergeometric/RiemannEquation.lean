@@ -33,14 +33,14 @@ equation (DLMF 15.10.1) with `a = a₁ + b₁ + c₁`, `b = a₁ + b₁ + c₂`,
 ## Implementation notes
 
 Write `w = P · (u ∘ T)` with the prefactor `P` and the Möbius variable `T`. The second-order
-product and chain rule `AnalyticAt.deriv_deriv_mul_comp` expresses `w′′` and `w′` through
+product and chain rule `AnalyticAt.hasDerivAt_deriv_mul_comp` expresses `w′′` and `w′` through
 `P, P′, P′′`, `T′, T′′` and `u, u′, u′′` at `T z`. The prefactor has logarithmic derivative
 `L = a₁ (1/(z − α) − 1/(z − γ)) + b₁ (1/(z − β) − 1/(z − γ))`, so `P′ = P L` and
 `P′′ = P (L ^ 2 + L′)` (`TauCeti.hasDerivAt_sub_div_sub_cpow`,
-`TauCeti.deriv_deriv_of_eventually_hasDerivAt_mul`), and `T` is a constant
-multiple of `(z − α)/(z − γ)` (`TauCeti.hasDerivAt_sub_div_sub`,
-`TauCeti.hasDerivAt_deriv_sub_div_sub`). After these substitutions Riemann's equation at `z` is a
-multiple of the hypergeometric equation at `T z`, which clearing denominators verifies.
+`TauCeti.hasDerivAt_deriv_of_eventually_hasDerivAt_mul`), and `T` is a fractional-linear map
+(`TauCeti.hasDerivAt_mul_add_div_mul_add`, `TauCeti.hasDerivAt_deriv_mul_add_div_mul_add`).
+After these substitutions Riemann's equation at `z` is a multiple of the hypergeometric equation
+at `T z`, which clearing denominators verifies.
 
 ## References
 
@@ -80,15 +80,15 @@ private theorem hasDerivAt_riemannPrefactor {α β γ a₁ b₁ z : ℂ}
         (a₁ * ((z - α)⁻¹ - (z - γ)⁻¹) + b₁ * ((z - β)⁻¹ - (z - γ)⁻¹))) z :=
   ((hasDerivAt_sub_div_sub_cpow hA).mul (hasDerivAt_sub_div_sub_cpow hB)).congr_deriv (by ring)
 
-/-- The second derivative of the prefactor `P` of DLMF 15.11.7 is `P (L ^ 2 + L′)`, where `L` is
-its logarithmic derivative. -/
-private theorem deriv_deriv_riemannPrefactor {α β γ a₁ b₁ z : ℂ}
+/-- The derivative `P′` of the prefactor `P` of DLMF 15.11.7 has derivative `P (L ^ 2 + L′)`,
+where `L` is the logarithmic derivative of `P`. -/
+private theorem hasDerivAt_deriv_riemannPrefactor {α β γ a₁ b₁ z : ℂ}
     (hA : (z - α) / (z - γ) ∈ slitPlane) (hB : (z - β) / (z - γ) ∈ slitPlane) :
-    deriv (deriv fun w => ((w - α) / (w - γ)) ^ a₁ * ((w - β) / (w - γ)) ^ b₁) z =
-      ((z - α) / (z - γ)) ^ a₁ * ((z - β) / (z - γ)) ^ b₁ *
+    HasDerivAt (deriv fun w => ((w - α) / (w - γ)) ^ a₁ * ((w - β) / (w - γ)) ^ b₁)
+      (((z - α) / (z - γ)) ^ a₁ * ((z - β) / (z - γ)) ^ b₁ *
         ((a₁ * ((z - α)⁻¹ - (z - γ)⁻¹) + b₁ * ((z - β)⁻¹ - (z - γ)⁻¹)) ^ 2 +
           (a₁ * (-((z - α) ^ 2)⁻¹ + ((z - γ) ^ 2)⁻¹) +
-            b₁ * (-((z - β) ^ 2)⁻¹ + ((z - γ) ^ 2)⁻¹))) := by
+            b₁ * (-((z - β) ^ 2)⁻¹ + ((z - γ) ^ 2)⁻¹)))) z := by
   obtain ⟨hzα, hzγ⟩ := ne_zero_and_ne_zero_of_div_mem_slitPlane hA
   have hzβ : z - β ≠ 0 := (ne_zero_and_ne_zero_of_div_mem_slitPlane hB).1
   -- Both quotients stay in the open slit plane near `z`, so `P′ = P L` near `z`.
@@ -96,7 +96,7 @@ private theorem deriv_deriv_riemannPrefactor {α β γ a₁ b₁ z : ℂ}
     (continuousAt_id.sub continuousAt_const).div (continuousAt_id.sub continuousAt_const) hzγ
   have hev := ((hc α).eventually_mem (isOpen_slitPlane.mem_nhds hA)).and
     ((hc β).eventually_mem (isOpen_slitPlane.mem_nhds hB))
-  refine deriv_deriv_of_eventually_hasDerivAt_mul
+  refine hasDerivAt_deriv_of_eventually_hasDerivAt_mul
     (ℓ := fun w => a₁ * ((w - α)⁻¹ - (w - γ)⁻¹) + b₁ * ((w - β)⁻¹ - (w - γ)⁻¹))
     (hev.mono fun w hw => hasDerivAt_riemannPrefactor hw.1 hw.2) ?_
   -- The derivative of the logarithmic derivative `L`.
@@ -108,21 +108,28 @@ private theorem deriv_deriv_riemannPrefactor {α β γ a₁ b₁ z : ℂ}
   ring
 
 /-- The first and second derivatives of the Möbius variable
-`T(w) = (w − α)(β − γ)/((w − γ)(β − α))` of DLMF 15.11.7, a constant multiple of
-`(w − α)/(w − γ)`, at `z ≠ γ`. -/
-private theorem derivs_riemannMobius {α β γ z : ℂ} (hz : z ≠ γ) :
+`T(w) = (w − α)(β − γ)/((w − γ)(β − α))` of DLMF 15.11.7 at `z ≠ γ`, for `α ≠ β`, from those of
+the fractional-linear map `w ↦ ((β − γ) w − α (β − γ)) / ((β − α) w − γ (β − α))`. -/
+private theorem derivs_riemannMobius {α β γ z : ℂ} (hαβ : α ≠ β) (hz : z ≠ γ) :
     deriv (fun w => (w - α) * (β - γ) / ((w - γ) * (β - α))) z =
         (β - γ) * (α - γ) / (β - α) * ((z - γ) ^ 2)⁻¹ ∧
       deriv (deriv fun w => (w - α) * (β - γ) / ((w - γ) * (β - α))) z =
         -2 * ((β - γ) * (α - γ) / (β - α)) * ((z - γ) ^ 3)⁻¹ := by
+  have hβα : β - α ≠ 0 := sub_ne_zero.mpr hαβ.symm
+  have hzγ : z - γ ≠ 0 := sub_ne_zero.mpr hz
   have hT : (fun w => (w - α) * (β - γ) / ((w - γ) * (β - α))) =
-      fun w => (β - γ) / (β - α) * ((w - α) / (w - γ)) := by
+      fun w => ((β - γ) * w + -(α * (β - γ))) / ((β - α) * w + -(γ * (β - α))) := by
     funext w
-    rw [mul_div_mul_comm, mul_comm]
-  rw [hT]
-  refine ⟨((hasDerivAt_sub_div_sub hz).const_mul _).deriv.trans (by ring), ?_⟩
-  simp only [deriv_const_mul_field', (hasDerivAt_deriv_sub_div_sub hz).deriv]
-  ring
+    ring
+  have hden : (β - α) * z + -(γ * (β - α)) = (β - α) * (z - γ) := by ring
+  have hne : (β - α) * z + -(γ * (β - α)) ≠ 0 := hden ▸ mul_ne_zero hβα hzγ
+  rw [hT, (hasDerivAt_mul_add_div_mul_add hne).deriv,
+    (hasDerivAt_deriv_mul_add_div_mul_add hne).deriv, hden]
+  constructor
+  · field_simp
+    ring
+  · field_simp
+    ring
 
 /-- **DLMF 15.11.7**: if `u` solves the hypergeometric equation (DLMF 15.10.1) with
 `a = a₁ + b₁ + c₁`, `b = a₁ + b₁ + c₂`, `c = 1 + a₁ − a₂` on an open set `V`, then
@@ -170,14 +177,14 @@ theorem riemannEquation_of_hypergeometricEquation {α β γ a₁ a₂ b₁ b₂ 
   -- Expand `w′′` and `w′` by the product and chain rules, and insert the derivatives of `P` and
   -- `T`.
   have hode := hu' (T z) (hUV z hz)
-  obtain ⟨hTd, hTdd⟩ := derivs_riemannMobius (α := α) (β := β) (sub_ne_zero.mp hzγ)
+  obtain ⟨hTd, hTdd⟩ := derivs_riemannMobius (α := α) (β := β) hαβ (sub_ne_zero.mp hzγ)
   set L : ℂ := a₁ * ((z - α)⁻¹ - (z - γ)⁻¹) + b₁ * ((z - β)⁻¹ - (z - γ)⁻¹) with hL
   -- State the derivatives of `P` with the value `P z` kept folded.
   have hPd : deriv P z = P z * L := (hasDerivAt_riemannPrefactor (hUs z hz).1 (hUs z hz).2).deriv
   have hPdd : deriv (deriv P) z = P z * (L ^ 2 + (a₁ * (-((z - α) ^ 2)⁻¹ + ((z - γ) ^ 2)⁻¹) +
       b₁ * (-((z - β) ^ 2)⁻¹ + ((z - γ) ^ 2)⁻¹))) :=
-    deriv_deriv_riemannPrefactor (hUs z hz).1 (hUs z hz).2
-  rw [hw, (hPa z hz).deriv_deriv_mul_comp (hTa z hz) (hFa z hz),
+    (hasDerivAt_deriv_riemannPrefactor (hUs z hz).1 (hUs z hz).2).deriv
+  rw [hw, ((hPa z hz).hasDerivAt_deriv_mul_comp (hTa z hz) (hFa z hz)).deriv,
     ((hPa z hz).deriv_mul_comp_eventuallyEq (hTa z hz) (hFa z hz)).eq_of_nhds, hPdd, hPd, hTdd,
     hTd]
   beta_reduce
