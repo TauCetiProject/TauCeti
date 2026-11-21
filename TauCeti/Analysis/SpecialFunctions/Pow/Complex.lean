@@ -95,6 +95,11 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`. Continuity holds for arbitrary `x` and
   `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
+* `TauCeti.norm_cpow_le_of_mem_closedBall` -- for `w ≠ 0`, a bound on `‖w ^ b‖` uniform for `b`
+  in a closed ball.
+* `Complex.cpow_sub_one` -- `x ^ (y − 1) = x ^ y / x` for `x ≠ 0`.
+* `Complex.hasDerivAt_cpow_mul_exp_neg` -- the derivative of `w ↦ w ^ b e^{−w}` on the slit plane.
+
 * `Complex.norm_one_sub_mul_ofReal_cpow_le` -- for `‖z‖ ≤ 1`, `0 ≤ t < 1`, and any `s : ℂ`,
   `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
 * `Complex.inv_cpow_half_cpow` -- `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
@@ -557,6 +562,29 @@ theorem one_div_cpow_mul_ofReal_rpow {w : ℂ} (hw : w.arg ≠ Real.pi) {p : ℝ
   rw [div_eq_mul_inv (p : ℂ) w, ofReal_mul_cpow hp, Complex.inv_cpow w (r : ℂ) hw,
     ← Complex.ofReal_cpow hp, one_div, mul_comm]
 
+/-- For a nonzero base `w`, the norm of `w ^ b` is bounded uniformly for the exponent `b` in the
+closed ball of radius `R` about `a₀`:
+`‖w ^ b‖ ≤ e^{π (|Im a₀| + R)} (‖w‖^{Re a₀ − R} + ‖w‖^{Re a₀ + R})`. -/
+theorem norm_cpow_le_of_mem_closedBall {w : ℂ} (hw : w ≠ 0) {a₀ b : ℂ} {R : ℝ}
+    (hb : b ∈ Metric.closedBall a₀ R) :
+    ‖w ^ b‖ ≤ Real.exp (Real.pi * (|a₀.im| + R)) * (‖w‖ ^ (a₀.re - R) + ‖w‖ ^ (a₀.re + R)) := by
+  have hb' : ‖b - a₀‖ ≤ R := by rwa [← dist_eq_norm]
+  have hre : |b.re - a₀.re| ≤ R := by simpa using (abs_re_le_norm (b - a₀)).trans hb'
+  have him : |b.im| ≤ |a₀.im| + R := by
+    have := (abs_im_le_norm (b - a₀)).trans hb'
+    rw [sub_im] at this
+    linarith [abs_sub_abs_le_abs_sub b.im a₀.im]
+  have hpow : ‖w‖ ^ b.re ≤ ‖w‖ ^ (a₀.re - R) + ‖w‖ ^ (a₀.re + R) :=
+    Real.rpow_le_rpow_add_rpow_of_mem_Icc (norm_pos_iff.mpr hw)
+      ⟨by linarith [abs_le.mp hre], by linarith [abs_le.mp hre]⟩
+  have harg : (Real.exp (w.arg * b.im))⁻¹ ≤ Real.exp (Real.pi * (|a₀.im| + R)) :=
+    (inv_exp_arg_mul_le_exp_pi_mul_abs _ _).trans
+      (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left him Real.pi_pos.le))
+  calc ‖w ^ b‖ ≤ (Real.exp (w.arg * b.im))⁻¹ * ‖w‖ ^ b.re := by
+        rw [mul_comm, ← div_eq_mul_inv]
+        exact norm_cpow_le _ _
+    _ ≤ _ := by gcongr
+
 end TauCeti
 
 namespace Complex
@@ -696,6 +724,18 @@ theorem im_cpow_ofReal_eq_zero {u : ℂ} {r : ℝ} (h : arg u * r = 0 ∨ arg u 
     (u ^ (r : ℂ)).im = 0 := by
   rw [cpow_ofReal_im]
   rcases h with h | h <;> rw [h] <;> simp
+
+/-- Lowering the exponent of a principal power of a nonzero base by one divides by the base:
+`x ^ (y − 1) = x ^ y / x`. -/
+theorem cpow_sub_one {x : ℂ} (hx : x ≠ 0) (y : ℂ) : x ^ (y - 1) = x ^ y / x := by
+  rw [cpow_sub _ _ hx, cpow_one]
+
+/-- On the slit plane, `w ↦ w ^ b e^{−w}` has derivative `(b / z − 1) z ^ b e^{−z}`. -/
+theorem hasDerivAt_cpow_mul_exp_neg (b : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
+    HasDerivAt (fun w => w ^ b * cexp (-w)) ((b / z - 1) * (z ^ b * cexp (-z))) z := by
+  refine (((hasDerivAt_id z).cpow_const (c := b) hz).mul (hasDerivAt_neg z).cexp).congr_deriv ?_
+  rw [id, cpow_sub_one (slitPlane_ne_zero hz)]
+  ring
 
 /-- A real power of a positive real number grows at most exponentially in the exponent. -/
 theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :
