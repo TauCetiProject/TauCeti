@@ -103,7 +103,7 @@ theorem timeSlice_stripReparam_apply (t : I) (x : M × M) :
 
 /-- The inverse of the diffeotopy at time `t` is `F` composed with the reparametrization of
 `F.symm` by `ρ t`. -/
-theorem timeSlice_stripReparam_symm_apply (t : I) (x : M × M) :
+theorem symm_timeSlice_stripReparam_apply (t : I) (x : M × M) :
     ((stripReparam F hF hF' hU hK hKU hρ hρK hρU hρ₀).timeSlice t).symm x =
       F (TauCeti.stripReparam U (ρ t) F.symm x) := by
   rw [symm_timeSlice_apply, symm_stripReparam_apply]
