@@ -60,7 +60,9 @@ env:
 jobs:
   # The hard signal runs independently of cache verification, without secrets.
   verify:
-    if: github.repository == 'TauCetiProject/TauCeti'
+    # Main only, so every message below can say "main": a dispatch from another branch would
+    # check out and verify that branch's head instead.
+    if: github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main'
     # A clean build alone now exceeds GitHub-hosted runners' six-hour platform limit, so this
     # singleton maintenance job targets the Fleet PR class directly. Do not route it through the
     # ordinary picker: its GitHub fallback cannot finish this workload. Workflow concurrency above
@@ -93,8 +95,8 @@ jobs:
           echo "vm.max_map_count=$now"
           [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
       # The triggering commit rather than `main`, so the report can name the commit under test
-      # even when this job dies before publishing its outputs. A scheduled run's `github.sha` is
-      # the head of the default branch when the run was created.
+      # even when this job dies before publishing its outputs. On main, `github.sha` is the head of
+      # main when the run was created.
       - name: Check out the commit under test
         uses: actions/checkout@v4
         with:
@@ -605,7 +607,8 @@ jobs:
     # than `||`.
     # The repository guard matters here too: on a fork `verify` is skipped, and without it this
     # job would fire on every schedule and fail for want of a Zulip secret it should not have.
-    if: ${{ always() && github.repository == 'TauCetiProject/TauCeti'
+    # The main guard likewise keeps a skipped non-main dispatch from posting.
+    if: ${{ always() && github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main'
             && (needs.verify.result != 'success' || needs.reference.result != 'success'
                 || needs.reference.outputs.compare != 'agree') }}
     runs-on: ubuntu-24.04
@@ -660,9 +663,8 @@ jobs:
                   # A job that loses its runner publishes no outputs, even for steps that ran, so
                   # a missing outcome is not evidence that the build never started.
                   lines.append(f"The from-source verification did not complete "
-                               f"(result: `{os.environ.get('RESULT')}`) and recorded no build outcome: "
-                               "either its runner was lost before the job finished, or a setup step "
-                               "failed before the build. The run log shows how far it got. "
+                               f"(result: `{os.environ.get('RESULT')}`) and recorded no build outcome. "
+                               "The run log shows how far it got. "
                                "No complete independent verification was established for this commit.")
           elif os.environ.get("REFERENCE_RESULT") != "success":
               lines.append(f"The from-source build and audits passed, but cache verification "
