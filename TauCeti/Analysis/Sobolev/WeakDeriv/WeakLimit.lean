@@ -7,6 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+import Mathlib.Analysis.InnerProductSpace.Convex
+import TauCeti.Analysis.Convex.Uniform.Basic
+import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -24,7 +27,9 @@ derivative are continuous for weak convergence in `L²(Ω; H)`. Hence if `Fₙ �
 (`TauCeti.hasWeakLineDerivOn_of_tendsto_inner_toLp`). Only weak convergence of the derivatives is
 assumed, which is what a bound on `‖Gₙ‖_{L²}` provides through weak compactness of balls in a
 Hilbert space; the strong `L¹` version is
-`TauCeti.hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub`.
+`TauCeti.hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub`. Combining the two, if `Fₙ → f` in
+`L²(Ω; H)` and the weak derivatives satisfy `∫_Ω ‖Gₙ‖² ≤ M`, then `f` has a weak derivative of
+norm at most `√M` in `L²(Ω; H)` (`TauCeti.exists_hasWeakLineDerivOn_and_norm_le_of_tendsto`).
 
 ## Main declarations
 
@@ -32,6 +37,8 @@ Hilbert space; the strong `L¹` version is
 * `TestFunction.inner_integral_smul_eq_inner_toLp`: testing against `φ • y` as an `L²` inner
   product.
 * `TauCeti.hasWeakLineDerivOn_of_tendsto_inner_toLp`: weak derivatives pass to weak `L²` limits.
+* `TauCeti.exists_hasWeakLineDerivOn_and_norm_le_of_tendsto`: `L²`-bounded weak derivatives of an
+  `L²` convergent sequence give a weak derivative of the limit with the same bound.
 
 ## References
 
@@ -119,5 +126,39 @@ theorem hasWeakLineDerivOn_of_tendsto_inner_toLp [IsLocallyFiniteMeasure μ] {ι
   rw [inner_neg_left]
   refine tendsto_nhds_unique (h1.congr fun n ↦ ?_) h2.neg
   rw [(hF n).integral_lineDeriv_smul_eq_neg_integral_smul φ, inner_neg_left]
+
+/-- **`L²`-bounded weak derivatives pass to `L²` limits.** If `F n → f` in `L²(Ω; H)` and each
+`F n` has a weak derivative `G n ∈ L²(Ω; H)` in the direction `v` on `Ω` with
+`∫_Ω ‖G n‖² ≤ M`, then `f` has a weak derivative `g ∈ L²(Ω; H)` in the direction `v` on `Ω` with
+`‖g‖ ≤ √M`: a subsequence of the `G n` converges weakly in `L²(Ω; H)`, and the norm is weakly
+lower semicontinuous. -/
+theorem exists_hasWeakLineDerivOn_and_norm_le_of_tendsto [IsLocallyFiniteMeasure μ] {M : ℝ}
+    {F G : ℕ → E → H} {f : E → H} (hF : ∀ n, HasWeakLineDerivOn μ Ω (F n) (G n) v)
+    (hFm : ∀ n, MemLp (F n) 2 (μ.restrict Ω)) (hf : MemLp f 2 (μ.restrict Ω))
+    (hGm : ∀ n, MemLp (G n) 2 (μ.restrict Ω)) (hGM : ∀ n, ∫ x in Ω, ‖G n x‖ ^ 2 ∂μ ≤ M)
+    (hFf : Tendsto (fun n ↦ ∫ x in Ω, ‖F n x - f x‖ ^ 2 ∂μ) atTop (𝓝 0)) :
+    ∃ g : Lp H 2 (μ.restrict Ω), HasWeakLineDerivOn μ Ω f g v ∧ ‖g‖ ≤ Real.sqrt M := by
+  set Gl : ℕ → Lp H 2 (μ.restrict Ω) := fun n ↦ (hGm n).toLp (G n)
+  have hGl (n : ℕ) : ‖Gl n‖ ≤ Real.sqrt M := by
+    rw [← Real.sqrt_sq (norm_nonneg _), MemLp.norm_toLp_sq]
+    exact Real.sqrt_le_sqrt (hGM n)
+  have hbdd : Bornology.IsBounded (Set.range Gl) :=
+    isBounded_iff_forall_norm_le.2 ⟨Real.sqrt M, by rintro _ ⟨n, rfl⟩; exact hGl n⟩
+  obtain ⟨g, φs, hφs, hweak⟩ := tendsto_subseq_toWeakSpace_of_isBounded
+    (surjective_inclusionInDoubleDual_of_uniformConvexSpace (𝕜 := ℝ)) hbdd
+  have hinner (Ψ : Lp H 2 (μ.restrict Ω)) :
+      Tendsto (fun k ↦ ⟪Gl (φs k), Ψ⟫_ℝ) atTop (𝓝 ⟪g, Ψ⟫_ℝ) := by
+    have hc : Continuous fun w : WeakSpace ℝ (Lp H 2 (μ.restrict Ω)) ↦
+        innerSL ℝ Ψ ((toWeakSpace ℝ _).symm w) :=
+      WeakBilin.eval_continuous (topDualPairing ℝ _).flip (innerSL ℝ Ψ)
+    simpa [Function.comp_def, real_inner_comm] using (hc.tendsto _).comp hweak
+  refine ⟨g, hasWeakLineDerivOn_of_tendsto_inner_toLp (F := fun k ↦ F (φs k))
+    (G := fun k ↦ G (φs k)) (fun k ↦ hF (φs k)) (fun k ↦ hFm (φs k)) hf (fun k ↦ hGm (φs k))
+    (hFf.comp hφs.tendsto_atTop) hinner, ?_⟩
+  -- Weak lower semicontinuity of the norm.
+  have h3 := le_of_tendsto' (hinner g) fun k ↦ (real_inner_le_norm _ _).trans
+    (mul_le_mul_of_nonneg_right (hGl (φs k)) (norm_nonneg g))
+  rw [real_inner_self_eq_norm_sq] at h3
+  nlinarith [norm_nonneg g, Real.sqrt_nonneg M]
 
 end TauCeti

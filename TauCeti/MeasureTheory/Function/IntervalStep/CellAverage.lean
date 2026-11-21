@@ -11,7 +11,7 @@ import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.Mul
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import Mathlib.MeasureTheory.Function.Floor
-import TauCeti.MeasureTheory.Integral.NormSq
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Cell averages on a uniform partition
@@ -62,6 +62,11 @@ private theorem add_natCast_mul_sub_div_natCast_self (a b : ℝ) {N : ℕ} (hN :
   rw [mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hN.ne')]
   ring
 
+/-- The cells of the partition of `[a, b]`, `a < b`, into `N` cells have positive length
+`(b - a) / N`. -/
+theorem sub_div_natCast_pos {a b : ℝ} (hab : a < b) {N : ℕ} (hN : 0 < N) : 0 < (b - a) / N :=
+  div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
+
 /-- The nodes `a + k (b - a) / N`, `k ≤ N`, of the partition of `[a, b]` into `N` cells lie in
 `[a, b]`. -/
 theorem add_natCast_mul_sub_div_natCast_mem_Icc {a b : ℝ} (hab : a ≤ b) {N k : ℕ} (hN : 0 < N)
@@ -83,7 +88,7 @@ theorem Icc_add_natCast_mul_sub_div_natCast_subset_Icc {a b : ℝ} (hab : a ≤ 
 /-- On `(a, b)`, the index of the cell of the partition into `N` cells lies between `1` and `N`. -/
 theorem intervalCellIndex_mem_Icc {a b t : ℝ} (ht : t ∈ Ioo a b) {N : ℕ} (hN : 0 < N) :
     intervalCellIndex a ((b - a) / N) t ∈ Icc 1 N := by
-  have hh : 0 < (b - a) / N := div_pos (sub_pos.2 (ht.1.trans ht.2)) (Nat.cast_pos.2 hN)
+  have hh : 0 < (b - a) / N := sub_div_natCast_pos (ht.1.trans ht.2) hN
   have hpos : 0 < (t - a) / ((b - a) / N) := div_pos (sub_pos.2 ht.1) hh
   refine ⟨Nat.one_le_iff_ne_zero.2 fun h ↦ ?_, Nat.ceil_le.2 ?_⟩
   · rw [intervalCellIndex, Nat.ceil_eq_zero] at h
@@ -97,7 +102,7 @@ theorem intervalCellIndex_mem_Icc {a b t : ℝ} (ht : t ∈ Ioo a b) {N : ℕ} (
 theorem exists_intervalCellIndex_eq {a b t : ℝ} (ht : t ∈ Ioo a b) {N : ℕ} (hN : 0 < N) :
     ∃ k < N, intervalCellIndex a ((b - a) / N) t = k + 1 ∧
       t ∈ Ioc (a + k * ((b - a) / N)) (a + (k + 1) * ((b - a) / N)) := by
-  have hh : 0 < (b - a) / N := div_pos (sub_pos.2 (ht.1.trans ht.2)) (Nat.cast_pos.2 hN)
+  have hh : 0 < (b - a) / N := sub_div_natCast_pos (ht.1.trans ht.2) hN
   obtain ⟨h₁, hN'⟩ := intervalCellIndex_mem_Icc ht hN
   obtain ⟨k, hk⟩ : ∃ k, intervalCellIndex a ((b - a) / N) t = k + 1 :=
     ⟨_, (Nat.sub_add_cancel h₁).symm⟩
@@ -108,7 +113,7 @@ theorem exists_intervalCellIndex_eq {a b t : ℝ} (ht : t ∈ Ioo a b) {N : ℕ}
 
 /-- The integral over `(a, b)` is the sum of the integrals over the cells of the partition into
 `N` cells. -/
-private theorem integral_Ioo_eq_sum [NormedSpace ℝ E] {a b : ℝ} (hab : a < b) {N : ℕ}
+theorem integral_Ioo_eq_sum [NormedSpace ℝ E] {a b : ℝ} (hab : a < b) {N : ℕ}
     (hN : 0 < N) {f : ℝ → E}
     (hf : ∀ k < N, IntervalIntegrable f volume (a + k * ((b - a) / N))
       (a + (k + 1) * ((b - a) / N))) :
@@ -129,7 +134,7 @@ theorem integral_Ioo_comp_intervalCellIndex [NormedSpace ℝ E] [CompleteSpace E
     (hab : a < b) {N : ℕ} (hN : 0 < N) (F : ℕ → E) :
     ∫ t in Ioo a b, F (intervalCellIndex a ((b - a) / N) t) =
       ∑ k ∈ Finset.range N, ((b - a) / N) • F (k + 1) := by
-  have hh : 0 < (b - a) / N := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
+  have hh : 0 < (b - a) / N := sub_div_natCast_pos hab hN
   have hae (k : ℕ) : ∀ᵐ t ∂volume,
       t ∈ Ι (a + k * ((b - a) / N)) (a + (k + 1) * ((b - a) / N)) →
         F (intervalCellIndex a ((b - a) / N) t) = F (k + 1) := Eventually.of_forall fun t ht ↦ by
@@ -154,7 +159,7 @@ theorem memLp_comp_intervalCellIndex {a b : ℝ} {N : ℕ} (hN : 0 < N) (F : ℕ
     (Finset.mem_range.2 (Nat.lt_succ_of_le (intervalCellIndex_mem_Icc ht hN).2))
 
 /-- An integrable function on `(a, b)` is integrable on each cell of a uniform partition. -/
-private theorem IntegrableOn.intervalIntegrable_cell {a b : ℝ} {g : ℝ → E}
+theorem IntegrableOn.intervalIntegrable_cell {a b : ℝ} {g : ℝ → E}
     (hg : IntegrableOn g (Ioo a b)) (hab : a ≤ b) {N k : ℕ} (hN : 0 < N) (hk : k < N) :
     IntervalIntegrable g volume (a + k * ((b - a) / N)) (a + (k + 1) * ((b - a) / N)) := by
   have hh : 0 ≤ (b - a) / N := div_nonneg (sub_nonneg.2 hab) N.cast_nonneg
@@ -172,6 +177,10 @@ variable [NormedSpace ℝ E]
 /-- The average of `g` over the cell `(a + k h, a + (k + 1) h]`. -/
 def intervalCellAverage (g : ℝ → E) (a h : ℝ) (k : ℕ) : E :=
   h⁻¹ • ∫ s in (a + k * h)..(a + (k + 1) * h), g s
+
+/-- The average of `g` over the cell `(a + k h, a + (k + 1) h]` is `h⁻¹ ∫ g` over the cell. -/
+theorem intervalCellAverage_def (g : ℝ → E) (a h : ℝ) (k : ℕ) :
+    intervalCellAverage g a h k = h⁻¹ • ∫ s in (a + k * h)..(a + (k + 1) * h), g s := (rfl)
 
 /-- The cellwise average of `g`, constant on each cell `(a + (k - 1) h, a + k h]`. -/
 def intervalStepAverage (g : ℝ → E) (a h t : ℝ) : E :=
@@ -204,7 +213,8 @@ theorem mul_norm_intervalCellAverage_sq_le [CompleteSpace E] {g : ℝ → E} {a 
     (by rw [Real.volume_Ioc]; exact (ENNReal.ofReal_pos.2 (sub_pos.2 hlt)).ne')
     (by simp [Real.volume_Ioc]) (by simp) hg.1 (by simpa [Function.comp_def] using hg2.1)
   simp only [Pi.pow_apply, setAverage_eq, hvol, smul_eq_mul] at hJ
-  rw [intervalCellAverage, intervalIntegral.integral_of_le hpq, intervalIntegral.integral_of_le hpq]
+  rw [intervalCellAverage_def, intervalIntegral.integral_of_le hpq,
+    intervalIntegral.integral_of_le hpq]
   calc h * ‖h⁻¹ • ∫ s in Ioc (a + k * h) (a + (k + 1) * h), g s‖ ^ 2
       ≤ h * (h⁻¹ * ∫ s in Ioc (a + k * h) (a + (k + 1) * h), ‖g s‖ ^ 2) := by gcongr
     _ = _ := by field_simp
@@ -214,7 +224,7 @@ theorem integral_norm_intervalStepAverage_sq_le [CompleteSpace E] {a b : ℝ} (h
     (hN : 0 < N)
     {g : ℝ → E} (hg : MemLp g 2 (volume.restrict (Ioo a b))) :
     ∫ t in Ioo a b, ‖intervalStepAverage g a ((b - a) / N) t‖ ^ 2 ≤ ∫ t in Ioo a b, ‖g t‖ ^ 2 := by
-  have hh : 0 < (b - a) / N := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
+  have hh : 0 < (b - a) / N := sub_div_natCast_pos hab hN
   have hg2 : IntegrableOn (fun s ↦ ‖g s‖ ^ 2) (Ioo a b) :=
     (memLp_two_iff_integrable_sq_norm hg.aestronglyMeasurable).1 hg
   rw [integral_Ioo_eq_sum hab hN fun k hk ↦ hg2.intervalIntegrable_cell hab.le hN hk]
@@ -249,7 +259,7 @@ theorem intervalStepAverage_sub {a b t : ℝ} (ht : t ∈ Ioo a b) {N : ℕ} (hN
       intervalStepAverage g a ((b - a) / N) t - intervalStepAverage φ a ((b - a) / N) t := by
   have hab := (ht.1.trans ht.2).le
   obtain ⟨k, hk, hidx, -⟩ := exists_intervalCellIndex_eq ht hN
-  simp only [intervalStepAverage, intervalCellAverage, hidx, Nat.add_sub_cancel]
+  simp only [intervalStepAverage, intervalCellAverage_def, hidx, Nat.add_sub_cancel]
   rw [intervalIntegral.integral_sub (hg.intervalIntegrable_cell hab hN hk)
     (hφ.intervalIntegrable_cell hab hN hk), smul_sub]
 
@@ -259,7 +269,7 @@ private theorem norm_intervalStepAverage_sub_le [CompleteSpace E] {φ : ℝ → 
     {a b t η : ℝ} (ht : t ∈ Ioo a b) {N : ℕ} (hN : 0 < N)
     (hη : ∀ s ∈ Icc a b, |s - t| ≤ (b - a) / N → ‖φ s - φ t‖ ≤ η) :
     ‖intervalStepAverage φ a ((b - a) / N) t - φ t‖ ≤ η := by
-  have hh : 0 < (b - a) / N := div_pos (sub_pos.2 (ht.1.trans ht.2)) (Nat.cast_pos.2 hN)
+  have hh : 0 < (b - a) / N := sub_div_natCast_pos (ht.1.trans ht.2) hN
   obtain ⟨k, hk, -, hmem⟩ := exists_intervalCellIndex_eq ht hN
   have hsub := Icc_add_natCast_mul_sub_div_natCast_subset_Icc (ht.1.trans ht.2).le hN hk
   rw [intervalStepAverage_eq φ hh hmem]
@@ -276,7 +286,8 @@ private theorem norm_intervalStepAverage_sub_le [CompleteSpace E] {φ : ℝ → 
       linarith [hs.1, hs.2, hmem.1, hmem.2]
   have heq : intervalCellAverage φ a h k - φ t = h⁻¹ • ∫ s in p..q, (φ s - φ t) := by
     rw [intervalIntegral.integral_sub (hφ.intervalIntegrable _ _) intervalIntegrable_const,
-      intervalIntegral.integral_const, hlen, smul_sub, inv_smul_smul₀ hh.ne', intervalCellAverage]
+      intervalIntegral.integral_const, hlen, smul_sub, inv_smul_smul₀ hh.ne',
+      intervalCellAverage_def]
   rw [heq, norm_smul, norm_inv, Real.norm_of_nonneg hh.le]
   calc h⁻¹ * ‖∫ s in p..q, (φ s - φ t)‖ ≤ h⁻¹ * (η * h) := by gcongr
     _ = η := by field_simp

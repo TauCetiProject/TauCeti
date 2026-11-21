@@ -6,15 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.EnergyEstimate
-import Mathlib.Analysis.InnerProductSpace.Convex
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Function.L2Space
-import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.InnerProductSpace.LaxMilgram
-import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.MeasureTheory.Function.IntervalStep.CellAverage
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Integral.NormSq
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.Analysis.Sobolev.WeakDeriv.WeakLimit
 
@@ -28,8 +24,10 @@ time, `‖A(t) - A(s)‖ ≤ L |t - s|`. A weak solution of `u' + A(t) u = ι* g
 `M = exp (L (b - a) / α) (A(a) v₀ v₀ + ∫ₐᵇ ‖g‖²)`, `∫ₐᵇ ‖d‖² ≤ M` and `A(t) u(t) u(t) ≤ M` for
 almost every `t`
 (`TauCeti.HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_lipschitz`). For
-`∂ₜu - ∂ᵢ(aⁱʲ(t, x) ∂ⱼu) = f` with `∂ₜa` bounded this is `∂ₜu ∈ L²(0, T; L²(Ω))` and
-`u ∈ L^∞(0, T; H¹₀(Ω))`. When `A` does not depend on time,
+`∂ₜu - ∂ᵢ(aⁱʲ(t, x) ∂ⱼu) = f` with symmetric, uniformly elliptic coefficients `aⁱʲ` and `∂ₜa`
+bounded, applied to `A(t)` the energy form of `a(t, ·)` on `H¹₀(Ω)`, this is
+`∂ₜu ∈ L²(0, T; L²(Ω))` and `u ∈ L^∞(0, T; H¹₀(Ω))`; that instantiation is not formalized here.
+When `A` does not depend on time,
 `TauCeti.HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm` proves these
 estimates by a shifted Gelfand triple, which has no counterpart for time-dependent `A`.
 
@@ -48,7 +46,7 @@ average `G` of `g`, and `∫ ‖uh - ub‖² ≤ h M / α`. The energy estimate
 `L²` (`MeasureTheory.tendsto_integral_norm_intervalStepAverage_sub_sq`), gives `uh → u` and
 `ub → u` in `L²(a, b; V)`. An almost everywhere convergent subsequence of `ub` passes the energy
 bound to `u`, and a weakly convergent subsequence of `ι D` in `L²(a, b; H)` gives `d`
-(`TauCeti.hasWeakLineDerivOn_of_tendsto_inner_toLp`).
+(`TauCeti.exists_hasWeakLineDerivOn_and_norm_le_of_tendsto`).
 
 ## References
 
@@ -120,8 +118,7 @@ private theorem rotheStep_energy {B B' : V →L[ℝ] StrongDual ℝ V} {α L h :
     ring
   have hBx : B' x x ≤ B x x + L * h * ‖x‖ ^ 2 := by
     have h1 : (B' - B) x x ≤ ‖B' - B‖ * ‖x‖ * ‖x‖ :=
-      (le_abs_self _).trans ((((B' - B) x).le_opNorm x).trans
-        (mul_le_mul_of_nonneg_right ((B' - B).le_opNorm x) (norm_nonneg x)))
+      (le_abs_self _).trans ((B' - B).le_opNorm₂ x x)
     simp only [sub_apply] at h1
     nlinarith [mul_le_mul_of_nonneg_right hBB (sq_nonneg ‖x‖)]
   have hx2 : L * h * ‖x‖ ^ 2 ≤ L * h / α * B x x := by
@@ -267,7 +264,7 @@ private theorem norm_rotheInterp_sub_le [CompleteSpace V] {b t : ℝ} (ht : t �
     ‖rotheInterp x a h t - x (intervalCellIndex a h t)‖ ≤
       ‖x (intervalCellIndex a h t) - x (intervalCellIndex a h t - 1)‖ := by
   subst hh
-  have hh : 0 < (b - a) / N := div_pos (sub_pos.2 (ht.1.trans ht.2)) (Nat.cast_pos.2 hN)
+  have hh : 0 < (b - a) / N := sub_div_natCast_pos (ht.1.trans ht.2) hN
   obtain ⟨k, -, hk, hmem⟩ := exists_intervalCellIndex_eq ht hN
   rw [hk, Nat.add_sub_cancel, rotheInterp_eq hh (Ioc_subset_Icc_self hmem)]
   set c := (t - (a + k * ((b - a) / N))) / ((b - a) / N)
@@ -329,7 +326,7 @@ private theorem hasWeakLineDerivOn_rotheInterp [CompleteSpace V] {b : ℝ} (hab 
 private theorem integral_norm_rotheDeriv_sq {b : ℝ} (hab : a < b) {N : ℕ} (hN : 0 < N) :
     ∫ t in Ioo a b, ‖ι (rotheDeriv x a ((b - a) / N) t)‖ ^ 2 =
       ∑ k ∈ Finset.range N, ‖ι (x (k + 1) - x k)‖ ^ 2 / ((b - a) / N) := by
-  have hh : 0 < (b - a) / N := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
+  have hh : 0 < (b - a) / N := sub_div_natCast_pos hab hN
   have := integral_Ioo_comp_intervalCellIndex hab hN
     (fun n ↦ ‖ι (((b - a) / N)⁻¹ • (x n - x (n - 1)))‖ ^ 2)
   simp only [rotheDeriv]
@@ -385,7 +382,7 @@ private theorem exists_rotheScheme_bound [CompleteSpace H] (hab : a < b) {N : �
           α * ‖x (j + 1) - x j‖ ^ 2) ≤
         Real.exp (L * (b - a) / α) * (A a v₀ v₀ + ∫ t in Ioo a b, ‖g t‖ ^ 2) := by
   set h := (b - a) / N
-  have hh : 0 < h := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
+  have hh : 0 < h := sub_div_natCast_pos hab hN
   set B : ℕ → V →L[ℝ] StrongDual ℝ V := fun k ↦ A (a + (min k N : ℕ) * h)
   have hnode (k : ℕ) : a + (min k N : ℕ) * h ∈ Icc a b :=
     add_natCast_mul_sub_div_natCast_mem_Icc hab.le hN (min_le_right _ _)
@@ -451,7 +448,7 @@ private theorem rotheDeriv_add_eq {g : ℝ → H} {x : ℕ → V} (hab : a < b) 
         A (a + intervalCellIndex a ((b - a) / N) t * ((b - a) / N))
           (x (intervalCellIndex a ((b - a) / N) t)) =
       ι.gelfandDual (intervalStepAverage g a ((b - a) / N) t) := by
-  have hh : 0 < (b - a) / N := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
+  have hh : 0 < (b - a) / N := sub_div_natCast_pos hab hN
   obtain ⟨k, hlt, hk, hmem⟩ := exists_intervalCellIndex_eq ht hN
   have hD : rotheDeriv x a ((b - a) / N) t = ((b - a) / N)⁻¹ • (x (k + 1) - x k) := by
     rw [rotheDeriv, hk, Nat.add_sub_cancel]
@@ -578,7 +575,7 @@ private theorem rotheScheme_integral_le (hab : a < b) {N : ℕ} (hN : 0 < N) (h�
           ‖rotheInterp x a ((b - a) / N) t - x (intervalCellIndex a ((b - a) / N) t)‖ ^ 2 ≤
         (b - a) / N * (M / α) ∧
       ∫ t in Ioo a b, ‖x (intervalCellIndex a ((b - a) / N) t)‖ ^ 2 ≤ (b - a) * (M / α) := by
-  have hh : 0 < (b - a) / N := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
+  have hh : 0 < (b - a) / N := sub_div_natCast_pos hab hN
   have hxk (k : ℕ) (hk : k ≤ N) : ‖x k‖ ^ 2 ≤ M / α := by
     rw [le_div_iff₀ hα, mul_comm]
     exact (hA _ (add_natCast_mul_sub_div_natCast_mem_Icc hab.le hN hk) _).trans (hE k hk)
@@ -609,18 +606,15 @@ private theorem apply_rotheScheme_le (hab : a < b) {N : ℕ} (hN : 0 < N) (hL : 
     (hxk : ∀ k ≤ N, ‖x k‖ ^ 2 ≤ M / α) {t : ℝ} (ht : t ∈ Ioo a b) :
     A t (x (intervalCellIndex a ((b - a) / N) t)) (x (intervalCellIndex a ((b - a) / N) t)) ≤
       (1 + L * ((b - a) / N) / α) * M := by
-  have hh : 0 < (b - a) / N := div_pos (sub_pos.2 hab) (Nat.cast_pos.2 hN)
+  have hh : 0 < (b - a) / N := sub_div_natCast_pos hab hN
   have hd := (norm_le_and_norm_sub_node_le hL hLip hN ht).2
   set κ := intervalCellIndex a ((b - a) / N) t
   have hκ : κ ≤ N := (intervalCellIndex_mem_Icc ht hN).2
   set n := a + κ * ((b - a) / N)
-  have h1 : (A t - A n) (x κ) (x κ) ≤ ‖(A t - A n) (x κ)‖ * ‖x κ‖ :=
-    (Real.le_norm_self _).trans (((A t - A n) (x κ)).le_opNorm (x κ))
-  have h2 := mul_le_mul_of_nonneg_right ((A t - A n).le_opNorm (x κ)) (norm_nonneg (x κ))
+  have h1 : (A t - A n) (x κ) (x κ) ≤ ‖A t - A n‖ * ‖x κ‖ * ‖x κ‖ :=
+    (Real.le_norm_self _).trans ((A t - A n).le_opNorm₂ (x κ) (x κ))
   have h3 := mul_le_mul_of_nonneg_right hd (sq_nonneg ‖x κ‖)
-  have h0 : (A t - A n) (x κ) (x κ) = A t (x κ) (x κ) - A n (x κ) (x κ) := by
-    rw [sub_apply, sub_apply]
-  rw [h0] at h1
+  simp only [sub_apply] at h1
   have hEκ := hE κ hκ
   have hLh : 0 ≤ L * ((b - a) / N) := mul_nonneg hL hh.le
   calc A t (x κ) (x κ) ≤ M + L * ((b - a) / N) * (M / α) := by
@@ -705,6 +699,11 @@ section Main
 
 variable [CompleteSpace V] {A : ℝ → V →L[ℝ] StrongDual ℝ V} {a b α L : ℝ}
 
+/-- The cell length `(b - a) / (n + 1)` of the partitions into `n + 1` cells tends to `0`. -/
+private theorem tendsto_sub_div_natCast_succ :
+    Tendsto (fun n : ℕ ↦ (b - a) / ((n + 1 : ℕ) : ℝ)) atTop (𝓝 0) :=
+  (tendsto_const_div_atTop_nhds_zero_nat (b - a)).comp (tendsto_add_atTop_nat 1)
+
 omit [CompleteSpace V] in
 /-- The interpolants of the schemes converge to the weak solution in `L²(a, b)`: given the bounds of
 `exists_rotheApprox` for the partitions into `n + 1` cells, `∫ ‖uh n - u‖² → 0`. -/
@@ -717,8 +716,7 @@ private theorem tendsto_integral_norm_rotheApprox_sub [CompleteSpace H] {M : ℝ
         (‖A a‖ + L * (b - a)) ^ 2 * ((b - a) / (n + 1 : ℕ) * (M / α)) +
         (L * ((b - a) / (n + 1 : ℕ))) ^ 2 * ((b - a) * (M / α)))) :
     Tendsto (fun n ↦ ∫ t in Ioo a b, ‖uh n t - u t‖ ^ 2) atTop (𝓝 0) := by
-  have hmesh : Tendsto (fun n : ℕ ↦ (b - a) / ((n + 1 : ℕ) : ℝ)) atTop (𝓝 0) :=
-    (tendsto_const_div_atTop_nhds_zero_nat (b - a)).comp (tendsto_add_atTop_nat 1)
+  have hmesh := tendsto_sub_div_natCast_succ (a := a) (b := b)
   have havg :=
     (tendsto_integral_norm_intervalStepAverage_sub_sq hab hg).comp (tendsto_add_atTop_nat 1)
   have hR := ((((havg.const_mul (‖ι‖ ^ 2)).add ((hmesh.mul_const (M / α)).const_mul
@@ -746,51 +744,6 @@ private theorem ae_apply_le_of_tendsto {M : ℝ} {c : ℕ → ℝ} (hc : Tendsto
   exact le_of_tendsto_of_tendsto' (((A t).continuous₂.tendsto (u t, u t)).comp (ht.prodMk_nhds ht))
     (hc.comp hns.tendsto_atTop) fun k ↦ hE (ns k) t ht'
 
-omit [CompleteSpace V] in
-/-- **The time derivative in the limit.** If `uh n → u` in `L²(a, b; V)` and the weak derivatives
-`D n` of `uh n` satisfy `∫ ‖ι (D n)‖² ≤ M`, then `ι ∘ u` has a weak derivative `d ∈ L²(a, b; H)`
-with `‖d‖ ≤ √M`: a subsequence of the `ι ∘ D n` converges weakly in `L²(a, b; H)`. -/
-private theorem exists_hasWeakLineDerivOn_of_bounded [CompleteSpace H] {M : ℝ} {u : ℝ → V}
-    {uh D : ℕ → ℝ → V} (hD : ∀ n, HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (uh n) (D n) 1)
-    (huh : ∀ n, MemLp (uh n) 2 (volume.restrict (Ioo a b)))
-    (hu : MemLp u 2 (volume.restrict (Ioo a b)))
-    (hDm : ∀ n, MemLp (D n) 2 (volume.restrict (Ioo a b)))
-    (hDbd : ∀ n, ∫ t in Ioo a b, ‖ι (D n t)‖ ^ 2 ≤ M)
-    (huhu : Tendsto (fun n ↦ ∫ t in Ioo a b, ‖uh n t - u t‖ ^ 2) atTop (𝓝 0)) :
-    ∃ d : Lp H 2 (volume.restrict (Ioo a b)),
-      HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ ι (u t)) d 1 ∧
-        ‖d‖ ≤ Real.sqrt M := by
-  set μ := volume.restrict (Ioo a b)
-  set Dl : ℕ → Lp H 2 μ := fun n ↦ (ι.comp_memLp' (hDm n)).toLp (fun t ↦ ι (D n t))
-  have hDl (n : ℕ) : ‖Dl n‖ ≤ Real.sqrt M := by
-    rw [← Real.sqrt_sq (norm_nonneg _), MemLp.norm_toLp_sq]
-    exact Real.sqrt_le_sqrt (hDbd n)
-  have hbdd : Bornology.IsBounded (range Dl) :=
-    isBounded_iff_forall_norm_le.2 ⟨Real.sqrt M, by rintro _ ⟨n, rfl⟩; exact hDl n⟩
-  obtain ⟨dl, φs, hφs, hweak⟩ := tendsto_subseq_toWeakSpace_of_isBounded
-    (surjective_inclusionInDoubleDual_of_uniformConvexSpace (𝕜 := ℝ)) hbdd
-  have hinner (Ψ : Lp H 2 μ) : Tendsto (fun k ↦ ⟪Dl (φs k), Ψ⟫_ℝ) atTop (𝓝 ⟪dl, Ψ⟫_ℝ) := by
-    have hc : Continuous fun v : WeakSpace ℝ (Lp H 2 μ) ↦
-        innerSL ℝ Ψ ((toWeakSpace ℝ _).symm v) :=
-      WeakBilin.eval_continuous (topDualPairing ℝ _).flip (innerSL ℝ Ψ)
-    simpa [Function.comp_def, real_inner_comm] using (hc.tendsto _).comp hweak
-  have hconv : Tendsto (fun k ↦ ∫ t in Ioo a b, ‖ι (uh (φs k) t) - ι (u t)‖ ^ 2) atTop
-      (𝓝 0) := by
-    refine squeeze_zero (fun n ↦ setIntegral_nonneg measurableSet_Ioo fun _ _ ↦ by positivity)
-      (fun k ↦ integral_norm_sq_le_sq_mul_of_norm_le
-        ((ι.comp_memLp' (huh _)).sub (ι.comp_memLp' hu)) ((huh _).sub hu)
-        (Eventually.of_forall fun t ↦ by rw [← map_sub]; exact ι.le_opNorm _)) ?_
-    simpa using (huhu.comp hφs.tendsto_atTop).const_mul (‖ι‖ ^ 2)
-  refine ⟨dl, hasWeakLineDerivOn_of_tendsto_inner_toLp (F := fun k t ↦ ι (uh (φs k) t))
-    (G := fun k t ↦ ι (D (φs k) t)) (fun k ↦ (hD (φs k)).clm_comp ι)
-    (fun k ↦ ι.comp_memLp' (huh _)) (ι.comp_memLp' hu) (fun k ↦ ι.comp_memLp' (hDm _))
-    hconv hinner, ?_⟩
-  -- Weak lower semicontinuity of the norm.
-  have h3 := le_of_tendsto' (hinner dl) fun k ↦ (real_inner_le_norm _ _).trans
-    (mul_le_mul_of_nonneg_right (hDl (φs k)) (norm_nonneg dl))
-  rw [real_inner_self_eq_norm_sq] at h3
-  nlinarith [norm_nonneg dl, Real.sqrt_nonneg M]
-
 /-- **Time regularity of weak solutions with time-dependent coefficients.** Let `V ↪ H ↪ V*` be
 given by `ι : V →L[ℝ] H`, and let `A(t) : V →L[ℝ] V*`, `t ∈ [a, b]`, be symmetric and coercive,
 `α ‖v‖² ≤ A(t) v v`, and Lipschitz in time, `‖A(t) - A(s)‖ ≤ L |t - s|`. If `u` is a weak solution
@@ -801,10 +754,12 @@ of `u' + A(t) u = ι* g` with `g ∈ L²(a, b; H)` and initial value `ι v₀`, 
 * `u` is essentially bounded in `V`:
   `A(t) u(t) u(t) ≤ exp (L (b - a) / α) (A(a) v₀ v₀ + ∫ₐᵇ ‖g‖²)` for almost every `t`.
 
-For a parabolic equation `∂ₜu - ∂ᵢ(aⁱʲ(t, x) ∂ⱼu) = f` whose coefficients have a bounded time
-derivative this says `∂ₜu ∈ L²(0, T; L²(Ω))` and `u ∈ L^∞(0, T; H¹₀(Ω))` when
-`f ∈ L²(0, T; L²(Ω))` and `u(0) ∈ H¹₀(Ω)`. This is the time-dependent counterpart of Evans,
-§7.1.3, Theorem 5, which treats time-independent coefficients. For `L = 0` it recovers the bound
+For a parabolic equation `∂ₜu - ∂ᵢ(aⁱʲ(t, x) ∂ⱼu) = f` whose coefficients `aⁱʲ` are symmetric and
+uniformly elliptic with a bounded time derivative, applied to `A(t)` the energy form of `a(t, ·)`
+on `H¹₀(Ω)`, this says `∂ₜu ∈ L²(0, T; L²(Ω))` and `u ∈ L^∞(0, T; H¹₀(Ω))` when
+`f ∈ L²(0, T; L²(Ω))` and `u(0) ∈ H¹₀(Ω)`; that instantiation is not formalized here. This is
+the time-dependent counterpart of Evans, §7.1.3, Theorem 5, which treats time-independent
+coefficients. For `L = 0` it recovers the bound
 `A u u ≤ A v₀ v₀ + ∫ₐᵇ ‖g‖²` of the time-independent theorem
 `TauCeti.HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm` and sharpens
 its derivative bound `∫ₐᵇ ‖d‖² ≤ 2 A v₀ v₀ + 4 ∫ₐᵇ ‖g‖²` to `∫ₐᵇ ‖d‖² ≤ A v₀ v₀ + ∫ₐᵇ ‖g‖²`,
@@ -846,8 +801,7 @@ theorem HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_lip
   have happrox (n : ℕ) := exists_rotheApprox (ι := ι) hab (Nat.succ_pos n) hsymm hα hA hL hLip hg
     h hu hu' heq hw hae h₀
   choose uh ub D hD huh hub hDm hDbd hE hdiff hcmp using happrox
-  have hmesh : Tendsto (fun n : ℕ ↦ (b - a) / ((n + 1 : ℕ) : ℝ)) atTop (𝓝 0) :=
-    (tendsto_const_div_atTop_nhds_zero_nat (b - a)).comp (tendsto_add_atTop_nat 1)
+  have hmesh := tendsto_sub_div_natCast_succ (a := a) (b := b)
   have huhu := tendsto_integral_norm_rotheApprox_sub hab hα hg hcmp
   -- The piecewise constant interpolants converge to `u` as well.
   have hubu : Tendsto (fun n ↦ ∫ t in Ioo a b, ‖ub n t - u t‖ ^ 2) atTop (𝓝 0) := by
@@ -867,11 +821,21 @@ theorem HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_lip
   have hc : Tendsto (fun n : ℕ ↦ (1 + L * ((b - a) / ((n + 1 : ℕ) : ℝ)) / α) * M) atTop
       (𝓝 M) := by
     simpa using (((hmesh.const_mul L).div_const α).const_add 1).mul_const M
-  obtain ⟨dl, hderiv, hdl⟩ := exists_hasWeakLineDerivOn_of_bounded hD huh hu hDm hDbd huhu
+  obtain ⟨dl, hderiv, hdl⟩ := exists_hasWeakLineDerivOn_and_norm_le_of_tendsto
+    (F := fun n t ↦ ι (uh n t)) (G := fun n t ↦ ι (D n t)) (f := fun t ↦ ι (u t))
+    (fun n ↦ (hD n).clm_comp ι)
+    (fun n ↦ ι.comp_memLp' (huh n)) (ι.comp_memLp' hu) (fun n ↦ ι.comp_memLp' (hDm n)) hDbd <| by
+      refine squeeze_zero (fun n ↦ setIntegral_nonneg measurableSet_Ioo fun _ _ ↦ by positivity)
+        (fun n ↦ integral_norm_sq_le_sq_mul_of_norm_le
+          ((ι.comp_memLp' (huh n)).sub (ι.comp_memLp' hu)) ((huh n).sub hu)
+          (Eventually.of_forall fun t ↦ by rw [← map_sub]; exact ι.le_opNorm _)) ?_
+      simpa using huhu.const_mul (‖ι‖ ^ 2)
   refine ⟨dl, Lp.memLp dl, hderiv, h.ae_eq (hderiv.clm_comp ι.gelfandDual),
     ae_apply_le_of_tendsto hc hub hu hubu hE, ?_⟩
-  rw [← MemLp.norm_toLp_sq (Lp.memLp dl), Lp.toLp_coeFn]
-  calc ‖dl‖ ^ 2 ≤ Real.sqrt M ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hdl 2
+  have hn := MemLp.norm_toLp_sq (Lp.memLp dl)
+  rw [Lp.toLp_coeFn] at hn
+  calc ∫ t in Ioo a b, ‖dl t‖ ^ 2 = ‖dl‖ ^ 2 := hn.symm
+    _ ≤ Real.sqrt M ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hdl 2
     _ = M := Real.sq_sqrt hM
 
 end Main
