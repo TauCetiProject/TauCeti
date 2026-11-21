@@ -1,0 +1,156 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Automorphy
+import TauCeti.NumberTheory.ModularForms.Basic
+
+/-!
+# Local sections of the automorphy sheaf at a cusp from functions of the cusp coordinate
+
+Let `D` be a normalized cusp datum of `Γ ≤ PSL(2, ℝ)`, and let `s, g ∈ SL(2, ℝ)` lift its scaling
+and generator, with `ε ^ k = (-1) ^ r` for the sign `ε` of `s * g * s⁻¹`. The file
+`TauCeti.Analysis.Complex.Fuchsian.Cusp.Automorphy` writes every local section `f` of the
+weight-`k` automorphy sheaf on a horodisc as the frame
+`TauCeti.Subgroup.CuspDatum.automorphyFrame D s k r` times a function of the cusp coordinate `q`,
+its coefficient `TauCeti.Subgroup.CuspDatum.automorphyDescent D s k r f`. This file proves the
+converse direction of this local trivialization: the frame times any function `G` of `q`,
+`TauCeti.Subgroup.CuspDatum.automorphySection D s k r G`, is a local section. So the local
+sections at a regular or irregular cusp are exactly the frame times the functions of the cusp
+coordinate, in the width parameter and with the errata order convention built into the frame:
+this is the local description at the cusp of the invertible sheaf on the compact quotient that the
+weight-`k` transformation data induces (Diamond–Shurman §§3.5–3.6).
+
+* If `G` is holomorphic on the disc of cusp-coordinate values of the horodisc of height `A`, the
+  section is holomorphic on that horodisc
+  (`TauCeti.Subgroup.CuspDatum.mdifferentiableOn_automorphySection`).
+* It satisfies the weight-`k` transformation law for `g` on all of `ℍ`
+  (`TauCeti.Subgroup.CuspDatum.automorphySection_smul`).
+* It is bounded at the cusp when `G` is continuous there
+  (`TauCeti.Subgroup.CuspDatum.isBoundedAtImInfty_slash_automorphySection`).
+* Its coefficient is `G`, including at the cusp
+  (`TauCeti.Subgroup.CuspDatum.eqOn_automorphyDescent_automorphySection`), and every local section
+  is the section of its coefficient
+  (`TauCeti.Subgroup.CuspDatum.automorphySection_automorphyDescent`).
+
+## References
+
+* Fred Diamond and Jerry Shurman, *A First Course in Modular Forms*, Graduate Texts in
+  Mathematics 228, Springer, 2005, §§2.4, 3.5–3.6, with the corrected irregular-cusp order
+  convention of the errata to pp. 74–75.
+-/
+
+public section
+
+noncomputable section
+
+open Metric Set UpperHalfPlane
+
+open scoped Manifold MatrixGroups ModularForm
+
+namespace TauCeti.Subgroup.CuspDatum
+
+variable {Γ : Subgroup PSL(2, ℝ)} (D : Γ.CuspDatum)
+
+/-- **The local section of the weight-`k` automorphy sheaf at the cusp of `D` with coefficient
+`G`**: the frame `TauCeti.Subgroup.CuspDatum.automorphyFrame D s k r` times `G` of the cusp
+coordinate. -/
+def automorphySection (s : SL(2, ℝ)) (k : ℤ) (r : ℕ) (G : ℂ → ℂ) (τ : ℍ) : ℂ :=
+  automorphyFrame D s k r τ * G (coordinate D τ)
+
+theorem automorphySection_def (s : SL(2, ℝ)) (k : ℤ) (r : ℕ) (G : ℂ → ℂ) (τ : ℍ) :
+    automorphySection D s k r G τ = automorphyFrame D s k r τ * G (coordinate D τ) :=
+  (rfl)
+
+variable {D} {s g : SL(2, ℝ)} {k : ℤ} {r : ℕ} {A : ℝ} {G : ℂ → ℂ}
+
+/-- **The local section with a holomorphic coefficient is holomorphic** on the horodisc of height
+`A`, when the coefficient is holomorphic on the disc of cusp-coordinate values of that horodisc. -/
+theorem mdifferentiableOn_automorphySection (s : SL(2, ℝ)) (k : ℤ) (r : ℕ)
+    (hG : DifferentiableOn ℂ G (ball 0 (Real.exp (-2 * Real.pi * A / D.width)))) :
+    MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) (automorphySection D s k r G) (horodisc D A) := fun τ hτ ↦ by
+  have hq : coordinate D τ ∈ ball (0 : ℂ) (Real.exp (-2 * Real.pi * A / D.width)) := by
+    rw [mem_ball_zero_iff, ← coe_qCoordinate]
+    exact (norm_qCoordinate_lt_iff_mem_horodisc D A τ).mpr hτ
+  have hGq : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (G ∘ coordinate D) τ :=
+    (hG.differentiableAt (isOpen_ball.mem_nhds hq)).comp_mdifferentiableAt
+      (mdifferentiable_coordinate D τ)
+  exact ((mdifferentiable_automorphyFrame D s k r τ).mul hGq).mdifferentiableWithinAt
+
+/-- **The transformation law of the local section with coefficient `G`.** If `s` and `g` lift the
+scaling and the generator of `D`, and `ε ^ k = (-1) ^ r` for the sign `ε` of `s * g * s⁻¹`, then
+the local section with any coefficient satisfies the weight-`k` transformation law for `g` on all
+of `ℍ`, the cusp coordinate being invariant under `g`. -/
+theorem automorphySection_smul (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator) (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    (τ : ℍ) :
+    automorphySection D s k r G (g • τ) =
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * automorphySection D s k r G τ := by
+  have hq : coordinate D (g • τ) = coordinate D τ := by
+    rw [← sqrtCoordinate_sq, ← sqrtCoordinate_sq, ← pslMk_smul, hg, sqrtCoordinate_generator_smul,
+      neg_sq]
+  rw [automorphySection_def, automorphySection_def, automorphyFrame_smul hs hg hk, hq, mul_assoc]
+
+/-- **The local section with a coefficient continuous at the cusp is bounded at the cusp**: if `s`
+lifts the scaling of `D` and `G` is continuous on the disc of cusp-coordinate values of the
+horodisc of height `A`, then `automorphySection D s k r G ∣[k] s⁻¹` is bounded at `i∞`. In the
+scaling coordinate this slash is `q₂ ^ r * G q`, and `q → 0` at `i∞`. -/
+theorem isBoundedAtImInfty_slash_automorphySection (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hG : ContinuousOn G (ball 0 (Real.exp (-2 * Real.pi * A / D.width)))) :
+    IsBoundedAtImInfty
+      (automorphySection D s k r G ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) := by
+  have hw := D.width_pos
+  have hρ : closedBall (0 : ℂ) (Real.exp (-2 * Real.pi * (A + 1) / D.width)) ⊆
+      ball 0 (Real.exp (-2 * Real.pi * A / D.width)) :=
+    closedBall_subset_ball (Real.exp_lt_exp.mpr
+      (div_lt_div_of_pos_right (by nlinarith [Real.pi_pos]) hw))
+  obtain ⟨C, hC⟩ := (isCompact_closedBall (0 : ℂ) _).exists_bound_of_continuousOn (hG.mono hρ)
+  refine isBoundedAtImInfty_iff.mpr ⟨max C 0, A + 1, fun z hz ↦ ?_⟩
+  obtain ⟨τ, rfl⟩ : ∃ τ : ℍ, z = s • τ := ⟨s⁻¹ • z, (smul_inv_smul s z).symm⟩
+  have hsc : D.scaling • τ = s • τ := by rw [← hs, pslMk_smul]
+  have hq : ‖coordinate D τ‖ ≤ Real.exp (-2 * Real.pi * (A + 1) / D.width) := by
+    rw [coordinate_apply, Function.Periodic.norm_qParam, coe_im, hsc]
+    exact Real.exp_le_exp.mpr (div_le_div_of_nonneg_right (by nlinarith [Real.pi_pos]) hw.le)
+  have hq₂ : ‖sqrtCoordinate D τ‖ ≤ 1 := by
+    rw [sqrtCoordinate_def, Function.Periodic.norm_qParam, coe_im, Real.exp_le_one_iff]
+    exact div_nonpos_of_nonpos_of_nonneg (by nlinarith [Real.pi_pos, (D.scaling • τ).im_pos])
+      (by positivity)
+  rw [Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul, automorphySection_def,
+    automorphyFrame_def, ← mul_assoc, ← mul_assoc, ← zpow_add₀ (denom_ne_zero _ _),
+    add_neg_cancel, zpow_zero, one_mul, norm_mul, norm_pow]
+  calc ‖sqrtCoordinate D τ‖ ^ r * ‖G (coordinate D τ)‖ ≤ 1 * max C 0 :=
+        mul_le_mul (pow_le_one₀ (norm_nonneg _) hq₂)
+          ((hC _ (mem_closedBall_zero_iff.mpr hq)).trans (le_max_left _ _)) (norm_nonneg _)
+          zero_le_one
+    _ = max C 0 := one_mul _
+
+/-- **The coefficient of the local section with coefficient `G` is `G`** on the disc of
+cusp-coordinate values of the horodisc of height `A ≥ 0`, including at the cusp `q = 0`, when `s`
+and `g` lift the scaling and the generator of `D`, `ε ^ k = (-1) ^ r` with `r < 2`, and `G` is
+holomorphic there. -/
+theorem eqOn_automorphyDescent_automorphySection (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator) (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    (hA : 0 ≤ A) (hr : r < 2)
+    (hG : DifferentiableOn ℂ G (ball 0 (Real.exp (-2 * Real.pi * A / D.width)))) :
+    EqOn G (automorphyDescent D s k r (automorphySection D s k r G))
+      (ball 0 (Real.exp (-2 * Real.pi * A / D.width))) :=
+  eqOn_automorphyDescent hs hg hk (fun τ _ ↦ automorphySection_smul hs hg hk τ)
+    (mdifferentiableOn_automorphySection s k r hG)
+    (isBoundedAtImInfty_slash_automorphySection hs hG.continuousOn) hA hr hG.continuousOn
+    fun τ _ ↦ automorphySection_def D s k r G τ
+
+/-- **Every local section at a cusp is the local section with its coefficient**: under the
+hypotheses of `TauCeti.Subgroup.CuspDatum.automorphyFrame_mul_automorphyDescent`, a function `f`
+satisfying the weight-`k` transformation law for `g` on the horodisc of height `A` agrees there with
+the local section whose coefficient is `TauCeti.Subgroup.CuspDatum.automorphyDescent D s k r f`. -/
+theorem automorphySection_automorphyDescent {f : ℍ → ℂ} (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator) (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
+    (hr : r < 2) :
+    EqOn (automorphySection D s k r (automorphyDescent D s k r f)) f (horodisc D A) :=
+  fun _ hτ ↦ automorphyFrame_mul_automorphyDescent hs hg hk hf hr hτ
+
+end TauCeti.Subgroup.CuspDatum
