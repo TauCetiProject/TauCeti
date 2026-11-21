@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pairing
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
@@ -42,6 +43,11 @@ reverses products, fixes the identity, and tends to the identity as `B₀` stays
 invertible map and `X` tends to the identity. On Banach spaces the comparison operator
 `B₀⁻¹ ∘ B` also tends to the identity as both maps tend to the same invertible map
 (`ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`).
+
+On normable spaces over nontrivially normed fields, with isometric scalar homomorphisms `σ₁₃`,
+`σ₂₃` and `σ₂₃` surjective, the flip `LinearMap.pairingFlip` of a continuous pairing
+`μ : E →SL[σ₁₃] F →SL[σ₂₃] H` is Mathlib's flip `ContinuousLinearMap.flip`
+(`ContinuousLinearMap.pairingFlip_eq_flip`).
 -/
 
 public section
@@ -227,6 +233,28 @@ theorem IsInvertible.tendsto_pairingAdjoint {B₀ : E →L[𝕜] E →L[𝕜] H}
   simpa only [hB₀.pairingAdjoint_one] using h.tendsto
 
 end Tendsto
+
+section PairingFlip
+
+variable {𝕜₂ 𝕜₃ E F H : Type*} [NontriviallyNormedField 𝕜₂] [NontriviallyNormedField 𝕜₃]
+  {σ₁₃ : 𝕜 →+* 𝕜₃} {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₁₃] [RingHomIsometric σ₂₃]
+  [RingHomSurjective σ₂₃]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsNormableSpace 𝕜 E]
+  [AddCommGroup F] [Module 𝕜₂ F] [TopologicalSpace F] [IsNormableSpace 𝕜₂ F]
+  [IsTopologicalAddGroup F]
+  [AddCommGroup H] [Module 𝕜₃ H] [TopologicalSpace H] [IsNormableSpace 𝕜₃ H]
+  [IsTopologicalAddGroup H]
+
+/-- On normable spaces, when both scalar homomorphisms are isometric and the second is
+surjective, the flip `LinearMap.pairingFlip` of a continuous pairing is Mathlib's flip. -/
+@[simp]
+theorem pairingFlip_eq_flip (μ : E →SL[σ₁₃] F →SL[σ₂₃] H)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) :
+    μ.toLinearMap.pairingFlip hμ = μ.flip := by
+  ext
+  rw [LinearMap.pairingFlip_apply, coe_coe, flip_apply]
+
+end PairingFlip
 
 end ContinuousLinearMap
 
