@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Neuromanifold.Activation
 public import TauCeti.Geometry.Neuromanifold.Convolution.Basic
 public import TauCeti.Geometry.Neuromanifold.Dense
 public import TauCeti.Geometry.Neuromanifold.Polynomial.Basic
+import TauCeti.Algebra.MvPolynomial.Monad
 
 /-!
 # Constructors of jointly polynomial models
@@ -251,19 +252,10 @@ theorem polynomialInputDegree_polynomialCompose_le [Fintype J] [Fintype L]
     polynomialInputDegree (polynomialCompose P Q) ≤
       polynomialInputDegree P * polynomialInputDegree Q := by
   refine (polynomialInputDegree_le_iff _).2 fun l => ?_
-  rw [inputPolynomial_polynomialCompose, eval₂_eq]
-  refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun s hs => ?_)
-  refine (totalDegree_mul _ _).trans ?_
-  rw [RingHom.comp_apply, RingHom.coe_coe, totalDegree_C, zero_add]
-  calc
-    _ ≤ ∑ j ∈ s.support, s j * polynomialInputDegree P :=
-        (totalDegree_finsetProd _ _).trans <| Finset.sum_le_sum fun j _ =>
-          (totalDegree_pow _ _).trans
-            (Nat.mul_le_mul_left _ (totalDegree_map_inputPolynomial_le P _ j))
-    _ = polynomialInputDegree P * (s.sum fun _ e => e) := by
-        rw [Finsupp.sum, ← Finset.sum_mul, mul_comm]
-    _ ≤ polynomialInputDegree P * polynomialInputDegree Q :=
-        Nat.mul_le_mul_left _ ((le_totalDegree hs).trans (totalDegree_inputPolynomial_le Q l))
+  rw [inputPolynomial_polynomialCompose, ← eval₂_map, ← coe_eval₂Hom, eval₂Hom_C_eq_bind₁]
+  refine (totalDegree_bind₁_le (fun j => totalDegree_map_inputPolynomial_le P _ j) _).trans ?_
+  rw [mul_comm]
+  exact Nat.mul_le_mul_left _ (totalDegree_map_inputPolynomial_le Q _ l)
 
 /-- Composition by polynomial substitution realizes the composite of the two realization
 maps, after splitting the parameters into those of `P` and those of `Q`. -/

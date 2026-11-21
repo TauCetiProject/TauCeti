@@ -202,10 +202,8 @@ theorem polynomialChainPrefix_castSucc {I : Fin (n + 2) → Type*} {W : Fin (n +
     rw [polynomialChainPrefix_succ, polynomialChainPrefix_succ, rename_bind₁]
     refine congrArg (fun F => bind₁ F (P i.castSucc o)) (funext fun x => ?_)
     rcases x with w | a
-    · rw [Sum.elim_inl, Sum.elim_inl, rename_X, Sum.map_inl]
-      simp
-    · rw [Sum.elim_inr, Sum.elim_inr]
-      exact ih a
+    · simp only [Sum.elim_inl, rename_X, Sum.map_inl]; rfl
+    · simp only [Sum.elim_inr, ih a]; rfl
 
 /-- Every positive prefix of a nonempty chain is the binary composition `polynomialCompose` of the
 first layer `P 0` with the corresponding prefix of the tail chain, after folding the first-layer
@@ -221,24 +219,18 @@ theorem polynomialChainPrefix_succ_eq_rename_polynomialCompose
   | zero =>
     rw [polynomialChainPrefix_succ, polynomialChainPrefix_zero, polynomialCompose_apply]
     simp only [bind₁_X_right, Sum.elim_inr, rename_rename]
-    rw [rename_eq_aeval (Sum.map (Sum.elim (Sigma.mk 0) _) id ∘ Sum.map Sum.inl id),
-      aeval_eq_bind₁]
+    rw [rename_eq_aeval _, aeval_eq_bind₁]
     refine congrArg (fun F => bind₁ F (P 0 o)) (funext fun x => ?_)
     rcases x with w | a
     · simp
-    · rw [Sum.elim_inr, Function.comp_apply, Function.comp_apply, Sum.map_inr, Sum.map_inr,
-        id_eq, id_eq]
-      -- `Fin.castSucc 0` is definitionally `0`, so `polynomialChainPrefix_zero` applies directly.
-      exact congrFun (polynomialChainPrefix_zero P) a
+    · rfl
   | succ i ih =>
     rw [polynomialChainPrefix_succ, polynomialCompose_apply, polynomialChainPrefix_succ,
       bind₁_bind₁, rename_bind₁]
     refine congrArg (fun F => bind₁ F (P i.succ o)) (funext fun x => ?_)
     rcases x with w | a
-    · rw [Sum.elim_inl, Sum.elim_inl, bind₁_X_right, Sum.elim_inl, rename_X, Sum.map_inl,
-        Sum.elim_inr]
-      simp
-    · rw [Sum.elim_inr, Sum.elim_inr, ← polynomialCompose_apply]
+    · simp only [Sum.elim_inl, bind₁_X_right, rename_X, Sum.map_inl, Sum.elim_inr]; rfl
+    · simp only [Sum.elim_inr, ← polynomialCompose_apply]
       exact ih a
 
 /-- Split off the first layer of `polynomialChain` as a binary `polynomialCompose`, folding the
@@ -277,16 +269,13 @@ theorem polynomialChain_succ_last {I : Fin (n + 2) → Type*} {W : Fin (n + 1) �
   rw [polynomialCompose_apply, polynomialCompose_apply, rename_bind₁, rename_bind₁]
   refine congrArg (fun F => bind₁ F (P (Fin.last n) o)) (funext fun x => ?_)
   rcases x with w | a
-  · rw [Sum.elim_inl, Sum.elim_inl, rename_X, rename_X, Sum.map_inl, Sum.map_inl, Sum.elim_inr,
-      Sum.elim_inr]
-    simp
+  · simp only [Sum.elim_inl, rename_X, Sum.map_inl, Sum.elim_inr]; rfl
   · simp only [Sum.elim_inr, polynomialChain_def]
+    rw [rename_rename, rename_rename]
+    refine (congrArg _ (polynomialChainPrefix_castSucc P (Fin.last n) a)).trans ?_
     refine (rename_rename _ _ _).trans ?_
-    refine ((congrArg _ (polynomialChainPrefix_castSucc P (Fin.last n) a)).trans
-      (rename_rename _ _ _)).trans ?_
-    refine (congrArg (fun f => rename f _) ?_).trans (rename_rename _ _ _).symm
-    funext y
-    rcases y with ⟨j, v⟩ | x₀ <;> simp
+    refine congrArg (fun f => rename f _) (funext fun y => ?_)
+    rcases y <;> simp
 
 /-! ### Evaluation and neuromanifolds -/
 
@@ -493,6 +482,20 @@ theorem isHomogeneous_inputPolynomial_polynomialChain
     rcases x with w | a
     · simp
     · exact ih a
+
+/-- Transporting two tuples identified with `polynomialChainPrefix` along a ring homomorphism
+agrees whenever their layers transport layerwise. -/
+theorem map_polynomialChainPrefix_of_eq {L : Type*} [CommSemiring L] (φ : K →+* L)
+    {P : ∀ i, I i.succ → MvPolynomial (W i ⊕ I i.castSucc) K}
+    {Q : ∀ i, I i.succ → MvPolynomial (W i ⊕ I i.castSucc) L}
+    {k : Fin (n + 1)} {lhs : I k → MvPolynomial ((Σ i, W i) ⊕ I 0) K}
+    {rhs : I k → MvPolynomial ((Σ i, W i) ⊕ I 0) L}
+    (hlhs : lhs = polynomialChainPrefix P k)
+    (hrhs : rhs = polynomialChainPrefix Q k)
+    (hPQ : ∀ i o, map φ (P i o) = Q i o) (o : I k) :
+    map φ (lhs o) = rhs o := by
+  rw [hlhs, hrhs, map_polynomialChainPrefix]
+  exact congrArg (fun R => polynomialChainPrefix R k o) (funext fun i => funext (hPQ i))
 
 /-- Transporting `polynomialChain` along a ring homomorphism transports each layer model. -/
 @[simp] theorem map_polynomialChain {L : Type*} [CommSemiring L] (φ : K →+* L)
