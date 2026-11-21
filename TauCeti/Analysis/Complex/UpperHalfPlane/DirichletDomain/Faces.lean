@@ -42,6 +42,8 @@ open scoped MatrixGroups
 
 namespace TauCeti.UpperHalfPlane
 
+section SMul
+
 variable {G : Type*} [SMul G ℍ]
 
 /-- A face indexed by an element moving the centre is cut out by its perpendicular bisector. -/
@@ -157,9 +159,9 @@ theorem mem_interior_dirichletDomain_iff {p z : ℍ} :
   refine lt_of_le_of_ne (mem_dirichletDomain.mp hzD g) fun he ↦ ?_
   exact (dirichletFace_subset_frontier hg (mem_dirichletFace.mpr ⟨hzD, he⟩)).2 hz
 
-end TauCeti.UpperHalfPlane
+end SMul
 
-namespace TauCeti.UpperHalfPlane
+section MulAction
 
 variable {G : Type*} [Group G] [MulAction G ℍ]
 
@@ -174,15 +176,9 @@ theorem eq_of_nontrivial_dirichletFace_inter {p : ℍ}
   exact TauCeti.smul_ne_of_ne_one G ℍ hp (g := g'⁻¹ * g)
     (fun h' ↦ hne (inv_mul_eq_one.1 h').symm) (by rw [mul_smul, he, inv_smul_smul])
 
-end TauCeti.UpperHalfPlane
-
-namespace TauCeti.UpperHalfPlane
-
-variable {G : Type*} [Group G] [MulAction G ℍ] [IsIsometricSMul G ℍ]
-  [ProperlyDiscontinuousSMul G ℍ]
+variable [IsIsometricSMul G ℍ]
 
 open scoped Pointwise in
-omit [ProperlyDiscontinuousSMul G ℍ] in
 /-- **An element moving the centre moves the interior of the Dirichlet domain off itself.** If
 `g • p ≠ p`, then the translate `g • interior D` of the interior of the Dirichlet domain `D`
 centred at `p` is disjoint from `interior D`. -/
@@ -196,5 +192,7 @@ theorem disjoint_smul_interior_dirichletDomain {p : ℍ} {g : G} (hg : g • p �
   have hf := (inv_smul_mem_dirichletDomain_iff (interior_subset hw) g⁻¹).mp
     (by simpa using interior_subset hz')
   exact (dirichletFace_subset_frontier hg' hf).2 hw
+
+end MulAction
 
 end TauCeti.UpperHalfPlane

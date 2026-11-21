@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.UniqueContinuation
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
 
 /-!
 # Infinitesimal translations of Floer solutions and the zeros of `∂ₛu`

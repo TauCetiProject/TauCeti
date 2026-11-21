@@ -656,6 +656,46 @@ theorem isFundamentalClass_zsmul_fundamentalClass_iff [Nonempty M] (c : ℤ) :
 theorem not_isFundamentalClass_two_zsmul_fundamentalClass [Nonempty M] :
     ¬ IsFundamentalClass ((2 : ℤ) • o.fundamentalClass hn) := by
   rw [o.isFundamentalClass_zsmul_fundamentalClass_iff hn, Int.isUnit_iff]; omega
+
+/-- **The fundamental classes of a connected manifold.** On a compact connected oriented manifold,
+the integral fundamental classes are exactly `[M]` and `-[M]`. -/
+theorem isFundamentalClass_iff_eq_or_eq_neg [ConnectedSpace M]
+    (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ)) :
+    IsFundamentalClass μ ↔ μ = o.fundamentalClass hn ∨ μ = -o.fundamentalClass hn := by
+  have : Nonempty M := ConnectedSpace.toNonempty
+  obtain ⟨c, rfl⟩ := o.exists_eq_zsmul_fundamentalClass hn μ
+  rw [o.isFundamentalClass_zsmul_fundamentalClass_iff hn, Int.isUnit_iff]
+  refine ⟨?_, ?_⟩
+  · rintro (rfl | rfl) <;> simp
+  · rintro (h | h)
+    · exact Or.inl (((o.fundamentalClassEquiv hn).injective (by simpa using h)))
+    · exact Or.inr (((o.fundamentalClassEquiv hn).injective (by simpa using h)))
+
+open AlgebraicTopology CategoryTheory in
+/-- **Fundamental classes of a homeomorphic copy.** If `e : M ≃ₜ X` is a homeomorphism from a
+compact connected oriented manifold, every integral fundamental class of `X` is `±` the image
+`e_*[M]` of the fundamental class of `M`. -/
+theorem exists_eq_smul_mapFundamentalClass_of_isFundamentalClass [ConnectedSpace M] {X : Type}
+    [TopologicalSpace X] (e : M ≃ₜ X)
+    {μ : ((TopCat.toSSet.obj (TopCat.of X)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+      ModuleCat.{0} ℤ)} (hμ : IsFundamentalClass μ) :
+    ∃ s : ℤ, (s = 1 ∨ s = -1) ∧ μ = s • o.mapFundamentalClass hn (e : C(M, X)) := by
+  -- Pull `μ` back to `M`, where it is `±[M]`, and push it forward again along `e`.
+  have hμe : (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom (e : C(M, X)))).hom
+      ((((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+        (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom (e.symm : C(X, M)))).hom μ) = μ :=
+    congrArg (fun φ ↦ φ.hom μ) (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).mapIso (TopCat.isoOfHomeo (X := TopCat.of M) e)).inv_hom_id
+  rcases (o.isFundamentalClass_iff_eq_or_eq_neg hn _).1 (hμ.map_homeomorph e.symm) with h | h
+  · refine ⟨1, Or.inl rfl, ?_⟩
+    rw [one_smul, mapFundamentalClass_def, ← h]
+    exact hμe.symm
+  · refine ⟨-1, Or.inr rfl, ?_⟩
+    rw [neg_one_zsmul, ← mapFundamentalClass_neg, mapFundamentalClass_def, fundamentalClass_neg,
+      ← h]
+    exact hμe.symm
 end IsFundamentalClass
 end HomologicalOrientation
 

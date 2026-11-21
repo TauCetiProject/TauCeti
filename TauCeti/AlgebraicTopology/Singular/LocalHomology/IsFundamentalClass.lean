@@ -54,6 +54,8 @@ commutative ring consumes. The integral and rational fundamental-class specializ
 * `TauCeti.IsFundamentalClass.exists_linearEquiv_isUnit`: on a compact connected manifold, with
   coefficients free of rank one over a Dedekind-finite ring `k`, the top homology carrying a
   fundamental class `μ` is a copy of `k` in which `μ` is a unit.
+* `TauCeti.IsFundamentalClass.map_homeomorph`: homeomorphisms carry fundamental classes to
+  fundamental classes.
 * `TauCeti.isFundamentalClass_iff_forall_isLocalOrientation`: with integral coefficients, `μ` is a
   fundamental class exactly when its image at each point is a local orientation.
 
@@ -162,6 +164,42 @@ theorem isFundamentalClass_iff_isUnit_of_linearEquiv [IsDedekindFiniteMonoid R]
   forall_congr' fun x ↦ (e x).span_singleton_eq_top_iff_isUnit
 
 end Definition
+
+section Homeomorph
+
+variable {M M' : Type w} [TopologicalSpace M] [TopologicalSpace M'] {R : Type u} [Ring R]
+  {N : ModuleCat.{w} R} {n : ℕ}
+
+open AlgebraicTopology in
+/-- **Fundamental classes are natural under homeomorphisms**: a homeomorphism `e : M ≃ₜ M'`
+carries a fundamental class of `M` to a fundamental class of `M'`. -/
+theorem IsFundamentalClass.map_homeomorph
+    {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} R)}
+    (hμ : IsFundamentalClass μ) (e : M ≃ₜ M') :
+    IsFundamentalClass
+      ((((singularHomologyFunctor (ModuleCat.{w} R) n).obj N).map
+        (TopCat.ofHom (e : C(M, M')))).hom μ) := by
+  intro y
+  obtain ⟨x, rfl⟩ : ∃ x, (e : C(M, M')) x = y := e.surjective y
+  have hx : (e : C(M, M')) ⁻¹' {(e : C(M, M')) x} ⊆ {x} := fun z hz ↦ e.injective hz
+  have hx' : (e.symm : C(M', M)) ⁻¹' {x} ⊆ {(e : C(M, M')) x} := fun z hz ↦
+    e.symm_apply_eq.1 hz
+  -- The map of local homology induced by `e` has the one induced by `e.symm` as a section.
+  have hsurj : Function.Surjective (localHomologyMap N (e : C(M, M')) hx n) := fun z ↦ by
+    refine ⟨localHomologyMap N (e.symm : C(M', M)) hx' n z, ?_⟩
+    rw [← ConcreteCategory.comp_apply, localHomologyMap_comp,
+      localHomologyMap_congr N (ContinuousMap.ext fun y ↦ e.apply_symm_apply y :
+        (e : C(M, M')).comp e.symm = ContinuousMap.id M'), localHomologyMap_id]
+    exact congrArg (fun φ ↦ φ.hom z) (localHomologyRestriction_refl N _ n)
+  have h := congrArg (Submodule.map (localHomologyMap N (e : C(M, M')) hx n).hom) (hμ x)
+  rw [Submodule.map_span, Set.image_singleton, Submodule.map_top,
+    LinearMap.range_eq_top.2 hsurj] at h
+  -- The local class of `e_* μ` at `e x` is read through the naturality of local homology.
+  rw [singularHomologyFunctor_obj_map_hom_apply,
+    singularHomologyToLocalHomology_singularHomologyMap N (e : C(M, M')) hx]
+  exact h
+
+end Homeomorph
 
 section Manifold
 
