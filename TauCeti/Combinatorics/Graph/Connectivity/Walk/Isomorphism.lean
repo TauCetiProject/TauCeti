@@ -16,7 +16,9 @@ import TauCeti.Data.List.Attach
 A multigraph isomorphism induces a prefunctor between the bidirected arrow families and hence
 transports edge-labelled walks between actual vertices. Transport respects the constructors,
 identity, composition, inverse, reversal, support, traversed edges, trails, paths, cycles, and
-reachability, including after deleting a transported edge set.
+reachability, including after deleting a transported edge set. It preserves and reflects
+edge, support, and internal vertex disjointness. It also gives equivalences of indexed walk and
+path families with potentially different endpoints for each member.
 
 ## Main definitions
 
@@ -24,11 +26,15 @@ reachability, including after deleting a transported edge set.
 * `Graph.Iso.toPrefunctor`: the induced prefunctor between bidirected arrow families.
 * `Graph.Iso.mapPath`: transport of directed walks of the bidirected family.
 * `Graph.Iso.mapWalk`: transport of edge-labelled multigraph walks.
+* `Graph.Iso.walkEquiv`: equivalence of walks between corresponding actual vertices.
+* `Graph.Iso.walkFamilyEquiv`: equivalence of indexed walk families with corresponding endpoints.
+* `Graph.Iso.pathFamilyEquiv`: equivalence of indexed simple-path families with corresponding
+  endpoints.
 -/
 
 public section
 
-universe u v u' v' u'' v''
+universe u v u' v' u'' v'' w
 
 open TauCeti
 
@@ -360,6 +366,48 @@ theorem mapWalk_mapWalk_symm (f : Iso G H) {x y : H.vertexSet} (p : H.Walk x y) 
       (congrArg Subtype.val (vertexEquiv_apply_symm_vertexEquiv f y)) = p := by
   simp [mapWalk, ← ArrowWalk.toGraphWalk_cast]
 
+/-- Transport commutes with changing the endpoints by equalities of actual vertices. -/
+@[simp]
+theorem mapWalk_copy (f : Iso G H) {x y x' y' : G.vertexSet} (p : G.Walk x y)
+    (hx : x = x') (hy : y = y') :
+    f.mapWalk (p.copy (congrArg Subtype.val hx) (congrArg Subtype.val hy)) =
+      (f.mapWalk p).copy (congrArg (fun z ↦ (f.vertexEquiv z : α')) hx)
+        (congrArg (fun z ↦ (f.vertexEquiv z : α')) hy) := by
+  subst x'
+  subst y'
+  simp
+
+/-- An isomorphism identifies walks between corresponding actual vertices. -/
+def walkEquiv (f : Iso G H) (x y : G.vertexSet) :
+    G.Walk x y ≃ H.Walk (f.vertexEquiv x) (f.vertexEquiv y) where
+  toFun := f.mapWalk
+  invFun p := (f.symm.mapWalk p).copy
+    (congrArg Subtype.val (f.symm_vertexEquiv_apply_vertexEquiv x))
+    (congrArg Subtype.val (f.symm_vertexEquiv_apply_vertexEquiv y))
+  left_inv := f.mapWalk_symm_mapWalk
+  right_inv p := by
+    rw [mapWalk_copy f _ (f.symm_vertexEquiv_apply_vertexEquiv x)
+      (f.symm_vertexEquiv_apply_vertexEquiv y)]
+    exact f.mapWalk_mapWalk_symm p
+
+/-- The walk equivalence applies the existing walk transport. -/
+@[simp]
+theorem walkEquiv_apply (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
+    f.walkEquiv x y p = f.mapWalk p := (rfl)
+
+/-- Its inverse transports along the inverse isomorphism and identifies the endpoints. -/
+@[simp]
+theorem walkEquiv_symm_apply (f : Iso G H) {x y : G.vertexSet}
+    (p : H.Walk (f.vertexEquiv x) (f.vertexEquiv y)) :
+    (f.walkEquiv x y).symm p = (f.symm.mapWalk p).copy
+      (congrArg Subtype.val (f.symm_vertexEquiv_apply_vertexEquiv x))
+      (congrArg Subtype.val (f.symm_vertexEquiv_apply_vertexEquiv y)) := (rfl)
+
+/-- Walk transport is injective, including for distinct parallel-edge paths. -/
+theorem mapWalk_injective (f : Iso G H) (x y : G.vertexSet) :
+    Function.Injective (f.mapWalk (x := x) (y := y)) :=
+  (f.walkEquiv x y).injective
+
 /-- The support of a transported walk is the pointwise image of the original support. -/
 theorem support_mapWalk (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
     (f.mapWalk p).support = ((p.toBidirected x.property).vertices.map f.vertexEquiv).unattach := by
@@ -401,6 +449,56 @@ theorem edgeEquiv_mem_edges_mapWalk_iff (f : Iso G H) {x y : G.vertexSet}
     List.val_mem_unattach_iff,
     List.mem_map_of_injective f.edgeEquiv.injective]
 
+/-- An isomorphism preserves and reflects disjointness of traversed edge identities. -/
+@[simp]
+theorem disjoint_edges_mapWalk_iff (f : G.Iso H) {x y z t : V(G)}
+    (p : G.Walk x y) (q : G.Walk z t) :
+    (f.mapWalk p).edges.Disjoint (f.mapWalk q).edges ↔ p.edges.Disjoint q.edges := by
+  simp only [edges_mapWalk, List.unattach, List.Disjoint.map_iff Subtype.val_injective,
+    List.Disjoint.map_iff f.edgeEquiv.injective]
+  simpa only [List.map_subtype, List.map_id', Walk.edgesAttach_unattach] using
+    (List.Disjoint.map_iff (s := p.edgesAttach) (t := q.edgesAttach)
+      Subtype.val_injective).symm
+
+/-- An isomorphism preserves and reflects disjointness including the walk endpoints. -/
+@[simp]
+theorem disjoint_support_mapWalk_iff (f : G.Iso H) {x y z t : V(G)}
+    (p : G.Walk x y) (q : G.Walk z t) :
+    (f.mapWalk p).support.Disjoint (f.mapWalk q).support ↔ p.support.Disjoint q.support := by
+  simp only [support_mapWalk, List.unattach, List.Disjoint.map_iff Subtype.val_injective,
+    List.Disjoint.map_iff f.vertexEquiv.injective]
+  simpa only [List.map_subtype, List.map_id', Walk.vertices_toBidirected] using
+    (List.Disjoint.map_iff (s := (p.toBidirected x.property).vertices)
+      (t := (q.toBidirected z.property).vertices) Subtype.val_injective).symm
+
+/-- An isomorphism preserves and reflects internal disjointness for common endpoints. -/
+@[simp]
+theorem internallyDisjoint_mapWalk_iff (f : G.Iso H) {x y : V(G)} (p q : G.Walk x y) :
+    (f.mapWalk p).InternallyDisjoint (f.mapWalk q) ↔ p.InternallyDisjoint q := by
+  rw [Walk.internallyDisjoint_def, Walk.internallyDisjoint_def]
+  constructor
+  · intro h a hap haq
+    let a' : V(G) := ⟨a, p.support_subset_vertexSet x.property a hap⟩
+    have ha := h (f.vertexEquiv a')
+      ((f.vertexEquiv_mem_support_mapWalk_iff p a').2 hap)
+      ((f.vertexEquiv_mem_support_mapWalk_iff q a').2 haq)
+    exact ha.imp
+      (fun hx ↦ congrArg Subtype.val (f.vertexEquiv.injective (Subtype.ext hx)))
+      (fun hy ↦ congrArg Subtype.val (f.vertexEquiv.injective (Subtype.ext hy)))
+  · intro h a hap haq
+    let a' : V(H) := ⟨a, (f.mapWalk p).support_subset_vertexSet (f.vertexEquiv x).property a hap⟩
+    have hp : (f.vertexEquiv (f.vertexEquiv.symm a') : α') ∈ (f.mapWalk p).support := by
+      simpa [a'] using hap
+    have hq : (f.vertexEquiv (f.vertexEquiv.symm a') : α') ∈ (f.mapWalk q).support := by
+      simpa [a'] using haq
+    have ha := h _ ((f.vertexEquiv_mem_support_mapWalk_iff p _).1 hp)
+      ((f.vertexEquiv_mem_support_mapWalk_iff q _).1 hq)
+    rcases ha with hx | hy
+    · left
+      exact congrArg Subtype.val (by simpa using congrArg f.vertexEquiv (Subtype.ext hx))
+    · right
+      exact congrArg Subtype.val (by simpa using congrArg f.vertexEquiv (Subtype.ext hy))
+
 /-- Walk transport preserves and reflects trails. -/
 @[simp]
 theorem isTrail_mapWalk (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
@@ -424,6 +522,47 @@ theorem isCycle_mapWalk (f : Iso G H) {x : G.vertexSet} (p : G.Walk x x) :
     (f.vertexEquiv x).property, Walk.isCycle_iff_isCycle_toBidirected_and_isTrail p x.property]
   rw [isTrail_mapWalk]
   simp only [toBidirected_mapWalk, isCycle_mapPath]
+
+/-- Relabel an indexed walk family, allowing each member to have its own endpoints. -/
+def walkFamilyEquiv (f : G.Iso H) {ι : Type w} (a b : ι → V(G)) :
+    (∀ i, G.Walk (a i) (b i)) ≃
+      (∀ i, H.Walk (f.vertexEquiv (a i)) (f.vertexEquiv (b i))) :=
+  Equiv.piCongrRight fun i ↦ f.walkEquiv (a i) (b i)
+
+/-- The transported member is the ordinary walk transport. -/
+@[simp]
+theorem walkFamilyEquiv_apply (f : G.Iso H) {ι : Type w} (a b : ι → V(G))
+    (P : ∀ i, G.Walk (a i) (b i)) (i : ι) :
+    f.walkFamilyEquiv a b P i = f.mapWalk (P i) := by
+  simp [walkFamilyEquiv]
+
+/-- Inverse family transport acts memberwise by inverse walk transport. -/
+@[simp]
+theorem walkFamilyEquiv_symm_apply (f : G.Iso H) {ι : Type w} (a b : ι → V(G))
+    (P : ∀ i, H.Walk (f.vertexEquiv (a i)) (f.vertexEquiv (b i))) (i : ι) :
+    (f.walkFamilyEquiv a b).symm P i = (f.walkEquiv (a i) (b i)).symm (P i) := (rfl)
+
+/-- Relabel a family of simple paths, with index-dependent endpoints. -/
+def pathFamilyEquiv (f : G.Iso H) {ι : Type w} (a b : ι → V(G)) :
+    (∀ i, {p : G.Walk (a i) (b i) // p.IsPath}) ≃
+      (∀ i, {p : H.Walk (f.vertexEquiv (a i)) (f.vertexEquiv (b i)) // p.IsPath}) :=
+  Equiv.piCongrRight fun i ↦ (f.walkEquiv (a i) (b i)).subtypeEquiv
+    (fun p ↦ by simp)
+
+/-- Relabelling a path family transports its underlying walks. -/
+@[simp]
+theorem pathFamilyEquiv_apply_val (f : G.Iso H) {ι : Type w} (a b : ι → V(G))
+    (P : ∀ i, {p : G.Walk (a i) (b i) // p.IsPath}) (i : ι) :
+    (f.pathFamilyEquiv a b P i).val = f.mapWalk (P i).val := by
+  simp [pathFamilyEquiv]
+
+/-- Inverse path-family transport recovers each underlying walk by the inverse equivalence. -/
+@[simp]
+theorem pathFamilyEquiv_symm_apply_val (f : G.Iso H) {ι : Type w} (a b : ι → V(G))
+    (P : ∀ i, {p : H.Walk (f.vertexEquiv (a i)) (f.vertexEquiv (b i)) // p.IsPath})
+    (i : ι) :
+    ((f.pathFamilyEquiv a b).symm P i).val =
+      (f.walkEquiv (a i) (b i)).symm (P i).val := (rfl)
 
 /-- Reachability between actual vertices is invariant under graph isomorphism. -/
 theorem reachable_iff (f : Iso G H) (x y : G.vertexSet) :
