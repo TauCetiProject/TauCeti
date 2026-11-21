@@ -50,7 +50,9 @@ normal vector and an offset.
 * `TauCeti.hyperplaneReflection_eq_self_of_mem_closure`: it fixes the points of the closure of the
   open half-space `{x | c < ⟪x, ν⟫}` outside it.
 * `TauCeti.dist_le_dist_hyperplaneReflection`: a point of the closed half-space
-  `{y | c ≤ ⟪y, ν⟫}` is at least as close to another such point as to its mirror image.
+  `{y | c ≤ ⟪y, ν⟫}` is at least as close to another such point as to its mirror image, and so
+  (`TauCeti.mem_thickening_of_hyperplaneReflection_mem_thickening`) a point of that half-space
+  whose mirror image lies in a thickening of a set in the half-space lies in it too.
 * `TauCeti.fderiv_hyperplaneReflection` and `TauCeti.abs_det_fderiv_hyperplaneReflection`: its
   derivative is the linear reflection, of determinant `±1`.
 * `TauCeti.measurePreserving_hyperplaneReflection`: it preserves every additive Haar measure, and
@@ -188,6 +190,19 @@ theorem dist_le_dist_hyperplaneReflection {ν : F} {c : ℝ} {x z : F} (hx : c �
     positivity
   rw [dist_eq_norm, dist_eq_norm, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), hid]
   linarith
+
+/-- **Reflection does not bring a point closer to a set on its side.** If `S` lies in the closed
+half-space `{y | c ≤ ⟪y, ν⟫}` and `x` lies in that half-space with its mirror image in the open
+`r`-thickening of `S`, then `x` lies in the `r`-thickening of `S` too. -/
+theorem mem_thickening_of_hyperplaneReflection_mem_thickening {ν x : F} {c r : ℝ} {S : Set F}
+    (hS : ∀ y ∈ S, c ≤ ⟪y, ν⟫_ℝ) (hx : c ≤ ⟪x, ν⟫_ℝ)
+    (hρx : hyperplaneReflection ν c x ∈ Metric.thickening r S) : x ∈ Metric.thickening r S := by
+  obtain ⟨s, hs, hxs⟩ := Metric.mem_thickening_iff.1 hρx
+  refine Metric.mem_thickening_iff.2 ⟨s, hs, ?_⟩
+  calc dist x s = dist s x := dist_comm _ _
+    _ ≤ dist s (hyperplaneReflection ν c x) := dist_le_dist_hyperplaneReflection (hS s hs) hx
+    _ = dist (hyperplaneReflection ν c x) s := dist_comm _ _
+    _ < r := hxs
 
 /-- The derivative of the hyperplane reflection at every point is its linear part
 `(ℝ ∙ ν)ᗮ.reflection`. -/

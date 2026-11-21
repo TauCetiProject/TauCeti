@@ -69,7 +69,9 @@ vanishes near `∂B` its extension by zero lies in `W^{1,p}_0(U ∩ H)`
   `1_H F - 1_H (R F) ∘ ρ` with the gradient of `φ`.
 * `TauCeti.W1p.setIntegral_norm_gradient_sub_compHyperplaneReflectionL_sub_smul_sq_le`: for `u`
   vanishing off `H`, the `L²(U)` distance of the gradient of the odd reflection from a multiple
-  `t ν` of the normal is at most `√2` times that of `∇u` on `U ∩ H`.
+  `t ν` of the normal is at most `√2` times that of `∇u` on `U ∩ H`, and
+  `TauCeti.W1p.norm_gradient_sub_compHyperplaneReflectionL_sq_le`: in particular the `L²(U)` norm
+  of the gradient of the odd reflection is at most `√2` times that of the gradient of `u|_{U ∩ H}`.
 -/
 
 public section
@@ -622,5 +624,26 @@ theorem W1p.setIntegral_norm_gradient_sub_compHyperplaneReflectionL_sub_smul_sq_
         rw [integral_add hGint hGρint, hρmp.integral_comp ρ.toHomeomorph.measurableEmbedding G,
           ← hG, setIntegral_indicator H.isOpen.measurableSet]
         ring
+
+/-- **The norm of the gradient of the odd reflection.** Let `U` have finite measure and let
+`u ∈ W^{1,2}(U)` vanish on `U ∖ H`, where `H = {x | c < ⟪x, ν⟫}`, `ν ≠ 0`. Then the odd reflection
+`w = u - u ∘ ρ` satisfies `‖∇w‖² ≤ 2 ‖∇(u|_{U ∩ H})‖²`, the norms being those of `L²(U)` and
+`L²(U ∩ H)`. -/
+theorem W1p.norm_gradient_sub_compHyperplaneReflectionL_sq_le (hν : ν ≠ 0)
+    (hH : ∀ x, x ∈ H ↔ c < ⟪x, ν⟫_ℝ) (hU : MapsTo (hyperplaneReflection ν c) U U)
+    (hUfin : mu U ≠ ⊤) {u : W1p mu U 2}
+    (hu0 : ∀ᵐ x ∂mu.restrict U, x ∉ H → W1p.value u x = 0) :
+    ‖W1p.gradient (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c hU u)‖ ^ 2 ≤
+      2 * ‖W1p.gradient (W1p.restrictL (inf_le_left : U ⊓ H ≤ U) u)‖ ^ 2 := by
+  have hint := W1p.setIntegral_norm_gradient_sub_compHyperplaneReflectionL_sub_smul_sq_le hν hH
+    hU hUfin hu0 0
+  simp only [zero_smul, sub_zero] at hint
+  rw [Lp.integral_norm_sq_eq_norm_sq] at hint
+  refine hint.trans_eq ?_
+  rw [← Lp.integral_norm_sq_eq_norm_sq]
+  congr 1
+  refine integral_congr_ae ?_
+  filter_upwards [W1p.gradient_restrictL_ae (inf_le_left : U ⊓ H ≤ U) u] with x hx
+  rw [hx]
 
 end TauCeti
