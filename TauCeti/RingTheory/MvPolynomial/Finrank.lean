@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
 import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Dimension of homogeneous and bounded-degree polynomials
@@ -148,22 +149,6 @@ theorem finrank_homogeneousSubmodule_eq_multichoose (σ R : Type*) [Fintype σ]
         Finset.card_finsuppAntidiag_nat_eq_multichoose]
       simp
 
-/-- There are `(m + d choose d)` exponent vectors of degree at most `m` in `d = card σ`
-variables. -/
-theorem card_degree_le_eq_choose (σ : Type*) [Fintype σ] (m : ℕ) :
-    Nat.card {s : σ →₀ ℕ // s.degree ≤ m} = (m + Fintype.card σ).choose (Fintype.card σ) := by
-  classical
-  have hset : {s : σ →₀ ℕ | s.degree ≤ m} =
-      ↑((Finset.range (m + 1)).biUnion ((Finset.univ : Finset σ).finsuppAntidiag ·)) := by
-    ext s
-    simp [Finset.mem_finsuppAntidiag, Finsupp.degree_eq_sum]
-  rw [← Set.coe_ofPred, Nat.card_coe_set_eq, hset, Set.ncard_coe_finset, Finset.card_biUnion]
-  · simp [Finset.card_finsuppAntidiag_nat_eq_multichoose, Nat.sum_range_multichoose]
-  · intro k _ l _ hkl
-    refine Finset.disjoint_left.2 fun s hk hl ↦ hkl ?_
-    rw [Finset.mem_finsuppAntidiag] at hk hl
-    exact hk.1.symm.trans hl.1
-
 /-- The polynomials of total degree at most `m` in `d = card σ` variables have dimension
 `(m + d choose d)`. -/
 theorem finrank_restrictTotalDegree (σ R : Type*) [Fintype σ] [CommSemiring R]
@@ -173,7 +158,7 @@ theorem finrank_restrictTotalDegree (σ R : Type*) [Fintype σ] [CommSemiring R]
   rw [restrictTotalDegree, Module.finrank_eq_nat_card_basis (basisRestrictSupport R _)]
   -- The basis is indexed by the exponents `s` with `(s.sum fun _ e ↦ e) ≤ m`, and this sum is
   -- `s.degree` by definition.
-  exact card_degree_le_eq_choose σ m
+  exact Finsupp.card_degree_le_eq_choose σ m
 
 /-- The degree-`w` homogeneous polynomials in two variables have dimension `w + 1`. -/
 theorem finrank_homogeneousSubmodule_fin_two (R : Type*) [CommSemiring R]

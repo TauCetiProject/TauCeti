@@ -82,7 +82,13 @@ theorem mem_restrictTotalDegree_of_mem_coefficientBox {d C : ℕ} {E : ι → Mv
     (hE : E ∈ coefficientBox ι σ d C) (i : ι) : E i ∈ restrictTotalDegree σ ℤ d :=
   (mem_restrictTotalDegree σ d (E i)).2 (hE i).1
 
+/-- The zero tuple lies in every coefficient box. -/
+theorem zero_mem_coefficientBox {d C : ℕ} :
+    (0 : ι → MvPolynomial σ ℤ) ∈ coefficientBox ι σ d C := by
+  simp
+
 /-- The coefficient box grows with the degree bound and the coefficient bound. -/
+@[gcongr]
 theorem coefficientBox_mono {d d' C C' : ℕ} (hd : d ≤ d') (hC : C ≤ C') :
     coefficientBox ι σ d C ⊆ coefficientBox ι σ d' C' := fun _ hE i ↦
   ⟨(hE i).1.trans hd, fun s ↦ ((hE i).2 s).trans (by exact_mod_cast hC)⟩
@@ -109,19 +115,17 @@ noncomputable def coefficientBoxEquiv [Finite σ] (d C : ℕ) :
     fun i ↦ by
       refine ⟨(mem_restrictTotalDegree σ d _).1 (Subtype.prop _), fun s ↦ ?_⟩
       by_cases hs : s.degree ≤ d
-      · rw [show s = ((⟨s, hs⟩ : {s : σ →₀ ℕ // s.degree ≤ d}) : σ →₀ ℕ) from rfl,
-          coeff_boundedCoefficientEquiv_symm_apply]
-        exact abs_le.2 (a (i, ⟨s, hs⟩)).property
+      · exact abs_le.2 <| (coeff_boundedCoefficientEquiv_symm_apply (fun p ↦ (a p : ℤ)) i
+          ⟨s, hs⟩).symm ▸ (a (i, ⟨s, hs⟩)).property
       · rw [coeff_eq_zero_of_mem_restrictTotalDegree (Subtype.prop _) (not_le.1 hs), abs_zero]
         exact C.cast_nonneg⟩
   left_inv E := by
-    refine Subtype.ext (funext fun i ↦ MvPolynomial.ext _ _ fun s ↦ ?_)
-    by_cases hs : s.degree ≤ d
-    · rw [show s = ((⟨s, hs⟩ : {s : σ →₀ ℕ // s.degree ≤ d}) : σ →₀ ℕ) from rfl,
-        coeff_boundedCoefficientEquiv_symm_apply]
-    · rw [coeff_eq_zero_of_mem_restrictTotalDegree (Subtype.prop _) (not_le.1 hs),
-        coeff_eq_zero_of_mem_restrictTotalDegree
-          (mem_restrictTotalDegree_of_mem_coefficientBox E.property i) (not_le.1 hs)]
+    let v : ι → restrictTotalDegree σ ℤ d :=
+      fun i ↦ ⟨E.val i, mem_restrictTotalDegree_of_mem_coefficientBox E.property i⟩
+    have h : (boundedCoefficientEquiv σ ℤ ι d).symm (fun p ↦ (E.val p.1).coeff p.2) = v :=
+      (boundedCoefficientEquiv σ ℤ ι d).symm_apply_eq.2 <|
+        funext fun p ↦ (boundedCoefficientEquiv_apply v p).symm
+    exact Subtype.ext (funext fun i ↦ congrArg Subtype.val (congrFun h i))
   right_inv a := by
     ext p
     exact coeff_boundedCoefficientEquiv_symm_apply _ p.1 p.2
@@ -156,7 +160,7 @@ theorem ncard_coefficientBox [Fintype ι] [Fintype σ] (d C : ℕ) :
     (coefficientBox ι σ d C).ncard =
       (2 * C + 1) ^ (Fintype.card ι * (d + Fintype.card σ).choose (Fintype.card σ)) := by
   rw [← Nat.card_coe_set_eq, Nat.card_congr (coefficientBoxEquiv ι σ d C), Nat.card_fun,
-    Nat.card_prod, card_degree_le_eq_choose, Nat.card_eq_fintype_card (α := ι),
+    Nat.card_prod, Finsupp.card_degree_le_eq_choose, Nat.card_eq_fintype_card (α := ι),
     Nat.card_eq_fintype_card (α := Set.Icc _ _)]
   congr 1
   simp only [Fintype.card_ofFinset, Int.card_Icc]
