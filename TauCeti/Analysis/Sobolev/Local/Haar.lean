@@ -159,11 +159,8 @@ theorem MemWkpLoc.comp_add_right {E : Type u} {F : Type v}
     {p : ENNReal} {U V : Set E} {k : ℕ} {u : E → F}
     (hu : MemWkpLoc p V k u) (b : E) (hmaps : MapsTo (· + b) U V) :
     MemWkpLoc p U k (fun x => u (x + b)) := by
-  have hint : MapsTo (· + b) (interior U) (interior V) := by
-    intro x hx
-    have hmem : x + b ∈ (Homeomorph.addRight b) '' interior U := ⟨x, hx, rfl⟩
-    rw [(Homeomorph.addRight b).image_interior] at hmem
-    exact interior_mono hmaps.image_subset hmem
+  have hint : MapsTo (· + b) (interior U) (interior V) :=
+    (Homeomorph.addRight b).isOpenMap.mapsTo_interior hmaps
   have aux : ∀ (k : ℕ) {F : Type (max u v)} [NormedAddCommGroup F] [NormedSpace ℝ F]
       {u : E → F}, MemWkpLoc p V k u → MemWkpLoc p U k (fun x => u (x + b)) := by
     intro k
@@ -222,11 +219,8 @@ theorem MemWkpLoc.comp_continuousLinearEquiv {p : ENNReal} {U : Set E}
     {V : Set E₁} {k : ℕ} {u : E₁ → F}
     (hu : MemWkpLoc p V k u) (e : E ≃L[ℝ] E₁) (hmaps : MapsTo e U V) :
     MemWkpLoc p U k (u ∘ e) := by
-  have hint : MapsTo e (interior U) (interior V) := by
-    intro x hx
-    have hmem : e x ∈ e.toHomeomorph '' interior U := ⟨x, hx, rfl⟩
-    rw [e.toHomeomorph.image_interior] at hmem
-    exact interior_mono hmaps.image_subset hmem
+  have hint : MapsTo e (interior U) (interior V) :=
+    e.toHomeomorph.isOpenMap.mapsTo_interior hmaps
   have aux : ∀ (k : ℕ) {F : Type (max u₁ v)} [NormedAddCommGroup F] [NormedSpace ℝ F]
       {u : E₁ → F}, MemWkpLoc p V k u → MemWkpLoc p U k (u ∘ e) := by
     intro k

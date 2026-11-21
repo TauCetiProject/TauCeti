@@ -179,11 +179,8 @@ theorem not_memLpLoc_lpSingle {p : ENNReal} {U : Set ℝ} (hU : (interior U).Non
   have hs_uncount : ¬ s.Countable := by
     intro hs_count
     have hK_le : volume K ≤ volume s + volume (K \ s) := by
-      calc volume K ≤ volume (s ∪ (K \ s)) := measure_mono fun x hx => by
-            by_cases hxs : x ∈ s
-            · exact Or.inl hxs
-            · exact Or.inr ⟨hx, hxs⟩
-        _ ≤ volume s + volume (K \ s) := measure_union_le _ _
+      simpa only [inter_eq_right.mpr (show s ⊆ K from inter_subset_left)] using
+        measure_le_inter_add_sdiff volume K s
     have hdiff : volume (K \ s) = 0 := by
       have hsub : K \ s ⊆ {x | u x ∉ t} ∩ K :=
         fun x hx => ⟨fun hxt => hx.2 ⟨hx.1, hxt⟩, hx.1⟩

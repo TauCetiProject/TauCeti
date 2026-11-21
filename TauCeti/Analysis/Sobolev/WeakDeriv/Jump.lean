@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
+import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.Analysis.Normed.Module.Span
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.MeasureTheory.Integral.Prod
@@ -171,15 +172,6 @@ private theorem not_hasWeakFDerivOn_indicator_fst_pos {d : ℕ}
   have hb := b.integral_pos (μ := volume)
   linarith
 
-private def hyperplaneKernelEquiv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] (ℓ : E →L[ℝ] ℝ) :
-    EuclideanSpace ℝ (Fin (Module.finrank ℝ (LinearMap.ker ℓ.toLinearMap))) ≃L[ℝ]
-      LinearMap.ker ℓ.toLinearMap :=
-  ((EuclideanSpace.basisFun
-    (Fin (Module.finrank ℝ (LinearMap.ker ℓ.toLinearMap))) ℝ).toBasis.equiv
-    (Module.finBasis ℝ (LinearMap.ker ℓ.toLinearMap))
-    (Equiv.refl _)).toContinuousLinearEquiv
-
 private def hyperplaneEquiv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] (ℓ : E →L[ℝ] ℝ) (v : E) (hℓv : ℓ v = 1) :
     (ℝ × EuclideanSpace ℝ (Fin (Module.finrank ℝ (LinearMap.ker ℓ.toLinearMap)))) ≃L[ℝ] E :=
@@ -204,21 +196,23 @@ private def hyperplaneEquiv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ 
   have hcompl : IsCompl L (LinearMap.ker ℓ.toLinearMap) := by
     rw [← hker]
     exact LinearMap.isCompl_of_proj hproj
-  ((lineIso.toLinearEquiv.prodCongr (hyperplaneKernelEquiv ℓ).toLinearEquiv).trans
+  ((lineIso.toLinearEquiv.prodCongr
+      (toEuclidean (E := LinearMap.ker ℓ.toLinearMap)).symm.toLinearEquiv).trans
     (Submodule.prodEquivOfIsCompl L (LinearMap.ker ℓ.toLinearMap) hcompl)).toContinuousLinearEquiv
 
 private theorem hyperplaneEquiv_apply {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] (ℓ : E →L[ℝ] ℝ) (v : E) (hℓv : ℓ v = 1)
     (q : ℝ × EuclideanSpace ℝ (Fin (Module.finrank ℝ (LinearMap.ker ℓ.toLinearMap)))) :
-    hyperplaneEquiv ℓ v hℓv q = q.1 • v + (hyperplaneKernelEquiv ℓ q.2 : E) :=
+    hyperplaneEquiv ℓ v hℓv q =
+      q.1 • v + ((toEuclidean (E := LinearMap.ker ℓ.toLinearMap)).symm q.2 : E) :=
   rfl
 
 private theorem apply_hyperplaneEquiv_fst {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] (ℓ : E →L[ℝ] ℝ) (v : E) (hℓv : ℓ v = 1)
     (q : ℝ × EuclideanSpace ℝ (Fin (Module.finrank ℝ (LinearMap.ker ℓ.toLinearMap)))) :
     ℓ (hyperplaneEquiv ℓ v hℓv q) = q.1 := by
-  have hq2 : ℓ (hyperplaneKernelEquiv ℓ q.2 : E) = 0 :=
-    LinearMap.mem_ker.1 (hyperplaneKernelEquiv ℓ q.2).property
+  have hq2 : ℓ ((toEuclidean (E := LinearMap.ker ℓ.toLinearMap)).symm q.2 : E) = 0 :=
+    LinearMap.mem_ker.1 ((toEuclidean (E := LinearMap.ker ℓ.toLinearMap)).symm q.2).property
   rw [hyperplaneEquiv_apply, map_add, map_smul, smul_eq_mul, hℓv, mul_one, hq2, add_zero]
 
 private theorem hyperplaneEquiv_symm_fst {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
