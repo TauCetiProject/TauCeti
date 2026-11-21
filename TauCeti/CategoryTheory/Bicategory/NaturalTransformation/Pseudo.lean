@@ -82,9 +82,6 @@ def whiskerLeft (P : B ⥤ᵖ B') {F G : B' ⥤ᵖ C} (η : F ⟶ G) : P.comp F 
     exact h
 
 /-- The component `η.app a ≅ θ.app a` at `a` of an invertible modification `e : η ≅ θ`. -/
--- The body is exposed so that, for pseudofunctors into `Cat`, the object components of
--- `Cat.Hom.toNatIso (isoApp e a)` are definitionally those of `e.hom.as.app a`.
-@[expose]
 def StrongTrans.isoApp {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (e : η ≅ θ) (a : B) : η.app a ≅ θ.app a where
   hom := e.hom.as.app a
   inv := e.inv.as.app a
