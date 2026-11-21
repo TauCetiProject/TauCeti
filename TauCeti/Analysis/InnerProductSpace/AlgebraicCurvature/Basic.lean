@@ -83,6 +83,8 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
 
 * `TauCeti.FourTensor.abs_apply_le_norm_of_norm_eq_one`: evaluation on unit vectors is bounded
   by the operator norm.
+* `TauCeti.FourTensor.IsAlgebraicCurvature.cyclic_last_eq_zero`: the first Bianchi identity in
+  the last three arguments.
 * `TauCeti.FourTensor.isClosed_algebraicCurvatureSubmodule`: the submodule is closed.
 * `TauCeti.FourTensor.IsAlgebraicCurvature.compContinuousLinearMap`: pullback preserves algebraic
   curvature tensors.
@@ -220,6 +222,13 @@ theorem IsAlgebraicCurvature.swap_first_last {r : FourTensor V} (hr : IsAlgebrai
 theorem IsAlgebraicCurvature.reverse {r : FourTensor V} (hr : IsAlgebraicCurvature r)
     (u v z w : V) : r ![u, v, z, w] = r ![w, z, v, u] := by
   rw [hr.swap_first_last, hr.swap_pairs]
+
+/-- The first Bianchi identity in the last three arguments:
+`r(u, v, z, w) + r(u, z, w, v) + r(u, w, v, z) = 0`. -/
+theorem IsAlgebraicCurvature.cyclic_last_eq_zero {r : FourTensor V} (hr : IsAlgebraicCurvature r)
+    (u v z w : V) : r ![u, v, z, w] + r ![u, z, w, v] + r ![u, w, v, z] = 0 := by
+  rw [hr.reverse u v, hr.reverse u z, hr.reverse u w]
+  linear_combination hr.cyclic_eq_zero w z v u
 
 variable (V) in
 /-- The submodule of algebraic curvature tensors. -/
@@ -658,9 +667,8 @@ theorem constantCurvature_compContinuousLinearMap_linearIsometry {W : Type*}
     [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (f : W →ₗᵢ[ℝ] V) :
     (constantCurvature V).compContinuousLinearMap (fun _ ↦ f.toContinuousLinearMap) =
       constantCurvature W := by
-  ext m
-  have hm : m = ![m 0, m 1, m 2, m 3] := by funext i; fin_cases i <;> rfl
-  rw [hm, compContinuousLinearMap_apply_vec]
+  refine ext_vec fun a b c d ↦ ?_
+  rw [compContinuousLinearMap_apply_vec]
   simp
 
 /-- The Ricci contraction of the constant-curvature tensor is `(n - 1) g`. -/
