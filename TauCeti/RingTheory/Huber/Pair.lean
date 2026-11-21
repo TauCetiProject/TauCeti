@@ -38,6 +38,8 @@ than selected by a typeclass.
   positive power of which lies in `A⁺`.
 * `TauCeti.Huber.IsRingOfIntegralElements.exists_isPseudoUniformizer`: in a Tate ring, `A⁺`
   contains a pseudouniformiser.
+* `TauCeti.Huber.IsRingOfIntegralElements.isLocalization`: a Tate ring is the localisation of
+  `A⁺` at the elements of `A⁺` which are units of the ambient ring.
 * `TauCeti.Huber.IsRingOfIntegralElements.map`: an isomorphism of topological rings carries a
   ring of integral elements onto a ring of integral elements.
 * `TauCeti.Huber.isRingOfIntegralElements_powerBoundedSubring`, `TauCeti.Huber.Pair.powerBounded`:
@@ -138,6 +140,14 @@ theorem IsRingOfIntegralElements.exists_isPseudoUniformizer [IsTopologicalRing A
     ∃ ϖ : Aplus, IsPseudoUniformizer (ϖ : A) :=
   have ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
   ⟨⟨ϖ, h.mem_of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent⟩, hϖ⟩
+
+/-- A Tate ring `A` is the localisation of a ring of integral elements `A⁺` at the elements of
+`A⁺` which are units of `A`. -/
+theorem IsRingOfIntegralElements.isLocalization [IsTopologicalRing A] [IsTateRing A]
+    {Aplus : Subring A} (h : IsRingOfIntegralElements Aplus) :
+    IsLocalization ((IsUnit.submonoid A).comap Aplus.subtype) A :=
+  have hϖ := h.exists_isPseudoUniformizer.choose_spec
+  Aplus.isLocalization_of_isOpen h.isOpen _ hϖ.isTopologicallyNilpotent hϖ.isUnit
 
 /-- An isomorphism of topological rings carries a ring of integral elements onto a ring of
 integral elements. -/
