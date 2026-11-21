@@ -104,6 +104,19 @@ def snoc (f : finiteOrthonormalFrame 𝕜 r N) (v : Metric.sphere (0 : f.complem
     (v : Metric.sphere (0 : f.complement) 1) :
     (f.snoc v).val (Fin.last r) = WithLp.ofLp v.val.val := by simp [snoc]
 
+/-- Appending a perpendicular unit vector keeps the earlier vectors, as unit vectors. -/
+@[simp] theorem toSphere_snoc_castSucc (f : finiteOrthonormalFrame 𝕜 r N)
+    (v : Metric.sphere (0 : f.complement) 1) (i : Fin r) :
+    (f.snoc v).toSphere i.castSucc = f.toSphere i :=
+  Subtype.ext <| by rw [coe_toSphere, coe_toSphere, snoc_castSucc]
+
+/-- The appended perpendicular unit vector is the last vector of the frame, as a unit vector. -/
+@[simp] theorem toSphere_snoc_last (f : finiteOrthonormalFrame 𝕜 r N)
+    (v : Metric.sphere (0 : f.complement) 1) :
+    (f.snoc v).toSphere (Fin.last r) =
+      ⟨v.val.val, mem_sphere_zero_iff_norm.2 (mem_sphere_zero_iff_norm.1 v.property)⟩ :=
+  Subtype.ext <| by rw [coe_toSphere, snoc_last, WithLp.toLp_ofLp]
+
 @[simp] theorem forgetLast_snoc (f : finiteOrthonormalFrame 𝕜 r N)
     (v : Metric.sphere (0 : f.complement) 1) : forgetLast (f.snoc v) = f := by
   ext i k

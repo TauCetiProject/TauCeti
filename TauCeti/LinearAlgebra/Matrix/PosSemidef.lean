@@ -26,6 +26,8 @@ but do not depend on Tau Ceti's positive-definite-function theory.
 
 ## Main declarations
 
+* `Matrix.posSemidef_vecMulVec_self`: the outer product `vecMulVec a a` over a ring with trivial
+  star.
 * `TauCeti.posSemidef_const_one` and `TauCeti.posSemidef_const_of_nonneg`: constant matrices.
 * `TauCeti.posSemidef_iff_finite_sum`: the quadratic-form characterization.
 * `TauCeti.posSemidef_schur_finset_prod` and `Matrix.PosSemidef.hadamard_pow`: finite Schur
@@ -208,6 +210,12 @@ theorem posSemidef_prod_symmDiff {𝕜 ι : Type*} [RCLike 𝕜] [DecidableEq α
   exact posSemidef_schur_finset_prod fun a _ => (hfactor a).submatrix Subtype.val
 
 end TauCeti
+
+/-- Over a ring with trivial star, such as `ℝ`, the outer product `vecMulVec a a` is positive
+semidefinite. This is `Matrix.posSemidef_vecMulVec_self_star` without the `star`. -/
+theorem Matrix.posSemidef_vecMulVec_self {n R : Type*} [Ring R] [PartialOrder R] [StarRing R]
+    [StarOrderedRing R] [TrivialStar R] (a : n → R) : (vecMulVec a a).PosSemidef := by
+  simpa using posSemidef_vecMulVec_self_star a
 
 /-- Schur powers of a positive-semidefinite matrix are positive semidefinite. -/
 theorem Matrix.PosSemidef.hadamard_pow {α 𝕜 : Type*} [RCLike 𝕜] {K : α → α → 𝕜}
