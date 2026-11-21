@@ -60,8 +60,8 @@ Here `K` is Peetre's `K`-functional `CompatibleCouple.kFunctional` and `dt / t` 
   finite `q ≠ 0`, and `c_{θ,∞} = 1` for `0 ≤ θ ≤ 1` (`CompatibleCouple.kMethodConst_top`); by
   `CompatibleCouple.kMethodENorm_refl`, for the couple `(X, X)` the norm is
   `‖u‖_{θ,q} = c_{θ,q} ‖u‖`. For instance `c_{1/2,2} = 2 ^ (1 / 2)` and `c_{1/2,∞} = 1`.
-* `CompatibleCouple.lintegral_rpow_neg_mul_min`: by dilation,
-  `∫ t ^ (-θ) min A (t B) dt / t = A ^ (1 - θ) B ^ θ c_{θ,1}` for `A, B > 0`.
+* `CompatibleCouple.eLpNorm_rpow_neg_mul_min`, `CompatibleCouple.lintegral_rpow_neg_mul_min`: by
+  dilation, `‖t ↦ t ^ (-θ) min A (t B)‖_{L^q(dt / t)} = A ^ (1 - θ) B ^ θ c_{θ,q}` for `A, B > 0`.
 
 ## References
 
@@ -107,27 +107,42 @@ theorem lintegral_mul_rpow_neg_mul_min_one_mul (θ : ℝ) {ρ : ℝ} (hρ : 0 < 
   filter_upwards [ae_pos_multHaar] with t ht
   rw [Real.eNorm_of_nonneg (mul_nonneg (Real.rpow_nonneg ht.le _) (le_min zero_le_one ht.le))]
 
+/-- For `A, B > 0` and any `q ∈ [0, ∞]`,
+`‖t ↦ t ^ (-θ) min A (t B)‖_{L^q(dt / t)} = A ^ (1 - θ) B ^ θ c_{θ,q}`, by the dilation
+`t ↦ (B / A) t`. -/
+theorem eLpNorm_rpow_neg_mul_min (θ : ℝ) (q : ℝ≥0∞) {A B : ℝ} (hA : 0 < A) (hB : 0 < B) :
+    eLpNorm (fun t : ℝ => t ^ (-θ) * min A (t * B)) q multHaar =
+      ENNReal.ofReal (A ^ (1 - θ) * B ^ θ) * kMethodConst θ q := by
+  have heq : (fun t : ℝ => t ^ (-θ) * min A (t * B)) =ᵐ[multHaar]
+      (A ^ (1 - θ) * B ^ θ) • fun t : ℝ => (B / A * t) ^ (-θ) * min 1 (B / A * t) := by
+    filter_upwards [ae_pos_multHaar] with t ht
+    have hmin : min A (t * B) = A * min 1 (B / A * t) := by
+      rw [mul_min_of_nonneg _ _ hA.le, mul_one]
+      field_simp
+    have := (Real.rpow_pos_of_pos hA θ).ne'
+    have := (Real.rpow_pos_of_pos hB θ).ne'
+    have := (Real.rpow_pos_of_pos ht θ).ne'
+    simp only [Pi.smul_apply, smul_eq_mul, hmin]
+    rw [Real.mul_rpow (by positivity) ht.le, Real.div_rpow hB.le hA.le, Real.rpow_sub hA,
+      Real.rpow_one]
+    simp only [Real.rpow_neg hA.le, Real.rpow_neg hB.le, Real.rpow_neg ht.le]
+    field_simp
+  rw [eLpNorm_congr_ae heq, eLpNorm_const_smul,
+    eLpNorm_comp_mul_left_multHaar (fun s : ℝ => s ^ (-θ) * min 1 s) (div_pos hB hA),
+    Real.eNorm_of_nonneg (by positivity), ← kMethodConst_def]
+
 /-- For `A, B > 0`, `∫ t ^ (-θ) min A (t B) dt / t = A ^ (1 - θ) B ^ θ c_{θ,1}`, by the dilation
 `t ↦ (B / A) t`. -/
 theorem lintegral_rpow_neg_mul_min (θ : ℝ) {A B : ℝ} (hA : 0 < A) (hB : 0 < B) :
     ∫⁻ t, ENNReal.ofReal (t ^ (-θ) * min A (t * B)) ∂multHaar =
       ENNReal.ofReal (A ^ (1 - θ) * B ^ θ) * kMethodConst θ 1 := by
-  rw [← lintegral_mul_rpow_neg_mul_min_one_mul θ (div_pos hB hA),
-    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  refine lintegral_congr_ae ?_
-  filter_upwards [ae_pos_multHaar] with t ht
-  rw [← ENNReal.ofReal_mul (by positivity)]
-  congr 1
-  have hmin : min A (t * B) = A * min 1 (t * (B / A)) := by
-    rw [mul_min_of_nonneg _ _ hA.le, mul_one]
-    field_simp
-  have := (Real.rpow_pos_of_pos hA θ).ne'
-  have := (Real.rpow_pos_of_pos hB θ).ne'
-  have := (Real.rpow_pos_of_pos ht θ).ne'
-  rw [hmin, Real.mul_rpow ht.le (by positivity), Real.div_rpow hB.le hA.le, Real.rpow_sub hA,
-    Real.rpow_one]
-  simp only [Real.rpow_neg hA.le, Real.rpow_neg hB.le, Real.rpow_neg ht.le]
-  field_simp
+  have hm : AEStronglyMeasurable (fun t : ℝ => t ^ (-θ) * min A (t * B)) multHaar :=
+    (by fun_prop : Measurable fun t : ℝ => t ^ (-θ) * min A (t * B)).aestronglyMeasurable
+  have h1 := eLpNorm_rpow_neg_mul_min θ 1 hA hB
+  rw [eLpNorm_one_eq_lintegral_eNorm hm] at h1
+  refine (lintegral_congr_ae (ae_pos_multHaar.mono fun t ht => ?_)).symm.trans h1
+  rw [Real.eNorm_of_nonneg
+    (mul_nonneg (Real.rpow_nonneg ht.le _) (le_min hA.le (mul_nonneg ht.le hB.le)))]
 
 private theorem continuousOn_rpow_neg_mul_min (θ : ℝ) :
     ContinuousOn (fun t : ℝ => t ^ (-θ) * min 1 t) (Ioi 0) :=

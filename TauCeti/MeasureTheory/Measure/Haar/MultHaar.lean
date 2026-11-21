@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.MeasureTheory.Function.JacobianOneDim
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 
 /-!
 # The multiplicative Haar measure `dt / t` on the positive reals
@@ -421,41 +422,14 @@ theorem eLpNorm_volume_Ioi_eq_eLpNorm_multHaar {p : ℝ≥0∞} (hp0 : p ≠ 0) 
 /-- `∫_{s ≤ t} s ^ θ ds / s = t ^ θ / θ` for `0 < θ` and `0 < t`. -/
 theorem lintegral_Iic_multHaar_rpow {θ t : ℝ} (hθ : 0 < θ) (ht : 0 < t) :
     ∫⁻ s in Iic t, ENNReal.ofReal (s ^ θ) ∂multHaar = ENNReal.ofReal (t ^ θ * θ⁻¹) := by
-  have hmp : MeasurePreserving (t * ·) multHaar multHaar :=
-    ⟨measurable_const_mul t, map_multHaar_mul_left ht⟩
-  have h1 : ∫⁻ u in Iic (1 : ℝ), ENNReal.ofReal (u ^ θ) ∂multHaar = ENNReal.ofReal θ⁻¹ := by
-    rw [← map_volume_exp, setLIntegral_map measurableSet_Iic (by fun_prop) Real.measurable_exp]
-    have hpre1 : Real.exp ⁻¹' Iic (1 : ℝ) = Iic 0 := by
-      ext x
-      exact Real.exp_le_one_iff
-    rw [hpre1, setLIntegral_congr_fun measurableSet_Iic
-        (g := fun x ↦ ENNReal.ofReal (Real.exp (θ * x)))
-        (fun x _ ↦ by rw [← Real.exp_mul, mul_comm]),
-      ← ofReal_integral_eq_lintegral_ofReal (integrableOn_exp_mul_Iic hθ 0)
-        (ae_of_all _ fun _ ↦ (Real.exp_pos _).le),
-      integral_exp_mul_Iic hθ]
-    simp
-  calc ∫⁻ s in Iic t, ENNReal.ofReal (s ^ θ) ∂multHaar
-      = ∫⁻ s, (Iic t).indicator (fun s ↦ ENNReal.ofReal (s ^ θ)) s ∂multHaar :=
-          (lintegral_indicator measurableSet_Iic _).symm
-    _ = ∫⁻ u, (Iic t).indicator (fun s ↦ ENNReal.ofReal (s ^ θ)) (t * u) ∂multHaar :=
-          (hmp.lintegral_comp ((by fun_prop : Measurable fun s : ℝ ↦
-            ENNReal.ofReal (s ^ θ)).indicator measurableSet_Iic)).symm
-    _ = ∫⁻ u, ENNReal.ofReal (t ^ θ) *
-          (Iic (1 : ℝ)).indicator (fun u ↦ ENNReal.ofReal (u ^ θ)) u ∂multHaar := by
-          refine lintegral_congr_ae ?_
-          filter_upwards [ae_pos_multHaar] with u hu
-          by_cases hu1 : u ≤ 1
-          · have htu : t * u ≤ t := by nlinarith
-            rw [indicator_of_mem htu, indicator_of_mem hu1, Real.mul_rpow ht.le hu.le,
-              ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _)]
-          · have htu : ¬ t * u ≤ t := by nlinarith
-            rw [indicator_of_notMem htu, indicator_of_notMem hu1, mul_zero]
-    _ = ENNReal.ofReal (t ^ θ) * ∫⁻ u in Iic (1 : ℝ), ENNReal.ofReal (u ^ θ) ∂multHaar := by
-          rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
-            lintegral_indicator measurableSet_Iic]
-    _ = ENNReal.ofReal (t ^ θ * θ⁻¹) := by
-          rw [h1, ← ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _)]
+  rw [setLIntegral_multHaar_eq_setLIntegral measurableSet_Iic, Set.Iic_inter_Ioi,
+    ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
+  have hpt : ∀ s ∈ Ioo 0 t,
+      ENNReal.ofReal s⁻¹ * ENNReal.ofReal (s ^ θ) = ENNReal.ofReal (s ^ (θ - 1)) := fun s hs ↦ by
+    rw [← ENNReal.ofReal_mul (inv_nonneg.2 hs.1.le), ← Real.rpow_neg_one, ← Real.rpow_add hs.1,
+      neg_add_eq_sub]
+  rw [setLIntegral_congr_fun measurableSet_Ioo hpt,
+    lintegral_ofReal_rpow_Ioo (by linarith) ht.le, sub_add_cancel, div_eq_mul_inv]
 
 /-- `∫_{s < t} s ^ θ ds / s = t ^ θ / θ` for `0 < θ` and `0 < t`. -/
 theorem lintegral_Iio_multHaar_rpow {θ t : ℝ} (hθ : 0 < θ) (ht : 0 < t) :
@@ -465,43 +439,27 @@ theorem lintegral_Iio_multHaar_rpow {θ t : ℝ} (hθ : 0 < θ) (ht : 0 < t) :
 /-- `∫_{s ≥ t} s ^ (-θ) ds / s = t ^ (-θ) / θ` for `0 < θ` and `0 < t`. -/
 theorem lintegral_Ici_multHaar_rpow_neg {θ t : ℝ} (hθ : 0 < θ) (ht : 0 < t) :
     ∫⁻ s in Ici t, ENNReal.ofReal (s ^ (-θ)) ∂multHaar = ENNReal.ofReal (t ^ (-θ) * θ⁻¹) := by
-  have hmp : MeasurePreserving Inv.inv multHaar multHaar :=
-    ⟨measurable_inv, map_multHaar_inv⟩
-  calc ∫⁻ s in Ici t, ENNReal.ofReal (s ^ (-θ)) ∂multHaar
-      = ∫⁻ s, (Ici t).indicator (fun s ↦ ENNReal.ofReal (s ^ (-θ))) s ∂multHaar :=
-          (lintegral_indicator measurableSet_Ici _).symm
-    _ = ∫⁻ u, (Ici t).indicator (fun s ↦ ENNReal.ofReal (s ^ (-θ))) u⁻¹ ∂multHaar :=
-          (hmp.lintegral_comp ((by fun_prop : Measurable fun s : ℝ ↦
-            ENNReal.ofReal (s ^ (-θ))).indicator measurableSet_Ici)).symm
-    _ = ∫⁻ u, (Iic t⁻¹).indicator (fun u ↦ ENNReal.ofReal (u ^ θ)) u ∂multHaar := by
-          refine lintegral_congr_ae ?_
-          filter_upwards [ae_pos_multHaar] with u hu
-          have hiff : t ≤ u⁻¹ ↔ u ≤ t⁻¹ := le_inv_comm₀ ht hu
-          by_cases hu' : u ≤ t⁻¹
-          · rw [indicator_of_mem (hiff.2 hu'), indicator_of_mem hu', Real.inv_rpow hu.le,
-              Real.rpow_neg hu.le, inv_inv]
-          · rw [indicator_of_notMem (mt hiff.1 hu'), indicator_of_notMem hu']
-    _ = ∫⁻ u in Iic t⁻¹, ENNReal.ofReal (u ^ θ) ∂multHaar :=
-          lintegral_indicator measurableSet_Iic _
-    _ = ENNReal.ofReal (t ^ (-θ) * θ⁻¹) := by
-          rw [lintegral_Iic_multHaar_rpow hθ (inv_pos.2 ht), Real.inv_rpow ht.le,
-            Real.rpow_neg ht.le]
+  rw [setLIntegral_multHaar_eq_setLIntegral measurableSet_Ici,
+    inter_eq_self_of_subset_left (Ici_subset_Ioi.2 ht), ← Measure.restrict_congr_set Ioi_ae_eq_Ici]
+  have hpt : ∀ s ∈ Ioi t,
+      ENNReal.ofReal s⁻¹ * ENNReal.ofReal (s ^ (-θ)) = ENNReal.ofReal (s ^ (-θ - 1)) :=
+    fun s hs ↦ by
+      have hs0 : 0 < s := ht.trans hs
+      rw [← ENNReal.ofReal_mul (inv_nonneg.2 hs0.le), ← Real.rpow_neg_one, ← Real.rpow_add hs0,
+        show (-1 : ℝ) + -θ = -θ - 1 by ring]
+  rw [setLIntegral_congr_fun measurableSet_Ioi hpt,
+    lintegral_ofReal_rpow_Ioi_of_lt (by linarith) ht, sub_add_cancel, neg_div_neg_eq,
+    div_eq_mul_inv]
 
 /-- `∫_0^∞ s ^ θ ds / s = ∞` for `0 < θ`. -/
-theorem lintegral_multHaar_rpow_eq_top {θ : ℝ} (hθ : 0 < θ) :
+theorem lintegral_multHaar_rpow_eq_top {θ : ℝ} (_hθ : 0 < θ) :
     ∫⁻ s, ENNReal.ofReal (s ^ θ) ∂multHaar = ∞ := by
-  refine eq_top_iff.2 ?_
-  calc ∞ = volume (Ici (0 : ℝ)) := Real.volume_Ici.symm
-    _ = multHaar (Ici (1 : ℝ)) := by
-          rw [← map_volume_exp, map_apply Real.measurable_exp measurableSet_Ici]
-          congr 1
-          ext x
-          exact Real.one_le_exp_iff.symm
-    _ = ∫⁻ _ in Ici (1 : ℝ), (1 : ℝ≥0∞) ∂multHaar := by simp
-    _ ≤ ∫⁻ s in Ici (1 : ℝ), ENNReal.ofReal (s ^ θ) ∂multHaar :=
-          setLIntegral_mono' measurableSet_Ici fun s (hs : 1 ≤ s) ↦
-            ENNReal.one_le_ofReal.2 (Real.one_le_rpow hs hθ.le)
-    _ ≤ ∫⁻ s, ENNReal.ofReal (s ^ θ) ∂multHaar := setLIntegral_le_lintegral _ _
+  rw [lintegral_multHaar_eq_setLIntegral]
+  have hpt : ∀ s ∈ Ioi (0 : ℝ),
+      ENNReal.ofReal s⁻¹ * ENNReal.ofReal (s ^ θ) = ENNReal.ofReal (s ^ (θ - 1)) := fun s hs ↦ by
+    rw [← ENNReal.ofReal_mul (inv_nonneg.2 hs.le), ← Real.rpow_neg_one, ← Real.rpow_add hs,
+      neg_add_eq_sub]
+  rw [setLIntegral_congr_fun measurableSet_Ioi hpt, lintegral_ofReal_rpow_Ioi]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
