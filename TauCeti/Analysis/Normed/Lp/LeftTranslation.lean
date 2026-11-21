@@ -50,6 +50,17 @@ noncomputable section
 
 open scoped ENNReal BoundedContinuousFunction
 
+namespace LinearIsometryEquiv
+
+/-- Reindexing `ℓᵖ` along a bijection preserves the unconditional sum of coordinates. -/
+theorem tsum_lpCongrLeft {α β 𝕜 E : Type*} {p : ℝ≥0∞} [Fact (1 ≤ p)] [NormedAddCommGroup E]
+    [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] (e : α ≃ β) (f : lp (fun _ : α ↦ E) p) :
+    ∑' y, lpCongrLeft p 𝕜 E e f y = ∑' x, f x := by
+  simp_rw [lpCongrLeft_apply]
+  exact e.symm.tsum_eq fun x ↦ f x
+
+end LinearIsometryEquiv
+
 namespace lp
 
 section MulAction
@@ -109,9 +120,8 @@ theorem leftTranslation_symm_single [DecidableEq X] (g : G) (x : X) (v : E) :
 
 /-- Left translation preserves the series sum of coordinates. -/
 theorem tsum_leftTranslation (g : G) (u : lp (fun _ : X ↦ E) p) :
-    ∑' x, leftTranslation p 𝕜 g u x = ∑' x, u x := by
-  simp_rw [leftTranslation_apply]
-  exact (MulAction.toPerm g⁻¹).tsum_eq ⇑u
+    ∑' x, leftTranslation p 𝕜 g u x = ∑' x, u x :=
+  LinearIsometryEquiv.tsum_lpCongrLeft (MulAction.toPerm g) u
 
 /-- Left translation of `f.toLp p` pushes `f : X →₀ E` forward along `g • ·`. -/
 theorem leftTranslation_finsupp_toLp (g : G) (f : X →₀ E) :

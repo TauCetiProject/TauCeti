@@ -96,35 +96,46 @@ section Group
 
 variable {G : Type*} [Group G]
 
-/-- Auxiliary `ℝ`-linear map sending `u ∈ ℓ¹(G)` to `(L_g u - u)_{g ∈ K}` in the `ℓ¹` direct sum
-over `K`. -/
-private def leftTranslationSubLinearMap (K : Finset G) :
-    lp (fun _ : G ↦ ℝ) 1 →ₗ[ℝ] PiLp 1 (fun _ : K ↦ lp (fun _ : G ↦ ℝ) 1) :=
-  (WithLp.linearEquiv 1 ℝ (∀ _ : K, lp (fun _ : G ↦ ℝ) 1)).symm.toLinearMap.comp
-    (LinearMap.pi fun g : K ↦
-      (lp.leftTranslation 1 ℝ (g : G)).toLinearEquiv.toLinearMap - LinearMap.id)
+/-- For a finite subset `K ⊆ G`, the continuous linear map `a ↦ (L_g a - a)_{g ∈ K}` from
+`ℓ¹(G)` into the sum-norm finite product `PiLp 1 (fun _ : K ↦ lp (fun _ : G ↦ ℝ) 1)`. -/
+def lpTranslateSub (K : Finset G) :
+    lp (fun _ : G ↦ ℝ) 1 →L[ℝ] PiLp 1 (fun _ : K ↦ lp (fun _ : G ↦ ℝ) 1) :=
+  (PiLp.continuousLinearEquiv 1 ℝ _).symm.toContinuousLinearMap.comp
+    (ContinuousLinearMap.pi fun g : K ↦
+      (lp.leftTranslation 1 ℝ (g : G)).toLinearIsometry.toContinuousLinearMap -
+        ContinuousLinearMap.id ℝ _)
+
+@[simp]
+theorem lpTranslateSub_apply (K : Finset G) (a : lp (fun _ : G ↦ ℝ) 1) (g : K) :
+    lpTranslateSub K a g = lp.leftTranslation 1 ℝ (g : G) a - a := by
+  simp [lpTranslateSub]
+
+/-- In `PiLp 1`, the norm of `lpTranslateSub K a` is `∑ g ∈ K, ‖L_g a - a‖`. -/
+theorem norm_lpTranslateSub (K : Finset G) (a : lp (fun _ : G ↦ ℝ) 1) :
+    ‖lpTranslateSub K a‖ = ∑ g ∈ K, ‖lp.leftTranslation 1 ℝ g a - a‖ := by
+  rw [PiLp.norm_eq_of_L1]
+  simp only [lpTranslateSub_apply]
+  exact K.sum_coe_sort fun g ↦ ‖lp.leftTranslation 1 ℝ g a - a‖
 
 /-- For a finite subset `K ⊆ G` and a finitely supported probability `p : StdSimplex ℝ G`, the
 family `(L_g (p.toLp 1) - p.toLp 1)_{g ∈ K}` in the finite `ℓ¹` product
 `PiLp 1 (fun _ : K ↦ lp (fun _ : G ↦ ℝ) 1)` equipped with the sum norm. -/
 def stdSimplexLeftTranslationSub (K : Finset G) (p : StdSimplex ℝ G) :
     PiLp 1 (fun _ : K ↦ lp (fun _ : G ↦ ℝ) 1) :=
-  leftTranslationSubLinearMap K (p.toLp 1)
+  lpTranslateSub K (p.toLp 1)
 
 @[simp]
 theorem stdSimplexLeftTranslationSub_apply (K : Finset G) (p : StdSimplex ℝ G) (g : K) :
-    stdSimplexLeftTranslationSub K p g = lp.leftTranslation 1 ℝ (g : G) (p.toLp 1) - p.toLp 1 := by
-  simp [stdSimplexLeftTranslationSub, leftTranslationSubLinearMap]
+    stdSimplexLeftTranslationSub K p g = lp.leftTranslation 1 ℝ (g : G) (p.toLp 1) - p.toLp 1 :=
+  lpTranslateSub_apply K (p.toLp 1) g
 
 /-- In `PiLp 1`, the norm of `stdSimplexLeftTranslationSub K p` is the sum over `g ∈ K` of the
 `ℓ¹` translation errors `‖L_g (p.toLp 1) - p.toLp 1‖`. -/
 @[simp]
 theorem norm_stdSimplexLeftTranslationSub (K : Finset G) (p : StdSimplex ℝ G) :
     ‖stdSimplexLeftTranslationSub K p‖ =
-      ∑ g ∈ K, ‖lp.leftTranslation 1 ℝ g (p.toLp 1) - p.toLp 1‖ := by
-  rw [PiLp.norm_eq_of_L1]
-  simp only [stdSimplexLeftTranslationSub_apply]
-  exact K.sum_coe_sort fun g ↦ ‖lp.leftTranslation 1 ℝ g (p.toLp 1) - p.toLp 1‖
+      ∑ g ∈ K, ‖lp.leftTranslation 1 ℝ g (p.toLp 1) - p.toLp 1‖ :=
+  norm_lpTranslateSub K (p.toLp 1)
 
 /-- On a point mass `StdSimplex.single x`, the `g`-th coordinate of
 `stdSimplexLeftTranslationSub K (.single x)` is `δ_{g * x} - δ_x`. -/
@@ -156,9 +167,8 @@ theorem range_stdSimplexLeftTranslationSub_eq_convexHull (K : Finset G) :
       convexHull ℝ (Set.range fun x : G ↦ stdSimplexLeftTranslationSub K (.single x)) := by
   classical
   have h : Set.range (stdSimplexLeftTranslationSub K) =
-      leftTranslationSubLinearMap K '' Set.range (fun p : StdSimplex ℝ G ↦ p.toLp 1) := by
-    ext y
-    simp [stdSimplexLeftTranslationSub]
+      (lpTranslateSub K).toLinearMap '' Set.range (fun p : StdSimplex ℝ G ↦ p.toLp 1) :=
+    Set.range_comp' (lpTranslateSub K).toLinearMap fun p : StdSimplex ℝ G ↦ p.toLp 1
   rw [h, StdSimplex.range_toLp_eq_convexHull, LinearMap.image_convexHull, ← Set.range_comp]
   congr 1
   ext x
@@ -205,15 +215,13 @@ theorem Amenable.zero_mem_closure_range_stdSimplexLeftTranslationSub [Amenable G
   obtain ⟨Λ, u, hΛ0, hΛ⟩ := geometric_hahn_banach_point_closed
     (convex_range_stdSimplexLeftTranslationSub K).closure isClosed_closure h
   rw [map_zero] at hΛ0
-  -- Pull `Λ` back along each coordinate inclusion `ι_g` and identify `(ℓ¹(G))* ≃ₗᵢ (G →ᵇ ℝ)`.
-  let f (g : K) : G →ᵇ ℝ :=
-    (lp.bcfDualEquiv ℝ G).symm
-      (Λ.comp (PiLp.singleCLM 1 ℝ (fun _ : K ↦ lp (fun _ : G ↦ ℝ) 1) g))
+  -- Represent `Λ` by its coordinate bounded functions `Λ.piLpCoordBCF g : G →ᵇ ℝ`.
   have hv (x : G) :
-      Λ (stdSimplexLeftTranslationSub K (.single x)) = ∑ g : K, (f g ((g : G) * x) - f g x) := by
-    conv_lhs => rw [← PiLp.univ_sum_single (stdSimplexLeftTranslationSub K (.single x))]
-    simp [stdSimplexLeftTranslationSub_single, map_sum, PiLp.single_sub, sum_sub_distrib, f]
-  let F (g : K) : UCB G := ⟨f g, by simp [ucb_eq_top]⟩
+      Λ (stdSimplexLeftTranslationSub K (.single x)) =
+        ∑ g : K, (Λ.piLpCoordBCF g ((g : G) * x) - Λ.piLpCoordBCF g x) := by
+    rw [Λ.apply_eq_sum_bcfPairing]
+    simp [stdSimplexLeftTranslationSub_apply, smul_eq_mul]
+  let F (g : K) : UCB G := (UCB.discreteAlgEquiv G).symm (Λ.piLpCoordBCF g)
   obtain ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := G)
   have h0 : m (∑ g : K, (UCB.leftTranslation (g : G)⁻¹ (F g) - F g)) = 0 := by
     simp only [map_sum, map_sub, hm.apply_leftTranslation, sub_self, sum_const_zero]

@@ -184,6 +184,13 @@ theorem norm_toLp_one (f : α →₀ E) :
   simp only [ENNReal.toReal_one, Real.rpow_one, one_div_one, coeFn_toLp]
   exact tsum_eq_sum fun _ ha ↦ by simp [notMem_support_iff.mp ha]
 
+/-- The `ℓ¹` norm of a nonnegative real finitely supported function is the finite sum of its
+values. -/
+theorem norm_toLp_one_of_nonneg {f : α →₀ ℝ} (hf : ∀ x, 0 ≤ f x) :
+    ‖f.toLp 1‖ = f.sum fun _ r ↦ r := by
+  rw [norm_toLp_one]
+  exact Finset.sum_congr rfl fun x _ ↦ Real.norm_of_nonneg (hf x)
+
 /-- Reindexing `f : α →₀ E` along `e : α ≃ β` via `equivMapDomain` corresponds to
 `AddEquiv.lpCongrLeft`. -/
 @[simp]
@@ -270,8 +277,7 @@ theorem tsum_toLp (s : StdSimplex ℝ α) (p : ℝ≥0∞) : ∑' a, s.toLp p a 
 /-- Every finitely supported probability has `ℓ¹` norm equal to `1`. -/
 @[simp]
 theorem norm_toLp_one (s : StdSimplex ℝ α) : ‖s.toLp 1‖ = 1 := by
-  rw [toLp, s.weights.norm_toLp_one, Finsupp.sum]
-  refine (Finset.sum_congr rfl fun a _ ↦ Real.norm_of_nonneg (s.nonneg a)).trans ?_
+  rw [toLp, Finsupp.norm_toLp_one_of_nonneg s.nonneg]
   exact s.total
 
 /-- Pushing a finitely supported probability forward along `e : α ≃ β` corresponds to

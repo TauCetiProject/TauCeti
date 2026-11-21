@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.LpEquiv
 public import TauCeti.Analysis.Normed.Lp.Dual
 public import TauCeti.Analysis.Normed.Lp.Finsupp
+public import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
@@ -31,7 +32,10 @@ norm at most `1`. On a finitely supported probability `s : Convexity.StdSimplex 
 When `α` carries the discrete topology and `𝕜` is `ℝ` or `ℂ`, `toLpInfty` is surjective (`lpBCFₗᵢ`)
 and `lp.dualEquiv` identifies `ℓ∞(α, 𝕜)` with the strong dual of `ℓ¹(α, 𝕜)`, giving the isometric
 identification `lp.bcfDualEquiv : (α →ᵇ 𝕜) ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)` whose
-inverse evaluates a functional on the unit coordinate vectors `lp.single 1 x 1`.
+inverse evaluates a functional on the unit coordinate vectors `lp.single 1 x 1`. Pulling back a
+continuous linear functional `Λ` on a finite `Lᵖ` product `PiLp p (fun _ : ι ↦ ℓ¹(α, 𝕜))` along
+the coordinate inclusions `PiLp.singleCLM` gives coordinate bounded functions
+`Λ.piLpCoordBCF i : α →ᵇ 𝕜` satisfying `Λ v = ∑ i, lp.bcfPairing 𝕜 α 𝕜 (v i) (Λ.piLpCoordBCF i)`.
 
 ## Main definitions
 
@@ -42,6 +46,8 @@ inverse evaluates a functional on the unit coordinate vectors `lp.single 1 x 1`.
   `∑' x, u x • f x`.
 * `lp.bcfDualEquiv`: on a discrete space over `RCLike 𝕜`, the linear isometry equivalence
   `(α →ᵇ 𝕜) ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp (fun _ : α ↦ 𝕜) 1)`.
+* `ContinuousLinearMap.piLpCoordBCF`: coordinate bounded functions `y ↦ Λ (PiLp.single p i δ_y)`
+  associated to a continuous linear functional `Λ` on `PiLp p (fun _ : ι ↦ ℓ¹(α, 𝕜))`.
 -/
 
 public section
@@ -279,3 +285,52 @@ theorem dualEquiv_toLpInfty_eq_bcfDualEquiv (f : α →ᵇ 𝕜) :
 end DiscreteDual
 
 end lp
+
+namespace ContinuousLinearMap
+
+section PiLpCoordBCF
+
+variable {ι α 𝕜 : Type*} [DecidableEq ι] [TopologicalSpace α] [DiscreteTopology α]
+  [RCLike 𝕜] {p : ℝ≥0∞}
+
+/-- For a continuous linear functional `Λ` on the `Lᵖ` product of `ℓ¹(α, 𝕜)` spaces, the
+`i`-th coordinate bounded function `y ↦ Λ (PiLp.single p i (lp.single 1 y 1))`. -/
+def piLpCoordBCF (Λ : StrongDual 𝕜 (PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1))) (i : ι) :
+    α →ᵇ 𝕜 :=
+  (lp.bcfDualEquiv 𝕜 α).symm
+    (Λ.comp (PiLp.singleCLM p 𝕜 (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1) i))
+
+/-- The `i`-th coordinate bounded function of `Λ` evaluates at `y` to
+`Λ (PiLp.single p i (lp.single 1 y 1))`. -/
+@[simp]
+theorem piLpCoordBCF_apply [DecidableEq α]
+    (Λ : StrongDual 𝕜 (PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1))) (i : ι) (y : α) :
+    Λ.piLpCoordBCF i y = Λ (PiLp.single p i (lp.single 1 y 1)) := by
+  simp [piLpCoordBCF]
+
+/-- Each coordinate bounded function of `Λ` has supremum norm at most `‖Λ‖`. -/
+theorem norm_piLpCoordBCF_le [Fintype ι] [Fact (1 ≤ p)]
+    (Λ : StrongDual 𝕜 (PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1))) (i : ι) :
+    ‖Λ.piLpCoordBCF i‖ ≤ ‖Λ‖ := by
+  rw [piLpCoordBCF, LinearIsometryEquiv.norm_map]
+  exact (Λ.opNorm_comp_le _).trans
+    (mul_le_of_le_one_right (norm_nonneg Λ) (PiLp.norm_singleCLM_le i))
+
+/-- Every pointwise value of a coordinate bounded function of `Λ` has norm at most `‖Λ‖`. -/
+theorem norm_piLpCoordBCF_apply_le [Fintype ι] [Fact (1 ≤ p)]
+    (Λ : StrongDual 𝕜 (PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1))) (i : ι) (y : α) :
+    ‖Λ.piLpCoordBCF i y‖ ≤ ‖Λ‖ :=
+  ((Λ.piLpCoordBCF i).norm_coe_le_norm y).trans (Λ.norm_piLpCoordBCF_le i)
+
+/-- A continuous linear functional on `PiLp p (fun _ : ι ↦ ℓ¹(α, 𝕜))` is the sum over `i` of the
+`ℓ¹`-pairings with its coordinate bounded functions `Λ.piLpCoordBCF i`. -/
+theorem apply_eq_sum_bcfPairing [Fintype ι]
+    (Λ : StrongDual 𝕜 (PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)))
+    (v : PiLp p (fun _ : ι ↦ lp (fun _ : α ↦ 𝕜) 1)) :
+    Λ v = ∑ i : ι, lp.bcfPairing 𝕜 α 𝕜 (v i) (Λ.piLpCoordBCF i) := by
+  conv_lhs => rw [← PiLp.univ_sum_single v]
+  simp [map_sum, piLpCoordBCF]
+
+end PiLpCoordBCF
+
+end ContinuousLinearMap
