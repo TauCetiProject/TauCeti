@@ -457,21 +457,13 @@ theorem vectorWaveFrontSet_toDistribution_quantizeSobolev_subset {a : Symbol n V
       (postcomp_comp_quantizeSobolev ha b ℓ t)
     simp only [_root_.sum_apply, map_sum, ContinuousLinearMap.comp_apply,
       BesselPotentialSpace.toDistrCLM_apply] at h
-    rw [← h]
-    ext φ
-    simp [mapCLM_apply]
+    rw [← h, BesselPotentialSpace.toDistribution_toDistr_postcomp]
   rw [hℓ] at hp
   obtain ⟨j, -, hj⟩ := mem_iUnion₂.1 (waveFrontSet_sum_subset _ _ hp)
   refine waveFrontSet_mapCLM_subset_vectorWaveFrontSet
     (b.coord j).toContinuousLinearMap _ ?_
   -- The coordinates of `v` have wave front sets inside that of `v`.
-  have hc : toDistribution ⊤ (BesselPotentialSpace.postcomp _ t 2
-      (b.coord j).toContinuousLinearMap v).toDistr =
-      mapCLM ((b.coord j).toContinuousLinearMap.restrictScalars ℝ)
-        (toDistribution ⊤ v.toDistr) := by
-    ext φ
-    simp [mapCLM_apply]
-  rw [← hc]
+  rw [← BesselPotentialSpace.toDistribution_toDistr_postcomp]
   exact waveFrontSet_toDistribution_quantizeSobolev_subset _ t _ hj
 
 /-- **Pseudodifferential operators do not enlarge the singular support.** For a symbol `a` with

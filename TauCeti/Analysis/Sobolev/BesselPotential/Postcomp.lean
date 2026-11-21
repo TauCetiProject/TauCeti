@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
@@ -28,6 +29,8 @@ Hilbert-space values with Plancherel's theorem transfer to any finite-dimensiona
   `L : F →L[ℂ] G`.
 * `SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM`: on Schwartz functions it is
   `u ↦ L ∘ u`.
+* `BesselPotentialSpace.toDistribution_toDistr_postcomp`: as a distribution on an open set, `L u`
+  is `L` applied to the values of `u`.
 * `BesselPotentialSpace.sum_postcomp_toSpanSingleton_coord`: for a basis `(e_j)` of a
   finite-dimensional `F` with coordinate functionals `(c_j)`, every `u ∈ H^{s,p}(E, F)` is
   `∑ⱼ e_j (c_j u)`.
@@ -73,6 +76,15 @@ def postcomp (L : F →L[ℂ] G) : H^{s, p}(E, F) →L[ℂ] H^{s, p}(E, G) :=
 theorem toDistr_postcomp_apply (L : F →L[ℂ] G) (f : H^{s, p}(E, F)) (φ : 𝓢(E, ℂ)) :
     (postcomp E s p L f).toDistr φ = L (f.toDistr φ) :=
   (rfl)
+
+/-- Restricting `L ∘ f` to a distribution on `Ω` applies `L` to the values of the restriction
+of `f`. -/
+theorem toDistribution_toDistr_postcomp {Ω : TopologicalSpace.Opens E} (L : F →L[ℂ] G)
+    (f : H^{s, p}(E, F)) :
+    toDistribution Ω (postcomp E s p L f).toDistr =
+      Distribution.mapCLM (L.restrictScalars ℝ) (toDistribution Ω f.toDistr) := by
+  ext φ
+  simp [Distribution.mapCLM_apply]
 
 @[simp]
 theorem toLp_postcomp (L : F →L[ℂ] G) (f : H^{s, p}(E, F)) :
