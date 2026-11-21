@@ -90,7 +90,8 @@ The last section bounds a single block of the homogeneous partition
 (`ContDiffBump.littlewoodPaley`, `j ∈ ℤ`), the `L²` multiplier `Pⱼ` with symbol `ψⱼ`, on every
 `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in the scale: `‖Pⱼ f‖_p ≤ ‖𝓕⁻ ψ₀‖₁ ‖f‖_p` for `f ∈ L²`
 (`ContDiffBump.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le`), and `‖Pⱼ‖ ≤ 1` on `L²`
-(`ContDiffBump.norm_fourierMultiplierCLM_littlewoodPaley_le`).
+(`ContDiffBump.norm_fourierMultiplierCLM_littlewoodPaley_le`). In dimension `0` every block
+vanishes (`ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero_of_finrank_eq_zero`).
 
 ## References
 
@@ -849,5 +850,17 @@ theorem norm_fourierMultiplierCLM_littlewoodPaley_le {j : ℤ}
     (hm.mono fun ξ h ↦ by
       rw [h, Complex.norm_real, Real.norm_eq_abs]
       exact φ.abs_littlewoodPaley_le_one j ξ))
+
+/-- In dimension `0` the cutoffs `ψⱼ` vanish, and so do the blocks `Pⱼ`. -/
+theorem fourierMultiplierCLM_littlewoodPaley_eq_zero_of_finrank_eq_zero {j : ℤ}
+    {m : Lp ℂ ∞ (volume : Measure V)} (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))
+    (hV : finrank ℝ V = 0) :
+    Lp.fourierMultiplierCLM (E := V) F m = 0 := by
+  have : Subsingleton V := finrank_zero_iff.1 hV
+  rw [Lp.fourierMultiplierCLM_of_ae_eq_const (c := 0)]
+  · exact zero_smul ℂ (ContinuousLinearMap.id ℂ (Lp F 2 (volume : Measure V)))
+  filter_upwards [hm] with ξ h
+  rw [h, Subsingleton.elim ξ 0, φ.littlewoodPaley_eq_zero_of_norm_le (by
+    rw [norm_zero]; exact (mul_pos (zpow_pos two_pos _) φ.rIn_pos).le), Complex.ofReal_zero]
 
 end ContDiffBump
