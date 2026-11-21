@@ -1,7 +1,8 @@
 name: Nightly verification (called)
 
-# Rebuild main from source with the Lake artifact cache switched off, and check that a clean
-# compile agrees byte for byte with what the cache serves.
+# Rebuild main's own modules from source without restoring any cached build outputs (Mathlib's
+# prebuilt oleans are still fetched, and the build still writes a workspace-local Lake cache), and
+# check that this clean compile agrees byte for byte with what the cache serves.
 #
 # ci.yml used to be this check by accident: it recompiled the whole library on every push, so main
 # was an independent root of trust that never took a compiled artifact on faith. Restoring the cache
@@ -75,7 +76,6 @@ jobs:
     # Full clean builds retain their twelve-hour budget; allow headroom for source growth and audits.
     timeout-minutes: 720
     outputs:
-      sha: ${{ steps.rev.outputs.sha }}
       build: ${{ steps.fresh_build.outcome }}
       audit: ${{ steps.fresh_audit.outcome }}
       manifest: ${{ steps.rev.outputs.manifest }}
@@ -110,14 +110,9 @@ jobs:
           tools-repository: TauCetiProject/TauCetiTools
           project-directory: fresh
 
-      - name: Resolve the commit under test
+      - name: Name the clean-build manifest
         id: rev
-        run: |
-          set -euo pipefail
-          sha=$(git -C fresh rev-parse HEAD)
-          echo "sha=$sha" >> "$GITHUB_OUTPUT"
-          echo "manifest=nightly-clean-manifest-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
-          echo "verifying $sha"
+        run: echo "manifest=nightly-clean-manifest-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
 
       # Both jobs use the same verified installer. scripts/test_elan_pin.py checks these copies.
       - name: Install elan (pinned + checksum)
@@ -152,7 +147,7 @@ jobs:
       # LAKE_RESTORE_ARTIFACTS=false and a workspace-local LAKE_CACHE_DIR that is never fetched into
       # are what make this from scratch. LAKE_ARTIFACT_CACHE stays true only so the build packs its
       # own outputs locally for the audits that follow; nothing is ever read from the network.
-      - name: Build main from source, with no cached artifacts
+      - name: Build main from source, restoring no cached build outputs
         id: fresh_build
         env:
           LAKE_ARTIFACT_CACHE: "true"
@@ -250,7 +245,7 @@ jobs:
       - name: Check out helpers for the verified commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.verify.outputs.sha }}
+          ref: ${{ github.sha }}
           path: fresh
           persist-credentials: false
 
@@ -265,7 +260,7 @@ jobs:
       - name: Check out the same commit for the reference build
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.verify.outputs.sha }}
+          ref: ${{ github.sha }}
           path: reference
           persist-credentials: false
           fetch-depth: 100
@@ -621,7 +616,8 @@ jobs:
           ZULIP_TOPIC: Nightly verification
           RESULT: ${{ needs.verify.result }}
           REFERENCE_RESULT: ${{ needs.reference.result }}
-          # Not `needs.verify.outputs.sha`: a job whose runner is lost publishes no outputs.
+          # The commit every job checked out. A job whose runner is lost publishes no outputs, so
+          # this must not come from `needs.verify.outputs`.
           SHA: ${{ github.sha }}
           BUILD: ${{ needs.verify.outputs.build }}
           AUDIT: ${{ needs.verify.outputs.audit }}
@@ -646,7 +642,7 @@ jobs:
           # coalesces intermediate commits, so this workflow's commit may never have had its own run.
           if os.environ.get("RESULT") != "success":
               if os.environ.get("BUILD") == "failure":
-                  lines.append("The from-source build FAILED with the artifact cache disabled. "
+                  lines.append("The from-source build FAILED with cached build outputs not restored. "
                                "Treat the published Lake cache as suspect until this is explained.")
               elif os.environ.get("AUDIT") == "failure":
                   lines.append("main built from source, but an audit or lint FAILED there. "

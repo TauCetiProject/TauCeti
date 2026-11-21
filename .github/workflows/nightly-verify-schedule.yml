@@ -1,10 +1,10 @@
 name: Nightly verification
 
-# Rebuild main from source with the Lake artifact cache switched off, and check that a clean
-# compile agrees byte for byte with what the cache serves. The jobs, and why they are shaped as
-# they are, live in nightly-verify.yml, which keeps that name because the TauCetiFleet runner group
-# admits jobs by the workflow file that defines them. This file owns the triggers and admits only
-# main.
+# Rebuild main's own modules from source without restoring any cached build outputs, and check
+# that this clean compile agrees byte for byte with what the cache serves. The jobs, and why they
+# are shaped as they are, live in nightly-verify.yml, which keeps that name because the
+# TauCetiFleet runner group admits jobs by the workflow file that defines them. This file owns the
+# triggers and admits only main.
 #
 # The main check runs in a job because GitHub expression comparisons ignore case: an `if:` on
 # `github.ref == 'refs/heads/main'` also admits a branch named `Main`, which would then be built and
