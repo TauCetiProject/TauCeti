@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.CStarAlgebra.Exponential
 import TauCeti.Analysis.Semigroups.BoundedGenerator.Perturbation
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
-import all TauCeti.Analysis.Semigroups.Group.Stone.Basic
+public import TauCeti.Analysis.Semigroups.Group.Stone.Basic
 
 /-!
 # Exponential estimates for bounded self-adjoint operators
@@ -43,19 +43,15 @@ private theorem norm_exp_smul_I_sub_exp_smul_I_apply_le_of_nonneg {Sm Sn : H →
     {t : ℝ} (ht : 0 ≤ t) (ψ : H) :
     ‖exp (t • (I • Sm)) ψ - exp (t • (I • Sn)) ψ‖ ≤
       t * ‖(I • Sm - I • Sn) ψ‖ := by
-  have hexp (S : H →L[ℂ] H) (u : ℝ) (x : H) :
-      exp (u • (I • S).restrictScalars ℝ) x = exp (u • (I • S)) x := by
-    have h := Semigroups.StronglyContinuousGroup.ofBoundedExp_apply S u
-    rw [Semigroups.StronglyContinuousGroup.ofBoundedExp.eq_def,
-      Semigroups.StronglyContinuousGroup.ofBounded_apply] at h
-    simpa only [coe_restrictScalars', Complex.coe_smul] using
-      congrArg (fun C : H →L[ℝ] H => C x) h
+  have hexp (S : H →L[ℂ] H) (u : ℝ) :
+      exp (u • (I • S).restrictScalars ℝ) =
+        (exp (u • (I • S))).restrictScalars ℝ := by
+    simpa only [Complex.coe_smul] using
+      Semigroups.StronglyContinuousGroup.restrictScalars_exp (I • S) u
   have hbound (S : H →L[ℂ] H) (hS : IsSelfAdjoint S) (u : ℝ) (_hu : 0 ≤ u) :
       ‖exp (u • (I • S).restrictScalars ℝ)‖ ≤ (1 : ℝ) := by
-    have h := (Semigroups.StronglyContinuousGroup.isUnitary_ofBoundedExp S hS).opNorm_le_one u
-    rw [Semigroups.StronglyContinuousGroup.ofBoundedExp.eq_def,
-      Semigroups.StronglyContinuousGroup.ofBounded_apply] at h
-    exact h
+    rw [hexp, norm_restrictScalars]
+    exact Semigroups.StronglyContinuousGroup.norm_exp_smul_I_le S hS u
   have hc : Commute ((I • Sm).restrictScalars ℝ) ((I • Sn).restrictScalars ℝ) := by
     ext x
     exact congrArg (fun C : H →L[ℂ] H => C x) ((hcomm.smul_left I).smul_right I).eq

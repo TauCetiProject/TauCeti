@@ -91,12 +91,9 @@ theorem _root_.IsSelfAdjoint.yosida_exponential_uniform_cauchy
         NormedSpace.exp (t • (I • A.symmetricYosidaApproximation (n : ℝ))) x‖ < ε := by
   let K := max R 0 + 1
   have hbound : ∀ᶠ n : ℕ+ in atTop, ∀ t ∈ {t : ℝ | |t| ≤ R}, ‖yosidaFlow A n t‖ ≤ 1 := by
-    exact Filter.Eventually.of_forall fun n t _ => by
-      have h := (Semigroups.StronglyContinuousGroup.isUnitary_ofBoundedExp _
-        (hA.isSelfAdjoint_symmetricYosidaApproximation (n : ℝ))).opNorm_le_one t
-      rw [Semigroups.StronglyContinuousGroup.ofBoundedExp_apply,
-        ContinuousLinearMap.norm_restrictScalars] at h
-      simpa only [yosidaFlow, Complex.coe_smul] using h
+    exact Filter.Eventually.of_forall fun n t _ =>
+      Semigroups.StronglyContinuousGroup.norm_exp_smul_I_le _
+        (hA.isSelfAdjoint_symmetricYosidaApproximation (n : ℝ)) t
   have hdomain : ∀ y ∈ (A.domain : Set H),
       UniformCauchySeqOn (fun n t => yosidaFlow A n t y) atTop {t : ℝ | |t| ≤ R} := by
     intro y hy

@@ -35,7 +35,8 @@ self-adjoint. -/
 def ofBoundedExp (A : H →L[ℂ] H) : StronglyContinuousGroup H :=
   ofBounded ((Complex.I • A).restrictScalars ℝ)
 
-private theorem restrictScalars_exp (A : H →L[ℂ] H) (t : ℝ) :
+/-- Restricting complex operators to real scalars commutes with the exponential. -/
+theorem restrictScalars_exp (A : H →L[ℂ] H) (t : ℝ) :
     NormedSpace.exp (t • A.restrictScalars ℝ) =
       (NormedSpace.exp ((t : ℂ) • A)).restrictScalars ℝ := by
   let _i : Module ℚ H := Module.compHom H (algebraMap ℚ ℂ)
@@ -99,6 +100,13 @@ theorem isUnitary_ofBoundedExp (A : H →L[ℂ] H) (hA : IsSelfAdjoint A) :
   have hu : NormedSpace.exp ((t : ℂ) • (Complex.I • A)) ∈ unitary (H →L[ℂ] H) := by
     simpa only [Complex.coe_smul] using hu0
   exact (NormedSpace.exp ((t : ℂ) • (Complex.I • A))).inner_map_map_of_mem_unitary hu x y
+
+/-- Imaginary-time exponentials of bounded self-adjoint operators have norm at most one. -/
+theorem norm_exp_smul_I_le (A : H →L[ℂ] H) (hA : IsSelfAdjoint A) (t : ℝ) :
+    ‖NormedSpace.exp (t • (Complex.I • A))‖ ≤ 1 := by
+  have h := (isUnitary_ofBoundedExp A hA).opNorm_le_one t
+  rw [ofBoundedExp_apply, ContinuousLinearMap.norm_restrictScalars] at h
+  simpa only [Complex.coe_smul] using h
 
 end StronglyContinuousGroup
 
