@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Cat
 public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Finite
-public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Module
-public import TauCeti.Algebra.HopfAlgebra.FiniteDual.Functoriality
+public import TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Algebra
 import TauCeti.LinearAlgebra.TensorProduct.Basis
 
@@ -95,7 +94,8 @@ theorem tensorComponent_finiteAlgebraActionEquiv_symm_coact (ρ : A →ₐ[R] Mo
       ρ ((ConvolutionDual.evalAlgEquiv R A).symm (toConv φ)) m := by
   rw [finiteAlgebraActionEquiv, Equiv.symm_trans_apply, AlgEquiv.arrowCongr_symm,
     convolutionActionEquiv_symm_apply, tensorComponent_ofConvolutionAction]
-  rfl
+  simp only [AlgEquiv.arrowCongr_apply, AlgHom.comp_apply, AlgEquiv.symm_symm,
+    AlgEquiv.coe_toAlgHom, AlgEquiv.refl_symm, AlgEquiv.coe_refl, id_eq]
 
 section OfModule
 
@@ -186,12 +186,20 @@ theorem ofFiniteAlgebraModule_finiteAlgebraModule :
   rw [tensorComponent_ofFiniteAlgebraModule_coact, finiteAlgebraModule_smul,
     AlgEquiv.apply_symm_apply, ofConv_toConv]
 
+/-- A comodule morphism commutes with contracting the coaction against evaluation at `x`. -/
+private theorem Hom.map_tensorComponent_evalAlgEquiv (f : Hom R (ConvolutionDual R A) M N) (x : A)
+    (m : M) :
+    f (LinearMap.tensorComponent (ConvolutionDual.evalAlgEquiv R A x).ofConv
+        (coact (R := R) (C := ConvolutionDual R A) m)) =
+      LinearMap.tensorComponent (ConvolutionDual.evalAlgEquiv R A x).ofConv
+        (coact (R := R) (C := ConvolutionDual R A) (f m)) := by
+  rw [← convolutionAction_apply, ← convolutionAction_apply, Hom.map_convolutionAction]
+
 /-- A comodule morphism is `A`-linear for the attached module structures. -/
 theorem Hom.map_finiteAlgebraModule_smul (f : Hom R (ConvolutionDual R A) M N) (x : A) (m : M) :
     f (letI := finiteAlgebraModule R A M; x • m) =
       (letI := finiteAlgebraModule R A N; x • f m) := by
-  rw [finiteAlgebraModule_smul, finiteAlgebraModule_smul, ← convolutionAction_apply,
-    ← convolutionAction_apply, Hom.map_convolutionAction]
+  rw [finiteAlgebraModule_smul, finiteAlgebraModule_smul, Hom.map_tensorComponent_evalAlgEquiv]
 
 end ToModule
 
@@ -248,7 +256,7 @@ def Hom.toFiniteAlgebraLinearMap (f : Hom R (ConvolutionDual R A) M N) : M →�
     rw [RingHom.id_apply,
       ← tensorComponent_evalAlgEquiv_ofFiniteAlgebraModule_coact (R := R) x m,
       ← tensorComponent_evalAlgEquiv_ofFiniteAlgebraModule_coact (R := R) x (f m),
-      ← convolutionAction_apply, ← convolutionAction_apply, Hom.map_convolutionAction]
+      Hom.map_tensorComponent_evalAlgEquiv]
 
 /-- The `A`-linear map attached to a comodule morphism has the same values. -/
 @[simp]
@@ -304,6 +312,12 @@ a module is its action through `algebraMap R A`, and its coaction is `ofFiniteAl
   map_comp f g := by
     rw [ModuleCat.hom_comp, LinearMap.toFiniteAlgebraComoduleHom_comp, ComoduleCat.ofHom_comp]
 
+/-- The coaction of the comodule attached to a left module is `ofFiniteAlgebraModule`. -/
+theorem ofModuleCat_obj_coact (M : ModuleCat.{w} A) (m : M) :
+    coact (R := R) (C := ConvolutionDual R A) (M := (ofModuleCat R A).obj M) m =
+      (ofFiniteAlgebraModule (R := R) (A := A) (M := M)).coact m :=
+  (rfl)
+
 /-- The functor from left modules keeps the values of `A`-linear maps. -/
 theorem ofModuleCat_map_apply {M N : ModuleCat.{w} A} (f : M ⟶ N) (m : M) :
     (ofModuleCat R A).map f m = f m := (rfl)
@@ -328,6 +342,14 @@ action. -/
         map_smul' := f.map_finiteAlgebraModule_smul }
   map_id _ := rfl
   map_comp _ _ := rfl
+
+/-- On the left module attached to a comodule, `x : A` acts by contracting the coaction against
+evaluation at `x`. -/
+theorem toModuleCat_obj_smul (N : ComoduleCat.{u, max u v, w} R (ConvolutionDual R A)) (x : A)
+    (n : (toModuleCat R A).obj N) :
+    x • n = LinearMap.tensorComponent (ConvolutionDual.evalAlgEquiv R A x).ofConv
+      (coact (R := R) (C := ConvolutionDual R A) (M := N) n) :=
+  finiteAlgebraModule_smul (M := N) x n
 
 /-- The functor to left modules keeps the values of comodule morphisms. -/
 @[simp]
@@ -356,11 +378,13 @@ def counitHom (N : ComoduleCat.{u, max u v, w} R (ConvolutionDual R A)) :
     refine TensorProduct.tensor_eq_of_forall_tensorComponent_eq fun φ ↦ ?_
     rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.tensorComponent_map,
       LinearMap.comp_id]
-    -- The coaction on the source is `ofFiniteAlgebraModule` for the module structure of `N`.
-    exact (tensorComponent_ofFiniteAlgebraModule_coact (R := R) (A := A)
-      (M := (toModuleCat R A).obj N) φ n).trans
-        ((finiteAlgebraModule_smul (R := R) (M := N) _ n).trans
-          (by rw [AlgEquiv.apply_symm_apply, ofConv_toConv]; rfl))
+    -- The source is `N` with the coaction `ofFiniteAlgebraModule` of its attached module
+    -- structure (`ofModuleCat_obj_coact`).
+    refine (tensorComponent_ofFiniteAlgebraModule_coact (R := R) (A := A)
+      (M := (toModuleCat R A).obj N) φ n).trans ((toModuleCat_obj_smul R A N _ n).trans ?_)
+    rw [AlgEquiv.apply_symm_apply, ofConv_toConv]
+    -- The underlying map `fun n ↦ n` is the identity, so both sides contract the coaction at `n`.
+    rfl
 
 /-- The unit of the equivalence is the identity on elements. -/
 @[simp]
