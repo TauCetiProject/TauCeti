@@ -109,33 +109,41 @@ private def cylinderChainMapTerm {X Y : SimplicialObject C} {f g : X ⟶ Y}
       else if α.toOrderHom 1 = 0 then f.app (op ⦋m + 1⦌)
       else f.app (op ⦋m + 1⦌) - X.δ 0 ≫ homotopyHom H m
 
-private lemma δ_toOrderHom_apply {n : ℕ} (i : Fin (n + 2)) (j : Fin (n + 1)) :
-    (SimplexCategory.δ i).toOrderHom j = i.succAbove j :=
-  SimplexCategory.δ_apply i j
-
 private lemma δ_zero_comp_toOrderHom_zero {n : ℕ} (α : ⦋n + 1⦌ ⟶ ⦋1⦌) :
     (SimplexCategory.δ (0 : Fin (n + 2)) ≫ α).toOrderHom 0 = α.toOrderHom 1 := by
-  simp [SimplexCategory.comp_toOrderHom, δ_toOrderHom_apply]
+  rw [SimplexCategory.comp_toOrderHom]
+  change α.toOrderHom ((SimplexCategory.δ (0 : Fin (n + 2))) 0) = α.toOrderHom 1
+  simp [SimplexCategory.δ_apply]
 
 private lemma δ_zero_comp_toOrderHom_one {n : ℕ} (α : ⦋n + 2⦌ ⟶ ⦋1⦌) :
     (SimplexCategory.δ (0 : Fin (n + 3)) ≫ α).toOrderHom 1 = α.toOrderHom 2 := by
-  simp [SimplexCategory.comp_toOrderHom, δ_toOrderHom_apply]
+  rw [SimplexCategory.comp_toOrderHom]
+  change α.toOrderHom ((SimplexCategory.δ (0 : Fin (n + 3))) 1) = α.toOrderHom 2
+  simp [SimplexCategory.δ_apply]
 
 private lemma δ_one_comp_toOrderHom_zero {n : ℕ} (α : ⦋n + 1⦌ ⟶ ⦋1⦌) :
     (SimplexCategory.δ (1 : Fin (n + 2)) ≫ α).toOrderHom 0 = α.toOrderHom 0 := by
-  simp [SimplexCategory.comp_toOrderHom, δ_toOrderHom_apply]
+  rw [SimplexCategory.comp_toOrderHom]
+  change α.toOrderHom ((SimplexCategory.δ (1 : Fin (n + 2))) 0) = α.toOrderHom 0
+  simp [SimplexCategory.δ_apply]
 
 private lemma δ_one_comp_toOrderHom_one {n : ℕ} (α : ⦋n + 2⦌ ⟶ ⦋1⦌) :
     (SimplexCategory.δ (1 : Fin (n + 3)) ≫ α).toOrderHom 1 = α.toOrderHom 2 := by
-  simp [SimplexCategory.comp_toOrderHom, δ_toOrderHom_apply]
+  rw [SimplexCategory.comp_toOrderHom]
+  change α.toOrderHom ((SimplexCategory.δ (1 : Fin (n + 3))) 1) = α.toOrderHom 2
+  simp [SimplexCategory.δ_apply]
 
 private lemma δ_succ_succ_comp_toOrderHom_zero {n : ℕ} (α : ⦋n + 2⦌ ⟶ ⦋1⦌) (k : Fin (n + 1)) :
     (SimplexCategory.δ k.succ.succ ≫ α).toOrderHom 0 = α.toOrderHom 0 := by
-  simp [SimplexCategory.comp_toOrderHom, δ_toOrderHom_apply]
+  rw [SimplexCategory.comp_toOrderHom]
+  change α.toOrderHom ((SimplexCategory.δ k.succ.succ) 0) = α.toOrderHom 0
+  simp [SimplexCategory.δ_apply]
 
 private lemma δ_succ_succ_comp_toOrderHom_one {n : ℕ} (α : ⦋n + 2⦌ ⟶ ⦋1⦌) (k : Fin (n + 1)) :
     (SimplexCategory.δ k.succ.succ ≫ α).toOrderHom 1 = α.toOrderHom 1 := by
-  simp [SimplexCategory.comp_toOrderHom, δ_toOrderHom_apply]
+  rw [SimplexCategory.comp_toOrderHom]
+  change α.toOrderHom ((SimplexCategory.δ k.succ.succ) 1) = α.toOrderHom 1
+  simp [SimplexCategory.δ_apply]
 
 private lemma cylinderChainMapTerm_comm_zero {X Y : SimplicialObject C} {f g : X ⟶ Y}
     (H : _root_.Homotopy ((alternatingFaceMapComplex C).map f)
