@@ -79,6 +79,12 @@ theorem rOut_shrinking (hR : 0 < R) (n : ℕ) :
     (shrinking hR n : ContDiffBump c).rOut = R / (n + 1) :=
   (rfl)
 
+/-- The outer radius of `ContDiffBump.shrinking` is at most `R`. -/
+theorem rOut_shrinking_le (hR : 0 < R) (n : ℕ) :
+    (shrinking hR n : ContDiffBump c).rOut ≤ R := by
+  rw [rOut_shrinking]
+  exact div_le_self hR.le (by simp)
+
 /-- The outer radius of `ContDiffBump.shrinking` is twice its inner radius. -/
 theorem rOut_shrinking_eq_two_mul_rIn (hR : 0 < R) (n : ℕ) :
     (shrinking hR n : ContDiffBump c).rOut = 2 * (shrinking hR n : ContDiffBump c).rIn := by
@@ -103,11 +109,10 @@ theorem exists_seq_sub_tsupport_subset {E : Type*} [NormedAddCommGroup E] [Norme
   obtain ⟨δ, hδ, hδΩ⟩ := hWc.exists_cthickening_subset_open Ω.isOpen hWΩ
   refine ⟨shrinking hδ, tendsto_rOut_shrinking hδ, ?_⟩
   intro n x hx y hy
-  rw [(shrinking hδ n).tsupport_normed_eq, mem_closedBall, dist_zero_right,
-    rOut_shrinking] at hy
+  rw [(shrinking hδ n).tsupport_normed_eq, mem_closedBall, dist_zero_right] at hy
   refine hδΩ (mem_cthickening_of_dist_le _ x δ _ (subset_closure hx) ?_)
   rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
-  exact hy.trans (div_le_self hδ.le (by simp))
+  exact hy.trans (rOut_shrinking_le hδ n)
 
 /-- `ContDiffBump.shrinking hR n` is `ContDiffBump.shrinking hR 0` rescaled by the factor `n + 1`,
 so all the bumps of the sequence are rescalings of one kernel. -/
