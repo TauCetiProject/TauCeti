@@ -307,7 +307,8 @@ theorem expand_cartier_zero_of_coeff_eq_zero (q : ℕ) (hq : q ≠ 0) {F : Power
 binomial coefficient. -/
 theorem cartier_one_add_X_pow {q i : ℕ} (j : ℕ) (hi : i < q) :
     cartier R q j ((1 + X) ^ i) = C (i.choose j : R) := by
-  have h : (1 + X : R⟦X⟧) ^ i = ((1 + Polynomial.X) ^ i : Polynomial R) := by push_cast; rfl
+  have h : (1 + X : R⟦X⟧) ^ i = ((1 + Polynomial.X) ^ i : Polynomial R) := by
+    simp [Polynomial.coe_pow, Polynomial.coe_add, Polynomial.coe_one, Polynomial.coe_X]
   ext n
   rw [coeff_cartier, coeff_C, h, Polynomial.coeff_coe, Polynomial.coeff_one_add_X_pow]
   rcases Nat.eq_zero_or_pos n with rfl | hn

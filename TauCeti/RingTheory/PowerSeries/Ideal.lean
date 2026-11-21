@@ -49,8 +49,6 @@ its coefficients and shows that it is prime when `I` is.
 * `PowerSeries.mem_map_C_iff_of_fg`, `PowerSeries.isPrime_map_C_of_fg`: for a finitely generated
   ideal `I`, the series in `I.map C` are those with all coefficients in `I`, and `I.map C` is prime
   when `I` is.
-* `PowerSeries.C_dvd_iff_map_mk_eq_zero`: `C r` divides `f` if and only if `f` vanishes in
-  `(R ⧸ (r))⟦X⟧`.
 * `PowerSeries.prime_C_iff`: `C r` is prime in `R⟦X⟧` if and only if `r` is prime in `R`.
 * `PowerSeries.torsionBy_quotient_span_C_pow_eq_bot`: a series with nonzero reduction modulo the
   maximal ideal has no nonzero torsion on `R⟦X⟧ ⧸ (ϖ ^ m)` for a prime `ϖ` of a local domain.
@@ -121,12 +119,6 @@ theorem mem_map_C_iff_of_fg {I : Ideal R} (hI : I.FG) {f : R⟦X⟧} :
   rw [← Ideal.mk_ker (I := I), ← ker_map_of_fg _ (by rwa [Ideal.mk_ker]), RingHom.mem_ker,
     PowerSeries.ext_iff]
   simp [Ideal.Quotient.eq_zero_iff_mem]
-
-/-- A constant series `C r` divides `f` if and only if `f` vanishes modulo `r`. -/
-theorem C_dvd_iff_map_mk_eq_zero {r : R} {f : R⟦X⟧} :
-    C r ∣ f ↔ map (Ideal.Quotient.mk (Ideal.span {r})) f = 0 := by
-  rw [← RingHom.mem_ker, ker_map_of_fg _ (by rw [Ideal.mk_ker]; exact ⟨{r}, by simp⟩),
-    Ideal.mk_ker, Ideal.map_span, Set.image_singleton, Ideal.mem_span_singleton]
 
 /-- The extension `I.map C` of a finitely generated prime ideal `I` of `R` is a prime ideal of
 `R⟦X⟧`: it is the kernel of `R⟦X⟧ → (R ⧸ I)⟦X⟧`, whose target is a domain. -/
