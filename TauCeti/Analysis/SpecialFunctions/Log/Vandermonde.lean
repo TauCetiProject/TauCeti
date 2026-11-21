@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-public import Mathlib.Order.Interval.Finset.Basic
-import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Algebra.BigOperators.Finset.Pairs
+import TauCeti.Topology.Constructions.Pi
 
 /-!
 # The logarithmic Vandermonde collision barrier
 
-`TauCeti.Probability.logVandermonde x` is the sum of `log |x i - x j|` over `i < j`.
+`TauCeti.logVandermonde x` is the sum of `log |x i - x j|` over `i < j`.
 It is smooth away from collisions. Its first variation is the inverse-gap sum, and its
 second variation is a negative sum of squares. These are the deterministic derivatives used
 when applying Itô's formula to the logarithmic-gap potential of a repulsive particle system.
@@ -35,7 +35,7 @@ noncomputable section
 open Finset Filter
 open scoped Topology ContDiff
 
-namespace TauCeti.Probability
+namespace TauCeti
 
 variable {ι : Type*} [Fintype ι] [LinearOrder ι] [LocallyFiniteOrderTop ι]
 
@@ -47,6 +47,54 @@ def logVandermonde (x : ι → ℝ) : ℝ :=
 /-- The defining pair sum for the logarithmic Vandermonde potential. -/
 theorem logVandermonde_def (x : ι → ℝ) :
     logVandermonde x = ∑ i, ∑ j ∈ Ioi i, Real.log (x i - x j) := (rfl)
+
+/-- With at most one index there are no gaps, so the logarithmic Vandermonde is zero. -/
+@[simp] theorem logVandermonde_of_subsingleton [Subsingleton ι] (x : ι → ℝ) :
+    logVandermonde x = 0 := by
+  rw [logVandermonde_def]
+  refine sum_eq_zero fun i _ ↦ sum_eq_zero fun j hj ↦ ?_
+  exact ((mem_Ioi.mp hj).ne (Subsingleton.elim i j)).elim
+
+/-- Relabeling the coordinates preserves the logarithmic Vandermonde. -/
+@[simp] theorem logVandermonde_comp_perm (x : ι → ℝ) (σ : Equiv.Perm ι) :
+    logVandermonde (x ∘ σ) = logVandermonde x := by
+  simp only [logVandermonde_def, Function.comp_apply]
+  exact sum_sum_Ioi_comp_perm (fun i j ↦ Real.log (x i - x j)) σ fun i j ↦ by
+    rw [← neg_sub (x j) (x i), Real.log_neg_eq_log]
+
+/-- Negating every coordinate preserves the logarithmic Vandermonde. -/
+@[simp] theorem logVandermonde_neg (x : ι → ℝ) : logVandermonde (-x) = logVandermonde x := by
+  simp only [logVandermonde_def, Pi.neg_apply, neg_sub_neg]
+  refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j _ ↦ ?_
+  rw [← neg_sub (x i) (x j), Real.log_neg_eq_log]
+
+/-- Translating every coordinate by the same amount preserves the logarithmic Vandermonde. -/
+@[simp] theorem logVandermonde_add_const (x : ι → ℝ) (c : ℝ) :
+    logVandermonde (fun i ↦ x i + c) = logVandermonde x := by
+  simp [logVandermonde_def]
+
+/-- Subtracting the same constant from every coordinate preserves the logarithmic Vandermonde. -/
+@[simp] theorem logVandermonde_sub_const (x : ι → ℝ) (c : ℝ) :
+    logVandermonde (fun i ↦ x i - c) = logVandermonde x := by
+  simpa only [sub_eq_add_neg] using logVandermonde_add_const x (-c)
+
+/-- A nonzero rescaling of a collision-free configuration adds one `Real.log c` per gap. -/
+theorem logVandermonde_smul {c : ℝ} (hc : c ≠ 0) {x : ι → ℝ} (hx : Function.Injective x) :
+    logVandermonde (c • x) = ((Fintype.card ι).choose 2 : ℝ) * Real.log c + logVandermonde x := by
+  have hlog (i j : ι) (hj : j ∈ Ioi i) :
+      Real.log ((c • x) i - (c • x) j) = Real.log c + Real.log (x i - x j) := by
+    simpa only [Pi.smul_apply, smul_eq_mul, mul_sub] using
+      Real.log_mul hc (sub_ne_zero.mpr (hx.ne (mem_Ioi.mp hj).ne))
+  have hcount : (∑ i : ι, ∑ _j ∈ Ioi i, Real.log c) =
+      ((Fintype.card ι).choose 2 : ℝ) * Real.log c := by
+    have hIoi (i : ι) : Ioi i = univ.filter (i < ·) := by ext; simp
+    calc
+      (∑ i : ι, ∑ _j ∈ Ioi i, Real.log c) =
+          ∑ _p ∈ ((univ : Finset ι) ×ˢ univ).filter (fun p ↦ p.1 < p.2), Real.log c := by
+            simp only [hIoi, sum_filter, sum_product]
+      _ = _ := by rw [sum_const, card_product_filter_lt, card_univ, nsmul_eq_mul]
+  rw [logVandermonde_def, logVandermonde_def, ← hcount, ← sum_add_distrib]
+  exact sum_congr rfl fun i _ ↦ by rw [← sum_add_distrib]; exact sum_congr rfl (hlog i)
 
 /-- Away from collisions the potential is the logarithm of the Vandermonde product.
 `Real.log` already takes the absolute value of a nonzero real argument. -/
@@ -82,36 +130,14 @@ theorem fderiv_logVandermonde_apply {x : ι → ℝ} (hx : Function.Injective x)
   rw [(hasFDerivAt_logVandermonde hx).fderiv]
   simp [div_eq_mul_inv, mul_comm]
 
-/-- The mixed second variation: differentiate the first variation in direction `v`,
-while evaluating the resulting linear form on `w`. -/
-private theorem hasDerivAt_fderiv_logVandermonde_add_smul {x : ι → ℝ}
-    (hx : Function.Injective x) (v w : ι → ℝ) :
-    HasDerivAt (fun t : ℝ ↦ fderiv ℝ logVandermonde (x + t • v) w)
-      (-∑ i, ∑ j ∈ Ioi i, (v i - v j) * (w i - w j) / (x i - x j) ^ 2) 0 := by
-  have hne : ∀ᶠ t : ℝ in 𝓝 0, Function.Injective (x + t • v) := by
-    simp only [Function.Injective, eventually_all]
-    intro i j
-    by_cases hij : i = j
-    · simp [hij]
-    · have hgap : ContinuousAt (fun t : ℝ ↦ (x + t • v) i - (x + t • v) j) 0 := by
-        fun_prop
-      filter_upwards [hgap.eventually_ne (by simpa using sub_ne_zero.mpr (hx.ne hij))]
-        with t ht h
-      exact False.elim (ht (sub_eq_zero.mpr h))
-  have heq : (fun t : ℝ ↦ fderiv ℝ logVandermonde (x + t • v) w) =ᶠ[𝓝 0]
-      (fun t ↦ ∑ i, ∑ j ∈ Ioi i, (w i - w j) / ((x + t • v) i - (x + t • v) j)) :=
-    hne.mono fun t ht ↦ fderiv_logVandermonde_apply ht w
-  apply HasDerivAt.congr_of_eventuallyEq _ heq
-  rw [← sum_neg_distrib]
-  simp_rw [← sum_neg_distrib]
-  refine HasDerivAt.fun_sum fun i _ ↦ HasDerivAt.fun_sum fun j hj ↦ ?_
-  have hgap : x i - x j ≠ 0 := sub_ne_zero.mpr (hx.ne (mem_Ioi.mp hj).ne)
-  have hd : HasDerivAt (fun t : ℝ ↦ (x + t • v) i - (x + t • v) j)
-      (v i - v j) 0 := by
-    simpa using ((hasDerivAt_id (0 : ℝ)).mul_const (v i)).const_add (x i) |>.fun_sub
-      (((hasDerivAt_id (0 : ℝ)).mul_const (v j)).const_add (x j))
-  convert (hd.inv (by simpa using hgap)).const_mul (w i - w j) using 1 <;>
-    simp [div_eq_mul_inv]; ring
+/-- The coordinate first derivative sums inverse gaps from the chosen coordinate to all others. -/
+theorem fderiv_logVandermonde_single {x : ι → ℝ} (hx : Function.Injective x) (k : ι) :
+    fderiv ℝ logVandermonde x (Pi.single k 1) = ∑ j ∈ univ.erase k, (x k - x j)⁻¹ := by
+  rw [fderiv_logVandermonde_apply hx]
+  simp_rw [div_eq_mul_inv]
+  have h := sum_mul_sum_erase_eq_sum_sum_Ioi (Pi.single k 1) (fun i j ↦ (x i - x j)⁻¹)
+    (fun {i j} _ ↦ by rw [← neg_sub (x i) (x j), inv_neg])
+  simpa [Pi.single_apply, ite_mul] using h.symm
 
 /-- The Hessian as a bilinear form, in the Fréchet-derivative representation used
 in the multivariate Itô formula. -/
@@ -119,14 +145,20 @@ theorem fderiv_fderiv_logVandermonde_apply {x : ι → ℝ}
     (hx : Function.Injective x) (v w : ι → ℝ) :
     fderiv ℝ (fderiv ℝ logVandermonde) x v w =
       -∑ i, ∑ j ∈ Ioi i, (v i - v j) * (w i - w j) / (x i - x j) ^ 2 := by
-  have ha : HasDerivAt (fun t : ℝ ↦ x + t • v) v 0 := by
-    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const v).const_add x
-  have hf := (contDiffAt_logVandermonde hx (m := 2)).fderiv_right (m := 1) (by norm_num)
-    |>.differentiableAt_one.hasFDerivAt
-  have he : HasDerivAt (fun t : ℝ ↦ fderiv ℝ logVandermonde (x + t • v) w)
-      (fderiv ℝ (fderiv ℝ logVandermonde) x v w) 0 := by
-    simpa using (hf.comp_hasDerivAt_of_eq 0 ha (by simp)).clm_apply (hasDerivAt_const 0 w)
-  exact he.unique (hasDerivAt_fderiv_logVandermonde_add_smul hx v w)
+  let gap (i j : ι) : (ι → ℝ) →L[ℝ] ℝ :=
+    (ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ) - ContinuousLinearMap.proj j
+  have hinj : ∀ᶠ y in 𝓝 x, Function.Injective y := isOpen_setOf_injective.mem_nhds hx
+  have heq : fderiv ℝ logVandermonde =ᶠ[𝓝 x]
+      fun y ↦ ∑ i, ∑ j ∈ Ioi i, (gap i j y)⁻¹ • gap i j :=
+    hinj.mono fun y hy ↦ (hasFDerivAt_logVandermonde hy).fderiv
+  rw [heq.fderiv_eq]
+  have hterm (i j : ι) (hj : j ∈ Ioi i) :=
+    have hne : gap i j x ≠ 0 := sub_ne_zero.mpr (hx.ne (mem_Ioi.mp hj).ne)
+    ((hasDerivAt_inv hne).comp_hasFDerivAt x (gap i j).hasFDerivAt).smul_const (gap i j)
+  have hd := HasFDerivAt.fun_sum (u := univ) fun i _ ↦ HasFDerivAt.fun_sum (hterm i)
+  simp only [Function.comp_apply] at hd
+  rw [hd.fderiv]
+  simp [gap, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc, ← sum_neg_distrib]
 
 /-- The quadratic form of the Hessian is a negative sum of squared gap ratios. -/
 theorem fderiv_fderiv_logVandermonde_self {x : ι → ℝ}
@@ -187,16 +219,20 @@ theorem tendsto_logVandermonde_atBot {α : Type*} {l : Filter α}
   exact (Real.tendsto_log_nhdsNE_zero.comp (tendsto_nhdsWithin_iff.mpr ⟨hp, hpne⟩)).congr'
     (hinj.mono fun a ha ↦ (logVandermonde_eq_log_prod ha).symm)
 
-/-- A collision-free family with a finite limit and an eventual lower bound on the
-logarithmic Vandermonde has a collision-free limit. No ordering of the particles is required. -/
-theorem injective_of_tendsto_of_logVandermonde_bddBelow {α : Type*} {l : Filter α} [NeBot l]
+/-- A finite limit is collision-free if the family is frequently collision-free with its
+logarithmic Vandermonde above a common lower bound. -/
+theorem injective_of_tendsto_of_frequently_le_logVandermonde {α : Type*} {l : Filter α}
     {X : α → ι → ℝ} {y : ι → ℝ} (hX : Tendsto X l (𝓝 y))
-    (hinj : ∀ᶠ a in l, Function.Injective (X a))
-    (hbound : ∃ C : ℝ, ∀ᶠ a in l, C ≤ logVandermonde (X a)) : Function.Injective y := by
+    (hbound : ∃ C : ℝ, ∃ᶠ a in l, Function.Injective (X a) ∧ C ≤ logVandermonde (X a)) :
+    Function.Injective y := by
   by_contra hy
   obtain ⟨C, hC⟩ := hbound
-  have hlt := (tendsto_logVandermonde_atBot hX hinj hy).eventually (eventually_lt_atBot C)
-  obtain ⟨a, ha, hlt⟩ := (hC.and hlt).exists
-  exact (not_lt_of_ge ha) hlt
+  let l' := l ⊓ 𝓟 {a | Function.Injective (X a) ∧ C ≤ logVandermonde (X a)}
+  have : NeBot l' := frequently_iff_neBot.mp hC
+  have he : ∀ᶠ a in l', Function.Injective (X a) ∧ C ≤ logVandermonde (X a) :=
+    eventually_inf_principal.mpr (Eventually.of_forall fun _ ha ↦ ha)
+  exact not_isBoundedUnder_of_tendsto_atBot
+    (tendsto_logVandermonde_atBot (hX.mono_left inf_le_left) (he.mono fun _ ha ↦ ha.1) hy)
+    (isBoundedUnder_of_eventually_ge (he.mono fun _ ha ↦ ha.2))
 
-end TauCeti.Probability
+end TauCeti
