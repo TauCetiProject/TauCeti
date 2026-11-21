@@ -622,11 +622,8 @@ theorem enlargedLittlewoodPaley_eq_one {L₀ : ℕ} (hL₀ : φ.rOut < 2 ^ L₀ 
     rw [norm_smul, norm_inv, norm_pow, Real.norm_two, inv_mul_le_iff₀ (by positivity)]
     calc ‖ξ‖ ≤ 2 ^ (k + 1) * φ.rOut := hup.le
       _ ≤ 2 ^ (k + 1) * (2 ^ L₀ * φ.rIn) := by gcongr
-      _ ≤ 2 ^ (k + L₀ + 2) * φ.rIn := by
-          have h := mul_pos (mul_pos (pow_pos (two_pos : (0 : ℝ) < 2) k)
-            (pow_pos (two_pos : (0 : ℝ) < 2) L₀)) hrIn
-          rw [pow_add, pow_add, pow_add]
-          nlinarith
+      _ ≤ 2 * (2 ^ (k + 1) * (2 ^ L₀ * φ.rIn)) := le_mul_of_one_le_left (by positivity) one_le_two
+      _ = 2 ^ (k + L₀ + 2) * φ.rIn := by ring
   rw [enlargedLittlewoodPaley_apply, Finset.sum_Ico_eq_sub _ (by omega),
     show k + (L₀ + 3) = (k + L₀ + 2) + 1 by omega, φ.sum_inhomogeneousLittlewoodPaley_range, hφ1]
   rcases le_or_gt k (L₀ + 2) with hk | hk
@@ -637,16 +634,13 @@ theorem enlargedLittlewoodPaley_eq_one {L₀ : ℕ} (hL₀ : φ.rOut < 2 ^ L₀ 
   rw [dist_zero_right, norm_smul, norm_inv, norm_pow, Real.norm_two,
     le_inv_mul_iff₀ (by positivity)]
   calc 2 ^ j * φ.rOut ≤ 2 ^ j * (2 ^ L₀ * φ.rIn) := by gcongr
-    _ ≤ 2 ^ (j + L₀ + 3) * φ.rIn / 4 := by
-        have h := mul_pos (mul_pos (pow_pos (two_pos : (0 : ℝ) < 2) j)
-          (pow_pos (two_pos : (0 : ℝ) < 2) L₀)) hrIn
-        rw [pow_add, pow_add]
-        nlinarith
+    _ ≤ 2 * (2 ^ j * (2 ^ L₀ * φ.rIn)) := le_mul_of_one_le_left (by positivity) one_le_two
+    _ = 2 ^ (j + L₀ + 3) * φ.rIn / 4 := by ring
     _ ≤ ‖ξ‖ := (hlow (by omega)).le
 
 /-- **The enlarged cutoff is `1` near the support of `ψₖ`**, for a width `L` depending only on
-`φ`: `Ψₖ - 1` is supported outside the closed ball of radius `2^k φ.rOut` and, for `k ≥ 1`, inside
-the open ball of radius `2^k φ.rIn / 2`. -/
+`φ`: `Ψₖ - 1` is supported in the union of the complement of the closed ball of radius
+`2^k φ.rOut` and, for `k ≥ 1`, the open ball of radius `2^k φ.rIn / 2`. -/
 theorem exists_tsupport_enlargedLittlewoodPaley_sub_one_subset :
     ∃ L : ℕ, ∀ k, tsupport (fun ξ ↦ φ.enlargedLittlewoodPaley L k ξ - 1) ⊆
       (closedBall 0 (2 ^ k * φ.rOut))ᶜ ∪ {ξ | k ≠ 0 ∧ ‖ξ‖ < 2 ^ k * φ.rIn / 2} := by

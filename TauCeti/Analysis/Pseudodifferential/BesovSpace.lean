@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.TemperedDistribution
-public import TauCeti.Analysis.Pseudodifferential.LpTempered
+public import TauCeti.Analysis.Pseudodifferential.Lp.Tempered
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.FourierMultiplier
 import TauCeti.Analysis.Pseudodifferential.Symbol.Dyadic
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.AlmostDiagonal
@@ -25,10 +25,10 @@ distributions (`TauCeti.Symbol.quantizeTempered`), maps the inhomogeneous Besov 
 `B^{s-m}_{p,q}` for every real `s` and all `1 ≤ p, q ≤ ∞`
 (`TauCeti.Symbol.IsUniform.exists_toDistr_eq_quantizeTempered_and_norm_le`,
 `TemperedDistribution.MemBesov.quantizeTempered`, `TauCeti.Symbol.quantizeBesov`). For
-`p = q = ∞` this is the mapping `𝒞^s → 𝒞^{s-m}` of the Hölder–Zygmund scale, which at non-integer
-orders is the scale of the bounded Hölder spaces (`TauCeti.BesovSpace.ckHolderSpaceEquiv`). Unlike
-the `Lᵖ` and `Hˢ` theories, no Calderón–Zygmund or `L²` argument is involved, and the endpoints
-`p = 1, ∞` are included.
+`p = q = ∞` this is the mapping `𝒞^s → 𝒞^{s-m}` of the Hölder–Zygmund scale, which at positive
+non-integer orders `k + α` is the scale of the bounded Hölder spaces
+(`TauCeti.BesovSpace.ckHolderSpaceEquiv`). Unlike the `Lᵖ` and `Hˢ` theories, no Calderón–Zygmund
+or `L²` argument is involved, and the endpoints `p = 1, ∞` are included.
 
 ## The argument
 
@@ -177,8 +177,9 @@ private theorem IsUniform.exists_quantizeTempered_dyadicPiece_eq_and_norm_le (ha
     rw [List.length_replicate, show (0 : ℝ) - ((n + 1 : ℕ) : ℝ) + n = ((-1 : ℤ) : ℝ) by
       push_cast; ring, Real.rpow_intCast] at this
     refine this.trans ?_
-    rw [zpow_neg_one, inv_pow, pow_succ, mul_inv, ← mul_assoc, mul_assoc c',
-      mul_inv_cancel₀ (by positivity), mul_one]
+    rw [show c' * (2 ^ j : ℝ) ^ n * ((2 ^ j)⁻¹) ^ (n + 1) = c' * (2 ^ j : ℝ) ^ (-1 : ℤ) by
+      rw [zpow_neg_one, inv_pow, pow_succ]
+      field_simp]
     gcongr
     exact (Finset.single_le_sum (fun i _ ↦ hc i) (Finset.mem_univ i)).trans
       (le_add_of_nonneg_left hc₀)

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Lp
+public import TauCeti.Analysis.Pseudodifferential.Lp.Basic
 public import TauCeti.Analysis.Pseudodifferential.TemperedDistribution
 import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
