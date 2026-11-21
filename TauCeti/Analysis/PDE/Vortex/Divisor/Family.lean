@@ -303,15 +303,12 @@ depends continuously on the parameter, in operator norm. -/
 theorem continuous_orthogonalKerProjection_sobolevGaugeFixedOperator_polynomialVortexLp :
     Continuous fun x ↦ ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues
       (sobolevGaugeFixedOperator (polynomialVortexLp (P x))) :=
-  continuous_iff_continuousAt.2 fun x ↦
-    have hx : 0 < (P x).natDegree := (hdeg x).symm ▸ hm
-    have hsurj := sobolevGaugeFixedOperator_polynomialVortexLp_surjective (hmonic x) hx
-    have := finiteDimensional_ker_sobolevGaugeFixedOperator_polynomialVortexLp (hmonic x) hx
-    ((ContinuousLinearMap.IsFredholm.of_surjective hsurj).continuousAt_orthogonalKerProjection
-      sobolevFieldValues_injective hsurj).comp
-      (f := fun x ↦ sobolevGaugeFixedOperator (polynomialVortexLp (P x)))
-      (continuous_sobolevGaugeFixedOperator.comp
-        (continuous_polynomialVortexLp hm hdeg hcoeff)).continuousAt
+  continuous_orthogonalKerProjection_sobolevGaugeFixedOperator
+    (continuous_polynomialVortexLp hm hdeg hcoeff)
+    (fun x ↦ sobolevGaugeFixedOperator_polynomialVortexLp_surjective (hmonic x)
+      ((hdeg x).symm ▸ hm))
+    fun x ↦ finiteDimensional_ker_sobolevGaugeFixedOperator_polynomialVortexLp (hmonic x)
+      ((hdeg x).symm ▸ hm)
 
 /-- **Continuity of the right inverses along the vortex family.** For a family of monic
 polynomials of a fixed positive degree whose coefficients depend continuously on a parameter, the
@@ -320,15 +317,12 @@ the parameter, in operator norm. -/
 theorem continuous_orthogonalRightInverse_sobolevGaugeFixedOperator_polynomialVortexLp :
     Continuous fun x ↦ ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues
       (sobolevGaugeFixedOperator (polynomialVortexLp (P x))) :=
-  continuous_iff_continuousAt.2 fun x ↦
-    have hx : 0 < (P x).natDegree := (hdeg x).symm ▸ hm
-    have hsurj := sobolevGaugeFixedOperator_polynomialVortexLp_surjective (hmonic x) hx
-    have := finiteDimensional_ker_sobolevGaugeFixedOperator_polynomialVortexLp (hmonic x) hx
-    ((ContinuousLinearMap.IsFredholm.of_surjective hsurj).continuousAt_orthogonalRightInverse
-      sobolevFieldValues_injective hsurj).comp
-      (f := fun x ↦ sobolevGaugeFixedOperator (polynomialVortexLp (P x)))
-      (continuous_sobolevGaugeFixedOperator.comp
-        (continuous_polynomialVortexLp hm hdeg hcoeff)).continuousAt
+  continuous_orthogonalRightInverse_sobolevGaugeFixedOperator
+    (continuous_polynomialVortexLp hm hdeg hcoeff)
+    (fun x ↦ sobolevGaugeFixedOperator_polynomialVortexLp_surjective (hmonic x)
+      ((hdeg x).symm ▸ hm))
+    fun x ↦ finiteDimensional_ker_sobolevGaugeFixedOperator_polynomialVortexLp (hmonic x)
+      ((hdeg x).symm ▸ hm)
 
 omit hm hmonic hdeg hcoeff
 

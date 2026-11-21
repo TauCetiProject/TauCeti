@@ -20,7 +20,7 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Normed.Group.Pi
 public import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Fredholm.Criteria
-import TauCeti.Analysis.Fredholm.OrthogonalSplitting
+public import TauCeti.Analysis.Fredholm.OrthogonalSplitting
 
 /-!
 # The gauge-fixed vortex operator on `H¹`: kernel, range and orthogonal splittings
@@ -96,7 +96,9 @@ there (`ContinuousLinearMap.IsFredholm.continuousAt_orthogonalKerProjection`,
 vortex coefficients continuous in `L∞`, at which the realization is onto with a
 finite-dimensional kernel (`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective`,
 `TauCeti.Vortex.finiteDimensional_ker_sobolevGaugeFixedOperator`), they give continuous kernel
-projections and right inverses along that family.
+projections and right inverses along that family
+(`TauCeti.Vortex.continuous_orthogonalKerProjection_sobolevGaugeFixedOperator`,
+`TauCeti.Vortex.continuous_orthogonalRightInverse_sobolevGaugeFixedOperator`).
 
 ## References
 
@@ -537,5 +539,42 @@ theorem exists_continuousOn_orthogonal_rightInverse_sobolevGaugeFixedOperator
     sobolevFieldValues_injective hsurj continuous_sobolevGaugeFixedOperator.continuousOn
       isOpen_univ (Set.mem_univ a₀)
   exact ⟨U, hU⟩
+
+section Family
+
+variable {X : Type*} [TopologicalSpace X] {a : X → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
+  (ha : Continuous a) (hsurj : ∀ x, Function.Surjective (sobolevGaugeFixedOperator (a x)))
+  (hfin : ∀ x, FiniteDimensional ℝ (sobolevGaugeFixedOperator (a x)).ker)
+include ha hsurj hfin
+
+/-- **Continuity of the kernel projections along a family of coefficients.** Along a family of
+`L∞` coefficients `a x`, continuous in `x`, at which the realization `L_a : H¹ → L²` is onto with
+a finite-dimensional kernel, the projection of `H¹(ℂ)⁴` onto the kernel of `L_a` along its
+`L²`-orthogonal complement depends continuously on `x`, in operator norm. -/
+theorem continuous_orthogonalKerProjection_sobolevGaugeFixedOperator :
+    Continuous fun x ↦ ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues
+      (sobolevGaugeFixedOperator (a x)) :=
+  continuous_iff_continuousAt.2 fun x ↦
+    have := hfin x
+    ((ContinuousLinearMap.IsFredholm.of_surjective (hsurj x)).continuousAt_orthogonalKerProjection
+      sobolevFieldValues_injective (hsurj x)).comp
+      (f := fun x ↦ sobolevGaugeFixedOperator (a x))
+      (continuous_sobolevGaugeFixedOperator.comp ha).continuousAt
+
+/-- **Continuity of the right inverses along a family of coefficients.** Along a family of `L∞`
+coefficients `a x`, continuous in `x`, at which the realization `L_a : H¹ → L²` is onto with a
+finite-dimensional kernel, the right inverse of `L_a` with values `L²`-orthogonal to its kernel
+depends continuously on `x`, in operator norm. -/
+theorem continuous_orthogonalRightInverse_sobolevGaugeFixedOperator :
+    Continuous fun x ↦ ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues
+      (sobolevGaugeFixedOperator (a x)) :=
+  continuous_iff_continuousAt.2 fun x ↦
+    have := hfin x
+    ((ContinuousLinearMap.IsFredholm.of_surjective (hsurj x)).continuousAt_orthogonalRightInverse
+      sobolevFieldValues_injective (hsurj x)).comp
+      (f := fun x ↦ sobolevGaugeFixedOperator (a x))
+      (continuous_sobolevGaugeFixedOperator.comp ha).continuousAt
+
+end Family
 
 end TauCeti.Vortex
