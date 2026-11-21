@@ -15,6 +15,7 @@ import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Topology.Algebra.Module.Equiv.Pi
 -- Proof-only: `Set.Finite.dense_sInter` for finite intersections of dense open sets.
 import Mathlib.Topology.Baire.Lemmas
+import TauCeti.Analysis.Analytic.Constructions
 import TauCeti.Analysis.Analytic.Uniqueness
 
 /-!
@@ -129,16 +130,10 @@ term `p n` of the series vanishes at `(v, …, v)`. -/
 theorem eventually_apply_add_smul_eq_zero_iff {p : FormalMultilinearSeries 𝕜 E F}
     (hf : HasFPowerSeriesAt f p x) :
     (∀ᶠ ξ in 𝓝 (0 : 𝕜), f (x + ξ • v) = 0) ↔ ∀ n, p n (fun _ ↦ v) = 0 := by
-  set u : 𝕜 →L[𝕜] E := (ContinuousLinearMap.id 𝕜 𝕜).smulRight v
-  -- the restriction of `f` to the line has the power series `p` composed with `ξ ↦ ξ • v`
-  have h0 : HasFPowerSeriesAt (fun z ↦ f (x + z)) p (u 0) := by
-    rw [map_zero]
-    convert hf.comp_sub (-x) using 1
-    · ext z
-      rw [sub_neg_eq_add, add_comm]
-    · rw [add_neg_cancel]
+  obtain ⟨r, hr⟩ := hf
+  let u : 𝕜 →L[𝕜] E := ContinuousLinearMap.toSpanSingleton 𝕜 v
   have hline : HasFPowerSeriesAt (fun ξ : 𝕜 ↦ f (x + ξ • v)) (p.compContinuousLinearMap u) 0 :=
-    h0.compContinuousLinearMap
+    (hr.comp_add_smul v).hasFPowerSeriesAt
   have hcoeff (n : ℕ) : p.compContinuousLinearMap u n (fun _ ↦ 1) = p n (fun _ ↦ v) := by
     rw [FormalMultilinearSeries.compContinuousLinearMap_apply]
     congr 1
