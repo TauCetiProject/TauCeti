@@ -58,7 +58,7 @@ private theorem range_variableMap (i : Fin n) :
 variable (G : GridDiagram n)
 
 local notation "d" => LinearMap.restrictScalars F (GridDiagram.unblockedDifferential G F)
-local notation "hd" => restrictScalars_unblockedDifferential_comp_self_eq_zero G
+local notation "hd" => restrictScalars_unblockedDifferential_comp_self_eq_zero G F
 
 private theorem variableMap_comp (i : Fin n) :
     variableMap i ∘ₗ d = d ∘ₗ variableMap i := by
