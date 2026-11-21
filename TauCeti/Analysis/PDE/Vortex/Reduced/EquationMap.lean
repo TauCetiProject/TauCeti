@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import TauCeti.Analysis.Polynomial.AtInfinity
 import TauCeti.Analysis.Polynomial.Monic.OfCoeff
+import TauCeti.Analysis.Polynomial.NormSq
 import TauCeti.Analysis.PDE.Vortex.Existence
 import TauCeti.Analysis.PDE.Vortex.Reduced.Functional
 import TauCeti.Analysis.PDE.Vortex.Reduced.Sobolev
@@ -40,8 +41,9 @@ and proves that it is smooth jointly in the coefficients and the correction
 
 (`TauCeti.Vortex.hasFDerivAt_reducedEquationMap`, `TauCeti.Vortex.coeFn_reducedLinearization`).
 At a real `C²` correction `u = w`, `Φ(c, w) = 0` exactly when `w` solves the reduced equation
-classically (`TauCeti.Vortex.reducedEquationMap_eq_zero_iff`), and Taubes's variational solution
-is such a zero for every `c` (`TauCeti.Vortex.exists_reducedEquationMap_eq_zero`). This is the
+classically (`TauCeti.Vortex.reducedEquationMap_eq_zero_iff`), and for every `c` the map
+`Φ(c, ·)` has a zero whose `L²` function is a smooth real function, by Taubes's variational
+existence theorem (`TauCeti.Vortex.exists_reducedEquationMap_eq_zero`). This is the
 input of the implicit function theorem that makes the vortex depend smoothly on its divisor: at a
 real solution the operator `D_u Φ` is `-(-Δ + h_c exp (2w) / 4)`, a Schrödinger operator with a
 nonnegative potential that is positive at infinity. Its invertibility and the identification of
@@ -91,7 +93,8 @@ The term `h_c (exp (2u) - 1) = (exp (2u) - 1) - φ_c (exp (2u) - 1)` uses the sm
   its partial derivative in `u` is `v ↦ Δv - h_c exp (2u) v / 4`.
 * `TauCeti.Vortex.reducedEquationMap_eq_zero_iff`: at a real `C²` correction, `Φ(c, u) = 0` is the
   classical reduced equation.
-* `TauCeti.Vortex.exists_reducedEquationMap_eq_zero`: Taubes's solution is a zero of `Φ(c, ·)`.
+* `TauCeti.Vortex.exists_reducedEquationMap_eq_zero`: `Φ(c, ·)` has a zero whose `L²` function
+  is a smooth real function.
 
 ## References
 
@@ -190,24 +193,12 @@ private def normSqWeight (hP₀ : P₀ ≠ 0) {n : ℕ} (hn : n ≤ P₀.natDegr
     ℂ →ᵇ ℂ :=
   ∑ i, ∑ j, (conj (a i) * a j) • monomialWeight P₀ hP₀ hn i j
 
-/-- `‖Q.eval z‖² = ∑ conj (Q_i) Q_j conj z ^ i z ^ j` for a polynomial `Q` of degree at most
-`n`. -/
-private theorem ofReal_norm_eval_sq {Q : _root_.Polynomial ℂ} {n : ℕ} (hQ : Q.natDegree < n + 1)
-    (z : ℂ) :
-    ((‖Q.eval z‖ ^ 2 : ℝ) : ℂ) =
-      ∑ i : Fin (n + 1), ∑ j : Fin (n + 1),
-        conj (Q.coeff i) * Q.coeff j * (conj z ^ (i : ℕ) * z ^ (j : ℕ)) := by
-  rw [Complex.ofReal_pow, ← Complex.conj_mul', eval_eq_sum_range' hQ, ← Fin.sum_univ_eq_sum_range,
-    map_sum, Finset.sum_mul_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [map_mul, map_pow]
-  ring
-
 private theorem normSqWeight_apply (hP₀ : P₀ ≠ 0) {n : ℕ} (hn : n ≤ P₀.natDegree)
     {Q : _root_.Polynomial ℂ} (hQ : Q.natDegree < n + 1) (z : ℂ) :
     normSqWeight P₀ hP₀ hn (fun i ↦ Q.coeff i) z =
       ((‖Q.eval z‖ ^ 2 : ℝ) : ℂ) * backgroundDefect P₀ z := by
-  rw [ofReal_norm_eval_sq hQ, Finset.sum_mul, normSqWeight]
+  rw [← RCLike.ofReal_eq_complex_ofReal, _root_.Polynomial.ofReal_norm_eval_sq_eq_sum hQ,
+    Finset.sum_mul, normSqWeight]
   simp only [_root_.sum_apply, Finset.sum_mul]
   refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
   rw [smul_apply, smul_eq_mul, monomialWeight, coe_ofNormedAddCommGroup]
@@ -593,10 +584,13 @@ theorem reducedEquationMap_eq_zero_iff (hm : 0 < m) (c : Fin m → ℂ) {u : H^{
     refine Lp.ext (hae.trans (Filter.EventuallyEq.trans (.of_forall fun z ↦ ?_) hzero.symm))
     simp [g, h z]
 
-/-- **Taubes's solution is a zero of the reduced equation map.** For every `c ∈ ℂ^m`, `m ≥ 1`,
-the smooth square-integrable solution `w` of the reduced equation for `P_c` given by Taubes's
-variational construction (`TauCeti.Vortex.exists_contDiff_memLp_laplacian_eq_reduced`) lies in
-`H²(ℂ)`, and its element `u ∈ H²(ℂ)` satisfies `Φ(c, u) = 0`. -/
+/-- **The reduced equation map has a smooth real zero.** For every `c ∈ ℂ^m`, `m ≥ 1`, there are
+`u ∈ H²(ℂ)` and a smooth real function `w` such that the `L²` function of `u` is almost everywhere
+`w` and `Φ(c, u) = 0`.
+The proof takes for `w` a smooth square-integrable solution of the reduced equation for `P_c`,
+which exists by Taubes's variational construction
+(`TauCeti.Vortex.exists_contDiff_memLp_laplacian_eq_reduced`), and shows that it lies in
+`H²(ℂ)`. -/
 theorem exists_reducedEquationMap_eq_zero (hm : 0 < m) (c : Fin m → ℂ) :
     ∃ (u : H^{2}(ℂ)) (w : ℂ → ℝ), ContDiff ℝ ∞ w ∧
       (⇑(inclusionLp zero_le_two u) =ᵐ[volume] fun z ↦ (w z : ℂ)) ∧
