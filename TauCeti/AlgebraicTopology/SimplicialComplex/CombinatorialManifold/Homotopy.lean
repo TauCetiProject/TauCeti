@@ -41,7 +41,7 @@ variable {ι : Type*} [DecidableEq ι] {P : PreAbstractSimplicialComplex ι}
 containing the complex. This includes the one-point zero-ball. -/
 theorem IsCombinatorialBall.contractibleSpace (h : IsCombinatorialBall P n)
     (hA : P ≤ A.toPreAbstractSimplicialComplex) :
-    ContractibleSpace {x : Realization A // x.1.support ∈ P} := by
+    ContractibleSpace {x : Realization A // x.val.support ∈ P} := by
   obtain ⟨e⟩ := h.nonempty_homeomorph_closedBall hA
   let := Metric.contractibleSpace_closedBall
     (x := (0 : EuclideanSpace ℝ (Fin n))) (r := 1) zero_le_one
@@ -51,7 +51,7 @@ theorem IsCombinatorialBall.contractibleSpace (h : IsCombinatorialBall P n)
 two-point zero-sphere. -/
 theorem IsCombinatorialSphere.not_contractibleSpace (h : IsCombinatorialSphere P n)
     (hA : P ≤ A.toPreAbstractSimplicialComplex) :
-    ¬ ContractibleSpace {x : Realization A // x.1.support ∈ P} := by
+    ¬ ContractibleSpace {x : Realization A // x.val.support ∈ P} := by
   obtain ⟨e⟩ := h.nonempty_homeomorph_sphere hA
   intro hc
   let := hc

@@ -168,7 +168,7 @@ theorem smul_tabloid_injective (t : YoungTableau μ) :
   intro q r h
   have hrow : (q : Equiv.Perm (Fin μ.card))⁻¹ * r ∈ rowSubgroup t := smul_tabloid_eq_iff.mp h
   have hcol : (q : Equiv.Perm (Fin μ.card))⁻¹ * r ∈ colSubgroup t :=
-    mul_mem (inv_mem q.2) r.2
+    mul_mem (inv_mem q.property) r.property
   have hmem : (q : Equiv.Perm (Fin μ.card))⁻¹ * r ∈ rowSubgroup t ⊓ colSubgroup t :=
     Subgroup.mem_inf.mpr ⟨hrow, hcol⟩
   rw [rowSubgroup_inf_colSubgroup_eq_bot t, Subgroup.mem_bot, inv_mul_eq_one] at hmem
@@ -272,7 +272,7 @@ theorem polytabloid_coeff_eq_zero_of_forall_ne (t : YoungTableau μ)
   classical
   rw [polytabloid_eq_sum, MonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply]
   refine Finset.sum_eq_zero fun q _ => ?_
-  have hne := h (q : Equiv.Perm (Fin μ.card)) q.2
+  have hne := h (q : Equiv.Perm (Fin μ.card)) q.property
   simp [MonoidAlgebra.coeff_single, hne]
 
 /-- Polytabloids are nonzero. -/
@@ -370,7 +370,7 @@ theorem spechtSubrepresentation_span_orbit_polytabloid_eq_top (t : YoungTableau 
     (s := fun σ : Equiv.Perm (Fin μ.card) =>
       (permutationModule (R := R) (shapePartition μ)).ρ σ (polytabloid (R := R) t))
     fun σ => ((spechtSubrepresentation (R := R) μ).toRepresentation σ
-      ⟨polytabloid (R := R) t, polytabloid_mem_spechtSubrepresentation t⟩).2).2
+      ⟨polytabloid (R := R) t, polytabloid_mem_spechtSubrepresentation t⟩).property).2
     (spechtSubrepresentation_eq_span_orbit t).symm
 
 /-- The Specht module is nonzero. -/

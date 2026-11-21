@@ -107,7 +107,7 @@ theorem isZero_khovanovBracket_X_of_quantum_notMem_Icc {j : ℤ}
   apply Khovanov.circleQuantumGrading_piece_eq_bot
   intro l hl
   apply hj
-  have hmem := D.card_add_labelingQuantumDegree_mem_Icc S.1 l
+  have hmem := D.card_add_labelingQuantumDegree_mem_Icc S.val l
   convert hmem using 1
   omega
 

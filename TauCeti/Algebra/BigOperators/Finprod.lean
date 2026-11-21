@@ -36,9 +36,13 @@ element commutes with `finsum` even when the support is infinite.
 * `TauCeti.hasFiniteMulSupport_sum_type`: a family on `α ⊕ β` has finite multiplicative support as
   soon as its two restrictions do.
 * `TauCeti.finprod_sum_type`: `∏ᶠ v : α ⊕ β, f v = (∏ᶠ a, f (.inl a)) * ∏ᶠ b, f (.inr b)`.
+* `TauCeti.exists_ne_one_of_finprod_ne_one`, `TauCeti.exists_ne_zero_of_finsum_ne_zero`: a
+  product that is not `1` has a factor that is not `1`, and likewise for sums.
 * `TauCeti.finprod_comp_eq_of_injective` and `TauCeti.finsum_comp_eq_of_injective`: reindex
   along an injection when the family is trivial outside its range.
 * `TauCeti.finprod_fiberwise`: regroup a finitely supported product by the fibers of a map.
+* `TauCeti.finprod_sigma`: a finitely supported product over `Σ i, κ i` is the iterated product
+  over `i` and the fiber `κ i`.
 * `TauCeti.finprod_mem_fiberwise`: regroup a product over a preimage `g ⁻¹' t` by the fibers of
   `g` over `t`.
 * `TauCeti.finprod_mul_eq_right_of_finprod_eq_one`: multiplying by a finitely supported family
@@ -126,6 +130,15 @@ theorem finprod_sum_type (f : α ⊕ β → M) (hl : HasFiniteMulSupport (f ∘ 
     finprod_mem_union' isCompl_range_inl_range_inr.disjoint hfl hfr,
     finprod_mem_range Sum.inl_injective, finprod_mem_range Sum.inr_injective]
 
+/-- If a product is not `1`, then one of its factors is not `1`. This is the case `s = univ` of
+`exists_ne_one_of_finprod_mem_ne_one`. -/
+@[to_additive /-- If a sum is not `0`, then one of its terms is not `0`. This is the case
+`s = univ` of `exists_ne_zero_of_finsum_mem_ne_zero`. -/]
+theorem exists_ne_one_of_finprod_ne_one {f : α → M} (h : ∏ᶠ a, f a ≠ 1) : ∃ a, f a ≠ 1 := by
+  obtain ⟨a, -, ha⟩ := exists_ne_one_of_finprod_mem_ne_one (s := univ) (f := f)
+    (by rwa [finprod_mem_univ])
+  exact ⟨a, ha⟩
+
 /-- Reindex a product along an injection when every factor outside its range is `1`. -/
 @[to_additive /-- Reindex a sum along an injection when every term outside its range is `0`. -/]
 theorem finprod_comp_eq_of_injective {g : α → β} (hg : Function.Injective g) (F : β → M)
@@ -150,6 +163,16 @@ theorem finprod_fiberwise {α β M : Type*} [CommMonoid M] (g : α → β) (f : 
     _ = ∏ᶠ b, ∏ a ∈ hf.toFinset with g a = b, f a := finprod_congr hb
     _ = ∏ a ∈ hf.toFinset, f a := finprod_prod_filter g hf.toFinset f
     _ = ∏ᶠ a, f a := (finprod_eq_prod f hf).symm
+
+/-- A finitely supported product over a sigma type is the product, over the first coordinate, of
+the products over the fibers. Neither the base nor the fibers need be finite. -/
+@[to_additive /-- A finitely supported sum over a sigma type is the sum, over the first
+coordinate, of the sums over the fibers. Neither the base nor the fibers need be finite. -/]
+theorem finprod_sigma {ι M : Type*} [CommMonoid M] {κ : ι → Type*} (f : (Σ i, κ i) → M)
+    (hf : (mulSupport f).Finite) : ∏ᶠ x, f x = ∏ᶠ i, ∏ᶠ k : κ i, f ⟨i, k⟩ := by
+  rw [← finprod_fiberwise Sigma.fst f hf]
+  exact finprod_congr fun i ↦
+    (finprod_comp_equiv (Equiv.sigmaSubtype i).symm (f := fun x ↦ f x.val)).symm
 
 /-- Regroup a product over a preimage `g ⁻¹' t` by the fibers of `g` over the points of `t`, when
 only finitely many factors over `t` differ from `1`. -/

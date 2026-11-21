@@ -708,7 +708,7 @@ theorem cap_comp_cup_ne_smul_id [Nontrivial R] (r : R) :
   intro h
   have hne : PlanarMatching.nested 2 ≠ (TLDiagram.cap.comp TLDiagram.cup).matching := by
     intro hm
-    have h0 := congrFun (congrArg (fun x : PlanarMatching 4 => ⇑x.1.val) hm) 0
+    have h0 := congrFun (congrArg (fun x : PlanarMatching 4 => ⇑x.val.val) hm) 0
     simp only [TLDiagram.cap_comp_cup_matching_val, PlanarMatching.nested_val] at h0
     exact absurd h0 (by decide)
   rw [cap_comp_cup_eq_diagBasis] at h
@@ -785,7 +785,7 @@ private theorem glueMiddle_zero_append_left_injective {n m : ℕ} (y : PlanarMat
   intro x₁ x₂ hx
   simp only [PlanarMatching.glueMiddle_zero, EmbeddingLike.apply_eq_iff_eq] at hx
   refine PlanarMatching.ext fun i => Fin.castAdd_injective (n + 0) (0 + m) ?_
-  have hi := congrFun (congrArg (fun z : PlanarMatching _ => ⇑z.1.val) hx)
+  have hi := congrFun (congrArg (fun z : PlanarMatching _ => ⇑z.val.val) hx)
     (Fin.castAdd (0 + m) i)
   simpa only [PlanarMatching.append_val_castAdd] using hi
 
@@ -795,7 +795,7 @@ private theorem glueMiddle_zero_append_right_injective {n m : ℕ} (x : PlanarMa
   intro z₁ z₂ hz
   simp only [PlanarMatching.glueMiddle_zero, EmbeddingLike.apply_eq_iff_eq] at hz
   refine PlanarMatching.ext fun j => Fin.natAdd_injective (0 + m) (n + 0) ?_
-  have hj := congrFun (congrArg (fun w : PlanarMatching _ => ⇑w.1.val) hz)
+  have hj := congrFun (congrArg (fun w : PlanarMatching _ => ⇑w.val.val) hz)
     (Fin.natAdd (n + 0) j)
   simpa only [PlanarMatching.append_val_natAdd] using hj
 

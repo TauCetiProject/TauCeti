@@ -122,20 +122,23 @@ on the positive half-plane. -/
 theorem analyticOrderAt_dirichletData_entireCompletion_eq_LFunction (hne : χ ≠ 1)
     {s : ℂ} (hs : 0 < s.re) :
     analyticOrderAt (dirichletData χ hχ).entireCompletion s = analyticOrderAt χ.LFunction s := by
-  rw [analyticOrderAt_dirichletData_entireCompletion χ hχ hne]
-  have hΓ := χ.analyticAt_gammaFactor_of_re_pos hs
-  have hΓ0 := χ.gammaFactor_ne_zero_of_re_pos hs
-  have he : χ.completedLFunction =ᶠ[𝓝 s] χ.gammaFactor * χ.LFunction := by
-    have hpos : ∀ᶠ z : ℂ in 𝓝 s, 0 < z.re :=
-      (isOpen_lt continuous_const continuous_re).mem_nhds hs
-    filter_upwards [hpos] with z hz
-    have hγ := χ.gammaFactor_ne_zero_of_re_pos hz
-    dsimp only [Pi.mul_apply]
-    rw [χ.LFunction_eq_completed_div_gammaFactor z (.inl (by rintro rfl; simp at hz))]
-    exact (mul_div_cancel₀ _ hγ).symm
-  rw [analyticOrderAt_congr he,
-    analyticOrderAt_mul hΓ ((DirichletCharacter.differentiable_LFunction hne).analyticAt s),
-    hΓ.analyticOrderAt_eq_zero.mpr hΓ0, zero_add]
+  rw [analyticOrderAt_dirichletData_entireCompletion χ hχ hne,
+    χ.analyticOrderAt_completedLFunction hs (.inr hne)]
+
+/-- The conductor factor changes no natural zero multiplicities of the completed Dirichlet
+function. -/
+theorem analyticOrderNatAt_dirichletData_entireCompletion (hne : χ ≠ 1) (s : ℂ) :
+    analyticOrderNatAt (dirichletData χ hχ).entireCompletion s =
+      analyticOrderNatAt χ.completedLFunction s :=
+  congrArg ENat.toNat (analyticOrderAt_dirichletData_entireCompletion χ hχ hne s)
+
+/-- The entire completion and ordinary L-function have equal natural zero multiplicities on the
+positive half-plane. -/
+theorem analyticOrderNatAt_dirichletData_entireCompletion_eq_LFunction (hne : χ ≠ 1)
+    {s : ℂ} (hs : 0 < s.re) :
+    analyticOrderNatAt (dirichletData χ hχ).entireCompletion s =
+      analyticOrderNatAt χ.LFunction s :=
+  congrArg ENat.toNat (analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hs)
 
 /-- The entire completion and ordinary L-function have the same zeros
 on the positive half-plane. -/

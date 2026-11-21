@@ -41,6 +41,11 @@ same way, `Jᵀ * J = 1` is the orthonormality of the columns of `J`.
 It also records membership in `Matrix.symplecticGroup` of three families of block matrices, each a
 specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 
+## Main definitions
+
+* `TauCeti.Symplectic.coordSign`: the sign of a native coordinate, `-1` on the `e`-coordinates
+  and `1` on the `f`-coordinates.
+
 ## Main results
 
 * `Matrix.J_mul_neg_J`, `Matrix.neg_J_mul_J` and `Matrix.isUnit_J`: the canonical skew-symmetric
@@ -54,10 +59,14 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   the latter, `tr (J * Jᵀ) = 2 * card l`.
 * `Matrix.J_apply_eq_zero_of_ne_swap` and `Matrix.J_apply_swap_ne_zero`: the nonzero entries of
   `J` are exactly those at the pairs `(x, x.swap)`.
+* `Matrix.J_apply_eq_ite`: the entry of `J` at `(a, a.swap)` is the sign
+  `TauCeti.Symplectic.coordSign a` of the coordinate `a`, `-1` on `inl i` and `1` on `inr i`.
 * `Matrix.sum_J_apply`: the row sums of `J` are its single nonzero entries.
 * `Matrix.sum_J_mul_J_eq_ite`: the columns of `J` are orthonormal, `Jᵀ * J = 1` read entrywise.
 * `Matrix.eq_J_conj_iff_mul_J_eq`: cancelling a conjugation by `J`.
 * `Matrix.J_mul_mul_J_mul_J`: sandwiching twice by `J` is the identity.
+* `Matrix.J_mul_transpose_single_mul_J`: the involution `X ↦ J Xᵀ J` sends the matrix unit
+  `E_ab` to `-sgn(a) sgn(b) E_(b', a')`.
 * `Matrix.transpose_mul_J_mul_transpose` and `Matrix.mul_J_mul_transpose_apply_self`: the
   congruence transform `C * J * Cᵀ` of `J` by a rectangular matrix is alternating, that is
   antisymmetric with zero diagonal, in every characteristic;
@@ -92,6 +101,37 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 public section
 
 open Matrix
+
+namespace TauCeti.Symplectic
+
+variable {l : Type*}
+
+/-- **The sign of a native coordinate** of the standard symplectic space `(l ⊕ l) → R`: `-1` on
+the `e`-coordinates `inl i` and `1` on the `f`-coordinates `inr i`. It is the sign of the nonzero
+entry of `Matrix.J` in the row of the coordinate (`Matrix.J_apply_eq_ite`), and the sign of the
+signed index in Molev's signed indexing of the coordinates. -/
+def coordSign : l ⊕ l → ℤ :=
+  Sum.elim (fun _ => -1) fun _ => 1
+
+@[simp]
+theorem coordSign_inl (i : l) : coordSign (Sum.inl i : l ⊕ l) = -1 :=
+  (rfl)
+
+@[simp]
+theorem coordSign_inr (i : l) : coordSign (Sum.inr i : l ⊕ l) = 1 :=
+  (rfl)
+
+/-- Passing to the paired coordinate changes the sign. -/
+@[simp]
+theorem coordSign_swap (a : l ⊕ l) : coordSign a.swap = -coordSign a := by
+  cases a <;> simp
+
+theorem coordSign_mul_self (a : l ⊕ l) : coordSign a * coordSign a = 1 := by
+  cases a <;> simp
+
+end TauCeti.Symplectic
+
+open TauCeti.Symplectic
 
 namespace Matrix
 
@@ -157,6 +197,16 @@ particular nonzero. -/
 theorem J_apply_swap_ne_zero [Nontrivial R] (x : l ⊕ l) : J l R x x.swap ≠ 0 := by
   rcases x with i | i <;> simp [Matrix.J]
 
+omit [Fintype l] in
+/-- **The standard form in signed terms**: `J a b` is the sign `TauCeti.Symplectic.coordSign a`
+when `b` is the coordinate paired with `a`, and vanishes otherwise. -/
+theorem J_apply_eq_ite (a b : l ⊕ l) :
+    J l R a b = if b = a.swap then (coordSign a : R) else 0 := by
+  split_ifs with h
+  · subst h
+    cases a <;> simp [J]
+  · exact J_apply_eq_zero_of_ne_swap l R h
+
 /-- The row sums of `J` are its single nonzero entries: `∑ y, J x y = J x x.swap`. -/
 theorem sum_J_apply (x : l ⊕ l) : ∑ y : l ⊕ l, J l R x y = J l R x x.swap :=
   Finset.sum_eq_single x.swap (fun _ _ hy ↦ J_apply_eq_zero_of_ne_swap l R hy) (by simp)
@@ -204,6 +254,33 @@ theorem J_mul_mul_J_mul_J (M : Matrix (l ⊕ l) (l ⊕ l) R) :
   calc J l R * (J l R * M * J l R) * J l R = (J l R * J l R) * M * (J l R * J l R) := by
         noncomm_ring
     _ = M := by simp [J_squared]
+
+/-- **The involution `X ↦ J Xᵀ J` on a matrix unit**: it sends `E_ab` to
+`-sgn(a) sgn(b) E_(b', a')`, where `b'` and `a'` are the coordinates paired with `b` and `a` and
+the signs are those of `TauCeti.Symplectic.coordSign`. -/
+theorem J_mul_transpose_single_mul_J (a b : l ⊕ l) :
+    J l R * (single a b (1 : R))ᵀ * J l R =
+      -(((coordSign a * coordSign b : ℤ) : R) • single b.swap a.swap 1) := by
+  have hinv : Function.Involutive (@Sum.swap l l) := Sum.swap_swap
+  ext x y
+  have hcol (w : l ⊕ l) :
+      (J l R * single b a (1 : R)) x w = if w = a then J l R x b else 0 := by
+    split_ifs with hw
+    · rw [hw, mul_single_apply_same, mul_one]
+    · exact mul_single_apply_of_ne (hbj := hw) ..
+  rw [transpose_single, Matrix.mul_apply,
+    Fintype.sum_congr _ _ fun w => by rw [hcol, ite_mul, zero_mul],
+    Fintype.sum_ite_eq' a, J_apply_eq_ite, J_apply_eq_ite,
+    Matrix.neg_apply, Matrix.smul_apply, single_apply]
+  clear hcol
+  by_cases hx : x = b.swap
+  · subst hx
+    by_cases hy : y = a.swap
+    · subst hy
+      simp [mul_comm]
+    · simp [hy, Ne.symm hy]
+  · have h₁ : b ≠ x.swap := fun h => hx (by rw [h, hinv])
+    simp [h₁, Ne.symm hx]
 
 /-- The congruence transform `C * J * Cᵀ` of `J` by a rectangular matrix `C` is antisymmetric. -/
 theorem transpose_mul_J_mul_transpose {m : Type*} (C : Matrix m (l ⊕ l) R) :
@@ -256,13 +333,13 @@ theorem exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero (I : Ideal R)
   let _ : LinearOrder (l ⊕ l) := (Fintype.equivFin (l ⊕ l)).linearOrder
   have hQ : (-E)ᵀ = -(-E) := by rw [transpose_neg, hE_transpose]
   have hQd : ∀ i, (-E) i i = 0 := fun i => by simp [hE_diag]
-  let Y : Matrix (l ⊕ l) (l ⊕ l) R := ((subTransposeEqEquiv hQ hQd).symm 0).1
+  let Y : Matrix (l ⊕ l) (l ⊕ l) R := ((subTransposeEqEquiv hQ hQd).symm 0).val
   have hY_mem : ∀ i j, Y i j ∈ I := fun i j => by
     simp only [Y, coe_subTransposeEqEquiv_symm_apply, Pi.zero_apply, zero_add]
     split_ifs
     · exact I.neg_mem (hE_mem i j)
     · exact I.zero_mem
-  have hY_sub : Y - Yᵀ = -E := ((subTransposeEqEquiv hQ hQd).symm 0).2
+  have hY_sub : Y - Yᵀ = -E := ((subTransposeEqEquiv hQ hQd).symm 0).property
   have hX_mul_J : -(Y * J l R) * J l R = Y := by
     rw [Matrix.neg_mul, Matrix.mul_assoc, J_squared]
     simp

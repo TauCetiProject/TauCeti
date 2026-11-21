@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import Mathlib.Basic.ENNReal.Holder
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import TauCeti.Data.ENNReal.Inv
@@ -60,6 +61,8 @@ and column integrals are only required almost everywhere.
 * `TauCeti.memLp_lintegral_mul`: hence the kernel maps `Lᵖ` to `Lᵖ` for finite `A` and `B`.
 * `TauCeti.lintegral_lintegral_mul_mul_le`: Schur's test for the bilinear form
   `∫∫ f(x) k(x, y) g(y)`, bounded by `‖f‖_p ‖g‖_q` for Hölder conjugate `p` and `q`.
+* `TauCeti.lintegral_lintegral_mul_indicator_ball_mul_le`: the bilinear form for the kernel
+  `1_{|x - y| < R}` on the real line, whose rows and columns have length `2R`.
 
 ## References
 
@@ -317,5 +320,41 @@ theorem lintegral_lintegral_mul_mul_le [SFinite μ] [SFinite ν] {k : α → β 
         exact eLpNorm_lintegral_mul_le hk hg (ENNReal.HolderConjugate.one_le (p := q) (q := p))
           hA hB
     _ = _ := by ring
+
+/-- The kernel `1_{dist x y < R}` is measurable. -/
+theorem measurable_uncurry_indicator_ball {γ : Type*} [PseudoMetricSpace γ] [MeasurableSpace γ]
+    [OpensMeasurableSpace γ] [SecondCountableTopology γ] (R : ℝ) :
+    Measurable (Function.uncurry fun x y : γ ↦ (Metric.ball x R).indicator (1 : γ → ℝ≥0∞) y) := by
+  have : (Function.uncurry fun x y : γ ↦ (Metric.ball x R).indicator (1 : γ → ℝ≥0∞) y) =
+      {p : γ × γ | dist p.2 p.1 < R}.indicator 1 := by
+    ext p
+    simp [Set.indicator, Metric.mem_ball, Function.uncurry]
+  rw [this]
+  exact measurable_one.indicator
+    (measurableSet_lt (measurable_snd.dist measurable_fst) measurable_const)
+
+/-- **Schur's test** for the kernel `1_{|x - y| < R}` on the real line: its rows and columns have
+length `2R`, so for Hölder conjugate `p` and `q`,
+`∫∫_{|x - y| < R} f(x) g(y) dx dy ≤ 2R ‖f‖_p ‖g‖_q`. -/
+theorem lintegral_lintegral_mul_indicator_ball_mul_le {f g : ℝ → ℝ≥0∞} (hf : AEMeasurable f)
+    (hg : AEMeasurable g) {p q : ℝ≥0∞} [ENNReal.HolderConjugate p q] (R : ℝ) :
+    ∫⁻ x, ∫⁻ y, f x * ((Metric.ball x R).indicator (1 : ℝ → ℝ≥0∞) y * g y) ≤
+      ENNReal.ofReal (2 * R) * eLpNorm f p * eLpNorm g q := by
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 hR]
+  have hrow (x : ℝ) :
+      ∫⁻ y, (Metric.ball x R).indicator (1 : ℝ → ℝ≥0∞) y = ENNReal.ofReal (2 * R) := by
+    rw [lintegral_indicator_one measurableSet_ball, Real.volume_ball]
+  have hcol (y : ℝ) :
+      ∫⁻ x, (Metric.ball x R).indicator (1 : ℝ → ℝ≥0∞) y = ENNReal.ofReal (2 * R) := by
+    have : (fun x : ℝ ↦ (Metric.ball x R).indicator (1 : ℝ → ℝ≥0∞) y) =
+        (Metric.ball y R).indicator 1 := by
+      ext x
+      simp only [Set.indicator, Pi.one_apply, Metric.mem_ball, dist_comm]
+    rw [this, hrow]
+  have h := lintegral_lintegral_mul_mul_le (measurable_uncurry_indicator_ball R).aemeasurable
+    hf hg (p := p) (q := q) (ae_of_all _ fun x ↦ (hrow x).le) (ae_of_all _ fun y ↦ (hcol y).le)
+  rwa [← ENNReal.rpow_add _ _ (ENNReal.ofReal_pos.2 (by positivity)).ne' ENNReal.ofReal_ne_top,
+    sub_add_cancel, ENNReal.rpow_one] at h
 
 end TauCeti

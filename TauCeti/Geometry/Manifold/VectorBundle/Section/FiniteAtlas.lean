@@ -40,7 +40,9 @@ finite chart-frame atlas with covering relative interiors generates
 `RCLike` normed fields when the model fibre is complete
 (`ContMDiffSection.completeSpace_finiteAtlas`). Every open cover on a compact manifold modelled on
 a locally compact space admits a subordinate finite compact chart cover
-(`TauCeti.exists_finite_compact_chart_cover_of_opens_cover`), so `ContMDiffSection.frameTopology`
+(`TauCeti.exists_finite_compact_chart_cover_of_opens_cover`). A finite atlas taken in frames of a
+smooth frame system generates that system's frame topology without local compactness of the model
+(`ContMDiffSection.withSeminorms_finiteAtlasSeminorm_comp`), so `ContMDiffSection.frameTopology`
 on `C^k` sections is normable (`ContMDiffSection.isNormableSpace_frameTopology_of_compactSpace`).
 
 Derivatives are taken within extended chart targets and interiors are relative to them, so
@@ -68,6 +70,7 @@ boundaryless model). Neither finite rank of the fibres nor Hausdorffness of the 
   `ContMDiffSection.withSeminorms_finiteAtlasSeminorm_subtype_of_cover`,
   `ContMDiffSection.withSeminorms_finiteAtlasSeminorm`,
   `ContMDiffSection.withSeminorms_finiteAtlasSeminorm_of_cover`,
+  `ContMDiffSection.withSeminorms_finiteAtlasSeminorm_comp`,
   `ContMDiffSection.withSeminorms_finiteAtlasSeminorm_infty`, and
   `ContMDiffSection.withSeminorms_finiteAtlasSeminorm_infty_of_cover`: generation of
   `ContMDiffSection.frameTopology` on `C^n`, `C^k`, and `C^∞` sections.
@@ -364,7 +367,7 @@ private theorem eventually_forall_mem_of_isOpen_totalSpace_piece
   have hcoord : Continuous (fun p : F × (extChartAt I (c i)).target ↦
       (((extChartAt I (c i)).symm p.2 : M),
         (e i).frameCoordinates (hU i) s₀ ((extChartAt I (c i)).symm p.2) + p.1)) :=
-    (continuous_subtype_val.comp (hq.comp continuous_snd)).prodMk
+    (continuous_subtypeVal.comp (hq.comp continuous_snd)).prodMk
       ((hf₀.comp (hq.comp continuous_snd)).add continuous_fst)
   have htot : Continuous (fun p : F × (extChartAt I (c i)).target ↦
       (⟨((extChartAt I (c i)).symm p.2 : M),
@@ -372,7 +375,7 @@ private theorem eventually_forall_mem_of_isOpen_totalSpace_piece
           ((e i).frameCoordinates (hU i) s₀ ((extChartAt I (c i)).symm p.2) + p.1)⟩ :
         TotalSpace F V)) :=
     (e i).continuousOn_symm.comp_continuous hcoord
-      fun p ↦ ⟨hU i ((extChartAt I (c i)).symm p.2).2, mem_univ _⟩
+      fun p ↦ ⟨hU i ((extChartAt I (c i)).symm p.2).property, mem_univ _⟩
   refine (K i).isCompact.eventually_forall_of_forall_eventually fun z _ ↦
     (hΩ.preimage htot).mem_nhds ?_
   rw [mem_preimage]
@@ -380,7 +383,7 @@ private theorem eventually_forall_mem_of_isOpen_totalSpace_piece
       ((e i).frameCoordinates (hU i) s₀ ((extChartAt I (c i)).symm z) + 0) =
       s₀ ((extChartAt I (c i)).symm z : M) := by
     rw [add_zero, Trivialization.frameCoordinates_apply,
-      (e i).symm_apply_apply_mk (hU i ((extChartAt I (c i)).symm z).2)]
+      (e i).symm_apply_apply_mk (hU i ((extChartAt I (c i)).symm z).property)]
   rw [h0]
   exact hs₀ _
 
@@ -419,7 +422,7 @@ theorem exists_pos_forall_mem_of_isOpen_totalSpace
       s ((extChartAt I (c i)).symm z : M) := by
     rw [map_sub, ContMDiffMap.coe_sub, Pi.sub_apply, add_sub_cancel,
       Trivialization.frameCoordinates_apply,
-      (e i).symm_apply_apply_mk (hU i ((extChartAt I (c i)).symm z).2)]
+      (e i).symm_apply_apply_mk (hU i ((extChartAt I (c i)).symm z).property)]
   rw [hsum] at hmem
   have hpt : ((extChartAt I (c i)).symm z : M) = y :=
     congrArg Subtype.val ((extChartAt I (c i)).left_inv hy)
@@ -446,14 +449,15 @@ include hK in
 theorem withSeminorms_finiteAtlasSeminorm_subtype :
     letI := frameTopology (I := I) (n := n) e U hU
     WithSeminorms
-      (fun k : {k : ℕ // (k : ℕ∞ω) ≤ n} ↦ finiteAtlasSeminorm (n := n) e U hU c K k.1 k.2) := by
+      (fun k : {k : ℕ // (k : ℕ∞ω) ≤ n} ↦ finiteAtlasSeminorm (n := n) e U hU c K k.val k.property)
+          := by
   let _ := frameTopology (I := I) (n := n) e U hU
   have hp := withSeminorms_frameSeminormFamily (I := I) (n := n) e U hU
   let _ := hp.isTopologicalAddGroup
   refine hp.congr ?_ (Seminorm.IsBounded.of_real ?_)
   · intro k
     obtain ⟨s, C, -, hbound⟩ := Seminorm.bound_of_continuous hp _
-      (continuous_finiteAtlasSeminorm (n := n) e U hU c K k.1 k.2)
+      (continuous_finiteAtlasSeminorm (n := n) e U hU c K k.val k.property)
     exact ⟨s, C, by simpa only [Seminorm.comp_id] using hbound⟩
   · rintro ⟨i, x, ⟨m, hm⟩, L⟩
     obtain ⟨C, -, hbound⟩ := exists_chartCkSeminorm_le_finiteAtlasSeminorm (n := n) e U hU hK
@@ -472,7 +476,8 @@ theorem withSeminorms_finiteAtlasSeminorm_subtype_of_cover [LocallyCompactSpace 
     (hcover' : ∀ y : M, ∃ j, y ∈ U' j) :
     letI := frameTopology (I := I) (n := n) e' U' hU'
     WithSeminorms
-      (fun k : {k : ℕ // (k : ℕ∞ω) ≤ n} ↦ finiteAtlasSeminorm (n := n) e U hU c K k.1 k.2) := by
+      (fun k : {k : ℕ // (k : ℕ∞ω) ≤ n} ↦ finiteAtlasSeminorm (n := n) e U hU c K k.val k.property)
+          := by
   have heq : frameTopology (I := I) (n := n) e' U' hU' =
       frameTopology (I := I) (n := n) e U hU :=
     frameTopology_eq_of_covers e' U' hU' hcover' e U hU (TauCeti.cover_of_extChartAt_cover hK)
@@ -491,14 +496,15 @@ variable (k : ℕ) [ContMDiffVectorBundle k F V I] [IsManifold I k M]
 
 private theorem withSeminorms_unit_of_subtype [TopologicalSpace Cₛ^k⟮I; F, V⟯]
     (hp : WithSeminorms
-      (fun m : {m : ℕ // (m : ℕ∞ω) ≤ k} ↦ finiteAtlasSeminorm (n := k) e U hU c K m.1 m.2)) :
+      (fun m : {m : ℕ // (m : ℕ∞ω) ≤ k} ↦ finiteAtlasSeminorm (n := k) e U hU c K m.val m.property))
+          :
     WithSeminorms (fun _ : Unit ↦ finiteAtlasSeminorm (n := k) e U hU c K k le_rfl) := by
   refine hp.congr ?_ ?_
   · exact fun _ ↦ ⟨{⟨k, le_rfl⟩}, 1, by
       simpa only [Finset.sup_singleton, one_smul, Seminorm.comp_id] using le_rfl⟩
   · exact fun m ↦ ⟨{()}, 1, by
       simpa only [Finset.sup_singleton, one_smul, Seminorm.comp_id] using
-        finiteAtlasSeminorm_le_of_le (n := k) e U hU c K (Nat.cast_le.mp m.2) le_rfl⟩
+        finiteAtlasSeminorm_le_of_le (n := k) e U hU c K (Nat.cast_le.mp m.property) le_rfl⟩
 
 variable (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U i,
   ∃ hy : (⟨y, hyU⟩ : U i) ∈ (extChartAt I (c i)).source,
@@ -641,24 +647,58 @@ end SmoothTopology
 
 section CompactBase
 
+variable (k : ℕ) [ContMDiffVectorBundle k F V I] [IsManifold I k M]
+  {κ : Type*} (e : κ → Trivialization F (π F V)) [∀ j, MemTrivializationAtlas (e j)]
+  (U : κ → Opens M) (hU : ∀ j, (U j : Set M) ⊆ (e j).baseSet)
+
+/-- **A finite subatlas generates the frame topology.** For any smooth frame system `e`, `U`, a
+finite chart-frame atlas in the frames `e (r i)`, `r : ι → κ`, whose compact pieces have relative
+interiors covering `M`, has a `C^k` norm generating `ContMDiffSection.frameTopology e U hU` on `C^k`
+sections. Unlike `ContMDiffSection.withSeminorms_finiteAtlasSeminorm_of_cover`, this needs no local
+compactness of the model. -/
+theorem withSeminorms_finiteAtlasSeminorm_comp {ι : Type*} [Fintype ι] (r : ι → κ)
+    {c : ∀ i, U (r i)} {K : ∀ i, Compacts (extChartAt I (c i)).target}
+    (hK : ∀ y : M, ∃ i, ∃ hyU : y ∈ U (r i),
+      ∃ hy : (⟨y, hyU⟩ : U (r i)) ∈ (extChartAt I (c i)).source,
+        (⟨extChartAt I (c i) ⟨y, hyU⟩, (extChartAt I (c i)).map_source hy⟩ :
+          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target)) :
+    letI := frameTopology (I := I) (n := k) e U hU
+    WithSeminorms (fun _ : Unit ↦ finiteAtlasSeminorm (n := k) (fun i ↦ e (r i))
+      (fun i ↦ U (r i)) (fun i ↦ hU (r i)) c K k le_rfl) := by
+  let _ := frameTopology (I := I) (n := k) e U hU
+  have hp := withSeminorms_frameSeminormFamily (I := I) (n := k) e U hU
+  let _ := hp.isTopologicalAddGroup
+  refine hp.congr ?_ (Seminorm.IsBounded.of_real ?_)
+  · intro _
+    -- Each piece lies in a frame `e (r i)` of the system, so the norm is continuous.
+    have hcont : Continuous (finiteAtlasSeminorm (n := k) (fun i ↦ e (r i)) (fun i ↦ U (r i))
+        (fun i ↦ hU (r i)) c K k le_rfl) := by
+      refine Seminorm.continuous_finsetSup fun i _ ↦ ?_
+      exact ((ContMDiffMap.continuous_chartCkSeminorm (c i) (K i) k le_rfl).comp
+        (continuous_frameCoordinates (I := I) (n := k) e U hU (r i))).congr fun s ↦
+          ((e (r i)).chartCkSeminorm_apply (hU (r i)) (c i) (K i) k le_rfl s).symm
+    obtain ⟨t, C, -, hbound⟩ := Seminorm.bound_of_continuous hp _ hcont
+    exact ⟨t, C, by simpa only [Seminorm.comp_id] using hbound⟩
+  · rintro ⟨j, x, ⟨m, hm⟩, L⟩
+    have hmk : m ≤ k := by exact_mod_cast hm
+    obtain ⟨C, -, hbound⟩ := exists_chartCkSeminorm_le_finiteAtlasSeminorm (n := k)
+      (fun i ↦ e (r i)) (fun i ↦ U (r i)) (fun i ↦ hU (r i)) hK (e j) (hU j) x L k le_rfl
+    refine ⟨{()}, C, fun s ↦ ?_⟩
+    simpa only [LinearMap.id_apply, frameSeminormFamily_apply, Finset.sup_singleton] using
+      ((e j).chartDerivativeSeminorm_le_chartCkSeminorm (hU j) x L hmk le_rfl s).trans (hbound s)
+
 /-- **Normability of `C^k` bundle sections on a compact manifold.** On a compact manifold modelled
 on a locally compact space, `ContMDiffSection.frameTopology` on `C^k` sections is generated by a
 single seminorm for every covering smooth frame system, including on manifolds with boundary and
 corners. -/
-theorem isNormableSpace_frameTopology_of_compactSpace (k : ℕ)
-    [ContMDiffVectorBundle k F V I] [IsManifold I k M]
-    [CompactSpace M] [LocallyCompactSpace E]
-    {κ : Type*} (e : κ → Trivialization F (π F V)) [∀ j, MemTrivializationAtlas (e j)]
-    (U : κ → Opens M) (hU : ∀ j, (U j : Set M) ⊆ (e j).baseSet)
+theorem isNormableSpace_frameTopology_of_compactSpace [CompactSpace M] [LocallyCompactSpace H]
     (hcover : ∀ y : M, ∃ j, y ∈ U j) :
     letI := frameTopology (I := I) (n := k) e U hU
     IsNormableSpace 𝕜 Cₛ^k⟮I; F, V⟯ := by
-  let _ := I.locallyCompactSpace
   let _ := frameTopology (I := I) (n := k) e U hU
   obtain ⟨N, r, c, K, hK⟩ :=
     TauCeti.exists_finite_compact_chart_cover_of_opens_cover (I := I) U hcover
-  exact ⟨⟨_, withSeminorms_finiteAtlasSeminorm_of_cover k
-    (fun i ↦ e (r i)) (fun i ↦ U (r i)) (fun i ↦ hU (r i)) hK e U hU hcover⟩⟩
+  exact ⟨⟨_, withSeminorms_finiteAtlasSeminorm_comp k e U hU r hK⟩⟩
 
 end CompactBase
 

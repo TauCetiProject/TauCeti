@@ -164,14 +164,14 @@ theorem isAugmented_iff_taylor {f : AInfinityHom 𝒜 ℬ} {ε : 𝒜.Augmentati
     fun ⟨hsu, htaylor⟩ ↦ ⟨hsu, LinearMap.ext fun a ↦ by
       simpa using LinearMap.congr_fun htaylor (ofLetter R A a), fun {n} hn x ↦ ?_⟩⟩
   · simp only [LinearMap.comp_apply]
-    by_cases hn1 : n.1 = 1
+    by_cases hn1 : n.val = 1
     · obtain ⟨k, hk⟩ := n; subst hn1
       rw [of_tprod_eq_subword R hk, subword_one R A x hk, letter_ofLetter, ← f.linearPart_apply]
       exact LinearMap.congr_fun hf.augmentation_comp_linearPart (x 0)
-    · have hcomp : f.component n.1 (fun i ↦ 𝒜.grading.koszulTwist ((n.1 : ℤ) - 1 - i) (x i)) =
+    · have hcomp : f.component n.val (fun i ↦ 𝒜.grading.koszulTwist ((n.val : ℤ) - 1 - i) (x i)) =
           f.taylor (of R A n (PiTensorProduct.tprod R x)) := by
-        simp [component_apply f n.1 n.2, InternalGrading.koszulTwist_koszulTwist]
-      rw [← hcomp, of_tprod_eq_subword R n.2, letter_subword_of_ne_one R A x 0 hn1, map_zero]
+        simp [component_apply f n.val n.property, InternalGrading.koszulTwist_koszulTwist]
+      rw [← hcomp, of_tprod_eq_subword R n.property, letter_subword_of_ne_one R A x 0 hn1, map_zero]
       exact hf.augmentation_component_eq_zero hn1 _
   · rcases Nat.eq_zero_or_pos n with rfl | hnpos; · simp
     simpa [component_apply f n hnpos, of_tprod_eq_subword R hnpos,
@@ -382,12 +382,12 @@ private theorem extendStrictlyUnitalTaylor_of_mem_degenerateWords (ε : 𝒜.Aug
     (degenerateWords_le_ker_map ε.reducedPart ε.reducedPart_unit hz)]
 
 private theorem extendStrictlyUnitalTaylor_of_tprod_eq_zero (ε : 𝒜.Augmentation) (eB : B)
-    (g : AInfinityHom ε.reducedAlgebra ℬ) (m : {m : ℕ // 0 < m}) (hm : m.1 ≠ 1)
-    (y : Fin m.1 → A) (hy : ∃ i, y i = ε.unit) :
+    (g : AInfinityHom ε.reducedAlgebra ℬ) (m : {m : ℕ // 0 < m}) (hm : m.val ≠ 1)
+    (y : Fin m.val → A) (hy : ∃ i, y i = ε.unit) :
     ε.extendStrictlyUnitalTaylor eB g (of R A m (PiTensorProduct.tprod R y)) = 0 := by
   rw [extendStrictlyUnitalTaylor_of_mem_degenerateWords ε eB g
       (of_tprod_mem_degenerateWords m y hy),
-    of_tprod_eq_subword R m.2, letter_subword_of_ne_one R A y 0 hm, map_zero, zero_smul]
+    of_tprod_eq_subword R m.property, letter_subword_of_ne_one R A y 0 hm, map_zero, zero_smul]
 
 private theorem extendStrictlyUnitalTaylor_isHomogeneous (ε : 𝒜.Augmentation) {eB : B}
     (hB : ℬ.StrictUnit eB) (g : AInfinityHom ε.reducedAlgebra ℬ) :

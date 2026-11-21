@@ -45,8 +45,13 @@ its coefficients.
   `‖Γ(s)‖ ≤ (2 m + 1)! / (-Re s (Re s + 1) (1 + (Im s)²)^{m + 1})` for `-1 < Re s < 0`.
 * `Complex.exists_norm_Gamma_le_div_pow_of_re_mem_Icc`: uniform polynomial decay
   `‖Γ(s)‖ ≤ C / |Im s|ᵐ` across any closed strip `σ₀ ≤ Re s ≤ σ₁` for `|Im s| ≥ 1`.
+* `Complex.continuousAt_Gamma_of_re_ne_neg_nat`, `Complex.continuous_Gamma_add_mul_I`,
+  `Complex.continuous_Gamma_sub_mul_I`: continuity of `Γ` away from `-ℕ` and along pole-free
+  vertical lines `y ↦ w ± i y`.
 * `Complex.verticalIntegrable_Gamma`: `Γ` is integrable on every vertical line `Re s = σ` with
   `σ` not a nonpositive integer.
+* `Complex.verticalIntegrable_Gamma_mul_Gamma_add`: `Γ(s) Γ(s + a)` is integrable on every
+  vertical line `Re s = σ` with neither `σ` nor `σ + Re a` a nonpositive integer.
 * `Complex.verticalIntegrable_Gamma_smul_of_norm_le`: `w ↦ Γ(w) • g(w)` is integrable on
   `Re w = σ` (`σ ≠ -n`) whenever `g` is measurable and almost everywhere polynomially bounded on
   that line.
@@ -217,16 +222,48 @@ theorem exists_norm_Gamma_le_div_pow_of_re_mem_Icc (σ₀ σ₁ : ℝ) (m : ℕ)
             simpa using abs_im_le_norm (s + k)
   exact (mul_le_mul_of_nonneg_left him_pow (norm_nonneg _)).trans (hbound.trans hΓ_le)
 
+/-- `Complex.Gamma` is continuous at every `s` whose real part is not a nonpositive integer. -/
+theorem continuousAt_Gamma_of_re_ne_neg_nat {s : ℂ} (hs : ∀ n : ℕ, s.re ≠ -n) :
+    ContinuousAt Gamma s :=
+  continuousAt_Gamma s fun m hm ↦ hs m (by simpa using congrArg re hm)
+
+/-- Along any vertical line `y ↦ w + i y` avoiding the nonpositive-integer poles (`Re w ∉ -ℕ`),
+`y ↦ Γ(w + i y)` is continuous on `ℝ`. -/
+theorem continuous_Gamma_add_mul_I {w : ℂ} (hw : ∀ n : ℕ, w.re ≠ -n) :
+    Continuous fun y : ℝ ↦ Gamma (w + y * I) :=
+  continuous_iff_continuousAt.mpr fun y ↦
+    (continuousAt_Gamma_of_re_ne_neg_nat (by simpa using hw)).comp (by fun_prop)
+
+/-- Along any vertical line `y ↦ w - i y` avoiding the nonpositive-integer poles (`Re w ∉ -ℕ`),
+`y ↦ Γ(w - i y)` is continuous on `ℝ`. -/
+theorem continuous_Gamma_sub_mul_I {w : ℂ} (hw : ∀ n : ℕ, w.re ≠ -n) :
+    Continuous fun y : ℝ ↦ Gamma (w - y * I) :=
+  continuous_iff_continuousAt.mpr fun y ↦
+    (continuousAt_Gamma_of_re_ne_neg_nat (by simpa [sub_eq_add_neg] using hw)).comp (by fun_prop)
+
 /-- The Gamma function is integrable on every vertical line `Re s = σ` which avoids its poles,
 that is, for `σ` not a nonpositive integer. -/
 theorem verticalIntegrable_Gamma {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n) :
     VerticalIntegrable Gamma σ := by
   obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hσ 1
-  refine (integrable_inv_one_add_sq.const_mul C).mono' ?_
+  exact (integrable_inv_one_add_sq.const_mul C).mono'
+    (continuous_Gamma_add_mul_I (by simpa using hσ)).aestronglyMeasurable
     (Eventually.of_forall fun t ↦ by simpa using hC t)
-  refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun t ↦ ?_)
-  refine (differentiableAt_Gamma _ fun m h ↦ hσ m ?_).continuousAt.comp (by fun_prop)
-  simpa using congrArg re h
+
+/-- On every vertical line `Re t = σ` with neither `σ` nor `σ + Re a` a nonpositive integer, the
+product `Γ(t) Γ(t + a)` is integrable. -/
+theorem verticalIntegrable_Gamma_mul_Gamma_add {a : ℂ} {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n)
+    (haσ : ∀ n : ℕ, σ + a.re ≠ -n) :
+    VerticalIntegrable (fun t ↦ Gamma t * Gamma (t + a)) σ := by
+  have hadd (y : ℝ) : σ + y * I + a = ↑(σ + a.re) + ↑(y + a.im) * I := by
+    apply Complex.ext <;> simp
+  obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow haσ 0
+  have hcont : Continuous fun y : ℝ ↦ Gamma (σ + y * I + a) := by
+    simp_rw [hadd]
+    exact (continuous_Gamma_add_mul_I (w := ↑(σ + a.re)) (by simpa using haσ)).comp
+      (continuous_id.add continuous_const)
+  exact (verticalIntegrable_Gamma hσ).mul_bdd (c := C) hcont.aestronglyMeasurable
+    (Eventually.of_forall fun y ↦ by simpa [hadd] using hC (y + a.im))
 
 /-- Because `Γ(σ + i t)` decays faster than every power of `|t|`, multiplying any measurable
 function `g` that is almost everywhere polynomially bounded on `Re w = σ` (`σ` not a nonpositive
@@ -238,12 +275,9 @@ theorem verticalIntegrable_Gamma_smul_of_norm_le {E : Type*} [NormedAddCommGroup
     VerticalIntegrable (fun w ↦ Gamma w • g w) σ := by
   obtain ⟨A, hA⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hσ (m + 1)
   have hA0 : 0 ≤ A := by simpa using (norm_nonneg (Gamma σ)).trans (by simpa using hA 0)
-  have hΓ_cont : Continuous fun t : ℝ ↦ Gamma (σ + t * I) :=
-    continuous_iff_continuousAt.mpr fun t ↦
-      (differentiableAt_Gamma _ fun n h ↦ hσ n (by simpa using congrArg re h)).continuousAt.comp
-        (by fun_prop)
   refine (integrable_inv_one_add_sq.const_mul (A * C)).mono'
-    (hΓ_cont.aestronglyMeasurable.smul hmeas) (hg.mono fun t hgt ↦ ?_)
+    ((continuous_Gamma_add_mul_I (by simpa using hσ)).aestronglyMeasurable.smul hmeas)
+    (hg.mono fun t hgt ↦ ?_)
   calc ‖Gamma (σ + t * I) • g (σ + t * I)‖
       = ‖Gamma (σ + t * I)‖ * ‖g (σ + t * I)‖ := norm_smul _ _
     _ ≤ (A * ((1 + t ^ 2) ^ (m + 1))⁻¹) * (C * (1 + t ^ 2) ^ m) :=

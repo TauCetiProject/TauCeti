@@ -212,6 +212,31 @@ theorem bracket_smul_right (a b : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ�
   ext x
   simp [A.bracket_smul_apply]
 
+/-- All Lie algebroid brackets are skew-symmetric: `bracket a b = -bracket b a`. -/
+theorem bracket_swap (a b : Cₛ^∞⟮I; F, V⟯) : A.bracket a b = -A.bracket b a :=
+  eq_neg_of_add_eq_zero_left <| by simpa [A.bracket_self] using A.bracket_self (a + b)
+
+/-- The Leibniz rule in the first argument: `[f • a, b] = f • [a, b] - (ρ(b) f) • a`. -/
+@[simp] theorem bracket_smul_left (f : C^∞⟮I, M; ℝ⟯) (a b : Cₛ^∞⟮I; F, V⟯) :
+    A.bracket (f • a) b = f • A.bracket a b - A.anchorDeriv b f • a := by
+  rw [A.bracket_swap (f • a) b, A.bracket_smul_right, neg_add, ← smul_neg, ← A.bracket_swap,
+    sub_eq_add_neg]
+
+/-- A Lie algebroid with zero anchor has a `C^∞⟮I, M; ℝ⟯`-linear bracket in the second argument. -/
+theorem bracket_smul_right_of_anchor_eq_zero {A : LieAlgebroid I F V} (hA : A.anchor = 0)
+    (a b : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) : A.bracket a (f • b) = f • A.bracket a b := by
+  have h0 : A.anchorDeriv a f = 0 := by
+    ext x
+    simp only [anchorDeriv_apply, hA, ContMDiffSection.coe_zero, Pi.zero_apply,
+      _root_.zero_apply, map_zero, ContMDiffMap.coe_zero]
+  simp only [bracket_smul_right, h0, zero_smul, add_zero]
+
+/-- A Lie algebroid with zero anchor has a `C^∞⟮I, M; ℝ⟯`-linear bracket in the first argument. -/
+theorem bracket_smul_left_of_anchor_eq_zero {A : LieAlgebroid I F V} (hA : A.anchor = 0)
+    (f : C^∞⟮I, M; ℝ⟯) (a b : Cₛ^∞⟮I; F, V⟯) : A.bracket (f • a) b = f • A.bracket a b := by
+  rw [A.bracket_swap (f • a) b, bracket_smul_right_of_anchor_eq_zero hA, ← smul_neg,
+    ← A.bracket_swap]
+
 section Separation
 
 variable [FiniteDimensional ℝ E] [T2Space M] [ContMDiffVectorBundle ∞ F V I]

@@ -101,7 +101,7 @@ theorem mfderiv_curvatureTensor_of_mem_atlas {e : OpenPartialHomeomorph M X} (he
     mfderiv_comp (f := Subtype.val) y'
       (((contMDiffOn_of_mem_atlas_of_hasGroupoid_smulGroupoid (I := I) (n := 1) (Isom I X)
         he).contMDiffAt (e.open_source.mem_nhds hy)).mdifferentiableAt one_ne_zero)
-      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
+      (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero)
   have hcomp (z : TangentSpace I y') :
       mfderiv I I (fun z : U ↦ e z) y' z = mfderiv I I e y (τ z) := by
     rw [hderiv, ContinuousLinearMap.comp_apply, hval, ContinuousLinearEquiv.coe_coe]
