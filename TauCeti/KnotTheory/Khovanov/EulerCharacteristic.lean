@@ -48,6 +48,8 @@ graded Euler characteristic `1`.
   index.
 * `TauCeti.OrientedPDCode.coeff_khovanovEulerChar_eq_sum`: each coefficient is the finite
   alternating sum of homology ranks over the cochain interval `[-n₋, n₊]`.
+* `TauCeti.OrientedPDCode.coeff_khovanovEulerChar_eq_zero_of_mod_two_ne`: over any nontrivial
+  commutative ring, the coefficient of `qʲ` vanishes when `j % 2 ≠ D.componentCount % 2`.
 * `TauCeti.OrientedPDCode.homologyEulerChar_khovanovComplex`: Euler–Poincaré for each quantum
   component, whose Euler characteristic is the coefficient of `qʲ` in the enhanced state sum.
 * `TauCeti.OrientedPDCode.khovanovEulerChar_eq_enhancedStateSum`: `χ_q Kh(D; R)` is the enhanced
@@ -151,6 +153,16 @@ theorem coeff_khovanovEulerChar_eq_sum (j : ℤ) :
   apply Finset.sum_congr rfl
   intro i _
   simp only [ComplexShape.eulerCharSignsUpInt_χ]
+
+/-- Over any nontrivial commutative ring `R`, the coefficient of `q ^ j` in
+`D.khovanovEulerChar hD R` vanishes whenever `j % 2 ≠ D.componentCount % 2`. -/
+theorem coeff_khovanovEulerChar_eq_zero_of_mod_two_ne {j : ℤ}
+    (hj : j % 2 ≠ (D.componentCount : ℤ) % 2) :
+    (D.khovanovEulerChar hD R).coeff j = 0 := by
+  rw [D.coeff_khovanovEulerChar_eq_sum hD R j]
+  refine Finset.sum_eq_zero fun i _ ↦ ?_
+  rw [ModuleCat.finrank_eq_zero_of_isZero (D.isZero_khovanovHomology_of_mod_two_ne hD R i hj),
+    Nat.cast_zero, mul_zero]
 
 /-- The empty diagram has graded Euler characteristic `1` over every nontrivial
 commutative ring. -/

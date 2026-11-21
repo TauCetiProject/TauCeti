@@ -30,18 +30,9 @@ def reconnect (D : OrientedPDCode n) (p q : Fin (4 * n))
     (h : D.orientation p = !D.orientation q) : OrientedPDCode n where
   toPDCode := D.toPDCode.reconnect p q
   orientation := D.orientation
-  orientation_edgePair := by
-    have hs (x) : D.orientation (Equiv.swap (D.edgePair.val p) q x) = D.orientation x := by
-      by_cases hx : x = D.edgePair.val p
-      · subst x
-        simp [h]
-      by_cases hxq : x = q
-      · subst x
-        simp [h]
-      simp [Equiv.swap_apply_of_ne_of_ne hx hxq]
-    intro x
-    rw [PDCode.reconnect_edgePair_val, Equiv.permCongr_apply, Equiv.symm_swap,
-      hs, D.orientation_edgePair, hs]
+  orientation_edgePair x := by
+    rw [PDCode.reconnect_edgePair]
+    exact D.edgePair.not_apply_reconnect_val D.orientation_edgePair (by rw [h, Bool.not_not]) x
   orientation_oppositeCrossingSlot := by simp
   crossinglessComponents := D.crossinglessComponents
   card_crossinglessComponents := by simp
