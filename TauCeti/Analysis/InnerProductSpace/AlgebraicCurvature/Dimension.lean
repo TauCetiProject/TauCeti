@@ -37,6 +37,7 @@ four-tensor equals `(Scal / 2) • constantCurvature V` and satisfies `Ric = (Sc
 ## Main definitions
 
 * `TauCeti.FourTensor.IsBivectorSymmetric`, `TauCeti.FourTensor.bivectorSymmetricSubmodule`,
+  `TauCeti.FourTensor.fourTensorOfExteriorBilin`,
   `TauCeti.FourTensor.bivectorSymmetricEquivSymmBilin`, and
   `TauCeti.FourTensor.bianchiAlternatingMap`.
 
@@ -45,6 +46,8 @@ four-tensor equals `(Scal / 2) • constantCurvature V` and satisfies `Ric = (Sc
 * `TauCeti.FourTensor.IsAlgebraicCurvature.eq_of_apply_self_eq`,
   `TauCeti.FourTensor.IsAlgebraicCurvature.eq_of_apply_self_eq_of_linearIndependent`,
   `TauCeti.FourTensor.eq_zero_of_finrank_le_one_of_antisymm_first`,
+  `TauCeti.FourTensor.kulkarniNomizu_eq_zero_of_finrank_le_one`,
+  `TauCeti.FourTensor.constantCurvature_ne_zero_of_two_le_finrank`,
   `TauCeti.FourTensor.finrank_algebraicCurvatureSubmodule`, and
   `TauCeti.FourTensor.eq_smul_constantCurvature_of_finrank_eq_two_of_antisymm`.
 
@@ -236,12 +239,22 @@ theorem algebraicCurvatureSubmodule_eq_bot_of_finrank_le_one (hdim : Module.finr
   (Submodule.eq_bot_iff _).mpr fun _ hr ↦
     (mem_algebraicCurvatureSubmodule.mp hr).eq_zero_of_finrank_le_one hdim
 
-private def fourTensorOfExteriorBilin (B : BilinForm ℝ (⋀[ℝ]^2 V)) : FourTensor V :=
-  ofLinearMap₄ <| MultilinearMap.toBilinMap
+/-- On a space of dimension at most `1`, every Kulkarni–Nomizu four-tensor vanishes. -/
+theorem kulkarniNomizu_eq_zero_of_finrank_le_one (hdim : Module.finrank ℝ V ≤ 1)
+    (h k : BilinForm ℝ V) : kulkarniNomizu h k = 0 :=
+  eq_zero_of_finrank_le_one_of_antisymm_first hdim (kulkarniNomizu_antisymm_first h k)
+
+/-- Pullback of a bilinear form on `⋀[ℝ]^2 V` to a four-tensor on `V`, defined by
+`fourTensorOfExteriorBilin B ![u, v, z, w] = B (u ∧ v) (z ∧ w)`. -/
+def fourTensorOfExteriorBilin : BilinForm ℝ (⋀[ℝ]^2 V) →ₗ[ℝ] FourTensor V where
+  toFun B := ofLinearMap₄ <| MultilinearMap.toBilinMap
     ((TauCeti.BilinForm.ofExteriorSquareDual.comp B).compMultilinearMap
       (exteriorPower.ιMulti ℝ 2).toMultilinearMap)
+  map_add' _ _ := ext_vec fun _ _ _ _ ↦ by simp
+  map_smul' _ _ := ext_vec fun _ _ _ _ ↦ by simp
 
-private theorem fourTensorOfExteriorBilin_apply (B : BilinForm ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
+/-- Evaluation of `fourTensorOfExteriorBilin B` on four vectors via pure wedges. -/
+@[simp] theorem fourTensorOfExteriorBilin_apply (B : BilinForm ℝ (⋀[ℝ]^2 V)) (u v z w : V) :
     fourTensorOfExteriorBilin B ![u, v, z, w] =
       B (exteriorPower.ιMulti ℝ 2 ![u, v]) (exteriorPower.ιMulti ℝ 2 ![z, w]) := by
   simp [fourTensorOfExteriorBilin]
@@ -376,6 +389,15 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 /-- The Ricci contraction of a bivector-symmetric four-tensor is symmetric. -/
 theorem IsBivectorSymmetric.isSymm_ricci {r : FourTensor V} (hr : IsBivectorSymmetric r) :
     (ricci r).IsSymm := isSymm_ricci_of_swap_pairs hr.swap_pairs
+
+/-- In dimension at least `2`, the constant-curvature tensor is nonzero. -/
+theorem constantCurvature_ne_zero_of_two_le_finrank (hdim : 2 ≤ Module.finrank ℝ V) :
+    constantCurvature V ≠ 0 := by
+  intro h
+  have hs := congrArg scalar h
+  rw [scalar_constantCurvature, map_zero] at hs
+  have hdim' : (2 : ℝ) ≤ Module.finrank ℝ V := by exact_mod_cast hdim
+  nlinarith
 
 /-- In dimension `2`, every pair-antisymmetric `r` is `(scalar r / 2) • constantCurvature V`. -/
 theorem eq_smul_constantCurvature_of_finrank_eq_two_of_antisymm {r : FourTensor V}
