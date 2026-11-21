@@ -573,22 +573,10 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V
 theorem hasNearDiagonalKernel_adjointKernelCutoff {χ : 𝓢(CoordinateSpace n, ℂ)} (hχ :
   HasCompactSupport χ)
     (hχR : Function.support χ ⊆ Metric.ball 0 R) (a : Symbol n V W m) :
-    (adjointKernelCutoff a χ hχ).HasNearDiagonalKernel R := by
-  apply Symbol.hasNearDiagonalKernel_iff.mpr
-  intro u x hu
-  rw [quantize_adjointKernelCutoff_eq_integral_rightIntegrand]
-  have he (ζ : CoordinateSpace n) :
-      inputSlice (SchwartzMap.conjnegCLM χ) (a.map ContinuousLinearMap.adjointRealCLM) u x ((2
-        * π) • ζ) = 0 := by
-    funext y
-    rw [inputSlice]
-    by_cases hy : χ (y - x) = 0
-    · simp only [SchwartzMap.conjnegCLM_apply, neg_sub, hy, map_zero, zero_smul, Pi.zero_apply]
-    · have hball := hχR hy
-      have hyR : y ∈ Metric.ball x R := by
-        simpa only [Metric.mem_ball, dist_zero_right, dist_eq_norm, sub_zero] using hball
-      simp only [hu y hyR, map_zero, smul_zero, Pi.zero_apply]
-  simp only [rightIntegrand, he, Real.fourier_eq, Pi.zero_apply, smul_zero, integral_zero]
+    (adjointKernelCutoff a χ hχ).HasNearDiagonalKernel R :=
+  hasNearDiagonalKernel_leftSymbol_ofRightCutoff _
+    (SchwartzMap.hasCompactSupport_conjnegCLM hχ)
+    (SchwartzMap.support_conjnegCLM_subset_ball hχR) _
 
 /-- The arbitrary-order Green identity holds on the actual native test-function operators. -/
 theorem integral_inner_quantizeTestFunctionCLM_adjointKernelCutoff {χ : 𝓢(CoordinateSpace n,
