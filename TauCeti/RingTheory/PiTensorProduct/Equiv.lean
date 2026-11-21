@@ -230,7 +230,7 @@ end Perm
 section ProductMap
 
 variable {σ τ : Type*} [Fintype σ] [Fintype τ] {A : σ → Type*}
-  [∀ i, CommSemiring (A i)] [∀ i, Algebra R (A i)]
+  [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
   {S : Type*} [CommSemiring S] [Algebra R S]
 
 /-- `PiTensorProduct.productMap` is invariant under `PiTensorProduct.reindexAlgEquiv`. -/
