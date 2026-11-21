@@ -330,7 +330,7 @@ theorem measurePreserving_comp_perm_hermiteBetaEnsemble (β : ℝ) (n : ℕ)
   have he : ⇑e = fun x ↦ x ∘ σ := by
     ext x i
     rw [← MeasurableEquiv.coe_toEquiv]
-    simp [e, MeasurableEquiv.arrowCongr']
+    exact Equiv.arrowCongr'_apply σ.symm (Equiv.refl ℝ) x i
   have hvol : MeasurePreserving e volume volume :=
     volume_preserving_arrowCongr' σ.symm (.refl ℝ) (.id volume)
   have hpdf : hermiteBetaPDF β n ∘ e = hermiteBetaPDF β n := by
@@ -346,7 +346,8 @@ the centred Gaussian of variance `2 / β`, whose density is proportional to `exp
 theorem hermiteBetaEnsemble_one_map_eval_zero (hβ : 0 < β) :
     (hermiteBetaEnsemble β 1).map (fun x ↦ x 0) = gaussianReal 0 (2 / β).toNNReal := by
   let e := MeasurableEquiv.funUnique (Fin 1) ℝ
-  have he : ⇑e = fun x ↦ x 0 := rfl
+  have he : ⇑e = fun x ↦ x 0 := by
+    rw [MeasurableEquiv.funUnique_apply, Fin.default_eq_zero]
   have hvol : MeasurePreserving e volume volume := volume_preserving_funUnique (Fin 1) ℝ
   have hv : (2 / β).toNNReal ≠ 0 := by simpa using hβ
   have hpdf : hermiteBetaPDF β 1 = gaussianPDF 0 (2 / β).toNNReal ∘ e := by
