@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.ChangeOrigin
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
+public import TauCeti.Analysis.Analytic.OfScalars
 public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Basic
 import TauCeti.Analysis.Normed.Algebra.GelfandRadius
 
@@ -24,6 +25,8 @@ value of the holomorphic functional calculus at `f`.
 * `TauCeti.hasSum_holomorphicCalculusOn_of_hasFPowerSeriesOnBall`: open-ball form.
 * `TauCeti.hasSum_holomorphicCalculus_of_hasFPowerSeriesOnBall` and
   `TauCeti.holomorphicCalculus_eq_tsum_of_hasFPowerSeriesOnBall`: germ forms.
+* `TauCeti.holomorphicCalculus_ofScalarsSum`: evaluation on shifted scalar power series
+  `FormalMultilinearSeries.ofScalarsSum`.
 
 ## References
 
@@ -102,5 +105,22 @@ theorem holomorphicCalculus_eq_tsum_of_hasFPowerSeriesOnBall (a : A) {f : ℂ �
     holomorphicCalculus a (holomorphicGerms.ofFun f (hf.analyticOnNhd.mono ha)) =
       ∑' k : ℕ, p.coeff k • (a - algebraMap ℂ A z₀) ^ k :=
   (hasSum_holomorphicCalculus_of_hasFPowerSeriesOnBall a hf ha).tsum_eq.symm
+
+/-- For a scalar power series `∑' n, c n * (z - z₀) ^ n` whose open disk of convergence contains
+`spectrum ℂ a`, the holomorphic germ calculus agrees with `FormalMultilinearSeries.ofScalarsSum`. -/
+theorem holomorphicCalculus_ofScalarsSum (c : ℕ → ℂ) (z₀ : ℂ) {a : A}
+    (ha : spectrum ℂ a ⊆ Metric.eball z₀ (FormalMultilinearSeries.ofScalars ℂ c).radius) :
+    holomorphicCalculus a (holomorphicGerms.ofFun
+        (fun z ↦ FormalMultilinearSeries.ofScalarsSum c (z - z₀))
+        ((analyticOnNhd_ofScalarsSum_sub c z₀).mono ha)) =
+      FormalMultilinearSeries.ofScalarsSum c (a - algebraMap ℂ A z₀) := by
+  nontriviality A
+  obtain ⟨w, hw, _⟩ := spectrum.exists_eNorm_eq_spectralRadius a
+  have hr : 0 < (FormalMultilinearSeries.ofScalars ℂ c).radius :=
+    bot_le.trans_lt (Metric.mem_eball.mp (ha hw))
+  rw [holomorphicCalculus_eq_tsum_of_hasFPowerSeriesOnBall a
+      (hasFPowerSeriesOnBall_ofScalarsSum_sub c z₀ hr) ha,
+    FormalMultilinearSeries.ofScalars_sum_eq]
+  exact tsum_congr fun n ↦ by rw [FormalMultilinearSeries.coeff_ofScalars]
 
 end TauCeti

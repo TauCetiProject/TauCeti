@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import Mathlib.Analysis.Analytic.Constructions
+public import Mathlib.Analysis.Analytic.Polynomial
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
+public import TauCeti.Algebra.Algebra.Spectrum
 public import TauCeti.Order.Filter.Germ
 import Mathlib.Analysis.Calculus.DSlope
 
@@ -19,11 +20,16 @@ by functions holomorphic on an open neighbourhood of `s`. Its elements remember 
 function near the whole set, not just its values on that set. This is the domain for
 a holomorphic functional calculus near a spectrum, including disconnected spectra.
 
-We construct evaluation, restriction, and composition homomorphisms and characterize units by
+We construct evaluation, restriction, and composition homomorphisms, the nonunital subalgebra
+`holomorphicGerms.vanishingAt` of germs vanishing at a marked point, and characterize units by
 nonvanishing on `s`; the inverse of a unit is represented by the pointwise reciprocal. A germ
 vanishes at a point `x ∈ s` exactly when it is divisible by `z - x`. The spectrum of a
-represented germ is exactly the image of `s`, and the coordinate germ has spectrum `s`. No
-compactness or nonemptiness is needed; at the empty set the germ algebra is the zero algebra.
+represented germ is exactly the image of `s`, and the coordinate germ has spectrum `s`. We also
+record how unital complex-algebra homomorphisms out of `holomorphicGerms s` act on polynomial and
+nonvanishing quotient germs, reflect units when sending the coordinate germ to `a` (yielding the
+algebraic spectral mapping theorem), and send `(w - ·)⁻¹` to `resolvent a w` when
+`w ∉ spectrum ℂ a`. No compactness or nonemptiness is needed; at the empty set the germ algebra is
+the zero algebra.
 
 The construction uses Mathlib's `AnalyticOnNhd.congr'` for independence of representatives
 and `Filter.Germ` (including `Filter.Germ.compTendsto'`) for the quotient, its pointwise
@@ -117,10 +123,22 @@ theorem ofFun_const (c : ℂ) :
     ofFun (fun _ ↦ c) (analyticOnNhd_const : AnalyticOnNhd ℂ (fun _ ↦ c) s) =
       algebraMap ℂ (holomorphicGerms s) c := (rfl)
 
+/-- The constant function `1` represents the multiplicative identity germ. -/
 @[simp]
 theorem ofFun_one :
     ofFun (1 : ℂ → ℂ) (analyticOnNhd_const : AnalyticOnNhd ℂ (1 : ℂ → ℂ) s) = 1 := (rfl)
 
+/-- Negation of analytic representatives corresponds to negation of holomorphic germs. -/
+@[simp]
+theorem ofFun_neg (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s) :
+    ofFun (-f) hf.neg = -ofFun f hf :=
+  Subtype.ext (Germ.coe_neg f)
+
+/-- Natural-number powers of analytic representatives correspond to powers of holomorphic germs. -/
+@[simp]
+theorem ofFun_pow (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s) (n : ℕ) :
+    ofFun (f ^ n) (hf.pow n) = ofFun f hf ^ n :=
+  Subtype.ext (Germ.coe_pow f n)
 /-- Evaluation of a germ at a point of its base set. -/
 noncomputable def eval (x : ℂ) (hx : x ∈ s) : holomorphicGerms s →ₐ[ℂ] ℂ where
   toFun g := Germ.liftOn g.val (fun f ↦ f x)
@@ -249,6 +267,53 @@ theorem spectrum_ofFun_id :
     spectrum ℂ (ofFun id (analyticOnNhd_id : AnalyticOnNhd ℂ id s)) = s := by
   rw [spectrum_ofFun, image_id]
 
+/-- The nonunital complex subalgebra of `holomorphicGerms s` consisting of germs vanishing at a
+marked point `x ∈ s`. -/
+def vanishingAt (s : Set ℂ) (x : ℂ) (hx : x ∈ s) :
+    NonUnitalSubalgebra ℂ (holomorphicGerms s) :=
+  NonUnitalAlgHom.equalizer (eval x hx).toNonUnitalAlgHom 0
+
+/-- Membership in `holomorphicGerms.vanishingAt s x hx` means vanishing under `eval x hx`. -/
+@[simp]
+theorem mem_vanishingAt_iff {s : Set ℂ} {x : ℂ} {hx : x ∈ s} {g : holomorphicGerms s} :
+    g ∈ vanishingAt s x hx ↔ eval x hx g = 0 := by
+  simp [vanishingAt, NonUnitalAlgHom.mem_equalizer]
+
+/-- Coercing a germ in `vanishingAt s x hx` to `holomorphicGerms s` gives a germ vanishing at
+`x`. -/
+@[simp]
+theorem eval_coe_vanishingAt {s : Set ℂ} {x : ℂ} {hx : x ∈ s} (g : vanishingAt s x hx) :
+    eval x hx (g : holomorphicGerms s) = 0 :=
+  mem_vanishingAt_iff.mp g.property
+
+/-- Construct an element of `holomorphicGerms.vanishingAt` from an analytic representative `f`
+satisfying `f x = 0`. -/
+def ofFunVanishingAt {s : Set ℂ} {x : ℂ} (hx : x ∈ s) (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s)
+    (hf0 : f x = 0) : vanishingAt s x hx :=
+  ⟨ofFun f hf, mem_vanishingAt_iff.mpr (by simpa using hf0)⟩
+
+/-- Coercing `ofFunVanishingAt` back to `holomorphicGerms s` recovers `ofFun f hf`. -/
+@[simp]
+theorem coe_ofFunVanishingAt {s : Set ℂ} {x : ℂ} (hx : x ∈ s) (f : ℂ → ℂ)
+    (hf : AnalyticOnNhd ℂ f s) (hf0 : f x = 0) :
+    (ofFunVanishingAt hx f hf hf0 : holomorphicGerms s) = ofFun f hf := (rfl)
+
+/-- The holomorphic germ of a polynomial function `z ↦ p.eval z` equals `Polynomial.aeval` at the
+coordinate germ. -/
+theorem ofFun_eval_polynomial (p : Polynomial ℂ) :
+    ofFun (fun z ↦ p.eval z) ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _)) =
+      Polynomial.aeval (ofFun id (analyticOnNhd_id : AnalyticOnNhd ℂ id s)) p := by
+  apply Subtype.ext
+  rw [coe_ofFun, ← (holomorphicGerms s).val_apply,
+    ← Polynomial.aeval_algHom_apply (holomorphicGerms s).val, Subalgebra.coe_val, coe_ofFun,
+    ← Germ.coeAlgHom_apply (R := ℂ) (l := 𝓝ˢ s) id,
+    Polynomial.aeval_algHom_apply (Germ.coeAlgHom (R := ℂ) (𝓝ˢ s)),
+    ← Germ.coeAlgHom_apply (R := ℂ) (l := 𝓝ˢ s) (fun z ↦ p.eval z)]
+  congr 1
+  ext z
+  rw [Polynomial.aeval_pi_apply, ← Polynomial.coe_aeval_eq_eval]
+  rfl
+
 /-- A holomorphic germ near `s` whose spectrum lies in `t` tends to `𝓝ˢ t` along `𝓝ˢ s`. -/
 theorem tendsto_nhdsSet (f : holomorphicGerms s) (hf : spectrum ℂ f ⊆ t) :
     f.val.Tendsto (𝓝ˢ t) := by
@@ -340,5 +405,103 @@ theorem comp_comp {u : Set ℂ} (f : holomorphicGerms s) (hf : spectrum ℂ f �
   simp [Function.comp_assoc]
 
 end holomorphicGerms
+
+end TauCeti
+
+namespace AlgHom
+
+open TauCeti
+
+/-- Any unital complex-algebra homomorphism on `holomorphicGerms s` sending the coordinate germ to
+`a` agrees with `Polynomial.aeval a` on polynomial germs. -/
+theorem map_ofFun_polynomial {s : Set ℂ} {A : Type*} [Semiring A] [Algebra ℂ A]
+    (Φ : holomorphicGerms s →ₐ[ℂ] A) {a : A}
+    (hΦ : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a) (p : Polynomial ℂ) :
+    Φ (holomorphicGerms.ofFun (fun z ↦ p.eval z)
+        ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _))) =
+      Polynomial.aeval a p := by
+  rw [holomorphicGerms.ofFun_eval_polynomial, ← Polynomial.aeval_algHom_apply, hΦ]
+
+/-- Any unital complex-algebra homomorphism `Φ : holomorphicGerms s →ₐ[ℂ] A` sends a quotient
+`f / g` with `g` nonvanishing on `s` to `Φ f * Ring.inverse (Φ g)`. -/
+theorem map_ofFun_div {s : Set ℂ} {A : Type*} [Semiring A] [Algebra ℂ A]
+    (Φ : holomorphicGerms s →ₐ[ℂ] A) {f g : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s)
+    (hg : AnalyticOnNhd ℂ g s) (hg0 : ∀ z ∈ s, g z ≠ 0) :
+    Φ (holomorphicGerms.ofFun (fun z ↦ f z / g z) (hf.div hg hg0)) =
+      Φ (holomorphicGerms.ofFun f hf) * Ring.inverse (Φ (holomorphicGerms.ofFun g hg)) := by
+  have hdiv : holomorphicGerms.ofFun (fun z ↦ f z / g z) (hf.div hg hg0) =
+      holomorphicGerms.ofFun f hf * (holomorphicGerms.ofFun g hg)⁻¹ʳ := by
+    rw [← holomorphicGerms.ofFun_inv hg hg0, ← holomorphicGerms.ofFun_mul,
+      holomorphicGerms.ofFun_eq_iff]
+    exact .of_forall fun z ↦ div_eq_mul_inv _ _
+  have hu : IsUnit (holomorphicGerms.ofFun g hg) :=
+    (holomorphicGerms.isUnit_iff _).mpr fun z hz ↦ by simpa using hg0 z hz
+  rw [hdiv, map_mul, hu.map_ringInverse]
+
+/-- Any unital complex-algebra homomorphism on `holomorphicGerms (spectrum ℂ a)` sending the
+coordinate germ to `a` reflects units. -/
+theorem isLocalHom_of_map_ofFun_id {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
+    (Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A)
+    (hΦ : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a) : IsLocalHom Φ where
+  map_nonunit g hg := by
+    refine (holomorphicGerms.isUnit_iff g).mpr fun x hx hgx ↦ ?_
+    obtain ⟨h, rfl⟩ := (holomorphicGerms.dvd_iff_eval_eq_zero hx g).mpr hgx
+    have hc : Commute (Φ (holomorphicGerms.ofFun id analyticOnNhd_id - algebraMap ℂ _ x))
+        (Φ h) := (Commute.all _ _).map _
+    have hunit : IsUnit (Φ (holomorphicGerms.ofFun id analyticOnNhd_id - algebraMap ℂ _ x)) :=
+      (hc.isUnit_mul_iff.mp (by simpa only [map_mul] using hg)).1
+    rw [map_sub, hΦ, AlgHom.commutes] at hunit
+    exact spectrum.mem_iff.mp hx (by simpa only [neg_sub] using hunit.neg)
+
+/-- Any unital complex-algebra homomorphism on `holomorphicGerms (spectrum ℂ a)` sending the
+coordinate germ to `a` maps the Cauchy kernel `(w - ·)⁻¹` (analytic near `spectrum ℂ a`, so with
+`w ∉ spectrum ℂ a`) to `resolvent a w`. -/
+theorem ofFun_sub_inv_eq_resolvent {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
+    (Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A)
+    (hid : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a)
+    {w : ℂ} (hf : AnalyticOnNhd ℂ (fun z ↦ (w - z)⁻¹) (spectrum ℂ a)) :
+    Φ (holomorphicGerms.ofFun (fun z ↦ (w - z)⁻¹) hf) = resolvent a w := by
+  have hw : w ∈ resolventSet ℂ a :=
+    spectrum.notMem_iff.mp fun hwσ ↦ by
+      have hcont : ContinuousAt (fun z : ℂ ↦ (w - z)⁻¹) (w - 0) := by
+        rw [sub_zero]
+        exact (hf w hwσ).continuousAt
+      have h0 : ContinuousAt (Inv.inv : ℂ → ℂ) 0 := by
+        simpa only [Function.comp_def, sub_sub_cancel] using
+          hcont.comp (continuousAt_const.sub continuousAt_id)
+      exact NormedField.continuousAt_inv.mp h0 rfl
+  let k := holomorphicGerms.ofFun (fun z ↦ (w - z)⁻¹) hf
+  have hmul : (algebraMap ℂ (holomorphicGerms (spectrum ℂ a)) w -
+      holomorphicGerms.ofFun id analyticOnNhd_id) * k = 1 := by
+    rw [← holomorphicGerms.ofFun_const w, ← holomorphicGerms.ofFun_sub,
+      ← holomorphicGerms.ofFun_mul, ← holomorphicGerms.ofFun_one,
+      holomorphicGerms.ofFun_eq_iff]
+    refine eventually_nhdsSet_iff_forall.mpr fun z hz ↦ ?_
+    have hne : w - z ≠ 0 := sub_ne_zero.mpr fun (h : w = z) ↦
+      spectrum.mem_iff.mp (h ▸ hz) (spectrum.mem_resolventSet_iff.mp hw)
+    filter_upwards [(continuousAt_const.sub continuousAt_id).eventually_ne hne] with u hu
+    exact mul_inv_cancel₀ hu
+  have hΦ := congrArg Φ hmul
+  rw [map_mul, map_sub, AlgHom.commutes, hid, map_one] at hΦ
+  calc Φ k = 1 * Φ k := (one_mul _).symm
+    _ = (resolvent a w * (algebraMap ℂ A w - a)) * Φ k := by
+        rw [resolvent, Ring.inverse_mul_cancel _ (spectrum.mem_resolventSet_iff.mp hw)]
+    _ = resolvent a w * ((algebraMap ℂ A w - a) * Φ k) := mul_assoc _ _ _
+    _ = resolvent a w := by rw [hΦ, mul_one]
+
+end AlgHom
+
+namespace TauCeti
+
+/-- **Algebraic spectral mapping theorem.** For any unital complex-algebra homomorphism
+`Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A` sending the coordinate germ to `a`, every germ
+`g : holomorphicGerms (spectrum ℂ a)` satisfies `spectrum ℂ (Φ g) = spectrum ℂ g`. -/
+theorem spectrum_algHom_eq {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
+    {Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A}
+    (hΦ : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a)
+    (g : holomorphicGerms (spectrum ℂ a)) :
+    spectrum ℂ (Φ g) = spectrum ℂ g :=
+  haveI := Φ.isLocalHom_of_map_ofFun_id hΦ
+  AlgHom.spectrum_apply_eq Φ g
 
 end TauCeti
