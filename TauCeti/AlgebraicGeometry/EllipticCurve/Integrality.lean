@@ -83,7 +83,8 @@ section
 
 variable {R : Type*} [CommRing R] (W : _root_.WeierstrassCurve R)
 
-/-- **An integral `x`-coordinate forces an integral `y`-coordinate**, over any `R`-algebra.
+/-- **An integral `x`-coordinate forces an integral `y`-coordinate**, over any commutative
+`R`-algebra.
 
 On the curve, `y` is a root of the monic quadratic `Y² + (a₁x + a₃)Y − (x³ + a₂x² + a₄x + a₆)`,
 whose coefficients are polynomial in `x` and so are integral whenever `x` is. No domain,
@@ -100,7 +101,7 @@ theorem _root_.WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x
     (c := -(x ^ 3 + algebraMap R A W.a₂ * x ^ 2 + algebraMap R A W.a₄ * x + algebraMap R A W.a₆))
     ((isIntegral_algebraMap.mul hx).add isIntegral_algebraMap)
     ((((hx.pow 3).add (isIntegral_algebraMap.mul (hx.pow 2))).add
-      (isIntegral_algebraMap.mul hx)).add isIntegral_algebraMap).neg ?_
+      (isIntegral_algebraMap.mul hx)).add isIntegral_algebraMap).neg (.all _ _) ?_
   linear_combination h
 
 section FractionField

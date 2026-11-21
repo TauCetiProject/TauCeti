@@ -137,7 +137,7 @@ private theorem isIntegral_s_of_smul_eq {W₁ W₂ : WeierstrassCurve K} [IsInte
     field
   refine IsIntegral.of_sq_add_mul_add_eq_zero (b := algebraMap R K (W₁.integralModel R).a₁)
     (c := algebraMap R K (u₀ ^ 2 * (W₂.integralModel R).a₂
-      - (W₁.integralModel R).a₂ - 3 * rR)) isIntegral_algebraMap isIntegral_algebraMap ?_
+      - (W₁.integralModel R).a₂ - 3 * rR)) isIntegral_algebraMap isIntegral_algebraMap (.all _ _) ?_
   simp only [map_sub, map_mul, map_pow, map_ofNat]
   rw [integralModel_a₁_eq R W₁, integralModel_a₂_eq R W₁, integralModel_a₂_eq R W₂, hau, hrR]
   linear_combination ha₂
@@ -160,7 +160,7 @@ private theorem isIntegral_t_of_smul_eq {W₁ W₂ : WeierstrassCurve K} [IsInte
     (c := algebraMap R K (u₀ ^ 6 * (W₂.integralModel R).a₆
       - ((W₁.integralModel R).a₆ + rR * (W₁.integralModel R).a₄
         + rR ^ 2 * (W₁.integralModel R).a₂ + rR ^ 3)))
-    isIntegral_algebraMap isIntegral_algebraMap ?_
+    isIntegral_algebraMap isIntegral_algebraMap (.all _ _) ?_
   simp only [map_add, map_sub, map_mul, map_pow]
   rw [integralModel_a₁_eq R W₁, integralModel_a₂_eq R W₁, integralModel_a₃_eq R W₁,
     integralModel_a₄_eq R W₁, integralModel_a₆_eq R W₁, integralModel_a₆_eq R W₂, hau, hrR]
