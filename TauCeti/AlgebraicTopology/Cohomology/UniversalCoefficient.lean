@@ -72,6 +72,8 @@ free in that degree and zero above it, while in the top degree it need not be to
   is injective on `H¹` of every space.
 * `TopCat.singularKroneckerEquivOne`: for free coefficients the Kronecker map is an isomorphism
   `H¹(X; R, M) ≃ₗ[k] Hom(H₁(X; R), M)` for every space `X`.
+* `TopCat.isAddTorsionFree_singularCohomology_one`: for free `R` and torsion-free `M`,
+  `H¹(X; R, M)` is torsion-free.
 * `TopPair.singularKronecker_bijective_of_projective_homology_lt`: the relative Kronecker map is
   bijective in degree `n` when the relative homology is projective below `n`, for instance when it
   vanishes there.
@@ -172,6 +174,20 @@ lemma singularKroneckerEquivOne_apply [Module.Free k R] (M : ModuleCat.{w} k)
     (α : X.singularCohomology R k M 1) :
     X.singularKroneckerEquivOne M α = X.singularKronecker k 1 α :=
   (rfl)
+
+/-- **`H¹` with torsion-free coefficients is torsion-free**: for a free coefficient module `R` and a
+module `M` without additive torsion, `H¹(X; R, M)` has no nonzero element of finite order, because
+the Kronecker map identifies it with `Hom(H₁(X; R), M)`
+(`TopCat.singularKroneckerEquivOne`). For instance `H¹(X; ℤ)` is torsion-free for every space
+`X`. -/
+instance isAddTorsionFree_singularCohomology_one [Module.Free k R] (M : ModuleCat.{w} k)
+    [IsAddTorsionFree M] : IsAddTorsionFree (X.singularCohomology R k M 1) :=
+  Function.Injective.isAddTorsionFree
+    { toFun α := ⇑(X.singularKroneckerEquivOne M α).hom
+      map_zero' := by simp
+      map_add' α β := by simp }
+    fun α β h ↦ (X.singularKroneckerEquivOne M).injective
+      (ModuleCat.hom_ext (LinearMap.ext (congrFun h)))
 
 end ProjectiveHomologyBelow
 
