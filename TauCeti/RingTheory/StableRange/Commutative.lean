@@ -69,7 +69,7 @@ theorem exists_isUnit_add_mul_of_isCoprime {a b : R} (hab : IsCoprime a b) :
   obtain ⟨w, hw⟩ := f.surjective_units_map_of_surjective Ideal.Quotient.mk_surjective hfa.unit
   have hmem : (w : R) - a ∈ Ideal.span {b} := by
     rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, sub_eq_zero]
-    exact congrArg Units.val hw
+    simpa [Units.coe_map, IsUnit.unit_spec] using congrArg Units.val hw
   obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.mp hmem
   exact ⟨c, by rw [mul_comm, hc, add_sub_cancel]; exact w.isUnit⟩
 
