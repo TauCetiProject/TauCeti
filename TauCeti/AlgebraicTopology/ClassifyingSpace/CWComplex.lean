@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CWComplex.OrderedMap
 public import TauCeti.Topology.CWComplex.Classical.FreeAction
 public import TauCeti.Topology.CWComplex.Classical.OrbitSpace
+import TauCeti.Topology.Category.TopCat.Subspace
 
 /-!
 # The CW structures on Milnor's countable join and classifying space
@@ -452,15 +453,15 @@ cellular maps. -/
 def classifyingSpaceProjCellularMap :
     TopCat.of (univ : Set (universalGSpace G)) ⟶
       TopCat.of (univ : Set (classifyingSpace G)) :=
-  TopCat.ofHom ⟨fun x ↦ ⟨classifyingSpaceProj G x.val, mem_univ _⟩,
-    ((continuous_classifyingSpaceProj G).comp continuous_subtypeVal).subtype_mk _⟩
+  TopCat.ofHom ((⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩ :
+    C(universalGSpace G, classifyingSpace G)).restrictPreimage univ)
 
 /-- On underlying points, `TauCeti.classifyingSpaceProjCellularMap` is `classifyingSpaceProj`. -/
 @[simp]
 theorem coe_classifyingSpaceProjCellularMap_apply
     (x : (univ : Set (universalGSpace G))) :
     (classifyingSpaceProjCellularMap G x : classifyingSpace G) = classifyingSpaceProj G x.val :=
-  (rfl)
+  Set.restrictPreimage_coe univ (classifyingSpaceProj G) x
 
 variable (G) in
 /-- **The universal covering projection `EG → BG` is cellular.** For the CW structures on Milnor's
@@ -468,8 +469,9 @@ countable join and classifying space, the projection `classifyingSpaceProj G` ca
 skeleton of `universalGSpace G` into the corresponding skeleton of `classifyingSpace G`. -/
 theorem isCellular_classifyingSpaceProj :
     IsCellular (univ : Set (universalGSpace G)) (univ : Set (classifyingSpace G))
-      (classifyingSpaceProjCellularMap G) :=
-  (isQuotientCoveringMap_classifyingSpaceProj G).isCellular_cwComplexQuotient
+      (classifyingSpaceProjCellularMap G) := by
+  rw [classifyingSpaceProjCellularMap, TopCat.ofHom_restrictPreimage_univ_eq]
+  exact (isQuotientCoveringMap_classifyingSpaceProj G).isCellular_cwComplexQuotient
     exists_smul_openCell_eq fun _ _ _ => eq_one_of_smul_openCell_universalGSpace_eq
 
 end ClassifyingSpace

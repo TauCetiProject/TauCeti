@@ -96,29 +96,21 @@ end Basis
 section Monomial
 
 /-- **Scalars of a monomial group action on a basis are units.** If `ρ g` sends `b x` to `c • b y`
-and `ρ g⁻¹` sends `b y` to `d • b x`, then `c` is a unit with inverse `d`. -/
+and `ρ g⁻¹` sends `b y` to `d • b x`, then `c` is a unit. -/
 theorem isUnit_of_apply_basis_eq_smul {k G V X : Type*} [Semiring k] [Group G]
     [AddCommMonoid V] [Module k V] (ρ : Representation k G V) (b : Module.Basis X k V)
     {g : G} {x y : X} {c d : k} (hxy : ρ g (b x) = c • b y) (hyx : ρ g⁻¹ (b y) = d • b x) :
     IsUnit c := by
   have hcd : c * d = 1 := by
-    have h1 : (c * d) • b x = b x := by
-      calc (c * d) • b x = c • (d • b x) := mul_smul c d (b x)
-        _ = c • ρ g⁻¹ (b y) := by rw [hyx]
-        _ = ρ g⁻¹ (c • b y) := (map_smul _ _ _).symm
-        _ = ρ g⁻¹ (ρ g (b x)) := by rw [hxy]
-        _ = ρ (g⁻¹ * g) (b x) := by rw [map_mul, mul_apply_eq_comp]
-        _ = b x := by rw [inv_mul_cancel, map_one, one_apply_eq_self]
-    simpa [map_smul, b.repr_self] using congrArg (fun v ↦ b.repr v x) h1
+    apply b.linearIndependent.smul_left_injective x
+    have h := ρ.inv_self_apply g (b x)
+    rw [hxy, map_smul, hyx, ← mul_smul] at h
+    simpa [one_smul] using h
   have hdc : d * c = 1 := by
-    have h2 : (d * c) • b y = b y := by
-      calc (d * c) • b y = d • (c • b y) := mul_smul d c (b y)
-        _ = d • ρ g (b x) := by rw [hxy]
-        _ = ρ g (d • b x) := (map_smul _ _ _).symm
-        _ = ρ g (ρ g⁻¹ (b y)) := by rw [hyx]
-        _ = ρ (g * g⁻¹) (b y) := by rw [map_mul, mul_apply_eq_comp]
-        _ = b y := by rw [mul_inv_cancel, map_one, one_apply_eq_self]
-    simpa [map_smul, b.repr_self] using congrArg (fun v ↦ b.repr v y) h2
+    apply b.linearIndependent.smul_left_injective y
+    have h := ρ.self_inv_apply g (b y)
+    rw [hyx, map_smul, hxy, ← mul_smul] at h
+    simpa [one_smul] using h
   exact ⟨⟨c, d, hcd, hdc⟩, rfl⟩
 
 variable {k G V ι X : Type*} [CommSemiring k] [Group G] [AddCommMonoid V] [Module k V]
@@ -160,8 +152,8 @@ def freeEquivOfMonomialBasis : (free k G ι).Equiv ρ :=
     rw [monomialRescaledBasis_apply, monomialRescaledBasis_apply, ← mul_apply_eq_comp,
       ← map_mul]
 
-/-- The generator `single i (single h r)` of the free representation corresponds to
-`r • ρ h (b (e ⟨i, 1⟩))`. -/
+/-- The single-supported element `single i (single h r)` of the free representation corresponds
+to `r • ρ h (b (e ⟨i, 1⟩))`. -/
 @[simp]
 theorem freeEquivOfMonomialBasis_single (i : ι) (h : G) (r : k) :
     ρ.freeEquivOfMonomialBasis b e hb (Finsupp.single i (MonoidAlgebra.single h r)) =
@@ -198,7 +190,7 @@ theorem freeEquivOfMonomialBasis_symm_basis (i : ι) (h : G) :
   rw [freeEquivOfMonomialBasis_single, ← map_smul]
   have hinv := apply_basis_eq_repr_smul ρ b e hb h⁻¹ h i
   rw [inv_mul_cancel] at hinv
-  rw [← hinv, ← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self]
+  rw [← hinv, ρ.self_inv_apply]
 
 end Monomial
 

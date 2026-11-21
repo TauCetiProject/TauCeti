@@ -419,9 +419,12 @@ isomorphic in `Rep R G` to `Rep.free R G ι`, sending the cellular basis vector 
 generator `single a (single 1 1)`. -/
 def cellActionChainRepIsoFree :
     Rep.of (cellActionChainRepresentation C hcell R n) ≅ Rep.free R G ι :=
-  (Rep.mkIso ((cellActionChainRepresentation C hcell R n).freeEquivOfBasis
-    (cellActionOrbitBasis C hcell hfree R s hs) (sigmaSMulCellEquiv hcell hfree s hs)
-    (cellActionChainRepresentation_cellActionOrbitBasis C hcell hfree R s hs))).symm
+  (Rep.mkIso ((cellActionChainRepresentation C hcell R n).freeEquivOfMonomialBasis
+    (cellularChainBasis C R n) (sigmaSMulCellEquiv hcell hfree s hs) fun g h a ↦
+      let := cellMulAction hcell n
+      ⟨cellActionScale C hcell R g (h • s a), by
+        rw [sigmaSMulCellEquiv_apply, sigmaSMulCellEquiv_apply,
+          cellActionChainRepresentation_cellularChainBasis, ← smul_smul]⟩)).symm
 
 /-- The generator `single a (single g 1)` of `Rep.free R G ι` corresponds under
 `TauCeti.cellActionChainRepIsoFree` to the `g`-translate of the cellular basis vector of `s a`. -/
@@ -430,11 +433,10 @@ theorem cellActionChainRepIsoFree_inv_hom_single (a : ι) (g : G) :
     (cellActionChainRepIsoFree C hcell hfree R s hs).inv.hom
         (Finsupp.single a (MonoidAlgebra.single g 1)) =
       cellActionChainRepresentation C hcell R n g (cellularChainBasis C R n (s a)) := by
+  let := cellMulAction hcell n
   rw [cellActionChainRepIsoFree, Iso.symm_inv, Rep.mkIso_hom_hom_apply]
-  exact ((cellActionChainRepresentation C hcell R n).freeEquivOfBasis_single
-    (cellActionOrbitBasis C hcell hfree R s hs) (sigmaSMulCellEquiv hcell hfree s hs)
-    (cellActionChainRepresentation_cellActionOrbitBasis C hcell hfree R s hs) a g 1).trans
-    (by rw [one_smul, cellActionOrbitBasis_sigmaSMulCellEquiv])
+  exact (Representation.freeEquivOfMonomialBasis_single _ _ _ _ a g 1).trans
+    (by rw [one_smul, sigmaSMulCellEquiv_apply, one_smul])
 
 /-- The cellular basis vector of each chosen representative `s a` maps to the generator
 `single a (single 1 1)` of `Rep.free R G ι`. This is not a `simp` lemma because `simp` unfolds
@@ -442,10 +444,11 @@ theorem cellActionChainRepIsoFree_inv_hom_single (a : ι) (g : G) :
 theorem cellActionChainRepIsoFree_hom_hom_cellularChainBasis (a : ι) :
     (cellActionChainRepIsoFree C hcell hfree R s hs).hom.hom (cellularChainBasis C R n (s a)) =
       Finsupp.single a (MonoidAlgebra.single 1 1) := by
-  have h1 : cellActionChainRepresentation C hcell R n 1 (cellularChainBasis C R n (s a)) =
-      cellularChainBasis C R n (s a) := by
-    rw [map_one, Module.End.one_eq_id, LinearMap.id_apply]
-  rw [← h1, ← cellActionChainRepIsoFree_inv_hom_single C hcell hfree R s hs, Rep.hom_inv_apply]
+  let := cellMulAction hcell n
+  have h1 : sigmaSMulCellEquiv hcell hfree s hs ⟨a, 1⟩ = s a := by
+    rw [sigmaSMulCellEquiv_apply, one_smul]
+  rw [← h1, cellActionChainRepIsoFree, Iso.symm_hom, Rep.mkIso_inv_hom_apply]
+  exact Representation.freeEquivOfMonomialBasis_symm_basis_one _ _ _ _ a
 
 /-- The cellular basis vector of a translated representative `g • s a` maps to the generator
 `single a (single g u⁻¹)` of `Rep.free R G ι`, where `u` is the unit
@@ -457,14 +460,14 @@ theorem cellActionChainRepIsoFree_hom_hom_cellularChainBasis_smul (a : ι) (g : 
         (cellularChainBasis C R n (g • s a)) =
       Finsupp.single a (MonoidAlgebra.single g (↑(cellActionUnit C hcell R g (s a))⁻¹ : R)) := by
   let := cellMulAction hcell n
-  have h := cellActionChainRepIsoFree_inv_hom_single C hcell hfree R s hs a g
-  rw [cellActionChainRepresentation_cellularChainBasis, ← val_cellActionUnit] at h
-  have hb : cellularChainBasis C R n (g • s a) =
-      (↑(cellActionUnit C hcell R g (s a))⁻¹ : R) •
-        (cellActionChainRepIsoFree C hcell hfree R s hs).inv.hom
-          (Finsupp.single a (MonoidAlgebra.single g 1)) := by
-    rw [h, smul_smul, Units.inv_mul, one_smul]
-  rw [hb, map_smul, Rep.hom_inv_apply, Finsupp.smul_single, MonoidAlgebra.smul_single', mul_one]
+  rw [← sigmaSMulCellEquiv_apply hcell hfree s hs ⟨a, g⟩, cellActionChainRepIsoFree, Iso.symm_hom,
+    Rep.mkIso_inv_hom_apply]
+  refine (Representation.freeEquivOfMonomialBasis_symm_basis _ _ _ _ a g).trans ?_
+  congr 2
+  rw [sigmaSMulCellEquiv_apply, sigmaSMulCellEquiv_apply, one_smul,
+    cellActionChainRepresentation_cellularChainBasis, map_smul, Module.Basis.repr_self,
+    Finsupp.smul_single, smul_eq_mul, mul_one, inv_smul_smul, Finsupp.single_eq_same,
+    ← val_cellActionUnit, ← cellActionUnit_inv]
 
 end Representatives
 
