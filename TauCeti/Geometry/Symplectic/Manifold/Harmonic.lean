@@ -72,18 +72,18 @@ theorem mvfderiv_eq_zero_of_isClosed [T2Space C] [CompactSpace C] [BoundarylessM
     (ho : ∀ c (b : Basis (Fin 2) ℝ (TangentSpace I c)), b 1 = j c (b 0) →
       b.orientation = o.orientationAt c)
     {τ : C → ℝ} (hτ : ContMDiff I 𝓘(ℝ) 1 τ) {β : SmoothForm I C ℝ 1} (hβ : β.IsClosed)
-    (hτβ : ∀ c e, mvfderiv I τ c (j c e) = β.1 c ![e]) (c : C) : mvfderiv I τ c = 0 := by
+    (hτβ : ∀ c e, mvfderiv I τ c (j c e) = β.val c ![e]) (c : C) : mvfderiv I τ c = 0 := by
   -- The one-form `α = τ β`, and the top form `η = -dα`.
-  set α : RoughForm I C ℝ 1 := fun c ↦ τ c • β.1 c
+  set α : RoughForm I C ℝ 1 := fun c ↦ τ c • β.val c
   have hα : IsSmoothForm I 1 α := (β.isSmoothForm.of_le (by simp)).fun_smul hτ
   set η : RoughForm I C ℝ 2 := (-1 : ℝ) • mextDeriv α
   -- On a frame `(e, j e)`, `η` is the energy density `dτ(e)² + dτ(j e)²`.
   have hη (c : C) (e : TangentSpace I c) :
       η c ![e, j c e] = mvfderiv I τ c e ^ 2 + mvfderiv I τ c (j c e) ^ 2 := by
-    have hβ' : mextDeriv β.1 c ![e, j c e] = 0 := by
+    have hβ' : mextDeriv β.val c ![e, j c e] = 0 := by
       rw [(SmoothForm.isClosed_iff_forall_mextDeriv_apply_eq_zero β).1 hβ c]
       rfl
-    have hβj : β.1 c ![j c e] = -mvfderiv I τ c e := by
+    have hβj : β.val c ![j c e] = -mvfderiv I τ c e := by
       rw [← hτβ, apply_apply, map_neg]
     simp only [η, Pi.smul_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
     rw [mextDeriv_fun_smul_apply (hτ.mdifferentiableAt one_ne_zero)

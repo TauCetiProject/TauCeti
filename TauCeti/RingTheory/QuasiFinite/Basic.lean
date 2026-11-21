@@ -6,17 +6,20 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang, The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.QuasiFinite.Basic
+public import Mathlib.RingTheory.Spectrum.Maximal.Defs
 public import TauCeti.RingTheory.LocalRing.Localization
+import Mathlib.RingTheory.Ideal.GoingUp
 
 /-!
-# Artinian fibres and residue fields of quasi-finite algebras
+# Artinian fibres, residue fields, and maximal spectra of quasi-finite algebras
 
 For a prime `q` at which `S` is quasi-finite over `R`, the local-ring localization equivalence
 identifies the fibre `S_q ⧸ (q.under R) S_q` with an Artinian quotient of the localization of
 `S_q` at its maximal ideal.
 
 For a quasi-finite local homomorphism `R → S` of local rings, the residue field of `S` is a finite
-extension of the residue field of `R`.
+extension of the residue field of `R`. More generally, an integral quasi-finite algebra over a ring
+with finitely many maximal ideals itself has finitely many maximal ideals.
 
 ## Main results
 
@@ -24,6 +27,8 @@ extension of the residue field of `R`.
   Artinian.
 * `IsLocalRing.ResidueField.finite_of_quasiFinite`: the residue field extension of a quasi-finite
   local homomorphism of local rings is finite.
+* `TauCeti.finite_maximalSpectrum_of_isIntegral_of_quasiFinite`: an integral quasi-finite algebra
+  over a ring with finitely many maximal ideals has finitely many maximal ideals.
 
 ## References
 
@@ -76,3 +81,23 @@ instance finite_of_quasiFinite [Algebra.QuasiFinite R S] :
   .of_quasiFinite
 
 end IsLocalRing.ResidueField
+
+namespace TauCeti
+
+/-- **An integral quasi-finite algebra over a semilocal ring is semilocal**: if `R` has finitely
+many maximal ideals and `B` is an integral quasi-finite `R`-algebra (in particular, a module-finite
+`R`-algebra), then `B` has finitely many maximal ideals. -/
+theorem finite_maximalSpectrum_of_isIntegral_of_quasiFinite (R : Type*) {B : Type*} [CommRing R]
+    [Finite (MaximalSpectrum R)] [CommRing B] [Algebra R B] [Algebra.IsIntegral R B]
+    [Algebra.QuasiFinite R B] : Finite (MaximalSpectrum B) := by
+  -- Every maximal ideal `M` of `B` contracts to a maximal ideal of `R` by integrality, and each
+  -- maximal ideal of `R` has only finitely many primes of `B` lying over it by quasi-finiteness.
+  have : ∀ m : MaximalSpectrum R, Finite (m.asIdeal.primesOver B) :=
+    fun m ↦ (Algebra.QuasiFinite.finite_primesOver m.asIdeal (S := B)).to_subtype
+  refine Finite.of_injective (β := (m : MaximalSpectrum R) × m.asIdeal.primesOver B)
+    (fun M ↦
+      have := M.isMaximal
+      ⟨⟨M.asIdeal.under R, inferInstance⟩, ⟨M.asIdeal, M.isMaximal.isPrime, ⟨rfl⟩⟩⟩)
+    fun M₁ M₂ h ↦ MaximalSpectrum.ext (congrArg (fun x ↦ x.2.val) h)
+
+end TauCeti

@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Infinitary.Operations
-public import TauCeti.ModelTheory.Infinitary.Reindex
-public import TauCeti.ModelTheory.Infinitary.Substitution
+public import TauCeti.ModelTheory.Infinitary.LanguageMap
 public import TauCeti.ModelTheory.Semantics
 public import TauCeti.ModelTheory.Syntax
 
@@ -38,9 +36,10 @@ analogue of the finitary fact that a formula only sees the variables it mentions
 * `FirstOrder.Language.BoundedFormulaInf.countable_freeVarSupport`: over a countable carrier the
   support is countable.
 * `FirstOrder.Language.BoundedFormulaInf.freeVarSupport_mapBound`,
-  `FirstOrder.Language.BoundedFormulaInf.freeVarSupport_castLE` and
-  `FirstOrder.Language.BoundedFormulaInf.freeVarSupport_reindex`: relabelling bound slots,
-  weakening and carrier transport keep the support.
+  `FirstOrder.Language.BoundedFormulaInf.freeVarSupport_castLE`,
+  `FirstOrder.Language.BoundedFormulaInf.freeVarSupport_reindex` and
+  `FirstOrder.Language.LHom.freeVarSupport_onBoundedFormulaInf`: relabelling bound slots,
+  weakening, carrier transport and language maps keep the support.
 * `TauCeti.BoundedFormulaInf.freeVarSupport_subst` and
   `TauCeti.BoundedFormulaInf.freeVarSupport_relabel`: the support after substitution and
   free-variable relabelling.
@@ -55,13 +54,13 @@ analogue of the finitary fact that a formula only sees the variables it mentions
 
 public section
 
-universe u v u' uι uκ uβ w
+universe u v u' v' uα uι uκ uβ w
 
 namespace FirstOrder
 
 namespace Language
 
-variable {L : Language.{u, v}} {α : Type u'}
+variable {L : Language.{u, v}} {α : Type uα}
 
 namespace BoundedFormulaInf
 
@@ -333,6 +332,27 @@ theorem freeVarSupport_toInf [DecidableEq α] {ι : Type uι} {n : ℕ} (φ : L.
   | all φ ih => simp [freeVarFinset, ih]
 
 end BoundedFormula
+
+namespace LHom
+
+variable {L' : Language.{u', v'}} {ι : Type uι} {n : ℕ}
+
+/-- A language map preserves the free-variable support of an infinitary formula; no injectivity on
+symbols is required. -/
+@[simp]
+theorem freeVarSupport_onBoundedFormulaInf (g : L →ᴸ L') (φ : L.BoundedFormulaInf ι α n) :
+    (g.onBoundedFormulaInf φ).freeVarSupport = φ.freeVarSupport := by
+  classical
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ => simp
+  | rel R ts => simp
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih]
+  | iInf φs ih => simp [ih]
+
+end LHom
 
 end Language
 

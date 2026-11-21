@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Composition
 public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+public import TauCeti.Analysis.Calculus.FormalMultilinearSeries
 
 import Mathlib.Analysis.Analytic.Uniqueness
 
@@ -26,7 +27,9 @@ corollary `HasFPowerSeriesOnBall.iteratedDeriv_eq_tsum_descFactorial_mul_pow`); 
 and rescaled termwise differentiated series are absolutely summable inside the disk of convergence
 (`FormalMultilinearSeries.summable_norm_descFactorial_mul_pow_sub_of_lt_ofScalars_radius` and
 `FormalMultilinearSeries.summable_norm_descFactorial_mul_pow_of_lt_ofScalars_radius`), and at zero
-they recover the coefficients.
+they recover the coefficients. Termwise differentiation of a scalar series represents the
+derivative on the same ball (`HasFPowerSeriesOnBall.deriv_ofScalars`), and gives the Euler operator
+`y * f' y` as `∑ n * c n * y ^ n` (`HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars`).
 
 It also proves coefficient uniqueness for scalar power series vanishing near a point of a
 preconnected ball (`HasFPowerSeriesOnBall.ofScalars_eq_zero_of_eventuallyEq_zero`), termwise
@@ -45,7 +48,11 @@ In any normed `𝕜`-algebra `A` with summable geometric series (not necessarily
 higher geometric series `∑ₙ C(n + k, k) xⁿ` has convergence radius at least `1`
 (`TauCeti.one_le_ofScalars_choose_radius`) and represents `(1 - x)⁻¹ʳ ^ (k + 1)` on the open unit
 ball (`TauCeti.hasFPowerSeriesOnBall_inverse_one_sub_pow`), extending Mathlib's
-`hasFPowerSeriesOnBall_inverse_one_sub` (`k = 0`).
+`hasFPowerSeriesOnBall_inverse_one_sub` (`k = 0`). Every one-variable scalar-valued formal
+multilinear series is `ofScalars` of its `coeff` sequence
+(`FormalMultilinearSeries.ofScalars_coeff`). Over a topological field `𝕜`, the scalar series
+`FormalMultilinearSeries.ofScalars 𝕜 c` agrees with `TauCeti.mkPiRingSeries 𝕜 c`
+(`TauCeti.mkPiRingSeries_eq_ofScalars`).
 -/
 
 public section
@@ -53,6 +60,14 @@ public section
 open scoped BigOperators ENNReal Topology
 
 namespace FormalMultilinearSeries
+
+/-- Every one-variable scalar-valued formal multilinear series equals `ofScalars` applied to its
+scalar coefficient sequence. -/
+@[simp]
+theorem ofScalars_coeff {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    (p : FormalMultilinearSeries 𝕜 𝕜 𝕜) : ofScalars 𝕜 p.coeff = p := by
+  ext n
+  simp [ofScalars, mul_comm]
 
 variable {𝕜 E : Type*} [Field 𝕜] [Ring E] [Algebra 𝕜 E] [TopologicalSpace E] [IsTopologicalRing E]
 
@@ -328,6 +343,41 @@ theorem _root_.HasFPowerSeriesOnBall.hasDerivAt_tsum_div_natCast
     hsum1.unique (hfun ▸ hsum2)
   exact hH_diff.congr_deriv (eq_div_of_mul_eq hy0 (by rw [mul_comm, hval]))
 
+/-- **Termwise differentiation of a scalar power series.** If `f` is the sum of the scalar power
+series `∑ c n * (z - x) ^ n` on the ball of radius `r` about `x`, then `deriv f` is the sum on
+the same ball of the termwise differentiated series `∑ (n + 1) * c (n + 1) * (z - x) ^ n`. -/
+theorem _root_.HasFPowerSeriesOnBall.deriv_ofScalars {𝕂 : Type*} [NontriviallyNormedField 𝕂]
+    [CompleteSpace 𝕂] {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {x : 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) x r) :
+    HasFPowerSeriesOnBall (deriv f) (ofScalars 𝕂 fun n ↦ (n + 1) * c (n + 1)) x r := by
+  have h := (ContinuousLinearMap.apply 𝕂 𝕂 (1 : 𝕂)).comp_hasFPowerSeriesOnBall hf.fderiv
+  convert h using 1
+  · ext y
+    exact fderiv_apply_one_eq_deriv.symm
+  · -- both series are scalar, so it suffices to compare their coefficients
+    ext n : 1
+    ext
+    rw [apply_eq_prod_smul_coeff, coeff_ofScalars, apply_eq_prod_smul_coeff]
+    congr 1
+    have h1 := derivSeries_coeff_one (ofScalars 𝕂 c) n
+    rw [coeff_ofScalars, nsmul_eq_mul, Nat.cast_succ] at h1
+    rw [← h1, coeff, coeff, ContinuousLinearMap.compFormalMultilinearSeries_apply,
+      ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
+      ContinuousLinearMap.apply_apply]
+
+/-- **The Euler operator on a scalar power series.** If `f` is the sum of the scalar power series
+`∑ c n * z ^ n` on the ball of radius `r` about `0`, then for `y` in that ball,
+`y * f' y = ∑ n * c n * y ^ n`. -/
+theorem _root_.HasFPowerSeriesOnBall.hasSum_mul_deriv_ofScalars {𝕂 : Type*}
+    [NontriviallyNormedField 𝕂] [CompleteSpace 𝕂] {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r) {y : 𝕂} (hy : ‖y‖ₑ < r) :
+    HasSum (fun n : ℕ ↦ n * c n * y ^ n) (y * deriv f y) := by
+  have h := (hf.deriv_ofScalars.hasSum (mem_eball_zero_iff.mpr hy)).mul_left y
+  rw [zero_add] at h
+  -- the term of index `0` vanishes, and the remaining terms are those of `h` shifted by one
+  refine (hasSum_nat_add_iff' 1).mp ?_
+  simpa [ofScalars_apply_eq, pow_succ, mul_comm, mul_left_comm, mul_assoc] using h
+
 /-- **Substituting `z ^ m` into a scalar power series.** Let `A` be a normed algebra over `𝕂`
 with `‖1‖ = 1`, for instance `𝕂` itself. If `f` is the sum of the scalar power series
 `∑ c k • z ^ k` on the ball of radius `r ≤ 1` about `0` in `A`, then for `0 < m` the function
@@ -350,9 +400,10 @@ theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 A : Type*} [Nontri
       have hk := hC k
       rw [ofScalars_norm] at hk
       rw [Nat.mul_div_cancel_left _ hm]
-      exact (mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one ρ.2 hρ1 (Nat.le_mul_of_pos_left k hm))
+      exact (mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one ρ.property hρ1
+          (Nat.le_mul_of_pos_left k hm))
         (norm_nonneg _)).trans hk
-    · simpa using (mul_nonneg (norm_nonneg _) (pow_nonneg ρ.2 0)).trans (hC 0)
+    · simpa using (mul_nonneg (norm_nonneg _) (pow_nonneg ρ.property 0)).trans (hC 0)
   · -- the series of `f` at `y ^ m`, reindexed along the multiples of `m`
     have hy1 : ‖y‖ₑ ≤ 1 := (mem_eball_zero_iff.mp hy).le.trans hr
     have hym : y ^ m ∈ Metric.eball (0 : A) r := by
@@ -447,5 +498,14 @@ theorem hasFPowerSeriesOnBall_inverse_one_sub_pow (𝕜 A : Type*) [Nontrivially
     convert hasSum_choose_mul_geometric_of_norm_lt_one' k hy using 1
     ext n
     rw [FormalMultilinearSeries.ofScalars_apply_eq, Nat.cast_smul_eq_nsmul, nsmul_eq_mul]
+
+/-- Over any topological field `𝕜`, the one-variable series `TauCeti.mkPiRingSeries 𝕜 c` coincides
+with `FormalMultilinearSeries.ofScalars 𝕜 c`. -/
+theorem mkPiRingSeries_eq_ofScalars {𝕜 : Type*} [Field 𝕜] [TopologicalSpace 𝕜]
+    [IsTopologicalRing 𝕜] (c : ℕ → 𝕜) :
+    mkPiRingSeries 𝕜 c = FormalMultilinearSeries.ofScalars 𝕜 c := by
+  ext1 n
+  rw [mkPiRingSeries_def, ← (FormalMultilinearSeries.ofScalars 𝕜 c n).mkPiRing_apply_one_eq_self]
+  simp [FormalMultilinearSeries.ofScalars]
 
 end TauCeti

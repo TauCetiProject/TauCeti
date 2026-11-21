@@ -41,13 +41,14 @@ variable {ι : Type*} (K : AbstractSimplicialComplex ι)
 /-- The realized skeleton consists exactly of the points carried by a face of dimension at most
 `n`. -/
 theorem range_realizationMap_skeleton (n : ℕ) :
-    range (realizationMap (K.skeleton_le n)) = {x : Realization K | x.1.support.card ≤ n + 1} := by
+    range (realizationMap (K.skeleton_le n)) = {x : Realization K | x.val.support.card ≤ n + 1}
+        := by
   ext x
   simp only [mem_range_realizationMap, mem_skeleton, mem_ofPred_eq, and_iff_right (support_mem K x)]
 
 /-- The points with at most `n + 1` nonzero coordinates form a closed subspace. -/
 theorem isClosed_setOf_card_support_le (n : ℕ) :
-    IsClosed {x : Realization K | x.1.support.card ≤ n + 1} := by
+    IsClosed {x : Realization K | x.val.support.card ≤ n + 1} := by
   rw [← range_realizationMap_skeleton]
   exact (isClosedEmbedding_realizationMap (K.skeleton_le n)).isClosed_range
 
@@ -55,7 +56,7 @@ theorem isClosed_setOf_card_support_le (n : ℕ) :
 theorem iUnion_range_realizationMap_skeleton :
     ⋃ n, range (realizationMap (K.skeleton_le n)) = univ := by
   simp only [range_realizationMap_skeleton]
-  exact eq_univ_of_forall fun x => mem_iUnion.mpr ⟨x.1.support.card, Nat.le_succ _⟩
+  exact eq_univ_of_forall fun x => mem_iUnion.mpr ⟨x.val.support.card, Nat.le_succ _⟩
 
 /-- Continuity out of a weak realization can be tested on all its skeleta. -/
 theorem continuous_iff_realizationMap_skeleton {X : Type*} [TopologicalSpace X]
@@ -64,11 +65,11 @@ theorem continuous_iff_realizationMap_skeleton {X : Type*} [TopologicalSpace X]
   refine ⟨fun hf n => hf.comp (continuous_realizationMap _), fun hf => ?_⟩
   apply continuous_iff_faceInclusion.mpr
   intro σ
-  let τ : TauCeti.SetLike.Face (K.skeleton σ.1.card) :=
-    ⟨σ.1, mem_skeleton.mpr ⟨σ.2, Nat.le_succ _⟩⟩
-  have he := realizationMap_comp_faceInclusion (K.skeleton_le σ.1.card) τ
+  let τ : TauCeti.SetLike.Face (K.skeleton σ.val.card) :=
+    ⟨σ.val, mem_skeleton.mpr ⟨σ.property, Nat.le_succ _⟩⟩
+  have he := realizationMap_comp_faceInclusion (K.skeleton_le σ.val.card) τ
   rw [← he, ← Function.comp_assoc]
-  exact (hf σ.1.card).comp (continuous_faceInclusion _ τ)
+  exact (hf σ.val.card).comp (continuous_faceInclusion _ τ)
 
 end AbstractSimplicialComplex
 
@@ -97,7 +98,7 @@ theorem realizationMap_skeleton
 /-- A simplicial realization cannot increase the number of nonzero barycentric coordinates. -/
 theorem card_support_realizationMap_le
     (f : SimplicialMap K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-    (x : Realization K) : (f.realizationMap x).1.support.card ≤ x.1.support.card := by
+    (x : Realization K) : (f.realizationMap x).val.support.card ≤ x.val.support.card := by
   rw [realizationMap_val]
   exact (Finset.card_le_card Finsupp.mapDomain_support).trans Finset.card_image_le
 
@@ -114,8 +115,8 @@ theorem mapsTo_realizationMap_skeleton
 coordinates. -/
 theorem card_support_realizationMap_of_injOn
     (f : SimplicialMap K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
-    (x : Realization K) (hf : InjOn f (x.1.support : Set ι)) :
-    (f.realizationMap x).1.support.card = x.1.support.card := by
+    (x : Realization K) (hf : InjOn f (x.val.support : Set ι)) :
+    (f.realizationMap x).val.support.card = x.val.support.card := by
   rw [TauCeti.PreAbstractSimplicialComplex.SimplicialMap.support_realizationMap f x]
   exact Finset.card_image_of_injOn hf
 

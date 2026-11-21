@@ -16,8 +16,11 @@ import Mathlib.Topology.MetricSpace.Bounded
 
 In a seminormed additive group, the squared distance between two points is at most twice the sum
 of their squared distances to any third point: the triangle inequality through `c`, squared with
-`(x + y) ^ 2 ≤ 2 (x ^ 2 + y ^ 2)`. The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of a squared
-distance is at most `1`.
+`(x + y) ^ 2 ≤ 2 (x ^ 2 + y ^ 2)`; likewise the squared norm of a sum of three vectors is at most
+three times the sum of their squared norms. The extended norm satisfies the triangle inequality
+`‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ`. Through the point `b`, a bound `c ‖a - b‖² ≤ r` with
+`c > 0` bounds `‖a‖²` by `2 / c * r + 2 ‖b‖²`. The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of a
+squared distance is at most `1`.
 
 An unbounded set stays unbounded after removing a closed ball, since a closed ball is bounded.
 
@@ -36,10 +39,22 @@ A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
 A constant bound on `‖f x‖` over a ball of positive radius is nonnegative, since the ball
 contains `0`.
 
+The translation by `c - c₀`, which takes `c₀` to `c`, preserves distances to these centres.
+
+The points at which a map comes within `ε` of a set form the preimage of the union of the closed
+`ε`-balls about its points.
+
+A point off a finite set stays farther than `ε` from all of its points for every small enough
+`ε > 0`.
+
 ## Main declarations
 
 * `TauCeti.norm_sub_sq_le_two_mul` -- the squared triangle inequality through an intermediate
   point.
+* `TauCeti.norm_add_add_sq_le_three_mul` -- the squared triangle inequality for three summands.
+* `TauCeti.eNorm_sub_le_eNorm_sub_add_eNorm_sub` -- the triangle inequality for the extended norm.
+* `TauCeti.norm_sq_le_of_mul_norm_sub_sq_le` -- `c ‖a - b‖² ≤ r` with `c > 0` bounds `‖a‖²` by
+  `2 / c * r + 2 ‖b‖²`.
 * `TauCeti.inv_one_add_norm_sub_sq_le_one` -- the reciprocal transform of a squared distance is at
   most `1`.
 * `TauCeti.not_isBounded_inter_lt_norm_sub` -- the part of an unbounded set outside a closed ball
@@ -56,6 +71,11 @@ contains `0`.
 * `TauCeti.nonneg_of_forall_norm_lt` -- a constant bound on `‖f x‖` over a ball of positive radius
   is nonnegative.
 * `TauCeti.eNorm_lt_ofReal_iff` -- `‖x‖ₑ < ENNReal.ofReal r ↔ ‖x‖ < r`.
+* `TauCeti.dist_add_sub_eq` -- `dist (x + (c - c₀)) c = dist x c₀`.
+* `TauCeti.setOf_exists_norm_sub_le_eq_preimage` -- `{t | ∃ s ∈ S, ‖f t - s‖ ≤ ε}` is the
+  preimage under `f` of the union of the closed `ε`-balls about the points of `S`.
+* `TauCeti.eventually_not_exists_norm_sub_le` -- a point off a finite set `S` is, for every small
+  enough `ε > 0`, farther than `ε` from each point of `S`.
 -/
 
 public section
@@ -72,6 +92,31 @@ theorem norm_sub_sq_le_two_mul {E : Type*} [SeminormedAddCommGroup E] (a b c : E
   (pow_le_pow_left₀ (norm_nonneg _)
     ((norm_sub_le_norm_sub_add_norm_sub a c b).trans_eq (by rw [norm_sub_rev c b])) 2).trans
     add_sq_le
+
+/-- **Squared triangle inequality for three summands.** The squared norm of `a + b + c` is at most
+three times the sum of the squared norms of `a`, `b` and `c`. -/
+theorem norm_add_add_sq_le_three_mul {E : Type*} [SeminormedAddCommGroup E] (a b c : E) :
+    ‖a + b + c‖ ^ 2 ≤ 3 * (‖a‖ ^ 2 + ‖b‖ ^ 2 + ‖c‖ ^ 2) :=
+  (pow_le_pow_left₀ (norm_nonneg _) norm_add₃_le 2).trans <| by
+    nlinarith [sq_nonneg (‖a‖ - ‖b‖), sq_nonneg (‖b‖ - ‖c‖), sq_nonneg (‖a‖ - ‖c‖)]
+
+/-- **Triangle inequality for the extended norm.** `‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ`, the
+extended-norm form of `norm_sub_le_norm_sub_add_norm_sub`. -/
+theorem eNorm_sub_le_eNorm_sub_add_eNorm_sub {G : Type*} [SeminormedAddCommGroup G] (u v w : G) :
+    ‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ := by
+  simpa only [eDist_eq_eNorm_sub] using edist_triangle u v w
+
+/-- If `c ‖a - b‖² ≤ r` with `c > 0`, then `‖a‖² ≤ 2 / c * r + 2 ‖b‖²`: the squared triangle
+inequality through `b`. -/
+theorem norm_sq_le_of_mul_norm_sub_sq_le {E : Type*} [SeminormedAddGroup E] {a b : E}
+    {c r : ℝ} (hc : 0 < c) (h : c * ‖a - b‖ ^ 2 ≤ r) :
+    ‖a‖ ^ 2 ≤ 2 / c * r + 2 * ‖b‖ ^ 2 := by
+  have hab : ‖a - b‖ ^ 2 ≤ r / c := by
+    rw [le_div_iff₀ hc, mul_comm]
+    exact h
+  have htri := (pow_le_pow_left₀ (norm_nonneg a) (norm_le_norm_sub_add a b) 2).trans add_sq_le
+  rw [div_mul_eq_mul_div, mul_div_assoc]
+  linarith
 
 /-- The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of the squared distance is at most `1`. -/
 theorem inv_one_add_norm_sub_sq_le_one {E : Type*} [SeminormedAddCommGroup E] (x a : E) :
@@ -151,5 +196,29 @@ theorem nonneg_of_forall_norm_lt {E F 𝓕 : Type*} [SeminormedAddGroup E] [Semi
 theorem eNorm_lt_ofReal_iff {E : Type*} [SeminormedAddGroup E] {x : E} {r : ℝ} :
     ‖x‖ₑ < ENNReal.ofReal r ↔ ‖x‖ < r := by
   rw [eNorm_eq_nnNorm, ENNReal.coe_lt_ofReal, coe_nnNorm]
+
+/-- The translation by `c - c₀`, which takes `c₀` to `c`, preserves distances: the distance from
+`x + (c - c₀)` to `c` is the distance from `x` to `c₀`. -/
+theorem dist_add_sub_eq {E : Type*} [SeminormedAddCommGroup E] (x c c₀ : E) :
+    dist (x + (c - c₀)) c = dist x c₀ := by
+  rw [← dist_add_right x c₀ (c - c₀), add_sub_cancel]
+
+/-- The set of points at which `f` comes within `ε` of some point of `S` is the preimage under `f`
+of the union of the closed `ε`-balls about the points of `S`. -/
+theorem setOf_exists_norm_sub_le_eq_preimage {α E : Type*} [SeminormedAddCommGroup E] (f : α → E)
+    (S : Set E) (ε : ℝ) :
+    {t | ∃ s ∈ S, ‖f t - s‖ ≤ ε} = f ⁻¹' ⋃ s ∈ S, closedBall s ε := by
+  ext; simp [dist_eq_norm]
+
+/-- **A point off a finite set keeps a positive distance from it.** If `z` is not in the finite set
+`S`, then for every small enough `ε > 0` it is farther than `ε` from each point of `S`. -/
+theorem eventually_not_exists_norm_sub_le {E : Type*} [NormedAddGroup E] {z : E} {S : Finset E}
+    (hz : z ∉ S) : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ¬ ∃ s ∈ S, ‖z - s‖ ≤ ε := by
+  -- Each of the finitely many distances `‖z - s‖` is positive.
+  have hlt : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ s ∈ S, ε < ‖z - s‖ :=
+    (eventually_all_finset S).mpr fun s hs => (eventually_lt_nhds <| norm_sub_pos_iff.mpr
+      fun h : z = s => hz (h ▸ hs)).filter_mono nhdsWithin_le_nhds
+  filter_upwards [hlt] with ε hε ⟨s, hs, hle⟩
+  exact (hε s hs).not_ge hle
 
 end TauCeti

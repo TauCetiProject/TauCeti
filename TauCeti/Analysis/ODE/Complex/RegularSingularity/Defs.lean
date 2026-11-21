@@ -134,9 +134,9 @@ def regularSingularCoeff (fs gs : ℕ → ℂ) (ρ : ℂ) (s : ℕ) : ℂ :=
   if s = 0 then 1
   else -(indicialPoly (fs 0) (gs 0) (ρ + s))⁻¹ *
     ∑ k ∈ (range s).attach,
-      ((ρ + k.1) * fs (s - k.1) + gs (s - k.1)) * regularSingularCoeff fs gs ρ k.1
+      ((ρ + k.val) * fs (s - k.val) + gs (s - k.val)) * regularSingularCoeff fs gs ρ k.val
 termination_by s
-decreasing_by exact mem_range.mp k.2
+decreasing_by exact mem_range.mp k.property
 
 @[simp]
 theorem regularSingularCoeff_zero (fs gs : ℕ → ℂ) (ρ : ℂ) :
@@ -216,18 +216,18 @@ def regularSingularSecondCoeff (fs gs : ℕ → ℂ) (α₂ : ℂ) (N s : ℕ) :
   else if s < N then
     -(indicialPoly (fs 0) (gs 0) (α₂ + s))⁻¹ *
       ∑ k ∈ (range s).attach,
-        ((α₂ + k.1) * fs (s - k.1) + gs (s - k.1)) *
-          regularSingularSecondCoeff fs gs α₂ N k.1
+        ((α₂ + k.val) * fs (s - k.val) + gs (s - k.val)) *
+          regularSingularSecondCoeff fs gs α₂ N k.val
   else
     -(indicialPoly (fs 0) (gs 0) (α₂ + s))⁻¹ *
       ((∑ k ∈ (range s).attach,
-          ((α₂ + k.1) * fs (s - k.1) + gs (s - k.1)) *
-            regularSingularSecondCoeff fs gs α₂ N k.1) +
+          ((α₂ + k.val) * fs (s - k.val) + gs (s - k.val)) *
+            regularSingularSecondCoeff fs gs α₂ N k.val) +
         regularSingularLogMultiplier fs gs α₂ N *
           ((2 * (α₂ + s) + fs 0 - 1) * regularSingularCoeff fs gs (α₂ + N) (s - N) +
             ∑ k ∈ range (s - N), fs (s - N - k) * regularSingularCoeff fs gs (α₂ + N) k))
 termination_by s
-decreasing_by all_goals exact mem_range.mp k.2
+decreasing_by all_goals exact mem_range.mp k.property
 
 @[simp]
 theorem regularSingularSecondCoeff_self (fs gs : ℕ → ℂ) (α₂ : ℂ) (N : ℕ) :

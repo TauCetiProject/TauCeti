@@ -11,7 +11,7 @@ import TauCeti.Analysis.BoundedVariation.MinkowskiContent
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
-# The perimeter of a ball
+# The perimeter of balls, annuli and separated balls
 
 Let `μ` be an additive Haar measure on a finite-dimensional real inner product space `E` of
 dimension `n`, and write `ω = μ (ball 0 1)`. A ball of radius `r > 0` has perimeter
@@ -25,6 +25,16 @@ set up to null sets, so the closed ball has the same perimeter (`TauCeti.perimet
 In dimension `n ≥ 1` balls satisfy `P(ball c r)^n = n^n ω μ (ball c r)^(n-1)`
 (`TauCeti.perimeter_ball_pow`): they attain equality in the isoperimetric inequality
 `P(E)^n ≥ n^n ω μ E^(n-1)`, whose constant is fixed by this identity.
+
+Sets assembled from balls test the inequality and its equality case. Perimeter adds up over sets
+with disjoint closures (`TauCeti.perimeter_union_of_disjoint_closure`), so for `0 < r < R` the open
+annulus `ball c R \ closedBall c r`, whose complement is `closedBall c r ∪ (ball c R)ᶜ`, has
+perimeter `n (R^(n-1) + r^(n-1)) ω` (`TauCeti.perimeter_ball_sdiff_closedBall_of_pos`), and two
+balls of radii `r₁, r₂ > 0` with centres more than `r₁ + r₂` apart have a union of perimeter
+`n (r₁^(n-1) + r₂^(n-1)) ω` (`TauCeti.perimeter_ball_union_ball`). Both satisfy the isoperimetric
+inequality strictly. The punctured ball `ball c r \ {c}` agrees with `ball c r` up to a null set,
+so it attains equality (`TauCeti.perimeter_ball_sdiff_singleton_pow`), although it is not a ball
+(`TauCeti.ball_sdiff_singleton_ne_ball`): equality only determines a set up to null sets.
 
 The perimeter is computed from its definition by duality. The test vector field
 `x ↦ θ x • (x - c) / (r + δ)`, for a smooth bump `θ` equal to one on the ball and supported in
@@ -41,6 +51,14 @@ of `r ↦ r^n ω`.
 * `TauCeti.perimeter_ball_eq_ofReal_div_mul`: `P(ball c r) = (n / r) μ (ball c r)`.
 * `TauCeti.perimeter_closedBall`: the same formula for closed balls.
 * `TauCeti.perimeter_ball_pow`: `P(ball c r)^n = n^n μ (ball 0 1) μ (ball c r)^(n-1)`.
+* `TauCeti.perimeter_ball_sdiff_closedBall`, `TauCeti.perimeter_ball_sdiff_closedBall_of_pos`: the
+  perimeter of an annulus.
+* `TauCeti.finrank_pow_mul_measure_ball_mul_measure_pow_lt_perimeter_ball_sdiff_closedBall_pow`:
+  annuli satisfy the isoperimetric inequality strictly.
+* `TauCeti.perimeter_ball_union_ball` and
+  `TauCeti.finrank_pow_mul_measure_ball_mul_measure_pow_lt_perimeter_ball_union_ball_pow`: the
+  perimeter of two separated balls, and the strict isoperimetric inequality for them.
+* `TauCeti.perimeter_ball_sdiff_singleton_pow`: punctured balls attain equality.
 
 ## References
 
@@ -202,5 +220,137 @@ theorem perimeter_ball_pow (hn : finrank ℝ E ≠ 0) (hr : 0 < r) :
       ← pow_mul, mul_comm]
   rw [hk, Nat.succ_sub_one, Nat.succ_eq_add_one, mul_pow, mul_pow, h]
   ring
+
+/-! ### Annuli, separated balls and punctured balls -/
+
+omit [BorelSpace E] in
+/-- A set whose perimeter and measure are `n a μ (ball 0 1)` and `v μ (ball 0 1)`, with
+`v^(n-1) < a^n`, satisfies the isoperimetric inequality strictly. Here `n ≥ 1` is the dimension. -/
+private theorem finrank_pow_mul_measure_ball_mul_measure_pow_lt_perimeter_pow_of_lt
+    (hn : finrank ℝ E ≠ 0) {A : Set E} {a v : ℝ} (ha : 0 ≤ a) (hv : 0 ≤ v)
+    (hP : perimeter μ ⊤ A = finrank ℝ E * ENNReal.ofReal a * μ (ball 0 1))
+    (hA : μ A = ENNReal.ofReal v * μ (ball 0 1)) (h : v ^ (finrank ℝ E - 1) < a ^ finrank ℝ E) :
+    (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * μ (ball 0 1) * μ A ^ (finrank ℝ E - 1) <
+      perimeter μ ⊤ A ^ finrank ℝ E := by
+  obtain ⟨k, hk⟩ := Nat.exists_eq_add_one_of_ne_zero hn
+  -- Both sides are `n ^ n μ (ball 0 1) ^ n` times a real number.
+  set C := (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * μ (ball 0 1) ^ finrank ℝ E
+  have hC : C ≠ 0 := mul_ne_zero (pow_ne_zero _ (by exact_mod_cast hn))
+    (pow_ne_zero _ (measure_ball_pos μ 0 one_pos).ne')
+  have hC' : C ≠ ∞ := ENNReal.mul_ne_top (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _))
+    (ENNReal.pow_ne_top measure_ball_lt_top.ne)
+  calc (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * μ (ball 0 1) * μ A ^ (finrank ℝ E - 1) =
+        C * ENNReal.ofReal (v ^ (finrank ℝ E - 1)) := by
+        rw [hA, mul_pow, ENNReal.ofReal_pow hv]
+        simp only [C, hk, Nat.add_sub_cancel]
+        ring
+    _ < C * ENNReal.ofReal (a ^ finrank ℝ E) := (ENNReal.mul_lt_mul_iff_right hC hC').2
+        ((ENNReal.ofReal_lt_ofReal_iff ((by positivity : (0 : ℝ) ≤ _).trans_lt h)).2 h)
+    _ = perimeter μ ⊤ A ^ finrank ℝ E := by
+        rw [hP, mul_pow, mul_pow, ENNReal.ofReal_pow ha]
+        ring
+
+/-- **The perimeter of an annulus.** For `r < R`, the open annulus `ball c R \ closedBall c r` has
+the perimeter of the outer ball plus that of the inner closed ball: its complement is the union of
+`closedBall c r` and `(ball c R)ᶜ`, which are closed and disjoint. -/
+theorem perimeter_ball_sdiff_closedBall {R : ℝ} (h : r < R) :
+    perimeter μ ⊤ (ball c R \ closedBall c r) =
+      perimeter μ ⊤ (ball c R) + perimeter μ ⊤ (closedBall c r) := by
+  rw [← perimeter_compl, compl_sdiff, perimeter_union_of_disjoint_closure
+    measurableSet_closedBall.nullMeasurableSet measurableSet_ball.compl.nullMeasurableSet,
+    perimeter_compl, add_comm]
+  rw [isClosed_closedBall.closure_eq, isOpen_ball.isClosed_compl.closure_eq]
+  exact disjoint_compl_right_iff_subset.2 (closedBall_subset_ball h)
+
+/-- **The perimeter of an annulus, explicitly.** For `0 < r < R`, in dimension `n` the open annulus
+`ball c R \ closedBall c r` has perimeter `n (R^(n-1) + r^(n-1)) μ (ball 0 1)`. -/
+theorem perimeter_ball_sdiff_closedBall_of_pos {R : ℝ} (hr : 0 < r) (h : r < R) :
+    perimeter μ ⊤ (ball c R \ closedBall c r) = finrank ℝ E *
+      ENNReal.ofReal (R ^ (finrank ℝ E - 1) + r ^ (finrank ℝ E - 1)) * μ (ball 0 1) := by
+  rw [perimeter_ball_sdiff_closedBall h, perimeter_ball (hr.trans h), perimeter_closedBall hr,
+    ENNReal.ofReal_add (pow_pos (hr.trans h) _).le (pow_pos hr _).le]
+  ring
+
+/-- **Annuli are strict isoperimetric examples.** In dimension `n ≥ 1`, for `0 < r < R` the open
+annulus `A = ball c R \ closedBall c r` satisfies `n^n μ (ball 0 1) μ A^(n-1) < P(A)^n`. -/
+theorem finrank_pow_mul_measure_ball_mul_measure_pow_lt_perimeter_ball_sdiff_closedBall_pow
+    (hn : finrank ℝ E ≠ 0) {R : ℝ} (hr : 0 < r) (h : r < R) :
+    (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * μ (ball 0 1) *
+        μ (ball c R \ closedBall c r) ^ (finrank ℝ E - 1) <
+      perimeter μ ⊤ (ball c R \ closedBall c r) ^ finrank ℝ E := by
+  have hv : 0 ≤ R ^ finrank ℝ E - r ^ finrank ℝ E :=
+    sub_nonneg.2 (pow_le_pow_left₀ hr.le h.le _)
+  refine finrank_pow_mul_measure_ball_mul_measure_pow_lt_perimeter_pow_of_lt hn
+    (add_nonneg (pow_pos (hr.trans h) _).le (pow_pos hr _).le) hv
+    (perimeter_ball_sdiff_closedBall_of_pos hr h) ?_ ?_
+  · rw [← ofReal_measureReal (measure_ne_top_of_subset sdiff_subset measure_ball_lt_top.ne),
+      μ.addHaar_real_ball_sdiff_closedBall c hr.le h.le, ENNReal.ofReal_mul hv,
+      ofReal_measureReal measure_ball_lt_top.ne]
+  · obtain ⟨k, hk⟩ := Nat.exists_eq_add_one_of_ne_zero hn
+    rw [hk, Nat.add_sub_cancel]
+    calc (R ^ (k + 1) - r ^ (k + 1)) ^ k ≤ (R ^ (k + 1)) ^ k :=
+          pow_le_pow_left₀ (hk ▸ hv) (sub_le_self _ (by positivity)) _
+      _ = (R ^ k) ^ (k + 1) := by rw [← pow_mul, ← pow_mul, mul_comm]
+      _ < (R ^ k + r ^ k) ^ (k + 1) :=
+          pow_lt_pow_left₀ (lt_add_of_pos_right _ (pow_pos hr k)) (pow_pos (hr.trans h) k).le
+            k.succ_ne_zero
+
+/-- **The perimeter of two separated balls.** Balls of radii `r₁, r₂ > 0` whose centres are at
+distance more than `r₁ + r₂` have disjoint closures, so in dimension `n` their union
+has perimeter `n (r₁^(n-1) + r₂^(n-1)) μ (ball 0 1)`. -/
+theorem perimeter_ball_union_ball {c₁ c₂ : E} {r₁ r₂ : ℝ} (hr₁ : 0 < r₁) (hr₂ : 0 < r₂)
+    (h : r₁ + r₂ < dist c₁ c₂) :
+    perimeter μ ⊤ (ball c₁ r₁ ∪ ball c₂ r₂) = finrank ℝ E *
+      ENNReal.ofReal (r₁ ^ (finrank ℝ E - 1) + r₂ ^ (finrank ℝ E - 1)) * μ (ball 0 1) := by
+  rw [perimeter_union_of_disjoint_closure measurableSet_ball.nullMeasurableSet
+      measurableSet_ball.nullMeasurableSet ((closedBall_disjoint_closedBall h).mono
+        closure_ball_subset_closedBall closure_ball_subset_closedBall),
+    perimeter_ball hr₁, perimeter_ball hr₂, ENNReal.ofReal_add (by positivity) (by positivity)]
+  ring
+
+/-- **Two separated balls are a strict isoperimetric example.** In dimension `n ≥ 1`, balls of radii
+`r₁, r₂ > 0` whose centres are at distance more than `r₁ + r₂` have a union `B` with
+`n^n μ (ball 0 1) μ B^(n-1) < P(B)^n`. -/
+theorem finrank_pow_mul_measure_ball_mul_measure_pow_lt_perimeter_ball_union_ball_pow
+    (hn : finrank ℝ E ≠ 0) {c₁ c₂ : E} {r₁ r₂ : ℝ} (hr₁ : 0 < r₁) (hr₂ : 0 < r₂)
+    (h : r₁ + r₂ < dist c₁ c₂) :
+    (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * μ (ball 0 1) *
+        μ (ball c₁ r₁ ∪ ball c₂ r₂) ^ (finrank ℝ E - 1) <
+      perimeter μ ⊤ (ball c₁ r₁ ∪ ball c₂ r₂) ^ finrank ℝ E := by
+  refine finrank_pow_mul_measure_ball_mul_measure_pow_lt_perimeter_pow_of_lt hn
+    (v := r₁ ^ finrank ℝ E + r₂ ^ finrank ℝ E) (by positivity) (by positivity)
+    (perimeter_ball_union_ball hr₁ hr₂ h) ?_ ?_
+  · rw [measure_union (ball_disjoint_ball h.le) measurableSet_ball, μ.addHaar_ball_of_pos _ hr₁,
+      μ.addHaar_ball_of_pos _ hr₂, ← add_mul, ← ENNReal.ofReal_add (by positivity) (by positivity)]
+  · obtain ⟨k, hk⟩ := Nat.exists_eq_add_one_of_ne_zero hn
+    rw [hk, Nat.add_sub_cancel]
+    -- Both sides compare with `max r₁ r₂ ^ k * (r₁ ^ k + r₂ ^ k) ^ k`.
+    have h₁ : r₁ ^ (k + 1) + r₂ ^ (k + 1) ≤ max r₁ r₂ * (r₁ ^ k + r₂ ^ k) := by
+      rw [pow_succ', pow_succ', mul_add]
+      gcongr
+      exacts [le_max_left r₁ r₂, le_max_right r₁ r₂]
+    have h₂ : max r₁ r₂ ^ k < r₁ ^ k + r₂ ^ k := by
+      rcases max_choice r₁ r₂ with hmax | hmax <;> rw [hmax]
+      · exact lt_add_of_pos_right _ (pow_pos hr₂ k)
+      · exact lt_add_of_pos_left _ (pow_pos hr₁ k)
+    calc (r₁ ^ (k + 1) + r₂ ^ (k + 1)) ^ k ≤ (max r₁ r₂ * (r₁ ^ k + r₂ ^ k)) ^ k :=
+          pow_le_pow_left₀ (by positivity) h₁ _
+      _ = max r₁ r₂ ^ k * (r₁ ^ k + r₂ ^ k) ^ k := mul_pow _ _ _
+      _ < (r₁ ^ k + r₂ ^ k) * (r₁ ^ k + r₂ ^ k) ^ k :=
+          mul_lt_mul_of_pos_right h₂ (by positivity)
+      _ = (r₁ ^ k + r₂ ^ k) ^ (k + 1) := (pow_succ' _ _).symm
+
+/-- **The punctured ball is an isoperimetric equality case.** In a nontrivial space of dimension
+`n`, the punctured ball `ball c r \ {c}`, `r > 0`, satisfies
+`P(ball c r \ {c})^n = n^n μ (ball 0 1) μ (ball c r \ {c})^(n-1)`, since it agrees with
+`ball c r` up to a null set. It is nevertheless not a ball
+(`TauCeti.ball_sdiff_singleton_ne_ball`, `TauCeti.ball_sdiff_singleton_ne_closedBall`): equality
+in the isoperimetric inequality only determines a set up to null sets. -/
+theorem perimeter_ball_sdiff_singleton_pow [Nontrivial E] (hr : 0 < r) :
+    perimeter μ ⊤ (ball c r \ {c}) ^ finrank ℝ E =
+      finrank ℝ E ^ finrank ℝ E * μ (ball 0 1) * μ (ball c r \ {c}) ^ (finrank ℝ E - 1) := by
+  rw [perimeter_congr_ae (ae_restrict_of_ae (sdiff_null_ae_eq_self (measure_singleton c))),
+    measure_congr (sdiff_null_ae_eq_self (measure_singleton c)),
+    perimeter_ball_pow finrank_pos.ne' hr]
 
 end TauCeti

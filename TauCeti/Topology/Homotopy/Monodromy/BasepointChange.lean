@@ -82,17 +82,17 @@ subgroup recovered at its starting point. -/
 theorem range_mapOfEq_monodromy_path (hp : IsCoveringMap p) (γ : Path x₀ x₁)
     (e₀ : p ⁻¹' {x₀}) :
     (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩
-      (hp.monodromy ⟦γ⟧ e₀).2).range =
+      (hp.monodromy ⟦γ⟧ e₀).property).range =
       FundamentalGroup.basepointChangeSubgroup γ
-        (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e₀.2).range := by
+        (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e₀.property).range := by
   let γq : Path.Homotopic.Quotient x₀ x₁ := Path.Homotopic.Quotient.mk γ
   let e₁ : p ⁻¹' {x₁} := hp.monodromy γq e₀
   ext g
   -- The range criterion is stated with the subtype's endpoint proof, while `e₁` is the
   -- locally named monodromy endpoint; this change aligns those definitionally equal terms.
-  change g ∈ (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e₁.2).range ↔
+  change g ∈ (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e₁.property).range ↔
     g ∈ FundamentalGroup.basepointChangeSubgroup γ
-      (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e₀.2).range
+      (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e₀.property).range
   rw [← IsCoveringMap.monodromy_eq_self_iff_mem_range hp e₁ g,
     FundamentalGroup.mem_basepointChangeSubgroup_iff,
     ← IsCoveringMap.monodromy_eq_self_iff_mem_range hp e₀]
