@@ -37,7 +37,7 @@ example : evaln (fun z => [1][z]?) 1 oracle 0 = some ⟨1, 1⟩ := by
 example : evaln (fun z => [0][z]?) 1 oracle 0 = some ⟨0, 1⟩ := by
   simp
 
--- A zero-use query program supplies a zero answer even against an empty base oracle.
+-- A zero-use query program returns zero even when the base answer table supplies no answers.
 example : evaln (zero.boundedAnswers (fun _ => none) 1 0) 1 oracle 0 = some ⟨0, 1⟩ :=
   evaln_succ_oracle_eq_some.2 ⟨le_rfl, 0,
     boundedAnswers_eq_some_iff.2 ⟨⟨0, 0⟩, by simp, le_rfl, rfl⟩, rfl⟩

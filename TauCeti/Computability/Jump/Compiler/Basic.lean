@@ -41,7 +41,7 @@ private theorem eval_jumpIndexTranslator (O : ℕ →. ℕ) (d : Code) (e : ℕ)
   simp only [eval_curry, exists_jumpIndexCode.choose_spec, Nat.unpair_pair, ofNat_encode]
 
 /-- The compiled jump program composes one oracle query with a translator that returns the
-translated index even on the empty oracle. -/
+translated index even on the nowhere-defined oracle. -/
 theorem exists_jumpProgram_eq_comp_oracle (d : Code) :
     ∃ t : Code, d.jumpProgram = comp oracle t ∧
       ∀ e, eval (fun _ => Part.none) t e = Part.some (d.jumpIndex e) :=

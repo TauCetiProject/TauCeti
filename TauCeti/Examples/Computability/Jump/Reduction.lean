@@ -20,6 +20,6 @@ open TauCeti.Oracle.Single.Code
 example (B : Set ℕ) (n : ℕ) :
     eval (Set.jump^[n] B).oracle (jumpProgram^[n] zero) =
       (Set.jump^[n] (∅ : Set ℕ)).oracle := by
-  apply Set.eval_iterate_jumpProgram_of_eval_eq_oracle
+  apply zero.eval_iterate_jumpProgram_of_eval_eq_oracle
   rw [Set.oracle_empty]
   exact funext eval_zero

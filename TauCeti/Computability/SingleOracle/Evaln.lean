@@ -193,19 +193,6 @@ theorem evaln_succ_comp_eq_some {cf cg : Code} :
   simp only [evaln, bind, Option.bind_eq_some_iff, Option.guard_eq_some', exists_const]
   grind
 
-/-- `comp oracle succ` queries address `n + 1` with use `n + 2` if the address is below
-the fuel and an answer is supplied there. Otherwise the run fails. -/
-theorem evaln_comp_oracle_succ : evaln σ k (comp oracle succ) n =
-    if n + 1 < k then (σ (n + 1)).map (fun y => ⟨y, n + 2⟩) else none := by
-  cases k with
-  | zero => simp
-  | succ k =>
-    simp only [Nat.lt_succ_iff]
-    by_cases h : n + 1 ≤ k
-    · have hn : n ≤ k := Nat.le_of_succ_le h
-      cases ha : σ (n + 1) <;> simp [evaln, hn, h, ha]
-    · by_cases hn : n ≤ k <;> simp [evaln, hn, h]
-
 /-- Primitive recursion at zero runs the base program. -/
 @[simp]
 theorem evaln_succ_prec_zero_eq_some {cf cg : Code} {a : ℕ} :
@@ -241,8 +228,9 @@ theorem evaln_succ_rfind' {cf : Code} {a m : ℕ} :
   rw [evaln]
   simp only [Nat.unpaired, Nat.unpair_pair]
 
-/-- `rfind' cf` at `m` runs `cf` at `m`. On output `0` it returns `m`; otherwise it continues the
-search at `m + 1` with one less fuel. Its use is the largest use of the runs of `cf` it makes. -/
+/-- `rfind' cf` probes `cf` at `Nat.pair a m`. A zero output returns `m`. A nonzero output
+continues at `Nat.pair a (m + 1)` with one less fuel. The search records the largest use of
+its probes. -/
 @[simp]
 theorem evaln_succ_rfind'_eq_some {cf : Code} {a m : ℕ} :
     evaln σ (k + 1) (rfind' cf) (Nat.pair a m) = some d ↔ Nat.pair a m ≤ k ∧
@@ -266,6 +254,28 @@ theorem evaln_bound : ∀ {k c n d}, evaln σ k c n = some d → n < k
 /-- A run at fuel `k` fails on every input at or above `k`. -/
 theorem evaln_eq_none_of_le {c : Code} (h : k ≤ n) : evaln σ k c n = none :=
   Option.eq_none_iff_forall_ne_some.2 fun _ hd => (evaln_bound hd).not_ge h
+
+/-- A bounded run of `comp oracle t` queries the address returned by `t` if it is below the fuel
+and an answer is supplied. Its use is the maximum of the address computation's use and one more
+than the queried address. -/
+theorem evaln_comp_oracle (t : Code) : evaln σ k (comp oracle t) n =
+    (evaln σ k t n).bind (fun r =>
+      if r.output < k then (σ r.output).map (fun y => ⟨y, max r.use (r.output + 1)⟩)
+      else none) := by
+  cases k with
+  | zero => simp
+  | succ k =>
+    by_cases hn : n ≤ k
+    · rw [evaln]
+      cases ht : evaln σ (k + 1) t n with
+      | none => simp [hn, ht]
+      | some r =>
+        by_cases hq : r.output ≤ k
+        · cases ha : σ r.output <;> simp [evaln, hn, ht, hq, ha, Nat.lt_succ_iff]
+        · simp [evaln, hn, ht, hq, Nat.lt_succ_iff]
+    · have ht : evaln σ (k + 1) t n = none := evaln_eq_none_of_le (by omega)
+      rw [evaln, ht]
+      simp [hn]
 
 /-- Every input is a pairing `Nat.pair a m`, the form in which the clauses for `prec` and
 `rfind'` are stated. -/
@@ -625,23 +635,8 @@ theorem exists_forall_evaln_comp_oracle_eq_map {t : Code} {x q : ℕ}
   refine ⟨max j (q + 1), fun σ k hk => ?_⟩
   have hrun := evaln_eq_some_of_use_eq_zero σ
     (evaln_mono ((le_max_left _ _).trans hk) hr) rfl
-  have hindex := (le_max_right j (q + 1)).trans hk
-  cases k with
-  | zero => simp at hrun
-  | succ k =>
-    have hx := Nat.lt_succ_iff.1 (evaln_bound hrun)
-    have hq := Nat.succ_le_succ_iff.1 hindex
-    apply Option.ext
-    intro r
-    rw [evaln_succ_comp_eq_some, Option.map_eq_some_iff]
-    constructor
-    · rintro ⟨-, r', r'', hr', hr'', rfl⟩
-      rw [evaln_unique hr' hrun] at hr'' ⊢
-      obtain ⟨-, y, hy, rfl⟩ := evaln_succ_oracle_eq_some.1 hr''
-      exact ⟨y, hy, by simp⟩
-    · rintro ⟨y, hy, rfl⟩
-      exact ⟨hx, ⟨q, 0⟩, ⟨y, q + 1⟩, hrun,
-        evaln_succ_oracle_eq_some.2 ⟨hq, y, hy, rfl⟩, by simp⟩
+  have hq : q < k := (le_max_right j (q + 1)).trans hk
+  simp [evaln_comp_oracle, hrun, hq]
 
 /-! ### Bounded oracle answers -/
 
