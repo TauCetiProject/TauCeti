@@ -11,6 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import TauCeti.Algebra.Star.SelfAdjoint
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Coercive bounded operators
@@ -18,7 +19,9 @@ import TauCeti.Algebra.Star.SelfAdjoint
 A uniformly coercive real part of the quadratic form makes a bounded operator
 on a real or complex Hilbert space invertible. Self-adjointness is not needed.
 The inverse follows from Mathlib’s operator invertibility criterion for a
-uniform lower bound on the norm of the quadratic form.
+uniform lower bound on the norm of the quadratic form. The inverse is coercive
+again, with constant `c / (‖N‖ + 1)²`
+(`ContinuousLinearMap.mul_norm_sq_le_re_inner_inverse_apply`).
 For complex operators the same argument applied to a scalar shift bounds the
 real part of every spectral value below by the coercivity constant.
 
@@ -78,6 +81,34 @@ theorem isUnit_of_coercive [CompleteSpace E] (N : E →L[𝕜] E) {c : ℝ}
   apply isUnit_of_forall_le_norm_inner_map N (c := ⟨c, hc.le⟩) hc
   intro x
   exact (mul_comm _ _).le.trans ((hcoer x).trans (RCLike.re_le_norm _))
+
+/-- A bounded operator with a uniformly coercive real quadratic form is invertible. -/
+theorem isInvertible_of_coercive [CompleteSpace E] (N : E →L[𝕜] E) {c : ℝ}
+    (hc : 0 < c) (hcoer : ∀ z, c * ‖z‖ ^ 2 ≤ RCLike.re ⟪N z, z⟫_𝕜) : N.IsInvertible :=
+  isInvertible_iff_isUnit.2 (isUnit_of_coercive N hc hcoer)
+
+/-- **The inverse of a coercive operator is coercive.** If `c ‖z‖² ≤ re ⟪N z, z⟫` with `c > 0`,
+then `N` is invertible and `c / (‖N‖ + 1)² ‖w‖² ≤ re ⟪N⁻¹ w, w⟫`: writing `w = N u`, the form
+`re ⟪N⁻¹ w, w⟫ = re ⟪N u, u⟫` is at least `c ‖u‖²`, and `‖w‖ ≤ (‖N‖ + 1) ‖u‖`. No self-adjointness
+is needed. -/
+theorem mul_norm_sq_le_re_inner_inverse_apply [CompleteSpace E] (N : E →L[𝕜] E) {c : ℝ}
+    (hc : 0 < c) (hcoer : ∀ z, c * ‖z‖ ^ 2 ≤ RCLike.re ⟪N z, z⟫_𝕜) (w : E) :
+    c / (‖N‖ + 1) ^ 2 * ‖w‖ ^ 2 ≤ RCLike.re ⟪N.inverse w, w⟫_𝕜 := by
+  obtain ⟨e, rfl⟩ := isInvertible_of_coercive N hc hcoer
+  set u := e.symm w
+  have hw : w = e u := (e.apply_symm_apply w).symm
+  have hu : ‖w‖ ≤ (‖(e : E →L[𝕜] E)‖ + 1) * ‖u‖ := by
+    rw [hw]
+    exact ((e : E →L[𝕜] E).le_opNorm u).trans
+      (mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg u))
+  have hre : RCLike.re ⟪(e : E →L[𝕜] E).inverse w, w⟫_𝕜 = RCLike.re ⟪(e : E →L[𝕜] E) u, u⟫_𝕜 := by
+    rw [inverse_equiv, ← inner_conj_symm, RCLike.conj_re, hw]
+    simp [u]
+  rw [hre, div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+  calc c * ‖w‖ ^ 2 ≤ c * ((‖(e : E →L[𝕜] E)‖ + 1) * ‖u‖) ^ 2 :=
+        mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg w) hu 2) hc.le
+    _ = c * ‖u‖ ^ 2 * (‖(e : E →L[𝕜] E)‖ + 1) ^ 2 := by ring
+    _ ≤ _ := mul_le_mul_of_nonneg_right (hcoer u) (by positivity)
 
 /-- Conjugating a Lyapunov identity by an inverse self-adjoint square root gives the
 Hermitian part of the similar operator. -/
@@ -218,14 +249,15 @@ theorem le_re_of_mem_spectrum_of_positive_lyapunov
   have hRR : R * R = C := by
     simpa only [CFC.sqrt_eq_rpow, R] using CFC.sqrt_mul_sqrt_self C hC.nonneg
   -- The inverse-equivalence constructor uses composition; translate at this boundary only.
-  let e := ContinuousLinearEquiv.equivOfInverse' R Rinv
+  let e := ContinuousLinearEquiv.ofContinuousLinearMap R Rinv
     (by simpa only [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using hRRinv)
     (by simpa only [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using hRinvR)
   have he : e.conjContinuousAlgEquiv.toAlgEquiv W = R * W * Rinv := by
     ext x
     simp only [ContinuousAlgEquiv.coe_toAlgEquiv,
       ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply,
-      ContinuousLinearEquiv.equivOfInverse'_apply, ContinuousLinearEquiv.symm_equivOfInverse',
+      ContinuousLinearEquiv.coe_ofContinuousLinearMap,
+      ContinuousLinearEquiv.symm_ofContinuousLinearMap,
       mul_apply_eq_comp, e]
   have hz' : z ∈ spectrum ℂ (e.conjContinuousAlgEquiv.toAlgEquiv W) := by
     rwa [AlgEquiv.spectrum_eq]

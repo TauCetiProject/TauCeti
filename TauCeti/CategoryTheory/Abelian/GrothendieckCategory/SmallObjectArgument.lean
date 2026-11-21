@@ -72,7 +72,7 @@ object argument. -/
 lemma hasSmallObjectArgument_of_le_monomorphisms (I : MorphismProperty C) [IsSmall.{w} I]
     (hI : I ≤ monomorphisms C) : HasSmallObjectArgument.{w} I := by
   obtain ⟨κ, hκ, hIκ⟩ :=
-    HasCardinalLT.exists_regular_cardinal_forall.{w} fun f : I.toSet ↦ Subobject f.1.left
+    HasCardinalLT.exists_regular_cardinal_forall.{w} fun f : I.toSet ↦ Subobject f.val.left
   have : Fact κ.IsRegular := ⟨hκ⟩
   have : Nonempty κ.ord.ToType := by simpa using hκ.ne_zero
   have := WellFoundedLT.toOrderBot κ.ord.ToType

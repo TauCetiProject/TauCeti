@@ -11,601 +11,604 @@ import Mathlib.GroupTheory.NoncommPiCoprod
 import TauCeti.GroupTheory.Commutator
 
 /-!
-# The Kervaire–Steinberg universal central extension and algebraic `K₂`
+# The Steinberg group as the universal central extension of `E(R)`
 
-For any possibly noncommutative ring `R`, the canonical homomorphism
-`φ : St(R) →* GL_∞(R)` from the stable Steinberg group `SteinbergGroup ℕ R` to the stable general
-linear group has image the stable elementary subgroup `E_∞(R)` and central kernel `K₂(R)`.
-Moreover, the resulting central extension `St(R) →* E_∞(R)` is universal: every central extension
-of `E_∞(R)` receives a unique homomorphism from `St(R)` over `E_∞(R)`.
+For an associative unital ring `R`, the canonical homomorphism
+`TauCeti.SteinbergGroup.toStableGL : St(R) →* GL_∞(R)` has image the stable elementary subgroup
+`E_∞(R)`. This file proves the **Kervaire–Steinberg theorem**:
 
-The proof of centrality (Milnor, Theorem 5.1; Weibel, Theorem 5.2.1) embeds each element
-`z ∈ ker φ` in a finite-stage subgroup `H_N`, shows that `H_N` normalizes the column and row
-unipotent subgroups `P_N = ⟨x_{i, N}(a) | i < N⟩` and `Q_N = ⟨x_{N, j}(a) | j < N⟩`, and uses
-injectivity of `φ` on `P_N` and `Q_N` (via `MonoidHom.noncommPiCoprod`, `Matrix.upperBlockGL`,
-and `Matrix.lowerBlockGL`) to deduce that `z` centralizes both `P_N` and `Q_N`, hence every
-commutator `xᵢⱼ(a) = ⁅x_{i, N}(a), x_{N, j}(1)⁆`.
-
-The proof of universality (Milnor, Theorem 5.10; Weibel, Theorem 5.5) takes any homomorphism
-`q : E →* GL_∞(R)` with image `E_∞(R)` and central kernel, picks arbitrary lifts `sᵢⱼ(a) ∈ E` of
-`eᵢⱼ(a)`, and uses the Hall–Witt identity together with central-kernel commutator invariance to
-show that the canonical lifts `yᵢⱼ(a) = ⁅sᵢₖ(a), sₖⱼ(1)⁆` are independent of `k ∉ {i, j}` and
-satisfy all three Steinberg relations. Uniqueness follows from the perfectness of `St(R)` via
-`MonoidHom.eq_of_comp_eq_of_ker_le_center`.
-
-Algebraic `K₂(R)` is defined as the kernel of `St(R) →* GL_∞(R)`. Centrality equips `K₂(R)` with
-a canonical commutative group structure, functorial in ring homomorphisms, fitting into the exact
-sequence `1 → K₂(R) → St(R) → GL_∞(R) → K₁(R) → 1`.
+1. **Centrality of the kernel (`K₂(R) ≤ Z(St(R))`).** Every element `z ∈ ker(St(R) →* GL_∞(R))`
+   comes from `Stₙ(R)` for some `n`. Inside `St_{n + 1}(R)`, the stabilized subgroup `Stₙ(R)`
+   normalizes the `n`-th column root subgroup `Pₙ = ⟨x_{in}(a) | i < n⟩`, on which `toGL` is
+   injective via upper block unipotent matrices in `GL_{n + 1}(R)`. Hence `z` centralizes `Pₙ`,
+   and by opposite-ring inverse-transpose duality (`IndexedSteinbergGroup.transposeOp`) it also
+   centralizes the `n`-th row root subgroup `⟨x_{nj}(b) | j < n⟩`, and therefore every generator
+   `x_{pq}(b) = ⁅x_{pn}(b), x_{nq}(1)⁆` with `p, q < n`.
+2. **Universal central extension.** Given an index type `ι` in which any four indices admit a fifth
+   distinct index (in particular `|ι| ≥ 5` or `Infinite ι`), a homomorphism `φ : St_ι(R) →* G`, and
+   a homomorphism `q : E →* G` (with `E` in an arbitrary universe) satisfying `φ.range ≤ q.range`
+   and `q.ker ≤ Z(E)`, commutators `⁅u, v⁆` in `E` depend only on `q(u)` and `q(v)`. Defining
+   `ψ(x_{ij}(a)) = ⁅u_{im}(a), u_{mj}(1)⁆` using a chosen auxiliary index `m` and lifts `u` in `E`,
+   the Hall–Witt commutator-associativity lemma `TauCeti.commutatorElement_assoc_of_commute` shows
+   independence of `m` and establishes all three Steinberg relations in `E`. Since `St_ι(R)` is
+   perfect, the resulting lift `ψ : St_ι(R) →* E` satisfying `q ∘ ψ = φ` is unique. In particular,
+   every central extension out of `St_ι(R)`—including `MonoidHom.id (St_ι(R))` and
+   `SteinbergGroup.toElementarySubgroup R : St(R) →* E_∞(R)`—is a universal central extension.
 
 ## Main definitions
 
-* `TauCeti.AlgebraicK2`: algebraic `K₂(R)`, the kernel of `St(R) →* GL_∞(R)`, equipped with its
-  commutative group structure.
-* `TauCeti.AlgebraicK2.map`: the homomorphism `K₂(R) →* K₂(S)` induced by a ring homomorphism.
+* `TauCeti.IndexedSteinbergGroup.liftCentralExtension`: the canonical lift `St_ι(R) →* E` of
+  `φ : St_ι(R) →* G` along any homomorphism `q : E →* G` with `φ.range ≤ q.range` and central
+  kernel, whenever any four indices in `ι` admit a fifth distinct index.
+* `TauCeti.AlgebraicK2`: Milnor's algebraic `K₂(R) := ker (St(R) →* GL_∞(R))`, together with its
+  `CommGroup` instance and functoriality `TauCeti.AlgebraicK2.map`.
 
 ## Main results
 
-* `TauCeti.SteinbergGroup.ker_toStableGL_le_center`: `ker (St(R) →* GL_∞(R))` is central in
+* `TauCeti.SteinbergGroup.ker_toStableGL_le_center`: `ker (toStableGL R)` lies in the center of
   `St(R)`.
-* `TauCeti.SteinbergGroup.isCentralExtension_toElementarySubgroup`: `St(R) →* E_∞(R)` is a
+* `TauCeti.SteinbergGroup.isCentralExtension_toElementarySubgroup`: `toElementarySubgroup R` is a
   central extension.
-* `TauCeti.SteinbergGroup.existsUnique_comp_eq_toStableGL`: universal property of
-  `St(R) →* GL_∞(R)` over any homomorphism `q : E →* GL_∞(R)` with image `E_∞(R)` and central
-  kernel.
-* `TauCeti.SteinbergGroup.isUniversalCentralExtension_toElementarySubgroup`: the Kervaire–Steinberg
-  theorem, stating that `St(R) →* E_∞(R)` is a universal central extension of `E_∞(R)`.
+* `TauCeti.IndexedSteinbergGroup.existsUnique_comp_eq_of_ker_le_center`,
+  `TauCeti.IndexedSteinbergGroup.existsUnique_comp_eq_of_five_le_card`,
+  `TauCeti.IndexedSteinbergGroup.existsUnique_comp_eq_of_infinite`: existence and uniqueness of
+  lifts from `St_ι(R)` into central extensions.
+* `TauCeti.IndexedSteinbergGroup.isUniversalCentralExtension_of_isCentralExtension`,
+  `TauCeti.IndexedSteinbergGroup.isUniversalCentralExtension_id_of_five_le_card`,
+  `TauCeti.IndexedSteinbergGroup.isUniversalCentralExtension_id_of_infinite`: `St_ι(R)` is
+  centrally closed when `|ι| ≥ 5` or `Infinite ι`.
+* `TauCeti.SteinbergGroup.existsUnique_comp_eq_toStableGL`: existence and uniqueness of lifts from
+  `St(R)` along any `q : E →* GL_∞(R)` with `E_∞(R) ≤ q.range` and central kernel.
+* `TauCeti.SteinbergGroup.isUniversalCentralExtension_toElementarySubgroup`:
+  `toElementarySubgroup R` satisfies `MonoidHom.IsUniversalCentralExtension`.
 * `TauCeti.SteinbergGroup.range_toStableGL_eq_ker_abelianizationOf`: exactness at `GL_∞(R)` of
   `1 → K₂(R) → St(R) → GL_∞(R) → K₁(R) → 1`.
-* `TauCeti.AlgebraicK2.map_id`, `TauCeti.AlgebraicK2.map_comp`, `TauCeti.AlgebraicK2.map_map`:
-  functoriality of algebraic `K₂`.
+* `TauCeti.steinberg_universalCentralExtension`: the packaged Kervaire–Steinberg universal central
+  extension theorem over `GL_∞(R)`.
 
 ## References
 
+* R. Steinberg, *Générateurs, relations et revêtements de groupes algébriques*, in *Colloq.
+  Théorie des Groupes Algébriques (Bruxelles, 1962)*, Librairie Universitaire, Louvain;
+  Gauthier-Villars, Paris (1962), 113–127.
+* M. Kervaire, *Multiplicateurs de Schur et K-théorie*, in *Essays on Topology and Related
+  Topics* (Mémoires dédiés à Georges de Rham), Springer (1970), 212–225.
 * J. Milnor, *Introduction to Algebraic K-Theory*, Annals of Mathematics Studies 72 (1971), §5,
   Theorems 5.1 and 5.10.
 * C. A. Weibel, *The K-book: An Introduction to Algebraic K-Theory*, Graduate Studies in
-  Mathematics 145 (2013), Chapter III, §5, Theorems 5.2.1 and 5.5, Lemma 5.3.3.
+  Mathematics 145 (2013), Chapter III, §5, Theorem 5.2.1, Lemma 5.3.3, and Theorem 5.5.
 -/
 
 public section
 
-open Matrix
+noncomputable section
+
+open Matrix Subgroup
 
 open scoped commutatorElement
 
-universe u v w
-
 namespace TauCeti
+
+universe u v
+
+/-! ## Centrality of `ker (toStableGL R)` -/
 
 namespace SteinbergGroup
 
+section Center
+
 variable {R : Type u} [Ring R]
 
-/-! ## Centrality of `ker (St(R) →* GL_∞(R))` -/
+private theorem colHomFin_pairwise (n : ℕ) :
+    Pairwise fun i j : Fin n ↦ ∀ a b : Multiplicative R,
+      Commute (IndexedSteinbergGroup.xHom (Fin.castSucc_lt_last i).ne a)
+        (IndexedSteinbergGroup.xHom (Fin.castSucc_lt_last j).ne b) := by
+  intro i j _ a b
+  simp only [IndexedSteinbergGroup.xHom_apply]
+  exact IndexedSteinbergGroup.commute_x
+    (Fin.castSucc_lt_last i).ne (Fin.castSucc_lt_last j).ne
+    (Fin.castSucc_lt_last j).ne.symm (Fin.castSucc_lt_last i).ne.symm a.toAdd b.toAdd
 
-section Centrality
+/-- The homomorphism `(Fin n → Multiplicative R) →* St_{n + 1}(R)` assembling the commuting column
+root subgroups `x_{i, n}` (`i < n`). -/
+private def colHomFin (n : ℕ) :
+    (Fin n → Multiplicative R) →* IndexedSteinbergGroup (Fin (n + 1)) R :=
+  MonoidHom.noncommPiCoprod
+    (fun i : Fin n ↦ IndexedSteinbergGroup.xHom (Fin.castSucc_lt_last i).ne)
+    (colHomFin_pairwise n)
 
-variable (R) in
-/-- The finite-stage subgroup `H_n` of `St(R)` generated by all `xᵢⱼ(a)` with `i, j < n`. -/
-private def stageSubgroup (n : ℕ) : Subgroup (SteinbergGroup ℕ R) :=
-  (mapIndex (R := R) (Fin.valEmbedding (n := n))).range
-
-variable (R) in
-/-- The column unipotent subgroup `P_n` of `St(R)` generated by `x_{i, n}(a)` for `i < n`. -/
-private def colSubgroup (n : ℕ) : Subgroup (SteinbergGroup ℕ R) :=
-  Subgroup.closure {x : SteinbergGroup ℕ R | ∃ (i : Fin n) (a : R), gen (Nat.ne_of_lt i.2) a = x}
-
-variable (R) in
-/-- The row unipotent subgroup `Q_n` of `St(R)` generated by `x_{n, j}(a)` for `j < n`. -/
-private def rowSubgroup (n : ℕ) : Subgroup (SteinbergGroup ℕ R) :=
-  Subgroup.closure {x : SteinbergGroup ℕ R | ∃ (j : Fin n) (a : R), gen (Nat.ne_of_gt j.2) a = x}
-
-private theorem stageSubgroup_eq_closure (n : ℕ) :
-    stageSubgroup R n =
-      Subgroup.closure {x : SteinbergGroup ℕ R |
-        ∃ (i j : Fin n) (hij : i ≠ j) (a : R), gen (Fin.val_ne_of_ne hij) a = x} := by
-  rw [stageSubgroup, MonoidHom.range_eq_map, ← closure_gen_eq_top (Fin n) R, MonoidHom.map_closure]
-  congr 1
-  ext x
-  constructor
-  · rintro ⟨_, ⟨i, j, hij, a, rfl⟩, rfl⟩
-    exact ⟨i, j, hij, a, (mapIndex_gen Fin.valEmbedding hij a).symm⟩
-  · rintro ⟨i, j, hij, a, rfl⟩
-    exact ⟨gen hij a, ⟨i, j, hij, a, rfl⟩, mapIndex_gen Fin.valEmbedding hij a⟩
-
-/-- Any generator `xᵢⱼ(a)` of `H_n` conjugates any generator `x_{l, n}(b)` of `P_n` into `P_n`. -/
-private theorem gen_conj_col_mem (n : ℕ) {i j l : Fin n} (hij : i ≠ j) (a b : R) :
-    gen (Fin.val_ne_of_ne hij) a * gen (Nat.ne_of_lt l.2) b * (gen (Fin.val_ne_of_ne hij) a)⁻¹ ∈
-      colSubgroup R n := by
-  by_cases hjl : j = l
-  · subst hjl
-    have hconj :
-        gen (Fin.val_ne_of_ne hij) a * gen (Nat.ne_of_lt j.2) b *
-            (gen (Fin.val_ne_of_ne hij) a)⁻¹ =
-          ⁅gen (Fin.val_ne_of_ne hij) a, gen (Nat.ne_of_lt j.2) b⁆ *
-            gen (Nat.ne_of_lt j.2) b := by
-      rw [commutatorElement_def, mul_assoc, mul_assoc, inv_mul_cancel, mul_one]
-    rw [hconj, commutatorElement_gen _ _ (Nat.ne_of_lt i.2)]
-    exact mul_mem (Subgroup.subset_closure ⟨i, a * b, rfl⟩)
-      (Subgroup.subset_closure ⟨j, b, rfl⟩)
-  · have hcomm : Commute (gen (Fin.val_ne_of_ne hij) a) (gen (Nat.ne_of_lt l.2) b) :=
-      commute_gen _ _ (Fin.val_ne_of_ne hjl) (Nat.ne_of_gt i.2) a b
-    rw [hcomm.mul_inv_cancel]
-    exact Subgroup.subset_closure ⟨l, b, rfl⟩
-
-/-- `H_n` normalizes the column subgroup `P_n`. -/
-private theorem stageSubgroup_le_normalizer_colSubgroup (n : ℕ) :
-    stageSubgroup R n ≤ Subgroup.normalizer (colSubgroup R n : Set (SteinbergGroup ℕ R)) := by
-  rw [stageSubgroup_eq_closure, colSubgroup]
-  refine closure_le_normalizer_closure ?_ ?_
-  · rintro _ ⟨i, j, hij, a, rfl⟩ _ ⟨l, b, rfl⟩
-    exact gen_conj_col_mem n hij a b
-  · rintro _ ⟨i, j, hij, a, rfl⟩ _ ⟨l, b, rfl⟩
-    simpa [colSubgroup, gen_inv] using gen_conj_col_mem n hij (-a) b
-
-/-- Any generator `xᵢⱼ(a)` of `H_n` conjugates any generator `x_{n, l}(b)` of `Q_n` into `Q_n`. -/
-private theorem gen_conj_row_mem (n : ℕ) {i j l : Fin n} (hij : i ≠ j) (a b : R) :
-    gen (Fin.val_ne_of_ne hij) a * gen (Nat.ne_of_gt l.2) b * (gen (Fin.val_ne_of_ne hij) a)⁻¹ ∈
-      rowSubgroup R n := by
-  by_cases hil : i = l
-  · subst hil
-    have hconj :
-        gen (Fin.val_ne_of_ne hij) a * gen (Nat.ne_of_gt i.2) b *
-            (gen (Fin.val_ne_of_ne hij) a)⁻¹ =
-          ⁅gen (Fin.val_ne_of_ne hij) a, gen (Nat.ne_of_gt i.2) b⁆ *
-            gen (Nat.ne_of_gt i.2) b := by
-      rw [commutatorElement_def, mul_assoc, mul_assoc, inv_mul_cancel, mul_one]
-    rw [hconj, commutatorElement_gen_reverse _ _ (Nat.ne_of_gt j.2)]
-    exact mul_mem (Subgroup.subset_closure ⟨j, -(b * a), rfl⟩)
-      (Subgroup.subset_closure ⟨i, b, rfl⟩)
-  · have hcomm : Commute (gen (Fin.val_ne_of_ne hij) a) (gen (Nat.ne_of_gt l.2) b) :=
-      commute_gen _ _ (Nat.ne_of_lt j.2) (Fin.val_ne_of_ne (Ne.symm hil)) a b
-    rw [hcomm.mul_inv_cancel]
-    exact Subgroup.subset_closure ⟨l, b, rfl⟩
-
-/-- `H_n` normalizes the row subgroup `Q_n`. -/
-private theorem stageSubgroup_le_normalizer_rowSubgroup (n : ℕ) :
-    stageSubgroup R n ≤ Subgroup.normalizer (rowSubgroup R n : Set (SteinbergGroup ℕ R)) := by
-  rw [stageSubgroup_eq_closure, rowSubgroup]
-  refine closure_le_normalizer_closure ?_ ?_
-  · rintro _ ⟨i, j, hij, a, rfl⟩ _ ⟨l, b, rfl⟩
-    exact gen_conj_row_mem n hij a b
-  · rintro _ ⟨i, j, hij, a, rfl⟩ _ ⟨l, b, rfl⟩
-    simpa [rowSubgroup, gen_inv] using gen_conj_row_mem n hij (-a) b
-
-variable (R) in
-/-- The homomorphism `(Fin n → Multiplicative R) →* St(R)` parametrizing the column subgroup `P_n`.
--/
-private def colHom (n : ℕ) : (Fin n → Multiplicative R) →* SteinbergGroup ℕ R :=
-  MonoidHom.noncommPiCoprod (fun i : Fin n ↦ genHom (Nat.ne_of_lt i.2))
-    (show Pairwise fun i j : Fin n ↦ ∀ a b,
-        Commute (genHom (R := R) (Nat.ne_of_lt i.2) a) (genHom (R := R) (Nat.ne_of_lt j.2) b) from
-      fun i j _ a b ↦ by
-        rw [genHom_apply, genHom_apply]
-        exact commute_gen _ _ (Nat.ne_of_gt j.2) (Nat.ne_of_gt i.2) _ _)
-
-private theorem range_colHom (n : ℕ) : (colHom R n).range = colSubgroup R n := by
-  rw [colHom, MonoidHom.noncommPiCoprod_range, colSubgroup]
-  refine le_antisymm (iSup_le fun i ↦ ?_) ((Subgroup.closure_le _).2 ?_)
-  · rintro _ ⟨a, rfl⟩
-    exact Subgroup.subset_closure ⟨i, Multiplicative.toAdd a, (genHom_apply _ a).symm⟩
-  · rintro _ ⟨i, a, rfl⟩
-    exact le_iSup (fun j : Fin n ↦ (genHom (R := R) (Nat.ne_of_lt j.2)).range) i
-      ⟨Multiplicative.ofAdd a, genHom_apply _ _⟩
-
-variable (R) in
-/-- The upper block unipotent parametrization `(Fin n → Multiplicative R) →* GL (Fin n ⊕ Fin 1) R`.
--/
-private def upperColHom (n : ℕ) :
-    (Fin n → Multiplicative R) →* GL (Fin n ⊕ Fin 1) R where
-  toFun v := upperBlockGL (Matrix.of fun (i : Fin n) (_ : Fin 1) ↦ Multiplicative.toAdd (v i))
+/-- The upper block unipotent homomorphism `(Fin n → Multiplicative R) →* GL (Fin (n + 1)) R`
+placing a column vector in the last column. -/
+private def upperColGLHom (n : ℕ) :
+    (Fin n → Multiplicative R) →* GL (Fin (n + 1)) R where
+  toFun f := (finSumFinEquiv (m := n) (n := 1)).reindexGL R
+    (Matrix.upperBlockGL (Matrix.of fun i (_ : Fin 1) ↦ (f i).toAdd))
   map_one' := by
-    rw [← upperBlockGL_zero]
-    congr 1
-  map_mul' u v := by
-    rw [← upperBlockGL_add]
-    congr 1
+    have h0 : (Matrix.of fun (i : Fin n) (_ : Fin 1) ↦
+        (((1 : Fin n → Multiplicative R) i).toAdd : R)) = 0 := by
+      ext
+      simp only [Pi.one_apply, toAdd_one, Matrix.of_apply, Matrix.zero_apply]
+    rw [h0, Matrix.upperBlockGL_zero, map_one]
+  map_mul' f g := by
+    have hadd : (Matrix.of fun i (_ : Fin 1) ↦ ((f * g) i).toAdd) =
+        (Matrix.of fun i (_ : Fin 1) ↦ (f i).toAdd) +
+          (Matrix.of fun i (_ : Fin 1) ↦ (g i).toAdd) := by
+      ext i _
+      exact toAdd_mul (f i) (g i)
+    rw [hadd, Matrix.upperBlockGL_add, map_mul]
 
-private theorem toStableGL_comp_colHom (n : ℕ) :
-    (toStableGL R).comp (colHom R n) =
-      (StableGeneralLinearGroup.of R (n + 1)).comp
-        ((finSumFinEquiv.reindexGL R).toMonoidHom.comp (upperColHom R n)) := by
+private theorem upperColGLHom_apply (n : ℕ) (f : Fin n → Multiplicative R) :
+    upperColGLHom n f = (finSumFinEquiv (m := n) (n := 1)).reindexGL R
+      (Matrix.upperBlockGL (Matrix.of fun i (_ : Fin 1) ↦ (f i).toAdd)) :=
+  (rfl)
+
+private theorem upperColGLHom_injective (n : ℕ) :
+    Function.Injective (upperColGLHom (R := R) n) := by
+  intro f g hfg
+  rw [upperColGLHom_apply, upperColGLHom_apply] at hfg
+  have hblk := ((finSumFinEquiv (m := n) (n := 1)).reindexGL R).injective hfg
+  ext i
+  have hentry := congrArg (fun u : GL (Fin n ⊕ Fin 1) R ↦
+    (u : Matrix (Fin n ⊕ Fin 1) (Fin n ⊕ Fin 1) R) (Sum.inl i) (Sum.inr 0)) hblk
+  simpa [Matrix.coe_upperBlockGL] using hentry
+
+private theorem toGL_comp_colHomFin (n : ℕ) :
+    (IndexedSteinbergGroup.toGL (R := R)).comp (colHomFin n) = upperColGLHom n := by
   refine MonoidHom.pi_ext fun i a ↦ ?_
-  simp only [MonoidHom.comp_apply, colHom, MonoidHom.noncommPiCoprod_mulSingle, genHom_apply,
-    toStableGL_gen,
-    stableTransvection_eq_of (Nat.ne_of_lt i.2) (Nat.lt_succ_of_lt i.2) (Nat.lt_succ_self n),
-    MulEquiv.coe_toMonoidHom, upperColHom, MonoidHom.coe_mk, OneHom.coe_mk]
-  congr 1
-  have htr :
-      upperBlockGL (Matrix.of fun (j : Fin n) (_ : Fin 1) ↦
-          Multiplicative.toAdd (Pi.mulSingle (M := fun _ : Fin n ↦ Multiplicative R) i a j)) =
-        transvectionUnit (Sum.inl_ne_inr (a := i) (b := (0 : Fin 1))) (Multiplicative.toAdd a) := by
+  rw [MonoidHom.comp_apply, colHomFin, MonoidHom.noncommPiCoprod_mulSingle,
+    IndexedSteinbergGroup.xHom_apply, IndexedSteinbergGroup.toGL_x, upperColGLHom_apply]
+  have hblk : Matrix.upperBlockGL (Matrix.of fun k (_ : Fin 1) ↦
+      ((Pi.mulSingle i a : Fin n → Multiplicative R) k).toAdd) =
+      transvectionUnit (Sum.inl_ne_inr (a := i) (b := (0 : Fin 1))) a.toAdd := by
+    apply Units.ext
     ext (p | p) (q | q) <;>
-      simp [coe_transvectionUnit_eq_one_add_single, Matrix.single_apply, Matrix.one_apply,
-        Pi.mulSingle_apply, eq_comm, Fin.eq_zero]
-    split_ifs <;> simp
-  rw [htr, Equiv.reindexGL_transvectionUnit]
-  ext p q
-  simp [coe_transvectionUnit_eq_one_add_single, Matrix.single_apply, finSumFinEquiv, Fin.ext_iff]
+      simp [coe_transvectionUnit_eq_one_add_single, Matrix.one_apply, Matrix.single_apply,
+        Pi.mulSingle_apply, Fin.eq_zero, apply_ite Multiplicative.toAdd, eq_comm]
+  rw [hblk, Equiv.reindexGL_transvectionUnit]
+  have hi_eq : finSumFinEquiv (m := n) (n := 1) (Sum.inl i) = i.castSucc := by ext; simp
+  have hj_eq : finSumFinEquiv (m := n) (n := 1) (Sum.inr 0) = Fin.last n := by ext; simp
+  simp only [hi_eq, hj_eq]
 
-/-- `toStableGL R` is injective on the column subgroup `P_n`. -/
-private theorem eq_one_of_mem_colSubgroup (n : ℕ) {x : SteinbergGroup ℕ R}
-    (hx : x ∈ colSubgroup R n) (hφ : toStableGL R x = 1) : x = 1 := by
-  rw [← range_colHom] at hx
-  obtain ⟨v, rfl⟩ := hx
-  have h1 := DFunLike.congr_fun (toStableGL_comp_colHom n) v
-  simp only [MonoidHom.comp_apply, hφ, MulEquiv.coe_toMonoidHom] at h1
-  have h2 : upperColHom R n v = 1 :=
-    (finSumFinEquiv.reindexGL R).injective <| StableGeneralLinearGroup.of_injective (n + 1) <| by
-      simpa using h1.symm
-  have hv : v = 1 := by
-    ext i
-    have hentry := congrArg
-      (fun g : GL (Fin n ⊕ Fin 1) R ↦ (g : Matrix (Fin n ⊕ Fin 1) (Fin n ⊕ Fin 1) R)
-        (Sum.inl i) (Sum.inr 0)) h2
-    dsimp only [upperColHom, MonoidHom.coe_mk, OneHom.coe_mk] at hentry
-    rw [coe_upperBlockGL] at hentry
-    simpa [Matrix.one_apply] using hentry
-  rw [hv, map_one]
+private theorem mem_range_colHomFin {n : ℕ} (i : Fin n) (a : R) :
+    IndexedSteinbergGroup.x (Fin.castSucc_lt_last i).ne a ∈ (colHomFin (R := R) n).range := by
+  refine ⟨Pi.mulSingle i (Multiplicative.ofAdd a), ?_⟩
+  rw [colHomFin, MonoidHom.noncommPiCoprod_mulSingle, IndexedSteinbergGroup.xHom_apply,
+    toAdd_ofAdd]
 
-variable (R) in
-/-- The homomorphism `(Fin n → Multiplicative R) →* St(R)` parametrizing the row subgroup `Q_n`. -/
-private def rowHom (n : ℕ) : (Fin n → Multiplicative R) →* SteinbergGroup ℕ R :=
-  MonoidHom.noncommPiCoprod (fun j : Fin n ↦ genHom (Nat.ne_of_gt j.2))
-    (show Pairwise fun i j : Fin n ↦ ∀ a b,
-        Commute (genHom (R := R) (Nat.ne_of_gt i.2) a) (genHom (R := R) (Nat.ne_of_gt j.2) b) from
-      fun i j _ a b ↦ by
-        rw [genHom_apply, genHom_apply]
-        exact commute_gen _ _ (Nat.ne_of_lt i.2) (Nat.ne_of_lt j.2) _ _)
+private theorem range_stabilize_le_normalizer_colHomFin (n : ℕ) :
+    (stabilize (Nat.le_succ n) (R := R)).range ≤
+      Subgroup.normalizer ((colHomFin (R := R) n).range :
+        Set (IndexedSteinbergGroup (Fin (n + 1)) R)) := by
+  have hcastEmb : Fin.castLEEmb (Nat.le_succ n) = Fin.castSuccEmb := by
+    ext p
+    simp
+  have hconj : ∀ {i j : Fin n} (hij : i ≠ j) (c : R),
+      ((colHomFin (R := R) n).range).map
+        (MulAut.conj (stabilize (Nat.le_succ n) (IndexedSteinbergGroup.x hij c))) ≤
+        (colHomFin (R := R) n).range := by
+    intro i j hij c
+    have hrange : (colHomFin (R := R) n).range =
+        ⨆ k : Fin n, (IndexedSteinbergGroup.xHom (Fin.castSucc_lt_last k).ne).range :=
+      MonoidHom.noncommPiCoprod_range _
+    rw [hrange, Subgroup.map_iSup]
+    refine iSup_le fun k ↦ ?_
+    rintro _ ⟨_, ⟨a, rfl⟩, rfl⟩
+    simp only [stabilize, hcastEmb, IndexedSteinbergGroup.xHom_apply,
+      IndexedSteinbergGroup.mapIndex_x, Fin.castSuccEmb_apply, MonoidHom.coe_ofClass,
+      MulAut.conj_apply]
+    by_cases hjk : j = k
+    · subst hjk
+      rw [IndexedSteinbergGroup.x_mul_x_mul_inv (Fin.castSucc_injective n |>.ne hij)
+        (Fin.castSucc_lt_last j).ne (Fin.castSucc_lt_last i).ne, ← hrange]
+      exact mul_mem (mem_range_colHomFin i (c * a.toAdd)) (mem_range_colHomFin j a.toAdd)
+    · have hcomm := IndexedSteinbergGroup.commute_x
+        (Fin.castSucc_injective n |>.ne hij) (Fin.castSucc_lt_last k).ne
+        (Fin.castSucc_injective n |>.ne hjk) (Fin.castSucc_lt_last i).ne.symm c a.toAdd
+      rw [hcomm.eq, mul_inv_cancel_right, ← hrange]
+      exact mem_range_colHomFin k a.toAdd
+  rw [IndexedSteinbergGroup.range_le_iff]
+  intro i j hij c
+  rw [Subgroup.mem_normalizer_iff_map_conj_eq]
+  refine le_antisymm (hconj hij c) fun y hy ↦ ?_
+  refine ⟨(stabilize (Nat.le_succ n) (IndexedSteinbergGroup.x hij c))⁻¹ * y *
+    stabilize (Nat.le_succ n) (IndexedSteinbergGroup.x hij c), ?_,
+    by rw [MonoidHom.coe_ofClass, MulAut.conj_apply]; group⟩
+  have hinv : (stabilize (Nat.le_succ n) (IndexedSteinbergGroup.x hij c))⁻¹ =
+      stabilize (Nat.le_succ n) (IndexedSteinbergGroup.x hij (-c)) := by
+    rw [← map_inv, IndexedSteinbergGroup.x_inv]
+  have hmem := hconj hij (-c) ⟨y, hy, rfl⟩
+  simpa only [SetLike.mem_coe, MonoidHom.coe_ofClass, MulAut.conj_apply, ← hinv, inv_inv] using
+    hmem
 
-private theorem range_rowHom (n : ℕ) : (rowHom R n).range = rowSubgroup R n := by
-  rw [rowHom, MonoidHom.noncommPiCoprod_range, rowSubgroup]
-  refine le_antisymm (iSup_le fun j ↦ ?_) ((Subgroup.closure_le _).2 ?_)
-  · rintro _ ⟨a, rfl⟩
-    exact Subgroup.subset_closure ⟨j, Multiplicative.toAdd a, (genHom_apply _ a).symm⟩
-  · rintro _ ⟨j, a, rfl⟩
-    exact le_iSup (fun k : Fin n ↦ (genHom (R := R) (Nat.ne_of_gt k.2)).range) j
-      ⟨Multiplicative.ofAdd a, genHom_apply _ _⟩
+/-- Any element of `Stₙ(R)` in the kernel of `toGL` commutes, after stabilizing to `St_{n + 1}(R)`,
+with every column generator `x_{p, n}(b)` (`p < n`). -/
+private theorem commute_stabilize_col {n : ℕ} {u : IndexedSteinbergGroup (Fin n) R}
+    (hu : IndexedSteinbergGroup.toGL u = 1) (p : Fin n) (b : R) :
+    Commute (stabilize (Nat.le_succ n) u)
+      (IndexedSteinbergGroup.x (Fin.castSucc_lt_last p).ne b) := by
+  have hinf : (IndexedSteinbergGroup.toGL (ι := Fin (n + 1)) (R := R)).ker ⊓
+      (colHomFin (R := R) n).range = ⊥ := by
+    rw [eq_bot_iff]
+    rintro _ ⟨hker, ⟨f, rfl⟩⟩
+    have hf : upperColGLHom n f = 1 := by
+      rw [← toGL_comp_colHomFin, MonoidHom.comp_apply]
+      exact hker
+    have hf1 : f = 1 := upperColGLHom_injective n (hf.trans (map_one _).symm)
+    rw [hf1, map_one, Subgroup.mem_bot]
+  have hle := inf_normalizer_le_centralizer_of_inf_eq_bot Subgroup.le_normalizer_of_normal hinf
+  have hker_u : stabilize (Nat.le_succ n) u ∈
+      (IndexedSteinbergGroup.toGL (ι := Fin (n + 1)) (R := R)).ker := by
+    rw [MonoidHom.mem_ker, IndexedSteinbergGroup.toGL_mapIndex_castLE, hu, map_one]
+  have hmem : stabilize (Nat.le_succ n) u ∈
+      Subgroup.centralizer ((colHomFin (R := R) n).range :
+        Set (IndexedSteinbergGroup (Fin (n + 1)) R)) :=
+    hle ⟨hker_u, range_stabilize_le_normalizer_colHomFin n ⟨u, rfl⟩⟩
+  exact (Subgroup.mem_centralizer_iff.mp hmem _ (mem_range_colHomFin p b)).symm
 
-variable (R) in
-/-- The lower block unipotent parametrization `(Fin n → Multiplicative R) →* GL (Fin n ⊕ Fin 1) R`.
--/
-private def lowerRowHom (n : ℕ) :
-    (Fin n → Multiplicative R) →* GL (Fin n ⊕ Fin 1) R where
-  toFun v := lowerBlockGL (Matrix.of fun (_ : Fin 1) (j : Fin n) ↦ Multiplicative.toAdd (v j))
-  map_one' := by
-    rw [← lowerBlockGL_zero]
-    congr 1
-  map_mul' u v := by
-    rw [← lowerBlockGL_add]
-    congr 1
-
-private theorem toStableGL_comp_rowHom (n : ℕ) :
-    (toStableGL R).comp (rowHom R n) =
-      (StableGeneralLinearGroup.of R (n + 1)).comp
-        ((finSumFinEquiv.reindexGL R).toMonoidHom.comp (lowerRowHom R n)) := by
-  refine MonoidHom.pi_ext fun j a ↦ ?_
-  simp only [MonoidHom.comp_apply, rowHom, MonoidHom.noncommPiCoprod_mulSingle, genHom_apply,
-    toStableGL_gen,
-    stableTransvection_eq_of (Nat.ne_of_gt j.2) (Nat.lt_succ_self n) (Nat.lt_succ_of_lt j.2),
-    MulEquiv.coe_toMonoidHom, lowerRowHom, MonoidHom.coe_mk, OneHom.coe_mk]
-  congr 1
-  have htr :
-      lowerBlockGL (Matrix.of fun (_ : Fin 1) (k : Fin n) ↦
-          Multiplicative.toAdd (Pi.mulSingle (M := fun _ : Fin n ↦ Multiplicative R) j a k)) =
-        transvectionUnit (Sum.inr_ne_inl (a := j) (b := (0 : Fin 1))) (Multiplicative.toAdd a) := by
-    ext (p | p) (q | q) <;>
-      simp [coe_transvectionUnit_eq_one_add_single, Matrix.single_apply, Matrix.one_apply,
-        Pi.mulSingle_apply, eq_comm, Fin.eq_zero]
-    split_ifs <;> simp
-  rw [htr, Equiv.reindexGL_transvectionUnit]
-  ext p q
-  simp [coe_transvectionUnit_eq_one_add_single, Matrix.single_apply, finSumFinEquiv, Fin.ext_iff]
-
-/-- `toStableGL R` is injective on the row subgroup `Q_n`. -/
-private theorem eq_one_of_mem_rowSubgroup (n : ℕ) {x : SteinbergGroup ℕ R}
-    (hx : x ∈ rowSubgroup R n) (hφ : toStableGL R x = 1) : x = 1 := by
-  rw [← range_rowHom] at hx
-  obtain ⟨v, rfl⟩ := hx
-  have h1 := DFunLike.congr_fun (toStableGL_comp_rowHom n) v
-  simp only [MonoidHom.comp_apply, hφ, MulEquiv.coe_toMonoidHom] at h1
-  have h2 : lowerRowHom R n v = 1 :=
-    (finSumFinEquiv.reindexGL R).injective <| StableGeneralLinearGroup.of_injective (n + 1) <| by
-      simpa using h1.symm
-  have hv : v = 1 := by
-    ext j
-    have hentry := congrArg
-      (fun g : GL (Fin n ⊕ Fin 1) R ↦ (g : Matrix (Fin n ⊕ Fin 1) (Fin n ⊕ Fin 1) R)
-        (Sum.inr 0) (Sum.inl j)) h2
-    dsimp only [lowerRowHom, MonoidHom.coe_mk, OneHom.coe_mk] at hentry
-    rw [coe_lowerBlockGL] at hentry
-    simpa [Matrix.one_apply] using hentry
-  rw [hv, map_one]
-
-/-- Any element of `ker (toStableGL R) ∩ H_N` commutes with `x_{i, N}(a)` and `x_{N, j}(b)` for
-`i, j < N`. -/
-private theorem commute_of_mem_ker_of_mem_stageSubgroup {z : SteinbergGroup ℕ R}
-    (hz : z ∈ (toStableGL R).ker) {N : ℕ} (hzN : z ∈ stageSubgroup R N)
-    {i j : ℕ} (hi : i < N) (hj : j < N) (a b : R) :
-    Commute z (gen (Nat.ne_of_lt hi) a) ∧ Commute z (gen (Nat.ne_of_gt hj) b) := by
-  have hker_comm : ∀ g : SteinbergGroup ℕ R, toStableGL R (z * g * z⁻¹ * g⁻¹) = 1 := fun g ↦ by
-    simp only [map_mul, map_inv, MonoidHom.mem_ker.mp hz, one_mul, inv_one, mul_one, mul_inv_cancel]
-  constructor
-  · have hconj : z * gen (Nat.ne_of_lt hi) a * z⁻¹ ∈ colSubgroup R N :=
-      ((Subgroup.mem_normalizer_iff.mp (stageSubgroup_le_normalizer_colSubgroup N hzN)) _).mp
-        (Subgroup.subset_closure ⟨⟨i, hi⟩, a, rfl⟩)
-    have h1 := eq_one_of_mem_colSubgroup N
-      (mul_mem hconj (inv_mem (Subgroup.subset_closure ⟨⟨i, hi⟩, a, rfl⟩))) (hker_comm _)
-    exact mul_inv_eq_iff_eq_mul.mp (mul_inv_eq_one.mp h1)
-  · have hconj : z * gen (Nat.ne_of_gt hj) b * z⁻¹ ∈ rowSubgroup R N :=
-      ((Subgroup.mem_normalizer_iff.mp (stageSubgroup_le_normalizer_rowSubgroup N hzN)) _).mp
-        (Subgroup.subset_closure ⟨⟨j, hj⟩, b, rfl⟩)
-    have h1 := eq_one_of_mem_rowSubgroup N
-      (mul_mem hconj (inv_mem (Subgroup.subset_closure ⟨⟨j, hj⟩, b, rfl⟩))) (hker_comm _)
-    exact mul_inv_eq_iff_eq_mul.mp (mul_inv_eq_one.mp h1)
-
-variable (R) in
-/-- **Centrality of `K₂(R)`**: the kernel of `St(R) →* GL_∞(R)` lies in the center of `St(R)`. -/
+/-- **Milnor's centrality theorem (`K₂(R) ≤ Z(St(R))`).** The kernel of `toStableGL R` lies in the
+center of `SteinbergGroup R`. -/
 theorem ker_toStableGL_le_center :
-    (toStableGL R).ker ≤ Subgroup.center (SteinbergGroup ℕ R) := by
+    (toStableGL R).ker ≤ Subgroup.center (SteinbergGroup R) := by
   intro z hz
-  obtain ⟨m, y, rfl⟩ := exists_mapIndex_fin z
-  set z' := mapIndex Fin.valEmbedding y
-  have htop : (⊤ : Subgroup (SteinbergGroup ℕ R)) ≤ Subgroup.centralizer {z'} := by
-    rw [← closure_gen_eq_top ℕ R, Subgroup.closure_le]
-    rintro _ ⟨i, j, hij, a, rfl⟩
-    rw [SetLike.mem_coe, Subgroup.mem_centralizer_singleton_iff]
-    let N := max m (max i j + 1)
-    have hzN : z' ∈ stageSubgroup R N :=
-      ⟨stabilize R (le_max_left ..) y, mapIndex_valEmbedding_stabilize ..⟩
-    obtain ⟨hcol, hrow⟩ := commute_of_mem_ker_of_mem_stageSubgroup hz hzN
-      (by omega : i < N) (by omega : j < N) a 1
-    have hcomm : Commute z' (gen hij a) := by
-      rw [← mul_one a, ← commutatorElement_gen (Nat.ne_of_lt (by omega : i < N))
-        (Nat.ne_of_gt (by omega : j < N)) hij, commutatorElement_def]
-      exact ((hcol.mul_right hrow).mul_right hcol.inv_right).mul_right hrow.inv_right
-    exact hcomm.symm.eq
-  exact Subgroup.mem_center_iff.mpr fun g ↦
-    Subgroup.mem_centralizer_singleton_iff.mp (htop (Subgroup.mem_top g))
+  obtain ⟨m, u, rfl⟩ := exists_ofFin z
+  have htop : Subgroup.centralizer {ofFin R m u} = ⊤ := by
+    rw [IndexedSteinbergGroup.subgroup_eq_top_iff]
+    intro p q hpq b
+    let n := max m (max p q + 1)
+    have hmn : m ≤ n := le_max_left _ _
+    have hp : p < n := by omega
+    have hq : q < n := by omega
+    let u' : IndexedSteinbergGroup (Fin n) R := stabilize hmn u
+    have hu' : IndexedSteinbergGroup.toGL u' = 1 := by
+      apply StableGeneralLinearGroup.of_injective n
+      rw [← toStableGL_ofFin, ofFin_stabilize, map_one]
+      exact hz
+    have hu'_op : IndexedSteinbergGroup.toGL (IndexedSteinbergGroup.transposeOp u') = 1 := by
+      apply Units.ext
+      simp [IndexedSteinbergGroup.coe_toGL_transposeOp, hu']
+    have hcp : Commute (stabilize (Nat.le_succ n) u')
+        (IndexedSteinbergGroup.x (Fin.castSucc_lt_last ⟨p, hp⟩).ne b) :=
+      commute_stabilize_col hu' ⟨p, hp⟩ b
+    have hcq_op : Commute (stabilize (Nat.le_succ n) (IndexedSteinbergGroup.transposeOp u'))
+        (IndexedSteinbergGroup.x (Fin.castSucc_lt_last ⟨q, hq⟩).ne (MulOpposite.op (-1 : R))) :=
+      commute_stabilize_col hu'_op ⟨q, hq⟩ (MulOpposite.op (-1))
+    have hcq : Commute (stabilize (Nat.le_succ n) u')
+        (IndexedSteinbergGroup.x (Fin.castSucc_lt_last ⟨q, hq⟩).ne.symm (1 : R)) := by
+      have h := hcq_op.map (IndexedSteinbergGroup.transposeOp (ι := Fin (n + 1)) (R := R)).symm
+      rw [← IndexedSteinbergGroup.transposeOp_mapIndex, MulEquiv.symm_apply_apply,
+        IndexedSteinbergGroup.transposeOp_symm_x, MulOpposite.unop_op, neg_neg] at h
+      exact h
+    have hcomm_fin : Commute (stabilize (Nat.le_succ n) u')
+        ⁅IndexedSteinbergGroup.x (Fin.castSucc_lt_last ⟨p, hp⟩).ne b,
+          IndexedSteinbergGroup.x (Fin.castSucc_lt_last ⟨q, hq⟩).ne.symm (1 : R)⁆ := by
+      rw [commutatorElement_def]
+      exact ((hcp.mul_right hcq).mul_right hcp.inv_right).mul_right hcq.inv_right
+    have hpq_fin : (⟨p, hp⟩ : Fin n).castSucc ≠ (⟨q, hq⟩ : Fin n).castSucc := fun h ↦
+      hpq (congrArg Fin.val h)
+    rw [IndexedSteinbergGroup.commutatorElement_x _ _ hpq_fin, mul_one] at hcomm_fin
+    have hcomm := hcomm_fin.map (ofFin R (n + 1))
+    rw [ofFin_stabilize, ofFin_stabilize, ofFin_x] at hcomm
+    simp only [Fin.val_castSucc] at hcomm
+    rw [Subgroup.mem_centralizer_iff]
+    intro _ hw
+    rw [Set.mem_singleton_iff.mp hw]
+    exact hcomm
+  refine Subgroup.mem_center_iff.mpr fun w ↦ ?_
+  have hw : w ∈ Subgroup.centralizer {ofFin R m u} := htop ▸ Subgroup.mem_top w
+  exact (Subgroup.mem_centralizer_iff.mp hw (ofFin R m u) rfl).symm
 
-variable (R) in
-/-- `toElementarySubgroup R : St(R) →* E_∞(R)` is a central extension. -/
+/-- The canonical projection `St(R) →* E_∞(R)` is a central extension. -/
 theorem isCentralExtension_toElementarySubgroup :
     (toElementarySubgroup R).IsCentralExtension where
   surjective := toElementarySubgroup_surjective
-  ker_le_center := ker_toElementarySubgroup.le.trans (ker_toStableGL_le_center R)
+  ker_le_center := ker_toElementarySubgroup (R := R) ▸ ker_toStableGL_le_center
 
-end Centrality
+end Center
 
-/-! ## The Kervaire–Steinberg universal central extension theorem -/
+end SteinbergGroup
+
+/-! ## Universal central extension property -/
+
+namespace IndexedSteinbergGroup
 
 section Universal
 
-/-- Specialized Hall–Witt identity: if `a` commutes with `c`, `⁅a, b⁆` commutes with `⁅b, c⁆`, and
-`⁅b, c⁆` commutes with `c`, then `⁅a, ⁅b, c⁆⁆ = ⁅⁅a, b⁆, c⁆`. -/
-private theorem commutatorElement_commutatorElement_right_eq {G : Type*} [Group G] {a b c : G}
-    (hac : Commute a c) (hab_bc : Commute ⁅a, b⁆ ⁅b, c⁆) (hbc_c : Commute ⁅b, c⁆ c) :
-    ⁅a, ⁅b, c⁆⁆ = ⁅⁅a, b⁆, c⁆ := by
-  have hhw := commutatorElement_conj_commutatorElement_mul a b c
-  rw [hac.symm.commutator_eq, commutatorElement_one_right, one_mul, hac.symm.mul_inv_cancel] at hhw
-  have hconjBC : b * c * b⁻¹ = ⁅b, c⁆ * c := by
-    rw [commutatorElement_def, mul_assoc, mul_assoc, inv_mul_cancel, mul_one]
-  have hthird : ⁅b * c * b⁻¹, ⁅a, b⁆⁆ = ⁅⁅a, b⁆, c⁆⁻¹ := by
-    rw [hconjBC, commutatorElement_mul_left_eq_conj_mul, hab_bc.symm.commutator_eq, mul_one]
-    have hcomm : Commute ⁅b, c⁆ ⁅c, ⁅a, b⁆⁆ := by
-      rw [commutatorElement_def]
-      exact ((hbc_c.mul_right hab_bc.symm).mul_right hbc_c.inv_right).mul_right
-        hab_bc.symm.inv_right
-    rw [hcomm.mul_inv_cancel, commutatorElement_inv]
-  rw [hthird, mul_inv_eq_one] at hhw
-  exact hhw
+variable {ι R G E : Type*} [Ring R] [Group G] [Group E]
 
-variable {E : Type v} [Group E] {q : E →* StableGeneralLinearGroup R}
+private theorem forall_exists_ne_four_of_five_le_card [Fintype ι] (h : 5 ≤ Fintype.card ι) :
+    ∀ a b c d : ι, ∃ m : ι, m ≠ a ∧ m ≠ b ∧ m ≠ c ∧ m ≠ d := by
+  classical
+  intro a b c d
+  have hlt : ({a, b, c, d} : Finset ι).card < (Finset.univ : Finset ι).card := by
+    calc
+      ({a, b, c, d} : Finset ι).card ≤ 4 := by
+        refine (Finset.card_insert_le _ _).trans ?_
+        refine Nat.add_le_add_right ((Finset.card_insert_le _ _).trans ?_) 1
+        exact Nat.add_le_add_right Finset.card_le_two 1
+      _ < (Finset.univ : Finset ι).card := by rw [Finset.card_univ]; omega
+  obtain ⟨m, -, hm⟩ := Finset.exists_mem_notMem_of_card_lt_card hlt
+  exact ⟨m, by simpa [not_or] using hm⟩
 
-/-- **Four-index lifting identity**: given a homomorphism `q : E →* GL_∞(R)` with central kernel
-and a family of lifts `s` of the stable transvections `eᵢⱼ(a)`, for any four pairwise distinct
-indices `i, j, k, l` we have `⁅s i k a, s k j b⁆ = ⁅s i l (a * b), s l j 1⁆`. -/
-private theorem commutatorElement_lift_eq
-    (hq_ker : q.ker ≤ Subgroup.center E)
-    (s : ∀ {i j : ℕ}, i ≠ j → R → E)
-    (hs : ∀ {i j : ℕ} (hij : i ≠ j) (a : R), q (s hij a) = stableTransvection hij a)
-    {i j k l : ℕ} (hij : i ≠ j) (hik : i ≠ k) (hil : i ≠ l)
-    (hjk : j ≠ k) (hjl : j ≠ l) (hkl : k ≠ l) (a b : R) :
-    ⁅s hik a, s hjk.symm b⁆ = ⁅s hil (a * b), s hjl.symm 1⁆ := by
-  let m := max (max i j) (max k l) + 1
-  have hlm : l ≠ m := by omega
-  have hjm : j ≠ m := by omega
-  have hkm : k ≠ m := by omega
-  let A : E := s hik a
-  let B : E := s hkl b
-  let C : E := ⁅s hlm 1, s hjm.symm 1⁆
-  let D : E := ⁅A, B⁆
-  let E' : E := ⁅s hkm b, s hjm.symm 1⁆
-  have hqC : q C = stableTransvection hjl.symm 1 := by
-    simp [C, hs, commutatorElement_stableTransvection hlm hjm.symm hjl.symm]
-  have hqD : q D = stableTransvection hil (a * b) := by
-    simp [D, A, B, hs, commutatorElement_stableTransvection hik hkl hil]
-  have hqE' : q E' = stableTransvection hjk.symm b := by
-    simp [E', hs, commutatorElement_stableTransvection hkm hjm.symm hjk.symm]
-  have hqBC : q ⁅B, C⁆ = stableTransvection hjk.symm b := by
-    simp [B, hs, hqC, commutatorElement_stableTransvection hkl hjl.symm hjk.symm]
-  have hAC : Commute A C := q.commute_commutatorElement_of_ker_le_center hq_ker
-    (by rw [hs, hs]; exact commute_stableTransvection hik hlm hkl (by omega) a 1)
-    (by rw [hs, hs]; exact commute_stableTransvection hik hjm.symm hkm hij.symm a 1)
-  have hDE' : Commute D E' := q.commute_commutatorElement_of_ker_le_center hq_ker
-    (by rw [hqD, hs]; exact commute_stableTransvection hil hkm hkl.symm (by omega) (a * b) b)
-    (by rw [hqD, hs]; exact commute_stableTransvection hil hjm.symm hlm hij.symm (a * b) 1)
-  have hD_BC : Commute D ⁅B, C⁆ := by
-    have hz : E'⁻¹ * ⁅B, C⁆ ∈ Subgroup.center E := hq_ker <| by
-      rw [MonoidHom.mem_ker, map_mul, map_inv, hqE', hqBC, inv_mul_cancel]
-    rw [← mul_inv_cancel_left E' ⁅B, C⁆]
-    exact hDE'.mul_right (Subgroup.mem_center_iff.mp hz D)
-  have hBC_C : Commute ⁅B, C⁆ C := q.commute_commutatorElement_of_ker_le_center hq_ker
-    (by rw [hqBC, hs]; exact commute_stableTransvection hjk.symm hlm hjl hkm.symm b 1)
-    (by rw [hqBC, hs]; exact commute_stableTransvection hjk.symm hjm.symm hjm hjk b 1)
+private theorem forall_exists_ne_four_of_infinite [Infinite ι] :
+    ∀ a b c d : ι, ∃ m : ι, m ≠ a ∧ m ≠ b ∧ m ≠ c ∧ m ≠ d := by
+  classical
+  intro a b c d
+  obtain ⟨m, hm⟩ := Infinite.exists_notMem_finset ({a, b, c, d} : Finset ι)
+  exact ⟨m, by simpa [not_or] using hm⟩
+
+/-- Chosen lift in `E` of `φ (x hij a)` along `q : E →* G` when `φ.range ≤ q.range`. -/
+private def chooseLift {φ : IndexedSteinbergGroup ι R →* G} {q : E →* G}
+    (hq_range : φ.range ≤ q.range) {i j : ι} (hij : i ≠ j) (a : R) : E :=
+  (hq_range ⟨x hij a, rfl⟩).choose
+
+private theorem apply_chooseLift {φ : IndexedSteinbergGroup ι R →* G} {q : E →* G}
+    (hq_range : φ.range ≤ q.range) {i j : ι} (hij : i ≠ j) (a : R) :
+    q (chooseLift hq_range hij a) = φ (x hij a) :=
+  (hq_range ⟨x hij a, rfl⟩).choose_spec
+
+/-- Any two elements of `E` lifting images of non-chaining Steinberg generators commute in `E`. -/
+private theorem commute_of_apply_eq
+    (hι : ∀ a b c d : ι, ∃ m : ι, m ≠ a ∧ m ≠ b ∧ m ≠ c ∧ m ≠ d)
+    {φ : IndexedSteinbergGroup ι R →* G} {q : E →* G}
+    (hq_range : φ.range ≤ q.range) (hq_ker : q.ker ≤ Subgroup.center E)
+    {i j k l : ι} (hij : i ≠ j) (hkl : k ≠ l) (hjk : j ≠ k) (hli : l ≠ i)
+    {a b : R} {w y : E}
+    (hw : q w = φ (x hij a)) (hy : q y = φ (x hkl b)) : Commute w y := by
+  obtain ⟨m, hmi, hmj, hmk, hml⟩ := hι i j k l
+  let u := chooseLift hq_range hmk.symm b
+  let v := chooseLift hq_range hml 1
+  have hcomm_uv : Commute w ⁅u, v⁆ :=
+    MonoidHom.commute_commutatorElement_of_commute_of_ker_le_center hq_ker
+      (by rw [hw, apply_chooseLift]; exact (commute_x hij hmk.symm hjk hmi a b).map φ)
+      (by rw [hw, apply_chooseLift]; exact (commute_x hij hml hmj.symm hli a 1).map φ)
+  have hquv : q ⁅u, v⁆ = q y := by
+    rw [map_commutatorElement, apply_chooseLift, apply_chooseLift, ← map_commutatorElement,
+      commutatorElement_x hmk.symm hml hkl, mul_one, hy]
+  exact commutatorElement_eq_one_iff_commute.mp
+    ((MonoidHom.commutatorElement_eq_of_ker_le_center hq_ker rfl hquv.symm).trans
+      hcomm_uv.commutator_eq)
+
+/-- Four-index associativity of commutators of lifted Steinberg generators: for pairwise distinct
+indices `i, m₁, m₂, j`, `⁅u, ⁅v, w⁆⁆ = ⁅⁅u, v⁆, w⁆`. -/
+private theorem commutatorElement_assoc_of_apply_eq
+    (hι : ∀ a b c d : ι, ∃ m : ι, m ≠ a ∧ m ≠ b ∧ m ≠ c ∧ m ≠ d)
+    {φ : IndexedSteinbergGroup ι R →* G} {q : E →* G}
+    (hq_range : φ.range ≤ q.range) (hq_ker : q.ker ≤ Subgroup.center E)
+    {i m₁ m₂ j : ι} (hi_m1 : i ≠ m₁) (hi_m2 : i ≠ m₂) (hij : i ≠ j)
+    (hm1_m2 : m₁ ≠ m₂) (hm1_j : m₁ ≠ j) (hm2_j : m₂ ≠ j)
+    {a b c : R} {u v w : E}
+    (hu : q u = φ (x hi_m1 a)) (hv : q v = φ (x hm1_m2 b)) (hw : q w = φ (x hm2_j c)) :
+    ⁅u, ⁅v, w⁆⁆ = ⁅⁅u, v⁆, w⁆ := by
+  have hq_uv : q ⁅u, v⁆ = φ (x hi_m2 (a * b)) := by
+    rw [map_commutatorElement, hu, hv, ← map_commutatorElement,
+      commutatorElement_x hi_m1 hm1_m2 hi_m2]
+  have hq_vw : q ⁅v, w⁆ = φ (x hm1_j (b * c)) := by
+    rw [map_commutatorElement, hv, hw, ← map_commutatorElement,
+      commutatorElement_x hm1_m2 hm2_j hm1_j]
+  have hq_uvw : q ⁅⁅u, v⁆, w⁆ = φ (x hij (a * b * c)) := by
+    rw [map_commutatorElement, hq_uv, hw, ← map_commutatorElement,
+      commutatorElement_x hi_m2 hm2_j hij]
+  exact commutatorElement_assoc_of_commute
+    (commute_of_apply_eq hι hq_range hq_ker hi_m1 hm2_j hm1_m2 hij.symm hu hw)
+    (commute_of_apply_eq hι hq_range hq_ker hi_m2 hm1_j hm1_m2.symm hij.symm hq_uv hq_vw)
+    (commute_of_apply_eq hι hq_range hq_ker hm1_j hij hij.symm hm1_j.symm hq_vw hq_uvw)
+
+/-- Canonical lift in `E` of the Steinberg generator `x_{ij}(a)`, defined as
+`⁅chooseLift (i, m) a, chooseLift (m, j) 1⁆` at a chosen auxiliary index `m` distinct from `i` and
+`j`. -/
+private def liftGen
+    (hι : ∀ a b c d : ι, ∃ m : ι, m ≠ a ∧ m ≠ b ∧ m ≠ c ∧ m ≠ d)
+    {φ : IndexedSteinbergGroup ι R →* G} {q : E →* G}
+    (hq_range : φ.range ≤ q.range) ⦃i j : ι⦄ (_ : i ≠ j) (a : R) : E :=
+  ⁅chooseLift hq_range (hι i j i j).choose_spec.1.symm a,
+    chooseLift hq_range (hι i j i j).choose_spec.2.1 1⁆
+
+private theorem apply_liftGen
+    (hι : ∀ a b c d : ι, ∃ m : ι, m ≠ a ∧ m ≠ b ∧ m ≠ c ∧ m ≠ d)
+    {φ : IndexedSteinbergGroup ι R →* G} {q : E →* G}
+    (hq_range : φ.range ≤ q.range) {i j : ι} (hij : i ≠ j) (a : R) :
+    q (liftGen hι hq_range hij a) = φ (x hij a) := by
+  rw [liftGen, map_commutatorElement, apply_chooseLift, apply_chooseLift, ← map_commutatorElement,
+    commutatorElement_x _ _ hij, mul_one]
+
+private theorem commutatorElement_eq_chooseLift_of_ne
+    (hι : ∀ a b c d : ι, ∃ m : ι, m ≠ a ∧ m ≠ b ∧ m ≠ c ∧ m ≠ d)
+    {φ : IndexedSteinbergGroup ι R →* G} {q : E →* G}
+    (hq_range : φ.range ≤ q.range) (hq_ker : q.ker ≤ Subgroup.center E)
+    {i k j M : ι} (hij : i ≠ j) (hik : i ≠ k) (hkj : k ≠ j)
+    (hiM : i ≠ M) (hjM : j ≠ M) (hkM : k ≠ M)
+    {a b : R} {u v : E}
+    (hu : q u = φ (x hik a)) (hv : q v = φ (x hkj b)) :
+    ⁅u, v⁆ =
+      ⁅chooseLift hq_range hiM (a * b), chooseLift hq_range hjM.symm 1⁆ := by
+  let v₁ := chooseLift hq_range hkM b
+  let v₂ := chooseLift hq_range hjM.symm 1
+  have hv12 : q ⁅v₁, v₂⁆ = q v := by
+    rw [map_commutatorElement, apply_chooseLift, apply_chooseLift, ← map_commutatorElement,
+      commutatorElement_x hkM hjM.symm hkj, mul_one, hv]
   calc
-    ⁅s hik a, s hjk.symm b⁆ = ⁅A, ⁅B, C⁆⁆ :=
-      q.commutatorElement_eq_of_ker_le_center hq_ker rfl ((hs hjk.symm b).trans hqBC.symm)
-    _ = ⁅D, C⁆ := commutatorElement_commutatorElement_right_eq hAC hD_BC hBC_C
-    _ = ⁅s hil (a * b), s hjl.symm 1⁆ :=
-      q.commutatorElement_eq_of_ker_le_center hq_ker
-        (hqD.trans (hs hil (a * b)).symm) (hqC.trans (hs hjl.symm 1).symm)
+    ⁅u, v⁆ = ⁅u, ⁅v₁, v₂⁆⁆ := MonoidHom.commutatorElement_eq_of_ker_le_center hq_ker rfl hv12.symm
+    _ = ⁅⁅u, v₁⁆, v₂⁆ := commutatorElement_assoc_of_apply_eq hι hq_range hq_ker
+      hik hiM hij hkM hkj hjM.symm hu (apply_chooseLift hq_range hkM b)
+      (apply_chooseLift hq_range hjM.symm 1)
+    _ = ⁅chooseLift hq_range hiM (a * b), v₂⁆ :=
+      MonoidHom.commutatorElement_eq_of_ker_le_center hq_ker
+        (by rw [map_commutatorElement, hu, apply_chooseLift, apply_chooseLift,
+          ← map_commutatorElement, commutatorElement_x hik hkM hiM]) rfl
 
-/-- The canonical lift `yᵢⱼ(a) = ⁅s_{i, k₀}(a), s_{k₀, j}(1)⁆` built from arbitrary lifts `s` of
-stable transvections using `k₀ = max i j + 1`. -/
-private def canonicalLift (s : ∀ {i j : ℕ}, i ≠ j → R → E) {i j : ℕ} (_ : i ≠ j) (a : R) : E :=
-  ⁅s (Nat.ne_of_lt (by omega : i < max i j + 1)) a,
-   s (Nat.ne_of_gt (by omega : j < max i j + 1)) 1⁆
+/-- For **any** intermediate index `k` (`i ≠ k`, `k ≠ j`) and any lifts `u, v ∈ E` of
+`φ (x_{ik}(a))` and `φ (x_{kj}(b))`, their commutator in `E` equals `liftGen hij (a * b)`. -/
+private theorem commutatorElement_eq_liftGen
+    (hι : ∀ a b c d : ι, ∃ m : ι, m ≠ a ∧ m ≠ b ∧ m ≠ c ∧ m ≠ d)
+    {φ : IndexedSteinbergGroup ι R →* G} {q : E →* G}
+    (hq_range : φ.range ≤ q.range) (hq_ker : q.ker ≤ Subgroup.center E)
+    {i k j : ι} (hij : i ≠ j) (hik : i ≠ k) (hkj : k ≠ j)
+    {a b : R} {u v : E}
+    (hu : q u = φ (x hik a)) (hv : q v = φ (x hkj b)) :
+    ⁅u, v⁆ = liftGen hι hq_range hij (a * b) := by
+  let m := (hι i j i j).choose
+  have hmi : m ≠ i := (hι i j i j).choose_spec.1
+  have hmj : m ≠ j := (hι i j i j).choose_spec.2.1
+  obtain ⟨M, hMi, hMj, hMk, hMm⟩ := hι i j k m
+  have h1 := commutatorElement_eq_chooseLift_of_ne hι hq_range hq_ker hij hik hkj
+    hMi.symm hMj.symm hMk.symm hu hv
+  have h2 := commutatorElement_eq_chooseLift_of_ne hι hq_range hq_ker hij hmi.symm hmj
+    hMi.symm hMj.symm hMm.symm
+    (apply_chooseLift hq_range hmi.symm (a * b))
+    (apply_chooseLift hq_range hmj 1)
+  rw [mul_one] at h2
+  exact h1.trans h2.symm
 
-private theorem map_canonicalLift
-    (s : ∀ {i j : ℕ}, i ≠ j → R → E)
-    (hs : ∀ {i j : ℕ} (hij : i ≠ j) (a : R), q (s hij a) = stableTransvection hij a)
-    {i j : ℕ} (hij : i ≠ j) (a : R) :
-    q (canonicalLift s hij a) = stableTransvection hij a := by
-  simp only [canonicalLift, map_commutatorElement, hs,
-    commutatorElement_stableTransvection _ _ hij, mul_one]
+private theorem liftGen_add
+    (hι : ∀ a b c d : ι, ∃ m : ι, m ≠ a ∧ m ≠ b ∧ m ≠ c ∧ m ≠ d)
+    {φ : IndexedSteinbergGroup ι R →* G} {q : E →* G}
+    (hq_range : φ.range ≤ q.range) (hq_ker : q.ker ≤ Subgroup.center E)
+    {i j : ι} (hij : i ≠ j) (a b : R) :
+    liftGen hι hq_range hij (a + b) = liftGen hι hq_range hij a * liftGen hι hq_range hij b := by
+  obtain ⟨m, hmi, hmj, -, -⟩ := hι i j i j
+  have hprod : q (liftGen hι hq_range hmi.symm a * liftGen hι hq_range hmi.symm b) =
+      φ (x hmi.symm (a + b)) := by
+    rw [map_mul, apply_liftGen, apply_liftGen, ← map_mul, ← x_add]
+  have h1 := commutatorElement_eq_liftGen hι hq_range hq_ker hij hmi.symm hmj hprod
+    (apply_liftGen hι hq_range hmj 1)
+  rw [mul_one, commutatorElement_mul_left_eq_conj_mul,
+    commutatorElement_eq_liftGen hι hq_range hq_ker hij hmi.symm hmj
+      (apply_liftGen hι hq_range hmi.symm b) (apply_liftGen hι hq_range hmj 1),
+    commutatorElement_eq_liftGen hι hq_range hq_ker hij hmi.symm hmj
+      (apply_liftGen hι hq_range hmi.symm a) (apply_liftGen hι hq_range hmj 1),
+    mul_one, mul_one] at h1
+  have hcomm_im : Commute (liftGen hι hq_range hmi.symm a) (liftGen hι hq_range hij b) :=
+    commute_of_apply_eq hι hq_range hq_ker hmi.symm hij hmi hij.symm
+      (apply_liftGen hι hq_range hmi.symm a) (apply_liftGen hι hq_range hij b)
+  have hcomm_ij : Commute (liftGen hι hq_range hij b) (liftGen hι hq_range hij a) :=
+    commute_of_apply_eq hι hq_range hq_ker hij hij hij.symm hij.symm
+      (apply_liftGen hι hq_range hij b) (apply_liftGen hι hq_range hij a)
+  rw [← h1, hcomm_im.eq, mul_inv_cancel_right, hcomm_ij.eq]
 
-private theorem canonicalLift_eq
-    (hq_ker : q.ker ≤ Subgroup.center E)
-    (s : ∀ {i j : ℕ}, i ≠ j → R → E)
-    (hs : ∀ {i j : ℕ} (hij : i ≠ j) (a : R), q (s hij a) = stableTransvection hij a)
-    {i j k : ℕ} (hij : i ≠ j) (hik : i ≠ k) (hkj : k ≠ j) (a : R) :
-    canonicalLift s hij a = ⁅s hik a, s hkj 1⁆ := by
-  let k₀ := max i j + 1
-  by_cases hkk : k = k₀
-  · subst hkk
-    exact q.commutatorElement_eq_of_ker_le_center hq_ker (by rw [hs]) (by rw [hs])
-  · have h := commutatorElement_lift_eq hq_ker s hs hij hik
-      (Nat.ne_of_lt (by omega : i < k₀)) hkj.symm (Nat.ne_of_lt (by omega : j < k₀)) hkk a 1
-    simpa only [canonicalLift, mul_one] using h.symm
+/-- **Steinberg lift into a central extension.** Given an index type `ι` in which any four indices
+admit a fifth distinct index, a homomorphism `φ : St_ι(R) →* G`, and a homomorphism `q : E →* G`
+with `φ.range ≤ q.range` and central kernel, there is a canonical lift `St_ι(R) →* E` over `G`. -/
+def liftCentralExtension
+    (hι : ∀ a b c d : ι, ∃ m : ι, m ≠ a ∧ m ≠ b ∧ m ≠ c ∧ m ≠ d)
+    {φ : IndexedSteinbergGroup ι R →* G} {q : E →* G}
+    (hq_range : φ.range ≤ q.range) (hq_ker : q.ker ≤ Subgroup.center E) :
+    IndexedSteinbergGroup ι R →* E :=
+  lift (liftGen hι hq_range)
+    (fun _ _ hij a b ↦ liftGen_add hι hq_range hq_ker hij a b)
+    (fun _ _ _ _ hij hkl hjk hli a b ↦
+      commute_of_apply_eq hι hq_range hq_ker hij hkl hjk hli
+        (apply_liftGen hι hq_range hij a) (apply_liftGen hι hq_range hkl b))
+    (fun _ _ _ hij hjk hik a b ↦
+      commutatorElement_eq_liftGen hι hq_range hq_ker hik hij hjk
+        (apply_liftGen hι hq_range hij a) (apply_liftGen hι hq_range hjk b))
 
-private theorem canonicalLift_add
-    (hq_ker : q.ker ≤ Subgroup.center E)
-    (s : ∀ {i j : ℕ}, i ≠ j → R → E)
-    (hs : ∀ {i j : ℕ} (hij : i ≠ j) (a : R), q (s hij a) = stableTransvection hij a)
-    {i j : ℕ} (hij : i ≠ j) (a b : R) :
-    canonicalLift s hij (a + b) = canonicalLift s hij a * canonicalLift s hij b := by
-  let k := max i j + 1
-  let l := k + 1
-  have hik : i ≠ k := by omega
-  have hkj : k ≠ j := by omega
-  have hil : i ≠ l := by omega
-  have hlj : l ≠ j := by omega
-  have hkl : k ≠ l := by omega
-  let u₁ : E := s hik a
-  let u₂ : E := s hik b
-  let v : E := s hkj 1
-  have hq_mul : q (u₂ * u₁) = q (s hik (a + b)) := by
-    simp [u₁, u₂, hs, ← stableTransvection_add, add_comm]
-  have hcomm_u₂ : Commute u₂ ⁅u₁, v⁆ := by
-    rw [← canonicalLift_eq hq_ker s hs hij hik hkj a, canonicalLift_eq hq_ker s hs hij hil hlj a]
-    exact q.commute_commutatorElement_of_ker_le_center hq_ker
-      (by rw [hs, hs]; exact commute_stableTransvection hik hil hik.symm hil.symm b a)
-      (by rw [hs, hs]; exact commute_stableTransvection hik hlj hkl hij.symm b 1)
-  calc
-    canonicalLift s hij (a + b) = ⁅s hik (a + b), v⁆ :=
-      canonicalLift_eq hq_ker s hs hij hik hkj (a + b)
-    _ = ⁅u₂ * u₁, v⁆ := q.commutatorElement_eq_of_ker_le_center hq_ker hq_mul.symm rfl
-    _ = u₂ * ⁅u₁, v⁆ * u₂⁻¹ * ⁅u₂, v⁆ := commutatorElement_mul_left_eq_conj_mul u₂ u₁ v
-    _ = ⁅u₁, v⁆ * ⁅u₂, v⁆ := by rw [hcomm_u₂.mul_inv_cancel]
-    _ = canonicalLift s hij a * canonicalLift s hij b := by
-      rw [← canonicalLift_eq hq_ker s hs hij hik hkj a,
-        ← canonicalLift_eq hq_ker s hs hij hik hkj b]
-
-private theorem commute_canonicalLift
-    (hq_ker : q.ker ≤ Subgroup.center E)
-    (s : ∀ {i j : ℕ}, i ≠ j → R → E)
-    (hs : ∀ {i j : ℕ} (hij : i ≠ j) (a : R), q (s hij a) = stableTransvection hij a)
-    {i j p q' : ℕ} (hij : i ≠ j) (hpq : p ≠ q') (hjp : j ≠ p) (hqi : q' ≠ i) (a b : R) :
-    Commute (canonicalLift s hij a) (canonicalLift s hpq b) := by
-  let m := max (max i j) (max p q') + 1
-  have hpm : p ≠ m := by omega
-  have hmq : m ≠ q' := by omega
-  rw [canonicalLift_eq hq_ker s hs hpq hpm hmq b]
-  exact q.commute_commutatorElement_of_ker_le_center hq_ker
-    (by
-      rw [map_canonicalLift s hs, hs]
-      exact commute_stableTransvection hij hpm hjp (by omega) a b)
-    (by
-      rw [map_canonicalLift s hs, hs]
-      exact commute_stableTransvection hij hmq (by omega) hqi a 1)
-
-private theorem commutatorElement_canonicalLift
-    (hq_ker : q.ker ≤ Subgroup.center E)
-    (s : ∀ {i j : ℕ}, i ≠ j → R → E)
-    (hs : ∀ {i j : ℕ} (hij : i ≠ j) (a : R), q (s hij a) = stableTransvection hij a)
-    {i j k : ℕ} (hij : i ≠ j) (hjk : j ≠ k) (hik : i ≠ k) (a b : R) :
-    ⁅canonicalLift s hij a, canonicalLift s hjk b⁆ = canonicalLift s hik (a * b) := by
-  let l := max (max i j) k + 1
-  have hil : i ≠ l := by omega
-  have hlk : l ≠ k := by omega
-  have hjl : j ≠ l := by omega
-  calc
-    ⁅canonicalLift s hij a, canonicalLift s hjk b⁆ = ⁅s hij a, s hjk b⁆ :=
-      q.commutatorElement_eq_of_ker_le_center hq_ker
-        ((map_canonicalLift s hs hij a).trans (hs hij a).symm)
-        ((map_canonicalLift s hs hjk b).trans (hs hjk b).symm)
-    _ = ⁅s hil (a * b), s hlk 1⁆ :=
-      commutatorElement_lift_eq hq_ker s hs hik hij hil hjk.symm hlk.symm hjl a b
-    _ = canonicalLift s hik (a * b) := (canonicalLift_eq hq_ker s hs hik hil hlk (a * b)).symm
-
-/-- Existence of a Steinberg lift `ψ : St(R) →* E` over any homomorphism `q : E →* GL_∞(R)` with
-image `E_∞(R)` and central kernel. -/
-private theorem exists_comp_eq_toStableGL
-    (hq_range : q.range = StableGeneralLinearGroup.elementarySubgroup R)
-    (hq_ker : q.ker ≤ Subgroup.center E) :
-    ∃ ψ : SteinbergGroup ℕ R →* E, q.comp ψ = toStableGL R := by
-  have hex : ∀ {i j : ℕ} (hij : i ≠ j) (a : R), ∃ e : E, q e = stableTransvection hij a :=
-    fun hij a ↦ by simpa [← hq_range] using stableTransvection_mem_elementarySubgroup hij a
-  let s : ∀ {i j : ℕ}, i ≠ j → R → E := fun hij a ↦ (hex hij a).choose
-  have hs : ∀ {i j : ℕ} (hij : i ≠ j) (a : R), q (s hij a) = stableTransvection hij a :=
-    fun hij a ↦ (hex hij a).choose_spec
-  refine ⟨lift (canonicalLift s)
-    (fun hij a b ↦ canonicalLift_add hq_ker s hs hij a b)
-    (fun hij hpq hjp hqi a b ↦ commute_canonicalLift hq_ker s hs hij hpq hjp hqi a b)
-    (fun hij hjk hik a b ↦ commutatorElement_canonicalLift hq_ker s hs hij hjk hik a b), ?_⟩
+@[simp]
+theorem comp_liftCentralExtension
+    (hι : ∀ a b c d : ι, ∃ m : ι, m ≠ a ∧ m ≠ b ∧ m ≠ c ∧ m ≠ d)
+    {φ : IndexedSteinbergGroup ι R →* G} {q : E →* G}
+    (hq_range : φ.range ≤ q.range) (hq_ker : q.ker ≤ Subgroup.center E) :
+    q.comp (liftCentralExtension hι hq_range hq_ker) = φ := by
   ext i j hij a
-  simp [map_canonicalLift s hs]
+  simp [liftCentralExtension, apply_liftGen]
+
+@[simp]
+theorem apply_liftCentralExtension
+    (hι : ∀ a b c d : ι, ∃ m : ι, m ≠ a ∧ m ≠ b ∧ m ≠ c ∧ m ≠ d)
+    {φ : IndexedSteinbergGroup ι R →* G} {q : E →* G}
+    (hq_range : φ.range ≤ q.range) (hq_ker : q.ker ≤ Subgroup.center E)
+    (z : IndexedSteinbergGroup ι R) :
+    q (liftCentralExtension hι hq_range hq_ker z) = φ z :=
+  DFunLike.congr_fun (comp_liftCentralExtension hι hq_range hq_ker) z
+
+/-- **Universal central-extension lifting property of `St_ι(R)`.** When any four indices in `ι`
+admit a fifth distinct index, every homomorphism `φ : St_ι(R) →* G` lifts uniquely along any
+homomorphism `q : E →* G` with `φ.range ≤ q.range` and central kernel. -/
+theorem existsUnique_comp_eq_of_ker_le_center
+    (hι : ∀ a b c d : ι, ∃ m : ι, m ≠ a ∧ m ≠ b ∧ m ≠ c ∧ m ≠ d)
+    {φ : IndexedSteinbergGroup ι R →* G} {q : E →* G}
+    (hq_range : φ.range ≤ q.range) (hq_ker : q.ker ≤ Subgroup.center E) :
+    ∃! ψ : IndexedSteinbergGroup ι R →* E, q.comp ψ = φ := by
+  have : Group.IsPerfect (IndexedSteinbergGroup ι R) :=
+    isPerfect_of_forall_exists_ne fun i j _ ↦
+      let ⟨m, hmi, hmj, _, _⟩ := hι i j i j
+      ⟨m, hmi, hmj⟩
+  refine ⟨liftCentralExtension hι hq_range hq_ker, comp_liftCentralExtension hι hq_range hq_ker,
+    fun ψ hψ ↦ MonoidHom.eq_of_comp_eq_of_ker_le_center hq_ker
+      (hψ.trans (comp_liftCentralExtension hι hq_range hq_ker).symm)⟩
+
+/-- For a finite index type of cardinality at least five, every homomorphism `φ : St_ι(R) →* G`
+lifts uniquely along any homomorphism `q : E →* G` with `φ.range ≤ q.range` and central kernel. -/
+theorem existsUnique_comp_eq_of_five_le_card [Fintype ι] (h : 5 ≤ Fintype.card ι)
+    {φ : IndexedSteinbergGroup ι R →* G} {q : E →* G}
+    (hq_range : φ.range ≤ q.range) (hq_ker : q.ker ≤ Subgroup.center E) :
+    ∃! ψ : IndexedSteinbergGroup ι R →* E, q.comp ψ = φ :=
+  existsUnique_comp_eq_of_ker_le_center (forall_exists_ne_four_of_five_le_card h) hq_range hq_ker
+
+/-- For an infinite index type `ι`, every homomorphism `φ : St_ι(R) →* G` lifts uniquely along
+any homomorphism `q : E →* G` with `φ.range ≤ q.range` and central kernel. -/
+theorem existsUnique_comp_eq_of_infinite [Infinite ι]
+    {φ : IndexedSteinbergGroup ι R →* G} {q : E →* G}
+    (hq_range : φ.range ≤ q.range) (hq_ker : q.ker ≤ Subgroup.center E) :
+    ∃! ψ : IndexedSteinbergGroup ι R →* E, q.comp ψ = φ :=
+  existsUnique_comp_eq_of_ker_le_center forall_exists_ne_four_of_infinite hq_range hq_ker
+
+/-- If any four indices in `ι` admit a fifth distinct index, every central extension
+`φ : St_ι(R) →* G` is automatically a universal central extension (in any universe `v`). -/
+theorem isUniversalCentralExtension_of_isCentralExtension
+    (hι : ∀ a b c d : ι, ∃ m : ι, m ≠ a ∧ m ≠ b ∧ m ≠ c ∧ m ≠ d)
+    {φ : IndexedSteinbergGroup ι R →* G} (hφ : φ.IsCentralExtension) :
+    φ.IsUniversalCentralExtension.{v} where
+  isCentralExtension := hφ
+  existsUnique_comp_eq := fun _ _ _ hq ↦
+    existsUnique_comp_eq_of_ker_le_center hι
+      (MonoidHom.range_eq_top.mpr hq.surjective ▸ le_top) hq.ker_le_center
 
 variable (R) in
-/-- **Universal property of `St(R) →* GL_∞(R)`**: for any group `E` (in any universe) and any
-homomorphism `q : E →* GL_∞(R)` with image `E_∞(R)` and central kernel, there is a unique
-homomorphism `ψ : St(R) →* E` with `q.comp ψ = toStableGL R`. -/
+/-- For a finite index type of cardinality at least five, `St_ι(R)` is centrally closed: the
+identity homomorphism on `St_ι(R)` is a universal central extension (in any universe `v`). -/
+theorem isUniversalCentralExtension_id_of_five_le_card [Fintype ι] (h : 5 ≤ Fintype.card ι) :
+    (MonoidHom.id (IndexedSteinbergGroup ι R)).IsUniversalCentralExtension.{v} :=
+  isUniversalCentralExtension_of_isCentralExtension (forall_exists_ne_four_of_five_le_card h)
+    ⟨Function.surjective_id, by simp⟩
+
+variable (ι R) in
+/-- For an infinite index type `ι`, `St_ι(R)` is centrally closed: the identity homomorphism on
+`St_ι(R)` is a universal central extension (in any universe `v`). -/
+theorem isUniversalCentralExtension_id_of_infinite [Infinite ι] :
+    (MonoidHom.id (IndexedSteinbergGroup ι R)).IsUniversalCentralExtension.{v} :=
+  isUniversalCentralExtension_of_isCentralExtension forall_exists_ne_four_of_infinite
+    ⟨Function.surjective_id, by simp⟩
+
+end Universal
+
+end IndexedSteinbergGroup
+
+namespace SteinbergGroup
+
+section Universal
+
+variable {R : Type u} [Ring R] {E : Type v} [Group E]
+
+/-- **Universal property of `St(R)` over `GL_∞(R)`**: for every group `E` (in any universe) and
+homomorphism `q : E →* GL_∞(R)` whose image contains `E_∞(R)` and whose kernel is central, there is
+a unique homomorphism `ψ : St(R) →* E` satisfying `q ∘ ψ = toStableGL R`. -/
 theorem existsUnique_comp_eq_toStableGL (q : E →* StableGeneralLinearGroup R)
-    (hq_range : q.range = StableGeneralLinearGroup.elementarySubgroup R)
+    (hq_range : StableGeneralLinearGroup.elementarySubgroup R ≤ q.range)
     (hq_ker : q.ker ≤ Subgroup.center E) :
-    ∃! ψ : SteinbergGroup ℕ R →* E, q.comp ψ = toStableGL R := by
-  obtain ⟨ψ, hψ⟩ := exists_comp_eq_toStableGL hq_range hq_ker
-  exact ⟨ψ, hψ, fun ψ' hψ' ↦ MonoidHom.eq_of_comp_eq_of_ker_le_center hq_ker (hψ'.trans hψ.symm)⟩
+    ∃! ψ : SteinbergGroup R →* E, q.comp ψ = toStableGL R :=
+  IndexedSteinbergGroup.existsUnique_comp_eq_of_infinite
+    (range_toStableGL (R := R) ▸ hq_range) hq_ker
 
 variable (R) in
-/-- **Kervaire–Steinberg theorem**: the canonical surjection `St(R) →* E_∞(R)` is a universal
-central extension of the stable elementary subgroup `E_∞(R)`, for central extensions with total
-group in any universe. -/
+/-- **The projection `St(R) →* E_∞(R)` is a universal central extension** in the sense of
+`MonoidHom.IsUniversalCentralExtension`, with respect to central extensions in any universe `v`. -/
 theorem isUniversalCentralExtension_toElementarySubgroup :
-    (toElementarySubgroup R).IsUniversalCentralExtension.{w} where
-  isCentralExtension := isCentralExtension_toElementarySubgroup R
-  existsUnique_comp_eq E' _ q hq := by
-    let ι := (StableGeneralLinearGroup.elementarySubgroup R).subtype
-    have hq_range : (ι.comp q).range = StableGeneralLinearGroup.elementarySubgroup R := by
-      rw [MonoidHom.range_comp, MonoidHom.range_eq_top_of_surjective q hq.surjective,
-        Subgroup.map_top, Subgroup.range_subtype]
-    have hq_ker : (ι.comp q).ker ≤ Subgroup.center E' := by
-      have hker : (ι.comp q).ker = q.ker := by
-        ext x
-        simp [MonoidHom.mem_ker, ι]
-      exact hker.le.trans hq.ker_le_center
-    obtain ⟨ψ, hψ, huniq⟩ := existsUnique_comp_eq_toStableGL R (ι.comp q) hq_range hq_ker
-    have hcomp : ∀ f : SteinbergGroup ℕ R →* E',
-        q.comp f = toElementarySubgroup R ↔ (ι.comp q).comp f = toStableGL R := fun f ↦ by
-      constructor
-      · intro h
-        rw [MonoidHom.comp_assoc, h]
-        exact MonoidHom.ext fun x ↦ by simp [ι]
-      · intro h
-        exact MonoidHom.ext fun x ↦ Subtype.ext (by simpa [ι] using DFunLike.congr_fun h x)
-    exact ⟨ψ, (hcomp ψ).mpr hψ, fun f hf ↦ huniq f ((hcomp f).mp hf)⟩
+    (toElementarySubgroup R).IsUniversalCentralExtension.{v} :=
+  IndexedSteinbergGroup.isUniversalCentralExtension_of_isCentralExtension
+    IndexedSteinbergGroup.forall_exists_ne_four_of_infinite
+    isCentralExtension_toElementarySubgroup
 
+variable (R) in
 /-- Exactness at `GL_∞(R)` of `1 → K₂(R) → St(R) → GL_∞(R) → K₁(R) → 1`: the image of
 `St(R) →* GL_∞(R)` equals the kernel of the abelianization projection `GL_∞(R) →* K₁(R)`. -/
 theorem range_toStableGL_eq_ker_abelianizationOf :
@@ -616,6 +619,24 @@ theorem range_toStableGL_eq_ker_abelianizationOf :
 end Universal
 
 end SteinbergGroup
+
+/-- **Kervaire–Steinberg universal central extension theorem.** For every associative unital ring
+`R`, the homomorphism `φ = SteinbergGroup.toStableGL R : St(R) →* GL_∞(R)` sending each generator
+`x_{ij}(a)` to `stableTransvection ⟨(i, j), hij⟩ a` has image `E_∞(R)` and central kernel, and for
+every group `E` (in any universe) and homomorphism `q : E →* GL_∞(R)` with image `E_∞(R)` and
+central kernel there is a unique homomorphism `ψ : St(R) →* E` with `q ∘ ψ = φ`. -/
+theorem steinberg_universalCentralExtension (R : Type u) [Ring R] :
+    ∃ φ : SteinbergGroup R →* StableGeneralLinearGroup R,
+      (∀ p a, φ (PresentedGroup.of (p, a)) = stableTransvection p a) ∧
+      φ.range = StableGeneralLinearGroup.elementarySubgroup R ∧
+      φ.ker ≤ Subgroup.center (SteinbergGroup R) ∧
+      ∀ (E : Type v) [Group E] (q : E →* StableGeneralLinearGroup R),
+        q.range = StableGeneralLinearGroup.elementarySubgroup R →
+        q.ker ≤ Subgroup.center E →
+        ∃! ψ : SteinbergGroup R →* E, q.comp ψ = φ :=
+  ⟨SteinbergGroup.toStableGL R, SteinbergGroup.toStableGL_of, SteinbergGroup.range_toStableGL,
+    SteinbergGroup.ker_toStableGL_le_center,
+    fun _ _ q hq_range hq_ker ↦ SteinbergGroup.existsUnique_comp_eq_toStableGL q hq_range.ge hq_ker⟩
 
 /-! ## Algebraic `K₂` -/
 
@@ -631,24 +652,27 @@ namespace AlgebraicK2
 
 /-- Algebraic `K₂(R)` is a commutative group, because `ker (St(R) →* GL_∞(R))` is central in
 `St(R)`. -/
-noncomputable instance instCommGroup : CommGroup (AlgebraicK2 R) :=
+instance instCommGroup : CommGroup (AlgebraicK2 R) :=
   { (inferInstance : Group (SteinbergGroup.toStableGL R).ker) with
     mul_comm := fun a b ↦ Subtype.ext <|
-      (Subgroup.mem_center_iff.mp (SteinbergGroup.ker_toStableGL_le_center R b.2) a.1) }
+      (Subgroup.mem_center_iff.mp (SteinbergGroup.ker_toStableGL_le_center (R := R) b.property)
+        a.val) }
 
 variable {R} {S T : Type*} [Ring S] [Ring T]
 
 /-- The homomorphism `K₂(R) →* K₂(S)` induced by a ring homomorphism `f : R →+* S`, restricting
-`SteinbergGroup.map f` to the kernels. -/
-noncomputable def map (f : R →+* S) : AlgebraicK2 R →* AlgebraicK2 S :=
-  ((SteinbergGroup.map f).comp (SteinbergGroup.toStableGL R).ker.subtype).codRestrict _ fun x ↦ by
-    rw [MonoidHom.mem_ker, MonoidHom.comp_apply, Subgroup.coe_subtype,
-      SteinbergGroup.toStableGL_map, MonoidHom.mem_ker.mp x.2, map_one]
+`IndexedSteinbergGroup.map f` to the kernels. -/
+def map (f : R →+* S) : AlgebraicK2 R →* AlgebraicK2 S :=
+  ((IndexedSteinbergGroup.map f).comp (SteinbergGroup.toStableGL R).ker.subtype).codRestrict _
+    fun x ↦ by
+      rw [MonoidHom.mem_ker, MonoidHom.comp_apply, Subgroup.coe_subtype,
+        SteinbergGroup.toStableGL_map, MonoidHom.mem_ker.mp x.property, map_one]
 
-/-- The underlying element in `St(S)` of `AlgebraicK2.map f x` is `SteinbergGroup.map f x`. -/
+/-- The underlying element in `St(S)` of `AlgebraicK2.map f x` is
+`IndexedSteinbergGroup.map f x`. -/
 @[simp]
 theorem coe_map_apply (f : R →+* S) (x : AlgebraicK2 R) :
-    (map f x : SteinbergGroup ℕ S) = SteinbergGroup.map f x :=
+    (map f x : SteinbergGroup S) = IndexedSteinbergGroup.map f x :=
   (rfl)
 
 /-- The identity ring homomorphism induces the identity of algebraic `K₂`. -/

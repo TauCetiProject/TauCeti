@@ -11,17 +11,25 @@ public import TauCeti.RepresentationTheory.Irreducible
 import Mathlib.RingTheory.SimpleModule.Basic
 -- Private: the span theorem is used only to pass from group invariance to even-Clifford invariance.
 import TauCeti.LinearAlgebra.CliffordAlgebra.ReflectionLift
+-- Private: the generation of the exterior endomorphism algebra by creation and contraction, the
+-- naturality of contraction, and the exterior algebras of finite subspaces are used only inside
+-- proofs.
+import TauCeti.LinearAlgebra.ExteriorAlgebra.End
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Subspace
 
 /-!
 # Invariant subspaces and intertwiners for the spinor and half-spin actions
 
 The Fock model makes the exterior algebra `S = ⋀·W` of the isotropic summand of a polarization a
-module over `CliffordAlgebra Q` (`TauCeti.spinAction`), and that action is onto the full
-endomorphism algebra as soon as `W` is finite free (`TauCeti.spinAction_surjective`). A module on
-which every endomorphism is realized has no proper nonzero submodule at all, so **the spinor module
-is simple**, in every dimension and without any nondegeneracy hypothesis: this is
-`TauCeti.exists_spinAction_eq`, that a nonzero spinor is carried to every other one, and
-`TauCeti.eq_bot_or_eq_top_of_map_spinAction_le`, its lattice form.
+module over `CliffordAlgebra Q` (`TauCeti.spinAction`). **The spinor module is simple**, in every
+dimension, without any nondegeneracy hypothesis, and for an arbitrary isotropic summand `W`:
+`TauCeti.exists_spinAction_eq` says that a nonzero spinor is carried to every other one, and
+`TauCeti.eq_bot_or_eq_top_of_map_spinAction_le` that an invariant subspace is `⊥` or everything.
+Neither goes through the surjectivity of the action onto the full endomorphism algebra
+(`TauCeti.spinAction_surjective`), which needs `W` finite-dimensional. A nonzero spinor lies in the
+exterior algebra of a finite-dimensional subspace of `W`, where creation and contraction operators
+generate every endomorphism and so carry it to `1`, and left multiplication by any spinor is a
+Fock operator.
 
 That is not yet the irreducibility the spin representation is named for, because in even dimension
 `S` visibly splits, into the two half-spin summands `S⁺` and `S⁻` of `TauCeti.spinPlus` and
@@ -90,7 +98,7 @@ central summands, for which the results here are the even-dimensional half; it i
 ## Main results
 
 * `TauCeti.exists_spinAction_eq` and `TauCeti.eq_bot_or_eq_top_of_map_spinAction_le`: **the spinor
-  module is a simple Clifford module.**
+  module is a simple Clifford module**, with no finiteness assumption on `W`.
 * `TauCeti.mem_even_of_map_spinPlus_le_of_map_spinMinus_le`: a Clifford element whose action
   preserves both half-spin summands is even.
 * `TauCeti.eq_bot_or_eq_top_of_map_spinPlusAction_le` and
@@ -175,7 +183,7 @@ private theorem spinGroupRepresentation_apply_mk {K : Type u} [Field K]
     {V : Type v} [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
     {M : Type*} [AddCommGroup M] [Module K M]
     (F : CliffordAlgebra.even Q →ₐ[K] Module.End K M) (g : spinGroup Q) :
-    spinGroupRepresentation F g = F ⟨g, spinGroup.mem_even g.2⟩ := by
+    spinGroupRepresentation F g = F ⟨g, spinGroup.mem_even g.property⟩ := by
   rw [spinGroupRepresentation_apply]
   exact congrArg F (Subtype.ext (coe_spinGroupToEven_apply Q g))
 
@@ -192,7 +200,7 @@ private theorem range_spinGroupToEven {K : Type u} [Field K]
     {V : Type v} [AddCommGroup V] [Module K V] (Q : QuadraticForm K V) :
     Set.range ⇑(spinGroupToEven Q) =
       Set.range fun g : spinGroup Q ↦
-        (⟨g, spinGroup.mem_even g.2⟩ : CliffordAlgebra.even Q) :=
+        (⟨g, spinGroup.mem_even g.property⟩ : CliffordAlgebra.even Q) :=
   congrArg Set.range (funext fun g ↦ Subtype.ext (coe_spinGroupToEven_apply Q g))
 
 private theorem spinGroupAlgebraHom_surjective {K : Type u} [Field K]
@@ -214,7 +222,7 @@ private theorem spinGroupAlgebraHom_surjective {K : Type u} [Field K]
   rw [range_spinGroupToEven]
   apply (Submodule.span_range_subtype_eq_top_iff
     (CliffordAlgebra.even Q).toSubmodule
-      (fun g : spinGroup Q ↦ spinGroup.mem_even g.2)).2
+      (fun g : spinGroup Q ↦ spinGroup.mem_even g.property)).2
   -- Return to the ambient Clifford algebra, where `hspan` states the spanning result.
   change Submodule.span K
     (Set.range (Subtype.val : spinGroup Q → CliffordAlgebra Q)) = _
@@ -253,7 +261,7 @@ private theorem intertwines_even_of_intertwines_spinGroup {K : Type u} [Field K]
     (F : CliffordAlgebra.even Q →ₐ[K] Module.End K M)
     (G : CliffordAlgebra.even Q →ₐ[K] Module.End K N) (φ : M →ₗ[K] N)
     (hφ : ∀ (g : spinGroup Q) (m : M),
-      φ (F ⟨g, spinGroup.mem_even g.2⟩ m) = G ⟨g, spinGroup.mem_even g.2⟩ (φ m))
+      φ (F ⟨g, spinGroup.mem_even g.property⟩ m) = G ⟨g, spinGroup.mem_even g.property⟩ (φ m))
     (x : CliffordAlgebra.even Q) (m : M) : φ (F x m) = G x (φ m) := by
   obtain ⟨a, rfl⟩ := spinGroupAlgebraHom_surjective hspan x
   let φ' : (spinGroupRepresentation F).IntertwiningMap (spinGroupRepresentation G) :=
@@ -269,32 +277,80 @@ private theorem intertwines_even_of_intertwines_spinGroup {K : Type u} [Field K]
 
 /-! ### The spinor module is a simple Clifford module
 
-Nothing here needs an even dimension, a nondegenerate form, or an invertible `2`: the Fock action
-is onto `Module.End K S` for every polarization whose isotropic summand is finite-dimensional, and
-a vector space is a simple module over its own endomorphism ring. -/
+Nothing here needs an even dimension, a nondegenerate form, an invertible `2`, or a
+finite-dimensional isotropic summand. A nonzero spinor lies in the exterior algebra of a
+finite-dimensional subspace `W₀ ≤ W`, where creation and contraction operators generate every
+endomorphism and so carry it to `1`; these operators extend from `W₀` to `W`, and left
+multiplication by any spinor is again a Fock operator (`TauCeti.exists_spinAction_eq_mul`). Only the
+stronger statement that the Fock action is onto `Module.End K S`, `TauCeti.spinAction_surjective`,
+needs `W` to be finite-dimensional. -/
 
 section Simple
 
 variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
-  {Q : QuadraticForm K V} (P : SpinPolarizationData Q) [FiniteDimensional K P.W]
+  {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
+
+/-- A nonzero spinor is carried to `1` by some Clifford element, with no finiteness assumption on
+`W`: it lies in the exterior algebra of a finite-dimensional `W₀`, where creation and contraction
+operators generate every endomorphism, and these operators extend from `W₀` to `W`. -/
+private theorem exists_spinAction_eq_one (s : ExteriorAlgebra K P.W) (hs : s ≠ 0) :
+    ∃ x : CliffordAlgebra Q, spinAction Q P x s = 1 := by
+  obtain ⟨W₀, hW₀, hsW₀⟩ := ExteriorAlgebra.exists_finite_submodule_mem_range_map_subtype s
+  obtain ⟨s₀, rfl⟩ := (AlgHom.mem_range _).mp hsW₀
+  have hs₀ : s₀ ≠ 0 := by rintro rfl; exact hs (map_zero _)
+  obtain ⟨g, hg⟩ := IsSimpleModule.toSpanSingleton_surjective
+    (Module.End K (ExteriorAlgebra K W₀)) hs₀ 1
+  rw [LinearMap.toSpanSingleton_apply, Module.End.smul_def] at hg
+  have key : ∀ g ∈ Algebra.adjoin K
+      (Set.range (fun x : W₀ ↦
+        (LinearMap.mulLeft K (ExteriorAlgebra.ι K x) : Module.End K (ExteriorAlgebra K W₀))) ∪
+       Set.range (fun d : Module.Dual K W₀ ↦
+        (CliffordAlgebra.contractLeft (Q := (0 : QuadraticForm K W₀)) d :
+          Module.End K (ExteriorAlgebra K W₀)))),
+      ∃ x : CliffordAlgebra Q, ∀ t, spinAction Q P x (ExteriorAlgebra.map W₀.subtype t) =
+      ExteriorAlgebra.map W₀.subtype (g t) := by
+    intro g hg
+    induction hg using Algebra.adjoin_induction with
+    | mem g hg =>
+      rcases hg with ⟨y, rfl⟩ | ⟨d, rfl⟩
+      · refine ⟨CliffordAlgebra.ι Q ((W₀.subtype y : P.W) : V), fun t => ?_⟩
+        rw [spinAction_ι_wedge]
+        simp [map_mul]
+      · obtain ⟨d', hd'⟩ := LinearMap.exists_extend (p := W₀) d
+        obtain ⟨y, hy⟩ := P.pairingEquiv.surjective d'
+        refine ⟨CliffordAlgebra.ι Q (y : V), fun t => ?_⟩
+        rw [spinAction_ι_contract, hy, ExteriorAlgebra.contractLeft_map]
+        simp [hd']
+    | algebraMap r => exact ⟨algebraMap K _ r, fun t => by simp⟩
+    | add a b _ _ ha hb =>
+      obtain ⟨x, hx⟩ := ha
+      obtain ⟨y, hy⟩ := hb
+      exact ⟨x + y, fun t => by simp [hx, hy]⟩
+    | mul a b _ _ ha hb =>
+      obtain ⟨x, hx⟩ := ha
+      obtain ⟨y, hy⟩ := hb
+      exact ⟨x * y, fun t => by simp [hx, hy]⟩
+  obtain ⟨x, hx⟩ := key g (by rw [ExteriorAlgebra.creation_contraction_adjoin_eq_top]; trivial)
+  exact ⟨x, by rw [hx, hg, map_one]⟩
 
 /-- **A nonzero spinor generates the spinor module**: some Clifford element carries it to any
-prescribed spinor. The Fock action realizes every endomorphism of `S = ⋀·W`, and a vector space is
-a simple module over its endomorphism ring. -/
+prescribed spinor. No finiteness of `W` is needed: some Clifford element carries the nonzero spinor
+to `1`, and left multiplication by the target is the Fock action of another. -/
 theorem exists_spinAction_eq {s : ExteriorAlgebra K P.W} (hs : s ≠ 0)
     (t : ExteriorAlgebra K P.W) : ∃ x : CliffordAlgebra Q, spinAction Q P x s = t := by
-  obtain ⟨f, hf⟩ := IsSimpleModule.toSpanSingleton_surjective
-    (Module.End K (ExteriorAlgebra K P.W)) hs t
-  rw [LinearMap.toSpanSingleton_apply, Module.End.smul_def] at hf
-  obtain ⟨x, rfl⟩ := spinAction_surjective P f
-  exact ⟨x, hf⟩
+  obtain ⟨x, hx⟩ := exists_spinAction_eq_one P s hs
+  obtain ⟨y, hy⟩ := exists_spinAction_eq_mul P t
+  exact ⟨y * x, by rw [map_mul, mul_apply_eq_comp, hx, hy, mul_one]⟩
 
 /-- **The invariant-subspace dichotomy for the spinor module**: a submodule of `S = ⋀·W`
 invariant under every Clifford element is `⊥` or the whole of `S`. The spinor module is nonzero,
-so this is its simplicity statement for the Clifford action. -/
+so this is its simplicity statement for the Clifford action. No finiteness of `W` is needed. -/
 theorem eq_bot_or_eq_top_of_map_spinAction_le (N : Submodule K (ExteriorAlgebra K P.W))
     (hN : ∀ x : CliffordAlgebra Q, N.map (spinAction Q P x) ≤ N) : N = ⊥ ∨ N = ⊤ := by
-  exact eq_bot_or_eq_top_of_surjective_action (spinAction Q P) (spinAction_surjective P) N hN
+  refine or_iff_not_imp_left.mpr fun h0 => Submodule.eq_top_iff'.mpr fun t => ?_
+  obtain ⟨s, hsN, hs⟩ := Submodule.exists_mem_ne_zero_of_ne_bot h0
+  obtain ⟨x, rfl⟩ := exists_spinAction_eq P hs t
+  exact hN x (Submodule.mem_map_of_mem hsN)
 
 end Simple
 

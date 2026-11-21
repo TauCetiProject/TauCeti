@@ -94,7 +94,7 @@ theorem gradedPiece_mk_eq_zero_iff {n : ℕ} (x : ↥(I ^ n)) :
 
 private noncomputable def filteredMul (I : Ideal R) (i j : ℕ) :
     ↥(I ^ i) →ₗ[R] ↥(I ^ j) →ₗ[R] ↥(I ^ (i + j)) :=
-  LinearMap.mk₂ R (fun x y => ⟨(x : R) * y, mul_mem_pow_add x.2 y.2⟩)
+  LinearMap.mk₂ R (fun x y => ⟨(x : R) * y, mul_mem_pow_add x.property y.property⟩)
     (fun _ _ _ => Subtype.ext (add_mul _ _ _))
     (fun _ _ _ => Subtype.ext (smul_mul_assoc _ _ _))
     (fun _ _ _ => Subtype.ext (mul_add _ _ _))
@@ -106,7 +106,8 @@ private noncomputable def gradedPreMul (I : Ideal R) (i j : ℕ) :
 
 private theorem gradedPreMul_apply (i j : ℕ) (x : ↥(I ^ i)) (y : ↥(I ^ j)) :
     gradedPreMul I i j x y =
-      Submodule.Quotient.mk (⟨(x : R) * y, mul_mem_pow_add x.2 y.2⟩ : ↥(I ^ (i + j))) :=
+      Submodule.Quotient.mk (⟨(x : R) * y, mul_mem_pow_add x.property y.property⟩ : ↥(I ^ (i + j)))
+          :=
   rfl
 
 private theorem gradedPreMul_ker_left (i j : ℕ) :
@@ -116,7 +117,7 @@ private theorem gradedPreMul_ker_left (i j : ℕ) :
   rw [LinearMap.mem_ker]
   ext y
   rw [gradedPreMul_apply, LinearMap.zero_apply, gradedPiece_mk_eq_zero_iff]
-  have h := mul_mem_pow_add hx y.2
+  have h := mul_mem_pow_add hx y.property
   rwa [Nat.add_right_comm] at h
 
 private theorem gradedPreMul_ker_right (i j : ℕ) :
@@ -127,7 +128,7 @@ private theorem gradedPreMul_ker_right (i j : ℕ) :
   ext x
   rw [LinearMap.flip_apply, gradedPreMul_apply, LinearMap.zero_apply,
     gradedPiece_mk_eq_zero_iff]
-  exact mul_mem_pow_add (i := i) (j := j + 1) x.2 hy
+  exact mul_mem_pow_add (i := i) (j := j + 1) x.property hy
 
 variable (I) in
 /-- The multiplication `I ^ i ⧸ I ^ (i + 1) × I ^ j ⧸ I ^ (j + 1) → I ^ (i + j) ⧸ I ^ (i + j + 1)`
@@ -140,12 +141,13 @@ noncomputable def gradedMul (i j : ℕ) :
 @[simp]
 theorem gradedMul_mk (i j : ℕ) (x : ↥(I ^ i)) (y : ↥(I ^ j)) :
     gradedMul I i j (Submodule.Quotient.mk x) (Submodule.Quotient.mk y) =
-      Submodule.Quotient.mk (⟨(x : R) * y, mul_mem_pow_add x.2 y.2⟩ : ↥(I ^ (i + j))) := by
+      Submodule.Quotient.mk (⟨(x : R) * y, mul_mem_pow_add x.property y.property⟩ : ↥(I ^ (i + j)))
+          := by
   rw [gradedMul, LinearMap.liftQ₂_mk, gradedPreMul_apply]
 
 private theorem gradedPiece_cast_mk {i j : ℕ} (h : i = j) (x : ↥(I ^ i)) :
     cast (congrArg I.GradedPiece h) (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk (⟨(x : R), h ▸ x.2⟩ : ↥(I ^ j)) := by
+      Submodule.Quotient.mk (⟨(x : R), h ▸ x.property⟩ : ↥(I ^ j)) := by
   subst j
   rfl
 
@@ -351,7 +353,7 @@ theorem mk_eq_mk_iff {n : ℕ} (x y : ↥(I ^ n)) :
 
 /-- The class of an element does not depend on how its degree is written. -/
 theorem mk_congr {m n : ℕ} (h : m = n) (x : ↥(I ^ m)) :
-    mk I m x = mk I n ⟨(x : R), h ▸ x.2⟩ := by
+    mk I m x = mk I n ⟨(x : R), h ▸ x.property⟩ := by
   subst n
   rfl
 
@@ -359,7 +361,7 @@ theorem mk_congr {m n : ℕ} (h : m = n) (x : ↥(I ^ m)) :
 `x * y` in degree `m + n`. -/
 @[simp]
 theorem mk_mul_mk {m n : ℕ} (x : ↥(I ^ m)) (y : ↥(I ^ n)) :
-    mk I m x * mk I n y = mk I (m + n) ⟨(x : R) * y, mul_mem_pow_add x.2 y.2⟩ := by
+    mk I m x * mk I n y = mk I (m + n) ⟨(x : R) * y, mul_mem_pow_add x.property y.property⟩ := by
   rw [mk_apply, mk_apply, DirectSum.of_mul_of, gradedGMul_mul, gradedMul_mk, mk_apply]
 
 /-- The class of `r ∈ I ^ 0 = R` in degree zero is the image of `r` under the algebra map. -/
@@ -374,7 +376,7 @@ theorem mk_zero_one : mk I 0 ⟨1, I.mem_pow_zero 1⟩ = 1 := by
 /-- The `k`-th power of the class of `x ∈ I ^ n` is the class of `x ^ k` in degree `k * n`. -/
 theorem mk_pow {n : ℕ} (x : ↥(I ^ n)) (k : ℕ) :
     mk I n x ^ k =
-      mk I (k * n) ⟨(x : R) ^ k, by rw [mul_comm, pow_mul]; exact pow_mem_pow x.2 k⟩ := by
+      mk I (k * n) ⟨(x : R) ^ k, by rw [mul_comm, pow_mul]; exact pow_mem_pow x.property k⟩ := by
   induction k with
   | zero =>
     rw [pow_zero, mk_congr (Nat.zero_mul n), ← mk_zero_one]
@@ -468,14 +470,14 @@ private noncomputable def gradedPieceMap (f : R →+* S) (h : I ≤ J.comap f) (
     I.GradedPiece n →ₛₗ[f] J.GradedPiece n :=
   Submodule.mapQ _ _
     ((f.toSemilinearMap.domRestrict (I ^ n)).codRestrict (J ^ n) fun x =>
-      map_mem_pow_of_le_comap f h x.2)
+      map_mem_pow_of_le_comap f h x.property)
     fun x hx => by
       rw [Submodule.mem_comap, Submodule.subtype_apply] at hx
       exact map_mem_pow_of_le_comap f h hx
 
 private theorem gradedPieceMap_mk (f : R →+* S) (h : I ≤ J.comap f) {n : ℕ} (x : ↥(I ^ n)) :
     gradedPieceMap f h n (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk (⟨f x, map_mem_pow_of_le_comap f h x.2⟩ : ↥(J ^ n)) :=
+      Submodule.Quotient.mk (⟨f x, map_mem_pow_of_le_comap f h x.property⟩ : ↥(J ^ n)) :=
   rfl
 
 namespace AssociatedGraded
@@ -500,7 +502,7 @@ noncomputable def map (f : R →+* S) (h : I ≤ J.comap f) :
 /-- `AssociatedGraded.map` sends the class of `x ∈ I ^ n` to the class of `f x ∈ J ^ n`. -/
 @[simp]
 theorem map_mk (f : R →+* S) (h : I ≤ J.comap f) {n : ℕ} (x : ↥(I ^ n)) :
-    map f h (mk I n x) = mk J n ⟨f x, map_mem_pow_of_le_comap f h x.2⟩ := by
+    map f h (mk I n x) = mk J n ⟨f x, map_mem_pow_of_le_comap f h x.property⟩ := by
   rw [map, mk_apply, DirectSum.toSemiring_of, AddMonoidHom.comp_apply,
     LinearMap.toAddMonoidHom_coe, gradedPieceMap_mk, mk_apply]
 

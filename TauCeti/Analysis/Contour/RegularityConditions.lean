@@ -484,8 +484,8 @@ private theorem pow_unit_eq_of_angle_resonance {L_R L_L : ℂ} {θ : ℝ} {k : �
     linear_combination -hm
   have hnorm : (‖L_L‖ : ℂ) = (‖-L_L‖ : ℂ) := by rw [norm_neg]
   rw [← Complex.exp_arg_mul_I hL_R, hnorm,
-    ← Complex.exp_arg_mul_I (neg_ne_zero.mpr hL_L), ← Complex.exp_nat_mul,
-    ← Complex.exp_nat_mul, Complex.exp_eq_exp_iff_exists_int]
+    ← Complex.exp_arg_mul_I (neg_ne_zero.mpr hL_L), ← Complex.exp_natCast_mul,
+    ← Complex.exp_natCast_mul, Complex.exp_eq_exp_iff_exists_int]
   refine ⟨-(m + (k : ℤ) * j), ?_⟩
   have hC := congrArg (fun x : ℝ => (x : ℂ) * Complex.I) h_real
   push_cast at hC ⊢

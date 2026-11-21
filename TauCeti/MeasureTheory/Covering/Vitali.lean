@@ -68,10 +68,11 @@ theorem exists_superset_setLIntegral_le {X S : Set α} {r : α → ℝ} {rm : �
   · obtain ⟨c, hcu, hc⟩ := hucov x hx
     exact mem_iUnion.2 ⟨⟨c, hcu⟩, hc (mem_ball_self (hr x hx).1)⟩
   have hdisj : Pairwise (Function.onFun Disjoint fun a : u => ball (a : α) (r a)) :=
-    fun a a' haa' => hudisj a.2 a'.2 (Subtype.coe_injective.ne haa')
-  have hUS : (⋃ a : u, ball (a : α) (r a)) ⊆ S := iUnion_subset fun a => hS a (huX a.2)
+    fun a a' haa' => hudisj a.property a'.property (Subtype.coe_injective.ne haa')
+  have hUS : (⋃ a : u, ball (a : α) (r a)) ⊆ S := iUnion_subset fun a => hS a (huX a.property)
   calc _ ≤ ∑' a : u, ∫⁻ y in ball (a : α) (4 * r a), G y ∂μ := lintegral_iUnion_le _ _
-    _ ≤ ∑' a : u, ∫⁻ y in ball (a : α) (r a), F y ∂μ := tsum_le_tsum fun a => hball a (huX a.2)
+    _ ≤ ∑' a : u, ∫⁻ y in ball (a : α) (r a), F y ∂μ := tsum_le_tsum fun a => hball a
+        (huX a.property)
     _ = ∫⁻ y in ⋃ a : u, ball (a : α) (r a), F y ∂μ :=
         (lintegral_iUnion (fun _ => measurableSet_ball) hdisj _).symm
     _ ≤ _ := lintegral_mono_set hUS
@@ -112,7 +113,7 @@ theorem mul_measure_le_lintegral_of_forall_exists_ball {S : Set X} {R : ℝ} {g 
   -- The selected balls are pairwise disjoint, so the integrals over them add up to at most `∫⁻ g`.
   have hdisj' : Pairwise (Function.onFun Disjoint fun b : u => ball (b : X) (r b)) :=
     fun b b' hbb' =>
-      (hdisj b.2 b'.2 (Subtype.coe_injective.ne hbb')).mono ball_subset_closedBall
+      (hdisj b.property b'.property (Subtype.coe_injective.ne hbb')).mono ball_subset_closedBall
         ball_subset_closedBall
   calc t * ν S
       ≤ t * ∑' b : u, ν (closedBall (b : X) (4 * r b)) := by
@@ -120,7 +121,7 @@ theorem mul_measure_le_lintegral_of_forall_exists_ball {S : Set X} {R : ℝ} {g 
         exact (measure_mono hsub).trans (measure_biUnion_le ν hcount _)
     _ = ∑' b : u, t * ν (closedBall (b : X) (4 * r b)) := ENNReal.tsum_mul_left.symm
     _ ≤ ∑' b : u, ∫⁻ y in ball (b : X) (r b), g y ∂μ :=
-        _root_.tsum_le_tsum fun b => hle b (hu b.2)
+        _root_.tsum_le_tsum fun b => hle b (hu b.property)
     _ = ∫⁻ y in ⋃ b : u, ball (b : X) (r b), g y ∂μ := by
         rw [lintegral_iUnion (fun b => measurableSet_ball) hdisj']
     _ ≤ ∫⁻ y, g y ∂μ := setLIntegral_le_lintegral _ _
