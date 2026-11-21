@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.TwoSidedIdeal.Annihilator
-public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
+public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Basic
 
 /-!
 # Closedness of annihilators of two-sided ideals

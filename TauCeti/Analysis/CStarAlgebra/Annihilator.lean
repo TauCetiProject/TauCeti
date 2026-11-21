@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Ideal
 public import TauCeti.Analysis.CStarAlgebra.Module.Ideal
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Essential
 

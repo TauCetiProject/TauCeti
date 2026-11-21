@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Module.Submodule.Unitization
 public import TauCeti.RingTheory.TwoSidedIdeal.Annihilator
-public import TauCeti.RingTheory.TwoSidedIdeal.Basic
 
 /-!
 # Left `Unitization` module actions on two-sided ideals

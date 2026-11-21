@@ -11,9 +11,8 @@ public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Annihilator
 # Closed-essential two-sided ideals in topological rings
 
 Two-sided ideals meeting every nonzero closed two-sided ideal (`TwoSidedIdeal.IsClosedEssential`),
-lattice/homeomorphism/product-kernel API, and equivalences with `IsEssential` and
-`annihilator = ⊥` for `star`-closed ideals in `T₁` proper star rings with separately continuous
-multiplication.
+lattice/homeomorphism API, and equivalences with `IsEssential` and `annihilator = ⊥` for
+`star`-closed ideals in `T₁` proper star rings with separately continuous multiplication.
 -/
 
 public section
@@ -106,44 +105,6 @@ theorem isClosedEssential_comap_iff_of_isHomeomorph {B E : Type*} [NonUnitalNonA
     rw [← φ.apply_symm_apply K] at hIK ⊢
     rw [← φ.map_inf, _root_.map_eq_bot_iff] at hIK
     rw [h (φ.symm K) hK' hIK, OrderIso.map_bot]
-
-/-- In a product `A × B` with `[T1Space A]`, the first-factor ideal `A × {0} = ker snd` is
-closed-essential if and only if `B` is a subsingleton. -/
-@[simp]
-theorem isClosedEssential_ker_snd_iff {B : Type*} [T1Space A] [NonUnitalNonAssocRing B]
-    [TopologicalSpace B] :
-    (TwoSidedIdeal.ker (NonUnitalRingHom.snd A B)).IsClosedEssential ↔ Subsingleton B :=
-  ⟨fun h => ker_fst_eq_bot_iff.mp <|
-      isClosedEssential_iff.mp h _
-        (isClosed_ker (by simpa only [NonUnitalRingHom.coe_fst] using continuous_fst))
-        ker_snd_inf_ker_fst,
-   fun h => (isEssential_ker_snd_iff.mpr h).isClosedEssential⟩
-
-/-- In a product `A × B` with `[T1Space B]`, the second-factor ideal `{0} × B = ker fst` is
-closed-essential if and only if `A` is a subsingleton. -/
-@[simp]
-theorem isClosedEssential_ker_fst_iff {B : Type*} [NonUnitalNonAssocRing B]
-    [TopologicalSpace B] [T1Space B] :
-    (TwoSidedIdeal.ker (NonUnitalRingHom.fst A B)).IsClosedEssential ↔ Subsingleton A :=
-  ⟨fun h => ker_snd_eq_bot_iff.mp <|
-      isClosedEssential_iff.mp h _
-        (isClosed_ker (by simpa only [NonUnitalRingHom.coe_snd] using continuous_snd))
-        ker_fst_inf_ker_snd,
-   fun h => (isEssential_ker_fst_iff.mpr h).isClosedEssential⟩
-
-@[simp]
-theorem isClosedEssential_ker_snd_nonUnitalStarAlgHom_iff {R B : Type*} [Monoid R]
-    [DistribMulAction R A] [Star A] [T1Space A]
-    [NonUnitalNonAssocRing B] [DistribMulAction R B] [Star B] [TopologicalSpace B] :
-    (TwoSidedIdeal.ker (NonUnitalStarAlgHom.snd R A B)).IsClosedEssential ↔ Subsingleton B := by
-  rw [ker_nonUnitalStarAlgHom_snd, isClosedEssential_ker_snd_iff]
-
-@[simp]
-theorem isClosedEssential_ker_fst_nonUnitalStarAlgHom_iff {R B : Type*} [Monoid R]
-    [DistribMulAction R A] [Star A]
-    [NonUnitalNonAssocRing B] [DistribMulAction R B] [Star B] [TopologicalSpace B] [T1Space B] :
-    (TwoSidedIdeal.ker (NonUnitalStarAlgHom.fst R A B)).IsClosedEssential ↔ Subsingleton A := by
-  rw [ker_nonUnitalStarAlgHom_fst, isClosedEssential_ker_fst_iff]
 
 end ClosedEssential
 

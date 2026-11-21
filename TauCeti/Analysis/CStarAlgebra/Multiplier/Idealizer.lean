@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.Nondegenerate
 public import TauCeti.Topology.Algebra.Star.Idealizer
-import TauCeti.Analysis.CStarAlgebra.Ideal
+import TauCeti.Analysis.CStarAlgebra.Multiplier.Ideal
 import TauCeti.Analysis.CStarAlgebra.Quotient
 
 /-!

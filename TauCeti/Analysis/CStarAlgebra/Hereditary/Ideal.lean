@@ -26,10 +26,10 @@ via `K ↦ closure (span ℂ (A · K · A))` (`NonUnitalStarSubalgebra.inducedCl
 `NonUnitalStarSubalgebra.closedIdealOrderIso`.
 
 At the single-element level, an element `a : A` is *full* (`TauCeti.IsFull`, defined in
-`TauCeti.Topology.Algebra.Ring.TwoSidedIdeal`) when the closed two-sided ideal it generates is all
-of `A`, whereas `a` is *strictly positive* (`TauCeti.CStarAlgebra.IsStrictlyPositive`) when `0 ≤ a`
-and the hereditary C⋆-subalgebra `closure {a * x * a | x : A}` it generates is all of `A`. In unital
-C⋆-algebras, strict positivity coincides with `0 ≤ a ∧ IsUnit a`
+`TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Basic`) when the closed two-sided ideal it generates
+is all of `A`, whereas `a` is *strictly positive* (`TauCeti.CStarAlgebra.IsStrictlyPositive`)
+when `0 ≤ a` and the hereditary C⋆-subalgebra `closure {a * x * a | x : A}` it generates is all of
+`A`. In unital C⋆-algebras, strict positivity coincides with `0 ≤ a ∧ IsUnit a`
 (`TauCeti.CStarAlgebra.isStrictlyPositive_iff_of_unital`), and every strictly positive element is
 full (`TauCeti.CStarAlgebra.IsStrictlyPositive.isFull`). Concrete `2 × 2` matrix counterexamples
 live in `TauCeti.Examples.Analysis.CStarAlgebra.Hereditary`.

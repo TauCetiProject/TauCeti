@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.Basic
 public import Mathlib.RingTheory.Ideal.Maps
-public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.Algebra.Star.Basic
 public import TauCeti.RingTheory.TwoSidedIdeal.Essential
-public import TauCeti.RingTheory.TwoSidedIdeal.Kernel
 
 /-!
 # Annihilators of two-sided ideals
@@ -429,129 +426,5 @@ theorem isEssential_iff_rightAnnihilator_eq_bot_of_star_mem (hI : ∀ x ∈ I, s
   rw [← annihilator_eq_bot_iff_isEssential hI, annihilator_eq_rightAnnihilator_of_star_mem hI]
 
 end IsProperStar
-
-section Prod
-
-/-- In a product `A × B` of nonunital rings, the left annihilator of `ker snd = A × {0}` is the
-preimage of `(⊤ : TwoSidedIdeal A).annihilator` along `fst`. -/
-theorem annihilator_ker_snd_eq_comap {A B : Type*} [NonUnitalRing A] [NonUnitalRing B] :
-    (TwoSidedIdeal.ker (NonUnitalRingHom.snd A B)).annihilator =
-      (⊤ : TwoSidedIdeal A).annihilator.comap (NonUnitalRingHom.fst A B) := by
-  ext p
-  rw [mem_annihilator, mem_comap, mem_annihilator]
-  refine ⟨fun h a _ => congrArg Prod.fst (h (a, 0) ((mem_ker _).mpr rfl)), fun h x hx => ?_⟩
-  rw [mem_ker, NonUnitalRingHom.coe_snd] at hx
-  ext
-  · exact h x.fst (mem_top A)
-  · simp [hx]
-
-theorem rightAnnihilator_ker_snd_eq_comap {A B : Type*} [NonUnitalRing A] [NonUnitalRing B] :
-    (TwoSidedIdeal.ker (NonUnitalRingHom.snd A B)).rightAnnihilator =
-      (⊤ : TwoSidedIdeal A).rightAnnihilator.comap (NonUnitalRingHom.fst A B) := by
-  ext p
-  rw [mem_rightAnnihilator, mem_comap, mem_rightAnnihilator]
-  refine ⟨fun h a _ => congrArg Prod.fst (h (a, 0) ((mem_ker _).mpr rfl)), fun h x hx => ?_⟩
-  rw [mem_ker, NonUnitalRingHom.coe_snd] at hx
-  ext
-  · exact h x.fst (mem_top A)
-  · simp [hx]
-
-/-- In a product `A × B` of nonunital rings, the left annihilator of `ker fst = {0} × B` is the
-preimage of `(⊤ : TwoSidedIdeal B).annihilator` along `snd`. -/
-theorem annihilator_ker_fst_eq_comap {A B : Type*} [NonUnitalRing A] [NonUnitalRing B] :
-    (TwoSidedIdeal.ker (NonUnitalRingHom.fst A B)).annihilator =
-      (⊤ : TwoSidedIdeal B).annihilator.comap (NonUnitalRingHom.snd A B) := by
-  ext p
-  rw [mem_annihilator, mem_comap, mem_annihilator]
-  refine ⟨fun h b _ => congrArg Prod.snd (h (0, b) ((mem_ker _).mpr rfl)), fun h x hx => ?_⟩
-  rw [mem_ker, NonUnitalRingHom.coe_fst] at hx
-  ext
-  · simp [hx]
-  · exact h x.snd (mem_top B)
-
-theorem rightAnnihilator_ker_fst_eq_comap {A B : Type*} [NonUnitalRing A] [NonUnitalRing B] :
-    (TwoSidedIdeal.ker (NonUnitalRingHom.fst A B)).rightAnnihilator =
-      (⊤ : TwoSidedIdeal B).rightAnnihilator.comap (NonUnitalRingHom.snd A B) := by
-  ext p
-  rw [mem_rightAnnihilator, mem_comap, mem_rightAnnihilator]
-  refine ⟨fun h b _ => congrArg Prod.snd (h (0, b) ((mem_ker _).mpr rfl)), fun h x hx => ?_⟩
-  rw [mem_ker, NonUnitalRingHom.coe_fst] at hx
-  ext
-  · simp [hx]
-  · exact h x.snd (mem_top B)
-
-/-- In a product `A × B` with `[FaithfulSMul A A]`, the left annihilator of the first-factor ideal
-`A × {0} = ker snd` is the second-factor ideal `{0} × B = ker fst`. -/
-@[simp]
-theorem annihilator_ker_snd {A B : Type*} [NonUnitalRing A] [FaithfulSMul A A]
-    [NonUnitalRing B] :
-    (TwoSidedIdeal.ker (NonUnitalRingHom.snd A B)).annihilator =
-      TwoSidedIdeal.ker (NonUnitalRingHom.fst A B) := by
-  ext p
-  simp [annihilator_ker_snd_eq_comap, mem_comap, mem_ker, annihilator_top_of_faithfulSMul]
-
-/-- In a product `A × B` with `[FaithfulSMul Aᵐᵒᵖ A]`, the right annihilator of the first-factor
-ideal `A × {0} = ker snd` is the second-factor ideal `{0} × B = ker fst`. -/
-@[simp]
-theorem rightAnnihilator_ker_snd {A B : Type*} [NonUnitalRing A] [FaithfulSMul Aᵐᵒᵖ A]
-    [NonUnitalRing B] :
-    (TwoSidedIdeal.ker (NonUnitalRingHom.snd A B)).rightAnnihilator =
-      TwoSidedIdeal.ker (NonUnitalRingHom.fst A B) := by
-  ext p
-  simp [rightAnnihilator_ker_snd_eq_comap, mem_comap, mem_ker]
-
-/-- In a product `A × B` with `[FaithfulSMul B B]`, the left annihilator of the second-factor ideal
-`{0} × B = ker fst` is the first-factor ideal `A × {0} = ker snd`. -/
-@[simp]
-theorem annihilator_ker_fst {A B : Type*} [NonUnitalRing A]
-    [NonUnitalRing B] [FaithfulSMul B B] :
-    (TwoSidedIdeal.ker (NonUnitalRingHom.fst A B)).annihilator =
-      TwoSidedIdeal.ker (NonUnitalRingHom.snd A B) := by
-  ext p
-  simp [annihilator_ker_fst_eq_comap, mem_comap, mem_ker, annihilator_top_of_faithfulSMul]
-
-/-- In a product `A × B` with `[FaithfulSMul Bᵐᵒᵖ B]`, the right annihilator of the second-factor
-ideal `{0} × B = ker fst` is the first-factor ideal `A × {0} = ker snd`. -/
-@[simp]
-theorem rightAnnihilator_ker_fst {A B : Type*} [NonUnitalRing A]
-    [NonUnitalRing B] [FaithfulSMul Bᵐᵒᵖ B] :
-    (TwoSidedIdeal.ker (NonUnitalRingHom.fst A B)).rightAnnihilator =
-      TwoSidedIdeal.ker (NonUnitalRingHom.snd A B) := by
-  ext p
-  simp [rightAnnihilator_ker_fst_eq_comap, mem_comap, mem_ker]
-
-@[simp]
-theorem annihilator_ker_snd_nonUnitalStarAlgHom {R A B : Type*} [Monoid R]
-    [NonUnitalRing A] [DistribMulAction R A] [Star A] [FaithfulSMul A A]
-    [NonUnitalRing B] [DistribMulAction R B] [Star B] :
-    (TwoSidedIdeal.ker (NonUnitalStarAlgHom.snd R A B)).annihilator =
-      TwoSidedIdeal.ker (NonUnitalStarAlgHom.fst R A B) := by
-  rw [ker_nonUnitalStarAlgHom_snd, ker_nonUnitalStarAlgHom_fst, annihilator_ker_snd]
-
-@[simp]
-theorem rightAnnihilator_ker_snd_nonUnitalStarAlgHom {R A B : Type*} [Monoid R]
-    [NonUnitalRing A] [DistribMulAction R A] [Star A] [FaithfulSMul Aᵐᵒᵖ A]
-    [NonUnitalRing B] [DistribMulAction R B] [Star B] :
-    (TwoSidedIdeal.ker (NonUnitalStarAlgHom.snd R A B)).rightAnnihilator =
-      TwoSidedIdeal.ker (NonUnitalStarAlgHom.fst R A B) := by
-  rw [ker_nonUnitalStarAlgHom_snd, ker_nonUnitalStarAlgHom_fst, rightAnnihilator_ker_snd]
-
-@[simp]
-theorem annihilator_ker_fst_nonUnitalStarAlgHom {R A B : Type*} [Monoid R]
-    [NonUnitalRing A] [DistribMulAction R A] [Star A]
-    [NonUnitalRing B] [DistribMulAction R B] [Star B] [FaithfulSMul B B] :
-    (TwoSidedIdeal.ker (NonUnitalStarAlgHom.fst R A B)).annihilator =
-      TwoSidedIdeal.ker (NonUnitalStarAlgHom.snd R A B) := by
-  rw [ker_nonUnitalStarAlgHom_fst, ker_nonUnitalStarAlgHom_snd, annihilator_ker_fst]
-
-@[simp]
-theorem rightAnnihilator_ker_fst_nonUnitalStarAlgHom {R A B : Type*} [Monoid R]
-    [NonUnitalRing A] [DistribMulAction R A] [Star A]
-    [NonUnitalRing B] [DistribMulAction R B] [Star B] [FaithfulSMul Bᵐᵒᵖ B] :
-    (TwoSidedIdeal.ker (NonUnitalStarAlgHom.fst R A B)).rightAnnihilator =
-      TwoSidedIdeal.ker (NonUnitalStarAlgHom.snd R A B) := by
-  rw [ker_nonUnitalStarAlgHom_fst, ker_nonUnitalStarAlgHom_snd, rightAnnihilator_ker_fst]
-
-end Prod
 
 end TwoSidedIdeal

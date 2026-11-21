@@ -8,20 +8,19 @@ module
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.Algebra.Module.Submodule.Essential
 public import TauCeti.RingTheory.TwoSidedIdeal.Basic
-public import TauCeti.RingTheory.TwoSidedIdeal.Kernel
 
 /-!
 # Essential two-sided ideals
 
-Essential two-sided ideals (`TwoSidedIdeal.IsEssential`), lattice and `comap` API, bridges to
-`TauCeti.IsEssential` on `I.asIdeal` / `I.asIdealOpposite`, and product-projection kernels.
+Essential two-sided ideals (`TwoSidedIdeal.IsEssential`), lattice and `comap` API, and bridges to
+`TauCeti.IsEssential` on `I.asIdeal` / `I.asIdealOpposite`.
 
 ## Main declarations
 
 * `TwoSidedIdeal.IsEssential`, `TwoSidedIdeal.isEssential_inf_iff`,
   `TwoSidedIdeal.isEssential_bot_iff`, `TwoSidedIdeal.isEssential_comap_iff`.
 * `TwoSidedIdeal.isEssential_of_isEssential_asIdeal`,
-  `TwoSidedIdeal.isEssential_iff_isEssential_asIdeal`, `TwoSidedIdeal.isEssential_ker_snd_iff`.
+  `TwoSidedIdeal.isEssential_iff_isEssential_asIdeal`.
 -/
 
 public section
@@ -141,51 +140,5 @@ theorem isEssential_iff_isEssential_asIdeal {R : Type*} [CommRing R] {I : TwoSid
    isEssential_of_isEssential_asIdeal⟩
 
 end CommRing
-
-section Prod
-
-/-- In a product `A × B`, the first-factor ideal `A × {0} = ker snd` is essential if and only if `B`
-is a subsingleton. -/
-@[simp]
-theorem isEssential_ker_snd_iff {A B : Type*} [NonUnitalNonAssocRing A]
-    [NonUnitalNonAssocRing B] :
-    (TwoSidedIdeal.ker (NonUnitalRingHom.snd A B)).IsEssential ↔ Subsingleton B := by
-  refine ⟨fun h => ker_fst_eq_bot_iff.mp (isEssential_iff_inf_eq_bot.mp h _ ker_snd_inf_ker_fst),
-    fun _ => ?_⟩
-  have htop : TwoSidedIdeal.ker (NonUnitalRingHom.snd A B) = ⊤ := by
-    ext p
-    simp [mem_ker, NonUnitalRingHom.coe_snd, Subsingleton.elim p.snd 0]
-  rw [htop]
-  exact isEssential_top
-
-/-- In a product `A × B`, the second-factor ideal `{0} × B = ker fst` is essential if and only if
-`A` is a subsingleton. -/
-@[simp]
-theorem isEssential_ker_fst_iff {A B : Type*} [NonUnitalNonAssocRing A]
-    [NonUnitalNonAssocRing B] :
-    (TwoSidedIdeal.ker (NonUnitalRingHom.fst A B)).IsEssential ↔ Subsingleton A := by
-  refine ⟨fun h => ker_snd_eq_bot_iff.mp (isEssential_iff_inf_eq_bot.mp h _ ker_fst_inf_ker_snd),
-    fun _ => ?_⟩
-  have htop : TwoSidedIdeal.ker (NonUnitalRingHom.fst A B) = ⊤ := by
-    ext p
-    simp [mem_ker, NonUnitalRingHom.coe_fst, Subsingleton.elim p.fst 0]
-  rw [htop]
-  exact isEssential_top
-
-@[simp]
-theorem isEssential_ker_snd_nonUnitalStarAlgHom_iff {R A B : Type*} [Monoid R]
-    [NonUnitalNonAssocRing A] [DistribMulAction R A] [Star A]
-    [NonUnitalNonAssocRing B] [DistribMulAction R B] [Star B] :
-    (TwoSidedIdeal.ker (NonUnitalStarAlgHom.snd R A B)).IsEssential ↔ Subsingleton B := by
-  rw [ker_nonUnitalStarAlgHom_snd, isEssential_ker_snd_iff]
-
-@[simp]
-theorem isEssential_ker_fst_nonUnitalStarAlgHom_iff {R A B : Type*} [Monoid R]
-    [NonUnitalNonAssocRing A] [DistribMulAction R A] [Star A]
-    [NonUnitalNonAssocRing B] [DistribMulAction R B] [Star B] :
-    (TwoSidedIdeal.ker (NonUnitalStarAlgHom.fst R A B)).IsEssential ↔ Subsingleton A := by
-  rw [ker_nonUnitalStarAlgHom_fst, isEssential_ker_fst_iff]
-
-end Prod
 
 end TwoSidedIdeal

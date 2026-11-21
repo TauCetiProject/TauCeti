@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Hom
-public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
+public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Basic
 public import Mathlib.Topology.MetricSpace.Equicontinuity
 
 /-!
