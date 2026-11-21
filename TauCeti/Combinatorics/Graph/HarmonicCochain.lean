@@ -93,6 +93,40 @@ theorem edgeDifferential_apply (f : G.vertexSet → M) (e : G.edgeSet) :
     G.edgeDifferential tail head f e = f (tail e) - f (head e) :=
   (rfl)
 
+@[simp]
+theorem edgeDifferential_zero : G.edgeDifferential tail head (0 : G.vertexSet → M) = 0 := by
+  ext e
+  simp
+
+@[simp]
+theorem edgeDifferential_add (f g : G.vertexSet → M) :
+    G.edgeDifferential tail head (f + g) =
+      G.edgeDifferential tail head f + G.edgeDifferential tail head g := by
+  ext e
+  simp only [edgeDifferential_apply, Pi.add_apply]
+  abel
+
+@[simp]
+theorem edgeDifferential_neg (f : G.vertexSet → M) :
+    G.edgeDifferential tail head (-f) = -G.edgeDifferential tail head f := by
+  ext e
+  simp [neg_add_eq_sub]
+
+@[simp]
+theorem edgeDifferential_sub (f g : G.vertexSet → M) :
+    G.edgeDifferential tail head (f - g) =
+      G.edgeDifferential tail head f - G.edgeDifferential tail head g := by
+  ext e
+  simp only [edgeDifferential_apply, Pi.sub_apply]
+  abel
+
+@[simp]
+theorem edgeDifferential_smul {R : Type*} [Monoid R] [DistribMulAction R M] (r : R)
+    (f : G.vertexSet → M) :
+    G.edgeDifferential tail head (r • f) = r • G.edgeDifferential tail head f := by
+  ext e
+  simp [smul_sub]
+
 /-- Reversing every chosen orientation negates the edge differential. -/
 theorem edgeDifferential_swap (f : G.vertexSet → M) :
     G.edgeDifferential head tail f = -G.edgeDifferential tail head f := by
@@ -111,13 +145,8 @@ coefficients. -/
 def edgeDifferentialLinearMap (R : Type*) [Semiring R] [Module R M] :
     (G.vertexSet → M) →ₗ[R] G.edgeSet → M where
   toFun := G.edgeDifferential tail head
-  map_add' f g := by
-    ext e
-    simp only [edgeDifferential_apply, Pi.add_apply]
-    abel
-  map_smul' r f := by
-    ext e
-    simp [smul_sub]
+  map_add' := G.edgeDifferential_add tail head
+  map_smul' := G.edgeDifferential_smul tail head
 
 @[simp]
 theorem coe_edgeDifferentialLinearMap (R : Type*) [Semiring R] [Module R M] :
@@ -228,6 +257,32 @@ noncomputable def edgeDivergenceLinearMap : (G.edgeSet → k) →ₗ[k] G.vertex
 theorem coe_edgeDivergenceLinearMap :
     ⇑(G.edgeDivergenceLinearMap tail head length) = G.edgeDivergence (k := k) tail head length :=
   (rfl)
+
+@[simp]
+theorem edgeDivergence_zero : G.edgeDivergence tail head length (0 : G.edgeSet → k) = 0 :=
+  map_zero (G.edgeDivergenceLinearMap tail head length)
+
+@[simp]
+theorem edgeDivergence_add (c d : G.edgeSet → k) :
+    G.edgeDivergence tail head length (c + d) =
+      G.edgeDivergence tail head length c + G.edgeDivergence tail head length d :=
+  map_add (G.edgeDivergenceLinearMap tail head length) c d
+
+@[simp]
+theorem edgeDivergence_neg (c : G.edgeSet → k) :
+    G.edgeDivergence tail head length (-c) = -G.edgeDivergence tail head length c :=
+  map_neg (G.edgeDivergenceLinearMap tail head length) c
+
+@[simp]
+theorem edgeDivergence_sub (c d : G.edgeSet → k) :
+    G.edgeDivergence tail head length (c - d) =
+      G.edgeDivergence tail head length c - G.edgeDivergence tail head length d :=
+  map_sub (G.edgeDivergenceLinearMap tail head length) c d
+
+@[simp]
+theorem edgeDivergence_smul (a : k) (c : G.edgeSet → k) :
+    G.edgeDivergence tail head length (a • c) = a • G.edgeDivergence tail head length c :=
+  map_smul (G.edgeDivergenceLinearMap tail head length) a c
 
 /-- The edge pairing `(c, d)_ℓ = ∑ₑ c e * d e / ℓ e` of two cochains, a symmetric bilinear form
 given by the diagonal matrix of inverse lengths. -/
