@@ -45,7 +45,10 @@ global one. It does extend after multiplication by a cutoff:
   (`TauCeti.LocalSymbol.hasCompactSpatialSupport_extend`), so it satisfies its estimates uniformly
   in the position (`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`). Restricting the extension
   to an open set on which `ψ = 1` recovers the restriction of the original symbol
-  (`TauCeti.LocalSymbol.restrict_extend_of_eqOn_one`).
+  (`TauCeti.LocalSymbol.restrict_extend_of_eqOn_one`). The mixed derivatives of the extension obey
+  the Leibniz bound `TauCeti.LocalSymbol.norm_mixedDeriv_cutoff_smul_le` in terms of those of the
+  original symbol, and vanish outside `tsupport ψ`
+  (`TauCeti.LocalSymbol.mixedDeriv_cutoff_smul_eq_zero`).
 
 The order inclusions `TauCeti.LocalSymbol.inclusion` commute with restriction and extension.
 
@@ -458,6 +461,42 @@ private theorem contDiff_cutoff_smul (a : LocalSymbol U V W m) (hψ : ContDiff �
   rw [← prod_univ]
   exact prod_mono hψU subset_rfl
 
+/-- **Leibniz bound for the cut-off coefficient.** At a position `x ∈ U`, the mixed derivative
+`∂_x^α ∂_ξ^β` of `ψ(x) a(x, ξ)` is at most
+`∑ᵢ (|α| choose i) ‖D^i ψ(x)‖ ∑_{|w| = |α| - i} ‖∂_x^w ∂_ξ^β a(x, ξ)‖`. -/
+theorem norm_mixedDeriv_cutoff_smul_le (a : LocalSymbol U V W m) (hψ : ContDiff ℝ ∞ ψ)
+    {x : CoordinateSpace n} (hx : x ∈ U) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
+    ‖mixedDeriv α β (fun p => ψ p.1 • a.coefficient p) x ξ‖ ≤
+      ∑ i ∈ Finset.range (α.length + 1), (α.length.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψ x‖ *
+        ∑ w : Fin (α.length - i) → Fin n, ‖mixedDeriv (List.ofFn w) β a.coefficient x ξ‖ := by
+  -- Near `x`, replace `a` by a smooth function `b` on all of `ℝⁿ × ℝⁿ`.
+  obtain ⟨b, hb, hab⟩ := a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ
+    isCompact_singleton U.isOpen (singleton_subset_iff.2 hx)
+  have hab := hab x rfl
+  have hψb : mixedDeriv α β (fun p => ψ p.1 • a.coefficient p) x ξ =
+      coordinateDeriv α (fun y => ψ y • coordinateDeriv β (fun η => b (y, η)) ξ) x := by
+    rw [mixedDeriv_congr_of_eventually (b := fun p => ψ p.1 • b p)
+      (by filter_upwards [hab] with y hy η using by rw [hy]), mixedDeriv_def]
+    congr 1
+    funext y
+    exact congrFun (coordinateDeriv_const_smul β (fun η => b (y, η)) (ψ y)) ξ
+  rw [hψb]
+  refine (norm_coordinateDeriv_smul_le α (contDiff_infty.1 hψ _)
+    (contDiff_infty.1 (contDiff_coordinateDeriv_slice hb β ξ) _) x).trans_eq ?_
+  refine Finset.sum_congr rfl fun i _ => ?_
+  congr 1
+  refine Finset.sum_congr rfl fun w _ => ?_
+  rw [← mixedDeriv_def, mixedDeriv_congr_of_eventually hab]
+
+/-- At a position outside the support of `ψ`, every mixed derivative of the cut-off coefficient
+`ψ(x) a(x, ξ)` vanishes. -/
+theorem mixedDeriv_cutoff_smul_eq_zero (a : LocalSymbol U V W m) {x : CoordinateSpace n}
+    (hx : x ∉ tsupport ψ) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
+    mixedDeriv α β (fun p => ψ p.1 • a.coefficient p) x ξ = 0 := by
+  refine mixedDeriv_eq_zero_of_eventually ?_ α β ξ
+  filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hx] with y hy η
+  simp [hy]
+
 /-- The cut-off coefficient `ψ(x) a(x, ξ)` satisfies the symbol estimates on every compact set of
 positions. -/
 private theorem exists_bound_extend (a : LocalSymbol U V W m) (hψ : ContDiff ℝ ∞ ψ)
@@ -465,49 +504,33 @@ private theorem exists_bound_extend (a : LocalSymbol U V W m) (hψ : ContDiff �
     (α β : List (Fin n)) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (fun p => ψ p.1 • a.coefficient p) x ξ‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  -- Near the compact set `L = K ∩ tsupport ψ ⊆ U`, replace `a` by a smooth function `b`.
+  -- Bounds for the derivatives of `ψ` and the mixed derivatives of `a` on the compact set
+  -- `L = K ∩ tsupport ψ ⊆ U`, outside of which the cut-off coefficient vanishes near `K`.
   set L := K ∩ tsupport ψ
   have hL : IsCompact L := hK.inter_right (isClosed_tsupport ψ)
   have hLU : L ⊆ U := inter_subset_right.trans hψU
-  obtain ⟨b, hb, hab⟩ :=
-    a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ hL U.isOpen hLU
-  -- Bounds for the derivatives of `ψ` and the mixed derivatives of `a` on `L`.
   choose B hB using fun i : ℕ => hL.exists_bound_of_continuousOn
     (hψ.continuous_iteratedFDeriv (WithTop.coe_le_coe.2 le_top) (m := i)).continuousOn
   choose C hC0 hC using fun γ : List (Fin n) => a.exists_bound L hLU hL γ β
-  refine ⟨∑ i ∈ Finset.range (α.length + 1), (α.length.choose i : ℝ) * max (B i) 0 *
-      ∑ w : Fin (α.length - i) → Fin n, C (List.ofFn w), Finset.sum_nonneg fun i _ =>
-        mul_nonneg (by positivity) (Finset.sum_nonneg fun w _ => hC0 _), fun x hx ξ => ?_⟩
+  have hC' : 0 ≤ ∑ i ∈ Finset.range (α.length + 1), (α.length.choose i : ℝ) * max (B i) 0 *
+      ∑ w : Fin (α.length - i) → Fin n, C (List.ofFn w) :=
+    Finset.sum_nonneg fun i _ => mul_nonneg (by positivity) (Finset.sum_nonneg fun w _ => hC0 _)
+  refine ⟨_, hC', fun x hx ξ => ?_⟩
   by_cases hxψ : x ∈ tsupport ψ
   · have hxL : x ∈ L := ⟨hx, hxψ⟩
-    have hψb : mixedDeriv α β (fun p => ψ p.1 • a.coefficient p) x ξ =
-        coordinateDeriv α (fun y => ψ y • coordinateDeriv β (fun η => b (y, η)) ξ) x := by
-      rw [mixedDeriv_congr_of_eventually (b := fun p => ψ p.1 • b p)
-        (by filter_upwards [hab x hxL] with y hy η using by rw [hy]), mixedDeriv_def]
-      congr 1
-      funext y
-      exact congrFun (coordinateDeriv_const_smul β (fun η => b (y, η)) (ψ y)) ξ
-    rw [hψb]
-    refine (norm_coordinateDeriv_smul_le α (contDiff_infty.1 hψ _)
-      (contDiff_infty.1 (contDiff_coordinateDeriv_slice hb β ξ) _) x).trans ?_
+    refine (a.norm_mixedDeriv_cutoff_smul_le hψ (hLU hxL) α β ξ).trans ?_
     rw [Finset.sum_mul]
     refine Finset.sum_le_sum fun i _ => ?_
     have hψi : ‖iteratedFDeriv ℝ i ψ x‖ ≤ max (B i) 0 := (hB i x hxL).trans (le_max_left _ _)
-    have hbi : ∑ w : Fin (α.length - i) → Fin n,
-        ‖coordinateDeriv (List.ofFn w) (fun y => coordinateDeriv β (fun η => b (y, η)) ξ) x‖ ≤
-          ∑ w : Fin (α.length - i) → Fin n,
-            C (List.ofFn w) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
-      Finset.sum_le_sum fun w _ => by
-        rw [← mixedDeriv_def, mixedDeriv_congr_of_eventually (hab x hxL)]
-        exact hC _ x hxL ξ
+    have hai : ∑ w : Fin (α.length - i) → Fin n, ‖mixedDeriv (List.ofFn w) β a.coefficient x ξ‖ ≤
+        ∑ w : Fin (α.length - i) → Fin n,
+          C (List.ofFn w) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
+      Finset.sum_le_sum fun w _ => hC _ x hxL ξ
     calc _ ≤ (α.length.choose i : ℝ) * max (B i) 0 * ∑ w : Fin (α.length - i) → Fin n,
           C (List.ofFn w) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by gcongr
       _ = _ := by simp only [Finset.sum_mul, mul_assoc]
-  · rw [mixedDeriv_eq_zero_of_eventually ?_ α β ξ, norm_zero]
-    · exact mul_nonneg (Finset.sum_nonneg fun i _ => mul_nonneg (by positivity)
-        (Finset.sum_nonneg fun w _ => hC0 _)) (Real.rpow_pos_of_pos (by positivity) _).le
-    filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hxψ] with y hy η
-    simp [hy]
+  · rw [a.mixedDeriv_cutoff_smul_eq_zero hxψ, norm_zero]
+    exact mul_nonneg hC' (Real.rpow_pos_of_pos (by positivity) _).le
 
 /-- The extension by zero of the cut-off symbol `ψ(x) a(x, ξ)`, for a smooth cutoff `ψ` whose
 support is a closed subset of `ℝⁿ` contained in `U`: a symbol on `ℝⁿ`. -/
