@@ -45,9 +45,9 @@ with a decidability-free `classOf` characterization, as well as transport lemmas
 
 ## Main results
 
-* `TauCeti.ClassData.orderOf_rep_map`, `TauCeti.ClassData.index_centralizer_rep_map`,
-  `TauCeti.ClassData.invIndex_map`, `TauCeti.ClassData.powIndex_map`: transport of representative
-  orders, centralizer indices, inverse maps, and power maps along `TauCeti.ClassData.map`.
+* `TauCeti.ClassData.invIndex_map`, `TauCeti.ClassData.powIndex_map`,
+  `TauCeti.ClassData.zpowIndex_map`: transport of inverse maps and power maps along
+  `TauCeti.ClassData.map`.
 * `TauCeti.ClassData.invIndex_eq_self_iff`: `d.invIndex` fixes `i` if and only if `d.classOf i` is
   a real class (`TauCeti.IsRealClass`).
 * `TauCeti.ClassData.powIndex_bijective_of_coprime`,
@@ -90,90 +90,7 @@ theorem classOf_eq_map_iff {H : Type*} [Group H] (dH : ClassData H) (φ : H →*
     d.classOf j = ConjClasses.map φ (dH.classOf i) ↔ IsConj (d.rep j) (φ (dH.rep i)) := by
   rw [classOf_eq_mk, classOf_eq_mk, ConjClasses.map_mk, ConjClasses.mk_eq_mk_iff_isConj]
 
-/-- The `Set.ncard` of the `i`-th conjugacy class is the centralizer index of its
-representative. -/
-@[simp]
-theorem ncard_carrier_classOf (i : Fin d.numClasses) :
-    (d.classOf i).carrier.ncard = (Subgroup.centralizer {d.rep i}).index := by
-  rw [d.classOf_eq_mk, ConjClasses.ncard_carrier_mk]
-
-/-- The `Nat.card` of the `i`-th conjugacy class is the centralizer index of its representative. -/
-theorem card_carrier_classOf (i : Fin d.numClasses) :
-    Nat.card (d.classOf i).carrier = (Subgroup.centralizer {d.rep i}).index := by
-  rw [d.classOf_eq_mk, ConjClasses.card_carrier_mk]
-
-/-- In a finite group, the size of the `i`-th class `Finset` is the centralizer index of its
-representative. -/
-theorem card_classFinset_eq_index_centralizer [Fintype G]
-    [DecidableRel (IsConj : G → G → Prop)] (i : Fin d.numClasses) :
-    (d.classFinset i).card = (Subgroup.centralizer {d.rep i}).index := by
-  rw [d.card_classFinset, d.card_carrier_classOf]
-
-/-- Every element has the same order as the chosen representative of its conjugacy class. -/
-@[simp]
-theorem orderOf_rep_index [DecidableRel (IsConj : G → G → Prop)] (g : G) :
-    orderOf (d.rep (d.index g)) = orderOf g := by
-  by_contra hne
-  exact ConjClasses.mk_ne_mk_of_orderOf_ne hne
-    (ConjClasses.mk_eq_mk_iff_isConj.mpr (d.isConj_rep_index g))
-
-/-- Every element has the same centralizer index as the chosen representative of its conjugacy
-class. -/
-@[simp]
-theorem index_centralizer_rep_index [DecidableRel (IsConj : G → G → Prop)] (g : G) :
-    (Subgroup.centralizer {d.rep (d.index g)}).index = (Subgroup.centralizer {g}).index := by
-  rw [← ConjClasses.card_carrier_mk, ← ConjClasses.card_carrier_mk, ← d.classOf_eq_mk,
-    d.classOf_index]
-
 end Invariants
-
-/-! ### Transport of representative invariants along a multiplicative equivalence -/
-
-section MapInvariants
-
-variable {G H : Type*} [Group G] [Group H] (e : G ≃* H) (d : ClassData G)
-
-/-- Transporting class data along a multiplicative equivalence preserves the order of each
-representative. -/
-theorem orderOf_rep_map (i : Fin (d.map e).numClasses) :
-    orderOf ((d.map e).rep i) = orderOf (d.rep (Fin.cast (d.numClasses_map e) i)) := by
-  rw [rep_map, e.orderOf_eq]
-
-/-- Transporting class data along a multiplicative equivalence preserves the centralizer index of
-each representative. -/
-theorem index_centralizer_rep_map (i : Fin (d.map e).numClasses) :
-    (Subgroup.centralizer {(d.map e).rep i}).index =
-      (Subgroup.centralizer {d.rep (Fin.cast (d.numClasses_map e) i)}).index := by
-  have hcomap :
-      Subgroup.centralizer {(d.map e).rep i} =
-        (Subgroup.centralizer {d.rep (Fin.cast (d.numClasses_map e) i)}).comap
-          e.symm.toMonoidHom := by
-    ext y
-    simp only [rep_map, Subgroup.mem_centralizer_singleton_iff, Subgroup.mem_comap,
-      MulEquiv.coe_toMonoidHom]
-    exact ⟨fun h => by simpa using congrArg e.symm h, fun h => by simpa using congrArg e h⟩
-  rw [hcomap]
-  exact Subgroup.index_comap_of_surjective _ e.symm.surjective
-
-/-- Transporting class data along a multiplicative equivalence preserves the centralizer order of
-each representative. -/
-theorem card_centralizer_rep_map (i : Fin (d.map e).numClasses) :
-    Nat.card (Subgroup.centralizer {(d.map e).rep i}) =
-      Nat.card (Subgroup.centralizer {d.rep (Fin.cast (d.numClasses_map e) i)}) := by
-  refine Nat.card_congr
-    { toFun := fun ⟨y, hy⟩ => ⟨e.symm y, ?_⟩
-      invFun := fun ⟨x, hx⟩ => ⟨e x, ?_⟩
-      left_inv := fun ⟨y, _⟩ => Subtype.ext (e.apply_symm_apply y)
-      right_inv := fun ⟨x, _⟩ => Subtype.ext (e.symm_apply_apply x) }
-  · have hy' : y * e (d.rep (Fin.cast (d.numClasses_map e) i)) =
-        e (d.rep (Fin.cast (d.numClasses_map e) i)) * y := by
-      simpa only [rep_map] using Subgroup.mem_centralizer_singleton_iff.mp hy
-    exact Subgroup.mem_centralizer_singleton_iff.mpr (by simpa using congrArg e.symm hy')
-  · have hx' := Subgroup.mem_centralizer_singleton_iff.mp hx
-    rw [Subgroup.mem_centralizer_singleton_iff, rep_map]
-    simpa using congrArg e hx'
-
-end MapInvariants
 
 /-! ### The numbered inverse-class map -/
 
