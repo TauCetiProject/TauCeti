@@ -95,71 +95,10 @@ namespace TauCeti
 
 /-! ### Little Hölder regularity implies high-frequency block decay -/
 
-section
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
-
-/-- A bounded continuous little `α`-Hölder function satisfies a global `η ‖y‖^α + B ‖y‖` increment
-bound for every `η > 0`. -/
-private theorem exists_norm_sub_le_of_memLittleHolder {α : ℝ≥0} {f : E →ᵇ F}
-    (hf : MemLittleHolder α f) {η : ℝ} (hη : 0 < η) :
-    ∃ B : ℝ, 0 ≤ B ∧ ∀ x y, ‖f (x - y) - f x‖ ≤ η * ‖y‖ ^ (α : ℝ) + B * ‖y‖ := by
-  obtain ⟨δ, hδ, hδf⟩ := memLittleHolder_iff.1 hf η hη
-  refine ⟨2 * ‖f‖ / δ, by positivity, fun x y ↦ ?_⟩
-  rcases lt_or_ge ‖y‖ δ with hy | hy
-  · have hd : dist (x - y) x < δ := by rwa [dist_eq_norm, sub_sub_cancel_left, norm_neg]
-    have h := hδf (x - y) x hd
-    rw [dist_eq_norm, dist_eq_norm, sub_sub_cancel_left, norm_neg] at h
-    exact h.trans (le_add_of_nonneg_right (by positivity))
-  · have h2f : ‖f (x - y) - f x‖ ≤ 2 * ‖f‖ :=
-      (norm_sub_le _ _).trans (by linarith [f.norm_coe_le_norm (x - y), f.norm_coe_le_norm x])
-    have hlarge : 2 * ‖f‖ ≤ (2 * ‖f‖ / δ) * ‖y‖ := by
-      rw [div_mul_eq_mul_div, le_div_iff₀ hδ]
-      exact mul_le_mul_of_nonneg_left hy (by positivity)
-    exact (h2f.trans hlarge).trans (le_add_of_nonneg_left (by positivity))
-
-end
-
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
 
 section LittleHolderToDecay
-
-/-- From a global `η ‖y‖^α + B ‖y‖` increment bound, the weighted dyadic block
-`2^{α (j + 1)} ‖Δ_{j+1} f‖_∞` splits into a scale-free `O(η)` term and a geometric
-`O((2^{α - 1})^j)` term. -/
-private theorem rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le
-    (φ : ContDiffBump (0 : E)) {α : ℝ≥0} {η B : ℝ} (hη : 0 ≤ η) (hB : 0 ≤ B) {f : E →ᵇ F}
-    (hf : ∀ x y, ‖f (x - y) - f x‖ ≤ η * ‖y‖ ^ (α : ℝ) + B * ‖y‖) {j : ℕ}
-    {v : Lp F ∞ (volume : Measure E)}
-    (hv : littlewoodPaleyBlock F φ (j + 1) (toLpTop volume ℂ f : 𝓢'(E, F)) = v) :
-    2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖v‖ ≤
-      η * (2 ^ (α : ℝ) *
-        ∫ y, ‖y‖ ^ (α : ℝ) * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) +
-      (B * 2 ^ (α : ℝ) *
-        ∫ y, ‖y‖ * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) *
-          ((2 : ℝ) ^ ((α : ℝ) - 1)) ^ j := by
-  have hblock := norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le φ α.coe_nonneg hη hB hf hv
-  have hpow : (2 : ℝ) ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) =
-      2 ^ (α : ℝ) * 2 ^ ((α : ℝ) * j) := by
-    rw [Nat.cast_add, Nat.cast_one, mul_add, mul_one, Real.rpow_add two_pos, mul_comm]
-  have hratio : 2 ^ ((α : ℝ) * j) * ((2 : ℝ) ^ j)⁻¹ = ((2 : ℝ) ^ ((α : ℝ) - 1)) ^ j := by
-    rw [← Real.rpow_natCast (2 : ℝ) j, ← Real.rpow_neg zero_le_two, ← Real.rpow_add two_pos,
-      ← Real.rpow_mul_natCast zero_le_two]
-    congr 1
-    ring
-  calc 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖v‖
-      ≤ 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) *
-          (η * ((2 : ℝ) ^ ((α : ℝ) * j))⁻¹ *
-            (∫ y, ‖y‖ ^ (α : ℝ) *
-              ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) +
-          B * ((2 : ℝ) ^ j)⁻¹ *
-            (∫ y, ‖y‖ * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖)) := by
-        gcongr
-    _ = _ := by
-        rw [hpow, mul_add, ← hratio]
-        have h2αj : (2 : ℝ) ^ ((α : ℝ) * j) ≠ 0 := by positivity
-        field_simp
 
 /-- For `α < 1`, if a bounded continuous function `f` is little `α`-Hölder, then its weighted
 dyadic blocks satisfy `2^{α j} ‖Δⱼ f‖_∞ → 0`. -/
@@ -362,30 +301,24 @@ theorem mem_littleBesov_iff_memLittleHolder_and_tendsto_cocompact (k : ℕ) (hα
   · intro hu
     refine ⟨(tendsto_rpow_mul_norm_block_iff_memLittleHolder φ k hα0 hα1).1
       (tendsto_rpow_mul_norm_block_of_mem_littleBesov hu), ?_⟩
-    set Φ : BesovSpace F φ (k + α) ∞ ∞ →L[ℝ] (E →ᵇ F) :=
-      CkHolderSpace.toBoundedContinuousFunctionCLM.comp (toCkHolderSpace F φ k hα0 hα1)
+    set Φ : BesovSpace F φ (k + α) ∞ ∞ →L[ℝ] Lp F ∞ (volume : Measure E) :=
+      ((toLpTop (volume : Measure E) ℂ).restrictScalars ℝ).comp
+        (CkHolderSpace.toBoundedContinuousFunctionCLM.comp (toCkHolderSpace F φ k hα0 hα1))
+    have hΦ (v : BesovSpace F φ (k + α) ∞ ∞) :
+        Φ v = toLpTop (volume : Measure E) ℂ
+          (toCkHolderSpace F φ k hα0 hα1 v).toBoundedContinuousFunction := by
+      simp only [Φ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+        CkHolderSpace.toBoundedContinuousFunctionCLM_apply]
     have hΦ_schwartz (g : 𝓢(E, F)) :
-        Φ (SchwartzMap.toBesovSpaceCLM F φ (k + α) ∞ ∞ g) = g.toBoundedContinuousFunction :=
-      toTemperedDistribution_toLpTop_injective (μ := volume) <| by
-        simp only [Φ, ContinuousLinearMap.comp_apply,
-          CkHolderSpace.toBoundedContinuousFunctionCLM_apply, toLpTop_toCkHolderSpace,
-          SchwartzMap.toDistr_toBesovSpaceCLM]
-        rw [← Lp.toTemperedDistribution_toLp_eq (p := ∞) (μ := volume) g,
-          g.toLp_top_eq_toLpTop (𝕜 := ℂ)]
+        Φ (SchwartzMap.toBesovSpaceCLM F φ (k + α) ∞ ∞ g) = g.toLp ∞ (volume : Measure E) :=
+      Lp.toTemperedDistribution_injective <| by
+        simp only [hΦ, toLpTop_toCkHolderSpace, SchwartzMap.toDistr_toBesovSpaceCLM,
+          Lp.toTemperedDistribution_toLp_eq]
     rw [← SetLike.mem_coe, coe_littleBesov] at hu
-    have hmem : Φ u ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toBoundedContinuousFunction) :=
+    have hmem : Φ u ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toLp ∞ (volume : Measure E)) :=
       map_mem_closure Φ.continuous hu fun _ ⟨g, hg⟩ ↦ ⟨g, hg ▸ (hΦ_schwartz g).symm⟩
-    have hsub :
-        (Set.range fun g : 𝓢(E, F) ↦ g.toBoundedContinuousFunction) ⊆
-          Set.range (ZeroAtInftyContinuousMap.toBCF : ZeroAtInftyContinuousMap E F → E →ᵇ F) :=
-      Set.range_subset_iff.2 fun g ↦ ⟨g.toZeroAtInfty, g.toZeroAtInfty_toBCF⟩
-    obtain ⟨h, hh⟩ := closure_minimal hsub ZeroAtInftyContinuousMap.isClosed_range_toBCF hmem
-    have htend : Tendsto (Φ u) (cocompact E) (𝓝 0) := by
-      rw [← hh]
-      exact zero_at_infty h
-    simpa only [Φ, ContinuousLinearMap.comp_apply,
-      CkHolderSpace.toBoundedContinuousFunctionCLM_apply,
-      CkHolderSpace.coe_toBoundedContinuousFunction] using htend
+    rw [hΦ, toLpTop_mem_closure_range_schwartz_toLp_top_iff] at hmem
+    simpa only [CkHolderSpace.coe_toBoundedContinuousFunction] using hmem
   · rintro ⟨hLH, h0⟩
     rw [mem_littleBesov_iff]
     refine ⟨(tendsto_rpow_mul_norm_block_iff_memLittleHolder φ k hα0 hα1).2 hLH, fun j ↦ ?_⟩

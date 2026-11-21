@@ -28,6 +28,8 @@ difference quotients tend to zero at small scales: for every `ε > 0` there is `
 * `HolderWith.memLittleHolder`: a function that is Hölder of a larger exponent `β > α` is little
   `α`-Hölder; in particular so is every Lipschitz function when `α < 1`
   (`LipschitzWith.memLittleHolder`).
+* `TauCeti.exists_norm_sub_le_of_memLittleHolder`: a bounded continuous little `α`-Hölder
+  function satisfies a global `η ‖y‖^α + B ‖y‖` increment bound for every `η > 0`.
 * `TauCeti.HolderSpace.isClosed_littleHolder`: the little Hölder space is closed in the
   supremum-plus-Hölder norm.
 * `TauCeti.HolderSpace.exists_contDiff_lipschitzWith_norm_sub_lt` and
@@ -76,6 +78,26 @@ theorem memLittleHolder_iff [PseudoMetricSpace Y] {α : ℝ≥0} {f : X → Y} :
     MemLittleHolder α f ↔
       ∀ ε > 0, ∃ δ > 0, ∀ x y, dist x y < δ → dist (f x) (f y) ≤ ε * dist x y ^ (α : ℝ) :=
   Iff.rfl
+
+/-- A bounded continuous little `α`-Hölder function satisfies a global `η ‖y‖^α + B ‖y‖` increment
+bound for every `η > 0`. -/
+theorem exists_norm_sub_le_of_memLittleHolder {E F : Type*} [NormedAddCommGroup E]
+    [NormedAddCommGroup F] {α : ℝ≥0} {f : E →ᵇ F} (hf : MemLittleHolder α f) {η : ℝ}
+    (hη : 0 < η) :
+    ∃ B : ℝ, 0 ≤ B ∧ ∀ x y, ‖f (x - y) - f x‖ ≤ η * ‖y‖ ^ (α : ℝ) + B * ‖y‖ := by
+  obtain ⟨δ, hδ, hδf⟩ := memLittleHolder_iff.1 hf η hη
+  refine ⟨2 * ‖f‖ / δ, by positivity, fun x y ↦ ?_⟩
+  rcases lt_or_ge ‖y‖ δ with hy | hy
+  · have hd : dist (x - y) x < δ := by rwa [dist_eq_norm, sub_sub_cancel_left, norm_neg]
+    have h := hδf (x - y) x hd
+    rw [dist_eq_norm, dist_eq_norm, sub_sub_cancel_left, norm_neg] at h
+    exact h.trans (le_add_of_nonneg_right (by positivity))
+  · have h2f : ‖f (x - y) - f x‖ ≤ 2 * ‖f‖ :=
+      (norm_sub_le _ _).trans (by linarith [f.norm_coe_le_norm (x - y), f.norm_coe_le_norm x])
+    have hlarge : 2 * ‖f‖ ≤ (2 * ‖f‖ / δ) * ‖y‖ := by
+      rw [div_mul_eq_mul_div, le_div_iff₀ hδ]
+      exact mul_le_mul_of_nonneg_left hy (by positivity)
+    exact (h2f.trans hlarge).trans (le_add_of_nonneg_left (by positivity))
 
 /-- A Hölder function of exponent `β` is little Hölder of every smaller exponent `α < β`. -/
 theorem _root_.HolderWith.memLittleHolder [PseudoMetricSpace Y] {C α β : ℝ≥0} {f : X → Y}

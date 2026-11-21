@@ -86,10 +86,6 @@ function by a function of temperate growth multiplies the function pointwise
   `Lᵖ → 𝓢'` bounded on Schwartz functions takes values in `Lᵖ`.
 * `BoundedContinuousFunction.toTemperedDistribution_toLpTop_injective`: for a measure positive on
   open sets, a bounded continuous function is determined by its tempered distribution.
-* `BoundedContinuousFunction.lineDerivOp_toLpTop_eq` and
-  `BoundedContinuousFunction.iteratedLineDerivOp_toLpTop_eq`: integration by parts identifies the
-  distributional directional and iterated directional derivatives of bounded `C^k` functions with
-  their pointwise derivatives.
 
 ## References
 

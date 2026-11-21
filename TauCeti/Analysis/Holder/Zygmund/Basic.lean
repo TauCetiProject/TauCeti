@@ -13,7 +13,6 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Calculus.SmoothSeries
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
-import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.LineDeriv
@@ -86,8 +85,6 @@ derivatives lie in `𝒞^{k-1+α}` lies in `𝒞^{k+α}`
   `TauCeti.BesovSpace.toHolderSpace_eq_iff` and `TauCeti.BesovSpace.toLpTop_toHolderSpace`,
   matching the order-zero `CkHolderSpace` representative via
   `TauCeti.BesovSpace.coe_toCkHolderSpace_zero_inclusion`.
-* `TauCeti.exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_holderWith`: the blocks of an
-  `α`-Hölder function with constant `H` satisfy `2^{(j+1)α} ‖Δ_{j+1} f‖_∞ ≤ C H`.
 * `TauCeti.CkHolderSpace.exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_sum_directional`:
   weighted reverse Bernstein estimate bounding `2^{(k+s)(j+1)} ‖Δ_{j+1} f‖_∞` by the weighted
   blocks of the directional `k`-th derivatives of `f`.
@@ -276,45 +273,6 @@ private theorem ae_eq_smoothBlock {n₀ : ℕ} (hn₀ : φ.rOut ≤ 2 ^ n₀ * �
   exact hconv ▸ ae_eq_fourierInv_convolution_of_fourierMultiplierCLM_eq hrep
 
 end Kernel
-
-section Holder
-
-open BoundedContinuousFunction
-
-variable (φ : ContDiffBump (0 : E))
-
-/-- **The blocks of a Hölder function.** Let `α ≥ 0`. There is `C`, depending only on `φ` and
-`α`, with the following property. Let `f` be a bounded continuous `α`-Hölder function with
-constant `H`. Then for every `j` the `L^∞` function `Δ_{j+1} f` satisfies
-`2^{(j+1)α} ‖Δ_{j+1} f‖_∞ ≤ C H`. -/
-theorem exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_holderWith (α : ℝ≥0) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (f : E →ᵇ F) {H : ℝ≥0}, HolderWith H α f →
-      ∀ (j : ℕ) (g : Lp F ∞ (volume : Measure E)),
-      littlewoodPaleyBlock F φ (j + 1) (toLpTop volume ℂ f : 𝓢'(E, F)) = g →
-      2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖g‖ ≤ C * H := by
-  refine ⟨2 ^ (α : ℝ) *
-      ∫ y, ‖y‖ ^ (α : ℝ) * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖,
-    mul_nonneg (by positivity) (integral_nonneg fun _ ↦ by positivity), fun f H hf j g hg ↦ ?_⟩
-  have hinc : ∀ x y, ‖f (x - y) - f x‖ ≤ (H : ℝ) * ‖y‖ ^ (α : ℝ) + 0 * ‖y‖ := fun x y ↦ by
-    simpa [dist_eq_norm] using hf.dist_le (x - y) x
-  have hblock := norm_littlewoodPaleyBlock_succ_le_of_norm_sub_le φ α.coe_nonneg H.coe_nonneg
-    le_rfl hinc hg
-  rw [zero_mul, zero_mul, add_zero] at hblock
-  have hpow : (2 : ℝ) ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) =
-      2 ^ (α : ℝ) * 2 ^ ((α : ℝ) * j) := by
-    rw [Nat.cast_add, Nat.cast_one, mul_add, mul_one, Real.rpow_add two_pos, mul_comm]
-  calc 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖g‖
-      ≤ 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ((H : ℝ) * ((2 : ℝ) ^ ((α : ℝ) * j))⁻¹ *
-          ∫ y, ‖y‖ ^ (α : ℝ) * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) := by
-        gcongr
-    _ = (2 ^ (α : ℝ) *
-          ∫ y, ‖y‖ ^ (α : ℝ) * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) y‖) *
-          H := by
-        rw [hpow]
-        have h2αj : (2 : ℝ) ^ ((α : ℝ) * j) ≠ 0 := by positivity
-        field_simp
-
-end Holder
 
 namespace CkHolderSpace
 

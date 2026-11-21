@@ -108,6 +108,10 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
   `∫ ψ (K ⋆ g) = ∫ g(t) (∫ ψ(x) K(x - t) dx) dt`.
 * `MeasureTheory.norm_convolution_le_of_integral_eq_zero`: convolution with a kernel of integral
   zero is bounded by the oscillation of the other factor.
+* `MeasureTheory.convolution_lsmul_eq_integral_sub_of_integral_eq_zero` and
+  `MeasureTheory.norm_convolution_lsmul_le_integral_of_integral_eq_zero`: for a scalar kernel of
+  integral zero, `(κ ⋆ f) x = ∫ κ(y) • (f(x - y) - f x)` and its norm is bounded by any integrable
+  majorant of `‖κ(y)‖ * ‖f(x - y) - f x‖`.
 * `MeasureTheory.enorm_sub_convolution_lsmul_le` and
   `MeasureTheory.enorm_sub_convolution_lsmul_le_mul_lintegral`: the distance from `f x` to
   `(ψ ⋆ f) x` is bounded by a `ψ`-weighted integral of the increments `‖f x - f w‖ₑ`.
@@ -548,6 +552,39 @@ theorem norm_convolution_le_of_integral_eq_zero (L : E →L[𝕜] E' →L[𝕜] 
   simpa only [h0, dist_zero_right] using dist_convolution_le' L hw hif hf hmg hg
 
 end ZeroIntegral
+
+section ZeroIntegralScalar
+
+/-- **Zero-mean scalar convolution as an integral of increments.** If an integrable scalar kernel
+`κ` has integral zero and `κ ⋆ f` exists at `x`, then
+`(κ ⋆ f) x = ∫ y, κ y • (f (x - y) - f x) ∂μ`. -/
+theorem convolution_lsmul_eq_integral_sub_of_integral_eq_zero {𝕜 G F : Type*}
+    [RCLike 𝕜] [Sub G] [MeasurableSpace G] {μ : Measure G}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
+    {κ : G → 𝕜} {f : G → F} {x : G} (hκ : Integrable κ μ) (hκ0 : ∫ y, κ y ∂μ = 0)
+    (hconv : ConvolutionExistsAt κ f x (lsmul 𝕜 𝕜) μ) :
+    (κ ⋆[lsmul 𝕜 𝕜, μ] f) x = ∫ y, κ y • (f (x - y) - f x) ∂μ := by
+  by_cases hF : CompleteSpace F
+  · simp only [convolution_def, lsmul_apply, smul_sub]
+    rw [integral_sub (by simpa only [lsmul_apply] using hconv.integrable) (hκ.smul_const (f x)),
+      integral_smul_const, hκ0, zero_smul, sub_zero]
+  · simp only [convolution_def, integral_of_not_completeSpace hF]
+
+/-- **Pointwise norm bound for convolution with a zero-mean scalar kernel.** If an integrable
+scalar kernel `κ` has integral zero, `κ ⋆ f` exists at `x`, and `g` is an integrable majorant of
+`y ↦ ‖κ y‖ * ‖f (x - y) - f x‖`, then `‖(κ ⋆ f) x‖ ≤ ∫ y, g y ∂μ`. -/
+theorem norm_convolution_lsmul_le_integral_of_integral_eq_zero {𝕜 G F : Type*}
+    [RCLike 𝕜] [Sub G] [MeasurableSpace G] {μ : Measure G}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
+    {κ : G → 𝕜} {f : G → F} {g : G → ℝ} {x : G} (hκ : Integrable κ μ)
+    (hκ0 : ∫ y, κ y ∂μ = 0) (hconv : ConvolutionExistsAt κ f x (lsmul 𝕜 𝕜) μ)
+    (hg : Integrable g μ) (hfg : ∀ᵐ y ∂μ, ‖κ y‖ * ‖f (x - y) - f x‖ ≤ g y) :
+    ‖(κ ⋆[lsmul 𝕜 𝕜, μ] f) x‖ ≤ ∫ y, g y ∂μ := by
+  rw [convolution_lsmul_eq_integral_sub_of_integral_eq_zero hκ hκ0 hconv]
+  refine norm_integral_le_of_norm_le hg (hfg.mono fun y hy ↦ ?_)
+  simpa only [norm_smul] using hy
+
+end ZeroIntegralScalar
 
 section Increments
 
