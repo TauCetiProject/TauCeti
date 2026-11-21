@@ -587,7 +587,7 @@ theorem toDistr_quantizeBesselPotentialSpace_ofSpatial_smul_id (φ : 𝓢(Coordi
   have hc : (ofSpatial (fun x ↦ φ x • ContinuousLinearMap.id ℂ V)
       ((φ.smooth ⊤).smul contDiff_const)).coefficient =
         fun p ↦ φ p.1 • ContinuousLinearMap.id ℂ V :=
-    funext (coefficient_ofSpatial _ _)
+    coefficient_ofSpatial_eq _ _
   have hq : quantizeUniformCLM _ h.isUniform = SchwartzMap.smulLeftCLM V (φ : _ → ℂ) := by
     ext v x
     rw [quantizeUniformCLM_apply, hc, SchwartzMap.smulLeftCLM_apply_apply φ.hasTemperateGrowth]

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Permutation
+public import TauCeti.AlgebraicTopology.LocalCoefficient.TransferSequence
 public import TauCeti.AlgebraicTopology.Singular.Transfer.CoveringPair
 public import TauCeti.Topology.VectorBundle.Orientation.TwistedHomology
 public import TauCeti.Topology.VectorBundle.SphereBundle.Orientation
@@ -64,6 +65,16 @@ coefficients a non-orientable line bundle, such as the Möbius line over the cir
 relative homology across the level of a critical submanifold of index one whose negative normal
 bundle is `E`.
 
+In characteristic two the twist disappears. If `R` has characteristic two, such as `ZMod 2`, the
+transfer `R ⟶ R[S(E)]`, which sends `r` to `r` times the sum of the two unit vectors, followed by
+the augmentation is short exact
+(`IsCoveringMap.shortExact_permutationLocalSystemTransfer_augmentation`), so `L` may be taken
+constant. This gives the **mod `2` Thom isomorphism of a line bundle**,
+`Hₙ₊₁(E, E₀; R) ≅ Hₙ(B; R)`, with constant coefficients, over an arbitrary base and with no
+orientation (`TauCeti.thomPairSingularHomologySuccIsoSingularHomology`). Followed by the transfer
+`Hₙ(B; R) ⟶ Hₙ(S(E); R)` of the double cover, it is the connecting map of the disc-sphere pair
+(`TauCeti.gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoSingularHomology_hom_comp`).
+
 ## Main results
 
 * `TauCeti.thomPairSingularHomologySuccIsoTwistedHomology`: `Hₙ₊₁(E, E₀; R) ≅ Hₙ(B; L)` for the
@@ -73,6 +84,8 @@ bundle is `E`.
 * `TauCeti.VectorBundleOrientation.thomPairSingularHomologyOneEquiv` and
   `TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyOneEquivQuotientTwo`:
   `H₁(E, E₀; R)` is `R` for an oriented and `R ⧸ 2R` for a non-orientable line bundle.
+* `TauCeti.thomPairSingularHomologySuccIsoSingularHomology`: `Hₙ₊₁(E, E₀; R) ≅ Hₙ(B; R)` for a
+  ring `R` of characteristic two.
 
 ## References
 
@@ -158,6 +171,51 @@ theorem gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomolo
   rw [gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomology_hom_assoc]
   exact TopPair.singularHomologySuccIsoTwistedHomology_hom_comp _ _ _ _ _ _ n
 
+section CharTwo
+
+variable (R) [CharP R 2]
+
+/-- **The mod `2` Thom isomorphism of a line bundle in homology.** Let `E → B` be a real vector
+bundle of rank one whose fibre norm is continuous on the total space, over an arbitrary base, and
+let `R` be a ring of characteristic two, such as `ZMod 2`. Then `Hₙ₊₁(E, E₀; R) ≅ Hₙ(B; R)`, with
+constant coefficients and no orientation. It is the Thom isomorphism
+`TauCeti.thomPairSingularHomologySuccIsoTwistedHomology` for the short exact sequence
+`0 ⟶ R ⟶ R[S(E)] ⟶ R ⟶ 0` of the transfer and the augmentation of the double cover `S(E) → B`
+(`IsCoveringMap.shortExact_permutationLocalSystemTransfer_augmentation`). -/
+def thomPairSingularHomologySuccIsoSingularHomology (n : ℕ) :
+    (thomPair F E).singularHomology (ModuleCat.of R R) (n + 1) ≅
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
+        (ModuleCat.of R R)).obj (TopCat.of B) :=
+  thomPairSingularHomologySuccIsoTwistedHomology hnorm hF
+      (IsCoveringMap.shortExact_permutationLocalSystemTransfer_augmentation
+        (p := TopCat.ofHom (sphereBundleProj F E)) (isCoveringMap_sphereBundleProj F E hnorm hF)
+        (finite_sphereBundleProj_preimage_singleton F E hF)
+        (natCard_sphereBundleProj_preimage_singleton F E hF)) n ≪≫
+    LocalCoefficientSystem.twistedHomologyConstantIso (TopCat.of B) (ModuleCat.of R R) n
+
+/-- The mod `2` Thom isomorphism of a line bundle, read on the disc-sphere pair and followed by the
+transfer `Hₙ(B; R) ⟶ Hₙ(S(E); R)` of the double cover `S(E) → B`, is the connecting map
+`Hₙ₊₁(D(E), S(E)) ⟶ Hₙ(S(E))` of the disc-sphere pair. -/
+@[reassoc]
+theorem gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoSingularHomology_hom_comp
+    (n : ℕ) :
+    TopPair.singularHomologyMap (gaugeDiscSpherePairMap (isFiberGauge_norm hnorm))
+        (ModuleCat.of R R) (n + 1) ≫
+        (thomPairSingularHomologySuccIsoSingularHomology hnorm hF R n).hom ≫
+          HomologicalComplex.homologyMap
+            ((isCoveringMap_sphereBundleProj F E hnorm hF).singularTransfer
+              (p := TopCat.ofHom (sphereBundleProj F E))
+              (finite_sphereBundleProj_preimage_singleton F E hF) (ModuleCat.of R R)) n =
+      (gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.snd‖).singularHomologyδ
+        (ModuleCat.of R R) (n + 1) n := by
+  rw [thomPairSingularHomologySuccIsoSingularHomology, Iso.trans_hom,
+    ← IsCoveringMap.transfer_comp_singularHomologyPermutationIso_inv]
+  simp only [Category.assoc, Iso.hom_inv_id_assoc]
+  exact gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomology_hom_comp hnorm hF
+    _ n
+
+end CharTwo
+
 end LocalSystem
 
 /-! ### The Thom isomorphism with orientation coefficients -/
@@ -171,12 +229,12 @@ augmentation of its permutation local system. -/
 private theorem shortExact_sphereBundle_signPermutationShortComplex [Nontrivial F] :
     ((isCoveringMap_sphereBundleProj F E hnorm hF).signPermutationShortComplex
       (p := TopCat.ofHom (sphereBundleProj F E)) R (sphereBundleProj_comp_sphereBundleNeg F E)
-      (sphereBundleNeg_involutive F E) (fun b ↦ (finite_preimage_sphereBundleProj hF b).to_subtype)
+      (sphereBundleNeg_involutive F E) (finite_sphereBundleProj_preimage_singleton F E hF)
       (sphereBundleNeg_ne_self F E)).ShortExact :=
   (isCoveringMap_sphereBundleProj F E hnorm hF).shortExact_signPermutationShortComplex
     (p := TopCat.ofHom (sphereBundleProj F E)) R (sphereBundleProj_comp_sphereBundleNeg F E)
     (sphereBundleNeg_involutive F E)
-    (fun b ↦ (finite_preimage_sphereBundleProj hF b).to_subtype)
+    (finite_sphereBundleProj_preimage_singleton F E hF)
     (sphereBundleNeg_ne_self F E)
     (fun _ _ h ↦ eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq hF h)
     (sphereBundleProj_surjective F E)
@@ -215,7 +273,7 @@ theorem
               (isCoveringMap_sphereBundleProj F E hnorm hF).signLocalSystemToPermutation
                 (p := TopCat.ofHom (sphereBundleProj F E)) R
                 (sphereBundleProj_comp_sphereBundleNeg F E)
-                (fun b ↦ (finite_preimage_sphereBundleProj hF b).to_subtype)) n ≫
+                (finite_sphereBundleProj_preimage_singleton F E hF)) n ≫
             ((isCoveringMap_sphereBundleProj F E hnorm hF).singularHomologyPermutationIso
               (p := TopCat.ofHom (sphereBundleProj F E)) R n).inv =
       (gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.snd‖).singularHomologyδ

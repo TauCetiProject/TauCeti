@@ -35,7 +35,11 @@ unit vector in its fibre (`TauCeti.unitSphereOfSphereBundle`), and the unit sphe
 continuously onto the base (`TauCeti.sphereBundleProj`), onto every point when the model fibre is
 nonzero (`TauCeti.sphereBundleProj_surjective`). Fibrewise negation `v ↦ -v` is a fixed-point-free
 involution of it over the base (`TauCeti.sphereBundleNeg`); for a line bundle it exchanges the two
-unit vectors of each fibre (`TauCeti.eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq`).
+unit vectors of each fibre (`TauCeti.eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq`). The pair
+`(D(E), S(E))` (`TauCeti.discSpherePair`) is the gauge disc-sphere pair of the fibre norm
+(`TauCeti.discSpherePair_eq_gaugeDiscSpherePair`). In rank zero every vector is zero, so the unit
+sphere bundle is empty and the unit disc bundle is the whole total space
+(`TauCeti.isEmpty_sphereBundle_of_subsingleton`, `TauCeti.discBundle_eq_univ_of_subsingleton`).
 
 The unit disc and sphere bundles are closed in the total space (`TauCeti.isClosed_discBundle`,
 `TauCeti.isClosed_sphereBundle`). For a finite-rank bundle whose fibres carry inner products, the
@@ -193,6 +197,10 @@ variable {F E} in
 theorem mem_sphereBundle {v : TotalSpace F E} : v ∈ sphereBundle F E ↔ ‖v.snd‖ = 1 :=
   Iff.rfl
 
+/-- The unit sphere bundle lies in the unit disc bundle. -/
+theorem sphereBundle_subset_discBundle : sphereBundle F E ⊆ discBundle F E :=
+  gaugeSphereBundle_subset_gaugeDiscBundle _
+
 variable {F E} in
 /-- A vector of the unit sphere bundle is nonzero. -/
 theorem snd_ne_zero_of_mem_sphereBundle {v : TotalSpace F E} (hv : v ∈ sphereBundle F E) :
@@ -227,6 +235,18 @@ variable (F E) in
 theorem coe_sphereBundleInclusion_apply (v : sphereBundle F E) :
     @Subtype.val _ (· ∈ zeroSectionCompl F E) (sphereBundleInclusion F E v) = v :=
   (rfl)
+
+variable (F E) in
+/-- The pair `(D(E), S(E))` of the unit disc bundle and the unit sphere bundle of a bundle with
+normed fibres. -/
+abbrev discSpherePair : TopPair.{w} :=
+  TopPair.ofInclusion (X := TopCat.of (TotalSpace F E)) (sphereBundle_subset_discBundle F E)
+
+variable (F E) in
+/-- The pair `(D(E), S(E))` is the disc-sphere pair of the fibre norm, as a fibre gauge. -/
+theorem discSpherePair_eq_gaugeDiscSpherePair :
+    discSpherePair F E = gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.snd‖ :=
+  TopPair.ofInclusion_congr _ _ sphereBundle_def discBundle_def
 
 end Sets
 
@@ -351,6 +371,15 @@ theorem sphereBundle_eq_empty_of_subsingleton : sphereBundle F E = ∅ :=
 instance isEmpty_sphereBundle_of_subsingleton : IsEmpty (sphereBundle F E) := by
   rw [sphereBundle_eq_empty_of_subsingleton]
   infer_instance
+
+/-- When the model fibre is a subsingleton, every vector is zero, so the unit disc bundle is the
+whole total space. -/
+theorem discBundle_eq_univ_of_subsingleton : discBundle F E = univ :=
+  eq_univ_of_forall fun v ↦ by
+    have : Subsingleton (E v.proj) :=
+      (FiberBundle.homeomorphAt F E v.proj).toEquiv.subsingleton
+    rw [mem_discBundle, Subsingleton.elim v.snd 0, norm_zero]
+    exact zero_le_one
 
 end Subsingleton
 
@@ -482,15 +511,6 @@ theorem eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq (hF : Module.finrank ℝ
   rcases (abs_eq zero_le_one).1 hc with rfl | rfl
   · exact .inl (Subtype.ext (by simp))
   · exact .inr (Subtype.ext (by simp))
-
-/-- In rank one, each fibre of the unit sphere bundle is finite: its points are a unit vector and
-its negative (`TauCeti.eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq`). -/
-theorem finite_preimage_sphereBundleProj (hF : Module.finrank ℝ F = 1) (b : B) :
-    (sphereBundleProj F E ⁻¹' {b}).Finite := by
-  have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
-  obtain ⟨v, rfl⟩ := sphereBundleProj_surjective F E b
-  refine (Set.toFinite {v, sphereBundleNeg F E v}).subset fun w hw ↦ ?_
-  rcases eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq hF hw with h | h <;> simp [h]
 
 end Neg
 

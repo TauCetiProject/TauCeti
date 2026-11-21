@@ -58,6 +58,7 @@ simplicial set on these edges.
 * `SSet.coslice.comp_π`: under the universal property, the projection to `C` is the restriction to
   `X`.
 * `SSet.coslice.isIso_π`: the coslice under the empty diagram is the whole simplicial set.
+* `SSet.coslice.isTerminal`: the coslice of a terminal simplicial set is terminal.
 
 ## References
 
@@ -173,6 +174,13 @@ noncomputable def representableBy : (functor p).RepresentableBy (coslice p) wher
 /-- Maps to the coslice are equal when the corresponding maps `K ⋆ X ⟶ C` are equal. -/
 lemma hom_ext {F G : X ⟶ coslice p} (h : (homEquiv F).val = (homEquiv G).val) : F = G :=
   homEquiv.injective (Subtype.ext h)
+
+variable (p) in
+/-- The coslice of a terminal simplicial set is terminal: over the point there is exactly one
+cocone under every diagram. -/
+noncomputable def isTerminal (hC : Limits.IsTerminal C) : Limits.IsTerminal (coslice p) :=
+  Limits.IsTerminal.ofUniqueHom (fun _ ↦ homEquiv.symm ⟨hC.from _, hC.hom_ext _ _⟩)
+    fun _ _ ↦ hom_ext (hC.hom_ext _ _)
 
 /-- The `n`-simplices of the coslice `C_{p/}` are the maps `K ⋆ Δ[n] ⟶ C` extending `p`. -/
 noncomputable def objEquiv {n : SimplexCategoryᵒᵖ} :
