@@ -68,6 +68,9 @@ unfolding.
   `(q, p)` form, with coordinate equations `..._pos_of_neg` and `..._neg_of_pos`.
 * `TauCeti.CliffordAlgebra.realCliffordEvenToNeg p q`: the even-algebra comparison into
   the Clifford algebra of the negated signature.
+* `TauCeti.CliffordAlgebra.realCliffordEvenEquivNeg p q`: the algebra isomorphism
+  `even (realCliffordForm p q) ≃ₐ[ℝ] even (realCliffordForm q p)`, the composite of
+  `CliffordAlgebra.evenEquivEvenNeg` with the even-algebra map of `realCliffordFormNegIsometry p q`.
 * `TauCeti.realCliffordSplitIsometry`: the shared splitter into two standard signature blocks.
 * `TauCeti.realCliffordFormCongr`: the coordinate isometry between equal signatures.
 * `TauCeti.realCliffordBlockIsometry`: the splitting of the `(p, q)` form into its
@@ -98,6 +101,8 @@ unfolding.
   standard real sum-of-squares form.
 * `TauCeti.finrank_cliffordAlgebra_realCliffordForm`:
   `finrank ℝ (CliffordAlgebra (realCliffordForm p q)) = 2 ^ (p + q)`.
+* `TauCeti.CliffordAlgebra.realCliffordEvenEquivNeg_ι`: the even comparison sends a bivector
+  `ι a * ι b` to minus the transported bivector.
 
 ## References
 
@@ -307,6 +312,41 @@ theorem realCliffordEvenToNeg_ι (p q : ℕ) (a b : Fin (p + q) → ℝ) :
   rw [realCliffordEvenToNeg_apply, evenEquivEvenNeg_apply, evenToNeg_ι]
   simp only [Subalgebra.coe_neg, coe_even_ι_bilin, map_neg, map_mul,
     map_apply_ι, QuadraticMap.IsometryEquiv.toIsometry_apply]
+
+/-- The even Clifford algebras of signatures `(p, q)` and `(q, p)` are isomorphic: apply Mathlib's
+`CliffordAlgebra.evenEquivEvenNeg` and then the even-algebra map of the coordinate isometry
+`realCliffordFormNegIsometry p q`. A bivector `ι a * ι b` goes to minus the bivector of the
+transported vectors (`TauCeti.CliffordAlgebra.realCliffordEvenEquivNeg_ι`). -/
+noncomputable def realCliffordEvenEquivNeg (p q : ℕ) :
+    even (realCliffordForm p q) ≃ₐ[ℝ] even (realCliffordForm q p) :=
+  (evenEquivEvenNeg (realCliffordForm p q)).trans
+    (evenEquivOfIsometry (realCliffordFormNegIsometry p q))
+
+/-- `realCliffordEvenEquivNeg p q` applies `CliffordAlgebra.evenEquivEvenNeg` followed by the
+even-algebra map of `realCliffordFormNegIsometry p q`. -/
+theorem realCliffordEvenEquivNeg_apply (p q : ℕ) (x : even (realCliffordForm p q)) :
+    realCliffordEvenEquivNeg p q x =
+      evenEquivOfIsometry (realCliffordFormNegIsometry p q)
+        (evenEquivEvenNeg (realCliffordForm p q) x) :=
+  (rfl)
+
+/-- The Clifford value of `realCliffordEvenEquivNeg p q x` is the even comparison
+`realCliffordEvenToNeg p q x`. -/
+theorem coe_realCliffordEvenEquivNeg_apply (p q : ℕ) (x : even (realCliffordForm p q)) :
+    (realCliffordEvenEquivNeg p q x : CliffordAlgebra (realCliffordForm q p)) =
+      realCliffordEvenToNeg p q x := by
+  rw [realCliffordEvenEquivNeg, AlgEquiv.trans_apply, coe_evenEquivOfIsometry_apply,
+    equivOfIsometry_apply, realCliffordEvenToNeg_apply]
+
+/-- `realCliffordEvenEquivNeg` sends a bivector `ι a * ι b` to minus the bivector of the vectors
+transported by `realCliffordFormNegIsometry p q`. -/
+@[simp]
+theorem realCliffordEvenEquivNeg_ι (p q : ℕ) (a b : Fin (p + q) → ℝ) :
+    realCliffordEvenEquivNeg p q ((even.ι (realCliffordForm p q)).bilin a b) =
+      -(even.ι (realCliffordForm q p)).bilin (realCliffordFormNegIsometry p q a)
+        (realCliffordFormNegIsometry p q b) := by
+  rw [realCliffordEvenEquivNeg, AlgEquiv.trans_apply, evenEquivEvenNeg_apply, evenToNeg_ι,
+    map_neg, evenEquivOfIsometry_ι]
 
 end CliffordAlgebra
 
