@@ -270,8 +270,8 @@ theorem thetaSeries_dual_ne_sum_thetaCosetClass_of_dual_lt (h : dual L < L)
     have : DiscreteTopology (dual L) :=
       IsIntegral.discreteTopology (isIntegral_iff_le_dual.mpr (dual_anti h.le))
     have h0 : thetaCoset L 0 = 0 :=
-      thetaCoset_eq_zero_of_forall_not_summable L 0 fun y hy hs ↦
-        hL (discreteTopology_of_summable_exp_neg_mul_norm_add_sq L 0 (by positivity) hs)
+      thetaCoset_eq_zero_of_forall_not_summable L 0 fun _ _ hs ↦
+        hL (discreteTopology_of_summable_exp_neg_mul_norm_add_sq L 0 hs)
     rw [← thetaCoset_zero L, h0, Pi.zero_apply]
     exact thetaSeries_ne_zero_of_re_eq_zero (dual L) hτ
 
