@@ -29,7 +29,7 @@ spaces are the same derivative identities. Both come from the Hölder bounds tha
 * A field `D_t^r D_x^m u` with `2 r + m = k - 1` must have uniformly `(1 + α) / 2`-Hölder time
   slices. In the larger space it lies below the order `(k + 1) - 1`, so it is bounded and
   Lipschitz in time, and its time slices are `(1 + α) / 2`-Hölder with constant `3 ‖u‖`
-  (`TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL_slabMk`).
+  (`TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL_slabMk_of_add_one_le`).
 * A field `D_t^r D_x^m u` with `2 r + m = k` must be parabolically `α`-Hölder. In the larger space
   it lies below the top order, so it is bounded, Lipschitz in space and `(1 + α) / 2`-Hölder in
   time, and parabolically `α`-Hölder with constant `6 ‖u‖`
@@ -73,7 +73,7 @@ private def ofSucc (hα : α ≤ 1) (f : ParabolicCkHolderSpace (k + 1) α E F h
     ParabolicCkHolderSpace k α E F hab :=
   mk (fun r m ↦ mixedDerivL r m f) (fun _ _ h t x ↦ f.hasFDerivAt_mixedDerivL (by omega) t x)
     (fun _ _ h x t ↦ f.hasDerivWithinAt_mixedDerivL (by omega) x t)
-    (fun _ _ h ↦ ⟨_, holderWith_mixedDerivL_slabMk hα f (by omega)⟩)
+    (fun _ _ h ↦ ⟨_, holderWith_mixedDerivL_slabMk_of_add_one_le hα f (by omega)⟩)
     (fun _ _ h ↦ (holderWith_mixedDerivL hα f (by omega)).memHolder)
 
 private theorem mixedDerivL_ofSucc (hα : α ≤ 1) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
@@ -95,7 +95,7 @@ private theorem norm_timeSliceL_add_norm_mixedDerivHolderL_ofSucc_le (hα : α �
   · -- The order `k - 1`: the Hölder field vanishes, and the time slices are those of the
     -- `(1 + α) / 2`-Hölder field `D_t^r D_x^m u`.
     rw [mixedDerivHolderL_of_ne (by omega), zero_apply, norm_zero, add_zero]
-    have hholder := holderWith_mixedDerivL_slabMk hα f (r := r) (m := m) (by omega)
+    have hholder := holderWith_mixedDerivL_slabMk_of_add_one_le hα f (r := r) (m := m) (by omega)
     have hK : ((3 * ‖f‖₊ : ℝ≥0) : ℝ) = 3 * ‖f‖ := by simp
     refine (lp.norm_le_of_forall_le (C := ‖mixedDerivL r m f‖ + 3 * ‖f‖)
       (by positivity) fun x ↦ ?_).trans (by nlinarith [hD r m])

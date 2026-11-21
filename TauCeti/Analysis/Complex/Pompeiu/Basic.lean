@@ -81,6 +81,8 @@ integrable `f` it is holomorphic off the closed support `tsupport f`, with compl
   the same commutation `D (T f) = T (D f)` for the normalized transform, also in directional form.
 * `TauCeti.cauchyTransform_add` and `TauCeti.cauchyTransform_smul`: the normalized transform is
   additive on continuous compactly supported data and commutes with scalar multiplication.
+* `ContinuousLinearEquiv.cauchyTransform_comp_comm`: it commutes with complex-linear equivalences
+  of the codomain, for arbitrary data.
 * `HasCompactSupport.fderiv_apply_one_add_I_smul_apply_I_two_pi_inv_smul_integral_sub_inv_smul`:
   `D = 2 \bar∂` of the Cauchy transform of a compactly supported `C¹` map `f` is `f`.
 * `HasCompactSupport.conjWirtingerDeriv_integral_sub_inv_smul_apply_one`:
@@ -289,6 +291,14 @@ theorem cauchyTransform_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜] [Norm
   simp only [cauchyTransform_apply, Pi.smul_apply]
   simp_rw [smul_comm (w - _)⁻¹ a]
   rw [integral_smul, smul_comm]
+
+/-- The Cauchy transform commutes with complex-linear equivalences of the codomain. No
+integrability is needed, since an equivalence commutes with the Bochner integral of every
+function. -/
+theorem _root_.ContinuousLinearEquiv.cauchyTransform_comp_comm {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℂ G] (A : F ≃L[ℂ] G) (f : ℂ → F) (w : ℂ) :
+    cauchyTransform (fun z ↦ A (f z)) w = A (cauchyTransform f w) := by
+  simp only [cauchyTransform_apply, ← map_smul, A.integral_comp_comm]
 
 /-- **The two normalisations agree.** The Cauchy–Pompeiu integral `(2π)⁻¹ ∫ (w - z)⁻¹ • D u z`,
 with `D = 2 \bar∂`, is the normalised Cauchy transform `π⁻¹ ∫ (w - z)⁻¹ • \bar∂ u z` of `\bar∂ u`.

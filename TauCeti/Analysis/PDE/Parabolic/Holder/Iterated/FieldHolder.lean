@@ -19,8 +19,8 @@ A bounded parabolic Hölder map `u` of order `k` controls the Hölder regularity
   below it because the field is bounded, Lipschitz in space, with the next spatial field as
   derivative, and Lipschitz or `(1 + α) / 2`-Hölder in time;
 * every field of order `2 r + m ≤ k - 1` has `(1 + α) / 2`-Hölder time slices with constant
-  `3 ‖u‖` (`TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL_slabMk`): at the order `k - 1`
-  by definition, and below it because the field is bounded and Lipschitz in time.
+  `3 ‖u‖` (`TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL_slabMk_of_add_one_le`): at the
+  order `k - 1` by definition, and below it because the field is bounded and Lipschitz in time.
 
 The lower orders use the interpolation of a bounded Lipschitz map at scale one
 (`TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_of_timeEHolderNorm_le` and
@@ -31,8 +31,8 @@ is where `α ≤ 1` enters.
 
 * `TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL`: every field of order at most `k` is
   parabolically `α`-Hölder with constant `6 ‖u‖`.
-* `TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL_slabMk`: every field of order at most
-  `k - 1` has `(1 + α) / 2`-Hölder time slices with constant `3 ‖u‖`.
+* `TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL_slabMk_of_add_one_le`: every field of
+  order at most `k - 1` has `(1 + α) / 2`-Hölder time slices with constant `3 ‖u‖`.
 
 ## References
 
@@ -90,13 +90,9 @@ private theorem timeEHolderNorm_mixedDerivL_le_of_add_one_eq
     (u : ParabolicCkHolderSpace k α E F hab) {r m : ℕ} (h : 2 * r + m + 1 = k) :
     timeEHolderNorm ((1 + α) / 2) (mixedDerivL r m u : slab (E := E) a b → E [×m]→L[ℝ] F) ≤
       ‖u‖₊ := by
-  refine timeEHolderNorm_le_iff.2 fun x t s ↦ ?_
-  have hx := (timeSliceL r m u x).holderWith_nnnorm t s
-  rw [coe_timeSliceL u h x] at hx
-  refine hx.trans ?_
-  gcongr
+  refine timeEHolderNorm_le_iff.2 fun x ↦ (holderWith_mixedDerivL_slabMk u h x).mono ?_
   rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm]
-  exact (lp.norm_apply_le_norm ENNReal.top_ne_zero _ x).trans (norm_timeSliceL_le u r m)
+  exact norm_timeSliceL_le u r m
 
 /-- Values of a field lie within distance `2 ‖u‖` of each other. -/
 private theorem dist_mixedDerivL_le (u : ParabolicCkHolderSpace k α E F hab) (r m : ℕ)
@@ -147,8 +143,8 @@ theorem holderWith_mixedDerivL (hα : α ≤ 1) (u : ParabolicCkHolderSpace k α
 /-- **Every field below the top order has Hölder time slices.** For `α ≤ 1`, each field
 `D_t^r D_x^m u` of order `2 r + m ≤ k - 1` has `(1 + α) / 2`-Hölder time slices with constant
 `3 ‖u‖`. -/
-theorem holderWith_mixedDerivL_slabMk (hα : α ≤ 1) (u : ParabolicCkHolderSpace k α E F hab)
-    {r m : ℕ} (h : 2 * r + m + 1 ≤ k) (x : E) :
+theorem holderWith_mixedDerivL_slabMk_of_add_one_le (hα : α ≤ 1)
+    (u : ParabolicCkHolderSpace k α E F hab) {r m : ℕ} (h : 2 * r + m + 1 ≤ k) (x : E) :
     HolderWith (3 * ‖u‖₊) ((1 + α) / 2) fun t : Icc a b ↦ mixedDerivL r m u (slabMk x t) := by
   have hbound : timeEHolderNorm ((1 + α) / 2)
       (mixedDerivL r m u : slab (E := E) a b → E [×m]→L[ℝ] F) ≤ ↑(3 * ‖u‖₊) := by

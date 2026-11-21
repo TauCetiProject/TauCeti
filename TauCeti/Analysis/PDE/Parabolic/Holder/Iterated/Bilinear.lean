@@ -47,9 +47,9 @@ only the top one. For `α ≤ 1`, every field `D_t^r D_x^m u` of order `2 r + m 
 top order by definition, and below it because the field is Lipschitz in space, with the next
 spatial field as derivative, and Lipschitz or `(1 + α) / 2`-Hölder in time. Likewise every field of
 order `2 r + m ≤ k - 1` has `(1 + α) / 2`-Hölder time slices with constant `3 ‖u‖`
-(`TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL_slabMk`). Products of bounded Hölder maps
-through a bilinear map are Hölder, which gives the Hölder field and the Hölder time slices of
-`B u v` at the top two orders.
+(`TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL_slabMk_of_add_one_le`). Products of
+bounded Hölder maps through a bilinear map are Hölder, which gives the Hölder field and the Hölder
+time slices of `B u v` at the top two orders.
 
 ## Main declarations
 
@@ -111,7 +111,7 @@ private theorem holderWith_jet (hα : α ≤ 1) (u : ParabolicCkHolderSpace k α
 private theorem holderWith_jet_slabMk (hα : α ≤ 1) (u : ParabolicCkHolderSpace k α E F hab)
     {r m : ℕ} (h : 2 * r + m + 1 ≤ k) (x : E) :
     HolderWith (3 * ‖u‖₊) ((1 + α) / 2) fun t : Icc a b ↦ jet u r m (slabMk x t) := fun t s ↦
-  edist_pi_le_iff.2 fun i ↦ holderWith_mixedDerivL_slabMk hα u (by omega) x t s
+  edist_pi_le_iff.2 fun i ↦ holderWith_mixedDerivL_slabMk_of_add_one_le hα u (by omega) x t s
 
 /-- The jet of the `r`-th time derivative is differentiable in time within `[a, b]`, with the jet
 of the `(r + 1)`-th time derivative as derivative. -/

@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Submodule
 public import Mathlib.RingTheory.TwoSidedIdeal.Kernel
-public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Basic
+public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Cohomology
 public import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!
@@ -31,6 +31,11 @@ augmentation ideal rather than from the unit-containing algebra.
 * `TauCeti.DGAlgAugmentation.splitLinearEquiv`: the canonical linear splitting
   `A ≃ R × ker ε`.
 * `TauCeti.IsDGAlgebra.unitHom`: the canonical unit morphism from the trivially graded base.
+
+## Main results
+
+* `TauCeti.DGAlgAugmentation.cohomologyMap_bijective_iff`: an augmentation is a
+  quasi-isomorphism exactly when the unit morphism is.
 
 ## References
 
@@ -151,6 +156,18 @@ theorem comp_unitHom :
     e.comp h.unitHom = DGAlgHom.id (isDGAlgebra_trivialGrading R) := by
   ext r
   simp
+
+/-- An augmentation is a quasi-isomorphism exactly when the unit morphism is, since on cohomology
+the augmentation is a retraction of the unit. -/
+theorem cohomologyMap_bijective_iff :
+    Function.Bijective e.cohomologyMap ↔ Function.Bijective h.unitHom.cohomologyMap := by
+  have hinv : Function.LeftInverse e.cohomologyMap h.unitHom.cohomologyMap := fun x ↦ by
+    rw [← GradedAlgHom.comp_apply, ← DGAlgHom.cohomologyMap_comp, e.comp_unitHom,
+      DGAlgHom.cohomologyMap_id, GradedAlgHom.id_apply]
+  exact ⟨fun he ↦ Function.bijective_iff_has_inverse.mpr
+      ⟨_, hinv, hinv.rightInverse_of_injective he.1⟩,
+    fun hu ↦ Function.bijective_iff_has_inverse.mpr
+      ⟨_, hinv.rightInverse_of_surjective hu.2, hinv⟩⟩
 
 /-- Removing the scalar part of an element leaves an element of the augmentation ideal. -/
 theorem sub_algebraMap_mem_augmentationIdeal (a : A) :
