@@ -195,6 +195,9 @@ private theorem surjective_mfderiv_orbitQuotientMap
     (hπK.contMDiff.mdifferentiableAt (by simp))
   have hcomp' := mfderiv_comp k (hπG.contMDiff.mdifferentiableAt (by simp))
     (φ.contMDiff_toFun.mdifferentiableAt (by simp))
+  have hfun : orbitQuotientMap φ hdφ ν ∘ QuotientGroup.mk = QuotientGroup.mk ∘ φ :=
+    funext (orbitQuotientMap_mk φ hdφ ν)
+  rw [hfun] at hcomp
   intro w
   obtain ⟨u, rfl⟩ := hπG.surjective_mfderiv (by simp) (φ k) w
   obtain ⟨v, rfl⟩ := φ.surjective_mfderiv_of_surjective_groupLieAlgebraMap hdφ k u
