@@ -51,21 +51,22 @@ constant family `x³ / 3` is not (`TauCeti.not_surjective_fderiv_fderiv_birthDea
 Genericity is proved for any linear map `P` from a finite-dimensional space `Λ` to functions on
 `E` that is jointly smooth in the parameter and the point and whose members realize every
 differential at the points considered. Subtracting `P p` from every member of the family gives the
-parametrized differential `((t, x), p) ↦ d(f t - P p)_x`, whose derivative in the direction of
-the parameter `p` is onto. The source of `G` has dimension `dim E + 1` and its target dimension
-`dim E`, so the parametric transversality theorem `TauCeti.ae_isRegularParameterOn` applies once
-`G` is `C²`, that is once the family is jointly `C³`. Hence for almost every `p` the family
-`f t - P p` is transverse at all of its critical points
-(`TauCeti.ae_forall_surjective_fderiv_fderiv_sub_of_forall_exists_fderiv_eq`). Unlike the Morse
-case, one derivative more than the Hessian is needed, because the source of `G` has one dimension
-more than its target. The linear functionals themselves form such a family, so for almost every
-`a` the family `f t - a` is transverse at all of its critical points
+parametrized differential `Φ ((t, x), p) = d(f t - P p)_x`, whose derivative in the direction of
+the parameter `p` is onto. For each `p`, the slice `(t, x) ↦ Φ ((t, x), p)` goes from `ℝ × E`, of
+dimension `dim E + 1`, to the dual of `E`, of dimension `dim E`, so the parametric transversality
+theorem `TauCeti.ae_isRegularParameterOn` applies once `Φ` is `C²`, that is once the family is
+jointly `C³`. Hence for almost every `p` the family `f t - P p` is transverse at all of its
+critical points (`TauCeti.ae_forall_surjective_fderiv_fderiv_sub_of_forall_exists_fderiv_eq`).
+Unlike the Morse case, one derivative more than the Hessian is needed, because the source of each
+slice has one dimension more than its target. The linear functionals themselves form such a
+family, so for almost every `a` the family `f t - a` is transverse at all of its critical points
 (`TauCeti.ae_forall_surjective_fderiv_fderiv_sub`). Subtracting `a` shifts `G` by the constant `a`
 and leaves its derivative alone (`TauCeti.fderiv_fderiv_sub_eq`).
 
-The remaining conditions of Cerf's theorem, that the third derivative along the kernel of a
-degenerate Hessian is nonzero and that the degenerate parameters are isolated, need perturbations
-by quadratic and cubic functions as well and are not treated here.
+The cubic condition of Cerf's theorem, that the third derivative along the kernel of a degenerate
+Hessian is nonzero, needs perturbations by quadratic and cubic functions as well and is proved in
+`TauCeti.Analysis.Calculus.Morse.Cerf.Cubic`. The remaining condition, that the degenerate
+parameters are isolated, is not treated here.
 
 ## Main declarations
 

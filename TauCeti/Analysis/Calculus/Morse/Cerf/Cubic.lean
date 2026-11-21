@@ -29,13 +29,13 @@ import TauCeti.Topology.Algebra.Module.FiniteDimension
 /-!
 # Generic one-parameter families have only cubic degenerate critical points
 
-A one-parameter family of functions `f t : E → ℝ` on a finite-dimensional real normed space has
-degenerate critical points at isolated parameters, where pairs of critical points are born or die.
-Cerf's theorem says that for a generic family each of these is a *birth–death point*: the family
-is transverse there, so that the Hessian has corank one, and along a nonzero vector `v` of the
-kernel of the Hessian the third derivative `D³ (f t)_x (v, v, v)` does not vanish. This file
-proves that these conditions hold after almost every perturbation of the family by a polynomial of
-degree at most three.
+A generic one-parameter family of functions `f t : E → ℝ` on a finite-dimensional real normed
+space has degenerate critical points only at isolated parameters, where pairs of critical points
+are born or die; this isolation is not proved here. Cerf's theorem says that for a generic family
+each degenerate critical point is a *birth–death point*: the family is transverse there, so that
+the Hessian has corank one, and along a nonzero vector `v` of the kernel of the Hessian the third
+derivative `D³ (f t)_x (v, v, v)` does not vanish. This file proves that these conditions hold
+after almost every perturbation of the family by a polynomial of degree at most three.
 
 The perturbations are the polynomials `y ↦ a y + B (y, y) + C (y, y, y)`
 (`TauCeti.cubicPerturbation (a, B, C)`), with `a` a continuous linear functional and `B`, `C`
