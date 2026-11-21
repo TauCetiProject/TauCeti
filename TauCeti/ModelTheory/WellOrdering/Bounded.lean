@@ -111,7 +111,7 @@ private theorem nonempty_equiv_ltSublang_iff (lt : L.Relations 2) (α : Type o) 
   let := ι.reduct M
   have hreduct (R : (ltSublang lt).Relations 2) (ys : Fin 2 → M) :
       (ι.reduct M).RelMap R ys ↔ RelMap lt ys := by
-    have hR : R.1 = lt := by simpa using Set.mem_singleton_iff.mp R.2
+    have hR : R.val = lt := by simpa using Set.mem_singleton_iff.mp R.property
     have h := (ι.map_onRelation (M := M) R ys).symm
     rw [symbSublangIncl_onRelation, hR] at h
     exact Iff.of_eq h
@@ -120,7 +120,7 @@ private theorem nonempty_equiv_ltSublang_iff (lt : L.Relations 2) (α : Type o) 
     refine ⟨⟨e.toEquiv, fun {a b} => ?_⟩⟩
     have hmap := e.map_rel (ltSymb lt) ![a, b]
     have hcomp : (e ∘ ![a, b]) = ![e.toEquiv a, e.toEquiv b] :=
-      funext (Fin.forall_fin_two.2 ⟨rfl, rfl⟩)
+      funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
     rw [hcomp, hreduct, ltSublangStructure_relMap] at hmap
     simpa only [Matrix.cons_val_zero, Matrix.cons_val_one] using hmap
   · rintro ⟨e⟩
@@ -130,7 +130,7 @@ private theorem nonempty_equiv_ltSublang_iff (lt : L.Relations 2) (α : Type o) 
     rw [Set.mem_singleton_iff] at hr
     cases hr
     have hcomp : (e.toFun ∘ xs) = ![e (xs 0), e (xs 1)] :=
-      funext (Fin.forall_fin_two.2 ⟨rfl, rfl⟩)
+      funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
     rw [hcomp, hreduct, ltSublangStructure_relMap]
     exact e.map_rel_iff
 
@@ -177,14 +177,14 @@ theorem functionsIn_wellOrderTypeSentence (lt : L.Relations 2) {α : Ordinal.{o}
   ext ⟨n, f⟩
   simp only [Set.mem_image, Set.mem_empty_iff_false, iff_false, not_exists, not_and]
   intro s _
-  exact isEmptyElim s.2
+  exact isEmptyElim s.snd
 
 /-- `wellOrderTypeSentence` mentions no relation symbol other than `lt`. -/
 theorem relationsIn_wellOrderTypeSentence_subset (lt : L.Relations 2) {α : Ordinal.{o}}
     (hα : α < ω₁) : (wellOrderTypeSentence lt α hα).relationsIn ⊆ {⟨2, lt⟩} := by
   rw [wellOrderTypeSentence, LHom.relationsIn_onBoundedFormulaInf]
   rintro _ ⟨⟨n, r⟩, -, rfl⟩
-  simpa only [symbSublangIncl_onRelation] using r.2
+  simpa only [symbSublangIncl_onRelation] using r.property
 
 /-- **Semantics of `wellOrderTypeSentence`.** A structure `M` of any cardinality, in any universe,
 satisfies `wellOrderTypeSentence lt α hα` if and only if `lt` well-orders `M` with order type `α`
@@ -235,7 +235,7 @@ theorem isWellOrder_of_realize_wellOrderTypeSentence (lt : L.Relations 2) {α : 
     (hα : α < ω₁) {M : Type w} [L.Structure M]
     (h : SentenceInf.Realize (wellOrderTypeSentence lt α hα) M) :
     IsWellOrder M (fun x y => RelMap lt ![x, y]) :=
-  ((realize_wellOrderTypeSentence_iff lt hα M).mp h).1
+  ((realize_wellOrderTypeSentence_iff lt hα M).mp h).fst
 
 /-- Every model of `wellOrderTypeSentence lt α hα`, in any universe, is countable. -/
 theorem countable_of_realize_wellOrderTypeSentence (lt : L.Relations 2) {α : Ordinal.{o}}
@@ -260,7 +260,7 @@ noncomputable def boundedWellOrderSentence (lt : L.Relations 2) (α : Ordinal.{o
   haveI : Countable (Set.Iio α) := (Cardinal.countable_Iio_of_lt_omega_one hα).to_subtype
   BoundedFormulaInf.iSupAlong
     (TauCeti.IndexCoding.ofEncodableWith (Encodable.ofCountable (Set.Iio α)))
-    fun β => wellOrderTypeSentence lt β.1 (β.2.trans hα)
+    fun β => wellOrderTypeSentence lt β.val (β.property.trans hα)
 
 /-- `boundedWellOrderSentence` mentions no function symbols. -/
 @[simp]
@@ -273,7 +273,7 @@ theorem functionsIn_boundedWellOrderSentence (lt : L.Relations 2) {α : Ordinal.
 theorem relationsIn_boundedWellOrderSentence_subset (lt : L.Relations 2) {α : Ordinal.{o}}
     (hα : α < ω₁) : (boundedWellOrderSentence lt α hα).relationsIn ⊆ {⟨2, lt⟩} := by
   rw [boundedWellOrderSentence, BoundedFormulaInf.relationsIn_iSupAlong]
-  exact Set.iUnion_subset fun β => relationsIn_wellOrderTypeSentence_subset lt (β.2.trans hα)
+  exact Set.iUnion_subset fun β => relationsIn_wellOrderTypeSentence_subset lt (β.property.trans hα)
 
 /-- **Semantics of `boundedWellOrderSentence`.** A structure `M` of any cardinality, in any
 universe, satisfies `boundedWellOrderSentence lt α hα` if and only if `lt` well-orders `M` with
@@ -306,7 +306,7 @@ theorem isWellOrder_of_realize_boundedWellOrderSentence (lt : L.Relations 2) {α
     (hα : α < ω₁) {M : Type w} [L.Structure M]
     (h : SentenceInf.Realize (boundedWellOrderSentence lt α hα) M) :
     IsWellOrder M (fun x y => RelMap lt ![x, y]) :=
-  ((realize_boundedWellOrderSentence_iff lt hα M).mp h).1
+  ((realize_boundedWellOrderSentence_iff lt hα M).mp h).fst
 
 /-- Every model of `boundedWellOrderSentence lt α hα`, in any universe, is countable. -/
 theorem countable_of_realize_boundedWellOrderSentence (lt : L.Relations 2) {α : Ordinal.{o}}
@@ -329,7 +329,7 @@ theorem lt_of_forall_type_lt_of_realize_boundedWellOrderSentence (lt : L.Relatio
       @Ordinal.type M (fun x y => RelMap lt ![x, y])
         (isWellOrder_of_realize_boundedWellOrderSentence lt hα h) < β)
     (hγ0 : 0 < γ) (hγα : γ < α) : γ < β := by
-  have : Nonempty γ.ToType := nonempty_toType_iff.2 hγ0.ne'
+  have : Nonempty γ.ToType := nonempty_toType_iff.mpr hγ0.ne'
   obtain ⟨inst, hrel⟩ := exists_structure_relMap_lt_iff lt γ.ToType
   let := inst
   have hwo : IsWellOrder γ.ToType (fun x y => RelMap lt ![x, y]) := by
@@ -375,12 +375,12 @@ theorem exists_sentenceω_realize_iff_isWellOrder_type_lt_countable_iff (lt : L.
   constructor
   · rintro ⟨φ, hφ⟩
     obtain ⟨β, hβ, hbound⟩ := Sentenceω.wellFounded_boundedness (φ := φ) (lt := lt)
-      fun M _ hne hc h => ((hφ M _ hne hc).1 h).1.wf
+      fun M _ hne hc h => ((hφ M _ hne hc).mp h).fst.wf
     by_contra hα
     have hβ1α : β + 1 < α :=
       ((Cardinal.isSuccLimit_omega 1).add_one_lt hβ).trans_le (not_lt.mp hα)
     let M := (β + 1).ToType
-    have hne : Nonempty M := nonempty_toType_iff.2 (by simp)
+    have hne : Nonempty M := nonempty_toType_iff.mpr (by simp)
     have hc : Countable M :=
       Cardinal.countable_toType_of_lt_omega_one ((Cardinal.isSuccLimit_omega 1).add_one_lt hβ)
     obtain ⟨inst, hrel⟩ := exists_structure_relMap_lt_iff lt M
@@ -389,11 +389,11 @@ theorem exists_sentenceω_realize_iff_isWellOrder_type_lt_countable_iff (lt : L.
       simpa only [hrel] using (inferInstance : IsWellOrder M (· < ·))
     have htype : @Ordinal.type M (fun x y => RelMap lt ![x, y]) hwo = β + 1 :=
       type_eq_of_relMap_iff lt (β + 1) hrel hwo
-    have hsat : SentenceInf.Realize φ M := (hφ M inst hne hc).2 ⟨hwo, htype.symm ▸ hβ1α⟩
+    have hsat : SentenceInf.Realize φ M := (hφ M inst hne hc).mpr ⟨hwo, htype.symm ▸ hβ1α⟩
     let f : β.ToType → M := fun a => ToType.mk
-      ⟨(ToType.toOrd a).1, (ToType.toOrd a).2.trans_le (Order.le_succ β)⟩
-    exact hbound M inst hne hsat f (relChain_iff.2 fun x y hxy => (hrel _ _).2
-      (ToType.mk.strictMono (Subtype.mk_lt_mk.2 (ToType.mk.symm.strictMono hxy))))
+      ⟨(ToType.toOrd a).val, (ToType.toOrd a).property.trans_le (Order.le_succ β)⟩
+    exact hbound M inst hne hsat f (relChain_iff.mpr fun x y hxy => (hrel _ _).mpr
+      (ToType.mk.strictMono (Subtype.mk_lt_mk.mpr (ToType.mk.symm.strictMono hxy))))
   · intro hα
     exact ⟨boundedWellOrderSentence lt α hα,
       fun M _ _ _ => realize_boundedWellOrderSentence_iff_lt lt hα M⟩

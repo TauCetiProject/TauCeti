@@ -12,6 +12,7 @@ public import Mathlib.Order.Filter.AtTopBot.Basic
 public import Mathlib.Order.Filter.Cofinite
 public import Mathlib.Order.Filter.Ultrafilter.Basic
 public import Mathlib.Order.OrderIsoNat
+import Mathlib.Order.InitialSeg
 
 /-!
 # Ordered structures from the order of a type, and non-well-founded models
@@ -22,6 +23,12 @@ of orders, but it is not an instance, and neither it nor a structure in an expan
 Thus, after installing `orderStructure M` and an `L`-structure on `M`, for example
 `FirstOrder.Ring.compatibleRingOfRing M` for the language of rings, the expanded structure on `M`
 interprets `≤` as the order of `M`, and results stated for ordered structures apply to it.
+
+It also shows that well-ordered structures are rigid: any two isomorphisms out of a structure
+carrying a well-ordering preserved by isomorphisms are equal
+(`FirstOrder.Language.Equiv.subsingleton_of_isWellOrder_rel`,
+`FirstOrder.Language.Equiv.subsingleton_of_isWellOrder`,
+`FirstOrder.Language.Equiv.subsingleton_of_wellFoundedLT`).
 
 It also shows that well-foundedness is not first-order: every first-order theory of an infinite
 linear order has a countable model that is not well-ordered. An infinite linear order contains a
@@ -34,6 +41,9 @@ the copies of `M` as its models.
 
 ## Main results
 
+* `FirstOrder.Language.Equiv.subsingleton_of_isWellOrder_rel`,
+  `FirstOrder.Language.Equiv.subsingleton_of_isWellOrder`,
+  `FirstOrder.Language.Equiv.subsingleton_of_wellFoundedLT`: rigidity of well-ordered structures.
 * `TauCeti.exists_countable_model_not_wellFoundedLT`: every first-order theory of an infinite
   linear order has a countable model that is a linear order but not a well-order.
 * `TauCeti.not_exists_theory_model_iff_nonempty_orderIso`: for an infinite countable well-order
@@ -46,6 +56,10 @@ namespace FirstOrder.Language
 
 variable {L : Language} {M : Type*}
 
+/-- The theory of linear orders in any ordered language is finite. -/
+theorem finite_linearOrderTheory (L : Language) [L.IsOrdered] : L.linearOrderTheory.Finite := by
+  simp [linearOrderTheory, partialOrderTheory, preorderTheory]
+
 /-- The order structure of a type interprets the order symbol `≤` as the order of the type. -/
 instance orderedStructure_orderStructure (M : Type*) [LE M] :
     @OrderedStructure Language.order M _ _ (orderStructure M) :=
@@ -56,6 +70,50 @@ instance orderedStructure_sum [L.Structure M] [LE M] [Language.order.Structure M
     [Language.order.OrderedStructure M] : (L.sum Language.order).OrderedStructure M :=
   -- The order symbol of `L.sum Language.order` is `Sum.inr leSymb`.
   ⟨fun x ↦ (congrFun (relMap_sumInr (L₁ := L) leSymb) x).to_iff.trans (relMap_leSymb x)⟩
+
+namespace Equiv
+
+open Structure
+
+variable {L : Language} {M N : Type*} [L.Structure M] [L.Structure N]
+
+/-- If `M` carries a well-ordering preserved by all `L`-isomorphisms into `N`, then there is at
+most one isomorphism `M ≃[L] N`. -/
+theorem subsingleton_of_isWellOrder_rel {r : M → M → Prop} {s : N → N → Prop}
+    [IsWellOrder M r] (hrel : ∀ (e : M ≃[L] N) (x y : M), r x y ↔ s (e x) (e y)) :
+    Subsingleton (M ≃[L] N) := by
+  refine ⟨fun e₁ e₂ => ?_⟩
+  let iso₁ : r ≃r s := ⟨e₁.toEquiv, fun {a b} => (hrel e₁ a b).symm⟩
+  let iso₂ : r ≃r s := ⟨e₂.toEquiv, fun {a b} => (hrel e₂ a b).symm⟩
+  have : IsWellOrder N s := iso₁.symm.toRelEmbedding.isWellOrder
+  ext x
+  exact InitialSeg.eq iso₁.toInitialSeg iso₂.toInitialSeg x
+
+/-- If a binary relation symbol well-orders `M`, there is at most one `L`-isomorphism `M ≃[L] N`. -/
+theorem subsingleton_of_isWellOrder (lt : L.Relations 2)
+    [IsWellOrder M (fun x y => RelMap lt ![x, y])] : Subsingleton (M ≃[L] N) :=
+  subsingleton_of_isWellOrder_rel
+    (r := fun x y => RelMap lt ![x, y]) (s := fun x y => RelMap lt ![x, y])
+    fun e x y => by
+      have h : (e ∘ ![x, y]) = ![e x, e y] := funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
+      simpa only [h] using (e.map_rel lt ![x, y]).symm
+
+/-- If `M` is an ordered structure whose order is a well-order, there is at most one
+`L`-isomorphism `M ≃[L] N`, with no order assumption on `N`. -/
+theorem subsingleton_of_wellFoundedLT [IsOrdered L] [LinearOrder M] [WellFoundedLT M]
+    [L.OrderedStructure M] : Subsingleton (M ≃[L] N) :=
+  subsingleton_of_isWellOrder_rel
+    (r := (· < ·))
+    (s := fun x y => RelMap (leSymb (L := L)) ![x, y] ∧ ¬ RelMap (leSymb (L := L)) ![y, x])
+    fun e x y => by
+      have hmap (a b : M) : RelMap (leSymb (L := L)) ![a, b] ↔
+          RelMap (leSymb (L := L)) ![e a, e b] := by
+        have h : (e ∘ ![a, b]) = ![e a, e b] := funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
+        simpa only [h] using (e.map_rel (leSymb (L := L)) ![a, b]).symm
+      simpa only [lt_iff_le_not_ge, relMap_leSymb, Matrix.cons_val_zero, Matrix.cons_val_one] using
+        and_congr (hmap x y) (not_congr (hmap y x))
+
+end Equiv
 
 end FirstOrder.Language
 

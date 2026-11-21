@@ -22,6 +22,9 @@ the image under `g` of the codomain of `f`. It is monotone in both partial equiv
 
 * `FirstOrder.Language.PartialEquiv.toEquiv_apply_of_le`: a larger partial equivalence agrees
   with a smaller one on the smaller domain.
+* `FirstOrder.Language.PartialEquiv.map_rel` and
+  `FirstOrder.Language.PartialEquiv.map_rel_two`: partial equivalences preserve relations on their
+  domains.
 * `FirstOrder.Language.PartialEquiv.mem_cod_comp`: the codomain of a composite.
 * `FirstOrder.Language.PartialEquiv.comp_le_comp`: composition is monotone in both arguments.
 * `FirstOrder.Language.FGEquiv.exists_le_and_le_dom_of_fg`: in a family of finitely generated
@@ -42,6 +45,22 @@ variable [L.Structure M] [L.Structure N] [L.Structure P]
 theorem toEquiv_apply_of_le {f g : M ≃ₚ[L] N} (h : f ≤ g) {x : M} (hx : x ∈ f.dom) :
     (g.toEquiv ⟨x, dom_le_dom h hx⟩ : N) = f.toEquiv ⟨x, hx⟩ :=
   congrArg Subtype.val (toEquiv_inclusion_apply h ⟨x, hx⟩)
+
+/-- A partial equivalence preserves `n`-ary relations on tuples in its domain. -/
+theorem map_rel (f : M ≃ₚ[L] N) {n : ℕ} (R : L.Relations n) (a : Fin n → f.dom) :
+    Structure.RelMap R (fun i => (f.toEquiv (a i) : N)) ↔
+      Structure.RelMap R (fun i => (a i : M)) :=
+  f.toEquiv.map_rel R a
+
+/-- A partial equivalence preserves binary relations on elements of its domain. -/
+theorem map_rel_two (f : M ≃ₚ[L] N) (R : L.Relations 2) (x y : f.dom) :
+    Structure.RelMap R ![(f.toEquiv x : N), f.toEquiv y] ↔
+      Structure.RelMap R ![x.val, y.val] := by
+  have h1 : (fun i => (f.toEquiv (![x, y] i) : N)) = ![(f.toEquiv x : N), f.toEquiv y] :=
+    funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
+  have h2 : (fun i => ((![x, y] i : f.dom) : M)) = ![x.val, y.val] :=
+    funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
+  simpa only [h1, h2] using f.map_rel R ![x, y]
 
 /-- The composite of partial equivalences `f : M ≃ₚ[L] N` and `g : N ≃ₚ[L] P` when the codomain
 of `f` lies in the domain of `g`. It has the domain of `f`. -/
@@ -75,7 +94,7 @@ theorem cod_comp_le (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.dom
     (g.comp f h).cod ≤ g.cod := by
   intro p hp
   obtain ⟨y, rfl⟩ := (mem_cod_comp g f h).1 hp
-  exact (g.toEquiv _).2
+  exact (g.toEquiv _).property
 
 /-- When the codomain of the first partial equivalence is the domain of the second, the composite
 has the codomain of the second. -/
@@ -83,7 +102,7 @@ theorem cod_comp_of_eq (g : N ≃ₚ[L] P) (f : M ≃ₚ[L] N) (h : f.cod ≤ g.
     (g.comp f h).cod = g.cod := by
   refine le_antisymm (cod_comp_le g f h) fun p hp => (mem_cod_comp g f h).2 ?_
   let z := g.toEquiv.symm ⟨p, hp⟩
-  exact ⟨⟨z, he.ge z.2⟩, by simp [z, Substructure.inclusion]⟩
+  exact ⟨⟨z, he.ge z.property⟩, by simp [z, Substructure.inclusion]⟩
 
 /-- Composition of partial equivalences is monotone in both arguments. -/
 theorem comp_le_comp {f f' : M ≃ₚ[L] N} {g g' : N ≃ₚ[L] P} (hf : f ≤ f') (hg : g ≤ g')
@@ -98,7 +117,7 @@ theorem comp_le_comp {f f' : M ≃ₚ[L] N} {g g' : N ≃ₚ[L] P} (hf : f ≤ f
   simp only [Embedding.comp_apply, Equiv.coe_toEmbedding, Substructure.coe_subtype, comp_apply]
   -- Both sides apply `g'` and `g` to the same value of `f`.
   refine (congrArg (fun y : g'.dom => (g'.toEquiv y : P)) (Subtype.ext ?_)).trans
-    (toEquiv_apply_of_le hg (h (f.toEquiv ⟨x, hx'⟩).2))
+    (toEquiv_apply_of_le hg (h (f.toEquiv ⟨x, hx'⟩).property))
   simpa using hf'
 
 end FirstOrder.Language.PartialEquiv
@@ -113,12 +132,12 @@ open PartialEquiv
 member extends within the family to one whose domain contains a given finitely generated
 substructure. -/
 theorem FGEquiv.exists_le_and_le_dom_of_fg {T : Set (L.FGEquiv M N)}
-    (hT : ∀ g ∈ T, ∀ m : M, ∃ g' ∈ T, m ∈ g'.1.dom ∧ g ≤ g') {g : L.FGEquiv M N} (hg : g ∈ T)
-    {A : L.Substructure M} (hA : A.FG) : ∃ g' ∈ T, A ≤ g'.1.dom ∧ g ≤ g' := by
+    (hT : ∀ g ∈ T, ∀ m : M, ∃ g' ∈ T, m ∈ g'.val.dom ∧ g ≤ g') {g : L.FGEquiv M N} (hg : g ∈ T)
+    {A : L.Substructure M} (hA : A.FG) : ∃ g' ∈ T, A ≤ g'.val.dom ∧ g ≤ g' := by
   classical
   obtain ⟨s, rfl⟩ := hA
   -- Extend one generator at a time.
-  suffices ∃ g' ∈ T, (s : Set M) ⊆ g'.1.dom ∧ g ≤ g' from
+  suffices ∃ g' ∈ T, (s : Set M) ⊆ g'.val.dom ∧ g ≤ g' from
     let ⟨g', hg', hs, hgg'⟩ := this; ⟨g', hg', Substructure.closure_le.2 hs, hgg'⟩
   induction s using Finset.induction_on with
   | empty => exact ⟨g, hg, by simp, le_rfl⟩

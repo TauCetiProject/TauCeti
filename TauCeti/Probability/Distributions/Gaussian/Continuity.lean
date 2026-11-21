@@ -50,7 +50,7 @@ theorem continuous_gaussianReal :
 semidefinite covariance, including every singular covariance and the zero covariance. -/
 theorem continuous_multivariateGaussian {ι : Type*} [Fintype ι] [DecidableEq ι] :
     Continuous (fun p : EuclideanSpace ℝ ι × {S : Matrix ι ι ℝ // S.PosSemidef} ↦
-      (multivariateGaussian p.1 p.2.1).toProbabilityMeasure) := by
+      (multivariateGaussian p.1 p.2.val).toProbabilityMeasure) := by
   -- Matrices carry the entrywise product topology.
   have : FirstCountableTopology
       (EuclideanSpace ℝ ι × {S : Matrix ι ι ℝ // S.PosSemidef}) :=
@@ -62,20 +62,20 @@ theorem continuous_multivariateGaussian {ι : Type*} [Fintype ι] [DecidableEq �
   intro t
   have hquad : Continuous (fun p :
       EuclideanSpace ℝ ι × {S : Matrix ι ι ℝ // S.PosSemidef} ↦
-        (t ⬝ᵥ p.2.1 *ᵥ t : ℝ)) :=
+        (t ⬝ᵥ p.2.val *ᵥ t : ℝ)) :=
     continuous_const.dotProduct
-      ((continuous_subtype_val.comp continuous_snd).matrix_mulVec continuous_const)
+      ((continuous_subtypeVal.comp continuous_snd).matrix_mulVec continuous_const)
   have hmean : Continuous (fun p :
       EuclideanSpace ℝ ι × {S : Matrix ι ι ℝ // S.PosSemidef} ↦ (⟪t, p.1⟫ : ℝ)) :=
     continuous_const.inner continuous_fst
   have h : Continuous (fun p : EuclideanSpace ℝ ι × {S : Matrix ι ι ℝ // S.PosSemidef} ↦
       Complex.exp ((⟪t, p.1⟫ : ℝ) * Complex.I -
-        (t ⬝ᵥ p.2.1 *ᵥ t : ℝ) / 2)) := by
+        (t ⬝ᵥ p.2.val *ᵥ t : ℝ) / 2)) := by
     exact Complex.continuous_exp.comp
       (((Complex.continuous_ofReal.comp hmean).mul_const Complex.I).sub
         ((Complex.continuous_ofReal.comp hquad).div_const 2))
   simpa only [Function.comp_def, Measure.coe_toProbabilityMeasure,
-    charFun_multivariateGaussian (p _).2.2, charFun_multivariateGaussian a.2.2] using
+    charFun_multivariateGaussian (p _).2.property, charFun_multivariateGaussian a.2.property] using
     (h.tendsto a).comp hp
 
 end TauCeti.Probability

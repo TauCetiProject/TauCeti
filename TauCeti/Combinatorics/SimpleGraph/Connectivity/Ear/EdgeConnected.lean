@@ -7,22 +7,25 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Ear.Basic
 
+import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
+
 /-!
 # Ear decompositions of `2`-edge-connected simple graphs
 
-A finite simple graph on a nonempty vertex type is `2`-edge-connected exactly when it can be built
-from one vertex by repeatedly adjoining open or closed ears. One direction holds without any
-finiteness assumption and is `SimpleGraph.EarDecomposition.isEdgeConnected_two`; this file proves
-the converse.
+A simple graph with finitely many edges on a nonempty vertex type is `2`-edge-connected exactly
+when it can be built from one vertex by repeatedly adjoining open or closed ears. One direction
+holds without any finiteness assumption and is `SimpleGraph.EarDecomposition.isEdgeConnected_two`;
+this file proves the converse.
 
 The extension step needs no finiteness. A non-bridge edge `uv` leaving a subgraph `H`, with
 `u ∈ H` and `v ∉ H`, lies on an ear: after deleting `uv`, a path leads from `v` back to `u`, and
 stopping it at its first vertex `w` of `H` gives a closed ear when `w = u` and an open ear
 otherwise. In a `2`-edge-connected graph no edge is a bridge, so every proper subgraph with a
 vertex admits an ear: if it misses a vertex, connectivity supplies an edge leaving it; otherwise
-it misses an edge, which is a single-edge open ear. On a finite vertex type the subgraphs form a
-finite lattice, so adjoining ears until the whole graph is reached extends every ear decomposition
-of a subgraph to one of `⊤` with the same initial subgraph.
+it misses an edge, which is a single-edge open ear. With finitely many edges (`[Finite G.edgeSet]`),
+preconnectedness implies `Finite V` (`SimpleGraph.Preconnected.finite_of_finite_edgeSet`), so the
+subgraphs form a finite lattice and adjoining ears until the whole graph is reached extends every
+ear decomposition of a subgraph to one of `⊤` with the same initial subgraph.
 
 ## Main results
 
@@ -30,14 +33,14 @@ of a subgraph to one of `⊤` with the same initial subgraph.
   that subgraph.
 * `SimpleGraph.IsEdgeConnected.exists_ear`: in a `2`-edge-connected graph, every proper subgraph
   with a vertex admits an ear.
-* `SimpleGraph.IsEdgeConnected.exists_earDecomposition_of_earDecomposition`: in a finite
-  `2`-edge-connected graph, every ear decomposition of a subgraph extends to one of `⊤` with the
-  same initial subgraph.
+* `SimpleGraph.IsEdgeConnected.exists_earDecomposition_of_earDecomposition`: in a
+  `2`-edge-connected graph with finitely many edges, every ear decomposition of a subgraph extends
+  to one of `⊤` with the same initial subgraph.
 * `SimpleGraph.IsEdgeConnected.exists_earDecomposition_initial_eq_singletonSubgraph`: such a graph
   has an ear decomposition of `⊤` starting at any prescribed vertex.
 * `SimpleGraph.isEdgeConnected_two_iff_exists_earDecomposition_initial_eq_singletonSubgraph`,
   `SimpleGraph.isEdgeConnected_two_iff_nonempty_earDecomposition`: the ear characterizations of
-  finite `2`-edge-connected simple graphs.
+  `2`-edge-connected simple graphs with finitely many edges.
 
 ## References
 
@@ -122,11 +125,12 @@ theorem IsEdgeConnected.exists_ear (hG : G.IsEdgeConnected 2) (hH : H ≠ ⊤)
       (isEdgeConnected_two_iff_forall_not_isBridge.mp hG _)
     exact ⟨e⟩
 
-/-- In a `2`-edge-connected simple graph on a finite vertex type, every ear decomposition of a
+/-- In a `2`-edge-connected simple graph with finitely many edges, every ear decomposition of a
 subgraph extends to an ear decomposition of `⊤` with the same initial subgraph. -/
-theorem IsEdgeConnected.exists_earDecomposition_of_earDecomposition [Finite V]
+theorem IsEdgeConnected.exists_earDecomposition_of_earDecomposition [Finite G.edgeSet]
     (hG : G.IsEdgeConnected 2) (d₀ : G.EarDecomposition H) :
     ∃ d : G.EarDecomposition (⊤ : G.Subgraph), d.initial = d₀.initial := by
+  have : Finite V := (hG.preconnected two_ne_zero).finite_of_finite_edgeSet
   induction H using WellFoundedGT.induction with
   | ind H ih =>
     by_cases htop : H = ⊤
@@ -135,27 +139,27 @@ theorem IsEdgeConnected.exists_earDecomposition_of_earDecomposition [Finite V]
       obtain ⟨d, hinit⟩ := ih e.adjoin e.lt_adjoin (d₀.snoc e)
       exact ⟨d, hinit.trans (d₀.initial_snoc e)⟩
 
-/-- A `2`-edge-connected simple graph on a finite vertex type has an ear decomposition of `⊤`
+/-- A `2`-edge-connected simple graph with finitely many edges has an ear decomposition of `⊤`
 starting at any prescribed vertex. -/
-theorem IsEdgeConnected.exists_earDecomposition_initial_eq_singletonSubgraph [Finite V]
+theorem IsEdgeConnected.exists_earDecomposition_initial_eq_singletonSubgraph [Finite G.edgeSet]
     (hG : G.IsEdgeConnected 2) (v : V) :
     ∃ d : G.EarDecomposition (⊤ : G.Subgraph), d.initial = G.singletonSubgraph v := by
   obtain ⟨d, hinit⟩ := hG.exists_earDecomposition_of_earDecomposition (.vertex G v)
   exact ⟨d, hinit.trans (EarDecomposition.initial_vertex v)⟩
 
-/-- **Ear characterization of `2`-edge-connectivity.** A simple graph on a finite nonempty vertex
-type is `2`-edge-connected exactly when it can be built from one vertex by adjoining open or
-closed ears. -/
-theorem isEdgeConnected_two_iff_exists_earDecomposition_initial_eq_singletonSubgraph [Finite V]
-    [Nonempty V] :
+/-- **Ear characterization of `2`-edge-connectivity.** A simple graph with finitely many edges on a
+nonempty vertex type is `2`-edge-connected exactly when it can be built from one vertex by
+adjoining open or closed ears. -/
+theorem isEdgeConnected_two_iff_exists_earDecomposition_initial_eq_singletonSubgraph
+    [Finite G.edgeSet] [Nonempty V] :
     G.IsEdgeConnected 2 ↔
       ∃ (v : V) (d : G.EarDecomposition (⊤ : G.Subgraph)), d.initial = G.singletonSubgraph v :=
   ⟨fun hG ↦ ⟨_, hG.exists_earDecomposition_initial_eq_singletonSubgraph (Classical.arbitrary V)⟩,
     fun ⟨_, d, _⟩ ↦ d.isEdgeConnected_two⟩
 
-/-- A simple graph on a finite nonempty vertex type is `2`-edge-connected exactly when it has an
-ear decomposition of `⊤`, starting from either a vertex or a cycle. -/
-theorem isEdgeConnected_two_iff_nonempty_earDecomposition [Finite V] [Nonempty V] :
+/-- A simple graph with finitely many edges on a nonempty vertex type is `2`-edge-connected exactly
+when it has an ear decomposition of `⊤`, starting from either a vertex or a cycle. -/
+theorem isEdgeConnected_two_iff_nonempty_earDecomposition [Finite G.edgeSet] [Nonempty V] :
     G.IsEdgeConnected 2 ↔ Nonempty (G.EarDecomposition (⊤ : G.Subgraph)) :=
   ⟨fun hG ↦
       (hG.exists_earDecomposition_initial_eq_singletonSubgraph (Classical.arbitrary V)).nonempty,

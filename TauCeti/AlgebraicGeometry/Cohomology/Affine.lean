@@ -194,8 +194,10 @@ private lemma quasiIso_cechAugmentation_finset {ι : Type u} (V : ι → X.Opens
       (quasiIso_cechAugmentation_prod_of_hom W isTerminalTop _ (T 0 ⨯ T 1) (i₀ := ⟨a, ha'⟩)
         prod.fst)).2 (quasiIso_cechAugmentation_fin_two M hU hY T hT hYV₁)
     · -- the two-member cover, restricted to a finite intersection of members of `W`
-      exact (quasiIso_cechAugmentation_iff_of_iso _ _ _ (Functor.isoWhiskerRight
-        (NatIso.op (prod.functorLeftComp _ _)) F.obj)).2
+      have e' : (prod.functor.obj (∏ᶜ fun j ↦ W (b j))).op ⋙ (prod.functor.obj Y).op ⋙ F.obj ≅
+          (prod.functor.obj (Y ⨯ ∏ᶜ fun j ↦ W (b j))).op ⋙ F.obj :=
+        Functor.isoWhiskerRight (NatIso.op (prod.functorLeftComp Y (∏ᶜ fun j ↦ W (b j)))) F.obj
+      exact (quasiIso_cechAugmentation_iff_of_iso T isTerminalTop _ e').2
         (quasiIso_cechAugmentation_fin_two M hU (Topology.prod_pi_mem_of_inf_mem (U := W)
           Scheme.inf_mem_range_basicOpen (fun i ↦ hV i) hY n b) T hT
           ((leOfHom prod.fst).trans hYV₁))
@@ -208,7 +210,7 @@ private lemma quasiIso_cechAugmentation_finset {ι : Type u} (V : ι → X.Opens
           (ih _ (Topology.prod_pi_mem_of_inf_mem (U := W) Scheme.inf_mem_range_basicOpen
             (fun i ↦ hV i) hYT₁ n b) ((leOfHom (prod.fst ≫ prod.snd)).trans hV₁s))
       · exact quasiIso_cechAugmentation_prod_of_hom W isTerminalTop _ _
-          (i₀ := ⟨b 0, Finset.mem_cons_of_mem (b 0).2⟩) (Pi.π _ 0)
+          (i₀ := ⟨b 0, Finset.mem_cons_of_mem (b 0).property⟩) (Pi.π _ 0)
       · exact (quasiIso_cechAugmentation_iff_of_iso _ _ _ e).2
           (ih _ hYT₁ ((leOfHom prod.snd).trans hV₁s))
 

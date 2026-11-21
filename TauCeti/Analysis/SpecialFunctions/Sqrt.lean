@@ -17,7 +17,8 @@ import Mathlib.Analysis.MeanInequalitiesPow
 Two estimates comparing the real square-root and inverse-square-root functions
 with the identity near `1`. These bounds control scalar spectral factors of
 positive operators close to the identity. The file also records that the square root is
-`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, that `1 ≤ √(1 + t²)`, `|t / √(1 + t²)| ≤ 1`, that the
+`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, that `1 ≤ √(1 + t²)`, and that
+`|t / √(t² + p)| ≤ 1` for `p ≥ 0`. It also records that the
 modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschitz, that `c √u` tends
 to `0` as
 `u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
@@ -32,11 +33,13 @@ to `0` as
   `|1 - (√μ)⁻¹| ≤ δ`.
 * `Real.abs_sqrt_sub_sqrt_le`: for all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`.
 * `Real.one_le_sqrt_one_add_sq`: for every real `t`, `1 ≤ √(1 + t²)`.
-* `Real.abs_div_sqrt_one_add_sq_le_one`: for every real `t`, `|t / √(1 + t²)| ≤ 1`.
+* `Real.abs_div_sqrt_sq_add_le_one`: for `p ≥ 0` and every real `t`, `|t / √(t² + p)| ≤ 1`.
 * `Real.sqrt_one_add_sq_sub_one_le_abs`: for every real `t`, `√(1 + t²) - 1 ≤ |t|`.
 * `Real.sqrt_one_add_sq_sub_one_le_sq_div_two`: for every real `t`, `√(1 + t²) - 1 ≤ t² / 2`.
 * `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le`: for all reals `a` and `b`,
   `|√(1 + a²) - √(1 + b²)| ≤ |a - b| (|a| + |b|)`.
+* `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub`: `t ↦ √(1 + t²)` is `1`-Lipschitz.
+* `Real.one_add_div_two_le_sqrt_one_add_sq`: for every real `t`, `(1 + t) / 2 ≤ √(1 + t²)`.
 * `Real.le_sqrt_mul_of_sq_le_mul`: if `0 ≤ b` and `a² ≤ c b²` then `a ≤ √c * b`.
 * `Real.abs_mul_inv_sqrt_sq_mul_mul`: for `d ≠ 0` and `0 ≤ c`,
   `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`.
@@ -142,11 +145,12 @@ theorem abs_sqrt_sub_sqrt_le (t s : ℝ) : |√t - √s| ≤ √|t - s| := by
 theorem one_le_sqrt_one_add_sq (t : ℝ) : 1 ≤ √(1 + t ^ 2) :=
   one_le_sqrt.mpr (by nlinarith [sq_nonneg t])
 
-/-- For every real `t`, `|t / √(1 + t²)| ≤ 1`. -/
-theorem abs_div_sqrt_one_add_sq_le_one (t : ℝ) : |t / √(1 + t ^ 2)| ≤ 1 := by
-  have hpos : 0 < √(1 + t ^ 2) := by linarith [one_le_sqrt_one_add_sq t]
-  rw [abs_div, abs_of_pos hpos, div_le_one₀ hpos]
-  exact abs_le_sqrt (by linarith)
+/-- For `p ≥ 0` and every real `t`, `|t / √(t² + p)| ≤ 1`, including when the
+square root vanishes. -/
+theorem abs_div_sqrt_sq_add_le_one {p : ℝ} (hp : 0 ≤ p) (t : ℝ) :
+    |t / √(t ^ 2 + p)| ≤ 1 := by
+  rw [abs_div, abs_of_nonneg (sqrt_nonneg _)]
+  exact div_le_one_of_le₀ (abs_le_sqrt (le_add_of_nonneg_right hp)) (sqrt_nonneg _)
 
 /-- The modular `√(1 + t²) - 1` grows at most linearly: `√(1 + t²) - 1 ≤ |t|`. -/
 theorem sqrt_one_add_sq_sub_one_le_abs (t : ℝ) : √(1 + t ^ 2) - 1 ≤ |t| := by
@@ -175,6 +179,28 @@ theorem abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le (a b : ℝ) :
         rw [← abs_of_pos (by linarith : 0 < √(1 + a ^ 2) + √(1 + b ^ 2)), ← abs_mul, key,
           abs_mul]
     _ ≤ |a - b| * (|a| + |b|) := mul_le_mul_of_nonneg_left (abs_add_le a b) (abs_nonneg _)
+
+/-- The function `t ↦ √(1 + t²)` is `1`-Lipschitz on the real line:
+`|√(1 + a²) - √(1 + b²)| ≤ |a - b|`. -/
+theorem abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub (a b : ℝ) :
+    |√(1 + a ^ 2) - √(1 + b ^ 2)| ≤ |a - b| := by
+  have hpos : 0 < √(1 + a ^ 2) + √(1 + b ^ 2) := by
+    linarith [one_le_sqrt_one_add_sq a, one_le_sqrt_one_add_sq b]
+  have hA : √(1 + a ^ 2) ^ 2 = 1 + a ^ 2 := sq_sqrt (by positivity)
+  have hB : √(1 + b ^ 2) ^ 2 = 1 + b ^ 2 := sq_sqrt (by positivity)
+  -- `|a| ≤ √(1 + a²)` and `|b| ≤ √(1 + b²)`, so the sum of the roots dominates `|a + b|`.
+  have hab : |a + b| ≤ √(1 + a ^ 2) + √(1 + b ^ 2) :=
+    (abs_add_le a b).trans (add_le_add (abs_le_sqrt (by nlinarith)) (abs_le_sqrt (by nlinarith)))
+  refine le_of_mul_le_mul_right ?_ hpos
+  -- `(√(1 + a²) - √(1 + b²)) (√(1 + a²) + √(1 + b²)) = (a - b) (a + b)`.
+  rw [← abs_of_pos hpos, ← abs_mul, abs_of_pos hpos,
+    show (√(1 + a ^ 2) - √(1 + b ^ 2)) * (√(1 + a ^ 2) + √(1 + b ^ 2)) = (a - b) * (a + b) by
+      linear_combination hA - hB, abs_mul]
+  exact mul_le_mul_of_nonneg_left hab (abs_nonneg _)
+
+/-- For every real `t`, `(1 + t) / 2 ≤ √(1 + t²)`. -/
+theorem one_add_div_two_le_sqrt_one_add_sq (t : ℝ) : (1 + t) / 2 ≤ √(1 + t ^ 2) :=
+  le_sqrt_of_sq_le (by nlinarith [sq_nonneg (t - 1)])
 
 /-- If `a² ≤ c b²` with `0 ≤ b`, then `a ≤ √c * b`. -/
 theorem le_sqrt_mul_of_sq_le_mul {a b c : ℝ} (hb : 0 ≤ b) (h : a ^ 2 ≤ c * b ^ 2) :
