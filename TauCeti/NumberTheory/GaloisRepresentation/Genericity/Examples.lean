@@ -13,7 +13,7 @@ public import Mathlib.Algebra.Field.ZMod
 
 Concrete checks of `TauCeti.IsGenericEigenvalues`, `TauCeti.IsStronglyGenericEigenvalues` and
 their matrix and representation forms over small prime fields. They separate the two conditions
-from each other and from pairwise distinctness, and show that both depend on `q`.
+from each other and from pairwise distinctness, and show that genericity depends on `q`.
 
 * Over `𝔽₃` with `q = 2`, the repeated pair `(1, 1)` is generic but not strongly generic, so the
   identity matrix and the trivial representation of rank two are generic but not strongly
