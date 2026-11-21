@@ -21,8 +21,10 @@ dimension vanishes, provided the quantum integers used in its construction are u
 These are the negligible projections killed in the positive Jones quotients.
 
 The radical and quotient trace are the general constructions `LinearMap.traceRadical`
-and `LinearMap.quotientTrace`; this file supplies their tower-specific properties.
-The strand maps here start at one strand, as does `TemperleyLieb.strandIncl`.
+and `LinearMap.quotientTrace`; this file supplies the `IsMarkovTrace.traceRadical` and
+`IsMarkovTrace.Quotient` shorthands together with their tower-specific properties.
+The strand maps `quotientStrandIncl` start at one strand, as does `TemperleyLieb.strandIncl`,
+while `comap_traceRadical_strandInclAll` extends the radical pullback to `n = 0` for unit `δ`.
 
 ## References
 
@@ -38,6 +40,21 @@ namespace TauCeti.TemperleyLieb.IsMarkovTrace
 variable {R : Type*} [CommRing R] {δ : R}
   {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
   (htr : IsMarkovTrace R δ tr)
+
+/-- The multiplication-pairing radical of a Markov trace at level `n`. -/
+@[expose] def traceRadical (n : ℕ) : Ideal (TemperleyLieb R δ n) :=
+  (tr n).traceRadical (htr.map_mul_comm n)
+
+/-- Membership in `htr.traceRadical n` is vanishing of `tr n (x * y)` for all `y`. -/
+theorem mem_traceRadical_iff {n : ℕ} {x : TemperleyLieb R δ n} :
+    x ∈ htr.traceRadical n ↔ ∀ y, tr n (x * y) = 0 :=
+  (tr n).mem_traceRadical (htr.map_mul_comm n)
+
+instance instIsTwoSidedTraceRadical (n : ℕ) : (htr.traceRadical n).IsTwoSided :=
+  inferInstanceAs ((tr n).traceRadical (htr.map_mul_comm n)).IsTwoSided
+
+/-- The trace-radical quotient of `TemperleyLieb R δ n` for a Markov trace `htr`. -/
+abbrev Quotient (n : ℕ) := TemperleyLieb R δ n ⧸ htr.traceRadical n
 
 /-- Strand inclusion pulls back the trace radical exactly, even at zero loop parameter. -/
 @[simp]
@@ -62,6 +79,23 @@ theorem comap_traceRadical_strandIncl (n : ℕ) :
         rw [← mul_assoc, ← mul_assoc, ← map_mul,
           htr.map_strandIncl_mul_e_last_mul, mul_assoc, hx (a * b)]
     exact fun y ↦ LinearMap.congr_fun hf y
+
+/-- When `δ` is a unit, `strandInclAll n` pulls back the trace radical exactly for every `n ≥ 0`. -/
+@[simp]
+theorem comap_traceRadical_strandInclAll (hδ : IsUnit δ) (n : ℕ) :
+    Ideal.comap (strandInclAll (R := R) (δ := δ) n) (htr.traceRadical (n + 1)) =
+      htr.traceRadical n := by
+  cases n with
+  | zero =>
+    ext x; simp only [Ideal.mem_comap, mem_traceRadical_iff]; refine ⟨fun hx _ ↦ ?_, fun hx _ ↦ ?_⟩
+    · have h1 := hx 1
+      simp only [strandInclAll_zero, Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul,
+        map_smul, htr.map_one, zero_add, pow_one, smul_eq_mul] at h1
+      rw [eq_algebraMap_aug_zero x, hδ.mul_left_eq_zero.mp h1, map_zero, zero_mul, map_zero]
+    · have h0 := hx 1
+      rw [eq_algebraMap_aug_zero x, Algebra.algebraMap_eq_smul_one, mul_one, map_smul,
+        htr.map_one, pow_zero, smul_eq_mul, mul_one] at h0; simp [h0]
+  | succ n => rw [strandInclAll_succ]; exact htr.comap_traceRadical_strandIncl n
 
 /-- Strand inclusion preserves and reflects trace-radical membership. -/
 theorem strandIncl_mem_traceRadical_iff {n : ℕ} (x : TemperleyLieb R δ (n + 1)) :

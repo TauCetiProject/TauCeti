@@ -158,6 +158,15 @@ theorem map_strandIncl_mul_e_last_mul (htr : IsMarkovTrace R δ tr) {n : ℕ}
     tr (n + 2) (strandIncl a * e δ (Fin.last n) * strandIncl b) = tr (n + 1) (a * b) :=
   (htr.isMarkovTraceUpTo (n + 2)).map_strandIncl_mul_e_last_mul le_rfl a b
 
+/-- Adding a straight strand at any level `n ≥ 0` multiplies a Markov trace by `δ`. -/
+@[simp]
+theorem map_strandInclAll (htr : IsMarkovTrace R δ tr) (n : ℕ) (x : TemperleyLieb R δ n) :
+    tr (n + 1) (strandInclAll n x) = δ * tr n x := by
+  cases n with
+  | zero =>
+    rw [eq_algebraMap_aug_zero x]; simp [Algebra.algebraMap_eq_smul_one, htr.map_one, mul_comm]
+  | succ n => rw [strandInclAll_succ, htr.map_strandIncl]
+
 /-- On at most one strand the algebra is the base ring, so a Markov trace is `aug x * δ ^ n`. -/
 theorem apply_of_le_one (htr : IsMarkovTrace R δ tr) {n : ℕ} (hn : n ≤ 1)
     (x : TemperleyLieb R δ n) : tr n x = aug x * δ ^ n :=

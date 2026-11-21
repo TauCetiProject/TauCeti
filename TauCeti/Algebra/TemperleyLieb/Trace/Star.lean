@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.TemperleyLieb.MarkovTrace
 public import TauCeti.Algebra.TemperleyLieb.Star
+public import TauCeti.Algebra.TemperleyLieb.Trace.Radical
 public import TauCeti.RingTheory.Ideal.Quotient.Star
 public import TauCeti.RingTheory.TraceFunctional.Star
 import Mathlib.Algebra.Star.LinearMap
@@ -20,9 +21,11 @@ this form by the loop parameter. This holds over any commutative star semiring, 
 or invertibility assumptions on the parameter.
 
 Together with `LinearMap.star_mem_traceRadical_iff` and `LinearMap.ker_traceSesqForm`, the adjoint
-identity shows that the trace radical is star-stable and is precisely the kernel of the Hermitian
-form. Positivity and the identification of that kernel with the zero-length vectors are separate
-questions.
+identity shows that the trace radical is star-stable (`IsMarkovTrace.instIsStarTraceRadical`) and
+is precisely the kernel of the Hermitian form, so strand inclusion induces injective `⋆`-algebra
+homomorphisms `IsMarkovTrace.quotientStrandStarAlgHom` between the algebraic trace quotients
+whenever `δ` is a unit. Positivity and the identification of that kernel with the zero-length
+vectors are separate questions.
 
 ## References
 
@@ -90,6 +93,48 @@ theorem IsMarkovTrace.isStar_traceRadical {tr : ∀ n : ℕ, TemperleyLieb R δ 
     (htr : IsMarkovTrace R δ tr) (n : ℕ) :
     ((tr n).traceRadical (htr.map_mul_comm n)).IsStar :=
   ⟨fun ha ↦ ((tr n).star_mem_traceRadical_iff (htr.map_mul_comm n) (htr.map_star n)).mpr ha⟩
+
+namespace IsMarkovTrace
+
+variable {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R} (htr : IsMarkovTrace R δ tr)
+
+instance instIsStarTraceRadical (n : ℕ) : (htr.traceRadical n).IsStar :=
+  htr.isStar_traceRadical n
+
+/-- Unital `⋆`-algebra strand inclusion `htr.Quotient n →⋆ₐ[R] htr.Quotient (n + 1)` (`n ≥ 0`),
+defined whenever `δ` is a unit. -/
+def quotientStrandStarAlgHom (hδ : IsUnit δ) (n : ℕ) :
+    htr.Quotient n →⋆ₐ[R] htr.Quotient (n + 1) :=
+  { Ideal.quotientMapₐ (htr.traceRadical (n + 1)) (strandInclAll n)
+      (htr.comap_traceRadical_strandInclAll hδ n).ge with
+    map_star' x := by
+      obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+      simp only [AlgHom.toFun_eq_coe, Ideal.Quotient.star_mk, Ideal.quotient_map_mkₐ,
+        strandInclAll_star, Ideal.Quotient.mkₐ_eq_mk] }
+
+/-- `quotientStrandStarAlgHom` acts on representatives by `strandInclAll`. -/
+@[simp]
+theorem quotientStrandStarAlgHom_mk (hδ : IsUnit δ) (n : ℕ) (x : TemperleyLieb R δ n) :
+    htr.quotientStrandStarAlgHom hδ n (Ideal.Quotient.mk (htr.traceRadical n) x) =
+      Ideal.Quotient.mk (htr.traceRadical (n + 1)) (strandInclAll n x) :=
+  Ideal.quotient_map_mkₐ _ _ _
+
+/-- The `⋆`-algebra strand map between trace-radical quotients is injective for unit `δ`. -/
+theorem quotientStrandStarAlgHom_injective (hδ : IsUnit δ) (n : ℕ) :
+    Function.Injective (htr.quotientStrandStarAlgHom hδ n) :=
+  Ideal.quotientMap_injective' (H := (htr.comap_traceRadical_strandInclAll hδ n).ge)
+    (htr.comap_traceRadical_strandInclAll hδ n).le
+
+/-- The algebraic quotient trace scales by `δ` along `quotientStrandStarAlgHom`. -/
+@[simp]
+theorem quotientTrace_quotientStrandStarAlgHom (hδ : IsUnit δ) (n : ℕ) (x : htr.Quotient n) :
+    (tr (n + 1)).quotientTrace (htr.map_mul_comm (n + 1)) (htr.quotientStrandStarAlgHom hδ n x) =
+      δ * (tr n).quotientTrace (htr.map_mul_comm n) x := by
+  obtain ⟨_, rfl⟩ := Ideal.Quotient.mk_surjective x; rw [htr.quotientStrandStarAlgHom_mk]
+  exact (LinearMap.quotientTrace_mk _ _ _).trans <| (htr.map_strandInclAll n _).trans <|
+    congrArg (δ * ·) (LinearMap.quotientTrace_mk _ _ _).symm
+
+end IsMarkovTrace
 
 /-- The spin-model Markov trace preserves the analytic adjoint, even when its unit parameter
 is not self-adjoint: only the loop parameter must be self-adjoint. -/
