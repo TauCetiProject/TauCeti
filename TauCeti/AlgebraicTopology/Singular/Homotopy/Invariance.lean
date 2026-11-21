@@ -29,7 +29,9 @@ from the identity into `s` keeps `s` inside `s`
 case, a homotopy equivalence of spaces induces an isomorphism on singular homology
 (`ContinuousMap.HomotopyEquiv.singularHomologyIso`), so by the five lemma a map of pairs which is a
 homotopy equivalence on both spaces induces isomorphisms on relative singular homology
-(`TopPair.isIso_singularHomologyMap_of_homotopyEquiv`).
+(`TopPair.isIso_singularHomologyMap_of_homotopyEquiv`). In particular, if `j : s → X` is an
+embedding and `h : X ≃ₕ t` is a homotopy equivalence with `h ∘ j` the inclusion `s ⊆ t`, then
+`Hₙ(X, j s) ≅ Hₙ(t, s)` (`TopPair.nonempty_singularHomology_ofInclusion_iso_of_homotopyEquiv`).
 
 The homotopy is transported to the singular simplicial sets of the two spaces, where the
 compatibility of the two simplicial homotopies over the inclusion of the subspace descends the
@@ -245,11 +247,46 @@ theorem isIso_singularHomologyMap_of_homotopyEquiv {P P' : TopPair.{w}} (f : P �
   exact isIso_singularHomologyMap_of_isIso R f n (hfst n) (hsnd n) (fun m _ ↦ hfst m)
     fun m _ ↦ hsnd m
 
+/-- **The relative homology of a homotopy model of a pair.** Let `s ⊆ t` be subsets of a space
+`Y`, and let `j : s → X` be an embedding and `h : X ≃ₕ t` a homotopy equivalence with `h ∘ j` the
+inclusion `s ⊆ t`. Then the pair `(X, j s)` has the relative singular homology of `(t, s)`, in
+every degree and for every coefficient object. -/
+theorem nonempty_singularHomology_ofInclusion_iso_of_homotopyEquiv {X Y : Type w}
+    [TopologicalSpace X] [TopologicalSpace Y] {s t : Set Y} (hst : s ⊆ t) {j : C(s, X)}
+    (hj : Topology.IsEmbedding j) (h : ContinuousMap.HomotopyEquiv X t)
+    (hh : ∀ x, (h (j x) : Y) = x) (R : C) (n : ℕ) :
+    Nonempty ((ofInclusion (X := TopCat.of X) (Set.subset_univ (Set.range j))).singularHomology
+      R n ≅ (ofInclusion (X := TopCat.of Y) hst).singularHomology R n) := by
+  -- On the total spaces the map of pairs is `h`, and on the subspaces it is `j⁻¹`.
+  let φ := ofInclusionMap (X := TopCat.of X) (Y := TopCat.of Y) (Set.subset_univ (Set.range j))
+    hst (h.toFun.restrict Set.univ) fun x ⟨w, hw⟩ ↦ by simp [← hw, hh]
+  have := isIso_singularHomologyMap_of_homotopyEquiv φ
+    ((Homeomorph.Set.univ X).toHomotopyEquiv.trans h) hj.toHomeomorph.symm.toHomotopyEquiv
+    (by ext x; exact ofInclusionMap_fst_apply _ _ x)
+    (by
+      ext ⟨_, w, rfl⟩
+      refine Subtype.ext ((ofInclusionMap_snd_apply _ _ _).trans ((hh w).trans ?_))
+      exact congrArg Subtype.val (hj.toHomeomorph_symm_apply w).symm) R n
+  exact ⟨asIso (TopPair.singularHomologyMap φ R n)⟩
+
 end TopPair
 
 namespace ContinuousMap
 
-open TauCeti
+open AlgebraicTopology TauCeti
+
+/-- Homotopic continuous maps induce the same map on singular homology with coefficients in any
+object `R`. -/
+theorem singularHomologyFunctor_map_eq_of_homotopic {C : Type u} [Category.{v} C]
+    [HasCoproducts.{w} C] [Preadditive C] [CategoryWithHomology C] (R : C) (n : ℕ)
+    {Y Z : Type w} [TopologicalSpace Y] [TopologicalSpace Z] {g g' : C(Y, Z)}
+    (H : g.Homotopic g') :
+    ((singularHomologyFunctor C n).obj R).map (TopCat.ofHom g) =
+      ((singularHomologyFunctor C n).obj R).map (TopCat.ofHom g') :=
+  -- `((singularHomologyFunctor C n).obj R).map` is the homology of the map of singular chains by
+  -- definition.
+  TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
+    (f := TopCat.ofHom g) (g := TopCat.ofHom g') H.some R n
 
 variable (k : Type w) [Ring k] (n : ℕ)
 
@@ -257,9 +294,7 @@ variable (k : Type w) [Ring k] (n : ℕ)
 theorem singularHomologyMap_eq_of_homotopic {Y Z : Type w} [TopologicalSpace Y]
     [TopologicalSpace Z] {g g' : C(Y, Z)} (H : g.Homotopic g') :
     singularHomologyMap k n g = singularHomologyMap k n g' :=
-  congrArg ModuleCat.Hom.hom
-    (TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
-      (f := TopCat.ofHom g) (g := TopCat.ofHom g') H.some (ModuleCat.of k k) n)
+  congrArg ModuleCat.Hom.hom (singularHomologyFunctor_map_eq_of_homotopic (ModuleCat.of k k) n H)
 
 /-- A continuous map with a left inverse up to homotopy is injective on singular homology. -/
 theorem injective_singularHomologyMap_of_homotopic_comp_id {Y Z : Type w} [TopologicalSpace Y]

@@ -25,9 +25,8 @@ Perturbation and homotopy theory for star projections and idempotents in complex
 * `IsIdempotentElem.exp_smul`, `IsStarProjection.coe_expUnitary_smul`, `.coe_expUnitary_pi_smul`,
   `.half_one_sub_of_mul_self_eq_one`, `Unitary.expUnitary_pi_half_one_sub`: exponentials of
   idempotents, projections, and self-adjoint unitaries.
-* `IsIdempotentElem.exists_isStarProjection_similar`,
-  `.exists_isStarProjection_similar_unitization`: every idempotent is similar to a star projection
-  with the same range.
+* `IsIdempotentElem.exists_isStarProjection_similar_unitization`: every idempotent is similar in
+  the unitization to a star projection with the same range.
 * `IsStarProjection.exists_unitary_conj_of_norm_sub_lt_one`,
   `.exists_unitization_unitary_conj_of_norm_sub_lt_one`,
   `.exists_path_isStarProjection_of_norm_sub_lt_one`, `.exists_unitary_conj_of_path`,
@@ -117,19 +116,6 @@ private theorem commute_ring_inverse_left {A : Type*} [Semiring A] {a b : A}
     (ha : IsUnit a) (h : Commute a b) : Commute a⁻¹ʳ b := by
   obtain ⟨u, rfl⟩ := ha; rw [Ring.inverse_unit]; exact h.units_inv_left
 
-/-- Every idempotent in a unital C⋆-algebra is similar to a star projection with the same
-range (`e * p = p` and `p * e = e`). -/
-theorem IsIdempotentElem.exists_isStarProjection_similar {A : Type*} [CStarAlgebra A]
-    {e : A} (he : IsIdempotentElem e) :
-    ∃ p : A, IsStarProjection p ∧ e * p = p ∧ p * e = e ∧
-      ∃ s : Aˣ, (s : A) * e * ↑s⁻¹ = p :=
-  ⟨TauCeti.idempotentRangeProjection e, he.isStarProjection_idempotentRangeProjection,
-    he.mul_idempotentRangeProjection, he.idempotentRangeProjection_mul,
-    TauCeti.idempotentConjUnit e (TauCeti.idempotentRangeProjection e)
-      he.mul_idempotentRangeProjection he.idempotentRangeProjection_mul,
-    TauCeti.idempotentConjUnit_mul_mul_inv e (TauCeti.idempotentRangeProjection e)
-      he.mul_idempotentRangeProjection he.idempotentRangeProjection_mul⟩
-
 /-- Every idempotent in a (possibly non-unital) C⋆-algebra is similar in the unitization `A⁺¹`
 to a star projection in `A` with the same range (`e * p = p` and `p * e = e`). -/
 theorem IsIdempotentElem.exists_isStarProjection_similar_unitization {A : Type*}
@@ -137,15 +123,19 @@ theorem IsIdempotentElem.exists_isStarProjection_similar_unitization {A : Type*}
     ∃ p : A, IsStarProjection p ∧ e * p = p ∧ p * e = e ∧
       ∃ s : (A⁺¹)ˣ, (s : A⁺¹) * (e : A⁺¹) * ↑s⁻¹ = (p : A⁺¹) := by
   have he' : IsIdempotentElem (e : A⁺¹) := by rw [IsIdempotentElem, ← Unitization.inr_mul, he.eq]
-  obtain ⟨p', hp', hep', hpe', s, hs⟩ := he'.exists_isStarProjection_similar
+  let p' : A⁺¹ := TauCeti.idempotentRangeProjection (e : A⁺¹)
+  have hp' : IsStarProjection p' := he'.isStarProjection_idempotentRangeProjection
+  have hep' : (e : A⁺¹) * p' = p' := he'.mul_idempotentRangeProjection
+  have hpe' : p' * (e : A⁺¹) = (e : A⁺¹) := he'.idempotentRangeProjection_mul
   have hp'_fst : p'.fst = 0 := by
     simpa [Unitization.fst_mul, Unitization.fst_inr] using
       (congrArg (fun x : A⁺¹ => x.fst) hep').symm
   have hp'_eq : (p'.snd : A⁺¹) = p' := Unitization.ext (by simp [hp'_fst]) rfl
-  refine ⟨p'.snd, IsStarProjection.of_inr (R := ℂ) (hp'_eq.symm ▸ hp'), ?_, ?_, s,
-    hp'_eq.symm ▸ hs⟩
+  refine ⟨p'.snd, IsStarProjection.of_inr (R := ℂ) (hp'_eq.symm ▸ hp'), ?_, ?_,
+    TauCeti.idempotentConjUnit (e : A⁺¹) p' hep' hpe', ?_⟩
   · exact Unitization.inr_injective (R := ℂ) (by simpa [Unitization.inr_mul, hp'_eq] using hep')
   · exact Unitization.inr_injective (R := ℂ) (by simpa [Unitization.inr_mul, hp'_eq] using hpe')
+  · simpa [hp'_eq] using TauCeti.idempotentConjUnit_mul_mul_inv (e : A⁺¹) p' hep' hpe'
 
 end IdempotentSimilar
 

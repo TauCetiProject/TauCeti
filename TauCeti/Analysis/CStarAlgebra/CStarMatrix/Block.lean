@@ -14,7 +14,7 @@ public import Mathlib.Topology.Connected.PathConnected
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.LinearAlgebra.Matrix.DotProduct
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 
 /-!
 # Block calculus, norms, reindexing, and rotations for C⋆-matrices
@@ -53,17 +53,10 @@ section RectangularAlgebra
 
 variable {l m n o R A B C : Type*}
 
-@[simp] theorem ofMatrix_symm_hMul [Fintype m] [Mul A] [AddCommMonoid A]
-    (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    ofMatrix.symm (M * N) = ofMatrix.symm M * ofMatrix.symm N := (rfl)
-
-@[simp] theorem ofMatrix_symm_conjTranspose [Star A] (M : CStarMatrix m n A) :
-    ofMatrix.symm M.conjTranspose = (ofMatrix.symm M)ᴴ := (rfl)
-
 @[simp] theorem ofMatrix_one [DecidableEq n] [Zero A] [One A] :
     ofMatrix (1 : Matrix n n A) = (1 : CStarMatrix n n A) := (rfl)
 
-@[simp] theorem ofMatrix_hMul [Fintype m] [Mul A] [AddCommMonoid A]
+@[simp] theorem ofMatrix_mul [Fintype m] [Mul A] [AddCommMonoid A]
     (M : Matrix l m A) (N : Matrix m n A) :
     ofMatrix (M * N) = ofMatrix M * ofMatrix N := (rfl)
 
@@ -99,10 +92,6 @@ protected theorem mul_sub [Fintype m] [NonUnitalNonAssocRing A]
     (L : CStarMatrix l m A) (M N : CStarMatrix m n A) : L * (M - N) = L * M - L * N :=
   Matrix.mul_sub (ofMatrix.symm L) (ofMatrix.symm M) (ofMatrix.symm N)
 
-@[simp] theorem conjTranspose_conjTranspose [InvolutiveStar A] (M : CStarMatrix m n A) :
-    M.conjTranspose.conjTranspose = M :=
-  Matrix.conjTranspose_conjTranspose (ofMatrix.symm M)
-
 @[simp] theorem conjTranspose_add [AddMonoid A] [StarAddMonoid A] (M N : CStarMatrix m n A) :
     (M + N).conjTranspose = M.conjTranspose + N.conjTranspose :=
   Matrix.conjTranspose_add (ofMatrix.symm M) (ofMatrix.symm N)
@@ -122,11 +111,6 @@ protected theorem mul_sub [Fintype m] [NonUnitalNonAssocRing A]
 
 @[simp] theorem conjTranspose_one [DecidableEq n] [NonAssocSemiring A] [StarRing A] :
     (1 : CStarMatrix n n A).conjTranspose = 1 := Matrix.conjTranspose_one
-
-@[simp] theorem conjTranspose_mul [Fintype m] [NonUnitalNonAssocSemiring A] [StarRing A]
-    (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
-    (M * N).conjTranspose = N.conjTranspose * M.conjTranspose :=
-  Matrix.conjTranspose_mul (ofMatrix.symm M) (ofMatrix.symm N)
 
 @[simp] theorem map_zero [Zero A] [Zero B] {f : A → B} (hf : f 0 = 0) :
     (0 : CStarMatrix m n A).map f = 0 := ext fun _ _ => hf
@@ -175,7 +159,7 @@ section FromBlocks
 variable {m₁ m₂ n₁ n₂ o₁ o₂ R A B : Type*}
 
 /-- Block matrix construction on `CStarMatrix`, delegating to `Matrix.fromBlocks`. -/
-def fromBlocks (M : CStarMatrix m₁ n₁ A) (N : CStarMatrix m₁ n₂ A)
+@[expose] def fromBlocks (M : CStarMatrix m₁ n₁ A) (N : CStarMatrix m₁ n₂ A)
     (P : CStarMatrix m₂ n₁ A) (Q : CStarMatrix m₂ n₂ A) :
     CStarMatrix (m₁ ⊕ m₂) (n₁ ⊕ n₂) A :=
   ofMatrix (Matrix.fromBlocks (ofMatrix.symm M) (ofMatrix.symm N)
@@ -729,14 +713,5 @@ theorem joined_one_blockRotation (θ : ℝ) :
 end CStarRotation
 
 end BlockRotation
-
-/-- The block-diagonal C⋆-matrix `fromBlocks p 0 0 q` is a star projection when `p` and `q` are. -/
-theorem isStarProjection_fromBlocks_zero₁₂_zero₂₁ {m n A : Type*} [Fintype m] [Fintype n]
-    [NonUnitalNonAssocSemiring A] [StarAddMonoid A]
-    {p : CStarMatrix m m A} {q : CStarMatrix n n A}
-    (hp : IsStarProjection p) (hq : IsStarProjection q) :
-    IsStarProjection (fromBlocks p 0 0 q) :=
-  ⟨by simp [IsIdempotentElem, hp.isIdempotentElem.eq, hq.isIdempotentElem.eq],
-   by simp [IsSelfAdjoint, hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]⟩
 
 end CStarMatrix
