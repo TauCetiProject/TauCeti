@@ -89,6 +89,11 @@ variable {n : ℕ}
 
 /-! ### Plane waves -/
 
+/-- The plane wave `x ↦ 𝐞 ⟪η, x⟫` of frequency `η` has temperate growth. -/
+private theorem hasTemperateGrowth_planeWave (η : CoordinateSpace n) :
+    (fun x : CoordinateSpace n ↦ (𝐞 ⟪η, x⟫ : ℂ)).HasTemperateGrowth := by
+  simpa only [real_inner_comm η] using Real.hasTemperateGrowth_fourierChar_inner η
+
 /-- The derivatives of order at most `N` of the plane wave of frequency `η` are bounded by
 `(2π) ^ N (1 + ‖η‖) ^ N`. -/
 private theorem norm_iteratedFDeriv_fourierChar_inner_le_pow (η : CoordinateSpace n) {N k : ℕ}
@@ -180,7 +185,7 @@ private theorem HasCompactSpatialSupport.modulatedPiece_apply (ha : a.HasCompact
     modulatedPiece a u η x =
       (𝐞 ⟪η, x⟫ : ℂ) • ∫ ζ, (𝐞 ⟪ζ, x⟫ : ℂ) • (sliceMultiplier a η ζ • 𝓕 u ζ) := by
   rw [modulatedPiece,
-    SchwartzMap.smulLeftCLM_apply_apply (Real.hasTemperateGrowth_fourierChar_inner η),
+    SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_planeWave η),
     SchwartzMap.fourierMultiplierCLM_apply, SchwartzMap.fourierInv_coe, Real.fourierInv_eq]
   simp only [SchwartzMap.smulLeftCLM_apply_apply (ha.hasTemperateGrowth_sliceMultiplier η),
     Circle.smul_def]
@@ -375,7 +380,7 @@ private theorem HasCompactSpatialSupport.exists_norm_toBesovSpaceCLM_modulatedPi
     exact Finset.single_le_sum (fun i _ ↦ hB0 i) (Finset.mem_range.2 (by omega))
   obtain ⟨v₁, hv₁, hv₁n⟩ :=
     hCf (ha.hasTemperateGrowth_sliceMultiplier η) hW (SchwartzMap.toBesovSpaceCLM ℂ φ s p q u)
-  obtain ⟨v₂, hv₂, hv₂n⟩ := hCm (Real.hasTemperateGrowth_fourierChar_inner η)
+  obtain ⟨v₂, hv₂, hv₂n⟩ := hCm (hasTemperateGrowth_planeWave η)
     (fun k hk x ↦ norm_iteratedFDeriv_fourierChar_inner_le_pow η hk x) v₁
   have hv : SchwartzMap.toBesovSpaceCLM ℂ φ (s - m) p q (modulatedPiece a u η) = v₂ :=
     BesovSpace.ext <| by

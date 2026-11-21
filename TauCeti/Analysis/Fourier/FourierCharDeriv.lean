@@ -14,7 +14,7 @@ import TauCeti.Analysis.PositiveDefinite.FourierAtom
 import TauCeti.Topology.Circle.Metric
 
 /-!
-# Derivatives and Lipschitz bounds of the Fourier phases
+# Derivatives, growth and Lipschitz bounds of the Fourier phases
 
 On a real inner-product space, the phases `ζ ↦ 𝐞 ⟪ζ, x⟫` and `y ↦ 𝐞 (-⟪y, ζ⟫)` of the inverse and
 direct Fourier integrals have directional derivatives `2πi ⟪v, x⟫ 𝐞 ⟪ζ, x⟫` and
@@ -25,13 +25,15 @@ bilinear map, specialized to the inner product and evaluated in a direction, whi
 used to integrate by parts against the phase.
 
 The plane wave `x ↦ 𝐞 ⟪η, x⟫ = exp(2πi ⟪η, x⟫)` of frequency `η` is smooth, with derivatives of
-order `k` bounded by `(2π ‖η‖) ^ k` at every point; in particular it has temperate growth, so it
-multiplies Schwartz functions and tempered distributions.
+order `k` bounded by `(2π ‖η‖) ^ k` at every point.
 
 The Fourier character `𝐞 t = Circle.exp (2πt)` is `2π`-Lipschitz, since `Circle.exp` is
 `1`-Lipschitz (`TauCeti.lipschitzWith_one_circleExp`). Hence the phase `z ↦ 𝐞 ⟪ζ, z⟫` changes by
 at most `2π ‖ζ‖ ‖z - z'‖`, which is how increments of oscillatory integrals in the spatial variable
 are bounded by a first frequency moment.
+
+The plane wave `x ↦ 𝐞 ⟪x, ξ⟫` is a function of temperate growth, and since it has modulus one
+it lies in `L^∞` of any measure, with norm one when the measure is nonzero.
 
 ## Main results
 
@@ -39,15 +41,18 @@ are bounded by a first frequency moment.
 * `Real.hasLineDerivAt_fourierChar_neg_inner`: the directional derivative of
   `y ↦ 𝐞 (-⟪y, ζ⟫)`.
 * `Real.norm_iteratedFDeriv_fourierChar_inner_le`: `‖D^k 𝐞 ⟪η, ·⟫‖ ≤ (2π ‖η‖) ^ k`.
-* `Real.hasTemperateGrowth_fourierChar_inner`: the plane waves have temperate growth.
 * `Real.norm_fourierChar_sub_fourierChar_le`: `‖𝐞 t - 𝐞 t'‖ ≤ 2π |t - t'|`.
 * `Real.norm_fourierChar_smul_sub_fourierChar_smul_le`:
   `‖𝐞 ⟪ζ, z⟫ • v - 𝐞 ⟪ζ, z'⟫ • v‖ ≤ 2π ‖ζ‖ ‖z - z'‖ ‖v‖`.
+* `Real.hasTemperateGrowth_fourierChar_inner`: the plane wave `x ↦ 𝐞 ⟪x, ξ⟫` has temperate growth.
+* `Real.memLp_top_fourierChar_inner`, `Real.norm_toLp_fourierChar_inner`: the plane wave lies in
+  `L^∞` of any measure, with norm one when the measure is nonzero.
 -/
 
 public section
 
-open scoped FourierTransform RealInnerProductSpace
+open MeasureTheory
+open scoped FourierTransform RealInnerProductSpace ENNReal
 
 namespace Real
 
@@ -95,12 +100,6 @@ theorem norm_iteratedFDeriv_fourierChar_inner_le (η : E) (k : ℕ) (x : E) :
   rw [fourierChar_inner_eq_fourierAtom, ← norm_neg η]
   exact TauCeti.norm_iteratedFDeriv_fourierAtom_le (-η) x k
 
-/-- The plane wave `x ↦ 𝐞 ⟪η, x⟫` has temperate growth. -/
-theorem hasTemperateGrowth_fourierChar_inner (η : E) :
-    (fun x : E ↦ (𝐞 ⟪η, x⟫ : ℂ)).HasTemperateGrowth :=
-  .of_norm_iteratedFDeriv_le (contDiff_fourierChar_inner η) fun k ↦
-    ⟨_, norm_iteratedFDeriv_fourierChar_inner_le η k⟩
-
 /-- The Fourier character is `2π`-Lipschitz: `‖𝐞 t - 𝐞 t'‖ ≤ 2π |t - t'|`, since
 `𝐞 t = Circle.exp (2πt)` and `Circle.exp` is `1`-Lipschitz. -/
 theorem norm_fourierChar_sub_fourierChar_le (t t' : ℝ) :
@@ -125,5 +124,30 @@ theorem norm_fourierChar_smul_sub_fourierChar_smul_le {F : Type*} [NormedAddComm
         gcongr
         exact abs_real_inner_le_norm _ _
     _ = 2 * π * ‖ζ‖ * ‖z - z'‖ := by ring
+
+/-- The plane wave `x ↦ 𝐞 ⟪x, ξ⟫` has temperate growth. -/
+theorem hasTemperateGrowth_fourierChar_inner (ξ : E) :
+    (fun x : E ↦ (𝐞 ⟪x, ξ⟫ : ℂ)).HasTemperateGrowth := by
+  have h : (fun x : E ↦ (𝐞 ⟪x, ξ⟫ : ℂ)) =
+      fun x ↦ Complex.exp (((2 * π * ⟪x, ξ⟫ : ℝ) : ℂ) * Complex.I) := by
+    funext x
+    rw [fourierChar_apply]
+  rw [h]
+  exact Complex.hasTemperateGrowth_exp_mul_I.comp (by fun_prop)
+
+variable [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E}
+
+/-- The plane wave `x ↦ 𝐞 ⟪x, ξ⟫` is essentially bounded. -/
+theorem memLp_top_fourierChar_inner (ξ : E) : MemLp (fun x : E ↦ (𝐞 ⟪x, ξ⟫ : ℂ)) ∞ μ :=
+  memLp_top_of_bound (by fun_prop : Continuous fun x : E ↦ (𝐞 ⟪x, ξ⟫ : ℂ)).aestronglyMeasurable 1
+    (ae_of_all _ fun x ↦ by simp)
+
+/-- The plane wave `x ↦ 𝐞 ⟪x, ξ⟫` has norm one in `L^∞` of any nonzero measure. -/
+theorem norm_toLp_fourierChar_inner [NeZero μ] (ξ : E) :
+    ‖(memLp_top_fourierChar_inner (μ := μ) ξ).toLp _‖ = 1 := by
+  rw [Lp.norm_toLp, eLpNorm_congr_norm_ae (memLp_top_fourierChar_inner ξ).aestronglyMeasurable
+    aestronglyMeasurable_const (g := fun _ : E ↦ (1 : ℂ)) (ae_of_all _ fun x ↦ by simp),
+    eLpNorm_const _ ENNReal.top_ne_zero (NeZero.ne μ)]
+  simp
 
 end Real
