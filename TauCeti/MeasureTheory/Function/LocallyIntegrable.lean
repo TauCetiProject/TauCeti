@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.Tactic.Linarith
 import Mathlib.Topology.Separation.Regular
+import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.Topology.Algebra.Support
 
 /-!
@@ -749,16 +750,14 @@ variable {X 𝕜 F G : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMea
 
 /-- Applying a field of continuous linear maps integrable on a measurable set `s` to a function
 continuous on a compact set `K ⊇ s` gives a function integrable on `s`. This is the
-operator-valued counterpart of Mathlib's `MeasureTheory.IntegrableOn.smul_continuousOn_of_subset`.
+operator-valued counterpart of Mathlib's `MeasureTheory.IntegrableOn.smul_continuousOn_of_subset`,
+and the evaluation case of `ContinuousLinearMap.integrableOn_of_bilin_of_continuousOn_of_subset`.
 -/
 theorem clm_apply_continuousOn_of_subset (hA : IntegrableOn A s μ) (hf : ContinuousOn f K)
     (hs : MeasurableSet s) (hK : IsCompact K) (hsK : s ⊆ K) :
-    IntegrableOn (fun x ↦ A x (f x)) s μ := by
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hf
-  exact Integrable.mono' (hA.norm.mul_const C)
-    (isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable₂ hA.aestronglyMeasurable
-      (hf.aestronglyMeasurable_of_subset_isCompact hK hs hsK))
-    (ae_restrict_of_forall_mem hs fun x hx ↦ (A x).le_opNorm_of_le (hC x (hsK hx)))
+    IntegrableOn (fun x ↦ A x (f x)) s μ :=
+  (ContinuousLinearMap.id 𝕜 (F →L[𝕜] G)).integrableOn_of_bilin_of_continuousOn_of_subset hA hf hs
+    hK hsK
 
 /-- Applying a field of continuous linear maps integrable on a compact set `K` to a function
 continuous on `K` gives a function integrable on `K`. This is the operator-valued counterpart of

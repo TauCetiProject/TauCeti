@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.ODE.PicardLindelof
 import Mathlib.Analysis.ODE.ExistUnique
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Algebra.Order.Floor
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
@@ -58,13 +57,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : ℝ → E �
 
 namespace CaratheodoryLinear
 
-/-- The integrand `s ↦ M s (y s) + F s` of the Picard map is integrable on `[a, b]`. -/
-private theorem integrableOn_Icc (hab : a ≤ b) (hM : IntegrableOn M (Ioo a b))
+/-- The integrand `s ↦ M s (y s) + F s` of the Picard map is integrable on `(a, b)`. -/
+private theorem integrableOn_Ioo (hab : a ≤ b) (hM : IntegrableOn M (Ioo a b))
     (hF : IntegrableOn F (Ioo a b)) (y : C(Icc a b, E)) :
-    IntegrableOn (fun s ↦ M s (IccExtend hab y s) + F s) (Icc a b) :=
-  (((integrableOn_Icc_iff_integrableOn_Ioo (f := M)).2 hM).clm_apply_continuousOn
-    y.continuous.Icc_extend'.continuousOn isCompact_Icc).add
-    ((integrableOn_Icc_iff_integrableOn_Ioo (f := F)).2 hF)
+    IntegrableOn (fun s ↦ M s (IccExtend hab y s) + F s) (Ioo a b) :=
+  (hM.clm_apply_continuousOn_of_subset y.continuous.Icc_extend'.continuousOn measurableSet_Ioo
+    isCompact_Icc Ioo_subset_Icc_self).add hF
 
 /-- The Picard map `y ↦ x₀ + ∫ₐᵗ (M s (y s) + F s) ds` on `C([a, b], E)`. -/
 private noncomputable def next (hab : a ≤ b) (hM : IntegrableOn M (Ioo a b))
@@ -73,7 +71,7 @@ private noncomputable def next (hab : a ≤ b) (hM : IntegrableOn M (Ioo a b))
   continuous_toFun := by
     simp only [ODE.picard_apply]
     have h := intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo
-      ((integrableOn_Icc hab hM hF y).mono_set Ioo_subset_Icc_self) (left_mem_Icc.2 hab)
+      (integrableOn_Ioo hab hM hF y) (left_mem_Icc.2 hab)
     exact (continuousOn_const.add h).domRestrict
 
 private theorem next_apply (hab : a ≤ b) (hM : IntegrableOn M (Ioo a b))
@@ -97,20 +95,18 @@ private theorem dist_iterate_next_apply_le {L : ℝ} (hL : ∀ᵐ t ∂volume.re
     set Z := (next hab hM hF x₀)^[n] z
     have hint : ∀ W : C(Icc a b, E), IntervalIntegrable
         (fun s ↦ M s (IccExtend hab W s) + F s) volume a t := fun W ↦
-      (intervalIntegrable_iff_integrableOn_Icc_of_le t.property.1).2
-        ((integrableOn_Icc hab hM hF W).mono_set (Icc_subset_Icc_right t.property.2))
+      (intervalIntegrable_iff_integrableOn_Ioo_of_le t.property.1).2
+        ((integrableOn_Ioo hab hM hF W).mono_set (Ioo_subset_Ioo_right t.property.2))
     have hLae : ∀ᵐ s, s ∈ Ioc a b → ‖M s‖ ≤ L := by
       rwa [← ae_restrict_iff' measurableSet_Ioc, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
-    rw [iterate_succ_apply', iterate_succ_apply', dist_eq_norm, next_apply, next_apply,
-      ODE.picard_apply, ODE.picard_apply, add_sub_add_left_eq_sub,
-      ← intervalIntegral.integral_sub (hint Y) (hint Z)]
+    simp only [iterate_succ_apply', next_apply, ODE.picard_apply]
+    rw [dist_eq_norm, add_sub_add_left_eq_sub, ← intervalIntegral.integral_sub (hint Y) (hint Z)]
     calc _ ≤ ∫ s in a..t, L * ((L * (s - a)) ^ n / n ! * dist y z) := by
           refine norm_integral_le_of_norm_le t.property.1 ?_
             (Continuous.intervalIntegrable (by fun_prop) _ _)
           filter_upwards [hLae] with s hs hst
           have hs' : s ∈ Icc a b := ⟨hst.1.le, hst.2.trans t.property.2⟩
-          rw [add_sub_add_right_eq_sub, ← map_sub, IccExtend_of_mem hab _ hs',
-            IccExtend_of_mem hab _ hs']
+          simp only [add_sub_add_right_eq_sub, ← map_sub, IccExtend_of_mem hab _ hs']
           refine ((M s).le_opNorm _).trans (mul_le_mul (hs ⟨hst.1, hst.2.trans t.property.2⟩) ?_
             (norm_nonneg _) hL₀)
           simpa [dist_eq_norm] using ih ⟨s, hs'⟩
@@ -122,8 +118,8 @@ private theorem dist_iterate_next_apply_le {L : ℝ} (hL : ∀ᵐ t ∂volume.re
             ext s
             rw [mul_pow, pow_succ]
             ring
-          rw [this, intervalIntegral.integral_comp_sub_right (fun s ↦ s ^ n), integral_pow,
-            sub_self, zero_pow n.succ_ne_zero, sub_zero, Nat.factorial_succ, mul_pow]
+          rw [this, intervalIntegral.integral_comp_sub_right (fun s ↦ s ^ n), integral_pow]
+          simp only [sub_self, zero_pow n.succ_ne_zero, sub_zero, Nat.factorial_succ, mul_pow]
           push_cast
           field_simp
 
@@ -157,8 +153,9 @@ private theorem isFixedPt_next {x : ℝ → E} (hx : ContinuousOn x (Icc a b))
     (h : ∀ t ∈ Icc a b, x t = ODE.picard (fun s y ↦ M s y + F s) a x₀ x t) :
     IsFixedPt (next hab hM hF x₀) ⟨(Icc a b).domRestrict x, hx.domRestrict⟩ := by
   ext t
-  rw [next_apply, ContinuousMap.coe_mk, domRestrict_apply, h t t.property, ODE.picard_apply,
-    ODE.picard_apply]
+  simp only [next_apply, ContinuousMap.coe_mk, domRestrict_apply]
+  rw [h t t.property]
+  simp only [ODE.picard_apply]
   congr 1
   refine intervalIntegral.integral_congr fun s hs ↦ ?_
   have hs' : s ∈ Icc a b := uIcc_subset_Icc ⟨le_rfl, hab⟩ t.property hs

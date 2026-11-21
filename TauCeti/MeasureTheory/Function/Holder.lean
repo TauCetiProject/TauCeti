@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Function.Holder
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.Analysis.InnerProductSpace.Continuous
-
-import Mathlib.MeasureTheory.Integral.IntegrableOn
 
 /-!
 # Hölder estimates for pointwise pairings
@@ -29,6 +28,9 @@ integration-by-parts arguments:
 * `ContinuousLinearMap.lpPairing_mul_eq_integral`: the Hölder pairing
   `ContinuousLinearMap.lpPairing` of the multiplication of a complete normed algebra is the
   integral of the product.
+* `ContinuousLinearMap.integrableOn_of_bilin_of_continuousOn_of_subset`: a continuous bilinear
+  pairing of a function integrable on a measurable set `s` with a function continuous on a compact
+  set `K ⊇ s` is integrable on `s`.
 * `ContinuousLinearMap.integrable_of_bilin_of_continuousOn`: a continuous bilinear pairing of an
   integrable function vanishing off a compact set `K` with a function continuous on `K` is
   integrable.
@@ -126,27 +128,25 @@ variable {α 𝕜 E F G : Type*} [TopologicalSpace α] [MeasurableSpace α] [Ope
   [T2Space α] [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedAddCommGroup F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 E] [NormedSpace 𝕜 F] [NormedSpace 𝕜 G] {μ : Measure α}
 
+omit [T2Space α] in
+/-- A continuous bilinear pairing of a function integrable on a measurable set `s` with a function
+continuous on a compact set `K ⊇ s` is integrable on `s`. -/
+theorem integrableOn_of_bilin_of_continuousOn_of_subset (B : E →L[𝕜] F →L[𝕜] G) {f : α → E}
+    {g : α → F} {s K : Set α} (hf : IntegrableOn f s μ) (hg : ContinuousOn g K)
+    (hs : MeasurableSet s) (hK : IsCompact K) (hsK : s ⊆ K) :
+    IntegrableOn (fun x ↦ B (f x) (g x)) s μ := by
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hg
+  exact B.integrable_of_bilin_of_bdd_right C hf
+    (hg.aestronglyMeasurable_of_subset_isCompact hK hs hsK)
+    (ae_restrict_of_forall_mem hs fun x hx ↦ hC x (hsK hx))
+
 /-- A continuous bilinear pairing of an integrable function vanishing off a compact set `K` with a
 function continuous on `K` is integrable. -/
 theorem integrable_of_bilin_of_continuousOn (B : E →L[𝕜] F →L[𝕜] G) {f : α → E}
     (hf : Integrable f μ) {K : Set α} (hK : IsCompact K) (hfK : ∀ x ∉ K, f x = 0) {g : α → F}
-    (hg : ContinuousOn g K) : Integrable (fun x => B (f x) (g x)) μ := by
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hg
-  have heq : (fun x => B (f x) (g x)) = fun x => B (f x) (K.indicator g x) := by
-    funext x
-    by_cases hx : x ∈ K
-    · rw [Set.indicator_of_mem hx]
-    · simp [hfK x hx]
-  rw [heq]
-  refine B.integrable_of_bilin_of_bdd_right (max C 0) hf
-    ((aestronglyMeasurable_indicator_iff hK.measurableSet).2
-      (hg.aestronglyMeasurable_of_isCompact hK hK.measurableSet))
-    (.of_forall fun x => ?_)
-  by_cases hx : x ∈ K
-  · rw [Set.indicator_of_mem hx]
-    exact (hC x hx).trans (le_max_left _ _)
-  · rw [Set.indicator_of_notMem hx, norm_zero]
-    exact le_max_right _ _
+    (hg : ContinuousOn g K) : Integrable (fun x => B (f x) (g x)) μ :=
+  (B.integrableOn_of_bilin_of_continuousOn_of_subset hf.integrableOn hg hK.measurableSet hK
+    Set.Subset.rfl).integrable_of_forall_notMem_eq_zero fun x hx ↦ by simp [hfK x hx]
 
 end ContinuousLinearMap
 
