@@ -36,6 +36,9 @@ presheaves on the category of all schemes.
   with respect to the corresponding sieve on `Y.left`.
 * `CategoryTheory.Over.isSheaf_over_iff_isSheaf_sigmaPresheaf`: `P` is a sheaf for `J.over S`
   if and only if `sigmaPresheaf P` is a sheaf for `J`, when `S` is a sheaf for `J`.
+* `CategoryTheory.PreOneHypercover.over` and
+  `CategoryTheory.GrothendieckTopology.OneHypercover.over`: lift a (pre-)`1`-hypercover of
+  `Y.left` in `C` to a (pre-)`1`-hypercover of `Y` in `Over X`.
 * `CategoryTheory.GrothendieckTopology.isLeftAdjoint_overPullback`: pullback of sheaves to the
   over site `J.over U` is a left adjoint whenever pointwise right Kan extensions along
   `(Over.forget U).op` exist.
@@ -206,6 +209,41 @@ theorem isSheaf_over_iff_isSheaf_sigmaPresheaf (J : GrothendieckTopology C)
     fun hP _ R hR ↦ isSheafFor_of_isSheafFor_sigmaPresheaf R (hS _ hR).isSeparatedFor (hP _ hR)⟩
 
 end CategoryTheory.Over
+
+namespace CategoryTheory
+
+variable {C : Type u} [Category.{v} C]
+
+/-- Lift a pre-`1`-hypercover of `Y.left` in `C` to a pre-`1`-hypercover of `Y` in `Over X`. -/
+-- Exposed so that consumers retain definitional access to the index types `I₀` and `I₁`.
+@[expose, simps I₀ X f I₁ Y p₁ p₂]
+def PreOneHypercover.over {X : C} (Y : Over X) (E : PreOneHypercover.{w} Y.left) :
+    PreOneHypercover.{w} Y where
+  I₀ := E.I₀
+  X i := Over.mk (E.f i ≫ Y.hom)
+  f i := Over.homMk (E.f i) rfl
+  I₁ := E.I₁
+  Y _ _ k := Over.mk (E.p₁ k ≫ E.f _ ≫ Y.hom)
+  p₁ _ _ k := Over.homMk (E.p₁ k) rfl
+  p₂ _ _ k := Over.homMk (E.p₂ k) (by simp [← Category.assoc, E.w])
+  w _ _ k := Over.OverMorphism.ext (E.w k)
+
+/-- Lift a `J`-`1`-hypercover of `Y.left` in `C` to a `(J.over X)`-`1`-hypercover of `Y` in
+`Over X`. -/
+-- Exposed so that consumers retain definitional access to the index types `I₀` and `I₁`.
+@[expose, simps! toPreOneHypercover]
+def GrothendieckTopology.OneHypercover.over {J : GrothendieckTopology C} {X : C}
+    (Y : Over X) (E : J.OneHypercover.{w} Y.left) :
+    (J.over X).OneHypercover.{w} Y where
+  toPreOneHypercover := E.toPreOneHypercover.over Y
+  mem₀ := by
+    rw [GrothendieckTopology.mem_over_iff, PreZeroHypercover.sieve₀, Sieve.overEquiv_ofArrows]
+    exact E.mem₀
+  mem₁ i₁ i₂ W q₁ q₂ hw := by
+    rw [GrothendieckTopology.mem_over_iff, Sieve.overEquiv_preOneHypercover_sieve₁]
+    exact E.mem₁ i₁ i₂ q₁.left q₂.left congr($(hw).left)
+
+end CategoryTheory
 
 namespace CategoryTheory.GrothendieckTopology
 
