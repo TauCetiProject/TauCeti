@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.StarAlgebra.GNS.Bounded
 public import TauCeti.Probability.FreeProbability.FreeProduct.Positive
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
+import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 
 /-!
 # The reduced C⋆-free product associated to states
@@ -51,19 +53,26 @@ theorem continuous_leftMul (ψ : StarPositiveFunctional (LinearAlgebra.FreeProdu
 
 variable (φ : ∀ i, StarPositiveFunctional (A i)) (hφ : ∀ i, φ i 1 = 1)
 
+-- Keep `HilbertSpace` an unexposed `def` with explicit Hilbert-space instances so typeclass
+-- search on operator subalgebras treats it as an atomic Hilbert space without unfolding the GNS
+-- quotient.
 /-- The completed GNS Hilbert space of the algebraic free-product state. -/
-abbrev HilbertSpace := (freeProductPositiveFunctional φ hφ).HilbertGNS
+def HilbertSpace : Type _ :=
+  (freeProductPositiveFunctional φ hφ).HilbertGNS
 
--- Fix the operator carrier before invoking the general topological instances: inferring
--- it from their topology projections otherwise unfolds the algebraic GNS quotient.
-private instance : IsTopologicalRing (HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ) :=
-  NonUnitalSeminormedRing.toIsTopologicalRing
-    (α := HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ)
+instance : NormedAddCommGroup (HilbertSpace φ hφ) :=
+  inferInstanceAs (NormedAddCommGroup (freeProductPositiveFunctional φ hφ).HilbertGNS)
 
-private instance : ContinuousStar (HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ) :=
-  ⟨(ContinuousLinearMap.adjoint :
-    (HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ) ≃ₗᵢ⋆[ℂ]
-      (HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ)).continuous⟩
+instance : InnerProductSpace ℂ (HilbertSpace φ hφ) :=
+  inferInstanceAs (InnerProductSpace ℂ (freeProductPositiveFunctional φ hφ).HilbertGNS)
+
+instance : CompleteSpace (HilbertSpace φ hφ) :=
+  inferInstanceAs (CompleteSpace (freeProductPositiveFunctional φ hφ).HilbertGNS)
+
+/-- The canonical linear map sending an element of the algebraic free product to its class in
+`HilbertSpace φ hφ`. -/
+def hilbertClassMap : LinearAlgebra.FreeProduct ℂ A →ₗ[ℂ] HilbertSpace φ hφ :=
+  (freeProductPositiveFunctional φ hφ).hilbertClassMap
 
 /-- The bounded left regular representation of the algebraic free product. -/
 def representation : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ]
@@ -73,8 +82,7 @@ def representation : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ]
 
 @[simp]
 theorem representation_hilbertClassMap (a b : LinearAlgebra.FreeProduct ℂ A) :
-    representation φ hφ a ((freeProductPositiveFunctional φ hφ).hilbertClassMap b) =
-      (freeProductPositiveFunctional φ hφ).hilbertClassMap (a * b) :=
+    representation φ hφ a (hilbertClassMap φ hφ b) = hilbertClassMap φ hφ (a * b) :=
   (freeProductPositiveFunctional φ hφ).boundedRepresentation_hilbertClassMap _ a b
 
 /-- The vacuum vector, represented by the unit of the algebraic free product. -/
@@ -88,8 +96,7 @@ theorem norm_vacuum : ‖vacuum φ hφ‖ = 1 :=
 
 @[simp]
 theorem representation_vacuum (a : LinearAlgebra.FreeProduct ℂ A) :
-    representation φ hφ a (vacuum φ hφ) =
-      (freeProductPositiveFunctional φ hφ).hilbertClassMap a :=
+    representation φ hφ a (vacuum φ hφ) = hilbertClassMap φ hφ a :=
   (freeProductPositiveFunctional φ hφ).boundedRepresentation_hilbertCyclicVector _ a
 
 /-- The represented algebraic free-product orbit of the vacuum is dense. -/
@@ -189,7 +196,8 @@ def state : algebra φ hφ →ₚ[ℂ] ℂ :=
 theorem state_apply (T : algebra φ hφ) :
     state φ hφ T = ⟪vacuum φ hφ, (T : HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ)
       (vacuum φ hφ)⟫_ℂ := by
-  exact (freeProductPositiveFunctional φ hφ).hilbertPositiveLinearMap_apply T
+  exact (freeProductPositiveFunctional φ hφ).hilbertPositiveLinearMap_apply
+    (T : HilbertSpace φ hφ →L[ℂ] HilbertSpace φ hφ)
 
 @[simp]
 theorem state_ofAlgebraic (a : LinearAlgebra.FreeProduct ℂ A) :
@@ -221,6 +229,19 @@ theorem isFreelyIndependent_factor :
     simpa only [factor, StarAlgHom.comp, ιStar_toAlgHom] using
       AlgHom.range_comp (ι ℂ A i) (ofAlgebraic φ hφ).toAlgHom
   simpa only [← hranges] using h
+
+/-- The reduced-product vacuum state is tracial whenever every factor state is tracial. -/
+theorem state_mul_comm (htr : ∀ i (a b : A i), φ i (a * b) = φ i (b * a))
+    (x y : algebra φ hφ) : state φ hφ (x * y) = state φ hφ (y * x) := by
+  have htrAlg : ∀ a ∈ Set.range (ofAlgebraic φ hφ), ∀ b ∈ Set.range (ofAlgebraic φ hφ),
+      state φ hφ (a * b) = state φ hφ (b * a) := by
+    rintro _ ⟨a, rfl⟩ _ ⟨b, rfl⟩
+    rw [← map_mul, ← map_mul, state_ofAlgebraic, state_ofAlgebraic,
+      freeProductPositiveFunctional_apply, freeProductPositiveFunctional_apply]
+    exact freeProductExpectation_mul_comm (fun i => (φ i).toLinearMap) hφ htr a b
+  exact eqOn_closure₂ htrAlg ((map_continuous (state φ hφ)).comp continuous_mul)
+    ((map_continuous (state φ hφ)).comp (continuous_mul.comp continuous_swap))
+    x (denseRange_ofAlgebraic φ hφ x) y (denseRange_ofAlgebraic φ hφ y)
 
 /-- The vacuum remains cyclic for the closed reduced product. -/
 theorem denseRange_algebra_vacuum :

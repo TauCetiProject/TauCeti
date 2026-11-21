@@ -30,6 +30,7 @@ simplifies totalized distribution laws that reduce to zero outside their paramet
 
 * `MeasureTheory.Measure.one_sub_measure_compl_le`
 * `MeasureTheory.not_isProbabilityMeasure_zero`
+* `MeasureTheory.isProbabilityMeasure_cond`
 * `Finset.norm_prod_measureReal_le_one`: a finite product of real masses of a zero-or-probability
   measure has norm at most one.
 
@@ -52,6 +53,12 @@ law. -/
 theorem not_isProbabilityMeasure_zero {α : Type*} [MeasurableSpace α] :
     ¬ IsProbabilityMeasure (0 : Measure α) :=
   fun _ ↦ IsProbabilityMeasure.ne_zero (0 : Measure α) rfl
+
+/-- Selecting between two probability measures with `Bool.cond` yields a probability measure. -/
+instance isProbabilityMeasure_cond {α : Type*} [MeasurableSpace α] {μ ν : Measure α}
+    [hμ : IsProbabilityMeasure μ] [hν : IsProbabilityMeasure ν] (b : Bool) :
+    IsProbabilityMeasure (cond b μ ν) :=
+  Bool.rec hν hμ b
 
 end MeasureTheory
 

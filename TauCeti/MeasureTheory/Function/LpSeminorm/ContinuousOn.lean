@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Measure.Support
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 
@@ -18,6 +19,9 @@ every measurable `s ⊆ K` (`ContinuousOn.memLp_top_restrict_of_subset_isCompact
 covers the usual case of an open interval `(a, b)` inside the compact interval `[a, b]`. This is the
 continuous counterpart of Mathlib's `MonotoneOn.memLp_top`, and the restricted-measure counterpart
 of `Continuous.memLp_top_of_hasCompactSupport`.
+
+When `μ` is finite on compact sets and concentrated a.e. on `s`, `f` lies in every `Lᵖ(μ)`
+(`ContinuousOn.memLp_of_subset_isCompact_of_ae_mem`, `ContinuousOn.memLp_of_isCompact_support`).
 
 The same bound controls a pointwise composition `x ↦ A x ∘L B x` of operator families with `A`
 continuous on `K`: `A ∘L B` lies in `Lᵖ(s)` whenever `B` does
@@ -50,6 +54,23 @@ theorem ContinuousOn.memLp_top_restrict_of_subset_isCompact {f : X → E} {K s :
   obtain ⟨C, hC⟩ := (hK.image_of_continuousOn (continuous_nnNorm.comp_continuousOn hf)).bddAbove
   refine memLp_top_of_bound_eNorm (hf.aestronglyMeasurable_of_subset_isCompact hK hs hsK) C ?_
   filter_upwards [ae_restrict_mem hs] with x hx using eNorm_le_coe.2 <| hC ⟨x, hsK hx, rfl⟩
+
+/-- A function continuous on a compact set `K` lies in every `Lᵖ(μ)` when `μ` is finite on compact
+sets and concentrated almost everywhere on a measurable subset `s ⊆ K`. -/
+theorem ContinuousOn.memLp_of_subset_isCompact_of_ae_mem {f : X → E} {K s : Set X} {μ : Measure X}
+    [IsFiniteMeasureOnCompacts μ] {p : ℝ≥0∞} (hf : ContinuousOn f K) (hK : IsCompact K)
+    (hs : MeasurableSet s) (hsK : s ⊆ K) (hμs : ∀ᵐ x ∂μ, x ∈ s) : MemLp f p μ := by
+  have : IsFiniteMeasure (μ.restrict s) :=
+    isFiniteMeasure_restrict.2 (measure_lt_top_of_subset hsK hK.measure_lt_top.ne).ne
+  rw [← Measure.restrict_eq_self_of_ae_mem hμs]
+  exact (hf.memLp_top_restrict_of_subset_isCompact hK hs hsK).mono_exponent le_top
+
+/-- A function continuous on the compact topological support of a measure finite on compact sets
+with conull support (for instance via `Measure.support_mem_ae`) lies in every `Lᵖ`. -/
+theorem ContinuousOn.memLp_of_isCompact_support {f : X → E} {μ : Measure X}
+    [IsFiniteMeasureOnCompacts μ] {p : ℝ≥0∞} (hf : ContinuousOn f μ.support)
+    (hK : IsCompact μ.support) (hμ : μ.support ∈ ae μ) : MemLp f p μ :=
+  hf.memLp_of_subset_isCompact_of_ae_mem hK Measure.isClosed_support.measurableSet .rfl hμ
 
 omit [OpensMeasurableSpace X] in
 /-- **The essential supremum dominates a value at a point of continuity.** If `f` is continuous

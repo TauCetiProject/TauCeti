@@ -195,6 +195,15 @@ theorem comap {φ' : A' →ₗ[R] R} {B' : ι → Subalgebra R A'}
 
 end IsFreelyIndependent
 
+/-- Free independence of subalgebras can be tested after pushing forward along an algebra
+homomorphism, provided that the functional is pulled back along the same homomorphism.
+Injectivity is not required. -/
+theorem isFreelyIndependent_map_iff (φ' : A' →ₗ[R] R) (f : A →ₐ[R] A')
+    (B : ι → Subalgebra R A) :
+    IsFreelyIndependent φ' (fun i => (B i).map f) ↔
+      IsFreelyIndependent (φ'.comp f.toLinearMap) B :=
+  ⟨fun h => (h.comap f).mono fun _ => Subalgebra.map_le.mp le_rfl, fun h => h.map f rfl⟩
+
 /-- For a normalised functional, members of a family equal to the scalars do not affect freeness:
 if `B i = ⊥` for every label outside `s`, then `B` is free exactly when its restriction to `s`
 is free. -/
