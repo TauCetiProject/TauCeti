@@ -41,12 +41,12 @@ variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N]
 /-- The ordered word obtained by repeating the `j`-th direction `m j` times.
 When `m j = n * duration j`, this subdivides the dilation by `n` into orbit-weight segments. -/
 def subdivisionWord (π : LSPath P b lam) (m : Fin (π.length + 1) → ℕ) : List P.weylGroup :=
-  (List.ofFn fun j ↦ List.replicate (m j) (π.dir j).1).flatten
+  (List.ofFn fun j ↦ List.replicate (m j) (π.dir j).val).flatten
 
 /-- The subdivision word lists the repeated directions in their original order. -/
 theorem subdivisionWord_def (π : LSPath P b lam) (m : Fin (π.length + 1) → ℕ) :
     π.subdivisionWord m =
-      (List.ofFn fun j ↦ List.replicate (m j) (π.dir j).1).flatten := (rfl)
+      (List.ofFn fun j ↦ List.replicate (m j) (π.dir j).val).flatten := (rfl)
 
 /-- The number of straight factors is the sum of their multiplicities. -/
 @[simp]
@@ -59,7 +59,7 @@ theorem length_subdivisionWord (π : LSPath P b lam) (m : Fin (π.length + 1) �
 @[simp]
 theorem mem_subdivisionWord_iff (π : LSPath P b lam) (m : Fin (π.length + 1) → ℕ)
     {w : P.weylGroup} :
-    w ∈ π.subdivisionWord m ↔ ∃ j, 0 < m j ∧ (π.dir j).1 = w := by
+    w ∈ π.subdivisionWord m ↔ ∃ j, 0 < m j ∧ (π.dir j).val = w := by
   constructor
   · intro hw
     obtain ⟨l, hl, hw⟩ := List.mem_flatten.mp hw
@@ -75,7 +75,7 @@ theorem isMinimalCosetRep_of_mem_subdivisionWord (π : LSPath P b lam)
     (m : Fin (π.length + 1) → ℕ) {w : P.weylGroup} (hw : w ∈ π.subdivisionWord m) :
     (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w := by
   obtain ⟨j, _, rfl⟩ := (π.mem_subdivisionWord_iff m).mp hw
-  exact (π.dir j).2
+  exact (π.dir j).property
 
 /-- Clearing the durations makes the subdivision word have exactly the stretching length. -/
 theorem length_subdivisionWord_eq (π : LSPath P b lam) (n : ℕ)
@@ -98,7 +98,7 @@ theorem toPLPath_stretch_eq_prod_pow (π : LSPath P b lam) (n : ℕ) (hn : 0 < n
     (m : Fin (π.length + 1) → ℕ)
     (hm : ∀ j, (m j : ℚ) = (n : ℚ) * π.duration j) :
     (π.stretch n hn).toPLPath 𝕜 f =
-      (List.ofFn fun j ↦ PLPath.straight 𝕜 (f ((π.dir j).1 • lam)) ^ m j).prod := by
+      (List.ofFn fun j ↦ PLPath.straight 𝕜 (f ((π.dir j).val • lam)) ^ m j).prod := by
   rw [toPLPath_stretch, toPLPath_def, PLPath.map_ofSegments, ← PLPath.prod_map_straight]
   simp only [timed_def, List.map_ofFn, Function.comp_def, LinearMap.smul_apply,
     LinearMap.id_apply, smul_smul]

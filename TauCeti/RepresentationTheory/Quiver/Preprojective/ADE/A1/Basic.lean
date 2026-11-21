@@ -48,7 +48,7 @@ abbrev preprojectiveA1Quiver := OrientedQuiver preprojectiveA1Graph
 instance (i j : preprojectiveA1Quiver) : IsEmpty (i ⟶ j) := by
   constructor
   intro e
-  simpa [preprojectiveA1Graph] using e.1
+  simpa [preprojectiveA1Graph] using e.val
 
 /-- The doubled `A₁` quiver also has no arrows. -/
 instance (i j : Symmetrify preprojectiveA1Quiver) : IsEmpty (i ⟶ j) := by

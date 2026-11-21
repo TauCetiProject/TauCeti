@@ -57,7 +57,7 @@ private def expNeg (x : ℝ≥0) : ℝ := Real.exp (-(x : ℝ))
 private theorem expNeg_apply (x : ℝ≥0) : expNeg x = Real.exp (-(x : ℝ)) := rfl
 
 private theorem measurable_expNeg : Measurable expNeg :=
-  Real.continuous_exp.comp (continuous_subtype_val.neg) |>.measurable
+  Real.continuous_exp.comp (continuous_subtypeVal.neg) |>.measurable
 
 private theorem injective_expNeg : Function.Injective expNeg := by
   intro x y hxy
@@ -82,7 +82,7 @@ private theorem exists_integrable_exp_map_expNeg (μ : Measure ℝ≥0) [IsFinit
   refine Integrable.mono' (integrable_const (Real.exp 1))
     ((Real.continuous_exp.comp
       (continuous_const.mul (continuous_abs.comp
-        (Real.continuous_exp.comp continuous_subtype_val.neg)))).aestronglyMeasurable) ?_
+        (Real.continuous_exp.comp continuous_subtypeVal.neg)))).aestronglyMeasurable) ?_
   filter_upwards with x
   rw [Function.comp_apply, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), one_mul]
   exact Real.exp_le_exp.mpr (abs_expNeg_le_one x)
@@ -105,7 +105,7 @@ theorem Measure.ext_of_forall_integral_exp_neg_natCast_mul_eq {μ ν : Measure �
       (continuous_pow n).aestronglyMeasurable
     rw [integral_map measurable_expNeg.aemeasurable hpowmeas]
     refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-    simp only [expNeg_apply, ← Real.exp_nat_mul]
+    simp only [expNeg_apply, ← Real.exp_natCast_mul]
     ring_nf
   rw [hpow, hpow]
   exact h n

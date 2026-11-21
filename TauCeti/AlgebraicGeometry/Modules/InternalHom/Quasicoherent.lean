@@ -87,6 +87,15 @@ private theorem isQuasicoherent_ihom_of_presentation_over
 
 variable (M N : X.Modules)
 
+/-- Internal Hom from a finite locally free scheme-module sheaf to a quasicoherent sheaf is
+quasicoherent. This specializes sheaf internal Hom to the scheme-module category. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_ihom_of_isLocallyFree
+    [M.IsLocallyFree] [M.IsFiniteType] [N.IsQuasicoherent] :
+    ((ihom (C := X.Modules) M).obj N).IsQuasicoherent := by
+  -- Instance search cannot recover `X.sheaf` from the scheme's ring-category sheaf alias.
+  exact @SheafOfModules.isQuasicoherent_ihom_of_isLocallyFree _ _ _ _ _ _ _ _ _ _ _ _
+    X.sheaf M N inferInstance inferInstance inferInstance
+
 /-- Internal Hom from a finitely presented module sheaf into a quasicoherent module sheaf
 is quasicoherent on every scheme. No local freeness or Noetherian hypothesis is required. -/
 instance isQuasicoherent_ihom_of_isFinitePresentation

@@ -6,33 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Augmentation
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Strict
-public import TauCeti.LinearAlgebra.TensorCoalgebra.Degenerate
+import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Augmented
 import TauCeti.LinearAlgebra.TensorCoalgebra.Coassoc
 import TauCeti.LinearAlgebra.TensorCoalgebra.Grading
 
 /-!
 # Bar projection of an augmented `A∞` algebra
 
-Let `(A, ε)` be an augmented `A∞` algebra with augmentation ideal `I = ker ε`.  The inclusion
-`I ⟶ A` is a strict `A∞` morphism
-(`TauCeti.AInfinityAlgebra.Augmentation.reducedAlgebraInclusion`), and the letterwise reduced-part
-projection `π = ReducedTensorWords.map ε.reducedPart` retracts its bar map.
+Let `(A, ε)` be an augmented `A∞` algebra with augmentation ideal `I = ker ε`.  The letterwise
+reduced-part projection `π = ReducedTensorWords.map ε.reducedPart` retracts the bar map of the
+inclusion `I ⟶ A` (`TauCeti.AInfinityAlgebra.Augmentation.inclusion`).
 
-This file decomposes the bar coalgebra `Tᶜ(sA)` into reduced words in `I` and unit-containing
-degenerate words (`sub_map_subtype_map_reducedPart_mem_degenerateWords`), computes `ε ∘ 𝒜.taylor`
-(`comp_taylor`), and expresses `π ∘ b_A` as `b_I ∘ π` plus the two boundary unit-contraction
-terms coming from the strict unit acting in arity two (`map_reducedPart_comp_barDifferential`).
-
-## Main definitions
-
-* `TauCeti.AInfinityAlgebra.Augmentation.reducedAlgebraInclusion`: the inclusion of the augmentation
-  ideal as a strict `A∞` morphism.
+This file computes `ε ∘ 𝒜.taylor` (`TauCeti.AInfinityAlgebra.Augmentation.comp_taylor`) and
+expresses `π ∘ b_A` as `b_I ∘ π` plus the two boundary unit-contraction terms coming from the
+strict unit acting in arity two
+(`TauCeti.AInfinityAlgebra.Augmentation.map_reducedPart_comp_barDifferential`).
 
 ## Main results
 
-* `TauCeti.AInfinityAlgebra.Augmentation.sub_map_subtype_map_reducedPart_mem_degenerateWords`:
-  every bar word differs from its reduced-part projection by a unit-containing degenerate word.
+* `TauCeti.ReducedTensorWords.map_letter_letter_deconcatenation_of_ne_two`: `letter ⊗ letter`
+  annihilates the deconcatenation of any pure tensor word of length different from two.
 * `TauCeti.AInfinityAlgebra.Augmentation.comp_taylor`: the augmentation of the Taylor map is the
   product of the two letter augmentations on length-two words and vanishes elsewhere.
 * `TauCeti.AInfinityAlgebra.Augmentation.map_reducedPart_comp_barDifferential`: the letterwise
@@ -61,11 +54,11 @@ namespace ReducedTensorWords
 /-- Applying `letter ⊗ letter` to the deconcatenation of a pure word of length other than two gives
 zero, because every nontrivial cut leaves a factor of length at least two. -/
 theorem map_letter_letter_deconcatenation_of_ne_two {M : Type*} [AddCommGroup M]
-    [Module R M] (n : {n : ℕ // 0 < n}) (hn : n.1 ≠ 2) (x : Fin n.1 → M) :
+    [Module R M] (n : {n : ℕ // 0 < n}) (hn : n.val ≠ 2) (x : Fin n.val → M) :
     TensorProduct.map (ReducedTensorWords.letter R M) (ReducedTensorWords.letter R M)
       (ReducedTensorWords.deconcatenation R M
         (ReducedTensorWords.of R M n (PiTensorProduct.tprod R x))) = 0 := by
-  have hn0 : 0 < n.1 := n.2
+  have hn0 : 0 < n.val := n.property
   rw [ReducedTensorWords.of_tprod_eq_subword R hn0, ReducedTensorWords.deconcatenation_subword,
     map_sum]
   refine Finset.sum_eq_zero fun d hd ↦ ?_
@@ -78,136 +71,50 @@ theorem map_letter_letter_deconcatenation_of_ne_two {M : Type*} [AddCommGroup M]
 
 end ReducedTensorWords
 
-/-! ### Inclusion of the augmentation ideal -/
+/-! ### Augmentation of `𝒜.taylor` and bar projection -/
 
 namespace AInfinityAlgebra.Augmentation
 
 variable {𝒜 : AInfinityAlgebra R A}
 
-/-- The inclusion of the reduced augmentation ideal into an augmented `A∞` algebra, as a strict
-`A∞` morphism. -/
-noncomputable def reducedAlgebraInclusion (ε : 𝒜.Augmentation) :
-    AInfinityStrictHom ε.reducedAlgebra 𝒜 where
-  toLinearMap := ε.augmentationIdeal.subtype
-  map_mem' {p} {a} ha := by
-    simpa only [reducedAlgebra_grading, reducedGrading_piece, Submodule.mem_comap] using ha
-  map_m' n := MultilinearMap.ext fun x ↦ by
-    simp only [LinearMap.compMultilinearMap_apply, MultilinearMap.compLinearMap_apply,
-      reducedAlgebra_m, Submodule.subtype_apply, coe_reducedOperation]
-
-/-- The underlying linear map of the reduced-algebra inclusion is the submodule inclusion. -/
-@[simp]
-theorem toLinearMap_reducedAlgebraInclusion (ε : 𝒜.Augmentation) :
-    ε.reducedAlgebraInclusion.toLinearMap = ε.augmentationIdeal.subtype := (rfl)
-
-/-- The reduced-algebra inclusion acts as subtype coercion. -/
-@[simp]
-theorem coe_reducedAlgebraInclusion (ε : 𝒜.Augmentation) (x : ε.augmentationIdeal) :
-    ε.reducedAlgebraInclusion x = (x : A) := (rfl)
-
-/-- The bar map of the reduced-algebra inclusion applies the submodule inclusion letterwise. -/
-@[simp]
-theorem barMap_reducedAlgebraInclusion (ε : 𝒜.Augmentation) :
-    ε.reducedAlgebraInclusion.barMap =
-      ReducedTensorWords.map (R := R) ε.augmentationIdeal.subtype :=
-  ε.reducedAlgebraInclusion.barMap_def
-
-
-/-! ### Degenerate words and the bar differential of an augmented `A∞` algebra -/
-
-/-- The reduced-part projection has degree zero for the suspended gradings. -/
-theorem isHomogeneous_reducedPart_shift (ε : 𝒜.Augmentation) :
-    LinearMap.IsHomogeneous ε.reducedPart (𝒜.grading.shift 1).piece
-      (ε.reducedAlgebra.grading.shift 1).piece 0 := by
-  rw [reducedAlgebra_grading, LinearMap.isHomogeneous_def]
-  intro p a ha
-  rw [InternalGrading.shift_piece] at ha
-  rw [add_zero, InternalGrading.shift_piece]
-  simpa only [add_zero] using ε.isHomogeneous_reducedPart.map_mem ha
-
-
 /-- Splitting each letter of a pure tensor word into its reduced and scalar parts writes the
 difference between the word and its reduced-part projection as a sum of pure words of the same
 length, each having at least one scalar-multiple-of-unit letter. -/
 private theorem of_tprod_sub_map_eq_sum_erase (ε : 𝒜.Augmentation) (n : {n : ℕ // 0 < n})
-    (x : Fin n.1 → A) :
+    (x : Fin n.val → A) :
     ReducedTensorWords.of R A n (PiTensorProduct.tprod R x) -
       ReducedTensorWords.map (R := R) ε.augmentationIdeal.subtype
         (ReducedTensorWords.map (R := R) ε.reducedPart
           (ReducedTensorWords.of R A n (PiTensorProduct.tprod R x))) =
-      ∑ f ∈ (Finset.univ : Finset (Fin n.1 → Bool)).erase (fun _ ↦ false),
+      ∑ f ∈ (Finset.univ : Finset (Fin n.val → Bool)).erase (fun _ ↦ false),
         ReducedTensorWords.of R A n (PiTensorProduct.tprod R fun i ↦
           if f i then ε (x i) • ε.unit else (ε.reducedPart (x i) : A)) := by
   classical
-  let piece : Fin n.1 → Bool → A := fun i b ↦
+  let piece : Fin n.val → Bool → A := fun i b ↦
     if b then ε (x i) • ε.unit else (ε.reducedPart (x i) : A)
-  have hx (i : Fin n.1) : ∑ b ∈ (Finset.univ : Finset Bool), piece i b = x i := by
+  have hx (i : Fin n.val) : ∑ b ∈ (Finset.univ : Finset Bool), piece i b = x i := by
     simp [piece, coe_reducedPart]
-  have hpi : Fintype.piFinset (fun _ : Fin n.1 ↦ (Finset.univ : Finset Bool)) = Finset.univ := by
+  have hpi : Fintype.piFinset (fun _ : Fin n.val ↦ (Finset.univ : Finset Bool)) = Finset.univ := by
     ext f
     simp
   have hsum : PiTensorProduct.tprod R x =
-      ∑ f : Fin n.1 → Bool, PiTensorProduct.tprod R (fun i ↦ piece i (f i)) := by
+      ∑ f : Fin n.val → Bool, PiTensorProduct.tprod R (fun i ↦ piece i (f i)) := by
     rw [← hpi, ← (PiTensorProduct.tprod R).map_sum_finset]
     exact congrArg _ (funext fun i ↦ (hx i).symm)
   conv_lhs =>
     arg 1
-    rw [hsum, map_sum, ← Finset.add_sum_erase _ _ (Finset.mem_univ (fun _ : Fin n.1 ↦ false))]
+    rw [hsum, map_sum, ← Finset.add_sum_erase _ _ (Finset.mem_univ (fun _ : Fin n.val ↦ false))]
   rw [ReducedTensorWords.map_of_tprod, ReducedTensorWords.map_of_tprod]
-  have hfalse : (fun i : Fin n.1 ↦ piece i false) =
+  have hfalse : (fun i : Fin n.val ↦ piece i false) =
       fun i ↦ ε.augmentationIdeal.subtype (ε.reducedPart (x i)) := by
     funext i
     simp [piece]
   rw [hfalse, add_sub_cancel_left]
 
-/-- Every reduced tensor word differs from its reduced-part projection by a unit-containing
-degenerate word. -/
-theorem sub_map_subtype_map_reducedPart_mem_degenerateWords (ε : 𝒜.Augmentation)
-    (z : ReducedTensorWords R A) :
-    z - ReducedTensorWords.map (R := R) ε.augmentationIdeal.subtype
-      (ReducedTensorWords.map (R := R) ε.reducedPart z) ∈
-        ReducedTensorWords.degenerateWords R A ε.unit := by
-  classical
-  let S : Submodule R (ReducedTensorWords R A) :=
-    (ReducedTensorWords.degenerateWords R A ε.unit).comap
-      (LinearMap.id - ReducedTensorWords.map (R := R) ε.augmentationIdeal.subtype ∘ₗ
-        ReducedTensorWords.map (R := R) ε.reducedPart)
-  suffices h : ⊤ ≤ S by
-    simpa [S] using h Submodule.mem_top (x := z)
-  rw [← ReducedTensorWords.iSup_range_of R A, iSup_le_iff]
-  intro n
-  rw [LinearMap.range_le_iff_comap]
-  apply top_unique
-  intro t ht
-  clear ht
-  induction t using PiTensorProduct.induction_on with
-  | smul_tprod c x =>
-    rw [Submodule.mem_comap, map_smul]
-    apply S.smul_mem c
-    rw [Submodule.mem_comap, LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply,
-      of_tprod_sub_map_eq_sum_erase]
-    refine Submodule.sum_mem _ fun f hf ↦ ?_
-    have hne : f ≠ fun _ ↦ false := (Finset.mem_erase.1 hf).1
-    have htrue : ∃ i, f i = true := by
-      by_contra h
-      push Not at h
-      apply hne
-      funext i
-      cases hfi : f i
-      · rfl
-      · exact (h i hfi).elim
-    obtain ⟨i, hi⟩ := htrue
-    exact ReducedTensorWords.of_tprod_mem_degenerateWords_of_eq_smul n _ (i := i)
-      (c := ε (x i)) (by simp [hi])
-  | add u v hu hv =>
-    rw [Submodule.mem_comap, map_add]
-    exact S.add_mem hu hv
-
-
 /-- For arity other than two, the Taylor map of an augmented `A∞` algebra depends only on the
 reduced-part projection of a pure word. -/
 private theorem taylor_of_tprod_eq_of_ne_two (ε : 𝒜.Augmentation) (n : {n : ℕ // 0 < n})
-    (hn : n.1 ≠ 2) (x : Fin n.1 → A) :
+    (hn : n.val ≠ 2) (x : Fin n.val → A) :
     𝒜.taylor (ReducedTensorWords.of R A n (PiTensorProduct.tprod R x)) =
       𝒜.taylor (ReducedTensorWords.map (R := R) ε.augmentationIdeal.subtype
         (ReducedTensorWords.map (R := R) ε.reducedPart
@@ -225,25 +132,12 @@ private theorem taylor_of_tprod_eq_of_ne_two (ε : 𝒜.Augmentation) (n : {n : 
     · rfl
     · exact (h i hfi).elim
   obtain ⟨i, hi⟩ := htrue
-  let y : Fin n.1 → A := fun j ↦ if f j then ε (x j) • ε.unit else (ε.reducedPart (x j) : A)
+  let y : Fin n.val → A := fun j ↦ if f j then ε (x j) • ε.unit else (ε.reducedPart (x j) : A)
   have hy : y = Function.update y i (ε (x i) • ε.unit) :=
     (Function.update_eq_self_iff.2 (by simp [y, hi])).symm
   change 𝒜.taylor (ReducedTensorWords.of R A n (PiTensorProduct.tprod R y)) = 0
   rw [hy, (PiTensorProduct.tprod R).map_update_smul, map_smul, map_smul,
     ε.isStrictUnit.taylor_of_tprod_eq_zero n hn _ ⟨i, by simp⟩, smul_zero]
-
-/-- An augmentation is invariant under the degree-one Koszul twist, because it vanishes outside
-degree zero. -/
-private theorem map_koszulTwist_one (ε : 𝒜.Augmentation) (a : A) :
-    ε (𝒜.grading.koszulTwist 1 a) = ε a := by
-  have h : ε.toLinearMap ∘ₗ 𝒜.grading.koszulTwist 1 = ε.toLinearMap := by
-    refine 𝒜.grading.linearMap_ext fun p x hx ↦ ?_
-    simp only [LinearMap.comp_apply, 𝒜.grading.koszulTwist_apply_of_mem hx, map_smul]
-    by_cases hp : p = 0
-    · subst p
-      simp
-    · rw [ε.map_of_mem_ne_zero p x hx hp, smul_zero]
-  exact LinearMap.congr_fun h a
 
 /-- The augmentation of the Taylor map is the product of the augmentations of the two letters on a
 two-letter word, and zero in all other arities. -/
@@ -255,7 +149,7 @@ theorem comp_taylor (ε : 𝒜.Augmentation) :
           (ε.toLinearMap ∘ₗ ReducedTensorWords.letter R A) ∘ₗ
         ReducedTensorWords.deconcatenation R A := by
   refine ReducedTensorWords.linearMap_ext R A fun n x ↦ ?_
-  by_cases hn : n.1 = 2
+  by_cases hn : n.val = 2
   · obtain ⟨k, hk⟩ := n
     simp only at hn
     subst k
@@ -268,12 +162,12 @@ theorem comp_taylor (ε : 𝒜.Augmentation) :
         (ε.toLinearMap ∘ₗ ReducedTensorWords.letter R A)
         (ReducedTensorWords.deconcatenation R A
           (ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![x 0, x 1]))))
-    rw [𝒜.taylor_of_two, ε.map_binary, ε.map_koszulTwist_one,
+    rw [𝒜.taylor_of_two, ε.map_binary, ε.map_koszulTwist 1,
       ReducedTensorWords.deconcatenation_of_two, TensorProduct.map_tmul, LinearMap.comp_apply,
       LinearMap.comp_apply, ReducedTensorWords.letter_ofLetter, ReducedTensorWords.letter_ofLetter,
       LinearMap.mul'_apply]
   · simp only [LinearMap.comp_apply]
-    rw [𝒜.taylor_of_tprod, ε.map_m_of_ne_two n.1 n.2 hn]
+    rw [𝒜.taylor_of_tprod, ε.map_m_of_ne_two n.val n.property hn]
     have h0 := ReducedTensorWords.map_letter_letter_deconcatenation_of_ne_two (R := R) n hn x
     have hfac : TensorProduct.map (ε.toLinearMap ∘ₗ ReducedTensorWords.letter R A)
         (ε.toLinearMap ∘ₗ ReducedTensorWords.letter R A) =
@@ -469,7 +363,8 @@ private theorem map_reducedPart_comp_barDifferential_aux (ε : 𝒜.Augmentation
   have hπ_hom : LinearMap.IsHomogeneous π
       (ReducedTensorWords.gradedPiece (𝒜.grading.shift 1))
       (ReducedTensorWords.gradedPiece (ε.reducedAlgebra.grading.shift 1)) 0 :=
-    ReducedTensorWords.isHomogeneous_map _ _ ε.isHomogeneous_reducedPart_shift
+    ReducedTensorWords.isHomogeneous_map _ _
+      (LinearMap.isHomogeneous_shift_piece_iff.2 ε.isHomogeneous_reducedPart)
   have hLHS : ReducedTensorWords.IsGradedCoderivationAlong (𝒜.grading.shift 1) 1 π π
       (π ∘ₗ 𝒜.barDifferential) :=
     hπ_coalg.comp_isGradedCoderivation 𝒜.isGradedCoderivation_barDifferential
@@ -478,7 +373,7 @@ private theorem map_reducedPart_comp_barDifferential_aux (ε : 𝒜.Augmentation
     (ε.reducedAlgebra.isGradedCoderivation_barDifferential.comp_isCoalgHom hπ_coalg hπ_hom).add
       ε.isGradedCoderivationAlong_unitTerms
   refine hLHS.eq_of_letter_comp_eq hRHS (ReducedTensorWords.linearMap_ext R A fun n x ↦ ?_)
-  by_cases hn1 : n.1 = 1
+  by_cases hn1 : n.val = 1
   · obtain ⟨k, hk⟩ := n
     simp only at hn1
     subst k
@@ -505,7 +400,7 @@ private theorem map_reducedPart_comp_barDifferential_aux (ε : 𝒜.Augmentation
       AInfinityAlgebra.taylor_ofLetter, leftUnitTerm, rightUnitTerm,
       ReducedTensorWords.deconcatenation_ofLetter, map_zero, smul_zero, add_zero]
     simpa only [← AInfinityAlgebra.differential_apply] using ε.reducedPart_differential (x 0)
-  · by_cases hn2 : n.1 = 2
+  · by_cases hn2 : n.val = 2
     · obtain ⟨k, hk⟩ := n
       simp only at hn2
       subst k
@@ -519,9 +414,9 @@ private theorem map_reducedPart_comp_barDifferential_aux (ε : 𝒜.Augmentation
           (ε.reducedAlgebra.grading.koszulTwist 1 (ε.reducedPart a) : A) + ε a • ε.unit := by
         have ha : a = (ε.reducedPart a : A) + ε a • ε.unit := by
           rw [coe_reducedPart, sub_add_cancel]
-        have hhom := ε.reducedAlgebraInclusion.isHomogeneous.koszulTwist_apply 1 (ε.reducedPart a)
+        have hhom := ε.inclusion.isHomogeneous.koszulTwist_apply 1 (ε.reducedPart a)
         simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
-          toLinearMap_reducedAlgebraInclusion, Submodule.subtype_apply] at hhom
+          inclusion_toLinearMap, Submodule.subtype_apply] at hhom
         conv_lhs => rw [ha]
         rw [map_add, map_smul, 𝒜.grading.koszulTwist_apply_of_mem_zero ε.isStrictUnit.degree_zero,
           hhom]

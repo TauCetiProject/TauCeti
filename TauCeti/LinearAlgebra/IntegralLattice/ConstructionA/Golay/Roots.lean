@@ -118,7 +118,7 @@ theorem norm_eq_two_iff {x : Fin 24 → ℚ} (hx : x ∈ constructionALattice.ca
 theorem mem_vectorsOfNorm_two_iff (x : constructionALattice) :
     x ∈ constructionALattice.vectorsOfNorm 2 ↔
       ∃ i : Fin 24, x = coordinateRoot i ∨ x = -coordinateRoot i := by
-  rw [IntegralLattice.mem_vectorsOfNorm, norm_eq_two_iff x.2]
+  rw [IntegralLattice.mem_vectorsOfNorm, norm_eq_two_iff x.property]
   simp only [← coe_coordinateRoot, ← Submodule.coe_neg, Subtype.ext_iff]
 
 /-- The roots generate exactly the zero-code sublattice `2 ℤ²⁴`. Thus the root lattice has
@@ -196,7 +196,7 @@ noncomputable def rootsEquiv :
     constructor
     · rintro ⟨i, b⟩ ⟨j, c⟩ h
       have hi := congrArg (fun x : constructionALattice.vectorsOfNorm 2 ↦
-        (x.1 : Fin 24 → ℚ) i) h
+        (x.val : Fin 24 → ℚ) i) h
       have hij : i = j := by
         by_contra hij
         cases b <;> cases c <;>
@@ -220,7 +220,7 @@ noncomputable def rootsEquiv :
 /-- The explicit root indexing recovers the chosen signed coordinate root. -/
 @[simp]
 theorem rootsEquiv_apply (i : Fin 24) (b : Bool) :
-    (rootsEquiv (i, b)).1 = if b then -coordinateRoot i else coordinateRoot i := by
+    (rootsEquiv (i, b)).val = if b then -coordinateRoot i else coordinateRoot i := by
   rw [rootsEquiv]
   rfl
 

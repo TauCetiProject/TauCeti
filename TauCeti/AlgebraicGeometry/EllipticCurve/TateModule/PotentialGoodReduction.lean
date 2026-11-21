@@ -171,7 +171,7 @@ theorem tateModuleGaloisRepresentation_eq_one_of_mem_inertiaSubgroup_of_mem_fixi
     ?_ hσ hσL ?_
   · rw [Nat.cast_pow]
     exact pow_ne_zero n hℓ
-  · rw [AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj n x).2, map_zero]
+  · rw [AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj n x).property, map_zero]
 
 end GoodReductionOverExtension
 
@@ -244,10 +244,10 @@ theorem HasPotentialGoodReduction.finite_image_tateModuleGaloisRepresentation
     rw [← mul_inv_cancel_left σ σ', map_mul, hM ℓ hℓ _ hg hgM, mul_one]
   -- So the image injects into the finite group `Gal(N/K)`.
   have : Finite (ρ '' (inertiaSubgroup K : Set (Field.absoluteGaloisGroup K))) := by
-    refine Finite.of_injective (fun y ↦ AlgEquiv.restrictNormal y.2.choose N)
+    refine Finite.of_injective (fun y ↦ AlgEquiv.restrictNormal y.property.choose N)
       fun y y' hyy' ↦ Subtype.ext ?_
-    rw [← y.2.choose_spec.2, ← y'.2.choose_spec.2]
-    exact key y.2.choose_spec.1 y'.2.choose_spec.1 hyy'
+    rw [← y.property.choose_spec.2, ← y'.property.choose_spec.2]
+    exact key y.property.choose_spec.1 y'.property.choose_spec.1 hyy'
   exact Set.toFinite _
 
 end PotentialGoodReduction
