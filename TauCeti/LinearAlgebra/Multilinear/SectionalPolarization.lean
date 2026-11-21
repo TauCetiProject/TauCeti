@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 import Mathlib.Algebra.GroupWithZero.Action.Regular
-import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
@@ -130,22 +129,19 @@ theorem eq_of_apply_self_eq_of_linearIndependent (T₁ : M →ₗ[R] M →ₗ[R]
     (h₁' : ∀ x y z w, T₂ x y z w = -T₂ y x z w) (h₂' : ∀ x y z w, T₂ x y z w = -T₂ x y w z)
     (h₃' : ∀ x y z w, T₂ x y z w + T₂ y z x w + T₂ z x y w = 0)
     (hT : ∀ x y, LinearIndependent R ![x, y] → T₁ x y y x = T₂ x y y x) : T₁ = T₂ := by
-  have hsix : (6 : R) = 3 * 2 := by norm_num
-  have h2 : (2 : R) ≠ 0 := fun h ↦ h6 <| by rw [hsix, h, mul_zero]
   -- Multiplication by `6 : ℕ` on the values is the scalar `6 ≠ 0`, which kills no nonzero value.
   have h6' : IsSMulRegular N (6 : ℕ) := .of_right_eq_zero_of_smul fun n hn ↦ by
     by_contra hn0
     exact h6 <| hN n hn0 <| by simpa only [ofNat_smul_eq_nsmul, zero_smul] using hn
-  -- On a dependent pair `x, y`, both sides vanish: by `h₁` and `2 ≠ 0`, the bilinear map
-  -- `(a, b) ↦ T(a, b, y, x)` is alternating.
+  -- On a dependent pair `x, y`, both sides vanish: by `h₁`, the bilinear slice
+  -- `(a, b) ↦ T(a, b, y, x)` is skew-symmetric, hence alternating since doubling is injective.
   have hdep (T : M →ₗ[R] M →ₗ[R] M →ₗ[R] M →ₗ[R] N) (h₁ : ∀ x y z w, T x y z w = -T y x z w)
       {x y : M} (hxy : ¬LinearIndependent R ![x, y]) : T x y y x = 0 := by
-    refine IsAlt.eq_zero_of_not_linearIndependent
-      (ω := (T.compr₂ (applyₗ y)).compr₂ (applyₗ x)) (fun a ↦ ?_) hN hxy
-    by_contra ha
-    refine h2 (hN _ ha ?_)
-    simpa only [compr₂_apply, applyₗ_apply_apply, two_smul, zero_smul,
-      ← eq_neg_iff_add_eq_zero] using h₁ a a y x
+    let ω := (T.compr₂ (applyₗ y)).compr₂ (applyₗ x)
+    have hω : ω.IsAlt := .of_neg (h6'.of_mul (a := 3) (b := 2)) fun a b ↦ by
+      simpa only [ω, compr₂_apply, applyₗ_apply_apply] using (h₁ b a y x).symm
+    simpa only [ω, compr₂_apply, applyₗ_apply_apply] using
+      hω.eq_zero_of_not_linearIndependent hN hxy
   refine T₁.eq_of_apply_self_eq h6' h₁ h₂ h₃ h₁' h₂' h₃' fun x y ↦ ?_
   by_cases hxy : LinearIndependent R ![x, y]
   · exact hT x y hxy
@@ -175,16 +171,19 @@ theorem twentyFour_nsmul_apply_eq_of_cyclic_eq_zero (T : M →ₗ[R] M →ₗ[R]
           T (y + w) (x - z) (x - z) (y + w) -
         T (y - w) (x + z) (x + z) (y - w) +
           T (y - w) (x - z) (x - z) (y - w)) := by
-  -- Expand the mixed differences by multilinearity before using the curvature symmetries.
-  -- As in the sixfold identity, opaque atoms keep the normalization small.
+  -- Each mixed difference `B` is four times an add-only cross term, and the sixfold identity is
+  -- the difference of two such cross terms. Align the slot order of the second difference with
+  -- the sixfold identity by the symmetry `T(a, b, b, a) = T(b, a, a, b)`.
+  have hk (a b : M) : T a b b a = T b a a b := by rw [h₁, h₂, neg_neg]
+  rw [show (24 : ℕ) = 4 * 6 from rfl, mul_nsmul', T.six_nsmul_apply_eq_of_cyclic_eq_zero h₁ h₂ h₃,
+    hk (y + w) (x + z), hk (y + w) (x - z), hk (y - w) (x + z), hk (y - w) (x - z)]
+  -- What remains is multilinearity, up to the symmetry of `T(z, w, w, z)`. As in the sixfold
+  -- identity, opaque atoms keep the normalization small.
   obtain ⟨t, ht⟩ : ∃ t : M → M → M → M → N, ∀ a b c d, T a b c d = t a b c d :=
     ⟨fun a b c d ↦ T a b c d, fun _ _ _ _ ↦ rfl⟩
-  simp only [map_add, map_sub, LinearMap.add_apply, LinearMap.sub_apply, ht] at h₁ h₂ h₃ ⊢
-  linear_combination (norm := module) 4 • h₁ x y z w + 8 • h₂ x y z w + 8 • h₃ x y z w -
-    8 • h₃ x y w z - 8 • h₁ x z y w + 4 • h₂ x z y w - 4 • h₁ x z w y +
-    8 • h₁ x w y z - 8 • h₂ x w y z + 4 • h₁ x w z y + 4 • h₃ x w z y -
-    4 • h₂ y z x w + 4 • h₁ y z w x + 8 • h₂ y w x z - 4 • h₁ y w z x -
-    4 • h₃ y w z x
+  have hzw := hk z w
+  simp only [map_add, map_sub, LinearMap.add_apply, LinearMap.sub_apply, ht] at hzw ⊢
+  linear_combination (norm := module) 4 • hzw
 
 end CommSemiring
 

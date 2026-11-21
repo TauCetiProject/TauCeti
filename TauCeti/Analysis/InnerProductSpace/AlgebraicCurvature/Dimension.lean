@@ -73,8 +73,12 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 theorem apply_eq_zero_of_not_linearIndependent_of_antisymm_first {r : FourTensor V} {u v : V}
     (huv : ¬LinearIndependent ℝ ![u, v])
     (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) (z w : V) : r ![u, v, z, w] = 0 := by
-  have hAlt : (toLinearMap₄ r).IsAlt := fun a ↦ LinearMap.ext₂ fun c d ↦ by
-    rw [toLinearMap₄_apply]; exact CharZero.eq_neg_self_iff.mp (h₁ a a c d)
+  -- Doubling is injective on the values, which form a real vector space.
+  have h2 : IsSMulRegular (V →ₗ[ℝ] V →ₗ[ℝ] ℝ) (2 : ℕ) := fun a b hab ↦
+    (IsUnit.mk0 (2 : ℝ) two_ne_zero).isSMulRegular _ <| by
+      simpa only [two_smul, two_nsmul] using hab
+  have hAlt : (toLinearMap₄ r).IsAlt := .of_neg (N := V →ₗ[ℝ] V →ₗ[ℝ] ℝ) h2 fun a b ↦
+    LinearMap.ext₂ fun c d ↦ by simp only [LinearMap.neg_apply, toLinearMap₄_apply, ← h₁]
   simpa using congr($(hAlt.eq_zero_of_not_linearIndependent
     (fun _ ↦ smul_left_injective ℝ (M := V →ₗ[ℝ] V →ₗ[ℝ] ℝ)) huv) z w)
 
@@ -84,8 +88,8 @@ theorem IsAlgebraicCurvature.apply_self_eq_zero_of_not_linearIndependent {r : Fo
     r ![u, v, u, v] = 0 :=
   apply_eq_zero_of_not_linearIndependent_of_antisymm_first huv hr.antisymm_first u v
 
-/-- **Sectional polarization**: algebraic curvature tensors agreeing on all linearly independent
-`(u, v, u, v)` agree. -/
+/-- **Sectional polarization**: algebraic curvature tensors agreeing on `(u, v, u, v)` for every
+linearly independent pair `u, v` agree. -/
 theorem IsAlgebraicCurvature.eq_of_apply_self_eq_of_linearIndependent {r₁ r₂ : FourTensor V}
     (hr₁ : IsAlgebraicCurvature r₁) (hr₂ : IsAlgebraicCurvature r₂)
     (h : ∀ u v, LinearIndependent ℝ ![u, v] → r₁ ![u, v, u, v] = r₂ ![u, v, u, v]) : r₁ = r₂ :=

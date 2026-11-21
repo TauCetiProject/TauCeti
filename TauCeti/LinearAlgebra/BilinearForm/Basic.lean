@@ -75,6 +75,8 @@ maps valued in an arbitrary module.
   pair of vectors is the determinant of the coefficient matrix times its value on the pair, and
   `LinearMap.IsAlt.apply_smul_add_smul_det` its form with coefficients the columns of an
   endomorphism of `R × R`.
+* `LinearMap.IsAlt.of_neg`: a skew-symmetric bilinear map is alternating when doubling is
+  injective on its values.
 * `LinearMap.IsAlt.eq_zero_of_not_linearIndependent`: an alternating bilinear map vanishes on a
   linearly dependent pair when unequal scalars act differently on every nonzero value.
 -/
@@ -113,6 +115,14 @@ theorem apply_smul_add_smul_det {R M N : Type*} [CommRing R] [AddCommGroup M] [M
     ω ((B (1, 0)).1 • v + (B (1, 0)).2 • w) ((B (0, 1)).1 • v + (B (0, 1)).2 • w) =
       LinearMap.det B • ω v w := by
   rw [halt.apply_smul_add_smul, LinearMap.det_finTwoProd]
+
+/-- A skew-symmetric bilinear map is alternating when doubling is injective on its values. This
+is the converse of `LinearMap.IsAlt.neg`, and a module-valued, semiring form of the reverse
+direction of `LinearMap.isAlt_iff_eq_neg_flip`. -/
+theorem of_neg {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [AddCommGroup N] [Module R N] {ω : M →ₗ[R] M →ₗ[R] N} (h2 : IsSMulRegular N (2 : ℕ))
+    (h : ∀ x y, -ω x y = ω y x) : ω.IsAlt := fun x ↦
+  h2 (show 2 • ω x x = 2 • 0 by rw [smul_zero, two_nsmul, ← neg_add_cancel (ω x x), h x x])
 
 /-- An alternating bilinear map vanishes on a linearly dependent pair, provided unequal scalars
 act differently on every nonzero value. Over a domain acting on torsion-free values, the latter
