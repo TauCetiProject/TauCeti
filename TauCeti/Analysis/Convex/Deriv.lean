@@ -29,6 +29,9 @@ derivative increases from a nonnegative value.
   interlace.
 * `ConvexOn.add_rightDeriv_mul_sub_le`: the tangent line with the right derivative as slope lies
   below a convex function.
+* `ConvexOn.exists_mul_sub_le_max_zero`: a supporting line with nonnegative slope and
+  nonpositive intercept to the positive part of a convex function `Φ` on `[0, ∞)` with
+  `Φ 0 ≤ 0`.
 * `TauCeti.strictConvexOn_Icc_of_deriv3_pos`: strict convexity on `[a, b]` from a positive third
   derivative and a nonnegative second derivative at `a`.
 
@@ -105,6 +108,23 @@ theorem add_rightDeriv_mul_sub_le (hφ : ConvexOn ℝ I φ) {x y : ℝ} (hx : x 
     have hderiv := mul_le_mul_of_nonneg_right (hφ.leftDeriv_le_rightDeriv_of_mem_interior hx)
       (sub_pos.2 hyx).le
     linarith
+
+/-- **A supporting line to the positive part.** If `Φ` is convex on `[0, ∞)` with `Φ 0 ≤ 0`, then
+at every `c > 0` the positive part `max (Φ ·) 0` has a supporting line `s ↦ k * s - d` with slope
+`k ≥ 0` and intercept `-d ≤ 0`: it lies below `max (Φ ·) 0` on `[0, ∞)` and touches it at `c`. -/
+theorem exists_mul_sub_le_max_zero {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦ0 : Φ 0 ≤ 0)
+    {c : ℝ} (hc : 0 < c) :
+    ∃ k d : ℝ, 0 ≤ k ∧ 0 ≤ d ∧ (∀ s, 0 ≤ s → k * s ≤ max (Φ s) 0 + d) ∧
+      max (Φ c) 0 + d = k * c := by
+  set Ψ : ℝ → ℝ := fun s ↦ max (Φ s) 0
+  have hΨ : ConvexOn ℝ (Ici 0) Ψ := hΦ.sup (convexOn_const 0 (convex_Ici 0))
+  have hc' : c ∈ interior (Ici (0 : ℝ)) := by rwa [interior_Ici]
+  set k := derivWithin Ψ (Ioi c) c
+  have htan (s : ℝ) (hs : 0 ≤ s) : Ψ c + k * (s - c) ≤ Ψ s := hΨ.add_rightDeriv_mul_sub_le hc' hs
+  -- The tangent line passes below the origin, where `Ψ` vanishes, so its slope is nonnegative.
+  have hd : 0 ≤ k * c - Ψ c := by linarith [htan 0 le_rfl, show Ψ 0 = 0 from max_eq_right hΦ0]
+  have hk : 0 ≤ k := nonneg_of_mul_nonneg_left (by linarith [le_max_right (Φ c) 0]) hc
+  exact ⟨k, k * c - Ψ c, hk, hd, fun s hs ↦ by linarith [htan s hs], by ring⟩
 
 end ConvexOn
 

@@ -56,8 +56,8 @@ theorem deriv_eq_zero_of_fderiv_comp_norm_eq_zero {v : ℝ → E} {x : F} (hx : 
   exact hv (by simpa [hn.fderiv_norm_self, hx] using h)
 
 /-- **Gradients of radially nonincreasing functions.** If `v` is nonincreasing in the norm, then
-any two points of the same level of `v` at which its totalized derivative does not vanish lie on
-the same centered sphere, and the derivatives there have the same norm. -/
+its totalized derivatives have the same norm at any two points of the same level of `v` at which
+they do not vanish. -/
 theorem norm_fderiv_eq_of_antitone_norm {v : F → ℝ} (hv : ∀ x y, ‖x‖ ≤ ‖y‖ → v y ≤ v x)
     {x y : F} (hx : fderiv ℝ v x ≠ 0) (hy : fderiv ℝ v y ≠ 0) (hxy : v x = v y) :
     ‖fderiv ℝ v x‖ = ‖fderiv ℝ v y‖ := by

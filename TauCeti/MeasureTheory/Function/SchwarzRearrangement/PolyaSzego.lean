@@ -12,8 +12,8 @@ import TauCeti.Analysis.BoundedVariation.LevelSurface
 import TauCeti.Analysis.BoundedVariation.SchwarzRearrangement
 import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.Calculus.FDeriv.Measurable
-import TauCeti.Analysis.Convex.Deriv
 import TauCeti.MeasureTheory.Function.Coarea.Critical
+import TauCeti.MeasureTheory.Integral.ReciprocalWeight
 
 /-!
 # The Pólya–Szegő inequality for Lipschitz functions
@@ -71,79 +71,6 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- A tangent line to the positive part of a convex function `Φ` on `[0, ∞)` with `Φ 0 ≤ 0`, at a
-point `c > 0`, written in `ℝ≥0∞`: it has a slope `k` and a finite intercept `-d`, lies below
-`Φ` on `[0, ∞)` and touches it at `c`. -/
-private theorem exists_tangent {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦ0 : Φ 0 ≤ 0)
-    {c : ℝ} (hc : 0 < c) :
-    ∃ k d : ℝ≥0∞, d ≠ ∞ ∧
-      (∀ s, 0 ≤ s → k * ENNReal.ofReal s ≤ ENNReal.ofReal (Φ s) + d) ∧
-      ENNReal.ofReal (Φ c) + d = k * ENNReal.ofReal c := by
-  set Ψ : ℝ → ℝ := fun s ↦ max (Φ s) 0
-  have hΨ : ConvexOn ℝ (Ici 0) Ψ := hΦ.sup (convexOn_const 0 (convex_Ici 0))
-  have hΨ0 : Ψ 0 = 0 := max_eq_right hΦ0
-  have hc' : c ∈ interior (Ici (0 : ℝ)) := by rwa [interior_Ici]
-  set k := derivWithin Ψ (Ioi c) c
-  have htan (s : ℝ) (hs : 0 ≤ s) : Ψ c + k * (s - c) ≤ Ψ s := hΨ.add_rightDeriv_mul_sub_le hc' hs
-  -- The tangent line passes below the origin, so its slope is nonnegative.
-  have hd : 0 ≤ k * c - Ψ c := by linarith [htan 0 le_rfl]
-  have hk : 0 ≤ k := nonneg_of_mul_nonneg_left (by linarith [le_max_right (Φ c) 0]) hc
-  have hofReal (s : ℝ) : ENNReal.ofReal (Φ s) = ENNReal.ofReal (Ψ s) := by
-    simp [Ψ, ENNReal.ofReal_max]
-  refine ⟨ENNReal.ofReal k, ENNReal.ofReal (k * c - Ψ c), ENNReal.ofReal_ne_top,
-    fun s hs ↦ ?_, ?_⟩
-  · rw [hofReal, ← ENNReal.ofReal_mul hk, ← ENNReal.ofReal_add (le_max_right _ _) hd]
-    exact ENNReal.ofReal_le_ofReal (by linarith [htan s hs])
-  · rw [hofReal, ← ENNReal.ofReal_mul hk, ← ENNReal.ofReal_add (le_max_right _ _) hd]
-    congr 1
-    ring
-
-/-- The levelwise comparison behind the Pólya–Szegő inequality, in the form of Jensen's inequality
-for a tangent line. Let `u` and `v` be nonvanishing on measurable sets `A` and `B`, with `‖v‖`
-constant on `B`. If `B` has at most the measure of `A`, and the integral of `‖v‖⁻¹` over `B` is
-finite and at least that of `‖u‖⁻¹` over `A`, then the integral of `Φ(‖v‖) ‖v‖⁻¹` over `B` is at
-most that of `Φ(‖u‖) ‖u‖⁻¹` over `A`. -/
-private theorem setLIntegral_ofReal_mul_inv_le {X F G : Type*} [MeasurableSpace X]
-    {ν : Measure X} [NormedAddCommGroup F] [MeasurableSpace F] [OpensMeasurableSpace F]
-    [NormedAddCommGroup G] {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦ0 : Φ 0 ≤ 0)
-    {A B : Set X} (hA : MeasurableSet A) (hB : MeasurableSet B) {u : X → F} {v : X → G}
-    (hu : Measurable u) (huA : ∀ x ∈ A, u x ≠ 0) (hvB : ∀ x ∈ B, v x ≠ 0)
-    (hvc : ∀ x ∈ B, ∀ y ∈ B, ‖v x‖ = ‖v y‖) (hP : ν B ≤ ν A)
-    (hm : ∫⁻ x in A, ‖u x‖ₑ⁻¹ ∂ν ≤ ∫⁻ x in B, ‖v x‖ₑ⁻¹ ∂ν)
-    (hm' : ∫⁻ x in B, ‖v x‖ₑ⁻¹ ∂ν ≠ ∞) :
-    ∫⁻ x in B, ENNReal.ofReal (Φ ‖v x‖) * ‖v x‖ₑ⁻¹ ∂ν ≤
-      ∫⁻ x in A, ENNReal.ofReal (Φ ‖u x‖) * ‖u x‖ₑ⁻¹ ∂ν := by
-  rcases B.eq_empty_or_nonempty with rfl | ⟨b, hb⟩
-  · simp
-  obtain ⟨k, d, hd, hle, heq⟩ := exists_tangent hΦ hΦ0 (norm_pos_iff.2 (hvB b hb))
-  -- On `B` the tangent line touches: the weight `(Φ(‖v‖) + d) ‖v‖⁻¹` is the slope `k`.
-  have hBk : ∫⁻ x in B, ENNReal.ofReal (Φ ‖v x‖) * ‖v x‖ₑ⁻¹ ∂ν +
-      d * ∫⁻ x in B, ‖v x‖ₑ⁻¹ ∂ν ≤ k * ν B := by
-    rw [← lintegral_const_mul' d _ hd, ← setLIntegral_const]
-    refine (le_lintegral_add _ _).trans (setLIntegral_mono' hB fun x hx ↦ ?_)
-    rw [← add_mul, ← ofReal_norm, hvc x hx b hb, heq, mul_assoc,
-      ENNReal.mul_inv_cancel (ENNReal.ofReal_pos.2 (norm_pos_iff.2 (hvB b hb))).ne'
-        ENNReal.ofReal_ne_top, mul_one]
-  -- On `A` the tangent line lies below: the weight `(Φ(‖u‖) + d) ‖u‖⁻¹` is at least `k`.
-  have hAk : k * ν A ≤ ∫⁻ x in A, ENNReal.ofReal (Φ ‖u x‖) * ‖u x‖ₑ⁻¹ ∂ν +
-      d * ∫⁻ x in A, ‖u x‖ₑ⁻¹ ∂ν := by
-    have hmeas : Measurable fun x ↦ d * ‖u x‖ₑ⁻¹ := hu.eNorm.inv.const_mul d
-    rw [← lintegral_const_mul' d _ hd, ← setLIntegral_const, ← lintegral_add_right _ hmeas]
-    refine setLIntegral_mono' hA fun x hx ↦ ?_
-    have hx0 : ‖u x‖ₑ ≠ 0 := ENNReal.coe_ne_zero.2 (nnNorm_ne_zero_iff.2 (huA x hx))
-    calc k = k * ‖u x‖ₑ * ‖u x‖ₑ⁻¹ := by
-          rw [mul_assoc, ENNReal.mul_inv_cancel hx0 eNorm_ne_top, mul_one]
-      _ ≤ (ENNReal.ofReal (Φ ‖u x‖) + d) * ‖u x‖ₑ⁻¹ := by
-          rw [← ofReal_norm]
-          gcongr
-          exact hle _ (norm_nonneg _)
-      _ = _ := by rw [add_mul, mul_comm d]
-  refine ENNReal.le_of_add_le_add_right (ENNReal.mul_ne_top hd hm') ?_
-  calc _ ≤ k * ν B := hBk
-    _ ≤ k * ν A := by gcongr
-    _ ≤ _ := hAk
-    _ ≤ _ := by gcongr
 
 /-- The coarea formula for the gradient integral `∫ Φ(‖∇g‖)`, as an integral over levels. -/
 private theorem lintegral_ofReal_comp_norm_fderiv_eq [FiniteDimensional ℝ E] [MeasurableSpace E]
@@ -246,7 +173,7 @@ private theorem ae_setLIntegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangem
   have hmeas {g : E → ℝ} : MeasurableSet ({x | fderiv ℝ g x ≠ 0} ∩ g ⁻¹' {t}) := by
     rw [inter_comm]
     exact measurableSet_preimage_inter_setOf_fderiv_ne_zero (measurableSet_singleton t)
-  refine setLIntegral_ofReal_mul_inv_le hΦ hΦ0 hmeas hmeas (measurable_fderiv ℝ h)
+  refine hΦ.setLIntegral_ofReal_mul_inv_le hΦ0 hmeas hmeas (measurable_fderiv ℝ h)
     (fun x hx ↦ hx.1) (fun x hx ↦ hx.1) (fun x hx y hy ↦ ?_) (hP ht)
     ((hm ht).trans (hm' ht).ge) ((hm' ht).trans_ne ENNReal.ofReal_ne_top)
   exact norm_fderiv_eq_of_antitone_norm hanti hx.1 hy.1 (hx.2.trans hy.2.symm)
