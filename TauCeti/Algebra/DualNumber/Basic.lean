@@ -19,8 +19,8 @@ the action on the coefficients does, and it commutes with multiplication wheneve
 the coefficients does; the two laws lift separately. When the coordinatewise action is a module
 structure over a commutative semiring, together they make multiplication bilinear, which makes
 bilinear multiplication and convolution available with that module structure.
-Dual numbers over an Artinian ring are also Artinian, using their product module structure, and
-they are a finite module over their coefficient ring.
+The dual numbers are a finite module over their coefficient ring, so dual numbers over an
+Artinian ring are also Artinian.
 Multiplication by `ε` is exact over any semiring. Over any ring, each element
 `1 + inr c` is a unit with inverse `1 - inr c`.
 Algebra maps on dual numbers evaluate in terms of their restriction to constants and
@@ -76,11 +76,6 @@ instance dualNumberSMulCommClass [SMulCommClass R B B] :
   .of_mul_smul_one fun r x ↦ by
     have h : r • (0 : B) = 0 := by rw [← mul_smul_one, zero_mul]
     ext <;> simp [h, mul_smul_one]
-
-/-- Dual numbers over an Artinian ring form an Artinian ring. -/
-instance dualNumberIsArtinianRing {R : Type*} [Ring R] [IsArtinianRing R] :
-    IsArtinianRing (DualNumber R) :=
-  isArtinian_of_tower R (inferInstanceAs (IsArtinian R (R × R)))
 
 /-- Multiplication by `ε` on the dual numbers is exact. -/
 theorem dualNumber_mul_eps_exact {R : Type*} [Semiring R] :
@@ -184,5 +179,10 @@ theorem dualNumber_linearMap_ext {M : Type*} [AddCommMonoid M] [Module R M]
   (dualNumberBasis R).ext fun i => by fin_cases i <;> simpa
 
 end DualNumberBasis
+
+/-- Dual numbers over an Artinian ring form an Artinian ring. -/
+instance dualNumberIsArtinianRing {R : Type*} [Ring R] [IsArtinianRing R] :
+    IsArtinianRing (DualNumber R) :=
+  .of_finite R (DualNumber R)
 
 end TauCeti

@@ -47,12 +47,14 @@ variable {ι : Type*} {A : ι → Type*} [∀ i, NonUnitalNonAssocSemiring (A i)
 /-- Scalar multiplication by `R` forms a scalar tower with the factorwise multiplication of an
 indexed tensor product, since that multiplication is `R`-linear in its left argument. -/
 instance isScalarTower_right : IsScalarTower R (⨂[R] i, A i) (⨂[R] i, A i) where
-  smul_assoc r x y := LinearMap.map_smul₂ mul r x y
+  smul_assoc r x y := by
+    simpa only [smul_eq_mul, mul_def] using LinearMap.map_smul₂ mul r x y
 
 /-- Scalar multiplication by `R` commutes with the factorwise multiplication of an indexed tensor
 product, since that multiplication is `R`-linear in its right argument. -/
 instance smulCommClass_right : SMulCommClass R (⨂[R] i, A i) (⨂[R] i, A i) where
-  smul_comm r x y := (map_smul (mul x) r y).symm
+  smul_comm r x y := by
+    simpa only [smul_eq_mul, mul_def] using (map_smul (mul x) r y).symm
 
 end NonUnitalNonAssocSemiring
 
