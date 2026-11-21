@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Module.Determinant
 public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.Topology.VectorBundle.ContinuousAlternatingMap
+public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import Mathlib.Topology.VectorBundle.Hom
+import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
 # Composition in alternating-bundle coordinates
@@ -26,6 +29,11 @@ When the codomain is a fixed space, a fibre alternating map read in the triviali
 is precomposed with the inverse, at its base point, of the trivialization of the domain bundle at
 `x₀` (`FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd`). This holds everywhere,
 with no base-set hypothesis.
+
+In top degree (`Fintype.card ι = Module.finrank 𝕜 F`), pulling back any scalar-valued top-degree
+continuous alternating form in a fibre of a finite-rank vector bundle along a fibre endomorphism
+multiplies the form by the endomorphism's determinant
+(`TauCeti.bundleTopForm_compContinuousLinearMap_eq_det_smul`).
 
 The coordinate maps are Mathlib's `ContinuousAlternatingMap.inCoordinates` and
 `ContinuousLinearMap.inCoordinates`.
@@ -95,3 +103,30 @@ theorem trivializationAt_continuousAlternatingMap_apply_snd (x₀ : B) {x : B}
   simp [trivializationAt_continuousAlternatingMap_apply, ContinuousAlternatingMap.inCoordinates]
 
 end FiberBundle
+
+namespace TauCeti
+
+section TopFormBundle
+
+open FiberBundle
+
+variable {𝕜 ι B F : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  {V : B → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+
+/-- On a finite-rank vector bundle `V` of model rank `Fintype.card ι`, pulling back any scalar
+top-degree alternating form in the fibre `V x [⋀^ι]→L[𝕜] 𝕜` along a continuous linear endomorphism
+`A : V x →L[𝕜] V x` multiplies the form by `A.det`. -/
+theorem bundleTopForm_compContinuousLinearMap_eq_det_smul
+    (h : Fintype.card ι = Module.finrank 𝕜 F) {x : B}
+    (α : V x [⋀^ι]→L[𝕜] 𝕜) (A : V x →L[𝕜] V x) :
+    α.compContinuousLinearMap A = A.det • α := by
+  let _ : FiniteDimensional 𝕜 (V x) := VectorBundle.finiteDimensional 𝕜 F V x
+  let e := (trivializationAt F V x).continuousLinearEquivAt 𝕜 x (mem_baseSet_trivializationAt F V x)
+  exact α.compContinuousLinearMap_eq_det_smul (h.trans e.toLinearEquiv.symm.finrank_eq) A
+
+end TopFormBundle
+
+end TauCeti
