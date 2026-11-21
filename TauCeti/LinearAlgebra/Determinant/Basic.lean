@@ -51,8 +51,6 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
 ## Main results
 
 * `AlternatingMap.eq_basis_det_smulRight`: `ω = b.det.smulRight (ω b)` for `ω` of top degree.
-* `AlternatingMap.map_sum_smul`: evaluating an alternating map on linear combinations given by the
-  rows of a square matrix `A` multiplies its value by `A.det`.
 * `AlternatingMap.compLinearMap_eq_det_smul`: `ω ∘ φ = det φ • ω` for `ω` of top degree.
 * `LinearMap.det_eq_of_compLinearMap_eq_smul`: if `ω ≠ 0` and `ω ∘ φ = d • ω` then `det φ = d`,
   for `R` cancellative and `N` torsion-free.
@@ -157,21 +155,6 @@ theorem eq_basis_det_smulRight [Fintype ι] [DecidableEq ι] (b : Basis ι R M)
   change ω (⇑b ∘ σ) = (b.det.smulRight (ω ⇑b)) (⇑b ∘ σ)
   simp [map_perm, Basis.det_self]
 
-/-- Applying an alternating map to linear combinations of a frame `v` with coefficients given by
-the rows of a square matrix `A` multiplies `f v` by `A.det`. -/
-theorem map_sum_smul [Fintype ι] [DecidableEq ι] (f : M [⋀^ι]→ₗ[R] N) (A : Matrix ι ι R)
-    (v : ι → M) : f (fun i ↦ ∑ j, A i j • v j) = A.det • f v := by
-  let L : (ι → R) →ₗ[R] M := Fintype.linearCombination R v
-  have hL : L ∘ Pi.basisFun R ι = v := by
-    ext j
-    simp [L]
-  have hmat : Matrix.of (fun i ↦ A i) = A := Matrix.ext fun i j ↦ Matrix.of_apply _ i j
-  have h := DFunLike.congr_fun ((f.compLinearMap L).eq_basis_det_smulRight (Pi.basisFun R ι))
-    (fun i ↦ A i)
-  rw [AlternatingMap.compLinearMap_apply, AlternatingMap.compLinearMap_apply,
-    AlternatingMap.smulRight_apply, Pi.basisFun_det_apply] at h
-  simpa [L, hL, Function.comp_def, Fintype.linearCombination_apply, hmat] using h
-
 /-- **An endomorphism scales a top-degree alternating form by its determinant.** Here `ω` is of
 top degree in the sense that its index type indexes a basis of `M`; that basis is a hypothesis and
 does not occur in the conclusion, which is an equality of alternating maps. -/
@@ -217,8 +200,8 @@ theorem exists_prod_det_eq_sign_smul_mul (b : Basis ι R M) (b' : Basis ι' R M'
   have hσ : w ∘ σ = Sum.elim (LinearMap.inl R M M' ∘ fun k ↦ (w (σ (.inl k))).1)
       (LinearMap.inr R M M' ∘ fun l ↦ (w (σ (.inr l))).2) := by
     ext1 (k | l)
-    · exact Prod.ext (by simp) (by simpa using h₁ _ (by simpa [σ] using (e₁ k).2))
-    · exact Prod.ext (by simpa using h₂ _ (by simpa [σ] using (e₂ l).2)) (by simp)
+    · exact Prod.ext (by simp) (by simpa using h₁ _ (by simpa [σ] using (e₁ k).property))
+    · exact Prod.ext (by simpa using h₂ _ (by simpa [σ] using (e₂ l).property)) (by simp)
   refine ⟨σ, ?_⟩
   have h := (b.prod b').det.map_perm w σ
   rw [hσ, prod_det_sumElim] at h

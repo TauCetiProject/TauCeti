@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.CalibratedFrame
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.CalibratedFrame
 public import TauCeti.LinearAlgebra.Complex.Orientation
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -187,27 +187,27 @@ private def kahlerSubspacePullback (J : AlmostComplexStructure V) (P : Submodule
 private theorem inner_twoVectorContraction_kahlerSubspacePullback_eq
     (J : AlmostComplexStructure V) (P : Submodule ℝ V) (x y : P) :
     ⟪twoVectorContraction (kahlerSubspacePullback J P) x, y⟫ =
-      (2⁻¹ : ℝ) * (⟪J x.1, y.1⟫ - ⟪J y.1, x.1⟫) := by
+      (2⁻¹ : ℝ) * (⟪J x.val, y.val⟫ - ⟪J y.val, x.val⟫) := by
   rw [inner_twoVectorContraction_apply, kahlerSubspacePullback,
     inner_alternatingFormEquiv_symm_ιMulti,
     ContinuousAlternatingMap.compContinuousLinearMap_apply, alternatingFormEquiv_apply]
-  have hcomp : (P.subtypeL ∘ ![x, y]) = ![x.1, y.1] := by ext i; fin_cases i <;> rfl
+  have hcomp : (P.subtypeL ∘ ![x, y]) = ![x.val, y.val] := by ext i; fin_cases i <;> rfl
   rw [hcomp, inner_kahlerForm_ιMulti_eq_inv_two_mul_sub]
 
 private theorem inner_twoVectorContraction_kahlerSubspacePullback
     {J : AlmostComplexStructure V} (hJ : ∀ u w, ⟪J u, J w⟫ = ⟪u, w⟫)
     (P : Submodule ℝ V) (x y : P) :
-    ⟪twoVectorContraction (kahlerSubspacePullback J P) x, y⟫ = ⟪J x.1, y.1⟫ := by
-  rw [inner_twoVectorContraction_kahlerSubspacePullback_eq, inner_apply_left hJ y.1 x.1,
-    real_inner_comm y.1 (J x.1)]
+    ⟪twoVectorContraction (kahlerSubspacePullback J P) x, y⟫ = ⟪J x.val, y.val⟫ := by
+  rw [inner_twoVectorContraction_kahlerSubspacePullback_eq, inner_apply_left hJ y.val x.val,
+    real_inner_comm y.val (J x.val)]
   ring
 
 private theorem coe_twoVectorContraction_kahlerSubspacePullback
     {J : AlmostComplexStructure V} (hJ : ∀ u w, ⟪J u, J w⟫ = ⟪u, w⟫)
     (P : Submodule ℝ V) (x : P) :
-    (twoVectorContraction (kahlerSubspacePullback J P) x : V) = P.starProjection (J x.1) := by
+    (twoVectorContraction (kahlerSubspacePullback J P) x : V) = P.starProjection (J x.val) := by
   refine (Submodule.eq_starProjection_of_mem_of_inner_eq_zero
-    (twoVectorContraction (kahlerSubspacePullback J P) x).2 fun y hy ↦ ?_).symm
+    (twoVectorContraction (kahlerSubspacePullback J P) x).property fun y hy ↦ ?_).symm
   have hxy := inner_twoVectorContraction_kahlerSubspacePullback hJ P x ⟨y, hy⟩
   rw [inner_sub_left, sub_eq_zero]
   exact hxy.symm
@@ -248,7 +248,7 @@ theorem kahlerPowerForm_apply_of_adapted {J : AlmostComplexStructure V}
       (by simpa only [coe_basisOfLinearIndependentOfCardEqFinrank'] using hwP)
   have hbP_coe (i : Fin (2 * r)) : (bP i : V) = w i := by simp [bP, wP]
   have hJP : ∀ x ∈ P, J x ∈ P := fun x hx ↦ by
-    have hx_repr : (∑ i, ⟪bP i, ⟨x, hx⟩⟫ • bP i : P).1 = x :=
+    have hx_repr : (∑ i, ⟪bP i, ⟨x, hx⟩⟫ • bP i : P).val = x :=
       congrArg Subtype.val (bP.sum_repr' ⟨x, hx⟩)
     rw [← hx_repr, Submodule.coe_sum, map_sum]
     refine Submodule.sum_mem _ fun i _ ↦ ?_
@@ -262,7 +262,7 @@ theorem kahlerPowerForm_apply_of_adapted {J : AlmostComplexStructure V}
       exact Submodule.neg_mem _ (Submodule.subset_span ⟨_, rfl⟩)
   let JP : AlmostComplexStructure P :=
     { toLinearMap := J.toLinearMap.restrict hJP
-      square_neg := by ext x; exact J.apply_apply x.1 }
+      square_neg := by ext x; exact J.apply_apply x.val }
   have hJP_adapt (j : Fin r) :
       bP ⟨2 * (j : ℕ) + 1, by omega⟩ = JP (bP ⟨2 * (j : ℕ), by omega⟩) :=
     Subtype.ext (by simpa [JP, hbP_coe] using hadapt j)
@@ -271,7 +271,7 @@ theorem kahlerPowerForm_apply_of_adapted {J : AlmostComplexStructure V}
     refine exteriorPower.ext_inner_ιMulti_two fun x y ↦ ?_
     rw [← inner_twoVectorContraction_apply, inner_twoVectorContraction_kahlerSubspacePullback_eq,
       inner_kahlerForm_ιMulti hJP_orth]
-    have hskew : ⟪J y.1, x.1⟫ = -⟪J x.1, y.1⟫ := by
+    have hskew : ⟪J y.val, x.val⟫ = -⟪J x.val, y.val⟫ := by
       have := inner_apply_left hJP_orth y x
       simpa [JP, real_inner_comm] using this
     rw [hskew, Submodule.coe_inner]
@@ -294,9 +294,9 @@ private theorem inner_smul_smul_exteriorPower {W : Type*} [NormedAddCommGroup W]
 
 private theorem apply_eq_of_norm_starProjection_eq_one {J : AlmostComplexStructure V}
     (hJ : ∀ u w, ⟪J u, J w⟫ = ⟪u, w⟫) {P : Submodule ℝ V} {u w : P}
-    (hu : ‖u‖ = 1) (hw : ‖w‖ = 1) (hproj : P.starProjection (J u.1) = w.1) :
-    w.1 = J u.1 := by
-  have hnorm : ‖P.starProjection (J u.1)‖ = ‖J u.1‖ := by
+    (hu : ‖u‖ = 1) (hw : ‖w‖ = 1) (hproj : P.starProjection (J u.val) = w.val) :
+    w.val = J u.val := by
+  have hnorm : ‖P.starProjection (J u.val)‖ = ‖J u.val‖ := by
     rw [hproj, Submodule.norm_coe, hw, J.norm_apply hJ, Submodule.norm_coe, hu]
   rw [← hproj]
   exact P.starProjection_eq_self_iff.2 ((P.mem_iff_norm_starProjection _).2 hnorm)
@@ -372,21 +372,22 @@ theorem norm_kahlerPowerForm {J : AlmostComplexStructure V}
     b.orthonormal.comp ι (fun i j hij ↦ Fin.ext (by simpa [ι] using congrArg Fin.val hij))
   have hadapt (j : Fin r) : w ⟨2 * (j : ℕ) + 1, by omega⟩ = J (w ⟨2 * (j : ℕ), by omega⟩) := by
     simpa [w, ι] using hb ⟨(j : ℕ), by omega⟩
-  have hcal : IsCalibratedFrame (J.kahlerPowerForm r) w :=
-    isCalibratedFrame_iff.2 ⟨hw, kahlerPowerForm_apply_of_adapted hw hadapt⟩
-  exact hcal.norm_eq_one (norm_kahlerPowerForm_le hJ r)
+  have hcal : (J.kahlerPowerForm r).IsCalibratedFrame w :=
+    ContinuousAlternatingMap.isCalibratedFrame_iff.2
+      ⟨hw, kahlerPowerForm_apply_of_adapted hw hadapt⟩
+  exact le_antisymm (norm_kahlerPowerForm_le hJ r) hcal.one_le_norm
 
 /-- **Equality case of the Wirtinger inequality** for an orthogonal almost complex structure: a
 `2r`-frame `v` is calibrated by `ωʳ / r!` precisely when `v` is real-orthonormal and shares its
 exterior product with a `J`-adapted orthonormal frame `(w₀, J w₀, …, w_{2r-2}, J w_{2r-2})`. -/
 theorem isCalibratedFrame_kahlerPowerForm_iff {J : AlmostComplexStructure V}
     (hJ : ∀ u w, ⟪J u, J w⟫ = ⟪u, w⟫) {r : ℕ} (v : Fin (2 * r) → V) :
-    IsCalibratedFrame (J.kahlerPowerForm r) v ↔
+    (J.kahlerPowerForm r).IsCalibratedFrame v ↔
       Orthonormal ℝ v ∧ ∃ w : Fin (2 * r) → V, Orthonormal ℝ w ∧
         (∀ j : Fin r, w ⟨2 * (j : ℕ) + 1, by omega⟩ = J (w ⟨2 * (j : ℕ), by omega⟩)) ∧
         ιMulti ℝ (2 * r) v = ιMulti ℝ (2 * r) w := by
   constructor
-  · rw [isCalibratedFrame_iff]
+  · rw [ContinuousAlternatingMap.isCalibratedFrame_iff]
     rintro ⟨hv, hval⟩
     obtain ⟨w, μ, ε, hw, hμ, hε, hι, heval, hμ_eq⟩ := exists_normalForm_eval_of_orthonormal hJ hv
     have hprod_nonneg : 0 ≤ ∏ j, μ j := Finset.prod_nonneg fun j _ ↦ (hμ j).1
@@ -407,8 +408,8 @@ theorem isCalibratedFrame_kahlerPowerForm_iff {J : AlmostComplexStructure V}
       nlinarith [(hμ j).1]
     exact ⟨hv, w, hw, fun j ↦ hμ_eq j (hall1 j), by simpa [hε1] using hι⟩
   · rintro ⟨hv, w, hw, hadapt, hι⟩
-    exact (isCalibratedFrame_iff_of_ιMulti_eq (J.kahlerPowerForm r) hv hw hι).2
-      (isCalibratedFrame_iff.2 ⟨hw, kahlerPowerForm_apply_of_adapted hw hadapt⟩)
+    exact (ContinuousAlternatingMap.isCalibratedFrame_iff.2
+      ⟨hw, kahlerPowerForm_apply_of_adapted hw hadapt⟩).of_ιMulti_eq hv hι
 
 /-- Lifting an order embedding `Fin r ↪o Fin n` to consecutive pairs `Fin (2 * r) ↪o Fin (2 * n)`
 by `i ↦ 2 * e (i / 2) + i % 2`. -/
@@ -457,10 +458,10 @@ private theorem doubleOrderEmb_injective {n r : ℕ} :
 
 private theorem noncommProd_adapted_eq_exteriorPowerBasis {n r : ℕ}
     (b : OrthonormalBasis (Fin (2 * n)) ℝ V) (s : Set.powersetCard (Fin n) r)
-    (hcs : (s.1 : Set (Fin n)).Pairwise (Function.onFun Commute fun k : Fin n ↦
+    (hcs : (s.val : Set (Fin n)).Pairwise (Function.onFun Commute fun k : Fin n ↦
       _root_.ExteriorAlgebra.ιMulti ℝ 2
         ![b ⟨2 * (k : ℕ), by omega⟩, b ⟨2 * (k : ℕ) + 1, by omega⟩])) :
-    s.1.noncommProd (fun k : Fin n ↦
+    s.val.noncommProd (fun k : Fin n ↦
       _root_.ExteriorAlgebra.ιMulti ℝ 2
         ![b ⟨2 * (k : ℕ), by omega⟩, b ⟨2 * (k : ℕ) + 1, by omega⟩]) hcs =
       (b.exteriorPower (2 * r)
@@ -478,7 +479,7 @@ private theorem noncommProd_adapted_eq_exteriorPowerBasis {n r : ℕ}
       rw [← OrthonormalBasis.coe_toBasis, OrthonormalBasis.toBasis_exteriorPower, basis_apply,
         ιMulti_family, OrthonormalBasis.coe_toBasis]
     rw [hBs, ιMulti_apply_coe, Equiv.symm_apply_apply]
-  have hs_eq : s.1 = ((List.finRange r).map e).toFinset := by
+  have hs_eq : s.val = ((List.finRange r).map e).toFinset := by
     ext k
     simp only [List.mem_toFinset, List.mem_map, List.mem_finRange, true_and]
     exact (Set.powersetCard.mem_range_ofFinEmbEquiv_symm_iff_mem s k).symm
@@ -517,15 +518,15 @@ private theorem kahlerPowerForm_symm_eq_sum_adapted {J : AlmostComplexStructure 
     ← Finset.sum_coe_sort ((Finset.univ : Finset (Fin n)).powersetCard r)]
   refine Finset.sum_bij
     (fun (s : ((Finset.univ : Finset (Fin n)).powersetCard r)) _ ↦
-      Set.powersetCard.ofCard (Finset.mem_powersetCard.mp s.2).2)
+      Set.powersetCard.ofCard (Finset.mem_powersetCard.mp s.property).2)
     (fun _ _ ↦ Finset.mem_univ _)
     (fun s₁ _ s₂ _ h ↦ Subtype.ext (by
       simpa [Set.powersetCard.ofCard] using congrArg Subtype.val h))
     (fun s _ ↦
-      ⟨⟨s.1, Finset.mem_powersetCard.mpr ⟨Finset.subset_univ _, Set.powersetCard.card_eq s⟩⟩,
+      ⟨⟨s.val, Finset.mem_powersetCard.mpr ⟨Finset.subset_univ _, Set.powersetCard.card_eq s⟩⟩,
         Finset.mem_univ _, rfl⟩)
     (fun s _ ↦ noncommProd_adapted_eq_exteriorPowerBasis b
-      (Set.powersetCard.ofCard (Finset.mem_powersetCard.mp s.2).2) _)
+      (Set.powersetCard.ofCard (Finset.mem_powersetCard.mp s.property).2) _)
 
 /-- **Hilbert norm of the normalized Kähler power**: for an orthogonal almost complex structure `J`
 on a `2n`-dimensional real inner product space, the Hilbert norm `√⟨ωʳ / r!, ωʳ / r!⟩` equals
@@ -670,8 +671,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [InnerProd
 finite-dimensionality required): an ordered pair `(v₀, v₁)` is calibrated by `kahlerTwoForm E`
 precisely when `‖v₀‖ = 1` and `v₁ = i • v₀`. -/
 theorem isCalibratedFrame_kahlerTwoForm_iff (v : Fin 2 → E) :
-    IsCalibratedFrame (kahlerTwoForm E) v ↔ ‖v 0‖ = 1 ∧ v 1 = Complex.I • v 0 := by
-  rw [isCalibratedFrame_iff]
+    (kahlerTwoForm E).IsCalibratedFrame v ↔ ‖v 0‖ = 1 ∧ v 1 = Complex.I • v 0 := by
+  rw [ContinuousAlternatingMap.isCalibratedFrame_iff]
   constructor
   · rintro ⟨hv, hval⟩
     refine ⟨hv.1 0, ?_⟩
@@ -847,7 +848,7 @@ finite-dimensional Hermitian vector space `E` is calibrated by `ωʳ / r!` preci
 real-orthonormal and shares its exterior product with `TauCeti.complexToRealFamily u` for some
 complex-orthonormal family `u : Fin r → E`. -/
 theorem isCalibratedFrame_kahlerPowerForm_iff {r : ℕ} (v : Fin (2 * r) → E) :
-    IsCalibratedFrame (kahlerPowerForm E r) v ↔
+    (kahlerPowerForm E r).IsCalibratedFrame v ↔
       Orthonormal ℝ v ∧ ∃ u : Fin r → E, Orthonormal ℂ u ∧
         ιMulti ℝ (2 * r) v = ιMulti ℝ (2 * r) (complexToRealFamily u) := by
   rw [kahlerPowerForm, AlmostComplexStructure.isCalibratedFrame_kahlerPowerForm_iff

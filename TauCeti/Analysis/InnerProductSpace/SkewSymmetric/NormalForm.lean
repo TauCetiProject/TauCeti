@@ -113,7 +113,7 @@ private theorem exists_skew_invariant_plane {r : ℕ} (hdim : finrank ℝ E = 2 
       rw [Submodule.mem_orthogonal_singleton_iff_inner_right] at hx ⊢
       rw [← neg_eq_zero, ← hA p x, hAp, inner_zero_left]
     let AW : W →ₗ[ℝ] W := A.restrict hW_inv
-    have hAW : ∀ x y : W, ⟪AW x, y⟫ = -⟪x, AW y⟫ := fun x y ↦ hA x.1 y.1
+    have hAW : ∀ x y : W, ⟪AW x, y⟫ = -⟪x, AW y⟫ := fun x y ↦ hA x.val y.val
     have hp0 : p ≠ 0 := norm_ne_zero_iff.mp (by rw [hp]; exact one_ne_zero)
     have hW_dim : finrank ℝ W = 2 * r + 1 := by
       have h := Submodule.finrank_add_finrank_orthogonal (ℝ ∙ p)
@@ -121,8 +121,8 @@ private theorem exists_skew_invariant_plane {r : ℕ} (hdim : finrank ℝ E = 2 
       dsimp only [W]
       omega
     obtain ⟨q, hq, hAq⟩ := AW.exists_norm_eq_one_apply_eq_zero_of_skew_odd hAW ⟨r, hW_dim⟩
-    refine ⟨p, q.1, 0, le_rfl, hp, by simpa using hq,
-      Submodule.mem_orthogonal_singleton_iff_inner_right.mp q.2, by simp [hAp], ?_⟩
+    refine ⟨p, q.val, 0, le_rfl, hp, by simpa using hq,
+      Submodule.mem_orthogonal_singleton_iff_inner_right.mp q.property, by simp [hAp], ?_⟩
     simpa [AW] using congrArg Subtype.val hAq
   · have hpos : 0 < ‖A p‖ := norm_pos_iff.mpr hAp
     refine ⟨p, ‖A p‖⁻¹ • A p, ‖A p‖, hpos.le, hp, norm_smul_inv_norm hAp, ?_, ?_, ?_⟩
@@ -150,9 +150,9 @@ private theorem orthonormal_plane_append_orthogonal {r : ℕ} {p q : E}
       (Fin.cases (motive := fun _ ↦ Fin 2 → E) (fun k ↦ ![p, q] k)
         (fun j k ↦ (bQ (j, k) : E)) jk.1) jk.2) := by
   have hp_orth (j : Fin r) (k : Fin 2) : ⟪p, (bQ (j, k) : E)⟫ = 0 :=
-    (bQ (j, k)).2 p (Submodule.subset_span (by simp))
+    (bQ (j, k)).property p (Submodule.subset_span (by simp))
   have hq_orth (j : Fin r) (k : Fin 2) : ⟪q, (bQ (j, k) : E)⟫ = 0 :=
-    (bQ (j, k)).2 q (Submodule.subset_span (by simp))
+    (bQ (j, k)).property q (Submodule.subset_span (by simp))
   refine ⟨fun ⟨j, k⟩ ↦ ?_, fun ⟨j₁, k₁⟩ ⟨j₂, k₂⟩ hne ↦ ?_⟩
   · cases j using Fin.cases with
     | zero => fin_cases k <;> simp [hp, hq]
@@ -232,7 +232,7 @@ theorem exists_orthonormalBasis_skew_normalForm {r : ℕ}
       have h := Submodule.finrank_add_finrank_orthogonal P
       rw [finrank_span_pair_of_orthonormal hp hq hpq, hdim] at h
       omega
-    obtain ⟨bQ, μQ, hμQ, hAQ0, hAQ1⟩ := ih hQ_dim (A.restrict hQ_inv) (fun x y ↦ hA x.1 y.1)
+    obtain ⟨bQ, μQ, hμQ, hAQ0, hAQ1⟩ := ih hQ_dim (A.restrict hQ_inv) (fun x y ↦ hA x.val y.val)
     let b := orthonormalBasisOfPlaneAndOrthogonal hp hq hpq bQ
     have hb0 : b (0, 0) = p := by simp [b, orthonormalBasisOfPlaneAndOrthogonal]
     have hb1 : b (0, 1) = q := by simp [b, orthonormalBasisOfPlaneAndOrthogonal]

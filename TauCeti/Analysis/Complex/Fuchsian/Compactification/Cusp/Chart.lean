@@ -135,7 +135,7 @@ private theorem cuspChartInv_of_ne_zero {q : ℂ} (hq : q ≠ 0) :
 private theorem cuspChartInv_coe (q : {q : 𝔻 // q ≠ 0}) :
     cuspChartInv D q =
       ofQuotient (Quotient.mk _ (D.scaling⁻¹ • invQParamUpperHalfPlane D.width D.width_pos q)) := by
-  rw [cuspChartInv_of_ne_zero D (fun h ↦ q.2 (Complex.UnitDisc.coe_injective h)),
+  rw [cuspChartInv_of_ne_zero D (fun h ↦ q.property (Complex.UnitDisc.coe_injective h)),
     ← coe_invQParamUpperHalfPlane D.width D.width_pos q, ofComplex_apply]
 
 /-- The inverse of the cusp chart is a left inverse of the q-coordinate on orbits. -/
@@ -192,7 +192,8 @@ private theorem cuspChartFun_ofQuotient_mk (hA : D.width ≤ A) {z : ℍ}
     cuspChartFun D A (ofQuotient (Quotient.mk _ z)) = coordinate D z := by
   have hfac : (fun z : horodisc D A ↦ coordinate D z).FactorsThrough
       (fun z : horodisc D A ↦ ofQuotient (Quotient.mk (orbitRel Γ ℍ) (z : ℍ))) := fun z z' h ↦ by
-    have := (quotientMk_eq_iff_qCoordinate_eq D hA z.2 z'.2).mp (ofQuotient_injective h)
+    have := (quotientMk_eq_iff_qCoordinate_eq D hA z.property z'.property).mp
+        (ofQuotient_injective h)
     dsimp only
     rw [← coe_qCoordinate, ← coe_qCoordinate, this]
   exact hfac.extend_apply _ ⟨z, hz⟩

@@ -18,7 +18,8 @@ The construction preserves the original norm and real scalar action. It is a nam
 structure rather than a global instance, since it depends on `J`.
 
 `TauCeti.AlmostComplexStructure.norm_apply` supplies norm preservation from preservation of the
-real inner product, `TauCeti.AlmostComplexStructure.inner_apply_self` supplies the orthogonality
+real inner product, `TauCeti.AlmostComplexStructure.inner_apply_left_eq_neg_swap` the antisymmetry
+`⟪J v, w⟫ = -⟪J w, v⟫`, `TauCeti.AlmostComplexStructure.inner_apply_self` the orthogonality
 `⟪J v, v⟫ = 0`, and
 `TauCeti.AlmostComplexStructure.real_inner_ofComplexModule_apply_ofComplexModule_apply` records
 that multiplication by `i` preserves a compatible real inner product on a complex inner product
@@ -41,6 +42,13 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 theorem norm_apply {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
     (v : V) : ‖J v‖ = ‖v‖ :=
   (J.toLinearMap.isometryOfInner hJ).norm_map v
+
+/-- For an orthogonal almost complex structure, `(v, w) ↦ ⟪J v, w⟫` is antisymmetric:
+`⟪J v, w⟫ = -⟪J w, v⟫`. -/
+theorem inner_apply_left_eq_neg_swap {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v w : V) : ⟪J v, w⟫ = -⟪J w, v⟫ := by
+  simpa only [innerₗ_apply_apply, real_inner_comm v (J w)] using
+    J.bilinForm_apply_left_eq_neg_apply_right (g := innerₗ V) hJ v w
 
 /-- An orthogonal almost complex structure turns every vector by a right angle, `⟪J v, v⟫ = 0`. -/
 theorem inner_apply_self {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)

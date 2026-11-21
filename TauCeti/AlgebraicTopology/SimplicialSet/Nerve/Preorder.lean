@@ -84,17 +84,17 @@ lemma hom_ext_of_preorder {f f' : X ⟶ nerve P}
 def homEquivOfPreorder :
     (X ⟶ nerve P) ≃ {g : X _⦋0⦌ → P // ∀ ⦃x y⦄, X.Edge x y → g x ≤ g y} where
   toFun f := ⟨fun x ↦ nerveEquiv (f.app _ x), fun _ _ e ↦ le_of_edge f e⟩
-  invFun g := homOfVertex g.1 g.2
+  invFun g := homOfVertex g.val g.property
   left_inv _ := hom_ext_of_preorder fun x ↦ nerveEquiv_homOfVertex_app _ _ x
-  right_inv g := Subtype.ext (funext fun x ↦ nerveEquiv_homOfVertex_app g.1 g.2 x)
+  right_inv g := Subtype.ext (funext fun x ↦ nerveEquiv_homOfVertex_app g.val g.property x)
 
 @[simp]
 lemma homEquivOfPreorder_apply_coe (f : X ⟶ nerve P) (x : X _⦋0⦌) :
-    (homEquivOfPreorder f).1 x = nerveEquiv (f.app _ x) :=
+    (homEquivOfPreorder f).val x = nerveEquiv (f.app _ x) :=
   (rfl)
 
 lemma homEquivOfPreorder_symm_apply (g : {g : X _⦋0⦌ → P // ∀ ⦃x y⦄, X.Edge x y → g x ≤ g y}) :
-    homEquivOfPreorder.symm g = homOfVertex g.1 g.2 :=
+    homEquivOfPreorder.symm g = homOfVertex g.val g.property :=
   (rfl)
 
 end CategoryTheory.nerve

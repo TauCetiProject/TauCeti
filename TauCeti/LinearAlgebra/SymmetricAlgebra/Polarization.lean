@@ -119,7 +119,7 @@ theorem span_pow_eq_homogeneousSubmodule (n : ℕ) :
   -- the word lies in the symmetric algebra of the finite-dimensional span `W` of its letters
   let W := Submodule.span K (l.toFinset : Set V)
   let l' : List W :=
-    l.attach.map fun v : {x // x ∈ l} ↦ ⟨v.1, Submodule.subset_span (by simp)⟩
+    l.attach.map fun v : {x // x ∈ l} ↦ ⟨v.val, Submodule.subset_span (by simp)⟩
   have hmem := prod_map_ι_mem_homogeneousSubmodule K W l'
   rw [← span_pow_eq_homogeneousSubmodule_of_finiteDimensional] at hmem
   have himg := Submodule.apply_mem_span_image_of_mem_span
