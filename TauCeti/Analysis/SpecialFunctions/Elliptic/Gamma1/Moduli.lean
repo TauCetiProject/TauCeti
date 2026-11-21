@@ -280,8 +280,10 @@ theorem smul_mk_zsmul_weierstrassPoint_one_div {γ : SL(2, ℤ)} (hγ : γ ∈ G
 theorem nsmul_weierstrassPoint_one_div_mul {M : ℕ} (hM : M ≠ 0) (z : ℍ) :
     M • z.periodPair.weierstrassPoint (1 / (N * M : ℕ)) =
       z.periodPair.weierstrassPoint (1 / N) := by
-  rw [PeriodPair.nsmul_weierstrassPoint, Nat.cast_mul, one_div, mul_inv, mul_comm (N : ℂ)⁻¹,
-    mul_inv_cancel_left₀ (Nat.cast_ne_zero.mpr hM), one_div]
+  rw [PeriodPair.nsmul_weierstrassPoint]
+  congr 1
+  push_cast
+  field_simp [Nat.cast_ne_zero.mpr hM]
 
 end UpperHalfPlane
 
