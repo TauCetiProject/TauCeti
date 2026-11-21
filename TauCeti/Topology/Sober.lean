@@ -13,8 +13,10 @@ public import TauCeti.Logic.Equiv.Set
 
 In a sober space, the generic points of irreducible components are precisely the points
 with no proper generization. Every point of a closed subset is a specialization of such a
-generic point of that subset. These facts let one choose component-generic points without
-Noetherianity or a dimension argument.
+generic point of that subset; in particular, every proper open `U ≠ ⊤` misses a point whose
+strict generizations all lie in `U` (`TopologicalSpace.Opens.exists_notMem_specializes_imp_mem`).
+These facts let one choose component-generic points without Noetherianity or a dimension
+argument.
 
 In a sober space, `x ↦ closure {x}` is a bijection from component-generic points onto
 irreducible components. For a continuous map between sober spaces, bijections on
@@ -75,6 +77,22 @@ theorem IsClosed.exists_genericPoint_specializes {X : Type*} [TopologicalSpace X
   refine ⟨(genericPoints.ofComponent C).val, (genericPoints.ofComponent C).property, ?_⟩
   exact ((genericPoints.isGenericPoint_ofComponent C).specializes mem_irreducibleComponent).map
     continuous_subtypeVal
+
+/-- Every proper open `U ≠ ⊤` of a sober space `X` misses the generic point `s` of an irreducible
+component of `X \ U`; every strict generization of `s` lies in `U`. -/
+theorem TopologicalSpace.Opens.exists_notMem_specializes_imp_mem {X : Type*} [TopologicalSpace X]
+    [QuasiSober X] [T0Space X] (U : TopologicalSpace.Opens X) (hU : U ≠ ⊤) :
+    ∃ s : X, s ∉ U ∧ ∀ ⦃t : X⦄, t ⤳ s → t ≠ s → t ∈ U := by
+  obtain ⟨z₀, hz₀⟩ : ((U : Set X)ᶜ).Nonempty :=
+    Set.nonempty_compl.mpr fun h ↦ hU (SetLike.ext' (h.trans TopologicalSpace.Opens.coe_top.symm))
+  let : QuasiSober ((U : Set X)ᶜ : Set X) :=
+    U.isOpen.isClosed_compl.isClosedEmbedding_subtypeVal.quasiSober
+  obtain ⟨s, hs, -⟩ := U.isOpen.isClosed_compl.exists_genericPoint_specializes hz₀
+  refine ⟨s.val, s.property, fun t hts hne ↦ ?_⟩
+  by_contra htU
+  have hts' : (⟨t, htU⟩ : ((U : Set X)ᶜ : Set X)) ⤳ s :=
+    Topology.IsInducing.subtypeVal.specializes_iff.mp hts
+  exact hne (congrArg Subtype.val ((TauCeti.mem_genericPoints_iff.mp hs) ⟨t, htU⟩ hts'))
 
 section Maps
 

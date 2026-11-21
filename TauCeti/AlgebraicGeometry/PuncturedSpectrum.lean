@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Scheme
-public import Mathlib.RingTheory.Spectrum.Prime.Topology
+public import Mathlib.AlgebraicGeometry.Stalk
 public import TauCeti.RingTheory.LocalRing.Spectrum
+import Mathlib.AlgebraicGeometry.Properties
+import TauCeti.Topology.Sober
 
 /-!
 # Punctured spectra of local rings
@@ -36,10 +37,15 @@ by finitely many basic opens, so that covers can be described and glued chart by
 * `TauCeti.IsLocalRing.preimage_puncturedSpectrum`: for an algebra `A'` over `A` whose closed
   point is the only point over the closed point of `Spec A`, the punctured spectrum of `A'` is the
   preimage of that of `A`.
+* `TauCeti.fromSpecStalk_preimage_eq_puncturedSpectrum_of_specializes` and
+  `AlgebraicGeometry.Scheme.Opens.exists_notMem_fromSpecStalk_preimage_eq_puncturedSpectrum`: at a
+  point `s ∉ U` whose strict generizations lie in `U`, the preimage of `U` in `Spec 𝒪_{X,s}` is
+  `TauCeti.IsLocalRing.puncturedSpectrum (X.presheaf.stalk s)`, and every proper open `U ≠ ⊤`
+  admits such a point.
 
 ## References
 
-* The Stacks Project, Section 58.20 (Tag 0BM7).
+* The Stacks Project, Section 58.20 (Tag 0BM7) and Lemma 58.21.6 (Tag 0EY7).
 * Ported from Taylor Dupuy, Thomas Tucker and Zhuoran Wang, pcfawd-formalization at commit
   `9a20b3f` (Apache 2.0), `Pcf/Stacks/Purity/PuncturedSpectrum.lean`.
 -/
@@ -176,3 +182,40 @@ theorem preimage_puncturedSpectrum
 end
 
 end TauCeti.IsLocalRing
+
+namespace TauCeti
+
+/-- If `s ∉ U` and every strict generization of `s` lies in `U`, then the preimage of `U` along
+`Spec 𝒪_{X,s} ⟶ X` is the punctured spectrum of `𝒪_{X,s}`. -/
+theorem fromSpecStalk_preimage_eq_puncturedSpectrum_of_specializes
+    {X : Scheme.{u}} {U : X.Opens} {s : X} (hs : s ∉ U)
+    (hgen : ∀ ⦃t : X⦄, t ⤳ s → t ≠ s → t ∈ U) :
+    (X.fromSpecStalk s) ⁻¹ᵁ U = IsLocalRing.puncturedSpectrum (X.presheaf.stalk s) := by
+  ext p
+  rw [SetLike.mem_coe, SetLike.mem_coe, Scheme.Hom.mem_preimage]
+  refine Iff.trans ?_ (IsLocalRing.mem_puncturedSpectrum_iff (X.presheaf.stalk s) p).symm
+  constructor
+  · intro hpU hpc
+    subst hpc
+    exact hs (Scheme.fromSpecStalk_closedPoint (X := X) (x := s) ▸ hpU)
+  · intro hne
+    have hspec : X.fromSpecStalk s p ⤳ s := X.range_fromSpecStalk.subset ⟨p, rfl⟩
+    have hinj : X.fromSpecStalk s p ≠ s := fun heq ↦
+      hne ((X.fromSpecStalk s).isEmbedding.injective
+        (heq.trans Scheme.fromSpecStalk_closedPoint.symm))
+    exact hgen hspec hinj
+
+end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Opens
+
+/-- For any proper open `U ≠ ⊤` of a scheme `X`, there exists a point `s ∉ U` such that the
+preimage of `U` in `Spec 𝒪_{X,s}` is the punctured spectrum of `𝒪_{X,s}`. -/
+theorem exists_notMem_fromSpecStalk_preimage_eq_puncturedSpectrum
+    {X : Scheme.{u}} (U : X.Opens) (hU : U ≠ ⊤) :
+    ∃ s : X, s ∉ U ∧
+      (X.fromSpecStalk s) ⁻¹ᵁ U = TauCeti.IsLocalRing.puncturedSpectrum (X.presheaf.stalk s) := by
+  obtain ⟨s, hs, hgen⟩ := U.exists_notMem_specializes_imp_mem hU
+  exact ⟨s, hs, TauCeti.fromSpecStalk_preimage_eq_puncturedSpectrum_of_specializes hs hgen⟩
+
+end AlgebraicGeometry.Scheme.Opens

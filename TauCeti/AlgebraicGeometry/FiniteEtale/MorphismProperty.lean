@@ -120,6 +120,19 @@ instance faithful_pullback (f : T ⟶ S) [IsDominant f] : (pullback f).Faithful 
     Functor.Faithful.of_iso (pullbackCompEquivOver f).symm
   exact Functor.Faithful.of_comp (pullback f) (equivOver T).functor
 
+/-- Essential surjectivity of `TauCeti.FiniteEtaleScheme.pullback f` is equivalent to essential
+surjectivity of Mathlib's `MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f`. -/
+theorem essSurj_pullback_iff (f : T ⟶ S) :
+    letI : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsStableUnderBaseChange := .inf
+    (pullback f).EssSurj ↔
+      (MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f).EssSurj := by
+  let : (@IsFinite ⊓ @Etale : MorphismProperty Scheme.{u}).IsStableUnderBaseChange := .inf
+  refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩
+  · have h := Functor.essSurj_of_iso (pullbackCompEquivOver f)
+    exact ⟨fun X ↦ Functor.essImage_comp_apply_of_essSurj.mp (h.mem_essImage X)⟩
+  · have := Functor.essSurj_of_iso (pullbackCompEquivOver f).symm
+    exact Functor.essSurj_of_comp_fully_faithful (pullback f) (equivOver T).functor
+
 /-- Faithfulness of `FiniteEtaleScheme.pullback f` transports across `equivOver` to
 `MorphismProperty.Over.pullback (@IsFinite ⊓ @Etale) ⊤ f`. -/
 instance faithful_overPullback (f : T ⟶ S)
