@@ -255,10 +255,10 @@ theorem zeroCharge_pos {f : C(Y, ℂ)} {σ : C(𝔻, Y)} (h : IsCompact (σ ⁻�
   have hx := mem_ball_zero_iff.2 x.norm_lt_one
   have han := hφd.analyticOnNhd isOpen_ball
   obtain ⟨w, hw, hφw⟩ := exists_mem_ball_ne_zero h hφ
-  refine Nat.cast_pos.2 (ENat.toNat_pos ((han x hx).analyticOrderAt_ne_zero.2 hx0) fun htop ↦ ?_)
-  -- An infinite order would make `φ` vanish near `x`, hence on the whole disc.
-  exact hφw (han.eqOn_zero_of_preconnected_of_eventuallyEq_zero (convex_ball _ _).isPreconnected hx
-    (analyticOrderAt_eq_top.1 htop) hw)
+  -- The order at `x` is finite since it is zero at `w`, where `φ` does not vanish.
+  exact Nat.cast_pos.2 (ENat.toNat_pos ((han x hx).analyticOrderAt_ne_zero.2 hx0)
+    (han.analyticOrderAt_ne_top_of_isPreconnected (convex_ball _ _).isPreconnected hw hx
+      (by simp [(han w hw).analyticOrderAt_eq_zero.2 hφw])))
 
 end ZeroCharge
 
