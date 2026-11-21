@@ -205,7 +205,7 @@ theorem fourierMultiplierCLM_laplacian (g : E → 𝕜) (f : 𝓢(E, F)) :
       ext1 φ
       by_cases hF : CompleteSpace F
       · have hg := fun hg ↦ hmain ⟨hF, hg⟩
-        simp [fourierMultiplierCLM_apply, smulLeftCLM_of_not_hasTemperateGrowth hg]
+        simp [fourierMultiplierCLM_apply, TauCeti.smulLeftCLM_of_not_hasTemperateGrowth hg]
       · simp [fourierMultiplierCLM_apply, fourier_eq_zero_of_not_completeSpace hF]
     simp only [h, zero_apply]
     exact (map_zero _).symm

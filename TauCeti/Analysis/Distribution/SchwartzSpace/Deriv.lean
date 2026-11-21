@@ -16,8 +16,8 @@ import TauCeti.Analysis.Normed.Operator.Basic
 
 Directional derivatives of a Schwartz function commute, since its second derivative is symmetric,
 and they commute with translation (`SchwartzMap.lineDerivOp_compSubConstCLM`) and with
-multiplication by a constant from any normed field acting on the values
-(`SchwartzMap.lineDerivOp_smul`).
+multiplication by a constant from any normed field acting on the values, provided this action
+commutes with real scalar multiplication (`SchwartzMap.lineDerivOp_smul`).
 Near a point where a Schwartz function is constant, its line derivatives vanish
 (`SchwartzMap.lineDerivOp_eventuallyEq_zero`).
 For a Schwartz function valued in a finite `L^p` product, such as Euclidean space, taking a
@@ -71,9 +71,9 @@ theorem lineDerivOp_postcompCLM (φ : 𝓢(V, F)) (L : F →L[𝕜] G) (v : V) :
     ∂_{v} (φ.postcompCLM L) = (∂_{v} φ).postcompCLM L := by
   ext x
   -- `L` is differentiated as a real-linear map.
-  rw [lineDerivOp_apply_eq_fderiv, coe_postcompCLM, ← L.coe_restrictScalars' (R := ℝ),
-    (L.restrictScalars ℝ).fderiv_comp_left φ.differentiableAt]
-  simp [lineDerivOp_apply_eq_fderiv]
+  have h := (L.restrictScalars ℝ).fderiv_comp_left (φ.differentiableAt (x := x))
+  simpa only [lineDerivOp_apply_eq_fderiv, coe_postcompCLM, postcompCLM_apply,
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.comp_apply] using congr($h v)
 
 open Laplacian in
 /-- The Laplacian commutes with a continuous linear map on the values of a Schwartz
@@ -84,9 +84,9 @@ theorem laplacian_postcompCLM {W : Type*} [NormedAddCommGroup W] [InnerProductSp
     Δ (φ.postcompCLM L) = (Δ φ).postcompCLM L := by
   ext x
   -- `L` is applied as a real-linear map.
-  rw [laplacian_apply, coe_postcompCLM, ← L.coe_restrictScalars' (R := ℝ),
-    (φ.smooth 2).contDiffAt.laplacian_CLM_comp_left, postcompCLM_apply, laplacian_apply,
-    Function.comp_apply, ContinuousLinearMap.coe_restrictScalars']
+  have h := (φ.smooth 2).contDiffAt.laplacian_CLM_comp_left (l := L.restrictScalars ℝ) (x := x)
+  simpa only [laplacian_apply, coe_postcompCLM, postcompCLM_apply,
+    ContinuousLinearMap.coe_restrictScalars', Function.comp_apply] using h
 
 /-- **Directional derivatives of Schwartz functions commute.** -/
 theorem lineDerivOp_comm (f : 𝓢(V, F)) (v w : V) : ∂_{v} (∂_{w} f) = ∂_{w} (∂_{v} f) := by
@@ -139,8 +139,9 @@ theorem laplacian_eq_lineDerivOp_one_I (f : 𝓢(ℂ, F)) :
   simp [laplacian_eq_sum Complex.orthonormalBasisOneI, Fin.sum_univ_two]
 
 /-- Directional differentiation commutes with multiplication by a constant `c` from any normed
-field `R` acting on the values. Mathlib's `LineDeriv.lineDerivOp_smul` covers only `RCLike`
-scalars on Schwartz space. -/
+field `R` acting on the values, provided this action commutes with real scalar multiplication
+(`SMulCommClass ℝ R F`). Mathlib's `LineDeriv.lineDerivOp_smul` covers only `RCLike` scalars on
+Schwartz space. -/
 @[simp]
 protected theorem lineDerivOp_smul {R : Type*} [NormedField R] [NormedSpace R F]
     [SMulCommClass ℝ R F] (f : 𝓢(V, F)) (c : R) (v : V) : ∂_{v} (c • f) = c • ∂_{v} f := by
@@ -169,7 +170,8 @@ theorem lineDerivOp_bilinLeftCLM {E : Type*} [NormedAddCommGroup E] [NormedSpace
 theorem lineDerivOp_smulLeftCLM (f : 𝓢(V, F)) {g : V → 𝕜} (hg : g.HasTemperateGrowth) (v : V) :
     ∂_{v} (smulLeftCLM F g f) =
       smulLeftCLM F (fun x ↦ fderiv ℝ g x v) f + smulLeftCLM F g (∂_{v} f) := by
-  rw [smulLeftCLM_eq_bilinLeftCLM hg, smulLeftCLM_eq_bilinLeftCLM (hg.fderiv_apply v),
+  rw [TauCeti.smulLeftCLM_eq_bilinLeftCLM hg,
+    TauCeti.smulLeftCLM_eq_bilinLeftCLM (hg.fderiv_apply v),
     lineDerivOp_bilinLeftCLM]
 
 /-- **The Leibniz rule for multiplication by a linear function**:
@@ -218,8 +220,8 @@ theorem norm_iterate_lineDerivOp_smulLeftCLM_clm_le_of_support_subset_closedBall
     (add_le_add (L.norm_apply_smul_le_of_support_subset_closedBall hsupp x) ?_)
   -- The scalar `k + 1`, cast into `𝕜`, is the image of the real `k + 1` and keeps its norm.
   have hk : ‖((k : 𝕜) + 1)‖ = k + 1 := by
-    rw [show ((k : 𝕜) + 1) = algebraMap ℝ 𝕜 (k + 1) by simp, norm_algebraMap',
-      Real.norm_of_nonneg (by positivity)]
+    simpa only [Nat.cast_succ, map_add, map_natCast, map_one] using
+      (norm_algebraMap' 𝕜 ((k + 1 : ℕ) : ℝ)).trans (Real.norm_natCast (k + 1))
   rw [norm_smul, norm_mul, hk, mul_assoc ((k : ℝ) + 1) ‖L‖ ‖v‖]
   gcongr
   exact L.le_opNorm v
