@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame.Orthonormal
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Curve.OrientedNormal
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Topology.Path
 
@@ -17,16 +16,15 @@ public import Mathlib.Topology.Path
 
 For a pair of tangent fields `s = (s₀, s₁)` and a curve `γ` in a Riemannian manifold, the complex
 number `⟪s₀, γ'⟫ + i ⟪s₁, γ'⟫` is the coordinate of the velocity `γ'(t)` in the frame
-(`TauCeti.Manifold.frameVelocityCoordinates`). When `s` is a local frame of a surface, orthonormal
-at `γ t`, it determines the velocity, `γ' = Re z • s₀ + Im z • s₁`, and has the same norm, so it
-vanishes only where the velocity does. It is periodic along a periodic curve, continuous along a
-`C¹` curve for a continuous metric, and `C^k` along a `C^(k+1)` curve for a `C^k` frame and metric.
+(`TauCeti.Manifold.frameVelocityCoordinates`). When `s` is orthonormal and spanning at `γ t`, it
+determines the velocity, `γ' = Re z • s₀ + Im z • s₁`. When `s` is a local frame of a surface,
+orthonormal at `γ t`, it has the norm of the velocity, so it vanishes only where the velocity
+does. It is periodic along a periodic curve, continuous along a `C¹` curve for a continuous
+metric, and `C^k` along a `C^(k+1)` curve for a `C^k` frame and metric.
 
 For a regular periodic `C¹` curve inside the domain of a frame orthonormal along it, the unit
 coordinates `z / ‖z‖` form a loop in the unit circle `Circle`, the unit tangent read in the frame
-(`TauCeti.Manifold.exists_path_eq_frameVelocityCoordinates_div_norm`). The left unit normal has
-coordinates `(-Im z, Re z) / ‖γ'‖` in a positively oriented frame
-(`TauCeti.Manifold.orientedUnitNormal_eq_frameVelocityCoordinates`). If `θ` is a continuous
+(`TauCeti.Manifold.exists_path_eq_frameVelocityCoordinates_div_norm`). If `θ` is a continuous
 angle of this loop, the unit tangent is `T = cos θ s₀ + sin θ s₁`.
 
 ## Main results
@@ -75,19 +73,21 @@ theorem frameVelocityCoordinates_im (s : Fin 2 → Π x : M, TangentSpace I x) (
     (t : ℝ) : (frameVelocityCoordinates s γ t).im = inner ℝ (s 1 (γ t)) (curveVelocity I γ t) :=
   (rfl)
 
+/-- A pair orthonormal and spanning at `γ t` recovers the velocity from its complex coordinates:
+`γ' = Re z • s₀ + Im z • s₁`. For a local frame, spanning is `IsLocalFrameOn.generating`. -/
+theorem curveVelocity_eq_frameVelocityCoordinates {s : Fin 2 → Π x : M, TangentSpace I x}
+    {γ : ℝ → M} {t : ℝ} (ho : Orthonormal ℝ (fun i ↦ s i (γ t)))
+    (hsp : ⊤ ≤ Submodule.span ℝ (range fun i ↦ s i (γ t))) :
+    curveVelocity I γ t = (frameVelocityCoordinates s γ t).re • s 0 (γ t) +
+      (frameVelocityCoordinates s γ t).im • s 1 (γ t) := by
+  simpa only [Fin.sum_univ_two, OrthonormalBasis.coe_mk, frameVelocityCoordinates_re,
+    frameVelocityCoordinates_im] using
+    ((OrthonormalBasis.mk ho hsp).sum_repr' (curveVelocity I γ t)).symm
+
 section Frame
 
 variable [IsManifold I 1 M] {n : ℕ∞ω} {s : Fin 2 → Π x : M, TangentSpace I x} {u : Set M}
   {γ : ℝ → M} {t : ℝ}
-
-/-- An orthonormal frame at `γ t` recovers the velocity from its complex coordinates:
-`γ' = Re z • s₀ + Im z • s₁`. -/
-theorem curveVelocity_eq_frameVelocityCoordinates (hs : IsLocalFrameOn I E n s u)
-    (ht : γ t ∈ u) (ho : Orthonormal ℝ (fun i ↦ s i (γ t))) :
-    curveVelocity I γ t = (frameVelocityCoordinates s γ t).re • s 0 (γ t) +
-      (frameVelocityCoordinates s γ t).im • s 1 (γ t) := by
-  simpa only [Fin.sum_univ_two, frameVelocityCoordinates_re, frameVelocityCoordinates_im] using
-    (hs.sum_inner_smul_eq ht ho (curveVelocity I γ t)).symm
 
 /-- In a frame orthonormal at `γ t`, the complex coordinates of the velocity have the norm of the
 velocity. -/
@@ -108,42 +108,6 @@ theorem frameVelocityCoordinates_ne_zero (hs : IsLocalFrameOn I E n s u) (ht : �
   exact norm_ne_zero_iff.mpr hv
 
 end Frame
-
-section OrientedNormal
-
-variable [FiniteDimensional ℝ E] [IsManifold I 1 M]
-  {s : Fin 2 → Π x : M, TangentSpace I x} {γ : ℝ → M} {t : ℝ}
-
-/-- The left unit normal in a positively oriented orthonormal frame has coordinates
-`(-Im z, Re z) / ‖γ'‖`. Compatibility is required only at the evaluation point. -/
-theorem orientedUnitNormal_eq_frameVelocityCoordinates
-    (o : Orientation I M (Fin 2))
-    (ho : Orthonormal ℝ (fun i ↦ s i (γ t)))
-    (hor : s 1 (γ t) = (letI := o.fact_finrank_tangentSpace (γ t);
-      (o.orientationAt (γ t)).rightAngleRotation (s 0 (γ t)))) :
-    orientedUnitNormal o γ t =
-      (-(frameVelocityCoordinates s γ t).im / ‖curveVelocity I γ t‖) • s 0 (γ t) +
-        ((frameVelocityCoordinates s γ t).re / ‖curveVelocity I γ t‖) • s 1 (γ t) := by
-  let := o.fact_finrank_tangentSpace (γ t)
-  let b := OrthonormalBasis.mk ho (ho.linearIndependent.span_eq_top_of_card_eq_finrank
-    (by simpa using (o.fact_finrank_tangentSpace (γ t)).out.symm)).ge
-  have hb : (b : Fin 2 → TangentSpace I (γ t)) = fun i ↦ s i (γ t) := by
-    simp only [b, OrthonormalBasis.coe_mk]
-  have hvel : curveVelocity I γ t =
-      (frameVelocityCoordinates s γ t).re • s 0 (γ t) +
-        (frameVelocityCoordinates s γ t).im • s 1 (γ t) := by
-    simpa only [Fin.sum_univ_two, OrthonormalBasis.coe_toBasis, hb,
-      frameVelocityCoordinates_re, frameVelocityCoordinates_im] using
-      (b.sum_repr' (curveVelocity I γ t)).symm
-  rw [orientedUnitNormal_apply, NormedSpace.normalize, hvel, map_smul, map_add, map_smul, map_smul,
-    ← hor]
-  have hJ : (o.orientationAt (γ t)).rightAngleRotation (s 1 (γ t)) = -s 0 (γ t) := by
-    rw [hor, (o.orientationAt (γ t)).rightAngleRotation_rightAngleRotation]
-  rw [hJ]
-  simp only [smul_add, smul_smul, smul_neg, div_eq_mul_inv]
-  module
-
-end OrientedNormal
 
 /-- Along an `a`-periodic curve, the frame coordinates of the velocity are `a`-periodic. -/
 theorem periodic_frameVelocityCoordinates (s : Fin 2 → Π x : M, TangentSpace I x) {γ : ℝ → M}

@@ -23,6 +23,9 @@ Riemannian volume form (`Orientation.inner_rightAngleRotation_left`). The regula
 follows from that of the volume form (`TauCeti.isSmoothForm_riemannianVolumeForm`) and of the Riesz
 dual (`Riemannian.Tensor.contMDiffAt_rieszDual`); no local frame appears in the statement.
 
+Pointwise, an orthonormal pair `(v₀, v₁)` satisfies `v₁ = J v₀` exactly when its oriented area is
+one (`TauCeti.Manifold.Orientation.eq_rightAngleRotation_iff_riemannianVolumeForm_eq_one`).
+
 ## References
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapters 2 and 9.
@@ -54,6 +57,23 @@ theorem rightAngleRotation_tangentSpace_congr
       (o.orientationAt q).rightAngleRotation w) := by
   subst hp hv
   rfl
+
+/-- An orthonormal pair `(v₀, v₁)` of tangent vectors satisfies `v₁ = J v₀` exactly when it has
+oriented area one, `vol(v₀, v₁) = 1`. -/
+theorem eq_rightAngleRotation_iff_riemannianVolumeForm_eq_one
+    (o : Manifold.Orientation I M (Fin 2)) {x : M} {v : Fin 2 → TangentSpace I x}
+    (hv : Orthonormal ℝ v) :
+    v 1 = (letI := o.fact_finrank_tangentSpace x; (o.orientationAt x).rightAngleRotation (v 0)) ↔
+      riemannianVolumeForm o x v = 1 := by
+  let := o.fact_finrank_tangentSpace x
+  have hvol : riemannianVolumeForm o x v =
+      inner ℝ ((o.orientationAt x).rightAngleRotation (v 0)) (v 1) := by
+    rw [riemannianVolumeForm_apply, (o.orientationAt x).inner_rightAngleRotation_left,
+      (o.orientationAt x).areaForm_to_volumeForm]
+    congr 1
+    ext i
+    fin_cases i <;> rfl
+  rw [hvol, inner_eq_one_iff_of_norm_eq_one (by simpa using hv.1 0) (hv.1 1), eq_comm]
 
 variable {n : ℕ∞ω} [IsManifold I (n + 1) M]
   [IsContMDiffRiemannianBundle I n E (TangentSpace I : M → Type _)]
