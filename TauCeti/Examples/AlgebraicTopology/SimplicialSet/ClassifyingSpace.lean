@@ -34,11 +34,11 @@ example (b : Fin 2) :
         ((Functor.const (Fin 2)).obj ⟨PUnit.unit⟩)) = 𝟙 (classifyingSpace (Discrete PUnit.{1})) ∧
     classifyingSpaceMap (((Functor.const (Fin 2)).obj ⟨PUnit.unit⟩) ⋙
         ((Functor.const (Discrete PUnit.{1})).obj b)) =
-      classifyingSpaceMap ((Functor.const (Fin 2)).obj b) :=
-  ⟨by rw [show ((Functor.const (Discrete PUnit.{1})).obj b) ⋙
-        ((Functor.const (Fin 2)).obj ⟨PUnit.unit⟩) = 𝟭 (Discrete PUnit.{1}) from
-      CategoryTheory.Functor.ext (fun ⟨⟨⟩⟩ ↦ rfl) fun ⟨⟨⟩⟩ ⟨⟨⟩⟩ _ ↦ Subsingleton.elim _ _,
-    classifyingSpaceMap_id], rfl⟩
+      classifyingSpaceMap ((Functor.const (Fin 2)).obj b) := by
+  have hcomp : ((Functor.const (Discrete PUnit.{1})).obj b) ⋙
+      ((Functor.const (Fin 2)).obj ⟨PUnit.unit⟩) = 𝟭 (Discrete PUnit.{1}) :=
+    CategoryTheory.Functor.ext (fun ⟨⟨⟩⟩ ↦ rfl) fun ⟨⟨⟩⟩ ⟨⟨⟩⟩ _ ↦ Subsingleton.elim _ _
+  exact ⟨by rw [hcomp, classifyingSpaceMap_id], rfl⟩
 example (C : Type*) [Category* C] [IsEmpty C] : ¬ ContractibleSpace (classifyingSpace C) := fun _ ↦
   let ⟨e⟩ := ContractibleSpace.hequiv_unit (classifyingSpace C); IsEmpty.false (e.invFun ())
 example :

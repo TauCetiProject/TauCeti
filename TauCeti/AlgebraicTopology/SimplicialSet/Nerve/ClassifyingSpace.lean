@@ -354,15 +354,17 @@ noncomputable def finSuccHomeomorphStdSimplex (n : ℕ) :
   (congrArg (finSuccHomeomorphStdSimplex n) (vertex_eq_toTopObjMk i)).trans <|
     (finSuccHomeomorphStdSimplex_toTopObjMk n
       (nerveEquiv.symm i : (nerve (Fin (n + 1))) _⦋0⦌) _).trans (StdSimplex.map_single 0 _)
+private lemma finSuccIsoStdSimplex_inv_app_id_obj (n : ℕ) :
+    (fun i : Fin (n + 1) ↦ ((nerve.finSuccIsoStdSimplex n).inv.app (op ⦋n⦌)
+      (SSet.stdSimplex.objEquiv.symm (𝟙 ⦋n⦌))).obj i) = id :=
+  funext fun i ↦ nerve.finSuccIsoStdSimplex_inv_app_obj _ i
 lemma finSuccHomeomorphStdSimplex_symm_apply (n : ℕ) (w : StdSimplex ℝ (Fin (n + 1))) :
     (finSuccHomeomorphStdSimplex n).symm w = SSet.toTopObjMk (X := nerve (Fin (n + 1)))
       ((nerve.finSuccIsoStdSimplex n).inv.app (op ⦋n⦌) (SSet.stdSimplex.objEquiv.symm (𝟙 ⦋n⦌)))
       w :=
   (finSuccHomeomorphStdSimplex n).injective <| by
     rw [Homeomorph.apply_symm_apply, finSuccHomeomorphStdSimplex_toTopObjMk,
-      show (fun i : Fin (n + 1) ↦ ((nerve.finSuccIsoStdSimplex n).inv.app (op ⦋n⦌)
-        (SSet.stdSimplex.objEquiv.symm (𝟙 ⦋n⦌))).obj i) = id from
-        funext fun i ↦ nerve.finSuccIsoStdSimplex_inv_app_obj _ i, StdSimplex.map_id]
+      finSuccIsoStdSimplex_inv_app_id_obj, StdSimplex.map_id]
 @[simp] lemma finSuccHomeomorphStdSimplex_symm_single (n : ℕ) (i : Fin (n + 1)) :
     (finSuccHomeomorphStdSimplex n).symm (StdSimplex.single i) = vertex i :=
   (finSuccHomeomorphStdSimplex n).injective (by simp)
@@ -374,12 +376,14 @@ noncomputable def finTwoHomeomorphI : classifyingSpace (Fin 2) ≃ₜ unitInterv
   ext; simp [finTwoHomeomorphI]
 @[simp] lemma finTwoHomeomorphI_vertex_one : finTwoHomeomorphI (vertex (1 : Fin 2)) = 1 := by
   ext; simp [finTwoHomeomorphI]
+private lemma edgeMk_finTwo_obj_eq_id :
+    (fun i : Fin 2 ↦ (nerve.edgeMk (homOfLE (by decide : (0 : Fin 2) ≤ 1))).edge.obj i) = id :=
+  funext fun i ↦ by fin_cases i <;> rfl
 @[simp] lemma finTwoHomeomorphI_edgePath_apply (t : unitInterval) :
     finTwoHomeomorphI (edgePath (homOfLE (by decide : (0 : Fin 2) ≤ 1)) t) = t := by
   rw [finTwoHomeomorphI, Homeomorph.trans_apply, edgePath_apply,
-    finSuccHomeomorphStdSimplex_toTopObjMk, show (fun i : Fin 2 ↦
-      (nerve.edgeMk (homOfLE (by decide : (0 : Fin 2) ≤ 1))).edge.obj i) = id from
-      funext fun i ↦ by fin_cases i <;> rfl, StdSimplex.map_id, Homeomorph.apply_symm_apply]
+    finSuccHomeomorphStdSimplex_toTopObjMk, edgeMk_finTwo_obj_eq_id, StdSimplex.map_id,
+    Homeomorph.apply_symm_apply]
 lemma finTwoHomeomorphI_symm_apply (t : unitInterval) :
     finTwoHomeomorphI.symm t = edgePath (homOfLE (by decide : (0 : Fin 2) ≤ 1)) t :=
   finTwoHomeomorphI.injective (by simp)
@@ -390,7 +394,7 @@ lemma finTwoHomeomorphI_symm_apply (t : unitInterval) :
 
 /-- There exists a morphism `classifyingSpace (Fin 2) ⟶ classifyingSpace (Fin 2)` outside the
 range of `classifyingSpaceMap`. -/
-private theorem exists_hom_fin_two_notMem_range_classifyingSpaceMap :
+theorem exists_hom_fin_two_notMem_range_classifyingSpaceMap :
     ∃ f : classifyingSpace (Fin 2) ⟶ classifyingSpace (Fin 2),
       f ∉ Set.range (classifyingSpaceMap (C := Fin 2) (D := Fin 2)) := by
   -- Transport `t ↦ 1 - t` across `finTwoHomeomorphI`; it swaps `vertex 0` and `vertex 1`, whereas

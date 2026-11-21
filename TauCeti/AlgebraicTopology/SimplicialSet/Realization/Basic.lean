@@ -63,9 +63,8 @@ lemma toTopObjMk_eq_toTopPoint (x : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) :
     CategoryTheory.Functor.map_id, types_id_apply]
 lemma toTopObjMk_single {n : ℕ} (x : X _⦋n⦌) (i : Fin (n + 1)) :
     toTopObjMk x (StdSimplex.single i) = toTopPoint (X.map (⦋0⦌.const ⦋n⦌ i).op x) := by
-  rw [show (StdSimplex.single i : StdSimplex ℝ (Fin (n + 1))) =
-      StdSimplex.map (⦋0⦌.const ⦋n⦌ i) (StdSimplex.single 0) by rw [StdSimplex.map_single]; rfl,
-    ← toTopObjMk_map, toTopObjMk_eq_toTopPoint]
+  rw [← toTopObjMk_eq_toTopPoint _ (StdSimplex.single 0), toTopObjMk_map, StdSimplex.map_single]
+  rfl
 /-- Every point of `|X|` lies in the image of `SSet.toTopObjMk` for some simplex of `X`. -/
 lemma exists_toTopObjMk (z : |X|) :
     ∃ (n : ℕ) (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))), toTopObjMk x w = z := by
@@ -118,14 +117,14 @@ lemma exists_joined_toTopPoint (z : |X|) : ∃ x : X _⦋0⦌, Joined z (toTopPo
 instance [X.IsConnected] : PathConnectedSpace |X| :=
   (pathConnectedSpace_toTop_iff X).2 inferInstance
 
+private lemma toTop_map_const_hom (x : X _⦋0⦌) :
+    (toTop.map (SSet.const x : X ⟶ X)).hom = ContinuousMap.const |X| (toTopPoint x) :=
+  ContinuousMap.ext (toTop_map_const_apply x)
 private lemma contractibleSpace_toTop_of_topHomotopy (x : X _⦋0⦌)
     (H : ContinuousMap.Homotopy (toTop.map (𝟙 X)).hom
       (toTop.map (SSet.const x : X ⟶ X)).hom) : ContractibleSpace |X| := by
   rw [contractible_iff_id_nullhomotopic]
-  rw [show (toTop.map (SSet.const x : X ⟶ X)).hom = ContinuousMap.const |X| (toTopPoint x) from
-      ContinuousMap.ext (toTop_map_const_apply x),
-    show (toTop.map (𝟙 X)).hom = ContinuousMap.id |X| by rw [CategoryTheory.Functor.map_id]; rfl]
-    at H
+  rw [toTop_map_const_hom, CategoryTheory.Functor.map_id, TopCat.hom_id] at H
   exact ⟨toTopPoint x, ⟨H⟩⟩
 /-- If `SSet.const x` is simplicially homotopic to `𝟙 X`, then `|X|` is contractible. -/
 lemma contractibleSpace_toTop_of_homotopy {x : X _⦋0⦌}
@@ -159,8 +158,12 @@ theorem toTopPoint_injective (X : SSet.{u}) : Function.Injective (toTopPoint (X 
 
 private lemma edgeExtension_diag {h : X _⦋1⦌ → ℝ} (hh : ∀ x : X _⦋0⦌, h (X.σ 0 x) = 0)
     {n : ℕ} (σ : X _⦋n⦌) (p : Fin (n + 1)) : h (X.map (⦋1⦌.const ⦋n⦌ p).op σ) = 0 := by
-  rw [show ⦋1⦌.const ⦋n⦌ p = SimplexCategory.σ 0 ≫ ⦋0⦌.const ⦋n⦌ p by ext k; fin_cases k <;> rfl,
-    op_comp, Functor.map_comp_apply]; exact hh _
+  rw [SimplexCategory.const_fac_thru_zero,
+    ← SimplexCategory.eq_const_to_zero (SimplexCategory.σ 0), op_comp, Functor.map_comp_apply]
+  exact hh _
+private lemma mkOfLe_eq_const {n : ℕ} {i j : Fin (n + 1)} (h : i ≤ j) (hij : i = j) :
+    SimplexCategory.mkOfLe i j h = ⦋1⦌.const ⦋n⦌ i := by
+  subst hij; exact SimplexCategory.mkOfLe_refl i
 private noncomputable def edgeExtension (h : X _⦋1⦌ → ℝ) (hh : ∀ x : X _⦋0⦌, h (X.σ 0 x) = 0) :
     |X| ⟶ TopCat.of (ULift.{u} ℝ) :=
   descToTop (fun n σ w ↦ ULift.up (∑ i : Fin (n + 1), ∑ j : Fin (n + 1), w.weights i * w.weights j *
@@ -178,8 +181,7 @@ private noncomputable def edgeExtension (h : X _⦋1⦌ → ℝ) (hh : ∀ x : X
           simp only [c, hab, hθ, ↓reduceDIte, ← Functor.map_comp_apply, ← op_comp, hcomp]
         · simp only [c, hab, ↓reduceDIte]; split_ifs with hθ; swap; · rfl
           have heq : θ a = θ b := le_antisymm hθ (θ.toOrderHom.monotone (le_of_not_ge hab))
-          rw [show SimplexCategory.mkOfLe (θ a) (θ b) hθ = ⦋1⦌.const ⦋n⦌ (θ a) by
-            ext k; fin_cases k <;> simp [SimplexCategory.mkOfLe, heq], edgeExtension_diag hh]
+          rw [mkOfLe_eq_const hθ heq, edgeExtension_diag hh]
       simp_rw [hcoeff, mul_assoc, ← Finset.mul_sum]
       exact (Finset.sum_congr rfl fun a _ ↦
         congrArg (w.weights a * ·) (StdSimplex.sum_weights_map_mul _ _ _).symm).trans
@@ -187,10 +189,10 @@ private noncomputable def edgeExtension (h : X _⦋1⦌ → ℝ) (hh : ∀ x : X
 
 @[simp] lemma toTopObjMk_single_zero (e : X _⦋1⦌) :
     toTopObjMk e (StdSimplex.single 0) = toTopPoint (X.δ 1 e) := by
-  rw [toTopObjMk_single, show ⦋0⦌.const ⦋1⦌ 0 = SimplexCategory.δ 1 by ext k; fin_cases k; rfl]; rfl
+  rw [toTopObjMk_single, ← SimplexCategory.δ_one_eq_const]; rfl
 @[simp] lemma toTopObjMk_single_one (e : X _⦋1⦌) :
     toTopObjMk e (StdSimplex.single 1) = toTopPoint (X.δ 0 e) := by
-  rw [toTopObjMk_single, show ⦋0⦌.const ⦋1⦌ 1 = SimplexCategory.δ 0 by ext k; fin_cases k; rfl]; rfl
+  rw [toTopObjMk_single, ← SimplexCategory.δ_zero_eq_const]; rfl
 
 private lemma edgeExtension_midpoint {h : X _⦋1⦌ → ℝ} (hh : ∀ x : X _⦋0⦌, h (X.σ 0 x) = 0)
     (e : X _⦋1⦌) : (edgeExtension h hh (toTopObjMk e
@@ -217,7 +219,7 @@ theorem toTopObjMk_one_injective (X : SSet.{u}) :
     have hv : toTopObjMk (X.σ 0 x₁) (StdSimplex.single 1) =
         toTopObjMk (X.σ 0 x₂) (StdSimplex.single 1) := congrFun heq (StdSimplex.single 1)
     rw [toTopObjMk_single_one, toTopObjMk_single_one, toTopPoint_inj,
-      show (0 : Fin 2) = Fin.castSucc 0 from rfl, δ_comp_σ_self_apply, δ_comp_σ_self_apply] at hv
+      ← Fin.castSucc_zero, δ_comp_σ_self_apply, δ_comp_σ_self_apply] at hv
     exact congrArg _ hv
   · exact sep h₁ heq
 
