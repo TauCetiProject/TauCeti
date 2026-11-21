@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain
 public import TauCeti.Analysis.Fredholm.ContinuousFamily
+public import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -23,9 +24,9 @@ strongly measurable coefficient `A`, recorded as an element of `L∞(Ω, D →L[
 
 The domain is the weak-derivative graph `WeakDerivStep mu Omega p (ι.compLpL p μΩ)` of
 `TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain`, whose norm controls `u` in `Lᵖ(Ω, D)` and
-the weak derivative of `ι ∘ u` in `Lᵖ(Ω, H)`. The coefficient acts through Mathlib's Hölder
-multiplication `ContinuousLinearMap.holderL`, as for the finite-dimensional
-`TauCeti.WeakDerivStep.trajectoryOperator`. For a constant coefficient `A₀` the operator is the
+the weak derivative of `ι ∘ u` in `Lᵖ(Ω, H)`. The coefficient acts by pointwise operator
+application `MeasureTheory.Lp.operatorMultiplication`, which wraps Mathlib's Hölder multiplication
+`ContinuousLinearMap.holderL`. For a constant coefficient `A₀` the operator is the
 autonomous `TauCeti.WeakDerivStep.domainTrajectoryOperator ι A₀`
 (`TauCeti.WeakDerivStep.nonautonomousDomainTrajectoryOperator_toLp_const`).
 
@@ -88,21 +89,20 @@ It depends only on the almost everywhere class of the coefficient. -/
 def nonautonomousDomainTrajectoryOperator (ι : D →L[ℝ] H) (A : Lp (D →L[ℝ] H) ∞ μΩ) :
     WeakDerivStep mu Omega p (ι.compLpL p μΩ) →L[ℝ] Lp H p μΩ :=
   ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL p μΩ).comp (weakFDerivL (ι.compLpL p μΩ)) +
-    ((ContinuousLinearMap.id ℝ (D →L[ℝ] H)).holderL μΩ ∞ p p A).comp (prevL (ι.compLpL p μΩ))
+    (Lp.operatorMultiplication p A).comp (prevL (ι.compLpL p μΩ))
 
 /-- Unfolding formula for `nonautonomousDomainTrajectoryOperator`. -/
 theorem nonautonomousDomainTrajectoryOperator_def (ι : D →L[ℝ] H) (A : Lp (D →L[ℝ] H) ∞ μΩ) :
     nonautonomousDomainTrajectoryOperator (p := p) ι A =
       ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL p μΩ).comp (weakFDerivL (ι.compLpL p μΩ)) +
-        ((ContinuousLinearMap.id ℝ (D →L[ℝ] H)).holderL μΩ ∞ p p A).comp
-          (prevL (ι.compLpL p μΩ)) := (rfl)
+        (Lp.operatorMultiplication p A).comp (prevL (ι.compLpL p μΩ)) := (rfl)
 
 /-- The operator adds the weak derivative in direction `1` to the coefficient action. -/
 @[simp] theorem nonautonomousDomainTrajectoryOperator_apply (ι : D →L[ℝ] H)
     (A : Lp (D →L[ℝ] H) ∞ μΩ) (u : WeakDerivStep mu Omega p (ι.compLpL p μΩ)) :
     nonautonomousDomainTrajectoryOperator ι A u =
       (ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL p μΩ (weakFDeriv (ι.compLpL p μΩ) u) +
-        (ContinuousLinearMap.id ℝ (D →L[ℝ] H)).holder p A (prev (ι.compLpL p μΩ) u) := by
+        Lp.operatorMultiplication p A (prev (ι.compLpL p μΩ) u) := by
   simp [nonautonomousDomainTrajectoryOperator]
 
 /-- Pointwise almost-everywhere formula: `(∂s + A) u (s) = (ι ∘ u)'(s) + A(s) u(s)`. -/
@@ -112,36 +112,19 @@ theorem nonautonomousDomainTrajectoryOperator_apply_ae (ι : D →L[ℝ] H) (A :
       fun s ↦ weakFDeriv (ι.compLpL p μΩ) u s 1 + A s (prev (ι.compLpL p μΩ) u s) := by
   let base := ι.compLpL p μΩ
   rw [nonautonomousDomainTrajectoryOperator_apply]
-  filter_upwards [Lp.coeFn_add ((ContinuousLinearMap.apply ℝ H (1 : ℝ)).compLpL p μΩ
-      (weakFDeriv base u)) ((ContinuousLinearMap.id ℝ (D →L[ℝ] H)).holder p A (prev base u)),
+  filter_upwards [Lp.coeFn_add _ (Lp.operatorMultiplication p A (prev base u)),
     (ContinuousLinearMap.apply ℝ H (1 : ℝ)).coeFn_compLpL (weakFDeriv base u),
-    (ContinuousLinearMap.id ℝ (D →L[ℝ] H)).coeFn_holder (r := p) A (prev base u)]
-    with s hadd hd hA
-  rw [hadd, Pi.add_apply, hd, hA, ContinuousLinearMap.apply_apply, ContinuousLinearMap.id_apply]
+    Lp.operatorMultiplication_ae A (prev base u)] with s hadd hd hA
+  rw [hadd, Pi.add_apply, hd, hA, ContinuousLinearMap.apply_apply]
 
 /-- Subtracting two operators cancels the derivative part and leaves multiplication by the
 difference of the coefficients. -/
 theorem nonautonomousDomainTrajectoryOperator_sub (ι : D →L[ℝ] H) (A B : Lp (D →L[ℝ] H) ∞ μΩ) :
     nonautonomousDomainTrajectoryOperator (p := p) ι A -
         nonautonomousDomainTrajectoryOperator ι B =
-      ((ContinuousLinearMap.id ℝ (D →L[ℝ] H)).holderL μΩ ∞ p p (A - B)).comp
-        (prevL (ι.compLpL p μΩ)) := by
+      (Lp.operatorMultiplication p (A - B)).comp (prevL (ι.compLpL p μΩ)) := by
   simp only [nonautonomousDomainTrajectoryOperator, map_sub, ContinuousLinearMap.sub_comp]
   abel
-
-/-- Multiplication by an `L∞` coefficient, applied to the value of a graph element, has norm at
-most the `L∞` norm of the coefficient. -/
-private theorem norm_holderL_comp_prevL_le (ι : D →L[ℝ] H) (A : Lp (D →L[ℝ] H) ∞ μΩ) :
-    ‖((ContinuousLinearMap.id ℝ (D →L[ℝ] H)).holderL μΩ ∞ p p A).comp
-      (prevL (ι.compLpL p μΩ))‖ ≤ ‖A‖ := by
-  have hA : ‖(ContinuousLinearMap.id ℝ (D →L[ℝ] H)).holderL μΩ ∞ p p A‖ ≤ ‖A‖ :=
-    (((ContinuousLinearMap.id ℝ (D →L[ℝ] H)).holderL μΩ ∞ p p).le_opNorm A).trans
-      (mul_le_of_le_one_left (norm_nonneg A)
-        ((ContinuousLinearMap.norm_holderL_le _).trans ContinuousLinearMap.norm_id_le))
-  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun u ↦ ?_
-  rw [ContinuousLinearMap.comp_apply, prevL_apply]
-  exact (ContinuousLinearMap.le_opNorm _ _).trans
-    (mul_le_mul hA (norm_prev_le _ u) (norm_nonneg _) (norm_nonneg _))
 
 /-- The operator norm of `∂s + A` is at most `1 + ‖A‖`. -/
 theorem norm_nonautonomousDomainTrajectoryOperator_le (ι : D →L[ℝ] H) (A : Lp (D →L[ℝ] H) ∞ μΩ) :
@@ -151,10 +134,8 @@ theorem norm_nonautonomousDomainTrajectoryOperator_le (ι : D →L[ℝ] H) (A : 
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
   · rw [ContinuousLinearMap.norm_apply_one_compLpL_apply]
     exact norm_weakFDeriv_le _ u
-  · calc _ = ‖(((ContinuousLinearMap.id ℝ (D →L[ℝ] H)).holderL μΩ ∞ p p A).comp
-          (prevL (ι.compLpL p μΩ))) u‖ := by simp
-      _ ≤ ‖A‖ * ‖u‖ := (ContinuousLinearMap.le_opNorm _ _).trans
-          (mul_le_mul_of_nonneg_right (norm_holderL_comp_prevL_le ι A) (norm_nonneg _))
+  · exact (Lp.norm_operatorMultiplication_apply_le A _).trans
+      (mul_le_mul_of_nonneg_left (norm_prev_le _ u) (norm_nonneg _))
 
 /-- Changing the coefficient from `B` to `A` changes `∂s + A` by at most `‖A - B‖` in norm. -/
 theorem norm_nonautonomousDomainTrajectoryOperator_sub_le (ι : D →L[ℝ] H)
@@ -162,7 +143,10 @@ theorem norm_nonautonomousDomainTrajectoryOperator_sub_le (ι : D →L[ℝ] H)
     ‖nonautonomousDomainTrajectoryOperator (p := p) ι A -
       nonautonomousDomainTrajectoryOperator ι B‖ ≤ ‖A - B‖ := by
   rw [nonautonomousDomainTrajectoryOperator_sub]
-  exact norm_holderL_comp_prevL_le (p := p) ι (A - B)
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun u ↦ ?_
+  rw [ContinuousLinearMap.comp_apply, prevL_apply]
+  exact (Lp.norm_operatorMultiplication_apply_le _ _).trans
+    (mul_le_mul_of_nonneg_left (norm_prev_le _ u) (norm_nonneg _))
 
 /-- `∂s + A` depends `1`-Lipschitz continuously on its `L∞` coefficient. -/
 theorem lipschitzWith_nonautonomousDomainTrajectoryOperator (ι : D →L[ℝ] H) :
@@ -183,12 +167,8 @@ theorem lipschitzWith_nonautonomousDomainTrajectoryOperator (ι : D →L[ℝ] H)
     nonautonomousDomainTrajectoryOperator (p := p) ι
         ((memLp_top_const (μ := μΩ) A₀).toLp fun _ ↦ A₀) =
       domainTrajectoryOperator ι A₀ := by
-  ext u : 1
-  refine Lp.ext ?_
-  filter_upwards [nonautonomousDomainTrajectoryOperator_apply_ae ι _ u,
-    domainTrajectoryOperator_apply_ae ι A₀ u, (memLp_top_const (μ := μΩ) A₀).coeFn_toLp]
-    with s hs hs₀ hA
-  rw [hs, hs₀, hA]
+  rw [nonautonomousDomainTrajectoryOperator_def, domainTrajectoryOperator_def,
+    Lp.operatorMultiplication_of_ae_eq_const (memLp_top_const (μ := μΩ) A₀).coeFn_toLp]
 
 /-- The difference between `∂s + A` and the autonomous `∂s + A₀` is at most `δ` in norm when
 `‖A(s) - A₀‖ ≤ δ` for almost every `s`. -/
@@ -224,11 +204,11 @@ theorem exists_prev_eq_and_nonautonomousDomainTrajectoryOperator_eq_of_hasWeakLi
     (h : HasWeakLineDerivOn mu Omega (ι.compLpL p μΩ x) (fun s ↦ f s - A s (x s)) 1) :
     ∃ u : WeakDerivStep mu Omega p (ι.compLpL p μΩ),
       prev (ι.compLpL p μΩ) u = x ∧ nonautonomousDomainTrajectoryOperator ι A u = f := by
-  let g := f - (ContinuousLinearMap.id ℝ (D →L[ℝ] H)).holder p A x
+  let g := f - Lp.operatorMultiplication p A x
   have hg : (fun s ↦ f s - A s (x s)) =ᵐ[μΩ] g := by
-    filter_upwards [Lp.coeFn_sub f ((ContinuousLinearMap.id ℝ (D →L[ℝ] H)).holder p A x),
-      (ContinuousLinearMap.id ℝ (D →L[ℝ] H)).coeFn_holder (r := p) A x] with s hs hA
-    simp only [g, hs, Pi.sub_apply, hA, ContinuousLinearMap.id_apply]
+    filter_upwards [Lp.coeFn_sub f (Lp.operatorMultiplication p A x),
+      Lp.operatorMultiplication_ae A x] with s hs hA
+    simp only [g, hs, Pi.sub_apply, hA]
   refine ⟨mkLine _ x g (h.congr_ae_deriv hg), prev_mkLine _ _ _ _, ?_⟩
   rwa [nonautonomousDomainTrajectoryOperator_eq_iff_hasWeakLineDerivOn, prev_mkLine]
 
