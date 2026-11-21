@@ -95,8 +95,8 @@ theorem dualCarrier_pi : (pi L).dualCarrier = Submodule.pi Set.univ fun i ↦ (L
 
 /-- The dual carrier of an orthogonal sum is canonically the product of the dual carriers. -/
 def piDualCarrierEquiv : (pi L).dualCarrier ≃ₗ[ℤ] ∀ i, (L i).dualCarrier where
-  toFun x i := ⟨(x : ∀ i, V i) i, (mem_dualCarrier_pi_iff L x).mp x.2 i⟩
-  invFun x := ⟨fun i ↦ x i, (mem_dualCarrier_pi_iff L _).mpr fun i ↦ (x i).2⟩
+  toFun x i := ⟨(x : ∀ i, V i) i, (mem_dualCarrier_pi_iff L x).mp x.property i⟩
+  invFun x := ⟨fun i ↦ x i, (mem_dualCarrier_pi_iff L _).mpr fun i ↦ (x i).property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl

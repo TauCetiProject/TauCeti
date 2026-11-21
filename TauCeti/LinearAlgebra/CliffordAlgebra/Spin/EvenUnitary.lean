@@ -148,14 +148,14 @@ theorem mem_iff_reverse_mul_self_eq_one {x : (CliffordAlgebra Q)ˣ} :
 theorem reverse_mul_self (x : evenUnitaryGroup Q) :
     reverse ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
       ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = 1 :=
-  (mem_iff_reverse_mul_self_eq_one Q).mp x.2 |>.2
+  (mem_iff_reverse_mul_self_eq_one Q).mp x.property |>.2
 
 /-- The right-handed reverse norm of an even unitary Clifford element is one. -/
 theorem self_mul_reverse (x : evenUnitaryGroup Q) :
     ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
       reverse ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = 1 := by
-  rw [reverse_eq_star_of_mem_even ⟨_, x.2.1⟩]
-  exact Unitary.mul_star_self_of_mem x.2.2
+  rw [reverse_eq_star_of_mem_even ⟨_, x.property.1⟩]
+  exact Unitary.mul_star_self_of_mem x.property.2
 
 /-- Reversal of an even unitary Clifford element is its unit inverse after coercion. -/
 @[simp]
@@ -229,11 +229,11 @@ def evenUnitaryGroupMap (f : Q₁ →qᵢ Q₂) :
     -- a star monoid homomorphism, whose underlying function is again `map f`.
     refine (CliffordAlgebra.evenUnitaryGroup.mem_iff Q₂).mpr ⟨?_, ?_⟩
     · simpa using CliffordAlgebra.map_mem_even f
-        (CliffordAlgebra.evenUnitaryGroup.mem_even _ x.2)
+        (CliffordAlgebra.evenUnitaryGroup.mem_even _ x.property)
     · simpa using Unitary.map_mem
         (⟨(CliffordAlgebra.map f).toMonoidHom, CliffordAlgebra.map_star f⟩ :
           CliffordAlgebra Q₁ →⋆* CliffordAlgebra Q₂)
-        (CliffordAlgebra.evenUnitaryGroup.mem_unitary _ x.2)
+        (CliffordAlgebra.evenUnitaryGroup.mem_unitary _ x.property)
 
 /-- After coercion, the induced map is the `Units.map` of the Clifford-algebra map. -/
 @[simp]
@@ -368,7 +368,7 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- Forget an even unitary Clifford unit to its value in the even Clifford subalgebra. -/
 def evenUnitaryGroupEvenPart : evenUnitaryGroup Q →* even Q where
-  toFun x := ⟨((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q), x.2.1⟩
+  toFun x := ⟨((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q), x.property.1⟩
   map_one' := rfl
   map_mul' _ _ := rfl
 
@@ -417,11 +417,12 @@ def evenUnitaryGroupEquivUnitaryOfAlgEquiv
     have hs : ∀ a : A, reverseEven Q (e.symm a) = e.symm (star a) := fun a ↦ by
       apply e.injective; rw [he, e.apply_symm_apply, e.apply_symm_apply]
     ⟨⟨e.symm q, e.symm (star q), by rw [← Subalgebra.coe_mul, ← map_mul,
-        Unitary.mul_star_self_of_mem q.2, map_one, Subalgebra.coe_one], by rw [← Subalgebra.coe_mul,
-        ← map_mul, Unitary.star_mul_self_of_mem q.2, map_one, Subalgebra.coe_one]⟩,
-      (evenUnitaryGroup.mem_iff_reverse_mul_self_eq_one Q).2 ⟨(e.symm q).2, by
+        Unitary.mul_star_self_of_mem q.property, map_one, Subalgebra.coe_one], by rw
+            [← Subalgebra.coe_mul,
+        ← map_mul, Unitary.star_mul_self_of_mem q.property, map_one, Subalgebra.coe_one]⟩,
+      (evenUnitaryGroup.mem_iff_reverse_mul_self_eq_one Q).2 ⟨(e.symm q).property, by
         rw [← coe_reverseEven_apply, hs, ← Subalgebra.coe_mul, ← map_mul,
-          Unitary.star_mul_self_of_mem q.2, map_one, Subalgebra.coe_one]⟩⟩
+          Unitary.star_mul_self_of_mem q.property, map_one, Subalgebra.coe_one]⟩⟩
   left_inv x := Subtype.ext <| Units.ext <| by simp
   right_inv q := Subtype.ext <| (congrArg e (Subtype.ext (coe_evenUnitaryGroupEvenPart Q _) :
     evenUnitaryGroupEvenPart Q _ = e.symm q)).trans (e.apply_symm_apply q)
@@ -432,7 +433,7 @@ element to a unitary element of the target algebra. -/
 theorem map_evenUnitaryGroupEvenPart_mem_unitary
     (e : even Q ≃ₐ[R] A) (he : ∀ x, e (reverseEven Q x) = star (e x))
     (x : evenUnitaryGroup Q) : e (evenUnitaryGroupEvenPart Q x) ∈ unitary A :=
-  (evenUnitaryGroupEquivUnitaryOfAlgEquiv Q e he x).2
+  (evenUnitaryGroupEquivUnitaryOfAlgEquiv Q e he x).property
 
 /-- The forward unitary transport applies the algebra equivalence to the even Clifford value. -/
 @[simp]
@@ -474,7 +475,7 @@ def evenUnitaryGroupEquivOfAlgEquiv
       fun g h hgh ↦ by rw [← Subalgebra.coe_mul, ← map_mul, ← map_mul, hgh, map_one, map_one,
         Subalgebra.coe_one]
     ⟨⟨e.symm (val g), e.symm (val g⁻¹), hinv _ _ (mul_inv_cancel g), hinv _ _ (inv_mul_cancel g)⟩,
-      (evenUnitaryGroup.mem_iff_reverse_mul_self_eq_one Q).2 ⟨(e.symm (val g)).2, by
+      (evenUnitaryGroup.mem_iff_reverse_mul_self_eq_one Q).2 ⟨(e.symm (val g)).property, by
         have := congrArg Subtype.val ((hP (e.symm (val g))).2 (by simpa using val_mem g))
         simpa only [coe_reverseEven_apply, Subalgebra.coe_mul, Subalgebra.coe_one] using this⟩⟩
   left_inv x := Subtype.ext <| Units.ext <| by simp [val_ofVal]
@@ -510,7 +511,7 @@ end TransportToPredicate
 
 /-- Forget a Spin element to the same Clifford unit in the even unitary carrier. -/
 def spinGroupToEvenUnitary : spinGroup Q →* evenUnitaryGroup Q :=
-  spinGroup.toUnits.codRestrict (evenUnitaryGroup Q) fun x ↦ ⟨x.2.2, x.2.1.2⟩
+  spinGroup.toUnits.codRestrict (evenUnitaryGroup Q) fun x ↦ ⟨x.property.2, x.property.1.2⟩
 
 /-- The canonical map from Spin to the even unitary carrier does not change the underlying
 Clifford unit. -/
@@ -564,20 +565,9 @@ theorem range_spinGroup_toUnits :
     (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range =
       (lipschitzGroup Q) ⊓ evenUnitaryGroup Q := by
   ext x
-  constructor
-  · rintro ⟨g, rfl⟩
-    refine ⟨spinGroup.units_mem_lipschitzGroup g.2, ?_⟩
-    exact ⟨g.2.2, g.2.1.2⟩
-  · intro hx
-    rcases hx with ⟨hLip, hEvenUnit⟩
-    have hEven : (x : CliffordAlgebra Q) ∈ even Q := hEvenUnit.1
-    have hUnitary : (x : CliffordAlgebra Q) ∈ unitary (CliffordAlgebra Q) := hEvenUnit.2
-    have hPin : (x : CliffordAlgebra Q) ∈ pinGroup Q := by
-      rw [pinGroup.mem_iff]
-      exact ⟨lipschitzGroup.coe_mem_iff_mem.mpr hLip, hUnitary⟩
-    refine ⟨⟨(x : CliffordAlgebra Q), hPin, hEven⟩, ?_⟩
-    apply Units.ext
-    rfl
+  simp only [mem_spinGroup_toUnits_range_iff, spinGroup.mem_iff, pinGroup.units_mem_iff,
+    Subgroup.mem_inf, evenUnitaryGroup.mem_iff]
+  tauto
 
 /-! ### Spin action after right multiplication by a negative vector -/
 

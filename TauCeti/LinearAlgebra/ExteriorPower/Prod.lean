@@ -123,8 +123,8 @@ theorem sum_coe_wedgeTensor_map_proj (n : ℕ) (y : ExteriorAlgebra R M ⊗[R] E
               ⋀[R]^(p + q) (M × N) := by
           rw [← _root_.exteriorPower.coe_map, ← _root_.exteriorPower.coe_map]
           exact SetLike.mul_mem_graded (Submodule.coe_mem _) (Submodule.coe_mem _)
-        simp only [TensorProduct.map_tmul, coe_wedgeTensor_tmul, coe_proj_of_mem a.2,
-          coe_proj_of_mem b.2]
+        simp only [TensorProduct.map_tmul, coe_wedgeTensor_tmul, coe_proj_of_mem a.property,
+          coe_proj_of_mem b.property]
         rw [← GradedTensorProduct.tmul, ExteriorAlgebra.prodEquivTensor_symm_tmul,
           coe_proj_of_mem hab]
         by_cases hpq : p + q = n

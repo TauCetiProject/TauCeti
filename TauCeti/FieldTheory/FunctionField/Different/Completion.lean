@@ -251,7 +251,7 @@ theorem mem_traceDual_completionIntegers_iff_valuation_le (P : Place k F) (P' : 
   have hmem1 : (∃ b : P'.completionPlace.integers,
       algebraMap P'.completionPlace.integers P'.Completion b = z * π ^ differentExponent k F P') ↔
       P'.completionPlace.valuation (z * π ^ differentExponent k F P') ≤ 1 :=
-    ⟨fun ⟨b, hb⟩ ↦ hb ▸ (P'.completionPlace.mem_integers_iff).mp b.2,
+    ⟨fun ⟨b, hb⟩ ↦ hb ▸ (P'.completionPlace.mem_integers_iff).mp b.property,
       fun h ↦ ⟨⟨_, (P'.completionPlace.mem_integers_iff).mpr h⟩, rfl⟩⟩
   rw [hmem1, map_mul, hvalπ]
   exact ⟨fun h ↦ by simpa [mul_assoc, ← WithZero.exp_add] using
@@ -307,7 +307,7 @@ theorem length_traceDual_completionIntegers_quotient_eq (P' : Place k' F')
   let _ := (P'.restrict k F).completionExtensionAlgebra P' rfl
   let _ := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
   have := isTorsionFree_integers (k := k) (F := F) P'
-  have hC : ∀ c : P'.integers, algebraMap P'.integers F' c ∈ P'.integers := fun c ↦ c.2
+  have hC : ∀ c : P'.integers, algebraMap P'.integers F' c ∈ P'.integers := fun c ↦ c.property
   rw [(P'.restrict k F).length_traceDual_completionIntegers_quotient P' rfl,
     length_traceDual_quotient_eq_multiplicity_mul_finrank,
     differentExponent_eq_multiplicity_center (B := (P'.restrict k F).integers) (C := P'.integers)
@@ -347,7 +347,7 @@ theorem ord_discr_completionIntegers_eq (P' : Place k' F')
   have : FiniteDimensional F F' :=
     .of_basis (b.localizationLocalization F (P'.restrict k F).integers⁰ F')
   have := isTorsionFree_integers (k := k) (F := F) P'
-  have hC : ∀ c : P'.integers, algebraMap P'.integers F' c ∈ P'.integers := fun c ↦ c.2
+  have hC : ∀ c : P'.integers, algebraMap P'.integers F' c ∈ P'.integers := fun c ↦ c.property
   intro b'
   rw [(P'.restrict k F).ord_discr_completionIntegers P' rfl b',
     ord_discr_eq_multiplicity_mul_finrank F F' b,
@@ -380,7 +380,7 @@ theorem differentExponent_completionPlace [FiniteDimensional F F'] [Algebra.IsSe
   have := P.isSeparable_completion P' hP
   have hC : ∀ c : P'.completionPlace.integers,
       algebraMap P'.completionPlace.integers P'.Completion c ∈ P'.completionPlace.integers :=
-    fun c ↦ c.2
+    fun c ↦ c.property
   rw [differentExponent_eq_multiplicity_center (B := P.completionPlace.integers)
       (C := P'.completionPlace.integers) P'.completionPlace hC,
     P'.completionPlace.center_integers_asIdeal hC,

@@ -168,7 +168,8 @@ theorem spectralMeasure_map_ofReal (A : Matrix n n ℝ)
 topology on probability measures. -/
 @[fun_prop]
 theorem continuous_spectralMeasure :
-    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.1.spectralMeasure A.2) := by
+    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.val.spectralMeasure A.property)
+        := by
   simp_rw [spectralMeasure_def]
   exact continuous_empiricalMeasureOfFintype.comp continuous_eigenvalues
 
@@ -176,7 +177,8 @@ theorem continuous_spectralMeasure :
 matrices and the evaluation σ-algebra on probability measures. -/
 @[fun_prop]
 theorem measurable_spectralMeasure [MeasurableSpace 𝕜] [BorelSpace 𝕜] :
-    Measurable (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.1.spectralMeasure A.2) := by
+    Measurable (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} => A.val.spectralMeasure A.property)
+        := by
   simp_rw [spectralMeasure_def]
   exact measurable_empiricalMeasureOfFintype.comp measurable_eigenvalues
 
@@ -255,6 +257,16 @@ theorem integral_spectralMeasure_eq_sum_eigenvalues₀ {E : Type*} [NormedAddCom
     ← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
     toFiniteMeasure_empiricalMeasureOfFintype,
     integral_empiricalFiniteMeasure_of_measurableSingletonClass, Fintype.card_fin]
+
+/-- Integrating a continuous function against a Hermitian spectral measure depends
+continuously on the matrix. The test function need not be bounded. -/
+@[fun_prop] theorem continuous_integral_spectralMeasure {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {f : ℝ → E} (hf : Continuous f) :
+    Continuous (fun A : {A : Matrix n n 𝕜 // A.IsHermitian} ↦
+      ∫ x, f x ∂(A.val.spectralMeasure A.property : Measure ℝ)) := by
+  simp_rw [integral_spectralMeasure_eq_sum_eigenvalues₀]
+  exact (continuous_finsetSum _ fun i _ ↦
+    hf.comp ((continuous_apply i).comp continuous_eigenvalues₀)).const_smul _
 
 /-- Hermitian matrices with the same characteristic polynomial have the same spectral measure.
 In particular the spectral measure does not depend on a choice of basis. -/

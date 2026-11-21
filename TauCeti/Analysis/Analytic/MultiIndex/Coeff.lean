@@ -45,6 +45,8 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
   `∑ α ∈ univ.piAntidiag k, (∏ i, z i ^ α i) • p.mvCoeff α`.
 * `FormalMultilinearSeries.prod_factorial_smul_mvCoeff`: factorial permutation-counting formula
   relating `(∏ i, (α i)!) • p.mvCoeff α` to the sum over `Equiv.Perm (Fin k)`.
+* `FormalMultilinearSeries.norm_partialSum_le_sum_mvCoeff`: on `‖z‖ ≤ r`, `‖p.partialSum T z‖` is
+  at most `∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k`.
 * `FormalMultilinearSeries.sum_norm_mvCoeff_le` and
   `FormalMultilinearSeries.exists_mvCoeff_eq_and_norm_le`: the coefficients of total degree `k`
   have norms summing to at most `(card ι) ^ k * ‖p k‖`, and conversely any coefficient family `c`
@@ -239,6 +241,20 @@ theorem prod_factorial_smul_mvCoeff [DecidableEq ι]
         simpa [Equiv.Perm.coe_mul, ← congrFun hσ₀ j] using hj
   rw [← Fintype.card_subtype, Fintype.card_congr hbij, DomMulAct.stabilizer_card v]
   exact prod_congr rfl fun i _ ↦ by rw [hv i]
+
+/-- On a closed polydisc `‖z‖ ≤ r`, the partial sum of degree `< T` is bounded in norm by
+`∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k`. -/
+theorem norm_partialSum_le_sum_mvCoeff [DecidableEq ι] (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F)
+    (T : ℕ) {r : ℝ} {z : ι → 𝕜} (hz : ‖z‖ ≤ r) :
+    ‖p.partialSum T z‖ ≤
+      ∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k := by
+  refine (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦ ?_)
+  rw [p.apply_eq_sum_mvCoeff k z]
+  refine (norm_sum_le _ _).trans (sum_le_sum fun α hα ↦ ?_)
+  rw [norm_smul, norm_prod, mul_comm, ← (mem_piAntidiag.1 hα).1, ← prod_pow_eq_pow_sum]
+  gcongr with i
+  rw [norm_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) ((norm_le_pi_norm z i).trans hz) _
 
 end NormedField
 
@@ -565,7 +581,7 @@ theorem exists_hasFPowerSeriesOnBall_of_hasSum {f : (ι → 𝕜) → F} {x : ι
     exact_mod_cast h
   -- Sum the given expansion fiberwise by total degree; each fiber is finite.
   let e : (Σ k : ℕ, {α // α ∈ univ.piAntidiag k}) ≃ (ι → ℕ) :=
-    { toFun := fun x ↦ x.2.1
+    { toFun := fun x ↦ x.2.val
       invFun := fun α ↦ ⟨∑ i, α i, ⟨α, mem_piAntidiag.2 ⟨rfl, by simp⟩⟩⟩
       left_inv := by rintro ⟨_, α, hα⟩; obtain ⟨rfl, -⟩ := mem_piAntidiag.1 hα; rfl
       right_inv := fun _ ↦ rfl }
