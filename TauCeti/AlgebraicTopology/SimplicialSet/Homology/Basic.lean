@@ -19,7 +19,8 @@ public import Mathlib.RingTheory.SimpleModule.Basic
 This file records how the coproduct inclusion associated to a simplex behaves under the
 simplicial operators and under a morphism of coefficient objects, and how the degreewise
 components of the chain maps induced by maps of simplicial sets compose with each other and with
-changes of coefficients. It also records that simplicial chain modules with semisimple
+changes of coefficients, and how the induced maps on homology commute with the cycle projections
+(`SSet.homologyπ_homologyMap`). It also records that simplicial chain modules with semisimple
 coefficients are semisimple, and those with projective coefficients are projective, both as
 modules and, for coefficients in any preadditive category with coproducts, as objects of that
 category.
@@ -84,6 +85,14 @@ lemma chainComplexMap_f_chainComplexFunctor_map_app_f {X Y : SSet.{w}} (f : X �
     (chainComplexMap f R).f n ≫ (((chainComplexFunctor C).map u).app Y).f n =
       (((chainComplexFunctor C).map u).app X).f n ≫ (chainComplexMap f R').f n := by
   rw [← HomologicalComplex.comp_f, ← HomologicalComplex.comp_f, NatTrans.naturality]
+
+/-- The homology projection `homologyπ` commutes with the simplicial homology map `SSet.homologyMap`
+and the induced map on cycles. -/
+@[reassoc]
+lemma homologyπ_homologyMap [CategoryWithHomology C] {X Y : SSet.{w}} (f : X ⟶ Y) (R : C) (n : ℕ) :
+    (X.chainComplex R).homologyπ n ≫ SSet.homologyMap f R n =
+      HomologicalComplex.cyclesMap (chainComplexMap f R) n ≫ (Y.chainComplex R).homologyπ n :=
+  HomologicalComplex.homologyπ_naturality (chainComplexMap f R) n
 
 /-- The summand inclusion of a simplex `x`, followed by a simplicial operator of the simplicial
 object `[n] ↦ ∐_{X _⦋n⦌} R` whose chain complex is `X.chainComplex R`, is the summand inclusion of
