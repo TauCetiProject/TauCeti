@@ -104,7 +104,26 @@ theorem normalizedNormedField_norm_eq_rpow_neg_realAddVal {x : K} (hx : x ≠ 0)
     untop₀_realAddVal_valuation_of_ne_zero hx, NNRat.cast_zpow, NNRat.cast_natCast,
     ← Real.rpow_intCast, Int.cast_neg]
 
+private def intValuationUnitsEquiv : ℤᵐ⁰ˣ ≃* Multiplicative ℤ :=
+  WithZero.unitsWithZeroEquiv.trans (MulEquiv.inv (Multiplicative ℤ))
+
+private theorem intValuationUnitsEquiv_unitsMap (x : Kˣ) :
+    intValuationUnitsEquiv (Units.map ((valuation K).intValuation : K →* ℤᵐ⁰) x) =
+      normalizedValuation K x := by
+  apply WithZero.coe_inj.mp
+  rw [← normalizedValuationWithZero_coe, normalizedValuationWithZero_eq_inv_intValuation]
+  simp [intValuationUnitsEquiv]
+
 end SingleField
+
+private theorem valueGroup_eq_range_unitsMap {A B : Type*} [GroupWithZero A] [GroupWithZero B]
+    (f : A →*₀ B) : f.valueGroup = (Units.map f.toMonoidHom).range := by
+  ext γ
+  rw [← SetLike.mem_coe, ← MonoidWithZeroHom.valueMonoid_eq_valueGroup', SetLike.mem_coe,
+    MonoidWithZeroHom.mem_valueMonoid_iff, MonoidHom.mem_range]
+  refine ⟨fun ⟨a, ha⟩ ↦ ?_, fun ⟨a, ha⟩ ↦ ⟨a, congrArg Units.val ha⟩⟩
+  have ha0 : a ≠ 0 := fun h0 ↦ Units.ne_zero γ (by simpa [h0] using ha.symm)
+  exact ⟨Units.mk0 a ha0, Units.ext (by simpa using ha)⟩
 
 section Extension
 
@@ -116,40 +135,25 @@ variable {K L : Type*} [Field K] [Field L] [ValuativeRel L] [TopologicalSpace L]
 @[simp]
 theorem ramificationIdx_valuation_eq_ramificationIndex :
     (valuation L).ramificationIdx K = ramificationIndex K L := by
-  let e : ℤᵐ⁰ˣ ≃* Multiplicative ℤ :=
-    WithZero.unitsWithZeroEquiv.trans (MulEquiv.inv (Multiplicative ℤ))
-  have he_coe (γ : ℤᵐ⁰ˣ) :
-      (((e : ℤᵐ⁰ˣ →* Multiplicative ℤ) γ : Multiplicative ℤ) : ℤᵐ⁰) = (γ : ℤᵐ⁰)⁻¹ := by
-    rw [MonoidHom.coe_ofClass, MulEquiv.trans_apply, MulEquiv.inv_apply, WithZero.coe_inv,
-      WithZero.unitsWithZeroEquiv_apply, WithZero.coe_unzero]
   have htop : (valuation L).intValuation.valueGroup = ⊤ :=
     Valuation.valueGroup_eq_top_of_surjective _ (valuation L).intValuation_surjective
+  have he_comp :
+      (intValuationUnitsEquiv : ℤᵐ⁰ˣ →* Multiplicative ℤ).comp
+          (Units.map ((valuation L).intValuation : L →* ℤᵐ⁰)) =
+        normalizedValuation L :=
+    MonoidHom.ext intValuationUnitsEquiv_unitsMap
+  have hcomap :
+      ((valuation L).intValuation.comap (algebraMap K L)).toMonoidWithZeroHom.toMonoidHom =
+        ((valuation L).intValuation : L →* ℤᵐ⁰).comp (algebraMap K L : K →* L) :=
+    MonoidHom.ext fun x ↦ (valuation L).intValuation.comap_apply (algebraMap K L) x
   have hmap : (((valuation L).intValuation.comap (algebraMap K L)).valueGroup).map
-        (e : ℤᵐ⁰ˣ →* Multiplicative ℤ) =
+        (intValuationUnitsEquiv : ℤᵐ⁰ˣ →* Multiplicative ℤ) =
         ((normalizedValuation L).comp (Units.map (algebraMap K L : K →* L))).range := by
-    ext g
-    rw [Subgroup.mem_map, MonoidHom.mem_range]
-    constructor
-    · rintro ⟨γ, hγ, rfl⟩
-      rw [← SetLike.mem_coe, ← MonoidWithZeroHom.valueMonoid_eq_valueGroup', SetLike.mem_coe,
-        MonoidWithZeroHom.mem_valueMonoid_iff] at hγ
-      obtain ⟨x, hx⟩ := hγ
-      rw [Valuation.coe_toMonoidWithZeroHom, Valuation.comap_apply] at hx
-      have hx0 : x ≠ 0 := fun h0 ↦ Units.ne_zero γ (by simpa [h0] using hx.symm)
-      refine ⟨Units.mk0 x hx0, WithZero.coe_inj.mp ?_⟩
-      rw [MonoidHom.comp_apply, ← normalizedValuationWithZero_coe, Units.coe_map,
-        MonoidHom.coe_ofClass, Units.val_mk0, normalizedValuationWithZero_eq_inv_intValuation,
-        hx, he_coe]
-    · rintro ⟨x, rfl⟩
-      have hne : (valuation L).intValuation (algebraMap K L x) ≠ 0 :=
-        (valuation L).intValuation.ne_zero_iff.mpr ((map_ne_zero (algebraMap K L)).mpr x.ne_zero)
-      refine ⟨Units.mk0 _ hne, MonoidWithZeroHom.mem_valueGroup _ ⟨(x : K), ?_⟩,
-        WithZero.coe_inj.mp ?_⟩
-      · rw [Valuation.coe_toMonoidWithZeroHom, Valuation.comap_apply, Units.val_mk0]
-      · rw [he_coe, Units.val_mk0, MonoidHom.comp_apply, ← normalizedValuationWithZero_coe,
-          Units.coe_map, MonoidHom.coe_ofClass, normalizedValuationWithZero_eq_inv_intValuation]
+    rw [valueGroup_eq_range_unitsMap, hcomap, Units.map_comp, MonoidHom.map_range,
+      ← MonoidHom.comp_assoc, he_comp]
   rw [(valuation L).isEquiv_intValuation.symm.ramificationIdx_eq, Valuation.ramificationIdx_def,
-    htop, Subgroup.relIndex_top_right, ← Subgroup.index_map_equiv _ e, hmap, ramificationIndex_def]
+    htop, Subgroup.relIndex_top_right, ← Subgroup.index_map_equiv _ intValuationUnitsEquiv,
+    hmap, ramificationIndex_def]
 
 /-- `L / K` is totally ramified iff `(valuation L).ramificationIdx K = Module.finrank K L`. -/
 theorem isTotallyRamified_iff_ramificationIdx_eq_finrank :
