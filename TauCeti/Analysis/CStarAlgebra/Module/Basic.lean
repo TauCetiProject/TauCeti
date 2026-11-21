@@ -41,6 +41,8 @@ Riesz theorem.
 * `CStarModule.isGreatest_norm_inner`: norm recovery, `‖x‖` is the largest value of
   `‖⟪y, x⟫_A‖` over the closed unit ball.
 * `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`.
+* `CStarModule.lipschitzWith_const_smul`, `CStarModule.continuous_const_smul`: continuity of
+  `x ↦ a • x`.
 * `CStarModule.inner_map_map_le_norm_sq_smul`: Paschke's inequality
   `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A` for any bounded `A`-linear operator `T : E →L[ℂ] F`.
 * `CStarModule.tendsto_smul`: the action is essential, `e x → x` along an approximate unit.
@@ -305,6 +307,22 @@ theorem tendsto_op_smul [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] {l : Filt
   refine (tendsto_smul (A := Aᵐᵒᵖ) (l := l.map op) (fun b ↦ ?_) x).comp tendsto_map
   rw [tendsto_map'_iff]
   simpa [Function.comp_def] using (continuous_op.tendsto (unop b)).comp (hl (unop b))
+
+/-- Coefficient multiplication `x ↦ a • x` is Lipschitz with constant `‖a‖₊` on any pre-Hilbert
+C⋆-module. -/
+theorem lipschitzWith_const_smul [SMul A E] [CStarModule A E] (a : A) :
+    LipschitzWith ‖a‖₊ (fun x : E ↦ a • x) := by
+  refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
+  have hsub : a • x - a • y = a • (x - y) :=
+    ext_inner_left (A := A) fun z ↦ by simp [inner_sub_right, inner_op_smul_right, mul_sub]
+  rw [dist_eq_norm, dist_eq_norm, hsub, coe_nnNorm]
+  exact CStarModule.norm_smul_le a (x - y)
+
+/-- Coefficient multiplication `x ↦ a • x` is continuous on any pre-Hilbert C⋆-module. -/
+@[continuity, fun_prop]
+theorem continuous_const_smul [SMul A E] [CStarModule A E] (a : A) :
+    Continuous (fun x : E ↦ a • x) :=
+  (lipschitzWith_const_smul (A := A) (E := E) a).continuous
 
 end Essential
 
