@@ -5,18 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Functoriality
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.QExpansion
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 
 /-!
-# Rank-one lattice theta series
+# The theta series of the integers
 
-For any nonzero vector `v` in a real normed space `E`, the theta series of the rank-one lattice
-`ℤ v` is Mathlib's `jacobiTheta` evaluated at `‖v‖² τ` (`ZLattice.thetaSeries_span_singleton`).
-In particular, the theta series of `ℤ ∙ 1 ⊆ ℝ` is `jacobiTheta τ`, and the theta series of
-`√2 ℤ` is `jacobiTheta (2 τ)`. The period-two expansion of `Θ_ℤ` has constant coefficient one,
-coefficient two at each positive square, and zero elsewhere. The coefficient two counts the two
-signs of a nonzero integer, as in Mathlib's `hasSum_nat_jacobiTheta`.
+The theta series of `ℤ ∙ 1 ⊆ ℝ` is Mathlib's `jacobiTheta`, with exponent `π i n² τ`.
+Consequently the theta series of `√2 ℤ` is `jacobiTheta (2 τ)`. The period-two expansion
+has constant coefficient one, coefficient two at each positive square, and zero elsewhere.
+The coefficient two counts the two signs of a nonzero integer, as in Mathlib's
+`hasSum_nat_jacobiTheta`.
 
 The comparison reindexes by `LinearEquiv.toSpanNonzeroSingleton`; the analytic series and its
 positive-square summation formula are Mathlib's `jacobiTheta` and `hasSum_nat_jacobiTheta`.
@@ -32,34 +32,21 @@ open scoped Real UpperHalfPlane Pointwise
 
 namespace ZLattice
 
-/-- The theta series of the rank-one lattice `ℤ v` (`v ≠ 0`) in a real normed space is Jacobi's
-theta function at `‖v‖² τ`. -/
-theorem thetaSeries_span_singleton {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {v : E} (hv : v ≠ 0) (τ : ℍ) :
-    thetaSeries (span ℤ {v}) τ = jacobiTheta ((‖v‖ ^ 2 : ℝ) * (τ : ℂ)) := by
-  have : Module.IsTorsionFree ℤ E := Module.IsTorsionFree.trans ℝ
-  rw [thetaSeries_apply, jacobiTheta,
-    ← (LinearEquiv.toSpanNonzeroSingleton ℤ E v hv).toEquiv.tsum_eq]
-  refine tsum_congr fun n ↦ ?_
-  simp only [LinearEquiv.coe_toEquiv, LinearEquiv.toSpanNonzeroSingleton_apply, norm_zsmul ℝ,
-    Real.norm_eq_abs, mul_pow, sq_abs]
-  congr 1
-  push_cast
-  ring
-
 /-- The theta series of the integer lattice, with exponent `π i n² τ`, is Jacobi's theta
 function. -/
 theorem thetaSeries_span_one (τ : ℍ) :
     thetaSeries (span ℤ {1} : Submodule ℤ ℝ) τ = jacobiTheta τ := by
-  simpa using thetaSeries_span_singleton (one_ne_zero (α := ℝ)) τ
+  rw [thetaSeries_apply, jacobiTheta,
+    ← (LinearEquiv.toSpanNonzeroSingleton ℤ ℝ 1 one_ne_zero).toEquiv.tsum_eq]
+  refine tsum_congr fun n ↦ ?_
+  simp [Real.norm_eq_abs, sq_abs]
 
 /-- Scaling the integer lattice by `√2` gives Jacobi's theta function at `2τ`. -/
 theorem thetaSeries_sqrt_two_smul_span_one (τ : ℍ) :
     thetaSeries (Real.sqrt 2 • (span ℤ {1} : Submodule ℤ ℝ)) τ = jacobiTheta (2 * (τ : ℂ)) := by
-  have hspan : Real.sqrt 2 • (span ℤ {1} : Submodule ℤ ℝ) = span ℤ {Real.sqrt 2} := by
-    simp [smul_span]
-  rw [hspan, thetaSeries_span_singleton (Real.sqrt_ne_zero'.mpr two_pos)]
-  simp
+  rw [thetaSeries_smul _ (Real.sqrt_ne_zero'.mpr two_pos), thetaSeries_span_one]
+  congr 1
+  simp [Complex.real_smul]
 
 /-- The period-two coefficients of the rank-one lattice theta series, explicitly supported at
 the squares. -/

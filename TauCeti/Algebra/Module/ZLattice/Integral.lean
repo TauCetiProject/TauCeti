@@ -49,8 +49,6 @@ unimodular lattice has a theta series of level one.
 
 * `ZLattice.isIntegral_iff`: `L` is integral if and only if all inner products on `L` are
   integers.
-* `ZLattice.isIntegral_span_singleton_iff`, `ZLattice.not_isIntegral_span_one_half`: the lattice
-  `ℤ v` is integral if and only if `‖v‖² ∈ ℤ`; in particular `½ ℤ ⊆ ℝ` is not integral.
 * `ZLattice.IsEven.isIntegral`: an even lattice is integral.
 * `ZLattice.IsIntegral.discreteTopology`: an integral lattice is discrete.
 * `ZLattice.IsUnimodular.span_eq_top`: a unimodular lattice in a finite-dimensional space spans it.
@@ -145,22 +143,6 @@ theorem isIntegral_iff {L : Submodule ℤ E} :
 /-- A sublattice of an integral lattice is integral. -/
 theorem IsIntegral.mono {L M : Submodule ℤ E} (hM : IsIntegral M) (h : L ≤ M) : IsIntegral L :=
   h.trans (hM.trans (dual_anti h))
-
-/-- The lattice spanned by a single vector `v` is integral if and only if `‖v‖²` is an
-integer. -/
-theorem isIntegral_span_singleton_iff {v : E} :
-    IsIntegral (span ℤ {v}) ↔ ∃ m : ℤ, ‖v‖ ^ 2 = m := by
-  refine ⟨fun h ↦ ?_, fun ⟨m, hm⟩ ↦ isIntegral_iff.mpr fun x hx y hy ↦ ?_⟩
-  · obtain ⟨m, hm⟩ := isIntegral_iff.mp h v (mem_span_singleton_self v) v
-      (mem_span_singleton_self v)
-    exact ⟨m, real_inner_self_eq_norm_sq v ▸ hm⟩
-  · obtain ⟨a, rfl⟩ := mem_span_singleton.mp hx
-    obtain ⟨b, rfl⟩ := mem_span_singleton.mp hy
-    refine ⟨a * b * m, ?_⟩
-    rw [← Int.cast_smul_eq_zsmul ℝ, ← Int.cast_smul_eq_zsmul ℝ,
-      real_inner_smul_left, real_inner_smul_right, real_inner_self_eq_norm_sq, hm]
-    push_cast
-    ring
 
 /-- An integral lattice is discrete. -/
 theorem IsIntegral.discreteTopology {L : Submodule ℤ E} (h : IsIntegral L) :

@@ -52,7 +52,7 @@ equal as functions if and only if `M = L`.
   `q`-expansion of `Θ_L` is `1`; `ZLattice.IsIntegral.qExpansion_two_thetaSeries_coeff_zero` is
   the same statement in `exp (π i τ)` for integral `L`.
 * `ZLattice.thetaCoset_eq_ofReal_of_re_eq_zero`, `ZLattice.thetaSeries_eq_ofReal_of_re_eq_zero`,
-  `ZLattice.re_thetaCoset_pos`, `ZLattice.re_thetaSeries_pos`, `ZLattice.one_le_re_thetaSeries`:
+  `ZLattice.re_thetaCoset_pos`, `ZLattice.one_le_re_thetaSeries`:
   on the imaginary axis `θ_{γ+L}` and `Θ_L` are real and positive, and `Θ_L ≥ 1`.
 * `ZLattice.re_thetaCoset_mono`, `ZLattice.re_thetaCoset_lt_of_lt`,
   `ZLattice.re_thetaSeries_mono`, `ZLattice.re_thetaSeries_lt_of_lt`,
@@ -296,10 +296,6 @@ theorem one_le_re_thetaSeries {τ : ℍ} (hτ : τ.re = 0) : 1 ≤ (thetaSeries 
   rw [← thetaCoset_zero, thetaCoset_eq_ofReal_of_re_eq_zero L 0 hτ, ofReal_re]
   simpa using (summable_exp_neg_mul_norm_add_sq L (c := π * τ.im) (by positivity) 0).le_tsum 0
     fun _ _ => (Real.exp_pos _).le
-
-/-- On the imaginary axis the theta series of a discrete subgroup has positive real part. -/
-theorem re_thetaSeries_pos {τ : ℍ} (hτ : τ.re = 0) : 0 < (thetaSeries L τ).re :=
-  zero_lt_one.trans_le (one_le_re_thetaSeries L hτ)
 
 /-- The theta series of a discrete subgroup does not vanish on the imaginary axis. -/
 theorem thetaSeries_ne_zero_of_re_eq_zero {τ : ℍ} (hτ : τ.re = 0) : thetaSeries L τ ≠ 0 :=

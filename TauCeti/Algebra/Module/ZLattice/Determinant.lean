@@ -10,7 +10,6 @@ public import Mathlib.GroupTheory.Rank
 public import TauCeti.Algebra.Module.ZLattice.Covolume
 public import TauCeti.Algebra.Module.ZLattice.Integral
 public import TauCeti.Algebra.Module.ZLattice.Quotient
-import Mathlib.LinearAlgebra.Isomorphisms
 import TauCeti.GroupTheory.Rank
 import TauCeti.LinearAlgebra.Matrix.Determinant.Skew
 
@@ -178,24 +177,6 @@ theorem discriminantGroupEquivQuotientSup_mk (L : Submodule ℤ E) (x : dual L) 
     discriminantGroupEquivQuotientSup L (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk ⟨x, mem_sup_right x.property⟩ :=
   (rfl)
-
-/-- The inverse of `discriminantGroupEquivQuotientSup L` sends the class of a vector of `L ⊔ L^∨`
-lying in `L^∨` to its class in the discriminant group. -/
-theorem discriminantGroupEquivQuotientSup_symm_mk_of_mem_dual
-    {x : ↥(L ⊔ dual L)} (hx : (x : E) ∈ dual L) :
-    (discriminantGroupEquivQuotientSup L).symm (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk ⟨(x : E), hx⟩ :=
-  (LinearEquiv.symm_apply_eq _).2 <| by
-    rw [discriminantGroupEquivQuotientSup_mk]
-
-/-- The inverse of `discriminantGroupEquivQuotientSup L` sends the class of a vector of `L ⊔ L^∨`
-to `0` if and only if the vector lies in `L`. -/
-theorem discriminantGroupEquivQuotientSup_symm_mk_eq_zero_iff
-    {x : ↥(L ⊔ dual L)} :
-    (discriminantGroupEquivQuotientSup L).symm (Submodule.Quotient.mk x) = 0 ↔
-      (x : E) ∈ L := by
-  rw [LinearEquiv.symm_apply_eq, map_zero, Submodule.Quotient.mk_eq_zero]
-  simp [submoduleOf]
 
 /-- The index of `L` in `L ⊔ L^∨` equals the order of the discriminant group. -/
 @[simp]
