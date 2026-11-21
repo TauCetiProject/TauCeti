@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Convex.Uniform
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.MeanInequalitiesPow
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.MeanInequalities.Pow
 
 /-!
 # Uniform convexity of powers of the norm

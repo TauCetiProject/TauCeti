@@ -37,7 +37,7 @@ that `r ≥ n`. Then
   (`RingHom.exists_norm_gelfond_value_le`).
 
 Since `m = 2 h + 2`, together they give `1 ≤ (c₂ c₃) ^ r r ^ ((1 - r) / 2)`, which fails once `n`,
-and hence `r`, is large (`Real.exists_pow_mul_rpow_lt_one`).
+and hence `r`, is at least `4 (c₂ c₃) ^ 2` (`Real.pow_mul_rpow_lt_one_of_four_mul_sq_le`).
 
 ## Main results
 
@@ -73,7 +73,9 @@ private theorem gelfond_false {K : Type*} [Field K] [NumberField K] (σ : K →+
   obtain ⟨c, -, haux⟩ := exists_gelfond_auxiliary_algebraic α β γ hm
   obtain ⟨c₂, hc₂, hlow⟩ := exists_one_le_pow_mul_norm_gelfond_value α β γ m c
   obtain ⟨c₃, -, hup⟩ := σ.exists_norm_gelfond_value_le hl hα hγ m c
-  obtain ⟨N, hN⟩ := Real.exists_pow_mul_rpow_lt_one (c₂ * c₃)
+  obtain ⟨N, hN⟩ : ∃ N : ℕ, ∀ r : ℕ, N ≤ r → (c₂ * c₃) ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) < 1 :=
+    ⟨⌈4 * (c₂ * c₃) ^ 2⌉₊, fun r hr ↦
+      Real.pow_mul_rpow_lt_one_of_four_mul_sq_le (Nat.ceil_le.1 hr)⟩
   -- Take `n = 2 m (N + 1) ^ 2 ≥ N` and `q = 2 m (N + 1)`, so that `q ^ 2 = 2 m n`.
   set n := 2 * m * (N + 1) ^ 2
   have hNn : N ≤ n := by

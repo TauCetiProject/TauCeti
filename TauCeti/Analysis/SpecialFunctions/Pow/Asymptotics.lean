@@ -49,8 +49,8 @@ larger exponent outgrows every constant multiple of a smaller one.
 
 ## Powers outgrowing geometric sequences
 
-For every real `C` and every large natural number `r`, `C ^ r r ^ ((1 - r) / 2) < 1`: the power
-`r ^ (r / 2)` outgrows every geometric sequence. This is the final contradiction of Gelfond's
+For every real `C` and every natural number `r ≥ 4 C ^ 2`, `C ^ r r ^ ((1 - r) / 2) < 1`: the
+power `r ^ (r / 2)` outgrows every geometric sequence. This is the final contradiction of Gelfond's
 proof of the Gelfond–Schneider theorem.
 -/
 
@@ -253,15 +253,13 @@ theorem add_one_mul_log_add_two_le {r t A : ℝ} (hr : 0 ≤ r) (ht : 0 ≤ t)
       mul_le_mul h1 hlog' (log_nonneg (by linarith)) (by positivity)
     _ = _ := by dsimp [M]; ring
 
-/-- For every real `C`, `C ^ r r ^ ((1 - r) / 2) < 1` for every natural number
-`r ≥ ⌈4 C ^ 2⌉₊ + 1`. -/
-theorem exists_pow_mul_rpow_lt_one (C : ℝ) :
-    ∃ N : ℕ, ∀ r : ℕ, N ≤ r → C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) < 1 := by
-  refine ⟨⌈4 * C ^ 2⌉₊ + 1, fun r hr ↦ ?_⟩
-  have hr₁ : (1 : ℝ) ≤ r := by exact_mod_cast (Nat.le_add_left 1 _).trans hr
+/-- For every real `C` and every natural number `r ≥ 4 C ^ 2`, `C ^ r r ^ ((1 - r) / 2) < 1`. -/
+theorem pow_mul_rpow_lt_one_of_four_mul_sq_le {C : ℝ} {r : ℕ} (hCr : 4 * C ^ 2 ≤ r) :
+    C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) < 1 := by
+  rcases Nat.eq_zero_or_pos r with rfl | hr
+  · norm_num
+  have hr₁ : (1 : ℝ) ≤ r := by exact_mod_cast hr
   have hr₀ : (0 : ℝ) < r := zero_lt_one.trans_le hr₁
-  have hCr : 4 * C ^ 2 ≤ r :=
-    (Nat.le_ceil _).trans (by exact_mod_cast (Nat.le_succ _).trans hr)
   set s := √(r : ℝ)
   have hs₀ : 0 < s := sqrt_pos.2 hr₀
   have hsr : s ≤ r := sqrt_le_self_iff.2 (Or.inr hr₁)
