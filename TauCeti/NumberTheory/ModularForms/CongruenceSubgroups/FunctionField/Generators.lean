@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.QExpansion
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Degree
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 
 /-!
 # Arithmetic generation by Fricke functions
@@ -55,27 +56,26 @@ theorem adjoin_insert_image_frickeMeromorphicFunction_eq_coeffIntermediateField
   have hAB : A ≤ B := by
     refine IntermediateField.adjoin_le_iff.mpr ?_
     rintro F (rfl | ⟨a, _, rfl⟩)
-    · simpa only [B, coe_modularFunctionJ, SetLike.mem_coe] using (modularFunctionJ N K).property
-    · exact mem_coeffIntermediateField.mpr ((mem_coeffSubfield _).mpr
-        (laurentQExpansion_frickeMeromorphicFunction_coeff_mem hK a))
-  let C := A.comap B.val
-  have hmap : C.map B.val = A :=
-    IntermediateField.map_comap_eq_self (by simpa using hAB)
+    · exact compactifiedQuotientComap_jMeromorphicFunction_mem_coeffIntermediateField N K
+    · exact mem_coeffIntermediateField.mpr (frickeMeromorphicFunction_mem_coeffSubfield hK a)
+  let T := B.val ⁻¹' S
+  let C := IntermediateField.adjoin K T
+  have himage : B.val '' T = S := Set.image_preimage_eq_of_subset (by
+    intro F hF
+    exact ⟨⟨F, hAB (IntermediateField.subset_adjoin K S hF)⟩, rfl⟩)
+  have hmap : C.map B.val = A := by
+    rw [IntermediateField.adjoin_map, himage]
   have hgen : IntermediateField.adjoin ℂ (Set.range (algebraMap C
       (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient))) = ⊤ := by
-    -- The tower map from C has image A; A contains the complex generators S.
     have hrange : Set.range (algebraMap C
         (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient)) = A := by
-      have hcomp : (algebraMap C
-          (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :
-          C → MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) =
-            B.val.comp C.val := by
-        funext x
-        simp only [IsScalarTower.algebraMap_apply C B
-          (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient),
-          IntermediateField.algebraMap_apply, AlgHom.comp_apply, IntermediateField.coe_val]
-      rw [hcomp]
-      rw [← AlgHom.coe_fieldRange, IntermediateField.fieldRange_comp_val, hmap]
+      have himage' : algebraMap B
+          (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) '' T = S := by
+        calc
+          _ = B.val '' T := Set.image_congr fun x _ ↦ by
+            rw [IntermediateField.algebraMap_apply, IntermediateField.coe_val]
+          _ = S := himage
+      rw [TauCeti.IntermediateField.range_algebraMap_adjoin, himage']
     rw [hrange, IntermediateField.adjoin_adjoin_right]
     exact adjoin_insert_image_frickeMeromorphicFunction_eq_top
   have hrank := (linearDisjoint_fieldRange_coeffIntermediateField
@@ -101,21 +101,6 @@ theorem modularFunctionField_eq_closure :
     ← adjoin_insert_image_frickeMeromorphicFunction_eq_coeffIntermediateField
       (fun _ hζ ↦ Subfield.subset_closure hζ), IntermediateField.adjoin_toSubfield]
 
-variable (N) in
-/-- The embedding of the cyclotomic constants `ℚ(ζ_N)` into `F_N`. -/
-def modularFunctionFieldConst :
-    Subfield.closure {z : ℂ | z ^ N = 1} →+* modularFunctionField N :=
-  ((algebraMap ℂ _).comp (Subfield.closure {z : ℂ | z ^ N = 1}).subtype).codRestrict _
-    fun c ↦ algebraMap_mem_modularFunctionField.mpr c.property
-
-/-- The cyclotomic constant embedding is the constant meromorphic function. -/
-@[simp]
-theorem coe_modularFunctionFieldConst_apply (c : Subfield.closure {z : ℂ | z ^ N = 1}) :
-    (modularFunctionFieldConst N c :
-      MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) =
-        algebraMap ℂ _ c := by
-  rfl
-
 /-- The Fricke function with residue index `a`, regarded as an element of `F_N`. -/
 def frickeModularFunction (a : Fin 2 → ZMod N) : modularFunctionField N :=
   ⟨frickeMeromorphicFunction a, frickeMeromorphicFunction_mem_modularFunctionField a⟩
@@ -127,6 +112,20 @@ theorem coe_frickeModularFunction (a : Fin 2 → ZMod N) :
       MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) =
         frickeMeromorphicFunction a := by
   rfl
+
+/-- Opposite residues give the same arithmetic Fricke function. -/
+@[simp]
+theorem frickeModularFunction_neg (a : Fin 2 → ZMod N) :
+    frickeModularFunction (-a) = frickeModularFunction a := by
+  apply Subtype.ext
+  simp only [coe_frickeModularFunction, frickeMeromorphicFunction_neg]
+
+/-- For nonzero residues, arithmetic Fricke functions agree exactly when their indices
+agree up to sign. -/
+theorem frickeModularFunction_eq_iff {a b : Fin 2 → ZMod N} (ha : a ≠ 0) (hb : b ≠ 0) :
+    frickeModularFunction a = frickeModularFunction b ↔ a = b ∨ a = -b := by
+  rw [Subtype.ext_iff, coe_frickeModularFunction, coe_frickeModularFunction,
+    frickeMeromorphicFunction_eq_iff ha hb]
 
 /-- Inside `F_N`, the cyclotomic constants, `j`, and the Fricke functions indexed by nonzero
 residues generate the whole field. Together with

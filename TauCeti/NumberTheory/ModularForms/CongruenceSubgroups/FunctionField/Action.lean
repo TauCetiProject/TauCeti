@@ -15,6 +15,11 @@ Fricke generation shows that fractional-linear substitutions preserve `F_N`, the
 functions whose Laurent coefficients at infinity lie in `ℚ(ζ_N)`. We restrict the complex
 action to this field and compute its action on generators and its kernel. The action is
 faithful exactly when `N ∣ 2`, including the levels where the two scalar signs coincide.
+
+## References
+
+* Goro Shimura, *Introduction to the Arithmetic Theory of Automorphic Functions*, Princeton
+  University Press, 1971, §6.1.
 -/
 
 public noncomputable section
@@ -44,11 +49,10 @@ theorem unop_modularFunctionActionZMod_mem_coeffSubfield {K : Subfield ℂ}
     rintro F (rfl | ⟨a, _, rfl⟩)
     · simp only [SetLike.mem_coe, IntermediateField.mem_comap, σ, AlgEquiv.coe_toAlgHom,
         AlgEquiv.restrictScalars_apply, unop_modularFunctionActionZMod_compactifiedQuotientComap]
-      simpa only [B, coe_modularFunctionJ, SetLike.mem_coe] using (modularFunctionJ N K).property
+      exact compactifiedQuotientComap_jMeromorphicFunction_mem_coeffIntermediateField N K
     · simp only [SetLike.mem_coe, IntermediateField.mem_comap, σ, AlgEquiv.coe_toAlgHom,
         AlgEquiv.restrictScalars_apply, unop_modularFunctionActionZMod_frickeMeromorphicFunction]
-      exact mem_coeffIntermediateField.mpr ((mem_coeffSubfield _).mpr
-        (laurentQExpansion_frickeMeromorphicFunction_coeff_mem hK _))
+      exact mem_coeffIntermediateField.mpr (frickeMeromorphicFunction_mem_coeffSubfield hK _)
   exact mem_coeffIntermediateField.mp (hle (mem_coeffIntermediateField.mpr hF))
 
 /-- If `K` contains the `N`-th roots of unity, a substituted function has Laurent coefficients
@@ -73,18 +77,34 @@ theorem unop_modularFunctionActionZMod_mem_modularFunctionField_iff (g : SL(2, Z
   exact unop_modularFunctionActionZMod_mem_coeffSubfield_iff
     (fun _ hζ ↦ Subfield.subset_closure hζ) g
 
+omit [NeZero N] in
+private instance modularFunctionActionZModMulSemiringAction :
+    MulSemiringAction (SL(2, ZMod N))ᵐᵒᵖ
+      (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :=
+  MulSemiringAction.compHom _
+    (MonoidHom.unop ((modularFunctionActionZMod N).comp
+      (MulEquiv.opOp SL(2, ZMod N)).symm.toMonoidHom))
+
+omit [NeZero N] in
+private theorem modularFunctionActionZMod_compHom_smul (g : (SL(2, ZMod N))ᵐᵒᵖ)
+    (F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :
+    g • F = unop (modularFunctionActionZMod N (unop g)) F := by
+  simp only [MulAction.compHom_smul_def,
+    MonoidHom.unop, MonoidHom.op_symm_apply_apply, Function.comp_apply, MonoidHom.comp_apply,
+    MulEquiv.coe_toMonoidHom, MulEquiv.opOp_symm_apply, unop_op, AlgEquiv.smul_def]
+
+private instance modularFunctionFieldInvariant :
+    IsInvariantSubring (SL(2, ZMod N))ᵐᵒᵖ (modularFunctionField N).toSubring :=
+  ⟨fun g _ hF ↦ by
+    rw [modularFunctionActionZMod_compHom_smul]
+    exact (unop_modularFunctionActionZMod_mem_modularFunctionField_iff (unop g)).mpr hF⟩
+
 variable (N) in
 /-- The fractional-linear right action of `SL(2, ℤ/Nℤ)` on the arithmetic modular function
 field `F_N`, obtained by restricting its action on the complex function field. -/
 def modularFunctionFieldActionZMod :
-    SL(2, ZMod N) →* (modularFunctionField N ≃+* modularFunctionField N)ᵐᵒᵖ := by
-  letI := MulSemiringAction.compHom
-    (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient)
-    (MonoidHom.unop ((modularFunctionActionZMod N).comp
-      (MulEquiv.opOp SL(2, ZMod N)).symm.toMonoidHom))
-  letI : IsInvariantSubring (SL(2, ZMod N))ᵐᵒᵖ (modularFunctionField N).toSubring :=
-    ⟨fun g _ hF ↦ (unop_modularFunctionActionZMod_mem_modularFunctionField_iff (unop g)).mpr hF⟩
-  exact (MonoidHom.op (MulSemiringAction.toRingAut (SL(2, ZMod N))ᵐᵒᵖ
+    SL(2, ZMod N) →* (modularFunctionField N ≃+* modularFunctionField N)ᵐᵒᵖ :=
+  (MonoidHom.op (MulSemiringAction.toRingAut (SL(2, ZMod N))ᵐᵒᵖ
     (modularFunctionField N).toSubring)).comp (MulEquiv.opOp SL(2, ZMod N)).toMonoidHom
 
 /-- The arithmetic modular action agrees with the complex action on underlying functions. -/
@@ -94,7 +114,17 @@ theorem coe_unop_modularFunctionFieldActionZMod_apply (g : SL(2, ZMod N))
     (unop (modularFunctionFieldActionZMod N g) F :
       MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) =
         unop (modularFunctionActionZMod N g) F := by
-  rfl
+  unfold modularFunctionFieldActionZMod
+  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.opOp_apply,
+    MonoidHom.op_apply_apply, Function.comp_apply, unop_op,
+    MulSemiringAction.toRingAut_apply]
+  rw [MulSemiringAction.toRingEquiv_apply_apply (SL(2, ZMod N))ᵐᵒᵖ
+    (modularFunctionField N).toSubring (op g) F]
+  simpa only [IsInvariantSubring.coe_subtypeHom, unop_op] using
+    (map_smul (X := (modularFunctionField N).toSubring)
+      (IsInvariantSubring.subtypeHom (SL(2, ZMod N))ᵐᵒᵖ
+        (modularFunctionField N).toSubring) (op g) F).trans
+      (modularFunctionActionZMod_compHom_smul (op g) F)
 
 /-- The arithmetic modular action fixes every cyclotomic constant. -/
 @[simp]

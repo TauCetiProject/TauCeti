@@ -133,6 +133,13 @@ theorem laurentQExpansion_frickeMeromorphicFunction_coeff_mem {K : Subfield ℂ}
   exact (hL _).mp (L.mul_mem (L.div_mem
     (L.mul_mem (hEL (by norm_num : 3 ≤ 4)) (hEL (by norm_num : 3 ≤ 6))) hΔL) hGL) n
 
+/-- If `K` contains the `N`-th roots of unity, every Fricke function has Laurent
+coefficients in `K`. -/
+theorem frickeMeromorphicFunction_mem_coeffSubfield {K : Subfield ℂ}
+    (hK : ∀ ζ : ℂ, ζ ^ N = 1 → ζ ∈ K) (a : Fin 2 → ZMod N) :
+    frickeMeromorphicFunction a ∈ coeffSubfield (cuspDatumInftyGamma N) K :=
+  (mem_coeffSubfield _).mpr (laurentQExpansion_frickeMeromorphicFunction_coeff_mem hK a)
+
 /-- The Fricke functions are elements of the arithmetic modular function field `F_N`. -/
 theorem frickeMeromorphicFunction_mem_modularFunctionField (a : Fin 2 → ZMod N) :
     frickeMeromorphicFunction a ∈ modularFunctionField N :=
