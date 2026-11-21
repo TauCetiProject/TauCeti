@@ -203,17 +203,20 @@ theorem addCoboundaryCoeff_apply_zero_zero (a : ℕ → M) :
   simp [addCoboundaryCoeff_apply]
 
 /-- The coefficient of `Yⁱ`, `i ≠ 0`, in `u(Y + Z) - u(Y) - u(Z)` vanishes. -/
+@[simp]
 theorem addCoboundaryCoeff_apply_zero_right (a : ℕ → M) {i : ℕ} (hi : i ≠ 0) :
     addCoboundaryCoeff a (i, 0) = 0 := by
   simp [addCoboundaryCoeff_apply, hi]
 
 /-- The coefficient of `Zʲ`, `j ≠ 0`, in `u(Y + Z) - u(Y) - u(Z)` vanishes. -/
+@[simp]
 theorem addCoboundaryCoeff_apply_zero_left (a : ℕ → M) {j : ℕ} (hj : j ≠ 0) :
     addCoboundaryCoeff a (0, j) = 0 := by
   simp [addCoboundaryCoeff_apply, hj]
 
 /-- The coefficient of a mixed monomial `YⁱZʲ`, `i, j ≠ 0`, in `u(Y + Z) - u(Y) - u(Z)` is
 `(i + j).choose i • a_{i+j}`. -/
+@[simp]
 theorem addCoboundaryCoeff_apply_of_ne_zero (a : ℕ → M) {i j : ℕ} (hi : i ≠ 0)
     (hj : j ≠ 0) :
     addCoboundaryCoeff a (i, j) = (i + j).choose i • a (i + j) := by
@@ -348,9 +351,10 @@ theorem exists_addCoboundaryCoeff_eq (𝕜 : Type*) [DivisionRing 𝕜] [CharZer
   -- `𝕜` need not be commutative, so prove the scalar identity in `ℚ` and cast it to `𝕜`.
   have key : (((i + 1 + j).choose (i + 1) : ℕ) : ℚ) * ((i + 1 + j : ℕ) : ℚ)⁻¹ =
       ((i + 1 : ℕ) : ℚ)⁻¹ * ((i + j).choose i : ℕ) := by
-    field_simp
-    norm_cast
-    linarith
+    -- Clearing the denominators leaves the cast of `hchoose`.
+    rw [mul_inv_eq_iff_eq_mul₀ (by positivity), mul_assoc,
+      eq_inv_mul_iff_mul_eq₀ (by positivity)]
+    exact_mod_cast hchoose
   simpa only [Rat.cast_mul, Rat.cast_inv, Rat.cast_natCast] using congrArg (Rat.cast : ℚ → 𝕜) key
 
 end IsAddCocycleCoeff
