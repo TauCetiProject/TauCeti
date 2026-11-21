@@ -132,7 +132,8 @@ def ofBoundedₗ {U : Opens V} (h : K ⊆ U) :
 /-- The inductive-limit topology on `A[K]`: the finest locally convex topology for which the germ
 maps `H^∞(U) → A[K]` are continuous for all open neighbourhoods `U` of `K`. -/
 instance instTopologicalSpace : TopologicalSpace (HolomorphicGermSpace K) :=
-  finalLocallyConvexTopology fun U : {U : Opens V // K ⊆ U} => (ofBoundedₗ U.2).restrictScalars ℝ
+  finalLocallyConvexTopology fun U : {U : Opens V // K ⊆ U} =>
+    (ofBoundedₗ U.property).restrictScalars ℝ
 
 instance : IsTopologicalAddGroup (HolomorphicGermSpace K) :=
   inferInstanceAs (@IsTopologicalAddGroup _ (finalLocallyConvexTopology _) _)
@@ -142,8 +143,8 @@ instance : LocallyConvexSpace ℝ (HolomorphicGermSpace K) :=
 
 instance : ContinuousSMul ℂ (HolomorphicGermSpace K) :=
   FinalLocallyConvexTopology.continuousSMul
-    (fun U : {U : Opens V // K ⊆ U} => (ofBoundedₗ U.2).restrictScalars ℝ)
-    fun U c f => map_smul (ofBoundedₗ U.2) c f
+    (fun U : {U : Opens V // K ⊆ U} => (ofBoundedₗ U.property).restrictScalars ℝ)
+    fun U c f => map_smul (ofBoundedₗ U.property) c f
 
 instance : UniformSpace (HolomorphicGermSpace K) :=
   IsTopologicalAddGroup.rightUniformSpace (HolomorphicGermSpace K)
@@ -156,7 +157,7 @@ def ofBounded {U : Opens V} (h : K ⊆ U) :
     boundedHolomorphicFunctions ℂ U →L[ℂ] HolomorphicGermSpace K :=
   { toLinearMap := ofBoundedₗ h
     cont := FinalLocallyConvexTopology.continuous
-      (fun W : {U : Opens V // K ⊆ U} => (ofBoundedₗ W.2).restrictScalars ℝ) ⟨U, h⟩ }
+      (fun W : {U : Opens V // K ⊆ U} => (ofBoundedₗ W.property).restrictScalars ℝ) ⟨U, h⟩ }
 
 @[simp]
 theorem toLinearMap_ofBounded {U : Opens V} (h : K ⊆ U) :
@@ -185,8 +186,8 @@ locally convex space is continuous exactly when its composites with the germ map
 theorem continuous_iff_continuous_comp_ofBounded (φ : HolomorphicGermSpace K →ₗ[ℂ] G) :
     Continuous φ ↔ ∀ (U : Opens V) (h : K ⊆ U), Continuous (φ ∘ ofBounded h) :=
   (FinalLocallyConvexTopology.continuous_iff_continuous_comp
-    (fun W : {U : Opens V // K ⊆ U} => (ofBoundedₗ W.2).restrictScalars ℝ) φ).trans
-    ⟨fun H U h => H ⟨U, h⟩, fun H W => H W.1 W.2⟩
+    (fun W : {U : Opens V // K ⊆ U} => (ofBoundedₗ W.property).restrictScalars ℝ) φ).trans
+    ⟨fun H U h => H ⟨U, h⟩, fun H W => H W.val W.property⟩
 
 end UniversalProperty
 
@@ -215,7 +216,7 @@ theorem ofBounded_injective {U : Opens V} (h : K ⊆ U)
   · rw [map_zero]
     refine Subtype.ext (BoundedContinuousFunction.ext fun z => ?_)
     rw [BoundedHolomorphicFunctions.restrict_apply, ← extend_apply]
-    simpa using hfW z z.2.2
+    simpa using hfW z z.property.2
 
 section Jet
 
@@ -430,8 +431,8 @@ theorem topologicalSpace_eq :
       finalLocallyConvexTopology fun n => (ofBoundedₗ (hU.subset n)).restrictScalars ℝ := by
   refine le_antisymm ((FinalLocallyConvexTopology.le_iff _ _).2 fun W => ?_)
     ((FinalLocallyConvexTopology.le_iff _ _).2 fun n => (ofBounded (hU.subset n)).continuous)
-  obtain ⟨n, hn⟩ := hU.exists_subset W.1.isOpen W.2
-  have hcomp : ⇑((ofBoundedₗ W.2).restrictScalars ℝ) =
+  obtain ⟨n, hn⟩ := hU.exists_subset W.val.isOpen W.property
+  have hcomp : ⇑((ofBoundedₗ W.property).restrictScalars ℝ) =
       (ofBoundedₗ (hU.subset n)).restrictScalars ℝ ∘ restrict (E := ℂ) (U' := U n) hn := by
     ext f : 1
     exact congr($(ofBounded_comp_restrict (hU.subset n) hn) f).symm
