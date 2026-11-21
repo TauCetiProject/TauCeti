@@ -304,6 +304,7 @@ variable (e₁ : ∀ x, E₁ x ≃L[𝕜] E₁' x) (e₂ : ∀ x, E₂ x ≃L[�
 /-- Homeomorphism of tensor-product total spaces induced by two continuous families of fibrewise
 linear equivalences. Continuity of the inverse follows automatically from finite rank. -/
 def bundleTensorCongrHomeomorph : TotalSpace PF₁F₂ TE₁E₂ ≃ₜ TotalSpace PF₁'F₂' TE₁'E₂' :=
+  let := FiniteDimensional.completeSpace 𝕜 PF₁F₂
   bundleHomeomorphOfHom (bundleTensorCongr e₁ e₂) <| by
     simpa only [bundleTensorCongr_toContinuousLinearMap] using continuous_bundleTensorMap
       ((continuous_hom_bundle_iff (fun x ↦ (e₁ x).toContinuousLinearMap)).2 he₁)
@@ -312,12 +313,14 @@ def bundleTensorCongrHomeomorph : TotalSpace PF₁F₂ TE₁E₂ ≃ₜ TotalSpa
 @[simp] theorem bundleTensorCongrHomeomorph_apply (p : TotalSpace PF₁F₂ TE₁E₂) :
     bundleTensorCongrHomeomorph e₁ e₂ he₁ he₂ p = ⟨p.proj, bundleTensorCongr e₁ e₂ p.proj p.snd⟩
         := by
-  rw [bundleTensorCongrHomeomorph, bundleHomeomorphOfHom_apply]
+  rw [bundleTensorCongrHomeomorph,
+    bundleHomeomorphOfHom_apply (hF₁ := FiniteDimensional.completeSpace 𝕜 PF₁F₂)]
 
 @[simp] theorem bundleTensorCongrHomeomorph_symm_apply (p : TotalSpace PF₁'F₂' TE₁'E₂') :
     (bundleTensorCongrHomeomorph e₁ e₂ he₁ he₂).symm p =
       ⟨p.proj, (bundleTensorCongr e₁ e₂ p.proj).symm p.snd⟩ := by
-  rw [bundleTensorCongrHomeomorph, bundleHomeomorphOfHom_symm_apply]
+  rw [bundleTensorCongrHomeomorph,
+    bundleHomeomorphOfHom_symm_apply (hF₁ := FiniteDimensional.completeSpace 𝕜 PF₁F₂)]
 end MapBundle
 
 section CommBundle
@@ -359,16 +362,19 @@ theorem continuous_bundleTensorCommEquiv :
 variable (F₁ E₁ F₂ E₂) in
 /-- Canonical symmetry homeomorphism between the total spaces of `E₁ ⊗ E₂` and `E₂ ⊗ E₁`. -/
 def bundleTensorCommHomeomorph : TotalSpace PF₁F₂ TE₁E₂ ≃ₜ TotalSpace PF₂F₁ TE₂E₁ :=
+  let := FiniteDimensional.completeSpace 𝕜 PF₁F₂
   bundleHomeomorphOfHom bundleTensorCommEquiv continuous_bundleTensorCommEquiv
 
 @[simp] theorem bundleTensorCommHomeomorph_apply (p : TotalSpace PF₁F₂ TE₁E₂) :
     bundleTensorCommHomeomorph F₁ E₁ F₂ E₂ p = ⟨p.proj, bundleTensorCommEquiv p.proj p.snd⟩ := by
-  rw [bundleTensorCommHomeomorph, bundleHomeomorphOfHom_apply]
+  rw [bundleTensorCommHomeomorph,
+    bundleHomeomorphOfHom_apply (hF₁ := FiniteDimensional.completeSpace 𝕜 PF₁F₂)]
 
 @[simp] theorem bundleTensorCommHomeomorph_symm_apply (p : TotalSpace PF₂F₁ TE₂E₁) :
     (bundleTensorCommHomeomorph F₁ E₁ F₂ E₂).symm p =
       ⟨p.proj, (bundleTensorCommEquiv p.proj).symm p.snd⟩ := by
-  rw [bundleTensorCommHomeomorph, bundleHomeomorphOfHom_symm_apply]
+  rw [bundleTensorCommHomeomorph,
+    bundleHomeomorphOfHom_symm_apply (hF₁ := FiniteDimensional.completeSpace 𝕜 PF₁F₂)]
 end CommBundle
 
 section AssocBundle
@@ -436,17 +442,20 @@ variable (F₁ E₁ F₂ E₂ F₃ E₃) in
 /-- Canonical associativity homeomorphism between the total spaces of `(E₁ ⊗ E₂) ⊗ E₃` and
 `E₁ ⊗ (E₂ ⊗ E₃)`. -/
 def bundleTensorAssocHomeomorph : TotalSpace PAssocL TAssocL ≃ₜ TotalSpace PAssocR TAssocR :=
-  bundleHomeomorphOfHom bundleTensorAssocEquiv continuous_bundleTensorAssocEquiv
+  bundleHomeomorphOfHom (hF₁ := FiniteDimensional.completeSpace 𝕜 PAssocL)
+    bundleTensorAssocEquiv continuous_bundleTensorAssocEquiv
 
 @[simp] theorem bundleTensorAssocHomeomorph_apply (p : TotalSpace PAssocL TAssocL) :
     bundleTensorAssocHomeomorph F₁ E₁ F₂ E₂ F₃ E₃ p =
       ⟨p.proj, bundleTensorAssocEquiv p.proj p.snd⟩ := by
-  rw [bundleTensorAssocHomeomorph, bundleHomeomorphOfHom_apply]
+  rw [bundleTensorAssocHomeomorph,
+    bundleHomeomorphOfHom_apply (hF₁ := FiniteDimensional.completeSpace 𝕜 PAssocL)]
 
 @[simp] theorem bundleTensorAssocHomeomorph_symm_apply (p : TotalSpace PAssocR TAssocR) :
     (bundleTensorAssocHomeomorph F₁ E₁ F₂ E₂ F₃ E₃).symm p =
       ⟨p.proj, (bundleTensorAssocEquiv p.proj).symm p.snd⟩ := by
-  rw [bundleTensorAssocHomeomorph, bundleHomeomorphOfHom_symm_apply]
+  rw [bundleTensorAssocHomeomorph,
+    bundleHomeomorphOfHom_symm_apply (hF₁ := FiniteDimensional.completeSpace 𝕜 PAssocL)]
 end AssocBundle
 
 section DualTensorHomBundle

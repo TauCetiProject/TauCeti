@@ -9,7 +9,7 @@ public import TauCeti.Topology.VectorBundle.Core.Basic
 public import TauCeti.Topology.VectorBundle.Descent
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Basic
 
 /-!
 # The category of finite-rank point-indexed vector-bundle cores
@@ -558,6 +558,58 @@ theorem fiberMap_isoOfTotalSpaceContinuous_inv
     (isoOfTotalSpaceContinuous Φ hΦ₁ hΦ₂).inv.fiberMap x =
       ((Φ x).symm : (Fin D.rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜)) :=
   fiberMap_ofTotalSpaceContinuous _ (hΦ₂.congr fun _ ↦ rfl) x
+
+/-- The continuous linear equivalence on the fibre at `x` induced by a categorical isomorphism of
+finite-rank cores. -/
+def isoFiberEquiv (e : A ≅ D) (x : B) : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜) :=
+  ContinuousLinearEquiv.ofContinuousLinearMap (e.hom.fiberMap x) (e.inv.fiberMap x)
+    (ContinuousLinearMap.ext fun v ↦ by
+      have h := congrArg (fun k : D ⟶ D ↦ k.fiberMap x v) e.inv_hom_id
+      simpa only [fiberMap_comp, fiberMap_id, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.id_apply] using h)
+    (ContinuousLinearMap.ext fun v ↦ by
+      have h := congrArg (fun k : A ⟶ A ↦ k.fiberMap x v) e.hom_inv_id
+      simpa only [fiberMap_comp, fiberMap_id, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.id_apply] using h)
+
+@[simp]
+theorem isoFiberEquiv_apply (e : A ≅ D) (x : B) (v : Fin A.rank → 𝕜) :
+    isoFiberEquiv e x v = e.hom.fiberMap x v :=
+  (rfl)
+
+@[simp]
+theorem isoFiberEquiv_symm_apply (e : A ≅ D) (x : B) (v : Fin D.rank → 𝕜) :
+    (isoFiberEquiv e x).symm v = e.inv.fiberMap x v :=
+  (rfl)
+
+/-- Re-express a continuous linear equivalence between core fibres directly on coordinate models so
+its type reduces under `implicit` transparency. -/
+def ofCoreEquiv {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (A : FiniteRankBundleCore 𝕜 Y) (D : FiniteRankBundleCore 𝕜 Z) (y : Y) (z : Z)
+    (e : A.core.Fiber y ≃L[𝕜] D.core.Fiber z) :
+    (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜) where
+  toFun v := e v
+  invFun v := e.symm v
+  left_inv v := e.symm_apply_apply v
+  right_inv v := e.apply_symm_apply v
+  map_add' u v := e.map_add u v
+  map_smul' c v := e.map_smul c v
+  continuous_toFun := e.continuous
+  continuous_invFun := e.symm.continuous
+
+@[simp]
+theorem ofCoreEquiv_apply {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (A : FiniteRankBundleCore 𝕜 Y) (D : FiniteRankBundleCore 𝕜 Z) (y : Y) (z : Z)
+    (e : A.core.Fiber y ≃L[𝕜] D.core.Fiber z) (v : Fin A.rank → 𝕜) :
+    ofCoreEquiv A D y z e v = e v :=
+  (rfl)
+
+@[simp]
+theorem ofCoreEquiv_symm_apply {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+    (A : FiniteRankBundleCore 𝕜 Y) (D : FiniteRankBundleCore 𝕜 Z) (y : Y) (z : Z)
+    (e : A.core.Fiber y ≃L[𝕜] D.core.Fiber z) (v : Fin D.rank → 𝕜) :
+    (ofCoreEquiv A D y z e).symm v = e.symm v :=
+  (rfl)
 
 end TotalSpace
 

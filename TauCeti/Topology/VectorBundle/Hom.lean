@@ -22,13 +22,15 @@ continuity in coordinates: read in linear trivializations, a fibrewise continuou
 a map of bases, with finite-dimensional model source and continuous total-space map, is a
 continuous family of linear maps between the model fibres
 (`TauCeti.continuousOn_continuousLinearMapAt_comp_symmL`).
-Consequently a continuous fibrewise linear equivalence, or one whose underlying continuous linear
-maps form a continuous Hom-bundle section, gives a homeomorphism of total spaces
-(`TauCeti.bundleHomeomorph`, `TauCeti.bundleHomeomorphOfHom`): continuity of the inverse need not
-be supplied separately.
+Consequently a continuous fibrewise linear equivalence gives a homeomorphism of total spaces
+(`TauCeti.bundleHomeomorph`): continuity of the inverse need not be supplied separately.
 
 We also prove local continuity of inversion for Hom-bundle sections with a Banach model
-source. This local result does not require finite rank or invertibility away from the
+source. Consequently, a fibrewise continuous linear equivalence whose underlying continuous linear
+maps form a continuous Hom-bundle section induces continuous forward and inverse total-space maps
+(`TauCeti.continuous_bundle_of_hom`) and a homeomorphism of total spaces
+(`TauCeti.bundleHomeomorphOfHom`) for any Banach model source, without finite dimensionality.
+This local result does not require finite rank or invertibility away from the
 point under consideration. The inverse is Mathlib's `ContinuousLinearMap.inverse`,
 which is zero at noninvertible maps. In the same generality, invertibility of the fibre
 maps is an open condition along a continuous Hom-bundle section, composition of
@@ -453,6 +455,53 @@ end Comp
 
 namespace TauCeti
 
+section BanachOfHom
+
+/-- A fibrewise continuous linear equivalence whose underlying continuous linear maps form a
+continuous Hom-bundle section is continuous on total spaces, and when the model source `F₁` is
+complete its inverse is continuous on total spaces as well. -/
+theorem continuous_bundle_of_hom [CompleteSpace F₁]
+    (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
+    (he : Continuous (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+      (E := fun y ↦ E₁ y →L[𝕜] E₂ y) x (e x).toContinuousLinearMap)) :
+    Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.snd)) ∧
+    Continuous (fun p : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₁ p.proj ((e p.proj).symm p.snd)) := by
+  have : ∀ x, IsTopologicalAddGroup (E₁ x) := VectorBundle.isTopologicalAddGroup 𝕜 F₁ E₁
+  have : ∀ x, ContinuousSMul 𝕜 (E₁ x) := VectorBundle.continuousSMul 𝕜 F₁ E₁
+  have hei : Continuous (fun x ↦ TotalSpace.mk' (F₂ →L[𝕜] F₁)
+      (E := fun y ↦ E₂ y →L[𝕜] E₁ y) x (e x).symm.toContinuousLinearMap) :=
+    (he.clm_bundle_inverse (fun _ ↦ ContinuousLinearMap.isInvertible_equiv)).congr fun x ↦
+      congrArg (TotalSpace.mk' (F₂ →L[𝕜] F₁) x) (ContinuousLinearMap.inverse_equiv (e x))
+  exact ⟨(he.comp (continuous_proj F₁ E₁)).clm_bundle_apply continuous_id,
+    (hei.comp (continuous_proj F₂ E₂)).clm_bundle_apply continuous_id⟩
+
+section
+
+variable [hF₁ : CompleteSpace F₁] (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
+  (he : Continuous (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+    (E := fun y ↦ E₁ y →L[𝕜] E₂ y) x (e x).toContinuousLinearMap))
+
+/-- The homeomorphism of total spaces induced by a family of fibrewise continuous linear
+equivalences whose underlying continuous linear maps form a continuous Hom-bundle section, for any
+Banach model source `F₁`. -/
+def bundleHomeomorphOfHom : TotalSpace F₁ E₁ ≃ₜ TotalSpace F₂ E₂ where
+  toFun p := ⟨p.proj, e p.proj p.snd⟩
+  invFun p := ⟨p.proj, (e p.proj).symm p.snd⟩
+  left_inv p := by simp
+  right_inv p := by simp
+  continuous_toFun := (continuous_bundle_of_hom e he).1
+  continuous_invFun := (continuous_bundle_of_hom e he).2
+
+@[simp] theorem bundleHomeomorphOfHom_apply (p : TotalSpace F₁ E₁) :
+    bundleHomeomorphOfHom e he p = ⟨p.proj, e p.proj p.snd⟩ := (rfl)
+
+@[simp] theorem bundleHomeomorphOfHom_symm_apply (p : TotalSpace F₂ E₂) :
+    (bundleHomeomorphOfHom e he).symm p = ⟨p.proj, (e p.proj).symm p.snd⟩ := (rfl)
+
+end
+
+end BanachOfHom
+
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁]
 
 section
@@ -497,25 +546,6 @@ theorem bundleHomeomorph_symm_apply (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
     (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.snd)))
     (p : TotalSpace F₂ E₂) : (bundleHomeomorph e he).symm p = ⟨p.proj, (e p.proj).symm p.snd⟩ :=
   (rfl)
-
-end
-
-section
-
-variable (e : ∀ x, E₁ x ≃L[𝕜] E₂ x) (he : Continuous (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
-  (E := fun y ↦ E₁ y →L[𝕜] E₂ y) x (e x).toContinuousLinearMap))
-
-/-- The homeomorphism of total spaces induced by a family of fibrewise continuous linear
-equivalences whose underlying continuous linear maps form a continuous Hom-bundle section. -/
-def bundleHomeomorphOfHom : TotalSpace F₁ E₁ ≃ₜ TotalSpace F₂ E₂ :=
-  bundleHomeomorph e
-    (((continuous_hom_bundle_iff (fun x ↦ (e x).toContinuousLinearMap)).1 he).congr fun _ ↦ rfl)
-
-@[simp] theorem bundleHomeomorphOfHom_apply (p : TotalSpace F₁ E₁) :
-    bundleHomeomorphOfHom e he p = ⟨p.proj, e p.proj p.snd⟩ := (rfl)
-
-@[simp] theorem bundleHomeomorphOfHom_symm_apply (p : TotalSpace F₂ E₂) :
-    (bundleHomeomorphOfHom e he).symm p = ⟨p.proj, (e p.proj).symm p.snd⟩ := (rfl)
 
 end
 
