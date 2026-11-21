@@ -367,16 +367,14 @@ private theorem dgRightModuleCochainCompTensor_d (p q j : ℤ) (hpq : p + q = j)
           (dgRightModuleCochainCompTensor (hM := hM) (hN := hN) (hP := hP) · · (j + 1) ·) =
       dgRightModuleCochainCompTensor (hM := hM) (hN := hN) (hP := hP) p q j hpq ≫
         (dgRightModuleHomComplex hM hP).d j (j + 1) := by
-  rw [← Category.assoc, HomologicalComplex.ιTensorObj_tensor_d _ _ p q j hpq]
-  rw [Preadditive.add_comp, Linear.units_smul_comp]
-  rw [Category.assoc, HomologicalComplex.ι_mapBifunctorDesc]
-  rw [Category.assoc, HomologicalComplex.ι_mapBifunctorDesc]
+  rw [HomologicalComplex.ιTensorObj_tensor_d_assoc]
+  simp only [Preadditive.add_comp, Linear.units_smul_comp, Category.assoc,
+    HomologicalComplex.ι_mapBifunctorDesc]
   apply ModuleCat.MonoidalCategory.tensor_ext
   intro g f
-  simp only [curriedTensor_obj_obj, ModuleCat.hom_comp, LinearMap.coe_comp,
-    Function.comp_apply, ModuleCat.hom_add, ModuleCat.hom_smul, LinearMap.add_apply,
-    ModuleCat.MonoidalCategory.whiskerRight_apply, LinearMap.smul_apply,
-    ModuleCat.MonoidalCategory.whiskerLeft_apply]
+  simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, ModuleCat.hom_add,
+    ModuleCat.hom_smul, LinearMap.add_apply, ModuleCat.MonoidalCategory.whiskerRight_apply,
+    LinearMap.smul_apply, ModuleCat.MonoidalCategory.whiskerLeft_apply]
   exact dgRightModuleCochainCompTensor_d_apply p q j hpq g f
 
 /-- Composition of DG right-module cochains is a closed degree-zero map of Hom complexes. -/

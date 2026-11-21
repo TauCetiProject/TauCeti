@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.LinearHomComplex.Basic
 public import TauCeti.Algebra.Homology.Monoidal.Braiding
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 
 /-!
 # Composition of cochains as a morphism of `R`-linear Hom complexes
@@ -126,7 +127,7 @@ private lemma cochainCompTensor_d (p q j : ℤ)
         (linearHomComplex R G K ⊗ linearHomComplex R F G).d j (j + 1) ≫
         HomologicalComplex.mapBifunctorDesc (cochainCompTensor R F G K · · (j + 1) ·) =
       cochainCompTensor R F G K p q j h ≫ (linearHomComplex R F K).d j (j + 1) := by
-  replace h : p + q = j := h
+  dsimp at h
   rw [HomologicalComplex.ιTensorObj_tensor_d_assoc]
   simp only [Preadditive.add_comp, Linear.units_smul_comp, Category.assoc,
     HomologicalComplex.ι_mapBifunctorDesc]
@@ -137,16 +138,12 @@ private lemma cochainCompTensor_d (p q j : ℤ)
   simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply, ModuleCat.hom_add,
     ModuleCat.hom_smul, LinearMap.add_apply, ModuleCat.MonoidalCategory.whiskerRight_apply,
     LinearMap.smul_apply, ModuleCat.MonoidalCategory.whiskerLeft_apply]
-  -- Express the totalized tensor differential on this pure tensor in the degreewise cochain
-  -- modules characterized by `linearHomComplex_X`.
-  change ModuleCat.Hom.hom (cochainCompTensor R F G K (p + 1) q (j + 1) _) (
-        ModuleCat.Hom.hom ((linearHomComplex R G K).d p (p + 1)) z₂' ⊗ₜ z₁') +
-      p.negOnePow • ModuleCat.Hom.hom (cochainCompTensor R F G K p (q + 1) (j + 1) _)
-        (z₂' ⊗ₜ ModuleCat.Hom.hom ((linearHomComplex R F G).d q (q + 1)) z₁') =
-    ModuleCat.Hom.hom ((linearHomComplex R F K).d j (j + 1))
-      (ModuleCat.Hom.hom (cochainCompTensor R F G K p q j _) (z₂' ⊗ₜ z₁'))
-  rw [linearHomComplex_d_hom_apply, linearHomComplex_d_hom_apply, cochainCompTensor_tmul,
-    cochainCompTensor_tmul, cochainCompTensor_tmul, linearHomComplex_d_hom_apply]
+  -- On a pure tensor of cochains, the differentials are `δ` (`linearHomComplex_d_hom_apply`) and
+  -- `cochainCompTensor` is composition (`cochainCompTensor_tmul`), both by definition; state the
+  -- goal through them as the Leibniz rule.
+  change z₁'.comp (δ p (p + 1) z₂') (by omega) +
+      p.negOnePow • (δ q (q + 1) z₁').comp z₂' (by omega) =
+    δ j (j + 1) (z₁'.comp z₂' (by omega))
   exact (δ_comp z₁' z₂' (by omega) (q + 1) (p + 1) (j + 1) rfl rfl rfl).symm
 
 /-- **Composition of cochains is a closed degree-zero map.**  It assembles into a morphism of

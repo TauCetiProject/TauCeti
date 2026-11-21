@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.BifunctorFlip
 public import TauCeti.Algebra.Homology.Monoidal.Summand
-public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
@@ -61,6 +61,11 @@ The hypotheses are the graded-object tensor existence and preservation classes u
 Mathlib's `HomologicalComplex.monoidalCategory`. In particular, modules over a commutative
 ring satisfy them through their closed symmetric monoidal structure.
 
+`TauCeti.koszulBraidingHom` totalizes the coefficient braiding, viewed as a map into the bicomplex
+of the flipped tensor product, and composes with Mathlib's `HomologicalComplex.mapBifunctorFlipIso`.
+At `ComplexShape.up ℤ` the sign `ComplexShape.σ` of that isomorphism is `(p * q).negOnePow`, so
+both the Koszul sign and the compatibility with the differentials come from Mathlib.
+
 ## References
 
 * The totalized monoidal structure `HomologicalComplex.monoidalCategory` in
@@ -107,49 +112,21 @@ lemma koszulBraidingSummand_def (X Y : CochainComplex C ℤ) (p q j : ℤ)
           (ComplexShape.up ℤ) q p j (by dsimp at h ⊢; omega)) :=
   (rfl)
 
-private lemma koszulBraidingSummand_comm (X Y : CochainComplex C ℤ)
-    (p q j : ℤ)
-    (h : ComplexShape.π (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) (p, q) = j) :
-    koszulBraidingSummand C X Y p q j h ≫ (Y ⊗ X).d j (j + 1) =
-      HomologicalComplex.ιMapBifunctor X Y (curriedTensor C)
-          (ComplexShape.up ℤ) p q j h ≫ (X ⊗ Y).d j (j + 1) ≫
-        HomologicalComplex.mapBifunctorDesc (koszulBraidingSummand C X Y · · (j + 1) ·) := by
-  simp only [koszulBraidingSummand, Linear.units_smul_comp, Category.assoc,
-    HomologicalComplex.ιTensorObj_tensor_d, HomologicalComplex.ιTensorObj_tensor_d_assoc,
-    Preadditive.comp_add, Preadditive.add_comp, Linear.comp_units_smul,
-    HomologicalComplex.ι_mapBifunctorDesc, smul_add, smul_smul]
-  -- The two Koszul sign identities are Mathlib's compatibilities `σ_ε₂` and `σ_ε₁` of the
-  -- symmetry `σ p q = (p * q).negOnePow` with the tensor signs of the swapped total complex.
-  have hs₁ : ((p + 1) * q).negOnePow = (p * q).negOnePow * q.negOnePow := by
-    have h := ComplexShape.σ_ε₂ (.up ℤ) (c₁₂ := .up ℤ) q (ComplexShape.up_mk p (p + 1) rfl)
-    dsimp at h
-    rw [mul_comm q, mul_comm q, one_mul] at h
-    exact h.symm
-  have hs₂ : p.negOnePow * (p * (q + 1)).negOnePow = (p * q).negOnePow := by
-    have h := ComplexShape.σ_ε₁ (c₂ := .up ℤ) (c₁₂ := .up ℤ) (ComplexShape.up_mk q (q + 1) rfl) p
-    dsimp at h
-    rw [mul_comm q, mul_comm (q + 1), mul_one] at h
-    exact h.symm
-  rw [hs₁, hs₂, ← BraidedCategory.braiding_naturality_left_assoc,
-    ← BraidedCategory.braiding_naturality_right_assoc]
-  exact add_comm _ _
-
-/-- The Koszul braiding `X ⊗ Y ⟶ Y ⊗ X`. -/
+/-- The Koszul braiding `X ⊗ Y ⟶ Y ⊗ X`: the braiding of `C` on each summand, as a map from the
+bicomplex of `X ⊗ Y` to the bicomplex of the flipped tensor product, totalized and followed by
+Mathlib's `HomologicalComplex.mapBifunctorFlipIso`, which carries the Koszul sign
+`ComplexShape.σ`. -/
 noncomputable def koszulBraidingHom (X Y : CochainComplex C ℤ) :
-    X ⊗ Y ⟶ Y ⊗ X where
-  f j := HomologicalComplex.mapBifunctorDesc (koszulBraidingSummand C X Y · · j ·)
-  comm' j j' hjj' := by
-    replace hjj' : j + 1 = j' := hjj'
-    subst hjj'
-    apply HomologicalComplex.mapBifunctor.hom_ext
-    intro p q h
-    rw [HomologicalComplex.ι_mapBifunctorDesc_assoc]
-    exact koszulBraidingSummand_comm C X Y p q j h
-
-private lemma koszulBraidingHom_f (X Y : CochainComplex C ℤ) (j : ℤ) :
-    (koszulBraidingHom C X Y).f j =
-      HomologicalComplex.mapBifunctorDesc (koszulBraidingSummand C X Y · · j ·) :=
-  rfl
+    X ⊗ Y ⟶ Y ⊗ X :=
+  HomologicalComplex₂.total.map
+      (HomologicalComplex₂.homMk
+        (K := (((curriedTensor C).mapBifunctorHomologicalComplex (.up ℤ) (.up ℤ)).obj X).obj Y)
+        (L := (((curriedTensor C).flip.mapBifunctorHomologicalComplex (.up ℤ) (.up ℤ)).obj X).obj Y)
+        (fun pq => (β_ (X.X pq.1) (Y.X pq.2)).hom)
+        (fun _ _ _ _ => by simp [BraidedCategory.braiding_naturality_left])
+        (fun _ _ _ _ => by simp [BraidedCategory.braiding_naturality_right]))
+      (.up ℤ) ≫
+    (HomologicalComplex.mapBifunctorFlipIso Y X (curriedTensor C) (.up ℤ)).hom
 
 @[reassoc (attr := simp)]
 lemma ι_koszulBraidingHom (X Y : CochainComplex C ℤ) (p q j : ℤ)
@@ -157,8 +134,7 @@ lemma ι_koszulBraidingHom (X Y : CochainComplex C ℤ) (p q j : ℤ)
     HomologicalComplex.ιMapBifunctor X Y (curriedTensor C)
         (ComplexShape.up ℤ) p q j h ≫ (koszulBraidingHom C X Y).f j =
       koszulBraidingSummand C X Y p q j h := by
-  rw [koszulBraidingHom_f]
-  apply HomologicalComplex.ι_mapBifunctorDesc
+  simp [koszulBraidingHom, koszulBraidingSummand, mul_comm q p]
 
 /-- The Koszul braiding is natural in the left-hand factor. -/
 lemma koszulBraidingHom_naturality_left {X Y : CochainComplex C ℤ} (f : X ⟶ Y)
