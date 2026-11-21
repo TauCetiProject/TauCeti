@@ -511,7 +511,7 @@ relative class. -/
 theorem exists_isCubicalRepresentative_of_dim_zero (P : TopPair.{u})
     (c : NormalizedCubicalChain P.fst k 0) : ∃ μ, P.IsCubicalRepresentative k c μ :=
   ⟨_, _, ((P.cubicalChainComplex k).iCycles_moduleCatCyclesMk 0 _ 0 (by simp)
-    (by rw [(P.cubicalChainComplex k).shape 0 0 (by simp)]; rfl)).symm, rfl⟩
+    (by simp)).symm, rfl⟩
 
 /-- **A chain represents the zero relative class exactly when it is a relative boundary**: the
 boundary of a chain of the ambient space, up to a chain of the subspace. -/

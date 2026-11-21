@@ -88,9 +88,13 @@ theorem exists_iCycles_eq_of_cubicalChainDifferential_lof_eq_zero (q : ℕ)
         (((normalizedCubicalChainComplex k).obj (TopCat.of Y)).iCycles q z) = a := by
   cases q with
   | zero =>
+    -- The differential `d 0 0` is the zero map. Since `a` is typed as a normalized chain rather
+    -- than an element of `X 0`, `LinearMap.zero_apply` closes the goal by `exact`, not by `rw`.
     exact ⟨_, HomologicalComplex.iCycles_moduleCatCyclesMk
       ((normalizedCubicalChainComplex k).obj (TopCat.of Y)) 0 a 0 (by simp)
-      (by rw [HomologicalComplex.shape _ 0 0 (by simp)]; rfl)⟩
+      (by simp only [ComplexShape.down_Rel, zero_add, one_ne_zero, not_false_eq_true,
+            HomologicalComplex.shape, ModuleCat.hom_zero]
+          exact LinearMap.zero_apply _)⟩
   | succ q =>
     rw [cubicalChainDifferential_lof_succ] at ha
     have hd : boundary _ k q a = 0 :=

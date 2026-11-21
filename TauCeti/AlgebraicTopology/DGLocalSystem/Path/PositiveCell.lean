@@ -283,9 +283,9 @@ private theorem exists_differential_sub_mem_of_lt {i : ℤ} (hi : -((m : ℤ) + 
     rw [← range_cellPathPullbackPair_map]
     exact ((cellPathPullbackPair b C (m + 1)).isCubicalRepresentative_zero_iff R x).1 hμ
   refine ⟨cubicalChainModuleLof _ H R (e + 1) v, ?_⟩
-  rw [cubicalChainModuleDifferential_lof_succ, ← map_sub,
-    cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff, ← neg_sub]
-  exact neg_mem hv
+  rw [← neg_sub, neg_mem_iff,
+    cubicalChainModuleLof_sub_differential_mem_cubicalChainModuleSupportedIn_iff]
+  exact hv
 
 /-- **Relative cycles of the pullback of dimension `p + m + 1` come from the free module on the
 cells**, up to relative boundaries. -/
@@ -322,9 +322,10 @@ private theorem exists_linearCombination_add_differential_sub_mem (p : ℕ)
     exact Finset.sum_eq_zero fun j _ ↦ by rw [cubicalChainDifferential_lof_iCycles, single_zero]
   · simp only [map_sum, linearCombination_single, cellSectionChain_def,
       lof_smul_cubicalChainModuleLof]
-    rw [← map_sum, cubicalChainModuleDifferential_lof_succ, ← map_add, ← map_sub,
-      cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff]
-    convert neg_mem hv using 1
+    have h := (cubicalChainModuleLof_sub_differential_mem_cubicalChainModuleSupportedIn_iff
+      (H := H)).2 hv
+    rw [map_sub, map_sum] at h
+    convert neg_mem h using 1
     abel
 
 /-- **The free module on the cells injects into the relative homology of the pullback.** If the
@@ -361,8 +362,7 @@ private theorem exists_mapRange_eq_of_linearCombination_sub_differential_mem (q 
     rw [linearCombination_apply, Finsupp.sum, map_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [← hz j, cellSectionChain_def, lof_smul_cubicalChainModuleLof]
-  rw [hsum, cubicalChainModuleDifferential_lof_succ, ← map_sub,
-    cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff] at hyw
+  rw [hsum, cubicalChainModuleLof_sub_differential_mem_cubicalChainModuleSupportedIn_iff] at hyw
   -- Each `zⱼ` is a boundary.
   have hb (j : cell C (m + 1)) (hj : j ∈ y.support) :
       ∃ c : NormalizedCubicalChain (MooreLoopSpace B b) R (q + 1),
