@@ -29,11 +29,12 @@ Atiyah–Bott description of the gauge action on this affine space as a Hamilton
   by `u · A = u A u⁻¹ - du u⁻¹`, that is by the translation
   `a ↦ a - circleLogDeriv u` by the real logarithmic derivative `-i u⁻¹ du`
   (`TauCeti.circleGaugeAction`). It is a group homomorphism into the affine automorphisms whose
-  linear parts are all the identity. The stabilizer of every connection is the group of constant
-  maps (`TauCeti.circleGaugeAction_apply_eq_self_iff`), the ineffective constant `U(1)`.
+  linear parts are all the identity. On a connected surface, the stabilizer of every connection is
+  the group of constant maps (`TauCeti.circleGaugeAction_apply_eq_self_iff`), the ineffective
+  constant `U(1)`.
 * **The infinitesimal action.** The Lie algebra of the gauge group is `C^∞(M, ℝ)`, a function `ξ`
   generating the one-parameter group `t ↦ exp (i t ξ)`, and
-  `exp (i t ξ) · a = a - t dξ` (`TauCeti.circleGaugeAction_circleExpMap_smul`). So the gauge
+  `exp (i t ξ) · a = a - t dξ` (`TauCeti.circleGaugeAction_circleExp_smul`). So the gauge
   action moves `a` along straight lines, with infinitesimal generator `ξ_a = -dξ`, which is
   `-d_A ξ` for this abelian group.
 * **The symplectic form.** `Ω(a, b) = ∫_M a ∧ b` (`TauCeti.atiyahBottForm`) is an alternating
@@ -82,16 +83,17 @@ transformation `u · A = u A u⁻¹ - du u⁻¹` is the translation `a ↦ a - c
 real logarithmic derivative of `u`. -/
 def circleGaugeAction :
     C^∞⟮I, M; 𝓡 1, Circle⟯ →* (SmoothForm I M ℝ 1 ≃ᵃ[ℝ] SmoothForm I M ℝ 1) where
-  toFun u := AffineEquiv.constVAdd ℝ (SmoothForm I M ℝ 1) (-circleLogDeriv u)
-  map_one' := by rw [circleLogDeriv_one, neg_zero, AffineEquiv.constVAdd_zero, AffineEquiv.one_def]
+  toFun u := AffineEquiv.constVAdd ℝ (SmoothForm I M ℝ 1) (-u.circleLogDeriv)
+  map_one' := by
+    rw [ContMDiffMap.circleLogDeriv_one, neg_zero, AffineEquiv.constVAdd_zero,
+      AffineEquiv.one_def]
   map_mul' u v := by
-    rw [circleLogDeriv_mul, neg_add, AffineEquiv.constVAdd_add, AffineEquiv.mul_def]
+    rw [ContMDiffMap.circleLogDeriv_mul, neg_add, AffineEquiv.constVAdd_add, AffineEquiv.mul_def]
 
 @[simp]
 theorem circleGaugeAction_apply (u : C^∞⟮I, M; 𝓡 1, Circle⟯) (a : SmoothForm I M ℝ 1) :
-    circleGaugeAction u a = a - circleLogDeriv u := by
-  rw [circleGaugeAction, MonoidHom.coe_mk, OneHom.coe_mk, AffineEquiv.constVAdd_apply, vadd_eq_add,
-    neg_add_eq_sub]
+    circleGaugeAction u a = a - u.circleLogDeriv := by
+  simp [circleGaugeAction, neg_add_eq_sub]
 
 /-- The gauge transformations are translations: their linear parts are the identity. -/
 @[simp]
@@ -101,19 +103,30 @@ theorem linear_circleGaugeAction (u : C^∞⟮I, M; 𝓡 1, Circle⟯) :
 
 /-- The infinitesimal generator `ξ_a = -dξ` of the gauge action for the function `ξ` in the Lie
 algebra `C^∞(M, ℝ)` of the gauge group. It does not depend on the connection `a`. -/
-def circleGaugeGenerator (ξ : C^∞⟮I, M; ℝ⟯) : SmoothForm I M ℝ 1 :=
+def _root_.ContMDiffMap.circleGaugeGenerator (ξ : C^∞⟮I, M; ℝ⟯) : SmoothForm I M ℝ 1 :=
   -mextDerivₗ I 0 (SmoothForm.ofFunction ξ)
+
+theorem _root_.ContMDiffMap.circleGaugeGenerator_def (ξ : C^∞⟮I, M; ℝ⟯) :
+    ξ.circleGaugeGenerator = -mextDerivₗ I 0 (SmoothForm.ofFunction ξ) :=
+  (rfl)
+
+/-- The infinitesimal generator `ξ_a = -dξ` evaluated at a tangent vector. -/
+@[simp]
+theorem _root_.ContMDiffMap.circleGaugeGenerator_apply (ξ : C^∞⟮I, M; ℝ⟯) (x : M)
+    (v : Fin 1 → TangentSpace I x) :
+    ξ.circleGaugeGenerator.1 x v = -mvfderiv I ξ x (v 0) := by
+  simp [ξ.circleGaugeGenerator_def, mextDerivₗ_apply, mextDeriv_ofFunction]
 
 /-- **The exponential formula for the gauge action.** The one-parameter group
 `t ↦ exp (i t ξ)` moves every connection along the straight line `a + t ξ_a`, so its velocity at
 `t = 0` is the infinitesimal generator `ξ_a = -dξ`. -/
-theorem circleGaugeAction_circleExpMap_smul (ξ : C^∞⟮I, M; ℝ⟯) (t : ℝ) (a : SmoothForm I M ℝ 1) :
-    circleGaugeAction (circleExpMap (t • ξ)) a = a + t • circleGaugeGenerator ξ := by
+theorem circleGaugeAction_circleExp_smul (ξ : C^∞⟮I, M; ℝ⟯) (t : ℝ) (a : SmoothForm I M ℝ 1) :
+    circleGaugeAction (t • ξ).circleExp a = a + t • ξ.circleGaugeGenerator := by
   have hξ : SmoothForm.ofFunction (t • ξ) = t • SmoothForm.ofFunction (I := I) ξ :=
     Subtype.ext (funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ by
       simp [RoughForm.ofFunction_apply])
-  rw [circleGaugeAction_apply, circleLogDeriv_circleExpMap, hξ, map_smul, circleGaugeGenerator,
-    smul_neg, sub_eq_add_neg]
+  rw [circleGaugeAction_apply, ContMDiffMap.circleLogDeriv_circleExp, hξ, map_smul,
+    ξ.circleGaugeGenerator_def, smul_neg, sub_eq_add_neg]
 
 /-- **The stabilizer of a connection is the constant gauge group.** On a connected manifold a gauge
 transformation fixes a connection exactly when it is a constant map to `U(1)`. In particular the
@@ -121,7 +134,7 @@ gauge group acts with the ineffective kernel `U(1)` of constants. -/
 theorem circleGaugeAction_apply_eq_self_iff [PreconnectedSpace M] {u : C^∞⟮I, M; 𝓡 1, Circle⟯}
     {a : SmoothForm I M ℝ 1} :
     circleGaugeAction u a = a ↔ ∃ z : Circle, ∀ x, u x = z := by
-  rw [circleGaugeAction_apply, sub_eq_self, circleLogDeriv_eq_zero_iff]
+  rw [circleGaugeAction_apply, sub_eq_self, ContMDiffMap.circleLogDeriv_eq_zero_iff]
 
 /-! ### The Atiyah–Bott form -/
 
@@ -169,24 +182,15 @@ theorem atiyahBottForm_isAlt : (atiyahBottForm o).IsAlt := fun a ↦ by
   have h := atiyahBottForm_swap o a a
   linarith
 
-omit [BoundarylessManifold I M] [T2Space M] in
-/-- For a smooth Riemannian metric, the Hodge star of a nonzero smooth form `α` of degree `k` on
-the closed surface pairs nontrivially with it: `∫_M α ∧ ⋆α = ∫_M |α|² vol ≠ 0`. -/
-private theorem integralTopForm_wedge_hodgeStar_ne_zero
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] {k l : ℕ}
-    (hkl : k + l = 2) {α : SmoothForm I M ℝ k} (hα : α ≠ 0) :
-    integralTopForm o (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q) hkl
-      (SmoothForm.wedge α (SmoothForm.hodgeStar o hkl α)) : RoughForm I M ℝ 2) ≠ 0 := by
-  rw [← SmoothForm.inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar]
-  exact mt (SmoothForm.integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff o hkl
-    ((mem_compactlySupportedForms I).mpr (isClosed_tsupport _).isCompact)).mp hα
-
 omit [BoundarylessManifold I M] in
-/-- **The Atiyah–Bott form is weakly nondegenerate**: if `Ω(a, b) = 0` for every `b`, then
-`a = 0`, and likewise in the second argument. Indeed `Ω(a, ⋆a) = ∫_M |a|² vol` for the Hodge
-star of any Riemannian metric on `M`. -/
-theorem atiyahBottForm_nondegenerate : (atiyahBottForm o).Nondegenerate := by
+/-- On the closed surface, a nonzero smooth `k`-form `α` pairs nontrivially with some smooth form
+`β` of the complementary degree, `∫_M α ∧ β ≠ 0`: take `β = ⋆α` for any Riemannian metric on `M`
+(`TauCeti.SmoothForm.integralTopForm_wedge_hodgeStar_self_ne_zero`). -/
+private theorem exists_integralTopForm_wedge_ne_zero {k l : ℕ} (hkl : k + l = 2)
+    {α : SmoothForm I M ℝ k} (hα : α ≠ 0) :
+    ∃ β : SmoothForm I M ℝ l, integralTopForm o
+      (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q) hkl
+        (SmoothForm.wedge α β) : RoughForm I M ℝ 2) ≠ 0 := by
   have : LocallyCompactSpace H := I.locallyCompactSpace
   have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
   obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := E)
@@ -194,12 +198,23 @@ theorem atiyahBottForm_nondegenerate : (atiyahBottForm o).Nondegenerate := by
   let : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
   have : IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y) :=
     Bundle.instIsContMDiffRiemannianBundle g
+  exact ⟨_, SmoothForm.integralTopForm_wedge_hodgeStar_self_ne_zero o hkl
+    ((mem_compactlySupportedForms I).mpr (isClosed_tsupport _).isCompact) hα⟩
+
+omit [BoundarylessManifold I M] in
+/-- **The Atiyah–Bott form is weakly nondegenerate**: if `Ω(a, b) = 0` for every `b`, then
+`a = 0`, and likewise in the second argument. Indeed `Ω(a, ⋆a) = ∫_M |a|² vol` for the Hodge
+star of any Riemannian metric on `M`. -/
+theorem atiyahBottForm_nondegenerate : (atiyahBottForm o).Nondegenerate := by
   have hleft : LinearMap.SeparatingLeft (atiyahBottForm o) := fun a ha ↦ by
     by_contra hne
-    have hkl : 1 + 1 = 2 := rfl
-    refine integralTopForm_wedge_hodgeStar_ne_zero o hkl hne ?_
-    rw [← ha (SmoothForm.hodgeStar o hkl a), atiyahBottForm, LinearMap.mk₂_apply]
+    obtain ⟨b, hb⟩ := exists_integralTopForm_wedge_ne_zero o (show 1 + 1 = 2 from rfl) hne
+    refine hb ?_
+    rw [← ha b, atiyahBottForm_apply]
     congr 1
+    funext x
+    ext v
+    rw [SmoothForm.cast_apply, Fin.cast_refl, Function.comp_id, SmoothForm.coe_wedge]
   refine ⟨hleft, fun b hb ↦ hleft b fun a ↦ ?_⟩
   rw [atiyahBottForm_swap, hb, neg_zero]
 
@@ -234,7 +249,7 @@ theorem atiyahBottMoment_apply (a : SmoothForm I M ℝ 1) (ξ : C^∞⟮I, M; �
 /-- **Integration by parts on the closed surface**: `∫_M ξ db = -∫_M dξ ∧ b`, that is
 `⟨μ(b), ξ⟩ = Ω(ξ_a, b)` for the infinitesimal generator `ξ_a = -dξ`. -/
 theorem atiyahBottForm_circleGaugeGenerator (ξ : C^∞⟮I, M; ℝ⟯) (b : SmoothForm I M ℝ 1) :
-    atiyahBottForm o (circleGaugeGenerator ξ) b = atiyahBottMoment o b ξ := by
+    atiyahBottForm o ξ.circleGaugeGenerator b = atiyahBottMoment o b ξ := by
   -- Stokes' theorem for the compactly supported `1`-form `ξ b`, with the Leibniz rule
   -- `d (ξ b) = dξ ∧ b + ξ db`.
   have hS := integralTopForm_mextDeriv_eq_zero (n := 1) o
@@ -242,14 +257,15 @@ theorem atiyahBottForm_circleGaugeGenerator (ξ : C^∞⟮I, M; ℝ⟯) (b : Smo
   rw [← mextDerivₗ_apply, SmoothForm.mextDerivₗ_funSMulₗ, Submodule.coe_add,
     integralTopForm_add_of_compactSpace o ((SmoothForm.isSmoothForm _).of_le (by simp))
       ((SmoothForm.isSmoothForm _).of_le (by simp))] at hS
-  -- the degree transport `0 + 1 + 1 = 1 + 1` of `dξ ∧ b` does not change its integral
-  have hcast : integralTopForm o (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
+  -- the degree transport `0 + 1 + 1 = 1 + 1` of `dξ ∧ b` does not change the form
+  have hcast : (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
       (show 0 + 1 + 1 = 1 + 1 by omega)
       (SmoothForm.wedge (mextDerivₗ I 0 (SmoothForm.ofFunction ξ)) b) : RoughForm I M ℝ 2) =
-        integralTopForm o (SmoothForm.wedge (mextDerivₗ I 0 (SmoothForm.ofFunction ξ)) b).1 := by
-    congr 1
+        (SmoothForm.wedge (mextDerivₗ I 0 (SmoothForm.ofFunction ξ)) b).1 :=
+    funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ by
+      rw [SmoothForm.cast_apply, Fin.cast_refl, Function.comp_id]
   rw [hcast] at hS
-  rw [circleGaugeGenerator, map_neg, LinearMap.neg_apply, atiyahBottForm, atiyahBottMoment,
+  rw [ξ.circleGaugeGenerator_def, map_neg, LinearMap.neg_apply, atiyahBottForm, atiyahBottMoment,
     LinearMap.mk₂_apply, LinearMap.mk₂_apply]
   linarith
 
@@ -257,7 +273,7 @@ theorem atiyahBottForm_circleGaugeGenerator (ξ : C^∞⟮I, M; ℝ⟯) (b : Smo
 `a + t b` through any connection `a`, the moment map changes by `t Ω(ξ_a, b)`. -/
 theorem atiyahBottMoment_add_smul_apply (a b : SmoothForm I M ℝ 1) (t : ℝ) (ξ : C^∞⟮I, M; ℝ⟯) :
     atiyahBottMoment o (a + t • b) ξ =
-      atiyahBottMoment o a ξ + t * atiyahBottForm o (circleGaugeGenerator ξ) b := by
+      atiyahBottMoment o a ξ + t * atiyahBottForm o ξ.circleGaugeGenerator b := by
   rw [atiyahBottForm_circleGaugeGenerator, map_add, map_smul, LinearMap.add_apply,
     LinearMap.smul_apply, smul_eq_mul]
 
@@ -270,7 +286,7 @@ theorem atiyahBottMoment_circleGaugeAction (u : C^∞⟮I, M; 𝓡 1, Circle⟯)
     atiyahBottMoment o (circleGaugeAction u a) = atiyahBottMoment o a := by
   rw [circleGaugeAction_apply, map_sub, sub_eq_self]
   ext ξ
-  rw [atiyahBottMoment_apply, mextDeriv_circleLogDeriv, LinearMap.zero_apply]
+  rw [atiyahBottMoment_apply, u.mextDeriv_circleLogDeriv, LinearMap.zero_apply]
   simp only [Pi.zero_apply, smul_zero]
   exact integralTopForm_zero o
 
@@ -280,21 +296,15 @@ curvature `da` vanishes. -/
 theorem atiyahBottMoment_eq_zero_iff {a : SmoothForm I M ℝ 1} :
     atiyahBottMoment o a = 0 ↔ mextDerivₗ I 1 a = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have : LocallyCompactSpace H := I.locallyCompactSpace
-    have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
-    obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := E)
-      (E := fun y : M ↦ TangentSpace I y)
-    let : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
-    have : IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y) :=
-      Bundle.instIsContMDiffRiemannianBundle g
-    by_contra hne
-    -- Pair the curvature `F = da` with the function `⋆F`: `⟨μ(a), ⋆F⟩ = ∫_M F ∧ ⋆F ≠ 0`.
+  · by_contra hne
+    -- Pair the curvature `F = da` with a function `s` such that `∫_M F ∧ s ≠ 0`, for instance
+    -- `s = ⋆F` for a Riemannian metric: then `⟨μ(a), s⟩ = ∫_M F ∧ s ≠ 0`.
     set F := mextDerivₗ I 1 a
-    set s := SmoothForm.hodgeStar o (show 2 + 0 = 2 from rfl) F
+    obtain ⟨s, hFs⟩ := exists_integralTopForm_wedge_ne_zero o (show 2 + 0 = 2 from rfl) hne
     have hs : ContMDiff I 𝓘(ℝ, ℝ) ∞ fun x ↦ s.1 x 0 := by
       rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction]
       exact s.isSmoothForm
-    refine integralTopForm_wedge_hodgeStar_ne_zero o (show 2 + 0 = 2 from rfl) hne ?_
+    refine hFs ?_
     have hξ := (atiyahBottMoment_apply o a ⟨fun x ↦ s.1 x 0, hs⟩).symm.trans
       ((LinearMap.congr_fun h _).trans (LinearMap.zero_apply _))
     rw [← hξ]

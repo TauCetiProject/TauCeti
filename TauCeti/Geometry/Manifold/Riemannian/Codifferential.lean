@@ -80,6 +80,8 @@ operator, this says that the principal symbol of `Δ` at `df_x` is `-|df_x|² Id
   `TauCeti.SmoothForm.integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff`: the
   pairing is positive definite, `∫_M |α|² vol ≥ 0` with equality only for `α = 0` when `α` is
   smooth and compactly supported.
+* `TauCeti.SmoothForm.integralTopForm_wedge_hodgeStar_self_ne_zero`: `∫_M α ∧ ⋆α ≠ 0` for a
+  nonzero compactly supported smooth form `α`.
 * `TauCeti.SmoothForm.hodgeStar_mextDeriv`: `⋆dα = (-1) ^ (k + 1) d*⋆α`.
 * `TauCeti.SmoothForm.hodgeStar_hodgeLaplacian`: `⋆Δ = Δ⋆`.
 * `TauCeti.SmoothForm.hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami`: on functions,
@@ -775,6 +777,17 @@ theorem integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff [NeZero
       (Ne.symm (mt alternatingFormInner_self_eq_zero.1 hx))
   · subst h
     exact integralTopForm_inner_zero_left o 0
+
+/-- **A nonzero form pairs nontrivially with its Hodge star**: on an oriented Riemannian manifold
+of positive dimension `m = k + l`, a nonzero compactly supported smooth `k`-form `α` satisfies
+`∫_M α ∧ ⋆α = ∫_M |α|² vol ≠ 0`. -/
+theorem integralTopForm_wedge_hodgeStar_self_ne_zero [NeZero m]
+    (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) {α : SmoothForm I M ℝ k}
+    (hα : α ∈ compactlySupportedForms I M k) (hα₀ : α ≠ 0) :
+    integralTopForm o (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q) hkl
+      (wedge α (hodgeStar o hkl α)) : RoughForm I M ℝ m) ≠ 0 := by
+  rw [← inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar]
+  exact mt (integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff o hkl hα).mp hα₀
 
 omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- The `L²` pairing of forms is symmetric: `∫_M ⟨α, β⟩ vol = ∫_M ⟨β, α⟩ vol`. -/

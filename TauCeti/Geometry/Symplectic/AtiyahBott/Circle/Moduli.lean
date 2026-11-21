@@ -52,56 +52,31 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
 
-namespace deRhamCohomology
-
-variable (I M) in
-/-- The lattice `2π H¹(M; ℤ)` in the first de Rham cohomology: the classes whose periods on every
-singular `1`-cycle lie in `2πℤ`. -/
-def circlePeriodLattice : AddSubgroup (deRhamCohomology I M 1) where
-  carrier := {c | ∀ z, ∃ n : ℤ, homologyPeriod c z = n * (2 * π)}
-  add_mem' {c d} hc hd z := by
-    obtain ⟨m, hm⟩ := hc z
-    obtain ⟨n, hn⟩ := hd z
-    exact ⟨m + n, by rw [map_add, AddMonoidHom.add_apply, hm, hn]; push_cast; ring⟩
-  zero_mem' z := ⟨0, by simp⟩
-  neg_mem' {c} hc z := by
-    obtain ⟨n, hn⟩ := hc z
-    exact ⟨-n, by rw [map_neg, AddMonoidHom.neg_apply, hn]; push_cast; ring⟩
-
-theorem mem_circlePeriodLattice_iff {c : deRhamCohomology I M 1} :
-    c ∈ circlePeriodLattice I M ↔ ∀ z, ∃ n : ℤ, homologyPeriod c z = n * (2 * π) :=
-  Iff.rfl
-
-end deRhamCohomology
-
 variable (I M) in
 /-- The real logarithmic derivatives of the smooth circle-valued maps, as a subgroup of the
 closed `1`-forms: the gauge orbit of the trivial connection. -/
-def circleGaugeSubgroup : AddSubgroup (closedForms I M 1) where
-  carrier := {a | ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, circleLogDeriv u = a.1}
+def circleLogDerivSubgroup : AddSubgroup (closedForms I M 1) where
+  carrier := {a | ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, u.circleLogDeriv = a.1}
   add_mem' {a b} := by
     rintro ⟨u, hu⟩ ⟨v, hv⟩
-    exact ⟨u * v, by rw [circleLogDeriv_mul, hu, hv, Submodule.coe_add]⟩
-  zero_mem' := ⟨1, by rw [circleLogDeriv_one, Submodule.coe_zero]⟩
+    exact ⟨u * v, by rw [ContMDiffMap.circleLogDeriv_mul, hu, hv, Submodule.coe_add]⟩
+  zero_mem' := ⟨1, by rw [ContMDiffMap.circleLogDeriv_one, Submodule.coe_zero]⟩
   neg_mem' {a} := by
     rintro ⟨u, hu⟩
-    exact ⟨u⁻¹, by rw [circleLogDeriv_inv, hu, Submodule.coe_neg]⟩
+    exact ⟨u⁻¹, by rw [ContMDiffMap.circleLogDeriv_inv, hu, Submodule.coe_neg]⟩
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
-theorem mem_circleGaugeSubgroup_iff {a : closedForms I M 1} :
-    a ∈ circleGaugeSubgroup I M ↔ ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, circleLogDeriv u = a.1 :=
+theorem mem_circleLogDerivSubgroup_iff {a : closedForms I M 1} :
+    a ∈ circleLogDerivSubgroup I M ↔ ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, u.circleLogDeriv = a.1 :=
   Iff.rfl
 
 /-- **The real logarithmic derivatives are the closed forms with periods in `2πℤ`.** A closed
 `1`-form is the real logarithmic derivative of a smooth circle-valued map exactly when its de Rham
 class lies in `2π H¹(M; ℤ)`. -/
-theorem mem_circleGaugeSubgroup_iff_mk_mem_circlePeriodLattice {a : closedForms I M 1} :
-    a ∈ circleGaugeSubgroup I M ↔
+theorem mem_circleLogDerivSubgroup_iff_mk_mem_circlePeriodLattice {a : closedForms I M 1} :
+    a ∈ circleLogDerivSubgroup I M ↔
       deRhamCohomology.mk I 1 a ∈ deRhamCohomology.circlePeriodLattice I M := by
-  rw [mem_circleGaugeSubgroup_iff, deRhamCohomology.mem_circlePeriodLattice_iff,
-    deRhamCohomology.homologyPeriod_mk]
-  refine ⟨fun ⟨u, hu⟩ z ↦ ⟨_, hu ▸ homologyPeriodHom_circleLogDeriv u z⟩, fun h ↦ ?_⟩
-  exact exists_circleLogDeriv_eq ((mem_closedForms I a.1).mp a.2) h
+  rw [mem_circleLogDerivSubgroup_iff, deRhamCohomology.mk_mem_circlePeriodLattice_iff]
 
 /-- **Gauge equivalence of flat connections.** Two flat connections `a` and `b` on the trivial
 circle bundle are related by a gauge transformation exactly when their de Rham classes differ by
@@ -110,20 +85,21 @@ theorem exists_circleGaugeAction_eq_iff {a b : closedForms I M 1} :
     (∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, circleGaugeAction u a.1 = b.1) ↔
       deRhamCohomology.mk I 1 a - deRhamCohomology.mk I 1 b ∈
         deRhamCohomology.circlePeriodLattice I M := by
-  rw [← map_sub, ← mem_circleGaugeSubgroup_iff_mk_mem_circlePeriodLattice,
-    mem_circleGaugeSubgroup_iff]
+  rw [← map_sub, ← mem_circleLogDerivSubgroup_iff_mk_mem_circlePeriodLattice,
+    mem_circleLogDerivSubgroup_iff]
   refine exists_congr fun u ↦ ?_
   rw [circleGaugeAction_apply, Submodule.coe_sub, sub_eq_iff_eq_add, ← sub_eq_iff_eq_add',
     eq_comm]
 
 /-- Two flat connections define the same gauge orbit exactly when a gauge transformation relates
 them. -/
-theorem circleGaugeSubgroup_mk_eq_mk_iff {a b : closedForms I M 1} :
-    (QuotientAddGroup.mk a : closedForms I M 1 ⧸ circleGaugeSubgroup I M) = QuotientAddGroup.mk b ↔
+theorem circleLogDerivSubgroup_mk_eq_mk_iff {a b : closedForms I M 1} :
+    (QuotientAddGroup.mk a : closedForms I M 1 ⧸ circleLogDerivSubgroup I M) =
+        QuotientAddGroup.mk b ↔
       ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, circleGaugeAction u a.1 = b.1 := by
   have hab : -a + b = -(a - b) := by abel
   rw [QuotientAddGroup.eq, hab, AddSubgroup.neg_mem_iff,
-    mem_circleGaugeSubgroup_iff_mk_mem_circlePeriodLattice, exists_circleGaugeAction_eq_iff,
+    mem_circleLogDerivSubgroup_iff_mk_mem_circlePeriodLattice, exists_circleGaugeAction_eq_iff,
     ← map_sub]
 
 /-- The map from flat connections to `H¹_dR(M) / 2π H¹(M; ℤ)` taking `a` to its de Rham class. -/
@@ -135,23 +111,24 @@ private theorem flatCircleModuliMap_surjective :
     Function.Surjective (flatCircleModuliMap (I := I) (M := M)) :=
   (QuotientAddGroup.mk'_surjective _).comp (deRhamCohomology.mk_surjective I 1)
 
-private theorem circleGaugeSubgroup_eq_ker_flatCircleModuliMap :
-    circleGaugeSubgroup I M = (flatCircleModuliMap (I := I) (M := M)).ker := by
+private theorem circleLogDerivSubgroup_eq_ker_flatCircleModuliMap :
+    circleLogDerivSubgroup I M = (flatCircleModuliMap (I := I) (M := M)).ker := by
   ext a
   rw [AddMonoidHom.mem_ker, flatCircleModuliMap, AddMonoidHom.comp_apply,
     QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff,
-    mem_circleGaugeSubgroup_iff_mk_mem_circlePeriodLattice]
+    mem_circleLogDerivSubgroup_iff_mk_mem_circlePeriodLattice]
   rfl
 
 variable (I M) in
-/-- **The moduli torus of flat circle connections.** The gauge orbits of flat connections on the
-trivial circle bundle over `M` are identified with `H¹_dR(M) / 2π H¹(M; ℤ)` by taking de Rham
-classes. -/
+/-- **Flat circle connections modulo gauge.** Taking de Rham classes identifies, as additive
+groups, the gauge orbits of flat connections on the trivial circle bundle over `M` with
+`H¹_dR(M) / 2π H¹(M; ℤ)`. For a closed surface `M` this quotient is the moduli torus of flat
+`U(1)`-connections; no topology on it is constructed here. -/
 def flatCircleModuliEquiv :
-    closedForms I M 1 ⧸ circleGaugeSubgroup I M ≃+
+    closedForms I M 1 ⧸ circleLogDerivSubgroup I M ≃+
       deRhamCohomology I M 1 ⧸ deRhamCohomology.circlePeriodLattice I M :=
-  QuotientAddGroup.liftEquiv (circleGaugeSubgroup I M) flatCircleModuliMap_surjective
-    circleGaugeSubgroup_eq_ker_flatCircleModuliMap
+  QuotientAddGroup.liftEquiv (circleLogDerivSubgroup I M) flatCircleModuliMap_surjective
+    circleLogDerivSubgroup_eq_ker_flatCircleModuliMap
 
 @[simp]
 theorem flatCircleModuliEquiv_mk (a : closedForms I M 1) :
