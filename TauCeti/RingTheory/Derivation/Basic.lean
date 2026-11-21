@@ -38,6 +38,8 @@ unit, without factoring it.
   differentiates a monomial in the coordinates by lowering its `i`-th exponent.
 * `Derivation.iterate_sum_smul`: iterated differentiation commutes with scalar linear combinations.
 * `Derivation.iterate_apply_mul`: the general Leibniz rule for iterates of a derivation.
+* `Derivation.iterate_apply_pow_of_apply_eq_one`: if `D x = 1`, then `D^[j] (x ^ k)` is the
+  descending factorial `k (k - 1) ⋯ (k - j + 1)` times `x ^ (k - j)`.
 * `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
 * `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
 * `Derivation.squarefree_of_isUnit`: an element whose derivative is a unit is squarefree.
@@ -112,6 +114,19 @@ theorem iterate_apply_mul (D : Derivation R A A) (n : ℕ) (a b : A) :
     congr 1
     refine Finset.sum_congr rfl fun ij hij => ?_
     rw [n.choose_symm_of_eq_add (Finset.mem_antidiagonal.1 hij).symm, mul_comm]
+
+/-- **Iterated derivatives of powers of a coordinate.** If `D x = 1`, then
+`D^[j] (x ^ k)` is the descending factorial `k (k - 1) ⋯ (k - j + 1)` times `x ^ (k - j)`. In
+particular `D^[k] (x ^ k) = k !`, and `D^[j] (x ^ k) = 0` for `j > k`. -/
+theorem iterate_apply_pow_of_apply_eq_one (D : Derivation R A A) {x : A} (hx : D x = 1)
+    (k j : ℕ) : D^[j] (x ^ k) = k.descFactorial j * x ^ (k - j) := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    rw [Function.iterate_succ_apply', ih, leibniz, leibniz_pow, hx, map_natCast,
+      Nat.descFactorial_succ, Nat.sub_sub]
+    simp only [smul_eq_mul, nsmul_eq_mul, mul_one, mul_zero, add_zero, Nat.cast_mul]
+    ring
 
 /-- Iterating a scalar multiple of a derivation scales its iterates by the corresponding power. -/
 theorem iterate_smul_apply (D : Derivation R A A) (r : R) (n : ℕ) (a : A) :
