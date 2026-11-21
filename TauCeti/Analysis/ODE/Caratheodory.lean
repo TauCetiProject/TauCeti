@@ -87,7 +87,7 @@ include hab hM hF in
 /-- If `‖M t‖ ≤ L` almost everywhere, the `n`-th iterate of the Picard map moves two curves at
 time `t` at most `(L (t - a))ⁿ / n!` times their distance apart. -/
 private theorem dist_iterate_next_apply_le {L : ℝ} (hL : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖M t‖ ≤ L)
-    (hL₀ : 0 ≤ L) (n : ℕ) (y z : C(Icc a b, E)) (t : Icc a b) :
+    (n : ℕ) (y z : C(Icc a b, E)) (t : Icc a b) :
     dist ((next hab hM hF x₀)^[n] y t) ((next hab hM hF x₀)^[n] z t) ≤
       (L * (t - a)) ^ n / n ! * dist y z := by
   induction n generalizing t with
@@ -99,7 +99,7 @@ private theorem dist_iterate_next_apply_le {L : ℝ} (hL : ∀ᵐ t ∂volume.re
         (fun s ↦ M s (IccExtend hab W s) + F s) volume a t := fun W ↦
       (integrableOn_Ioo hab hM hF W).intervalIntegrable_of_mem_Icc (left_mem_Icc.2 hab) t.property
     have hLae : ∀ᵐ s, s ∈ Ioc a b → ‖M s‖ ≤ L := by
-      rwa [← ae_restrict_iff' measurableSet_Ioc, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
+      rwa [← ae_restrict_iff' measurableSet_Ioc, ← restrict_Ioo_eq_restrict_Ioc]
     simp only [iterate_succ_apply', next_apply, ODE.picard_apply]
     rw [dist_eq_norm, add_sub_add_left_eq_sub, ← intervalIntegral.integral_sub (hint Y) (hint Z)]
     refine (TauCeti.intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_right
@@ -110,8 +110,8 @@ private theorem dist_iterate_next_apply_le {L : ℝ} (hL : ∀ᵐ t ∂volume.re
       simp only [add_sub_add_right_eq_sub, ← map_sub, IccExtend_of_mem hab _ hs',
         Real.rpow_natCast]
       calc _ ≤ L * ((L * (s - a)) ^ n / n ! * dist y z) :=
-            ((M s).le_opNorm _).trans (mul_le_mul (hs ⟨hst.1, hst.2.trans t.property.2⟩)
-              (by simpa [dist_eq_norm] using ih ⟨s, hs'⟩) (norm_nonneg _) hL₀)
+            (M s).le_of_opNorm_le_of_le (hs ⟨hst.1, hst.2.trans t.property.2⟩)
+              (by simpa [dist_eq_norm] using ih ⟨s, hs'⟩)
         _ = _ := by rw [mul_pow, pow_succ]; ring
     · rw [← Nat.cast_add_one, Real.rpow_natCast, Nat.factorial_succ, Nat.cast_mul, mul_pow]
       field_simp
@@ -124,7 +124,6 @@ private theorem exists_contractingWith_iterate_next
   set K' := max K 0
   have hK' : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖M t‖ ≤ K' := hK.mono fun t ht ↦ ht.trans
     (le_max_left _ _)
-  have hK'₀ : 0 ≤ K' := le_max_right _ _
   obtain ⟨n, hn⟩ := FloorSemiring.tendsto_pow_div_factorial_atTop (K' * (b - a))
     |>.eventually (gt_mem_nhds zero_lt_one) |>.exists
   have h₀ : 0 ≤ (K' * (b - a)) ^ n / n ! := by
@@ -134,7 +133,7 @@ private theorem exists_contractingWith_iterate_next
     LipschitzWith.of_dist_le_mul fun y z ↦ ?_⟩
   rw [Real.coe_toNNReal _ h₀, ContinuousMap.dist_le (by positivity)]
   intro t
-  refine (dist_iterate_next_apply_le hab hM hF hK' hK'₀ n y z t).trans ?_
+  refine (dist_iterate_next_apply_le hab hM hF hK' n y z t).trans ?_
   have : 0 ≤ (t : ℝ) - a := sub_nonneg.2 t.property.1
   have : (t : ℝ) ≤ b := t.property.2
   gcongr
