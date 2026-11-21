@@ -40,7 +40,7 @@ many elements at a time pass to direct limits.
   in the image of a single component.
 * `TauCeti.DirectLimit.Algebra.of_comp_f`: the canonical maps into a direct limit of algebras are
   compatible with the transition maps. This is the algebra version of
-  `Ring.DirectLimit.of_comp_f` in `TauCeti/Algebra/Colimit/Ring.lean`.
+  `TauCeti.Ring.DirectLimit.of_comp_f` in `TauCeti/Algebra/Colimit/Ring/Basic.lean`.
 -/
 
 public section
