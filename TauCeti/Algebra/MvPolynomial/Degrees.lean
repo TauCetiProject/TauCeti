@@ -66,16 +66,13 @@ degree by at most `D`. -/
 theorem totalDegree_aeval_le {σ τ R : Type*} [CommSemiring R] {f : σ → MvPolynomial τ R} {D : ℕ}
     (hf : ∀ i, (f i).totalDegree ≤ D) (p : MvPolynomial σ R) :
     (aeval f p).totalDegree ≤ p.totalDegree * D := by
-  conv_lhs => rw [p.as_sum]
-  rw [map_sum]
+  rw [aeval_def, eval₂_eq, algebraMap_eq]
   refine totalDegree_finsetSum_le fun s hs ↦ ?_
-  rw [aeval_monomial, algebraMap_eq, Finsupp.prod]
-  refine (totalDegree_mul _ _).trans ?_
-  rw [totalDegree_C, zero_add]
-  refine (totalDegree_finsetProd _ _).trans ?_
+  rw [← smul_eq_C_mul]
+  refine (totalDegree_smul_le _ _).trans <| (totalDegree_finsetProd _ _).trans ?_
   calc ∑ i ∈ s.support, (f i ^ s i).totalDegree ≤ ∑ i ∈ s.support, s i * D :=
         Finset.sum_le_sum fun i _ ↦ (totalDegree_pow _ _).trans (Nat.mul_le_mul_left _ (hf i))
-    _ = (s.sum fun _ e ↦ e) * D := by rw [Finsupp.sum, Finset.sum_mul]
+    _ = (s.sum fun _ e ↦ e) * D := (Finsupp.sum_mul D s (f := fun _ e ↦ e)).symm
     _ ≤ p.totalDegree * D := Nat.mul_le_mul_right _ (le_totalDegree hs)
 
 end MvPolynomial
