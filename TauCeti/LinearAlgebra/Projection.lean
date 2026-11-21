@@ -19,8 +19,9 @@ summand inherits such a projection.
 
 This file records these projections, `TauCeti.internalProjection`. Their pointwise behaviour and
 kernel are Mathlib's lemmas about `Submodule.projectionOnto`, restated for the specialization.
-The one fact that goes beyond a single projection is that over a finite index type the projections
-sum to the identity, `TauCeti.sum_coe_internalProjection`.
+Over a finite index type the projections sum to the identity (`TauCeti.sum_coe_internalProjection`),
+giving the canonical linear equivalence `TauCeti.internalDirectSumEquiv : (∀ i, Q i) ≃ₗ[A] M`
+without requiring `DecidableEq` on the index type.
 
 For a single complementary pair `F₀`, `F₁`, the projection onto `F₁` also computes any linear map
 vanishing on `F₀` from its values on a basis of `F₁`
@@ -35,6 +36,8 @@ remains injective.
 
 * `TauCeti.internalProjection`: the projection of `M` onto the summand `Q i` of an internal direct
   sum decomposition, as a linear map `M →ₗ[A] Q i`.
+* `TauCeti.internalDirectSumEquiv`: the canonical linear equivalence `(∀ i, Q i) ≃ₗ[A] M` for a
+  finite internal direct sum decomposition, requiring no `DecidableEq` on the index type.
 
 ## Main results
 
@@ -43,6 +46,9 @@ remains injective.
   other summands.
 * `TauCeti.sum_coe_internalProjection`: over a finite index type the projections onto the summands
   sum to the identity.
+* `TauCeti.internalDirectSumEquiv_apply` and `TauCeti.internalDirectSumEquiv_symm_apply`: the
+  forward map sums the summand components and the inverse reads them off via
+  `TauCeti.internalProjection`.
 * `DirectSum.IsInternal.coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection`: the
   component supplied by the inverse direct-sum equivalence is the internal projection.
 * `Submodule.apply_eq_sum_repr_projectionOnto`: a linear map vanishing on `F₀` is determined by
@@ -131,6 +137,41 @@ theorem sum_coe_internalProjection [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i
   rw [LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.id_apply, LinearMap.sum_apply,
     sub_eq_zero] at hx
   simpa using hx
+
+/-- The canonical linear equivalence `(∀ i, Q i) ≃ₗ[A] M` associated to a finite internal direct
+sum decomposition `Q`, sending a tuple to the sum of its coordinates and inversely projecting onto
+each summand via `TauCeti.internalProjection`. Requires no `DecidableEq ι`. -/
+noncomputable def internalDirectSumEquiv [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤) :
+    (∀ i, Q i) ≃ₗ[A] M :=
+  LinearEquiv.ofLinearMap
+    (∑ i, (Q i).subtype.comp (LinearMap.proj i))
+    (LinearMap.pi fun i ↦ internalProjection hQi hQt i)
+    (LinearMap.ext fun x ↦ by
+      simp only [LinearMap.comp_apply, LinearMap.sum_apply, LinearMap.pi_apply,
+        Submodule.coe_subtype, LinearMap.proj_apply, LinearMap.id_apply]
+      exact sum_coe_internalProjection hQi hQt x)
+    (LinearMap.ext fun x ↦ funext fun i ↦ by
+      simp only [LinearMap.comp_apply, LinearMap.pi_apply, LinearMap.sum_apply,
+        Submodule.coe_subtype, LinearMap.proj_apply, LinearMap.id_apply, map_sum]
+      rw [Finset.sum_eq_single_of_mem i (Finset.mem_univ i)]
+      · exact internalProjection_apply hQi hQt (x i)
+      · intro j _ hji
+        exact internalProjection_apply_of_ne hQi hQt hji (x j))
+
+/-- The internal direct-sum equivalence sends a tuple of summand elements to their sum in `M`. -/
+@[simp]
+theorem internalDirectSumEquiv_apply [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤)
+    (x : ∀ i, Q i) :
+    internalDirectSumEquiv hQi hQt x = ∑ i, (x i : M) := by
+  simp [internalDirectSumEquiv]
+
+/-- The inverse of the internal direct-sum equivalence reads off the `i`-th coordinate by
+`TauCeti.internalProjection`. -/
+@[simp]
+theorem internalDirectSumEquiv_symm_apply [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤)
+    (x : M) (i : ι) :
+    (internalDirectSumEquiv hQi hQt).symm x i = internalProjection hQi hQt i x := by
+  simp [internalDirectSumEquiv]
 
 /-- Moving a map by multiples of a vector `d` on none of its secant lines keeps it injective:
 `x ↦ f x - a x • d` is injective for every coefficient function `a`. -/
