@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Category.Grp.Preadditive
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import Mathlib.AlgebraicTopology.AlternatingFaceMapComplex
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.HopfAlgebroid
+public import TauCeti.AlgebraicTopology.AlternatingCofaceMapComplex
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Nerve
 
 /-!
@@ -108,6 +108,8 @@ alternating coface complex `weightedCobarComplex k`. Its differentials in degree
 * `counit_eq_zero_of_cobarD₁_eq_zero`: every degree-one weighted cocycle is normalized.
 * `cobarWeight_comp`: the weights of the structure maps are a cocycle, so `weightedCobarMap_comp`
   holds and `weightedCobarObject k` is a cosimplicial object.
+* `cobarWeight_δ_one_eq_weightCharacter`, `cobarWeight_δ_two_eq_map_weightCharacter`: the
+  nontrivial weights of the cofaces in degrees `0` and `1`.
 * `weightedCobarComplex_d_hom_apply`: the differential of the weight-`k` cobar complex is
   `∑ᵢ (-1)ⁱ δⁱ`; `weightedCobarComplex_d_zero_one_hom_apply` and
   `weightedCobarComplex_d_one_two_hom_apply` identify it in degrees `0` and `1` with `cobarD₀ k`
@@ -742,33 +744,13 @@ def cobarComplex : CochainComplex AddCommGrpCat.{0} ℕ :=
 theorem cobarComplex_X (n : ℕ) : cobarComplex.X n = AddCommGrpCat.of (cobarRing n) :=
   (rfl)
 
-/-- The differential of the alternating coface complex of a cosimplicial additive group, evaluated
-at a cochain, is the alternating sum `∑ᵢ (-1)ⁱ δⁱ` of the cofaces. -/
-private theorem alternatingCofaceMapComplex_d_hom_apply (X : CosimplicialObject AddCommGrpCat.{0})
-    (n : ℕ) (x : X.obj ⦋n⦌) :
-    (((AlgebraicTopology.alternatingCofaceMapComplex AddCommGrpCat).obj X).d n (n + 1)).hom x =
-      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • (X.δ i).hom x := by
-  have h : ((AlgebraicTopology.alternatingCofaceMapComplex AddCommGrpCat).obj X).d n (n + 1) =
-      AlgebraicTopology.AlternatingCofaceMapComplex.objD X n :=
-    CochainComplex.of_d (fun n ↦ X.obj (SimplexCategory.mk n)) _ n
-  rw [h]
-  -- Restate the goal with the morphism typed by the cosimplicial object, not the complex.
-  change (AlgebraicTopology.AlternatingCofaceMapComplex.objD X n).hom x = _
-  rw [AlgebraicTopology.AlternatingCofaceMapComplex.objD]
-  -- Evaluating a morphism of additive groups is additive in the morphism.
-  refine (congrArg (fun g : X.obj ⦋n⦌ →+ X.obj ⦋n + 1⦌ ↦ g x)
-    (map_sum AddCommGrpCat.homAddEquiv _ Finset.univ)).trans ?_
-  refine (AddMonoidHom.finsetSum_apply _ _ x).trans (Finset.sum_congr rfl fun i _ ↦ ?_)
-  rw [map_zsmul]
-  rfl
-
 /-- The differential `Γ^{⊗_A n} → Γ^{⊗_A (n + 1)}` of the cobar complex is the alternating sum
 `∑ᵢ (-1)ⁱ δⁱ` of the cofaces. -/
 theorem cobarComplex_d_hom_apply (n : ℕ) (x : cobarRing n) :
     (cobarComplex.d n (n + 1)).hom x =
       ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • cobarMap (SimplexCategory.δ i) x :=
   -- The forgetful functors to additive groups keep the underlying functions of the cofaces.
-  alternatingCofaceMapComplex_d_hom_apply
+  AlgebraicTopology.AlternatingCofaceMapComplex.obj_d_hom_apply
     (cobarObject ⋙ forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat) n x
 
 /-- The differential `A → Γ` of the cobar complex in degree `0` is `η_R - η_L`. -/
@@ -823,6 +805,13 @@ def cobarWeight (k : ℤ) {m n : SimplexCategory} (f : m ⟶ n) : cobarRing n.le
   cobarMap (SimplexCategory.mkOfLe (f.toOrderHom (Fin.last m.len)) (Fin.last n.len)
     (Fin.le_last _)) (weightCharacter k : ArrowRing)
 
+/-- The weight of `f : [m] ⟶ [n]` is the structure map of the edge from `f m` to `n` applied to
+the weight-`k` character. -/
+theorem cobarWeight_def (k : ℤ) {m n : SimplexCategory} (f : m ⟶ n) :
+    cobarWeight k f = cobarMap (SimplexCategory.mkOfLe (f.toOrderHom (Fin.last m.len))
+      (Fin.last n.len) (Fin.le_last _)) (weightCharacter k : ArrowRing) :=
+  (rfl)
+
 /-- A map `f : [m] ⟶ [n]` keeping the last vertex has trivial weight. -/
 theorem cobarWeight_eq_one (k : ℤ) {m n : SimplexCategory} {f : m ⟶ n}
     (hf : f.toOrderHom (Fin.last m.len) = Fin.last n.len) : cobarWeight k f = 1 := by
@@ -831,7 +820,7 @@ theorem cobarWeight_eq_one (k : ℤ) {m n : SimplexCategory} {f : m ⟶ n}
       (Fin.le_last _) =
         SimplexCategory.σ (n := 0) 0 ≫ SimplexCategory.const ⦋0⦌ n (Fin.last n.len) :=
     SimplexCategory.Hom.ext_one_left _ _ hf
-  rw [cobarWeight, h, cobarMap_comp, RingHom.comp_apply, cobarMap_σ_zero_eq_counit,
+  rw [cobarWeight_def, h, cobarMap_comp, RingHom.comp_apply, cobarMap_σ_zero_eq_counit,
     counit_weightCharacter, map_one]
 
 @[simp]
@@ -841,7 +830,24 @@ theorem cobarWeight_id (k : ℤ) (n : SimplexCategory) : cobarWeight k (𝟙 n) 
 /-- In weight `0` every weight is trivial. -/
 @[simp]
 theorem cobarWeight_zero {m n : SimplexCategory} (f : m ⟶ n) : cobarWeight 0 f = 1 := by
-  rw [cobarWeight, weightCharacter_zero, Units.val_one, map_one]
+  rw [cobarWeight_def, weightCharacter_zero, Units.val_one, map_one]
+
+/-- The coface `δ¹ : [0] ⟶ [1]` keeps the first vertex, so its weight is the weight-`k` character
+of the universal arrow. -/
+@[simp]
+theorem cobarWeight_δ_one_eq_weightCharacter (k : ℤ) :
+    cobarWeight k (SimplexCategory.δ (n := 0) 1) = weightCharacter k := by
+  rw [cobarWeight_def, show SimplexCategory.mkOfLe _ _ _ = 𝟙 ⦋1⦌ from
+    SimplexCategory.Hom.ext_one_left _ _, cobarMap_id, RingHom.id_apply]
+
+/-- The coface `δ² : [1] ⟶ [2]` forgets the second arrow, so its weight is the weight-`k`
+character of the second arrow. -/
+@[simp]
+theorem cobarWeight_δ_two_eq_map_weightCharacter (k : ℤ) :
+    cobarWeight k (SimplexCategory.δ (n := 1) 2) =
+      ChangeRing.map rightUnit (weightCharacter k : ArrowRing) := by
+  rw [cobarWeight_def, show SimplexCategory.mkOfLe _ _ _ = SimplexCategory.δ (n := 1) 0 from
+    SimplexCategory.Hom.ext_one_left _ _, cobarMap_δ_zero_eq_map_rightUnit]
 
 /-- **The weights are a cocycle**: transporting from `W_{g (f l)}` to `W_{g m}` and then to `W_n` is
 transporting from `W_{g (f l)}` to `W_n`. This is the multiplicativity of the weight character
@@ -861,7 +867,8 @@ theorem cobarWeight_comp (k : ℤ) {l m n : SimplexCategory} (f : l ⟶ m) (g : 
   have h₂ : SimplexCategory.mkOfLe (f.toOrderHom (Fin.last l.len)) (Fin.last m.len)
       (Fin.le_last _) ≫ g = SimplexCategory.δ (n := 1) 2 ≫ T :=
     SimplexCategory.Hom.ext_one_left _ _
-  rw [cobarWeight, cobarWeight, cobarWeight, ← RingHom.comp_apply, ← cobarMap_comp, h₀, h₁, h₂]
+  rw [cobarWeight_def, cobarWeight_def, cobarWeight_def, ← RingHom.comp_apply, ← cobarMap_comp,
+    h₀, h₁, h₂]
   simp only [cobarMap_comp, RingHom.comp_apply, cobarMap_δ_zero_eq_map_rightUnit,
     cobarMap_δ_one_eq_coproduct, cobarMap_δ_two_eq_algebraMap, coproduct_weightCharacter, map_mul]
   exact mul_comm _ _
@@ -958,20 +965,16 @@ theorem weightedCobarComplex_d_hom_apply (k : ℤ) (n : ℕ) (x : cobarRing n) :
     ((weightedCobarComplex k).d n (n + 1)).hom x =
       ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • weightedCobarMap k (SimplexCategory.δ i) x :=
   -- The cofaces of `weightedCobarObject k` are the maps `weightedCobarMap k (δ i)`.
-  alternatingCofaceMapComplex_d_hom_apply (weightedCobarObject k) n x
+  AlgebraicTopology.AlternatingCofaceMapComplex.obj_d_hom_apply (weightedCobarObject k) n x
 
 /-- The differential `A → Γ` of the weight-`k` cobar complex in degree `0` is the first weighted
 cobar differential `f ↦ η_R(f) - u⁻ᵏ η_L(f)`. -/
 theorem weightedCobarComplex_d_zero_one_hom_apply (k : ℤ) (x : MvPolynomial Coeff ℤ) :
     ((weightedCobarComplex k).d 0 1).hom x = cobarD₀ k x := by
   have h₀ : cobarWeight k (SimplexCategory.δ (n := 0) 0) = 1 := cobarWeight_eq_one k rfl
-  -- The coface `δ¹` keeps the first vertex, so its weight is that of the universal arrow.
-  have h₁ : cobarWeight k (SimplexCategory.δ (n := 0) 1) = weightCharacter k := by
-    rw [cobarWeight, show SimplexCategory.mkOfLe _ _ _ = 𝟙 ⦋1⦌ from
-      SimplexCategory.Hom.ext_one_left _ _, cobarMap_id, RingHom.id_apply]
   rw [weightedCobarComplex_d_hom_apply, Fin.sum_univ_two, weightedCobarMap_apply,
-    weightedCobarMap_apply, h₀, h₁, cobarMap_δ_zero_eq_rightUnit, cobarMap_δ_one_eq_algebraMap,
-    cobarD₀_apply]
+    weightedCobarMap_apply, h₀, cobarWeight_δ_one_eq_weightCharacter,
+    cobarMap_δ_zero_eq_rightUnit, cobarMap_δ_one_eq_algebraMap, cobarD₀_apply]
   simp only [Fin.val_zero, Fin.val_one, pow_zero, pow_one, one_smul, neg_smul, one_mul,
     ← sub_eq_add_neg]
   -- The two sides differ only in spelling `Γ` as `cobarRing 1` or `ArrowRing`.
@@ -983,13 +986,9 @@ theorem weightedCobarComplex_d_one_two_hom_apply (k : ℤ) (x : ArrowRing) :
     ((weightedCobarComplex k).d 1 2).hom x = cobarD₁ k x := by
   have h₀ : cobarWeight k (SimplexCategory.δ (n := 1) 0) = 1 := cobarWeight_eq_one k rfl
   have h₁ : cobarWeight k (SimplexCategory.δ (n := 1) 1) = 1 := cobarWeight_eq_one k rfl
-  -- The coface `δ²` forgets the second arrow, so its weight is that of the second arrow.
-  have h₂ : cobarWeight k (SimplexCategory.δ (n := 1) 2) =
-      ChangeRing.map rightUnit (weightCharacter k : ArrowRing) := by
-    rw [cobarWeight, show SimplexCategory.mkOfLe _ _ _ = SimplexCategory.δ (n := 1) 0 from
-      SimplexCategory.Hom.ext_one_left _ _, cobarMap_δ_zero_eq_map_rightUnit]
   rw [weightedCobarComplex_d_hom_apply, Fin.sum_univ_three, weightedCobarMap_apply,
-    weightedCobarMap_apply, weightedCobarMap_apply, h₀, h₁, h₂, cobarMap_δ_zero_eq_map_rightUnit,
+    weightedCobarMap_apply, weightedCobarMap_apply, h₀, h₁,
+    cobarWeight_δ_two_eq_map_weightCharacter, cobarMap_δ_zero_eq_map_rightUnit,
     cobarMap_δ_one_eq_coproduct, cobarMap_δ_two_eq_algebraMap, cobarD₁_apply]
   simp only [Fin.val_zero, Fin.val_one, Fin.val_two, pow_zero, pow_one, one_smul, neg_smul,
     neg_one_sq, one_mul, ← sub_eq_add_neg]
