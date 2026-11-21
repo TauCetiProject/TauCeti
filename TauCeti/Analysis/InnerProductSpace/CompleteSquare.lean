@@ -38,6 +38,8 @@ whenever `‖q - q₀‖ ≥ δ > 0`.
 * `TauCeti.norm_sq_div_two_add_norm_sub_sq_div`: its case `a = 1 / 2`, `b = 1 / (2τ)`. For
   `τ > 0` this objective is minimized exactly at `x / (1 + τ)`, the proximal point of
   `‖·‖² / 2` at `x`.
+* `TauCeti.norm_smul_add_smul_sq_of_add_eq_one`: for weights `a + b = 1`, the squared norm of
+  `a • x + b • y` is `a ‖x‖² + b ‖y‖² - a b ‖x - y‖²`.
 * `TauCeti.edist_smul_add_smul_sq_add`: the convex-combination form of the identity, for extended
   distances.
 * `TauCeti.norm_sq_norm_smul_sub_inv_norm_smul`: the squared norm of the normalized reflection
@@ -48,6 +50,8 @@ whenever `‖q - q₀‖ ≥ δ > 0`.
   `|(2 ⟪w, h⟫ - ‖h‖²) / ‖w‖²|` when `‖w‖ ≥ δ > 0`.
 * `TauCeti.norm_sub_le_add_div_sub_inner`: for unit vectors `a` and `ν`, the distance `‖a - ν‖`
   is bounded by `η / 2 + 1 / η - 1 / η * ⟪ν, a⟫` for every `η > 0`.
+* `TauCeti.one_sub_div_mul_norm_sq_sub_le_norm_sub_sq`: if `‖q‖ ≤ a r` with `0 ≤ a ≤ L`, then
+  `(1 - a / L) ‖p‖² - (L - a) a r² ≤ ‖p - q‖²`.
 * `Finset.sum_mul_norm_sub_sq_eq` and `Finset.sum_mul_edist_sq_eq`: for finitely many points
   `x i` and weights `w i` summing to `1`, the weighted sum of the squared distances from `y` is
   the squared distance from `y` to the weighted mean `m = ∑ i, w i • x i` plus the weighted sum
@@ -106,6 +110,15 @@ theorem norm_sq_div_two_add_norm_sub_sq_div {τ : ℝ} (hτ : τ ≠ 0) (hτ' : 
   field_simp at h ⊢
   linear_combination h
 
+/-- For weights `a` and `b` summing to `1`, the squared norm of the affine combination
+`a • x + b • y` is `a * ‖x‖ ^ 2 + b * ‖y‖ ^ 2 - a * b * ‖x - y‖ ^ 2`. -/
+theorem norm_smul_add_smul_sq_of_add_eq_one {a b : ℝ} (hab : a + b = 1) (x y : F) :
+    ‖a • x + b • y‖ ^ 2 = a * ‖x‖ ^ 2 + b * ‖y‖ ^ 2 - a * b * ‖x - y‖ ^ 2 := by
+  rw [norm_add_sq_real, norm_sub_sq_real, norm_smul, norm_smul,
+    real_inner_smul_left, real_inner_smul_right]
+  simp only [Real.norm_eq_abs, mul_pow, sq_abs]
+  linear_combination (a * ‖x‖ ^ 2 + b * ‖y‖ ^ 2) * hab
+
 /-- The completed square at the weights `1 - t` and `t`, for extended distances: for `t ∈ [0, 1]`,
 `d(x, (1 - t) a + t b) ^ 2 + t (1 - t) d(a, b) ^ 2 = (1 - t) d(x, a) ^ 2 + t d(x, b) ^ 2`. -/
 theorem edist_smul_add_smul_sq_add {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) (x a b : F) :
@@ -138,6 +151,35 @@ theorem norm_sub_le_add_div_sub_inner {a ν : F} {η : ℝ} (ha : ‖a‖ = 1) (
     linarith
   rw [heq, le_div_iff₀ (by positivity)]
   nlinarith [sq_nonneg (‖a - ν‖ - η)]
+
+/-- **A lower bound for `‖p - q‖²` when `q` is small.** If `‖q‖ ≤ a r` with `0 ≤ a ≤ L`, then
+`(1 - a / L) ‖p‖² - (L - a) a r² ≤ ‖p - q‖²`. After multiplying by `L a`, the difference of
+the two sides is at least the square `(a ‖p‖ - L ‖q‖)²`. -/
+theorem one_sub_div_mul_norm_sq_sub_le_norm_sub_sq {a L r : ℝ} (ha0 : 0 ≤ a) (haL : a ≤ L)
+    {p q : F} (hq : ‖q‖ ≤ a * r) :
+    (1 - a / L) * ‖p‖ ^ 2 - (L - a) * a * r ^ 2 ≤ ‖p - q‖ ^ 2 := by
+  have hpq : ⟪p, q⟫ ≤ ‖p‖ * ‖q‖ := real_inner_le_norm p q
+  have hq0 : 0 ≤ ‖q‖ := norm_nonneg q
+  rw [norm_sub_sq_real]
+  rcases ha0.eq_or_lt with rfl | ha0'
+  · have : ‖q‖ = 0 := le_antisymm (by simpa using hq) hq0
+    rw [this] at hpq ⊢
+    norm_num at hpq ⊢
+    linarith
+  have hL : 0 < L := ha0'.trans_le haL
+  have hq2 : ‖q‖ ^ 2 ≤ (a * r) ^ 2 := pow_le_pow_left₀ hq0 hq 2
+  have hX : 0 ≤ L * a * (a / L * ‖p‖ ^ 2 - 2 * (‖p‖ * ‖q‖) + ‖q‖ ^ 2 + (L - a) * a * r ^ 2) := by
+    have he : L * a * (a / L * ‖p‖ ^ 2 - 2 * (‖p‖ * ‖q‖) + ‖q‖ ^ 2 + (L - a) * a * r ^ 2) =
+        (a * ‖p‖ - L * ‖q‖) ^ 2 + L * (L - a) * ((a * r) ^ 2 - ‖q‖ ^ 2) := by
+      field_simp
+      ring
+    rw [he]
+    have : 0 ≤ L * (L - a) := mul_nonneg hL.le (by linarith)
+    nlinarith [sq_nonneg (a * ‖p‖ - L * ‖q‖)]
+  have hX' := (mul_nonneg_iff_of_pos_left (by positivity : 0 < L * a)).1 hX
+  have hsplit : (1 - a / L) * ‖p‖ ^ 2 = ‖p‖ ^ 2 - a / L * ‖p‖ ^ 2 := by ring
+  rw [hsplit]
+  nlinarith
 
 /-- Factoring out `‖q - q₀‖²` from the squared distance to a displaced point `q₀ + h` when
 `q ≠ q₀`. -/

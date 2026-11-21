@@ -68,6 +68,10 @@ respects, such as the Alexander grading, descends to this quotient.
   grid.
 * `TauCeti.GridDiagram.IsKnot.isScalarTower_unblockedHomology`: the coefficient action agrees
   with the `R[U]`-module structure.
+* `TauCeti.GridDiagram.IsKnot.isTorsion_unblockedHomology_iff_of_eq`: equal knot grids have
+  unblocked homology modules that are torsion simultaneously.
+* `TauCeti.GridDiagram.IsKnot.isTorsion_unblockedHomology_swapColumns_swapColumns_iff`: exchanging
+  the same two columns twice does not change whether `GH⁻` of a knot grid is torsion.
 
 ## References
 
@@ -200,6 +204,55 @@ theorem unblockedHomologyClass_eq_zero_iff (z : LinearMap.ker (G.unblockedDiffer
 
 end Quotient
 
+section HomologyMap
+
+variable {m : ℕ} (G' : GridDiagram m)
+
+/-- A class-compatible surjective map on unblocked homology lifts cycles modulo boundaries. -/
+theorem exists_sub_map_mem_range_unblockedDifferential_of_surjective
+    (f : GridChainMinus R m → GridChainMinus R n)
+    (hf : ∀ z ∈ LinearMap.ker (G'.unblockedDifferential R),
+      f z ∈ LinearMap.ker (G.unblockedDifferential R))
+    (F : G'.unblockedHomology R → G.unblockedHomology R)
+    (hF : ∀ (z : LinearMap.ker (G'.unblockedDifferential R))
+      (hz : f z ∈ LinearMap.ker (G.unblockedDifferential R)),
+      F (G'.unblockedHomologyClass R z) = G.unblockedHomologyClass R ⟨f z, hz⟩)
+    (h : Function.Surjective F) {c : GridChainMinus R n}
+    (hc : c ∈ LinearMap.ker (G.unblockedDifferential R)) :
+    ∃ z ∈ LinearMap.ker (G'.unblockedDifferential R),
+      c - f z ∈ LinearMap.range (G.unblockedDifferential R) := by
+  obtain ⟨y, hy⟩ := h (G.unblockedHomologyClass R ⟨c, hc⟩)
+  obtain ⟨z, rfl⟩ := G'.unblockedHomologyClass_surjective R y
+  have hz : f z ∈ LinearMap.ker (G.unblockedDifferential R) := hf z z.property
+  rw [hF z hz] at hy
+  have he : G.unblockedHomologyClass R (⟨c, hc⟩ - ⟨f z, hz⟩) = 0 := by
+    calc
+      _ = G.unblockedHomologyClass R ⟨c, hc⟩ -
+          G.unblockedHomologyClass R ⟨f z, hz⟩ := map_sub _ _ _
+      _ = 0 := sub_eq_zero.mpr hy.symm
+  exact ⟨z, z.property, (G.unblockedHomologyClass_eq_zero_iff R _).1 he⟩
+
+/-- A class-compatible injective map on unblocked homology reflects boundaries of cycles. -/
+theorem mem_range_unblockedDifferential_of_map_mem_range_of_injective
+    (f : GridChainMinus R m → GridChainMinus R n)
+    {𝓕 : Type*} [FunLike 𝓕 (G'.unblockedHomology R) (G.unblockedHomology R)]
+    [ZeroHomClass 𝓕 (G'.unblockedHomology R) (G.unblockedHomology R)] (F : 𝓕)
+    (hF : ∀ (z : LinearMap.ker (G'.unblockedDifferential R))
+      (hz : f z ∈ LinearMap.ker (G.unblockedDifferential R)),
+      F (G'.unblockedHomologyClass R z) = G.unblockedHomologyClass R ⟨f z, hz⟩)
+    (h : Function.Injective F) {z : GridChainMinus R m}
+    (hz : z ∈ LinearMap.ker (G'.unblockedDifferential R))
+    (hb : f z ∈ LinearMap.range (G.unblockedDifferential R)) :
+    z ∈ LinearMap.range (G'.unblockedDifferential R) := by
+  have hfz : f z ∈ LinearMap.ker (G.unblockedDifferential R) :=
+    (LinearMap.range_le_ker_iff.mpr (G.unblockedDifferential_comp_self_eq_zero R)) hb
+  apply (G'.unblockedHomologyClass_eq_zero_iff R ⟨z, hz⟩).1
+  apply h
+  rw [map_zero, hF ⟨z, hz⟩ hfz, unblockedHomologyClass_eq_zero_iff]
+  exact hb
+
+end HomologyMap
+
 /-! ### The equivalence induced by an intertwining map -/
 
 section Intertwining
@@ -273,7 +326,7 @@ theorem unblockedHomologyEquivOfIntertwining_unblockedHomologyClass
     (z : LinearMap.ker (G.unblockedDifferential R)) :
     G.unblockedHomologyEquivOfIntertwining R G' e he (G.unblockedHomologyClass R z) =
       G'.unblockedHomologyClass R
-        ⟨e z, G.map_mem_ker_unblockedDifferential_of_intertwining R G' e he z.2⟩ := by
+        ⟨e z, G.map_mem_ker_unblockedDifferential_of_intertwining R G' e he z.property⟩ := by
   simp only [unblockedHomologyEquivOfIntertwining, LinearEquiv.trans_apply,
     LinearEquiv.symm_apply_eq]
   rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
@@ -291,9 +344,7 @@ variable replaced by one fixed variable `V_c`. -/
 private theorem smul_eq_rename_const_smul (hG : G.IsKnot) (c : Fin n)
     (p : MvPolynomial (Fin n) R) (x : G.unblockedHomology R) :
     p • x = MvPolynomial.rename (fun _ => c) p • x :=
-  smul_unblockedHomology_eq_rename_smul _ (fun c' =>
-    ((G.isKnot_iff_componentPerm_isCycle).mp hG).sameCycle (G.componentPerm_apply_ne_self c')
-      (G.componentPerm_apply_ne_self c)) p x
+  smul_unblockedHomology_eq_rename_smul _ (fun c' => hG.sameCycle_componentPerm c' c) p x
 
 /-- On a knot grid the unblocked grid homology is annihilated by the kernel of the evaluation
 `R[V₀, …, V_{n-1}] → R[U]` sending every variable to `U`. -/
@@ -358,6 +409,29 @@ theorem isScalarTower_unblockedHomology (hG : G.IsKnot) :
   have hbase : r • y = (MvPolynomial.C r : MvPolynomial (Fin n) R) • y :=
     IsScalarTower.algebraMap_smul (MvPolynomial (Fin n) R) r y
   simpa only [MvPolynomial.aeval_C, hbase] using h
+
+variable (R) in
+/-- Equal knot grids have unblocked homology modules that are torsion simultaneously,
+independently of their knot witnesses. -/
+theorem isTorsion_unblockedHomology_iff_of_eq {G₁ : GridDiagram n} (hG : G.IsKnot)
+    {hG₁ : G₁.IsKnot} (h : G₁ = G) :
+    letI := hG.unblockedHomologyModule R
+    letI := hG₁.unblockedHomologyModule R
+    Module.IsTorsion (Polynomial R) (G₁.unblockedHomology R) ↔
+      Module.IsTorsion (Polynomial R) (G.unblockedHomology R) := by
+  subst h
+  exact Iff.rfl
+
+variable (R) in
+/-- Exchanging the same two columns twice returns the original knot grid, whose `GH⁻` is torsion
+exactly when it was before. -/
+theorem isTorsion_unblockedHomology_swapColumns_swapColumns_iff (hG : G.IsKnot) (a b : Fin n) :
+    letI := hG.unblockedHomologyModule R
+    letI := ((hG.swapColumns a b).swapColumns a b).unblockedHomologyModule R
+    Module.IsTorsion (Polynomial R)
+        (((G.swapColumns a b).swapColumns a b).unblockedHomology R) ↔
+      Module.IsTorsion (Polynomial R) (G.unblockedHomology R) :=
+  hG.isTorsion_unblockedHomology_iff_of_eq R (G.swapColumns_swapColumns a b)
 
 end IsKnot
 

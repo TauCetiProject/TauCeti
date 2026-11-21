@@ -176,14 +176,12 @@ private theorem qExpansion_coeff_eq_zero_of_forall_coprime_prime_mul {q : ℕ} (
     (hvan : ∀ n, n.Coprime (q * M) → (qExpansion 1 h).coeff n = 0) (n : ℕ)
     (hn : n.Coprime M) : (qExpansion 1 h).coeff n = 0 := by
   have : NeZero q := ⟨hq.ne_zero⟩
-  have : NeZero (M.primeFactors.prod id * M) :=
-    ⟨mul_ne_zero (Finset.prod_ne_zero_iff.mpr fun p hp ↦ (Nat.prime_of_mem_primeFactors hp).ne_zero)
-      (NeZero.ne M)⟩
+  have hRM : ∏ p ∈ M.primeFactors, p ∣ M := Nat.prod_primeFactors_dvd M
+  have : NeZero ((∏ p ∈ M.primeFactors, p) * M) :=
+    ⟨mul_ne_zero (ne_zero_of_dvd_ne_zero (NeZero.ne M) hRM) (NeZero.ne M)⟩
   obtain ⟨g, hgχ, hgq, hg⟩ :=
     exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd χ hχ hq subset_rfl hvan
-  have hqL : q.Coprime (M.primeFactors.prod id * M) := by
-    refine Nat.Coprime.mul_right (Nat.Coprime.prod_right fun p hp ↦ ?_) hqM
-    exact hqM.coprime_dvd_right (Nat.dvd_of_mem_primeFactors hp)
+  have hqL : q.Coprime ((∏ p ∈ M.primeFactors, p) * M) := (hqM.coprime_dvd_right hRM).mul_right hqM
   have hg0 := eq_zero_of_qExpansionSupportedOnDvd_of_coprime hq.ne_one hqL hgχ hgq
   have h1 := hg n
   rw [hg0, FunLike.coe_zero, qExpansion_zero, map_zero, eq_comm, ite_eq_right_iff] at h1

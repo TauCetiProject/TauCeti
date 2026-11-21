@@ -414,16 +414,16 @@ theorem GlueingDatum.mem_sections_iff (D : GlueingDatum R₁ R₂ R₁₂ M₁ M
 
 @[simp]
 theorem GlueingDatum.fst_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : D.sections R) :
-    D.fst R x = x.1.1 := by rfl
+    D.fst R x = x.val.1 := by rfl
 
 @[simp]
 theorem GlueingDatum.snd_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : D.sections R) :
-    D.snd R x = x.1.2 := by rfl
+    D.snd R x = x.val.2 := by rfl
 
 @[simp]
 theorem GlueingDatum.sectionsEquivProdOfSubsingleton_apply [Subsingleton M₁₂]
     (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : D.sections R) :
-    D.sectionsEquivProdOfSubsingleton R x = x.1 := by rfl
+    D.sectionsEquivProdOfSubsingleton R x = x.val := by rfl
 
 @[simp]
 theorem GlueingDatum.coe_sectionsEquivProdOfSubsingleton_symm [Subsingleton M₁₂]

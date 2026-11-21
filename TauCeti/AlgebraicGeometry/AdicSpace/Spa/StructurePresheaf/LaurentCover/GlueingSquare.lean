@@ -84,7 +84,7 @@ section Helpers
 universe v
 
 private def isoToRingEquiv {U V : _root_.TopCommRingCat.{v}} (I : U ≅ V) : U ≃+* V :=
-  RingEquiv.ofRingHom I.hom.1 I.inv.1
+  RingEquiv.ofRingHom I.hom.val I.inv.val
     (RingHom.ext fun x ↦ I.inv_hom_id_apply x) (RingHom.ext fun y ↦ I.hom_inv_id_apply y)
 
 variable {R : Type v} [CommRing R] [UniformSpace R] [IsTopologicalRing R]
@@ -119,22 +119,22 @@ private theorem rationalSectionRingEquiv_apply
     let p : Presentation P := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
     rationalSectionRingEquiv P hAplus T s hT hB z =
       ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose
-        ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1
-          ((presentationLimitRationalIso Aplus hAplus p hT).hom.hom.1 z)) := by
+        ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
+          ((presentationLimitRationalIso Aplus hAplus p hT).hom.hom.val z)) := by
   simp only [rationalSectionRingEquiv, rationalSectionTopIso, isoToRingEquiv,
     RingEquiv.trans_apply, RingEquiv.ofRingHom_apply, AlgEquiv.coe_toRingEquiv,
     Iso.trans_hom, eqToIso.hom, Functor.mapIso_hom]
-  -- Morphism composition `(f ≫ g).1 z` in `TopCommRingCat` is definitionally `g.1 (f.1 z)`.
+  -- Morphism composition `(f ≫ g).val z` in `TopCommRingCat` is definitionally `g.val (f.val z)`.
   rfl
 
 private theorem continuous_rationalSectionRingEquiv :
     Continuous (rationalSectionRingEquiv P hAplus T s hT hB) :=
   ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose_spec.1.comp
-    (rationalSectionTopIso P hAplus T s hT).hom.2
+    (rationalSectionTopIso P hAplus T s hT).hom.property
 
 private theorem continuous_rationalSectionRingEquiv_symm :
     Continuous (rationalSectionRingEquiv P hAplus T s hT hB).symm :=
-  (rationalSectionTopIso P hAplus T s hT).inv.2.comp
+  (rationalSectionTopIso P hAplus T s hT).inv.property.comp
     ((isRationalCompletion_iff_ratLoc P T s hT B).mp hB).choose_spec.2
 
 end RationalSection
@@ -155,12 +155,12 @@ private noncomputable def topSectionRingEquiv (P : PairOfDefinition R) {Aplus : 
 private theorem topSectionRingEquiv_symm_eq (P : PairOfDefinition R) {Aplus : Subring R}
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (r : R) :
     (topSectionRingEquiv P hAplus).symm r =
-      (toPresentationLimit (P := P) Aplus ⊤).hom.1
-        ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj R).symm).1 r) := by
+      (toPresentationLimit (P := P) Aplus ⊤).hom.val
+        ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj R).symm).val r) := by
   simp only [topSectionRingEquiv, isoToRingEquiv, RingEquiv.ofRingHom_symm,
     RingEquiv.ofRingHom_apply, Iso.trans_inv, eqToIso.inv, Functor.mapIso_inv,
     presentationLimitTopIso_inv]
-  -- Morphism composition `(f ≫ g).1 r` in `TopCommRingCat` is definitionally `g.1 (f.1 r)`.
+  -- Morphism composition `(f ≫ g).val r` in `TopCommRingCat` is definitionally `g.val (f.val r)`.
   rfl
 
 /-- Under `topSectionRingEquiv` and `rationalSectionRingEquiv`, restricting a global section to
@@ -171,13 +171,13 @@ private theorem rationalSectionRingEquiv_map_top (P : PairOfDefinition R) {Aplus
     {B : Type*} [CommRing B] [TopologicalSpace B] [Algebra R B]
     (hB : IsRationalCompletion P T s hT B) (x : presentationLimit (P := P) Aplus ⊤) :
     rationalSectionRingEquiv P hAplus T s hT hB
-        ((presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus T s ≤ ⊤)).hom.1 x) =
+        ((presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus T s ≤ ⊤)).hom.val x) =
       algebraMap R B (topSectionRingEquiv P hAplus x) := by
   let p : Presentation P := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
   set r := topSectionRingEquiv P hAplus x
   have hx : x = (topSectionRingEquiv P hAplus).symm r := by simp [r]
-  have hof : (eqToHom (CompleteSeparatedTopCommRingCat.of_obj R)).1
-      ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj R).symm).1 r) = r :=
+  have hof : (eqToHom (CompleteSeparatedTopCommRingCat.of_obj R)).val
+      ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj R).symm).val r) = r :=
     (eqToIso (CompleteSeparatedTopCommRingCat.of_obj R).symm).hom_inv_id_apply r
   rw [hx, topSectionRingEquiv_symm_eq, rationalSectionRingEquiv_apply,
     presentationLimitRationalIso_map_top_apply Aplus hAplus p hT, hof, ← algebraMap_ratLoc,
@@ -196,22 +196,22 @@ private theorem rationalSectionRingEquiv_map_le (P : PairOfDefinition R) {Aplus 
     (hc : Continuous (algebraMap B B'))
     (z : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s)) :
     rationalSectionRingEquiv P hAplus T' s' hT' hB'
-        ((presentationLimitMap (P := P) hle).hom.1 z) =
+        ((presentationLimitMap (P := P) hle).hom.val z) =
       algebraMap B B' (rationalSectionRingEquiv P hAplus T s hT hB z) := by
   have : T2Space B' := hB'.t2Space
   set φB := rationalSectionRingEquiv P hAplus T s hT hB
   set φB' := rationalSectionRingEquiv P hAplus T' s' hT' hB'
   let g : B →+* B' :=
-    φB'.toRingHom.comp <| (presentationLimitMap (P := P) hle).hom.1.comp φB.symm.toRingHom
+    φB'.toRingHom.comp <| (presentationLimitMap (P := P) hle).hom.val.comp φB.symm.toRingHom
   have hg_cont : Continuous g :=
     (continuous_rationalSectionRingEquiv P hAplus T' s' hT' hB').comp <|
-      (presentationLimitMap (P := P) hle).hom.2.comp
+      (presentationLimitMap (P := P) hle).hom.property.comp
         (continuous_rationalSectionRingEquiv_symm P hAplus T s hT hB)
   have hg_eq : g = algebraMap B B' :=
     hB.ringHom_ext_of_continuous hg_cont hc <| RingHom.ext fun r ↦ by
     let x₀ := (topSectionRingEquiv P hAplus).symm r
     have hrB : algebraMap R B r =
-        φB ((presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus T s ≤ ⊤)).hom.1 x₀) := by
+        φB ((presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus T s ≤ ⊤)).hom.val x₀) := by
       rw [rationalSectionRingEquiv_map_top, RingEquiv.apply_symm_apply]
     simp only [RingHom.comp_apply]
     rw [← IsScalarTower.algebraMap_apply R B B', hrB]
@@ -231,12 +231,12 @@ private theorem existsUnique_presentationLimit_laurent [IsHuberRing R] [Decidabl
     (x₁ : presentationLimit (P := P) Aplus (spaBasicOpen Aplus {f, 1} 1))
     (x₂ : presentationLimit (P := P) Aplus (spaBasicOpen Aplus {1} f))
     (hx : (presentationLimitMap (P := P)
-        (inf_le_left : spaBasicOpen Aplus {f, 1} 1 ⊓ spaBasicOpen Aplus {1} f ≤ _)).hom.1 x₁ =
+        (inf_le_left : spaBasicOpen Aplus {f, 1} 1 ⊓ spaBasicOpen Aplus {1} f ≤ _)).hom.val x₁ =
       (presentationLimitMap (P := P)
-        (inf_le_right : spaBasicOpen Aplus {f, 1} 1 ⊓ spaBasicOpen Aplus {1} f ≤ _)).hom.1 x₂) :
+        (inf_le_right : spaBasicOpen Aplus {f, 1} 1 ⊓ spaBasicOpen Aplus {1} f ≤ _)).hom.val x₂) :
     ∃! a : presentationLimit (P := P) Aplus ⊤,
-      (presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus {f, 1} 1 ≤ ⊤)).hom.1 a = x₁ ∧
-      (presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus {1} f ≤ ⊤)).hom.1 a = x₂ := by
+      (presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus {f, 1} 1 ≤ ⊤)).hom.val a = x₁ ∧
+      (presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus {1} f ≤ ⊤)).hom.val a = x₂ := by
   have hsheaf := ((isSheafyForEveryPresentation_iff_isRingOfIntegralElements_and_isSheaf P).mp hs).2
   have hsheafG : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Aplus))
       (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
@@ -248,7 +248,7 @@ private theorem existsUnique_presentationLimit_laurent [IsHuberRing R] [Decidabl
     fun b ↦ b.rec (spaBasicOpen Aplus {1} f) (spaBasicOpen Aplus {f, 1} 1)
   have hcov : Sieve.ofArrows U (fun _ ↦ homOfLE le_top) ∈
       Opens.grothendieckTopology ↥(spa Aplus) ⊤ := fun v _ ↦ by
-    obtain ⟨b, hb⟩ := Set.mem_iUnion.mp (spa_subset_iUnion_laurentCover Aplus f v.2)
+    obtain ⟨b, hb⟩ := Set.mem_iUnion.mp (spa_subset_iUnion_laurentCover Aplus f v.property)
     refine ⟨U b, homOfLE le_top, Sieve.ofArrows_mk _ _ b, ?_⟩
     cases b <;> simpa [U, mem_spaBasicOpen, mem_rationalSubset_iff] using hb
   have hfor := (Presieve.isSheafFor_iff_generate _).mpr (hsheafG.isSheafFor _ hcov)
@@ -257,7 +257,7 @@ private theorem existsUnique_presentationLimit_laurent [IsHuberRing R] [Decidabl
     cases i <;> cases j
     · rfl
     · have h := congrArg (presentationLimitMap (P := P)
-          (le_inf inf_le_right inf_le_left : U false ⊓ U true ≤ U true ⊓ U false)).hom.1 hx.symm
+          (le_inf inf_le_right inf_le_left : U false ⊓ U true ≤ U true ⊓ U false)).hom.val hx.symm
       rwa [presentationLimitMap_apply_presentationLimitMap_apply,
         presentationLimitMap_apply_presentationLimitMap_apply] at h
     · exact hx
@@ -341,17 +341,17 @@ private theorem presentationLimitMap_laurentInf_eq {Aplus : Subring R}
     (hc₁ : Continuous (algebraMap R₁ R₁₂)) (hc₂ : Continuous (algebraMap R₂ R₁₂))
     {y₁ : R₁} {y₂ : R₂} (hy : algebraMap R₁ R₁₂ y₁ = algebraMap R₂ R₁₂ y₂) :
     (presentationLimitMap (P := P)
-        (inf_le_left : spaBasicOpen Aplus {f, 1} 1 ⊓ spaBasicOpen Aplus {1} f ≤ _)).hom.1
+        (inf_le_left : spaBasicOpen Aplus {f, 1} 1 ⊓ spaBasicOpen Aplus {1} f ≤ _)).hom.val
       ((rationalSectionRingEquiv P hAplus {f, 1} 1 hT₁ h₁).symm y₁) =
     (presentationLimitMap (P := P)
-        (inf_le_right : spaBasicOpen Aplus {f, 1} 1 ⊓ spaBasicOpen Aplus {1} f ≤ _)).hom.1
+        (inf_le_right : spaBasicOpen Aplus {f, 1} 1 ⊓ spaBasicOpen Aplus {1} f ≤ _)).hom.val
       ((rationalSectionRingEquiv P hAplus {1} f hT₂ h₂).symm y₂) := by
   have hEq := spaBasicOpen_laurentOverlap_eq_inf Aplus f
   set e₁ := rationalSectionRingEquiv P hAplus {f, 1} 1 hT₁ h₁
   set e₂ := rationalSectionRingEquiv P hAplus {1} f hT₂ h₂
   set e₁₂ := rationalSectionRingEquiv P hAplus {f * f, 1} f hT₁₂ h₁₂
-  have hInv : Function.LeftInverse (presentationLimitMap (P := P) hEq.ge).hom.1
-      (presentationLimitMap (P := P) hEq.le).hom.1 := fun z ↦ by
+  have hInv : Function.LeftInverse (presentationLimitMap (P := P) hEq.ge).hom.val
+      (presentationLimitMap (P := P) hEq.le).hom.val := fun z ↦ by
     rw [presentationLimitMap_apply_presentationLimitMap_apply, presentationLimitMap_refl]
     exact ConcreteCategory.id_apply z
   refine hInv.injective (e₁₂.injective ?_)
@@ -382,9 +382,9 @@ theorem laurent_injective_and_exact_of_isSheafyForEveryPresentation [IsHuberRing
       (presentationLimitMap_laurentInf_eq hSplus h₁ h₂ h₁₂ hc₁ hc₂ (by
         rw [← IsScalarTower.algebraMap_apply R R₁ R₁₂,
           ← IsScalarTower.algebraMap_apply R R₂ R₁₂]))
-    have htop₁ (r : R) : e₁ ((presentationLimitMap (P := P) le_top).hom.1 (e₀.symm r)) =
+    have htop₁ (r : R) : e₁ ((presentationLimitMap (P := P) le_top).hom.val (e₀.symm r)) =
         algebraMap R R₁ r := by rw [rationalSectionRingEquiv_map_top, e₀.apply_symm_apply]
-    have htop₂ (r : R) : e₂ ((presentationLimitMap (P := P) le_top).hom.1 (e₀.symm r)) =
+    have htop₂ (r : R) : e₂ ((presentationLimitMap (P := P) le_top).hom.val (e₀.symm r)) =
         algebraMap R R₂ r := by rw [rationalSectionRingEquiv_map_top, e₀.apply_symm_apply]
     exact e₀.symm.injective (hglue.unique
       ⟨e₁.injective (by rw [e₁.apply_symm_apply, htop₁]),

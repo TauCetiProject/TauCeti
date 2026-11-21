@@ -217,7 +217,7 @@ public theorem frickeConjSL_mem_Gamma0 (σ : ↥(Gamma0 N)) :
 remain `≡ 1 (mod N)`. Note that this needs `σ ∈ Γ₁(N)`, not merely `σ ∈ Γ₀(N)`. As for `Γ₀(N)` it
 maps the subgroup into itself at every level; normalization is `frickeConjGamma1MulEquiv`. -/
 public theorem frickeConjSL_mem_Gamma1 (σ : SL(2, ℤ)) (hσ : σ ∈ Gamma1 N) :
-    frickeConjSL ⟨σ, Gamma1_in_Gamma0 N hσ⟩ ∈ Gamma1 N := by
+    frickeConjSL ⟨σ, Gamma1_le_Gamma0 N hσ⟩ ∈ Gamma1 N := by
   obtain ⟨ha, hd, -⟩ := (Gamma1_mem N σ).mp hσ
   rw [Gamma1_mem, coe_frickeConjSL]
   exact ⟨by simpa using hd, by simpa using ha, by simp⟩
@@ -289,17 +289,17 @@ public theorem coe_frickeConjGamma0 (σ : ↥(Gamma0 N)) :
 `Γ₁(N) →* Γ₁(N)`; the `Γ₁` counterpart of `frickeConjGamma0`, bundling
 `frickeConjSL_mem_Gamma1`, and like it defined at every level. -/
 public def frickeConjGamma1 : ↥(Gamma1 N) →* ↥(Gamma1 N) where
-  toFun σ := ⟨frickeConjSL ⟨σ, Gamma1_in_Gamma0 N σ.property⟩,
+  toFun σ := ⟨frickeConjSL ⟨σ, Gamma1_le_Gamma0 N σ.property⟩,
     frickeConjSL_mem_Gamma1 (σ : SL(2, ℤ)) σ.property⟩
   map_one' := Subtype.ext frickeConjSL_one
-  map_mul' σ τ := Subtype.ext (frickeConjSL_mul ⟨σ, Gamma1_in_Gamma0 N σ.property⟩
-    ⟨τ, Gamma1_in_Gamma0 N τ.property⟩)
+  map_mul' σ τ := Subtype.ext (frickeConjSL_mul ⟨σ, Gamma1_le_Gamma0 N σ.property⟩
+    ⟨τ, Gamma1_le_Gamma0 N τ.property⟩)
 
 /-- The `SL(2, ℤ)` matrix underlying `frickeConjGamma1 σ` is `frickeConjSL σ`: the
 characterizing lemma for the bundled map, as `coe_frickeConjGamma0` is at level `Γ₀(N)`. -/
 @[simp]
 public theorem coe_frickeConjGamma1 (σ : ↥(Gamma1 N)) :
-    (frickeConjGamma1 σ : SL(2, ℤ)) = frickeConjSL ⟨σ, Gamma1_in_Gamma0 N σ.property⟩ :=
+    (frickeConjGamma1 σ : SL(2, ℤ)) = frickeConjSL ⟨σ, Gamma1_le_Gamma0 N σ.property⟩ :=
   (rfl)
 
 section NeZero
@@ -392,7 +392,7 @@ public theorem frickeConjGamma0MulEquiv_symm :
 -- maps. The one remaining definitional step is `coe_frickeConjGamma1` itself, which is `(rfl)`.
 public theorem frickeConjGamma1_frickeConjGamma1 (σ : ↥(Gamma1 N)) :
     frickeConjGamma1 (frickeConjGamma1 σ) = σ :=
-  Subtype.ext (frickeConjSL_frickeConjSL ⟨σ, Gamma1_in_Gamma0 N σ.property⟩)
+  Subtype.ext (frickeConjSL_frickeConjSL ⟨σ, Gamma1_le_Gamma0 N σ.property⟩)
 
 /-- `frickeConjGamma1` is involutive, in the form `Function.Involutive` consumes. -/
 public theorem frickeConjGamma1_involutive :

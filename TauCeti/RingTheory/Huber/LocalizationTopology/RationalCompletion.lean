@@ -505,7 +505,7 @@ theorem IsRationalCompletion.surjective_sub_laurent
     modelEvalHom_X_mul_inv P hT₁₂ e₁₂ ![f * f, 1] ht₁₂ 1 rfl
   have hρ₁ := comp_modelEvalHom_eq_weightedRename P hT₁ hT₁₂ e₁ he₁ e₁₂ he₁₂
     ![f] ht₁ ![f * f, 1] ht₁₂ ρ₁ hc₁ Fin.castSuccEmb (by
-      rw [Fin.castSuccEmb_apply, Fin.castSucc_zero',
+      rw [Fin.castSuccEmb_apply, Fin.castSucc_zero,
         modelEvalHom_X_eq_algebraMap_of_mul P hT₁ e₁ ![f] ht₁ 0 (one_mul f).symm, ρ₁.commutes]
       exact hX₀.symm)
   have hρ₂ := comp_modelEvalHom_eq_weightedRename P hT₂ hT₁₂ e₂ he₂ e₁₂ he₁₂

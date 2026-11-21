@@ -78,7 +78,7 @@ noncomputable def centerEigenspace (χ : Subalgebra.center R U → R) : LieSubmo
     simp only [Submodule.mem_carrier, SetLike.mem_coe, Submodule.mem_iInf,
       End.mem_eigenspace_iff] at hm ⊢
     intro z
-    rw [representation_lie_of_mem_center R L M z.2, hm z, lie_smul]
+    rw [representation_lie_of_mem_center R L M z.property, hm z, lie_smul]
 
 variable {R L M N}
 
@@ -142,7 +142,7 @@ theorem iSupIndep_centerEigenspace :
     (fun z : Subalgebra.center R U ↦ representation R L M (z : U)) fun z w φ ↦
       End.mapsTo_maxGenEigenspace_of_comm ?_ φ).mono fun χ ↦
     iInf_mono fun z ↦ End.eigenspace_le_maxGenEigenspace
-  rw [Commute, SemiconjBy, ← map_mul, ← map_mul, (Subalgebra.mem_center_iff.mp z.2) (w : U)]
+  rw [Commute, SemiconjBy, ← map_mul, ← map_mul, (Subalgebra.mem_center_iff.mp z.property) (w : U)]
 
 /-- Centre eigenspaces for distinct eigenvalue functions meet only in zero. -/
 theorem disjoint_centerEigenspace {χ₁ χ₂ : Subalgebra.center R U → R} (h : χ₁ ≠ χ₂) :
