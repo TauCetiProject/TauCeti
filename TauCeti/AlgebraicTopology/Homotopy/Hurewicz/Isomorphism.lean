@@ -151,16 +151,6 @@ private theorem basedCycle_smul
   apply (chainEquiv R).injective
   simp only [map_smul, iCycles_basedCycle]
 
-/-- The cubical Hurewicz homomorphism sends the class of a generalized loop to the cubical
-Hurewicz class of that loop. -/
-private theorem cubicalHurewiczHom_ofMul_mk (R : Type u) [Ring R] (p : Ω^ (Fin (n + 2)) X x) :
-    cubicalHurewiczHom R (n + 1)
-        (Additive.ofMul (α := HomotopyGroup (Fin (n + 2)) X x) ⟦p⟧) =
-      GenLoop.cubicalHurewicz R p :=
-  -- `toMul_ofMul` cannot be used by `rw` here: `⟦p⟧` is elaborated at the quotient type
-  -- underlying `HomotopyGroup`, so the step is the definitional equation `toMul (ofMul a) = a`.
-  (cubicalHurewiczHom_apply R (n + 1) _).trans (cubicalHurewicz_mk R (n + 1) p)
-
 private theorem cubicalHurewiczHom_basedClassHomOfRingEquiv (e : R ≃+* ℤ)
     (g : NormalizedCubicalChain X R (n + 2))
     (hg : g ∈ Submodule.span R

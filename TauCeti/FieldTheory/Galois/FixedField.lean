@@ -11,6 +11,7 @@ public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
 import Mathlib.FieldTheory.Galois.Infinite
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import TauCeti.GroupTheory.GroupAction.Hom
 
 /-!
 # Fixed fields and fixing subgroups
@@ -758,7 +759,8 @@ theorem apply_fixedField_stabilizer_out_of_injective (K : Type*) [Field K] {M X 
     (hx : (Quotient.mk'' (g x) : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) Y) = ω) :
     f (IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) ω.out)) =
       f (IntermediateField.fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) := by
-  rw [apply_fixedField_stabilizer_out K hf hx, MulAction.stabilizer_eq_of_injective g hg he]
+  rw [apply_fixedField_stabilizer_out K hf hx,
+    TauCeti.MulAction.stabilizer_eq_of_injective g hg (he · x)]
 
 /-- Translating a point does not change the degree of its stabilizer's fixed field. -/
 @[simp]
