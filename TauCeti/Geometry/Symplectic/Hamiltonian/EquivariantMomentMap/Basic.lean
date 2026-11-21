@@ -122,6 +122,8 @@ is conserved along the integral curves of a Hamiltonian vector field of an invar
   case of a trivial stabilizer.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.momentCocycle_eq_zero`: conversely, the cocycle of
   a group-level moment map vanishes at every point.
+* `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isotropy_le_lieAnnihilator`: the isotropy algebra
+  `𝔤_x` lies in the infinitesimal coadjoint stabilizer `𝔤_{μ(x)}`.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.differential_surjective_smul_iff`: `dμ_{g • x}` is
   surjective exactly when `dμ_x` is, and
   `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.differential_surjective_of_apply_eq`: a group-level
@@ -528,6 +530,13 @@ theorem momentCocycle_eq_zero (h : σ.IsEquivariantMomentMap μ) (x : M) :
   have hd := h.toIsMomentMap.mvfderiv_momentDefect_one x ξ η
   rw [hθ, mvfderiv_const, momentCocycle_apply, LinearEquiv.apply_symm_apply] at hd
   exact (sub_eq_zero.1 (by simpa using hd.symm))
+
+/-- **The isotropy algebra of a point lies in the coadjoint stabilizer of its moment value**: for
+a coadjoint-equivariant moment map, `𝔤_x ≤ 𝔤_{μ(x)}`. -/
+theorem isotropy_le_lieAnnihilator (h : σ.IsEquivariantMomentMap μ) (x : M) :
+    (InfinitesimalAction.fundamental I G I' M).isotropy x ≤
+      lieAnnihilator ℝ (GroupLieAlgebra I G) (μ x) :=
+  h.toIsMomentMap.isotropy_le_lieAnnihilator (h.momentCocycle_eq_zero x)
 
 end IsEquivariantMomentMap
 

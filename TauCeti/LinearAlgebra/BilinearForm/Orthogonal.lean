@@ -94,6 +94,14 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   subspace on which an injective bilinear map with values in a line vanishes.
 * `LinearMap.mem_of_apply_eq_zero_of_two_mul_finrank_eq`: such a subspace of exactly half the
   dimension is its own orthogonal.
+* `LinearMap.BilinForm.isCompl_orthogonal_of_anisotropic`: for an anisotropic form, every
+  finite-dimensional subspace is complementary to its orthogonal complement.
+* `LinearMap.BilinForm.sup_inf_orthogonal_of_le`,
+  `LinearMap.BilinForm.inf_orthogonal_sup_orthogonal_of_le` and
+  `LinearMap.BilinForm.isCompl_inf_orthogonal_sup_orthogonal_of_le`: for such a form and subspaces
+  `W ≤ U` with `U` finite-dimensional, the splitting `V = W ⊕ (U ⊓ Wᗮ) ⊕ Uᗮ` of the flag, with
+  `W ⊔ (U ⊓ Wᗮ) = U`, `(U ⊓ Wᗮ) ⊔ Uᗮ = Wᗮ`, and `U ⊓ Wᗮ` complementary to `W ⊔ Uᗮ`. No
+  reflexivity is needed.
 
 ## References
 
@@ -718,6 +726,61 @@ theorem two_mul_finrank_le_finrank_of_le_orthogonal (hB : B.Nondegenerate) {W : 
   have hmono := Submodule.finrank_mono h
   have hle := Submodule.finrank_le W
   omega
+
+omit [FiniteDimensional K V] in
+/-- **Anisotropic forms split every finite-dimensional subspace.** For a form with anisotropic
+diagonal, such as a real inner product, every finite-dimensional subspace is complementary to its
+orthogonal complement. Neither reflexivity nor finite-dimensionality of the ambient space is
+needed. -/
+theorem isCompl_orthogonal_of_anisotropic (hani : B.toQuadraticMap.Anisotropic)
+    (W : Submodule K V) [FiniteDimensional K W] : IsCompl W (B.orthogonal W) := by
+  refine ⟨disjoint_iff.2 <|
+      eq_bot_of_le_orthogonal hani (inf_le_right.trans (orthogonal_le inf_le_left)),
+    codisjoint_iff.2 <| eq_top_iff.2 fun v _ ↦ ?_⟩
+  -- Pairing on the right identifies `W` with its dual, since `B u u ≠ 0` for `u ≠ 0`; so the
+  -- functional `B · v` on `W` is `B · u` for some `u ∈ W`, and `v - u ∈ Wᗮ`.
+  have hinj : Function.Injective (B.restrict W).flip :=
+    (injective_iff_map_eq_zero _).2 fun u hu ↦ Submodule.coe_eq_zero.1 <| hani _ <| by
+      simpa only [LinearMap.BilinMap.toQuadraticMap_apply, flip_apply, restrict_apply,
+        LinearMap.domRestrict_apply, LinearMap.zero_apply] using LinearMap.congr_fun hu u
+  obtain ⟨u, hu⟩ := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    Subspace.dual_finrank_eq.symm).1 hinj ((B.flip v).domRestrict W)
+  refine Submodule.mem_sup.2
+    ⟨u, u.property, v - u, B.mem_orthogonal_iff.2 fun w hw ↦ ?_, add_sub_cancel _ _⟩
+  have huw := LinearMap.congr_fun hu ⟨w, hw⟩
+  simp only [flip_apply, restrict_apply, LinearMap.domRestrict_apply] at huw
+  rw [map_sub, huw, sub_self]
+
+omit [FiniteDimensional K V] in
+/-- For an anisotropic form and subspaces `W ≤ U` with `W` finite-dimensional, `W` and the relative
+orthogonal complement `U ⊓ Wᗮ` span `U`: `W ⊔ (U ⊓ Wᗮ) = U`. -/
+theorem sup_inf_orthogonal_of_le (hani : B.toQuadraticMap.Anisotropic) {W U : Submodule K V}
+    [FiniteDimensional K W] (h : W ≤ U) : W ⊔ U ⊓ B.orthogonal W = U := by
+  rw [inf_comm, ← sup_inf_assoc_of_le _ h,
+    (isCompl_orthogonal_of_anisotropic hani W).sup_eq_top, top_inf_eq]
+
+omit [FiniteDimensional K V] in
+/-- For an anisotropic form and subspaces `W ≤ U` with `U` finite-dimensional, the orthogonal
+complement `Wᗮ` is the sum of the relative complement `U ⊓ Wᗮ` and of `Uᗮ`. -/
+theorem inf_orthogonal_sup_orthogonal_of_le (hani : B.toQuadraticMap.Anisotropic)
+    {W U : Submodule K V} [FiniteDimensional K U] (h : W ≤ U) :
+    U ⊓ B.orthogonal W ⊔ B.orthogonal U = B.orthogonal W := by
+  rw [inf_comm, inf_sup_assoc_of_le _ (orthogonal_le h),
+    (isCompl_orthogonal_of_anisotropic hani U).sup_eq_top, inf_top_eq]
+
+omit [FiniteDimensional K V] in
+/-- For an anisotropic form and subspaces `W ≤ U` with `U` finite-dimensional, the relative
+orthogonal complement `U ⊓ Wᗮ` is complementary to `W ⊔ Uᗮ`. No reflexivity is needed. -/
+theorem isCompl_inf_orthogonal_sup_orthogonal_of_le (hani : B.toQuadraticMap.Anisotropic)
+    {W U : Submodule K V} [FiniteDimensional K U] (h : W ≤ U) :
+    IsCompl (U ⊓ B.orthogonal W) (W ⊔ B.orthogonal U) := by
+  have : FiniteDimensional K W := Submodule.finiteDimensional_of_le h
+  -- `U ⊓ Wᗮ` and `Uᗮ` are disjoint, and their sum `Wᗮ` complements `W`.
+  rw [sup_comm]
+  refine Disjoint.isCompl_sup_right_of_isCompl_sup_left
+    ((isCompl_orthogonal_of_anisotropic hani U).disjoint.mono_left inf_le_left) ?_
+  rw [inf_orthogonal_sup_orthogonal_of_le hani h]
+  exact (isCompl_orthogonal_of_anisotropic hani W).symm
 
 /-- The orthogonal complement of the span of a hyperbolic pair has codimension two. -/
 theorem IsAlt.finrank_orthogonal_span_pair_add_two (hB : B.IsAlt) {e f : V} (hfe : B f e = 1) :
