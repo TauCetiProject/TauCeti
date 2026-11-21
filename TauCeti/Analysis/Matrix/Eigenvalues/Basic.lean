@@ -105,10 +105,7 @@ theorem IsHermitian.exists_unitary_conj_of_eigenvalues₀_eq (hA : A.IsHermitian
     (hB : B.IsHermitian) (h : hA.eigenvalues₀ = hB.eigenvalues₀) :
     ∃ U ∈ unitaryGroup ι 𝕜, B = U * A * star U := by
   -- Equal sorted eigenvalues give equal matrix-indexed eigenvalues.
-  have he : hA.eigenvalues = hB.eigenvalues := by
-    funext i
-    simp only [IsHermitian.eigenvalues]
-    exact congrFun h _
+  have he := (hA.eigenvalues_eq_eigenvalues_iff hB).2 ((hA.eigenvalues₀_eq_eigenvalues₀_iff hB).1 h)
   -- Both are conjugate to the same real diagonal matrix by the spectral theorem.
   have hBA := hB.spectral_theorem
   rw [← he, ← hA.conjStarAlgAut_star_eigenvectorUnitary, ← Unitary.conjStarAlgAut_mul_apply,
@@ -126,12 +123,11 @@ theorem IsHermitian.eigenvalues₀_diagonal {s : Fin (Fintype.card ι) → ℝ} 
     Polynomial.roots_prod _ _ (by simp [Finset.prod_ne_zero_iff, Polynomial.X_sub_C_ne_zero])]
   simp only [Polynomial.roots_X_sub_C, Multiset.bind_singleton, Multiset.map_map,
     Function.comp_def, RCLike.ofReal_re]
-  rw [show (Finset.univ.val.map fun k ↦ s (e.symm k)) = Finset.univ.val.map s by
-    rw [← Multiset.map_univ_val_equiv e.symm, Multiset.map_map, Function.comp_def]]
-  rw [Fin.univ_val_map, Multiset.coe_sort]
-  apply List.mergeSort_of_pairwise
-  simp_rw [decide_eq_true_eq, ← List.sortedGE_iff_pairwise]
-  exact hs.sortedGE_ofFn
+  rw [← Function.comp_def s e.symm, ← Multiset.map_map, Multiset.map_univ_val_equiv,
+    Fin.univ_val_map]
+  -- Sorting the decreasing list `List.ofFn s` returns it unchanged.
+  exact List.Perm.eq_of_sortedGE (List.sortedGE_iff_pairwise.2 (Multiset.pairwise_sort _ _))
+    hs.sortedGE_ofFn (Multiset.coe_eq_coe.1 (Multiset.sort_eq _ _))
 
 /-- Entrywise perturbations of size `ε` change every sorted eigenvalue of a Hermitian matrix
 by at most `card ι * ε`. -/
