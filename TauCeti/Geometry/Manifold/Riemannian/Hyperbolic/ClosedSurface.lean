@@ -291,15 +291,6 @@ theorem exists_hyperbolicMetric_mem_conformalClass_iff [I.Boundaryless] [Nonempt
   exact g.integral_scalarCurvature_neg_of_scalarCurvature_rescale_eq hE hf hf_pos
     (c := -2) (by norm_num) (hGf ▸ G.scalarCurvature_metric_of_finrank_eq_two hE)
 
-/-- **Hyperbolicity from negative total curvature.** A closed connected surface admitting a smooth
-Riemannian metric of negative total scalar curvature is hyperbolic. -/
-theorem isHyperbolic_of_integral_scalarCurvature_neg [I.Boundaryless] (hE : finrank ℝ E = 2)
-    (hK : ∫ x, g.scalarCurvature x.ofWithMetric ∂riemannianVolume I (WithMetric g) < 0) :
-    IsHyperbolic (I := I) (M := M) :=
-  isHyperbolic_iff.2 <|
-    let ⟨G, _, _, _, _⟩ := g.exists_hyperbolicMetric_metric_eq_rescale hE hK
-    ⟨G⟩
-
 end Bundle.ContMDiffRiemannianMetric
 
 namespace TauCeti
@@ -316,6 +307,7 @@ theorem isHyperbolic_iff_exists_integral_scalarCurvature_neg [I.Boundaryless] [N
   exact ⟨fun ⟨G⟩ ↦
     ⟨G.metric, (G.metric.exists_hyperbolicMetric_mem_conformalClass_iff hE).1
       ⟨G, G.metric.self_mem_conformalClass⟩⟩,
-    fun ⟨g, hK⟩ ↦ isHyperbolic_iff.1 (g.isHyperbolic_of_integral_scalarCurvature_neg hE hK)⟩
+    fun ⟨g, hK⟩ ↦ let ⟨G, _⟩ := (g.existsUnique_hyperbolicMetric_mem_conformalClass hE hK).exists
+      ⟨G⟩⟩
 
 end TauCeti

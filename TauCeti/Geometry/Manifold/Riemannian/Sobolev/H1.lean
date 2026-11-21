@@ -451,6 +451,12 @@ theorem toLp_injective : Function.Injective (toLp (I := I) (M := M)) := by
   refine denseRange_ofSmooth.eq_zero_of_inner_left ℝ fun φ ↦ ?_
   rw [inner_ofSmooth_right_eq_inner, hw, inner_zero_left]
 
+/-- An element of `H¹(M)` whose `L²` value agrees almost everywhere with a smooth function `u`
+equals `ofSmooth u`. -/
+theorem eq_ofSmooth_of_toLp_ae_eq {w : SobolevH1 I M} {u : C^∞⟮I, M; ℝ⟯}
+    (hwu : toLp w =ᵐ[riemannianVolume I M] u) : w = ofSmooth u :=
+  toLp_injective (Lp.ext (hwu.trans (toLp_ofSmooth_ae_eq u).symm))
+
 /-- **The Dirichlet form against a smooth function.** On a closed manifold with a `C¹` metric,
 `D(w, φ) = ∫ w Δ⁺φ dV` for `w ∈ H¹(M)` and a smooth function `φ`, where `Δ⁺ = -div grad` is the
 nonnegative Laplacian. -/

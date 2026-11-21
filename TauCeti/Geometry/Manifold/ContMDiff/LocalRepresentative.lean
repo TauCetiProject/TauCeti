@@ -20,7 +20,7 @@ common open domain, so for a measure that charges every nonempty open set they a
 there (`MeasureTheory.Measure.eqOn_open_of_ae_eq`). The value at `y` of any representative near
 `y` therefore defines the glued function on `Ω`, and the Lindelöf property turns the local almost
 everywhere equalities into a global one without assuming second countability of the ambient
-manifold (`TauCeti.exists_eqOn_ae_eq_of_locally`).
+manifold (`TauCeti.exists_locally_eqOn_and_ae_eq_of_locally_ae_eq`).
 
 This is how regularity proved in charts, for instance by Euclidean elliptic regularity, becomes
 regularity of one representative on a Lindelöf subset or the whole manifold. The case `n = 0` glues
@@ -63,7 +63,7 @@ must charge every nonempty open set. -/
 theorem exists_contMDiffOn_ae_eq_of_locally {Ω : Set M} (hΩ : IsLindelof Ω)
     (h : ∀ x ∈ Ω, ∃ U ∈ 𝓝 x, ∃ g : M → N, ContMDiffOn I I' n g U ∧ u =ᵐ[μ.restrict U] g) :
     ∃ g : M → N, ContMDiffOn I I' n g Ω ∧ u =ᵐ[μ.restrict Ω] g := by
-  obtain ⟨G, hG, huG⟩ := exists_eqOn_ae_eq_of_locally hΩ
+  obtain ⟨G, hG, huG⟩ := exists_locally_eqOn_and_ae_eq_of_locally_ae_eq hΩ
     (P := fun s g ↦ ContMDiffOn I I' n g s)
     (fun hst hg ↦ hg.mono hst) (fun hg ↦ hg.continuousOn) h
   refine ⟨G, contMDiffOn_of_locally_contMDiffOn fun x hx ↦ ?_, huG⟩
