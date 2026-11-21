@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Hamiltonian.DarbouxChart
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive.Darboux
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive.Extension
 
@@ -30,11 +29,12 @@ The positions of every Darboux chart are canonical conjugate variables of its mo
 (`TauCeti/Geometry/Symplectic/Hamiltonian/DarbouxChart.lean`). Applied to the chart of the
 Carathéodory–Jacobi–Lie theorem with the function `Fᵢ`, which equals the momentum
 `p_(Fin.castAdd m i)` on the source, this says that the Hamiltonian vector field of `Fᵢ` is
-`∂/∂q_(Fin.castAdd m i)` (`TauCeti.SmoothTwoForm.mvfderiv_hamiltonianVectorField_eq_of_eqOn_snd`),
-that `{q_(Fin.castAdd m i), Fⱼ} = δᵢⱼ`
-(`TauCeti.SmoothTwoForm.poissonBracket_eq_ite_of_eqOn_fst_of_eqOn_snd`), and that the flow of `Fᵢ`
-is translation in `q_(Fin.castAdd m i)`
-(`TauCeti.SmoothTwoForm.apply_eq_add_smul_of_isMIntegralCurveOn`).
+`∂/∂q_(Fin.castAdd m i)`
+(`TauCeti.SmoothTwoForm.IsDarbouxChart.mvfderiv_hamiltonianVectorField_eq_of_eqOn_snd`), that
+`{q_(Fin.castAdd m i), Fⱼ} = δᵢⱼ`
+(`TauCeti.SmoothTwoForm.IsDarbouxChart.poissonBracket_eq_ite_of_eqOn_fst_of_eqOn_snd`), and that
+the flow of `Fᵢ` is translation in `q_(Fin.castAdd m i)` (`TauCeti.SmoothTwoForm.IsDarbouxChart.`
+`apply_eq_add_smul_single_of_isMIntegralCurveOn_hamiltonianVectorField`).
 No compactness of the levels of `F` and no completeness of the Hamiltonian vector fields is needed.
 
 ## References
@@ -68,9 +68,10 @@ dimension `2 (k + m)`, let `F : M → (Fin k → ℝ)` be smooth, with component
 `x` and with independent differentials at `x`. Then the `Fᵢ` are momenta of Darboux coordinates
 near `x`: there is a smooth partial diffeomorphism `chart` from `M` to
 `(Fin (k + m) → ℝ) × (Fin (k + m) → ℝ)` whose source contains `x`, with positions `0` at `x` and
-momenta `p_(Fin.castAdd m i) = Fᵢ`, pulling the standard form `∑ⱼ dqⱼ ∧ dpⱼ` back to `σ`. Its
-positions `q_(Fin.castAdd m i)` are conjugate to the `Fᵢ`, by
-`TauCeti.SmoothTwoForm.poissonBracket_eq_ite_of_eqOn_fst_of_eqOn_snd`. -/
+momenta `p_(Fin.castAdd m i) = Fᵢ`, pulling the standard form `∑ⱼ dqⱼ ∧ dpⱼ` back to `σ`
+(`TauCeti.SmoothTwoForm.IsDarbouxChart`). Its positions `q_(Fin.castAdd m i)` are conjugate to the
+`Fᵢ`, by
+`TauCeti.SmoothTwoForm.IsDarbouxChart.poissonBracket_eq_ite_of_eqOn_fst_of_eqOn_snd`. -/
 theorem exists_darbouxChart_snd_castAdd_eq (hσ : σ.IsSymplectic) {k m : ℕ}
     (hdim : 2 * (k + m) = finrank ℝ E) {F : M → Fin k → ℝ}
     (hF : ContMDiff I 𝓘(ℝ, Fin k → ℝ) ∞ F)
@@ -80,9 +81,7 @@ theorem exists_darbouxChart_snd_castAdd_eq (hσ : σ.IsSymplectic) {k m : ℕ}
         ((Fin (k + m) → ℝ) × (Fin (k + m) → ℝ)) ∞,
       x ∈ chart.source ∧ (chart x).1 = 0 ∧
         (∀ y ∈ chart.source, ∀ i, (chart y).2 (Fin.castAdd m i) = F y i) ∧
-        ∀ y ∈ chart.source, ∀ v w : TangentSpace I y, SmoothBundleForm.eval₂ σ y v w =
-          ∑ j, ((mvfderiv I chart y v).1 j * (mvfderiv I chart y w).2 j -
-            (mvfderiv I chart y w).1 j * (mvfderiv I chart y v).2 j) := by
+        σ.IsDarbouxChart chart := by
   -- Extend `F` to `k + m` involutive independent functions `G`, and take the Darboux chart with
   -- momenta `G`.
   obtain ⟨G, hG, hGc, hGr, hGF⟩ :=

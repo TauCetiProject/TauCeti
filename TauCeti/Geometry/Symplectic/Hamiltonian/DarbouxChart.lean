@@ -15,23 +15,24 @@ import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 # Canonical conjugate variables in a Darboux chart
 
 Let `σ` be a smooth two-form on a manifold `M`, with the conventions `ι_{X_f} σ = df` and
-`{f, g} = σ(X_f, X_g) = df(X_g)`. A **Darboux chart** is a partial diffeomorphism `chart` from `M`
-to `(ι → ℝ) × (ι → ℝ)`, with coordinates `(q, p)`, pulling `∑ᵢ dqᵢ ∧ dpᵢ` back to `σ` on its
-source. The positions `q` of a Darboux chart are **canonical conjugate variables** of its momenta
-`p`. On the source of the chart:
+`{f, g} = σ(X_f, X_g) = df(X_g)`. A **Darboux chart** (`TauCeti.SmoothTwoForm.IsDarbouxChart`) is
+a partial diffeomorphism `chart` from `M` to `(ι → ℝ) × (ι → ℝ)`, with coordinates `(q, p)`,
+pulling `∑ᵢ dqᵢ ∧ dpᵢ` back to `σ` on its source. The positions `q` of a Darboux chart are
+**canonical conjugate variables** of its momenta `p`. On the source of the chart:
 
-* `σ` is nondegenerate (`TauCeti.SmoothTwoForm.isInvertible_flat_of_mem_source`);
+* `σ` is nondegenerate (`TauCeti.SmoothTwoForm.IsDarbouxChart.isInvertible_flat`);
 * the Hamiltonian vector field of a function equal to the momentum `pᵢ` is the coordinate field
   `∂/∂qᵢ`, and that of a function equal to the position `qᵢ` is `-∂/∂pᵢ`
-  (`TauCeti.SmoothTwoForm.mvfderiv_hamiltonianVectorField_eq_of_eqOn_snd`,
-  `TauCeti.SmoothTwoForm.mvfderiv_hamiltonianVectorField_eq_of_eqOn_fst`);
+  (`TauCeti.SmoothTwoForm.IsDarbouxChart.mvfderiv_hamiltonianVectorField_eq_of_eqOn_snd`,
+  `TauCeti.SmoothTwoForm.IsDarbouxChart.mvfderiv_hamiltonianVectorField_eq_of_eqOn_fst`);
 * the coordinates satisfy the canonical relations `{qᵢ, pⱼ} = δᵢⱼ`, `{qᵢ, qⱼ} = 0` and
-  `{pᵢ, pⱼ} = 0` (`TauCeti.SmoothTwoForm.poissonBracket_eq_ite_of_eqOn_fst_of_eqOn_snd`,
-  `TauCeti.SmoothTwoForm.poissonBracket_eq_zero_of_eqOn_fst`,
-  `TauCeti.SmoothTwoForm.poissonBracket_eq_zero_of_eqOn_snd`);
+  `{pᵢ, pⱼ} = 0`
+  (`TauCeti.SmoothTwoForm.IsDarbouxChart.poissonBracket_eq_ite_of_eqOn_fst_of_eqOn_snd`,
+  `TauCeti.SmoothTwoForm.IsDarbouxChart.poissonBracket_eq_zero_of_eqOn_fst`,
+  `TauCeti.SmoothTwoForm.IsDarbouxChart.poissonBracket_eq_zero_of_eqOn_snd`);
 * the Hamiltonian flow of the momentum `pᵢ` translates the position `qᵢ` at unit speed and fixes
-  the other coordinates, as long as it stays in the chart
-  (`TauCeti.SmoothTwoForm.apply_eq_add_smul_of_isMIntegralCurveOn`).
+  the other coordinates, as long as it stays in the chart (`TauCeti.SmoothTwoForm.IsDarbouxChart.`
+  `apply_eq_add_smul_single_of_isMIntegralCurveOn_hamiltonianVectorField`).
 
 These are stated for any function agreeing with a coordinate on the source, so that they apply to
 functions that are only known to be coordinates of some Darboux chart, such as the commuting
@@ -60,16 +61,27 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {σ : SmoothTwoForm I M} {ι : Type*} [Fintype ι]
   {chart : PartialDiffeomorph I 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) M ((ι → ℝ) × (ι → ℝ)) ∞} {y : M}
-  (hform : ∀ y ∈ chart.source, ∀ v w : TangentSpace I y, SmoothBundleForm.eval₂ σ y v w =
+
+variable (σ chart) in
+/-- A **Darboux chart** for a two-form `σ`: a partial diffeomorphism `chart` from `M` to
+`(ι → ℝ) × (ι → ℝ)`, with coordinates `(q, p)`, pulling the standard form `∑ᵢ dqᵢ ∧ dpᵢ` back to
+`σ` on its source. -/
+structure IsDarbouxChart : Prop where
+  /-- On the source, `σ(v, w) = ∑ᵢ (dqᵢ(v) dpᵢ(w) - dqᵢ(w) dpᵢ(v))`. -/
+  eval₂_eq : ∀ y ∈ chart.source, ∀ v w : TangentSpace I y, SmoothBundleForm.eval₂ σ y v w =
     ∑ i, ((mvfderiv I chart y v).1 i * (mvfderiv I chart y w).2 i -
-      (mvfderiv I chart y w).1 i * (mvfderiv I chart y v).2 i))
+      (mvfderiv I chart y w).1 i * (mvfderiv I chart y v).2 i)
+
+namespace IsDarbouxChart
+
+variable (hform : σ.IsDarbouxChart chart)
 
 include hform
 
 /-- **A two-form with a Darboux chart is nondegenerate on its source.** If a partial
 diffeomorphism to `(ι → ℝ) × (ι → ℝ)` pulls `∑ᵢ dqᵢ ∧ dpᵢ` back to `σ` on its source, then the flat
 map of `σ` is invertible at every point of that source. -/
-theorem isInvertible_flat_of_mem_source (hy : y ∈ chart.source) : (σ.flat y).IsInvertible := by
+theorem isInvertible_flat (hy : y ∈ chart.source) : (σ.flat y).IsInvertible := by
   classical
   have hbij := chart.bijective_mvfderiv (by simp) hy
   have : FiniteDimensional ℝ E :=
@@ -83,11 +95,11 @@ theorem isInvertible_flat_of_mem_source (hy : y ∈ chart.source) : (σ.flat y).
   ext l
   · obtain ⟨w, hw⟩ := hbij.2 (0, Pi.single l 1)
     have h := hv w
-    rw [SmoothForm.bilinFormAt_apply, hform y hy, hw] at h
+    rw [SmoothForm.bilinFormAt_apply, hform.eval₂_eq y hy, hw] at h
     simpa [Pi.single_apply] using h
   · obtain ⟨w, hw⟩ := hbij.2 (Pi.single l 1, 0)
     have h := hv w
-    rw [SmoothForm.bilinFormAt_apply, hform y hy, hw] at h
+    rw [SmoothForm.bilinFormAt_apply, hform.eval₂_eq y hy, hw] at h
     simpa [Pi.single_apply] using h
 
 /-- **The Hamiltonian vector field of a momentum is the conjugate position field.** In a Darboux
@@ -99,11 +111,11 @@ theorem mvfderiv_hamiltonianVectorField_eq_of_eqOn_snd [DecidableEq ι] {f : M �
   have hd := chart.mdifferentiableAt (by simp) hy
   obtain ⟨v, hv⟩ := (chart.bijective_mvfderiv (by simp) hy).2 (Pi.single i 1, 0)
   rw [(hamiltonianVectorField_eq_iff_of_isInvertible_flat
-    (isInvertible_flat_of_mem_source hform hy)).2 fun w ↦ ?_, hv]
+    (hform.isInvertible_flat hy)).2 fun w ↦ ?_, hv]
   rw [(hf.eventuallyEq_of_mem (chart.open_source.mem_nhds hy)).mvfderiv_eq,
     ← mvfderiv_apply_apply (Φ := fun z ↦ (chart z).2)
       ((ContinuousLinearMap.snd ℝ (ι → ℝ) (ι → ℝ)).differentiableAt.comp_mdifferentiableAt hd),
-    hd.mvfderiv_snd_apply, hform y hy, hv]
+    hd.mvfderiv_snd_apply, hform.eval₂_eq y hy, hv]
   simp [Pi.single_apply]
 
 /-- **The Hamiltonian vector field of a position is minus the conjugate momentum field.** In a
@@ -115,11 +127,11 @@ theorem mvfderiv_hamiltonianVectorField_eq_of_eqOn_fst [DecidableEq ι] {f : M �
   have hd := chart.mdifferentiableAt (by simp) hy
   obtain ⟨v, hv⟩ := (chart.bijective_mvfderiv (by simp) hy).2 (0, -Pi.single i 1)
   rw [(hamiltonianVectorField_eq_iff_of_isInvertible_flat
-    (isInvertible_flat_of_mem_source hform hy)).2 fun w ↦ ?_, hv]
+    (hform.isInvertible_flat hy)).2 fun w ↦ ?_, hv]
   rw [(hf.eventuallyEq_of_mem (chart.open_source.mem_nhds hy)).mvfderiv_eq,
     ← mvfderiv_apply_apply (Φ := fun z ↦ (chart z).1)
       ((ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)).differentiableAt.comp_mdifferentiableAt hd),
-    hd.mvfderiv_fst_apply, hform y hy, hv]
+    hd.mvfderiv_fst_apply, hform.eval₂_eq y hy, hv]
   simp [Pi.single_apply]
 
 /-- **The canonical relation `{qᵢ, pⱼ} = δᵢⱼ`.** In a Darboux chart, if `f` equals the position `qᵢ`
@@ -129,8 +141,9 @@ theorem poissonBracket_eq_ite_of_eqOn_fst_of_eqOn_snd [DecidableEq ι] {f g : M 
     (hf : EqOn f (fun z ↦ (chart z).1 i) chart.source)
     (hg : EqOn g (fun z ↦ (chart z).2 j) chart.source) (hy : y ∈ chart.source) :
     σ.poissonBracket f g y = if i = j then 1 else 0 := by
-  rw [poissonBracket_def, hform y hy, mvfderiv_hamiltonianVectorField_eq_of_eqOn_fst hform hf hy,
-    mvfderiv_hamiltonianVectorField_eq_of_eqOn_snd hform hg hy]
+  rw [poissonBracket_def, hform.eval₂_eq y hy,
+    hform.mvfderiv_hamiltonianVectorField_eq_of_eqOn_fst hf hy,
+    hform.mvfderiv_hamiltonianVectorField_eq_of_eqOn_snd hg hy]
   simp [Pi.single_apply]
 
 /-- **The canonical relation `{qᵢ, qⱼ} = 0`.** In a Darboux chart, functions equal on the source to
@@ -140,8 +153,9 @@ theorem poissonBracket_eq_zero_of_eqOn_fst {f g : M → ℝ} {i j : ι}
     (hg : EqOn g (fun z ↦ (chart z).1 j) chart.source) (hy : y ∈ chart.source) :
     σ.poissonBracket f g y = 0 := by
   classical
-  rw [poissonBracket_def, hform y hy, mvfderiv_hamiltonianVectorField_eq_of_eqOn_fst hform hf hy,
-    mvfderiv_hamiltonianVectorField_eq_of_eqOn_fst hform hg hy]
+  rw [poissonBracket_def, hform.eval₂_eq y hy,
+    hform.mvfderiv_hamiltonianVectorField_eq_of_eqOn_fst hf hy,
+    hform.mvfderiv_hamiltonianVectorField_eq_of_eqOn_fst hg hy]
   simp
 
 /-- **The canonical relation `{pᵢ, pⱼ} = 0`.** In a Darboux chart, functions equal on the source to
@@ -151,8 +165,9 @@ theorem poissonBracket_eq_zero_of_eqOn_snd {f g : M → ℝ} {i j : ι}
     (hg : EqOn g (fun z ↦ (chart z).2 j) chart.source) (hy : y ∈ chart.source) :
     σ.poissonBracket f g y = 0 := by
   classical
-  rw [poissonBracket_def, hform y hy, mvfderiv_hamiltonianVectorField_eq_of_eqOn_snd hform hf hy,
-    mvfderiv_hamiltonianVectorField_eq_of_eqOn_snd hform hg hy]
+  rw [poissonBracket_def, hform.eval₂_eq y hy,
+    hform.mvfderiv_hamiltonianVectorField_eq_of_eqOn_snd hf hy,
+    hform.mvfderiv_hamiltonianVectorField_eq_of_eqOn_snd hg hy]
   simp
 
 /-- **The Hamiltonian flow of a momentum translates its conjugate position.** In a Darboux chart,
@@ -160,14 +175,17 @@ let `f` equal the momentum `pᵢ` on the source, and let `γ` be an integral cur
 vector field of `f` on a preconnected set of times `s`, such as an interval, staying in the source.
 Then in the chart `γ` moves along the `qᵢ`-axis at unit speed:
 `chart (γ t) = chart (γ t₀) + (t - t₀) • (eᵢ, 0)`. -/
-theorem apply_eq_add_smul_of_isMIntegralCurveOn [DecidableEq ι] {f : M → ℝ} {i : ι}
+theorem apply_eq_add_smul_single_of_isMIntegralCurveOn_hamiltonianVectorField
+    [DecidableEq ι] {f : M → ℝ} {i : ι}
     (hf : EqOn f (fun z ↦ (chart z).2 i) chart.source) {γ : ℝ → M} {s : Set ℝ}
     (hγ : IsMIntegralCurveOn γ (σ.hamiltonianVectorField f) s) (hs : IsPreconnected s)
     (hγs : ∀ t ∈ s, γ t ∈ chart.source) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     chart (γ t) = chart (γ t₀) + (t - t₀) • ((Pi.single i 1, 0) : (ι → ℝ) × (ι → ℝ)) :=
   hγ.apply_eq_add_smul_of_mvfderiv_apply_eq hs
     (fun u hu ↦ chart.mdifferentiableAt (by simp) (hγs u hu))
-    (fun u hu ↦ mvfderiv_hamiltonianVectorField_eq_of_eqOn_snd hform hf (hγs u hu)) ht₀ ht
+    (fun u hu ↦ hform.mvfderiv_hamiltonianVectorField_eq_of_eqOn_snd hf (hγs u hu)) ht₀ ht
+
+end IsDarbouxChart
 
 end SmoothTwoForm
 
