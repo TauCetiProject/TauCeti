@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Bas
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Equivariance
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
 
 /-!
 # Maps between centralizers of Lie algebra elements
@@ -126,3 +127,85 @@ theorem centralizerMap_comp_mkBialgHom (φ : H →ₐc[k] K)
   exact φ.centralizerMap_mk x a
 
 end BialgHom
+
+section Kernel
+
+open CategoryTheory
+
+namespace CommHopfAlgCat.Hom
+
+variable {k : Type u} [Field k] {H K : CommHopfAlgCat.{u} k}
+  [Module.Finite k (Bialgebra.CotangentSpace k H)]
+  [Module.Finite k (Bialgebra.CotangentSpace k K)]
+
+/-- For any morphism `f : H ⟶ K` of commutative Hopf algebras, the kernel Hopf ideal of the
+induced centralizer morphism `C_K(x) → C_H(df(x))` is the image of `kernelHopfIdeal f` in
+`O(C_K(x))`. -/
+theorem kernelHopfIdeal_centralizerMap (f : H ⟶ K)
+    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+    CommHopfAlgCat.kernelHopfIdeal (CommHopfAlgCat.ofHom (f.hom.centralizerMap x)) =
+      (CommHopfAlgCat.kernelHopfIdeal f).map
+        (CommHopfAlgCat.mkQuotient K (centralizerHopfIdeal K x)).hom := by
+  have hcomm :
+      CommHopfAlgCat.mkQuotient H (centralizerHopfIdeal H (dualCotangentMap f.hom x)) ≫
+          CommHopfAlgCat.ofHom (f.hom.centralizerMap x) =
+        f ≫ CommHopfAlgCat.mkQuotient K (centralizerHopfIdeal K x) := by
+    apply CommHopfAlgCat.hom_ext
+    simpa only [CommHopfAlgCat.hom_comp, CommHopfAlgCat.hom_mkQuotient,
+      CommHopfAlgCat.hom_ofHom] using f.hom.centralizerMap_comp_mkBialgHom x
+  rw [← CommHopfAlgCat.kernelHopfIdeal_comp_of_surjective
+      (CommHopfAlgCat.mkQuotient H (centralizerHopfIdeal H (dualCotangentMap f.hom x)))
+      (CommHopfAlgCat.mkQuotient_surjective H _)
+      (CommHopfAlgCat.ofHom (f.hom.centralizerMap x)),
+    hcomm, CommHopfAlgCat.kernelHopfIdeal_comp]
+
+/-- Pulling back the kernel of `C_K(x) → C_H(df(x))` to `K` gives the scheme-theoretic intersection
+`ker(f) ∩ C_K(x)` (`kernelHopfIdeal f ⊔ centralizerHopfIdeal K x`). -/
+theorem comapOfSurjective_kernelHopfIdeal_centralizerMap (f : H ⟶ K)
+    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+    (CommHopfAlgCat.kernelHopfIdeal
+        (CommHopfAlgCat.ofHom (f.hom.centralizerMap x))).comapOfSurjective
+        (CommHopfAlgCat.mkQuotient K (centralizerHopfIdeal K x)).hom
+        (CommHopfAlgCat.mkQuotient_surjective K _) =
+      CommHopfAlgCat.kernelHopfIdeal f ⊔ centralizerHopfIdeal K x := by
+  rw [f.kernelHopfIdeal_centralizerMap, HopfIdeal.comapOfSurjective_map]
+  have hker :
+      HopfIdeal.kerOfSurjective (CommHopfAlgCat.mkQuotient K (centralizerHopfIdeal K x)).hom
+        (CommHopfAlgCat.mkQuotient_surjective K _) = centralizerHopfIdeal K x := by
+    simpa only [CommHopfAlgCat.hom_mkQuotient] using
+      HopfIdeal.kerOfSurjective_mkBialgHom (centralizerHopfIdeal K x)
+  rw [hker]
+
+/-- Whenever `ker(f)` is contained scheme-theoretically in `C_K(x)`, the scheme-theoretic kernel
+of `C_K(x) → C_H(df(x))` is canonically isomorphic to `ker(f)`. -/
+noncomputable def kernelCentralizerMapIso (f : H ⟶ K)
+    (x : Module.Dual k (Bialgebra.CotangentSpace k K))
+    (hle : centralizerHopfIdeal K x ≤ CommHopfAlgCat.kernelHopfIdeal f) :
+    CommHopfAlgCat.quotient K (CommHopfAlgCat.kernelHopfIdeal f) ≅
+      CommHopfAlgCat.quotient
+        (CommHopfAlgCat.quotient K (centralizerHopfIdeal K x))
+        (CommHopfAlgCat.kernelHopfIdeal
+          (CommHopfAlgCat.ofHom (f.hom.centralizerMap x))) :=
+  ((CommHopfAlgCat.mkQuotient K (centralizerHopfIdeal K x)).quotientIsoQuotientQuotient rfl
+      hle) ≪≫
+    eqToIso (congrArg (CommHopfAlgCat.quotient _) (f.kernelHopfIdeal_centralizerMap x).symm)
+
+/-- The canonical isomorphism `ker(f) ≅ ker(C_K(x) → C_H(df(x)))` identifies the closed immersion
+`ker(f) ↪ C_K(x)` with the kernel immersion `ker(centralizerMap) ↪ C_K(x)`. -/
+theorem quotientMapOfLe_comp_kernelCentralizerMapIso_hom (f : H ⟶ K)
+    (x : Module.Dual k (Bialgebra.CotangentSpace k K))
+    (hle : centralizerHopfIdeal K x ≤ CommHopfAlgCat.kernelHopfIdeal f) :
+    CommHopfAlgCat.quotientMapOfLe K hle ≫
+        (f.kernelCentralizerMapIso x hle).hom =
+      CommHopfAlgCat.mkQuotient (CommHopfAlgCat.quotient K (centralizerHopfIdeal K x))
+        (CommHopfAlgCat.kernelHopfIdeal
+          (CommHopfAlgCat.ofHom (f.hom.centralizerMap x))) := by
+  apply CommHopfAlgCat.mkQuotient_hom_ext
+  rw [← Category.assoc, CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe,
+    kernelCentralizerMapIso, Iso.trans_hom, ← Category.assoc,
+    CommHopfAlgCat.Hom.mkQuotient_comp_quotientIsoQuotientQuotient_hom, Category.assoc,
+    eqToIso.hom, CommHopfAlgCat.mkQuotient_comp_eqToHom (f.kernelHopfIdeal_centralizerMap x)]
+
+end CommHopfAlgCat.Hom
+
+end Kernel

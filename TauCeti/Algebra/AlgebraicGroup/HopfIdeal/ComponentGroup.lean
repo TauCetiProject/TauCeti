@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Functor
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.IdentityComponent
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 
 /-!
 # Component groups of closed subgroups
@@ -198,7 +198,7 @@ section Inclusion
 
 /-- The homomorphism `π₀(N) →* π₀(G)` induced by the inclusion of the closed subgroup `N` cut out
 by `I`. It need not be injective. -/
-noncomputable def componentGroupInclusion (I : HopfIdeal k H) :
+@[expose] noncomputable def componentGroupInclusion (I : HopfIdeal k H) :
     I.ComponentGroup →* ConnectedComponents (PrimeSpectrum H) :=
   mapComponentGroup (mkQuotient H I)
 
@@ -225,7 +225,7 @@ section Conjugation
 /-- **Conjugation of component groups.** Conjugation by a rational point `g` induces an
 isomorphism `π₀(N) ≃* π₀(gNg⁻¹)`, where `N` is cut out by `I` and `gNg⁻¹` by
 `J = I.conjugate g`. -/
-noncomputable def componentGroupConjugationEquiv (I J : HopfIdeal k H)
+@[expose] noncomputable def componentGroupConjugationEquiv (I J : HopfIdeal k H)
     (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) (hJ : J = I.conjugate g) :
     I.ComponentGroup ≃* J.ComponentGroup :=
   mapComponentGroupMulEquiv (I.quotientConjugationIso J g hJ)
@@ -281,7 +281,7 @@ variable {K : FiniteTypeCommHopfAlgCat.{u, u} k}
 groups with coordinate arrow `f : H ⟶ K`, mapping the closed subgroup `N'` cut out by `J` into the
 closed subgroup `N` cut out by `I` (that is, `I.map f ≤ J`). Then `φ` induces
 `π₀(N') →* π₀(N)`. -/
-noncomputable def componentGroupMap (I : HopfIdeal k H) (J : HopfIdeal k K) (f : H ⟶ K)
+@[expose] noncomputable def componentGroupMap (I : HopfIdeal k H) (J : HopfIdeal k K) (f : H ⟶ K)
     (h : I.map (toBialgHom f) ≤ J) : J.ComponentGroup →* I.ComponentGroup :=
   mapComponentGroup (quotientMap I J f h)
 
@@ -297,6 +297,21 @@ theorem componentGroupMap_rationalComponentMap (I : HopfIdeal k H) (J : HopfIdea
           CommHopfAlgCat.mapDomain_mem_quotientPointsSubgroup_of_map_le f.hom h _ c.property⟩ :=
   mapComponentGroup_rationalComponentMap_of_mk _ (toBialgHom f) (quotientMap_mk I J f h) _ _
     (BialgHom.mapDomain_apply _ _)
+
+/-- For nested closed subgroups `V(J) ⊆ V(I)` (`I ≤ J`), the induced component-group map
+`π₀(V(J)) → π₀(V(I))` agrees with the inclusion `V(J)(k) ⊆ V(I)(k)`. -/
+@[simp]
+theorem
+    _root_.TauCeti.FiniteTypeCommHopfAlgCat.mapComponentGroup_quotientMapOfLe_rationalComponentMap
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k) {I J : HopfIdeal k H} (hIJ : I ≤ J)
+    (g : CommHopfAlgCat.quotientPointsSubgroup H.obj J (CommAlgCat.of k k)) :
+    mapComponentGroup (quotientMapOfLe H hIJ) (J.rationalComponentMap g) =
+      I.rationalComponentMap
+        ⟨g.val, CommHopfAlgCat.quotientPointsSubgroup_le_of_le H.obj hIJ _ g.property⟩ := by
+  have h := componentGroupMap_rationalComponentMap I J (𝟙 H)
+    (by rwa [toBialgHom_id, HopfIdeal.map_id]) g
+  simpa only [componentGroupMap, quotientMap_id, toBialgHom_id,
+    BialgHom.mapDomain_id, MonoidHom.id_apply] using h
 
 /-- Along the identity morphism, the induced map of component groups is the identity. -/
 @[simp]
