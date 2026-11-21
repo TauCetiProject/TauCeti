@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Analysis.Sobolev.GraphStep.Compactness
 public import TauCeti.Analysis.Normed.Operator.Compact.Basic
+import TauCeti.Analysis.Normed.Operator.Compact.Ehrling
 
 /-!
 # Compactness criteria for `W^{k+1,p}`
@@ -26,12 +27,31 @@ lifts first-order compactness to every order: if the value map `W^{1,p}(Ω) → 
 then forgetting the highest weak derivative `W^{k+1,p}(Ω) → W^{k,p}(Ω)` is compact for every `k`.
 Any domain with a first-order Rellich theorem therefore has the higher-order one.
 
+Compactness of the truncations gives the interpolation inequalities of `W^{k,p}(Ω)` with a
+non-explicit constant, by Ehrling's inequality: lower-order norms are bounded by an arbitrarily
+small multiple of a higher norm plus a multiple of the `Lᵖ` norm, which is injective on
+`W^{k,p}(Ω)` because weak derivatives are unique. This is how lower-order terms are absorbed in
+global a priori estimates on domains with a Rellich theorem.
+
 ## Main declarations
 
 * `TauCeti.Wkp.isCompactOperator_of_isCompactOperator_lowerOrderL_iteratedGradientL`: the
   componentwise compactness criterion.
 * `TauCeti.Wkp.isCompactOperator_lowerOrderL_of_isCompactOperator_valueL`: higher-order
   compactness from first-order compactness.
+* `TauCeti.Wkp.exists_norm_toOrderL_le_of_isCompactOperator`: Ehrling's inequality
+  `‖u‖_{W^{j,p}} ≤ ε ‖u‖_{W^{k,p}} + C ‖u‖_{Lᵖ}` when truncation to order `j` is compact.
+* `TauCeti.Wkp.exists_norm_lowerOrder_le_of_isCompactOperator`: the lower-order part bounded by
+  the top derivative, `‖u‖_{W^{k,p}} ≤ ε ‖D^{k+1} u‖ + C ‖u‖_{Lᵖ}`.
+* `TauCeti.Wkp.exists_norm_le_of_norm_iteratedGradient_le_of_isCompactOperator`: absorption of the
+  lower-order terms in an estimate of the top derivative.
+
+## References
+
+* G. Ehrling, *On a type of eigenvalue problem for certain elliptic differential operators*,
+  Math. Scand. **2** (1954), 267–285.
+* D. Gilbarg and N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
+  Theorem 7.28 and the proof of Theorem 9.13.
 -/
 
 public section
@@ -115,5 +135,79 @@ theorem isCompactOperator_lowerOrderL_of_isCompactOperator_valueL
         (lowerOrderL (k + 1)) (ih.comp_clm _) ?_
       rw [heq]
       exact WeakDerivStep.isCompactOperator_comp_prevL base h
+
+/-! ### Interpolation inequalities from compactness -/
+
+/-- **Ehrling's inequality for `W^{k,p}(Ω)`.** If forgetting the weak derivatives above order
+`j ≤ k` is a compact operator `W^{k,p}(Ω) → W^{j,p}(Ω)`, then for every `ε > 0` there is `C` with
+`‖u‖_{W^{j,p}(Ω)} ≤ ε ‖u‖_{W^{k,p}(Ω)} + C ‖u‖_{Lᵖ(Ω)}` for every `u ∈ W^{k,p}(Ω)`. -/
+theorem exists_norm_toOrderL_le_of_isCompactOperator {j k : ℕ} (h : j ≤ k)
+    (hK : IsCompactOperator (toOrderL (mu := mu) (Omega := Omega) (p := p) h)) {ε : ℝ}
+    (hε : 0 < ε) :
+    ∃ C, 0 ≤ C ∧ ∀ u : Wkp mu Omega p k, ‖toOrderL h u‖ ≤ ε * ‖u‖ + C * ‖value k u‖ := by
+  have hinj : Function.Injective (valueL (mu := mu) (Omega := Omega) (p := p) j) :=
+    fun u v huv ↦ ext j (by simpa only [valueL_apply] using huv)
+  obtain ⟨C, hC, hle⟩ := hK.exists_norm_le_mul_norm_add_mul_norm hinj hε
+  refine ⟨C, hC, fun u ↦ ?_⟩
+  simpa only [ContinuousLinearMap.coe_coe, valueL_apply, value_toOrderL] using hle u
+
+/-- **The lower-order part is controlled by the top derivative.** If forgetting the highest weak
+derivative `W^{k+1,p}(Ω) → W^{k,p}(Ω)` is compact, then for every `ε > 0` there is `C` with
+`‖u‖_{W^{k,p}(Ω)} ≤ ε ‖D^{k+1} u‖_{Lᵖ(Ω)} + C ‖u‖_{Lᵖ(Ω)}` for every `u ∈ W^{k+1,p}(Ω)`, where the
+left side is the norm of the lower-order part `lowerOrder k u`. -/
+theorem exists_norm_lowerOrder_le_of_isCompactOperator {k : ℕ}
+    (hK : IsCompactOperator (lowerOrderL (mu := mu) (Omega := Omega) (p := p) k)) {ε : ℝ}
+    (hε : 0 < ε) :
+    ∃ C, 0 ≤ C ∧ ∀ u : Wkp mu Omega p (k + 1),
+      ‖lowerOrder k u‖ ≤ ε * ‖iteratedGradient k u‖ + C * ‖value (k + 1) u‖ := by
+  -- Ehrling's inequality with `ε / (1 + ε)`, then absorb the lower-order part of `‖u‖`.
+  have hε' : 0 < ε / (1 + ε) := by positivity
+  rw [← toOrderL_le_succ k (Nat.le_succ k)] at hK
+  obtain ⟨C, hC, hle⟩ := exists_norm_toOrderL_le_of_isCompactOperator _ hK hε'
+  refine ⟨(1 + ε) * C, by positivity, fun u ↦ ?_⟩
+  have h1 := hle u
+  rw [toOrderL_le_succ, lowerOrderL_apply] at h1
+  have h2 := norm_le_norm_lowerOrder_add_norm_iteratedGradient k u
+  have h3 : ε / (1 + ε) * (1 + ε) = ε := div_mul_cancel₀ ε (by positivity)
+  nlinarith [norm_nonneg (lowerOrder k u), norm_nonneg (iteratedGradient k u),
+    norm_nonneg (value (k + 1) u)]
+
+/-- **Absorbing lower-order terms in an a priori estimate.** Suppose that forgetting the highest
+weak derivative `W^{k+1,p}(Ω) → W^{k,p}(Ω)` is compact. If the top derivative of every
+`u ∈ W^{k+1,p}(Ω)` satisfies `‖D^{k+1} u‖ ≤ C₀ (‖T u‖ + ‖u‖_{W^{k,p}})` for some map `T` into a
+seminormed group, then there is `D` with `‖u‖_{W^{k+1,p}} ≤ D (‖T u‖ + ‖u‖_{Lᵖ})` for every `u`.
+For a second-order operator `T`, this removes the terms `‖∇u‖` and `‖u‖` of the `W^{1,p}` norm
+from an estimate `‖D²u‖ ≤ C₀ (‖T u‖ + ‖∇u‖ + ‖u‖)`, keeping only `‖u‖_{Lᵖ}`. -/
+theorem exists_norm_le_of_norm_iteratedGradient_le_of_isCompactOperator {k : ℕ}
+    (hK : IsCompactOperator (lowerOrderL (mu := mu) (Omega := Omega) (p := p) k))
+    {G : Type*} [SeminormedAddCommGroup G] {T : Wkp mu Omega p (k + 1) → G} {C₀ : ℝ}
+    (hT : ∀ u, ‖iteratedGradient k u‖ ≤ C₀ * (‖T u‖ + ‖lowerOrder k u‖)) :
+    ∃ D, 0 ≤ D ∧ ∀ u, ‖u‖ ≤ D * (‖T u‖ + ‖value (k + 1) u‖) := by
+  -- The hypothesis also holds with the nonnegative constant `C = max C₀ 0`.
+  set C := max C₀ 0
+  have hC : 0 ≤ C := le_max_right _ _
+  -- With `ε C ≤ 1 / 2`, the bound on `‖u‖_{W^{k,p}}` absorbs its own contribution through `hT`.
+  have hε : 0 < 1 / (2 * C + 2) := by positivity
+  obtain ⟨A, hA, hle⟩ := exists_norm_lowerOrder_le_of_isCompactOperator hK hε
+  refine ⟨(2 * C + 1) * (2 * A + 1), by positivity, fun u ↦ ?_⟩
+  set a := ‖lowerOrder k u‖
+  set d := ‖iteratedGradient k u‖
+  set t := ‖T u‖
+  set v := ‖value (k + 1) u‖
+  have ha : 0 ≤ a := norm_nonneg _
+  have ht : 0 ≤ t := norm_nonneg _
+  have hv : 0 ≤ v := norm_nonneg _
+  have h1 : a ≤ 1 / (2 * C + 2) * d + A * v := hle u
+  have h2 : d ≤ C * (t + a) :=
+    (hT u).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
+  -- First `a ≤ t + 2 A v`, then `d ≤ C (2 t + 2 A v)`.
+  have h4 : (2 * C + 2) * a ≤ d + (2 * C + 2) * A * v := by
+    have := mul_le_mul_of_nonneg_left h1 (by positivity : (0 : ℝ) ≤ 2 * C + 2)
+    rwa [mul_add, ← mul_assoc, mul_one_div_cancel (by positivity), one_mul, ← mul_assoc] at this
+  have h5 : a ≤ t + 2 * A * v := by nlinarith
+  have h6 : d ≤ C * (2 * t + 2 * A * v) := by nlinarith
+  calc ‖u‖ ≤ a + d := norm_le_norm_lowerOrder_add_norm_iteratedGradient k u
+    _ ≤ (2 * C + 1) * t + 2 * A * (C + 1) * v := by nlinarith [h5, h6]
+    _ ≤ (2 * C + 1) * (2 * A + 1) * (t + v) := by nlinarith [mul_nonneg hC hA]
 
 end TauCeti.Wkp
