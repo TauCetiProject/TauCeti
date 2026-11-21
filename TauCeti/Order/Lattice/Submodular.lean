@@ -94,32 +94,27 @@ theorem comp_latticeHom [Add K] [LE K] [Lattice L] [Lattice M] [FunLike F M L]
 
 /-- Let `a` minimize a submodular function over `s` and `b` minimize it over `t`. If the meet
 lies in `s` and the join lies in `t`, then the join minimizes over `t` and the meet minimizes
-over `s`. -/
-theorem isMinOn_sup_inf [AddCommMagma K] [Preorder K] [AddLeftMono K]
-    [AddLeftReflectLE K] [Lattice L] {f : L → K} (hf : IsSubmodular f) {s t : Set L} {a b : L}
-    (hamin : IsMinOn f s a) (hbmin : IsMinOn f t b) (hsup : a ⊔ b ∈ t) (hinf : a ⊓ b ∈ s) :
-    IsMinOn f t (a ⊔ b) ∧ IsMinOn f s (a ⊓ b) := by
+over `s`. Addition need not be commutative: it must preserve and reflect the order on both
+sides, and the submodular inequality at `b` and `a` puts the summands in the order that each
+cancellation needs. -/
+theorem isMinOn_sup_inf [Add K] [Preorder K] [AddLeftMono K] [AddRightMono K]
+    [AddLeftReflectLE K] [AddRightReflectLE K] [Lattice L] {f : L → K} (hf : IsSubmodular f)
+    {s t : Set L} {a b : L} (hamin : IsMinOn f s a) (hbmin : IsMinOn f t b) (hsup : a ⊔ b ∈ t)
+    (hinf : a ⊓ b ∈ s) : IsMinOn f t (a ⊔ b) ∧ IsMinOn f s (a ⊓ b) := by
   rw [isMinOn_iff] at hamin hbmin ⊢
-  have hsup_le : f (a ⊔ b) ≤ f b := by
-    refine le_of_add_le_add_left (a := f a) ?_
-    calc
-      f a + f (a ⊔ b) = f (a ⊔ b) + f a := add_comm ..
-      _ ≤ f (a ⊔ b) + f (a ⊓ b) := add_le_add_right (hamin _ hinf) _
-      _ ≤ f a + f b := hf a b
-  have hinf_le : f (a ⊓ b) ≤ f a := by
-    refine le_of_add_le_add_left (a := f b) ?_
-    calc
-      f b + f (a ⊓ b) = f (a ⊓ b) + f b := add_comm ..
-      _ ≤ f (a ⊓ b) + f (a ⊔ b) := add_le_add_right (hbmin _ hsup) _
-      _ = f (a ⊔ b) + f (a ⊓ b) := add_comm ..
-      _ ≤ f a + f b := hf a b
-      _ = f b + f a := add_comm ..
+  have hba : f (a ⊔ b) + f (a ⊓ b) ≤ f b + f a := by
+    simpa only [sup_comm b a, inf_comm b a] using hf.apply b a
+  have hsup_le : f (a ⊔ b) ≤ f b :=
+    le_of_add_le_add_right ((add_le_add_right (hamin _ hinf) _).trans hba)
+  have hinf_le : f (a ⊓ b) ≤ f a :=
+    le_of_add_le_add_left ((add_le_add_left (hbmin _ hsup) _).trans hba)
   exact ⟨fun _ hc ↦ hsup_le.trans (hbmin _ hc), fun _ hc ↦ hinf_le.trans (hamin _ hc)⟩
 
 /-- The minimizers of a submodular function over a sublattice form a sublattice. Membership in
-this set records both membership in the original domain and minimality there. -/
-theorem isSublattice_minimizers [AddCommMagma K] [Preorder K] [AddLeftMono K]
-    [AddLeftReflectLE K] [Lattice L] {f : L → K} (hf : IsSubmodular f)
+this set records both membership in the original domain and minimality there. Addition need not
+be commutative, but must preserve and reflect the order on both sides. -/
+theorem isSublattice_minimizers [Add K] [Preorder K] [AddLeftMono K] [AddRightMono K]
+    [AddLeftReflectLE K] [AddRightReflectLE K] [Lattice L] {f : L → K} (hf : IsSubmodular f)
     {s : Set L} (hs : IsSublattice s) :
     IsSublattice {a | a ∈ s ∧ IsMinOn f s a} := by
   constructor
