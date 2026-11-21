@@ -8,8 +8,10 @@ module
 public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import Mathlib.CategoryTheory.MorphismProperty.Retract
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.Geometry.Manifold.Algebra.SMul
+public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 public import TauCeti.Geometry.Manifold.SmoothSingular.Homotopy
@@ -51,6 +53,18 @@ singular homology of `U` vanishes in positive degrees
 and corners: the contraction stays in `range I` because `I '' U` does. A star-convex open subset of
 a normed space `V` is the case `I = 𝓘(ℝ, V)`.
 
+The comparison passes to smooth homotopy retracts. Let `f : M → N` and `g : N → M` be smooth maps
+such that a smooth map `F : ℝ × M → M` joins `F (0, ·) = id` to `F (1, ·) = g ∘ f`. Both smooth
+and singular homology are homotopy invariant
+(`TauCeti.homologyMap_smoothSingularSubcomplexMap_eq_of_contMDiff`, and
+`SSet.Homotopy.congr_homologyMap` for the restriction of `F` to `[0, 1] × M`), so in every degree
+`f` and `g` exhibit the comparison map of `M` as a retract, in the arrow category, of that of `N`.
+A retract of an isomorphism is an isomorphism, so if the comparison is a quasi-isomorphism for `N`
+then it is one for `M` (`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy`).
+In particular two diffeomorphic manifolds, possibly over different models, have the comparison
+together (`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_of_diffeomorph`); this
+moves it along a chart, from an open subset of the chart source onto its image in the model.
+
 These are the base cases of the Mayer–Vietoris induction (`TauCeti.mayerVietoris_induction`) that
 compares smooth with continuous singular homology on manifolds with corners: the empty open set,
 and the open sets of the model space with convex image, which form a basis closed under
@@ -72,6 +86,10 @@ intersection. The step for countable disjoint unions is
   has no smooth singular homology in positive degrees.
 * `TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`: neither has an open set of
   the model space with star-convex image.
+* `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy`: the quasi-isomorphism
+  passes to smooth homotopy retracts.
+* `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_of_diffeomorph`: it is
+  invariant under diffeomorphisms.
 
 ## References
 
@@ -248,5 +266,66 @@ theorem isZero_homology_smoothSingularSubcomplex_of_starConvex [CategoryWithHomo
   obtain ⟨F, hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex hU
   exact isZero_homology_smoothSingularSubcomplex_of_contMDiff R hF (F (1, ⟨x₀, hx₀⟩)) h₀
     (fun x ↦ Subtype.ext ((h₁ x).trans (h₁ _).symm)) hn
+
+/-! ### Smooth homotopy retracts and diffeomorphisms -/
+
+section Retract
+
+variable [CategoryWithHomology C] {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} {N : Type u} [TopologicalSpace N]
+  [ChartedSpace H' N]
+
+/-- **The comparison passes to smooth homotopy retracts.** Let `f : M → N` and `g : N → M` be
+smooth maps, and let a smooth map `F : ℝ × M → M` join `F (0, ·) = id` to `F (1, ·) = g ∘ f`. If
+the inclusion of smooth singular chains into singular chains of `N` is a quasi-isomorphism, then
+so is that of `M`. -/
+theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy {f : M → N} {g : N → M}
+    (hf : ContMDiff I J ∞ f) (hg : ContMDiff J I ∞ g) {F : ℝ × M → M}
+    (hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F) (h₀ : ∀ x, F (0, x) = x) (h₁ : ∀ x, F (1, x) = g (f x))
+    (hN : QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex J N).ι R)) :
+    QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R) := by
+  rw [quasiIso_iff]
+  intro n
+  rw [quasiIsoAt_iff_isIso_homologyMap]
+  have hNn : IsIso (SSet.homologyMap (smoothSingularSubcomplex J N).ι R n) :=
+    (quasiIsoAt_iff_isIso_homologyMap _ n).1 inferInstance
+  let tf : TopCat.of M ⟶ TopCat.of N := TopCat.ofHom ⟨f, hf.continuous⟩
+  let tg : TopCat.of N ⟶ TopCat.of M := TopCat.ofHom ⟨g, hg.continuous⟩
+  -- The restriction of `F` to `[0, 1] × M` is a homotopy from the identity to `g ∘ f`.
+  let K : TopCat.Homotopy (𝟙 (TopCat.of M)) (tf ≫ tg) := homotopyOfRealProd hF.continuous h₀ h₁
+  have hsing : SSet.homologyMap (TopCat.toSSet.map tf) R n ≫
+      SSet.homologyMap (TopCat.toSSet.map tg) R n = 𝟙 _ := by
+    rw [← SSet.homologyMap_comp, ← Functor.map_comp, ← K.toSSet.congr_homologyMap R n,
+      TopCat.toSSet.map_id, SSet.homologyMap_id]
+  have hsmooth : SSet.homologyMap (smoothSingularSubcomplexMap f hf) R n ≫
+      SSet.homologyMap (smoothSingularSubcomplexMap g hg) R n = 𝟙 _ := by
+    rw [← SSet.homologyMap_comp, ← smoothSingularSubcomplexMap_comp,
+      ← homologyMap_smoothSingularSubcomplexMap_eq_of_contMDiff R contMDiff_id (hg.comp hf) hF h₀
+        h₁ n, smoothSingularSubcomplexMap_id, SSet.homologyMap_id]
+  -- In degree `n`, `f` and `g` make the comparison of `M` a retract of the comparison of `N`.
+  let h : RetractArrow (SSet.homologyMap (smoothSingularSubcomplex I M).ι R n)
+      (SSet.homologyMap (smoothSingularSubcomplex J N).ι R n) :=
+    { i := Arrow.homMk (SSet.homologyMap (smoothSingularSubcomplexMap f hf) R n)
+        (SSet.homologyMap (TopCat.toSSet.map tf) R n) (by
+          simp only [Arrow.mk_hom, ← SSet.homologyMap_comp, smoothSingularSubcomplexMap_ι, tf])
+      r := Arrow.homMk (SSet.homologyMap (smoothSingularSubcomplexMap g hg) R n)
+        (SSet.homologyMap (TopCat.toSSet.map tg) R n) (by
+          simp only [Arrow.mk_hom, ← SSet.homologyMap_comp, smoothSingularSubcomplexMap_ι, tg])
+      retract := Arrow.hom_ext _ _ hsmooth hsing }
+  exact (MorphismProperty.isomorphisms C).of_retract h hNn
+
+/-- **The comparison is invariant under diffeomorphisms.** For a diffeomorphism `e : M ≃ N`,
+possibly between manifolds over different models, the inclusion of smooth singular chains into
+singular chains of `M` is a quasi-isomorphism exactly when that of `N` is. -/
+theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_of_diffeomorph
+    (e : M ≃ₘ⟮I, J⟯ N) :
+    QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R) ↔
+      QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex J N).ι R) :=
+  ⟨quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy R e.symm.contMDiff
+      e.contMDiff contMDiff_snd (fun _ ↦ rfl) fun y ↦ (e.apply_symm_apply y).symm,
+    quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_homotopy R e.contMDiff
+      e.symm.contMDiff contMDiff_snd (fun _ ↦ rfl) fun x ↦ (e.symm_apply_apply x).symm⟩
+
+end Retract
 
 end TauCeti
