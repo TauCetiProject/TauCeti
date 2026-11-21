@@ -88,6 +88,8 @@ and letting `δ → 0` gives it for `u`.
   inequality for nonnegative supersolutions, for every exponent `s > 0` with `(n - 2) s < n`.
 * `TauCeti.PDE.exists_ae_ae_value_le_mul_value`: Moser's Harnack inequality for nonnegative
   solutions.
+* `TauCeti.PDE.exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_lowerOrder`: the weak Harnack
+  inequality at a small exponent with lower-order terms.
 * `TauCeti.PDE.exists_ae_setAverage_rpow_rpow_inv_le_mul_value_lowerOrder`: the weak Harnack
   inequality with lower-order terms.
 * `TauCeti.PDE.exists_ae_ae_value_le_mul_value_lowerOrder`: the Harnack inequality with
@@ -203,6 +205,26 @@ private theorem sq_div_add_div_le {lam beta gamma r σ : ℝ} (hlam : 0 < lam) (
   have h3 : 0 ≤ beta * (2 * r) / lam := by positivity
   exact add_le_add (pow_le_pow_left₀ h3 h1 2) h2
 
+omit [DecidableEq ι] in
+/-- The mass coefficient `c u⁺ / (u⁺ + δ)` of the shift `u + δ`, `δ > 0`, is measurable on every
+open `U ⊆ Ω`, and bounded by `γ` there when `|c| ≤ γ` on `Ω`. -/
+private theorem aestronglyMeasurable_mass_and_norm_mass_le {Omega U : Opens (EuclideanSpace ℝ ι)}
+    (hU : U ≤ Omega) {c : EuclideanSpace ℝ ι → ℝ} {gamma δ : ℝ} (u : W1p mu Omega 2)
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hcγ : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) (hδ : 0 < δ) :
+    AEStronglyMeasurable (fun x => c x * (max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ)))
+      (mu.restrict U) ∧ ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)),
+        ‖c x * (max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ))‖ ≤ gamma := by
+  have hum : AEMeasurable (W1p.value u) (mu.restrict Omega) :=
+    (Lp.aestronglyMeasurable _).aemeasurable
+  refine ⟨(hc.mul ((hum.max aemeasurable_const).div ((hum.max aemeasurable_const).add_const δ)
+    ).aestronglyMeasurable).mono_measure (Measure.restrict_mono hU le_rfl), fun x hx => ?_⟩
+  have hq : ‖max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ)‖ ≤ 1 := by
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+    exact div_le_one_of_le₀ (by linarith) (by positivity)
+  rw [norm_mul]
+  exact (mul_le_of_le_one_right (norm_nonneg _) hq).trans (hcγ x (hU hx))
+
 /-- The weak Harnack inequality at a small exponent with lower-order terms, for supersolutions
 bounded below by a positive constant `ε`, with constants independent of `ε`. -/
 private theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos_lowerOrder
@@ -274,6 +296,81 @@ private theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos_lower
   exact ae_setAverage_rpow_rpow_inv_le_mul_of_mul_le hp₀ hr hpos ((hcross mu h ha hb hc hbβ hcγ
     hu hε hεu (x₀ := x₀) (r := 2 * r) ((ball_subset_ball (by nlinarith)).trans hball)
     hp₀c).trans (le_max_left K 1)) h1
+
+/-- **Moser's weak Harnack inequality at a small exponent with lower-order terms.** Let `n ≥ 1`
+be the dimension and let `σ` be real. There are an exponent `p₀ ∈ (0, 2]` and a constant `C > 0`,
+depending only on `λ`, `Λ`, `σ`, the dimension and the normalization of the additive Haar measure
+`mu`, with the following property. Let `a` be measurable and uniformly elliptic on `Ω` with
+constants `λ, Λ`, let `b` and `c` be measurable with `‖b‖ ≤ β` and `|c| ≤ γ` on `Ω`, with no
+condition on the sign of `c`, and let `u ∈ H¹(Ω)` be a nonnegative weak supersolution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`.
+Then on every ball with `B(x₀, 8√n r) ⊆ Ω`, `βr ≤ σλ` and `γr² ≤ σλ`,
+
+`(⨍_{B(x₀, 2r)} u^{p₀})^{1/p₀} ≤ C u(x)` for almost every `x ∈ B(x₀, r)`.
+
+The constant does not depend on `u` or the ball. -/
+theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_lowerOrder [Nonempty ι] (σ : ℝ) :
+    ∃ p₀ : ℝ, 0 < p₀ ∧ p₀ ≤ 2 ∧ ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+      {c : EuclideanSpace ℝ ι → ℝ} {beta gamma : ℝ} {u : W1p mu Omega 2}
+      {x₀ : EuclideanSpace ℝ ι} {r : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) → AEStronglyMeasurable b (mu.restrict Omega) →
+      AEStronglyMeasurable c (mu.restrict Omega) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta) →
+      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) →
+      (∀ v : W1p0 mu Omega 2,
+        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+          0 ≤ energyFormH1 a b c u (v : W1p mu Omega 2)) →
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value u x) →
+      ball x₀ (8 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      beta * r ≤ σ * lam → gamma * r ^ 2 ≤ σ * lam →
+      ∀ᵐ x ∂mu.restrict (ball x₀ r),
+        (⨍ y in ball x₀ (2 * r), W1p.value u y ^ p₀ ∂mu) ^ p₀⁻¹ ≤ C * W1p.value u x := by
+  obtain ⟨p₀, hp₀, hp₀2, C, hC, hpos⟩ :=
+    exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos_lowerOrder (mu := mu) (lam := lam)
+      (Lam := Lam) σ
+  refine ⟨p₀, hp₀, hp₀2, C, hC, ?_⟩
+  intro Omega a b c beta gamma u x₀ r h ha hb hc hbβ hcγ hu hu0 hball hβr hγr
+  rcases le_or_gt r 0 with hr | hr
+  · simp [ball_eq_empty.2 hr]
+  have hsqrt : 1 ≤ √(Fintype.card ι : ℝ) := Real.one_le_sqrt.2 (Nat.one_le_cast.2 Fintype.card_pos)
+  -- Work on the bounded open ball `U = B(x₀, 8√n r)`, where constants lie in `H¹(U)`.
+  set U : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ (8 * √(Fintype.card ι) * r), isOpen_ball⟩
+  have hU : U ≤ Omega := hball
+  have h2U : ball x₀ (2 * r) ⊆ (U : Set (EuclideanSpace ℝ ι)) := ball_subset_ball (by nlinarith)
+  have hrU : ball x₀ r ⊆ (U : Set (EuclideanSpace ℝ ι)) := ball_subset_ball (by nlinarith)
+  have : IsFiniteMeasure (mu.restrict U) := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have : IsFiniteMeasure (mu.restrict (ball x₀ (2 * r))) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hu0U := ae_restrict_of_ae_restrict_of_subset hball hu0
+  have hu02 := ae_restrict_of_ae_restrict_of_subset h2U hu0U
+  have hmem : MemLp (W1p.value u) (ENNReal.ofReal p₀) (mu.restrict (ball x₀ (2 * r))) :=
+    ((Lp.memLp _).mono_measure (Measure.restrict_mono (h2U.trans hball) le_rfl)).mono_exponent
+      ((ENNReal.ofReal_le_ofReal hp₀2).trans_eq (ENNReal.ofReal_ofNat 2))
+  -- For each `δ = 1/(k + 1)`, `u + δ` is a supersolution on `U` bounded below by `δ`, with mass
+  -- coefficient `c u⁺ / (u⁺ + δ)`.
+  have hδ : ∀ k : ℕ, ∀ᵐ x ∂mu.restrict (ball x₀ r),
+      (⨍ y in ball x₀ (2 * r), W1p.value u y ^ p₀ ∂mu) ^ p₀⁻¹ ≤
+        C * (W1p.value u x + 1 / ((k : ℝ) + 1)) := by
+    intro k
+    set δ : ℝ := 1 / ((k : ℝ) + 1)
+    have hδ0 : 0 < δ := Nat.one_div_pos_of_nat
+    have hwv := W1p.value_restrictL_add_const_ae hU u δ
+    obtain ⟨hc', hcγ'⟩ := aestronglyMeasurable_mass_and_norm_mass_le hU u hc hcγ hδ0
+    have hH := hpos (h.mono_set hball) (ha.mono_measure (Measure.restrict_mono hball le_rfl))
+      (hb.mono_measure (Measure.restrict_mono hball le_rfl)) hc' (fun x hx => hbβ x (hball hx))
+      hcγ' (energyFormH1_restrictL_add_const_nonneg_mass hU hu hu0U hδ0) hδ0
+      (W1p.le_value_restrictL_add_const_ae hU hu0U δ) (x₀ := x₀) (r := r) subset_rfl hβr hγr
+    rw [average_congr ((ae_restrict_of_ae_restrict_of_subset h2U hwv).mono fun y hy =>
+      congrArg (· ^ p₀) hy)] at hH
+    -- The average of `u^{p₀}` is at most that of `(u + δ)^{p₀}`.
+    have hmono := average_rpow_le_average_add_const_rpow hp₀ hδ0.le hmem hu02
+    filter_upwards [hH, ae_restrict_of_ae_restrict_of_subset hrU hwv] with x hx hwx
+    exact (Real.rpow_le_rpow (average_nonneg_of_ae (hu02.mono fun y hy => Real.rpow_nonneg hy _))
+      hmono (inv_nonneg.2 hp₀.le)).trans (hx.trans_eq (by rw [hwx]))
+  -- Let `δ → 0`.
+  exact ae_le_mul_of_forall_ae_le_mul_add_one_div hδ
 
 /-- The weak Harnack inequality with lower-order terms for supersolutions bounded below by a
 positive constant `ε`, with constants independent of `ε`. -/
@@ -372,26 +469,12 @@ private theorem exists_setAverage_add_const_rpow_rpow_inv_le_mul_lowerOrder [Non
   have hU : U ≤ Omega := hball
   have hrU : ball x₀ r ⊆ (U : Set (EuclideanSpace ℝ ι)) := ball_subset_ball (by nlinarith)
   have : IsFiniteMeasure (mu.restrict U) := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hum : AEStronglyMeasurable (W1p.value u) (mu.restrict Omega) := Lp.aestronglyMeasurable _
   have hu0U := ae_restrict_of_ae_restrict_of_subset hball hu0
   have hwv := W1p.value_restrictL_add_const_ae hU u δ
-  have hc' : AEStronglyMeasurable
-      (fun x => c x * (max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ)))
-      (mu.restrict Omega) :=
-    hc.mul ((hum.aemeasurable.max aemeasurable_const).div
-      ((hum.aemeasurable.max aemeasurable_const).add_const δ)).aestronglyMeasurable
-  have hcγ' : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)),
-      ‖c x * (max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ))‖ ≤ gamma := by
-    intro x hx
-    have hq : ‖max (W1p.value u x) 0 / (max (W1p.value u x) 0 + δ)‖ ≤ 1 := by
-      rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-      exact div_le_one_of_le₀ (by linarith) (by positivity)
-    rw [norm_mul]
-    exact (mul_le_of_le_one_right (norm_nonneg _) hq).trans (hcγ x (hball hx))
+  obtain ⟨hc', hcγ'⟩ := aestronglyMeasurable_mass_and_norm_mass_le hU u hc hcγ hδ0
   obtain ⟨hint, hH⟩ := hpos (h.mono_set hball)
     (ha.mono_measure (Measure.restrict_mono hball le_rfl))
-    (hb.mono_measure (Measure.restrict_mono hball le_rfl))
-    (hc'.mono_measure (Measure.restrict_mono hball le_rfl)) (fun x hx => hbβ x (hball hx)) hcγ'
+    (hb.mono_measure (Measure.restrict_mono hball le_rfl)) hc' (fun x hx => hbβ x (hball hx)) hcγ'
     (energyFormH1_restrictL_add_const_nonneg_mass hU hu hu0U hδ0) hδ0
     (W1p.le_value_restrictL_add_const_ae hU hu0U δ) (x₀ := x₀) (r := r) subset_rfl hβr hγr
   have hwvr := ae_restrict_of_ae_restrict_of_subset hrU hwv
@@ -550,50 +633,13 @@ theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] :
       ball x₀ (8 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ∀ᵐ x ∂mu.restrict (ball x₀ r),
         (⨍ y in ball x₀ (2 * r), W1p.value u y ^ p₀ ∂mu) ^ p₀⁻¹ ≤ C * W1p.value u x := by
-  obtain ⟨p₀, hp₀, hp₀2, C, hC, hpos⟩ :=
-    exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos_lowerOrder (mu := mu) (lam := lam)
+  obtain ⟨p₀, hp₀, hp₀2, C, hC, hK⟩ :=
+    exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_lowerOrder (mu := mu) (lam := lam)
       (Lam := Lam) 0
-  refine ⟨p₀, hp₀, hp₀2, C, hC, fun {Omega a u x₀ r} h ha hu hu0 hball => ?_⟩
-  rcases le_or_gt r 0 with hr | hr
-  · simp [ball_eq_empty.2 hr]
-  have hsqrt : 1 ≤ √(Fintype.card ι : ℝ) := Real.one_le_sqrt.2 (Nat.one_le_cast.2 Fintype.card_pos)
-  -- Work on the bounded open ball `U = B(x₀, 8√n r)`, where constants lie in `H¹(U)`.
-  set U : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ (8 * √(Fintype.card ι) * r), isOpen_ball⟩
-  have hU : U ≤ Omega := hball
-  have h2U : ball x₀ (2 * r) ⊆ (U : Set (EuclideanSpace ℝ ι)) := ball_subset_ball (by nlinarith)
-  have hrU : ball x₀ r ⊆ (U : Set (EuclideanSpace ℝ ι)) := ball_subset_ball (by nlinarith)
-  have : IsFiniteMeasure (mu.restrict U) := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have : IsFiniteMeasure (mu.restrict (ball x₀ (2 * r))) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hu02 : ∀ᵐ y ∂mu.restrict (ball x₀ (2 * r)), 0 ≤ W1p.value u y :=
-    ae_restrict_of_ae_restrict_of_subset (h2U.trans hball) hu0
-  have hmem : MemLp (W1p.value u) (ENNReal.ofReal p₀) (mu.restrict (ball x₀ (2 * r))) :=
-    ((Lp.memLp _).mono_measure (Measure.restrict_mono (h2U.trans hball) le_rfl)).mono_exponent
-      ((ENNReal.ofReal_le_ofReal hp₀2).trans_eq (ENNReal.ofReal_ofNat 2))
-  -- For each `δ = 1/(k + 1)`, the estimate for the positive supersolution `u + δ` on `U`.
-  have hδ : ∀ k : ℕ, ∀ᵐ x ∂mu.restrict (ball x₀ r),
-      (⨍ y in ball x₀ (2 * r), W1p.value u y ^ p₀ ∂mu) ^ p₀⁻¹ ≤
-        C * (W1p.value u x + 1 / ((k : ℝ) + 1)) := by
-    intro k
-    set δ : ℝ := 1 / ((k : ℝ) + 1)
-    have hδ0 : 0 < δ := Nat.one_div_pos_of_nat
-    have hwv := W1p.value_restrictL_add_const_ae hU u δ
-    -- The case `b = 0`, `c = 0` of the estimate with lower-order terms.
-    have hH := hpos (b := 0) (c := 0) (beta := 0) (gamma := 0) (h.mono_set hball)
-      (ha.mono_measure (Measure.restrict_mono hball le_rfl)) aestronglyMeasurable_const
-      aestronglyMeasurable_const (by simp) (by simp)
-      (energyFormH1_restrictL_add_const_nonneg hU hu δ) hδ0
-      (W1p.le_value_restrictL_add_const_ae hU (ae_restrict_of_ae_restrict_of_subset hball hu0) δ)
-      (x₀ := x₀) (r := r) subset_rfl (by simp) (by simp)
-    rw [average_congr ((ae_restrict_of_ae_restrict_of_subset h2U hwv).mono fun y hy =>
-      congrArg (· ^ p₀) hy)] at hH
-    -- The average of `u^{p₀}` is at most that of `(u + δ)^{p₀}`.
-    have hmono := average_rpow_le_average_add_const_rpow hp₀ hδ0.le hmem hu02
-    filter_upwards [hH, ae_restrict_of_ae_restrict_of_subset hrU hwv] with x hx hwx
-    exact (Real.rpow_le_rpow (average_nonneg_of_ae (hu02.mono fun y hy => Real.rpow_nonneg hy _))
-      hmono (inv_nonneg.2 hp₀.le)).trans (hx.trans_eq (by rw [hwx]))
-  -- Let `δ → 0`.
-  exact ae_le_mul_of_forall_ae_le_mul_add_one_div hδ
+  refine ⟨p₀, hp₀, hp₀2, C, hC, fun h ha hu hu0 hball => ?_⟩
+  -- The case `b = 0`, `c = 0` of the inequality with lower-order terms.
+  exact hK (b := 0) (c := 0) (beta := 0) (gamma := 0) h ha aestronglyMeasurable_const
+    aestronglyMeasurable_const (by simp) (by simp) hu hu0 hball (by simp) (by simp)
 
 /-- **Moser's weak Harnack inequality.** Let `n ≥ 1` be the dimension. For every exponent `s > 0`
 with `(n - 2) s < n`, that is `s < n/(n - 2)` when `n ≥ 3` and `s` arbitrary when `n ≤ 2`, there
