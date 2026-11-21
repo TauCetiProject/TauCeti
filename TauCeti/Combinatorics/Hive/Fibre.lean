@@ -634,10 +634,12 @@ def shiftProductBoundaryEquiv {n : ℕ} (lam μ γ : DominantWeight n) (a b : �
   left_inv h := by ext p; simp [mul_add]; abel
   right_inv h := by ext p; simp [mul_add]; abel
 
+/-- Underlying hive of the forward map `shiftProductBoundaryEquiv`. -/
 @[simp] theorem shiftProductBoundaryEquiv_apply_val {n : ℕ} (lam μ γ : DominantWeight n) (a b : ℤ)
     (h : FixedIntegerHive (productBoundary lam μ γ)) :
     (shiftProductBoundaryEquiv lam μ γ a b h).val = h.val + affine n a (a + b) := (rfl)
 
+/-- Underlying hive of the inverse map `shiftProductBoundaryEquiv.symm`. -/
 @[simp] theorem shiftProductBoundaryEquiv_symm_apply_val {n : ℕ} (lam μ γ : DominantWeight n)
     (a b : ℤ) (h : FixedIntegerHive (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b)))) :
     ((shiftProductBoundaryEquiv lam μ γ a b).symm h).val = h.val + affine n (-a) (-(a + b)) := (rfl)

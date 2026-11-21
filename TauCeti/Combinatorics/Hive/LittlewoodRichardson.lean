@@ -219,6 +219,7 @@ private theorem hiveOfLRTableau_apply (hlam : lam.IsPolynomial) (hμ : μ.IsPoly
     (hiveOfLRTableau hlam hμ hγ T).val p = lrHiveFun T p :=
   rfl
 
+/-- Evaluating `hiveOfLRTableau` at chart coordinates `(i, j)`. -/
 @[simp] theorem hiveOfLRTableau_apply_ofChart (hlam : lam.IsPolynomial) (hμ : μ.IsPolynomial)
     (hγ : γ.IsPolynomial) (T : LRTableau lam.shape γ.shape μ.shape) {i j : ℕ}
     (hij : i ≤ j) (hjn : j ≤ n) :
@@ -666,11 +667,13 @@ def fixedIntegerHiveEquivLRTableau (hlam : lam.IsPolynomial) (hμ : μ.IsPolynom
   left_inv := hiveOfLRTableau_lrTableauOfHive hlam hμ hγ
   right_inv := lrTableauOfHive_hiveOfLRTableau hlam hμ hγ
 
+/-- Forward direction of `fixedIntegerHiveEquivLRTableau`. -/
 @[simp] theorem fixedIntegerHiveEquivLRTableau_apply (hlam : lam.IsPolynomial)
     (hμ : μ.IsPolynomial) (hγ : γ.IsPolynomial)
     (h : FixedIntegerHive (productBoundary lam μ γ)) :
     fixedIntegerHiveEquivLRTableau hlam hμ hγ h = lrTableauOfHive hlam hμ h := (rfl)
 
+/-- Inverse direction of `fixedIntegerHiveEquivLRTableau`. -/
 @[simp] theorem fixedIntegerHiveEquivLRTableau_symm_apply (hlam : lam.IsPolynomial)
     (hμ : μ.IsPolynomial) (hγ : γ.IsPolynomial) (T : LRTableau lam.shape γ.shape μ.shape) :
     (fixedIntegerHiveEquivLRTableau hlam hμ hγ).symm T = hiveOfLRTableau hlam hμ hγ T := (rfl)
