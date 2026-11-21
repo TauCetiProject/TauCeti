@@ -51,6 +51,9 @@ itself an isomorphism.
   sections over a rational open are determined by their composites with the canonical map.
 * `TauCeti.ValuationSpectrum.isIso_toPresentationLimit_top` : on the whole spectrum the canonical
   map is an isomorphism.
+* `TauCeti.ValuationSpectrum.presentationLimitRationalIso_map_top_apply` : under
+  `presentationLimitRationalIso`, restricting the image of an element of `A` from the whole
+  spectrum to `R(p)` agrees with `toCompletionLoc`.
 
 ## References
 
@@ -223,6 +226,24 @@ noncomputable def presentationLimitTopIso (hAplus : ∀ ⦃a⦄, a ∈ Aplus →
 theorem presentationLimitTopIso_inv (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) :
     (presentationLimitTopIso (P := P) Aplus hAplus).inv = toPresentationLimit Aplus ⊤ :=
   (rfl)
+
+/-- Under `presentationLimitRationalIso`, restricting the image of `c : A` over the whole spectrum
+to `R(p)` yields the structure map `toCompletionLoc` applied to `c`. -/
+theorem presentationLimitRationalIso_map_top_apply
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p : Presentation P)
+    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A))
+    (c : CompleteSeparatedTopCommRingCat.of A) :
+    (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val
+        ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.val
+          ((presentationLimitMap le_top).hom.val ((toPresentationLimit Aplus ⊤).hom.val c))) =
+      toCompletionLoc P p.num p.den _ p.hasDenominatorPower
+        ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).val c) := by
+  have key : toPresentationLimit Aplus ⊤ ≫ presentationLimitMap le_top ≫
+      (presentationLimitRationalIso Aplus hAplus p hp).hom = p.toCompletionLocObjHom := by simp
+  refine (congrArg (fun g ↦ (eqToHom (completionLocObj_obj ..)).val (g.hom.val c)) key).trans ?_
+  rw [Presentation.toCompletionLocObjHom_hom]
+  exact (eqToIso
+    (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm).hom_inv_id_apply _
 
 end TauCeti.ValuationSpectrum
 
