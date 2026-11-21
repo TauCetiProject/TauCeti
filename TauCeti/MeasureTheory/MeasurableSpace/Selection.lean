@@ -245,11 +245,10 @@ theorem _root_.IsOpenQuotientMap.exists_measurable_rightInverse [TopologicalSpac
     ∃ s : Z → X, Measurable s ∧ Function.RightInverse s q := by
   -- the fibres of `q` are closed and nonempty, and the fibres meeting `U` lie over `q '' U`
   have hM (U : Set X) (hU : IsOpen U) : MeasurableSet {z | (q ⁻¹' {z} ∩ U).Nonempty} := by
-    convert (hq.isOpenMap U hU).measurableSet using 1
-    ext z
-    simp only [mem_ofPred_eq, mem_image, Set.Nonempty, mem_inter_iff, mem_preimage,
-      mem_singleton_iff]
-    exact ⟨fun ⟨x, hxz, hxU⟩ ↦ ⟨x, hxU, hxz⟩, fun ⟨x, hxU, hxz⟩ ↦ ⟨x, hxz, hxU⟩⟩
+    have : {z | (q ⁻¹' {z} ∩ U).Nonempty} = q '' U := by
+      ext z
+      simp [Set.Nonempty, and_comm]
+    exact this ▸ (hq.isOpenMap U hU).measurableSet
   obtain ⟨s, hs, hsq⟩ := exists_measurable_forall_mem (M := fun z ↦ q ⁻¹' {z})
     (fun z ↦ isClosed_singleton.preimage hq.continuous)
     (fun z ↦ hq.surjective.nonempty_preimage.2 (singleton_nonempty z)) hM

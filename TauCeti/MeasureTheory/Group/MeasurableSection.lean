@@ -46,7 +46,7 @@ open Function Set Topology
 
 open scoped Pointwise
 
-variable {E G : Type*} [Group E] [Group G] [TopologicalSpace G]
+variable {E G : Type*} [MulOneClass E] [Group G] [TopologicalSpace G]
 
 namespace MonoidHom
 
@@ -59,8 +59,8 @@ homomorphism onto a Lindelöf additive group with continuous translations, and l
 a measurable map that is a section of `p` on a measurable neighbourhood `V` of `0`. Then `p` has a
 measurable section that agrees with `σ` on `V`. -/]
 theorem exists_measurable_rightInverse_eqOn [MeasurableSpace E] [MeasurableMul E]
-    [ContinuousConstSMul G G] [LindelofSpace G] [MeasurableSpace G] [MeasurableMul G] (p : E →* G)
-    (hp : Surjective p) {V : Set G} (hV : V ∈ 𝓝 1) (hVm : MeasurableSet V) {σ : G → E}
+    [ContinuousConstSMul G G] [LindelofSpace G] [MeasurableSpace G] [MeasurableConstSMul G G]
+    (p : E →* G) (hp : Surjective p) {V : Set G} (hV : V ∈ 𝓝 1) (hVm : MeasurableSet V) {σ : G → E}
     (hσ : Measurable σ) (hpσ : ∀ g ∈ V, p (σ g) = g) :
     ∃ s : G → E, Measurable s ∧ RightInverse s p ∧ EqOn s σ V := by
   classical
@@ -73,10 +73,10 @@ theorem exists_measurable_rightInverse_eqOn [MeasurableSpace E] [MeasurableMul E
   rw [biUnion_range, iUnion_eq_univ_iff] at htV
   have hmem (n : ℕ) (x : G) : x ∈ f n • V ↔ (f n)⁻¹ * x ∈ V := mem_smul_set_iff_inv_smul_mem
   -- on the first translate containing `x`, use the translate of `σ` by a lift of `f n`
-  set patch : ℕ → G → E := fun n x ↦ surjInv hp (f n) * σ ((f n)⁻¹ * x)
+  set patch : ℕ → G → E := fun n x ↦ surjInv hp (f n) * σ ((f n)⁻¹ • x)
   have hpatch : Measurable fun x ↦ patch (Nat.find (htV x)) x :=
-    Measurable.find (f := patch) (fun n ↦ (hσ.comp (measurable_const_mul _)).const_mul _)
-      (fun n ↦ by simp_rw [hmem]; exact measurable_const_mul (f n)⁻¹ hVm) htV
+    Measurable.find (f := patch) (fun n ↦ (hσ.comp (measurable_const_smul _)).const_mul _)
+      (fun n ↦ by simp_rw [hmem]; exact measurable_const_smul (f n)⁻¹ hVm) htV
   refine ⟨V.piecewise σ fun x ↦ patch (Nat.find (htV x)) x, hσ.piecewise hVm hpatch,
     fun x ↦ ?_, fun x hx ↦ piecewise_eq_of_mem _ _ _ hx⟩
   by_cases hx : x ∈ V
