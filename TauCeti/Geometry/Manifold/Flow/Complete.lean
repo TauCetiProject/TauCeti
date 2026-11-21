@@ -20,8 +20,8 @@ pointwise maximal intervals and to the existence of global integral curves.
 Compactly supported `C¹` vector fields on boundaryless Banach manifolds are complete. In
 particular, every `C¹` vector field on a compact boundaryless Banach manifold is complete. So is
 every `C¹` vector field admitting a proper map that is constant along its integral curves, such
-as a Hamiltonian vector field with a proper family of first integrals, and more generally every
-`C¹` vector field along which a proper real function changes at a bounded rate. These criteria
+as a Hamiltonian vector field with a proper family of first integrals, and every `C¹` vector
+field along which a proper real function changes at a bounded rate. These criteria
 make completeness available without choosing a global flow or assuming finite dimensionality.
 
 ## Main declarations
