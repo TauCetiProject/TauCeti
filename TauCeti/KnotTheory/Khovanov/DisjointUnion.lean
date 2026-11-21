@@ -124,10 +124,10 @@ variable (R : Type*) [CommRing R] (σ τ : Type*) [Fintype σ] [Fintype τ]
 
 /-- The native disjoint-union tensor equivalence preserves the total quantum degree. -/
 theorem isHomogeneous_tmulEquiv :
-    TauCeti.LinearMap.IsHomogeneous (tmulEquiv R R[ε]).toLinearMap
+    LinearMap.IsHomogeneous (tmulEquiv R R[ε]).toLinearMap
       ((circleQuantumGrading R σ).tensorProduct (circleQuantumGrading R τ)).piece
       (circleQuantumGrading R (σ ⊕ τ)).piece 0 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro n z hz
   refine (circleQuantumGrading R σ).tensorProduct_piece_le (circleQuantumGrading R τ)
     (C := ((circleQuantumGrading R (σ ⊕ τ)).piece (n + 0)).comap
@@ -146,7 +146,7 @@ theorem isHomogeneous_tmulEquiv :
 
 /-- Separating a disjoint-union tensor preserves the total quantum degree. -/
 theorem isHomogeneous_tmulEquiv_symm :
-    TauCeti.LinearMap.IsHomogeneous (tmulEquiv R R[ε]).symm.toLinearMap
+    LinearMap.IsHomogeneous (tmulEquiv R R[ε]).symm.toLinearMap
       (circleQuantumGrading R (σ ⊕ τ)).piece
       ((circleQuantumGrading R σ).tensorProduct (circleQuantumGrading R τ)).piece 0 :=
   (isHomogeneous_tmulEquiv R σ τ).linearEquiv_symm
@@ -197,7 +197,7 @@ variable (S : Type*) [CommRing S]
 
 /-- The actual disjoint-union comparison preserves the total quantum degree. -/
 theorem isHomogeneous_disjointUnionCircleTensorEquiv :
-    TauCeti.LinearMap.IsHomogeneous (D.disjointUnionCircleTensorEquiv E s S).toLinearMap
+    LinearMap.IsHomogeneous (D.disjointUnionCircleTensorEquiv E s S).toLinearMap
       (Khovanov.circleQuantumGrading S ((D.disjointUnion E).ResolvedCircle s)).piece
       ((Khovanov.circleQuantumGrading S (D.ResolvedCircle (s ∘ Fin.castAdd m))).tensorProduct
         (Khovanov.circleQuantumGrading S (E.ResolvedCircle (s ∘ Fin.natAdd n)))).piece 0 := by
@@ -206,7 +206,7 @@ theorem isHomogeneous_disjointUnionCircleTensorEquiv :
 
 /-- Reassembling the two actual resolved-circle tensors preserves the total quantum degree. -/
 theorem isHomogeneous_disjointUnionCircleTensorEquiv_symm :
-    TauCeti.LinearMap.IsHomogeneous (D.disjointUnionCircleTensorEquiv E s S).symm.toLinearMap
+    LinearMap.IsHomogeneous (D.disjointUnionCircleTensorEquiv E s S).symm.toLinearMap
       ((Khovanov.circleQuantumGrading S (D.ResolvedCircle (s ∘ Fin.castAdd m))).tensorProduct
         (Khovanov.circleQuantumGrading S (E.ResolvedCircle (s ∘ Fin.natAdd n)))).piece
       (Khovanov.circleQuantumGrading S ((D.disjointUnion E).ResolvedCircle s)).piece 0 :=
