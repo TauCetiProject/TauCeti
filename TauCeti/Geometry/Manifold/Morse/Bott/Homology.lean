@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.DisjointClosed
 public import TauCeti.Geometry.Manifold.Morse.Bott.Attachment
 public import TauCeti.Geometry.Manifold.Morse.Bott.DiscBundle
+public import TauCeti.Geometry.Manifold.Morse.Bott.GaugeDiscBundle
 public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
 public import TauCeti.Topology.VectorBundle.Attachment
 public import TauCeti.Topology.VectorBundle.Thom.LineBundle
@@ -84,6 +85,10 @@ with coefficients in a ring of characteristic two, such as `ZMod 2`, the twist d
 (`TauCeti.thomPairSingularHomologySuccIsoSingularHomology`), so crossing the level shifts the
 homology of the base by one: `Hₙ₊₁(M_{c+ε}, M_{c-ε}; R) ≅ Hₙ(B; R)`
 (`TauCeti.nonempty_singularHomology_sublevelPair_succ_iso_singularHomology_of_finrank_eq_one`).
+`TauCeti.Geometry.Manifold.Morse.Bott.Cohomology` proves the cohomological forms of the
+sublevel-pair and Thom-pair isomorphisms above and applies the Thom isomorphism in cohomology. The
+elementary facts about the parametrization shared by both files are in
+`TauCeti.Geometry.Manifold.Morse.Bott.GaugeDiscBundle`.
 
 ## Main results
 
@@ -739,24 +744,11 @@ theorem exists_isIso_singularHomologyMap_sublevelPair_of_negativeDiscBundle
         IsIso (TopPair.singularHomologyMap ψ R n) := by
   obtain ⟨r, -, ⟨G⟩⟩ := exists_sublevel_union_negativeDiscBundle_deformation hfs hW hs ht hs₀ ht₀
     hf hdir φ hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit
-  refine exists_isIso_singularHomologyMap_of_homotopyRel_attach_discBundle hρ
+  exact exists_isIso_singularHomologyMap_of_homotopyRel_attach_discBundle hρ
     (sublevel_mono f (by linarith)) (isClosed_le hfs.continuous continuous_const) hg hgD
-    (fun x ⟨hxW, htx, _⟩ ↦ ?_) (fun v hv ↦ ?_) r G
-  · -- On the negative disc bundle `f = c - s ≤ c`.
-    rw [mem_ofPred_eq, hf x hxW, htx]
-    linarith [hs₀ x hxW]
-  · -- A point of the disc bundle lies in `{f ≤ c - ε}` exactly when `s = ε` there, that is, when
-    -- it is the image of a point of the sphere bundle.
-    obtain ⟨hxW, htx, hsx⟩ : g v ∈ {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε} := hgD ▸ mem_image_of_mem g hv
-    rw [mem_ofPred_eq, hf _ hxW, htx]
-    refine ⟨fun hle ↦ ?_, fun hvS ↦ ?_⟩
-    · obtain ⟨w, hw, hwv⟩ : g v ∈ g '' gaugeSphereBundle ρ := hgS ▸ ⟨hxW, htx, by linarith⟩
-      obtain rfl : w = v :=
-        congrArg Subtype.val
-          (@hg.injective ⟨w, gaugeSphereBundle_subset_gaugeDiscBundle ρ hw⟩ ⟨v, hv⟩ hwv)
-      exact hw
-    · have : g v ∈ {x | x ∈ W ∧ t x = 0 ∧ s x = ε} := hgS ▸ mem_image_of_mem g hvS
-      linarith [this.2.2]
+    (fun x hx ↦ (apply_le_of_mem_negativeDiscBundle hf hs₀ hx).trans (by linarith))
+    (fun v hv ↦ apply_le_sub_iff_mem_gaugeSphereBundle hf (injOn_iff_injective.2 hg.injective) hgD
+      hgS hv) r G
 
 /-- **The relative homology across a Morse–Bott critical level is that of the Thom pair of the
 negative bundle.** Under the hypotheses of
