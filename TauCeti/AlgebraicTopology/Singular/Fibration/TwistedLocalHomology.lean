@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.LocalCoefficient.Contractible
 public import TauCeti.AlgebraicTopology.Singular.Fibration.LocalHomology
 public import TauCeti.AlgebraicTopology.Singular.Twisted.ConstantNaturality
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Excision
@@ -36,9 +37,9 @@ point `b`, and a class is detected by it exactly when its localization along `F`
 
 Choose a ball of positive radius `ε` about `e b` inside the target of `e`, and let `U` be its
 preimage in the source of `e` (`OpenPartialHomeomorph.chartBall`). The chart ball contracts onto
-`b` (`OpenPartialHomeomorph.chartBallContraction`), so the restriction of `p` to the open set
-`p⁻¹(U)`, which contains the closed fibre `F`, is homotopic to the constant map at `b`, and the
-restriction of `p*L` to `p⁻¹(U)` is the constant system at `L_b`
+`b` (`OpenPartialHomeomorph.chartBallContraction`), so the restriction of `L` to it is the constant
+system at `L_b` (`TauCeti.LocalCoefficientSystem.isoConstantOfHomotopy`), and so is the
+restriction of `p*L` to the open set `p⁻¹(U)`, which contains the closed fibre `F`
 (`TauCeti.TopCat.chartBallCoefficientIso`). Relative homology modulo the complement of `F` only
 sees the coefficients near `F` (`TopPair.twistedHomologyComplIsoOfRestrictIso`), so
 `Hₘ(E, E ∖ F; p*L) ≅ Hₘ(E, E ∖ F; L_b)`, and the untwisted computation finishes the proof. After
@@ -72,31 +73,25 @@ variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] {E B : _root_.T
   (e : OpenPartialHomeomorph B V) {b : B} (hb : b ∈ e.source) {ε : ℝ}
   (hε : ball (e b) ε ⊆ e.target) (hε₀ : 0 < ε)
 
-/-- The contraction of the chart ball `e.chartBall b ε` onto `b`, read on the part of `E` over it:
-a homotopy from the restriction of `p` to the constant map at `b`, moving `p z` along
-`OpenPartialHomeomorph.chartBallContraction`. Its endpoints agree pointwise with the composites
-that `ContinuousMap.Homotopy.comp` produces by definition of `ContinuousMap.restrictPreimage`. -/
-private def chartBallPreimageContraction :
-    (p.hom.comp (⟨Subtype.val, continuous_subtype_val⟩ :
-      C(_root_.TopCat.of (p ⁻¹' e.chartBall b ε), E))).Homotopy (ContinuousMap.const _ b) :=
-  ((ContinuousMap.Homotopy.refl ⟨Subtype.val, continuous_subtype_val⟩).comp
-    ((e.chartBallContraction hb hε hε₀).compContinuousMap
-      (p.hom.restrictPreimage (e.chartBall b ε)))).cast
-    (ContinuousMap.ext fun _ ↦ rfl) (ContinuousMap.ext fun _ ↦ rfl)
-
 /-- The restriction of `p*L` to the part of `E` over the chart ball `e.chartBall b ε` is the
-constant system at the fibre `L_b`: the contraction of the chart ball onto `b` makes the
-restriction of `p` to this part homotopic to the constant map at `b`, and pulling `L` back along
-homotopic maps gives isomorphic systems (`TauCeti.LocalCoefficientSystem.pullbackHomotopyIso`). At
-a point `z` the comparison is transport by `L` along the path traced by `p z` under the contraction
+constant system at the fibre `L_b`: it is pulled back, along the restriction of `p`, from the
+restriction of `L` to the chart ball, which its contraction onto `b` identifies with the constant
+system (`TauCeti.LocalCoefficientSystem.isoConstantOfHomotopy`). At a point `z` the comparison is
+transport by `L` along the path traced by `p z` under the contraction
 (`TauCeti.TopCat.chartBallCoefficientIso_hom_app`). -/
 def chartBallCoefficientIso :
     (pullback (R := R) (⟨Subtype.val, continuous_subtype_val⟩ :
         C(_root_.TopCat.of (p ⁻¹' e.chartBall b ε), E))).obj ((pullback p.hom).obj L) ≅
       (constantFunctor _).obj (L.obj (FundamentalGroupoid.mk b)) :=
+  -- The two factorizations `p ∘ val` and `val ∘ p.restrictPreimage` of the restriction of `p` are
+  -- the same continuous map by definition, so the two `pullbackCompIso` compose directly.
   ((pullbackCompIso _ p.hom).app L).symm ≪≫
-    (pullbackHomotopyIso (chartBallPreimageContraction e hb hε hε₀)).app L ≪≫
-    pullbackConstIso _ b L
+    (pullbackCompIso (X := _root_.TopCat.of (p ⁻¹' e.chartBall b ε))
+      (Y := _root_.TopCat.of (e.chartBall b ε)) (p.hom.restrictPreimage (e.chartBall b ε))
+      ⟨Subtype.val, continuous_subtype_val⟩).app L ≪≫
+    (pullback _).mapIso (isoConstantOfHomotopy (X := _root_.TopCat.of (e.chartBall b ε))
+      (e.chartBallContraction hb hε hε₀) _) ≪≫
+    pullbackConstantIso _ _
 
 /-- At a point `z` over the chart ball, `TauCeti.TopCat.chartBallCoefficientIso` is transport by
 `L` along the path traced by `p z` under the contraction of the chart ball onto `b`. -/
@@ -108,14 +103,19 @@ lemma chartBallCoefficientIso_hom_app
         C(_root_.TopCat.of (e.chartBall b ε), B))).obj L).map
         ⟦(e.chartBallContraction hb hε hε₀).evalAt
           (p.hom.restrictPreimage (e.chartBall b ε) z.as)⟧ := by
-  simp only [chartBallCoefficientIso, Iso.trans_hom, Iso.symm_hom, Iso.app_inv, Iso.app_hom,
-    NatTrans.comp_app, pullbackCompIso_inv_app_app, pullbackHomotopyIso_hom_app_app,
-    pullbackConstIso_hom_app]
-  -- The identity components of `pullbackCompIso` and `pullbackConstIso` sit between objects that
-  -- agree only by definition, such as `(F ⋙ G).obj L` and `G.obj (F.obj L)`, so the unit laws are
-  -- applied by `exact`. The two path classes then agree by definition: both trace `p z` under the
-  -- contraction of the chart ball.
-  exact (Category.id_comp _).trans (Category.comp_id _)
+  simp only [chartBallCoefficientIso, Iso.trans_hom, Iso.symm_hom, Iso.app_inv,
+    NatTrans.comp_app, pullbackCompIso_inv_app_app]
+  -- With `q` the restriction of `p`, the pieces of the composite meet at objects that agree only
+  -- by definition: first `(pullback (p ∘ val)).obj L` and `(pullback (val ∘ q)).obj L`, then
+  -- `(pullback val ⋙ pullback q).obj L` and `(pullback q).obj ((pullback val).obj L)`. So
+  -- `Iso.trans_hom` cannot be rewritten there, and is applied at each of them by `congrArg`.
+  refine (Category.id_comp _).trans ((congrArg (NatTrans.app · z) (Iso.trans_hom _ _)).trans ?_)
+  rw [NatTrans.comp_app, Iso.app_hom, pullbackCompIso_hom_app_app]
+  refine (Category.id_comp _).trans ((congrArg (NatTrans.app · z) (Iso.trans_hom _ _)).trans ?_)
+  simp only [NatTrans.comp_app, Functor.mapIso_hom, pullback_map_app,
+    isoConstantOfHomotopy_hom_app, pullbackConstantIso_hom_app]
+  -- The two path classes agree by definition: both trace `p z` under the contraction.
+  exact Category.comp_id _
 
 variable [T1Space B]
 
