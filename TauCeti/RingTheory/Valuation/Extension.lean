@@ -155,10 +155,11 @@ variable {R K L M Γ₁ Γ₂ : Type*}
   [LinearOrderedCommGroupWithZero Γ₁] [LinearOrderedCommGroupWithZero Γ₂]
 
 private theorem val_valueGroup_mk_comap [Ring R] [Ring L] (w : Valuation L Γ₁) (f : R →+* L)
-    {r s : R} (hr : (w.comap f : R →*₀ Γ₁) r ≠ 0) (hs : (w.comap f : R →*₀ Γ₁) s ≠ 0)
-    (hr' : (w : L →*₀ Γ₁) (f r) ≠ 0) (hs' : (w : L →*₀ Γ₁) (f s) ≠ 0) :
+    {r s : R} (hr : (w.comap f : R →*₀ Γ₁) r ≠ 0) (hs : (w.comap f : R →*₀ Γ₁) s ≠ 0) :
     (valueGroup.mk (w.comap f : R →*₀ Γ₁) r s hr hs : Γ₁ˣ) =
-      (valueGroup.mk (w : L →*₀ Γ₁) (f r) (f s) hr' hs' : Γ₁ˣ) :=
+      (valueGroup.mk (w : L →*₀ Γ₁) (f r) (f s)
+        (by simpa only [coe_toMonoidWithZeroHom, comap_apply] using hr)
+        (by simpa only [coe_toMonoidWithZeroHom, comap_apply] using hs) : Γ₁ˣ) :=
   Units.ext <| by simp only [valueGroup.mk_eq_div, coe_toMonoidWithZeroHom, comap_apply]
 
 private theorem map_orderMonoidIso_subgroupOf_valueGroup_comap_le [Ring R] [Ring L]
@@ -172,9 +173,7 @@ private theorem map_orderMonoidIso_subgroupOf_valueGroup_comap_le [Ring R] [Ring
   have hrL : w₁ (f r) ≠ 0 := by simpa only [coe_toMonoidWithZeroHom, comap_apply] using hr
   have hsL : w₁ (f s) ≠ 0 := by simpa only [coe_toMonoidWithZeroHom, comap_apply] using hs
   have hγ' : γ = valueGroup.mk (w₁ : L →*₀ Γ₁) (f r) (f s) hrL hsL :=
-    Subtype.ext (hmk.trans (val_valueGroup_mk_comap w₁ f hr hs
-      (by simpa only [coe_toMonoidWithZeroHom] using hrL)
-      (by simpa only [coe_toMonoidWithZeroHom] using hsL)))
+    Subtype.ext (hmk.trans (val_valueGroup_mk_comap w₁ f hr hs))
   have hmap : (h.orderMonoidIso.toMulEquiv : w₁.valueGroup →* w₂.valueGroup) γ =
       valueGroup.mk (w₂ : L →*₀ Γ₂) (f r) (f s) (h.eq_zero.ne.mp hrL) (h.eq_zero.ne.mp hsL) :=
     hγ' ▸ h.orderMonoidIso_spec hrL hsL
@@ -184,9 +183,7 @@ private theorem map_orderMonoidIso_subgroupOf_valueGroup_comap_le [Ring R] [Ring
   have hs₂ : (w₂.comap f : R →*₀ Γ₂) s ≠ 0 := by
     simpa only [coe_toMonoidWithZeroHom, comap_apply] using h.eq_zero.ne.mp hsL
   exact (mem_valueGroup_iff_exists_mk_of_comm (w₂.comap f : R →*₀ Γ₂)).mpr
-    ⟨r, s, hr₂, hs₂, (val_valueGroup_mk_comap w₂ f hr₂ hs₂
-      (by simpa only [coe_toMonoidWithZeroHom] using h.eq_zero.ne.mp hrL)
-      (by simpa only [coe_toMonoidWithZeroHom] using h.eq_zero.ne.mp hsL)).symm⟩
+    ⟨r, s, hr₂, hs₂, (val_valueGroup_mk_comap w₂ f hr₂ hs₂).symm⟩
 
 /-- The value-group isomorphism induced by an equivalence of valuations carries the restricted
 value subgroup of a ring homomorphism to the corresponding restricted value subgroup. -/

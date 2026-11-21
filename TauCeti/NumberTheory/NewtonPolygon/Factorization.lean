@@ -190,6 +190,13 @@ theorem newtonPolygon_ne_top (hg : f.IsPureSlopeFactorization v g) (m : ℝ) :
 theorem dvd (hg : f.IsPureSlopeFactorization v g) (m : ℝ) : g m ∣ f :=
   hg.finprod_eq ▸ finprod_mem_dvd m hg.finite_mulSupport
 
+/-- Every root of a factor `g m` in a nontrivial `R`-algebra is nonzero. -/
+theorem ne_zero_of_aeval_eq_zero {A : Type*} [Semiring A] [Algebra R A] [Nontrivial A]
+    (hg : f.IsPureSlopeFactorization v g) {m : ℝ} {α : A} (hroot : aeval α (g m) = 0) :
+    α ≠ 0 := by
+  rintro rfl
+  simp [aeval_def, hg.coeff_zero m] at hroot
+
 /-- The constant family `1` is a pure slope factorisation of `1`. -/
 theorem one (v : AddValuation R (WithTop ℝ)) : (1 : R[X]).IsPureSlopeFactorization v 1 :=
   ⟨by simp, fun _ => by simp, fun _ _ hs => by
@@ -375,12 +382,9 @@ theorem den_dvd_of_aeval_eq_zero {K L : Type*} [Field K] [Field L] [Algebra K L]
     (hw : ∀ x, w (algebraMap K L x) = v x) {e : ℕ}
     (hL : ∀ y : L, y ≠ 0 → ∃ n : ℤ, w y = ((n / e : ℝ) : WithTop ℝ)) {f : K[X]} {g : ℝ → K[X]}
     (hg : f.IsPureSlopeFactorization v g) {q : ℚ} {α : L} (hroot : aeval α (g q) = 0) :
-    q.den ∣ e := by
-  have hα : α ≠ 0 := by
-    rintro rfl
-    simp [aeval_def, hg.coeff_zero q] at hroot
-  exact Polynomial.den_dvd_of_forall_mem_newtonSlopes_eq hw hL (hg.apply_ne_zero q)
-    (hg.newtonSlopes_eq q) hα hroot
+    q.den ∣ e :=
+  Polynomial.den_dvd_of_forall_mem_newtonSlopes_eq hw hL (hg.apply_ne_zero q)
+    (hg.newtonSlopes_eq q) (hg.ne_zero_of_aeval_eq_zero hroot) hroot
 
 /-- If `g` is a pure slope factorisation of `f : K[X]` for `v.realAddVal`, `w` on an extension
 `L / K` extends the rank-one discrete valuation `v`, and `α : L` is a root of the slope-`q` factor
@@ -389,12 +393,9 @@ theorem den_dvd_ramificationIdx_of_aeval_eq_zero {K L ΓK ΓL : Type*} [Field K]
     [Algebra K L] [LinearOrderedCommGroupWithZero ΓK] [LinearOrderedCommGroupWithZero ΓL]
     (v : Valuation K ΓK) [v.IsRankOneDiscrete] (w : Valuation L ΓL) [v.HasExtension w] {f : K[X]}
     {g : ℝ → K[X]} (hg : f.IsPureSlopeFactorization v.realAddVal g) {q : ℚ} {α : L}
-    (hroot : aeval α (g q) = 0) : q.den ∣ w.ramificationIdx K := by
-  have hα : α ≠ 0 := by
-    rintro rfl
-    simp [aeval_def, hg.coeff_zero q] at hroot
-  exact Polynomial.den_dvd_ramificationIdx_of_forall_mem_newtonSlopes_eq v w (hg.apply_ne_zero q)
-    (hg.newtonSlopes_eq q) hα hroot
+    (hroot : aeval α (g q) = 0) : q.den ∣ w.ramificationIdx K :=
+  Polynomial.den_dvd_ramificationIdx_of_forall_mem_newtonSlopes_eq v w (hg.apply_ne_zero q)
+    (hg.newtonSlopes_eq q) (hg.ne_zero_of_aeval_eq_zero hroot) hroot
 
 end IsPureSlopeFactorization
 
@@ -786,11 +787,8 @@ theorem setOf_norm_eq_and_evalAt_eq_zero {L : Type*} [NormedField L]
         (Real.rpow_right_inj (zero_lt_one.trans hb) hb.ne').mp (hnorm'.symm.trans hnorm)
       rwa [← hmm']
   · intro hroot
-    have hx_ne : x ≠ 0 := by
-      rintro rfl
-      simp [Polynomial.aeval_def, Polynomial.eval₂_at_zero, hc0 m] at hroot
     have hnorm := Polynomial.norm_eq_rpow_of_forall_mem_newtonSlopes_eq v hb hv
-      (hg_fact.apply_ne_zero m) (hslopes m) hx_ne hroot
+      (hg_fact.apply_ne_zero m) (hslopes m) (hg_fact.ne_zero_of_aeval_eq_zero hroot) hroot
     refine ⟨hnorm, ?_⟩
     have hgm_ne_one : g m ≠ 1 := by
       rintro h1
