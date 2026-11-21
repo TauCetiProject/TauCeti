@@ -44,8 +44,8 @@ has the energy density of `u` (`TauCeti.SmoothTwoForm.IsNondegenerate.floerEnerg
 `TauCeti.SmoothTwoForm.IsNondegenerate.isComplexLinearMap_perturbedFDeriv_comp_iff`).
 
 The orbit is assumed to lie in a single symplectic chart, as constant orbits always do. An orbit
-that meets no single chart needs a symplectic chart along the whole loop, which is not treated
-here.
+whose image does not lie in a single symplectic chart needs a symplectic chart along the whole
+loop, which is not treated here.
 
 ## References
 
