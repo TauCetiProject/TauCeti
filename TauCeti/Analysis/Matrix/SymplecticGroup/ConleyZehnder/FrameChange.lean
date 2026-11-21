@@ -155,7 +155,7 @@ theorem hasDerivAt_frameChange_extend {A B C : GLSymplectic n ℝ} (g : Path A A
         (((frameChange g Ψ).extend t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) t := by
   have h := hasDerivAt_inv_mul_mul_of_mem_symplecticGroup
     (Filter.Eventually.of_forall fun s ↦
-      GLSymplectic.mem_iff_mem_symplecticGroup.mp (g.extend s).2) hg hΨ
+      GLSymplectic.mem_iff_mem_symplecticGroup.mp (g.extend s).property) hg hΨ
     ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)
   simpa only [frameChange_extend, Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul,
     coe_units_inv] using h
