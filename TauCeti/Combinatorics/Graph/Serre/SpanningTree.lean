@@ -86,7 +86,7 @@ private theorem darts_subset_or_eq_comp {S : Set Γ.E} {R : Set Γ.V}
   induction p with
   | nil => exact Or.inl (by simp)
   | @cons b c p f ih =>
-    have hf : f.1 = e ∨ f.1 = Γ.rev e ∨ f.1 ∈ S := hpS f.1 (by simp)
+    have hf : f.val = e ∨ f.val = Γ.rev e ∨ f.val ∈ S := hpS f.val (by simp)
     rcases ih (hp.of_cons Γ) (fun d hd => hpS d (by simp [hd])) with
       hpS' | ⟨x, hx, q, r, rfl, hq, hr⟩
     · rcases hf with hf | hf | hf
@@ -100,7 +100,7 @@ private theorem darts_subset_or_eq_comp {S : Set Γ.E} {R : Set Γ.V}
         simp only [Path.darts_cons, List.mem_append, List.mem_singleton]
         rintro d (hd | rfl)
         exacts [hpS' d hd, hf]
-    · by_cases hfS : f.1 ∈ S
+    · by_cases hfS : f.val ∈ S
       · -- A dart of `S` extends the final segment `r`.
         refine Or.inr ⟨x, hx, q, r.cons f, rfl, hq, ?_⟩
         simp only [Path.darts_cons, List.mem_append, List.mem_singleton]
@@ -108,12 +108,12 @@ private theorem darts_subset_or_eq_comp {S : Set Γ.E} {R : Set Γ.V}
         exacts [hr d hd, hfS]
       · -- The crossing darts `e` and `rev e` cannot follow `r`.
         exfalso
-        have hf : f.1 = e ∨ f.1 = Γ.rev e := hf.imp_right fun h => h.resolve_right hfS
+        have hf : f.val = e ∨ f.val = Γ.rev e := hf.imp_right fun h => h.resolve_right hfS
         have hside := Path.mem_iff_mem_of_forall_mem_darts _ hS hR r hr
-        rw [← f.2.1] at hside
+        rw [← f.property.1] at hside
         -- The darts `x` and `f` both cross between `R` and its complement, in opposite
         -- directions, so `f` reverses `x`.
-        have hfx : f.1 = Γ.rev x := by
+        have hfx : f.val = Γ.rev x := by
           rcases hx with rfl | rfl <;> rcases hf with hf | hf
           · rw [hf] at hside
             exact absurd (hside.mpr he) he'
@@ -121,7 +121,7 @@ private theorem darts_subset_or_eq_comp {S : Set Γ.E} {R : Set Γ.V}
           · rw [hf, rev_rev]
           · rw [hf, src_rev, tgt_rev] at hside
             exact absurd (hside.mp he) he'
-        have hb : b = Γ.tgt x := by rw [← f.2.1, hfx, src_rev]
+        have hb : b = Γ.tgt x := by rw [← f.property.1, hfx, src_rev]
         subst hb
         obtain rfl := hSa _ r ((hp.of_cons Γ).of_comp_right Γ) hr
         exact ((Path.isReduced_cons_cons Γ q (Γ.dart x) f).mp hp).2 (by rw [dart_val]; exact hfx)
@@ -283,7 +283,7 @@ theorem homotopic_path_comp_path (a b c : Γ.V) :
 tree path to the target of `f` is the tree path to its source followed by `f`, or the tree path
 to the source of `f` is the tree path to its target followed by the reverse of `f`. -/
 theorem path_eq_cons_or_path_eq_cons_reverse (c : Γ.V) {a b : Γ.V} (f : Quiver.Hom a b)
-    (hf : f.1 ∈ T.darts) :
+    (hf : f.val ∈ T.darts) :
     T.path c b = (T.path c a).cons f ∨ T.path c a = (T.path c b).cons (Quiver.reverse f) := by
   have hmem : ∀ e ∈ Path.darts Γ (T.path c a), e ∈ T.darts := fun _ => T.mem_of_mem_darts_path
   by_cases h : Path.IsReduced Γ ((T.path c a).cons f)
@@ -297,9 +297,9 @@ theorem path_eq_cons_or_path_eq_cons_reverse (c : Γ.V) {a b : Γ.V} (f : Quiver
   cases p with
   | nil => exact absurd (Path.isReduced_toPath Γ f) h
   | @cons d _ r g =>
-    have hfg : f.1 = Γ.rev g.1 :=
+    have hfg : f.val = Γ.rev g.val :=
       of_not_not fun hne => h ((Path.isReduced_cons_cons Γ r g f).mpr ⟨hred, hne⟩)
-    obtain rfl : b = d := f.2.2.symm.trans (by rw [hfg, tgt_rev, g.2.1])
+    obtain rfl : b = d := f.property.2.symm.trans (by rw [hfg, tgt_rev, g.property.1])
     rw [T.eq_path (hred.of_cons Γ) fun e he => hmem e (by simp [he])]
     exact congrArg _ (Subtype.ext (by rw [reverse_val, hfg, rev_rev]))
 
@@ -362,8 +362,8 @@ variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
 
 /-- A spanning tree whose darts lie in a subgraph is a spanning tree of that subgraph. -/
 def restrict (hTS : T.darts ⊆ S) : (Γ.restrict S hS).SpanningTree where
-  darts := {e | e.1 ∈ T.darts}
-  rev_mem e he := T.rev_mem e.1 he
+  darts := {e | e.val ∈ T.darts}
+  rev_mem e he := T.rev_mem e.val he
   isTree := by
     refine (isTree_iff _).mpr ⟨(connected_iff _).mpr ⟨((connected_iff _).mp T.isTree.connected).1,
       (preconnected_restrict_iff _ _ _).mpr fun a b => ?_⟩,
@@ -371,7 +371,7 @@ def restrict (hTS : T.darts ⊆ S) : (Γ.restrict S hS).SpanningTree where
     · obtain ⟨p, hp⟩ := Γ.exists_restrict_path S hS (T.path a b)
         fun e he => hTS (T.mem_of_mem_darts_path he)
       have hmem (e : (Γ.restrict S hS).E) (he : e ∈ Path.darts (Γ.restrict S hS) p) :
-          e.1 ∈ Path.darts Γ ((Γ.restrictInclusion S hS).toPrefunctor.mapPath p) := by
+          e.val ∈ Path.darts Γ ((Γ.restrictInclusion S hS).toPrefunctor.mapPath p) := by
         rw [Hom.darts_mapPath]
         exact List.mem_map.mpr ⟨e, he, rfl⟩
       exact ⟨p, fun e he => T.mem_of_mem_darts_path (a := a) (b := b) (hp ▸ hmem e he)⟩
@@ -385,7 +385,7 @@ def restrict (hTS : T.darts ⊆ S) : (Γ.restrict S hS).SpanningTree where
         Quiver.Path.length_nil]
 
 @[simp] theorem mem_restrict_darts (hTS : T.darts ⊆ S) {e : (Γ.restrict S hS).E} :
-    e ∈ (T.restrict S hS hTS).darts ↔ e.1 ∈ T.darts := Iff.rfl
+    e ∈ (T.restrict S hS hTS).darts ↔ e.val ∈ T.darts := Iff.rfl
 
 /-- The inclusion of a subgraph containing a spanning tree sends the tree paths of the restricted
 tree to the tree paths of the tree. -/
@@ -401,14 +401,14 @@ end Restrict
 /-- Two dart weights that agree on the darts of a spanning tree agree along every tree path. -/
 theorem weight_path_congr {M : Type*} [Monoid M] {wt wt' : Γ.E → M}
     (hwt : ∀ e ∈ T.darts, wt e = wt' e) (a b : Γ.V) :
-    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) =
-      (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt' e.1) :=
+    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) =
+      (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt' e.val) :=
   Path.weight_congr Γ _ fun _ he => hwt _ (T.mem_of_mem_darts_path he)
 
 /-- A dart weight that is trivial on the darts of a spanning tree is trivial along every tree
 path. -/
 theorem weight_path_eq_one {M : Type*} [Monoid M] {wt : Γ.E → M} (hwt : ∀ e ∈ T.darts, wt e = 1)
-    (a b : Γ.V) : (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) = 1 :=
+    (a b : Γ.V) : (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) = 1 :=
   Path.weight_eq_one Γ _ fun _ he => hwt _ (T.mem_of_mem_darts_path he)
 
 /-- For a dart weight compatible with reversal on the darts of a spanning tree, the weights of the
@@ -416,9 +416,9 @@ tree paths from `a` to `b` and from `b` to `c` multiply to the weight of the tre
 `c`. -/
 theorem weight_path_mul_weight_path {G : Type*} [Group G] {wt : Γ.E → G}
     (hwt : ∀ e ∈ T.darts, wt (Γ.rev e) = (wt e)⁻¹) (a b c : Γ.V) :
-    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) *
-        (T.path b c).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) =
-      (T.path a c).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) := by
+    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) *
+        (T.path b c).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) =
+      (T.path a c).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) := by
   classical
   -- Extended by `1` off the tree, the weight is compatible with reversal on every dart.
   have hrev (e : Γ.E) : (if Γ.rev e ∈ T.darts then wt (Γ.rev e) else 1) =
@@ -438,8 +438,8 @@ from `a` to the target of `e` is the weight of the tree path from `a` to its sou
 weight of `e`. -/
 theorem weight_path_tgt {G : Type*} [Group G] {wt : Γ.E → G} (a : Γ.V) {e : Γ.E}
     (he : e ∈ T.darts) (hwt : wt (Γ.rev e) = (wt e)⁻¹) :
-    (T.path a (Γ.tgt e)).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) =
-      (T.path a (Γ.src e)).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.1) * wt e := by
+    (T.path a (Γ.tgt e)).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) =
+      (T.path a (Γ.src e)).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) * wt e := by
   rcases T.path_eq_cons_or_path_eq_cons_reverse a (Γ.dart e) (by simpa using he) with h | h
   · simp [h]
   · simp [h, hwt]

@@ -56,6 +56,8 @@ preconnected base these are all of its orientations
 
 * `TauCeti.VectorBundleOrientation.eventually_mapOrientation_eq`: an orientation is locally
   constant when read in any trivialization of the atlas.
+* `TauCeti.VectorBundleOrientation.mapOrientation_eq_of_isPreconnected`: on a preconnected part of
+  the base set of such a trivialization, it reads as a single orientation of the model fibre.
 * `TauCeti.VectorBundleOrientation.eq_or_eq_neg`: over a preconnected base, two orientations of
   a bundle are equal or opposite.
 * `TauCeti.VectorBundleOrientation.eq_trivial`: over a preconnected base, every orientation of a
@@ -298,6 +300,18 @@ theorem trivial_apply (o : Orientation ℝ F ι) (b : B) : trivial B o b = o :=
 theorem neg_trivial (o : Orientation ℝ F ι) : -trivial B o = trivial B (-o) :=
   ext fun _ ↦ (rfl)
 
+variable (B) in
+/-- The trivialization of the trivial bundle `B × F` reads every orientation of a fibre as the same
+orientation of `F`. -/
+@[simp]
+theorem _root_.Bundle.Trivial.mapOrientation_trivialization {b : B}
+    (hb : b ∈ (Bundle.Trivial.trivialization B F).baseSet) (o : Orientation ℝ F ι) :
+    (Bundle.Trivial.trivialization B F).mapOrientation ι hb o = o := by
+  have h : (Bundle.Trivial.trivialization B F).linearEquivAt ℝ b hb = LinearEquiv.refl ℝ F := by
+    ext v
+    simp [Trivialization.linearEquivAt_apply]
+  rw [Trivialization.mapOrientation_apply, h, Orientation.map_refl, Equiv.refl_apply]
+
 section Pullback
 
 variable {B' : Type*} [TopologicalSpace B'] (f : C(B', B))
@@ -410,6 +424,21 @@ theorem eventually_mapOrientation_eq (hι : Fintype.card ι = finrank ℝ F)
     ∀ᶠ x in 𝓝 b, ∀ hx : x ∈ e.baseSet, e.mapOrientation ι hx (o x) = e.mapOrientation ι hb (o b) :=
   (trivializationAt F E b).eventually_mapOrientation_eq_of_eventually hι e
     (FiberBundle.mem_baseSet_trivializationAt' b) hb (o.eventually_mapOrientation_eq' b)
+
+/-- On a preconnected subset of the base set of a trivialization of the atlas, an orientation reads
+as a single orientation of the model fibre. -/
+theorem mapOrientation_eq_of_isPreconnected (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) (e : Trivialization F (π F E)) [MemTrivializationAtlas e]
+    {s : Set B} (hs : IsPreconnected s) (hse : s ⊆ e.baseSet) {x y : B} (hx : x ∈ s)
+    (hy : y ∈ s) :
+    e.mapOrientation ι (hse hx) (o x) = e.mapOrientation ι (hse hy) (o y) := by
+  have := Subtype.preconnectedSpace hs
+  -- Read on the subtype `s`, the orientation is locally constant.
+  have hlc : IsLocallyConstant fun z : s ↦ e.mapOrientation ι (hse z.property) (o z) :=
+    (IsLocallyConstant.iff_eventually_eq _).2 fun z ↦
+      ((continuous_subtypeVal.tendsto z).eventually
+        (o.eventually_mapOrientation_eq hι e (hse z.property))).mono fun w hw ↦ hw (hse w.property)
+  exact hlc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
 
 /-- An orientation of the bundle from fibre orientations that are locally constant near each
 point `b` when read in some trivialization `e b` of the atlas whose base set contains `b`. -/

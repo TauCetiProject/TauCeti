@@ -116,9 +116,9 @@ def circleTimesSphere (r : Fin 3) : HeegaardRegionSystem 1 (Fin 2) (Fin 3) Unit 
   alpha _ := 0
   beta _ := 0
   alphaNext := Equiv.swap 0 1
-  alphaNext_isCycleOn := isCycleOn_swap_fin_two_fiber _
+  alphaNext_isCycleOn := isCycleOn_swap_fiber (by decide) _
   betaNext := Equiv.swap 0 1
-  betaNext_isCycleOn := isCycleOn_swap_fin_two_fiber _
+  betaNext_isCycleOn := isCycleOn_swap_fiber (by decide) _
   alphaLeft := ![1, 0]
   alphaRight := ![0, 2]
   betaLeft := ![0, 2]
@@ -126,6 +126,7 @@ def circleTimesSphere (r : Fin 3) : HeegaardRegionSystem 1 (Fin 2) (Fin 3) Unit 
   regionNonempty := inferInstance
   crossingCompatible := by
     intro p
+    rw [isCrossingCompatible_iff]
     fin_cases p
     · left
       simp
@@ -470,6 +471,12 @@ theorem coe_relativeGrading_circleTimesSphere_one :
 theorem circleTimesSphereGenerator_snd_zero (r : Fin 3) (x : (circleTimesSphere r).Generator) :
     circleTimesSphereGenerator r (x.2 0) = x :=
   HeegaardIntersectionSystem.point_injective _ (funext fun i => by simp [Subsingleton.elim i 0])
+
+/-- The generators of `circleTimesSphere r` are exactly `p₀` and `p₁`. -/
+theorem circleTimesSphereGenerator_bijective (r : Fin 3) :
+    Function.Bijective (circleTimesSphereGenerator r) :=
+  ⟨fun a b h => by simpa using congrFun (congrArg (circleTimesSphere r).point h) 0,
+    fun x => ⟨_, circleTimesSphereGenerator_snd_zero r x⟩⟩
 
 /-- With the basepoint in the annulus, the domains counted by the hat differential from `p₀` to
 `p₁` are the two bigons. -/
