@@ -119,32 +119,16 @@ variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
   [Module.Finite K L]
 
-/-! ### The Herbrand function of the integer ring -/
-
-/-- The Herbrand function of the action of `Gal(L/K)` on `𝒪[L]`, as a self-map of `[-1, ∞)`. -/
-private def herbrandFun (u : RamificationIndexDomain) : RamificationIndexDomain :=
-  ⟨TauCeti.IsLocalRing.herbrandFun (L ≃ₐ[K] L) 𝒪[L] u,
-    (TauCeti.IsLocalRing.neg_one_le_herbrandFun_iff _ _).2 u.property⟩
-
-private theorem herbrandFun_strictMono : StrictMono (herbrandFun K L) :=
-  fun _ _ h ↦ Subtype.mk_lt_mk.2 (TauCeti.IsLocalRing.herbrandFun_strictMono _ _ h)
-
-private theorem herbrandFun_surjective : Function.Surjective (herbrandFun K L) := fun y ↦ by
-  obtain ⟨u, hu⟩ := TauCeti.IsLocalRing.herbrandFun_surjective (L ≃ₐ[K] L) 𝒪[L] y
-  have hu₁ : u ∈ RamificationIndexDomain := by
-    rw [mem_Ici, ← TauCeti.IsLocalRing.neg_one_le_herbrandFun_iff (L ≃ₐ[K] L) 𝒪[L], hu]
-    exact y.property
-  exact ⟨⟨u, hu₁⟩, Subtype.ext hu⟩
-
 /-! ### The Herbrand function and its inverse -/
 
 /-- The **Herbrand function** `φ_{L/K}(u) = ∫_0^u dt / [G_0 : G_t]` of a finite Galois extension
 of local fields, as an order automorphism of `[-1, ∞)`. Its inverse is the inverse Herbrand function
-`ψ_{L/K}`. The integral formula is `coe_herbrand`. The construction does not use `IsGalois`;
-the hypothesis restricts the Herbrand function to the Galois case, where it is meaningful. -/
+`ψ_{L/K}`. It is the order automorphism `TauCeti.IsLocalRing.herbrandIciOrderIso` of the action
+of `Gal(L/K)` on `𝒪[L]`. The integral formula is `coe_herbrand`. The construction does not use
+`IsGalois`; the hypothesis restricts the Herbrand function to the Galois case, where it is
+meaningful. -/
 def herbrandOrderIso [_hGal : IsGalois K L] : RamificationIndexDomain ≃o RamificationIndexDomain :=
-  StrictMono.orderIsoOfSurjective (herbrandFun K L) (herbrandFun_strictMono K L)
-    (herbrandFun_surjective K L)
+  TauCeti.IsLocalRing.herbrandIciOrderIso (L ≃ₐ[K] L) 𝒪[L]
 
 variable [IsGalois K L]
 
@@ -169,10 +153,8 @@ theorem herbrandOrderIso_symm_apply (v : RamificationIndexDomain) :
 /-- The Herbrand function of `L/K` is the Herbrand function of the action of `Gal(L/K)` on the
 integer ring `𝒪[L]`. -/
 theorem coe_herbrand_eq_herbrandFun (u : RamificationIndexDomain) :
-    (herbrand K L u : ℝ) = TauCeti.IsLocalRing.herbrandFun (L ≃ₐ[K] L) 𝒪[L] u := by
-  rw [← herbrandOrderIso_apply, herbrandOrderIso, StrictMono.coe_orderIsoOfSurjective]
-  -- The private `herbrandFun K L` is the general function with its value packed in `[-1, ∞)`.
-  rfl
+    (herbrand K L u : ℝ) = TauCeti.IsLocalRing.herbrandFun (L ≃ₐ[K] L) 𝒪[L] u :=
+  TauCeti.IsLocalRing.coe_herbrandIciOrderIso_apply _ _ u
 
 /-- The integral formula for the Herbrand function:
 `φ_{L/K}(u) = ∫_0^u #G_t / #G_0 dt`. For `t > -1` the group `G_t` is a subgroup of `G_0` and
@@ -193,9 +175,8 @@ theorem herbrand_inverseHerbrand (v : RamificationIndexDomain) :
 /-- The inverse Herbrand function of `L/K` is the inverse Herbrand function of the action of
 `Gal(L/K)` on the integer ring `𝒪[L]`. -/
 theorem coe_inverseHerbrand_eq_inverseHerbrandFun (v : RamificationIndexDomain) :
-    (inverseHerbrand K L v : ℝ) = TauCeti.IsLocalRing.inverseHerbrandFun (L ≃ₐ[K] L) 𝒪[L] v := by
-  conv_rhs => rw [← herbrand_inverseHerbrand K L v]
-  rw [coe_herbrand_eq_herbrandFun, TauCeti.IsLocalRing.inverseHerbrandFun_herbrandFun]
+    (inverseHerbrand K L v : ℝ) = TauCeti.IsLocalRing.inverseHerbrandFun (L ≃ₐ[K] L) 𝒪[L] v :=
+  TauCeti.IsLocalRing.coe_herbrandIciOrderIso_symm_apply _ _ v
 
 /-- The inverse Herbrand function undoes the Herbrand function: `ψ(φ(u)) = u`. -/
 @[simp]
@@ -258,23 +239,9 @@ theorem herbrand_eq_self_of_forall_eq {u : RamificationIndexDomain}
     (h : ∀ t : ℝ, 0 < t → t ≤ u →
       lowerRamificationGroupReal K L t = lowerRamificationGroup K L 0) :
     herbrand K L u = u := by
-  by_cases hu : (u : ℝ) ≤ 0
-  · exact herbrand_of_coe_le_zero K L hu
-  replace hu : 0 ≤ (u : ℝ) := le_of_not_ge hu
-  apply Subtype.ext
-  rw [coe_herbrand]
-  have hcard : (Nat.card (lowerRamificationGroup K L 0) : ℝ) ≠ 0 := by
-    exact_mod_cast Nat.card_pos.ne'
-  have hfun : (∫ t in (0 : ℝ)..u,
-      (Nat.card (lowerRamificationGroupReal K L t) : ℝ) /
-        Nat.card (lowerRamificationGroup K L 0)) = ∫ _ in (0 : ℝ)..u, (1 : ℝ) := by
-    apply intervalIntegral.integral_congr_ae
-    exact Filter.Eventually.of_forall fun t ht ↦ by
-      obtain ⟨ht0, htu⟩ := Set.uIoc_of_le hu ▸ ht
-      rw [h t ht0 htu]
-      exact div_self hcard
-  rw [hfun]
-  simp
+  simp only [lowerRamificationGroupReal_eq_ramificationGroupReal, lowerRamificationGroup_def] at h
+  exact Subtype.ext ((coe_herbrand_eq_herbrandFun K L u).trans
+    (TauCeti.IsLocalRing.herbrandFun_eq_self_of_forall_eq _ _ u.property h))
 
 /-- The inverse Herbrand function is the identity on `[-1, 0]`. -/
 @[simp]

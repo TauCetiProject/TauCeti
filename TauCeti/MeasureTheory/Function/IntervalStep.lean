@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
@@ -19,6 +20,10 @@ import Mathlib.MeasureTheory.Integral.Bochner.Set
 Sampling a continuous function at the left nodes of a sufficiently fine uniform subdivision
 approximates it uniformly on a compact interval. Together with the density of continuous functions
 in `L¹`, this gives approximation of an integrable function by interval step functions.
+
+A step function of the integer ceiling, `t ↦ g ⌈t⌉` for an arbitrary `g : ℤ → E`, is bounded on
+every bounded interval, so it is interval integrable between any two points
+(`intervalIntegrable_comp_ceil`).
 -/
 
 public section
@@ -56,6 +61,19 @@ theorem integrableOn_intervalStep (a b δ : ℝ) (g : ℝ → E) :
   apply volume.integrableOn_of_bounded measure_Ioc_lt_top.ne hm.aestronglyMeasurable
   exact (ae_restrict_mem measurableSet_Ioc).mono fun t ht ↦
     hC _ (mem_image_of_mem _ ⟨ht.1.le, ht.2⟩)
+
+variable [NormedAddCommGroup E] in
+/-- A step function `t ↦ g ⌈t⌉` of the integer ceiling, for an arbitrary `g : ℤ → E`, is interval
+integrable between any two points: on a bounded interval it takes only finitely many values. -/
+theorem intervalIntegrable_comp_ceil (g : ℤ → E) (a b : ℝ) :
+    IntervalIntegrable (fun t ↦ g ⌈t⌉) volume a b := by
+  rw [intervalIntegrable_iff, uIoc]
+  refine IntegrableOn.of_bound measure_Ioc_lt_top
+    ((StronglyMeasurable.of_discrete.comp_measurable Int.measurable_ceil).aestronglyMeasurable)
+    (∑ i ∈ Finset.Icc ⌈min a b⌉ ⌈max a b⌉, ‖g i‖)
+    (ae_restrict_of_forall_mem measurableSet_Ioc fun t ht ↦ ?_)
+  exact Finset.single_le_sum (f := fun i ↦ ‖g i‖) (fun i _ ↦ norm_nonneg _)
+    (Finset.mem_Icc.2 ⟨Int.ceil_mono ht.1.le, Int.ceil_mono ht.2⟩)
 
 private theorem sample_bounds {a δ t : ℝ} (hδ : 0 < δ) (hat : a ≤ t) :
     a ≤ a + (⌊(t - a) / δ⌋₊ : ℝ) * δ ∧
