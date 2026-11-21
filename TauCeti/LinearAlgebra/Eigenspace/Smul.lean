@@ -14,7 +14,8 @@ import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 # Eigenspaces of a scalar multiple
 
 Scaling an endomorphism `f` by a nonzero scalar `c` scales its eigenvalues by `c` and leaves the
-eigenspaces unchanged: the `c μ`-eigenspace of `c • f` is the `μ`-eigenspace of `f`. For example,
+eigenspaces unchanged: the `c μ`-eigenspace of `c • f` is the `μ`-eigenspace of `f`, and likewise
+for the generalized eigenspaces of every order (`Module.End.genEigenspace_smul`). For example,
 the eigenspaces of the acceleration operator `(κ / m) • H` of a spring system are those of its
 force matrix `H`.
 
@@ -38,12 +39,21 @@ namespace Module.End
 variable {R M : Type*} [CommRing R] [IsDomain R] [AddCommGroup M] [Module R M]
   [Module.IsTorsionFree R M]
 
+/-- The generalized `c μ`-eigenspace of `c • f` is the generalized `μ`-eigenspace of `f`, for
+`c ≠ 0`. -/
+theorem genEigenspace_smul (f : End R M) {c : R} (hc : c ≠ 0) (μ : R) (k : ℕ∞) :
+    (c • f).genEigenspace (c * μ) k = f.genEigenspace μ k := by
+  refine le_antisymm (fun x hx ↦ ?_) (genEigenspace_le_smul f μ c k)
+  obtain ⟨l, hlk, hl⟩ := mem_genEigenspace.1 hx
+  -- `(c • f - (c * μ) • 1) ^ l = c ^ l • (f - μ • 1) ^ l`, and `c ^ l` is not a zero divisor.
+  rw [LinearMap.mem_ker, mul_smul, ← smul_sub, smul_pow, LinearMap.smul_apply,
+    smul_eq_zero_iff_right (pow_ne_zero l hc)] at hl
+  exact mem_genEigenspace.2 ⟨l, hlk, LinearMap.mem_ker.2 hl⟩
+
 /-- The `c μ`-eigenspace of `c • f` is the `μ`-eigenspace of `f`, for `c ≠ 0`. -/
 theorem eigenspace_smul (f : End R M) {c : R} (hc : c ≠ 0) (μ : R) :
-    eigenspace (c • f) (c * μ) = eigenspace f μ := by
-  ext x
-  rw [mem_eigenspace_iff, mem_eigenspace_iff, LinearMap.smul_apply, mul_smul,
-    smul_right_inj hc]
+    eigenspace (c • f) (c * μ) = eigenspace f μ :=
+  genEigenspace_smul f hc μ 1
 
 /-- For `c ≠ 0`, `c • f` has the eigenvalue `c * μ` exactly when `f` has the eigenvalue `μ`. -/
 theorem hasEigenvalue_smul_iff (f : End R M) {c : R} (hc : c ≠ 0) (μ : R) :
