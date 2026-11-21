@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 import Mathlib.Tactic.Abel
 
@@ -185,15 +185,3 @@ theorem comp_upperTriangularBlockParametrix_sub_one
 end Ring
 
 end ContinuousLinearMap
-
-namespace TauCeti
-
-/-- The upper-triangular block operator with identity diagonal blocks and zero off-diagonal block
-is the identity on `E₁ × E₂`. -/
-theorem upperTriangularBlock_id {R E₁ E₂ : Type*} [Semiring R]
-    [TopologicalSpace E₁] [AddCommMonoid E₁] [Module R E₁] [ContinuousAdd E₁]
-    [TopologicalSpace E₂] [AddCommMonoid E₂] [Module R E₂] :
-    ContinuousLinearMap.upperTriangularBlock (.id R E₁) 0 (.id R E₂) = .id R (E₁ × E₂) := by
-  apply ContinuousLinearMap.ext; rintro ⟨x₁, x₂⟩; ext <;> simp
-
-end TauCeti

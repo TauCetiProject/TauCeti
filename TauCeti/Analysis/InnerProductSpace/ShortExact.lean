@@ -18,11 +18,12 @@ algebraic surjectivity to canonical continuous linear one-sided inverses:
 
 * `ContinuousLinearMap.orthogonalLeftInverse`: for an injective bounded map `f : E →L[𝕜] H` from a
   Banach space into a Hilbert space with closed range, the composite
-  `(f.equivRange _ _)⁻¹ ∘ P_{im f}` is a continuous linear left inverse of `f` with kernel
-  `(range f)ᗮ`.
+  `(f.equivRange _ _)⁻¹ ∘ P_{im f}` is the unique continuous linear left inverse of `f` vanishing
+  on `(range f)ᗮ` (`ContinuousLinearMap.eq_orthogonalLeftInverse`).
 * `ContinuousLinearMap.orthogonalRightInverse`: for a surjective bounded map `g : H →L[𝕜] F` from a
-  Hilbert space onto a Banach space, inverting the bijection `g|_{(ker g)ᗮ} : (ker g)ᗮ → F` gives a
-  continuous linear right inverse of `g` with range `(ker g)ᗮ`.
+  Hilbert space onto a Banach space, inverting the bijection `g|_{(ker g)ᗮ} : (ker g)ᗮ → F` gives
+  the unique continuous linear right inverse of `g` with range in `(ker g)ᗮ`
+  (`ContinuousLinearMap.eq_orthogonalRightInverse`).
 
 Combined with `Function.Exact.isClosed_range`, every algebraically short exact sequence
 `0 → E₁ --f--> H₂ --g--> E₃ → 0` of bounded linear maps with `E₁, E₃` Banach spaces and `H₂` a
@@ -109,6 +110,20 @@ onto `range f`. -/
 @[simp] theorem range_orthogonalLeftInverse : (f.orthogonalLeftInverse hf hclo).range = ⊤ :=
   LinearMap.range_eq_top.2 (f.leftInverse_orthogonalLeftInverse hf hclo).surjective
 
+/-- **Uniqueness of `orthogonalLeftInverse`.** Any continuous linear left inverse of `f` that
+vanishes on `(range f)ᗮ` equals `f.orthogonalLeftInverse hf hclo`. -/
+theorem eq_orthogonalLeftInverse {L : H →L[𝕜] E}
+    (hL : L ∘L f = ContinuousLinearMap.id 𝕜 E) (hker : f.rangeᗮ ≤ L.ker) :
+    L = f.orthogonalLeftInverse hf hclo := by
+  have : CompleteSpace f.range := hclo.completeSpace_coe
+  ext y
+  have hsub : y - f (f.orthogonalLeftInverse hf hclo y) ∈ f.rangeᗮ := by
+    rw [← comp_apply f, f.self_comp_orthogonalLeftInverse hf hclo]
+    exact f.range.sub_starProjection_mem_orthogonal y
+  have h0 := hker hsub
+  rw [LinearMap.mem_ker, coe_coe, map_sub, sub_eq_zero, ← comp_apply L f, hL, id_apply] at h0
+  exact h0
+
 end LeftInverse
 
 /-- An injective continuous linear map from a Banach space into a Hilbert space with closed range
@@ -181,6 +196,20 @@ theorem rightInverse_orthogonalRightInverse :
     ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
     LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _),
     Submodule.toLinearMap_subtypeL, Submodule.range_subtype]
+
+/-- **Uniqueness of `orthogonalRightInverse`.** Any continuous linear right inverse of `g` whose
+range is contained in `(ker g)ᗮ` equals `g.orthogonalRightInverse hg`. -/
+theorem eq_orthogonalRightInverse {R : F →L[𝕜] H}
+    (hR : g ∘L R = ContinuousLinearMap.id 𝕜 F) (hrange : R.range ≤ g.kerᗮ) :
+    R = g.orthogonalRightInverse hg := by
+  ext y
+  have hmem_orth : R y - g.orthogonalRightInverse hg y ∈ g.kerᗮ :=
+    g.kerᗮ.sub_mem (hrange ⟨y, rfl⟩)
+      ((g.range_orthogonalRightInverse hg).le ⟨y, rfl⟩)
+  have hmem_ker : R y - g.orthogonalRightInverse hg y ∈ g.ker := by
+    rw [LinearMap.mem_ker, coe_coe, map_sub, ← comp_apply g R, hR, id_apply,
+      g.apply_orthogonalRightInverse hg, sub_self]
+  exact sub_eq_zero.mp (Submodule.disjoint_def.mp g.ker.orthogonal_disjoint _ hmem_ker hmem_orth)
 
 end RightInverse
 
