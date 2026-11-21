@@ -196,6 +196,25 @@ theorem coe_binaryDihedralRotation_eq_toComplexMatrix :
   ext i j
   fin_cases i <;> fin_cases j <;> simp [hexp, hexp']
 
+/-- In quaternion coordinates the inverse of the rotation generator is `cos (π/n) - sin (π/n) i`. -/
+theorem coe_binaryDihedralRotation_inv_eq_toComplexMatrix :
+    (((binaryDihedralRotation n)⁻¹ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) =
+      Quaternion.toComplexMatrix ⟨Real.cos (π / n), -Real.sin (π / n), 0, 0⟩ := by
+  rw [← Matrix.star_eq_inv, Matrix.specialUnitaryGroup.coe_star,
+    coe_binaryDihedralRotation_eq_toComplexMatrix, ← map_star]
+  congr 1
+  ext <;> simp
+
+/-- Squaring the rotation generator at level `2n` gives the rotation generator at level `n`. -/
+theorem binaryDihedralRotation_two_mul_sq :
+    binaryDihedralRotation (2 * n) ^ 2 = binaryDihedralRotation n := by
+  have hn : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
+  apply Subtype.ext
+  rw [SubmonoidClass.coe_pow, coe_binaryDihedralRotation, coe_binaryDihedralRotation,
+    Matrix.diagonal_pow, Matrix.diagonal_eq_diagonal_iff]
+  intro i
+  fin_cases i <;> simp [← Complex.exp_natCast_mul] <;> congr 1 <;> field_simp
+
 /-- The rotations of the binary dihedral group are the powers of the rotation generator. -/
 theorem binaryDihedralHom_a_eq_pow (i : ZMod (2 * n)) :
     binaryDihedralHom n (a i) = binaryDihedralRotation n ^ i.val := by

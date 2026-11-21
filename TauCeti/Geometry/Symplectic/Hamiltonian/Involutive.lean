@@ -41,7 +41,9 @@ parametrization satisfying the hypotheses described below:
 * at a regular point of `F` (the differentials `dF_i` are independent) the `X_{F_i}(x)` are
   linearly independent, so `k` independent Poisson-commuting functions on a `2n`-dimensional
   manifold satisfy `k ≤ n`
-  (`TauCeti.SmoothTwoForm.IsNondegenerate.two_mul_card_le_finrank`);
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.two_mul_card_le_finrank`), and when `k < n` the kernel
+  `ker dF_x` contains a vector outside the span of the `X_{F_i}(x)`
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_mem_ker_mfderiv_notMem_span`);
 * the kernel is then Lagrangian exactly when `k = n`, and in that case the Hamiltonian vectors
   span `ker dF_x`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangian_ker_mfderiv_iff` and
@@ -229,6 +231,25 @@ theorem two_mul_card_le_finrank (hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F
     2 * Fintype.card ι ≤ finrank ℝ E := by
   have := hσ.two_mul_mfderivRank_le hcomm
   rwa [isRegularPoint_iff_mfderivRank_eq.1 hreg, Module.finrank_fintype_fun_eq_card] at this
+
+/-- **Room for one more commuting function.** If `k` functions Poisson-commute at a regular point
+`x` of `F = (F₁, …, F_k)` on a manifold of dimension greater than `2k`, then `ker dF_x` contains a
+vector outside the span of the Hamiltonian vectors `X_{F_i}(x)`: that span has dimension `k`,
+while `ker dF_x` has dimension `dim M - k`. -/
+theorem exists_mem_ker_mfderiv_notMem_span (hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x)
+    (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0)
+    (hk : 2 * Fintype.card ι < finrank ℝ E) :
+    ∃ w ∈ (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker,
+      w ∉ Submodule.span ℝ (Set.range fun i ↦ σ.hamiltonianVectorField (F · i) x) := by
+  have hSK : Submodule.span ℝ (Set.range fun i ↦ σ.hamiltonianVectorField (F · i) x) ≤
+      (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker :=
+    Submodule.span_le.2 <| Set.range_subset_iff.2 fun j ↦
+      (hamiltonianVectorField_mem_ker_mfderiv_iff hreg.mdifferentiableAt j).2 fun i ↦ hcomm i j
+  refine IsConcreteLE.exists_of_lt (Submodule.lt_of_le_of_finrank_lt_finrank hSK ?_)
+  have h1 := hreg.finrank_ker_mfderiv_add_finrank
+  rw [finrank_fintype_fun_eq_card] at h1
+  rw [hσ.finrank_span_hamiltonianVectorField hreg]
+  omega
 
 /-- **The Lagrangian criterion for `ker dF_x`.** At a regular point of `F`
 at which the `F_i` Poisson-commute, the kernel of `dF_x` is Lagrangian exactly when there are

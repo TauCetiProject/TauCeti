@@ -133,7 +133,6 @@ private theorem differentExponent_le_of_ord_nonneg (P : Place F W.FunctionField)
         (mul_mem (hc _) hxi)) (hc _))
     (adjoin_genericY_eq_top W (RatFunc F))
     (by simp only [map_add, map_mul, map_pow, hX, hC]; linear_combination heq)
-    (by rw [hu]; exact invariantDifferentialDenom_ne_zero W)
   rw [hu] at h
   omega
 
@@ -196,7 +195,6 @@ private theorem differentExponent_le_of_ord_neg (P : Place F W.FunctionField)
       simp only [map_add, map_mul, map_pow, map_inv₀, hX, hC]
       field_simp
       linear_combination heq)
-    (by rw [hu]; exact mul_ne_zero (invariantDifferentialDenom_ne_zero W) hx2)
   rw [hu, P.ord_mul (invariantDifferentialDenom_ne_zero W) hx2, P.ord_inv, P.ord_pow] at h
   push_cast at h
   omega
@@ -255,7 +253,7 @@ theorem weilDifferentialDivisor_invariantDifferential :
     weilDifferentialDivisor W.isFunctionField (isIntegrallyClosedIn_functionField W)
         (kaehlerDifferentialEquivWeilDifferentialOfSeparating W.isFunctionField
           (isIntegrallyClosedIn_functionField W) (transcendental_genericX W)
-          (invariantDifferential W)).2
+          (invariantDifferential W)).property
         (kaehlerDifferentialEquivWeilDifferentialOfSeparating_invariantDifferential_ne_zero W) =
       0 := by
   let _ := weilDifferentialSpaceModule W.isFunctionField
@@ -266,7 +264,7 @@ theorem weilDifferentialDivisor_invariantDifferential :
   let z : W.FunctionFieldˣ := Units.mk0 (invariantDifferentialDenom W)⁻¹
     (inv_ne_zero (invariantDifferentialDenom_ne_zero W))
   have hD := weilDifferentialDivisor_repartitionDualMul hF hex
-    (weilDifferentialOfSeparating hF hx).2
+    (weilDifferentialOfSeparating hF hx).property
     (by simpa using weilDifferentialOfSeparating_ne_zero hF hx) z
   rw [weilDifferentialDivisor_weilDifferentialOfSeparating] at hD
   have hω : ((kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx

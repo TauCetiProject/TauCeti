@@ -109,11 +109,11 @@ variable (c) in
 /-- The interior vertices other than `c` through which a chain of paths passes. -/
 private def toCube {d : ℕ} (x : ComposableArrows (Path i j) d) :
     ComposableArrows (Set (S i j c)) d :=
-  Monotone.functor (f := fun t ↦ {k : S i j c | k.1 ∈ (x.obj t).I})
+  Monotone.functor (f := fun t ↦ {k : S i j c | k.val ∈ (x.obj t).I})
     fun _ _ h _ hk ↦ monotone_chain x h hk
 
 private lemma mem_toCube_obj {d : ℕ} (x : ComposableArrows (Path i j) d) (t : Fin (d + 1))
-    (k : S i j c) : k ∈ (toCube c x).obj t ↔ k.1 ∈ (x.obj t).I :=
+    (k : S i j c) : k ∈ (toCube c x).obj t ↔ k.val ∈ (x.obj t).I :=
   Iff.rfl
 
 open scoped Classical in
@@ -210,11 +210,11 @@ private noncomputable def objEquiv (d : ℕ) :
     · rw [mem_toCube_obj, chainMk_obj, mem_pathMk_iff]
       constructor
       · rintro (h | h | ⟨_, hk⟩ | ⟨h, -⟩)
-        · exact absurd h k.2.1.ne'
-        · exact absurd h k.2.2.1.ne
+        · exact absurd h k.property.1.ne'
+        · exact absurd h k.property.2.1.ne
         · exact hk
-        · exact absurd h k.2.2.2
-      · exact fun hk ↦ Or.inr (Or.inr (Or.inl ⟨k.2, hk⟩))
+        · exact absurd h k.property.2.2
+      · exact fun hk ↦ Or.inr (Or.inr (Or.inl ⟨k.property, hk⟩))
     · have : c ∈ (pathMk hi hj (p.1.obj t) (p.2 t = 1)).I ↔ p.2 t = 1 := by
         rw [mem_pathMk_iff]
         constructor
