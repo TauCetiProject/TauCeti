@@ -811,9 +811,9 @@ set `Z ⊆ Ω` with `#Z * δ ≤ A`, and a map `v` with values in `C` on `Ω \ Z
 disc about a point of `Z` eventually carries Floer energy at least `δ`, the coordinate maps
 `φ ∘ u_{ψ n}` and their derivatives converge to `φ ∘ v` and its derivative locally uniformly on
 `Ω \ Z`, `v` is a `C¹` solution of the Floer equation for `J(z, v)` on `Ω \ Z`, and the Floer
-energy of `v` over `Ω \ Z` is finite and at most `A`. This is read off from
-`IsNondegenerate.exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset`:
-the masses at the bubbling points are at least `δ` and the energy density of `v` is nonnegative. -/
+energy of `v` over `Ω \ Z` is finite and at most `A`. See also
+`IsNondegenerate.exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset`
+for the energy masses at the bubbling points. -/
 theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
     (hω : ω.IsNondegenerate) (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞))
     {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {C : Set M}

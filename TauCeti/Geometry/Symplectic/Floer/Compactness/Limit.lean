@@ -162,8 +162,7 @@ theorem tendstoLocallyUniformlyOn_fderiv_of_floer (ω : SymplecticForm V)
 further subsequence `φ` attaches to every bubbling point `z ∈ Z` a mass `m z ≥ δ`: for every small
 `ε > 0` the Floer energy of `u_{φ n}` over the disc `B_ε(z)` converges to `m z` plus the energy of
 the limit `v` over the punctured disc, and the energy of `v` over `Ω \ Z` together with the masses
-is at most `E`. So the energy densities converge to that of `v` plus point masses at the bubbling
-points, each at least the threshold `δ`, and no energy is created in the limit. -/
+is at most `E`, so no energy is created in the limit. -/
 theorem exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset
     (ω : SymplecticForm V) {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {K : Set V}
     (hW : IsOpen W) (hKs : ContDiffOn ℝ 3 (uncurry Ks) W)
@@ -238,9 +237,9 @@ threshold `δ > 0` with the following property. Let `uₖ` be smooth solutions o
 `Z ⊆ Ω` with `#Z * δ ≤ E`, and a map `v : Ω \ Z → K` such that along `φ` every disc about a point of
 `Z` eventually carries Floer energy at least `δ`, `u_{φ n} → v` and `du_{φ n} → dv` locally
 uniformly on `Ω \ Z`, `v` is a `C¹` solution of the Floer equation on `Ω \ Z`, and the Floer energy
-of `v` over `Ω \ Z` is finite and at most `E`. This is read off from
-`SymplecticForm.exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset`:
-the masses at the bubbling points are at least `δ` and the energy density of `v` is nonnegative. -/
+of `v` over `Ω \ Z` is finite and at most `E`. See also
+`SymplecticForm.exists_pos_forall_tendsto_setIntegral_floerEnergyDensity_ball_subseq_off_finset`
+for the energy masses at the bubbling points. -/
 theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
     (ω : SymplecticForm V) {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {K : Set V}
     (hW : IsOpen W) (hKs : ContDiffOn ℝ 3 (uncurry Ks) W)

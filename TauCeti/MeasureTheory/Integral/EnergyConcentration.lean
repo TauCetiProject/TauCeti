@@ -87,9 +87,10 @@ to zero.
   concentration at a null point gives a subsequence blowing up at points converging to it.
 * `TauCeti.coe_eq_setOf_forall_exists_lt_of_concentration`: a finite set of concentration
   points off which the sequence is locally bounded is its set of blow-up points.
-* `TauCeti.exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le`: densities
-  converging locally uniformly off a finite set `Z` converge, along a subsequence, to the limit
-  density plus masses at the points of `Z`, with no energy created.
+* `TauCeti.exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le`: for densities
+  converging locally uniformly off a finite set `Z`, along a subsequence the energies of small
+  balls centred at the points of `Z` converge to the energy of the limit there plus masses, with
+  no energy created.
 * `TauCeti.le_of_tendsto_setIntegral_ball`: the mass at a concentration point of threshold `δ` is
   at least `δ`.
 * `TauCeti.eventually_tendsto_setIntegral_ball_congr`: the mass at a point only depends on the
@@ -517,9 +518,8 @@ the mass plus the energy of the limit on the punctured ball,
 
 `∫_{B_ε(z)} e (ψ n) → m z + ∫_{B_ε(z) \ {z}} f`,
 
-and the energy of the limit off `Z` and the masses together are at most `E`. In other words the
-energy measures `e n μ` converge on the balls about `Z` to `f μ` plus point masses `m z` at the
-points of `Z`, and no energy is created in the limit. -/
+and the energy of the limit off `Z` and the masses together are at most `E`, so no energy is
+created in the limit. -/
 theorem exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le
     {e : ℕ → X → ℝ} {f : X → ℝ} {Z : Finset X} (hΩ : IsOpen Ω) (hZΩ : ↑Z ⊆ Ω)
     (he : ∀ n, ∀ y ∈ Ω, 0 ≤ e n y) (hint : ∀ n, IntegrableOn (e n) Ω μ)
