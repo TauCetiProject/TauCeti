@@ -66,15 +66,28 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance] Matrix.linftyOpTopologicalSpace TauCeti.normedAlgebraRatOfReal
 attribute [local instance] NormedAlgebra.toNormedSpace
 
+omit [NormedAlgebra ℝ 𝕜] [CompleteSpace 𝕜] in
+private theorem mem_skewAdjointMatricesLieSubalgebra_iff_add (J A : Matrix n n 𝕜) :
+    A ∈ skewAdjointMatricesLieSubalgebra J ↔ Aᵀ * J + J * A = 0 := by
+  simp only [mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
+    Matrix.IsSkewAdjoint, Matrix.IsAdjointPair, mul_neg, eq_neg_iff_add_eq_zero]
+
+omit [CompleteSpace 𝕜] in
+private theorem smul_mem_skewAdjointMatricesLieSubalgebra
+    {J A : Matrix n n 𝕜} (hA : A ∈ skewAdjointMatricesLieSubalgebra J) (t : ℝ) :
+    t • A ∈ skewAdjointMatricesLieSubalgebra J := by
+  rw [← IsScalarTower.algebraMap_smul 𝕜 t A]
+  exact (skewAdjointMatricesLieSubalgebra J).smul_mem (algebraMap ℝ 𝕜 t) hA
+
 /-- The matrix exponential of an element of `skewAdjointMatricesLieSubalgebra J` preserves `J`,
 without any invertibility or symmetry assumption on `J`. -/
 theorem exp_transpose_mul_mul_exp_of_mem_skewAdjointMatricesLieSubalgebra
     (J A : Matrix n n 𝕜) (hA : A ∈ skewAdjointMatricesLieSubalgebra J) :
     (exp A)ᵀ * J * exp A = J := by
   have hsemi : SemiconjBy J A (-Aᵀ) := by
-    simp only [mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
-      Matrix.IsSkewAdjoint, Matrix.IsAdjointPair] at hA
-    rw [SemiconjBy, neg_mul, hA, mul_neg, neg_neg]
+    rw [mem_skewAdjointMatricesLieSubalgebra_iff_add] at hA
+    rw [SemiconjBy, neg_mul]
+    exact eq_neg_of_add_eq_zero_right hA
   have h := hsemi.exp_neg_mul_mul_exp_eq_self
   rw [neg_neg] at h
   have ht : exp Aᵀ = (exp A)ᵀ := Matrix.exp_transpose A
@@ -99,14 +112,11 @@ theorem forall_exp_smul_transpose_mul_mul_eq_iff_mem_skewAdjointMatricesLieSubal
       hasDerivAt_exp_smul_transpose_mul_mul_exp_smul J A (0 : ℝ)
     have h0 := hderiv.unique hconst
     simp only [zero_smul, exp_zero, one_mul, mul_one] at h0
-    simp only [mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
-      Matrix.IsSkewAdjoint, Matrix.IsAdjointPair]
-    rw [mul_neg, eq_neg_iff_add_eq_zero]
+    rw [mem_skewAdjointMatricesLieSubalgebra_iff_add]
     exact h0
   · intro hA t
-    refine exp_transpose_mul_mul_exp_of_mem_skewAdjointMatricesLieSubalgebra J (t • A) ?_
-    rw [← IsScalarTower.algebraMap_smul 𝕜 t A]
-    exact (skewAdjointMatricesLieSubalgebra J).smul_mem (algebraMap ℝ 𝕜 t) hA
+    exact exp_transpose_mul_mul_exp_of_mem_skewAdjointMatricesLieSubalgebra J (t • A)
+      (smul_mem_skewAdjointMatricesLieSubalgebra hA t)
 
 /-- When `J.det` is a non-zerodivisor in `𝕜`, the exponential of every
 `A ∈ skewAdjointMatricesLieSubalgebra J` has determinant `1`. -/
@@ -123,10 +133,8 @@ theorem det_exp_eq_one_of_mem_skewAdjointMatricesLieSubalgebra
     have hzero : ((exp ((1 / 2 : ℝ) • A)).det ^ 2 - 1) * J.det = 0 := by linear_combination hdet
     exact sub_eq_zero.mp (mem_nonZeroDivisors_iff_right.mp hJ _ hzero)
   have hdouble : exp A = exp ((1 / 2 : ℝ) • A) ^ 2 := by
-    have h := NormedSpace.exp_nsmul 2 ((1 / 2 : ℝ) • A)
-    rw [← Nat.cast_smul_eq_nsmul ℝ, Nat.cast_ofNat, smul_smul] at h
-    norm_num at h
-    exact h
+    rw [pow_two]
+    exact Matrix.exp_eq_mul_exp_half A
   rw [hdouble, Matrix.det_pow, hsq]
 
 /-- When `J.det` is a non-zerodivisor in `𝕜`, the real exponential line of `A` preserves `J` with
@@ -141,9 +149,7 @@ theorem forall_exp_smul_transpose_mul_mul_eq_and_det_eq_one_iff
     exact (forall_exp_smul_transpose_mul_mul_eq_iff_mem_skewAdjointMatricesLieSubalgebra J A).mp
       fun t ↦ (h t).1
   · intro hA t
-    have htA : t • A ∈ skewAdjointMatricesLieSubalgebra J := by
-      rw [← IsScalarTower.algebraMap_smul 𝕜 t A]
-      exact (skewAdjointMatricesLieSubalgebra J).smul_mem (algebraMap ℝ 𝕜 t) hA
+    have htA := smul_mem_skewAdjointMatricesLieSubalgebra hA t
     exact ⟨exp_transpose_mul_mul_exp_of_mem_skewAdjointMatricesLieSubalgebra J (t • A) htA,
       det_exp_eq_one_of_mem_skewAdjointMatricesLieSubalgebra hJ (t • A) htA⟩
 

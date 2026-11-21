@@ -219,6 +219,13 @@ theorem toMatrix_mulVec_eq_repr {R V M ι κ : Type*} [CommSemiring R] [AddCommM
   rw [← v.equivFun_symm_apply, ← toMatrix_mulVec_repr v b, ← v.equivFun_apply,
     LinearEquiv.apply_symm_apply]
 
+/-- `LinearMap.toMatrixAlgEquiv b f` agrees with `LinearMap.toMatrix b b f`. -/
+theorem toMatrixAlgEquiv_eq_toMatrix {R V ι : Type*} [CommSemiring R] [AddCommMonoid V]
+    [Module R V] [Fintype ι] [DecidableEq ι] (b : Module.Basis ι R V) (f : Module.End R V) :
+    toMatrixAlgEquiv b f = toMatrix b b f := by
+  ext i j
+  rw [toMatrixAlgEquiv_apply, toMatrix_apply]
+
 /-- In the coordinates of bases `v` and `b`, a linear map `φ` acts by its matrix
 `LinearMap.toMatrix v b φ`. -/
 theorem toLin'_toMatrix_comp_equivFun {R V M ι κ : Type*} [CommSemiring R] [AddCommMonoid V]

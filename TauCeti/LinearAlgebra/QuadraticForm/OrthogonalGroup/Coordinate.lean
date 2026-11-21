@@ -86,15 +86,14 @@ theorem mem_range_orthogonalToGeneralLinear_iff
     rw [coe_orthogonalToGeneralLinear, LinearMap.toMatrix'_mulVec, LinearEquiv.coe_coe]
     exact (mem_orthogonalGroup_iff.mp g.prop) x
   · intro hU
-    let e : (n → R) ≃ₗ[R] (n → R) :=
-      LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R) (matrixGeneralLinearEquiv U)
-    have he (x : n → R) : e x = (U : Matrix n n R) *ᵥ x := by
-      simp [e, matrixGeneralLinearEquiv_apply]
-    refine ⟨⟨e, mem_orthogonalGroup_iff.mpr fun x ↦ (congrArg Q (he x)).trans (hU x)⟩, ?_⟩
+    refine ⟨⟨LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
+        (matrixGeneralLinearEquiv U),
+      mem_orthogonalGroup_iff.mpr fun x ↦ by
+        rw [matrixGeneralLinearEquiv_apply, hU x]⟩, ?_⟩
     apply Units.ext
     ext i j
-    rw [orthogonalToGeneralLinear_apply, Subtype.coe_mk, he, Matrix.mulVec_single_one,
-      Matrix.col_apply]
+    rw [orthogonalToGeneralLinear_apply, Subtype.coe_mk, matrixGeneralLinearEquiv_apply,
+      Matrix.mulVec_single_one, Matrix.col_apply]
 
 /-- A general-linear matrix lies in the coordinate range of `SO(Q)` if and only if its
 matrix-vector action preserves `Q` and its determinant is one. -/
@@ -136,12 +135,10 @@ theorem mem_range_specialOrthogonalToGeneralLinear_iff_polarBilin
         (U : Matrix n n R).det = 1 := by
   rw [mem_range_specialOrthogonalToGeneralLinear_iff]
   refine and_congr_left fun _ ↦ ?_
-  let e : (n → R) ≃ₗ[R] (n → R) :=
-    LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R) (matrixGeneralLinearEquiv U)
-  have he (x : n → R) : e x = (U : Matrix n n R) *ᵥ x := by
-    simp [e, matrixGeneralLinearEquiv_apply]
-  have hQ : (∀ x : n → R, Q ((U : Matrix n n R) *ᵥ x) = Q x) ↔ e ∈ orthogonalGroup Q := by
-    simp only [mem_orthogonalGroup_iff, he]
+  have hQ : (∀ x : n → R, Q ((U : Matrix n n R) *ᵥ x) = Q x) ↔
+      LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)
+        (matrixGeneralLinearEquiv U) ∈ orthogonalGroup Q := by
+    simp only [mem_orthogonalGroup_iff, matrixGeneralLinearEquiv_apply]
   rw [hQ, mem_orthogonalGroup_iff_polar h2]
   have hcomp :
       (U : Matrix n n R)ᵀ * LinearMap.BilinForm.toMatrix' Q.polarBilin * (U : Matrix n n R) =
@@ -151,7 +148,8 @@ theorem mem_range_specialOrthogonalToGeneralLinear_iff_polarBilin
     simpa only [Matrix.transpose_transpose] using
       LinearMap.BilinForm.mul_toMatrix'_mul Q.polarBilin (U : Matrix n n R)ᵀ (U : Matrix n n R)
   rw [hcomp, LinearMap.BilinForm.toMatrix'.injective.eq_iff, LinearMap.BilinForm.ext_iff]
-  simp only [LinearMap.BilinForm.comp_apply, Matrix.toLin'_apply, he, polarBilin_apply_apply]
+  simp only [LinearMap.BilinForm.comp_apply, Matrix.toLin'_apply, matrixGeneralLinearEquiv_apply,
+    polarBilin_apply_apply]
 
 end Range
 

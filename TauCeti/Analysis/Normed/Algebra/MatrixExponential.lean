@@ -253,9 +253,11 @@ variable {m : Type*} [Fintype m] [DecidableEq m]
 
 /-- The exponential of a matrix is the square of the exponential of its half,
 `exp A = exp (A / 2) * exp (A / 2)`. -/
-theorem exp_eq_mul_exp_half {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m m 𝕜) :
+theorem exp_eq_mul_exp_half {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+    (A : Matrix m m 𝔸) :
     NormedSpace.exp A =
       NormedSpace.exp ((1 / 2 : ℝ) • A) * NormedSpace.exp ((1 / 2 : ℝ) • A) := by
+  let _ := TauCeti.normedAlgebraRatOfReal (R := 𝔸)
   conv_lhs => rw [← one_smul ℝ A, ← add_halves (1 : ℝ), add_smul]
   exact Matrix.exp_add_of_commute _ _ (((Commute.refl A).smul_left _).smul_right _)
 

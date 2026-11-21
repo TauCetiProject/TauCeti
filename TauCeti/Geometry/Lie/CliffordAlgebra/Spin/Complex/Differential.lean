@@ -7,6 +7,7 @@ module
 
 import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.UnitsDifferential
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
+import TauCeti.LinearAlgebra.Matrix.ToLin
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Complex.Projection
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Complex.Representation
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Realization
@@ -328,7 +329,8 @@ theorem lie_complexSpinSmoothMatrixComplexLieHom_ι_eq
   let φ : CliffordAlgebra Q →ₐ[ℂ] Matrix κ κ ℂ :=
     (LinearMap.toMatrixAlgEquiv b).toAlgHom.comp (spinAction Q P)
   have hφ (z : CliffordAlgebra Q) : LinearMap.toMatrix b b (spinAction Q P z) = φ z := by
-    simp [φ, LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply]
+    simp only [φ, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+      LinearMap.toMatrixAlgEquiv_eq_toMatrix]
   have hlie : ⁅φ x, φ (ι Q v)⁆ = φ ⁅(x : CliffordAlgebra Q), ι Q v⁆ :=
     (φ.toLieHom.map_lie (x : CliffordAlgebra Q) (ι Q v)).symm
   rw [complexSpinSmoothMatrixComplexLieHom_apply, hφ, hφ, hφ, hlie,

@@ -113,22 +113,10 @@ theorem ι_mulVec_eq_lie_of_spinToSpecialOrthogonal_exp_curve
     have hmul : (s : CliffordAlgebra Q) * star (s : CliffordAlgebra Q) = 1 :=
       spinGroup.coe_mul_star_self s
     have hstar : e (star (s : CliffordAlgebra Q)) = NormedSpace.exp (t • (-e x)) := by
-      have hexp : NormedSpace.exp (t • (-e x)) * NormedSpace.exp (t • e x) = 1 := by
-        rw [← NormedSpace.exp_add_of_commute (by
-          rw [smul_neg, Commute, SemiconjBy, neg_mul, mul_neg])]
-        simp
-      have he : e (s : CliffordAlgebra Q) * e (star (s : CliffordAlgebra Q)) = 1 := by
-        rw [← map_mul, hmul, map_one]
-      calc
-        e (star (s : CliffordAlgebra Q)) =
-            (NormedSpace.exp (t • (-e x)) * NormedSpace.exp (t • e x)) *
-              e (star (s : CliffordAlgebra Q)) := by
-          rw [hexp, one_mul]
-        _ = NormedSpace.exp (t • (-e x)) *
-              (e (s : CliffordAlgebra Q) * e (star (s : CliffordAlgebra Q))) := by
-          rw [← hs, mul_assoc]
-        _ = NormedSpace.exp (t • (-e x)) := by
-          rw [he, mul_one]
+      let _ := NormedSpace.invertibleExp (t • e x)
+      have he : NormedSpace.exp (t • e x) * e (star (s : CliffordAlgebra Q)) = 1 := by
+        rw [← hs, ← map_mul, hmul, map_one]
+      rw [← invOf_eq_right_inv he, NormedSpace.invOf_exp, smul_neg]
     rw [hmatrix, ι_spinVectorAction_apply, map_mul, map_mul, hs, hstar]
   have hleft := hasDerivAt_linearMap_exp_mulVec
     (e.toLinearMap.comp ((ι Q).restrictScalars ℝ)) A v

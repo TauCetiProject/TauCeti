@@ -62,9 +62,8 @@ theorem exp_mem_orthogonalGroup_of_mem_so (A : Matrix n n ℝ)
 /-- The exponential of a real skew-symmetric matrix has determinant one. -/
 theorem det_exp_eq_one_of_transpose_eq_neg (A : Matrix n n ℝ) (hA : Aᵀ = -A) :
     (exp A).det = 1 :=
-  det_exp_eq_one_of_mem_skewAdjointMatricesLieSubalgebra (J := 1) (by simp) A <| by
-    simp only [mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
-      Matrix.IsSkewAdjoint, Matrix.IsAdjointPair, mul_one, one_mul, hA]
+  det_exp_eq_one_of_mem_skewAdjointMatricesLieSubalgebra (J := 1) (by simp) A
+    ((LieAlgebra.Orthogonal.mem_so n ℝ A).mpr hA)
 
 /-- The exponential of an element of the real orthogonal Lie algebra is special orthogonal. -/
 theorem exp_mem_specialOrthogonalGroup_of_mem_so (A : Matrix n n ℝ)
