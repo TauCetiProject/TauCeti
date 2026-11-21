@@ -121,9 +121,9 @@ theorem exists_chartIteratedFDeriv_eq_of_tendstoLocallyUniformlyOn
     rwa [Function.comp_apply, (extChartAt I y).left_inv hp'] at this
   let h : C^(r : ℕ∞ω)⟮I, M; 𝓘(𝕜, F), F⟯ := ⟨G, hGs⟩
   refine ⟨h, fun x m hm z ↦ (chartIteratedFDeriv_self_target_apply h x m hm z).trans ?_⟩
-  exact (iteratedFDerivWithin_congr (hG x) z.2 m).trans
+  exact (iteratedFDerivWithin_congr (hG x) z.property m).trans
     ((hT x).eq_iteratedFDerivWithin_of_uniqueDiffOn hm (uniqueDiffOn_extChartAt_target x)
-      z.2).symm
+      z.property).symm
 
 end Gluing
 

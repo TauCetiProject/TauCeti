@@ -11,11 +11,15 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 # Logarithmic kernels in the upper half-plane
 
 The logarithmic kernel is continuous in its real argument when its complex parameter is nonreal.
-A logarithmic bound also controls its approach to the real axis for bounded real arguments and
-imaginary offsets of magnitude at most one.
+Away from its singularity, it converges to its real-axis value as the imaginary offset tends to
+zero. A logarithmic bound controls this approach for bounded real arguments and imaginary offsets
+of magnitude at most one.
 -/
 
 public section
+
+open Filter
+open scoped Topology
 
 namespace TauCeti
 
@@ -24,6 +28,20 @@ theorem continuous_log_sub_of_im_ne_zero {w : ℂ} (hw : w.im ≠ 0) :
     Continuous fun y : ℝ ↦ Complex.log (w - y) :=
   (by fun_prop : Continuous fun y : ℝ ↦ w - (y : ℂ)).clog
     (fun y ↦ by simp [Complex.slitPlane, hw])
+
+/-- The logarithmic kernel converges to its real-axis value away from its singularity. -/
+theorem tendsto_log_norm_add_mul_I_sub (x y : ℝ) (hxy : y ≠ x) :
+    Tendsto (fun ε : ℝ ↦ Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖)
+      (𝓝[>] 0) (𝓝 (Real.log |x - y|)) := by
+  have harg : ContinuousAt (fun ε : ℝ ↦ (x : ℂ) + (ε : ℂ) * Complex.I - y) 0 := by
+    fun_prop
+  have hnorm : ‖(x : ℂ) - y‖ ≠ 0 := by
+    apply norm_ne_zero_iff.mpr
+    rw [← Complex.ofReal_sub]
+    exact_mod_cast (sub_ne_zero.mpr (Ne.symm hxy))
+  have hlog := (harg.norm.log (by simpa using hnorm)).tendsto.mono_left
+    (nhdsWithin_le_nhds : 𝓝[>] (0 : ℝ) ≤ 𝓝 0)
+  simpa [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs] using hlog
 
 end TauCeti
 

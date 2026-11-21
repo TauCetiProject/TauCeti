@@ -213,7 +213,7 @@ theorem localOrientation_injective (hF : finrank ℝ F = n + 1) :
   have := FiniteDimensional.of_finrank_eq_succ hF
   intro ω ω' h
   simp only at h
-  rcases ω.eq_or_eq_neg ω' (by rw [Fintype.card_fin, hF]) with h' | h'
+  rcases ω.eq_or_eq_neg ω' (by rw [Nat.card_fin, hF]) with h' | h'
   · exact h'
   · rw [h', localOrientation_neg] at h
     exact absurd (congrArg Subtype.val h)

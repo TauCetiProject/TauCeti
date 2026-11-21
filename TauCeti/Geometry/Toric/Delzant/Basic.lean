@@ -484,9 +484,9 @@ theorem isSmoothVertex_nsmul_iff (hm : ∀ j, m j ≠ 0) {y : StrongDual ℝ V} 
     -- A member of a lattice basis is primitive, so it is not a proper multiple.
     have h1 (j : ι) (hj : j ∈ activeSet (facetPairing i u) c y) : m j = 1 :=
       (b.isPrimitive ⟨j, hj⟩).eq_one_of_eq_nsmul (hb ⟨j, hj⟩)
-    exact ⟨h1, b, fun j ↦ by rw [hb, h1 j j.2, one_smul]⟩
+    exact ⟨h1, b, fun j ↦ by rw [hb, h1 j j.property, one_smul]⟩
   · rintro ⟨h1, b, hb⟩
-    exact ⟨b, fun j ↦ by rw [hb, h1 j j.2, one_smul]⟩
+    exact ⟨b, fun j ↦ by rw [hb, h1 j j.property, one_smul]⟩
 
 /-- **Labelled Delzant presentations.** The labelled presentation with normals `m j • u j` and
 support constants `m j * c j` is Delzant exactly when every label is one and `(u, c)` is Delzant:

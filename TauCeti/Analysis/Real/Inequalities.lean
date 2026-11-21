@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Real.Basic
+public import Mathlib.Order.Interval.Set.Basic
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.GCongr
@@ -13,17 +14,45 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
 /-!
-# Inequalities between quadratic penalties over `ℝ`
+# Real inequalities
 
 ## Main results
 
 * `Real.le_add_sq_div_two_mul_of_sq_div_le`: if `m ≤ b + d² / (2σ)` and the penalty `δ₀² / (2τ)`
   beats `c' - m + δ₀² / (2σ)` with `0 < τ ≤ σ`, then `c' ≤ b + d² / (2τ)` for every `d ≥ δ₀ ≥ 0`.
+* `Real.abs_le_abs_add_of_mem_Icc`: a bound on the absolute value of a point in a centered interval.
+* `Real.mul_one_sub_sq_le_sq_mul_add_one_sq`: a quadratic bound under a scalar relation and
+  `x² ≤ 4`.
 -/
 
 public section
 
 namespace Real
+
+/-- A point in a centered interval has absolute value at most the center's absolute value plus
+the radius. -/
+theorem abs_le_abs_add_of_mem_Icc (a y r : ℝ) (hy : y ∈ Set.Icc (a - r) (a + r)) :
+    |y| ≤ |a| + r := by
+  apply abs_le.mpr
+  constructor
+  · linarith [neg_abs_le a, hy.1]
+  · linarith [le_abs_self a, hy.2]
+
+/-- A quadratic scalar relation and `x² ≤ 4` imply a bound on `q * (1 - q)²`. -/
+theorem mul_one_sub_sq_le_sq_mul_add_one_sq {a b q x : ℝ} (hq : 0 ≤ q)
+    (hqdef : q = a ^ 2 + b ^ 2) (hreal : a * (q + 1) = -x * q) (hx2 : x ^ 2 ≤ 4) :
+    q * (1 - q) ^ 2 ≤ b ^ 2 * (q + 1) ^ 2 := by
+  have hreal_sq : a ^ 2 * (q + 1) ^ 2 = x ^ 2 * q ^ 2 := by
+    have h := congrArg (fun t : ℝ ↦ t ^ 2) hreal
+    nlinarith [h]
+  have hfactor :
+      b ^ 2 * (q + 1) ^ 2 = q * ((q + 1) ^ 2 - x ^ 2 * q) := by
+    nlinarith [hreal_sq, hqdef]
+  have hfactor_le : (1 - q) ^ 2 ≤ (q + 1) ^ 2 - x ^ 2 * q := by
+    have h4x : 0 ≤ 4 - x ^ 2 := by linarith
+    nlinarith [mul_nonneg hq h4x]
+  rw [hfactor]
+  exact mul_le_mul_of_nonneg_left hfactor_le hq
 
 /-- A quadratic penalty inequality: if `m ≤ b + d² / (2σ)` and the penalty
 `δ₀² / (2τ)` already beats `c' - m + δ₀² / (2σ)` with `τ ≤ σ`, then every point at distance

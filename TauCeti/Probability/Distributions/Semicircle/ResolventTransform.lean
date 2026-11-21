@@ -11,6 +11,7 @@ import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Complex.Convex
 import TauCeti.Basic.Complex.OfRealSub
 import TauCeti.Analysis.SpecificLimits.Catalan
+import TauCeti.Analysis.Real.Inequalities
 
 /-!
 # The resolvent transform of the semicircle law
@@ -197,6 +198,13 @@ theorem resolventTransform_semicircleReal_eq_iff (hz : 0 < z.im) {w : ℂ} :
       (normSq_nonneg _)
   linarith
 
+/-- The upper-half-plane semicircle resolvent is characterized by its quadratic equation and
+positive imaginary part. -/
+theorem eq_resolventTransform_semicircleReal_iff (hz : 0 < z.im) {w : ℂ} :
+    w = resolventTransform (semicircleReal a v) z ↔
+      0 < w.im ∧ (v : ℂ) * (w * w) + (z - a) * w + 1 = 0 :=
+  resolventTransform_semicircleReal_eq_iff hz
+
 /-- On the positive imaginary axis through its centre, the semicircle resolvent has zero real
 part and its imaginary part satisfies the quadratic equation. -/
 theorem resolventTransform_semicircleReal_mul_I_re_eq_zero_and_im_sq_add_mul_eq_one
@@ -235,6 +243,43 @@ theorem resolventTransform_semicircleReal_mul_I_re_eq_zero_and_im_sq_add_mul_eq_
   · simp [z, m, hmre]
   · simp [z, m, hmre] at hre
     nlinarith
+
+/-- On the closed upper half-plane of candidate values, the error from the semicircle
+transform is controlled by the quadratic residual at a nonreal upper-half-plane parameter. -/
+theorem norm_sub_resolventTransform_semicircleReal_le
+    (hz : 0 < z.im) {w : ℂ} (hw : 0 ≤ w.im) :
+    ‖w - resolventTransform (semicircleReal a v) z‖ ≤
+      ‖(v : ℂ) * (w * w) + (z - a) * w + 1‖ / z.im := by
+  let s := resolventTransform (semicircleReal a v) z
+  obtain ⟨hs, hquad⟩ := (resolventTransform_semicircleReal_eq_iff hz).mp (rfl : s = s)
+  have hfactor : (v : ℂ) * (w * w) + (z - a) * w + 1 =
+      (w - s) * ((v : ℂ) * (w + s) + (z - a)) := by
+    linear_combination hquad
+  have him : z.im ≤ ((v : ℂ) * (w + s) + (z - a)).im := by
+    simp only [add_im, sub_im, ofReal_im, sub_zero, im_ofReal_mul]
+    exact le_add_of_nonneg_left (mul_nonneg v.coe_nonneg (add_nonneg hw hs.le))
+  rw [hfactor, norm_mul, le_div_iff₀ hz]
+  exact mul_le_mul_of_nonneg_left (him.trans (im_le_norm _)) (norm_nonneg _)
+
+/-- Changing the semicircle variance at fixed centre changes the upper-half-plane
+transform by at most the variance difference divided by `(Im z)^3`. -/
+theorem norm_resolventTransform_semicircleReal_sub_le
+    (hz : 0 < z.im) (v' : ℝ≥0) :
+    ‖resolventTransform (semicircleReal a v') z -
+      resolventTransform (semicircleReal a v) z‖ ≤ |(v' : ℝ) - v| / z.im ^ 3 := by
+  let w := resolventTransform (semicircleReal a v') z
+  obtain ⟨hw, hquad⟩ := (resolventTransform_semicircleReal_eq_iff hz).mp (rfl : w = w)
+  have h := norm_sub_resolventTransform_semicircleReal_le (a := a) (v := v) hz hw.le
+  have hres : (v : ℂ) * (w * w) + (z - a) * w + 1 = ((v : ℂ) - v') * (w * w) := by
+    linear_combination hquad
+  rw [hres, norm_mul, norm_mul, ← ofReal_sub, norm_real, Real.norm_eq_abs, abs_sub_comm] at h
+  have hb : ‖w‖ ≤ z.im⁻¹ := by
+    simpa only [abs_of_pos hz, probReal_univ, mul_one] using
+      norm_resolventTransform_le (μ := semicircleReal a v') hz.ne'
+  calc
+    _ ≤ |(v' : ℝ) - v| * (‖w‖ * ‖w‖) / z.im := h
+    _ ≤ |(v' : ℝ) - v| * (z.im⁻¹ * z.im⁻¹) / z.im := by gcongr
+    _ = _ := by simp only [div_eq_mul_inv, ← inv_pow]; ring
 
 /-- The transform of the standard semicircle law at `i` is `i (√5 - 1) / 2`, the root of
 `m² + i m + 1 = 0` with positive imaginary part; the other root is `-i (√5 + 1) / 2`. -/
@@ -326,21 +371,6 @@ private theorem standard_boundary_normSq_lt_one {x ε : ℝ} (hε : 0 < ε) :
   rw [himag] at hnonpos
   linarith
 
-private theorem boundary_scalar_bound {a b q x : ℝ} (hq : 0 ≤ q)
-    (hqdef : q = a ^ 2 + b ^ 2) (hreal : a * (q + 1) = -x * q) (hx2 : x ^ 2 ≤ 4) :
-    q * (1 - q) ^ 2 ≤ b ^ 2 * (q + 1) ^ 2 := by
-  have hreal_sq : a ^ 2 * (q + 1) ^ 2 = x ^ 2 * q ^ 2 := by
-    have h := congrArg (fun t : ℝ ↦ t ^ 2) hreal
-    nlinarith [h]
-  have hfactor :
-      b ^ 2 * (q + 1) ^ 2 = q * ((q + 1) ^ 2 - x ^ 2 * q) := by
-    nlinarith [hreal_sq, hqdef]
-  have hfactor_le : (1 - q) ^ 2 ≤ (q + 1) ^ 2 - x ^ 2 * q := by
-    have h4x : 0 ≤ 4 - x ^ 2 := by linarith
-    nlinarith [mul_nonneg hq h4x]
-  rw [hfactor]
-  exact mul_le_mul_of_nonneg_left hfactor_le hq
-
 private theorem standard_boundary_normSq_bound_of_mem_Icc {x ε : ℝ}
     (hx : x ∈ Icc (-2) 2) (hε : 0 < ε) :
     (1 - standardSemicircleResolventNormSq x ε) ^ 2 ≤ 2 * ε := by
@@ -363,7 +393,7 @@ private theorem standard_boundary_normSq_bound_of_mem_Icc {x ε : ℝ}
     have hxright : 0 ≤ 2 - x := by linarith [hx.2]
     nlinarith [mul_nonneg hxleft hxright]
   have hbound_b : q * (1 - q) ^ 2 ≤ b ^ 2 * (q + 1) ^ 2 := by
-    exact boundary_scalar_bound hq.le hqdef hreal hx2
+    exact Real.mul_one_sub_sq_le_sq_mul_add_one_sq hq.le hqdef hreal hx2
   have himag_sq : b ^ 2 * (1 - q) ^ 2 = ε ^ 2 * q ^ 2 := by
     have h := congrArg (fun t : ℝ ↦ t ^ 2) himag
     nlinarith [h]

@@ -75,6 +75,8 @@ weights.
   coordinate.
 * `TauCeti.exists_isRegular_neg_single_add_single_sub_single_add_single`: a negative coordinate
   sum and a coordinate sum differ regularly at some coordinate.
+* `TauCeti.piMatrixLinearEquiv`: the `R`-linear equivalence flattening a family of matrices
+  `(i : ι) → Matrix (κ i) (μ i) α` to `(Σ i, κ i × μ i) → α`.
 -/
 
 /-- **A tuple with vanishing initial segment is a one-point family.**  Appending `x` to the zero
@@ -399,7 +401,7 @@ public theorem finrank_pi_eq_finsum {R ι : Type*} [Semiring R] [StrongRankCondi
     Module.finrank R ((i : ι) → M i) = ∑ᶠ i, Module.finrank R (M i) := by
   classical
   have (i : {x // x ∉ h.toFinset}) : Subsingleton (M i) :=
-    not_nontrivial_iff_subsingleton.mp (by simpa using i.2)
+    not_nontrivial_iff_subsingleton.mp (by simpa using i.property)
   rw [(LinearEquiv.piEquivPiSubtypeProd R (· ∈ h.toFinset) M).finrank_eq, Module.finrank_prod,
     Module.finrank_zero_of_subsingleton (M := (i : {x // x ∉ h.toFinset}) → M i), add_zero,
     Module.finrank_pi_fintype,
@@ -478,5 +480,32 @@ public theorem exists_isRegular_neg_single_add_single_sub_single_add_single
   · exact ⟨i, by convert hneg2 using 1; norm_num [hai, hbi, hij]⟩
   · exact ⟨i, by convert hneg2 using 1; norm_num [hai, hbi, hij]⟩
   · exact ⟨i, by simpa [hai, hbi, hij] using h1⟩
+
+section MatrixCoordinates
+
+variable (R : Type*) [Semiring R] {ι : Type*} (κ μ : ι → Type*) (α : Type*)
+  [AddCommMonoid α] [Module R α]
+
+/-- Flatten a family of matrices `(i : ι) → Matrix (κ i) (μ i) α` to a single coordinate tuple
+indexed by `Σ i, κ i × μ i`, as an `R`-linear equivalence. -/
+public def piMatrixLinearEquiv :
+    ((i : ι) → Matrix (κ i) (μ i) α) ≃ₗ[R] ((p : Σ i, κ i × μ i) → α) :=
+  (LinearEquiv.piCongrRight fun i ↦
+      (Matrix.ofLinearEquiv R).symm.trans (LinearEquiv.curry R α (κ i) (μ i)).symm).trans
+    (LinearEquiv.piCurry R fun (_ : ι) (_ : κ _ × μ _) ↦ α).symm
+
+@[simp]
+public theorem piMatrixLinearEquiv_apply (A : (i : ι) → Matrix (κ i) (μ i) α)
+    (p : Σ i, κ i × μ i) :
+    piMatrixLinearEquiv R κ μ α A p = A p.1 p.2.1 p.2.2 := by
+  simp [piMatrixLinearEquiv, Sigma.uncurry, Function.uncurry]
+
+@[simp]
+public theorem piMatrixLinearEquiv_symm_apply (a : (p : Σ i, κ i × μ i) → α)
+    (i : ι) (j : κ i) (k : μ i) :
+    (piMatrixLinearEquiv R κ μ α).symm a i j k = a ⟨i, j, k⟩ := by
+  simp [piMatrixLinearEquiv, Sigma.curry]
+
+end MatrixCoordinates
 
 end TauCeti

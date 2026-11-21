@@ -73,9 +73,9 @@ to `b` to `w_a p w_b⁻¹`, where `p` is read in `π₁(𝔸, T')` and `w_v` is 
 generators of `π₁(𝔸, T')` along the `T`-geodesic from `v₀` to `v`. -/
 @[simp] theorem π₁TreeEquiv_toπ₁Tree {a b : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) :
     π₁TreeEquiv 𝔸 v₀ T T' (p.toπ₁Tree T.darts) =
-      (T.path v₀ a).weight (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T'.darts e.1) *
+      (T.path v₀ a).weight (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T'.darts e.val) *
         p.toπ₁Tree T'.darts *
-        ((T.path v₀ b).weight (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T'.darts e.1))⁻¹ := by
+        ((T.path v₀ b).weight (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T'.darts e.val))⁻¹ := by
   -- Write the tree path back to `v₀` as the reverse of the tree path from `v₀`, which reads as
   -- the inverse; `reverse_path` is removed from the simp set so that this form is kept.
   rw [π₁TreeEquiv, MulEquiv.trans_apply, π₁Equiv_symm_toπ₁Tree, π₁Equiv_mk, ← T.reverse_path v₀ b]
@@ -85,9 +85,9 @@ generators of `π₁(𝔸, T')` along the `T`-geodesic from `v₀` to `v`. -/
 the dart generators of `π₁(𝔸, T')` along the `T`-geodesic from `v₀` to `v`. -/
 @[simp] theorem π₁TreeEquiv_of (v : Γ.V) (g : 𝔸.vertexGroup v) :
     π₁TreeEquiv 𝔸 v₀ T T' (π₁Tree.of T.darts v g) =
-      (T.path v₀ v).weight (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T'.darts e.1) *
+      (T.path v₀ v).weight (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T'.darts e.val) *
         π₁Tree.of T'.darts v g *
-        ((T.path v₀ v).weight (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T'.darts e.1))⁻¹ := by
+        ((T.path v₀ v).weight (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T'.darts e.val))⁻¹ := by
   simpa using π₁TreeEquiv_toπ₁Tree 𝔸 v₀ T T' (Path.ofVertex g)
 
 /-- The change of maximal tree sends the generator of a dart `e` to `w_{src e} e w_{tgt e}⁻¹`,
@@ -95,9 +95,9 @@ where `w_v` is the product of the dart generators of `π₁(𝔸, T')` along the
 `v₀` to `v`. -/
 @[simp] theorem π₁TreeEquiv_edge (e : Γ.E) :
     π₁TreeEquiv 𝔸 v₀ T T' (π₁Tree.edge T.darts e) =
-      (T.path v₀ (Γ.src e)).weight (fun {a b : Γ.V} (d : a ⟶ b) => π₁Tree.edge T'.darts d.1) *
+      (T.path v₀ (Γ.src e)).weight (fun {a b : Γ.V} (d : a ⟶ b) => π₁Tree.edge T'.darts d.val) *
         π₁Tree.edge T'.darts e * ((T.path v₀ (Γ.tgt e)).weight
-          fun {a b : Γ.V} (d : a ⟶ b) => π₁Tree.edge T'.darts d.1)⁻¹ := by
+          fun {a b : Γ.V} (d : a ⟶ b) => π₁Tree.edge T'.darts d.val)⁻¹ := by
   simpa using π₁TreeEquiv_toπ₁Tree 𝔸 v₀ T T' (Path.ofDart (Γ.dart e))
 
 /-- The change of maximal tree restricted to a vertex group `A_v` is the canonical homomorphism
@@ -105,7 +105,7 @@ where `w_v` is the product of the dart generators of `π₁(𝔸, T')` along the
 @[simp] theorem π₁TreeEquiv_comp_of (v : Γ.V) :
     (π₁TreeEquiv 𝔸 v₀ T T' : π₁Tree 𝔸 T.darts →* π₁Tree 𝔸 T'.darts).comp (π₁Tree.of T.darts v) =
       (MulAut.conj ((T.path v₀ v).weight
-          (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge (𝔸 := 𝔸) T'.darts e.1)) :
+          (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge (𝔸 := 𝔸) T'.darts e.val)) :
           π₁Tree 𝔸 T'.darts →* π₁Tree 𝔸 T'.darts).comp (π₁Tree.of T'.darts v) := by
   ext g
   simp
@@ -120,7 +120,7 @@ theorem map_π₁TreeEquiv_map_of (v : Γ.V) (H : Subgroup (𝔸.vertexGroup v))
         (π₁TreeEquiv 𝔸 v₀ T T' : π₁Tree 𝔸 T.darts →* π₁Tree 𝔸 T'.darts) =
       (H.map (π₁Tree.of T'.darts v)).map
         (MulAut.conj ((T.path v₀ v).weight
-          (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge (𝔸 := 𝔸) T'.darts e.1)) :
+          (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge (𝔸 := 𝔸) T'.darts e.val)) :
           π₁Tree 𝔸 T'.darts →* π₁Tree 𝔸 T'.darts) := by
   simp [Subgroup.map_map]
 
@@ -144,7 +144,7 @@ inner automorphism of `π₁(𝔸, T')` by the inverse of the product of the dar
 `π₁(𝔸, T')` along the `T`-geodesic from `v₀` to `v₁`. -/
 theorem π₁TreeEquiv_eq_trans_conj (v₁ : Γ.V) :
     π₁TreeEquiv 𝔸 v₁ T T' = (π₁TreeEquiv 𝔸 v₀ T T').trans (MulAut.conj
-      ((T.path v₀ v₁).weight fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T'.darts e.1)⁻¹) := by
+      ((T.path v₀ v₁).weight fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T'.darts e.val)⁻¹) := by
   -- Compare the two base vertices through the change of base vertex along the tree path from
   -- `v₀` to `v₁`, which is read as `1` in `π₁(𝔸, T)` and as the conjugator in `π₁(𝔸, T')`.
   ext x

@@ -61,9 +61,9 @@ theorem uniformContinuous_congr (σ : K ≃+* K')
     (Valued.hasBasis_nhds_zero _ _)]
   intro γ _
   -- Transport a representative quotient for the target value-group radius back along `σ`.
-  have hγ : (WithVal.valueGroupOrderIso₀ w γ.1) ≠ 0 := by simp
+  have hγ : (WithVal.valueGroupOrderIso₀ w γ.val) ≠ 0 := by simp
   obtain ⟨a, b, ha, hb, hab⟩ :=
-    (WithVal.valueGroupOrderIso₀ w γ.1).zero_or_exists_mk.resolve_left hγ
+    (WithVal.valueGroupOrderIso₀ w γ.val).zero_or_exists_mk.resolve_left hγ
   have hva : v (σ.symm a) ≠ 0 := by simpa [← hσ]
   have hvb : v (σ.symm b) ≠ 0 := by simpa [← hσ]
   let δ : v.ValueGroup₀ := valueGroup.mk (v : K →*₀ Γ₀) (σ.symm a) (σ.symm b) hva hvb

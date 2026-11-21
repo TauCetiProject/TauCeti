@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
 import TauCeti.Analysis.Complex.UpperHalfPlane.Log.Kernel
 import TauCeti.Analysis.Complex.UpperHalfPlane.Cpow
 import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.Real.Inequalities
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
@@ -90,27 +91,6 @@ private theorem ae_ne_semicircleReal (a x : ℝ) {v : ℝ≥0} (hv : 0 < v) :
   let _ := nullSingletonClass_semicircleReal a hv
   exact (semicircleReal a v).ae_ne x
 
-private theorem abs_le_semicircle_support_radius (a y : ℝ) (v : ℝ≥0)
-    (hy : y ∈ Icc (a - 2 * Real.sqrt v) (a + 2 * Real.sqrt v)) :
-    |y| ≤ |a| + 2 * Real.sqrt v := by
-  apply abs_le.mpr
-  constructor
-  · linarith [neg_abs_le a, hy.1]
-  · linarith [le_abs_self a, hy.2]
-
-private theorem tendsto_log_norm_vertical (x y : ℝ) (hxy : y ≠ x) :
-    Tendsto (fun ε : ℝ ↦ Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖)
-      (𝓝[>] 0) (𝓝 (Real.log |x - y|)) := by
-  have harg : ContinuousAt (fun ε : ℝ ↦ (x : ℂ) + (ε : ℂ) * Complex.I - y) 0 := by
-    fun_prop
-  have hnorm : ‖(x : ℂ) - y‖ ≠ 0 := by
-    apply norm_ne_zero_iff.mpr
-    rw [← Complex.ofReal_sub]
-    exact_mod_cast (sub_ne_zero.mpr (Ne.symm hxy))
-  have hlog := (harg.norm.log (by simpa using hnorm)).tendsto.mono_left
-    (nhdsWithin_le_nhds : 𝓝[>] (0 : ℝ) ≤ 𝓝 0)
-  simpa [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs] using hlog
-
 /-- The logarithmic kernel converges in integral to its real-axis value for a positive-variance
 semicircle law. -/
 theorem tendsto_integral_log_norm_sub_semicircleReal (a x : ℝ) {v : ℝ≥0} (hv : 0 < v) :
@@ -138,13 +118,13 @@ theorem tendsto_integral_log_norm_sub_semicircleReal (a x : ℝ) {v : ℝ≥0} (
     have hεpos : 0 < ε := hε
     have hεle : ε ≤ 1 := hε1.le
     filter_upwards [ae_mem_Icc_semicircleReal a v, ae_ne_semicircleReal a x hv] with y hy hxy
-    have hy' : |y| ≤ R := abs_le_semicircle_support_radius a y v hy
+    have hy' : |y| ≤ R := Real.abs_le_abs_add_of_mem_Icc a y (2 * Real.sqrt v) hy
     simpa [bound] using
       Real.norm_log_norm_add_mul_I_sub_le_of_ne_of_abs_le x y ε R
         (by rw [abs_of_pos hεpos]; exact hεle)
         hy' hxy
   · filter_upwards [ae_ne_semicircleReal a x hv] with y hxy
-    exact tendsto_log_norm_vertical x y hxy
+    exact tendsto_log_norm_add_mul_I_sub x y hxy
 
 /-- The Stieltjes transform of the standard semicircle law. -/
 local notation "m" => resolventTransform (semicircleReal 0 1)

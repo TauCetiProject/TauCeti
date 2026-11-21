@@ -113,7 +113,7 @@ theorem subsingleton_homotopyGroup_realization_indexedJoin
     induction a using Quotient.inductionOn with | h p =>
     have hp : IsCompact (Set.range (Subtype.val : Set.range p → _)) := by
       rw [Subtype.range_coe]
-      exact isCompact_range p.1.continuous
+      exact isCompact_range p.val.continuous
     obtain ⟨g, hg⟩ := one_mem_orbit_of_forall_mem_of_nullhomotopic
       (ContinuousMap.nullhomotopic_to_indexedJoin _ hp hA) p Set.mem_range_self
     exact (fundamentalGroup_smul_eq_self g _).symm.trans hg
