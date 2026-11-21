@@ -12,7 +12,6 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Matrix.PosDef
-import TauCeti.Analysis.Normed.Module.QuadraticMap
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 -- Private: `ContinuousLinearMap.dual_finrank_eq` is used only inside proofs.
 import TauCeti.Topology.Algebra.Module.FiniteDimension
@@ -44,7 +43,6 @@ use.
 
 * `LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap`: making a finite-dimensional
   bilinear form continuous and then forgetting continuity returns the original form.
-
 * `ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective`: the bilinear form of a
   continuous linear map into the dual is left-separating if and only if the map is injective.
 * `ContinuousLinearMap.isSymm_toBilinForm_iff`: the bilinear form of a continuous linear map into
@@ -79,6 +77,8 @@ use.
   nonzero diagonal vectors already implies the bounded-unit-set condition.
 * `TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos`: strict diagonal positivity is open
   among all continuous bilinear forms in finite dimensions, without imposing symmetry.
+* `IsCompact.exists_forall_le_mul_norm_sq`: a family of continuous bilinear forms continuous on a
+  compact set is bounded by a uniform multiple of `‖v‖²`.
 * `IsCompact.exists_pos_forall_mul_norm_sq_le`: in finite dimensions, a family of continuous
   bilinear forms, continuous on a compact set and positive on nonzero diagonal vectors, is bounded
   below on the diagonal by one positive multiple of the squared norm.
@@ -251,32 +251,6 @@ theorem _root_.ContinuousLinearMap.isInvertible_of_pos
     by_contra hv0
     exact (hpos v hv0).ne' (hv v)
 
-/-- A continuous bilinear form that is negative on the nonzero vectors of a finite-dimensional
-subspace is uniformly negative there: it is bounded by a negative multiple of the squared norm. -/
-theorem _root_.ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (L : E →L[ℝ] E →L[ℝ] ℝ) (N : Submodule ℝ E) [FiniteDimensional ℝ N]
-    (hN : ∀ x ∈ N, x ≠ 0 → L x x < 0) :
-    ∃ c > 0, ∀ x ∈ N, L x x ≤ -(c * ‖x‖ ^ 2) := by
-  set Q := L.toBilinForm.toQuadraticMap.restrict N
-  have hQ : Q.Anisotropic := fun x hx ↦ by
-    by_contra hx0
-    have h := hN x x.2 (by simpa using hx0)
-    simp only [Q, QuadraticMap.restrict_apply, LinearMap.BilinMap.toQuadraticMap_apply,
-      ContinuousLinearMap.toBilinForm_apply] at hx
-    linarith
-  have hcont : Continuous Q :=
-    (L.continuous.comp continuous_subtype_val).clm_apply continuous_subtype_val
-  obtain ⟨c, hc, hle⟩ := hQ.exists_pos_mul_norm_sq_le hcont
-  refine ⟨c, hc, fun x hx ↦ ?_⟩
-  rcases eq_or_ne x 0 with rfl | hx0
-  · simp
-  have h := hle ⟨x, hx⟩
-  simp only [Q, QuadraticMap.restrict_apply, LinearMap.BilinMap.toQuadraticMap_apply,
-    ContinuousLinearMap.toBilinForm_apply, Real.norm_eq_abs, abs_of_neg (hN x hx hx0),
-    ← Submodule.norm_coe] at h
-  linarith
-
 section Convex
 
 open Bornology Set
@@ -416,6 +390,33 @@ theorem _root_.IsCompact.exists_pos_forall_mul_norm_sq_le
     ring
   rw [heq, le_inv_mul_iff₀ (by positivity)] at hh
   linarith
+
+/-- A continuous bilinear form that is negative on the nonzero vectors of a finite-dimensional
+subspace is uniformly negative there: it is bounded by a negative multiple of the squared norm. -/
+theorem _root_.ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (L : E →L[ℝ] E →L[ℝ] ℝ) (N : Submodule ℝ E) [FiniteDimensional ℝ N]
+    (hN : ∀ x ∈ N, x ≠ 0 → L x x < 0) :
+    ∃ c > 0, ∀ x ∈ N, L x x ≤ -(c * ‖x‖ ^ 2) := by
+  obtain ⟨c, hc, h⟩ := (isCompact_singleton (x := ())).exists_pos_forall_mul_norm_sq_le (E := N)
+    (b := fun _ ↦ -(L.bilinearComp N.subtypeL N.subtypeL)) continuousOn_const
+    fun _ _ v hv ↦ by simpa using hN v v.property (by simpa using hv)
+  exact ⟨c, hc, fun x hx ↦ by have := h () rfl ⟨x, hx⟩; simp at this; linarith⟩
+
+/-- **Uniform bound over a compact family.** On a real normed space, let `b x` be a family of
+continuous bilinear forms, continuous on a compact set `K`. Then one constant `C` gives
+`b x v v ≤ C ‖v‖²` for every `x ∈ K` and every `v`. -/
+theorem _root_.IsCompact.exists_forall_le_mul_norm_sq
+    {X E : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {K : Set X} (hK : IsCompact K) {b : X → E →L[ℝ] E →L[ℝ] ℝ}
+    (hb : ContinuousOn b K) : ∃ C, ∀ x ∈ K, ∀ v, b x v v ≤ C * ‖v‖ ^ 2 := by
+  -- `hb` is stated for the topology of `→L[ℝ]`, which is the operator-norm topology only up to
+  -- unfolding instances, so it is passed by `exact`.
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (f := b) (by exact hb)
+  refine ⟨C, fun x hx v ↦ ?_⟩
+  calc b x v v ≤ ‖b x‖ * ‖v‖ * ‖v‖ := (Real.le_norm_self _).trans ((b x).le_opNorm₂ v v)
+    _ = ‖b x‖ * ‖v‖ ^ 2 := by ring
+    _ ≤ C * ‖v‖ ^ 2 := mul_le_mul_of_nonneg_right (hC x hx) (sq_nonneg _)
 
 /-- **Uniform coercivity over a compact set of operators.** On a finite-dimensional real normed
 space, let `b` be a continuous bilinear form and `T` a compact set of continuous endomorphisms

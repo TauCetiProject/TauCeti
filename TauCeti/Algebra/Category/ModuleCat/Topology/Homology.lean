@@ -7,10 +7,13 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Topology.Homology
 public import Mathlib.Algebra.Exact.Basic
+public import Mathlib.Algebra.Homology.ConcreteCategory
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Topology.Algebra.Module.Quotient
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
+import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
 
 /-!
 # Homology in `TopModuleCat` as a concrete subquotient
@@ -48,7 +51,10 @@ homology; unlike Mathlib's `CategoryTheory.ShortComplex.descHomology` it produce
 into an arbitrary module rather than a morphism of `TopModuleCat R`, which is what a bilinear
 operation on homology, such as a cup product, needs in its first variable. Both have degreewise
 forms for a homological complex. `HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq` describes
-the induced map on homology on the class of an elementwise cocycle.
+the induced map on homology on the class of an elementwise cocycle. After forgetting topologies,
+`HomologicalComplex.forget₂_cyclesMk_iCycles` identifies a cycle with the cycle built by Mathlib's
+`HomologicalComplex.cyclesMk` on the complex of modules, and
+`ShortComplex.forget₂_mapHomologyIso_hom_homologyπ` identifies the classes.
 -/
 
 public section
@@ -329,5 +335,52 @@ theorem homologyπ_injective_of_d_eq_zero [K.HasHomology n] {m : ι} (hm : c.pre
   exact (K.sc n).homologyπ_injective_of_f_eq_zero h
 
 end Elementwise
+
+end HomologicalComplex
+
+/-! ### Cycles and classes after forgetting topologies -/
+
+universe u v
+
+namespace CategoryTheory.ShortComplex
+
+variable {R : Type u} [Ring R] [TopologicalSpace R] (S : ShortComplex (TopModuleCat.{v} R))
+
+/-- **Classes after forgetting topologies.** The class, in the homology of the forgotten short
+complex of modules, of the image of a cycle `z` under `CategoryTheory.ShortComplex.mapCyclesIso`
+is carried by `CategoryTheory.ShortComplex.mapHomologyIso` to the class of `z`. -/
+theorem forget₂_mapHomologyIso_hom_homologyπ (z : S.cycles) :
+    (S.mapHomologyIso (forget₂ (TopModuleCat.{v} R) (ModuleCat.{v} R))).hom
+        ((S.map (forget₂ (TopModuleCat.{v} R) (ModuleCat.{v} R))).homologyπ
+          ((S.mapCyclesIso (forget₂ (TopModuleCat.{v} R) (ModuleCat.{v} R))).inv z)) =
+      S.homologyπ z :=
+  (ConcreteCategory.congr_hom
+      (S.homologyπ_comp_mapHomologyIso_hom (forget₂ (TopModuleCat.{v} R) (ModuleCat.{v} R)))
+      ((S.mapCyclesIso (forget₂ (TopModuleCat.{v} R) (ModuleCat.{v} R))).inv z)).trans
+    (congrArg (S.homologyπ).hom
+      (Iso.inv_hom_id_apply (S.mapCyclesIso (forget₂ (TopModuleCat.{v} R) (ModuleCat.{v} R))) z))
+
+end CategoryTheory.ShortComplex
+
+namespace HomologicalComplex
+
+variable {R : Type u} [Ring R] [TopologicalSpace R] {ι : Type*} {c : ComplexShape ι}
+  (K : HomologicalComplex (TopModuleCat.{v} R) c)
+
+/-- **Cycles after forgetting topologies.** The cycle of the forgotten complex of modules built, by
+Mathlib's `HomologicalComplex.cyclesMk`, from the underlying element of a cycle `z` is the image of
+`z` under the cycles identification `CategoryTheory.ShortComplex.mapCyclesIso`. -/
+theorem forget₂_cyclesMk_iCycles {n : ι} (z : K.cycles n) (j : ι) (hj : c.next n = j)
+    (hz : (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v}).map
+      ((((forget₂ (TopModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex c).obj K).d n j)
+        (K.iCycles n z) = 0) :
+    (((forget₂ (TopModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex c).obj K).cyclesMk
+        (K.iCycles n z) j hj hz =
+      ((K.sc n).mapCyclesIso (forget₂ (TopModuleCat.{v} R) (ModuleCat.{v} R))).inv z :=
+  -- Both cycles have the underlying element `K.iCycles n z`.
+  (ModuleCat.mono_iff_injective (HomologicalComplex.iCycles _ n)).1 inferInstance <|
+    (HomologicalComplex.i_cyclesMk _ _ j hj hz).trans
+      (ConcreteCategory.congr_hom ((K.sc n).mapCyclesIso_inv_comp_iCycles
+        (forget₂ (TopModuleCat.{v} R) (ModuleCat.{v} R))) z).symm
 
 end HomologicalComplex

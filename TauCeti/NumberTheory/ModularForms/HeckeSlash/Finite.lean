@@ -83,13 +83,13 @@ operators `Tₚ`. -/
 def heckeTCuspPrimeAlgebra :
     Subalgebra ℤ (Module.End ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k)) :=
   Algebra.adjoin ℤ (Set.range fun p : {p : ℕ // p.Prime} ↦
-    @heckeTCuspNat N _ k (p : ℕ) ⟨p.2.ne_zero⟩)
+    @heckeTCuspNat N _ k (p : ℕ) ⟨p.property.ne_zero⟩)
 
 /-- The defining generators of the prime-index cusp-form Hecke algebra. -/
 theorem heckeTCuspPrimeAlgebra_def :
     heckeTCuspPrimeAlgebra N k =
       Algebra.adjoin ℤ (Set.range fun p : {p : ℕ // p.Prime} ↦
-        @heckeTCuspNat N _ k (p : ℕ) ⟨p.2.ne_zero⟩) := (rfl)
+        @heckeTCuspNat N _ k (p : ℕ) ⟨p.property.ne_zero⟩) := (rfl)
 
 /-- Every prime-index Hecke operator belongs to the prime-index cusp-form Hecke algebra. -/
 @[simp]
@@ -109,7 +109,7 @@ theorem heckeTCuspPrimeAlgebra_le_iff
   · intro h
     apply Algebra.adjoin_le
     rintro _ ⟨p, rfl⟩
-    exact h p p.2
+    exact h p p.property
 
 /-- The prime-index cusp-form Hecke algebra is contained in the cusp-form Hecke algebra. -/
 theorem heckeTCuspPrimeAlgebra_le_heckeTCuspAlgebra :

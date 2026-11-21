@@ -187,7 +187,7 @@ theorem directedOn_finiteSubcomodules :
 @[simp]
 theorem coe_sSup_finiteSubcomodules : ((sSup (finiteSubcomodules (R := R) (C := C) (M := M)) :
         Subcomodule R C M) : Set M) =
-      ⋃ N : finiteSubcomodules (R := R) (C := C) (M := M), (N.1 : Set M) :=
+      ⋃ N : finiteSubcomodules (R := R) (C := C) (M := M), (N.val : Set M) :=
   coe_sSup_of_directedOn nonempty_finiteSubcomodules directedOn_finiteSubcomodules
 
 /-- Membership in the supremum of all finite subcomodules means membership in one finite
@@ -244,7 +244,7 @@ theorem sSup_finiteSubcomodules_eq_top_of_exists_mem
 the whole carrier. -/
 theorem iUnion_finiteSubcomodules_eq_univ_of_exists_mem
     (hM : ∀ m : M, ∃ N : Subcomodule R C M, Module.Finite R N.toSubmodule ∧ m ∈ N) :
-    (⋃ N : finiteSubcomodules (R := R) (C := C) (M := M), (N.1 : Set M)) =
+    (⋃ N : finiteSubcomodules (R := R) (C := C) (M := M), (N.val : Set M)) =
       Set.univ := by
   rw [← coe_sSup_finiteSubcomodules, sSup_finiteSubcomodules_eq_top_of_exists_mem hM]
   rfl

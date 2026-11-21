@@ -28,9 +28,9 @@ this work, and they are the content of the file.
 
 * **The boundary is visible in every chart.** Mathlib defines a boundary point through the chart
   *at that point*. Detecting it in any other chart is the topological invariance of the boundary,
-  `OpenPartialHomeomorph.isBoundaryPoint_iff_mem_frontier_range`, which rests on invariance of
-  domain and needs no smoothness. This file specialises it to the Euclidean half-space equation
-  `x ∈ ∂M ↔ (e x) 0 = 0`.
+  `ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional`, which rests on
+  invariance of domain and needs no smoothness. This file specialises it to the Euclidean
+  half-space equation `x ∈ ∂M ↔ (e x) 0 = 0`.
 * **The transition maps stay `C^k`.** A boundary transition map is the ambient transition map
   conjugated by the linear parametrization of the coordinate hyperplane, and `ContDiffOn` composes
   with continuous linear maps, so no new analysis is needed.
@@ -90,8 +90,8 @@ variable {d : ℕ} [NeZero d] {M : Type*} [TopologicalSpace M]
 point exactly when any chart around it reads it with positive zeroth coordinate. -/
 theorem ModelWithCorners.isInteriorPoint_euclideanHalfSpace_iff
     {e : OpenPartialHomeomorph M (EuclideanHalfSpace d)} {x : M} (hx : x ∈ e.source) :
-    (𝓡∂ d).IsInteriorPoint x ↔ 0 < (e x).1 0 := by
-  rw [e.isInteriorPoint_iff_mem_interior_range _ hx,
+    (𝓡∂ d).IsInteriorPoint x ↔ 0 < (e x).val 0 := by
+  rw [ModelWithCorners.isInteriorPoint_iff_mem_interior_range_of_finiteDimensional hx,
     interior_range_modelWithCornersEuclideanHalfSpace, modelWithCornersEuclideanHalfSpace_toFun]
   exact Iff.rfl
 
@@ -106,9 +106,9 @@ variable {n : ℕ} {k : WithTop ℕ∞} {M : Type*} [TopologicalSpace M]
 /-- A point of a charted space modeled on the `(n + 1)`-dimensional Euclidean half-space lies on
 the boundary exactly when any chart around it reads it with vanishing zeroth coordinate. -/
 theorem ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (hx : x ∈ e.source) :
-    x ∈ (𝓡∂ (n + 1)).boundary M ↔ (e x).1 0 = 0 := by
+    x ∈ (𝓡∂ (n + 1)).boundary M ↔ (e x).val 0 = 0 := by
   rw [ModelWithCorners.boundary, mem_ofPred_eq,
-    e.isBoundaryPoint_iff_mem_frontier_range _ hx,
+    ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional hx,
     frontier_range_modelWithCornersEuclideanHalfSpace, modelWithCornersEuclideanHalfSpace_toFun]
   exact eq_comm
 
@@ -164,7 +164,7 @@ private theorem boundaryChart_target :
 /-- A boundary chart reads a point through the ambient chart and deletes the zeroth coordinate. -/
 @[simp]
 private theorem boundaryChart_apply (q : ↥((𝓡∂ (n + 1)).boundary M)) :
-    boundaryChart p e q = EuclideanHalfSpace.boundaryProj n (e q.1) := by
+    boundaryChart p e q = EuclideanHalfSpace.boundaryProj n (e q.val) := by
   unfold boundaryChart
   apply OpenPartialHomeomorph.subtypeCoord_apply
 
@@ -188,12 +188,12 @@ about its atlas and preferred charts. -/
 @[irreducible, instance] noncomputable def boundaryChartedSpace :
     ChartedSpace (EuclideanSpace ℝ (Fin n)) ↥((𝓡∂ (n + 1)).boundary M) where
   atlas := range fun p ↦ boundaryChart p
-    (chartAt (EuclideanHalfSpace (n + 1)) p.1)
+    (chartAt (EuclideanHalfSpace (n + 1)) p.val)
   chartAt := fun p ↦ boundaryChart p
-    (chartAt (EuclideanHalfSpace (n + 1)) p.1)
+    (chartAt (EuclideanHalfSpace (n + 1)) p.val)
   mem_chart_source p := by
     rw [boundaryChart_source]
-    exact mem_chart_source _ p.1
+    exact mem_chart_source _ p.val
   chart_mem_atlas p := mem_range_self p
 
 variable (M) in
@@ -359,7 +359,7 @@ theorem isImmersion_subtypeVal_boundary :
   apply Manifold.IsImmersionOfComplement.isImmersion (F := ℝ)
   intro p
   apply Manifold.IsImmersionAtOfComplement.mk_of_continuousAt
-    continuous_subtype_val.continuousAt (euclideanHalfSpaceBoundaryNormalEquiv n)
+    continuous_subtypeVal.continuousAt (euclideanHalfSpaceBoundaryNormalEquiv n)
     (chartAt (EuclideanSpace ℝ (Fin n)) p)
     (chartAt (EuclideanHalfSpace (n + 1)) (p : M))
     (mem_chart_source _ p) (mem_chart_source _ (p : M))

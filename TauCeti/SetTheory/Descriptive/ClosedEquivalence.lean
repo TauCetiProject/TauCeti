@@ -60,10 +60,10 @@ theorem countablySeparated_quotient_of_isClosed (E : Setoid X)
   -- Each inequivalent pair has an open rectangle whose two factors have disjoint quotient
   -- images. Separate those images by a measurable set of the quotient.
   have hlocal : ∀ p : D, ∃ U V : Set X, ∃ C : Set (Quotient E),
-      IsOpen U ∧ IsOpen V ∧ p.1.1 ∈ U ∧ p.1.2 ∈ V ∧ MeasurableSet C ∧
+      IsOpen U ∧ IsOpen V ∧ p.val.1 ∈ U ∧ p.val.2 ∈ V ∧ MeasurableSet C ∧
         Quotient.mk E '' U ⊆ C ∧ Disjoint (Quotient.mk E '' V) C := by
     intro p
-    obtain ⟨U, V, hU, hV, hx, hy, hUV⟩ := isOpen_prod_iff.1 hE.isOpen_compl _ _ p.2
+    obtain ⟨U, V, hU, hV, hx, hy, hUV⟩ := isOpen_prod_iff.1 hE.isOpen_compl _ _ p.property
     have hdisj : Disjoint (Quotient.mk E '' U) (Quotient.mk E '' V) :=
       disjoint_image_image fun x hx y hy heq => hUV (mk_mem_prod hx hy) (Quotient.exact heq)
     have hUa : AnalyticSet U := by simpa using hU.analyticSet_image continuous_id

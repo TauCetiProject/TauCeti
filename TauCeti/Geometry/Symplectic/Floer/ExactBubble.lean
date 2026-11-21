@@ -189,7 +189,7 @@ variable [IsManifold I (⊤ : ℕ∞) M] {ω : SmoothTwoForm I M} {α : SmoothFo
 
 /-- The area density of the polar cap of a disc, as a function of `(s, t)`. -/
 private abbrev polarDensity (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) (z : ℝ × ℝ) : ℝ :=
-  ω.1 ((u ∘ polarCap) z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ polarCap) z (1, 0),
+  ω.val ((u ∘ polarCap) z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ polarCap) z (1, 0),
     mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ polarCap) z (0, 1)]
 
 private theorem continuous_polarDensity (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
@@ -218,10 +218,10 @@ private theorem polarDensity_eq {z : ℝ × ℝ}
 /-- **The area of a disc is the line integral along its boundary.** For `ω = dα`, the integral of
 the area density of the polar cap of a `C²` disc over the unit square is minus the line integral of
 `α` along the boundary loop. -/
-private theorem integral_polarDensity (hα : mextDeriv α.1 = ω.1)
+private theorem integral_polarDensity (hα : mextDeriv α.val = ω.val)
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u) :
     ∫ z in Icc (0, 0) (1, 1), polarDensity ω u z =
-      -pathIntegral α.1 (fun t ↦ u (cos (2 * π * t), sin (2 * π * t))) 0 1 := by
+      -pathIntegral α.val (fun t ↦ u (cos (2 * π * t), sin (2 * π * t))) 0 1 := by
   rw [(ω.isSmoothForm.of_le (by simp)).setIntegral_eq_rectangleIntegral
     ((hu.comp contDiff_polarCap.contMDiff).of_le one_le_two)
     (Prod.mk_le_mk.2 ⟨zero_le_one, zero_le_one⟩), ← hα]
@@ -265,12 +265,12 @@ nondegenerate exact two-form and `u` a `C²` map of the plane solving the Cauchy
 by `ω`. Then the line integral of `α` along the boundary loop `t ↦ u (cos 2πt, sin 2πt)`, which is
 the symplectic area of the disc, is nonnegative. -/
 theorem IsNondegenerate.pathIntegral_disc_boundary_nonneg (hω : ω.IsNondegenerate)
-    (hα : mextDeriv α.1 = ω.1) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
+    (hα : mextDeriv α.val = ω.val) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
     (hJ : ∀ z : ℝ × ℝ, z.1 ^ 2 + z.2 ^ 2 < 1 → (hω.symplecticFormAt (u z)).Tames (J z))
     (hhol : ∀ z : ℝ × ℝ, z.1 ^ 2 + z.2 ^ 2 < 1 → mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
       J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)) :
-    0 ≤ pathIntegral α.1 (fun t ↦ u (cos (2 * π * t), sin (2 * π * t))) 0 1 := by
+    0 ≤ pathIntegral α.val (fun t ↦ u (cos (2 * π * t), sin (2 * π * t))) 0 1 := by
   have h := setIntegral_nonpos (μ := volume) measurableSet_Icc fun z hz ↦
     polarDensity_nonpos_of_mem_Icc hω (hu.of_le one_le_two) hJ hhol hz
   rw [integral_polarDensity hα hu] at h
@@ -303,12 +303,12 @@ of `IsNondegenerate.pathIntegral_disc_boundary_nonneg`, if the line integral of 
 boundary loop `t ↦ u (cos 2πt, sin 2πt)` vanishes, then `u` is constant on the closed unit
 disc. -/
 theorem IsNondegenerate.apply_eq_apply_zero_of_pathIntegral_eq_zero (hω : ω.IsNondegenerate)
-    (hα : mextDeriv α.1 = ω.1) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
+    (hα : mextDeriv α.val = ω.val) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
     (hJ : ∀ z : ℝ × ℝ, z.1 ^ 2 + z.2 ^ 2 < 1 → (hω.symplecticFormAt (u z)).Tames (J z))
     (hhol : ∀ z : ℝ × ℝ, z.1 ^ 2 + z.2 ^ 2 < 1 → mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
       J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal))
-    (h0 : pathIntegral α.1 (fun t ↦ u (cos (2 * π * t), sin (2 * π * t))) 0 1 = 0) {z : ℝ × ℝ}
+    (h0 : pathIntegral α.val (fun t ↦ u (cos (2 * π * t), sin (2 * π * t))) 0 1 = 0) {z : ℝ × ℝ}
     (hz : z.1 ^ 2 + z.2 ^ 2 ≤ 1) : u z = u 0 := by
   have hu₁ := hu.of_le one_le_two
   set U := Ioo (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1
@@ -365,13 +365,13 @@ constant on the closed unit disc. -/
 theorem IsNondegenerate.apply_eq_apply_zero_of_boundary_exact {E₀ H₀ N : Type*}
     [NormedAddCommGroup E₀] [NormedSpace ℝ E₀] [TopologicalSpace H₀] {I₀ : ModelWithCorners ℝ E₀ H₀}
     [TopologicalSpace N] [ChartedSpace H₀ N] {i : N → M} {f : N → ℝ} {c : ℝ → N}
-    (hω : ω.IsNondegenerate) (hα : mextDeriv α.1 = ω.1) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
+    (hω : ω.IsNondegenerate) (hα : mextDeriv α.val = ω.val) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
     (hJ : ∀ z : ℝ × ℝ, z.1 ^ 2 + z.2 ^ 2 < 1 → (hω.symplecticFormAt (u z)).Tames (J z))
     (hhol : ∀ z : ℝ × ℝ, z.1 ^ 2 + z.2 ^ 2 < 1 → mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
       J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal))
     (hi : MDifferentiable I₀ I i) (hf : ContMDiff I₀ 𝓘(ℝ) 1 f)
-    (hL : mpullback I₀ I i α.1 = mextDeriv (RoughForm.ofFunction I₀ f))
+    (hL : mpullback I₀ I i α.val = mextDeriv (RoughForm.ofFunction I₀ f))
     (hc : ContMDiff 𝓘(ℝ, ℝ) I₀ 1 c) (hc₀₁ : c 0 = c 1)
     (hbd : ∀ t ∈ Icc (0 : ℝ) 1, u (cos (2 * π * t), sin (2 * π * t)) = i (c t)) {z : ℝ × ℝ}
     (hz : z.1 ^ 2 + z.2 ^ 2 ≤ 1) : u z = u 0 := by
@@ -387,7 +387,7 @@ unit disc for almost complex structures tamed by `ω`, whose boundary loops agre
 orientations, `u₂ (cos 2πt, sin 2πt) = u₁ (cos 2πt, -sin 2πt)`. Then both are constant on the
 closed unit disc, with the same value. -/
 theorem IsNondegenerate.exists_forall_eq_of_disc_pair (hω : ω.IsNondegenerate)
-    (hα : mextDeriv α.1 = ω.1) {u₁ u₂ : ℝ × ℝ → M} (hu₁ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u₁)
+    (hα : mextDeriv α.val = ω.val) {u₁ u₂ : ℝ × ℝ → M} (hu₁ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u₁)
     (hu₂ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u₂)
     (J₁ : ∀ z, AlmostComplexStructure (TangentSpace I (u₁ z)))
     (J₂ : ∀ z, AlmostComplexStructure (TangentSpace I (u₂ z)))
@@ -411,13 +411,13 @@ theorem IsNondegenerate.exists_forall_eq_of_disc_pair (hω : ω.IsNondegenerate)
   have hrev : (fun t ↦ u₂ (cos (2 * π * t), sin (2 * π * t))) = fun t ↦ γ₁ (1 - t) := by
     funext t
     simp only [γ₁, hglue, mul_sub, mul_one, cos_two_pi_sub, sin_two_pi_sub]
-  have h₂ : pathIntegral α.1 (fun t ↦ u₂ (cos (2 * π * t), sin (2 * π * t))) 0 1 =
-      -pathIntegral α.1 γ₁ 0 1 := by
+  have h₂ : pathIntegral α.val (fun t ↦ u₂ (cos (2 * π * t), sin (2 * π * t))) 0 1 =
+      -pathIntegral α.val γ₁ 0 1 := by
     rw [hrev, pathIntegral_comp_sub_left (α.isSmoothForm.of_le (by simp)) hγ₁, sub_self, sub_zero]
   have hn₁ := hω.pathIntegral_disc_boundary_nonneg hα hu₁ J₁ hJ₁ hhol₁
   have hn₂ := hω.pathIntegral_disc_boundary_nonneg hα hu₂ J₂ hJ₂ hhol₂
-  have hz₁ : pathIntegral α.1 γ₁ 0 1 = 0 := by linarith
-  have hz₂ : pathIntegral α.1 (fun t ↦ u₂ (cos (2 * π * t), sin (2 * π * t))) 0 1 = 0 := by
+  have hz₁ : pathIntegral α.val γ₁ 0 1 = 0 := by linarith
+  have hz₂ : pathIntegral α.val (fun t ↦ u₂ (cos (2 * π * t), sin (2 * π * t))) 0 1 = 0 := by
     rw [h₂, hz₁, neg_zero]
   -- The two constants agree at the common boundary point `(1, 0)`.
   have hone : ((1 : ℝ), (0 : ℝ)).1 ^ 2 + ((1 : ℝ), (0 : ℝ)).2 ^ 2 ≤ 1 := by norm_num

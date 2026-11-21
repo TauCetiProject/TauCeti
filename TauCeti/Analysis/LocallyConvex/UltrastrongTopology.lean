@@ -179,6 +179,19 @@ theorem isEmbedding_inducingFn : IsEmbedding (inducingFn 𝕜 E F) := by
   ext x
   simpa using congr($hAB (lp.single 2 0 x) 0)
 
+/-- The ultrastrong topology is the strong operator topology of the ampliation: it is induced by
+`A ↦ ⊕ₙ A` into Mathlib's pointwise-convergence copy of the operators on `ℓ²(ℕ, E)`. -/
+theorem isInducing_toPointwiseConvergenceCLM_ampliation :
+    IsInducing fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦
+      ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) ℓ²(ℕ, E) ℓ²(ℕ, F)
+        (lp.ampliation ℕ 2 A.toCLM) := by
+  refine ((PointwiseConvergenceCLM.isEmbedding_coeFn (RingHom.id 𝕜) ℓ²(ℕ, E)
+    ℓ²(ℕ, F)).isInducing.of_comp_iff).1 ?_
+  convert isInducing_inducingFn (𝕜 := 𝕜) (E := E) (F := F) using 1
+  ext A ξ : 2
+  -- `ℓ²(ℕ, E) →Lₚₜ[𝕜] ℓ²(ℕ, F)` reuses the `FunLike` instance of `ℓ²(ℕ, E) →L[𝕜] ℓ²(ℕ, F)`.
+  rfl
+
 @[fun_prop]
 theorem continuous_ampliation_apply (ξ : ℓ²(ℕ, E)) :
     Continuous fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦ lp.ampliation ℕ 2 A.toCLM ξ :=
@@ -337,10 +350,10 @@ theorem isInducing_restrict_toPointwiseConvergenceCLM
     IsInducing (s.domRestrict fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦
       ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F A.toCLM) := by
   refine isInducing_iff_nhds.2 fun A ↦ le_antisymm
-    ((continuous_toPointwiseConvergenceCLM.comp continuous_subtype_val).tendsto A).le_comap ?_
+    ((continuous_toPointwiseConvergenceCLM.comp continuous_subtypeVal).tendsto A).le_comap ?_
   rw [nhds_subtype, ← tendsto_iff_comap]
   exact (tendsto_iff_tendsto_toPointwiseConvergenceCLM_of_eventually_norm_le
-    (Eventually.of_forall fun B : s ↦ hs B B.2)).2 tendsto_comap
+    (Eventually.of_forall fun B : s ↦ hs B B.property)).2 tendsto_comap
 
 /-- From an infinite-dimensional normed space with separating dual to a nontrivial one, the
 ultrastrong topology is strictly finer than the strong operator topology: the identity from the
@@ -392,7 +405,7 @@ theorem not_continuous_ofPointwiseConvergenceCLM [SeparatingDual 𝕜 E] [Nontri
   have h0 : ‖lp.ampliation ℕ 2 (f.smulRight y) ξ‖ ≤ 0 := by
     refine le_trans (le_of_eq (by simp [A, seminorm_apply, hof])) ((hC A).trans ?_)
     rw [smul_apply, NNReal.smul_def, smul_eq_mul]
-    exact mul_nonpos_of_nonneg_of_nonpos C.2 hsup
+    exact mul_nonpos_of_nonneg_of_nonpos C.property hsup
   refine smul_ne_zero hfN hy (norm_le_zero_iff.1 (le_trans ?_ h0))
   simpa [lp.ampliation_apply_apply] using
     lp.norm_apply_le_norm two_ne_zero (lp.ampliation ℕ 2 (f.smulRight y) ξ) N
