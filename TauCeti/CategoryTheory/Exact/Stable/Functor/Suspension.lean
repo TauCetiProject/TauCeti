@@ -255,25 +255,16 @@ noncomputable def stableSuspensionCompStableFunctorIso (hF : StableConflationExa
     eqToIso (hE'.stableSuspension_obj_projectiveStableFunctor_obj (F.obj X)).symm ≪≫
     eqToIso (congrArg hE'.stableSuspension.obj
       (hF.stableFunctor_obj_projectiveStableFunctor_obj hE X)).symm) (fun {X Y} f ↦ by
-          have hmapF {A B : C} (g : A ⟶ B) :
-              (hF.stableFunctor hE).map (E.projectiveStableFunctor.map g) =
-                eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE A) ≫
-                  E'.projectiveStableFunctor.map (F.map g) ≫
-                    eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE B).symm := by
-            apply (cancel_mono
-              (eqToHom (hF.stableFunctor_obj_projectiveStableFunctor_obj hE B))).1
-            simpa only [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id] using
-              hF.stableFunctor_map_projectiveStableFunctor_map hE g
           simp only [Functor.comp_map, Functor.map_comp, Iso.trans_hom,
             eqToIso.hom, eqToHom_map, eqToHom_trans, eqToHom_trans_assoc,
             Category.assoc,
             ExactStructure.IsFrobenius.stableSuspension_map_projectiveStableFunctor_map]
-          rw [hmapF f]
+          rw [hF.stableFunctor_map_projectiveStableFunctor_map_eq hE f]
           simp only [Functor.map_comp, eqToHom_map, Category.assoc,
             ExactStructure.IsFrobenius.stableSuspension_map_projectiveStableFunctor_map,
             eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-          rw [hmapF ((hE.suspensionPresentation X).cokernelMap
-            (hE.suspensionPresentation Y) f)]
+          rw [hF.stableFunctor_map_projectiveStableFunctor_map_eq hE
+            ((hE.suspensionPresentation X).cokernelMap (hE.suspensionPresentation Y) f)]
           simp only [Category.assoc, eqToHom_trans_assoc]
           rw [projectiveStableIsoSuspensionObj_hom_naturality_mapSuspensionPresentation_assoc
             (hF := hF) (hE := hE) (hE' := hE') f]
