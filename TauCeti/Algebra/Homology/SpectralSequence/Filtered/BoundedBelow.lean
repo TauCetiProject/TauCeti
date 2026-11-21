@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Exhaustive
 public import TauCeti.Algebra.Homology.SpectralObject.Image
+public import TauCeti.CategoryTheory.Thin
 
 /-!
 # Convergence for filtrations bounded below
@@ -89,13 +90,6 @@ section Functor
 variable (G : EInt ⥤ CochainComplex (ModuleCat.{v} R) ℤ)
   [∀ {a b : EInt} (f : a ⟶ b), Mono (G.map f)]
 
-omit [∀ {a b : EInt} (f : a ⟶ b), Mono (G.map f)] in
-/-- The transition maps of `G` compose. -/
-private lemma map_comp_eq {a b c : EInt} (hab : a ≤ b) (hbc : b ≤ c) (hac : a ≤ c) :
-    G.map (homOfLE hab) ≫ G.map (homOfLE hbc) = G.map (homOfLE hac) := by
-  rw [← G.map_comp]
-  rfl
-
 /-- The map `H^n(q ≤ a) ⟶ H^n(q ≤ b)` of the spectral object of `G`, read through
 `spectralObjectHIsoCokernel`, is the map in cohomology of `G_a / G_q ⟶ G_b / G_q`. -/
 @[elementwise]
@@ -105,7 +99,7 @@ private lemma H_map_twoδ₂Toδ₁'_comp_spectralObjectHIsoCokernel_hom {q a b 
         (spectralObjectHIsoCokernel G (homOfLE (hqa.trans hab)) n).hom =
       (spectralObjectHIsoCokernel G (homOfLE hqa) n).hom ≫ HomologicalComplex.homologyMap
         (cokernel.map _ _ (𝟙 _) (G.map (homOfLE hab))
-          (by rw [Category.id_comp, map_comp_eq])) n := by
+          (by rw [← G.map_id]; apply G.map_comp_map_eq_map_comp_map)) n := by
   rw [spectralObject_H_map_comp_spectralObjectHIsoCokernel_hom]
   simp [twoδ₂Toδ₁']
 
@@ -118,24 +112,25 @@ private lemma exists_homologyMap_cokernelMap_eq_zero {q j n : ℤ} (hqj : q ≤ 
     (y : (cokernel (G.map (homOfLE (show (q : EInt) ≤ j by simpa using hqj)))).homology n)
     (hy : HomologicalComplex.homologyMap (cokernel.map _
       (G.map (homOfLE (le_top : (q : EInt) ≤ ⊤))) (𝟙 _)
-      (G.map (homOfLE (le_top : (j : EInt) ≤ ⊤))) (by rw [Category.id_comp, map_comp_eq])) n y =
-        0) :
+      (G.map (homOfLE (le_top : (j : EInt) ≤ ⊤)))
+      (by rw [← G.map_id]; apply G.map_comp_map_eq_map_comp_map)) n y = 0) :
     ∃ (j' : ℤ) (hjj' : j ≤ j'), HomologicalComplex.homologyMap (cokernel.map _
       (G.map (homOfLE (show (q : EInt) ≤ j' by simp; lia))) (𝟙 _)
       (G.map (homOfLE (show (j : EInt) ≤ j' by simpa using hjj')))
-      (by rw [Category.id_comp, map_comp_eq])) n y = 0 := by
+      (by rw [← G.map_id]; apply G.map_comp_map_eq_map_comp_map)) n y = 0 := by
   -- The quotients `G_a / G_q` form a directed family of subcomplexes of `G_⊤ / G_q`.
   let L (a : {a : ℤ // q ≤ a}) : CochainComplex (ModuleCat.{v} R) ℤ :=
     cokernel (G.map (homOfLE (show (q : EInt) ≤ a.1 by simpa using a.2)))
   let φ (a : {a : ℤ // q ≤ a}) :
       L a ⟶ cokernel (G.map (homOfLE (le_top : (q : EInt) ≤ ⊤))) :=
-    cokernel.map _ _ (𝟙 _) (G.map (homOfLE le_top)) (by rw [Category.id_comp, map_comp_eq])
+    cokernel.map _ _ (𝟙 _) (G.map (homOfLE le_top))
+      (by rw [← G.map_id]; apply G.map_comp_map_eq_map_comp_map)
   have hφ (a : {a : ℤ // q ≤ a}) : Mono (φ a) :=
     Abelian.mono_cokernel_map_of_isPullback (IsPullback.of_vert_isIso_mono ⟨by
-      rw [Category.id_comp, map_comp_eq]⟩)
+      rw [← G.map_id]; apply G.map_comp_map_eq_map_comp_map⟩)
   let ψ (a : {a : ℤ // q ≤ a}) (ha : j ≤ a.1) : L ⟨j, hqj⟩ ⟶ L a :=
     cokernel.map _ _ (𝟙 _) (G.map (homOfLE (show (j : EInt) ≤ a.1 by simpa using ha)))
-      (by rw [Category.id_comp, map_comp_eq])
+      (by rw [← G.map_id]; apply G.map_comp_map_eq_map_comp_map)
   have hψ (a : {a : ℤ // q ≤ a}) (ha : j ≤ a.1) : ψ a ha ≫ φ a = φ ⟨j, hqj⟩ := by
     apply coequalizer.hom_ext
     simp only [ψ, φ, cokernel.π_desc, cokernel.π_desc_assoc, Category.assoc, ← G.map_comp_assoc]
@@ -152,7 +147,8 @@ private lemma exists_homologyMap_cokernelMap_eq_zero {q j n : ℤ} (hqj : q ≤ 
         simp))).f (n - 1) w), ?_⟩
     simp only [φ, ← ConcreteCategory.comp_apply, ← HomologicalComplex.comp_f, Category.assoc,
       cokernel.π_desc]
-    rw [← Category.assoc, map_comp_eq]
+    rw [← Category.assoc, ← G.map_comp]
+    rfl
   obtain ⟨a, ha, hya⟩ := HomologicalComplex.exists_homologyMap_eq_zero_of_injective n φ
     (fun a ↦ (ModuleCat.mono_iff_injective _).1 inferInstance) (m := n - 1) (by simp)
     (i := ⟨j, hqj⟩) (P := fun a ↦ j ≤ a.1) ψ hψ hcover _ hy

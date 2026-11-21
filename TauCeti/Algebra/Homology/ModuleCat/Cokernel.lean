@@ -18,6 +18,12 @@ computed degreewise, so the projection `π : A ⟶ cokernel φ` is surjective in
 `φ.f i` (`HomologicalComplex.cokernel_π_f_apply_eq_zero_iff`). This file records the resulting
 description of the cycles and homology classes of `cokernel φ` through representatives in `A`.
 
+* The map `cokernel φ ⟶ cokernel ψ` induced by a commutative square sends the image of a
+  representative to the image of its image, on elements and on homology classes
+  (`HomologicalComplex.cokernel_map_f_cokernel_π_f_apply`,
+  `HomologicalComplex.homologyMap_cokernel_map_moduleCatKerHomologyClass`). For a functor `G` out
+  of a thin category, the ranges of the maps `G.map f` into `G_a`, the kernels of the projections
+  onto the quotients of `G_a`, grow with the source (`HomologicalComplex.range_map_f_le`).
 * The image `π c` of `c ∈ A_i` is a cycle exactly when the boundary of `c` lies in the range of
   `φ` (`HomologicalComplex.cokernel_d_π_f_apply_eq_zero_iff`).
 * Changing `c` by a boundary of `A` does not change the homology class of `π c`
@@ -64,6 +70,39 @@ lemma cokernel_d_π_f_apply_eq_zero_iff (i j : ι) (x : A.X i) :
     (cokernel φ).d i j ((cokernel.π φ).f i x) = 0 ↔
       A.d i j x ∈ LinearMap.range (φ.f j).hom := by
   rw [Hom.comm_apply, cokernel_π_f_apply_eq_zero_iff]
+
+/-- For a functor `G` out of a thin category, the range of `G.map f` into `G_a` grows with the
+source of `f`. -/
+lemma range_map_f_le {J : Type*} [Category* J] [Quiver.IsThin J]
+    (G : J ⥤ HomologicalComplex (ModuleCat.{v} R) c) {s s' a : J} (f : s ⟶ a) (g : s' ⟶ a)
+    (u : s ⟶ s') (i : ι) :
+    LinearMap.range ((G.map f).f i).hom ≤ LinearMap.range ((G.map g).f i).hom := by
+  rw [Subsingleton.elim f (u ≫ g), G.map_comp, comp_f, ModuleCat.hom_comp]
+  exact LinearMap.range_comp_le_range _ _
+
+section Map
+
+variable {A' B' : HomologicalComplex (ModuleCat.{v} R) c} (ψ : B' ⟶ A') (u : B ⟶ B') (v : A ⟶ A')
+  (w : φ ≫ v = u ≫ ψ)
+
+/-- The map `cokernel φ ⟶ cokernel ψ` induced by `v`, on representatives. -/
+lemma cokernel_map_f_cokernel_π_f_apply (i : ι) (y : A.X i) :
+    (cokernel.map φ ψ u v w).f i ((cokernel.π φ).f i y) = (cokernel.π ψ).f i (v.f i y) := by
+  rw [← ConcreteCategory.comp_apply, ← comp_f, cokernel.π_desc, comp_f,
+    ConcreteCategory.comp_apply]
+
+/-- The map `cokernel φ ⟶ cokernel ψ` induced by `v`, on homology classes of representatives. -/
+lemma homologyMap_cokernel_map_moduleCatKerHomologyClass {n m : ι} (hm : c.next n = m)
+    (y : A.X n) (hy : (cokernel φ).d n m ((cokernel.π φ).f n y) = 0)
+    (hy' : (cokernel ψ).d n m ((cokernel.π ψ).f n (v.f n y)) = 0) :
+    homologyMap (cokernel.map φ ψ u v w) n
+        ((cokernel φ).moduleCatKerHomologyClass hm ⟨(cokernel.π φ).f n y, hy⟩) =
+      (cokernel ψ).moduleCatKerHomologyClass hm ⟨(cokernel.π ψ).f n (v.f n y), hy'⟩ := by
+  rw [homologyMap_moduleCatKerHomologyClass]
+  congr 2
+  exact cokernel_map_f_cokernel_π_f_apply φ ψ u v w n y
+
+end Map
 
 variable {n m p : ι} (hm : c.next n = m) (hp : c.prev n = p)
 include hp

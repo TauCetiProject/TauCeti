@@ -98,15 +98,6 @@ section Functor
 
 variable (G : EInt ⥤ CochainComplex (ModuleCat.{v} R) ℤ)
 
-/-- The maps between the quotients `G_a / G_s` induced by `G`, on representatives in `G_a`. -/
-private lemma cokernelMap_f_π_f_apply {s s' a : EInt} (f : s ⟶ a) (g : s' ⟶ a) (u : s ⟶ s')
-    (v : a ⟶ a)
-    (w : G.map f ≫ G.map v = G.map u ≫ G.map g) (m : ℤ) (y : (G.obj a).X m) :
-    (cokernel.map (G.map f) (G.map g) (G.map u) (G.map v) w).f m ((cokernel.π (G.map f)).f m y) =
-      (cokernel.π (G.map g)).f m y := by
-  rw [← ConcreteCategory.comp_apply, ← HomologicalComplex.comp_f, cokernel.π_desc,
-    Subsingleton.elim v (𝟙 a), G.map_id, Category.id_comp]
-
 /-- The maps between the quotients `G_a / G_s` induced by `G`, on homology classes of
 representatives in `G_a`. -/
 private lemma homologyMap_cokernelMap_moduleCatKerHomologyClass {s s' a : EInt} (f : s ⟶ a)
@@ -120,18 +111,9 @@ private lemma homologyMap_cokernelMap_moduleCatKerHomologyClass {s s' a : EInt} 
           ⟨(cokernel.π (G.map f)).f n y, hy⟩) =
       (cokernel (G.map g)).moduleCatKerHomologyClass (CochainComplex.next ℤ n)
         ⟨(cokernel.π (G.map g)).f n y, hy'⟩ := by
-  rw [HomologicalComplex.homologyMap_moduleCatKerHomologyClass]
-  congr 2
-  exact cokernelMap_f_π_f_apply G f g u v w n y
-
-private lemma range_map_f_le {s s' a : EInt} (f : s ⟶ a) (g : s' ⟶ a) (u : s ⟶ s') (m : ℤ) :
-    LinearMap.range ((G.map f).f m).hom ≤ LinearMap.range ((G.map g).f m).hom := by
-  rw [Subsingleton.elim f (u ≫ g), G.map_comp, HomologicalComplex.comp_f, ModuleCat.hom_comp]
-  exact LinearMap.range_comp_le_range _ _
-
-private lemma map_comp_map_eq {s s' a b : EInt} (f : s ⟶ a) (v : a ⟶ b) (u : s ⟶ s') (g : s' ⟶ b) :
-    G.map f ≫ G.map v = G.map u ≫ G.map g := by
-  rw [← G.map_comp, ← G.map_comp, Subsingleton.elim (f ≫ v) (u ≫ g)]
+  obtain rfl : v = 𝟙 a := Subsingleton.elim _ _
+  convert HomologicalComplex.homologyMap_cokernel_map_moduleCatKerHomologyClass _ _ _ _ w _ y hy
+    (by simpa using hy') using 3 <;> simp
 
 /-- The cochain `c` of `G_a` represents the class `ξ` of `H^n(G_a / G_s)`. -/
 private def IsCokernelRep {s a : EInt} (f : s ⟶ a) {n : ℤ}
@@ -152,18 +134,18 @@ private lemma exists_isCokernelRep_sub_mem_range {s' s a : EInt} (f' : s' ⟶ a)
     (u : s' ⟶ s) {n : ℤ} (ξ' : (cokernel (G.map f')).homology n)
     (ξ : (cokernel (G.map f)).homology n)
     (hξ : HomologicalComplex.homologyMap (cokernel.map (G.map f') (G.map f) (G.map u)
-      (G.map (𝟙 a)) (map_comp_map_eq G _ _ _ _)) n ξ' = ξ)
+      (G.map (𝟙 a)) (G.map_comp_map_eq_map_comp_map _ _ _ _)) n ξ' = ξ)
     (c : (G.obj a).X n) (hc : IsCokernelRep G f ξ c) :
     ∃ c', IsCokernelRep G f' ξ' c' ∧ c' - c ∈ LinearMap.range ((G.map f).f n).hom := by
   obtain ⟨c', hc'₁, hc'₂⟩ := exists_isCokernelRep G f' ξ'
   -- `c'` also represents `ξ` modulo `G_s`, so it differs from `c` by a boundary modulo `G_s`.
   have hc'₃ := (HomologicalComplex.cokernel_d_π_f_apply_eq_zero_iff (G.map f) n (n + 1) c').2
-    (range_map_f_le G _ _ u _ ((HomologicalComplex.cokernel_d_π_f_apply_eq_zero_iff _ n (n + 1)
-      c').1 hc'₁))
+    (HomologicalComplex.range_map_f_le G _ _ u _
+      ((HomologicalComplex.cokernel_d_π_f_apply_eq_zero_iff _ n (n + 1) c').1 hc'₁))
   obtain ⟨e, he⟩ := HomologicalComplex.exists_sub_sub_d_mem_range_of_moduleCatKerHomologyClass_eq
     _ (CochainComplex.next ℤ n) (CochainComplex.prev ℤ n) c' c hc'₃ hc.1 (by
       rw [← homologyMap_cokernelMap_moduleCatKerHomologyClass G _ _ u (𝟙 _)
-        (map_comp_map_eq G _ _ _ _) n c' hc'₁ hc'₃, hc'₂, hξ, hc.2])
+        (G.map_comp_map_eq_map_comp_map _ _ _ _) n c' hc'₁ hc'₃, hc'₂, hξ, hc.2])
   have h₁ : ((cokernel (G.map f')).d n (n + 1))
       ((cokernel.π (G.map f')).f n (c' - (G.obj a).d (n - 1) n e)) = 0 := by
     rw [HomologicalComplex.cokernel_d_π_f_apply_eq_zero_iff, map_sub,
