@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.FreeGroup.GenEq.FreeItems
 public import TauCeti.GroupTheory.FreeGroup.GenEq.Kernel
-import Mathlib.GroupTheory.FreeGroup.Center
+import TauCeti.GroupTheory.FreeGroup.CSA
 import TauCeti.GroupTheory.GroupAlgGeom.SumVars
 
 /-!
@@ -321,11 +321,10 @@ private theorem kernelExample_commute_zero_four {v : Fin 13 → FreeGroup (Fin 2
 the nontrivial elements of a free group, and `a`, `b` do not commute. -/
 private theorem kernelExample_eq_one_or_eq_one {v : Fin 13 → FreeGroup (Fin 2)}
     (hv : v ∈ V (MonoidHom.id (FreeGroup (Fin 2))) kernelExample.toSystem) :
-    v 0 = 1 ∨ v 4 = 1 := by
-  by_contra! hne
-  exact absurd (IsFreeGroup.commute_trans (IsFreeGroup.commute_trans
-    (kernelExample_commute_zero hv).symm (kernelExample_commute_zero_four hv) hne.1)
-      (kernelExample_commute_four hv) hne.2).eq (by decide)
+    v 0 = 1 ∨ v 4 = 1 :=
+  IsFreeGroup.isCommTransitive.eq_one_or_eq_one_of_not_commute
+    (fun hab => absurd hab.eq (by decide)) (kernelExample_commute_zero hv).symm
+    (kernelExample_commute_zero_four hv) (kernelExample_commute_four hv)
 
 /-- The point `(a, a, a, a, 1, b, b, 1, a, 1, 1, a, 1)` of the example. -/
 private theorem kernelExample_mem_V₁ :

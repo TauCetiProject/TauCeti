@@ -10,7 +10,7 @@ public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
 public import Mathlib.Algebra.Group.Commutator
 import TauCeti.GroupTheory.Coprod.NormalForm
 import TauCeti.GroupTheory.FreeGroup.Basic
-import TauCeti.GroupTheory.FreeGroup.Centralizer
+import TauCeti.GroupTheory.FreeGroup.CSA
 
 /-!
 # Systems of equations with free variables
@@ -177,32 +177,6 @@ private theorem toQuotientFreeVars_inr_map (N : Subgroup (GX G X)) [N.Normal] (w
     FreeGroup.ext_hom _ _ fun _ => by simp [toQuotientFreeVars]
   exact DFunLike.congr_fun h w
 
-private theorem toQuotientFreeVars_surjective (N : Subgroup (GX G X)) [N.Normal] :
-    Function.Surjective (toQuotientFreeVars Y N) := by
-  intro w
-  induction w using induction_on with
-  | inl q =>
-    obtain ⟨t, rfl⟩ := QuotientGroup.mk_surjective q
-    exact ⟨_, toQuotientFreeVars_inclFreeVars N t⟩
-  | inr w => exact ⟨_, toQuotientFreeVars_inr_map N w⟩
-  | mul x y hx hy =>
-    obtain ⟨⟨s, rfl⟩, ⟨t, rfl⟩⟩ := hx, hy
-    exact ⟨s * t, map_mul _ s t⟩
-
-/-- A homomorphism `(G[X] ⧸ N) ∗ F(Y) → H` given by a homomorphism on `G[X] ⧸ N` compatible with
-the coefficients and by values of `Y`, restricted to `G[X ⊕ Y]`, is evaluation at the
-corresponding point. -/
-private theorem eval_toQuotientFreeVars (ι : G →* H) {N : Subgroup (GX G X)} [N.Normal]
-    (φ : GX G X ⧸ N →* H) (hφ : ∀ g, φ ((inl g : GX G X) : GX G X ⧸ N) = ι g) (u : Y → H)
-    (t : GX G (X ⊕ Y)) :
-    eval φ u (toQuotientFreeVars Y N t) =
-      eval ι (Sum.elim (fun x => φ ((inr (FreeGroup.of x) : GX G X) : GX G X ⧸ N)) u) t := by
-  have h : (eval φ u).comp (toQuotientFreeVars Y N) =
-      eval ι (Sum.elim (fun x => φ ((inr (FreeGroup.of x) : GX G X) : GX G X ⧸ N)) u) :=
-    hom_ext (MonoidHom.ext fun g => by simp [toQuotientFreeVars, hφ])
-      (FreeGroup.ext_hom _ _ fun x => by cases x <;> simp [toQuotientFreeVars])
-  exact DFunLike.congr_fun h t
-
 /-! ### The group presented by a system with free variables -/
 
 namespace SystemGroup
@@ -325,11 +299,9 @@ private theorem toCoordGroup_apply_inl_eq_one {w : GX G X} (hw : w ∈ Rad ι S)
     ⟨((SystemGroup.evalGHom v hv : SystemGroup G T →* H).comp
       (ψ : GX (SystemGroup G S) Y →* SystemGroup G T)).comp inl, fun g => by
       simpa using congrArg (SystemGroup.evalGHom v hv) (ψ.map_coeff g)⟩
-  have hχ : χ = SystemGroup.evalGHom _ (SystemGroup.homEquiv ι S χ).property :=
-    ((SystemGroup.homEquiv ι S).symm_apply_apply χ).symm.trans (SystemGroup.homEquiv_symm_apply _)
   have h := mem_Rad.1 hw _ (SystemGroup.homEquiv ι S χ).property
-  rw [← SystemGroup.evalGHom_mk hv, ht]
-  rwa [← SystemGroup.evalGHom_mk (SystemGroup.homEquiv ι S χ).property, ← hχ] at h
+  rw [SystemGroup.eval_homEquiv] at h
+  rwa [← SystemGroup.evalGHom_mk hv, ht]
 
 variable (ι) in
 /-- The homomorphism `G_{R(S)} → G_{R(T)}` induced by `G_S → G_S ∗ F(Y) → G_T`. -/
@@ -469,15 +441,6 @@ theorem freeVarsHom_inr (w : FreeGroup Y) :
       ((inr (FreeGroup.map Sum.inr w) : GX G (X ⊕ Y)) : CoordGroup ι (addFreeVars Y S)) := by
   simp [freeVarsHom]
 
-private theorem freeVarsHom_toQuotientFreeVars (t : GX G (X ⊕ Y)) :
-    freeVarsHom ι Y S (toQuotientFreeVars Y (Rad ι S) t) =
-      (t : CoordGroup ι (addFreeVars Y S)) := by
-  have h : (freeVarsHom ι Y S : _ →* _).comp (toQuotientFreeVars Y (Rad ι S)) =
-      QuotientGroup.mk' (Rad ι (addFreeVars Y S)) :=
-    hom_ext (MonoidHom.ext fun _ => by simp [toQuotientFreeVars])
-      (FreeGroup.ext_hom _ _ fun x => by cases x <;> simp [toQuotientFreeVars])
-  exact DFunLike.congr_fun h t
-
 theorem freeVarsHom_inr_of (y : Y) :
     freeVarsHom ι Y S (inr (FreeGroup.of y)) =
       ((inr (FreeGroup.of (Sum.inr y)) : GX G (X ⊕ Y)) : CoordGroup ι (addFreeVars Y S)) := by
@@ -519,15 +482,12 @@ theorem freeVarsHom_eq_one_iff {w : GX (CoordGroup ι S) Y} :
     freeVarsHom ι Y S w = 1 ↔
       ∀ (v : X → H) (hv : v ∈ V ι S) (u : Y → H),
         eval (evalGHom v hv : CoordGroup ι S →* H) u w = 1 := by
-  obtain ⟨t, rfl⟩ := toQuotientFreeVars_surjective (Rad ι S) w
-  have key (v : X → H) (hv : v ∈ V ι S) (u : Y → H) :
-      eval (evalGHom v hv : CoordGroup ι S →* H) u (toQuotientFreeVars Y (Rad ι S) t) =
-        eval ι (Sum.elim v u) t := by
-    rw [eval_toQuotientFreeVars ι _ (by simp)]
-    simp
-  simp only [freeVarsHom_toQuotientFreeVars, QuotientGroup.eq_one_iff, mem_Rad, key]
-  refine ⟨fun h v hv u => h _ (mem_V_addFreeVars.2 (by simpa using hv)), fun h v hv => ?_⟩
-  simpa using h _ (mem_V_addFreeVars.1 hv) (v ∘ Sum.inr)
+  obtain ⟨t, ht⟩ := QuotientGroup.mk_surjective (freeVarsHom ι Y S w)
+  rw [← ht, QuotientGroup.eq_one_iff, mem_Rad]
+  refine ⟨fun h v hv u => ?_, fun h v hv => ?_⟩
+  · have hv' : Sum.elim v u ∈ V ι (addFreeVars Y S) := mem_V_addFreeVars.2 (by simpa using hv)
+    simpa [← evalGHom_mk hv', ht] using h _ hv'
+  · simpa [← evalGHom_mk hv, ht] using h _ (mem_V_addFreeVars.1 hv) (v ∘ Sum.inr)
 
 /-- The homomorphism `G_{R(S)} ∗ F(Y) → G_{R(S')}` is injective exactly when the homomorphisms
 `G_{R(S)} ∗ F(Y) → H` given by a solution of `S` in `H` and values of `Y` in `H` separate the
@@ -592,10 +552,8 @@ private theorem mem_V_commutatorSystem {v : Fin 2 → FreeGroup (Fin 2)} :
 private theorem eq_one_or_eq_one_of_mem_V_commutatorSystem {v : Fin 2 → FreeGroup (Fin 2)}
     (hv : v ∈ V (.id _) commutatorSystem) : v 0 = 1 ∨ v 1 = 1 := by
   obtain ⟨h₀, h₁, h⟩ := mem_V_commutatorSystem.1 hv
-  by_contra! hne
-  have hab : Commute (of (0 : Fin 2)) (of 1) :=
-    IsFreeGroup.commute_of_commute hne.2 (IsFreeGroup.commute_of_commute hne.1 h₀.symm h) h₁
-  exact absurd hab.eq (by decide)
+  exact IsFreeGroup.isCommTransitive.eq_one_or_eq_one_of_not_commute
+    (fun hab => absurd hab.eq (by decide)) h₀.symm h h₁
 
 /-- For the system `S = {[x, a], [y, b], [x, y]}` over the free group `F(a, b)` and one free
 variable `z`, the surjection `F_{R(S)} ∗ ⟨z⟩ → F_{R(S')}` is not injective: every solution has
