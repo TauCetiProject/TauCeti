@@ -493,7 +493,7 @@ theorem memLpLoc_norm_inv_euclidean_iff [Nontrivial E] (hU : U ∈ 𝓝 (0 : E))
     exact not_memLp_norm_inv_closedBall (mu := μ) (half_pos hr) (not_lt.1 hp)
       (memLpLoc_iff.1 h _ hK (isCompact_closedBall 0 _))
   · intro hp
-    exact memLpLoc_iff.2 fun K _ hK => hK.memLp_norm_inv_restrict (mu := μ) hp
+    exact memLpLoc_iff.2 fun K _ hK => hK.isBounded.memLp_norm_inv_restrict (mu := μ) hp
 
 -- In dimension `3`, `x ↦ ‖x‖⁻¹` belongs to `MemLpLoc p U volume` near `0` iff `p < 3`.
 example {U : Set (EuclideanSpace ℝ (Fin 3))}
@@ -729,42 +729,36 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   {p : ℝ≥0∞} {U : Set E}
 
-/-- For `dim E ≥ 2` and `p < dim E`, the coordinate `x ↦ ‖x‖⁻¹ ⟪x, v⟫` of the unit radial field
-lies in `MemWkpLoc p U 1 μ`. -/
-private theorem memWkpLoc_one_norm_rpow_neg_one_mul_inner_euclidean
-    (hd : 1 < Module.finrank ℝ E) (hp : p < Module.finrank ℝ E) (v : E) :
-    MemWkpLoc p U 1 (fun x : E => ‖x‖ ^ (-1 : ℝ) * ⟪x, v⟫) μ := by
-  refine memWkpLoc_succ_iff.2 ⟨memLpLoc_iff.2 fun K _ hK => ?_, _,
-    hasWeakFDerivOn_norm_rpow_neg_one_mul_inner hd v _,
-    memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K _ hK => ?_)⟩
-  · have : IsFiniteMeasure (μ.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
-    exact MemLp.of_bound (by fun_prop : Measurable _).aestronglyMeasurable ‖v‖
-      (Eventually.of_forall fun x => abs_norm_rpow_neg_one_mul_inner_le v x)
-  · have hker : MemLp (fun x : E => ‖x‖⁻¹) p (μ.restrict K) :=
-      hK.memLp_norm_inv_restrict (mu := μ) hp
-    refine (hker.const_mul (2 * ‖v‖)).of_le (by fun_prop : Measurable _).aestronglyMeasurable
-      (Eventually.of_forall fun x => ?_)
-    rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_neg_one]
-    exact norm_norm_rpow_neg_one_smul_innerSL_sub_le v x
-
 /-- On a real inner product space `E` of dimension at least `2`, the unit radial field
 `x ↦ ‖x‖⁻¹ • x` belongs to `MemWkpLoc p U 1 μ` for every `p < Module.finrank ℝ E`. -/
 theorem memWkpLoc_one_unitRadial (hd : 1 < Module.finrank ℝ E) (hp : p < Module.finrank ℝ E) :
     MemWkpLoc p U 1 (fun x : E => ‖x‖⁻¹ • x) μ := by
-  let b := stdOrthonormalBasis ℝ E
-  rw [b.toBasis.memWkpLoc_iff]
-  intro i
-  have hcoord : (fun x : E => b.toBasis.repr (‖x‖⁻¹ • x) i) =
-      fun x : E => ‖x‖ ^ (-1 : ℝ) * ⟪x, b i⟫ := by
+  have heq : (fun x : E => ‖x‖⁻¹ • x) = fun x : E => ‖x‖ ^ (-1 : ℝ) • x := by
     funext x
-    rw [OrthonormalBasis.coe_toBasis_repr_apply, b.repr_apply_apply, real_inner_smul_right,
-      real_inner_comm, Real.rpow_neg_one]
-  rw [hcoord]
-  exact memWkpLoc_one_norm_rpow_neg_one_mul_inner_euclidean hd hp (b i)
+    rw [Real.rpow_neg_one]
+  rw [heq]
+  refine memWkpLoc_succ_iff.2 ⟨memLpLoc_iff.2 fun K _ hK => ?_, _,
+    hasWeakFDerivOn_norm_rpow_neg_one_smul_self hd _,
+    memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K _ hK => ?_)⟩
+  · have : IsFiniteMeasure (μ.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
+    refine MemLp.of_bound (by fun_prop : Measurable _).aestronglyMeasurable 1
+      (Eventually.of_forall fun x => ?_)
+    rw [norm_smul, Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _), Real.rpow_neg_one]
+    rcases eq_or_ne x 0 with rfl | hx
+    · simp
+    · rw [inv_mul_cancel₀ (norm_ne_zero_iff.2 hx)]
+  · have hker : MemLp (fun x : E => ‖x‖⁻¹) p (μ.restrict K) :=
+      hK.isBounded.memLp_norm_inv_restrict (mu := μ) hp
+    refine (hker.const_mul (1 + |(-1 : ℝ)|)).of_le
+      ((hasWeakFDerivOn_norm_rpow_neg_one_smul_self (μ := μ) hd
+        (⊤ : Opens E)).locallyIntegrableOn_deriv.mono_set (subset_univ K)).aestronglyMeasurable
+      (Eventually.of_forall fun x => ?_)
+    rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_neg_one]
+    exact norm_rpow_smul_id_add_smulRight_le (-1) x
 
 /-- On a real inner product space `E` of dimension at least `2`, the unit radial field
-`x ↦ ‖x‖⁻¹ • x` does not belong to `MemWkpLoc p U 1 μ` when `0 ∈ interior U` and
-`Module.finrank ℝ E ≤ p`. -/
+`x ↦ ‖x‖⁻¹ • x` belongs to `MemWkpLoc p U 1 μ` on any set whose interior contains `0` exactly when
+`p < Module.finrank ℝ E`. -/
 theorem not_memWkpLoc_one_unitRadial (hd : 1 < Module.finrank ℝ E)
     (hp : Module.finrank ℝ E ≤ p) (h0 : (0 : E) ∈ interior U) :
     ¬ MemWkpLoc p U 1 (fun x : E => ‖x‖⁻¹ • x) μ := by
@@ -877,101 +871,16 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 theorem memWkpLoc_one_norm_rpow_smul_id {α : ℝ} (hα : -1 < α)
     (hp : MemLpLoc p U (fun x : E => ‖x‖ ^ α) μ) :
     MemWkpLoc p U 1 (fun x : E => ‖x‖ ^ α • x) μ := by
-  let u : E → E := fun x => ‖x‖ ^ α • x
-  let D : E → E →L[ℝ] E := fun x =>
-    ‖x‖ ^ α • ContinuousLinearMap.id ℝ E +
-      (α * ‖x‖ ^ (α - 2)) • (innerSL ℝ x).smulRight x
-  -- Step 1: Continuity of `u` at `0` (via `α + 1 > 0`) and away from `0`.
-  have hcont : Continuous u := by
-    rw [continuous_iff_continuousAt]
-    intro x
-    rcases eq_or_ne x 0 with rfl | hx
-    · rw [Metric.continuousAt_iff]
-      intro ε hε
-      have hpos : 0 < α + 1 := by linarith
-      refine ⟨(ε / 2) ^ (1 / (α + 1)), Real.rpow_pos_of_pos (half_pos hε) _, fun y hy => ?_⟩
-      simp only [u, dist_zero_right, smul_zero, norm_smul,
-        Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg y) _)]
-      rcases eq_or_ne y 0 with rfl | hy0
-      · simp [hε]
-      · have hnorm : ‖y‖ ^ α * ‖y‖ = ‖y‖ ^ (α + 1) := by
-          rw [← Real.rpow_add_one (norm_ne_zero_iff.2 hy0)]
-        rw [hnorm]
-        have hy' : ‖y‖ < (ε / 2) ^ (1 / (α + 1)) := by simpa [dist_zero_right] using hy
-        have := Real.rpow_lt_rpow (norm_nonneg y) hy' hpos
-        rw [← Real.rpow_mul (by positivity), one_div_mul_cancel hpos.ne', Real.rpow_one] at this
-        linarith
-    · exact (continuousAt_id.norm.rpow_const (Or.inl (norm_ne_zero_iff.2 hx))).smul
-        continuousAt_id
-  -- Step 2: Pointwise bound `‖D x‖ ≤ (1 + |α|) * ‖x‖ ^ α` and classical derivative off `{0}`.
-  have hDbound : ∀ x : E, ‖D x‖ ≤ (1 + |α|) * ‖x‖ ^ α := fun x => by
-    refine (norm_add_le _ _).trans ?_
-    have h1 : ‖‖x‖ ^ α • ContinuousLinearMap.id ℝ E‖ ≤ ‖x‖ ^ α := by
-      rw [norm_smul, Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)]
-      exact mul_le_of_le_one_right (Real.rpow_nonneg (norm_nonneg x) _)
-        ContinuousLinearMap.norm_id_le
-    have h2 : ‖(α * ‖x‖ ^ (α - 2)) • (innerSL ℝ x).smulRight x‖ ≤ |α| * ‖x‖ ^ α := by
-      rcases eq_or_ne x 0 with rfl | hx
-      · simp only [norm_zero, map_zero, ContinuousLinearMap.zero_smulRight, smul_zero]
-        positivity
-      · rw [norm_smul, Real.norm_eq_abs, abs_mul,
-          abs_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)]
-        have hsr : ‖(innerSL ℝ x).smulRight x‖ ≤ ‖x‖ * ‖x‖ := by
-          refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v => ?_
-          rw [ContinuousLinearMap.smulRight_apply, innerSL_apply_apply, norm_smul,
-            Real.norm_eq_abs]
-          calc |⟪x, v⟫| * ‖x‖ ≤ (‖x‖ * ‖v‖) * ‖x‖ :=
-                mul_le_mul_of_nonneg_right (abs_real_inner_le_norm x v) (norm_nonneg x)
-            _ = (‖x‖ * ‖x‖) * ‖v‖ := by ring
-        calc |α| * ‖x‖ ^ (α - 2) * ‖(innerSL ℝ x).smulRight x‖
-            ≤ |α| * ‖x‖ ^ (α - 2) * (‖x‖ * ‖x‖) :=
-              mul_le_mul_of_nonneg_left hsr (by positivity)
-          _ = |α| * (‖x‖ ^ (α - 2) * ‖x‖ ^ (2 : ℝ)) := by
-              rw [Real.rpow_two, sq]; ring
-          _ = |α| * ‖x‖ ^ α := by
-              rw [← Real.rpow_add (norm_pos_iff.2 hx), sub_add_cancel]
-    linarith
-  have hd : ∀ x : E, x ≠ 0 → HasFDerivAt u (D x) x := fun x hx => by
-    have hrpow : HasFDerivAt (fun y : E => ‖y‖ ^ α)
-        ((α * ‖x‖ ^ (α - 2)) • innerSL ℝ x) x := hasFDerivAt_norm_rpow_of_ne α hx
-    have hprod := hrpow.smul (hasFDerivAt_id x)
-    refine hprod.congr_fderiv ?_
-    ext v
-    simp [D, smul_smul]
-  -- Step 3: Local integrability of `D`, removable singularity at `{0}`, and `Lᵖ` bound on `D`.
-  have hsrCont : Continuous (fun x : E => (innerSL ℝ x).smulRight x) := by
-    let B : (E →L[ℝ] ℝ) × E → (E →L[ℝ] E) := fun p => p.1.smulRight p.2
-    have hB : Continuous B :=
-      (StrongDual.smulRightL ℝ E E).isBoundedBilinearMap.continuous
-    exact hB.comp ((innerSL ℝ).continuous.prodMk continuous_id)
-  have hDmeas : Measurable D :=
-    ((continuous_norm.measurable.pow_const α).smul measurable_const).add
-      ((measurable_const.mul (continuous_norm.measurable.pow_const (α - 2))).smul
-        hsrCont.measurable)
-  have hDloc : LocallyIntegrableOn D (Opens.interior U) μ := by
-    refine LocallyIntegrable.locallyIntegrableOn ?_ _
-    rw [locallyIntegrable_iff]
-    intro K hK
-    have hmaj : IntegrableOn (fun x : E => (1 + |α|) * ‖x‖ ^ α) K μ := by
-      rcases subsingleton_or_nontrivial E with hE | hE
-      · exact continuous_of_discreteTopology.locallyIntegrable.integrableOn_isCompact hK
-      · have hgt : -(Module.finrank ℝ E : ℝ) < α := by
-          have : (1 : ℝ) ≤ Module.finrank ℝ E := by
-            exact_mod_cast Module.finrank_pos (R := ℝ) (M := E)
-          linarith
-        exact (((locallyIntegrable_norm_sub_rpow (mu := μ) hgt (0 : E)).integrableOn_isCompact
-          hK).const_mul (1 + |α|)).congr (Eventually.of_forall fun x => by simp)
-    exact hmaj.mono' hDmeas.aestronglyMeasurable (Eventually.of_forall hDbound)
-  have hweak : HasWeakFDerivOn μ (Opens.interior U) u D :=
-    hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton (0 : E))
-      hcont.continuousOn hDloc (fun x hx => hd x hx.2)
-  refine memWkpLoc_succ_iff.2 ⟨hcont.continuousOn.memLpLoc, D, hweak,
+  refine memWkpLoc_succ_iff.2 ⟨(continuous_norm_rpow_smul_self hα).continuousOn.memLpLoc, _,
+    hasWeakFDerivOn_norm_rpow_smul_self hα _,
     memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K hKU hK => ?_)⟩
   have hbase : MemLp (fun x : E => ‖x‖ ^ α) p (μ.restrict K) := memLpLoc_iff.1 hp K hKU hK
-  refine (hbase.const_mul (1 + |α|)).of_le hDmeas.aestronglyMeasurable
+  refine (hbase.const_mul (1 + |α|)).of_le
+    ((hasWeakFDerivOn_norm_rpow_smul_self (μ := μ) hα
+      (⊤ : Opens E)).locallyIntegrableOn_deriv.mono_set (subset_univ K)).aestronglyMeasurable
     (Eventually.of_forall fun x => ?_)
   rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (Real.rpow_nonneg (norm_nonneg x) _))]
-  exact hDbound x
+  exact norm_rpow_smul_id_add_smulRight_le α x
 
 end RadialPower
 

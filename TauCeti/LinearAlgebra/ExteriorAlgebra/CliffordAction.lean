@@ -67,6 +67,9 @@ complex-valued forms.
   `CliffordAlgebra.baseChangeEquiv_equivExterior`, and
   `CliffordAlgebra.equivExterior_symm_baseChangeEquiv`: compatibility with
   `ExteriorAlgebra.baseChangeEquiv`.
+* `CliffordAlgebra.equivExterior_ofBaseChange` and `CliffordAlgebra.equivExterior_ofBaseChangeAux`:
+  the Chevalley map of `Q.baseChange A` on the images of `CliffordAlgebra.ofBaseChange` and
+  `CliffordAlgebra.ofBaseChangeAux`.
 
 ## References
 
@@ -298,6 +301,24 @@ theorem equivExterior_symm_baseChangeEquiv (x : A ⊗[R] ExteriorAlgebra R M) :
   apply (equivExterior (Q.baseChange A)).injective
   rw [LinearEquiv.apply_symm_apply, ← baseChangeEquiv_equivExterior, toBaseChange_ofBaseChange,
     LinearEquiv.apply_symm_apply]
+
+/-- **The Chevalley map on `ofBaseChange`**: `CliffordAlgebra.equivExterior` on `Q.baseChange A`
+sends `ofBaseChange A Q t` to the scalar extension of `equivExterior Q` applied to `t`, followed by
+`ExteriorAlgebra.baseChangeEquiv`. -/
+theorem equivExterior_ofBaseChange (t : A ⊗[R] CliffordAlgebra Q) :
+    equivExterior (Q.baseChange A) (ofBaseChange A Q t) =
+      ExteriorAlgebra.baseChangeEquiv R M A ((equivExterior Q).baseChange R A _ _ t) := by
+  rw [← baseChangeEquiv_equivExterior, toBaseChange_ofBaseChange]
+
+/-- **The Chevalley map on `ofBaseChangeAux`**: `CliffordAlgebra.equivExterior` on
+`Q.baseChange A` sends `ofBaseChangeAux A Q c` to
+`ExteriorAlgebra.baseChangeEquiv R M A (1 ⊗ₜ equivExterior Q c)`. -/
+theorem equivExterior_ofBaseChangeAux (c : CliffordAlgebra Q) :
+    equivExterior (Q.baseChange A) (ofBaseChangeAux A Q c) =
+      ExteriorAlgebra.baseChangeEquiv R M A (1 ⊗ₜ[R] equivExterior Q c) := by
+  have h : ofBaseChange A Q (1 ⊗ₜ[R] c) = ofBaseChangeAux A Q c :=
+    (Algebra.TensorProduct.lift_tmul _ _ _ 1 c).trans (by rw [map_one, one_mul])
+  rw [← h, equivExterior_ofBaseChange, LinearEquiv.baseChange_tmul]
 
 end InvertibleTwo
 

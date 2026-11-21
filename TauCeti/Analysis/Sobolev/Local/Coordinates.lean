@@ -20,6 +20,8 @@ vector-valued maps without choosing compatible representatives of their iterated
 
 The criteria include the zero-dimensional codomain, order zero, and the exponent infinity.
 They also show that testing one basis is equivalent to testing every basis.
+Conversely, real functions in a local Sobolev class, one for each vector of a finite basis,
+are the coordinates of a single map in that class (`Module.Basis.exists_memWkpLoc_repr_eq`).
 
 For maps on a finite-dimensional real normed space `E`, a weak derivative `D` is likewise tested
 through its partial derivatives `x ↦ D x (b i)` along any finite basis `b` of `E`
@@ -92,6 +94,17 @@ theorem memWkpLoc_iff (b : Module.Basis ι ℝ F) :
       intro i _
       exact (h i).smul_const (b i)
     simpa only [b.sum_repr] using hs
+
+/-- Real functions `v i` in `MemWkpLoc p U k`, one for each vector of a finite basis `b` of `F`,
+are the coordinates in `b` of a single function `E → F` in `MemWkpLoc p U k`. -/
+theorem exists_memWkpLoc_repr_eq (b : Module.Basis ι ℝ F) {v : ι → E → ℝ}
+    (hv : ∀ i, MemWkpLoc p U k (v i) μ) :
+    ∃ V : E → F, MemWkpLoc p U k V μ ∧ ∀ i, (fun z => b.repr (V z) i) = v i := by
+  classical
+  let : Fintype ι := Fintype.ofFinite ι
+  have hrepr : ∀ i, (fun z => b.repr (b.equivFun.symm fun j => v j z) i) = v i := fun i =>
+    funext fun z => by rw [← b.equivFun_apply, b.equivFun.apply_symm_apply]
+  exact ⟨_, b.memWkpLoc_iff.2 fun i => (hrepr i).symm ▸ hv i, hrepr⟩
 
 open TopologicalSpace in
 /-- **Assembling a weak derivative from its partial derivatives along a basis.** A locally `Lᵖ`
