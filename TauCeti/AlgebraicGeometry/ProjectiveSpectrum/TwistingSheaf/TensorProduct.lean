@@ -282,33 +282,14 @@ theorem tensorObjIso_hom_app_tmulRight (U : (Proj 𝒜).Opens) (s : Γ(twistingS
     (t : Γ(twistingSheaf 𝒜 n, U)) :
     (tensorObjIso f hf hcover m n).hom.app U
       (Scheme.Modules.tmulRight (twistingSheaf 𝒜 m) t s) = mul 𝒜 U m n s t := by
-  let F : (Proj 𝒜).Modules ⥤ PresheafOfModulesOfCommRing (Proj 𝒜).presheaf :=
-    _root_.SheafOfModules.forget _
-  let _ : F.LaxMonoidal := TauCeti.SheafOfModules.forgetLaxMonoidal (Proj 𝒜).sheaf
-  have e : ((twistingSheaf 𝒜 m).tensorUnderlyingIso (twistingSheaf 𝒜 n)).inv ≫
-      (tensorObjIso f hf hcover m n).hom =
-      (TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf _ _).inv ≫
-        (tensorProductIso f hf hcover m n).hom := by
-    rw [tensorObjIso_hom]
-    exact Iso.inv_hom_id_assoc _ _
-  -- The tensor map of the forgetful functor, followed by `tensorObjIso`, is the sheafification
-  -- unit followed by `tensorProductIso`.
-  have h : Functor.LaxMonoidal.μ F (twistingSheaf 𝒜 m) (twistingSheaf 𝒜 n) ≫
-      F.map (tensorObjIso f hf hcover m n).hom = _ :=
-    TauCeti.SheafOfModules.forget_μ_comp_map (R := (Proj 𝒜).sheaf) _
-  rw [e] at h
-  have hu := (TauCeti.SheafOfModules.sheafificationForgetAdjunction (Proj 𝒜).sheaf).homEquiv_unit
-    _ _ ((TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf (twistingSheaf 𝒜 m)
-      (twistingSheaf 𝒜 n)).inv ≫ (tensorProductIso f hf hcover m n).hom)
-  -- The tensor map of sections over `U` is that of the forgetful functor, evaluated at `U`.
-  rw [Scheme.Modules.tmulRight_apply]
-  change (tensorObjIso f hf hcover m n).hom.app U
-    ((Functor.LaxMonoidal.μ F (twistingSheaf 𝒜 m) (twistingSheaf 𝒜 n)).app (op U) (s ⊗ₜ t)) = _
-  -- `sheafificationForgetAdjunction` is Mathlib's sheafification adjunction, whose unit appears in
-  -- `tensorProductIso_hom_tmul`.
-  exact ((congrArg (fun g ↦ g.app (op U) (s ⊗ₜ t)) h).trans
-    (congrArg (fun g ↦ g.app (op U) (s ⊗ₜ t)) hu)).trans
-    (tensorProductIso_hom_tmul f hf hcover m n U s t)
+  rw [tensorObjIso_hom]
+  erw [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply]
+  change (tensorProductIso f hf hcover m n).hom.val.app (op U)
+    ((TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf _ _).inv.val.app (op U)
+      (((twistingSheaf 𝒜 m).tensorUnderlyingIso (twistingSheaf 𝒜 n)).hom.val.app (op U)
+        (Scheme.Modules.tmulRight (twistingSheaf 𝒜 m) t s))) = _
+  rw [Scheme.Modules.tensorUnderlyingIso_hom_app_tmulRight]
+  exact tensorProductIso_hom_tmul f hf hcover m n U s t
 
 end Cover
 

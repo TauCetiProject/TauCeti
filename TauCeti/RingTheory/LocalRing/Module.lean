@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import Mathlib.Algebra.Module.Shrink
+import TauCeti.Algebra.Module.Equiv.SpanSingleton
 
 /-!
 # Generators of modules over a local ring
@@ -86,6 +87,7 @@ theorem span_singleton_eq_top_iff_one_tmul_ne_zero [Module.Free R M]
     (h : Module.finrank R M = 1) (m : M) :
     Submodule.span R {m} = ⊤ ↔ (1 : _root_.IsLocalRing.ResidueField R) ⊗ₜ[R] m ≠ 0 := by
   obtain ⟨e⟩ := Module.nonempty_linearEquiv_of_finrank_eq_one h
+  rw [e.symm.span_singleton_eq_top_iff_isUnit]
   obtain ⟨a, rfl⟩ := e.surjective m
   -- Under `k ⊗ M ≃ k ⊗ R ≃ k`, the vector `1 ⊗ e a` is the residue of `a`.
   have he : (1 : _root_.IsLocalRing.ResidueField R) ⊗ₜ[R] e a =
@@ -94,9 +96,7 @@ theorem span_singleton_eq_top_iff_one_tmul_ne_zero [Module.Free R M]
       map_smul, ← TensorProduct.smul_tmul, Algebra.smul_def, mul_one, smul_eq_mul, mul_one]
     rfl
   rw [he, LinearEquiv.map_ne_zero_iff, LinearEquiv.map_ne_zero_iff,
-    _root_.IsLocalRing.residue_ne_zero_iff_isUnit, ← Ideal.span_singleton_eq_top,
-    ← Submodule.map_eq_top_iff (e := e), Ideal.span, Submodule.map_span, Set.image_singleton]
-  rfl
+    _root_.IsLocalRing.residue_ne_zero_iff_isUnit, LinearEquiv.symm_apply_apply]
 
 /-- **A family with linearly independent residues is a basis.** If `M` has a basis `b` indexed by
 `ι`, and `v` is a family of `|ι|` elements whose coordinates in `b`, read in the residue field,

@@ -107,8 +107,9 @@ instance isInvertible_restrict [IsOpenImmersion f] (M : Y.Modules) [isInvertible
 restriction to every member of an open cover is invertible. -/
 theorem isInvertible_iff_forall_restrict (𝒰 : X.OpenCover) (M : X.Modules) :
     isInvertible X M ↔ ∀ i, isInvertible (𝒰.X i) (M.restrict (𝒰.f i)) := by
-  refine ⟨fun _ i ↦ (isInvertible _).prop_of_iso
-    ((Scheme.Modules.restrictFunctorIsoPullback (𝒰.f i)).app M).symm inferInstance, fun h ↦ ?_⟩
+  refine ⟨fun h i ↦ ?_, fun h ↦ ?_⟩
+  · have := h
+    infer_instance
   -- Trivialize the restriction to each member `𝒰.X i` on an open cover `W i` of `𝒰.X i`, and
   -- pick for every point of `X` a trivializing open `W i k` whose image contains it.
   choose ι W hW e using fun i ↦ isInvertible_iff_exists_isOpenCover.mp (h i)

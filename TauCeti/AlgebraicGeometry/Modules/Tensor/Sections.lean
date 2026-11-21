@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Modules.Sections
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
+import all TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Monoidal
 
 /-!
 # Tensoring sections of `𝒪_X`-modules with a section
@@ -79,8 +80,8 @@ theorem tensorUnderlyingIso_hom_app_tmulRight {U : X.Opens} (e : Γ(L, U)) (t : 
   -- so rewriting the comparison requires elaborator transparency.
   erw [Iso.inv_hom_id,
     (TauCeti.SheafOfModules.sheafificationForgetAdjunction X.sheaf).homEquiv_unit,
-    CategoryTheory.Functor.map_id, Category.comp_id,
-    TauCeti.SheafOfModules.sheafificationForgetAdjunction_unit_app X.sheaf (F.val ⊗ L.val)] at h
+    CategoryTheory.Functor.map_id, Category.comp_id] at h
+  unfold TauCeti.SheafOfModules.sheafificationForgetAdjunction at h
   rw [tmulRight_apply]
   exact congrArg (fun φ ↦ (φ.app (op U)).hom (t ⊗ₜ e)) h
 

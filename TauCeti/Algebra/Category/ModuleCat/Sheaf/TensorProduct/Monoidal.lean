@@ -292,13 +292,6 @@ def sheafificationForgetAdjunction :
       _root_.SheafOfModules.forget (ringCatSheaf R) :=
   PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)
 
-/-- The unit of the sheafification--forgetful adjunction is the usual sheafification unit. -/
-lemma sheafificationForgetAdjunction_unit_app
-    (M : PresheafOfModules.{u} (ringCatSheaf R).obj) :
-    (sheafificationForgetAdjunction R).unit.app M =
-      (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app M :=
-  (rfl)
-
 /-- The counit of `sheafificationForgetAdjunction` at a sheaf of modules `M` is the
 identification `sheafificationIso` of the sheafification of `M.val` with `M`. -/
 lemma sheafificationForgetAdjunction_counit_app (M : SheafOfModules.{u} (ringCatSheaf R)) :

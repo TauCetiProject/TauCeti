@@ -170,16 +170,12 @@ theorem IsAmple.mul_mk_of_isGloballyGenerated {a : LineBundleClass X} (h : a.IsA
   exists_isAffineOpen_nonvanishingLocus x := by
     obtain ⟨n, hn, L, hL, s, hxs, hs⟩ := h.exists_isAffineOpen_nonvanishingLocus x
     obtain ⟨t, hxt⟩ := InvertibleSheaf.isGloballyGenerated_iff.mp (hK.tensorPow n) x
-    let u := (InvertibleSheaf.tensorProductObjIso L (K.tensorPow n)).inv.app ⊤
-      (Scheme.Modules.tmulRight L.obj t s)
-    have hu : (L.tensorProduct (K.tensorPow n)).obj.nonvanishingLocus u =
-        L.obj.nonvanishingLocus s ⊓ (K.tensorPow n).obj.nonvanishingLocus t := by
-      exact (Scheme.Modules.nonvanishingLocus_hom_app
-        (InvertibleSheaf.tensorProductObjIso L (K.tensorPow n)).symm _).trans
-          (Scheme.Modules.nonvanishingLocus_tmulRight s t)
-    refine ⟨n, hn, L.tensorProduct (K.tensorPow n), ?_, u,
-      hu ▸ ⟨hxs, hxt⟩, ?_⟩
-    · rw [mk_tensorProduct, hL, mk_tensorPow, mul_pow]
+    let u := Scheme.Modules.tmulRight L.obj t s
+    have hu : (L ⊗ K.tensorPow n).obj.nonvanishingLocus u =
+        L.obj.nonvanishingLocus s ⊓ (K.tensorPow n).obj.nonvanishingLocus t :=
+      Scheme.Modules.nonvanishingLocus_tmulRight s t
+    refine ⟨n, hn, L ⊗ K.tensorPow n, ?_, u, hu ▸ ⟨hxs, hxt⟩, ?_⟩
+    · rw [mk_tensorObj, hL, mk_tensorPow, mul_pow]
     · -- `X_s ∩ X_t` is the nonvanishing locus of `t` restricted to `X_s`.
       rw [hu, ← Scheme.Modules.nonvanishingLocus_map
         (homOfLE (le_top : L.obj.nonvanishingLocus s ≤ ⊤)) t]
@@ -203,16 +199,12 @@ theorem IsAmple.mul {a b : LineBundleClass X} (ha : a.IsAmple) (hb : b.IsAmple) 
     obtain ⟨M', hM'⟩ := mk_surjective (b ^ (n * m))
     obtain ⟨t', ht'⟩ := InvertibleSheaf.exists_nonvanishingLocus_eq_of_mk_eq_pow hn
       (by rw [hM', hM, ← pow_mul, mul_comm m]) t
-    let u := (InvertibleSheaf.tensorProductObjIso L' M').inv.app ⊤
-      (Scheme.Modules.tmulRight L'.obj t' s')
-    have hu : (L'.tensorProduct M').obj.nonvanishingLocus u =
+    let u := Scheme.Modules.tmulRight L'.obj t' s'
+    have hu : (L' ⊗ M').obj.nonvanishingLocus u =
         L.obj.nonvanishingLocus s ⊓ M.obj.nonvanishingLocus t := by
-      exact (Scheme.Modules.nonvanishingLocus_hom_app
-        (InvertibleSheaf.tensorProductObjIso L' M').symm _).trans
-          ((Scheme.Modules.nonvanishingLocus_tmulRight s' t').trans (by rw [hs', ht']))
-    refine ⟨n * m, Nat.mul_pos hn hm, L'.tensorProduct M', ?_, u,
-      hu ▸ ⟨hxs, hxt⟩, ?_⟩
-    · rw [mk_tensorProduct, hL', hM', mul_pow]
+      exact (Scheme.Modules.nonvanishingLocus_tmulRight s' t').trans (by rw [hs', ht'])
+    refine ⟨n * m, Nat.mul_pos hn hm, L' ⊗ M', ?_, u, hu ▸ ⟨hxs, hxt⟩, ?_⟩
+    · rw [mk_tensorObj, hL', hM', mul_pow]
     · -- `X_s ∩ X_t` is the nonvanishing locus of `t` restricted to `X_s`.
       rw [hu, ← Scheme.Modules.nonvanishingLocus_map
         (homOfLE (le_top : L.obj.nonvanishingLocus s ≤ ⊤)) t]
@@ -227,7 +219,7 @@ theorem IsAmple.pullback {Y : Scheme.{u}} {a : LineBundleClass Y} (h : a.IsAmple
     [IsAffineHom e] : (pullback e a).IsAmple where
   compactSpace := by
     have := h.compactSpace
-    exact ⟨by simpa using QuasiCompact.isCompact_preimage (f := e) _ isOpen_univ isCompact_univ⟩
+    exact QuasiCompact.compactSpace_of_compactSpace e
   exists_isAffineOpen_nonvanishingLocus x := by
     obtain ⟨n, hn, L, hL, s, hx, hs⟩ := h.exists_isAffineOpen_nonvanishingLocus (e x)
     let s' : Γ(((InvertibleSheaf.pullback e).obj L).obj, ⊤) := e.pullbackSections L.obj ⊤ s
@@ -235,7 +227,7 @@ theorem IsAmple.pullback {Y : Scheme.{u}} {a : LineBundleClass Y} (h : a.IsAmple
         e ⁻¹ᵁ L.obj.nonvanishingLocus s :=
       Scheme.Modules.nonvanishingLocus_pullbackSections e s
     refine ⟨n, hn, (InvertibleSheaf.pullback e).obj L, ?_, s', hs' ▸ hx, hs' ▸ hs.preimage e⟩
-    rw [← pullback_mk, hL, ← pullbackHom_apply, map_pow, pullbackHom_apply]
+    rw [← pullback_mk, hL, pullback_pow]
 
 /-- **Ampleness is invariant under isomorphisms of schemes**: for an isomorphism `e : X ⟶ Y`, the
 pullback of `a` to `X` is ample exactly when `a` is ample. -/

@@ -53,17 +53,6 @@ universe u
 
 noncomputable section
 
-namespace SheafOfModules
-
-/-- The tensor product of two invertible sheaves in `X.Modules` is invertible. -/
-instance isInvertible_tensorObj {X : Scheme.{u}} (M N : X.Modules)
-    [isInvertible X M] [isInvertible X N] : isInvertible X (M ⊗ N) :=
-  (isInvertible X).prop_of_iso
-    (SheafOfModules.tensorProductIso X.sheaf M N ≪≫ (M.tensorUnderlyingIso N).symm)
-    (SheafOfModules.IsInvertible.tensorProduct (R := X.sheaf) (M := M) (N := N))
-
-end SheafOfModules
-
 namespace InvertibleSheaf
 
 variable {X : Scheme.{u}}

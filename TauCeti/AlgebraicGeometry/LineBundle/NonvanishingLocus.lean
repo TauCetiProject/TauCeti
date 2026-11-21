@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Stalk
-public import TauCeti.AlgebraicGeometry.LineBundle.Class
+public import TauCeti.AlgebraicGeometry.LineBundle.Monoidal
 public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
 public import TauCeti.AlgebraicGeometry.LineBundle.Stalk
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.ResidueField
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Sections
 public import TauCeti.RingTheory.LocalRing.Module
+import TauCeti.Algebra.Module.Equiv.SpanSingleton
 import Mathlib.AlgebraicGeometry.Morphisms.Affine
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 import TauCeti.AlgebraicGeometry.Modules.Localization
@@ -545,8 +546,14 @@ theorem nonvanishingLocus_tmulRight
     [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X M]
     [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X N]
     {U : X.Opens} (s : Γ(M, U)) (t : Γ(N, U)) :
+    letI : TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X (M ⊗ N) :=
+      ObjectProperty.prop_tensor (P₁ := TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X)
+        (P₂ := TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X) inferInstance inferInstance
     (M ⊗ N).nonvanishingLocus (tmulRight M t s) =
       M.nonvanishingLocus s ⊓ N.nonvanishingLocus t := by
+  have : TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X (M ⊗ N) :=
+    ObjectProperty.prop_tensor (P₁ := TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X)
+      (P₂ := TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X) inferInstance inferInstance
   let T : X.Modules := TauCeti.SheafOfModules.tensorProduct X.sheaf M N
   let e : M ⊗ N ≅ T := (M.tensorUnderlyingIso N) ≪≫
     (TauCeti.SheafOfModules.tensorProductIso X.sheaf M N).symm
@@ -562,12 +569,6 @@ theorem nonvanishingLocus_tmulRight
     erw [Iso.trans_hom, Iso.symm_hom, Hom.comp_app, ConcreteCategory.comp_apply]
     exact congrArg ((TauCeti.SheafOfModules.tensorProductIso X.sheaf M N).inv.val.app (op U))
       (tensorUnderlyingIso_hom_app_tmulRight M t s)
-  -- Generating a module is invariant under linear equivalences.
-  have hequiv {R P Q : Type u} [CommRing R] [AddCommGroup P] [Module R P] [AddCommGroup Q]
-      [Module R Q] (f : P ≃ₗ[R] Q) (p : P) :
-      Submodule.span R {f p} = ⊤ ↔ Submodule.span R {p} = ⊤ := by
-    rw [← Submodule.map_eq_top_iff (e := f), Submodule.map_span, Set.image_singleton,
-      LinearEquiv.coe_coe]
   ext x
   by_cases hx : x ∈ U
   swap
@@ -586,20 +587,18 @@ theorem nonvanishingLocus_tmulRight
       {M.presheaf.germ U x hx s ⊗ₜ[X.presheaf.stalk x] N.presheaf.germ U x hx t} = ⊤ ↔
       Submodule.span (X.presheaf.stalk x) {T.presheaf.germ U x hx st} = ⊤ := by
     rw [← hgerm]
-    exact hequiv (TauCeti.SheafOfModules.tensorStalkEquiv X.sheaf M N x) _
+    exact (TauCeti.SheafOfModules.tensorStalkEquiv X.sheaf M N x).span_singleton_apply_eq_top_iff
   -- An element of a module free of rank one generates it exactly when its coordinate is a unit.
-  have hunit {P : Type u} [AddCommGroup P] [Module (X.presheaf.stalk x) P]
-      (e : X.presheaf.stalk x ≃ₗ[X.presheaf.stalk x] P) (p : P) :
-      Submodule.span (X.presheaf.stalk x) {p} = ⊤ ↔ IsUnit (e.symm p) :=
-    (hequiv e.symm p).symm.trans Ideal.span_singleton_eq_top
-  have htmul := hunit ((TensorProduct.lid _ _).symm ≪≫ₗ TensorProduct.congr eM eN)
-    (M.presheaf.germ U x hx s ⊗ₜ[X.presheaf.stalk x] N.presheaf.germ U x hx t)
+  have htmul := LinearEquiv.span_singleton_eq_top_iff_isUnit
+    ((TensorProduct.lid _ _).symm ≪≫ₗ TensorProduct.congr eM eN).symm
+      (x := M.presheaf.germ U x hx s ⊗ₜ[X.presheaf.stalk x] N.presheaf.germ U x hx t)
   simp only [LinearEquiv.trans_symm, LinearEquiv.symm_symm, LinearEquiv.trans_apply,
     TensorProduct.congr_symm_tmul, TensorProduct.lid_tmul, smul_eq_mul, IsUnit.mul_iff] at htmul
   rw [SetLike.mem_coe, SetLike.mem_coe, Opens.mem_inf,
     mem_nonvanishingLocus_iff_of_mem (M := T) hx,
     mem_nonvanishingLocus_iff_of_mem (M := M) hx,
-    mem_nonvanishingLocus_iff_of_mem (M := N) hx, hunit eM, hunit eN]
+    mem_nonvanishingLocus_iff_of_mem (M := N) hx, eM.symm.span_singleton_eq_top_iff_isUnit,
+    eN.symm.span_singleton_eq_top_iff_isUnit]
   exact key.symm.trans htmul
 
 end TensorProduct
@@ -619,27 +618,34 @@ theorem exists_nonvanishingLocus_eq_of_mk_eq_pow
     {L₀ L : InvertibleSheaf X} {k : ℕ} {U : X.Opens} (hk : 0 < k) (hL : mk L = mk L₀ ^ k)
     (s₀ : Γ(L₀.obj, U)) :
     ∃ s : Γ(L.obj, U), L.obj.nonvanishingLocus s = L₀.obj.nonvanishingLocus s₀ := by
-  -- The `(k + 1)`-fold tensor product of `s₀` with itself vanishes exactly where `s₀` does.
-  have key (k : ℕ) : ∃ (L' : InvertibleSheaf X) (_ : mk L' = mk L₀ ^ (k + 1))
-      (s' : Γ(L'.obj, U)), L'.obj.nonvanishingLocus s' = L₀.obj.nonvanishingLocus s₀ := by
-    induction k with
-    | zero => exact ⟨L₀, by rw [zero_add, pow_one], s₀, rfl⟩
-    | succ k ih =>
-      obtain ⟨L', hL', s', hs'⟩ := ih
-      let s'' := (InvertibleSheaf.tensorProductObjIso L' L₀).inv.app U
-        (Scheme.Modules.tmulRight L'.obj s₀ s')
-      exact ⟨L'.tensorProduct L₀, by rw [mk_tensorProduct, hL', ← pow_succ], s'',
-        by
-          exact (Scheme.Modules.nonvanishingLocus_hom_app
-            (InvertibleSheaf.tensorProductObjIso L' L₀).symm _).trans
-              ((Scheme.Modules.nonvanishingLocus_tmulRight s' s₀).trans
-                (by rw [hs', inf_idem]))⟩
-  obtain ⟨L', hL', s', hs'⟩ := key (k - 1)
-  rw [Nat.sub_add_cancel hk, ← hL] at hL'
-  obtain ⟨e⟩ := mk_eq_mk_iff.mp hL'
-  obtain ⟨s, hs⟩ : L'.obj.nonvanishingLocus s' ∈ Set.range (L.obj.nonvanishingLocus (U := U)) := by
-    rw [← Scheme.Modules.range_nonvanishingLocus_eq_of_iso e U]
-    exact ⟨s', rfl⟩
-  exact ⟨s, hs.trans hs'⟩
+  have hpow (n : ℕ) : SheafOfModules.isInvertible X (TauCeti.tensorPow L₀.obj n) := by
+    induction n with
+    | zero => exact SheafOfModules.isInvertible_tensorUnit X
+    | succ n ih => exact ObjectProperty.prop_tensor L₀.property ih
+  let P (n : ℕ) : InvertibleSheaf X := ⟨TauCeti.tensorPow L₀.obj n, hpow n⟩
+  have hclass (n : ℕ) : mk (P n) = mk L₀ ^ n := by
+    induction n with
+    | zero => exact mk_tensorUnit X
+    | succ n ih =>
+      change mk (L₀ ⊗ P n) = _
+      rw [mk_tensorObj, ih, pow_succ']
+  have hlocus (n : ℕ) : (P (n + 1)).obj.nonvanishingLocus
+      (Scheme.Modules.tensorPowSection s₀ (n + 1)) = L₀.obj.nonvanishingLocus s₀ := by
+    induction n with
+    | zero =>
+      have := hpow 1
+      rw [Scheme.Modules.tensorPowSection_succ, Scheme.Modules.tensorPowSection_zero,
+        ← Scheme.Modules.rightUnitor_inv_app_eq_tmulRight]
+      exact Scheme.Modules.nonvanishingLocus_hom_app (ρ_ L₀.obj).symm s₀
+    | succ n ih =>
+      have := hpow (n + 1)
+      have := hpow (n + 2)
+      rw [Scheme.Modules.tensorPowSection_succ, Scheme.Modules.nonvanishingLocus_tmulRight]
+      exact (congrArg (L₀.obj.nonvanishingLocus s₀ ⊓ ·) ih).trans (inf_idem _)
+  obtain ⟨e⟩ := mk_eq_mk_iff.mp ((hclass k).trans hL.symm)
+  refine ⟨e.hom.app U (Scheme.Modules.tensorPowSection s₀ k), ?_⟩
+  rw [Scheme.Modules.nonvanishingLocus_hom_app e]
+  have h := hlocus (k - 1)
+  rwa [Nat.sub_add_cancel hk] at h
 
 end TauCeti.AlgebraicGeometry.InvertibleSheaf
