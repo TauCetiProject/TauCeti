@@ -115,7 +115,7 @@ private theorem mk_tripleAdj_eq_mk_iff {p q : Fin k ⊕ Fin k} :
     Quot.mk (TripleAdj D₁ D₂ D₃) p = Quot.mk (TripleAdj D₁ D₂ D₃) q ↔
       ReflTransGen (TripleAdj D₁ D₂ D₃) p q := by
   have : Std.Symm (TripleAdj D₁ D₂ D₃) := ⟨fun _ _ h => TripleAdj.symm h⟩
-  rw [Quot.eq, EqvGen.eqvGen_eq_reflTransGen]
+  rw [Quot.eq, Relation.eqvGen_eq_reflTransGen]
 
 private theorem OnTripleLoop.reflTransGen {p q : Fin k ⊕ Fin k} (hp : OnTripleLoop D₁ D₂ D₃ p)
     (hpq : ReflTransGen (TripleAdj D₁ D₂ D₃) p q) : OnTripleLoop D₁ D₂ D₃ q :=

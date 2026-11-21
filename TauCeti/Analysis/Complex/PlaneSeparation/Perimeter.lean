@@ -189,7 +189,7 @@ theorem variationMeasure_filledHull_sdiff (hab : a < b) (hα : HasUnitSpeedOn α
   have := hα.isFiniteMeasure_euclideanHausdorffMeasure_restrict
   exact TauCeti.variationMeasure_indicator_eq_of_forall_setIntegral_divergenceCLM_eq
     hα.measurableSet_filledHull_sdiff.nullMeasurableSet
-    ((measurable_candidateNormal hα hinj).comp measurable_subtype_coe).aestronglyMeasurable
+    ((measurable_candidateNormal hα hinj).comp measurable_subtypeVal).aestronglyMeasurable
     ((ae_restrict_iff_subtype Ω.isOpen.measurableSet).1
       (ae_restrict_of_ae (ae_norm_candidateNormal_eq_one hab hα hclosed hinj)))
     (setIntegral_divergenceCLM_filledHull_sdiff_eq hab hα hclosed hinj Ω)
@@ -203,11 +203,11 @@ theorem perimeter_filledHull_sdiff_opens (hab : a < b) (hα : HasUnitSpeedOn α 
   have := hα.isFiniteMeasure_euclideanHausdorffMeasure_restrict
   rw [TauCeti.perimeter_eq_of_forall_setIntegral_divergenceCLM_eq (Ω := ⊤)
     hα.measurableSet_filledHull_sdiff.nullMeasurableSet
-    ((measurable_candidateNormal hα hinj).comp measurable_subtype_coe).aestronglyMeasurable
+    ((measurable_candidateNormal hα hinj).comp measurable_subtypeVal).aestronglyMeasurable
     ((ae_restrict_iff_subtype (⊤ : Opens ℂ).isOpen.measurableSet).1
       (ae_restrict_of_ae (ae_norm_candidateNormal_eq_one hab hα hclosed hinj)))
     (setIntegral_divergenceCLM_filledHull_sdiff_eq hab hα hclosed hinj ⊤) le_top]
-  rw [comap_subtype_coe_apply (⊤ : Opens ℂ).isOpen.measurableSet]
+  rw [comap_subtypeVal_apply (⊤ : Opens ℂ).isOpen.measurableSet]
   trans ((μHE[1].restrict (α '' Icc a b)) (U : Set ℂ))
   · congr 1; ext z; simp
   · rw [Measure.restrict_apply U.isOpen.measurableSet, inter_comm]
@@ -249,11 +249,11 @@ private theorem ae_mem_reducedBoundary_and_outerNormal_eq_candidateNormal (hab :
   have hdiv := setIntegral_divergenceCLM_filledHull_sdiff_eq hab hα hclosed hinj ⊤
   have hred := TauCeti.ae_mem_reducedBoundary_of_forall_setIntegral_divergenceCLM_eq (Ω := ⊤)
     hα.measurableSet_filledHull_sdiff.nullMeasurableSet
-    ((measurable_candidateNormal hα hinj).comp measurable_subtype_coe).aestronglyMeasurable
+    ((measurable_candidateNormal hα hinj).comp measurable_subtypeVal).aestronglyMeasurable
     hc1 hdiv
   have hout := TauCeti.ae_outerNormal_eq_of_forall_setIntegral_divergenceCLM_eq (Ω := ⊤)
     hα.measurableSet_filledHull_sdiff.nullMeasurableSet
-    ((measurable_candidateNormal hα hinj).comp measurable_subtype_coe).aestronglyMeasurable
+    ((measurable_candidateNormal hα hinj).comp measurable_subtypeVal).aestronglyMeasurable
     hc1 hdiv
   have hae' := (ae_restrict_iff_subtype (⊤ : Opens ℂ).isOpen.measurableSet (p := fun z =>
     z ∈ TauCeti.reducedBoundary volume ⊤ (TauCeti.filledHull (α '' Icc a b) \ α '' Icc a b) ∧

@@ -76,18 +76,18 @@ namespace DominantWeight
 /-- The sequence `λᵢ - i` attached to a dominant weight `λ`.  It is the classical `λ + ρ` up to
 the constant `n`: the traditional normalization is `λᵢ + n - i`, and only the differences of the
 sequence are ever used. -/
-def rhoShift (l : DominantWeight n) (i : Fin n) : ℤ := l.1 i - i
+def rhoShift (l : DominantWeight n) (i : Fin n) : ℤ := l.val i - i
 
 /-- The defining equation of `TauCeti.DominantWeight.rhoShift`, its pointwise normal form. -/
 @[simp]
-theorem rhoShift_apply (l : DominantWeight n) (i : Fin n) : l.rhoShift i = l.1 i - i := by
+theorem rhoShift_apply (l : DominantWeight n) (i : Fin n) : l.rhoShift i = l.val i - i := by
   simp only [rhoShift]
 
 /-- Subtracting the staircase turns the weak decrease of a dominant weight into strict decrease.
 This is what makes every factor of `TauCeti.weylDimensionNumerator` positive. -/
 theorem rhoShift_strictAnti (l : DominantWeight n) : StrictAnti l.rhoShift := by
   intro i j hij
-  have h : l.1 j ≤ l.1 i := l.antitone hij.le
+  have h : l.val j ≤ l.val i := l.antitone hij.le
   have : (i : ℤ) < j := by exact_mod_cast hij
   simp only [rhoShift_apply]
   omega
@@ -95,7 +95,7 @@ theorem rhoShift_strictAnti (l : DominantWeight n) : StrictAnti l.rhoShift := by
 /-- The differences of `TauCeti.DominantWeight.rhoShift` are the factors of the Weyl dimension
 formula. -/
 theorem rhoShift_sub_rhoShift (l : DominantWeight n) (i j : Fin n) :
-    l.rhoShift i - l.rhoShift j = l.1 i - l.1 j + ((j : ℤ) - i) := by
+    l.rhoShift i - l.rhoShift j = l.val i - l.val j + ((j : ℤ) - i) := by
   simp only [rhoShift_apply]; ring
 
 /-- The determinant twist `λ ↦ λ + m·(1, …, 1)` shifts `TauCeti.DominantWeight.rhoShift` by `m`.
@@ -140,7 +140,7 @@ def weylDimensionNumerator (l : DominantWeight n) : ℤ :=
 `∏_{i < j} (λᵢ - λⱼ + j - i)` of the factors of the Weyl dimension formula.  This is the form every
 computation with the numerator starts from. -/
 theorem weylDimensionNumerator_eq_prod_prod (l : DominantWeight n) :
-    weylDimensionNumerator l = ∏ i, ∏ j ∈ Ioi i, (l.1 i - l.1 j + ((j : ℤ) - i)) := by
+    weylDimensionNumerator l = ∏ i, ∏ j ∈ Ioi i, (l.val i - l.val j + ((j : ℤ) - i)) := by
   simp only [weylDimensionNumerator, DominantWeight.rhoShift_sub_rhoShift]
 
 /-- Every factor of the numerator is positive, because `TauCeti.DominantWeight.rhoShift` is
@@ -205,9 +205,9 @@ theorem weylDimension_pos (l : DominantWeight n) : 0 < weylDimension l := by
 the term-by-term quotients `(λᵢ - λⱼ + j - i) / (j - i)`. -/
 theorem weylDimension_eq_prod_prod_div (l : DominantWeight n) :
     (weylDimension l : ℚ) =
-      ∏ i : Fin n, ∏ j ∈ Ioi i, ((l.1 i : ℚ) - l.1 j + ((j : ℚ) - i)) / ((j : ℚ) - i) := by
+      ∏ i : Fin n, ∏ j ∈ Ioi i, ((l.val i : ℚ) - l.val j + ((j : ℚ) - i)) / ((j : ℚ) - i) := by
   have hden := prod_Ioi_sub_eq_superFactorial ℚ n
-  have hnum : (∏ i : Fin n, ∏ j ∈ Ioi i, ((l.1 i : ℚ) - l.1 j + ((j : ℚ) - i))) =
+  have hnum : (∏ i : Fin n, ∏ j ∈ Ioi i, ((l.val i : ℚ) - l.val j + ((j : ℚ) - i))) =
       ((weylDimensionNumerator l : ℤ) : ℚ) := by
     rw [weylDimensionNumerator_eq_prod_prod]
     push_cast
@@ -221,7 +221,7 @@ theorem weylDimension_eq_prod_prod_div (l : DominantWeight n) :
 /-- **The formula reads only the differences of a weight**: two weights with the same differences
 `λᵢ - λⱼ` for `i < j` — the only ones the product ranges over — have the same numerator. -/
 theorem weylDimensionNumerator_congr {l l' : DominantWeight n}
-    (h : ∀ i j, i < j → l.1 i - l.1 j = l'.1 i - l'.1 j) :
+    (h : ∀ i j, i < j → l.val i - l.val j = l'.val i - l'.val j) :
     weylDimensionNumerator l = weylDimensionNumerator l' := by
   rw [weylDimensionNumerator_eq_prod_prod, weylDimensionNumerator_eq_prod_prod]
   exact Finset.prod_congr rfl fun i _ => Finset.prod_congr rfl fun j hj => by
@@ -231,7 +231,7 @@ theorem weylDimensionNumerator_congr {l l' : DominantWeight n}
 differences `λᵢ - λⱼ` for `i < j` have the same dimension.  Cancelling `sf (n - 1)` in
 `TauCeti.weylDimension_mul_superFactorial` reduces this to the numerator. -/
 theorem weylDimension_congr {l l' : DominantWeight n}
-    (h : ∀ i j, i < j → l.1 i - l.1 j = l'.1 i - l'.1 j) :
+    (h : ∀ i j, i < j → l.val i - l.val j = l'.val i - l'.val j) :
     weylDimension l = weylDimension l' := by
   have hsf : (0 : ℤ) < ((n - 1).superFactorial : ℤ) := by
     exact_mod_cast Nat.superFactorial_pos (n - 1)
@@ -258,7 +258,7 @@ theorem weylDimension_shift (l : DominantWeight n) (m : ℤ) :
 /-- A **constant weight** `(c, …, c)` — the weight of the `c`-th power of the determinant — has
 numerator exactly the denominator `sf (n - 1)`. -/
 theorem weylDimensionNumerator_eq_superFactorial_of_forall_eq
-    {l : DominantWeight n} {c : ℤ} (h : ∀ i, l.1 i = c) :
+    {l : DominantWeight n} {c : ℤ} (h : ∀ i, l.val i = c) :
     weylDimensionNumerator l = ((n - 1).superFactorial : ℤ) := by
   rw [weylDimensionNumerator_eq_prod_prod, ← prod_Ioi_sub_eq_superFactorial ℤ n]
   exact Finset.prod_congr rfl fun i _ => Finset.prod_congr rfl fun j _ => by
@@ -266,7 +266,7 @@ theorem weylDimensionNumerator_eq_superFactorial_of_forall_eq
 
 /-- **A power of the determinant is one-dimensional**: a constant dominant weight has Weyl
 dimension `1`. -/
-theorem weylDimension_eq_one_of_forall_eq {l : DominantWeight n} {c : ℤ} (h : ∀ i, l.1 i = c) :
+theorem weylDimension_eq_one_of_forall_eq {l : DominantWeight n} {c : ℤ} (h : ∀ i, l.val i = c) :
     weylDimension l = 1 := by
   have hsf : (0 : ℤ) < ((n - 1).superFactorial : ℤ) := by
     exact_mod_cast Nat.superFactorial_pos (n - 1)
@@ -283,14 +283,14 @@ theorem weylDimension_fin_zero (l : DominantWeight 0) : weylDimension l = 1 :=
 /-- Every weight of `GL 1` is a power of the determinant, hence one-dimensional. -/
 @[simp]
 theorem weylDimension_fin_one (l : DominantWeight 1) : weylDimension l = 1 :=
-  weylDimension_eq_one_of_forall_eq (c := l.1 0) fun i => by
+  weylDimension_eq_one_of_forall_eq (c := l.val 0) fun i => by
     rw [Subsingleton.elim i 0]
 
 /-- **The `GL 2` case**: the irreducible with highest weight `(λ₁, λ₂)` has dimension
 `λ₁ - λ₂ + 1`.  For `λ = (d, 0)` this is the `(d+1)`-dimensional symmetric power `Symᵈ`. -/
 theorem weylDimension_fin_two (l : DominantWeight 2) :
-    (weylDimension l : ℤ) = l.1 0 - l.1 1 + 1 := by
-  have hnum : weylDimensionNumerator l = l.1 0 - l.1 1 + 1 := by
+    (weylDimension l : ℤ) = l.val 0 - l.val 1 + 1 := by
+  have hnum : weylDimensionNumerator l = l.val 0 - l.val 1 + 1 := by
     rw [weylDimensionNumerator_eq_prod_prod, Fin.prod_univ_two]
     have h0 : (Ioi (0 : Fin 2)) = {1} := by decide
     have h1 : (Ioi (1 : Fin 2)) = ∅ := by decide

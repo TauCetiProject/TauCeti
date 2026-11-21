@@ -227,7 +227,7 @@ theorem exists_neBot_eventually_norm_le_and_forall_tendsto
     (TauCeti.exists_neBot_tendsto_iff_forall_finset_dist_lt (p := fun x : E ↦ ‖x‖ ≤ r)
       (F := fun k x ↦ ‖S k x - z k‖) (x := fun _ ↦ (0 : ℝ))).2 fun s ε hε ↦ by
     obtain ⟨x, hx, happrox⟩ := Φ.exists_norm_le_and_forall_norm_sub_lt
-      (fun k : s ↦ S k.1) (fun k : s ↦ z k.1) (fun k ↦ hz k.1) hr hε
+      (fun k : s ↦ S k.val) (fun k : s ↦ z k.val) (fun k ↦ hz k.val) hr hε
     exact ⟨x, hx, fun k hk ↦ by
       simpa only [Real.dist_eq, sub_zero, abs_of_nonneg (norm_nonneg _)] using happrox ⟨k, hk⟩⟩
   exact ⟨l, hl, hle, fun k ↦ tendsto_iff_norm_sub_tendsto_zero.2 (ht k)⟩

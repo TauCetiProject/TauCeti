@@ -94,28 +94,28 @@ theorem shiftSelectedEmb_ne_zero (p : Fin (k + l)) : shiftSelectedEmb k l p ≠ 
 /-- Prepending a selected position at site `0` inserts `0` and shifts all selected positions of `M`
 by `+ 1`. -/
 def consSelected (M : ShuffleMask k l) : ShuffleMask (k + 1) l :=
-  ⟨insert 0 (M.1.map (shiftSelectedEmb k l)), by
-    rw [card_insert_of_notMem, card_map, M.2]
+  ⟨insert 0 (M.val.map (shiftSelectedEmb k l)), by
+    rw [card_insert_of_notMem, card_map, M.property]
     simp [Fin.ext_iff]⟩
 
 /-- `M.consSelected` always selects site `0`. -/
 @[simp]
 theorem zero_mem_consSelected (M : ShuffleMask k l) :
-    (0 : Fin ((k + 1) + l)) ∈ M.consSelected.1 :=
+    (0 : Fin ((k + 1) + l)) ∈ M.consSelected.val :=
   mem_insert_self ..
 
 /-- A shifted position belongs to `M.consSelected` if and only if the original position belongs to
 `M`. -/
 @[simp]
 theorem shiftSelectedEmb_mem_consSelected {M : ShuffleMask k l} {p : Fin (k + l)} :
-    shiftSelectedEmb k l p ∈ M.consSelected.1 ↔ p ∈ M.1 := by
+    shiftSelectedEmb k l p ∈ M.consSelected.val ↔ p ∈ M.val := by
   simp [consSelected, Fin.ext_iff]
 
 /-- Prepending a selected position at site `0` is injective. -/
 theorem consSelected_injective : Function.Injective (@consSelected k l) := by
   intro M₁ M₂ h
   refine Subtype.ext (Finset.ext fun p ↦ ?_)
-  have hp := congrArg (fun M : ShuffleMask (k + 1) l ↦ shiftSelectedEmb k l p ∈ M.1) h
+  have hp := congrArg (fun M : ShuffleMask (k + 1) l ↦ shiftSelectedEmb k l p ∈ M.val) h
   simpa only [shiftSelectedEmb_mem_consSelected] using Iff.of_eq hp
 
 /-- Exchanging two shifted positions in `M.consSelected` corresponds to exchanging them in `M`. -/
@@ -142,8 +142,8 @@ positions unchanged. -/
 @[simp]
 theorem restIndex_consSelected (M : ShuffleMask k l) (p : Fin (k + l)) :
     M.consSelected.restIndex (shiftSelectedEmb k l p) = M.restIndex p := by
-  have hset : ({x ∈ M.consSelected.1ᶜ | x < shiftSelectedEmb k l p} : Finset _) =
-      ({x ∈ M.1ᶜ | x < p} : Finset _).map (shiftSelectedEmb k l) := by
+  have hset : ({x ∈ M.consSelected.valᶜ | x < shiftSelectedEmb k l p} : Finset _) =
+      ({x ∈ M.valᶜ | x < p} : Finset _).map (shiftSelectedEmb k l) := by
     ext y
     simp only [mem_filter, mem_compl, mem_map]
     constructor
@@ -163,10 +163,10 @@ theorem restIndex_consSelected (M : ShuffleMask k l) (p : Fin (k + l)) :
   simpa only [card_map, restIndex_def] using hcard
 
 private theorem insert_zero_map_filter_shiftSelectedEmb (S : ShuffleMask (k + 1) l)
-    (hS : (0 : Fin ((k + 1) + l)) ∈ S.1) :
+    (hS : (0 : Fin ((k + 1) + l)) ∈ S.val) :
     insert (0 : Fin ((k + 1) + l))
-      ((univ.filter fun p : Fin (k + l) ↦ shiftSelectedEmb k l p ∈ S.1).map
-        (shiftSelectedEmb k l)) = S.1 := by
+      ((univ.filter fun p : Fin (k + l) ↦ shiftSelectedEmb k l p ∈ S.val).map
+        (shiftSelectedEmb k l)) = S.val := by
   ext y
   simp only [mem_insert, mem_map, mem_filter, mem_univ, true_and]
   constructor
@@ -183,16 +183,16 @@ private theorem insert_zero_map_filter_shiftSelectedEmb (S : ShuffleMask (k + 1)
 
 /-- Removing the selected position at site `0` from a mask `S` selecting `0`. -/
 def tailOfZeroMem (S : ShuffleMask (k + 1) l)
-    (hS : (0 : Fin ((k + 1) + l)) ∈ S.1) : ShuffleMask k l :=
-  ⟨univ.filter fun p : Fin (k + l) ↦ shiftSelectedEmb k l p ∈ S.1, by
+    (hS : (0 : Fin ((k + 1) + l)) ∈ S.val) : ShuffleMask k l :=
+  ⟨univ.filter fun p : Fin (k + l) ↦ shiftSelectedEmb k l p ∈ S.val, by
     have hcard := congrArg Finset.card (insert_zero_map_filter_shiftSelectedEmb S hS)
-    rw [card_insert_of_notMem (by simp [Fin.ext_iff]), card_map, S.2] at hcard
+    rw [card_insert_of_notMem (by simp [Fin.ext_iff]), card_map, S.property] at hcard
     omega⟩
 
 /-- Prepending `0` to `tailOfZeroMem S hS` recovers `S`. -/
 @[simp]
 theorem consSelected_tailOfZeroMem (S : ShuffleMask (k + 1) l)
-    (hS : (0 : Fin ((k + 1) + l)) ∈ S.1) :
+    (hS : (0 : Fin ((k + 1) + l)) ∈ S.val) :
     (tailOfZeroMem S hS).consSelected = S :=
   Subtype.ext (insert_zero_map_filter_shiftSelectedEmb S hS)
 
@@ -206,11 +206,11 @@ theorem tailOfZeroMem_consSelected (M : ShuffleMask k l) :
 selecting site `0`. -/
 def consSelectedEquiv :
     ShuffleMask k l ≃
-      {S : ShuffleMask (k + 1) l // (0 : Fin ((k + 1) + l)) ∈ S.1} where
+      {S : ShuffleMask (k + 1) l // (0 : Fin ((k + 1) + l)) ∈ S.val} where
   toFun M := ⟨M.consSelected, zero_mem_consSelected M⟩
-  invFun S := tailOfZeroMem S.1 S.2
+  invFun S := tailOfZeroMem S.val S.property
   left_inv M := tailOfZeroMem_consSelected M
-  right_inv S := Subtype.ext (consSelected_tailOfZeroMem S.1 S.2)
+  right_inv S := Subtype.ext (consSelected_tailOfZeroMem S.val S.property)
 
 /-- Forward evaluation of `consSelectedEquiv` prepends a selected position at site `0`. -/
 @[simp]
@@ -220,28 +220,28 @@ theorem consSelectedEquiv_apply (M : ShuffleMask k l) :
 /-- Inverse evaluation of `consSelectedEquiv` removes the selected position at site `0`. -/
 @[simp]
 theorem consSelectedEquiv_symm_apply
-    (S : {S : ShuffleMask (k + 1) l // (0 : Fin ((k + 1) + l)) ∈ S.1}) :
-    consSelectedEquiv.symm S = tailOfZeroMem S.1 S.2 := (rfl)
+    (S : {S : ShuffleMask (k + 1) l // (0 : Fin ((k + 1) + l)) ∈ S.val}) :
+    consSelectedEquiv.symm S = tailOfZeroMem S.val S.property := (rfl)
 
 /-- Prepending a rest position at site `0` shifts every selected position of `M` by `Fin.succ`. -/
 def consRest (M : ShuffleMask k l) : ShuffleMask k (l + 1) :=
-  ⟨M.1.map (Fin.succEmb (k + l)), by rw [card_map, M.2]⟩
+  ⟨M.val.map (Fin.succEmb (k + l)), by rw [card_map, M.property]⟩
 
 /-- `M.consRest` never selects site `0`. -/
 @[simp]
 theorem zero_notMem_consRest (M : ShuffleMask k l) :
-    (0 : Fin (k + (l + 1))) ∉ M.consRest.1 := by simp [consRest]
+    (0 : Fin (k + (l + 1))) ∉ M.consRest.val := by simp [consRest]
 
 /-- A shifted position `p.succ` belongs to `M.consRest` if and only if `p` belongs to `M`. -/
 @[simp]
 theorem succ_mem_consRest {M : ShuffleMask k l} {p : Fin (k + l)} :
-    p.succ ∈ M.consRest.1 ↔ p ∈ M.1 := by simp [consRest]
+    p.succ ∈ M.consRest.val ↔ p ∈ M.val := by simp [consRest]
 
 /-- Prepending a rest position at site `0` is injective. -/
 theorem consRest_injective : Function.Injective (@consRest k l) := by
   intro M₁ M₂ h
   refine Subtype.ext (Finset.ext fun p ↦ ?_)
-  exact Iff.of_eq (by simpa only [succ_mem_consRest] using congrArg (p.succ ∈ ·.1) h)
+  exact Iff.of_eq (by simpa only [succ_mem_consRest] using congrArg (p.succ ∈ ·.val) h)
 
 /-- Exchanging two shifted positions in `M.consRest` corresponds to exchanging them in `M`. -/
 theorem consRest_swap (a b : Fin (k + l)) (M : ShuffleMask k l) :
@@ -257,9 +257,9 @@ shifted position. -/
 @[simp]
 theorem restIndex_consRest_succ (M : ShuffleMask k l) (p : Fin (k + l)) :
     M.consRest.restIndex p.succ = M.restIndex p + 1 := by
-  have hset : ({x ∈ M.consRest.1ᶜ | x < p.succ} : Finset _) =
+  have hset : ({x ∈ M.consRest.valᶜ | x < p.succ} : Finset _) =
       insert (0 : Fin (k + (l + 1)))
-        (({x ∈ M.1ᶜ | x < p} : Finset _).map (Fin.succEmb (k + l))) := by
+        (({x ∈ M.valᶜ | x < p} : Finset _).map (Fin.succEmb (k + l))) := by
     ext y
     refine Fin.cases ?_ (fun x ↦ ?_) y
     · simp [Fin.succ_pos]
@@ -271,20 +271,20 @@ theorem restIndex_consRest_succ (M : ShuffleMask k l) (p : Fin (k + l)) :
 
 /-- Removing the rest position at site `0` from a mask `S` not selecting `0`. -/
 def tailOfZeroNotMem (S : ShuffleMask k (l + 1))
-    (hS : (0 : Fin (k + (l + 1))) ∉ S.1) : ShuffleMask k l :=
-  ⟨univ.filter fun p : Fin (k + l) ↦ p.succ ∈ S.1, by
-    have hmap : ((univ.filter fun p : Fin (k + l) ↦ p.succ ∈ S.1).map (Fin.succEmb (k + l))) =
-        S.1 := by
+    (hS : (0 : Fin (k + (l + 1))) ∉ S.val) : ShuffleMask k l :=
+  ⟨univ.filter fun p : Fin (k + l) ↦ p.succ ∈ S.val, by
+    have hmap : ((univ.filter fun p : Fin (k + l) ↦ p.succ ∈ S.val).map (Fin.succEmb (k + l))) =
+        S.val := by
       ext y
       refine Fin.cases ?_ (fun p ↦ ?_) y
       · simp [hS]
       · simp
-    rw [← card_map (Fin.succEmb (k + l)), hmap, S.2]⟩
+    rw [← card_map (Fin.succEmb (k + l)), hmap, S.property]⟩
 
 /-- Prepending a rest position at site `0` to `tailOfZeroNotMem S hS` recovers `S`. -/
 @[simp]
 theorem consRest_tailOfZeroNotMem (S : ShuffleMask k (l + 1))
-    (hS : (0 : Fin (k + (l + 1))) ∉ S.1) :
+    (hS : (0 : Fin (k + (l + 1))) ∉ S.val) :
     (tailOfZeroNotMem S hS).consRest = S := by
   refine Subtype.ext (Finset.ext fun y ↦ ?_)
   refine Fin.cases ?_ (fun p ↦ ?_) y
@@ -300,11 +300,11 @@ theorem tailOfZeroNotMem_consRest (M : ShuffleMask k l) :
 /-- Bijection between `k`-masks on `k + l` strands and `k`-masks on `k + (l + 1)` strands leaving
 site `0` in the rest. -/
 def consRestEquiv :
-    ShuffleMask k l ≃ {S : ShuffleMask k (l + 1) // (0 : Fin (k + (l + 1))) ∉ S.1} where
+    ShuffleMask k l ≃ {S : ShuffleMask k (l + 1) // (0 : Fin (k + (l + 1))) ∉ S.val} where
   toFun M := ⟨M.consRest, zero_notMem_consRest M⟩
-  invFun S := tailOfZeroNotMem S.1 S.2
+  invFun S := tailOfZeroNotMem S.val S.property
   left_inv M := tailOfZeroNotMem_consRest M
-  right_inv S := Subtype.ext (consRest_tailOfZeroNotMem S.1 S.2)
+  right_inv S := Subtype.ext (consRest_tailOfZeroNotMem S.val S.property)
 
 /-- Forward evaluation of `consRestEquiv` prepends a rest position at site `0`. -/
 @[simp]
@@ -314,8 +314,8 @@ theorem consRestEquiv_apply (M : ShuffleMask k l) :
 /-- Inverse evaluation of `consRestEquiv` removes the rest position at site `0`. -/
 @[simp]
 theorem consRestEquiv_symm_apply
-    (S : {S : ShuffleMask k (l + 1) // (0 : Fin (k + (l + 1))) ∉ S.1}) :
-    consRestEquiv.symm S = tailOfZeroNotMem S.1 S.2 := (rfl)
+    (S : {S : ShuffleMask k (l + 1) // (0 : Fin (k + (l + 1))) ∉ S.val}) :
+    consRestEquiv.symm S = tailOfZeroNotMem S.val S.property := (rfl)
 
 end ShuffleMask
 
@@ -333,14 +333,14 @@ variable (R U) [NeZero (k + l)]
 /-- Linear projection on `ShuffleMask k l → U` retaining masks that select site `0` and zeroing
 out masks that leave site `0` in the rest. -/
 def firstSelectedProj : Module.End R (ShuffleMask k l → U) where
-  toFun f S := if (0 : Fin (k + l)) ∈ S.1 then f S else 0
+  toFun f S := if (0 : Fin (k + l)) ∈ S.val then f S else 0
   map_add' _ _ := funext fun _ ↦ by simp only [Pi.add_apply]; split_ifs <;> simp
   map_smul' _ _ := funext fun _ ↦ by simp only [Pi.smul_apply, RingHom.id_apply]; split_ifs <;> simp
 
 /-- Linear projection on `ShuffleMask k l → U` retaining masks that leave site `0` in the rest and
 zeroing out masks that select site `0`. -/
 def firstRestProj : Module.End R (ShuffleMask k l → U) where
-  toFun f S := if (0 : Fin (k + l)) ∈ S.1 then 0 else f S
+  toFun f S := if (0 : Fin (k + l)) ∈ S.val then 0 else f S
   map_add' _ _ := funext fun _ ↦ by simp only [Pi.add_apply]; split_ifs <;> simp
   map_smul' _ _ := funext fun _ ↦ by simp only [Pi.smul_apply, RingHom.id_apply]; split_ifs <;> simp
 
@@ -349,19 +349,19 @@ variable {R U}
 /-- Pointwise evaluation of `firstSelectedProj` at mask `S`. -/
 @[simp]
 theorem firstSelectedProj_apply (f : ShuffleMask k l → U) (S : ShuffleMask k l) :
-    firstSelectedProj R U f S = if (0 : Fin (k + l)) ∈ S.1 then f S else 0 := (rfl)
+    firstSelectedProj R U f S = if (0 : Fin (k + l)) ∈ S.val then f S else 0 := (rfl)
 
 /-- Pointwise evaluation of `firstRestProj` at mask `S`. -/
 @[simp]
 theorem firstRestProj_apply (f : ShuffleMask k l → U) (S : ShuffleMask k l) :
-    firstRestProj R U f S = if (0 : Fin (k + l)) ∈ S.1 then 0 else f S := (rfl)
+    firstRestProj R U f S = if (0 : Fin (k + l)) ∈ S.val then 0 else f S := (rfl)
 
 /-- `firstSelectedProj` is idempotent under composition. -/
 @[simp]
 theorem firstSelectedProj_comp_firstSelectedProj :
     (firstSelectedProj R U : Module.End R (ShuffleMask k l → U)) ∘ₗ firstSelectedProj R U =
       firstSelectedProj R U :=
-  LinearMap.ext fun _ ↦ funext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+  LinearMap.ext fun _ ↦ funext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.val <;> simp [h]
 
 /-- `firstSelectedProj` is an idempotent endomorphism. -/
 theorem isIdempotentElem_firstSelectedProj :
@@ -373,7 +373,7 @@ theorem isIdempotentElem_firstSelectedProj :
 theorem firstRestProj_comp_firstRestProj :
     (firstRestProj R U : Module.End R (ShuffleMask k l → U)) ∘ₗ firstRestProj R U =
       firstRestProj R U :=
-  LinearMap.ext fun _ ↦ funext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+  LinearMap.ext fun _ ↦ funext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.val <;> simp [h]
 
 /-- `firstRestProj` is an idempotent endomorphism. -/
 theorem isIdempotentElem_firstRestProj :
@@ -384,19 +384,19 @@ theorem isIdempotentElem_firstRestProj :
 @[simp]
 theorem firstSelectedProj_comp_firstRestProj :
     (firstSelectedProj R U : Module.End R (ShuffleMask k l → U)) ∘ₗ firstRestProj R U = 0 :=
-  LinearMap.ext fun _ ↦ funext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+  LinearMap.ext fun _ ↦ funext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.val <;> simp [h]
 
 /-- `firstRestProj` annihilates the image of `firstSelectedProj`. -/
 @[simp]
 theorem firstRestProj_comp_firstSelectedProj :
     (firstRestProj R U : Module.End R (ShuffleMask k l → U)) ∘ₗ firstSelectedProj R U = 0 :=
-  LinearMap.ext fun _ ↦ funext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+  LinearMap.ext fun _ ↦ funext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.val <;> simp [h]
 
 /-- `firstSelectedProj` and `firstRestProj` sum to the identity operator. -/
 @[simp]
 theorem firstSelectedProj_add_firstRestProj :
     (firstSelectedProj R U : Module.End R (ShuffleMask k l → U)) + firstRestProj R U = 1 :=
-  LinearMap.ext fun _ ↦ funext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.1 <;> simp [h]
+  LinearMap.ext fun _ ↦ funext fun S ↦ by by_cases h : (0 : Fin (k + l)) ∈ S.val <;> simp [h]
 
 end Nonempty
 
@@ -405,7 +405,7 @@ end Nonempty
 theorem firstRestProj_zero_right [NeZero k] :
     (firstRestProj R U : Module.End R (ShuffleMask k 0 → U)) = 0 := by
   refine LinearMap.ext fun f ↦ funext fun S ↦ ?_
-  have hS : S.1 = univ := eq_univ_of_card S.1 (by simpa using S.2)
+  have hS : S.val = univ := eq_univ_of_card S.val (by simpa using S.property)
   simp [hS]
 
 /-- When `l = 0` (`0 < k`), every mask selects site `0`, so `firstSelectedProj` is `1`. -/
@@ -421,7 +421,7 @@ theorem firstSelectedProj_zero_left [NeZero l] :
     (firstSelectedProj R U : Module.End R (ShuffleMask 0 l → U)) = 0 := by
   have : NeZero (0 + l) := by simpa only [Nat.zero_add] using ‹NeZero l›
   refine LinearMap.ext fun f ↦ funext fun S ↦ ?_
-  have hS : S.1 = ∅ := card_eq_zero.mp S.2
+  have hS : S.val = ∅ := card_eq_zero.mp S.property
   simp [hS]
 
 /-- When `k = 0` (`0 < l`), every mask leaves site `0` in the rest, so `firstRestProj` is `1`. -/
@@ -453,7 +453,7 @@ theorem shuffleRep_T_succ_consSelected (ρ : TypeAHeckeAlgebra R q l →ₐ[R] M
   have hb : BraidGroup.strandSucc i' =
       ShuffleMask.shiftSelectedEmb k l (BraidGroup.strandSucc i) :=
     Fin.ext (by simp [i'])
-  by_cases h₁ : BraidGroup.strand i ∈ M.1 <;> by_cases h₂ : BraidGroup.strandSucc i ∈ M.1
+  by_cases h₁ : BraidGroup.strand i ∈ M.val <;> by_cases h₂ : BraidGroup.strandSucc i ∈ M.val
   · rw [shuffleRep_T_apply_of_mem_of_mem ρ (by rw [ha]; simpa using h₁)
       (by rw [hb]; simpa using h₂), shuffleRep_T_apply_of_mem_of_mem ρ h₁ h₂]
   · rw [shuffleRep_T_apply_of_mem_of_notMem ρ (by rw [ha]; simpa using h₁)
@@ -486,7 +486,7 @@ theorem shuffleRep_tailIncl_consRest
     have ha : BraidGroup.strand i' = (BraidGroup.strand i).succ := Fin.ext (by simp [i'])
     have hb : BraidGroup.strandSucc i' = (BraidGroup.strandSucc i).succ :=
       Fin.ext (by simp [i'])
-    by_cases h₁ : BraidGroup.strand i ∈ M.1 <;> by_cases h₂ : BraidGroup.strandSucc i ∈ M.1
+    by_cases h₁ : BraidGroup.strand i ∈ M.val <;> by_cases h₂ : BraidGroup.strandSucc i ∈ M.val
     · rw [shuffleRep_T_apply_of_mem_of_mem ρ (by rw [ha]; simpa using h₁)
         (by rw [hb]; simpa using h₂), shuffleRep_T_apply_of_mem_of_mem _ h₁ h₂]
     · rw [shuffleRep_T_apply_of_mem_of_notMem ρ (by rw [ha]; simpa using h₁)
@@ -528,12 +528,12 @@ theorem firstRestProj_comp_shuffleRep_T_of_pos [NeZero (k + l)]
     simp only [ne_eq, Fin.ext_iff, Fin.val_zero, BraidGroup.val_strandSucc]
     omega
   have hswap0 : ∀ M : ShuffleMask k l,
-      (0 : Fin (k + l)) ∈ (M.swap (BraidGroup.strand i) (BraidGroup.strandSucc i)).1 ↔
-        (0 : Fin (k + l)) ∈ M.1 := fun M ↦ by
+      (0 : Fin (k + l)) ∈ (M.swap (BraidGroup.strand i) (BraidGroup.strandSucc i)).val ↔
+        (0 : Fin (k + l)) ∈ M.val := fun M ↦ by
     simp [Equiv.swap_apply_of_ne_of_ne ha0 hb0]
-  by_cases h0 : (0 : Fin (k + l)) ∈ S.1 <;>
-    by_cases ha : BraidGroup.strand i ∈ S.1 <;>
-    by_cases hb : BraidGroup.strandSucc i ∈ S.1 <;>
+  by_cases h0 : (0 : Fin (k + l)) ∈ S.val <;>
+    by_cases ha : BraidGroup.strand i ∈ S.val <;>
+    by_cases hb : BraidGroup.strandSucc i ∈ S.val <;>
     simp [h0, ha, hb, hswap0]
 
 /-- **First-site rest projection commutes with `tailIncl`.** -/
@@ -553,7 +553,7 @@ theorem firstRestProj_comp_shuffleRep_tailIncl
   | algebraMap r =>
     rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one, map_smul, map_one]
     refine LinearMap.ext fun f ↦ funext fun S ↦ ?_
-    by_cases h : (0 : Fin (k + (l + 1))) ∈ S.1 <;> simp [h]
+    by_cases h : (0 : Fin (k + (l + 1))) ∈ S.val <;> simp [h]
   | add x y _ _ hx hy =>
     rw [map_add, map_add, LinearMap.comp_add, LinearMap.add_comp, hx, hy]
   | mul x y _ _ hx hy =>
@@ -644,18 +644,18 @@ private theorem shuffleRep_T_zero_firstRestProj_consSelected {k' l : ℕ}
   have hshift0 : ShuffleMask.shiftSelectedEmb k' (l + 1) 0 = BraidGroup.strandSucc z :=
     Fin.ext (by simp [z])
   funext N
-  have haN : BraidGroup.strand z ∈ N.consSelected.1 := ha0 ▸ ShuffleMask.zero_mem_consSelected N
-  have h0N : (0 : Fin ((k' + 1) + (l + 1))) ∈ N.consSelected.1 :=
+  have haN : BraidGroup.strand z ∈ N.consSelected.val := ha0 ▸ ShuffleMask.zero_mem_consSelected N
+  have h0N : (0 : Fin ((k' + 1) + (l + 1))) ∈ N.consSelected.val :=
     ShuffleMask.zero_mem_consSelected N
-  by_cases hN0 : (0 : Fin (k' + (l + 1))) ∈ N.1
-  · have hbN : BraidGroup.strandSucc z ∈ N.consSelected.1 := by
+  by_cases hN0 : (0 : Fin (k' + (l + 1))) ∈ N.val
+  · have hbN : BraidGroup.strandSucc z ∈ N.consSelected.val := by
       rwa [← hshift0, ShuffleMask.shiftSelectedEmb_mem_consSelected]
     rw [shuffleRep_T_apply_of_mem_of_mem ρ haN hbN]
     simp [h0N, hN0]
-  · have hbN : BraidGroup.strandSucc z ∉ N.consSelected.1 := by
+  · have hbN : BraidGroup.strandSucc z ∉ N.consSelected.val := by
       rwa [← hshift0, ShuffleMask.shiftSelectedEmb_mem_consSelected]
     have hswap_notMem : (0 : Fin ((k' + 1) + (l + 1))) ∉
-        (N.consSelected.swap (BraidGroup.strand z) (BraidGroup.strandSucc z)).1 := by
+        (N.consSelected.swap (BraidGroup.strand z) (BraidGroup.strandSucc z)).val := by
       rw [← ha0, ShuffleMask.mem_swap, Equiv.swap_apply_left]
       exact hbN
     rw [shuffleRep_T_apply_of_mem_of_notMem ρ haN hbN]
@@ -668,30 +668,30 @@ private theorem shuffleRep_T_zero_firstRestProj_consSelected {k' l : ℕ}
 private theorem tailAdditiveJM_branch_selected {k' l : ℕ}
     (ρ : TypeAHeckeAlgebra R q (l + 1) →ₐ[R] Module.End R U)
     (ih : ∀ (f : ShuffleMask k' (l + 1) → U) (S : ShuffleMask k' (l + 1)),
-      (0 : Fin (k' + (l + 1))) ∉ S.1 →
+      (0 : Fin (k' + (l + 1))) ∉ S.val →
       shuffleRep k' ρ (tailAdditiveJucysMurphy q (0 : Fin (k' + (l + 1))))
           (firstRestProj R U f) S =
         ρ (tailAdditiveJucysMurphy q (0 : Fin (l + 1))) (f S))
     (f : ShuffleMask (k' + 1) (l + 1) → U) (S : ShuffleMask (k' + 1) (l + 1))
-    (hS0 : (0 : Fin ((k' + 1) + (l + 1))) ∉ S.1)
-    (hbS : BraidGroup.strandSucc (⟨0, by omega⟩ : Fin ((k' + 1) + (l + 1) - 1)) ∈ S.1) :
+    (hS0 : (0 : Fin ((k' + 1) + (l + 1))) ∉ S.val)
+    (hbS : BraidGroup.strandSucc (⟨0, by omega⟩ : Fin ((k' + 1) + (l + 1) - 1)) ∈ S.val) :
     shuffleRep (k' + 1) ρ (tailAdditiveJucysMurphy q (0 : Fin ((k' + 1) + (l + 1))))
         (firstRestProj R U f) S =
       ρ (tailAdditiveJucysMurphy q (0 : Fin (l + 1))) (f S) := by
   let z : Fin ((k' + 1) + l) := ⟨0, by omega⟩
-  have hbS' : BraidGroup.strandSucc (z : Fin ((k' + 1) + (l + 1) - 1)) ∈ S.1 := hbS
+  have hbS' : BraidGroup.strandSucc (z : Fin ((k' + 1) + (l + 1) - 1)) ∈ S.val := hbS
   have ha0 : BraidGroup.strand (z : Fin ((k' + 1) + (l + 1) - 1)) =
       (0 : Fin ((k' + 1) + (l + 1))) := Fin.ext (by simp [z])
   have hshift0 : ShuffleMask.shiftSelectedEmb k' (l + 1) 0 =
       BraidGroup.strandSucc (z : Fin ((k' + 1) + (l + 1) - 1)) := Fin.ext (by simp [z])
-  have haS : BraidGroup.strand (z : Fin ((k' + 1) + (l + 1) - 1)) ∉ S.1 := ha0 ▸ hS0
+  have haS : BraidGroup.strand (z : Fin ((k' + 1) + (l + 1) - 1)) ∉ S.val := ha0 ▸ hS0
   have hz0 : (0 : Fin ((k' + 1) + (l + 1))) = z.castSucc := Fin.ext rfl
   rw [hz0, tailAdditiveJucysMurphy_castSucc]
   simp only [map_add, map_mul, map_smul, LinearMap.add_apply, LinearMap.smul_apply,
     mul_apply_eq_comp, Pi.add_apply, Pi.smul_apply]
   have hswap_mem : (0 : Fin ((k' + 1) + (l + 1))) ∈
       (S.swap (BraidGroup.strand (z : Fin ((k' + 1) + (l + 1) - 1)))
-        (BraidGroup.strandSucc (z : Fin ((k' + 1) + (l + 1) - 1)))).1 := by
+        (BraidGroup.strandSucc (z : Fin ((k' + 1) + (l + 1) - 1)))).val := by
     rw [← ha0, ShuffleMask.mem_swap, Equiv.swap_apply_left]
     exact hbS'
   have hsecond : shuffleRep (k' + 1) ρ (T (n := (k' + 1) + (l + 1)) q z)
@@ -704,7 +704,7 @@ private theorem tailAdditiveJM_branch_selected {k' l : ℕ}
       S₀.consSelected = S.swap (BraidGroup.strand (z : Fin ((k' + 1) + (l + 1) - 1)))
         (BraidGroup.strandSucc (z : Fin ((k' + 1) + (l + 1) - 1))) :=
     ShuffleMask.consSelected_tailOfZeroMem _ hswap_mem
-  have hS₀_notMem : (0 : Fin (k' + (l + 1))) ∉ S₀.1 := fun hmem ↦ by
+  have hS₀_notMem : (0 : Fin (k' + (l + 1))) ∉ S₀.val := fun hmem ↦ by
     have h1 := ShuffleMask.shiftSelectedEmb_mem_consSelected.mpr hmem
     rw [hS₀_eq, ShuffleMask.mem_swap, hshift0, Equiv.swap_apply_right] at h1
     exact haS h1
@@ -733,17 +733,17 @@ private theorem shuffleRep_T_zero_firstRestProj_consRest {k l' : ℕ}
   have ha0 : BraidGroup.strand z = (0 : Fin (k + (l' + 2))) := Fin.ext (by simp [z])
   have hsucc0 : (0 : Fin (k + (l' + 1))).succ = BraidGroup.strandSucc z := Fin.ext (by simp [z])
   funext N
-  have haN : BraidGroup.strand z ∉ N.consRest.1 := ha0 ▸ ShuffleMask.zero_notMem_consRest N
-  by_cases hN0 : (0 : Fin (k + (l' + 1))) ∈ N.1
-  · have hbN : BraidGroup.strandSucc z ∈ N.consRest.1 := by
+  have haN : BraidGroup.strand z ∉ N.consRest.val := ha0 ▸ ShuffleMask.zero_notMem_consRest N
+  by_cases hN0 : (0 : Fin (k + (l' + 1))) ∈ N.val
+  · have hbN : BraidGroup.strandSucc z ∈ N.consRest.val := by
       rwa [← hsucc0, ShuffleMask.succ_mem_consRest]
     have hswap0 : (0 : Fin (k + (l' + 2))) ∈
-        (N.consRest.swap (BraidGroup.strand z) (BraidGroup.strandSucc z)).1 := by
+        (N.consRest.swap (BraidGroup.strand z) (BraidGroup.strandSucc z)).val := by
       rw [← ha0, ShuffleMask.mem_swap, Equiv.swap_apply_left]
       exact hbN
     rw [shuffleRep_T_apply_of_notMem_of_mem ρ haN hbN]
     simp [hswap0, hN0]
-  · have hbN : BraidGroup.strandSucc z ∉ N.consRest.1 := by
+  · have hbN : BraidGroup.strandSucc z ∉ N.consRest.val := by
       rwa [← hsucc0, ShuffleMask.succ_mem_consRest]
     rw [shuffleRep_T_apply_of_notMem_of_notMem ρ haN hbN]
     simp only [firstRestProj_apply, ShuffleMask.zero_notMem_consRest, ↓reduceIte, hN0]
@@ -756,20 +756,20 @@ private theorem shuffleRep_T_zero_firstRestProj_consRest {k l' : ℕ}
 private theorem tailAdditiveJM_branch_rest {k l' : ℕ}
     (ρ : TypeAHeckeAlgebra R q (l' + 2) →ₐ[R] Module.End R U)
     (ih : ∀ (f : ShuffleMask k (l' + 1) → U) (S : ShuffleMask k (l' + 1)),
-      (0 : Fin (k + (l' + 1))) ∉ S.1 →
+      (0 : Fin (k + (l' + 1))) ∉ S.val →
       shuffleRep k (ρ.comp (tailIncl q (l' + 1)))
           (tailAdditiveJucysMurphy q (0 : Fin (k + (l' + 1)))) (firstRestProj R U f) S =
         (ρ.comp (tailIncl q (l' + 1))) (tailAdditiveJucysMurphy q (0 : Fin (l' + 1))) (f S))
     (f : ShuffleMask k (l' + 2) → U) (S : ShuffleMask k (l' + 2))
-    (hS0 : (0 : Fin (k + (l' + 2))) ∉ S.1)
-    (hbS : BraidGroup.strandSucc (0 : Fin (k + (l' + 1))) ∉ S.1) :
+    (hS0 : (0 : Fin (k + (l' + 2))) ∉ S.val)
+    (hbS : BraidGroup.strandSucc (0 : Fin (k + (l' + 1))) ∉ S.val) :
     shuffleRep k ρ (tailAdditiveJucysMurphy q (0 : Fin (k + (l' + 2))))
         (firstRestProj R U f) S =
       ρ (tailAdditiveJucysMurphy q (0 : Fin (l' + 2))) (f S) := by
   let z : Fin (k + (l' + 1)) := 0
   have ha0 : BraidGroup.strand z = (0 : Fin (k + (l' + 2))) := Fin.ext (by simp [z])
   have hsucc0 : (0 : Fin (k + (l' + 1))).succ = BraidGroup.strandSucc z := Fin.ext (by simp [z])
-  have haS : BraidGroup.strand z ∉ S.1 := ha0 ▸ hS0
+  have haS : BraidGroup.strand z ∉ S.val := ha0 ▸ hS0
   have hz0 : (0 : Fin (k + (l' + 2))) = z.castSucc := Fin.ext rfl
   rw [hz0, tailAdditiveJucysMurphy_castSucc]
   simp only [map_add, map_mul, map_smul, LinearMap.add_apply, LinearMap.smul_apply,
@@ -785,7 +785,7 @@ private theorem tailAdditiveJM_branch_rest {k l' : ℕ}
   simp only [firstRestProj_apply, hS0, ↓reduceIte]
   let S₁ : ShuffleMask k (l' + 1) := ShuffleMask.tailOfZeroNotMem S hS0
   have hS₁_eq : S₁.consRest = S := ShuffleMask.consRest_tailOfZeroNotMem S hS0
-  have hS₁_notMem : (0 : Fin (k + (l' + 1))) ∉ S₁.1 := fun hmem ↦ by
+  have hS₁_notMem : (0 : Fin (k + (l' + 1))) ∉ S₁.val := fun hmem ↦ by
     have h1 := ShuffleMask.succ_mem_consRest.mpr hmem
     rw [hS₁_eq, hsucc0] at h1
     exact hbS h1
@@ -802,7 +802,7 @@ private theorem shuffleRep_tailAdditiveJucysMurphy_zero_firstRestProj_aux :
     ∀ (n k l : ℕ), k + l = n →
       ∀ (ρ : TypeAHeckeAlgebra R q (l + 1) →ₐ[R] Module.End R U)
         (f : ShuffleMask k (l + 1) → U) (S : ShuffleMask k (l + 1)),
-        (0 : Fin (k + (l + 1))) ∉ S.1 →
+        (0 : Fin (k + (l + 1))) ∉ S.val →
         shuffleRep k ρ (tailAdditiveJucysMurphy q (0 : Fin (k + (l + 1))))
             (firstRestProj R U f) S =
           ρ (tailAdditiveJucysMurphy q (0 : Fin (l + 1))) (f S) := by
@@ -816,10 +816,10 @@ private theorem shuffleRep_tailAdditiveJucysMurphy_zero_firstRestProj_aux :
     intro k l hn ρ f S hS0
     let i₀ : Fin (k + (l + 1) - 1) := ⟨0, by omega⟩
     have ha0 : BraidGroup.strand i₀ = (0 : Fin (k + (l + 1))) := Fin.ext (by simp [i₀])
-    have haS : BraidGroup.strand i₀ ∉ S.1 := ha0 ▸ hS0
-    by_cases hbS : BraidGroup.strandSucc i₀ ∈ S.1
+    have haS : BraidGroup.strand i₀ ∉ S.val := ha0 ▸ hS0
+    by_cases hbS : BraidGroup.strandSucc i₀ ∈ S.val
     · have hk_pos : 0 < k := by
-        rw [← S.2]
+        rw [← S.property]
         exact card_pos.mpr ⟨_, hbS⟩
       obtain ⟨k', rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
       exact tailAdditiveJM_branch_selected ρ (ih k' l (by omega) ρ) f S hS0 hbS
@@ -884,7 +884,7 @@ theorem firstRestProj_comp_shuffleRep_tailJucysMurphy_zero_comp_firstRestProj
   simp only [LinearMap.comp_apply, LinearMap.add_apply, LinearMap.smul_apply,
     one_apply_eq_self, LinearMap.compLeft_apply, Function.comp_apply] at hS ⊢
   rw [map_add, map_smul, Pi.add_apply, Pi.smul_apply, hS]
-  by_cases h0 : (0 : Fin (k + (l + 1))) ∈ S.1 <;> simp [firstRestProj_apply, h0]
+  by_cases h0 : (0 : Fin (k + (l + 1))) ∈ S.val <;> simp [firstRestProj_apply, h0]
 
 /-- **Pointwise first-site normalized Jucys–Murphy compression on the rest block.** -/
 theorem shuffleRep_tailJucysMurphy_zero_firstRestProj_consRest

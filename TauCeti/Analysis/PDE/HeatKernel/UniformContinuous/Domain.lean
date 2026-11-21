@@ -94,8 +94,8 @@ theorem integral_laplacian_smul_eq_integral_smul_generator_heatSemigroupBUC
       ∀ φ : 𝓓(⊤, ℝ), ∫ x, Δ (φ : E → ℝ) x • p.1 x = ∫ x, (φ : E → ℝ) x • p.2 x}
   -- Against a fixed test function, both sides are continuous in the supremum norm.
   have hs : IsClosed s := by
-    refine IsClosed.preimage ((continuous_subtype_val.comp continuous_fst).prodMk
-      (continuous_subtype_val.comp continuous_snd)) ?_
+    refine IsClosed.preimage ((continuous_subtypeVal.comp continuous_fst).prodMk
+      (continuous_subtypeVal.comp continuous_snd)) ?_
     simp only [ofPred_forall]
     refine isClosed_iInter fun φ ↦ isClosed_eq ?_ ?_
     · exact (((φ.contDiff.of_le (by simp)).continuous_laplacian).integrable_of_hasCompactSupport
@@ -107,15 +107,15 @@ theorem integral_laplacian_smul_eq_integral_smul_generator_heatSemigroupBUC
       Set _) ⊆ s := by
     intro p hp φ
     obtain ⟨h, rfl⟩ := (LinearPMap.mem_graph_iff' _).1 hp
-    obtain ⟨_, hΔ⟩ := exists_generator_heatSemigroupBUC_eq_laplacian h.2.1
+    obtain ⟨_, hΔ⟩ := exists_generator_heatSemigroupBUC_eq_laplacian h.property.1
     have hval : ((S.generator.domRestrict (smoothBoundedDerivativesSubmodule ℝ E F)) h).val =
         Δ (h.val.val : E → F) := by
       have hres : (S.generator.domRestrict (smoothBoundedDerivativesSubmodule ℝ E F)) h =
-          S.generator ⟨h.val, h.2.2⟩ := LinearPMap.domRestrict_apply rfl
+          S.generator ⟨h.val, h.property.2⟩ := LinearPMap.domRestrict_apply rfl
       rw [hres]
       exact hΔ
     simp only [hval]
-    have hsmooth := ((mem_smoothBoundedDerivativesSubmodule ℝ E F _).1 h.2.1).1
+    have hsmooth := ((mem_smoothBoundedDerivativesSubmodule ℝ E F _).1 h.property.1).1
     exact (hsmooth.of_le (by simp)).contDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian
       (Ω := ⊤) φ
   have hgraph := generator_heatSemigroupBUC_hasCore_smoothBoundedDerivativesSubmodule
@@ -171,6 +171,6 @@ theorem generator_heatSemigroupBUC_eq_of_integral_laplacian_smul_eq
       ∫ x, Δ (φ : E → ℝ) x • ((f : uniformContinuousSubmodule ℝ E F).val : E → F) x =
         ∫ x, (φ : E → ℝ) x • (g.val : E → F) x) :
     (heatSemigroupBUC (E := E) (F := F)).generator f = g :=
-  ((LinearPMap.image_iff f.2).2 (mem_graph_generator_heatSemigroupBUC_iff.2 h)).symm
+  ((LinearPMap.image_iff f.property).2 (mem_graph_generator_heatSemigroupBUC_iff.2 h)).symm
 
 end TauCeti

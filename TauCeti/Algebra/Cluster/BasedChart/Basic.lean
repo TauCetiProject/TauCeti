@@ -260,6 +260,7 @@ theorem evalEquiv_symm_apply (f : {f : QuantumTorus R L u Λ →ₐ[R] B // Func
 
 /-- Evaluation on finitely supported coefficients is their finite linear combination
 of chart monomials. -/
+@[simp↓]
 theorem eval_repr_symm (M : BasedChart u Λ B) (c : L →₀ R) :
     M.eval ((QuantumTorus.basis u Λ).repr.symm c) =
       c.sum (fun a r ↦ r • (M.monomial a : B)) := by
@@ -431,6 +432,7 @@ theorem reindex_refl (M : BasedChart u Λ B) :
   simp [reindex]
 
 /-- Reindexing respects composition of lattice isomorphisms. -/
+@[simp]
 theorem reindex_reindex (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L') (e' : L' ≃ₗ[ℤ] L'')
     (he : ∀ a b, Λ' (e a) (e b) = Λ a b)
     (he' : ∀ a b, Λ'' (e' a) (e' b) = Λ' a b) :
@@ -439,7 +441,6 @@ theorem reindex_reindex (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L') (e' : L' 
   ext a
   simp [reindex]
 
-@[simp]
 theorem reindex_reindex_symm (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L')
     (he : ∀ a b, Λ' (e a) (e b) = Λ a b)
     (he' : ∀ a b, Λ (e.symm a) (e.symm b) = Λ' a b) :
@@ -449,7 +450,6 @@ theorem reindex_reindex_symm (M : BasedChart u Λ B) (e : L ≃ₗ[ℤ] L')
   simp
 
 /-- Reindexing in the opposite order also recovers the original chart. -/
-@[simp]
 theorem reindex_symm_reindex (M : BasedChart u Λ' B) (e : L ≃ₗ[ℤ] L')
     (he : ∀ a b, Λ (e.symm a) (e.symm b) = Λ' a b)
     (he' : ∀ a b, Λ' (e a) (e b) = Λ a b) :

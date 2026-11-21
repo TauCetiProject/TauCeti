@@ -43,7 +43,7 @@ theorem prod_norm_adicCompletionExtension_eq_norm_pow
     (L : Type*) [Field L] [NumberField L] [Algebra K L]
     (v : HeightOneSpectrum (𝓞 K)) (x : v.adicCompletion K) :
     ∏ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        ‖v.adicCompletionExtension K L w.1 x‖ =
+        ‖v.adicCompletionExtension K L w.val x‖ =
       ‖x‖ ^ Module.finrank K L := by
   simp_rw [IsDedekindDomain.HeightOneSpectrum.norm_adicCompletionExtension]
   rw [Finset.prod_pow_eq_pow_sum, v.sum_finrank_adicCompletion_of_finite]

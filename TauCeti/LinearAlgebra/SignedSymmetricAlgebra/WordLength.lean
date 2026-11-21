@@ -129,8 +129,8 @@ theorem lengthPiece_eq_span (n : ℕ) :
   rw [Set.mem_pow]
   constructor
   · rintro ⟨x, rfl⟩
-    refine ⟨fun i => (x i).2.choose, ?_⟩
-    simp only [(x _).2.choose_spec]
+    refine ⟨fun i => (x i).property.choose, ?_⟩
+    simp only [(x _).property.choose_spec]
   · rintro ⟨x, rfl⟩
     exact ⟨fun i => ⟨generator G (x i), ⟨x i, rfl⟩⟩, rfl⟩
 
@@ -177,10 +177,10 @@ theorem decompose_lengthPiece_zero (a : SignedSym G) :
   | @homogeneous n a =>
     by_cases hn : n = 0
     · subst n
-      rw [decompose_lengthPiece_of_mem G a.2, ite_eq_left rfl,
-        algebraMap_augmentation_of_mem_lengthPiece_zero G a.2]
-    · rw [decompose_lengthPiece_of_mem G a.2, ite_eq_right (Ne.symm hn),
-        augmentation_eq_zero_of_mem_lengthPiece G hn a.2, map_zero]
+      rw [decompose_lengthPiece_of_mem G a.property, ite_eq_left rfl,
+        algebraMap_augmentation_of_mem_lengthPiece_zero G a.property]
+    · rw [decompose_lengthPiece_of_mem G a.property, ite_eq_right (Ne.symm hn),
+        augmentation_eq_zero_of_mem_lengthPiece G hn a.property, map_zero]
   | add a b ha hb =>
     simp only [DirectSum.decompose_add, DirectSum.add_apply, AddMemClass.coe_add, map_add, ha, hb]
 
@@ -258,7 +258,7 @@ theorem signedSymPiece_eq_lengthPiece_of_piece_eq_bot [IsRightCancelMulZero ι] 
     (fun m _ hx => lengthPiece_le_signedSymPiece_of_piece_eq_bot G hG m hx) n a
   simp only [AddMonoidHom.id_apply, DirectSum.decompose_of_mem_same (signedSymPiece G) ha] at hshift
   rw [← hshift]
-  exact (DirectSum.decompose (lengthPiece G) a n).2
+  exact (DirectSum.decompose (lengthPiece G) a n).property
 
 end SingleDegree
 

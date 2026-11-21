@@ -13,6 +13,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.Probability.Distributions.Gaussian.Pi
 
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # The density of a multivariate Gaussian measure
@@ -49,6 +50,8 @@ form into the one of `S⁻¹`.
   covariance is the affine range `m + range S`;
 * `TauCeti.Probability.ae_mem_affineRange_multivariateGaussian` — the law is almost surely in
   this affine range;
+* `TauCeti.Probability.ae_exists_sub_eq_mul_multivariateGaussian_vecMulVec_self` — at a rank-one
+  covariance `c cᵀ` the law is almost surely on the line through `m` in the direction `c`;
 * `TauCeti.Probability.multivariateGaussian_eq_withDensity` — the density presentation of the law;
 * `TauCeti.Probability.hasPDF_of_hasLaw_multivariateGaussian` and
   `TauCeti.Probability.pdf_eq_multivariateGaussianPDF_of_hasLaw_multivariateGaussian` — the `HasPDF`
@@ -295,6 +298,22 @@ theorem ae_mem_affineRange_multivariateGaussian (hS : S.PosSemidef)
         Set (EuclideanSpace ℝ ι)) := by
   exact Filter.eventually_mem_set.mpr <|
     support_multivariateGaussian hS m ▸ (multivariateGaussian m S).support_mem_ae
+
+open Matrix in
+/-- A Gaussian vector with rank-one covariance `c cᵀ` lies almost surely on the line through
+its mean in the direction `c`. -/
+theorem ae_exists_sub_eq_mul_multivariateGaussian_vecMulVec_self (m : EuclideanSpace ℝ ι)
+    (c : ι → ℝ) :
+    ∀ᵐ x ∂multivariateGaussian m (vecMulVec c c), ∃ t : ℝ, ∀ j, x j - m j = t * c j := by
+  filter_upwards [ae_mem_affineRange_multivariateGaussian
+    (posSemidef_vecMulVec_self c) m] with x hx
+  simp only [SetLike.mem_coe, AffineSubspace.mem_mk', vsub_eq_sub, LinearMap.mem_range] at hx
+  obtain ⟨y, hy⟩ := hx
+  refine ⟨c ⬝ᵥ y, fun j ↦ ?_⟩
+  have hj := congrArg (fun z : EuclideanSpace ℝ ι ↦ z j) hy
+  simp only [Matrix.toLpLin_apply, vecMulVec_mulVec, PiLp.sub_apply] at hj
+  rw [← hj]
+  simp [MulOpposite.smul_eq_mul_unop, mul_comm]
 
 /-- **A nondegenerate multivariate Gaussian law is Lebesgue measure with the Gaussian density.** -/
 theorem multivariateGaussian_eq_withDensity (hS : S.PosDef) (m : EuclideanSpace ℝ ι) :
