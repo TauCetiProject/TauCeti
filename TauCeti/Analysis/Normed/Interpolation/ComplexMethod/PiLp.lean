@@ -12,6 +12,7 @@ import Mathlib.Analysis.MeanInequalities
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.SpecificCodomains.WithLp
 import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Poisson
+import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # Complex interpolation of finite vector-valued sequence spaces
@@ -377,24 +378,6 @@ theorem piLpContinuousLinearEquiv_symm_mk (C : ∀ i, CompatibleCouple ℂ (X₀
 
 /-! ### Auxiliary `PiLp`, Hölder, and Bochner–Minkowski estimates -/
 
-private theorem norm_toLp_norm {p : ℝ≥0∞} [Fact (1 ≤ p)] {β : ι → Type*}
-    [∀ i, SeminormedAddCommGroup (β i)] (x : PiLp p β) :
-    ‖WithLp.toLp p (fun i => ‖x i‖)‖ = ‖x‖ := by
-  rcases eq_or_ne p ∞ with rfl | hp
-  · simp [PiLp.norm_eq_ciSup]
-  · simp [PiLp.norm_eq_sum (ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp)]
-
-private theorem norm_le_norm_toLp_of_le {p : ℝ≥0∞} [Fact (1 ≤ p)] {β : ι → Type*}
-    [∀ i, SeminormedAddCommGroup (β i)] (x : PiLp p β) {a : ι → ℝ} (ha : ∀ i, ‖x i‖ ≤ a i) :
-    ‖x‖ ≤ ‖WithLp.toLp p a‖ := by
-  rcases eq_or_ne p ∞ with rfl | hp
-  · rw [← PiLp.norm_ofLp, pi_norm_le_iff_of_nonneg (norm_nonneg _)]
-    exact fun i => (ha i).trans ((le_abs_self (a i)).trans (PiLp.norm_apply_le (WithLp.toLp ∞ a) i))
-  · have hp0 := ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp
-    rw [PiLp.norm_eq_sum hp0 x, PiLp.norm_eq_sum hp0 (WithLp.toLp p a)]
-    gcongr with i
-    exact (ha i).trans (le_abs_self (a i))
-
 private theorem norm_toLp_integral_le {p : ℝ≥0∞} [Fact (1 ≤ p)] (f : ι → ℝ → ℝ)
     (hf : ∀ i, Integrable (f i)) :
     ‖WithLp.toLp p (fun i => ∫ t, f i t)‖ ≤ ∫ t, ‖WithLp.toLp p (fun i => f i t)‖ := by
@@ -424,7 +407,7 @@ private theorem norm_toLp_integral_weighted_le {p : ℝ≥0∞} [Fact (1 ≤ p)]
         have hfactor : WithLp.toLp p (fun i => ‖f t i‖ * w t) =
             w t • WithLp.toLp p (fun i => ‖f t i‖) := by ext i; simp [mul_comm]
         dsimp only
-        rw [hfactor, norm_smul, Real.norm_of_nonneg (hw_nonneg t), norm_toLp_norm (f t), mul_comm]
+        rw [hfactor, norm_smul, Real.norm_of_nonneg (hw_nonneg t), PiLp.norm_norm (f t), mul_comm]
         exact mul_le_mul_of_nonneg_right (ZeroAtInftyContinuousMap.norm_coe_le_norm f t)
           (hw_nonneg t)
     _ = ‖f‖ := by rw [integral_const_mul, hw_sum, mul_comm ‖f‖, inv_mul_cancel_left₀ hα.ne']
@@ -561,18 +544,18 @@ private theorem norm_piLpContinuousLinearEquiv_zero
     [Fact (1 ≤ q₁)] (u : (piLp C q₀ q₁).ComplexMethodSpace 0) :
     ‖piLpContinuousLinearEquiv C q₀ q₁ q₀ 0 u‖ = ‖u‖ := by
   obtain ⟨g, rfl⟩ := mk_surjective u
-  rw [← norm_toLp_norm (piLpContinuousLinearEquiv C q₀ q₁ q₀ 0 (mk 0 g))]
+  rw [← PiLp.norm_norm (piLpContinuousLinearEquiv C q₀ q₁ q₀ 0 (mk 0 g))]
   simp_rw [piLpContinuousLinearEquiv_mk_apply, norm_mk_zero, piLpStripTracesEquiv_apply_fst]
-  rw [norm_toLp_norm]
+  rw [PiLp.norm_norm]
 
 private theorem norm_piLpContinuousLinearEquiv_one
     (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)) (q₀ q₁ : ℝ≥0∞) [Fact (1 ≤ q₀)]
     [Fact (1 ≤ q₁)] (u : (piLp C q₀ q₁).ComplexMethodSpace 1) :
     ‖piLpContinuousLinearEquiv C q₀ q₁ q₁ 1 u‖ = ‖u‖ := by
   obtain ⟨g, rfl⟩ := mk_surjective u
-  rw [← norm_toLp_norm (piLpContinuousLinearEquiv C q₀ q₁ q₁ 1 (mk 1 g))]
+  rw [← PiLp.norm_norm (piLpContinuousLinearEquiv C q₀ q₁ q₁ 1 (mk 1 g))]
   simp_rw [piLpContinuousLinearEquiv_mk_apply, norm_mk_one, piLpStripTracesEquiv_apply_snd]
-  rw [norm_toLp_norm]
+  rw [PiLp.norm_norm]
 
 private theorem norm_piLpContinuousLinearEquiv_le (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i))
     {q₀ q₁ q : ℝ≥0∞} [Fact (1 ≤ q₀)] [Fact (1 ≤ q₁)] [Fact (1 ≤ q)] {θ : ℝ}
@@ -607,7 +590,8 @@ private theorem norm_piLpContinuousLinearEquiv_le (C : ∀ i, CompatibleCouple �
         have hb_norm := (norm_toLp_integral_weighted_le g.val.2 hθ0 (integrable_stripPoisson₁ θ)
           (fun t => (stripPoisson₁_pos hθoo t).le) (integral_stripPoisson₁ ⟨hθ0.le, hθ1⟩)).trans
           ((norm_snd_le g.val).trans_eq (Submodule.norm_coe g))
-        refine ((norm_le_norm_toLp_of_le _ hpt).trans
+        refine ((PiLp.norm_mono (y := WithLp.toLp q fun i => a i ^ (1 - θ) * b i ^ θ)
+          fun i => (hpt i).trans (le_abs_self _)).trans
           (norm_toLp_rpow_mul_rpow_le hθoo hq ha hb)).trans_lt (lt_of_le_of_lt ?_ hg)
         calc ‖WithLp.toLp q₀ a‖ ^ (1 - θ) * ‖WithLp.toLp q₁ b‖ ^ θ
             ≤ ‖g‖ ^ (1 - θ) * ‖g‖ ^ θ :=
@@ -737,7 +721,7 @@ private theorem exists_pos_perturbation [Nonempty ι] {q : ℝ≥0∞} [Fact (1 
           dsimp only [B]; rw [show WithLp.toLp q b = WithLp.toLp q (fun i => ‖v i‖) + δ • u1 by
             ext i; simp [b, u1]]
           exact norm_add_le _ _
-      _ = ‖v‖ + δ * ‖u1‖ := by rw [norm_toLp_norm, norm_smul, Real.norm_of_nonneg hδ.le]
+      _ = ‖v‖ + δ * ‖u1‖ := by rw [PiLp.norm_norm, norm_smul, Real.norm_of_nonneg hδ.le]
       _ ≤ ‖v‖ + ε := add_le_add_right hδu ‖v‖
   · have hBeq : B = (∑ i, b i ^ q.toReal) ^ (1 / q.toReal) := by
       dsimp only [B]; rw [PiLp.norm_eq_sum hq0]
@@ -766,12 +750,16 @@ private theorem norm_symm_le_of_ne_top (C : ∀ i, CompatibleCouple ℂ (X₀ i)
   have hG : ‖G.val‖ ≤ B := by
     rw [Prod.norm_def]
     exact max_le ((ZeroAtInftyContinuousMap.norm_le hB.le).2 fun t =>
-        (norm_le_norm_toLp_of_le _ fun i => by
-          rw [piLpStripTracesEquiv_symm_apply_fst]; exact hg'_0 i t).trans
+        (PiLp.norm_mono (y := WithLp.toLp q₀ fun i => B * (b i / B) ^ (q.toReal * (q₀⁻¹).toReal))
+          fun i => by
+            rw [piLpStripTracesEquiv_symm_apply_fst]
+            exact (hg'_0 i t).trans (le_abs_self _)).trans
           (norm_toLp_mul_div_rpow_le hB (fun i => (hb i).1) hsum))
       ((ZeroAtInftyContinuousMap.norm_le hB.le).2 fun t =>
-        (norm_le_norm_toLp_of_le _ fun i => by
-          rw [piLpStripTracesEquiv_symm_apply_snd]; exact hg'_1 i t).trans
+        (PiLp.norm_mono (y := WithLp.toLp q₁ fun i => B * (b i / B) ^ (q.toReal * (q₁⁻¹).toReal))
+          fun i => by
+            rw [piLpStripTracesEquiv_symm_apply_snd]
+            exact (hg'_1 i t).trans (le_abs_self _)).trans
           (norm_toLp_mul_div_rpow_le hB (fun i => (hb i).1) hsum))
   rw [show (piLpContinuousLinearEquiv C q₀ q₁ q θ).symm v = mk θ G by
     rw [show v = WithLp.toLp q (fun i => mk θ (g' i)) from PiLp.ext fun i => (hg'_mk i).symm,
