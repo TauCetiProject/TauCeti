@@ -14,7 +14,7 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 /-!
 # Linear differential equations with measurable coefficients
 
-Let `E` be a real normed space and consider the linear initial value problem
+Let `E` be a Banach space and consider the linear initial value problem
 
 `x' = M(t) x + F(t)`, `x(a) = x₀`
 
@@ -180,17 +180,12 @@ open CaratheodoryLinear
 everywhere strongly measurable and essentially bounded on `(a, b)`, and let `F : ℝ → E` be
 integrable on `(a, b)`. Then the linear equation `x' = M(t) x + F(t)` with `x(a) = x₀` has a
 solution in Carathéodory's sense: a curve `x` continuous on `[a, b]` with `x a = x₀` and
-`x t = x₀ + ∫ s in a..t, (M s (x s) + F s)` for every `t ∈ [a, b]`. If `E` is not complete, every
-Bochner integral in `E` is `0` by convention and the constant curve `x₀` is a solution. -/
-theorem exists_continuousOn_eq_forall_mem_Icc_eq_picard
+`x t = x₀ + ∫ s in a..t, (M s (x s) + F s)` for every `t ∈ [a, b]`. -/
+theorem exists_continuousOn_eq_forall_mem_Icc_eq_picard [CompleteSpace E]
     (hM : AEStronglyMeasurable M (volume.restrict (Ioo a b)))
     (hK : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖M t‖ ≤ K) (hF : IntegrableOn F (Ioo a b)) (x₀ : E) :
     ∃ x : ℝ → E, ContinuousOn x (Icc a b) ∧ x a = x₀ ∧
       ∀ t ∈ Icc a b, x t = ODE.picard (fun s y ↦ M s y + F s) a x₀ x t := by
-  by_cases hE : CompleteSpace E
-  swap
-  · refine ⟨fun _ ↦ x₀, continuousOn_const, rfl, fun t _ ↦ ?_⟩
-    simp [ODE.picard_apply, intervalIntegral, integral_of_not_completeSpace hE]
   rcases lt_or_ge b a with hba | hab
   · exact ⟨fun _ ↦ x₀, continuousOn_const, rfl, by simp [Icc_eq_empty_of_lt hba]⟩
   have hMi : IntegrableOn M (Ioo a b) := Integrable.of_bound hM K hK
