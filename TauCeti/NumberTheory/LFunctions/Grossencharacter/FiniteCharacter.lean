@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.MulChar.Basic
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Compatibility
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Residue
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.Approximation
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.Ideal.Quotient.Representative
 
@@ -48,6 +49,15 @@ character at the class of every nonzero integer
 (`Grossencharacter.finiteCharacter_eq_residueCharacter`), which pins the residue character down
 (`Grossencharacter.existsUnique_residueCharacter`).
 
+Read through the triviality of the Hecke character on the principal idele of `x`, the finite
+character is the inverse of the product of the local components at the primes dividing the
+finite conductor `𝔣` of the Hecke character,
+`χ_f(x) = ∏_{v ∣ 𝔣} χ_v(x)⁻¹` (`Grossencharacter.finiteCharacterK_eq_prod_finiteComponent_inv`).
+Approximating a local unit by an integer, this shows that the finite conductor is the conductor of
+the residue character: it divides an ideal `𝔫` exactly when the residue character is trivial on
+the residue units congruent to `1` modulo `𝔫`
+(`Grossencharacter.finiteConductor_dvd_iff_residueCharacter_eq_one`).
+
 The coefficient and the residue character must be kept apart at `0`. When `𝔪₀ = 𝓞 K`, the residue
 ring has one element, a unit, at which the residue character is `1`, while the coefficient at the
 integer `0` is `0`. Accordingly the comparison is stated for nonzero integers only.
@@ -75,10 +85,17 @@ integer `0` is `0`. Accordingly the comparison is stated for nonzero integers on
   integers not prime to `𝔪`.
 * `TauCeti.LFunctions.Grossencharacter.finiteCharacter_unit`: on a unit it is the archimedean
   value.
+* `TauCeti.LFunctions.Grossencharacter.finiteCharacterK_eq_prod_finiteComponent_inv`: the finite
+  character is the inverse of the product of the components at the primes of the finite conductor.
+* `TauCeti.LFunctions.Grossencharacter.finiteConductor_dvd_iff_residueCharacter_eq_one`: the
+  finite conductor divides `𝔫` exactly when the residue character is trivial on the residue units
+  congruent to `1` modulo `𝔫`.
 
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VII, (6.1) and (6.13).
+* J. Tate, *Fourier analysis in number fields and Hecke's zeta-functions*, in J. W. S. Cassels and
+  A. Fröhlich, eds., *Algebraic Number Theory*, §3.1.
 -/
 
 public section
@@ -316,6 +333,227 @@ theorem existsUnique_residueCharacter (χ : Grossencharacter K 𝔪) :
     fun ψ hψ ↦ MulChar.ext' fun r ↦ ?_⟩
   obtain ⟨b, hb₀, rfl⟩ := Ideal.Quotient.exists_ne_zero_mk_eq 𝔪.finitePart_ne_bot r
   rw [hψ b hb₀, χ.finiteCharacter_eq_residueCharacter hb₀]
+
+/-! ### The finite character as a product of local components -/
+
+/-- **The finite character is the inverse of the product of the components at the ramified
+primes**: at `x` prime to `𝔪`, `χ_f(x) = ∏_{v ∣ 𝔣} χ_v(x)⁻¹`, the product running over the primes
+dividing the finite conductor `𝔣` of the presented Hecke character. This is the triviality of
+the Hecke character on the principal idele of `x`
+(`HeckeCharacter.idealCharacter_apply_toPrincipalIdeal_eq_prod_inv_mul_prod_inv`). -/
+theorem finiteCharacterK_eq_prod_finiteComponent_inv (χ : Grossencharacter K 𝔪)
+    (x : primeToSubgroup 𝔪) :
+    χ.finiteCharacterK x =
+      (∏ v ∈ (⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot,
+          ∅⟩ : Modulus K).support,
+        χ.toHeckeCharacter.finiteComponent v
+          (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ)))⁻¹ := by
+  set I := NumberFieldArithmetic.idealsAwayInclusion K
+    (Modulus.support_mono χ.mk_finiteConductor_dvd)
+    (NumberFieldArithmetic.principalIdealAway K 𝔪.support x) with hIdef
+  have hI : (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) = toPrincipalIdeal (𝓞 K) K (x : Kˣ) := by
+    rw [NumberFieldArithmetic.coe_idealsAwayInclusion,
+      NumberFieldArithmetic.coe_principalIdealAway]
+  have hmem : toPrincipalIdeal (𝓞 K) K (x : Kˣ) ∈ idealsPrimeTo
+      ⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩ :=
+    hI ▸ I.property
+  rw [finiteCharacterK_apply, ← hIdef, show I = ⟨_, hmem⟩ from Subtype.ext hI,
+    HeckeCharacter.idealCharacter_apply_toPrincipalIdeal_eq_prod_inv_mul_prod_inv,
+    archimedeanValue_apply, mul_right_comm, inv_mul_cancel, one_mul]
+
+/-! ### The finite conductor and the residue character -/
+
+/-- An integer close to a given integral element of `K_v` at `v`, and congruent to `1` modulo the
+exponent of `𝔪` at every other prime dividing `𝔪`. -/
+private theorem exists_sub_one_mem_and_valued_sub_le (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K))
+    (t : v.adicCompletionIntegers K) :
+    ∃ r : 𝓞 K, (∀ w ∈ 𝔪.support, w ≠ v → r - 1 ∈ w.asIdeal ^ 𝔪.exponent w) ∧
+      Valued.v ((t : v.adicCompletion K) - algebraMap (𝓞 K) (v.adicCompletion K) r) ≤
+        WithZero.exp (-(𝔪.exponent v : ℤ)) := by
+  classical
+  obtain ⟨r, hr⟩ := HeightOneSpectrum.exists_forall_valued_sub_le (insert v 𝔪.support)
+    (Function.update (1 : ∀ w : HeightOneSpectrum (𝓞 K), w.adicCompletionIntegers K) v t)
+    𝔪.exponent
+  refine ⟨r, fun w hw hwv ↦ ?_, ?_⟩
+  · have hrw := hr w (Finset.mem_insert_of_mem hw)
+    rw [Function.update_of_ne hwv, Pi.one_apply, OneMemClass.coe_one] at hrw
+    rw [w.mem_asIdeal_pow_iff_valued_algebraMap_le (K := K), map_sub, map_one,
+      Valuation.map_sub_swap]
+    exact hrw
+  · have hrv := hr v (Finset.mem_insert_self v _)
+    rw [Function.update_self] at hrv
+    exact hrv
+
+/-- An integer close to an element `t ≡ 1 mod v ^ n(v)` of `K_v` at `v`, `n(v)` the multiplicity of
+`v` in `𝔫 ⊇ 𝔪₀`, and congruent to `1` modulo the exponent of `𝔪` at every other prime of `𝔪`, is
+congruent to `1` modulo `𝔫`. -/
+private theorem sub_one_mem_of_valued_sub_le {𝔫 : Ideal (𝓞 K)} (h𝔫 : 𝔪.finitePart ≤ 𝔫)
+    {v : HeightOneSpectrum (𝓞 K)} {t : v.adicCompletion K}
+    (ht : Valued.v (t - 1) ≤
+      WithZero.exp (-((Associates.mk v.asIdeal).count (Associates.mk 𝔫).factors : ℤ)))
+    {r : 𝓞 K} (hrw : ∀ w ∈ 𝔪.support, w ≠ v → r - 1 ∈ w.asIdeal ^ 𝔪.exponent w)
+    (hrv : Valued.v (t - algebraMap (𝓞 K) (v.adicCompletion K) r) ≤
+      WithZero.exp (-(𝔪.exponent v : ℤ))) :
+    r - 1 ∈ 𝔫 := by
+  have h𝔫ne : 𝔫 ≠ ⊥ := fun h0 ↦ 𝔪.finitePart_ne_bot (le_bot_iff.mp (h0 ▸ h𝔫))
+  -- The multiplicity of a prime in `𝔫` is at most its exponent in `𝔪`.
+  have hn𝔪 (w : HeightOneSpectrum (𝓞 K)) :
+      (Associates.mk w.asIdeal).count (Associates.mk 𝔫).factors ≤ 𝔪.exponent w := by
+    rw [Modulus.exponent_def,
+      HeightOneSpectrum.le_count_associates_iff_le_pow w 𝔪.finitePart_ne_bot]
+    exact h𝔫.trans ((HeightOneSpectrum.le_count_associates_iff_le_pow w h𝔫ne _).mp le_rfl)
+  -- Check the congruence one prime power at a time.
+  rw [← Ideal.iInf_maxPowDividing_eq h𝔫ne, Submodule.mem_iInf]
+  intro w
+  rw [HeightOneSpectrum.maxPowDividing]
+  by_cases hw : w ∈ 𝔪.support
+  · by_cases hwv : w = v
+    · subst hwv
+      rw [w.mem_asIdeal_pow_iff_valued_algebraMap_le (K := K), map_sub, map_one,
+        ← sub_add_sub_cancel _ t]
+      refine (Valuation.map_add _ _ _).trans (max_le ?_ ht)
+      rw [Valuation.map_sub_swap]
+      exact hrv.trans (WithZero.exp_le_exp.mpr (by have := hn𝔪 w; omega))
+    · exact Ideal.pow_le_pow_right (hn𝔪 w) (hrw w hw hwv)
+  · have h0 := hn𝔪 w
+    rw [(Modulus.mem_support_iff_exponent_ne_zero 𝔪 w).not, not_not] at hw
+    rw [hw, Nat.le_zero] at h0
+    rw [h0, pow_zero, Ideal.one_eq_top]
+    exact Submodule.mem_top
+
+/-- An integer outside `v` and congruent to `1` modulo the exponent of `𝔪` at every other prime of
+`𝔪` lies outside every prime of `𝔪`. -/
+private theorem notMem_of_sub_one_mem {v : HeightOneSpectrum (𝓞 K)} {r : 𝓞 K} (hrv : r ∉ v.asIdeal)
+    (hrw : ∀ w ∈ 𝔪.support, w ≠ v → r - 1 ∈ w.asIdeal ^ 𝔪.exponent w) :
+    ∀ w ∈ 𝔪.support, r ∉ w.asIdeal := by
+  intro w hw hrw0
+  by_cases hwv : w = v
+  · exact hrv (hwv ▸ hrw0)
+  have h1 := Ideal.pow_le_self (Modulus.exponent_pos_of_mem_support hw).ne' (hrw w hw hwv)
+  exact w.isPrime.ne_top ((Ideal.eq_top_iff_one _).mpr (by simpa using sub_mem hrw0 h1))
+
+/-- The component at `v` of the presented Hecke character takes the same value at two units of
+`𝒪_v` congruent modulo `v ^ 𝔪.exponent v`. -/
+private theorem finiteComponent_eq_of_valued_sub_le (χ : Grossencharacter K 𝔪)
+    {v : HeightOneSpectrum (𝓞 K)} {s t : (v.adicCompletion K)ˣ}
+    (hs : Valued.v (s : v.adicCompletion K) = 1) (ht : Valued.v (t : v.adicCompletion K) = 1)
+    (hst : Valued.v ((t : v.adicCompletion K) - s) ≤ WithZero.exp (-(𝔪.exponent v : ℤ))) :
+    χ.toHeckeCharacter.finiteComponent v t = χ.toHeckeCharacter.finiteComponent v s := by
+  -- `s⁻¹ t` lies in `U(K_v, 𝔪.exponent v)`, on which the component is trivial.
+  have hq : s⁻¹ * t ∈ TauCeti.unitFiltration (v.adicCompletion K)
+      (χ.toHeckeCharacter.conductorExponent v) := by
+    refine TauCeti.unitFiltration_antitone (χ.conductorExponent_le_exponent v) ?_
+    have hs0 : (s : v.adicCompletion K) ≠ 0 := s.ne_zero
+    rw [HeightOneSpectrum.mem_unitFiltration_adicCompletion_iff, Units.val_mul,
+      Units.val_inv_eq_inv_val, map_mul, map_inv₀, hs, ht, inv_one, one_mul,
+      show (s : v.adicCompletion K)⁻¹ * t - 1 =
+          (s : v.adicCompletion K)⁻¹ * ((t : v.adicCompletion K) - s) by field_simp,
+      map_mul, map_inv₀, hs, inv_one, one_mul]
+    exact ⟨rfl, hst⟩
+  rw [← mul_inv_cancel_left s t, map_mul,
+    χ.toHeckeCharacter.finiteComponent_eq_one_of_mem_unitFiltration hq, mul_one]
+
+/-- If the residue character is trivial on the residue units of the integers congruent to `1`
+modulo an ideal `𝔫 ⊇ 𝔪₀`, then `𝔫` is contained in `v ^ a_v(χ)` for every prime `v`. -/
+private theorem le_pow_conductorExponent_of_residueCharacter_eq_one (χ : Grossencharacter K 𝔪)
+    {𝔫 : Ideal (𝓞 K)} (h𝔫 : 𝔪.finitePart ≤ 𝔫)
+    (h : ∀ u : 𝓞 K, IsUnit (Ideal.Quotient.mk 𝔪.finitePart u) → u - 1 ∈ 𝔫 →
+      χ.residueCharacter (Ideal.Quotient.mk 𝔪.finitePart u) = 1)
+    (v : HeightOneSpectrum (𝓞 K)) :
+    𝔫 ≤ v.asIdeal ^ χ.toHeckeCharacter.conductorExponent v := by
+  set 𝔣 : Modulus K :=
+    ⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩
+  have h𝔫ne : 𝔫 ≠ ⊥ := fun h0 ↦ 𝔪.finitePart_ne_bot (le_bot_iff.mp (h0 ▸ h𝔫))
+  refine ((HeightOneSpectrum.le_count_associates_iff_le_pow v h𝔫ne _).mp le_rfl).trans
+    (Ideal.pow_le_pow_right ?_)
+  -- Away from the primes of the finite conductor there is nothing to prove.
+  by_cases hv𝔣 : v ∈ 𝔣.support
+  swap
+  · have h0 : χ.toHeckeCharacter.conductorExponent v = 0 := by
+      by_contra hne
+      exact hv𝔣 ((𝔣.mem_support_iff v).mpr ((χ.toHeckeCharacter.dvd_finiteConductor_iff v).mpr hne))
+    rw [h0]
+    exact Nat.zero_le _
+  have h𝔣𝔪 : 𝔣.support ⊆ 𝔪.support := Modulus.support_mono χ.mk_finiteConductor_dvd
+  -- Given `t ∈ U(K_v, n)`, choose an integer `r` close to `t` at `v` and to `1` at the other
+  -- primes of `𝔪`. Then `r ≡ 1 mod 𝔫`, so `1 = χ_f(r) = χ_v(r)⁻¹`, and `χ_v(t) = χ_v(r)`.
+  rw [HeckeCharacter.conductorExponent_le_iff]
+  intro t ht
+  have ht' := (HeightOneSpectrum.mem_unitFiltration_adicCompletion_iff (v := v)).mp ht
+  obtain ⟨r, hrw, hrv⟩ := exists_sub_one_mem_and_valued_sub_le 𝔪 v ⟨t, ht'.1.le⟩
+  have hmem := sub_one_mem_of_valued_sub_le h𝔫 ht'.2 hrw hrv
+  -- `r` is a unit at every prime of `𝔪`.
+  have hr1 : Valued.v (algebraMap (𝓞 K) (v.adicCompletion K) r) = 1 := by
+    rw [← ht'.1]
+    refine Valuation.map_eq_of_sub_lt _ ?_
+    rw [Valuation.map_sub_swap, ht'.1]
+    exact hrv.trans_lt (WithZero.exp_lt_one_iff.mpr (by
+      have := Modulus.exponent_pos_of_mem_support (h𝔣𝔪 hv𝔣); omega))
+  have hrw' := notMem_of_sub_one_mem
+    ((v.notMem_asIdeal_iff_valued_algebraMap_eq_one (K := K)).mpr hr1) hrw
+  have hr0 : r ≠ 0 := fun h0 ↦ hrw' v (h𝔣𝔪 hv𝔣) (by rw [h0]; exact zero_mem _)
+  have hcop : 𝔪.IsCoprimeTo (Ideal.span {r}) :=
+    Modulus.isCoprimeTo_iff.mpr ⟨Ideal.span_singleton_eq_bot.not.mpr hr0,
+      fun w hw hdvd ↦ hrw' w hw (Ideal.dvd_span_singleton.mp hdvd)⟩
+  obtain ⟨x, hx⟩ := Modulus.isCoprimeTo_span_singleton_iff.mp hcop
+  set xv := Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom (x : Kˣ)
+  have hxv : (xv : v.adicCompletion K) = algebraMap (𝓞 K) (v.adicCompletion K) r := by
+    simp [xv, hx, ← IsScalarTower.algebraMap_apply]
+  -- `1 = χ_f(r) = χ_v(r)⁻¹`, the components at the other primes of `𝔣` being trivial at `r`.
+  have hχr := h r (Ideal.Quotient.isUnit_mk_iff.mpr (Modulus.isCoprimeTo_iff_sup_eq_top.mp hcop).2)
+    hmem
+  rw [← χ.finiteCharacter_eq_residueCharacter hr0,
+    χ.finiteCharacter_eq_finiteCharacterK x hx.symm, Units.val_eq_one,
+    finiteCharacterK_eq_prod_finiteComponent_inv, inv_eq_one,
+    Finset.prod_eq_single_of_mem v hv𝔣 fun w hw hwv ↦ ?_] at hχr
+  · rw [χ.finiteComponent_eq_of_valued_sub_le (s := xv) (by rwa [hxv]) ht'.1 (by rwa [hxv]), hχr]
+  refine χ.toHeckeCharacter.finiteComponent_eq_one_of_mem_unitFiltration
+    (TauCeti.unitFiltration_antitone (χ.conductorExponent_le_exponent w) ?_)
+  exact (w.unitsMap_algebraMap_mem_unitFiltration_iff hx.symm).mpr
+    ⟨hrw' w (h𝔣𝔪 hw), hrw w (h𝔣𝔪 hw) hwv⟩
+
+/-- **The finite conductor is read off the residue character.** The finite conductor of a
+presentation divides an ideal `𝔫` exactly when the residue character is trivial on the residue
+units modulo `𝔪₀` of the integers congruent to `1` modulo `𝔫`. -/
+theorem finiteConductor_dvd_iff_residueCharacter_eq_one (χ : Grossencharacter K 𝔪)
+    (𝔫 : Ideal (𝓞 K)) :
+    χ.toHeckeCharacter.finiteConductor ∣ 𝔫 ↔
+      ∀ u : 𝓞 K, IsUnit (Ideal.Quotient.mk 𝔪.finitePart u) → u - 1 ∈ 𝔫 →
+        χ.residueCharacter (Ideal.Quotient.mk 𝔪.finitePart u) = 1 := by
+  refine ⟨fun h𝔣 u hu hu1 ↦ ?_, fun h ↦ ?_⟩
+  · by_cases hu0 : u = 0
+    · -- A residue ring in which `0` is a unit has a single element.
+      rw [hu0, map_zero, isUnit_zero_iff] at hu
+      have := subsingleton_of_zero_eq_one hu
+      rw [Subsingleton.elim (Ideal.Quotient.mk 𝔪.finitePart u) 1, map_one]
+    have hcop : 𝔪.IsCoprimeTo (Ideal.span {u}) :=
+      Modulus.isCoprimeTo_iff_sup_eq_top.mpr
+        ⟨Ideal.span_singleton_eq_bot.not.mpr hu0, Ideal.Quotient.isUnit_mk_iff.mp hu⟩
+    obtain ⟨x, hx⟩ := Modulus.isCoprimeTo_span_singleton_iff.mp hcop
+    rw [← χ.finiteCharacter_eq_residueCharacter hu0,
+      χ.finiteCharacter_eq_finiteCharacterK x hx.symm, finiteCharacterK_eq_prod_finiteComponent_inv,
+      Finset.prod_eq_one fun w hw ↦ ?_, inv_one, Units.val_one]
+    -- At a prime `w` of the finite conductor, `u ≡ 1` modulo `w ^ a_w(χ)`.
+    have hw𝔪 := Modulus.support_mono χ.mk_finiteConductor_dvd hw
+    refine χ.toHeckeCharacter.finiteComponent_eq_one_of_mem_unitFiltration
+      ((w.unitsMap_algebraMap_mem_unitFiltration_iff hx.symm).mpr ⟨fun huw ↦
+        (Modulus.isCoprimeTo_iff.mp hcop).2 w hw𝔪 (Ideal.dvd_span_singleton.mpr huw), ?_⟩)
+    exact Ideal.dvd_iff_le.mp ((χ.toHeckeCharacter.pow_dvd_finiteConductor_iff w _).mpr le_rfl)
+      (Ideal.dvd_iff_le.mp h𝔣 hu1)
+  -- Conversely, pass to `𝔫 ⊔ 𝔪₀`, which contains `𝔪₀`, and compare prime by prime.
+  have h' : ∀ u : 𝓞 K, IsUnit (Ideal.Quotient.mk 𝔪.finitePart u) →
+      u - 1 ∈ 𝔫 ⊔ 𝔪.finitePart → χ.residueCharacter (Ideal.Quotient.mk 𝔪.finitePart u) = 1 := by
+    intro u hu hu1
+    obtain ⟨a, ha, b, hb, hab⟩ := Submodule.mem_sup.mp hu1
+    have hmk : Ideal.Quotient.mk 𝔪.finitePart (u - b) = Ideal.Quotient.mk 𝔪.finitePart u :=
+      Ideal.Quotient.eq.mpr (by rw [sub_sub_cancel_left]; exact neg_mem hb)
+    rw [← hmk] at hu ⊢
+    exact h _ hu (by rwa [show u - b - 1 = a by linear_combination -hab])
+  rw [Ideal.dvd_iff_le]
+  refine (le_sup_left (b := 𝔪.finitePart)).trans ((le_iInf fun v ↦ ?_).trans
+    (Ideal.iInf_maxPowDividing_eq χ.toHeckeCharacter.finiteConductor_ne_bot).le)
+  rw [HeightOneSpectrum.maxPowDividing, χ.toHeckeCharacter.count_finiteConductor]
+  exact le_pow_conductorExponent_of_residueCharacter_eq_one χ le_sup_right h' v
 
 end Grossencharacter
 

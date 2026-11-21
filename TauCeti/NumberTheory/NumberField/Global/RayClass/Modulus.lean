@@ -125,6 +125,11 @@ theorem ext {m n : Modulus K} (hfinite : m.finitePart = n.finitePart)
 theorem finitePart_ne_zero (𝔪 : Modulus K) : 𝔪.finitePart ≠ 0 := fun h ↦
   𝔪.finitePart_ne_bot (by rwa [Ideal.zero_eq_bot] at h)
 
+/-- The residue ring of `𝓞 K` modulo the finite part of a modulus is finite, the finite part being
+a nonzero ideal. -/
+instance finite_quotient_finitePart (𝔪 : Modulus K) : Finite (𝓞 K ⧸ 𝔪.finitePart) :=
+  Ring.HasFiniteQuotients.finiteQuotient 𝔪.finitePart_ne_bot
+
 /-- **Divisibility of moduli**: `𝔪 ∣ 𝔫` when the finite part of `𝔪` divides that of `𝔫` and the
 infinite part of `𝔪` is contained in that of `𝔫`, so that the congruence conditions imposed by
 `𝔫` are the stronger ones. -/

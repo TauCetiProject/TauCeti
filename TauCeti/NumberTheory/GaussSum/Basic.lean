@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.Trace.Defs
 import Mathlib.Algebra.CharP.Quotient
 
 /-!
-# Gauss sums over finite fields
+# Gauss sums over finite fields and finite rings
 
 This file extends Mathlib's theory of Gauss sums `g(χ, ψ)` in `Mathlib.NumberTheory.GaussSum`:
 pushing a Gauss sum along a ring homomorphism of the coefficients (`MulChar.gaussSum_ringHomComp`,
@@ -23,6 +23,13 @@ Let `χ` be a nontrivial multiplicative character and `ψ` a primitive additive 
 with complex values. Mathlib's `gaussSum_mul_gaussSum_eq_card` computes
 `g(χ, ψ) g(χ⁻¹, ψ⁻¹) = #F`, and `star_gaussSum_eq` identifies `g(χ⁻¹, ψ⁻¹)` with the complex
 conjugate of `g(χ, ψ)`. Together they give the classical absolute value `|g(χ, ψ)| = √#F`.
+
+Over a finite commutative ring `R` that is not a field the same absolute value holds once the
+shifted sums `g(χ, x ↦ ψ (b * x))` are `χ⁻¹ b` times `g(χ, ψ)` for every `b`, nonunits included.
+For a unit `b` this is Mathlib's `gaussSum_mulShift_eq`; for a nonunit `b` it says that the shifted
+sum vanishes, which follows from a unit `u` with `b * (u - 1) = 0` and `χ u ≠ 1`. Such units exist
+when `χ` is primitive: for Dirichlet characters, and for the residue characters of Hecke
+characters of a number field.
 
 Let `l` be a prime and `χ` a character with `χ ^ l = 1`, with values in a domain `R`. Raising to
 the `l`-th power is additive modulo `l`, so `g(χ, ψ)^l ≡ g(χ^l, ψ^l) = g(1, ψ^l) ≡ -1` modulo
@@ -41,6 +48,11 @@ then reindexing the Gauss sum by the Frobenius gives `g(χ ^ p, ψ) = g(χ, ψ)`
 ## Main results
 
 * `TauCeti.norm_gaussSum`: `‖g(χ, ψ)‖ = √#F`.
+* `MulChar.gaussSum_mulShift_eq_zero_of_mul_sub_one_eq_zero`: the Gauss sum against a shift
+  `x ↦ ψ (b * x)` vanishes if `b * (u - 1) = 0` for a unit `u` with `χ u ≠ 1`.
+* `TauCeti.gaussSum_mul_gaussSum_inv_eq_card_of_forall_mulShift` and
+  `TauCeti.norm_gaussSum_of_forall_mulShift`: `g(χ, ψ) g(χ⁻¹, ψ⁻¹) = #R` and `‖g(χ, ψ)‖ = √#R`
+  over a finite ring, when the shifted sums are proportional to `χ⁻¹`.
 * `TauCeti.gaussSum_pow_modEq_neg_one`: `g(χ, ψ)^l ≡ -1 (mod l)` when `χ ^ l = 1` and
   `ψ ^ l ≠ 1`.
 * `TauCeti.gaussSum_pow_char_pow`: `g(χ, ψ) ^ q = χ⁻¹ (q) g(χ, ψ)` when the coefficients have
@@ -105,6 +117,60 @@ theorem gaussSum_pow_char_pow {A : Type*} [CommRing A] [Fintype A] {R : Type*} [
       _root_.pow_apply]
   rw [h, AddChar.pow_mulShift, Nat.cast_pow, ← hq.unit_spec, gaussSum_mulShift_eq]
 
+section FiniteRing
+
+variable {R : Type*} [CommRing R] [Fintype R]
+
+/-- **The product of a Gauss sum and its conjugate sum is `#R`** whenever the shifted Gauss sums
+are proportional to `χ⁻¹`. Let `ψ` be a primitive additive character of the finite ring `R`, and
+suppose that `g(χ, x ↦ ψ (b * x)) = χ⁻¹ b * g(χ, ψ)` for every `b ∈ R`, nonunits included. Then
+`g(χ, ψ) g(χ⁻¹, ψ⁻¹) = #R`. Over a finite field this is Mathlib's
+`gaussSum_mul_gaussSum_eq_card`; over `ZMod n` the hypothesis holds for primitive Dirichlet
+characters (`gaussSum_mulShift_of_isPrimitive`). -/
+theorem gaussSum_mul_gaussSum_inv_eq_card_of_forall_mulShift {R' : Type*} [CommRing R']
+    [IsDomain R'] {χ : MulChar R R'} {ψ : AddChar R R'}
+    (hχ : ∀ b, gaussSum χ (ψ.mulShift b) = χ⁻¹ b * gaussSum χ ψ) (hψ : ψ.IsPrimitive) :
+    gaussSum χ ψ * gaussSum χ⁻¹ ψ⁻¹ = Fintype.card R := by
+  classical
+  simp only [gaussSum]
+  rw [Finset.mul_sum]
+  calc
+    ∑ b, gaussSum χ ψ * (χ⁻¹ b * ψ⁻¹ b) = ∑ b, gaussSum χ (ψ.mulShift b) * ψ⁻¹ b := by
+      refine Finset.sum_congr rfl fun b _ ↦ ?_
+      rw [hχ b]
+      ring
+    _ = ∑ b, ∑ a, χ a * ψ (b * a) * ψ (-b) := by
+      refine Finset.sum_congr rfl fun b _ ↦ ?_
+      simp only [gaussSum, AddChar.mulShift_apply, AddChar.inv_apply, Finset.sum_mul]
+    _ = ∑ a, χ a * ∑ b, ψ (b * (a - 1)) := by
+      rw [Finset.sum_comm]
+      refine Finset.sum_congr rfl fun a _ ↦ ?_
+      rw [Finset.mul_sum]
+      refine Finset.sum_congr rfl fun b _ ↦ ?_
+      rw [mul_assoc, ← ψ.map_add_eq_mul]
+      congr 2
+      ring
+    _ = Fintype.card R := by
+      simp_rw [AddChar.sum_mulShift _ hψ]
+      rw [Finset.sum_eq_single 1]
+      · simp
+      · intro b _ hb
+        simp [sub_eq_zero, hb]
+      · simp
+
+/-- **A complex Gauss sum has absolute value `√#R`** whenever the shifted Gauss sums are
+proportional to `χ⁻¹`: if `ψ` is a primitive additive character of the finite ring `R` and
+`g(χ, x ↦ ψ (b * x)) = χ⁻¹ b * g(χ, ψ)` for every `b ∈ R`, then `‖g(χ, ψ)‖ = √#R`. -/
+theorem norm_gaussSum_of_forall_mulShift {χ : MulChar R ℂ} {ψ : AddChar R ℂ}
+    (hχ : ∀ b, gaussSum χ (ψ.mulShift b) = χ⁻¹ b * gaussSum χ ψ) (hψ : ψ.IsPrimitive) :
+    ‖gaussSum χ ψ‖ = √(Fintype.card R) := by
+  have h := gaussSum_mul_gaussSum_inv_eq_card_of_forall_mulShift hχ hψ
+  rw [← star_gaussSum_eq, ← starRingEnd_apply, Complex.mul_conj'] at h
+  rw [← Real.sqrt_sq (norm_nonneg _)]
+  exact congrArg Real.sqrt (by exact_mod_cast h)
+
+end FiniteRing
+
 omit [Fintype F] in
 /-- An additive character factoring through the trace to `𝔽_p` is invariant under the Frobenius:
 if `ψ x = g (Tr x)` for all `x`, then `ψ (x ^ p) = ψ x`. -/
@@ -130,6 +196,19 @@ theorem apply_pow_char_of_trace {p : ℕ} [Fact p.Prime] [Algebra (ZMod p) F]
 end TauCeti
 
 namespace MulChar
+
+/-- **A Gauss sum against a degenerate shift vanishes.** Let `u` be a unit of the finite ring `R`
+and `b` an element with `b * (u - 1) = 0`, so that the shifted additive character
+`x ↦ ψ (b * x)` is invariant under multiplication by `u`. If `χ u ≠ 1`, then the Gauss sum of `χ`
+against that shifted character is `0`. -/
+theorem gaussSum_mulShift_eq_zero_of_mul_sub_one_eq_zero {R : Type*} [CommRing R] [Fintype R]
+    {R' : Type*} [CommRing R'] [IsDomain R'] (χ : MulChar R R') (ψ : AddChar R R') {b : R}
+    {u : Rˣ} (hbu : b * (u - 1) = 0) (hu : χ u ≠ 1) : gaussSum χ (ψ.mulShift b) = 0 := by
+  have hb : b * u = b := by linear_combination hbu
+  have h := gaussSum_mulShift χ (ψ.mulShift b) u
+  rw [AddChar.mulShift_mulShift, hb] at h
+  by_contra hne
+  exact hu ((mul_eq_right₀ hne).mp h)
 
 /-- Pushing a multiplicative and an additive character along a ring homomorphism `f` of the
 coefficients pushes their Gauss sum along `f`: `g(f ∘ χ, f ∘ ψ) = f (g(χ, ψ))`. This is the

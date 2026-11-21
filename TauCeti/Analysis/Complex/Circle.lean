@@ -60,6 +60,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   dense in the circle.
 * `Circle.exp_neg_arg_mul_self`: rotating `x : ℂ` by `exp (-i arg x)` gives `‖x‖`.
 * `Circle.inv_eq_self_iff`: the points of the circle equal to their inverses are `1` and `-1`.
+* `Real.fourierChar_eq_one_iff`: the Fourier character `𝐞 x = exp (2π i x)` is `1` exactly at
+  the integers.
 * `Circle.im_coe_eq_zero_iff`: the real points of the circle are `1` and `-1`.
 * `Circle.upperSemicircle`: the parametrization `x ↦ x + √(1 - x²) I` of the upper semicircle by
   `[-1, 1]`; with its inverse it covers the circle (`Circle.exists_upperSemicircle_eq_or_inv_eq`),
@@ -407,3 +409,15 @@ theorem hasDerivAt_coe_circleExp (t : ℝ) :
   simpa [mul_comm] using ((ofRealCLM.hasDerivAt (x := t)).mul_const I).cexp
 
 end TauCeti
+
+namespace Real
+
+open scoped FourierTransform
+
+/-- **The kernel of the Fourier character** `𝐞 x = e^{2πix}` consists of the integers. -/
+theorem fourierChar_eq_one_iff {x : ℝ} : 𝐞 x = 1 ↔ ∃ n : ℤ, x = n := by
+  rw [fourierChar_apply', Circle.exp_eq_one]
+  refine exists_congr fun n ↦ ⟨fun h ↦ ?_, fun h ↦ by rw [h]; ring⟩
+  exact mul_left_cancel₀ (by positivity : 2 * π ≠ 0) (by linarith)
+
+end Real
