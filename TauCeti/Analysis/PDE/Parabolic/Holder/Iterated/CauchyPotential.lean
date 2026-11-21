@@ -185,10 +185,10 @@ private theorem hasDerivWithinAt_field (hab : a < b) (ha : 0 ≤ a) (g : CkHolde
       rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv, datum,
         norm_iteratedFDeriv_iteratedFDeriv]
       exact norm_datum_le g (m := 1 + 1 + m) (by omega) y)
-    (ha.trans t.2.1) x
+    (ha.trans t.property.1) x
   rw [hΔ] at hd
   refine (hd.mono (Icc_subset_Ici_self.trans (Ici_subset_Ici.2 ha))).congr_of_mem
-    (fun s hs ↦ ?_) t.2
+    (fun s hs ↦ ?_) t.property
   simp [ParabolicC2HolderSpace.timeExtension_def, projIcc_of_mem hab.le hs,
     field_slabMk g (by omega : 2 * r + m ≤ k)]
 
