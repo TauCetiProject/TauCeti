@@ -198,15 +198,19 @@ the cut from the root. -/
     Crosses S (sideAvoiding r T) ↔ Crosses S T := by
   by_cases h : r ∈ T <;> simp [sideAvoiding, h]
 
-/-- **Root convention.** Representing each cut of a pairwise non-crossing family by its side
-avoiding a fixed root vertex gives a laminar family. -/
-theorem pairwise_nestedOrDisjoint_image_sideAvoiding {𝒞 : Set (Finset V)}
-    (h𝒞 : 𝒞.Pairwise fun S T ↦ ¬Crosses S T) (r : V) :
-    (sideAvoiding r '' 𝒞).Pairwise NestedOrDisjoint := by
-  rintro _ ⟨S, hS, rfl⟩ _ ⟨T, hT, rfl⟩ hne
-  rw [← not_crosses_iff_nestedOrDisjoint (notMem_sideAvoiding r S) (notMem_sideAvoiding r T),
-    crosses_sideAvoiding_left, crosses_sideAvoiding_right]
-  exact h𝒞 hS hT fun h ↦ hne (h ▸ rfl)
+/-- **Root convention.** A family of cuts is pairwise non-crossing exactly when representing
+each cut by its side avoiding a fixed root vertex gives a laminar family. -/
+theorem pairwise_nestedOrDisjoint_image_sideAvoiding (r : V) {𝒞 : Set (Finset V)} :
+    (sideAvoiding r '' 𝒞).Pairwise NestedOrDisjoint ↔ 𝒞.Pairwise fun S T ↦ ¬Crosses S T := by
+  have key (S T : Finset V) :
+      NestedOrDisjoint (sideAvoiding r S) (sideAvoiding r T) ↔ ¬Crosses S T := by
+    rw [← not_crosses_iff_nestedOrDisjoint (notMem_sideAvoiding r S) (notMem_sideAvoiding r T),
+      crosses_sideAvoiding_left, crosses_sideAvoiding_right]
+  refine ⟨fun h S hS T hT _ ↦ (key S T).mp ?_, fun h ↦ (h.imp fun S T ↦ (key S T).mpr).image⟩
+  by_cases hST : sideAvoiding r S = sideAvoiding r T
+  · -- Cuts with the same side avoiding the root have nested sides.
+    exact hST ▸ .of_subset subset_rfl
+  · exact h (Set.mem_image_of_mem _ hS) (Set.mem_image_of_mem _ hT) hST
 
 end Crossing
 
