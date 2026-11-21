@@ -19,6 +19,7 @@ import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.ContDiff.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Add
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Calculus.Morse.Cerf
@@ -305,12 +306,12 @@ private theorem fderiv_jetMap_apply_coeff {t : ℝ} {x v : E} {p : Λ}
   simp only [jetMap, Prod.mk_add_mk, Prod.smul_mk, smul_zero, add_zero, smul_neg,
     ← sub_eq_add_neg, Prod.mk_sub_mk]
   refine Prod.ext ?_ (Prod.ext ?_ ?_)
-  · exact fderiv_sub_apply_add_smul (hu.differentiableAt (by norm_num))
+  · exact P.fderiv_sub_map_add_smul (hu.differentiableAt (by norm_num))
       (hw.differentiable (by norm_num) x) s
-  · rw [sub_apply_add_smul (f t) P p q s,
+  · rw [P.sub_map_add_smul (f t) p q s,
       fderiv_fderiv_sub (hu.of_le (by norm_num)) (hsw.of_le (by norm_num)),
       fderiv_fderiv_const_smul, sub_apply, smul_apply]
-  · rw [sub_apply_add_smul (f t) P p q s, fderiv_fderiv_fderiv_sub hu hsw,
+  · rw [P.sub_map_add_smul (f t) p q s, fderiv_fderiv_fderiv_sub hu hsw,
       fderiv_fderiv_fderiv_const_smul, sub_apply, sub_apply, sub_apply, smul_apply, smul_apply,
       smul_apply, smul_eq_mul]
 

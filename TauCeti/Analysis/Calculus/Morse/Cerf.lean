@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.Morse.BirthDeath
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Analysis.Calculus.ContDiff.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Add
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Fredholm.LevelSet.FiniteDimensional
@@ -133,25 +134,6 @@ theorem contDiffAt_sub_of_contDiffAt_uncurry {Λ : Type*} [NormedAddCommGroup Λ
     hP.comp ((t, p), x) (contDiffAt_fst.snd.prodMk contDiffAt_snd)
   exact h1.sub h2
 
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
-/-- Moving the parameter of a linear family of perturbations `P` from `p` to `p + s • q` subtracts
-`s • P q` from the perturbed function `g - P p`. -/
-theorem sub_apply_add_smul {Λ : Type*} [AddCommGroup Λ] [Module ℝ Λ] (g : E → ℝ)
-    (P : Λ →ₗ[ℝ] E → ℝ) (p q : Λ) (s : ℝ) :
-    (fun y ↦ g y - P (p + s • q) y) = (fun y ↦ g y - P p y) - s • P q := by
-  ext y
-  simp only [map_add, map_smul, Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul]
-  ring
-
-/-- Moving the parameter of a linear family of perturbations `P` from `p` to `p + s • q` subtracts
-`s • d(P q)_x` from the differential at `x` of the perturbed function `g - P p`. -/
-theorem fderiv_sub_apply_add_smul {Λ : Type*} [AddCommGroup Λ] [Module ℝ Λ] {g : E → ℝ}
-    {P : Λ →ₗ[ℝ] E → ℝ} {p q : Λ} {x : E} (hg : DifferentiableAt ℝ (fun y ↦ g y - P p y) x)
-    (hq : DifferentiableAt ℝ (P q) x) (s : ℝ) :
-    fderiv ℝ (fun y ↦ g y - P (p + s • q) y) x =
-      fderiv ℝ (fun y ↦ g y - P p y) x - s • fderiv ℝ (P q) x := by
-  rw [sub_apply_add_smul g P p q s, fderiv_sub hg (hq.const_smul s), fderiv_const_smul hq]
-
 /-- **The derivative of the parametrized differential** `(t, x) ↦ d(f t)_x` at `(t, x)` sends
 `(τ, ξ)` to `τ • ∂ₜ (d(f t)_x) + Hess(f t)_x ξ`. -/
 theorem fderiv_fderiv_apply (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) (p : ℝ × E) :
@@ -248,7 +230,7 @@ theorem ae_forall_surjective_fderiv_fderiv_sub_of_forall_exists_fderiv_eq {Λ : 
       ((hGc _ hw).differentiableAt (by norm_num)).fderiv_apply_eq_of_add_smul
         (.of_forall fun s ↦ ?_)⟩
     simp only [G, Prod.mk_add_mk, Prod.smul_mk, smul_zero, add_zero]
-    rw [fderiv_sub_apply_add_smul hu hw', hq, smul_neg, sub_neg_eq_add]
+    rw [P.fderiv_sub_map_add_smul hu hw', hq, smul_neg, sub_neg_eq_add]
   have hreg := ae_isRegularParameterOn ν (U := U) (c := 0) (n := 2) (fun w hw _ ↦ hGc w hw)
     htotal (by
       rw [Module.finrank_prod, Module.finrank_self, ContinuousLinearMap.dual_finrank_eq]
