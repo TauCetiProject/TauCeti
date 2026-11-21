@@ -66,17 +66,14 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 * `CStarMatrix.submatrix_nonneg` and `CStarMatrix.extend_nonneg`: reindexing a positive matrix
   along any map of indices, or extending it by zero along an injective one, gives a positive
   matrix.
-<<<<<<< HEAD
 * `CStarMatrix.algebraMap_le_iff_forall_sum_le`: the quadratic-form criterion for scalar lower
   bounds `algebraMap ℝ (CStarMatrix n n A) r ≤ M` over a unital C⋆-algebra.
-=======
 * `WithCStarModule.norm_equiv_symm_pi_smul`: the vector `(vᵢ a)ᵢ` of the Hilbert `A`-module `Aᵐ`
   has norm `‖v‖ ‖a‖`.
 * `CStarMatrix.norm_sum_smul_le`: compressing `x ∈ M_{m,n}(A)` by scalar vectors `v`, `w` gives
   `‖∑ i j, (vᵢ wⱼ*) xᵢⱼ‖ ≤ ‖v‖ ‖x‖ ‖w‖`. The proof tests `x` against the vectors `(vᵢ a)ᵢ` and
   `(wⱼ b)ⱼ` of `Aᵐ` and `Aⁿ`, which bounds `‖a z b*‖` for the compression `z`, and takes `a = z*`,
   `b = z* z`; no unit is needed.
->>>>>>> origin/main
 
 ## References
 

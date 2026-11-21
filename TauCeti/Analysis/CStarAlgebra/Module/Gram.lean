@@ -83,7 +83,7 @@ end Algebraic
 
 section UnitalAlgebraic
 
-variable [Fintype n] [DecidableEq n] [SeminormedRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
+variable [Fintype n] [DecidableEq n] [SeminormedRing A] [StarRing A] [Module ℂ A]
   [PartialOrder A] [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E]
   [CStarModule Aᵐᵒᵖ E]
 
@@ -92,7 +92,9 @@ a right linear combination `∑ j, op (c j) • x j` recovers the `i`-th coeffic
 theorem inner_sum_op_smul_of_gram_eq_one {x : n → E} (hx : gram A x = 1) (c : n → A) (i : n) :
     inner Aᵐᵒᵖ (x i) (∑ j, op (c j) • x j) = op (c i) := by
   apply unop_injective
-  rw [CStarModule.inner_sum_right, Finset.unop_sum]
+  have hsum : inner Aᵐᵒᵖ (x i) (∑ j, op (c j) • x j) = ∑ j, inner Aᵐᵒᵖ (x i) (op (c j) • x j) :=
+    map_sum (AddMonoidHom.mk' (inner Aᵐᵒᵖ (x i)) fun _ _ ↦ CStarModule.inner_add_right) _ _
+  rw [hsum, Finset.unop_sum]
   have hgram (j : n) : unop (inner Aᵐᵒᵖ (x i) (x j)) = (1 : CStarMatrix n n A) i j := by
     rw [← gram_apply, hx]
   simp [CStarModule.inner_op_smul_right, hgram, one_apply]

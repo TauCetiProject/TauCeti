@@ -58,9 +58,9 @@ is its adjoint if and only if it is surjective and preserves the `A`-valued inne
   surjective and preserves the `A`-valued inner product.
 * `LinearMap.isometryOfInnerCStarModule`, `LinearEquiv.isometryOfInnerCStarModule`: construct
   linear isometries and isometric equivalences from inner-product preservation.
-* `LinearIsometryEquiv.inner_map_map_of_map_smul_cstarModule`,
-  `LinearIsometryEquiv.inner_map_map_cstarModule`: every `A`-linear isometric equivalence
-  preserves `⟪·, ·⟫_A`.
+* `LinearIsometry.inner_map_map_of_map_smul_cstarModule`,
+  `LinearIsometry.inner_map_map_cstarModule`, `LinearIsometryEquiv.inner_map_map_cstarModule`:
+  every `A`-linear isometry (not necessarily surjective) preserves `⟪·, ·⟫_A`.
 
 ## References
 
@@ -779,6 +779,125 @@ def isometryOfInnerCStarModule : E ≃ₗᵢ[R] F where
 
 end LinearEquiv
 
+namespace LinearIsometry
+
+section NonUnital
+
+open Filter Topology
+open scoped ComplexOrder Ring
+
+variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [SeminormedAddCommGroup E] [Module ℂ E] [SMul A E] [CStarModule A E]
+  [SeminormedAddCommGroup F] [Module ℂ F] [SMul A F] [CStarModule A F]
+
+omit [StarOrderedRing A] in
+private lemma inr_inner_unitization_smul {E : Type*} [AddCommGroup E] [Module ℂ E] [SMul A E]
+    [Norm E] [CStarModule A E] (u : Unitization ℂ A) (z : E) :
+    (inner A (u.fst • z + u.snd • z) (u.fst • z + u.snd • z) : Unitization ℂ A) =
+      u * (inner A z z : Unitization ℂ A) * star u := by
+  ext
+  · simp [Unitization.fst_mul]
+  · simp only [Unitization.snd_inr, Unitization.snd_mul, Unitization.fst_mul, Unitization.fst_inr,
+      Unitization.fst_star, Unitization.snd_star, zero_mul, zero_smul, zero_add, add_zero,
+      CStarModule.inner_add_left, CStarModule.inner_add_right, CStarModule.inner_smul_left_complex,
+      CStarModule.inner_smul_right_complex, CStarModule.inner_op_smul_left,
+      CStarModule.inner_op_smul_right, smul_add, smul_smul, mul_add, mul_smul_comm, mul_assoc]
+
+/-- **Lance's theorem** (isometry case) over a (possibly non-unital) C⋆-algebra `A`: every
+`f : E →ₗᵢ[ℂ] F` commuting with the `A`-action preserves `⟪·, ·⟫_A`. -/
+theorem inner_map_map_of_map_smul_cstarModule (f : E →ₗᵢ[ℂ] F)
+    (hf : ∀ (a : A) (x : E), f (a • x) = a • f x) (x y : E) :
+    inner A (f x) (f y) = inner A x y := by
+  let : NormedSpace ℂ E := .ofCore (CStarModule.normedSpaceCore A)
+  let : NormedSpace ℂ F := .ofCore (CStarModule.normedSpaceCore A)
+  let fCLM : E →L[ℂ] F := f.toContinuousLinearMap
+  have hf_norm : ‖fCLM‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun z ↦ by simp [fCLM]
+  refine (CStarModule.inner_map_map_iff_forall_inner_map_map_self f).mpr (fun z ↦ ?_) x y
+  refine le_antisymm ?_ ?_
+  · calc inner A (f z) (f z)
+        ≤ ‖fCLM‖ ^ 2 • inner A z z :=
+          CStarModule.inner_map_map_le_norm_sq_smul fCLM hf z
+      _ ≤ (1 : ℝ) ^ 2 • inner A z z := by
+          gcongr; exact CStarModule.inner_self_nonneg
+      _ = inner A z z := by simp
+  · rw [← Unitization.inr_le_inr_iff ℂ]
+    set p : Unitization ℂ A := (inner A (f z) (f z) : Unitization ℂ A)
+    set q : Unitization ℂ A := (inner A z z : Unitization ℂ A)
+    have hp : 0 ≤ p := Unitization.inr_nonneg ℂ _ CStarModule.inner_self_nonneg
+    have hle (ε : ℝ) (hε : 0 < ε) : q ≤ p + algebraMap ℝ (Unitization ℂ A) ε := by
+      set b : Unitization ℂ A := p + algebraMap ℝ (Unitization ℂ A) ε
+      have hb : IsStrictlyPositive b :=
+        IsStrictlyPositive.nonneg_add hp (isStrictlyPositive_algebraMap hε)
+      set u : Unitization ℂ A := CFC.sqrt b⁻¹ʳ
+      have hu_sa : IsSelfAdjoint u := (CFC.sqrt_nonneg _).isSelfAdjoint
+      set w : E := u.fst • z + u.snd • z
+      have hfw : f w = u.fst • f z + u.snd • f z := by simp only [w, map_add, map_smul, hf]
+      have hw_inner : (inner A w w : Unitization ℂ A) = CFC.conjSqrt b⁻¹ʳ q := by
+        rw [CFC.conjSqrt_apply]
+        simpa only [hu_sa.star_eq] using inr_inner_unitization_smul u z
+      have hfw_inner : (inner A (f w) (f w) : Unitization ℂ A) = CFC.conjSqrt b⁻¹ʳ p := by
+        rw [CFC.conjSqrt_apply]
+        simpa only [hfw, hu_sa.star_eq] using inr_inner_unitization_smul u (f z)
+      have hupu_nonneg : 0 ≤ CFC.conjSqrt b⁻¹ʳ p := hu_sa.conjugate_nonneg hp
+      have hpb : p ≤ b := le_add_of_nonneg_right (isStrictlyPositive_algebraMap hε).nonneg
+      have hupu_le : CFC.conjSqrt b⁻¹ʳ p ≤ 1 :=
+        (CFC.conjSqrt_le_conjSqrt hpb).trans_eq (CFC.conjSqrt_ringInverse_self b hb)
+      have hfw_norm : ‖CFC.conjSqrt b⁻¹ʳ p‖ ≤ 1 :=
+        (CStarAlgebra.norm_le_one_iff_of_nonneg _ hupu_nonneg).mpr hupu_le
+      have hq_norm : ‖CFC.conjSqrt b⁻¹ʳ q‖ ≤ 1 := by
+        rw [← hfw_inner, Unitization.norm_inr (𝕜 := ℂ), ← CStarModule.norm_sq_eq A, f.norm_map,
+          CStarModule.norm_sq_eq A, ← Unitization.norm_inr (𝕜 := ℂ), hw_inner] at hfw_norm
+        exact hfw_norm
+      have huqu_nonneg : 0 ≤ CFC.conjSqrt b⁻¹ʳ q :=
+        hu_sa.conjugate_nonneg (Unitization.inr_nonneg ℂ _ CStarModule.inner_self_nonneg)
+      have huqu_le : CFC.conjSqrt b⁻¹ʳ q ≤ algebraMap ℝ (Unitization ℂ A) 1 := by
+        simpa using (CStarAlgebra.norm_le_iff_le_algebraMap _ zero_le_one huqu_nonneg).mp hq_norm
+      simpa using (CFC.conjSqrt_ringInverse_le_algebraMap_iff hb).mp huqu_le
+    have hcont : Continuous (fun ε : ℝ ↦ p + algebraMap ℝ (Unitization ℂ A) ε) := by fun_prop
+    have htend : Tendsto (fun ε : ℝ ↦ p + algebraMap ℝ (Unitization ℂ A) ε) (𝓝[>] 0) (𝓝 p) := by
+      simpa only [map_zero, add_zero] using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
+    exact ge_of_tendsto htend (eventually_nhdsWithin_of_forall hle)
+
+end NonUnital
+
+section Left
+
+variable {A E F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [SeminormedAddCommGroup E] [Module ℂ E] [Module A E] [CStarModule A E]
+  [SeminormedAddCommGroup F] [Module ℂ F] [Module A F] [CStarModule A F]
+
+/-- Every `A`-linear isometry `f : E →ₗᵢ[A] F` over a unital C⋆-algebra preserves `⟪·, ·⟫_A`. -/
+@[simp] theorem inner_map_map_cstarModule (f : E →ₗᵢ[A] F) (x y : E) :
+    inner A (f x) (f y) = inner A x y := by
+  have : IsScalarTower ℂ A E := CStarModule.isScalarTower A E
+  have : IsScalarTower ℂ A F := CStarModule.isScalarTower A F
+  let fC : E →ₗᵢ[ℂ] F :=
+    { toLinearMap := f.toLinearMap.restrictScalars ℂ
+      norm_map' := f.norm_map }
+  exact fC.inner_map_map_of_map_smul_cstarModule f.map_smul x y
+
+/-- Every `A`-linear isometry `f : E →ₗᵢ[A] F` preserves diagonal inner products `⟪x, x⟫_A`. -/
+theorem inner_map_map_self_cstarModule (f : E →ₗᵢ[A] F) (x : E) :
+    inner A (f x) (f x) = inner A x x := f.inner_map_map_cstarModule x x
+
+end Left
+
+section Right
+
+variable {A E F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [SeminormedAddCommGroup E] [Module ℂ E] [Module Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E]
+  [SeminormedAddCommGroup F] [Module ℂ F] [Module Aᵐᵒᵖ F] [CStarModule Aᵐᵒᵖ F]
+
+/-- Every right `A`-linear isometry `f : E →ₗᵢ[Aᵐᵒᵖ] F` preserves `⟨x, y⟩_A`. -/
+theorem unop_inner_map_map_cstarModule (f : E →ₗᵢ[Aᵐᵒᵖ] F) (x y : E) :
+    unop (inner Aᵐᵒᵖ (f x) (f y)) = unop (inner Aᵐᵒᵖ x y) :=
+  congrArg unop (f.inner_map_map_cstarModule x y)
+
+end Right
+
+end LinearIsometry
+
 namespace LinearIsometryEquiv
 
 section NonUnital
@@ -791,32 +910,8 @@ variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrdered
 `f : E ≃ₗᵢ[ℂ] F` commuting with the `A`-action preserves `⟪·, ·⟫_A`. -/
 theorem inner_map_map_of_map_smul_cstarModule (f : E ≃ₗᵢ[ℂ] F)
     (hf : ∀ (a : A) (x : E), f (a • x) = a • f x) (x y : E) :
-    inner A (f x) (f y) = inner A x y := by
-  let : NormedSpace ℂ E := .ofCore (CStarModule.normedSpaceCore A)
-  let : NormedSpace ℂ F := .ofCore (CStarModule.normedSpaceCore A)
-  have hfsymm (a : A) (z : F) : f.symm (a • z) = a • f.symm z :=
-    f.injective (by rw [f.apply_symm_apply, hf, f.apply_symm_apply])
-  let fCLM : E →L[ℂ] F := f.toLinearIsometry.toContinuousLinearMap
-  let fSymmCLM : F →L[ℂ] E := f.symm.toLinearIsometry.toContinuousLinearMap
-  have hf_norm : ‖fCLM‖ ≤ 1 :=
-    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun z ↦ by simp [fCLM]
-  have hfsymm_norm : ‖fSymmCLM‖ ≤ 1 :=
-    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun z ↦ by simp [fSymmCLM]
-  refine (CStarModule.inner_map_map_iff_forall_inner_map_map_self f).mpr (fun z ↦ ?_) x y
-  refine le_antisymm ?_ ?_
-  · calc inner A (f z) (f z)
-        ≤ ‖fCLM‖ ^ 2 • inner A z z :=
-          CStarModule.inner_map_map_le_norm_sq_smul fCLM hf z
-      _ ≤ (1 : ℝ) ^ 2 • inner A z z := by
-          gcongr; exact CStarModule.inner_self_nonneg
-      _ = inner A z z := by simp
-  · calc inner A z z
-        = inner A (f.symm (f z)) (f.symm (f z)) := by simp
-      _ ≤ ‖fSymmCLM‖ ^ 2 • inner A (f z) (f z) :=
-          CStarModule.inner_map_map_le_norm_sq_smul fSymmCLM hfsymm (f z)
-      _ ≤ (1 : ℝ) ^ 2 • inner A (f z) (f z) := by
-          gcongr; exact CStarModule.inner_self_nonneg
-      _ = inner A (f z) (f z) := by simp
+    inner A (f x) (f y) = inner A x y :=
+  f.toLinearIsometry.inner_map_map_of_map_smul_cstarModule hf x y
 
 end NonUnital
 
@@ -829,13 +924,8 @@ variable {A E F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 /-- **Lance's theorem** (Lance, Theorem 3.5): every surjective `A`-linear isometry `f : E ≃ₗᵢ[A] F`
 over a unital C⋆-algebra preserves `⟪·, ·⟫_A`. -/
 @[simp] theorem inner_map_map_cstarModule (f : E ≃ₗᵢ[A] F) (x y : E) :
-    inner A (f x) (f y) = inner A x y := by
-  have : IsScalarTower ℂ A E := CStarModule.isScalarTower A E
-  have : IsScalarTower ℂ A F := CStarModule.isScalarTower A F
-  let fC : E ≃ₗᵢ[ℂ] F :=
-    { toLinearEquiv := f.toLinearEquiv.restrictScalars ℂ
-      norm_map' := f.norm_map }
-  exact fC.inner_map_map_of_map_smul_cstarModule f.map_smul x y
+    inner A (f x) (f y) = inner A x y :=
+  f.toLinearIsometry.inner_map_map_cstarModule x y
 
 /-- A surjective `A`-linear isometry `f : E ≃ₗᵢ[A] F` preserves diagonal inner products
 `⟪x, x⟫_A`. -/

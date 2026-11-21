@@ -15,13 +15,14 @@ Over a unital C⋆-algebra `A`, this file establishes the frame characterization
 projective Hilbert modules (Frank–Larson; Roe, Prop. 10.2) and its structural consequences:
 
 * **Frame characterization of finitely generated projective Hilbert modules (Frank–Larson; Roe,
-  Prop. 10.2)** (`CStarModule.exists_isParsevalFrame_iff_finite_projective`): a complete right
-  Hilbert `A`-module `E` admits a finite Parseval frame if and only if `E` is finitely generated and
-  projective as an algebraic right `A`-module. Completeness of `E` is essential for the reverse
-  implication: on `C([0, 1], ℂ)` with `⟨a, b⟩(t) = t · star (a t) * b t`, the module is free of rank
-  `1` over itself yet incomplete and admits no finite Parseval frame.
+  Prop. 10.2)** (`TauCeti.CStarModule.exists_isParsevalFrame_iff_finite_projective`): a complete
+  right Hilbert `A`-module `E` admits a finite Parseval frame if and only if `E` is finitely
+  generated and projective as an algebraic right `A`-module. Completeness of `E` is essential for
+  the reverse implication: on `C([0, 1], ℂ)` with `⟨a, b⟩(t) = t · star (a t) * b t`, the module is
+  free of rank `1` over itself yet incomplete and admits no finite Parseval frame.
 * Every algebraic finitely generated projective right `A`-module admits a complete Hilbert
-  `A`-module structure (`CStarModule.exists_completeSpace_cstarModule_of_finite_projective`).
+  `A`-module structure
+  (`TauCeti.CStarModule.exists_completeSpace_cstarModule_of_finite_projective`).
 * Every right `A`-linear map out of a complete finitely generated projective right Hilbert
   `A`-module is automatically adjointable (`LinearMap.exists_isAdjointPair_of_finite_projective`).
 * Every right `A`-linear equivalence `T : E ≃ₗ[Aᵐᵒᵖ] F` between complete finitely generated
@@ -29,16 +30,16 @@ projective Hilbert modules (Frank–Larson; Roe, Prop. 10.2) and its structural 
   `U : E ≃ₗᵢ[Aᵐᵒᵖ] F` (`LinearEquiv.exists_polar_linearIsometryEquiv_of_finite_projective`). In
   particular, two complete finitely generated projective right Hilbert `A`-modules are unitarily
   isomorphic if and only if they are algebraically isomorphic as right `A`-modules
-  (`CStarModule.nonempty_linearIsometryEquiv_iff_nonempty_linearEquiv`).
+  (`TauCeti.CStarModule.nonempty_linearIsometryEquiv_iff_nonempty_linearEquiv`).
 
 ## Main declarations
 
-* `CStarModule.IsParsevalFrame.finite`, `CStarModule.IsParsevalFrame.projective`
-* `CStarModule.exists_isParsevalFrame_iff_finite_projective`
-* `CStarModule.exists_completeSpace_cstarModule_of_finite_projective`
+* `TauCeti.CStarModule.IsParsevalFrame.finite`, `TauCeti.CStarModule.IsParsevalFrame.projective`
+* `TauCeti.CStarModule.exists_isParsevalFrame_iff_finite_projective`
+* `TauCeti.CStarModule.exists_completeSpace_cstarModule_of_finite_projective`
 * `LinearMap.exists_isAdjointPair_of_finite_projective`
 * `LinearEquiv.exists_polar_linearIsometryEquiv_of_finite_projective`,
-  `CStarModule.nonempty_linearIsometryEquiv_iff_nonempty_linearEquiv`
+  `TauCeti.CStarModule.nonempty_linearIsometryEquiv_iff_nonempty_linearEquiv`
 
 ## References
 
@@ -54,7 +55,7 @@ public section
 open MulOpposite CStarModule
 open scoped WithCStarModule
 
-namespace CStarModule
+namespace TauCeti.CStarModule
 
 section Algebraic
 
@@ -134,9 +135,11 @@ theorem exists_completeSpace_cstarModule_of_finite_projective (A M : Type*)
 
 end FiniteProjective
 
-end CStarModule
+end TauCeti.CStarModule
 
 section FiniteProjectiveMaps
+
+open TauCeti.CStarModule
 
 variable {A E F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] [Module Aᵐᵒᵖ E]
@@ -172,7 +175,7 @@ theorem LinearEquiv.exists_polar_linearIsometryEquiv_of_finite_projective (T : E
 (`E ≃ₗᵢ[Aᵐᵒᵖ] F`) if and only if they are algebraically isomorphic as right `A`-modules
 (`E ≃ₗ[Aᵐᵒᵖ] F`). In particular, the complete Hilbert `A`-module structure on any finitely generated
 projective right `A`-module is unique up to unitary isomorphism. -/
-theorem CStarModule.nonempty_linearIsometryEquiv_iff_nonempty_linearEquiv :
+theorem TauCeti.CStarModule.nonempty_linearIsometryEquiv_iff_nonempty_linearEquiv :
     Nonempty (E ≃ₗᵢ[Aᵐᵒᵖ] F) ↔ Nonempty (E ≃ₗ[Aᵐᵒᵖ] F) :=
   ⟨fun ⟨U⟩ ↦ ⟨U.toLinearEquiv⟩, fun ⟨T⟩ ↦
     let ⟨U, _, _, _, _⟩ := T.exists_polar_linearIsometryEquiv_of_finite_projective

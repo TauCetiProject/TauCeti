@@ -54,8 +54,9 @@ Riesz theorem.
 * `CStarModule.star_unop_inner_mul_unop_inner_le`: the Cauchy–Schwarz inequality
   `⟨x, y⟩_A⋆ ⟨x, y⟩_A ≤ ‖x‖² ⟨y, y⟩_A` for right modules.
 * `CStarModule.isGreatest_norm_unop_inner`, `CStarModule.norm_op_smul_le`,
-  `CStarModule.unop_inner_map_map_le_norm_sq_smul`, `CStarModule.tendsto_op_smul`: norm recovery,
-  `‖x a‖ ≤ ‖x‖ ‖a‖`, Paschke's inequality, and essentiality of the action for right modules.
+  `ContinuousLinearMap.unop_inner_map_map_le_norm_sq_smul`, `CStarModule.tendsto_op_smul`: norm
+  recovery, `‖x a‖ ≤ ‖x‖ ‖a‖`, Paschke's inequality, and essentiality of the action for right
+  modules.
 
 ## References
 
@@ -154,6 +155,16 @@ theorem ext_inner_right {x y : E} (h : ∀ z, inner A x z = inner A y z) : x = y
   simpa using congrArg star (h z)
 
 end NoStarModule
+
+/-- Right-module form of `inner_add_add_self_le`:
+`⟨x + y, x + y⟩_A ≤ 2 • (⟨x, x⟩_A + ⟨y, y⟩_A)`. -/
+lemma unop_inner_add_add_self_le [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A]
+    [Norm Aᵐᵒᵖ] [IsOrderedAddMonoid A] [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E]
+    [CStarModule Aᵐᵒᵖ E] (x y : E) :
+    unop (inner Aᵐᵒᵖ (x + y) (x + y)) ≤
+      2 • (unop (inner Aᵐᵒᵖ x x) + unop (inner Aᵐᵒᵖ y y)) := by
+  simpa only [unop_smul, unop_add] using
+    unop_le_unop.mpr (inner_add_add_self_le (A := Aᵐᵒᵖ) x y)
 
 variable [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A] [PartialOrder A] [Norm A]
   [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
@@ -333,14 +344,6 @@ section Right
 
 variable [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [CStarModule Aᵐᵒᵖ E]
 
-/-- Right-module form of `inner_add_add_self_le`:
-`⟨x + y, x + y⟩_A ≤ (2 : ℝ) • (⟨x, x⟩_A + ⟨y, y⟩_A)`. -/
-lemma unop_inner_add_add_self_le (x y : E) :
-    unop (inner Aᵐᵒᵖ (x + y) (x + y)) ≤
-      (2 : ℝ) • (unop (inner Aᵐᵒᵖ x x) + unop (inner Aᵐᵒᵖ y y)) := by
-  simpa only [unop_smul, ← ofNat_smul_eq_nsmul ℝ 2, unop_add] using
-    unop_le_unop.mpr (inner_add_add_self_le (A := Aᵐᵒᵖ) x y)
-
 /-- The Cauchy–Schwarz inequality for a right Hilbert C⋆-module, in the C⋆-algebra:
 `⟨x, y⟩_A⋆ ⟨x, y⟩_A ≤ ‖x‖² ⟨y, y⟩_A`. -/
 theorem star_unop_inner_mul_unop_inner_le (x y : E) :
@@ -513,16 +516,21 @@ theorem inner_map_map_le_norm_sq_smul {E F : Type*} [SeminormedAddCommGroup E] [
     simpa only [map_zero, add_zero] using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
   exact ge_of_tendsto htend (eventually_nhdsWithin_of_forall hle)
 
+end Paschke
+
+end CStarModule
+
+namespace ContinuousLinearMap
+
 /-- Right-module form of Paschke's inequality: `⟨T x, T x⟩_A ≤ ‖T‖ ^ 2 • ⟨x, x⟩_A`. -/
-theorem unop_inner_map_map_le_norm_sq_smul {E F : Type*} [SeminormedAddCommGroup E]
-    [NormedSpace ℂ E] [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] [SeminormedAddCommGroup F]
-    [NormedSpace ℂ F] [SMul Aᵐᵒᵖ F] [CStarModule Aᵐᵒᵖ F] (T : E →L[ℂ] F)
+theorem unop_inner_map_map_le_norm_sq_smul {A E F : Type*} [NonUnitalCStarAlgebra A]
+    [PartialOrder A] [StarOrderedRing A] [SeminormedAddCommGroup E] [NormedSpace ℂ E]
+    [SMul Aᵐᵒᵖ E] [CStarModule Aᵐᵒᵖ E] [SeminormedAddCommGroup F] [NormedSpace ℂ F]
+    [SMul Aᵐᵒᵖ F] [CStarModule Aᵐᵒᵖ F] (T : E →L[ℂ] F)
     (hT : ∀ (a : A) (x : E), T (op a • x) = op a • T x) (x : E) :
     unop (inner Aᵐᵒᵖ (T x) (T x)) ≤ ‖T‖ ^ 2 • unop (inner Aᵐᵒᵖ x x) := by
   rw [← unop_smul]
   exact unop_le_unop.mpr <|
-    inner_map_map_le_norm_sq_smul (A := Aᵐᵒᵖ) T (fun a y ↦ hT (unop a) y) x
+    CStarModule.inner_map_map_le_norm_sq_smul (A := Aᵐᵒᵖ) T (fun a y ↦ hT (unop a) y) x
 
-end Paschke
-
-end CStarModule
+end ContinuousLinearMap
