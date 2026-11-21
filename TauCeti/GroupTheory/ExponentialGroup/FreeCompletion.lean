@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.GroupTheory.ExponentialGroup.Completion
 import TauCeti.Algebra.Group.Subgroup.Ker
 
@@ -38,7 +37,8 @@ exponents in `A`, modulo the least congruence containing the group laws, the mul
   as soon as `G` embeds in some `A`-group: apply
   `TauCeti.IsExponentialGroup.IsCompletion.injective_of_injective` to `isCompletion_of`.
 * `TauCeti.ExponentialGroup.Completion.of_pow_ne_one`: with a ring homomorphism `f : A →+* ℤ`,
-  the power `g ^ a` of an element of infinite order of `G` is not the identity when `f a ≠ 0`.
+  the power `g ^ a` in the completion of an element `g` of `G` is not the identity when
+  `g ^ f a ≠ 1` in `G`.
 
 ## Implementation notes
 
@@ -220,7 +220,8 @@ private theorem exists_retraction (f : A →+* ℤ) :
       pow_mul g a b := (congrArg (g ^ ·) (map_mul f a b)).trans (zpow_mul g _ _)
       conj_pow _ _ _ := conj_zpow
       mul_pow hc a := hc.mul_zpow (f a) }
-  exact ⟨(lift (.id G)).toMonoidHom, fun _ => rfl, (lift (.id G)).map_pow⟩
+  exact ⟨(isCompletion_of.lift (.id G)).toMonoidHom, isCompletion_of.lift_eq (.id G),
+    (isCompletion_of.lift (.id G)).map_pow⟩
 
 /-- If the semiring `A` has a ring homomorphism to `ℤ`, every group embeds in its tensor
 `A`-completion. For `A = ℤ[t]`, take the evaluation at `1`. -/
@@ -229,13 +230,13 @@ theorem of_injective (f : A →+* ℤ) : Function.Injective (of : G →* Complet
   exact Function.LeftInverse.injective hr
 
 /-- If the semiring `A` has a ring homomorphism `f` to `ℤ`, the power `g ^ a` in the completion of
-an element `g` of infinite order of `G` is not the identity when `f a ≠ 0`. For `A = ℤ[t]` and a
-nonzero polynomial `a`, take for `f` the evaluation at an integer that is not a root of `a`. -/
-theorem of_pow_ne_one (f : A →+* ℤ) {g : G} (hg : ¬IsOfFinOrder g) {a : A} (ha : f a ≠ 0) :
+an element `g` of `G` is not the identity when `g ^ f a ≠ 1` in `G`. For instance, for `A = ℤ[t]`,
+an element `g` of infinite order and a nonzero polynomial `a`, take for `f` the evaluation at an
+integer that is not a root of `a`. -/
+theorem of_pow_ne_one (f : A →+* ℤ) {g : G} {a : A} (h : g ^ f a ≠ 1) :
     (of g : Completion A G) ^ a ≠ 1 := by
   obtain ⟨r, hr, hpow⟩ := exists_retraction (G := G) f
-  refine fun h => hg (isOfFinOrder_iff_zpow_eq_one.2 ⟨f a, ha, ?_⟩)
-  simpa [hpow, hr] using congrArg r h
+  exact fun h' => h (by simpa [hpow, hr] using congrArg r h')
 
 end Completion
 
