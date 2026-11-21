@@ -133,24 +133,6 @@ noncomputable abbrev thomPairOverSignHomologyMap {W W' : Set B} (h : W ⊆ W') (
     inter_subset_left inter_subset_left (preimage_mono h)
     (inter_subset_inter_left _ (preimage_mono h))) n
 
-variable (K) in
-/-- The map of twisted homology induced by an inclusion of pairs of subsets of the total space. -/
-private noncomputable abbrev subsetPairSignHomologyMap {A₁ C₁ A₂ C₂ : Set (thomPair F E).fst}
-    (hC₁ : C₁ ⊆ A₁) (hC₂ : C₂ ⊆ A₂) (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) (n : ℕ) :=
-  HomologicalComplex.homologyMap
-    (subsetPairTwistedChainComplexMap (thomPairSignSystem F E hι K) hC₁ hC₂ hA hC) n
-
-/-- The maps induced by inclusions of pairs of subsets compose. -/
-private theorem subsetPairSignHomologyMap_comp {A₁ C₁ A₂ C₂ A₃ C₃ : Set (thomPair F E).fst}
-    (hC₁ : C₁ ⊆ A₁) (hC₂ : C₂ ⊆ A₂) (hC₃ : C₃ ⊆ A₃) (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂)
-    (hA' : A₂ ⊆ A₃) (hC' : C₂ ⊆ C₃) (n : ℕ) :
-    subsetPairSignHomologyMap hι K hC₁ hC₂ hA hC n ≫
-        subsetPairSignHomologyMap hι K hC₂ hC₃ hA' hC' n =
-      subsetPairSignHomologyMap hι K hC₁ hC₃ (hA.trans hA') (hC.trans hC') n :=
-  (HomologicalComplex.homologyMap_comp _ _ n).symm.trans
-    (congrArg (HomologicalComplex.homologyMap · n)
-      (subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap _ _ _ _ _ _ _ _))
-
 variable (e : Trivialization F (π F E)) [MemTrivializationAtlas e] (ω : Orientation ℝ F ι)
 
 variable (K) in
@@ -451,7 +433,7 @@ theorem thomPairOverSignHomologyMap_comp {W W' W'' : Set B} (h : W ⊆ W') (h' :
     (n : ℕ) :
     thomPairOverSignHomologyMap F E hι K h n ≫ thomPairOverSignHomologyMap F E hι K h' n =
       thomPairOverSignHomologyMap F E hι K (h.trans h') n :=
-  subsetPairSignHomologyMap_comp hι _ _ _ _ _ _ _ n
+  subsetPairTwistedHomologyMap_comp _ _ _ _ _ _ _ _ n
 
 /-- Restricting from `W` to `W'` carries fibre classes to fibre classes. -/
 @[simp]
@@ -601,25 +583,6 @@ private theorem isIso_thomPairOverSignHomologyFinrankInv_empty :
     (isZero_thomPairOverSignHomology_empty hι _).isoZero
 
 omit [FiniteDimensional ℝ F] in
-/-- Equal pairs of subsets have isomorphic homology. -/
-private noncomputable def subsetPairSignHomologyIsoOfEq {A₁ C₁ A₂ C₂ : Set (thomPair F E).fst}
-    (hC₁ : C₁ ⊆ A₁) (hC₂ : C₂ ⊆ A₂) (hA : A₁ = A₂) (hC : C₁ = C₂) (n : ℕ) :
-    (TopPair.ofInclusion hC₁).twistedHomology
-        ((pullback (X := TopCat.of ↥A₁) (ContinuousMap.subtypeVal A₁)).obj
-          (thomPairSignSystem F E hι K)) n ≅
-      (TopPair.ofInclusion hC₂).twistedHomology
-        ((pullback (X := TopCat.of ↥A₂) (ContinuousMap.subtypeVal A₂)).obj
-          (thomPairSignSystem F E hι K)) n where
-  hom := subsetPairSignHomologyMap hι K hC₁ hC₂ hA.le hC.le n
-  inv := subsetPairSignHomologyMap hι K hC₂ hC₁ hA.ge hC.ge n
-  hom_inv_id := (subsetPairSignHomologyMap_comp hι _ _ _ _ _ _ _ n).trans
-    ((congrArg (HomologicalComplex.homologyMap · n)
-      (subsetPairTwistedChainComplexMap_self _ hC₁)).trans (HomologicalComplex.homologyMap_id _ n))
-  inv_hom_id := (subsetPairSignHomologyMap_comp hι _ _ _ _ _ _ _ n).trans
-    ((congrArg (HomologicalComplex.homologyMap · n)
-      (subsetPairTwistedChainComplexMap_self _ hC₂)).trans (HomologicalComplex.homologyMap_id _ n))
-
-omit [FiniteDimensional ℝ F] in
 /-- The first two maps of the Mayer–Vietoris sequence of the Thom pairs over `U` and `V` with
 coefficients in the orientation local system compose to zero. -/
 private theorem thomPairOverSignHomologyMap_comp_zero {U V : Set B} (n : ℕ) :
@@ -653,17 +616,19 @@ private theorem biprod_desc_thomPairOverSignHomologyMap_comp_hom (U V : Set B) (
     Limits.biprod.desc
         (thomPairOverSignHomologyMap F E hι K (subset_union_left : U ⊆ U ∪ V) n)
         (thomPairOverSignHomologyMap F E hι K (subset_union_right : V ⊆ U ∪ V) n) ≫
-      (subsetPairSignHomologyIsoOfEq hι _ _ (mayerVietoris_sets F E U V).2.2.1
-        (mayerVietoris_sets F E U V).2.2.2 n).hom =
+      (subsetPairTwistedHomologyIsoOfEq (thomPairSignSystem F E hι K) _ _
+        (mayerVietoris_sets F E U V).2.2.1 (mayerVietoris_sets F E U V).2.2.2 n).hom =
       pairTwistedMayerVietorisFromBiprod (thomPairSignSystem F E hι K) inter_subset_left
         inter_subset_left n := by
   -- `erw`: the summands are `thomPairOverSignHomology` on the left and the homology of the pairs
-  -- of subsets on the right, which agree only after unfolding that abbreviation.
+  -- of subsets on the right, which agree only after unfolding that abbreviation. Likewise the
+  -- pairs of subsets here live in `(thomPair F E).fst`, which unfolds to the total space.
+  erw [subsetPairTwistedHomologyIsoOfEq_hom]
   refine Limits.biprod.hom_ext' _ _ ?_ ?_
   · erw [Limits.biprod.inl_desc_assoc, inl_pairTwistedMayerVietorisFromBiprod]
-    exact subsetPairSignHomologyMap_comp hι (K := K) _ _ _ _ _ _ _ n
+    exact subsetPairTwistedHomologyMap_comp _ _ _ _ _ _ _ _ n
   · erw [Limits.biprod.inr_desc_assoc, inr_pairTwistedMayerVietorisFromBiprod]
-    exact subsetPairSignHomologyMap_comp hι (K := K) _ _ _ _ _ _ _ n
+    exact subsetPairTwistedHomologyMap_comp _ _ _ _ _ _ _ _ n
 
 omit [FiniteDimensional ℝ F] in
 /-- **Exactness of the Mayer–Vietoris sequence** of the Thom pairs over open sets `U` and `V` with
@@ -679,19 +644,21 @@ private theorem thomPairOverSignHomology_mayerVietoris_exact {U V : Set B} (hU :
   have hf : Limits.biprod.lift
       (thomPairOverSignHomologyMap F E hι K (inter_subset_left : U ∩ V ⊆ U) n)
       (-thomPairOverSignHomologyMap F E hι K (inter_subset_right : U ∩ V ⊆ V) n) =
-      (subsetPairSignHomologyIsoOfEq hι _ _ h₁ h₂ n).hom ≫ pairTwistedMayerVietorisToBiprod
-        (thomPairSignSystem F E hι K) inter_subset_left inter_subset_left n := by
+      (subsetPairTwistedHomologyIsoOfEq (thomPairSignSystem F E hι K) _ _ h₁ h₂ n).hom ≫
+        pairTwistedMayerVietorisToBiprod (thomPairSignSystem F E hι K) inter_subset_left
+          inter_subset_left n := by
     -- `erw`, as in `biprod_desc_thomPairOverSignHomologyMap_comp_hom`: the summands agree only
     -- after unfolding `thomPairOverSignHomology`.
+    erw [subsetPairTwistedHomologyIsoOfEq_hom]
     refine Limits.biprod.hom_ext _ _ ?_ ?_
     · rw [Limits.biprod.lift_fst]
       erw [Category.assoc, pairTwistedMayerVietorisToBiprod_fst]
-      exact (subsetPairSignHomologyMap_comp hι (K := K) _ _ _ _ _ _ _ n).symm
+      exact (subsetPairTwistedHomologyMap_comp _ _ _ _ _ _ _ _ n).symm
     · rw [Limits.biprod.lift_snd]
       erw [Category.assoc, pairTwistedMayerVietorisToBiprod_snd, Preadditive.comp_neg]
-      exact congrArg Neg.neg (subsetPairSignHomologyMap_comp hι (K := K) _ _ _ _ _ _ _ n).symm
-  exact ShortComplex.isoMk (subsetPairSignHomologyIsoOfEq hι _ _ h₁ h₂ n) (Iso.refl _)
-    (subsetPairSignHomologyIsoOfEq hι _ _ h₃ h₄ n) (hf.symm.trans (Category.comp_id _).symm)
+      exact congrArg Neg.neg (subsetPairTwistedHomologyMap_comp _ _ _ _ _ _ _ _ n).symm
+  exact ShortComplex.isoMk (subsetPairTwistedHomologyIsoOfEq _ _ _ h₁ h₂ n) (Iso.refl _)
+    (subsetPairTwistedHomologyIsoOfEq _ _ _ h₃ h₄ n) (hf.symm.trans (Category.comp_id _).symm)
     ((Category.id_comp _).trans (biprod_desc_thomPairOverSignHomologyMap_comp_hom hι U V n).symm)
 
 omit [FiniteDimensional ℝ F] in
@@ -707,13 +674,15 @@ private theorem epi_thomPairOverSignHomology_union {U V : Set B} (hU : IsOpen U)
   obtain ⟨h₁, h₂, h₃, h₄⟩ := mayerVietoris_sets F E U V
   rw [(Iso.eq_comp_inv _).2 (biprod_desc_thomPairOverSignHomologyMap_comp_hom (E := E) hι (K := K)
     U V n)]
-  refine epi_comp' ?_ (IsIso.epi_of_iso (subsetPairSignHomologyIsoOfEq hι _ _ h₃ h₄ n).inv)
+  refine epi_comp' ?_ (IsIso.epi_of_iso
+    (subsetPairTwistedHomologyIsoOfEq (thomPairSignSystem F E hι K) _ _ h₃ h₄ n).inv)
   cases n with
   | zero => exact epi_pairTwistedMayerVietorisFromBiprod_zero _ _ _ hA hB hC hD
   | succ m =>
     refine (pairTwistedMayerVietoris_exact₃ _ _ _ hA hB hC hD (m + 1) m rfl).epi_f
       (Limits.IsZero.eq_of_tgt ?_ _ _)
-    exact (hUV m rfl).of_iso (subsetPairSignHomologyIsoOfEq hι _ _ h₁ h₂ m).symm
+    exact (hUV m rfl).of_iso
+      (subsetPairTwistedHomologyIsoOfEq (thomPairSignSystem F E hι K) _ _ h₁ h₂ m).symm
 
 /-- **Finite unions of trivializing open sets**: the map is an isomorphism over a finite union of
 open sets each lying in the base set of a trivialization of the atlas. -/
