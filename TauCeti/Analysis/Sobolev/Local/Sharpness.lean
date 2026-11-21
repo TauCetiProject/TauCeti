@@ -100,9 +100,9 @@ theorem memWkpLoc_one_norm_rpow (hp1 : 1 ≤ p) (hp : p ≠ ∞) (hs : -2 < (s -
   have hpr : 1 ≤ p.toReal := by
     simpa using ENNReal.toReal_mono hp hp1
   have hs1 : 1 - (Module.finrank ℝ ℂ : ℝ) < s := by
-    rw [Complex.finrank_real_complex]
-    push_cast
-    nlinarith
+    have := neg_finrank_lt_of_neg_finrank_lt_mul (E := ℂ) hpr
+      (by rw [Complex.finrank_real_complex]; push_cast; exact hs)
+    linarith
   refine memWkpLoc_succ_iff.2 ⟨memLpLoc_norm_rpow hp (by nlinarith),
     fun z => (s * ‖z‖ ^ (s - 2)) • innerSL ℝ z, hasWeakFDerivOn_norm_rpow hs1 _,
     memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K hK hc => ?_)⟩
@@ -113,45 +113,20 @@ theorem memWkpLoc_one_norm_rpow (hp1 : 1 ≤ p) (hp : p ≠ ∞) (hs : -2 < (s -
   rw [Real.norm_of_nonneg (by positivity)]
 
 /-- For `0 < p < ∞` and `s ≠ 0`, if `(s - 1) p ≤ -2` then `z ↦ ‖z‖ ^ s` is not in
-`W^{1,p}_loc` on any neighbourhood of the origin: away from the origin a weak derivative agrees
-with the classical one, whose norm `|s| ‖z‖ ^ (s - 1)` is not `p`-integrable near the origin. -/
+`W^{1,p}_loc` on any neighbourhood of the origin. -/
 theorem not_memWkpLoc_one_norm_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞) (hU : U ∈ 𝓝 (0 : ℂ))
     (hs0 : s ≠ 0) (hs : (s - 1) * p.toReal ≤ -2) :
     ¬ MemWkpLoc p U 1 (fun z : ℂ => ‖z‖ ^ s) := by
   intro h
   obtain ⟨-, D, hD, hDp⟩ := memWkpLoc_succ_iff.1 h
   obtain ⟨r, hr, hrU⟩ := nhds_basis_closedBall.mem_iff.1 (interior_mem_nhds.2 hU)
-  -- On the punctured interior, `D` is the classical derivative.
-  let W : Opens ℂ := Opens.interior U ⊓ ⟨{0}ᶜ, isOpen_compl_singleton⟩
-  have hdiff : ∀ z ∈ (W : Set ℂ), HasFDerivAt (fun z : ℂ => ‖z‖ ^ s)
-      ((s * ‖z‖ ^ (s - 2)) • innerSL ℝ z) z := fun z hz => hasFDerivAt_norm_rpow_of_ne s hz.2
-  have hcont : ContinuousOn (fderiv ℝ fun z : ℂ => ‖z‖ ^ s) W := by
-    have hc : ContinuousOn (fun z : ℂ => (s * ‖z‖ ^ (s - 2)) • innerSL ℝ z) W :=
-      fun z hz => ((continuousAt_const.mul ((continuous_norm.continuousAt).rpow_const
-        (Or.inl (norm_ne_zero_iff.2 hz.2)))).smul
-          (innerSL ℝ).continuous.continuousAt).continuousWithinAt
-    exact hc.congr fun z hz => (hdiff z hz).fderiv
-  have hae := (hD.mono (inf_le_left : W ≤ Opens.interior U)).ae_eq_fderiv
-    (hcont.locallyIntegrableOn W.isOpen.measurableSet)
-    fun z hz => (hdiff z hz).differentiableAt
-  have hae' := (ae_restrict_iff' W.isOpen.measurableSet).1 hae
-  -- So `|s| ‖z‖ ^ (s - 1)` would be `p`-integrable on a ball about the origin.
+  -- The weak derivative `D` is `p`-integrable on a ball about the origin.
   have hint := (memLpLoc_iff.1 (memWkpLoc_zero_iff.1 hDp) _ (hrU.trans interior_subset)
     (isCompact_closedBall 0 r)).integrable_norm_rpow hp0 hp
-  have hball : IntegrableOn (fun z : ℂ => |s| ^ p.toReal * ‖z‖ ^ ((s - 1) * p.toReal))
-      (ball 0 r) volume := by
-    refine (IntegrableOn.mono_set hint ball_subset_closedBall).congr ?_
-    filter_upwards [ae_restrict_of_ae hae', ae_restrict_mem measurableSet_ball,
-      ae_restrict_of_ae (Measure.ae_ne volume (0 : ℂ))] with z hz hzb hz0
-    have hzW : z ∈ (W : Set ℂ) :=
-      ⟨by simpa using hrU (ball_subset_closedBall hzb), hz0⟩
-    rw [hz hzW, norm_fderiv_norm_rpow_of_ne s hz0,
-      Real.mul_rpow (abs_nonneg s) (Real.rpow_nonneg (norm_nonneg z) _),
-      ← Real.rpow_mul (norm_nonneg z)]
-  have hpos : (0 : ℝ) < |s| ^ p.toReal := Real.rpow_pos_of_pos (abs_pos.2 hs0) _
-  rw [IntegrableOn, integrable_const_mul_iff hpos.ne'.isUnit, ← IntegrableOn,
-    integrableOn_norm_rpow_ball_iff hr, Complex.finrank_real_complex] at hball
-  push_cast at hball
+  have h2 := hD.neg_finrank_lt_sub_one_mul_of_integrableOn hs0 hr
+    (ball_subset_closedBall.trans hrU) (IntegrableOn.mono_set hint ball_subset_closedBall)
+  rw [Complex.finrank_real_complex] at h2
+  push_cast at h2
   linarith
 
 /-- **Local `W^{1,p}` membership of a norm power.** For `1 ≤ p < ∞`, `s ≠ 0` and a neighbourhood
