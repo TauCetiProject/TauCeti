@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Coordinates
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 
 /-!
@@ -70,12 +71,6 @@ open Bundle Manifold Set Function Topology TopologicalSpace
 open scoped ContDiff Manifold
 
 namespace TauCeti.SmoothEmbedding
-
--- The orders `∞ + 1` and `1 + 1` required by the normal-bundle API are at most `∞`, so Mathlib's
--- instances provide the corresponding smooth manifold structures from the `C^∞` ones.
-local instance : ENat.LEInfty (∞ + 1) := ⟨by simp⟩
-
-local instance : ENat.LEInfty (1 + 1) := ⟨by norm_cast⟩
 
 variable {E V F P H G H' Q M N : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
