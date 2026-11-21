@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Peetre's inequality for the Japanese bracket
@@ -361,27 +362,12 @@ theorem one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow (x : E) (N : ℕ) :
 `max (a ^ (u / 2)) (b ^ (u / 2)) R ^ u`. -/
 theorem one_add_norm_sq_rpow_le_max_mul_rpow {a b R : ℝ} (ha : 0 < a) (hR : 0 < R) {ξ : E}
     (hξ : a * R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ∧ 1 + ‖ξ‖ ^ 2 ≤ b * R ^ 2) (u : ℝ) :
-    (1 + ‖ξ‖ ^ 2) ^ (u / 2) ≤ max (a ^ (u / 2)) (b ^ (u / 2)) * R ^ u := by
-  have hb : 0 < b := pos_of_mul_pos_left ((mul_pos ha (by positivity)).trans_le
-    (hξ.1.trans hξ.2)) (by positivity)
-  have hRu (c : ℝ) (hc : 0 < c) : (c * R ^ 2) ^ (u / 2) = c ^ (u / 2) * R ^ u := by
-    rw [Real.mul_rpow hc.le (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul hR.le]
+    (1 + ‖ξ‖ ^ 2) ^ (u / 2) ≤ max (a ^ (u / 2)) (b ^ (u / 2)) * R ^ u :=
+  (Real.rpow_le_max_mul_rpow ha (by positivity) hξ.1 hξ.2 (u / 2)).trans_eq <| by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul hR.le]
     congr 2
     push_cast
     ring
-  rcases le_total 0 u with hu | hu
-  · calc (1 + ‖ξ‖ ^ 2) ^ (u / 2) ≤ (b * R ^ 2) ^ (u / 2) :=
-          Real.rpow_le_rpow (by positivity) hξ.2 (by positivity)
-      _ ≤ _ := by
-          rw [hRu b hb]
-          gcongr
-          exact le_max_right _ _
-  · calc (1 + ‖ξ‖ ^ 2) ^ (u / 2) ≤ (a * R ^ 2) ^ (u / 2) :=
-          Real.rpow_le_rpow_of_nonpos (by positivity) hξ.1 (by linarith)
-      _ ≤ _ := by
-          rw [hRu a ha]
-          gcongr
-          exact le_max_left _ _
 
 omit [SeminormedAddGroup E] in
 /-- On the annulus `0 < c ≤ ‖ζ‖ ≤ d`, every power of the Japanese bracket of `t ζ` with `t ≥ 1` is
