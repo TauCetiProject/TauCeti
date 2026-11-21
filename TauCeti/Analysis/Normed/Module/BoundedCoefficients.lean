@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Basic
+import TauCeti.Analysis.Normed.Module.RCLike.Basic
 
 /-!
 # Finite sums with bounded coefficients
@@ -30,8 +31,9 @@ indexed by `ℕ`, a uniform bound `S` on `±1`-signed combinations along initial
 
 The first estimate peels off the smallest coefficient, which multiplies the full sum; the others
 split coefficients into positive and negative parts, into signs and magnitudes, and into real and
-imaginary parts. These are the estimates by which the coordinate projections and signed
-multipliers of an unconditional basis control its bounded coordinate multipliers.
+imaginary parts (`TauCeti.norm_sum_smul_le_norm_sum_re_add_norm_sum_im`). These are the
+estimates by which the coordinate projections and signed multipliers of an unconditional basis
+control its bounded coordinate multipliers.
 
 ## References
 
@@ -104,27 +106,13 @@ theorem norm_sum_ofReal_smul_le_two_mul (hS : ∀ u ⊆ s, ‖∑ i ∈ u, v i�
 `v i` with scalar coefficients of norm at most `t` has norm at most `4 * t * S`. -/
 theorem norm_sum_smul_le_four_mul (hS : ∀ u ⊆ s, ‖∑ i ∈ u, v i‖ ≤ S) (ht : 0 ≤ t)
     {a : ι → 𝕜} (ha : ∀ i ∈ s, ‖a i‖ ≤ t) :
-    ‖∑ i ∈ s, a i • v i‖ ≤ 4 * t * S := by
-  -- Split each coefficient into its real and imaginary parts; multiplying the family by `I`
-  -- keeps the subsum bound.
-  have hI : ∀ u ⊆ s, ‖∑ i ∈ u, (RCLike.I : 𝕜) • v i‖ ≤ S := fun u hu ↦ by
-    rw [← Finset.smul_sum, norm_smul]
-    refine (mul_le_of_le_one_left (norm_nonneg _) ?_).trans (hS u hu)
-    rw [RCLike.norm_I]
-    split_ifs <;> norm_num
-  have hsplit : ∑ i ∈ s, a i • v i =
-      ∑ i ∈ s, (RCLike.re (a i) : 𝕜) • v i +
-        ∑ i ∈ s, (RCLike.im (a i) : 𝕜) • (RCLike.I : 𝕜) • v i := by
-    rw [← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [smul_smul, ← add_smul, RCLike.re_add_im]
+    ‖∑ i ∈ s, a i • v i‖ ≤ 4 * t * S :=
   calc
-    ‖∑ i ∈ s, a i • v i‖ ≤ 2 * t * S + 2 * t * S := by
-      rw [hsplit]
-      exact (norm_add_le _ _).trans (add_le_add
+    ‖∑ i ∈ s, a i • v i‖ ≤ 2 * t * S + 2 * t * S :=
+      norm_sum_smul_le_norm_sum_re_add_norm_sum_im.trans (add_le_add
         (norm_sum_ofReal_smul_le_two_mul hS ht fun i hi ↦
           (RCLike.abs_re_le_norm _).trans (ha i hi))
-        (norm_sum_ofReal_smul_le_two_mul hI ht fun i hi ↦
+        (norm_sum_ofReal_smul_le_two_mul hS ht fun i hi ↦
           (RCLike.abs_im_le_norm _).trans (ha i hi)))
     _ = 4 * t * S := by ring
 
@@ -153,23 +141,19 @@ theorem norm_sum_ofReal_smul_le_of_forall_abs_eq_one
     have hε₁ (i : ι) : |ε₁ i| = 1 := by dsimp only [ε₁]; split_ifs <;> simp [hσ]
     have hε₂ (i : ι) : |ε₂ i| = 1 := by dsimp only [ε₂]; split_ifs <;> simp [hσ]
     have hmid : ∑ i ∈ u, (σ i : 𝕜) • v i =
-        ((2⁻¹ : ℝ) : 𝕜) • ∑ i ∈ s, (ε₁ i : 𝕜) • v i +
-          ((2⁻¹ : ℝ) : 𝕜) • ∑ i ∈ s, (ε₂ i : 𝕜) • v i := by
-      rw [Finset.smul_sum, Finset.smul_sum, ← Finset.sum_add_distrib, ← Finset.sum_subset hu]
+        ((2⁻¹ : ℝ) : 𝕜) • (∑ i ∈ s, (ε₁ i : 𝕜) • v i + ∑ i ∈ s, (ε₂ i : 𝕜) • v i) := by
+      rw [← Finset.sum_add_distrib, Finset.smul_sum, ← Finset.sum_subset hu]
       · refine Finset.sum_congr rfl fun i hi ↦ ?_
         simp only [ε₁, ε₂, hi, ↓reduceIte]
-        rw [← add_smul, ← RCLike.ofReal_add]
+        rw [smul_add, ← add_smul, ← RCLike.ofReal_add]
         norm_num
       · intro i _ hiu
         simp [ε₁, ε₂, hiu]
+    rw [hmid, norm_smul, RCLike.norm_ofReal, abs_of_nonneg (by norm_num)]
     calc
-      ‖∑ i ∈ u, (σ i : 𝕜) • v i‖ ≤ 2⁻¹ * S + 2⁻¹ * S := by
-        rw [hmid]
-        refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-        · rw [norm_smul, RCLike.norm_ofReal, abs_of_nonneg (by norm_num)]
-          exact mul_le_mul_of_nonneg_left (hS ε₁ hε₁) (by norm_num)
-        · rw [norm_smul, RCLike.norm_ofReal, abs_of_nonneg (by norm_num)]
-          exact mul_le_mul_of_nonneg_left (hS ε₂ hε₂) (by norm_num)
+      2⁻¹ * ‖∑ i ∈ s, (ε₁ i : 𝕜) • v i + ∑ i ∈ s, (ε₂ i : 𝕜) • v i‖ ≤ 2⁻¹ * (S + S) := by
+        gcongr
+        exact (norm_add_le _ _).trans (add_le_add (hS ε₁ hε₁) (hS ε₂ hε₂))
       _ = S := by ring
   have heq : ∑ i ∈ s, (a i : 𝕜) • v i = ∑ i ∈ s, ((|a i| : ℝ) : 𝕜) • (σ i : 𝕜) • v i :=
     Finset.sum_congr rfl fun i _ ↦ by rw [smul_smul, ← RCLike.ofReal_mul, ← haσ]
@@ -182,30 +166,13 @@ most `2 * t * S`. -/
 theorem norm_sum_smul_le_two_mul_of_forall_abs_eq_one
     (hS : ∀ ε : ι → ℝ, (∀ i, |ε i| = 1) → ‖∑ i ∈ s, (ε i : 𝕜) • v i‖ ≤ S) (ht : 0 ≤ t)
     {a : ι → 𝕜} (ha : ∀ i ∈ s, ‖a i‖ ≤ t) :
-    ‖∑ i ∈ s, a i • v i‖ ≤ 2 * t * S := by
-  have hI : ∀ ε : ι → ℝ, (∀ i, |ε i| = 1) → ‖∑ i ∈ s, (ε i : 𝕜) • (RCLike.I : 𝕜) • v i‖ ≤ S :=
-    fun ε hε ↦ by
-      have hcomm : ∑ i ∈ s, (ε i : 𝕜) • (RCLike.I : 𝕜) • v i =
-          (RCLike.I : 𝕜) • ∑ i ∈ s, (ε i : 𝕜) • v i := by
-        rw [Finset.smul_sum]
-        exact Finset.sum_congr rfl fun i _ ↦ smul_comm _ _ _
-      rw [hcomm, norm_smul]
-      refine (mul_le_of_le_one_left (norm_nonneg _) ?_).trans (hS ε hε)
-      rw [RCLike.norm_I]
-      split_ifs <;> norm_num
-  have hsplit : ∑ i ∈ s, a i • v i =
-      ∑ i ∈ s, (RCLike.re (a i) : 𝕜) • v i +
-        ∑ i ∈ s, (RCLike.im (a i) : 𝕜) • (RCLike.I : 𝕜) • v i := by
-    rw [← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [smul_smul, ← add_smul, RCLike.re_add_im]
+    ‖∑ i ∈ s, a i • v i‖ ≤ 2 * t * S :=
   calc
-    ‖∑ i ∈ s, a i • v i‖ ≤ t * S + t * S := by
-      rw [hsplit]
-      exact (norm_add_le _ _).trans (add_le_add
+    ‖∑ i ∈ s, a i • v i‖ ≤ t * S + t * S :=
+      norm_sum_smul_le_norm_sum_re_add_norm_sum_im.trans (add_le_add
         (norm_sum_ofReal_smul_le_of_forall_abs_eq_one hS ht fun i hi ↦
           (RCLike.abs_re_le_norm _).trans (ha i hi))
-        (norm_sum_ofReal_smul_le_of_forall_abs_eq_one hI ht fun i hi ↦
+        (norm_sum_ofReal_smul_le_of_forall_abs_eq_one hS ht fun i hi ↦
           (RCLike.abs_im_le_norm _).trans (ha i hi)))
     _ = 2 * t * S := by ring
 
