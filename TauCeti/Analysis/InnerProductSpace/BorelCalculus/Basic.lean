@@ -55,6 +55,9 @@ commutes with every spectral projection, equivalently with every value of the Bo
   not an eigenvalue.
 * `ContinuousLinearMap.forall_commute_borelCalculus_iff`,
   `ContinuousLinearMap.forall_commute_spectralPVM_proj_iff`: the spectral commutant.
+* `ContinuousLinearMap.borelCalculus_mem_closure_span_spectralPVM_proj`,
+  `ContinuousLinearMap.mem_closure_span_spectralPVM_proj`: `f(a)` and `a` lie in the norm closure
+  of the complex linear span of the spectral projections of `a`.
 
 ## References
 
@@ -295,5 +298,21 @@ theorem range_spectralPVM_proj_preimage_singleton (z : ℂ) :
   refine ⟨?_, fun h => ⟨ξ, h⟩⟩
   rintro ⟨η, rfl⟩
   exact a.spectralPVM.proj_apply_proj _ _ η
+
+/-- Every value of the Borel calculus of `a` lies in the operator-norm closure of the complex
+linear span of the spectral projections of `a`. -/
+theorem borelCalculus_mem_closure_span_spectralPVM_proj
+    (f : BoundedBorelFunction (spectrum ℂ a)) :
+    a.borelCalculus f ∈
+      closure (Submodule.span ℂ {p | ∃ B hB, a.spectralPVM.proj B hB = p} : Set (H →L[ℂ] H)) := by
+  rw [← a.integral_spectralPVM]
+  exact a.spectralPVM.integral_mem_closure_span_proj f
+
+/-- **Norm-approximation spectral theorem.** Every normal operator lies in the operator-norm
+closure of the complex linear span of its spectral projections. -/
+theorem mem_closure_span_spectralPVM_proj :
+    a ∈ closure (Submodule.span ℂ {p | ∃ B hB, a.spectralPVM.proj B hB = p} : Set (H →L[ℂ] H)) :=
+  Set.mem_of_eq_of_mem a.borelCalculus_restrict_id.symm
+    (a.borelCalculus_mem_closure_span_spectralPVM_proj _)
 
 end ContinuousLinearMap

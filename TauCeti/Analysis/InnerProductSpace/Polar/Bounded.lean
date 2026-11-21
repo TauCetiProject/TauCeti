@@ -44,6 +44,9 @@ on `T`.
   `ContinuousLinearMap.polarFactor_comp_adjoint_polarFactor_of_denseRange`: `U` is an isometry
   when `T` is injective, and a coisometry when `T` has dense range.
 * `ContinuousLinearMap.eq_polarFactor_iff`: uniqueness of the polar factor.
+* `ContinuousLinearMap.polarFactor_unitary_conj`,
+  `ContinuousLinearMap.commute_polarFactor_of_mem_unitary`: unitary conjugation and commutation for
+  the polar factor of an endomorphism.
 * `ContinuousLinearMap.polarFactor_smul`: the polar factor of `c T` is `(c / ‖c‖) U`.
 * `ContinuousLinearMap.modulus_adjoint`: `|T†| = T U†`.
 * `ContinuousLinearMap.polarFactor_adjoint`: the polar factor of `T†` is `U†`.
@@ -211,6 +214,29 @@ theorem polarFactor_comp_linearIsometryEquiv {E' : Type*} [NormedAddCommGroup E'
     [InnerProductSpace 𝕜 E'] [CompleteSpace E'] (e : E' ≃ₗᵢ[𝕜] E) :
     (T ∘L (e : E' →L[𝕜] E)).polarFactor = T.polarFactor ∘L (e : E' →L[𝕜] E) := by
   simpa using polarFactor_conj (LinearIsometryEquiv.refl 𝕜 F) e.symm T
+
+/-- Conjugating an endomorphism by a unitary conjugates its polar factor by the same unitary. -/
+theorem polarFactor_unitary_conj {u : E →L[𝕜] E} (hu : u ∈ unitary (E →L[𝕜] E))
+    (T : E →L[𝕜] E) :
+    (u * T * star u).polarFactor = u * T.polarFactor * star u := by
+  let e : E ≃ₗᵢ[𝕜] E := Unitary.linearIsometryEquiv ⟨u, hu⟩
+  have he : (e : E →L[𝕜] E) = u := rfl
+  have he_symm : (e.symm : E →L[𝕜] E) = star u := by
+    rw [← e.adjoint_eq_symm, he, star_eq_adjoint]
+  simpa only [he, he_symm, mul_def, comp_assoc] using polarFactor_conj e e T
+
+/-- A unitary endomorphism commuting with `T` also commutes with its polar factor. -/
+theorem commute_polarFactor_of_mem_unitary {u T : E →L[𝕜] E} (hu : u ∈ unitary (E →L[𝕜] E))
+    (h : Commute u T) : Commute u T.polarFactor := by
+  have hconj : u * T * star u = T := by
+    rw [h.eq, mul_assoc, Unitary.mul_star_self_of_mem hu, mul_one]
+  have hp := polarFactor_unitary_conj hu T
+  rw [hconj] at hp
+  rw [commute_iff_eq]
+  calc u * T.polarFactor
+    _ = u * T.polarFactor * (star u * u) := by rw [Unitary.star_mul_self_of_mem hu, mul_one]
+    _ = (u * T.polarFactor * star u) * u := by simp only [mul_assoc]
+    _ = T.polarFactor * u := by rw [← hp]
 
 /-- The polar factor of the zero operator is zero. -/
 @[simp]
