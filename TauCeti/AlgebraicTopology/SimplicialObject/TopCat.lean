@@ -6,24 +6,27 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialObject.Basic
+public import Mathlib.AlgebraicTopology.SimplicialSet.Degenerate
 public import Mathlib.Topology.Category.TopCat.Basic
+public import Mathlib.Topology.Separation.Hausdorff
 
 /-!
 # Simplicial spaces
 
 A simplicial space is a simplicial object `X : SimplicialObject TopCat`. Each degeneracy
-`X.σ i` is an embedding (`CategoryTheory.SimplicialObject.isEmbedding_σ`): the face
+`X.σ i` is an embedding (`CategoryTheory.SimplicialObject.isEmbedding_σ`), since the face
 `X.δ i.castSucc` deleting the repeated simplex is a continuous left inverse
-(`CategoryTheory.SimplicialObject.δ_comp_σ_self`). When the target level `X _⦋n + 1⦌` is
-Hausdorff, this continuous retraction forces the image of `X.σ i` to be closed, so each degeneracy
-is a closed embedding (`CategoryTheory.SimplicialObject.isClosedEmbedding_σ`).
+(`CategoryTheory.SimplicialObject.δ_comp_σ_self`). Whenever its codomain `X _⦋n + 1⦌` is Hausdorff,
+`X.σ i` is a closed embedding (`CategoryTheory.SimplicialObject.isClosedEmbedding_σ`). Consequently,
+the degenerate simplices in a degree form a closed subset whenever the degeneracies landing in that
+degree are closed embeddings (`CategoryTheory.SimplicialObject.isClosed_degenerate_succ`,
+`CategoryTheory.SimplicialObject.isClosed_degenerate`,
+`CategoryTheory.SimplicialObject.isClosed_degenerate_of_t2Space`).
 -/
 
 public section
 
-open CategoryTheory Topology
-
-open scoped Simplicial
+open CategoryTheory Simplicial Topology
 
 namespace CategoryTheory.SimplicialObject
 
@@ -35,13 +38,33 @@ theorem isEmbedding_σ (X : SimplicialObject TopCat) {n : ℕ} (i : Fin (n + 1))
     (fun x ↦ by rw [← ConcreteCategory.comp_apply, δ_comp_σ_self, ConcreteCategory.id_apply])
     (ContinuousMap.continuous _) (ContinuousMap.continuous _)
 
-/-- Each degeneracy of a simplicial space into a Hausdorff level is a closed embedding: its image
-is a retract of the Hausdorff space `X _⦋n + 1⦌`. -/
+/-- Each degeneracy of a simplicial space into a Hausdorff level is a closed embedding. -/
 theorem isClosedEmbedding_σ (X : SimplicialObject TopCat) {n : ℕ} [T2Space (X _⦋n + 1⦌)]
     (i : Fin (n + 1)) : IsClosedEmbedding (X.σ i) :=
-  ⟨isEmbedding_σ X i,
-    Function.LeftInverse.isClosed_range (f := X.δ i.castSucc)
-      (fun x ↦ by rw [← ConcreteCategory.comp_apply, δ_comp_σ_self, ConcreteCategory.id_apply])
-      (ContinuousMap.continuous _) (ContinuousMap.continuous _)⟩
+  Function.LeftInverse.isClosedEmbedding (f := X.δ i.castSucc)
+    (fun x ↦ by rw [← ConcreteCategory.comp_apply, δ_comp_σ_self, ConcreteCategory.id_apply])
+    (ContinuousMap.continuous _) (ContinuousMap.continuous _)
+
+/-- If every degeneracy `X.σ i` (`i : Fin (n + 1)`) is a closed embedding, the degenerate
+`(n + 1)`-simplices form a closed subset of `X _⦋n + 1⦌`. -/
+theorem isClosed_degenerate_succ (X : SimplicialObject TopCat) {n : ℕ}
+    (hσ : ∀ i : Fin (n + 1), IsClosedEmbedding (X.σ i)) :
+    IsClosed (X := X _⦋n + 1⦌) (SSet.degenerate (X ⋙ forget TopCat) (n + 1)) := by
+  rw [SSet.degenerate_eq_iUnion_range_σ]
+  exact isClosed_iUnion_of_finite fun i ↦ (hσ i).isClosed_range
+
+/-- If every degeneracy landing in degree `n` is a closed embedding, the degenerate `n`-simplices
+form a closed subset of `X _⦋n⦌`. -/
+theorem isClosed_degenerate (X : SimplicialObject TopCat) (n : ℕ)
+    (hσ : ∀ {m : ℕ}, n = m + 1 → ∀ i : Fin (m + 1), IsClosedEmbedding (X.σ i)) :
+    IsClosed (X := X _⦋n⦌) (SSet.degenerate (X ⋙ forget TopCat) n) := by
+  cases n with
+  | zero => exact SSet.degenerate_zero (X ⋙ forget TopCat) ▸ isClosed_empty
+  | succ m => exact X.isClosed_degenerate_succ (hσ rfl)
+
+/-- In any Hausdorff degree `X _⦋n⦌`, the degenerate `n`-simplices form a closed subset. -/
+theorem isClosed_degenerate_of_t2Space (X : SimplicialObject TopCat) (n : ℕ) [T2Space (X _⦋n⦌)] :
+    IsClosed (X := X _⦋n⦌) (SSet.degenerate (X ⋙ forget TopCat) n) :=
+  X.isClosed_degenerate n fun h i ↦ by subst h; exact X.isClosedEmbedding_σ i
 
 end CategoryTheory.SimplicialObject

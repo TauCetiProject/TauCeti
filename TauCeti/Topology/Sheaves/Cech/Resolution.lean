@@ -71,15 +71,15 @@ variable {X : TopCat.{u}} {R : Type u} [Ring R]
 
 -- `fromSingle₀Equiv` sends `ι` to `ι.f 0`, whose source `((single₀ _).obj F).X 0` is `F` by
 -- unfolding `single₀`
-private instance : Mono (CochainComplex.fromSingle₀Equiv K F ι).1 :=
+private instance : Mono (CochainComplex.fromSingle₀Equiv K F ι).val :=
   inferInstanceAs (Mono (ι.f 0))
 
 /-- The short exact sequence `0 ⟶ F ⟶ K⁰ ⟶ Z¹ ⟶ 0` of a resolution. -/
 private lemma shortExact_zero :
-    (ShortComplex.mk (CochainComplex.fromSingle₀Equiv K F ι).1 (K.toCycles 0 1)
-      (K.comp_toCycles_eq_zero 1 _ (CochainComplex.fromSingle₀Equiv K F ι).2)).ShortExact :=
-  K.shortExact_resolution_zero (CochainComplex.fromSingle₀Equiv K F ι).1
-    (CochainComplex.fromSingle₀Equiv K F ι).2
+    (ShortComplex.mk (CochainComplex.fromSingle₀Equiv K F ι).val (K.toCycles 0 1)
+      (K.comp_toCycles_eq_zero 1 _ (CochainComplex.fromSingle₀Equiv K F ι).property)).ShortExact :=
+  K.shortExact_resolution_zero (CochainComplex.fromSingle₀Equiv K F ι).val
+    (CochainComplex.fromSingle₀Equiv K F ι).property
     (CochainComplex.exact_f_zero_of_quasiIsoAt ι)
     (fun j ↦ CochainComplex.exactAt_succ_of_quasiIsoAt ι j)
 
@@ -125,8 +125,8 @@ private lemma isLimitSucc_lift (n : ℕ) :
 /-- The global sections of `F` are the kernel of `Γ(K⁰) ⟶ Γ(K¹)`. -/
 private def isLimitZero :
     IsLimit (KernelFork.ofι ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
-      (CochainComplex.fromSingle₀Equiv K F ι).1)
-      (by dsimp; rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv K F ι).2,
+      (CochainComplex.fromSingle₀Equiv K F ι).val)
+      (by dsimp; rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv K F ι).property,
         Functor.map_zero]) :
         KernelFork ((((Sheaf.Γ (Opens.grothendieckTopology X)
           (ModuleCat.{u} R)).mapHomologicalComplex _).obj K).sc' 0 0 1).g) :=
@@ -152,11 +152,11 @@ private abbrev leftHomologyDataZero :
   K := (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).obj F
   H := (cechCohomology X (ModuleCat.{u} R) 0).obj F.obj
   i := (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
-    (CochainComplex.fromSingle₀Equiv K F ι).1
+    (CochainComplex.fromSingle₀Equiv K F ι).val
   π := (sectionsIsoCechZero F).hom
   wi := by
     dsimp
-    rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv K F ι).2, Functor.map_zero]
+    rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv K F ι).property, Functor.map_zero]
   hi := isLimitZero ι
   wπ := isLimitZero_lift_comp ι
   hπ := ((ShortComplex.exact_iff_mono (ShortComplex.mk _ _ (isLimitZero_lift_comp ι))
@@ -176,8 +176,8 @@ private lemma leftHomologyDataZero_cyclesIso_inv :
       (HomologicalComplex.cyclesIsoSc' _ 0 0 1 (by simp) (by simp)).inv =
       (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
         K).liftCycles ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
-          (CochainComplex.fromSingle₀Equiv K F ι).1) 1 (by simp)
-          (by dsimp; rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv K F ι).2,
+          (CochainComplex.fromSingle₀Equiv K F ι).val) 1 (by simp)
+          (by dsimp; rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv K F ι).property,
             Functor.map_zero]) := by
   rw [← cancel_mono (HomologicalComplex.iCycles _ _), Category.assoc,
     HomologicalComplex.cyclesIsoSc'_inv_iCycles,
@@ -200,8 +200,8 @@ def resolutionCechδ : (n : ℕ) → {k m : ℕ} → k + n + 1 = m →
 
 /-- For `n = 0` the iterated connecting map is the connecting map of `0 ⟶ F ⟶ K⁰ ⟶ Z¹ ⟶ 0`. -/
 lemma resolutionCechδ_zero (k : ℕ)
-    (hS : (ShortComplex.mk (CochainComplex.fromSingle₀Equiv K F ι).1 (K.toCycles 0 1)
-      (K.comp_toCycles_eq_zero 1 _ (CochainComplex.fromSingle₀Equiv K F ι).2)).ShortExact) :
+    (hS : (ShortComplex.mk (CochainComplex.fromSingle₀Equiv K F ι).val (K.toCycles 0 1)
+      (K.comp_toCycles_eq_zero 1 _ (CochainComplex.fromSingle₀Equiv K F ι).property)).ShortExact) :
     resolutionCechδ ι 0 (k := k) rfl = hS.cechCohomologyδ k := by
   rw [resolutionCechδ]
 
@@ -369,8 +369,8 @@ theorem cechCohomologyObjIsoOfIsFlasque_zero_hom :
         (cechCohomologyObjIsoOfIsFlasque ι hK 0).hom =
       (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
         K).liftCycles ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
-          (CochainComplex.fromSingle₀Equiv K F ι).1) 1 (by simp)
-          (by dsimp; rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv K F ι).2,
+          (CochainComplex.fromSingle₀Equiv K F ι).val) 1 (by simp)
+          (by dsimp; rw [← Functor.map_comp, (CochainComplex.fromSingle₀Equiv K F ι).property,
             Functor.map_zero]) ≫
         (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
           K).homologyπ 0 := by

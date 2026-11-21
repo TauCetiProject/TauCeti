@@ -67,12 +67,12 @@ private theorem sum_inner_shuffleRep_T (hq : star (q : 𝕜) = q)
   let e : Equiv.Perm (ShuffleMask k l) :=
     Function.Involutive.toPerm (fun S => S.swap a b) (fun S => S.swap_swap a b)
   let h (S : ShuffleMask k l) : 𝕜 :=
-    if (a ∈ S.1 ∧ b ∉ S.1) ∨ (a ∉ S.1 ∧ b ∈ S.1) then ⟪f S, g (e S)⟫_𝕜 else 0
+    if (a ∈ S.val ∧ b ∉ S.val) ∨ (a ∉ S.val ∧ b ∈ S.val) then ⟪f S, g (e S)⟫_𝕜 else 0
   have he (S : ShuffleMask k l) : e S = S.swap a b := (rfl)
   have hp (S : ShuffleMask k l) :
       ⟪shuffleRep k ρ (T q i) f S, g S⟫_𝕜 =
         ⟪f S, shuffleRep k ρ (T q i) g S⟫_𝕜 + (h S - h (e S)) := by
-    by_cases ha : a ∈ S.1 <;> by_cases hb : b ∈ S.1
+    by_cases ha : a ∈ S.val <;> by_cases hb : b ∈ S.val
     · simp [h, he, ha, hb, a, b, inner_smul_left, inner_smul_right, starRingEnd_apply, hq]
     · simp [h, he, ha, hb, a, b, inner_sub_left, inner_sub_right,
         inner_smul_left, inner_smul_right, map_sub, starRingEnd_apply, hq]
@@ -111,8 +111,8 @@ theorem continuous_shuffleHilbertRep (hρ : ∀ i, Continuous (ρ (T q i)))
     apply (PiLp.continuous_toLp 2 _).comp
     apply continuous_pi
     intro S
-    by_cases ha : BraidGroup.strand i ∈ S.1 <;>
-      by_cases hb : BraidGroup.strandSucc i ∈ S.1
+    by_cases ha : BraidGroup.strand i ∈ S.val <;>
+      by_cases hb : BraidGroup.strandSucc i ∈ S.val
     · simp only [shuffleRep_T_apply_of_mem_of_mem ρ ha hb]
       exact (PiLp.continuous_apply 2 _ S).const_smul _
     · simp only [shuffleRep_T_apply_of_mem_of_notMem ρ ha hb]

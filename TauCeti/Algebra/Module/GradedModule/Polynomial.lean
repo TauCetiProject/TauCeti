@@ -114,7 +114,8 @@ theorem bddAbove_setOf_piece_ne_bot [Module.Finite k[X] M]
     have hsL : Submodule.span k[X] (s : Set M) ≤ L' := by
       refine Submodule.span_le.mpr fun g hg ↦ ?_
       rw [← DirectSum.sum_support_decompose G.piece g]
-      refine L.sum_mem fun q hq ↦ Submodule.mem_iSup_of_mem ⟨q, ?_⟩ (DirectSum.decompose _ g q).2
+      refine L.sum_mem fun q hq ↦ Submodule.mem_iSup_of_mem ⟨q, ?_⟩
+          (DirectSum.decompose _ g q).property
       exact hD (Set.mem_biUnion hg hq)
     exact fun y ↦ hsL (hs ▸ Submodule.mem_top)
   refine ⟨D, fun p hp ↦ ?_⟩
@@ -122,7 +123,7 @@ theorem bddAbove_setOf_piece_ne_bot [Module.Finite k[X] M]
   refine hp (eq_bot_iff.mpr fun x hx ↦ ?_)
   refine Submodule.disjoint_def.mp (G.isInternal.submodule_iSupIndep p) x hx ?_
   refine (iSup_le fun q ↦ ?_ : L ≤ ⨆ j, ⨆ (_ : j ≠ p), G.piece j) (hL x)
-  exact le_iSup₂_of_le (q : ℤ) (q.2.trans_lt hDp).ne le_rfl
+  exact le_iSup₂_of_le (q : ℤ) (q.property.trans_lt hDp).ne le_rfl
 
 /-- If `X` lowers degree by `d ≠ 0`, the terms `a.coeff n • X ^ n • x` of `a • x`, for `x`
 homogeneous of degree `p`, lie in the pairwise distinct degrees `p - n * d`; so the component of
@@ -334,9 +335,9 @@ theorem le_of_forall_mem_piece_exists_sub_X_smul_mem (hd : d ≠ 0)
   refine N.sum_mem fun p _ ↦ ?_
   by_cases hp : p ≤ B
   · obtain ⟨n, rfl⟩ : ∃ n : ℕ, p = B - n := ⟨(B - p).toNat, by omega⟩
-    exact hN n _ (DirectSum.decompose G.piece x _).2 (hL _ hx)
+    exact hN n _ (DirectSum.decompose G.piece x _).property (hL _ hx)
   · rw [(Submodule.eq_bot_iff _).mp (hpiece (not_le.mp hp)) _
-      (DirectSum.decompose G.piece x p).2]
+      (DirectSum.decompose G.piece x p).property]
     exact N.zero_mem
 
 end InternalGrading
@@ -356,7 +357,7 @@ theorem isSMulRegular_of_coeff_zero (hd : d ≠ 0)
   refine IsSMulRegular.of_right_eq_zero_of_smul fun x hax ↦ ?_
   by_contra hx
   have hs : (DirectSum.decompose G.piece x).support.Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty]
+    rw [← Finset.ne_empty_iff_nonempty]
     intro hs
     have hz := DFinsupp.support_eq_empty.mp hs
     exact hx ((DirectSum.decompose G.piece).injective

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.Module
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.Finiteness.Basic
 
 /-!
@@ -154,6 +155,28 @@ instance instFiniteReal [AddCommGroup V] [Module ℝ V] [Module.Finite ℝ V] :
 instance instFiniteComplex [AddCommGroup V] [Module ℂ V] [Module.Finite ℂ V] :
     Module.Finite ℂ (Conjugate V) :=
   .of_surjective toConjₗ.toLinearMap toConjₗ.surjective
+
+/-- The conjugate of a real vector space has the same real rank: its real structure is that of
+`V`. -/
+@[simp] theorem rank_real [AddCommGroup V] [Module ℝ V] :
+    Module.rank ℝ (Conjugate V) = Module.rank ℝ V :=
+  (rfl)
+
+/-- The conjugate of a real vector space has the same real dimension. -/
+@[simp] theorem finrank_real [AddCommGroup V] [Module ℝ V] :
+    Module.finrank ℝ (Conjugate V) = Module.finrank ℝ V :=
+  (rfl)
+
+/-- The conjugate of a complex vector space has the same complex rank. -/
+@[simp] theorem rank_complex [AddCommGroup V] [Module ℂ V] :
+    Module.rank ℂ (Conjugate V) = Module.rank ℂ V :=
+  (rank_eq_of_equiv_equiv (starRingEnd ℂ) (toConjₗ : V ≃ₗ⋆[ℂ] Conjugate V).toAddEquiv
+    (Function.Involutive.bijective Complex.conj_conj) fun c v ↦ toConj_smul c v).symm
+
+/-- The conjugate of a complex vector space has the same complex dimension. -/
+@[simp] theorem finrank_complex [AddCommGroup V] [Module ℂ V] :
+    Module.finrank ℂ (Conjugate V) = Module.finrank ℂ V :=
+  congrArg Cardinal.toNat rank_complex
 
 end Conjugate
 
