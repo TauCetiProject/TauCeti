@@ -24,8 +24,7 @@ compute vector stabilizers across standard constructions on representations:
   (`Representation.Equiv.stabilizer_apply`);
 * restriction along a group homomorphism (`Representation.stabilizer_comp`), trivial and
   subsingleton representations, binary and arbitrary products (`Representation.stabilizer_prod`,
-  `Representation.stabilizer_pi`), and quotients (`Representation.le_stabilizer_quotient_mk`,
-  `Subrepresentation.le_stabilizer_quotient_mk`);
+  `Representation.stabilizer_pi`), and quotients (`Subrepresentation.le_stabilizer_quotient_mk`);
 * permutation and left regular representations (`Representation.stabilizer_ofMulAction_single`,
   `Representation.stabilizer_leftRegular_single`, `Representation.finite_stabilizer_leftRegular`),
   trivial subgroup restrictions (`Representation.isTrivial_comp_subtype_iff` and
@@ -41,7 +40,7 @@ compute vector stabilizers across standard constructions on representations:
 * `Representation.Equiv.stabilizer_apply`
 * `Representation.stabilizer_comp`
 * `Representation.stabilizer_prod` and `Representation.stabilizer_pi`
-* `Representation.le_stabilizer_quotient_mk` and `Subrepresentation.le_stabilizer_quotient_mk`
+* `Subrepresentation.le_stabilizer_quotient_mk`
 * `Representation.stabilizer_ofMulAction_single` and `Representation.stabilizer_leftRegular_single`
 * `Representation.finite_stabilizer_leftRegular`
 * `Representation.isTrivial_comp_subtype_iff` and
@@ -71,7 +70,8 @@ theorem le_stabilizer_quotient_mk {A G V : Type*} [Ring A] [Group G]
     ρ.stabilizer v ≤ S.quotient.stabilizer (Submodule.Quotient.mk v) := by
   intro g hg
   rw [Representation.mem_stabilizer] at hg ⊢
-  rw [Subrepresentation.quotient, Representation.quotient_apply, Submodule.mapQ_apply, hg]
+  change S.quotient g ⟦v⟧ = ⟦v⟧
+  rw [Subrepresentation.quotient_apply_mk, hg]
 
 end Subrepresentation
 
@@ -200,18 +200,6 @@ theorem le_stabilizer_ofMulAction_quotient (N : Subgroup G) [N.Normal] (v : A[G 
   le_stabilizer_of_isTrivial_comp_subtype (ofMulAction A G (G ⧸ N)) N v
 
 end Semiring
-
-section Ring
-
-variable {A G V : Type*} [Ring A] [Group G] [AddCommGroup V] [Module A V]
-
-/-- Passing to a quotient representation can only enlarge the stabilizer of a vector. -/
-theorem le_stabilizer_quotient_mk (ρ : Representation A G V) (W : Submodule A V)
-    (hW : ∀ g, ∀ w ∈ W, ρ g w ∈ W) (v : V) :
-    ρ.stabilizer v ≤ (ρ.quotient W hW).stabilizer (Submodule.Quotient.mk v) :=
-  Subrepresentation.le_stabilizer_quotient_mk ⟨W, hW⟩ v
-
-end Ring
 
 section CommRing
 

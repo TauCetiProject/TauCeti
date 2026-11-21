@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Group.Quotient
 public import TauCeti.RepresentationTheory.Stabilizer
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
+import TauCeti.RepresentationTheory.Quotient
 
 /-!
 # Smooth representations and smooth vectors
@@ -21,13 +22,15 @@ these are the representations studied in the representation theory of `p`-adic g
 
 Every representation has a largest smooth subrepresentation, its subrepresentation of *smooth
 vectors* `V^∞`, made of the vectors with open stabilizer. When `G` is weakly locally compact and
-nonarchimedean (locally profinite), `V^∞` is the union (and supremum) of the invariants `V^U` over
-the compact open subgroups `U` of `G`.
+nonarchimedean (in particular, for locally profinite groups), `V^∞` is the union (and supremum)
+of the invariants `V^U` over the compact open subgroups `U` of `G`.
 
 ## Main definitions
 
 * `Representation.IsSmooth ρ`: every vector of `V` has an open stabilizer.
 * `Representation.smoothVectors ρ`: the subrepresentation of vectors with open stabilizer.
+* `Representation.IntertwiningMap.liftSmoothVectors`: unique lift of an intertwining map from a
+  smooth representation into `smoothVectors`.
 * `Representation.IntertwiningMap.restrictSmoothVectors`: restriction of an intertwining map to
   `smoothVectors`.
 
@@ -44,21 +47,24 @@ the compact open subgroups `U` of `G`.
   passes to subrepresentations and quotients.
 * `Representation.IsSmooth.comp`: smoothness passes to the restriction along a continuous
   homomorphism, in particular to subgroups.
-* `Representation.isSmooth_ofMulAction_iff`: the permutation representation on `A[X]` is smooth
-  exactly when every point of `X` has an open stabilizer, as for `X = G ⧸ U` with `U` open.
+* `Representation.isSmooth_ofMulAction_iff`: over a nontrivial semiring, the permutation
+  representation on `A[X]` is smooth exactly when every point of `X` has an open stabilizer, as
+  for `X = G ⧸ U` with `U` open.
 * `Representation.smoothVectors_leftRegular_eq_bot`: for a Hausdorff (indeed `T₁`) group that is
   not discrete, the left regular representation on `A[G]` has no nonzero smooth vector.
-* `Representation.not_isSmooth_pi_ofMulAction_quotient`: an infinite product of coset permutation
-  modules `∏ i, A[G ⧸ H i]` fails to be smooth when `⨅ i, H i` is not open.
+* `Representation.not_isSmooth_pi_ofMulAction_quotient`: over a nontrivial semiring, an infinite
+  product of coset permutation modules `∏ i, A[G ⧸ H i]` fails to be smooth when `⨅ i, H i` is
+  not open.
 
 ## References
 
 * J. Bernstein, *Representations of p-adic groups*, Harvard lectures 1992, written by
   K. Rumelhart, Chapter I, §1.1, Definition 2 and Proposition 1, p. 7.
 * JX-Mo, [mathlib4#41525](https://github.com/leanprover-community/mathlib4/pull/41525) (file
-  `Mathlib/RepresentationTheory/Smooth/Basic.lean`), whose design this file follows:
-  `IsSmooth` as a Prop-valued class asserting open stabilizers, and `smoothVectors` as a
-  `Subrepresentation`.
+  `Mathlib/RepresentationTheory/Smooth/Basic.lean`), and the Lean Zulip discussion
+  [class and def (p-adic reps)](https://leanprover-community.github.io/archive/stream/116395-maths/topic/class.20and.20def.20%28p-adic.20reps%29.html),
+  whose design this file follows: `IsSmooth` as a `Prop`-valued class asserting open stabilizers,
+  and `smoothVectors` as a `Subrepresentation`.
 -/
 
 public section
@@ -123,12 +129,9 @@ instance instIsSmoothOfQuotient [IsSmooth ρ] (S : Subgroup G) [S.Normal]
     [IsTrivial (ρ.comp S.subtype)] : IsSmooth (ρ.ofQuotient S) where
   isOpen_stabilizer v := by
     rw [← (QuotientGroup.isQuotientMap_mk S).isOpen_preimage]
-    have hpre :
-        (QuotientGroup.mk : G → G ⧸ S) ⁻¹' (((ρ.ofQuotient S).stabilizer v : Subgroup (G ⧸ S)) :
-          Set (G ⧸ S)) = ((ρ.stabilizer v : Subgroup G) : Set G) := by
-      ext g
-      simp [ofQuotient_coe_apply]
-    rw [hpre]
+    change IsOpen
+      ((((ρ.ofQuotient S).stabilizer v).comap (QuotientGroup.mk' S) : Subgroup G) : Set G)
+    rw [← stabilizer_comp, ofQuotient_comp_mk']
     exact IsSmooth.isOpen_stabilizer v
 
 /-- The binary product of two smooth representations is smooth. -/
@@ -244,12 +247,53 @@ theorem IntertwiningMap.apply_mem_smoothVectors (f : ρ.IntertwiningMap σ) {v :
     (hv : v ∈ ρ.smoothVectors) : f v ∈ σ.smoothVectors :=
   Subgroup.isOpen_mono (f.stabilizer_le v) hv
 
+/-- A representation is smooth exactly when every vector is smooth. -/
+theorem isSmooth_iff_forall_mem_smoothVectors : IsSmooth ρ ↔ ∀ v, v ∈ ρ.smoothVectors :=
+  isSmooth_iff ρ
+
+/-- Every vector of a smooth representation is smooth. -/
+theorem IsSmooth.mem_smoothVectors [IsSmooth ρ] (v : V) : v ∈ ρ.smoothVectors :=
+  IsSmooth.isOpen_stabilizer v
+
+/-- `V^∞` is smooth. -/
+instance : IsSmooth ρ.smoothVectors.toRepresentation :=
+  ⟨fun v ↦ ρ.smoothVectors.stabilizer_toRepresentation v ▸ v.property⟩
+
+/-- An intertwining map from a smooth representation `ρ` into `σ` factors through
+`σ.smoothVectors`. -/
+def IntertwiningMap.liftSmoothVectors [IsSmooth ρ] (f : ρ.IntertwiningMap σ) :
+    ρ.IntertwiningMap σ.smoothVectors.toRepresentation :=
+  f.codRestrict σ.smoothVectors fun v ↦
+    Subrepresentation.mem_toSubmodule.mpr
+      (f.apply_mem_smoothVectors (IsSmooth.mem_smoothVectors v))
+
+/-- Coercing `f.liftSmoothVectors v` to the ambient module evaluates `f` on `v`. -/
+@[simp]
+theorem IntertwiningMap.coe_liftSmoothVectors_apply [IsSmooth ρ] (f : ρ.IntertwiningMap σ)
+    (v : V) :
+    ((f.liftSmoothVectors v : σ.smoothVectors.toSubmodule) : W) = f v := by
+  simp [liftSmoothVectors]
+
+/-- Composing `f.liftSmoothVectors` with the inclusion of `σ.smoothVectors` recovers `f`. -/
+@[simp]
+theorem IntertwiningMap.subtype_comp_liftSmoothVectors [IsSmooth ρ] (f : ρ.IntertwiningMap σ) :
+    σ.smoothVectors.subtype.comp f.liftSmoothVectors = f :=
+  IntertwiningMap.ext <| LinearMap.ext fun _ ↦ by simp
+
+/-- `f.liftSmoothVectors` is the unique intertwining map into `σ.smoothVectors` whose composition
+with `σ.smoothVectors.subtype` is `f`. -/
+theorem IntertwiningMap.liftSmoothVectors_unique [IsSmooth ρ] (f : ρ.IntertwiningMap σ)
+    (g : ρ.IntertwiningMap σ.smoothVectors.toRepresentation)
+    (hg : σ.smoothVectors.subtype.comp g = f) :
+    g = f.liftSmoothVectors :=
+  IntertwiningMap.ext <| LinearMap.ext fun v ↦ Subtype.ext <| by
+    simpa using congrArg (fun h ↦ h v) hg
+
 /-- **Functoriality of smooth vectors:** an intertwining map `f : ρ → σ` restricts to an
 intertwining map `ρ.smoothVectors → σ.smoothVectors`. -/
 def IntertwiningMap.restrictSmoothVectors (f : ρ.IntertwiningMap σ) :
     ρ.smoothVectors.toRepresentation.IntertwiningMap σ.smoothVectors.toRepresentation :=
-  (f.comp ρ.smoothVectors.subtype).codRestrict σ.smoothVectors fun v ↦ by
-    simpa using f.apply_mem_smoothVectors (Subrepresentation.mem_toSubmodule.mp v.property)
+  (f.comp ρ.smoothVectors.subtype).liftSmoothVectors
 
 /-- Coercing `f.restrictSmoothVectors v` to the ambient module evaluates `f` on `v`. -/
 @[simp]
@@ -271,14 +315,6 @@ theorem IntertwiningMap.restrictSmoothVectors_comp {U : Type*} [AddCommMonoid U]
     (g.comp f).restrictSmoothVectors = g.restrictSmoothVectors.comp f.restrictSmoothVectors :=
   IntertwiningMap.ext <| LinearMap.ext fun _ ↦ Subtype.ext <| by simp
 
-/-- A representation is smooth exactly when every vector is smooth. -/
-theorem isSmooth_iff_forall_mem_smoothVectors : IsSmooth ρ ↔ ∀ v, v ∈ ρ.smoothVectors :=
-  isSmooth_iff ρ
-
-/-- Every vector of a smooth representation is smooth. -/
-theorem IsSmooth.mem_smoothVectors [IsSmooth ρ] (v : V) : v ∈ ρ.smoothVectors :=
-  IsSmooth.isOpen_stabilizer v
-
 /-- A representation is smooth exactly when every vector is fixed by an open subgroup. -/
 theorem isSmooth_iff_exists_openSubgroup :
     IsSmooth ρ ↔ ∀ v, ∃ U : OpenSubgroup G, (U : Subgroup G) ≤ ρ.stabilizer v := by
@@ -292,10 +328,6 @@ theorem isSmooth_iff_exists_isCompact_openSubgroup [NonarchimedeanGroup G]
       ∀ v, ∃ U : OpenSubgroup G, IsCompact (U : Set G) ∧ (U : Subgroup G) ≤ ρ.stabilizer v := by
   simp only [isSmooth_iff_forall_mem_smoothVectors,
     mem_smoothVectors_iff_exists_isCompact_openSubgroup]
-
-/-- `V^∞` is smooth. -/
-instance : IsSmooth ρ.smoothVectors.toRepresentation :=
-  ⟨fun v ↦ ρ.smoothVectors.stabilizer_toRepresentation v ▸ v.property⟩
 
 /-- `V^∞` is the largest smooth subrepresentation: a subrepresentation lies in it exactly when it
 is smooth. -/
@@ -462,9 +494,7 @@ theorem isSmooth_ofMulAction [SeparatelyContinuousMul G]
   induction f using MonoidAlgebra.induction_linear with
   | zero => exact (ofMulAction A G X).smoothVectors.toSubmodule.zero_mem
   | add u w hu hw => exact (ofMulAction A G X).smoothVectors.toSubmodule.add_mem hu hw
-  | single x r =>
-    refine Subgroup.isOpen_mono (fun g hg ↦ ?_) (h x)
-    rw [mem_stabilizer, ofMulAction_single, MulAction.mem_stabilizer_iff.1 hg]
+  | single x r => exact Subgroup.isOpen_mono (le_stabilizer_ofMulAction_single x r) (h x)
 
 /-- Over a nontrivial semiring, the permutation representation on `A[X]` is smooth exactly when
 every point of `X` has an open stabilizer. -/
@@ -489,19 +519,13 @@ theorem isSmooth_leftRegular_iff [SeparatelyContinuousMul G] [Nontrivial A] :
 nonzero smooth vector. -/
 theorem smoothVectors_leftRegular_eq_bot [SeparatelyContinuousMul G] [T1Space G]
     (hG : ¬ DiscreteTopology G) : (leftRegular A G).smoothVectors = ⊥ := by
-  -- A nonzero `f` with open stabilizer `H` would make `H` finite, since `H` permutes the finite
-  -- support of `f`, and a finite open subgroup of a `T₁` group makes `{1}` open.
+  -- A nonzero `f` with open stabilizer `H` would make `H` finite, and a finite open subgroup of a
+  -- `T₁` group makes `{1}` open.
   refine eq_bot_iff.2 fun f hf ↦ ?_
   rw [← Subrepresentation.mem_toSubmodule, Subrepresentation.toSubmodule_bot, Submodule.mem_bot]
   by_contra hf0
-  obtain ⟨x, hx⟩ := Finsupp.support_nonempty_iff.2 (mt MonoidAlgebra.coeff_eq_zero.1 hf0)
   set H := (leftRegular A G).stabilizer f
-  -- Every `g ∈ H` sends `x` into the support of `f`, so `H` lies in a finite set.
-  have hfin : (H : Set G).Finite := by
-    refine ((f.coeff.support.finite_toSet.image fun y ↦ y * x⁻¹)).subset fun g hg ↦ ?_
-    refine ⟨g * x, ?_, by simp⟩
-    rw [← mem_stabilizer.1 hg]
-    simpa [coeff_ofMulAction] using hx
+  have hfin : (H : Set G).Finite := finite_stabilizer_leftRegular hf0
   exact hG (discreteTopology_of_isOpen_singleton_one
     (isOpen_singleton_of_finite_mem_nhds 1 ((mem_smoothVectors_iff.1 hf).mem_nhds H.one_mem) hfin))
 

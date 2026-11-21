@@ -11,6 +11,7 @@ public import Mathlib.Topology.Separation.Regular
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic
 import Mathlib.Topology.Algebra.ClopenNhdofOne
 import Mathlib.Topology.Separation.Connected
+import TauCeti.Topology.Algebra.MulAction.Stabilizer
 import TauCeti.Topology.Algebra.Nonarchimedean.OpenSubgroupBasis
 
 /-!
@@ -34,7 +35,6 @@ compact open subgroup.
 
 ## Main results
 
-* `IsCompact.isOpen_stabilizer`: the left translation stabilizer of a compact open set is open.
 * `IsCompact.exists_openSubgroup_subset`: a compact open set containing the identity contains a
   compact open subgroup.
 * `TauCeti.IsTopologicalGroup.nonarchimedeanGroup_of_weaklyLocallyCompactSpace`: a
@@ -77,29 +77,14 @@ section Stabilizer
 
 variable [IsTopologicalGroup G] {C : Set G}
 
-/-- In a topological group, the left translation stabilizer `{g | g • C = C}` of a compact open
-set `C` is open. -/
-@[to_additive IsCompact.isOpen_addStabilizer /-- In a topological additive group, the translation
-stabilizer `{g | g +ᵥ C = C}` of a compact open set `C` is open. -/]
-theorem IsCompact.isOpen_stabilizer (hC : IsCompact C) (hCo : IsOpen C) :
-    IsOpen (MulAction.stabilizer G C : Set G) := by
-  obtain ⟨V, hV, hVC⟩ := compact_open_separated_mul_left hC hCo subset_rfl
-  have hsub (g : G) (hg : g ∈ V) : g • C ⊆ C := (smul_set_subset_mul hg).trans hVC
-  refine Subgroup.isOpen_of_mem_nhds _ (g := 1) ?_
-  filter_upwards [hV, inv_mem_nhds_one G hV] with g hg hg'
-  refine MulAction.mem_stabilizer_iff.2 ((hsub g hg).antisymm fun c hc ↦ ?_)
-  exact ⟨g⁻¹ • c, hsub g⁻¹ hg' (smul_mem_smul_set hc), smul_inv_smul g c⟩
-
 /-- **Compact open subgroups inside compact open sets.** In a topological group, a compact open
 set containing the identity contains a compact open subgroup: its left translation stabilizer. -/
 @[to_additive /-- In a topological additive group, a compact open set containing zero contains a
 compact open additive subgroup: its translation stabilizer. -/]
 theorem IsCompact.exists_openSubgroup_subset (hC : IsCompact C) (hCo : IsOpen C)
-    (h1 : (1 : G) ∈ C) : ∃ H : OpenSubgroup G, IsCompact (H : Set G) ∧ (H : Set G) ⊆ C := by
-  let H : OpenSubgroup G := ⟨MulAction.stabilizer G C, hC.isOpen_stabilizer hCo⟩
-  have hHC : (H : Set G) ⊆ C := fun h hh ↦ by
-    simpa [MulAction.mem_stabilizer_iff.1 hh] using smul_mem_smul_set (a := h) h1
-  exact ⟨H, hC.of_isClosed_subset H.isClosed hHC, hHC⟩
+    (h1 : (1 : G) ∈ C) : ∃ H : OpenSubgroup G, IsCompact (H : Set G) ∧ (H : Set G) ⊆ C :=
+  ⟨hC.stabilizerOpenSubgroup G hCo, hC.isCompact_stabilizerOpenSubgroup hCo h1,
+    hC.stabilizerOpenSubgroup_subset hCo h1⟩
 
 end Stabilizer
 
