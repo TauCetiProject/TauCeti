@@ -11,7 +11,8 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 # Measurable sets of strictly increasing tuples
 
 Strictly increasing finite tuples form a measurable set, as do those whose entries
-lie in a given open interval. These sets describe ordered regions in finite products.
+lie in a given open interval or are strictly positive. These sets describe ordered
+regions in finite products.
 -/
 
 public section
@@ -37,5 +38,12 @@ theorem measurableSet_strictMono_mem_Ioo (n : ℕ) (a b : α) :
   simp only [ofPred_and, ofPred_forall]
   exact measurableSet_setOf_strictMono.inter
     (MeasurableSet.iInter fun i => measurable_pi_apply i measurableSet_Ioo)
+
+/-- Strictly increasing finite tuples with strictly positive entries form a measurable set. -/
+theorem measurableSet_setOf_pos_and_strictMono [Zero α] (n : ℕ) :
+    MeasurableSet {s : Fin n → α | (∀ i, 0 < s i) ∧ StrictMono s} := by
+  simp only [ofPred_and, ofPred_forall]
+  exact (MeasurableSet.iInter fun i => measurable_pi_apply i measurableSet_Ioi).inter
+    measurableSet_setOf_strictMono
 
 end TauCeti

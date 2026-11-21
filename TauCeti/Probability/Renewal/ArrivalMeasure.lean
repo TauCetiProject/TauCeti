@@ -17,7 +17,11 @@ import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 `renewalArrivalMeasure T ω` places one Dirac mass at each positive-index arrival of the
 renewal process with increments `T`. It omits the artificial arrival at index zero, but
 retains genuine arrivals at zero and repeated arrivals. Its evaluation on `[0,t]` is the
-extended renewal count, and local finiteness is equivalent to nonexplosion.
+extended renewal count, and local finiteness is equivalent to nonexplosion. Extracting
+interarrival gaps from `renewalArrivalMeasure T ω` recovers `T`, and conversely every
+locally finite integer-valued measure on `ℝ≥0` whose occurrence times are all finite equals
+the renewal arrival measure of its `ℝ≥0` interarrival-gap representatives on the canonical
+space `Measure ℝ≥0`.
 
 The construction is measurable into Mathlib's space of measures with its evaluation
 σ-algebra. Its entire law transfers to the canonical product realization of i.i.d.
@@ -247,5 +251,63 @@ theorem hasLaw_renewalArrivalMeasure_Ioc_poissonMeasure {r : ℝ≥0}
   apply (hasLaw_renewalCountNat_poissonMeasure hindep hlaw t).congr
   filter_upwards [ae_renewalArrivalMeasure_Ioc_eq_of_expMeasure hindep hlaw] with ω hω
   simp [hω t]
+
+section OccurrenceGap
+
+/-- When the `n`-th occurrence time of `μ` is finite, the `(n + 1)`-st renewal arrival time of
+its `ℝ≥0` interarrival-gap representatives on the canonical space `Measure ℝ≥0` equals that
+occurrence time. -/
+theorem arrival_toNNReal_occurrenceGap {μ : Measure ℝ≥0} {n : ℕ}
+    (hn : μ.occurrenceTime n ≠ ∞) :
+    arrival (fun i (ν : Measure ℝ≥0) => (ν.occurrenceGap i).toNNReal) (n + 1) μ =
+      (μ.occurrenceTime n).toNNReal := by
+  rw [arrival_def, μ.sum_range_toNNReal_occurrenceGap hn]
+
+/-- Any locally finite integer-valued measure on `ℝ≥0` whose occurrence times are all finite
+equals the renewal arrival measure of its `ℝ≥0` interarrival-gap representatives on the canonical
+space `Measure ℝ≥0`. Atoms at zero and coincident occurrences are allowed. -/
+theorem eq_renewalArrivalMeasure_toNNReal_occurrenceGap {μ : Measure ℝ≥0}
+    [IsLocallyFiniteMeasure μ] (hμ : μ.IsIntegerValued)
+    (hfin : ∀ n, μ.occurrenceTime n ≠ ∞) :
+    μ = renewalArrivalMeasure (fun n (ν : Measure ℝ≥0) => (ν.occurrenceGap n).toNNReal) μ := by
+  rw [renewalArrivalMeasure_eq_occurrenceTimeMeasure]
+  have hseq : (fun n =>
+      (arrival (fun i (ν : Measure ℝ≥0) => (ν.occurrenceGap i).toNNReal) (n + 1) μ : ℝ≥0∞)) =
+      μ.occurrenceTime := by
+    funext n
+    rw [arrival_toNNReal_occurrenceGap (hfin n), ENNReal.coe_toNNReal (hfin n)]
+  rw [hseq]
+  exact hμ.eq_occurrenceTimeMeasure
+
+/-- For a locally finite counting measure on `ℝ≥0` whose occurrence times are all finite, the
+mass of `[0, t]` equals the extended renewal count of its `ℝ≥0` interarrival-gap
+representatives on the canonical space `Measure ℝ≥0`. -/
+theorem apply_Iic_eq_renewalCount_toNNReal_occurrenceGap {μ : Measure ℝ≥0}
+    [IsLocallyFiniteMeasure μ] (hμ : μ.IsIntegerValued)
+    (hfin : ∀ n, μ.occurrenceTime n ≠ ∞) (t : ℝ≥0) :
+    μ (Iic t) =
+      renewalCount (fun n (ν : Measure ℝ≥0) => (ν.occurrenceGap n).toNNReal) t μ := by
+  conv_lhs => rw [eq_renewalArrivalMeasure_toNNReal_occurrenceGap hμ hfin]
+  rw [renewalArrivalMeasure_Iic]
+
+/-- For a locally finite counting measure on `ℝ≥0` whose occurrence times are all finite, the
+mass of `[0, t]` equals the natural-valued renewal count of its `ℝ≥0` interarrival-gap
+representatives on the canonical space `Measure ℝ≥0`. -/
+theorem apply_Iic_eq_renewalCountNat_toNNReal_occurrenceGap {μ : Measure ℝ≥0}
+    [IsLocallyFiniteMeasure μ] (hμ : μ.IsIntegerValued)
+    (hfin : ∀ n, μ.occurrenceTime n ≠ ∞) (t : ℝ≥0) :
+    μ (Iic t) =
+      (renewalCountNat (fun n (ν : Measure ℝ≥0) => (ν.occurrenceGap n).toNNReal) t μ : ℝ≥0∞) := by
+  have heq := eq_renewalArrivalMeasure_toNNReal_occurrenceGap hμ hfin
+  have hlf : IsLocallyFiniteMeasure
+      (renewalArrivalMeasure (fun n (ν : Measure ℝ≥0) => (ν.occurrenceGap n).toNNReal) μ) :=
+    heq ▸ inferInstance
+  have htend : Tendsto
+      (fun n => arrival (fun i (ν : Measure ℝ≥0) => (ν.occurrenceGap i).toNNReal) n μ)
+      atTop atTop :=
+    (isLocallyFiniteMeasure_renewalArrivalMeasure_iff _ μ).mp hlf
+  rw [apply_Iic_eq_renewalCount_toNNReal_occurrenceGap hμ hfin t, ← natCast_renewalCountNat htend]
+
+end OccurrenceGap
 
 end TauCeti.Probability

@@ -18,7 +18,8 @@ public import Mathlib.Probability.Distributions.Exponential
 For intensity `r • nnvolume`, with `r > 0`, occurrence `n` (indexed from zero)
 has the Gamma law of shape `n + 1` and rate `r`. The first occurrence therefore
 has the exponential law. All occurrence times are simultaneously positive and
-finite almost surely.
+finite almost surely. At intensity zero, the random measure vanishes almost
+surely, so every occurrence time is almost surely infinite.
 
 The extended-valued law retains the possible value infinity until the law itself
 rules it out. No pathwise local finiteness or integrality assumption is needed:
@@ -123,6 +124,14 @@ theorem IsPoissonRandomMeasure.ae_forall_occurrenceTime_pos_lt_top
     (measurableSet_Ioi.inter measurableSet_Iio)).2
   filter_upwards [ae_pos_gammaMeasure (n + 1) r] with x hx
   simp [ENNReal.ofReal_pos.mpr hx]
+
+/-- For a Poisson random measure on `ℝ≥0` with zero intensity, every occurrence time is infinite
+almost surely. -/
+theorem IsPoissonRandomMeasure.ae_forall_occurrenceTime_eq_top_of_zero
+    (h : IsPoissonRandomMeasure P N 0) :
+    ∀ᵐ ω ∂P, ∀ n, (N ω).occurrenceTime n = ∞ := by
+  filter_upwards [h.ae_eq_zero_measure] with ω hω n
+  simp [hω]
 
 /-- The real-valued version of occurrence `n` has Gamma shape `n + 1` and rate `r`.
 The exceptional value assigned by `toReal` at infinity does not affect this law. -/
