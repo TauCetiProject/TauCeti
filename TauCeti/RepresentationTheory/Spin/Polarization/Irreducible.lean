@@ -36,8 +36,11 @@ The same argument applies without coordinates to the spin representation
 quadratic realization `CliffordAlgebra.soEquivQuadratic`: the spin module is irreducible in odd
 dimension, and the half-spin modules `TauCeti.SpinPolarizationData.soSpinPlusLieRep` and
 `TauCeti.SpinPolarizationData.soSpinMinusLieRep` are irreducible in even dimension, the second when
-it is nonzero. In odd dimension no unit-length vector in the orthogonal remainder is needed, unlike
-for the type-`B` coordinate model.
+it is nonzero. Unlike the type-`B` coordinate model, the odd-dimensional statement takes no
+unit-length remainder vector as an argument. This removes a choice, not a hypothesis: the remainder
+coordinate squares to `Q` and is onto
+(`TauCeti.SpinPolarizationData.lineCoordinate_surjective_of_ne_bot`), so such a vector always
+exists.
 
 Irreducibility of the Spin *group* representations on the same modules is
 `TauCeti/RepresentationTheory/Spin/Irreducible.lean`; the statements here are the Lie algebra
@@ -262,8 +265,9 @@ theorem eq_bot_or_eq_top_of_map_soSpinLieRep_le (hodd : Odd (finrank K V))
     exact (Module.End.mem_invtSubmodule_iff_map_le _).2 (hN f)
 
 /-- **The spin Lie module of `𝔰𝔬(Q)` is irreducible in odd dimension.** The action is pulled back
-along `P.soSpinLieRep`. In even dimension the two half-spin summands are proper invariant
-subspaces, so the hypothesis cannot be dropped. -/
+along `P.soSpinLieRep`. In positive even dimension the two half-spin summands are proper
+invariant subspaces, so the hypothesis cannot be dropped there; in dimension zero the spinor module
+is the one-dimensional `⋀·0`, which is irreducible. -/
 theorem isIrreducible_soSpinLieRep (hodd : Odd (finrank K V)) :
     letI : LieRingModule (skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q))
         (ExteriorAlgebra K P.W) :=

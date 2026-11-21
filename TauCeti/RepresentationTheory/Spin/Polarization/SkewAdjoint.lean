@@ -154,8 +154,9 @@ theorem soSpinLieRep_apply_eq_mul_contractLeft_sub (w : P.W) (w' : P.W')
     AlgHom.commutes, LinearMap.sub_apply, mul_apply_eq_comp, spinAction_ι_contract,
     spinAction_ι_wedge, LinearMap.smul_apply, Module.algebraMap_end_apply, smul_smul]
 
-/-- **The vacuum has spin weight `-½`.** Under the rotation of an isotropic pair `w ∈ W`,
-`w' ∈ W'`, the scalar spinor `1` is an eigenvector with eigenvalue `-(⅟2 * polar Q w w')`. -/
+/-- **The spin operator of the rotation of an isotropic pair on the vacuum.** For `w ∈ W` and
+`w' ∈ W'`, the rotation sends the scalar spinor `1` to `-(⅟2 * polar Q w w') • 1`. For a hyperbolic
+pair, `polar Q w w' = 1`, the vacuum is thus an eigenvector of spin weight `-½`. -/
 theorem soSpinLieRep_apply_one (w : P.W) (w' : P.W')
     (f : skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q))
     (hf : ∀ x, (f : Module.End K V) x =
@@ -164,8 +165,9 @@ theorem soSpinLieRep_apply_one (w : P.W) (w' : P.W')
   rw [P.soSpinLieRep_apply_eq_mul_contractLeft_sub w w' f hf, ← map_one (algebraMap K _),
     contractLeft_algebraMap, mul_zero, zero_sub, neg_smul]
 
-/-- **An isotropic vector has spin weight `+½`.** Under the rotation of an isotropic pair
-`w ∈ W`, `w' ∈ W'`, the spinor `w` is an eigenvector with eigenvalue `⅟2 * polar Q w w'`. -/
+/-- **The spin operator of the rotation of an isotropic pair on `w`.** For `w ∈ W` and `w' ∈ W'`,
+the rotation sends the spinor `w` to `(⅟2 * polar Q w w') • w`. For a hyperbolic pair,
+`polar Q w w' = 1`, so `w ≠ 0`, the spinor `w` is thus an eigenvector of spin weight `+½`. -/
 theorem soSpinLieRep_apply_ι (w : P.W) (w' : P.W')
     (f : skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q))
     (hf : ∀ x, (f : Module.End K V) x =
