@@ -205,30 +205,29 @@ theorem hasFDerivAt_smulCoord_expGauge_zero (y : Fin 4 → H^{(k : ℝ)}(ℂ)) :
   set M := (mulCLM hs').bilinearRestrictScalars ℝ with hM
   rw [hasFDerivAt_pi']
   intro j
-  fin_cases j
-  · simp only [Fin.zero_eta, smulCoord_zero hs']
-    refine ((hy 0).sub (((hD 1).add (M.hasFDerivAt_of_bilinear hιR (hD 1))).sub
-      (M.hasFDerivAt_of_bilinear hιJ (hDR 1)))).congr_fderiv ?_
-    refine ContinuousLinearMap.ext fun p ↦ ?_
-    simp [hM]
-    abel
-  · simp only [Fin.mk_one, smulCoord_one hs']
+  -- Assemble the derivative of each coordinate from the pieces above.
+  fin_cases j <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, smulCoord_zero hs',
+      smulCoord_one hs', smulCoord_two hs', smulCoord_three hs'] <;>
+    [refine ((hy 0).sub (((hD 1).add (M.hasFDerivAt_of_bilinear hιR (hD 1))).sub
+      (M.hasFDerivAt_of_bilinear hιJ (hDR 1)))).congr_fderiv ?_;
     refine ((hy 1).sub (((hD I).add (M.hasFDerivAt_of_bilinear hιR (hD I))).sub
-      (M.hasFDerivAt_of_bilinear hιJ (hDR I)))).congr_fderiv ?_
-    refine ContinuousLinearMap.ext fun p ↦ ?_
-    simp [hM]
-    abel
-  · simp only [Fin.reduceFinMk, smulCoord_two hs']
+      (M.hasFDerivAt_of_bilinear hιJ (hDR I)))).congr_fderiv ?_;
     refine (((((hy 2).add (M.hasFDerivAt_of_bilinear hιR (hy 2))).sub
-      (M.hasFDerivAt_of_bilinear hιJ (hy 3))).add (hrefR 2)).sub (hrefJ 3)).congr_fderiv ?_
-    refine ContinuousLinearMap.ext fun p ↦ ?_
-    simp [hM, sobolevGaugeDirection_apply_two hs']
-    abel
-  · simp only [Fin.reduceFinMk, smulCoord_three hs']
+      (M.hasFDerivAt_of_bilinear hιJ (hy 3))).add (hrefR 2)).sub (hrefJ 3)).congr_fderiv ?_;
     refine (((((hy 3).add (M.hasFDerivAt_of_bilinear hιJ (hy 2))).add
-      (M.hasFDerivAt_of_bilinear hιR (hy 3))).add (hrefJ 2)).add (hrefR 3)).congr_fderiv ?_
+      (M.hasFDerivAt_of_bilinear hιR (hy 3))).add (hrefJ 2)).add (hrefR 3)).congr_fderiv ?_]
+  -- It remains to identify each assembled derivative with the claimed one.
+  all_goals
     refine ContinuousLinearMap.ext fun p ↦ ?_
-    simp [hM, sobolevGaugeDirection_apply_three hs']
+    simp only [Fin.isValue, hM, ContinuousLinearMap.coe_restrictScalars', Function.comp_apply,
+      AddChar.map_zero_eq_one, reSubOne_one, imPart_one, map_zero, zero_apply, add_zero, zero_add,
+      sub_zero, sub_apply, add_apply, neg_add_rev, ContinuousLinearMap.zero_comp,
+      ContinuousLinearMap.comp_zero, ContinuousLinearMap.comp_add, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', ContinuousLinearMap.proj_apply,
+      ContinuousLinearMap.precompL_apply, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
+      Submodule.coe_subtypeL, Submodule.subtype_apply, sobolevGaugeDirection_apply_zero,
+      sobolevGaugeDirection_apply_one, sobolevGaugeDirection_apply_two hs',
+      sobolevGaugeDirection_apply_three hs']
     abel
 
 /-- **`sobolevGaugeDirection` is the infinitesimal gauge action.** For a continuous field `x` of
