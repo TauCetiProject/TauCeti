@@ -90,27 +90,6 @@ variable {Y E : Type} [TopologicalSpace Y] [LocallyCompactSpace Y] [T2Space Y]
 include hR hbc
 
 omit [ContinuousConstSMul Γ Y] in
-include hcont hinj in
-/-- The orbit map of the affine action on the family of tori is a covering map, when `Γ` acts on
-the base freely, properly discontinuously and continuously. -/
-private theorem isCoveringMap_quotientMk_torusFamilyAffineMulAction :
-    letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
-    IsCoveringMap (Quotient.mk (MulAction.orbitRel Γ (AddAction.orbitRel.Quotient Λ (Y × E)))) := by
-  let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
-  have := continuousConstVAdd_periodAddAction P hcont
-  have := properlyDiscontinuousVAdd_periodAddAction P hcont hinj
-  have : T2Space (AddAction.orbitRel.Quotient Λ (Y × E)) :=
-    t2Space_of_properlyDiscontinuousVAdd_of_t2Space
-  have : LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (Y × E)) :=
-    AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
-  have := properlyDiscontinuousSMul_torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
-  have := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul hcont hR hbc
-  have := isCancelSMul_torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
-  exact isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul.isCoveringMap
-
-omit [ContinuousConstSMul Γ Y] in
 /-- The monodromy in the total space, with the end loop moved back by the action. Let `H'` be a
 free homotopy of loops in `X` from the loop `γ₀` over `y₀` to a loop over `g • y₀` whose image in
 `X/Γ` is that of the loop `γ₁` over `y₀`. Then the marking of `γ₁` is `ρ g⁻¹` applied to the
@@ -130,8 +109,8 @@ private theorem torusFamilyMarking_loopClass_of_homotopy_of_mk_eq {g : Γ} {y₀
       ρ g⁻¹ (torusFamilyMarking P hcont hinj y₀ (H₁AddEquivHomology _ (loopClass γ₀))) := by
   let _ := periodAddAction P
   let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
-  have covX := isCoveringMap_quotientMk_torusFamilyAffineMulAction P hcont hinj R hone hmul ρ hP b
-    hb hbmul hR hbc
+  have covX := (isQuotientCoveringMap_quotientMk_torusFamilyAffineMulAction P hcont hinj R hone
+    hmul ρ hP b hb hbmul hR hbc).isCoveringMap
   let γ₁' : Path (⟨H' (0, 1), htop 0⟩ : {z | torusFamilyProjection P z = g • y₀})
       ⟨H' (0, 1), htop 0⟩ :=
     { toFun t := ⟨H' (t, 1), htop t⟩
@@ -210,8 +189,8 @@ theorem torusFamilyMarking_loopClass_of_orbitRelQuotient_homotopy {y₀ : Y}
   let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
   have hqY := isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul (G := Γ) (E := Y)
   -- Lift `H` through the orbit map `X → X/Γ` to a free homotopy of loops starting at `γ₀`.
-  obtain ⟨H', hH', hbot, hloop⟩ := (isCoveringMap_quotientMk_torusFamilyAffineMulAction P hcont
-    hinj R hone hmul ρ hP b hb hbmul hR hbc).exists_lift_freeHomotopy H hH
+  obtain ⟨H', hH', hbot, hloop⟩ := (isQuotientCoveringMap_quotientMk_torusFamilyAffineMulAction P
+    hcont hinj R hone hmul ρ hP b hb hbmul hR hbc).isCoveringMap.exists_lift_freeHomotopy H hH
     ⟨fun t ↦ (γ₀ t : AddAction.orbitRel.Quotient Λ (Y × E)), continuous_subtypeVal.comp
       γ₀.continuous⟩ h₀ (congrArg Subtype.val (γ₀.source.trans γ₀.target.symm))
   replace hH' : ∀ t s, Quotient.mk _ (H' (t, s)) = H (t, s) := fun t s ↦ congr_fun hH' (t, s)
