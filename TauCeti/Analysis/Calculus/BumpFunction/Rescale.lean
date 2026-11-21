@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.FDerivApply
-import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Integral.Dilation
 
 /-!
 # Rescaling smooth bumps
@@ -126,16 +126,10 @@ theorem lintegral_eNorm_mul_eNorm_fderiv_normed_apply_eq [MeasurableSpace E] [Bo
     simp only [w, eNorm_smul]
     ring
   simp_rw [hpt]
-  rw [lintegral_const_mul' _ _ eNorm_ne_top]
-  -- Change variables `s = c • t`.
-  have hmap : Measure.map (fun t : E ↦ c • t) μ = ENNReal.ofReal |(c ^ n)⁻¹| • μ :=
-    Measure.map_addHaar_smul μ hc.ne'
-  have hmeas : Measurable w :=
-    measurable_eNorm.mul
-      ((ψ.contDiff_normed (n := 1)).continuous_fderiv_apply_const one_ne_zero _).eNorm.measurable
   have hone : ‖c ^ n‖ₑ * ENNReal.ofReal |(c ^ n)⁻¹| = 1 := by
     simp [Real.eNorm_eq_ofReal_abs, ENNReal.mul_inv_cancel, hc.ne']
-  rw [← lintegral_map hmeas (measurable_const_smul c), hmap, lintegral_smul_measure, smul_eq_mul,
-    ← mul_assoc, hone, one_mul]
+  -- Change variables `s = c • t`.
+  rw [lintegral_const_mul' _ _ eNorm_ne_top, Measure.lintegral_comp_smul μ w hc.ne', ← mul_assoc,
+    hone, one_mul]
 
 end ContDiffBump
