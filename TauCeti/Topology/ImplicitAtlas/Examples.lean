@@ -114,8 +114,8 @@ noncomputable instance (I : Finset A) :
   inferInstanceAs (ChartedSpace (EuclideanSpace ℝ (Fin n)) (⊤ : TopologicalSpace.Opens X))
 
 /-- **The smooth structure of a smooth manifold is a smooth enhancement of its manifold atlas.**
-For an atlas with an empty index set, a smooth enhancement is exactly a smooth structure on `X`.
--/
+For the atlas `ofChartedSpace` with an empty index set, a smooth structure on `X` gives a smooth
+enhancement whose regular loci carry the charts of `X`. -/
 theorem isSmoothEnhancement_ofChartedSpace [IsManifold (𝓡 n) ∞ X] :
     (ofChartedSpace Γ E ρ n X).IsSmoothEnhancement fun _ ↦ n where
   natCast_eq I _ := by simp [Finset.eq_empty_of_isEmpty I]

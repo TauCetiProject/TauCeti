@@ -33,9 +33,10 @@ enhancement of `𝒜`:
 * each `X_I^reg` is a smooth manifold, of the expected dimension `d + m_I` when it is nonempty,
   where `m_I = ∑_(α ∈ I) dim E_α`;
 * `Γ_I` acts on `X_I^reg` by smooth maps, and the Kuranishi maps `s_α` are smooth on `X_I^reg`;
-* near every point `x` of `ψ_IJ⁻¹(X_I^reg)` there is a smooth map `τ : X_J^reg → X_I^reg`
-  extending the footprint map `ψ_IJ` from the zero set `Z_IJ = {s_(J \ I) = 0}` such that
-  `y ↦ (τ y, s_(J \ I) y)` is a local diffeomorphism `X_J^reg → X_I^reg × E_(J \ I)` at `x`.
+* near every point `x` of `ψ_IJ⁻¹(X_I^reg)` there is a map `τ : X_J^reg → X_I^reg`, smooth near
+  `x`, that agrees with the footprint map `ψ_IJ` on the zero set `Z_IJ = {s_(J \ I) = 0}` near
+  `x` and such that `y ↦ (τ y, s_(J \ I) y)` is a local diffeomorphism
+  `X_J^reg → X_I^reg × E_(J \ I)` at `x`.
 
 The last condition is Pardon's requirement that the extra obstruction `s_(J \ I)` be a smooth
 submersion over `ψ_IJ⁻¹(X_I^reg)` and that `ψ_IJ` be a local diffeomorphism on
@@ -103,9 +104,9 @@ structure IsSmoothEnhancement : Prop where
   /-- The Kuranishi maps `s_α` are smooth on `X_I^reg`. -/
   contMDiff_kuranishi : ∀ (I : Finset A) (α : I),
     ContMDiff (𝓡 (N I)) 𝓘(ℝ, E α) ∞ (fun x : 𝒜.regLocus I ↦ 𝒜.kuranishi I α x)
-  /-- Near every point `x` of `ψ_IJ⁻¹(X_I^reg)` the footprint map `ψ_IJ` extends from the zero
-  set `Z_IJ` to a map `τ : X_J^reg → X_I^reg` such that `y ↦ (τ y, s_(J \ I) y)` is a local
-  diffeomorphism at `x`. -/
+  /-- Near every point `x` of `ψ_IJ⁻¹(X_I^reg)` there is a map `τ : X_J^reg → X_I^reg` that
+  agrees with the footprint map `ψ_IJ` on the zero set `Z_IJ` near `x` and such that
+  `y ↦ (τ y, s_(J \ I) y)` is a local diffeomorphism at `x`. -/
   exists_isLocalDiffeomorphAt : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J)
     (x : kuranishiZeroSet 𝒜.kuranishi I J) (hx : 𝒜.footprintMap h x ∈ 𝒜.regLocus I),
     ∃ τ : 𝒜.regLocus J → 𝒜.regLocus I,
