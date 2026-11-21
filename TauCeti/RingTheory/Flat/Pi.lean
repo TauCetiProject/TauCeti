@@ -42,8 +42,8 @@ factors may all fail to be faithfully flat.
   as every maximal ideal stays proper in *some* factor.
 * `Module.FaithfullyFlat.pi_of_faithfullyFlat`: the special case of one distinguished faithfully
   flat factor.
-* `Module.FaithfullyFlat.pi`, `Module.FaithfullyFlat.pi_of_isCoherentRing`: a *nonempty* product
-  of faithfully flat modules is faithfully flat, if the index is finite or the ring is coherent.
+* `Module.FaithfullyFlat.pi`: a flat *nonempty* product of faithfully flat modules is faithfully
+  flat; the product is flat if the index is finite or the ring is coherent.
 
 ## Implementation notes
 
@@ -71,8 +71,8 @@ section Flat
 
 variable [CommSemiring R] [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
 
-/-- **A finite product of flat modules is flat.** The finiteness is essential; see the module
-docstring. -/
+/-- **A finite product of flat modules is flat.** Over a non-coherent ring the finiteness cannot be
+dropped; over a coherent ring see `Module.Flat.pi_of_isCoherentRing`. -/
 instance Flat.pi [Finite ι] [∀ i, Flat R (M i)] : Flat R (∀ i, M i) := by
   have := Fintype.ofFinite ι
   exact Flat.of_linearEquiv (DirectSum.linearEquivFunOnFintype R ι M).symm
@@ -136,16 +136,12 @@ theorem FaithfullyFlat.pi_of_faithfullyFlat [Flat R (∀ i, M i)] (j : ι)
   FaithfullyFlat.pi_of_exists_submodule_ne_top fun _ hm ↦
     ⟨j, FaithfullyFlat.submodule_ne_top hm⟩
 
-/-- A finite **nonempty** product of faithfully flat modules is faithfully flat. The emptiness
-hypothesis is essential; see the module docstring. -/
-instance FaithfullyFlat.pi [Nonempty ι] [Finite ι] [∀ i, FaithfullyFlat R (M i)] :
+/-- A flat **nonempty** product of faithfully flat modules is faithfully flat. The product is flat
+when the index is finite (`Module.Flat.pi`) or the ring is coherent
+(`Module.Flat.pi_of_isCoherentRing`). The nonemptiness hypothesis is essential; see the module
+docstring. -/
+instance FaithfullyFlat.pi [Nonempty ι] [∀ i, FaithfullyFlat R (M i)] [Flat R (∀ i, M i)] :
     FaithfullyFlat R (∀ i, M i) :=
-  FaithfullyFlat.pi_of_faithfullyFlat (Classical.arbitrary ι)
-
-/-- Over a coherent ring, a **nonempty** product of faithfully flat modules is faithfully flat,
-for an arbitrary index. The emptiness hypothesis is essential; see the module docstring. -/
-instance FaithfullyFlat.pi_of_isCoherentRing [Nonempty ι] [TauCeti.IsCoherentRing R]
-    [∀ i, FaithfullyFlat R (M i)] : FaithfullyFlat R (∀ i, M i) :=
   FaithfullyFlat.pi_of_faithfullyFlat (Classical.arbitrary ι)
 
 end FaithfullyFlat
