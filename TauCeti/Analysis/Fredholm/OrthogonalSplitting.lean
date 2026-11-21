@@ -54,9 +54,17 @@ complements of the kernel, which move continuously with the solution about which
   values in its kernel, `R - π R` is a right inverse of `T` whenever `R` is, and when `π` projects
   along the `ι`-orthogonal complement of the kernel, a right inverse `Q` with values in that
   complement splits every `e` as `e = π e + Q (T e)`.
-* `ContinuousLinearMap.eq_of_orthogonal_ker_projection` and
-  `ContinuousLinearMap.eq_of_orthogonal_rightInverse`: the projection onto the kernel along its
+* `ContinuousLinearMap.IsOrthogonalKerProjection.eq` and
+  `ContinuousLinearMap.IsOrthogonalRightInverse.eq`: the projection onto the kernel along its
   `ι`-orthogonal complement, and the right inverse with values in that complement, are unique.
+  They are named `ContinuousLinearMap.orthogonalKerProjection ι T` and
+  `ContinuousLinearMap.orthogonalRightInverse ι T`.
+* `ContinuousLinearMap.isOrthogonalKerProjection_orthogonalKerProjection` and
+  `ContinuousLinearMap.IsFredholm.isOrthogonalRightInverse_orthogonalRightInverse`: they exist
+  when the kernel is finite-dimensional, respectively when `T` is Fredholm and onto.
+* `ContinuousLinearMap.IsFredholm.continuousAt_orthogonalKerProjection` and
+  `ContinuousLinearMap.IsFredholm.continuousAt_orthogonalRightInverse`: they are continuous in `T`
+  at every Fredholm operator that is onto.
 * `ContinuousLinearMap.IsFredholm.exists_continuousOn_orthogonal_ker_projection`: continuous
   projections onto the kernels along their `ι`-orthogonal complements, at the parameters of
   constant nullity.
@@ -116,10 +124,25 @@ theorem apply_add_apply_apply_eq_self {H : Type*} [RCLike 𝕜] [AddCommGroup E]
   have : d = 0 := hι (by simpa using hdd)
   exact (sub_eq_zero.1 (by simpa only [d, sub_sub] using this)).symm
 
-section Uniqueness
+section Orthogonal
 
 variable {H : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E] [AddCommGroup F] [Module 𝕜 F]
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] {ι : E →L[𝕜] H} {T : E →L[𝕜] F}
+
+/-- `π` is the projection onto the kernel of `T` along its `ι`-orthogonal complement: it takes
+values in the kernel, and `ι (e - π e)` is orthogonal to `ι k` for every `k` in the kernel. -/
+structure IsOrthogonalKerProjection (ι : E →L[𝕜] H) (T : E →L[𝕜] F) (π : E →L[𝕜] E) : Prop where
+  /-- The projection takes values in the kernel. -/
+  mem_ker : ∀ e, π e ∈ T.ker
+  /-- The projection is along the `ι`-orthogonal complement of the kernel. -/
+  inner_sub_eq_zero : ∀ e, ∀ k ∈ T.ker, ⟪ι (e - π e), ι k⟫_𝕜 = 0
+
+/-- `Q` is a right inverse of `T` whose values are `ι`-orthogonal to the kernel of `T`. -/
+structure IsOrthogonalRightInverse (ι : E →L[𝕜] H) (T : E →L[𝕜] F) (Q : F →L[𝕜] E) : Prop where
+  /-- `Q` is a right inverse of `T`. -/
+  rightInverse : RightInverse Q T
+  /-- The values of `Q` are `ι`-orthogonal to the kernel. -/
+  inner_eq_zero : ∀ y, ∀ k ∈ T.ker, ⟪ι (Q y), ι k⟫_𝕜 = 0
 
 /-- An element of the kernel of `T` whose image under an injective `ι` is orthogonal to `ι` of the
 kernel vanishes. -/
@@ -128,30 +151,90 @@ private theorem eq_zero_of_mem_ker_of_forall_inner_eq_zero (hι : Injective ι) 
   hι (by simpa using horth d hd)
 
 /-- **Uniqueness of the orthogonal kernel projection.** For an injective `ι` into an inner product
-space, two operators with values in the kernel of `T` that project along the `ι`-orthogonal
-complement of the kernel agree. -/
-theorem eq_of_orthogonal_ker_projection (hι : Injective ι) {π π' : E →L[𝕜] E}
-    (hmem : ∀ e, π e ∈ T.ker) (horth : ∀ e, ∀ k ∈ T.ker, ⟪ι (e - π e), ι k⟫_𝕜 = 0)
-    (hmem' : ∀ e, π' e ∈ T.ker) (horth' : ∀ e, ∀ k ∈ T.ker, ⟪ι (e - π' e), ι k⟫_𝕜 = 0) :
-    π = π' := by
+space, two projections onto the kernel of `T` along its `ι`-orthogonal complement agree. -/
+theorem IsOrthogonalKerProjection.eq (hι : Injective ι) {π π' : E →L[𝕜] E}
+    (h : IsOrthogonalKerProjection ι T π) (h' : IsOrthogonalKerProjection ι T π') : π = π' := by
   ext e
   refine sub_eq_zero.1 (eq_zero_of_mem_ker_of_forall_inner_eq_zero hι
-    (T.ker.sub_mem (hmem e) (hmem' e)) fun k hk ↦ ?_)
-  have h : π e - π' e = (e - π' e) - (e - π e) := by abel
-  rw [h, map_sub, inner_sub_left, horth' e k hk, horth e k hk, sub_zero]
+    (T.ker.sub_mem (h.mem_ker e) (h'.mem_ker e)) fun k hk ↦ ?_)
+  have hd : π e - π' e = (e - π' e) - (e - π e) := by abel
+  rw [hd, map_sub, inner_sub_left, h'.inner_sub_eq_zero e k hk, h.inner_sub_eq_zero e k hk,
+    sub_zero]
+
+/-- The orthogonal kernel projection fixes the kernel, for an injective `ι`. -/
+theorem IsOrthogonalKerProjection.apply_of_mem_ker (hι : Injective ι) {π : E →L[𝕜] E}
+    (h : IsOrthogonalKerProjection ι T π) {k : E} (hk : k ∈ T.ker) : π k = k :=
+  (sub_eq_zero.1 (eq_zero_of_mem_ker_of_forall_inner_eq_zero hι
+    (T.ker.sub_mem hk (h.mem_ker k)) (h.inner_sub_eq_zero k))).symm
 
 /-- **Uniqueness of the orthogonal right inverse.** For an injective `ι` into an inner product
 space, two right inverses of `T` whose values are `ι`-orthogonal to the kernel of `T` agree. -/
-theorem eq_of_orthogonal_rightInverse (hι : Injective ι) {Q Q' : F →L[𝕜] E}
-    (hQ : RightInverse Q T) (hQorth : ∀ y, ∀ k ∈ T.ker, ⟪ι (Q y), ι k⟫_𝕜 = 0)
-    (hQ' : RightInverse Q' T) (hQorth' : ∀ y, ∀ k ∈ T.ker, ⟪ι (Q' y), ι k⟫_𝕜 = 0) :
-    Q = Q' := by
+theorem IsOrthogonalRightInverse.eq (hι : Injective ι) {Q Q' : F →L[𝕜] E}
+    (h : IsOrthogonalRightInverse ι T Q) (h' : IsOrthogonalRightInverse ι T Q') : Q = Q' := by
   ext y
   refine sub_eq_zero.1 (eq_zero_of_mem_ker_of_forall_inner_eq_zero (T := T) hι
-    (LinearMap.mem_ker.2 (by simp [hQ y, hQ' y])) fun k hk ↦ ?_)
-  rw [map_sub, inner_sub_left, hQorth y k hk, hQorth' y k hk, sub_zero]
+    (LinearMap.mem_ker.2 (by simp [h.rightInverse y, h'.rightInverse y])) fun k hk ↦ ?_)
+  rw [map_sub, inner_sub_left, h.inner_eq_zero y k hk, h'.inner_eq_zero y k hk, sub_zero]
 
-end Uniqueness
+/-- **The orthogonal splitting.** For an injective `ι`, if `π` is the projection onto the kernel
+of `T` along its `ι`-orthogonal complement and `Q` is a right inverse of `T` with values in that
+complement, then every `e` splits as `e = π e + Q (T e)`. -/
+theorem IsOrthogonalKerProjection.apply_add_apply_apply_eq_self (hι : Injective ι)
+    {π : E →L[𝕜] E} {Q : F →L[𝕜] E} (hπ : IsOrthogonalKerProjection ι T π)
+    (hQ : IsOrthogonalRightInverse ι T Q) (e : E) : π e + Q (T e) = e :=
+  ContinuousLinearMap.apply_add_apply_apply_eq_self hι hπ.mem_ker hπ.inner_sub_eq_zero
+    hQ.rightInverse hQ.inner_eq_zero e
+
+open Classical in
+/-- **The orthogonal kernel projection** of `T` for `ι`: the projection onto the kernel of `T`
+along its `ι`-orthogonal complement. It is unique for an injective `ι`
+(`ContinuousLinearMap.IsOrthogonalKerProjection.eq`) and exists when the kernel is
+finite-dimensional
+(`ContinuousLinearMap.isOrthogonalKerProjection_orthogonalKerProjection`); it is `0` when no
+such projection exists. -/
+noncomputable def orthogonalKerProjection (ι : E →L[𝕜] H) (T : E →L[𝕜] F) : E →L[𝕜] E :=
+  if h : ∃ π, IsOrthogonalKerProjection ι T π then h.choose else 0
+
+open Classical in
+/-- **The orthogonal right inverse** of `T` for `ι`: the right inverse of `T` whose values are
+`ι`-orthogonal to the kernel of `T`. It is unique for an injective `ι`
+(`ContinuousLinearMap.IsOrthogonalRightInverse.eq`) and exists when `T` is Fredholm and onto
+(`ContinuousLinearMap.IsFredholm.isOrthogonalRightInverse_orthogonalRightInverse`); it is `0`
+when no such right inverse exists. -/
+noncomputable def orthogonalRightInverse (ι : E →L[𝕜] H) (T : E →L[𝕜] F) : F →L[𝕜] E :=
+  if h : ∃ Q, IsOrthogonalRightInverse ι T Q then h.choose else 0
+
+/-- Whenever a projection onto the kernel along its `ι`-orthogonal complement exists,
+`ContinuousLinearMap.orthogonalKerProjection ι T` is one. -/
+theorem IsOrthogonalKerProjection.isOrthogonalKerProjection_orthogonalKerProjection
+    {π : E →L[𝕜] E} (h : IsOrthogonalKerProjection ι T π) :
+    IsOrthogonalKerProjection ι T (orthogonalKerProjection ι T) := by
+  have he : ∃ π, IsOrthogonalKerProjection ι T π := ⟨π, h⟩
+  rw [orthogonalKerProjection, dite_eq_left_of_eq_true (eq_true he)]
+  exact he.choose_spec
+
+/-- Whenever a right inverse with values `ι`-orthogonal to the kernel exists,
+`ContinuousLinearMap.orthogonalRightInverse ι T` is one. -/
+theorem IsOrthogonalRightInverse.isOrthogonalRightInverse_orthogonalRightInverse
+    {Q : F →L[𝕜] E} (h : IsOrthogonalRightInverse ι T Q) :
+    IsOrthogonalRightInverse ι T (orthogonalRightInverse ι T) := by
+  have he : ∃ Q, IsOrthogonalRightInverse ι T Q := ⟨Q, h⟩
+  rw [orthogonalRightInverse, dite_eq_left_of_eq_true (eq_true he)]
+  exact he.choose_spec
+
+/-- For an injective `ι`, a projection onto the kernel of `T` along its `ι`-orthogonal complement
+is `ContinuousLinearMap.orthogonalKerProjection ι T`. -/
+theorem IsOrthogonalKerProjection.eq_orthogonalKerProjection (hι : Injective ι) {π : E →L[𝕜] E}
+    (h : IsOrthogonalKerProjection ι T π) : π = orthogonalKerProjection ι T :=
+  h.eq hι h.isOrthogonalKerProjection_orthogonalKerProjection
+
+/-- For an injective `ι`, a right inverse of `T` with values `ι`-orthogonal to the kernel is
+`ContinuousLinearMap.orthogonalRightInverse ι T`. -/
+theorem IsOrthogonalRightInverse.eq_orthogonalRightInverse (hι : Injective ι) {Q : F →L[𝕜] E}
+    (h : IsOrthogonalRightInverse ι T Q) : Q = orthogonalRightInverse ι T :=
+  h.eq hι h.isOrthogonalRightInverse_orthogonalRightInverse
+
+end Orthogonal
 
 end SingleOperator
 
@@ -313,6 +396,76 @@ theorem IsFredholm.exists_continuousOn_orthogonal_rightInverse (ι : E →L[𝕜
   exact hR'.sub ((hπ.mono inter_subset_left).clm_comp hR')
 
 end Family
+
+section OrthogonalOperators
+
+variable {𝕜 E F H : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H] {ι : E →L[𝕜] H}
+
+omit [CompleteSpace E] [CompleteSpace F] in
+/-- **Existence of the orthogonal kernel projection.** For an injective `ι` into a Hilbert space and
+an operator `T` with finite-dimensional kernel, `ContinuousLinearMap.orthogonalKerProjection ι T`
+is the projection onto the kernel of `T` along its `ι`-orthogonal complement. -/
+theorem isOrthogonalKerProjection_orthogonalKerProjection (hι : Injective ι) (T : E →L[𝕜] F)
+    [FiniteDimensional 𝕜 T.ker] :
+    IsOrthogonalKerProjection ι T (orthogonalKerProjection ι T) := by
+  set κ := T.ker.subtypeL ∘L (euclideanEquiv T.ker).toContinuousLinearMap
+  have hG : IsUnit (adjoint (ι ∘L κ) ∘L (ι ∘L κ)) :=
+    (isUnit_adjoint_comp_self_iff _).2
+      (hι.comp (Subtype.val_injective.comp (euclideanEquiv T.ker).injective))
+  refine IsOrthogonalKerProjection.isOrthogonalKerProjection_orthogonalKerProjection
+    (π := gramProjection ι κ) ⟨fun e ↦ ?_, fun e k hk ↦ ?_⟩
+  · obtain ⟨v, hv⟩ := gramProjection_apply_mem_range ι κ e
+    rw [← hv]
+    exact (euclideanEquiv T.ker v).property
+  · have hkκ : k = κ ((euclideanEquiv T.ker).symm ⟨k, hk⟩) := by simp [κ]
+    rw [hkκ]
+    exact gramProjection_inner_eq_zero hG e _
+
+/-- Near a Fredholm operator `T₀` that is onto, the orthogonal kernel projections and right
+inverses exist and depend continuously on the operator. -/
+private theorem IsFredholm.exists_continuousOn_orthogonalKerProjection (hι : Injective ι)
+    {T₀ : E →L[𝕜] F} (hT₀ : IsFredholm T₀) (hsurj : Surjective T₀) :
+    ∃ U : Set (E →L[𝕜] F), IsOpen U ∧ T₀ ∈ U ∧ ContinuousOn (orthogonalKerProjection ι) U ∧
+      ContinuousOn (orthogonalRightInverse ι) U ∧
+      ∀ T ∈ U, IsOrthogonalRightInverse ι T (orthogonalRightInverse ι T) := by
+  obtain ⟨U, -, hU, hT₀U, π, Q, hπ, hQ, h⟩ := hT₀.exists_continuousOn_orthogonal_rightInverse
+    (T := id) ι hι hsurj continuousOn_id isOpen_univ (mem_univ T₀)
+  have hspec (T : E →L[𝕜] F) (hT : T ∈ U) :
+      IsOrthogonalKerProjection ι T (π T) ∧ IsOrthogonalRightInverse ι T (Q T) := by
+    obtain ⟨-, hmem, -, horth, hQT, hQorth, -⟩ := h T hT
+    exact ⟨⟨hmem, horth⟩, ⟨hQT, hQorth⟩⟩
+  exact ⟨U, hU, hT₀U,
+    hπ.congr fun T hT ↦ ((hspec T hT).1.eq_orthogonalKerProjection hι).symm,
+    hQ.congr fun T hT ↦ ((hspec T hT).2.eq_orthogonalRightInverse hι).symm,
+    fun T hT ↦ (hspec T hT).2.isOrthogonalRightInverse_orthogonalRightInverse⟩
+
+/-- **Existence of the orthogonal right inverse.** For an injective `ι` into a Hilbert space and a
+Fredholm operator `T` that is onto, `ContinuousLinearMap.orthogonalRightInverse ι T` is a right
+inverse of `T` whose values are `ι`-orthogonal to the kernel of `T`. -/
+theorem IsFredholm.isOrthogonalRightInverse_orthogonalRightInverse (hι : Injective ι)
+    {T : E →L[𝕜] F} (hT : IsFredholm T) (hsurj : Surjective T) :
+    IsOrthogonalRightInverse ι T (orthogonalRightInverse ι T) := by
+  obtain ⟨U, -, hTU, -, -, h⟩ := hT.exists_continuousOn_orthogonalKerProjection hι hsurj
+  exact h T hTU
+
+/-- **The orthogonal kernel projection moves continuously** near a Fredholm operator `T` that is
+onto: `ContinuousLinearMap.orthogonalKerProjection ι` is continuous at `T` in operator norm. -/
+theorem IsFredholm.continuousAt_orthogonalKerProjection (hι : Injective ι) {T : E →L[𝕜] F}
+    (hT : IsFredholm T) (hsurj : Surjective T) : ContinuousAt (orthogonalKerProjection ι) T := by
+  obtain ⟨U, hU, hTU, h, -⟩ := hT.exists_continuousOn_orthogonalKerProjection hι hsurj
+  exact h.continuousAt (hU.mem_nhds hTU)
+
+/-- **The orthogonal right inverse moves continuously** near a Fredholm operator `T` that is
+onto: `ContinuousLinearMap.orthogonalRightInverse ι` is continuous at `T` in operator norm. -/
+theorem IsFredholm.continuousAt_orthogonalRightInverse (hι : Injective ι) {T : E →L[𝕜] F}
+    (hT : IsFredholm T) (hsurj : Surjective T) : ContinuousAt (orthogonalRightInverse ι) T := by
+  obtain ⟨U, hU, hTU, -, h, -⟩ := hT.exists_continuousOn_orthogonalKerProjection hι hsurj
+  exact h.continuousAt (hU.mem_nhds hTU)
+
+end OrthogonalOperators
 
 section RealFamily
 

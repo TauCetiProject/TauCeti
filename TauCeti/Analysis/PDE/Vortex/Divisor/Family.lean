@@ -5,18 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Fredholm.OrthogonalSplitting
 public import TauCeti.Analysis.PDE.Vortex.Existence
 public import TauCeti.Analysis.PDE.Vortex.SobolevRealization
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
-import TauCeti.Analysis.PDE.Regularity.PlanarGradientEstimate
+import TauCeti.Analysis.Fredholm.Criteria
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.PDE.Vortex.Fredholm
 import TauCeti.Analysis.PDE.Vortex.Reduced.Continuity
-import TauCeti.Analysis.PDE.Vortex.ScalarEquation
-import TauCeti.Analysis.Polynomial.AtInfinity
 import TauCeti.Topology.Algebra.Polynomial.Basic
 import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 
 /-!
 # Kernel projections and right inverses along the family of plane vortices
@@ -44,21 +42,22 @@ Along a family of polynomials of a fixed positive degree whose coefficients depe
 on a parameter, the reduced solutions and their derivatives move uniformly on the plane, and so
 do the vortices (`TauCeti.Vortex.tendstoUniformly_polynomialVortex`); hence their `L∞` classes
 move continuously (`TauCeti.Vortex.continuous_polynomialVortexLp`). Composed with the continuity
-of the orthogonal kernel projections and right inverses at onto coefficients
-(`TauCeti.Vortex.continuousAt_sobolevGaugeFixedKerProjection`,
-`TauCeti.Vortex.continuousAt_sobolevGaugeFixedRightInverse`), this shows that the projection of
-`H¹(ℂ)⁴` onto the kernel of `L_P` along its `L²`-orthogonal complement, and the right inverse of
-`L_P` with values in that complement, depend continuously on the vortex, in operator norm:
+of the orthogonal kernel projections and right inverses at Fredholm operators that are onto
+(`ContinuousLinearMap.IsFredholm.continuousAt_orthogonalKerProjection`,
+`ContinuousLinearMap.IsFredholm.continuousAt_orthogonalRightInverse`), this shows that the
+projection of `H¹(ℂ)⁴` onto the kernel of `L_P` along its `L²`-orthogonal complement, and the
+right inverse of `L_P` with values in that complement, depend continuously on the vortex, in
+operator norm:
 
-* `TauCeti.Vortex.continuous_sobolevGaugeFixedKerProjection_polynomialVortexLp`,
-* `TauCeti.Vortex.continuous_sobolevGaugeFixedRightInverse_polynomialVortexLp`.
+* `TauCeti.Vortex.continuous_orthogonalKerProjection_sobolevGaugeFixedOperator_polynomialVortexLp`,
+* `TauCeti.Vortex.continuous_orthogonalRightInverse_sobolevGaugeFixedOperator_polynomialVortexLp`.
 
 In particular both are bounded uniformly over every compact set of coefficients, including the
 coefficients of divisors with colliding zeros
-(`TauCeti.Vortex.exists_forall_norm_sobolevGaugeFixedKerProjection_le_of_isCompact`,
-`TauCeti.Vortex.exists_forall_norm_sobolevGaugeFixedRightInverse_le_of_isCompact`). No bound
-uniform over all of `Sym^m ℂ`, which is not compact, is asserted. Smooth dependence on the
-coefficients is not treated here.
+(`TauCeti.Vortex.exists_norm_orthogonalKerProjection_sobolevGaugeFixedOperator_le_of_isCompact`,
+`TauCeti.Vortex.exists_norm_orthogonalRightInverse_sobolevGaugeFixedOperator_le_of_isCompact`).
+No bound uniform over all of `Sym^m ℂ`, which is not compact, is asserted. Smooth dependence on
+the coefficients is not treated here.
 
 ## Main definitions
 
@@ -73,13 +72,13 @@ coefficients is not treated here.
 * `TauCeti.Vortex.sobolevGaugeFixedOperator_polynomialVortexLp_surjective`,
   `TauCeti.Vortex.finiteDimensional_ker_sobolevGaugeFixedOperator_polynomialVortexLp`: at a monic
   polynomial of positive degree the realization is onto with a finite-dimensional kernel.
-* `TauCeti.Vortex.continuous_sobolevGaugeFixedKerProjection_polynomialVortexLp`,
-  `TauCeti.Vortex.continuous_sobolevGaugeFixedRightInverse_polynomialVortexLp`: continuity of the
-  orthogonal kernel projections and right inverses along continuous families of monic polynomials
-  of a fixed positive degree.
-* `TauCeti.Vortex.exists_forall_norm_sobolevGaugeFixedKerProjection_le_of_isCompact`,
-  `TauCeti.Vortex.exists_forall_norm_sobolevGaugeFixedRightInverse_le_of_isCompact`: their bounds
-  over a compact set of coefficients.
+* `TauCeti.Vortex.continuous_orthogonalKerProjection_sobolevGaugeFixedOperator_polynomialVortexLp`,
+  `TauCeti.Vortex.continuous_orthogonalRightInverse_sobolevGaugeFixedOperator_polynomialVortexLp`:
+  continuity of the orthogonal kernel projections and right inverses along continuous families of
+  monic polynomials of a fixed positive degree.
+* `TauCeti.Vortex.exists_norm_orthogonalKerProjection_sobolevGaugeFixedOperator_le_of_isCompact`,
+  `TauCeti.Vortex.exists_norm_orthogonalRightInverse_sobolevGaugeFixedOperator_le_of_isCompact`:
+  their bounds over a compact set of coefficients.
 
 ## References
 
@@ -147,50 +146,6 @@ theorem tendsto_sectionValue_polynomialVortex (hP : P.Monic) (hm : 0 < P.natDegr
   (equation_amplitudeField_reducedSolution_eq_zero_and_tendsto_sectionValue hP hm).2
 
 /-! ### Boundedness -/
-
-/-- The reduced solution is bounded, since it is continuous and vanishes at infinity. -/
-private theorem exists_abs_reducedSolution_le (P : Polynomial ℂ) :
-    ∃ B, ∀ z, |reducedSolution P z| ≤ B := by
-  let f : ZeroAtInftyContinuousMap ℂ ℝ :=
-    ⟨⟨reducedSolution P, (contDiff_reducedSolution P).continuous⟩,
-      tendsto_reducedSolution_cocompact P⟩
-  exact ⟨‖f.toBCF‖, fun z ↦ f.toBCF.norm_coe_le_norm z⟩
-
-/-- The derivative of the reduced solution is bounded, by the interior gradient estimate. -/
-private theorem exists_norm_fderiv_reducedSolution_le (P : Polynomial ℂ) :
-    ∃ D, ∀ z, ‖fderiv ℝ (reducedSolution P) z‖ ≤ D := by
-  rcases Nat.eq_zero_or_pos P.natDegree with hm | hm
-  · exact ⟨0, fun z ↦ by simp [reducedSolution_eq_zero_of_natDegree_eq_zero hm]⟩
-  obtain ⟨B, hB⟩ := exists_abs_reducedSolution_le P
-  obtain ⟨G, hG⟩ := P.exists_forall_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq_le
-  have hG' (z : ℂ) : 2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 ≤ 2 * G := by
-    rw [mul_div_assoc]
-    exact mul_le_mul_of_nonneg_left (hG z) zero_le_two
-  have hG0 : 0 ≤ G := le_trans (by positivity) (hG 0)
-  have hK (y : ℂ) : |Δ (reducedSolution P) y| ≤ Real.exp (2 * B) / 8 + 2 * G + 1 / 8 := by
-    obtain ⟨h₁, h₂⟩ := laplacian_reducedSolution_bounds hm hB hG' y
-    rw [abs_le]
-    constructor <;> linarith [Real.exp_pos (2 * B)]
-  refine ⟨8 * B / 1 + 340 * (Real.exp (2 * B) / 8 + 2 * G + 1 / 8) * 1, fun z ↦ ?_⟩
-  exact norm_fderiv_le_of_abs_le_of_abs_laplacian_le
-    ((contDiff_reducedSolution P).of_le (by simp)) one_pos (fun y _ ↦ hB y) fun y _ ↦ hK y
-
-/-- The derivative of the background amplitude of a polynomial is bounded on unit vectors. -/
-private theorem exists_abs_fderiv_backgroundAmplitude_apply_le (P : Polynomial ℂ) :
-    ∃ C, ∀ z v, ‖v‖ = 1 → |fderiv ℝ (backgroundAmplitude P.eval) z v| ≤ C := by
-  obtain ⟨C, hC0, hC⟩ :=
-    Polynomial.exists_norm_eval_le_mul_one_add_norm_eval (Polynomial.degree_derivative_le (p := P))
-  refine ⟨2 * C, fun z v hv ↦ ?_⟩
-  rw [fderiv_backgroundAmplitude_apply (P.differentiable z), Polynomial.deriv, abs_neg, abs_mul,
-    abs_inv, abs_of_pos (by positivity : (0 : ℝ) < 1 + ‖P.eval z‖ ^ 2)]
-  have hin : |⟪P.eval z, v * P.derivative.eval z⟫_ℝ| ≤ ‖P.eval z‖ * (C * (1 + ‖P.eval z‖)) := by
-    refine (abs_real_inner_le_norm _ _).trans ?_
-    rw [norm_mul, hv, one_mul]
-    exact mul_le_mul_of_nonneg_left (hC z) (norm_nonneg _)
-  rw [inv_mul_le_iff₀ (by positivity)]
-  refine hin.trans ?_
-  have := norm_nonneg (P.eval z)
-  nlinarith [sq_nonneg (‖P.eval z‖ - 1), mul_nonneg hC0 (sq_nonneg (‖P.eval z‖ - 1))]
 
 /-- The connection coordinates of the vortex of a polynomial are bounded. -/
 private theorem exists_abs_polynomialVortex_connection_le (P : Polynomial ℂ) :
@@ -345,29 +300,35 @@ include hm hmonic hdeg hcoeff
 polynomials of a fixed positive degree whose coefficients depend continuously on a parameter, the
 projection of `H¹(ℂ)⁴` onto the kernel of `L_P : H¹ → L²` along its `L²`-orthogonal complement
 depends continuously on the parameter, in operator norm. -/
-theorem continuous_sobolevGaugeFixedKerProjection_polynomialVortexLp :
-    Continuous fun x ↦ sobolevGaugeFixedKerProjection (polynomialVortexLp (P x)) :=
+theorem continuous_orthogonalKerProjection_sobolevGaugeFixedOperator_polynomialVortexLp :
+    Continuous fun x ↦ ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues
+      (sobolevGaugeFixedOperator (polynomialVortexLp (P x))) :=
   continuous_iff_continuousAt.2 fun x ↦
     have hx : 0 < (P x).natDegree := (hdeg x).symm ▸ hm
-    (continuousAt_sobolevGaugeFixedKerProjection
-      (sobolevGaugeFixedOperator_polynomialVortexLp_surjective (hmonic x) hx)
-      (finiteDimensional_ker_sobolevGaugeFixedOperator_polynomialVortexLp (hmonic x) hx)).comp
-      (f := fun x ↦ polynomialVortexLp (P x))
-      (continuous_polynomialVortexLp hm hdeg hcoeff).continuousAt
+    have hsurj := sobolevGaugeFixedOperator_polynomialVortexLp_surjective (hmonic x) hx
+    have := finiteDimensional_ker_sobolevGaugeFixedOperator_polynomialVortexLp (hmonic x) hx
+    ((ContinuousLinearMap.IsFredholm.of_surjective hsurj).continuousAt_orthogonalKerProjection
+      sobolevFieldValues_injective hsurj).comp
+      (f := fun x ↦ sobolevGaugeFixedOperator (polynomialVortexLp (P x)))
+      (continuous_sobolevGaugeFixedOperator.comp
+        (continuous_polynomialVortexLp hm hdeg hcoeff)).continuousAt
 
 /-- **Continuity of the right inverses along the vortex family.** For a family of monic
 polynomials of a fixed positive degree whose coefficients depend continuously on a parameter, the
 right inverse of `L_P : H¹ → L²` with values `L²`-orthogonal to its kernel depends continuously on
 the parameter, in operator norm. -/
-theorem continuous_sobolevGaugeFixedRightInverse_polynomialVortexLp :
-    Continuous fun x ↦ sobolevGaugeFixedRightInverse (polynomialVortexLp (P x)) :=
+theorem continuous_orthogonalRightInverse_sobolevGaugeFixedOperator_polynomialVortexLp :
+    Continuous fun x ↦ ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues
+      (sobolevGaugeFixedOperator (polynomialVortexLp (P x))) :=
   continuous_iff_continuousAt.2 fun x ↦
     have hx : 0 < (P x).natDegree := (hdeg x).symm ▸ hm
-    (continuousAt_sobolevGaugeFixedRightInverse
-      (sobolevGaugeFixedOperator_polynomialVortexLp_surjective (hmonic x) hx)
-      (finiteDimensional_ker_sobolevGaugeFixedOperator_polynomialVortexLp (hmonic x) hx)).comp
-      (f := fun x ↦ polynomialVortexLp (P x))
-      (continuous_polynomialVortexLp hm hdeg hcoeff).continuousAt
+    have hsurj := sobolevGaugeFixedOperator_polynomialVortexLp_surjective (hmonic x) hx
+    have := finiteDimensional_ker_sobolevGaugeFixedOperator_polynomialVortexLp (hmonic x) hx
+    ((ContinuousLinearMap.IsFredholm.of_surjective hsurj).continuousAt_orthogonalRightInverse
+      sobolevFieldValues_injective hsurj).comp
+      (f := fun x ↦ sobolevGaugeFixedOperator (polynomialVortexLp (P x)))
+      (continuous_sobolevGaugeFixedOperator.comp
+        (continuous_polynomialVortexLp hm hdeg hcoeff)).continuousAt
 
 omit hm hmonic hdeg hcoeff
 
@@ -376,35 +337,31 @@ compact set `K` of coefficient tuples `c ∈ ℂᵐ`, symmetric coordinates on `
 divisors with colliding zeros, the orthogonal kernel projections of `L_P` at the vortices of the
 monic polynomials `P = TauCeti.Polynomial.monicOfCoeff c`, `c ∈ K`, are bounded in operator norm by
 one constant. -/
-theorem exists_forall_norm_sobolevGaugeFixedKerProjection_le_of_isCompact (hm : 0 < m)
-    {K : Set (Fin m → ℂ)} (hK : IsCompact K) :
-    ∃ C, ∀ c ∈ K,
-      ‖sobolevGaugeFixedKerProjection (polynomialVortexLp (Polynomial.monicOfCoeff c))‖ ≤ C := by
-  -- The codomain is given explicitly so that `Continuous.norm` elaborates against the operator
-  -- norm.
-  obtain ⟨C, hC⟩ := (hK.image_of_continuousOn (Continuous.norm
+theorem exists_norm_orthogonalKerProjection_sobolevGaugeFixedOperator_le_of_isCompact
+    (hm : 0 < m) {K : Set (Fin m → ℂ)} (hK : IsCompact K) :
+    ∃ C, ∀ c ∈ K, ‖ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues
+      (sobolevGaugeFixedOperator (polynomialVortexLp (Polynomial.monicOfCoeff c)))‖ ≤ C := by
+  -- The codomain is given explicitly so that its operator norm is found.
+  exact hK.exists_bound_of_continuousOn
     (E := (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2))
-    (continuous_sobolevGaugeFixedKerProjection_polynomialVortexLp hm
+    (continuous_orthogonalKerProjection_sobolevGaugeFixedOperator_polynomialVortexLp hm
       Polynomial.monic_monicOfCoeff Polynomial.natDegree_monicOfCoeff
-      Polynomial.continuous_coeff_monicOfCoeff)).continuousOn).bddAbove
-  exact ⟨C, fun c hc ↦ hC (mem_image_of_mem _ hc)⟩
+      Polynomial.continuous_coeff_monicOfCoeff).continuousOn
 
 /-- **The right inverses are bounded over a compact window of divisors.** For `m ≥ 1` and a
 compact set `K` of coefficient tuples `c ∈ ℂᵐ`, symmetric coordinates on `Sym^m ℂ` that include
 divisors with colliding zeros, the right inverses of `L_P` orthogonal to its kernel at the vortices
 of the monic polynomials `P = TauCeti.Polynomial.monicOfCoeff c`, `c ∈ K`, are bounded in operator
 norm by one constant. -/
-theorem exists_forall_norm_sobolevGaugeFixedRightInverse_le_of_isCompact (hm : 0 < m)
-    {K : Set (Fin m → ℂ)} (hK : IsCompact K) :
-    ∃ C, ∀ c ∈ K,
-      ‖sobolevGaugeFixedRightInverse (polynomialVortexLp (Polynomial.monicOfCoeff c))‖ ≤ C := by
-  -- The codomain is given explicitly so that `Continuous.norm` elaborates against the operator
-  -- norm.
-  obtain ⟨C, hC⟩ := (hK.image_of_continuousOn (Continuous.norm
+theorem exists_norm_orthogonalRightInverse_sobolevGaugeFixedOperator_le_of_isCompact
+    (hm : 0 < m) {K : Set (Fin m → ℂ)} (hK : IsCompact K) :
+    ∃ C, ∀ c ∈ K, ‖ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues
+      (sobolevGaugeFixedOperator (polynomialVortexLp (Polynomial.monicOfCoeff c)))‖ ≤ C := by
+  -- The codomain is given explicitly so that its operator norm is found.
+  exact hK.exists_bound_of_continuousOn
     (E := Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2))
-    (continuous_sobolevGaugeFixedRightInverse_polynomialVortexLp hm
+    (continuous_orthogonalRightInverse_sobolevGaugeFixedOperator_polynomialVortexLp hm
       Polynomial.monic_monicOfCoeff Polynomial.natDegree_monicOfCoeff
-      Polynomial.continuous_coeff_monicOfCoeff)).continuousOn).bddAbove
-  exact ⟨C, fun c hc ↦ hC (mem_image_of_mem _ hc)⟩
+      Polynomial.continuous_coeff_monicOfCoeff).continuousOn
 
 end TauCeti.Vortex

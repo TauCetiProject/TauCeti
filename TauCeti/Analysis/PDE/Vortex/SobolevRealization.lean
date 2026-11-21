@@ -86,17 +86,17 @@ the general statement for Fredholm families,
 `ContinuousLinearMap.IsFredholm.exists_continuousOn_orthogonal_rightInverse`, applied to the
 Lipschitz family `a ↦ L_a` and the inclusion into `L²`.
 
-Both are unique (`ContinuousLinearMap.eq_of_orthogonal_ker_projection`,
-`ContinuousLinearMap.eq_of_orthogonal_rightInverse`), so they can be named at every coefficient
-where `L_a` is onto with a finite-dimensional kernel:
-`TauCeti.Vortex.sobolevGaugeFixedKerProjection a` is the projection onto the kernel of `L_a`
-along its `L²`-orthogonal complement, and `TauCeti.Vortex.sobolevGaugeFixedRightInverse a` is the
-right inverse of `L_a` with values in that complement. They are continuous in `a` at every such
-coefficient (`TauCeti.Vortex.continuousAt_sobolevGaugeFixedKerProjection`,
-`TauCeti.Vortex.continuousAt_sobolevGaugeFixedRightInverse`). Composed with a family of vortex
-coefficients continuous in `L∞`, at which the realization is onto
-(`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective`), they give continuous kernel projections
-and right inverses along that family.
+Both are unique (`ContinuousLinearMap.IsOrthogonalKerProjection.eq`,
+`ContinuousLinearMap.IsOrthogonalRightInverse.eq`): at every coefficient where `L_a` is onto with
+a finite-dimensional kernel they are
+`ContinuousLinearMap.orthogonalKerProjection sobolevFieldValues L_a` and
+`ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues L_a`, which are continuous in `L_a`
+there (`ContinuousLinearMap.IsFredholm.continuousAt_orthogonalKerProjection`,
+`ContinuousLinearMap.IsFredholm.continuousAt_orthogonalRightInverse`). Composed with a family of
+vortex coefficients continuous in `L∞`, at which the realization is onto with a
+finite-dimensional kernel (`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective`,
+`TauCeti.Vortex.finiteDimensional_ker_sobolevGaugeFixedOperator`), they give continuous kernel
+projections and right inverses along that family.
 
 ## References
 
@@ -504,9 +504,11 @@ theorem isClosed_range_sobolevGaugeFixedOperator (hx : ContDiff ℝ 1 x)
 
 /-- **The `L²`-orthogonal kernel projections and right inverses of `L_x : H¹ → L²` move
 continuously with the coefficient.** Let `a₀` be an `L∞` class at which the realization is onto
-with a finite-dimensional kernel, as is expected at a plane vortex; surjectivity there is not
-proved here. Near `a₀` in `L∞`, every realization `L_a` is onto, and there are families of
-operators `π a` on `H¹(ℂ)⁴` and `Q a : L² → H¹(ℂ)⁴`, continuous in `a` for the operator norms,
+with a finite-dimensional kernel; at a plane vortex these hypotheses are supplied by
+`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective` and
+`TauCeti.Vortex.finiteDimensional_ker_sobolevGaugeFixedOperator`. Near `a₀` in `L∞`, every
+realization `L_a` is onto, and there are families of operators `π a` on `H¹(ℂ)⁴` and
+`Q a : L² → H¹(ℂ)⁴`, continuous in `a` for the operator norms,
 such that `π a` is the projection onto the kernel of `L_a` along its `L²`-orthogonal complement,
 `Q a` is a right inverse of `L_a` whose values are `L²`-orthogonal to that kernel, and every `y`
 splits as `y = π a y + Q a (L_a y)`. The `L²` pairing on `H¹(ℂ)⁴` is taken through the inclusion
@@ -535,187 +537,5 @@ theorem exists_continuousOn_orthogonal_rightInverse_sobolevGaugeFixedOperator
     sobolevFieldValues_injective hsurj continuous_sobolevGaugeFixedOperator.continuousOn
       isOpen_univ (Set.mem_univ a₀)
   exact ⟨U, hU⟩
-
-/-! ### The orthogonal kernel projection and right inverse at one coefficient -/
-
-/-- The projection of `H¹(ℂ)⁴` onto the kernel of `L_a : H¹ → L²` along the `L²`-orthogonal
-complement of that kernel. When `L_a` is onto with a finite-dimensional kernel such a projection
-exists and is unique, and this is it (`TauCeti.Vortex.sobolevGaugeFixedKerProjection_mem_ker`,
-`TauCeti.Vortex.inner_sub_sobolevGaugeFixedKerProjection`,
-`TauCeti.Vortex.eq_sobolevGaugeFixedKerProjection`); it is `0` when no such projection exists. -/
-def sobolevGaugeFixedKerProjection (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
-    (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :=
-  open Classical in
-  if h : ∃ π : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2),
-      (∀ y, π y ∈ (sobolevGaugeFixedOperator a).ker) ∧
-        ∀ y, ∀ k ∈ (sobolevGaugeFixedOperator a).ker,
-          ⟪sobolevFieldValues (y - π y), sobolevFieldValues k⟫_ℝ = 0
-  then h.choose else 0
-
-/-- The right inverse of `L_a : H¹ → L²` whose values are `L²`-orthogonal to the kernel of `L_a`.
-When `L_a` is onto with a finite-dimensional kernel such a right inverse exists and is unique, and
-this is it (`TauCeti.Vortex.sobolevGaugeFixedOperator_sobolevGaugeFixedRightInverse`,
-`TauCeti.Vortex.inner_sobolevGaugeFixedRightInverse`,
-`TauCeti.Vortex.eq_sobolevGaugeFixedRightInverse`); it is `0` when no such right inverse
-exists. -/
-def sobolevGaugeFixedRightInverse (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
-    Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :=
-  open Classical in
-  if h : ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2),
-      (∀ f, sobolevGaugeFixedOperator a (Q f) = f) ∧
-        ∀ f, ∀ k ∈ (sobolevGaugeFixedOperator a).ker,
-          ⟪sobolevFieldValues (Q f), sobolevFieldValues k⟫_ℝ = 0
-  then h.choose else 0
-
-/-- The defining properties of `TauCeti.Vortex.sobolevGaugeFixedKerProjection`, whenever some
-operator has them. -/
-private theorem sobolevGaugeFixedKerProjection_spec {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
-    (h : ∃ π : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2),
-      (∀ y, π y ∈ (sobolevGaugeFixedOperator a).ker) ∧
-        ∀ y, ∀ k ∈ (sobolevGaugeFixedOperator a).ker,
-          ⟪sobolevFieldValues (y - π y), sobolevFieldValues k⟫_ℝ = 0) :
-    (∀ y, sobolevGaugeFixedKerProjection a y ∈ (sobolevGaugeFixedOperator a).ker) ∧
-      ∀ y, ∀ k ∈ (sobolevGaugeFixedOperator a).ker,
-        ⟪sobolevFieldValues (y - sobolevGaugeFixedKerProjection a y), sobolevFieldValues k⟫_ℝ =
-          0 := by
-  rw [sobolevGaugeFixedKerProjection, dite_eq_left_of_eq_true (eq_true h)]
-  exact h.choose_spec
-
-/-- The defining properties of `TauCeti.Vortex.sobolevGaugeFixedRightInverse`, whenever some
-operator has them. -/
-private theorem sobolevGaugeFixedRightInverse_spec {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
-    (h : ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2),
-      (∀ f, sobolevGaugeFixedOperator a (Q f) = f) ∧
-        ∀ f, ∀ k ∈ (sobolevGaugeFixedOperator a).ker,
-          ⟪sobolevFieldValues (Q f), sobolevFieldValues k⟫_ℝ = 0) :
-    (∀ f, sobolevGaugeFixedOperator a (sobolevGaugeFixedRightInverse a f) = f) ∧
-      ∀ f, ∀ k ∈ (sobolevGaugeFixedOperator a).ker,
-        ⟪sobolevFieldValues (sobolevGaugeFixedRightInverse a f), sobolevFieldValues k⟫_ℝ = 0 := by
-  rw [sobolevGaugeFixedRightInverse, dite_eq_left_of_eq_true (eq_true h)]
-  exact h.choose_spec
-
-/-- **Uniqueness of the orthogonal kernel projection.** An operator with values in the kernel of
-`L_a` that projects along the `L²`-orthogonal complement of the kernel is
-`TauCeti.Vortex.sobolevGaugeFixedKerProjection a`. -/
-theorem eq_sobolevGaugeFixedKerProjection {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
-    {π : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)}
-    (hmem : ∀ y, π y ∈ (sobolevGaugeFixedOperator a).ker)
-    (horth : ∀ y, ∀ k ∈ (sobolevGaugeFixedOperator a).ker,
-      ⟪sobolevFieldValues (y - π y), sobolevFieldValues k⟫_ℝ = 0) :
-    π = sobolevGaugeFixedKerProjection a :=
-  have h := sobolevGaugeFixedKerProjection_spec ⟨π, hmem, horth⟩
-  ContinuousLinearMap.eq_of_orthogonal_ker_projection sobolevFieldValues_injective hmem horth h.1
-    h.2
-
-/-- **Uniqueness of the orthogonal right inverse.** A right inverse of `L_a` whose values are
-`L²`-orthogonal to the kernel of `L_a` is `TauCeti.Vortex.sobolevGaugeFixedRightInverse a`. -/
-theorem eq_sobolevGaugeFixedRightInverse {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
-    {Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)}
-    (hQ : ∀ f, sobolevGaugeFixedOperator a (Q f) = f)
-    (hQorth : ∀ f, ∀ k ∈ (sobolevGaugeFixedOperator a).ker,
-      ⟪sobolevFieldValues (Q f), sobolevFieldValues k⟫_ℝ = 0) :
-    Q = sobolevGaugeFixedRightInverse a :=
-  have h := sobolevGaugeFixedRightInverse_spec ⟨Q, hQ, hQorth⟩
-  ContinuousLinearMap.eq_of_orthogonal_rightInverse sobolevFieldValues_injective hQ hQorth h.1
-    h.2
-
-section OntoCoefficient
-
-variable {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
-  (hsurj : Function.Surjective (sobolevGaugeFixedOperator a))
-  (hfin : FiniteDimensional ℝ (sobolevGaugeFixedOperator a).ker)
-include hsurj hfin
-
-/-- Where `L_a` is onto with a finite-dimensional kernel, operators with the defining properties
-of the orthogonal kernel projection and right inverse exist. -/
-private theorem exists_orthogonal_ker_projection_and_rightInverse :
-    (∃ π : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2),
-      (∀ y, π y ∈ (sobolevGaugeFixedOperator a).ker) ∧
-        ∀ y, ∀ k ∈ (sobolevGaugeFixedOperator a).ker,
-          ⟪sobolevFieldValues (y - π y), sobolevFieldValues k⟫_ℝ = 0) ∧
-    ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2),
-      (∀ f, sobolevGaugeFixedOperator a (Q f) = f) ∧
-        ∀ f, ∀ k ∈ (sobolevGaugeFixedOperator a).ker,
-          ⟪sobolevFieldValues (Q f), sobolevFieldValues k⟫_ℝ = 0 := by
-  obtain ⟨U, -, haU, π, Q, -, -, h⟩ :=
-    exists_continuousOn_orthogonal_rightInverse_sobolevGaugeFixedOperator hsurj hfin
-  obtain ⟨-, hmem, -, horth, hQ, hQorth, -⟩ := h a haU
-  exact ⟨⟨π a, hmem, horth⟩, Q a, hQ, hQorth⟩
-
-/-- The orthogonal kernel projection takes values in the kernel of `L_a`, when `L_a` is onto with
-a finite-dimensional kernel. -/
-theorem sobolevGaugeFixedKerProjection_mem_ker (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
-    sobolevGaugeFixedKerProjection a y ∈ (sobolevGaugeFixedOperator a).ker :=
-  (sobolevGaugeFixedKerProjection_spec
-    (exists_orthogonal_ker_projection_and_rightInverse hsurj hfin).1).1 y
-
-/-- The orthogonal kernel projection projects along the `L²`-orthogonal complement of the kernel
-of `L_a`, when `L_a` is onto with a finite-dimensional kernel. -/
-theorem inner_sub_sobolevGaugeFixedKerProjection (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)
-    {k : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2} (hk : k ∈ (sobolevGaugeFixedOperator a).ker) :
-    ⟪sobolevFieldValues (y - sobolevGaugeFixedKerProjection a y), sobolevFieldValues k⟫_ℝ = 0 :=
-  (sobolevGaugeFixedKerProjection_spec
-    (exists_orthogonal_ker_projection_and_rightInverse hsurj hfin).1).2 y k hk
-
-/-- The orthogonal right inverse is a right inverse of `L_a`, when `L_a` is onto with a
-finite-dimensional kernel. -/
-theorem sobolevGaugeFixedOperator_sobolevGaugeFixedRightInverse
-    (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
-    sobolevGaugeFixedOperator a (sobolevGaugeFixedRightInverse a f) = f :=
-  (sobolevGaugeFixedRightInverse_spec
-    (exists_orthogonal_ker_projection_and_rightInverse hsurj hfin).2).1 f
-
-/-- The values of the orthogonal right inverse are `L²`-orthogonal to the kernel of `L_a`, when
-`L_a` is onto with a finite-dimensional kernel. -/
-theorem inner_sobolevGaugeFixedRightInverse (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤)
-    {k : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2} (hk : k ∈ (sobolevGaugeFixedOperator a).ker) :
-    ⟪sobolevFieldValues (sobolevGaugeFixedRightInverse a f), sobolevFieldValues k⟫_ℝ = 0 :=
-  (sobolevGaugeFixedRightInverse_spec
-    (exists_orthogonal_ker_projection_and_rightInverse hsurj hfin).2).2 f k hk
-
-/-- **The orthogonal splitting.** When `L_a` is onto with a finite-dimensional kernel, every
-`y ∈ H¹(ℂ)⁴` splits as `y = π y + Q (L_a y)` into its kernel component and the orthogonal right
-inverse of `L_a y`. -/
-theorem sobolevGaugeFixedKerProjection_add_sobolevGaugeFixedRightInverse
-    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
-    sobolevGaugeFixedKerProjection a y +
-      sobolevGaugeFixedRightInverse a (sobolevGaugeFixedOperator a y) = y :=
-  ContinuousLinearMap.apply_add_apply_apply_eq_self sobolevFieldValues_injective
-    (sobolevGaugeFixedKerProjection_mem_ker hsurj hfin)
-    (fun y _ hk ↦ inner_sub_sobolevGaugeFixedKerProjection hsurj hfin y hk)
-    (sobolevGaugeFixedOperator_sobolevGaugeFixedRightInverse hsurj hfin)
-    (fun f _ hk ↦ inner_sobolevGaugeFixedRightInverse hsurj hfin f hk) y
-
-/-- The orthogonal kernel projection fixes the kernel of `L_a`, when `L_a` is onto with a
-finite-dimensional kernel. -/
-theorem sobolevGaugeFixedKerProjection_apply_of_mem_ker {k : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2}
-    (hk : k ∈ (sobolevGaugeFixedOperator a).ker) : sobolevGaugeFixedKerProjection a k = k := by
-  have h := sobolevGaugeFixedKerProjection_add_sobolevGaugeFixedRightInverse hsurj hfin k
-  have hk0 : sobolevGaugeFixedOperator a k = 0 := LinearMap.mem_ker.1 hk
-  rwa [hk0, map_zero, add_zero] at h
-
-/-- **The orthogonal kernel projection moves continuously with the coefficient** near every `L∞`
-coefficient `a` at which `L_a` is onto with a finite-dimensional kernel. -/
-theorem continuousAt_sobolevGaugeFixedKerProjection :
-    ContinuousAt sobolevGaugeFixedKerProjection a := by
-  obtain ⟨U, hU, haU, π, Q, hπ, -, h⟩ :=
-    exists_continuousOn_orthogonal_rightInverse_sobolevGaugeFixedOperator hsurj hfin
-  refine (hπ.continuousAt (hU.mem_nhds haU)).congr ?_
-  filter_upwards [hU.mem_nhds haU] with b hb
-  obtain ⟨-, hmem, -, horth, -⟩ := h b hb
-  exact eq_sobolevGaugeFixedKerProjection hmem horth
-
-/-- **The orthogonal right inverse moves continuously with the coefficient** near every `L∞`
-coefficient `a` at which `L_a` is onto with a finite-dimensional kernel. -/
-theorem continuousAt_sobolevGaugeFixedRightInverse :
-    ContinuousAt sobolevGaugeFixedRightInverse a := by
-  obtain ⟨U, hU, haU, π, Q, -, hQ, h⟩ :=
-    exists_continuousOn_orthogonal_rightInverse_sobolevGaugeFixedOperator hsurj hfin
-  refine (hQ.continuousAt (hU.mem_nhds haU)).congr ?_
-  filter_upwards [hU.mem_nhds haU] with b hb
-  obtain ⟨-, -, -, -, hQb, hQorth, -⟩ := h b hb
-  exact eq_sobolevGaugeFixedRightInverse hQb hQorth
-
-end OntoCoefficient
 
 end TauCeti.Vortex
