@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.Calculus.ContDiff.UniformOn
 public import TauCeti.Analysis.ODE.LyapunovPerron.Graph
 public import TauCeti.Analysis.ODE.LyapunovPerron.Linear
-import Mathlib.Analysis.Calculus.ImplicitContDiff
+import TauCeti.Analysis.Calculus.Contracting
 import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.Calculus.FDeriv.BoundedContinuousFunction
 
@@ -103,7 +103,7 @@ private theorem norm_exp_smul_apply_le (ξ : X) (t : ℝ≥0) :
 
 /-- The homogeneous term `ξ ↦ (t ↦ exp (t A) (P ξ))` of the Lyapunov--Perron equation, as a
 bounded linear map into bounded continuous curves on `[0, ∞)`. -/
-private def lyapunovPerronHomogeneousCLM : X →L[ℝ] (ℝ≥0 →ᵇ X) :=
+def lyapunovPerronHomogeneousCLM : X →L[ℝ] (ℝ≥0 →ᵇ X) :=
   LinearMap.mkContinuous
     { toFun := fun ξ ↦ BoundedContinuousFunction.ofNormedAddCommGroup
         (fun t : ℝ≥0 ↦ exp ((t : ℝ) • A) (P ξ))
@@ -115,7 +115,9 @@ private def lyapunovPerronHomogeneousCLM : X →L[ℝ] (ℝ≥0 →ᵇ X) :=
     K fun ξ ↦ BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ (by positivity)
       (norm_exp_smul_apply_le hs ξ)
 
-private theorem lyapunovPerronHomogeneousCLM_apply (ξ : X) (t : ℝ≥0) :
+/-- The homogeneous term is the decaying linear evolution of the stable coordinate. -/
+@[simp]
+theorem lyapunovPerronHomogeneousCLM_apply (ξ : X) (t : ℝ≥0) :
     lyapunovPerronHomogeneousCLM hs ξ t = exp ((t : ℝ) • A) (P ξ) :=
   (rfl)
 
@@ -137,85 +139,7 @@ private theorem lyapunovPerronSolution_eq_add (ξ : X) :
   rw [← lyapunovPerronMap_eq_add hs hu hα hN]
   exact (isFixedPt_lyapunovPerronSolution hs hu hα hN hsmall ξ).symm
 
-include hsmall in
-/-- Postcomposing pointwise multiplication by a family of operators of norm at most `ε` with the
-Lyapunov--Perron integral operator gives an operator of norm less than `1`. -/
-private theorem norm_lyapunovPerronIntegralCLM_comp_applyCLM_lt_one
-    {Φ : ℝ≥0 →ᵇ (X →L[ℝ] X)} (hΦ : ‖Φ‖ ≤ ε) :
-    ‖lyapunovPerronIntegralCLM A P hs hu hα ∘L BoundedContinuousFunction.applyCLM Φ‖ < 1 := by
-  have hαR : (0 : ℝ) < α := by exact_mod_cast hα
-  have hsmallR : 2 * (K : ℝ) * ε < α := by exact_mod_cast hsmall
-  calc _ ≤ ‖lyapunovPerronIntegralCLM A P hs hu hα‖ * ‖BoundedContinuousFunction.applyCLM Φ‖ :=
-        opNorm_comp_le _ _
-    _ ≤ 2 * K / α * ε := mul_le_mul (norm_lyapunovPerronIntegralCLM_le hs hu hα)
-        ((BoundedContinuousFunction.norm_applyCLM_apply_le Φ).trans hΦ) (norm_nonneg _)
-        (by positivity)
-    _ = 2 * K * ε / α := by ring
-    _ < 1 := (div_lt_one hαR).2 hsmallR
-
 variable {N' : X → X →L[ℝ] X} {s : Set X} {δ : ℝ} {ξ₀ : X}
-
-/-- Near a parameter whose solution stays a positive distance inside the region where the
-nonlinearity is uniformly `C^n` (`n ≥ 1`), the Lyapunov--Perron solution agrees with a `C^n`
-function: the implicit function of the equation `γ - T ξ γ = 0`. -/
-private theorem exists_contDiffAt_eventuallyEq_lyapunovPerronSolution {n : ℕ} (hn : 1 ≤ n)
-    (hNn : TauCeti.UniformContDiffOn ℝ n N s) (hδ : 0 < δ)
-    (hξ₀ : ∀ t, ball (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ₀ t) δ ⊆ s) :
-    ∃ ψ : X → ℝ≥0 →ᵇ X, ContDiffAt ℝ n ψ ξ₀ ∧
-      ψ =ᶠ[𝓝 ξ₀] lyapunovPerronSolution A P N hs hu hα hN hsmall := by
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  obtain ⟨_, N', hNs, -, hN'm⟩ := TauCeti.uniformContDiffOn_succ_iff.1 hNn
-  have hN' := hN'm.uniformContinuousOn
-  have hn0 : ((m + 1 : ℕ) : WithTop ℕ∞) ≠ 0 := Nat.cast_ne_zero.2 m.succ_ne_zero
-  set γ₀ := lyapunovPerronSolution A P N hs hu hα hN hsmall ξ₀
-  set E := lyapunovPerronHomogeneousCLM hs
-  set I := lyapunovPerronIntegralCLM A P hs hu hα
-  obtain ⟨Φ, hΦ⟩ := BoundedContinuousFunction.exists_eq_comp hN hNs hN'.continuousOn
-    fun t ↦ hξ₀ t (mem_ball_self hδ)
-  -- The equation `γ - T ξ γ = 0`, whose zeros are the Lyapunov--Perron solutions.
-  set F : X × (ℝ≥0 →ᵇ X) → ℝ≥0 →ᵇ X := fun p ↦ p.2 - (E p.1 + I (p.2.comp N hN)) with hFdef
-  have hF : ContDiffAt ℝ (m + 1 : ℕ) F (ξ₀, γ₀) :=
-    contDiffAt_snd.sub ((E.contDiff.contDiffAt.comp (ξ₀, γ₀) contDiffAt_fst).add
-      (I.contDiff.contDiffAt.comp (ξ₀, γ₀)
-        ((BoundedContinuousFunction.contDiffAt_comp_of_uniformContDiffOn hN hNn hδ hξ₀).comp
-          (ξ₀, γ₀) contDiffAt_snd)))
-  have hsup : HasFDerivAt (fun p : X × (ℝ≥0 →ᵇ X) ↦ p.2.comp N hN)
-      (BoundedContinuousFunction.applyCLM Φ ∘L snd ℝ X (ℝ≥0 →ᵇ X)) (ξ₀, γ₀) :=
-    HasFDerivAt.comp (g := BoundedContinuousFunction.comp N hN) (f := Prod.snd) (ξ₀, γ₀)
-      (BoundedContinuousFunction.hasFDerivAt_comp hN hNs hN' hδ hξ₀ hΦ)
-      (hasFDerivAt_snd (𝕜 := ℝ) (p := (ξ₀, γ₀)))
-  have hF' : HasFDerivAt F (snd ℝ X (ℝ≥0 →ᵇ X) -
-      (E ∘L fst ℝ X (ℝ≥0 →ᵇ X) +
-        I ∘L BoundedContinuousFunction.applyCLM Φ ∘L snd ℝ X (ℝ≥0 →ᵇ X))) (ξ₀, γ₀) :=
-    hasFDerivAt_snd.sub ((E.hasFDerivAt.comp (ξ₀, γ₀) hasFDerivAt_fst).add
-      (I.hasFDerivAt.comp (ξ₀, γ₀) hsup))
-  -- The partial derivative in `γ` is `1 - I ∘ (N' ∘ γ₀)`, a small perturbation of the identity.
-  have hnorm : ‖I ∘L BoundedContinuousFunction.applyCLM Φ‖ < 1 :=
-    norm_lyapunovPerronIntegralCLM_comp_applyCLM_lt_one hs hu hα hsmall <|
-      (BoundedContinuousFunction.norm_le ε.coe_nonneg).2 fun t ↦ by
-        rw [hΦ t]
-        exact (hNs _ (hξ₀ t (mem_ball_self hδ))).le_of_lipschitz hN
-  have hinv : (fderiv ℝ F (ξ₀, γ₀) ∘L inr ℝ X (ℝ≥0 →ᵇ X)).IsInvertible := by
-    have hpartial : fderiv ℝ F (ξ₀, γ₀) ∘L inr ℝ X (ℝ≥0 →ᵇ X) =
-        1 - I ∘L BoundedContinuousFunction.applyCLM Φ := by
-      rw [hF'.fderiv]
-      ext h : 1
-      simp
-    rw [hpartial]
-    exact ⟨ContinuousLinearEquiv.ofUnit (isUnit_one_sub_of_norm_lt_one hnorm).unit, rfl⟩
-  have hF0 : F (ξ₀, γ₀) = 0 := by
-    rw [hFdef, sub_eq_zero]
-    exact lyapunovPerronSolution_eq_add hs hu hα hN hsmall ξ₀
-  refine ⟨hF.implicitFunction hn0 hinv,
-    hF.contDiffAt_implicitFunction hn0 hinv, ?_⟩
-  filter_upwards [hF.eventually_apply_implicitFunction hn0 hinv] with ξ hξ
-  -- A zero of the equation is a fixed point of the contraction `T ξ`, hence the solution.
-  have hfix : hF.implicitFunction hn0 hinv ξ =
-      lyapunovPerronMap A P N hs hu hα hN ξ (hF.implicitFunction hn0 hinv ξ) := by
-    rw [lyapunovPerronMap_eq_add hs hu hα hN]
-    exact sub_eq_zero.1 (hξ.trans hF0)
-  exact eq_lyapunovPerronSolution hs hu hα hN hsmall fun t ↦ by
-    rw [← lyapunovPerronMap_apply hs hu hα hN, ← hfix]
 
 /-- **The Lyapunov--Perron solution is `C^n` in its parameter.** Suppose that the nonlinearity `N`
 is uniformly `C^n` on a set `s` (`TauCeti.UniformContDiffOn`), and that the values
@@ -230,9 +154,19 @@ theorem contDiffAt_lyapunovPerronSolution_of_uniformContDiffOn {n : ℕ}
     exact (contDiff_zero.2 (lipschitzWith_lyapunovPerronSolution hs hu hα hN hsmall).continuous
       ).contDiffAt
   | succ m =>
-    obtain ⟨_, hψ, hψeq⟩ := exists_contDiffAt_eventuallyEq_lyapunovPerronSolution hs hu hα hN
-      hsmall le_add_self hNn hδ hξ₀
-    exact hψ.congr_of_eventuallyEq hψeq.symm
+    apply ContractingWith.contDiffAt_of_isFixedPt
+      (F := lyapunovPerronMap A P N hs hu hα hN)
+      (fun ξ ↦ contractingWith_lyapunovPerronMap hs hu hα hN hsmall ξ)
+      (isFixedPt_lyapunovPerronSolution hs hu hα hN hsmall) (by simp)
+    have hT : Function.uncurry (lyapunovPerronMap A P N hs hu hα hN) =
+        fun p : X × (ℝ≥0 →ᵇ X) ↦ lyapunovPerronHomogeneousCLM hs p.1 +
+          lyapunovPerronIntegralCLM A P hs hu hα (p.2.comp N hN) :=
+      funext fun p ↦ lyapunovPerronMap_eq_add hs hu hα hN p.1 p.2
+    rw [hT]
+    exact ((lyapunovPerronHomogeneousCLM hs).contDiff.contDiffAt.comp _ contDiffAt_fst).add
+      ((lyapunovPerronIntegralCLM A P hs hu hα).contDiff.contDiffAt.comp _
+        ((BoundedContinuousFunction.contDiffAt_comp_of_uniformContDiffOn hN hNn hδ hξ₀).comp
+          (ξ₀, lyapunovPerronSolution A P N hs hu hα hN hsmall ξ₀) contDiffAt_snd))
 
 /-- **The Lyapunov--Perron solution is `C¹` in its parameter.** Suppose that the nonlinearity `N`
 has derivative `N' x` at every point `x` of a set `s`, with `N'` uniformly continuous on `s`, and

@@ -259,6 +259,37 @@ theorem contDiffAt_of_forall_apply_eq {n : ℕ} (hG : TauCeti.UniformContDiffOn 
       (fun G' hG'n {_} {_} hδ' hf₀' hΘ' ↦
         contDiffAt_of_uniformContDiffOn_aux hG'n hδ' hf₀' hΘ')
 
+/-- Uniform local regularity and a bounded continuous base composition suffice to construct
+an operator which is `C^n` at `f₀` and agrees locally with pointwise superposition by `G`.
+No global continuity, Lipschitz bound, or boundedness-preservation assumption on `G` is needed. -/
+theorem exists_contDiffAt_superposition {n : ℕ} (hG : TauCeti.UniformContDiffOn 𝕜 n G s)
+    (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s)
+    (g₀ : α →ᵇ Y) (hg₀ : ∀ t, g₀ t = G (f₀ t)) :
+    ∃ Ψ : (α →ᵇ X) → (α →ᵇ Y), ContDiffAt 𝕜 n Ψ f₀ ∧
+      ∀ᶠ f in 𝓝 f₀, ∀ t, Ψ f t = G (f t) := by
+  classical
+  let Ψ : (α →ᵇ X) → (α →ᵇ Y) := fun f ↦
+    if h : ∃ g : α →ᵇ Y, ∀ t, g t = G (f t) then h.choose else 0
+  obtain ⟨η, hη, hu⟩ := Metric.uniformContinuousOn_iff.1 hG.uniformContinuousOn 1 zero_lt_one
+  let ρ := min δ η
+  have hρ : 0 < ρ := lt_min hδ hη
+  have hlocal (f : α →ᵇ X) (hf : f ∈ ball f₀ ρ) : ∀ t, Ψ f t = G (f t) := by
+    have hfs : ∀ t, f t ∈ s := apply_mem_of_mem_ball
+      (fun t ↦ (ball_subset_ball (min_le_left _ _)).trans (hf₀ t)) hf
+    have hb (t : α) : ‖G (f t)‖ ≤ ‖g₀‖ + 1 := by
+      have hd : dist (G (f t)) (G (f₀ t)) < 1 := hu _ (hfs t) _
+        (hf₀ t (mem_ball_self hδ))
+        ((dist_coe_le_dist t).trans_lt (hf.trans_le (min_le_right _ _)))
+      exact (norm_le_norm_add_const_of_dist_le hd.le).trans
+        (add_le_add (hg₀ t ▸ g₀.norm_coe_le_norm t) le_rfl)
+    have hex : ∃ g : α →ᵇ Y, ∀ t, g t = G (f t) :=
+      ⟨ofNormedAddCommGroup (fun t ↦ G (f t))
+        (hG.continuousOn.comp_continuous f.continuous hfs) (‖g₀‖ + 1) hb, fun _ ↦ rfl⟩
+    simpa only [Ψ, dite_eq_left hex] using hex.choose_spec
+  exact ⟨Ψ, contDiffAt_of_forall_apply_eq hG hρ
+    (fun t ↦ (ball_subset_ball (min_le_left _ _)).trans (hf₀ t)) hlocal,
+    Filter.eventually_of_mem (ball_mem_nhds f₀ hρ) hlocal⟩
+
 /-- **A superposition operator is `C^n`.** Let `G` be Lipschitz and uniformly `C^n` on `s`. If the
 values of `f₀` stay a distance `δ > 0` inside `s`, then `f ↦ G ∘ f` is `C^n` at `f₀`. -/
 theorem contDiffAt_comp_of_uniformContDiffOn (hG : LipschitzWith C G) {n : ℕ}
