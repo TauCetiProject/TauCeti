@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Basic
 import TauCeti.Analysis.Analytic.AffineHyperplane
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.Regularity.Boundary.Campanato
 import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
 import TauCeti.Analysis.Sobolev.W1p.HyperplaneReflection

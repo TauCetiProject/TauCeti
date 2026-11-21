@@ -689,13 +689,10 @@ theorem W1p.exists_value_eq_zero_and_value_ae_eq (hp : p ≠ ⊤) (hH : ∀ x, x
   set z : W1p0 mu ⊤ p := W1p0.extendByZeroL (le_top : Ω ≤ ⊤) ⟨v, hv0⟩
   have hz : W1p.value (W1p.restrictL (le_top : U₁ ≤ ⊤) (z : W1p mu ⊤ p)) =ᵐ[mu.restrict U₁]
       (Ω : Set E).indicator (W1p.value v) := by
-    have h2 : W1p.value (z : W1p mu ⊤ p) =ᵐ[mu.restrict ((⊤ : Opens E) : Set E)]
-        (Ω : Set E).indicator (W1p.value v) := by
-      rw [W1p0.value_extendByZeroL]
-      exact coeFn_extendByZeroLpₗᵢ ℝ _ _ _
     filter_upwards [W1p.value_restrictL_ae (mu := mu) (p := p) (le_top : U₁ ≤ ⊤)
         (z : W1p mu ⊤ p),
-      ae_restrict_of_ae_restrict_of_subset (subset_univ _) h2] with x hx1 hx2
+      ae_restrict_of_ae (W1p0.value_extendByZeroL_top_ae (mu := mu) (p := p) ⟨v, hv0⟩)]
+      with x hx1 hx2
     rw [hx1, hx2]
   refine ⟨W1p.restrictL (le_top : U₁ ≤ ⊤) (z : W1p mu ⊤ p), ?_, ?_⟩
   · filter_upwards [hz] with x hx hxH
