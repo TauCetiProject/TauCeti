@@ -48,6 +48,10 @@ the field with `q = p ^ n` elements behind the finite unitary groups.
   automorphism `x ↦ x ^ p` is an involution.
 * `TauCeti.FiniteField.iterateFrobenius_involutive`: on a field of order `p ^ (2 n)`, the iterated
   Frobenius `x ↦ x ^ p ^ n` is an involution.
+* `TauCeti.FiniteField.exists_iterateFrobenius_ne`: on a domain with more than `p ^ n` elements,
+  finite or not, the iterated Frobenius `x ↦ x ^ p ^ n` moves some element when `1 < p ^ n`.
+* `TauCeti.FiniteField.exists_iterateFrobenius_ne_of_card_eq_sq`: on a field of order
+  `(p ^ n) ^ 2`, the iterated Frobenius `x ↦ x ^ p ^ n` is not the identity.
 
 ## Mathematical context
 
@@ -140,21 +144,6 @@ theorem isPurelyInseparable_fieldRange_frobeniusAlgHom :
 
 /-! ### The Frobenius of a field of order `p ^ 2` or `p ^ (2 n)` -/
 
-section Involutive
-
-variable {K : Type*} [Field K] [Finite K] {p : ℕ} [Fact p.Prime] [CharP K p]
-
-/-- On a field of order `p ^ 2`, the Frobenius automorphism `x ↦ x ^ p` is an involution. -/
-theorem frobeniusEquiv_involutive (hK : Nat.card K = p ^ 2) :
-    Function.Involutive (frobeniusEquiv K p) := by
-  let := Fintype.ofFinite K
-  have hcard : Fintype.card K = p ^ 2 := Nat.card_eq_fintype_card.symm.trans hK
-  intro x
-  simpa only [coe_frobeniusEquiv, pow_two, RingHom.mul_def, RingHom.comp_apply, RingHom.one_def,
-    RingHom.id_apply] using DFunLike.congr_fun (FiniteField.frobenius_pow hcard) x
-
-end Involutive
-
 variable {K : Type*} [Field K] {p : ℕ} [ExpChar K p]
 
 /-- On a field of order `p ^ (2 n)`, the iterated Frobenius `x ↦ x ^ p ^ n` is an involution. For
@@ -165,36 +154,39 @@ theorem iterateFrobenius_involutive {n : ℕ} (hK : Nat.card K = p ^ (n * 2)) :
     (by rw [hK]; exact (pow_pos (expChar_pos K p) _).ne')
   let := Fintype.ofFinite K
   intro x
-  rw [iterateFrobenius_def, iterateFrobenius_def, ← pow_mul, ← pow_add, ← mul_two, ← hK,
+  -- Two passes of the `p ^ n`-power map make the `Nat.card K`-power map, which fixes `x`.
+  rw [← iterateFrobenius_add_apply, ← mul_two, iterateFrobenius_def, ← hK,
     Nat.card_eq_fintype_card, FiniteField.pow_card]
 
-/-- An iterate of Frobenius is not the identity on a domain with more than `p ^ n` elements,
-provided `1 < p ^ n`. -/
-theorem exists_iterateFrobenius_ne {K : Type*} [CommRing K] [IsDomain K] {p n : ℕ}
-    [ExpChar K p] (hq : 1 < p ^ n) (hK : p ^ n < Nat.card K) :
-    ∃ s : K, iterateFrobenius K p n s ≠ s := by
-  classical
-  have : Finite K := Nat.finite_of_card_ne_zero (by omega)
-  let := Fintype.ofFinite K
-  by_contra! h
-  have hcard : Nat.card K ≤ p ^ n := by
-    rw [Nat.card_eq_fintype_card, ← Finset.card_univ]
-    refine (Polynomial.card_le_degree_of_subset_roots
-      (p := Polynomial.X ^ (p ^ n) - Polynomial.X) fun s _ ↦ ?_).trans
-      (Polynomial.natDegree_X_pow_sub_X (R := K) hq).le
-    rw [Polynomial.mem_roots (Polynomial.X_pow_sub_X_ne_zero hq)]
-    simpa [Polynomial.IsRoot, sub_eq_zero, iterateFrobenius_def] using h s
-  exact hK.not_ge hcard
+/-- On a field of order `p ^ 2`, the Frobenius automorphism `x ↦ x ^ p` is an involution: the case
+`n = 1` of `iterateFrobenius_involutive`. -/
+theorem frobeniusEquiv_involutive [PerfectRing K p] (hK : Nat.card K = p ^ 2) :
+    Function.Involutive (frobeniusEquiv K p) := by
+  have h := iterateFrobenius_involutive (K := K) (p := p) (n := 1) (by rwa [one_mul])
+  rwa [iterateFrobenius_one, ← coe_frobeniusEquiv] at h
 
-/-- The quadratic finite-field involution is not the identity. -/
+/-- An iterate of Frobenius is not the identity on a domain, finite or infinite, with more than
+`p ^ n` elements, provided `1 < p ^ n`. -/
+theorem exists_iterateFrobenius_ne {K : Type*} [CommRing K] [IsDomain K] {p n : ℕ}
+    [ExpChar K p] (hq : 1 < p ^ n) (hK : (p ^ n : ℕ) < Cardinal.mk K) :
+    ∃ s : K, iterateFrobenius K p n s ≠ s := by
+  -- A point where `X ^ p ^ n - X` does not vanish is one that the iterate moves.
+  obtain ⟨s, hs⟩ := Polynomial.exists_eval_ne_zero_of_natDegree_lt_card _
+    (Polynomial.X_pow_sub_X_ne_zero (R := K) hq) (by rwa [Polynomial.natDegree_X_pow_sub_X hq])
+  refine ⟨s, fun h ↦ hs ?_⟩
+  rw [iterateFrobenius_def] at h
+  simp only [Polynomial.eval_sub, Polynomial.eval_pow, Polynomial.eval_X, h, sub_self]
+
+/-- On a field of order `(p ^ n) ^ 2`, the iterated Frobenius `x ↦ x ^ p ^ n` is not the
+identity. -/
 theorem exists_iterateFrobenius_ne_of_card_eq_sq {n : ℕ}
     (hK : Nat.card K = (p ^ n) ^ 2) : ∃ s : K, iterateFrobenius K p n s ≠ s := by
   have : Finite K := Nat.finite_of_card_ne_zero
     (by rw [hK]; exact (pow_pos (pow_pos (expChar_pos K p) n) 2).ne')
   have hq : 1 < p ^ n := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Finite.one_lt_card)
-  apply exists_iterateFrobenius_ne hq
-  rw [hK]
-  nlinarith
+  refine exists_iterateFrobenius_ne hq ?_
+  rw [← Nat.cast_card, hK]
+  exact_mod_cast lt_self_pow₀ hq one_lt_two
 
 end TauCeti.FiniteField
 
