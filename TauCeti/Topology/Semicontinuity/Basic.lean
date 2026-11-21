@@ -18,9 +18,6 @@ This file collects general topological properties of lower semicontinuous functi
   complete linear order, is lower semicontinuous (`TauCeti.lowerSemicontinuous_iSup_nhds`): a strict
   lower bound witnessed by a neighbourhood of `x` is witnessed by the same set at every point of its
   interior. Lower envelopes and lower and upper Γ-limits are of this form.
-* If `f` is lower semicontinuous within `s` at `x`, `u → x` within `s` along a nontrivial filter,
-  and `f ∘ u → l` in a linear order with closed order topology, then `f x ≤ l`
-  (`LowerSemicontinuousWithinAt.le_of_tendsto`).
 * The sublevels of a lower semicontinuous function on a closed set are closed
   (`LowerSemicontinuousOn.isClosed_inter_preimage_Iic`), and a lower semicontinuous function on a
   set `s` with a nonempty compact sublevel attains its minimum on `s`
@@ -51,23 +48,6 @@ theorem lowerSemicontinuous_iSup_nhds (G : Set X → β) :
   exact hcs.trans_le (le_iSup₂_of_le s hy le_rfl)
 
 end TauCeti
-
-namespace LowerSemicontinuousWithinAt
-
-/-- If `f` is lower semicontinuous within `s` at `x`, `u` tends to `x` within `s` along a
-nontrivial filter `F`, and `f ∘ u` tends to `l` in a linearly ordered space with closed order
-topology, then `f x ≤ l`. -/
-theorem le_of_tendsto {α β ι : Type*} [TopologicalSpace α] [LinearOrder β] [TopologicalSpace β]
-    [OrderClosedTopology β] {f : α → β} {s : Set α} {x : α}
-    (hf : LowerSemicontinuousWithinAt f s x) {F : Filter ι} [F.NeBot] {u : ι → α}
-    (hu : Tendsto u F (𝓝[s] x)) {l : β} (hl : Tendsto (f ∘ u) F (𝓝 l)) :
-    f x ≤ l := by
-  by_contra! hlt
-  obtain ⟨y, hy, z, hz, hdisj⟩ := hlt.exists_disjoint_Iio_Ioi
-  obtain ⟨i, hi1, hi2⟩ := ((hl.eventually (Iio_mem_nhds hy)).and (hu.eventually (hf z hz))).exists
-  exact (hdisj _ hi1 _ hi2).false
-
-end LowerSemicontinuousWithinAt
 
 namespace LowerSemicontinuousOn
 

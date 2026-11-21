@@ -28,9 +28,10 @@ infinite-dimensional
 
 * every norm-bounded set in an infinite-dimensional normed space has empty weak interior
   (`TauCeti.interior_toWeakSpace_eq_empty_of_isBounded`);
-* any continuous linear map `J : V →L[𝕜] F` with infinite-dimensional range into a normed space is
-  discontinuous for the weak topology on `V` and the norm topology on `F` at every point
-  (`ContinuousLinearMap.not_continuousAt_toWeakSpace_symm`, complementing global discontinuity in
+* any linear map with infinite-dimensional range into a normed space is discontinuous for the weak
+  topology on the domain and the norm topology on the codomain at every point
+  (`TauCeti.not_continuousAt_comp_toWeakSpace_symm` and
+  `TauCeti.not_continuous_comp_toWeakSpace_symm` in
   `TauCeti.Analysis.Normed.Module.WeakSpace.Sphere`);
 * over `ℝ` or `ℂ`, for any continuous linear map `J : V →L[𝕜] F` with infinite-dimensional range,
   any center `y : F`, and any `r : ℝ`, the weak closure of `J ⁻¹' Metric.sphere y r` is
@@ -120,36 +121,6 @@ end InfiniteDimensionalLines
 end TauCeti
 
 namespace ContinuousLinearMap
-
-section GlobalDiscontinuity
-
-variable {𝕜 V F : Type*} [NontriviallyNormedField 𝕜]
-  [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-/-- A continuous linear map with infinite-dimensional range from a topological vector space into a
-normed space is discontinuous at every point when the domain carries its weak topology and the
-codomain carries its norm topology. -/
-theorem not_continuousAt_toWeakSpace_symm (J : V →L[𝕜] F)
-    (hJ : ¬ FiniteDimensional 𝕜 (LinearMap.range J.toLinearMap)) (x : V) :
-    ¬ ContinuousAt (fun w : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm w))
-        (toWeakSpace 𝕜 V x) := by
-  intro hc
-  have hU : (fun w : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm w)) ⁻¹' ball (J x) 1 ∈
-      𝓝 (toWeakSpace 𝕜 V x) :=
-    hc.preimage_mem_nhds (ball_mem_nhds _ one_pos)
-  obtain ⟨v, hv, hline⟩ :=
-    J.toLinearMap.exists_apply_ne_zero_forall_toWeakSpace_add_smul_mem_of_mem_nhds hJ hU
-  have hJv : 0 < ‖J v‖ := norm_pos_iff.2 hv
-  obtain ⟨c, hc_norm⟩ := NormedField.exists_lt_norm 𝕜 (1 / ‖J v‖)
-  have hlt : ‖c‖ * ‖J v‖ < 1 := by
-    have h : J (x + c • v) ∈ ball (J x) 1 := by
-      simpa only [mem_preimage, LinearEquiv.symm_apply_apply] using hline c
-    rw [mem_ball, dist_eq_norm, map_add, map_smul, add_sub_cancel_left, norm_smul] at h
-    exact h
-  exact ((div_lt_iff₀ hJv).1 hc_norm).not_ge hlt.le
-
-end GlobalDiscontinuity
 
 section WeakClosureSphere
 

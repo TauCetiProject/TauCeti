@@ -72,14 +72,8 @@ theorem not_isClosed_toWeakSpace_setOf_norm_diagonalCLM_eq [Infinite ι] (hd : �
 closed. -/
 theorem isSeqClosed_toWeakSpace_setOf_norm_diagonalCLM_eq
     (hd : Tendsto (fun i ↦ ‖d i‖) cofinite (𝓝 0)) (r : ℝ) :
-    IsSeqClosed (toWeakSpace 𝕜 ℓ^p(ι, 𝕜) '' {u | ‖diagonalCLM d u‖ = r}) := by
-  have heq : {u : ℓ^p(ι, 𝕜) | ‖diagonalCLM d u‖ = r} =
-      diagonalCLM d ⁻¹' Metric.sphere 0 r := by
-    ext u
-    simp
-  rw [heq]
-  exact (isCompactOperator_diagonalCLM d hd).isSeqClosed_toWeakSpace_preimage
-    Metric.isClosed_sphere
+    IsSeqClosed (toWeakSpace 𝕜 ℓ^p(ι, 𝕜) '' {u | ‖diagonalCLM d u‖ = r}) :=
+  (isCompactOperator_diagonalCLM d hd).isSeqClosed_toWeakSpace_setOf_norm_eq r
 
 end GeneralDiagonal
 
@@ -97,18 +91,15 @@ example (𝕜 : Type*) [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)] {r : ℝ}
       ¬ IsClosed (toWeakSpace 𝕜 ℓ^p(ℕ, 𝕜) '' {u | ‖J u‖ = r}) ∧
       ¬ Continuous fun w : WeakSpace 𝕜 ℓ^p(ℕ, 𝕜) ↦ J ((toWeakSpace 𝕜 ℓ^p(ℕ, 𝕜)).symm w) := by
   intro J
-  have hd_ne : ∀ n : ℕ, invNatSucc 𝕜 n ≠ 0 := by
-    intro n
-    rw [invNatSucc_apply]
-    exact inv_ne_zero (by exact_mod_cast Nat.succ_ne_zero n)
+  have hd_ne : ∀ n : ℕ, invNatSucc 𝕜 n ≠ 0 :=
+    (injective_diagonalCLM_iff _).mp (injective_diagonalCLM_invNatSucc (p := p) 𝕜)
   have hJ_inf :
       ¬ FiniteDimensional 𝕜 (LinearMap.range (J : ℓ^p(ℕ, 𝕜) →ₗ[𝕜] ℓ^p(ℕ, 𝕜))) := by
     rw [finiteDimensional_range_diagonalCLM_iff,
       show {i | invNatSucc 𝕜 i ≠ 0} = Set.univ from Set.eq_univ_iff_forall.2 hd_ne]
     exact Set.infinite_univ
   refine ⟨isCompactOperator_diagonalCLM_invNatSucc 𝕜,
-    isSeqClosed_toWeakSpace_setOf_norm_diagonalCLM_eq
-      (Nat.cofinite_eq_atTop ▸ tendsto_norm_invNatSucc 𝕜) r,
+    (isCompactOperator_diagonalCLM_invNatSucc 𝕜).isSeqClosed_toWeakSpace_setOf_norm_eq r,
     TauCeti.zero_mem_closure_toWeakSpace_setOf_norm_eq hJ_inf hr.le,
     not_isClosed_toWeakSpace_setOf_norm_diagonalCLM_eq hd_ne hr,
     TauCeti.not_continuous_comp_toWeakSpace_symm hJ_inf⟩

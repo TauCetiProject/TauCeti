@@ -19,7 +19,8 @@ weak convergence be used without unfolding the definition of `WeakSpace` as a `W
 No injectivity of the duality pairing is needed, since the weak topology is induced by the
 evaluations. Sequential closedness of an image `toWeakSpace 𝕜 E '' s` likewise translates directly
 to closure of `s` under limits of weakly convergent sequences
-(`TauCeti.isSeqClosed_toWeakSpace_image_iff`).
+(`TauCeti.isSeqClosed_toWeakSpace_image_iff`), and intersections with preimages transport into
+`WeakSpace 𝕜 E` via `TauCeti.image_toWeakSpace_inter_preimage`.
 
 When the weak topology is Hausdorff, weak convergence implies convergence in the original topology
 for families that eventually stay in a compact set
@@ -38,12 +39,20 @@ infinite-dimensional space it contains an affine line in a nonzero direction
 
 public section
 
-open Filter Topology
+open Filter Set Topology
 
 namespace TauCeti
 
 variable {𝕜 E : Type*} [CommSemiring 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
   [ContinuousConstSMul 𝕜 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
+
+/-- Transporting an intersection `S ∩ J ⁻¹' C` into `WeakSpace 𝕜 E` yields the intersection of
+`toWeakSpace 𝕜 E '' S` with the preimage of `C` under `w ↦ J ((toWeakSpace 𝕜 E).symm w)`. -/
+theorem image_toWeakSpace_inter_preimage {F : Type*} (J : E → F) (S : Set E) (C : Set F) :
+    toWeakSpace 𝕜 E '' (S ∩ J ⁻¹' C) =
+      toWeakSpace 𝕜 E '' S ∩
+        (fun w : WeakSpace 𝕜 E ↦ J ((toWeakSpace 𝕜 E).symm w)) ⁻¹' C := by
+  simp only [(toWeakSpace 𝕜 E).image_eq_preimage_symm, preimage_inter, preimage_preimage]
 
 /-- A family converges weakly exactly when its values under every continuous linear functional
 converge. -/

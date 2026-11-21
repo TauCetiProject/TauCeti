@@ -14,7 +14,7 @@ public import TauCeti.Topology.Algebra.Module.WeakSpace
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.Normed.Module.WeakSpace.Closure
-import TauCeti.Topology.Semicontinuity.Basic
+import TauCeti.Topology.Semicontinuity.Sequences
 
 /-!
 # Compact operators on bounded sets in the weak topology
@@ -28,11 +28,6 @@ topology of `F` (`IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isVonN
 convergence without metrizability or reflexivity assumptions on `V`.
 
 This bounded-set weak-to-norm continuity yields:
-* weak continuity and weak lower semicontinuity of nonlinear functionals `g ∘ J` and compact
-  perturbations `u ↦ E₀ u + g (J u)` on norm-bounded sets
-  (`IsCompactOperator.continuousOn_comp_toWeakSpace_symm`,
-  `IsCompactOperator.lowerSemicontinuousOn_comp_toWeakSpace_symm`,
-  `IsCompactOperator.lowerSemicontinuousOn_add_comp_toWeakSpace_symm`);
 * weak closedness and weak compactness of `S ∩ J ⁻¹' C` for a bounded weakly closed or weakly
   compact set `S` and a closed set `C ⊆ F`
   (`IsCompactOperator.isClosed_toWeakSpace_inter_preimage_of_isVonNBounded`,
@@ -62,8 +57,6 @@ are weakly sequentially closed yet not weakly closed, see
   a compact operator on any norm-bounded set, and
   `IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isVonNBounded` in topological vector
   spaces.
-* `IsCompactOperator.lowerSemicontinuousOn_add_comp_toWeakSpace_symm`: weak lower semicontinuity of
-  a compact perturbation `u ↦ E₀ u + g (J u)` on any norm-bounded set.
 * `IsCompactOperator.isClosed_toWeakSpace_inter_preimage_of_isBounded`,
   `IsCompactOperator.isCompact_toWeakSpace_inter_preimage_of_isCompact`, and
   `IsCompactOperator.isCompact_toWeakSpace_inter_preimage`: weak closedness and weak compactness of
@@ -87,14 +80,6 @@ public section
 open Bornology Filter Function Metric NormedSpace Set Topology
 
 namespace IsCompactOperator
-
-private theorem image_toWeakSpace_inter_preimage {𝕜 V F : Type*} [CommSemiring 𝕜]
-    [TopologicalSpace 𝕜] [ContinuousAdd 𝕜] [ContinuousConstSMul 𝕜 𝕜]
-    [AddCommMonoid V] [Module 𝕜 V] [TopologicalSpace V] (J : V → F) (S : Set V) (C : Set F) :
-    toWeakSpace 𝕜 V '' (S ∩ J ⁻¹' C) =
-      toWeakSpace 𝕜 V '' S ∩
-        (fun w : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm w)) ⁻¹' C := by
-  simp only [(toWeakSpace 𝕜 V).image_eq_preimage_symm, preimage_inter, preimage_preimage]
 
 section TopologicalVectorSpace
 
@@ -147,7 +132,7 @@ operator is weakly closed. -/
 theorem isClosed_toWeakSpace_inter_preimage_of_isVonNBounded (hJ : IsCompactOperator J)
     {B : Set V} (hB : IsVonNBounded 𝕜 B) (hBc : IsClosed (toWeakSpace 𝕜 V '' B)) {C : Set F}
     (hC : IsClosed C) : IsClosed (toWeakSpace 𝕜 V '' (B ∩ J ⁻¹' C)) := by
-  rw [image_toWeakSpace_inter_preimage]
+  rw [TauCeti.image_toWeakSpace_inter_preimage]
   exact (hJ.continuousOn_comp_toWeakSpace_symm_of_isVonNBounded hB).preimage_isClosed_of_isClosed
     hBc hC
 
@@ -187,44 +172,6 @@ theorem continuousOn_comp_toWeakSpace_symm_of_isBounded (hJ : IsCompactOperator 
   hJ.continuousOn_comp_toWeakSpace_symm_of_isVonNBounded <| by
     rwa [NormedSpace.isVonNBounded_iff]
 
-/-- Composing a continuous map `g : F → α` on `J '' B` with a compact operator `J` gives a weakly
-continuous map on any norm-bounded set `B ⊆ V`. -/
-theorem continuousOn_comp_toWeakSpace_symm {α : Type*} [TopologicalSpace α]
-    (hJ : IsCompactOperator J) {B : Set V} (hB : IsBounded B) {g : F → α}
-    (hg : ContinuousOn g (J '' B)) :
-    ContinuousOn (fun z : WeakSpace 𝕜 V ↦ g (J ((toWeakSpace 𝕜 V).symm z)))
-      (toWeakSpace 𝕜 V '' B) := by
-  refine hg.comp (hJ.continuousOn_comp_toWeakSpace_symm_of_isBounded hB) ?_
-  rintro _ ⟨u, hu, rfl⟩
-  simpa only [LinearEquiv.symm_apply_apply] using mem_image_of_mem J hu
-
-/-- Composing a lower semicontinuous map `g : F → β` on `J '' B` with a compact operator `J` gives a
-weakly lower semicontinuous functional on any norm-bounded set `B ⊆ V`. -/
-theorem lowerSemicontinuousOn_comp_toWeakSpace_symm {β : Type*} [Preorder β]
-    (hJ : IsCompactOperator J) {B : Set V} (hB : IsBounded B) {g : F → β}
-    (hg : LowerSemicontinuousOn g (J '' B)) :
-    LowerSemicontinuousOn (fun z : WeakSpace 𝕜 V ↦ g (J ((toWeakSpace 𝕜 V).symm z)))
-      (toWeakSpace 𝕜 V '' B) := by
-  refine hg.comp (hJ.continuousOn_comp_toWeakSpace_symm_of_isBounded hB) ?_
-  rintro _ ⟨u, hu, rfl⟩
-  simpa only [LinearEquiv.symm_apply_apply] using mem_image_of_mem J hu
-
-/-- On any norm-bounded set `B ⊆ V`, adding `g ∘ J` (with `J` compact and `g` lower semicontinuous
-on `J '' B`) to a weakly lower semicontinuous functional `E₀` preserves weak lower semicontinuity.
--/
-theorem lowerSemicontinuousOn_add_comp_toWeakSpace_symm {β : Type*}
-    [AddCommMonoid β] [LinearOrder β] [IsOrderedAddMonoid β]
-    [TopologicalSpace β] [OrderTopology β] [ContinuousAdd β]
-    (hJ : IsCompactOperator J) {B : Set V} (hB : IsBounded B) {E₀ : V → β} {g : F → β}
-    (hE₀ : LowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E₀ ((toWeakSpace 𝕜 V).symm w))
-      (toWeakSpace 𝕜 V '' B))
-    (hg : LowerSemicontinuousOn g (J '' B)) :
-    LowerSemicontinuousOn
-      (fun w : WeakSpace 𝕜 V ↦
-        E₀ ((toWeakSpace 𝕜 V).symm w) + g (J ((toWeakSpace 𝕜 V).symm w)))
-      (toWeakSpace 𝕜 V '' B) :=
-  hE₀.add (hJ.lowerSemicontinuousOn_comp_toWeakSpace_symm hB hg)
-
 /-- On a bounded weakly closed set `B`, the preimage of a closed set under a compact operator is
 weakly closed. -/
 theorem isClosed_toWeakSpace_inter_preimage_of_isBounded (hJ : IsCompactOperator J) {B : Set V}
@@ -244,7 +191,7 @@ theorem isCompact_toWeakSpace_inter_preimage_of_isCompact (hJ : IsCompactOperato
       fun z : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm z)) :=
     continuousOn_iff_continuous_domRestrict.1
       (hJ.continuousOn_comp_toWeakSpace_symm_of_isBounded hS_bdd)
-  rw [image_toWeakSpace_inter_preimage, ← Subtype.image_preimage_val]
+  rw [TauCeti.image_toWeakSpace_inter_preimage, ← Subtype.image_preimage_val]
   exact (hC.preimage hcont).isCompact.image continuous_subtypeVal
 
 /-- In a reflexive seminormed space over a proper nontrivially normed field, if `S ⊆ V` is
@@ -296,15 +243,6 @@ theorem seqContinuous_toWeakSpace_symm (hJ : IsCompactOperator J) :
   fun _ _ hw ↦ hJ.tendsto_of_tendsto_toWeakSpace
     (by simpa only [LinearEquiv.apply_symm_apply] using hw)
 
-/-- Along any weakly convergent sequence in `V`, a compact operator `J : V →L[𝕜] F` composed with a
-map `g : F → α` continuous at `J a` converges to `g (J a)`. -/
-theorem tendsto_comp_of_tendsto_toWeakSpace {α : Type*} [TopologicalSpace α]
-    (hJ : IsCompactOperator J) {u : ℕ → V} {a : V}
-    (hu : Tendsto (fun n ↦ toWeakSpace 𝕜 V (u n)) atTop (𝓝 (toWeakSpace 𝕜 V a)))
-    {g : F → α} (hg : ContinuousAt g (J a)) :
-    Tendsto (fun n ↦ g (J (u n))) atTop (𝓝 (g (J a))) :=
-  hg.tendsto.comp (hJ.tendsto_of_tendsto_toWeakSpace hu)
-
 /-- **Sequential weak closedness of compact constraints.** Over `ℝ` or `ℂ`, for a compact operator
 `J : V →L[𝕜] F` and any sequentially closed set `C ⊆ F`, `J ⁻¹' C` is sequentially closed in the
 weak topology on `V`, even when `J ⁻¹' C` is unbounded and not weakly closed. -/
@@ -336,27 +274,20 @@ theorem le_of_tendsto_add_comp_of_tendsto_toWeakSpace {β : Type*}
     (hu : Tendsto (fun n ↦ toWeakSpace 𝕜 V (u n)) atTop (𝓝 (toWeakSpace 𝕜 V a)))
     {l : β} (hl : Tendsto (fun n ↦ E₀ (u n) + g (J (u n))) atTop (𝓝 l)) :
     E₀ a + g (J a) ≤ l := by
-  -- The weakly convergent sequence has norm-bounded range `B = S ∩ range u`, on which `J` is
-  -- weak-to-original continuous and `LowerSemicontinuousWithinAt.add` applies.
-  let B : Set V := S ∩ range u
-  have hB : IsBounded B := hu.isBounded_range_of_toWeakSpace.subset inter_subset_right
-  have hmaps : MapsTo (fun z : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm z))
-      (toWeakSpace 𝕜 V '' B) (J '' S) := by
-    rintro _ ⟨v, hv, rfl⟩
-    simpa only [LinearEquiv.symm_apply_apply] using mem_image_of_mem J hv.left
-  have hg_at : LowerSemicontinuousWithinAt g (J '' S)
+  have hg_at : TauCeti.SeqLowerSemicontinuousWithinAt g (J '' S)
       (J ((toWeakSpace 𝕜 V).symm (toWeakSpace 𝕜 V a))) := by
-    simpa only [LinearEquiv.symm_apply_apply] using hg
-  have hsum := (hE₀.mono (image_mono inter_subset_left)).add
-    (LowerSemicontinuousWithinAt.comp
+    simpa only [LinearEquiv.symm_apply_apply] using hg.seqLowerSemicontinuousWithinAt
+  have hmaps : MapsTo (fun z : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm z))
+      (toWeakSpace 𝕜 V '' S) (J '' S) := by
+    rw [mapsTo_image_iff]
+    simpa only [Function.comp_def, LinearEquiv.symm_apply_apply] using mapsTo_image J S
+  have hsum := hE₀.seqLowerSemicontinuousWithinAt.add
+    (TauCeti.SeqLowerSemicontinuousWithinAt.comp_seqContinuous
       (g := fun z : WeakSpace 𝕜 V ↦ J ((toWeakSpace 𝕜 V).symm z))
-      hg_at (hJ.continuousWithinAt_toWeakSpace_symm hB (toWeakSpace 𝕜 V a)) hmaps)
-  have hu_B : Tendsto (fun n ↦ toWeakSpace 𝕜 V (u n)) atTop
-      (𝓝[toWeakSpace 𝕜 V '' B] (toWeakSpace 𝕜 V a)) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ hu
-      (Eventually.of_forall fun n ↦ mem_image_of_mem _ ⟨huS n, mem_range_self n⟩)
-  simpa only [Function.comp_apply, LinearEquiv.symm_apply_apply] using hsum.le_of_tendsto hu_B <| by
-    simpa only [Function.comp_def, LinearEquiv.symm_apply_apply] using hl
+      hg_at hJ.seqContinuous_toWeakSpace_symm hmaps)
+  simpa only [Function.comp_apply, LinearEquiv.symm_apply_apply] using
+    hsum.le_of_tendsto (fun n ↦ mem_image_of_mem _ (huS n)) hu <| by
+      simpa only [Function.comp_apply, LinearEquiv.symm_apply_apply] using hl
 
 end RCLike
 

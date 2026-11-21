@@ -70,10 +70,13 @@ theorem lowerSemicontinuousOn_add_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn
     LowerSemicontinuousOn
       (fun w : WeakSpace 𝕜 V ↦
         E₀ ((toWeakSpace 𝕜 V).symm w) + g (J ((toWeakSpace 𝕜 V).symm w)))
-      (toWeakSpace 𝕜 V '' S) :=
-  TauCeti.lowerSemicontinuousOn_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn hb fun _ hBS hB ↦
-    hJ.lowerSemicontinuousOn_add_comp_toWeakSpace_symm hB
-      (hE₀.mono (image_mono hBS)) (hg.mono (image_mono hBS))
+      (toWeakSpace 𝕜 V '' S) := by
+  refine TauCeti.lowerSemicontinuousOn_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn hb
+    fun B hBS hB ↦ (hE₀.mono (image_mono hBS)).add
+      ((hg.mono (image_mono hBS)).comp
+        (hJ.continuousOn_comp_toWeakSpace_symm_of_isBounded hB) ?_)
+  rw [mapsTo_image_iff]
+  simpa only [Function.comp_def, LinearEquiv.symm_apply_apply] using mapsTo_image J B
 
 end CompactPerturbation
 
