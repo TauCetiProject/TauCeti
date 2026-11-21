@@ -465,9 +465,30 @@ theorem repr_of_mul_apply [IsLeftCancelMul H] (f : twistedMonoidAlgebra R H β) 
 
 end CancelMonoidCoefficients
 
-section CommGroupCoefficients
+section GroupCoefficients
 
-variable {R H : Type*} [CommSemiring R] [CommGroup H]
+variable {R H : Type*} [CommSemiring R] [Group H]
+  {β : H → H → Rˣ} [IsFactorSet β]
+
+/-- The coefficient at a free index after right multiplication by a basis element. -/
+@[simp]
+theorem repr_mul_of_apply_mul_inv (f : twistedMonoidAlgebra R H β) (b c : H) :
+    (basis R H β).repr (f * of b) c =
+      (basis R H β).repr f (c * b⁻¹) * (β (c * b⁻¹) b : R) := by
+  simpa only [inv_mul_cancel_right] using repr_mul_of_apply f (c * b⁻¹) b
+
+/-- The coefficient at a free index after left multiplication by a basis element. -/
+@[simp]
+theorem repr_of_mul_apply_inv_mul (f : twistedMonoidAlgebra R H β) (b c : H) :
+    (basis R H β).repr (of b * f) c =
+      (basis R H β).repr f (b⁻¹ * c) * (β b (b⁻¹ * c) : R) := by
+  simpa only [mul_inv_cancel_left] using repr_of_mul_apply f (b⁻¹ * c) b
+
+end GroupCoefficients
+
+section CancelCommMonoidCoefficients
+
+variable {R H : Type*} [CommSemiring R] [CancelCommMonoid H]
   {β : H → H → Rˣ} [IsFactorSet β]
 
 /-- Commutation with a basis element is equality of coefficients weighted by opposite
@@ -485,10 +506,17 @@ theorem commute_of_iff (f : twistedMonoidAlgebra R H β) (b : H) :
   · intro h
     apply (basis R H β).repr.injective
     ext c
-    rw [← div_mul_cancel c b, repr_mul_of_apply, mul_comm (c / b) b, repr_of_mul_apply]
-    exact h (c / b)
+    by_cases hc : c ∈ Set.range (fun a : H ↦ a * b)
+    · obtain ⟨a, rfl⟩ := hc
+      change (basis R H β).repr (f * of b) (a * b) =
+        (basis R H β).repr (of b * f) (a * b)
+      rw [repr_mul_of_apply, mul_comm a b, repr_of_mul_apply]
+      exact h a
+    · have hn : ∀ a : H, a * b ≠ c := fun a he ↦ hc ⟨a, he⟩
+      have hn' : ∀ a : H, b * a ≠ c := fun a ↦ by simpa only [mul_comm b] using hn a
+      simp [repr_mul, repr_of, hn, hn']
 
-end CommGroupCoefficients
+end CancelCommMonoidCoefficients
 
 /-- An algebra map out of `k_α[G]` is determined by its values on the basis elements. -/
 @[ext]

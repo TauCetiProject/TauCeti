@@ -118,11 +118,9 @@ theorem basis_repr_apply (f : QuantumTorus R L u Λ) (a : L) :
     (basis u Λ).repr f a =
       (TwistedMonoidAlgebra.basis R (Multiplicative L) (factorSet u Λ)).repr f
         (Multiplicative.ofAdd a) := by
-  simp only [basis, Module.Basis.repr_reindex_apply]
-  rfl
+  simp only [basis, Module.Basis.repr_reindex_apply, Multiplicative.toAdd_symm_eq]
 
 /-- Right multiplication by a monomial shifts its coefficient and contributes its twist. -/
-@[simp]
 theorem basis_repr_mul_monomial_apply (f : QuantumTorus R L u Λ) (a b : L) :
     (basis u Λ).repr (f * monomial u Λ b) (a + b) =
       (basis u Λ).repr f a * (u ^ (Λ a b) : Rˣ) := by
@@ -132,7 +130,6 @@ theorem basis_repr_mul_monomial_apply (f : QuantumTorus R L u Λ) (a b : L) :
       (Multiplicative.ofAdd a) (Multiplicative.ofAdd b)
 
 /-- Left multiplication by a monomial shifts its coefficient with the opposite twist. -/
-@[simp]
 theorem basis_repr_monomial_mul_apply (f : QuantumTorus R L u Λ) (a b : L) :
     (basis u Λ).repr (monomial u Λ b * f) (a + b) =
       (basis u Λ).repr f a * (u ^ (Λ b a) : Rˣ) := by
@@ -142,23 +139,30 @@ theorem basis_repr_monomial_mul_apply (f : QuantumTorus R L u Λ) (a b : L) :
     TwistedMonoidAlgebra.repr_of_mul_apply (β := factorSet u Λ) f
       (Multiplicative.ofAdd a) (Multiplicative.ofAdd b)
 
+/-- The coefficient at a free index after right multiplication by a monomial. -/
+@[simp]
+theorem basis_repr_mul_monomial_apply_sub (f : QuantumTorus R L u Λ) (b c : L) :
+    (basis u Λ).repr (f * monomial u Λ b) c =
+      (basis u Λ).repr f (c - b) * (u ^ (Λ (c - b) b) : Rˣ) := by
+  simpa only [sub_add_cancel] using basis_repr_mul_monomial_apply f (c - b) b
+
+/-- The coefficient at a free index after left multiplication by a monomial. -/
+@[simp]
+theorem basis_repr_monomial_mul_apply_sub (f : QuantumTorus R L u Λ) (b c : L) :
+    (basis u Λ).repr (monomial u Λ b * f) c =
+      (basis u Λ).repr f (c - b) * (u ^ (Λ b (c - b)) : Rˣ) := by
+  simpa only [sub_add_cancel] using basis_repr_monomial_mul_apply f (c - b) b
+
 /-- Commutation with a normalized monomial is equality of coefficients weighted by the
 two opposite twist factors. -/
 theorem commute_monomial_iff (f : QuantumTorus R L u Λ) (b : L) :
     Commute f (monomial u Λ b) ↔ ∀ a,
       (basis u Λ).repr f a * (u ^ (Λ a b) : Rˣ) =
         (basis u Λ).repr f a * (u ^ (Λ b a) : Rˣ) := by
-  constructor
-  · intro h a
-    simpa only [basis_repr_apply, factorSet_apply, toAdd_ofAdd] using
-      (TwistedMonoidAlgebra.commute_of_iff (β := factorSet u Λ) f
-        (Multiplicative.ofAdd b)).mp h (Multiplicative.ofAdd a)
-  · intro h
-    apply (TwistedMonoidAlgebra.commute_of_iff (β := factorSet u Λ) f
-      (Multiplicative.ofAdd b)).mpr
-    intro a
-    simpa only [basis_repr_apply, factorSet_apply, toAdd_ofAdd,
-      ofAdd_toAdd] using h a.toAdd
+  simpa only [monomial_def, Multiplicative.forall, ← basis_repr_apply,
+    factorSet_apply, toAdd_ofAdd] using
+    (TwistedMonoidAlgebra.commute_of_iff (β := factorSet u Λ) f
+      (Multiplicative.ofAdd b))
 
 /-- A map out of a based quantum torus is determined by its normalized monomials. -/
 @[ext]
