@@ -21,7 +21,10 @@ Let `R` be a compact topological semiring and `M` a finitely generated Hausdorff
 decomposes `f` in `C(X, M)` into a finite linear combination of continuous scalar-valued coordinate
 functions (`ContinuousMap.eq_sum_smul_const`), and for a topological `R`-algebra `A` over a compact
 commutative semiring `R` into `A`-multiples of `algebraMapCLM R A` postcomposed with those
-coordinates (`ContinuousMap.eq_sum_smul_algebraMapCLM_comp`).
+coordinates (`ContinuousMap.eq_sum_smul_algebraMapCLM_comp`). More generally, when `A` carries the
+`R`-module topology (`IsModuleTopology R A`), any finite dual family `(b, φ)` with
+`∀ a, ∑ i, φ i a • b i = a` yields the corresponding decomposition
+`ContinuousMap.eq_sum_smul_algebraMapCLM_comp_of_dual`.
 -/
 
 public section
@@ -46,6 +49,25 @@ theorem eq_sum_smul_const {X R M ι : Type*} [TopologicalSpace X]
     const_apply]
   exact (b.sum_repr (f x)).symm
 
+/-- Every continuous map `f : C(X, A)` into a topological `R`-algebra `A` carrying the `R`-module
+topology over a topological commutative semiring `R` decomposes along any finite dual family
+`(b, φ)` satisfying `∀ a, ∑ i, φ i a • b i = a` into `A`-multiples of `algebraMapCLM R A`
+postcomposed with the continuous scalar-valued coordinate functions `φ i ∘ f`. -/
+theorem eq_sum_smul_algebraMapCLM_comp_of_dual {X R A ι : Type*} [TopologicalSpace X]
+    [CommSemiring R] [TopologicalSpace R] [ContinuousAdd R] [ContinuousSMul R R]
+    [Semiring A] [TopologicalSpace A] [ContinuousAdd A] [ContinuousMul A]
+    [Algebra R A] [IsModuleTopology R A] [Fintype ι]
+    {b : ι → A} {φ : ι → Module.Dual R A} (hsum : ∀ a : A, ∑ i, φ i a • b i = a)
+    (f : C(X, A)) :
+    f = ∑ i : ι, b i •
+      (algebraMapCLM R A : C(R, A)).comp
+        ((⟨φ i, IsModuleTopology.continuous_of_linearMap (φ i)⟩ : C(A, R)).comp f) := by
+  ext x
+  simp only [coe_sum, coe_smul, Finset.sum_apply, Pi.smul_apply, comp_apply,
+    algebraMapCLM_apply, ContinuousMap.coe_mk, smul_eq_mul,
+    ← Algebra.commutes, ← Algebra.smul_def]
+  exact (hsum (f x)).symm
+
 /-- Every continuous map `f : C(X, A)` into a finitely generated Hausdorff topological `R`-algebra
 `A` with continuous `R`-action over a compact topological commutative semiring `R` decomposes along
 any finite `R`-basis `b` of `A` into `A`-multiples of `algebraMapCLM R A` postcomposed with the
@@ -58,11 +80,13 @@ theorem eq_sum_smul_algebraMapCLM_comp {X R A ι : Type*} [TopologicalSpace X]
     f = ∑ i : ι, b i •
       (algebraMapCLM R A : C(R, A)).comp
         (((b.coord i).toContinuousLinearMapOfFiniteOfCompactSpace : C(A, R)).comp f) := by
-  ext x
-  simp only [coe_sum, coe_smul, Finset.sum_apply, Pi.smul_apply, comp_apply,
-    ContinuousMap.coe_ofClass, algebraMapCLM_apply,
-    LinearMap.coe_toContinuousLinearMapOfFiniteOfCompactSpace, Module.Basis.coord_apply,
-    smul_eq_mul, ← Algebra.commutes, ← Algebra.smul_def]
-  exact (b.sum_repr (f x)).symm
+  have := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := R) (M := A)
+  have hcoe (i : ι) :
+      ((b.coord i).toContinuousLinearMapOfFiniteOfCompactSpace : C(A, R)) =
+        ⟨b.coord i, IsModuleTopology.continuous_of_linearMap (b.coord i)⟩ := by
+    ext
+    simp
+  simp_rw [hcoe]
+  exact eq_sum_smul_algebraMapCLM_comp_of_dual (b := b) (φ := b.coord) (fun a ↦ b.sum_repr a) f
 
 end ContinuousMap

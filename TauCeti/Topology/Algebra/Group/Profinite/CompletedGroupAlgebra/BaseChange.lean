@@ -88,9 +88,10 @@ is a topological ring and `S` carries the `R`-module topology.
   `TauCeti.completedGroupAlgebra.baseChange_baseChangeEquiv_symm`,
   `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_mapRingHom`,
   `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_of`,
+  `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_apply_of_dual`,
   `TauCeti.completedGroupAlgebra.baseChangeEquiv_symm_apply`: inverse cancellation, self-base-change
-  normalization, pure-tensor and generator normal forms, and basis decomposition of
-  `(baseChangeEquiv R S Γ).symm`.
+  normalization, pure-tensor and generator normal forms, and dual-family and basis decompositions
+  of `(baseChangeEquiv R S Γ).symm`.
 
 ## References
 
@@ -495,20 +496,30 @@ theorem baseChangeEquiv_symm_of (γ : Γ) :
     (baseChangeEquiv R S Γ).symm (of S Γ γ) = 1 ⊗ₜ[R] of R Γ γ := by
   rw [← mapRingHom_of (algebraMap R S) γ, baseChangeEquiv_symm_mapRingHom]
 
-/-- In any finite `R`-basis `b` of `S`, `(baseChangeEquiv R S Γ).symm y` decomposes as
-`∑ i, b i ⊗ₜ mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y`. -/
-theorem baseChangeEquiv_symm_apply {ι : Type*} [Fintype ι] (b : Module.Basis ι R S)
+/-- Given a finite dual family `(b, φ)` for `S` over `R` satisfying
+`∀ s, ∑ i, φ i s • b i = s`, `(baseChangeEquiv R S Γ).symm y` decomposes as
+`∑ i, b i ⊗ₜ mapAddMonoidHom Γ (φ i).toAddMonoidHom y`. -/
+theorem baseChangeEquiv_symm_apply_of_dual {ι : Type*} [Fintype ι]
+    {b : ι → S} {φ : ι → Module.Dual R S} (hsum : ∀ s : S, ∑ i, φ i s • b i = s)
     (y : completedGroupAlgebra S Γ) :
     (baseChangeEquiv R S Γ).symm y =
-      ∑ i : ι, b i ⊗ₜ[R] mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y := by
+      ∑ i : ι, b i ⊗ₜ[R] mapAddMonoidHom Γ (φ i).toAddMonoidHom y := by
   apply (baseChangeEquiv R S Γ).injective
   rw [AlgEquiv.apply_symm_apply, coe_baseChangeEquiv, map_sum]
   refine ext fun U ↦ MonoidAlgebra.coeff_injective <| Finsupp.ext fun a ↦ ?_
   simp only [baseChange_tmul, map_sum, map_smul, MonoidAlgebra.coeff_sum, MonoidAlgebra.coeff_smul,
     Finsupp.finsetSum_apply, Finsupp.smul_apply, coeff_proj_mapRingHom,
-    coeff_proj_mapAddMonoidHom, LinearMap.toAddMonoidHom_coe, Module.Basis.coord_apply,
-    smul_eq_mul, mul_comm (b _), ← Algebra.smul_def]
-  exact (b.sum_repr ((proj S Γ U y).coeff a)).symm
+    coeff_proj_mapAddMonoidHom, LinearMap.toAddMonoidHom_coe, smul_eq_mul, mul_comm (b _),
+    ← Algebra.smul_def]
+  exact (hsum ((proj S Γ U y).coeff a)).symm
+
+/-- In any finite `R`-basis `b` of `S`, `(baseChangeEquiv R S Γ).symm y` decomposes as
+`∑ i, b i ⊗ₜ mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y`. -/
+theorem baseChangeEquiv_symm_apply {ι : Type*} [Fintype ι] (b : Module.Basis ι R S)
+    (y : completedGroupAlgebra S Γ) :
+    (baseChangeEquiv R S Γ).symm y =
+      ∑ i : ι, b i ⊗ₜ[R] mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y :=
+  baseChangeEquiv_symm_apply_of_dual (b := b) (φ := b.coord) (fun s ↦ b.sum_repr s) y
 
 /-- Base change from `R` to `R` itself recovers `Algebra.TensorProduct.lid`. -/
 @[simp]

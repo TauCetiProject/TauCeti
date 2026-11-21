@@ -12,6 +12,7 @@ import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 import Mathlib.Topology.Algebra.Module.Compact
 import TauCeti.LinearAlgebra.Dual.FiniteProjective
 import TauCeti.Topology.Algebra.Ring.Basic
+import TauCeti.Topology.ContinuousMap.AutomaticContinuity
 
 /-!
 # Finite projective `O`-valued measures and completed group algebras
@@ -218,15 +219,7 @@ private theorem apply_eq_sum_of_dual_of_leftInverse
         (inv (completedGroupAlgebra.mapAddMonoidHom Γ
           (φ i).toAddMonoidHom (toCompletedGroupAlgebra ν))
             ((⟨φ j, IsModuleTopology.continuous_of_linearMap (φ j)⟩ : C(O, R)).comp f)) • b i := by
-  have hf : f = ∑ j : Fin n,
-      b j • ((algebraMapCLM R O : C(R, O)).comp
-        ((⟨φ j, IsModuleTopology.continuous_of_linearMap (φ j)⟩ : C(O, R)).comp f)) := by
-    ext x
-    simp only [ContinuousMap.coe_sum, Finset.sum_apply, ContinuousMap.smul_apply,
-      ContinuousMap.comp_apply, algebraMapCLM_apply, ContinuousMap.coe_mk, smul_eq_mul,
-      mul_comm (b _), ← Algebra.smul_def]
-    exact (hsum (f x)).symm
-  conv_lhs => rw [hf]
+  conv_lhs => rw [ContinuousMap.eq_sum_smul_algebraMapCLM_comp_of_dual hsum f]
   rw [map_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [map_smul, smul_eq_mul]
@@ -378,12 +371,14 @@ theorem completedGroupAlgebraEquivOfFreeOfFinite_symm_of {p : ℕ} [Fact p.Prime
 @[simp]
 theorem completedGroupAlgebraEquivOfFreeOfFinite_symm_mapRingHom {p : ℕ} [Fact p.Prime]
     {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [IsModuleTopology ℤ_[p] O]
+    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]
     [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
     (x : completedGroupAlgebra ℤ_[p] Γ) :
+    let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
     (completedGroupAlgebraEquivOfFreeOfFinite p O).symm
         (completedGroupAlgebra.mapRingHom Γ (algebraMap ℤ_[p] O) x) =
       extendScalars O (completedGroupAlgebraEquiv.symm x) := by
+  let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
   apply (completedGroupAlgebraEquivOfFreeOfFinite p O).injective
   simp
 
@@ -392,13 +387,15 @@ extracts each scalar coordinate in `ℤ_p[[Γ]]`, converts it to an integral mea
 in `D(Γ, O)`. -/
 theorem completedGroupAlgebraEquivOfFreeOfFinite_symm_apply {p : ℕ} [Fact p.Prime]
     {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O] [T2Space O]
-    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O] [IsModuleTopology ℤ_[p] O]
+    [Algebra ℤ_[p] O] [ContinuousSMul ℤ_[p] O]
     [Module.Free ℤ_[p] O] [Module.Finite ℤ_[p] O]
     {ι : Type*} [Fintype ι] (b : Module.Basis ι ℤ_[p] O) (y : completedGroupAlgebra O Γ) :
+    let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
     (completedGroupAlgebraEquivOfFreeOfFinite p O).symm y =
       ∑ i : ι, b i • extendScalars O
         (completedGroupAlgebraEquiv.symm
           (completedGroupAlgebra.mapAddMonoidHom Γ (b.coord i).toAddMonoidHom y)) := by
+  let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
   apply (completedGroupAlgebraEquivOfFreeOfFinite p O).injective
   rw [AlgEquiv.apply_symm_apply, coe_completedGroupAlgebraEquivOfFreeOfFinite]
   have hsum : ∑ i : ι, b i • extendScalars O

@@ -16,6 +16,7 @@ public import TauCeti.Topology.Algebra.Module.AutomaticContinuity
 import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.LinearAlgebra.Dual.FiniteProjective
 import TauCeti.NumberTheory.Padics.Measure.Dirac
+import TauCeti.Topology.ContinuousMap.AutomaticContinuity
 
 /-!
 # Finite projective base change of abstract measures
@@ -84,13 +85,16 @@ Every hypothesis on `O` is necessary:
 * `AbstractMeasure.mapScalars_smul_dirac`, `AbstractMeasure.mapScalars_mapScalars`,
   `AbstractMeasure.extendScalars_apply_comp_algebraMap`,
   `AbstractMeasure.existsUnique_apply_comp_algebraMap`,
+  `AbstractMeasure.extendScalars_apply_eq_sum_of_dual`,
   `AbstractMeasure.extendScalars_apply_eq_sum`, `AbstractMeasure.extendScalars_self`,
   `AbstractMeasure.extendScalars_apply_one`, `AbstractMeasure.extendScalars_extendScalars`,
   `AbstractMeasure.extendScalars_injective`, `AbstractMeasure.extendScalars_dirac`,
   `AbstractMeasure.extendScalars_map`, `AbstractMeasure.finiteProjection_extendScalars`,
+  `AbstractMeasure.eq_sum_smul_extendScalars_of_dual`,
   `AbstractMeasure.eq_sum_smul_extendScalars_of_basis`,
   `AbstractMeasure.baseChangeLinearEquiv_symm_extendScalars`,
   `AbstractMeasure.baseChangeLinearEquiv_symm_dirac`,
+  `AbstractMeasure.baseChangeLinearEquiv_symm_apply_of_dual`,
   `AbstractMeasure.baseChangeLinearEquiv_symm_apply`,
   `AbstractMeasure.baseChangeLinearEquiv_self`,
   `AbstractMeasure.extendScalarsRingHom_self`,
@@ -242,19 +246,6 @@ variable (O : Type*) [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
 
 local instance : ContinuousSMul R O := IsModuleTopology.toContinuousSMul R O
 
-private theorem continuousMap_eq_sum_of_dual {O} [CommRing O] [TopologicalSpace O]
-    [IsTopologicalRing O] [Algebra R O] [IsModuleTopology R O]
-    {n : ℕ} {b : Fin n → O} {φ : Fin n → Module.Dual R O}
-    (hsum : ∀ a : O, ∑ i, φ i a • b i = a) (f : C(X, O)) :
-    f = ∑ i : Fin n,
-      b i • ((algebraMapCLM R O : C(R, O)).comp
-        ((⟨φ i, IsModuleTopology.continuous_of_linearMap (φ i)⟩ : C(O, R)).comp f)) := by
-  ext x
-  simp only [ContinuousMap.coe_sum, Finset.sum_apply, ContinuousMap.smul_apply,
-    ContinuousMap.comp_apply, algebraMapCLM_apply, ContinuousMap.coe_mk, smul_eq_mul,
-    mul_comm (b _), ← Algebra.smul_def]
-  exact (hsum (f x)).symm
-
 variable (R) {O} in
 /-- **Scalar-test extensionality for `O`-valued measures.** When `O` carries the `R`-module topology
 and is finitely generated and projective over `R`, two `O`-valued measures on `X` agree if they
@@ -265,7 +256,7 @@ theorem ext_of_apply_comp_algebraMap [Module.Projective R O] [Module.Finite R O]
     ν₁ = ν₂ := by
   obtain ⟨n, b, φ, hsum⟩ := TauCeti.exists_sum_dual_smul_eq (R := R) (M := O)
   ext f
-  rw [continuousMap_eq_sum_of_dual hsum f, map_sum, map_sum]
+  rw [ContinuousMap.eq_sum_smul_algebraMapCLM_comp_of_dual hsum f, map_sum, map_sum]
   exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, map_smul, h]
 
 private theorem exists_apply_comp_algebraMap [Module.Projective R O] [Module.Finite R O]
@@ -351,25 +342,26 @@ theorem existsUnique_apply_comp_algebraMap (μ : D(X, R)) :
   ⟨extendScalars O μ, extendScalars_apply_comp_algebraMap μ,
     fun _ hν ↦ eq_extendScalars_iff.mpr hν⟩
 
+/-- Explicit coordinate formula for `extendScalars O μ f` with respect to any finite dual
+family `(b, φ)` satisfying `∀ a, ∑ i, φ i a • b i = a`. -/
+theorem extendScalars_apply_eq_sum_of_dual {ι : Type*} [Fintype ι]
+    {b : ι → O} {φ : ι → Module.Dual R O} (hsum : ∀ a : O, ∑ i, φ i a • b i = a)
+    (μ : D(X, R)) (f : C(X, O)) :
+    extendScalars O μ f =
+      ∑ i : ι,
+        μ ((⟨φ i, IsModuleTopology.continuous_of_linearMap (φ i)⟩ : C(O, R)).comp f) • b i := by
+  conv_lhs => rw [ContinuousMap.eq_sum_smul_algebraMapCLM_comp_of_dual hsum f]
+  simp only [map_sum, map_smul, extendScalars_apply_comp_algebraMap, smul_eq_mul,
+    mul_comm (b _), ← Algebra.smul_def]
+
 /-- Explicit coordinate formula for `extendScalars O μ f` in any finite `R`-basis `b` of `O`. -/
 theorem extendScalars_apply_eq_sum {ι : Type*} [Fintype ι] (b : Module.Basis ι R O) (μ : D(X, R))
     (f : C(X, O)) :
     extendScalars O μ f =
       ∑ i : ι,
         μ ((⟨b.coord i, IsModuleTopology.continuous_of_linearMap (b.coord i)⟩ : C(O, R)).comp f) •
-          b i := by
-  have hdecomp : f = ∑ i : ι,
-      b i • ((algebraMapCLM R O : C(R, O)).comp
-        ((⟨b.coord i, IsModuleTopology.continuous_of_linearMap (b.coord i)⟩ :
-          C(O, R)).comp f)) := by
-    ext x
-    simp only [ContinuousMap.coe_sum, Finset.sum_apply, ContinuousMap.smul_apply,
-      ContinuousMap.comp_apply, algebraMapCLM_apply, ContinuousMap.coe_mk, smul_eq_mul,
-      mul_comm (b _), ← Algebra.smul_def, Module.Basis.coord_apply]
-    exact (b.sum_repr (f x)).symm
-  conv_lhs => rw [hdecomp]
-  simp only [map_sum, map_smul, extendScalars_apply_comp_algebraMap, smul_eq_mul,
-    mul_comm (b _), ← Algebra.smul_def]
+          b i :=
+  extendScalars_apply_eq_sum_of_dual (b := b) (φ := b.coord) (fun a ↦ b.sum_repr a) μ f
 
 /-- Evaluating `extendScalars O μ` at the constant test function `1 : C(X, O)` applies
 `algebraMap R O` to `μ 1`. -/
@@ -451,16 +443,25 @@ theorem mapScalars_extendScalars (l : O →ₗ[R] R) (μ : D(X, R)) :
     mapScalars l (extendScalars O μ) = l 1 • μ := by
   simpa using mapScalars_smul_extendScalars l (1 : O) μ
 
+/-- Given a finite dual family `(b, φ)` for `O` over `R` satisfying
+`∀ a, ∑ i, φ i a • b i = a`, every `O`-valued measure `ν` decomposes in terms of `b` and
+its `R`-valued coordinate measures `mapScalars (φ i) ν`. -/
+theorem eq_sum_smul_extendScalars_of_dual {ι : Type*} [Fintype ι]
+    {b : ι → O} {φ : ι → Module.Dual R O} (hsum : ∀ a : O, ∑ i, φ i a • b i = a)
+    (ν : D(X, O)) :
+    ν = ∑ i : ι, b i • extendScalars O (mapScalars (φ i) ν) := by
+  refine ext_of_apply_comp_algebraMap R fun g ↦ ?_
+  rw [← coe_toCLMEquiv (∑ i : ι, _), map_sum, _root_.sum_apply]
+  simp_rw [coe_toCLMEquiv, _root_.smul_apply, extendScalars_apply_comp_algebraMap, mapScalars_apply,
+    smul_eq_mul, mul_comm (b _), ← Algebra.smul_def]
+  exact (hsum (ν ((algebraMapCLM R O : C(R, O)).comp g))).symm
+
 /-- Given a finite `R`-basis `b` of `O`, every `O`-valued measure `ν` decomposes in terms of `b` and
 its `R`-valued coordinate measures `mapScalars (b.coord i) ν`. -/
 theorem eq_sum_smul_extendScalars_of_basis {ι : Type*} [Fintype ι] (b : Module.Basis ι R O)
     (ν : D(X, O)) :
-    ν = ∑ i : ι, b i • extendScalars O (mapScalars (b.coord i) ν) := by
-  refine ext_of_apply_comp_algebraMap R fun g ↦ ?_
-  rw [← coe_toCLMEquiv (∑ i : ι, _), map_sum, _root_.sum_apply]
-  simp_rw [coe_toCLMEquiv, _root_.smul_apply, extendScalars_apply_comp_algebraMap, mapScalars_apply,
-    Module.Basis.coord_apply, smul_eq_mul, mul_comm (b _), ← Algebra.smul_def]
-  exact (b.sum_repr (ν ((algebraMapCLM R O : C(R, O)).comp g))).symm
+    ν = ∑ i : ι, b i • extendScalars O (mapScalars (b.coord i) ν) :=
+  eq_sum_smul_extendScalars_of_dual (b := b) (φ := b.coord) (fun a ↦ b.sum_repr a) ν
 
 omit [Module.Projective R O] [Module.Finite R O] in
 /-- Given a finite `R`-basis `b` of `O`, two `O`-valued measures are equal whenever all of their
@@ -543,19 +544,24 @@ theorem baseChangeLinearEquiv_symm_dirac (x : X) :
     (baseChangeLinearEquiv O).symm (dirac O x) = (1 : O) ⊗ₜ[R] dirac R x := by
   rw [← extendScalars_dirac (R := R), baseChangeLinearEquiv_symm_extendScalars]
 
+/-- Given a finite dual family `(b, φ)` for `O` over `R` satisfying
+`∀ a, ∑ i, φ i a • b i = a`, `(baseChangeLinearEquiv O).symm ν` decomposes as
+`∑ i, b i ⊗ₜ mapScalars (φ i) ν`. -/
+theorem baseChangeLinearEquiv_symm_apply_of_dual {ι : Type*} [Fintype ι]
+    {b : ι → O} {φ : ι → Module.Dual R O} (hsum : ∀ a : O, ∑ i, φ i a • b i = a)
+    (ν : D(X, O)) :
+    (baseChangeLinearEquiv O).symm ν = ∑ i : ι, b i ⊗ₜ[R] mapScalars (φ i) ν := by
+  apply (baseChangeLinearEquiv O).injective
+  rw [LinearEquiv.apply_symm_apply, map_sum]
+  simpa only [baseChangeLinearEquiv_tmul] using
+    eq_sum_smul_extendScalars_of_dual hsum ν
+
 /-- In any finite `R`-basis `b` of `O`, `(baseChangeLinearEquiv O).symm ν` decomposes as
 `∑ i, b i ⊗ₜ mapScalars (b.coord i) ν`. -/
 theorem baseChangeLinearEquiv_symm_apply {ι : Type*} [Fintype ι]
     (b : Module.Basis ι R O) (ν : D(X, O)) :
-    (baseChangeLinearEquiv O).symm ν = ∑ i : ι, b i ⊗ₜ[R] mapScalars (b.coord i) ν := by
-  apply (baseChangeLinearEquiv O).injective
-  rw [LinearEquiv.apply_symm_apply, map_sum]
-  refine ext_of_apply_comp_algebraMap R fun g ↦ ?_
-  rw [← coe_toCLMEquiv ν, ← coe_toCLMEquiv (∑ i : ι, _), map_sum, _root_.sum_apply]
-  simp_rw [coe_toCLMEquiv, baseChangeLinearEquiv_tmul, _root_.smul_apply,
-    extendScalars_apply_comp_algebraMap, mapScalars_apply, smul_eq_mul, mul_comm (b _),
-    ← Algebra.smul_def, Module.Basis.coord_apply]
-  exact (b.sum_repr (ν ((algebraMapCLM R O : C(R, O)).comp g))).symm
+    (baseChangeLinearEquiv O).symm ν = ∑ i : ι, b i ⊗ₜ[R] mapScalars (b.coord i) ν :=
+  baseChangeLinearEquiv_symm_apply_of_dual (b := b) (φ := b.coord) (fun a ↦ b.sum_repr a) ν
 
 end FiniteProjective
 
@@ -606,14 +612,7 @@ theorem continuous_extendScalars_weak [Module.Projective R O] [Module.Finite R O
   let _ : TopologicalSpace D(X, R) := WeakTopology
   let _ : TopologicalSpace D(X, O) := WeakTopology
   refine continuous_induced_rng.mpr (continuous_pi fun f : C(X, O) ↦ ?_)
-  have hval (μ : D(X, R)) :
-      extendScalars O μ f =
-        ∑ i : Fin n,
-          μ ((⟨φ i, IsModuleTopology.continuous_of_linearMap (φ i)⟩ : C(O, R)).comp f) • b i := by
-    conv_lhs => rw [continuousMap_eq_sum_of_dual hsum f]
-    simp only [map_sum, map_smul, extendScalars_apply_comp_algebraMap, smul_eq_mul,
-      mul_comm (b _), ← Algebra.smul_def]
-  simp only [Function.comp_apply, hval]
+  simp only [Function.comp_apply, extendScalars_apply_eq_sum_of_dual hsum _ f]
   refine continuous_finsetSum _ fun i _ ↦ ?_
   have heval : Continuous (fun μ : D(X, R) ↦
       μ ((⟨φ i, IsModuleTopology.continuous_of_linearMap (φ i)⟩ : C(O, R)).comp f)) :=
