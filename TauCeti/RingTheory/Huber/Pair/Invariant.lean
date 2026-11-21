@@ -41,6 +41,8 @@ spectrum by `G`, and of finite quotients of affinoid perfectoid spaces.
 
 * `TauCeti.Huber.IsPseudoUniformizer.orbitProd`: the orbit product of a pseudouniformiser is a
   pseudouniformiser.
+* `TauCeti.Huber.IsPseudoUniformizer.orbitProd_fixedPoints`: it is also a pseudouniformiser of
+  the fixed subring.
 * `TauCeti.Huber.isTateRing_fixedPoints`: `Aᴳ` is a Tate ring, as an instance.
 * `TauCeti.Huber.powerBoundedSubring_fixedPoints`: `(Aᴳ)° = A° ∩ Aᴳ`.
 * `TauCeti.Huber.integralClosure_map_invariantPair_plus`: if `G` preserves `A⁺`, then `A⁺` is the
@@ -87,6 +89,17 @@ theorem IsPseudoUniformizer.orbitProd {R : Type*} [CommSemiring R] [TopologicalS
     Finset.univ_nonempty fun g _ ↦
       hϖ.map (φ := MulSemiringAction.toRingHom G R g) (continuous_const_smul g)
 
+/-- **The orbit product of a pseudouniformiser is a pseudouniformiser of the fixed subring.** Its
+inverse is the orbit product of `ϖ⁻¹`, which is again invariant. -/
+theorem IsPseudoUniformizer.orbitProd_fixedPoints [TopologicalSpace A] [ContinuousMul A]
+    [Fintype G] [ContinuousConstSMul G A] {ϖ : A} (hϖ : IsPseudoUniformizer ϖ) :
+    IsPseudoUniformizer
+      (⟨TauCeti.orbitProd G ϖ, TauCeti.orbitProd_mem_subring G ϖ⟩ : FixedPoints.subring A G) :=
+  isPseudoUniformizer_iff.mpr
+    ⟨(Units.mkOfMulEqOne _ ⟨_, TauCeti.orbitProd_mem_subring G (↑hϖ.isUnit.unit⁻¹ : A)⟩
+      (Subtype.ext (TauCeti.orbitProd_units_mul_inv G hϖ.isUnit.unit))).isUnit,
+      isTopologicallyNilpotent_mk _ (hϖ.orbitProd G).isTopologicallyNilpotent⟩
+
 variable [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A] [Finite G]
   [ContinuousConstSMul G A]
 
@@ -96,7 +109,7 @@ theorem exists_isPseudoUniformizer_mem_fixedPoints :
     ∃ ϖ : A, IsPseudoUniformizer ϖ ∧ ϖ ∈ FixedPoints.subring A G := by
   have := Fintype.ofFinite G
   obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
-  exact ⟨_, hϖ.orbitProd G, fun g ↦ TauCeti.smul_orbitProd G g ϖ⟩
+  exact ⟨_, hϖ.orbitProd G, TauCeti.orbitProd_mem_subring G ϖ⟩
 
 /-- **The fixed subring of a finite group acting on a Tate ring is a Tate ring** for the subspace
 topology. If `ϖ` is a pseudouniformiser of `A`, its orbit product `N(ϖ) = ∏ g, g • ϖ` is a
@@ -109,9 +122,9 @@ instance isTateRing_fixedPoints : IsTateRing (FixedPoints.subring A G) := by
   have hinv : (↑(hN.isUnit.unit⁻¹) : A) = TauCeti.orbitProd G (↑(hϖ.isUnit.unit⁻¹) : A) :=
     Units.inv_eq_of_mul_eq_one_right (TauCeti.orbitProd_units_mul_inv G hϖ.isUnit.unit)
   refine (FixedPoints.subring A G).isTateRing_of_isPseudoUniformizer hN.isUnit.unit hN
-    (fun g ↦ TauCeti.smul_orbitProd G g ϖ) ?_
+    (TauCeti.orbitProd_mem_subring G ϖ) ?_
   rw [hinv]
-  exact fun g ↦ TauCeti.smul_orbitProd G g _
+  exact TauCeti.orbitProd_mem_subring G _
 
 /-- **Power-bounded invariants** (`(Aᴳ)° = A° ∩ Aᴳ`): an invariant element is power-bounded in
 `Aᴳ` exactly when it is power-bounded in `A`. -/
