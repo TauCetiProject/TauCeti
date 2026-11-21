@@ -74,8 +74,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 * `HasEnoughRootsOfUnity.primitiveRoots_nonempty` and
   `HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective`: with enough `n`-th roots of unity,
   `primitiveRoots n R` is nonempty, also after an injective homomorphism into a domain.
-* `HasEnoughRootsOfUnity.natCast_card_ne_zero`: a field with enough roots of unity for the
-  exponent of a finite group `G` has `#G ≠ 0`.
+* `TauCeti.natCast_card_ne_zero_of_hasEnoughRootsOfUnity`: a field with enough roots of unity
+  for the exponent of a finite group `G` has `#G ≠ 0`.
 * `TauCeti.rootsOfUnity_eq_bot_iff`: for a prime `p`, the `p`th roots of unity are trivial
   exactly when there is no primitive `p`th root of unity.
 * `TauCeti.finite_torsionBy_additive_units`: the `n`-torsion of `Mˣ`, written additively, is
@@ -323,7 +323,7 @@ variable (K : Type*) [Field K] in
 /-- A field with enough roots of unity for the exponent of a finite group `G` has `#G ≠ 0`: a
 primitive root of unity of that order makes the exponent nonzero in `K`, so `#G` is a unit
 (`TauCeti.isUnit_natCard_of_isUnit_exponent`). -/
-theorem _root_.HasEnoughRootsOfUnity.natCast_card_ne_zero {G : Type*} [Group G] [Finite G]
+theorem natCast_card_ne_zero_of_hasEnoughRootsOfUnity {G : Type*} [Group G] [Finite G]
     [HasEnoughRootsOfUnity K (Monoid.exponent G)] : (Nat.card G : K) ≠ 0 := by
   have : NeZero (Monoid.exponent G) := ⟨Monoid.exponent_ne_zero_of_finite⟩
   exact (isUnit_natCard_of_isUnit_exponent (HasEnoughRootsOfUnity.exists_isPrimitiveRoot K

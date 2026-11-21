@@ -161,16 +161,15 @@ theorem isQuadratic_prod {M R ι : Type*} [CommMonoid M] [CommRing R]
 theorem pow_eq_one_iff_forall_mem_range_apply_eq_one {M R : Type*} [CommMonoid M]
     [CommMonoidWithZero R] (χ : MulChar M R) (d : ℕ) :
     χ ^ d = 1 ↔ ∀ h ∈ (powMonoidHom d : Mˣ →* Mˣ).range, χ h = 1 := by
-  simp only [MonoidHom.mem_range, powMonoidHom_apply, forall_exists_index, forall_apply_eq_imp_iff]
-  refine ⟨fun hχ y ↦ ?_, fun hχ ↦ ext fun y ↦ ?_⟩
-  · simpa [pow_apply_coe] using congr_fun (congrArg DFunLike.coe hχ) (y : M)
-  · simpa [pow_apply_coe] using hχ y
+  simp only [eq_one_iff, MonoidHom.mem_range, powMonoidHom_apply, forall_exists_index,
+    forall_apply_eq_imp_iff, pow_apply_coe, Units.val_pow_eq_pow_val, map_pow]
 
 /-- At a unit `v`, the inverse of a character takes the value `χ v⁻¹`, with the inverse in `Mˣ`. -/
 theorem inv_apply_units {M R : Type*} [CommMonoid M] [CommMonoidWithZero R] (χ : MulChar M R)
     (v : Mˣ) : χ⁻¹ v = χ ↑v⁻¹ := by
-  rw [← coe_equivToUnitHom, ← mulEquivToUnitHom_apply, map_inv, MonoidHom.inv_apply,
-    ← map_inv, mulEquivToUnitHom_apply, coe_equivToUnitHom]
+  have h : mulEquivToUnitHom χ⁻¹ v = mulEquivToUnitHom χ v⁻¹ := by
+    simp only [map_inv, MonoidHom.inv_apply]
+  simpa only [mulEquivToUnitHom_apply, coe_equivToUnitHom] using congrArg Units.val h
 
 /-- The sum of a character over a finite commutative monoid `M` is the cast of the number of
 units of `M` for the trivial character and zero otherwise. This puts Mathlib's

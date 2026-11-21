@@ -28,6 +28,8 @@ complex characters of order `d` exactly for `d ∣ #F - 1`.
 
 ## Main results
 
+* `MulChar.mulEquivRootsOfUnityOfGenerator`: if `g` generates `Mˣ`, evaluation at `g` identifies
+  the characters with the `#Mˣ`-th roots of unity of `R`.
 * `MulChar.orderOf_apply_eq_orderOf`: if `g` generates `Mˣ`, then `χ g` has the order of `χ`.
 * `MulChar.isCyclic`: with values in a domain, the characters of a monoid with a finite cyclic unit
   group form a cyclic group.
@@ -46,26 +48,27 @@ section CommMonoidWithZero
 
 variable {M : Type*} [CommMonoid M] {R : Type*} [CommMonoidWithZero R]
 
-/-- If `g` generates `Mˣ`, the characters are the `#Mˣ`-th roots of unity of `R`: Mathlib's
-`IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator`, transported along `MulChar.mulEquivToUnitHom`
-and `rootsOfUnityUnitsMulEquiv`. -/
-private noncomputable def mulEquivRootsOfUnity {g : Mˣ} (hg : ∀ x, x ∈ Subgroup.zpowers g) :
+/-- If `g` generates `Mˣ`, evaluation at `g` identifies the characters with the `#Mˣ`-th roots of
+unity of `R`. This is Mathlib's `IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator`, transported
+along `MulChar.mulEquivToUnitHom` and `rootsOfUnityUnitsMulEquiv`. -/
+noncomputable def mulEquivRootsOfUnityOfGenerator {g : Mˣ} (hg : ∀ x, x ∈ Subgroup.zpowers g) :
     MulChar M R ≃* rootsOfUnity (Nat.card Mˣ) R :=
   mulEquivToUnitHom.trans ((IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator hg Rˣ).trans
     (rootsOfUnityUnitsMulEquiv R _))
 
 /-- The root of unity attached to a character is its value at the generator. -/
-private theorem mulEquivRootsOfUnity_apply {g : Mˣ} (hg : ∀ x, x ∈ Subgroup.zpowers g)
-    (χ : MulChar M R) : ((mulEquivRootsOfUnity hg χ : Rˣ) : R) = χ g := by
-  simp [mulEquivRootsOfUnity, IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator,
+@[simp]
+theorem mulEquivRootsOfUnityOfGenerator_apply {g : Mˣ} (hg : ∀ x, x ∈ Subgroup.zpowers g)
+    (χ : MulChar M R) : ((mulEquivRootsOfUnityOfGenerator hg χ : Rˣ) : R) = χ g := by
+  simp [mulEquivRootsOfUnityOfGenerator, IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator,
     rootsOfUnityUnitsMulEquiv]
 
 /-- If `g` generates `Mˣ`, then the value of a character at `g` has the order of the
 character. -/
 theorem orderOf_apply_eq_orderOf (χ : MulChar M R) {g : Mˣ}
     (hg : ∀ x, x ∈ Subgroup.zpowers g) : orderOf (χ g) = orderOf χ := by
-  rw [← (mulEquivRootsOfUnity (R := R) hg).orderOf_eq χ, ← Subgroup.orderOf_coe, ← orderOf_units,
-    mulEquivRootsOfUnity_apply]
+  rw [← (mulEquivRootsOfUnityOfGenerator (R := R) hg).orderOf_eq χ, ← Subgroup.orderOf_coe,
+    ← orderOf_units, mulEquivRootsOfUnityOfGenerator_apply]
 
 end CommMonoidWithZero
 
@@ -77,8 +80,8 @@ variable {M : Type*} [CommMonoid M] {R : Type*} [CommRing R] [IsDomain R]
 cyclic group: they are the `#Mˣ`-th roots of unity of `R`, which form a cyclic group. -/
 instance isCyclic [Finite Mˣ] [IsCyclic Mˣ] : IsCyclic (MulChar M R) := by
   obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := Mˣ)
-  exact isCyclic_of_injective (mulEquivRootsOfUnity (R := R) hg).toMonoidHom
-    (mulEquivRootsOfUnity hg).injective
+  exact isCyclic_of_injective (mulEquivRootsOfUnityOfGenerator (R := R) hg).toMonoidHom
+    (mulEquivRootsOfUnityOfGenerator hg).injective
 
 /-- For a monoid with finitely many units and characters valued in a domain, a character `ω`
 whose order is `#Mˣ` generates the character group: every character is `ω ^ m` for exactly one
@@ -86,26 +89,28 @@ whose order is `#Mˣ` generates the character group: every character is `ω ^ m`
 theorem existsUnique_lt_and_pow_eq [Finite Mˣ] (ω : MulChar M R) (hω : orderOf ω = Nat.card Mˣ)
     (χ : MulChar M R) : ∃! m : ℕ, m < Nat.card Mˣ ∧ ω ^ m = χ := by
   -- The exponent of `Mˣ` kills every unit, so it kills `ω`; hence `Mˣ` is cyclic.
-  have hexp : orderOf ω ∣ Monoid.exponent Mˣ := orderOf_dvd_of_pow_eq_one <| ext fun u ↦ by
-    simpa [pow_apply_coe] using congrArg (fun v : Mˣ ↦ ω v) (Monoid.pow_exponent_eq_one u)
+  have hexp : orderOf ω ∣ Monoid.exponent Mˣ := orderOf_dvd_of_pow_eq_one <| eq_one_iff.2 fun u ↦ by
+    rw [pow_apply_coe, ← map_pow, ← Units.val_pow_eq_pow_val, Monoid.pow_exponent_eq_one,
+      Units.val_one, map_one]
   obtain ⟨g, hg⟩ := (IsCyclic.of_exponent_eq_card
     (Nat.dvd_antisymm Group.exponent_dvd_nat_card (hω ▸ hexp))).exists_generator
   -- The characters are the `#Mˣ`-th roots of unity, and there are at most `#Mˣ` of these.
-  let e := mulEquivRootsOfUnity (R := R) hg
+  let e := mulEquivRootsOfUnityOfGenerator (R := R) hg
   have : Finite (MulChar M R) := Finite.of_equiv _ e.symm.toEquiv
   have : NeZero (Nat.card Mˣ) := ⟨Nat.card_pos.ne'⟩
-  have hχ : χ ∈ Submonoid.powers ω := by
-    rw [mem_powers_iff_mem_zpowers, Subgroup.eq_top_of_le_card (Subgroup.zpowers ω) (by
+  have hχ : χ ∈ Subgroup.zpowers ω := by
+    rw [Subgroup.eq_top_of_le_card (Subgroup.zpowers ω) (by
       rw [Nat.card_zpowers, hω, Nat.card_congr e.toEquiv]
       exact card_rootsOfUnity R _)]
     exact Subgroup.mem_top χ
-  -- The powers `ω ^ m` with `m < orderOf ω` list the elements of `powers ω`, without repetition.
+  -- The powers `ω ^ m` with `m < orderOf ω` list the elements of `zpowers ω`, without repetition.
   have hfin : IsOfFinOrder ω := orderOf_pos_iff.mp (hω ▸ Nat.card_pos)
-  obtain ⟨m, hm⟩ := (finEquivPowers hfin).surjective ⟨χ, hχ⟩
-  have hm' : ω ^ (m : ℕ) = χ := by
-    simpa only [finEquivPowers_apply] using congrArg Subtype.val hm
-  exact ⟨m, ⟨hω ▸ m.isLt, hm'⟩, fun j hj ↦ pow_injOn_Iio_orderOf (Set.mem_Iio.2 (hω ▸ hj.1))
-    (Set.mem_Iio.2 m.isLt) (hj.2.trans hm'.symm)⟩
+  obtain ⟨i, hi, huniq⟩ := (finEquivZPowers hfin).bijective.existsUnique ⟨χ, hχ⟩
+  have hi' : ω ^ (i : ℕ) = χ := by
+    simpa only [finEquivZPowers_apply] using congrArg Subtype.val hi
+  refine ⟨i, ⟨hω ▸ i.isLt, hi'⟩, fun j hj ↦ ?_⟩
+  exact congrArg Fin.val (huniq ⟨j, hω ▸ hj.1⟩ (Subtype.ext (by
+    simpa only [finEquivZPowers_apply] using hj.2)))
 
 end Domain
 

@@ -23,9 +23,11 @@ Ceti's `CommGroup.sum_monoidHom_apply_eq_ite`, `CommGroup.sum_inv_mul_monoidHom_
 file states these sums for the characters `MulChar M R`, through `MulChar.equivToUnitHom`, in the
 forms that character sums over a finite field use.
 
-The characters trivial on a subgroup `H` of `Mˣ` are the characters of `Mˣ ⧸ H`, so their values at
-a unit `u` sum to the index of `H` if `u ∈ H` and to zero otherwise. This needs enough roots of
-unity in `R` only for the exponent of `Mˣ ⧸ H`. For the subgroup of `d`-th powers, the characters
+The characters trivial on a subgroup `H` of `Mˣ` are the characters of `Mˣ ⧸ H`. If `H` has finite
+index, there are finitely many of them, and their values at a unit `u` sum to the index of `H` if
+`u ∈ H` and to zero otherwise. This needs enough roots of unity in `R` only for the exponent of
+`Mˣ ⧸ H`, and it holds also when `Mˣ` is infinite. When the type `MulChar M R` is finite, the same
+sum is a sum over a filter of all characters. For the subgroup of `d`-th powers, the characters
 trivial on `H` are the characters `χ` with `χ ^ d = 1`, and the sum is the number of `d`-th roots of
 `u` in `Mˣ`; for a finite field and `d ≠ 0` this gives the classical count of solutions of
 `y ^ d = c`.
@@ -36,8 +38,12 @@ the characteristic; with values in `ℂ` they are exact counts.
 
 ## Main results
 
-* `Subgroup.sum_filter_mulChar_apply_eq_ite`: the values at a unit `u` of the characters trivial
-  on `H` sum to the cast of `H.index` if `u ∈ H` and to zero otherwise.
+* `Subgroup.sum_subtype_mulChar_apply_eq_ite`: for `H` of finite index, the values at a unit `u`
+  of the characters trivial on `H` sum to the cast of `H.index` if `u ∈ H` and to zero otherwise.
+  The sum is over the subtype of these characters, which is finite
+  (`Subgroup.finite_subtype_mulChar`).
+* `Subgroup.sum_filter_mulChar_apply_eq_ite`: the same sum as a filter of a finite type
+  `MulChar M R`.
 The next four results need enough roots of unity in `R` for the exponent of `Mˣ`.
 
 * `TauCeti.sum_mulChar_apply_eq_ite`: `∑ χ, χ a` is the cast of `#Mˣ` if `a = 1` and zero
@@ -50,7 +56,7 @@ The next four results need enough roots of unity in `R` for the exponent of `Mˣ
   `M`, with the inner sum over all `y ∈ M`.
 
 Over a field `K` with enough roots of unity for the exponent of `Mˣ`, the cast of `#Mˣ` is nonzero
-(`HasEnoughRootsOfUnity.natCast_card_ne_zero`).
+(`TauCeti.natCast_card_ne_zero_of_hasEnoughRootsOfUnity`).
 
 * `TauCeti.apply_eq_inv_card_units_mul_sum_mulChar_units` and
   `TauCeti.apply_eq_inv_card_units_mul_sum_mulChar`: the normalized expansions
@@ -73,28 +79,59 @@ variable {M R : Type*} [CommMonoid M] [Finite Mˣ] [CommRing R] [IsDomain R]
 
 namespace Subgroup
 
-omit [Finite Mˣ] in
-/-- **Orthogonality for the characters trivial on a subgroup.** The values at a unit `u` of the
-characters trivial on a subgroup `H` of `Mˣ` sum to the cast of the index of `H` if `u ∈ H` and to
-zero otherwise. These characters are the characters of `Mˣ ⧸ H`, so this is
+omit [Finite Mˣ] [IsDomain R] [Fintype (MulChar M R)] in
+/-- The characters trivial on a subgroup `H` of `Mˣ` are the characters of `Mˣ ⧸ H`. -/
+private noncomputable def mulCharEquivQuotient (H : Subgroup Mˣ) :
+    {χ : MulChar M R // ∀ h ∈ H, χ h = 1} ≃ (Mˣ ⧸ H →* Rˣ) :=
+  (MulChar.equivToUnitHom.subtypeEquiv fun χ ↦ by
+    simp [MonoidHom.mem_ker, MonoidHom.domRestrict_eq_one_iff, Units.ext_iff]).trans
+    (MonoidHom.domRestrictHomKerEquiv Rˣ H).toEquiv
+
+omit [Finite Mˣ] [IsDomain R] [Fintype (MulChar M R)] in
+private theorem mulCharEquivQuotient_apply (H : Subgroup Mˣ)
+    (χ : {χ : MulChar M R // ∀ h ∈ H, χ h = 1}) (u : Mˣ) :
+    (mulCharEquivQuotient H χ (u : Mˣ ⧸ H) : R) = (χ : MulChar M R) u := by
+  simp [mulCharEquivQuotient]
+
+omit [Finite Mˣ] [Fintype (MulChar M R)] in
+/-- A subgroup of finite index has finitely many characters trivial on it, since they are the
+characters of the finite group `Mˣ ⧸ H`. -/
+instance finite_subtype_mulChar (H : Subgroup Mˣ) [Finite (Mˣ ⧸ H)] :
+    Finite {χ : MulChar M R // ∀ h ∈ H, χ h = 1} :=
+  Finite.of_equiv _ (mulCharEquivQuotient H).symm
+
+omit [Finite Mˣ] [Fintype (MulChar M R)] in
+/-- **Orthogonality for the characters trivial on a subgroup.** For a subgroup `H` of `Mˣ` of
+finite index, the values at a unit `u` of the characters trivial on `H` sum to the cast of the
+index of `H` if `u ∈ H` and to zero otherwise. The sum is over the subtype of these characters, so
+`Mˣ` and `MulChar M R` can be infinite. These characters are the characters of `Mˣ ⧸ H`, so this is
 `CommGroup.sum_monoidHom_apply_eq_ite` on `Mˣ ⧸ H`, and `R` needs enough roots of unity only for
 the exponent of `Mˣ ⧸ H`. -/
+@[simp]
+theorem sum_subtype_mulChar_apply_eq_ite (H : Subgroup Mˣ) [Finite (Mˣ ⧸ H)]
+    [HasEnoughRootsOfUnity R (Monoid.exponent (Mˣ ⧸ H))] (u : Mˣ) [Decidable (u ∈ H)]
+    [Fintype {χ : MulChar M R // ∀ h ∈ H, χ h = 1}] :
+    ∑ χ : {χ : MulChar M R // ∀ h ∈ H, χ h = 1}, (χ : MulChar M R) u =
+      if u ∈ H then (H.index : R) else 0 := by
+  classical
+  rw [Fintype.sum_equiv (mulCharEquivQuotient H) _ (fun ψ ↦ (ψ (u : Mˣ ⧸ H) : R))
+      fun χ ↦ (mulCharEquivQuotient_apply H χ u).symm, CommGroup.sum_monoidHom_apply_eq_ite]
+  simp only [QuotientGroup.eq_one_iff, index_eq_card]
+
+omit [Finite Mˣ] in
+/-- **Orthogonality for the characters trivial on a subgroup, as a filtered sum.** For a finite
+type `MulChar M R` and a subgroup `H` of `Mˣ` of finite index, the values at a unit `u` of the
+characters trivial on `H` sum to the cast of the index of `H` if `u ∈ H` and to zero otherwise.
+This is `Subgroup.sum_subtype_mulChar_apply_eq_ite` with the sum over a filter of all
+characters. -/
 @[simp]
 theorem sum_filter_mulChar_apply_eq_ite (H : Subgroup Mˣ) [Finite (Mˣ ⧸ H)]
     [HasEnoughRootsOfUnity R (Monoid.exponent (Mˣ ⧸ H))] (u : Mˣ) [Decidable (u ∈ H)]
     [DecidablePred fun χ : MulChar M R ↦ ∀ h ∈ H, χ h = 1] :
     ∑ χ : MulChar M R with ∀ h ∈ H, χ h = 1, χ u = if u ∈ H then (H.index : R) else 0 := by
-  classical
-  -- The characters trivial on `H` correspond to the characters of `Mˣ ⧸ H`.
-  let e : {χ : MulChar M R // ∀ h ∈ H, χ h = 1} ≃ (Mˣ ⧸ H →* Rˣ) :=
-    (MulChar.equivToUnitHom.subtypeEquiv fun χ ↦ by
-      simp [MonoidHom.mem_ker, MonoidHom.domRestrict_eq_one_iff, Units.ext_iff]).trans
-      (MonoidHom.domRestrictHomKerEquiv Rˣ H).toEquiv
   rw [sum_subtype (univ.filter fun χ : MulChar M R ↦ ∀ h ∈ H, χ h = 1)
-      (p := fun χ : MulChar M R ↦ ∀ h ∈ H, χ h = 1) (fun χ ↦ by simp) fun χ ↦ χ u,
-    Fintype.sum_equiv e _ (fun ψ ↦ (ψ (u : Mˣ ⧸ H) : R)) fun χ ↦ by simp [e],
-    CommGroup.sum_monoidHom_apply_eq_ite]
-  simp only [QuotientGroup.eq_one_iff, index_eq_card]
+    (p := fun χ : MulChar M R ↦ ∀ h ∈ H, χ h = 1) (fun χ ↦ by simp) fun χ ↦ χ u]
+  exact sum_subtype_mulChar_apply_eq_ite H u
 
 end Subgroup
 
@@ -177,7 +214,7 @@ theorem apply_eq_inv_card_units_mul_sum_mulChar_units [Fintype (MulChar M K)] [F
     φ u = (Nat.card Mˣ : K)⁻¹ * ∑ χ : MulChar M K, χ u * ∑ y : Mˣ, φ y * (χ y)⁻¹ := by
   simp_rw [← inv_apply_eq_inv']
   rw [← card_units_mul_apply_eq_sum_mulChar_units,
-    inv_mul_cancel_left₀ (HasEnoughRootsOfUnity.natCast_card_ne_zero K)]
+    inv_mul_cancel_left₀ (natCast_card_ne_zero_of_hasEnoughRootsOfUnity K)]
 
 omit [Finite Mˣ] in
 /-- **The normalized Fourier expansion on `Mˣ` of a function on `M`.** Over a field `K` with enough
@@ -189,7 +226,7 @@ theorem apply_eq_inv_card_units_mul_sum_mulChar [Fintype (MulChar M K)] [Fintype
     φ u = (Nat.card Mˣ : K)⁻¹ * ∑ χ : MulChar M K, χ u * ∑ y, φ y * (χ y)⁻¹ := by
   simp_rw [← inv_apply_eq_inv']
   rw [← card_units_mul_apply_eq_sum_mulChar,
-    inv_mul_cancel_left₀ (HasEnoughRootsOfUnity.natCast_card_ne_zero K)]
+    inv_mul_cancel_left₀ (natCast_card_ne_zero_of_hasEnoughRootsOfUnity K)]
 
 end Normalized
 
