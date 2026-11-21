@@ -68,8 +68,9 @@ of its original domain.
 
 
 The continuous linear `middleProjection` retains the middle cocycle of a compatible triple.
-Compact holomorphic realization identifies functions and cocycles with their native Bergman
-classes. `Bergman.Lifting` proves surjectivity and uniform bounded lifting of the middle projection.
+`exists_representative_eq` and `exists_cocycle_representative_eq` give native Bergman
+representatives with the same pointwise values after restriction to smaller opens whose
+closures are compact and contained in the original holomorphic domains. `Bergman.Lifting` proves surjectivity and uniform bounded lifting of the middle projection.
 These Banach spaces and compact restrictions enter the analytic finiteness argument for `H¹`.
 
 ## References
