@@ -10,9 +10,14 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Topology
 public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Projectivization.ZeroLocus
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
+import Mathlib.Analysis.Calculus.FDeriv.Pow
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.CoordinateRing
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Geometry.Manifold.Immersion.ModelChange
+import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
 
 /-!
@@ -62,6 +67,8 @@ uniformization `ℂ / Λ ≃ E(ℂ)` are built.
   is holomorphic at the points `[X : Y : Z]` with `Y ≠ 0`; in particular near the origin
   (`WeierstrassCurve.Projective.Point.eventually_contMDiffAt_localParameter` and
   `WeierstrassCurve.Projective.Point.contMDiffAt_localParameter_zero`).
+* `WeierstrassCurve.Projective.isLocalDiffeomorphAt_localParameter_zero`: the local parameter is
+  a local coordinate at the origin, independently of uniformization.
 
 ## References
 
@@ -309,5 +316,122 @@ theorem contMDiffAt_localParameter_zero (r : ℕ∞ω) :
   (eventually_contMDiffAt_localParameter r).self_of_nhds
 
 end Point
+
+/-- The cubic equation in the `Y = 1` chart at infinity. -/
+private noncomputable def infinityEquation (v : Fin 2 → ℂ) : ℂ :=
+  v 1 + W.a₁ * v 0 * v 1 + W.a₃ * v 1 ^ 2 -
+    (v 0 ^ 3 + W.a₂ * v 0 ^ 2 * v 1 + W.a₄ * v 0 * v 1 ^ 2 + W.a₆ * v 1 ^ 3)
+
+omit [W.IsElliptic] in
+private theorem hasFDerivAt_infinityEquation :
+    HasFDerivAt W.infinityEquation
+      (ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : Fin 2 ↦ ℂ) 1) 0 := by
+  have h₀ := (ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : Fin 2 ↦ ℂ) 0).hasFDerivAt
+    (x := (0 : Fin 2 → ℂ))
+  have h₁ := (ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : Fin 2 ↦ ℂ) 1).hasFDerivAt
+    (x := (0 : Fin 2 → ℂ))
+  have h := (h₁.add (((h₀.const_mul W.a₁).mul h₁))).add
+    ((h₁.pow 2).const_mul W.a₃)
+  have k := (((h₀.pow 3).add (((h₀.pow 2).const_mul W.a₂).mul h₁)).add
+    ((h₀.const_mul W.a₄).mul (h₁.pow 2))).add ((h₁.pow 3).const_mul W.a₆)
+  convert! h.sub k using 1
+  ext v
+  simp
+
+omit [W.IsElliptic] in
+private theorem infinityEquation_affineChart_eventuallyEq :
+    (fun P : W.Point ↦ W.infinityEquation (affineChart 1 P.toProjectivization)) =ᶠ[𝓝 0]
+      fun _ ↦ 0 := by
+  have hO : (0 : W.Point).toProjectivization ∈ affineOpen 1 := by
+    simp [Point.toProjectivization_zero]
+  filter_upwards [Point.continuous_toProjectivization.continuousAt.preimage_mem_nhds
+    ((isOpen_affineOpen 1).mem_nhds hO)] with P hP
+  let v := Fin.insertNth (α := fun _ ↦ ℂ) (1 : Fin 3) 1 (affineChart 1 P.toProjectivization)
+  have hv : Projectivization.mk ℂ v (Fin.insertNth_one_ne_zero 1 _) = P.toProjectivization :=
+    (affineChart_symm_apply 1 _).symm.trans ((affineChart 1).left_inv
+      (by simpa only [affineChart_source, Set.mem_preimage] using hP))
+  have hns := (Point.exists_toProjectivization_eq_mk_iff v _).mp ⟨P, hv.symm⟩
+  have hvdef : v = ![affineChart 1 P.toProjectivization 0, 1,
+      affineChart 1 P.toProjectivization 1] := by
+    ext i
+    fin_cases i <;> rfl
+  simpa [infinityEquation, hvdef, equation_iff] using hns.1
+
+omit [W.IsElliptic] in
+private theorem localParameter_eq_neg_affineChart :
+    (Point.localParameter : W.Point → ℂ) =
+      fun P ↦ -(affineChart 1 P.toProjectivization 0) := by
+  funext P
+  obtain ⟨v, hv⟩ := Quotient.exists_rep P.point
+  have hns : W.NonsingularLift ⟦v⟧ := hv.symm ▸ P.nonsingular
+  have hP : Point.mk hns = P := Point.ext hv
+  rw [← hP, Point.localParameter_mk, Point.toProjectivization_mk, affineChart_mk]
+  rfl
+
+/-- In the `Y = 1` chart, the cubic has differential `dZ` at infinity, so the injective
+differential of the embedding is detected by `dX = -dt`. -/
+private theorem isInvertible_mfderiv_localParameter_zero :
+    (mfderiv 𝓘(ℂ) 𝓘(ℂ) (Point.localParameter : W.Point → ℂ) 0).IsInvertible := by
+  let f : W.Point → Fin 2 → ℂ := affineChart 1 ∘ Point.toProjectivization
+  have hO : (0 : W.Point).toProjectivization ∈ affineOpen 1 := by
+    simp [Point.toProjectivization_zero]
+  have hc : IsLocalDiffeomorphAt 𝓘(ℂ, Fin 2 → ℂ) 𝓘(ℂ, Fin 2 → ℂ) 1
+      (affineOpenPartialHomeomorph 1) (0 : W.Point).toProjectivization :=
+    (affineOpenPartialHomeomorph 1).isLocalDiffeomorphAt_of_mem_maximalAtlas
+    (affineOpenPartialHomeomorph_mem_maximalAtlas (I := 𝓘(ℂ, Fin 2 → ℂ)) (r := 1) 1) (by
+        rw [affineOpenPartialHomeomorph_toPartialEquiv, affineChart_source]
+        exact hO)
+  have he := (Point.isSmoothEmbedding_toProjectivization W 1).contMDiff.mdifferentiable
+    one_ne_zero
+  have hf : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, Fin 2 → ℂ) f 0 :=
+    by simpa only [coe_affineOpenPartialHomeomorph] using
+      (hc.mdifferentiableAt one_ne_zero).comp 0 (he 0)
+  have hf0 : f 0 = 0 := by
+    ext i
+    fin_cases i <;> simp [f, Point.toProjectivization_zero]
+  have hinj : Function.Injective (mfderiv 𝓘(ℂ) 𝓘(ℂ, Fin 2 → ℂ) f 0) := by
+    rw [show f = (affineOpenPartialHomeomorph 1) ∘ Point.toProjectivization by
+      rw [coe_affineOpenPartialHomeomorph],
+      mfderiv_comp 0 (hc.mdifferentiableAt one_ne_zero) (he 0)]
+    exact (hc.isInvertible_mfderiv one_ne_zero).injective.comp
+      ((Point.isSmoothEmbedding_toProjectivization W 1).isImmersion.mfderiv_injective
+        one_ne_zero 0)
+  have hinj' : Function.Injective (mvfderiv 𝓘(ℂ) f 0) :=
+    TauCeti.injective_mvfderiv_iff.mpr hinj
+  have hz (v : TangentSpace 𝓘(ℂ) (0 : W.Point)) :
+      mvfderiv 𝓘(ℂ) f 0 v 1 = 0 := by
+    have hd := ((hf0.symm ▸ W.hasFDerivAt_infinityEquation).hasMFDerivAt.comp 0
+      hf.hasMFDerivAt).mfderiv
+    have hd' : mfderiv 𝓘(ℂ) 𝓘(ℂ)
+        (fun P : W.Point ↦ W.infinityEquation (affineChart 1 P.toProjectivization)) 0 =
+        (ContinuousLinearMap.proj 1).comp (mfderiv 𝓘(ℂ) 𝓘(ℂ, Fin 2 → ℂ) f 0) := hd
+    rw [W.infinityEquation_affineChart_eventuallyEq.mfderiv_eq, mfderiv_const] at hd'
+    exact (DFunLike.congr_fun hd' v).symm
+  have ht : (Point.localParameter : W.Point → ℂ) = fun P ↦ -(f P 0) :=
+    W.localParameter_eq_neg_affineChart
+  apply (TauCeti.isInvertible_mfderiv_iff_injective rfl).mpr
+  intro v w hvw
+  have ht' (u : TangentSpace 𝓘(ℂ) (0 : W.Point)) :
+      mfderiv 𝓘(ℂ) 𝓘(ℂ) (Point.localParameter : W.Point → ℂ) 0 u =
+        -(mvfderiv 𝓘(ℂ) f 0 u 0) := by
+    rw [← mvfderiv_apply_eq_mfderiv_apply, ht, mvfderiv_fun_neg]
+    exact congrArg Neg.neg (TauCeti.mvfderiv_apply_apply hf u 0).symm
+  apply hinj'
+  ext i
+  fin_cases i
+  · rw [ht' v, ht' w] at hvw
+    exact neg_injective hvw
+  · exact (hz v).trans (hz w).symm
+
+/-- **The local parameter is a local coordinate at the origin**: it is a local diffeomorphism
+of every class `C^n`, including `n = ω`. -/
+theorem isLocalDiffeomorphAt_localParameter_zero {n : ℕ∞ω} :
+    IsLocalDiffeomorphAt 𝓘(ℂ) 𝓘(ℂ) n (Point.localParameter : W.Point → ℂ) 0 := by
+  obtain ⟨e, he⟩ := W.isInvertible_mfderiv_localParameter_zero
+  exact (TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq (n := ω) (s := {P | ∀ᶠ Q in 𝓝 P,
+      ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω (Point.localParameter : W.Point → ℂ) Q})
+    (fun _ hP ↦ hP.self_of_nhds.contMDiffWithinAt) isOpen_setOfPred_eventually_nhds
+    (Point.eventually_contMDiffAt_localParameter ω)
+    (by exact BoundarylessManifold.isInteriorPoint) (by exact le_top) he).of_le le_top
 
 end WeierstrassCurve.Projective

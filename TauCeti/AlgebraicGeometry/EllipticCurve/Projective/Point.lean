@@ -144,6 +144,8 @@ theorem Point.exists_mk_eq_mk_add_mk {P Q R : Fin 3 → F} (hP : W.Nonsingular P
 
 /-- Over a field, the projective-affine comparison `Point.toAffineAddEquiv` sends the projective
 point `P.toProjective` of an affine point `P` back to `P`. -/
+-- Cancel before the general toAffineAddEquiv_apply simp rule unfolds the equivalence.
+@[simp 1100]
 theorem Point.toAffineAddEquiv_toProjective [DecidableEq F] (P : W.toAffine.Point) :
     Point.toAffineAddEquiv W P.toProjective = P :=
   (Point.toAffineAddEquiv W).apply_symm_apply P

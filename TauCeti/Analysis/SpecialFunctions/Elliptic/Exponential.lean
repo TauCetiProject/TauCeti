@@ -14,6 +14,7 @@ import TauCeti.Analysis.SpecialFunctions.Elliptic.AdditionTheorem
 import TauCeti.Geometry.Lie.Exponential.Classification
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
@@ -84,8 +85,6 @@ map, inducing an isomorphism of topological groups `ℂ / ker exp_E ≃ E(ℂ)`,
 * `WeierstrassCurve.Projective.contMDiff_exp`: `exp_E` is holomorphic.
 * `WeierstrassCurve.Projective.isInvertible_mfderiv_exp`: the derivative of `exp_E` is invertible
   at every point.
-* `WeierstrassCurve.Projective.isLocalDiffeomorphAt_localParameter_zero`: the local parameter is a
-  local coordinate at the origin.
 * `PeriodPair.exp_weierstrassCurve` and `PeriodPair.exp_variableChange_weierstrassCurve`: the
   comparison with the Weierstrass point map.
 * `WeierstrassCurve.Projective.exp_variableChange`: the rescaling of `exp_E` under a change of
@@ -161,7 +160,11 @@ private theorem tangentExp_apply (v : ℂ) : W.tangentExp v =
       BoundarylessManifold.isInteriorPoint).apply_symm_apply v)
 
 private theorem contMDiff_tangentExp (n : ℕ∞ω) : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n W.tangentExp := by
-  rw [show ⇑W.tangentExp = _ from funext W.tangentExp_apply]
+  have h : ⇑W.tangentExp = fun v : ℂ ↦
+      (mulInvariantExp (I := 𝓘(ℝ, ℂ)) (G := Multiplicative W.Point)
+        (v : GroupLieAlgebra 𝓘(ℝ, ℂ) (Multiplicative W.Point))).toAdd :=
+    funext W.tangentExp_apply
+  rw [h]
   exact Multiplicative.contMDiff_toAdd.comp
     (TauCeti.contMDiff_mulInvariantExp_complex (E := ℂ) (G := Multiplicative W.Point) n)
 
@@ -267,7 +270,7 @@ private theorem mem_finite_fiber_of_mapClusterPt {g : ℂ →+ W.Point}
 
 /-- The finite fibre gives a uniform integer annihilating every cluster point: the multiples of a
 cluster point at `0` are again cluster points there, so they lie in the finite fibre, and the
-factorial of its size annihilates each of its points of finite order. -/
+factorial of its size annihilates every cluster point whose multiples remain in that fibre. -/
 private theorem exists_nsmul_mapClusterPt_eq_zero {g : ℂ →+ W.Point}
     (h : HasDerivAt (fun z ↦ (g z).localParameter) 1 0) :
     ∃ N : ℕ, 0 < N ∧ ∀ P, MapClusterPt P (𝓝[≠] 0) g → N • P = 0 := by
@@ -616,12 +619,18 @@ theorem ker_exp : W.exp.ker = W.periodLattice.toAddSubgroup := by
   obtain ⟨L, C, hu, rfl⟩ := WeierstrassCurve.exists_periodPair_variableChange_smul_eq W
   rw [periodLattice_eq_iff.mpr ⟨C, hu, rfl⟩]
   classical
-  ext z
-  rw [AddMonoidHom.mem_ker, PeriodPair.exp_variableChange_weierstrassCurve, hu, Units.val_one,
-    inv_one, one_mul, AddEquivClass.map_eq_zero_iff,
-    ← (Point.toAffineAddEquiv L.weierstrassCurve.toProjective).map_eq_zero_iff,
-    Point.toAffineAddEquiv_toProjective, PeriodPair.weierstrassPoint_eq_zero_iff,
-    Submodule.mem_toAddSubgroup]
+  let e := Point.toAffineAddEquiv L.weierstrassCurve.toProjective
+  let c := (Point.addEquivVariableChange L.weierstrassCurve C).symm
+  have h : (C • L.weierstrassCurve).toProjective.exp =
+      c.toAddMonoidHom.comp (e.symm.toAddMonoidHom.comp L.weierstrassPointHom) := by
+    apply AddMonoidHom.ext
+    intro z
+    simp only [PeriodPair.exp_variableChange_weierstrassCurve, hu, Units.val_one,
+      inv_one, one_mul, AddMonoidHom.comp_apply, AddEquiv.toAddMonoidHom_eq_coe,
+      PeriodPair.weierstrassPointHom_apply]
+    rfl
+  rw [h, AddMonoidHom.ker_comp_of_injective _ _ c.injective,
+    AddMonoidHom.ker_comp_of_injective _ _ e.symm.injective, L.ker_weierstrassPointHom]
 
 /-- `exp_E` vanishes exactly on the period lattice of `E`. -/
 @[simp]
@@ -693,19 +702,9 @@ theorem pullback_invariantDifferential_exp :
 theorem pullback_exp_eq_mvfderiv_id_iff {α : TauCeti.RiemannSurface.OneForm W.Point} :
     α.pullback W.exp = mvfderiv 𝓘(ℂ) id ↔ α = W.invariantDifferential := by
   rw [← W.pullback_invariantDifferential_exp]
-  exact (TauCeti.RiemannSurface.OneForm.pullback_injective W.exp_surjective
-    fun z ↦ (W.isInvertible_mfderiv_exp z).surjective).eq_iff
-
-/-- The invariant differential vanishes nowhere. -/
-theorem invariantDifferential_ne_zero (P : W.Point) : W.invariantDifferential P ≠ 0 := by
-  obtain ⟨z, rfl⟩ := W.exp_surjective P
-  intro h
-  have hv := W.invariantDifferential_apply_mfderiv_exp z
-    ((NormedSpace.fromTangentSpace z).symm 1)
-  rw [h] at hv
-  have h01 : (0 : ℂ) = 1 := by simpa only [zero_apply,
-    ContinuousLinearEquiv.apply_symm_apply] using hv
-  exact zero_ne_one h01
+  exact (TauCeti.RiemannSurface.OneForm.pullback_injective (fun P ↦ by
+    obtain ⟨z, rfl⟩ := W.exp_surjective P
+    exact ⟨z, rfl, (W.isInvertible_mfderiv_exp z).surjective⟩)).eq_iff
 
 /-- The exponential is locally biholomorphic, by its invertible derivative: it is a local
 diffeomorphism of class `C^n` for every `n`, including `n = ω`. -/
@@ -716,65 +715,40 @@ theorem isLocalDiffeomorphAt_exp {n : ℕ∞ω} (z : ℂ) :
     isOpen_univ (Set.mem_univ z) (by exact BoundarylessManifold.isInteriorPoint)
     (by exact le_top) he).of_le le_top
 
-/-- **The local parameter is a local coordinate at the origin**: it is a local diffeomorphism of
-class `C^n` there for every `n`, including `n = ω`, as it has derivative `1` along `exp_E`. -/
-theorem isLocalDiffeomorphAt_localParameter_zero {n : ℕ∞ω} :
-    IsLocalDiffeomorphAt 𝓘(ℂ) 𝓘(ℂ) n (Point.localParameter : W.Point → ℂ) 0 := by
-  have ht := (Point.contMDiffAt_localParameter_zero (W := W) 1).mdifferentiableAt one_ne_zero
-  have hm : mfderiv 𝓘(ℂ) 𝓘(ℂ) (Point.localParameter ∘ W.exp) 0 = _ :=
-    W.hasDerivAt_localParameter_exp.hasFDerivAt.hasMFDerivAt.mfderiv
-  have hcomp : (mfderiv 𝓘(ℂ) 𝓘(ℂ) (Point.localParameter ∘ W.exp) 0).IsInvertible :=
-    ⟨ContinuousLinearEquiv.refl ℂ ℂ, by
-      rw [hm]
-      ext
-      -- Both sides are `1`, as elements of the tangent spaces `ℂ`.
-      exact (one_smul ℂ (1 : ℂ)).symm⟩
-  have hd := (TauCeti.isInvertible_mfderiv_of_isInvertible_mfderiv_comp rfl
-    (by rwa [map_zero]) (W.mdifferentiable_exp 0) hcomp).2
-  rw [map_zero] at hd
-  obtain ⟨e, he⟩ := hd
-  -- The local parameter is holomorphic on the open set of points near which it is holomorphic.
-  exact (TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq (n := ω) (s := {P | ∀ᶠ Q in 𝓝 P,
-      ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω (Point.localParameter : W.Point → ℂ) Q})
-    (fun _ hP ↦ hP.self_of_nhds.contMDiffWithinAt) isOpen_setOfPred_eventually_nhds
-    (Point.eventually_contMDiffAt_localParameter ω)
-    (by exact BoundarylessManifold.isInteriorPoint) (by exact le_top) he).of_le le_top
-
 /-- **Local logarithms integrate the invariant differential**: on its source, the differential of
-a local inverse of `exp_E` of class `C^n`, `n ≠ 0`, is the invariant differential. -/
+any continuous local inverse of `exp_E` is the invariant differential. -/
 theorem mvfderiv_localInverse_exp {n : ℕ∞ω} {z : ℂ}
-    (hf : IsLocalDiffeomorphAt 𝓘(ℂ) 𝓘(ℂ) n W.exp z) (hn : n ≠ 0) {Q : W.Point}
+    (hf : IsLocalDiffeomorphAt 𝓘(ℂ) 𝓘(ℂ) n W.exp z) {Q : W.Point}
     (hQ : Q ∈ hf.localInverse.source) :
     mvfderiv 𝓘(ℂ) hf.localInverse Q = W.invariantDifferential Q := by
-  have hmd : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) hf.localInverse Q :=
-    (hf.contMDiffOn_localInverse.contMDiffAt
-      (hf.localInverse.open_source.mem_nhds hQ)).mdifferentiableAt hn
   have hid : W.exp ∘ hf.localInverse =ᶠ[𝓝 Q] id :=
     eventuallyEq_of_mem (hf.localInverse.open_source.mem_nhds hQ) hf.localInverse_eqOn_right
+  have hmd : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) hf.localInverse Q := by
+    have hcomp : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) 1 (W.exp ∘ hf.localInverse) Q :=
+      contMDiffAt_id.congr_of_eventuallyEq hid
+    have hi : ContMDiffWithinAt 𝓘(ℂ) 𝓘(ℂ) 1 hf.localInverse Set.univ Q :=
+      hcomp.contMDiffWithinAt.of_comp_isLocalDiffeomorph
+        (W.isLocalDiffeomorphAt_exp (n := 1) (hf.localInverse Q))
+        (hf.localInverse.toOpenPartialHomeomorph.continuousAt hQ).continuousWithinAt
+    exact hi.contMDiffAt (by simp) |>.mdifferentiableAt one_ne_zero
+  have he : hf.localInverse.symm =ᶠ[𝓝 (hf.localInverse Q)] W.exp := by
+    filter_upwards [hf.localInverse.open_target.mem_nhds (hf.localInverse.map_source hQ)]
+      with R hR
+    have hR' := hf.localInverse_right_inv (hf.localInverse.map_target hR)
+    rw [hf.localInverse.right_inv hR] at hR'
+    exact hR'.symm
   apply ContinuousLinearMap.ext
   intro v
-  have hv : mfderiv 𝓘(ℂ) 𝓘(ℂ) W.exp (hf.localInverse Q)
-      (mfderiv 𝓘(ℂ) 𝓘(ℂ) hf.localInverse Q v) = v := by
-    rw [TauCeti.mfderiv_apply_mfderiv_of_eventuallyEq_comp hid (W.mdifferentiable_exp _)
-      hmd v, mfderiv_id, ContinuousLinearMap.id_apply]
+  have hv := hf.localInverse.toOpenPartialHomeomorph.mfderiv_symm_apply_mfderiv_apply hQ hmd
+    ((W.mdifferentiable_exp _).congr_of_eventuallyEq he) v
+  change mfderiv 𝓘(ℂ) 𝓘(ℂ) hf.localInverse.symm (hf.localInverse Q)
+    (mfderiv 𝓘(ℂ) 𝓘(ℂ) hf.localInverse Q v) = v at hv
+  rw [he.mfderiv_eq] at hv
   have hω := W.invariantDifferential_apply_mfderiv_exp (hf.localInverse Q)
     (mfderiv 𝓘(ℂ) 𝓘(ℂ) hf.localInverse Q v)
-  rw [hf.localInverse_right_inv hQ] at hv hω
+  rw [hf.localInverse_right_inv hQ] at hω
   rw [mvfderiv_apply_eq_mfderiv_apply]
   exact hω.symm.trans (congrArg (W.invariantDifferential Q) hv)
-
-/-- The invariant differential is holomorphic everywhere, including at infinity and two-torsion:
-near every point it is the differential of a holomorphic local logarithm. -/
-theorem holomorphicAt_invariantDifferential (P : W.Point) :
-    W.invariantDifferential.HolomorphicAt P := by
-  obtain ⟨z, rfl⟩ := W.exp_surjective P
-  let hf := W.isLocalDiffeomorphAt_exp (n := 1) z
-  have hU : ∀ᶠ Q in 𝓝 (W.exp z), Q ∈ hf.localInverse.source :=
-    hf.localInverse.open_source.mem_nhds hf.localInverse_mem_source
-  refine (TauCeti.RiemannSurface.OneForm.holomorphicAt_mvfderiv (hU.mono fun Q hQ ↦ ?_)).congr
-    (hU.mono fun Q hQ ↦ W.mvfderiv_localInverse_exp hf one_ne_zero hQ)
-  exact (hf.contMDiffOn_localInverse.contMDiffAt
-    (hf.localInverse.open_source.mem_nhds hQ)).mdifferentiableAt one_ne_zero
 
 /-- On any affine coordinate neighbourhood `(x, y)` of `P` where `2y + a₁x + a₃ ≠ 0` at `P`, the
 global invariant form at `P` is the algebraic differential `dx / (2y + a₁x + a₃)`. Where the
@@ -792,13 +766,8 @@ theorem invariantDifferential_eq_inv_smul_mvfderiv {x y : W.Point → ℂ} {P : 
     W.hasDerivAt_of_eventually_toAffineAddEquiv_exp_eq_some
       (W.continuous_exp.continuousAt.eventually h)
   let hf := W.isLocalDiffeomorphAt_exp (n := 1) z
-  have hx : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) x (W.exp z) := by
-    have hi := hf.mdifferentiableAt_localInverse one_ne_zero
-    have hc := hd.differentiableAt.mdifferentiableAt.comp_of_eq (W.exp z) hi
-      (hf.localInverse_left_inv hf.localInverse_mem_target)
-    apply hc.congr_of_eventuallyEq
-    filter_upwards [hf.localInverse_eventuallyEq_right] with Q hQ
-    exact congrArg x hQ.symm
+  have hx : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) x (W.exp z) :=
+    (hf.mdifferentiableAt_comp_iff one_ne_zero).mp hd.differentiableAt.mdifferentiableAt
   apply ContinuousLinearMap.ext
   intro v
   obtain ⟨w, rfl⟩ := (W.isInvertible_mfderiv_exp z).surjective v
