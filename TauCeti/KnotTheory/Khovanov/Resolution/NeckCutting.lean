@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Khovanov.Resolution.Edge
+import TauCeti.KnotTheory.Khovanov.Mark
 
 /-!
 # Reverse saddles and neck cutting
@@ -56,7 +57,7 @@ theorem resolutionSplitMap_resolutionMergeMap (hs : #(D.circlesAt s c) = 2)
       (fiberwiseMul (A := fun _ ↦ R[ε]) _ x), Khovanov.fiberwiseSplit_fiberwiseMul_mul]
   rw [hproj, resolutionSplitMap_one, Khovanov.circleX_apply, Khovanov.circleX_apply,
     mul_comm x]
-  exact PiTensorProduct.mul.map_add₂ _ _ x
+  exact NonUnitalNonAssocSemiring.right_distrib _ _ x
 
 /-- Splitting a resolution circle and merging the two outputs back gives `2X` on the
 original circle, with the identity on all other factors. -/
@@ -66,16 +67,18 @@ theorem resolutionMergeMap_resolutionSplitMap (ht : #(D.circlesAt t c) = 2)
         (D.resolutionSplitMap hst hc ht R x) =
       2 • Khovanov.circleX R (.inl ⟦D.crossing c 0⟧) x := by
   classical
-  have hs := D.card_circlesAt_eq_one_of_card_circlesAt_eq_two
-    (fun j hj ↦ (hst j hj).symm) hc.symm ht
+  have hts : ∀ j, j ≠ c → t j = s j := fun j hj ↦ (hst j hj).symm
+  have hs := D.card_circlesAt_eq_one_of_card_circlesAt_eq_two hts hc.symm ht
   have hhandle :
       D.resolutionMergeMap (fun j hj ↦ (hst j hj).symm) hc.symm ht R
           (D.resolutionSplitMap hst hc ht R 1) =
         2 • singleAlgHom (A := fun _ : D.ResolvedCircle s ↦ R[ε])
           (.inl ⟦D.crossing c 0⟧) ε := by
     simp only [resolutionSplitMap_one, map_add, resolutionMergeMap_def,
-      fiberwiseMul_singleAlgHom, saddleResolvedCircleMap_inl, saddleCircleMap_mk,
-      ((D.card_circlesAt_eq_one_iff s c).mp hs).symm, two_smul]
+      fiberwiseMul_singleAlgHom,
+      (D.saddleResolvedCircleMap_eq_crossing_iff hts hs (.inl ⟦D.crossing c 0⟧)).2 (.inl rfl),
+      (D.saddleResolvedCircleMap_eq_crossing_iff hts hs (.inl ⟦D.crossing c 2⟧)).2 (.inr rfl),
+      two_smul]
   have hproj :
       D.resolutionMergeMap (fun j hj ↦ (hst j hj).symm) hc.symm ht R
           (D.resolutionSplitMap hst hc ht R x) =
@@ -84,12 +87,11 @@ theorem resolutionMergeMap_resolutionSplitMap (ht : #(D.circlesAt t c) = 2)
     simp only [resolutionMergeMap_def, resolutionSplitMap_def]
     simpa only [fiberwiseMul_id, AlgHom.id_apply] using
       Khovanov.fiberwiseMul_fiberwiseSplit
-        (D.saddleResolvedCircleMap_surjective (fun j hj ↦ (hst j hj).symm) hs)
-        (g := D.saddleResolvedCircleMap (fun j hj ↦ (hst j hj).symm) hs)
-        (h := id) rfl x
+        (D.saddleResolvedCircleMap_surjective hts hs)
+        (g := D.saddleResolvedCircleMap hts hs) (h := id) rfl x
   rw [hproj, hhandle]
   simp only [two_smul, Khovanov.circleX_apply, mul_comm x]
-  exact PiTensorProduct.mul.map_add₂ _ _ x
+  exact NonUnitalNonAssocSemiring.right_distrib _ _ x
 
 variable (h : #(D.circlesAt s c) = 2 ∨ #(D.circlesAt t c) = 2)
 
@@ -120,18 +122,11 @@ theorem resolutionEdgeMap_circleX_crossing
       Khovanov.circleX R (.inl ⟦D.crossing c 2⟧) (D.resolutionEdgeMap hst hc h R x) := by
   rcases h with hs | ht
   · have ht := D.card_circlesAt_eq_one_of_card_circlesAt_eq_two hst hc hs
-    rw [resolutionEdgeMap_eq_resolutionMergeMap _ _ _ _ _ hs,
-      resolutionMergeMap_def, AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply,
-      Khovanov.fiberwiseMul_circleX]
-    simp only [saddleResolvedCircleMap_inl, saddleCircleMap_mk,
-      ((D.card_circlesAt_eq_one_iff t c).mp ht).symm]
+    simpa only [Mark.resolvedCircle_onArc, ((D.card_circlesAt_eq_one_iff t c).mp ht).symm] using
+      D.resolutionEdgeMap_circleX (Mark.onArc D (D.crossing c 0)) hst hc R (Or.inl hs) x
   · have hs := D.card_circlesAt_eq_one_of_card_circlesAt_eq_two
       (fun j hj ↦ (hst j hj).symm) hc.symm ht
-    rw [resolutionEdgeMap_eq_resolutionSplitMap _ _ _ _ _ ht, resolutionSplitMap_def]
-    have he : D.saddleResolvedCircleMap (fun j hj ↦ (hst j hj).symm) hs
-        (.inl ⟦D.crossing c 2⟧) = .inl ⟦D.crossing c 0⟧ := by
-      simp only [saddleResolvedCircleMap_inl, saddleCircleMap_mk,
-        ((D.card_circlesAt_eq_one_iff s c).mp hs).symm]
-    rw [← he, Khovanov.fiberwiseSplit_circleX]
+    simpa only [Mark.resolvedCircle_onArc, (D.card_circlesAt_eq_one_iff s c).mp hs] using
+      D.resolutionEdgeMap_circleX (Mark.onArc D (D.crossing c 2)) hst hc R (Or.inr ht) x
 
 end TauCeti.PDCode
