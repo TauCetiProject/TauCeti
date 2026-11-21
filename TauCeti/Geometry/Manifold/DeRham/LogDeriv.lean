@@ -555,6 +555,7 @@ def circlePeriodLattice : AddSubgroup (deRhamCohomology I M 1) where
     obtain ⟨n, hn⟩ := hc z
     exact ⟨-n, by rw [map_neg, AddMonoidHom.neg_apply, hn]; push_cast; ring⟩
 
+@[simp]
 theorem mem_circlePeriodLattice_iff {c : deRhamCohomology I M 1} :
     c ∈ circlePeriodLattice I M ↔ ∀ z, ∃ n : ℤ, homologyPeriod c z = n * (2 * π) :=
   Iff.rfl

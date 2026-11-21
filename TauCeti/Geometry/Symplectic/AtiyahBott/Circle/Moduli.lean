@@ -66,6 +66,7 @@ def circleLogDerivSubgroup : AddSubgroup (closedForms I M 1) where
     exact ⟨u⁻¹, by rw [ContMDiffMap.circleLogDeriv_inv, hu, Submodule.coe_neg]⟩
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
+@[simp]
 theorem mem_circleLogDerivSubgroup_iff {a : closedForms I M 1} :
     a ∈ circleLogDerivSubgroup I M ↔ ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, u.circleLogDeriv = a.val :=
   Iff.rfl

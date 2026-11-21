@@ -160,6 +160,7 @@ def atiyahBottForm : LinearMap.BilinForm ℝ (SmoothForm I M ℝ 1) :=
     fun c a b ↦ by rw [map_smul, Submodule.coe_smul, integralTopForm_smul, smul_eq_mul]
 
 omit [BoundarylessManifold I M] [T2Space M] in
+@[simp]
 theorem atiyahBottForm_apply (a b : SmoothForm I M ℝ 1) :
     atiyahBottForm o a b = integralTopForm o (RoughForm.wedge a.val b.val) := by
   rw [atiyahBottForm, LinearMap.mk₂_apply, SmoothForm.coe_wedge]
@@ -219,6 +220,7 @@ def atiyahBottMoment : SmoothForm I M ℝ 1 →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ →
       simp [mul_smul]
 
 omit [BoundarylessManifold I M] [T2Space M] in
+@[simp]
 theorem atiyahBottMoment_apply (a : SmoothForm I M ℝ 1) (ξ : C^∞⟮I, M; ℝ⟯) :
     atiyahBottMoment o a ξ =
       integralTopForm o (fun x ↦ ξ x • mextDeriv a.val x : RoughForm I M ℝ 2) := by
