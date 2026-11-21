@@ -70,6 +70,11 @@ def totalSpaceMap (f : F →[G] F') (v : TotalSpace F (AssociatedBundle G P F)) 
     TotalSpace F' (AssociatedBundle G P F') :=
   ⟨v.proj, map f v.snd⟩
 
+/-- The associated total-space map covers the identity and applies `map` on each fibre. -/
+theorem totalSpaceMap_apply (f : F →[G] F') (v : TotalSpace F (AssociatedBundle G P F)) :
+    totalSpaceMap f v = ⟨v.proj, map f v.2⟩ :=
+  (rfl)
+
 @[simp]
 theorem totalSpaceMap_proj (f : F →[G] F') (v : TotalSpace F (AssociatedBundle G P F)) :
     (totalSpaceMap f v).proj = v.proj :=

@@ -50,11 +50,11 @@ native bundle-metric constructions from having to unfold the fibre presentation.
 instance instIsTopologicalAddGroup (b : B) : IsTopologicalAddGroup (AssociatedBundle G P F b) :=
   inferInstanceAs (IsTopologicalAddGroup F)
 
-/-- Fixed scalar multiplication is continuous for the associated fibre's native module and
-topology, as required by the native Riemannian-metric installation API. -/
-instance instContinuousConstSMul (b : B) :
-    ContinuousConstSMul 𝕜 (AssociatedBundle G P F b) :=
-  inferInstanceAs (ContinuousConstSMul 𝕜 F)
+/-- Scalar multiplication is jointly continuous for the associated fibre's native module and
+topology, as required by the native Hom-bundle and Riemannian-metric APIs. -/
+instance instContinuousSMul (b : B) :
+    ContinuousSMul 𝕜 (AssociatedBundle G P F b) :=
+  inferInstanceAs (ContinuousSMul 𝕜 F)
 
 /-- Joint scalar multiplication is continuous for the associated fibre's native module and
 topology. -/
