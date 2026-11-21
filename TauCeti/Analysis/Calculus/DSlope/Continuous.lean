@@ -31,6 +31,8 @@ These are the analytic inputs Dixon's proof of the homology Cauchy theorem needs
   in terms of the limit of the second one, with no continuity hypothesis.
 * `TauCeti.deriv_dslope_bounded_on_compact` — for holomorphic `f`, a uniform bound on
   `‖deriv (dslope f c) w‖` for `c` in a compact subset of `U` and `w` near a point of `U`.
+* `Complex.differentiable_dslope` and `Differentiable.dslope` — for a complete complex normed
+  space `E`, `dslope f a` is entire if and only if `f : ℂ → E` is entire.
 
 ## Provenance
 
@@ -165,6 +167,20 @@ theorem deriv_dslope_bounded_on_compact {U : Set ℂ} (hU : IsOpen U)
     (((Complex.differentiableOn_dslope (hU.mem_nhds (hKU hc))).mpr hf).diffContOnCl_ball
       (hwr.trans hrU)) fun z hz ↦ ?_
   exact (hM ⟨(c, z), ⟨hc, hwr (sphere_subset_closedBall hz)⟩, rfl⟩).trans (le_max_left _ _)
+
+/-- For a function `f : ℂ → E` into a complete complex normed space `E`, `dslope f a` is entire
+if and only if `f` is entire. -/
+theorem _root_.Complex.differentiable_dslope {a : ℂ} :
+    Differentiable ℂ (dslope f a) ↔ Differentiable ℂ f := by
+  rw [← differentiableOn_univ, Complex.differentiableOn_dslope Filter.univ_mem,
+    differentiableOn_univ]
+
+/-- The divided difference `dslope f a` of an entire function `f : ℂ → E` into a complete complex
+normed space `E` is entire. -/
+@[fun_prop]
+protected theorem _root_.Differentiable.dslope (hf : Differentiable ℂ f) (a : ℂ) :
+    Differentiable ℂ (dslope f a) :=
+  Complex.differentiable_dslope.mpr hf
 
 end Complex
 

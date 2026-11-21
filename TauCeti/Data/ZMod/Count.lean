@@ -33,7 +33,8 @@ counting form. In particular the number of roots modulo `n` of an integer polyno
 of its numbers of roots modulo the prime powers exactly dividing `n`, by `ZMod.equivPi`.
 
 Sums over the residues modulo `n` of a function of the least nonnegative representative are sums
-over `range n`; summed over the representatives that are multiples of `n / m`, for `m ∣ n`, they
+over `range n`, and sums over `ZMod n` coincide with sums over the positive representatives
+`Icc 1 n`; summed over the representatives that are multiples of `n / m`, for `m ∣ n`, they
 become sums over the residues modulo `m`.
 
 ## Main results
@@ -41,6 +42,8 @@ become sums over the residues modulo `m`.
 * `ZMod.mul_card_filter_natCast_val`: counting a condition on the reduction modulo `m ∣ n`.
 * `ZMod.sum_comp_natCast_val`: summing a function of the reduction modulo `m ∣ n`.
 * `ZMod.sum_val_eq_sum_range`: summing a function of the representatives over `range n`.
+* `ZMod.sum_eq_sum_Icc`: summing a function on `ZMod n` over the positive representatives
+  `Icc 1 n`.
 * `ZMod.sum_inv_val_le_one_add_log`: a logarithmic bound for reciprocal representatives.
 * `ZMod.sum_Ico_mul`: splitting an integer interval into complete residue blocks.
 * `ZMod.sum_ite_dvd_val`: summing over the representatives that are multiples of `n / m`.
@@ -124,6 +127,17 @@ theorem sum_val_eq_sum_range {M : Type*} [AddCommMonoid M] [NeZero n] (f : ℕ �
     ∑ x : ZMod n, f x.val = ∑ i ∈ range n, f i := by
   rw [Finset.sum_range, ← (finEquiv n).symm.toEquiv.sum_comp]
   simp
+
+/-- **Summing over positive residue representatives.** For `n ≠ 0`, a sum over `ZMod n` equals
+the sum over `Finset.Icc 1 n` obtained by replacing `0` with `n`. -/
+theorem sum_eq_sum_Icc {A : Type*} [AddCommMonoid A] [NeZero n] (f : ZMod n → A) :
+    ∑ x : ZMod n, f x = ∑ a ∈ Icc 1 n, f a := by
+  have hval : ∑ x : ZMod n, f x = ∑ x : ZMod n, f (x.val : ZMod n) :=
+    Finset.sum_congr rfl fun x _ => by rw [ZMod.natCast_zmod_val]
+  have h0n : f (0 : ℕ) = f (n : ℕ) := by simp
+  rw [hval, sum_val_eq_sum_range (fun a => f a), Finset.range_eq_Ico,
+    Finset.sum_eq_sum_Ico_succ_bot (NeZero.pos n), h0n,
+    add_comm, ← Finset.sum_Ico_succ_top (NeZero.pos n), Finset.Ico_add_one_right_eq_Icc]
 
 /-- The sum of reciprocal least nonnegative representatives of the nonzero residues is
 bounded by one plus the logarithm of the modulus. -/

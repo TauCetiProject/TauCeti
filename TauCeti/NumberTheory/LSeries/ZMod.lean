@@ -8,11 +8,13 @@ module
 public import Mathlib.Analysis.Fourier.ZMod
 public import Mathlib.NumberTheory.ZetaValues
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
+public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import TauCeti.Analysis.Fourier.ZMod
+import TauCeti.Data.ZMod.Count
 import TauCeti.NumberTheory.ZetaValues
 
 /-!
-# Values at positive integers of the series of a periodic function
+# Values and Hurwitz decompositions of periodic L-functions
 
 For a function `Φ` on `ZMod N` and a natural number `k ≥ 2`, the absolutely convergent series
 `∑_{n ∈ ℤ} Φ(n) n⁻ᵏ` (whose term at `n = 0` is `0`) has the value
@@ -31,10 +33,16 @@ and sums each against `n⁻ᵏ` by the Fourier series of the periodized Bernoull
 Mathlib's `hasSum_one_div_pow_mul_fourier_mul_bernoulliFun`, as in the special case of Dirichlet
 characters, `DirichletCharacter.gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli`.
 
+For all `s ∈ ℂ`, reindexing `ZMod N` over positive residue representatives `a ∈ Finset.Icc 1 N`
+expresses `ZMod.LFunction Φ s` as `(N : ℂ) ^ (-s)` times a finite linear combination of
+circle-parametrized Hurwitz zeta values `HurwitzZeta.hurwitzZeta ((a / N : ℝ) : UnitAddCircle) s`.
+
 ## Main results
 
 * `ZMod.hasSum_mul_zpow_neg_bernoulli`: the value of `∑_{n ∈ ℤ} Φ(n) n⁻ᵏ`.
 * `ZMod.exists_natCast_mul_tsum_div_mem`: the bounded denominators of these values.
+* `ZMod.LFunction_eq_cpow_mul_sum_Icc_hurwitzZeta`: finite `Icc 1 N` circle-Hurwitz decomposition
+  of `ZMod.LFunction Φ s`.
 
 ## References
 
@@ -112,5 +120,18 @@ theorem exists_natCast_mul_tsum_div_mem {R : Subring ℂ} (hR : ∀ ζ : ℂ, ζ
   simp only [ρ]
   push_cast
   field_simp
+
+/-- Reindexing `ZMod N` over `a ∈ {1, ..., N}` expresses `ZMod.LFunction Φ s` for all `s ∈ ℂ`
+(including `s = 1`) as `(N : ℂ) ^ (-s)` times the finite circle-Hurwitz sum over the positive
+residue representatives `a / N ∈ (0, 1]`. -/
+theorem LFunction_eq_cpow_mul_sum_Icc_hurwitzZeta (Φ : ZMod N → ℂ) (s : ℂ) :
+    ZMod.LFunction Φ s =
+      (N : ℂ) ^ (-s) *
+        ∑ a ∈ Finset.Icc 1 N,
+          Φ a * HurwitzZeta.hurwitzZeta ((a / N : ℝ) : UnitAddCircle) s := by
+  rw [ZMod.LFunction, ZMod.sum_eq_sum_Icc]
+  congr 1
+  refine Finset.sum_congr rfl fun a _ => ?_
+  rw [ZMod.toAddCircle_natCast]
 
 end ZMod
