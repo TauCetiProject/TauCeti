@@ -450,9 +450,7 @@ theorem hasCompactSupport_toReal_schwarzRearrangement {u : E → ℝ} (hfin0 : �
     convert hfin0 using 2
     ext y
     exact ENNReal.ofReal_pos
-  obtain ⟨R, -, hR⟩ := exists_radius_schwarzRearrangement_eq_zero μ hfin0'
-  exact HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall (0 : E) R)
-    fun x hx ↦ mem_closedBall_zero_iff.2 (not_lt.1 fun hlt ↦ hx (by simp [hR x hlt.le]))
+  exact (hasCompactSupport_schwarzRearrangement μ hfin0').comp_left ENNReal.toReal_zero
 
 /-- The Schwarz rearrangement has the same `Lᵖ` seminorm as `f`, for every exponent
 `p ∈ [0, ∞]`. -/

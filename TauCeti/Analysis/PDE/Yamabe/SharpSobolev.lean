@@ -14,6 +14,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.PDE.Yamabe.Bubble.Cutoff
 import TauCeti.Analysis.PDE.Yamabe.Bubble.Homogeneous
 import TauCeti.Analysis.PDE.Yamabe.WeightedSobolev
+import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.SchwarzRearrangement.PolyaSzego
 import TauCeti.MeasureTheory.Measure.OpenPos
@@ -191,8 +192,7 @@ theorem sphereYamabeConstant_mul_rpow_le_conformalCoefficient_mul_integral_of_li
   obtain ⟨R, hR, hvR_enn⟩ := exists_radius_schwarzRearrangement_eq_zero volume hfin0
   have hvR : ∀ x, R ≤ ‖x‖ → v x = 0 := fun x hx ↦ by simp [v, v_enn, hvR_enn x hx]
   have hv_supp : HasCompactSupport v :=
-    HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall (0 : E) R) fun x hx ↦
-      mem_closedBall_zero_iff.2 (not_lt.1 fun hlt ↦ hx (hvR x hlt.le))
+    hasCompactSupport_toReal_schwarzRearrangement volume hfin0_norm
   -- Stage 2: Equimeasurability of the critical mass and Pólya–Szegő gradient decay.
   have hmass_eq : (∫ x, v x ^ pₙ) = ∫ x, |u x| ^ pₙ := by
     rw [← ENNReal.toReal_ofReal (integral_nonneg fun _ ↦ Real.rpow_nonneg ENNReal.toReal_nonneg _),
@@ -229,17 +229,17 @@ theorem sphereYamabeConstant_mul_rpow_le_conformalCoefficient_mul_integral
   exact sphereYamabeConstant_mul_rpow_le_conformalCoefficient_mul_integral_of_lipschitzWith hn
     hK hsupp
 
-private theorem norm_lp_criticalExponent_sq
-    [Fact (1 ≤ ENNReal.ofReal (criticalExponent (finrank ℝ E)))] (hn : 2 < finrank ℝ E)
+private theorem norm_lp_criticalExponent_sq (hn : 2 < finrank ℝ E)
     (w : Lp ℝ (ENNReal.ofReal (criticalExponent (finrank ℝ E)))
       ((volume : Measure E).restrict (⊤ : Opens E))) :
     ‖w‖ ^ 2 =
       (∫ x, |w x| ^ criticalExponent (finrank ℝ E)) ^ (2 / criticalExponent (finrank ℝ E)) := by
   have hpₙ : 0 < criticalExponent (finrank ℝ E) := criticalExponent_pos hn
-  have hLp := Lp.integral_norm_rpow_eq_norm_rpow
+  have hLp := Lp.norm_eq_integral_norm_rpow_inv
     (ENNReal.ofReal_pos.mpr hpₙ).ne' ENNReal.ofReal_ne_top w
   simp only [ENNReal.toReal_ofReal hpₙ.le, Opens.coe_top, setIntegral_univ, Real.norm_eq_abs] at hLp
-  rw [hLp, ← Real.rpow_mul (norm_nonneg _), mul_div_cancel₀ _ hpₙ.ne', Real.rpow_two]
+  rw [hLp, ← Real.rpow_two,
+    ← Real.rpow_mul (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _), inv_mul_eq_div]
 
 /-- **The sharp Euclidean Sobolev inequality on `D^{1,2}_0(E)`**, in norm form. -/
 theorem sphereYamabeConstant_mul_norm_sobolevEmbeddingL_sq_le_conformalCoefficient_mul_norm_sq

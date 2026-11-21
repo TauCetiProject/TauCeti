@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Sard.Oscillation
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import TauCeti.Analysis.Calculus.Sard.MorseVanishing.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.MeasureTheory.Measure.LocallyNull
@@ -142,17 +143,8 @@ omit [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] [Nontrivial F]
 critical points of a map into such a space are the points where its derivative vanishes. -/
 @[simp] theorem setOf_not_surjective_fderiv_eq_setOf_fderiv_eq_zero_of_finrank_eq_one :
     {x | ¬ Surjective (fderiv ℝ f x)} = {x | fderiv ℝ f x = 0} := by
-  let _ : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
   ext x
-  simp only [mem_ofPred_eq, not_iff_comm]
-  constructor
-  · intro hx
-    exact _root_.surjective_of_ne_zero_of_finrank_eq_one (f := (fderiv ℝ f x : E →ₗ[ℝ] F)) hF
-      fun hzero ↦ hx (ContinuousLinearMap.coe_injective hzero)
-  · rintro hsurj h
-    obtain ⟨y, hy⟩ := exists_ne (0 : F)
-    obtain ⟨v, hv⟩ := hsurj y
-    exact hy (by simpa [h] using hv.symm)
+  simp [surjective_fderiv_iff_ne_zero_of_finrank_eq_one hF]
 
 end OneDimensional
 

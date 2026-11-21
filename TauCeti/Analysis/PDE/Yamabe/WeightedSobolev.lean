@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.Basic
-import TauCeti.Analysis.Calculus.FDeriv.Integrable
+import TauCeti.Analysis.Calculus.Deriv.Integrable
 import TauCeti.Analysis.PDE.Yamabe.Bubble.Moments
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
@@ -105,10 +105,7 @@ private theorem exists_inverse_bubbleRadialWeight {n : ℕ} (hn : 0 < n) :
     set s := Ginv y
     obtain ⟨hs, hGs⟩ := hGinv y hy
     have hsplit : I₀ - y = ∫ σ in Ioi s, bubbleRadialWeight n σ := by
-      have hunion : Ioc 0 s ∪ Ioi s = Ioi (0 : ℝ) := Ioc_union_Ioi_eq_Ioi hs.le
-      rw [← hGs, intervalIntegral.integral_of_le hs.le, hI₀_def, ← hunion,
-        setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi
-          (hw.mono_set (hunion ▸ subset_union_left)) (hw.mono_set (hunion ▸ subset_union_right))]
+      rw [hI₀_def, ← hGs, ← intervalIntegral.integral_Ioi_sub_Ioi hw hs.le]
       ring
     rw [hsplit]
     exact pow_mul_integral_Ioi_bubbleRadialWeight_le hn hs
@@ -532,19 +529,17 @@ private theorem exists_support_endpoint_of_antitoneOn {n : ℕ} (hn : 2 < n) {f 
     (((continuous_pow (n - 1)).mul
       (hf_cont.rpow_const fun _ ↦ .inr hpₙ.le)).integral_hasStrictDerivAt 0 r).hasDerivAt
   have hFR₀ : F R₀ = I₀ := by
-    have hint_Ioc : IntegrableOn (fun ρ ↦ ρ ^ (n - 1) * f ρ ^ pₙ) (Ioc 0 R₀) :=
-      (intervalIntegrable_iff_integrableOn_Ioc_of_le hR₀_pos.le).1
-        (((continuous_pow (n - 1)).mul
-          (hf_cont.rpow_const fun _ ↦ .inr hpₙ.le)).intervalIntegrable 0 R₀)
+    have hint_Ioc : IntervalIntegrable (fun ρ ↦ ρ ^ (n - 1) * f ρ ^ pₙ) volume 0 R₀ :=
+      ((continuous_pow (n - 1)).mul
+        (hf_cont.rpow_const fun _ ↦ .inr hpₙ.le)).intervalIntegrable 0 R₀
     have hint_Ioi : IntegrableOn (fun ρ ↦ ρ ^ (n - 1) * f ρ ^ pₙ) (Ioi R₀) :=
       integrableOn_zero.congr_fun
         (fun ρ hρ ↦ by rw [hf_zero_ge ρ (mem_Ioi.1 hρ).le, Real.zero_rpow hpₙ.ne', mul_zero])
         measurableSet_Ioi
-    rw [← hnorm, ← Ioc_union_Ioi_eq_Ioi hR₀_pos.le,
-      setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi hint_Ioc hint_Ioi,
+    have htail0 : ∫ ρ in Ioi R₀, ρ ^ (n - 1) * f ρ ^ pₙ = 0 :=
       setIntegral_eq_zero_of_forall_eq_zero fun ρ (hρ : ρ ∈ Ioi R₀) ↦ by
-        rw [hf_zero_ge ρ (mem_Ioi.1 hρ).le, Real.zero_rpow hpₙ.ne', mul_zero],
-      add_zero, ← intervalIntegral.integral_of_le hR₀_pos.le]
+        rw [hf_zero_ge ρ (mem_Ioi.1 hρ).le, Real.zero_rpow hpₙ.ne', mul_zero]
+    rw [← hnorm, ← intervalIntegral.integral_interval_add_Ioi' hint_Ioc hint_Ioi, htail0, add_zero]
   -- Stage 3: Deduce strict monotonicity of `F` on `[0, R₀]`.
   have hF_strict : StrictMonoOn F (Icc 0 R₀) :=
     strictMonoOn_of_deriv_pos (convex_Icc 0 R₀)

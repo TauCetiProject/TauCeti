@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.SchwarzRearrangement
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Basic
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Schwarz rearrangement of Lipschitz functions
@@ -150,15 +151,6 @@ theorem schwarzRearrangement_ne_top [Nontrivial E] (hf : ∀ x y, f x ≤ f y + 
   exact ENNReal.add_ne_top.2 ⟨ne_top_of_le_ne_top ht (not_lt.1 hy),
     ENNReal.mul_ne_top ENNReal.coe_ne_top (edist_ne_top x y)⟩
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem ofReal_le_add_mul_edist {h : E → ℝ} (hh : LipschitzWith K h) (x y : E) :
-    ENNReal.ofReal (h x) ≤ ENNReal.ofReal (h y) + K * edist x y := by
-  calc ENNReal.ofReal (h x) ≤ ENNReal.ofReal (h y + K * dist x y) :=
-        ENNReal.ofReal_le_ofReal (hh.le_add_mul x y)
-    _ ≤ ENNReal.ofReal (h y) + K * edist x y := by
-      rw [edist_dist, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul K.coe_nonneg]
-      exact ENNReal.ofReal_add_le
-
 /-- **Finiteness of the rearrangement of a real Lipschitz function.** If `h : E → ℝ` is
 Lipschitz and some nonnegative level `t` has a superlevel set of finite Haar measure, then the
 Schwarz rearrangement of `y ↦ ENNReal.ofReal (h y)` is finite everywhere. -/
@@ -170,7 +162,7 @@ theorem schwarzRearrangement_ofReal_ne_top {h : E → ℝ} (hh : LipschitzWith K
       ((schwarzRearrangement_le_essSup μ _ x).trans
         (essSup_le_of_ae_le (ENNReal.ofReal (h x)) (.of_forall fun y ↦ ?_)))
     rw [Subsingleton.elim y x]
-  · refine schwarzRearrangement_ne_top μ (ofReal_le_add_mul_edist hh) (t := ENNReal.ofReal t)
+  · refine schwarzRearrangement_ne_top μ hh.ofReal_le_add_mul_edist (t := ENNReal.ofReal t)
       ENNReal.ofReal_ne_top ?_ x
     convert hμt using 2
     ext y
@@ -183,7 +175,7 @@ theorem lipschitzWith_toReal_schwarzRearrangement {h : E → ℝ} (hh : Lipschit
     LipschitzWith K fun x ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (h y)) x).toReal := by
   set g := schwarzRearrangement μ fun y ↦ ENNReal.ofReal (h y)
   have hg : ∀ x y, g x ≤ g y + K * edist x y :=
-    schwarzRearrangement_le_add_mul_edist μ (ofReal_le_add_mul_edist hh)
+    schwarzRearrangement_le_add_mul_edist μ hh.ofReal_le_add_mul_edist
   refine LipschitzWith.of_le_add_mul K fun x y ↦ ?_
   have hxy : K * edist x y ≠ ∞ := ENNReal.mul_ne_top ENNReal.coe_ne_top (edist_ne_top x y)
   rcases eq_or_ne (g y) ∞ with hgy | hgy

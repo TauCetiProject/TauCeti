@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Convex.Perspective
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
+import TauCeti.Analysis.Convex.Continuous
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.Probability.Density
 
@@ -20,6 +21,9 @@ with weight `1 / g` compares `∫ Φ(g) / g` with
 then allow a lower bound on `ν.real univ` and an upper bound on `m` to be substituted.
 The resulting inequality applies to a level surface with `g` the gradient norm. Empty
 measures and zero denominators are included using the real division convention.
+
+`ConvexOn.lintegral_ofReal_div_le_of_ae_eq_const` packages the `lintegral` two-measure
+comparison when the first weight is almost everywhere constant.
 
 ## References
 
@@ -94,5 +98,71 @@ theorem mul_map_div_le_integral_div {α : Type*} [MeasurableSpace α] {ν : Meas
       (hΦm (div_nonneg hP hm.le) (div_nonneg measureReal_nonneg hm.le)
         (div_le_div_of_nonneg_right hPν hm.le)) hm.le
     _ ≤ ∫ x, Φ (g x) / g x ∂ν := hJ'
+
+/-- A `lintegral` reciprocal-weighted comparison between two measures `μ` and `ν` (`ν` finite),
+when `g₁` is `μ`-almost everywhere constant and positive, `g₂` is `ν`-almost everywhere measurable
+and positive, `μ univ ≤ ν univ`, and
+`∫⁻ y, ENNReal.ofReal (g₂ y)⁻¹ ∂ν ≤ ∫⁻ x, ENNReal.ofReal (g₁ x)⁻¹ ∂μ < ∞`. -/
+theorem lintegral_ofReal_div_le_of_ae_eq_const {α β : Type*} [MeasurableSpace α]
+    [MeasurableSpace β] {μ : Measure α} {ν : Measure β} [IsFiniteMeasure ν]
+    {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 = 0)
+    {g₁ : α → ℝ} {g₂ : β → ℝ} (hg₁_pos : ∀ᵐ x ∂μ, 0 < g₁ x)
+    (hg₁_const : ∃ γ : ℝ, ∀ᵐ x ∂μ, g₁ x = γ)
+    (hg₂_m : AEMeasurable g₂ ν) (hg₂_pos : ∀ᵐ y ∂ν, 0 < g₂ y)
+    (hμν : μ univ ≤ ν univ)
+    (hinv : (∫⁻ y, ENNReal.ofReal (g₂ y)⁻¹ ∂ν) ≤ ∫⁻ x, ENNReal.ofReal (g₁ x)⁻¹ ∂μ)
+    (hinv_fin : (∫⁻ x, ENNReal.ofReal (g₁ x)⁻¹ ∂μ) < ∞) :
+    (∫⁻ x, ENNReal.ofReal (Φ (g₁ x) / g₁ x) ∂μ) ≤
+      ∫⁻ y, ENNReal.ofReal (Φ (g₂ y) / g₂ y) ∂ν := by
+  by_cases hΦ_top : (∫⁻ y, ENNReal.ofReal (Φ (g₂ y) / g₂ y) ∂ν) = ∞
+  · exact hΦ_top ▸ le_top
+  have hΦ_fin : (∫⁻ y, ENNReal.ofReal (Φ (g₂ y) / g₂ y) ∂ν) < ∞ := lt_top_iff_ne_top.2 hΦ_top
+  by_cases hμ0 : μ = 0
+  · simp [hμ0]
+  have : NeZero μ := ⟨hμ0⟩
+  have hμ_fin : μ univ < ∞ := hμν.trans_lt (measure_lt_top ν univ)
+  have hΦ_nn (s : ℝ) (hs : 0 ≤ s) : 0 ≤ Φ s := hΦ0 ▸ hΦm (mem_Ici.2 le_rfl) hs hs
+  obtain ⟨γ, hγ_ae⟩ := hg₁_const
+  obtain ⟨x₀, hx₀_pos, hx₀_eq⟩ := (hg₁_pos.and hγ_ae).exists
+  have hγ : 0 < γ := hx₀_eq ▸ hx₀_pos
+  set P := (μ univ).toReal
+  set M := (∫⁻ x, ENNReal.ofReal (g₁ x)⁻¹ ∂μ).toReal
+  have hP_pos : 0 < P := ENNReal.toReal_pos (Measure.measure_univ_ne_zero.2 hμ0) hμ_fin.ne
+  have hM_eq : M = P / γ := by
+    have hm : (∫⁻ x, ENNReal.ofReal (g₁ x)⁻¹ ∂μ) = ENNReal.ofReal γ⁻¹ * μ univ :=
+      (lintegral_congr_ae (hγ_ae.mono fun _ hx ↦ by rw [hx])).trans
+        (by rw [lintegral_const, mul_comm])
+    simp [M, P, hm, ENNReal.toReal_ofReal (inv_nonneg.2 hγ.le), inv_mul_eq_div]
+  have hlhs_eq : (∫⁻ x, ENNReal.ofReal (Φ (g₁ x) / g₁ x) ∂μ) = ENNReal.ofReal (M * Φ (P / M)) := by
+    have hc : (∫⁻ x, ENNReal.ofReal (Φ (g₁ x) / g₁ x) ∂μ) = ENNReal.ofReal (Φ γ / γ) * μ univ :=
+      (lintegral_congr_ae (hγ_ae.mono fun _ hx ↦ by rw [hx])).trans
+        (by rw [lintegral_const, mul_comm])
+    have hPM : P / M = γ := by rw [hM_eq, div_div_cancel₀ hP_pos.ne']
+    rw [hc, hPM, hM_eq, ← ENNReal.ofReal_toReal hμ_fin.ne,
+      ← ENNReal.ofReal_mul (div_nonneg (hΦ_nn γ hγ.le) hγ.le)]
+    congr 1; ring
+  have hg₂_inv_nn : ∀ᵐ y ∂ν, 0 ≤ (g₂ y)⁻¹ := hg₂_pos.mono fun _ hy ↦ (inv_pos.mpr hy).le
+  have hinv_int : Integrable (fun y ↦ (g₂ y)⁻¹) ν :=
+    ⟨hg₂_m.inv.aestronglyMeasurable,
+      (hasFiniteIntegral_iff_ofReal hg₂_inv_nn).2 (hinv.trans_lt hinv_fin)⟩
+  have hΦ_cont : Continuous fun s : ℝ ↦ Φ (max s 0) :=
+    (hΦ.continuousOn_Ici_of_monotoneOn hΦm).comp_continuous
+      (continuous_id.max continuous_const) fun _ ↦ le_max_right _ _
+  have hΦg_ae : AEMeasurable (fun y ↦ Φ (g₂ y)) ν :=
+    (hΦ_cont.measurable.comp_aemeasurable hg₂_m).congr
+      (hg₂_pos.mono fun _ hy ↦ by simp only [Function.comp_apply, max_eq_left hy.le])
+  have hΦ_nn_ae : ∀ᵐ y ∂ν, 0 ≤ Φ (g₂ y) / g₂ y :=
+    hg₂_pos.mono fun _ hy ↦ div_nonneg (hΦ_nn _ hy.le) hy.le
+  have hΦ_int : Integrable (fun y ↦ Φ (g₂ y) / g₂ y) ν :=
+    ⟨(hΦg_ae.div hg₂_m).aestronglyMeasurable, (hasFiniteIntegral_iff_ofReal hΦ_nn_ae).2 hΦ_fin⟩
+  have hM_bound : (∫ y, (g₂ y)⁻¹ ∂ν) ≤ M := by
+    rw [← ENNReal.ofReal_le_iff_le_toReal hinv_fin.ne,
+      ofReal_integral_eq_lintegral_ofReal hinv_int hg₂_inv_nn]
+    exact hinv
+  have hPν : P ≤ ν.real univ := by
+    rw [measureReal_def]; exact ENNReal.toReal_mono (measure_ne_top ν univ) hμν
+  rw [hlhs_eq, ← ofReal_integral_eq_lintegral_ofReal hΦ_int hΦ_nn_ae]
+  exact ENNReal.ofReal_le_ofReal
+    (hΦ.mul_map_div_le_integral_div hΦm hΦ0 hg₂_pos hinv_int hΦ_int hP_pos.le hPν hM_bound)
 
 end ConvexOn

@@ -126,7 +126,7 @@ theorem volume_preimage_inter_setOf_fderiv_ne_zero {h : E → ℝ} {I : Set ℝ}
   set R := {x | fderiv ℝ h x ≠ 0}
   have hR : MeasurableSet R := (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ h)
   have hsurj (x : E) (hx : x ∈ R) : Surjective (fderiv ℝ h x) :=
-    TauCeti.surjective_fderiv_iff_ne_zero.2 hx
+    (TauCeti.surjective_fderiv_iff_ne_zero_of_finrank_eq_one (finrank_self ℝ)).2 hx
   have hm : MeasurableSet (h ⁻¹' I ∩ R) :=
     TauCeti.measurableSet_preimage_inter_setOf_fderiv_ne_zero hI
   -- The weight `1_I(h) ‖Dh‖⁻¹` on the regular set.
@@ -180,7 +180,7 @@ theorem lintegral_map_norm_fderiv_eq_setLIntegral_Ioi {u : E → ℝ} (hu0 : ∀
   set R := {x : E | fderiv ℝ u x ≠ 0}
   have hR : MeasurableSet R := (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ u)
   have hsurj (x : E) (hx : x ∈ R) : Surjective (fderiv ℝ u x) :=
-    TauCeti.surjective_fderiv_iff_ne_zero.2 hx
+    (TauCeti.surjective_fderiv_iff_ne_zero_of_finrank_eq_one (finrank_self ℝ)).2 hx
   let g : E → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (Φ ‖fderiv ℝ u x‖ / ‖fderiv ℝ u x‖)
   have hg : Measurable g := ENNReal.measurable_ofReal.comp (hΦ.div (measurable_fderiv ℝ u).norm)
   have hlhs : ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ u x‖) =

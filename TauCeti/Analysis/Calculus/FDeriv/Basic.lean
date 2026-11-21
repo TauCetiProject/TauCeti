@@ -8,7 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
-import Mathlib.Algebra.Module.LinearMap.DivisionRing
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 
 /-!
 # Differentiability criteria
@@ -24,9 +25,8 @@ scalar functions recover both functions as differentiable.
   derivative does not vanish.
 * `TauCeti.differentiableAt_of_fderiv_surjective`: a function is differentiable wherever its
   derivative is surjective.
-* `TauCeti.surjective_fderiv_iff_ne_zero`, `TauCeti.differentiableAt_and_surjective_fderiv_iff`,
-  `TauCeti.setOf_differentiableAt_and_surjective_eq_setOf_fderiv_ne_zero`: for scalar functions,
-  surjectivity of `fderiv` (with or without differentiability) is equivalent to `fderiv ≠ 0`.
+* `TauCeti.surjective_fderiv_iff_ne_zero_of_finrank_eq_one`: for a map into a one-dimensional
+  space, surjectivity of `fderiv` is equivalent to `fderiv ≠ 0`.
 * `TauCeti.differentiableAt_and_of_differentiableAt_comb`: if two combinations `a F + b G` and
   `c F + d G` with `a d - b c ≠ 0` are differentiable at a point, so are `F` and `G`.
 * `Asymptotics.IsBigO.hasFDerivWithinAt_zero`, `Asymptotics.IsBigO.hasFDerivAt_zero`: a function
@@ -60,26 +60,17 @@ theorem differentiableAt_of_fderiv_surjective (h : Function.Surjective (fderiv �
   obtain ⟨v, hv⟩ := exists_ne (0 : F)
   exact fun hs ↦ hv (by simpa using (hs v).choose_spec.symm)
 
-/-- For a scalar function, the totalized Fréchet derivative is surjective if and only if it is
-nonzero. -/
-theorem surjective_fderiv_iff_ne_zero {w : E → 𝕜} {x : E} :
-    Function.Surjective (fderiv 𝕜 w x) ↔ fderiv 𝕜 w x ≠ 0 :=
-  LinearMap.surjective_iff_ne_zero.trans
-    (ContinuousLinearMap.coe_injective.ne_iff' ContinuousLinearMap.toLinearMap_zero)
-
-/-- For a scalar function, differentiability together with surjectivity of the Fréchet derivative
-is equivalent to nonvanishing of the totalized Fréchet derivative. -/
-theorem differentiableAt_and_surjective_fderiv_iff {w : E → 𝕜} {x : E} :
-    (DifferentiableAt 𝕜 w x ∧ Function.Surjective (fderiv 𝕜 w x)) ↔ fderiv 𝕜 w x ≠ 0 :=
-  ⟨fun ⟨_, h⟩ ↦ surjective_fderiv_iff_ne_zero.1 h,
-    fun h ↦ ⟨differentiableAt_of_fderiv_ne_zero h, surjective_fderiv_iff_ne_zero.2 h⟩⟩
-
-/-- For a scalar function, the regular locus where it is differentiable with surjective Fréchet
-derivative equals `{x | fderiv 𝕜 w x ≠ 0}`. -/
-theorem setOf_differentiableAt_and_surjective_eq_setOf_fderiv_ne_zero (w : E → 𝕜) :
-    {x : E | DifferentiableAt 𝕜 w x ∧ Function.Surjective (fderiv 𝕜 w x)} =
-      {x : E | fderiv 𝕜 w x ≠ 0} :=
-  Set.ext fun _ ↦ differentiableAt_and_surjective_fderiv_iff
+/-- For a map into a one-dimensional space, the totalized Fréchet derivative is surjective if and
+only if it is nonzero. -/
+theorem surjective_fderiv_iff_ne_zero_of_finrank_eq_one (hF : Module.finrank 𝕜 F = 1) :
+    Function.Surjective (fderiv 𝕜 f x) ↔ fderiv 𝕜 f x ≠ 0 := by
+  let _ : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
+  refine ⟨fun hsurj hzero ↦ ?_, fun hne ↦
+    _root_.surjective_of_ne_zero_of_finrank_eq_one (f := (fderiv 𝕜 f x : E →ₗ[𝕜] F)) hF
+      fun h ↦ hne (ContinuousLinearMap.coe_injective h)⟩
+  obtain ⟨y, hy⟩ := exists_ne (0 : F)
+  obtain ⟨v, hv⟩ := hsurj y
+  exact hy (by simpa [hzero] using hv.symm)
 
 end Topological
 

@@ -362,6 +362,16 @@ theorem Lp.integral_norm_rpow_eq_norm_rpow {alpha F : Type*} [MeasurableSpace al
     lpNorm_eq_integral_norm_rpow_toReal hp0 hp (Lp.aestronglyMeasurable f),
     ← Real.rpow_mul h_nonneg, inv_mul_cancel₀ (ENNReal.toReal_pos hp0 hp).ne', Real.rpow_one]
 
+/-- For `0 < p < ∞`, the `Lᵖ` norm of an `Lᵖ` function is the `p⁻¹`-th power of the integral of
+the `p`-th power of its pointwise norm. -/
+theorem Lp.norm_eq_integral_norm_rpow_inv {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (f : Lp F p m) :
+    ‖f‖ = (∫ x, ‖f x‖ ^ p.toReal ∂m) ^ p.toReal⁻¹ := by
+  have h_nonneg : 0 ≤ ‖f‖ := Lp.norm_def f ▸ ENNReal.toReal_nonneg
+  rw [Lp.integral_norm_rpow_eq_norm_rpow hp0 hp f, ← Real.rpow_mul h_nonneg,
+    mul_inv_cancel₀ (ENNReal.toReal_pos hp0 hp).ne', Real.rpow_one]
+
 /-- The integral of the squared pointwise norm of an `L²` function is its squared `L²` norm. -/
 theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
     {m : Measure alpha} [NormedAddCommGroup F] (f : Lp F 2 m) :

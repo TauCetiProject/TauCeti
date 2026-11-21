@@ -8,23 +8,18 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Topology.EMetricSpace.Lipschitz
-import Mathlib.Analysis.Calculus.Deriv.Basic
-import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Const
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Normed.Group.Bounded
-import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import Mathlib.MeasureTheory.Measure.Prod
-import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.RCLike.OperatorNorm
 
 /-!
@@ -66,11 +61,6 @@ integrable on the product of a half-line with `V`.
 * `TauCeti.memLp_norm_fderiv_of_lipschitzWith`,
   `TauCeti.integrable_norm_fderiv_sq_of_lipschitzWith`: `Lᵖ` and squared-energy integrability of
   `‖fderiv 𝕜 u‖` for a compactly supported Lipschitz map.
-* `TauCeti.integrableOn_pow_mul_norm_deriv_sq_of_lipschitzWith`,
-  `TauCeti.integrableOn_pow_mul_deriv_sq_of_lipschitzWith`: `Ioi 0`-integrability of
-  `r ^ k * ‖deriv f r‖ ^ 2` for a Lipschitz map vanishing on `[R, ∞)`.
-* `TauCeti.integral_radial_deriv_sq_le`: the polar energy of a radial compactly supported
-  Lipschitz function dominates the weighted 1D ray energy.
 * `TauCeti.integrableOn_norm_fderiv_sq_of_apply_I_eq`: integrability of `‖fderiv ℝ u z‖ ^ 2` from
   integrability of `‖fderiv ℝ u z 1‖ ^ 2` under a Cauchy--Riemann equation.
 * `ContinuousLinearEquiv.integrable_norm_fderiv_comp_sq_iff`: integrability of
@@ -83,7 +73,7 @@ integrable on the product of a half-line with `V`.
 public section
 
 open MeasureTheory Set
-open scoped ENNReal NNReal Topology
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -288,100 +278,5 @@ theorem integrable_fderiv_apply_prod {g : WithLp 2 (ℝ × V) → ℝ} (hg : Con
   exact hprod.integrableOn
 
 end Prod
-
-section RadialAndHalfLine
-
-/-- For a `K`-Lipschitz map `f : ℝ → F` into a complete space vanishing on `[R, ∞)` with
-`0 ≤ R`, the weighted squared derivative `r ↦ r ^ k * ‖deriv f r‖ ^ 2` is integrable on `(0, ∞)`. -/
-theorem integrableOn_pow_mul_norm_deriv_sq_of_lipschitzWith {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] [CompleteSpace F] {k : ℕ} {K : ℝ≥0} {f : ℝ → F} (hf : LipschitzWith K f)
-    {R : ℝ} (hR : 0 ≤ R) (hfR : ∀ r ≥ R, f r = 0) :
-    IntegrableOn (fun r : ℝ ↦ r ^ k * ‖deriv f r‖ ^ 2) (Ioi 0) := by
-  have hmeas : AEStronglyMeasurable (fun r : ℝ ↦ r ^ k * ‖deriv f r‖ ^ 2) volume :=
-    (continuous_pow k).aestronglyMeasurable.mul ((aestronglyMeasurable_deriv f volume).norm.pow 2)
-  have hIoc : IntegrableOn (fun r : ℝ ↦ r ^ k * ‖deriv f r‖ ^ 2) (Ioc 0 R) := by
-    refine IntegrableOn.of_bound measure_Ioc_lt_top hmeas.restrict (R ^ k * (K : ℝ) ^ 2) ?_
-    refine ae_restrict_of_forall_mem measurableSet_Ioc fun r hr ↦ ?_
-    rw [Real.norm_of_nonneg (mul_nonneg (pow_nonneg hr.1.le _) (sq_nonneg _))]
-    have hnorm : ‖deriv f r‖ ≤ K := norm_deriv_le_of_lipschitz hf
-    exact mul_le_mul (pow_le_pow_left₀ hr.1.le hr.2 _)
-      (sq_le_sq.2 (by rwa [abs_of_nonneg (norm_nonneg _), abs_of_nonneg K.coe_nonneg]))
-      (sq_nonneg _) (pow_nonneg hR _)
-  have hIoi : IntegrableOn (fun r : ℝ ↦ r ^ k * ‖deriv f r‖ ^ 2) (Ioi R) := by
-    refine integrableOn_zero.congr_fun (fun r (hr : R < r) ↦ ?_) measurableSet_Ioi
-    have h0 : f =ᶠ[𝓝 r] 0 :=
-      Filter.eventually_of_mem (Ioi_mem_nhds hr) fun x hx ↦ hfR x hx.le
-    simp [h0.deriv_eq]
-  rw [← Ioc_union_Ioi_eq_Ioi hR]
-  exact hIoc.union hIoi
-
-/-- For a `K`-Lipschitz real function `f : ℝ → ℝ` vanishing on `[R, ∞)` with `0 ≤ R`, the
-weighted squared derivative `r ↦ r ^ k * (deriv f r) ^ 2` is integrable on `(0, ∞)`. -/
-theorem integrableOn_pow_mul_deriv_sq_of_lipschitzWith {k : ℕ} {K : ℝ≥0} {f : ℝ → ℝ}
-    (hf : LipschitzWith K f) {R : ℝ} (hR : 0 ≤ R) (hfR : ∀ r ≥ R, f r = 0) :
-    IntegrableOn (fun r : ℝ ↦ r ^ k * (deriv f r) ^ 2) (Ioi 0) := by
-  simpa only [Real.norm_eq_abs, sq_abs] using
-    integrableOn_pow_mul_norm_deriv_sq_of_lipschitzWith (k := k) hf hR hfR
-
-open Module
-
-/-- For a compactly supported `K`-Lipschitz radial real function `v : E → ℝ`, the weighted
-one-dimensional Dirichlet energy of the scaled unit-ray profile `r ↦ c * v (max r 0 • e₀)`
-on `(0, ∞)` is bounded above by `c ^ 2 * ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ`. -/
-theorem integral_radial_deriv_sq_le {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [Nontrivial E] (μ : Measure E)
-    [μ.IsAddHaarMeasure] {K : ℝ≥0} {v : E → ℝ} (hv_lip : LipschitzWith K v)
-    (hv_supp : HasCompactSupport v) (hv_rad : ∀ x y, ‖x‖ = ‖y‖ → v x = v y)
-    {e₀ : E} (he₀ : ‖e₀‖ = 1) (c : ℝ) :
-    (finrank ℝ E : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
-        ∫ r in Ioi (0 : ℝ), r ^ (finrank ℝ E - 1) *
-          (deriv (fun r ↦ c * v (max r 0 • e₀)) r) ^ 2) ≤
-      c ^ 2 * ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ := by
-  set n := finrank ℝ E with hn_def
-  let f : ℝ → ℝ := fun r ↦ c * v (max r 0 • e₀)
-  let φ : ℝ → ℝ := fun r ↦ ‖fderiv ℝ v (max r 0 • e₀)‖ ^ 2
-  have hv_grad_int := integrable_norm_fderiv_sq_of_lipschitzWith (𝕜 := ℝ) (μ := μ) hv_lip hv_supp
-  have hv_grad_eq : (fun x : E ↦ ‖fderiv ℝ v x‖ ^ 2) = fun x ↦ φ ‖x‖ := funext fun x ↦ by
-    have hnorm : ‖x‖ = ‖‖x‖ • e₀‖ := by rw [norm_smul, Real.norm_eq_abs, abs_norm, he₀, mul_one]
-    simp only [φ, max_eq_left (norm_nonneg x), norm_fderiv_eq_of_norm_eq hv_rad hnorm]
-  have hφ_int : IntegrableOn (fun r ↦ r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2) (Ioi 0) := by
-    rw [hv_grad_eq] at hv_grad_int
-    exact ((integrable_fun_norm_addHaar μ (f := φ)).mp hv_grad_int).congr_fun
-      (fun r (hr : 0 < r) ↦ by simp [φ, max_eq_left hr.le, smul_eq_mul, ← hn_def])
-      measurableSet_Ioi
-  have hpt : ∀ r ∈ Ioi (0 : ℝ), r ^ (n - 1) * (deriv f r) ^ 2 ≤
-      c ^ 2 * (r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2) := fun r (hr : 0 < r) ↦ by
-    have hev : f =ᶠ[𝓝 r] fun s ↦ c * v (s • e₀) :=
-      Filter.eventually_of_mem (Ioi_mem_nhds hr) fun s hs ↦ by simp [f, max_eq_left hs.le]
-    rw [hev.deriv_eq, deriv_const_mul_field, mul_pow, mul_left_comm]
-    exact mul_le_mul_of_nonneg_left
-      (mul_le_mul_of_nonneg_left (deriv_radial_sq_le hv_rad he₀ hr) (pow_nonneg hr.le _))
-      (sq_nonneg c)
-  have hderiv_f_int : IntegrableOn (fun r ↦ r ^ (n - 1) * (deriv f r) ^ 2) (Ioi 0) :=
-    (hφ_int.const_mul (c ^ 2)).mono' (((continuous_pow (n - 1)).measurable.mul
-      ((measurable_deriv f).pow_const 2)).aestronglyMeasurable.restrict)
-      (ae_restrict_of_forall_mem measurableSet_Ioi fun r hr ↦ by
-        rw [Real.norm_of_nonneg (mul_nonneg (pow_nonneg (mem_Ioi.1 hr).le _) (sq_nonneg _))]
-        exact hpt r hr)
-  have hrad_le : ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv f r) ^ 2 ≤
-      c ^ 2 * ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2 := by
-    rw [← integral_const_mul]
-    exact setIntegral_mono_on hderiv_f_int (hφ_int.const_mul (c ^ 2)) measurableSet_Ioi hpt
-  have hgrad_polar : (n : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
-      ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2) =
-      ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ := by
-    rw [hv_grad_eq, integral_fun_norm_addHaar μ φ]
-    simp only [nsmul_eq_mul, smul_eq_mul, ← hn_def]; congr 2
-    exact setIntegral_congr_fun measurableSet_Ioi fun r (hr : 0 < r) ↦ by
-      simp [φ, max_eq_left hr.le]
-  calc (n : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
-        ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv f r) ^ 2)
-      ≤ (n : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
-          (c ^ 2 * ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2)) :=
-        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hrad_le measureReal_nonneg)
-          (Nat.cast_nonneg n)
-    _ = c ^ 2 * ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ := by rw [← hgrad_polar]; ring
-
-end RadialAndHalfLine
 
 end TauCeti

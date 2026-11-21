@@ -27,6 +27,7 @@ locally Lipschitz on a set with a locally Lipschitz map keeps it locally Lipschi
 `LipschitzOnWith.closure_of_continuousWithinAt` extends a Lipschitz bound to the closure when
 continuity is supplied only at the added points. `LipschitzOnWith.Icc_of_Ico` specializes this
 to a half-open real interval. `LipschitzOnWith.edist_apply_min_le` controls a backward time clamp.
+`LipschitzWith.ofReal_le_add_mul_edist` bounds `ENNReal.ofReal (h x)` using `edist x y`.
 
 The declaration `TauCeti.lipschitzWith_toReal_edist` and its proof follow
 [Mathlib pull request #41839](https://github.com/leanprover-community/mathlib4/pull/41839),
@@ -116,6 +117,18 @@ theorem LipschitzOnWith.edist_apply_min_le {Y : Type*} [PseudoEMetricSpace Y]
     rw [Real.dist_eq, Real.dist_eq, abs_of_nonneg (sub_nonneg.mpr hat),
       abs_of_nonpos (sub_nonpos.mpr hab)]
     linarith
+
+/-- For a real `K`-Lipschitz function on an extended pseudometric space, `ENNReal.ofReal (h x)`
+is at most `ENNReal.ofReal (h y) + K * edist x y`. -/
+theorem LipschitzWith.ofReal_le_add_mul_edist {α : Type*} [PseudoEMetricSpace α] {K : ℝ≥0}
+    {h : α → ℝ} (hh : LipschitzWith K h) (x y : α) :
+    ENNReal.ofReal (h x) ≤ ENNReal.ofReal (h y) + K * edist x y := by
+  calc ENNReal.ofReal (h x)
+      ≤ ENNReal.ofReal (h y + dist (h x) (h y)) :=
+        ENNReal.ofReal_le_ofReal (by linarith [le_abs_self (h x - h y), Real.dist_eq (h x) (h y)])
+    _ ≤ ENNReal.ofReal (h y) + ENNReal.ofReal (dist (h x) (h y)) := ENNReal.ofReal_add_le
+    _ = ENNReal.ofReal (h y) + edist (h x) (h y) := by rw [edist_dist]
+    _ ≤ ENNReal.ofReal (h y) + K * edist x y := add_le_add le_rfl (hh x y)
 
 /-- The inclusion of a subset into a larger subset is `1`-Lipschitz. -/
 protected theorem LipschitzWith.inclusion {α : Type*} [PseudoEMetricSpace α] {s t : Set α}
