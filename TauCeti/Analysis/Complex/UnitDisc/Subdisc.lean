@@ -13,7 +13,8 @@ public import Mathlib.Topology.ContinuousMap.Basic
 
 A round disc `B(c, r)` with `‖c‖ + r ≤ 1` lies in `𝔻`, and the affine map `z ↦ c + r z` parametrizes
 it by `𝔻` (`TauCeti.Complex.UnitDisc.subdisc`), with inverse `w ↦ (w - c) / r`
-(`TauCeti.Complex.UnitDisc.coe_subdisc_sub_div`). These maps compose like affine maps
+(`TauCeti.Complex.UnitDisc.coe_subdisc_sub_div`); read in `ℂ` it is an open embedding
+(`TauCeti.Complex.UnitDisc.isOpenEmbedding_coe_comp_subdisc`). These maps compose like affine maps
 (`TauCeti.Complex.UnitDisc.subdisc_comp_subdisc`). If a compact subset `K` of `𝔻` meets no point of
 the circle `‖z - c‖ = r`, then the points of `𝔻` that `subdisc c r` sends into `K` form a compact
 set (`TauCeti.Complex.UnitDisc.isCompact_subdisc_preimage`): they are the rescaled points of `K`
@@ -68,6 +69,12 @@ variable {c c' : ℂ} {r r' : ℝ} {hc : ‖c‖ + r ≤ 1} {hr : 0 < r}
 @[simp]
 theorem coe_subdisc_apply (z : 𝔻) : (subdisc c r hc hr z : ℂ) = c + r * z :=
   (rfl)
+
+/-- The round subdisc map `subdisc c r`, read in `ℂ`, is an open embedding: it is the restriction
+to `𝔻` of the affine homeomorphism `w ↦ c + r w` of `ℂ`. -/
+theorem isOpenEmbedding_coe_comp_subdisc : IsOpenEmbedding (((↑) : 𝔻 → ℂ) ∘ subdisc c r hc hr) :=
+  ((Homeomorph.mulLeft₀ (r : ℂ) (Complex.ofReal_ne_zero.2 hr.ne')).trans
+    (Homeomorph.addLeft c)).isOpenEmbedding.comp isOpenEmbedding_coe
 
 /-- A point of the unit disc lies in the image of `subdisc c r` exactly when it lies in the disc
 `B(c, r)`. -/
