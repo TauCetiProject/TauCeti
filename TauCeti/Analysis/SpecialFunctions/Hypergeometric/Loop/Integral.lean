@@ -102,6 +102,13 @@ private def affineCircIntegrand (a β γ w₀ w₁ : ℂ) (ρ θ : ℝ) : ℂ :=
   ((ρ : ℂ) ^ (β - 1) * exp (θ * I * (β - 1))) * (1 - ρ * exp (θ * I)) ^ (γ - 1) *
     (w₀ - w₁ * (ρ * exp (θ * I))) ^ (-a) * (I * ρ * exp (θ * I))
 
+/-- The unit affine circle is the continued Euler kernel with its circular derivative. -/
+private theorem affineCircIntegrand_unit (a b c z : ℂ) (ρ : ℝ) :
+    affineCircIntegrand a b (c - b) 1 z ρ = fun θ : ℝ =>
+      ((ρ : ℂ) ^ (b - 1) * exp (θ * I * (b - 1))) *
+        (1 - ρ * exp (θ * I)) ^ (c - b - 1) *
+        (1 - z * (ρ * exp (θ * I))) ^ (-a) * (I * ρ * exp (θ * I)) := rfl
+
 private def affineLoopZero (a β γ w₀ w₁ : ℂ) (A ρ : ℝ) : ℂ :=
   (exp (2 * π * I * (β - 1)) - 1) * (∫ u : ℝ in ρ..A, affineSegIntegrand a β γ w₀ w₁ u) +
     ∫ θ : ℝ in 0..(2 * π), affineCircIntegrand a β γ w₀ w₁ ρ θ
@@ -131,13 +138,15 @@ private theorem I_mul_affineLogIntegrand_vertical (a β γ w₀ w₁ : ℂ) {ρ 
     (θ : ℝ) :
     I * affineLogIntegrand a β γ w₀ w₁ ((Real.log ρ : ℂ) + θ * I) =
       affineCircIntegrand a β γ w₀ w₁ ρ θ := by
-  have hcpow : (ρ : ℂ) ^ (β - 1) = exp ((β - 1) * Real.log ρ) := by
-    have h := TauCeti.ofReal_exp_cpow (Real.log ρ) (β - 1)
-    rwa [Real.exp_log hρ, mul_comm] at h
+  have hρ0 : (ρ : ℂ) ≠ 0 := ofReal_ne_zero.mpr hρ.ne'
   have hexp : exp ((Real.log ρ : ℂ) + θ * I) = ρ * exp (θ * I) := by
-    rw [exp_add, ← ofReal_exp, Real.exp_log hρ]
-  have hθβ : (β - 1) * (θ * I) = θ * I * (β - 1) := mul_comm _ _
-  simp only [affineLogIntegrand, affineCircIntegrand, hexp, hcpow, mul_add, exp_add, hθβ]
+    simpa only [ofReal_log hρ.le, mul_one, cpow_one] using
+      exp_log_add_mul hρ0 (θ * I) 1
+  have hpow : exp ((β - 1) * ((Real.log ρ : ℂ) + θ * I)) =
+      (ρ : ℂ) ^ (β - 1) * exp (θ * I * (β - 1)) := by
+    rw [mul_comm]
+    simpa only [ofReal_log hρ.le] using exp_log_add_mul hρ0 (θ * I) (β - 1)
+  simp only [affineLogIntegrand, affineCircIntegrand, hexp, hpow]
   ring
 
 private theorem continuousOn_affineSegIntegrand_Icc (a β γ w₀ w₁ : ℂ) {r s : ℝ}
@@ -529,16 +538,6 @@ private theorem hypergeometricLoopOne_eq_affineLoopZero (a b c z : ℂ) (ρ : �
     loopOne_circ_eq_affineCircIntegrand, he1, he2, affineLoopZero]
   ring
 
-/-- Reflecting the Euler segment by `t = 1 - u` preserves its slit-plane condition. -/
-private theorem reflected_eulerKernel_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
-    {u : ℝ} (hu : u ∈ Icc 0 1) : (1 - z) - (-z) * (u : ℂ) ∈ slitPlane := by
-  have hreflect : (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) := by
-    push_cast
-    ring
-  rw [hreflect]
-  exact one_sub_mul_ofReal_mem_slitPlane hz
-    ⟨sub_nonneg.mpr hu.2, sub_le_self _ hu.1⟩
-
 private theorem intervalIntegrable_loopOne_seg (a b c z : ℂ) (hb : 0 < b.re) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) (hz : 1 - z ∈ slitPlane) :
     IntervalIntegrable (affineSegIntegrand a (c - b) b (1 - z) (-z)) volume ρ 1 := by
@@ -903,7 +902,7 @@ theorem hypergeometricLoopZero_eq_mul_regularizedGaussHGFun (a : ℂ) {b c z : �
         regularizedGaussHGFun a b c z := by
   have hslit : 1 - z ∈ slitPlane := by
     simpa only [sub_eq_add_neg] using mem_slitPlane_of_norm_lt_one (by rwa [norm_neg] : ‖-z‖ < 1)
-  have hzρ : ‖z‖ * ρ < 1 := by nlinarith [norm_nonneg z]
+  have hzρ : ‖z‖ * ρ < 1 := (mul_le_of_le_one_right (norm_nonneg z) hρ1.le).trans_lt hz
   -- Adapt the earlier continuation proof of `Complex.hypergeometricLoopZero_zero`.
   let d := c - b
   have hd : 0 < d.re := by simpa only [d, sub_re, sub_pos] using hbc
@@ -933,7 +932,7 @@ theorem hypergeometricLoopZero_eq_mul_regularizedGaussHGFun (a : ℂ) {b c z : �
 /-- On the open unit disk, the regularized Gauss function is represented by the `(0+)` loop
 when `b.re < c.re`, `b` is not a positive integer, and `0 < ρ < 1`. No positivity assumption on
 `b.re` is needed. -/
-theorem regularizedGaussHGFun_eq_hypergeometricLoopZero (a : ℂ) {b c z : ℂ}
+theorem regularizedGaussHGFun_eq_mul_hypergeometricLoopZero (a : ℂ) {b c z : ℂ}
     (hbc : b.re < c.re) (hb_int : ∀ n : ℕ, b ≠ n + 1) (hz : ‖z‖ < 1) {ρ : ℝ}
     (hρ : 0 < ρ) (hρ1 : ρ < 1) :
     regularizedGaussHGFun a b c z =

@@ -85,6 +85,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `TauCeti.continuousOn_ofReal_add_cpow`, `TauCeti.continuousOn_ofReal_add_cpow_Ici`,
   `TauCeti.continuous_ofReal_add_cpow_of_re_pos` -- continuity of `t ↦ (t + x) ^ s` on
   `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
+* `Complex.exp_log_add_mul` -- split an exponential at a principal logarithm.
 * `Complex.exp_sub_log_mul_mul_inv_cpow` -- collect powers of a common denominator in a
   product with a continued logarithm.
 * `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half`,
@@ -567,6 +568,12 @@ theorem one_div_cpow_mul_ofReal_rpow {w : ℂ} (hw : w.arg ≠ Real.pi) {p : ℝ
 end TauCeti
 
 namespace Complex
+
+/-- An exponential based at a principal logarithm splits into a principal power and the
+exponential of the remaining summand. -/
+theorem exp_log_add_mul {z : ℂ} (hz : z ≠ 0) (w e : ℂ) :
+    exp ((log z + w) * e) = z ^ e * exp (w * e) := by
+  rw [add_mul, exp_add, cpow_def_of_ne_zero hz]
 
 /-- Collect powers of a common denominator in a product with a continued logarithm.
 The inverse uses the principal branch away from the negative real axis, and `hpow`

@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Convex
-public import Mathlib.Analysis.Complex.Exponential
-import Mathlib.Analysis.Complex.Trigonometric
 
 /-!
 # Geometry of the complex slit plane
@@ -48,9 +46,9 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 
 * `Complex.closedBall_one_subset_slitPlane_iff`
 * `Complex.conj_mem_slitPlane`, `Complex.mem_slitPlane_iff_add_ofReal_ne_zero`
-* `Complex.re_one_sub_mul_exp_mul_I_pos`
 * `Complex.neg_mem_slitPlane_of_norm_eq_one`
 * `Complex.one_sub_mul_ofReal_mem_slitPlane`, `Complex.one_sub_ofReal_mul_mem_slitPlane`
+* `Complex.reflected_eulerKernel_mem_slitPlane`
 * `Complex.isOpen_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_ofReal_setOf_one_sub_mem_slitPlane`,
@@ -345,13 +343,6 @@ end TauCeti
 
 namespace Complex
 
-/-- Multiplying a point of the open unit disc by any unit complex exponential and subtracting
-it from `1` gives a point of the open right half-plane. -/
-theorem re_one_sub_mul_exp_mul_I_pos {w : ℂ} (hw : ‖w‖ < 1) (θ : ℝ) :
-    0 < (1 - w * exp (θ * I)).re := by
-  apply TauCeti.re_pos_of_norm_sub_one_lt_one
-  simpa only [sub_sub_cancel_left, norm_neg, norm_mul, norm_exp_ofReal_mul_I, mul_one] using hw
-
 /-- A point off the slit plane is real. -/
 theorem im_eq_zero_of_notMem_slitPlane {z : ℂ} (hz : z ∉ slitPlane) : z.im = 0 :=
   by_contra fun h => hz (mem_slitPlane_iff.mpr (Or.inr h))
@@ -388,6 +379,16 @@ theorem one_sub_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
   convert h using 1
   simp only [real_smul]
   ring
+
+/-- Reflecting the Euler segment by `t = 1 - u` preserves its slit-plane condition. -/
+theorem reflected_eulerKernel_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
+    {u : ℝ} (hu : u ∈ Set.Icc 0 1) : (1 - z) - (-z) * (u : ℂ) ∈ slitPlane := by
+  have hreflect : (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) := by
+    push_cast
+    ring
+  rw [hreflect]
+  exact one_sub_mul_ofReal_mem_slitPlane hz
+    ⟨sub_nonneg.mpr hu.2, sub_le_self _ hu.1⟩
 
 /-- Left-multiplying `z` by a real number in `[0, 1]` preserves slit-plane membership of `1 - z`. -/
 theorem one_sub_ofReal_mul_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)

@@ -30,8 +30,8 @@ the disc coordinates centred at a point and at its image, in
 
 ## Main results
 
-* `TauCeti.one_add_div_one_sub`, `TauCeti.one_add_div_one_sub_sub_mul_div_one_sub`: affine
-  factors under the chart `u ↦ u / (1 - u)`.
+* `TauCeti.one_add_div_one_sub_sub_mul_div_one_sub`: affine factors under the chart
+  `u ↦ u / (1 - u)` over a division ring.
 * `TauCeti.moebius_sub_moebius`: the difference formula for a linear fractional transformation.
 * `TauCeti.moebius_sub_of_fixed`: the difference formula for a linear fractional
   transformation at a fixed point.
@@ -80,16 +80,11 @@ end RingHom
 
 namespace TauCeti
 
-/-- The affine factor `1 + v` for the chart `v = u / (1 - u)` is the inverse denominator. -/
-theorem one_add_div_one_sub {K : Type*} [Field K] {u : K} (hu : 1 - u ≠ 0) :
-    1 + u / (1 - u) = (1 - u)⁻¹ := by
-  rw [one_add_div hu, sub_add_cancel, one_div]
-
 /-- An affine factor in the chart `v = u / (1 - u)` has the same denominator. -/
-theorem one_add_div_one_sub_sub_mul_div_one_sub {K : Type*} [Field K] {u : K}
+theorem one_add_div_one_sub_sub_mul_div_one_sub {K : Type*} [DivisionRing K] {u : K}
     (hu : 1 - u ≠ 0) (z : K) :
     1 + u / (1 - u) - z * (u / (1 - u)) = (1 - z * u) * (1 - u)⁻¹ := by
-  rw [one_add_div_one_sub hu, div_eq_mul_inv, sub_mul, one_mul, mul_assoc]
+  rw [one_add_div hu, sub_add_cancel, one_div, div_eq_mul_inv, sub_mul, one_mul, mul_assoc]
 
 /-- **The Möbius difference formula**: if both denominators are nonzero, then
 `(a * t + b) / (c * t + d) - (a * w + b) / (c * w + d) =
