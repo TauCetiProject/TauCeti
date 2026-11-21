@@ -66,6 +66,28 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Measurabl
   [BorelSpace E] [SecondCountableTopology E] [CompleteSpace E]
   {lam : ℝ} {φ : WassersteinSpace 2 E → EReal}
 
+private lemma exists_moreauYosida_ne_bot_and_penalizedConvex
+    (hφ : LowerSemicontinuous φ) (hconv : ∀ ν, GeneralizedGeodesicallyConvex lam φ ν)
+    {μ₀ : WassersteinSpace 2 E} (hμ₀ : φ μ₀ ≠ ⊤) (hμ₀bot : φ μ₀ ≠ ⊥) :
+    ∃ τ₀ : ℝ≥0, 0 < τ₀ ∧ moreauYosida φ τ₀ μ₀ ≠ ⊥ ∧
+      ∀ τ : ℝ≥0, 0 < τ → τ < τ₀ → PenalizedConvex lam τ φ := by
+  set r₀ : ℝ := (2 * (|lam| + 1))⁻¹
+  have hr₀ : 0 < r₀ := by positivity
+  set τ₀ : ℝ≥0 := r₀.toNNReal
+  have hτ₀ : 0 < τ₀ := Real.toNNReal_pos.2 hr₀
+  have hpos : ∀ {δ : ℝ≥0}, δ ≤ τ₀ → 0 < 1 + lam * (δ : ℝ) := fun {δ} hδ ↦ by
+    have hδr : (δ : ℝ) ≤ r₀ :=
+      (NNReal.coe_le_coe.2 hδ).trans_eq (Real.coe_toNNReal r₀ hr₀.le)
+    have habs : |lam * (δ : ℝ)| ≤ 1 / 2 := by
+      rw [abs_mul, abs_of_nonneg (NNReal.coe_nonneg δ)]
+      calc |lam| * (δ : ℝ) ≤ (|lam| + 1) * r₀ :=
+            mul_le_mul (by linarith) hδr (NNReal.coe_nonneg _) (by positivity)
+        _ = 1 / 2 := by dsimp [r₀]; field_simp
+    linarith [(abs_le.1 habs).1]
+  exact ⟨τ₀, hτ₀,
+    (hconv μ₀).moreauYosida_ne_bot (hφ.lowerSemicontinuousAt μ₀) hμ₀ hμ₀bot (hpos le_rfl) μ₀,
+    fun τ hτ hττ₀ ↦ penalizedConvex_of_generalizedGeodesicallyConvex hconv hτ (hpos hττ₀.le).le⟩
+
 /-- **Existence of Wasserstein `EVI_λ` flows and uniform convergence of JKO schemes**
 (Ambrosio–Gigli–Savaré, Theorems 4.0.4 and 11.2.1; Ambrosio–Gigli, Theorem 3.25). Let
 `φ : WassersteinSpace 2 E → EReal` be lower semicontinuous and `lam`-convex along generalized
@@ -82,23 +104,9 @@ theorem exists_isEVISolution_tendstoUniformlyOn_of_generalizedGeodesicallyConvex
         (∀ᶠ j in atTop, ∀ k, J j (k + 1) ∈ moreauYosidaResolvent φ (τ j) (J j k)) →
         ∀ T : ℝ, TendstoUniformlyOn
           (fun j (t : ℝ) ↦ J j ⌈t / (τ j : ℝ)⌉₊) u atTop (Icc 0 T) := by
-  set r₀ : ℝ := (2 * (|lam| + 1))⁻¹
-  have hr₀ : 0 < r₀ := by positivity
-  set τ₀ : ℝ≥0 := r₀.toNNReal
-  have hτ₀ : 0 < τ₀ := Real.toNNReal_pos.2 hr₀
-  have hpos : ∀ {δ : ℝ≥0}, δ ≤ τ₀ → 0 < 1 + lam * (δ : ℝ) := fun {δ} hδ ↦ by
-    have hδr : (δ : ℝ) ≤ r₀ :=
-      (NNReal.coe_le_coe.2 hδ).trans_eq (Real.coe_toNNReal r₀ hr₀.le)
-    have habs : |lam * (δ : ℝ)| ≤ 1 / 2 := by
-      rw [abs_mul, abs_of_nonneg (NNReal.coe_nonneg δ)]
-      calc |lam| * (δ : ℝ) ≤ (|lam| + 1) * r₀ :=
-            mul_le_mul (by linarith) hδr (NNReal.coe_nonneg _) (by positivity)
-        _ = 1 / 2 := by dsimp [r₀]; field_simp
-    linarith [(abs_le.1 habs).1]
-  exact exists_isEVISolution_tendstoUniformlyOn_of_penalizedConvex hφ hτ₀ hτ₀
-    (fun τ hτ hττ₀ ↦ penalizedConvex_of_generalizedGeodesicallyConvex hconv hτ (hpos hττ₀.le).le)
-    ((hconv μ₀).moreauYosida_ne_bot (hφ.lowerSemicontinuousAt μ₀) hμ₀ hμ₀bot (hpos le_rfl) μ₀)
-    hμ₀
+  obtain ⟨τ₀, hτ₀, h₀, hpen⟩ :=
+    exists_moreauYosida_ne_bot_and_penalizedConvex hφ hconv hμ₀ hμ₀bot
+  exact exists_isEVISolution_tendstoUniformlyOn_of_penalizedConvex hφ hτ₀ hτ₀ hpen h₀ hμ₀
 
 /-- **Convergence of the Jordan–Kinderlehrer–Otto scheme with converging initial laws**
 (Ambrosio–Gigli–Savaré, Theorem 4.0.4; Ambrosio–Gigli, Theorem 3.25). Under the hypotheses of
@@ -117,29 +125,14 @@ theorem exists_isEVISolution_tendstoUniformlyOn_moreauYosidaResolvent
         (∀ᶠ j in atTop, ∀ k, J j (k + 1) ∈ moreauYosidaResolvent φ (τ j) (J j k)) →
         ∀ T : ℝ, TendstoUniformlyOn
           (fun j (t : ℝ) ↦ J j ⌈t / (τ j : ℝ)⌉₊) u atTop (Icc 0 T) := by
-  set r₀ : ℝ := (2 * (|lam| + 1))⁻¹
-  have hr₀ : 0 < r₀ := by positivity
-  set τ₀ : ℝ≥0 := r₀.toNNReal
-  have hτ₀ : 0 < τ₀ := Real.toNNReal_pos.2 hr₀
-  have hpos : ∀ {δ : ℝ≥0}, δ ≤ τ₀ → 0 < 1 + lam * (δ : ℝ) := fun {δ} hδ ↦ by
-    have hδr : (δ : ℝ) ≤ r₀ :=
-      (NNReal.coe_le_coe.2 hδ).trans_eq (Real.coe_toNNReal r₀ hr₀.le)
-    have habs : |lam * (δ : ℝ)| ≤ 1 / 2 := by
-      rw [abs_mul, abs_of_nonneg (NNReal.coe_nonneg δ)]
-      calc |lam| * (δ : ℝ) ≤ (|lam| + 1) * r₀ :=
-            mul_le_mul (by linarith) hδr (NNReal.coe_nonneg _) (by positivity)
-        _ = 1 / 2 := by dsimp [r₀]; field_simp
-    linarith [(abs_le.1 habs).1]
-  have h₀ : moreauYosida φ τ₀ μ₀ ≠ ⊥ :=
-    (hconv μ₀).moreauYosida_ne_bot (hφ.lowerSemicontinuousAt μ₀) hμ₀ hμ₀bot (hpos le_rfl) μ₀
-  have hpen : ∀ᶠ τ in 𝓝[>] (0 : ℝ≥0), PenalizedConvex lam τ φ := by
-    filter_upwards [nhdsWithin_le_nhds (Iio_mem_nhds hτ₀), self_mem_nhdsWithin] with
-      τ (hττ₀ : τ < τ₀) (hτ0 : 0 < τ)
-    exact penalizedConvex_of_generalizedGeodesicallyConvex hconv hτ0 (hpos hττ₀.le).le
+  obtain ⟨τ₀, hτ₀, h₀, hpen⟩ :=
+    exists_moreauYosida_ne_bot_and_penalizedConvex hφ hconv hμ₀ hμ₀bot
   obtain ⟨u, hu0, hu, _⟩ :=
-    exists_isEVISolution_tendstoUniformlyOn_of_generalizedGeodesicallyConvex hφ hconv hμ₀ hμ₀bot
+    exists_isEVISolution_tendstoUniformlyOn_of_penalizedConvex hφ hτ₀ hτ₀ hpen h₀ hμ₀
+  have hpen_nhds : ∀ᶠ τ in 𝓝[>] (0 : ℝ≥0), PenalizedConvex lam τ φ :=
+    (nhdsGT_basis (0 : ℝ≥0)).eventually_iff.2 ⟨τ₀, hτ₀, fun _ hτ ↦ hpen _ hτ.1 hτ.2⟩
   exact ⟨u, hu0, hu, fun τ J hτ hτ0 hJ0 ⟨_, hS⟩ hJ T ↦
-    hu.tendstoUniformlyOn_of_penalizedConvex hφ hτ₀ h₀ hpen hτ hτ0 (hu0.symm ▸ hJ0) hS hJ T⟩
+    hu.tendstoUniformlyOn_of_penalizedConvex hφ hτ₀ h₀ hpen_nhds hτ hτ0 (hu0.symm ▸ hJ0) hS hJ T⟩
 
 /-- **Characterization of the Wasserstein `EVI_λ` domain** (Ambrosio–Gigli–Savaré, Theorems 4.0.4
 and 11.2.1). For an energy `φ` on `P₂(E)` that is lower semicontinuous, `lam`-convex along

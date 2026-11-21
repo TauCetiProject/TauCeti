@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.ODE.Gronwall
 import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.Analysis.Calculus.GridInterpolation
+import TauCeti.Analysis.GradientFlow.MinimizingMovement
 
 /-!
 # Two-step error estimate for Moreau–Yosida minimizing movements
@@ -326,20 +327,6 @@ private theorem two_mul_bilinInterp_le_of_penalizedConvex {X : Type*} [PseudoMet
       exp (K * t) * (τ * (eU 0 - eU (⌊t / τ⌋₊ + 1)) + η * (eV 0 - eV (⌊t / η⌋₊ + 1))) := by ring
   linarith [hmul, hrhs]
 
-/-- One-step dissipation bound `d(U n, U (n + 1))² ≤ 2τ (e 0 - e (n + 1))` along a minimizing
-movement sequence with real antitone energies. -/
-private theorem dist_succ_sq_le_of_forall_mem_moreauYosidaResolvent {X : Type*}
-    [PseudoMetricSpace X] {τ : ℝ≥0} {φ : X → EReal} (hτ : 0 < τ) {U : ℕ → X}
-    (hU : ∀ n, U (n + 1) ∈ moreauYosidaResolvent φ τ (U n)) {e : ℕ → ℝ}
-    (he : ∀ n, φ (U n) = e n) (hanti : Antitone e) (n : ℕ) :
-    dist (U n) (U (n + 1)) ^ 2 ≤ 2 * τ * (e 0 - e (n + 1)) := by
-  have h1 := apply_add_le_of_mem_moreauYosidaResolvent (hU n)
-  rw [coe_edist_sq_div_eq_coe_dist_sq_div hτ, he (n + 1), he n, ← EReal.coe_add,
-    EReal.coe_le_coe_iff] at h1
-  have h2 : dist (U n) (U (n + 1)) ^ 2 ≤ (e n - e (n + 1)) * (2 * τ) :=
-    (div_le_iff₀ (by positivity : (0 : ℝ) < 2 * τ)).1 (by linarith)
-  nlinarith [hanti (Nat.zero_le n), NNReal.coe_nonneg τ, h2]
-
 /-- **Quantitative two-step error bound for minimizing movements.** Under
 `TauCeti.PenalizedConvex m τ φ` and `TauCeti.PenalizedConvex m η φ` with `|m| τ ≤ 1 / 2` and
 `|m| η ≤ 1 / 2`, the piecewise constant interpolants of two minimizing movement sequences with real
@@ -361,10 +348,18 @@ theorem dist_ceil_sq_le_of_penalizedConvex {X : Type*} [PseudoMetricSpace X]
     (heU j ▸ heU i ▸ antitone_comp_of_forall_mem_moreauYosidaResolvent hU hij)
   have hantiV : Antitone eV := fun i j hij ↦ EReal.coe_le_coe_iff.1
     (heV j ▸ heV i ▸ antitone_comp_of_forall_mem_moreauYosidaResolvent hV hij)
+  have hstep {δ : ℝ≥0} {W : ℕ → X} (hW : ∀ i, W (i + 1) ∈ moreauYosidaResolvent φ δ (W i))
+      {e : ℕ → ℝ} (he : ∀ i, φ (W i) = e i) (hanti : Antitone e) (i : ℕ) :
+      dist (W i) (W (i + 1)) ^ 2 ≤ 2 * δ * (e 0 - e (i + 1)) := by
+    have h1 := toReal_edist_sq_le_mul_sub_of_forall_mem_moreauYosidaResolvent hW
+      (Nat.le_add_right i 1) (he i) (he (i + 1))
+    simp only [← dist_edist, Nat.add_sub_cancel_left, Nat.cast_one, one_mul] at h1
+    exact h1.trans (mul_le_mul_of_nonneg_left (sub_le_sub_right (hanti (Nat.zero_le i)) _)
+      (by positivity))
   set n := ⌊t / (τ : ℝ)⌋₊; set k := ⌊t / (η : ℝ)⌋₊
   set ΔU := dist (U n) (U (n + 1)); set ΔV := dist (V k) (V (k + 1))
-  have hΔU := dist_succ_sq_le_of_forall_mem_moreauYosidaResolvent hτ hU heU hantiU n
-  have hΔV := dist_succ_sq_le_of_forall_mem_moreauYosidaResolvent hη hV heV hantiV k
+  have hΔU := hstep hU heU hantiU n
+  have hΔV := hstep hV heV hantiV k
   have hdU (i : ℕ) (hi : i = n ∨ i = n + 1) : dist (U ⌈t / τ⌉₊) (U i) ≤ ΔU := by
     rcases ceil_eq_floor_or_add_one (t / (τ : ℝ)) with hc | hc <;>
       rcases hi with rfl | rfl <;> simp [hc, n, ΔU, dist_comm]
