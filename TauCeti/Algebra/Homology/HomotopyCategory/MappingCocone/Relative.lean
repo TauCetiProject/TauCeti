@@ -67,7 +67,7 @@ lemma relativeCoordinates_apply (p q : ℤ) (hpq : p + -1 = q) (x : (mappingCoco
 
 lemma relativeCoordinates_symm_apply (p q : ℤ) (hpq : p + -1 = q) (x : K.X p × L.X q) :
     (relativeCoordinates f p q hpq).symm x = (inl f).v p p (add_zero p) x.1 -
-      (inr f).1.v q p (by omega) x.2 := by
+      (inr f).val.v q p (by omega) x.2 := by
   apply (relativeCoordinates f p q hpq).injective
   rw [LinearEquiv.apply_symm_apply, relativeCoordinates_apply]
   ext <;> simp [← ModuleCat.comp_apply]

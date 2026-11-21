@@ -109,11 +109,11 @@ private theorem localFunctional_matrixCoefficientSubcoalgebraHom
   calc
     localFunctional k H A eta N
           (Comodule.matrixCoefficientSubcoalgebraHom (C := H) phi m) =
-        counitEvaluation k H A N.1
+        counitEvaluation k H A N.val
           (scalarExtensionComponent k H A eta (finiteRegularObject k H N)
             (1 ⊗ₜ[k] Comodule.matrixCoefficientSubcoalgebraHom (C := H) phi m)) := by
             rw [localFunctional_apply]
-    _ = counitEvaluation k H A N.1
+    _ = counitEvaluation k H A N.val
           (f.hom.toLinearMap.baseChange A
             (scalarExtensionComponent k H A eta M (1 ⊗ₜ[k] m))) := by
             rw [← hf_baseChange_tmul, ← hnatural]

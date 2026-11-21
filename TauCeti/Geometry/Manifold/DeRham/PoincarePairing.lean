@@ -74,7 +74,7 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 form integrates to zero. This is Stokes' theorem for compactly supported exact top forms. -/
 theorem integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms
     (o : Manifold.Orientation I M (Fin n)) {φ : SmoothForm I M ℝ n}
-    (hφ : φ ∈ exactCompactlySupportedForms I M n) : integralTopForm o φ.1 = 0 := by
+    (hφ : φ ∈ exactCompactlySupportedForms I M n) : integralTopForm o φ.val = 0 := by
   cases n with
   | zero =>
     rw [exactCompactlySupportedForms_zero, Submodule.mem_bot] at hφ
@@ -92,12 +92,12 @@ namespace compactlySupportedDeRhamCohomology
 /-- Integration of compactly supported closed top forms, as a linear map. -/
 private def integralClosedForms (o : Manifold.Orientation I M (Fin n)) :
     compactlySupportedClosedForms I M n →ₗ[ℝ] ℝ where
-  toFun φ := integralTopForm o φ.1.1
-  map_add' φ ψ := integralTopForm_add o (φ.1.isSmoothForm.of_le (by simp))
-    (ψ.1.isSmoothForm.of_le (by simp))
-    ((mem_compactlySupportedForms I).mp ((mem_compactlySupportedClosedForms I).mp φ.2).1)
-    ((mem_compactlySupportedForms I).mp ((mem_compactlySupportedClosedForms I).mp ψ.2).1)
-  map_smul' c φ := integralTopForm_smul o c φ.1.1
+  toFun φ := integralTopForm o φ.val.val
+  map_add' φ ψ := integralTopForm_add o (φ.val.isSmoothForm.of_le (by simp))
+    (ψ.val.isSmoothForm.of_le (by simp))
+    ((mem_compactlySupportedForms I).mp ((mem_compactlySupportedClosedForms I).mp φ.property).1)
+    ((mem_compactlySupportedForms I).mp ((mem_compactlySupportedClosedForms I).mp ψ.property).1)
+  map_smul' c φ := integralTopForm_smul o c φ.val.val
 
 /-- Compactly supported exact top forms are killed by integration. -/
 private theorem ker_mk_le_ker_integralClosedForms (o : Manifold.Orientation I M (Fin n)) :
@@ -119,7 +119,7 @@ form. -/
 @[simp]
 theorem integral_mk (o : Manifold.Orientation I M (Fin n))
     (φ : compactlySupportedClosedForms I M n) :
-    integral o (mk I n φ) = integralTopForm o φ.1.1 :=
+    integral o (mk I n φ) = integralTopForm o φ.val.val :=
   LinearMap.equivOfSurjective_apply _ _
 
 /-- Reversing the orientation negates integration on compactly supported cohomology. -/
@@ -140,7 +140,7 @@ theorem integral_extendByZero (o : Manifold.Orientation I M (Fin n)) {U W : Open
   obtain ⟨φ, rfl⟩ := mk_surjective I n x
   rw [extendByZero_mk, integral_mk, integral_mk, compactlySupportedClosedForms.coe_extendByZero]
   exact integralTopForm_extendByZero o h ((mem_compactlySupportedForms I).mp
-    ((mem_compactlySupportedClosedForms I).mp φ.2).1)
+    ((mem_compactlySupportedClosedForms I).mp φ.property).1)
 
 /-- Identifying the top open subset with the ambient manifold preserves integration on
 compactly supported cohomology, with the restricted orientation. -/
@@ -150,7 +150,8 @@ theorem integral_equivOfDiffeomorph_ofTop (o : Manifold.Orientation I M (Fin n))
       integral o c := by
   let Φ : (⊤ : Opens M) ≃ₘ⟮I, I⟯ M := Diffeomorph.ofTop ⊤ rfl
   obtain ⟨φ, rfl⟩ := mk_surjective I n c
-  have h : integralTopForm (o.restrict ⊤) (mpullback I I Φ φ.1.1) = integralTopForm o φ.1.1 := by
+  have h : integralTopForm (o.restrict ⊤) (mpullback I I Φ φ.val.val) = integralTopForm o φ.val.val
+      := by
     rw [Diffeomorph.coe_ofTop]
     exact integralTopForm_mpullback_subtypeVal o ⊤ (by simp)
   rw [equivOfDiffeomorph_mk, integral_mk, integral_mk, ← h]
@@ -211,7 +212,7 @@ theorem poincarePairing_mk (o : Manifold.Orientation I M (Fin (k + l)))
     (φ : closedForms I M k) (ψ : compactlySupportedClosedForms I M l) :
     poincarePairing I M o (deRhamCohomology.mk I k φ)
         (compactlySupportedDeRhamCohomology.mk I l ψ) =
-      integralTopForm o (RoughForm.wedge (φ.1 : RoughForm I M ℝ k) ψ.1.1) := by
+      integralTopForm o (RoughForm.wedge (φ.val : RoughForm I M ℝ k) ψ.val.val) := by
   rw [poincarePairing_apply, compactlySupportedDeRhamCohomology.wedge_mk,
     compactlySupportedDeRhamCohomology.integral_mk, SmoothForm.coe_wedge]
 
@@ -224,7 +225,8 @@ theorem integralTopForm_wedge_self_eq_of_sub_mem_exactForms
     (o : Manifold.Orientation I M (Fin (k + k))) (hk : Even k) {φ ψ : SmoothForm I M ℝ k}
     (hφ : φ ∈ compactlySupportedClosedForms I M k)
     (hψ : ψ ∈ compactlySupportedClosedForms I M k) (hψφ : ψ - φ ∈ exactForms I M k) :
-    integralTopForm o (RoughForm.wedge ψ.1 ψ.1) = integralTopForm o (RoughForm.wedge φ.1 φ.1) := by
+    integralTopForm o (RoughForm.wedge ψ.val ψ.val) = integralTopForm o
+        (RoughForm.wedge φ.val φ.val) := by
   -- Forms of even degree commute, so `ψ ∧ ψ - φ ∧ φ = (ψ - φ) ∧ ψ + (ψ - φ) ∧ φ`, which is
   -- compactly supported exact.
   have hsub : SmoothForm.wedge ψ ψ - SmoothForm.wedge φ φ =

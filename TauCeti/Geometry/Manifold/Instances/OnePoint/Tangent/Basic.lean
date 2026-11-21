@@ -22,7 +22,8 @@ multiplication by `-z²` (`OnePoint.tangentCoordChange_infty_coe`).
 For the complex tangent bundle, it also reads tangent vectors in the preferred trivializations:
 at a finite point in the affine chart and at `∞` in the inverted chart a tangent vector reads as
 itself, while a tangent vector `v` at a nonzero finite point `z` reads in the trivialization at `∞`
-as `-z⁻² v` (`OnePoint.trivializationAt_infty_apply_coe`).
+as `-z⁻² v` (`OnePoint.trivializationAt_infty_apply_coe`). The base point of such a reading can be
+rewritten along an equality of points with `OnePoint.trivializationAt_snd_congr`.
 -/
 
 public section
@@ -69,5 +70,16 @@ theorem trivializationAt_infty_apply_coe {z : ℂ} (hz : z ≠ 0) (v : ℂ) :
   have h : (invChart : OpenPartialHomeomorph (OnePoint ℂ) ℂ) ∘ affineChart.symm = fun w ↦ w⁻¹ :=
     funext fun _ ↦ by simp
   simp [TangentBundle.trivializationAt_apply, h, (hasDerivAt_inv hz).hasFDerivAt.fderiv, mul_comm]
+
+/-- Transport the value of a trivialization of the tangent bundle of the Riemann sphere along an
+equality `x = x'` of base points. The fibre `TangentSpace 𝓘(ℂ, ℂ) x` of the point `⟨x, w⟩` of the
+total space depends on `x`, so `rw` cannot rewrite `x` there directly: the motive would not be
+type-correct. Once the vector `w` is read as an element of `ℂ`, this lemma rewrites the base point
+together with the vector. -/
+theorem trivializationAt_snd_congr (b : OnePoint ℂ) {x x' : OnePoint ℂ} (h : x = x') (w : ℂ) :
+    (trivializationAt ℂ (TangentSpace 𝓘(ℂ, ℂ)) b ⟨x, w⟩).2 =
+      (trivializationAt ℂ (TangentSpace 𝓘(ℂ, ℂ)) b ⟨x', w⟩).2 := by
+  subst h
+  rfl
 
 end OnePoint

@@ -236,7 +236,7 @@ theorem mapDomain_mkFixedPoints_fixedPointsMulEquiv_symm
 theorem fixedPointsMulEquiv_symm_ofConv_comp_mkₐ
     (g : ↥(⨅ i, fixedSubgroup (BialgHom.mapDomain (A := A) (f i).hom))) :
     (((fixedPointsMulEquiv f A).symm g).ofConv).comp
-        (Ideal.Quotient.mkₐ R (fixedPointsHopfIdeal f).toIdeal) = g.1.ofConv := by
+        (Ideal.Quotient.mkₐ R (fixedPointsHopfIdeal f).toIdeal) = g.val.ofConv := by
   simpa using congrArg WithConv.ofConv (mapDomain_mkFixedPoints_fixedPointsMulEquiv_symm f A g)
 
 /-- Evaluating `(fixedPointsMulEquiv f A).symm g` on `Ideal.Quotient.mk _ a` gives `g.1 a`. -/
@@ -244,13 +244,13 @@ theorem fixedPointsMulEquiv_symm_ofConv_comp_mkₐ
 theorem fixedPointsMulEquiv_symm_ofConv_mk
     (g : ↥(⨅ i, fixedSubgroup (BialgHom.mapDomain (A := A) (f i).hom))) (a : H) :
     (((fixedPointsMulEquiv f A).symm g).ofConv)
-        (Ideal.Quotient.mk (fixedPointsHopfIdeal f).toIdeal a) = g.1.ofConv a :=
+        (Ideal.Quotient.mk (fixedPointsHopfIdeal f).toIdeal a) = g.val.ofConv a :=
   AlgHom.congr_fun (fixedPointsMulEquiv_symm_ofConv_comp_mkₐ f A g) a
 
 /-- Evaluating `(fixedPointsMulEquiv f A).symm g` on `(mkFixedPoints f).hom a` gives `g.1 a`. -/
 theorem fixedPointsMulEquiv_symm_ofConv_mkFixedPoints
     (g : ↥(⨅ i, fixedSubgroup (BialgHom.mapDomain (A := A) (f i).hom))) (a : H) :
-    (((fixedPointsMulEquiv f A).symm g).ofConv) ((mkFixedPoints f).hom a) = g.1.ofConv a :=
+    (((fixedPointsMulEquiv f A).symm g).ofConv) ((mkFixedPoints f).hom a) = g.val.ofConv a :=
   fixedPointsMulEquiv_symm_ofConv_mk f A g a
 
 end PointsAlgebra
