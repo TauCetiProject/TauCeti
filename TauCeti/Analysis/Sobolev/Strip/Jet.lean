@@ -121,6 +121,12 @@ theorem jet_add (hξ : Differentiable ℝ ξ) (hη : Differentiable ℝ η) :
   funext z
   simp [jet, fderiv_add (hξ z) (hη z)]
 
+/-- The jet of a difference of differentiable maps is the difference of their jets. -/
+theorem jet_sub (hξ : Differentiable ℝ ξ) (hη : Differentiable ℝ η) :
+    jet (ξ - η) = jet ξ - jet η := by
+  funext z
+  simp [jet, fderiv_sub (hξ z) (hη z)]
+
 /-- The jet commutes with scalar multiplication. -/
 theorem jet_smul (c : ℝ) (ξ : ℝ × ℝ → V) : jet (c • ξ) = c • jet ξ := by
   funext z
@@ -372,6 +378,24 @@ theorem norm_fderiv_le_two_mul_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ)
     ‖fderiv ℝ ξ z‖ ≤ 2 * ‖jet ξ z‖ := by
   linarith [(fderiv ℝ ξ z).opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one,
     norm_fderiv_one_zero_le_norm_jet ξ z, norm_fderiv_zero_one_le_norm_jet ξ z]
+
+/-- The `Lᵖ` norm of a map is at most the `Lᵖ` norm of its jet. -/
+theorem eLpNorm_le_eLpNorm_jet {μ : Measure (ℝ × ℝ)} (hξ : AEStronglyMeasurable ξ μ)
+    (p : ℝ≥0∞) : eLpNorm ξ p μ ≤ eLpNorm (jet ξ) p μ :=
+  eLpNorm_mono hξ (norm_le_norm_jet ξ)
+
+/-- The `Lᵖ` norm of the `t`-derivative is at most the `Lᵖ` norm of the jet. -/
+theorem eLpNorm_fderiv_zero_one_le_eLpNorm_jet {μ : Measure (ℝ × ℝ)}
+    (hξ : AEStronglyMeasurable (fun z ↦ fderiv ℝ ξ z (0, 1)) μ) (p : ℝ≥0∞) :
+    eLpNorm (fun z ↦ fderiv ℝ ξ z (0, 1)) p μ ≤ eLpNorm (jet ξ) p μ :=
+  eLpNorm_mono hξ (norm_fderiv_zero_one_le_norm_jet ξ)
+
+/-- The `Lᵖ` norm of the derivative is at most twice the `Lᵖ` norm of the jet. -/
+theorem eLpNorm_fderiv_le_two_mul_eLpNorm_jet {μ : Measure (ℝ × ℝ)}
+    (hξ : AEStronglyMeasurable (fderiv ℝ ξ) μ) (p : ℝ≥0∞) :
+    eLpNorm (fderiv ℝ ξ) p μ ≤ 2 * eLpNorm (jet ξ) p μ :=
+  (eLpNorm_le_mul_eLpNorm_of_ae_le_mul hξ
+    (.of_forall (norm_fderiv_le_two_mul_norm_jet ξ)) p).trans_eq (by simp)
 
 /-! ### The `L²` jets of a space of sections and their closure -/
 
