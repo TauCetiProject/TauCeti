@@ -93,7 +93,7 @@ private noncomputable def next (hab : a ≤ b)
       exact integrableOn_Icc hab hM hK hF y
     have h := continuousOn_primitive_interval hI
     rw [uIcc_of_le hab] at h
-    exact (continuousOn_const.add h).comp_continuous continuous_subtype_val Subtype.prop
+    exact (continuousOn_const.add h).comp_continuous continuous_subtypeVal Subtype.prop
 
 private theorem next_apply (hab : a ≤ b)
     (hM : AEStronglyMeasurable M (volume.restrict (Ioo a b)))
@@ -119,21 +119,21 @@ private theorem dist_iterate_next_apply_le {L : ℝ} (hL : ∀ᵐ t ∂volume.re
     set Z := (next hab hM hK hF x₀)^[n] z
     have hint : ∀ W : C(Icc a b, E), IntervalIntegrable
         (fun s ↦ M s (IccExtend hab W s) + F s) volume a t := fun W ↦
-      (intervalIntegrable_iff_integrableOn_Icc_of_le t.2.1).2
-        ((integrableOn_Icc hab hM hK hF W).mono_set (Icc_subset_Icc_right t.2.2))
+      (intervalIntegrable_iff_integrableOn_Icc_of_le t.property.1).2
+        ((integrableOn_Icc hab hM hK hF W).mono_set (Icc_subset_Icc_right t.property.2))
     have hLae : ∀ᵐ s, s ∈ Ioc a b → ‖M s‖ ≤ L := by
       rwa [← ae_restrict_iff' measurableSet_Ioc, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
     rw [iterate_succ_apply', iterate_succ_apply', dist_eq_norm, next_apply, next_apply,
       ODE.picard_apply, ODE.picard_apply, add_sub_add_left_eq_sub,
       ← intervalIntegral.integral_sub (hint Y) (hint Z)]
     calc _ ≤ ∫ s in a..t, L * ((L * (s - a)) ^ n / n ! * dist y z) := by
-          refine norm_integral_le_of_norm_le t.2.1 ?_
+          refine norm_integral_le_of_norm_le t.property.1 ?_
             (Continuous.intervalIntegrable (by fun_prop) _ _)
           filter_upwards [hLae] with s hs hst
-          have hs' : s ∈ Icc a b := ⟨hst.1.le, hst.2.trans t.2.2⟩
+          have hs' : s ∈ Icc a b := ⟨hst.1.le, hst.2.trans t.property.2⟩
           rw [add_sub_add_right_eq_sub, ← map_sub, IccExtend_of_mem hab _ hs',
             IccExtend_of_mem hab _ hs']
-          refine ((M s).le_opNorm _).trans (mul_le_mul (hs ⟨hst.1, hst.2.trans t.2.2⟩) ?_
+          refine ((M s).le_opNorm _).trans (mul_le_mul (hs ⟨hst.1, hst.2.trans t.property.2⟩) ?_
             (norm_nonneg _) hL₀)
           simpa [dist_eq_norm] using ih ⟨s, hs'⟩
       _ = (L * (t - a)) ^ (n + 1) / (n + 1)! * dist y z := by
@@ -167,9 +167,9 @@ private theorem exists_contractingWith_iterate_next :
   rw [Real.coe_toNNReal _ h₀, ContinuousMap.dist_le (by positivity)]
   intro t
   refine (dist_iterate_next_apply_le hab hM hK hF hK' (le_max_right _ _) n y z t).trans ?_
-  have h₁ : 0 ≤ K' * (t - a) := mul_nonneg (le_max_right _ _) (sub_nonneg.2 t.2.1)
+  have h₁ : 0 ≤ K' * (t - a) := mul_nonneg (le_max_right _ _) (sub_nonneg.2 t.property.1)
   have h₂ : K' * (t - a) ≤ K' * (b - a) :=
-    mul_le_mul_of_nonneg_left (sub_le_sub_right t.2.2 a) (le_max_right _ _)
+    mul_le_mul_of_nonneg_left (sub_le_sub_right t.property.2 a) (le_max_right _ _)
   gcongr
 
 include hab hM hK hF in
@@ -179,11 +179,11 @@ private theorem isFixedPt_next {x : ℝ → E} (hx : ContinuousOn x (Icc a b))
     (h : ∀ t ∈ Icc a b, x t = ODE.picard (fun s y ↦ M s y + F s) a x₀ x t) :
     IsFixedPt (next hab hM hK hF x₀) ⟨(Icc a b).domRestrict x, hx.domRestrict⟩ := by
   ext t
-  rw [next_apply, ContinuousMap.coe_mk, domRestrict_apply, h t t.2, ODE.picard_apply,
+  rw [next_apply, ContinuousMap.coe_mk, domRestrict_apply, h t t.property, ODE.picard_apply,
     ODE.picard_apply]
   congr 1
   refine intervalIntegral.integral_congr fun s hs ↦ ?_
-  have hs' : s ∈ Icc a b := uIcc_subset_Icc ⟨le_rfl, hab⟩ t.2 hs
+  have hs' : s ∈ Icc a b := uIcc_subset_Icc ⟨le_rfl, hab⟩ t.property hs
   simp [IccExtend_of_mem hab _ hs']
 
 end CaratheodoryLinear

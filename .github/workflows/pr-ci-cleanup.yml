@@ -31,10 +31,9 @@ jobs:
           sparse-checkout: tauceti.toml
           sparse-checkout-cone-mode: false
           persist-credentials: false
-      - uses: TauCetiProject/TauCetiTools/.github/actions/setup@e4ed3eab96457b7425b494b0ea1952319f1d12d6
+      - uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: e4ed3eab96457b7425b494b0ea1952319f1d12d6
           project-directory: .
       - name: Cancel only builds whose live PR state makes them obsolete
         env:
