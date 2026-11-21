@@ -365,7 +365,8 @@ theorem ofCube_mem_range_map {f : C(X, Y)} (hf : Topology.IsInducing f) {n : ℕ
     {c : SingularCube Y n} (hc : Set.range c ⊆ Set.range f) :
     ofCube Y R c ∈ LinearMap.range (map R f n) := by
   choose g hg using fun y ↦ hc ⟨y, rfl⟩
-  have hgc : Continuous g := hf.continuous_iff.2 (by simpa [Function.comp_def, hg] using c.2)
+  have hgc : Continuous g := hf.continuous_iff.2 (by simpa [Function.comp_def,
+      hg] using c.continuous_toFun)
   refine ⟨ofCube X R ⟨g, hgc⟩, ?_⟩
   rw [map_ofCube]
   congr 1

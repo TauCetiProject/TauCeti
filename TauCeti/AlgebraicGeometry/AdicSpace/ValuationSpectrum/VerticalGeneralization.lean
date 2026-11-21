@@ -55,7 +55,7 @@ units of its value monoid gives a point of `Spv B` that specializes to `ofValuat
 theorem ofValuation_coarsenByUnits_specializes (w : Valuation B Δ₀) (H : ConvexSubgroup Δ₀ˣ) :
     ofValuation (w.coarsenByUnits H) ⤳ ofValuation w := by
   refine specializes_of_forall_mem_basicOpen fun f s hfs ↦ ?_
-  rw [mem_basicOpen_iff, vle_ofValuation, vle_ofValuation, map_zero, le_zero_iff] at hfs ⊢
+  rw [mem_basicOpen_iff, vle_ofValuation, vle_ofValuation, map_zero, nonpos_iff_eq_zero] at hfs ⊢
   rw [coarsenByUnits_apply, coarsenByUnits_apply, map_eq_zero]
   exact ⟨coarsenMapOfValueGroup_monotone H hfs.1, hfs.2⟩
 
@@ -81,11 +81,11 @@ private theorem valuation_le_of_le (hx : x ⤳ comap φ (ofValuation w))
     (hsupp : x.supp = (comap φ (ofValuation w)).supp) {a b : A} (hab : w (φ a) ≤ w (φ b)) :
     x.valuation a ≤ x.valuation b := by
   rcases eq_or_ne (w (φ b)) 0 with hb | hb
-  · rw [(valuation_eq_zero_iff_of_supp_eq hsupp a).mpr (le_zero_iff.mp (hb ▸ hab))]
+  · rw [(valuation_eq_zero_iff_of_supp_eq hsupp a).mpr (nonpos_iff_eq_zero.mp (hb ▸ hab))]
     exact zero_le
   · rw [valuation_le_iff]
     refine vle_of_specializes hx (by rwa [comap_vle, vle_ofValuation]) ?_
-    rwa [comap_vle, vle_ofValuation, map_zero, map_zero, le_zero_iff]
+    rwa [comap_vle, vle_ofValuation, map_zero, map_zero, nonpos_iff_eq_zero]
 
 private theorem one_mem_liftSet : (1 : Δ₀ˣ) ∈ liftSet φ w x :=
   ⟨le_rfl, 1, 1, rfl, by simp, by simp⟩
@@ -115,7 +115,7 @@ private theorem valuation_le_of_mem_closure (hx : x ⤳ comap φ (ofValuation w)
     exact mul_le_mul_left hle _
   have hxd := valuation_le_of_le hx hsupp hwd
   rw [map_mul, map_mul, hcd] at hxd
-  exact le_of_mul_le_mul_right hxd (zero_lt_iff.mpr hd)
+  exact le_of_mul_le_mul_right hxd (pos_iff_ne_zero.mpr hd)
 
 /-- **Vertical generizations are pullbacks of coarsenings.** Let `x` be a vertical generization of
 the pullback along `φ` of the point of `Spv B` defined by a valuation `w`: `x` specializes to it
@@ -132,7 +132,7 @@ theorem comap_ofValuation_coarsenByUnits_eq (hx : x ⤳ comap φ (ofValuation w)
   · rw [ha, (hzero a).mpr ha, map_zero]
     exact iff_of_true zero_le zero_le
   rcases eq_or_ne (w (φ b)) 0 with hb | hb
-  · rw [hb, (hzero b).mpr hb, map_zero, le_zero_iff, le_zero_iff, map_eq_zero, hzero]
+  · rw [hb, (hzero b).mpr hb, map_zero, nonpos_iff_eq_zero, nonpos_iff_eq_zero, map_eq_zero, hzero]
   rw [coarsenMapOfValueGroup_le_iff _ ha hb]
   refine ⟨fun h ↦ h.elim (fun h ↦ valuation_le_of_le hx hsupp h)
     (valuation_le_of_mem_closure hx hsupp ha hb), fun h ↦ ?_⟩

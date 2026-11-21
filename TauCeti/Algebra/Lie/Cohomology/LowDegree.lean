@@ -97,8 +97,8 @@ theorem mem_oneCocycle_iff {f : oneCochain R L M} :
 
 /-- The cocycle identity for a bundled one-cocycle. -/
 theorem oneCocycle_apply_lie (f : oneCocycle R L M) (x y : L) :
-    f.1 ⁅x, y⁆ = ⁅x, f.1 y⁆ - ⁅y, f.1 x⁆ :=
-  (mem_oneCocycle_iff (R := R) (L := L) (M := M)).1 f.2 x y
+    f.val ⁅x, y⁆ = ⁅x, f.val y⁆ - ⁅y, f.val x⁆ :=
+  (mem_oneCocycle_iff (R := R) (L := L) (M := M)).1 f.property x y
 
 /-- The degree-zero differential, with codomain restricted to one-cocycles. -/
 def d₀₁Cocycle : M →ₗ[R] oneCocycle R L M :=

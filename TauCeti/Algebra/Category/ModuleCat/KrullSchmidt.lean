@@ -83,7 +83,7 @@ theorem exists_indecomposable_iso_biproduct (X : ModuleCat.{v} A) [IsArtinian A 
   let h : (s : Type v) ≃ Fin s.card := s.equivFin
   refine ⟨s.card, fun i ↦ ModuleCat.of A ((h.symm i : Submodule A X) : Type v), fun i ↦ ?_, ⟨?_⟩⟩
   · rw [indecomposable_iff_isIndecomposableModule]
-    exact hs _ (h.symm i).2
+    exact hs _ (h.symm i).property
   · exact (e.trans ((DirectSum.lequivCongrLeft A h).trans
       (biproductDirectSumEquiv
         fun i ↦ ModuleCat.of A ((h.symm i : Submodule A X) : Type v)).symm)).toModuleIso

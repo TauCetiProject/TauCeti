@@ -23,6 +23,10 @@ absolutely on `Re s > 1`.
 
 These statements concern the Eisenstein span, not arbitrary weight-one modular forms.
 No decomposition of a general modular form into Eisenstein and cuspidal parts is assumed.
+Since the series span a complement of the cusp forms, this is the Eisenstein half of the
+abscissa bound `1` for every form of weight one on `Γ₁(N)`, the weight-one case of
+Diamond–Shurman, Proposition 5.9.1
+(`TauCeti.ModularFormClass.abscissaOfAbsConv_qExpansion_coeff_le_of_Gamma1_le`).
 The constant Fourier coefficient does not affect either the asymptotic bound or the
 abscissa of absolute convergence.
 

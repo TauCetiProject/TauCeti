@@ -48,7 +48,7 @@ theorem frameCoordinates_smul_apply_ofNormedAlgebra
   have hs : (c • s : Cₛ^n⟮I; F, V⟯) x = c • s x :=
     congrFun (ContMDiffSection.coe_smul_of_normedAlgebra c s) x
   rw [hs]
-  exact (e.linear 𝕜' (hU x.2)).map_smul c (s x)
+  exact (e.linear 𝕜' (hU x.property)).map_smul c (s x)
 
 end Bundle.Trivialization
 
@@ -89,8 +89,8 @@ theorem frameJet_smul_ofNormedAlgebra (c : 𝕜') (s : Cₛ^n⟮I; F, V⟯) :
   rw [hf]
   exact iteratedFDerivWithin_const_smul_apply
     (((e i).frameCoordinates (hU i) s).contMDiff.comp_contMDiffOn
-      (contMDiffOn_extChartAt_symm x) |>.contDiffOn z z.2 |>.of_le m.2)
-    (uniqueDiffOn_extChartAt_target x) z.2
+      (contMDiffOn_extChartAt_symm x) |>.contDiffOn z z.property |>.of_le m.property)
+    (uniqueDiffOn_extChartAt_target x) z.property
 
 /-- The existing frame jet, regarded as linear over the extension field. Its underlying map
 and its compact-open jet codomain are unchanged. -/

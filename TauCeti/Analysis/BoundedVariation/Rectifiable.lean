@@ -161,7 +161,7 @@ theorem countable_reducedBoundary_of_finrank_le_one [μ.IsAddHaarMeasure]
     exact Set.to_countable _
   · have := Ω.isOpen.locallyCompactSpace
     refine (Measure.countable_meas_level_set_pos (μ := variationMeasure μ Ω (s.indicator 1))
-      measurable_subtype_coe).mono fun x hx => mem_ofPred.2 (pos_iff_ne_zero.2 fun h0 => ?_)
+      measurable_subtypeVal).mono fun x hx => mem_ofPred.2 (pos_iff_ne_zero.2 fun h0 => ?_)
     obtain ⟨r₀, hr₀, hr₀Ω⟩ :=
       nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
     let S (t : ℝ) : Set Ω := ((↑) : Ω → E) ⁻¹' closedBall x t
@@ -175,7 +175,7 @@ theorem countable_reducedBoundary_of_finrank_le_one [μ.IsAddHaarMeasure]
       (hK.measure_lt_top (μ := variationMeasure μ Ω (s.indicator 1))).ne
     have hlim := tendsto_measure_biInter_gt (μ := variationMeasure μ Ω (s.indicator 1))
       (fun t _ =>
-        (isClosed_closedBall.preimage continuous_subtype_val).measurableSet.nullMeasurableSet)
+        (isClosed_closedBall.preimage continuous_subtypeVal).measurableSet.nullMeasurableSet)
       (fun _ _ _ hij => preimage_mono (closedBall_subset_closedBall hij)) ⟨r₀, hr₀, hfin⟩
     rw [hS0, h0] at hlim
     have hmul : Tendsto (fun t => ENNReal.ofReal (2 / μ.real (ball (0 : E) 1)) *

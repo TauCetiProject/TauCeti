@@ -174,18 +174,18 @@ def heatInitialDataCLE (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T) 
     ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT ≃L[ℝ]
       HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
         CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ :=
-  ContinuousLinearEquiv.equivOfInverse (heatInitialDataL hα₁.le hT) (heatSolutionL hα₀ hα₁ hT)
-    (Function.RightInverse.leftInverse_of_injective
-      (heatInitialDataL_heatSolutionL (E := EuclideanSpace ℝ ι) (F := ℝ) (hT := hT) hα₀ hα₁)
-      (heatInitialDataL_injective hα₁.le))
-    (heatInitialDataL_heatSolutionL hα₀ hα₁)
+  ContinuousLinearEquiv.ofContinuousLinearMap (heatInitialDataL hα₁.le hT)
+    (heatSolutionL hα₀ hα₁ hT)
+    (ContinuousLinearMap.ext (heatInitialDataL_heatSolutionL hα₀ hα₁))
+    (ContinuousLinearMap.ext fun _ ↦ heatInitialDataL_injective hα₁.le
+      (heatInitialDataL_heatSolutionL hα₀ hα₁ _))
 
 /-- The forward isomorphism is the forcing-and-initial-trace operator. -/
 @[simp]
 theorem heatInitialDataCLE_apply (hα₀ : 0 < α) (hα₁ : α < 1)
     (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) :
     heatInitialDataCLE (ι := ι) hα₀ hα₁ hT u = heatInitialDataL hα₁.le hT u := by
-  rw [heatInitialDataCLE, ContinuousLinearEquiv.equivOfInverse_apply]
+  rw [heatInitialDataCLE, ContinuousLinearEquiv.coe_ofContinuousLinearMap]
 
 /-- The inverse isomorphism is the constructed heat solution operator. -/
 @[simp]

@@ -556,7 +556,7 @@ theorem neckPoint_snd (a : ℂ) (PQ : supported s E (Set.Ici 0) × supported s E
 theorem neckPoint_mem_neckGraph (ha : ‖a‖ ≤ 1)
     (PQ : supported s E (Set.Ici 0) × supported s E (Set.Ici 0)) :
     neckPoint a PQ ∈ neckGraph s E a :=
-  sub_neckTransfer_mem_neckGraph ha PQ.1.2 PQ.2.2
+  sub_neckTransfer_mem_neckGraph ha PQ.1.property PQ.2.property
 
 /-- The nonnegative part of `P - neckTransfer a u` is `P`. -/
 @[simp]
@@ -564,7 +564,7 @@ theorem indicatorProj_sub_neckTransfer (a : ℂ) (P : supported s E (Set.Ici 0))
     (u : CircleSobolev s E) :
     indicatorProj (Set.Ici 0) ((P : CircleSobolev s E) - neckTransfer a u) = P := by
   ext1
-  rw [coe_indicatorProj, map_sub, indicator_eq_self_iff.2 P.2,
+  rw [coe_indicatorProj, map_sub, indicator_eq_self_iff.2 P.property,
     indicator_eq_zero_iff.2 (by rw [Set.compl_Ici]; exact neckTransfer_mem_supported a u),
     sub_zero]
 

@@ -209,12 +209,12 @@ theorem lim_ext {x y : F.lim} (h : ∀ n, F.limπ n x = F.limπ n y) : x = y :=
 @[simp]
 theorem transition_coe_lim_succ (x : F.lim) (n : ℕ) :
     F.transition n ((x : F.Product) (n + 1)) = (x : F.Product) n :=
-  F.mem_lim.1 x.2 n
+  F.mem_lim.1 x.property n
 
 @[simp]
 theorem transition_comp_limπ (n : ℕ) : F.transition n ∘ₗ F.limπ (n + 1) = F.limπ n := by
   ext x
-  exact F.mem_lim.1 x.2 n
+  exact F.mem_lim.1 x.property n
 
 @[ext]
 theorem lim_hom_ext {P : Type*} [AddCommGroup P] [Module R P] {f g : P →ₗ[R] F.lim}
@@ -255,7 +255,7 @@ def limCone : Limits.Cone F where
   pt := ModuleCat.of R F.lim
   π := NatTrans.ofOpSequence (fun n ↦ ModuleCat.ofHom (F.limπ n)) fun n ↦ by
     ext x
-    exact (F.mem_lim.1 x.2 n).symm
+    exact (F.mem_lim.1 x.property n).symm
 
 @[simp]
 theorem limCone_pt : F.limCone.pt = ModuleCat.of R F.lim :=
@@ -279,7 +279,7 @@ theorem transitionOfLE_apply_of_mem_lim {x : F.Product} (hx : x ∈ F.lim) {n k 
 @[simp]
 theorem transitionOfLE_coe_lim (x : F.lim) {n k : ℕ} (h : n ≤ k) :
     F.transitionOfLE h ((x : F.Product) k) = (x : F.Product) n :=
-  F.transitionOfLE_apply_of_mem_lim x.2 h
+  F.transitionOfLE_apply_of_mem_lim x.property h
 
 @[simp]
 theorem transitionOfLE_comp_limπ {n k : ℕ} (h : n ≤ k) :
@@ -334,14 +334,14 @@ theorem mem_range_shift_of_le_map (B : ∀ n, Submodule R (F.obj (op n)))
   -- The equations `xₙ - φₙ(xₙ₊₁) = cₙ` are solved inside the `Bₙ` by choosing `x₀ = 0` and
   -- `xₙ₊₁ ∈ Bₙ₊₁` a preimage of `xₙ - cₙ ∈ Bₙ`.
   have hlift (n : ℕ) (y : B n) : ∃ z : B (n + 1), F.transition n z = y := by
-    obtain ⟨z, hz, h⟩ := hB n y.2
+    obtain ⟨z, hz, h⟩ := hB n y.property
     exact ⟨⟨z, hz⟩, h⟩
   choose s hs using hlift
   let x : ∀ n, B n := fun n ↦
     Nat.rec (motive := fun n ↦ B n) 0 (fun n xn ↦ s n (xn - ⟨c n, hc n⟩)) n
   -- The recursion step defining `x` computes definitionally.
   have hx (n : ℕ) : x (n + 1) = s n (x n - ⟨c n, hc n⟩) := rfl
-  refine ⟨fun n ↦ (x n).1, funext fun n ↦ ?_⟩
+  refine ⟨fun n ↦ (x n).val, funext fun n ↦ ?_⟩
   rw [shift_apply, hx, hs, Submodule.coe_sub, sub_sub_cancel]
 
 /-- If every transition map of a tower is surjective, then so is its shift map. -/

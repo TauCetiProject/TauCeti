@@ -105,7 +105,7 @@ instance Subgroup.instNonarchimedeanGroup {G : Type*} [Group G] [TopologicalSpac
   is_nonarchimedean U hU := by
     obtain ⟨W, hW, hWU⟩ := (mem_nhds_subtype _ _ _).mp hU
     obtain ⟨V, hV⟩ := NonarchimedeanGroup.is_nonarchimedean W hW
-    exact ⟨V.comap H.subtype continuous_subtype_val, fun _ hx ↦ hWU (hV hx)⟩
+    exact ⟨V.comap H.subtype continuous_subtypeVal, fun _ hx ↦ hWU (hV hx)⟩
 
 /-- An open subgroup of a nonarchimedean group is nonarchimedean in the subspace topology. -/
 @[to_additive /-- An open additive subgroup of a nonarchimedean additive group is nonarchimedean in

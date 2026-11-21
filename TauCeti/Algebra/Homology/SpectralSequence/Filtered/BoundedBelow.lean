@@ -120,7 +120,7 @@ private lemma exists_homologyMap_cokernelMap_eq_zero {q j n : ℤ} (hqj : q ≤ 
       (by rw [← G.map_id]; apply G.map_comp_map_eq_map_comp_map)) n y = 0 := by
   -- The quotients `G_a / G_q` form a directed family of subcomplexes of `G_⊤ / G_q`.
   let L (a : {a : ℤ // q ≤ a}) : CochainComplex (ModuleCat.{v} R) ℤ :=
-    cokernel (G.map (homOfLE (show (q : EInt) ≤ a.1 by simpa using a.2)))
+    cokernel (G.map (homOfLE (show (q : EInt) ≤ a.val by simpa using a.property)))
   let φ (a : {a : ℤ // q ≤ a}) :
       L a ⟶ cokernel (G.map (homOfLE (le_top : (q : EInt) ≤ ⊤))) :=
     cokernel.map _ _ (𝟙 _) (G.map (homOfLE le_top))
@@ -128,16 +128,16 @@ private lemma exists_homologyMap_cokernelMap_eq_zero {q j n : ℤ} (hqj : q ≤ 
   have hφ (a : {a : ℤ // q ≤ a}) : Mono (φ a) :=
     Abelian.mono_cokernel_map_of_isPullback (IsPullback.of_vert_isIso_mono ⟨by
       rw [← G.map_id]; apply G.map_comp_map_eq_map_comp_map⟩)
-  let ψ (a : {a : ℤ // q ≤ a}) (ha : j ≤ a.1) : L ⟨j, hqj⟩ ⟶ L a :=
-    cokernel.map _ _ (𝟙 _) (G.map (homOfLE (show (j : EInt) ≤ a.1 by simpa using ha)))
+  let ψ (a : {a : ℤ // q ≤ a}) (ha : j ≤ a.val) : L ⟨j, hqj⟩ ⟶ L a :=
+    cokernel.map _ _ (𝟙 _) (G.map (homOfLE (show (j : EInt) ≤ a.val by simpa using ha)))
       (by rw [← G.map_id]; apply G.map_comp_map_eq_map_comp_map)
-  have hψ (a : {a : ℤ // q ≤ a}) (ha : j ≤ a.1) : ψ a ha ≫ φ a = φ ⟨j, hqj⟩ := by
+  have hψ (a : {a : ℤ // q ≤ a}) (ha : j ≤ a.val) : ψ a ha ≫ φ a = φ ⟨j, hqj⟩ := by
     apply coequalizer.hom_ext
     simp only [ψ, φ, cokernel.π_desc, cokernel.π_desc_assoc, Category.assoc, ← G.map_comp_assoc]
     rfl
   -- Every element of `(G_⊤ / G_q)^{n-1}` comes from some `G_a / G_q` with `j ≤ a`.
   have hcover (z : (cokernel (G.map (homOfLE (le_top : (q : EInt) ≤ ⊤)))).X (n - 1)) :
-      ∃ a, ∃ _ : j ≤ a.1, ∃ w, (φ a).f (n - 1) w = z := by
+      ∃ a, ∃ _ : j ≤ a.val, ∃ w, (φ a).f (n - 1) w = z := by
     obtain ⟨z, rfl⟩ := (ModuleCat.epi_iff_surjective
       ((cokernel.π (G.map (homOfLE (le_top : (q : EInt) ≤ ⊤)))).f (n - 1))).1 inferInstance z
     obtain ⟨i, w, rfl⟩ := hex z
@@ -151,8 +151,8 @@ private lemma exists_homologyMap_cokernelMap_eq_zero {q j n : ℤ} (hqj : q ≤ 
     rfl
   obtain ⟨a, ha, hya⟩ := HomologicalComplex.exists_homologyMap_eq_zero_of_injective n φ
     (fun a ↦ (ModuleCat.mono_iff_injective _).1 inferInstance) (m := n - 1) (by simp)
-    (i := ⟨j, hqj⟩) (P := fun a ↦ j ≤ a.1) ψ hψ hcover _ hy
-  exact ⟨a.1, ha, hya⟩
+    (i := ⟨j, hqj⟩) (P := fun a ↦ j ≤ a.val) ψ hψ hcover _ hy
+  exact ⟨a.val, ha, hya⟩
 
 /-- **Vanishing in `H^n(q ≤ ⊤)` is detected at a finite stage.** Suppose that every element of
 `G_⊤` in degree `n - 1` comes from some `G_i`, `i : ℤ`. Then a class of `H^n(q ≤ j)` (the

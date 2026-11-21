@@ -432,20 +432,20 @@ variable {ι 𝕜 X : Type*} [Fintype ι] {p : ℝ≥0∞} [Fact (1 ≤ p)] [Rin
 /-- Restrict a linear isometry equivalence `e : X ≃ₗᵢ[𝕜] PiLp p F` to a submodule `M` of `X`
 characterized coordinatewise by `x ∈ M ↔ ∀ i, e x i ∈ N i`. -/
 noncomputable def submodulePiLp : ↥M ≃ₗᵢ[𝕜] PiLp p (fun i ↦ ↥(N i)) where
-  toFun x := WithLp.toLp p fun i ↦ ⟨e x.1 i, (hMN x.1).mp x.2 i⟩
+  toFun x := WithLp.toLp p fun i ↦ ⟨e x.val i, (hMN x.val).mp x.property i⟩
   invFun g := ⟨e.symm (WithLp.toLp p fun i ↦ (g i : F i)),
-    (hMN _).mpr fun i ↦ by rw [e.apply_symm_apply, PiLp.toLp_apply]; exact (g i).2⟩
+    (hMN _).mpr fun i ↦ by rw [e.apply_symm_apply, PiLp.toLp_apply]; exact (g i).property⟩
   map_add' _ _ := by ext i : 2; simp [map_add]
   map_smul' _ _ := by ext i : 2; simp
-  left_inv x := Subtype.ext <| by have hx := WithLp.toLp_ofLp p (e x.1); simp [hx]
+  left_inv x := Subtype.ext <| by have hx := WithLp.toLp_ofLp p (e x.val); simp [hx]
   right_inv _ := by ext i : 2; simp
   norm_map' x := (le_antisymm (PiLp.norm_mono fun _ ↦ by simp [PiLp.toLp_apply])
     (PiLp.norm_mono fun _ ↦ by simp [PiLp.toLp_apply])).trans
-      ((e.norm_map x.1).trans (Submodule.norm_coe x))
+      ((e.norm_map x.val).trans (Submodule.norm_coe x))
 
 /-- Coordinatewise evaluation of `e.submodulePiLp M N hMN` in `F i`. -/
 @[simp] theorem coe_submodulePiLp_apply (x : ↥M) (i : ι) :
-    (e.submodulePiLp M N hMN x i : F i) = e x.1 i := (rfl)
+    (e.submodulePiLp M N hMN x i : F i) = e x.val i := (rfl)
 
 /-- Coordinatewise evaluation of `(e.submodulePiLp M N hMN).symm` under `e`. -/
 @[simp] theorem apply_coe_submodulePiLp_symm (g : PiLp p (fun i ↦ ↥(N i))) (i : ι) :

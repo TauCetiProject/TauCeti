@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Pullback
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 
 /-!
 # Asymptotic orbits at the ends of a finite-energy Floer pair of pants
@@ -185,8 +186,8 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart
     LinearMap.ext (ω.fromTangentSpace_perturbedMFDeriv_constSmooth_apply Ks Kt v z)
   rw [← h] at hfloer ⊢
   exact SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart
-    (ω := ω.constSmooth) hKH hH (fun q t ↦ (hHd q t).mdifferentiable) hζ hu.mdifferentiableAt
-    hfloer
+    (ω := ω.constSmooth) (hKH q) (hH q) (fun t ↦ (hHd q t).mdifferentiable) hζ
+    hu.mdifferentiableAt hfloer
 
 /-- **A cylindrical end of a Floer pair of pants is a Floer half-cylinder.** Let `K` be equal to
 `H_q(t) dt` beyond `T₀` on each end `q`, and let `u` be differentiable on `S` and solve the Floer
@@ -238,8 +239,8 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset
   -- This is the manifold statement for the constant form.
   simpa only [floerEnergyDensity_constSmooth] using
     SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset
-      (ω := ω.constSmooth) hKH hH (fun q t ↦ (hHd q t).mdifferentiable) hu.mdifferentiableOn q hs
-      hst
+      (ω := ω.constSmooth) q (hKH q) (hH q) (fun t ↦ (hHd q t).mdifferentiable)
+      hu.mdifferentiableOn hs hst
 
 /-- **The translated ends of a Floer pair of pants solve one cylindrical Floer equation.** Let
 `K` be equal to `H_q(t) dt` beyond `T₀` on each end `q`, and let `u` be differentiable on `S` and
@@ -322,7 +323,7 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le
   -- This is the manifold statement for the constant form.
   simpa only [floerEnergyDensity_constSmooth] using
     SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le (ω := ω.constSmooth)
-      hKH hH (fun q t ↦ (hHd q t).mdifferentiable) hu.mdifferentiableOn q ha₀ haT
+      q (hKH q) (hH q) (fun t ↦ (hHd q t).mdifferentiable) hu.mdifferentiableOn ha₀ haT
 
 /-- **A cylindrical end of a finite-energy Floer pair of pants is a finite-energy Floer
 half-cylinder.** Let `K` be equal to `H_q(t) dt` beyond `T₀` on each end `q`, and let `u` be `Cⁿ`
@@ -392,13 +393,6 @@ theorem floer_comp_positiveEndChart_of_cylindrical
 /-! ### Asymptotic orbits at the ends -/
 
 variable {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {B : Set V} {c M : ℝ}
-
-omit [FiniteDimensional ℝ V] in
-/-- Uniform tameness `c ‖v‖² ≤ ω(v, J z v)` makes `ω(v, J z v)` positive for `v ≠ 0`. -/
-private theorem apply_pos_of_tame (hc : 0 < c)
-    (hJc : ∀ z ∈ thricePuncturedSphereReal, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v)) {z : ℝ × ℝ}
-    (hz : z ∈ thricePuncturedSphereReal) {v : V} (hv : v ≠ 0) : 0 < ω v (J z v) :=
-  (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
 
 /-- The positive end chart maps the half-cylinder `(max T₀ 0, ∞) × ℝ` into `S`. -/
 private theorem mapsTo_positiveEndChart (q : Puncture) :
@@ -591,7 +585,7 @@ theorem exists_lintegral_floerEnergyDensity_eq_sum_hamiltonianAction
   refine ⟨y, hy, ?_⟩
   exact ω.lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm hK hKH hH
     (fun q ↦ (hHs q).continuous) hu
-    (fun z hz ↦ ω.floerEnergyDensity_nonneg (fun _ hv ↦ apply_pos_of_tame hc hJc hz hv)
+    (fun z hz ↦ ω.floerEnergyDensity_nonneg (tames_of_mul_norm_sq_le hc (hJc z hz))
       (hfloer z hz)) hR fun q ↦ (hy q).2.2.2
 
 /-- **The energy identity of the pair-of-pants perturbation with asymptotic orbits.** Let `K` be
@@ -643,7 +637,7 @@ theorem exists_lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq
       hJc hJM hfloer hE q
   refine ⟨y, hy, ?_⟩
   exact lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq ω hH hHs hu
-    (fun _ hz _ hv ↦ apply_pos_of_tame hc hJc hz hv) hfloer
+    (fun z hz ↦ tames_of_mul_norm_sq_le hc (hJc z hz)) hfloer
     (by simpa only [endChart_mk] using fun q ↦ (hy q).2.2.2)
 
 end SymplecticForm

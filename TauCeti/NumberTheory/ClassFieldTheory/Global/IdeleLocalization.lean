@@ -723,7 +723,7 @@ private theorem cocyclesMap2_ideleCoeffComponent_apply {E : Ω}
     {U : OpenNormalSubgroup (AbsoluteGaloisGroup K)} (z : Z2 (AbsoluteGaloisGroup K) (IdeleCoeff K))
     (a : (AbsoluteGaloisGroup K ⧸ U.toSubgroup) × (AbsoluteGaloisGroup K ⧸ U.toSubgroup) →
       IdeleGroup (𝓞 E) E)
-    (ha : ∀ g h : AbsoluteGaloisGroup K, ideleCoeffOf K E (.ofMul (a (g, h))) = z.1 (g, h))
+    (ha : ∀ g h : AbsoluteGaloisGroup K, ideleCoeffOf K E (.ofMul (a (g, h))) = z.val (g, h))
     (w : HeightOneSpectrum (𝓞 E)) [w.asIdeal.LiesOver v.asIdeal]
     (τ' : w.adicCompletion E →ₐ[v.adicCompletion K] SeparableClosure (v.adicCompletion K))
     (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
@@ -738,7 +738,7 @@ private theorem cocyclesMap2_ideleCoeffComponent_apply {E : Ω}
     ((cocyclesMap2 (AbsoluteGaloisGroup K) (IdeleCoeff K)
       (AbsoluteGaloisGroup (v.adicCompletion K)) (UnitsCoeff (v.adicCompletion K))
       (absoluteGaloisGroupMap τ) (ideleCoeffComponent τ) continuous_of_discreteTopology
-      (ideleCoeffComponent_smul τ) z).1 (g, h) : UnitsCoeff _) =
+      (ideleCoeffComponent_smul τ) z).val (g, h) : UnitsCoeff _) =
       embeddedUnitsEquivInvariants _ _ τ'
         (.ofMul (u (τ'.restrictNormalHom g, τ'.restrictNormalHom h))) := by
   rw [cocyclesMap2_apply]
@@ -759,7 +759,7 @@ private theorem ideleBrLocalization_eq_zero_of_isUnramified {E : Ω}
     (z : Z2 (AbsoluteGaloisGroup K) (IdeleCoeff K))
     (a : (AbsoluteGaloisGroup K ⧸ U.toSubgroup) × (AbsoluteGaloisGroup K ⧸ U.toSubgroup) →
       IdeleGroup (𝓞 E) E)
-    (ha : ∀ g h : AbsoluteGaloisGroup K, ideleCoeffOf K E (.ofMul (a (g, h))) = z.1 (g, h))
+    (ha : ∀ g h : AbsoluteGaloisGroup K, ideleCoeffOf K E (.ofMul (a (g, h))) = z.val (g, h))
     (w : HeightOneSpectrum (𝓞 E)) [w.asIdeal.LiesOver v.asIdeal]
     [IsUnramified (v.adicCompletion K) (w.adicCompletion E)]
     (hw : ∀ q, Valued.v ((a q : AdeleRing (𝓞 E) E).2 w) = 1)
@@ -806,14 +806,14 @@ theorem finite_setOfPred_ideleBrLocalization_ne_zero
     Subgroup.quotient_finite_of_isOpen _ U.isOpen
   have : Fintype (AbsoluteGaloisGroup K ⧸ U.toSubgroup) := .ofFinite _
   obtain ⟨E₀, _, _, hE₀⟩ := exists_galoisOpenNormalSubgroup_eq U
-  choose F a ha using fun q ↦ exists_ideleCoeffOf_eq (K := K) (c.1 q : IdeleCoeff K)
+  choose F a ha using fun q ↦ exists_ideleCoeffOf_eq (K := K) (c.val q : IdeleCoeff K)
   let E : Ω := ⟨E₀⟩ ⊔ Finset.univ.sup F
   have hFE (q) : F q ≤ E := le_sup_of_le_right (Finset.le_sup (Finset.mem_univ q))
   have hU : (E : IntermediateField K (SeparableClosure K)).fixingSubgroup ≤ U.toSubgroup := by
     rw [← hE₀, galoisOpenNormalSubgroup_toSubgroup, IntermediateField.fieldRange_val]
     exact IntermediateField.fixingSubgroup_le (le_sup_left (a := (⟨E₀⟩ : Ω)))
   let b q : IdeleGroup (𝓞 E) E := ideleTransition K (F q) E (hFE q) (a q)
-  have hb (g h : AbsoluteGaloisGroup K) : ideleCoeffOf K E (.ofMul (b (g, h))) = z.1 (g, h) :=
+  have hb (g h : AbsoluteGaloisGroup K) : ideleCoeffOf K E (.ofMul (b (g, h))) = z.val (g, h) :=
     ((ideleCoeffOf_ideleTransition _ _).trans (ha _)).trans (hc g h)
   -- The places of `E` that ramify over `K` or at which a value of `b` is not a unit.
   let bad : Set (HeightOneSpectrum (𝓞 E)) :=
