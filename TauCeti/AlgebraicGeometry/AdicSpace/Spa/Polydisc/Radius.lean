@@ -52,11 +52,11 @@ local notation "C" => weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily
 /-- The infimum of norms of constants above `x(f)` separates the constants strictly away
 from the boundary. Continuity ensures that this boundary is positive. -/
 private theorem exists_radius_bounds (x : closedPolydisc k K) {f : 𝒯}
-    (hle : x.1.valuation f ≤ 1) (hne : x.1.valuation f ≠ 0) :
+    (hle : x.val.valuation f ≤ 1) (hne : x.val.valuation f ≠ 0) :
     ∃ r : ℝ, 0 < r ∧ r ≤ 1 ∧
-      (∀ c : K, ‖c‖ < r → x.1.valuation (C c) < x.1.valuation f) ∧
-      (∀ c : K, r < ‖c‖ → x.1.valuation f < x.1.valuation (C c)) := by
-  let S : Set ℝ := {s | ∃ c : K, ‖c‖ = s ∧ x.1.valuation f ≤ x.1.valuation (C c)}
+      (∀ c : K, ‖c‖ < r → x.val.valuation (C c) < x.val.valuation f) ∧
+      (∀ c : K, r < ‖c‖ → x.val.valuation f < x.val.valuation (C c)) := by
+  let S : Set ℝ := {s | ∃ c : K, ‖c‖ = s ∧ x.val.valuation f ≤ x.val.valuation (C c)}
   have hS : (1 : ℝ) ∈ S := ⟨1, norm_one, by simpa using hle⟩
   have hneS : S.Nonempty := ⟨1, hS⟩
   have hbdd : BddBelow S := ⟨0, by rintro s ⟨c, rfl, _⟩; exact norm_nonneg c⟩
@@ -65,12 +65,12 @@ private theorem exists_radius_bounds (x : closedPolydisc k K) {f : 𝒯}
   have hdNil : IsTopologicallyNilpotent d := tendsto_pow_atTop_nhds_zero_of_norm_lt_one hd₁
   have hnil : IsTopologicallyNilpotent (C d) :=
     hdNil.map (continuous_weightedC isWeightFamily_one_weight)
-  have hf : f ∉ x.1.supp := by
+  have hf : f ∉ x.val.supp := by
     rwa [supp_eq_valuation_supp, Valuation.mem_supp_iff]
   obtain ⟨n, hn⟩ := IsContinuous.exists_pow_vlt_of_isTopologicallyNilpotent
-    ((mem_closedPolydisc_iff k K x.1).mp x.2).1 hnil hf
-  have he : x.1.valuation (C (d ^ n)) < x.1.valuation f := by
-    simpa only [map_pow] using (valuation_lt_iff x.1 _ _).mpr hn
+    ((mem_closedPolydisc_iff k K x.val).mp x.property).1 hnil hf
+  have he : x.val.valuation (C (d ^ n)) < x.val.valuation f := by
+    simpa only [map_pow] using (valuation_lt_iff x.val _ _).mpr hn
   have hpos : 0 < sInf S := (pow_pos hd₀ n).trans_le (by
     rw [← norm_pow]
     refine le_csInf hneS ?_
@@ -93,22 +93,22 @@ take `f = T - a` at a minimising centre. The first alternative gives the radius 
 for `η_{a,r}`, the second for `η_{a,r⁺}`, and
 the third for `η_{a,r⁻}`. -/
 theorem exists_radius_trichotomy (x : closedPolydisc k K) {f : 𝒯}
-    (hle : x.1.valuation f ≤ 1) (hne : x.1.valuation f ≠ 0) :
+    (hle : x.val.valuation f ≤ 1) (hne : x.val.valuation f ≠ 0) :
     ∃ r : ℝ, 0 < r ∧ r ≤ 1 ∧
-      ((∀ c : K, x.1.toValuativeRel.vle f (C c) ↔ r ≤ ‖c‖) ∧
-        (∀ c : K, x.1.toValuativeRel.vle (C c) f ↔ ‖c‖ ≤ r) ∨
+      ((∀ c : K, x.val.toValuativeRel.vle f (C c) ↔ r ≤ ‖c‖) ∧
+        (∀ c : K, x.val.toValuativeRel.vle (C c) f ↔ ‖c‖ ≤ r) ∨
       (r < 1 ∧ (∃ c : K, ‖c‖ = r) ∧
-        (∀ c : K, x.1.toValuativeRel.vle f (C c) ↔ r < ‖c‖) ∧
-        (∀ c : K, x.1.toValuativeRel.vle (C c) f ↔ ‖c‖ ≤ r)) ∨
+        (∀ c : K, x.val.toValuativeRel.vle f (C c) ↔ r < ‖c‖) ∧
+        (∀ c : K, x.val.toValuativeRel.vle (C c) f ↔ ‖c‖ ≤ r)) ∨
       ((∃ c : K, ‖c‖ = r) ∧
-        (∀ c : K, x.1.toValuativeRel.vle f (C c) ↔ r ≤ ‖c‖) ∧
-        (∀ c : K, x.1.toValuativeRel.vle (C c) f ↔ ‖c‖ < r))) := by
+        (∀ c : K, x.val.toValuativeRel.vle f (C c) ↔ r ≤ ‖c‖) ∧
+        (∀ c : K, x.val.toValuativeRel.vle (C c) f ↔ ‖c‖ < r))) := by
   classical
   obtain ⟨r, hr₀, hr₁, hlo, hhi⟩ := exists_radius_bounds x hle hne
   refine ⟨r, hr₀, hr₁, ?_⟩
   simp only [← valuation_le_iff]
   -- An attained boundary value gives both non-strict comparison rules immediately.
-  by_cases heq : ∃ d : K, ‖d‖ = r ∧ x.1.valuation f = x.1.valuation (C d)
+  by_cases heq : ∃ d : K, ‖d‖ = r ∧ x.val.valuation f = x.val.valuation (C d)
   · obtain ⟨d, hd, hdf⟩ := heq
     refine Or.inl ⟨?_, ?_⟩
     · intro c
@@ -117,16 +117,16 @@ theorem exists_radius_trichotomy (x : closedPolydisc k K) {f : 𝒯}
       rw [hdf, closedPolydisc_valuation_weightedC_le_iff, hd]
   -- Constants of the same norm have the same value, so one strict comparison settles
   -- every boundary constant. The bound `x(f) ≤ 1` excludes the above case at radius one.
-  by_cases habove : ∃ d : K, ‖d‖ = r ∧ x.1.valuation (C d) < x.1.valuation f
+  by_cases habove : ∃ d : K, ‖d‖ = r ∧ x.val.valuation (C d) < x.val.valuation f
   · obtain ⟨d, hd, hdf⟩ := habove
-    have hboundary (c : K) (hc : ‖c‖ = r) : x.1.valuation (C c) < x.1.valuation f := by
+    have hboundary (c : K) (hc : ‖c‖ = r) : x.val.valuation (C c) < x.val.valuation f := by
       rw [closedPolydisc_valuation_weightedC_eq_of_norm_eq x (hc.trans hd.symm)]
       exact hdf
     have hlt_one : r < 1 := by
       refine lt_of_le_of_ne hr₁ ?_
       intro h
       have := hboundary 1 (by simpa using h.symm)
-      have hgt : 1 < x.1.valuation f := by simpa using this
+      have hgt : 1 < x.val.valuation f := by simpa using this
       exact hgt.not_ge hle
     refine Or.inr (Or.inl ⟨hlt_one, ⟨d, hd⟩, ?_, ?_⟩)
     all_goals
@@ -139,7 +139,7 @@ theorem exists_radius_trichotomy (x : closedPolydisc k K) {f : 𝒯}
   -- Otherwise both non-strict rules follow from the strict separation away from `r`.
   by_cases hboundary_exists : ∃ d : K, ‖d‖ = r
   · obtain ⟨d, hd⟩ := hboundary_exists
-    have hboundary (c : K) (hc : ‖c‖ = r) : x.1.valuation f < x.1.valuation (C c) := by
+    have hboundary (c : K) (hc : ‖c‖ = r) : x.val.valuation f < x.val.valuation (C c) := by
       refine lt_of_le_of_ne (le_of_not_gt fun h ↦ habove ⟨c, hc, h⟩) ?_
       exact fun h ↦ heq ⟨c, hc, h⟩
     refine Or.inr (Or.inr ⟨⟨d, hd⟩, ?_, ?_⟩)

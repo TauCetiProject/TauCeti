@@ -200,6 +200,22 @@ theorem subsingleton_iff :
     induction γ' using QuotientAddGroup.induction_on with
     | H t => exact mk_eq_mk_iff.2 ⟨by rw [(h s).1, (h t).1], by rw [(h s).2, (h t).2]⟩
 
+variable {ω c} in
+/-- The area vanishes on the period group exactly when `ω` vanishes on every spherical class. -/
+theorem area_eq_zero_iff : area ω c = 0 ↔ ω = 0 := by
+  refine ⟨fun h => AddMonoidHom.ext fun s => by
+    simpa using DFunLike.congr_fun h (s : PeriodGroup ω c), fun h => AddMonoidHom.ext fun γ => ?_⟩
+  induction γ using QuotientAddGroup.induction_on with
+  | H s => simp [h]
+
+variable {ω c} in
+/-- The degree vanishes on the period group exactly when `c` vanishes on every spherical class. -/
+theorem degree_eq_zero_iff : degree ω c = 0 ↔ c = 0 := by
+  refine ⟨fun h => AddMonoidHom.ext fun s => by
+    simpa using DFunLike.congr_fun h (s : PeriodGroup ω c), fun h => AddMonoidHom.ext fun γ => ?_⟩
+  induction γ using QuotientAddGroup.induction_on with
+  | H s => simp [h]
+
 section Injective
 
 variable {ω c}
@@ -350,6 +366,21 @@ theorem chern_eq_mul_chernEquivInt (hker : c.ker ≤ ω.ker) (hc : c ≠ 0)
       chern ω c ((chernEquivInt hker hc).symm 1) := by
   simpa only [AddEquiv.symm_apply_apply] using
     chern_chernEquivInt_symm hker hc (chernEquivInt hker hc γ)
+
+/-- **A generator with positive first Chern number is the positive Chern generator**: its integer
+coordinate is `1`. -/
+theorem chernEquivInt_eq_one_of_zmultiples_eq_top (hker : c.ker ≤ ω.ker) (hc : c ≠ 0)
+    {γ : PeriodGroup ω c} (hγ : AddSubgroup.zmultiples γ = ⊤) (h : 0 < chern ω c γ) :
+    chernEquivInt hker hc γ = 1 := by
+  obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1
+    (hγ ▸ AddSubgroup.mem_top ((chernEquivInt hker hc).symm 1))
+  -- Applying the coordinate to `k • γ = e.symm 1` gives `k * e γ = 1`, and `e γ` is positive since
+  -- `chern γ = e γ * chern (e.symm 1)` with both Chern numbers positive.
+  have h1 : k * chernEquivInt hker hc γ = 1 := by
+    rw [← smul_eq_mul, ← map_zsmul, hk, AddEquiv.apply_symm_apply]
+  have hpos : 0 < chernEquivInt hker hc γ := pos_of_mul_pos_left
+    ((chern_eq_mul_chernEquivInt hker hc γ) ▸ h) (chern_chernEquivInt_symm_pos hker hc).le
+  exact Int.eq_one_of_mul_eq_one_left hpos.le h1
 
 /-- Laurent exponents for Floer coefficients. The variable corresponds to the negative of the
 positive Chern generator, so its valuation is positive on positively monotone targets. -/

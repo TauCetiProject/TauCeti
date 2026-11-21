@@ -290,7 +290,7 @@ theorem baseChangeExp_mul_baseChangeExp_of_commutator_eq_three_nsmul
     (hxw : x * w = w * x + 3 • v) (hwz : w * z = z * w + 3 • s) (hxv : Commute x v)
     (hxs : Commute x s) (hyz : Commute y z) (hwv : Commute w v) (hzs : Commute z s)
     (hws : Commute w s) (hvs : Commute v s)
-    (hx : IsNilpotent x) (hy : IsNilpotent y) (hz : IsNilpotent z) (hw : IsNilpotent w)
+    (hz : IsNilpotent z) (hw : IsNilpotent w)
     (hMx : ∀ n, ∀ a ∈ M, Associative.dividedPower n x • a ∈ M)
     (hMy : ∀ n, ∀ a ∈ M, Associative.dividedPower n y • a ∈ M)
     (hMz : ∀ n, ∀ a ∈ M, Associative.dividedPower n z • a ∈ M)
@@ -303,6 +303,13 @@ theorem baseChangeExp_mul_baseChangeExp_of_commutator_eq_three_nsmul
         baseChangeExp w M hMw (t ^ 2 * u) * baseChangeExp v M hMv (t ^ 3 * u) *
         baseChangeExp s M hMs (t ^ 3 * u ^ 2) * baseChangeExp x M hMx t := by
   classical
+  -- If `x` or `y` is not nilpotent, its exponential is zero and both sides vanish.
+  by_cases hx : IsNilpotent x
+  swap
+  · simp [baseChangeExp_eq_zero_of_not_isNilpotent hx M hMx]
+  by_cases hy : IsNilpotent y
+  swap
+  · simp [baseChangeExp_eq_zero_of_not_isNilpotent hy M hMy]
   obtain ⟨kx, hkx⟩ := hx
   obtain ⟨ky, hky⟩ := hy
   obtain ⟨kz, hkz⟩ := hz
@@ -344,14 +351,16 @@ theorem baseChangeExp_mul_baseChangeExp_of_commutator_eq_three_nsmul
       (forall_baseChange_integralDividedPower_eq_zero_of_le (R := R) s M hMs hks)
 
 /-- The conjugation form of the Chevalley commutator relation in type `G₂`: conjugating the
-one-parameter subgroup of `y` by that of `x` multiplies it by the one-parameter subgroups of `z`,
-`w`, `v`, and `s`, at the parameters `t * u`, `t ^ 2 * u`, `t ^ 3 * u`, and `t ^ 3 * u ^ 2`. -/
+base-changed exponential of `y` by that of `x` multiplies it by the base-changed exponentials of
+`z`, `w`, `v`, and `s`, at the parameters `t * u`, `t ^ 2 * u`, `t ^ 3 * u`, and `t ^ 3 * u ^ 2`.
+No nilpotence of `y` is needed; when `y` is nilpotent these exponentials form a one-parameter
+subgroup. -/
 theorem baseChangeExp_conj_of_commutator_eq_three_nsmul
     {x y z w v s : A} (M : S) (hxy : x * y = y * x + z) (hxz : x * z = z * x + 2 • w)
     (hxw : x * w = w * x + 3 • v) (hwz : w * z = z * w + 3 • s) (hxv : Commute x v)
     (hxs : Commute x s) (hyz : Commute y z) (hwv : Commute w v) (hzs : Commute z s)
     (hws : Commute w s) (hvs : Commute v s)
-    (hx : IsNilpotent x) (hy : IsNilpotent y) (hz : IsNilpotent z) (hw : IsNilpotent w)
+    (hx : IsNilpotent x) (hz : IsNilpotent z) (hw : IsNilpotent w)
     (hMx : ∀ n, ∀ a ∈ M, Associative.dividedPower n x • a ∈ M)
     (hMy : ∀ n, ∀ a ∈ M, Associative.dividedPower n y • a ∈ M)
     (hMz : ∀ n, ∀ a ∈ M, Associative.dividedPower n z • a ∈ M)
@@ -364,7 +373,7 @@ theorem baseChangeExp_conj_of_commutator_eq_three_nsmul
         baseChangeExp w M hMw (t ^ 2 * u) * baseChangeExp v M hMv (t ^ 3 * u) *
         baseChangeExp s M hMs (t ^ 3 * u ^ 2) := by
   rw [baseChangeExp_mul_baseChangeExp_of_commutator_eq_three_nsmul M hxy hxz hxw hwz hxv hxs hyz
-      hwv hzs hws hvs hx hy hz hw hMx hMy hMz hMw hMv hMs t u,
+      hwv hzs hws hvs hz hw hMx hMy hMz hMw hMv hMs t u,
     mul_assoc, ← baseChangeExp_add x M hMx hx t (-t), add_neg_cancel,
     baseChangeExp_zero x M hMx hx, mul_one]
 

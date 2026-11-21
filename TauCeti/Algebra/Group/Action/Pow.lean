@@ -39,7 +39,7 @@ Finally, for two elements `x, y` of a monoid with a compatible scalar action sat
   `xⁿ • w = 0`.
 * `TauCeti.pow_smul_eq_add_nsmul`, `TauCeti.zpow_smul_eq_add_zsmul`: if `g • c n = c (n + t)` for
   all `n`, then `gᵏ • c n = c (n + k • t)`.
-* `TauCeti.mul_pow_of_mul_eq_smul_mul`: if `y * x = c • (x * y)`, then
+* `TauCeti.mul_pow_eq_pow_smul_mul_pow`: if `y * x = c • (x * y)`, then
   `(x * y) ^ n = c ^ (n * (n - 1) / 2) • (x ^ n * y ^ n)`.
 -/
 
@@ -95,7 +95,7 @@ end Translate
 
 /-- Straightening a power of a skew-commuting product: if `y * x = c • (x * y)` in a monoid with a
 compatible scalar action, then `(x * y) ^ n = c ^ (n * (n - 1) / 2) • (x ^ n * y ^ n)`. -/
-theorem mul_pow_of_mul_eq_smul_mul {R A : Type*} [Monoid R] [Monoid A] [MulAction R A]
+theorem mul_pow_eq_pow_smul_mul_pow {R A : Type*} [Monoid R] [Monoid A] [MulAction R A]
     [IsScalarTower R A A] [SMulCommClass R A A] {c : R} {x y : A}
     (h : y * x = c • (x * y)) (n : ℕ) :
     (x * y) ^ n = c ^ (n * (n - 1) / 2) • (x ^ n * y ^ n) := by
