@@ -39,13 +39,14 @@ and negative stabilization constants of a Markov trace, `a = τ (γ n)` and `b =
 and they also govern the stabilization `x ↦ x * γ n` of every `x` in the stage of the first
 `n + 1` strands. When `cosh α * cosh θ ≠ 0`, the two constants are equal exactly when
 
-`η = cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2`,
+`η = cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2`
+(`TauCeti.hyperbolicProjParam`),
 
 and their common value is then `-I * sinh θ / cosh α`. If moreover `sinh θ ≠ 0`, the
 normalization `C * λ * a = 1 = C * λ⁻¹ * b` of the braid-closure invariant is solved by `λ = 1`
 and `C = I * cosh α / sinh θ`. Precomposing the trace with the complement automorphism, which
 exchanges the two eigenprojections, replaces `η` by `1 - η`, and the condition becomes
-`η = (1 + tanh α * tanh θ) / 2`.
+`η = (1 + tanh α * tanh θ) / 2` (`TauCeti.hyperbolicWenzlProjParam`).
 
 The parameter `η` is free here: the statements identify which Markov traces have equal
 stabilization constants, and assert nothing about positivity.
@@ -53,11 +54,18 @@ stabilization constants, and assert nothing about positivity.
 ## Main definitions
 
 * `TauCeti.hyperbolicHeckeParam`: the Hecke parameter `q = exp (-θ)` as a unit.
+* `TauCeti.hyperbolicProjParam`: the native hyperbolic projection parameter
+  `(1 - tanh α * tanh θ) / 2`.
+* `TauCeti.hyperbolicWenzlProjParam`: Wenzl's complementary hyperbolic projection parameter
+  `(1 + tanh α * tanh θ) / 2`.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.hyperbolicGen`: the rescaled generator `I * exp (-α) • T i`,
   as a unit.
 
 ## Main results
 
+* `TauCeti.hyperbolicProjParam_eq_cosh_sub_div` and
+  `TauCeti.hyperbolicWenzlProjParam_eq_cosh_add_div`: hyperbolic-cosine forms of the two projection
+  parameters.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.val_hyperbolicGen_eq_eigenprojection` and
   `TauCeti.InfiniteTypeAHeckeAlgebra.hyperbolicGen_skein`: the two-eigenvalue form of `γ i` and its
   skein identity.
@@ -65,15 +73,17 @@ stabilization constants, and assert nothing about positivity.
   `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_inv_hyperbolicGen`: the two
   stabilization constants.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_hyperbolicGen_eq_map_inv_iff`: **the two
-  stabilization constants agree exactly when `η = (1 - tanh α * tanh θ) / 2`.**
+  stabilization constants agree exactly when `η = hyperbolicProjParam α θ`.**
 * `TauCeti.hyperbolicStabilization_eq_neg_I_mul_sinh_div_cosh` and
   `TauCeti.hyperbolicStabilization_normalization`:
   the common value and the normalization constants.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_complementEquiv_hyperbolicGen_eq_iff`: the
-  same condition for the complementary eigenprojection.
+  same condition `η = hyperbolicWenzlProjParam α θ` for the complementary eigenprojection.
 
 ## References
 
+* H. Wenzl, *Hecke algebras of type A_n and subfactors*, Invent. Math. 92 (1988), 349–383, §§2–3,
+  for the complementary projection convention.
 * V. F. R. Jones, *Hecke algebra representations of braid groups and link polynomials*,
   Ann. of Math. 126 (1987), 335–388, Section 6, for the normalization of the Ocneanu trace by
   the two stabilization constants.
@@ -101,6 +111,112 @@ theorem val_hyperbolicHeckeParam (θ : ℂ) : (hyperbolicHeckeParam θ : ℂ) = 
 /-- The inverse of the hyperbolic Hecke parameter is `exp θ`. -/
 theorem val_inv_hyperbolicHeckeParam (θ : ℂ) : (↑(hyperbolicHeckeParam θ)⁻¹ : ℂ) = exp θ := by
   simp [hyperbolicHeckeParam, ← exp_neg]
+
+/-- The native hyperbolic projection parameter `η = (1 - tanh α * tanh θ) / 2` at which the
+positive and negative stabilization constants of `γ i = I * exp (-α) • T i` agree on the Hecke
+algebra with parameter `q = exp (-θ)`. -/
+noncomputable def hyperbolicProjParam (α θ : ℂ) : ℂ :=
+  (1 - tanh α * tanh θ) / 2
+
+/-- Wenzl's complementary hyperbolic projection parameter
+`η_W = (1 + tanh α * tanh θ) / 2 = 1 - η`, attached to the complementary eigenprojection. -/
+noncomputable def hyperbolicWenzlProjParam (α θ : ℂ) : ℂ :=
+  (1 + tanh α * tanh θ) / 2
+
+/-- Defining formula for `hyperbolicProjParam`. -/
+theorem hyperbolicProjParam_def (α θ : ℂ) :
+    hyperbolicProjParam α θ = (1 - tanh α * tanh θ) / 2 := (rfl)
+
+/-- Defining formula for `hyperbolicWenzlProjParam`. -/
+theorem hyperbolicWenzlProjParam_def (α θ : ℂ) :
+    hyperbolicWenzlProjParam α θ = (1 + tanh α * tanh θ) / 2 := (rfl)
+
+/-- Wenzl's hyperbolic projection parameter is `1` minus the native parameter. -/
+theorem hyperbolicWenzlProjParam_eq_one_sub (α θ : ℂ) :
+    hyperbolicWenzlProjParam α θ = 1 - hyperbolicProjParam α θ := by
+  rw [hyperbolicWenzlProjParam_def, hyperbolicProjParam_def]
+  ring
+
+/-- The native hyperbolic projection parameter is `1` minus Wenzl's parameter. -/
+theorem hyperbolicProjParam_eq_one_sub (α θ : ℂ) :
+    hyperbolicProjParam α θ = 1 - hyperbolicWenzlProjParam α θ := by
+  rw [hyperbolicWenzlProjParam_eq_one_sub]
+  ring
+
+/-- The native and Wenzl hyperbolic projection parameters sum to `1`. -/
+theorem hyperbolicProjParam_add_hyperbolicWenzlProjParam (α θ : ℂ) :
+    hyperbolicProjParam α θ + hyperbolicWenzlProjParam α θ = 1 := by
+  rw [hyperbolicWenzlProjParam_eq_one_sub]
+  ring
+
+/-- `hyperbolicProjParam` is symmetric in its two arguments. -/
+theorem hyperbolicProjParam_comm (α θ : ℂ) :
+    hyperbolicProjParam α θ = hyperbolicProjParam θ α := by
+  rw [hyperbolicProjParam_def, hyperbolicProjParam_def, mul_comm]
+
+/-- `hyperbolicWenzlProjParam` is symmetric in its two arguments. -/
+theorem hyperbolicWenzlProjParam_comm (α θ : ℂ) :
+    hyperbolicWenzlProjParam α θ = hyperbolicWenzlProjParam θ α := by
+  rw [hyperbolicWenzlProjParam_def, hyperbolicWenzlProjParam_def, mul_comm]
+
+/-- Negating `α` exchanges the native and Wenzl hyperbolic projection parameters. -/
+@[simp]
+theorem hyperbolicProjParam_neg_left (α θ : ℂ) :
+    hyperbolicProjParam (-α) θ = hyperbolicWenzlProjParam α θ := by
+  simp [hyperbolicProjParam_def, hyperbolicWenzlProjParam_def, sub_eq_add_neg]
+
+/-- Negating `θ` exchanges the native and Wenzl hyperbolic projection parameters. -/
+@[simp]
+theorem hyperbolicProjParam_neg_right (α θ : ℂ) :
+    hyperbolicProjParam α (-θ) = hyperbolicWenzlProjParam α θ := by
+  simp [hyperbolicProjParam_def, hyperbolicWenzlProjParam_def, sub_eq_add_neg]
+
+/-- Negating `α` turns Wenzl's hyperbolic projection parameter into the native one. -/
+@[simp]
+theorem hyperbolicWenzlProjParam_neg_left (α θ : ℂ) :
+    hyperbolicWenzlProjParam (-α) θ = hyperbolicProjParam α θ := by
+  simp [hyperbolicProjParam_def, hyperbolicWenzlProjParam_def, sub_eq_add_neg]
+
+/-- Negating `θ` turns Wenzl's hyperbolic projection parameter into the native one. -/
+@[simp]
+theorem hyperbolicWenzlProjParam_neg_right (α θ : ℂ) :
+    hyperbolicWenzlProjParam α (-θ) = hyperbolicProjParam α θ := by
+  simp [hyperbolicProjParam_def, hyperbolicWenzlProjParam_def, sub_eq_add_neg]
+
+/-- At `α = 0`, the native hyperbolic projection parameter is `1 / 2`. -/
+@[simp]
+theorem hyperbolicProjParam_zero_left (θ : ℂ) : hyperbolicProjParam 0 θ = 1 / 2 := by
+  simp [hyperbolicProjParam_def]
+
+/-- At `θ = 0` (`Q = 1`), the native hyperbolic projection parameter is `1 / 2` for every `α`. -/
+@[simp]
+theorem hyperbolicProjParam_zero_right (α : ℂ) : hyperbolicProjParam α 0 = 1 / 2 := by
+  simp [hyperbolicProjParam_def]
+
+/-- At `α = 0`, Wenzl's hyperbolic projection parameter is `1 / 2`. -/
+@[simp]
+theorem hyperbolicWenzlProjParam_zero_left (θ : ℂ) : hyperbolicWenzlProjParam 0 θ = 1 / 2 := by
+  simp [hyperbolicWenzlProjParam_def]
+
+/-- At `θ = 0` (`Q = 1`), Wenzl's hyperbolic projection parameter is `1 / 2` for every `α`. -/
+@[simp]
+theorem hyperbolicWenzlProjParam_zero_right (α : ℂ) : hyperbolicWenzlProjParam α 0 = 1 / 2 := by
+  simp [hyperbolicWenzlProjParam_def]
+
+/-- Hyperbolic-cosine form `hyperbolicProjParam α θ = cosh (α - θ) / (2 * cosh α * cosh θ)` when
+`cosh α * cosh θ ≠ 0`. -/
+theorem hyperbolicProjParam_eq_cosh_sub_div {α θ : ℂ} (hα : cosh α ≠ 0) (hθ : cosh θ ≠ 0) :
+    hyperbolicProjParam α θ = cosh (α - θ) / (2 * cosh α * cosh θ) := by
+  rw [hyperbolicProjParam_def]
+  exact (cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two hα hθ).symm
+
+/-- Hyperbolic-cosine form `hyperbolicWenzlProjParam α θ = cosh (α + θ) / (2 * cosh α * cosh θ)`
+when `cosh α * cosh θ ≠ 0`. -/
+theorem hyperbolicWenzlProjParam_eq_cosh_add_div {α θ : ℂ} (hα : cosh α ≠ 0) (hθ : cosh θ ≠ 0) :
+    hyperbolicWenzlProjParam α θ = cosh (α + θ) / (2 * cosh α * cosh θ) := by
+  have hθ' : cosh (-θ) ≠ 0 := by simpa using hθ
+  rw [← hyperbolicProjParam_neg_right, hyperbolicProjParam_eq_cosh_sub_div hα hθ', sub_neg_eq_add,
+    cosh_neg]
 
 /-- The positive stabilization constant `I * (exp (-α - θ) * η - exp (-α + θ) * (1 - η))` of a
 Markov trace with projection parameter `η`, for the generators `γ = I * exp (-α) • T`. -/
@@ -132,40 +248,31 @@ theorem hyperbolicStabilization_sub_hyperbolicStabilizationInv (α θ η : ℂ) 
   ring
 
 /-- **Equality of the stabilization constants.** For `cosh α * cosh θ ≠ 0`, the positive and
-negative stabilization constants agree exactly when
-`η = cosh (α - θ) / (2 * cosh α * cosh θ)`. -/
+negative stabilization constants agree exactly when `η = hyperbolicProjParam α θ`
+(`= cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2`). -/
 theorem hyperbolicStabilization_eq_hyperbolicStabilizationInv_iff {α θ η : ℂ} (hα : cosh α ≠ 0)
     (hθ : cosh θ ≠ 0) :
     hyperbolicStabilization α θ η = hyperbolicStabilizationInv α θ η ↔
-      η = cosh (α - θ) / (2 * cosh α * cosh θ) := by
+      η = hyperbolicProjParam α θ := by
   rw [← sub_eq_zero, hyperbolicStabilization_sub_hyperbolicStabilizationInv,
-    eq_div_iff (by simp [hα, hθ])]
+    hyperbolicProjParam_eq_cosh_sub_div hα hθ, eq_div_iff (by simp [hα, hθ])]
   simp [I_ne_zero, sub_eq_zero, mul_comm]
-
-/-- **Equality of the stabilization constants, in hyperbolic tangents.** For
-`cosh α * cosh θ ≠ 0`, the positive and negative stabilization constants agree exactly when
-`η = (1 - tanh α * tanh θ) / 2`. -/
-theorem hyperbolicStabilization_eq_hyperbolicStabilizationInv_iff_tanh {α θ η : ℂ} (hα : cosh α ≠ 0)
-    (hθ : cosh θ ≠ 0) :
-    hyperbolicStabilization α θ η = hyperbolicStabilizationInv α θ η ↔
-      η = (1 - tanh α * tanh θ) / 2 := by
-  rw [hyperbolicStabilization_eq_hyperbolicStabilizationInv_iff hα hθ,
-    cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two hα hθ]
 
 /-- **Exchanging the eigenprojections.** For `cosh α * cosh θ ≠ 0`, the stabilization constants
 at the complementary projection parameter `1 - η` agree exactly when
-`η = (1 + tanh α * tanh θ) / 2`. -/
+`η = hyperbolicWenzlProjParam α θ`. -/
 theorem hyperbolicStabilization_one_sub_eq_hyperbolicStabilizationInv_one_sub_iff {α θ η : ℂ}
     (hα : cosh α ≠ 0) (hθ : cosh θ ≠ 0) :
     hyperbolicStabilization α θ (1 - η) = hyperbolicStabilizationInv α θ (1 - η) ↔
-      η = (1 + tanh α * tanh θ) / 2 := by
-  rw [hyperbolicStabilization_eq_hyperbolicStabilizationInv_iff_tanh hα hθ]
+      η = hyperbolicWenzlProjParam α θ := by
+  rw [hyperbolicStabilization_eq_hyperbolicStabilizationInv_iff hα hθ,
+    hyperbolicProjParam_eq_one_sub]
   constructor <;> intro h <;> linear_combination -h
 
-/-- **The common stabilization constant.** At `η = (1 - tanh α * tanh θ) / 2`, the positive
+/-- **The common stabilization constant.** At `η = hyperbolicProjParam α θ`, the positive
 stabilization constant is `-I * sinh θ / cosh α`. -/
 theorem hyperbolicStabilization_eq_neg_I_mul_sinh_div_cosh {α θ η : ℂ} (hα : cosh α ≠ 0)
-    (hθ : cosh θ ≠ 0) (hη : η = (1 - tanh α * tanh θ) / 2) :
+    (hθ : cosh θ ≠ 0) (hη : η = hyperbolicProjParam α θ) :
     hyperbolicStabilization α θ η = -I * sinh θ / cosh α := by
   have h1 : exp (-α) * (cosh α + sinh α) = 1 := by
     rw [cosh_add_sinh, ← exp_add, neg_add_cancel, exp_zero]
@@ -173,7 +280,7 @@ theorem hyperbolicStabilization_eq_neg_I_mul_sinh_div_cosh {α θ η : ℂ} (hα
     rw [hyperbolicStabilization, two_cosh]
     simp only [exp_sub, exp_add, exp_neg]
     ring
-  rw [← cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two hα hθ] at hη
+  rw [hyperbolicProjParam_eq_cosh_sub_div hα hθ] at hη
   rw [key, hη, eq_div_iff hα]
   calc I * exp (-α) * (2 * cosh θ * (cosh (α - θ) / (2 * cosh α * cosh θ)) - exp θ) * cosh α
       = I * exp (-α) * (cosh (α - θ) - exp θ * cosh α) := by field_simp
@@ -181,18 +288,18 @@ theorem hyperbolicStabilization_eq_neg_I_mul_sinh_div_cosh {α θ η : ℂ} (hα
       rw [cosh_sub, ← cosh_add_sinh θ]
       linear_combination (-I * sinh θ) * h1
 
-/-- **The normalization constants.** At `η = (1 - tanh α * tanh θ) / 2`, if moreover
+/-- **The normalization constants.** At `η = hyperbolicProjParam α θ`, if moreover
 `sinh θ ≠ 0`, then `λ = 1` and `C = I * cosh α / sinh θ` solve the normalization
 `C * λ * a = 1 = C * λ⁻¹ * b` for the positive and negative stabilization constants `a` and `b`. -/
 theorem hyperbolicStabilization_normalization {α θ η : ℂ} (hα : cosh α ≠ 0) (hθ : cosh θ ≠ 0)
-    (hθ' : sinh θ ≠ 0) (hη : η = (1 - tanh α * tanh θ) / 2) :
+    (hθ' : sinh θ ≠ 0) (hη : η = hyperbolicProjParam α θ) :
     I * cosh α / sinh θ * hyperbolicStabilization α θ η = 1 ∧
       I * cosh α / sinh θ * hyperbolicStabilizationInv α θ η = 1 := by
   have h : I * cosh α / sinh θ * hyperbolicStabilization α θ η = 1 := by
     rw [hyperbolicStabilization_eq_neg_I_mul_sinh_div_cosh hα hθ hη]
     field_simp
     simp
-  exact ⟨h, ((hyperbolicStabilization_eq_hyperbolicStabilizationInv_iff_tanh hα hθ).2 hη) ▸ h⟩
+  exact ⟨h, ((hyperbolicStabilization_eq_hyperbolicStabilizationInv_iff hα hθ).2 hη) ▸ h⟩
 
 namespace InfiniteTypeAHeckeAlgebra
 
@@ -303,29 +410,29 @@ theorem IsMarkovTrace.map_mul_inv_hyperbolicGen (hτ : IsMarkovTrace z τ)
   ring
 
 /-- **The stabilization constants of a Markov trace agree exactly at
-`η = (1 - tanh α * tanh θ) / 2`.** For a Markov trace with projection parameter `η` on the Hecke
+`η = hyperbolicProjParam α θ`.** For a Markov trace with projection parameter `η` on the Hecke
 algebra with parameter `q = exp (-θ)`, and `cosh α * cosh θ ≠ 0`, the traces of `γ n` and of
-`γ n⁻¹` agree exactly when `η = (1 - tanh α * tanh θ) / 2`. -/
+`γ n⁻¹` agree exactly when `η = hyperbolicProjParam α θ`. -/
 theorem IsMarkovTrace.map_hyperbolicGen_eq_map_inv_iff (hτ : IsMarkovTrace z τ)
     (hz : z = exp (-θ) * η - exp θ * (1 - η)) (hα : cosh α ≠ 0) (hθ : cosh θ ≠ 0) (n : ℕ) :
-    τ (hyperbolicGen α θ n) = τ ↑(hyperbolicGen α θ n)⁻¹ ↔ η = (1 - tanh α * tanh θ) / 2 := by
+    τ (hyperbolicGen α θ n) = τ ↑(hyperbolicGen α θ n)⁻¹ ↔ η = hyperbolicProjParam α θ := by
   have h1 := hτ.map_mul_hyperbolicGen (α := α) hz (one_mem (stage ℂ _ (n + 1)))
   have h2 := hτ.map_mul_inv_hyperbolicGen (α := α) hz (one_mem (stage ℂ _ (n + 1)))
   rw [one_mul, hτ.map_one, mul_one] at h1 h2
-  rw [h1, h2, hyperbolicStabilization_eq_hyperbolicStabilizationInv_iff_tanh hα hθ]
+  rw [h1, h2, hyperbolicStabilization_eq_hyperbolicStabilizationInv_iff hα hθ]
 
 /-- **The complementary eigenprojection.** Precomposing a Markov trace with projection parameter
 `η` with the complement automorphism, which exchanges the eigenprojections of the generators,
-the traces of `γ n` and of `γ n⁻¹` agree exactly when `η = (1 + tanh α * tanh θ) / 2`. -/
+the traces of `γ n` and of `γ n⁻¹` agree exactly when `η = hyperbolicWenzlProjParam α θ`. -/
 theorem IsMarkovTrace.map_complementEquiv_hyperbolicGen_eq_iff (hτ : IsMarkovTrace z τ)
     (hz : z = exp (-θ) * η - exp θ * (1 - η)) (hα : cosh α ≠ 0) (hθ : cosh θ ≠ 0) (n : ℕ) :
     τ (complementEquiv _ (hyperbolicGen α θ n)) =
         τ (complementEquiv _ ↑(hyperbolicGen α θ n)⁻¹) ↔
-      η = (1 + tanh α * tanh θ) / 2 := by
+      η = hyperbolicWenzlProjParam α θ := by
   have h := (hτ.comp_complementEquiv).map_hyperbolicGen_eq_map_inv_iff (η := 1 - η)
     (by simp only [val_hyperbolicHeckeParam, val_inv_hyperbolicHeckeParam, hz]; ring) hα hθ n
   rw [← hyperbolicStabilization_one_sub_eq_hyperbolicStabilizationInv_one_sub_iff hα hθ,
-    hyperbolicStabilization_eq_hyperbolicStabilizationInv_iff_tanh hα hθ]
+    hyperbolicStabilization_eq_hyperbolicStabilizationInv_iff hα hθ]
   simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply] using h
 
 end InfiniteTypeAHeckeAlgebra
