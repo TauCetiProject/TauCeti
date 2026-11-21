@@ -158,7 +158,7 @@ conjugation law that is usable from the *original* domain. -/
 theorem map_mem_unitaryConj_domain (U : H ≃ₗᵢ[𝕜] H') (A : H →ₗ.[𝕜] H) (y : A.domain) :
     U (y : H) ∈ (unitaryConj U A).domain := by
   rw [mem_unitaryConj_domain_iff, U.symm_apply_apply]
-  exact y.2
+  exact y.property
 
 /-- **The intertwining law**, in the form consumers want: conjugation composed
 with `U` is `U` composed with `A`, indexed by the *original* domain rather than

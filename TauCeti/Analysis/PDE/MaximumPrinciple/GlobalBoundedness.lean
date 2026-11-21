@@ -428,7 +428,7 @@ private theorem exists_forall_eLpNorm_value_le_toNNReal_mul_measureReal_rpow [No
     positivity
   refine ⟨K, hK, fun {Omega} hOmega v hv => ?_⟩
   have hsob := W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (mu := mu)
-    ENNReal.ofNat_ne_top hOmega hs2 (δ := δ) (by rw [ENNReal.toReal_ofNat, hs, inv_inv]; ring)
+    hOmega hs2 (δ := δ) (by rw [ENNReal.toReal_ofNat, hs, inv_inv]; ring)
     (by rwa [finrank_euclideanSpace]) hv
   rw [finrank_euclideanSpace] at hsob
   refine hsob.trans_eq ?_
@@ -582,12 +582,12 @@ theorem exists_ae_abs_value_le_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr 
   refine ⟨C, hC, fun {Omega a c lam Lam gamma f u} hOmega h ha hc hc_bound hc_nonneg hf hsol => ?_⟩
   -- The bound from above for `u`, and for `-u`, a weak solution with forcing `-f`.
   have hup := hmain (u := (u : W1p mu Omega 2)) le_rfl hOmega h ha hc hc_bound hc_nonneg hf
-    (fun v _ => (hsol v).le) (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl u.2)
+    (fun v _ => (hsol v).le) (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl u.property)
   have hlo := hmain (u := -(u : W1p mu Omega 2)) (f := fun x => -f x) le_rfl hOmega h ha hc
     hc_bound hc_nonneg hf.neg (fun v _ => by
       rw [← neg_one_smul ℝ (u : W1p mu Omega 2), energyFormH1_smul_left, hsol v]
       simp only [neg_mul, integral_neg, one_mul, le_refl])
-    (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl (-u).2)
+    (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl (-u).property)
   have hnorm : eLpNorm (fun x => -f x) r (mu.restrict Omega) = eLpNorm f r (mu.restrict Omega) :=
     eLpNorm_neg _ _ _
   rw [hnorm] at hlo
@@ -896,12 +896,12 @@ theorem exists_ae_abs_value_le_mul_div_mul_rpow_divergence [Nonempty ι] {q : �
   refine ⟨C, hC, fun {Omega a c lam Lam gamma F u} hOmega h ha hc hc_bound hc_nonneg hF hsol => ?_⟩
   -- The bound from above for `u`, and for `-u`, a weak solution with datum `-F`.
   have hup := hmain (u := (u : W1p mu Omega 2)) le_rfl hOmega h ha hc hc_bound hc_nonneg hF
-    (fun v _ => (hsol v).le) (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl u.2)
+    (fun v _ => (hsol v).le) (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl u.property)
   have hlo := hmain (u := -(u : W1p mu Omega 2)) (F := fun x => -F x) le_rfl hOmega h ha hc
     hc_bound hc_nonneg hF.neg (fun v _ => by
       rw [← neg_one_smul ℝ (u : W1p mu Omega 2), energyFormH1_smul_left, hsol v]
       simp only [inner_neg_left, integral_neg, neg_mul, one_mul, le_refl])
-    (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl (-u).2)
+    (W1p.posPartAbove_mem_w1p0Submodule (by norm_num) le_rfl (-u).property)
   have hnorm : eLpNorm (fun x => -F x) q (mu.restrict Omega) = eLpNorm F q (mu.restrict Omega) :=
     eLpNorm_neg _ _ _
   rw [hnorm] at hlo

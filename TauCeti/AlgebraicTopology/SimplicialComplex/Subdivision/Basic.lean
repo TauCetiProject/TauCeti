@@ -126,9 +126,10 @@ of `K` has at most `D` vertices, so does every face of its barycentric subdivisi
 members of a chain of nonempty faces have distinct cardinalities between `1` and `D`. -/
 theorem card_le_of_mem_barycentricSubdivision {D : ℕ} (hD : ∀ σ ∈ K, σ.card ≤ D)
     {ρ : Finset (SetLike.Face K)} (hρ : ρ ∈ barycentricSubdivision K) : ρ.card ≤ D := by
-  have hmaps : ∀ σ ∈ ρ, σ.1.card ∈ Finset.Icc 1 D := fun σ _ =>
-    Finset.mem_Icc.2 ⟨Finset.card_pos.2 (K.isRelLowerSet_faces.prop_of_mem σ.2), hD σ.1 σ.2⟩
-  have hinj : Set.InjOn (fun σ : SetLike.Face K => σ.1.card) ρ := by
+  have hmaps : ∀ σ ∈ ρ, σ.val.card ∈ Finset.Icc 1 D := fun σ _ =>
+    Finset.mem_Icc.2 ⟨Finset.card_pos.2 (K.isRelLowerSet_faces.prop_of_mem σ.property),
+        hD σ.val σ.property⟩
+  have hinj : Set.InjOn (fun σ : SetLike.Face K => σ.val.card) ρ := by
     intro σ hσ τ hτ hστ
     apply Subtype.ext
     rcases subset_or_subset_of_mem_barycentricSubdivision hρ hσ hτ with h | h
@@ -166,7 +167,7 @@ theorem coe_barycentricSubdivisionMap [DecidableEq β]
 theorem coe_barycentricSubdivisionMap_apply [DecidableEq β]
     (f : _root_.PreAbstractSimplicialComplex.SimplicialMap K L)
     (σ : SetLike.Face K) :
-    (barycentricSubdivisionMap f σ : Finset β) = σ.1.image f := by
+    (barycentricSubdivisionMap f σ : Finset β) = σ.val.image f := by
   rw [← coe_faceOrderHom_apply, ← coe_barycentricSubdivisionMap]
 
 /-- Barycentric subdivision sends the identity simplicial map to the identity simplicial map. -/
@@ -206,7 +207,7 @@ variable {ι : Type*} (K : AbstractSimplicialComplex ι) (P : PreAbstractSimplic
 the chains of faces of `K` all of whose members are faces of `P`. -/
 def subdivisionSubcomplex : PreAbstractSimplicialComplex (TauCeti.SetLike.Face K) where
   faces := {ρ | ρ ∈ TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
-    K.toPreAbstractSimplicialComplex ∧ ∀ σ ∈ ρ, σ.1 ∈ P}
+    K.toPreAbstractSimplicialComplex ∧ ∀ σ ∈ ρ, σ.val ∈ P}
   isRelLowerSet_faces := by
     rintro ρ ⟨hρK, hρP⟩
     have h := (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
@@ -217,7 +218,7 @@ def subdivisionSubcomplex : PreAbstractSimplicialComplex (TauCeti.SetLike.Face K
 theorem mem_subdivisionSubcomplex_iff {ρ : Finset (TauCeti.SetLike.Face K)} :
     ρ ∈ K.subdivisionSubcomplex P ↔
       ρ ∈ TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
-        K.toPreAbstractSimplicialComplex ∧ ∀ σ ∈ ρ, σ.1 ∈ P :=
+        K.toPreAbstractSimplicialComplex ∧ ∀ σ ∈ ρ, σ.val ∈ P :=
   Iff.rfl
 
 end AbstractSimplicialComplex

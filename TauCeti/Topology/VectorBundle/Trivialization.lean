@@ -6,13 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.FiberBundle.Constructions
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.VectorBundle.Basic
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Trivializations over the whole base
 
 A trivialization `e` of a fibre bundle `E` whose base set is the whole base is a homeomorphism
-`E ≃ₜ B × F`. Read through `Bundle.Trivial.homeomorphProd`, it is a homeomorphism of total spaces
+`E ≃ₜ B × F` (`Bundle.Trivialization.toHomeomorphOfBaseSetEqUniv`), which is `e` with inverse
+the partial inverse of `e` (`Bundle.Trivialization.coe_toHomeomorphOfBaseSetEqUniv`,
+`Bundle.Trivialization.coe_toHomeomorphOfBaseSetEqUniv_symm`).
+Read through `Bundle.Trivial.homeomorphProd`, it is a homeomorphism of total spaces
 `E ≃ₜ TotalSpace F (Bundle.Trivial B F)` onto the trivial bundle
 (`Bundle.Trivialization.homeomorphTrivial`). It covers the identity of the base, sends `v` to the
 fibre coordinate of `e v`, and its inverse is the partial inverse of `e`
@@ -39,7 +44,9 @@ satisfy the identity and cocycle laws over the relevant base sets
 `Bundle.Trivialization.coordChangeL_coordChangeL_apply`), equal the identity outside the overlap
 (`Bundle.Trivialization.coordChangeL_of_notMem`), and send the coordinate of a point in
 the first trivialization to its coordinate in the second
-(`Bundle.Trivialization.coordChangeL_apply_snd`). Convergence in the total space of a vector bundle
+(`Bundle.Trivialization.coordChangeL_apply_snd`); the fibrewise inverse of the second, after the
+coordinate change from the first, is the fibrewise inverse of the first
+(`Bundle.Trivialization.symmL_coordChangeL`). Convergence in the total space of a vector bundle
 is convergence of base points and of fibre coordinates in any linear trivialization over the limit
 point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`). Over the base set, pulling continuous
 linear maps on the model fibre back to a fibre through a linear trivialization is injective
@@ -51,7 +58,9 @@ bundle (`FiberBundle.trivializationAt_prod`), and scalar restriction of linear t
 and coordinate changes (`Bundle.Trivialization.isLinear_restrictScalars`,
 `Bundle.Trivialization.restrictScalars_coordChangeL`). A trivialization that is linear over two
 fields has the same continuous linear map at every point over either field
-(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`).
+(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`). Subspaces of
+the fibres of a vector bundle with finite-dimensional model fibre are closed
+(`VectorBundle.isClosed_submodule`).
 -/
 
 public section
@@ -66,12 +75,32 @@ namespace Bundle.Trivialization
 variable {B : Type*} [TopologicalSpace B] {F : Type*} [TopologicalSpace F] {E : B → Type*}
   [TopologicalSpace (TotalSpace F E)] (e : Trivialization F (π F E))
 
+/-- A trivialization over the whole base is a homeomorphism `E ≃ₜ B × F` of the total space onto
+the product. -/
+def toHomeomorphOfBaseSetEqUniv (he : e.baseSet = Set.univ) : TotalSpace F E ≃ₜ B × F :=
+  e.toHomeomorphOfSourceEqUnivTargetEqUniv (by simp [e.source_eq, he])
+    (by simp [e.target_eq, he])
+
+/-- The homeomorphism of a trivialization over the whole base is the trivialization. -/
+@[simp]
+theorem coe_toHomeomorphOfBaseSetEqUniv (he : e.baseSet = Set.univ) :
+    ⇑(e.toHomeomorphOfBaseSetEqUniv he) = e := by
+  rw [toHomeomorphOfBaseSetEqUniv,
+    OpenPartialHomeomorph.toHomeomorphOfSourceEqUnivTargetEqUniv_apply, coe_coe]
+
+/-- The inverse of the homeomorphism of a trivialization over the whole base is the partial
+inverse of the trivialization. -/
+@[simp]
+theorem coe_toHomeomorphOfBaseSetEqUniv_symm (he : e.baseSet = Set.univ) :
+    ⇑(e.toHomeomorphOfBaseSetEqUniv he).symm = e.toOpenPartialHomeomorph.symm := by
+  rw [toHomeomorphOfBaseSetEqUniv,
+    OpenPartialHomeomorph.toHomeomorphOfSourceEqUnivTargetEqUniv_symm_apply]
+
 /-- The homeomorphism `E ≃ₜ B × F` of a trivialization over the whole base, read as a
 homeomorphism onto the total space of the trivial bundle. -/
 def homeomorphTrivial (he : e.baseSet = Set.univ) :
     TotalSpace F E ≃ₜ TotalSpace F (Bundle.Trivial B F) :=
-  (e.toHomeomorphOfSourceEqUnivTargetEqUniv (by simp [e.source_eq, he])
-    (by simp [e.target_eq, he])).trans (Bundle.Trivial.homeomorphProd B F).symm
+  (e.toHomeomorphOfBaseSetEqUniv he).trans (Bundle.Trivial.homeomorphProd B F).symm
 
 @[simp]
 theorem homeomorphTrivial_apply (he : e.baseSet = Set.univ) (v : TotalSpace F E) :
@@ -82,7 +111,7 @@ theorem homeomorphTrivial_apply (he : e.baseSet = Set.univ) (v : TotalSpace F E)
 @[simp]
 theorem homeomorphTrivial_symm_apply (he : e.baseSet = Set.univ)
     (w : TotalSpace F (Bundle.Trivial B F)) :
-    (e.homeomorphTrivial he).symm w = e.toPartialHomeomorph.symm (w.proj, w.2) := by
+    (e.homeomorphTrivial he).symm w = e.toPartialHomeomorph.symm (w.proj, w.snd) := by
   rfl
 
 section Linear
@@ -95,7 +124,7 @@ include R in
 /-- A linear trivialization sends a vector over its base set to a nonzero vector exactly when the
 vector is nonzero. -/
 theorem snd_apply_ne_zero_iff {v : TotalSpace F E} (hv : v.proj ∈ e.baseSet) :
-    (e v).2 ≠ 0 ↔ v.2 ≠ 0 := by
+    (e v).2 ≠ 0 ↔ v.snd ≠ 0 := by
   simpa only [linearEquivAt_apply] using (e.linearEquivAt R v.proj hv).map_ne_zero_iff
 
 include R in
@@ -155,14 +184,14 @@ variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] (e : Trivialization F
 theorem homeomorphTrivial_apply_eq_continuousLinearEquivAt (he : e.baseSet = Set.univ)
     (v : TotalSpace F E) :
     e.homeomorphTrivial he v = TotalSpace.mk' F v.proj (e.continuousLinearEquivAt 𝕜 v.proj
-      (he ▸ Set.mem_univ _) v.2) :=
+      (he ▸ Set.mem_univ _) v.snd) :=
   congrArg (Bundle.Trivial.homeomorphProd B F).symm
-    (e.apply_eq_prod_continuousLinearEquivAt 𝕜 v.proj (he ▸ Set.mem_univ _) v.2)
+    (e.apply_eq_prod_continuousLinearEquivAt 𝕜 v.proj (he ▸ Set.mem_univ _) v.snd)
 
 theorem homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt (he : e.baseSet = Set.univ)
     (w : TotalSpace F (Bundle.Trivial B F)) :
     (e.homeomorphTrivial he).symm w = TotalSpace.mk' F w.proj
-      ((e.continuousLinearEquivAt 𝕜 w.proj (he ▸ Set.mem_univ _)).symm w.2) := by
+      ((e.continuousLinearEquivAt 𝕜 w.proj (he ▸ Set.mem_univ _)).symm w.snd) := by
   rw [Homeomorph.symm_apply_eq, homeomorphTrivial_apply_eq_continuousLinearEquivAt 𝕜]
   exact congrArg (TotalSpace.mk' F w.proj) (ContinuousLinearEquiv.apply_symm_apply _ _).symm
 
@@ -202,6 +231,13 @@ theorem continuousLinearEquivAt_trans_coordChangeL (hb : b ∈ e.baseSet) (hb' :
   rw [← comp_continuousLinearEquivAt_eq_coord_change e e' ⟨hb, hb'⟩]
   ext x
   simp only [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.symm_apply_apply]
+
+/-- Over the intersection of the base sets of two linear trivializations `e'` and `e`, the
+fibrewise inverse `e.symmL` after the coordinate change from `e'` to `e` is `e'.symmL`. -/
+theorem symmL_coordChangeL (hb : b ∈ e'.baseSet ∩ e.baseSet) (v : F) :
+    e.symmL 𝕜 b (e'.coordChangeL 𝕜 e b v) = e'.symmL 𝕜 b v := by
+  rw [e'.coordChangeL_apply e hb, e.symmL_apply hb.2, e.symm_apply_apply_mk hb.2,
+    e'.symmL_apply hb.1]
 
 end FiberBundle
 
@@ -328,5 +364,16 @@ protected theorem continuousSMul [∀ x, AddCommMonoid (E x)] [∀ x, Module �
   let e := (trivializationAt F E b).continuousLinearEquivAt 𝕜 b
     (FiberBundle.mem_baseSet_trivializationAt' b)
   e.toHomeomorph.isInducing.continuousSMul continuous_id fun {c x} ↦ e.map_smul c x
+
+/-- A subspace of a fibre of a topological vector bundle with finite-dimensional model fibre over a
+complete field is closed: the preferred trivialization at `b` maps it onto a finite-dimensional
+subspace of the model fibre. -/
+theorem isClosed_submodule [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [∀ x, AddCommGroup (E x)]
+    [∀ x, Module 𝕜 (E x)] [VectorBundle 𝕜 F E] (b : B) (L : Submodule 𝕜 (E b)) :
+    IsClosed (L : Set (E b)) := by
+  let e := (trivializationAt F E b).continuousLinearEquivAt 𝕜 b
+    (FiberBundle.mem_baseSet_trivializationAt' b)
+  rw [← e.toHomeomorph.isClosed_image]
+  exact (L.map (e : E b →ₗ[𝕜] F)).isClosed_of_finiteDimensional
 
 end VectorBundle
